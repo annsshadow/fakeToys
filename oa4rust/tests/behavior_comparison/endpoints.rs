@@ -1,6 +1,6 @@
 /// 行为对比测试端点列表（自动生成）
 
-/// 生成时间: 2026-08-22 21:54:23
+/// 生成时间: 2026-08-22 23:58:32
 use super::EndpointDef;
 
 pub const ENDPOINTS: &[EndpointDef] = &[
@@ -17458,6 +17458,116 @@ pub const ENDPOINTS: &[EndpointDef] = &[
     EndpointDef {
         crate_name: "processplatform_assemble_surface",
         method: "DELETE",
+        rust_path: "/jaxrs/processplatform/assemble/surface/application/{flag}/{onlyRemoveNotCompleted}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_assemble_surface",
+        method: "DELETE",
+        rust_path: "/jaxrs/processplatform/assemble/surface/applicationdict/{applicationDictFlag}/application/{applicationFlag}/{path0}/data",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_assemble_surface",
+        method: "DELETE",
+        rust_path: "/jaxrs/processplatform/assemble/surface/applicationdict/{applicationDictFlag}/application/{applicationFlag}/{path0}/{path1}/data",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_assemble_surface",
+        method: "DELETE",
+        rust_path: "/jaxrs/processplatform/assemble/surface/applicationdict/{applicationDictFlag}/application/{applicationFlag}/{path0}/{path1}/{path2}/data",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_assemble_surface",
+        method: "DELETE",
+        rust_path: "/jaxrs/processplatform/assemble/surface/applicationdict/{applicationDictFlag}/application/{applicationFlag}/{path0}/{path1}/{path2}/{path3}/data",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_assemble_surface",
+        method: "DELETE",
+        rust_path: "/jaxrs/processplatform/assemble/surface/applicationdict/{applicationDictFlag}/application/{applicationFlag}/{path0}/{path1}/{path2}/{path3}/data/mockdeletetoget",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_assemble_surface",
+        method: "DELETE",
+        rust_path: "/jaxrs/processplatform/assemble/surface/applicationdict/{applicationDictFlag}/application/{applicationFlag}/{path0}/{path1}/{path2}/{path3}/{path4}/data",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_assemble_surface",
+        method: "DELETE",
+        rust_path: "/jaxrs/processplatform/assemble/surface/applicationdict/{applicationDictFlag}/application/{applicationFlag}/{path0}/{path1}/{path2}/{path3}/{path4}/{path5}/data",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_assemble_surface",
+        method: "DELETE",
+        rust_path: "/jaxrs/processplatform/assemble/surface/applicationdict/{applicationDictFlag}/application/{applicationFlag}/{path0}/{path1}/{path2}/{path3}/{path4}/{path5}/{path6}/data",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_assemble_surface",
+        method: "DELETE",
+        rust_path: "/jaxrs/processplatform/assemble/surface/applicationdict/{applicationDictFlag}/application/{applicationFlag}/{path0}/{path1}/{path2}/{path3}/{path4}/{path5}/{path6}/{path7}/data",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_assemble_surface",
+        method: "DELETE",
+        rust_path: "/jaxrs/processplatform/assemble/surface/attachment/{id}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_assemble_surface",
+        method: "DELETE",
         rust_path: "/jaxrs/processplatform/assemble/surface/attachment/{id}/work/{workId}",
         java_war: "",
         java_action: "",
@@ -17468,7 +17578,167 @@ pub const ENDPOINTS: &[EndpointDef] = &[
     EndpointDef {
         crate_name: "processplatform_assemble_surface",
         method: "DELETE",
+        rust_path: "/jaxrs/processplatform/assemble/surface/data/work/{id}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_assemble_surface",
+        method: "DELETE",
+        rust_path: "/jaxrs/processplatform/assemble/surface/draft/{id}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_assemble_surface",
+        method: "DELETE",
+        rust_path: "/jaxrs/processplatform/assemble/surface/process/{flag}/{onlyRemoveNotCompleted}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_assemble_surface",
+        method: "DELETE",
+        rust_path: "/jaxrs/processplatform/assemble/surface/read/{id}/manage",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_assemble_surface",
+        method: "DELETE",
+        rust_path: "/jaxrs/processplatform/assemble/surface/readcompleted/{id}/manage",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_assemble_surface",
+        method: "DELETE",
+        rust_path: "/jaxrs/processplatform/assemble/surface/record/{id}/manage",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_assemble_surface",
+        method: "DELETE",
+        rust_path: "/jaxrs/processplatform/assemble/surface/review/{id}/application/{applicationFlag}/manage",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_assemble_surface",
+        method: "DELETE",
+        rust_path: "/jaxrs/processplatform/assemble/surface/serialnumber/{id}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_assemble_surface",
+        method: "DELETE",
+        rust_path: "/jaxrs/processplatform/assemble/surface/sign/task/{taskId}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_assemble_surface",
+        method: "DELETE",
+        rust_path: "/jaxrs/processplatform/assemble/surface/sign/{id}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_assemble_surface",
+        method: "DELETE",
         rust_path: "/jaxrs/processplatform/assemble/surface/snap/{id}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_assemble_surface",
+        method: "DELETE",
+        rust_path: "/jaxrs/processplatform/assemble/surface/task/{id}/manage",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_assemble_surface",
+        method: "DELETE",
+        rust_path: "/jaxrs/processplatform/assemble/surface/taskcompleted/{id}/manage",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_assemble_surface",
+        method: "DELETE",
+        rust_path: "/jaxrs/processplatform/assemble/surface/work/{id}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_assemble_surface",
+        method: "DELETE",
+        rust_path: "/jaxrs/processplatform/assemble/surface/work/{id}/relative/manage",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_assemble_surface",
+        method: "DELETE",
+        rust_path: "/jaxrs/processplatform/assemble/surface/work/{id}/single/manage",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_assemble_surface",
+        method: "DELETE",
+        rust_path: "/jaxrs/processplatform/assemble/surface/workcompleted/{id}/delete/manage",
         java_war: "",
         java_action: "",
         body: None,
@@ -17619,6 +17889,26 @@ pub const ENDPOINTS: &[EndpointDef] = &[
         crate_name: "processplatform_assemble_surface",
         method: "GET",
         rust_path: "/jaxrs/processplatform/assemble/surface/application/{flag}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_assemble_surface",
+        method: "GET",
+        rust_path: "/jaxrs/processplatform/assemble/surface/application/{flag}/icon",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_assemble_surface",
+        method: "GET",
+        rust_path: "/jaxrs/processplatform/assemble/surface/application/{flag}/is/manager",
         java_war: "",
         java_action: "",
         body: None,
@@ -17828,6 +18118,176 @@ pub const ENDPOINTS: &[EndpointDef] = &[
     EndpointDef {
         crate_name: "processplatform_assemble_surface",
         method: "GET",
+        rust_path: "/jaxrs/processplatform/assemble/surface/applicationdict/{applicationDictFlag}/application/{applicationFlag}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_assemble_surface",
+        method: "GET",
+        rust_path: "/jaxrs/processplatform/assemble/surface/applicationdict/{applicationDictFlag}/application/{applicationFlag}/data",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_assemble_surface",
+        method: "GET",
+        rust_path: "/jaxrs/processplatform/assemble/surface/applicationdict/{applicationDictFlag}/application/{applicationFlag}/{path0}/data",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_assemble_surface",
+        method: "GET",
+        rust_path: "/jaxrs/processplatform/assemble/surface/applicationdict/{applicationDictFlag}/application/{applicationFlag}/{path0}/data/mockdeletetoget",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_assemble_surface",
+        method: "GET",
+        rust_path: "/jaxrs/processplatform/assemble/surface/applicationdict/{applicationDictFlag}/application/{applicationFlag}/{path0}/{path1}/data",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_assemble_surface",
+        method: "GET",
+        rust_path: "/jaxrs/processplatform/assemble/surface/applicationdict/{applicationDictFlag}/application/{applicationFlag}/{path0}/{path1}/data/mockdeletetoget",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_assemble_surface",
+        method: "GET",
+        rust_path: "/jaxrs/processplatform/assemble/surface/applicationdict/{applicationDictFlag}/application/{applicationFlag}/{path0}/{path1}/{path2}/data",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_assemble_surface",
+        method: "GET",
+        rust_path: "/jaxrs/processplatform/assemble/surface/applicationdict/{applicationDictFlag}/application/{applicationFlag}/{path0}/{path1}/{path2}/data/mockdeletetoget",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_assemble_surface",
+        method: "GET",
+        rust_path: "/jaxrs/processplatform/assemble/surface/applicationdict/{applicationDictFlag}/application/{applicationFlag}/{path0}/{path1}/{path2}/{path3}/data",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_assemble_surface",
+        method: "GET",
+        rust_path: "/jaxrs/processplatform/assemble/surface/applicationdict/{applicationDictFlag}/application/{applicationFlag}/{path0}/{path1}/{path2}/{path3}/{path4}/data",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_assemble_surface",
+        method: "GET",
+        rust_path: "/jaxrs/processplatform/assemble/surface/applicationdict/{applicationDictFlag}/application/{applicationFlag}/{path0}/{path1}/{path2}/{path3}/{path4}/data/mockdeletetoget",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_assemble_surface",
+        method: "GET",
+        rust_path: "/jaxrs/processplatform/assemble/surface/applicationdict/{applicationDictFlag}/application/{applicationFlag}/{path0}/{path1}/{path2}/{path3}/{path4}/{path5}/data",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_assemble_surface",
+        method: "GET",
+        rust_path: "/jaxrs/processplatform/assemble/surface/applicationdict/{applicationDictFlag}/application/{applicationFlag}/{path0}/{path1}/{path2}/{path3}/{path4}/{path5}/data/mockdeletetoget",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_assemble_surface",
+        method: "GET",
+        rust_path: "/jaxrs/processplatform/assemble/surface/applicationdict/{applicationDictFlag}/application/{applicationFlag}/{path0}/{path1}/{path2}/{path3}/{path4}/{path5}/{path6}/data",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_assemble_surface",
+        method: "GET",
+        rust_path: "/jaxrs/processplatform/assemble/surface/applicationdict/{applicationDictFlag}/application/{applicationFlag}/{path0}/{path1}/{path2}/{path3}/{path4}/{path5}/{path6}/data/mockdeletetoget",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_assemble_surface",
+        method: "GET",
+        rust_path: "/jaxrs/processplatform/assemble/surface/applicationdict/{applicationDictFlag}/application/{applicationFlag}/{path0}/{path1}/{path2}/{path3}/{path4}/{path5}/{path6}/{path7}/data",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_assemble_surface",
+        method: "GET",
+        rust_path: "/jaxrs/processplatform/assemble/surface/applicationdict/{applicationDictFlag}/application/{applicationFlag}/{path0}/{path1}/{path2}/{path3}/{path4}/{path5}/{path6}/{path7}/data/mockdeletetoget",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_assemble_surface",
+        method: "GET",
         rust_path: "/jaxrs/processplatform/assemble/surface/attachment/list/job/{job}",
         java_war: "",
         java_action: "",
@@ -17858,7 +18318,7 @@ pub const ENDPOINTS: &[EndpointDef] = &[
     EndpointDef {
         crate_name: "processplatform_assemble_surface",
         method: "GET",
-        rust_path: "/jaxrs/processplatform/assemble/surface/attachment/list/workorworkcompleted/{flag}",
+        rust_path: "/jaxrs/processplatform/assemble/surface/attachment/list/workorworkcompleted/{workOrWorkCompleted}",
         java_war: "",
         java_action: "",
         body: None,
@@ -17869,6 +18329,16 @@ pub const ENDPOINTS: &[EndpointDef] = &[
         crate_name: "processplatform_assemble_surface",
         method: "GET",
         rust_path: "/jaxrs/processplatform/assemble/surface/attachment/{id}/available",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_assemble_surface",
+        method: "GET",
+        rust_path: "/jaxrs/processplatform/assemble/surface/attachment/{id}/mockdeletetoget",
         java_war: "",
         java_action: "",
         body: None,
@@ -17899,6 +18369,16 @@ pub const ENDPOINTS: &[EndpointDef] = &[
         crate_name: "processplatform_assemble_surface",
         method: "GET",
         rust_path: "/jaxrs/processplatform/assemble/surface/attachment/{id}/workcompleted/{workCompletedId}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_assemble_surface",
+        method: "GET",
+        rust_path: "/jaxrs/processplatform/assemble/surface/attachment/{id}/workorworkcompleted/{workOrWorkCompleted}",
         java_war: "",
         java_action: "",
         body: None,
@@ -17939,6 +18419,26 @@ pub const ENDPOINTS: &[EndpointDef] = &[
         crate_name: "processplatform_assemble_surface",
         method: "GET",
         rust_path: "/jaxrs/processplatform/assemble/surface/correlation/list/job/job/site/site",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_assemble_surface",
+        method: "GET",
+        rust_path: "/jaxrs/processplatform/assemble/surface/correlation/list/job/{job}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_assemble_surface",
+        method: "GET",
+        rust_path: "/jaxrs/processplatform/assemble/surface/correlation/list/job/{job}/site/{site}",
         java_war: "",
         java_action: "",
         body: None,
@@ -18148,6 +18648,96 @@ pub const ENDPOINTS: &[EndpointDef] = &[
     EndpointDef {
         crate_name: "processplatform_assemble_surface",
         method: "GET",
+        rust_path: "/jaxrs/processplatform/assemble/surface/data/job/{job}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_assemble_surface",
+        method: "GET",
+        rust_path: "/jaxrs/processplatform/assemble/surface/data/job/{job}/{path0}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_assemble_surface",
+        method: "GET",
+        rust_path: "/jaxrs/processplatform/assemble/surface/data/job/{job}/{path0}/{path1}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_assemble_surface",
+        method: "GET",
+        rust_path: "/jaxrs/processplatform/assemble/surface/data/job/{job}/{path0}/{path1}/{path2}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_assemble_surface",
+        method: "GET",
+        rust_path: "/jaxrs/processplatform/assemble/surface/data/job/{job}/{path0}/{path1}/{path2}/{path3}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_assemble_surface",
+        method: "GET",
+        rust_path: "/jaxrs/processplatform/assemble/surface/data/job/{job}/{path0}/{path1}/{path2}/{path3}/{path4}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_assemble_surface",
+        method: "GET",
+        rust_path: "/jaxrs/processplatform/assemble/surface/data/job/{job}/{path0}/{path1}/{path2}/{path3}/{path4}/{path5}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_assemble_surface",
+        method: "GET",
+        rust_path: "/jaxrs/processplatform/assemble/surface/data/job/{job}/{path0}/{path1}/{path2}/{path3}/{path4}/{path5}/{path6}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_assemble_surface",
+        method: "GET",
+        rust_path: "/jaxrs/processplatform/assemble/surface/data/job/{job}/{path0}/{path1}/{path2}/{path3}/{path4}/{path5}/{path6}/{path7}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_assemble_surface",
+        method: "GET",
         rust_path: "/jaxrs/processplatform/assemble/surface/data/work/mockputtopost/{id}",
         java_war: "",
         java_action: "",
@@ -18319,6 +18909,16 @@ pub const ENDPOINTS: &[EndpointDef] = &[
         crate_name: "processplatform_assemble_surface",
         method: "GET",
         rust_path: "/jaxrs/processplatform/assemble/surface/data/work/{id}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_assemble_surface",
+        method: "GET",
+        rust_path: "/jaxrs/processplatform/assemble/surface/data/work/{id}/mockdeletetoget",
         java_war: "",
         java_action: "",
         body: None,
@@ -18528,6 +19128,26 @@ pub const ENDPOINTS: &[EndpointDef] = &[
     EndpointDef {
         crate_name: "processplatform_assemble_surface",
         method: "GET",
+        rust_path: "/jaxrs/processplatform/assemble/surface/data/workcompleted/{id}/from/data",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_assemble_surface",
+        method: "GET",
+        rust_path: "/jaxrs/processplatform/assemble/surface/data/workcompleted/{id}/from/item",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_assemble_surface",
+        method: "GET",
         rust_path: "/jaxrs/processplatform/assemble/surface/datarecord/get/job/job/path/path",
         java_war: "",
         java_action: "",
@@ -18538,7 +19158,27 @@ pub const ENDPOINTS: &[EndpointDef] = &[
     EndpointDef {
         crate_name: "processplatform_assemble_surface",
         method: "GET",
+        rust_path: "/jaxrs/processplatform/assemble/surface/datarecord/get/job/{job}/path/{path}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_assemble_surface",
+        method: "GET",
         rust_path: "/jaxrs/processplatform/assemble/surface/datarecord/list/job/job",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_assemble_surface",
+        method: "GET",
+        rust_path: "/jaxrs/processplatform/assemble/surface/datarecord/list/job/{job}",
         java_war: "",
         java_action: "",
         body: None,
@@ -18568,7 +19208,37 @@ pub const ENDPOINTS: &[EndpointDef] = &[
     EndpointDef {
         crate_name: "processplatform_assemble_surface",
         method: "GET",
+        rust_path: "/jaxrs/processplatform/assemble/surface/documentversion/list/job/{job}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_assemble_surface",
+        method: "GET",
+        rust_path: "/jaxrs/processplatform/assemble/surface/documentversion/list/job/{job}/category/{category}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_assemble_surface",
+        method: "GET",
         rust_path: "/jaxrs/processplatform/assemble/surface/documentversion/list/workorworkcompleted/{workOrWorkCompleted}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_assemble_surface",
+        method: "GET",
+        rust_path: "/jaxrs/processplatform/assemble/surface/documentversion/list/workorworkcompleted/{workOrWorkCompleted}/category/{category}",
         java_war: "",
         java_action: "",
         body: None,
@@ -18638,6 +19308,26 @@ pub const ENDPOINTS: &[EndpointDef] = &[
     EndpointDef {
         crate_name: "processplatform_assemble_surface",
         method: "GET",
+        rust_path: "/jaxrs/processplatform/assemble/surface/draft/list/{id}/next/{count}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_assemble_surface",
+        method: "GET",
+        rust_path: "/jaxrs/processplatform/assemble/surface/draft/list/{id}/prev/{count}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_assemble_surface",
+        method: "GET",
         rust_path: "/jaxrs/processplatform/assemble/surface/draft/mockputtopost",
         java_war: "",
         java_action: "",
@@ -18668,6 +19358,26 @@ pub const ENDPOINTS: &[EndpointDef] = &[
     EndpointDef {
         crate_name: "processplatform_assemble_surface",
         method: "GET",
+        rust_path: "/jaxrs/processplatform/assemble/surface/draft/{id}/mockdeletetoget",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_assemble_surface",
+        method: "GET",
+        rust_path: "/jaxrs/processplatform/assemble/surface/draft/{id}/start",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_assemble_surface",
+        method: "GET",
         rust_path: "/jaxrs/processplatform/assemble/surface/file/application/content/{flag}/{applicationFlag}",
         java_war: "",
         java_action: "",
@@ -18689,6 +19399,26 @@ pub const ENDPOINTS: &[EndpointDef] = &[
         crate_name: "processplatform_assemble_surface",
         method: "GET",
         rust_path: "/jaxrs/processplatform/assemble/surface/file/list/application/{applicationFlag}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_assemble_surface",
+        method: "GET",
+        rust_path: "/jaxrs/processplatform/assemble/surface/file/{flag}/application/{applicationFlag}/content",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_assemble_surface",
+        method: "GET",
+        rust_path: "/jaxrs/processplatform/assemble/surface/file/{flag}/application/{applicationFlag}/download",
         java_war: "",
         java_action: "",
         body: None,
@@ -18748,6 +19478,26 @@ pub const ENDPOINTS: &[EndpointDef] = &[
     EndpointDef {
         crate_name: "processplatform_assemble_surface",
         method: "GET",
+        rust_path: "/jaxrs/processplatform/assemble/surface/form/v2/lookup/taskcompleted/{taskcompleted}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_assemble_surface",
+        method: "GET",
+        rust_path: "/jaxrs/processplatform/assemble/surface/form/v2/lookup/taskcompleted/{taskcompleted}/mobile",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_assemble_surface",
+        method: "GET",
         rust_path: "/jaxrs/processplatform/assemble/surface/form/v2/lookup/workorworkcompleted/mobile/{workOrWorkCompleted}",
         java_war: "",
         java_action: "",
@@ -18759,6 +19509,16 @@ pub const ENDPOINTS: &[EndpointDef] = &[
         crate_name: "processplatform_assemble_surface",
         method: "GET",
         rust_path: "/jaxrs/processplatform/assemble/surface/form/v2/lookup/workorworkcompleted/{workOrWorkCompleted}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_assemble_surface",
+        method: "GET",
+        rust_path: "/jaxrs/processplatform/assemble/surface/form/v2/lookup/workorworkcompleted/{workOrWorkCompleted}/mobile",
         java_war: "",
         java_action: "",
         body: None,
@@ -18788,7 +19548,47 @@ pub const ENDPOINTS: &[EndpointDef] = &[
     EndpointDef {
         crate_name: "processplatform_assemble_surface",
         method: "GET",
+        rust_path: "/jaxrs/processplatform/assemble/surface/form/v2/{id}/mobile",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_assemble_surface",
+        method: "GET",
         rust_path: "/jaxrs/processplatform/assemble/surface/form/{flag}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_assemble_surface",
+        method: "GET",
+        rust_path: "/jaxrs/processplatform/assemble/surface/form/{flag}/application/{applicationFlag}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_assemble_surface",
+        method: "GET",
+        rust_path: "/jaxrs/processplatform/assemble/surface/form/{flag}/application/{applicationFlag}/mobile",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_assemble_surface",
+        method: "GET",
+        rust_path: "/jaxrs/processplatform/assemble/surface/form/{flag}/mobile",
         java_war: "",
         java_action: "",
         body: None,
@@ -18878,7 +19678,47 @@ pub const ENDPOINTS: &[EndpointDef] = &[
     EndpointDef {
         crate_name: "processplatform_assemble_surface",
         method: "GET",
+        rust_path: "/jaxrs/processplatform/assemble/surface/job/latest/work/workcompleted/serial/{serial}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_assemble_surface",
+        method: "GET",
         rust_path: "/jaxrs/processplatform/assemble/surface/job/v2/job/projection",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_assemble_surface",
+        method: "GET",
+        rust_path: "/jaxrs/processplatform/assemble/surface/job/v2/{job}/projection",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_assemble_surface",
+        method: "GET",
+        rust_path: "/jaxrs/processplatform/assemble/surface/job/{job}/allow/visit/person/{person}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_assemble_surface",
+        method: "GET",
+        rust_path: "/jaxrs/processplatform/assemble/surface/job/{job}/find/work/workcompleted",
         java_war: "",
         java_action: "",
         body: None,
@@ -18928,6 +19768,16 @@ pub const ENDPOINTS: &[EndpointDef] = &[
     EndpointDef {
         crate_name: "processplatform_assemble_surface",
         method: "GET",
+        rust_path: "/jaxrs/processplatform/assemble/surface/mode/{id}/delete",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_assemble_surface",
+        method: "GET",
         rust_path: "/jaxrs/processplatform/assemble/surface/preview/{id}",
         java_war: "",
         java_action: "",
@@ -18939,6 +19789,16 @@ pub const ENDPOINTS: &[EndpointDef] = &[
         crate_name: "processplatform_assemble_surface",
         method: "GET",
         rust_path: "/jaxrs/processplatform/assemble/surface/process/activity/activity/{activityType}/{activityType}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_assemble_surface",
+        method: "GET",
+        rust_path: "/jaxrs/processplatform/assemble/surface/process/activity/{activity}/activityType/{activityType}",
         java_war: "",
         java_action: "",
         body: None,
@@ -19028,6 +19888,36 @@ pub const ENDPOINTS: &[EndpointDef] = &[
     EndpointDef {
         crate_name: "processplatform_assemble_surface",
         method: "GET",
+        rust_path: "/jaxrs/processplatform/assemble/surface/process/{flag}/allowrerouteto",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_assemble_surface",
+        method: "GET",
+        rust_path: "/jaxrs/processplatform/assemble/surface/process/{flag}/application/{applicationFlag}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_assemble_surface",
+        method: "GET",
+        rust_path: "/jaxrs/processplatform/assemble/surface/process/{flag}/complex",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_assemble_surface",
+        method: "GET",
         rust_path: "/jaxrs/processplatform/assemble/surface/process/{flag}/{onlyRemoveNotCompleted}",
         java_war: "",
         java_action: "",
@@ -19088,7 +19978,27 @@ pub const ENDPOINTS: &[EndpointDef] = &[
     EndpointDef {
         crate_name: "processplatform_assemble_surface",
         method: "GET",
+        rust_path: "/jaxrs/processplatform/assemble/surface/read/list/count/application/{applicationFlag}/process",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_assemble_surface",
+        method: "GET",
         rust_path: "/jaxrs/processplatform/assemble/surface/read/list/date/date/manage",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_assemble_surface",
+        method: "GET",
+        rust_path: "/jaxrs/processplatform/assemble/surface/read/list/date/{date}/manage",
         java_war: "",
         java_action: "",
         body: None,
@@ -19118,7 +20028,27 @@ pub const ENDPOINTS: &[EndpointDef] = &[
     EndpointDef {
         crate_name: "processplatform_assemble_surface",
         method: "GET",
+        rust_path: "/jaxrs/processplatform/assemble/surface/read/list/job/{job}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_assemble_surface",
+        method: "GET",
         rust_path: "/jaxrs/processplatform/assemble/surface/read/list/my/filter/{page}/{size}/{size}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_assemble_surface",
+        method: "GET",
+        rust_path: "/jaxrs/processplatform/assemble/surface/read/list/my/paging/{page}/size/{size}",
         java_war: "",
         java_action: "",
         body: None,
@@ -19188,6 +20118,16 @@ pub const ENDPOINTS: &[EndpointDef] = &[
     EndpointDef {
         crate_name: "processplatform_assemble_surface",
         method: "GET",
+        rust_path: "/jaxrs/processplatform/assemble/surface/read/list/person/{person}/manage",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_assemble_surface",
+        method: "GET",
         rust_path: "/jaxrs/processplatform/assemble/surface/read/list/prev/application/{id}/{count}/{applicationFlag}",
         java_war: "",
         java_action: "",
@@ -19238,7 +20178,77 @@ pub const ENDPOINTS: &[EndpointDef] = &[
     EndpointDef {
         crate_name: "processplatform_assemble_surface",
         method: "GET",
+        rust_path: "/jaxrs/processplatform/assemble/surface/read/list/work/{work}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_assemble_surface",
+        method: "GET",
         rust_path: "/jaxrs/processplatform/assemble/surface/read/list/workorworkcompleted/{workOrWorkCompleted}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_assemble_surface",
+        method: "GET",
+        rust_path: "/jaxrs/processplatform/assemble/surface/read/list/{id}/next/{count}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_assemble_surface",
+        method: "GET",
+        rust_path: "/jaxrs/processplatform/assemble/surface/read/list/{id}/next/{count}/application/{applicationFlag}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_assemble_surface",
+        method: "GET",
+        rust_path: "/jaxrs/processplatform/assemble/surface/read/list/{id}/next/{count}/process/{processFlag}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_assemble_surface",
+        method: "GET",
+        rust_path: "/jaxrs/processplatform/assemble/surface/read/list/{id}/prev/{count}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_assemble_surface",
+        method: "GET",
+        rust_path: "/jaxrs/processplatform/assemble/surface/read/list/{id}/prev/{count}/application/{applicationFlag}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_assemble_surface",
+        method: "GET",
+        rust_path: "/jaxrs/processplatform/assemble/surface/read/list/{id}/prev/{count}/process/{processFlag}",
         java_war: "",
         java_action: "",
         body: None,
@@ -19338,6 +20348,26 @@ pub const ENDPOINTS: &[EndpointDef] = &[
     EndpointDef {
         crate_name: "processplatform_assemble_surface",
         method: "GET",
+        rust_path: "/jaxrs/processplatform/assemble/surface/read/{id}/manage/mockdeletetoget",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_assemble_surface",
+        method: "GET",
+        rust_path: "/jaxrs/processplatform/assemble/surface/read/{id}/reference",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_assemble_surface",
+        method: "GET",
         rust_path: "/jaxrs/processplatform/assemble/surface/readcompleted/count/{credential}",
         java_war: "",
         java_action: "",
@@ -19378,7 +20408,37 @@ pub const ENDPOINTS: &[EndpointDef] = &[
     EndpointDef {
         crate_name: "processplatform_assemble_surface",
         method: "GET",
+        rust_path: "/jaxrs/processplatform/assemble/surface/readcompleted/list/count/application",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_assemble_surface",
+        method: "GET",
+        rust_path: "/jaxrs/processplatform/assemble/surface/readcompleted/list/count/application/{applicationFlag}/process",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_assemble_surface",
+        method: "GET",
         rust_path: "/jaxrs/processplatform/assemble/surface/readcompleted/list/date/date/manage",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_assemble_surface",
+        method: "GET",
+        rust_path: "/jaxrs/processplatform/assemble/surface/readcompleted/list/date/{date}/manage",
         java_war: "",
         java_action: "",
         body: None,
@@ -19408,7 +20468,27 @@ pub const ENDPOINTS: &[EndpointDef] = &[
     EndpointDef {
         crate_name: "processplatform_assemble_surface",
         method: "GET",
+        rust_path: "/jaxrs/processplatform/assemble/surface/readcompleted/list/job/{job}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_assemble_surface",
+        method: "GET",
         rust_path: "/jaxrs/processplatform/assemble/surface/readcompleted/list/my/filter/{page}/{size}/{size}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_assemble_surface",
+        method: "GET",
+        rust_path: "/jaxrs/processplatform/assemble/surface/readcompleted/list/my/paging/{page}/size/{size}",
         java_war: "",
         java_action: "",
         body: None,
@@ -19518,7 +20598,77 @@ pub const ENDPOINTS: &[EndpointDef] = &[
     EndpointDef {
         crate_name: "processplatform_assemble_surface",
         method: "GET",
+        rust_path: "/jaxrs/processplatform/assemble/surface/readcompleted/list/work/{work}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_assemble_surface",
+        method: "GET",
         rust_path: "/jaxrs/processplatform/assemble/surface/readcompleted/list/workorworkcompleted/{workOrWorkCompleted}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_assemble_surface",
+        method: "GET",
+        rust_path: "/jaxrs/processplatform/assemble/surface/readcompleted/list/{id}/next/{count}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_assemble_surface",
+        method: "GET",
+        rust_path: "/jaxrs/processplatform/assemble/surface/readcompleted/list/{id}/next/{count}/application/{applicationFlag}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_assemble_surface",
+        method: "GET",
+        rust_path: "/jaxrs/processplatform/assemble/surface/readcompleted/list/{id}/next/{count}/process/{processFlag}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_assemble_surface",
+        method: "GET",
+        rust_path: "/jaxrs/processplatform/assemble/surface/readcompleted/list/{id}/prev/{count}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_assemble_surface",
+        method: "GET",
+        rust_path: "/jaxrs/processplatform/assemble/surface/readcompleted/list/{id}/prev/{count}/application/{applicationFlag}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_assemble_surface",
+        method: "GET",
+        rust_path: "/jaxrs/processplatform/assemble/surface/readcompleted/list/{id}/prev/{count}/process/{processFlag}",
         java_war: "",
         java_action: "",
         body: None,
@@ -19588,7 +20738,37 @@ pub const ENDPOINTS: &[EndpointDef] = &[
     EndpointDef {
         crate_name: "processplatform_assemble_surface",
         method: "GET",
+        rust_path: "/jaxrs/processplatform/assemble/surface/readcompleted/{id}/manage/mockdeletetoget",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_assemble_surface",
+        method: "GET",
+        rust_path: "/jaxrs/processplatform/assemble/surface/readcompleted/{id}/reference",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_assemble_surface",
+        method: "GET",
         rust_path: "/jaxrs/processplatform/assemble/surface/readrecord/list/job/job",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_assemble_surface",
+        method: "GET",
+        rust_path: "/jaxrs/processplatform/assemble/surface/readrecord/list/job/{job}",
         java_war: "",
         java_action: "",
         body: None,
@@ -19638,6 +20818,26 @@ pub const ENDPOINTS: &[EndpointDef] = &[
     EndpointDef {
         crate_name: "processplatform_assemble_surface",
         method: "GET",
+        rust_path: "/jaxrs/processplatform/assemble/surface/record/list/job/{job}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_assemble_surface",
+        method: "GET",
+        rust_path: "/jaxrs/processplatform/assemble/surface/record/list/job/{job}/paging/{page}/size/{size}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_assemble_surface",
+        method: "GET",
         rust_path: "/jaxrs/processplatform/assemble/surface/record/list/workorworkcompleted/paging/{workOrWorkCompleted}/{page}/{size}/{size}",
         java_war: "",
         java_action: "",
@@ -19658,6 +20858,16 @@ pub const ENDPOINTS: &[EndpointDef] = &[
     EndpointDef {
         crate_name: "processplatform_assemble_surface",
         method: "GET",
+        rust_path: "/jaxrs/processplatform/assemble/surface/record/list/workorworkcompleted/{workOrWorkCompleted}/paging/{page}/size/{size}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_assemble_surface",
+        method: "GET",
         rust_path: "/jaxrs/processplatform/assemble/surface/record/manage/mockputtopost/{id}",
         java_war: "",
         java_action: "",
@@ -19669,6 +20879,16 @@ pub const ENDPOINTS: &[EndpointDef] = &[
         crate_name: "processplatform_assemble_surface",
         method: "GET",
         rust_path: "/jaxrs/processplatform/assemble/surface/record/manage/{id}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_assemble_surface",
+        method: "GET",
+        rust_path: "/jaxrs/processplatform/assemble/surface/record/{id}/manage/mockdeletetoget",
         java_war: "",
         java_action: "",
         body: None,
@@ -19709,6 +20929,16 @@ pub const ENDPOINTS: &[EndpointDef] = &[
         crate_name: "processplatform_assemble_surface",
         method: "GET",
         rust_path: "/jaxrs/processplatform/assemble/surface/review/list/job/job",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_assemble_surface",
+        method: "GET",
+        rust_path: "/jaxrs/processplatform/assemble/surface/review/list/job/{job}",
         java_war: "",
         java_action: "",
         body: None,
@@ -19798,6 +21028,16 @@ pub const ENDPOINTS: &[EndpointDef] = &[
     EndpointDef {
         crate_name: "processplatform_assemble_surface",
         method: "GET",
+        rust_path: "/jaxrs/processplatform/assemble/surface/review/{id}/application/{applicationFlag}/manage/mockdeletetoget",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_assemble_surface",
+        method: "GET",
         rust_path: "/jaxrs/processplatform/assemble/surface/route/list/mockputtopost",
         java_war: "",
         java_action: "",
@@ -19828,6 +21068,16 @@ pub const ENDPOINTS: &[EndpointDef] = &[
     EndpointDef {
         crate_name: "processplatform_assemble_surface",
         method: "GET",
+        rust_path: "/jaxrs/processplatform/assemble/surface/route/{id}/selectconfig",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_assemble_surface",
+        method: "GET",
         rust_path: "/jaxrs/processplatform/assemble/surface/script/application/imported/{flag}/{applicationFlag}",
         java_war: "",
         java_action: "",
@@ -19839,6 +21089,16 @@ pub const ENDPOINTS: &[EndpointDef] = &[
         crate_name: "processplatform_assemble_surface",
         method: "GET",
         rust_path: "/jaxrs/processplatform/assemble/surface/script/application/{flag}/{applicationFlag}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_assemble_surface",
+        method: "GET",
+        rust_path: "/jaxrs/processplatform/assemble/surface/script/{flag}/application/{applicationFlag}/imported",
         java_war: "",
         java_action: "",
         body: None,
@@ -19898,6 +21158,16 @@ pub const ENDPOINTS: &[EndpointDef] = &[
     EndpointDef {
         crate_name: "processplatform_assemble_surface",
         method: "GET",
+        rust_path: "/jaxrs/processplatform/assemble/surface/serialnumber/{id}/mockdeletetoget",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_assemble_surface",
+        method: "GET",
         rust_path: "/jaxrs/processplatform/assemble/surface/sign/download/{scrawlId}",
         java_war: "",
         java_action: "",
@@ -19918,7 +21188,27 @@ pub const ENDPOINTS: &[EndpointDef] = &[
     EndpointDef {
         crate_name: "processplatform_assemble_surface",
         method: "GET",
+        rust_path: "/jaxrs/processplatform/assemble/surface/sign/list/job/{job}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_assemble_surface",
+        method: "GET",
         rust_path: "/jaxrs/processplatform/assemble/surface/sign/task/{taskId}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_assemble_surface",
+        method: "GET",
+        rust_path: "/jaxrs/processplatform/assemble/surface/sign/task/{taskId}/mockdeletetoget",
         java_war: "",
         java_action: "",
         body: None,
@@ -19938,7 +21228,37 @@ pub const ENDPOINTS: &[EndpointDef] = &[
     EndpointDef {
         crate_name: "processplatform_assemble_surface",
         method: "GET",
+        rust_path: "/jaxrs/processplatform/assemble/surface/sign/{id}/mockdeletetoget",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_assemble_surface",
+        method: "GET",
+        rust_path: "/jaxrs/processplatform/assemble/surface/snap/list/my/paging/{page}/size/{size}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_assemble_surface",
+        method: "GET",
         rust_path: "/jaxrs/processplatform/assemble/surface/snap/list/{id}/next/{count}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_assemble_surface",
+        method: "GET",
+        rust_path: "/jaxrs/processplatform/assemble/surface/snap/list/{id}/next/{count}/application/{applicationFlag}",
         java_war: "",
         java_action: "",
         body: None,
@@ -19958,6 +21278,16 @@ pub const ENDPOINTS: &[EndpointDef] = &[
     EndpointDef {
         crate_name: "processplatform_assemble_surface",
         method: "GET",
+        rust_path: "/jaxrs/processplatform/assemble/surface/snap/list/{id}/next/{count}/process/{processFlag}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_assemble_surface",
+        method: "GET",
         rust_path: "/jaxrs/processplatform/assemble/surface/snap/list/{id}/prev/{count}",
         java_war: "",
         java_action: "",
@@ -19968,7 +21298,27 @@ pub const ENDPOINTS: &[EndpointDef] = &[
     EndpointDef {
         crate_name: "processplatform_assemble_surface",
         method: "GET",
+        rust_path: "/jaxrs/processplatform/assemble/surface/snap/list/{id}/prev/{count}/application/{applicationFlag}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_assemble_surface",
+        method: "GET",
         rust_path: "/jaxrs/processplatform/assemble/surface/snap/list/{id}/prev/{count}/manage",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_assemble_surface",
+        method: "GET",
+        rust_path: "/jaxrs/processplatform/assemble/surface/snap/list/{id}/prev/{count}/process/{processFlag}",
         java_war: "",
         java_action: "",
         body: None,
@@ -20038,6 +21388,16 @@ pub const ENDPOINTS: &[EndpointDef] = &[
     EndpointDef {
         crate_name: "processplatform_assemble_surface",
         method: "GET",
+        rust_path: "/jaxrs/processplatform/assemble/surface/snap/{id}/mockdeletetoget",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_assemble_surface",
+        method: "GET",
         rust_path: "/jaxrs/processplatform/assemble/surface/snap/{id}/restore",
         java_war: "",
         java_action: "",
@@ -20098,6 +21458,16 @@ pub const ENDPOINTS: &[EndpointDef] = &[
     EndpointDef {
         crate_name: "processplatform_assemble_surface",
         method: "GET",
+        rust_path: "/jaxrs/processplatform/assemble/surface/task/list/count/application/{applicationFlag}/process",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_assemble_surface",
+        method: "GET",
         rust_path: "/jaxrs/processplatform/assemble/surface/task/list/date/date/hour/hour/exclude/draft/manage/{isExcludeDraft}",
         java_war: "",
         java_action: "",
@@ -20139,6 +21509,16 @@ pub const ENDPOINTS: &[EndpointDef] = &[
         crate_name: "processplatform_assemble_surface",
         method: "GET",
         rust_path: "/jaxrs/processplatform/assemble/surface/task/list/my/filter/{page}/{size}/{size}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_assemble_surface",
+        method: "GET",
+        rust_path: "/jaxrs/processplatform/assemble/surface/task/list/my/paging/{page}/size/{size}",
         java_war: "",
         java_action: "",
         body: None,
@@ -20298,6 +21678,96 @@ pub const ENDPOINTS: &[EndpointDef] = &[
     EndpointDef {
         crate_name: "processplatform_assemble_surface",
         method: "GET",
+        rust_path: "/jaxrs/processplatform/assemble/surface/task/list/work/{work}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_assemble_surface",
+        method: "GET",
+        rust_path: "/jaxrs/processplatform/assemble/surface/task/list/{id}/next/{count}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_assemble_surface",
+        method: "GET",
+        rust_path: "/jaxrs/processplatform/assemble/surface/task/list/{id}/next/{count}/application/{applicationFlag}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_assemble_surface",
+        method: "GET",
+        rust_path: "/jaxrs/processplatform/assemble/surface/task/list/{id}/next/{count}/manage",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_assemble_surface",
+        method: "GET",
+        rust_path: "/jaxrs/processplatform/assemble/surface/task/list/{id}/next/{count}/process/{processFlag}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_assemble_surface",
+        method: "GET",
+        rust_path: "/jaxrs/processplatform/assemble/surface/task/list/{id}/prev/{count}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_assemble_surface",
+        method: "GET",
+        rust_path: "/jaxrs/processplatform/assemble/surface/task/list/{id}/prev/{count}/application/{applicationFlag}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_assemble_surface",
+        method: "GET",
+        rust_path: "/jaxrs/processplatform/assemble/surface/task/list/{id}/prev/{count}/manage",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_assemble_surface",
+        method: "GET",
+        rust_path: "/jaxrs/processplatform/assemble/surface/task/list/{id}/prev/{count}/process/{processFlag}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_assemble_surface",
+        method: "GET",
         rust_path: "/jaxrs/processplatform/assemble/surface/task/manage/{id}",
         java_war: "",
         java_action: "",
@@ -20368,7 +21838,37 @@ pub const ENDPOINTS: &[EndpointDef] = &[
     EndpointDef {
         crate_name: "processplatform_assemble_surface",
         method: "GET",
+        rust_path: "/jaxrs/processplatform/assemble/surface/task/v2/{id}/resume",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_assemble_surface",
+        method: "GET",
+        rust_path: "/jaxrs/processplatform/assemble/surface/task/v2/{id}/trigger/processing",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_assemble_surface",
+        method: "GET",
         rust_path: "/jaxrs/processplatform/assemble/surface/task/v3/pin/{id}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_assemble_surface",
+        method: "GET",
+        rust_path: "/jaxrs/processplatform/assemble/surface/task/v3/{id}/pin",
         java_war: "",
         java_action: "",
         body: None,
@@ -20389,6 +21889,56 @@ pub const ENDPOINTS: &[EndpointDef] = &[
         crate_name: "processplatform_assemble_surface",
         method: "GET",
         rust_path: "/jaxrs/processplatform/assemble/surface/task/{id}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_assemble_surface",
+        method: "GET",
+        rust_path: "/jaxrs/processplatform/assemble/surface/task/{id}/manage/mockdeletetoget",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_assemble_surface",
+        method: "GET",
+        rust_path: "/jaxrs/processplatform/assemble/surface/task/{id}/press/manage",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_assemble_surface",
+        method: "GET",
+        rust_path: "/jaxrs/processplatform/assemble/surface/task/{id}/reference",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_assemble_surface",
+        method: "GET",
+        rust_path: "/jaxrs/processplatform/assemble/surface/task/{id}/will",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_assemble_surface",
+        method: "GET",
+        rust_path: "/jaxrs/processplatform/assemble/surface/taskcompleted/count/{credential}",
         java_war: "",
         java_action: "",
         body: None,
@@ -20428,7 +21978,37 @@ pub const ENDPOINTS: &[EndpointDef] = &[
     EndpointDef {
         crate_name: "processplatform_assemble_surface",
         method: "GET",
+        rust_path: "/jaxrs/processplatform/assemble/surface/taskcompleted/list/count/application",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_assemble_surface",
+        method: "GET",
+        rust_path: "/jaxrs/processplatform/assemble/surface/taskcompleted/list/count/application/{applicationFlag}/process",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_assemble_surface",
+        method: "GET",
         rust_path: "/jaxrs/processplatform/assemble/surface/taskcompleted/list/date/date/hour/hour/manage",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_assemble_surface",
+        method: "GET",
+        rust_path: "/jaxrs/processplatform/assemble/surface/taskcompleted/list/date/{date}/hour/{hour}/manage",
         java_war: "",
         java_action: "",
         body: None,
@@ -20458,7 +22038,27 @@ pub const ENDPOINTS: &[EndpointDef] = &[
     EndpointDef {
         crate_name: "processplatform_assemble_surface",
         method: "GET",
+        rust_path: "/jaxrs/processplatform/assemble/surface/taskcompleted/list/job/{job}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_assemble_surface",
+        method: "GET",
         rust_path: "/jaxrs/processplatform/assemble/surface/taskcompleted/list/my/filter/{page}/{size}/{size}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_assemble_surface",
+        method: "GET",
+        rust_path: "/jaxrs/processplatform/assemble/surface/taskcompleted/list/my/paging/{page}/size/{size}",
         java_war: "",
         java_action: "",
         body: None,
@@ -20578,6 +22178,16 @@ pub const ENDPOINTS: &[EndpointDef] = &[
     EndpointDef {
         crate_name: "processplatform_assemble_surface",
         method: "GET",
+        rust_path: "/jaxrs/processplatform/assemble/surface/taskcompleted/list/work/{work}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_assemble_surface",
+        method: "GET",
         rust_path: "/jaxrs/processplatform/assemble/surface/taskcompleted/list/workorworkcompleted/{workOrWorkCompleted}",
         java_war: "",
         java_action: "",
@@ -20588,7 +22198,77 @@ pub const ENDPOINTS: &[EndpointDef] = &[
     EndpointDef {
         crate_name: "processplatform_assemble_surface",
         method: "GET",
+        rust_path: "/jaxrs/processplatform/assemble/surface/taskcompleted/list/{id}/next/{count}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_assemble_surface",
+        method: "GET",
+        rust_path: "/jaxrs/processplatform/assemble/surface/taskcompleted/list/{id}/next/{count}/application/{applicationFlag}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_assemble_surface",
+        method: "GET",
+        rust_path: "/jaxrs/processplatform/assemble/surface/taskcompleted/list/{id}/next/{count}/process/{processFlag}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_assemble_surface",
+        method: "GET",
+        rust_path: "/jaxrs/processplatform/assemble/surface/taskcompleted/list/{id}/prev/{count}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_assemble_surface",
+        method: "GET",
+        rust_path: "/jaxrs/processplatform/assemble/surface/taskcompleted/list/{id}/prev/{count}/application/{applicationFlag}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_assemble_surface",
+        method: "GET",
+        rust_path: "/jaxrs/processplatform/assemble/surface/taskcompleted/list/{id}/prev/{count}/process/{processFlag}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_assemble_surface",
+        method: "GET",
         rust_path: "/jaxrs/processplatform/assemble/surface/taskcompleted/manage/{id}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_assemble_surface",
+        method: "GET",
+        rust_path: "/jaxrs/processplatform/assemble/surface/taskcompleted/press/work/{work}",
         java_war: "",
         java_action: "",
         body: None,
@@ -20648,6 +22328,66 @@ pub const ENDPOINTS: &[EndpointDef] = &[
     EndpointDef {
         crate_name: "processplatform_assemble_surface",
         method: "GET",
+        rust_path: "/jaxrs/processplatform/assemble/surface/taskcompleted/{id}/manage/mockdeletetoget",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_assemble_surface",
+        method: "GET",
+        rust_path: "/jaxrs/processplatform/assemble/surface/taskcompleted/{id}/reference",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_assemble_surface",
+        method: "GET",
+        rust_path: "/jaxrs/processplatform/assemble/surface/taskcompleted/{id}/reference/control",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_assemble_surface",
+        method: "GET",
+        rust_path: "/jaxrs/processplatform/assemble/surface/touch/expire",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_assemble_surface",
+        method: "GET",
+        rust_path: "/jaxrs/processplatform/assemble/surface/touch/passexpired",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_assemble_surface",
+        method: "GET",
+        rust_path: "/jaxrs/processplatform/assemble/surface/touch/touchdetained",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_assemble_surface",
+        method: "GET",
         rust_path: "/jaxrs/processplatform/assemble/surface/work/application/process/{applicationFlag}/{processFlag}",
         java_war: "",
         java_action: "",
@@ -20688,6 +22428,16 @@ pub const ENDPOINTS: &[EndpointDef] = &[
     EndpointDef {
         crate_name: "processplatform_assemble_surface",
         method: "GET",
+        rust_path: "/jaxrs/processplatform/assemble/surface/work/count/{credential}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_assemble_surface",
+        method: "GET",
         rust_path: "/jaxrs/processplatform/assemble/surface/work/count/{credential}/application/{appId}",
         java_war: "",
         java_action: "",
@@ -20718,6 +22468,16 @@ pub const ENDPOINTS: &[EndpointDef] = &[
     EndpointDef {
         crate_name: "processplatform_assemble_surface",
         method: "GET",
+        rust_path: "/jaxrs/processplatform/assemble/surface/work/filter/attribute/application/{applicationFlag}/manage",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_assemble_surface",
+        method: "GET",
         rust_path: "/jaxrs/processplatform/assemble/surface/work/list/application/process/manage/{count}/{applicationFlag}",
         java_war: "",
         java_action: "",
@@ -20729,6 +22489,36 @@ pub const ENDPOINTS: &[EndpointDef] = &[
         crate_name: "processplatform_assemble_surface",
         method: "GET",
         rust_path: "/jaxrs/processplatform/assemble/surface/work/list/application/process/{count}/{applicationFlag}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_assemble_surface",
+        method: "GET",
+        rust_path: "/jaxrs/processplatform/assemble/surface/work/list/count/application",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_assemble_surface",
+        method: "GET",
+        rust_path: "/jaxrs/processplatform/assemble/surface/work/list/count/application/{applicationFlag}/process",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_assemble_surface",
+        method: "GET",
+        rust_path: "/jaxrs/processplatform/assemble/surface/work/list/count/application/{applicationFlag}/process/manage",
         java_war: "",
         java_action: "",
         body: None,
@@ -20908,6 +22698,86 @@ pub const ENDPOINTS: &[EndpointDef] = &[
     EndpointDef {
         crate_name: "processplatform_assemble_surface",
         method: "GET",
+        rust_path: "/jaxrs/processplatform/assemble/surface/work/list/{id}/next/{count}/application/{applicationFlag}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_assemble_surface",
+        method: "GET",
+        rust_path: "/jaxrs/processplatform/assemble/surface/work/list/{id}/next/{count}/application/{applicationFlag}/manage",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_assemble_surface",
+        method: "GET",
+        rust_path: "/jaxrs/processplatform/assemble/surface/work/list/{id}/next/{count}/creator/current",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_assemble_surface",
+        method: "GET",
+        rust_path: "/jaxrs/processplatform/assemble/surface/work/list/{id}/next/{count}/process/{processFlag}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_assemble_surface",
+        method: "GET",
+        rust_path: "/jaxrs/processplatform/assemble/surface/work/list/{id}/prev/{count}/application/{applicationFlag}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_assemble_surface",
+        method: "GET",
+        rust_path: "/jaxrs/processplatform/assemble/surface/work/list/{id}/prev/{count}/application/{applicationFlag}/manage",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_assemble_surface",
+        method: "GET",
+        rust_path: "/jaxrs/processplatform/assemble/surface/work/list/{id}/prev/{count}/creator/current",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_assemble_surface",
+        method: "GET",
+        rust_path: "/jaxrs/processplatform/assemble/surface/work/list/{id}/prev/{count}/process/{processFlag}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_assemble_surface",
+        method: "GET",
         rust_path: "/jaxrs/processplatform/assemble/surface/work/manage/{id}",
         java_war: "",
         java_action: "",
@@ -21018,6 +22888,16 @@ pub const ENDPOINTS: &[EndpointDef] = &[
     EndpointDef {
         crate_name: "processplatform_assemble_surface",
         method: "GET",
+        rust_path: "/jaxrs/processplatform/assemble/surface/work/v2/list/{id}/activity/goback",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_assemble_surface",
+        method: "GET",
         rust_path: "/jaxrs/processplatform/assemble/surface/work/v2/reroute/mockputtopost/{id}",
         java_war: "",
         java_action: "",
@@ -21108,6 +22988,26 @@ pub const ENDPOINTS: &[EndpointDef] = &[
     EndpointDef {
         crate_name: "processplatform_assemble_surface",
         method: "GET",
+        rust_path: "/jaxrs/processplatform/assemble/surface/work/v2/{id}/terminate/manage",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_assemble_surface",
+        method: "GET",
+        rust_path: "/jaxrs/processplatform/assemble/surface/work/v2/{id}/trigger/processing",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_assemble_surface",
+        method: "GET",
         rust_path: "/jaxrs/processplatform/assemble/surface/work/v3/retract",
         java_war: "",
         java_action: "",
@@ -21128,7 +23028,27 @@ pub const ENDPOINTS: &[EndpointDef] = &[
     EndpointDef {
         crate_name: "processplatform_assemble_surface",
         method: "GET",
+        rust_path: "/jaxrs/processplatform/assemble/surface/work/v3/retract/stage/job/{job}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_assemble_surface",
+        method: "GET",
         rust_path: "/jaxrs/processplatform/assemble/surface/work/v3/workorworkcompleted/permission/{workOrWorkCompleted}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_assemble_surface",
+        method: "GET",
+        rust_path: "/jaxrs/processplatform/assemble/surface/work/v3/workorworkcompleted/{workOrWorkCompleted}/permission",
         java_war: "",
         java_action: "",
         body: None,
@@ -21168,6 +23088,96 @@ pub const ENDPOINTS: &[EndpointDef] = &[
     EndpointDef {
         crate_name: "processplatform_assemble_surface",
         method: "GET",
+        rust_path: "/jaxrs/processplatform/assemble/surface/work/{id}/assignment/manage",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_assemble_surface",
+        method: "GET",
+        rust_path: "/jaxrs/processplatform/assemble/surface/work/{id}/close/check",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_assemble_surface",
+        method: "GET",
+        rust_path: "/jaxrs/processplatform/assemble/surface/work/{id}/manage",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_assemble_surface",
+        method: "GET",
+        rust_path: "/jaxrs/processplatform/assemble/surface/work/{id}/mockdeletetoget",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_assemble_surface",
+        method: "GET",
+        rust_path: "/jaxrs/processplatform/assemble/surface/work/{id}/projection",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_assemble_surface",
+        method: "GET",
+        rust_path: "/jaxrs/processplatform/assemble/surface/work/{id}/refer",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_assemble_surface",
+        method: "GET",
+        rust_path: "/jaxrs/processplatform/assemble/surface/work/{id}/relative/manage",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_assemble_surface",
+        method: "GET",
+        rust_path: "/jaxrs/processplatform/assemble/surface/work/{id}/relative/manage/mockdeletetoget",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_assemble_surface",
+        method: "GET",
+        rust_path: "/jaxrs/processplatform/assemble/surface/work/{id}/single/manage/mockdeletetoget",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_assemble_surface",
+        method: "GET",
         rust_path: "/jaxrs/processplatform/assemble/surface/workcompleted/assignment/manage/{id}",
         java_war: "",
         java_action: "",
@@ -21189,6 +23199,16 @@ pub const ENDPOINTS: &[EndpointDef] = &[
         crate_name: "processplatform_assemble_surface",
         method: "GET",
         rust_path: "/jaxrs/processplatform/assemble/surface/workcompleted/filter/attribute/application/{applicationFlag}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_assemble_surface",
+        method: "GET",
+        rust_path: "/jaxrs/processplatform/assemble/surface/workcompleted/filter/attribute/application/{applicationFlag}/manage",
         java_war: "",
         java_action: "",
         body: None,
@@ -21229,6 +23249,26 @@ pub const ENDPOINTS: &[EndpointDef] = &[
         crate_name: "processplatform_assemble_surface",
         method: "GET",
         rust_path: "/jaxrs/processplatform/assemble/surface/workcompleted/list/count/application",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_assemble_surface",
+        method: "GET",
+        rust_path: "/jaxrs/processplatform/assemble/surface/workcompleted/list/count/application/{applicationFlag}/process",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_assemble_surface",
+        method: "GET",
+        rust_path: "/jaxrs/processplatform/assemble/surface/workcompleted/list/count/application/{applicationFlag}/process/manage",
         java_war: "",
         java_action: "",
         body: None,
@@ -21328,6 +23368,46 @@ pub const ENDPOINTS: &[EndpointDef] = &[
     EndpointDef {
         crate_name: "processplatform_assemble_surface",
         method: "GET",
+        rust_path: "/jaxrs/processplatform/assemble/surface/workcompleted/list/{id}/next/{count}/application/{applicationFlag}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_assemble_surface",
+        method: "GET",
+        rust_path: "/jaxrs/processplatform/assemble/surface/workcompleted/list/{id}/next/{count}/application/{applicationFlag}/manage",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_assemble_surface",
+        method: "GET",
+        rust_path: "/jaxrs/processplatform/assemble/surface/workcompleted/list/{id}/prev/{count}/application/{applicationFlag}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_assemble_surface",
+        method: "GET",
+        rust_path: "/jaxrs/processplatform/assemble/surface/workcompleted/list/{id}/prev/{count}/application/{applicationFlag}/manage",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_assemble_surface",
+        method: "GET",
         rust_path: "/jaxrs/processplatform/assemble/surface/workcompleted/manage/{id}",
         java_war: "",
         java_action: "",
@@ -21388,7 +23468,57 @@ pub const ENDPOINTS: &[EndpointDef] = &[
     EndpointDef {
         crate_name: "processplatform_assemble_surface",
         method: "GET",
+        rust_path: "/jaxrs/processplatform/assemble/surface/workcompleted/{id}/assignment/manage",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_assemble_surface",
+        method: "GET",
+        rust_path: "/jaxrs/processplatform/assemble/surface/workcompleted/{id}/delete/manage/mockdeletetoget",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_assemble_surface",
+        method: "GET",
+        rust_path: "/jaxrs/processplatform/assemble/surface/workcompleted/{id}/manage",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_assemble_surface",
+        method: "GET",
+        rust_path: "/jaxrs/processplatform/assemble/surface/worklog/list/add/split/work/{workId}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_assemble_surface",
+        method: "GET",
         rust_path: "/jaxrs/processplatform/assemble/surface/worklog/list/job/job",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_assemble_surface",
+        method: "GET",
+        rust_path: "/jaxrs/processplatform/assemble/surface/worklog/list/job/{job}",
         java_war: "",
         java_action: "",
         body: None,
@@ -21508,7 +23638,187 @@ pub const ENDPOINTS: &[EndpointDef] = &[
     EndpointDef {
         crate_name: "processplatform_assemble_surface",
         method: "POST",
+        rust_path: "/jaxrs/processplatform/assemble/surface/applicationdict/{applicationDictFlag}/application/{applicationFlag}/{path0}/data",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_assemble_surface",
+        method: "POST",
+        rust_path: "/jaxrs/processplatform/assemble/surface/applicationdict/{applicationDictFlag}/application/{applicationFlag}/{path0}/data/mockputtopost",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_assemble_surface",
+        method: "POST",
+        rust_path: "/jaxrs/processplatform/assemble/surface/applicationdict/{applicationDictFlag}/application/{applicationFlag}/{path0}/{path1}/data",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_assemble_surface",
+        method: "POST",
+        rust_path: "/jaxrs/processplatform/assemble/surface/applicationdict/{applicationDictFlag}/application/{applicationFlag}/{path0}/{path1}/data/mockputtopost",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_assemble_surface",
+        method: "POST",
+        rust_path: "/jaxrs/processplatform/assemble/surface/applicationdict/{applicationDictFlag}/application/{applicationFlag}/{path0}/{path1}/{path2}/data",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_assemble_surface",
+        method: "POST",
+        rust_path: "/jaxrs/processplatform/assemble/surface/applicationdict/{applicationDictFlag}/application/{applicationFlag}/{path0}/{path1}/{path2}/data/mockputtopost",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_assemble_surface",
+        method: "POST",
+        rust_path: "/jaxrs/processplatform/assemble/surface/applicationdict/{applicationDictFlag}/application/{applicationFlag}/{path0}/{path1}/{path2}/{path3}/data",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_assemble_surface",
+        method: "POST",
+        rust_path: "/jaxrs/processplatform/assemble/surface/applicationdict/{applicationDictFlag}/application/{applicationFlag}/{path0}/{path1}/{path2}/{path3}/data/mockputtopost",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_assemble_surface",
+        method: "POST",
+        rust_path: "/jaxrs/processplatform/assemble/surface/applicationdict/{applicationDictFlag}/application/{applicationFlag}/{path0}/{path1}/{path2}/{path3}/{path4}/data",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_assemble_surface",
+        method: "POST",
+        rust_path: "/jaxrs/processplatform/assemble/surface/applicationdict/{applicationDictFlag}/application/{applicationFlag}/{path0}/{path1}/{path2}/{path3}/{path4}/data/mockputtopost",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_assemble_surface",
+        method: "POST",
+        rust_path: "/jaxrs/processplatform/assemble/surface/applicationdict/{applicationDictFlag}/application/{applicationFlag}/{path0}/{path1}/{path2}/{path3}/{path4}/{path5}/data",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_assemble_surface",
+        method: "POST",
+        rust_path: "/jaxrs/processplatform/assemble/surface/applicationdict/{applicationDictFlag}/application/{applicationFlag}/{path0}/{path1}/{path2}/{path3}/{path4}/{path5}/data/mockputtopost",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_assemble_surface",
+        method: "POST",
+        rust_path: "/jaxrs/processplatform/assemble/surface/applicationdict/{applicationDictFlag}/application/{applicationFlag}/{path0}/{path1}/{path2}/{path3}/{path4}/{path5}/{path6}/data",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_assemble_surface",
+        method: "POST",
+        rust_path: "/jaxrs/processplatform/assemble/surface/applicationdict/{applicationDictFlag}/application/{applicationFlag}/{path0}/{path1}/{path2}/{path3}/{path4}/{path5}/{path6}/data/mockputtopost",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_assemble_surface",
+        method: "POST",
+        rust_path: "/jaxrs/processplatform/assemble/surface/applicationdict/{applicationDictFlag}/application/{applicationFlag}/{path0}/{path1}/{path2}/{path3}/{path4}/{path5}/{path6}/{path7}/data",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_assemble_surface",
+        method: "POST",
+        rust_path: "/jaxrs/processplatform/assemble/surface/applicationdict/{applicationDictFlag}/application/{applicationFlag}/{path0}/{path1}/{path2}/{path3}/{path4}/{path5}/{path6}/{path7}/data/mockputtopost",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_assemble_surface",
+        method: "POST",
         rust_path: "/jaxrs/processplatform/assemble/surface/correlation/job/job/delete",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_assemble_surface",
+        method: "POST",
+        rust_path: "/jaxrs/processplatform/assemble/surface/correlation/job/{job}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_assemble_surface",
+        method: "POST",
+        rust_path: "/jaxrs/processplatform/assemble/surface/correlation/job/{job}/delete",
         java_war: "",
         java_action: "",
         body: None,
@@ -21528,7 +23838,127 @@ pub const ENDPOINTS: &[EndpointDef] = &[
     EndpointDef {
         crate_name: "processplatform_assemble_surface",
         method: "POST",
+        rust_path: "/jaxrs/processplatform/assemble/surface/correlation/update/job/{job}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_assemble_surface",
+        method: "POST",
         rust_path: "/jaxrs/processplatform/assemble/surface/create",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_assemble_surface",
+        method: "POST",
+        rust_path: "/jaxrs/processplatform/assemble/surface/data/fetch/job/{job}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_assemble_surface",
+        method: "POST",
+        rust_path: "/jaxrs/processplatform/assemble/surface/data/job/{job}/array/data",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_assemble_surface",
+        method: "POST",
+        rust_path: "/jaxrs/processplatform/assemble/surface/data/job/{job}/mockputtopost",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_assemble_surface",
+        method: "POST",
+        rust_path: "/jaxrs/processplatform/assemble/surface/data/job/{job}/{path0}/mockputtopost",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_assemble_surface",
+        method: "POST",
+        rust_path: "/jaxrs/processplatform/assemble/surface/data/job/{job}/{path0}/{path1}/mockputtopost",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_assemble_surface",
+        method: "POST",
+        rust_path: "/jaxrs/processplatform/assemble/surface/data/job/{job}/{path0}/{path1}/{path2}/mockputtopost",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_assemble_surface",
+        method: "POST",
+        rust_path: "/jaxrs/processplatform/assemble/surface/data/job/{job}/{path0}/{path1}/{path2}/{path3}/mockputtopost",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_assemble_surface",
+        method: "POST",
+        rust_path: "/jaxrs/processplatform/assemble/surface/data/job/{job}/{path0}/{path1}/{path2}/{path3}/{path4}/mockputtopost",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_assemble_surface",
+        method: "POST",
+        rust_path: "/jaxrs/processplatform/assemble/surface/data/job/{job}/{path0}/{path1}/{path2}/{path3}/{path4}/{path5}/mockputtopost",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_assemble_surface",
+        method: "POST",
+        rust_path: "/jaxrs/processplatform/assemble/surface/data/job/{job}/{path0}/{path1}/{path2}/{path3}/{path4}/{path5}/{path6}/mockputtopost",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_assemble_surface",
+        method: "POST",
+        rust_path: "/jaxrs/processplatform/assemble/surface/data/job/{job}/{path0}/{path1}/{path2}/{path3}/{path4}/{path5}/{path6}/{path7}/mockputtopost",
         java_war: "",
         java_action: "",
         body: None,
@@ -21628,7 +24058,57 @@ pub const ENDPOINTS: &[EndpointDef] = &[
     EndpointDef {
         crate_name: "processplatform_assemble_surface",
         method: "POST",
+        rust_path: "/jaxrs/processplatform/assemble/surface/data/work/{id}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_assemble_surface",
+        method: "POST",
+        rust_path: "/jaxrs/processplatform/assemble/surface/data/work/{id}/mockputtopost",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_assemble_surface",
+        method: "POST",
+        rust_path: "/jaxrs/processplatform/assemble/surface/data/workcompleted/{id}/mockputtopost",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_assemble_surface",
+        method: "POST",
         rust_path: "/jaxrs/processplatform/assemble/surface/delete/{id}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_assemble_surface",
+        method: "POST",
+        rust_path: "/jaxrs/processplatform/assemble/surface/documentversion/work/{work}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_assemble_surface",
+        method: "POST",
+        rust_path: "/jaxrs/processplatform/assemble/surface/draft/list/my/paging/{page}/size/{size}",
         java_war: "",
         java_action: "",
         body: None,
@@ -21648,7 +24128,57 @@ pub const ENDPOINTS: &[EndpointDef] = &[
     EndpointDef {
         crate_name: "processplatform_assemble_surface",
         method: "POST",
+        rust_path: "/jaxrs/processplatform/assemble/surface/draft/process/{processFlag}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_assemble_surface",
+        method: "POST",
         rust_path: "/jaxrs/processplatform/assemble/surface/draft/start/{id}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_assemble_surface",
+        method: "POST",
+        rust_path: "/jaxrs/processplatform/assemble/surface/handover/list/paging/{page}/size/{size}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_assemble_surface",
+        method: "POST",
+        rust_path: "/jaxrs/processplatform/assemble/surface/handover/{id}/cancel",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_assemble_surface",
+        method: "POST",
+        rust_path: "/jaxrs/processplatform/assemble/surface/handover/{id}/process",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_assemble_surface",
+        method: "POST",
+        rust_path: "/jaxrs/processplatform/assemble/surface/mode/clear/person/{person}/manager",
         java_war: "",
         java_action: "",
         body: None,
@@ -21688,6 +24218,16 @@ pub const ENDPOINTS: &[EndpointDef] = &[
     EndpointDef {
         crate_name: "processplatform_assemble_surface",
         method: "POST",
+        rust_path: "/jaxrs/processplatform/assemble/surface/process/list/application/{applicationFlag}/filter",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_assemble_surface",
+        method: "POST",
         rust_path: "/jaxrs/processplatform/assemble/surface/process/list/ids",
         java_war: "",
         java_action: "",
@@ -21709,6 +24249,46 @@ pub const ENDPOINTS: &[EndpointDef] = &[
         crate_name: "processplatform_assemble_surface",
         method: "POST",
         rust_path: "/jaxrs/processplatform/assemble/surface/read/count/filter",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_assemble_surface",
+        method: "POST",
+        rust_path: "/jaxrs/processplatform/assemble/surface/read/list/filter/{page}/size/{size}/manage",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_assemble_surface",
+        method: "POST",
+        rust_path: "/jaxrs/processplatform/assemble/surface/read/list/my/filter/{page}/size/{size}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_assemble_surface",
+        method: "POST",
+        rust_path: "/jaxrs/processplatform/assemble/surface/read/list/{id}/next/{count}/filter",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_assemble_surface",
+        method: "POST",
+        rust_path: "/jaxrs/processplatform/assemble/surface/read/list/{id}/prev/{count}/filter",
         java_war: "",
         java_action: "",
         body: None,
@@ -21838,6 +24418,16 @@ pub const ENDPOINTS: &[EndpointDef] = &[
     EndpointDef {
         crate_name: "processplatform_assemble_surface",
         method: "POST",
+        rust_path: "/jaxrs/processplatform/assemble/surface/read/v2/list/create/paging/{page}/size/{size}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_assemble_surface",
+        method: "POST",
         rust_path: "/jaxrs/processplatform/assemble/surface/read/v2/list/create/paging/{page}/{size}/{size}",
         java_war: "",
         java_action: "",
@@ -21849,6 +24439,166 @@ pub const ENDPOINTS: &[EndpointDef] = &[
         crate_name: "processplatform_assemble_surface",
         method: "POST",
         rust_path: "/jaxrs/processplatform/assemble/surface/read/v2/list/create/prev/{id}/{count}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_assemble_surface",
+        method: "POST",
+        rust_path: "/jaxrs/processplatform/assemble/surface/read/v2/list/create/{id}/next/{count}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_assemble_surface",
+        method: "POST",
+        rust_path: "/jaxrs/processplatform/assemble/surface/read/v2/list/create/{id}/prev/{count}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_assemble_surface",
+        method: "POST",
+        rust_path: "/jaxrs/processplatform/assemble/surface/read/v2/list/paging/{page}/size/{size}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_assemble_surface",
+        method: "POST",
+        rust_path: "/jaxrs/processplatform/assemble/surface/read/v2/list/{id}/next/{count}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_assemble_surface",
+        method: "POST",
+        rust_path: "/jaxrs/processplatform/assemble/surface/read/v2/list/{id}/prev/{count}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_assemble_surface",
+        method: "POST",
+        rust_path: "/jaxrs/processplatform/assemble/surface/read/work/{workId}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_assemble_surface",
+        method: "POST",
+        rust_path: "/jaxrs/processplatform/assemble/surface/read/workcompleted/{workCompletedId}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_assemble_surface",
+        method: "POST",
+        rust_path: "/jaxrs/processplatform/assemble/surface/read/{id}/mockputtopost",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_assemble_surface",
+        method: "POST",
+        rust_path: "/jaxrs/processplatform/assemble/surface/read/{id}/opinion/manage/mockputtopost",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_assemble_surface",
+        method: "POST",
+        rust_path: "/jaxrs/processplatform/assemble/surface/read/{id}/processing",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_assemble_surface",
+        method: "POST",
+        rust_path: "/jaxrs/processplatform/assemble/surface/read/{id}/processing/manage/mockputtopost",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_assemble_surface",
+        method: "POST",
+        rust_path: "/jaxrs/processplatform/assemble/surface/read/{id}/reset/manage/mockputtopost",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_assemble_surface",
+        method: "POST",
+        rust_path: "/jaxrs/processplatform/assemble/surface/readcompleted/list/filter/{page}/size/{size}/manage",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_assemble_surface",
+        method: "POST",
+        rust_path: "/jaxrs/processplatform/assemble/surface/readcompleted/list/my/filter/{page}/size/{size}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_assemble_surface",
+        method: "POST",
+        rust_path: "/jaxrs/processplatform/assemble/surface/readcompleted/list/{id}/next/{count}/filter",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_assemble_surface",
+        method: "POST",
+        rust_path: "/jaxrs/processplatform/assemble/surface/readcompleted/list/{id}/prev/{count}/filter",
         java_war: "",
         java_action: "",
         body: None,
@@ -21918,6 +24668,16 @@ pub const ENDPOINTS: &[EndpointDef] = &[
     EndpointDef {
         crate_name: "processplatform_assemble_surface",
         method: "POST",
+        rust_path: "/jaxrs/processplatform/assemble/surface/readcompleted/v2/list/create/paging/{page}/size/{size}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_assemble_surface",
+        method: "POST",
         rust_path: "/jaxrs/processplatform/assemble/surface/readcompleted/v2/list/create/paging/{page}/{size}/{size}",
         java_war: "",
         java_action: "",
@@ -21938,7 +24698,87 @@ pub const ENDPOINTS: &[EndpointDef] = &[
     EndpointDef {
         crate_name: "processplatform_assemble_surface",
         method: "POST",
+        rust_path: "/jaxrs/processplatform/assemble/surface/readcompleted/v2/list/create/{id}/next/{count}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_assemble_surface",
+        method: "POST",
+        rust_path: "/jaxrs/processplatform/assemble/surface/readcompleted/v2/list/create/{id}/prev/{count}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_assemble_surface",
+        method: "POST",
+        rust_path: "/jaxrs/processplatform/assemble/surface/readcompleted/v2/list/paging/{page}/size/{size}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_assemble_surface",
+        method: "POST",
+        rust_path: "/jaxrs/processplatform/assemble/surface/readcompleted/v2/list/{id}/next/{count}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_assemble_surface",
+        method: "POST",
+        rust_path: "/jaxrs/processplatform/assemble/surface/readcompleted/v2/list/{id}/prev/{count}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_assemble_surface",
+        method: "POST",
+        rust_path: "/jaxrs/processplatform/assemble/surface/readcompleted/{id}/opinion/manage",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_assemble_surface",
+        method: "POST",
+        rust_path: "/jaxrs/processplatform/assemble/surface/record/job/{job}/manage",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_assemble_surface",
+        method: "POST",
         rust_path: "/jaxrs/processplatform/assemble/surface/record/manage/mockdeletetoget/{id}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_assemble_surface",
+        method: "POST",
+        rust_path: "/jaxrs/processplatform/assemble/surface/record/{id}/manage/mockputtopost",
         java_war: "",
         java_action: "",
         body: None,
@@ -22038,6 +24878,16 @@ pub const ENDPOINTS: &[EndpointDef] = &[
     EndpointDef {
         crate_name: "processplatform_assemble_surface",
         method: "POST",
+        rust_path: "/jaxrs/processplatform/assemble/surface/review/v2/list/create/paging/{page}/size/{size}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_assemble_surface",
+        method: "POST",
         rust_path: "/jaxrs/processplatform/assemble/surface/review/v2/list/create/paging/{page}/{size}/{size}",
         java_war: "",
         java_action: "",
@@ -22058,6 +24908,66 @@ pub const ENDPOINTS: &[EndpointDef] = &[
     EndpointDef {
         crate_name: "processplatform_assemble_surface",
         method: "POST",
+        rust_path: "/jaxrs/processplatform/assemble/surface/review/v2/list/create/{id}/next/{count}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_assemble_surface",
+        method: "POST",
+        rust_path: "/jaxrs/processplatform/assemble/surface/review/v2/list/create/{id}/prev/{count}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_assemble_surface",
+        method: "POST",
+        rust_path: "/jaxrs/processplatform/assemble/surface/review/v2/list/paging/{page}/size/{size}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_assemble_surface",
+        method: "POST",
+        rust_path: "/jaxrs/processplatform/assemble/surface/review/v2/list/paging/{page}/size/{size}/manage",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_assemble_surface",
+        method: "POST",
+        rust_path: "/jaxrs/processplatform/assemble/surface/review/v2/list/{id}/next/{count}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_assemble_surface",
+        method: "POST",
+        rust_path: "/jaxrs/processplatform/assemble/surface/review/v2/list/{id}/prev/{count}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_assemble_surface",
+        method: "POST",
         rust_path: "/jaxrs/processplatform/assemble/surface/save/{id}",
         java_war: "",
         java_action: "",
@@ -22068,7 +24978,37 @@ pub const ENDPOINTS: &[EndpointDef] = &[
     EndpointDef {
         crate_name: "processplatform_assemble_surface",
         method: "POST",
+        rust_path: "/jaxrs/processplatform/assemble/surface/script/{flag}/application/{applicationFlag}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_assemble_surface",
+        method: "POST",
+        rust_path: "/jaxrs/processplatform/assemble/surface/serialnumber/list/paging/{page}/size/{size}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_assemble_surface",
+        method: "POST",
         rust_path: "/jaxrs/processplatform/assemble/surface/serialnumber/mockdeletetoget/{id}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_assemble_surface",
+        method: "POST",
+        rust_path: "/jaxrs/processplatform/assemble/surface/serialnumber/{id}/mockputtopost",
         java_war: "",
         java_action: "",
         body: None,
@@ -22089,6 +25029,16 @@ pub const ENDPOINTS: &[EndpointDef] = &[
         crate_name: "processplatform_assemble_surface",
         method: "POST",
         rust_path: "/jaxrs/processplatform/assemble/surface/service/work/touch/{id}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_assemble_surface",
+        method: "POST",
+        rust_path: "/jaxrs/processplatform/assemble/surface/service/work/{id}/touch/mockputtopost",
         java_war: "",
         java_action: "",
         body: None,
@@ -22128,7 +25078,77 @@ pub const ENDPOINTS: &[EndpointDef] = &[
     EndpointDef {
         crate_name: "processplatform_assemble_surface",
         method: "POST",
+        rust_path: "/jaxrs/processplatform/assemble/surface/snap/list/my/filter/{page}/size/{size}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_assemble_surface",
+        method: "POST",
         rust_path: "/jaxrs/processplatform/assemble/surface/task/count/filter",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_assemble_surface",
+        method: "POST",
+        rust_path: "/jaxrs/processplatform/assemble/surface/task/list/filter/{page}/size/{size}/manage",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_assemble_surface",
+        method: "POST",
+        rust_path: "/jaxrs/processplatform/assemble/surface/task/list/my/filter/{page}/size/{size}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_assemble_surface",
+        method: "POST",
+        rust_path: "/jaxrs/processplatform/assemble/surface/task/list/{id}/next/{count}/filter",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_assemble_surface",
+        method: "POST",
+        rust_path: "/jaxrs/processplatform/assemble/surface/task/list/{id}/next/{count}/filter/manage",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_assemble_surface",
+        method: "POST",
+        rust_path: "/jaxrs/processplatform/assemble/surface/task/list/{id}/prev/{count}/filter",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_assemble_surface",
+        method: "POST",
+        rust_path: "/jaxrs/processplatform/assemble/surface/task/list/{id}/prev/{count}/filter/manage",
         java_war: "",
         java_action: "",
         body: None,
@@ -22278,6 +25298,16 @@ pub const ENDPOINTS: &[EndpointDef] = &[
     EndpointDef {
         crate_name: "processplatform_assemble_surface",
         method: "POST",
+        rust_path: "/jaxrs/processplatform/assemble/surface/task/v2/list/create/paging/{page}/size/{size}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_assemble_surface",
+        method: "POST",
         rust_path: "/jaxrs/processplatform/assemble/surface/task/v2/list/create/paging/{page}/{size}/{size}",
         java_war: "",
         java_action: "",
@@ -22289,6 +25319,56 @@ pub const ENDPOINTS: &[EndpointDef] = &[
         crate_name: "processplatform_assemble_surface",
         method: "POST",
         rust_path: "/jaxrs/processplatform/assemble/surface/task/v2/list/create/prev/{id}/{count}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_assemble_surface",
+        method: "POST",
+        rust_path: "/jaxrs/processplatform/assemble/surface/task/v2/list/create/{id}/next/{count}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_assemble_surface",
+        method: "POST",
+        rust_path: "/jaxrs/processplatform/assemble/surface/task/v2/list/create/{id}/prev/{count}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_assemble_surface",
+        method: "POST",
+        rust_path: "/jaxrs/processplatform/assemble/surface/task/v2/list/paging/{page}/size/{size}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_assemble_surface",
+        method: "POST",
+        rust_path: "/jaxrs/processplatform/assemble/surface/task/v2/list/{id}/next/{count}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_assemble_surface",
+        method: "POST",
+        rust_path: "/jaxrs/processplatform/assemble/surface/task/v2/list/{id}/prev/{count}",
         java_war: "",
         java_action: "",
         body: None,
@@ -22338,6 +25418,16 @@ pub const ENDPOINTS: &[EndpointDef] = &[
     EndpointDef {
         crate_name: "processplatform_assemble_surface",
         method: "POST",
+        rust_path: "/jaxrs/processplatform/assemble/surface/task/v2/{id}/reset/mockputtopost",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_assemble_surface",
+        method: "POST",
         rust_path: "/jaxrs/processplatform/assemble/surface/task/v3/add/{id}",
         java_war: "",
         java_action: "",
@@ -22368,7 +25458,97 @@ pub const ENDPOINTS: &[EndpointDef] = &[
     EndpointDef {
         crate_name: "processplatform_assemble_surface",
         method: "POST",
+        rust_path: "/jaxrs/processplatform/assemble/surface/task/{id}/mockputtopost",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_assemble_surface",
+        method: "POST",
+        rust_path: "/jaxrs/processplatform/assemble/surface/task/{id}/opinion/manage/mockputtopost",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_assemble_surface",
+        method: "POST",
         rust_path: "/jaxrs/processplatform/assemble/surface/task/{id}/processing",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_assemble_surface",
+        method: "POST",
+        rust_path: "/jaxrs/processplatform/assemble/surface/task/{id}/processing/manage/mockputtopost",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_assemble_surface",
+        method: "POST",
+        rust_path: "/jaxrs/processplatform/assemble/surface/task/{id}/processing/neural",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_assemble_surface",
+        method: "POST",
+        rust_path: "/jaxrs/processplatform/assemble/surface/task/{id}/reset/manage/mockputtopost",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_assemble_surface",
+        method: "POST",
+        rust_path: "/jaxrs/processplatform/assemble/surface/taskcompleted/list/filter/{page}/size/{size}/manage",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_assemble_surface",
+        method: "POST",
+        rust_path: "/jaxrs/processplatform/assemble/surface/taskcompleted/list/my/filter/{page}/size/{size}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_assemble_surface",
+        method: "POST",
+        rust_path: "/jaxrs/processplatform/assemble/surface/taskcompleted/list/{id}/next/{count}/filter",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_assemble_surface",
+        method: "POST",
+        rust_path: "/jaxrs/processplatform/assemble/surface/taskcompleted/list/{id}/prev/{count}/filter",
         java_war: "",
         java_action: "",
         body: None,
@@ -22468,6 +25648,16 @@ pub const ENDPOINTS: &[EndpointDef] = &[
     EndpointDef {
         crate_name: "processplatform_assemble_surface",
         method: "POST",
+        rust_path: "/jaxrs/processplatform/assemble/surface/taskcompleted/v2/list/create/paging/{page}/size/{size}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_assemble_surface",
+        method: "POST",
         rust_path: "/jaxrs/processplatform/assemble/surface/taskcompleted/v2/list/create/paging/{page}/{size}/{size}",
         java_war: "",
         java_action: "",
@@ -22488,7 +25678,187 @@ pub const ENDPOINTS: &[EndpointDef] = &[
     EndpointDef {
         crate_name: "processplatform_assemble_surface",
         method: "POST",
+        rust_path: "/jaxrs/processplatform/assemble/surface/taskcompleted/v2/list/create/{id}/next/{count}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_assemble_surface",
+        method: "POST",
+        rust_path: "/jaxrs/processplatform/assemble/surface/taskcompleted/v2/list/create/{id}/prev/{count}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_assemble_surface",
+        method: "POST",
+        rust_path: "/jaxrs/processplatform/assemble/surface/taskcompleted/v2/list/paging/{page}/size/{size}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_assemble_surface",
+        method: "POST",
+        rust_path: "/jaxrs/processplatform/assemble/surface/taskcompleted/v2/list/{id}/next/{count}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_assemble_surface",
+        method: "POST",
+        rust_path: "/jaxrs/processplatform/assemble/surface/taskcompleted/v2/list/{id}/prev/{count}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_assemble_surface",
+        method: "POST",
+        rust_path: "/jaxrs/processplatform/assemble/surface/taskcompleted/{id}/opinion/manage/mockputtopost",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_assemble_surface",
+        method: "POST",
+        rust_path: "/jaxrs/processplatform/assemble/surface/work/application/{applicationFlag}/process/{processFlag}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_assemble_surface",
+        method: "POST",
+        rust_path: "/jaxrs/processplatform/assemble/surface/work/list/filter/{page}/size/{size}/manage",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_assemble_surface",
+        method: "POST",
+        rust_path: "/jaxrs/processplatform/assemble/surface/work/list/my/paging/{page}/size/{size}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_assemble_surface",
+        method: "POST",
+        rust_path: "/jaxrs/processplatform/assemble/surface/work/list/paging/{page}/size/{size}/application/{applicationFlag}/filter/manage",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_assemble_surface",
+        method: "POST",
+        rust_path: "/jaxrs/processplatform/assemble/surface/work/list/{id}/next/{count}/application/{applicationFlag}/filter",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_assemble_surface",
+        method: "POST",
+        rust_path: "/jaxrs/processplatform/assemble/surface/work/list/{id}/next/{count}/application/{applicationFlag}/filter/manage",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_assemble_surface",
+        method: "POST",
+        rust_path: "/jaxrs/processplatform/assemble/surface/work/list/{id}/next/{count}/creator/current/filter",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_assemble_surface",
+        method: "POST",
+        rust_path: "/jaxrs/processplatform/assemble/surface/work/list/{id}/prev/{count}/application/{applicationFlag}/filter",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_assemble_surface",
+        method: "POST",
+        rust_path: "/jaxrs/processplatform/assemble/surface/work/list/{id}/prev/{count}/application/{applicationFlag}/filter/manage",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_assemble_surface",
+        method: "POST",
+        rust_path: "/jaxrs/processplatform/assemble/surface/work/list/{id}/prev/{count}/creator/current/filter",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_assemble_surface",
+        method: "POST",
         rust_path: "/jaxrs/processplatform/assemble/surface/work/mockdeletetoget/{id}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_assemble_surface",
+        method: "POST",
+        rust_path: "/jaxrs/processplatform/assemble/surface/work/process/{processFlag}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_assemble_surface",
+        method: "POST",
+        rust_path: "/jaxrs/processplatform/assemble/surface/work/process/{processFlag}/force",
         java_war: "",
         java_action: "",
         body: None,
@@ -22568,7 +25938,107 @@ pub const ENDPOINTS: &[EndpointDef] = &[
     EndpointDef {
         crate_name: "processplatform_assemble_surface",
         method: "POST",
+        rust_path: "/jaxrs/processplatform/assemble/surface/work/v2/list/paging/{page}/size/{size}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_assemble_surface",
+        method: "POST",
+        rust_path: "/jaxrs/processplatform/assemble/surface/work/v2/list/{id}/next/{count}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_assemble_surface",
+        method: "POST",
+        rust_path: "/jaxrs/processplatform/assemble/surface/work/v2/list/{id}/prev/{count}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_assemble_surface",
+        method: "POST",
         rust_path: "/jaxrs/processplatform/assemble/surface/work/v2/trigger/processing/{id}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_assemble_surface",
+        method: "POST",
+        rust_path: "/jaxrs/processplatform/assemble/surface/work/v2/{id}/add/split/mockputtopost",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_assemble_surface",
+        method: "POST",
+        rust_path: "/jaxrs/processplatform/assemble/surface/work/v2/{id}/reroute/mockputtopost",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_assemble_surface",
+        method: "POST",
+        rust_path: "/jaxrs/processplatform/assemble/surface/work/v2/{id}/retract/mockputtopost",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_assemble_surface",
+        method: "POST",
+        rust_path: "/jaxrs/processplatform/assemble/surface/work/v2/{id}/rollback/mockputtopost",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_assemble_surface",
+        method: "POST",
+        rust_path: "/jaxrs/processplatform/assemble/surface/work/v2/{id}/terminate",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_assemble_surface",
+        method: "POST",
+        rust_path: "/jaxrs/processplatform/assemble/surface/work/{id}/close/check",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_assemble_surface",
+        method: "POST",
+        rust_path: "/jaxrs/processplatform/assemble/surface/work/{id}/processing/mockputtopost",
         java_war: "",
         java_action: "",
         body: None,
@@ -22598,6 +26068,86 @@ pub const ENDPOINTS: &[EndpointDef] = &[
     EndpointDef {
         crate_name: "processplatform_assemble_surface",
         method: "POST",
+        rust_path: "/jaxrs/processplatform/assemble/surface/workcompleted/filter/list/{id}/prev/{count}/application/{applicationFlag}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_assemble_surface",
+        method: "POST",
+        rust_path: "/jaxrs/processplatform/assemble/surface/workcompleted/list/filter/{page}/size/{size}/manage",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_assemble_surface",
+        method: "POST",
+        rust_path: "/jaxrs/processplatform/assemble/surface/workcompleted/list/paging/{page}/size/{size}/application/{applicationFlag}/filter/manage",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_assemble_surface",
+        method: "POST",
+        rust_path: "/jaxrs/processplatform/assemble/surface/workcompleted/list/{id}/next/{count}/application/{applicationFlag}/filter",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_assemble_surface",
+        method: "POST",
+        rust_path: "/jaxrs/processplatform/assemble/surface/workcompleted/list/{id}/next/{count}/application/{applicationFlag}/filter/manage",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_assemble_surface",
+        method: "POST",
+        rust_path: "/jaxrs/processplatform/assemble/surface/workcompleted/list/{id}/prev/{count}/application/{applicationFlag}/filter",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_assemble_surface",
+        method: "POST",
+        rust_path: "/jaxrs/processplatform/assemble/surface/workcompleted/process/{processFlag}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_assemble_surface",
+        method: "POST",
+        rust_path: "/jaxrs/processplatform/assemble/surface/workcompleted/{flag}/rollback/mockputtopost",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_assemble_surface",
+        method: "POST",
         rust_path: "/jaxrs/processplatform/assemble/surface/worklog/list/add/split/work/{workId}",
         java_war: "",
         java_action: "",
@@ -22608,7 +26158,387 @@ pub const ENDPOINTS: &[EndpointDef] = &[
     EndpointDef {
         crate_name: "processplatform_assemble_surface",
         method: "PUT",
+        rust_path: "/jaxrs/processplatform/assemble/surface/applicationdict/{applicationDictFlag}/application/{applicationFlag}/{path0}/data",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_assemble_surface",
+        method: "PUT",
+        rust_path: "/jaxrs/processplatform/assemble/surface/applicationdict/{applicationDictFlag}/application/{applicationFlag}/{path0}/{path1}/data",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_assemble_surface",
+        method: "PUT",
+        rust_path: "/jaxrs/processplatform/assemble/surface/applicationdict/{applicationDictFlag}/application/{applicationFlag}/{path0}/{path1}/{path2}/data",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_assemble_surface",
+        method: "PUT",
+        rust_path: "/jaxrs/processplatform/assemble/surface/applicationdict/{applicationDictFlag}/application/{applicationFlag}/{path0}/{path1}/{path2}/{path3}/data",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_assemble_surface",
+        method: "PUT",
+        rust_path: "/jaxrs/processplatform/assemble/surface/applicationdict/{applicationDictFlag}/application/{applicationFlag}/{path0}/{path1}/{path2}/{path3}/{path4}/data",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_assemble_surface",
+        method: "PUT",
+        rust_path: "/jaxrs/processplatform/assemble/surface/applicationdict/{applicationDictFlag}/application/{applicationFlag}/{path0}/{path1}/{path2}/{path3}/{path4}/{path5}/data",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_assemble_surface",
+        method: "PUT",
+        rust_path: "/jaxrs/processplatform/assemble/surface/applicationdict/{applicationDictFlag}/application/{applicationFlag}/{path0}/{path1}/{path2}/{path3}/{path4}/{path5}/{path6}/data",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_assemble_surface",
+        method: "PUT",
+        rust_path: "/jaxrs/processplatform/assemble/surface/applicationdict/{applicationDictFlag}/application/{applicationFlag}/{path0}/{path1}/{path2}/{path3}/{path4}/{path5}/{path6}/{path7}/data",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_assemble_surface",
+        method: "PUT",
+        rust_path: "/jaxrs/processplatform/assemble/surface/data/job/{job}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_assemble_surface",
+        method: "PUT",
+        rust_path: "/jaxrs/processplatform/assemble/surface/data/job/{job}/{path0}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_assemble_surface",
+        method: "PUT",
+        rust_path: "/jaxrs/processplatform/assemble/surface/data/job/{job}/{path0}/{path1}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_assemble_surface",
+        method: "PUT",
+        rust_path: "/jaxrs/processplatform/assemble/surface/data/job/{job}/{path0}/{path1}/{path2}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_assemble_surface",
+        method: "PUT",
+        rust_path: "/jaxrs/processplatform/assemble/surface/data/job/{job}/{path0}/{path1}/{path2}/{path3}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_assemble_surface",
+        method: "PUT",
+        rust_path: "/jaxrs/processplatform/assemble/surface/data/job/{job}/{path0}/{path1}/{path2}/{path3}/{path4}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_assemble_surface",
+        method: "PUT",
+        rust_path: "/jaxrs/processplatform/assemble/surface/data/job/{job}/{path0}/{path1}/{path2}/{path3}/{path4}/{path5}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_assemble_surface",
+        method: "PUT",
+        rust_path: "/jaxrs/processplatform/assemble/surface/data/job/{job}/{path0}/{path1}/{path2}/{path3}/{path4}/{path5}/{path6}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_assemble_surface",
+        method: "PUT",
+        rust_path: "/jaxrs/processplatform/assemble/surface/data/job/{job}/{path0}/{path1}/{path2}/{path3}/{path4}/{path5}/{path6}/{path7}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_assemble_surface",
+        method: "PUT",
+        rust_path: "/jaxrs/processplatform/assemble/surface/data/work/{id}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_assemble_surface",
+        method: "PUT",
+        rust_path: "/jaxrs/processplatform/assemble/surface/data/workcompleted/{id}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_assemble_surface",
+        method: "PUT",
+        rust_path: "/jaxrs/processplatform/assemble/surface/read/{id}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_assemble_surface",
+        method: "PUT",
+        rust_path: "/jaxrs/processplatform/assemble/surface/read/{id}/opinion/manage",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_assemble_surface",
+        method: "PUT",
+        rust_path: "/jaxrs/processplatform/assemble/surface/read/{id}/processing/manage",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_assemble_surface",
+        method: "PUT",
+        rust_path: "/jaxrs/processplatform/assemble/surface/read/{id}/reset/manage",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_assemble_surface",
+        method: "PUT",
+        rust_path: "/jaxrs/processplatform/assemble/surface/record/{id}/manage",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_assemble_surface",
+        method: "PUT",
         rust_path: "/jaxrs/processplatform/assemble/surface/route/list",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_assemble_surface",
+        method: "PUT",
+        rust_path: "/jaxrs/processplatform/assemble/surface/serialnumber/{id}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_assemble_surface",
+        method: "PUT",
+        rust_path: "/jaxrs/processplatform/assemble/surface/service/work/{id}/touch",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_assemble_surface",
+        method: "PUT",
+        rust_path: "/jaxrs/processplatform/assemble/surface/task/v2/{id}/reset",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_assemble_surface",
+        method: "PUT",
+        rust_path: "/jaxrs/processplatform/assemble/surface/task/{id}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_assemble_surface",
+        method: "PUT",
+        rust_path: "/jaxrs/processplatform/assemble/surface/task/{id}/opinion/manage",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_assemble_surface",
+        method: "PUT",
+        rust_path: "/jaxrs/processplatform/assemble/surface/task/{id}/processing/manage",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_assemble_surface",
+        method: "PUT",
+        rust_path: "/jaxrs/processplatform/assemble/surface/task/{id}/reset/manage",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_assemble_surface",
+        method: "PUT",
+        rust_path: "/jaxrs/processplatform/assemble/surface/taskcompleted/{id}/opinion/manage",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_assemble_surface",
+        method: "PUT",
+        rust_path: "/jaxrs/processplatform/assemble/surface/work/v2/{id}/add/split",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_assemble_surface",
+        method: "PUT",
+        rust_path: "/jaxrs/processplatform/assemble/surface/work/v2/{id}/reroute",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_assemble_surface",
+        method: "PUT",
+        rust_path: "/jaxrs/processplatform/assemble/surface/work/v2/{id}/retract",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_assemble_surface",
+        method: "PUT",
+        rust_path: "/jaxrs/processplatform/assemble/surface/work/v2/{id}/rollback",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_assemble_surface",
+        method: "PUT",
+        rust_path: "/jaxrs/processplatform/assemble/surface/work/{id}/processing",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_assemble_surface",
+        method: "PUT",
+        rust_path: "/jaxrs/processplatform/assemble/surface/workcompleted/{flag}/rollback",
         java_war: "",
         java_action: "",
         body: None,
