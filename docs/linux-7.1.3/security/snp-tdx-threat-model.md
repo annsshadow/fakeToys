@@ -1,4 +1,4 @@
-﻿## Confidential Computing 鍦?Linux 鐢ㄤ簬 x86 virtualization
+﻿## Confidential Computing Linux 用于 x86 virtualization
 
 
 
@@ -7,59 +7,59 @@
 ## Motivation
 
 
-鍐呮牳 developers working 鍦?confidential computing 鐢ㄤ簬 virtualized
-environments 鍦?x86 operate 鍦ㄢ€︿笅 涓€涓?set 鐨?assumptions regarding the Linux
-鍐呮牳 threat 鍨嬪彿 璇?differ 鏉ヨ嚜 the traditional view. Historically,
-the Linux threat 鍨嬪彿 acknowledges attackers residing 鍦?userspace, 浣滀负
-well 浣滀负 涓€涓?limited set 鐨?澶栭儴 attackers 璇?鏄?able 鍒?interact 涓?
-the 鍐呮牳 through 鍚勭 networking 鎴?limited HW-specific exposed
-interfaces (USB, thunderbolt). The goal 鐨?姝?document 鏄?鍒?explain
-棰濆 attack vectors 璇?arise 鍦?the confidential computing space
-鍜?discuss the proposed protection mechanisms 鐢ㄤ簬 the Linux 鍐呮牳.
+内核 developers working confidential computing 用于 virtualized
+environments x86 operate 在…下 一set assumptions regarding the Linux
+内核 threat 型号 differ 来自 the traditional view. Historically,
+the Linux threat 型号 acknowledges attackers residing userspace, 作为
+well 作为 一limited set 外部 attackers able interact 
+the 内核 through 各种 networking limited HW-specific exposed
+interfaces (USB, thunderbolt). The goal 鐨，姝?document 鏄，鍒?explain
+额外 attack vectors arise the confidential computing space
+discuss the proposed protection mechanisms 用于 the Linux 内核.
 
 ## Overview 鍜?terminology
 
 
-Confidential Computing (CoCo) 鏄?涓€涓?broad term covering 涓€涓?wide range 鐨?
-瀹夊叏 technologies 璇?aim 鍒?protect the confidentiality 鍜?integrity
-鐨?鏁版嵁 鍦?浣跨敤 (瀵规瘮. 鏁版嵁 鍦?rest 鎴?鏁版嵁 鍦?transit). 鍦?鍏?鏍稿績, CoCo
-solutions 鎻愪緵 涓€涓?Trusted Execution Environment (TEE), 浣曞 secure 鏁版嵁
-processing 鍙?涓?performed 鍜? 鍥犳, 瀹冧滑鏄?typically further
-classified 杩涘叆 涓嶅悓 subtypes depending 鍦?the SW 鍗?intended
-鍒?涓?杩愯 鍦?TEE. 姝?document focuses 鍦?涓€涓?subclass 鐨?CoCo technologies
-璇?鏄?targeting virtualized environments 鍜?鍏佽 杩愯涓?铏氭嫙
-Machines (VM) inside TEE. 鏉ヨ嚜 鐜板湪 鍦?鍦?姝?document 灏?涓?referring
-鍒?姝?subclass 鐨?CoCo 浣滀负 'Confidential Computing (CoCo) 鐢ㄤ簬 the
+Confidential Computing (CoCo) 一broad term covering 一wide range 
+安全 technologies aim protect the confidentiality integrity
+数据 使用 (对比. 数据 rest 数据 transit). 核心, CoCo
+solutions 提供 一Trusted Execution Environment (TEE), 何处 secure 数据
+processing performed  因此, 它们typically further
+classified 进入 不同 subtypes depending the SW intended
+运行 TEE. document focuses 一subclass CoCo technologies
+targeting virtualized environments 允许 运行虚拟
+Machines (VM) inside TEE. 来自 现在 document referring
+subclass CoCo 作为 'Confidential Computing (CoCo) 用于 the
 virtualized environments (VE)'.
 
-CoCo, 鍦?the virtualization 涓婁笅鏂? refers 鍒?涓€涓?set 鐨?HW 鍜?鎴?SW
-technologies 璇?鍏佽 鐢ㄤ簬 stronger 瀹夊叏 guarantees 鐢ㄤ簬 the SW 杩愯涓?
-inside 涓€涓?CoCo VM. Namely, confidential computing allows 鍏?users 鍒?
-confirm the trustworthiness 鐨?鍏ㄩ儴 SW pieces 鍒?鍖呭惈 鍦?鍏?reduced
-Trusted Computing Base (TCB) given 鍏?ability 鍒?attest the 鐘舵€?鐨?杩欎簺
+CoCo, the virtualization 上下 refers 一set HW SW
+technologies 允许 用于 stronger 安全 guarantees 用于 the SW 运行
+inside 一CoCo VM. Namely, confidential computing allows users 
+confirm the trustworthiness 全部 SW pieces 包含 reduced
+Trusted Computing Base (TCB) given ability attest the 状这些
 trusted components.
 
-鍚屾椂 the concrete implementation details differ 涔嬮棿 technologies, 鍏ㄩ儴
-鍙敤 mechanisms aim 鍒?鎻愪緵 increased confidentiality 鍜?
-integrity 鐢ㄤ簬 the VM's guest 鍐呭瓨 鍜?execution 鐘舵€?(vCPU 瀵勫瓨鍣?,
-鏇村 tightly controlled guest 涓柇 injection, 浠ュ強 涓€浜?
-棰濆 mechanisms 鍒?control guest-host 椤?鏄犲皠. 鏇村 details 鍦?
-the x86-鐗瑰畾 solutions 鍙?涓?found 鍦?
-[Intel Trust Domain Extensions (TDX) </arch/x86/tdx>](Intel Trust Domain Extensions (TDX) </arch/x86/tdx>) 鍜?
+同时 the concrete implementation details differ 之间 technologies, 全部
+可用 mechanisms aim 提供 increased confidentiality 
+integrity 用于 the VM's guest 内存 execution 状(vCPU 寄存,
+更多 tightly controlled guest 中断 injection, 以及 一
+额外 mechanisms control guest-host 映射. 更多 details 
+the x86-特定 solutions found 
+[Intel Trust Domain Extensions (TDX) </arch/x86/tdx>](Intel Trust Domain Extensions (TDX) </arch/x86/tdx>) 鍜。
 `AMD Memory Encryption <https://www.amd.com/system/files/techdocs/sev-snp-strengthening-vm-isolation-with-integrity-protection-and-more.pdf>`_.
 
-The 鍩烘湰 CoCo guest layout 鍖呭惈 the host, guest, the interfaces 璇?
-communicate guest 鍜?host, 涓€涓?platform capable 鐨?supporting CoCo VMs, 鍜?
-涓€涓?trusted intermediary 涔嬮棿 the guest VM 鍜?the underlying platform
-璇?acts 浣滀负 涓€涓?瀹夊叏 manager. The host-side 铏氭嫙 machine 鐩戣鍣?
-(VMM) typically consists 鐨?涓€涓?subset 鐨?traditional VMM 鐗规€?鍜?
-鏄?浠嶇劧 鍦?charge 鐨?the guest lifecycle, i.e. 鍒涘缓 鎴?destroy 涓€涓?CoCo
-VM, manage 鍏?access 鍒?绯荤粺 resources, 绛? 鐒惰€? since 瀹?
-typically stays 瓒呭嚭 CoCo VM TCB, 鍏?access 鏄?limited 鍒?preserve the
-瀹夊叏 objectives.
+The 基本 CoCo guest layout 包含 the host, guest, the interfaces 
+communicate guest host, 一platform capable supporting CoCo VMs, 
+一trusted intermediary 之间 the guest VM the underlying platform
+acts 作为 一安全 manager. The host-side 虚拟 machine 监视
+(VMM) typically consists 一subset traditional VMM 特
+仍然 charge the guest lifecycle, i.e. 创建 destroy 一CoCo
+VM, manage access 系统 resources,  然 since 
+typically stays 超出 CoCo VM TCB, access limited preserve the
+安全 objectives.
 
-鍦?the 浠ヤ笅 diagram, the "<--->" lines represent bi-directional
-communication channels 鎴?interfaces 涔嬮棿 the CoCo 瀹夊叏 manager 鍜?
+the 以下 diagram, the "<--->" lines represent bi-directional
+communication channels interfaces 之间 the CoCo 安全 manager 
 ```
 
     +-------------------+      +-----------------------+
@@ -75,11 +75,11 @@ communication channels 鎴?interfaces 涔嬮棿 the CoCo 瀹夊叏 manager 鍜?
     +--------------------+     +-----------------------+
 
 ```
-The 鐗瑰畾 details 鐨?the CoCo 瀹夊叏 manager vastly diverge 涔嬮棿
-technologies. 渚嬪, 鍦?涓€浜?cases, 瀹?灏?涓?implemented 鍦?HW
-鍚屾椂 鍦?others 瀹?鍙?涓?pure SW.
+The 特定 details the CoCo 安全 manager vastly diverge 之间
+technologies. 例如, 一cases, implemented HW
+同时 others pure SW.
 
-## Existing Linux 鍐呮牳 threat 鍨嬪彿
+## Existing Linux 内核 threat 型号
 
 
 ```
@@ -100,40 +100,40 @@ technologies. 渚嬪, 鍦?涓€浜?cases, 瀹?灏?涓?implemented 鍦?HW
 
 ```
 瀛樺湪 涔?communication 涔嬮棿 the bootloader 鍜?the 鍐呮牳 鏈熼棿
-the boot 杩涚▼, 浣?姝?diagram 鎵ц 涓?represent 瀹?explicitly. The
-"Interfaces" box represents the 鍚勭 interfaces 璇?鍏佽
-communication 涔嬮棿 鍐呮牳 鍜?userspace. 姝?鍖呭惈 绯荤粺 calls,
-鍐呮牳 APIs, 璁惧 椹卞姩, 绛?
+the boot 进程, diagram 执行 represent explicitly. The
+"Interfaces" box represents the 各种 interfaces 允许
+communication 之间 内核 userspace. 包含 系统 calls,
+内核 APIs, 设备 驱动, 
 
-The existing Linux 鍐呮牳 threat 鍨嬪彿 typically assumes execution 鍦?涓€涓?
-trusted HW platform 涓?鍏ㄩ儴 鐨?the 鍥轰欢 鍜?bootloaders included 鍦?
-鍏?TCB. The primary attacker resides 鍦?the userspace, 鍜?鍏ㄩ儴 鐨?the 鏁版嵁
-coming 鏉ヨ嚜 瀛樺湪 generally considered untrusted, 闄ら潪 userspace 鏄?
-privileged enough 鍒?perform trusted actions. 姝ゅ, 澶栭儴
-attackers 鏄?typically considered, including 閭ｄ簺 涓?access 鍒?宸插惎鐢?
-澶栭儴 缃戠粶 (e.g. 浠ュお缃? 鏃犵嚎, 钃濈墮), exposed 纭欢
+The existing Linux 内核 threat 型号 typically assumes execution 一
+trusted HW platform 全部 the 固件 bootloaders included 
+TCB. The primary attacker resides the userspace, 全部 the 数据
+coming 来自 存在 generally considered untrusted, 除非 userspace 
+privileged enough perform trusted actions. 此外, 外部
+attackers typically considered, including 那些 access 已启
+外部 网络 (e.g. 以太 无线, 蓝牙), exposed 硬件
 interfaces (e.g. USB, Thunderbolt), 鍜?the ability 鍒?modify the contents
 鐨?disks offline.
 
-Regarding 澶栭儴 attack vectors, 瀹冩槸 interesting 鍒?娉ㄦ剰 璇?鍦?澶у鏁?
-cases 澶栭儴 attackers 灏?try 鍒?exploit vulnerabilities 鍦?userspace
-绗竴, 浣?璇?瀹冩槸 鍙兘 鐢ㄤ簬 涓€涓?attacker 鍒?directly target the
-鍐呮牳; particularly 鑻?the host 鍏锋湁 鐗╃悊 access. 绀轰緥 鐨?direct
-鍐呮牳 attacks 鍖呭惈 the vulnerabilities CVE-2019-19524, CVE-2022-0435
+Regarding 外部 attack vectors, 它是 interesting 注意 大多
+cases 外部 attackers try exploit vulnerabilities userspace
+第一, 它是 可能 用于 一attacker directly target the
+内核; particularly the host 具有 物理 access. 示例 direct
+内核 attacks 包含 the vulnerabilities CVE-2019-19524, CVE-2022-0435
 鍜?CVE-2020-24490.
 
-## Confidential Computing threat 鍨嬪彿 鍜?鍏?瀹夊叏 objectives
+## Confidential Computing threat 鍨嬪彿 鍜，鍏，瀹夊叏 objectives
 
 
-Confidential Computing adds 涓€涓?鏂?绫诲瀷 鐨?attacker 鍒?the 涓婃枃 鍒楀嚭: 涓€涓?
-potentially misbehaving host (鍏?鍙?涔?鍖呭惈 涓€浜?part 鐨?涓€涓?
-traditional VMM 鎴?鍏ㄩ儴 鐨?瀹?, 鍏?鏄?typically placed outside 鐨?the
-CoCo VM TCB 鐢变簬 鍏?large SW attack surface. 瀹冩槸 閲嶈 鍒?娉ㄦ剰
-璇?姝?doesn鈥檛 imply 璇?the host 鎴?VMM 鏄?intentionally
-malicious, 浣?璇?閭ｉ噷 exists 涓€涓?瀹夊叏 鍊?鍦?having 涓€涓?small CoCo
-VM TCB. 姝?鏂?绫诲瀷 鐨?adversary 鍙?涓?viewed 浣滀负 涓€涓?鏇村 powerful 绫诲瀷
-鐨?澶栭儴 attacker, 浣滀负 瀹?resides locally 鍦?the 鐩稿悓 鐗╃悊 machine
-(鐩告瘮涔嬩笅 鍒?涓€涓?remote 缃戠粶 attacker) 鍜?鍏锋湁 control 鍦ㄢ€︿笂 the guest
+Confidential Computing adds 一类型 attacker the 上文 列出: 一
+potentially misbehaving host (包含 一part 一
+traditional VMM 全部 , typically placed outside the
+CoCo VM TCB 由于 large SW attack surface. 它是 重要 注意
+璇，姝?doesn鈥檛 imply 璇?the host 鎴?VMM 鏄?intentionally
+malicious, 那里 exists 一安全 having 一small CoCo
+VM TCB. 类型 adversary viewed 作为 一更多 powerful 类型
+外部 attacker, 作为 resides locally the 相同 物理 machine
+(相比之下 一remote 网络 attacker) 具有 control 在…上 the guest
 ```
 
                                  +------------------------+
@@ -158,53 +158,53 @@ VM TCB. 姝?鏂?绫诲瀷 鐨?adversary 鍙?涓?viewed 浣滀负 涓€涓?鏇�
    +-----------------------+     +------------------------+
 
 ```
-鍚屾椂 traditionally the host 鍏锋湁 unlimited access 鍒?guest 鏁版嵁 鍜?鍙?
-leverage 姝?access 鍒?attack the guest, the CoCo 绯荤粺 mitigate 姝ょ被
-attacks 鐢?adding 瀹夊叏 鐗规€?绫讳技 guest 鏁版嵁 confidentiality 鍜?
-integrity protection. 姝?threat 鍨嬪彿 assumes 璇?閭ｄ簺 鐗规€?鏄?
-鍙敤 鍜?intact.
+同时 traditionally the host 具有 unlimited access guest 数据 
+leverage access attack the guest, the CoCo 系统 mitigate 此类
+attacks adding 安全 特类似 guest 数据 confidentiality 
+integrity protection. threat 型号 assumes 那些 特
+可用 intact.
 
-The **Linux 鍐呮牳 CoCo VM 瀹夊叏 objectives** 鍙?涓?summarized 浣滀负 follows:
+The **Linux 内核 CoCo VM 安全 objectives** summarized 作为 follows:
 
-1. Preserve the confidentiality 鍜?integrity 鐨?CoCo guest's 绉佹湁
-鍐呭瓨 鍜?瀵勫瓨鍣?
+1. Preserve the confidentiality integrity CoCo guest's 私有
+内存 寄存
 
-2. Prevent privileged escalation 鏉ヨ嚜 涓€涓?host 杩涘叆 涓€涓?CoCo guest Linux 鍐呮牳.
-鍚屾椂 瀹冩槸 true 璇?the host (鍜?host-side VMM) 闇€瑕?涓€浜?level 鐨?
-privilege 鍒?鍒涘缓, destroy, 鎴?pause the guest, part 鐨?the goal 鐨?
-preventing privileged escalation 鏄?鍒?ensure 璇?杩欎簺 鎿嶄綔 鎵ц 涓?
-鎻愪緵 涓€涓?pathway 鐢ㄤ簬 attackers 鍒?gain access 鍒?the guest's 鍐呮牳.
+2. Prevent privileged escalation 来自 一host 进入 一CoCo guest Linux 内核.
+同时 它是 true the host (host-side VMM) 需一level 
+privilege 创建, destroy, pause the guest, part the goal 
+preventing privileged escalation ensure 这些 操作 执行 
+提供 一pathway 用于 attackers gain access the guest's 内核.
 
-The 涓婃枃 瀹夊叏 objectives result 鍦?two primary **Linux 鍐呮牳 CoCo
+The 上文 安全 objectives result two primary **Linux 内核 CoCo
 VM assets**:
 
-1. Guest 鍐呮牳 execution 涓婁笅鏂?
-2. Guest 鍐呮牳 绉佹湁 鍐呭瓨.
+1. Guest 内核 execution 上下
+2. Guest 内核 私有 内存.
 
-The host retains full control 鍦ㄢ€︿笂 the CoCo guest resources, 鍜?鍙?鎷掔粷
-access 鍒?them 鍦?浠讳綍 time. 绀轰緥 鐨?resources 鍖呭惈 CPU time, 鍐呭瓨
-璇?the guest 鍙?consume, 缃戠粶 bandwidth, 绛? 鍥犱负 鐨?姝? the
+The host retains full control 在…上 the CoCo guest resources, 拒绝
+access them 任何 time. 示例 resources 包含 CPU time, 内存
+the guest consume, 网络 bandwidth,  因为  the
 host Denial 鐨?Service (DoS) attacks against CoCo guests 鏄?beyond the
-scope 鐨?姝?threat 鍨嬪彿.
+scope threat 型号.
 
-The **Linux CoCo VM attack surface** 鏄?浠讳綍 鎺ュ彛 exposed 鏉ヨ嚜 涓€涓?CoCo
-guest Linux 鍐呮牳 towards 涓€涓?untrusted host 鍗?涓?covered 鐢?the
-CoCo technology SW/HW protection. 姝?鍖呭惈 浠讳綍 鍙兘
-side-channels, 浠ュ強 transient execution side channels. 绀轰緥 鐨?
-explicit (涓?side-channel) interfaces 鍖呭惈 accesses 鍒?绔彛 I/O, MMIO
-鍜?DMA interfaces, access 鍒?PCI 閰嶇疆 space, VMM-specific
-hypercalls (towards Host-side VMM), access 鍒?shared 鍐呭瓨 椤?
-涓柇 allowed 鍒?涓?injected 杩涘叆 the guest 鍐呮牳 鐢?the host, 浣滀负
-well 浣滀负 CoCo technology-specific hypercalls, 鑻?present. Additionally, the
-host 鍦?涓€涓?CoCo 绯荤粺 typically controls the 杩涚▼ 鐨?creating 涓€涓?CoCo
-guest: 瀹?鍏锋湁 涓€涓?鏂规硶 鍒?鍔犺浇 杩涘叆 涓€涓?guest the 鍥轰欢 鍜?bootloader
-images, the 鍐呮牳 image together 涓?the 鍐呮牳 鍛戒护 line. 鍏ㄩ儴 鐨?姝?
-鏁版嵁 搴斿綋 涔?涓?considered untrusted 鐩村埌 鍏?integrity 鍜?
-authenticity 鏄?established 閫氳繃 attestation.
+The **Linux CoCo VM attack surface** 任何 接口 exposed 来自 一CoCo
+guest Linux 内核 towards 一untrusted host covered the
+CoCo technology SW/HW protection. 包含 任何 可能
+side-channels, 以及 transient execution side channels. 示例 
+explicit (side-channel) interfaces 包含 accesses 端口 I/O, MMIO
+DMA interfaces, access PCI 配置 space, VMM-specific
+hypercalls (towards Host-side VMM), access shared 内存 
+中断 allowed injected 进入 the guest 内核 the host, 作为
+well 作为 CoCo technology-specific hypercalls, present. Additionally, the
+host 一CoCo 系统 typically controls the 进程 creating 一CoCo
+guest: 具有 一方法 加载 进入 一guest the 固件 bootloader
+images, the 内核 image together the 内核 命令 line. 全部 
+数据 应当 considered untrusted 直到 integrity 
+authenticity established 通过 attestation.
 
-The 琛?涓嬫枃 鏄剧ず 涓€涓?threat matrix 鐢ㄤ簬 the CoCo guest Linux 鍐呮牳 浣?
-鎵ц 涓?discuss potential mitigation strategies. The matrix refers 鍒?
-CoCo-鐗瑰畾 versions 鐨?the guest, host 鍜?platform.
+The 下文 显示 一threat matrix 用于 the CoCo guest Linux 内核 
+执行 discuss potential mitigation strategies. The matrix refers 
+CoCo-特定 versions the guest, host platform.
 
    :widths: auto
    :align: center
@@ -213,41 +213,41 @@ CoCo-鐗瑰畾 versions 鐨?the guest, host 鍜?platform.
    - - Threat name
      - Threat description
 
-   - - Guest malicious 閰嶇疆
-     - 涓€涓?misbehaving host modifies one 鐨?the 浠ヤ笅 guest's
-       閰嶇疆:
+   - - Guest malicious 配置
+     - 一misbehaving host modifies one the 以下 guest's
+       配置:
 
-       1. Guest 鍥轰欢 鎴?bootloader
+       1. Guest 固件 bootloader
 
-       2. Guest 鍐呮牳 鎴?妯″潡 binaries
+       2. Guest 内核 模块 binaries
 
-       3. Guest 鍛戒护 line 鍙傛暟
+       3. Guest 命令 line 参数
 
-       姝?allows the host 鍒?break the integrity 鐨?the code 杩愯涓?
-       inside 涓€涓?CoCo guest, 鍜?violates the CoCo 瀹夊叏 objectives.
+       allows the host break the integrity the code 运行
+       inside 一CoCo guest, violates the CoCo 安全 objectives.
 
-   - - CoCo guest 鏁版嵁 attacks
-     - 涓€涓?misbehaving host retains full control 鐨?the CoCo guest's 鏁版嵁
-       in-transit 涔嬮棿 the guest 鍜?the host-managed 鐗╃悊 鎴?
-       铏氭嫙 璁惧. 姝?allows 浠讳綍 attack against confidentiality,
-       integrity 鎴?freshness 鐨?姝ょ被 鏁版嵁.
+   - - CoCo guest 数据 attacks
+     - 一misbehaving host retains full control the CoCo guest's 数据
+       in-transit 之间 the guest the host-managed 物理 
+       虚拟 设备. allows 任何 attack against confidentiality,
+       integrity freshness 此类 数据.
 
-   - - Malformed runtime 杈撳叆
-     - 涓€涓?misbehaving host injects malformed 杈撳叆 閫氳繃 浠讳綍 communication
-       鎺ュ彛 浣跨敤 鐢?the guest's 鍐呮牳 code. 鑻?the code 鏄?涓?
-       prepared 鍒?handle 姝?杈撳叆 correctly, 姝?鍙?result 鍦?涓€涓?host
-       --> guest 鍐呮牳 privilege escalation. 姝?鍖呭惈 traditional
-       side-channel 鍜?鎴?transient execution attack vectors.
+   - - Malformed runtime 输入
+     - 一misbehaving host injects malformed 输入 通过 任何 communication
+       接口 使用 the guest's 内核 code. the code 
+       prepared handle 输入 correctly, result 一host
+       --> guest 内核 privilege escalation. 包含 traditional
+       side-channel 鍜，鎴?transient execution attack vectors.
 
-   - - Malicious runtime 杈撳叆
-     - 涓€涓?misbehaving host injects 涓€涓?鐗瑰畾 杈撳叆 鍊?閫氳繃 浠讳綍
-       communication 鎺ュ彛 浣跨敤 鐢?the guest's 鍐呮牳 code. The
-       difference 涓?the 鍓嶄竴涓?attack vector (malformed runtime 杈撳叆)
-       鏄?璇?姝?杈撳叆 鏄?涓?malformed, 浣?鍏?鍊?鏄?crafted 鍒?
-       impact the guest's 鍐呮牳 瀹夊叏. 绀轰緥 鐨?姝ょ被 inputs 鍖呭惈
-       providing 涓€涓?malicious time 鍒?the guest 鎴?the entropy 鍒?the guest
-       random 鏁板瓧 generator. Additionally, the timing 鐨?姝ょ被 浜嬩欢 鍙?
-       涓?涓€涓?attack vector 鍦?鍏?own, 鑻?瀹?results 鍦?涓€涓?鐗瑰畾 guest
-       鍐呮牳 action (i.e. processing 鐨?涓€涓?host-injected 涓柇).
-       resistant 鍒?supplied host 杈撳叆.
+   - - Malicious runtime 输入
+     - 一misbehaving host injects 一特定 输入 通过 任何
+       communication 接口 使用 the guest's 内核 code. The
+       difference the 前一attack vector (malformed runtime 输入)
+       输入 malformed, crafted 
+       impact the guest's 内核 安全. 示例 此类 inputs 包含
+       providing 一malicious time the guest the entropy the guest
+       random 数字 generator. Additionally, the timing 此类 事件 
+       一attack vector own, results 一特定 guest
+       内核 action (i.e. processing 一host-injected 中断).
+       resistant supplied host 输入.
 

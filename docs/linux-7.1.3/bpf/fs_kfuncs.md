@@ -1,15 +1,15 @@
 ﻿
-## BPF 鏂囦欢绯荤粺 kfunc
+## BPF 文件系统 kfunc
 
 
-BPF LSM 绋嬪簭闇€瑕佷粠 LSM 閽╁瓙璁块棶鏂囦欢绯荤粺鏁版嵁銆傚彲浣跨敤浠ヤ笅 BPF kfunc 鏉ヨ幏鍙栬繖浜涙暟鎹€?
+BPF LSM 程序需要从 LSM 钩子访问文件系统数据。可使用以下 BPF kfunc 来获取这些数据
 
  - `bpf_get_file_xattr()`
 
  - `bpf_get_fsverity_digest()`
 
-涓洪伩鍏嶉€掑綊锛岃繖浜?kfunc 閬靛惊浠ヤ笅瑙勫垯锛?
+为避免递归，这kfunc 遵循以下规则
 
-1. 杩欎簺 kfunc 浠呭厑璁稿湪 BPF LSM 鍑芥暟涓娇鐢ㄣ€?
-2. 杩欎簺 kfunc 涓嶅簲璋冪敤鍏朵粬 LSM 閽╁瓙锛屽嵆 security_*()銆備緥濡傦紝`bpf_get_file_xattr()`
-   涓嶄娇鐢?`vfs_getxattr()`锛屽洜涓哄悗鑰呬細璋冪敤 LSM 閽╁瓙 `security_inode_getxattr`銆?
+1. 这些 kfunc 仅允许在 BPF LSM 函数中使用
+2. 这些 kfunc 不应调用其他 LSM 钩子，即 security_*()。例如，`bpf_get_file_xattr()`
+   不使`vfs_getxattr()`，因为后者会调用 LSM 钩子 `security_inode_getxattr`

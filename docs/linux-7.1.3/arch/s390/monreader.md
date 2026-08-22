@@ -1,4 +1,4 @@
-﻿## 鐢ㄤ簬璇诲彇 z/VM Monitor 璁板綍鐨?Linux API
+﻿## 用于读取 z/VM Monitor 记录Linux API
 
 
 Date  : 2004-Nov-26
@@ -7,51 +7,51 @@ Author: Gerald Schaefer (geraldsc@de.ibm.com)
 
 
 
-## 鎻忚堪
+## 描述
 
-鏈」鎻愪緵涓€涓柊鐨?Linux API锛屽叾褰㈠紡涓哄彲渚涚敤鎴风┖闂翠娇鐢ㄧ殑娣锋潅瀛楃锛坢isc char锛夎澶囷紝鍏佽瀵圭敱 z/VM 鐨?`*MONITOR` System Service 鎵€鏀堕泦鐨?z/VM Monitor 璁板綍杩涜璇诲彇璁块棶銆?
+本项提供一个新Linux API，其形式为可供用户空间使用的混杂字符（misc char）设备，允许对由 z/VM `*MONITOR` System Service 所收集z/VM Monitor 记录进行读取访问
 
-## 鐢ㄦ埛闇€姹?
-浣犲笇鏈涜闂 API 鐨?z/VM 瀹㈡埛鏈猴紙guest锛夐渶瑕佽繘琛岄厤缃紝浠ュ厑璁稿埌 `*MONITOR` 鏈嶅姟鐨?IUCV 杩炴帴锛屽嵆鍏剁敤鎴锋潯鐩腑闇€瑕佹湁 IUCV `*MONITOR` 璇彞銆傚鏋滆浣跨敤鐨?monitor DCSS 鍙楀埌闄愬埗锛堝緢鍙兘锛夛紝浣犺繕闇€瑕?NAMESAVE <DCSS NAME> 璇彞銆傛湰椤瑰皢浣跨敤 IUCV 璁惧椹卞姩鏉ヨ闂?z/VM 鏈嶅姟锛屽洜姝や綘闇€瑕佷竴涓甫鏈?IUCV 鏀寔鐨勫唴鏍搞€備綘杩橀渶瑕?z/VM 4.4 鎴?5.1 鐗堟湰銆?
-鑳藉鍔犺浇 monitor DCSS 鏈変袱绉嶉€夋嫨锛堢ず渚嬪亣璁?monitor DCSS 璧峰浜?144 MB銆佺粨鏉熶簬 152 MB锛夈€備綘鍙互鐢?E 绾х壒鏉冪殑 CP 鍛戒护 Q NSS MAP 鏉ユ煡璇?monitor DCSS 鐨勪綅缃紙BEGPAG 鍜?ENDPAG 鐨勫€间互 4K 椤典负鍗曚綅缁欏嚭锛夈€?
-鍚屾椂鍙傝鈥淐P Command and Utility Reference鈥濓紙SC24-6081-00锛変互鑾峰彇鍏充簬 DEF STOR 鍜?Q NSS MAP 鍛戒护鐨勬洿澶氫俊鎭紝浠ュ強鈥淪aved Segments Planning and Administration鈥濓紙SC24-6116-00锛変互鑾峰彇鍏充簬 DCSS 鐨勬洿澶氫俊鎭€?
+## 用户需
+你希望访问此 API z/VM 客户机（guest）需要进行配置，以允许到 `*MONITOR` 服务IUCV 连接，即其用户条目中需要有 IUCV `*MONITOR` 语句。如果要使用monitor DCSS 受到限制（很可能），你还需NAMESAVE <DCSS NAME> 语句。本项将使用 IUCV 设备驱动来访z/VM 服务，因此你需要一个带IUCV 支持的内核。你还需z/VM 4.4 5.1 版本
+能够加载 monitor DCSS 有两种选择（示例假monitor DCSS 起始144 MB、结束于 152 MB）。你可以E 级特权的 CP 命令 Q NSS MAP 来查monitor DCSS 的位置（BEGPAG ENDPAG 的值以 4K 页为单位给出）
+同时参见“CP Command and Utility Reference”（SC24-6081-00）以获取关于 DEF STOR Q NSS MAP 命令的更多信息，以及“Saved Segments Planning and Administration”（SC24-6116-00）以获取关于 DCSS 的更多信息
 ### 绗?1 绉嶆柟妗堬細
 
-浣犲彲浠ヤ娇鐢?CP 鍛戒护 DEF STOR CONFIG 鍦ㄤ綘鐨勫鎴锋満铏氭嫙瀛樺偍锛坓uest virtual storage锛変腑鍥寸粫 DCSS 鐨勫湴鍧€鑼冨洿瀹氫箟涓€涓€滃唴瀛樼┖娲烇紙memory hole锛夆€濄€?
-绀轰緥锛欴EF STOR CONFIG 0.140M 200M.200M
+你可以使CP 命令 DEF STOR CONFIG 在你的客户机虚拟存储（guest virtual storage）中围绕 DCSS 的地址范围定义一个“内存空洞（memory hole）”
+示例：DEF STOR CONFIG 0.140M 200M.200M
 
-杩欏畾涔変簡涓ゅ潡瀛樺偍锛岀涓€鍧楀ぇ灏忎负 140MB 涓旇捣濮嬩簬鍦板潃 0MB锛岀浜屽潡澶у皬涓?200MB 涓旇捣濮嬩簬鍦板潃 200MB锛屾€诲瓨鍌ㄤ负 340MB銆傛敞鎰忥紝绗竴鍧楀簲褰撳缁堜粠 0 寮€濮嬶紝骞朵笖澶у皬鑷冲皯涓?64MB銆?
+这定义了两块存储，第一块大小为 140MB 且起始于地址 0MB，第二块大小200MB 且起始于地址 200MB，总存储为 340MB。注意，第一块应当始终从 0 开始，并且大小至少64MB
 ### 绗?2 绉嶆柟妗堬細
 
-浣犵殑瀹㈡埛鏈鸿櫄鎷熷瓨鍌ㄥ繀椤诲湪 DCSS 鐨勮捣濮嬪湴鍧€涔嬩笅缁撴潫锛屽苟涓斾綘蹇呴』鍦ㄤ綘鐨?parmfile 涓敤 鈥渕em=鈥?鍐呮牳鍙傛暟鎸囧畾涓€涓ぇ浜?DCSS 缁撴潫鍦板潃鐨勫€笺€?
+你的客户机虚拟存储必须在 DCSS 的起始地址之下结束，并且你必须在你parmfile 中用 “mem=内核参数指定一个大DCSS 结束地址的值
 ```
 
 	DEF STOR 140M
 
 ```
-杩欎负浣犵殑瀹㈡埛鏈哄畾涔変簡 140MB 鐨勫瓨鍌ㄥぇ灏忥紝鍙傛暟 鈥渕em=160M鈥?琚坊鍔犲埌 parmfile 涓€?
+这为你的客户机定义了 140MB 的存储大小，参数 “mem=160M被添加到 parmfile 中
 
-## 鐢ㄦ埛鎺ュ彛
+## 用户接口
 
-璇ュ瓧绗﹁澶囧疄鐜颁负涓€涓悕涓?鈥渕onreader鈥?鐨勫唴鏍告ā鍧楋紝鍙互閫氳繃 modprobe 鍛戒护鍔犺浇锛屼篃鍙互缂栬瘧杩涘唴鏍搞€傛湁涓€涓彲閫夌殑妯″潡锛堟垨鍐呮牳锛夊弬鏁?鈥渕ondcss鈥濓紝鐢ㄤ簬鎸囧畾 monitor DCSS 鐨勫悕绉般€傚鏋滄ā鍧楄缂栬瘧杩涘唴鏍革紝鍒欏彲浠ュ湪 parmfile 涓寚瀹氬唴鏍稿弬鏁?鈥渕onreader.mondcss=<DCSS NAME>鈥濄€?
-濡傛灉鏈寚瀹氬悕绉帮紝DCSS 鐨勯粯璁ゅ悕绉颁负 鈥淢ONDCSS鈥濄€傚鏋滃凡缁忔湁鍏朵粬鐢ㄦ埛杩炴帴鍒?`*MONITOR` 鏈嶅姟锛堜緥濡?Performance Toolkit锛夛紝鍒?monitor DCSS 宸茬粡琚畾涔夛紝浣犲繀椤讳娇鐢ㄥ悓涓€涓?DCSS銆侰P 鍛戒护 Q MONITOR锛圗 绾х壒鏉冿級浼氭樉绀?monitor DCSS 鐨勫悕绉帮紙濡傛灉宸茬粡瀹氫箟锛変互鍙婅繛鎺ュ埌 `*MONITOR` 鏈嶅姟鐨勭敤鎴枫€?
-鍏充簬濡備綍鍦ㄤ綘鐨?z/VM 灏氭湭鎷ユ湁 monitor DCSS 鏃跺垱寤轰竴涓紝璇峰弬鑰?鈥渮/VM Performance鈥?涓€涔︼紙SC24-6109-00锛夛紝浣犻渶瑕?E 绾х壒鏉冩潵瀹氫箟骞朵繚瀛樹竴涓?DCSS銆?
-### 绀轰緥锛?
+该字符设备实现为一个名“monreader的内核模块，可以通过 modprobe 命令加载，也可以编译进内核。有一个可选的模块（或内核）参“mondcss”，用于指定 monitor DCSS 的名称。如果模块被编译进内核，则可以在 parmfile 中指定内核参“monreader.mondcss=<DCSS NAME>”
+如果未指定名称，DCSS 的默认名称为 “MONDCSS”。如果已经有其他用户连接`*MONITOR` 服务（例Performance Toolkit），monitor DCSS 已经被定义，你必须使用同一DCSS。CP 命令 Q MONITOR（E 级特权）会显monitor DCSS 的名称（如果已经定义）以及连接到 `*MONITOR` 服务的用户
+关于如何在你z/VM 尚未拥有 monitor DCSS 时创建一个，请参“z/VM Performance一书（SC24-6109-00），你需E 级特权来定义并保存一DCSS
+### 示例
 
 ```
 
 	modprobe monreader mondcss=MYDCSS
 
 ```
-杩欎細鍔犺浇妯″潡骞跺皢 DCSS 鍚嶇О璁剧疆涓?鈥淢YDCSS鈥濄€?
-### 娉ㄦ剰锛?
-鏈?API 娌℃湁鎻愪緵鐢ㄤ簬鎺у埗 `*MONITOR` 鏈嶅姟鐨勬帴鍙ｏ紝渚嬪鎸囧畾瑕佹敹闆嗗摢浜涙暟鎹€傝繖鍙互閫氳繃 CP 鍛戒护 MONITOR锛圗 绾х壒鏉冿級鏉ュ畬鎴愶紝璇﹁ 鈥淐P Command and Utility Reference鈥濄€?
-### 浣跨敤 udev 鍒涘缓璁惧鑺傜偣锛?
-鍔犺浇妯″潡鍚庯紝灏嗗垱寤轰竴涓瓧绗﹁澶囦互鍙婅澶囪妭鐐?/<udev directory>/monreader銆?
-### 涓嶄娇鐢?udev 鍒涘缓璁惧鑺傜偣锛?
-濡傛灉浣犵殑鍙戣鐗堜笉鏀寔 udev锛屽垯璁惧鑺傜偣涓嶄細琚嚜鍔ㄥ垱寤猴紝浣犲湪鍔犺浇妯″潡鍚庡繀椤绘墜鍔ㄥ垱寤哄畠銆傚洜姝や綘闇€瑕佺煡閬撹璁惧鐨勪富璁惧鍙峰拰娆¤澶囧彿銆傝繖浜涘彿鐮佸彲浠ュ湪 /sys/class/misc/monreader/dev 涓壘鍒般€?
-杈撳叆 cat /sys/class/misc/monreader/dev 浼氱粰鍑哄舰濡?<major>:<minor> 鐨勮緭鍑恒€傝澶囪妭鐐瑰彲浠ラ€氳繃 mknod 鍛戒护鍒涘缓锛岃緭鍏?mknod <name> c <major> <minor>锛屽叾涓?<name> 鏄鍒涘缓鐨勮澶囪妭鐐圭殑鍚嶇О銆?
-### 绀轰緥锛?
+这会加载模块并将 DCSS 名称设置“MYDCSS”
+### 注意
+API 没有提供用于控制 `*MONITOR` 服务的接口，例如指定要收集哪些数据。这可以通过 CP 命令 MONITOR（E 级特权）来完成，详见 “CP Command and Utility Reference”
+### 使用 udev 创建设备节点
+加载模块后，将创建一个字符设备以及设备节/<udev directory>/monreader
+### 不使udev 创建设备节点
+如果你的发行版不支持 udev，则设备节点不会被自动创建，你在加载模块后必须手动创建它。因此你需要知道该设备的主设备号和次设备号。这些号码可以在 /sys/class/misc/monreader/dev 中找到
+输入 cat /sys/class/misc/monreader/dev 会给出形<major>:<minor> 的输出。设备节点可以通过 mknod 命令创建，输mknod <name> c <major> <minor>，其<name> 是要创建的设备节点的名称
+### 示例
 
 ```
 
@@ -61,31 +61,31 @@ Author: Gerald Schaefer (geraldsc@de.ibm.com)
 	# mknod /dev/monreader c 10 63
 
 ```
-杩欎細浠ラ粯璁?monitor DCSS锛圡ONDCSS锛夊姞杞芥ā鍧楀苟鍒涘缓涓€涓澶囪妭鐐广€?
-### 鏂囦欢鎿嶄綔锛?
-鏀寔浠ヤ笅鏂囦欢鎿嶄綔锛歰pen銆乺elease銆乺ead銆乸oll銆傝鍙栨湁涓ょ鍙€夋柟寮忥細瑕佷箞閰嶅悎杞锛坧olling锛夌殑闈為樆濉炶鍙栵紝瑕佷箞涓嶅甫杞鐨勯樆濉炶鍙栥€備笉鏀寔 IOCTL銆?
-### 璇诲彇锛?
-浠庤澶囪鍙栦細鎻愪緵涓€涓?12 瀛楄妭鐨?monitor 鎺у埗鍏冪礌锛圡CE锛夛紝鍏跺悗璺熼殢涓€缁勮繛缁殑涓€涓垨澶氫釜 monitor 璁板綍锛堢被浼间簬 CMS 宸ュ叿 MONWRITE 鐨勮緭鍑猴紝浣嗕笉鍚?4K 鎺у埗鍧楋級銆侻CE 鍖呭惈鍏充簬鍚庣画璁板綍闆嗙被鍨嬶紙sample/event 鏁版嵁锛夈€佸叾涓寘鍚殑 monitor 鍩燂紙domain锛夛紝浠ュ強璁板綍闆嗗湪 monitor DCSS 涓捣濮嬪拰缁撴潫鍦板潃鐨勪俊鎭€傝捣濮嬪拰缁撴潫鍦板潃鍙敤浜庣‘瀹氳褰曢泦鐨勫ぇ灏忥紝缁撴潫鍦板潃鏄渶鍚庝竴涓暟鎹瓧鑺傜殑鍦板潃銆傝捣濮嬪湴鍧€闇€瑕佺敤鏉ユ纭鐞?鈥渆nd-of-frame鈥?璁板綍锛堝煙 1锛岃褰?13锛夛紝鍗冲畠鍙互鐢ㄦ潵纭畾鐩稿浜?4K 椤碉紙frame锛夎竟鐣岀殑璁板綍璧峰鍋忕Щ閲忋€?
-鍏充簬 monitor 鎺у埗鍏冪礌鐨勫竷灞€锛岃鍙傝 鈥渮/VM Performance鈥?鏂囨。涓殑 鈥淎ppendix A: `*MONITOR`鈥濄€俶onitor 璁板綍鐨勫竷灞€鍙互鍦ㄦ澶勬壘鍒帮紙z/VM 5.1锛夛細https://www.vm.ibm.com/pubs/mon510/index.html
+这会以默monitor DCSS（MONDCSS）加载模块并创建一个设备节点
+### 文件操作
+支持以下文件操作：open、release、read、poll。读取有两种可选方式：要么配合轮询（polling）的非阻塞读取，要么不带轮询的阻塞读取。不支持 IOCTL
+### 读取
+从设备读取会提供一12 字节monitor 控制元素（MCE），其后跟随一组连续的一个或多个 monitor 记录（类似于 CMS 工具 MONWRITE 的输出，但不4K 控制块）。MCE 包含关于后续记录集类型（sample/event 数据）、其中包含的 monitor 域（domain），以及记录集在 monitor DCSS 中起始和结束地址的信息。起始和结束地址可用于确定记录集的大小，结束地址是最后一个数据字节的地址。起始地址需要用来正确处“end-of-frame记录（域 1，记13），即它可以用来确定相对4K 页（frame）边界的记录起始偏移量
+关于 monitor 控制元素的布局，请参见 “z/VM Performance文档中的 “Appendix A: `*MONITOR`”。monitor 记录的布局可以在此处找到（z/VM 5.1）：https://www.vm.ibm.com/pubs/mon510/index.html
 
 ```
 
 	...
-	<璇诲彇鍒?0 瀛楄妭>
-	<绗竴涓?MCE>              \
-	<绗竴缁勮褰?               |
-	...                        |- 鏁版嵁闆?	<鏈€鍚庝竴涓?MCE>             |
-	<鏈€鍚庝竴缁勮褰?            /
-	<璇诲彇鍒?0 瀛楄妭>
+	<读取0 字节>
+	<第一MCE>              \
+	<第一组记               |
+	...                        |- 数据	<最后一MCE>             |
+	<最后一组记            /
+	<读取0 字节>
 	...
 
 ```
-鍦ㄤ竴涓暟鎹泦鍐呴儴鍙兘瀛樺湪澶氫簬涓€缁勭殑 MCE 鍙婂叾瀵瑰簲鐨勮褰曢泦锛屾瘡涓暟鎹泦鐨勭粨鏉熶互涓€娆¤繑鍥炲€间负 0锛堣鍙栧埌 0 瀛楄妭锛夌殑鎴愬姛璇诲彇鏉ユ爣绀恒€傚湪鎴愬姛璇诲彇瀹屼竴涓畬鏁撮泦鍚堬紙鍖呮嫭缁撳熬鐨?0 瀛楄妭璇诲彇锛変箣鍓嶏紝浠讳綍鎺ユ敹鍒扮殑鏁版嵁閮藉繀椤昏瑙嗕负鏃犳晥銆傚洜姝わ紝浣犲簲褰撴€绘槸鍦ㄥ鐞嗘暟鎹箣鍓嶆妸瀹屾暣鐨勬暟鎹泦璇诲彇杩涚紦鍐插尯銆?
-涓€涓暟鎹泦鐨勬渶澶уぇ灏忓彲浠ュぇ鍒?monitor DCSS 鐨勫ぇ灏忥紝鍥犳璇风浉搴斿湴璁捐缂撳啿鍖猴紝鎴栬€呬娇鐢ㄥ姩鎬佸唴瀛樺垎閰嶃€俶onitor DCSS 鐨勫ぇ灏忎細鍦ㄥ姞杞芥ā鍧楀悗鎵撳嵃杩?syslog銆備綘涔熷彲浠ヤ娇鐢紙E 绾х壒鏉冿級CP 鍛戒护 Q NSS MAP 鏉ュ垪鍑烘墍鏈夊彲鐢ㄧ殑娈碉紙segment锛変互鍙婂叧浜庡畠浠殑淇℃伅銆?
-涓庡ぇ澶氭暟瀛楃璁惧涓€鏍凤紝閿欒鏉′欢閫氳繃杩斿洖涓€涓礋鐨勫瓧鑺傝鍙栨暟鏉ユ爣绀恒€傚湪杩欑鎯呭喌涓嬶紝errno 鍙橀噺鎸囩ず閿欒鏉′欢锛?
-EIO锛?     鍥炲澶辫触锛岃鍙栫殑鏁版嵁鏃犳晥锛屽簲鐢ㄧ▼搴忓簲褰撲涪寮冭嚜涓婃鎴愬姛鐨?0 澶у皬璇诲彇浠ユ潵璇诲彇鐨勬暟鎹€?EFAULT锛?	copy_to_user 澶辫触锛岃鍙栫殑鏁版嵁鏃犳晥锛屽簲鐢ㄧ▼搴忓簲褰撲涪寮冭嚜涓婃鎴愬姛鐨?0 澶у皬璇诲彇浠ユ潵璇诲彇鐨勬暟鎹€?EAGAIN锛?	鍦ㄩ潪闃诲璇诲彇鏃讹紝濡傛灉褰撳墠娌℃湁鍙敤鏁版嵁鍒欏彂鐢熴€傚苟娌℃湁鏁版嵁缂哄け鎴栨崯鍧忥紝鍙渶閲嶈瘯锛屾垨鑰呮洿濂藉湴浣跨敤杞鏉ヨ繘琛岄潪闃诲璇诲彇銆?EOVERFLOW锛?	   杈惧埌娑堟伅涓婇檺锛岃嚜涓婃鎴愬姛鐨?0 澶у皬璇诲彇浠ユ潵璇诲彇鐨勬暟鎹槸鏈夋晥鐨勶紝浣嗗悗缁殑璁板綍鍙兘缂哄け銆?
-鍦ㄦ渶鍚庝竴绉嶆儏鍐碉紙EOVERFLOW锛変腑鍙兘瀛樺湪缂哄け鐨勬暟鎹紝鍦ㄥ墠涓ょ鎯呭喌锛圗IO銆丒FAULT锛変腑鍒欏繀鐒跺瓨鍦ㄧ己澶辩殑鏁版嵁銆傚簲鐢ㄧ▼搴忓彲浠ヨ嚜琛屽喅瀹氭槸缁х画璇诲彇鍚庣画鏁版嵁杩樻槸閫€鍑恒€?
-### 鎵撳紑锛?
-鍙厑璁镐竴涓敤鎴锋墦寮€璇ュ瓧绗﹁澶囥€傚鏋滃畠宸茬粡鍦ㄤ娇鐢ㄤ腑锛宱pen 鍑芥暟灏嗗け璐ワ紙杩斿洖璐熷€硷級骞跺皢 errno 缃负 EBUSY銆傚鏋滄棤娉曞缓绔嬪埌 `*MONITOR` 鏈嶅姟鐨?IUCV 杩炴帴锛宱pen 鍑芥暟涔熷彲鑳藉け璐ャ€傚湪杩欑鎯呭喌涓?errno 浼氳缃负 EIO锛屽苟涓斾竴鏉″甫鏈?IPUSER SEVER 鐮佺殑閿欒娑堟伅浼氳鎵撳嵃杩?syslog銆侷PUSER SEVER 鐮佸湪 鈥渮/VM Performance鈥?涓€涔︾殑闄勫綍 A 涓湁鎻忚堪銆?
-### 娉ㄦ剰锛?
-涓€鏃﹁澶囪鎵撳紑锛屽埌杈剧殑娑堟伅灏变細琚帴鏀讹紝骞朵笖瀹冧滑浼氳鍏ユ秷鎭笂闄愶紝鍗虫墦寮€璁惧鑰屼笉浠庝腑璇诲彇鏈€缁堜細瑙﹀彂 鈥滆揪鍒版秷鎭笂闄愨€?閿欒锛圗OVERFLOW 閿欒鐮侊級銆?
+在一个数据集内部可能存在多于一组的 MCE 及其对应的记录集，每个数据集的结束以一次返回值为 0（读取到 0 字节）的成功读取来标示。在成功读取完一个完整集合（包括结尾0 字节读取）之前，任何接收到的数据都必须被视为无效。因此，你应当总是在处理数据之前把完整的数据集读取进缓冲区
+一个数据集的最大大小可以大monitor DCSS 的大小，因此请相应地设计缓冲区，或者使用动态内存分配。monitor DCSS 的大小会在加载模块后打印syslog。你也可以使用（E 级特权）CP 命令 Q NSS MAP 来列出所有可用的段（segment）以及关于它们的信息
+与大多数字符设备一样，错误条件通过返回一个负的字节读取数来标示。在这种情况下，errno 变量指示错误条件
+EIO     回复失败，读取的数据无效，应用程序应当丢弃自上次成功0 大小读取以来读取的数据EFAULT	copy_to_user 失败，读取的数据无效，应用程序应当丢弃自上次成功0 大小读取以来读取的数据EAGAIN	在非阻塞读取时，如果当前没有可用数据则发生。并没有数据缺失或损坏，只需重试，或者更好地使用轮询来进行非阻塞读取EOVERFLOW	   达到消息上限，自上次成功0 大小读取以来读取的数据是有效的，但后续的记录可能缺失
+在最后一种情况（EOVERFLOW）中可能存在缺失的数据，在前两种情况（EIO、EFAULT）中则必然存在缺失的数据。应用程序可以自行决定是继续读取后续数据还是退出
+### 打开
+只允许一个用户打开该字符设备。如果它已经在使用中，open 函数将失败（返回负值）并将 errno 置为 EBUSY。如果无法建立到 `*MONITOR` 服务IUCV 连接，open 函数也可能失败。在这种情况errno 会被置为 EIO，并且一条带IPUSER SEVER 码的错误消息会被打印syslog。IPUSER SEVER 码在 “z/VM Performance一书的附录 A 中有描述
+### 注意
+一旦设备被打开，到达的消息就会被接收，并且它们会计入消息上限，即打开设备而不从中读取最终会触发 “达到消息上限错误（EOVERFLOW 错误码）

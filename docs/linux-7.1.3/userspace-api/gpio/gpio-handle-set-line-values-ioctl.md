@@ -1,32 +1,32 @@
 ﻿
 ######## GPIO_HANDLE_SET_LINE_VALUES_IOCTL
 
-    璇?ioctl 鏄?chardev_v1.rst 鐨勪竴閮ㄥ垎锛屽凡琚?    gpio-v2-line-set-values-ioctl.rst 搴熷純銆?
-## 鍚嶇О
+    ioctl chardev_v1.rst 的一部分，已    gpio-v2-line-set-values-ioctl.rst 废弃
+## 名称
 
 
-GPIO_HANDLE_SET_LINE_VALUES_IOCTL - 璁剧疆鎵€鏈夎璇锋眰杈撳嚭绾跨殑鏁板€笺€?
-## 姒傝
+GPIO_HANDLE_SET_LINE_VALUES_IOCTL - 设置所有被请求输出线的数值
+## 概要
 
 
 `int ioctl(int handle_fd, GPIO_HANDLE_SET_LINE_VALUES_IOCTL, struct gpiohandle_data *values)`
 
-## 鍙傛暟
+## 参数
 
 
 `handle_fd`
-    GPIO 瀛楃璁惧鐨勬枃浠舵弿杩扮锛岀敱
-    gpio-get-linehandle-ioctl.rst 鍦?`request.fd<gpiohandle_request>` 涓繑鍥炪€?
+    GPIO 字符设备的文件描述符，由
+    gpio-get-linehandle-ioctl.rst `request.fd<gpiohandle_request>` 中返回
 `values`
-    瑕佽缃殑 `line_values<gpiohandle_data>`銆?
-## 鎻忚堪
+    要设置的 `line_values<gpiohandle_data>`
+## 描述
 
 
-璁剧疆鎵€鏈夎璇锋眰杈撳嚭绾跨殑鏁板€笺€?
-璁剧疆鐨勬暟鍊兼槸閫昏緫鍊硷紝琛ㄧず绾胯矾鏄縺娲昏繕鏄潪婵€娲汇€俙GPIOHANDLE_REQUEST_ACTIVE_LOW`
-鏍囧織鎺у埗閫昏緫鍊硷紙婵€娲?闈炴縺娲伙級涓庣墿鐞嗗€硷紙楂?浣庯級涔嬮棿鐨勬槧灏勩€傝嫢鏈缃?`GPIOHANDLE_REQUEST_ACTIVE_LOW`锛屽垯婵€娲讳负楂樸€侀潪婵€娲讳负浣庛€傝嫢璁剧疆浜?`GPIOHANDLE_REQUEST_ACTIVE_LOW`锛屽垯婵€娲讳负浣庛€侀潪婵€娲讳负楂樸€?
-鍙兘璁剧疆杈撳嚭绾跨殑鏁板€笺€?灏濊瘯璁剧疆杈撳叆绾跨殑鏁板€兼槸涓€涓敊璇紙**EPERM**锛夈€?
-## 杩斿洖鍊?
+设置所有被请求输出线的数值
+设置的数值是逻辑值，表示线路是激活还是非激活。`GPIOHANDLE_REQUEST_ACTIVE_LOW`
+标志控制逻辑值（激非激活）与物理值（低）之间的映射。若未设`GPIOHANDLE_REQUEST_ACTIVE_LOW`，则激活为高、非激活为低。若设置`GPIOHANDLE_REQUEST_ACTIVE_LOW`，则激活为低、非激活为高
+只能设置输出线的数值尝试设置输入线的数值是一个错误（**EPERM**）
+## 杩斿洖鍊。
 
-鎴愬姛鏃惰繑鍥?0銆?
-鍑洪敊鏃惰繑鍥?-1 骞剁浉搴斿湴璁剧疆 `errno` 鍙橀噺銆傚父瑙侀敊璇爜鍦?error-codes.rst 涓鏄庛€?
+成功时返0
+出错时返-1 并相应地设置 `errno` 变量。常见错误码error-codes.rst 中说明

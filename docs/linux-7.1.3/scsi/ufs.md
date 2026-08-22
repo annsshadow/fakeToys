@@ -1,77 +1,77 @@
-﻿## 閫氱敤闂瓨瀛樺偍锛圲niversal Flash Storage锛?
+﻿## 通用闪存存储（Universal Flash Storage
 
-   1. 姒傝堪锛圤verview锛?   2. UFS 鏋舵瀯姒傝堪锛圲FS Architecture Overview锛?     2.1 搴旂敤灞傦紙Application Layer锛?     2.2 UFS 浼犺緭鍗忚锛圲TP锛夊眰
-     2.3 UFS 浜掕繛锛圲IC锛夊眰
-   3. UFSHCD 姒傝堪
-     3.1 UFS 鎺у埗鍣ㄥ垵濮嬪寲
-     3.2 UTP 浼犺緭璇锋眰
-     3.3 UFS 閿欒澶勭悊
-     3.4 SCSI 閿欒澶勭悊
-   4. BSG 鏀寔
-   5. UFS 鍙傝€冩椂閽熼鐜囬厤缃?
+   1. 概述（Overview   2. UFS 架构概述（UFS Architecture Overview     2.1 应用层（Application Layer     2.2 UFS 传输协议（UTP）层
+     2.3 UFS 互连（UIC）层
+   3. UFSHCD 概述
+     3.1 UFS 控制器初始化
+     3.2 UTP 传输请求
+     3.3 UFS 错误处理
+     3.4 SCSI 错误处理
+   4. BSG 支持
+   5. UFS 参考时钟频率配
 
-## 1. 姒傝堪锛圤verview锛?
+## 1. 概述（Overview
 
-閫氱敤闂瓨瀛樺偍锛圲FS锛夋槸閽堝闂瓨璁惧鐨勫瓨鍌ㄨ鑼冦€傚畠鏃ㄥ湪涓烘櫤鑳芥墜鏈哄拰骞虫澘鐢佃剳绛夌Щ鍔ㄨ澶囦腑鍩轰簬宓屽叆寮忎笌鍙Щ鍔ㄩ棯瀛樼殑瀛樺偍鎻愪緵缁熶竴鐨勫瓨鍌ㄦ帴鍙ｃ€傝瑙勮寖鐢?JEDEC 鍥烘€佹妧鏈崗浼氬畾涔夈€俇FS 鍩轰簬 MIPI M-PHY 鐗╃悊灞傛爣鍑嗐€俇FS 浣跨敤 MIPI M-PHY 浣滀负鐗╃悊灞傦紝浣跨敤 MIPI Unipro 浣滀负閾捐矾灞傘€?
-UFS 鐨勪富瑕佺洰鏍囨槸鎻愪緵锛?
- - 浼樺寲鐨勬€ц兘锛?
-   UFS 1.0 鍜?1.1 鐗堟湰鐨勭洰鏍囨€ц兘濡備笅锛?
-   - 蹇呴』鏀寔 Gear1锛堥€熺巼 A锛?248Mbps锛岄€熺巼 B锛?457.6Mbps锛?   - 鍙€夋敮鎸?Gear2锛堥€熺巼 A锛?496Mbps锛岄€熺巼 B锛?915.2Mbps锛?
-   鏈潵鐨勬爣鍑嗙増鏈紝
+通用闪存存储（UFS）是针对闪存设备的存储规范。它旨在为智能手机和平板电脑等移动设备中基于嵌入式与可移动闪存的存储提供统一的存储接口。该规范JEDEC 固态技术协会定义。UFS 基于 MIPI M-PHY 物理层标准。UFS 使用 MIPI M-PHY 作为物理层，使用 MIPI Unipro 作为链路层
+UFS 的主要目标是提供
+ - 优化的性能
+   UFS 1.0 1.1 版本的目标性能如下
+   - 必须支持 Gear1（速率 A248Mbps，速率 B457.6Mbps   - 可选支Gear2（速率 A496Mbps，速率 B915.2Mbps
+   未来的标准版本，
 
-   - Gear3锛堥€熺巼 A锛?992Mbps锛岄€熺巼 B锛?830.4Mbps锛?
- - 浣庡姛鑰? - 楂橀殢鏈?IOPS 鍜屼綆寤惰繜
-
-
-## 2. UFS 鏋舵瀯姒傝堪锛圲FS Architecture Overview锛?
-
-UFS 鎷ユ湁涓€涓熀浜?SCSI SAM-5 鏋舵瀯妯″瀷鐨勫眰娆″寲閫氫俊鏋舵瀯銆?
-UFS 閫氫俊鏋舵瀯鐢变互涓嬪眰娆＄粍鎴愩€?
-### 2.1 搴旂敤灞傦紙Application Layer锛?
-
-  搴旂敤灞傜敱 UFS 鍛戒护闆嗗眰锛圲CS锛夈€佷换鍔＄鐞嗗櫒鍜岃澶囩鐞嗗櫒绛夌粍鎴愩€俇FS 鎺ュ彛琚璁′负鍗忚鏃犲叧锛屼絾 SCSI 琚€変负 UFS 鍗忚灞?1.0 鍜?1.1 鐗堟湰鐨勫熀绾垮崗璁€?
-  UFS 鏀寔鐢?SPC-4 鍜?SBC-3 瀹氫箟鐨?SCSI 鍛戒护鐨勪竴涓瓙闆嗐€?
-  - UCS锛?     瀹冨鐞?UFS 瑙勮寖鏀寔鐨?SCSI 鍛戒护銆?  - 浠诲姟绠＄悊鍣紙Task manager锛夛細
-     瀹冨鐞嗙敱 UFS 瀹氫箟鐨勩€佺敤浜庡懡浠ら槦鍒楁帶鍒剁殑浠诲姟绠＄悊鍔熻兘銆?  - 璁惧绠＄悊鍣紙Device manager锛夛細
-     瀹冨鐞嗚澶囩骇鎿嶄綔鍜岃澶囬厤缃搷浣溿€傝澶囩骇鎿嶄綔涓昏娑夊強璁惧鐢垫簮绠＄悊鎿嶄綔浠ュ強瀵逛簰杩炲眰鐨勫懡浠ゃ€傝澶囩骇閰嶇疆娑夊強澶勭悊鐢ㄤ簬淇敼鍜屾绱㈣澶囬厤缃俊鎭殑鏌ヨ璇锋眰銆?
-### 2.2 UFS 浼犺緭鍗忚锛圲TP锛夊眰
+   - Gear3（速率 A992Mbps，速率 B830.4Mbps
+ - 低功 - 高随IOPS 和低延迟
 
 
-  UTP 灞傞€氳繃鏈嶅姟璁块棶鐐癸紙Service Access Points锛変负涓婂眰鎻愪緵鏈嶅姟銆俇TP 涓轰笂灞傚畾涔変簡 3 涓湇鍔¤闂偣銆?
-  - UDM_SAP锛氳澶囩鐞嗗櫒鏈嶅姟璁块棶鐐癸紝鏆撮湶缁欒澶囩鐞嗗櫒鐢ㄤ簬璁惧绾ф搷浣溿€傝繖浜涜澶囩骇鎿嶄綔閫氳繃鏌ヨ璇锋眰瀹屾垚銆?  - UTP_CMD_SAP锛氬懡浠ゆ湇鍔¤闂偣锛屾毚闇茬粰 UFS 鍛戒护闆嗗眰锛圲CS锛変互浼犺緭鍛戒护銆?  - UTP_TM_SAP锛氫换鍔＄鐞嗘湇鍔¤闂偣锛屾毚闇茬粰浠诲姟绠＄悊鍣ㄤ互浼犺緭浠诲姟绠＄悊鍔熻兘銆?
-  UTP 閫氳繃 UFS 鍗忚淇℃伅鍗曞厓锛圲PIU锛変紶杈撴秷鎭€?
-### 2.3 UFS 浜掕繛锛圲IC锛夊眰
+## 2. UFS 架构概述（UFS Architecture Overview
+
+UFS 拥有一个基SCSI SAM-5 架构模型的层次化通信架构
+UFS 通信架构由以下层次组成
+### 2.1 应用层（Application Layer
+
+  应用层由 UFS 命令集层（UCS）、任务管理器和设备管理器等组成。UFS 接口被设计为协议无关，但 SCSI 被选为 UFS 协议1.0 1.1 版本的基线协议
+  UFS 支持SPC-4 SBC-3 定义SCSI 命令的一个子集
+  - UCS     它处UFS 规范支持SCSI 命令  - 任务管理器（Task manager）：
+     它处理由 UFS 定义的、用于命令队列控制的任务管理功能  - 设备管理器（Device manager）：
+     它处理设备级操作和设备配置操作。设备级操作主要涉及设备电源管理操作以及对互连层的命令。设备级配置涉及处理用于修改和检索设备配置信息的查询请求
+### 2.2 UFS 传输协议（UTP）层
 
 
-  UIC 鏄?UFS 灞傛鍖栨灦鏋勪腑鐨勬渶搴曞眰銆傚畠澶勭悊 UFS 涓绘満涓?UFS 璁惧涔嬮棿鐨勮繛鎺ャ€俇IC 鐢?MIPI UniPro 鍜?MIPI M-PHY 缁勬垚銆俇IC 涓轰笂灞傛彁渚?2 涓湇鍔¤闂偣锛?
-  - UIC_SAP锛氬湪 UFS 涓绘満涓?UFS 璁惧涔嬮棿浼犺緭 UPIU銆?  - UIO_SAP锛氬悜 Unipro 灞傚彂鍑哄懡浠ゃ€?
-
-## 3. UFSHCD 姒傝堪
-
-
-UFS 涓绘満鎺у埗鍣ㄩ┍鍔紙UFSHCD锛夊熀浜?Linux SCSI 妗嗘灦銆俇FSHCD 鏄竴涓簳灞傝澶囬┍鍔紝鍏呭綋 SCSI 涓棿灞備笌鍩轰簬 PCIe 鐨?UFS 涓绘満鎺у埗鍣ㄤ箣闂寸殑鎺ュ彛銆?
-褰撳墠 UFSHCD 瀹炵幇鏀寔浠ヤ笅鍔熻兘锛?
-### 3.1 UFS 鎺у埗鍣ㄥ垵濮嬪寲
+  UTP 层通过服务访问点（Service Access Points）为上层提供服务。UTP 为上层定义了 3 个服务访问点
+  - UDM_SAP：设备管理器服务访问点，暴露给设备管理器用于设备级操作。这些设备级操作通过查询请求完成  - UTP_CMD_SAP：命令服务访问点，暴露给 UFS 命令集层（UCS）以传输命令  - UTP_TM_SAP：任务管理服务访问点，暴露给任务管理器以传输任务管理功能
+  UTP 通过 UFS 协议信息单元（UPIU）传输消息
+### 2.3 UFS 互连（UIC）层
 
 
-  鍒濆鍖栨ā鍧楀皢 UFS 涓绘満鎺у埗鍣ㄥ甫鍏ユ椿鍔ㄧ姸鎬侊紝骞跺噯澶囨帶鍒跺櫒鍦?UFSHCD 涓?UFS 璁惧涔嬮棿浼犺緭鍛戒护/鍝嶅簲銆?
-### 3.2 UTP 浼犺緭璇锋眰
+  UIC UFS 层次化架构中的最底层。它处理 UFS 主机UFS 设备之间的连接。UIC MIPI UniPro MIPI M-PHY 组成。UIC 为上层提2 个服务访问点
+  - UIC_SAP：在 UFS 主机UFS 设备之间传输 UPIU  - UIO_SAP：向 Unipro 层发出命令
+
+## 3. UFSHCD 概述
 
 
-  浼犺緭璇锋眰澶勭悊妯″潡鎺ユ敹鏉ヨ嚜 SCSI 涓棿灞傜殑 SCSI 鍛戒护锛屾瀯閫?UPIU 骞跺皢鍏跺彂閫佺粰 UFS 涓绘満鎺у埗鍣ㄣ€傚悓鏃讹紝璇ユā鍧楀皢浠?UPIU 褰㈠紡浠?UFS 涓绘満鎺у埗鍣ㄦ帴鏀跺埌鐨勫搷搴旇繘琛岃В鐮侊紝骞跺皢鍛戒护鐘舵€侀€氱煡 SCSI 涓棿灞傘€?
-### 3.3 UFS 閿欒澶勭悊
+UFS 主机控制器驱动（UFSHCD）基Linux SCSI 框架。UFSHCD 是一个底层设备驱动，充当 SCSI 中间层与基于 PCIe UFS 主机控制器之间的接口
+当前 UFSHCD 实现支持以下功能
+### 3.1 UFS 控制器初始化
 
 
-  閿欒澶勭悊妯″潡澶勭悊涓绘満鎺у埗鍣ㄨ嚧鍛介敊璇€佽澶囪嚧鍛介敊璇互鍙婁笌 UIC 浜掕繛灞傜浉鍏崇殑閿欒銆?
-### 3.4 SCSI 閿欒澶勭悊
+  初始化模块将 UFS 主机控制器带入活动状态，并准备控制器UFSHCD UFS 设备之间传输命令/响应
+### 3.2 UTP 传输请求
 
 
-  杩欓€氳繃娉ㄥ唽鍒?SCSI 涓棿灞傜殑 UFSHCD SCSI 閿欒澶勭悊渚嬬▼瀹屾垚銆傜敱 SCSI 涓棿灞傚彂鍑虹殑涓€浜涢敊璇鐞嗗懡浠ょず渚嬪寘鎷腑姝换鍔★紙Abort task锛夈€丩UN 澶嶄綅鍜屼富鏈哄浣嶃€傜敤浜庢墽琛岃繖浜涗换鍔＄殑 UFSHCD 渚嬬▼閫氳繃 .eh_abort_handler銆?eh_device_reset_handler 鍜?.eh_host_reset_handler 娉ㄥ唽鍒?SCSI 涓棿灞傘€?
-鍦ㄦ湰鐗堟湰鐨?UFSHCD 涓紝鏌ヨ璇锋眰鍜岀數婧愮鐞嗗姛鑳藉皻鏈疄鐜般€?
-## 4. BSG 鏀寔
+  传输请求处理模块接收来自 SCSI 中间层的 SCSI 命令，构UPIU 并将其发送给 UFS 主机控制器。同时，该模块将UPIU 形式UFS 主机控制器接收到的响应进行解码，并将命令状态通知 SCSI 中间层
+### 3.3 UFS 错误处理
 
 
-璇ヤ紶杈撻┍鍔ㄦ敮鎸佷笌 UFS 璁惧浜ゆ崲 UFS 鍗忚淇℃伅鍗曞厓锛圲PIU锛夈€傞€氬父锛岀敤鎴风┖闂翠細鍒嗛厤 struct ufs_bsg_request 鍜?struct ufs_bsg_reply锛堣 ufs_bsg.h锛夊垎鍒綔涓?request_upiu 鍜?reply_upiu銆傚～鍐欒繖浜?UPIU 搴旂鍚?JEDEC 瑙勮寖 UFS2.1 绗?10.7 鑺傘€?**Caveat emptor锛堜拱鑰呰嚜璐燂級**锛氶┍鍔ㄤ笉鍐嶅仛杩涗竴姝ョ殑杈撳叆鏍￠獙锛岃€屾槸鎸夊師鏍峰皢 UPIU 鍙戦€佺粰璁惧銆傚湪 /dev/ufs-bsg 鎵撳紑 bsg 璁惧锛屽苟
+  错误处理模块处理主机控制器致命错误、设备致命错误以及与 UIC 互连层相关的错误
+### 3.4 SCSI 错误处理
+
+
+  这通过注册SCSI 中间层的 UFSHCD SCSI 错误处理例程完成。由 SCSI 中间层发出的一些错误处理命令示例包括中止任务（Abort task）、LUN 复位和主机复位。用于执行这些任务的 UFSHCD 例程通过 .eh_abort_handlereh_device_reset_handler .eh_host_reset_handler 注册SCSI 中间层
+在本版本UFSHCD 中，查询请求和电源管理功能尚未实现
+## 4. BSG 支持
+
+
+该传输驱动支持与 UFS 设备交换 UFS 协议信息单元（UPIU）。通常，用户空间会分配 struct ufs_bsg_request struct ufs_bsg_reply（见 ufs_bsg.h）分别作request_upiu reply_upiu。填写这UPIU 应符JEDEC 规范 UFS2.1 10.7 节**Caveat emptor（买者自负）**：驱动不再做进一步的输入校验，而是按原样将 UPIU 发送给设备。在 /dev/ufs-bsg 打开 bsg 设备，并
 
 ```
 	io_hdr_v4.guard = 'Q';
@@ -90,16 +90,16 @@ UFS 涓绘満鎺у埗鍣ㄩ┍鍔紙UFSHCD锛夊熀浜?Linux SCSI 妗嗘灦�
 	}
 ```
 
-濡傛灉浣犲笇鏈涜鍙栨垨鍐欏叆鎻忚堪绗︼紝璇蜂娇鐢?sg_io_v4 鐩稿簲鐨?xferp銆?
-涓?ufs-bsg 绔偣浜や簰骞朵娇鐢ㄥ叾鍩轰簬 UPIU 鍗忚鐨勭敤鎴风┖闂村伐鍏蜂綅浜庯細
+如果你希望读取或写入描述符，请使sg_io_v4 相应xferp
+ufs-bsg 端点交互并使用其基于 UPIU 协议的用户空间工具位于：
 
 	https://github.com/westerndigitalcorporation/ufs-tool
 
-鏈夊叧璇ュ伐鍏峰強鍏舵墍鏀寔鍔熻兘鐨勬洿璇︾粏淇℃伅锛岃鍙傝璇ュ伐鍏风殑 README銆?
-UFS 瑙勮寖鍙湪浠ヤ笅浣嶇疆鎵惧埌锛?
+有关该工具及其所支持功能的更详细信息，请参见该工具的 README
+UFS 规范可在以下位置找到
 - UFS - http://www.jedec.org/sites/default/files/docs/JESD220.pdf
 - UFSHCI - http://www.jedec.org/sites/default/files/docs/JESD223.pdf
 
-## 5. UFS 鍙傝€冩椂閽熼鐜囬厤缃?
+## 5. UFS 参考时钟频率配
 
-璁惧鏍戯紙Devicetree锛夊彲浠ュ湪 UFS 鎺у埗鍣ㄨ妭鐐逛笅瀹氫箟涓€涓悕涓?"ref_clk" 鐨勬椂閽燂紝鐢ㄤ互鎸囧畾 UFS 瀛樺偍閮ㄤ欢鐨勬湡鏈涘弬鑰冩椂閽熼鐜囥€傚熀浜?ACPI 鐨勭郴缁熷彲浠ヤ娇鐢ㄥ悕涓?"ref-clk-freq" 鐨?ACPI 璁惧鐗瑰畾鏁版嵁锛圖evice-Specific Data锛夊睘鎬ф潵鎸囧畾棰戠巼銆備袱绉嶆柟寮忎笅锛岃鍊奸兘琚В閲婁负浠?Hz 涓哄崟浣嶇殑棰戠巼锛屽苟涓斿繀椤讳笌 UFS 瑙勮寖涓粰鍑虹殑鏌愪釜鍊煎尮閰嶃€俇FS 瀛愮郴缁熶細鍦ㄦ墽琛岄€氱敤鎺у埗鍣ㄥ垵濮嬪寲鏃跺皾璇曡鍙栬鍊笺€傚鏋滆鍊煎彲鐢紝UFS 瀛愮郴缁熷皢纭繚 UFS 瀛樺偍璁惧鐨?bRefClkFreq 灞炴€ц鐩稿簲璁剧疆锛屽苟鍦ㄤ笉鍖归厤鏃朵慨鏀瑰畠銆?
+设备树（Devicetree）可以在 UFS 控制器节点下定义一个名"ref_clk" 的时钟，用以指定 UFS 存储部件的期望参考时钟频率。基ACPI 的系统可以使用名"ref-clk-freq" ACPI 设备特定数据（Device-Specific Data）属性来指定频率。两种方式下，该值都被解释为Hz 为单位的频率，并且必须与 UFS 规范中给出的某个值匹配。UFS 子系统会在执行通用控制器初始化时尝试读取该值。如果该值可用，UFS 子系统将确保 UFS 存储设备bRefClkFreq 属性被相应设置，并在不匹配时修改它

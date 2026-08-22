@@ -1,35 +1,35 @@
 ﻿锘?### 鐗规畩 inode
 
 
-ext4 涓虹壒娈婂姛鑳戒繚鐣欎簡涓€浜?inode锛屽涓嬶細
+ext4 为特殊功能保留了一inode，如下：
 
    :widths: 6 70
    :header-rows: 1
 
-   - - inode 缂栧彿
-     - 鐢ㄩ€?   - - 0
-     - 涓嶅瓨鍦紱娌℃湁 inode 0銆?   - - 1
-     - 鍧忓潡鍒楄〃銆?   - - 2
-     - 鏍圭洰褰曘€?   - - 3
-     - 鐢ㄦ埛閰嶉銆?   - - 4
-     - 缁勯厤棰濄€?   - - 5
-     - 寮曞鍔犺浇绋嬪簭銆?   - - 6
-     - 鍙嶅垹闄ょ洰褰曘€?   - - 7
-     - 淇濈暀鐨勭粍鎻忚堪绗?inode銆傦紙鈥渞esize inode鈥濓級
+   - - inode 编号
+     - 用   - - 0
+     - 不存在；没有 inode 0   - - 1
+     - 坏块列表   - - 2
+     - 根目录   - - 3
+     - 用户配额   - - 4
+     - 组配额   - - 5
+     - 引导加载程序   - - 6
+     - 反删除目录   - - 7
+     - 保留的组描述inode。（“resize inode”）
    - - 8
-     - 鏃ュ織 inode銆?   - - 9
-     - 鈥渆xclude鈥?inode锛岀敤浜庡揩鐓э紙)銆?   - - 10
-     - 鍓湰 inode锛岀敤浜庢煇浜涢潪涓婃父鐗规€э紵
+     - 日志 inode   - - 9
+     - “excludeinode，用于快照（)   - - 10
+     - 副本 inode，用于某些非上游特性？
    - - 11
-     - 浼犵粺鐨勭涓€涓潪淇濈暀 inode銆傞€氬父杩欐槸 lost+found 鐩綍銆傝瓒呯骇鍧椾腑鐨?s_first_ino銆?
-娉ㄦ剰锛岃繕鏈変粠闈炰繚鐣?inode 缂栧彿鍒嗛厤鐨勪竴浜?inode锛岀敤浜庡叾浠栨枃浠剁郴缁熺壒鎬э紝
-瀹冧滑鏈粠鏍囧噯鐩綍灞傛寮曠敤銆傝繖浜涢€氬父鐢辫秴绾у潡寮曠敤銆傚畠浠槸锛?
+     - 传统的第一个非保留 inode。通常这是 lost+found 目录。见超级块中s_first_ino
+注意，还有从非保inode 编号分配的一inode，用于其他文件系统特性，
+它们未从标准目录层次引用。这些通常由超级块引用。它们是
    :widths: 20 50
    :header-rows: 1
 
    - - 瓒呯骇鍧楀瓧娈?     - 鎻忚堪
 
    - - s_lpf_ino
-     - lost+found 鐩綍鐨?inode 缂栧彿銆?   - - s_prj_quota_inum
-     - 璺熻釜椤圭洰閰嶉鐨勯厤棰濇枃浠剁殑 inode 缂栧彿銆?   - - s_orphan_file_inum
-     - 璺熻釜瀛ょ珛 inode 鐨勬枃浠剁殑 inode 缂栧彿銆?
+     - lost+found 目录inode 编号   - - s_prj_quota_inum
+     - 跟踪项目配额的配额文件的 inode 编号   - - s_orphan_file_inum
+     - 跟踪孤立 inode 的文件的 inode 编号
