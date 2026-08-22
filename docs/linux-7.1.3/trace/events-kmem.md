@@ -1,12 +1,12 @@
 ﻿## Subsystem Trace Points: kmem
 
 
-kmem 璺熻釜绯荤粺鎹曡幏鍐呮牳涓笌瀵硅薄鍜岄〉闈㈠垎閰嶇浉鍏崇殑浜嬩欢銆傚ぇ鑷村彲浠ュ垎涓轰簲涓富瑕佺被鍒€?
-  - 鏈煡绫诲瀷鐨勫皬瀵硅薄鐨?Slab 鍒嗛厤锛坘malloc锛?  - 宸茬煡绫诲瀷鐨勫皬瀵硅薄鐨?Slab 鍒嗛厤
-  - 椤甸潰鍒嗛厤
-  - Per-CPU 鍒嗛厤鍣ㄦ椿鍔?  - 澶栭儴纰庣墖
+kmem 跟踪系统捕获内核中与对象和页面分配相关的事件。大致可以分为五个主要类别
+  - 未知类型的小对象Slab 分配（kmalloc  - 已知类型的小对象Slab 分配
+  - 页面分配
+  - Per-CPU 分配器活  - 外部碎片
 
-鏈枃妗ｆ弿杩颁簡姣忎釜璺熻釜鐐规槸浠€涔堬紝浠ュ強瀹冧滑涓轰綍鍙兘鏈夌敤銆?
+本文档描述了每个跟踪点是什么，以及它们为何可能有用
 ## 1. Slab allocation of small objects of unknown type
 
 ```
@@ -16,7 +16,7 @@ kmem 璺熻釜绯荤粺鎹曡幏鍐呮牳涓笌瀵硅薄鍜岄〉闈㈠垎閰
   kfree		call_site=%lx ptr=%p
 
 ```
-杩欎簺浜嬩欢鐨勯珮搴︽椿璺冨彲鑳借〃鏄庢湁蹇呰浣跨敤涓€涓壒瀹氱殑缂撳瓨锛坈ache锛夛紝鐗瑰埆鏄綋 kmalloc slab 椤电敱浜庡垎閰嶆ā寮忚€屽嚭鐜颁弗閲嶅唴閮ㄧ鐗囨椂銆傞€氳繃灏?kmalloc 涓?kfree 鍏宠仈璧锋潵锛屾湁鍙兘璇嗗埆鍑哄唴瀛樻硠婕忎互鍙婂垎閰嶅彂鐢熺殑浣嶇疆銆?
+这些事件的高度活跃可能表明有必要使用一个特定的缓存（cache），特别是当 kmalloc slab 页由于分配模式而出现严重内部碎片时。通过kmalloc kfree 关联起来，有可能识别出内存泄漏以及分配发生的位置
 
 ## 2. Slab allocation of small objects of known type
 
@@ -27,7 +27,7 @@ kmem 璺熻釜绯荤粺鎹曡幏鍐呮牳涓笌瀵硅薄鍜岄〉闈㈠垎閰
   kmem_cache_free		call_site=%lx ptr=%p
 
 ```
-杩欎簺浜嬩欢鍦ㄤ娇鐢ㄦ柟寮忎笂涓?kmalloc 鐩稿叧浜嬩欢绫讳技锛屽彧鏄洿瀹规槗灏嗕簨浠跺畾浣嶅埌鐗瑰畾鐨勭紦瀛樸€傚湪鎾板啓鏈枃鏃讹紝灏氭棤娉曡幏鍙栨鍦ㄤ粠鍝釜 slab 鍒嗛厤鐨勪俊鎭紝浣?call_site 閫氬父鍙互鐢ㄦ潵鎺ㄦ柇璇ヤ俊鎭€?
+这些事件在使用方式上kmalloc 相关事件类似，只是更容易将事件定位到特定的缓存。在撰写本文时，尚无法获取正在从哪个 slab 分配的信息，call_site 通常可以用来推断该信息
 ## 3. Page allocation
 
 ```
@@ -38,10 +38,10 @@ kmem 璺熻釜绯荤粺鎹曡幏鍐呮牳涓笌瀵硅薄鍜岄〉闈㈠垎閰
   mm_page_free_batched	  page=%p pfn=%lu order=%d cold=%d
 
 ```
-杩欏洓涓簨浠跺鐞嗛〉闈㈢殑鍒嗛厤涓庨噴鏀俱€俶m_page_alloc 鏄〉闈㈠垎閰嶅櫒娲诲姩鐨勪竴涓畝鍗曟寚绀哄櫒銆傞〉闈㈠彲鑳戒粠 per-CPU 鍒嗛厤鍣紙楂樻€ц兘锛夋垨浼欎即锛坆uddy锛夊垎閰嶅櫒鍒嗛厤銆?
-濡傛灉椤甸潰鐩存帴浠庝紮浼村垎閰嶅櫒鍒嗛厤锛屽垯浼氳Е鍙?mm_page_alloc_zone_locked 浜嬩欢銆傝浜嬩欢寰堥噸瑕侊紝鍥犱负澶ч噺鐨勬椿鍔ㄦ剰鍛崇潃 zone->lock 涓婄殑娲诲姩寰堥珮銆傝幏鍙栬閿佷細閫氳繃绂佺敤涓柇銆佸湪 CPU 涔嬮棿寮勮剰缂撳瓨琛屼互鍙婂澶氫釜 CPU 涓茶鍖栬€屾崯瀹虫€ц兘銆?
-褰撹皟鐢ㄨ€呯洿鎺ラ噴鏀句竴涓〉闈㈡椂锛屽彧浼氳Е鍙?mm_page_free 浜嬩欢銆傝繖閲屽ぇ閲忕殑娲诲姩鍙兘琛ㄦ槑璋冪敤鑰呭簲褰撴壒澶勭悊瀹冧滑鐨勬椿鍔ㄣ€?
-褰撻〉闈㈣鎵归噺閲婃斁鏃讹紝杩樹細瑙﹀彂 mm_page_free_batched銆傚ぇ鑷磋€岃█锛岄〉闈細鎴愭壒鍦颁粠 LRU 閿佷笂鍙栦笅锛屽苟閫氳繃涓€涓〉鍒楄〃鎵归噺閲婃斁銆傝繖閲屽ぇ閲忕殑娲诲姩鍙兘琛ㄦ槑绯荤粺姝ｅ浜庡唴瀛樺帇鍔涗笅锛屼篃鍙兘琛ㄦ槑 lruvec->lru_lock 涓婂瓨鍦ㄤ簤鐢ㄣ€?
+这四个事件处理页面的分配与释放。mm_page_alloc 是页面分配器活动的一个简单指示器。页面可能从 per-CPU 分配器（高性能）或伙伴（buddy）分配器分配
+如果页面直接从伙伴分配器分配，则会触mm_page_alloc_zone_locked 事件。该事件很重要，因为大量的活动意味着 zone->lock 上的活动很高。获取该锁会通过禁用中断、在 CPU 之间弄脏缓存行以及对多个 CPU 串行化而损害性能
+当调用者直接释放一个页面时，只会触mm_page_free 事件。这里大量的活动可能表明调用者应当批处理它们的活动
+当页面被批量释放时，还会触发 mm_page_free_batched。大致而言，页面会成批地从 LRU 锁上取下，并通过一个页列表批量释放。这里大量的活动可能表明系统正处于内存压力下，也可能表明 lruvec->lru_lock 上存在争用
 ## 4. Per-CPU Allocator Activity
 
 ```
@@ -50,10 +50,10 @@ kmem 璺熻釜绯荤粺鎹曡幏鍐呮牳涓笌瀵硅薄鍜岄〉闈㈠垎閰
   mm_page_pcpu_drain		page=%p pfn=%lu order=%d cpu=%d migratetype=%d
 
 ```
-鍦ㄩ〉闈㈠垎閰嶅櫒鍓嶉潰鏄竴涓?per-cpu 椤甸潰鍒嗛厤鍣ㄣ€傚畠浠呯敤浜?order-0 椤甸潰锛屽彲浠ュ噺灏?zone->lock 涓婄殑浜夌敤锛屽苟鍑忓皯鍦?struct page 涓婄殑鍐欏叆閲忋€?
-褰?per-CPU 鍒楄〃涓虹┖鎴栧垎閰嶄簡閿欒绫诲瀷鐨勯〉闈㈡椂锛屼細鑾峰彇涓€娆?zone->lock 骞堕噸鏂板～鍏?per-CPU 鍒楄〃銆傚姣忎釜鍒嗛厤鐨勯〉闈㈤兘浼氳Е鍙?mm_page_alloc_zone_locked 浜嬩欢锛岃浜嬩欢浼氭寚绀哄畠鏄惁鐢ㄤ簬 percpu_refill銆?
-褰?per-CPU 鍒楄〃杩囨弧鏃讹紝浼氶噴鏀句竴瀹氭暟閲忕殑椤甸潰锛屾瘡涓〉闈㈤兘浼氳Е鍙戜竴涓?mm_page_pcpu_drain 浜嬩欢銆?
-杩欎簺浜嬩欢鐨勪釜浣撴€ц川鏄负浜嗚兘澶熷湪鍒嗛厤鍜岄噴鏀句箣闂磋窡韪〉闈€傝繛缁彂鐢熺殑涓€鎵?drain 鎴?refill 鎰忓懗鐫€鑾峰彇浜嗕竴娆?zone->lock銆傚ぇ閲忕殑 per-CPU refill 鍜?drain 鍙兘鎰忓懗鐫€ CPU 涔嬮棿鐨勮礋杞戒笉鍧囪　锛屽嵆杩囧鐨勫伐浣滈泦涓湪涓€涓湴鏂广€傚畠涔熷彲鑳借〃鏄?per-CPU 鍒楄〃搴斿綋鏇村ぇ鐨勫昂瀵搞€傛渶鍚庯紝澶ч噺鍦ㄤ竴涓?CPU 涓?refill 鑰屽湪鍙︿竴涓?CPU 涓?drain锛屽彲鑳芥槸瀵艰嚧澶ч噺鍥?CPU 涔嬮棿鍐欏叆鑰屼骇鐢熺殑缂撳瓨琛屽脊璺筹紙cache line bounce锛夌殑涓€涓洜绱狅紝鍊煎緱璋冩煡鏄惁鍙互閫氳繃鏌愮绠楁硶鍙樻洿璁╅〉闈㈠湪鍚屼竴涓?CPU 涓婂垎閰嶅拰閲婃斁銆?
+在页面分配器前面是一per-cpu 页面分配器。它仅用order-0 页面，可以减zone->lock 上的争用，并减少struct page 上的写入量
+per-CPU 列表为空或分配了错误类型的页面时，会获取一zone->lock 并重新填per-CPU 列表。对每个分配的页面都会触mm_page_alloc_zone_locked 事件，该事件会指示它是否用于 percpu_refill
+per-CPU 列表过满时，会释放一定数量的页面，每个页面都会触发一mm_page_pcpu_drain 事件
+这些事件的个体性质是为了能够在分配和释放之间跟踪页面。连续发生的一drain refill 意味着获取了一zone->lock。大量的 per-CPU refill drain 可能意味着 CPU 之间的负载不均衡，即过多的工作集中在一个地方。它也可能表per-CPU 列表应当更大的尺寸。最后，大量在一CPU refill 而在另一CPU drain，可能是导致大量CPU 之间写入而产生的缓存行弹跳（cache line bounce）的一个因素，值得调查是否可以通过某种算法变更让页面在同一CPU 上分配和释放
 ## 5. External Fragmentation
 
 ```
@@ -61,5 +61,5 @@ kmem 璺熻釜绯荤粺鎹曡幏鍐呮牳涓笌瀵硅薄鍜岄〉闈㈠垎閰
   mm_page_alloc_extfrag		page=%p pfn=%lu alloc_order=%d fallback_order=%d pageblock_order=%d alloc_migratetype=%d fallback_migratetype=%d fragmenting=%d change_ownership=%d
 
 ```
-澶栭儴纰庣墖浼氬奖鍝嶉珮闃跺垎閰嶆槸鍚︿細鎴愬姛銆傚浜庢煇浜涚被鍨嬬殑纭欢锛岃繖寰堥噸瑕侊紝涓嶈繃鍦ㄥ彲鑳界殑鎯呭喌涓嬩細灏介噺閬垮厤銆傚鏋滅郴缁熸鍦ㄤ娇鐢ㄥぇ椤碉紙huge page锛夛紝骞朵笖闇€瑕佸湪绯荤粺鐢熷懡鍛ㄦ湡鍐呰兘澶熻皟鏁存睜鐨勫ぇ灏忥紝閭ｄ箞杩欎釜鍊煎緢閲嶈銆?
-璇ヤ簨浠剁殑澶ч噺鍑虹幇鎰忓懗鐫€鍐呭瓨姝ｅ湪纰庣墖鍖栵紝楂橀樁鍒嗛厤灏嗗湪鏈潵鐨勬煇涓椂鍒诲紑濮嬪け璐ャ€傚噺灏戣浜嬩欢鍙戠敓鐨勫叾涓竴绉嶆柟娉曟槸锛屾寜 3**pageblock_size**nr_online_nodes 鐨勫閲忓澶?min_free_kbytes锛屽叾涓?pageblock_size 閫氬父鏄粯璁ゅぇ椤靛ぇ灏忋€?
+外部碎片会影响高阶分配是否会成功。对于某些类型的硬件，这很重要，不过在可能的情况下会尽量避免。如果系统正在使用大页（huge page），并且需要在系统生命周期内能够调整池的大小，那么这个值很重要
+该事件的大量出现意味着内存正在碎片化，高阶分配将在未来的某个时刻开始失败。减少该事件发生的其中一种方法是，按 3**pageblock_size**nr_online_nodes 的增量增min_free_kbytes，其pageblock_size 通常是默认大页大小

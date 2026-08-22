@@ -1,23 +1,23 @@
-﻿### Mono(tm) 浜岃繘鍒跺唴鏍告敮鎸侊紙Linux锛?
+﻿### Mono(tm) 二进制内核支持（Linux
 
-瑕侀厤缃?Linux 浠ヨ嚜鍔ㄦ墽琛屽熀浜?Mono 鐨?.NET 浜岃繘鍒舵枃浠讹紙浠?.exe 鏂囦欢褰㈠紡锛夛紝鑰屾棤闇€
-浣跨敤 mono CLR 鍖呰鍣紝浣犲彲浠ヤ娇鐢?BINFMT_MISC 鍐呮牳鏀寔銆?
-瀹屾垚浠ヤ笅姝ラ鍚庯紝杩欏皢鍏佽浣犲儚鎵ц鍏朵粬浠讳綍绋嬪簭涓€鏍锋墽琛屽熀浜?Mono 鐨?.NET 浜岃繘鍒舵枃浠讹細
+要配Linux 以自动执行基Mono .NET 二进制文件（.exe 文件形式），而无需
+使用 mono CLR 包装器，你可以使BINFMT_MISC 内核支持
+完成以下步骤后，这将允许你像执行其他任何程序一样执行基Mono .NET 二进制文件：
 
-1) 浣犲繀椤婚鍏堝畨瑁?Mono CLR 鏀寔锛屽彲浠ラ€氳繃涓嬭浇浜岃繘鍒跺寘銆佹簮浠ｇ爜 tarball 鎴栦粠 Git
-   瀹夎銆傝嫢骞插彂琛岀増鐨勪簩杩涘埗鍖呭彲鍦ㄤ互涓嬩綅缃壘鍒帮細
+1) 你必须首先安Mono CLR 支持，可以通过下载二进制包、源代码 tarball 或从 Git
+   安装。若干发行版的二进制包可在以下位置找到：
 
 	https://www.mono-project.com/download/
 
-   Mono 鐨勭紪璇戣鏄庡彲鍦ㄤ互涓嬩綅缃壘鍒帮細
+   Mono 的编译说明可在以下位置找到：
 
 	https://www.mono-project.com/docs/compiling-mono/linux/
 
-   涓€鏃﹀畨瑁呬簡 Mono CLR 鏀寔锛屽彧闇€纭 `/usr/bin/mono`锛堝彲鑳戒綅浜庡埆澶勶紝渚嬪
-   `/usr/local/bin/mono`锛夊彲浠ユ甯稿伐浣溿€?
-2) 浣犲繀椤诲皢 BINFMT_MISC 缂栬瘧涓烘ā鍧楁垨缂栧叆鍐呮牳锛坄CONFIG_BINFMT_MISC`锛夊苟姝ｇ‘璁剧疆銆?   濡傛灉浣犻€夋嫨灏嗗叾缂栬瘧涓烘ā鍧楋紝鍒欏繀椤讳娇鐢?modprobe/insmod 鎵嬪姩鎻掑叆锛屽洜涓?kmod 鏃犳硶
-   杞绘槗鍦扮敱 binfmt_misc 鏀寔銆傞槄璇绘湰鐩綍涓殑 `binfmt_misc.txt` 鏂囦欢浠ヤ簡瑙ｆ洿澶?   鍏充簬閰嶇疆杩囩▼鐨勪俊鎭€?
-3) 灏嗕互涓嬫潯鐩坊鍔犲埌 `/etc/rc.local` 鎴栫被浼肩殑鍦ㄧ郴缁熷惎鍔ㄦ椂杩愯鐨勮剼鏈腑锛?
+   一旦安装了 Mono CLR 支持，只需确认 `/usr/bin/mono`（可能位于别处，例如
+   `/usr/local/bin/mono`）可以正常工作
+2) 你必须将 BINFMT_MISC 编译为模块或编入内核（`CONFIG_BINFMT_MISC`）并正确设置   如果你选择将其编译为模块，则必须使modprobe/insmod 手动插入，因kmod 无法
+   轻易地由 binfmt_misc 支持。阅读本目录中的 `binfmt_misc.txt` 文件以了解更   关于配置过程的信息
+3) 将以下条目添加到 `/etc/rc.local` 或类似的在系统启动时运行的脚本中
    .. code-block:: sh
 
     # Insert BINFMT_MISC module into the kernel
@@ -43,7 +43,7 @@
         exit 1
     fi
 
-4) 纭 `.exe` 浜岃繘鍒舵枃浠舵棤闇€鍖呰鑴氭湰鍗冲彲杩愯锛屽彧闇€鐩存帴鍚姩璇?`.exe` 鏂囦欢銆?```
+4) 确认 `.exe` 二进制文件无需包装脚本即可运行，只需直接启动`.exe` 文件```
 
 	/usr/bin/xsd.exe
 

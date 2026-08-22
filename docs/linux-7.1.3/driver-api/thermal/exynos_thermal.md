@@ -1,4 +1,4 @@
-﻿## 鍐呮牳椹卞姩 exynos_tmu
+﻿## 内核驱动 exynos_tmu
 
 
 Supported chips:
@@ -10,35 +10,35 @@ Supported chips:
 Authors: Donggeun Kim <dg77.kim@samsung.com>
 Authors: Amit Daniel <amit.daniel@samsung.com>
 
-### TMU 鎺у埗鍣ㄦ弿杩帮細
+### TMU 控制器描述：
 
 
-鏈┍鍔ㄥ厑璁歌鍙?Samsung Exynos4/5 绯诲垪 SoC 鍐呴儴鐨勬俯搴︺€?
-璇ヨ姱鐗囦粎閫氳繃涓€涓瘎瀛樺櫒鏆撮湶娴嬮噺寰楀埌鐨?8 浣嶆俯搴︿唬鐮佸€笺€?娓╁害鍙敱娓╁害浠ｇ爜鎹㈢畻寰楀嚭銆?鍏辨湁涓変釜浠庢俯搴︽崲绠椾负娓╁害浠ｇ爜鐨勫叕寮忋€?
-杩欎笁涓叕寮忓涓嬶細
+本驱动允许读Samsung Exynos4/5 系列 SoC 内部的温度
+该芯片仅通过一个寄存器暴露测量得到8 位温度代码值温度可由温度代码换算得出共有三个从温度换算为温度代码的公式
+这三个公式如下：
 ```
 
 	Tc = (T - 25) * (TI2 - TI1) / (85 - 25) + TI1
 
-  2. 鍗曠偣淇暣锛圤ne point trimming锛?:
+  2. 单点修整（One point trimming:
 
 	Tc = T + TI1 - 25
 
-  3. 鏃犱慨鏁达紙No trimming锛?:
+  3. 无修整（No trimming:
 
 	Tc = T + 50
 
   Tc:
-       娓╁害浠ｇ爜锛孴锛氭俯搴︼紝
+       温度代码，T：温度，
   TI1:
-       25 鎽勬皬搴﹀搴旂殑淇暣淇℃伅锛堝瓨鍌ㄥ湪 TRIMINFO 瀵勫瓨鍣級
-       鍦?25 鎽勬皬搴︿笅娴嬪緱鐨勩€佷繚鎸佷笉鍙樼殑娓╁害浠ｇ爜
+       25 摄氏度对应的修整信息（存储在 TRIMINFO 寄存器）
+       25 摄氏度下测得的、保持不变的温度代码
   TI2:
-       85 鎽勬皬搴﹀搴旂殑淇暣淇℃伅锛堝瓨鍌ㄥ湪 TRIMINFO 瀵勫瓨鍣級
-       鍦?85 鎽勬皬搴︿笅娴嬪緱鐨勩€佷繚鎸佷笉鍙樼殑娓╁害浠ｇ爜
+       85 摄氏度对应的修整信息（存储在 TRIMINFO 寄存器）
+       85 摄氏度下测得的、保持不变的温度代码
 
 ```
-Exynos4/5 涓殑 TMU锛堢儹绠＄悊鍗曞厓锛孴hermal Management Unit锛夊湪娓╁害瓒呰繃棰勫畾涔夌骇鍒椂浜х敓涓柇銆?鍙厤缃殑闃堝€兼渶澶ф暟閲忎负浜斾釜銆?```
+Exynos4/5 中的 TMU（热管理单元，Thermal Management Unit）在温度超过预定义级别时产生中断可配置的阈值最大数量为五个```
 
   Level_0: current temperature > trigger_level_0 + threshold
   Level_1: current temperature > trigger_level_1 + threshold
@@ -46,9 +46,9 @@ Exynos4/5 涓殑 TMU锛堢儹绠＄悊鍗曞厓锛孴hermal Management Unit�
   Level_3: current temperature > trigger_level_3 + threshold
 
 ```
-闃堝€间笌鍚勪釜 trigger_level 閫氳繃鐩稿簲鐨勫瘎瀛樺櫒璁剧疆銆?
-褰撲腑鏂彂鐢熸椂锛屾湰椹卞姩閫氳繃 exynos_report_trigger 鍑芥暟閫氱煡鍐呮牳鐑鏋躲€?铏界劧鍙互涓?level_0 璁剧疆涓柇鏉′欢锛屼絾瀹冨彲鐢ㄤ簬鍚屾闄嶆俯鍔ㄤ綔銆?
-### TMU 椹卞姩鎻忚堪锛?
+阈值与各个 trigger_level 通过相应的寄存器设置
+当中断发生时，本驱动通过 exynos_report_trigger 函数通知内核热框架虽然可以level_0 设置中断条件，但它可用于同步降温动作
+### TMU 驱动描述
 
 ```
 
@@ -62,5 +62,5 @@ Exynos4/5 涓殑 TMU锛堢儹绠＄悊鍗曞厓锛孴hermal Management Unit�
   (exynos_tmu_data.h)	      (exynos_tmu.h)	   (exynos_thermal_common.h)
 
 ```
-a) TMU 閰嶇疆鏁版嵁锛?		瀹冪敱閫氳繃缁撴瀯浣?exynos_tmu_registers 鎻忚堪鐨?TMU 瀵勫瓨鍣ㄥ亸绉?浣嶅煙缁勬垚銆傛澶栬繕浣跨敤鑻ュ共鍏朵粬骞冲彴鏁版嵁锛坰truct exynos_tmu_platform_data锛夋垚鍛樻潵閰嶇疆 TMU銆?b) TMU 椹卞姩锛?		璇ョ粍浠跺垵濮嬪寲 TMU 鎺у埗鍣ㄥ苟璁剧疆涓嶅悓鐨勯槇鍊笺€傚畠閫氳繃璋冪敤 exynos_report_trigger 鏉ヨЕ鍙戞牳蹇冪儹瀹炵幇銆?c) Exynos 鏍稿績鐑皝瑁呭眰锛圗xynos Core thermal wrapper锛夛細
-		瀹冩彁渚?3 涓皝瑁呭嚱鏁颁互浣跨敤鍐呮牳鏍稿績鐑鏋讹紝鍒嗗埆鏄?exynos_unregister_thermal銆乪xynos_register_thermal 鍜?exynos_report_trigger銆?
+a) TMU 配置数据		它由通过结构exynos_tmu_registers 描述TMU 寄存器偏位域组成。此外还使用若干其他平台数据（struct exynos_tmu_platform_data）成员来配置 TMUb) TMU 驱动		该组件初始化 TMU 控制器并设置不同的阈值。它通过调用 exynos_report_trigger 来触发核心热实现c) Exynos 核心热封装层（Exynos Core thermal wrapper）：
+		它提3 个封装函数以使用内核核心热框架，分别exynos_unregister_thermal、exynos_register_thermal exynos_report_trigger

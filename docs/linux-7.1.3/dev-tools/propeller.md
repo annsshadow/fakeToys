@@ -1,32 +1,32 @@
 ﻿
-灏?Propeller 鐢ㄤ簬 Linux 鍐呮牳
+Propeller 用于 Linux 内核
 
 
-鍚敤鍚庯紝鍦ㄤ娇鐢?Clang 缂栬瘧鍣ㄦ椂涓哄唴鏍告彁渚?Propeller 鏋勫缓鏀寔銆侾ropeller 鏄竴绉嶅熀浜庢€ц兘鍓栨瀽鐨勪紭鍖栵紙PGO锛夋柟娉曪紝鐢ㄤ簬浼樺寲浜岃繘鍒跺彲鎵ц鏂囦欢銆備笌 AutoFDO 绫讳技锛屽畠鍒╃敤纭欢閲囨牱鏀堕泦浜岃繘鍒朵腑涓嶅悓浠ｇ爜璺緞鐨勬墽琛岄鐜囦俊鎭€備笌 AutoFDO 涓嶅悓锛岃淇℃伅闅忓悗浼氬湪閾炬帴闃舵涔嬪墠琚敤浜庝紭鍖栵紙鍏朵腑鍖呮嫭锛夊嚱鏁板唴閮ㄥ強璺ㄥ嚱鏁扮殑鍩烘湰鍧楀竷灞€銆?
+启用后，在使Clang 编译器时为内核提Propeller 构建支持。Propeller 是一种基于性能剖析的优化（PGO）方法，用于优化二进制可执行文件。与 AutoFDO 类似，它利用硬件采样收集二进制中不同代码路径的执行频率信息。与 AutoFDO 不同，该信息随后会在链接阶段之前被用于优化（其中包括）函数内部及跨函数的基本块布局
 
-閲囩敤 Propeller 浼樺寲鏃剁殑涓€浜涢噸瑕佹敞鎰忎簨椤癸細
+采用 Propeller 优化时的一些重要注意事项：
 
-#. 灏界瀹冨彲浣滀负鐙珛鐨勪紭鍖栨楠や娇鐢紝浣嗗己鐑堝缓璁湪 AutoFDO銆丄utoFDO+ThinLTO 鎴?Instrument FDO 涔嬩笂搴旂敤 Propeller銆傛湰鏂囨。鐨勫叾浣欓儴鍒嗗潎浠ユ鑼冨紡涓哄墠鎻愩€?
+#. 尽管它可作为独立的优化步骤使用，但强烈建议在 AutoFDO、AutoFDO+ThinLTO Instrument FDO 之上应用 Propeller。本文档的其余部分均以此范式为前提
 
-#. Propeller 鍦?AutoFDO/AutoFDO+ThinLTO/iFDO 涔嬩笂鍐嶈繘琛屼竴杞€ц兘鍓栨瀽銆傛暣涓瀯寤鸿繃绋嬪寘鎷€渂uild-afdo - train-afdo - build-propeller - train-propeller - build-optimized鈥濄€?
+#. Propeller AutoFDO/AutoFDO+ThinLTO/iFDO 之上再进行一轮性能剖析。整个构建过程包括“build-afdo - train-afdo - build-propeller - train-propeller - build-optimized”
 
-#. Propeller 闇€瑕?Clang/Clang++ 涓庨摼鎺ュ櫒锛坙d.lld锛変负 LLVM 19 鎴栨洿楂樼増鏈€?
+#. Propeller 需Clang/Clang++ 与链接器（ld.lld）为 LLVM 19 或更高版本
 
-#. 闄?LLVM 宸ュ叿閾惧锛孭ropeller 杩橀渶瑕佷竴涓€ц兘鍓栨瀽杞崲宸ュ叿锛歨ttps://github.com/google/autofdo锛岀増鏈渶鍦?v0.30.1 涔嬪悗锛歨ttps://github.com/google/autofdo/releases/tag/v0.30.1銆?
+#. LLVM 工具链外，Propeller 还需要一个性能剖析转换工具：https://github.com/google/autofdo，版本需v0.30.1 之后：https://github.com/google/autofdo/releases/tag/v0.30.1
 
-Propeller 浼樺寲杩囩▼鍖呭惈浠ヤ笅姝ラ锛?
+Propeller 优化过程包含以下步骤
 
-#. 鍒濆鏋勫缓锛氬儚閫氬父閭ｆ牱鏋勫缓 AutoFDO 鎴?AutoFDO+ThinLTO 浜岃繘鍒舵枃浠讹紝浣嗛渶甯︿笂涓€缁勭紪璇戞湡/閾炬帴鏈熸爣蹇楋紝浠ヤ究鍦ㄥ唴鏍镐簩杩涘埗鏂囦欢涓垱寤轰竴涓壒娈婄殑鍏冩暟鎹銆傝鐗规畩娈典粎鐢ㄤ簬鎬ц兘鍓栨瀽宸ュ叿锛屽畠涓嶆槸杩愯鏃舵槧鍍忕殑涓€閮ㄥ垎锛屼篃涓嶄細鏀瑰彉鍐呮牳杩愯鏃剁殑鏂囨湰娈点€?
+#. 初始构建：像通常那样构建 AutoFDO AutoFDO+ThinLTO 二进制文件，但需带上一组编译期/链接期标志，以便在内核二进制文件中创建一个特殊的元数据段。该特殊段仅用于性能剖析工具，它不是运行时映像的一部分，也不会改变内核运行时的文本段
 
-#. 鎬ц兘鍓栨瀽锛氶殢鍚庝娇鐢ㄥ叿鏈変唬琛ㄦ€х殑宸ヤ綔璐熻浇杩愯涓婅堪鍐呮牳锛屼互鏀堕泦鎵ц棰戠巼鏁版嵁銆傝繖浜涙暟鎹€氳繃 perf 鍒╃敤纭欢閲囨牱鏀堕泦銆侾ropeller 鍦ㄦ敮鎸侀珮绾?PMU 鐗规€э紙濡?Intel 鏈哄櫒涓婄殑 LBR锛夌殑骞冲彴涓婃渶涓烘湁鏁堛€傛姝ラ涓庝负 AutoFDO 鍓栨瀽鍐呮牳鐨勮繃绋嬬浉鍚岋紙鍏蜂綋鐨?perf 鍙傛暟鍙兘涓嶅悓锛夈€?
+#. 性能剖析：随后使用具有代表性的工作负载运行上述内核，以收集执行频率数据。这些数据通过 perf 利用硬件采样收集。Propeller 在支持高PMU 特性（Intel 机器上的 LBR）的平台上最为有效。此步骤与为 AutoFDO 剖析内核的过程相同（具体perf 参数可能不同）
 
-#. Propeller 鍓栨瀽鏂囦欢鐢熸垚锛氶€氳繃绂荤嚎宸ュ叿灏?perf 杈撳嚭鏂囦欢杞崲涓轰竴瀵?Propeller 鍓栨瀽鏂囦欢銆?
+#. Propeller 剖析文件生成：通过离线工具perf 输出文件转换为一Propeller 剖析文件
 
-#. 浼樺寲鏋勫缓锛氬儚閫氬父閭ｆ牱鏋勫缓 AutoFDO 鎴?AutoFDO+ThinLTO 浼樺寲浜岃繘鍒舵枃浠讹紝浣嗛渶甯︿笂缂栬瘧鏈?閾炬帴鏈熸爣蹇椾互浣跨敤 Propeller 鐨勭紪璇戞湡涓庨摼鎺ユ湡鍓栨瀽鏂囦欢銆傛鏋勫缓姝ラ浣跨敤 3 涓墫鏋愭枃浠垛€斺€擜utoFDO 鍓栨瀽鏂囦欢銆丳ropeller 缂栬瘧鏈熷墫鏋愭枃浠跺拰 Propeller 閾炬帴鏈熷墫鏋愭枃浠躲€?
+#. 优化构建：像通常那样构建 AutoFDO AutoFDO+ThinLTO 优化二进制文件，但需带上编译链接期标志以使用 Propeller 的编译期与链接期剖析文件。此构建步骤使用 3 个剖析文件——AutoFDO 剖析文件、Propeller 编译期剖析文件和 Propeller 链接期剖析文件
 
-#. 閮ㄧ讲锛氫紭鍖栧悗鐨勫唴鏍镐簩杩涘埗鏂囦欢琚儴缃插苟鐢ㄤ簬鐢熶骇鐜锛屼粠鑰屾彁渚涙洿楂樼殑鎬ц兘鍜屾洿浣庣殑寤惰繜銆?
+#. 部署：优化后的内核二进制文件被部署并用于生产环境，从而提供更高的性能和更低的延迟
 
-鍑嗗宸ヤ綔
+准备工作
 
 
 ```
@@ -35,10 +35,10 @@ Propeller 浼樺寲杩囩▼鍖呭惈浠ヤ笅姝ラ锛?
    CONFIG_PROPELLER_CLANG=y
 
 ```
-鑷畾涔?
+自定
 
 
-榛樿鐨?CONFIG_PROPELLER_CLANG 璁剧疆瑕嗙洊 Propeller 鏋勫缓鐨勫唴鏍哥┖闂寸洰鏍囥€備笉杩囷紝鍙互閫氳繃鍦ㄧ浉搴旂殑鍐呮牳 Makefile 涓坊鍔犵被浼间笅闈㈢殑涓€琛岋紝鏉ヤ负鍗曚釜鏂囦欢鎴栫洰褰曞惎鐢ㄦ垨绂佺敤 Propeller 鏋勫缓锛?
+默认CONFIG_PROPELLER_CLANG 设置覆盖 Propeller 构建的内核空间目标。不过，可以通过在相应的内核 Makefile 中添加类似下面的一行，来为单个文件或目录启用或禁用 Propeller 构建
 
 ```
 
@@ -61,12 +61,12 @@ Propeller 浼樺寲杩囩▼鍖呭惈浠ヤ笅姝ラ锛?
 
 
 ```
-宸ヤ綔娴佺▼
+工作流程
 
 
-浠ヤ笅鏄瀯寤?AutoFDO+Propeller 鍐呮牳鐨勭ず渚嬪伐浣滄祦绋嬶細
+以下是构AutoFDO+Propeller 内核的示例工作流程：
 
-1) 鍋囪宸叉寜鐓?AutoFDO 鏂囨。涓殑璇存槑鏀堕泦浜?AutoFDO 鍓栨瀽鏂囦欢锛屽湪涓绘満涓婃瀯寤哄唴鏍?
+1) 假设已按AutoFDO 文档中的说明收集AutoFDO 剖析文件，在主机上构建内
 ```
 
       CONFIG_AUTOFDO_CLANG=y
@@ -77,9 +77,9 @@ Propeller 浼樺寲杩囩▼鍖呭惈浠ヤ笅姝ラ锛?
       $ make LLVM=1 CLANG_AUTOFDO_PROFILE=<autofdo-profile-name>
 
 ```
-2) 鍦ㄦ祴璇曟満鍣ㄤ笂瀹夎璇ュ唴鏍搞€?
+2) 在测试机器上安装该内核
 
-3) 杩愯璐熻浇娴嬭瘯銆俻erf 涓殑 '-c' 閫夐」鎸囧畾閲囨牱浜嬩欢鍛ㄦ湡銆傚缓璁负姝や娇鐢ㄤ竴涓悎閫傜殑绱犳暟锛屼緥濡?500009銆?
+3) 运行负载测试。perf 中的 '-c' 选项指定采样事件周期。建议为此使用一个合适的素数，例500009
 
 ```
 
@@ -92,9 +92,9 @@ Propeller 浼樺寲杩囩▼鍖呭惈浠ヤ笅姝ラ锛?
    Note you can repeat the above steps to collect multiple <perf_file>s.
 
 ```
-4) 锛堝彲閫夛級灏嗗師濮?perf 鏂囦欢涓嬭浇鍒颁富鏈恒€?
+4) （可选）将原perf 文件下载到主机
 
-5) 浣跨敤 create_llvm_prof 宸ュ叿锛坔ttps://github.com/google/autofdo锛夋潵
+5) 使用 create_llvm_prof 工具（https://github.com/google/autofdo）来
 ```
 
       $ create_llvm_prof --binary=<vmlinux> --profile=<perf_file>
@@ -118,7 +118,7 @@ Propeller 浼樺寲杩囩▼鍖呭惈浠ヤ笅姝ラ锛?
                          --propeller_symorder=<propeller_profile_prefix>_ld_profile.txt
 
 ```
-6) 浣跨敤 AutoFDO 涓?Propeller 閲嶆柊鏋勫缓鍐呮牳
+6) 使用 AutoFDO Propeller 重新构建内核
 ```
 
       CONFIG_AUTOFDO_CLANG=y

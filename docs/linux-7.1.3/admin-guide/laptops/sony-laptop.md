@@ -4,17 +4,17 @@
  - Copyright (C) 2004- 2005 Stelian Pop <stelian@popies.net>
  - Copyright (C) 2007 Mattia Dongili <malattia@linux.it>
 
-杩欎釜杩蜂綘椹卞姩椹卞姩 Sony Vaio 绗旇鏈數鑴?ACPI BIOS 涓瓨鍦ㄧ殑 SNC 鍜?SPIC 璁惧銆傝椹卞姩鍦紙灏介噺涓€鑷寸殑锛夊悓涓€鎺ュ彛涓嬫贩鍚堜簡杩欎袱绉嶈澶囩殑鍔熻兘銆傝繖涔熸剰鍛崇潃 sonypi 椹卞姩鐜板湪宸茶 sony-laptop 鍙栦唬銆?
+这个迷你驱动驱动 Sony Vaio 笔记本电ACPI BIOS 中存在的 SNC SPIC 设备。该驱动在（尽量一致的）同一接口下混合了这两种设备的功能。这也意味着 sonypi 驱动现在已被 sony-laptop 取代
 ### Fn keys (hotkeys):
 
 
-涓€浜涘瀷鍙烽€氳繃 SNC 鎴?SPIC 璁惧鎶ュ憡鐑敭锛屾绫讳簨浠舵棦閫氳繃 ACPI 瀛愮郴缁熶綔涓?acpi 浜嬩欢鎶ュ憡锛屼篃閫氳繃 INPUT 瀛愮郴缁熸姤鍛娿€傛煡鐪?/proc/bus/input/devices 鐨勬棩蹇楀彲浠ユ壘鍑鸿繖浜涗簨浠舵槸浠€涔堬紝浠ュ強椹卞姩鍒涘缓浜嗗摢浜涜緭鍏ヨ澶囥€傛澶栵紝浣跨敤 debug 閫夐」鍔犺浇椹卞姩浼氬湪鍐呮牳鏃ュ織涓姤鍛婃墍鏈変簨浠躲€?
-浼犻€掔粰杈撳叆绯荤粺锛堝彲浠ョ敤 udev 閲嶆柊鏄犲皠锛夌殑鈥滄壂鎻忕爜鈥濇槸 sony-laptop.c 妯″潡涓〃 "sony_laptop_input_keycode_map" 鐨勭储寮曘€備緥濡?鈥淔N/E鈥?缁勫悎閿紙鍦ㄦ煇浜涘瀷鍙蜂笂鏄?EJECTCD锛夌敓鎴愭壂鎻忕爜 20锛?x14锛夈€?
+一些型号通过 SNC SPIC 设备报告热键，此类事件既通过 ACPI 子系统作acpi 事件报告，也通过 INPUT 子系统报告。查/proc/bus/input/devices 的日志可以找出这些事件是什么，以及驱动创建了哪些输入设备。此外，使用 debug 选项加载驱动会在内核日志中报告所有事件
+传递给输入系统（可以用 udev 重新映射）的“扫描码”是 sony-laptop.c 模块中表 "sony_laptop_input_keycode_map" 的索引。例“FN/E组合键（在某些型号上EJECTCD）生成扫描码 20x14）
 ### Backlight control:
 
 
-濡傛灉浣犵殑绗旇鏈瀷鍙锋敮鎸侊紝浣犱細鍦?/sys/class/backlight/sony/
-鐩綍涓嬫壘鍒?sysfs 鏂囦欢銆備綘灏嗚兘澶熸煡璇㈠拰璁剧疆褰撳墠灞忓箷浜害锛?
+如果你的笔记本型号支持，你会/sys/class/backlight/sony/
+目录下找sysfs 文件。你将能够查询和设置当前屏幕亮度
 	======================	=========================================
 	brightness		get/set screen brightness (an integer
 				between 0 and 7)
@@ -28,9 +28,9 @@
 
 
 鍔犺浇 sony-laptop 妯″潡浼氬垱寤?/sys/devices/platform/sony-laptop/
-鐩綍锛屽叾涓～鍏呬簡涓€浜涙枃浠躲€?
-浣犲彲浠ラ€氳繃鏍囧噯 UNIX 宸ュ叿瀵硅繖浜涙枃浠惰繘琛屾暣鏁板€肩殑璇?鍐欍€?
-杩欎簺鏂囦欢鏄細
+目录，其中填充了一些文件
+你可以通过标准 UNIX 工具对这些文件进行整数值的写
+这些文件是：
 
 	======================	==========================================
 	brightness_default	screen brightness which will be set
@@ -43,73 +43,73 @@
 	fanspeed		get/set the fan speed
 	======================	==========================================
 
-娉ㄦ剰锛屽鏋滄煇涓枃浠朵笉琚綘鐨勭壒瀹氱瑪璁版湰鍨嬪彿鏀寔锛屽畠鍙兘涓嶅瓨鍦ㄣ€?
+注意，如果某个文件不被你的特定笔记本型号支持，它可能不存在
 ```
 
 	# echo "1" > /sys/devices/platform/sony-laptop/brightness_default
 
 ```
-涓轰笅娆″強浠ュ悗鐨勯噸鍚缃渶浣庡睆骞曚寒搴?
+为下次及以后的重启设置最低屏幕亮
 ```
 
 	# echo "8" > /sys/devices/platform/sony-laptop/brightness_default
 
 ```
-涓轰笅娆″強浠ュ悗鐨勯噸鍚缃渶楂樺睆骞曚寒搴?
+为下次及以后的重启设置最高屏幕亮
 ```
 
 	# cat /sys/devices/platform/sony-laptop/brightness_default
 
 ```
-鑾峰彇璇ュ€?
+获取该
 ```
 
 	# echo "0" > /sys/devices/platform/sony-laptop/audiopower
 
 ```
-鍏抽棴澹板崱
+关闭声卡
 
 ```
 
 	# echo "1" > /sys/devices/platform/sony-laptop/audiopower
 
 ```
-鎵撳紑澹板崱銆?
+打开声卡
 
 ### RFkill control:
 
 
-杈冩柊鐨?Vaio 鍨嬪彿鏆撮湶浜嗕竴缁勪竴鑷寸殑 ACPI 鏂规硶鏉ユ帶鍒跺皠棰戝彂灏勮澶囥€傚鏋滀綘鏈夊垢鎷ユ湁杩欐牱鐨勭瑪璁版湰锛屼綘浼氬湪
+较新Vaio 型号暴露了一组一致的 ACPI 方法来控制射频发射设备。如果你有幸拥有这样的笔记本，你会在
 ```
 
 	# grep . /sys/class/rfkill/*/{state,name}
 
 
 ```
-涓嬫壘鍒版墍闇€鐨?rfkill 璁惧
+下找到所需rfkill 设备
 
 ### Development:
 
 
-濡傛灉浣犳兂甯姪寮€鍙戣繖涓┍鍔紙骞朵笖浣犱笉鎬曞浣犵殑 ACPI BIOS 鍋氬鎬殑浜嬫儏鍙兘缁欎綘鐨勭瑪璁版湰甯︽潵鐨勪换浣曞壇浣滅敤锛夛紝鍔犺浇椹卞姩骞朵紶鍏ラ€夐」 'debug=1'銆?
+如果你想帮助开发这个驱动（并且你不怕对你的 ACPI BIOS 做奇怪的事情可能给你的笔记本带来的任何副作用），加载驱动并传入选项 'debug=1'
 REPEAT:
-	**濡傛灉浣犱笉鍠滄鍐掗櫓琛屼负锛屽氨涓嶈杩欐牱鍋氥€?*
+	**如果你不喜欢冒险行为，就不要这样做*
 
-鍦ㄥ唴鏍告棩蹇椾腑浣犱細鎵惧埌浣犵殑绗旇鏈笂 SNC 璁惧鎷ユ湁鐨勬墍鏈?ACPI 鏂规硶鍒楄〃銆?
-- 瀵逛簬鏂板瀷鍙凤紝浣犱細鐪嬪埌涓€涓暱闀跨殑鏃犳剰涔夋柟娉曞悕鍒楄〃锛岄槄璇?DSDT 琛ㄦ簮鐮佸簲璇ヨ兘鎻ず锛?
-(1) SNC 璁惧浣跨敤鍐呴儴鑳藉姏鏌ユ壘琛?(2) SN00 鐢ㄤ簬鍦ㄦ煡鎵捐〃涓煡鎵惧€?(3) SN06 鍜?SN07 鐢ㄤ簬鏍规嵁浣犲彲浠ラ€氳繃 SN00 杩唬琛ㄨ幏寰楃殑鍋忕Щ閲忚皟鐢ㄧ湡瀹炴柟娉?(4) SN02 鐢ㄤ簬鍚敤浜嬩欢銆?
-鑳藉姏鏌ユ壘琛ㄤ腑鐨勪竴浜涘€兼垨澶氭垨灏戞槸宸茬煡鐨勶紝鍙傝鎵€鏈?sony_call_snc_handle 璋冪敤鐨勪唬鐮侊紝鍏朵粬鍒欐洿鏅︽订銆?
-- 瀵逛簬鏃у瀷鍙凤紝浣犲彲浠ョ湅鍒扮敤浜庢墦寮€/鍏抽棴 CD 椹卞姩鐨?GCDP/GCDP 鏂规硶锛屼絾杩樻湁鍏朵粬鏂规硶锛屽苟涓斿畠浠€氬父鍥犲瀷鍙疯€屽紓銆?
-**鎴戝畬鍏ㄤ笉鐭ラ亾閭ｄ簺鏂规硶鏄仛浠€涔堢殑銆?*
+在内核日志中你会找到你的笔记本上 SNC 设备拥有的所ACPI 方法列表
+- 对于新型号，你会看到一个长长的无意义方法名列表，阅DSDT 表源码应该能揭示
+(1) SNC 设备使用内部能力查找(2) SN00 用于在查找表中查找(3) SN06 SN07 用于根据你可以通过 SN00 迭代表获得的偏移量调用真实方(4) SN02 用于启用事件
+能力查找表中的一些值或多或少是已知的，参见所sony_call_snc_handle 调用的代码，其他则更晦涩
+- 对于旧型号，你可以看到用于打开/关闭 CD 驱动GCDP/GCDP 方法，但还有其他方法，并且它们通常因型号而异
+**我完全不知道那些方法是做什么的*
 
-sony-laptop 椹卞姩涓哄叾涓竴浜涙柟娉曪紙鍦ㄥ涓?Vaio 鍨嬪彿涓婃壘鍒扮殑鏈€鏂版柟娉曪級鍦?/sys/devices/platform/sony-laptop 涓嬪垱寤轰簡涓€涓潯鐩紝灏卞儚 'cdpower' 閭ｆ牱銆備綘鍙互閫氳繃杩涗竴姝ョ紪杈戞簮鐮侊紙鍙傝 'sony_nc_values' 琛紝骞朵娇鐢?SNC_HANDLE_NAMES 瀹忔妸浣犵殑 get/set 鏂规硶鍚嶄綔涓烘柊鏉＄洰鍔犲叆璇ヨ〃锛夋潵鍒涘缓瀵瑰簲浜庝綘鑷繁绗旇鏈柟娉曠殑鍏朵粬鏉＄洰銆?
-浣犵殑浠诲姟锛堝鏋滀綘鎺ュ彈鐨勮瘽锛夋槸灏濊瘯閫氳繃浠庤繖浜涙枃浠惰/鍐欓殢鏈哄€兼潵鎵惧嚭杩欎簺鏉＄洰鏄仛浠€涔堢敤鐨勶紝浠ュ強瀹冧滑瀵逛綘鐨勭瑪璁版湰鏈変粈涔堝奖鍝嶃€?
-濡傛灉浣犲彂鐜颁簡浠讳綍鏈夎叮鐨勪笢瑗匡紝璇峰洖鎶ョ粰鎴戯紝鎴戜笉浼氬惁璁ゅ浣犺涓虹殑鍏ㄩ儴浜嗚В :)
+sony-laptop 驱动为其中一些方法（在多Vaio 型号上找到的最新方法）/sys/devices/platform/sony-laptop 下创建了一个条目，就像 'cdpower' 那样。你可以通过进一步编辑源码（参见 'sony_nc_values' 表，并使SNC_HANDLE_NAMES 宏把你的 get/set 方法名作为新条目加入该表）来创建对应于你自己笔记本方法的其他条目
+你的任务（如果你接受的话）是尝试通过从这些文件读/写随机值来找出这些条目是做什么用的，以及它们对你的笔记本有什么影响
+如果你发现了任何有趣的东西，请回报给我，我不会否认对你行为的全部了解 :)
 
-鍙﹁ http://www.linux.it/~malattia/wiki/index.php/Sony_drivers 鑾峰彇鍏朵粬鏈夌敤淇℃伅銆?
+另见 http://www.linux.it/~malattia/wiki/index.php/Sony_drivers 获取其他有用信息
 ### Bugs/Limitations:
 
 
-- 璇ラ┍鍔ㄥ苟闈炲熀浜?Sony 鐨勫畼鏂规枃妗ｏ紙鍥犱负鏍规湰娌℃湁锛夛紝鍥犳涓嶄繚璇佽椹卞姩鑳藉伐浣滐紝鎴栧仛姝ｇ‘鐨勪簨銆傚敖绠¤繖娌℃湁鍙戠敓鍦ㄦ垜韬笂锛屼絾璇ラ┍鍔ㄥ彲鑳藉浣犵殑绗旇鏈仛寰堢碂绯曠殑浜嬶紝鍖呮嫭姘镐箙鎬ф崯鍧忋€?
-- sony-laptop 鍜?sonypi 椹卞姩涔嬮棿瀹屽叏涓嶄氦浜掋€傚皢鏉ワ紝sonypi 灏嗚绉婚櫎骞剁敱 sony-laptop 鍙栦唬銆?
-- spicctrl 鏄敤浜庝笌 sonypi 椹卞姩锛堥€氳繃 /dev/sonypi锛夐€氫俊鐨勭敤鎴风┖闂村伐鍏凤紝涔熷凡琚純鐢紝鍥犱负瀹冪殑鎵€鏈夌壒鎬х幇鍦ㄩ兘鍙互閫氳繃 sony-laptop 鍦?sysfs 鏍戜笅浣跨敤銆?
+- 该驱动并非基Sony 的官方文档（因为根本没有），因此不保证该驱动能工作，或做正确的事。尽管这没有发生在我身上，但该驱动可能对你的笔记本做很糟糕的事，包括永久性损坏
+- sony-laptop sonypi 驱动之间完全不交互。将来，sonypi 将被移除并由 sony-laptop 取代
+- spicctrl 是用于与 sonypi 驱动（通过 /dev/sonypi）通信的用户空间工具，也已被弃用，因为它的所有特性现在都可以通过 sony-laptop sysfs 树下使用

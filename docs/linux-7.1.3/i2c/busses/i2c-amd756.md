@@ -1,17 +1,17 @@
-﻿## 鍐呮牳椹卞姩 i2c-amd756
+﻿## 内核驱动 i2c-amd756
 
 
-鏀寔鐨勯€傞厤鍣細
+支持的适配器：
   - AMD 756
   - AMD 766
   - AMD 768
   - AMD 8111
 
-    Datasheets: 鍙湪 AMD 缃戠珯鍏紑鑾峰彇
+    Datasheets: 可在 AMD 网站公开获取
 
   - nVidia nForce
 
-    Datasheet: 涓嶅彲鐢?
+    Datasheet: 不可
 
 Authors:
  - Frodo Looijaard <frodol@dds.nl>,
@@ -20,6 +20,6 @@ Authors:
 ### Description
 
 
-璇ラ┍鍔ㄦ敮鎸?AMD 756銆?66銆?68 鍜?8111 澶栬鎬荤嚎鎺у埗鍣紝浠ュ強 nVidia nForce銆?
+该驱动支AMD 7566668 8111 外设总线控制器，以及 nVidia nForce
 
-娉ㄦ剰锛屽浜?8111锛屾湁涓や釜 SMBus 閫傞厤鍣ㄣ€係MBus 1.0 閫傞厤鍣ㄧ敱鏈┍鍔ㄦ敮鎸侊紝鑰?SMBus 2.0 閫傞厤鍣ㄧ敱 i2c-amd8111 椹卞姩鏀寔銆?
+注意，对8111，有两个 SMBus 适配器。SMBus 1.0 适配器由本驱动支持，SMBus 2.0 适配器由 i2c-amd8111 驱动支持

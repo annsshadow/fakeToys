@@ -1,10 +1,10 @@
-﻿## accel/qaic Qualcomm Cloud AI 椹卞姩
+﻿## accel/qaic Qualcomm Cloud AI 驱动
 
-鏈〉鏄?Qualcomm Cloud AI 鍔犻€熷崱锛坬aic锛夐┍鍔ㄦ枃妗ｇ殑绱㈠紩锛屾眹鎬讳簡璇ラ┍鍔ㄦā鍧椾笅鐨勫弬鑰冩枃妗ｄ笌鍚勫瓙璁惧璇存槑鍏ュ彛銆傝鑰呭彲鎹蹇€熷畾浣嶉┍鍔ㄦ杩帮紝浠ュ強 aic080 涓?aic100 绛夊姞閫熷崱鐨勪笓灞炴枃妗ｃ€?
+本页Qualcomm Cloud AI 加速卡（qaic）驱动文档的索引，汇总了该驱动模块下的参考文档与各子设备说明入口。读者可据此快速定位驱动概述，以及 aic080 aic100 等加速卡的专属文档
 
 
 
-accel/qaic 椹卞姩鏀寔 Qualcomm Cloud AI 鏈哄櫒瀛︿範鍔犻€熷崱銆?
+accel/qaic 驱动支持 Qualcomm Cloud AI 机器学习加速卡
 
 - [qaic](qaic)
 - [aic080](aic080)

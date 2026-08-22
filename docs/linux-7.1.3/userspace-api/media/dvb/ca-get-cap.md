@@ -16,21 +16,21 @@ CA_GET_CAP
 
 
 `fd`
-  鐢卞厛鍓?`open()` 璋冪敤杩斿洖鐨勬枃浠舵弿杩扮銆?
+  由先`open()` 调用返回的文件描述符
 
 `caps`
-  鎸囧悜 struct `ca_caps` 鐨勬寚閽堛€?
+  指向 struct `ca_caps` 的指针
 
 ### Description
 
 
-鍚戝唴鏍告煡璇㈡湁鍏冲彲鐢?CA 鍜岃В鎵板櫒鎻掓Ы鍙婂叾绫诲瀷鐨勪俊鎭€?
+向内核查询有关可CA 和解扰器插槽及其类型的信息
 
 ### Return Value
 
 
-鎴愬姛鏃惰繑鍥?0 骞跺～鍏?`ca_caps`銆?
+成功时返0 并填`ca_caps`
 
-鍑洪敊鏃惰繑鍥?-1锛屽苟鐩稿簲鍦拌缃?`errno` 鍙橀噺銆?
+出错时返-1，并相应地设`errno` 变量
 
-閫氱敤閿欒鐮佸湪 Generic Error Codes <gen-errors> 绔犺妭涓弿杩般€?
+通用错误码在 Generic Error Codes <gen-errors> 章节中描述

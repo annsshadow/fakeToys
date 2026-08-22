@@ -6,7 +6,7 @@
 ## Name
 
 
-CEC_DQEVENT - 鍑洪槦锛圖equeue锛変竴涓?CEC 浜嬩欢
+CEC_DQEVENT - 出队（Dequeue）一CEC 事件
 
 ## Synopsis
 
@@ -18,14 +18,14 @@ CEC_DQEVENT - 鍑洪槦锛圖equeue锛変竴涓?CEC 浜嬩欢
 
 
 `fd`
-    `open()` 杩斿洖鐨勬枃浠舵弿杩扮銆?
+    `open()` 返回的文件描述符
 `argp`
 
 ## Description
 
 
-CEC 璁惧鍙互鍙戦€佸紓姝ヤ簨浠躲€傚彲閫氳繃璋冪敤 `CEC_DQEVENT` 鏉ユ绱㈣繖浜涗簨浠躲€傚鏋滄枃浠舵弿杩扮澶勪簬闈為樆濉炴ā寮忎笖娌℃湁鎸傝捣浜嬩欢锛屽垯杩斿洖 -1 骞跺皢 errno 璁剧疆涓?`EAGAIN` 閿欒鐮併€?
-鍐呴儴浜嬩欢闃熷垪鏄寜鏂囦欢鍙ユ焺锛坒ilehandle锛夊拰浜嬩欢绫诲瀷鍒嗗埆缁存姢鐨勩€傚鏋滈槦鍒楀凡婊★紝鍒欐渶鍚庝竴涓簨浠朵細琚柊浜嬩欢瑕嗙洊銆傝繖鎰忓懗鐫€涓棿缁撴灉鍙兘琚涪寮冿紝浣嗘渶鏂颁簨浠跺缁堝彲鐢ㄣ€傝繖涔熸剰鍛崇潃鏈夊彲鑳借鍒颁袱涓叿鏈夌浉鍚屽€肩殑杩炵画浜嬩欢锛堜緥濡備袱涓?CEC_EVENT_STATE_CHANGE <CEC-EVENT-STATE-CHANGE> 浜嬩欢锛屽叾鐘舵€佺浉鍚岋級銆傚湪杩欑鎯呭喌涓嬶紝涓棿鐨勭姸鎬佸彉鍖栦細涓㈠け锛屼絾鍙互淇濊瘉涓ゆ浜嬩欢涔嬮棿鐨勭姸鎬佺‘瀹炲彂鐢熻繃鍙樺寲銆?
+CEC 设备可以发送异步事件。可通过调用 `CEC_DQEVENT` 来检索这些事件。如果文件描述符处于非阻塞模式且没有挂起事件，则返回 -1 并将 errno 设置`EAGAIN` 错误码
+内部事件队列是按文件句柄（filehandle）和事件类型分别维护的。如果队列已满，则最后一个事件会被新事件覆盖。这意味着中间结果可能被丢弃，但最新事件始终可用。这也意味着有可能读到两个具有相同值的连续事件（例如两CEC_EVENT_STATE_CHANGE <CEC-EVENT-STATE-CHANGE> 事件，其状态相同）。在这种情况下，中间的状态变化会丢失，但可以保证两次事件之间的状态确实发生过变化
 
 
     :header-rows:  0
@@ -77,21 +77,21 @@ CEC 璁惧鍙互鍙戦€佸紓姝ヤ簨浠躲€傚彲閫氳繃璋冪敤 
 
     - - __u64
       - `ts`
-      - 浜嬩欢鐨勬椂闂存埑锛屽崟浣嶄负 ns銆?
-	璇ユ椂闂存埑鍙栬嚜 `CLOCK_MONOTONIC` 鏃堕挓銆?
-	鑻ヨ鍦ㄧ敤鎴风┖闂磋闂悓涓€鏃堕挓锛屽彲浣跨敤 `clock_gettime`銆?    - - __u32
+      - 事件的时间戳，单位为 ns
+	该时间戳取自 `CLOCK_MONOTONIC` 时钟
+	若要在用户空间访问同一时钟，可使用 `clock_gettime`    - - __u32
       - `event`
-      - CEC 浜嬩欢绫诲瀷锛屽弬瑙?cec-events銆?    - - __u32
+      - CEC 事件类型，参cec-events    - - __u32
       - `flags`
-      - 浜嬩欢鏍囧織锛屽弬瑙?cec-event-flags銆?    - - union {
+      - 事件标志，参cec-event-flags    - - union {
       - (anonymous)
     - - struct cec_event_state_change
       - `state_change`
-      - 鐢?CEC_EVENT_STATE_CHANGE <CEC-EVENT-STATE-CHANGE> 浜嬩欢
-	鍙戦€佺殑鏂扮殑閫傞厤鍣ㄧ姸鎬併€?    - - struct cec_event_lost_msgs
+      - CEC_EVENT_STATE_CHANGE <CEC-EVENT-STATE-CHANGE> 事件
+	发送的新的适配器状态    - - struct cec_event_lost_msgs
       - `lost_msgs`
-      - 鐢?CEC_EVENT_LOST_MSGS <CEC-EVENT-LOST-MSGS> 浜嬩欢
-	鍙戦€佺殑涓㈠け娑堟伅鏁伴噺銆?    - - }
+      - CEC_EVENT_LOST_MSGS <CEC-EVENT-LOST-MSGS> 事件
+	发送的丢失消息数量    - - }
       -
 
 
@@ -104,47 +104,47 @@ CEC 璁惧鍙互鍙戦€佸紓姝ヤ簨浠躲€傚彲閫氳繃璋冪敤 
 
       - `CEC_EVENT_STATE_CHANGE`
       - 1
-      - 褰?CEC 閫傞厤鍣ㄧ姸鎬佸彂鐢熷彉鍖栨椂鐢熸垚銆傝皟鐢?open() 鏃朵細涓鸿鏂囦欢鍙ユ焺
-	鐢熸垚涓€鏉″垵濮嬩簨浠讹紝鍙嶆槧褰撴椂 CEC 閫傞厤鍣ㄧ殑鐘舵€併€?    - .. _`CEC-EVENT-LOST-MSGS`:
+      - CEC 适配器状态发生变化时生成。调open() 时会为该文件句柄
+	生成一条初始事件，反映当时 CEC 适配器的状态    - .. _`CEC-EVENT-LOST-MSGS`:
 
       - `CEC_EVENT_LOST_MSGS`
       - 2
-      - 濡傛灉鐢变簬搴旂敤绋嬪簭鏈兘鍙婃椂鍑洪槦 CEC 娑堟伅鑰屽鑷翠竴鏉℃垨澶氭潯
-	CEC 娑堟伅涓㈠け锛屽垯鐢熸垚璇ヤ簨浠躲€?    - .. _`CEC-EVENT-PIN-CEC-LOW`:
+      - 如果由于应用程序未能及时出队 CEC 消息而导致一条或多条
+	CEC 消息丢失，则生成该事件    - .. _`CEC-EVENT-PIN-CEC-LOW`:
 
       - `CEC_EVENT_PIN_CEC_LOW`
       - 3
-      - 褰?CEC 寮曡剼浠庨珮鐢靛帇鍙樹负浣庣數鍘嬫椂鐢熸垚銆備粎閫傜敤浜庤缃簡
-	`CEC_CAP_MONITOR_PIN` 鑳藉姏鐨勯€傞厤鍣ㄣ€?    - .. _`CEC-EVENT-PIN-CEC-HIGH`:
+      - CEC 引脚从高电压变为低电压时生成。仅适用于设置了
+	`CEC_CAP_MONITOR_PIN` 能力的适配器    - .. _`CEC-EVENT-PIN-CEC-HIGH`:
 
       - `CEC_EVENT_PIN_CEC_HIGH`
       - 4
-      - 褰?CEC 寮曡剼浠庝綆鐢靛帇鍙樹负楂樼數鍘嬫椂鐢熸垚銆備粎閫傜敤浜庤缃簡
-	`CEC_CAP_MONITOR_PIN` 鑳藉姏鐨勯€傞厤鍣ㄣ€?    - .. _`CEC-EVENT-PIN-HPD-LOW`:
+      - CEC 引脚从低电压变为高电压时生成。仅适用于设置了
+	`CEC_CAP_MONITOR_PIN` 能力的适配器    - .. _`CEC-EVENT-PIN-HPD-LOW`:
 
       - `CEC_EVENT_PIN_HPD_LOW`
       - 5
-      - 褰?HPD 寮曡剼浠庨珮鐢靛帇鍙樹负浣庣數鍘嬫椂鐢熸垚銆備粎閫傜敤浜庤缃簡
-	`CEC_CAP_MONITOR_PIN` 鑳藉姏鐨勯€傞厤鍣ㄣ€傝皟鐢?open() 鏃跺彲璇诲彇 HPD
-	寮曡剼锛岃嫢 HPD 涓轰綆鐢靛钩锛屽垯灏嗕负璇ユ枃浠跺彞鏌勭敓鎴愪竴鏉″垵濮嬩簨浠躲€?    - .. _`CEC-EVENT-PIN-HPD-HIGH`:
+      - HPD 引脚从高电压变为低电压时生成。仅适用于设置了
+	`CEC_CAP_MONITOR_PIN` 能力的适配器。调open() 时可读取 HPD
+	引脚，若 HPD 为低电平，则将为该文件句柄生成一条初始事件    - .. _`CEC-EVENT-PIN-HPD-HIGH`:
 
       - `CEC_EVENT_PIN_HPD_HIGH`
       - 6
-      - 褰?HPD 寮曡剼浠庝綆鐢靛帇鍙樹负楂樼數鍘嬫椂鐢熸垚銆備粎閫傜敤浜庤缃簡
-	`CEC_CAP_MONITOR_PIN` 鑳藉姏鐨勯€傞厤鍣ㄣ€傝皟鐢?open() 鏃跺彲璇诲彇 HPD
-	寮曡剼锛岃嫢 HPD 涓洪珮鐢靛钩锛屽垯灏嗕负璇ユ枃浠跺彞鏌勭敓鎴愪竴鏉″垵濮嬩簨浠躲€?    - .. _`CEC-EVENT-PIN-5V-LOW`:
+      - HPD 引脚从低电压变为高电压时生成。仅适用于设置了
+	`CEC_CAP_MONITOR_PIN` 能力的适配器。调open() 时可读取 HPD
+	引脚，若 HPD 为高电平，则将为该文件句柄生成一条初始事件    - .. _`CEC-EVENT-PIN-5V-LOW`:
 
       - `CEC_EVENT_PIN_5V_LOW`
       - 6
-      - 褰?5V 寮曡剼浠庨珮鐢靛帇鍙樹负浣庣數鍘嬫椂鐢熸垚銆備粎閫傜敤浜庤缃簡
-	`CEC_CAP_MONITOR_PIN` 鑳藉姏鐨勯€傞厤鍣ㄣ€傝皟鐢?open() 鏃跺彲璇诲彇 5V
-	寮曡剼锛岃嫢 5V 涓轰綆鐢靛钩锛屽垯灏嗕负璇ユ枃浠跺彞鏌勭敓鎴愪竴鏉″垵濮嬩簨浠躲€?    - .. _`CEC-EVENT-PIN-5V-HIGH`:
+      - 5V 引脚从高电压变为低电压时生成。仅适用于设置了
+	`CEC_CAP_MONITOR_PIN` 能力的适配器。调open() 时可读取 5V
+	引脚，若 5V 为低电平，则将为该文件句柄生成一条初始事件    - .. _`CEC-EVENT-PIN-5V-HIGH`:
 
       - `CEC_EVENT_PIN_5V_HIGH`
       - 7
-      - 褰?5V 寮曡剼浠庝綆鐢靛帇鍙樹负楂樼數鍘嬫椂鐢熸垚銆備粎閫傜敤浜庤缃簡
-	`CEC_CAP_MONITOR_PIN` 鑳藉姏鐨勯€傞厤鍣ㄣ€傝皟鐢?open() 鏃跺彲璇诲彇 5V
-	寮曡剼锛岃嫢 5V 涓洪珮鐢靛钩锛屽垯灏嗕负璇ユ枃浠跺彞鏌勭敓鎴愪竴鏉″垵濮嬩簨浠躲€?
+      - 5V 引脚从低电压变为高电压时生成。仅适用于设置了
+	`CEC_CAP_MONITOR_PIN` 能力的适配器。调open() 时可读取 5V
+	引脚，若 5V 为高电平，则将为该文件句柄生成一条初始事件
 
 
     :header-rows:  0
@@ -155,20 +155,20 @@ CEC 璁惧鍙互鍙戦€佸紓姝ヤ簨浠躲€傚彲閫氳繃璋冪敤 
 
       - `CEC_EVENT_FL_INITIAL_STATE`
       - 1
-      - 閽堝璁惧鎵撳紑鏃剁敓鎴愮殑鍒濆浜嬩欢璁剧疆銆傚摢浜涗簨浠朵細杩欐牱鍋氾紝鍙傝涓婅〃銆?	杩欐牱搴旂敤绋嬪簭鍙互鍦?open() 鏃朵簡瑙ｅ埌 CEC 閫傞厤鍣ㄧ殑鍒濆鐘舵€併€?    - .. _`CEC-EVENT-FL-DROPPED-EVENTS`:
+      - 针对设备打开时生成的初始事件设置。哪些事件会这样做，参见上表	这样应用程序可以open() 时了解到 CEC 适配器的初始状态    - .. _`CEC-EVENT-FL-DROPPED-EVENTS`:
 
       - `CEC_EVENT_FL_DROPPED_EVENTS`
       - 2
-      - 濡傛灉缁欏畾浜嬩欢绫诲瀷鐨勪竴涓垨澶氫釜浜嬩欢宸茶涓㈠純锛屽垯璁剧疆璇ユ爣蹇椼€?	杩欒〃鏄庡簲鐢ㄧ▼搴忔棤娉曡窡涓婂鐞嗛€熷害銆?
+      - 如果给定事件类型的一个或多个事件已被丢弃，则设置该标志	这表明应用程序无法跟上处理速度
 
 ## Return Value
 
 
-鎴愬姛鏃惰繑鍥?0锛屽嚭閿欐椂杩斿洖 -1 骞堕€傚綋鍦拌缃?`errno` 鍙橀噺銆傞€氱敤閿欒鐮佸湪
-Generic Error Codes <gen-errors> 绔犺妭涓弿杩般€?
-ioctl CEC_DQEVENT <CEC_DQEVENT> 鍙兘杩斿洖浠ヤ笅閿欒鐮侊細
+成功时返0，出错时返回 -1 并适当地设`errno` 变量。通用错误码在
+Generic Error Codes <gen-errors> 章节中描述
+ioctl CEC_DQEVENT <CEC_DQEVENT> 可能返回以下错误码：
 
 EAGAIN
-    褰撴枃浠跺彞鏌勫浜庨潪闃诲妯″紡涓旀病鏈夋寕璧蜂簨浠舵椂杩斿洖銆?
+    当文件句柄处于非阻塞模式且没有挂起事件时返回
 ERESTARTSYS
-    鍦ㄩ樆濉炴ā寮忎笅绛夊緟浜嬩欢鍒拌揪鏃讹紝鏀跺埌浜嗕竴涓腑鏂紙渚嬪 Ctrl-C锛夈€?
+    在阻塞模式下等待事件到达时，收到了一个中断（例如 Ctrl-C）
