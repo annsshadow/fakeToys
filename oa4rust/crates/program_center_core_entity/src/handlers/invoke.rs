@@ -154,12 +154,9 @@ pub async fn invoke_delete(
 }
 
 pub fn _router(_pool: Pool, db: Option<DatabaseConnection>) -> Router {
-    let router = Router::new()
-        .route("/jaxrs/program_center/invoke/list", get(invoke_list))
-        .route("/jaxrs/program_center/invoke", post(invoke_create))
-        .route("/jaxrs/program_center/invoke/{id}", put(invoke_update).delete(invoke_delete));
-    match db {
-        Some(conn) => router.layer(Extension(conn)),
-        None => router,
-    }
+    // All /jaxrs/program_center/* routes are owned by the program_center
+    // crate (raw-SQL implementations). Registering them here too would
+    // panic axum at merge time ("Overlapping method route").
+    Router::new()
 }
+
