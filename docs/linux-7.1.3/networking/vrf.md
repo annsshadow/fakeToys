@@ -1,29 +1,29 @@
 ﻿
-## Virtual Routing and Forwarding锛堣櫄鎷熻矾鐢变笌杞彂锛孷RF锛?
+## Virtual Routing and Forwarding（虚拟路由与转发，VRF
 
 
-## The VRF Device锛圴RF 璁惧锛?
+## The VRF Device（VRF 设备
 
 
-VRF 璁惧閰嶅悎 ip 瑙勫垯锛屽彲浠ュ湪 Linux 缃戠粶鏍堜腑鍒涘缓铏氭嫙璺敱涓庤浆鍙戝煙
-锛堝叿浣撳嵆 VRF銆乂RF-lite锛夈€備竴涓吀鍨嬬殑浣跨敤鍦烘櫙鏄绉熸埛闂锛氭瘡涓鎴?
-閮芥嫢鏈夊悇鑷嫭绔嬬殑璺敱琛紝骞朵笖鑷冲皯闇€瑕佷笉鍚岀殑榛樿缃戝叧銆?
+VRF 设备配合 ip 规则，可以在 Linux 网络栈中创建虚拟路由与转发域
+（具体即 VRF、VRF-lite）。一个典型的使用场景是多租户问题：每个租
+都拥有各自独立的路由表，并且至少需要不同的默认网关
 
-杩涚▼鍙互閫氳繃灏嗗鎺ュ瓧缁戝畾鍒?VRF 璁惧锛屼粠鑰屽仛鍒扳€淰RF 鎰熺煡鈥濄€傞€氳繃璇ュ鎺ュ瓧
-鏀跺彂鐨勬姤鏂囬殢鍚庝細浣跨敤涓?VRF 璁惧鐩稿叧鑱旂殑璺敱琛ㄣ€俈RF 璁惧瀹炵幇鐨勪竴涓噸瑕?
-鐗规€ф槸瀹冨彧褰卞搷绗?3 灞傚強浠ヤ笂锛屽洜姝?L2 宸ュ叿锛堜緥濡?LLDP锛変笉浼氬彈鍒板奖鍝?
-锛堝嵆鏃犻渶鍦ㄦ瘡涓?VRF 涓垎鍒繍琛岋級銆傝璁捐杩樺厑璁镐娇鐢ㄦ洿楂樹紭鍏堢骇鐨?ip 瑙勫垯
-锛堝熀浜庣瓥鐣ョ殑璺敱锛孭BR锛夋潵浼樺厛浜?VRF 璁惧瑙勫垯锛屼粠鑰屾寜闇€寮曞鐗瑰畾娴侀噺銆?
+进程可以通过将套接字绑定VRF 设备，从而做到“VRF 感知”。通过该套接字
+收发的报文随后会使用VRF 设备相关联的路由表。VRF 设备实现的一个重
+特性是它只影响3 层及以上，因L2 工具（例LLDP）不会受到影
+（即无需在每VRF 中分别运行）。该设计还允许使用更高优先级ip 规则
+（基于策略的路由，PBR）来优先VRF 设备规则，从而按需引导特定流量
 
-姝ゅ锛孷RF 璁惧鏀寔灏?VRF 宓屽鍦ㄥ懡鍚嶇┖闂村唴銆備緥濡傦紝缃戠粶鍛藉悕绌洪棿鍦ㄨ澶囧眰
-鎻愪緵缃戠粶鎺ュ彛鐨勯殧绂伙紝鍛藉悕绌洪棿鍐呮帴鍙ｄ笂鐨?VLAN 鎻愪緵 L2 闅旂锛岃€?VRF 璁惧
-鍒欐彁渚?L3 闅旂銆?
+此外，VRF 设备支持VRF 嵌套在命名空间内。例如，网络命名空间在设备层
+提供网络接口的隔离，命名空间内接口上VLAN 提供 L2 隔离，VRF 设备
+则提L3 隔离
 
-### Design锛堣璁★級
+### Design（设计）
 
 
-VRF 璁惧鍒涘缓鏃朵細鍏宠仈涓€寮犺矾鐢辫〃銆傜綉缁滄帴鍙ｈ浠庡睘浜庢煇涓?VRF 璁惧鍚庯紝VRF
-灏卞埄鐢ㄥ畠鏉ュ紩瀵煎叆鍚戜笌鍑哄悜鎶ユ枃锛?
+VRF 设备创建时会关联一张路由表。网络接口被从属于某VRF 设备后，VRF
+就利用它来引导入向与出向报文
 
 ```
 	 +-----------------------------+
@@ -39,146 +39,146 @@ VRF 璁惧鍒涘缓鏃朵細鍏宠仈涓€寮犺矾鐢辫〃銆傜綉缁滄�
 			      +------+ +------+
 
 ```
-鍦ㄨ浠庡睘浜?VRF 璁惧鐨勬帴鍙ｄ笂鏀跺埌鐨勬姤鏂囷紝浼氬湪 IPv4 涓?IPv6 鍗忚鏍堜腑琚垏鎹㈠埌
-VRF 璁惧锛屼粠鑰岀粰浜轰竴绉嶆姤鏂囨祦缁?VRF 璁惧鐨勫嵃璞°€傜被浼煎湴锛屽湪鍑虹珯鏂瑰悜涓婏紝璺敱
-瑙勫垯浼氬湪鎶ユ枃鐪熸鍙戝嚭鍓嶅皢鍏堕€佸線 VRF 璁惧椹卞姩銆傝繖浣垮緱鍦?VRF 璁惧涓婁娇鐢?
-tcpdump 鍗冲彲鎹曡幏杩涘嚭鏁翠釜 VRF 鐨勬墍鏈夋姤鏂嘰 [^1^]_銆傚悓鏍峰湴锛屽彲浠ュ埄鐢?VRF 璁惧
-搴旂敤 netfilter\ [^2^]_ 涓?tc 瑙勫垯锛屼粠鑰屾寚瀹氶€傜敤浜庢暣涓?VRF 鍩熺殑瑙勫垯銆?
+在被从属VRF 设备的接口上收到的报文，会在 IPv4 IPv6 协议栈中被切换到
+VRF 设备，从而给人一种报文流VRF 设备的印象。类似地，在出站方向上，路由
+规则会在报文真正发出前将其送往 VRF 设备驱动。这使得VRF 设备上使
+tcpdump 即可捕获进出整个 VRF 的所有报文\ [^1^]_。同样地，可以利VRF 设备
+应用 netfilter\ [^2^]_ tc 规则，从而指定适用于整VRF 域的规则
 
-       娉ㄦ剰锛歵cpdump 鐩墠鐪嬩笉鍒拌繖浜涙姤鏂囥€傝闄愬埗灏嗗湪鏈潵鐨勭増鏈腑浜堜互瑙ｅ喅銆?
+       注意：tcpdump 目前看不到这些报文。该限制将在未来的版本中予以解决
 
-       瀵逛簬鍏ュ悜锛孖NPUT 涓?PREROUTING 瑙勫垯鐨?skb->dev 琚涓?VRF 璁惧锛?
-       瀵逛簬鍑哄悜锛孭OSTROUTING 涓?OUTPUT 瑙勫垯鍙互浣跨敤 VRF 璁惧鎴栫湡瀹炵殑
-       鍑哄悜璁惧杩涜缂栧啓銆?
+       对于入向，INPUT PREROUTING 规则skb->dev 被设VRF 设备
+       对于出向，POSTROUTING OUTPUT 规则可以使用 VRF 设备或真实的
+       出向设备进行编写
 
-### Setup锛堥厤缃級
+### Setup（配置）
 
 
-1. 鍒涘缓 VRF 璁惧锛屽苟鍏宠仈涓€寮?FIB 琛細
+1. 创建 VRF 设备，并关联一FIB 表：
 
 ```
 	ip link add vrf-blue type vrf table 10
 	ip link set dev vrf-blue up
 
 ```
-2. 涓€鏉?l3mdev FIB 瑙勫垯灏嗘煡鎵惧紩瀵煎埌涓庤璁惧鐩稿叧鑱旂殑琛ㄣ€傚崟涓?l3mdev 瑙勫垯
-   瓒充互鏈嶅姟鎵€鏈?VRF銆傚綋棣栦釜璁惧鍒涘缓鏃讹紝VRF 璁惧浼氫负 IPv4 涓?IPv6 娣诲姞
-   l3mdev 瑙勫垯锛岄粯璁や紭鍏堢骇涓?1000銆傜敤鎴峰闇€鍙垹闄よ瑙勫垯锛屽苟浠ヤ笉鍚屼紭鍏堢骇
-   閲嶆柊娣诲姞锛屾垨瀹夎鎸?VRF 鍒掑垎鐨勮鍒欍€?
+2. 一l3mdev FIB 规则将查找引导到与该设备相关联的表。单l3mdev 规则
+   足以服务所VRF。当首个设备创建时，VRF 设备会为 IPv4 IPv6 添加
+   l3mdev 规则，默认优先级1000。用户如需可删除该规则，并以不同优先级
+   重新添加，或安装VRF 划分的规则
 
 ```
        ip ru add oif vrf-blue table 10
        ip ru add iif vrf-blue table 10
 
 ```
-3. 涓?VRF 娣诲姞 IPv4 涓?IPv6 榛樿璺敱銆備緥濡傦紝浣跨敤榛樿涓嶅彲杈捐矾鐢变綔涓哄厹搴曪紝
-   纭繚浠讳綍璺敱鍗忚閮借兘瑕嗙洊瀹冿細
+3. VRF 添加 IPv4 IPv6 默认路由。例如，使用默认不可达路由作为兜底，
+   确保任何路由协议都能覆盖它：
 
 ```
        ip route add table 10 unreachable default metric 4278198272
 
 ```
-璇ヨ緝楂樼殑 metric 鍊肩‘淇濋粯璁や笉鍙揪璺敱鍙璺敱鍗忚濂椾欢瑕嗙洊銆侳RRouting 灏?
-鍐呮牳 metric 瑙ｉ噴涓虹粍鍚堢殑绠＄悊璺濈锛堥珮瀛楄妭锛変笌浼樺厛绾э紙浣?3 瀛楄妭锛夛紝鍥犳
-涓婅堪 metric 绛変环浜?[255/8192]銆?
+该较高的 metric 值确保默认不可达路由可被路由协议套件覆盖。FRRouting 
+内核 metric 解释为组合的管理距离（高字节）与优先级（3 字节），因此
+上述 metric 等价[255/8192]
 
-4. 灏嗙綉缁滄帴鍙ｄ粠灞炰簬 VRF 璁惧锛?
+4. 将网络接口从属于 VRF 设备
 
 ```
        ip link set dev eth1 master vrf-blue
 
 ```
-浠庡睘浜?VRF 璁惧鐨勬湰鍦颁笌鐩磋繛璺敱浼氳嚜鍔ㄧЩ鍔ㄥ埌涓庤 VRF 璁惧鐩稿叧鑱旂殑琛ㄣ€?
-浠讳綍渚濊禆浜庤浠庡睘璁惧鐨勯澶栬矾鐢变細琚涪寮冿紝闇€瑕佸湪浠庡睘鍏崇郴寤虹珛鍚庨噸鏂版彃鍏?
-鍒?VRF FIB 琛ㄣ€?
+从属VRF 设备的本地与直连路由会自动移动到与该 VRF 设备相关联的表
+任何依赖于该从属设备的额外路由会被丢弃，需要在从属关系建立后重新插
+VRF FIB 表
 
-5. IPv6 sysctl 閫夐」 keep_addr_on_down 鍙紑鍚紝浠ュ湪 VRF 浠庡睘鍏崇郴鍙樺寲鏃?
-   淇濈暀 IPv6 鍏ㄥ眬鍦板潃锛?
+5. IPv6 sysctl 选项 keep_addr_on_down 可开启，以在 VRF 从属关系变化
+   保留 IPv6 全局地址
 
 ```
        sysctl -w net.ipv6.conf.all.keep_addr_on_down=1
 
 ```
-6. 鍚?VRF 琛ㄦ坊鍔犺矾鐢憋細
+6. VRF 表添加路由：
 
 ```
        ip route add table 10 ...
 
 ```
-### Applications锛堝簲鐢級
+### Applications（应用）
 
 
-瑕佸湪 VRF 鍐呭伐浣滅殑搴旂敤闇€瑕佸皢鍏跺鎺ュ瓧缁戝畾鍒?VRF 璁惧锛屽彲浣跨敤 setsockopt锛?
+要在 VRF 内工作的应用需要将其套接字绑定VRF 设备，可使用 setsockopt
 
 ```
     setsockopt(sd, SOL_SOCKET, SO_BINDTODEVICE, dev, strlen(dev)+1);
 
 ```
-鎴栦娇鐢?cmsg 涓?IP_PKTINFO 鏉ユ寚瀹氳緭鍑鸿澶囥€?
+或使cmsg IP_PKTINFO 来指定输出设备
 
-榛樿鎯呭喌涓嬶紝鏈粦瀹氬鎺ュ瓧鐨勭鍙ｇ粦瀹氳寖鍥翠粎闄愪簬榛樿 VRF銆備篃灏辨槸璇达紝鍒拌揪
-浠庡睘浜?l3mdev 鐨勬帴鍙ｇ殑鎶ユ枃涓嶄細琚叾鍖归厤锛涜€岃繘绋嬭嫢缁戝畾鍒版煇涓?l3mdev锛屽垯
-鍙互缁戝畾鍒板悓涓€绔彛銆?
+默认情况下，未绑定套接字的端口绑定范围仅限于默认 VRF。也就是说，到达
+从属l3mdev 的接口的报文不会被其匹配；而进程若绑定到某l3mdev，则
+可以绑定到同一端口
 
-杩愯鍦ㄩ粯璁?VRF 涓婁笅鏂囷紙鍗虫湭缁戝畾鍒颁换浣?VRF 璁惧锛変腑鐨?TCP 涓?UDP 鏈嶅姟锛?
-鍙€氳繃寮€鍚互涓嬮€夐」鍦ㄦ墍鏈?VRF 鍩熶腑宸ヤ綔锛?
+运行在默VRF 上下文（即未绑定到任VRF 设备）中TCP UDP 服务
+可通过开启以下选项在所VRF 域中工作
 
 ```
     sysctl -w net.ipv4.tcp_l3mdev_accept=1
     sysctl -w net.ipv4.udp_l3mdev_accept=1
 
 ```
-杩欎簺閫夐」榛樿鍏抽棴锛屼娇寰?VRF 涓殑濂楁帴瀛楀彧琚€変腑澶勭悊璇?VRF 鍐呯殑鎶ユ枃銆俁AW
-濂楁帴瀛楁湁绫讳技閫夐」锛屽嚭浜庡悜鍚庡吋瀹归粯璁ゅ紑鍚紝浠ヤ究鐢?cmsg 涓?IP_PKTINFO 鎸囧畾
-杈撳嚭璁惧锛屼絾浣跨敤鐨勬槸鏈粦瀹氬埌瀵瑰簲 VRF 鐨勫鎺ュ瓧銆備緥濡傦紝杩欏厑璁歌€佸紡 ping
-瀹炵幇鍦ㄦ寚瀹氳澶囩殑鎯呭喌涓嬭繍琛岋紝鑰屾棤闇€鍦?VRF 涓墽琛屻€傝閫夐」鍙叧闂紝浠庤€屼娇
-鍦?VRF 涓婁笅鏂囦腑鏀跺埌鐨勬姤鏂囧彧鐢辩粦瀹氬埌 VRF 鐨?raw 濂楁帴瀛楀鐞嗭細
+这些选项默认关闭，使VRF 中的套接字只被选中处理VRF 内的报文。RAW
+套接字有类似选项，出于向后兼容默认开启，以便cmsg IP_PKTINFO 指定
+输出设备，但使用的是未绑定到对应 VRF 的套接字。例如，这允许老式 ping
+实现在指定设备的情况下运行，而无需VRF 中执行。该选项可关闭，从而使
+VRF 上下文中收到的报文只由绑定到 VRF raw 套接字处理：
 
 ```
     sysctl -w net.ipv4.raw_l3mdev_accept=0
 
 ```
-VRF 璁惧涓婄殑 netfilter 瑙勫垯涔熷彲鐢ㄤ簬闄愬埗瀵硅繍琛屽湪榛樿 VRF 涓婁笅鏂囦腑鐨?
-鏈嶅姟鐨勮闂€?
+VRF 设备上的 netfilter 规则也可用于限制对运行在默认 VRF 上下文中
+服务的访问
 
-浣跨敤 VRF 鎰熺煡搴旂敤锛堝嵆鍚屾椂鍒涘缓 VRF 鍐呭濂楁帴瀛楃殑搴旂敤锛夐厤鍚?
-`net.ipv4.tcp_l3mdev_accept=1` 鏄彲琛岀殑锛屼絾鍦ㄦ煇浜涙儏鍐典笅鍙兘瀵艰嚧闂銆?
-鍦ㄨ sysctl 鍙栧€间笅锛岀敱鍝釜鐩戝惉濂楁帴瀛楁潵澶勭悊 VRF 娴侀噺杩炴帴鏄笉纭畾鐨勶紱
-涔熷氨鏄锛屾棦鍙兘浣跨敤缁戝畾鍒?VRF 鐨勫鎺ュ瓧锛屼篃鍙兘浣跨敤鏈粦瀹氱殑濂楁帴瀛楁潵
-鎺ュ彈鏉ヨ嚜 VRF 鐨勬柊杩炴帴銆傚鏋滀负濂楁帴瀛楅厤缃簡棰濆閫夐」锛堜緥濡?TCP MD5 瀵嗛挜锛夛紝
-骞舵湡鏈?VRF 娴侀噺鍙敱缁戝畾鍒?VRF 鐨勫鎺ュ瓧澶勭悊锛堝嵆 `net.ipv4.tcp_l3mdev_accept=0`
-鐨勬儏褰級锛岃繖绉嶇暐鏄炬剰澶栫殑琛屼负灏卞彲鑳藉紩鍙戦棶棰樸€傛渶鍚庢彁閱掞紝鏃犺閫変腑鍝釜鐩戝惉
-濂楁帴瀛楋紝宸插缓绔嬬殑濂楁帴瀛楅兘浼氬熀浜庡叆鍚戞帴鍙ｅ垱寤哄湪瀵瑰簲鐨?VRF 涓紝濡傚墠鏂囨墍杩般€?
+使用 VRF 感知应用（即同时创建 VRF 内外套接字的应用）配
+`net.ipv4.tcp_l3mdev_accept=1` 是可行的，但在某些情况下可能导致问题
+在该 sysctl 取值下，由哪个监听套接字来处理 VRF 流量连接是不确定的；
+也就是说，既可能使用绑定VRF 的套接字，也可能使用未绑定的套接字来
+接受来自 VRF 的新连接。如果为套接字配置了额外选项（例TCP MD5 密钥），
+并期VRF 流量只由绑定VRF 的套接字处理（即 `net.ipv4.tcp_l3mdev_accept=0`
+的情形），这种略显意外的行为就可能引发问题。最后提醒，无论选中哪个监听
+套接字，已建立的套接字都会基于入向接口创建在对应VRF 中，如前文所述
 
 --------------------------------------------------------------------------------
 
-## Using iproute2 for VRFs锛堜娇鐢?iproute2 绠＄悊 VRF锛?
+## Using iproute2 for VRFs（使iproute2 管理 VRF
 
 
-iproute2 鑷?v4.7 璧锋敮鎸?vrf 鍏抽敭瀛椼€傚嚭浜庡悜鍚庡吋瀹癸紝鏈妭鍦ㄥ悎閫傚鍒楀嚭涓ょ
-鍛戒护鈥斺€斿甫 vrf 鍏抽敭瀛楃殑褰㈠紡涓庝笉甯﹀畠鐨勬棫寮忓啓娉曘€?
+iproute2 v4.7 起支vrf 关键字。出于向后兼容，本节在合适处列出两种
+命令——带 vrf 关键字的形式与不带它的旧式写法
 
-1. Create a VRF锛堝垱寤?VRF锛?
+1. Create a VRF（创VRF
 
-鍒涘缓 VRF 璁惧锛?
+创建 VRF 设备
 
 ```
        $ ip link add dev NAME type vrf table ID
 
 ```
-鑷?v4.8 璧凤紝鍐呮牳鏀寔 l3mdev FIB 瑙勫垯锛屽崟鏉¤鍒欏嵆鍙鐩栨墍鏈?VRF銆傝
-l3mdev 瑙勫垯鍦ㄩ涓澶囧垱寤烘椂涓?IPv4 涓?IPv6 寤虹珛銆?
+v4.8 起，内核支持 l3mdev FIB 规则，单条规则即可覆盖所VRF。该
+l3mdev 规则在首个设备创建时IPv4 IPv6 建立
 
-2. List VRFs锛堝垪鍑?VRF锛?
+2. List VRFs（列VRF
 
-鍒楀嚭鎵€鏈?VRF 璁惧锛?
+列出所VRF 设备
 
 ```
        $ ip [-d] link show type vrf
-	 NOTE: 闇€瑕?-d 閫夐」鎵嶈兘鏄剧ず琛?id
+	 NOTE: 需-d 选项才能显示id
 
 ```
-渚嬪锛?
+例如
 
 ```
        $ ip -d link show type vrf
@@ -196,7 +196,7 @@ l3mdev 瑙勫垯鍦ㄩ涓澶囧垱寤烘椂涓?IPv4 涓?IPv6 寤虹珛�
 	   vrf table 81 addrgenmode eui64
 
 ```
-鎴栦互绠€鐣ヨ緭鍑猴細
+或以简略输出：
 
 ```
        $ ip -br link show type vrf
@@ -206,32 +206,32 @@ l3mdev 瑙勫垯鍦ㄩ涓澶囧垱寤烘椂涓?IPv4 涓?IPv6 寤虹珛�
        green        UP             e6:28:b8:63:70:bb <NOARP,MASTER,UP,LOWER_UP>
 
 ```
-3. Assign a Network Interface to a VRF锛堝皢缃戠粶鎺ュ彛鍒嗛厤缁?VRF锛?
+3. Assign a Network Interface to a VRF（将网络接口分配VRF
 
-缃戠粶鎺ュ彛閫氳繃灏嗙綉缁滆澶囦粠灞炰簬 VRF 鏉ュ垎閰嶇粰 VRF锛?
+网络接口通过将网络设备从属于 VRF 来分配给 VRF
 
 ```
        $ ip link set dev NAME master NAME
 
 ```
-浠庡睘鏃讹紝鐩磋繛涓庢湰鍦拌矾鐢变細鑷姩绉诲姩鍒颁笌 VRF 璁惧鐩稿叧鑱旂殑琛ㄣ€?
+从属时，直连与本地路由会自动移动到与 VRF 设备相关联的表
 
-渚嬪锛?
+例如
 
 ```
        $ ip link set dev eth0 master mgmt
 
 ```
-4. Show Devices Assigned to a VRF锛堟樉绀哄垎閰嶇粰 VRF 鐨勮澶囷級
+4. Show Devices Assigned to a VRF（显示分配给 VRF 的设备）
 
-瑕佹樉绀哄凡鍒嗛厤缁欑壒瀹?VRF 鐨勮澶囷紝鍙湪 show 鍛戒护涓姞鍏?master 鍙傛暟锛?
+要显示已分配给特VRF 的设备，可在 show 命令中加master 参数
 
 ```
        $ ip link show vrf NAME
        $ ip link show master NAME
 
 ```
-渚嬪锛?
+例如
 
 ```
        $ ip link show vrf red
@@ -243,7 +243,7 @@ l3mdev 瑙勫垯鍦ㄩ涓澶囧垱寤烘椂涓?IPv4 涓?IPv6 寤虹珛�
 	   link/ether 02:00:00:00:02:06 brd ff:ff:ff:ff:ff:ff
 
 ```
-鎴栦娇鐢ㄧ畝鐣ヨ緭鍑猴細
+或使用简略输出：
 
 ```
        $ ip -br link show vrf red
@@ -252,16 +252,16 @@ l3mdev 瑙勫垯鍦ㄩ涓澶囧垱寤烘椂涓?IPv4 涓?IPv6 寤虹珛�
        eth5             DOWN           02:00:00:00:02:06 <BROADCAST,MULTICAST>
 
 ```
-5. Show Neighbor Entries for a VRF锛堟樉绀?VRF 鐨勯偦灞呰〃椤癸級
+5. Show Neighbor Entries for a VRF（显VRF 的邻居表项）
 
-瑕佸垪鍑轰粠灞炰簬 VRF 璁惧鐨勮澶囩浉鍏宠仈鐨勯偦灞呰〃椤癸紝鍙娇鐢細
+要列出从属于 VRF 设备的设备相关联的邻居表项，可使用：
 
 ```
        $ ip [-6] neigh show vrf NAME
        $ ip [-6] neigh show master NAME
 
 ```
-渚嬪锛?
+例如
 
 ```
        $  ip neigh show vrf red
@@ -272,16 +272,16 @@ l3mdev 瑙勫垯鍦ㄩ涓澶囧垱寤烘椂涓?IPv4 涓?IPv6 寤虹珛�
        2002:1::64 dev eth1 lladdr a6:d9:c7:4f:06:23 REACHABLE
 
 ```
-6. Show Addresses for a VRF锛堟樉绀?VRF 鐨勫湴鍧€锛?
+6. Show Addresses for a VRF（显VRF 的地址
 
-瑕佹樉绀轰笌 VRF 鐩稿叧鑱旂殑鎺ュ彛鍦板潃锛屽彲鍦?show 鍛戒护涓姞鍏?master 鍙傛暟锛?
+要显示与 VRF 相关联的接口地址，可show 命令中加master 参数
 
 ```
        $ ip addr show vrf NAME
        $ ip addr show master NAME
 
 ```
-渚嬪锛?
+例如
 
 ```
 	$ ip addr show vrf red
@@ -305,7 +305,7 @@ l3mdev 瑙勫垯鍦ㄩ涓澶囧垱寤烘椂涓?IPv4 涓?IPv6 寤虹珛�
 	    link/ether 02:00:00:00:02:06 brd ff:ff:ff:ff:ff:ff
 
 ```
-鎴栦互绠€鐣ユ牸寮忥細
+或以简略格式：
 
 ```
 	$ ip -br addr show vrf red
@@ -314,16 +314,16 @@ l3mdev 瑙勫垯鍦ㄩ涓澶囧垱寤烘椂涓?IPv4 涓?IPv6 寤虹珛�
 	eth5             DOWN
 
 ```
-7. Show Routes for a VRF锛堟樉绀?VRF 鐨勮矾鐢憋級
+7. Show Routes for a VRF（显VRF 的路由）
 
-瑕佹樉绀?VRF 鐨勮矾鐢憋紝浣跨敤 ip 鍛戒护鏄剧ず涓?VRF 鐩稿叧鑱旂殑琛細
+要显VRF 的路由，使用 ip 命令显示VRF 相关联的表：
 
 ```
        $ ip [-6] route show vrf NAME
        $ ip [-6] route show table ID
 
 ```
-渚嬪锛?
+例如
 
 ```
 	$ ip route show vrf red
@@ -356,16 +356,16 @@ l3mdev 瑙勫垯鍦ㄩ涓澶囧垱寤烘椂涓?IPv4 涓?IPv6 寤虹珛�
 	unreachable default dev lo  metric 4278198272  error -101 pref medium
 
 ```
-8. Route Lookup for a VRF锛堟煡璇?VRF 鐨勮矾鐢憋級
+8. Route Lookup for a VRF（查VRF 的路由）
 
-鏌ヨ鏌愬湴鍧€鍦?VRF 涓殑璺敱锛?
+查询某地址VRF 中的路由
 
 ```
        $ ip [-6] route get vrf NAME ADDRESS
        $ ip [-6] route get oif NAME ADDRESS
 
 ```
-渚嬪锛?
+例如
 
 ```
 	$ ip route get 10.2.1.40 vrf red
@@ -376,17 +376,17 @@ l3mdev 瑙勫垯鍦ㄩ涓澶囧垱寤烘椂涓?IPv4 涓?IPv6 寤虹珛�
 	2002:1::32 from :: dev eth1  table red  proto kernel  src 2002:1::2  metric 256  pref medium
 
 ```
-9. Removing Network Interface from a VRF锛堜粠 VRF 绉婚櫎缃戠粶鎺ュ彛锛?
+9. Removing Network Interface from a VRF（从 VRF 移除网络接口
 
-缃戠粶鎺ュ彛閫氳繃瑙ｉ櫎瀵?VRF 璁惧鐨勪粠灞炲叧绯绘潵浠?VRF 涓Щ闄わ細
+网络接口通过解除VRF 设备的从属关系来VRF 中移除：
 
 ```
        $ ip link set dev NAME nomaster
 
 ```
-鐩磋繛璺敱浼氳绉诲洖榛樿琛紝鏈湴琛ㄩ」浼氳绉诲姩鍒版湰鍦拌〃銆?
+直连路由会被移回默认表，本地表项会被移动到本地表
 
-渚嬪锛?
+例如
 
 ```
     $ ip link set dev eth0 nomaster
@@ -394,8 +394,8 @@ l3mdev 瑙勫垯鍦ㄩ涓澶囧垱寤烘椂涓?IPv4 涓?IPv6 寤虹珛�
 ```
 --------------------------------------------------------------------------------
 
-浠ヤ笅鏄湪 /etc/iproute2/rt_tables.d/vrf.conf 涓畾涔夎嚜瀹氫箟琛紝骞剁敤鑴氭湰
-鎵归噺鍒涘缓 VRF 鐨勭ず渚嬶細
+以下是在 /etc/iproute2/rt_tables.d/vrf.conf 中定义自定义表，并用脚本
+批量创建 VRF 的示例：
 
 ```
      cat >> /etc/iproute2/rt_tables.d/vrf.conf <<EOF

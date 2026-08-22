@@ -1,15 +1,15 @@
-﻿## InfiniBand 涓庤繙绋?DMA锛圧DMA锛夋帴鍙?
+﻿## InfiniBand 与远DMA（RDMA）接
 
-鏈〉鏄?InfiniBand 涓庤繙绋嬬洿鎺ュ唴瀛樿闂紙RDMA锛夊瓙绯荤粺鍐呮牳鎺ュ彛鏂囨。鐨勫叆鍙ｏ紝姹囨€讳簡鏍稿績鎺ュ彛銆丷DMA Verbs 浼犺緭搴撲互鍙婁笂灞傚崗璁紙濡?iSER锛夌瓑鐩稿叧鍙傝€冦€傞潰鍚戝紑鍙?RDMA 椹卞姩涓庡唴鏍镐腑闂翠欢銆侀渶瑕佷簡瑙ｈ瀛愮郴缁熷鍑哄嚱鏁颁笌鍐呴儴鎺ュ彛鐨勮鑰呫€?
-
-
-
-## 绠€浠嬩笌姒傝堪
+本页InfiniBand 与远程直接内存访问（RDMA）子系统内核接口文档的入口，汇总了核心接口、RDMA Verbs 传输库以及上层协议（iSER）等相关参考。面向开RDMA 驱动与内核中间件、需要了解该子系统导出函数与内部接口的读者
 
 
-寰呭畾锛圱BD锛?
 
-## InfiniBand 鏍稿績鎺ュ彛
+## 简介与概述
+
+
+待定（TBD
+
+## InfiniBand 核心接口
 
 
     :internal:
@@ -34,7 +34,7 @@
 
     :export:
 
-## RDMA Verbs 浼犺緭搴?
+## RDMA Verbs 浼犺緭搴。
 
 
     :export:
@@ -51,10 +51,10 @@
 
     :export:
 
-## 涓婂眰鍗忚
+## 上层协议
 
 
-### 鐢ㄤ簬 RDMA 鐨?iSCSI 鎵╁睍锛坕SER锛?
+### 用于 RDMA iSCSI 扩展（iSER
 
 
    :internal:
@@ -72,14 +72,14 @@
 
    :internal:
 
-### InfiniBand SCSI RDMA 鍗忚鐩爣鏀寔
+### InfiniBand SCSI RDMA 协议目标支持
 
 
    :internal:
 
    :internal:
 
-### 鐢ㄤ簬 RDMA 鐨?iSCSI 鎵╁睍锛坕SER锛夌洰鏍囨敮鎸?
+### 用于 RDMA iSCSI 扩展（iSER）目标支
 
 
    :internal:

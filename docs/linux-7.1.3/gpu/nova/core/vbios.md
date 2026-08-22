@@ -1,22 +1,22 @@
 ﻿
 ## VBIOS
 
-鏈枃妗ｆ弿杩颁簡 VBIOS 鏄犲儚鐨勫竷灞€锛屽畠鏄?GPU 鐨?ROM 涓竴绯诲垪鎷兼帴鍦ㄤ竴璧风殑鏄犲儚銆俈BIOS 琚暅鍍忓埌
-BAR 0 绌洪棿锛屾棦鐢?GPU 涓婄殑 Boot ROM 鍥轰欢锛堜篃绉颁负 IFR 鎴?init-from-rom 鍥轰欢锛夎鍙栵紝浠ュ湪椹卞姩鍔犺浇
-鍓嶅紩瀵煎悇绉嶅井鎺у埗鍣紙PMU銆丼EC銆丟SP锛夊畬鎴愬叧閿殑鍒濆鍖栵紝涔熺敱鍐呮牳涓殑 nova-core 椹卞姩璇诲彇浠ュ紩瀵?GSP銆?
-ROM 涓槧鍍忕殑鏍煎紡閬靛惊 PCI 瑙勮寖涓殑"BIOS 瑙勮寖"閮ㄥ垎锛屽苟甯︽湁 Nvidia 鐗规湁鐨勬墿灞曘€傜被鍨嬩负 FwSec 鐨?ROM 鏄犲儚鍖呭惈 Falcon ucode锛屼篃鏄垜浠富瑕佸鎵剧殑鍐呭銆?
-涓句緥鏉ヨ锛屼互涓嬫槸琚?nova-core 椹卞姩鏀寔鐨?Ampere GA102 GPU 鐨?VBIOS 涓彲浠ユ壘鍒扮殑涓嶅悓鏄犲儚绫诲瀷锛?
-- PciAt 鏄犲儚锛堢被鍨?0x00锛夆€斺€旇繖鏄爣鍑嗙殑 PCI BIOS 鏄犲儚锛屽叾鍚嶇О寰堝彲鑳芥潵鑷?"IBM PC/AT" 鏋舵瀯銆?
-- EFI 鏄犲儚锛堢被鍨?0x03锛夆€斺€旇繖鏄?EFI BIOS 鏄犲儚銆傚畠鍖呭惈鐢ㄤ簬鏄剧ず UEFI 鍥惧舰杈撳嚭鐨?UEFI GOP 椹卞姩銆?
-- 绗竴涓?FwSec 鏄犲儚锛堢被鍨?0xE0锛夆€斺€旂涓€涓?FwSec 鏄犲儚锛圫ecure Firmware锛屽畨鍏ㄥ浐浠讹級
+本文档描述了 VBIOS 映像的布局，它GPU ROM 中一系列拼接在一起的映像。VBIOS 被镜像到
+BAR 0 空间，既GPU 上的 Boot ROM 固件（也称为 IFR init-from-rom 固件）读取，以在驱动加载
+前引导各种微控制器（PMU、SEC、GSP）完成关键的初始化，也由内核中的 nova-core 驱动读取以引GSP
+ROM 中映像的格式遵循 PCI 规范中的"BIOS 规范"部分，并带有 Nvidia 特有的扩展。类型为 FwSec ROM 映像包含 Falcon ucode，也是我们主要寻找的内容
+举例来说，以下是nova-core 驱动支持Ampere GA102 GPU VBIOS 中可以找到的不同映像类型
+- PciAt 映像（类0x00）——这是标准的 PCI BIOS 映像，其名称很可能来"IBM PC/AT" 架构
+- EFI 映像（类0x03）——这EFI BIOS 映像。它包含用于显示 UEFI 图形输出UEFI GOP 驱动
+- 第一FwSec 映像（类0xE0）——第一FwSec 映像（Secure Firmware，安全固件）
 
-- 绗簩涓?FwSec 鏄犲儚锛堢被鍨?0xE0锛夆€斺€旂浜屼釜 FwSec 鏄犲儚锛堝畨鍏ㄥ浐浠讹級鍖呭惈鍚勭寰爜锛堜篃绉颁负 application锛夛紝
-  瀹冧滑鎵ц涓€绯诲垪涓嶅悓鐨勫姛鑳姐€侳WSEC ucode 浠?heavy-secure 妯″紡杩愯锛岄€氬父鐩存帴鍦?GSP 涓婅繍琛岋紙鍦ㄦ湭鏉ョ殑
-  浠ｆ涓畠涔熷彲鑳借繍琛屽湪涓嶅悓鐨勬寚瀹氬鐞嗗櫒涓婏紝浣嗗湪 Ampere 涓婂畠鏄?GSP锛夈€傝鍥轰欢闅忓悗鍦?GPU 澶嶄綅涔嬪悗銆?  椹卞姩鍔犺浇涔嬪墠锛屾妸鍏跺畠鍥轰欢 ucode 鍔犺浇鍒?PMU 鍜?SEC2 寰帶鍒跺櫒涓婁互杩涜 gfw 鍒濆鍖栵紙鍙傝 devinit.rst锛夈€?  DEVINIT ucode 鏈韩鏄瓨鍌ㄥ湪璇?ROM 鍒嗗尯涓殑鍙︿竴涓?ucode銆?
-涓€鏃﹀畾浣嶅埌锛孎alcon ucode 鍦ㄥ叾鏁版嵁鍐呭瓨锛圖MEM锛変腑鍏锋湁"搴旂敤绋嬪簭鎺ュ彛"锛圓pplication Interfaces锛夈€?瀵逛簬 FWSEC锛屾垜浠敤浜?FWSEC 鐨勫簲鐢ㄧ▼搴忔帴鍙ｆ槸"DMEM mapper"鎺ュ彛锛屽畠琚厤缃负杩愯 "FRTS" 鍛戒护銆傝
-鍛戒护鍦?VRAM 涓垝鍒嗗嚭 WPR2锛圵rite-Protected Region锛屽啓淇濇姢鍖哄煙锛夈€傜劧鍚庡畠鎶婄О涓?'FRTS' 鐨勯噸瑕?鐢垫簮绠＄悊鏁版嵁鏀惧叆璇ュ尯鍩熴€俉PR2 鍖哄煙鍙兘琚?heavy-secure ucode 璁块棶銆?
-   FwSec 涓轰綍鍦?ROM 涓湁 2 涓笉鍚岀殑鍒嗗尯灏氫笉娓呮锛屼絾瀹冧滑閮芥槸绫诲瀷 0xE0锛屽苟涓斿彲浠ユ嵁姝よ瘑鍒€傚湪鏈潵鐨?   浠ｆ涓繖鍙兘浼氬彂鐢熷彉鍖栥€?
-### VBIOS ROM 甯冨眬锛圴BIOS ROM Layout锛?
+- 第二FwSec 映像（类0xE0）——第二个 FwSec 映像（安全固件）包含各种微码（也称为 application），
+  它们执行一系列不同的功能。FWSEC ucode heavy-secure 模式运行，通常直接GSP 上运行（在未来的
+  代次中它也可能运行在不同的指定处理器上，但在 Ampere 上它GSP）。该固件随后GPU 复位之后  驱动加载之前，把其它固件 ucode 加载PMU SEC2 微控制器上以进行 gfw 初始化（参见 devinit.rst）  DEVINIT ucode 本身是存储在ROM 分区中的另一ucode
+一旦定位到，Falcon ucode 在其数据内存（DMEM）中具有"应用程序接口"（Application Interfaces）对于 FWSEC，我们用FWSEC 的应用程序接口是"DMEM mapper"接口，它被配置为运行 "FRTS" 命令。该
+命令VRAM 中划分出 WPR2（Write-Protected Region，写保护区域）。然后它把称'FRTS' 的重电源管理数据放入该区域。WPR2 区域只能heavy-secure ucode 访问
+   FwSec 为何ROM 中有 2 个不同的分区尚不清楚，但它们都是类型 0xE0，并且可以据此识别。在未来   代次中这可能会发生变化
+### VBIOS ROM 布局（VBIOS ROM Layout
 ```
 
     +----------------------------------------------------------------------------+
@@ -129,8 +129,8 @@ ROM 涓槧鍍忕殑鏍煎紡閬靛惊 PCI 瑙勮寖涓殑"BIOS 瑙勮寖"�
     +----------------------------------------------------------------------------+
 
 ```
-   璇ュ浘浠?GA-102 Ampere GPU 涓轰緥鍒涘缓锛屽浜庢湭鏉ョ殑鎴栧叾瀹?GPU 鍙兘浼氭湁鎵€涓嶅悓銆?
-   鍏充簬缂╃暐璇殑鏇村瑙ｉ噴锛岃鍙傝 `vbios.rs` 涓殑璇︾粏鎻忚堪銆?
-### Falcon 鏁版嵁鏌ユ壘锛團alcon data Lookup锛?
-VBIOS 鎻愬彇浠ｇ爜锛坴bios.rs锛夌殑涓€涓叧閿儴鍒嗭紝鏄壘鍒?VBIOS 涓寘鍚簡 PMU 鏌ユ壘琛ㄧ殑 Falcon data 鐨?浣嶇疆銆傝鏌ユ壘琛ㄧ敤浜庢牴鎹簲鐢ㄧ▼搴?ID 鏌ユ壘鎵€闇€鐨?Falcon ucode銆?
-PMU 鏌ユ壘琛ㄧ殑浣嶇疆鏄€氳繃鎵弿 BIT锛坄BIOS Information Table`_锛塼oken 鏉ユ壘鍒扮殑锛岀洰鏍囨槸瀵绘壘 id 涓?`BIT_TOKEN_ID_FALCON_DATA`锛?x70锛夌殑 token锛屽畠琛ㄧず璇ヨ〃鐩稿浜?VBIOS 鏄犲儚璧峰浣嶇疆鐨勫亸绉婚噺銆?閬楁喚鐨勬槸锛岃鍋忕Щ閲忔病鏈夎€冭檻浣嶄簬 PciAt 涓?FwSec 鏄犲儚涔嬮棿鐨?EFI 鏄犲儚銆俙vbios.rs` 浠ｇ爜閫氳繃鐩稿簲鐨?绠楁湳杩愮畻瀵规杩涜浜嗚ˉ鍋裤€?
+   该图GA-102 Ampere GPU 为例创建，对于未来的或其GPU 可能会有所不同
+   关于缩略语的更多解释，请参见 `vbios.rs` 中的详细描述
+### Falcon 数据查找（Falcon data Lookup
+VBIOS 提取代码（vbios.rs）的一个关键部分，是找VBIOS 中包含了 PMU 查找表的 Falcon data 位置。该查找表用于根据应用程ID 查找所需Falcon ucode
+PMU 查找表的位置是通过扫描 BIT（`BIOS Information Table`_）token 来找到的，目标是寻找 id `BIT_TOKEN_ID_FALCON_DATA`x70）的 token，它表示该表相对VBIOS 映像起始位置的偏移量遗憾的是，该偏移量没有考虑位于 PciAt FwSec 映像之间EFI 映像。`vbios.rs` 代码通过相应算术运算对此进行了补偿

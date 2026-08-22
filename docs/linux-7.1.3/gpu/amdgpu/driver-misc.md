@@ -1,11 +1,11 @@
 ﻿
-## AMDGPU 椹卞姩鏉傞」淇℃伅
+## AMDGPU 驱动杂项信息
 
 
-## GPU 浜у搧淇℃伅
+## GPU 产品信息
 
 
-鏌愪簺鏄惧崱鍙€氳繃 sysfs 鑾峰彇 GPU 鐩稿叧淇℃伅
+某些显卡可通过 sysfs 获取 GPU 相关信息
 
 ### product_name
 
@@ -42,10 +42,10 @@
 
    :doc: board_info
 
-## GPU 鍐呭瓨浣跨敤淇℃伅
+## GPU 内存使用信息
 
 
-鍙€氳繃 sysfs 璁块棶鍚勭鍐呭瓨缁熻淇℃伅
+可通过 sysfs 访问各种内存统计信息
 
 ### mem_info_vram_total
 
@@ -77,7 +77,7 @@
 
    :doc: mem_info_gtt_used
 
-## PCIe 缁熻淇℃伅
+## PCIe 统计信息
 
 
 ### pcie_bw
@@ -90,10 +90,10 @@
 
    :doc: pcie_replay_count
 
-## GPU SmartShift 淇℃伅
+## GPU SmartShift 信息
 
 
-鍙€氳繃 sysfs 鑾峰彇 GPU SmartShift 淇℃伅
+可通过 sysfs 获取 GPU SmartShift 信息
 
 ### smartshift_apu_power
 
@@ -110,11 +110,11 @@
 
    :doc: smartshift_bias
 
-## UMA 棰勭暀锛圕arveout锛?
+## UMA 预留（Carveout
 
-鏌愪簺 Atom ROM 鐗堟湰浼氭毚闇?VRAM 棰勭暀锛坈arveout锛夊ぇ灏忕殑鍙€夐」锛屽苟鍏佽鍦ㄥ彈鏀寔鐨?BIOS 瀹炵幇涓婇€氳繃 ATCS 鍔熻兘鐮?0xA 鏇存敼棰勭暀澶у皬銆?
-瀵逛簬杩欎簺骞冲彴锛岀敤鎴峰彲浠ヤ娇鐢?uma/ 涓嬬殑浠ヤ笅鏂囦欢鏉ヨ缃鐣欏ぇ灏忥紝鏂瑰紡涓?Windows 鐢ㄦ埛鍦?AMD Adrenalin 鐨勨€淭uning鈥濋€夐」鍗′腑鎵€鍋氱殑绫讳技銆?
-娉ㄦ剰锛屽浜庝笉鏀寔姝ゅ姛鑳界殑 BIOS 瀹炵幇锛岃繖浜涙枃浠舵牴鏈笉浼氳鍒涘缓銆?
+某些 Atom ROM 版本会暴VRAM 预留（carveout）大小的可选项，并允许在受支持BIOS 实现上通过 ATCS 功能0xA 更改预留大小
+对于这些平台，用户可以使uma/ 下的以下文件来设置预留大小，方式Windows 用户AMD Adrenalin 的“Tuning”选项卡中所做的类似
+注意，对于不支持此功能的 BIOS 实现，这些文件根本不会被创建
 ### uma/carveout_options
 
 

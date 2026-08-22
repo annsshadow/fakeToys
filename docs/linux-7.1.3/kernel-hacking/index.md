@@ -1,8 +1,8 @@
 ﻿
-## 鍐呮牳 Hacking 鎸囧崡
+## 内核 Hacking 指南
 
 
-鏈〉姹囬泦鍐呮牳寮€鍙戯紙hacking锛夌浉鍏崇殑鎸囧崡鏂囨。锛屾兜鐩栧唴鏍歌皟璇曟妧宸с€侀攣鏈哄埗浠ュ強浼叡浜紙false-sharing锛夌瓑鍐呭銆?
+本页汇集内核开发（hacking）相关的指南文档，涵盖内核调试技巧、锁机制以及伪共享（false-sharing）等内容
 
 - [hacking](hacking)
 - [locking](locking)

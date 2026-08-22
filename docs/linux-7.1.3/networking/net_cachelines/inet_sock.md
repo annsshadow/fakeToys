@@ -1,18 +1,18 @@
 ﻿
-## inet_sock 缁撴瀯浣撳揩璺緞浣跨敤鍒嗚В
+## inet_sock 结构体快路径使用分解
 
-鏈〉浠ヨ〃鏍煎舰寮忓垎瑙ｇ綉缁滃瓙绯荤粺涓?inet_sock 缁撴瀯浣撶殑瀛楁甯冨眬涓庣紦瀛樿锛坈acheline锛夊垎甯冿紝鏍囨敞鍚勫瓧娈靛湪鍙戦€侊紙tx锛変笌鎺ユ敹锛坮x锛夊揩璺緞涓殑璁块棶鎯呭喌銆備緵鍐呮牳缃戠粶寮€鍙戣€呯悊瑙ｇ粨鏋勪綋瀛楁鐨勫唴瀛樼儹璺緞褰掑睘锛岃緟鍔╃紦瀛樺弸濂芥€т紭鍖栥€?
+本页以表格形式分解网络子系统inet_sock 结构体的字段布局与缓存行（cacheline）分布，标注各字段在发送（tx）与接收（rx）快路径中的访问情况。供内核网络开发者理解结构体字段的内存热路径归属，辅助缓存友好性优化
 
 
-鏈枃妗ｄ负鑷姩鐢熸垚鐨勭粨鏋勫寲鏉＄洰绱㈠紩锛屾潯鐩悕绉颁互鑻辨枃鏈淇濈暀浠ヤ究妫€绱€?
+本文档为自动生成的结构化条目索引，条目名称以英文术语保留以便检索
 
 
 ======================== ===================== =================== =================== ======================================================================================================
-绫诲瀷 鍚嶇О fastpath_tx_access fastpath_rx_access 璇存槑
+类型 名称 fastpath_tx_access fastpath_rx_access 说明
 ======================== ===================== =================== =================== ======================================================================================================
-缁撴瀯浣?sock sk read_mostly read_mostly tcp_init_buffer_space,tcp_init_transfer,tcp_finish_connect,tcp_connect,tcp_send_rcvq,tcp_send_syn_data
-缁撴瀯浣?ipv6_pinfo* pinet6
-缁撴瀯浣?ipv6_fl_socklist* ipv6_fl_list read_mostly tcp_v6_connect,__ip6_datagram_connect,udpv6_sendmsg,rawv6_sendmsg
+结构sock sk read_mostly read_mostly tcp_init_buffer_space,tcp_init_transfer,tcp_finish_connect,tcp_connect,tcp_send_rcvq,tcp_send_syn_data
+结构ipv6_pinfo* pinet6
+结构ipv6_fl_socklist* ipv6_fl_list read_mostly tcp_v6_connect,__ip6_datagram_connect,udpv6_sendmsg,rawv6_sendmsg
 be16 inet_sport read_mostly __tcp_transmit_skb
 be32 inet_daddr read_mostly ip_select_ident_segs
 be32 inet_rcv_saddr
@@ -21,7 +21,7 @@ u16 inet_num
 be32 inet_saddr
 s16 uc_ttl read_mostly __ip_queue_xmit/ip_select_ttl
 u16 cmsg_flags
-缁撴瀯浣?ip_options_rcu* inet_opt read_mostly __ip_queue_xmit
+结构ip_options_rcu* inet_opt read_mostly __ip_queue_xmit
 u16 inet_id read_mostly ip_select_ident_segs
 u8 tos read_mostly ip_queue_xmit
 u8 min_ttl
@@ -43,7 +43,7 @@ u8 convert_csum
 int uc_index
 int mc_index
 be32 mc_addr
-缁撴瀯浣?ip_mc_socklist* mc_list
-缁撴瀯浣?inet_cork_full cork read_mostly __tcp_transmit_skb
-缁撴瀯浣?local_port_range
+结构ip_mc_socklist* mc_list
+结构inet_cork_full cork read_mostly __tcp_transmit_skb
+结构local_port_range
 ======================== ===================== =================== =================== ======================================================================================================

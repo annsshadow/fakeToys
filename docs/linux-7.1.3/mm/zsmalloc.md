@@ -1,11 +1,11 @@
 ﻿## zsmalloc
 
-璇ュ垎閰嶅櫒璁捐鐢ㄤ簬涓?zram 閰嶅悎浣跨敤銆傚洜姝わ紝璇ュ垎閰嶅櫒琚湡鏈涘湪鍐呭瓨绱у紶鐨勬潯浠朵笅涔熻兘鑹ソ宸ヤ綔銆傜壒鍒槸锛屽畠浠庝笉灏濊瘯楂橀樁椤靛垎閰嶏紝鑰屽湪鍐呭瓨鍘嬪姏涓嬭繖绉嶅垎閰嶆瀬鏈夊彲鑳藉け璐ャ€傚彟涓€鏂归潰锛屽鏋滄垜浠彧浣跨敤鍗曚釜锛? 闃讹級椤碉紝瀹冨皢閬彈闈炲父楂樼殑纰庣墖鈥斺€斾换浣曞ぇ灏忎负 PAGE_SIZE/2 鎴栨洿澶х殑瀵硅薄閮戒細鍗犳嵁鏁翠釜椤点€傝繖鏄叾鍓嶈韩锛坸vmalloc锛夌殑涓昏闂涔嬩竴銆?
-涓轰簡鍏嬫湇杩欎簺闂锛寊smalloc 鍒嗛厤涓€缁?0 闃堕〉锛屽苟浣跨敤鍚勭 `struct page` 瀛楁灏嗗畠浠摼鎺ュ湪涓€璧枫€傝繖浜涜閾炬帴璧锋潵鐨勯〉鍏呭綋鍗曚釜楂橀樁椤碉紝涔熷氨鏄锛屼竴涓璞″彲浠ヨ法瓒?0 闃堕〉鐨勮竟鐣屻€備唬鐮佸皢杩欎簺琚摼鎺ョ殑椤典綔涓轰竴涓О涓?zspage 鐨勫崟涓€瀹炰綋鏉ュ紩鐢ㄣ€?
-涓虹畝鍗曡捣瑙侊紝zsmalloc 鍙兘鍒嗛厤澶у皬涓嶈秴杩?PAGE_SIZE 鐨勫璞★紝鍥犱负杩欐弧瓒充簡鍏舵墍鏈夊綋鍓嶇敤鎴风殑闇€姹傦紙鍦ㄦ渶鍧忔儏鍐典笅锛岄〉涓嶅彲鍘嬬缉锛屽洜鑰屼互鈥滃師鏍封€濓紙鍗虫湭鍘嬬缉褰㈠紡锛夊瓨鍌級銆傚浜庡ぇ浜庢澶у皬鐨勫垎閰嶈姹傦紝杩斿洖澶辫触锛堝弬瑙?zs_malloc锛夈€?
-姝ゅ锛宍zs_malloc()` 涓嶈繑鍥炲彲瑙ｅ紩鐢ㄧ殑鎸囬拡銆傜浉鍙嶏紝瀹冭繑鍥炰竴涓笉閫忔槑鐨勫彞鏌勶紙unsigned long锛夛紝鍏朵腑缂栫爜浜嗘墍鍒嗛厤瀵硅薄鐨勭湡瀹炰綅缃€傝繖绉嶉棿鎺ユ€х殑鍘熷洜鏄?zsmalloc 涓嶄細姘镐箙鏄犲皠 zspage锛屽洜涓洪偅鏍蜂細鍦ㄥ唴鏍哥┖闂存槧灏勭殑铏氭嫙鍦板潃锛圴A锛夊尯鍩熼潪甯稿皬鐨?32 浣嶇郴缁熶笂寮曞彂闂銆傚洜姝わ紝浣跨敤鎵€鍒嗛厤鐨勫唴瀛樺簲褰撻€氳繃鍚堥€傜殑鍩轰簬鍙ユ焺鐨?API 杩涜銆?
-## 缁熻淇℃伅锛坰tat锛?
-鍚敤 `CONFIG_ZSMALLOC_STAT` 鍚庯紝鎴戜滑鍙互閫氳繃浠ヤ笅鏂瑰紡鏌ョ湅 zsmalloc 鍐呴儴淇℃伅锛?
+该分配器设计用于zram 配合使用。因此，该分配器被期望在内存紧张的条件下也能良好工作。特别是，它从不尝试高阶页分配，而在内存压力下这种分配极有可能失败。另一方面，如果我们只使用单个 阶）页，它将遭受非常高的碎片——任何大小为 PAGE_SIZE/2 或更大的对象都会占据整个页。这是其前身（xvmalloc）的主要问题之一
+为了克服这些问题，zsmalloc 分配一0 阶页，并使用各种 `struct page` 字段将它们链接在一起。这些被链接起来的页充当单个高阶页，也就是说，一个对象可以跨0 阶页的边界。代码将这些被链接的页作为一个称zspage 的单一实体来引用
+为简单起见，zsmalloc 只能分配大小不超PAGE_SIZE 的对象，因为这满足了其所有当前用户的需求（在最坏情况下，页不可压缩，因而以“原样”（即未压缩形式）存储）。对于大于此大小的分配请求，返回失败（参zs_malloc）
+此外，`zs_malloc()` 不返回可解引用的指针。相反，它返回一个不透明的句柄（unsigned long），其中编码了所分配对象的真实位置。这种间接性的原因zsmalloc 不会永久映射 zspage，因为那样会在内核空间映射的虚拟地址（VA）区域非常小32 位系统上引发问题。因此，使用所分配的内存应当通过合适的基于句柄API 进行
+## 统计信息（stat
+启用 `CONFIG_ZSMALLOC_STAT` 后，我们可以通过以下方式查看 zsmalloc 内部信息
 ```
  # cat /sys/kernel/debug/zsmalloc/zram0/classes
 
@@ -20,41 +20,41 @@
 
 ```
 class
-	绱㈠紩
+	索引
 size
-	zspage 瀛樺偍鐨勫璞″ぇ灏?10%
-	浣跨敤鐜囦綆浜?10% 鐨?zspage 鏁伴噺锛堣涓嬫枃锛?20%
-	浣跨敤鐜囧湪 10% 鍒?20% 涔嬮棿鐨?zspage 鏁伴噺
+	zspage 存储的对象大10%
+	使用率低10% zspage 数量（见下文20%
+	使用率在 10% 20% 之间zspage 数量
 30%
-	浣跨敤鐜囧湪 20% 鍒?30% 涔嬮棿鐨?zspage 鏁伴噺
+	使用率在 20% 30% 之间zspage 数量
 40%
-	浣跨敤鐜囧湪 30% 鍒?40% 涔嬮棿鐨?zspage 鏁伴噺
+	使用率在 30% 40% 之间zspage 数量
 50%
-	浣跨敤鐜囧湪 40% 鍒?50% 涔嬮棿鐨?zspage 鏁伴噺
+	使用率在 40% 50% 之间zspage 数量
 60%
-	浣跨敤鐜囧湪 50% 鍒?60% 涔嬮棿鐨?zspage 鏁伴噺
+	使用率在 50% 60% 之间zspage 数量
 70%
-	浣跨敤鐜囧湪 60% 鍒?70% 涔嬮棿鐨?zspage 鏁伴噺
+	使用率在 60% 70% 之间zspage 数量
 80%
-	浣跨敤鐜囧湪 70% 鍒?80% 涔嬮棿鐨?zspage 鏁伴噺
+	使用率在 70% 80% 之间zspage 数量
 90%
-	浣跨敤鐜囧湪 80% 鍒?90% 涔嬮棿鐨?zspage 鏁伴噺
+	使用率在 80% 90% 之间zspage 数量
 99%
-	浣跨敤鐜囧湪 90% 鍒?99% 涔嬮棿鐨?zspage 鏁伴噺
+	使用率在 90% 99% 之间zspage 数量
 100%
-	浣跨敤鐜囦负 100% 鐨?zspage 鏁伴噺
+	使用率为 100% zspage 数量
 obj_allocated
-	宸插垎閰嶇殑瀵硅薄鏁伴噺
+	已分配的对象数量
 obj_used
-	宸插垎閰嶇粰鐢ㄦ埛鐨勫璞℃暟閲?pages_used
-	涓鸿 size class 鍒嗛厤鐨勯〉鏁?pages_per_zspage
-	缁勬垚涓€涓?zspage 鎵€闇€鐨?0 闃堕〉鏁?freeable
-	璇?size class 鍘嬬缉鍚庡彲閲婃斁鐨勫ぇ鑷撮〉鏁?
-姣忎釜 zspage 缁存姢涓€涓?inuse 璁℃暟鍣紝鐢ㄤ簬杩借釜璇?zspage 涓瓨鍌ㄧ殑瀵硅薄鏁伴噺銆俰nuse 璁℃暟鍣ㄥ喅瀹氫簡 zspage 鐨勨€滃～鍏呭害鍒嗙粍鈥濓紙fullness group锛夛紝鍏惰绠楁柟寮忎负 鈥渋nuse鈥?瀵硅薄鏁伴噺涓?zspage 鍙绾崇殑瀵硅薄鎬绘暟锛坥bjs_per_zspage锛変箣姣斻€俰nuse 璁℃暟鍣ㄨ秺鎺ヨ繎 objs_per_zspage 瓒婂ソ銆?
-## 鍐呴儴瀹炵幇
+	已分配给用户的对象数pages_used
+	为该 size class 分配的页pages_per_zspage
+	组成一zspage 所需0 阶页freeable
+	size class 压缩后可释放的大致页
+每个 zspage 维护一inuse 计数器，用于追踪zspage 中存储的对象数量。inuse 计数器决定了 zspage 的“填充度分组”（fullness group），其计算方式为 “inuse对象数量zspage 可容纳的对象总数（objs_per_zspage）之比。inuse 计数器越接近 objs_per_zspage 越好
+## 内部实现
 
-zsmalloc 鏈?255 涓?size class锛屾瘡涓?size class 鍙互瀹圭撼鑻ュ共涓?zspage銆傛瘡涓?zspage 鏈€澶氬彲鍖呭惈 ZSMALLOC_CHAIN_SIZE 涓墿鐞嗭紙0 闃讹級椤点€傛瘡涓?size class 鐨勬渶浼?zspage 閾惧ぇ灏忓湪鍒涘缓 zsmalloc 姹犳椂璁＄畻锛堝弬瑙?`calculate_zspage_chain_size()`锛夈€?
-浣滀负涓€绉嶄紭鍖栵紝zsmalloc 浼氬悎骞跺湪鈥滄瘡 zspage 椤垫暟鈥濆拰鈥滄瘡涓?zspage 鍙瓨鍌ㄥ璞℃暟鈥濇柟闈㈠叿鏈夌浉浼肩壒寰佺殑 size class銆?
+zsmalloc 255 size class，每size class 可以容纳若干zspage。每zspage 最多可包含 ZSMALLOC_CHAIN_SIZE 个物理（0 阶）页。每size class 的最zspage 链大小在创建 zsmalloc 池时计算（参`calculate_zspage_chain_size()`）
+作为一种优化，zsmalloc 会合并在“每 zspage 页数”和“每zspage 可存储对象数”方面具有相似特征的 size class
 ```
   class  size       10%   ....    100% obj_allocated   obj_used pages_used pages_per_zspage freeable
   ...
@@ -63,9 +63,9 @@ zsmalloc 鏈?255 涓?size class锛屾瘡涓?size class 鍙互瀹圭撼鑻ュ�
   ...
 
 ```
-size class #95-99 琚悎骞跺埌 size class #100銆傝繖鎰忓懗鐫€褰撴垜浠渶瑕佸瓨鍌ㄤ竴涓ぇ灏忎负锛堜緥濡傦級1568 瀛楄妭鐨勫璞℃椂锛屾渶缁堜細鐢ㄥ埌 size class #100 鑰岄潪 size class #96銆俿ize class #100 闈㈠悜澶у皬涓?1632 瀛楄妭鐨勫璞★紝鍥犳姣忎釜澶у皬涓?1568 瀛楄妭鐨勫璞′細娴垂 1632-1568=64 瀛楄妭銆?
-size class #100 鐢辨瘡涓惈 2 涓墿鐞嗛〉鐨?zspage 缁勬垚锛屾€诲叡鍙绾?5 涓璞°€傚鏋滄垜浠渶瑕佸瓨鍌?13 涓ぇ灏忎负 1568 鐨勫璞★紝鏈€缁堜細鍒嗛厤涓変釜 zspage锛屽嵆 6 涓墿鐞嗛〉銆?
-鐒惰€岋紝濡傛灉鎴戜滑浠旂粏鏌ョ湅 size class #96锛堥潰鍚戝ぇ灏忎负 1568 瀛楄妭鐨勫璞★級骞惰拷韪?`calculate_zspage_chain_size()`锛屼細鍙戠幇璇?class 鏈€浼樼殑 zspage 閰嶇疆鏄竴涓摼锛?
+size class #95-99 被合并到 size class #100。这意味着当我们需要存储一个大小为（例如）1568 字节的对象时，最终会用到 size class #100 而非 size class #96。size class #100 面向大小1632 字节的对象，因此每个大小1568 字节的对象会浪费 1632-1568=64 字节
+size class #100 由每个含 2 个物理页zspage 组成，总共可容5 个对象。如果我们需要存13 个大小为 1568 的对象，最终会分配三个 zspage，即 6 个物理页
+然而，如果我们仔细查看 size class #96（面向大小为 1568 字节的对象）并追`calculate_zspage_chain_size()`，会发现class 最优的 zspage 配置是一个链
 ```
     pages per zspage      wasted bytes     used%
            1                  960           76
@@ -75,8 +75,8 @@ size class #100 鐢辨瘡涓惈 2 涓墿鐞嗛〉鐨?zspage 缁勬垚锛�
            5                   96           99
 
 ```
-杩欐剰鍛崇潃锛岀敱 5 涓墿鐞嗛〉缁勬垚鐨?class #96 閰嶇疆鍙互鍦ㄥ崟涓?zspage 涓瓨鍌?13 涓ぇ灏忎负 1568 鐨勫璞★紝鎬诲叡浣跨敤 5 涓墿鐞嗛〉銆傝繖姣?class #100 鐨勯厤缃洿楂樻晥锛屽悗鑰呬細鐢?6 涓墿鐞嗛〉鏉ュ瓨鍌ㄧ浉鍚屾暟閲忕殑瀵硅薄銆?
-闅忕潃 class #96 鐨?zspage 閾惧ぇ灏忓鍔狅紝鍏跺叧閿壒寰侊紙濡傛瘡 zspage 椤垫暟鍜屾瘡 zspage 瀵硅薄鏁帮級涔熼殢涔嬫敼鍙樸€傝繖瀵艰嚧鏇村皯鐨?class 鍚堝苟锛屼粠鑰屽舰鎴愭洿绱у噾鐨?class 鍒嗙粍锛屽噺灏戜簡鍐呭瓨娴垂銆?
+这意味着，由 5 个物理页组成class #96 配置可以在单zspage 中存13 个大小为 1568 的对象，总共使用 5 个物理页。这class #100 的配置更高效，后者会6 个物理页来存储相同数量的对象
+随着 class #96 zspage 链大小增加，其关键特征（如每 zspage 页数和每 zspage 对象数）也随之改变。这导致更少class 合并，从而形成更紧凑class 分组，减少了内存浪费
 ```
   class  size       10%   ....    100% obj_allocated   obj_used pages_used pages_per_zspage freeable
 
@@ -86,8 +86,8 @@ size class #100 鐢辨瘡涓惈 2 涓墿鐞嗛〉鐨?zspage 缁勬垚锛�
   ...
 
 ```
-size class #202 瀛樺偍澶у皬涓?3264 瀛楄妭鐨勫璞★紝姣忎釜 zspage 鏈€澶?4 椤点€備换浣曞ぇ浜?3264 瀛楄妭鐨勫璞¤瑙嗕负宸ㄥぇ锛坔uge锛夊璞★紝灞炰簬 size class #254锛岃 class 灏嗘瘡涓璞″瓨鍌ㄥ湪鍏惰嚜宸辩殑鐗╃悊椤典腑锛堝法澶?class 涓殑瀵硅薄涓嶅叡浜〉锛夈€?
-澧炲ぇ zspage 閾剧殑澶у皬涔熶細瀵艰嚧宸ㄥぇ size class 鐨?watermark 鏇撮珮锛屾€讳綋涓婂法澶?class 鏇村皯銆傝繖鍏佽鏇撮珮鏁堝湴瀛樺偍澶у璞°€?
+size class #202 存储大小3264 字节的对象，每个 zspage 最4 页。任何大3264 字节的对象被视为巨大（huge）对象，属于 size class #254，该 class 将每个对象存储在其自己的物理页中（巨class 中的对象不共享页）
+增大 zspage 链的大小也会导致巨大 size class watermark 更高，总体上巨class 更少。这允许更高效地存储大对象
 ```
   class  size       10%   ....    100% obj_allocated   obj_used pages_used pages_per_zspage freeable
 
@@ -146,8 +146,8 @@ size class #202 瀛樺偍澶у皬涓?3264 瀛楄妭鐨勫璞★紝姣忎釜 z
 
 
 ```
-### 涓€涓悎鎴愭祴璇?
-灏?zram 鐢ㄤ綔鏋勫缓浜х墿瀛樺偍锛圠inux 鍐呮牳缂栬瘧锛夈€?
+### 一个合成测
+zram 用作构建产物存储（Linux 内核编译）
 - `CONFIG_ZSMALLOC_CHAIN_SIZE=4`
 
 ```
@@ -175,7 +175,7 @@ size class #202 瀛樺偍澶у皬涓?3264 瀛楄妭鐨勫璞★紝姣忎釜 z
     1691803648 627793930 641703936        0 641703936       60        0    33591    33591
 
 ```
-浣跨敤鏇村ぇ鐨?zspage 閾惧彲鑳戒細鍑忓皯鐗╃悊椤电殑浣跨敤锛屽绀轰緥鎵€绀衡€斺€斾娇鐢ㄧ殑鐗╃悊椤垫暟浠?159955 涓嬮檷鍒?156666锛屽悓鏃?zsmalloc 姹犵殑鏈€澶у唴瀛樹娇鐢ㄩ噺浠?655175680 涓嬮檷鍒?641703936 瀛楄妭銆?
-鐒惰€岋紝鍦ㄥ唴閮ㄧ鐗囦弗閲嶄笖 zspool 鍘嬬缉鏃犳硶閲嶅畾浣嶅璞″苟閲婃斁 zspage 鐨勬儏鍐典笅锛岃繖涓€浼樺娍鍙兘琚郴缁熷唴瀛樺帇鍔涚殑娼滃湪澧炲姞鎵€鎶垫秷銆傚湪杩欎簺鎯呭喌涓嬶紝寤鸿鍑忓皬 zspage 閾惧ぇ灏忕殑涓婇檺锛堢敱 `CONFIG_ZSMALLOC_CHAIN_SIZE` 閫夐」鎸囧畾锛夈€?
-## 鍑芥暟
+使用更大zspage 链可能会减少物理页的使用，如示例所示——使用的物理页数159955 下降156666，同zsmalloc 池的最大内存使用量655175680 下降641703936 字节
+然而，在内部碎片严重且 zspool 压缩无法重定位对象并释放 zspage 的情况下，这一优势可能被系统内存压力的潜在增加所抵消。在这些情况下，建议减小 zspage 链大小的上限（由 `CONFIG_ZSMALLOC_CHAIN_SIZE` 选项指定）
+## 函数
 

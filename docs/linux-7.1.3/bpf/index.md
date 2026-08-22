@@ -1,14 +1,14 @@
-﻿## BPF 鏂囨。
+﻿## BPF 文档
 
-鏈〉鏄?BPF锛圔erkeley Packet Filter锛屽惈 eBPF 鎵╁睍锛夊瓙绯荤粺鏂囨。鐨勭储寮曪紝姹囨€讳簡楠岃瘉鍣ㄣ€乴ibbpf銆丅TF銆佽緟鍔╁嚱鏁般€佹槧灏勩€乲funcs 绛変富棰樼殑璇存槑鍏ュ彛锛屼究浜庤鑰呮寜涓婚绯荤粺瀛︿範 BPF 鎶€鏈粏鑺傘€?
+本页BPF（Berkeley Packet Filter，含 eBPF 扩展）子系统文档的索引，汇总了验证器、libbpf、BTF、辅助函数、映射、kfuncs 等主题的说明入口，便于读者按主题系统学习 BPF 技术细节
 
 
 
-鏈洰褰曞寘鍚?BPF锛圔erkeley Packet Filter锛夎鏂界殑鏂囨。锛岄噸鐐瑰叧娉ㄦ墿灞?BPF 鐗堟湰
-锛坋BPF锛夈€?
+本目录包BPF（Berkeley Packet Filter）设施的文档，重点关注扩BPF 版本
+（eBPF）
 
-姝ゅ唴鏍镐晶鏂囨。浠嶅湪瀹屽杽涓€侰ilium 椤圭洰杩樼淮鎶や簡涓€浠?`BPF and XDP Reference Guide`_
-锛屾繁鍏ユ帰璁ㄤ簡 BPF 鏋舵瀯鐨勬妧鏈粏鑺傘€?
+此内核侧文档仍在完善中。Cilium 项目还维护了一`BPF and XDP Reference Guide`_
+，深入探讨了 BPF 架构的技术细节
 
 - [verifier](verifier)
 - [libbpf/index](libbpf/index)

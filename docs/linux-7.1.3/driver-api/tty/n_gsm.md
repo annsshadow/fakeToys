@@ -1,21 +1,21 @@
-﻿## GSM 0710 tty 澶氳矾澶嶇敤鍣ㄤ娇鐢ㄨ鏄?
+﻿## GSM 0710 tty 多路复用器使用说
 
-璇ョ嚎璺绋嬪疄鐜颁簡 GSM 07.10 澶氳矾澶嶇敤鍗忚锛岃瑙佷互涓?3GPP 鏂囨。锛?
+该线路规程实现了 GSM 07.10 多路复用协议，详见以3GPP 文档
 	https://www.3gpp.org/ftp/Specs/archive/07_series/07.10/0710-720.zip
 
-鏈枃妗ｇ粰鍑轰簡涓€浜涘叧浜庡浣曞皢璇ラ┍鍔ㄧ敤浜庤繛鎺ュ埌鐗╃悊涓插彛鐨?GPRS 鍜?3G 璋冨埗瑙ｈ皟鍣ㄧ殑鎻愮ず銆?
-## 濡備綍浣跨敤
+本文档给出了一些关于如何将该驱动用于连接到物理串口GPRS 3G 调制解调器的提示
+## 如何使用
 
 
-### 閰嶇疆鍙戣捣鏂?
+### 配置发起
 
-#. 閫氳繃鍏朵覆鍙ｅ皢璋冨埗瑙ｈ皟鍣ㄥ垵濮嬪寲涓?0710 澶氳矾澶嶇敤锛坢ux锛夋ā寮忥紙閫氬父浣跨敤 `AT+CMUX=` 鍛戒护锛夈€傛牴鎹墍鐢ㄨ皟鍒惰В璋冨櫒鐨勪笉鍚岋紝鍙互鍚戣鍛戒护浼犲叆鎴栧鎴栧皯鍙傛暟銆?
-#. 浣跨敤 `TIOCSETD` ioctl 灏嗕覆琛岀嚎璺垏鎹负浣跨敤 n_gsm 绾胯矾瑙勭▼銆?
-#. 濡傛湁闇€瑕侊紝浣跨敤 `GSMIOC_GETCONF_EXT`/`GSMIOC_SETCONF_EXT` ioctl 閰嶇疆澶氳矾澶嶇敤鍣ㄣ€?
-#. 浣跨敤 `GSMIOC_GETCONF`/`GSMIOC_SETCONF` ioctl 閰嶇疆澶氳矾澶嶇敤鍣ㄣ€?
-#. 瀵逛簬闈為粯璁ら厤缃紝浣跨敤 `GSMIOC_GETCONF_DLCI`/`GSMIOC_SETCONF_DLCI` ioctl 閰嶇疆 DLC銆?
-#. 鑾峰彇鎵€鐢ㄤ覆鍙ｇ殑鍩哄噯 gsmtty 缂栧彿銆?
-   鍒濆鍖栫▼搴忕殑涓昏閮ㄥ垎
+#. 通过其串口将调制解调器初始化0710 多路复用（mux）模式（通常使用 `AT+CMUX=` 命令）。根据所用调制解调器的不同，可以向该命令传入或多或少参数
+#. 使用 `TIOCSETD` ioctl 将串行线路切换为使用 n_gsm 线路规程
+#. 如有需要，使用 `GSMIOC_GETCONF_EXT`/`GSMIOC_SETCONF_EXT` ioctl 配置多路复用器
+#. 使用 `GSMIOC_GETCONF`/`GSMIOC_SETCONF` ioctl 配置多路复用器
+#. 对于非默认配置，使用 `GSMIOC_GETCONF_DLCI`/`GSMIOC_SETCONF_DLCI` ioctl 配置 DLC
+#. 获取所用串口的基准 gsmtty 编号
+   初始化程序的主要部分
 ```
 
       #include <stdio.h>
@@ -82,25 +82,25 @@
       pause();
 
 ```
-#. 灏嗚繖浜涜澶囧綋浣滄櫘閫氫覆鍙ｄ娇鐢ㄣ€?
-   渚嬪锛屽彲浠ワ細
+#. 将这些设备当作普通串口使用
+   例如，可以：
 
-   - 浣跨敤 **gnokii** 鍦?`ttygsm1` 涓婂彂閫?/ 鎺ユ敹鐭俊
-   - 浣跨敤 **ppp** 鍦?`ttygsm2` 涓婂缓绔嬫暟鎹摼璺?
-#. 鍦ㄥ叧闂墿鐞嗙鍙ｄ箣鍓嶏紝鍏堝叧闂墍鏈夎櫄鎷熺鍙ｃ€?
-   娉ㄦ剰锛屽叧闂墿鐞嗙鍙ｅ悗璋冨埗瑙ｈ皟鍣ㄤ粛澶勪簬澶氳矾澶嶇敤妯″紡銆傝繖鍙兘浼氬鑷寸◢鍚庢棤娉曟垚鍔熼噸鏂版墦寮€璇ョ鍙ｃ€備负閬垮厤杩欑鎯呭喌锛屽彲浠ュ湪鍒濆鍖栧璺鐢ㄦā寮忎箣鍓嶏紝鍦ㄧ‖浠跺厑璁哥殑鎯呭喌涓嬪浣嶈皟鍒惰В璋冨櫒锛屾垨鑰呮墜鍔ㄥ彂閫佹柇寮€杩炴帴鍛戒护甯?```
+   - 使用 **gnokii** `ttygsm1` 上发/ 接收短信
+   - 使用 **ppp** `ttygsm2` 上建立数据链
+#. 在关闭物理端口之前，先关闭所有虚拟端口
+   注意，关闭物理端口后调制解调器仍处于多路复用模式。这可能会导致稍后无法成功重新打开该端口。为避免这种情况，可以在初始化多路复用模式之前，在硬件允许的情况下复位调制解调器，或者手动发送断开连接命令```
 
       0xf9, 0x03, 0xef, 0x03, 0xc3, 0x16, 0xf9
 
 ```
-### 閰嶇疆璇锋眰鏂?
+### 配置请求
 
-#. 閫氳繃鍏朵覆鍙ｆ帴鏀?`AT+CMUX=` 鍛戒护锛屽垵濮嬪寲澶氳矾澶嶇敤妯″紡閰嶇疆銆?
-#. 浣跨敤 `TIOCSETD` ioctl 灏嗕覆琛岀嚎璺垏鎹负浣跨敤 **n_gsm** 绾胯矾瑙勭▼銆?
-#. 濡傛湁闇€瑕侊紝浣跨敤 `GSMIOC_GETCONF_EXT`/`GSMIOC_SETCONF_EXT`
-   ioctl 閰嶇疆澶氳矾澶嶇敤鍣ㄣ€?
-#. 浣跨敤 `GSMIOC_GETCONF`/`GSMIOC_SETCONF` ioctl 閰嶇疆澶氳矾澶嶇敤鍣ㄣ€?
-#. 瀵逛簬闈為粯璁ら厤缃紝浣跨敤 `GSMIOC_GETCONF_DLCI`/`GSMIOC_SETCONF_DLCI` ioctl 閰嶇疆 DLC銆?
+#. 通过其串口接`AT+CMUX=` 命令，初始化多路复用模式配置
+#. 使用 `TIOCSETD` ioctl 将串行线路切换为使用 **n_gsm** 线路规程
+#. 如有需要，使用 `GSMIOC_GETCONF_EXT`/`GSMIOC_SETCONF_EXT`
+   ioctl 配置多路复用器
+#. 使用 `GSMIOC_GETCONF`/`GSMIOC_SETCONF` ioctl 配置多路复用器
+#. 对于非默认配置，使用 `GSMIOC_GETCONF_DLCI`/`GSMIOC_SETCONF_DLCI` ioctl 配置 DLC
 ```
 
         #include <stdio.h>

@@ -1,12 +1,12 @@
 ﻿
 
 
-# 鍓嶇鍑芥暟璋冪敤锛團rontend Function Calls锛?
+# 前端函数调用（Frontend Function Calls
 
-鏈〉鏄?DVB 鍓嶇锛坒rontend锛夎澶囧嚱鏁拌皟鐢ㄥ弬鑰冪殑绱㈠紩锛屾眹鎬讳簡 open/close銆佽皟璋愩€丏iSEqC 涓庡睘鎬ц鍐欑瓑鍚勫墠绔?ioctl 瀵瑰簲鐨勫弬鑰冩枃妗ｅ叆鍙ｏ紝渚夸簬鎸夊姛鑳藉揩閫熷畾浣嶇敤鎴风┖闂存帴鍙ｈ鏄庛€?
+本页DVB 前端（frontend）设备函数调用参考的索引，汇总了 open/close、调谐、DiSEqC 与属性读写等各前ioctl 对应的参考文档入口，便于按功能快速定位用户空间接口说明
 
 
-鏈〉鍒楀嚭 DVB 鍓嶇锛坒rontend锛夎澶囧悇鍑芥暟璋冪敤鐨勫弬鑰冩枃妗ｃ€?
+本页列出 DVB 前端（frontend）设备各函数调用的参考文档
 
 
 

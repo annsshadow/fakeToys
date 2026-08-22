@@ -1,24 +1,24 @@
 ﻿
-## KVM 涓撶敤鐨?MSR
+## KVM 专用MSR
 
 
 :Author: Glauber Costa <glommer@redhat.com>, Red Hat Inc, 2010
 
-KVM 浣跨敤涓€浜涜嚜瀹氫箟鐨?MSR 鏉ュ鐞嗘煇浜涜姹傘€?
+KVM 使用一些自定义MSR 来处理某些请求
 
-鑷畾涔?MSR 鏈変竴涓负鍏朵繚鐣欑殑鍖洪棿锛岃寖鍥翠粠 0x4b564d00 鍒?0x4b564dff銆傚湪姝ゅ尯闂翠箣澶栦篃瀛樺湪涓€浜?MSR锛屼絾瀹冧滑宸茶寮冪敤锛屼笉寤鸿浣跨敤銆?
+自定MSR 有一个为其保留的区间，范围从 0x4b564d00 0x4b564dff。在此区间之外也存在一MSR，但它们已被弃用，不建议使用
 
-### 鑷畾涔?MSR 鍒楄〃
+### 自定MSR 列表
 
 
-褰撳墠鏀寔鐨勮嚜瀹氫箟 MSR 鍒楄〃濡備笅锛?
+当前支持的自定义 MSR 列表如下
 
 MSR_KVM_WALL_CLOCK_NEW:
 	0x4b564d00
 
 data:
-	涓€涓唴瀛樺尯鍩熺殑 4 瀛楄妭瀵归綈鐗╃悊鍦板潃锛岃鍖哄煙蹇呴』浣嶄簬
-	瀹㈡埛鏈?RAM 涓€傝鍐呭瓨棰勬湡鐢ㄤ簬淇濆瓨濡備笅鍐呭鐨勫壇鏈?
+	一个内存区域的 4 字节对齐物理地址，该区域必须位于
+	客户RAM 中。该内存预期用于保存如下内容的副
 ```
 
 	 struct pvclock_wall_clock {
@@ -57,8 +57,8 @@ MSR_KVM_SYSTEM_TIME_NEW:
 	0x4b564d01
 
 data:
-	涓€涓唴瀛樺尯鍩熺殑 4 瀛楄妭瀵归綈鐗╃悊鍦板潃锛岃鍖哄煙蹇呴』浣嶄簬瀹㈡埛鏈?RAM 涓紝
-	澶栧姞 bit 0 涓殑涓€涓娇鑳戒綅銆傝鍐呭瓨棰勬湡鐢ㄤ簬淇濆瓨
+	一个内存区域的 4 字节对齐物理地址，该区域必须位于客户RAM 中，
+	外加 bit 0 中的一个使能位。该内存预期用于保存
 ```
 
 	  struct pvclock_vcpu_time_info {
@@ -147,23 +147,23 @@ MSR_KVM_WALL_CLOCK:
 	0x11
 
 data and functioning:
-	涓?MSR_KVM_WALL_CLOCK_NEW 鐩稿悓銆傝鏀圭敤鍚庤€呫€?
+	MSR_KVM_WALL_CLOCK_NEW 相同。请改用后者
 
-	璇?MSR 涓嶅湪淇濈暀鐨?KVM 鍖洪棿鍐咃紝鏈潵鍙兘浼氳绉婚櫎銆?
-	瀹冪殑浣跨敤宸茶寮冪敤銆?
+	MSR 不在保留KVM 区间内，未来可能会被移除
+	它的使用已被弃用
 
-	浣跨敤鍓嶅繀椤婚€氳繃 0x4000001 cpuid 鍙跺瓙涓殑 bit 0 妫€鏌ヨ MSR 鏄惁鍙敤銆?
+	使用前必须通过 0x4000001 cpuid 叶子中的 bit 0 检查该 MSR 是否可用
 
 MSR_KVM_SYSTEM_TIME:
 	0x12
 
 data and functioning:
-	涓?MSR_KVM_SYSTEM_TIME_NEW 鐩稿悓銆傝鏀圭敤鍚庤€呫€?
+	MSR_KVM_SYSTEM_TIME_NEW 相同。请改用后者
 
-	璇?MSR 涓嶅湪淇濈暀鐨?KVM 鍖洪棿鍐咃紝鏈潵鍙兘浼氳绉婚櫎銆?
-	瀹冪殑浣跨敤宸茶寮冪敤銆?
+	MSR 不在保留KVM 区间内，未来可能会被移除
+	它的使用已被弃用
 
-	浣跨敤鍓嶅繀椤婚€氳繃 0x4000001 cpuid 鍙跺瓙涓殑 bit 0 妫€鏌ヨ MSR 鏄惁鍙敤銆?
+	使用前必须通过 0x4000001 cpuid 叶子中的 bit 0 检查该 MSR 是否可用
 
 ```
 
@@ -187,7 +187,7 @@ MSR_KVM_ASYNC_PF_EN:
 	0x4b564d02
 
 data:
-	寮傛椤甸敊璇紙APF锛夋帶鍒?MSR銆?
+	异步页错误（APF）控MSR
 
 	Bits 63-6 hold 64-byte aligned physical address of a 64 byte memory area
 	which must be in guest RAM. This memory is expected to hold the
@@ -258,8 +258,8 @@ MSR_KVM_STEAL_TIME:
 	0x4b564d03
 
 data:
-	涓€涓唴瀛樺尯鍩熺殑 64 瀛楄妭瀵归綈鐗╃悊鍦板潃锛岃鍖哄煙蹇呴』
-	浣嶄簬瀹㈡埛鏈?RAM 涓紝澶栧姞 bit 0 涓殑浣胯兘浣嶃€傝鍐呭瓨棰勬湡鐢ㄤ簬
+	一个内存区域的 64 字节对齐物理地址，该区域必须
+	位于客户RAM 中，外加 bit 0 中的使能位。该内存预期用于
 ```
 
 	  struct kvm_steal_time {
@@ -306,50 +306,50 @@ MSR_KVM_EOI_EN:
 	0x4b564d04
 
 data:
-	褰?vCPU 涓婂惎鐢ㄤ簡 PV锛堝崐铏氭嫙鍖栵級涓柇缁撴潫鏃讹紝bit 0 涓?1锛涚鐢ㄦ椂涓?0銆俠it 1 涓轰繚鐣欎綅锛屽繀椤讳负 0銆傚綋 PV 涓柇缁撴潫琚惎鐢紙bit 0 缃綅锛夋椂锛宐it 63-2 淇濆瓨涓€涓?4 瀛楄妭瀵归綈鐨勭墿鐞嗗湴鍧€锛屾寚鍚戜竴涓?4 瀛楄妭鍐呭瓨鍖哄煙锛岃鍖哄煙蹇呴』浣嶄簬瀹㈡埛鏈?RAM 涓笖蹇呴』琚竻闆躲€?
+	vCPU 上启用了 PV（半虚拟化）中断结束时，bit 0 1；禁用时0。bit 1 为保留位，必须为 0。当 PV 中断结束被启用（bit 0 置位）时，bit 63-2 保存一4 字节对齐的物理地址，指向一4 字节内存区域，该区域必须位于客户RAM 中且必须被清零
 
-	璇?4 瀛楄妭鍐呭瓨鍖哄煙鐨勬渶浣庢湁鏁堜綅锛堢涓€浣嶏級灏嗙敱 hypervisor 鍐欏叆锛岄€氬父鏄湪娉ㄥ叆涓柇鏃躲€傚€间负 1 琛ㄧず瀹㈡埛鏈哄彲浠ヨ烦杩囧悜 APIC 鍐欏叆 EOI锛堥€氳繃 MSR 鎴?MMIO 鍐欙級锛涚浉鍙嶏紝鍙渶閫氳繃娓呴櫎瀹㈡埛鏈哄唴瀛樹腑鐨勮浣嶆潵鍙戝嚭 EOI 淇″彿鈥斺€旇浣嶇疆绋嶅悗浼氳 hypervisor 杞銆傚€间负 0 琛ㄧず闇€瑕佽繘琛?EOI 鍐欐搷浣溿€?
+	4 字节内存区域的最低有效位（第一位）将由 hypervisor 写入，通常是在注入中断时。值为 1 表示客户机可以跳过向 APIC 写入 EOI（通过 MSR MMIO 写）；相反，只需通过清除客户机内存中的该位来发出 EOI 信号——该位置稍后会被 hypervisor 轮询。值为 0 表示需要进EOI 写操作
 
-	瀹㈡埛鏈哄拷鐣ヨ浼樺寲骞剁洿鎺ユ墽琛?APIC EOI 鍐欐搷浣滃缁堟槸瀹夊叏鐨勩€?
+	客户机忽略该优化并直接执APIC EOI 写操作始终是安全的
 
-	Hypervisor 淇濊瘉鍙細鍦ㄥ綋鍓?VCPU 涓婁笅鏂囧唴淇敼璇ユ渶浣庢湁鏁堜綅锛岃繖鎰忓懗鐫€瀹㈡埛鏈烘棤闇€浣跨敤 lock 鍓嶇紑鎴栧唴瀛樻帓搴忓師璇潵涓?hypervisor 鍚屾銆?
+	Hypervisor 保证只会在当VCPU 上下文内修改该最低有效位，这意味着客户机无需使用 lock 前缀或内存排序原语来hypervisor 同步
 
-	鐒惰€岋紝hypervisor 鍙互闅忔椂缃綅鎴栨竻闄よ鍐呭瓨浣嶏細鍥犳锛屼负浜嗙‘淇?hypervisor 涓嶄細鍦ㄥ鎴锋満妫€娴嬫槸鍚﹀彲浠ヨ烦杩?EOI APIC 鍐欍€佷笌娓呴櫎璇ヤ綅浠ュ悜 hypervisor 鍙戝嚭 EOI 淇″彿涔嬮棿鐨勭獥鍙ｆ湡鍐呮墦鏂鎴锋満骞舵竻闄よ鍐呭瓨鍖哄煙鐨勬渶浣庢湁鏁堜綅锛屽鎴锋満蹇呴』浣跨敤鍗曟潯 CPU 鎸囦护锛堝 test-and-clear 鎴?compare-and-exchange锛夊悓鏃惰鍙栧苟娓呴櫎璇ュ唴瀛樺尯鍩熺殑鏈€浣庢湁鏁堜綅銆?
+	然而，hypervisor 可以随时置位或清除该内存位：因此，为了确hypervisor 不会在客户机检测是否可以跳EOI APIC 写、与清除该位以向 hypervisor 发出 EOI 信号之间的窗口期内打断客户机并清除该内存区域的最低有效位，客户机必须使用单条 CPU 指令（如 test-and-clear compare-and-exchange）同时读取并清除该内存区域的最低有效位
 
 MSR_KVM_POLL_CONTROL:
 	0x4b564d05
 
-	鎺у埗瀹夸富鏈轰晶鐨勮疆璇€?
+	控制宿主机侧的轮询
 
 data:
-	Bit 0 鐢ㄤ簬鍚敤锛?锛夋垨绂佺敤锛?锛夊涓绘満渚х殑 HLT 杞閫昏緫銆?
+	Bit 0 用于启用）或禁用）宿主机侧的 HLT 轮询逻辑
 
-	KVM 瀹㈡埛鏈哄彲浠ヨ姹傚涓绘満涓嶈鍦?HLT 鏃惰疆璇紝渚嬪褰撳畠浠嚜韬鍦ㄨ繘琛岃疆璇㈡椂銆?
+	KVM 客户机可以请求宿主机不要HLT 时轮询，例如当它们自身正在进行轮询时
 
 MSR_KVM_ASYNC_PF_INT:
 	0x4b564d06
 
 data:
-	绗簩涓紓姝ラ〉閿欒锛圓PF锛夋帶鍒?MSR銆?
+	第二个异步页错误（APF）控MSR
 
-	Bit 0-7锛氱敤浜庢姇閫?'page ready'锛堥〉闈㈠氨缁級APF 浜嬩欢鐨?APIC 鍚戦噺銆?
-	Bit 8-63锛氫繚鐣?
+	Bit 0-7：用于投'page ready'（页面就绪）APF 事件APIC 向量
+	Bit 8-63：保
 
-	鐢ㄤ簬寮傛 'page ready' 閫氱煡鎶曢€掔殑涓柇鍚戦噺銆?
-	璇ュ悜閲忓繀椤诲湪寮傛椤甸敊璇満鍒朵簬 MSR_KVM_ASYNC_PF_EN 涓惎鐢ㄤ箣鍓嶈缃ソ銆備粎褰?CPUID 涓瓨鍦?KVM_FEATURE_ASYNC_PF_INT 鏃惰 MSR 鎵嶅彲鐢ㄣ€?
+	用于异步 'page ready' 通知投递的中断向量
+	该向量必须在异步页错误机制于 MSR_KVM_ASYNC_PF_EN 中启用之前设置好。仅CPUID 中存KVM_FEATURE_ASYNC_PF_INT 时该 MSR 才可用
 
 MSR_KVM_ASYNC_PF_ACK:
 	0x4b564d07
 
 data:
-	寮傛椤甸敊璇紙APF锛夌‘璁ゃ€?
+	异步页错误（APF）确认
 
-	褰撳鎴锋満澶勭悊瀹?'page ready' APF 浜嬩欢锛屼笖 'struct kvm_vcpu_pv_apf_data' 涓殑 'token' 瀛楁琚竻闄ゅ悗锛屽簲鍚戣 MSR 鐨?bit 0 鍐欏叆 '1'锛岃繖浼氫績浣垮涓绘満閲嶆柊鎵弿鍏堕槦鍒楀苟妫€鏌ユ槸鍚﹁繕鏈夋洿澶氬緟澶勭悊閫氱煡銆備粎褰?CPUID 涓瓨鍦?KVM_FEATURE_ASYNC_PF_INT 鏃惰 MSR 鎵嶅彲鐢ㄣ€?
+	当客户机处理'page ready' APF 事件，且 'struct kvm_vcpu_pv_apf_data' 中的 'token' 字段被清除后，应向该 MSR bit 0 写入 '1'，这会促使宿主机重新扫描其队列并检查是否还有更多待处理通知。仅CPUID 中存KVM_FEATURE_ASYNC_PF_INT 时该 MSR 才可用
 
 MSR_KVM_MIGRATION_CONTROL:
         0x4b564d08
 
 data:
-        浠呭綋 CPUID 涓瓨鍦?KVM_FEATURE_MIGRATION_CONTROL 鏃惰 MSR 鎵嶅彲鐢ㄣ€侭it 0 琛ㄧず鏄惁鍏佽瀵瑰鎴锋満杩涜瀹炴椂杩佺Щ銆?
+        仅当 CPUID 中存KVM_FEATURE_MIGRATION_CONTROL 时该 MSR 才可用。Bit 0 表示是否允许对客户机进行实时迁移
 
-        褰撳鎴锋満鍚姩鏃讹紝鑻ュ鎴锋満浣跨敤浜嗗姞瀵嗗唴瀛橈紝bit 0 涓?0锛涜嫢瀹㈡埛鏈烘湭浣跨敤鍔犲瘑鍐呭瓨锛宐it 0 涓?1銆傚鏋滃鎴锋満閫氳繃 `KVM_HC_MAP_GPA_RANGE` hypercall 鍚戝涓绘満閫氭姤椤靛姞瀵嗙姸鎬侊紝鍒欏畠鍙互灏嗚 MSR 鐨?bit 0 缃綅锛屼互鍏佽瀵瑰鎴锋満杩涜瀹炴椂杩佺Щ銆?
+        当客户机启动时，若客户机使用了加密内存，bit 0 0；若客户机未使用加密内存，bit 0 1。如果客户机通过 `KVM_HC_MAP_GPA_RANGE` hypercall 向宿主机通报页加密状态，则它可以将该 MSR bit 0 置位，以允许对客户机进行实时迁移

@@ -1,14 +1,14 @@
 ﻿
-## 鍐呮牳瀛愮郴缁熸枃妗?
+## 鍐呮牳瀛愮郴缁熸枃妗。
 
-鏈〉鏄?Linux 鍐呮牳鏂囨。鐨勫瓙绯荤粺鎬荤储寮曪紝鎸夋牳蹇冦€佷汉鏈烘帴鍙ｃ€佺綉缁溿€佸瓨鍌ㄧ瓑绫诲埆姹囨€讳簡鍚勫唴鏍稿瓙绯荤粺鐨勫弬鑰冩枃妗ｅ叆鍙ｏ紝渚夸簬寮€鍙戣€呬粠鍐呮牳瑙嗚蹇€熷畾浣嶇壒瀹氬瓙绯荤粺鐨勮鏄庛€?
+本页Linux 内核文档的子系统总索引，按核心、人机接口、网络、存储等类别汇总了各内核子系统的参考文档入口，便于开发者从内核视角快速定位特定子系统的说明
 
 
-杩欎簺涔︾睄浠庡唴鏍稿紑鍙戣€呯殑瑙掑害锛岃缁嗕粙缁嶄簡鐗瑰畾鍐呮牳瀛愮郴缁熸槸濡備綍宸ヤ綔鐨勩€?
-杩欓噷鐨勫ぇ閮ㄥ垎淇℃伅鐩存帴鍙栬嚜鍐呮牳婧愪唬鐮侊紝骞惰闇€瑕佹坊鍔犱簡琛ュ厖鏉愭枡锛堟垨鑰呰嚦灏?
-鏄垜浠娉曟坊鍔犵殑鍐呭鈥斺€斿緢鍙兘 **骞堕潪** 鍏ㄩ儴鎵€闇€锛夈€?
+这些书籍从内核开发者的角度，详细介绍了特定内核子系统是如何工作的
+这里的大部分信息直接取自内核源代码，并视需要添加了补充材料（或者至
+是我们设法添加的内容——很可能 **并非** 全部所需）
 
-### 鏍稿績瀛愮郴缁?
+### 鏍稿績瀛愮郴缁。
 
 
 - [core-api/index](core-api/index)
@@ -19,7 +19,7 @@
 - [timers/index](timers/index)
 - [locking/index](locking/index)
 
-### 浜烘満鎺ュ彛
+### 人机接口
 
 
 - [input/index](input/index)
@@ -29,7 +29,7 @@
 - [fb/index](fb/index)
 - [leds/index](leds/index)
 
-### 缃戠粶鎺ュ彛
+### 网络接口
 
 
 - [networking/index](networking/index)
@@ -37,7 +37,7 @@
 - [infiniband/index](infiniband/index)
 - [mhi/index](mhi/index)
 
-### 瀛樺偍鎺ュ彛
+### 存储接口
 
 
 - [filesystems/index](filesystems/index)
@@ -47,9 +47,9 @@
 - [target/index](target/index)
 - [nvme/index](nvme/index)
 
-### 鍏朵粬瀛愮郴缁?
+### 鍏朵粬瀛愮郴缁。
 
-**Fixme**锛氳繖閲岃繕闇€瑕佹洿澶氱殑鍒嗙被缁勭粐宸ヤ綔銆?
+**Fixme**：这里还需要更多的分类组织工作
 
 - [accounting/index](accounting/index)
 - [cpu-freq/index](cpu-freq/index)

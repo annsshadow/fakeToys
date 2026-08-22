@@ -1,8 +1,8 @@
 ﻿
-######## 鍓嶇浜嬩欢
+######## 前端事件
 
 
-鏈妭鎻忚堪鍓嶇浜嬩欢锛坒rontend events锛夌浉鍏崇殑鏁版嵁缁撴瀯銆?
+本节描述前端事件（frontend events）相关的数据结构
 
 
      struct dvb_frontend_event {

@@ -4,15 +4,15 @@
 ## 濯掍綋瀛愮郴缁熷唴鏍稿唴閮?API
 
 
-鏈妭鍖呭惈鏈夊叧濯掍綋瀛愮郴缁熷強鍏跺彈鏀寔椹卞姩鐨勭敤娉曚俊鎭€?
-璇峰弬闃咃細
+本节包含有关媒体子系统及其受支持驱动的用法信息
+请参阅：
 
 Documentation/admin-guide/media/index.rst
 
-  - 鏈夊叧濯掍綋瀛愮郴缁熶笌鍙楁敮鎸侀┍鍔ㄧ殑鐢ㄦ硶淇℃伅锛?
+  - 有关媒体子系统与受支持驱动的用法信息
 Documentation/userspace-api/media/index.rst
 
-  - 鏈夊叧濯掍綋璁惧浣跨敤鐨勭敤鎴风┖闂?API銆?
+  - 有关媒体设备使用的用户空API
 
 - [maintainer-entry-profile](maintainer-entry-profile)
 - [media-committers](media-committers)
@@ -25,7 +25,7 @@ Documentation/userspace-api/media/index.rst
 - [camera-sensor](camera-sensor)
 - [drivers/index](drivers/index)
 
-**鐗堟潈** |copy| 2009-2020 : LinuxTV 寮€鍙戣€?
+**版权** |copy| 2009-2020 : LinuxTV 开发
 ```
 
   This documentation is free software; you can redistribute it and/or modify it

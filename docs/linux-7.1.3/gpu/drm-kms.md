@@ -1,19 +1,19 @@
-﻿## 鍐呮牳妯″紡璁剧疆 (KMS)
+﻿## 内核模式设置 (KMS)
 
 
-椹卞姩蹇呴』閫氳繃鍦?DRM 璁惧涓婅皟鐢?drmm_mode_config_init() 鏉ュ垵濮嬪寲妯″紡璁剧疆鏍稿績銆傝鍑芥暟鍒濆鍖?`struct drm_device <drm_device>` 鐨?mode_config 瀛楁锛屼笖姘歌繙涓嶄細澶辫触銆傚畬鎴愬悗锛屽繀椤婚€氳繃鍒濆鍖栦互涓嬪瓧娈垫潵寤虹珛妯″紡閰嶇疆銆?
+驱动必须通过DRM 设备上调drmm_mode_config_init() 来初始化模式设置核心。该函数初始`struct drm_device <drm_device>` mode_config 字段，且永远不会失败。完成后，必须通过初始化以下字段来建立模式配置
 
 - int min_width, min_height; int max_width, max_height;
-   甯х紦鍐诧紙frame buffer锛夌殑鏈€灏忓拰鏈€澶у搴︿笌楂樺害锛屼互鍍忕礌涓哄崟浣嶃€?
+   帧缓冲（frame buffer）的最小和最大宽度与高度，以像素为单位
 
 - struct drm_mode_config_funcs \*funcs;
-   妯″紡璁剧疆鍑芥暟銆?
+   模式设置函数
 
-## 姒傝堪
+## 概述
 
 
-   :alt: KMS 鏄剧ず娴佹按绾?
-   :caption: KMS 鏄剧ず娴佹按绾挎瑙?
+   :alt: KMS 显示流水
+   :caption: KMS 显示流水线概
 
    digraph "KMS" {
       node [shape=box]
@@ -47,16 +47,16 @@
       }
    }
 
-KMS 鍚戠敤鎴风┖闂村憟鐜扮殑鍩烘湰瀵硅薄缁撴瀯鐩稿綋绠€鍗曘€傚抚缂撳啿锛堢敱 `struct drm_framebuffer <drm_framebuffer>` 琛ㄧず锛屽弬瑙?`Frame Buffer Abstraction`_锛夎緭鍏ュ埌 plane 涓€侾lane 鐢?`struct drm_plane <drm_plane>` 琛ㄧず锛屾洿澶氱粏鑺傚弬瑙?`Plane Abstraction`_銆備竴涓垨澶氫釜锛堢敋鑷抽浂涓級plane 灏嗗叾鍍忕礌鏁版嵁閫佸叆涓€涓?CRTC锛堢敱 `struct drm_crtc <drm_crtc>` 琛ㄧず锛屽弬瑙?`CRTC Abstraction`_锛夎繘琛屾贩鍚堬紙blending锛夈€傜簿纭殑娣峰悎姝ラ鍦?`Plane Composition Properties`_ 鍙婄浉鍏崇珷鑺備腑鏈夋洿璇︾粏鐨勮鏄庛€?
+KMS 向用户空间呈现的基本对象结构相当简单。帧缓冲（由 `struct drm_framebuffer <drm_framebuffer>` 表示，参`Frame Buffer Abstraction`_）输入到 plane 中。Plane `struct drm_plane <drm_plane>` 表示，更多细节参`Plane Abstraction`_。一个或多个（甚至零个）plane 将其像素数据送入一CRTC（由 `struct drm_crtc <drm_crtc>` 表示，参`CRTC Abstraction`_）进行混合（blending）。精确的混合步骤`Plane Composition Properties`_ 及相关章节中有更详细的说明
 
-鍦ㄨ緭鍑鸿矾鐢辨柟闈紝绗竴姝ユ槸 encoder锛堢敱 `struct drm_encoder <drm_encoder>` 琛ㄧず锛屽弬瑙?`Encoder Abstraction`_锛夈€傝繖浜涘疄闄呬笂鍙槸鐢ㄤ簬瀹炵幇 KMS 椹卞姩鐨勮緟鍔╁簱鐨勫唴閮ㄤ骇鐗┿€傞櫎姝や箣澶栵紝瀹冧滑璁╃敤鎴风┖闂存洿闅句互寮勬竻妤?CRTC 涓?connector 涔嬮棿鍝簺杩炴帴鏄彲鑳界殑銆佹敮鎸佷綍绉嶅厠闅嗭紙cloning锛夛紝瀹冧滑鍦ㄧ敤鎴风┖闂?API 涓鏃犵敤澶勩€傞仐鎲剧殑鏄?encoder 宸茬粡鏆撮湶缁欎簡鐢ㄦ埛绌洪棿锛屽洜姝ょ洰鍓嶆棤娉曠Щ闄ゅ畠浠€傛澶栵紝鏆撮湶鐨勯檺鍒剁粡甯镐細琚┍鍔ㄩ敊璇湴璁剧疆锛屽苟涓斿湪寰堝鎯呭喌涓嬩笉瓒充互琛ㄨ揪鐪熸鐨勯檺鍒躲€備竴涓?CRTC 鍙互杩炴帴鍒板涓?encoder锛岃€屽浜庝竴涓浜庢椿鍔ㄧ姸鎬佺殑 CRTC 鑰岃█锛屽繀椤昏嚦灏戞湁涓€涓?encoder銆?
+在输出路由方面，第一步是 encoder（由 `struct drm_encoder <drm_encoder>` 表示，参`Encoder Abstraction`_）。这些实际上只是用于实现 KMS 驱动的辅助库的内部产物。除此之外，它们让用户空间更难以弄清CRTC connector 之间哪些连接是可能的、支持何种克隆（cloning），它们在用户空API 中毫无用处。遗憾的encoder 已经暴露给了用户空间，因此目前无法移除它们。此外，暴露的限制经常会被驱动错误地设置，并且在很多情况下不足以表达真正的限制。一CRTC 可以连接到多encoder，而对于一个处于活动状态的 CRTC 而言，必须至少有一encoder
 
-鏄剧ず閾句腑鏈€缁堢殑銆佷篃鏄湡姝ｇ殑绔偣鏄?connector锛堢敱 `struct drm_connector <drm_connector>` 琛ㄧず锛屽弬瑙?`Connector Abstraction`_锛夈€侰onnector 鍙互鏈変笉鍚岀殑鍙敤 encoder锛屼絾鍐呮牳椹卞姩浼氫负姣忎釜 connector 閫夋嫨浣跨敤鍝釜 encoder銆傚叾鐢ㄤ緥鏄?DVI锛屽畠鍙互鍦ㄦā鎷熷拰鏁板瓧 encoder 涔嬮棿鍒囨崲銆侲ncoder 涔熷彲浠ラ┍鍔ㄥ涓笉鍚岀殑 connector銆傛瘡涓椿鍔?encoder 鎭板ソ瀵瑰簲涓€涓椿鍔?connector銆?
+显示链中最终的、也是真正的端点connector（由 `struct drm_connector <drm_connector>` 表示，参`Connector Abstraction`_）。Connector 可以有不同的可用 encoder，但内核驱动会为每个 connector 选择使用哪个 encoder。其用例DVI，它可以在模拟和数字 encoder 之间切换。Encoder 也可以驱动多个不同的 connector。每个活encoder 恰好对应一个活connector
 
-鍦ㄥ唴閮紝杈撳嚭娴佹按绾胯绋嶅井澶嶆潅涓€浜涳紝骞朵笖鏇磋创杩戝綋浠婄殑纭欢锛?
+在内部，输出流水线要稍微复杂一些，并且更贴近当今的硬件
 
-   :alt: KMS 杈撳嚭娴佹按绾?
-   :caption: KMS 杈撳嚭娴佹按绾?
+   :alt: KMS 输出流水
+   :caption: KMS 输出流水
 
    digraph "Output Pipeline" {
       node [shape=box]
@@ -100,13 +100,13 @@ KMS 鍚戠敤鎴风┖闂村憟鐜扮殑鍩烘湰瀵硅薄缁撴瀯鐩稿綋绠�
       }
    }
 
-鍦ㄥ唴閮ㄨ繕鏈変袱涓澶栫殑杈呭姪瀵硅薄鍙戞尌浣滅敤銆傞鍏堬紝涓轰簡鑳藉鍦?encoder 涔嬮棿鍏变韩浠ｇ爜锛堟湁鏃跺湪鍚屼竴 SoC 涓婏紝鏈夋椂鍦ㄧ墖澶栵級锛屽彲浠ュ皢涓€涓垨澶氫釜 drm_bridge锛堢敱 :c:type:`struct drm_bridge <drm_bridge>` 琛ㄧず锛夐摼鎺ュ埌鏌愪釜 encoder銆傝閾炬帴鏄潤鎬佺殑锛屾棤娉曟洿鏀癸紝杩欐剰鍛崇潃浜ゅ弶寮€鍏筹紙cross-bar锛屽鏋滄湁鐨勮瘽锛夊繀椤绘槧灏勫埌 CRTC 涓庝换浣?encoder 涔嬮棿銆傞€氬父鍦ㄥ甫鏈?bridge 鐨勯┍鍔ㄤ腑锛宔ncoder 灞傞潰宸茬粡娌℃湁浠ｇ爜鍓╀笅銆侫tomic 椹卞姩鍙互鐪佸幓鎵€鏈?encoder 鍥炶皟锛屼粠鑰屽疄璐ㄤ笂鍙暀涓嬩竴涓搼璺敱锛坉ummy routing锛夊璞★紝鐢变簬 encoder 宸叉毚闇茬粰鐢ㄦ埛绌洪棿锛岃瀵硅薄闇€瑕佷繚鐣欎互瀹炵幇鍚戝悗鍏煎銆?
+在内部还有两个额外的辅助对象发挥作用。首先，为了能够encoder 之间共享代码（有时在同一 SoC 上，有时在片外），可以将一个或多个 drm_bridge（由 :c:type:`struct drm_bridge <drm_bridge>` 表示）链接到某个 encoder。该链接是静态的，无法更改，这意味着交叉开关（cross-bar，如果有的话）必须映射到 CRTC 与任encoder 之间。通常在带bridge 的驱动中，encoder 层面已经没有代码剩下。Atomic 驱动可以省去所encoder 回调，从而实质上只留下一个哑路由（dummy routing）对象，由于 encoder 已暴露给用户空间，该对象需要保留以实现向后兼容
 
-绗簩涓璞＄敤浜庨潰鏉匡紙panel锛夛紝鐢?:c:type:`struct drm_panel <drm_panel>` 琛ㄧず锛屽弬瑙?drm_panel_helper銆傞潰鏉挎病鏈夊浐瀹氱殑缁戝畾鐐癸紝浣嗛€氬父閾炬帴鍒板唴宓屼簡 `struct drm_connector <drm_connector>` 鐨勯┍鍔ㄧ鏈夌粨鏋勩€?
+第二个对象用于面板（panel），:c:type:`struct drm_panel <drm_panel>` 表示，参drm_panel_helper。面板没有固定的绑定点，但通常链接到内嵌了 `struct drm_connector <drm_connector>` 的驱动私有结构
 
-娉ㄦ剰锛岀洰鍓?bridge 鐨勯摼寮忚繛鎺ヤ互鍙婁笌 connector 鍜?panel 鐨勪氦浜掍粛澶勪簬鍙樺姩涔嬩腑锛屽皻鏈湡姝ｅ畬鍏ㄧ悊娓呫€?
+注意，目bridge 的链式连接以及与 connector panel 的交互仍处于变动之中，尚未真正完全理清
 
-## KMS 鏍稿績缁撴瀯浣撲笌鍑芥暟
+## KMS 核心结构体与函数
 
 
    :internal:
@@ -117,8 +117,8 @@ KMS 鍚戠敤鎴风┖闂村憟鐜扮殑鍩烘湰瀵硅薄缁撴瀯鐩稿綋绠�
 ## Modeset Base Object Abstraction
 
 
-   :alt: 妯″紡瀵硅薄涓庡睘鎬?
-   :caption: 妯″紡瀵硅薄涓庡睘鎬?
+   :alt: 模式对象与属
+   :caption: 模式对象与属
 
    digraph {
       node [shape=box]
@@ -128,7 +128,7 @@ KMS 鍚戠敤鎴风┖闂村憟鐜扮殑鍩烘湰瀵硅薄缁撴瀯鐩稿綋绠�
       "drm_property B" -> "drm_mode_object A"
    }
 
-鎵€鏈?KMS 瀵硅薄鐨勫熀缁撴瀯鏄?:c:type:`struct drm_mode_object <drm_mode_object>`銆傚畠鎻愪緵鐨勫熀纭€鏈嶅姟涔嬩竴鏄窡韪睘鎬э紙property锛夛紝杩欏浜?atomic IOCTL 灏や负閲嶈锛堝弬瑙?`Atomic Mode Setting`_锛夈€傝繖閲屾湁鐐瑰嚭浜烘剰鏂欑殑鏄紝灞炴€у苟闈炵洿鎺ュ湪姣忎釜瀵硅薄涓婂疄渚嬪寲锛岃€屾槸鏈韩鏄嫭绔嬬殑妯″紡瀵硅薄锛岀敱 `struct drm_property <drm_property>` 琛ㄧず锛屽畠鍙瀹氫簡灞炴€х殑绫诲瀷鍜屽彇鍊艰寖鍥淬€備换浣曠粰瀹氱殑灞炴€ч兘鍙互閫氳繃 drm_object_attach_property() 澶氭闄勫姞鍒颁笉鍚屽璞′笂銆?
+所KMS 对象的基结构:c:type:`struct drm_mode_object <drm_mode_object>`。它提供的基础服务之一是跟踪属性（property），这对atomic IOCTL 尤为重要（参`Atomic Mode Setting`_）。这里有点出人意料的是，属性并非直接在每个对象上实例化，而是本身是独立的模式对象，由 `struct drm_property <drm_property>` 表示，它只规定了属性的类型和取值范围。任何给定的属性都可以通过 drm_object_attach_property() 多次附加到不同对象上
 
    :internal:
 
@@ -138,8 +138,8 @@ KMS 鍚戠敤鎴风┖闂村憟鐜扮殑鍩烘湰瀵硅薄缁撴瀯鐩稿綋绠�
 
 
 
-   :alt: 妯″紡瀵硅薄涓庡睘鎬?
-   :caption: 妯″紡瀵硅薄涓庡睘鎬?
+   :alt: 模式对象与属
+   :caption: 模式对象与属
 
    digraph {
       node [shape=box]
@@ -176,37 +176,37 @@ KMS 鍚戠敤鎴风┖闂村憟鐜扮殑鍩烘湰瀵硅薄缁撴瀯鐩稿綋绠�
       "duplicated drm_plane_state A" -> "drm_device"[style=invis]
    }
 
-Atomic 鎻愪緵浜嬪姟鎬х殑妯″紡璁剧疆锛堝寘鎷?plane锛夋洿鏂帮紝浣嗕笌閫氬父鐨?try-commit 鍔?rollback 鐨勪簨鍔℃柟寮忕暐鏈変笉鍚岋細
+Atomic 提供事务性的模式设置（包plane）更新，但与通常try-commit rollback 的事务方式略有不同：
 
-- 棣栧厛锛屽綋鎻愪氦锛坈ommit锛変細澶辫触鏃讹紝涓嶅厑璁歌繘琛屼换浣曠‖浠舵洿鏀广€傝繖浣挎垜浠兘澶熷疄鐜?DRM_MODE_ATOMIC_TEST_ONLY 妯″紡锛岃鐢ㄦ埛绌洪棿鑳藉璇曟帰鏌愪簺閰嶇疆鏄惁鍙銆?
+- 首先，当提交（commit）会失败时，不允许进行任何硬件更改。这使我们能够实DRM_MODE_ATOMIC_TEST_ONLY 模式，让用户空间能够试探某些配置是否可行
 
-- 杩欎粛鐒跺厑璁稿彧璁剧疆鍜屽洖婊氳蒋浠剁姸鎬侊紝绠€鍖栦簡瀵圭幇鏈夐┍鍔ㄧ殑杞崲銆備絾鍦ㄨ繖绉嶆儏鍐典笅锛屽璁￠┍鍔ㄧ殑 atomic_check 浠ｇ爜姝ｇ‘鎬у彉寰楅潪甯稿洶闅撅細鍒板鍥炴粴鏁版嵁缁撴瀯涓殑鏀瑰姩寰堥毦鍋氬銆?
+- 这仍然允许只设置和回滚软件状态，简化了对现有驱动的转换。但在这种情况下，审计驱动的 atomic_check 代码正确性变得非常困难：到处回滚数据结构中的改动很难做对
 
-- 鏈€鍚庯紝涓轰簡鍚戝悗鍏煎骞舵敮鎸佹墍鏈夌敤渚嬶紝atomic 鏇存柊闇€瑕佹槸澧為噺鐨勶紝骞朵笖瑕佽兘澶熷苟琛屾墽琛屻€傜‖浠跺苟闈炴€昏兘鍋氬埌杩欎竴鐐癸紝浣嗗湪鍙兘鐨勬儏鍐典笅锛屼笉鍚?CRTC 涓婄殑 plane 鏇存柊涓嶅簲鐩镐簰骞叉壈锛屼篃涓嶅簲鍥犱负涓嶅悓 CRTC 涓婄殑杈撳嚭璺敱鍙樺寲鑰屽仠婊炪€?
+- 最后，为了向后兼容并支持所有用例，atomic 更新需要是增量的，并且要能够并行执行。硬件并非总能做到这一点，但在可能的情况下，不CRTC 上的 plane 更新不应相互干扰，也不应因为不同 CRTC 上的输出路由变化而停滞
 
-缁煎悎璧锋潵锛宎tomic 璁捐鏈変袱鐐瑰悗鏋滐細
+综合起来，atomic 设计有两点后果：
 
-- 鏁翠綋鐘舵€佽鎷嗗垎涓哄熀浜庢瘡涓璞＄殑 state 缁撴瀯锛歱lane 瀵瑰簲 `struct drm_plane_state <drm_plane_state>`锛孋RTC 瀵瑰簲 :c:type:`struct drm_crtc_state <drm_crtc_state>`锛宑onnector 瀵瑰簲 :c:type:`struct drm_connector_state <drm_connector_state>`銆傝繖浜涙槸鍞竴鍏锋湁鐢ㄦ埛绌洪棿鍙涓斿彲璁剧疆鐘舵€佺殑瀵硅薄銆傚浜庡唴閮ㄧ姸鎬侊紝椹卞姩鍙互閫氳繃鍐呭祵锛坋mbedding锛夋潵瀛愮被鍖栬繖浜涚粨鏋勶紝鎴栬€呬负瀹冧滑鍏ㄥ眬鍏变韩鐨勭‖浠跺姛鑳芥坊鍔犲叏鏂扮殑鐘舵€佺粨鏋勶紝鍙傝 :c:type:`struct drm_private_state<drm_private_state>`銆?
+- 整体状态被拆分为基于每个对象的 state 结构：plane 对应 `struct drm_plane_state <drm_plane_state>`，CRTC 对应 :c:type:`struct drm_crtc_state <drm_crtc_state>`，connector 对应 :c:type:`struct drm_connector_state <drm_connector_state>`。这些是唯一具有用户空间可见且可设置状态的对象。对于内部状态，驱动可以通过内嵌（embedding）来子类化这些结构，或者为它们全局共享的硬件功能添加全新的状态结构，参见 :c:type:`struct drm_private_state<drm_private_state>`
 
-- 涓€涓?atomic 鏇存柊琚粍瑁呭苟楠岃瘉涓?`drm_atomic_state <drm_atomic_state>` 瀹瑰櫒鍐呬竴缁勫畬鍏ㄧ嫭绔嬬殑锛坒ree-standing锛夌粨鏋勩€傞┍鍔ㄧ鏈夌姸鎬佺粨鏋勪篃鍦ㄥ悓涓€缁撴瀯涓窡韪紱鍙傝涓嬩竴绔犮€傚彧鏈夊綋鏌愪釜鐘舵€佽鎻愪氦鏃讹紝鎵嶄細灏嗗叾搴旂敤鍒伴┍鍔ㄥ拰妯″紡璁剧疆瀵硅薄銆傝繖鏍凤紝鍥炴粴涓€娆℃洿鏂板氨褰掔粨涓洪噴鏀惧唴瀛樺苟瑙ｉ櫎瀵瑰抚缂撳啿绛夊璞＄殑寮曠敤銆?
+- 一atomic 更新被组装并验证`drm_atomic_state <drm_atomic_state>` 容器内一组完全独立的（free-standing）结构。驱动私有状态结构也在同一结构中跟踪；参见下一章。只有当某个状态被提交时，才会将其应用到驱动和模式设置对象。这样，回滚一次更新就归结为释放内存并解除对帧缓冲等对象的引用
 
-Atomic state 缁撴瀯鐨勫姞閿佸湪鍐呴儴浣跨敤 :c:type:`struct drm_modeset_lock <drm_modeset_lock>`銆備竴鑸師鍒欐槸鍔犻攣涓嶅簲鏆撮湶缁欓┍鍔紝鐩稿弽锛屼换浣曞鍒舵垨绐ヨ鏌愪釜鐘舵€佺殑鍑芥暟锛堜緥濡?drm_atomic_get_crtc_state()锛夐兘搴旇嚜鍔ㄨ幏鍙栨纭殑閿併€傚姞閿佸彧淇濇姢杞欢鏁版嵁缁撴瀯锛屽皢鐘舵€佸彉鏇存彁浜ゅ埌纭欢鐨勯『搴忓垯浣跨敤 `struct drm_crtc_commit <drm_crtc_commit>` 鏉ユ帓搴忋€?
+Atomic state 结构的加锁在内部使用 :c:type:`struct drm_modeset_lock <drm_modeset_lock>`。一般原则是加锁不应暴露给驱动，相反，任何复制或窥视某个状态的函数（例drm_atomic_get_crtc_state()）都应自动获取正确的锁。加锁只保护软件数据结构，将状态变更提交到硬件的顺序则使用 `struct drm_crtc_commit <drm_crtc_commit>` 来排序
 
-鏈珷浠ュ強 drm_atomic_helper 涓繕鏈夋洿澶氬叧浜庡叿浣撲富棰樼殑璇︾粏浠嬬粛锛岃缁х画闃呰銆?
+本章以及 drm_atomic_helper 中还有更多关于具体主题的详细介绍，请继续阅读
 
-### 澶勭悊椹卞姩绉佹湁鐘舵€?
+### 处理驱动私有状
 
 
    :doc: handling driver private state
 
-### 鍘熷瓙妯″紡璁剧疆鍑芥暟鍙傝€?
+### 原子模式设置函数参
 
 
    :internal:
 
    :export:
 
-### 鍘熷瓙妯″紡璁剧疆 IOCTL 涓?UAPI 鍑芥暟
+### 原子模式设置 IOCTL UAPI 函数
 
 
    :doc: overview
@@ -218,14 +218,14 @@ Atomic state 缁撴瀯鐨勫姞閿佸湪鍐呴儴浣跨敤 :c:type:`struct drm_m
 
    :doc: overview
 
-### CRTC 鍑芥暟鍙傝€?
+### CRTC 函数参
 
 
    :internal:
 
    :export:
 
-### 鑹插僵绠＄悊鍑芥暟鍙傝€?
+### 色彩管理函数参
 
 
    :export:
@@ -237,7 +237,7 @@ Atomic state 缁撴瀯鐨勫姞閿佸湪鍐呴儴浣跨敤 :c:type:`struct drm_m
 
    :doc: overview
 
-### 甯х紦鍐插嚱鏁板弬鑰?
+### 甯х紦鍐插嚱鏁板弬鑰。
 
 
    :internal:
@@ -249,7 +249,7 @@ Atomic state 缁撴瀯鐨勫姞閿佸湪鍐呴儴浣跨敤 :c:type:`struct drm_m
 
    :doc: overview
 
-### 鏍煎紡鍑芥暟鍙傝€?
+### 格式函数参
 
 
    :internal:
@@ -267,31 +267,31 @@ Atomic state 缁撴瀯鐨勫姞閿佸湪鍐呴儴浣跨敤 :c:type:`struct drm_m
 
    :doc: overview
 
-### Plane 鍑芥暟鍙傝€?
+### Plane 函数参
 
 
    :internal:
 
    :export:
 
-### Plane 鍚堟垚鍑芥暟鍙傝€?
+### Plane 合成函数参
 
 
    :export:
 
-### Plane 鎹熷潖璺熻釜鍑芥暟鍙傝€?
+### Plane 损坏跟踪函数参
 
 
    :export:
 
    :internal:
 
-### Plane 绱ф€ユ樉绀虹壒鎬?
+### Plane 紧急显示特
 
 
    :doc: overview
 
-### Plane 绱ф€ユ樉绀虹壒鎬у嚱鏁板弬鑰?
+### Plane 紧急显示特性函数参
 
 
    :internal:
@@ -303,14 +303,14 @@ Atomic state 缁撴瀯鐨勫姞閿佸湪鍐呴儴浣跨敤 :c:type:`struct drm_m
 
    :doc: overview
 
-### Colorop 鍑芥暟鍙傝€?
+### Colorop 函数参
 
 
    :internal:
 
    :export:
 
-## 鏄剧ず妯″紡鍑芥暟鍙傝€?
+## 显示模式函数参
 
 
    :internal:
@@ -322,7 +322,7 @@ Atomic state 缁撴瀯鐨勫姞閿佸湪鍐呴儴浣跨敤 :c:type:`struct drm_m
 
    :doc: overview
 
-### Connector 鍑芥暟鍙傝€?
+### Connector 函数参
 
 
    :internal:
@@ -343,7 +343,7 @@ Atomic state 缁撴瀯鐨勫姞閿佸湪鍐呴儴浣跨敤 :c:type:`struct drm_m
 
    :doc: overview
 
-### Encoder 鍑芥暟鍙傝€?
+### Encoder 函数参
 
 
    :internal:
@@ -362,32 +362,32 @@ Atomic state 缁撴瀯鐨勫姞閿佸湪鍐呴儴浣跨敤 :c:type:`struct drm_m
 ## KMS Properties
 
 
-鏈枃妗ｇ殑杩欎竴鑺備富瑕侀潰鍚戠敤鎴风┖闂村紑鍙戣€呫€傛湁鍏抽┍鍔?API锛岃鍙傝鍏朵粬绔犺妭銆?
+本文档的这一节主要面向用户空间开发者。有关驱API，请参见其他章节
 
 ### Requirements
 
 
-KMS 椹卞姩鍙兘闇€瑕佹坊鍔犻澶栫殑灞炴€т互鏀寔鏂板姛鑳姐€傞櫎浜嗕笂闈㈡彁鍒扮殑涓€鐐逛箣澶栵紝椹卞姩涓紩鍏ョ殑姣忎釜鏂板睘鎬ц繕闇€瑕佹弧瓒充互涓嬪嚑涓姹傦細
+KMS 驱动可能需要添加额外的属性以支持新功能。除了上面提到的一点之外，驱动中引入的每个新属性还需要满足以下几个要求：
 
-- 瀹冨繀椤绘槸鏍囧噯鍖栫殑锛屽苟搴旇褰曪細
+- 它必须是标准化的，并应记录：
 
-  - 瀹屾暣銆佸噯纭殑鍚嶇О瀛楃涓诧紱
-  - 濡傛灉璇ュ睘鎬ф槸鏋氫妇锛屾墍鏈夊悎娉曠殑鍙栧€煎悕绉板瓧绗︿覆锛?
-  - 鎺ュ彈鍝簺鍊硷紝浠ュ強杩欎簺鍊兼剰鍛崇潃浠€涔堬紱
-  - 璇ュ睘鎬х殑浣滅敤浠ュ強濡備綍浣跨敤瀹冿紱
-  - 璇ュ睘鎬у彲鑳藉浣曚笌鍏朵粬宸叉湁灞炴€т氦浜掋€?
+  - 完整、准确的名称字符串；
+  - 如果该属性是枚举，所有合法的取值名称字符串
+  - 接受哪些值，以及这些值意味着什么；
+  - 该属性的作用以及如何使用它；
+  - 该属性可能如何与其他已有属性交互
 
-- 瀹冨繀椤诲湪鏍稿績浠ｇ爜涓彁渚涗竴涓€氱敤杈呭姪鍑芥暟锛岀敤浜庡皢璇ュ睘鎬ф敞鍐屽埌瀹冩墍闄勫姞鐨勫璞′笂銆?
+- 它必须在核心代码中提供一个通用辅助函数，用于将该属性注册到它所附加的对象上
 
-- 瀹冪殑鍐呭蹇呴』鐢辨牳蹇冧唬鐮佽В鐮侊紝骞舵彁渚涘埌瀵硅薄鍏宠仈鐨勭姸鎬佺粨鏋勪腑銆傝繖鍖呮嫭椹卞姩鍙兘鎯宠棰勮绠楃殑浠讳綍鍐呭锛屼緥濡?plane 鐨?struct drm_clip_rect銆?
+- 它的内容必须由核心代码解码，并提供到对象关联的状态结构中。这包括驱动可能想要预计算的任何内容，例plane struct drm_clip_rect
 
-- 瀹冪殑鍒濆鐘舵€佸繀椤讳笌璇ュ睘鎬у紩鍏ヤ箣鍓嶇殑琛屼负涓€鑷淬€傝繖鍙兘鏄竴涓笌纭欢瀹為檯琛屼负鐩稿尮閰嶇殑鍥哄畾鍊硷紝涔熷彲鑳芥槸浠庡浐浠跺湪鍚姩鏈熼棿鐣欑粰绯荤粺鐨勭姸鎬佺户鎵胯€屾潵銆?
+- 它的初始状态必须与该属性引入之前的行为一致。这可能是一个与硬件实际行为相匹配的固定值，也可能是从固件在启动期间留给系统的状态继承而来
 
-- 鍦ㄥ悎鐞嗙殑鎯呭喌涓嬶紝蹇呴』鎻愪氦涓€涓?IGT 娴嬭瘯銆?
+- 在合理的情况下，必须提交一IGT 测试
 
-鐢变簬鍘嗗彶鍘熷洜锛屽瓨鍦ㄩ潪鏍囧噯鐨勩€侀┍鍔ㄧ壒瀹氱殑灞炴€с€傚鏋滄煇涓?KMS 椹卞姩鎯宠娣诲姞瀵瑰叾涓竴涓睘鎬х殑鏀寔锛屽垯搴斿湪鍙兘鐨勬儏鍐典笅閫傜敤鏂板睘鎬х殑鍚勯」瑕佹眰銆傛澶栵紝鏂囨。鍖栫殑琛屼负蹇呴』涓庤宸叉湁灞炴€х殑浜嬪疄璇箟鐩稿尮閰嶏紝浠ョ‘淇濆吋瀹规€с€傞涓坊鍔犺灞炴€х殑椹卞姩鐨勫紑鍙戣€呭簲褰撳崗鍔╁畬鎴愯繖浜涗换鍔★紝骞跺敖鍙兘 ACK 鏂囨。鍖栫殑琛屼负銆?
+由于历史原因，存在非标准的、驱动特定的属性。如果某KMS 驱动想要添加对其中一个属性的支持，则应在可能的情况下适用新属性的各项要求。此外，文档化的行为必须与该已有属性的事实语义相匹配，以确保兼容性。首个添加该属性的驱动的开发者应当协助完成这些任务，并尽可能 ACK 文档化的行为
 
-### 灞炴€х被鍨嬩笌 Blob 灞炴€ф敮鎸?
+### 属性类型与 Blob 属性支
 
 
    :doc: overview
@@ -402,12 +402,12 @@ KMS 椹卞姩鍙兘闇€瑕佹坊鍔犻澶栫殑灞炴€т互鏀寔�
 
    :doc: standard connector properties
 
-### HDMI 涓撶敤 Connector 灞炴€?
+### HDMI 专用 Connector 属
 
 
    :doc: HDMI connector properties
 
-### 妯℃嫙鐢佃涓撶敤 Connector 灞炴€?
+### 模拟电视专用 Connector 属
 
 
    :doc: Analog TV Connector Properties
@@ -463,7 +463,7 @@ KMS 椹卞姩鍙兘闇€瑕佹坊鍔犻澶栫殑灞炴€т互鏀寔�
 ### Existing KMS Properties
 
 
-涓嬭〃鎻忚堪浜嗗悇涓ā鍧?椹卞姩鏆撮湶鐨?drm 灞炴€с€傜敱浜庤琛ㄩ潪甯哥閲嶏紝璇峰嬁鍦ㄦ澶勬坊鍔犱换浣曟柊灞炴€с€傝€屽簲鍦ㄤ笂闈㈢殑鏌愪釜灏忚妭涓褰曞畠浠€?
+下表描述了各个模驱动暴露drm 属性。由于该表非常笨重，请勿在此处添加任何新属性。而应在上面的某个小节中记录它们
 
    :header-rows: 1
    :file: kms-properties.csv
@@ -473,7 +473,7 @@ KMS 椹卞姩鍙兘闇€瑕佹坊鍔犻澶栫殑灞炴€т互鏀寔�
 
    :doc: vblank handling
 
-### 鍨傜洿娑堥殣涓庝腑鏂鐞嗗嚱鏁板弬鑰?
+### 垂直消隐与中断处理函数参
 
 
    :internal:
@@ -485,7 +485,7 @@ KMS 椹卞姩鍙兘闇€瑕佹坊鍔犻澶栫殑灞炴€т互鏀寔�
 
    :doc: vblank works
 
-### 鍨傜洿娑堥殣宸ヤ綔鍑芥暟鍙傝€?
+### 垂直消隐工作函数参
 
 
    :internal:

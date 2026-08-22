@@ -1,10 +1,10 @@
-﻿## 缃戠粶鍒嗙被鍣?cgroup
+﻿## 网络分类cgroup
 
 
-缃戠粶鍒嗙被鍣紙Network classifier锛塩group 鎻愪緵浜嗕竴涓帴鍙ｏ紝鐢ㄤ簬涓虹綉缁滄暟鎹寘鎵撲笂绫诲埆鏍囪瘑绗︼紙classid锛夈€?
-娴侀噺鎺у埗鍣紙Traffic Controller锛宼c锛夊彲鐢ㄤ簬涓烘潵鑷笉鍚?cgroup 鐨勬暟鎹寘鍒嗛厤涓嶅悓鐨勪紭鍏堢骇銆傛澶栵紝Netfilter锛坕ptables锛変篃鍙互鍒╃敤姝ゆ爣璁板杩欑被鏁版嵁鍖呮墽琛屾搷浣溿€?
-鍒涘缓 net_cls cgroup 瀹炰緥浼氬垱寤轰竴涓?net_cls.classid 鏂囦欢銆傝 net_cls.classid 鍊煎垵濮嬪寲涓?0銆?
-浣犲彲浠ュ悜 net_cls.classid 鍐欏叆鍗佸叚杩涘埗鍊硷紱杩欎簺鍊肩殑鏍煎紡涓?0xAAAABBBB锛屽叾涓?AAAA 鏄富鍙ユ焺鍙凤紙major handle number锛夛紝BBBB 鏄鍙ユ焺鍙凤紙minor handle number锛夈€傝鍙?net_cls.classid 寰楀埌鐨勬槸鍗佽繘鍒剁粨鏋溿€?
+网络分类器（Network classifier）cgroup 提供了一个接口，用于为网络数据包打上类别标识符（classid）
+流量控制器（Traffic Controller，tc）可用于为来自不cgroup 的数据包分配不同的优先级。此外，Netfilter（iptables）也可以利用此标记对这类数据包执行操作
+创建 net_cls cgroup 实例会创建一net_cls.classid 文件。该 net_cls.classid 值初始化0
+你可以向 net_cls.classid 写入十六进制值；这些值的格式0xAAAABBBB，其AAAA 是主句柄号（major handle number），BBBB 是次句柄号（minor handle number）。读net_cls.classid 得到的是十进制结果
 ```
 
 	mkdir /sys/fs/cgroup/net_cls
