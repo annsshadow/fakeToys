@@ -1,17 +1,17 @@
 ﻿## request_firmware API
 
 
-浣犻€氬父浼氬厛鍔犺浇鍥轰欢锛岀劧鍚庝互鏌愮鏂瑰紡灏嗗叾鍔犺浇鍒颁綘鐨勮澶囦腑銆?```
+你通常会先加载固件，然后以某种方式将其加载到你的设备中```
 
 	 if(request_firmware(&fw_entry, $FIRMWARE, device) == 0)
                 copy_fw_to_device(fw_entry->data, fw_entry->size);
 	 release_firmware(fw_entry);
 
 ```
-## 鍚屾鍥轰欢璇锋眰
+## 同步固件请求
 
 
-鍚屾鍥轰欢璇锋眰浼氫竴鐩寸瓑寰咃紝鐩村埌鎵惧埌鍥轰欢鎴栬繑鍥為敊璇€?
+同步固件请求会一直等待，直到找到固件或返回错误
 ### request_firmware
 
    :functions: request_firmware
@@ -32,22 +32,22 @@
 
    :functions: request_firmware_into_buf
 
-## 寮傛鍥轰欢璇锋眰
+## 异步固件请求
 
 
-寮傛鍥轰欢璇锋眰鍏佽椹卞姩浠ｇ爜涓嶅繀绛夊緟鍥轰欢鎴栭敊璇繑鍥炪€傛彁渚涗簡鍑芥暟鍥炶皟锛屼互渚垮湪鎵惧埌鍥轰欢鎴栭敊璇椂閫氳繃鍥炶皟閫氱煡椹卞姩銆俽equest_firmware_nowait() 涓嶈兘鍦ㄥ師瀛愪笂涓嬫枃涓皟鐢ㄣ€?
+异步固件请求允许驱动代码不必等待固件或错误返回。提供了函数回调，以便在找到固件或错误时通过回调通知驱动。request_firmware_nowait() 不能在原子上下文中调用
 ### request_firmware_nowait
 
    :functions: request_firmware_nowait
 
-## 閲嶅惎鏃剁殑鐗规畩浼樺寲
+## 重启时的特殊优化
 
 
-鏌愪簺璁惧鍏锋湁涓€椤逛紭鍖栵紝浣垮浐浠跺湪绯荤粺閲嶅惎鏈熼棿寰椾互淇濈暀銆備娇鐢ㄨ繖绫讳紭鍖栨椂锛岄┍鍔ㄤ綔鑰呭繀椤荤‘淇濆浐浠跺湪浠庢寕璧锋仮澶嶆椂浠嶇劧鍙敤锛岃繖鍙互閫氳繃 firmware_request_cache() 鏉ヤ唬鏇胯姹傚姞杞藉浐浠跺疄鐜般€?
+某些设备具有一项优化，使固件在系统重启期间得以保留。使用这类优化时，驱动作者必须确保固件在从挂起恢复时仍然可用，这可以通过 firmware_request_cache() 来代替请求加载固件实现
 ### firmware_request_cache()
 
    :functions: firmware_request_cache
 
-## 璇锋眰鍥轰欢 API 棰勬湡鐨勯┍鍔ㄤ娇鐢ㄦ柟寮?
+## 请求固件 API 预期的驱动使用方
 
-涓€鏃?API 璋冪敤杩斿洖锛屼綘灏卞鐞嗗浐浠讹紝鐒跺悗閲婃斁鍥轰欢銆備緥濡傦紝濡傛灉浣犱娇鐢ㄤ簡 request_firmware() 骞朵笖瀹冭繑鍥炰簡锛岄┍鍔ㄥ氨鍙互鍦?fw_entry->{data,size} 涓闂浐浠堕暅鍍忋€傚鏋滃嚭浜嗛棶棰橈紝request_firmware() 杩斿洖闈為浂鍊硷紝骞朵笖 fw_entry 琚涓?NULL銆備竴鏃︿綘鐨勯┍鍔ㄥ鐞嗗畬鍥轰欢锛屽畠灏卞彲浠ヨ皟鐢?release_firmware(fw_entry) 鏉ラ噴鏀惧浐浠堕暅鍍忎互鍙婁换浣曠浉鍏宠祫婧愩€?
+一API 调用返回，你就处理固件，然后释放固件。例如，如果你使用了 request_firmware() 并且它返回了，驱动就可以fw_entry->{data,size} 中访问固件镜像。如果出了问题，request_firmware() 返回非零值，并且 fw_entry 被设NULL。一旦你的驱动处理完固件，它就可以调release_firmware(fw_entry) 来释放固件镜像以及任何相关资源

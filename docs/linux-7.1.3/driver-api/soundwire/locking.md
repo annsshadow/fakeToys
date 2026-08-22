@@ -1,49 +1,49 @@
-﻿## SoundWire 閿佹満鍒?
+﻿## SoundWire 锁机
 
 
-鏂囨。 explains 閿佹満鍒?mechanism SoundWire 鎬荤嚎. 鎬荤嚎 uses
-following locks order avoid race conditions 鎬荤嚎 鎿嶄綔
-shared 璧勬簮.
+文档 explains 锁机mechanism SoundWire 总线. 总线 uses
+following locks order avoid race conditions 总线 操作
+shared 资源.
 
-- 鎬荤嚎 閿?
+- 鎬荤嚎 閿。
 
-- Message 閿?
+- Message 閿。
 
-## 鎬荤嚎 閿?
-
-
-SoundWire 鎬荤嚎 閿?浜掓枼浣?part 鎬荤嚎 鏁版嵁 缁撴瀯浣?
-(sdw_bus) 浣跨敤 every 鎬荤嚎 instance. 閿?浣跨敤
-serialize following 鎿嶄綔(s) SoundWire 鎬荤嚎 instance.
-
-- Addition removal Slave(s), changing Slave 鐘舵€?
-
-- Prepare, 鍚敤, 绂佺敤 De-prepare stream 鎿嶄綔.
-
-- 璁块棶 Stream 鏁版嵁 缁撴瀯浣?
-
-## Message 閿?
+## 鎬荤嚎 閿。
 
 
-SoundWire message transfer 閿? 浜掓枼浣?part
-鎬荤嚎 鏁版嵁 缁撴瀯浣?(sdw_bus). 閿?浣跨敤 serialize message
-transfers (璇诲彇/鍐欏叆) SoundWire 鎬荤嚎 instance.
+SoundWire 总线 互斥part 总线 数据 结构
+(sdw_bus) 使用 every 总线 instance. 使用
+serialize following 操作(s) SoundWire 总线 instance.
 
-绀轰緥 鏄剧ず locks acquired.
+- Addition removal Slave(s), changing Slave 状
 
-### 绀轰緥 1
+- Prepare, 启用, 禁用 De-prepare stream 操作.
+
+- 访问 Stream 数据 结构
+
+## Message 閿。
+
+
+SoundWire message transfer  互斥part
+总线 数据 结构(sdw_bus). 使用 serialize message
+transfers (读取/写入) SoundWire 总线 instance.
+
+示例 显示 locks acquired.
+
+### 示例 1
 
 
 Message transfer.
 
 1. every message transfer
 
-. Acquire Message 閿?
+. Acquire Message 閿。
 
-b. Transfer message (璇诲彇/鍐欏叆) Slave1 broadcast message
-鎬荤嚎 case bank switch.
+b. Transfer message (读取/写入) Slave1 broadcast message
+总线 case bank switch.
 
-c. 閲婃斁 Message 閿?
+c. 閲婃斁 Message 閿。
 
 ```
 
@@ -64,21 +64,21 @@ c. 閲婃斁 Message 閿?
 	     +                               +
 
 ```
-### 绀轰緥 2
+### 示例 2
 
 
-Prepare 鎿嶄綔.
+Prepare 操作.
 
-1. Acquire 閿?鎬荤嚎 instance associated Master 1.
+1. Acquire 閿，鎬荤嚎 instance associated Master 1.
 
-2. every message transfer Prepare 鎿嶄綔
+2. every message transfer Prepare 操作
 
-. Acquire Message 閿?
+. Acquire Message 閿。
 
-b. Transfer message (璇诲彇/鍐欏叆) Slave1 broadcast message
-鎬荤嚎 case bank switch.
+b. Transfer message (读取/写入) Slave1 broadcast message
+总线 case bank switch.
 
-c. 閲婃斁 Message 閿?
+c. 閲婃斁 Message 閿。
 
 ```
 

@@ -1,17 +1,17 @@
 ﻿
-## Intel 骞冲彴涓婄殑 HDAudio 澶氶摼璺墿灞?
+## Intel 平台上的 HDAudio 多链路扩
 
 :Copyright: |copy| 2023 Intel Corporation
 
-鏈枃浠惰褰曚簡 2015 骞撮殢 Skylake 澶勭悊鍣ㄥ紩鍏ャ€佸苟鍦ㄦ洿鏂扮殑 Intel 骞冲彴涓繎鏈熷緱鍒版墿灞曠殑鈥滃閾捐矾缁撴瀯
-锛坢ulti-link structure锛夆€濄€?
-## HDaudio 鐜版湁閾捐矾鏄犲皠锛?015 骞村湪 SkyLake 涓殑鏂板锛?
+本文件记录了 2015 年随 Skylake 处理器引入、并在更新的 Intel 平台中近期得到扩展的“多链路结构
+（multi-link structure）”
+## HDaudio 现有链路映射015 年在 SkyLake 中的新增
 
-澶栭儴 HDAudio 缂栬В鐮佸櫒鐢遍摼璺?#0 澶勭悊锛岃€岀敤浜?HDMI/DisplayPort 鐨?iDISP 缂栬В鐮佸櫒鐢遍摼璺?#1 澶勭悊銆?
-瀵?2015 骞村畾涔夊敮涓€鐨勫彉鍖栨槸澹版槑浜?LCAP.ALT=0x0鈥斺€旂敱浜?ALT 浣嶆鍓嶆槸淇濈暀浣嶏紝杩欐槸涓€涓悜鍚庡吋瀹圭殑
-鏀瑰彉銆?
-LCTL.SPA 鍜?LCTL.CPA 鍦ㄩ€€鍑哄浣嶆椂鑷姩璁剧疆銆傚畠浠粎鍦ㄩ渶瑕佸 SCF 鍊艰繘琛屼慨姝ｆ椂鎵嶈鐜版湁椹卞姩浣跨敤銆?
-### HDaudio 缂栬В鐮佸櫒鐨勫熀鏈粨鏋?
+外部 HDAudio 编解码器由链#0 处理，而用HDMI/DisplayPort iDISP 编解码器由链#1 处理
+2015 年定义唯一的变化是声明LCAP.ALT=0x0——由ALT 位此前是保留位，这是一个向后兼容的
+改变
+LCTL.SPA LCTL.CPA 在退出复位时自动设置。它们仅在需要对 SCF 值进行修正时才被现有驱动使用
+### HDaudio 编解码器的基本结
 
 ```
   +-----------+
@@ -64,18 +64,18 @@ LCTL.SPA 鍜?LCTL.CPA 鍦ㄩ€€鍑哄浣嶆椂鑷姩璁剧疆銆傚畠�
 
 ```
 
-## SoundWire HDaudio 鎵╁睍閾捐矾鏄犲皠
+## SoundWire HDaudio 扩展链路映射
 
 
-褰?LCAP.ALT=1 涓?LEPTR.ID=0 鏃讹紝鏍囪瘑涓轰竴涓?SoundWire 鎵╁睍閾捐矾銆?
-DMA 鎺у埗浣跨敤鐜版湁鐨?LOSIDV 瀵勫瓨鍣ㄣ€?
-鍙樻洿鍖呭惈浜嗘棭鏈熶唬闄呬腑鎵€娌℃湁鐨勩€佺敤浜庢灇涓剧殑棰濆鎻忚堪銆?
-- 澶氶摼璺悓姝ワ細鑳藉姏浣嶄簬 LCAP.LSS锛屾帶鍒朵綅浜?LSYNC
-- 瀛愰摼璺暟閲忥紙绠＄悊鍣?IP锛変綅浜?LCAP.LSCOUNT
-- 鐢垫簮绠＄悊浠?SHIM 绉昏嚦 LCTL.SPA 浣?- 閫氳繃 LCTL.OFLEN 灏嗗閾捐矾瀵勫瓨鍣ㄣ€丼HIM/IP 绉讳氦缁?DSP 璁块棶
-- 灏?SoundWire 缂栬В鐮佸櫒鏄犲皠鍒?SDI ID 浣?- SHIM 鍜?Cadence 瀵勫瓨鍣ㄧЩ鍔ㄥ埌涓嶅悓鐨勫亸绉伙紝鍔熻兘涓嶅彉銆侺EPTR.PTR 鍊兼槸鐩稿浜?ML 鍦板潃鐨勫亸绉伙紝
-  榛樿鍊间负 0x30000銆?
-### SoundWire 鐨勬墿灞曠粨鏋勶紙鍋囪 4 涓鐞嗗櫒 IP锛?
+LCAP.ALT=1 LEPTR.ID=0 时，标识为一SoundWire 扩展链路
+DMA 控制使用现有LOSIDV 寄存器
+变更包含了早期代际中所没有的、用于枚举的额外描述
+- 多链路同步：能力位于 LCAP.LSS，控制位LSYNC
+- 子链路数量（管理IP）位LCAP.LSCOUNT
+- 电源管理SHIM 移至 LCTL.SPA - 通过 LCTL.OFLEN 将多链路寄存器、SHIM/IP 移交DSP 访问
+- SoundWire 编解码器映射SDI ID - SHIM Cadence 寄存器移动到不同的偏移，功能不变。LEPTR.PTR 值是相对ML 地址的偏移，
+  默认值为 0x30000
+### SoundWire 的扩展结构（假设 4 个管理器 IP
 
 ```
   +-----------+
@@ -146,18 +146,18 @@ DMA 鎺у埗浣跨敤鐜版湁鐨?LOSIDV 瀵勫瓨鍣ㄣ€?
 
 ```
 
-## DMIC HDaudio 鎵╁睍閾捐矾鏄犲皠
+## DMIC HDaudio 扩展链路映射
 
 
-褰?LCAP.ALT=1 涓?LEPTR.ID=0xC1 琚缃椂锛屾爣璇嗕负涓€涓?DMIC 鎵╁睍閾捐矾銆?
-DMA 鎺у埗浣跨敤鐜版湁鐨?LOSIDV 瀵勫瓨鍣?
-鍙樻洿鍖呭惈浜嗘棭鏈熶唬闄呬腑鎵€娌℃湁鐨勩€佺敤浜庢灇涓剧殑棰濆鎻忚堪銆?
-- 澶氶摼璺悓姝ワ細鑳藉姏浣嶄簬 LCAP.LSS锛屾帶鍒朵綅浜?LSYNC
-- 浣跨敤 LCTL.SPA 浣嶇殑鐢垫簮绠＄悊
-- 閫氳繃 LCTL.OFLEN 灏嗗閾捐矾瀵勫瓨鍣ㄣ€丼HIM/IP 绉讳氦缁?DSP 璁块棶
+LCAP.ALT=1 LEPTR.ID=0xC1 被设置时，标识为一DMIC 扩展链路
+DMA 控制使用现有LOSIDV 寄存
+变更包含了早期代际中所没有的、用于枚举的额外描述
+- 多链路同步：能力位于 LCAP.LSS，控制位LSYNC
+- 使用 LCTL.SPA 位的电源管理
+- 通过 LCTL.OFLEN 将多链路寄存器、SHIM/IP 移交DSP 访问
 
-- DMIC 瀵勫瓨鍣ㄧЩ鍔ㄥ埌涓嶅悓鐨勫亸绉伙紝鍔熻兘涓嶅彉銆侺EPTR.PTR 鍊兼槸鐩稿浜?ML 鍦板潃鐨勫亸绉伙紝榛樿鍊间负 0x10000銆?
-### DMIC 鐨勬墿灞曠粨鏋?
+- DMIC 寄存器移动到不同的偏移，功能不变。LEPTR.PTR 值是相对ML 地址的偏移，默认值为 0x10000
+### DMIC 的扩展结
 
 ```
   +-----------+
@@ -208,17 +208,17 @@ DMA 鎺у埗浣跨敤鐜版湁鐨?LOSIDV 瀵勫瓨鍣?
 
 ```
 
-## SSP HDaudio 鎵╁睍閾捐矾鏄犲皠
+## SSP HDaudio 扩展链路映射
 
 
-褰?LCAP.ALT=1 涓?LEPTR.ID=0xC0 琚缃椂锛屾爣璇嗕负涓€涓?DMIC 鎵╁睍閾捐矾銆?
-DMA 鎺у埗浣跨敤鐜版湁鐨?LOSIDV 瀵勫瓨鍣?
-鍙樻洿鍖呭惈浜嗘棭鏈熶唬闄呬腑鎵€娌℃湁鐨勩€佺敤浜庢灇涓惧拰鎺у埗鐨勯澶栨弿杩帮細
-- 瀛愰摼璺暟閲忥紙SSP IP 瀹炰緥锛変綅浜?LCAP.LSCOUNT
-- 鐢垫簮绠＄悊浠?SHIM 绉昏嚦 LCTL.SPA 浣?- 閫氳繃 LCTL.OFLEN 灏嗗閾捐矾瀵勫瓨鍣ㄣ€丼HIM/IP 绉讳氦缁?DSP 璁块棶
-- SHIM 鍜?SSP IP 瀵勫瓨鍣ㄧЩ鍔ㄥ埌涓嶅悓鐨勫亸绉伙紝鍔熻兘涓嶅彉銆侺EPTR.PTR 鍊兼槸鐩稿浜?ML 鍦板潃鐨勫亸绉伙紝榛樿鍊间负
-  0x28000銆?
-### SSP 鐨勬墿灞曠粨鏋勶紙鍋囪 3 涓?IP 瀹炰緥锛?
+LCAP.ALT=1 LEPTR.ID=0xC0 被设置时，标识为一DMIC 扩展链路
+DMA 控制使用现有LOSIDV 寄存
+变更包含了早期代际中所没有的、用于枚举和控制的额外描述：
+- 子链路数量（SSP IP 实例）位LCAP.LSCOUNT
+- 电源管理SHIM 移至 LCTL.SPA - 通过 LCTL.OFLEN 将多链路寄存器、SHIM/IP 移交DSP 访问
+- SHIM SSP IP 寄存器移动到不同的偏移，功能不变。LEPTR.PTR 值是相对ML 地址的偏移，默认值为
+  0x28000銆。
+### SSP 的扩展结构（假设 3 IP 实例
 
 ```
   +-----------+

@@ -1,36 +1,36 @@
 ﻿
-## 閲嶅畾鍚?
+## 重定
 
 # XDP_REDIRECT
 
 
-### 鏀寔鐨勬槧灏?
+### 支持的映
 
-XDP_REDIRECT 閫傜敤浜庝互涓嬫槧灏勭被鍨嬶細
+XDP_REDIRECT 适用于以下映射类型：
 
 - `BPF_MAP_TYPE_DEVMAP`
 - `BPF_MAP_TYPE_DEVMAP_HASH`
 - `BPF_MAP_TYPE_CPUMAP`
 - `BPF_MAP_TYPE_XSKMAP`
 
-鍏充簬杩欎簺鏄犲皠鐨勬洿澶氫俊鎭紝璇峰弬闃呭搴旂殑鏄犲皠鏂囨。銆?
-### 澶勭悊杩囩▼
+关于这些映射的更多信息，请参阅对应的映射文档
+### 处理过程
 
 
    :doc: xdp redirect
 
-    骞堕潪鎵€鏈夐┍鍔ㄩ兘鏀寔閲嶅畾鍚戝悗鍙戦€佸抚锛岃€屽浜庢敮鎸佺殑椹卞姩锛屼篃骞堕潪鍏ㄩ儴鏀寔闈炵嚎鎬у抚銆傞潪绾挎€?xdp buf/frame 鏄寚鍖呭惈澶氫釜鐗囨鐨?buf/frame銆?
-### 璋冭瘯涓㈠寘
+    并非所有驱动都支持重定向后发送帧，而对于支持的驱动，也并非全部支持非线性帧。非线xdp buf/frame 是指包含多个片段buf/frame
+### 调试丢包
 
 
-XDP_REDIRECT 鐨勯潤榛樹涪鍖呭彲閫氳繃浠ヤ笅鏂瑰紡璋冭瘯锛?
+XDP_REDIRECT 的静默丢包可通过以下方式调试
 - bpf_trace
 - perf_record
 
 ##### bpf_trace
 
 
-浠ヤ笅 bpftrace 鍛戒护鍙敤浜庢崟鑾峰苟缁熻鎵€鏈?XDP 璺熻釜鐐癸細
+以下 bpftrace 命令可用于捕获并统计所XDP 跟踪点：
 
 
     sudo bpftrace -e 'tracepoint:xdp:* { @cnt[probe] = count(); }'
@@ -45,7 +45,7 @@ XDP_REDIRECT 鐨勯潤榛樹涪鍖呭彲閫氳繃浠ヤ笅鏂瑰紡璋冭瘯锛?
 
     Various xdp tracepoints can be found in `source/include/trace/events/xdp.h`
 
-浠ヤ笅 bpftrace 鍛戒护鍙敤浜庢彁鍙栦綔涓?err 鍙傛暟涓€閮ㄥ垎杩斿洖鐨?`ERRNO`锛?
+以下 bpftrace 命令可用于提取作err 参数一部分返回`ERRNO`
 
     sudo bpftrace -e \
     'tracepoint:xdp:xdp_redirect*_err {@redir_errno[-args->err] = count();}
@@ -54,13 +54,13 @@ XDP_REDIRECT 鐨勯潤榛樹涪鍖呭彲閫氳繃浠ヤ笅鏂瑰紡璋冭瘯锛?
 ##### perf record
 
 
-perf 宸ュ叿涔熸敮鎸佽褰曡窡韪偣锛?
+perf 工具也支持记录跟踪点
 
     perf record -a -e xdp:xdp_redirect_err \
         -e xdp:xdp_redirect_map_err \
         -e xdp:xdp_exception \
         -e xdp:xdp_devmap_xmit
 
-## 鍙傝€?
+## 参
 
 - https://github.com/xdp-project/xdp-tutorial/tree/master/tracing02-xdp-monitor

@@ -1,13 +1,13 @@
 ﻿
 
-######## 瑙嗛杈撳叆涓庤緭鍑?
+######## 视频输入与输
 
-瑙嗛杈撳叆鍜岃緭鍑烘槸璁惧鐨勭墿鐞嗚繛鎺ュ櫒銆傝繖浜涘彲浠ユ槸渚嬪锛歊F 杩炴帴鍣紙澶╃嚎/鏈夌嚎鐢佃锛夈€丆VBS锛堝張绉板鍚堣棰戯級銆丼-Video 鍜?RGB 杩炴帴鍣ㄣ€傜浉鏈轰紶鎰熷櫒涔熻瑙嗕负涓€绉嶈棰戣緭鍏ャ€傝棰戝拰 VBI 鎹曡幏璁惧鍏锋湁杈撳叆銆傝棰戝拰 VBI 杈撳嚭璁惧鍏锋湁杈撳嚭锛屽悇鑷嚦灏戞湁涓€涓€傛棤绾跨數璁惧娌℃湁瑙嗛杈撳叆鎴栬緭鍑恒€?
-瑕佷簡瑙ｅ彲鐢ㄨ緭鍏ュ拰杈撳嚭鐨勬暟閲忎笌灞炴€э紝搴旂敤绋嬪簭鍙互鍒嗗埆浣跨敤
-VIDIOC_ENUMINPUT 鍜?VIDIOC_ENUMOUTPUT ioctl 鏉ユ灇涓惧畠浠€俈IDIOC_ENUMINPUT
-ioctl 杩斿洖鐨?`v4l2_input` 缁撴瀯浣撹繕鍖呭惈閫傜敤浜庢煡璇㈠綋鍓嶈棰戣緭鍏ユ椂鐨勪俊鍙风姸鎬佷俊鎭€?
-VIDIOC_G_INPUT <VIDIOC_G_INPUT> 鍜?VIDIOC_G_OUTPUT <VIDIOC_G_OUTPUT> ioctl 杩斿洖褰撳墠瑙嗛杈撳叆鎴栬緭鍑虹殑绱㈠紩銆傝閫夋嫨涓嶅悓鐨勮緭鍏ユ垨杈撳嚭锛屽簲鐢ㄧ▼搴忚皟鐢?VIDIOC_S_INPUT <VIDIOC_G_INPUT> 鍜?VIDIOC_S_OUTPUT <VIDIOC_G_OUTPUT> ioctl銆傚綋璁惧鍏锋湁涓€涓垨澶氫釜杈撳叆鏃讹紝椹卞姩蹇呴』瀹炵幇鎵€鏈夎緭鍏?ioctl锛涘綋璁惧鍏锋湁涓€涓垨澶氫釜杈撳嚭鏃讹紝蹇呴』瀹炵幇鎵€鏈夎緭鍑?ioctl銆?
-## 绀轰緥锛氬叧浜庡綋鍓嶈棰戣緭鍏ョ殑淇℃伅
+视频输入和输出是设备的物理连接器。这些可以是例如：RF 连接器（天线/有线电视）、CVBS（又称复合视频）、S-Video RGB 连接器。相机传感器也被视为一种视频输入。视频和 VBI 捕获设备具有输入。视频和 VBI 输出设备具有输出，各自至少有一个。无线电设备没有视频输入或输出
+要了解可用输入和输出的数量与属性，应用程序可以分别使用
+VIDIOC_ENUMINPUT VIDIOC_ENUMOUTPUT ioctl 来枚举它们。VIDIOC_ENUMINPUT
+ioctl 返回`v4l2_input` 结构体还包含适用于查询当前视频输入时的信号状态信息
+VIDIOC_G_INPUT <VIDIOC_G_INPUT> VIDIOC_G_OUTPUT <VIDIOC_G_OUTPUT> ioctl 返回当前视频输入或输出的索引。要选择不同的输入或输出，应用程序调VIDIOC_S_INPUT <VIDIOC_G_INPUT> VIDIOC_S_OUTPUT <VIDIOC_G_OUTPUT> ioctl。当设备具有一个或多个输入时，驱动必须实现所有输ioctl；当设备具有一个或多个输出时，必须实现所有输ioctl
+## 示例：关于当前视频输入的信息
 
 
 
@@ -30,7 +30,7 @@ VIDIOC_G_INPUT <VIDIOC_G_INPUT> 鍜?VIDIOC_G_OUTPUT <VIDIOC_G_OUTPUT> ioctl 杩�
     printf("Current input: %s\n", input.name);
 
 
-## 绀轰緥锛氬垏鎹㈠埌绗竴涓棰戣緭鍏?
+## 示例：切换到第一个视频输
 
 
     int index;

@@ -16,14 +16,14 @@ Userdata append support by Matthew Wood <thepacketgeek@gmail.com>, Jan 22 2024
 
 Sysdata append support by Breno Leitao <leitao@debian.org>, Jan 15 2025
 
-## 绠€浠嬶細
+## 简介：
 
 
-璇ユā鍧楅€氳繃 UDP 璁板綍鍐呮牳 printk 娑堟伅锛屼究浜庡湪纾佺洏鏃ュ織澶辫触涓斾覆鍙ｆ帶鍒跺彴涓嶅疄鐢ㄧ殑鎯呭喌涓嬭繘琛岃皟璇曘€?
-瀹冩棦鍙互浣滀负鍐呯疆鍔熻兘浣跨敤锛屼篃鍙互浣滀负妯″潡浣跨敤銆備綔涓哄唴缃姛鑳芥椂锛宯etconsole 鍦ㄧ綉鍗′箣鍚庣珛鍗冲垵濮嬪寲锛屽苟灏藉揩鍚敤鎸囧畾鐨勬帴鍙ｃ€傝櫧鐒惰繖鏃犳硶鎹曡幏鏃╂湡鐨勫唴鏍?panic锛屼絾瀹冪‘瀹炶兘鎹曡幏澶ч儴鍒嗙殑鍚姩杩囩▼銆?
-## 鍙戦€佹柟涓庢帴鏀舵柟閰嶇疆锛?
+该模块通过 UDP 记录内核 printk 消息，便于在磁盘日志失败且串口控制台不实用的情况下进行调试
+它既可以作为内置功能使用，也可以作为模块使用。作为内置功能时，netconsole 在网卡之后立即初始化，并尽快启用指定的接口。虽然这无法捕获早期的内panic，但它确实能捕获大部分的启动过程
+## 发送方与接收方配置
 
-瀹冩帴鍙椾竴涓瓧绗︿覆閰嶇疆鍙傛暟 "netconsole"锛屾牸寮忓涓嬶細
+它接受一个字符串配置参数 "netconsole"，格式如下：
 ```
  netconsole=[+][r][src-port]@[src-ip]/[<dev>],[tgt-port]@<tgt-ip>/[tgt-macaddr]
 
@@ -49,17 +49,17 @@ Sysdata append support by Breno Leitao <leitao@debian.org>, Jan 15 2025
 ```
  linux netconsole=4444@10.0.0.1/22:33:44:55:66:77,9353@10.0.0.2/12:34:56:78:9a:bc
 ```
-瀹冭繕鏀寔閫氳繃鐢ㄥ垎鍙峰垎闅斿涓唬鐞嗙殑鍙傛暟锛屾妸鏃ュ織鍙戦€佸埌澶氫釜杩滅▼浠ｇ悊锛?```
+它还支持通过用分号分隔多个代理的参数，把日志发送到多个远程代理```
  modprobe netconsole netconsole="@/,@10.0.0.2/;@/eth1,6892@10.0.0.3/"
 ```
-鍐呯疆鐨?netconsole 鍦?TCP 鍗忚鏍堝垵濮嬪寲鍚庣珛鍗冲惎鍔紝骞跺皾璇曞湪鎵€鎻愪緵鐨勫湴鍧€涓婂惎鐢ㄦ墍鎻愪緵鐨?dev銆?
-杩滅▼涓绘満鏈夊嚑绉嶆帴鏀跺唴鏍告秷鎭殑鏂瑰紡锛屼緥濡傦細
+内置netconsole TCP 协议栈初始化后立即启动，并尝试在所提供的地址上启用所提供dev
+远程主机有几种接收内核消息的方式，例如：
 
 1) syslogd
 
 2) netcat
 
-   鍦ㄤ娇鐢ㄥ熀浜?BSD 鐨?netcat 鐗堟湰锛堜緥濡?Fedora銆乷penSUSE 鍜?Ubuntu锛夌殑鍙戣鐗堜笂锛屽繀椤讳互涓嶅甫浠ヤ笅褰㈠紡鐨勬柟寮忔寚瀹氱洃鍚鍙?```
+   在使用基BSD netcat 版本（例Fedora、openSUSE Ubuntu）的发行版上，必须以不带以下形式的方式指定监听端```
 	nc -u -l -p <port>' / 'nc -u -l <port>
 
    or::
@@ -71,27 +71,27 @@ Sysdata append support by Breno Leitao <leitao@debian.org>, Jan 15 2025
 ```
    socat udp-recv:<port> -
 ```
-## 鍔ㄦ€侀噸閰嶇疆锛?
+## 动态重配置
 
-鍔ㄦ€佸彲閲嶉厤缃槸 netconsole 鐨勪竴涓湁鐢ㄨˉ鍏咃紝瀹冧娇杩滅▼鏃ュ織鐩爣鑳藉閫氳繃鍩轰簬 configfs 鐨勭敤鎴风┖闂存帴鍙ｅ湪杩愯鏃惰鍔ㄦ€佹坊鍔犮€佺Щ闄ゆ垨鍏跺弬鏁拌閲嶆柊閰嶇疆銆?
-瑕佸寘鍚鐗规€э紝璇峰湪鏋勫缓 netconsole 妯″潡锛堟垨鍐呮牳锛屽鏋?netconsole 鏄唴缃殑锛夋椂閫夋嫨 CONFIG_NETCONSOLE_DYNAMIC銆?
-浠ヤ笅鏄竴浜涚ず渚嬶紙鍏朵腑 configfs 鎸傝浇鍦?/sys/kernel/config 鎸傝浇鐐癸級銆?
+动态可重配置是 netconsole 的一个有用补充，它使远程日志目标能够通过基于 configfs 的用户空间接口在运行时被动态添加、移除或其参数被重新配置
+要包含此特性，请在构建 netconsole 模块（或内核，如netconsole 是内置的）时选择 CONFIG_NETCONSOLE_DYNAMIC
+以下是一些示例（其中 configfs 挂载/sys/kernel/config 挂载点）
 ```
  cd /sys/kernel/config/netconsole/
  mkdir target1
 ```
-璇锋敞鎰忥紝鏂板垱寤虹殑鐩爣鍏锋湁榛樿鐨勫弬鏁板€硷紙濡備笂鎵€杩帮級锛屽苟涓旈粯璁ゆ槸绂佺敤鐨勨€斺€斿畠浠繀椤婚鍏堥€氳繃灏?"1" 鍐欏叆 "enabled" 灞炴€э紙閫氬父鍦ㄧ浉搴斿湴璁剧疆鍙傛暟涔嬪悗锛夋潵鍚敤锛屽涓嬫墍杩般€?
+请注意，新创建的目标具有默认的参数值（如上所述），并且默认是禁用的——它们必须首先通过"1" 写入 "enabled" 属性（通常在相应地设置参数之后）来启用，如下所述
 ```
  rmdir /sys/kernel/config/netconsole/othertarget/
 ```
-璇ユ帴鍙ｅ悜鐢ㄦ埛绌洪棿鏆撮湶浜?netconsole 鐩爣鐨勪互涓嬪弬鏁帮細
+该接口向用户空间暴露netconsole 目标的以下参数：
 
 	=============== =================================       ============
-	enabled		璇ョ洰鏍囧綋鍓嶆槸鍚﹀凡鍚敤锛?	锛堝彲璇诲啓锛?	extended	鏄惁鍚敤鎵╁睍妯″紡			锛堝彲璇诲啓锛?	release		鍦ㄦ秷鎭墠鍔犱笂鍐呮牳鐗堟湰锛坮elease锛?锛堝彲璇诲啓锛?	dev_name	鏈湴缃戠粶鎺ュ彛鍚嶇О			锛堝彲璇诲啓锛?	local_port	瑕佷娇鐢ㄧ殑婧?UDP 绔彛			锛堝彲璇诲啓锛?	remote_port	杩滅▼浠ｇ悊鐨?UDP 绔彛			锛堝彲璇诲啓锛?	local_ip	瑕佷娇鐢ㄧ殑婧?IP 鍦板潃			锛堝彲璇诲啓锛?	remote_ip	杩滅▼浠ｇ悊鐨?IP 鍦板潃			锛堝彲璇诲啓锛?	local_mac	鏈湴鎺ュ彛鐨?MAC 鍦板潃			锛堝彧璇伙級
-	remote_mac	杩滅▼浠ｇ悊鐨?MAC 鍦板潃			锛堝彲璇诲啓锛?	transmit_errors	鏁版嵁鍖呭彂閫侀敊璇鏁?		锛堝彧璇伙級
+	enabled		该目标当前是否已启用	（可读写	extended	是否启用扩展模式			（可读写	release		在消息前加上内核版本（release（可读写	dev_name	本地网络接口名称			（可读写	local_port	要使用的UDP 端口			（可读写	remote_port	远程代理UDP 端口			（可读写	local_ip	要使用的IP 地址			（可读写	remote_ip	远程代理IP 地址			（可读写	local_mac	本地接口MAC 地址			（只读）
+	remote_mac	远程代理MAC 地址			（可读写	transmit_errors	数据包发送错误次		（只读）
 	=============== =================================       ============
 
-"enabled" 灞炴€ц繕鐢ㄤ簬鎺у埗鑳藉惁鏇存柊鐩爣鐨勫弬鏁扳€斺€斾綘鍙兘淇敼宸茬鐢ㄧ洰鏍囷紙鍗?"enabled" 涓?0锛夌殑鍙傛暟銆?
+"enabled" 属性还用于控制能否更新目标的参数——你只能修改已禁用目标（"enabled" 0）的参数
 ```
  cat enabled				# check if enabled is 1
  echo 0 > enabled			# disable the target (if required)
@@ -100,8 +100,8 @@ Sysdata append support by Breno Leitao <leitao@debian.org>, Jan 15 2025
  echo cb:a9:87:65:43:21 > remote_mac	# update more parameters
  echo 1 > enabled			# enable target again
 ```
-浣犱篃鍙互鍔ㄦ€佸湴鏇存柊鏈湴鎺ュ彛銆傚鏋滀綘鎯宠浣跨敤鏂拌繎鍚姩锛堜笖鍦?netconsole 鍔犺浇/鍒濆鍖栨椂鍙兘杩樹笉瀛樺湪锛夌殑鎺ュ彛锛岃繖灏ゅ叾鏈夌敤銆?
-鍦ㄥ紩瀵兼椂锛堟垨妯″潡鍔犺浇鏃讹級閫氳繃 `netconsole=` 鍙傛暟瀹氫箟鐨勭洰鏍囦細琚祴浜堝悕绉?`cmdline<index>`銆備緥濡傦紝鍙傛暟涓殑绗竴涓洰鏍囪鍛藉悕涓?`cmdline0`銆備綘鍙互閫氳繃鍒涘缓鍚屽悕 configfs 鐩綍鏉ユ帶鍒跺拰淇敼杩欎簺鐩爣銆?
+你也可以动态地更新本地接口。如果你想要使用新近启动（且netconsole 加载/初始化时可能还不存在）的接口，这尤其有用
+在引导时（或模块加载时）通过 `netconsole=` 参数定义的目标会被赋予名`cmdline<index>`。例如，参数中的第一个目标被命名`cmdline0`。你可以通过创建同名 configfs 目录来控制和修改这些目标
 ```
  netconsole=4444@10.0.0.1/eth1,9353@10.0.0.2/12:34:56:78:9a:bc;4444@10.0.0.1/eth1,9353@10.0.0.3/12:34:56:78:9a:bc
 ```
@@ -114,11 +114,11 @@ Sysdata append support by Breno Leitao <leitao@debian.org>, Jan 15 2025
  cat cmdline1/remote_ip
  10.0.0.3
 ```
-### 杩藉姞鐢ㄦ埛鏁版嵁
+### 追加用户数据
 
 
-鍦ㄥ惎鐢ㄤ簡 netconsole 鍔ㄦ€侀厤缃殑鎯呭喌涓嬶紝鍙互灏嗚嚜瀹氫箟鐢ㄦ埛鏁版嵁杩藉姞鍒版秷鎭殑鏈熬銆傜敤鎴锋暟鎹潯鐩彲浠ュ湪涓嶆洿鏀圭洰鏍?"enabled" 灞炴€х殑鎯呭喌涓嬭淇敼銆?
-浣嶄簬 `userdata` 涓嬬殑鐩綍锛堥敭锛夐暱搴﹂檺鍒朵负 53 涓瓧绗︼紝骞朵笖
+在启用了 netconsole 动态配置的情况下，可以将自定义用户数据追加到消息的末尾。用户数据条目可以在不更改目"enabled" 属性的情况下被修改
+位于 `userdata` 下的目录（键）长度限制为 53 个字符，并且
 ```
  cd /sys/kernel/config/netconsole && mkdir cmdline0
  cd cmdline0
@@ -139,7 +139,7 @@ Sysdata append support by Breno Leitao <leitao@debian.org>, Jan 15 2025
  cd /sys/kernel/config/netconsole/cmdline0/userdata
  for f in `ls userdata`; do echo $f=$(cat userdata/$f/value); done
 ```
-濡傛灉鍒涘缓浜?`userdata` 鏉＄洰浣嗘病鏈夊悜 `value` 鏂囦欢鍐欏叆鏁版嵁锛?```
+如果创建`userdata` 条目但没有向 `value` 文件写入数据```
  cd /sys/kernel/config/netconsole && mkdir cmdline0
  cd cmdline0
  mkdir userdata/foo
@@ -154,7 +154,7 @@ Sysdata append support by Breno Leitao <leitao@debian.org>, Jan 15 2025
 ```
  rmdir /sys/kernel/config/netconsole/cmdline0/userdata/qux
 ```
-   鍚戠敤鎴锋暟鎹€煎啓鍏ュ瓧绗︿覆鏃讹紝杈撳叆浼氭寜琛屾媶鍒?```
+   向用户数据值写入字符串时，输入会按行拆```
      mkdir userdata/testing
      printf "val1\nval2" > userdata/testing/value
      # userdata store value is called twice, first with "val1\n" then "val2"
@@ -162,24 +162,24 @@ Sysdata append support by Breno Leitao <leitao@debian.org>, Jan 15 2025
      cat userdata/testing/value
      val2
 
-   寤鸿涓嶈鍐欏叆甯︽湁鎹㈣绗︾殑鐢ㄦ埛鏁版嵁鍊笺€?```
-### 鍦?userdata 涓嚜鍔ㄥ～鍏呬换鍔″悕
+   建议不要写入带有换行符的用户数据值```
+### userdata 中自动填充任务名
 
 
-鍦?netconsole configfs 灞傜骇涓紝鏈変竴涓悕涓?`taskname_enabled` 鐨勬枃浠讹紝浣嶄簬 `userdata` 鐩綍涓嬨€傝鏂囦欢鐢ㄤ簬鍚敤鎴栫鐢ㄨ嚜鍔ㄤ换鍔″悕濉厖鐗规€с€傝鐗规€т細鑷姩濉厖褰撳墠姝ｅ湪璐熻矗鍙戦€佹秷鎭殑 CPU 涓婅璋冨害鐨勪换鍔＄殑鍚嶇О銆?
+netconsole configfs 层级中，有一个名`taskname_enabled` 的文件，位于 `userdata` 目录下。该文件用于启用或禁用自动任务名填充特性。该特性会自动填充当前正在负责发送消息的 CPU 上被调度的任务的名称
 ```
   echo 1 > /sys/kernel/config/netconsole/target1/userdata/taskname_enabled
 ```
-褰撳惎鐢ㄨ閫夐」鍚庯紝netconsole 娑堟伅浼氬湪 userdata 瀛楁涓寘鍚竴琛岄澶栧唴瀹癸紝鏍煎紡涓?`taskname=<浠诲姟鍚?`銆傝繖浣垮緱 netconsole 娑堟伅鐨勬帴鏀舵柟鑳藉杞绘澗鎵惧嚭鐢熸垚璇ユ秷鎭椂褰撳墠琚皟搴︾殑搴旂敤绋嬪簭锛屼粠鑰屼负鍐呮牳娑堟伅鎻愪緵棰濆鐨勪笂涓嬫枃骞舵湁鍔╀簬瀵瑰叾鍒嗙被銆?
+当启用该选项后，netconsole 消息会在 userdata 字段中包含一行额外内容，格式`taskname=<任务`。这使得 netconsole 消息的接收方能够轻松找出生成该消息时当前被调度的应用程序，从而为内核消息提供额外的上下文并有助于对其分类
 ```
   echo "This is a message" > /dev/kmsg
   12,607,22085407756,-;This is a message
    taskname=echo
 ```
-鍦ㄦ绀轰緥涓紝璇ユ秷鎭槸鍦?"echo" 浣滀负褰撳墠琚皟搴﹁繘绋嬫椂鐢熸垚鐨勩€?
-### 鍦?userdata 涓嚜鍔ㄥ～鍏呭唴鏍哥増鏈紙release锛?
+在此示例中，该消息是"echo" 作为当前被调度进程时生成的
+### userdata 中自动填充内核版本（release
 
-鍦?netconsole configfs 灞傜骇涓紝鏈変竴涓悕涓?`release_enabled` 鐨勬枃浠讹紝浣嶄簬 `userdata` 鐩綍涓嬨€傝鏂囦欢鎺у埗鍐呮牳鐗堟湰锛坮elease锛夎嚜鍔ㄥ～鍏呯壒鎬э紝瀹冧細灏嗗唴鏍哥増鏈俊鎭拷鍔犲埌鎵€鍙戦€佹瘡鏉℃秷鎭殑 userdata 瀛楀吀涓€?
+netconsole configfs 层级中，有一个名`release_enabled` 的文件，位于 `userdata` 目录下。该文件控制内核版本（release）自动填充特性，它会将内核版本信息追加到所发送每条消息的 userdata 字典中
 ```
   echo 1 > /sys/kernel/config/netconsole/target1/userdata/release_enabled
 ```
@@ -188,22 +188,22 @@ Sysdata append support by Breno Leitao <leitao@debian.org>, Jan 15 2025
   12,607,22085407756,-;This is a message
    release=6.14.0-rc6-01219-g3c027fbd941d
 ```
-   璇ョ壒鎬ф彁渚涚殑鏁版嵁涓?"release prepend" 鐗规€х浉鍚屻€備笉杩囷紝鍦ㄨ繖绉嶆儏鍐典笅锛岀増鏈俊鎭槸琚拷鍔犲埌 userdata 瀛楀吀涓紝鑰屼笉鏄寘鍚湪娑堟伅澶撮噷銆?
-### 鍦?userdata 涓嚜鍔ㄥ～鍏?CPU 缂栧彿
+   该特性提供的数据"release prepend" 特性相同。不过，在这种情况下，版本信息是被追加到 userdata 字典中，而不是包含在消息头里
+### userdata 中自动填CPU 编号
 
 
-鍦?netconsole configfs 灞傜骇涓紝鏈変竴涓悕涓?`cpu_nr` 鐨勬枃浠讹紝浣嶄簬 `userdata` 鐩綍涓嬨€傝鏂囦欢鐢ㄤ簬鍚敤鎴栫鐢?CPU 缂栧彿鑷姩濉厖鐗规€с€傝鐗规€т細鑷姩濉厖姝ｅ湪鍙戦€佹秷鎭殑 CPU 鐨勭紪鍙枫€?
+netconsole configfs 层级中，有一个名`cpu_nr` 的文件，位于 `userdata` 目录下。该文件用于启用或禁CPU 编号自动填充特性。该特性会自动填充正在发送消息的 CPU 的编号
 ```
   echo 1 > /sys/kernel/config/netconsole/target1/userdata/cpu_nr
 ```
-褰撳惎鐢ㄨ閫夐」鍚庯紝netconsole 娑堟伅浼氬湪 userdata 瀛楁涓寘鍚竴琛岄澶栧唴瀹癸紝鏍煎紡涓?`cpu=<cpu_number>`銆傝繖浣垮緱 netconsole 娑堟伅鐨勬帴鏀舵柟鑳藉杞绘澗鍖哄垎鍜岃В澶嶇敤鏉ヨ嚜涓嶅悓 CPU 鐨勬秷鎭紝鍦ㄥ鐞嗗苟琛屾棩蹇楄緭鍑烘椂灏ゅ叾鏈夌敤銆?
+当启用该选项后，netconsole 消息会在 userdata 字段中包含一行额外内容，格式`cpu=<cpu_number>`。这使得 netconsole 消息的接收方能够轻松区分和解复用来自不同 CPU 的消息，在处理并行日志输出时尤其有用
 ```
   echo "This is a message" > /dev/kmsg
   12,607,22085407756,-;This is a message
    cpu=42
 ```
-鍦ㄦ绀轰緥涓紝璇ユ秷鎭敱 CPU 42 鍙戦€併€?
-   濡傛灉鐢ㄦ埛宸插湪 userdata 瀛楀吀涓缃簡涓€涓啿绐佺殑 `cpu` 閿紝涓や釜閿兘浼氳鎶ュ憡锛屽叾涓唴鏍稿～鍏呯殑鏉＄洰鍑虹幇鍦ㄥ叾鍚?```
+在此示例中，该消息由 CPU 42 发送
+   如果用户已在 userdata 字典中设置了一个冲突的 `cpu` 键，两个键都会被报告，其中内核填充的条目出现在其```
      # User-defined CPU entry
      mkdir -p /sys/kernel/config/netconsole/target1/userdata/cpu
      echo "1" > /sys/kernel/config/netconsole/target1/userdata/cpu/value
@@ -214,12 +214,12 @@ Sysdata append support by Breno Leitao <leitao@debian.org>, Jan 15 2025
       cpu=1
       cpu=42    # kernel-populated value
 ```
-### 鍦?userdata 涓嚜鍔ㄥ～鍏呮秷鎭?ID
+### userdata 中自动填充消ID
 
 
-鍦?netconsole configfs 灞傜骇涓紝鏈変竴涓悕涓?`msgid_enabled` 鐨勬枃浠讹紝浣嶄簬 `userdata` 鐩綍涓嬨€傝鏂囦欢鎺у埗娑堟伅 ID 鑷姩濉厖鐗规€э紝瀹冧細涓哄彂閫佸埌缁欏畾鐩爣鐨勬瘡鏉℃秷鎭垎閰嶄竴涓暟鍊?ID锛屽苟灏嗚 ID 杩藉姞鍒版墍鍙戦€佹瘡鏉℃秷鎭殑 userdata 瀛楀吀涓€?
-娑堟伅 ID 浣跨敤姣忎釜鐩爣涓€涓殑 32 浣嶈鏁板櫒鐢熸垚锛屾瘡鍚戣鐩爣鍙戦€佷竴鏉℃秷鎭氨閫掑涓€娆°€傝娉ㄦ剰锛岃璁℃暟鍣ㄥ湪杈惧埌 uint32_t 鏈€澶у€煎悗浼氬洖缁曪紝鍥犳娑堟伅 ID 鍦ㄩ暱鏃堕棿鑼冨洿鍐呭苟闈炲叏灞€鍞竴銆備笉杩囷紝鐩爣浠嶇劧鍙互鍒╃敤瀹冿紝閫氳繃璇嗗埆 ID 搴忓垪涓殑闂撮殭鏉ユ娴嬫秷鎭槸鍚﹀湪鍒拌揪鐩爣涔嬪墠琚涪寮冦€?
-鍖哄垎娑堟伅 ID 涓庢秷鎭殑 <sequnum> 瀛楁寰堥噸瑕併€傛煇浜涘唴鏍告秷鎭彲鑳芥案杩滀笉浼氬埌杈?netconsole锛堜緥濡傜敱浜?printk 闄愰€燂級銆傚洜姝わ紝<sequnum> 涓殑闂撮殭涓嶈兘鍗曠嫭鐢ㄦ潵鎸囩ず娑堟伅鍦ㄤ紶杈撹繃绋嬩腑琚涪寮冿紝鍥犱负瀹冨彲鑳戒粠鏈€氳繃 netconsole 鍙戦€佽繃銆傚彟涓€鏂归潰锛屾秷鎭?ID 鍙垎閰嶇粰瀹為檯閫氳繃 netconsole 浼犺緭鐨勬秷鎭€?
+netconsole configfs 层级中，有一个名`msgid_enabled` 的文件，位于 `userdata` 目录下。该文件控制消息 ID 自动填充特性，它会为发送到给定目标的每条消息分配一个数ID，并将该 ID 追加到所发送每条消息的 userdata 字典中
+消息 ID 使用每个目标一个的 32 位计数器生成，每向该目标发送一条消息就递增一次。请注意，该计数器在达到 uint32_t 最大值后会回绕，因此消息 ID 在长时间范围内并非全局唯一。不过，目标仍然可以利用它，通过识别 ID 序列中的间隙来检测消息是否在到达目标之前被丢弃
+区分消息 ID 与消息的 <sequnum> 字段很重要。某些内核消息可能永远不会到netconsole（例如由printk 限速）。因此，<sequnum> 中的间隙不能单独用来指示消息在传输过程中被丢弃，因为它可能从未通过 netconsole 发送过。另一方面，消ID 只分配给实际通过 netconsole 传输的消息
 ```
   echo "This is message #1" > /dev/kmsg
   echo "This is message #2" > /dev/kmsg
@@ -228,41 +228,41 @@ Sysdata append support by Breno Leitao <leitao@debian.org>, Jan 15 2025
   13,435,54934019,-;This is message #2
    msgid=2
 ```
-## 鎵╁睍鎺у埗鍙帮細
+## 扩展控制台：
 
 
-濡傛灉閰嶇疆琛屽墠缂€浜?'+'锛屾垨鑰?"extended" 閰嶇疆鏂囦欢琚涓?1锛屽垯鍚敤鎵╁睍鎺у埗鍙版敮鎸併€備竴涓紩瀵?```
+如果配置行前缀'+'，或"extended" 配置文件被设1，则启用扩展控制台支持。一个引```
  linux netconsole=+4444@10.0.0.1/eth1,9353@10.0.0.2/12:34:56:78:9a:bc
 ```
-鏃ュ織娑堟伅浼氫互鎵╁睍鍏冩暟鎹ご鐨勫舰寮忎紶杈?```
+日志消息会以扩展元数据头的形式传```
  <level>,<sequnum>,<timestamp>,<contflag>;<message text>
 ```
-濡傛灉鍚敤浜?'r'锛坮elease锛夌壒鎬э紝鍒欎細鍦ㄦ秷鎭腑鍖呭惈鍐呮牳鐗堟湰鍙?```
+如果启用'r'（release）特性，则会在消息中包含内核版本```
  6.4.0,6,444,501151268,-;netconsole: network logging started
 ```
-<message text> 涓殑涓嶅彲鎵撳嵃瀛楃浣跨敤 "\xff" 璁版硶杩涜杞箟銆傚鏋滄秷鎭寘鍚彲閫夌殑瀛楀吀锛屽垯浣跨敤鍘熸牱鐨勬崲琛岀浣滀负鍒嗛殧绗︺€?
-濡傛灉涓€鏉℃秷鎭棤娉曟斁鍏ヤ竴瀹氭暟閲忕殑瀛楄妭锛堝綋鍓嶄负 1000锛変腑锛宯etconsole 浼氬皢鍏舵媶鍒嗕负澶氫釜鍒嗙墖銆傝繖浜?```
+<message text> 中的不可打印字符使用 "\xff" 记法进行转义。如果消息包含可选的字典，则使用原样的换行符作为分隔符
+如果一条消息无法放入一定数量的字节（当前为 1000）中，netconsole 会将其拆分为多个分片。这```
  ncfrag=<byte-offset>/<total-bytes>
 ```
-渚嬪锛屽亣璁惧垎鍧楀ぇ灏忓皬寰楀锛屾秷鎭?"the first
+例如，假设分块大小小得多，消"the first
 ```
  6,416,1758426,-,ncfrag=0/31;the first chunk,
  6,416,1758426,-,ncfrag=16/31; the 2nd chunk.
 ```
-## 鏉傞」璇存槑锛?
+## 杂项说明
 
-   榛樿鐩爣鐨勪互澶綉璁剧疆浣跨敤骞挎挱浠ュお缃戝湴鍧€鏉ュ彂閫佹暟鎹寘锛岃繖浼氬鑷村悓涓€浠ュお缃戞涓婂叾浠栫郴缁熺殑璐熻浇澧炲姞銆?
+   默认目标的以太网设置使用广播以太网地址来发送数据包，这会导致同一以太网段上其他系统的负载增加
 
-   鏌愪簺 LAN 浜ゆ崲鏈哄彲鑳借閰嶇疆涓烘姂鍒朵互澶綉骞挎挱锛屽洜姝ゅ缓璁€氳繃浼犵粰 netconsole 鐨勯厤缃弬鏁版樉寮忔寚瀹氳繙绋嬩唬鐞嗙殑 MAC 鍦板潃銆?
+   某些 LAN 交换机可能被配置为抑制以太网广播，因此建议通过传给 netconsole 的配置参数显式指定远程代理的 MAC 地址
 
 ```
 	ping -c 1 10.0.0.2 ; /sbin/arp -n | grep 10.0.0.2
 ```
-   濡傛灉杩滅▼鏃ュ織浠ｇ悊涓庡彂閫佹柟浣嶄簬涓嶅悓鐨?LAN 瀛愮綉锛屽缓璁皾璇曞皢榛樿缃戝叧鐨?MAC 鍦板潃锛堜綘鍙互浣跨敤 /sbin/route -n 鏌ュ埌锛夋寚瀹氫负杩滅▼ MAC 鍦板潃銆?
+   如果远程日志代理与发送方位于不同LAN 子网，建议尝试将默认网关MAC 地址（你可以使用 /sbin/route -n 查到）指定为远程 MAC 地址
 
-   缃戠粶璁惧锛堜笂杩颁緥瀛愪腑鐨?eth1锛夊彲浠ヨ繍琛屼换浣曠被鍨嬬殑鍏朵粬缃戠粶娴侀噺锛宯etconsole 涓嶄細閫犳垚骞叉壈銆傚鏋滃唴鏍告秷鎭噺寰堝ぇ锛宯etconsole 鍙兘浼氬鑷村叾浠栨祦閲忓嚭鐜拌交寰欢杩燂紝浣嗕笉搴斾骇鐢熷叾浠栧奖鍝嶃€?
+   网络设备（上述例子中eth1）可以运行任何类型的其他网络流量，netconsole 不会造成干扰。如果内核消息量很大，netconsole 可能会导致其他流量出现轻微延迟，但不应产生其他影响
 
-   濡傛灉浣犲彂鐜拌繙绋嬫棩蹇椾唬鐞嗘病鏈夋帴鏀舵垨鎵撳嵃鍑哄彂閫佹柟鐨勬墍鏈夋秷鎭紝寰堝彲鑳芥槸鍥犱负浣犲皢鍙戦€佹柟涓婄殑 "console_loglevel" 鍙傛暟璁剧疆寰楀彧鍙戦€侀珮
+   如果你发现远程日志代理没有接收或打印出发送方的所有消息，很可能是因为你将发送方上的 "console_loglevel" 参数设置得只发送高
 ```
 	dmesg -n 8
 
@@ -272,4 +272,4 @@ Sysdata append support by Breno Leitao <leitao@debian.org>, Jan 15 2025
    dmesg(8) man page and Documentation/admin-guide/kernel-parameters.rst
    for details.
 ```
-Netconsole 琚璁′负灏藉彲鑳藉嵆鏃讹紝浠ヤ究鑳藉璁板綍鍗充娇鏄渶鍏抽敭鐨勫唴鏍?bug銆傚畠涔熷彲浠ュ湪 IRQ 涓婁笅鏂囦腑宸ヤ綔锛屽苟涓斿湪鍙戦€佹暟鎹寘鏃朵笉鍚敤涓柇銆傜敱浜庤繖浜涚嫭鐗圭殑闇€姹傦紝閰嶇疆鏃犳硶鏇村姞鑷姩鍖栵紝骞朵笖涓€浜涘熀鏈檺鍒跺皢闀挎湡瀛樺湪锛氫粎鏀寔 IP 缃戠粶銆乁DP 鏁版嵁鍖呭拰浠ュお缃戣澶囥€?
+Netconsole 被设计为尽可能即时，以便能够记录即使是最关键的内bug。它也可以在 IRQ 上下文中工作，并且在发送数据包时不启用中断。由于这些独特的需求，配置无法更加自动化，并且一些基本限制将长期存在：仅支持 IP 网络、UDP 数据包和以太网设备

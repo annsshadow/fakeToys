@@ -1,27 +1,27 @@
 ﻿
-## 鍩轰簬 ACPI 鐨勮澶囨灇涓?
+## 基于 ACPI 的设备枚
 
 
-ACPI 5 寮曞叆浜嗕竴缁勬柊璧勬簮锛圲artTSerialBus銆両2cSerialBus銆丼piSerialBus銆丟pioIo 涓?GpioInt锛夛紝鍙敤浜庢灇涓句覆琛屾€荤嚎鎺у埗鍣ㄨ儗鍚庣殑浠庤澶囥€?
+ACPI 5 引入了一组新资源（UartTSerialBus、I2cSerialBus、SpiSerialBus、GpioIo GpioInt），可用于枚举串行总线控制器背后的从设备
 
-姝ゅ锛屾垜浠紑濮嬬湅鍒伴泦鎴愬湪 SoC/鑺墖缁勪腑鐨勫璁句粎鍑虹幇鍦?ACPI 鍛藉悕绌洪棿涓€傝繖浜涢€氬父鏄€氳繃鍐呭瓨鏄犲皠瀵勫瓨鍣ㄨ闂殑璁惧銆?
+此外，我们开始看到集成在 SoC/芯片组中的外设仅出现ACPI 命名空间中。这些通常是通过内存映射寄存器访问的设备
 
-涓轰簡鏀寔杩欎竴鐐瑰苟灏藉彲鑳藉鐢ㄧ幇鏈夐┍鍔紝鎴戜滑鍐冲畾閲囧彇浠ヤ笅鍋氭硶锛?
+为了支持这一点并尽可能复用现有驱动，我们决定采取以下做法
 
-  - 娌℃湁鎬荤嚎杩炴帴鍣ㄨ祫婧愮殑璁惧琛ㄧず涓?platform 璁惧銆?
+  - 没有总线连接器资源的设备表示platform 设备
 
-  - 浣嶄簬鐪熷疄鎬荤嚎涔嬪悗銆佷笖瀛樺湪杩炴帴鍣ㄨ祫婧愮殑璁惧琛ㄧず涓?struct spi_device 鎴?struct i2c_client銆傛敞鎰忥紝鏍囧噯 UART 骞朵笉鏄€荤嚎锛屽洜姝や笉瀛樺湪 struct uart_device锛屼笉杩囧叾涓竴浜涘彲浠ョ敱 struct serdev_device 琛ㄧず銆?
+  - 位于真实总线之后、且存在连接器资源的设备表示struct spi_device struct i2c_client。注意，标准 UART 并不是总线，因此不存在 struct uart_device，不过其中一些可以由 struct serdev_device 表示
 
-鐢变簬 ACPI 涓?Device Tree 閮借〃绀轰竴妫佃澶囷紙鍙婂叾璧勬簮锛夋爲锛屾湰瀹炵幇灏藉彲鑳介伒寰?Device Tree 鐨勬柟寮忋€侫CPI 瀹炵幇鏋氫妇鎬荤嚎锛坧latform銆丼PI銆両2C锛屼互鍙婃煇浜涙儏鍐典笅鐨?UART锛夎儗鍚庣殑璁惧锛屽垱寤虹墿鐞嗚澶囷紝骞跺皢瀹冧滑缁戝畾鍒板叾鍦?ACPI 鍛藉悕绌洪棿涓殑 ACPI handle銆?
+由于 ACPI Device Tree 都表示一棵设备（及其资源）树，本实现尽可能遵Device Tree 的方式。ACPI 实现枚举总线（platform、SPI、I2C，以及某些情况下UART）背后的设备，创建物理设备，并将它们绑定到其ACPI 命名空间中的 ACPI handle
 
-杩欐剰鍛崇潃褰?ACPI_HANDLE(dev) 杩斿洖闈?NULL 鏃讹紝璇ヨ澶囨槸浠?ACPI 鍛藉悕绌洪棿鏋氫妇鑰屾潵鐨勩€傛 handle 鍙敤浜庢彁鍙栧叾浠栬澶囩壒瀹氱殑閰嶇疆銆備笅闈㈡湁涓€涓ず渚嬨€?
+这意味着ACPI_HANDLE(dev) 返回NULL 时，该设备是ACPI 命名空间枚举而来的。此 handle 可用于提取其他设备特定的配置。下面有一个示例
 
-## 骞冲彴鎬荤嚎鏀寔
+## 平台总线支持
 
 
-鐢变簬鎴戜滑浣跨敤 platform 璁惧鏉ヨ〃绀烘湭杩炴帴鍒颁换浣曠墿鐞嗘€荤嚎鐨勮澶囷紝鎴戜滑鍙渶涓鸿璁惧瀹炵幇涓€涓?platform 椹卞姩骞舵坊鍔犲彈鏀寔鐨?ACPI ID銆傚鏋滃湪鍏朵粬鏌愪釜闈?ACPI 骞冲彴涓婁娇鐢ㄤ簡鐩稿悓鐨?IP 妯″潡锛岃椹卞姩涔熻鍙互寮€绠卞嵆鐢紝鎴栧彧闇€灏戦噺淇敼銆?
+由于我们使用 platform 设备来表示未连接到任何物理总线的设备，我们只需为该设备实现一platform 驱动并添加受支持ACPI ID。如果在其他某个ACPI 平台上使用了相同IP 模块，该驱动也许可以开箱即用，或只需少量修改
 
-涓虹幇鏈夐┍鍔ㄦ坊鍔?ACPI 鏀寔搴斿綋鐩稿綋
+为现有驱动添ACPI 支持应当相当
 
 ```
 	static const struct acpi_device_id mydrv_acpi_match[] = {
@@ -38,30 +38,30 @@ ACPI 5 寮曞叆浜嗕竴缁勬柊璧勬簮锛圲artTSerialBus銆両2cSerialBus�
 	};
 ```
 
-濡傛灉椹卞姩闇€瑕佹墽琛屾洿澶嶆潅鐨勫垵濮嬪寲锛堜緥濡傝幏鍙栧苟閰嶇疆 GPIO锛夛紝瀹冨彲浠ヨ幏鍙栧叾 ACPI handle 骞朵粠姝?ACPI 琛ㄤ腑鎻愬彇璇ヤ俊鎭€?
+如果驱动需要执行更复杂的初始化（例如获取并配置 GPIO），它可以获取其 ACPI handle 并从ACPI 表中提取该信息
 
-## ACPI 璁惧瀵硅薄
-
-
-涓€鑸潵璇达紝鍦ㄤ娇鐢?ACPI 浣滀负骞冲彴鍥轰欢涓?OS 涔嬮棿鎺ュ彛鐨勭郴缁熶腑鏈変袱绫昏澶囷細涓€绫绘槸鏃犻渶骞冲彴鍥轰欢鍗忓姪銆侀€氳繃涓哄叾鎵€鍦ㄧ壒瀹氭€荤嚎瀹氫箟鐨勫崗璁紙渚嬪 PCI 涓殑閰嶇疆绌洪棿锛夊嵆鍙鍘熺敓鍙戠幇骞舵灇涓剧殑璁惧锛涘彟涓€绫绘槸闇€瑕佺敱骞冲彴鍥轰欢鎻忚堪鎵嶈兘琚彂鐜扮殑璁惧銆備笉杩囷紝瀵逛簬骞冲彴鍥轰欢宸茬煡鐨勪换浣曡澶囷紝鏃犺瀹冨睘浜庡摢涓€绫伙紝鍦?ACPI 鍛藉悕绌洪棿涓兘鍙兘瀛樺湪涓€涓搴旂殑 ACPI 璁惧瀵硅薄锛屾鏃?Linux 鍐呮牳浼氬熀浜庡畠涓鸿璁惧鍒涘缓涓€涓?struct acpi_device 瀵硅薄銆?
-
-閭ｄ簺 struct acpi_device 瀵硅薄浠庝笉鐢ㄤ簬涓哄師鐢熷彲鍙戠幇鐨勮澶囩粦瀹氶┍鍔紝鍥犱负瀹冧滑鐢卞叾浠栫被鍨嬬殑璁惧瀵硅薄锛堜緥濡?PCI 璁惧鐨?struct pci_dev锛夎〃绀猴紝骞剁敱璁惧椹卞姩缁戝畾锛堢浉搴旂殑 struct acpi_device 瀵硅薄鍒欑敤浣滃叧浜庤璁惧閰嶇疆鐨勯澶栦俊鎭潵婧愶級銆傛澶栵紝ACPI 璁惧鏋氫妇鏍稿績浠ｇ爜涓虹粷澶у鏁板€熷姪骞冲彴鍥轰欢鍙戠幇骞舵灇涓剧殑璁惧鍒涘缓 struct platform_device 瀵硅薄锛岃€岃繖浜?platform 璁惧瀵硅薄鍙互鐢?platform 椹卞姩缁戝畾锛屼笌鍘熺敓鍙灇涓捐澶囩殑鎯呭喌鐩存帴绫绘瘮銆傚洜姝わ紝灏嗛┍鍔ㄧ粦瀹氬埌 struct acpi_device 瀵硅薄鍦ㄩ€昏緫涓婃槸涓嶄竴鑷寸殑锛屽洜鑰岄€氬父鏄棤鏁堢殑锛屽寘鎷负鍊熷姪骞冲彴鍥轰欢鍙戠幇鐨勮澶囩紪鍐欑殑椹卞姩涔熸槸濡傛銆?
-
-鍘嗗彶涓婏紝鏇句负涓€浜涘€熷姪骞冲彴鍥轰欢鏋氫妇鐨勮澶囧疄鐜拌繃鐩存帴缁戝畾鍒?struct acpi_device 瀵硅薄鐨?ACPI 椹卞姩锛屼絾涓嶅缓璁换浣曟柊椹卞姩杩欐牱鍋氥€傚涓婃墍杩帮紝杩欎簺璁惧鍘熷垯涓婇兘浼氬垱寤?platform 璁惧瀵硅薄锛堟澶勬棤鍏崇殑灏戞暟渚嬪闄ゅ锛夛紝鍥犳鍗充娇鐩稿簲鐨?ACPI 璁惧瀵硅薄鏄繖绉嶆儏鍐典笅鍞竴鐨勮澶囬厤缃俊鎭潵婧愶紝涔熷簲浣跨敤 platform 椹卞姩鏉ュ鐞嗗畠浠€?
-
-瀵逛簬姣忎釜鎷ユ湁瀵瑰簲 struct acpi_device 瀵硅薄鐨勮澶囷紝鎸囧悜瀹冪殑鎸囬拡鐢?ACPI_COMPANION() 瀹忚繑鍥烇紝鍥犳鎬绘槸鍙互閫氳繃杩欑鏂瑰紡鑾峰彇鍒板瓨鍌ㄥ湪 ACPI 璁惧瀵硅薄涓殑璁惧閰嶇疆淇℃伅銆傜浉搴斿湴锛宻truct acpi_device 鍙涓哄唴鏍镐笌 ACPI 鍛藉悕绌洪棿涔嬮棿鎺ュ彛鐨勪竴閮ㄥ垎锛岃€屽叾浠栫被鍨嬬殑璁惧瀵硅薄锛堜緥濡?struct pci_dev 鎴?struct platform_device锛夊垯鐢ㄤ簬涓庣郴缁熷叾浣欓儴鍒嗕氦浜掋€?
-
-## DMA 鏀寔
+## ACPI 设备对象
 
 
-閫氳繃 ACPI 鏋氫妇鐨?DMA 鎺у埗鍣ㄥ簲鍦ㄧ郴缁熶腑娉ㄥ唽锛屼互鎻愪緵瀵瑰叾璧勬簮鐨勯€氱敤璁块棶銆備緥濡傦紝甯屾湜浠庡睘璁惧鑳介€氳繃閫氱敤 API 璋冪敤 dma_request_chan() 璁块棶鐨勯┍鍔紝蹇呴』鍦?probe 鍑芥暟鏈熬鍍忎笅闈㈣繖鏍锋敞鍐岃嚜宸憋細
+一般来说，在使ACPI 作为平台固件OS 之间接口的系统中有两类设备：一类是无需平台固件协助、通过为其所在特定总线定义的协议（例如 PCI 中的配置空间）即可被原生发现并枚举的设备；另一类是需要由平台固件描述才能被发现的设备。不过，对于平台固件已知的任何设备，无论它属于哪一类，ACPI 命名空间中都可能存在一个对应的 ACPI 设备对象，此Linux 内核会基于它为该设备创建一struct acpi_device 对象
+
+那些 struct acpi_device 对象从不用于为原生可发现的设备绑定驱动，因为它们由其他类型的设备对象（例PCI 设备struct pci_dev）表示，并由设备驱动绑定（相应的 struct acpi_device 对象则用作关于该设备配置的额外信息来源）。此外，ACPI 设备枚举核心代码为绝大多数借助平台固件发现并枚举的设备创建 struct platform_device 对象，而这platform 设备对象可以platform 驱动绑定，与原生可枚举设备的情况直接类比。因此，将驱动绑定到 struct acpi_device 对象在逻辑上是不一致的，因而通常是无效的，包括为借助平台固件发现的设备编写的驱动也是如此
+
+历史上，曾为一些借助平台固件枚举的设备实现过直接绑定struct acpi_device 对象ACPI 驱动，但不建议任何新驱动这样做。如上所述，这些设备原则上都会创platform 设备对象（此处无关的少数例外除外），因此即使相应ACPI 设备对象是这种情况下唯一的设备配置信息来源，也应使用 platform 驱动来处理它们
+
+对于每个拥有对应 struct acpi_device 对象的设备，指向它的指针ACPI_COMPANION() 宏返回，因此总是可以通过这种方式获取到存储在 ACPI 设备对象中的设备配置信息。相应地，struct acpi_device 可视为内核与 ACPI 命名空间之间接口的一部分，而其他类型的设备对象（例struct pci_dev struct platform_device）则用于与系统其余部分交互
+
+## DMA 支持
+
+
+通过 ACPI 枚举DMA 控制器应在系统中注册，以提供对其资源的通用访问。例如，希望从属设备能通过通用 API 调用 dma_request_chan() 访问的驱动，必须probe 函数末尾像下面这样注册自己：
 
 ```
 	err = devm_acpi_dma_controller_register(dev, xlate_func, dw);
 	/* Handle the error if it's not a case of !CONFIG_ACPI */
 ```
 
-骞跺湪闇€瑕佹椂瀹炵幇鑷畾涔夌殑 xlate 鍑芥暟锛堥€氬父 acpi_dma_simple_xlate() 宸茶冻澶燂級锛岃鍑芥暟灏?struct acpi_dma_spec 鎻愪緵鐨?FixedDMA 璧勬簮杞崲涓虹浉搴旂殑 DMA 閫氶亾銆傜浉鍏充唬鐮佺墖鏂涓嬶細
+并在需要时实现自定义的 xlate 函数（通常 acpi_dma_simple_xlate() 已足够），该函数struct acpi_dma_spec 提供FixedDMA 资源转换为相应的 DMA 通道。相关代码片断如下：
 
 ```
 	#ifdef CONFIG_ACPI
@@ -95,9 +95,9 @@ ACPI 5 寮曞叆浜嗕竴缁勬柊璧勬簮锛圲artTSerialBus銆両2cSerialBus�
 	#endif
 ```
 
-dma_request_chan() 浼氫负姣忎釜宸叉敞鍐岀殑 DMA 鎺у埗鍣ㄨ皟鐢?xlate_func()銆傚湪 xlate 鍑芥暟涓紝蹇呴』鏍规嵁 struct acpi_dma_spec 涓殑淇℃伅浠ュ強 struct acpi_dma 鎻愪緵鐨勬帶鍒跺櫒灞炴€ф潵閫夋嫨鍚堥€傜殑閫氶亾銆?
+dma_request_chan() 会为每个已注册的 DMA 控制器调xlate_func()。在 xlate 函数中，必须根据 struct acpi_dma_spec 中的信息以及 struct acpi_dma 提供的控制器属性来选择合适的通道
 
-瀹㈡埛绔繀椤讳娇鐢ㄥ搴斾簬鐗瑰畾 FixedDMA 璧勬簮鐨勫瓧绗︿覆鍙傛暟璋冪敤 dma_request_chan()銆傞粯璁ゆ儏鍐典笅 "tx" 琛ㄧず FixedDMA 璧勬簮鏁扮粍鐨勭涓€椤癸紝"rx" 琛ㄧず绗簩椤广€備笅琛ㄦ紨绀轰簡涓€涓?
+客户端必须使用对应于特定 FixedDMA 资源的字符串参数调用 dma_request_chan()。默认情况下 "tx" 表示 FixedDMA 资源数组的第一项，"rx" 表示第二项。下表演示了一
 
 ```
 	Device (I2C0)
@@ -115,14 +115,14 @@ dma_request_chan() 浼氫负姣忎釜宸叉敞鍐岀殑 DMA 鎺у埗鍣ㄨ皟鐢
 	}
 ```
 
-鍥犳锛屽湪鏈緥涓姹傜嚎涓?0x0018 鐨?FixedDMA 鏄?"tx"锛屼笅涓€涓槸 "rx"銆?
+因此，在本例中请求线0x0018 FixedDMA "tx"，下一个是 "rx"
 
-鍦ㄥ仴澹殑瀹炵幇涓紝瀹㈡埛绔笉宸ч渶瑕佺洿鎺ヨ皟鐢?acpi_dma_request_slave_chan_by_index()锛屼粠鑰屾寜绱㈠紩閫夋嫨鐗瑰畾鐨?FixedDMA 璧勬簮銆?
+在健壮的实现中，客户端不巧需要直接调acpi_dma_request_slave_chan_by_index()，从而按索引选择特定FixedDMA 资源
 
-## 鍛藉悕涓柇
+## 命名中断
 
 
-閫氳繃 ACPI 鏋氫妇鐨勯┍鍔ㄥ彲浠ュ湪 ACPI 琛ㄤ腑涓轰腑鏂懡鍚嶏紝杩欎簺鍚嶇О鍙敤浜庡湪椹卞姩涓幏鍙?IRQ 鍙枫€備腑鏂悕绉板彲浠ュ湪 _DSD 涓互 'interrupt-names' 鍒楀嚭銆傝繖浜涘悕绉板簲鍒椾负涓€涓瓧绗︿覆鏁扮粍锛屽畠浠皢鏄犲皠鍒?ACPI 琛ㄤ腑涓庡叾绱㈠紩瀵瑰簲鐨?Interrupt() 璧勬簮銆?
+通过 ACPI 枚举的驱动可以在 ACPI 表中为中断命名，这些名称可用于在驱动中获IRQ 号。中断名称可以在 _DSD 中以 'interrupt-names' 列出。这些名称应列为一个字符串数组，它们将映射ACPI 表中与其索引对应Interrupt() 资源
 
 ```
     Device (DEV0) {
@@ -145,14 +145,14 @@ dma_request_chan() 浼氫负姣忎釜宸叉敞鍐岀殑 DMA 鎺у埗鍣ㄨ皟鐢
     }
 ```
 
-涓柇鍚嶇О 'default' 灏嗗搴?Interrupt() 璧勬簮涓殑 0x20锛?alert' 瀵瑰簲 0x24銆傛敞鎰忥紝浠呮槧灏?Interrupt() 璧勬簮锛岃€屼笉鏄犲皠 GpioInt() 鎴栫被浼艰祫婧愩€?
+中断名称 'default' 将对Interrupt() 资源中的 0x20alert' 对应 0x24。注意，仅映Interrupt() 资源，而不映射 GpioInt() 或类似资源
 
-椹卞姩鍙互璋冪敤鍑芥暟 fwnode_irq_get_byname()锛屼互 fwnode 涓庝腑鏂悕绉颁綔涓哄弬鏁帮紝鏉ヨ幏鍙栫浉搴旂殑 IRQ 鍙枫€?
+驱动可以调用函数 fwnode_irq_get_byname()，以 fwnode 与中断名称作为参数，来获取相应的 IRQ 号
 
-## SPI 涓茶鎬荤嚎鏀寔
+## SPI 串行总线支持
 
 
-浣嶄簬 SPI 鎬荤嚎涔嬪悗鐨勪粠璁惧闄勬湁 SpiSerialBus 璧勬簮銆係PI 鏍稿績浼氳嚜鍔ㄦ彁鍙栧畠锛屽苟涓斾竴鏃︽€荤嚎椹卞姩璋冪敤 spi_register_master()锛屼粠璁惧灏变細琚灇涓俱€?
+位于 SPI 总线之后的从设备附有 SpiSerialBus 资源。SPI 核心会自动提取它，并且一旦总线驱动调用 spi_register_master()，从设备就会被枚举
 
 ```
 	Device (EEP0)
@@ -172,7 +172,7 @@ dma_request_chan() 浼氫负姣忎釜宸叉敞鍐岀殑 DMA 鎺у埗鍣ㄨ皟鐢
 		...
 ```
 
-SPI 璁惧椹卞姩鍙渶浠ョ被浼间簬 platform 璁惧椹卞姩鐨勬柟寮忔坊鍔?ACPI ID銆備笅闈㈡槸涓€涓垜浠坊鍔?ACPI 鏀寔鐨勭ず渚?
+SPI 设备驱动只需以类似于 platform 设备驱动的方式添ACPI ID。下面是一个我们添ACPI 支持的示
 
 ```
 	static const struct acpi_device_id at25_acpi_match[] = {
@@ -189,7 +189,7 @@ SPI 璁惧椹卞姩鍙渶浠ョ被浼间簬 platform 璁惧椹卞姩鐨
 	};
 ```
 
-娉ㄦ剰锛岃椹卞姩瀹為檯涓婇渶瑕佹洿澶氫俊鎭紝渚嬪椤靛ぇ灏忕瓑
+注意，该驱动实际上需要更多信息，例如页大小等
 
 ```
 	Device (EEP0)
@@ -208,7 +208,7 @@ SPI 璁惧椹卞姩鍙渶浠ョ被浼间簬 platform 璁惧椹卞姩鐨
 	}
 ```
 
-鐒跺悗 at25 SPI 椹卞姩鍙互閫氳繃璋冪敤璁惧灞炴€ф帴鍙ｈ幏鍙栨閰嶇疆
+然后 at25 SPI 驱动可以通过调用设备属性接口获取此配置
 
 ```
 	err = device_property_read_u32(dev, "size", &size);
@@ -224,12 +224,12 @@ SPI 璁惧椹卞姩鍙渶浠ョ被浼间簬 platform 璁惧椹卞姩鐨
 		...error handling...
 ```
 
-## I2C 涓茶鎬荤嚎鏀寔
+## I2C 串行总线支持
 
 
-浣嶄簬 I2C 鎬荤嚎鎺у埗鍣ㄤ箣鍚庣殑浠庤澶囧彧闇€鍍?platform 涓?SPI 椹卞姩閭ｆ牱娣诲姞 ACPI ID銆備竴鏃﹂€傞厤鍣ㄦ敞鍐岋紝I2C 鏍稿績浼氳嚜鍔ㄦ灇涓炬帶鍒跺櫒璁惧鑳屽悗鐨勪换浣曚粠璁惧銆?
+位于 I2C 总线控制器之后的从设备只需platform SPI 驱动那样添加 ACPI ID。一旦适配器注册，I2C 核心会自动枚举控制器设备背后的任何从设备
 
-涓嬮潰鏄皢 ACPI 鏀寔娣诲姞鍒扮幇鏈?mpu3050 鐨勭ず渚?
+下面是将 ACPI 支持添加到现mpu3050 的示
 
 ```
 	static const struct acpi_device_id mpu3050_acpi_match[] = {
@@ -252,10 +252,10 @@ SPI 璁惧椹卞姩鍙渶浠ョ被浼间簬 platform 璁惧椹卞姩鐨
 	module_i2c_driver(mpu3050_i2c_driver);
 ```
 
-## 瀵?PWM 璁惧鐨勫紩鐢?
+## PWM 设备的引
 
 
-鏈夋椂涓€涓澶囧彲浠ユ槸鏌愪釜 PWM 閫氶亾鐨勬秷璐硅€呫€傛樉鐒?OS 甯屾湜鐭ラ亾鏄摢涓€涓€備负浜嗘彁渚涜繖绉嶆槧灏勶紝鐗规畩灞炴€у凡琚?
+有时一个设备可以是某个 PWM 通道的消费者。显OS 希望知道是哪一个。为了提供这种映射，特殊属性已
 
 ```
     Device (DEV)
@@ -280,12 +280,12 @@ SPI 璁惧椹卞姩鍙渶浠ョ被浼间簬 platform 璁惧椹卞姩鐨
     }
 ```
 
-鍦ㄤ笂杩扮ず渚嬩腑锛屽熀浜?PWM 鐨?LED 椹卞姩寮曠敤浜?\_SB.PCI0.PWM 璁惧鐨?PWM 閫氶亾 0锛屽垵濮嬪懆鏈熻缃负 600 ms锛堟敞鎰忚鍊间互绾崇缁欏嚭锛夈€?
+在上述示例中，基PWM LED 驱动引用\_SB.PCI0.PWM 设备PWM 通道 0，初始周期设置为 600 ms（注意该值以纳秒给出）
 
-## GPIO 鏀寔
+## GPIO 支持
 
 
-ACPI 5 寮曞叆浜嗕袱涓柊璧勬簮鏉ユ弿杩?GPIO 杩炴帴锛欸pioIo 涓?GpioInt銆傝繖浜涜祫婧愬彲鐢ㄤ簬灏嗚澶囦娇鐢ㄧ殑 GPIO 缂栧彿浼犻€掔粰椹卞姩銆侫CPI 5.1 閫氳繃 _DSD锛圖evice Specific Data锛岃澶囩壒瀹氭暟鎹級瀵规杩涜浜嗘墿灞曪紝闄ゅ叾浠栧姛鑳藉锛岃繕浣垮緱鍙互涓?GPIO 鍛藉悕銆?
+ACPI 5 引入了两个新资源来描GPIO 连接：GpioIo GpioInt。这些资源可用于将设备使用的 GPIO 编号传递给驱动。ACPI 5.1 通过 _DSD（Device Specific Data，设备特定数据）对此进行了扩展，除其他功能外，还使得可以GPIO 命名
 
 ```
 	Device (DEV)
@@ -320,11 +320,11 @@ ACPI 5 寮曞叆浜嗕袱涓柊璧勬簮鏉ユ弿杩?GPIO 杩炴帴锛欸pioI
 	}
 ```
 
-杩欎簺 GPIO 缂栧彿鏄浉瀵逛簬鎺у埗鍣ㄧ殑锛岃矾寰?"\\_SB.PCI0.GPI0" 鎸囧畾浜嗘帶鍒跺櫒鎵€鍦ㄧ殑璺緞銆備负浜嗗湪 Linux 涓娇鐢ㄨ繖浜?GPIO锛屾垜浠渶瑕佸皢瀹冧滑杞崲涓虹浉搴旂殑 Linux GPIO 鎻忚堪绗︺€?
+这些 GPIO 编号是相对于控制器的，路"\\_SB.PCI0.GPI0" 指定了控制器所在的路径。为了在 Linux 中使用这GPIO，我们需要将它们转换为相应的 Linux GPIO 描述符
 
-瀵规鏈変竴涓爣鍑嗙殑 GPIO API锛屽叾鏂囨。浣嶄簬 Documentation/admin-guide/gpio/銆?
+对此有一个标准的 GPIO API，其文档位于 Documentation/admin-guide/gpio/
 
-鍦ㄤ笂杩扮ず渚嬩腑锛屾垜浠彲浠ラ€氳繃浠ヤ笅鏂瑰紡鑾峰彇鐩稿簲鐨勪袱涓?GPIO 鎻忚堪绗︼細
+在上述示例中，我们可以通过以下方式获取相应的两GPIO 描述符：
 
 ```
 	#include <linux/gpio/consumer.h>
@@ -343,14 +343,14 @@ ACPI 5 寮曞叆浜嗕袱涓柊璧勬簮鏉ユ弿杩?GPIO 杩炴帴锛欸pioI
 	/* Now we can use the GPIO descriptors */
 ```
 
-杩欎簺鍑芥暟杩樻湁 devm_* 鐗堟湰锛屼細鍦ㄨ澶囬噴鏀炬椂涓€骞堕噴鏀炬弿杩扮銆?
+这些函数还有 devm_* 版本，会在设备释放时一并释放描述符
 
-鏈夊叧涓?GPIO 鐩稿叧鐨?_DSD 缁戝畾锛岃瑙?Documentation/firmware-guide/acpi/gpio-properties.rst銆?
+有关GPIO 相关_DSD 绑定，详Documentation/firmware-guide/acpi/gpio-properties.rst
 
-## RS-485 鏀寔
+## RS-485 支持
 
 
-ACPI _DSD锛圖evice Specific Data锛夊彲鐢ㄤ簬鎻忚堪 UART 鐨?RS-485 鑳藉姏銆?
+ACPI _DSD（Device Specific Data）可用于描述 UART RS-485 能力
 
 ```
 	Device (DEV)
@@ -371,17 +371,17 @@ ACPI _DSD锛圖evice Specific Data锛夊彲鐢ㄤ簬鎻忚堪 UART 鐨?RS-485 �
 		...
 ```
 
-## MFD 璁惧
+## MFD 设备
 
 
-MFD 璁惧灏嗗叾瀛愯澶囨敞鍐屼负 platform 璁惧銆傚浜庡瓙璁惧锛岄渶瑕佷竴涓?ACPI handle锛屼緵鍏跺紩鐢ㄤ笌鑷韩鐩稿叧鐨?ACPI 鍛藉悕绌洪棿閮ㄥ垎銆傚湪 Linux MFD 瀛愮郴缁熶腑鎴戜滑鎻愪緵涓ょ鏂瑰紡锛?
+MFD 设备将其子设备注册为 platform 设备。对于子设备，需要一ACPI handle，供其引用与自身相关ACPI 命名空间部分。在 Linux MFD 子系统中我们提供两种方式
 
-  - 瀛愯澶囧叡浜埗璁惧鐨?ACPI handle銆?
-  - MFD cell 鍙互鎸囧畾璇ヨ澶囩殑 ACPI id銆?
+  - 子设备共享父设备ACPI handle
+  - MFD cell 可以指定该设备的 ACPI id
 
-瀵逛簬绗竴绉嶆儏鍐碉紝MFD 椹卞姩鏃犻渶鍋氫换浣曚簨銆傜敓鎴愮殑瀛?platform 璁惧鍏?ACPI_COMPANION() 灏嗚璁剧疆涓烘寚鍚戠埗璁惧銆?
+对于第一种情况，MFD 驱动无需做任何事。生成的platform 设备ACPI_COMPANION() 将被设置为指向父设备
 
-濡傛灉 ACPI 鍛藉悕绌洪棿涓湁涓€涓垜浠彲浠ラ€氳繃 ACPI id 鎴?ACPI
+如果 ACPI 命名空间中有一个我们可以通过 ACPI id ACPI
 
 ```
 	static struct mfd_cell_acpi_match my_subdevice_cell_acpi_match = {
@@ -396,20 +396,20 @@ MFD 璁惧灏嗗叾瀛愯澶囨敞鍐屼负 platform 璁惧銆傚浜
 	};
 ```
 
-鐒跺悗锛孉CPI id "XYZ0001" 琚敤浜庣洿鎺ュ湪 MFD 璁惧涓嬫煡鎵句竴涓?ACPI 璁惧锛岃嫢鎵惧埌锛屽垯璇?ACPI companion 璁惧琚粦瀹氬埌鐢熸垚鐨勫瓙 platform 璁惧銆?
+然后，ACPI id "XYZ0001" 被用于直接在 MFD 设备下查找一ACPI 设备，若找到，则ACPI companion 设备被绑定到生成的子 platform 设备
 
-## Device Tree 鍛藉悕绌洪棿閾炬帴璁惧 ID
+## Device Tree 命名空间链接设备 ID
 
 
-Device Tree 鍗忚浣跨敤鍩轰簬 "compatible" 灞炴€х殑璁惧鏍囪瘑锛岃灞炴€х殑鍊兼槸涓€涓瓧绗︿覆鎴栦竴缁勫瓧绗︿覆锛岃椹卞姩涓庨┍鍔ㄦ牳蹇冭瘑鍒负璁惧鏍囪瘑绗︺€傛墍鏈夎繖浜涘瓧绗︿覆鐨勯泦鍚堝彲琚涓轰竴涓澶囨爣璇嗗懡鍚嶇┖闂达紝绫讳技浜?ACPI/PNP 璁惧 ID 鍛藉悕绌洪棿銆傚洜姝わ紝鍘熷垯涓婁笉搴旀湁蹇呰涓哄湪 Device Tree锛圖T锛夊懡鍚嶇┖闂翠腑宸叉湁鏍囪瘑瀛楃涓茬殑璁惧鍒嗛厤涓€涓柊鐨勶紙涓斿彲璇存槸鍐椾綑鐨勶級ACPI/PNP 璁惧 ID锛屽挨鍏舵槸褰撹 ID 浠呯敤浜庤〃鏄庢煇涓粰瀹氳澶囦笌鍙︿竴涓澶囧吋瀹癸紙鍚庤€呭ぇ姒傚湪鍐呮牳涓凡鏈夊尮閰嶇殑椹卞姩锛夋椂銆?
+Device Tree 协议使用基于 "compatible" 属性的设备标识，该属性的值是一个字符串或一组字符串，被驱动与驱动核心识别为设备标识符。所有这些字符串的集合可被视为一个设备标识命名空间，类似ACPI/PNP 设备 ID 命名空间。因此，原则上不应有必要为在 Device Tree（DT）命名空间中已有标识字符串的设备分配一个新的（且可说是冗余的）ACPI/PNP 设备 ID，尤其是当该 ID 仅用于表明某个给定设备与另一个设备兼容（后者大概在内核中已有匹配的驱动）时
 
-鍦?ACPI 涓紝鍚嶄负 _CID锛圕ompatible ID锛屽吋瀹?ID锛夌殑璁惧鏍囪瘑瀵硅薄鐢ㄤ簬鍒楀嚭缁欏畾璁惧鎵€鍏煎璁惧鐨?ID锛屼絾杩欎簺 ID 蹇呴』灞炰簬 ACPI 瑙勮寖瑙勫畾鐨勬煇涓懡鍚嶇┖闂达紙璇﹁ ACPI 6.0 绗?6.1.2 鑺傦級锛岃€?DT 鍛藉悕绌洪棿骞堕潪鍏朵腑涔嬩竴銆傛澶栵紝瑙勮寖寮哄埗瑕佹眰鎵€鏈夎〃绀鸿澶囩殑 ACPI 瀵硅薄閮藉繀椤诲瓨鍦?_HID 鎴?_ADR 鏍囪瘑瀵硅薄锛圓CPI 6.0 绗?6.1 鑺傦級銆傚浜庝笉鍙灇涓剧殑鎬荤嚎绫诲瀷锛岃瀵硅薄蹇呴』鏄?_HID锛屼笖鍏跺€间篃蹇呴』鏄鑼冭瀹氱殑鏌愪釜鍛藉悕绌洪棿涓殑璁惧 ID銆?
+ACPI 中，名为 _CID（Compatible ID，兼ID）的设备标识对象用于列出给定设备所兼容设备ID，但这些 ID 必须属于 ACPI 规范规定的某个命名空间（详见 ACPI 6.0 6.1.2 节），DT 命名空间并非其中之一。此外，规范强制要求所有表示设备的 ACPI 对象都必须存_HID _ADR 标识对象（ACPI 6.0 6.1 节）。对于不可枚举的总线类型，该对象必须_HID，且其值也必须是规范规定的某个命名空间中的设备 ID
 
-鐗规畩鐨?DT 鍛藉悕绌洪棿閾炬帴璁惧 ID锛孭RP0001锛屾彁渚涗簡涓€绉嶅湪 ACPI 涓娇鐢ㄧ幇鏈?DT 鍏煎璁惧鏍囪瘑銆佸悓鏃跺張鑳芥弧瓒充笂杩版簮鑷?ACPI 瑙勮寖涔嬭姹傜殑鏂规硶銆傚叿浣撴潵璇达紝濡傛灉 _HID 杩斿洖 PRP0001锛孉CPI 瀛愮郴缁熷皢鍦ㄨ澶囧璞＄殑 _DSD 涓煡鎵?"compatible" 灞炴€э紝骞朵娇鐢ㄨ灞炴€х殑鍊兼寜鐓у師濮?DT 璁惧鏍囪瘑绠楁硶鏉ヨ瘑鍒浉搴旇澶囥€傚鏋?"compatible" 灞炴€т笉瀛樺湪鎴栧叾鍊兼棤鏁堬紝璇ヨ澶囧皢涓嶄細琚?ACPI 瀛愮郴缁熸灇涓俱€傚惁鍒欙紝瀹冨皢鑷姩浣滀负 platform 璁惧琚灇涓撅紙闄ら潪璇ヨ澶囦笌鍏剁埗璁惧涔嬮棿瀛樺湪 I2C 鎴?SPI 閾炬帴锛屾鏃?ACPI 鏍稿績浼氬皢璁惧鏋氫妇鐣欑粰鐖惰澶囩殑椹卞姩锛夛紝骞朵笖 "compatible" 灞炴€у€间腑鐨勬爣璇嗗瓧绗︿覆灏嗕笌 _CID 鍒楀嚭鐨勮澶?ID锛堝鏋滃瓨鍦級涓€璧风敤浜庝负璇ヨ澶囨煡鎵鹃┍鍔ㄣ€?
+特殊DT 命名空间链接设备 ID，PRP0001，提供了一种在 ACPI 中使用现DT 兼容设备标识、同时又能满足上述源ACPI 规范之要求的方法。具体来说，如果 _HID 返回 PRP0001，ACPI 子系统将在设备对象的 _DSD 中查"compatible" 属性，并使用该属性的值按照原DT 设备标识算法来识别相应设备。如"compatible" 属性不存在或其值无效，该设备将不会ACPI 子系统枚举。否则，它将自动作为 platform 设备被枚举（除非该设备与其父设备之间存在 I2C SPI 链接，此ACPI 核心会将设备枚举留给父设备的驱动），并且 "compatible" 属性值中的标识字符串将与 _CID 列出的设ID（如果存在）一起用于为该设备查找驱动
 
-绫讳技鍦帮紝濡傛灉 PRP0001 鍑虹幇鍦?_CID 杩斿洖鐨勮澶?ID 鍒楄〃涓紝鍒?"compatible" 灞炴€у€硷紙濡傛灉瀛樺湪涓旀湁鏁堬級鍒楀嚭鐨勬爣璇嗗瓧绗︿覆灏嗚鐢ㄤ簬鏌ユ壘鍖归厤璇ヨ澶囩殑椹卞姩锛屼絾鍦ㄨ繖绉嶆儏鍐典笅锛屽畠浠浉瀵逛簬 _HID 涓?_CID 鍒楀嚭鐨勫叾浠栬澶?ID 鐨勪紭鍏堢骇锛屽彇鍐充簬 PRP0001 鍦?_CID 杩斿洖鍖呬腑鐨勪綅缃€傚叿浣撴潵璇达紝_HID 杩斿洖鐨勮澶?ID 浠ュ強鍦?_CID 杩斿洖鍖呬腑浣嶄簬 PRP0001 涔嬪墠鐨勮澶?ID 灏嗛鍏堣妫€鏌ャ€傚悓鏍峰湪杩欑鎯呭喌涓嬶紝璁惧灏嗚鏋氫妇鍒扮殑鎬荤嚎绫诲瀷鍙栧喅浜?_HID 杩斿洖鐨勮澶?ID銆?
+类似地，如果 PRP0001 出现_CID 返回的设ID 列表中，"compatible" 属性值（如果存在且有效）列出的标识字符串将被用于查找匹配该设备的驱动，但在这种情况下，它们相对于 _HID _CID 列出的其他设ID 的优先级，取决于 PRP0001 _CID 返回包中的位置。具体来说，_HID 返回的设ID 以及_CID 返回包中位于 PRP0001 之前的设ID 将首先被检查。同样在这种情况下，设备将被枚举到的总线类型取决_HID 返回的设ID
 
-渚嬪锛屼笅闈㈢殑 ACPI 绀轰緥鍙敤浜庢灇涓句竴涓?lm75 绫诲瀷鐨?I2C 娓╁害浼犳劅鍣紝骞朵娇鐢?Device Tree
+例如，下面的 ACPI 示例可用于枚举一lm75 类型I2C 温度传感器，并使Device Tree
 
 ```
 	Device (TMP0)
@@ -435,20 +435,20 @@ Device Tree 鍗忚浣跨敤鍩轰簬 "compatible" 灞炴€х殑璁惧鏍�
 	}
 ```
 
-瀹氫箟 _HID 杩斿洖 PRP0001銆佷笖 _DSD 涓病鏈?"compatible" 灞炴€ф垨 _CID 鐨勮澶囧璞℃槸鍚堟硶鐨勶紝鍙瀹冧滑鐨勬煇涓鍏堟彁渚涗簡涓€涓甫鏈夋湁鏁?"compatible" 灞炴€х殑 _DSD銆傝繖鏍风殑璁惧瀵硅薄闅忓悗琚畝鍗曞湴瑙嗕负棰濆鐨勩€屽潡銆嶏紝鍚戝鍚堢鍏堣澶囬┍鍔ㄦ彁渚涘垎灞傞厤缃俊鎭€?
+定义 _HID 返回 PRP0001、且 _DSD 中没"compatible" 属性或 _CID 的设备对象是合法的，只要它们的某个祖先提供了一个带有有"compatible" 属性的 _DSD。这样的设备对象随后被简单地视为额外的「块」，向复合祖先设备驱动提供分层配置信息
 
-涓嶈繃锛孭RP0001 鍙兘浠庤澶囧璞＄殑 _HID 鎴?_CID 杩斿洖锛屽墠鎻愭槸涓庡畠鍏宠仈鐨?_DSD锛堟棤璁烘槸璁惧瀵硅薄鑷韩鐨?_DSD锛岃繕鏄笂杩般€屽鍚堣澶囥€嶆儏鍐典笅鍏剁鍏堢殑 _DSD锛夎繑鍥炵殑鎵€鏈夊睘鎬ч兘鍙互鍦?ACPI 鐜涓娇鐢ㄣ€傚惁鍒欙紝_DSD 鏈韩琚涓烘棤鏁堬紝鍥犺€屽叾杩斿洖鐨?"compatible" 灞炴€т篃灏辨鏃犳剰涔夈€?
+不过，PRP0001 只能从设备对象的 _HID _CID 返回，前提是与它关联_DSD（无论是设备对象自身_DSD，还是上述「复合设备」情况下其祖先的 _DSD）返回的所有属性都可以ACPI 环境中使用。否则，_DSD 本身被视为无效，因而其返回"compatible" 属性也就毫无意义
 
-鏇村淇℃伅璇峰弬闃?Documentation/firmware-guide/acpi/DSD-properties-rules.rst銆?
+更多信息请参Documentation/firmware-guide/acpi/DSD-properties-rules.rst
 
-## PCI 灞傜骇琛ㄧず
+## PCI 层级表示
 
 
-鏈夋椂锛屽湪宸茬煡 PCI 璁惧浣嶄簬 PCI 鎬荤嚎涓婄殑浣嶇疆鏃舵灇涓惧畠浼氬緢鏈夌敤銆備緥濡傦紝鏌愪簺绯荤粺灏?PCI 璁惧锛堜互澶綉銆乄i-Fi銆佷覆鍙ｇ瓑锛夌洿鎺ョ剨鎺ュ湪涓绘澘涓婂浐瀹氫綅缃€傚湪杩欑鎯呭喌涓嬶紝鍙互鏍规嵁杩欎簺 PCI 璁惧鍦?PCI 鎬荤嚎鎷撴墤涓殑浣嶇疆鏉ュ紩鐢ㄥ畠浠€?
+有时，在已知 PCI 设备位于 PCI 总线上的位置时枚举它会很有用。例如，某些系统PCI 设备（以太网、Wi-Fi、串口等）直接焊接在主板上固定位置。在这种情况下，可以根据这些 PCI 设备PCI 总线拓扑中的位置来引用它们
 
-瑕佽瘑鍒竴涓?PCI 璁惧锛岄渶瑕佸畬鏁寸殑灞傜骇鎻忚堪锛屼粠鑺墖缁勬牴绔彛涓€鐩村埌鏈€缁堣澶囷紝缁忚繃鏉夸笂鎵€鏈夌殑涓棿妗?浜ゆ崲鏈恒€?
+要识别一PCI 设备，需要完整的层级描述，从芯片组根端口一直到最终设备，经过板上所有的中间交换机
 
-渚嬪锛屽亣璁炬垜浠湁涓€涓郴缁燂紝鍏朵富鏉夸笂鐒婃帴浜嗕竴涓?PCIe 涓插彛鈥斺€擡xar XR17V3521銆傝 UART 鑺墖杩樺寘鍚?16 涓?GPIO锛屾垜浠笇鏈涗负杩欎簺寮曡剼娣诲姞灞炴€?`gpio-line-names` [^1^]_銆?
+例如，假设我们有一个系统，其主板上焊接了一PCIe 串口——Exar XR17V3521。该 UART 芯片还包16 GPIO，我们希望为这些引脚添加属`gpio-line-names` [^1^]_
 
 ```
 	07:00.0 Serial controller: Exar Corp. XR17V3521 Dual PCIe UART (rev 03)
@@ -484,14 +484,14 @@ Device Tree 鍗忚浣跨敤鍩轰簬 "compatible" 灞炴€х殑璁惧鏍�
 ```
 
 
-瑕佹弿杩拌繖涓?Exar 璁惧鍦?PCI 鎬荤嚎涓婄殑浣嶇疆锛屾垜浠繀椤讳粠 ACPI 鍚嶇О寮€濮?
+要描述这Exar 设备PCI 总线上的位置，我们必须从 ACPI 名称开
 
 ```
 	Bus: 0 - Device: 14 - Function: 1
 ```
 
 
-瑕佹壘鍒拌繖浜涗俊鎭紝鏈夊繀瑕佸弽姹囩紪 BIOS ACPI 琛紝
+要找到这些信息，有必要反汇编 BIOS ACPI 表，
 
 ```
 	mkdir ~/tables/
@@ -502,7 +502,7 @@ Device Tree 鍗忚浣跨敤鍩轰簬 "compatible" 灞炴€х殑璁惧鏍�
 ```
 
 
-鐜板湪锛屽湪 dsdt.dsl 涓紝鎴戜滑蹇呴』鎼滅储鍦板潃涓?0x14锛堣澶囷級鍜?0x01锛堝姛鑳斤級鐩稿叧鐨勮澶囥€傚湪杩欑鎯呭喌涓嬫垜浠彲浠ユ壘鍒颁互涓嬪唴瀹?
+现在，在 dsdt.dsl 中，我们必须搜索地址0x14（设备）0x01（功能）相关的设备。在这种情况下我们可以找到以下内
 
 ```
 	Scope (_SB.PCI0)
@@ -525,7 +525,7 @@ Device Tree 鍗忚浣跨敤鍩轰簬 "compatible" 灞炴€х殑璁惧鏍�
 ```
 
 
-鑰?_ADR 鏂规硶 [^3^]_ 鎭板ソ杩斿洖鎴戜滑姝ｅ湪瀵绘壘鐨勮澶?鍔熻兘缁勫悎銆傚€熷姪杩欎簺淇℃伅骞跺垎鏋愪笂闈㈢殑 `lspci` 杈撳嚭锛堣澶囧垪琛ㄤ笌璁惧鏍戜袱鑰咃級锛屾垜浠彲浠ヤ负 Exar PCIe UART 缂栧啓濡備笅 ACPI 鎻忚堪锛屽悓鏃跺姞鍏ュ叾 GPIO 绾垮垪琛?
+_ADR 方法 [^3^]_ 恰好返回我们正在寻找的设功能组合。借助这些信息并分析上面的 `lspci` 输出（设备列表与设备树两者），我们可以为 Exar PCIe UART 编写如下 ACPI 描述，同时加入其 GPIO 线列
 
 ```
 	Scope (_SB.PCI0.RP02)
@@ -575,12 +575,12 @@ Device Tree 鍗忚浣跨敤鍩轰簬 "compatible" 灞炴€х殑璁惧鏍�
 ```
 
 
-浣嶇疆 "_SB.PCI0.RP02" 鏄€氳繃涓婅堪瀵?dsdt.dsl 琛ㄧ殑璋冩煡寰楀埌鐨勶紝鑰岃澶囧悕 "BRG1"銆?BRG2" 涓?"EXAR" 鏄€氳繃鍒嗘瀽 Exar UART 鍦?PCI 鎬荤嚎鎷撴墤涓殑浣嶇疆鍒涘缓鐨勩€?
+位置 "_SB.PCI0.RP02" 是通过上述dsdt.dsl 表的调查得到的，而设备名 "BRG1"BRG2" "EXAR" 是通过分析 Exar UART PCI 总线拓扑中的位置创建的
 
-## 鍙傝€冭祫鏂?
+## 参考资
 
 
 
 ```
-    https://uefi.org/sites/default/files/resources/ACPI_6_3_May16.pdf锛屽紩鐢ㄦ棩鏈?2020-11-18
+    https://uefi.org/sites/default/files/resources/ACPI_6_3_May16.pdf，引用日2020-11-18
 ```

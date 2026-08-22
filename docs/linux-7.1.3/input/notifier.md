@@ -1,14 +1,14 @@
-﻿## 閿洏閫氱煡鍣?
+﻿## 键盘通知
 
-鍙互浣跨敤 register_keyboard_notifier 鍦ㄩ敭鐩樹簨浠跺彂鐢熸椂鑾峰緱鍥炶皟
-锛堣瑙?kbd_keycode() 鍑芥暟锛夈€備紶鍏ョ殑缁撴瀯浣撲负 keyboard_notifier_param
-锛堝弬瑙?<linux/keyboard.h>锛夛細
+可以使用 register_keyboard_notifier 在键盘事件发生时获得回调
+（详kbd_keycode() 函数）。传入的结构体为 keyboard_notifier_param
+（参<linux/keyboard.h>）：
 
-- 'vc' 濮嬬粓鎻愪緵璇ラ敭鐩樹簨浠舵墍閫傜敤鐨勮櫄鎷熸帶鍒跺彴锛圴C锛夛紱
-- 'down' 瀵逛簬鎸夐敭浜嬩欢涓?1锛屽浜庢澗寮€浜嬩欢涓?0锛?- 'shift' 涓哄綋鍓嶄慨楗伴敭鐘舵€侊紝鎺╃爜浣嶇储寮曚负 KG_*锛?- 'ledstate' 涓哄綋鍓?LED 鐘舵€侊紱
-- 'value' 鍙栧喅浜庝簨浠剁被鍨嬨€?
-- KBD_KEYCODE 浜嬩欢鎬绘槸鍦ㄥ叾浠栦簨浠朵箣鍓嶅彂閫侊紝value 涓洪敭鐮併€?- KBD_UNBOUND_KEYCODE 浜嬩欢鍦ㄩ敭鐮佹湭缁戝畾鍒版煇涓?keysym 鏃跺彂閫併€?  value 涓洪敭鐮併€?- KBD_UNICODE 浜嬩欢鍦?閿爜 -> keysym 杞崲浜х敓涓€涓?  unicode 瀛楃鏃跺彂閫併€倂alue 涓鸿 unicode 鍊笺€?- KBD_KEYSYM 浜嬩欢鍦?閿爜 -> keysym 杞崲浜х敓涓€涓?  闈?unicode 瀛楃鏃跺彂閫併€倂alue 涓鸿 keysym銆?- KBD_POST_KEYSYM 浜嬩欢鍦ㄥ鐞嗗畬闈?unicode keysym 涔嬪悗鍙戦€併€?  杩欏厑璁镐緥濡傛鏌ユ渶缁堝緱鍒扮殑 LED銆?
-瀵逛簬闄ゆ渶鍚庝竴绉嶅鐨勬瘡绉嶄簨浠讹紝鍥炶皟鍙互杩斿洖 NOTIFY_STOP 浠モ€滃悆鎺夆€濊浜嬩欢锛?閫氱煡寰幆琚仠姝紝閿洏浜嬩欢琚涪寮冦€?
+- 'vc' 始终提供该键盘事件所适用的虚拟控制台（VC）；
+- 'down' 对于按键事件1，对于松开事件0- 'shift' 为当前修饰键状态，掩码位索引为 KG_*- 'ledstate' 为当LED 状态；
+- 'value' 取决于事件类型
+- KBD_KEYCODE 事件总是在其他事件之前发送，value 为键码- KBD_UNBOUND_KEYCODE 事件在键码未绑定到某keysym 时发送  value 为键码- KBD_UNICODE 事件键码 -> keysym 转换产生一  unicode 字符时发送。value 为该 unicode 值- KBD_KEYSYM 事件键码 -> keysym 转换产生一  unicode 字符时发送。value 为该 keysym- KBD_POST_KEYSYM 事件在处理完unicode keysym 之后发送  这允许例如检查最终得到的 LED
+对于除最后一种外的每种事件，回调可以返回 NOTIFY_STOP 以“吃掉”该事件通知循环被停止，键盘事件被丢弃
 ```
 
     kbd_keycode(keycode) {

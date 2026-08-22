@@ -1,14 +1,14 @@
 ﻿
-## 甯х紦鍐诧紙Frame Buffer锛?
+## 帧缓冲（Frame Buffer
 
-鏈〉鏄抚缂撳啿锛坒ramebuffer锛夊瓙绯荤粺鐨勬枃妗ｇ储寮曪紝姹囨€婚€氱敤璇存槑涓庡悇绫诲抚缂撳啿璁惧椹卞姩鏂囨。鍏ュ彛锛屼究浜庤鑰呮寜涓婚蹇€熷畾浣嶇浉鍏宠鏄庛€?
-
-
-鏈〉鎻愪緵甯х紦鍐诧紙framebuffer锛夊瓙绯荤粺鐨勯€氱敤璇存槑锛屼互鍙婂悇绫诲抚缂撳啿璁惧椹卞姩鏂囨。銆?
+本页是帧缓冲（framebuffer）子系统的文档索引，汇总通用说明与各类帧缓冲设备驱动文档入口，便于读者按主题快速定位相关说明
 
 
+本页提供帧缓冲（framebuffer）子系统的通用说明，以及各类帧缓冲设备驱动文档
 
-## 閫氱敤淇℃伅锛圙eneral information锛?
+
+
+## 通用信息（General information
 
 
 - [api](api)
@@ -17,9 +17,9 @@
 - [fbcon](fbcon)
 - [framebuffer](framebuffer)
 - [internals](internals)
-- [鏄剧ず妯″紡鏁版嵁搴揮(modedb)
+- [显示模式数据库](modedb)
 
-## 椹卞姩鏂囨。锛圖river documentation锛?
+## 驱动文档（Driver documentation
 
 
 - [arkfb](arkfb)

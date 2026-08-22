@@ -1,21 +1,21 @@
 ﻿
-## ACPI CA 璋冭瘯杈撳嚭
+## ACPI CA 调试输出
 
 
-ACPI CA 鑳藉鐢熸垚璋冭瘯杈撳嚭銆傛湰鏂囨。浠嬬粛濡備綍浣跨敤璇ユ満鍒躲€?
-## 缂栬瘧鏃堕厤缃?
+ACPI CA 能够生成调试输出。本文档介绍如何使用该机制
+## 编译时配
 
-ACPI CA 鐨勮皟璇曡緭鍑虹敱 `CONFIG_ACPI_DEBUG` 鍏ㄥ眬寮€鍚€傝嫢鏈缃閰嶇疆閫夐」锛岃皟璇曟秷鎭敋鑷充笉浼氳缂栬瘧杩涘唴鏍搞€?
-## 鍚姩涓庤繍琛屾椂閰嶇疆
-
-
-褰?`CONFIG_ACPI_DEBUG=y` 鏃讹紝浣犲彲浠ラ€夋嫨鎰熷叴瓒ｇ殑缁勪欢涓庢秷鎭骇鍒€傚湪鍚姩闃舵锛屼娇鐢?`acpi.debug_layer` 鍜?`acpi.debug_level` 鍐呮牳鍛戒护琛岄€夐」銆傚惎鍔ㄤ箣鍚庯紝鍙互浣跨敤 `/sys/module/acpi/parameters/` 涓嬬殑 `debug_layer` 涓?`debug_level` 鏂囦欢鏉ユ帶鍒惰皟璇曟秷鎭€?
-## debug_layer锛堢粍浠讹級
+ACPI CA 的调试输出由 `CONFIG_ACPI_DEBUG` 全局开启。若未设置该配置选项，调试消息甚至不会被编译进内核
+## 启动与运行时配置
 
 
-`debug_layer` 鏄竴涓敤浜庨€夋嫨鎰熷叴瓒ｇ粍浠剁殑鎺╃爜锛屼緥濡?ACPI 瑙ｉ噴鍣ㄧ殑鏌愪釜鐗瑰畾閮ㄥ垎銆傝鏋勯€?`debug_layer` 浣嶆帺鐮侊紝璇峰湪 ACPI 婧愭枃浠朵腑鏌ユ壘 `#define _COMPONENT`銆?
-浣犲彲浠ュ湪鍚姩闃舵浣跨敤 `acpi.debug_layer` 鍛戒护琛屽弬鏁拌缃?`debug_layer` 鎺╃爜锛屽惎鍔ㄤ箣鍚庝篃鍙互閫氳繃鍚?`/sys/module/acpi/parameters/debug_layer` 鍐欏叆鏁板€兼潵鏇存敼瀹冦€?
-鍙兘鐨勭粍浠跺畾涔夊湪 `include/acpi/acoutput.h` 涓€?
+`CONFIG_ACPI_DEBUG=y` 时，你可以选择感兴趣的组件与消息级别。在启动阶段，使`acpi.debug_layer` `acpi.debug_level` 内核命令行选项。启动之后，可以使用 `/sys/module/acpi/parameters/` 下的 `debug_layer` `debug_level` 文件来控制调试消息
+## debug_layer（组件）
+
+
+`debug_layer` 是一个用于选择感兴趣组件的掩码，例ACPI 解释器的某个特定部分。要构`debug_layer` 位掩码，请在 ACPI 源文件中查找 `#define _COMPONENT`
+你可以在启动阶段使用 `acpi.debug_layer` 命令行参数设`debug_layer` 掩码，启动之后也可以通过`/sys/module/acpi/parameters/debug_layer` 写入数值来更改它
+可能的组件定义在 `include/acpi/acoutput.h` 中
 ```
 
     ACPI_UTILITIES                  0x00000001
@@ -37,10 +37,10 @@ ACPI CA 鐨勮皟璇曡緭鍑虹敱 `CONFIG_ACPI_DEBUG` 鍏ㄥ眬寮€鍚€
 ## debug_level
 
 
-`debug_level` 鏄竴涓敤浜庨€夋嫨涓嶅悓绫诲瀷娑堟伅鐨勬帺鐮侊紝渚嬪涓庡垵濮嬪寲銆佹柟娉曟墽琛屻€佷俊鎭€ф秷鎭瓑鐩稿叧鐨勬秷鎭€傝鏋勯€?`debug_level`锛岃鏌ョ湅 `ACPI_DEBUG_PRINT()` 璇彞涓寚瀹氱殑绾у埆銆?
-ACPI 瑙ｉ噴鍣ㄤ娇鐢ㄥ涓笉鍚岀殑绾у埆锛屼絾 Linux 鐨?ACPI 鏍稿績涓?ACPI 椹卞姩閫氬父鍙娇鐢?`ACPI_LV_INFO`銆?
-浣犲彲浠ュ湪鍚姩闃舵浣跨敤 `acpi.debug_level` 鍛戒护琛屽弬鏁拌缃?`debug_level` 鎺╃爜锛屽惎鍔ㄤ箣鍚庝篃鍙互閫氳繃鍚?`/sys/module/acpi/parameters/debug_level` 鍐欏叆鏁板€兼潵鏇存敼瀹冦€?
-鍙兘鐨勭骇鍒畾涔夊湪 `include/acpi/acoutput.h` 涓€傝鍙?`/sys/module/acpi/parameters/debug_level` 浼氭樉绀烘敮鎸佺殑鎺╃爜鍊硷紝
+`debug_level` 是一个用于选择不同类型消息的掩码，例如与初始化、方法执行、信息性消息等相关的消息。要构`debug_level`，请查看 `ACPI_DEBUG_PRINT()` 语句中指定的级别
+ACPI 解释器使用多个不同的级别，但 Linux ACPI 核心ACPI 驱动通常只使`ACPI_LV_INFO`
+你可以在启动阶段使用 `acpi.debug_level` 命令行参数设`debug_level` 掩码，启动之后也可以通过`/sys/module/acpi/parameters/debug_level` 写入数值来更改它
+可能的级别定义在 `include/acpi/acoutput.h` 中。读`/sys/module/acpi/parameters/debug_level` 会显示支持的掩码值，
 
 ```
 
@@ -74,7 +74,7 @@ ACPI 瑙ｉ噴鍣ㄤ娇鐢ㄥ涓笉鍚岀殑绾у埆锛屼絾 Linux 鐨?AC
     ACPI_LV_EVENTS                  0x80000000
 
 ```
-## 绀轰緥
+## 示例
 
 
 ```
@@ -84,9 +84,9 @@ ACPI 瑙ｉ噴鍣ㄤ娇鐢ㄥ涓笉鍚岀殑绾у埆锛屼絾 Linux 鐨?AC
     ACPI_DEBUG_PRINT((ACPI_DB_INIT, "ACPI mode disabled\n"));
 
 ```
-瑕佹墦寮€璇ユ秷鎭紝璇峰湪 `acpi.debug_layer` 涓缃?`ACPI_EVENTS` 浣嶏紝骞跺湪 `acpi.debug_level` 涓缃?`ACPI_LV_INIT` 浣嶃€傦紙`ACPI_DEBUG_PRINT` 璇彞浣跨敤 `ACPI_DB_INIT`锛屽畠鏄熀浜?`ACPI_LV_INIT` 瀹氫箟鐨勪竴涓畯銆傦級
+要打开该消息，请在 `acpi.debug_layer` 中设`ACPI_EVENTS` 位，并在 `acpi.debug_level` 中设`ACPI_LV_INIT` 位。（`ACPI_DEBUG_PRINT` 语句使用 `ACPI_DB_INIT`，它是基`ACPI_LV_INIT` 定义的一个宏。）
 
-寮€鍚墍鏈?AML "Debug" 杈撳嚭锛堝湪瑙ｉ噴杩囩▼涓瓨鍌ㄥ埌 Debug 瀵硅薄锛夛紝
+开启所AML "Debug" 输出（在解释过程中存储到 Debug 对象），
 
 ```
 
