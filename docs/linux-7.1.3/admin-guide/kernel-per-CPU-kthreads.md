@@ -1,142 +1,142 @@
-﻿## 鍑忓皯鐢?per-cpu kthread 寮曡捣鐨勬搷浣滅郴缁熸姈鍔紙Reducing OS jitter due to per-cpu kthreads锛?
-鏈枃妗ｅ垪鍑轰簡 Linux 鍐呮牳涓殑 per-CPU kthread锛屽苟缁欏嚭浜嗘帶鍒跺叾鎿嶄綔绯荤粺鎶栧姩锛圤S jitter锛夌殑
-鑻ュ共閫夐」銆傛敞鎰忥紝杩欓噷涓嶅垪鍑洪潪 per-CPU 鐨?kthread銆傝鍑忓皯鏉ヨ嚜闈?per-CPU kthread 鐨勬搷浣滅郴缁?鎶栧姩锛岃灏嗗叾缁戝畾鍒颁竴涓笓鐢ㄤ簬姝ょ被宸ヤ綔鐨?绠″"锛坔ousekeeping锛塁PU 涓娿€?
-## 鍙傝€冭祫鏂欙紙References锛?
-- Documentation/core-api/irq/irq-affinity.rst锛氬皢涓柇缁戝畾鍒颁竴缁?CPU銆?
-- Documentation/admin-guide/cgroup-v1锛氫娇鐢?cgroup 灏嗕换鍔＄粦瀹氬埌涓€缁?CPU銆?
-- man taskset锛氫娇鐢?taskset 鍛戒护灏嗕换鍔＄粦瀹氬埌涓€缁?	CPU銆?
-- man sched_setaffinity锛氫娇鐢?sched_setaffinity() 绯荤粺璋冪敤
-	灏嗕换鍔＄粦瀹氬埌涓€缁?CPU銆?
-- /sys/devices/system/cpu/cpuN/online锛氭帶鍒?CPU N 鐨勭儹鎻掓嫈鐘舵€侊紝
-	鍐欏叆 "0" 琛ㄧず涓嬬嚎锛屽啓鍏?"1" 琛ㄧず涓婄嚎銆?
-- 涓轰簡瀹氫綅 CPU N 涓婄敱鍐呮牳浜х敓鐨勬搷浣滅郴缁熸姈鍔細
+﻿## 减少per-cpu kthread 引起的操作系统抖动（Reducing OS jitter due to per-cpu kthreads
+本文档列出了 Linux 内核中的 per-CPU kthread，并给出了控制其操作系统抖动（OS jitter）的
+若干选项。注意，这里不列出非 per-CPU kthread。要减少来自per-CPU kthread 的操作系抖动，请将其绑定到一个专用于此类工作管家"（housekeeping）CPU 上
+## 参考资料（References
+- Documentation/core-api/irq/irq-affinity.rst：将中断绑定到一CPU
+- Documentation/admin-guide/cgroup-v1：使cgroup 将任务绑定到一CPU
+- man taskset：使taskset 命令将任务绑定到一	CPU
+- man sched_setaffinity：使sched_setaffinity() 系统调用
+	将任务绑定到一CPU
+- /sys/devices/system/cpu/cpuN/online：控CPU N 的热插拔状态，
+	写入 "0" 表示下线，写"1" 表示上线
+- 为了定位 CPU N 上由内核产生的操作系统抖动：
 
 		cd /sys/kernel/tracing
-		echo 1 > max_graph_depth # 澧炲ぇ "1" 浠ヨ幏寰楁洿澶氱粏鑺?		echo function_graph > current_tracer
-		# 杩愯宸ヤ綔璐熻浇
+		echo 1 > max_graph_depth # 增大 "1" 以获得更多细		echo function_graph > current_tracer
+		# 运行工作负载
 		cat per_cpu/cpuN/trace
 
-## kthread锛坘threads锛?
+## kthread（kthreads
 Name:
   ehca_comp/%u
 
 Purpose:
-  鍛ㄦ湡鎬у湴澶勭悊 Infiniband 鐩稿叧鐨勪换鍔°€?
-瑕佸噺灏戝叾鎿嶄綔绯荤粺鎶栧姩锛屽彲鎵ц浠ヤ笅浠绘剰涓€椤癸細
+  周期性地处理 Infiniband 相关的任务
+要减少其操作系统抖动，可执行以下任意一项：
 
-1. 涓嶈浣跨敤 eHCA Infiniband 纭欢锛岃€屾槸閫夋嫨涓嶉渶瑕?per-CPU kthread 鐨勭‖浠躲€傝繖鏍蜂細浠庝竴寮€濮嬪氨
-	闃绘杩欎簺 kthread 琚垱寤恒€傦紙杩欏澶у鏁颁汉鏈夋晥锛屽洜涓鸿繖绉嶇‖浠惰櫧鐒堕噸瑕侊紝浣嗙浉瀵硅緝鏃э紝涓斾骇閲?	鐩稿杈冧綆銆傦級
-2. 鍦ㄥ叾瀹?CPU 涓婂畬鎴愭墍鏈?eHCA-Infiniband 鐩稿叧鐨勫伐浣滐紝鍖呮嫭涓柇銆?3. 閲嶆柊鏀归€?eHCA 椹卞姩锛屼娇鍏?per-CPU kthread 浠呴厤缃湪閫夊畾鐨?CPU 涓娿€?
+1. 不要使用 eHCA Infiniband 硬件，而是选择不需per-CPU kthread 的硬件。这样会从一开始就
+	阻止这些 kthread 被创建。（这对大多数人有效，因为这种硬件虽然重要，但相对较旧，且产	相对较低。）
+2. 在其CPU 上完成所eHCA-Infiniband 相关的工作，包括中断3. 重新改eHCA 驱动，使per-CPU kthread 仅配置在选定CPU 上
 
 Name:
   irq/%d-%s
 
 Purpose:
-  澶勭悊绾跨▼鍖栦腑鏂紙threaded interrupt锛夈€?
-瑕佸噺灏戝叾鎿嶄綔绯荤粺鎶栧姩锛岃鎵ц浠ヤ笅鎿嶄綔锛?
-1. 浣跨敤涓柇浜插拰鎬э紙irq affinity锛夊己鍒?irq 绾跨▼鍦ㄥ叾瀹?CPU 涓婃墽琛屻€?
+  处理线程化中断（threaded interrupt）
+要减少其操作系统抖动，请执行以下操作
+1. 使用中断亲和性（irq affinity）强irq 线程在其CPU 上执行
 Name:
   kcmtpd_ctr_%d
 
 Purpose:
-  澶勭悊钃濈墮锛圔luetooth锛夌浉鍏崇殑宸ヤ綔銆?
-瑕佸噺灏戝叾鎿嶄綔绯荤粺鎶栧姩锛屽彲鎵ц浠ヤ笅浠绘剰涓€椤癸細
+  处理蓝牙（Bluetooth）相关的工作
+要减少其操作系统抖动，可执行以下任意一项：
 
-1. 涓嶈浣跨敤钃濈墮锛岃繖鏍疯繖浜?kthread 浠庝竴寮€濮嬪氨涓嶄細琚垱寤恒€?2. 浣跨敤涓柇浜插拰鎬у己鍒惰摑鐗欑浉鍏崇殑涓柇鍙戠敓鍦ㄥ叾瀹?CPU 涓婏紝骞惰繘涓€姝ュ湪鍏跺畠 CPU 涓婂彂璧锋墍鏈?	钃濈墮娲诲姩銆?
+1. 不要使用蓝牙，这样这kthread 从一开始就不会被创建2. 使用中断亲和性强制蓝牙相关的中断发生在其CPU 上，并进一步在其它 CPU 上发起所	蓝牙活动
 Name:
   ksoftirqd/%u
 
 Purpose:
-  鍦ㄩ噰鐢ㄧ嚎绋嬪寲鎴栧浜庨珮璐熻浇鏃舵墽琛?softirq 澶勭悊鍑芥暟銆?
-瑕佸噺灏戝叾鎿嶄綔绯荤粺鎶栧姩锛屽繀椤诲垎鍒鐞嗘瘡涓?softirq 鍚戦噺锛屽涓嬫墍绀猴細
+  在采用线程化或处于高负载时执softirq 处理函数
+要减少其操作系统抖动，必须分别处理每softirq 向量，如下所示：
 
 ### TIMER_SOFTIRQ
 
-璇锋墽琛屼互涓嬪叏閮ㄦ搷浣滐細
+请执行以下全部操作：
 
-1. 鍦?CPU 闈炵┖闂叉椂锛屽敖鍙兘璁╁叾鑴辩鍐呮牳鎬侊紝渚嬪锛岄伩鍏嶇郴缁熻皟鐢紝骞跺己鍒惰鍐呮牳绾跨▼涓庝腑鏂?	閮藉湪鍒鎵ц銆?2. 浠?CONFIG_HOTPLUG_CPU=y 鏋勫缓銆傚惎鍔ㄥ畬鎴愬悗锛屽己鍒跺皢璇?CPU 涓嬬嚎锛屽啀灏嗗叾閲嶆柊涓婄嚎銆傝繖浼?	寮哄埗鍛ㄦ湡鎬у畾鏃跺櫒杩佺Щ鍒板埆澶勩€傚鏋滀綘鍏虫敞澶氫釜 CPU锛岃鍦ㄦ妸绗竴涓噸鏂颁笂绾夸箣鍓嶏紝鍏堟妸瀹冧滑鍏ㄩ儴
-	寮哄埗涓嬬嚎銆備竴鏃︿綘鎶婅繖浜?CPU 涓婄嚎鍚庯紝涓嶈鍐嶈鍏跺畠 CPU 涓嬬嚎锛屽洜涓洪偅鏍峰仛鍙兘浼氭妸瀹氭椂鍣?	閲嶆柊寮哄埗鏀惧洖杩欎簺 CPU 涓殑鏌愪竴涓笂銆?
+1. CPU 非空闲时，尽可能让其脱离内核态，例如，避免系统调用，并强制让内核线程与中	都在别处执行2. CONFIG_HOTPLUG_CPU=y 构建。启动完成后，强制将CPU 下线，再将其重新上线。这	强制周期性定时器迁移到别处。如果你关注多个 CPU，请在把第一个重新上线之前，先把它们全部
+	强制下线。一旦你把这CPU 上线后，不要再让其它 CPU 下线，因为那样做可能会把定时	重新强制放回这些 CPU 中的某一个上
 ### NET_TX_SOFTIRQ 涓?NET_RX_SOFTIRQ
 
-璇锋墽琛屼互涓嬪叏閮ㄦ搷浣滐細
+请执行以下全部操作：
 
-1. 灏嗙綉缁滀腑鏂己鍒惰縼绉诲埌鍏跺畠 CPU 涓娿€?2. 鍦ㄥ叾瀹?CPU 涓婂彂璧蜂换浣曠綉缁?I/O銆?3. 涓€鏃︿綘鐨勫簲鐢ㄧ▼搴忓惎鍔紝灏辫闃绘鍙兘杩愯鍦ㄥ緟鍘绘姈鍔?CPU 涓婄殑浠诲姟鍙戣捣 CPU 鐑彃鎷旀搷浣溿€?	锛堝湪璇?CPU 涓婂己鍒朵笅绾跨劧鍚庡啀閲嶆柊涓婄嚎鏄彲浠ョ殑锛屽墠鎻愭槸鍦ㄤ綘鍚姩搴旂敤绋嬪簭涔嬪墠瀹屾垚銆傦級
+1. 将网络中断强制迁移到其它 CPU 上2. 在其CPU 上发起任何网I/O3. 一旦你的应用程序启动，就要阻止可能运行在待去抖CPU 上的任务发起 CPU 热插拔操作	（在CPU 上强制下线然后再重新上线是可以的，前提是在你启动应用程序之前完成。）
 
 ### BLOCK_SOFTIRQ
 
-璇锋墽琛屼互涓嬪叏閮ㄦ搷浣滐細
+请执行以下全部操作：
 
-1. 灏嗗潡璁惧涓柇寮哄埗杩佺Щ鍒板叾瀹?CPU 涓娿€?2. 鍦ㄥ叾瀹?CPU 涓婂彂璧蜂换浣曞潡 I/O銆?3. 涓€鏃︿綘鐨勫簲鐢ㄧ▼搴忓惎鍔紝灏辫闃绘鍙兘杩愯鍦ㄥ緟鍘绘姈鍔?CPU 涓婄殑浠诲姟鍙戣捣 CPU 鐑彃鎷旀搷浣溿€?	锛堝湪璇?CPU 涓婂己鍒朵笅绾跨劧鍚庡啀閲嶆柊涓婄嚎鏄彲浠ョ殑锛屽墠鎻愭槸鍦ㄤ綘鍚姩搴旂敤绋嬪簭涔嬪墠瀹屾垚銆傦級
+1. 将块设备中断强制迁移到其CPU 上2. 在其CPU 上发起任何块 I/O3. 一旦你的应用程序启动，就要阻止可能运行在待去抖CPU 上的任务发起 CPU 热插拔操作	（在CPU 上强制下线然后再重新上线是可以的，前提是在你启动应用程序之前完成。）
 
 ### IRQ_POLL_SOFTIRQ
 
-璇锋墽琛屼互涓嬪叏閮ㄦ搷浣滐細
+请执行以下全部操作：
 
-1. 灏嗗潡璁惧涓柇寮哄埗杩佺Щ鍒板叾瀹?CPU 涓娿€?2. 鍦ㄥ叾瀹?CPU 涓婂彂璧蜂换浣曞潡 I/O 浠ュ強鍧?I/O 杞銆?3. 涓€鏃︿綘鐨勫簲鐢ㄧ▼搴忓惎鍔紝灏辫闃绘鍙兘杩愯鍦ㄥ緟鍘绘姈鍔?CPU 涓婄殑浠诲姟鍙戣捣 CPU 鐑彃鎷旀搷浣溿€?	锛堝湪璇?CPU 涓婂己鍒朵笅绾跨劧鍚庡啀閲嶆柊涓婄嚎鏄彲浠ョ殑锛屽墠鎻愭槸鍦ㄤ綘鍚姩搴旂敤绋嬪簭涔嬪墠瀹屾垚銆傦級
+1. 将块设备中断强制迁移到其CPU 上2. 在其CPU 上发起任何块 I/O 以及I/O 轮询3. 一旦你的应用程序启动，就要阻止可能运行在待去抖CPU 上的任务发起 CPU 热插拔操作	（在CPU 上强制下线然后再重新上线是可以的，前提是在你启动应用程序之前完成。）
 
 ### TASKLET_SOFTIRQ
 
-璇锋墽琛屼互涓嬩竴椤规垨澶氶」锛?
-1. 閬垮厤浣跨敤浣跨敤 tasklet 鐨勯┍鍔ㄣ€傦紙杩欑被椹卞姩涓細鍖呭惈瀵?tasklet_schedule() 涔嬬被鐨勮皟鐢ㄣ€傦級
-2. 鎶婁綘蹇呴』浣跨敤鐨勬墍鏈夐┍鍔ㄤ粠 tasklet 鏀归€犱负 workqueue銆?3. 灏嗕娇鐢?tasklet 鐨勯┍鍔ㄧ殑涓柇寮哄埗杩佺Щ鍒板叾瀹?CPU 涓婏紝骞朵笖杩欎簺椹卞姩娑夊強鐨?I/O 涔熼兘鍦?	鍏跺畠 CPU 涓婅繘琛屻€?
+请执行以下一项或多项
+1. 避免使用使用 tasklet 的驱动。（这类驱动中会包含tasklet_schedule() 之类的调用。）
+2. 把你必须使用的所有驱动从 tasklet 改造为 workqueue3. 将使tasklet 的驱动的中断强制迁移到其CPU 上，并且这些驱动涉及I/O 也都	其它 CPU 上进行
 ### SCHED_SOFTIRQ
 
-璇锋墽琛屼互涓嬪叏閮ㄦ搷浣滐細
+请执行以下全部操作：
 
-1. 閬垮厤鍚戝緟鍘绘姈鍔ㄧ殑 CPU 鍙戦€佽皟搴﹀櫒 IPI锛屼緥濡傦紝纭繚璇?CPU 涓婃渶澶氬彧瀛樺湪涓€涓彲杩愯鐨?kthread銆?	濡傛灉鏌愪釜鏈熸湜鍦ㄥ幓鎶栧姩 CPU 涓婅繍琛岀殑绾跨▼琚敜閱掞紝璋冨害鍣ㄤ細鍙戦€佷竴涓彲鑳藉鑷村悗缁?SCHED_SOFTIRQ
-	鐨?IPI銆?2. 璁剧疆 CONFIG_NO_HZ_FULL=y锛屽苟浣跨敤 "nohz_full=" 鍚姩鍙傛暟灏嗗緟鍘绘姈鍔ㄧ殑 CPU 鏍囪涓?	adaptive-ticks锛堣嚜閫傚簲鏃堕挓锛塁PU銆傝繖浼氬噺灏戝幓鎶栧姩 CPU 鏀跺埌鐨勮皟搴﹀櫒鏃堕挓涓柇鏁伴噺锛屼粠鑰?	闄嶄綆鍏惰閫変腑鎵ц杩愯鍦?SCHED_SOFTIRQ 涓婁笅鏂囦腑鐨勮礋杞藉潎琛″伐浣滅殑姒傜巼銆?3. 鍦?CPU 闈炵┖闂叉椂锛屽敖鍙兘璁╁叾鑴辩鍐呮牳鎬侊紝渚嬪锛岄伩鍏嶇郴缁熻皟鐢紝骞跺己鍒惰鍐呮牳绾跨▼涓庝腑鏂?	閮藉湪鍒鎵ц銆傝繖杩涗竴姝ュ噺灏戜簡鍘绘姈鍔?CPU 鏀跺埌鐨勮皟搴﹀櫒鏃堕挓涓柇鏁伴噺銆?
+1. 避免向待去抖动的 CPU 发送调度器 IPI，例如，确保CPU 上最多只存在一个可运行kthread	如果某个期望在去抖动 CPU 上运行的线程被唤醒，调度器会发送一个可能导致后SCHED_SOFTIRQ
+	IPI2. 设置 CONFIG_NO_HZ_FULL=y，并使用 "nohz_full=" 启动参数将待去抖动的 CPU 标记	adaptive-ticks（自适应时钟）CPU。这会减少去抖动 CPU 收到的调度器时钟中断数量，从	降低其被选中执行运行SCHED_SOFTIRQ 上下文中的负载均衡工作的概率3. CPU 非空闲时，尽可能让其脱离内核态，例如，避免系统调用，并强制让内核线程与中	都在别处执行。这进一步减少了去抖CPU 收到的调度器时钟中断数量
 ### HRTIMER_SOFTIRQ
 
-璇锋墽琛屼互涓嬪叏閮ㄦ搷浣滐細
+请执行以下全部操作：
 
-1. 鍦?CPU 闈炵┖闂叉椂锛屽敖鍙兘璁╁叾鑴辩鍐呮牳鎬併€備緥濡傦紝閬垮厤绯荤粺璋冪敤锛屽苟寮哄埗璁╁唴鏍哥嚎绋嬩笌涓柇
-	閮藉湪鍒鎵ц銆?2. 浠?CONFIG_HOTPLUG_CPU=y 鏋勫缓銆傚惎鍔ㄥ畬鎴愬悗锛屽己鍒跺皢璇?CPU 涓嬬嚎锛屽啀灏嗗叾閲嶆柊涓婄嚎銆傝繖浼?	寮哄埗鍛ㄦ湡鎬у畾鏃跺櫒杩佺Щ鍒板埆澶勩€傚鏋滀綘鍏虫敞澶氫釜 CPU锛岃鍦ㄦ妸绗竴涓噸鏂颁笂绾夸箣鍓嶏紝鍏堟妸瀹冧滑鍏ㄩ儴
-	寮哄埗涓嬬嚎銆備竴鏃︿綘鎶婅繖浜?CPU 涓婄嚎鍚庯紝涓嶈鍐嶈鍏跺畠 CPU 涓嬬嚎锛屽洜涓洪偅鏍峰仛鍙兘浼氭妸瀹氭椂鍣?	閲嶆柊寮哄埗鏀惧洖杩欎簺 CPU 涓殑鏌愪竴涓笂銆?
+1. CPU 非空闲时，尽可能让其脱离内核态。例如，避免系统调用，并强制让内核线程与中断
+	都在别处执行2. CONFIG_HOTPLUG_CPU=y 构建。启动完成后，强制将CPU 下线，再将其重新上线。这	强制周期性定时器迁移到别处。如果你关注多个 CPU，请在把第一个重新上线之前，先把它们全部
+	强制下线。一旦你把这CPU 上线后，不要再让其它 CPU 下线，因为那样做可能会把定时	重新强制放回这些 CPU 中的某一个上
 ### RCU_SOFTIRQ
 
-璇疯嚦灏戞墽琛屼互涓嬩竴椤癸細
+请至少执行以下一项：
 
-1. 鍗歌浇鍥炶皟锛坥ffload callbacks锛夛紝骞惰璇?CPU 淇濇寔 dyntick-idle 鎴?adaptive-ticks 鐘舵€侊紝
-	鍏蜂綋鍋氭硶濡備笅锛?
-	a.	璁剧疆 CONFIG_NO_HZ_FULL=y锛屽苟浣跨敤 "nohz_full=" 鍚姩鍙傛暟灏嗗緟鍘绘姈鍔ㄧ殑 CPU 鏍囪涓?		adaptive-ticks CPU銆傚皢 rcuo kthread 缁戝畾鍒拌兘澶熷蹇嶆搷浣滅郴缁熸姈鍔ㄧ殑绠″ CPU 涓娿€?	b.	鍦?CPU 闈炵┖闂叉椂锛屽敖鍙兘璁╁叾鑴辩鍐呮牳鎬侊紝渚嬪锛岄伩鍏嶇郴缁熻皟鐢紝骞跺己鍒惰鍐呮牳绾跨▼涓?		涓柇閮藉湪鍒鎵ц銆?
-2. 閫氳繃 dyntick-idle 璁?RCU 杩滅▼瀹屾垚鍏跺鐞嗭紝鍏蜂綋鍋氭硶濡備笅锛?
-	a.	浠?CONFIG_NO_HZ=y 鏋勫缓銆?	b.	纭繚璇?CPU 棰戠箒杩涘叆绌洪棽鐘舵€侊紝璁╁叾瀹?CPU 鑳藉妫€娴嬪埌瀹冨凡缁忕粡杩囦簡涓€涓?RCU 闈欐
-		锛坬uiescent锛夌姸鎬併€傚鏋滃唴鏍镐互 CONFIG_NO_HZ_FULL=y 鏋勫缓锛岀敤鎴风┖闂存墽琛屼篃鑳借鍏跺畠
-		CPU 妫€娴嬪埌璇?CPU 宸茬粡缁忚繃浜嗛潤姝㈢姸鎬併€?	c.	鍦?CPU 闈炵┖闂叉椂锛屽敖鍙兘璁╁叾鑴辩鍐呮牳鎬侊紝渚嬪锛岄伩鍏嶇郴缁熻皟鐢紝骞跺己鍒惰鍐呮牳绾跨▼涓?		涓柇閮藉湪鍒鎵ц銆?
+1. 卸载回调（offload callbacks），并让CPU 保持 dyntick-idle adaptive-ticks 状态，
+	具体做法如下
+	a.	设置 CONFIG_NO_HZ_FULL=y，并使用 "nohz_full=" 启动参数将待去抖动的 CPU 标记		adaptive-ticks CPU。将 rcuo kthread 绑定到能够容忍操作系统抖动的管家 CPU 上	b.	CPU 非空闲时，尽可能让其脱离内核态，例如，避免系统调用，并强制让内核线程		中断都在别处执行
+2. 通过 dyntick-idle RCU 远程完成其处理，具体做法如下
+	a.	CONFIG_NO_HZ=y 构建	b.	确保CPU 频繁进入空闲状态，让其CPU 能够检测到它已经经过了一RCU 静止
+		（quiescent）状态。如果内核以 CONFIG_NO_HZ_FULL=y 构建，用户空间执行也能让其它
+		CPU 检测到CPU 已经经过了静止状态	c.	CPU 非空闲时，尽可能让其脱离内核态，例如，避免系统调用，并强制让内核线程		中断都在别处执行
 Name:
   kworker/%u:%d%s (cpu, id, priority)
 
 Purpose:
-  鎵ц workqueue 璇锋眰銆?
-瑕佸噺灏戝叾鎿嶄綔绯荤粺鎶栧姩锛屽彲鎵ц浠ヤ笅浠绘剰涓€椤癸細
+  执行 workqueue 请求
+要减少其操作系统抖动，可执行以下任意一项：
 
-1. 浠ュ疄鏃讹紙real-time锛変紭鍏堢骇杩愯浣犵殑宸ヤ綔璐熻浇锛岃繖灏嗗厑璁告姠鍗?kworker 瀹堟姢杩涚▼銆?2. 閫氳繃鍦ㄦ煇涓?workqueue 鐨?alloc_workqueue() 涓紶鍏?WQ_SYSFS锛屽彲浠ヨ璇?workqueue 鍦?	sysfs 鏂囦欢绯荤粺涓彲瑙併€傝繖鏍风殑 workqueue 鍙互浣跨敤
-	`/sys/devices/virtual/workqueue/*/cpumask` sysfs 鏂囦欢琚檺鍒跺湪缁欏畾鐨勪竴缁?CPU 涓娿€?	鍙互浣跨敤 "ls /sys/devices/virtual/workqueue" 鏄剧ず WQ_SYSFS workqueue 鐨勯泦鍚堛€傝瘽铏藉姝わ紝
-	workqueue 鐨勭淮鎶よ€呮兂鎻愰啋澶у涓嶈闅忔剰鍦版妸 WQ_SYSFS 鍒板涔辩敤銆備箣鎵€浠ヨ璋ㄦ厧锛屾槸鍥犱负娣诲姞
-	WQ_SYSFS 寰堝鏄擄紝浣嗙敱浜?sysfs 鏄寮忕殑鐢ㄦ埛/鍐呮牳 API 鐨勪竴閮ㄥ垎锛屽嵆浣挎坊鍔犳槸涓敊璇紝涔熷嚑涔?	涓嶅彲鑳藉啀灏嗗叾绉婚櫎銆?3. 鎵ц浠ヤ笅浠绘剰鎵€闇€鐨勬搷浣滐紝浠ラ伩鍏嶄綘鐨勫簲鐢ㄧ▼搴忔棤娉曞蹇嶇殑鎶栧姩锛?
-	a.	閬垮厤浣跨敤 oprofile锛屼粠鑰岄伩鍏嶆潵鑷?wq_sync_buffer() 鐨勬搷浣滅郴缁熸姈鍔ㄣ€?	b.	闄愬埗浣犵殑 CPU 棰戠巼锛屼粠鑰屼笉闇€瑕?CPU 棰戠巼璋冭妭锛坓overnor锛夛紝鍙兘杩橀渶瑕佸€熷姪鐗规畩鐨?		鏁ｇ儹鐗囨垨鍏跺畠鏁ｇ儹鎶€鏈€傚鏋滃仛寰楁纭紝骞朵笖浣犵殑 CPU 鏋舵瀯鍏佽锛屼綘搴旇鑳藉浠?		CONFIG_CPU_FREQ=n 鏋勫缓鍐呮牳锛屼互閬垮厤 CPU 棰戠巼璋冭妭鍣紙鍖呮嫭 cs_dbs_timer() 鍜?		od_dbs_timer()锛夊懆鏈熸€у湴鍦ㄦ瘡涓?CPU 涓婅繍琛屻€?
-		WARNING锛氳鏌ラ槄浣犵殑 CPU 瑙勬牸锛岀‘淇濊繖鍦ㄤ綘鐨勭壒瀹氱郴缁熶笂鏄畨鍏ㄧ殑銆?	c.	鑷?v3.18 璧凤紝Christoph Lameter 鐨勬寜闇€ vmstat 宸ヤ綔锛坥n-demand vmstat workers锛?		鎻愪氦闃叉浜嗗湪 CONFIG_SMP=y 绯荤粺涓婄敱 vmstat_update() 寮曡捣鐨勬搷浣滅郴缁熸姈鍔ㄣ€傚湪 v3.18
-		涔嬪墠锛屾棤娉曞畬鍏ㄦ秷闄ゆ搷浣滅郴缁熸姈鍔紝浣嗕綘鍙互閫氳繃鍚?/proc/sys/vm/stat_interval 鍐欏叆
-		涓€涓緝澶х殑鍊兼潵闄嶄綆鍏堕鐜囥€傞粯璁ゅ€兼槸 HZ锛屽搴斾竴绉掔殑闂撮殧銆傚綋鐒讹紝杈冨ぇ鐨勫€间細璁╀綘鐨?		铏氭嫙鍐呭瓨缁熻淇℃伅鏇存柊寰楁洿鎱€傚綋鐒讹紝浣犱篃鍙互浠ュ疄鏃朵紭鍏堢骇杩愯浣犵殑宸ヤ綔璐熻浇锛屼粠鑰屾姠鍗?		vmstat_update()锛屼絾濡傛灉浣犵殑宸ヤ綔璐熻浇鏄?CPU 瀵嗛泦鍨嬬殑锛岃繖灏变笉鏄釜濂戒富鎰忋€備笉杩囷紝
-		Christoph Lameter 鏈変竴涓紙鍩轰簬 Gilad Ben-Yossef 鏃╁厛鎻愪氦鐨勶級RFC 琛ヤ竵锛岃兘澶熶负鏌愪簺
-		宸ヤ綔璐熻浇鍑忚交鐢氳嚦娑堥櫎 vmstat 寮€閿€锛屽湴鍧€涓?		https://lore.kernel.org/r/00000140e9dfd6bd-40db3d4f-c1be-434f-8132-7820f81bb586-000000@email.amazonses.com銆?	d.	濡傛灉杩愯鍦ㄩ珮绔?powerpc 鏈嶅姟鍣ㄤ笂锛岃浠?CONFIG_PPC_RTAS_DAEMON=n 鏋勫缓銆傝繖浼氶樆姝?		RTAS 瀹堟姢杩涚▼姣忛殧涓€绉掑乏鍙冲湪姣忎釜 CPU 涓婅繍琛屻€傦紙杩欓渶瑕佺紪杈?Kconfig 鏂囦欢锛屽苟涓斾細鐮村潖
-		璇ュ钩鍙扮殑 RAS 鍔熻兘銆傦級杩欒兘閬垮厤鐢?rtas_event_scan() 鍑芥暟寮曡捣鐨勬姈鍔ㄣ€?		WARNING锛氳鏌ラ槄浣犵殑 CPU 瑙勬牸锛岀‘淇濊繖鍦ㄤ綘鐨勭壒瀹氱郴缁熶笂鏄畨鍏ㄧ殑銆?	e.	濡傛灉杩愯鍦?PowerMAC 涓婏紝璇蜂互 CONFIG_PMAC_RACKMETER=n 鏋勫缓鍐呮牳浠ョ鐢?CPU 璁¤〃鍣?		锛圕PU-meter锛夛紝浠庤€岄伩鍏嶆潵鑷?rackmeter_do_timer() 鐨勬搷浣滅郴缁熸姈鍔ㄣ€?
+1. 以实时（real-time）优先级运行你的工作负载，这将允许抢kworker 守护进程2. 通过在某workqueue alloc_workqueue() 中传WQ_SYSFS，可以让workqueue 	sysfs 文件系统中可见。这样的 workqueue 可以使用
+	`/sys/devices/virtual/workqueue/*/cpumask` sysfs 文件被限制在给定的一CPU 上	可以使用 "ls /sys/devices/virtual/workqueue" 显示 WQ_SYSFS workqueue 的集合。话虽如此，
+	workqueue 的维护者想提醒大家不要随意地把 WQ_SYSFS 到处乱用。之所以要谨慎，是因为添加
+	WQ_SYSFS 很容易，但由sysfs 是正式的用户/内核 API 的一部分，即使添加是个错误，也几	不可能再将其移除3. 执行以下任意所需的操作，以避免你的应用程序无法容忍的抖动
+	a.	避免使用 oprofile，从而避免来wq_sync_buffer() 的操作系统抖动	b.	限制你的 CPU 频率，从而不需CPU 频率调节（governor），可能还需要借助特殊		散热片或其它散热技术。如果做得正确，并且你的 CPU 架构允许，你应该能够		CONFIG_CPU_FREQ=n 构建内核，以避免 CPU 频率调节器（包括 cs_dbs_timer() 		od_dbs_timer()）周期性地在每CPU 上运行
+		WARNING：请查阅你的 CPU 规格，确保这在你的特定系统上是安全的	c.	v3.18 起，Christoph Lameter 的按需 vmstat 工作（on-demand vmstat workers		提交防止了在 CONFIG_SMP=y 系统上由 vmstat_update() 引起的操作系统抖动。在 v3.18
+		之前，无法完全消除操作系统抖动，但你可以通过/proc/sys/vm/stat_interval 写入
+		一个较大的值来降低其频率。默认值是 HZ，对应一秒的间隔。当然，较大的值会让你		虚拟内存统计信息更新得更慢。当然，你也可以以实时优先级运行你的工作负载，从而抢		vmstat_update()，但如果你的工作负载CPU 密集型的，这就不是个好主意。不过，
+		Christoph Lameter 有一个（基于 Gilad Ben-Yossef 早先提交的）RFC 补丁，能够为某些
+		工作负载减轻甚至消除 vmstat 开销，地址		https://lore.kernel.org/r/00000140e9dfd6bd-40db3d4f-c1be-434f-8132-7820f81bb586-000000@email.amazonses.com	d.	如果运行在高powerpc 服务器上，请CONFIG_PPC_RTAS_DAEMON=n 构建。这会阻		RTAS 守护进程每隔一秒左右在每个 CPU 上运行。（这需要编Kconfig 文件，并且会破坏
+		该平台的 RAS 功能。）这能避免rtas_event_scan() 函数引起的抖动		WARNING：请查阅你的 CPU 规格，确保这在你的特定系统上是安全的	e.	如果运行PowerMAC 上，请以 CONFIG_PMAC_RACKMETER=n 构建内核以禁CPU 计表		（CPU-meter），从而避免来rackmeter_do_timer() 的操作系统抖动
 Name:
   rcuc/%u
 
 Purpose:
-  鍦ㄤ互 CONFIG_RCU_BOOST=y 鏋勫缓鐨勫唴鏍镐腑鎵ц RCU 鍥炶皟銆?
-瑕佸噺灏戝叾鎿嶄綔绯荤粺鎶栧姩锛岃鑷冲皯鎵ц浠ヤ笅涓€椤癸細
+  在以 CONFIG_RCU_BOOST=y 构建的内核中执行 RCU 回调
+要减少其操作系统抖动，请至少执行以下一项：
 
-1. 浠?CONFIG_PREEMPT=n 鏋勫缓鍐呮牳銆傝繖浼氫粠涓€寮€濮嬪氨闃绘杩欎簺 kthread 琚垱寤猴紝鍚屾椂涔熸秷闄や簡瀵?	RCU 浼樺厛绾ф彁鍗囷紙priority boosting锛夌殑闇€姹傘€傝繖绉嶆柟娉曞浜庝笉闇€瑕侀珮搴﹀搷搴旀€х殑宸ヤ綔璐熻浇鏄?	鍙鐨勩€?2. 浠?CONFIG_RCU_BOOST=n 鏋勫缓鍐呮牳銆傝繖浼氫粠涓€寮€濮嬪氨闃绘杩欎簺 kthread 琚垱寤恒€傝繖绉嶆柟娉曚粎褰撲綘鐨?	宸ヤ綔璐熻浇姘歌繙涓嶉渶瑕?RCU 浼樺厛绾ф彁鍗囨椂鎵嶅彲琛岋紝渚嬪锛屽鏋滀綘鑳界‘淇濇墍鏈夊彲鑳藉湪鍐呮牳涓墽琛岀殑 CPU
-	閮芥湁棰戠箒绌洪棽鏃堕棿銆?3. 浠?CONFIG_RCU_NOCB_CPU=y 鏋勫缓锛屽苟浣跨敤 rcu_nocbs= 鍚姩鍙傛暟锛屼粠鎵€鏈夊鏄撳彂鐢熸搷浣滅郴缁熸姈鍔ㄧ殑
-	CPU 涓婂嵏杞?RCU 鍥炶皟銆傝繖绉嶆柟娉曚細璁?rcuc/%u kthread 娌℃湁浠讳綍宸ヤ綔鍙仛锛屼粠鑰屾案杩滀笉浼氳鍞ら啋銆?4. 纭繚璇?CPU 姘镐笉杩涘叆鍐呮牳鎬侊紝灏ゅ叾鏄伩鍏嶅湪璇?CPU 涓婂彂璧蜂换浣?CPU 鐑彃鎷旀搷浣溿€傝繖鏄槻姝换浣?	鍥炶皟琚帓闃熷埌璇?CPU 涓婄殑鍙︿竴绉嶆柟寮忥紝鍚屾牱鑳借 rcuc/%u kthread 娌℃湁浠讳綍宸ヤ綔鍙仛銆?
+1. CONFIG_PREEMPT=n 构建内核。这会从一开始就阻止这些 kthread 被创建，同时也消除了	RCU 优先级提升（priority boosting）的需求。这种方法对于不需要高度响应性的工作负载	可行的2. CONFIG_RCU_BOOST=n 构建内核。这会从一开始就阻止这些 kthread 被创建。这种方法仅当你	工作负载永远不需RCU 优先级提升时才可行，例如，如果你能确保所有可能在内核中执行的 CPU
+	都有频繁空闲时间3. CONFIG_RCU_NOCB_CPU=y 构建，并使用 rcu_nocbs= 启动参数，从所有容易发生操作系统抖动的
+	CPU 上卸RCU 回调。这种方法会rcuc/%u kthread 没有任何工作可做，从而永远不会被唤醒4. 确保CPU 永不进入内核态，尤其是避免在CPU 上发起任CPU 热插拔操作。这是防止任	回调被排队到CPU 上的另一种方式，同样能让 rcuc/%u kthread 没有任何工作可做
 Name:
   rcuop/%d, rcuos/%d, and rcuog/%d
 
 Purpose:
-  浠庣浉搴旂殑 CPU 涓婂嵏杞?RCU 鍥炶皟銆?
-瑕佸噺灏戝叾鎿嶄綔绯荤粺鎶栧姩锛岃鑷冲皯鎵ц浠ヤ笅涓€椤癸細
+  从相应的 CPU 上卸RCU 回调
+要减少其操作系统抖动，请至少执行以下一项：
 
-1. 浣跨敤浜插拰鎬с€乧group 鎴栧叾瀹冩満鍒讹紝寮哄埗杩欎簺 kthread 鍦ㄥ叾瀹?CPU 涓婃墽琛屻€?2. 浠?CONFIG_RCU_NOCB_CPU=n 鏋勫缓锛岃繖灏嗕粠涓€寮€濮嬪氨闃绘杩欎簺 kthread 琚垱寤恒€備笉杩囪娉ㄦ剰锛岃繖
-	骞朵笉浼氭秷闄ゆ搷浣滅郴缁熸姈鍔紝鑰屾槸浼氭妸瀹冭浆绉诲埌 RCU_SOFTIRQ 涓娿€?
+1. 使用亲和性、cgroup 或其它机制，强制这些 kthread 在其CPU 上执行2. CONFIG_RCU_NOCB_CPU=n 构建，这将从一开始就阻止这些 kthread 被创建。不过请注意，这
+	并不会消除操作系统抖动，而是会把它转移到 RCU_SOFTIRQ 上
