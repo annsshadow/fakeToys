@@ -1,6 +1,6 @@
 /// 行为对比测试端点列表（自动生成）
 
-/// 生成时间: 2026-08-23 04:55:41
+/// 生成时间: 2026-08-23 13:33:10
 use super::EndpointDef;
 
 pub const ENDPOINTS: &[EndpointDef] = &[
@@ -2397,46 +2397,6 @@ pub const ENDPOINTS: &[EndpointDef] = &[
 
     EndpointDef {
         crate_name: "bbs_assemble_control",
-        method: "DELETE",
-        rust_path: "/jaxrs/bbs/assemble/control/delete/forum",
-        java_war: "",
-        java_action: "",
-        body: None,
-        requires_auth: false,
-    },
-
-    EndpointDef {
-        crate_name: "bbs_assemble_control",
-        method: "DELETE",
-        rust_path: "/jaxrs/bbs/assemble/control/delete/reply",
-        java_war: "",
-        java_action: "",
-        body: None,
-        requires_auth: false,
-    },
-
-    EndpointDef {
-        crate_name: "bbs_assemble_control",
-        method: "DELETE",
-        rust_path: "/jaxrs/bbs/assemble/control/delete/subject",
-        java_war: "",
-        java_action: "",
-        body: None,
-        requires_auth: false,
-    },
-
-    EndpointDef {
-        crate_name: "bbs_assemble_control",
-        method: "DELETE",
-        rust_path: "/jaxrs/bbs/assemble/control/shutup/delete",
-        java_war: "",
-        java_action: "",
-        body: None,
-        requires_auth: false,
-    },
-
-    EndpointDef {
-        crate_name: "bbs_assemble_control",
         method: "GET",
         rust_path: "/jaxrs/bbs/assemble/control/config",
         java_war: "",
@@ -2449,26 +2409,6 @@ pub const ENDPOINTS: &[EndpointDef] = &[
         crate_name: "bbs_assemble_control",
         method: "GET",
         rust_path: "/jaxrs/bbs/assemble/control/forum/list",
-        java_war: "",
-        java_action: "",
-        body: None,
-        requires_auth: false,
-    },
-
-    EndpointDef {
-        crate_name: "bbs_assemble_control",
-        method: "GET",
-        rust_path: "/jaxrs/bbs/assemble/control/forum/view/all",
-        java_war: "",
-        java_action: "",
-        body: None,
-        requires_auth: false,
-    },
-
-    EndpointDef {
-        crate_name: "bbs_assemble_control",
-        method: "GET",
-        rust_path: "/jaxrs/bbs/assemble/control/forum/{id}",
         java_war: "",
         java_action: "",
         body: None,
@@ -2538,57 +2478,7 @@ pub const ENDPOINTS: &[EndpointDef] = &[
     EndpointDef {
         crate_name: "bbs_assemble_control",
         method: "GET",
-        rust_path: "/jaxrs/bbs/assemble/control/permission/section/{sectionId}",
-        java_war: "",
-        java_action: "",
-        body: None,
-        requires_auth: false,
-    },
-
-    EndpointDef {
-        crate_name: "bbs_assemble_control",
-        method: "GET",
-        rust_path: "/jaxrs/bbs/assemble/control/permission/subject/{subjectId}",
-        java_war: "",
-        java_action: "",
-        body: None,
-        requires_auth: false,
-    },
-
-    EndpointDef {
-        crate_name: "bbs_assemble_control",
-        method: "GET",
-        rust_path: "/jaxrs/bbs/assemble/control/permission/{replyPublishable}/{subjectId}",
-        java_war: "",
-        java_action: "",
-        body: None,
-        requires_auth: false,
-    },
-
-    EndpointDef {
-        crate_name: "bbs_assemble_control",
-        method: "GET",
-        rust_path: "/jaxrs/bbs/assemble/control/picture/list",
-        java_war: "",
-        java_action: "",
-        body: None,
-        requires_auth: false,
-    },
-
-    EndpointDef {
-        crate_name: "bbs_assemble_control",
-        method: "GET",
-        rust_path: "/jaxrs/bbs/assemble/control/reply/filter/list/{page}/{page}/{count}/{count}",
-        java_war: "",
-        java_action: "",
-        body: None,
-        requires_auth: false,
-    },
-
-    EndpointDef {
-        crate_name: "bbs_assemble_control",
-        method: "GET",
-        rust_path: "/jaxrs/bbs/assemble/control/reply/list/sub/{id}",
+        rust_path: "/jaxrs/bbs/assemble/control/picture/list/{subjectId}",
         java_war: "",
         java_action: "",
         body: None,
@@ -2599,26 +2489,6 @@ pub const ENDPOINTS: &[EndpointDef] = &[
         crate_name: "bbs_assemble_control",
         method: "GET",
         rust_path: "/jaxrs/bbs/assemble/control/section/list",
-        java_war: "",
-        java_action: "",
-        body: None,
-        requires_auth: false,
-    },
-
-    EndpointDef {
-        crate_name: "bbs_assemble_control",
-        method: "GET",
-        rust_path: "/jaxrs/bbs/assemble/control/section/viewforum/{forumId}",
-        java_war: "",
-        java_action: "",
-        body: None,
-        requires_auth: false,
-    },
-
-    EndpointDef {
-        crate_name: "bbs_assemble_control",
-        method: "GET",
-        rust_path: "/jaxrs/bbs/assemble/control/shutup/list",
         java_war: "",
         java_action: "",
         body: None,
@@ -2669,36 +2539,6 @@ pub const ENDPOINTS: &[EndpointDef] = &[
         crate_name: "bbs_assemble_control",
         method: "GET",
         rust_path: "/jaxrs/bbs/assemble/control/subject/statgrade",
-        java_war: "",
-        java_action: "",
-        body: None,
-        requires_auth: false,
-    },
-
-    EndpointDef {
-        crate_name: "bbs_assemble_control",
-        method: "GET",
-        rust_path: "/jaxrs/bbs/assemble/control/subject/top/{sectionId}",
-        java_war: "",
-        java_action: "",
-        body: None,
-        requires_auth: false,
-    },
-
-    EndpointDef {
-        crate_name: "bbs_assemble_control",
-        method: "GET",
-        rust_path: "/jaxrs/bbs/assemble/control/subject/view/{id}",
-        java_war: "",
-        java_action: "",
-        body: None,
-        requires_auth: false,
-    },
-
-    EndpointDef {
-        crate_name: "bbs_assemble_control",
-        method: "GET",
-        rust_path: "/jaxrs/bbs/assemble/control/subjectattach/list",
         java_war: "",
         java_action: "",
         body: None,
@@ -2868,7 +2708,7 @@ pub const ENDPOINTS: &[EndpointDef] = &[
     EndpointDef {
         crate_name: "bbs_assemble_control",
         method: "POST",
-        rust_path: "/jaxrs/bbs/assemble/control/update/control/config",
+        rust_path: "/jaxrs/bbs/assemble/control/topic/filter/listsubjectinfo",
         java_war: "",
         java_action: "",
         body: None,
@@ -2877,7 +2717,7 @@ pub const ENDPOINTS: &[EndpointDef] = &[
 
     EndpointDef {
         crate_name: "bbs_assemble_control",
-        method: "PUT",
+        method: "POST",
         rust_path: "/jaxrs/bbs/assemble/control/update/control/config",
         java_war: "",
         java_action: "",
@@ -8688,27 +8528,7 @@ pub const ENDPOINTS: &[EndpointDef] = &[
     EndpointDef {
         crate_name: "file",
         method: "GET",
-        rust_path: "/jaxrs/file/complex/top",
-        java_war: "",
-        java_action: "",
-        body: None,
-        requires_auth: false,
-    },
-
-    EndpointDef {
-        crate_name: "file",
-        method: "GET",
         rust_path: "/jaxrs/file/download/{id}",
-        java_war: "",
-        java_action: "",
-        body: None,
-        requires_auth: false,
-    },
-
-    EndpointDef {
-        crate_name: "file",
-        method: "GET",
-        rust_path: "/jaxrs/file/folder/list/top",
         java_war: "",
         java_action: "",
         body: None,
@@ -8778,7 +8598,37 @@ pub const ENDPOINTS: &[EndpointDef] = &[
     EndpointDef {
         crate_name: "file_assemble_control",
         method: "DELETE",
+        rust_path: "/jaxrs/file/assemble/control/file/clean/unused/referencetype/cmsdocument/manage",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "file_assemble_control",
+        method: "DELETE",
         rust_path: "/jaxrs/file/assemble/control/file/delete/{id}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "file_assemble_control",
+        method: "DELETE",
+        rust_path: "/jaxrs/file/assemble/control/file/referencetype/{referenceType}/reference/{reference}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "file_assemble_control",
+        method: "DELETE",
+        rust_path: "/jaxrs/file/assemble/control/file/{id}",
         java_war: "",
         java_action: "",
         body: None,
@@ -8799,6 +8649,36 @@ pub const ENDPOINTS: &[EndpointDef] = &[
         crate_name: "file_assemble_control",
         method: "DELETE",
         rust_path: "/jaxrs/recycle/delete/{id}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "file_assemble_control",
+        method: "DELETE",
+        rust_path: "/jaxrs/recycle/empty",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "file_assemble_control",
+        method: "DELETE",
+        rust_path: "/jaxrs/recycle/{id}/delete",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "file_assemble_control",
+        method: "GET",
+        rust_path: "/jaxrs/anonymous/file/{id}/download",
         java_war: "",
         java_action: "",
         body: None,
@@ -8828,6 +8708,306 @@ pub const ENDPOINTS: &[EndpointDef] = &[
     EndpointDef {
         crate_name: "file_assemble_control",
         method: "GET",
+        rust_path: "/jaxrs/attachment/list/editor/{owner}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "file_assemble_control",
+        method: "GET",
+        rust_path: "/jaxrs/attachment/list/folder/{folderId}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "file_assemble_control",
+        method: "GET",
+        rust_path: "/jaxrs/attachment/list/share/{owner}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "file_assemble_control",
+        method: "GET",
+        rust_path: "/jaxrs/attachment/list/top",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "file_assemble_control",
+        method: "GET",
+        rust_path: "/jaxrs/attachment/{id}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "file_assemble_control",
+        method: "GET",
+        rust_path: "/jaxrs/attachment/{id}/binary/base64",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "file_assemble_control",
+        method: "GET",
+        rust_path: "/jaxrs/attachment/{id}/download",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "file_assemble_control",
+        method: "GET",
+        rust_path: "/jaxrs/attachment/{id}/download/stream",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "file_assemble_control",
+        method: "GET",
+        rust_path: "/jaxrs/attachment/{id}/image/scale/{scale}/binary/base64",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "file_assemble_control",
+        method: "GET",
+        rust_path: "/jaxrs/attachment/{id}/image/width/{width}/height/{height}/binary/base64",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "file_assemble_control",
+        method: "GET",
+        rust_path: "/jaxrs/attachment2/exist/file/{fileMd5}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "file_assemble_control",
+        method: "GET",
+        rust_path: "/jaxrs/attachment2/list/editor/{owner}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "file_assemble_control",
+        method: "GET",
+        rust_path: "/jaxrs/attachment2/list/filter/{name}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "file_assemble_control",
+        method: "GET",
+        rust_path: "/jaxrs/attachment2/list/folder/{folderId}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "file_assemble_control",
+        method: "GET",
+        rust_path: "/jaxrs/attachment2/list/share/{owner}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "file_assemble_control",
+        method: "GET",
+        rust_path: "/jaxrs/attachment2/list/top",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "file_assemble_control",
+        method: "GET",
+        rust_path: "/jaxrs/attachment2/user/capacity",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "file_assemble_control",
+        method: "GET",
+        rust_path: "/jaxrs/attachment2/{id}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "file_assemble_control",
+        method: "GET",
+        rust_path: "/jaxrs/attachment2/{id}/binary/base64",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "file_assemble_control",
+        method: "GET",
+        rust_path: "/jaxrs/attachment2/{id}/download",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "file_assemble_control",
+        method: "GET",
+        rust_path: "/jaxrs/attachment2/{id}/download/image/width/{width}/height/{height}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "file_assemble_control",
+        method: "GET",
+        rust_path: "/jaxrs/attachment2/{id}/download/stream",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "file_assemble_control",
+        method: "GET",
+        rust_path: "/jaxrs/attachment2/{id}/image/scale/{scale}/binary/base64",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "file_assemble_control",
+        method: "GET",
+        rust_path: "/jaxrs/attachment2/{id}/image/width/{width}/height/{height}/binary/base64",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "file_assemble_control",
+        method: "GET",
+        rust_path: "/jaxrs/attachment2/{id}/office/preview/type/{type}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "file_assemble_control",
+        method: "GET",
+        rust_path: "/jaxrs/complex/folder/{id}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "file_assemble_control",
+        method: "GET",
+        rust_path: "/jaxrs/complex/top",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "file_assemble_control",
+        method: "GET",
+        rust_path: "/jaxrs/config/is/file/manager",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "file_assemble_control",
+        method: "GET",
+        rust_path: "/jaxrs/config/system/config",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "file_assemble_control",
+        method: "GET",
+        rust_path: "/jaxrs/editor/list",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "file_assemble_control",
+        method: "GET",
         rust_path: "/jaxrs/file/anonymous/file/id/download",
         java_war: "",
         java_action: "",
@@ -8848,7 +9028,107 @@ pub const ENDPOINTS: &[EndpointDef] = &[
     EndpointDef {
         crate_name: "file_assemble_control",
         method: "GET",
-        rust_path: "/jaxrs/file/assemble/control/file/list/{folderId}",
+        rust_path: "/jaxrs/file/assemble/control/file/copy/attachment/{attachmentId}/referencetype/{referenceType}/reference/{reference}/scale/{scale}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "file_assemble_control",
+        method: "GET",
+        rust_path: "/jaxrs/file/assemble/control/file/list/referencetype",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "file_assemble_control",
+        method: "GET",
+        rust_path: "/jaxrs/file/assemble/control/file/list/referencetype/{referenceType}/reference/{reference}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "file_assemble_control",
+        method: "GET",
+        rust_path: "/jaxrs/file/assemble/control/file/list/unused/referencetype/cmsdocument/manage",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "file_assemble_control",
+        method: "GET",
+        rust_path: "/jaxrs/file/assemble/control/file/list/{id}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "file_assemble_control",
+        method: "GET",
+        rust_path: "/jaxrs/file/assemble/control/file/list/{id}/next/{count}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "file_assemble_control",
+        method: "GET",
+        rust_path: "/jaxrs/file/assemble/control/file/list/{id}/next/{count}/all",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "file_assemble_control",
+        method: "GET",
+        rust_path: "/jaxrs/file/assemble/control/file/list/{id}/next/{count}/referencetype/{referenceType}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "file_assemble_control",
+        method: "GET",
+        rust_path: "/jaxrs/file/assemble/control/file/list/{id}/prev/{count}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "file_assemble_control",
+        method: "GET",
+        rust_path: "/jaxrs/file/assemble/control/file/list/{id}/prev/{count}/all",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "file_assemble_control",
+        method: "GET",
+        rust_path: "/jaxrs/file/assemble/control/file/list/{id}/prev/{count}/referencetype/{referenceType}",
         java_war: "",
         java_action: "",
         body: None,
@@ -8859,6 +9139,26 @@ pub const ENDPOINTS: &[EndpointDef] = &[
         crate_name: "file_assemble_control",
         method: "GET",
         rust_path: "/jaxrs/file/assemble/control/file/{id}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "file_assemble_control",
+        method: "GET",
+        rust_path: "/jaxrs/file/assemble/control/file/{id}/binary/base64",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "file_assemble_control",
+        method: "GET",
+        rust_path: "/jaxrs/file/assemble/control/file/{id}/download",
         java_war: "",
         java_action: "",
         body: None,
@@ -9408,6 +9708,156 @@ pub const ENDPOINTS: &[EndpointDef] = &[
     EndpointDef {
         crate_name: "file_assemble_control",
         method: "GET",
+        rust_path: "/jaxrs/folder/list/top",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "file_assemble_control",
+        method: "GET",
+        rust_path: "/jaxrs/folder/list/{id}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "file_assemble_control",
+        method: "GET",
+        rust_path: "/jaxrs/folder/{id}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "file_assemble_control",
+        method: "GET",
+        rust_path: "/jaxrs/folder2/batch/download",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "file_assemble_control",
+        method: "GET",
+        rust_path: "/jaxrs/folder2/list/top",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "file_assemble_control",
+        method: "GET",
+        rust_path: "/jaxrs/folder2/list/{id}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "file_assemble_control",
+        method: "GET",
+        rust_path: "/jaxrs/folder2/{id}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "file_assemble_control",
+        method: "GET",
+        rust_path: "/jaxrs/folder2/{id}/download",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "file_assemble_control",
+        method: "GET",
+        rust_path: "/jaxrs/recycle/list",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "file_assemble_control",
+        method: "GET",
+        rust_path: "/jaxrs/recycle/{id}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "file_assemble_control",
+        method: "GET",
+        rust_path: "/jaxrs/share/download/share/{shareId}/file/{fileId}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "file_assemble_control",
+        method: "GET",
+        rust_path: "/jaxrs/share/list",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "file_assemble_control",
+        method: "GET",
+        rust_path: "/jaxrs/share/list/att/share/{shareId}/folder/{folderId}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "file_assemble_control",
+        method: "GET",
+        rust_path: "/jaxrs/share/list/folder/share/{shareId}/folder/{folderId}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "file_assemble_control",
+        method: "GET",
+        rust_path: "/jaxrs/share/list/my",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "file_assemble_control",
+        method: "GET",
         rust_path: "/jaxrs/share/list/my2/{shareType}/{fileType}",
         java_war: "",
         java_action: "",
@@ -9418,7 +9868,57 @@ pub const ENDPOINTS: &[EndpointDef] = &[
     EndpointDef {
         crate_name: "file_assemble_control",
         method: "GET",
+        rust_path: "/jaxrs/share/list/to/me",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "file_assemble_control",
+        method: "GET",
         rust_path: "/jaxrs/share/list/to/me2/{fileType}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "file_assemble_control",
+        method: "GET",
+        rust_path: "/jaxrs/share/shield/{id}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "file_assemble_control",
+        method: "GET",
+        rust_path: "/jaxrs/share/{id}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "file_assemble_control",
+        method: "GET",
+        rust_path: "/jaxrs/share/{id}/password/{password}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "file_assemble_control",
+        method: "POST",
+        rust_path: "/jaxrs/anonymous/file/{id}/download/stream",
         java_war: "",
         java_action: "",
         body: None,
@@ -9468,7 +9968,47 @@ pub const ENDPOINTS: &[EndpointDef] = &[
     EndpointDef {
         crate_name: "file_assemble_control",
         method: "POST",
+        rust_path: "/jaxrs/attachment/upload/folder/{folderId}/callback/{callback}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "file_assemble_control",
+        method: "POST",
+        rust_path: "/jaxrs/attachment/{id}/update/callback/{callback}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "file_assemble_control",
+        method: "POST",
+        rust_path: "/jaxrs/attachment2/list/type/{page}/size/{size}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "file_assemble_control",
+        method: "POST",
         rust_path: "/jaxrs/attachment2/upload/folder/{folderId}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "file_assemble_control",
+        method: "POST",
+        rust_path: "/jaxrs/config",
         java_war: "",
         java_action: "",
         body: None,
@@ -9499,6 +10039,46 @@ pub const ENDPOINTS: &[EndpointDef] = &[
         crate_name: "file_assemble_control",
         method: "POST",
         rust_path: "/jaxrs/file/assemble/control/file/upload",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "file_assemble_control",
+        method: "POST",
+        rust_path: "/jaxrs/file/assemble/control/file/upload/referencetype/{referenceType}/reference/{reference}/scale/{scale}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "file_assemble_control",
+        method: "POST",
+        rust_path: "/jaxrs/file/assemble/control/file/upload/referencetype/{referenceType}/reference/{reference}/scale/{scale}/callback/{callback}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "file_assemble_control",
+        method: "POST",
+        rust_path: "/jaxrs/file/assemble/control/file/upload/with/url",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "file_assemble_control",
+        method: "POST",
+        rust_path: "/jaxrs/file/assemble/control/file/{id}/download/stream",
         java_war: "",
         java_action: "",
         body: None,
@@ -9558,6 +10138,26 @@ pub const ENDPOINTS: &[EndpointDef] = &[
     EndpointDef {
         crate_name: "file_assemble_control",
         method: "POST",
+        rust_path: "/jaxrs/folder",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "file_assemble_control",
+        method: "POST",
+        rust_path: "/jaxrs/folder2",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "file_assemble_control",
+        method: "POST",
         rust_path: "/jaxrs/recycle/delete/{id}",
         java_war: "",
         java_action: "",
@@ -9569,6 +10169,36 @@ pub const ENDPOINTS: &[EndpointDef] = &[
         crate_name: "file_assemble_control",
         method: "POST",
         rust_path: "/jaxrs/recycle/resume/{id}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "file_assemble_control",
+        method: "POST",
+        rust_path: "/jaxrs/recycle/{id}/resume",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "file_assemble_control",
+        method: "POST",
+        rust_path: "/jaxrs/share",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "file_assemble_control",
+        method: "POST",
+        rust_path: "/jaxrs/share/share/{shareId}/file/{fileId}/folder/{folderId}",
         java_war: "",
         java_action: "",
         body: None,
@@ -9589,6 +10219,16 @@ pub const ENDPOINTS: &[EndpointDef] = &[
         crate_name: "file_assemble_control",
         method: "PUT",
         rust_path: "/jaxrs/attachment/update/{id}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "file_assemble_control",
+        method: "PUT",
+        rust_path: "/jaxrs/attachment/{id}/update",
         java_war: "",
         java_action: "",
         body: None,
