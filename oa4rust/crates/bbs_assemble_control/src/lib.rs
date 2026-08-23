@@ -14,10 +14,15 @@ use uuid::Uuid;
 
 pub mod routes;
 
+/// plan002 U2 — Java 端点全量闭合（106 条对齐）新增实现。
+pub mod u2;
+
 #[cfg(test)]
 mod tests;
 #[cfg(test)]
 mod tests_generated;
+#[cfg(test)]
+mod tests_u2;
 
 
 thread_local! {
