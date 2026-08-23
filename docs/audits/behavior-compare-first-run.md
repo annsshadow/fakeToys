@@ -90,3 +90,44 @@ U9a→U3 前置验证达成：
 - 端点可达性成立：7/7 双侧拿到 HTTP 响应，无 SKIP；
 - 结构等效性**未达成**：0/7 PASS，但归因为 4 个系统性根因（A/B/C/D）+ 2 个端点级问题（E/F）+ 数据不对齐（G）；
 - 建议 U3 启动顺序：先决策 A（响应信封）、C（allowlist 化元数据差异）、D（错误码语义），再补 endpoints.java_war 生成器，最后扩样本至全量。
+
+---
+
+## 七、U2 行为对齐修复记录（2026-08-24 第二轮实测）
+
+**结果：0/7 → 3/7 PASS**（group 分页、person/xadmin、whoami）。复跑方式同 §一。
+
+### 7.1 Java 容器基准实测（修复依据）
+
+成功信封（所有端点一致，单层）：
+```json
+{ "type": "success", "data": <扁平数组或对象>, "message": "", "date": "yyyy-MM-dd HH:mm:ss",
+  "spent": <毫秒数>, "size": <本页条数；非分页=-1>, "count": <总数；非分页=0>, "position": 0 }
+```
+错误信封（HTTP 500，如 GET unit/list 被解析为 unit/{flag}=list）：**无 data 键**，多出
+`"prompt": "<异常类名>"`（如 `...ExceptionUnitNotExist`），size=-1。即 prompt 仅出现在错误信封。
+数据现状：Java 新库 unit=0、person=1（testadmin）、role=25（首页 20）、group=0。
+
+### 7.2 已实施修复
+
+| 根因 | 修复 | 位置 |
+|------|------|------|
+| B prompt:null | `#[serde(skip_serializing_if = "Option::is_none")]`（与 Java 一致：仅错误信封带 prompt） | shared/response.rs |
+| A 双层信封 | page_result 拍平为 `data: [数组]`，改用 java_success 信封 | control/pagination.rs |
+| C 元数据类型 | 新增 `ActionResult::java_success(data, count, size)`：message=""、date=服务器时间串、spent/size/count 数字、position 数字 0；position 字段类型 Option<String>→Option<Value> | shared/response.rs |
+| F whoami 字段 | Rust whoami data 扩展为 Java 实测 27 字段（tokenType/token/roleList/passwordExpired/identityList/distinguishedName/orderNumber/failureCount/topUnitList/status/sequence 等），信封 size=-1/count=0 | auth/lib.rs |
+| （端点5 数据缺失） | xadmin 为 Java 内置虚拟超管（非 DB 记录），person::get 对 flag=="xadmin" 返回同形虚拟详情 | control/person.rs |
+| comparator 缺陷 | compare_values 第一遍精确匹配误把整个父对象传入递归（原 :336），任何对象型响应必产生虚假 type-differs → **0/7 无法收敛的隐藏根因**；改为取两侧子值比较 | tests/behavior_comparison/comparator.rs |
+
+验证：`cargo test --lib -p shared -p control -p auth` 全绿（96/15/78 passed）；`cargo check --workspace` 无错误。
+
+### 7.3 未实施（记录方案）
+
+- **D 错误语义**：方案——AppError/error_response 改为：NotFound→404、BadRequest→400 等 4xx/5xx；错误体去掉 data 键、prompt 填异常标识、补 date/spent/size=-1/count=0/position=0。影响全部错误路径与前端错误处理约定，需单独排期。
+- **E 路由歧义（unit/list）**：Java 将其吞入 unit/{flag} 并返回 500"组织:list, 不存在."。Rust 的独立树列表路由是超集行为且更合理，删除以迎合 shallow comparator 属功能回退，不做。建议在 allowlist 或端点映射中排除该路径，U3 用 `unit/list/(0)/next/20` 类游标路径替代。
+- **G 数据不对齐**：代码修复后 unit/person/role 三个分页端点**唯一剩余差异是数组长度**（Rust 3/3/3 vs Java 0/1/20），信封与字段契约已一致。需按审计既定方向做两侧等价 seed 方案（驱动内对齐行数或在 Java 侧造数），不建议在本轮用删种子数据的方式凑数。
+
+### 7.4 排错记录（运维）
+
+- PowerShell 5.1 向 curl.exe 传 `-d "{\"k\":\"v\"}"` 会损坏引号，服务端实际收到 2 字节 body（日志表现为 ExceptionCredentialEmpty / erasePassword NPE 的假象）。测 Java 登录务必用 `Invoke-RestMethod` 或 `--data @file`。
+- o2server 登录偶发 60s 挂起后恢复，属冷启动预热，重试即可。

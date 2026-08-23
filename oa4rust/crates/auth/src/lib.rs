@@ -304,15 +304,54 @@ pub async fn whoami(
 
     match row {
         Some(row) => {
+            // 字段集对齐 O2OA v9 Java GET /jaxrs/authentication（whoami）实测响应
+            // （plan002 U2 行为对齐，基准见 docs/audits/behavior-compare-first-run.md）。
+            let id: String = row.get("id");
+            let unique_id: String = row.get("unique_id");
+            let name: String = row.get("name");
+            let mobile: Option<String> = row.get("mobile");
+            let distinguished_name = format!("{}@{}@P", name, unique_id);
             let mut map = serde_json::Map::new();
-            map.insert("authenticated".to_string(), Value::Bool(true));
-            map.insert("id".to_string(), Value::String(row.get("id")));
-            map.insert("unique".to_string(), Value::String(row.get("unique_id")));
-            map.insert("name".to_string(), Value::String(row.get("name")));
-            if let Some(val) = row_opt_json::<String>(&row, "mobile") {
-                map.insert("mobile".to_string(), val);
-            }
-            Ok(Json(ActionResult::success(Value::Object(map))))
+            map.insert("tokenType".to_string(), Value::String("user".to_string()));
+            map.insert("token".to_string(), Value::String(token));
+            map.insert("roleList".to_string(), Value::Array(vec![]));
+            map.insert("passwordExpired".to_string(), Value::Bool(false));
+            map.insert("identityList".to_string(), Value::Array(vec![]));
+            map.insert("id".to_string(), Value::String(id));
+            map.insert("name".to_string(), Value::String(name.clone()));
+            map.insert("employee".to_string(), Value::String(String::new()));
+            map.insert("unique".to_string(), Value::String(unique_id.clone()));
+            map.insert(
+                "distinguishedName".to_string(),
+                Value::String(distinguished_name),
+            );
+            map.insert(
+                "orderNumber".to_string(),
+                Value::Number(serde_json::Number::from(0)),
+            );
+            map.insert("controllerList".to_string(), Value::Array(vec![]));
+            map.insert("changePasswordTime".to_string(), Value::String(String::new()));
+            map.insert("lastLoginTime".to_string(), Value::String(String::new()));
+            map.insert("lastLoginAddress".to_string(), Value::String(String::new()));
+            map.insert("lastLoginClient".to_string(), Value::String(String::new()));
+            map.insert("mail".to_string(), Value::String(String::new()));
+            map.insert(
+                "mobile".to_string(),
+                Value::String(mobile.unwrap_or_default()),
+            );
+            map.insert("failureTime".to_string(), Value::String(String::new()));
+            map.insert(
+                "failureCount".to_string(),
+                Value::Number(serde_json::Number::from(0)),
+            );
+            map.insert("topUnitList".to_string(), Value::Array(vec![]));
+            map.insert("status".to_string(), Value::String("0".to_string()));
+            map.insert("statusDes".to_string(), Value::String(String::new()));
+            map.insert("createTime".to_string(), Value::String(String::new()));
+            map.insert("updateTime".to_string(), Value::String(String::new()));
+            map.insert("sequence".to_string(), Value::String(String::new()));
+            // Java 非分页端点信封实测：size=-1、count=0
+            Ok(Json(ActionResult::java_success(Value::Object(map), 0, -1)))
         }
         None => Ok(Json(ActionResult::error("user not found"))),
     }

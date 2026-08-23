@@ -162,7 +162,11 @@ pub struct ActionResult<T> {
     pub spent: Option<i64>,
     pub size: Option<i64>,
     pub count: Option<i64>,
-    pub position: Option<String>,
+    /// O2OA v9 Java 信封中 position 为数字（实测恒为 0），因此用 Value 承载。
+    pub position: Option<Value>,
+    /// Java 仅在错误信封携带 prompt（异常类名）；成功信封无此字段，
+    /// 故 None 时跳过序列化（plan002 U2 行为对齐）。
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub prompt: Option<String>,
 }
 
@@ -196,4 +200,30 @@ impl<T> ActionResult<T> {
             prompt: None,
         }
     }
+
+    /// O2OA v9 Java 兼容成功信封（plan002 U2 行为对齐，基准实测见
+    /// docs/audits/behavior-compare-first-run.md）。
+    ///
+    /// Java 信封所有元数据字段恒存在：message 为空串、date 为服务器时间
+    /// （"yyyy-MM-dd HH:mm:ss"）、spent 为耗时毫秒数（此处置 0）、size/count
+    /// 为数字、position 为数字 0。分页端点传 (total, data.len())，
+    /// 非分页端点按 Java 实测传 (0, -1)。
+    pub fn java_success(data: T, count: i64, size: i64) -> Self {
+        Self {
+            data: Some(data),
+            r#type: Some("success".to_string()),
+            message: Some(String::new()),
+            date: Some(java_date_now()),
+            spent: Some(0),
+            size: Some(size),
+            count: Some(count),
+            position: Some(Value::Number(serde_json::Number::from(0))),
+            prompt: None,
+        }
+    }
+}
+
+/// O2OA v9 Java 信封 date 字段格式："yyyy-MM-dd HH:mm:ss"
+fn java_date_now() -> String {
+    chrono::Local::now().format("%Y-%m-%d %H:%M:%S").to_string()
 }
