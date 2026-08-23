@@ -123,9 +123,13 @@ mod u2_tests {
 
     #[tokio::test]
     async fn u2_unregistered_java_path_still_missing() {
-        // 未实现的 Java 端点必须仍是 404，防止误报对齐
-        assert_eq!(status_of("GET", "/jaxrs/person/detail/p1").await, StatusCode::NOT_FOUND);
-        assert_eq!(status_of("GET", "/jaxrs/unit/list/type/t1/object").await, StatusCode::NOT_FOUND);
+        // 未实现的路径必须仍是 404；person/detail 已注册为 POST，
+        // 其 GET 变体返回 405（方法不匹配）而非 404
+        assert_eq!(status_of("GET", "/jaxrs/person/detail/p1").await, StatusCode::METHOD_NOT_ALLOWED);
+        assert_eq!(
+            status_of("POST", "/jaxrs/person/no/such/java/action").await,
+            StatusCode::NOT_FOUND
+        );
     }
 
     #[test]

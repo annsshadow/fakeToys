@@ -67,6 +67,47 @@ pub(crate) fn named_list(key: &str, items: &[String]) -> Value {
     )]))
 }
 
+/// Java WrapBoolean Wo 序列化形态：{"value": true|false}。
+pub(crate) fn wrap_bool(v: bool) -> Value {
+    Value::Object(serde_json::Map::from_iter([("value".to_string(), Value::Bool(v))]))
+}
+
+/// 单值字符串字段（缺失/非字符串返回 None）。
+pub(crate) fn string_field(body: &Value, key: &str) -> Option<String> {
+    body.get(key)
+        .and_then(|v| v.as_str())
+        .filter(|s| !s.trim().is_empty())
+        .map(str::to_string)
+}
+
+/// 布尔字段，默认 default（Java BooleanUtils.isNotFalse / isNotTrue 语义的 loose 版）。
+pub(crate) fn bool_field(body: &Value, key: &str, default: bool) -> bool {
+    body.get(key).and_then(|v| v.as_bool()).unwrap_or(default)
+}
+
+/// 整型数组字段（levelList 等），同样受批量上限约束。
+pub(crate) fn int_list(body: &Value, key: &str) -> Result<Vec<i32>, AppError> {
+    let raw: Vec<i32> = body
+        .get(key)
+        .and_then(|v| v.as_array())
+        .map(|arr| arr.iter().filter_map(|x| x.as_i64().map(|n| n as i32)).collect())
+        .unwrap_or_default();
+    capped(&raw.iter().map(|i| i.to_string()).collect::<Vec<_>>())?;
+    Ok(raw)
+}
+
+/// 归一化查重：trim、去空、保序去重（o2 ListTools.trim 的等价实现）。
+/// 所有批量入口在 capped() 之后调用，保证重复 flag 不会产生重复行。
+pub(crate) fn normalize_flags(flags: Vec<String>) -> Vec<String> {
+    let mut seen = std::collections::HashSet::new();
+    flags
+        .into_iter()
+        .map(|f| f.trim().to_string())
+        .filter(|f| !f.is_empty())
+        .filter(|f| seen.insert(f.clone()))
+        .collect()
+}
+
 pub(crate) async fn named_list_response(
     pool: &Pool,
     key: &'static str,
@@ -122,7 +163,7 @@ pub(crate) fn row_to_map(row: &deadpool_postgres::tokio_postgres::Row) -> Value 
 
 // ── Person ────────────────────────────────────────────────────────────────────
 
-fn person_cols(pii: bool) -> Cols {
+pub(crate) fn person_cols(pii: bool) -> Cols {
     if pii {
         &["id", "name", "unit_id", "mobile", "email"]
     } else {
@@ -130,7 +171,7 @@ fn person_cols(pii: bool) -> Cols {
     }
 }
 
-async fn resolve_person_ids(
+pub(crate) async fn resolve_person_ids(
     client: &deadpool_postgres::Client,
     flags: &[String],
 ) -> Result<Vec<String>, AppError> {

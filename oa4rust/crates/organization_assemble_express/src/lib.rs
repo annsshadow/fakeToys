@@ -7,7 +7,13 @@ use serde_json::Value;
 use shared::{error::AppError, response::ActionResult};
 
 pub mod endpoints;
+pub mod endpoints_attr;
+pub mod endpoints_duty2;
+pub mod endpoints_group2;
 pub mod endpoints_org;
+pub mod endpoints_org2;
+pub mod endpoints_person2;
+pub mod endpoints_unit2;
 pub mod routes;
 
 #[cfg(test)]
@@ -16,6 +22,8 @@ mod tests;
 mod tests_generated;
 #[cfg(test)]
 mod tests_u2;
+#[cfg(test)]
+mod tests_u2_closure;
 
 
 pub fn organization_assemble_express_router(pool: Pool) -> axum::Router {
