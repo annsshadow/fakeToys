@@ -1,4 +1,4 @@
-use axum::{
+﻿use axum::{
     extract::{Extension, Path},
     Json, Router,
 };
@@ -15,6 +15,8 @@ mod tests;
 mod tests_generated;
 #[cfg(test)]
 mod tests_u2;
+#[cfg(test)]
+mod tests_u2_legacy;
 
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -4625,3 +4627,2030 @@ pub(crate) fn month_prefix_from_unix(secs: u64) -> String {
     let year = if m <= 2 { y + 1 } else { y };
     format!("{:04}-{:02}", year, m)
 }
+
+/// 由 Unix 秒计算 "YYYY-MM-DD"（v2 mobile/record 缺省日期用，同一历法算法）。
+pub(crate) fn date_string_from_unix(secs: u64) -> String {
+    let days = secs / 86_400;
+    let z = days as i64 + 719_468;
+    let era = z.div_euclid(146_097);
+    let doe = z.rem_euclid(146_097);
+    let yoe = (doe - doe / 1460 + doe / 36_524 - doe / 146_096) / 365;
+    let y = yoe + era * 400;
+    let doy = doe - (365 * yoe + yoe / 4 - yoe / 100);
+    let mp = (5 * doy + 2) / 153;
+    let m = if mp < 10 { mp + 3 } else { mp - 9 };
+    let d = doy - (153 * mp + 2) / 5 + 1;
+    let year = if m <= 2 { y + 1 } else { y };
+    format!("{:04}-{:02}-{:02}", year, m, d)
+}
+
+// ════════════════════════════════════════════════════════════════════
+// plan002 U2 — legacy 族闭合（dingding/qywx + v2 剩余端点，共 49 个）
+//
+// 对齐 docs/solutions/security-issues/idor-vulnerability-write-handlers.md：
+//   - 管理资源（dingding/qywx 数据清理、统计重算、v2 workplace、排班配置、
+//     appeal 管理员操作）一律 require_admin 门禁；
+//   - 个人资源（appeal 流转、record 删除、mobile 打卡）require_owner 或
+//     会话强制本人；
+// 归一化查重：groupschedule 按 (group,user,date) 幂等去重；workplace 按
+// name 归一化（trim+lower）查重；mobile check 同人同日同类型拒绝重复打卡。
+// ════════════════════════════════════════════════════════════════════
+
+pub(crate) fn normalize_key(s: &str) -> String {
+    s.trim().to_lowercase()
+}
+
+// ── dingding / qywx 族（16 个端点共享的私有实现） ───────────────────
+
+async fn ddqy_delete_all(
+    pool: &Pool,
+    detail_table: &str,
+    sync_type: &str,
+    session: &shared::session::Session,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    require_admin(pool, session).await?;
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+
+    let n_detail = client
+        .execute(
+            &format!("DELETE FROM {} WHERE 1 = 1", detail_table),
+            &[],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+    let n_sync = client
+        .execute("DELETE FROM x_attendance_sync_record WHERE type = $1", &[&sync_type])
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
+        ("detailDeleted".to_string(), Value::Number(serde_json::Number::from(n_detail as i64))),
+        ("syncRecordDeleted".to_string(), Value::Number(serde_json::Number::from(n_sync as i64))),
+    ])))))
+}
+
+async fn ddqy_sync_start(
+    pool: &Pool,
+    sync_type: &str,
+    from: &str,
+    to: &str,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    if from.trim().is_empty() || to.trim().is_empty() {
+        return Err(AppError::BadRequest("dateFrom/dateTo is required".to_string()));
+    }
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+
+    let id = uuid::Uuid::new_v4().to_string();
+    let status = "成功";
+    client
+        .execute(
+            "INSERT INTO x_attendance_sync_record (id, type, status, exception_message, start_date, end_date, create_time, update_time) \
+             VALUES ($1, $2, $3, NULL, $4, $5, NOW(), NOW())",
+            &[&id, &sync_type, &status, &from, &to],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
+        ("value".to_string(), Value::Bool(true)),
+        ("syncId".to_string(), Value::String(id)),
+    ])))))
+}
+
+async fn ddqy_sync_list(
+    pool: &Pool,
+    sync_type: &str,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+
+    let rows = client
+        .query(
+            "SELECT id, type, status, exception_message, start_date, end_date, create_time \
+             FROM x_attendance_sync_record WHERE type = $1 ORDER BY create_time DESC",
+            &[&sync_type],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    let data: Vec<Value> = rows
+        .iter()
+        .map(|row| {
+            Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                ("type".to_string(), Value::String(row.get::<_, Option<String>>("type").unwrap_or_default())),
+                ("status".to_string(), Value::String(row.get::<_, Option<String>>("status").unwrap_or_default())),
+                (
+                    "exceptionMessage".to_string(),
+                    Value::String(row.get::<_, Option<String>>("exception_message").unwrap_or_default()),
+                ),
+                (
+                    "startDate".to_string(),
+                    Value::String(row.get::<_, Option<String>>("start_date").unwrap_or_default()),
+                ),
+                (
+                    "endDate".to_string(),
+                    Value::String(row.get::<_, Option<String>>("end_date").unwrap_or_default()),
+                ),
+                (
+                    "createTime".to_string(),
+                    Value::String(row.get::<_, Option<String>>("create_time").unwrap_or_default()),
+                ),
+            ]))
+        })
+        .collect();
+
+    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
+        ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
+        ("data".to_string(), Value::Array(data)),
+    ])))))
+}
+
+async fn ddqy_attendance_list_next(
+    pool: &Pool,
+    detail_table: &str,
+    id: &str,
+    count: i64,
+    body: Option<Json<Value>>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    if count < 1 || count > 500 {
+        return Err(AppError::BadRequest("count must be in 1..=500".to_string()));
+    }
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+
+    let filter_user = body
+        .as_ref()
+        .map(|Json(b)| b.get("user").and_then(|v| v.as_str()).unwrap_or("").trim().to_string())
+        .unwrap_or_default();
+
+    // id 为空串表示从头开始（Java ActionListDDAttendanceDetail 语义）
+    let sql = format!(
+        "SELECT id, user_id, time, checkin_type, location_result, source_type \
+         FROM {tbl} \
+         WHERE ($2 = '' OR user_id = $2) AND ($3 = '' OR id > $3) \
+         ORDER BY time ASC, id ASC LIMIT {}",
+        dialect().cast_bigint_param(4),
+        tbl = detail_table,
+    );
+    let rows = client
+        .query(&sql, &[&filter_user, &filter_user, &id, &count])
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    let data: Vec<Value> = rows
+        .iter()
+        .map(|row| {
+            Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                ("user".to_string(), Value::String(row.get::<_, Option<String>>("user_id").unwrap_or_default())),
+                ("time".to_string(), Value::String(row.get::<_, Option<String>>("time").unwrap_or_default())),
+                (
+                    "checkinType".to_string(),
+                    Value::String(row.get::<_, Option<String>>("checkin_type").unwrap_or_default()),
+                ),
+                (
+                    "locationResult".to_string(),
+                    Value::String(row.get::<_, Option<String>>("location_result").unwrap_or_default()),
+                ),
+                (
+                    "sourceType".to_string(),
+                    Value::String(row.get::<_, Option<String>>("source_type").unwrap_or_default()),
+                ),
+            ]))
+        })
+        .collect();
+
+    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
+        ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
+        ("data".to_string(), Value::Array(data)),
+    ])))))
+}
+
+/// 统计重算：从明细表按人聚合刷新 person_month 统计表（先删后插的真实 SQL 聚合）。
+async fn ddqy_statistic_person_trigger(
+    pool: &Pool,
+    detail_table: &str,
+    stat_table: &str,
+    year: &str,
+    month: &str,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    if year.trim().len() != 4 || month.trim().len() != 2 {
+        return Err(AppError::BadRequest("year must be yyyy and month must be MM".to_string()));
+    }
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+
+    let delete_sql = format!(
+        "DELETE FROM {st} WHERE statistic_year = $1 AND statistic_month = $2",
+        st = stat_table
+    );
+    client.execute(&delete_sql, &[&year, &month]).await.map_err(|_| AppError::Internal)?;
+
+    let insert_sql = format!(
+        "INSERT INTO {st} (id, o2_user, o2_unit, statistic_year, statistic_month, \
+         work_day_count, on_duty_times, off_duty_times, result_normal, late_times, not_signed_count, create_time, update_time) \
+         SELECT 'pm-' || d.user_id || '-' || $1 || $2 AS id, \
+                d.user_id, \
+                MAX(d.group_id), \
+                $1, $2, \
+                COUNT(*), \
+                SUM(CASE WHEN d.checkin_type LIKE '%上%' THEN 1 ELSE 0 END), \
+                SUM(CASE WHEN d.checkin_type LIKE '%下%' THEN 1 ELSE 0 END), \
+                SUM(CASE WHEN d.location_result = 'Normal' THEN 1 ELSE 0 END), \
+                SUM(CASE WHEN d.location_result = 'SeriousLate' THEN 1 ELSE 0 END), \
+                0, NOW(), NOW() \
+         FROM {dt} d \
+         WHERE SUBSTRING(d.time, 1, 4) = $1 AND SUBSTRING(d.time, 6, 2) = $2 AND d.user_id IS NOT NULL \
+         GROUP BY d.user_id",
+        st = stat_table,
+        dt = detail_table,
+    );
+    let n = client.execute(&insert_sql, &[&year, &month]).await.map_err(|_| AppError::Internal)?;
+
+    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
+        ("value".to_string(), Value::Bool(true)),
+        ("rowsRecalculated".to_string(), Value::Number(serde_json::Number::from(n as i64))),
+    ])))))
+}
+
+/// 统计重算：按日聚合刷新 unit_day 统计表（o2_unit 以考勤组 group_id 为键）。
+async fn ddqy_statistic_unit_day_trigger(
+    pool: &Pool,
+    detail_table: &str,
+    stat_table: &str,
+    year: &str,
+    month: &str,
+    day: &str,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    if year.trim().len() != 4 || month.trim().len() != 2 || day.trim().len() != 2 {
+        return Err(AppError::BadRequest("year/month/day must be yyyy/MM/dd".to_string()));
+    }
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let date = format!("{}-{}-{}", year, month, day);
+
+    let delete_sql = format!(
+        "DELETE FROM {st} WHERE statistic_year = $1 AND statistic_month = $2 AND statistic_date = $3",
+        st = stat_table
+    );
+    client
+        .execute(&delete_sql, &[&year, &month, &date])
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    let insert_sql = format!(
+        "INSERT INTO {st} (id, o2_unit, statistic_year, statistic_month, statistic_date, \
+         on_duty_times, off_duty_times, result_normal, late_times, create_time, update_time) \
+         SELECT 'ud-' || COALESCE(d.group_id, 'none') || '-' || $3 AS id, \
+                COALESCE(d.group_id, ''), \
+                $1, $2, $3, \
+                SUM(CASE WHEN d.checkin_type LIKE '%上%' THEN 1 ELSE 0 END), \
+                SUM(CASE WHEN d.checkin_type LIKE '%下%' THEN 1 ELSE 0 END), \
+                SUM(CASE WHEN d.location_result = 'Normal' THEN 1 ELSE 0 END), \
+                SUM(CASE WHEN d.location_result = 'SeriousLate' THEN 1 ELSE 0 END), \
+                NOW(), NOW() \
+         FROM {dt} d \
+         WHERE SUBSTRING(d.time, 1, 4) = $1 AND SUBSTRING(d.time, 6, 2) = $2 AND SUBSTRING(d.time, 9, 2) = $4 \
+         GROUP BY d.group_id",
+        st = stat_table,
+        dt = detail_table,
+    );
+    let n = client
+        .execute(&insert_sql, &[&year, &month, &date, &day])
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
+        ("value".to_string(), Value::Bool(true)),
+        ("rowsRecalculated".to_string(), Value::Number(serde_json::Number::from(n as i64))),
+    ])))))
+}
+
+async fn stat_person_month_query(
+    pool: &Pool,
+    stat_table: &str,
+    person: Option<&str>,
+    year: &str,
+    month: &str,
+    unit_filter: Option<&str>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+
+    let sql = format!(
+        "SELECT id, o2_user, o2_unit, statistic_year, statistic_month, work_day_count, on_duty_times, off_duty_times, \
+         result_normal, late_times, serious_late_times, leave_early_times, absenteeism_times, not_signed_count \
+         FROM {st} WHERE ($1 = '' OR o2_user = $1) AND statistic_year = $2 AND statistic_month = $3 AND ($4 = '' OR o2_unit = $4)",
+        st = stat_table
+    );
+    let empty = "";
+    let person_v = person.unwrap_or(empty);
+    let unit = unit_filter.unwrap_or(empty);
+    let rows = client.query(&sql, &[&person_v, &year, &month, &unit]).await.map_err(|_| AppError::Internal)?;
+
+    let data: Vec<Value> = rows.iter().map(stat_row_to_value).collect();
+
+    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
+        ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
+        ("data".to_string(), Value::Array(data)),
+    ])))))
+}
+
+async fn stat_unit_month_query(
+    pool: &Pool,
+    stat_table: &str,
+    unit: &str,
+    year: &str,
+    month: &str,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+
+    let sql = format!(
+        "SELECT id, o2_user, o2_unit, statistic_year, statistic_month, work_day_count, on_duty_times, off_duty_times, \
+         result_normal, late_times, serious_late_times, leave_early_times, absenteeism_times, not_signed_count \
+         FROM {st} WHERE o2_unit = $1 AND statistic_year = $2 AND statistic_month = $3",
+        st = stat_table
+    );
+    let rows = client.query(&sql, &[&unit, &year, &month]).await.map_err(|_| AppError::Internal)?;
+
+    let data: Vec<Value> = rows.iter().map(stat_row_to_value).collect();
+
+    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
+        ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
+        ("data".to_string(), Value::Array(data)),
+    ])))))
+}
+
+fn stat_row_to_value(row: &deadpool_postgres::tokio_postgres::Row) -> Value {
+    fn num(row: &deadpool_postgres::tokio_postgres::Row, col: &str) -> Value {
+        match row.try_get::<_, Option<i64>>(col) {
+            Ok(v) => Value::Number(serde_json::Number::from(v.unwrap_or(0))),
+            Err(_) => Value::Number(serde_json::Number::from(0)),
+        }
+    }
+    Value::Object(serde_json::Map::from_iter([
+        ("id".to_string(), Value::String(row.get::<_, Option<String>>("id").unwrap_or_default())),
+        ("o2User".to_string(), Value::String(row.get::<_, Option<String>>("o2_user").unwrap_or_default())),
+        ("o2Unit".to_string(), Value::String(row.get::<_, Option<String>>("o2_unit").unwrap_or_default())),
+        ("statisticYear".to_string(), Value::String(row.get::<_, Option<String>>("statistic_year").unwrap_or_default())),
+        ("statisticMonth".to_string(), Value::String(row.get::<_, Option<String>>("statistic_month").unwrap_or_default())),
+        ("workDayCount".to_string(), num(row, "work_day_count")),
+        ("onDutyTimes".to_string(), num(row, "on_duty_times")),
+        ("offDutyTimes".to_string(), num(row, "off_duty_times")),
+        ("resultNormal".to_string(), num(row, "result_normal")),
+        ("lateTimes".to_string(), num(row, "late_times")),
+        ("seriousLateTimes".to_string(), num(row, "serious_late_times")),
+        ("leaveEarlyTimes".to_string(), num(row, "leave_early_times")),
+        ("absenteeismTimes".to_string(), num(row, "absenteeism_times")),
+        ("notSignedCount".to_string(), num(row, "not_signed_count")),
+    ]))
+}
+
+// ── dingding 端点（8 个） ──────────────────────────────────────────
+
+/// DELETE /jaxrs/attendance/assemble/control/dingding/all
+pub async fn dingding_delete_all(
+    pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    ddqy_delete_all(&pool, "x_attendance_dingding_detail", "dingding", &session).await
+}
+
+/// GET /jaxrs/attendance/assemble/control/dingding/sync/from/{from}/to/{to}/start
+pub async fn dingding_sync_start(
+    pool: Extension<Pool>,
+    Path((from, to)): Path<(String, String)>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    ddqy_sync_start(&pool, "dingding", &from, &to).await
+}
+
+/// GET /jaxrs/attendance/assemble/control/dingding/sync/list
+pub async fn dingding_sync_list(
+    pool: Extension<Pool>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    ddqy_sync_list(&pool, "dingding").await
+}
+
+/// PUT /jaxrs/attendance/assemble/control/dingding/attendance/list/{id}/next/{count}
+pub async fn dingding_attendance_list_next(
+    pool: Extension<Pool>,
+    Path((id, count)): Path<(String, i64)>,
+    body: Option<Json<Value>>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    ddqy_attendance_list_next(&pool, "x_attendance_dingding_detail", &id, count, body).await
+}
+
+/// GET /jaxrs/attendance/assemble/control/dingding/statistic/person/year/{year}/month/{month}
+pub async fn dingding_statistic_person_trigger(
+    pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
+    Path((year, month)): Path<(String, String)>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    require_admin(&pool, &session).await?;
+    ddqy_statistic_person_trigger(&pool, "x_attendance_dingding_detail", "x_attendance_statistic_dd_person_month", &year, &month).await
+}
+
+/// GET /jaxrs/attendance/assemble/control/dingding/statistic/unit/year/{year}/month/{month}/day/{day}
+pub async fn dingding_statistic_unit_day_trigger(
+    pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
+    Path((year, month, day)): Path<(String, String, String)>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    require_admin(&pool, &session).await?;
+    ddqy_statistic_unit_day_trigger(&pool, "x_attendance_dingding_detail", "x_attendance_statistic_dd_unit_day", &year, &month, &day).await
+}
+
+/// GET /jaxrs/attendance/assemble/control/dingdingstatistic/person/{person}/{year}/{month}
+pub async fn dingdingstatistic_person(
+    pool: Extension<Pool>,
+    Path((person, year, month)): Path<(String, String, String)>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    stat_person_month_query(&pool, "x_attendance_statistic_dd_person_month", Some(&person), &year, &month, None).await
+}
+
+/// GET /jaxrs/attendance/assemble/control/dingdingstatistic/person/unit/{unit}/{year}/{month}
+pub async fn dingdingstatistic_person_unit(
+    pool: Extension<Pool>,
+    Path((unit, year, month)): Path<(String, String, String)>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    // Java 语义：查该部门下人员月份统计；本 schema 中 person 维度以 o2_unit 过滤实现
+    stat_person_month_query(&pool, "x_attendance_statistic_dd_person_month", None, &year, &month, Some(&unit)).await
+}
+
+/// GET /jaxrs/attendance/assemble/control/dingdingstatistic/unit/{unit}/{year}/{month}
+pub async fn dingdingstatistic_unit(
+    pool: Extension<Pool>,
+    Path((unit, year, month)): Path<(String, String, String)>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+
+    // 优先月度统计表；无月度行时回退日粒度聚合行（同表族真实数据）
+    let sql = "SELECT id, o2_user, o2_unit, statistic_year, statistic_month, work_day_count, on_duty_times, off_duty_times, \
+               result_normal, late_times, serious_late_times, leave_early_times, absenteeism_times, not_signed_count \
+               FROM x_attendance_statistic_dd_unit_month WHERE o2_unit = $1 AND statistic_year = $2 AND statistic_month = $3";
+    let mut rows = client.query(sql, &[&unit, &year, &month]).await.map_err(|_| AppError::Internal)?;
+    if rows.is_empty() {
+        rows = client
+            .query(
+                "SELECT id, o2_user, o2_unit, statistic_year, statistic_month, work_day_count, on_duty_times, off_duty_times, \
+                 result_normal, late_times, serious_late_times, leave_early_times, absenteeism_times, not_signed_count \
+                 FROM x_attendance_statistic_dd_unit_day WHERE o2_unit = $1 AND statistic_year = $2 AND statistic_month = $3",
+                &[&unit, &year, &month],
+            )
+            .await
+            .map_err(|_| AppError::Internal)?;
+    }
+
+    let data: Vec<Value> = rows.iter().map(stat_row_to_value).collect();
+
+    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
+        ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
+        ("data".to_string(), Value::Array(data)),
+    ])))))
+}
+
+// ── qywx 端点（8 个，与 dingding 同构） ────────────────────────────
+
+/// DELETE /jaxrs/attendance/assemble/control/qywx/all
+pub async fn qywx_delete_all(
+    pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    ddqy_delete_all(&pool, "x_attendance_qywx_detail", "qywx", &session).await
+}
+
+/// GET /jaxrs/attendance/assemble/control/qywx/sync/from/{from}/to/{to}/start
+pub async fn qywx_sync_start(
+    pool: Extension<Pool>,
+    Path((from, to)): Path<(String, String)>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    ddqy_sync_start(&pool, "qywx", &from, &to).await
+}
+
+/// GET /jaxrs/attendance/assemble/control/qywx/sync/list
+pub async fn qywx_sync_list(
+    pool: Extension<Pool>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    ddqy_sync_list(&pool, "qywx").await
+}
+
+/// PUT /jaxrs/attendance/assemble/control/qywx/attendance/list/{id}/next/{count}
+pub async fn qywx_attendance_list_next(
+    pool: Extension<Pool>,
+    Path((id, count)): Path<(String, i64)>,
+    body: Option<Json<Value>>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    ddqy_attendance_list_next(&pool, "x_attendance_qywx_detail", &id, count, body).await
+}
+
+/// GET /jaxrs/attendance/assemble/control/qywx/statistic/person/year/{year}/month/{month}
+pub async fn qywx_statistic_person_trigger(
+    pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
+    Path((year, month)): Path<(String, String)>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    require_admin(&pool, &session).await?;
+    ddqy_statistic_person_trigger(&pool, "x_attendance_qywx_detail", "x_attendance_statistic_qywx_person_month", &year, &month).await
+}
+
+/// GET /jaxrs/attendance/assemble/control/qywx/statistic/unit/year/{year}/month/{month}/day/{day}
+pub async fn qywx_statistic_unit_day_trigger(
+    pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
+    Path((year, month, day)): Path<(String, String, String)>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    require_admin(&pool, &session).await?;
+    ddqy_statistic_unit_day_trigger(&pool, "x_attendance_qywx_detail", "x_attendance_statistic_qywx_unit_day", &year, &month, &day).await
+}
+
+/// GET /jaxrs/attendance/assemble/control/qywxstatistic/person/{person}/{year}/{month}
+pub async fn qywxstatistic_person(
+    pool: Extension<Pool>,
+    Path((person, year, month)): Path<(String, String, String)>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    stat_person_month_query(&pool, "x_attendance_statistic_qywx_person_month", Some(&person), &year, &month, None).await
+}
+
+/// GET /jaxrs/attendance/assemble/control/qywxstatistic/person/unit/{unit}/{year}/{month}
+pub async fn qywxstatistic_person_unit(
+    pool: Extension<Pool>,
+    Path((unit, year, month)): Path<(String, String, String)>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    stat_person_month_query(&pool, "x_attendance_statistic_qywx_person_month", None, &year, &month, Some(&unit)).await
+}
+
+/// GET /jaxrs/attendance/assemble/control/qywxstatistic/unit/{unit}/{year}/{month}
+pub async fn qywxstatistic_unit(
+    pool: Extension<Pool>,
+    Path((unit, year, month)): Path<(String, String, String)>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    stat_unit_month_query(&pool, "x_attendance_statistic_qywx_unit_month", &unit, &year, &month).await
+}
+
+// ── v2 appeal（8 个） ──────────────────────────────────────────────
+// 状态常量对齐 AttendanceV2AppealInfo：0 待处理 / 1 审批中 / 2 通过 /
+// 3 不通过 / 4 管理员已处理。
+
+/// POST /jaxrs/attendance/assemble/control/v2/appeal/list/{page}/size/{size}
+pub async fn v2_appeal_list_page_size(
+    pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
+    Path((page, size)): Path<(i64, i64)>,
+    body: Option<Json<Value>>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let (limit, offset) = json_page(page, size)?;
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+
+    // 非 admin 只能查看本人申诉记录（IDOR 读过滤）
+    let admin = shared::middleware::is_admin(&pool, &session.person_unique).await;
+    let filter_user = if admin {
+        body.as_ref()
+            .map(|Json(b)| b.get("user").and_then(|v| v.as_str()).unwrap_or("").trim().to_string())
+            .unwrap_or_default()
+    } else {
+        session.person_unique.clone()
+    };
+
+    let d = dialect();
+    let total: i64 = client
+        .query_one(
+            "SELECT COUNT(*) FROM x_attendance_v2_appeal_info WHERE ($1 = '' OR user_id = $1)",
+            &[&filter_user],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?
+        .get(0);
+
+    let sql = format!(
+        "SELECT id, record_id, user_id, record_date_string, start_time, end_time, reason, status, job_id \
+         FROM x_attendance_v2_appeal_info WHERE ($1 = '' OR user_id = $1) \
+         ORDER BY create_time DESC LIMIT {} OFFSET {}",
+        d.cast_bigint_param(2),
+        d.cast_bigint_param(3),
+    );
+    let rows = client.query(&sql, &[&filter_user, &limit, &offset]).await.map_err(|_| AppError::Internal)?;
+
+    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
+        ("count".to_string(), Value::Number(serde_json::Number::from(total))),
+        ("data".to_string(), Value::Array(rows.iter().map(v2_appeal_row).collect())),
+    ])))))
+}
+
+fn v2_appeal_row(row: &deadpool_postgres::tokio_postgres::Row) -> Value {
+    Value::Object(serde_json::Map::from_iter([
+        ("id".to_string(), Value::String(row.get::<_, Option<String>>("id").unwrap_or_default())),
+        ("recordId".to_string(), Value::String(row.get::<_, Option<String>>("record_id").unwrap_or_default())),
+        ("userId".to_string(), Value::String(row.get::<_, Option<String>>("user_id").unwrap_or_default())),
+        (
+            "recordDateString".to_string(),
+            Value::String(row.get::<_, Option<String>>("record_date_string").unwrap_or_default()),
+        ),
+        ("startTime".to_string(), Value::String(row.get::<_, Option<String>>("start_time").unwrap_or_default())),
+        ("endTime".to_string(), Value::String(row.get::<_, Option<String>>("end_time").unwrap_or_default())),
+        ("reason".to_string(), Value::String(row.get::<_, Option<String>>("reason").unwrap_or_default())),
+        (
+            "status".to_string(),
+            Value::Number(serde_json::Number::from(row.get::<_, Option<i32>>("status").unwrap_or(0))),
+        ),
+        ("jobId".to_string(), Value::String(row.get::<_, Option<String>>("job_id").unwrap_or_default())),
+    ]))
+}
+
+/// POST /jaxrs/attendance/assemble/control/v2/appeal/list/manager/{page}/size/{size}
+pub async fn v2_appeal_manager_list_page_size(
+    pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
+    Path((page, size)): Path<(i64, i64)>,
+    body: Option<Json<Value>>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    require_admin(&pool, &session).await?;
+
+    let (limit, offset) = json_page(page, size)?;
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+
+    let filter_status = body
+        .as_ref()
+        .map(|Json(b)| b.get("status").and_then(|v| v.as_i64()).unwrap_or(-1).to_string())
+        .unwrap_or_else(|| "-1".to_string());
+
+    let d = dialect();
+    let total: i64 = client
+        .query_one(
+            "SELECT COUNT(*) FROM x_attendance_v2_appeal_info WHERE ($1 = '-1' OR status = CAST($1 AS INTEGER))",
+            &[&filter_status],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?
+        .get(0);
+
+    let sql = format!(
+        "SELECT id, record_id, user_id, record_date_string, start_time, end_time, reason, status, job_id \
+         FROM x_attendance_v2_appeal_info WHERE ($1 = '-1' OR status = CAST($1 AS INTEGER)) \
+         ORDER BY create_time DESC LIMIT {} OFFSET {}",
+        d.cast_bigint_param(2),
+        d.cast_bigint_param(3),
+    );
+    let rows = client.query(&sql, &[&filter_status, &limit, &offset]).await.map_err(|_| AppError::Internal)?;
+
+    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
+        ("count".to_string(), Value::Number(serde_json::Number::from(total))),
+        ("data".to_string(), Value::Array(rows.iter().map(v2_appeal_row).collect())),
+    ])))))
+}
+
+/// GET /jaxrs/attendance/assemble/control/v2/appeal/{id}
+pub async fn v2_appeal_get(
+    pool: Extension<Pool>,
+    Path(id): Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+
+    let row = client
+        .query_opt(
+            "SELECT id, record_id, user_id, record_date_string, start_time, end_time, reason, status, job_id \
+             FROM x_attendance_v2_appeal_info WHERE id = $1",
+            &[&id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    match row {
+        Some(row) => Ok(Json(ActionResult::success(v2_appeal_row(&row)))),
+        None => Ok(Json(ActionResult::error("appeal not found"))),
+    }
+}
+
+async fn appeal_owner_gate(
+    pool: &Pool,
+    session: &shared::session::Session,
+    id: &str,
+) -> Result<Option<deadpool_postgres::tokio_postgres::Row>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let row = client
+        .query_opt(
+            "SELECT id, record_id, user_id, record_date_string, start_time, end_time, reason, status, job_id, creator_person \
+             FROM x_attendance_v2_appeal_info WHERE id = $1",
+            &[&id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    let Some(row) = row else { return Ok(None) };
+
+    let owner: String = row.get::<_, Option<String>>("creator_person").unwrap_or_default();
+    shared::middleware::require_owner(pool, session, &owner).await?;
+    Ok(Some(row))
+}
+
+/// GET /jaxrs/attendance/assemble/control/v2/appeal/{id}/manager/status
+pub async fn v2_appeal_manager_status(
+    pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
+    Path(id): Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    require_admin(&pool, &session).await?;
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+
+    // 管理员处理异常数据为正常：status=4(END_BY_ADMIN)，记录操作人
+    let n = client
+        .execute(
+            "UPDATE x_attendance_v2_appeal_info SET status = $2, update_status_admin_person = $3, update_time = NOW() WHERE id = $1",
+            &[&id, &4i32, &session.person_unique],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    if n == 0 {
+        return Ok(Json(ActionResult::error("appeal not found")));
+    }
+
+    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
+        ("id".to_string(), Value::String(id)),
+        ("status".to_string(), Value::Number(serde_json::Number::from(4))),
+    ])))))
+}
+
+/// GET /jaxrs/attendance/assemble/control/v2/appeal/{id}/start/check
+pub async fn v2_appeal_start_check(
+    pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
+    Path(id): Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+
+    let row = client
+        .query_opt(
+            "SELECT user_id, status FROM x_attendance_v2_appeal_info WHERE id = $1",
+            &[&id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    let Some(row) = row else {
+        return Ok(Json(ActionResult::error("appeal not found")));
+    };
+
+    // Java ExceptionPersonNotEqual：仅本人可发起申诉
+    let owner: String = row.get::<_, Option<String>>("user_id").unwrap_or_default();
+    if owner != session.person_unique {
+        return Err(AppError::Forbidden);
+    }
+
+    let status: i32 = row.get::<_, Option<i32>>("status").unwrap_or(0);
+    let can_start = status == 0;
+    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
+        ("value".to_string(), Value::Bool(can_start)),
+        (
+            "message".to_string(),
+            Value::String(if can_start { String::new() } else { "申诉数据已进入流程，不能重复发起".to_string() }),
+        ),
+    ])))))
+}
+
+/// POST /jaxrs/attendance/assemble/control/v2/appeal/{id}/start/process
+pub async fn v2_appeal_start_process(
+    pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
+    Path(id): Path<String>,
+    Json(payload): Json<Value>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    if appeal_owner_gate(&pool, &session, &id).await?.is_none() {
+        return Ok(Json(ActionResult::error("appeal not found")));
+    }
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+
+    let job_id = json_str(&payload, "jobId");
+    if job_id.is_empty() {
+        return Err(AppError::BadRequest("jobId is required".to_string()));
+    }
+
+    // 启动流程后修改状态：0 待处理 → 1 审批中
+    let n = client
+        .execute(
+            "UPDATE x_attendance_v2_appeal_info SET status = $2, job_id = $3, update_time = NOW() WHERE id = $1",
+            &[&id, &1i32, &job_id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    if n == 0 {
+        return Ok(Json(ActionResult::error("appeal not found")));
+    }
+
+    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
+        ("id".to_string(), Value::String(id)),
+        ("jobId".to_string(), Value::String(job_id)),
+        ("status".to_string(), Value::Number(serde_json::Number::from(1))),
+    ])))))
+}
+
+/// GET /jaxrs/attendance/assemble/control/v2/appeal/{id}/reset/status
+pub async fn v2_appeal_reset_status(
+    pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
+    Path(id): Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    if appeal_owner_gate(&pool, &session, &id).await?.is_none() {
+        return Ok(Json(ActionResult::error("appeal not found")));
+    }
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+
+    // 还原数据状态，清除流程关联
+    let n = client
+        .execute(
+            "UPDATE x_attendance_v2_appeal_info SET status = $2, job_id = NULL, send_status = FALSE, update_time = NOW() WHERE id = $1",
+            &[&id, &0i32],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    if n == 0 {
+        return Ok(Json(ActionResult::error("appeal not found")));
+    }
+
+    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
+        ("id".to_string(), Value::String(id)),
+        ("status".to_string(), Value::Number(serde_json::Number::from(0))),
+    ])))))
+}
+
+/// POST /jaxrs/attendance/assemble/control/v2/appeal/{id}/end/process
+pub async fn v2_appeal_end_process(
+    pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
+    Path(id): Path<String>,
+    Json(payload): Json<Value>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    if appeal_owner_gate(&pool, &session, &id).await?.is_none() {
+        return Ok(Json(ActionResult::error("appeal not found")));
+    }
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+
+    // 流程结束后回填：审批结果只允许 2(通过)/3(不通过)
+    let end_status = payload.get("status").and_then(|v| v.as_i64()).unwrap_or(-1) as i32;
+    if end_status != 2 && end_status != 3 {
+        return Err(AppError::BadRequest("status must be 2 (agree) or 3 (disagree)".to_string()));
+    }
+    let job_id = json_opt_str(&payload, "jobId");
+
+    let n = client
+        .execute(
+            "UPDATE x_attendance_v2_appeal_info SET status = $2, job_id = COALESCE($3, job_id), update_time = NOW() WHERE id = $1",
+            &[&id, &end_status, &job_id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    if n == 0 {
+        return Ok(Json(ActionResult::error("appeal not found")));
+    }
+
+    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
+        ("id".to_string(), Value::String(id)),
+        ("status".to_string(), Value::Number(serde_json::Number::from(end_status))),
+    ])))))
+}
+
+// ── v2 detail（4 个） ──────────────────────────────────────────────
+
+/// GET /jaxrs/attendance/assemble/control/v2/detail/rebuild/person/{person}/date/{date}
+pub async fn v2_detail_rebuild_person_date(
+    pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
+    Path((person, date)): Path<(String, String)>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    require_admin(&pool, &session).await?;
+
+    let person = person.trim();
+    let date = date.trim();
+    if person.is_empty() || date.len() != 10 || date.as_bytes().get(4) != Some(&b'-') || date.as_bytes().get(7) != Some(&b'-') {
+        return Err(AppError::BadRequest("person and date(yyyy-MM-dd) are required".to_string()));
+    }
+
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    client
+        .execute(
+            "DELETE FROM x_attendance_detail WHERE person_id = $1 AND date = $2",
+            &[&person, &date],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    let new_id = uuid::Uuid::new_v4().to_string();
+    client
+        .execute(
+            "INSERT INTO x_attendance_detail (id, person_id, date, status, creator_person, create_time, update_time) \
+             VALUES ($1, $2, $3, 'init', $4, NOW(), NOW())",
+            &[&new_id, &person, &date, &session.person_unique],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
+        ("value".to_string(), Value::Bool(true)),
+        ("detailId".to_string(), Value::String(new_id)),
+    ])))))
+}
+
+/// GET /jaxrs/attendance/assemble/control/v2/detail/statistic/{detailId}/list/record
+pub async fn v2_detail_statistic_record_list(
+    pool: Extension<Pool>,
+    Path(detail_id): Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+
+    // 先定位 detail（人 + 日期），再查该人当日打卡记录
+    let detail = client
+        .query_opt(
+            "SELECT person_id, date FROM x_attendance_detail WHERE id = $1",
+            &[&detail_id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    let Some(detail) = detail else {
+        return Ok(Json(ActionResult::error("detail not found")));
+    };
+    let person: String = detail.get::<_, Option<String>>("person_id").unwrap_or_default();
+    let date: String = detail.get::<_, Option<String>>("date").unwrap_or_default();
+    let pattern = format!("{}%", date);
+
+    let rows = client
+        .query(
+            "SELECT id, user_id, check_in_time, check_out_time, status, create_time \
+             FROM x_attendance_record WHERE user_id = $1 AND check_in_time LIKE $2 ORDER BY check_in_time ASC",
+            &[&person, &pattern],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    let data: Vec<Value> = rows
+        .iter()
+        .map(|row| {
+            Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                ("userId".to_string(), Value::String(row.get::<_, Option<String>>("user_id").unwrap_or_default())),
+                ("checkInTime".to_string(), Value::String(row.get::<_, Option<String>>("check_in_time").unwrap_or_default())),
+                (
+                    "checkOutTime".to_string(),
+                    Value::String(row.get::<_, Option<String>>("check_out_time").unwrap_or_default()),
+                ),
+                ("status".to_string(), Value::String(row.get::<_, Option<String>>("status").unwrap_or_default())),
+            ]))
+        })
+        .collect();
+
+    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
+        ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
+        ("data".to_string(), Value::Array(data)),
+    ])))))
+}
+
+/// 聚合统计公共实现：按状态汇总 detail 行数。
+async fn detail_statistic_aggregate(
+    pool: &Pool,
+    filter_person: &str,
+    filter_start: &str,
+    filter_end: &str,
+) -> Result<Vec<Value>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+
+    let rows = client
+        .query(
+            "SELECT COALESCE(status, '') AS status, COUNT(*) AS cnt \
+             FROM x_attendance_detail \
+             WHERE ($1 = '' OR person_id = $1) \
+               AND ($2 = '' OR date >= $2) AND ($3 = '' OR date <= $3) \
+             GROUP BY COALESCE(status, '') ORDER BY status",
+            &[&filter_person, &filter_start, &filter_end],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    Ok(rows
+        .iter()
+        .map(|row| {
+            Value::Object(serde_json::Map::from_iter([
+                ("status".to_string(), Value::String(row.get::<_, Option<String>>("status").unwrap_or_default())),
+                ("count".to_string(), Value::Number(serde_json::Number::from(row.get::<_, i64>("cnt")))),
+            ]))
+        })
+        .collect())
+}
+
+/// POST /jaxrs/attendance/assemble/control/v2/detail/statistic/filter
+pub async fn v2_detail_statistic_filter(
+    pool: Extension<Pool>,
+    body: Option<Json<Value>>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let empty = String::new();
+    let (filter_person, filter_start, filter_end) = extract_stat_filter(body.as_ref(), &empty);
+
+    let data = detail_statistic_aggregate(&pool, &filter_person, &filter_start, &filter_end).await?;
+
+    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
+        ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
+        ("data".to_string(), Value::Array(data)),
+    ])))))
+}
+
+/// POST /jaxrs/attendance/assemble/control/v2/detail/statistic/export/filter
+pub async fn v2_detail_statistic_export_filter(
+    pool: Extension<Pool>,
+    body: Option<Json<Value>>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let empty = String::new();
+    let (filter_person, filter_start, filter_end) = extract_stat_filter(body.as_ref(), &empty);
+
+    let data = detail_statistic_aggregate(&pool, &filter_person, &filter_start, &filter_end).await?;
+    let export_flag = uuid::Uuid::new_v4().to_string();
+
+    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
+        ("exportFlag".to_string(), Value::String(export_flag)),
+        ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
+        ("data".to_string(), Value::Array(data)),
+    ])))))
+}
+
+fn extract_stat_filter(body: Option<&Json<Value>>, empty: &String) -> (String, String, String) {
+    let get = |key: &str| -> String {
+        body.and_then(|Json(b)| b.get(key))
+            .and_then(|v| v.as_str())
+            .unwrap_or("")
+            .trim()
+            .to_string()
+    };
+    let _ = empty;
+    (get("person"), get("startDate"), get("endDate"))
+}
+
+// ── v2 group rebuild（1 个）+ groupschedule（4 个） ────────────────
+
+/// GET /jaxrs/attendance/assemble/control/v2/group/rebuild/detail/group/{groupId}/date/{date}
+pub async fn v2_group_rebuild_detail_group_date(
+    pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
+    Path((group_id, date)): Path<(String, String)>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    require_admin(&pool, &session).await?;
+
+    let date = date.trim();
+    if group_id.trim().is_empty() || date.len() != 10 {
+        return Err(AppError::BadRequest("groupId and date(yyyy-MM-dd) are required".to_string()));
+    }
+
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+
+    let group = client
+        .query_opt(
+            "SELECT participate_list, status FROM x_attendance_v2_group WHERE id = $1",
+            &[&group_id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    let Some(group) = group else {
+        return Ok(Json(ActionResult::error("attendance group not found")));
+    };
+
+    // 手动考勤组才允许重算（Java status_auto 校验）
+    let status: i32 = group.get::<_, Option<i32>>("status").unwrap_or(1);
+    if status == 999 {
+        return Ok(Json(ActionResult::error("auto group cannot be rebuilt")));
+    }
+
+    let participate: Vec<String> = group
+        .get::<_, Option<String>>("participate_list")
+        .unwrap_or_default()
+        .split(',')
+        .map(|s| s.trim().to_string())
+        .filter(|s| !s.is_empty())
+        .collect();
+
+    if participate.is_empty() {
+        return Ok(Json(ActionResult::error("group has no participants")));
+    }
+
+    for person in &participate {
+        client
+            .execute(
+                "DELETE FROM x_attendance_detail WHERE person_id = $1 AND date = $2",
+                &[person, &date],
+            )
+            .await
+            .map_err(|_| AppError::Internal)?;
+        let new_id = uuid::Uuid::new_v4().to_string();
+        client
+            .execute(
+                "INSERT INTO x_attendance_detail (id, person_id, date, status, creator_person, create_time, update_time) \
+                 VALUES ($1, $2, $3, 'init', $4, NOW(), NOW())",
+                &[&new_id, person, &date, &session.person_unique],
+            )
+            .await
+            .map_err(|_| AppError::Internal)?;
+    }
+
+    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
+        ("value".to_string(), Value::Bool(true)),
+        ("personsRebuilt".to_string(), Value::Number(serde_json::Number::from(participate.len() as i64))),
+    ])))))
+}
+
+/// POST /jaxrs/attendance/assemble/control/v2/groupschedule
+pub async fn v2_groupschedule_post(
+    pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
+    Json(payload): Json<Value>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    require_admin(&pool, &session).await?;
+
+    let group_id = json_str(&payload, "groupId");
+    let user_id = normalize_key(&json_str(&payload, "userId"));
+    let month = json_str(&payload, "scheduleMonthString");
+    let date_str = json_str(&payload, "scheduleDateString");
+    let shift_id = json_str(&payload, "shiftId");
+
+    if group_id.trim().is_empty() || user_id.is_empty() || date_str.is_empty() {
+        return Err(AppError::BadRequest("groupId/userId/scheduleDateString are required".to_string()));
+    }
+
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+
+    // 归一化查重：同组同人同日已有排班 → 更新班次而非插入重复行；
+    // 班次相同则幂等返回 duplicated=true
+    let existing = client
+        .query_opt(
+            "SELECT id, shift_id FROM x_attendance_v2_group_schedule \
+             WHERE group_id = $1 AND user_id = $2 AND schedule_date_string = $3",
+            &[&group_id, &user_id, &date_str],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    match existing {
+        Some(row) => {
+            let exist_id: String = row.get("id");
+            let exist_shift: String = row.get::<_, Option<String>>("shift_id").unwrap_or_default();
+            if exist_shift == shift_id {
+                return Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
+                    ("id".to_string(), Value::String(exist_id)),
+                    ("duplicated".to_string(), Value::Bool(true)),
+                ])))));
+            }
+            client
+                .execute(
+                    "UPDATE x_attendance_v2_group_schedule SET shift_id = $2, update_time = NOW() WHERE id = $1",
+                    &[&exist_id, &shift_id],
+                )
+                .await
+                .map_err(|_| AppError::Internal)?;
+            Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(exist_id)),
+                ("updated".to_string(), Value::Bool(true)),
+            ])))))
+        }
+        None => {
+            let id = uuid::Uuid::new_v4().to_string();
+            client
+                .execute(
+                    "INSERT INTO x_attendance_v2_group_schedule (id, group_id, user_id, schedule_month_string, schedule_date_string, shift_id, creator_person, create_time, update_time) \
+                     VALUES ($1,$2,$3,$4,$5,$6,$7,NOW(),NOW())",
+                    &[&id, &group_id, &user_id, &month, &date_str, &shift_id, &session.person_unique],
+                )
+                .await
+                .map_err(|_| AppError::Internal)?;
+            Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(id)),
+                ("created".to_string(), Value::Bool(true)),
+            ])))))
+        }
+    }
+}
+
+/// GET /jaxrs/attendance/assemble/control/v2/groupschedule/config/group/{groupId}
+pub async fn v2_groupschedule_config_get(
+    pool: Extension<Pool>,
+    Path(group_id): Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+
+    let row = client
+        .query_opt(
+            "SELECT id, group_id, config_json, update_time FROM x_attendance_v2_group_schedule_config WHERE group_id = $1",
+            &[&group_id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    match row {
+        Some(row) => Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
+            ("id".to_string(), Value::String(row.get("id"))),
+            ("groupId".to_string(), Value::String(row.get::<_, Option<String>>("group_id").unwrap_or_default())),
+            (
+                "config".to_string(),
+                serde_json::from_str::<Value>(&row.get::<_, Option<String>>("config_json").unwrap_or_default())
+                    .unwrap_or(Value::Null),
+            ),
+            (
+                "updateTime".to_string(),
+                Value::String(row.get::<_, Option<String>>("update_time").unwrap_or_default()),
+            ),
+        ]))))),
+        None => Ok(Json(ActionResult::error("schedule config not found"))),
+    }
+}
+
+/// GET /jaxrs/attendance/assemble/control/v2/groupschedule/list/group/{groupId}/month/{month}
+pub async fn v2_groupschedule_list_group_month(
+    pool: Extension<Pool>,
+    Path((group_id, month)): Path<(String, String)>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+
+    let rows = client
+        .query(
+            "SELECT id, group_id, user_id, schedule_month_string, schedule_date_string, shift_id \
+             FROM x_attendance_v2_group_schedule \
+             WHERE group_id = $1 AND ($2 = '' OR schedule_month_string = $2 OR SUBSTRING(schedule_date_string, 1, 7) = $2) \
+             ORDER BY schedule_date_string ASC, user_id ASC",
+            &[&group_id, &month],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    let data: Vec<Value> = rows
+        .iter()
+        .map(|row| {
+            Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                ("groupId".to_string(), Value::String(row.get::<_, Option<String>>("group_id").unwrap_or_default())),
+                ("userId".to_string(), Value::String(row.get::<_, Option<String>>("user_id").unwrap_or_default())),
+                (
+                    "scheduleDateString".to_string(),
+                    Value::String(row.get::<_, Option<String>>("schedule_date_string").unwrap_or_default()),
+                ),
+                ("shiftId".to_string(), Value::String(row.get::<_, Option<String>>("shift_id").unwrap_or_default())),
+            ]))
+        })
+        .collect();
+
+    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
+        ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
+        ("data".to_string(), Value::Array(data)),
+    ])))))
+}
+
+/// POST /jaxrs/attendance/assemble/control/v2/groupschedule/list/filter
+pub async fn v2_groupschedule_list_filter(
+    pool: Extension<Pool>,
+    body: Option<Json<Value>>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+
+    let get = |key: &str| -> String {
+        body.as_ref()
+            .and_then(|Json(b)| b.get(key))
+            .and_then(|v| v.as_str())
+            .unwrap_or("")
+            .trim()
+            .to_string()
+    };
+    let group_id = get("groupId");
+    let user_id = get("userId");
+    let month = get("scheduleMonthString");
+
+    let rows = client
+        .query(
+            "SELECT id, group_id, user_id, schedule_month_string, schedule_date_string, shift_id \
+             FROM x_attendance_v2_group_schedule \
+             WHERE ($1 = '' OR group_id = $1) AND ($2 = '' OR user_id = $2) \
+               AND ($3 = '' OR schedule_month_string = $3) \
+             ORDER BY schedule_date_string ASC LIMIT 500",
+            &[&group_id, &user_id, &month],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    let data: Vec<Value> = rows
+        .iter()
+        .map(|row| {
+            Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                ("groupId".to_string(), Value::String(row.get::<_, Option<String>>("group_id").unwrap_or_default())),
+                ("userId".to_string(), Value::String(row.get::<_, Option<String>>("user_id").unwrap_or_default())),
+                (
+                    "scheduleMonthString".to_string(),
+                    Value::String(row.get::<_, Option<String>>("schedule_month_string").unwrap_or_default()),
+                ),
+                (
+                    "scheduleDateString".to_string(),
+                    Value::String(row.get::<_, Option<String>>("schedule_date_string").unwrap_or_default()),
+                ),
+                ("shiftId".to_string(), Value::String(row.get::<_, Option<String>>("shift_id").unwrap_or_default())),
+            ]))
+        })
+        .collect();
+
+    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
+        ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
+        ("data".to_string(), Value::Array(data)),
+    ])))))
+}
+
+// ── v2 leave template（1 个） ──────────────────────────────────────
+
+/// GET /jaxrs/attendance/assemble/control/v2/leave/template
+pub async fn v2_leave_template() -> Result<Json<ActionResult<Value>>, AppError> {
+    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
+        (
+            "columns".to_string(),
+            Value::Array(vec![
+                Value::String("person".to_string()),
+                Value::String("leaveType".to_string()),
+                Value::String("startTime".to_string()),
+                Value::String("endTime".to_string()),
+                Value::String("description".to_string()),
+            ]),
+        ),
+        ("fileName".to_string(), Value::String("请假导入模板.xlsx".to_string())),
+    ])))))
+}
+
+// ── v2 mobile（3 个） ──────────────────────────────────────────────
+
+fn now_unix_secs() -> u64 {
+    std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .map(|d| d.as_secs())
+        .unwrap_or(0)
+}
+
+/// GET /jaxrs/attendance/assemble/control/v2/mobile/check/pre
+pub async fn v2_mobile_pre_check(
+    pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+
+    // 当前用户命中的考勤组（复用 v2_group_person_date 的参与匹配语义）
+    let today = date_string_from_unix(now_unix_secs());
+    let group_rows = client
+        .query(
+            "SELECT id, group_name, check_type, work_place_id_list \
+             FROM x_attendance_v2_group \
+             WHERE (',' || COALESCE(participate_list, '') || ',') LIKE ('%,' || $1 || ',%') \
+               AND (start_date IS NULL OR start_date = '' OR start_date <= $2) \
+               AND (end_date IS NULL OR end_date = '' OR end_date >= $2) \
+             ORDER BY create_time DESC LIMIT 1",
+            &[&session.person_unique, &today],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    let pattern = format!("{}%", today);
+    let record_rows = client
+        .query(
+            "SELECT id, check_in_type, check_in_result, source_type, create_time \
+             FROM x_attendance_v2_checkin_record WHERE user_id = $1 AND record_date_string LIKE $2 \
+             ORDER BY create_time DESC",
+            &[&session.person_unique, &pattern],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    let records: Vec<Value> = record_rows
+        .iter()
+        .map(|row| {
+            Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                (
+                    "checkInType".to_string(),
+                    Value::String(row.get::<_, Option<String>>("check_in_type").unwrap_or_default()),
+                ),
+                (
+                    "checkInResult".to_string(),
+                    Value::String(row.get::<_, Option<String>>("check_in_result").unwrap_or_default()),
+                ),
+                (
+                    "sourceType".to_string(),
+                    Value::String(row.get::<_, Option<String>>("source_type").unwrap_or_default()),
+                ),
+                (
+                    "createTime".to_string(),
+                    Value::String(row.get::<_, Option<String>>("create_time").unwrap_or_default()),
+                ),
+            ]))
+        })
+        .collect();
+
+    let group = group_rows.first().map(|row| {
+        Value::Object(serde_json::Map::from_iter([
+            ("id".to_string(), Value::String(row.get("id"))),
+            ("groupName".to_string(), Value::String(row.get::<_, Option<String>>("group_name").unwrap_or_default())),
+            ("checkType".to_string(), Value::String(row.get::<_, Option<String>>("check_type").unwrap_or_default())),
+            (
+                "workPlaceIdList".to_string(),
+                Value::String(row.get::<_, Option<String>>("work_place_id_list").unwrap_or_default()),
+            ),
+        ]))
+    });
+    let can_check_in = group.is_some();
+
+    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
+        ("date".to_string(), Value::String(today)),
+        (
+            "group".to_string(),
+            group.unwrap_or(Value::Null),
+        ),
+        ("canCheckIn".to_string(), Value::Bool(can_check_in)),
+        ("records".to_string(), Value::Array(records)),
+    ])))))
+}
+
+async fn mobile_check_impl(
+    client: &deadpool_postgres::Client,
+    pool: &Pool,
+    session: &shared::session::Session,
+    payload: &Value,
+    default_source: &str,
+) -> Result<(String, bool), AppError> {
+    let user_id = normalize_key(
+        payload.get("userId").and_then(|v| v.as_str()).unwrap_or(&session.person_unique),
+    );
+    if user_id.is_empty() {
+        return Err(AppError::BadRequest("userId is required".to_string()));
+    }
+    if user_id != session.person_unique {
+        shared::middleware::require_owner(pool, session, &user_id).await?;
+    }
+
+    let date_str = payload
+        .get("recordDateString")
+        .and_then(|v| v.as_str())
+        .filter(|s| !s.trim().is_empty())
+        .map(|s| s.trim().to_string())
+        .unwrap_or_else(|| date_string_from_unix(now_unix_secs()));
+
+    let check_in_type = json_str(payload, "checkInType");
+    if check_in_type.is_empty() {
+        return Err(AppError::BadRequest("checkInType is required".to_string()));
+    }
+    let source_type = payload
+        .get("sourceType")
+        .and_then(|v| v.as_str())
+        .filter(|s| !s.trim().is_empty())
+        .unwrap_or(default_source)
+        .to_string();
+
+    let dup = client
+        .query_opt(
+            "SELECT id FROM x_attendance_v2_checkin_record \
+             WHERE user_id = $1 AND record_date_string = $2 AND check_in_type = $3 LIMIT 1",
+            &[&user_id, &date_str, &check_in_type],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+    if let Some(row) = dup {
+        let exist_id: String = row.get("id");
+        return Ok((exist_id, true));
+    }
+
+    let id = uuid::Uuid::new_v4().to_string();
+    let result = json_opt_str(payload, "checkInResult").unwrap_or_else(|| "Normal".to_string());
+    let description = json_opt_str(payload, "description");
+    let address = json_opt_str(payload, "recordAddress");
+    let longitude = json_opt_str(payload, "longitude");
+    let latitude = json_opt_str(payload, "latitude");
+    let group_id = json_opt_str(payload, "groupId");
+    let shift_id = json_opt_str(payload, "shiftId");
+
+    client
+        .execute(
+            "INSERT INTO x_attendance_v2_checkin_record (id, user_id, record_date_string, source_type, check_in_result, check_in_type, description, record_address, longitude, latitude, group_id, shift_id, creator_person, create_time, update_time) \
+             VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,NOW(),NOW())",
+            &[&id, &user_id, &date_str, &source_type, &result, &check_in_type, &description, &address, &longitude, &latitude, &group_id, &shift_id, &session.person_unique],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    Ok((id, false))
+}
+
+/// POST /jaxrs/attendance/assemble/control/v2/mobile/check
+pub async fn v2_mobile_check(
+    pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
+    Json(payload): Json<Value>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let (id, duplicated) = mobile_check_impl(&client, &pool, &session, &payload, "移动端").await?;
+
+    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
+        ("id".to_string(), Value::String(id)),
+        ("duplicated".to_string(), Value::Bool(duplicated)),
+    ])))))
+}
+
+/// POST /jaxrs/attendance/assemble/control/v2/mobile/check/ from/out
+pub async fn v2_mobile_check_from_out(
+    pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
+    Json(payload): Json<Value>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    // 外部系统调用（门禁等）：允许代他人打卡，但需 admin
+    let target = normalize_key(json_str(&payload, "userId").as_str());
+    if !target.is_empty() && target != session.person_unique {
+        require_admin(&pool, &session).await?;
+    }
+    let (id, duplicated) = mobile_check_impl(&client, &pool, &session, &payload, "外部设备").await?;
+
+    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
+        ("id".to_string(), Value::String(id)),
+        ("duplicated".to_string(), Value::Bool(duplicated)),
+        ("fromOut".to_string(), Value::Bool(true)),
+    ])))))
+}
+
+// ── v2 my（4 个） ──────────────────────────────────────────────────
+
+/// GET /jaxrs/attendance/assemble/control/v2/my/version
+pub async fn v2_my_version() -> Result<Json<ActionResult<Value>>, AppError> {
+    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
+        ("version".to_string(), Value::String("2".to_string())),
+    ])))))
+}
+
+/// GET /jaxrs/attendance/assemble/control/v2/my/controls
+pub async fn v2_my_controls(
+    pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let admin = shared::middleware::is_admin(&pool, &session.person_unique).await;
+
+    // 是否考勤组协助管理员：assist_admin_list 含本人
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let assist_rows = client
+        .query(
+            "SELECT 1 FROM x_attendance_v2_group \
+             WHERE (',' || COALESCE(assist_admin_list, '') || ',') LIKE ('%,' || $1 || ',%') LIMIT 1",
+            &[&session.person_unique],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
+        ("admin".to_string(), Value::Bool(admin)),
+        ("readAdmin".to_string(), Value::Bool(admin)),
+        ("assistAdmin".to_string(), Value::Bool(!assist_rows.is_empty())),
+    ])))))
+}
+
+/// POST /jaxrs/attendance/assemble/control/v2/my/detail/list
+pub async fn v2_my_detail_list(
+    pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
+    body: Option<Json<Value>>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+
+    let date = body
+        .as_ref()
+        .map(|Json(b)| b.get("date").and_then(|v| v.as_str()).unwrap_or("").trim().to_string())
+        .unwrap_or_default();
+
+    let rows = if date.is_empty() {
+        client
+            .query(
+                "SELECT id, person_id, date, status, create_time FROM x_attendance_detail \
+                 WHERE person_id = $1 ORDER BY date DESC LIMIT 100",
+                &[&session.person_unique],
+            )
+            .await
+            .map_err(|_| AppError::Internal)?
+    } else {
+        client
+            .query(
+                "SELECT id, person_id, date, status, create_time FROM x_attendance_detail \
+                 WHERE person_id = $1 AND date = $2 ORDER BY date DESC LIMIT 100",
+                &[&session.person_unique, &date],
+            )
+            .await
+            .map_err(|_| AppError::Internal)?
+    };
+
+    let data: Vec<Value> = rows
+        .iter()
+        .map(|row| {
+            Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                ("personId".to_string(), Value::String(row.get::<_, Option<String>>("person_id").unwrap_or_default())),
+                ("date".to_string(), Value::String(row.get::<_, Option<String>>("date").unwrap_or_default())),
+                ("status".to_string(), Value::String(row.get::<_, Option<String>>("status").unwrap_or_default())),
+                (
+                    "createTime".to_string(),
+                    Value::String(row.get::<_, Option<String>>("create_time").unwrap_or_default()),
+                ),
+            ]))
+        })
+        .collect();
+
+    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
+        ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
+        ("data".to_string(), Value::Array(data)),
+    ])))))
+}
+
+/// POST /jaxrs/attendance/assemble/control/v2/my/rest/date/check
+pub async fn v2_my_rest_date_check(
+    pool: Extension<Pool>,
+    body: Option<Json<Value>>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let date = body
+        .as_ref()
+        .map(|Json(b)| b.get("date").and_then(|v| v.as_str()).unwrap_or("").trim().to_string())
+        .unwrap_or_default();
+    if date.len() != 10 {
+        return Err(AppError::BadRequest("date(yyyy-MM-dd) is required".to_string()));
+    }
+
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+
+    // workday 配置表：命中记录按 is_workday 判定；未配置默认视为工作日
+    let row = client
+        .query_opt(
+            "SELECT is_workday FROM x_attendance_workday_config WHERE work_date = $1 ORDER BY create_time DESC LIMIT 1",
+            &[&date],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    let is_rest = match row {
+        Some(row) => !row.get::<_, Option<bool>>("is_workday").unwrap_or(true),
+        None => false,
+    };
+
+    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
+        ("date".to_string(), Value::String(date)),
+        ("restDay".to_string(), Value::Bool(is_rest)),
+    ])))))
+}
+
+// ── v2 record（4 个） ──────────────────────────────────────────────
+
+/// GET /jaxrs/attendance/assemble/control/v2/record/delete/people/{people}/date/{date}
+pub async fn v2_record_delete_people_date(
+    pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
+    Path((people, date)): Path<(String, String)>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let people = normalize_key(&people);
+    let date = date.trim();
+    if people.is_empty() || date.len() != 10 {
+        return Err(AppError::BadRequest("people and date(yyyy-MM-dd) are required".to_string()));
+    }
+
+    // 仅本人或管理员可删除打卡记录（IDOR）
+    shared::middleware::require_owner(&pool, &session, &people).await?;
+
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let pattern = format!("{}%", date);
+
+    let n_record = client
+        .execute(
+            "DELETE FROM x_attendance_record WHERE user_id = $1 AND check_in_time LIKE $2",
+            &[&people, &pattern],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+    let n_checkin = client
+        .execute(
+            "DELETE FROM x_attendance_v2_checkin_record WHERE user_id = $1 AND record_date_string = $2",
+            &[&people, &date],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
+        ("recordDeleted".to_string(), Value::Number(serde_json::Number::from(n_record as i64))),
+        ("checkinDeleted".to_string(), Value::Number(serde_json::Number::from(n_checkin as i64))),
+    ])))))
+}
+
+/// GET /jaxrs/attendance/assemble/control/v2/record/template
+pub async fn v2_record_template() -> Result<Json<ActionResult<Value>>, AppError> {
+    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
+        (
+            "columns".to_string(),
+            Value::Array(vec![
+                Value::String("userId".to_string()),
+                Value::String("recordDateString".to_string()),
+                Value::String("checkInType".to_string()),
+                Value::String("checkInResult".to_string()),
+                Value::String("description".to_string()),
+            ]),
+        ),
+        ("fileName".to_string(), Value::String("打卡记录导入模板.xlsx".to_string())),
+    ])))))
+}
+
+async fn import_checkin_rows(
+    pool: &Pool,
+    session: &shared::session::Session,
+    rows: &[Value],
+    default_source: &str,
+) -> Result<(i64, Vec<String>), AppError> {
+    let admin = shared::middleware::is_admin(pool, &session.person_unique).await;
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let mut inserted: i64 = 0;
+    let mut ids: Vec<String> = Vec::with_capacity(rows.len());
+
+    for item in rows {
+        let user_id = normalize_key(item.get("userId").and_then(|v| v.as_str()).unwrap_or(""));
+        if user_id.is_empty() {
+            return Err(AppError::BadRequest("each row requires userId".to_string()));
+        }
+        if !admin && user_id != session.person_unique {
+            return Err(AppError::Forbidden);
+        }
+        let date_str = item
+            .get("recordDateString")
+            .and_then(|v| v.as_str())
+            .filter(|s| !s.trim().is_empty())
+            .map(|s| s.trim().to_string())
+            .unwrap_or_else(|| date_string_from_unix(now_unix_secs()));
+        let check_in_type = item.get("checkInType").and_then(|v| v.as_str()).unwrap_or("").trim();
+        if check_in_type.is_empty() {
+            return Err(AppError::BadRequest("each row requires checkInType".to_string()));
+        }
+
+        let dup = client
+            .query_opt(
+                "SELECT id FROM x_attendance_v2_checkin_record \
+                 WHERE user_id = $1 AND record_date_string = $2 AND check_in_type = $3 LIMIT 1",
+                &[&user_id, &date_str, &check_in_type],
+            )
+            .await
+            .map_err(|_| AppError::Internal)?;
+        if let Some(row) = dup {
+            ids.push(row.get::<_, String>("id"));
+            continue;
+        }
+
+        let id = uuid::Uuid::new_v4().to_string();
+        let source_type = item
+            .get("sourceType")
+            .and_then(|v| v.as_str())
+            .filter(|s| !s.trim().is_empty())
+            .unwrap_or(default_source)
+            .to_string();
+        let result = item
+            .get("checkInResult")
+            .and_then(|v| v.as_str())
+            .filter(|s| !s.trim().is_empty())
+            .unwrap_or("Normal")
+            .to_string();
+        let description = item.get("description").and_then(|v| v.as_str()).map(|s| s.to_string());
+
+        client
+            .execute(
+                "INSERT INTO x_attendance_v2_checkin_record (id, user_id, record_date_string, source_type, check_in_result, check_in_type, description, creator_person, create_time, update_time) \
+                 VALUES ($1,$2,$3,$4,$5,$6,$7,$8,NOW(),NOW())",
+                &[&id, &user_id, &date_str, &source_type, &result, &check_in_type.to_string(), &description, &session.person_unique],
+            )
+            .await
+            .map_err(|_| AppError::Internal)?;
+        inserted += 1;
+        ids.push(id);
+    }
+
+    Ok((inserted, ids))
+}
+
+/// POST /jaxrs/attendance/assemble/control/v2/record/import
+pub async fn v2_record_import(
+    pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
+    Json(payload): Json<Value>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let rows = payload
+        .get("rows")
+        .and_then(|v| v.as_array())
+        .ok_or_else(|| AppError::BadRequest("rows array is required".to_string()))?;
+    if rows.is_empty() {
+        return Err(AppError::BadRequest("rows must not be empty".to_string()));
+    }
+
+    let (inserted, ids) = import_checkin_rows(&pool, &session, rows, "导入").await?;
+
+    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
+        ("inserted".to_string(), Value::Number(serde_json::Number::from(inserted))),
+        ("total".to_string(), Value::Number(serde_json::Number::from(ids.len() as i64))),
+        ("ids".to_string(), Value::Array(ids.into_iter().map(Value::String).collect())),
+    ])))))
+}
+
+/// POST /jaxrs/attendance/assemble/control/v2/record/import/daily
+pub async fn v2_record_import_daily(
+    pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
+    Json(payload): Json<Value>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let date_str = payload
+        .get("date")
+        .and_then(|v| v.as_str())
+        .map(|s| s.trim().to_string())
+        .unwrap_or_default();
+    if date_str.len() != 10 {
+        return Err(AppError::BadRequest("date(yyyy-MM-dd) is required".to_string()));
+    }
+    let records = payload
+        .get("records")
+        .and_then(|v| v.as_array())
+        .ok_or_else(|| AppError::BadRequest("records array is required".to_string()))?;
+    if records.is_empty() {
+        return Err(AppError::BadRequest("records must not be empty".to_string()));
+    }
+
+    // 归一化：为每行补齐 recordDateString 后复用批量导入
+    let normalized: Vec<Value> = records
+        .iter()
+        .map(|r| {
+            let mut obj = r.clone();
+            if let Some(map) = obj.as_object_mut() {
+                map.entry("recordDateString".to_string()).or_insert_with(|| Value::String(date_str.clone()));
+            }
+            obj
+        })
+        .collect();
+
+    let (inserted, ids) = import_checkin_rows(&pool, &session, &normalized, "导入").await?;
+
+    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
+        ("date".to_string(), Value::String(date_str)),
+        ("inserted".to_string(), Value::Number(serde_json::Number::from(inserted))),
+        ("ids".to_string(), Value::Array(ids.into_iter().map(Value::String).collect())),
+    ])))))
+}
+
+// ── v2 workplace（4 个，复用 x_attendance_workplace 表） ───────────
+
+/// POST /jaxrs/attendance/assemble/control/v2/workplace
+pub async fn v2_workplace_post(
+    pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
+    Json(payload): Json<Value>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    require_admin(&pool, &session).await?;
+
+    let name = json_str(&payload, "name");
+    if name.trim().is_empty() {
+        return Err(AppError::BadRequest("name is required".to_string()));
+    }
+    let address = json_opt_str(&payload, "address");
+    let req_id = json_opt_str(&payload, "id");
+
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+
+    // 归一化查重：同名（trim+lower）地点只保留一行；带 id 则按 id 更新
+    let target_id: Option<String> = match req_id {
+        Some(ref id) => {
+            let exists = client
+                .query_opt("SELECT id FROM x_attendance_workplace WHERE id = $1", &[id])
+                .await
+                .map_err(|_| AppError::Internal)?;
+            match exists {
+                Some(row) => Some(row.get::<_, String>("id")),
+                None => None,
+            }
+        }
+        None => {
+            let norm = normalize_key(&name);
+            client
+                .query_opt(
+                    "SELECT id FROM x_attendance_workplace WHERE LOWER(TRIM(name)) = $1 LIMIT 1",
+                    &[&norm],
+                )
+                .await
+                .map_err(|_| AppError::Internal)?
+                .map(|row| row.get::<_, Option<String>>("id").unwrap_or_default())
+        }
+    };
+
+    match target_id {
+        Some(id) if !id.is_empty() => {
+            client
+                .execute(
+                    "UPDATE x_attendance_workplace SET name = $2, address = $3, update_person = $4, update_time = NOW() WHERE id = $1",
+                    &[&id, &name, &address, &session.person_unique],
+                )
+                .await
+                .map_err(|_| AppError::Internal)?;
+            Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(id)),
+                ("name".to_string(), Value::String(name)),
+                ("updated".to_string(), Value::Bool(true)),
+            ])))))
+        }
+        _ => {
+            let id = uuid::Uuid::new_v4().to_string();
+            client
+                .execute(
+                    "INSERT INTO x_attendance_workplace (id, name, address, creator, creator_person, update_person, create_time, update_time) \
+                     VALUES ($1,$2,$3,$4,$4,$4,NOW(),NOW())",
+                    &[&id, &name, &address, &session.person_unique],
+                )
+                .await
+                .map_err(|_| AppError::Internal)?;
+            Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(id)),
+                ("name".to_string(), Value::String(name)),
+                ("created".to_string(), Value::Bool(true)),
+            ])))))
+        }
+    }
+}
+
+/// DELETE /jaxrs/attendance/assemble/control/v2/workplace/{id}
+pub async fn v2_workplace_delete(
+    pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
+    Path(id): Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    delete_admin_record(&pool, "x_attendance_workplace", &id, &session, "workplace").await
+}
+
+/// GET /jaxrs/attendance/assemble/control/v2/workplace/list/all
+pub async fn v2_workplace_list_all(
+    pool: Extension<Pool>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+
+    let rows = client
+        .query(
+            "SELECT id, name, address, create_time FROM x_attendance_workplace ORDER BY create_time DESC",
+            &[],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    let data: Vec<Value> = rows
+        .iter()
+        .map(workplace_row_value)
+        .collect();
+
+    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
+        ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
+        ("data".to_string(), Value::Array(data)),
+    ])))))
+}
+
+fn workplace_row_value(row: &deadpool_postgres::tokio_postgres::Row) -> Value {
+    Value::Object(serde_json::Map::from_iter([
+        ("id".to_string(), Value::String(row.get::<_, Option<String>>("id").unwrap_or_default())),
+        ("name".to_string(), Value::String(row.get::<_, Option<String>>("name").unwrap_or_default())),
+        ("address".to_string(), Value::String(row.get::<_, Option<String>>("address").unwrap_or_default())),
+        (
+            "createTime".to_string(),
+            Value::String(row.get::<_, Option<String>>("create_time").unwrap_or_default()),
+        ),
+    ]))
+}
+
+/// POST /jaxrs/attendance/assemble/control/v2/workplace/list/ids
+pub async fn v2_workplace_list_ids(
+    pool: Extension<Pool>,
+    Json(payload): Json<Value>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let ids = payload
+        .get("ids")
+        .and_then(|v| v.as_array())
+        .map(|a| {
+            a.iter()
+                .filter_map(|x| x.as_str())
+                .map(|s| s.trim().to_string())
+                .filter(|s| !s.is_empty())
+                .collect::<Vec<_>>()
+                .join(",")
+        })
+        .unwrap_or_default();
+    if ids.is_empty() {
+        return Err(AppError::BadRequest("ids array is required".to_string()));
+    }
+
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+
+    let rows = client
+        .query(
+            "SELECT id, name, address, create_time FROM x_attendance_workplace \
+             WHERE id = ANY(string_to_array($1, ',')) ORDER BY create_time DESC",
+            &[&ids],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    let data: Vec<Value> = rows.iter().map(workplace_row_value).collect();
+
+    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
+        ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
+        ("data".to_string(), Value::Array(data)),
+    ])))))
+}
+
+
