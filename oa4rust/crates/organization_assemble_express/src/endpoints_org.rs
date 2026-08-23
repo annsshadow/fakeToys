@@ -92,8 +92,12 @@ async fn unit_tree_scope(
     body: Value,
     direction: &str,
     nested: bool,
+    objects: bool,
 ) -> Result<AxumJson<ActionResult<Value>>, AppError> {
     const SUB_DIRECT_SQL: &str = "SELECT id FROM x_org_unit WHERE deleted_at IS NULL \
+         AND parent_id IN (SELECT id FROM x_org_unit WHERE deleted_at IS NULL AND (id = ANY($1) OR name = ANY($1))) \
+         ORDER BY id";
+    const SUB_DIRECT_OBJ_SQL: &str = "SELECT id, name, parent_id, level FROM x_org_unit WHERE deleted_at IS NULL \
          AND parent_id IN (SELECT id FROM x_org_unit WHERE deleted_at IS NULL AND (id = ANY($1) OR name = ANY($1))) \
          ORDER BY id";
     const SUB_NESTED_SQL: &str = "WITH RECURSIVE sub AS (\
@@ -102,9 +106,21 @@ async fn unit_tree_scope(
          SELECT u.id FROM x_org_unit u JOIN sub s ON u.parent_id = s.id WHERE u.deleted_at IS NULL) \
          SELECT id FROM sub WHERE id NOT IN (SELECT id FROM x_org_unit WHERE deleted_at IS NULL AND (id = ANY($1) OR name = ANY($1))) \
          ORDER BY id";
+    const SUB_NESTED_OBJ_SQL: &str = "WITH RECURSIVE sub AS (\
+         SELECT id FROM x_org_unit WHERE deleted_at IS NULL AND (id = ANY($1) OR name = ANY($1)) \
+         UNION \
+         SELECT u.id FROM x_org_unit u JOIN sub s ON u.parent_id = s.id WHERE u.deleted_at IS NULL) \
+         SELECT u.id, u.name, u.parent_id, u.level FROM x_org_unit u \
+         WHERE u.deleted_at IS NULL AND u.id IN (SELECT id FROM sub) AND u.id NOT IN (\
+             SELECT id FROM x_org_unit WHERE deleted_at IS NULL AND (id = ANY($1) OR name = ANY($1))) \
+         ORDER BY u.id";
     const SUP_DIRECT_SQL: &str = "WITH seeds AS (\
          SELECT id, parent_id FROM x_org_unit WHERE deleted_at IS NULL AND (id = ANY($1) OR name = ANY($1))) \
          SELECT DISTINCT u.id FROM x_org_unit u JOIN seeds s ON u.id = s.parent_id \
+         WHERE u.deleted_at IS NULL ORDER BY u.id";
+    const SUP_DIRECT_OBJ_SQL: &str = "WITH seeds AS (\
+         SELECT id, parent_id FROM x_org_unit WHERE deleted_at IS NULL AND (id = ANY($1) OR name = ANY($1))) \
+         SELECT DISTINCT u.id, u.name, u.parent_id, u.level FROM x_org_unit u JOIN seeds s ON u.id = s.parent_id \
          WHERE u.deleted_at IS NULL ORDER BY u.id";
     const SUP_NESTED_SQL: &str = "WITH RECURSIVE sup AS (\
          SELECT id, parent_id FROM x_org_unit WHERE deleted_at IS NULL AND (id = ANY($1) OR name = ANY($1)) \
@@ -112,28 +128,45 @@ async fn unit_tree_scope(
          SELECT u.id, u.parent_id FROM x_org_unit u JOIN sup s ON s.parent_id = u.id WHERE u.deleted_at IS NULL) \
          SELECT id FROM sup WHERE id NOT IN (SELECT id FROM x_org_unit WHERE deleted_at IS NULL AND (id = ANY($1) OR name = ANY($1))) \
          ORDER BY id";
+    const SUP_NESTED_OBJ_SQL: &str = "WITH RECURSIVE sup AS (\
+         SELECT id, parent_id FROM x_org_unit WHERE deleted_at IS NULL AND (id = ANY($1) OR name = ANY($1)) \
+         UNION \
+         SELECT u.id, u.parent_id FROM x_org_unit u JOIN sup s ON s.parent_id = u.id WHERE u.deleted_at IS NULL) \
+         SELECT uu.id, uu.name, uu.parent_id, uu.level FROM x_org_unit uu \
+         WHERE uu.deleted_at IS NULL AND uu.id IN (SELECT id FROM sup) AND uu.id NOT IN (\
+             SELECT id FROM x_org_unit WHERE deleted_at IS NULL AND (id = ANY($1) OR name = ANY($1))) \
+         ORDER BY uu.id";
 
     let flags = string_list(&body, "unitList");
     capped(&flags)?;
     if flags.is_empty() {
         return ok_json(count_data(0, vec![]));
     }
-    let sql = match (direction, nested) {
-        ("sub", false) => SUB_DIRECT_SQL,
-        ("sub", true) => SUB_NESTED_SQL,
-        ("sup", false) => SUP_DIRECT_SQL,
-        _ => SUP_NESTED_SQL,
+    let sql = match (direction, nested, objects) {
+        ("sub", false, false) => SUB_DIRECT_SQL,
+        ("sub", false, true) => SUB_DIRECT_OBJ_SQL,
+        ("sub", true, false) => SUB_NESTED_SQL,
+        ("sub", true, true) => SUB_NESTED_OBJ_SQL,
+        ("sup", false, false) => SUP_DIRECT_SQL,
+        ("sup", false, true) => SUP_DIRECT_OBJ_SQL,
+        ("sup", true, false) => SUP_NESTED_SQL,
+        (_, _, _) => SUP_NESTED_OBJ_SQL,
     };
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let rows = client
         .query(sql, &[&flags])
         .await
         .map_err(|_| AppError::Internal)?;
-    let list: Vec<Value> = rows
-        .iter()
-        .map(|r| Value::String(r.get::<_, String>("id")))
-        .collect();
-    ok_json(count_data(list.len(), list))
+    if objects {
+        let data: Vec<Value> = rows.iter().map(crate::endpoints::row_to_map).collect();
+        ok_json(count_data(data.len(), data))
+    } else {
+        let list: Vec<Value> = rows
+            .iter()
+            .map(|r| Value::String(r.get::<_, String>("id")))
+            .collect();
+        ok_json(count_data(list.len(), list))
+    }
 }
 
 /// POST /jaxrs/unit/list/unit/sub/direct: direct child units.
@@ -141,7 +174,7 @@ pub async fn unit_list_unit_sub_direct(
     pool: Extension<Pool>,
     Json(body): Json<Value>,
 ) -> Result<AxumJson<ActionResult<Value>>, AppError> {
-    unit_tree_scope(pool, body, "sub", false).await
+    unit_tree_scope(pool, body, "sub", false, false).await
 }
 
 /// POST /jaxrs/unit/list/unit/sub/nested: recursive descendant units.
@@ -149,7 +182,7 @@ pub async fn unit_list_unit_sub_nested(
     pool: Extension<Pool>,
     Json(body): Json<Value>,
 ) -> Result<AxumJson<ActionResult<Value>>, AppError> {
-    unit_tree_scope(pool, body, "sub", true).await
+    unit_tree_scope(pool, body, "sub", true, false).await
 }
 
 /// POST /jaxrs/unit/list/unit/sup/direct: direct parent units.
@@ -157,7 +190,7 @@ pub async fn unit_list_unit_sup_direct(
     pool: Extension<Pool>,
     Json(body): Json<Value>,
 ) -> Result<AxumJson<ActionResult<Value>>, AppError> {
-    unit_tree_scope(pool, body, "sup", false).await
+    unit_tree_scope(pool, body, "sup", false, false).await
 }
 
 /// POST /jaxrs/unit/list/unit/sup/nested: recursive ancestor units.
@@ -165,7 +198,39 @@ pub async fn unit_list_unit_sup_nested(
     pool: Extension<Pool>,
     Json(body): Json<Value>,
 ) -> Result<AxumJson<ActionResult<Value>>, AppError> {
-    unit_tree_scope(pool, body, "sup", true).await
+    unit_tree_scope(pool, body, "sup", true, false).await
+}
+
+/// POST /jaxrs/unit/list/unit/sub/direct/object (Java ActionListWithUnitSubDirectObject)。
+pub async fn unit_list_unit_sub_direct_object(
+    pool: Extension<Pool>,
+    Json(body): Json<Value>,
+) -> Result<AxumJson<ActionResult<Value>>, AppError> {
+    unit_tree_scope(pool, body, "sub", false, true).await
+}
+
+/// POST /jaxrs/unit/list/unit/sub/nested/object。
+pub async fn unit_list_unit_sub_nested_object(
+    pool: Extension<Pool>,
+    Json(body): Json<Value>,
+) -> Result<AxumJson<ActionResult<Value>>, AppError> {
+    unit_tree_scope(pool, body, "sub", true, true).await
+}
+
+/// POST /jaxrs/unit/list/unit/sup/direct/object。
+pub async fn unit_list_unit_sup_direct_object(
+    pool: Extension<Pool>,
+    Json(body): Json<Value>,
+) -> Result<AxumJson<ActionResult<Value>>, AppError> {
+    unit_tree_scope(pool, body, "sup", false, true).await
+}
+
+/// POST /jaxrs/unit/list/unit/sup/nested/object。
+pub async fn unit_list_unit_sup_nested_object(
+    pool: Extension<Pool>,
+    Json(body): Json<Value>,
+) -> Result<AxumJson<ActionResult<Value>>, AppError> {
+    unit_tree_scope(pool, body, "sup", true, true).await
 }
 
 /// POST /jaxrs/unit/check/unit/has/person: does each unit contain persons?
