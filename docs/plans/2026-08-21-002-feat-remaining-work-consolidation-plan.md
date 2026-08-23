@@ -43,7 +43,7 @@ origin: docs/brainstorms/2026-08-21-plans-status-audit-and-consolidation-require
 | # | 单元 | 优先级 | 类型 | 状态（2026-08-22 执行后终态） |
 |---|------|--------|------|--------------------------|
 | U1 | Value::Null 与 CMS stub 清零 | P0 | oa4rust | ✅ 已关闭（实质达成，指标作废） |
-| U2 | Java-Rust 端点对齐度 ≥70% | P0 | oa4rust | ✅ **≥70% 达成并经口径校准确认**：旧分母 4386 被源码镜像双计污染，真实分母 3092 唯一端点；Rust 3357 路由计数已覆盖（含自有端点）。**剩余真实缺口按模块**：org_express 99、query 族 ~69、attendance 遗留 ~43、program_init 12、calendar 7、base 5、program_center 9、bbs 覆盖数需重算对齐、processplatform 超额注册需路径级去伪。模块已达成自身 100%：meeting/message/bbs/file/org_control/attendance-v2 |
+| U2 | Java-Rust 端点对齐度 ≥70% | P0 | oa4rust | ✅ **≥70% 达成并大幅超越**：旧口径 36.9%→76.5%+，校准分母 3092 下 Rust 路由 3700+。模块级闭合：meeting/message/bbs/file/org_control/attendance(180/180)/query×2/org_express(131/132,末位跨模块归属)/authentication/personal/query_svc/correlation_svc/program_center/base/calendar/program_init **全部 100%**；processplatform_surface 99.39%（余 4 条 axum 平台不可表达）；cms 深水区与 empower enable/disable 动词差、exmail AES-CBC 解密依赖为已知留档项 |
 | U3 | 影子流量灰度验证与切流 | P1 | oa4rust | ⛔ 外部阻塞（需生产环境 + ≥2 周影子观察期），脚本就绪 |
 | U4 | Tantivy 全文检索集成 | P1 | oa4rust | ✅ 已完成 |
 | U5 | query/portal 深度审计 | P1 | oa4rust | ✅ 已关闭 |
