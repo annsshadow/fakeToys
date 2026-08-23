@@ -1747,6 +1747,7 @@ dependencies = [
  "async-trait",
  "axum 0.8.9",
  "base64 0.22.1",
+ "chrono",
  "deadpool-postgres",
  "serde",
  "serde_json",
@@ -3122,6 +3123,8 @@ name = "meeting_assemble_control"
 version = "0.1.0"
 dependencies = [
  "axum 0.8.9",
+ "base64 0.22.1",
+ "chrono",
  "deadpool-postgres",
  "serde",
  "serde_json",
@@ -3857,6 +3860,7 @@ name = "organization_assemble_control"
 version = "0.1.0"
 dependencies = [
  "axum 0.8.9",
+ "chrono",
  "deadpool-postgres",
  "serde",
  "serde_json",
