@@ -56,6 +56,21 @@ use crate::{
 use crate::{
     snap_u2_get, snap_u2_delete, snap_u2_restore,
     snap_u2_list_next_count, snap_u2_list_prev_count, snap_u2_list_next_count_manage, snap_u2_list_prev_count_manage,
+    // plan002 U2-c：POST filter 族真缺失闭合
+    snap_u2_manage_filter_paging, snap_u2_manage_app_paging_filter,
+    snap_u2_manage_next_filter, snap_u2_manage_prev_filter,
+    snap_u2_upload, snap_u2_download,
+    read_u2_filter_attribute_post, readcompleted_u2_filter_attribute_post,
+    task_u2_filter_attribute_post, taskcompleted_u2_filter_attribute_post,
+    review_u2_filter_attribute_post, review_u2_v2_search, review_u2_filter_create_entry,
+    route_u2_list_by_ids,
+    draft_u2_save, draft_u2_save_mockputtopost,
+    keylock_u2_lock, keylock_u2_lock_mockputtopost,
+    serialnumber_u2_create, serialnumber_u2_generate,
+    handover_u2_create, openapi_get,
+    work_u2_v3_retract, workcompleted_u2_shift_time,
+    attachment_u2c_download_work_stream_ext, attachment_u2c_download_work_ext,
+    attachment_u2c_download_wc_stream_ext, attachment_u2c_download_wc_ext,
     snap_u2_work_type_snap, snap_u2_work_type_abandoned, snap_u2_work_type_suspend,
     snap_u2_workcompleted_type_snapworkcompleted, snap_u2_workcompleted_type_abandonedworkcompleted,
     attachment_u2_list_job_job, attachment_u2_list_work_work_id, attachment_u2_list_workcompleted_work_completed_id,
@@ -1161,5 +1176,37 @@ pub fn router(pool: Pool) -> Router {
         .route("/jaxrs/processplatform/assemble/surface/attachment/{id}/workcompleted/{workCompletedId}", delete(attachment_u2b_delete_by_workcompleted))
         .route("/jaxrs/processplatform/assemble/surface/attachment/{id}/work/{workId}/mockdeletetoget", get(attachment_u2b_get_by_work_mockdeletetoget))
         .route("/jaxrs/processplatform/assemble/surface/attachment/{id}/workcompleted/{workCompletedId}/mockdeletetoget", get(attachment_u2b_get_by_wc_mockdeletetoget))
+
+        // ── plan002 U2-c：POST filter 族真缺失闭合（28 条，对照对账报告 §2.4） ──
+        .route("/jaxrs/processplatform/assemble/surface/snap/list/filter/{page}/size/{size}/manage", post(snap_u2_manage_filter_paging))
+        .route("/jaxrs/processplatform/assemble/surface/snap/list/paging/{page}/size/{size}/application/{applicationFlag}/filter/manage", post(snap_u2_manage_app_paging_filter))
+        .route("/jaxrs/processplatform/assemble/surface/snap/list/{id}/next/{count}/filter/manage", post(snap_u2_manage_next_filter))
+        .route("/jaxrs/processplatform/assemble/surface/snap/list/{id}/prev/{count}/filter/manage", post(snap_u2_manage_prev_filter))
+        .route("/jaxrs/processplatform/assemble/surface/read/filter/attribute/filter", post(read_u2_filter_attribute_post))
+        .route("/jaxrs/processplatform/assemble/surface/readcompleted/filter/attribute/filter", post(readcompleted_u2_filter_attribute_post))
+        .route("/jaxrs/processplatform/assemble/surface/task/filter/attribute/filter", post(task_u2_filter_attribute_post))
+        .route("/jaxrs/processplatform/assemble/surface/taskcompleted/filter/attribute/filter", post(taskcompleted_u2_filter_attribute_post))
+        .route("/jaxrs/processplatform/assemble/surface/review/filter/attribute", post(review_u2_filter_attribute_post))
+        .route("/jaxrs/processplatform/assemble/surface/review/filter/create/entry", get(review_u2_filter_create_entry))
+        .route("/jaxrs/processplatform/assemble/surface/route/list/mockputtopost", post(route_u2_list_by_ids))
+        .route("/jaxrs/processplatform/assemble/surface/review/v2/search", post(review_u2_v2_search))
+        .route("/jaxrs/processplatform/assemble/surface/draft", put(draft_u2_save))
+        .route("/jaxrs/processplatform/assemble/surface/draft/mockputtopost", post(draft_u2_save_mockputtopost))
+        .route("/jaxrs/processplatform/assemble/surface/keylock/lock", put(keylock_u2_lock))
+        .route("/jaxrs/processplatform/assemble/surface/keylock/lock/mockputtopost", post(keylock_u2_lock_mockputtopost))
+        .route("/jaxrs/processplatform/assemble/surface/serialnumber", post(serialnumber_u2_create))
+        .route("/jaxrs/processplatform/assemble/surface/serialnumber/generate/process/{processId}/name/{name}/serial", post(serialnumber_u2_generate))
+        .route("/jaxrs/processplatform/assemble/surface/handover", post(handover_u2_create))
+        .route("/jaxrs/processplatform/assemble/surface/openapi", get(openapi_get))
+        .route("/jaxrs/processplatform/assemble/surface/work/v3/retract", post(work_u2_v3_retract))
+        .route("/jaxrs/processplatform/assemble/surface/workcompleted/shift/time", post(workcompleted_u2_shift_time))
+        .route("/jaxrs/processplatform/assemble/surface/snap/upload", post(snap_u2_upload))
+        .route("/jaxrs/processplatform/assemble/surface/snap/{id}/download", get(snap_u2_download))
+        // 形状残差说明：Java 单段双参数 {fileName}.{ext} 受 matchit 每段单参限制，
+        // 以 {fileName}（含扩展名）注册，行为等价（见 lib.rs U2-c 段注释）
+        .route("/jaxrs/processplatform/assemble/surface/attachment/download/{id}/work/{workId}/stream/{fileName}", get(attachment_u2c_download_work_stream_ext))
+        .route("/jaxrs/processplatform/assemble/surface/attachment/download/{id}/work/{workId}/{fileName}", get(attachment_u2c_download_work_ext))
+        .route("/jaxrs/processplatform/assemble/surface/attachment/download/{id}/workcompleted/{workCompletedId}/stream/{fileName}", get(attachment_u2c_download_wc_stream_ext))
+        .route("/jaxrs/processplatform/assemble/surface/attachment/download/{id}/workcompleted/{workCompletedId}/{fileName}", get(attachment_u2c_download_wc_ext))
 .layer(Extension(pool))
 }

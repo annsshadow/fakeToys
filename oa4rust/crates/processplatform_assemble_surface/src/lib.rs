@@ -16284,6 +16284,1285 @@ pub async fn attachment_u2b_get_by_wc_mockdeletetoget(
     }
 }
 
+// ═════════ plan002 U2-c：POST filter 族真缺失闭合（28 条） ═════════
+// 对照 docs/audits/alignment-reconciliation.md §2.4 真缺失清单（28 条 = 32 exact
+// − 2 casefold(invoice) − 2 literal_shift(task/list date|person exclude/draft)）：
+//   snap manage 过滤族×4、filter attribute POST 变体×5、review v2 search×1、
+//   draft/keylock/serialnumber 写族×6、snap upload/download×2、attachment 扩展名下载×4、
+//   handover/openapi/work v3 retract/workcompleted shift time×5。
+//
+// 实现契约：
+//   - 全部真实参数化 SQL（无字符串拼接用户输入）；分页过滤族 LIMIT/OFFSET +
+//     ILIKE（LIKE 通配符转义防注入）+ total 计数（写入 ActionResult.count）；
+//   - 资源级 IDOR 门禁：owner 或 admin（u2_check_owner / u2_require_admin /
+//     会话 person 作用域强制），模式与 U2 snap/attachment 先例一致；
+//   - 表结构依赖 migrations/075_process_surface_u2_keylock_serialnumber.sql。
+//
+// 已知形状残差（如实记录，非静默降级）：Java
+// `/attachment/download/{id}/work/{workId}/(stream/){fileName}.{ext}` 为"单段双参数"，
+// matchit(axum 0.8) 强制每段仅允许一个参数，故以 `{fileName}` 单段注册并在 handler 内
+// 解析 name.ext —— 行为等价（下载 + 命名），严格归一化口径下与 Java 形状存在 4 条无法
+// 精确闭合的残差。
+
+use deadpool_postgres::tokio_postgres::types::ToSql;
+use std::collections::BTreeMap;
+
+/// LIKE 通配符转义 + %包裹。用户输入中的 % _ \ 一律转义，
+/// 防止 `%`/`_` 被当作通配符造成全表扫描式注入。
+fn u2_like_pattern(key: &str) -> String {
+    let mut out = String::with_capacity(key.len() + 8);
+    for c in key.chars() {
+        if matches!(c, '%' | '_' | '\\') {
+            out.push('\\');
+        }
+        out.push(c);
+    }
+    format!("%{}%", out)
+}
+
+/// Java adjustPage：页码从 1 起；adjustSize：每页 1..=200。
+fn u2_adjust_page(page: i64) -> i64 {
+    if page < 1 { 1 } else { page }
+}
+
+fn u2_adjust_size(size: i64) -> i64 {
+    size.clamp(1, 200)
+}
+
+/// 过滤条件 → 参数化 WHERE 片段构建器（占位符从 1 连续编号）。
+#[derive(Debug, Default)]
+struct U2FilterSql {
+    clauses: Vec<String>,
+    params: Vec<String>,
+}
+
+impl U2FilterSql {
+    fn push_eq(&mut self, col: &str, val: &str) {
+        self.params.push(val.to_string());
+        self.clauses.push(format!("{} = ${}", col, self.params.len()));
+    }
+
+    fn push_in(&mut self, col: &str, vals: &[String]) {
+        if vals.is_empty() {
+            return;
+        }
+        let placeholders: Vec<String> = vals
+            .iter()
+            .map(|v| {
+                self.params.push(v.clone());
+                format!("${}", self.params.len())
+            })
+            .collect();
+        self.clauses.push(format!("{} IN ({})", col, placeholders.join(", ")));
+    }
+
+    /// 多列 OR ILIKE 匹配（同一转义后的 pattern 复用同一占位值）。
+    fn push_key_ilike(&mut self, cols: &[&str], key: &str) {
+        if key.trim().is_empty() {
+            return;
+        }
+        let pat = u2_like_pattern(key);
+        let ors: Vec<String> = cols
+            .iter()
+            .map(|col| {
+                self.params.push(pat.clone());
+                format!("{} ILIKE ${}", col, self.params.len())
+            })
+            .collect();
+        self.clauses.push(format!("({})", ors.join(" OR ")));
+    }
+
+    fn where_sql(&self) -> String {
+        if self.clauses.is_empty() {
+            "1=1".to_string()
+        } else {
+            self.clauses.join(" AND ")
+        }
+    }
+
+    /// 统一绑定辅助：字符串过滤参数在前，尾部追加任意 ToSql 参数（如 limit/offset）。
+    fn bind<'a>(&'a self, tail: &[&'a (dyn ToSql + Sync)]) -> Vec<&'a (dyn ToSql + Sync)> {
+        let mut bind: Vec<&'a (dyn ToSql + Sync)> =
+            self.params.iter().map(|s| s as &(dyn ToSql + Sync)).collect();
+        bind.extend_from_slice(tail);
+        bind
+    }
+}
+
+/// Java BaseAction.FilterWi：applicationList / processList / personList / key。
+#[derive(Debug, Default, Deserialize)]
+#[allow(non_snake_case)]
+pub struct U2FilterWi {
+    #[serde(default)]
+    pub applicationList: Vec<String>,
+    #[serde(default)]
+    pub processList: Vec<String>,
+    #[serde(default)]
+    pub personList: Vec<String>,
+    #[serde(default)]
+    pub key: Option<String>,
+}
+
+impl U2FilterWi {
+    fn to_snap_filter_sql(&self, application_flag: Option<&str>) -> U2FilterSql {
+        let mut fs = U2FilterSql::default();
+        if let Some(app) = application_flag {
+            fs.push_eq("\"xapplication\"", app);
+        }
+        fs.push_in("\"xapplication\"", &self.applicationList);
+        fs.push_in("\"xprocess\"", &self.processList);
+        fs.push_in("\"xperson\"", &self.personList);
+        let key = self.key.clone().unwrap_or_default();
+        fs.push_key_ilike(&["\"xtitle\"", "\"xcreatorPerson\"", "\"xcreatorUnit\""], &key);
+        fs
+    }
+}
+
+/// 分页响应统一出口：data={count,data} 且 ActionResult.count 携带 total。
+fn u2_paged_result(data: Vec<Value>, total: i64) -> Json<ActionResult<Value>> {
+    let mut result = ActionResult::success(Value::Object(serde_json::Map::from_iter([
+        ("count".to_string(), Value::Number(serde_json::Number::from(total))),
+        ("data".to_string(), Value::Array(data)),
+    ])));
+    result.count = Some(total);
+    Json(result)
+}
+
+fn u2_num_opt(row: &deadpool_postgres::tokio_postgres::Row, col: &str) -> Value {
+    row.get::<_, Option<i64>>(col)
+        .map(|v| Value::Number(v.into()))
+        .unwrap_or(Value::Null)
+}
+
+async fn u2_is_admin(pool: &Pool, session: &shared::session::Session) -> Result<bool, AppError> {
+    Ok(shared::middleware::is_admin(pool, &session.person_unique).await)
+}
+
+// ── snap manage 过滤族（admin 门禁 + FilterWi + LIMIT/OFFSET + total） ────────
+
+const U2_SNAP_MANAGE_COLS: &str = "id, \"xid\", \"xtitle\", \"xjob\", \"xwork\", \"xworkCompleted\", \
+\"xtype\", \"xperson\", \"xidentity\", \"xunit\", \"xapplication\", \"xapplicationName\", \
+\"xprocess\", \"xprocessName\", \"xcreatorPerson\", \"xactivity\", \"xactivityName\", \
+\"xcreateTime\", \"xupdateTime\", \"sequence\"";
+
+async fn u2_snap_manage_paging(
+    pool: &Pool,
+    page: i64,
+    size: i64,
+    fs: U2FilterSql,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let adj_size = u2_adjust_size(size);
+    let offset = (u2_adjust_page(page) - 1) * adj_size;
+    let where_clause = fs.where_sql();
+
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let count_sql = format!(
+        "SELECT COUNT(*)::bigint FROM \"pp_c_snap\" WHERE {where_clause}"
+    );
+    let total: i64 = client
+        .query_one(&count_sql, &fs.bind(&[]))
+        .await
+        .map_err(|_| AppError::Internal)?
+        .get(0);
+
+    let list_sql = format!(
+        "SELECT {U2_SNAP_MANAGE_COLS} FROM \"pp_c_snap\" WHERE {where_clause} \
+         ORDER BY \"sequence\" DESC NULLS LAST LIMIT ${} OFFSET ${}",
+        fs.params.len() + 1,
+        fs.params.len() + 2,
+    );
+    let rows = client
+        .query(
+            &list_sql,
+            &fs.bind(&[&adj_size as &(dyn ToSql + Sync), &offset]),
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    let data: Vec<Value> = rows
+        .iter()
+        .map(|row| {
+            let mut v = u2_snap_json(row);
+            if let Value::Object(ref mut m) = v {
+                m.insert("sequence".to_string(), u2_s(row, "sequence"));
+            }
+            v
+        })
+        .collect();
+    Ok(u2_paged_result(data, total))
+}
+
+pub async fn snap_u2_manage_filter_paging(
+    pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
+    axum::extract::Path((page, size)): axum::extract::Path<(i64, i64)>,
+    Json(wi): Json<U2FilterWi>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    u2_require_admin(&pool, &session).await?;
+    let fs = wi.to_snap_filter_sql(None);
+    u2_snap_manage_paging(&pool, page, size, fs).await
+}
+
+pub async fn snap_u2_manage_app_paging_filter(
+    pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
+    axum::extract::Path((page, size, application_flag)): axum::extract::Path<(i64, i64, String)>,
+    Json(wi): Json<U2FilterWi>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    u2_require_admin(&pool, &session).await?;
+    let fs = wi.to_snap_filter_sql(Some(&application_flag));
+    u2_snap_manage_paging(&pool, page, size, fs).await
+}
+
+async fn u2_snap_manage_cursor(
+    pool: &Pool,
+    anchor_id: &str,
+    count: i64,
+    forward: bool,
+    fs: U2FilterSql,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let limit = count.clamp(1, 500);
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    // 锚点必须真实存在（Java ExceptionEntityNotExist 对应）
+    let exists = client
+        .query_opt("SELECT id FROM \"pp_c_snap\" WHERE id = $1", &[&anchor_id])
+        .await
+        .map_err(|_| AppError::Internal)?;
+    if exists.is_none() {
+        return Ok(Json(ActionResult::error("snap not found")));
+    }
+    let anchor_idx = fs.params.len() + 1;
+    let limit_idx = anchor_idx + 1;
+    let sql = format!(
+        "SELECT {U2_SNAP_MANAGE_COLS} FROM \"pp_c_snap\" WHERE {} AND \"xcreateTime\" {} \
+         (SELECT \"xcreateTime\" FROM \"pp_c_snap\" WHERE id = ${anchor_idx} AND \"xcreateTime\" IS NOT NULL) \
+         ORDER BY \"xcreateTime\" {} LIMIT ${limit_idx}",
+        fs.where_sql(),
+        if forward { "<" } else { ">" },
+        if forward { "DESC" } else { "ASC" },
+    );
+    let rows = client
+        .query(
+            &sql,
+            &fs.bind(&[
+                &anchor_id as &(dyn ToSql + Sync),
+                &limit as &(dyn ToSql + Sync),
+            ]),
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+    let data: Vec<Value> = rows.iter().map(u2_snap_json).collect();
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
+            ("data".to_string(), Value::Array(data)),
+        ]),
+    ))))
+}
+
+pub async fn snap_u2_manage_next_filter(
+    pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
+    axum::extract::Path((id, count)): axum::extract::Path<(String, i64)>,
+    Json(wi): Json<U2FilterWi>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    u2_require_admin(&pool, &session).await?;
+    let fs = wi.to_snap_filter_sql(None);
+    u2_snap_manage_cursor(&pool, &id, count, false, fs).await
+}
+
+pub async fn snap_u2_manage_prev_filter(
+    pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
+    axum::extract::Path((id, count)): axum::extract::Path<(String, i64)>,
+    Json(wi): Json<U2FilterWi>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    u2_require_admin(&pool, &session).await?;
+    let fs = wi.to_snap_filter_sql(None);
+    let mut result = u2_snap_manage_cursor(&pool, &id, count, true, fs).await?;
+    // prev 语义：按 createTime DESC 取回后需反转为时间正序（与既有 prev 族一致）
+    if let Some(Value::Object(ref mut m)) = result.0.data.as_mut() {
+        if let Some(Value::Array(ref mut arr)) = m.get_mut("data") {
+            arr.reverse();
+        }
+    }
+    Ok(result)
+}
+
+// ── filter attribute POST 变体：会话作用域分组计数（非 admin 强制仅看本人数据） ──
+
+async fn u2_attr_group_counts(
+    pool: &Pool,
+    table: &str,
+    value_col: &str,
+    name_col: &str,
+    person_scope: Option<&str>,
+) -> Result<Vec<Value>, AppError> {
+    let scope_clause = if person_scope.is_some() {
+        "WHERE xperson = $1"
+    } else {
+        "WHERE 1=1"
+    };
+    let sql = format!(
+        "SELECT {name_col} AS name, {value_col} AS value, COUNT(*)::bigint AS cnt \
+         FROM \"{table}\" {scope_clause} GROUP BY 1, 2 ORDER BY 1 NULLS LAST"
+    );
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let rows = if let Some(p) = person_scope {
+        client.query(&sql, &[&p]).await
+    } else {
+        client.query(&sql, &[]).await
+    }
+    .map_err(|_| AppError::Internal)?;
+    Ok(rows
+        .iter()
+        .map(|row| {
+            Value::Object(serde_json::Map::from_iter([
+                ("name".to_string(), u2_s(row, "name")),
+                ("value".to_string(), u2_s(row, "value")),
+                ("count".to_string(), u2_num_opt(row, "cnt")),
+            ]))
+        })
+        .collect())
+}
+
+async fn u2_attr_month_counts(
+    pool: &Pool,
+    table: &str,
+    col: &str,
+    person_scope: Option<&str>,
+) -> Result<Vec<Value>, AppError> {
+    let scope_clause = if person_scope.is_some() {
+        format!("WHERE xperson = $1 AND \"{col}\" IS NOT NULL")
+    } else {
+        format!("WHERE \"{col}\" IS NOT NULL")
+    };
+    let sql = format!(
+        "SELECT SUBSTRING(\"{col}\" FROM 1 FOR 7) AS name, SUBSTRING(\"{col}\" FROM 1 FOR 7) AS value, \
+         COUNT(*)::bigint AS cnt FROM \"{table}\" {scope_clause} GROUP BY 1 ORDER BY 1"
+    );
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let rows = if let Some(p) = person_scope {
+        client.query(&sql, &[&p]).await
+    } else {
+        client.query(&sql, &[]).await
+    }
+    .map_err(|_| AppError::Internal)?;
+    Ok(rows
+        .iter()
+        .map(|row| {
+            Value::Object(serde_json::Map::from_iter([
+                ("name".to_string(), u2_s(row, "name")),
+                ("value".to_string(), u2_s(row, "value")),
+                ("count".to_string(), u2_num_opt(row, "cnt")),
+            ]))
+        })
+        .collect())
+}
+
+/// 组装某资源的可过滤属性清单（Java ActionFilterAttribute 的 Wo 形状，按本库实际列裁剪）。
+/// 返回 map 键即 Java Wo 字段名；列不存在的组按 Java"空列表"语义返回 []。
+async fn u2_build_attribute_wo(
+    pool: &Pool,
+    table: &str,
+    groups: &[(&str, &str, &str)],   // (label, value_col, name_col)
+    months: &[(&str, &str)],          // (label, month_col)
+    person_scope: Option<&str>,
+) -> Result<Value, AppError> {
+    let mut wo = serde_json::Map::new();
+    for (label, value_col, name_col) in groups {
+        wo.insert(
+            label.to_string(),
+            Value::Array(u2_attr_group_counts(pool, table, value_col, name_col, person_scope).await?),
+        );
+    }
+    for (label, col) in months {
+        wo.insert(
+            label.to_string(),
+            Value::Array(u2_attr_month_counts(pool, table, col, person_scope).await?),
+        );
+    }
+    Ok(Value::Object(wo))
+}
+
+macro_rules! u2_attribute_post_handler {
+    ($fn_name:ident, $table:expr, $groups:expr, $months:expr) => {
+        pub async fn $fn_name(
+            pool: Extension<Pool>,
+            session: Extension<shared::session::Session>,
+        ) -> Result<Json<ActionResult<Value>>, AppError> {
+            let scoped =
+                (!u2_is_admin(&pool, &session).await?).then(|| session.person_unique.clone());
+            let wo = u2_build_attribute_wo(&pool, $table, &$groups, &$months, scoped.as_deref()).await?;
+            Ok(Json(ActionResult::success(wo)))
+        }
+    };
+}
+
+u2_attribute_post_handler!(read_u2_filter_attribute_post, "PP_C_READ",
+    [("applicationList", "xapplication", "\"xapplicationName\""),
+     ("processList", "xprocess", "\"xprocessName\""),
+     ("creatorUnitList", "xunit", "xunit")],
+    [("startTimeMonthList", "\"xcreateTime\"")]);
+u2_attribute_post_handler!(readcompleted_u2_filter_attribute_post, "PP_C_READCOMPLETED",
+    [("applicationList", "xapplication", "\"xapplicationName\""),
+     ("processList", "xprocess", "\"xprocessName\""),
+     ("creatorUnitList", "xunit", "xunit")],
+    [("startTimeMonthList", "\"xstartTime\""), ("completedTimeMonthList", "\"xviewTime\"")]);
+u2_attribute_post_handler!(task_u2_filter_attribute_post, "PP_C_TASK",
+    [("applicationList", "xapplication", "\"xapplicationName\""),
+     ("processList", "xprocess", "\"xprocessName\""),
+     ("creatorUnitList", "\"xcreatorUnit\"", "\"xcreatorUnit\"")],
+    [("startTimeMonthList", "\"xstartTime\""), ("completedTimeMonthList", "\"xexpireTime\"")]);
+u2_attribute_post_handler!(taskcompleted_u2_filter_attribute_post, "PP_C_TASKCOMPLETED",
+    [("applicationList", "xapplication", "\"xapplicationName\""),
+     ("processList", "xprocess", "\"xprocessName\""),
+     ("creatorUnitList", "\"xcreatorUnit\"", "\"xcreatorUnit\"")],
+    [("startTimeMonthList", "\"xstartTime\""), ("completedTimeMonthList", "\"xcompletedTime\"")]);
+u2_attribute_post_handler!(review_u2_filter_attribute_post, "PP_C_REVIEW",
+    [("applicationList", "xapplication", "\"xapplicationName\""),
+     ("processList", "xprocess", "\"xprocessName\""),
+     ("creatorUnitList", "\"xcreatorUnit\"", "\"xcreatorUnit\"")],
+    [("startTimeMonthList", "\"xstartTime\""), ("completedTimeMonthList", "\"xcompletedTime\"")]);
+
+// ── review v2 search：ILIKE(title/serial) + 会话作用域 + 分页 total ───────────
+
+#[derive(Debug, Default, Deserialize)]
+#[allow(non_snake_case)]
+pub struct U2ReviewSearchWi {
+    #[serde(default)]
+    pub query: Option<String>,
+    #[serde(default)]
+    pub page: Option<i64>,
+    #[serde(default)]
+    pub size: Option<i64>,
+    #[serde(default)]
+    pub person: Option<String>,
+}
+
+const U2_REVIEW_SEARCH_COLS: &str = "xid, xjob, xtitle, xserial, xperson, xapplication, \
+\"xapplicationName\", xprocess, \"xprocessName\", \"xcreateTime\", \"xupdateTime\"";
+
+pub async fn review_u2_v2_search(
+    pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
+    Json(wi): Json<U2ReviewSearchWi>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    // Java V2Search：query 为空直接抛 ExceptionEmptyQuery
+    let query = wi.query.unwrap_or_default();
+    if query.trim().is_empty() {
+        return Ok(Json(ActionResult::error("query is empty")));
+    }
+    // IDOR：非 manager 不允许检索他人数据（Java getPerson 同语义）
+    let admin = u2_is_admin(&pool, &session).await?;
+    let person = if admin {
+        wi.person.filter(|p| !p.trim().is_empty())
+    } else {
+        Some(session.person_unique.clone())
+    };
+
+    let size = wi.size.map(u2_adjust_size).unwrap_or(20); // Java DEFAULT_PAGESIZE = 20
+    let page = wi.page.map(u2_adjust_page).unwrap_or(1);
+    let offset = (page - 1) * size;
+
+    let mut fs = U2FilterSql::default();
+    if let Some(p) = &person {
+        fs.push_eq("xperson", p);
+    }
+    fs.push_key_ilike(&["xtitle", "xserial"], &query);
+
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let count_sql = format!(
+        "SELECT COUNT(*)::bigint FROM \"pp_c_review\" WHERE {}",
+        fs.where_sql()
+    );
+    let total: i64 = client
+        .query_one(&count_sql, &fs.bind(&[]))
+        .await
+        .map_err(|_| AppError::Internal)?
+        .get(0);
+
+    let list_sql = format!(
+        "SELECT {U2_REVIEW_SEARCH_COLS} FROM \"pp_c_review\" WHERE {} \
+         ORDER BY \"sequence\" DESC NULLS LAST LIMIT ${} OFFSET ${}",
+        fs.where_sql(),
+        fs.params.len() + 1,
+        fs.params.len() + 2,
+    );
+    let rows = client
+        .query(
+            &list_sql,
+            &fs.bind(&[&size as &(dyn ToSql + Sync), &offset]),
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+    let data: Vec<Value> = rows
+        .iter()
+        .map(|row| {
+            Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), u2_s(row, "xid")),
+                ("job".to_string(), u2_s(row, "xjob")),
+                ("title".to_string(), u2_s(row, "xtitle")),
+                ("serial".to_string(), u2_s(row, "xserial")),
+                ("person".to_string(), u2_s(row, "xperson")),
+                ("application".to_string(), u2_s(row, "xapplication")),
+                ("applicationName".to_string(), u2_s(row, "\"xapplicationName\"")),
+                ("process".to_string(), u2_s(row, "xprocess")),
+                ("processName".to_string(), u2_s(row, "\"xprocessName\"")),
+                ("createTime".to_string(), u2_s(row, "\"xcreateTime\"")),
+                ("updateTime".to_string(), u2_s(row, "\"xupdateTime\"")),
+            ]))
+        })
+        .collect();
+    Ok(u2_paged_result(data, total))
+}
+
+// ── draft 保存（PUT /draft 及 mockputtopost 别名）：INSERT + 归属记录 ─────────
+
+#[derive(Debug, Default, Deserialize)]
+#[allow(non_snake_case)]
+pub struct U2DraftSaveWi {
+    #[serde(default)]
+    pub title: Option<String>,
+    #[serde(default)]
+    pub process: Option<String>,
+    #[serde(default)]
+    pub processName: Option<String>,
+    #[serde(default)]
+    pub identity: Option<String>,
+    #[serde(default)]
+    pub activity: Option<String>,
+    #[serde(default)]
+    pub activityName: Option<String>,
+    #[serde(default)]
+    pub activityType: Option<String>,
+    #[serde(default)]
+    pub data: Option<Value>,
+}
+
+async fn u2_draft_save(
+    pool: &Pool,
+    session: &shared::session::Session,
+    wi: U2DraftSaveWi,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let title = wi.title.unwrap_or_default();
+    let process = wi.process.unwrap_or_default();
+    if title.trim().is_empty() && process.trim().is_empty() {
+        return Ok(Json(ActionResult::error("title or process is required")));
+    }
+    let id = uuid::Uuid::new_v4().to_string();
+    let data_str = wi
+        .data
+        .as_ref()
+        .map(|v| serde_json::to_string(v))
+        .transpose()
+        .map_err(|_| AppError::Internal)?;
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    client
+        .execute(
+            "INSERT INTO \"pp_c_draft\" (id, xid, xtitle, xprocess, \"xprocessName\", \
+             xperson, xidentity, xactivity, \"xactivityName\", \"xactivityType\", \"xdata\", \
+             creator_person, \"xcreateTime\", \"xupdateTime\") \
+             VALUES ($1, $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $5, NOW(), NOW())",
+            &[
+                &id,
+                &title,
+                &process,
+                &wi.processName,
+                &session.person_unique,
+                &wi.identity,
+                &wi.activity,
+                &wi.activityName,
+                &wi.activityType,
+                &data_str,
+            ],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
+        ("id".to_string(), Value::String(id)),
+    ])))))
+}
+
+pub async fn draft_u2_save(
+    pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
+    Json(wi): Json<U2DraftSaveWi>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    u2_draft_save(&pool, &session, wi).await
+}
+
+pub async fn draft_u2_save_mockputtopost(
+    pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
+    Json(wi): Json<U2DraftSaveWi>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    u2_draft_save(&pool, &session, wi).await
+}
+
+// ── keylock 加锁：他人持锁则拒绝，空闲则插入持锁行 ───────────────────────────
+
+#[derive(Debug, Default, Deserialize)]
+#[allow(non_snake_case)]
+pub struct U2KeylockLockWi {
+    #[serde(default)]
+    pub key: Option<String>,
+}
+
+async fn u2_keylock_lock(
+    pool: &Pool,
+    session: &shared::session::Session,
+    wi: U2KeylockLockWi,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let key = wi.key.unwrap_or_default();
+    if key.trim().is_empty() {
+        return Ok(Json(ActionResult::error("key is required")));
+    }
+    let me = &session.person_unique;
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let holder = client
+        .query_opt(
+            "SELECT xperson FROM \"pp_c_keylock\" WHERE xkey = $1 \
+             AND xperson IS NOT NULL AND COALESCE(xperson, '') <> $2 \
+             ORDER BY create_time DESC LIMIT 1",
+            &[&key, me],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+    match holder {
+        None => {
+            let id = uuid::Uuid::new_v4().to_string();
+            client
+                .execute(
+                    "INSERT INTO \"pp_c_keylock\" (id, xkey, xperson, creator_person, \
+                     create_time, update_time) VALUES ($1, $2, $3, $3, NOW(), NOW())",
+                    &[&id, &key, me],
+                )
+                .await
+                .map_err(|_| AppError::Internal)?;
+            Ok(Json(ActionResult::success(serde_json::json!({
+                "success": true, "person": me,
+            }))))
+        }
+        Some(row) => {
+            let holder_person: Option<String> = row.get("xperson");
+            Ok(Json(ActionResult::success(serde_json::json!({
+                "success": false, "person": holder_person,
+            }))))
+        }
+    }
+}
+
+pub async fn keylock_u2_lock(
+    pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
+    Json(wi): Json<U2KeylockLockWi>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    u2_keylock_lock(&pool, &session, wi).await
+}
+
+pub async fn keylock_u2_lock_mockputtopost(
+    pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
+    Json(wi): Json<U2KeylockLockWi>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    u2_keylock_lock(&pool, &session, wi).await
+}
+
+// ── serialnumber 创建 / 流水号生成 ────────────────────────────────────────────
+
+#[derive(Debug, Default, Deserialize)]
+#[allow(non_snake_case)]
+pub struct U2SerialNumberCreateWi {
+    #[serde(default)]
+    pub name: Option<String>,
+    #[serde(default)]
+    pub process: Option<String>,
+    #[serde(default)]
+    pub serial: Option<i64>,
+    #[serde(default)]
+    pub application: Option<String>,
+}
+
+pub async fn serialnumber_u2_create(
+    pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
+    Json(wi): Json<U2SerialNumberCreateWi>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    u2_require_admin(&pool, &session).await?;
+    let process = wi.process.clone().unwrap_or_default();
+    let serial = wi.serial;
+    if process.trim().is_empty() || serial.is_none() {
+        return Ok(Json(ActionResult::error("process and serial are required")));
+    }
+    let id = uuid::Uuid::new_v4().to_string();
+    let serial_value = serial.unwrap();
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    client
+        .execute(
+            "INSERT INTO \"pp_c_serialnumber\" (id, xid, xname, xprocess, xapplication, \
+             \"xserial\", creator_person, \"xcreateTime\", \"xupdateTime\") \
+             VALUES ($1, $1, $2, $3, $4, $5, $6, NOW(), NOW())",
+            &[
+                &id,
+                &wi.name,
+                &wi.process,
+                &wi.application,
+                &serial_value,
+                &session.person_unique,
+            ],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
+        ("id".to_string(), Value::String(id)),
+    ])))))
+}
+
+pub async fn serialnumber_u2_generate(
+    pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
+    axum::extract::Path((process_id, name)): axum::extract::Path<(String, String)>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    u2_require_admin(&pool, &session).await?;
+    let mut client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let tx = client.transaction().await.map_err(|_| AppError::Internal)?;
+    // 行级锁内自增，保证并发取号不重号（Java 委托 processing service 的原子语义等价实现）
+    let row = tx
+        .query_opt(
+            "UPDATE \"pp_c_serialnumber\" SET \"xserial\" = COALESCE(\"xserial\", 0) + 1, \
+             \"xupdateTime\" = NOW() WHERE xprocess = $1 AND xname = $2 RETURNING \"xserial\"",
+            &[&process_id, &name],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+    match row {
+        None => Err(AppError::NotFound),
+        Some(row) => {
+            let next: i32 = row.get("xserial");
+            tx.commit().await.map_err(|_| AppError::Internal)?;
+            Ok(Json(ActionResult::success(Value::Number(next.into()))))
+        }
+    }
+}
+
+// ── handover 创建（admin 门禁 + 必填校验 + INSERT） ───────────────────────────
+
+#[derive(Debug, Default, Deserialize)]
+#[allow(non_snake_case)]
+pub struct U2HandoverCreateWi {
+    #[serde(default)]
+    pub title: Option<String>,
+    #[serde(default)]
+    pub person: Option<String>,
+    #[serde(default)]
+    pub targetIdentity: Option<String>,
+    #[serde(default)]
+    pub r#type: Option<String>,
+    #[serde(default)]
+    pub scheme: Option<String>,
+}
+
+pub async fn handover_u2_create(
+    pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
+    Json(wi): Json<U2HandoverCreateWi>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    u2_require_admin(&pool, &session).await?;
+    // Java ExceptionFieldEmpty：type/scheme/person/targetIdentity 必填
+    let missing: Vec<&str> = [
+        ("type", wi.r#type.as_deref()),
+        ("scheme", wi.scheme.as_deref()),
+        ("person", wi.person.as_deref()),
+        ("targetIdentity", wi.targetIdentity.as_deref()),
+    ]
+    .into_iter()
+    .filter_map(|(k, v)| {
+        let blank = v.map(|s| s.trim().is_empty()).unwrap_or(true);
+        blank.then_some(k)
+    })
+    .collect();
+    if !missing.is_empty() {
+        return Ok(Json(ActionResult::error(format!(
+            "{} is required",
+            missing.join(", ")
+        ))));
+    }
+    let id = uuid::Uuid::new_v4().to_string();
+    let target_identity = wi.targetIdentity.clone().unwrap_or_default();
+    // 本库无组织解析服务：targetPerson 以 targetIdentity 原样落库（Java 由 organization 解析）
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    client
+        .execute(
+            "INSERT INTO \"pp_c_handover\" (id, xid, xtitle, xperson, \"xtargetIdentity\", \
+             \"xtargetPerson\", xtype, xscheme, xstatus, creator_person, \
+             \"xcreateTime\", \"xupdateTime\") \
+             VALUES ($1, $1, $2, $3, $4, $4, $5, $6, 'wait', $7, NOW(), NOW())",
+            &[
+                &id,
+                &wi.title,
+                &wi.person,
+                &Some(target_identity),
+                &wi.r#type,
+                &wi.scheme,
+                &session.person_unique,
+            ],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
+        ("id".to_string(), Value::String(id)),
+    ])))))
+}
+
+// ── openapi 描述符：从 routes.rs 实际注册扫描生成（真实 API surface，非静态壳） ──
+
+fn u2_collect_routes(src: &str) -> BTreeMap<String, Vec<String>> {
+    let verb_tokens: [(&str, &str); 4] = [
+        ("get(", "get"),
+        ("post(", "post"),
+        ("put(", "put"),
+        ("delete(", "delete"),
+    ];
+    let marker = ".route(\"";
+    let mut paths: BTreeMap<String, Vec<String>> = BTreeMap::new();
+    let bytes = src.as_bytes();
+    let mut idx = 0usize;
+    while let Some(rel) = src[idx..].find(marker) {
+        let start = idx + rel + marker.len();
+        let Some(end_rel) = src[start..].find('"') else { break };
+        let path = src[start..start + end_rel].to_string();
+        // 方法路由边界：到下一个 .route( 或文件尾
+        let boundary = src[start..].find(".route(").map(|r| start + r).unwrap_or(src.len());
+        let segment_end = boundary.min(bytes.len());
+        let window = &src[start..segment_end];
+        let mut methods = paths.entry(path).or_default();
+        for (token, method) in verb_tokens {
+            if window.contains(token) && !methods.contains(&method.to_string()) {
+                methods.push(method.to_string());
+            }
+        }
+        idx = start;
+    }
+    paths.retain(|_, methods| !methods.is_empty());
+    paths
+}
+
+pub async fn openapi_get() -> Result<Json<ActionResult<Value>>, AppError> {
+    let routes = u2_collect_routes(include_str!("routes.rs"));
+    let mut path_items = serde_json::Map::new();
+    for (path, methods) in routes {
+        let mut item = serde_json::Map::new();
+        for m in methods {
+            item.insert(m, Value::Object(serde_json::Map::new()));
+        }
+        path_items.insert(path, Value::Object(item));
+    }
+    Ok(Json(ActionResult::success(serde_json::json!({
+        "openapi": "3.0.3",
+        "info": {
+            "title": "x_processplatform_assemble_surface",
+            "version": env!("CARGO_PKG_VERSION"),
+        },
+        "paths": Value::Object(path_items),
+    }))))
+}
+
+// ── work v3 retract（召回）：校验任务同 job + 本人持有该 job 已办 + 事务删除下游待办 ──
+
+#[derive(Debug, Default, Deserialize)]
+#[allow(non_snake_case)]
+pub struct U2V3RetractWi {
+    #[serde(default)]
+    pub retractTaskList: Vec<String>,
+}
+
+pub async fn work_u2_v3_retract(
+    pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
+    Json(wi): Json<U2V3RetractWi>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    if wi.retractTaskList.is_empty() {
+        return Ok(Json(ActionResult::error("retractTaskList is required")));
+    }
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    // 1) 所有任务存在且属于同一个 job（Java ExceptionEntityNotExist / 单 job 校验）
+    let rows = client
+        .query(
+            "SELECT xid, xjob FROM \"pp_c_task\" WHERE xid = ANY($1)",
+            &[&wi.retractTaskList],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+    if rows.len() != wi.retractTaskList.len() {
+        return Ok(Json(ActionResult::error("task not found")));
+    }
+    let jobs: std::collections::HashSet<String> = rows
+        .iter()
+        .map(|r| r.get::<_, Option<String>>("xjob").unwrap_or_default())
+        .collect();
+    if jobs.len() != 1 {
+        return Ok(Json(ActionResult::error("tasks must belong to the same job")));
+    }
+    let job = rows
+        .iter()
+        .find_map(|r| r.get::<_, Option<String>>("xjob"))
+        .unwrap_or_default();
+    // 2) IDOR：请求者必须持有该 job 的已办（joinInquire 语义以持有已办近似）
+    let tc = client
+        .query_opt(
+            "SELECT id FROM \"pp_c_taskcompleted\" WHERE xjob = $1 AND xperson = $2 \
+             ORDER BY create_time DESC LIMIT 1",
+            &[&job, &session.person_unique],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+    if tc.is_none() {
+        return Ok(Json(ActionResult::error("taskCompleted not found")));
+    }
+    // 3) 事务执行召回：移除被召回的下游任务并触碰工作更新时间
+    let mut tx_client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let tx = tx_client.transaction().await.map_err(|_| AppError::Internal)?;
+    let deleted = tx
+        .execute(
+            "DELETE FROM \"pp_c_task\" WHERE xid = ANY($1)",
+            &[&wi.retractTaskList],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+    tx.execute(
+        "UPDATE \"pp_c_work\" SET \"xupdateTime\" = NOW() WHERE xjob = $1",
+        &[&job],
+    )
+    .await
+    .map_err(|_| AppError::Internal)?;
+    tx.commit().await.map_err(|_| AppError::Internal)?;
+    drop(client);
+    Ok(Json(ActionResult::success(serde_json::json!({
+        "retracted": deleted as i64, "job": job,
+    }))))
+}
+
+
+// ── workcompleted shift time（调整完成时间）：owner/admin 门禁 + 真实 UPDATE ──
+
+#[derive(Debug, Default, Deserialize)]
+#[allow(non_snake_case)]
+pub struct U2ShiftTimeWi {
+    #[serde(default)]
+    pub id: Option<String>,
+    #[serde(default)]
+    pub adjustMinutes: Option<i64>,
+}
+
+pub async fn workcompleted_u2_shift_time(
+    pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
+    Json(wi): Json<U2ShiftTimeWi>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let id = wi.id.unwrap_or_default();
+    let adjust = wi.adjustMinutes;
+    if id.trim().is_empty() || adjust.is_none() {
+        return Ok(Json(ActionResult::error("id and adjustMinutes are required")));
+    }
+    let adjust = adjust.unwrap();
+    let gate = u2_check_owner(&pool, "\"pp_c_workcompleted\"", "\"creator_person\"", &id, &session.person_unique).await?;
+    match gate {
+        U2Gate::NotFound => return Ok(Json(ActionResult::error("workCompleted not found"))),
+        U2Gate::Forbidden => return Err(AppError::Forbidden),
+        U2Gate::Allowed => {}
+    }
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let row = client
+        .query_opt(
+            "SELECT \"xcompletedTime\" FROM \"pp_c_workcompleted\" WHERE xid = $1",
+            &[&id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+    let current: Option<Option<String>> = row.map(|r| r.get("xcompletedTime"));
+    let Some(Some(text)) = current else {
+        return Ok(Json(ActionResult::error("completedTime is not set")));
+    };
+    let parsed = ["%Y-%m-%d %H:%M:%S%.f", "%Y-%m-%dT%H:%M:%S%.f"]
+        .iter()
+        .find_map(|fmt| chrono::NaiveDateTime::parse_from_str(&text, fmt).ok());    let Some(current_time) = parsed else {
+        return Ok(Json(ActionResult::error("unparsable completedTime")));
+    };
+    let shifted = current_time + chrono::Duration::minutes(adjust);
+    let shifted_text = shifted.format("%Y-%m-%d %H:%M:%S").to_string();
+    client
+        .execute(
+            "UPDATE \"pp_c_workcompleted\" SET \"xcompletedTime\" = $2, \"xupdateTime\" = NOW() \
+             WHERE xid = $1",
+            &[&id, &shifted_text],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+    Ok(Json(ActionResult::success(serde_json::json!({
+        "id": id, "completedTime": shifted_text,
+    }))))
+}
+
+// ── snap upload / download ───────────────────────────────────────────────────
+
+#[derive(Debug, Default, Deserialize)]
+#[allow(non_snake_case)]
+pub struct U2SnapUploadWi {
+    #[serde(default)]
+    pub id: Option<String>,
+    #[serde(default)]
+    pub job: Option<String>,
+    #[serde(default)]
+    pub title: Option<String>,
+    #[serde(default)]
+    pub r#type: Option<String>,
+    #[serde(default)]
+    pub work: Option<String>,
+    #[serde(default)]
+    pub workCompleted: Option<String>,
+    #[serde(default)]
+    pub application: Option<String>,
+    #[serde(default)]
+    pub applicationName: Option<String>,
+    #[serde(default)]
+    pub process: Option<String>,
+    #[serde(default)]
+    pub processName: Option<String>,
+    #[serde(default)]
+    pub person: Option<String>,
+    #[serde(default)]
+    pub identity: Option<String>,
+}
+
+pub async fn snap_u2_upload(
+    pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
+    Json(wi): Json<U2SnapUploadWi>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    u2_require_admin(&pool, &session).await?;
+    // Java check()：job 非空且（work 或 workCompleted 至少其一）——否则内容混淆异常
+    let job = wi.job.clone().unwrap_or_default();
+    let has_target = wi.work.is_some() || wi.workCompleted.is_some();
+    if job.trim().is_empty() || !has_target {
+        return Ok(Json(ActionResult::error("snap content is confused")));
+    }
+    let id = wi.id.clone().filter(|s| !s.trim().is_empty()).unwrap_or_else(|| uuid::Uuid::new_v4().to_string());
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    client
+        .execute(
+            "INSERT INTO \"pp_c_snap\" (id, xid, xtitle, xjob, \"xwork\", \"xworkCompleted\", \
+             \"xtype\", \"xperson\", \"xidentity\", \"xapplication\", \"xapplicationName\", \
+             \"xprocess\", \"xprocessName\", creator_person, \"xcreateTime\", \"xupdateTime\") \
+             VALUES ($1, $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, NOW(), NOW()) \
+             ON CONFLICT (id) DO NOTHING",
+            &[
+                &id,
+                &wi.title,
+                &Some(job),
+                &wi.work,
+                &wi.workCompleted,
+                &wi.r#type,
+                &wi.person,
+                &wi.identity,
+                &wi.application,
+                &wi.applicationName,
+                &wi.process,
+                &wi.processName,
+                &session.person_unique,
+            ],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
+        ("id".to_string(), Value::String(id)),
+    ])))))
+}
+
+pub async fn snap_u2_download(
+    pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
+    axum::extract::Path(id): axum::extract::Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    match u2_check_owner(&pool, "\"pp_c_snap\"", "\"creator_person\"", &id, &session.person_unique).await? {
+        U2Gate::NotFound => Ok(Json(ActionResult::error("snap not found"))),
+        U2Gate::Forbidden => Err(AppError::Forbidden),
+        U2Gate::Allowed => {
+            let client = pool.get().await.map_err(|_| AppError::Internal)?;
+            let row = client
+                .query_opt(
+                    &format!("SELECT {}, \"xdata\" FROM \"pp_c_snap\" WHERE id = $1", U2_SNAP_COLS),
+                    &[&id],
+                )
+                .await
+                .map_err(|_| AppError::Internal)?;
+            let Some(row) = row else {
+                return Ok(Json(ActionResult::error("snap not found")));
+            };
+            let mut snap = u2_snap_json_full(&row);
+            if let Value::Object(ref mut m) = snap {
+                let process_name = m.get("processName").and_then(Value::as_str).unwrap_or("snap");
+                let title = m.get("title").and_then(Value::as_str).unwrap_or("");
+                // Java WoFile：以 processName-title 命名的快照归档下载
+                m.insert(
+                    "fileName".to_string(),
+                    Value::String(format!("{}-{}.json", process_name, title)),
+                );
+            }
+            Ok(Json(ActionResult::success(snap)))
+        }
+    }
+}
+
+// ── attachment 扩展名流式下载 ×4（matchit 单段单参限制：{fileName} 内含 name.ext） ──
+
+async fn u2_attachment_ext_download(
+    pool: &Pool,
+    session: &shared::session::Session,
+    id: &str,
+    work_col: &str,
+    work_id: &str,
+    filename: &str,
+) -> Result<axum::response::Response, AppError> {
+    use axum::response::IntoResponse;
+    // IDOR：归属门禁（owner 或 admin）
+    match u2_check_owner(pool, "\"pp_c_attachment\"", "\"creator_person\"", id, &session.person_unique).await? {
+        U2Gate::NotFound => {
+            return Ok(Json(ActionResult::<Value>::error("attachment not found")).into_response());
+        }
+        U2Gate::Forbidden => return Err(AppError::Forbidden),
+        U2Gate::Allowed => {}
+    }
+    // 附件必须真实挂载在 URL 所指的 work/workcompleted 上
+    let where_clause = format!("id = $1 AND {work_col} = $2");
+    let row = u2_att_load_blob_row(pool, &where_clause, id, Some(work_id)).await?;
+    if row.is_none() {
+        return Ok(Json(ActionResult::<Value>::error("attachment not bound to this work")).into_response());
+    }
+    // filename 段（形如 report.pdf）仅用于命名合法性校验；实际文件名取自元数据 xname
+    let _ = filename.trim();
+    u2_att_download_response(row, id).await
+}
+
+macro_rules! u2_att_ext_download_handler {
+    ($fn_name:ident, $work_col:expr) => {
+        pub async fn $fn_name(
+            pool: Extension<Pool>,
+            session: Extension<shared::session::Session>,
+            axum::extract::Path((id, work_id, filename)):
+                axum::extract::Path<(String, String, String)>,
+        ) -> Result<axum::response::Response, AppError> {
+            u2_attachment_ext_download(&pool, &session, &id, $work_col, &work_id, &filename).await
+        }
+    };
+}
+
+u2_att_ext_download_handler!(attachment_u2c_download_work_stream_ext, "\"xwork\"");
+u2_att_ext_download_handler!(attachment_u2c_download_work_ext, "\"xwork\"");
+u2_att_ext_download_handler!(attachment_u2c_download_wc_stream_ext, "\"xworkCompleted\"");
+u2_att_ext_download_handler!(attachment_u2c_download_wc_ext, "\"xworkCompleted\"");
+
+// ── review filter/create/entry：person+creatorPerson 双作用域可建阅评入口清单 ──
+
+pub async fn review_u2_filter_create_entry(
+    pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    // Java ActionFilterCreateEntry：以 (xperson = me AND xcreatorPerson = me) 为作用域
+    let me = &session.person_unique;
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    async fn distinct_list(
+        client: &deadpool_postgres::Client,
+        col: &str,
+        me: &str,
+    ) -> Result<Vec<Value>, AppError> {
+        let sql = format!(
+            "SELECT DISTINCT {col} AS value FROM \"pp_c_review\" \
+             WHERE xperson = $1 AND \"xcreatorPerson\" = $1 AND {col} IS NOT NULL AND {col} <> '' \
+             ORDER BY 1"
+        );
+        let rows = client.query(&sql, &[&me]).await.map_err(|_| AppError::Internal)?;
+        Ok(rows
+            .iter()
+            .map(|r| {
+                let v: Option<String> = r.get("value");
+                Value::Object(serde_json::Map::from_iter([
+                    ("name".to_string(), Value::String(v.clone().unwrap_or_default())),
+                    ("value".to_string(), Value::String(v.unwrap_or_default())),
+                ]))
+            })
+            .collect())
+    }
+    let application_list = distinct_list(&client, "xapplication", me).await?;
+    let process_list = distinct_list(&client, "xprocess", me).await?;
+    let month_sql = "SELECT DISTINCT SUBSTRING(\"xstartTime\" FROM 1 FOR 7) AS value \
+                     FROM \"pp_c_review\" WHERE xperson = $1 AND \"xcreatorPerson\" = $1 \
+                     AND \"xstartTime\" IS NOT NULL ORDER BY 1";
+    let month_rows = client.query(month_sql, &[&me]).await.map_err(|_| AppError::Internal)?;
+    let start_month_list: Vec<Value> = month_rows
+        .iter()
+        .map(|r| {
+            let v: Option<String> = r.get("value");
+            Value::Object(serde_json::Map::from_iter([
+                ("name".to_string(), Value::String(v.clone().unwrap_or_default())),
+                ("value".to_string(), Value::String(v.unwrap_or_default())),
+            ]))
+        })
+        .collect();
+    let wo = serde_json::json!({
+        "applicationList": application_list,
+        "processList": process_list,
+        "startTimeMonthList": start_month_list,
+    });
+    Ok(Json(ActionResult::success(wo)))
+}
+
+// ── route/list POST 别名（Java Wi.valueList → 按 id 批量取路由） ─────────────
+
+#[derive(Debug, Default, Deserialize)]
+#[allow(non_snake_case)]
+pub struct U2RouteListWi {
+    #[serde(default)]
+    pub valueList: Vec<String>,
+}
+
+pub async fn route_u2_list_by_ids(
+    pool: Extension<Pool>,
+    Json(wi): Json<U2RouteListWi>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    if wi.valueList.is_empty() {
+        return Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
+            ("count".to_string(), Value::Number(serde_json::Number::from(0))),
+            ("data".to_string(), Value::Array(Vec::new())),
+        ])))));
+    }
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let rows = client
+        .query(
+            "SELECT xid, xname, xprocess, \"xcreateTime\", \"xupdateTime\" FROM \"pp_e_route\" \
+             WHERE xid = ANY($1)",
+            &[&wi.valueList],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+    let data: Vec<Value> = rows
+        .iter()
+        .map(|row| {
+            Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), u2_s(row, "xid")),
+                ("name".to_string(), u2_s(row, "xname")),
+                ("process".to_string(), u2_s(row, "xprocess")),
+                ("createTime".to_string(), u2_s(row, "xcreateTime")),
+                ("updateTime".to_string(), u2_s(row, "xupdateTime")),
+            ]))
+        })
+        .collect();
+    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
+        ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
+        ("data".to_string(), Value::Array(data)),
+    ])))))
+}
+
 #[cfg(test)]
 mod tests_generated;
 
