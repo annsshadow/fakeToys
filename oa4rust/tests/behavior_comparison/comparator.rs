@@ -89,19 +89,42 @@ impl EndpointComparator {
     }
 
     /// Attempt to log in to a service and return the token on success.
+    ///
+    /// O2OA v9 的认证端点位于 war 前缀下：
+    ///   POST {base}/x_organization_assemble_authentication/jaxrs/authentication
+    /// 实测响应：HTTP 200，token 位于 data.token；凭据错误返回 HTTP 500。
+    /// Rust 服务则注册在裸路径 POST /jaxrs/authentication（及别名 /login）。
+    /// 依次尝试候选路径，首个拿到 token 者胜出。注意 O2OA 对未知裸 /jaxrs/* 会挂起，
+    /// 因此 v9 war 路径必须排在裸路径之前（Java 首跳即命中，不会触达挂起路径）。
     pub async fn login(
         &self,
         base_url: &str,
         credential: &str,
         password: &str,
     ) -> Option<String> {
-        let url = format!("{}/jaxrs/authentication/login", base_url.trim_end_matches('/'));
+        let base = base_url.trim_end_matches('/');
         let body = serde_json::json!({"credential": credential, "password": password});
+        let candidates = [
+            "/x_organization_assemble_authentication/jaxrs/authentication",
+            "/jaxrs/authentication/login",
+            "/jaxrs/authentication",
+        ];
+        for path in candidates {
+            let url = format!("{}{}", base, path);
+            if let Some(token) = self.try_login(&url, &body).await {
+                return Some(token);
+            }
+        }
+        None
+    }
+
+    /// POST one candidate login URL and extract data.token from the response.
+    async fn try_login(&self, url: &str, body: &serde_json::Value) -> Option<String> {
         let resp = self
             .client
-            .post(&url)
+            .post(url)
             .header("Content-Type", "application/json")
-            .json(&body)
+            .json(body)
             .send()
             .await
             .ok()?;
