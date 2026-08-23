@@ -1,8 +1,8 @@
-//! plan002 U2 新增端点的路由可达测试与契约测试。
+﻿//! plan002 U2 鏂板绔偣鐨勮矾鐢卞彲杈炬祴璇曚笌濂戠害娴嬭瘯銆?
 //!
-//! 路由测试使用 mock_pool（无法建连）：请求命中路由后 handler 返回 500，
-//! 断言 500（而非 404）即可证明路由已注册且可达。
-//! Router 构建本身会校验路径唯一性——若存在重复注册将直接 panic。
+//! 璺敱娴嬭瘯浣跨敤 mock_pool锛堟棤娉曞缓杩烇級锛氳姹傚懡涓矾鐢卞悗 handler 杩斿洖 500锛?
+//! 鏂█ 500锛堣€岄潪 404锛夊嵆鍙瘉鏄庤矾鐢卞凡娉ㄥ唽涓斿彲杈俱€?
+//! Router 鏋勫缓鏈韩浼氭牎楠岃矾寰勫敮涓€鎬р€斺€旇嫢瀛樺湪閲嶅娉ㄥ唽灏嗙洿鎺?panic銆?
 
 #[cfg(test)]
 mod u2_tests {
@@ -27,7 +27,7 @@ mod u2_tests {
         .status()
     }
 
-    // ── snap 域 ────────────────────────────────────────────────
+    // 鈹€鈹€ snap 鍩?鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
 
     #[tokio::test]
     async fn u2_snap_get_reachable() {
@@ -83,7 +83,7 @@ mod u2_tests {
         );
     }
 
-    // ── attachment 域 ──────────────────────────────────────────
+    // 鈹€鈹€ attachment 鍩?鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
 
     #[tokio::test]
     async fn u2_attachment_list_routes_reachable() {
@@ -118,7 +118,7 @@ mod u2_tests {
         );
     }
 
-    // ── 死代码接线（已定义 handler 补路由） ────────────────────
+    // 鈹€鈹€ 姝讳唬鐮佹帴绾匡紙宸插畾涔?handler 琛ヨ矾鐢憋級 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
 
     #[tokio::test]
     async fn u2_unrouted_handlers_now_wired() {
@@ -151,7 +151,7 @@ mod u2_tests {
         }
     }
 
-    // ── 漂移路径修复（Java 精确形状注册） ──────────────────────
+    // 鈹€鈹€ 婕傜Щ璺緞淇锛圝ava 绮剧‘褰㈢姸娉ㄥ唽锛?鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
 
     #[tokio::test]
     async fn u2_java_exact_paths_take_priority_over_drifted_params() {
@@ -182,7 +182,7 @@ mod u2_tests {
         }
     }
 
-    // ── ActionResult 9 字段契约 ────────────────────────────────
+    // 鈹€鈹€ ActionResult 9 瀛楁濂戠害 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
 
     #[test]
     fn u2_action_result_contract_has_all_nine_fields() {
@@ -212,8 +212,8 @@ mod u2_tests {
 
     #[test]
     fn u2_snap_row_mapper_maps_all_columns_to_camel_case() {
-        // 直接验证 mapper 的字段命名契约：通过构造 JSON 断言输出键集合
-        // （Row 无法脱离 PG 连接构造，此处锁定 mapper 输出键与 Java WO 对齐）
+        // 鐩存帴楠岃瘉 mapper 鐨勫瓧娈靛懡鍚嶅绾︼細閫氳繃鏋勯€?JSON 鏂█杈撳嚭閿泦鍚?
+        // 锛圧ow 鏃犳硶鑴辩 PG 杩炴帴鏋勯€狅紝姝ゅ閿佸畾 mapper 杈撳嚭閿笌 Java WO 瀵归綈锛?
         let keys = [
             "id", "title", "job", "work", "workCompleted", "type", "person", "identity", "unit",
             "application", "applicationName", "process", "processName", "creatorPerson",
@@ -228,9 +228,9 @@ mod u2_tests {
         }
     }
 
-    // ══════════ plan002 U2 批量第二注册（漂移路由 + 缺失端点补齐） ══════════
-    // 断言语义：404=路由未注册；400=路径参数提取失败；500=路由可达且提取成功、DB 连接失败。
-    // 因此「断言 500」同时证明了：路由存在 + 元组提取器与 Java 路径形状一致。
+    // 鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲 plan002 U2 鎵归噺绗簩娉ㄥ唽锛堟紓绉昏矾鐢?+ 缂哄け绔偣琛ラ綈锛?鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲
+    // 鏂█璇箟锛?04=璺敱鏈敞鍐岋紱400=璺緞鍙傛暟鎻愬彇澶辫触锛?00=璺敱鍙揪涓旀彁鍙栨垚鍔熴€丏B 杩炴帴澶辫触銆?
+    // 鍥犳銆屾柇瑷€ 500銆嶅悓鏃惰瘉鏄庝簡锛氳矾鐢卞瓨鍦?+ 鍏冪粍鎻愬彇鍣ㄤ笌 Java 璺緞褰㈢姸涓€鑷淬€?
 
     #[tokio::test]
     async fn u2r_phase_c_snap_routes_reachable() {
@@ -255,7 +255,7 @@ mod u2_tests {
 
     #[tokio::test]
     async fn u2r_tuple_extraction_contract_paging_routes() {
-        // 若 Path<(i64,i64)> 与路由 {page}/size/{size} 不匹配，axum 会回 400 而非 500
+        // 鑻?Path<(i64,i64)> 涓庤矾鐢?{page}/size/{size} 涓嶅尮閰嶏紝axum 浼氬洖 400 鑰岄潪 500
         let base = "/jaxrs/processplatform/assemble/surface";
         for (method, path) in [
             ("GET", "/task/list/my/paging/3/size/20"),
@@ -298,7 +298,7 @@ mod u2_tests {
 
     #[tokio::test]
     async fn u2r_deep_pathn_extraction_contract() {
-        // applicationdict 10 参元组、data 路径导航族：证明长元组提取器与 Java 形状一致
+        // applicationdict 10 鍙傚厓缁勩€乨ata 璺緞瀵艰埅鏃忥細璇佹槑闀垮厓缁勬彁鍙栧櫒涓?Java 褰㈢姸涓€鑷?
         let base = "/jaxrs/processplatform/assemble/surface";
         for (method, path) in [
             ("GET", "/applicationdict/d1/application/a1/p0/p1/p2/p3/p4/p5/p6/p7/data"),
@@ -319,7 +319,7 @@ mod u2_tests {
 
     #[tokio::test]
     async fn u2r_same_path_multi_method_merging() {
-        // 同一 Java 路径的 GET/PUT/POST 复用同一 handler，方法路由应合并且互不覆盖
+        // 鍚屼竴 Java 璺緞鐨?GET/PUT/POST 澶嶇敤鍚屼竴 handler锛屾柟娉曡矾鐢卞簲鍚堝苟涓斾簰涓嶈鐩?
         let uri = "/jaxrs/processplatform/assemble/surface/applicationdict/d1/application/a1/p0/data";
         for method in ["GET", "PUT", "POST"] {
             assert_eq!(
@@ -378,7 +378,7 @@ mod u2_tests {
 
     #[tokio::test]
     async fn u2r_data_job_pathn_extraction_contract() {
-        // data/job 路径导航族：元组提取器与 Java {job}/{pathN} 形状一致（否则 axum 回 400）
+        // data/job 璺緞瀵艰埅鏃忥細鍏冪粍鎻愬彇鍣ㄤ笌 Java {job}/{pathN} 褰㈢姸涓€鑷达紙鍚﹀垯 axum 鍥?400锛?
         let base = "/jaxrs/processplatform/assemble/surface/data/job";
         for (method, path) in [
             ("GET", "/j-1/p0"),
@@ -418,7 +418,7 @@ mod u2_tests {
     }
 }
 
-// ════════════ plan002 U2-b：attachment 二进制族 + data pathN 元组化回归保护 ════════════
+// 鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲 plan002 U2-b锛歛ttachment 浜岃繘鍒舵棌 + data pathN 鍏冪粍鍖栧洖褰掍繚鎶?鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲
 #[cfg(test)]
 mod u2b_tests {
     use crate::router;
@@ -462,7 +462,7 @@ mod u2b_tests {
     const MP: &[(&str, &str)] = &[("content-type", "multipart/form-data; boundary=xboundary")];
     const JSON: &[(&str, &str)] = &[("content-type", "application/json")];
 
-    // ── 转换/预览/发票/URL/打包族：无引擎 → 精确 501（不触碰 DB 即可断言） ──
+    // 鈹€鈹€ 杞崲/棰勮/鍙戠エ/URL/鎵撳寘鏃忥細鏃犲紩鎿?鈫?绮剧‘ 501锛堜笉瑙︾ DB 鍗冲彲鏂█锛?鈹€鈹€
 
     #[tokio::test]
     async fn u2b_engineless_endpoints_return_exact_501() {
@@ -502,7 +502,7 @@ mod u2b_tests {
         assert!(json["data"].is_null());
     }
 
-    // ── 上传族路由可达（session extension 缺失 → handler 内 pool/session 提取失败 → 500） ──
+    // 鈹€鈹€ 涓婁紶鏃忚矾鐢卞彲杈撅紙session extension 缂哄け 鈫?handler 鍐?pool/session 鎻愬彇澶辫触 鈫?500锛?鈹€鈹€
 
     #[tokio::test]
     async fn u2b_multipart_upload_routes_reachable() {
@@ -531,7 +531,7 @@ mod u2b_tests {
         assert_eq!(status, StatusCode::INTERNAL_SERVER_ERROR, "base64 upload route unreachable");
     }
 
-    // ── 下载族路由可达 ─────────────────────────────────────────────────────
+    // 鈹€鈹€ 涓嬭浇鏃忚矾鐢卞彲杈?鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
 
     #[tokio::test]
     async fn u2b_download_routes_reachable() {
@@ -556,7 +556,7 @@ mod u2b_tests {
         }
     }
 
-    // ── 元数据管理族路由可达 ───────────────────────────────────────────────
+    // 鈹€鈹€ 鍏冩暟鎹鐞嗘棌璺敱鍙揪 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
 
     #[tokio::test]
     async fn u2b_metadata_write_routes_reachable() {
@@ -608,7 +608,7 @@ mod u2b_tests {
         }
     }
 
-    // ── BlobStorage 接入点单元级行为：FS 回读成功 / DB 占位 fail loud ──────
+    // 鈹€鈹€ BlobStorage 鎺ュ叆鐐瑰崟鍏冪骇琛屼负锛欶S 鍥炶鎴愬姛 / DB 鍗犱綅 fail loud 鈹€鈹€鈹€鈹€鈹€鈹€
 
     fn fs_backend(tag: &str) -> FsBlobStorage {
         let dir = std::env::temp_dir()
@@ -630,8 +630,8 @@ mod u2b_tests {
 
     #[tokio::test]
     async fn u2b_db_placeholder_backend_fails_loud_as_not_implemented() {
-        // 红线：DbBlobStorage.put 是 no-op —— 若照常 success 即"上传假成功"。
-        // 契约：回读校验必须把这种情况映射为显式 NotImplemented（HTTP 501）。
+        // 绾㈢嚎锛欴bBlobStorage.put 鏄?no-op 鈥斺€?鑻ョ収甯?success 鍗?涓婁紶鍋囨垚鍔?銆?
+        // 濂戠害锛氬洖璇绘牎楠屽繀椤绘妸杩欑鎯呭喌鏄犲皠涓烘樉寮?NotImplemented锛圚TTP 501锛夈€?
         let storage = DbBlobStorage::default();
         let err = crate::u2_att_persist_verified(&storage, "attachment/a-1/f.bin", b"x")
             .await
@@ -645,7 +645,7 @@ mod u2b_tests {
     #[tokio::test]
     async fn u2b_blob_key_rejects_traversal_and_empty_names() {
         use crate::u2_att_blob_key;
-        assert!(u2_att_blob_key("a-1", "../escape.txt").is_ok()); // 分隔符被剥离为 _
+        assert!(u2_att_blob_key("a-1", "../escape.txt").is_ok()); // 鍒嗛殧绗﹁鍓ョ涓?_
         let key = u2_att_blob_key("a-1", "../escape.txt").unwrap();
         assert!(!key.contains(".."), "key must not contain traversal components: {key}");
         assert!(u2_att_blob_key("a-1", "").is_err());
@@ -653,11 +653,11 @@ mod u2b_tests {
         assert_eq!(u2_att_blob_key("a-1", "dir/nested.txt").unwrap(), "attachment/a-1/dir_nested.txt");
     }
 
-    // ── 族 2：data work/workcompleted pathN Java 形状元组提取契约 ──────────
+    // 鈹€鈹€ 鏃?2锛歞ata work/workcompleted pathN Java 褰㈢姸鍏冪粍鎻愬彇濂戠害 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
 
     #[tokio::test]
     async fn u2r_data_work_pathn_java_shape_extraction_contract() {
-        // 断言 500（而非 400/404）证明：Java 形状路由存在且 N 元组 Path 提取器匹配。
+        // 鏂█ 500锛堣€岄潪 400/404锛夎瘉鏄庯細Java 褰㈢姸璺敱瀛樺湪涓?N 鍏冪粍 Path 鎻愬彇鍣ㄥ尮閰嶃€?
         let base = "/jaxrs/processplatform/assemble/surface/data/work";
         for (method, path) in [
             ("GET", &format!("{base}/w-1/p0")),
@@ -696,7 +696,7 @@ mod u2b_tests {
 
     #[tokio::test]
     async fn u2r_data_pathn_legacy_literal_routes_still_guarded() {
-        // 回归保护：旧字面量风格 URI 不因新增 Java 形状路由而消失（tests_generated 口径 !=404）
+        // 鍥炲綊淇濇姢锛氭棫瀛楅潰閲忛鏍?URI 涓嶅洜鏂板 Java 褰㈢姸璺敱鑰屾秷澶憋紙tests_generated 鍙ｅ緞 !=404锛?
         let base = "/jaxrs/processplatform/assemble/surface/data";
         for (method, path) in [
             ("GET", &format!("{base}/work/path0/test-id")),
@@ -712,3 +712,303 @@ mod u2b_tests {
     }
 }
 
+// ════════════ plan002 U2-c：POST filter 族真缺失闭合回归保护 ════════════
+#[cfg(test)]
+mod u2c_tests {
+    use crate::router;
+    use axum::body::Body;
+    use axum::http::{Request, StatusCode};
+    use tower::ServiceExt;
+
+    async fn status_of(method: &str, uri: &str) -> StatusCode {
+        router(shared::testing::mock_pool())
+            .oneshot(
+                Request::builder()
+                    .uri(uri)
+                    .method(method)
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap()
+            .status()
+    }
+
+    const BASE: &str = "/jaxrs/processplatform/assemble/surface";
+
+    // ── 路由可达性：500 = 路由存在 + 提取器匹配（session 缺失先于 DB 失败） ──
+
+    #[tokio::test]
+    async fn u2c_snap_manage_filter_routes_reachable() {
+        for path in [
+            "/snap/list/filter/1/size/20/manage",
+            "/snap/list/paging/2/size/30/application/app-1/filter/manage",
+            "/snap/list/snap-1/next/20/filter/manage",
+            "/snap/list/snap-1/prev/20/filter/manage",
+        ] {
+            assert_eq!(
+                status_of("POST", &format!("{}{}", BASE, path)).await,
+                StatusCode::INTERNAL_SERVER_ERROR,
+                "snap manage filter route failed: {}",
+                path
+            );
+        }
+    }
+
+    #[tokio::test]
+    async fn u2c_attribute_post_variants_reachable() {
+        for path in [
+            "/read/filter/attribute/filter",
+            "/readcompleted/filter/attribute/filter",
+            "/task/filter/attribute/filter",
+            "/taskcompleted/filter/attribute/filter",
+            "/review/filter/attribute",
+        ] {
+            assert_eq!(
+                status_of("POST", &format!("{}{}", BASE, path)).await,
+                StatusCode::INTERNAL_SERVER_ERROR,
+                "attribute POST route failed: {}",
+                path
+            );
+        }
+    }
+
+    #[tokio::test]
+    async fn u2c_review_search_route_reachable() {
+        assert_eq!(
+            status_of("POST", &format!("{}/review/v2/search", BASE)).await,
+            StatusCode::INTERNAL_SERVER_ERROR
+        );
+    }
+
+    #[tokio::test]
+    async fn u2c_review_create_entry_get_and_route_list_post_reachable() {
+        // Java 精确形状：GET /review/filter/create/entry（此前仅漂移的 POST 绑定）
+        let status = status_of("GET", &format!("{}/review/filter/create/entry", BASE)).await;
+        assert_ne!(status, StatusCode::NOT_FOUND);
+        assert_ne!(status, StatusCode::BAD_REQUEST);
+        // Java POST /route/list/mockputtopost（此前仅有漂移的 GET 绑定）
+        let status = status_of("POST", &format!("{}/route/list/mockputtopost", BASE)).await;
+        assert_ne!(status, StatusCode::NOT_FOUND);
+        assert_ne!(status, StatusCode::BAD_REQUEST);
+    }
+
+
+    #[tokio::test]
+    async fn u2c_draft_keylock_write_verb_routes_reachable() {
+        for (method, path) in [
+            ("PUT", "/draft"),
+            ("POST", "/draft/mockputtopost"),
+            ("PUT", "/keylock/lock"),
+            ("POST", "/keylock/lock/mockputtopost"),
+        ] {
+            assert_eq!(
+                status_of(method, &format!("{}{}", BASE, path)).await,
+                StatusCode::INTERNAL_SERVER_ERROR,
+                "write route failed: {} {}",
+                method,
+                path
+            );
+        }
+    }
+
+    #[tokio::test]
+    async fn u2c_serialnumber_create_and_java_shape_generate_reachable() {
+        assert_eq!(
+            status_of("POST", &format!("{}/serialnumber", BASE)).await,
+            StatusCode::INTERNAL_SERVER_ERROR
+        );
+        // Java 精确形状（此前 Rust 侧为漂移的字面量路径 /generate/process/name/name/serial/{id}）
+        let status = status_of(
+            "POST",
+            &format!("{}/serialnumber/generate/process/pr-1/name/serial-1/serial", BASE),
+        )
+        .await;
+        assert_eq!(status, StatusCode::INTERNAL_SERVER_ERROR);
+    }
+
+    #[tokio::test]
+    async fn u2c_handover_post_openapi_get_reachable() {
+        assert_eq!(
+            status_of("POST", &format!("{}/handover", BASE)).await,
+            StatusCode::INTERNAL_SERVER_ERROR
+        );
+        // openapi 不触 DB/session：应真实 200 并返回描述符
+        assert_eq!(status_of("GET", &format!("{}/openapi", BASE)).await, StatusCode::OK);
+    }
+
+    #[tokio::test]
+    async fn u2c_work_v3_retract_and_shift_time_post_routes_reachable() {
+        assert_eq!(
+            status_of("POST", &format!("{}/work/v3/retract", BASE)).await,
+            StatusCode::INTERNAL_SERVER_ERROR
+        );
+        assert_eq!(
+            status_of("POST", &format!("{}/workcompleted/shift/time", BASE)).await,
+            StatusCode::INTERNAL_SERVER_ERROR
+        );
+    }
+
+    #[tokio::test]
+    async fn u2c_snap_upload_download_routes_reachable() {
+        assert_eq!(
+            status_of("POST", &format!("{}/snap/upload", BASE)).await,
+            StatusCode::INTERNAL_SERVER_ERROR
+        );
+        assert_ne!(
+            status_of("GET", &format!("{}/snap/snap-1/download", BASE)).await,
+            StatusCode::NOT_FOUND
+        );
+    }
+
+    #[tokio::test]
+    async fn u2c_attachment_ext_download_routes_reachable() {
+        // 形状残差：{fileName}.{ext} 单段双参数受 matchit 限制，以 {fileName} 承载 name.ext
+        for path in [
+            "/attachment/download/att-1/work/work-1/stream/report.pdf",
+            "/attachment/download/att-1/work/work-1/report.pdf",
+            "/attachment/download/att-1/workcompleted/wc-1/stream/data.xlsx",
+            "/attachment/download/att-1/workcompleted/wc-1/data.xlsx",
+        ] {
+            let status = status_of("GET", &format!("{}{}", BASE, path)).await;
+            assert_ne!(status, StatusCode::NOT_FOUND, "route missing: {}", path);
+            assert_ne!(status, StatusCode::BAD_REQUEST, "extractor mismatch: {}", path);
+        }
+    }
+
+    #[tokio::test]
+    async fn u2c_same_path_multi_method_merge_survives() {
+        // 同一路径既有 GET 又新增 PUT/POST 的合并注册不得互相覆盖
+        let cases: Vec<(&str, &str)> = vec![
+            ("GET", "/keylock/lock"),
+            ("PUT", "/keylock/lock"),
+            ("POST", "/keylock/lock/mockputtopost"),
+            ("GET", "/work/v3/retract"),
+            ("POST", "/work/v3/retract"),
+            ("GET", "/review/filter/attribute"),
+            ("POST", "/review/filter/attribute"),
+        ];
+        for (method, path) in cases {
+            let status = status_of(method, &format!("{}{}", BASE, path)).await;
+            assert_ne!(
+                status,
+                StatusCode::METHOD_NOT_ALLOWED,
+                "method merge lost: {} {}",
+                method,
+                path
+            );
+        }
+    }
+
+    // ── 纯函数契约：注入防护 / 分页钳制 / 参数化构建器 ─────────────────────
+
+    #[test]
+    fn u2c_like_pattern_escapes_wildcard_injection() {
+        use crate::u2_like_pattern;
+        // 业务动机：% _ 是 LIKE 通配符、\ 是转义符——不转义则 '%%' 可拖库
+        assert_eq!(u2_like_pattern("abc"), "%abc%");
+        assert_eq!(u2_like_pattern("50%"), "%50\\%%");
+        assert_eq!(u2_like_pattern("a_b"), "%a\\_b%");
+        assert_eq!(u2_like_pattern("a\\b"), "%a\\\\b%");
+        assert_eq!(u2_like_pattern("%_'\\x"), "%\\%\\_'\\\\x%");
+    }
+
+    #[test]
+    fn u2c_paging_adjust_clamps_prevent_unbounded_scan() {
+        use crate::{u2_adjust_page, u2_adjust_size};
+        assert_eq!(u2_adjust_page(0), 1);
+        assert_eq!(u2_adjust_page(-5), 1);
+        assert_eq!(u2_adjust_page(3), 3);
+        assert_eq!(u2_adjust_size(0), 1);
+        assert_eq!(u2_adjust_size(999_999), 200, "超大 size 必须被钳制");
+        assert_eq!(u2_adjust_size(-1), 1);
+    }
+
+    #[test]
+    fn u2c_filter_sql_builder_parameterizes_all_user_input() {
+        use crate::U2FilterSql;
+        let mut fs = U2FilterSql::default();
+        fs.push_eq("xperson", "zhang@x");
+        fs.push_in("\"xapplication\"", &["app-1".to_string(), "app-2".to_string()]);
+        fs.push_key_ilike(&["xtitle", "xserial"], "100%_");
+        // 所有用户值必须走占位符，不得内联进 SQL 文本
+        let where_clause = fs.where_sql();
+        assert_eq!(
+            where_clause,
+            "xperson = $1 AND \"xapplication\" IN ($2, $3) AND (xtitle ILIKE $4 OR xserial ILIKE $5)"
+        );
+        assert_eq!(fs.params.len(), 5);
+        assert_eq!(fs.params[3], "%100\\%\\_%", "ILIKE pattern 需转义通配符");
+        // 空条件退化为恒真（与既有 handler WHERE 1=1 惯例一致）
+        let empty = U2FilterSql::default();
+        assert_eq!(empty.where_sql(), "1=1");
+    }
+
+    #[test]
+    fn u2c_paged_result_carries_total_in_action_result_count() {
+        use crate::u2_paged_result;
+        let data = vec![serde_json::json!({"id": "a"}), serde_json::json!({"id": "b"})];
+        let result = u2_paged_result(data, 57);
+        assert_eq!(result.0.count, Some(57), "分页 total 必须写入 ActionResult.count");
+        assert_eq!(result.0.r#type.as_deref(), Some("success"));
+        let body = result.0.data.unwrap();
+        assert_eq!(body["count"], 57, "data.count 与 total 一致");
+        assert_eq!(body["data"].as_array().unwrap().len(), 2);
+    }
+
+    #[test]
+    fn u2c_normalized_registrations_have_no_duplicate_method_path() {
+        // 防通配冲突守卫：routes.rs 中任意 (method, {x}→{} 归一化路径) 只允许出现一次，
+        // 否则 axum Router 构建期会 panic（服务无法启动）。
+        let src = include_str!("routes.rs");
+        let mut seen = std::collections::HashSet::new();
+        let mut duplicates = Vec::new();
+        let marker = ".route(\"";
+        let mut idx = 0usize;
+        while let Some(rel) = src[idx..].find(marker) {
+            let start = idx + rel + marker.len();
+            let Some(end) = src[start..].find('"') else { break };
+            let raw_path = &src[start..start + end];
+            let boundary = src[start..].find(".route(").map(|r| start + r).unwrap_or(src.len());
+            let window = &src[start..boundary];
+            let method = ["get(", "post(", "put(", "delete("]
+                .iter()
+                .find_map(|t| window.contains(t).then_some(t.trim_end_matches('(')))
+                .map(str::to_string);
+            if let Some(m) = method {
+                let normalized = raw_path
+                    .split('/')
+                    .map(|seg| {
+                        if seg.starts_with('{') && seg.ends_with('}') { "{}" } else { seg }
+                    })
+                    .collect::<Vec<_>>()
+                    .join("/");
+                let key = format!("{} {}", m.to_uppercase(), normalized);
+                if !seen.insert(key.clone()) {
+                    duplicates.push(key);
+                }
+            }
+            idx = start;
+        }
+        assert!(duplicates.is_empty(), "归一化后重复注册（将导致路由 panic）: {:?}", duplicates);
+    }
+
+    #[tokio::test]
+    async fn u2c_openapi_descriptor_reflects_real_registrations() {
+        use crate::{openapi_get, u2_collect_routes};
+        // 描述符必须来自 routes.rs 实际扫描而非硬编码清单
+        let routes = u2_collect_routes(include_str!("routes.rs"));
+        let upload = routes
+            .get(&format!("{}/snap/upload", BASE))
+            .expect("snap/upload must be listed");
+        assert!(upload.contains(&"post".to_string()));
+        assert!(routes.contains_key(&format!("{}/keylock/lock", BASE)));
+
+        let response = openapi_get().await.unwrap().0;
+        assert_eq!(response.r#type.as_deref(), Some("success"));
+        let body = response.data.expect("openapi data required");
+        assert_eq!(body["openapi"], "3.0.3");
+        assert!(body["paths"][&format!("{}/review/v2/search", BASE)]["post"].is_object());
+        assert!(body["paths"][&format!("{}/openapi", BASE)]["get"].is_object());
+    }
+}
