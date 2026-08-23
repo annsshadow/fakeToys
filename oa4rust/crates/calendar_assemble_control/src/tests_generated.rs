@@ -77,4 +77,125 @@ mod tests {
             "get_calendar_detail route should be registered");
     }
 
+    // plan002 U2: route-registration tests for the 7 newly added endpoints
+
+    #[tokio::test]
+    async fn test_u2_calendar_list_my() {
+        let app = crate::router(shared::testing::test_pool());
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/calendar_assemble_control/calendar/list/my")
+                    .method("GET")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_ne!(response.status(), StatusCode::NOT_FOUND,
+            "u2 calendar list/my route should be registered");
+    }
+
+    #[tokio::test]
+    async fn test_u2_calendar_list_public() {
+        let app = crate::router(shared::testing::test_pool());
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/calendar_assemble_control/calendar/list/public")
+                    .method("GET")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_ne!(response.status(), StatusCode::NOT_FOUND,
+            "u2 calendar list/public route should be registered");
+    }
+
+    #[tokio::test]
+    async fn test_u2_calendar_get() {
+        let app = crate::router(shared::testing::test_pool());
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/calendar_assemble_control/calendar/some-id")
+                    .method("GET")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_ne!(response.status(), StatusCode::NOT_FOUND,
+            "u2 calendar {{id}} route should be registered");
+    }
+
+    #[tokio::test]
+    async fn test_u2_calendar_ismanager() {
+        let app = crate::router(shared::testing::test_pool());
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/calendar_assemble_control/calendar/ismanager")
+                    .method("GET")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_ne!(response.status(), StatusCode::NOT_FOUND,
+            "u2 calendar ismanager route should be registered");
+    }
+
+    #[tokio::test]
+    async fn test_u2_event_get() {
+        let app = crate::router(shared::testing::test_pool());
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/calendar_assemble_control/event/some-id")
+                    .method("GET")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_ne!(response.status(), StatusCode::NOT_FOUND,
+            "u2 event {{id}} route should be registered");
+    }
+
+    #[tokio::test]
+    async fn test_u2_setting_list_all() {
+        let app = crate::router(shared::testing::test_pool());
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/calendar_assemble_control/setting/list/all")
+                    .method("GET")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_ne!(response.status(), StatusCode::NOT_FOUND,
+            "u2 setting list/all route should be registered");
+    }
+
+    #[tokio::test]
+    async fn test_u2_setting_ismanager() {
+        let app = crate::router(shared::testing::test_pool());
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/calendar_assemble_control/setting/ismanager")
+                    .method("GET")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_ne!(response.status(), StatusCode::NOT_FOUND,
+            "u2 setting ismanager route should be registered");
+    }
+
 }

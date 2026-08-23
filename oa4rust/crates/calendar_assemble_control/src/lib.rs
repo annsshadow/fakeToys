@@ -8,6 +8,7 @@ use serde_json::Value;
 use shared::{error::AppError, response::ActionResult};
 
 pub mod routes;
+pub mod u2;
 
 #[cfg(test)]
 mod tests;
@@ -193,7 +194,9 @@ pub async fn get_calendar_detail(
 }
 
 pub fn calendar_assemble_control_router(pool: Pool) -> Router {
-    routes::router(pool)
+    // plan002 U2 的 7 条新路由注册于 routes::router 内部（Extension 层之前），
+    // 确保共享连接池扩展对全部路由可见。
+    crate::routes::router(pool)
         .route("/jaxrs/calendar/assemble/control/calendar/detail/{id}", get(get_calendar_detail))
 }
 
