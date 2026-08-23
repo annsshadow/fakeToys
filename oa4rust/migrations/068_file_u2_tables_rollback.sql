@@ -1,0 +1,7 @@
+-- plan002 U2 rollback
+
+DROP INDEX IF EXISTS idx_file_share_file;
+DROP INDEX IF EXISTS idx_file_share_person;
+DROP TABLE IF EXISTS FILE_SHARE;
+
+ALTER TABLE FILE_FILE DROP COLUMN IF EXISTS storage_key;
