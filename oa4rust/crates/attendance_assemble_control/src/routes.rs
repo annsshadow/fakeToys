@@ -1,5 +1,5 @@
 ﻿use axum::{
-    routing::{get, post},
+    routing::{delete, get, post, put},
     Router,
 };
 use deadpool_postgres::Pool;
@@ -52,9 +52,9 @@ pub fn attendance_assemble_control_routes(pool: Pool) -> Router {
             "/jaxrs/attendance/assemble/control/attendancedetail/list/{file_id}",
             get(crate::attendancedetail_list_file_id),
         )
-        .route("/jaxrs/attendance/assemble/control/attendancedetail/mobile/filter/list/page/{page}/count/{count}", get(crate::attendancedetail_mobile_filter_list_page_page_count_count))
-        .route("/jaxrs/attendance/assemble/control/attendancedetail/mobile/mobilepreview", post(crate::attendancedetail_mobile_mobilepreview))
-        .route("/jaxrs/attendance/assemble/control/attendancedetail/mobile/my", post(crate::attendancedetail_mobile_my))
+        .route("/jaxrs/attendance/assemble/control/attendancedetail/mobile/filter/list/page/{page}/count/{count}", get(crate::attendancedetail_mobile_filter_list_page_page_count_count).put(crate::attendancedetail_mobile_filter_list_page_page_count_count))
+        .route("/jaxrs/attendance/assemble/control/attendancedetail/mobile/mobilepreview", post(crate::attendancedetail_mobile_mobilepreview).get(crate::attendancedetail_mobile_mobilepreview))
+        .route("/jaxrs/attendance/assemble/control/attendancedetail/mobile/my", post(crate::attendancedetail_mobile_my).get(crate::attendancedetail_mobile_my))
         .route("/jaxrs/attendance/assemble/control/attendancedetail/mobile/recive", post(crate::attendancedetail_mobile_recive))
         .route(
             "/jaxrs/attendance/assemble/control/attendancedetail/mobile/{id}",
@@ -190,5 +190,178 @@ pub fn attendance_assemble_control_routes(pool: Pool) -> Router {
         .route("/jaxrs/attendance/assemble/control/v2/record/list/{page}/size/{size}", post(crate::v2_record_list_page_size))
         .route("/jaxrs/attendance/assemble/control/v2/detail/list/{page}/size/{size}", post(crate::v2_detail_list_page_size))
         .route("/jaxrs/attendance/assemble/control/v2/my/statistic", post(crate::v2_my_statistic))
+        // ── plan002 U2 legacy 族闭合新增注册 ──────────────────────────
+        // dingding / qywx
+        .route(
+            "/jaxrs/attendance/assemble/control/dingding/all",
+            delete(crate::dingding_delete_all),
+        )
+        .route(
+            "/jaxrs/attendance/assemble/control/dingding/sync/from/{from}/to/{to}/start",
+            get(crate::dingding_sync_start),
+        )
+        .route("/jaxrs/attendance/assemble/control/dingding/sync/list", get(crate::dingding_sync_list))
+        .route(
+            "/jaxrs/attendance/assemble/control/dingding/attendance/list/{id}/next/{count}",
+            put(crate::dingding_attendance_list_next),
+        )
+        .route(
+            "/jaxrs/attendance/assemble/control/dingding/statistic/person/year/{year}/month/{month}",
+            get(crate::dingding_statistic_person_trigger),
+        )
+        .route(
+            "/jaxrs/attendance/assemble/control/dingding/statistic/unit/year/{year}/month/{month}/day/{day}",
+            get(crate::dingding_statistic_unit_day_trigger),
+        )
+        .route(
+            "/jaxrs/attendance/assemble/control/dingdingstatistic/person/{person}/{year}/{month}",
+            get(crate::dingdingstatistic_person),
+        )
+        .route(
+            "/jaxrs/attendance/assemble/control/dingdingstatistic/person/unit/{unit}/{year}/{month}",
+            get(crate::dingdingstatistic_person_unit),
+        )
+        .route(
+            "/jaxrs/attendance/assemble/control/dingdingstatistic/unit/{unit}/{year}/{month}",
+            get(crate::dingdingstatistic_unit),
+        )
+        .route(
+            "/jaxrs/attendance/assemble/control/qywx/all",
+            delete(crate::qywx_delete_all),
+        )
+        .route(
+            "/jaxrs/attendance/assemble/control/qywx/sync/from/{from}/to/{to}/start",
+            get(crate::qywx_sync_start),
+        )
+        .route("/jaxrs/attendance/assemble/control/qywx/sync/list", get(crate::qywx_sync_list))
+        .route(
+            "/jaxrs/attendance/assemble/control/qywx/attendance/list/{id}/next/{count}",
+            put(crate::qywx_attendance_list_next),
+        )
+        .route(
+            "/jaxrs/attendance/assemble/control/qywx/statistic/person/year/{year}/month/{month}",
+            get(crate::qywx_statistic_person_trigger),
+        )
+        .route(
+            "/jaxrs/attendance/assemble/control/qywx/statistic/unit/year/{year}/month/{month}/day/{day}",
+            get(crate::qywx_statistic_unit_day_trigger),
+        )
+        .route(
+            "/jaxrs/attendance/assemble/control/qywxstatistic/person/{person}/{year}/{month}",
+            get(crate::qywxstatistic_person),
+        )
+        .route(
+            "/jaxrs/attendance/assemble/control/qywxstatistic/person/unit/{unit}/{year}/{month}",
+            get(crate::qywxstatistic_person_unit),
+        )
+        .route(
+            "/jaxrs/attendance/assemble/control/qywxstatistic/unit/{unit}/{year}/{month}",
+            get(crate::qywxstatistic_unit),
+        )
+        // v2 appeal
+        .route(
+            "/jaxrs/attendance/assemble/control/v2/appeal/list/{page}/size/{size}",
+            post(crate::v2_appeal_list_page_size),
+        )
+        .route(
+            "/jaxrs/attendance/assemble/control/v2/appeal/list/manager/{page}/size/{size}",
+            post(crate::v2_appeal_manager_list_page_size),
+        )
+        .route("/jaxrs/attendance/assemble/control/v2/appeal/{id}", get(crate::v2_appeal_get))
+        .route(
+            "/jaxrs/attendance/assemble/control/v2/appeal/{id}/manager/status",
+            get(crate::v2_appeal_manager_status),
+        )
+        .route(
+            "/jaxrs/attendance/assemble/control/v2/appeal/{id}/start/check",
+            get(crate::v2_appeal_start_check),
+        )
+        .route(
+            "/jaxrs/attendance/assemble/control/v2/appeal/{id}/start/process",
+            post(crate::v2_appeal_start_process),
+        )
+        .route(
+            "/jaxrs/attendance/assemble/control/v2/appeal/{id}/reset/status",
+            get(crate::v2_appeal_reset_status),
+        )
+        .route(
+            "/jaxrs/attendance/assemble/control/v2/appeal/{id}/end/process",
+            post(crate::v2_appeal_end_process),
+        )
+        // v2 detail
+        .route(
+            "/jaxrs/attendance/assemble/control/v2/detail/rebuild/person/{person}/date/{date}",
+            get(crate::v2_detail_rebuild_person_date),
+        )
+        .route(
+            "/jaxrs/attendance/assemble/control/v2/detail/statistic/{detailId}/list/record",
+            get(crate::v2_detail_statistic_record_list),
+        )
+        .route(
+            "/jaxrs/attendance/assemble/control/v2/detail/statistic/filter",
+            post(crate::v2_detail_statistic_filter),
+        )
+        .route(
+            "/jaxrs/attendance/assemble/control/v2/detail/statistic/export/filter",
+            post(crate::v2_detail_statistic_export_filter),
+        )
+        // v2 group rebuild + groupschedule
+        .route(
+            "/jaxrs/attendance/assemble/control/v2/group/rebuild/detail/group/{groupId}/date/{date}",
+            get(crate::v2_group_rebuild_detail_group_date),
+        )
+        .route(
+            "/jaxrs/attendance/assemble/control/v2/groupschedule",
+            post(crate::v2_groupschedule_post),
+        )
+        .route(
+            "/jaxrs/attendance/assemble/control/v2/groupschedule/config/group/{groupId}",
+            get(crate::v2_groupschedule_config_get),
+        )
+        .route(
+            "/jaxrs/attendance/assemble/control/v2/groupschedule/list/group/{groupId}/month/{month}",
+            get(crate::v2_groupschedule_list_group_month),
+        )
+        .route(
+            "/jaxrs/attendance/assemble/control/v2/groupschedule/list/filter",
+            post(crate::v2_groupschedule_list_filter),
+        )
+        // v2 leave template
+        .route("/jaxrs/attendance/assemble/control/v2/leave/template", get(crate::v2_leave_template))
+        // v2 mobile（Java 端 "check/ from/out" 路径含空格：同时注册空格与 %20 形态）
+        .route("/jaxrs/attendance/assemble/control/v2/mobile/check/pre", get(crate::v2_mobile_pre_check))
+        .route("/jaxrs/attendance/assemble/control/v2/mobile/check", post(crate::v2_mobile_check))
+        .route(
+            "/jaxrs/attendance/assemble/control/v2/mobile/check/ from/out",
+            post(crate::v2_mobile_check_from_out),
+        )
+        .route(
+            "/jaxrs/attendance/assemble/control/v2/mobile/check/%20from/out",
+            post(crate::v2_mobile_check_from_out),
+        )
+        // v2 my
+        .route("/jaxrs/attendance/assemble/control/v2/my/version", get(crate::v2_my_version))
+        .route("/jaxrs/attendance/assemble/control/v2/my/controls", get(crate::v2_my_controls))
+        .route("/jaxrs/attendance/assemble/control/v2/my/detail/list", post(crate::v2_my_detail_list))
+        .route("/jaxrs/attendance/assemble/control/v2/my/rest/date/check", post(crate::v2_my_rest_date_check))
+        // v2 record
+        .route(
+            "/jaxrs/attendance/assemble/control/v2/record/delete/people/{people}/date/{date}",
+            get(crate::v2_record_delete_people_date),
+        )
+        .route("/jaxrs/attendance/assemble/control/v2/record/template", get(crate::v2_record_template))
+        .route("/jaxrs/attendance/assemble/control/v2/record/import", post(crate::v2_record_import))
+        .route("/jaxrs/attendance/assemble/control/v2/record/import/daily", post(crate::v2_record_import_daily))
+        // v2 workplace
+        .route("/jaxrs/attendance/assemble/control/v2/workplace", post(crate::v2_workplace_post))
+        .route(
+            "/jaxrs/attendance/assemble/control/v2/workplace/{id}",
+            delete(crate::v2_workplace_delete),
+        )
+        .route("/jaxrs/attendance/assemble/control/v2/workplace/list/all", get(crate::v2_workplace_list_all))
+        .route(
+            "/jaxrs/attendance/assemble/control/v2/workplace/list/ids",
+            post(crate::v2_workplace_list_ids),
+        )
         .layer(axum::Extension(pool))
 }
