@@ -188,8 +188,6 @@ pub fn router(pool: Pool, session_manager: SessionManager) -> Router {
             get(regist::check_email),
         )
         .route("/jaxrs/person/regist/code", post(regist::send_regist_code))
-        // empower 模块路由
-        .merge(empower::router::router(pool.clone(), session_manager.clone()))
         // 电子签名端点
         .route("/jaxrs/person/signature/upload", post(signature::upload))
         .route("/jaxrs/person/signature/list", get(signature::list))
