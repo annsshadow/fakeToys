@@ -5,7 +5,7 @@ use axum::{
 };
 use deadpool_postgres::Pool;
 use serde::Deserialize;
-use serde_json::Value;
+use serde_json::{json, Value};
 use shared::{error::AppError, response::ActionResult};
 
 pub mod routes;
@@ -6050,8 +6050,409 @@ pub async fn center_regist_applications_update(
 
     Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
         ("id".to_string(), Value::String(id)),
-        ("registered".to_string(), Value::Bool(true)),
+        ("deleted".to_string(), Value::Bool(true)),
     ])))))
+}
+
+// ══════════════════════════════════════════════════════════════════
+// plan002 U2 残余闭合（9 条，路径对齐 Java v9 全集）：
+//
+// - config PUT 家族（3 条）：centerserver / person / token 的写回。
+//   Java 侧为 Config 对象保存（ActionEditConfig），Rust 侧以
+//   x_program_config 键值域持久化；管理员门禁（require_admin）。
+// - invoke CRUD（4 条）：POST/GET/PUT/DELETE /invoke[/{flag}]，
+//   表 x_program_invoke（migration 074），flag 语义对齐 Java emc.flag
+//   （id 或 name 或 alias）；写操作 serviceControlAble ≈ 管理员门禁；
+//   name/alias 归一化查重（trim 后比对，排除自身 id）。
+// - appstyle erase GET 家族（2 条）：GET .../erase 为 Java 原生方法，
+//   语义是"清除当前该类图片"（无 id 参数）；补挂在既有 DELETE 注册上，
+//   管理员门禁（对齐 Java ExceptionAccessDenied）。
+// ══════════════════════════════════════════════════════════════════
+
+/// config PUT 家族的公共实现：按 key 域 upsert 配置 JSON
+async fn u2_config_domain_put(
+    pool: &Pool,
+    session: &shared::session::Session,
+    key: &str,
+    body: Value,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    require_admin(pool, session).await?;
+    if !body.is_object() {
+        return Ok(Json(ActionResult::error("request body must be a JSON object")));
+    }
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let value = body.to_string();
+    let n = client
+        .execute(
+            "UPDATE x_program_config SET value = $1, update_time = NOW() \
+             WHERE key = $2 AND deleted_at IS NULL",
+            &[&value, &key],
+        )
+        .await
+        .map_err(|e| {
+            tracing::error!("[u2_config_put] update failed: {}", e);
+            AppError::Internal
+        })?;
+    if n == 0 {
+        let id = uuid::Uuid::new_v4().to_string();
+        client
+            .execute(
+                "INSERT INTO x_program_config (id, key, value, category, creator, create_time, update_time) \
+                 VALUES ($1, $2, $3, 'config', $4, NOW(), NOW())",
+                &[&id, &key, &value, &session.person_unique],
+            )
+            .await
+            .map_err(|e| {
+                tracing::error!("[u2_config_put] insert failed: {}", e);
+                AppError::Internal
+            })?;
+    }
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("value".to_string(), Value::Bool(true)),
+            ("key".to_string(), Value::String(key.to_string())),
+        ]),
+    ))))
+}
+
+/// PUT /jaxrs/program_center/config/centerserver —— 保存中心服务器配置
+pub async fn u2_config_centerserver_put(
+    pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
+    Json(body): Json<Value>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    u2_config_domain_put(&pool, &session, "centerserver", body).await
+}
+
+/// PUT /jaxrs/program_center/config/person —— 人员配置保存
+pub async fn u2_config_person_put(
+    pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
+    Json(body): Json<Value>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    u2_config_domain_put(&pool, &session, "person", body).await
+}
+
+/// PUT /jaxrs/program_center/config/token —— 令牌配置保存
+pub async fn u2_config_token_put(
+    pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
+    Json(body): Json<Value>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    u2_config_domain_put(&pool, &session, "system.token", body).await
+}
+
+// --- invoke CRUD（表：x_program_invoke）---
+
+#[derive(Debug, Deserialize)]
+pub struct U2InvokeRequest {
+    #[serde(default)]
+    pub name: String,
+    #[serde(default)]
+    pub alias: String,
+    #[serde(default)]
+    pub category: String,
+    #[serde(default)]
+    pub description: String,
+    #[serde(default)]
+    pub enable: bool,
+    #[serde(rename = "enableToken", default)]
+    pub enable_token: bool,
+    #[serde(rename = "enableAnonymous", default = "default_true_u2")]
+    pub enable_anonymous: bool,
+    #[serde(default)]
+    pub validated: bool,
+    #[serde(default)]
+    pub text: String,
+    #[serde(rename = "remoteAddrRegex", default)]
+    pub remote_addr_regex: String,
+    #[serde(default)]
+    pub data: String,
+    #[serde(rename = "executorList", default)]
+    pub executor_list: Option<Vec<String>>,
+}
+
+fn default_true_u2() -> bool {
+    true
+}
+
+fn opt_non_empty(s: &str) -> Option<String> {
+    let t = s.trim();
+    if t.is_empty() {
+        None
+    } else {
+        Some(t.to_string())
+    }
+}
+
+async fn u2_invoke_find_by_flag(
+    client: &deadpool_postgres::tokio_postgres::Client,
+    flag: &str,
+) -> Result<Option<String>, AppError> {
+    // 对齐 Java emc.flag：id 或 name 或 alias 命中
+    let row = client
+        .query_opt(
+            "SELECT id FROM x_program_invoke \
+             WHERE (id = $1 OR name = $1 OR alias = $1)",
+            &[&flag],
+        )
+        .await
+        .map_err(|e| {
+            tracing::error!("[u2_invoke] find-by-flag failed: {}", e);
+            AppError::Internal
+        })?;
+    Ok(row.map(|r| r.get::<_, String>("id")))
+}
+
+/// POST /jaxrs/program_center/invoke —— 创建服务调用
+pub async fn u2_invoke_create(
+    pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
+    Json(req): Json<U2InvokeRequest>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    require_admin(&pool, &session).await?;
+    let name = req.name.trim().to_string();
+    if name.is_empty() {
+        return Ok(Json(ActionResult::error("name cannot be empty")));
+    }
+    let alias = opt_non_empty(&req.alias);
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+
+    // 归一化查重：name 与 alias 都不允许与现有记录的 name/alias 冲突
+    let dup_name = client
+        .query_opt(
+            "SELECT id FROM x_program_invoke WHERE name = $1 OR alias = $1 LIMIT 1",
+            &[&name],
+        )
+        .await
+        .map_err(|e| {
+            tracing::error!("[u2_invoke_create] dup-name check failed: {}", e);
+            AppError::Internal
+        })?;
+    if dup_name.is_some() {
+        return Ok(Json(ActionResult::error("duplicate name")));
+    }
+    if let Some(a) = &alias {
+        let dup_alias = client
+            .query_opt(
+                "SELECT id FROM x_program_invoke WHERE name = $1 OR alias = $1 LIMIT 1",
+                &[a],
+            )
+            .await
+            .map_err(|e| {
+                tracing::error!("[u2_invoke_create] dup-alias check failed: {}", e);
+                AppError::Internal
+            })?;
+        if dup_alias.is_some() {
+            return Ok(Json(ActionResult::error("duplicate alias")));
+        }
+    }
+
+    let id = uuid::Uuid::new_v4().to_string();
+    let executor_list = serde_json::to_string(&req.executor_list.unwrap_or_default())
+        .unwrap_or_else(|_| "[]".to_string());
+    client
+        .execute(
+            "INSERT INTO x_program_invoke \
+             (id, name, alias, category, description, enable, enable_token, enable_anonymous, \
+              validated, text, remote_addr_regex, data, executor_list, creator) \
+             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, ($13::text)::jsonb, $14)",
+            &[
+                &id,
+                &name,
+                &alias,
+                &opt_non_empty(&req.category),
+                &opt_non_empty(&req.description),
+                &req.enable,
+                &req.enable_token,
+                &req.enable_anonymous,
+                &req.validated,
+                &opt_non_empty(&req.text),
+                &opt_non_empty(&req.remote_addr_regex),
+                &opt_non_empty(&req.data),
+                &executor_list,
+                &session.person_unique,
+            ],
+        )
+        .await
+        .map_err(|e| {
+            tracing::error!("[u2_invoke_create] insert failed: {}", e);
+            AppError::Internal
+        })?;
+
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([("id".to_string(), Value::String(id))]),
+    ))))
+}
+
+/// GET /jaxrs/program_center/invoke/{flag} —— 按 id/name/alias 查询
+pub async fn u2_invoke_get(
+    pool: Extension<Pool>,
+    Path(flag): Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let Some(id) = u2_invoke_find_by_flag(&client, flag.trim()).await? else {
+        return Ok(Json(ActionResult::error("invoke not found")));
+    };
+    let row = client
+        .query_opt(
+            "SELECT id, name, alias, category, description, enable, enable_token, \
+             enable_anonymous, validated, text, remote_addr_regex, last_start_time, last_end_time \
+             FROM x_program_invoke WHERE id = $1",
+            &[&id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+    let Some(r) = row else {
+        return Ok(Json(ActionResult::error("invoke not found")));
+    };
+    Ok(Json(ActionResult::success(json!({
+        "id": r.get::<_, String>("id"),
+        "name": r.get::<_, String>("name"),
+        "alias": r.get::<_, Option<String>>("alias"),
+        "category": r.get::<_, Option<String>>("category"),
+        "description": r.get::<_, Option<String>>("description"),
+        "enable": r.get::<_, bool>("enable"),
+        "enableToken": r.get::<_, bool>("enable_token"),
+        "enableAnonymous": r.get::<_, bool>("enable_anonymous"),
+        "validated": r.get::<_, bool>("validated"),
+        "text": r.get::<_, Option<String>>("text"),
+        "remoteAddrRegex": r.get::<_, Option<String>>("remote_addr_regex"),
+    }))))
+}
+
+/// PUT /jaxrs/program_center/invoke/{flag} —— 更新服务调用
+pub async fn u2_invoke_update(
+    pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
+    Path(flag): Path<String>,
+    Json(req): Json<U2InvokeRequest>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    require_admin(&pool, &session).await?;
+    let name = req.name.trim().to_string();
+    if name.is_empty() {
+        return Ok(Json(ActionResult::error("name cannot be empty")));
+    }
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let Some(id) = u2_invoke_find_by_flag(&client, flag.trim()).await? else {
+        return Ok(Json(ActionResult::error("invoke not found")));
+    };
+
+    // 查重排除自身
+    let dup = client
+        .query_opt(
+            "SELECT id FROM x_program_invoke \
+             WHERE (name = $1 OR alias = $1 OR alias = $2) AND id <> $3 LIMIT 1",
+            &[&name, &opt_non_empty(&req.alias), &id],
+        )
+        .await
+        .map_err(|e| {
+            tracing::error!("[u2_invoke_update] dup check failed: {}", e);
+            AppError::Internal
+        })?;
+    if dup.is_some() {
+        return Ok(Json(ActionResult::error("duplicate name")));
+    }
+
+    let alias = opt_non_empty(&req.alias);
+    let n = client
+        .execute(
+            "UPDATE x_program_invoke SET name = $1, alias = $2, category = $3, description = $4, \
+             enable = $5, enable_token = $6, enable_anonymous = $7, validated = $8, text = $9, \
+             remote_addr_regex = $10, data = $11, update_time = NOW() WHERE id = $12",
+            &[
+                &name,
+                &alias,
+                &opt_non_empty(&req.category),
+                &opt_non_empty(&req.description),
+                &req.enable,
+                &req.enable_token,
+                &req.enable_anonymous,
+                &req.validated,
+                &opt_non_empty(&req.text),
+                &opt_non_empty(&req.remote_addr_regex),
+                &opt_non_empty(&req.data),
+                &id,
+            ],
+        )
+        .await
+        .map_err(|e| {
+            tracing::error!("[u2_invoke_update] update failed: {}", e);
+            AppError::Internal
+        })?;
+    if n == 0 {
+        return Ok(Json(ActionResult::error("invoke not found")));
+    }
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([("id".to_string(), Value::String(id))]),
+    ))))
+}
+
+/// DELETE /jaxrs/program_center/invoke/{flag} —— 删除服务调用
+pub async fn u2_invoke_delete(
+    pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
+    Path(flag): Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    require_admin(&pool, &session).await?;
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let Some(id) = u2_invoke_find_by_flag(&client, flag.trim()).await? else {
+        return Ok(Json(ActionResult::error("invoke not found")));
+    };
+    client
+        .execute("DELETE FROM x_program_invoke WHERE id = $1", &[&id])
+        .await
+        .map_err(|e| {
+            tracing::error!("[u2_invoke_delete] delete failed: {}", e);
+            AppError::Internal
+        })?;
+    Ok(Json(ActionResult::success(json!({ "value": true }))))
+}
+
+// --- appstyle erase（GET，清除当前类图，对齐 Java 无 id 参数语义）---
+
+async fn u2_appstyle_erase_current(
+    pool: &Pool,
+    session: &shared::session::Session,
+    resource_type: &str,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    require_admin(pool, session).await?;
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let n = client
+        .execute(
+            "DELETE FROM x_program_deploy_resource \
+             WHERE id = (SELECT id FROM x_program_deploy_resource \
+                         WHERE resource_type = $1 ORDER BY create_time DESC LIMIT 1)",
+            &[&resource_type],
+        )
+        .await
+        .map_err(|e| {
+            tracing::error!("[u2_appstyle_erase] delete failed: {}", e);
+            AppError::Internal
+        })?;
+    if n == 0 {
+        return Ok(Json(ActionResult::error("not found")));
+    }
+    Ok(Json(ActionResult::success(json!({
+        "value": true,
+        "resourceType": resource_type,
+    }))))
+}
+
+/// GET /jaxrs/program_center/appstyle/image/login/avatar/erase —— 清除当前登录头像
+pub async fn u2_appstyle_login_avatar_erase_get(
+    pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    u2_appstyle_erase_current(&pool, &session, "login_avatar").await
+}
+
+/// GET /jaxrs/program_center/appstyle/image/launch/logo/erase —— 清除当前启动 Logo
+pub async fn u2_appstyle_launch_logo_erase_get(
+    pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    u2_appstyle_erase_current(&pool, &session, "launch_logo").await
 }
 
 // ── agent list / delete（Java: GET/DELETE /agent）──────────────────────
