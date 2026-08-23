@@ -1,6 +1,6 @@
 /// 行为对比测试端点列表（自动生成）
 
-/// 生成时间: 2026-08-23 13:33:10
+/// 生成时间: 2026-08-23 17:12:13
 use super::EndpointDef;
 
 pub const ENDPOINTS: &[EndpointDef] = &[
@@ -12218,7 +12218,67 @@ pub const ENDPOINTS: &[EndpointDef] = &[
     EndpointDef {
         crate_name: "meeting_assemble_control",
         method: "DELETE",
+        rust_path: "/jaxrs/meeting/assemble/control/meeting/{id}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "meeting_assemble_control",
+        method: "DELETE",
         rust_path: "/jaxrs/meeting/assemble/control/meeting/{id}/delete/invite",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "meeting_assemble_control",
+        method: "GET",
+        rust_path: "/jaxrs/meeting/assemble/control/attachment/list/meeting/{meetingId}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "meeting_assemble_control",
+        method: "GET",
+        rust_path: "/jaxrs/meeting/assemble/control/attachment/list/{id}/next/{count}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "meeting_assemble_control",
+        method: "GET",
+        rust_path: "/jaxrs/meeting/assemble/control/attachment/list/{id}/prev/{count}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "meeting_assemble_control",
+        method: "GET",
+        rust_path: "/jaxrs/meeting/assemble/control/attachment/{id}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "meeting_assemble_control",
+        method: "GET",
+        rust_path: "/jaxrs/meeting/assemble/control/attachment/{id}/download/{stream}",
         java_war: "",
         java_action: "",
         body: None,
@@ -12268,6 +12328,36 @@ pub const ENDPOINTS: &[EndpointDef] = &[
     EndpointDef {
         crate_name: "meeting_assemble_control",
         method: "GET",
+        rust_path: "/jaxrs/meeting/assemble/control/building/list/start/{start}/completed/{completed}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "meeting_assemble_control",
+        method: "GET",
+        rust_path: "/jaxrs/meeting/assemble/control/building/list/start/{start}/completed/{completed}/allmeeting",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "meeting_assemble_control",
+        method: "GET",
+        rust_path: "/jaxrs/meeting/assemble/control/building/list/start/{start}/completed/{completed}/room/{room}/meeting/{meeting}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "meeting_assemble_control",
+        method: "GET",
         rust_path: "/jaxrs/meeting/assemble/control/building/{id}",
         java_war: "",
         java_action: "",
@@ -12279,6 +12369,16 @@ pub const ENDPOINTS: &[EndpointDef] = &[
         crate_name: "meeting_assemble_control",
         method: "GET",
         rust_path: "/jaxrs/meeting/assemble/control/config/system/config",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "meeting_assemble_control",
+        method: "GET",
+        rust_path: "/jaxrs/meeting/assemble/control/config/system/config/manage",
         java_war: "",
         java_action: "",
         body: None,
@@ -12348,6 +12448,16 @@ pub const ENDPOINTS: &[EndpointDef] = &[
     EndpointDef {
         crate_name: "meeting_assemble_control",
         method: "GET",
+        rust_path: "/jaxrs/meeting/assemble/control/meeting/list/coming/month/{count}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "meeting_assemble_control",
+        method: "GET",
         rust_path: "/jaxrs/meeting/assemble/control/meeting/list/coming/{month}/{count}",
         java_war: "",
         java_action: "",
@@ -12369,6 +12479,16 @@ pub const ENDPOINTS: &[EndpointDef] = &[
         crate_name: "meeting_assemble_control",
         method: "GET",
         rust_path: "/jaxrs/meeting/assemble/control/meeting/list/forward/monthcount/{monthCount}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "meeting_assemble_control",
+        method: "GET",
+        rust_path: "/jaxrs/meeting/assemble/control/meeting/list/forward/monthcount/{monthCount}/all",
         java_war: "",
         java_action: "",
         body: None,
@@ -12488,6 +12608,36 @@ pub const ENDPOINTS: &[EndpointDef] = &[
     EndpointDef {
         crate_name: "meeting_assemble_control",
         method: "GET",
+        rust_path: "/jaxrs/meeting/assemble/control/meeting/list/year/{year}/month/{month}/day/{day}/{roomId}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "meeting_assemble_control",
+        method: "GET",
+        rust_path: "/jaxrs/meeting/assemble/control/meeting/list/{id}/next/{count}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "meeting_assemble_control",
+        method: "GET",
+        rust_path: "/jaxrs/meeting/assemble/control/meeting/list/{id}/prev/{count}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "meeting_assemble_control",
+        method: "GET",
         rust_path: "/jaxrs/meeting/assemble/control/meeting/list/{id}/{next}/{count}",
         java_war: "",
         java_action: "",
@@ -12509,6 +12659,86 @@ pub const ENDPOINTS: &[EndpointDef] = &[
         crate_name: "meeting_assemble_control",
         method: "GET",
         rust_path: "/jaxrs/meeting/assemble/control/meeting/{id}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "meeting_assemble_control",
+        method: "GET",
+        rust_path: "/jaxrs/meeting/assemble/control/meeting/{id}/accept",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "meeting_assemble_control",
+        method: "GET",
+        rust_path: "/jaxrs/meeting/assemble/control/meeting/{id}/checkin",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "meeting_assemble_control",
+        method: "GET",
+        rust_path: "/jaxrs/meeting/assemble/control/meeting/{id}/checkin/code",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "meeting_assemble_control",
+        method: "GET",
+        rust_path: "/jaxrs/meeting/assemble/control/meeting/{id}/confirm/allow",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "meeting_assemble_control",
+        method: "GET",
+        rust_path: "/jaxrs/meeting/assemble/control/meeting/{id}/confirm/deny",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "meeting_assemble_control",
+        method: "GET",
+        rust_path: "/jaxrs/meeting/assemble/control/meeting/{id}/manual/completed",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "meeting_assemble_control",
+        method: "GET",
+        rust_path: "/jaxrs/meeting/assemble/control/meeting/{id}/reject",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "meeting_assemble_control",
+        method: "GET",
+        rust_path: "/jaxrs/meeting/assemble/control/openmeeting",
         java_war: "",
         java_action: "",
         body: None,
@@ -12588,6 +12818,56 @@ pub const ENDPOINTS: &[EndpointDef] = &[
     EndpointDef {
         crate_name: "meeting_assemble_control",
         method: "POST",
+        rust_path: "/jaxrs/meeting/assemble/control/attachment/create/from/processplatform",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "meeting_assemble_control",
+        method: "POST",
+        rust_path: "/jaxrs/meeting/assemble/control/attachment/meeting/{meetingId}/upload/{summary}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "meeting_assemble_control",
+        method: "POST",
+        rust_path: "/jaxrs/meeting/assemble/control/attachment/meeting/{meetingId}/upload/{summary}/callback/{callback}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "meeting_assemble_control",
+        method: "POST",
+        rust_path: "/jaxrs/meeting/assemble/control/attachment/{id}/update/callback/{ballback}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "meeting_assemble_control",
+        method: "POST",
+        rust_path: "/jaxrs/meeting/assemble/control/building",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "meeting_assemble_control",
+        method: "POST",
         rust_path: "/jaxrs/meeting/assemble/control/building/list/completed/completed/allmeeting/{start}/{start}",
         java_war: "",
         java_action: "",
@@ -12618,6 +12898,16 @@ pub const ENDPOINTS: &[EndpointDef] = &[
     EndpointDef {
         crate_name: "meeting_assemble_control",
         method: "POST",
+        rust_path: "/jaxrs/meeting/assemble/control/config",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "meeting_assemble_control",
+        method: "POST",
         rust_path: "/jaxrs/meeting/assemble/control/config/system/config/manage",
         java_war: "",
         java_action: "",
@@ -12629,6 +12919,16 @@ pub const ENDPOINTS: &[EndpointDef] = &[
         crate_name: "meeting_assemble_control",
         method: "POST",
         rust_path: "/jaxrs/meeting/assemble/control/create",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "meeting_assemble_control",
+        method: "POST",
+        rust_path: "/jaxrs/meeting/assemble/control/meeting",
         java_war: "",
         java_action: "",
         body: None,
@@ -12668,7 +12968,47 @@ pub const ENDPOINTS: &[EndpointDef] = &[
     EndpointDef {
         crate_name: "meeting_assemble_control",
         method: "POST",
+        rust_path: "/jaxrs/meeting/assemble/control/meeting/list/apply/{page}/size/{size}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "meeting_assemble_control",
+        method: "POST",
+        rust_path: "/jaxrs/meeting/assemble/control/meeting/list/invite/{page}/size/{size}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "meeting_assemble_control",
+        method: "POST",
         rust_path: "/jaxrs/meeting/assemble/control/meeting/list/manage/{page}/{size}/{size}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "meeting_assemble_control",
+        method: "POST",
+        rust_path: "/jaxrs/meeting/assemble/control/meeting/list/{page}/size/{size}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "meeting_assemble_control",
+        method: "POST",
+        rust_path: "/jaxrs/meeting/assemble/control/meeting/list/{page}/size/{size}/manage",
         java_war: "",
         java_action: "",
         body: None,
@@ -12787,8 +13127,98 @@ pub const ENDPOINTS: &[EndpointDef] = &[
 
     EndpointDef {
         crate_name: "meeting_assemble_control",
+        method: "POST",
+        rust_path: "/jaxrs/meeting/assemble/control/room",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "meeting_assemble_control",
+        method: "POST",
+        rust_path: "/jaxrs/meeting/assemble/control/room/{id}/photo",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "meeting_assemble_control",
+        method: "PUT",
+        rust_path: "/jaxrs/meeting/assemble/control/attachment/{id}/update",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "meeting_assemble_control",
+        method: "PUT",
+        rust_path: "/jaxrs/meeting/assemble/control/building/{id}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "meeting_assemble_control",
         method: "PUT",
         rust_path: "/jaxrs/meeting/assemble/control/meeting/save/{id}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "meeting_assemble_control",
+        method: "PUT",
+        rust_path: "/jaxrs/meeting/assemble/control/meeting/{id}/add/invite",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "meeting_assemble_control",
+        method: "PUT",
+        rust_path: "/jaxrs/meeting/assemble/control/meeting/{id}/delete/invite",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "meeting_assemble_control",
+        method: "PUT",
+        rust_path: "/jaxrs/meeting/assemble/control/meeting/{id}/modify/completedtime",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "meeting_assemble_control",
+        method: "PUT",
+        rust_path: "/jaxrs/meeting/assemble/control/meeting/{id}/modify/starttime",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "meeting_assemble_control",
+        method: "PUT",
+        rust_path: "/jaxrs/meeting/assemble/control/room/{id}",
         java_war: "",
         java_action: "",
         body: None,
@@ -15297,8 +15727,168 @@ pub const ENDPOINTS: &[EndpointDef] = &[
 
     EndpointDef {
         crate_name: "organization_assemble_express",
+        method: "GET",
+        rust_path: "/jaxrs/unit/list/type/{type}/object",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "organization_assemble_express",
+        method: "POST",
+        rust_path: "/jaxrs/distinguishedname/list",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "organization_assemble_express",
+        method: "POST",
+        rust_path: "/jaxrs/empower/list/identity/object",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "organization_assemble_express",
+        method: "POST",
+        rust_path: "/jaxrs/empowerlog",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "organization_assemble_express",
+        method: "POST",
+        rust_path: "/jaxrs/group/has/role",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "organization_assemble_express",
         method: "POST",
         rust_path: "/jaxrs/group/list",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "organization_assemble_express",
+        method: "POST",
+        rust_path: "/jaxrs/group/list/group/sub/direct",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "organization_assemble_express",
+        method: "POST",
+        rust_path: "/jaxrs/group/list/group/sub/direct/object",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "organization_assemble_express",
+        method: "POST",
+        rust_path: "/jaxrs/group/list/group/sub/nested",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "organization_assemble_express",
+        method: "POST",
+        rust_path: "/jaxrs/group/list/group/sub/nested/object",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "organization_assemble_express",
+        method: "POST",
+        rust_path: "/jaxrs/group/list/group/sup/direct",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "organization_assemble_express",
+        method: "POST",
+        rust_path: "/jaxrs/group/list/group/sup/direct/object",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "organization_assemble_express",
+        method: "POST",
+        rust_path: "/jaxrs/group/list/group/sup/nested",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "organization_assemble_express",
+        method: "POST",
+        rust_path: "/jaxrs/group/list/group/sup/nested/object",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "organization_assemble_express",
+        method: "POST",
+        rust_path: "/jaxrs/group/list/group/tree",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "organization_assemble_express",
+        method: "POST",
+        rust_path: "/jaxrs/group/list/identity",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "organization_assemble_express",
+        method: "POST",
+        rust_path: "/jaxrs/group/list/identity/object",
         java_war: "",
         java_action: "",
         body: None,
@@ -15328,7 +15918,57 @@ pub const ENDPOINTS: &[EndpointDef] = &[
     EndpointDef {
         crate_name: "organization_assemble_express",
         method: "POST",
+        rust_path: "/jaxrs/group/list/person/object",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "organization_assemble_express",
+        method: "POST",
         rust_path: "/jaxrs/identity/list",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "organization_assemble_express",
+        method: "POST",
+        rust_path: "/jaxrs/identity/list/group",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "organization_assemble_express",
+        method: "POST",
+        rust_path: "/jaxrs/identity/list/group/object",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "organization_assemble_express",
+        method: "POST",
+        rust_path: "/jaxrs/identity/list/major/person",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "organization_assemble_express",
+        method: "POST",
+        rust_path: "/jaxrs/identity/list/major/person/object",
         java_war: "",
         java_action: "",
         body: None,
@@ -15358,6 +15998,36 @@ pub const ENDPOINTS: &[EndpointDef] = &[
     EndpointDef {
         crate_name: "organization_assemble_express",
         method: "POST",
+        rust_path: "/jaxrs/identity/list/person/object",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "organization_assemble_express",
+        method: "POST",
+        rust_path: "/jaxrs/identity/list/unit/person",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "organization_assemble_express",
+        method: "POST",
+        rust_path: "/jaxrs/identity/list/unit/person/object",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "organization_assemble_express",
+        method: "POST",
         rust_path: "/jaxrs/identity/list/unit/sub/direct",
         java_war: "",
         java_action: "",
@@ -15368,7 +16038,37 @@ pub const ENDPOINTS: &[EndpointDef] = &[
     EndpointDef {
         crate_name: "organization_assemble_express",
         method: "POST",
+        rust_path: "/jaxrs/identity/list/unit/sub/direct/object",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "organization_assemble_express",
+        method: "POST",
         rust_path: "/jaxrs/identity/list/unit/sub/nested",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "organization_assemble_express",
+        method: "POST",
+        rust_path: "/jaxrs/identity/list/unit/sub/nested/object",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "organization_assemble_express",
+        method: "POST",
+        rust_path: "/jaxrs/person/detail/{flag}",
         java_war: "",
         java_action: "",
         body: None,
@@ -15418,7 +16118,67 @@ pub const ENDPOINTS: &[EndpointDef] = &[
     EndpointDef {
         crate_name: "organization_assemble_express",
         method: "POST",
+        rust_path: "/jaxrs/person/list/group/object",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "organization_assemble_express",
+        method: "POST",
         rust_path: "/jaxrs/person/list/identity",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "organization_assemble_express",
+        method: "POST",
+        rust_path: "/jaxrs/person/list/identity/object",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "organization_assemble_express",
+        method: "POST",
+        rust_path: "/jaxrs/person/list/login/after",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "organization_assemble_express",
+        method: "POST",
+        rust_path: "/jaxrs/person/list/login/after/object",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "organization_assemble_express",
+        method: "POST",
+        rust_path: "/jaxrs/person/list/login/recent",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "organization_assemble_express",
+        method: "POST",
+        rust_path: "/jaxrs/person/list/login/recent/object",
         java_war: "",
         java_action: "",
         body: None,
@@ -15438,7 +16198,257 @@ pub const ENDPOINTS: &[EndpointDef] = &[
     EndpointDef {
         crate_name: "organization_assemble_express",
         method: "POST",
+        rust_path: "/jaxrs/person/list/pair/identity",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "organization_assemble_express",
+        method: "POST",
+        rust_path: "/jaxrs/person/list/person/sub/direct",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "organization_assemble_express",
+        method: "POST",
+        rust_path: "/jaxrs/person/list/person/sub/direct/object",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "organization_assemble_express",
+        method: "POST",
+        rust_path: "/jaxrs/person/list/person/sub/nested",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "organization_assemble_express",
+        method: "POST",
+        rust_path: "/jaxrs/person/list/person/sub/nested/object",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "organization_assemble_express",
+        method: "POST",
+        rust_path: "/jaxrs/person/list/person/sup/direct",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "organization_assemble_express",
+        method: "POST",
+        rust_path: "/jaxrs/person/list/person/sup/direct/object",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "organization_assemble_express",
+        method: "POST",
+        rust_path: "/jaxrs/person/list/person/sup/nested",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "organization_assemble_express",
+        method: "POST",
+        rust_path: "/jaxrs/person/list/person/sup/nested/object",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "organization_assemble_express",
+        method: "POST",
+        rust_path: "/jaxrs/person/list/personattribute",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "organization_assemble_express",
+        method: "POST",
+        rust_path: "/jaxrs/person/list/personattribute/object",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "organization_assemble_express",
+        method: "POST",
         rust_path: "/jaxrs/person/list/role",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "organization_assemble_express",
+        method: "POST",
+        rust_path: "/jaxrs/person/list/role/object",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "organization_assemble_express",
+        method: "POST",
+        rust_path: "/jaxrs/person/list/unit/sub/direct",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "organization_assemble_express",
+        method: "POST",
+        rust_path: "/jaxrs/person/list/unit/sub/direct/like",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "organization_assemble_express",
+        method: "POST",
+        rust_path: "/jaxrs/person/list/unit/sub/direct/like/object",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "organization_assemble_express",
+        method: "POST",
+        rust_path: "/jaxrs/person/list/unit/sub/direct/object",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "organization_assemble_express",
+        method: "POST",
+        rust_path: "/jaxrs/person/list/unit/sub/nested",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "organization_assemble_express",
+        method: "POST",
+        rust_path: "/jaxrs/person/list/unit/sub/nested/like",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "organization_assemble_express",
+        method: "POST",
+        rust_path: "/jaxrs/person/list/unit/sub/nested/like/object",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "organization_assemble_express",
+        method: "POST",
+        rust_path: "/jaxrs/person/list/unit/sub/nested/object",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "organization_assemble_express",
+        method: "POST",
+        rust_path: "/jaxrs/personattribute/append/person/name",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "organization_assemble_express",
+        method: "POST",
+        rust_path: "/jaxrs/personattribute/list/attribute/person/name",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "organization_assemble_express",
+        method: "POST",
+        rust_path: "/jaxrs/personattribute/list/name/person",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "organization_assemble_express",
+        method: "POST",
+        rust_path: "/jaxrs/personattribute/list/person/object",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "organization_assemble_express",
+        method: "POST",
+        rust_path: "/jaxrs/personattribute/set/person/name",
         java_war: "",
         java_action: "",
         body: None,
@@ -15458,7 +16468,37 @@ pub const ENDPOINTS: &[EndpointDef] = &[
     EndpointDef {
         crate_name: "organization_assemble_express",
         method: "POST",
+        rust_path: "/jaxrs/role/list/object",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "organization_assemble_express",
+        method: "POST",
         rust_path: "/jaxrs/role/list/person",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "organization_assemble_express",
+        method: "POST",
+        rust_path: "/jaxrs/role/list/person/object",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "organization_assemble_express",
+        method: "POST",
+        rust_path: "/jaxrs/unit/check/unit/has/identity",
         java_war: "",
         java_action: "",
         body: None,
@@ -15478,7 +16518,127 @@ pub const ENDPOINTS: &[EndpointDef] = &[
     EndpointDef {
         crate_name: "organization_assemble_express",
         method: "POST",
+        rust_path: "/jaxrs/unit/check/unit/has/unit",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "organization_assemble_express",
+        method: "POST",
+        rust_path: "/jaxrs/unit/identity/level",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "organization_assemble_express",
+        method: "POST",
+        rust_path: "/jaxrs/unit/identity/level/object",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "organization_assemble_express",
+        method: "POST",
+        rust_path: "/jaxrs/unit/identity/type",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "organization_assemble_express",
+        method: "POST",
+        rust_path: "/jaxrs/unit/identity/type/object",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "organization_assemble_express",
+        method: "POST",
         rust_path: "/jaxrs/unit/list",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "organization_assemble_express",
+        method: "POST",
+        rust_path: "/jaxrs/unit/list/identity",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "organization_assemble_express",
+        method: "POST",
+        rust_path: "/jaxrs/unit/list/identity/object",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "organization_assemble_express",
+        method: "POST",
+        rust_path: "/jaxrs/unit/list/identity/sup/nested",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "organization_assemble_express",
+        method: "POST",
+        rust_path: "/jaxrs/unit/list/identity/sup/nested/object",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "organization_assemble_express",
+        method: "POST",
+        rust_path: "/jaxrs/unit/list/level",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "organization_assemble_express",
+        method: "POST",
+        rust_path: "/jaxrs/unit/list/level/name/object",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "organization_assemble_express",
+        method: "POST",
+        rust_path: "/jaxrs/unit/list/level/object",
         java_war: "",
         java_action: "",
         body: None,
@@ -15498,7 +16658,77 @@ pub const ENDPOINTS: &[EndpointDef] = &[
     EndpointDef {
         crate_name: "organization_assemble_express",
         method: "POST",
+        rust_path: "/jaxrs/unit/list/person",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "organization_assemble_express",
+        method: "POST",
+        rust_path: "/jaxrs/unit/list/person/object",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "organization_assemble_express",
+        method: "POST",
+        rust_path: "/jaxrs/unit/list/person/sup/nested",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "organization_assemble_express",
+        method: "POST",
+        rust_path: "/jaxrs/unit/list/person/sup/nested/object",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "organization_assemble_express",
+        method: "POST",
+        rust_path: "/jaxrs/unit/list/types",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "organization_assemble_express",
+        method: "POST",
+        rust_path: "/jaxrs/unit/list/types/object",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "organization_assemble_express",
+        method: "POST",
         rust_path: "/jaxrs/unit/list/unit/sub/direct",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "organization_assemble_express",
+        method: "POST",
+        rust_path: "/jaxrs/unit/list/unit/sub/direct/object",
         java_war: "",
         java_action: "",
         body: None,
@@ -15518,7 +16748,27 @@ pub const ENDPOINTS: &[EndpointDef] = &[
     EndpointDef {
         crate_name: "organization_assemble_express",
         method: "POST",
+        rust_path: "/jaxrs/unit/list/unit/sub/nested/object",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "organization_assemble_express",
+        method: "POST",
         rust_path: "/jaxrs/unit/list/unit/sup/direct",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "organization_assemble_express",
+        method: "POST",
+        rust_path: "/jaxrs/unit/list/unit/sup/direct/object",
         java_war: "",
         java_action: "",
         body: None,
@@ -15538,6 +16788,146 @@ pub const ENDPOINTS: &[EndpointDef] = &[
     EndpointDef {
         crate_name: "organization_assemble_express",
         method: "POST",
+        rust_path: "/jaxrs/unit/list/unit/sup/nested/object",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "organization_assemble_express",
+        method: "POST",
+        rust_path: "/jaxrs/unit/list/unit/tree",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "organization_assemble_express",
+        method: "POST",
+        rust_path: "/jaxrs/unit/list/unitattribute",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "organization_assemble_express",
+        method: "POST",
+        rust_path: "/jaxrs/unit/list/unitattribute/object",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "organization_assemble_express",
+        method: "POST",
+        rust_path: "/jaxrs/unit/list/unitduty",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "organization_assemble_express",
+        method: "POST",
+        rust_path: "/jaxrs/unit/list/unitduty/object",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "organization_assemble_express",
+        method: "POST",
+        rust_path: "/jaxrs/unitattribute/append/unit/name",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "organization_assemble_express",
+        method: "POST",
+        rust_path: "/jaxrs/unitattribute/list/attribute/unit/name",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "organization_assemble_express",
+        method: "POST",
+        rust_path: "/jaxrs/unitattribute/list/name/unit",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "organization_assemble_express",
+        method: "POST",
+        rust_path: "/jaxrs/unitattribute/list/unit/object",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "organization_assemble_express",
+        method: "POST",
+        rust_path: "/jaxrs/unitattribute/set/unit/name",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "organization_assemble_express",
+        method: "POST",
+        rust_path: "/jaxrs/unitduty/find/by/unit/name",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "organization_assemble_express",
+        method: "POST",
+        rust_path: "/jaxrs/unitduty/list/identity/unit/name",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "organization_assemble_express",
+        method: "POST",
+        rust_path: "/jaxrs/unitduty/list/identity/unit/name/object",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "organization_assemble_express",
+        method: "POST",
         rust_path: "/jaxrs/unitduty/list/name",
         java_war: "",
         java_action: "",
@@ -15548,7 +16938,27 @@ pub const ENDPOINTS: &[EndpointDef] = &[
     EndpointDef {
         crate_name: "organization_assemble_express",
         method: "POST",
+        rust_path: "/jaxrs/unitduty/list/name/identity",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "organization_assemble_express",
+        method: "POST",
         rust_path: "/jaxrs/unitduty/list/name/unit",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "organization_assemble_express",
+        method: "POST",
+        rust_path: "/jaxrs/unitduty/list/unit/object",
         java_war: "",
         java_action: "",
         body: None,
@@ -32388,7 +33798,67 @@ pub const ENDPOINTS: &[EndpointDef] = &[
     EndpointDef {
         crate_name: "query_assemble_designer",
         method: "DELETE",
+        rust_path: "/jaxrs/query/assemble/designer/importmodel/delete/{id}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "query_assemble_designer",
+        method: "DELETE",
+        rust_path: "/jaxrs/query/assemble/designer/neural/delete/model/{modelFlag}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "query_assemble_designer",
+        method: "DELETE",
+        rust_path: "/jaxrs/query/assemble/designer/stat/delete/{id}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "query_assemble_designer",
+        method: "DELETE",
+        rust_path: "/jaxrs/query/assemble/designer/table/delete/{flag}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "query_assemble_designer",
+        method: "DELETE",
         rust_path: "/jaxrs/query/assemble/designer/table/row/delete/all/{tableFlag}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "query_assemble_designer",
+        method: "DELETE",
+        rust_path: "/jaxrs/query/assemble/designer/table/row/delete/{tableFlag}/{id}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "query_assemble_designer",
+        method: "DELETE",
+        rust_path: "/jaxrs/query/assemble/designer/view/delete/{id}",
         java_war: "",
         java_action: "",
         body: None,
@@ -32438,7 +33908,27 @@ pub const ENDPOINTS: &[EndpointDef] = &[
     EndpointDef {
         crate_name: "query_assemble_designer",
         method: "GET",
+        rust_path: "/jaxrs/query/assemble/designer/list/all",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "query_assemble_designer",
+        method: "GET",
         rust_path: "/jaxrs/query/assemble/designer/list/querycategory/{query}/{queryCategory}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "query_assemble_designer",
+        method: "GET",
+        rust_path: "/jaxrs/query/assemble/designer/list/summary",
         java_war: "",
         java_action: "",
         body: None,
@@ -32508,6 +33998,16 @@ pub const ENDPOINTS: &[EndpointDef] = &[
     EndpointDef {
         crate_name: "query_assemble_designer",
         method: "GET",
+        rust_path: "/jaxrs/query/assemble/designer/neural/list/model",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "query_assemble_designer",
+        method: "GET",
         rust_path: "/jaxrs/query/assemble/designer/neural/model/{modelFlag}",
         java_war: "",
         java_action: "",
@@ -32529,6 +34029,16 @@ pub const ENDPOINTS: &[EndpointDef] = &[
         crate_name: "query_assemble_designer",
         method: "GET",
         rust_path: "/jaxrs/query/assemble/designer/neural/stop/learn/model/{modelFlag}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "query_assemble_designer",
+        method: "GET",
+        rust_path: "/jaxrs/query/assemble/designer/output/list",
         java_war: "",
         java_action: "",
         body: None,
@@ -32568,7 +34078,37 @@ pub const ENDPOINTS: &[EndpointDef] = &[
     EndpointDef {
         crate_name: "query_assemble_designer",
         method: "GET",
+        rust_path: "/jaxrs/query/assemble/designer/query/{flag}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "query_assemble_designer",
+        method: "GET",
+        rust_path: "/jaxrs/query/assemble/designer/querycategory/list",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "query_assemble_designer",
+        method: "GET",
         rust_path: "/jaxrs/query/assemble/designer/simulate/{view}/{id}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "query_assemble_designer",
+        method: "GET",
+        rust_path: "/jaxrs/query/assemble/designer/stat/list/{id}/prev/{count}",
         java_war: "",
         java_action: "",
         body: None,
@@ -32628,7 +34168,37 @@ pub const ENDPOINTS: &[EndpointDef] = &[
     EndpointDef {
         crate_name: "query_assemble_designer",
         method: "GET",
+        rust_path: "/jaxrs/query/assemble/designer/statement/list/manage",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "query_assemble_designer",
+        method: "GET",
+        rust_path: "/jaxrs/query/assemble/designer/statement/{flag}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "query_assemble_designer",
+        method: "GET",
         rust_path: "/jaxrs/query/assemble/designer/table/build/dispatch/{query}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "query_assemble_designer",
+        method: "GET",
+        rust_path: "/jaxrs/query/assemble/designer/table/build/query/{query}",
         java_war: "",
         java_action: "",
         body: None,
@@ -32668,7 +34238,27 @@ pub const ENDPOINTS: &[EndpointDef] = &[
     EndpointDef {
         crate_name: "query_assemble_designer",
         method: "GET",
+        rust_path: "/jaxrs/query/assemble/designer/table/list/manage",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "query_assemble_designer",
+        method: "GET",
         rust_path: "/jaxrs/query/assemble/designer/table/list/row/select/where/where/{tableFlag}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "query_assemble_designer",
+        method: "GET",
+        rust_path: "/jaxrs/query/assemble/designer/table/list/row/{tableFlag}/{id}/prev/{count}",
         java_war: "",
         java_action: "",
         body: None,
@@ -32699,6 +34289,16 @@ pub const ENDPOINTS: &[EndpointDef] = &[
         crate_name: "query_assemble_designer",
         method: "GET",
         rust_path: "/jaxrs/query/assemble/designer/table/permission/{id}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "query_assemble_designer",
+        method: "GET",
+        rust_path: "/jaxrs/query/assemble/designer/table/reload/dynamic",
         java_war: "",
         java_action: "",
         body: None,
@@ -32748,6 +34348,36 @@ pub const ENDPOINTS: &[EndpointDef] = &[
     EndpointDef {
         crate_name: "query_assemble_designer",
         method: "GET",
+        rust_path: "/jaxrs/query/assemble/designer/view/list/{id}/prev/{count}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "query_assemble_designer",
+        method: "GET",
+        rust_path: "/jaxrs/query/assemble/designer/view/permission/{id}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "query_assemble_designer",
+        method: "GET",
+        rust_path: "/jaxrs/query/assemble/designer/view/{id}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "query_assemble_designer",
+        method: "GET",
         rust_path: "/jaxrs/query/assemble/designer/{id}/{count}",
         java_war: "",
         java_action: "",
@@ -32769,6 +34399,16 @@ pub const ENDPOINTS: &[EndpointDef] = &[
         crate_name: "query_assemble_designer",
         method: "POST",
         rust_path: "/jaxrs/query/assemble/designer/delete/{id}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "query_assemble_designer",
+        method: "POST",
+        rust_path: "/jaxrs/query/assemble/designer/importmodel",
         java_war: "",
         java_action: "",
         body: None,
@@ -32808,6 +34448,16 @@ pub const ENDPOINTS: &[EndpointDef] = &[
     EndpointDef {
         crate_name: "query_assemble_designer",
         method: "POST",
+        rust_path: "/jaxrs/query/assemble/designer/neural/model",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "query_assemble_designer",
+        method: "POST",
         rust_path: "/jaxrs/query/assemble/designer/neural/model/reset/{modelFlag}/{status}",
         java_war: "",
         java_action: "",
@@ -32819,6 +34469,86 @@ pub const ENDPOINTS: &[EndpointDef] = &[
         crate_name: "query_assemble_designer",
         method: "POST",
         rust_path: "/jaxrs/query/assemble/designer/save/{id}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "query_assemble_designer",
+        method: "POST",
+        rust_path: "/jaxrs/query/assemble/designer/search",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "query_assemble_designer",
+        method: "POST",
+        rust_path: "/jaxrs/query/assemble/designer/stat",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "query_assemble_designer",
+        method: "POST",
+        rust_path: "/jaxrs/query/assemble/designer/statement",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "query_assemble_designer",
+        method: "POST",
+        rust_path: "/jaxrs/query/assemble/designer/statement/execute/{flag}/mode/{mode}/page/{page}/size/{size}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "query_assemble_designer",
+        method: "POST",
+        rust_path: "/jaxrs/query/assemble/designer/statement/execute/{flag}/page/{page}/size/{size}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "query_assemble_designer",
+        method: "POST",
+        rust_path: "/jaxrs/query/assemble/designer/statement/list/query/{queryFlag}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "query_assemble_designer",
+        method: "POST",
+        rust_path: "/jaxrs/query/assemble/designer/statement/permission/{id}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "query_assemble_designer",
+        method: "POST",
+        rust_path: "/jaxrs/query/assemble/designer/table",
         java_war: "",
         java_action: "",
         body: None,
@@ -32848,7 +34578,107 @@ pub const ENDPOINTS: &[EndpointDef] = &[
     EndpointDef {
         crate_name: "query_assemble_designer",
         method: "POST",
+        rust_path: "/jaxrs/query/assemble/designer/table/row/insert/{tableFlag}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "query_assemble_designer",
+        method: "POST",
         rust_path: "/jaxrs/query/assemble/designer/table/row/save/{tableFlag}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "query_assemble_designer",
+        method: "POST",
+        rust_path: "/jaxrs/query/assemble/designer/view",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "query_assemble_designer",
+        method: "PUT",
+        rust_path: "/jaxrs/query/assemble/designer/icon/set/{flag}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "query_assemble_designer",
+        method: "PUT",
+        rust_path: "/jaxrs/query/assemble/designer/importmodel/edit/{id}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "query_assemble_designer",
+        method: "PUT",
+        rust_path: "/jaxrs/query/assemble/designer/input/compare",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "query_assemble_designer",
+        method: "PUT",
+        rust_path: "/jaxrs/query/assemble/designer/input/cover",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "query_assemble_designer",
+        method: "PUT",
+        rust_path: "/jaxrs/query/assemble/designer/input/create",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "query_assemble_designer",
+        method: "PUT",
+        rust_path: "/jaxrs/query/assemble/designer/input/prepare/cover",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "query_assemble_designer",
+        method: "PUT",
+        rust_path: "/jaxrs/query/assemble/designer/input/prepare/create",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "query_assemble_designer",
+        method: "PUT",
+        rust_path: "/jaxrs/query/assemble/designer/neural/update/model/{modelFlag}",
         java_war: "",
         java_action: "",
         body: None,
@@ -32868,7 +34698,67 @@ pub const ENDPOINTS: &[EndpointDef] = &[
     EndpointDef {
         crate_name: "query_assemble_designer",
         method: "PUT",
+        rust_path: "/jaxrs/query/assemble/designer/stat/edit/{id}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "query_assemble_designer",
+        method: "PUT",
+        rust_path: "/jaxrs/query/assemble/designer/table/edit/{flag}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "query_assemble_designer",
+        method: "PUT",
         rust_path: "/jaxrs/query/assemble/designer/table/row/save/{tableFlag}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "query_assemble_designer",
+        method: "PUT",
+        rust_path: "/jaxrs/query/assemble/designer/table/row/update/{tableFlag}/{id}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "query_assemble_designer",
+        method: "PUT",
+        rust_path: "/jaxrs/query/assemble/designer/view/edit/{id}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "query_assemble_surface",
+        method: "DELETE",
+        rust_path: "/jaxrs/queryview/importmodel/record/delete/{recordId}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "query_assemble_surface",
+        method: "DELETE",
+        rust_path: "/jaxrs/queryview/table/row/delete/{tableFlag}/{id}",
         java_war: "",
         java_action: "",
         body: None,
@@ -33008,6 +34898,36 @@ pub const ENDPOINTS: &[EndpointDef] = &[
     EndpointDef {
         crate_name: "query_assemble_surface",
         method: "GET",
+        rust_path: "/jaxrs/queryview/importmodel/execute/record/{recordId}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "query_assemble_surface",
+        method: "GET",
+        rust_path: "/jaxrs/queryview/importmodel/uuid",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "query_assemble_surface",
+        method: "GET",
+        rust_path: "/jaxrs/queryview/list",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "query_assemble_surface",
+        method: "GET",
         rust_path: "/jaxrs/queryview/list/{query}/{key}/{key}",
         java_war: "",
         java_action: "",
@@ -33019,6 +34939,56 @@ pub const ENDPOINTS: &[EndpointDef] = &[
         crate_name: "query_assemble_surface",
         method: "GET",
         rust_path: "/jaxrs/queryview/neural/list/calculate/model/{modelFlag}/{work}/{workId}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "query_assemble_surface",
+        method: "GET",
+        rust_path: "/jaxrs/queryview/stat/flag/{flag}/query/{queryFlag}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "query_assemble_surface",
+        method: "GET",
+        rust_path: "/jaxrs/queryview/stat/list/query/{queryFlag}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "query_assemble_surface",
+        method: "GET",
+        rust_path: "/jaxrs/queryview/stat/{id}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "query_assemble_surface",
+        method: "GET",
+        rust_path: "/jaxrs/queryview/statement/{id}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "query_assemble_surface",
+        method: "GET",
+        rust_path: "/jaxrs/queryview/statement/{id}/format",
         java_war: "",
         java_action: "",
         body: None,
@@ -33058,6 +35028,16 @@ pub const ENDPOINTS: &[EndpointDef] = &[
     EndpointDef {
         crate_name: "query_assemble_surface",
         method: "GET",
+        rust_path: "/jaxrs/queryview/table/list/row/{tableFlag}/{id}/prev/{count}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "query_assemble_surface",
+        method: "GET",
         rust_path: "/jaxrs/queryview/table/list/row/{tableFlag}/{id}/{next}/{count}",
         java_war: "",
         java_action: "",
@@ -33078,7 +35058,27 @@ pub const ENDPOINTS: &[EndpointDef] = &[
     EndpointDef {
         crate_name: "query_assemble_surface",
         method: "GET",
+        rust_path: "/jaxrs/queryview/table/list/{id}/prev/{count}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "query_assemble_surface",
+        method: "GET",
         rust_path: "/jaxrs/queryview/table/list/{id}/{next}/{count}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "query_assemble_surface",
+        method: "GET",
+        rust_path: "/jaxrs/queryview/table/reload/dynamic",
         java_war: "",
         java_action: "",
         body: None,
@@ -33129,6 +35129,26 @@ pub const ENDPOINTS: &[EndpointDef] = &[
         crate_name: "query_assemble_surface",
         method: "GET",
         rust_path: "/jaxrs/queryview/table/{flag}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "query_assemble_surface",
+        method: "GET",
+        rust_path: "/jaxrs/queryview/view/list/query/{queryFlag}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "query_assemble_surface",
+        method: "GET",
+        rust_path: "/jaxrs/queryview/view/{id}",
         java_war: "",
         java_action: "",
         body: None,
@@ -33209,6 +35229,16 @@ pub const ENDPOINTS: &[EndpointDef] = &[
         crate_name: "query_assemble_surface",
         method: "POST",
         rust_path: "/jaxrs/queryview/bundle/mockputtopost/{view}/{id}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "query_assemble_surface",
+        method: "POST",
+        rust_path: "/jaxrs/queryview/bundle/v2/post/{id}",
         java_war: "",
         java_action: "",
         body: None,
@@ -33348,6 +35378,76 @@ pub const ENDPOINTS: &[EndpointDef] = &[
     EndpointDef {
         crate_name: "query_assemble_surface",
         method: "POST",
+        rust_path: "/jaxrs/queryview/morelikethis",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "query_assemble_surface",
+        method: "POST",
+        rust_path: "/jaxrs/queryview/search",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "query_assemble_surface",
+        method: "POST",
+        rust_path: "/jaxrs/queryview/stat/execute/mockputtopost/{id}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "query_assemble_surface",
+        method: "POST",
+        rust_path: "/jaxrs/queryview/stat/{id}/execute/mockputtopost",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "query_assemble_surface",
+        method: "POST",
+        rust_path: "/jaxrs/queryview/statement/execute/{flag}/mode/{mode}/page/{page}/size/{size}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "query_assemble_surface",
+        method: "POST",
+        rust_path: "/jaxrs/queryview/statement/execute/{flag}/page/{page}/size/{size}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "query_assemble_surface",
+        method: "POST",
+        rust_path: "/jaxrs/queryview/statement/list/query/{queryFlag}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "query_assemble_surface",
+        method: "POST",
         rust_path: "/jaxrs/queryview/table/row/delete/all/mockdeletetoget/{tableFlag}",
         java_war: "",
         java_action: "",
@@ -33359,6 +35459,16 @@ pub const ENDPOINTS: &[EndpointDef] = &[
         crate_name: "query_assemble_surface",
         method: "POST",
         rust_path: "/jaxrs/queryview/table/row/delete/all/{tableFlag}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "query_assemble_surface",
+        method: "POST",
+        rust_path: "/jaxrs/queryview/table/row/insert/{tableFlag}",
         java_war: "",
         java_action: "",
         body: None,
@@ -33388,7 +35498,27 @@ pub const ENDPOINTS: &[EndpointDef] = &[
     EndpointDef {
         crate_name: "query_assemble_surface",
         method: "POST",
+        rust_path: "/jaxrs/queryview/table/row/one/insert/{tableFlag}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "query_assemble_surface",
+        method: "POST",
         rust_path: "/jaxrs/queryview/table/row/part/update/{tableFlag}/{id}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "query_assemble_surface",
+        method: "PUT",
+        rust_path: "/jaxrs/queryview/stat/{id}/execute",
         java_war: "",
         java_action: "",
         body: None,
