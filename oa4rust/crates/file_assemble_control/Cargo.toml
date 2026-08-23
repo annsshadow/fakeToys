@@ -20,3 +20,4 @@ zip = "2"
 
 [dev-dependencies]
 tower.workspace = true
+chrono.workspace = true

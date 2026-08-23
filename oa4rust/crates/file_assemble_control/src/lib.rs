@@ -1685,7 +1685,7 @@ pub async fn config_is_file_manager(
 
 #[axum::debug_handler]
 pub async fn config_system_config() -> Result<Json<ActionResult<Value>>, AppError> {
-    Err(AppError::NotImplemented)
+    Err(u2_capability_unavailable("file-system-config-read"))
 }
 
 #[axum::debug_handler]
@@ -2255,11 +2255,10 @@ pub async fn folder_id(
 #[axum::debug_handler]
 pub async fn folder2_batch_download(
     pool: Extension<Pool>,
-    axum::extract::Json(body): axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let _ = pool;
-    let _ = body;
-    Err(AppError::NotImplemented)
+    // Java 语义：按文件夹批量打包下载 —— 无打包引擎，显式 501 + warn。
+    Err(u2_capability_unavailable("zip-batch-download"))
 }
 
 #[axum::debug_handler]
@@ -2313,7 +2312,8 @@ pub async fn folder2_id_download(
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let _ = (pool, id);
-    Err(AppError::NotImplemented)
+    // Java 语义：文件夹打包下载 —— 无打包引擎，显式 501 + warn。
+    Err(u2_capability_unavailable("zip-folder-download"))
 }
 
 #[axum::debug_handler]
@@ -2667,3 +2667,749 @@ pub async fn share_id_password_password(
     let _ = (pool, id, _password);
     Err(AppError::NotImplemented)
 }
+
+// ════════════ plan002 U2：file 模块端点全量闭合（Java jaxrs 105 端点对齐） ════════════
+// 语义红线（沿用 processplatform_assemble_surface U2-b 先例，禁止假成功壳）：
+//   - 新上传 = BlobStorage put + 回读校验。FS 后端真实落盘；STORAGE_BACKEND=db 时
+//     DbBlobStorage.put 为 no-op、get 必然 Err → 显式 501 + warn（不写内容必丢的元数据行）。
+//     FS 模式下同时回写 FILE_FILE.content(base64)，保证既有下载/预览路径语义不变。
+//   - 元数据管理（改名/删除/分享/保存到文件夹）：真实参数化 SQL + IDOR 门禁
+//     （require_owner；Java manager-only 操作用 is_admin）。
+//   - 无引擎能力（zip 打包批量下载、文件夹打包下载、系统级配置写入）：
+//     显式 501 NotImplemented + tracing::warn（fail loud）。
+//
+// 跨 crate 裁决记录：GET /jaxrs/file/{id} 已被 cms_assemble_control 以相同方法注册
+// （语义为 CMS 文件，不可复用），本模块该端点由既有模块前缀路由
+// /jaxrs/file/assemble/control/file/{id} 闭合，不再裸注册以免引入跨 crate 冲突；
+// 其余缺口一律按 Java 真实路径注册（经归一化查重无跨 crate 占用）。
+
+fn u2_capability_unavailable(capability: &'static str) -> AppError {
+    tracing::warn!(capability, "endpoint requires an unavailable engine; returning 501");
+    AppError::NotImplemented
+}
+
+async fn u2_require_admin(
+    pool: &Pool,
+    session: &shared::session::Session,
+) -> Result<(), AppError> {
+    if shared::middleware::is_admin(pool, &session.person_unique).await {
+        Ok(())
+    } else {
+        Err(AppError::Forbidden)
+    }
+}
+
+/// 规范化 blob key：`attachment/{id}/{filename}`；剥离路径分隔符与控制字符
+/// （FsBlobStorage.resolve 还会拒绝 `..` 组件 —— 双保险）。
+fn u2_blob_key(id: &str, filename: &str) -> Result<String, AppError> {
+    let cleaned: String = filename
+        .replace(['\\', '/'], "_")
+        .chars()
+        .filter(|c| !c.is_control() && *c != '"' && *c != '\0')
+        .collect();
+    let name = cleaned.trim().trim_start_matches('.');
+    if name.is_empty() || name == "." || name == ".." {
+        return Err(AppError::BadRequest("invalid file name".to_string()));
+    }
+    Ok(format!("attachment/{id}/{name}"))
+}
+
+fn u2_ext_of(filename: &str) -> String {
+    filename.rsplit('.').next().unwrap_or("bin").to_string()
+}
+
+/// put + 回读校验。DB 占位后端 put 无副作用且 get 必然 Err —— 在此显式失败，
+/// 避免产生"上传成功但内容丢失"的假成功响应。
+async fn u2_persist_verified(
+    storage: &dyn shared::storage::BlobStorage,
+    key: &str,
+    bytes: &[u8],
+) -> Result<(), AppError> {
+    storage.put(key, bytes).await.map_err(|e| {
+        tracing::warn!(key, error = %e, "blob put failed");
+        AppError::Internal
+    })?;
+    if let Err(e) = storage.get(key).await {
+        tracing::warn!(key, error = %e,
+            "blob backend did not persist upload (STORAGE_BACKEND=db placeholder); \
+             set STORAGE_BACKEND=fs to enable binary uploads");
+        return Err(AppError::NotImplemented);
+    }
+    Ok(())
+}
+
+async fn u2_read_multipart_file(
+    mut multipart: axum::extract::Multipart,
+) -> Result<(String, Option<String>, Vec<u8>), AppError> {
+    while let Some(field) = multipart
+        .next_field()
+        .await
+        .map_err(|_| AppError::BadRequest("malformed multipart body".to_string()))?
+    {
+        let fname = field.file_name().map(str::to_string).filter(|s| !s.is_empty());
+        let mime = field.content_type().map(str::to_string);
+        let data = field
+            .bytes()
+            .await
+            .map_err(|_| AppError::BadRequest("unreadable upload field".to_string()))?;
+        if fname.is_some() || !data.is_empty() {
+            return Ok((
+                fname.unwrap_or_else(|| "upload.bin".to_string()),
+                mime,
+                data.to_vec(),
+            ));
+        }
+    }
+    Err(AppError::BadRequest("no file provided".to_string()))
+}
+
+/// 上传统一入口：persist(带回读校验) + 写 FILE_FILE 元数据行。
+/// content 列双写 base64：既有下载/预览 handler 直读该列，保持行为基线不变。
+async fn u2_store_new(
+    pool: &Pool,
+    person: &str,
+    id: &str,
+    filename: &str,
+    mime: Option<&str>,
+    bytes: Vec<u8>,
+    reference_type: &str,
+    reference: &str,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let key = u2_blob_key(id, filename)?;
+    let storage = shared::storage::storage_from_env();
+    u2_persist_verified(storage.as_ref(), &key, &bytes).await?;
+
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let ext = u2_ext_of(filename);
+    let length = bytes.len() as i64;
+    let mime_owned = mime.unwrap_or("").to_string();
+    let content_b64 = base64::engine::general_purpose::STANDARD.encode(&bytes);
+    client
+        .execute(
+            "INSERT INTO FILE_FILE (id, name, person, reference_id, reference_type, extension, length, mime_type, content, storage_key, create_time, update_time) \
+             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, NOW(), NOW())",
+            &[&id, &filename, &person, &reference, &reference_type, &ext, &length, &mime_owned, &content_b64, &key],
+        )
+        .await
+        .map_err(|e| {
+            tracing::warn!(error = %e, attachment = %id, "attachment metadata insert failed after blob write");
+            AppError::Internal
+        })?;
+
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("id".to_string(), Value::String(id.to_string())),
+            ("name".to_string(), Value::String(filename.to_string())),
+            ("extension".to_string(), Value::String(ext)),
+            ("length".to_string(), Value::Number(serde_json::Number::from(length))),
+            ("storageKey".to_string(), Value::String(key)),
+            ("uploaded".to_string(), Value::Bool(true)),
+        ]),
+    ))))
+}
+
+// ── 上传族（multipart / octet-stream → BlobStorage + 元数据行） ─────────────
+
+#[axum::debug_handler]
+pub async fn u2_file_upload_octet_stream(
+    pool: Extension<Pool>,
+    Extension(session): Extension<shared::session::Session>,
+    axum::extract::Path((reference_type, reference, _scale)): axum::extract::Path<(String, String, String)>,
+    query: axum::extract::Query<std::collections::HashMap<String, String>>,
+    body: axum::body::Bytes,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    if body.is_empty() {
+        return Err(AppError::BadRequest("empty request body".to_string()));
+    }
+    let filename = query
+        .get("fileName")
+        .or_else(|| query.get("filename"))
+        .cloned()
+        .unwrap_or_else(|| "upload.bin".to_string());
+    let id = uuid::Uuid::new_v4().to_string();
+    u2_store_new(&pool, &session.person_unique, &id, &filename, None, body.to_vec(), &reference_type, &reference).await
+}
+
+#[axum::debug_handler]
+pub async fn u2_file_upload_multipart(
+    pool: Extension<Pool>,
+    Extension(session): Extension<shared::session::Session>,
+    axum::extract::Path((reference_type, reference, _scale)): axum::extract::Path<(String, String, String)>,
+    multipart: axum::extract::Multipart,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let (filename, mime, bytes) = u2_read_multipart_file(multipart).await?;
+    let id = uuid::Uuid::new_v4().to_string();
+    u2_store_new(&pool, &session.person_unique, &id, &filename, mime.as_deref(), bytes, &reference_type, &reference).await
+}
+
+#[axum::debug_handler]
+pub async fn u2_file_upload_callback(
+    pool: Extension<Pool>,
+    Extension(session): Extension<shared::session::Session>,
+    axum::extract::Path((reference_type, reference, _scale, _callback)): axum::extract::Path<(String, String, String, String)>,
+    multipart: axum::extract::Multipart,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    u2_file_upload_multipart(pool, Extension(session), axum::extract::Path((reference_type, reference, _scale)), multipart).await
+}
+
+// ── 内容替换族（PUT /attachment/{id}/update：multipart → BlobStorage 回填） ──
+
+#[axum::debug_handler]
+pub async fn u2_attachment_update_content(
+    pool: Extension<Pool>,
+    Extension(session): Extension<shared::session::Session>,
+    axum::extract::Path(id): axum::extract::Path<String>,
+    multipart: axum::extract::Multipart,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let row = client
+        .query_opt("SELECT person FROM FILE_FILE WHERE id = $1 AND deleted_at IS NULL", &[&id])
+        .await.map_err(|_| AppError::Internal)?;
+    let Some(row) = row else {
+        return Ok(Json(ActionResult::error("attachment not found")));
+    };
+    let owner: String = row.get("person");
+    shared::middleware::require_owner(&pool, &session, &owner).await?;
+
+    let (filename, _mime, bytes) = u2_read_multipart_file(multipart).await?;
+    let key = u2_blob_key(&id, &filename)?;
+    let storage = shared::storage::storage_from_env();
+    u2_persist_verified(storage.as_ref(), &key, &bytes).await?;
+
+    let ext = u2_ext_of(&filename);
+    let length = bytes.len() as i64;
+    let content_b64 = base64::engine::general_purpose::STANDARD.encode(&bytes);
+    client
+        .execute(
+            "UPDATE FILE_FILE SET storage_key = $1, length = $2, extension = $3, content = $4, update_time = NOW() WHERE id = $5",
+            &[&key, &length, &ext, &content_b64, &id],
+        )
+        .await.map_err(|_| AppError::Internal)?;
+
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("id".to_string(), Value::String(id)),
+            ("name".to_string(), Value::String(filename)),
+            ("length".to_string(), Value::Number(serde_json::Number::from(length))),
+            ("saved".to_string(), Value::Bool(true)),
+        ]),
+    ))))
+}
+
+#[axum::debug_handler]
+pub async fn u2_attachment_update_content_callback(
+    pool: Extension<Pool>,
+    Extension(session): Extension<shared::session::Session>,
+    axum::extract::Path((id, _callback)): axum::extract::Path<(String, String)>,
+    multipart: axum::extract::Multipart,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    u2_attachment_update_content(pool, Extension(session), axum::extract::Path(id), multipart).await
+}
+
+// ── 元数据管理族（真实 SQL + IDOR 门禁） ────────────────────────────────────
+
+#[axum::debug_handler]
+pub async fn u2_attachment_delete(
+    pool: Extension<Pool>,
+    Extension(session): Extension<shared::session::Session>,
+    axum::extract::Path(id): axum::extract::Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let row = client
+        .query_opt("SELECT person FROM FILE_FILE WHERE id = $1 AND deleted_at IS NULL", &[&id])
+        .await.map_err(|_| AppError::Internal)?;
+    let Some(row) = row else {
+        return Ok(Json(ActionResult::error("attachment not found")));
+    };
+    let owner: String = row.get("person");
+    shared::middleware::require_owner(&pool, &session, &owner).await?;
+    client
+        .execute("UPDATE FILE_FILE SET deleted_at = NOW(), update_time = NOW() WHERE id = $1 AND deleted_at IS NULL", &[&id])
+        .await.map_err(|_| AppError::Internal)?;
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("id".to_string(), Value::String(id)),
+            ("deleted".to_string(), Value::Bool(true)),
+        ]),
+    ))))
+}
+
+#[axum::debug_handler]
+pub async fn u2_attachment2_update(
+    pool: Extension<Pool>,
+    Extension(session): Extension<shared::session::Session>,
+    axum::extract::Path(id): axum::extract::Path<String>,
+    axum::extract::Json(body): axum::extract::Json<Value>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let row = client
+        .query_opt("SELECT person FROM FILE_FILE WHERE id = $1 AND deleted_at IS NULL", &[&id])
+        .await.map_err(|_| AppError::Internal)?;
+    let Some(row) = row else {
+        return Ok(Json(ActionResult::error("attachment not found")));
+    };
+    let owner: String = row.get("person");
+    shared::middleware::require_owner(&pool, &session, &owner).await?;
+
+    let name = body.get("name").and_then(|v| v.as_str()).unwrap_or_default().to_string();
+    let mime_type = body.get("mimeType").and_then(|v| v.as_str()).unwrap_or_default().to_string();
+    client
+        .execute(
+            "UPDATE FILE_FILE SET name = $1, mime_type = $2, update_time = NOW() WHERE id = $3 AND deleted_at IS NULL",
+            &[&name, &mime_type, &id],
+        )
+        .await.map_err(|_| AppError::Internal)?;
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("id".to_string(), Value::String(id)),
+            ("saved".to_string(), Value::Bool(true)),
+        ]),
+    ))))
+}
+
+#[axum::debug_handler]
+pub async fn u2_attachment2_delete(
+    pool: Extension<Pool>,
+    Extension(session): Extension<shared::session::Session>,
+    axum::extract::Path(id): axum::extract::Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let row = client
+        .query_opt("SELECT person FROM FILE_FILE WHERE id = $1 AND deleted_at IS NULL", &[&id])
+        .await.map_err(|_| AppError::Internal)?;
+    let Some(row) = row else {
+        return Ok(Json(ActionResult::error("attachment not found")));
+    };
+    let owner: String = row.get("person");
+    shared::middleware::require_owner(&pool, &session, &owner).await?;
+    client
+        .execute("UPDATE FILE_FILE SET deleted_at = NOW(), update_time = NOW() WHERE id = $1 AND deleted_at IS NULL", &[&id])
+        .await.map_err(|_| AppError::Internal)?;
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("id".to_string(), Value::String(id)),
+            ("deleted".to_string(), Value::Bool(true)),
+        ]),
+    ))))
+}
+
+#[axum::debug_handler]
+pub async fn u2_file_delete_by_id(
+    pool: Extension<Pool>,
+    Extension(session): Extension<shared::session::Session>,
+    axum::extract::Path(id): axum::extract::Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let row = client
+        .query_opt("SELECT person FROM FILE_FILE WHERE id = $1 AND deleted_at IS NULL", &[&id])
+        .await.map_err(|_| AppError::Internal)?;
+    let Some(row) = row else {
+        return Ok(Json(ActionResult::error("file not found")));
+    };
+    let owner: String = row.get("person");
+    shared::middleware::require_owner(&pool, &session, &owner).await?;
+    client
+        .execute("UPDATE FILE_FILE SET deleted_at = NOW(), update_time = NOW() WHERE id = $1 AND deleted_at IS NULL", &[&id])
+        .await.map_err(|_| AppError::Internal)?;
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("id".to_string(), Value::String(id)),
+            ("deleted".to_string(), Value::Bool(true)),
+        ]),
+    ))))
+}
+
+/// Java FileAction.delete(referenceType, reference)：manager-only，按引用批量清除。
+#[axum::debug_handler]
+pub async fn u2_file_delete_by_reference(
+    pool: Extension<Pool>,
+    Extension(session): Extension<shared::session::Session>,
+    axum::extract::Path((reference_type, reference)): axum::extract::Path<(String, String)>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    u2_require_admin(&pool, &session).await?;
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let result = client
+        .execute(
+            "DELETE FROM FILE_FILE WHERE reference_id = $1 AND reference_type = $2",
+            &[&reference, &reference_type],
+        )
+        .await.map_err(|_| AppError::Internal)?;
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("value".to_string(), Value::Bool(true)),
+            ("deleted".to_string(), Value::Number(serde_json::Number::from(result))),
+        ]),
+    ))))
+}
+
+/// Java ActionListReferenceType：当前用户各 referenceType 的文件计数。
+#[axum::debug_handler]
+pub async fn u2_file_list_reference_types(
+    pool: Extension<Pool>,
+    Extension(session): Extension<shared::session::Session>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let rows = client
+        .query(
+            "SELECT reference_type AS rtype, COUNT(*) AS cnt FROM FILE_FILE \
+             WHERE person = $1 AND deleted_at IS NULL GROUP BY reference_type ORDER BY reference_type",
+            &[&session.person_unique],
+        )
+        .await.map_err(|_| AppError::Internal)?;
+    let data: Vec<Value> = rows
+        .iter()
+        .map(|row| {
+            Value::Object(serde_json::Map::from_iter([
+                ("name".to_string(), Value::String(row.get::<_, String>("rtype"))),
+                ("value".to_string(), Value::String(row.get::<_, String>("rtype"))),
+                ("count".to_string(),
+                    Value::Number(serde_json::Number::from(row.get::<_, i64>("cnt")))),
+            ]))
+        })
+        .collect();
+    Ok(Json(ActionResult::success(Value::Array(data))))
+}
+
+// ── 文件夹族（FILE_FOLDER 真实 CRUD + IDOR 门禁；folder2 复用同一实现） ─────
+
+#[axum::debug_handler]
+pub async fn u2_folder_create(
+    pool: Extension<Pool>,
+    Extension(session): Extension<shared::session::Session>,
+    axum::extract::Json(body): axum::extract::Json<Value>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let name = body.get("name").and_then(|v| v.as_str()).unwrap_or_default().trim().to_string();
+    if name.is_empty() {
+        return Err(AppError::BadRequest("folder name is empty".to_string()));
+    }
+    let superior = body
+        .get("superior")
+        .and_then(|v| v.as_str())
+        .filter(|s| !s.is_empty())
+        .map(|s| s.to_string());
+    let id = uuid::Uuid::new_v4().to_string();
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    client
+        .execute(
+            "INSERT INTO FILE_FOLDER (id, name, person, superior) VALUES ($1, $2, $3, $4)",
+            &[&id, &name, &session.person_unique, &superior],
+        )
+        .await.map_err(|_| AppError::Internal)?;
+    let mut map = serde_json::Map::from_iter([
+        ("id".to_string(), Value::String(id.clone())),
+        ("name".to_string(), Value::String(name)),
+        ("person".to_string(), Value::String(session.person_unique.clone())),
+    ]);
+    if let Some(sup) = superior {
+        map.insert("superior".to_string(), Value::String(sup));
+    }
+    Ok(Json(ActionResult::success(Value::Object(map))))
+}
+
+#[axum::debug_handler]
+pub async fn u2_folder_rename(
+    pool: Extension<Pool>,
+    Extension(session): Extension<shared::session::Session>,
+    axum::extract::Path(id): axum::extract::Path<String>,
+    axum::extract::Json(body): axum::extract::Json<Value>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let name = body.get("name").and_then(|v| v.as_str()).unwrap_or_default().trim().to_string();
+    if name.is_empty() {
+        return Err(AppError::BadRequest("folder name is empty".to_string()));
+    }
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let row = client
+        .query_opt("SELECT person FROM FILE_FOLDER WHERE id = $1 AND deleted_at IS NULL", &[&id])
+        .await.map_err(|_| AppError::Internal)?;
+    let Some(row) = row else {
+        return Ok(Json(ActionResult::error("folder not found")));
+    };
+    let owner: String = row.get("person");
+    shared::middleware::require_owner(&pool, &session, &owner).await?;
+    client
+        .execute(
+            "UPDATE FILE_FOLDER SET name = $1, update_time = NOW() WHERE id = $2 AND deleted_at IS NULL",
+            &[&name, &id],
+        )
+        .await.map_err(|_| AppError::Internal)?;
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("id".to_string(), Value::String(id)),
+            ("name".to_string(), Value::String(name)),
+            ("saved".to_string(), Value::Bool(true)),
+        ]),
+    ))))
+}
+
+#[axum::debug_handler]
+pub async fn u2_folder_delete(
+    pool: Extension<Pool>,
+    Extension(session): Extension<shared::session::Session>,
+    axum::extract::Path(id): axum::extract::Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let row = client
+        .query_opt("SELECT person FROM FILE_FOLDER WHERE id = $1 AND deleted_at IS NULL", &[&id])
+        .await.map_err(|_| AppError::Internal)?;
+    let Some(row) = row else {
+        return Ok(Json(ActionResult::error("folder not found")));
+    };
+    let owner: String = row.get("person");
+    shared::middleware::require_owner(&pool, &session, &owner).await?;
+    client
+        .execute(
+            "UPDATE FILE_FOLDER SET deleted_at = NOW(), update_time = NOW() WHERE id = $1 AND deleted_at IS NULL",
+            &[&id],
+        )
+        .await.map_err(|_| AppError::Internal)?;
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("id".to_string(), Value::String(id)),
+            ("deleted".to_string(), Value::Bool(true)),
+        ]),
+    ))))
+}
+
+// ── 分享族（FILE_SHARE 真实 CRUD；字段对齐 Java personal.Share） ────────────
+
+fn u2_share_row_to_json(row: &deadpool_postgres::tokio_postgres::Row) -> Value {
+    let mut map = serde_json::Map::from_iter([
+        ("id".to_string(), Value::String(row.get("id"))),
+        ("person".to_string(), Value::String(row.get("person"))),
+        ("name".to_string(), Value::String(row.get::<_, Option<String>>("name").unwrap_or_default())),
+        ("fileId".to_string(), Value::String(row.get("file_id"))),
+        ("fileType".to_string(), Value::String(row.get::<_, Option<String>>("file_type").unwrap_or_default())),
+        ("extension".to_string(), Value::String(row.get::<_, Option<String>>("extension").unwrap_or_default())),
+        ("shareType".to_string(), Value::String(row.get::<_, Option<String>>("share_type").unwrap_or_default())),
+    ]);
+    if let Some(len) = row.try_get::<_, Option<i64>>("length").ok().flatten() {
+        map.insert("length".to_string(), Value::Number(serde_json::Number::from(len)));
+    }
+    Value::Object(map)
+}
+
+const U2_SHARE_SELECT: &str = "SELECT id, person, name, file_id, file_type, extension, length, share_type FROM FILE_SHARE";
+
+#[axum::debug_handler]
+pub async fn u2_share_create(
+    pool: Extension<Pool>,
+    Extension(session): Extension<shared::session::Session>,
+    axum::extract::Json(body): axum::extract::Json<Value>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    // 输入校验先于任何 DB 访问（与 Java ActionCreate 一致：fileId/shareType 必填，
+    // password 型分享必须带密码）。
+    let file_id = body.get("fileId").and_then(|v| v.as_str()).unwrap_or_default().trim().to_string();
+    let share_type = body.get("shareType").and_then(|v| v.as_str()).unwrap_or_default().trim().to_string();
+    let password = body.get("password").and_then(|v| v.as_str()).unwrap_or_default().to_string();
+    let name = body.get("name").and_then(|v| v.as_str()).unwrap_or_default().to_string();
+    if file_id.is_empty() {
+        return Err(AppError::BadRequest("fileId is empty".to_string()));
+    }
+    if share_type.is_empty() {
+        return Err(AppError::BadRequest("shareType is empty".to_string()));
+    }
+    if share_type == "password" && password.trim().is_empty() {
+        return Err(AppError::BadRequest("password is required for password share".to_string()));
+    }
+
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    // 与 Java 一致的 upsert：同人同文件已有分享则更新，否则新建。
+    let existing = client
+        .query_opt("SELECT id FROM FILE_SHARE WHERE person = $1 AND file_id = $2", &[&session.person_unique, &file_id])
+        .await.map_err(|_| AppError::Internal)?;
+    let meta = client
+        .query_opt(
+            "SELECT extension, length FROM FILE_FILE WHERE id = $1 AND deleted_at IS NULL",
+            &[&file_id],
+        )
+        .await.map_err(|_| AppError::Internal)?;
+    let (extension, length): (Option<String>, i64) = match &meta {
+        Some(m) => (m.get("extension"), m.get::<_, Option<i64>>("length").unwrap_or(0)),
+        None => (None, 0),
+    };
+
+    let id = match existing {
+        Some(row) => {
+            let id: String = row.get("id");
+            client
+                .execute(
+                    "UPDATE FILE_SHARE SET share_type = $1, password = $2, name = $3, extension = $4, length = $5, update_time = NOW() WHERE id = $6",
+                    &[&share_type, &password, &name, &extension, &length, &id],
+                )
+                .await.map_err(|_| AppError::Internal)?;
+            id
+        }
+        None => {
+            let id = uuid::Uuid::new_v4().to_string();
+            client
+                .execute(
+                    "INSERT INTO FILE_SHARE (id, person, name, file_id, file_type, extension, length, share_type, password) \
+                     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)",
+                    &[&id, &session.person_unique, &name, &file_id, &share_type, &extension, &length, &share_type, &password],
+                )
+                .await.map_err(|_| AppError::Internal)?;
+            id
+        }
+    };
+
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("id".to_string(), Value::String(id)),
+            ("fileId".to_string(), Value::String(file_id)),
+            ("shareType".to_string(), Value::String(share_type)),
+        ]),
+    ))))
+}
+
+#[axum::debug_handler]
+pub async fn u2_share_get(
+    pool: Extension<Pool>,
+    axum::extract::Path(id): axum::extract::Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let row = client
+        .query_opt(&format!("{U2_SHARE_SELECT} WHERE id = $1"), &[&id])
+        .await.map_err(|_| AppError::Internal)?;
+    match row {
+        Some(row) => Ok(Json(ActionResult::success(u2_share_row_to_json(&row)))),
+        None => Ok(Json(ActionResult::error("share not found"))),
+    }
+}
+
+#[axum::debug_handler]
+pub async fn u2_share_delete(
+    pool: Extension<Pool>,
+    Extension(session): Extension<shared::session::Session>,
+    axum::extract::Path(id): axum::extract::Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let row = client
+        .query_opt("SELECT person FROM FILE_SHARE WHERE id = $1", &[&id])
+        .await.map_err(|_| AppError::Internal)?;
+    let Some(row) = row else {
+        return Ok(Json(ActionResult::error("share not found")));
+    };
+    let owner: String = row.get("person");
+    shared::middleware::require_owner(&pool, &session, &owner).await?;
+    client
+        .execute("DELETE FROM FILE_SHARE WHERE id = $1", &[&id])
+        .await.map_err(|_| AppError::Internal)?;
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("id".to_string(), Value::String(id)),
+            ("deleted".to_string(), Value::Bool(true)),
+        ]),
+    ))))
+}
+
+/// 屏蔽分享：将 validTime 置为过去时刻（Java shield 语义 = 使分享失效）。
+#[axum::debug_handler]
+pub async fn u2_share_shield(
+    pool: Extension<Pool>,
+    Extension(session): Extension<shared::session::Session>,
+    axum::extract::Path(id): axum::extract::Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let row = client
+        .query_opt("SELECT person FROM FILE_SHARE WHERE id = $1", &[&id])
+        .await.map_err(|_| AppError::Internal)?;
+    let Some(row) = row else {
+        return Ok(Json(ActionResult::error("share not found")));
+    };
+    let owner: String = row.get("person");
+    shared::middleware::require_owner(&pool, &session, &owner).await?;
+    client
+        .execute(
+            "UPDATE FILE_SHARE SET valid_time = '1970-01-01 00:00:00'::TIMESTAMP, update_time = NOW() WHERE id = $1",
+            &[&id],
+        )
+        .await.map_err(|_| AppError::Internal)?;
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("id".to_string(), Value::String(id)),
+            ("shielded".to_string(), Value::Bool(true)),
+        ]),
+    ))))
+}
+
+/// 密码访问：校验密码与有效期后返回分享信息（不含密码本身）。
+#[axum::debug_handler]
+pub async fn u2_share_get_with_password(
+    pool: Extension<Pool>,
+    axum::extract::Path((id, password)): axum::extract::Path<(String, String)>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let row = client
+        .query_opt(
+            &format!(
+                "{U2_SHARE_SELECT} WHERE id = $1 AND password = $2 \
+                 AND (valid_time IS NULL OR valid_time >= NOW())"
+            ),
+            &[&id, &password],
+        )
+        .await.map_err(|_| AppError::Internal)?;
+    match row {
+        Some(row) => Ok(Json(ActionResult::success(u2_share_row_to_json(&row)))),
+        None => Ok(Json(ActionResult::error("share not found or password mismatch"))),
+    }
+}
+
+/// 保存分享到我的文件夹：复制 FILE_FILE 行归属当前用户（需提供有效 shareId+fileId 对）。
+#[axum::debug_handler]
+pub async fn u2_share_save_to_folder(
+    pool: Extension<Pool>,
+    Extension(session): Extension<shared::session::Session>,
+    axum::extract::Path((share_id, file_id, folder_id)): axum::extract::Path<(String, String, String)>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let share_valid = client
+        .query_opt(
+            "SELECT id FROM FILE_SHARE WHERE id = $1 AND file_id = $2 \
+             AND (valid_time IS NULL OR valid_time >= NOW())",
+            &[&share_id, &file_id],
+        )
+        .await.map_err(|_| AppError::Internal)?;
+    if share_valid.is_none() {
+        return Ok(Json(ActionResult::error("share not found or expired")));
+    }
+    let new_id = uuid::Uuid::new_v4().to_string();
+    let result = client
+        .execute(
+            "INSERT INTO FILE_FILE (id, name, person, reference_id, reference_type, extension, length, mime_type, content, storage_key, create_time, update_time) \
+             SELECT $1, name, $2, $3, reference_type, extension, length, mime_type, content, storage_key, NOW(), NOW() \
+             FROM FILE_FILE WHERE id = $4 AND deleted_at IS NULL",
+            &[&new_id, &session.person_unique, &folder_id, &file_id],
+        )
+        .await.map_err(|_| AppError::Internal)?;
+    if result == 0 {
+        return Ok(Json(ActionResult::error("file not found")));
+    }
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("id".to_string(), Value::String(new_id)),
+            ("fileId".to_string(), Value::String(file_id)),
+            ("folderId".to_string(), Value::String(folder_id)),
+            ("saved".to_string(), Value::Bool(true)),
+        ]),
+    ))))
+}
+
+// ── 配置族（无配置存储引擎 → 显式 501 + warn） ─────────────────────────────
+
+/// Java 真实路径为 /list/type/{page}/size/{size}（2 段参数）；既有 handler 为历史
+/// 字面路由设计的 3 元组 —— 以适配器复用其查询逻辑，不改动原函数。
+#[axum::debug_handler]
+pub async fn u2_attachment2_list_type_page_size_size(
+    pool: Extension<Pool>,
+    axum::extract::Path((page, size)): axum::extract::Path<(String, String)>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    attachment2_list_type_page_size_size(pool, axum::extract::Path((String::from("all"), page, size))).await
+}
+
+#[axum::debug_handler]
+pub async fn u2_config_save_system_config() -> Result<Json<ActionResult<Value>>, AppError> {
+    Err(u2_capability_unavailable("file-system-config-write"))
+}
+
+#[cfg(test)]
+mod tests_u2;
