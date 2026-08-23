@@ -1,0 +1,635 @@
+{
+ "mode": "unique-endpoints",
+ "rust_total_unique": 3357,
+ "rust_total_defs": 3357,
+ "rust_mapped_to_java": 3243,
+ "denominator_used_total": 3092,
+ "global_alignment": 1.0857050452781372,
+ "historical_legacy_denominator": 4386,
+ "rows": [
+  {
+   "family": "organization",
+   "java_unique": 448,
+   "java_verbs": 448,
+   "covered": 187,
+   "denominator": 448,
+   "gap": 261,
+   "ratio": 0.4174107142857143,
+   "crates": [
+    [
+     "organization_assemble_authentication",
+     11
+    ],
+    [
+     "organization_assemble_control",
+     116
+    ],
+    [
+     "organization_assemble_express",
+     37
+    ],
+    [
+     "organization_assemble_personal",
+     2
+    ],
+    [
+     "organization_core_entity",
+     18
+    ],
+    [
+     "organization_core_express",
+     3
+    ]
+   ],
+   "modules": [
+    "x_organization_assemble_authentication",
+    "x_organization_assemble_control",
+    "x_organization_assemble_express",
+    "x_organization_assemble_personal",
+    "x_organization_core_entity",
+    "x_organization_core_express"
+   ]
+  },
+  {
+   "family": "query",
+   "java_unique": 184,
+   "java_verbs": 184,
+   "covered": 115,
+   "denominator": 184,
+   "gap": 69,
+   "ratio": 0.625,
+   "crates": [
+    [
+     "query_assemble_designer",
+     50
+    ],
+    [
+     "query_assemble_surface",
+     52
+    ],
+    [
+     "query_core_entity",
+     5
+    ],
+    [
+     "query_core_express",
+     4
+    ],
+    [
+     "query_service_processing",
+     4
+    ]
+   ],
+   "modules": [
+    "x_query_assemble_designer",
+    "x_query_assemble_surface",
+    "x_query_core_entity",
+    "x_query_core_express",
+    "x_query_service_processing"
+   ]
+  },
+  {
+   "family": "bbs",
+   "java_unique": 106,
+   "java_verbs": 106,
+   "covered": 57,
+   "denominator": 106,
+   "gap": 49,
+   "ratio": 0.5377358490566038,
+   "crates": [
+    [
+     "bbs",
+     9
+    ],
+    [
+     "bbs_assemble_control",
+     33
+    ],
+    [
+     "bbs_core_entity",
+     15
+    ]
+   ],
+   "modules": [
+    "x_bbs_assemble_control",
+    "x_bbs_core_entity"
+   ]
+  },
+  {
+   "family": "attendance",
+   "java_unique": 180,
+   "java_verbs": 180,
+   "covered": 137,
+   "denominator": 180,
+   "gap": 43,
+   "ratio": 0.7611111111111111,
+   "crates": [
+    [
+     "attendance",
+     9
+    ],
+    [
+     "attendance_assemble_control",
+     120
+    ],
+    [
+     "attendance_core_entity",
+     8
+    ]
+   ],
+   "modules": [
+    "x_attendance_assemble_control",
+    "x_attendance_core_entity"
+   ]
+  },
+  {
+   "family": "program_init",
+   "java_unique": 15,
+   "java_verbs": 15,
+   "covered": 3,
+   "denominator": 15,
+   "gap": 12,
+   "ratio": 0.2,
+   "crates": [
+    [
+     "program_init",
+     3
+    ]
+   ],
+   "modules": [
+    "x_program_init"
+   ]
+  },
+  {
+   "family": "program_center",
+   "java_unique": 252,
+   "java_verbs": 253,
+   "covered": 243,
+   "denominator": 252,
+   "gap": 9,
+   "ratio": 0.9642857142857143,
+   "crates": [
+    [
+     "program_center",
+     243
+    ]
+   ],
+   "modules": [
+    "x_program_center",
+    "x_program_center_core_entity"
+   ]
+  },
+  {
+   "family": "calendar",
+   "java_unique": 31,
+   "java_verbs": 31,
+   "covered": 24,
+   "denominator": 31,
+   "gap": 7,
+   "ratio": 0.7741935483870968,
+   "crates": [
+    [
+     "calendar",
+     10
+    ],
+    [
+     "calendar_assemble_control",
+     4
+    ],
+    [
+     "calendar_core_entity",
+     10
+    ]
+   ],
+   "modules": [
+    "x_calendar_assemble_control",
+    "x_calendar_core_entity"
+   ]
+  },
+  {
+   "family": "base",
+   "java_unique": 8,
+   "java_verbs": 8,
+   "covered": 3,
+   "denominator": 8,
+   "gap": 5,
+   "ratio": 0.375,
+   "crates": [
+    [
+     "base",
+     3
+    ]
+   ],
+   "modules": [
+    "x_base_core_project"
+   ]
+  },
+  {
+   "family": "processplatform",
+   "java_unique": 942,
+   "java_verbs": 960,
+   "covered": 1268,
+   "denominator": 942,
+   "gap": 0,
+   "ratio": 1.346072186836518,
+   "crates": [
+    [
+     "processplatform_assemble_bam",
+     46
+    ],
+    [
+     "processplatform_assemble_designer",
+     73
+    ],
+    [
+     "processplatform_assemble_surface",
+     1036
+    ],
+    [
+     "processplatform_core_entity",
+     6
+    ],
+    [
+     "processplatform_core_express",
+     6
+    ],
+    [
+     "processplatform_service_processing",
+     101
+    ]
+   ],
+   "modules": [
+    "x_processplatform_assemble_bam",
+    "x_processplatform_assemble_designer",
+    "x_processplatform_assemble_surface",
+    "x_processplatform_core_entity",
+    "x_processplatform_core_express",
+    "x_processplatform_service_processing"
+   ]
+  },
+  {
+   "family": "cms",
+   "java_unique": 437,
+   "java_verbs": 478,
+   "covered": 447,
+   "denominator": 437,
+   "gap": 0,
+   "ratio": 1.022883295194508,
+   "crates": [
+    [
+     "cms_assemble_control",
+     439
+    ],
+    [
+     "cms_core_entity",
+     6
+    ],
+    [
+     "cms_core_express",
+     2
+    ]
+   ],
+   "modules": [
+    "x_cms_assemble_control",
+    "x_cms_core_entity",
+    "x_cms_core_express"
+   ]
+  },
+  {
+   "family": "file",
+   "java_unique": 105,
+   "java_verbs": 105,
+   "covered": 180,
+   "denominator": 105,
+   "gap": 0,
+   "ratio": 1.7142857142857142,
+   "crates": [
+    [
+     "file",
+     7
+    ],
+    [
+     "file_assemble_control",
+     166
+    ],
+    [
+     "file_core_entity",
+     7
+    ]
+   ],
+   "modules": [
+    "x_file_assemble_control",
+    "x_file_core_entity"
+   ]
+  },
+  {
+   "family": "portal",
+   "java_unique": 102,
+   "java_verbs": 102,
+   "covered": 106,
+   "denominator": 102,
+   "gap": 0,
+   "ratio": 1.0392156862745099,
+   "crates": [
+    [
+     "portal",
+     7
+    ],
+    [
+     "portal_assemble_designer",
+     43
+    ],
+    [
+     "portal_assemble_surface",
+     48
+    ],
+    [
+     "portal_core_entity",
+     8
+    ]
+   ],
+   "modules": [
+    "x_portal_assemble_designer",
+    "x_portal_assemble_surface",
+    "x_portal_core_entity"
+   ]
+  },
+  {
+   "family": "meeting",
+   "java_unique": 76,
+   "java_verbs": 76,
+   "covered": 78,
+   "denominator": 76,
+   "gap": 0,
+   "ratio": 1.0263157894736843,
+   "crates": [
+    [
+     "meeting",
+     7
+    ],
+    [
+     "meeting_assemble_control",
+     60
+    ],
+    [
+     "meeting_core_entity",
+     11
+    ]
+   ],
+   "modules": [
+    "x_meeting_assemble_control",
+    "x_meeting_core_entity"
+   ]
+  },
+  {
+   "family": "message",
+   "java_unique": 64,
+   "java_verbs": 64,
+   "covered": 73,
+   "denominator": 64,
+   "gap": 0,
+   "ratio": 1.140625,
+   "crates": [
+    [
+     "message",
+     5
+    ],
+    [
+     "message_assemble_communicate",
+     65
+    ],
+    [
+     "message_core_entity",
+     3
+    ]
+   ],
+   "modules": [
+    "x_message_assemble_communicate",
+    "x_message_core_entity"
+   ]
+  },
+  {
+   "family": "general",
+   "java_unique": 46,
+   "java_verbs": 46,
+   "covered": 93,
+   "denominator": 46,
+   "gap": 0,
+   "ratio": 2.0217391304347827,
+   "crates": [
+    [
+     "general_assemble_control",
+     72
+    ],
+    [
+     "general_core_entity",
+     21
+    ]
+   ],
+   "modules": [
+    "x_general_assemble_control",
+    "x_general_core_entity"
+   ]
+  },
+  {
+   "family": "ai",
+   "java_unique": 33,
+   "java_verbs": 33,
+   "covered": 62,
+   "denominator": 33,
+   "gap": 0,
+   "ratio": 1.878787878787879,
+   "crates": [
+    [
+     "ai",
+     21
+    ],
+    [
+     "ai_assemble_control",
+     38
+    ],
+    [
+     "ai_core_entity",
+     3
+    ]
+   ],
+   "modules": [
+    "x_ai_assemble_control",
+    "x_ai_core_entity"
+   ]
+  },
+  {
+   "family": "mind",
+   "java_unique": 23,
+   "java_verbs": 23,
+   "covered": 28,
+   "denominator": 23,
+   "gap": 0,
+   "ratio": 1.2173913043478262,
+   "crates": [
+    [
+     "mind",
+     10
+    ],
+    [
+     "mind_assemble_control",
+     8
+    ],
+    [
+     "mind_core_entity",
+     10
+    ]
+   ],
+   "modules": [
+    "x_mind_assemble_control",
+    "x_mind_core_entity"
+   ]
+  },
+  {
+   "family": "correlation",
+   "java_unique": 12,
+   "java_verbs": 12,
+   "covered": 29,
+   "denominator": 12,
+   "gap": 0,
+   "ratio": 2.4166666666666665,
+   "crates": [
+    [
+     "correlation",
+     3
+    ],
+    [
+     "correlation_core_entity",
+     4
+    ],
+    [
+     "correlation_core_express",
+     2
+    ],
+    [
+     "correlation_service_processing",
+     20
+    ]
+   ],
+   "modules": [
+    "x_correlation_core_entity",
+    "x_correlation_core_express",
+    "x_correlation_service_processing"
+   ]
+  },
+  {
+   "family": "hotpic",
+   "java_unique": 12,
+   "java_verbs": 12,
+   "covered": 44,
+   "denominator": 12,
+   "gap": 0,
+   "ratio": 3.6666666666666665,
+   "crates": [
+    [
+     "hotpic",
+     3
+    ],
+    [
+     "hotpic_assemble_control",
+     36
+    ],
+    [
+     "hotpic_core_entity",
+     5
+    ]
+   ],
+   "modules": [
+    "x_hotpic_assemble_control",
+    "x_hotpic_core_entity"
+   ]
+  },
+  {
+   "family": "jpush",
+   "java_unique": 9,
+   "java_verbs": 9,
+   "covered": 43,
+   "denominator": 9,
+   "gap": 0,
+   "ratio": 4.777777777777778,
+   "crates": [
+    [
+     "jpush",
+     6
+    ],
+    [
+     "jpush_assemble_control",
+     32
+    ],
+    [
+     "jpush_core_entity",
+     5
+    ]
+   ],
+   "modules": [
+    "x_jpush_assemble_control",
+    "x_jpush_core_entity"
+   ]
+  },
+  {
+   "family": "component",
+   "java_unique": 7,
+   "java_verbs": 7,
+   "covered": 16,
+   "denominator": 7,
+   "gap": 0,
+   "ratio": 2.2857142857142856,
+   "crates": [
+    [
+     "component",
+     3
+    ],
+    [
+     "component_assemble_control",
+     10
+    ],
+    [
+     "component_core_entity",
+     3
+    ]
+   ],
+   "modules": [
+    "x_component_assemble_control",
+    "x_component_core_entity"
+   ]
+  },
+  {
+   "family": "console",
+   "java_unique": 0,
+   "java_verbs": 0,
+   "covered": 7,
+   "denominator": 0,
+   "gap": 0,
+   "ratio": null,
+   "crates": [
+    [
+     "console",
+     7
+    ]
+   ],
+   "modules": [
+    "x_console"
+   ]
+  }
+ ],
+ "unmapped_crates": {
+  "auth": 28,
+  "cms_control": 2,
+  "cms_express": 5,
+  "control": 25,
+  "express": 10,
+  "personal": 19,
+  "personal_extend": 4,
+  "process_bam": 3,
+  "process_designer": 7,
+  "process_express": 3,
+  "process_surface": 3,
+  "query_express": 2,
+  "realtime": 3
+ }
+}
