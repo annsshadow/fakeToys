@@ -1,7 +1,7 @@
 use axum::{
     extract::{Extension, Path},
     http::HeaderMap,
-    routing::{get, post},
+    routing::{delete, get, post, put},
     Json, Router,
 };
 use chrono::{DateTime, Duration, Utc};
@@ -17,6 +17,7 @@ use std::sync::{Mutex, OnceLock};
 use uuid::Uuid;
 
 pub mod routes;
+pub mod u2;
 
 #[cfg(test)]
 mod tests;
@@ -806,6 +807,100 @@ pub fn organization_assemble_authentication_router() -> Router {
         .route(
             "/jaxrs/organization/assemble/authentication/zhengwudingding/login/{code}",
             get(zhengwudingding_login),
+        )
+        // ══ Java x_organization_assemble_authentication 契约补齐（u2）═════
+        // AuthenticationAction（类路径 authentication）
+        .route(
+            "/jaxrs/organization/assemble/authentication/authentication/mode",
+            get(u2::mode),
+        )
+        .route("/jaxrs/organization/assemble/authentication/authentication/mockdeletetoget", get(u2::logout_get))
+        .route(
+            "/jaxrs/organization/assemble/authentication/authentication",
+            post(auth::login).delete(auth::logout).get(auth::whoami),
+        )
+        .route(
+            "/jaxrs/organization/assemble/authentication/authentication/captcha",
+            post(u2::captcha_login),
+        )
+        .route(
+            "/jaxrs/organization/assemble/authentication/authentication/captcha/width/{width}/height/{height}",
+            get(u2::captcha_with_size_alias),
+        )
+        .route(
+            "/jaxrs/organization/assemble/authentication/authentication/captchaRSAPublicKey",
+            get(u2::captcha_rsa_public_key),
+        )
+        .route(
+            "/jaxrs/organization/assemble/authentication/authentication/two/factory/login",
+            post(auth::two_factor::two_factor_login),
+        )
+        .route(
+            "/jaxrs/organization/assemble/authentication/authentication/code",
+            post(auth::code),
+        )
+        .route(
+            "/jaxrs/organization/assemble/authentication/authentication/code/credential/{credential}",
+            get(auth::code_send),
+        )
+        .route(
+            "/jaxrs/organization/assemble/authentication/authentication/safe/logout",
+            get(u2::safe_logout_get),
+        )
+        .route(
+            "/jaxrs/organization/assemble/authentication/authentication/check/token",
+            post(auth::check_token::check_token),
+        )
+        .route(
+            "/jaxrs/organization/assemble/authentication/authentication/switchuser",
+            put(auth::switch_user::switch_user),
+        )
+        .route(
+            "/jaxrs/organization/assemble/authentication/authentication/switchuser/mockputtopost",
+            post(auth::switch_user::switch_user),
+        )
+        // BindAction
+        .route(
+            "/jaxrs/organization/assemble/authentication/bind/list",
+            get(u2::bind_list),
+        )
+        .route(
+            "/jaxrs/organization/assemble/authentication/bind/meta/{meta}",
+            get(auth::bind::bind_poll).post(auth::bind::bind_confirm),
+        )
+        .route(
+            "/jaxrs/organization/assemble/authentication/authentication/bind",
+            get(auth::bind::bind),
+        )
+        // SsoAction
+        .route(
+            "/jaxrs/organization/assemble/authentication/sso/encrypt/client/{client}/key/{key}/credential/{credential}",
+            get(u2::sso_encrypt_get),
+        )
+        .route(
+            "/jaxrs/organization/assemble/authentication/sso",
+            post(auth::sso::sso_post_login),
+        )
+        .route(
+            "/jaxrs/organization/assemble/authentication/sso/encrypt",
+            post(auth::sso::sso_encrypt),
+        )
+        .route(
+            "/jaxrs/organization/assemble/authentication/sso/client/{client}/token/{token}",
+            get(auth::sso::sso_get_login),
+        )
+        // DingdingAction / ZhengwuDingdingAction
+        .route(
+            "/jaxrs/organization/assemble/authentication/dingding/info",
+            post(u2::dingding_info),
+        )
+        .route(
+            "/jaxrs/organization/assemble/authentication/dingding/code/{code}",
+            get(dingding_login),
+        )
+        .route(
+            "/jaxrs/organization/assemble/authentication/zhengwudingding/info",
+            post(u2::zhengwudingding_info_post),
         )
 }
 

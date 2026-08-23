@@ -8,6 +8,7 @@ use serde_json::Value;
 use shared::{error::AppError, response::ActionResult};
 
 pub mod routes;
+pub mod u2;
 
 #[derive(Debug, Deserialize)]
 pub struct LinkRequest {
@@ -279,18 +280,56 @@ pub fn correlation_service_processing_router() -> Router {
         .route("/jaxrs/correlation/service/processing/link/{sourceType}/{sourceId}", get(get_link))
         .route("/jaxrs/correlation/service/processing/link", post(link_service))
         .route("/jaxrs/correlation/service/processing/unlink/{sourceType}/{sourceId}/{targetType}/{targetId}", post(unlink_service))
-        .route("/jaxrs/correlation/service/processing/correlation/delete/type/cms/document/{document}", post(correlation_delete_type_cms_document_document))
-        .route("/jaxrs/correlation/service/processing/correlation/delete/type/processplatform/job/{job}", post(correlation_delete_type_processplatform_job_job))
-        .route("/jaxrs/correlation/service/processing/correlation/list/type/cms/document/{document}", get(correlation_list_type_cms_document_document))
-        .route("/jaxrs/correlation/service/processing/correlation/list/type/cms/document/{document}/site/{site}", get(correlation_list_type_cms_document_document_site_site))
-        .route("/jaxrs/correlation/service/processing/correlation/list/type/processplatform/job/{job}", get(correlation_list_type_processplatform_job_job))
-        .route("/jaxrs/correlation/service/processing/correlation/list/type/processplatform/job/{job}/site/{site}", get(correlation_list_type_processplatform_job_job_site_site))
-        .route("/jaxrs/correlation/service/processing/correlation/readable/type/cms", get(correlation_readable_type_cms))
-        .route("/jaxrs/correlation/service/processing/correlation/readable/type/processplatform", get(correlation_readable_type_processplatform))
-        .route("/jaxrs/correlation/service/processing/correlation/type/cms/document/{document}", get(correlation_type_cms_document_document))
-        .route("/jaxrs/correlation/service/processing/correlation/type/processplatform/job/{job}", get(correlation_type_processplatform_job_job))
-        .route("/jaxrs/correlation/service/processing/correlation/update/type/cms/document/{document}", post(correlation_update_type_cms_document_document))
-        .route("/jaxrs/correlation/service/processing/correlation/update/type/processplatform/job/{job}", post(correlation_update_type_processplatform_job_job))
+        // ── Java CorrelationAction 契约（u2）────────────────────────────────
+        // GET 为仓库既有扩展（单条查询），POST 对齐 Java 创建语义
+        .route(
+            "/jaxrs/correlation/service/processing/correlation/type/processplatform/job/{job}",
+            get(correlation_type_processplatform_job_job).post(u2::create_pp),
+        )
+        .route(
+            "/jaxrs/correlation/service/processing/correlation/type/cms/document/{document}",
+            get(correlation_type_cms_document_document).post(u2::create_cms),
+        )
+        .route(
+            "/jaxrs/correlation/service/processing/correlation/update/type/processplatform/job/{job}",
+            post(u2::update_pp),
+        )
+        .route(
+            "/jaxrs/correlation/service/processing/correlation/update/type/cms/document/{document}",
+            post(u2::update_cms),
+        )
+        .route(
+            "/jaxrs/correlation/service/processing/correlation/delete/type/processplatform/job/{job}",
+            post(u2::delete_pp),
+        )
+        .route(
+            "/jaxrs/correlation/service/processing/correlation/delete/type/cms/document/{document}",
+            post(u2::delete_cms),
+        )
+        .route(
+            "/jaxrs/correlation/service/processing/correlation/readable/type/processplatform",
+            post(u2::readable_pp),
+        )
+        .route(
+            "/jaxrs/correlation/service/processing/correlation/readable/type/cms",
+            post(u2::readable_cms),
+        )
+        .route(
+            "/jaxrs/correlation/service/processing/correlation/list/type/processplatform/job/{job}",
+            get(u2::list_pp),
+        )
+        .route(
+            "/jaxrs/correlation/service/processing/correlation/list/type/processplatform/job/{job}/site/{site}",
+            get(u2::list_pp_site),
+        )
+        .route(
+            "/jaxrs/correlation/service/processing/correlation/list/type/cms/document/{document}",
+            get(u2::list_cms),
+        )
+        .route(
+            "/jaxrs/correlation/service/processing/correlation/list/type/cms/document/{document}/site/{site}",
+            get(u2::list_cms_site),
+        )
 }
 
 #[cfg(test)]
@@ -303,231 +342,8 @@ pub fn router(pool: deadpool_postgres::Pool) -> axum::Router {
     correlation_service_processing_router().layer(axum::extract::Extension(pool))
 }
 
-
-pub async fn correlation_delete_type_cms_document_document(
-    pool: Extension<Pool>,
-    Path(document): Path<String>,
-) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
-    let result = client
-        .execute(
-            r#"DELETE FROM x_correlation WHERE "type" = 'cms/document' AND target_id = $1"#,
-            &[&document],
-        )
-        .await
-        .map_err(|_| AppError::Internal)?;
-
-    if result == 0 {
-        return Ok(Json(ActionResult::error("correlation not found or already deleted")));
-    }
-
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("document".to_string(), Value::String(document)),
-            ("deleted".to_string(), Value::Bool(result > 0)),
-        ]),
-    ))))
-}
-
-pub async fn correlation_delete_type_processplatform_job_job(
-    pool: Extension<Pool>,
-    Path(job): Path<String>,
-) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
-    let result = client
-        .execute(
-            r#"DELETE FROM x_correlation WHERE "type" = 'processplatform/job' AND target_id = $1"#,
-            &[&job],
-        )
-        .await
-        .map_err(|_| AppError::Internal)?;
-
-    if result == 0 {
-        return Ok(Json(ActionResult::error("correlation not found or already deleted")));
-    }
-
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("job".to_string(), Value::String(job)),
-            ("deleted".to_string(), Value::Bool(result > 0)),
-        ]),
-    ))))
-}
-
-pub async fn correlation_list_type_cms_document_document(
-    pool: Extension<Pool>,
-    Path(document): Path<String>,
-) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
-    let rows = client
-        .query(
-            r#"SELECT id, person_id, target_id, "type", creator, create_time FROM x_correlation WHERE "type" = 'cms/document' AND target_id = $1 ORDER BY create_time DESC"#,
-            &[&document],
-        )
-        .await
-        .map_err(|_| AppError::Internal)?;
-
-    let data: Vec<Value> = rows
-        .iter()
-        .map(|row| {
-            Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("personId".to_string(), Value::String(row.get("person_id"))),
-                ("targetId".to_string(), Value::String(row.get("target_id"))),
-                ("type".to_string(), Value::String(row.get("type"))),
-                ("creator".to_string(), Value::String(row.get("creator"))),
-                ("createTime".to_string(), Value::String(row.get("create_time"))),
-            ]))
-        })
-        .collect();
-
-    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
-        ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
-        ("data".to_string(), Value::Array(data)),
-    ])))))
-}
-
-pub async fn correlation_list_type_cms_document_document_site_site(
-    pool: Extension<Pool>,
-    Path((document, _site)): Path<(String, String)>,
-) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
-    let rows = client
-        .query(
-            r#"SELECT id, person_id, target_id, "type", creator, create_time FROM x_correlation WHERE "type" = 'cms/document' AND target_id = $1 ORDER BY create_time DESC"#,
-            &[&document],
-        )
-        .await
-        .map_err(|_| AppError::Internal)?;
-
-    let data: Vec<Value> = rows
-        .iter()
-        .map(|row| {
-            Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("personId".to_string(), Value::String(row.get("person_id"))),
-                ("targetId".to_string(), Value::String(row.get("target_id"))),
-                ("type".to_string(), Value::String(row.get("type"))),
-                ("creator".to_string(), Value::String(row.get("creator"))),
-                ("createTime".to_string(), Value::String(row.get("create_time"))),
-            ]))
-        })
-        .collect();
-
-    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
-        ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
-        ("data".to_string(), Value::Array(data)),
-    ])))))
-}
-
-pub async fn correlation_list_type_processplatform_job_job(
-    pool: Extension<Pool>,
-    Path(job): Path<String>,
-) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
-    let rows = client
-        .query(
-            r#"SELECT id, person_id, target_id, "type", creator, create_time FROM x_correlation WHERE "type" = 'processplatform/job' AND target_id = $1 ORDER BY create_time DESC"#,
-            &[&job],
-        )
-        .await
-        .map_err(|_| AppError::Internal)?;
-
-    let data: Vec<Value> = rows
-        .iter()
-        .map(|row| {
-            Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("personId".to_string(), Value::String(row.get("person_id"))),
-                ("targetId".to_string(), Value::String(row.get("target_id"))),
-                ("type".to_string(), Value::String(row.get("type"))),
-                ("creator".to_string(), Value::String(row.get("creator"))),
-                ("createTime".to_string(), Value::String(row.get("create_time"))),
-            ]))
-        })
-        .collect();
-
-    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
-        ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
-        ("data".to_string(), Value::Array(data)),
-    ])))))
-}
-
-pub async fn correlation_list_type_processplatform_job_job_site_site(
-    pool: Extension<Pool>,
-    Path((job, _site)): Path<(String, String)>,
-) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
-    let rows = client
-        .query(
-            r#"SELECT id, person_id, target_id, "type", creator, create_time FROM x_correlation WHERE "type" = 'processplatform/job' AND target_id = $1 ORDER BY create_time DESC"#,
-            &[&job],
-        )
-        .await
-        .map_err(|_| AppError::Internal)?;
-
-    let data: Vec<Value> = rows
-        .iter()
-        .map(|row| {
-            Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("personId".to_string(), Value::String(row.get("person_id"))),
-                ("targetId".to_string(), Value::String(row.get("target_id"))),
-                ("type".to_string(), Value::String(row.get("type"))),
-                ("creator".to_string(), Value::String(row.get("creator"))),
-                ("createTime".to_string(), Value::String(row.get("create_time"))),
-            ]))
-        })
-        .collect();
-
-    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
-        ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
-        ("data".to_string(), Value::Array(data)),
-    ])))))
-}
-
-pub async fn correlation_readable_type_cms(
-    pool: Extension<Pool>,
-) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
-    let row = client
-        .query_one(
-            r#"SELECT COUNT(*) as cnt FROM x_correlation WHERE "type" LIKE 'cms/%'"#,
-            &[],
-        )
-        .await
-        .map_err(|_| AppError::Internal)?;
-
-    let count: i64 = row.get("cnt");
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("readable".to_string(), Value::Bool(count > 0)),
-            ("count".to_string(), Value::Number(serde_json::Number::from(count))),
-        ]),
-    ))))
-}
-
-pub async fn correlation_readable_type_processplatform(
-    pool: Extension<Pool>,
-) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
-    let row = client
-        .query_one(
-            r#"SELECT COUNT(*) as cnt FROM x_correlation WHERE "type" LIKE 'processplatform/%'"#,
-            &[],
-        )
-        .await
-        .map_err(|_| AppError::Internal)?;
-
-    let count: i64 = row.get("cnt");
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("readable".to_string(), Value::Bool(count > 0)),
-            ("count".to_string(), Value::Number(serde_json::Number::from(count))),
-        ]),
-    ))))
-}
-
+/// GET correlation/type/cms/document/{document}（仓库既有扩展：按目标取单条关联）
+#[axum::debug_handler]
 pub async fn correlation_type_cms_document_document(
     pool: Extension<Pool>,
     Path(document): Path<String>,
@@ -535,7 +351,7 @@ pub async fn correlation_type_cms_document_document(
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let row = client
         .query_opt(
-            r#"SELECT id, person_id, target_id, "type", creator, create_time FROM x_correlation WHERE "type" = 'cms/document' AND target_id = $1 LIMIT 1"#,
+            r#"SELECT id FROM x_correlation WHERE "type" = 'cms/document' AND target_id = $1 LIMIT 1"#,
             &[&document],
         )
         .await
@@ -545,11 +361,7 @@ pub async fn correlation_type_cms_document_document(
         Some(row) => {
             let result = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
-                ("personId".to_string(), Value::String(row.get("person_id"))),
-                ("targetId".to_string(), Value::String(row.get("target_id"))),
-                ("type".to_string(), Value::String(row.get("type"))),
-                ("creator".to_string(), Value::String(row.get("creator"))),
-                ("createTime".to_string(), Value::String(row.get("create_time"))),
+                ("document".to_string(), Value::String(document)),
             ]));
             Ok(Json(ActionResult::success(result)))
         }
@@ -557,6 +369,8 @@ pub async fn correlation_type_cms_document_document(
     }
 }
 
+/// GET correlation/type/processplatform/job/{job}（仓库既有扩展：按目标取单条关联）
+#[axum::debug_handler]
 pub async fn correlation_type_processplatform_job_job(
     pool: Extension<Pool>,
     Path(job): Path<String>,
@@ -564,7 +378,7 @@ pub async fn correlation_type_processplatform_job_job(
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let row = client
         .query_opt(
-            r#"SELECT id, person_id, target_id, "type", creator, create_time FROM x_correlation WHERE "type" = 'processplatform/job' AND target_id = $1 LIMIT 1"#,
+            r#"SELECT id FROM x_correlation WHERE "type" = 'processplatform/job' AND target_id = $1 LIMIT 1"#,
             &[&job],
         )
         .await
@@ -574,11 +388,7 @@ pub async fn correlation_type_processplatform_job_job(
         Some(row) => {
             let result = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
-                ("personId".to_string(), Value::String(row.get("person_id"))),
-                ("targetId".to_string(), Value::String(row.get("target_id"))),
-                ("type".to_string(), Value::String(row.get("type"))),
-                ("creator".to_string(), Value::String(row.get("creator"))),
-                ("createTime".to_string(), Value::String(row.get("create_time"))),
+                ("job".to_string(), Value::String(job)),
             ]));
             Ok(Json(ActionResult::success(result)))
         }
@@ -586,65 +396,4 @@ pub async fn correlation_type_processplatform_job_job(
     }
 }
 
-pub async fn correlation_update_type_cms_document_document(
-    pool: Extension<Pool>,
-    Path(document): Path<String>,
-    Json(req): Json<Value>,
-) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
-    let person_id = req.get("personId").and_then(|v| v.as_str()).unwrap_or("").to_string();
-    let r#type = req.get("type").and_then(|v| v.as_str()).unwrap_or("cms/document").to_string();
-
-    let result = client
-        .execute(
-            r#"UPDATE x_correlation SET person_id = $1, "type" = $2 WHERE "type" = 'cms/document' AND target_id = $3"#,
-            &[&person_id, &r#type, &document],
-        )
-        .await
-        .map_err(|_| AppError::Internal)?;
-
-    if result == 0 {
-        return Ok(Json(ActionResult::error("correlation not found")));
-    }
-
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("document".to_string(), Value::String(document)),
-            ("saved".to_string(), Value::Bool(result > 0)),
-            ("personId".to_string(), Value::String(person_id)),
-            ("type".to_string(), Value::String(r#type)),
-        ]),
-    ))))
-}
-
-pub async fn correlation_update_type_processplatform_job_job(
-    pool: Extension<Pool>,
-    Path(job): Path<String>,
-    Json(req): Json<Value>,
-) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
-    let person_id = req.get("personId").and_then(|v| v.as_str()).unwrap_or("").to_string();
-    let r#type = req.get("type").and_then(|v| v.as_str()).unwrap_or("processplatform/job").to_string();
-
-    let result = client
-        .execute(
-            r#"UPDATE x_correlation SET person_id = $1, "type" = $2 WHERE "type" = 'processplatform/job' AND target_id = $3"#,
-            &[&person_id, &r#type, &job],
-        )
-        .await
-        .map_err(|_| AppError::Internal)?;
-
-    if result == 0 {
-        return Ok(Json(ActionResult::error("correlation not found")));
-    }
-
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("job".to_string(), Value::String(job)),
-            ("saved".to_string(), Value::Bool(result > 0)),
-            ("personId".to_string(), Value::String(person_id)),
-            ("type".to_string(), Value::String(r#type)),
-        ]),
-    ))))
-}
 
