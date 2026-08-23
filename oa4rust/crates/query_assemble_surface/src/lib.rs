@@ -1,6 +1,6 @@
 use axum::{
     extract::{Extension, Path},
-    Json, Router, routing::get, routing::post,
+    Json, Router, routing::get, routing::post, routing::put, routing::delete,
 };
 use deadpool_postgres::Pool;
 use serde::Deserialize;
@@ -8,6 +8,7 @@ use serde_json::Value;
 use shared::{error::AppError, response::ActionResult};
 
 pub mod routes;
+pub mod u2_closures;
 
 #[derive(Debug, Deserialize)]
 pub struct CreateSurfaceRequest {
@@ -187,6 +188,7 @@ pub async fn preview_surface(
 }
 
 pub fn query_assemble_surface_router() -> Router {
+    use u2_closures as u2;
     Router::new()
         .route("/jaxrs/query/assemble/surface/get/{id}", get(get_surface))
         .route("/jaxrs/query/assemble/surface/create", post(create_surface))
@@ -240,6 +242,35 @@ pub fn query_assemble_surface_router() -> Router {
         .route("/jaxrs/queryview/execute/{view}/{id}", get(crate::view_id_execute))
         .route("/jaxrs/queryview/execute/mockputtopost/{view}/{id}", post(crate::view_id_execute_mockputtopost))
         .route("/jaxrs/queryview/execute/v2/{view}/{id}/{page}/{page}/{size}/{size}", get(crate::view_id_execute_v2_page_page_size_size))
+        // ── plan002 U2：已实现未注册 handler 补挂 ──
+        .route("/jaxrs/queryview/importmodel/uuid", get(importmodel_uuid))
+        .route("/jaxrs/queryview/importmodel/record/delete/{recordId}", delete(u2::importmodel_record_delete))
+        .route("/jaxrs/queryview/importmodel/execute/record/{recordId}", get(u2::importmodel_reexecute_record))
+        .route("/jaxrs/queryview/list", get(query_list))
+        .route("/jaxrs/queryview/table/list/{id}/prev/{count}", get(table_list_id_prev_count))
+        .route("/jaxrs/queryview/table/list/row/{tableFlag}/{id}/prev/{count}", get(table_list_tableFlag_row_id_prev_count))
+        .route("/jaxrs/queryview/table/reload/dynamic", get(table_reload_dynamic))
+        .route("/jaxrs/queryview/view/{id}", get(view_id))
+        .route("/jaxrs/queryview/view/list/query/{queryFlag}", get(view_list_query_queryFlag))
+        // ── plan002 U2：statement / stat / search / morelikethis 缺口 ──
+        .route("/jaxrs/queryview/statement/{id}/format", get(u2::statement_get_format))
+        .route("/jaxrs/queryview/statement/{id}", get(u2::statement_get_id))
+        .route("/jaxrs/queryview/statement/execute/{flag}/mode/{mode}/page/{page}/size/{size}", post(u2::statement_execute_mode_v2))
+        .route("/jaxrs/queryview/statement/execute/{flag}/page/{page}/size/{size}", post(u2::statement_execute))
+        .route("/jaxrs/queryview/statement/list/query/{queryFlag}", post(u2::statement_list_with_query))
+        .route("/jaxrs/queryview/stat/flag/{flag}/query/{queryFlag}", get(u2::stat_get_with_query))
+        .route("/jaxrs/queryview/stat/list/query/{queryFlag}", get(u2::stat_list_with_query))
+        .route("/jaxrs/queryview/stat/{id}", get(u2::stat_get_id))
+        .route("/jaxrs/queryview/stat/{id}/execute", put(u2::stat_execute))
+        .route("/jaxrs/queryview/stat/{id}/execute/mockputtopost", post(u2::stat_execute))
+        .route("/jaxrs/queryview/stat/execute/mockputtopost/{id}", post(u2::stat_execute))
+        .route("/jaxrs/queryview/search", post(u2::search_post))
+        .route("/jaxrs/queryview/morelikethis", post(u2::morelikethis_post))
+        // ── plan002 U2：table 行级 + view bundle v2 缺口 ──
+        .route("/jaxrs/queryview/table/row/delete/{tableFlag}/{id}", delete(u2::table_row_delete))
+        .route("/jaxrs/queryview/table/row/insert/{tableFlag}", post(u2::table_row_insert))
+        .route("/jaxrs/queryview/table/row/one/insert/{tableFlag}", post(u2::table_row_insert_one))
+        .route("/jaxrs/queryview/bundle/v2/post/{id}", post(u2::view_bundle_v2_post))
 }
 
 #[cfg(test)]
