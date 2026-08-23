@@ -16,6 +16,7 @@ pub mod password;
 pub mod regist;
 pub mod reset;
 pub mod signature;
+pub mod u2;
 
 // --- 数据模型 ---
 
@@ -196,6 +197,142 @@ pub fn router(pool: Pool, session_manager: SessionManager) -> Router {
         // 头像端点
         .route("/jaxrs/person/icon/{person}", get(icon::get))
         .route("/jaxrs/person/icon/upload", post(icon::upload))
+        // ══ Java x_organization_assemble_personal 契约补齐（u2）════════════
+        // PersonAction
+        // 注：GET/PUT /jaxrs/person/icon 已由 personal_extend 提供同路径实现，
+        // 此处仅补齐 octet-stream 上传与 mock 别名，避免跨 crate 路由冲突。
+        .route("/jaxrs/person/mockputtopost", post(edit_person))
+        .route(
+            "/jaxrs/person/icon",
+            post(u2::set_icon_octet_stream),
+        )
+        .route(
+            "/jaxrs/person/icon/mockputtopost",
+            post(u2::upload_multipart_alias),
+        )
+        // PasswordAction
+        .route("/jaxrs/person/password/mockputtopost", post(password::change))
+        // RegistAction
+        .route("/jaxrs/person/regist/mode", get(u2::regist_mode))
+        .route(
+            "/jaxrs/person/regist/captcha/width/{width}/height/{height}",
+            get(auth::captcha::captcha_with_size),
+        )
+        .route(
+            "/jaxrs/person/regist/code/mobile/{mobile}",
+            get(u2::regist_code_mobile),
+        )
+        .route(
+            "/jaxrs/person/regist/check/password/{password}",
+            get(u2::regist_check_password),
+        )
+        // ResetAction
+        .route("/jaxrs/reset/mockputtopost", post(reset::reset_password))
+        // SignatureAction
+        .route(
+            "/jaxrs/person/signature/list/person/{flag}",
+            get(u2::signature_list_person),
+        )
+        // CustomAction
+        .route(
+            "/jaxrs/person/custom/{name}",
+            get(u2::custom_get)
+                .put(u2::custom_edit)
+                .post(u2::custom_edit)
+                .delete(u2::custom_delete),
+        )
+        .route("/jaxrs/person/custom/{name}/mockdeletetoget", get(u2::custom_delete))
+        .route(
+            "/jaxrs/person/custom/manager/person/{person}/name/{name}",
+            get(u2::custom_manager_get).put(u2::custom_manager_edit),
+        )
+        .route(
+            "/jaxrs/person/custom/manager/person/{person}/name/{name}/mockputtopost",
+            post(u2::custom_manager_edit),
+        )
+        // DefinitionAction
+        .route(
+            "/jaxrs/person/definition/{name}",
+            get(u2::definition_get)
+                .put(u2::definition_edit)
+                .post(u2::definition_edit)
+                .delete(u2::definition_delete),
+        )
+        .route("/jaxrs/person/definition/{name}/mockdeletetoget", get(u2::definition_delete))
+        .route("/jaxrs/person/definition/{name}/mockputtopost", post(u2::definition_edit))
+        // EmpowerAction 残余
+        .route(
+            "/jaxrs/person/empower/list/{id}/next/{count}",
+            get(u2::empower_list_next),
+        )
+        .route(
+            "/jaxrs/person/empower/list/{id}/prev/{count}",
+            get(u2::empower_list_prev),
+        )
+        .route(
+            "/jaxrs/person/empower/list/person/{flag}",
+            get(u2::empower_list_with_person),
+        )
+        .route(
+            "/jaxrs/person/empower/{id}/mockputtopost",
+            post(empower::update),
+        )
+        .route(
+            "/jaxrs/person/empower/manager/{id}/mockputtopost",
+            post(empower::manager_update),
+        )
+        .route(
+            "/jaxrs/person/empower/{id}/mockdeletetoget",
+            get(empower::delete),
+        )
+        .route(
+            "/jaxrs/person/empower/manager/{id}/mockdeletetoget",
+            get(empower::manager_delete),
+        )
+        // EmpowerLogAction
+        .route(
+            "/jaxrs/person/empowerlog/list/{id}/next/{count}",
+            get(u2::log_list_next),
+        )
+        .route(
+            "/jaxrs/person/empowerlog/list/{id}/prev/{count}",
+            get(u2::log_list_prev),
+        )
+        .route(
+            "/jaxrs/person/empowerlog/list/currentperson/paging/{page}/size/{size}",
+            post(u2::log_currentperson_paging),
+        )
+        .route(
+            "/jaxrs/person/empowerlog/list/to/currentperson/paging/{page}/size/{size}",
+            post(u2::log_to_currentperson_paging),
+        )
+        .route(
+            "/jaxrs/person/empowerlog/manager/list/paging/{page}/size/{size}",
+            post(u2::log_manager_paging),
+        )
+        .route(
+            "/jaxrs/person/empowerlog/{id}",
+            axum::routing::delete(u2::log_delete),
+        )
+        .route(
+            "/jaxrs/person/empowerlog/{id}/mockdeletetoget",
+            get(u2::log_delete),
+        )
+        // ExmailAction
+        .route("/jaxrs/person/exmail/new/count", get(u2::exmail_new_count))
+        .route(
+            "/jaxrs/person/exmail/new/count/passive",
+            get(u2::exmail_new_count_passive),
+        )
+        .route(
+            "/jaxrs/person/exmail/list/title/passive",
+            get(u2::exmail_list_title_passive),
+        )
+        .route("/jaxrs/person/exmail/sso", get(u2::exmail_sso))
+        .route(
+            "/jaxrs/person/exmail",
+            get(u2::exmail_callback_get).post(u2::exmail_callback_post),
+        )
         .layer(Extension(pool))
         .layer(Extension(session_manager))
         .layer(Extension(reset_store))
