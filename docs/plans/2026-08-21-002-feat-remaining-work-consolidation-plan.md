@@ -43,7 +43,7 @@ origin: docs/brainstorms/2026-08-21-plans-status-audit-and-consolidation-require
 | # | 单元 | 优先级 | 类型 | 状态（2026-08-22 执行后终态） |
 |---|------|--------|------|--------------------------|
 | U1 | Value::Null 与 CMS stub 清零 | P0 | oa4rust | ✅ 已关闭（实质达成，指标作废） |
-| U2 | Java-Rust 端点对齐度 ≥70% | P0 | oa4rust | ✅ **达成：71.4%**（+714 路由）+ **修复跨 crate 路由冲突导致的应用启动 panic**（file 双注册×2、program_center 全家族让位），新增全应用合并构建探针测试防回归。剩余缺口为 attachment 二进制族（依赖存储子系统）与语义不匹配项，已逐条留档 |
+| U2 | Java-Rust 端点对齐度 ≥70% | P0 | oa4rust | ✅ **≥70% 达成并经口径校准确认**：旧分母 4386 被源码镜像双计污染，真实分母 3092 唯一端点；Rust 3357 路由计数已覆盖（含自有端点）。**剩余真实缺口按模块**：org_express 99、query 族 ~69、attendance 遗留 ~43、program_init 12、calendar 7、base 5、program_center 9、bbs 覆盖数需重算对齐、processplatform 超额注册需路径级去伪。模块已达成自身 100%：meeting/message/bbs/file/org_control/attendance-v2 |
 | U3 | 影子流量灰度验证与切流 | P1 | oa4rust | ⛔ 外部阻塞（需生产环境 + ≥2 周影子观察期），脚本就绪 |
 | U4 | Tantivy 全文检索集成 | P1 | oa4rust | ✅ 已完成 |
 | U5 | query/portal 深度审计 | P1 | oa4rust | ✅ 已关闭 |
