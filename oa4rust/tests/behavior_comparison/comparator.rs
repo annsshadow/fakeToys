@@ -37,11 +37,19 @@ pub struct EndpointDef {
 }
 
 /// Endpoint comparator: parallel calls to Rust and Java and structural comparison.
+///
+/// 实测修正（plan002 U9a→U3 前置验证，2026-08-24）：
+/// - O2OA v9 只认 `x-token` header（或同名 cookie），`Authorization: Bearer` 会被当作
+///   anonymous；Rust 侧则认 `Authorization: Bearer`。因此请求头同时携带两者。
+/// - Rust 与 Java 的登录 token 互不通用，支持分别设置（with_tokens），
+///   compare 时按目标服务选取；未单独设置的侧回退到 with_auth_token 的全局 token。
 pub struct EndpointComparator {
     rust_base_url: String,
     java_base_url: String,
     client: reqwest::Client,
     auth_token: Option<String>,
+    rust_auth_token: Option<String>,
+    java_auth_token: Option<String>,
     pub allowlist: DiffAllowlist,
 }
 
@@ -55,14 +63,38 @@ impl EndpointComparator {
                 .build()
                 .unwrap_or_default(),
             auth_token: None,
+            rust_auth_token: None,
+            java_auth_token: None,
             allowlist: DiffAllowlist::empty(),
         }
     }
 
-    /// Set the Bearer token for authenticated requests.
+    /// Set the Bearer token for authenticated requests (both sides).
     pub fn with_auth_token(mut self, token: impl Into<String>) -> Self {
         self.auth_token = Some(token.into());
         self
+    }
+
+    /// Set per-side tokens (Rust token is sent to Rust, Java token to Java).
+    pub fn with_tokens(
+        mut self,
+        rust_token: impl Into<String>,
+        java_token: impl Into<String>,
+    ) -> Self {
+        self.rust_auth_token = Some(rust_token.into());
+        self.java_auth_token = Some(java_token.into());
+        self
+    }
+
+    /// Pick the token for the given base URL (per-side override, else global).
+    fn token_for(&self, base_url: &str) -> Option<&String> {
+        if base_url == self.rust_base_url {
+            self.rust_auth_token.as_ref().or(self.auth_token.as_ref())
+        } else if base_url == self.java_base_url {
+            self.java_auth_token.as_ref().or(self.auth_token.as_ref())
+        } else {
+            self.auth_token.as_ref()
+        }
     }
 
     /// Load allowlist from a YAML file.
@@ -71,11 +103,19 @@ impl EndpointComparator {
         Ok(self)
     }
 
-    /// Build the auth headers map if a token is set.
-    fn auth_headers(&self) -> Option<HashMap<String, String>> {
-        self.auth_token
-            .as_ref()
-            .map(|t| [("Authorization".to_string(), format!("Bearer {}", t))].iter().cloned().collect())
+    /// Build the auth headers map for the given base URL if a token is set.
+    ///
+    /// 同时发送 `Authorization: Bearer`（Rust 侧）与 `x-token`（O2OA v9 Java 侧）。
+    fn auth_headers_for(&self, base_url: &str) -> Option<HashMap<String, String>> {
+        self.token_for(base_url)
+            .map(|t| {
+                [
+                    ("Authorization".to_string(), format!("Bearer {}", t)),
+                    ("x-token".to_string(), t.clone()),
+                ]
+                .into_iter()
+                .collect()
+            })
     }
 
     /// Construct the full Java URL for an endpoint definition.
@@ -143,13 +183,14 @@ impl EndpointComparator {
     pub async fn compare_endpoint(&self, def: &EndpointDef) -> ComparisonResult {
         let rust_url = format!("{}{}", self.rust_base_url, def.rust_path);
         let java_url = self.java_url(def);
-        let headers = self.auth_headers();
+        let rust_headers = self.auth_headers_for(&self.rust_base_url);
+        let java_headers = self.auth_headers_for(&self.java_base_url);
 
         let (rust_status, rust_body) = self
-            .call_endpoint(&rust_url, def.method, headers.clone(), def.body)
+            .call_endpoint(&rust_url, def.method, rust_headers, def.body)
             .await;
         let (java_status, java_body) = self
-            .call_endpoint(&java_url, def.method, headers.clone(), def.body)
+            .call_endpoint(&java_url, def.method, java_headers, def.body)
             .await;
 
         let java_unreachable = java_status.is_none() && java_body.is_none();
@@ -292,7 +333,10 @@ impl EndpointComparator {
                         } else {
                             format!("{}.{}", path, key)
                         };
-                        Self::recurse(self, rust, jv, &field_path, diffs, java_seen);
+                        // 修复（plan002 U2）：此处必须取两侧的“子值”递归比较；
+                        // 原实现误传整个父对象 rust，导致每个键都与全信封比较，
+                        // 任何对象型响应都会产生虚假 type-differs（0/7 无法收敛的根因之一）。
+                        Self::recurse(self, ro.get(key).unwrap(), jv, &field_path, diffs, java_seen);
                         rust_unmatched.remove(key);
                         java_unmatched.remove(key);
                     }
