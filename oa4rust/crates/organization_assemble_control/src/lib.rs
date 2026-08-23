@@ -12,6 +12,12 @@ use serde_json::Value;
 use shared::{error::AppError, response::ActionResult};
 use uuid::Uuid;
 
+mod u2_helpers;
+mod u2_misc;
+mod u2_org;
+mod u2_person;
+mod u2_router;
+
 #[derive(Debug, Deserialize)]
 pub struct PersonLikeRequest {
     pub name: Option<String>,
@@ -3557,6 +3563,7 @@ pub fn router(pool: deadpool_postgres::Pool) -> Router {
     .route("/jaxrs/organization/assemble/control/unitattribute/{flag}/mockdeletetoget", delete(unitattribute_flag_mockdeletetoget))
     .route("/jaxrs/organization/assemble/control/unitduty/{flag}/mockdeletetoget", delete(unitduty_flag_mockdeletetoget))
     .route("/jaxrs/organization/assemble/control/unitduty/update/member", put(unitduty_update_member))
+    .merge(u2_router::router())
     .layer(Extension(pool));
     router
 }
@@ -3565,6 +3572,8 @@ pub fn router(pool: deadpool_postgres::Pool) -> Router {
 mod tests;
 #[cfg(test)]
 mod tests_generated;
+#[cfg(test)]
+mod tests_u2;
 
 
 
