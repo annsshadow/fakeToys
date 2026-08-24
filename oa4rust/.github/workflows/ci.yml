@@ -78,3 +78,105 @@ jobs:
         run: cargo test --test integration_runner
         env:
           DATABASE_DIALECT: ${{ matrix.dialect }}
+
+  # ── plan002 U9: Java-Rust 行为对比接入 CI ──────────────────────────────────
+  # 该 job 依赖外部 Java 容器（o2server），冷启动约 10 分钟，且对比结果可能因
+  # 外部 Java 服务状态波动。因此设为 allow-failure（continue-on-error），
+  # 失败不影响主构建（unit-tests / integration-tests）。
+  behavior-compare:
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: o2server
+          POSTGRES_PASSWORD: password
+          POSTGRES_DB: oa4rust
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    env:
+      DATABASE_URL: postgres://o2server:password@localhost:5432/oa4rust
+      DATABASE_DIALECT: postgres
+      RUST_LOG: warn
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Rust
+        uses: dtolnay/rust-action@stable
+
+      - name: Cache cargo registry
+        uses: actions/cache@v4
+        with:
+          path: ~/.cargo/registry
+          key: ${{ runner.os }}-cargo-registry-${{ hashFiles('**/Cargo.lock') }}
+
+      # 提前拉起 o2server，使冷启动（~10min）与后续 cargo 编译并行
+      - name: Start o2server (Java) container
+        run: |
+          docker run -d --name o2server \
+            -p 18080:80 \
+            -e MYSQL_ROOT_PASSWORD=o2oa@2022 \
+            o2oa/o2server:latest
+
+      - name: Build server binary
+        run: cargo build --bin oa4rust
+
+      # 路由无冲突冒烟测试（仅依赖 postgres，与 Java 容器无关）
+      - name: Route-conflict probe (u2_probe)
+        run: cargo test --test u2_probe
+
+      # 启动 Rust 服务（启动时自动应用表迁移），等待 /health 就绪。
+      # 用 nohup 使后台进程跨 step 存活（否则 step 结束会被回收）。
+      - name: Start Rust server
+        run: |
+          nohup ./target/debug/oa4rust > rust_server.log 2>&1 &
+          echo $! > rust_server.pid
+          for i in $(seq 1 60); do
+            if curl -fsS http://localhost:3000/health >/dev/null 2>&1; then
+              echo "Rust server ready"; break
+            fi
+            sleep 5
+          done
+
+      # 就绪探针：POST /jaxrs/secret/set 初始化，再 GET /jaxrs/server/execute。
+      # 超时上限 ≥15 分钟（100 次 × 10s），避免 o2server 冷启动导致 CI 误失败。
+      - name: Wait for o2server readiness
+        run: |
+          ready=0
+          for i in $(seq 1 100); do
+            code=$(curl -s -o /dev/null -w '%{http_code}' -X POST \
+              http://localhost:18080/jaxrs/secret/set \
+              -H 'Content-Type: application/json' \
+              -d '{"secret":"o2oa@2022"}' || true)
+            if [ "$code" != "000" ] && [ "$code" != "502" ] && [ "$code" != "503" ]; then
+              ex=$(curl -s -o /dev/null -w '%{http_code}' \
+                http://localhost:18080/jaxrs/server/execute || true)
+              if [ "$ex" != "000" ]; then
+                echo "o2server ready after $((i * 10))s (secret/set=$code, server/execute=$ex)"
+                ready=1
+                break
+              fi
+            fi
+            sleep 10
+          done
+          if [ "$ready" -ne 1 ]; then
+            echo "::warning::o2server not ready within timeout; behavior comparison will SKIP Java side"
+          fi
+
+      - name: Run behavior comparison (Rust vs Java)
+        run: cargo test --test behavior_compare -- --nocapture
+        env:
+          BEHAVIOR_COMPARE: "1"
+          JAVA_SERVICE_URL: http://localhost:18080
+
+      - name: Teardown
+        if: always()
+        run: |
+          if [ -f rust_server.pid ]; then kill "$(cat rust_server.pid)" || true; fi
+          docker rm -f o2server || true
