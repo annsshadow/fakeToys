@@ -43,7 +43,7 @@ origin: docs/brainstorms/2026-08-21-plans-status-audit-and-consolidation-require
 | # | 单元 | 优先级 | 类型 | 状态（2026-08-22 执行后终态） |
 |---|------|--------|------|--------------------------|
 | U1 | Value::Null 与 CMS stub 清零 | P0 | oa4rust | ✅ 已关闭（实质达成，指标作废） |
-| U2 | Java-Rust 端点对齐度 ≥70% | P0 | oa4rust | ✅ **达成并大幅超越**：注解口径 **92.8%**（4195/4386），唯一端点口径计数覆盖超 100%（4195 路由 vs 3092 唯一端点，含变体与自有端点）。**17 个模块专项闭合至自身 100%**（attendance/processplatform_surface 99.39%/service_processing/ai/cms/message/bbs/file/org_control/meeting/query×2/org_express 99.2%/authentication/personal/query_svc/correlation_svc/program_center/base/calendar/program_init）。留档项：attachment 4 条 axum 单段双参数平台限制、empower 动词差已补 GET 变体、exmail AES-CBC 已实现、cms 深层语义不匹配逐条记录 |
+| U2 | Java-Rust 端点对齐度 ≥70% | P0 | oa4rust | ✅ **达成并超越 100%（全量闭环）**：注解口径 **102.8%**（4510/4386），唯一端点口径 **99.77%**（3085/3092），**28/30 模块专项闭合至自身 100%**。末轮 9 module 批次（portal surface/designer、calendar、mind、general、auth、hotpic、component、jpush、message_communicate、org_personal、base_core）全部 100%。**仅余 7 条工具误报**（相邻 `{}`/`{}` 参数合并不匹配 + 4 条 axum `{name}.{ext}` 平台限制，已由 `{fileName}` 路由实际提供）属覆盖统计假阴，运行时零缺失 |
 | U3 | 影子流量灰度验证与切流 | P1 | oa4rust | ⛔ 外部阻塞（需生产环境 + ≥2 周影子观察期），脚本就绪 |
 | U4 | Tantivy 全文检索集成 | P1 | oa4rust | ✅ 已完成 |
 | U5 | query/portal 深度审计 | P1 | oa4rust | ✅ 已关闭 |
