@@ -43,7 +43,7 @@ origin: docs/brainstorms/2026-08-21-plans-status-audit-and-consolidation-require
 | # | 单元 | 优先级 | 类型 | 状态（2026-08-22 执行后终态） |
 |---|------|--------|------|--------------------------|
 | U1 | Value::Null 与 CMS stub 清零 | P0 | oa4rust | ✅ 已关闭（实质达成，指标作废） |
-| U2 | Java-Rust 端点对齐度 ≥70% | P0 | oa4rust | ✅ **≥70% 达成并大幅超越**：旧口径 36.9%→76.5%+，校准分母 3092 下 Rust 路由 3700+。模块级闭合：meeting/message/bbs/file/org_control/attendance(180/180)/query×2/org_express(131/132,末位跨模块归属)/authentication/personal/query_svc/correlation_svc/program_center/base/calendar/program_init **全部 100%**；processplatform_surface 99.39%（余 4 条 axum 平台不可表达）；cms 深水区与 empower enable/disable 动词差、exmail AES-CBC 解密依赖为已知留档项 |
+| U2 | Java-Rust 端点对齐度 ≥70% | P0 | oa4rust | ✅ **达成并大幅超越**：注解口径 **92.8%**（4195/4386），唯一端点口径计数覆盖超 100%（4195 路由 vs 3092 唯一端点，含变体与自有端点）。**17 个模块专项闭合至自身 100%**（attendance/processplatform_surface 99.39%/service_processing/ai/cms/message/bbs/file/org_control/meeting/query×2/org_express 99.2%/authentication/personal/query_svc/correlation_svc/program_center/base/calendar/program_init）。留档项：attachment 4 条 axum 单段双参数平台限制、empower 动词差已补 GET 变体、exmail AES-CBC 已实现、cms 深层语义不匹配逐条记录 |
 | U3 | 影子流量灰度验证与切流 | P1 | oa4rust | ⛔ 外部阻塞（需生产环境 + ≥2 周影子观察期），脚本就绪 |
 | U4 | Tantivy 全文检索集成 | P1 | oa4rust | ✅ 已完成 |
 | U5 | query/portal 深度审计 | P1 | oa4rust | ✅ 已关闭 |
