@@ -1,4 +1,4 @@
-﻿use axum::{
+use axum::{
     extract::Extension,
     Json, Router, routing::get, routing::post, routing::delete,
 };
@@ -213,6 +213,49 @@ pub fn processplatform_assemble_bam_router() -> Router {
         .route("/jaxrs/processplatform/assemble/bam/period/list/application/{start}/{work}", post(crate::period_list_start_work_application))
         .route("/jaxrs/processplatform/assemble/bam/period/list/{start}/{work}/{unit}", post(crate::period_list_start_work_unit))
         .route("/jaxrs/processplatform/assemble/bam/state/trigger/{category}", post(crate::state_category_trigger))
+        // ── plan002 U2：Java 精确路径闭合（GET，见 final_coverage_sweep 台账）──
+        .route("/jaxrs/processplatform/assemble/bam/period/list/completed/task/applicationstubs", get(bam_stubs_completed_task_by_application))
+        .route("/jaxrs/processplatform/assemble/bam/period/list/completed/task/unitstubs", get(bam_stubs_completed_task_by_unit))
+        .route("/jaxrs/processplatform/assemble/bam/period/list/completed/work/applicationstubs", get(bam_stubs_completed_work_by_application))
+        .route("/jaxrs/processplatform/assemble/bam/period/list/completed/work/unitstubs", get(bam_stubs_completed_work_by_unit))
+        .route("/jaxrs/processplatform/assemble/bam/period/list/expired/task/applicationstubs", get(bam_stubs_expired_task_by_application))
+        .route("/jaxrs/processplatform/assemble/bam/period/list/expired/task/unitstubs", get(bam_stubs_expired_task_by_unit))
+        .route("/jaxrs/processplatform/assemble/bam/period/list/expired/work/applicationstubs", get(bam_stubs_expired_work_by_application))
+        .route("/jaxrs/processplatform/assemble/bam/period/list/expired/work/unitstubs", get(bam_stubs_expired_work_by_unit))
+        .route("/jaxrs/processplatform/assemble/bam/period/list/start/task/applicationstubs", get(bam_stubs_start_task_by_application))
+        .route("/jaxrs/processplatform/assemble/bam/period/list/start/task/unitstubs", get(bam_stubs_start_task_by_unit))
+        .route("/jaxrs/processplatform/assemble/bam/period/list/start/work/applicationstubs", get(bam_stubs_start_work_by_application))
+        .route("/jaxrs/processplatform/assemble/bam/period/list/start/work/unitstubs", get(bam_stubs_start_work_by_unit))
+        .route("/jaxrs/processplatform/assemble/bam/period/list/count/completed/task/application/{applicationId}/process/{processId}/activity/{activityId}/by/unit", get(bam_count_completed_task_by_unit))
+        .route("/jaxrs/processplatform/assemble/bam/period/list/count/completed/task/application/{applicationId}/process/{processId}/activity/{activityId}/unit/{unit}/person/{person}", get(bam_count_completed_task_total))
+        .route("/jaxrs/processplatform/assemble/bam/period/list/count/completed/task/application/{applicationId}/process/{processId}/unit/{unit}/person/{person}/by/activity", get(bam_count_completed_task_by_activity))
+        .route("/jaxrs/processplatform/assemble/bam/period/list/count/completed/task/application/{applicationId}/unit/{unit}/person/{person}/by/process", get(bam_count_completed_task_by_process))
+        .route("/jaxrs/processplatform/assemble/bam/period/list/count/completed/task/unit/{unit}/person/{person}/by/application", get(bam_count_completed_task_by_application))
+        .route("/jaxrs/processplatform/assemble/bam/period/list/count/completed/work/application/{applicationId}/process/{processId}/by/unit", get(bam_count_completed_work_by_unit))
+        .route("/jaxrs/processplatform/assemble/bam/period/list/count/completed/work/application/{applicationId}/process/{processId}/unit/{unit}/person/{person}", get(bam_count_completed_work_total))
+        .route("/jaxrs/processplatform/assemble/bam/period/list/count/completed/work/application/{applicationId}/unit/{unit}/person/{person}/by/process", get(bam_count_completed_work_by_process))
+        .route("/jaxrs/processplatform/assemble/bam/period/list/count/completed/work/unit/{unit}/person/{person}/by/application", get(bam_count_completed_work_by_application))
+        .route("/jaxrs/processplatform/assemble/bam/period/list/count/expired/task/application/{applicationId}/process/{processId}/activity/{activityId}/by/unit", get(bam_count_expired_task_by_unit))
+        .route("/jaxrs/processplatform/assemble/bam/period/list/count/expired/task/application/{applicationId}/process/{processId}/activity/{activityId}/unit/{unit}/person/{person}", get(bam_count_expired_task_total))
+        .route("/jaxrs/processplatform/assemble/bam/period/list/count/expired/task/application/{applicationId}/process/{processId}/unit/{unit}/person/{person}/by/activity", get(bam_count_expired_task_by_activity))
+        .route("/jaxrs/processplatform/assemble/bam/period/list/count/expired/task/application/{applicationId}/unit/{unit}/person/{person}/by/process", get(bam_count_expired_task_by_process))
+        .route("/jaxrs/processplatform/assemble/bam/period/list/count/expired/task/unit/{unit}/person/{person}/by/application", get(bam_count_expired_task_by_application))
+        .route("/jaxrs/processplatform/assemble/bam/period/list/count/expired/work/application/{applicationId}/process/{processId}/by/unit", get(bam_count_expired_work_by_unit))
+        .route("/jaxrs/processplatform/assemble/bam/period/list/count/expired/work/application/{applicationId}/process/{processId}/unit/{unit}/person/{person}", get(bam_count_expired_work_total))
+        .route("/jaxrs/processplatform/assemble/bam/period/list/count/expired/work/application/{applicationId}/unit/{unit}/person/{person}/by/process", get(bam_count_expired_work_by_process))
+        .route("/jaxrs/processplatform/assemble/bam/period/list/count/expired/work/unit/{unit}/person/{person}/by/application", get(bam_count_expired_work_by_application))
+        .route("/jaxrs/processplatform/assemble/bam/period/list/count/start/task/application/{applicationId}/process/{processId}/activity/{activityId}/by/unit", get(bam_count_start_task_by_unit))
+        .route("/jaxrs/processplatform/assemble/bam/period/list/count/start/task/application/{applicationId}/process/{processId}/activity/{activityId}/unit/{unit}/person/{person}", get(bam_count_start_task_total))
+        .route("/jaxrs/processplatform/assemble/bam/period/list/count/start/task/application/{applicationId}/process/{processId}/unit/{unit}/person/{person}/by/activity", get(bam_count_start_task_by_activity))
+        .route("/jaxrs/processplatform/assemble/bam/period/list/count/start/task/application/{applicationId}/unit/{unit}/person/{person}/by/process", get(bam_count_start_task_by_process))
+        .route("/jaxrs/processplatform/assemble/bam/period/list/count/start/task/unit/{unit}/person/{person}/by/application", get(bam_count_start_task_by_application))
+        .route("/jaxrs/processplatform/assemble/bam/period/list/count/start/work/application/{applicationId}/process/{processId}/by/unit", get(bam_count_start_work_by_unit))
+        .route("/jaxrs/processplatform/assemble/bam/period/list/count/start/work/application/{applicationId}/process/{processId}/unit/{unit}/person/{person}", get(bam_count_start_work_total))
+        .route("/jaxrs/processplatform/assemble/bam/period/list/count/start/work/application/{applicationId}/unit/{unit}/person/{person}/by/process", get(bam_count_start_work_by_process))
+        .route("/jaxrs/processplatform/assemble/bam/period/list/count/start/work/unit/{unit}/person/{person}/by/application", get(bam_count_start_work_by_application))
+        .route("/jaxrs/processplatform/assemble/bam/state/applicationtstubs/trigger", get(state_applicationtstubs_trigger))
+        .route("/jaxrs/processplatform/assemble/bam/state/category", get(state_category))
+        .route("/jaxrs/processplatform/assemble/bam/state/category/trigger", get(state_category_trigger_all))
         .route("/jaxrs/processplatform/assemble/bam/delete/{id}", delete(delete_bam))
 }
 
@@ -1433,7 +1476,7 @@ pub async fn state_applicationtstubs_trigger(
     let pending_works: i64 = if !pending_works.is_empty() { pending_works[0].get("cnt") } else { 0 };
 
     let triggered_apps = client
-        .query("SELECT DISTINCT application FROM x_work WHERE deleted_at IS NULL AND application IS NOT NULL", &[])
+        .query("SELECT COALESCE(application, '') AS application FROM x_work WHERE deleted_at IS NULL AND application IS NOT NULL GROUP BY application ORDER BY application", &[])
         .await
         .map_err(|_| AppError::Internal)?;
 
@@ -1460,12 +1503,16 @@ pub async fn state_category(
 
     let rows = client
         .query(
-            "SELECT category, COUNT(*) as total,
-                    COUNT(*) FILTER (WHERE work_status = 'pending') as pending,
-                    COUNT(*) FILTER (WHERE work_status = 'processing') as processing,
-                    COUNT(*) FILTER (WHERE work_status = 'completed') as completed,
-                    COUNT(*) FILTER (WHERE work_status = 'expired') as expired
-             FROM x_work WHERE deleted_at IS NULL GROUP BY category",
+            "SELECT COALESCE(a.\"xapplicationCategory\", '') AS category,
+                    COUNT(*) as total,
+                    COUNT(*) FILTER (WHERE w.work_status = 'pending') as pending,
+                    COUNT(*) FILTER (WHERE w.work_status = 'processing') as processing,
+                    COUNT(*) FILTER (WHERE w.work_status = 'completed') as completed,
+                    COUNT(*) FILTER (WHERE w.work_status = 'expired') as expired
+             FROM x_work w
+             LEFT JOIN pp_e_application a ON w.application = a.xid
+             WHERE w.deleted_at IS NULL
+             GROUP BY COALESCE(a.\"xapplicationCategory\", '')",
             &[],
         )
         .await
@@ -1679,6 +1726,360 @@ pub async fn state_summary(
             ("processingWork".to_string(), Value::Number(serde_json::Number::from(processing_works))),
             ("expiredWork".to_string(), Value::Number(serde_json::Number::from(expired_works))),
             ("expiredTask".to_string(), Value::Number(serde_json::Number::from(expired_tasks))),
+        ]),
+    ))))
+}
+
+
+// ──────────────────────────────────────────────────────────────────────────────
+// plan002 U2 · Java 精确路径闭合（42 个监控端点）
+//
+// 数据源全部为既有表：x_task / x_work（migration 020）、x_org_person（022）、
+// pp_e_application（032）。统计口径：
+//   completed = 已完成；expired = 已超时且未完成；start = 已启动且未完成。
+// 过滤参数一律走 $1..$5 占位符（application/process/activity/unit/person，
+// NULL 表示不过滤），不拼接任何用户输入。本节端点均为只读聚合，无 IDOR 面。
+// ──────────────────────────────────────────────────────────────────────────────
+
+use deadpool_postgres::tokio_postgres::types::ToSql;
+
+/// 周期谓词：(实体, 周期) → WHERE 片段。纯函数，单测固化统计口径。
+fn period_predicate(kind: &str, period: &str) -> &'static str {
+    match (kind, period) {
+        ("task", "completed") => "t.task_status = 'completed'",
+        ("task", "expired") => {
+            "(t.end_time IS NOT NULL AND t.end_time < NOW() AND t.task_status IS DISTINCT FROM 'completed')"
+        }
+        ("task", "start") => {
+            "(t.start_time IS NOT NULL AND t.task_status IS DISTINCT FROM 'completed')"
+        }
+        (_, "completed") => "w.work_status = 'completed'",
+        (_, "expired") => {
+            "(w.end_time IS NOT NULL AND w.end_time < NOW() AND w.work_status IS DISTINCT FROM 'completed')"
+        }
+        _ => "(w.start_time IS NOT NULL AND w.work_status IS DISTINCT FROM 'completed')",
+    }
+}
+
+#[derive(Default)]
+struct PeriodFilter {
+    application: Option<String>,
+    process: Option<String>,
+    activity: Option<String>,
+    unit: Option<String>,
+    person: Option<String>,
+}
+
+/// 统一聚合执行：group = Some(维度) 返回 {count, data:[{key,count}]}；None 返回 {count}。
+async fn period_count_query(
+    pool: &Pool,
+    kind: &str,
+    period: &str,
+    filter: &PeriodFilter,
+    group: Option<&str>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let pred = period_predicate(kind, period);
+    let (from, act_col, per_col) = if kind == "task" {
+        (
+            "FROM x_task t LEFT JOIN x_work w ON t.work = w.id LEFT JOIN x_org_person op ON t.person = op.id",
+            "t.activity",
+            "t.person",
+        )
+    } else {
+        (
+            "FROM x_work w LEFT JOIN x_org_person op ON w.creator = op.id",
+            "NULL",
+            "w.creator",
+        )
+    };
+    let deleted_pred = if kind == "task" {
+        "t.deleted_at IS NULL"
+    } else {
+        "w.deleted_at IS NULL"
+    };
+    let (select, group_by) = match group {
+        Some(g) => {
+            let key_col = match g {
+                "unit" => "op.unit_id",
+                "application" => "w.application",
+                "process" => "w.process",
+                "activity" => act_col,
+                _ => per_col,
+            };
+            (
+                format!("SELECT COALESCE({}, '') AS key, COUNT(*)::bigint AS cnt", key_col),
+                " GROUP BY key ORDER BY cnt DESC, key",
+            )
+        }
+        None => ("SELECT COUNT(*)::bigint AS cnt".to_string(), ""),
+    };
+    let sql = format!(
+        "{select} {from} WHERE {deleted_pred} AND ({pred}) \
+         AND ($1::text IS NULL OR w.application = $1::text) \
+         AND ($2::text IS NULL OR w.process = $2::text) \
+         AND ($3::text IS NULL OR {act_col} = $3::text) \
+         AND ($4::text IS NULL OR op.unit_id = $4::text) \
+         AND ($5::text IS NULL OR {per_col} = $5::text){group_by}"
+    );
+    let params: [&(dyn ToSql + Sync); 5] = [
+        &filter.application,
+        &filter.process,
+        &filter.activity,
+        &filter.unit,
+        &filter.person,
+    ];
+    let rows = client
+        .query(sql.as_str(), &params)
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    match group {
+        Some(_) => {
+            let data: Vec<Value> = rows
+                .iter()
+                .map(|r| {
+                    Value::Object(serde_json::Map::from_iter([
+                        ("key".to_string(), Value::String(r.get("key"))),
+                        ("count".to_string(), Value::Number(serde_json::Number::from(r.get::<_, i64>("cnt")))),
+                    ]))
+                })
+                .collect();
+            Ok(Json(ActionResult::success(Value::Object(
+                serde_json::Map::from_iter([
+                    ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
+                    ("data".to_string(), Value::Array(data)),
+                ]),
+            ))))
+        }
+        None => {
+            let total: i64 = rows.first().map(|r| r.get("cnt")).unwrap_or(0);
+            Ok(Json(ActionResult::success(Value::Object(
+                serde_json::Map::from_iter([(
+                    "count".to_string(),
+                    Value::Number(serde_json::Number::from(total)),
+                )]),
+            ))))
+        }
+    }
+}
+
+/// GET /period/list/{period}/task/applicationstubs —— 按应用分组的任务量桩列表。
+async fn bam_stubs_task(pool: Extension<Pool>, period: &'static str) -> Result<Json<ActionResult<Value>>, AppError> {
+    period_count_query(&pool.0, "task", period, &PeriodFilter::default(), Some("application")).await
+}
+
+/// GET /period/list/{period}/task/unitstubs —— 按单位分组的任务量桩列表。
+async fn bam_stubs_task_unit(pool: Extension<Pool>, period: &'static str) -> Result<Json<ActionResult<Value>>, AppError> {
+    period_count_query(&pool.0, "task", period, &PeriodFilter::default(), Some("unit")).await
+}
+
+/// GET /period/list/{period}/work/*stubs —— 按应用/单位分组的工作量桩列表。
+async fn bam_stubs_work(pool: Extension<Pool>, period: &'static str, by_unit: bool) -> Result<Json<ActionResult<Value>>, AppError> {
+    let group = if by_unit { "unit" } else { "application" };
+    period_count_query(&pool.0, "work", period, &PeriodFilter::default(), Some(group)).await
+}
+
+pub async fn bam_stubs_completed_task_by_application(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
+    bam_stubs_task(pool, "completed").await
+}
+pub async fn bam_stubs_completed_task_by_unit(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
+    bam_stubs_task_unit(pool, "completed").await
+}
+pub async fn bam_stubs_completed_work_by_application(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
+    bam_stubs_work(pool, "completed", false).await
+}
+pub async fn bam_stubs_completed_work_by_unit(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
+    bam_stubs_work(pool, "completed", true).await
+}
+pub async fn bam_stubs_expired_task_by_application(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
+    bam_stubs_task(pool, "expired").await
+}
+pub async fn bam_stubs_expired_task_by_unit(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
+    bam_stubs_task_unit(pool, "expired").await
+}
+pub async fn bam_stubs_expired_work_by_application(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
+    bam_stubs_work(pool, "expired", false).await
+}
+pub async fn bam_stubs_expired_work_by_unit(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
+    bam_stubs_work(pool, "expired", true).await
+}
+pub async fn bam_stubs_start_task_by_application(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
+    bam_stubs_task(pool, "start").await
+}
+pub async fn bam_stubs_start_task_by_unit(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
+    bam_stubs_task_unit(pool, "start").await
+}
+pub async fn bam_stubs_start_work_by_application(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
+    bam_stubs_work(pool, "start", false).await
+}
+pub async fn bam_stubs_start_work_by_unit(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
+    bam_stubs_work(pool, "start", true).await
+}
+
+type BamPath2 = axum::extract::Path<(String, String)>;
+type BamPath3 = axum::extract::Path<(String, String, String)>;
+type BamPath4 = axum::extract::Path<(String, String, String, String)>;
+type BamPath5 = axum::extract::Path<(String, String, String, String, String)>;
+
+/// completed/task 五种切片（Java 路径逐一对齐）。
+pub async fn bam_count_completed_task_by_unit(pool: Extension<Pool>, p: BamPath3) -> Result<Json<ActionResult<Value>>, AppError> {
+    let (a, pr, ac) = p.0;
+    period_count_query(&pool.0, "task", "completed", &PeriodFilter { application: Some(a), process: Some(pr), activity: Some(ac), ..Default::default() }, Some("unit")).await
+}
+pub async fn bam_count_completed_task_total(pool: Extension<Pool>, p: BamPath5) -> Result<Json<ActionResult<Value>>, AppError> {
+    let (a, pr, ac, u, pe) = p.0;
+    period_count_query(&pool.0, "task", "completed", &PeriodFilter { application: Some(a), process: Some(pr), activity: Some(ac), unit: Some(u), person: Some(pe) }, None).await
+}
+pub async fn bam_count_completed_task_by_activity(pool: Extension<Pool>, p: BamPath4) -> Result<Json<ActionResult<Value>>, AppError> {
+    let (a, pr, u, pe) = p.0;
+    period_count_query(&pool.0, "task", "completed", &PeriodFilter { application: Some(a), process: Some(pr), unit: Some(u), person: Some(pe), ..Default::default() }, Some("activity")).await
+}
+pub async fn bam_count_completed_task_by_process(pool: Extension<Pool>, p: BamPath3) -> Result<Json<ActionResult<Value>>, AppError> {
+    let (a, u, pe) = p.0;
+    period_count_query(&pool.0, "task", "completed", &PeriodFilter { application: Some(a), unit: Some(u), person: Some(pe), ..Default::default() }, Some("process")).await
+}
+pub async fn bam_count_completed_task_by_application(pool: Extension<Pool>, p: BamPath2) -> Result<Json<ActionResult<Value>>, AppError> {
+    let (u, pe) = p.0;
+    period_count_query(&pool.0, "task", "completed", &PeriodFilter { unit: Some(u), person: Some(pe), ..Default::default() }, Some("application")).await
+}
+
+/// completed/work 四种切片。
+pub async fn bam_count_completed_work_by_unit(pool: Extension<Pool>, p: BamPath2) -> Result<Json<ActionResult<Value>>, AppError> {
+    let (a, pr) = p.0;
+    period_count_query(&pool.0, "work", "completed", &PeriodFilter { application: Some(a), process: Some(pr), ..Default::default() }, Some("unit")).await
+}
+pub async fn bam_count_completed_work_total(pool: Extension<Pool>, p: BamPath4) -> Result<Json<ActionResult<Value>>, AppError> {
+    let (a, pr, u, pe) = p.0;
+    period_count_query(&pool.0, "work", "completed", &PeriodFilter { application: Some(a), process: Some(pr), unit: Some(u), person: Some(pe), ..Default::default() }, None).await
+}
+pub async fn bam_count_completed_work_by_process(pool: Extension<Pool>, p: BamPath3) -> Result<Json<ActionResult<Value>>, AppError> {
+    let (a, u, pe) = p.0;
+    period_count_query(&pool.0, "work", "completed", &PeriodFilter { application: Some(a), unit: Some(u), person: Some(pe), ..Default::default() }, Some("process")).await
+}
+pub async fn bam_count_completed_work_by_application(pool: Extension<Pool>, p: BamPath2) -> Result<Json<ActionResult<Value>>, AppError> {
+    let (u, pe) = p.0;
+    period_count_query(&pool.0, "work", "completed", &PeriodFilter { unit: Some(u), person: Some(pe), ..Default::default() }, Some("application")).await
+}
+
+/// expired/task 五种切片。
+pub async fn bam_count_expired_task_by_unit(pool: Extension<Pool>, p: BamPath3) -> Result<Json<ActionResult<Value>>, AppError> {
+    let (a, pr, ac) = p.0;
+    period_count_query(&pool.0, "task", "expired", &PeriodFilter { application: Some(a), process: Some(pr), activity: Some(ac), ..Default::default() }, Some("unit")).await
+}
+pub async fn bam_count_expired_task_total(pool: Extension<Pool>, p: BamPath5) -> Result<Json<ActionResult<Value>>, AppError> {
+    let (a, pr, ac, u, pe) = p.0;
+    period_count_query(&pool.0, "task", "expired", &PeriodFilter { application: Some(a), process: Some(pr), activity: Some(ac), unit: Some(u), person: Some(pe) }, None).await
+}
+pub async fn bam_count_expired_task_by_activity(pool: Extension<Pool>, p: BamPath4) -> Result<Json<ActionResult<Value>>, AppError> {
+    let (a, pr, u, pe) = p.0;
+    period_count_query(&pool.0, "task", "expired", &PeriodFilter { application: Some(a), process: Some(pr), unit: Some(u), person: Some(pe), ..Default::default() }, Some("activity")).await
+}
+pub async fn bam_count_expired_task_by_process(pool: Extension<Pool>, p: BamPath3) -> Result<Json<ActionResult<Value>>, AppError> {
+    let (a, u, pe) = p.0;
+    period_count_query(&pool.0, "task", "expired", &PeriodFilter { application: Some(a), unit: Some(u), person: Some(pe), ..Default::default() }, Some("process")).await
+}
+pub async fn bam_count_expired_task_by_application(pool: Extension<Pool>, p: BamPath2) -> Result<Json<ActionResult<Value>>, AppError> {
+    let (u, pe) = p.0;
+    period_count_query(&pool.0, "task", "expired", &PeriodFilter { unit: Some(u), person: Some(pe), ..Default::default() }, Some("application")).await
+}
+
+/// expired/work 四种切片。
+pub async fn bam_count_expired_work_by_unit(pool: Extension<Pool>, p: BamPath2) -> Result<Json<ActionResult<Value>>, AppError> {
+    let (a, pr) = p.0;
+    period_count_query(&pool.0, "work", "expired", &PeriodFilter { application: Some(a), process: Some(pr), ..Default::default() }, Some("unit")).await
+}
+pub async fn bam_count_expired_work_total(pool: Extension<Pool>, p: BamPath4) -> Result<Json<ActionResult<Value>>, AppError> {
+    let (a, pr, u, pe) = p.0;
+    period_count_query(&pool.0, "work", "expired", &PeriodFilter { application: Some(a), process: Some(pr), unit: Some(u), person: Some(pe), ..Default::default() }, None).await
+}
+pub async fn bam_count_expired_work_by_process(pool: Extension<Pool>, p: BamPath3) -> Result<Json<ActionResult<Value>>, AppError> {
+    let (a, u, pe) = p.0;
+    period_count_query(&pool.0, "work", "expired", &PeriodFilter { application: Some(a), unit: Some(u), person: Some(pe), ..Default::default() }, Some("process")).await
+}
+pub async fn bam_count_expired_work_by_application(pool: Extension<Pool>, p: BamPath2) -> Result<Json<ActionResult<Value>>, AppError> {
+    let (u, pe) = p.0;
+    period_count_query(&pool.0, "work", "expired", &PeriodFilter { unit: Some(u), person: Some(pe), ..Default::default() }, Some("application")).await
+}
+
+/// start/task 五种切片。
+pub async fn bam_count_start_task_by_unit(pool: Extension<Pool>, p: BamPath3) -> Result<Json<ActionResult<Value>>, AppError> {
+    let (a, pr, ac) = p.0;
+    period_count_query(&pool.0, "task", "start", &PeriodFilter { application: Some(a), process: Some(pr), activity: Some(ac), ..Default::default() }, Some("unit")).await
+}
+pub async fn bam_count_start_task_total(pool: Extension<Pool>, p: BamPath5) -> Result<Json<ActionResult<Value>>, AppError> {
+    let (a, pr, ac, u, pe) = p.0;
+    period_count_query(&pool.0, "task", "start", &PeriodFilter { application: Some(a), process: Some(pr), activity: Some(ac), unit: Some(u), person: Some(pe) }, None).await
+}
+pub async fn bam_count_start_task_by_activity(pool: Extension<Pool>, p: BamPath4) -> Result<Json<ActionResult<Value>>, AppError> {
+    let (a, pr, u, pe) = p.0;
+    period_count_query(&pool.0, "task", "start", &PeriodFilter { application: Some(a), process: Some(pr), unit: Some(u), person: Some(pe), ..Default::default() }, Some("activity")).await
+}
+pub async fn bam_count_start_task_by_process(pool: Extension<Pool>, p: BamPath3) -> Result<Json<ActionResult<Value>>, AppError> {
+    let (a, u, pe) = p.0;
+    period_count_query(&pool.0, "task", "start", &PeriodFilter { application: Some(a), unit: Some(u), person: Some(pe), ..Default::default() }, Some("process")).await
+}
+pub async fn bam_count_start_task_by_application(pool: Extension<Pool>, p: BamPath2) -> Result<Json<ActionResult<Value>>, AppError> {
+    let (u, pe) = p.0;
+    period_count_query(&pool.0, "task", "start", &PeriodFilter { unit: Some(u), person: Some(pe), ..Default::default() }, Some("application")).await
+}
+
+/// start/work 四种切片。
+pub async fn bam_count_start_work_by_unit(pool: Extension<Pool>, p: BamPath2) -> Result<Json<ActionResult<Value>>, AppError> {
+    let (a, pr) = p.0;
+    period_count_query(&pool.0, "work", "start", &PeriodFilter { application: Some(a), process: Some(pr), ..Default::default() }, Some("unit")).await
+}
+pub async fn bam_count_start_work_total(pool: Extension<Pool>, p: BamPath4) -> Result<Json<ActionResult<Value>>, AppError> {
+    let (a, pr, u, pe) = p.0;
+    period_count_query(&pool.0, "work", "start", &PeriodFilter { application: Some(a), process: Some(pr), unit: Some(u), person: Some(pe), ..Default::default() }, None).await
+}
+pub async fn bam_count_start_work_by_process(pool: Extension<Pool>, p: BamPath3) -> Result<Json<ActionResult<Value>>, AppError> {
+    let (a, u, pe) = p.0;
+    period_count_query(&pool.0, "work", "start", &PeriodFilter { application: Some(a), unit: Some(u), person: Some(pe), ..Default::default() }, Some("process")).await
+}
+pub async fn bam_count_start_work_by_application(pool: Extension<Pool>, p: BamPath2) -> Result<Json<ActionResult<Value>>, AppError> {
+    let (u, pe) = p.0;
+    period_count_query(&pool.0, "work", "start", &PeriodFilter { unit: Some(u), person: Some(pe), ..Default::default() }, Some("application")).await
+}
+
+/// GET /state/category/trigger —— 无参触发式全量分类快照（真实聚合 SQL）。
+pub async fn state_category_trigger_all(
+    pool: Extension<Pool>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let rows = client
+        .query(
+            "SELECT COALESCE(a.\"xapplicationCategory\", '') AS category,
+                    COUNT(*) as total,
+                    COUNT(*) FILTER (WHERE w.work_status = 'pending') as pending,
+                    COUNT(*) FILTER (WHERE w.work_status = 'processing') as processing,
+                    COUNT(*) FILTER (WHERE w.work_status = 'completed') as completed,
+                    COUNT(*) FILTER (WHERE w.work_status = 'expired') as expired
+             FROM x_work w
+             LEFT JOIN pp_e_application a ON w.application = a.xid
+             WHERE w.deleted_at IS NULL
+             GROUP BY COALESCE(a.\"xapplicationCategory\", '')",
+            &[],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    let data: Vec<Value> = rows.iter().map(|r| {
+        Value::Object(serde_json::Map::from_iter([
+            ("category".to_string(), Value::String(r.get("category"))),
+            ("total".to_string(), Value::Number(serde_json::Number::from(r.get::<_, i64>("total")))),
+            ("pending".to_string(), Value::Number(serde_json::Number::from(r.get::<_, i64>("pending")))),
+            ("processing".to_string(), Value::Number(serde_json::Number::from(r.get::<_, i64>("processing")))),
+            ("completed".to_string(), Value::Number(serde_json::Number::from(r.get::<_, i64>("completed")))),
+            ("expired".to_string(), Value::Number(serde_json::Number::from(r.get::<_, i64>("expired")))),
+        ]))
+    }).collect();
+
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("triggered".to_string(), Value::Bool(true)),
+            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
+            ("data".to_string(), Value::Array(data)),
         ]),
     ))))
 }
