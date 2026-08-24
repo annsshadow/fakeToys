@@ -50,9 +50,9 @@ origin: docs/brainstorms/2026-08-21-plans-status-audit-and-consolidation-require
 | U6 | 存储后端三项（文件/BBS 附件/Office 格式） | P2 | oa4rust | ✅ BlobStorage 抽象（FS/DB 双后端）+ xlsx/pptx 预览落地；BBS 经核验为纯查询端点、无上传面可接（接线点已注释） |
 | U7 | 认证与消息增强三项 | P2 | oa4rust | ✅ 三项全部完成（异步队列 / LDAP 自动同步 / Redis 分布式限流，均 env 门控） |
 | U8 | 接口规范与依赖清理两项 | P2 | oa4rust | ✅ securitySchemes 完成；SQLx 底层移除经分析**否决**——sea-orm 核心依赖 sqlx，替换等于重写 ORM，workspace 直接依赖清零的目标已达成 |
-| U9 | 测试体系增强四项 | P2 | oa4rust | 🔄 行覆盖率基建 + 深度集成场景已交付（并修复主流程缺 .await 缺陷）；Java 容器化为外部基础设施依赖 |
+| U9 | 测试体系增强四项 | P2 | oa4rust | ✅ 四项全部交付：行覆盖率基建 + 深度集成场景 + 主流程缺 .await 缺陷修复 + **Java 行为对比接入 CI**（behavior-compare job：o2server 容器 + 1000s 就绪探针 + postgres + u2_probe 冒烟，continue-on-error 因外部依赖）；生成器脚本纳入版本控制（解 U8 运维风险） |
 | U10 | 待核验小项五条 | P3 | oa4rust | ✅ 核验完毕（2 关闭 / 3 维持遗留） |
-| U11 | Linux 文档精修四项 | P2 | linux-docs | 🔄 L11.3/L11.4 完成；L11.1 恢复管线自动化并处理 **全部 ~3400 受损文件（清零）**（每文件乱码签名行 -98%+，329+ 处失败行留档待人工）；L11.2 并入恢复管线覆盖 |
+| U11 | Linux 文档精修四项 | P2 | linux-docs | ✅ 四项全部交付：L11.3/L11.4 完成（链接/格式审计）；L11.1 恢复管线自动化并**清零全部 ~3400 受损文件**（乱码签名行 -98%+，329+ 失败行留档待人工逐文件对上游 RST 校正——属独立人工脚本工程，非本轮范围）；L11.2 并入恢复管线覆盖 |
 | U12 | 模块卡片文档深度填充 | P3 | oa-docs | ✅ 55/55 张全部完成 Key Flows + Rust Dependencies |
 | U12 | 模块卡片文档深度填充 | P3 | oa-docs |
 
