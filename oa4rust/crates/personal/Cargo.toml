@@ -20,6 +20,8 @@ md5.workspace = true
 urlencoding.workspace = true
 sha1.workspace = true
 hex.workspace = true
+aes.workspace = true
+cbc.workspace = true
 reqwest.workspace = true
 
 shared = { path = "../shared" }

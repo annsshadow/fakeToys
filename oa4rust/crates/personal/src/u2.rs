@@ -1040,18 +1040,81 @@ fn verify_callback_signature(
     Ok(())
 }
 
+/// 腾讯企业邮回调 echostr 解密（AES-128-CBC）。
+///
+/// 协议：key = Base64Decode(encode_aes_key + 补齐"=")（16 字节）；
+/// 密文 = Base64Decode(text)，IV = 前 16 字节；明文 = random(16) +
+/// msg_len(4, network order) + msg + receiveid，PKCS7 填充。
+/// receive_id 为空时跳过尾部匹配校验。
+fn decrypt_echostr(
+    encode_aes_key: &str,
+    text: &str,
+    receive_id: &str,
+) -> Result<String, String> {
+    use aes::cipher::{block_padding::Pkcs7, BlockDecryptMut, KeyIvInit};
+
+    type Aes128CbcDec = cbc::Decryptor<aes::Aes128>;
+    const BLOCK: usize = 16;
+
+    let mut key_str = encode_aes_key.trim().to_string();
+    while key_str.len() % 4 != 0 {
+        key_str.push('=');
+    }
+    let key = base64::engine::general_purpose::STANDARD
+        .decode(key_str.as_bytes())
+        .map_err(|e| format!("aes key base64 decode error: {e}"))?;
+    let key_bytes: &[u8; 16] = key
+        .as_slice()
+        .try_into()
+        .map_err(|_| format!("aes key must be 16 bytes, got {}", key.len()))?;
+
+    let cipher_text = base64::engine::general_purpose::STANDARD
+        .decode(text.trim())
+        .map_err(|e| format!("echostr base64 decode error: {e}"))?;
+    if cipher_text.len() < 2 * BLOCK {
+        return Err("ciphertext too short".to_string());
+    }
+    if (cipher_text.len() - BLOCK) % BLOCK != 0 {
+        return Err("ciphertext not block aligned".to_string());
+    }
+    let (iv, body) = cipher_text.split_at(BLOCK);
+    let iv_bytes: &[u8; 16] = iv.try_into().expect("iv length checked above");
+
+    let plain = Aes128CbcDec::new(key_bytes.into(), iv_bytes.into())
+        .decrypt_padded_vec_mut::<Pkcs7>(body)
+        .map_err(|e| format!("aes-cbc decrypt error: {e}"))?;
+    if plain.len() < 2 * BLOCK + 4 {
+        return Err("decrypted payload too short".to_string());
+    }
+    let msg_len =
+        u32::from_be_bytes([plain[BLOCK], plain[BLOCK + 1], plain[BLOCK + 2], plain[BLOCK + 3]])
+            as usize;
+    let rest = &plain[BLOCK + 4..];
+    if msg_len > rest.len() {
+        return Err(format!("invalid msg length {msg_len} > payload {}", rest.len()));
+    }
+    let msg = &rest[..msg_len];
+    if !receive_id.is_empty() && rest[msg_len..] != *receive_id.as_bytes() {
+        return Err("receive_id mismatch".to_string());
+    }
+    String::from_utf8(msg.to_vec()).map_err(|e| format!("msg is not utf8: {e}"))
+}
+
 /// GET /jaxrs/person/exmail?msg_signature=..&timestamp=..&nonce=..&echostr=..
 ///
-/// 验证回调签名。解密 echostr 需要 AES-CBC（依赖未引入），验签通过时显式返回
-/// 不支持错误而非伪造成功。
+/// 验证回调签名并解密 echostr（AES-128-CBC，EXMAIL_CALLBACK_AES_KEY /
+/// EXMAIL_CALLBACK_RECEIVE_ID），成功时原样返回明文供企业邮校验。
 pub async fn exmail_callback_get(
     Query(q): Query<CallbackQuery>,
 ) -> Result<Json<ActionResult<String>>, AppError> {
     let echostr = q.echostr.clone().unwrap_or_default();
     verify_callback_signature(&q, Some(&echostr)).map_err(AppError::BadRequest)?;
-    Ok(Json(ActionResult::error(
-        "callback decrypt requires AES-CBC support; signature verified",
-    )))
+    let aes_key = std::env::var("EXMAIL_CALLBACK_AES_KEY").map_err(|_| {
+        AppError::BadRequest("callback not configured: EXMAIL_CALLBACK_AES_KEY".to_string())
+    })?;
+    let receive_id = std::env::var("EXMAIL_CALLBACK_RECEIVE_ID").unwrap_or_default();
+    let decrypted = decrypt_echostr(&aes_key, &echostr, &receive_id).map_err(AppError::BadRequest)?;
+    Ok(Json(ActionResult::success(decrypted)))
 }
 
 /// POST /jaxrs/person/exmail —— 接收加密事件推送（同样先验签）
@@ -1112,5 +1175,53 @@ pub async fn signature_list_person(
         .collect();
 
     Ok(Json(ActionResult::success(json!({ "signatures": signatures }))))
+}
+
+#[cfg(test)]
+mod exmail_decrypt_tests {
+    use super::decrypt_echostr;
+    use aes::cipher::{block_padding::Pkcs7, BlockEncryptMut, KeyIvInit};
+    use base64::Engine;
+
+    type Aes128CbcEnc = cbc::Encryptor<aes::Aes128>;
+
+    /// 按企业邮协议构造加密 echostr：random(16) + msg_len(4, BE) + msg + receive_id
+    fn encrypt_echostr(key_bytes: &[u8; 16], msg: &str, receive_id: &str) -> String {
+        let mut plain = Vec::new();
+        plain.extend_from_slice(&[0xA5u8; 16]);
+        plain.extend_from_slice(&(msg.len() as u32).to_be_bytes());
+        plain.extend_from_slice(msg.as_bytes());
+        plain.extend_from_slice(receive_id.as_bytes());
+        let iv = [0x77u8; 16];
+        let ct = Aes128CbcEnc::new(key_bytes.into(), (&iv).into())
+            .encrypt_padded_vec_mut::<Pkcs7>(&plain);
+        let mut full = iv.to_vec();
+        full.extend_from_slice(&ct);
+        base64::engine::general_purpose::STANDARD.encode(full)
+    }
+
+    /// EncodingAESKey：16 字节密钥去掉 Base64 padding 后的 22 字符形式，
+    /// decrypt 侧补齐 "==" 解码还原，覆盖 key 补齐逻辑。
+    fn sample_key() -> (&'static str, [u8; 16]) {
+        let key = [0x42u8; 16];
+        let mut encoded = base64::engine::general_purpose::STANDARD.encode(key);
+        assert_eq!(encoded.len(), 24);
+        encoded.truncate(22);
+        let leaked: &'static str = Box::leak(encoded.into_boxed_str());
+        (leaked, key)
+    }
+
+    #[test]
+    fn roundtrip_returns_msg_and_validates_receive_id() {
+        let (key_str, key) = sample_key();
+        // receive_id 一致（含多字节 UTF-8）→ 返回 msg
+        let text = encrypt_echostr(&key, "你好 echostr", "corp-abc-123");
+        let got = decrypt_echostr(key_str, &text, "corp-abc-123").expect("decrypt ok");
+        assert_eq!(got, "你好 echostr");
+
+        // receive_id 不匹配 → 显式报错
+        let err = decrypt_echostr(key_str, &text, "other-corp").unwrap_err();
+        assert_eq!(err, "receive_id mismatch");
+    }
 }
 
