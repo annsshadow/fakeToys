@@ -271,6 +271,58 @@ pub fn query_assemble_surface_router() -> Router {
         .route("/jaxrs/queryview/table/row/insert/{tableFlag}", post(u2::table_row_insert))
         .route("/jaxrs/queryview/table/row/one/insert/{tableFlag}", post(u2::table_row_insert_one))
         .route("/jaxrs/queryview/bundle/v2/post/{id}", post(u2::view_bundle_v2_post))
+        // ── plan002 U2 v9：Java 精确路径/动词闭合（权威清单 docs/audits/java-endpoint-inventory.json）──
+        .route("/jaxrs/queryview/importmodel/flag/{flag}/query/{queryFlag}", get(crate::importmodel_flag_flag_query_queryFlag))
+        .route("/jaxrs/queryview/importmodel/list/query/{queryFlag}", get(crate::importmodel_list_query_queryFlag))
+        .route("/jaxrs/queryview/importmodel/list/record/item/paging/{page}/size/{size}", post(crate::importmodel_list_record_item_paging_page_size_size))
+        .route("/jaxrs/queryview/importmodel/list/record/paging/{page}/size/{size}", post(crate::importmodel_list_record_paging_page_size_size))
+        .route("/jaxrs/queryview/importmodel/record/{recordId}", get(crate::importmodel_record_recordId))
+        .route("/jaxrs/queryview/importmodel/record/{recordId}/mockdeletetoget", get(crate::importmodel_record_recordId_mockdeletetoget))
+        .route("/jaxrs/queryview/importmodel/record/{recordId}/status", get(crate::importmodel_record_recordId_status))
+        .route("/jaxrs/queryview/importmodel/record/{recordId}", delete(u2::importmodel_record_delete))
+        .route("/jaxrs/queryview/importmodel/{id}", get(crate::importmodel_id))
+        .route("/jaxrs/queryview/importmodel/{id}/execute", post(crate::importmodel_id_execute))
+        .route("/jaxrs/queryview/neural/list/calculate/model/{modelFlag}/work/{workId}", get(crate::neural_list_calculate_model_modelFlag_work_workId))
+        .route("/jaxrs/queryview/query/list", get(query_list))
+        .route("/jaxrs/queryview/query/list/key/{key}", get(crate::query_list_key_key))
+        .route("/jaxrs/queryview/query/{flag}", get(crate::query_flag))
+        .route("/jaxrs/queryview/stat/flag/{flag}/query/{queryFlag}/execute", put(u2::stat_execute_with_query_put))
+        .route("/jaxrs/queryview/stat/flag/{flag}/query/{queryFlag}/execute/mockputtopost", post(u2::stat_execute_with_query_mock))
+        .route("/jaxrs/queryview/statement/{flag}/execute/mode/{mode}/page/{page}/size/{size}", post(u2::statement_execute_mode_v2))
+        .route("/jaxrs/queryview/statement/{flag}/execute/page/{page}/size/{size}", post(u2::statement_execute))
+        .route("/jaxrs/queryview/table/list/paging/{page}/size/{size}", post(crate::table_list_paging_page_size_size))
+        .route("/jaxrs/queryview/table/list/table/{tableFlag}/row/paging/{page}/size/{size}", post(crate::table_list_table_tableFlag_row_paging_page_size_size))
+        .route("/jaxrs/queryview/table/list/{id}/next/{count}", get(crate::table_list_id_next_count))
+        .route("/jaxrs/queryview/table/list/{id}/row/select", post(u2::table_row_select_post))
+        .route("/jaxrs/queryview/table/list/{id}/row/select/where/{where}", get(crate::table_list_tableFlag_row_select_where_where))
+        .route("/jaxrs/queryview/table/list/{id}/row/{rid}/next/{count}", get(crate::table_list_tableFlag_row_id_next_count))
+        .route("/jaxrs/queryview/table/list/{id}/row/{rid}/prev/{count}", get(crate::table_list_tableFlag_row_id_prev_count))
+        .route("/jaxrs/queryview/table/{flag}/row", post(u2::table_row_insert))
+        .route("/jaxrs/queryview/table/{flag}/row/count/where/{where}", get(crate::table_tableFlag_row_count_where_where))
+        .route("/jaxrs/queryview/table/{flag}/row/delete/all", delete(crate::table_tableFlag_row_delete_all))
+        .route("/jaxrs/queryview/table/{flag}/row/delete/all/mockdeletetoget", get(crate::table_tableFlag_row_delete_all_mockdeletetoget))
+        .route("/jaxrs/queryview/table/{flag}/row/one", post(u2::table_row_insert_one))
+        .route("/jaxrs/queryview/table/{flag}/row/{rid}", get(crate::table_tableFlag_row_id).put(crate::table_tableFlag_row_id_mockputtopost).delete(u2::table_row_delete))
+        .route("/jaxrs/queryview/table/{flag}/row/{rid}/mockdeletetoget", get(crate::table_tableFlag_row_id_mockdeletetoget))
+        .route("/jaxrs/queryview/table/{flag}/row/{rid}/mockputtopost", post(crate::table_tableFlag_row_id_mockputtopost))
+        .route("/jaxrs/queryview/table/{flag}/row/{rid}/part/update", post(crate::table_tableFlag_row_id_part_update))
+        .route("/jaxrs/queryview/view/excel/result/{flag}", get(crate::view_excel_result_flag))
+        .route("/jaxrs/queryview/view/flag/{flag}/query/{queryFlag}", get(crate::view_flag_flag_query_queryFlag))
+        .route("/jaxrs/queryview/view/flag/{flag}/query/{queryFlag}/bundle", put(u2::view_flag_query_bundle_put))
+        .route("/jaxrs/queryview/view/flag/{flag}/query/{queryFlag}/bundle/mockputtopost", post(u2::view_flag_query_bundle_mock))
+        .route("/jaxrs/queryview/view/flag/{flag}/query/{queryFlag}/excel", put(u2::view_flag_query_excel_put))
+        .route("/jaxrs/queryview/view/flag/{flag}/query/{queryFlag}/excel/mockputtopost", post(u2::view_flag_query_excel_mock))
+        .route("/jaxrs/queryview/view/flag/{flag}/query/{queryFlag}/execute", put(u2::view_flag_query_execute_put))
+        .route("/jaxrs/queryview/view/flag/{flag}/query/{queryFlag}/execute/mockputtopost", post(u2::view_flag_query_execute_mock))
+        .route("/jaxrs/queryview/view/flag/{flag}/query/{queryFlag}/execute/v2/page/{page}/size/{size}", post(u2::view_execute_v2_flag_query))
+        .route("/jaxrs/queryview/view/{id}/bundle", put(u2::view_id_bundle_put))
+        .route("/jaxrs/queryview/view/{id}/bundle/mockputtopost", post(u2::view_id_bundle_mock))
+        .route("/jaxrs/queryview/view/{id}/bundle/v2", post(u2::view_bundle_v2_post))
+        .route("/jaxrs/queryview/view/{id}/excel", put(u2::view_id_excel_put))
+        .route("/jaxrs/queryview/view/{id}/excel/mockputtopost", post(crate::view_id_excel_mockputtopost))
+        .route("/jaxrs/queryview/view/{id}/execute", put(u2::view_id_execute_put))
+        .route("/jaxrs/queryview/view/{id}/execute/mockputtopost", post(crate::view_id_execute_mockputtopost))
+        .route("/jaxrs/queryview/view/{id}/execute/v2/page/{page}/size/{size}", post(u2::view_execute_v2_id))
 }
 
 #[cfg(test)]
@@ -587,10 +639,11 @@ pub async fn importmodel_id_execute(
     match row {
         Some(row) => {
             let record_id = uuid::Uuid::new_v4().to_string();
+            let model_flag = row.get::<_, Option<String>>("model_flag").unwrap_or_default();
             let result = client
                 .execute(
-                    "INSERT INTO x_query_import_model_record (id, model_flag, import_model_id, create_time) VALUES ($1, $2, $3, NOW())",
-                    &[&record_id, &row.get::<_, String>("model_flag"), &id],
+                    "INSERT INTO x_query_import_model_record (id, model_flag, import_model_id, create_time) VALUES ($1, $2, $3, to_char(NOW(),'YYYY-MM-DD HH24:MI:SS'))",
+                    &[&record_id, &model_flag, &id],
                 )
                 .await
                 .map_err(|_| AppError::Internal)?;
@@ -1255,7 +1308,7 @@ pub async fn table_tableFlag_row_id_mockputtopost(
 
     let result = client
         .execute(
-            "UPDATE x_query_table_data SET data = $1, update_time = NOW() WHERE table_flag = $2 AND id = $3",
+            "UPDATE x_query_table_data SET data = $1, update_time = to_char(NOW(),'YYYY-MM-DD HH24:MI:SS') WHERE table_flag = $2 AND id = $3",
             &[&data_str, &table_flag, &id],
         )
         .await
@@ -1286,8 +1339,11 @@ pub async fn table_tableFlag_row_id_part_update(
 
     let result = client
         .execute(
-            "UPDATE x_query_table_data SET data = jsonb_set(COALESCE(data, '{}'), $1, $2::jsonb, true), update_time = NOW() WHERE table_flag = $3 AND id = $4",
-            &[&"{/part}", &data_str, &table_flag, &id],
+            "UPDATE x_query_table_data \
+             SET data = jsonb_set(COALESCE(data,'{}')::jsonb, ARRAY[$1], $2::jsonb, true), \
+                 update_time = to_char(NOW(),'YYYY-MM-DD HH24:MI:SS') \
+             WHERE table_flag = $3 AND id = $4",
+            &[&"/part", &data_str, &table_flag, &id],
         )
         .await
         .map_err(|_| AppError::Internal)?;
@@ -1347,7 +1403,7 @@ pub async fn view_flag_flag_query_queryFlag(
 
     let row = client
         .query_opt(
-            "SELECT id, name, view_flag, query_flag, content, creator, create_time FROM x_query_view WHERE view_flag = $1 AND query_flag = $2 LIMIT 1",
+            "SELECT id, name, view_flag, query_flag, content, creator, to_char(create_time,'YYYY-MM-DD HH24:MI:SS') AS create_time FROM x_query_view WHERE view_flag = $1 AND query_flag = $2 LIMIT 1",
             &[&flag, &query_flag],
         )
         .await
@@ -1594,7 +1650,7 @@ pub async fn view_list_query_queryFlag(
 
     let rows = client
         .query(
-            "SELECT id, name, view_flag, query_flag, creator, create_time FROM x_query_view WHERE query_flag = $1 ORDER BY create_time DESC",
+            "SELECT id, name, view_flag, query_flag, creator, to_char(create_time,'YYYY-MM-DD HH24:MI:SS') AS create_time FROM x_query_view WHERE query_flag = $1 ORDER BY create_time DESC",
             &[&query_flag],
         )
         .await

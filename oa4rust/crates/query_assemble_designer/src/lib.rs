@@ -280,7 +280,58 @@ pub fn query_assemble_designer_router(pool: Option<Pool>) -> Router {
         .route("/jaxrs/query/assemble/designer/view", post(u2::view_create))
         .route("/jaxrs/query/assemble/designer/view/edit/{id}", put(u2::view_edit))
         .route("/jaxrs/query/assemble/designer/view/delete/{id}", delete(u2::view_delete))
-        .route("/jaxrs/query/assemble/designer/icon/set/{flag}", put(u2::query_set_icon));
+        .route("/jaxrs/query/assemble/designer/icon/set/{flag}", put(u2::query_set_icon))
+        // ── plan002 U2 v9：Java 精确路径/动词闭合（权威清单 docs/audits/java-endpoint-inventory.json）──
+        .route("/jaxrs/query/assemble/designer/designer/search", post(u2::designer_search_v2))
+        .route("/jaxrs/query/assemble/designer/id/{count}", get(u2::id_generate))
+        .route("/jaxrs/query/assemble/designer/importmodel/list/query/{flag}", get(crate::importmodel_list_query_flag))
+        .route("/jaxrs/query/assemble/designer/importmodel/{id}", get(u2::importmodel_get_flag).put(u2::importmodel_edit_flag).delete(u2::importmodel_delete_flag))
+        .route("/jaxrs/query/assemble/designer/importmodel/{id}/permission", post(u2::importmodel_permission_set))
+        .route("/jaxrs/query/assemble/designer/neural/model/{modelFlag}", put(u2::neural_update_model_modelFlag).delete(u2::neural_delete_model_modelFlag))
+        .route("/jaxrs/query/assemble/designer/neural/model/{modelFlag}/reset/status", get(crate::neural_model_modelFlag_reset_status))
+        .route("/jaxrs/query/assemble/designer/output/{flag}/select", put(u2::output_select_put))
+        .route("/jaxrs/query/assemble/designer/output/{flag}/select/file", get(crate::output_flag_select_file))
+        .route("/jaxrs/query/assemble/designer/query", post(u2::query_create_v2))
+        .route("/jaxrs/query/assemble/designer/query/entity/{entity}/category/{entityCategory}/properties", get(crate::query_entity_entity_category_entityCategory_properties))
+        .route("/jaxrs/query/assemble/designer/query/list/all", get(crate::query_list_all))
+        .route("/jaxrs/query/assemble/designer/query/list/querycategory/{queryCategory}", get(crate::query_list_querycategory_queryCategory))
+        .route("/jaxrs/query/assemble/designer/query/list/summary", get(crate::query_list_summary))
+        .route("/jaxrs/query/assemble/designer/query/list/summary/querycategory/{queryCategory}", get(crate::query_list_summary_querycategory_queryCategory))
+        .route("/jaxrs/query/assemble/designer/query/querycategory/list", get(crate::query_querycategory_list))
+        .route("/jaxrs/query/assemble/designer/query/{flag}", put(u2::query_edit_flag).delete(u2::query_delete_flag))
+        .route("/jaxrs/query/assemble/designer/query/{flag}/icon", put(u2::query_icon_set))
+        .route("/jaxrs/query/assemble/designer/query/{flag}/permission", post(u2::query_permission_set))
+        .route("/jaxrs/query/assemble/designer/stat/list/query/{queryFlag}", get(crate::stat_list_query_flag))
+        .route("/jaxrs/query/assemble/designer/stat/list/{id}/next/{count}", get(crate::stat_list_id_next_count))
+        .route("/jaxrs/query/assemble/designer/stat/{id}", put(u2::stat_edit).delete(u2::stat_delete))
+        .route("/jaxrs/query/assemble/designer/stat/{id}/permission", post(u2::stat_permission_set))
+        .route("/jaxrs/query/assemble/designer/stat/{id}/simulate", put(u2::stat_simulate_put))
+        .route("/jaxrs/query/assemble/designer/statement/{flag}/execute/mode/{mode}/page/{page}/size/{size}", post(u2::statement_execute_mode_v2))
+        .route("/jaxrs/query/assemble/designer/statement/{flag}/execute/page/{page}/size/{size}", post(u2::statement_execute_v2))
+        .route("/jaxrs/query/assemble/designer/statement/{flag}/permission", post(u2::statement_permission))
+        .route("/jaxrs/query/assemble/designer/table/export/{tableFlag}/count/{count}", get(crate::table_export_tableFlag_count_count))
+        .route("/jaxrs/query/assemble/designer/table/list/query/{flag}", get(crate::table_list_query_flag))
+        .route("/jaxrs/query/assemble/designer/table/list/{flag}/row/select/where/{where}", get(crate::table_list_tableFlag_row_select_where_where))
+        .route("/jaxrs/query/assemble/designer/table/list/{flag}/row/{id}/next/{count}", get(crate::table_list_tableFlag_row_id_next_count))
+        .route("/jaxrs/query/assemble/designer/table/list/{flag}/row/{id}/prev/{count}", get(crate::table_list_tableFlag_row_id_prev_count))
+        .route("/jaxrs/query/assemble/designer/table/query/{query}/build", get(crate::table_query_build_dispatch))
+        .route("/jaxrs/query/assemble/designer/table/{flag}", put(u2::table_edit).delete(u2::table_delete))
+        .route("/jaxrs/query/assemble/designer/table/{flag}/build/dispatch", get(u2::table_build_dispatch_flag))
+        .route("/jaxrs/query/assemble/designer/table/{flag}/execute", post(crate::table_flag_execute))
+        .route("/jaxrs/query/assemble/designer/table/{flag}/permission", post(u2::table_permission_set))
+        .route("/jaxrs/query/assemble/designer/table/{flag}/row", post(u2::table_tableFlag_row_insert))
+        .route("/jaxrs/query/assemble/designer/table/{flag}/row/count/where/{where}", get(crate::table_tableFlag_row_count_where_where))
+        .route("/jaxrs/query/assemble/designer/table/{flag}/row/delete/all", delete(crate::table_tableFlag_row_delete_all))
+        .route("/jaxrs/query/assemble/designer/table/{flag}/row/save", post(crate::table_tableFlag_row_save))
+        .route("/jaxrs/query/assemble/designer/table/{flag}/row/{id}", get(crate::table_tableFlag_row_id).put(u2::table_tableFlag_row_update).delete(u2::table_tableFlag_row_delete))
+        .route("/jaxrs/query/assemble/designer/table/{flag}/status/build", get(crate::table_flag_status_build))
+        .route("/jaxrs/query/assemble/designer/table/{flag}/status/draft", get(crate::table_flag_status_draft))
+        .route("/jaxrs/query/assemble/designer/view/list/query/{queryFlag}", get(crate::view_list_query_flag))
+        .route("/jaxrs/query/assemble/designer/view/list/{id}/next/{count}", get(crate::view_list_id_next_count))
+        .route("/jaxrs/query/assemble/designer/view/{id}", put(u2::view_edit).delete(u2::view_delete))
+        .route("/jaxrs/query/assemble/designer/view/{id}/bundle", put(u2::view_bundle_put))
+        .route("/jaxrs/query/assemble/designer/view/{id}/permission", post(u2::view_permission_set))
+        .route("/jaxrs/query/assemble/designer/view/{id}/simulate", put(u2::view_simulate_put));
 
     if let Some(pool) = pool {
         router.layer(Extension(pool))
@@ -743,7 +794,7 @@ pub async fn neural_model_modelFlag_reset_status(
 
     let result = client
         .execute(
-            "UPDATE x_query_neural_model SET status = 'idle', update_time = NOW() WHERE flag = $1",
+            "UPDATE x_query_neural_model SET status = 'idle', update_time = to_char(NOW(),'YYYY-MM-DD HH24:MI:SS') WHERE flag = $1",
             &[&model_flag],
         )
         .await
@@ -1566,7 +1617,7 @@ pub async fn table_query_query_build(
 
     let result = client
         .execute(
-            "UPDATE x_query_table SET status = 'build', reloaded = FALSE, update_time = NOW() WHERE query_flag = $1 AND deleted_at IS NULL",
+            "UPDATE x_query_table SET status = 'build', update_time = to_char(NOW(),'YYYY-MM-DD HH24:MI:SS') WHERE query_flag = $1 AND deleted_at IS NULL",
             &[&query],
         )
         .await
@@ -1662,7 +1713,7 @@ pub async fn table_flag_status_build(
 
     let result = client
         .execute(
-            "UPDATE x_query_table SET status = 'build', update_time = NOW() WHERE table_flag = $1",
+            "UPDATE x_query_table SET status = 'build', update_time = to_char(NOW(),'YYYY-MM-DD HH24:MI:SS') WHERE table_flag = $1",
             &[&flag],
         )
         .await
@@ -1688,7 +1739,7 @@ pub async fn table_flag_status_draft(
 
     let result = client
         .execute(
-            "UPDATE x_query_table SET status = 'draft', update_time = NOW() WHERE table_flag = $1",
+            "UPDATE x_query_table SET status = 'draft', update_time = to_char(NOW(),'YYYY-MM-DD HH24:MI:SS') WHERE table_flag = $1",
             &[&flag],
         )
         .await
@@ -1741,7 +1792,7 @@ pub async fn table_query_build_dispatch(
 
     let result = client
         .execute(
-            "UPDATE x_query_table SET status = 'build', update_time = NOW() WHERE query_flag = $1 AND deleted_at IS NULL",
+            "UPDATE x_query_table SET status = 'build', update_time = to_char(NOW(),'YYYY-MM-DD HH24:MI:SS') WHERE query_flag = $1 AND deleted_at IS NULL",
             &[&query],
         )
         .await
@@ -1846,7 +1897,7 @@ pub async fn table_tableFlag_row_save(
 
     let result = client
         .execute(
-            "INSERT INTO x_query_table_data (id, table_flag, data, create_time) VALUES ($1, $2, $3, NOW())",
+            "INSERT INTO x_query_table_data (id, table_flag, data, create_time) VALUES ($1, $2, $3, to_char(NOW(),'YYYY-MM-DD HH24:MI:SS'))",
             &[&id, &table_flag, &data_str],
         )
         .await
@@ -1897,7 +1948,7 @@ pub async fn view_list_query_flag(
 
     let rows = client
         .query(
-            "SELECT id, name, view_flag, query_flag, creator, create_time FROM x_query_view WHERE query_flag = $1 ORDER BY create_time DESC",
+            "SELECT id, name, view_flag, query_flag, creator, to_char(create_time,'YYYY-MM-DD HH24:MI:SS') AS create_time FROM x_query_view WHERE query_flag = $1 ORDER BY create_time DESC",
             &[&query_flag],
         )
         .await
@@ -1932,7 +1983,7 @@ pub async fn view_list_id_next_count(
 
     let rows = client
         .query(
-            "SELECT id, name, view_flag, creator, create_time FROM x_query_view WHERE id > $1 ORDER BY id ASC LIMIT $2::bigint",
+            "SELECT id, name, view_flag, creator, to_char(create_time,'YYYY-MM-DD HH24:MI:SS') AS create_time FROM x_query_view WHERE id > $1 ORDER BY id ASC LIMIT $2::bigint",
             &[&id, &count],
         )
         .await
@@ -1966,7 +2017,7 @@ pub async fn view_list_id_prev_count(
 
     let rows = client
         .query(
-            "SELECT id, name, view_flag, creator, create_time FROM x_query_view WHERE id < $1 ORDER BY id DESC LIMIT $2::bigint",
+            "SELECT id, name, view_flag, creator, to_char(create_time,'YYYY-MM-DD HH24:MI:SS') AS create_time FROM x_query_view WHERE id < $1 ORDER BY id DESC LIMIT $2::bigint",
             &[&id, &count],
         )
         .await

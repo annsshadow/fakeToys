@@ -700,7 +700,7 @@ pub async fn table_row_insert(
 
     let result = client
         .execute(
-            "INSERT INTO x_query_table_data (id, table_flag, data, create_time) VALUES ($1, $2, $3, NOW())",
+            "INSERT INTO x_query_table_data (id, table_flag, data, create_time) VALUES ($1, $2, $3, to_char(NOW(),'YYYY-MM-DD HH24:MI:SS'))",
             &[&id, &table_flag, &data_str],
         )
         .await
@@ -726,7 +726,7 @@ pub async fn table_row_insert_one(
 
     client
         .execute(
-            "INSERT INTO x_query_table_data (id, table_flag, data, create_time) VALUES ($1, $2, $3, NOW())",
+            "INSERT INTO x_query_table_data (id, table_flag, data, create_time) VALUES ($1, $2, $3, to_char(NOW(),'YYYY-MM-DD HH24:MI:SS'))",
             &[&id, &table_flag, &data_str],
         )
         .await
@@ -796,7 +796,7 @@ pub async fn importmodel_reexecute_record(
     client
         .execute(
             "INSERT INTO x_query_import_model_record (id, model_flag, import_model_id, status, create_time) \
-             VALUES ($1, $2, $3, 'running', NOW())",
+             VALUES ($1, $2, $3, 'running', to_char(NOW(),'YYYY-MM-DD HH24:MI:SS'))",
             &[&new_record_id, &model_flag, &import_model_id],
         )
         .await
@@ -804,7 +804,7 @@ pub async fn importmodel_reexecute_record(
 
     client
         .execute(
-            "UPDATE x_query_import_model_record SET status = 'running', update_time = NOW() WHERE id = $1",
+            "UPDATE x_query_import_model_record SET status = 'running', update_time = to_char(NOW(),'YYYY-MM-DD HH24:MI:SS') WHERE id = $1",
             &[&record_id],
         )
         .await
@@ -871,6 +871,416 @@ pub async fn view_bundle_v2_post(
             ("page".to_string(), Value::Number(serde_json::Number::from(page))),
             ("size".to_string(), Value::Number(serde_json::Number::from(size))),
             ("list".to_string(), Value::Array(slice)),
+        ]),
+    ))))
+}
+
+// ──────────────────────────────────────────────────────────────────────────────
+// plan002 U2 v9 缺口闭合（surface）
+//
+// 约定：写端点（PUT/POST 内容更新）先经 require_owner 校验记录归属
+// （creator_person 回退 creator），管理员放行；归属列为空降级管理员门禁
+// （fail-closed）。执行类端点沿用 sqlparser 仅 SELECT 校验后真实执行。
+// ──────────────────────────────────────────────────────────────────────────────
+
+use shared::session::Session;
+
+async fn require_admin_gate(pool: &Pool, session: &Session) -> Result<(), AppError> {
+    if shared::middleware::is_admin(pool, &session.person_unique).await {
+        Ok(())
+    } else {
+        Err(AppError::Forbidden)
+    }
+}
+
+/// 写端点统一 IDOR 门禁：
+///   Ok(false) —— 记录不存在，由调用方转 ActionResult::error；
+///   Err(403) —— 非属主且非管理员；
+/// 归属列为空时降级为管理员门禁（fail-closed）。
+async fn guard_write(
+    pool: &Pool,
+    session: &Session,
+    client: &deadpool_postgres::Client,
+    select_owner_sql: &str,
+    key: &str,
+) -> Result<bool, AppError> {
+    let row = client
+        .query_opt(select_owner_sql, &[&key])
+        .await
+        .map_err(|_| AppError::Internal)?;
+    match row {
+        None => Ok(false),
+        Some(row) => {
+            let owner: String = row.get::<_, Option<String>>("owner").unwrap_or_default();
+            if owner.is_empty() {
+                require_admin_gate(pool, session).await?;
+            } else {
+                shared::middleware::require_owner(pool, session, &owner).await?;
+            }
+            Ok(true)
+        }
+    }
+}
+
+fn body_str<'a>(body: &'a Value, keys: &[&str]) -> Option<&'a str> {
+    keys.iter().find_map(|k| body.get(*k).and_then(|v| v.as_str()))
+}
+
+/// PUT/POST /stat/flag/{flag}/query/{queryFlag}/execute —— 查询作用域内按 flag/name 执行统计。
+async fn stat_execute_scoped(
+    pool: Extension<Pool>,
+    Path((flag, query_flag)): Path<(String, String)>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+
+    let row = client
+        .query_opt(
+            "SELECT id FROM x_query_stat WHERE (name = $1 OR id = $1) AND query_flag = $2 LIMIT 1",
+            &[&flag, &query_flag],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    let row = match row {
+        Some(r) => r,
+        None => return Ok(Json(ActionResult::error("stat not found"))),
+    };
+    let id: String = row.get("id");
+
+    let result = execute_stat_by_id(&client, &id).await?;
+    Ok(Json(ActionResult::success(result)))
+}
+
+/// PUT /stat/flag/{flag}/query/{queryFlag}/execute
+pub async fn stat_execute_with_query_put(
+    pool: Extension<Pool>,
+    path: Path<(String, String)>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    stat_execute_scoped(pool, path).await
+}
+
+/// POST /stat/flag/{flag}/query/{queryFlag}/execute/mockputtopost
+pub async fn stat_execute_with_query_mock(
+    pool: Extension<Pool>,
+    path: Path<(String, String)>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    stat_execute_scoped(pool, path).await
+}
+
+/// 视图字段写入共用实现（bundle/excel/content），IDOR 门禁后真实落库。
+async fn view_update_field_by_flag_query(
+    pool: &Pool,
+    session: &Session,
+    field: ViewField,
+    flag: &str,
+    query_flag: &str,
+    body: &Value,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+
+    // 归属校验：先按 (view_flag, query_flag) 定位行再走 owner 门禁。
+    let owner_row = client
+        .query_opt(
+            "SELECT id, COALESCE(creator_person, creator, '') AS owner FROM x_query_view \
+             WHERE view_flag = $1 AND query_flag = $2 LIMIT 1",
+            &[&flag, &query_flag],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    let row = match owner_row {
+        Some(r) => r,
+        None => return Ok(Json(ActionResult::error("view not found"))),
+    };
+    let owner: String = row.get::<_, Option<String>>("owner").unwrap_or_default();
+    if owner.is_empty() {
+        require_admin_gate(pool, session).await?;
+    } else {
+        shared::middleware::require_owner(pool, session, &owner).await?;
+    }
+    let id: String = row.get("id");
+
+    let value_str = field.extract(body)?;
+    let update_sql = format!(
+        "UPDATE x_query_view SET {} = $1, update_time = NOW() WHERE id = $2",
+        field.column
+    );
+    let result = client
+        .execute(update_sql.as_str(), &[&value_str, &id])
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    if result == 0 {
+        return Ok(Json(ActionResult::error("view not found")));
+    }
+
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("viewFlag".to_string(), Value::String(flag.to_string())),
+            ("queryFlag".to_string(), Value::String(query_flag.to_string())),
+            ("updated".to_string(), Value::Bool(true)),
+        ]),
+    ))))
+}
+
+/// 视图可写字段描述（列名编译期常量，无注入面）。
+struct ViewField {
+    column: &'static str,
+    #[allow(dead_code)]
+    label: &'static str,
+}
+
+impl ViewField {
+    fn extract(&self, body: &Value) -> Result<String, AppError> {
+        match self.column {
+            "excel_data" => Ok(body_str(body, &["excelData", "file"]).unwrap_or_default().to_string()),
+            _ => serde_json::to_string(body).map_err(|_| AppError::Internal),
+        }
+    }
+}
+
+const FIELD_BUNDLE: ViewField = ViewField { column: "bundle_data", label: "bundle" };
+const FIELD_EXCEL: ViewField = ViewField { column: "excel_data", label: "excel" };
+const FIELD_CONTENT: ViewField = ViewField { column: "content", label: "content" };
+
+/// PUT /view/flag/{flag}/query/{queryFlag}/bundle
+pub async fn view_flag_query_bundle_put(
+    pool: Extension<Pool>,
+    session: Extension<Session>,
+    Path((flag, query_flag)): Path<(String, String)>,
+    Json(body): Json<Value>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    view_update_field_by_flag_query(&pool, &session, FIELD_BUNDLE, &flag, &query_flag, &body).await
+}
+
+/// POST /view/flag/{flag}/query/{queryFlag}/bundle/mockputtopost
+pub async fn view_flag_query_bundle_mock(
+    pool: Extension<Pool>,
+    session: Extension<Session>,
+    Path((flag, query_flag)): Path<(String, String)>,
+    Json(body): Json<Value>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    view_update_field_by_flag_query(&pool, &session, FIELD_BUNDLE, &flag, &query_flag, &body).await
+}
+
+/// PUT /view/flag/{flag}/query/{queryFlag}/excel
+pub async fn view_flag_query_excel_put(
+    pool: Extension<Pool>,
+    session: Extension<Session>,
+    Path((flag, query_flag)): Path<(String, String)>,
+    Json(body): Json<Value>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    view_update_field_by_flag_query(&pool, &session, FIELD_EXCEL, &flag, &query_flag, &body).await
+}
+
+/// POST /view/flag/{flag}/query/{queryFlag}/excel/mockputtopost
+pub async fn view_flag_query_excel_mock(
+    pool: Extension<Pool>,
+    session: Extension<Session>,
+    Path((flag, query_flag)): Path<(String, String)>,
+    Json(body): Json<Value>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    view_update_field_by_flag_query(&pool, &session, FIELD_EXCEL, &flag, &query_flag, &body).await
+}
+
+/// PUT /view/flag/{flag}/query/{queryFlag}/execute
+pub async fn view_flag_query_execute_put(
+    pool: Extension<Pool>,
+    session: Extension<Session>,
+    Path((flag, query_flag)): Path<(String, String)>,
+    Json(body): Json<Value>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    view_update_field_by_flag_query(&pool, &session, FIELD_CONTENT, &flag, &query_flag, &body).await
+}
+
+/// POST /view/flag/{flag}/query/{queryFlag}/execute/mockputtopost
+pub async fn view_flag_query_execute_mock(
+    pool: Extension<Pool>,
+    session: Extension<Session>,
+    Path((flag, query_flag)): Path<(String, String)>,
+    Json(body): Json<Value>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    view_update_field_by_flag_query(&pool, &session, FIELD_CONTENT, &flag, &query_flag, &body).await
+}
+
+/// 视图执行 v2 共用实现：真实分页查询视图内容（与既有 GET v2 同口径）。
+fn view_rows_payload(rows: &[deadpool_postgres::tokio_postgres::Row]) -> Value {
+    let data: Vec<Value> = rows.iter().map(row_to_json).collect();
+    Value::Object(serde_json::Map::from_iter([
+        ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
+        ("data".to_string(), Value::Array(data)),
+    ]))
+}
+
+/// POST /view/flag/{flag}/query/{queryFlag}/execute/v2/page/{page}/size/{size}
+pub async fn view_execute_v2_flag_query(
+    pool: Extension<Pool>,
+    Path((flag, query_flag, page, size)): Path<(String, String, i64, i64)>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let offset = if page > 0 { (page - 1) * size } else { 0 };
+    let rows = client
+        .query(
+            "SELECT id, name, view_flag, query_flag, content, creator, to_char(create_time,'YYYY-MM-DD HH24:MI:SS') AS create_time FROM x_query_view \
+             WHERE view_flag = $1 AND query_flag = $2 \
+             ORDER BY create_time DESC LIMIT $3 OFFSET $4",
+            &[&flag, &query_flag, &size, &offset],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+    Ok(Json(ActionResult::success(view_rows_payload(&rows))))
+}
+
+/// POST /view/{id}/execute/v2/page/{page}/size/{size}
+pub async fn view_execute_v2_id(
+    pool: Extension<Pool>,
+    Path((id, page, size)): Path<(String, i64, i64)>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let offset = if page > 0 { (page - 1) * size } else { 0 };
+    let rows = client
+        .query(
+            "SELECT id, name, view_flag, query_flag, content, creator, to_char(create_time,'YYYY-MM-DD HH24:MI:SS') AS create_time FROM x_query_view \
+             WHERE id = $1 \
+             ORDER BY create_time DESC LIMIT $2 OFFSET $3",
+            &[&id, &size, &offset],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+    Ok(Json(ActionResult::success(view_rows_payload(&rows))))
+}
+
+/// 按 id 写视图字段共用实现（IDOR 门禁）。
+async fn view_update_field_by_id(
+    pool: &Pool,
+    session: &Session,
+    field: ViewField,
+    id: &str,
+    body: &Value,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+
+    let found = guard_write(
+        pool,
+        session,
+        &client,
+        "SELECT COALESCE(creator_person, creator, '') AS owner FROM x_query_view WHERE id = $1",
+        id,
+    )
+    .await?;
+    if !found {
+        return Ok(Json(ActionResult::error("view not found")));
+    }
+
+    let value_str = field.extract(body)?;
+    let update_sql = format!(
+        "UPDATE x_query_view SET {} = $1, update_time = NOW() WHERE id = $2",
+        field.column
+    );
+    let result = client
+        .execute(update_sql.as_str(), &[&value_str, &id])
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    if result == 0 {
+        return Ok(Json(ActionResult::error("view not found")));
+    }
+
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("id".to_string(), Value::String(id.to_string())),
+            ("updated".to_string(), Value::Bool(true)),
+        ]),
+    ))))
+}
+
+/// PUT /view/{id}/bundle
+pub async fn view_id_bundle_put(
+    pool: Extension<Pool>,
+    session: Extension<Session>,
+    Path(id): Path<String>,
+    Json(body): Json<Value>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    view_update_field_by_id(&pool, &session, FIELD_BUNDLE, &id, &body).await
+}
+
+/// POST /view/{id}/bundle/mockputtopost
+pub async fn view_id_bundle_mock(
+    pool: Extension<Pool>,
+    session: Extension<Session>,
+    Path(id): Path<String>,
+    Json(body): Json<Value>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    view_update_field_by_id(&pool, &session, FIELD_BUNDLE, &id, &body).await
+}
+
+/// PUT /view/{id}/excel
+pub async fn view_id_excel_put(
+    pool: Extension<Pool>,
+    session: Extension<Session>,
+    Path(id): Path<String>,
+    Json(body): Json<Value>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    view_update_field_by_id(&pool, &session, FIELD_EXCEL, &id, &body).await
+}
+
+/// POST /view/{id}/excel/mockputtopost
+pub async fn view_id_excel_mock(
+    pool: Extension<Pool>,
+    session: Extension<Session>,
+    Path(id): Path<String>,
+    Json(body): Json<Value>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    view_update_field_by_id(&pool, &session, FIELD_EXCEL, &id, &body).await
+}
+
+/// PUT /view/{id}/execute
+pub async fn view_id_execute_put(
+    pool: Extension<Pool>,
+    session: Extension<Session>,
+    Path(id): Path<String>,
+    Json(body): Json<Value>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    view_update_field_by_id(&pool, &session, FIELD_CONTENT, &id, &body).await
+}
+
+/// POST /view/{id}/execute/mockputtopost
+pub async fn view_id_execute_mock(
+    pool: Extension<Pool>,
+    session: Extension<Session>,
+    Path(id): Path<String>,
+    Json(body): Json<Value>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    view_update_field_by_id(&pool, &session, FIELD_CONTENT, &id, &body).await
+}
+
+/// POST /table/list/{tableFlag}/row/select —— 按过滤词检索动态表数据（参数化 ILIKE，绝不拼接 SQL）。
+pub async fn table_row_select_post(
+    pool: Extension<Pool>,
+    Path(table_flag): Path<String>,
+    Json(body): Json<Value>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+
+    let key = body_str(&body, &["where", "key", "filter"]).unwrap_or_default();
+    let pattern = format!("%{}%", key);
+
+    let rows = client
+        .query(
+            "SELECT id, table_flag, data FROM x_query_table_data \
+             WHERE table_flag = $1 AND data ILIKE $2 \
+             ORDER BY create_time DESC LIMIT 100",
+            &[&table_flag, &pattern],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    let data: Vec<Value> = rows.iter().map(row_to_json).collect();
+
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
+            ("data".to_string(), Value::Array(data)),
         ]),
     ))))
 }
