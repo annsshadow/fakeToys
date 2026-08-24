@@ -561,7 +561,7 @@ pub async fn importmodel_create(
     client
         .execute(
             "INSERT INTO x_query_import_model (id, name, model_flag, query_flag, content, creator, create_time, update_time) \
-             VALUES ($1, $2, $3, $4, $5, $6, NOW(), NOW())",
+             VALUES ($1, $2, $3, $4, $5, $6, to_char(NOW(),'YYYY-MM-DD HH24:MI:SS'), to_char(NOW(),'YYYY-MM-DD HH24:MI:SS'))",
             &[&id, &name, &model_flag, &query_flag, &content, &creator],
         )
         .await
@@ -587,7 +587,7 @@ pub async fn importmodel_edit(
 
     let result = client
         .execute(
-            "UPDATE x_query_import_model SET name = COALESCE(NULLIF($1,''), name), content = COALESCE(NULLIF($2,''), content), update_time = NOW() WHERE id = $3",
+            "UPDATE x_query_import_model SET name = COALESCE(NULLIF($1,''), name), content = COALESCE(NULLIF($2,''), content), update_time = to_char(NOW(),'YYYY-MM-DD HH24:MI:SS') WHERE id = $3",
             &[&name, &content, &id],
         )
         .await
@@ -661,7 +661,7 @@ pub async fn neural_update_model_modelFlag(
 
     let result = client
         .execute(
-            "UPDATE x_query_neural_model SET name = COALESCE(NULLIF($1,''), name), update_time = NOW() WHERE flag = $2",
+            "UPDATE x_query_neural_model SET name = COALESCE(NULLIF($1,''), name), update_time = to_char(NOW(),'YYYY-MM-DD HH24:MI:SS') WHERE flag = $2",
             &[&name, &model_flag],
         )
         .await
@@ -717,7 +717,7 @@ pub async fn stat_create(
     client
         .execute(
             "INSERT INTO x_query_stat (id, name, query_flag, stat_type, config, creator, create_time, update_time) \
-             VALUES ($1, $2, $3, $4, $5, $6, NOW(), NOW())",
+             VALUES ($1, $2, $3, $4, $5, $6, to_char(NOW(),'YYYY-MM-DD HH24:MI:SS'), to_char(NOW(),'YYYY-MM-DD HH24:MI:SS'))",
             &[&id, &name, &query_flag, &stat_type, &config, &creator],
         )
         .await
@@ -743,7 +743,7 @@ pub async fn stat_edit(
 
     let result = client
         .execute(
-            "UPDATE x_query_stat SET name = COALESCE(NULLIF($1,''), name), config = COALESCE(NULLIF($2,''), config), update_time = NOW() WHERE id = $3",
+            "UPDATE x_query_stat SET name = COALESCE(NULLIF($1,''), name), config = COALESCE(NULLIF($2,''), config), update_time = to_char(NOW(),'YYYY-MM-DD HH24:MI:SS') WHERE id = $3",
             &[&name, &config, &id],
         )
         .await
@@ -815,7 +815,7 @@ pub async fn table_create(
     client
         .execute(
             "INSERT INTO x_query_table (id, name, table_flag, query_flag, status, creator, create_time, update_time) \
-             VALUES ($1, $2, $3, $4, 'draft', $5, NOW(), NOW())",
+             VALUES ($1, $2, $3, $4, 'draft', $5, to_char(NOW(),'YYYY-MM-DD HH24:MI:SS'), to_char(NOW(),'YYYY-MM-DD HH24:MI:SS'))",
             &[&id, &name, &table_flag, &query_flag, &creator],
         )
         .await
@@ -840,7 +840,7 @@ pub async fn table_edit(
 
     let result = client
         .execute(
-            "UPDATE x_query_table SET name = COALESCE(NULLIF($1,''), name), update_time = NOW() WHERE table_flag = $2",
+            "UPDATE x_query_table SET name = COALESCE(NULLIF($1,''), name), update_time = to_char(NOW(),'YYYY-MM-DD HH24:MI:SS') WHERE table_flag = $2",
             &[&name, &flag],
         )
         .await
@@ -893,7 +893,7 @@ pub async fn table_tableFlag_row_insert(
 
     let result = client
         .execute(
-            "INSERT INTO x_query_table_data (id, table_flag, data, create_time) VALUES ($1, $2, $3, NOW())",
+            "INSERT INTO x_query_table_data (id, table_flag, data, create_time) VALUES ($1, $2, $3, to_char(NOW(),'YYYY-MM-DD HH24:MI:SS'))",
             &[&id, &table_flag, &data_str],
         )
         .await
@@ -918,7 +918,7 @@ pub async fn table_tableFlag_row_update(
 
     let result = client
         .execute(
-            "UPDATE x_query_table_data SET data = $1, update_time = NOW() WHERE table_flag = $2 AND id = $3",
+            "UPDATE x_query_table_data SET data = $1, update_time = to_char(NOW(),'YYYY-MM-DD HH24:MI:SS') WHERE table_flag = $2 AND id = $3",
             &[&data_str, &table_flag, &id],
         )
         .await
@@ -1094,4 +1094,876 @@ pub async fn query_set_icon(
             ("iconUpdated".to_string(), Value::Bool(true)),
         ]),
     ))))
+}
+
+// ──────────────────────────────────────────────────────────────────────────────
+// plan002 U2 v9 缺口闭合（designer）
+//
+// 约定（对齐 processplatform_assemble_designer / docs/solutions IDOR 文档）：
+//   - 写端点先查记录归属（creator_person 回退 creator），经 require_owner 校验；
+//     管理员放行；归属列为空降级为管理员门禁（fail-closed）。
+//   - 新建 creator 取会话（session.person_unique），绝不信任请求体。
+//   - 命名类写入前归一化查重（normalize_identifier：trim + 小写）。
+// ──────────────────────────────────────────────────────────────────────────────
+
+use shared::session::Session;
+
+async fn require_admin_gate(pool: &Pool, session: &Session) -> Result<(), AppError> {
+    if shared::middleware::is_admin(pool, &session.person_unique).await {
+        Ok(())
+    } else {
+        Err(AppError::Forbidden)
+    }
+}
+
+/// 写端点统一 IDOR 门禁：
+///   Ok(false) —— 记录不存在，由调用方转 ActionResult::error；
+///   Err(403) —— 非属主且非管理员；
+/// 归属列为空时降级为管理员门禁（fail-closed）。
+async fn guard_write(
+    pool: &Pool,
+    session: &Session,
+    client: &deadpool_postgres::Client,
+    select_owner_sql: &str,
+    key: &str,
+) -> Result<bool, AppError> {
+    let row = client
+        .query_opt(select_owner_sql, &[&key])
+        .await
+        .map_err(|_| AppError::Internal)?;
+    match row {
+        None => Ok(false),
+        Some(row) => {
+            let owner: String = row.get::<_, Option<String>>("owner").unwrap_or_default();
+            if owner.is_empty() {
+                require_admin_gate(pool, session).await?;
+            } else {
+                shared::middleware::require_owner(pool, session, &owner).await?;
+            }
+            Ok(true)
+        }
+    }
+}
+
+fn body_str<'a>(body: &'a Value, keys: &[&str]) -> Option<&'a str> {
+    keys.iter().find_map(|k| body.get(*k).and_then(|v| v.as_str()))
+}
+
+/// POST /designer/search —— 按关键词检索查询设计（真实 ILIKE，拒绝空 key）。
+pub async fn designer_search_v2(
+    pool: Extension<Pool>,
+    Json(body): Json<Value>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+
+    let key = body
+        .get("key")
+        .or_else(|| body.get("query"))
+        .and_then(|v| v.as_str())
+        .unwrap_or_default();
+    if key.trim().is_empty() {
+        return Ok(Json(ActionResult::error("key is required")));
+    }
+    let pattern = format!("%{}%", key.trim());
+
+    let rows = client
+        .query(
+            "SELECT id, name, category, creator, create_time FROM x_query_design \
+             WHERE (name ILIKE $1 OR category ILIKE $1) AND deleted_at IS NULL \
+             ORDER BY update_time DESC NULLS LAST LIMIT 20",
+            &[&pattern],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    let data: Vec<Value> = rows
+        .iter()
+        .map(|row| {
+            Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                ("name".to_string(), Value::String(row.get("name"))),
+                ("category".to_string(), Value::String(row.get("category"))),
+            ]))
+        })
+        .collect();
+
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
+            ("data".to_string(), Value::Array(data)),
+        ]),
+    ))))
+}
+
+/// GET /id/{count} —— 生成唯一标识列表（0 < count < 200，对齐 Java ActionGet）。
+pub async fn id_generate(
+    Path(count): Path<i64>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let n = count.clamp(0, 199);
+    let ids: Vec<Value> = (0..n)
+        .map(|_| Value::String(uuid::Uuid::new_v4().to_string()))
+        .collect();
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("count".to_string(), Value::Number(serde_json::Number::from(ids.len() as i64))),
+            ("data".to_string(), Value::Array(ids)),
+        ]),
+    ))))
+}
+
+/// GET /importmodel/{flag} —— 按 id 或 model_flag 获取导入模型。
+pub async fn importmodel_get_flag(
+    pool: Extension<Pool>,
+    Path(flag): Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+
+    let row = client
+        .query_opt(
+            "SELECT id, name, model_flag, query_flag, content, creator, create_time \
+             FROM x_query_import_model WHERE id = $1 OR model_flag = $1 LIMIT 1",
+            &[&flag],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    match row {
+        Some(row) => Ok(Json(ActionResult::success(Value::Object(
+            serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                ("name".to_string(), Value::String(row.get("name"))),
+                ("modelFlag".to_string(), Value::String(row.get("model_flag"))),
+                (
+                    "queryFlag".to_string(),
+                    Value::String(row.get::<_, Option<String>>("query_flag").unwrap_or_default()),
+                ),
+                (
+                    "content".to_string(),
+                    Value::String(row.get::<_, Option<String>>("content").unwrap_or_default()),
+                ),
+                ("creator".to_string(), Value::String(row.get("creator"))),
+                ("createTime".to_string(), Value::String(row.get("create_time"))),
+            ]),
+        )))),
+        None => Ok(Json(ActionResult::error("import model not found"))),
+    }
+}
+
+/// PUT /importmodel/{flag} —— 更新导入模型（IDOR 门禁 + 归一化查重排除自身）。
+pub async fn importmodel_edit_flag(
+    pool: Extension<Pool>,
+    session: Extension<Session>,
+    Path(flag): Path<String>,
+    Json(body): Json<Value>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+
+    let found = guard_write(
+        &pool,
+        &session,
+        &client,
+        "SELECT COALESCE(creator_person, creator, '') AS owner FROM x_query_import_model \
+         WHERE id = $1 OR model_flag = $1 LIMIT 1",
+        &flag,
+    )
+    .await?;
+    if !found {
+        return Ok(Json(ActionResult::error("import model not found")));
+    }
+
+    let name = body_str(&body, &["name"]).unwrap_or_default();
+    if !name.trim().is_empty() {
+        let norm = normalize_identifier(name);
+        let dup_row = client
+            .query_one(
+                "SELECT COUNT(*) AS cnt FROM x_query_import_model \
+                 WHERE LOWER(TRIM(COALESCE(name,''))) = $1 AND id <> $2",
+                &[&norm, &flag],
+            )
+            .await
+            .map_err(|_| AppError::Internal)?;
+        if dup_row.get::<_, i64>("cnt") > 0 {
+            return Ok(Json(ActionResult::error("import model name already exists")));
+        }
+    }
+    let content = body_str(&body, &["data", "content"]).unwrap_or_default();
+
+    let result = client
+        .execute(
+            "UPDATE x_query_import_model \
+             SET name = COALESCE(NULLIF($1,''), name), content = COALESCE(NULLIF($2,''), content), \
+                 update_time = to_char(NOW(),'YYYY-MM-DD HH24:MI:SS') \
+             WHERE id = $3 OR model_flag = $3",
+            &[&name, &content, &flag],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    if result == 0 {
+        return Ok(Json(ActionResult::error("import model not found")));
+    }
+
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("id".to_string(), Value::String(flag)),
+            ("updated".to_string(), Value::Number(serde_json::Number::from(result as i64))),
+        ]),
+    ))))
+}
+
+/// DELETE /importmodel/{flag} —— 删除导入模型（IDOR 门禁）。
+pub async fn importmodel_delete_flag(
+    pool: Extension<Pool>,
+    session: Extension<Session>,
+    Path(flag): Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+
+    let found = guard_write(
+        &pool,
+        &session,
+        &client,
+        "SELECT COALESCE(creator_person, creator, '') AS owner FROM x_query_import_model \
+         WHERE id = $1 OR model_flag = $1 LIMIT 1",
+        &flag,
+    )
+    .await?;
+    if !found {
+        return Ok(Json(ActionResult::error("import model not found")));
+    }
+
+    let result = client
+        .execute(
+            "DELETE FROM x_query_import_model WHERE id = $1 OR model_flag = $1",
+            &[&flag],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    if result == 0 {
+        return Ok(Json(ActionResult::error("import model not found")));
+    }
+
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([("id".to_string(), Value::String(flag))]),
+    ))))
+}
+
+/// POST /importmodel/{flag}/permission —— 设置权限（IDOR 门禁，权限体序列化落库）。
+pub async fn importmodel_permission_set(
+    pool: Extension<Pool>,
+    session: Extension<Session>,
+    Path(flag): Path<String>,
+    Json(body): Json<Value>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+
+    let found = guard_write(
+        &pool,
+        &session,
+        &client,
+        "SELECT COALESCE(creator_person, creator, '') AS owner FROM x_query_import_model \
+         WHERE id = $1 OR model_flag = $1 LIMIT 1",
+        &flag,
+    )
+    .await?;
+    if !found {
+        return Ok(Json(ActionResult::error("import model not found")));
+    }
+
+    let permission = serde_json::to_string(
+        body.get("permissionList").unwrap_or(&Value::Array(Vec::new())),
+    )
+    .map_err(|_| AppError::Internal)?;
+
+    let result = client
+        .execute(
+            "UPDATE x_query_import_model SET permission = $1, update_time = to_char(NOW(),'YYYY-MM-DD HH24:MI:SS') \
+             WHERE id = $2 OR model_flag = $2",
+            &[&permission, &flag],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    if result == 0 {
+        return Ok(Json(ActionResult::error("import model not found")));
+    }
+
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("id".to_string(), Value::String(flag)),
+            ("permissionSet".to_string(), Value::Bool(true)),
+        ]),
+    ))))
+}
+
+/// PUT /output/{flag}/select —— 设置输出选择（IDOR 门禁，select_file/query_flag 真实落库）。
+pub async fn output_select_put(
+    pool: Extension<Pool>,
+    session: Extension<Session>,
+    Path(flag): Path<String>,
+    Json(body): Json<Value>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+
+    let found = guard_write(
+        &pool,
+        &session,
+        &client,
+        "SELECT COALESCE(creator_person, creator, '') AS owner FROM x_query_output \
+         WHERE flag = $1 LIMIT 1",
+        &flag,
+    )
+    .await?;
+    if !found {
+        return Ok(Json(ActionResult::error("output not found")));
+    }
+
+    let select_file = body_str(&body, &["selectFile", "file"]).unwrap_or_default();
+    let query_flag = body_str(&body, &["queryFlag", "query"]).unwrap_or_default();
+
+    let result = client
+        .execute(
+            "UPDATE x_query_output \
+             SET select_file = COALESCE(NULLIF($1,''), select_file), \
+                 query_flag = COALESCE(NULLIF($2,''), query_flag), \
+                 update_time = to_char(NOW(),'YYYY-MM-DD HH24:MI:SS') \
+             WHERE flag = $3",
+            &[&select_file, &query_flag, &flag],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    if result == 0 {
+        return Ok(Json(ActionResult::error("output not found")));
+    }
+
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("flag".to_string(), Value::String(flag)),
+            ("selected".to_string(), Value::Bool(true)),
+        ]),
+    ))))
+}
+
+/// POST /query —— 创建查询设计（归一化查重，creator 取会话）。
+pub async fn query_create_v2(
+    pool: Extension<Pool>,
+    session: Extension<Session>,
+    Json(body): Json<Value>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+
+    let name = body_str(&body, &["name"]).unwrap_or_default();
+    if name.trim().is_empty() {
+        return Ok(Json(ActionResult::error("name is required")));
+    }
+
+    let norm = normalize_identifier(name);
+    let dup_row = client
+        .query_one(
+            "SELECT COUNT(*) AS cnt FROM x_query_design \
+             WHERE LOWER(TRIM(COALESCE(name,''))) = $1 AND deleted_at IS NULL",
+            &[&norm],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+    if dup_row.get::<_, i64>("cnt") > 0 {
+        return Ok(Json(ActionResult::error("query name already exists")));
+    }
+
+    let id = uuid::Uuid::new_v4().to_string();
+    let flag = uuid::Uuid::new_v4().to_string();
+    let category = body_str(&body, &["category"]).unwrap_or_default();
+    let query_definition = body_str(&body, &["data", "query"]).unwrap_or_default();
+
+    client
+        .execute(
+            "INSERT INTO x_query_design (id, flag, name, category, query_definition, creator, create_time, update_time) \
+             VALUES ($1, $2, $3, $4, $5, $6, to_char(NOW(),'YYYY-MM-DD HH24:MI:SS'), NOW())",
+            &[&id, &flag, &name, &category, &query_definition, &session.person_unique],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("id".to_string(), Value::String(id)),
+            ("flag".to_string(), Value::String(flag)),
+        ]),
+    ))))
+}
+
+/// DELETE /query/{flag} —— 删除查询设计（软删 + IDOR 门禁）。
+pub async fn query_delete_flag(
+    pool: Extension<Pool>,
+    session: Extension<Session>,
+    Path(flag): Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+
+    let found = guard_write(
+        &pool,
+        &session,
+        &client,
+        "SELECT COALESCE(creator_person, creator, '') AS owner FROM x_query_design \
+         WHERE flag = $1 OR id = $1 LIMIT 1",
+        &flag,
+    )
+    .await?;
+    if !found {
+        return Ok(Json(ActionResult::error("query not found")));
+    }
+
+    let result = client
+        .execute(
+            "UPDATE x_query_design SET deleted_at = NOW() WHERE (flag = $1 OR id = $1) AND deleted_at IS NULL",
+            &[&flag],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    if result == 0 {
+        return Ok(Json(ActionResult::error("query not found or already deleted")));
+    }
+
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([("id".to_string(), Value::String(flag))]),
+    ))))
+}
+
+/// PUT /query/{flag} —— 更新查询设计（IDOR 门禁 + 归一化查重排除自身）。
+pub async fn query_edit_flag(
+    pool: Extension<Pool>,
+    session: Extension<Session>,
+    Path(flag): Path<String>,
+    Json(body): Json<Value>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+
+    let found = guard_write(
+        &pool,
+        &session,
+        &client,
+        "SELECT COALESCE(creator_person, creator, '') AS owner FROM x_query_design \
+         WHERE flag = $1 OR id = $1 LIMIT 1",
+        &flag,
+    )
+    .await?;
+    if !found {
+        return Ok(Json(ActionResult::error("query not found")));
+    }
+
+    let name = body_str(&body, &["name"]).unwrap_or_default();
+    if !name.trim().is_empty() {
+        let norm = normalize_identifier(name);
+        let dup_row = client
+            .query_one(
+                "SELECT COUNT(*) AS cnt FROM x_query_design \
+                 WHERE LOWER(TRIM(COALESCE(name,''))) = $1 AND flag <> $2 AND deleted_at IS NULL",
+                &[&norm, &flag],
+            )
+            .await
+            .map_err(|_| AppError::Internal)?;
+        if dup_row.get::<_, i64>("cnt") > 0 {
+            return Ok(Json(ActionResult::error("query name already exists")));
+        }
+    }
+    let category = body_str(&body, &["category"]).unwrap_or_default();
+    let query_definition = body_str(&body, &["data", "query"]).unwrap_or_default();
+
+    let result = client
+        .execute(
+            "UPDATE x_query_design \
+             SET name = COALESCE(NULLIF($1,''), name), \
+                 category = COALESCE(NULLIF($2,''), category), \
+                 query_definition = COALESCE(NULLIF($3,''), query_definition), \
+                 update_time = NOW() \
+             WHERE (flag = $4 OR id = $4) AND deleted_at IS NULL",
+            &[&name, &category, &query_definition, &flag],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    if result == 0 {
+        return Ok(Json(ActionResult::error("query not found")));
+    }
+
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("id".to_string(), Value::String(flag)),
+            ("updated".to_string(), Value::Number(serde_json::Number::from(result as i64))),
+        ]),
+    ))))
+}
+
+/// POST /query/{flag}/icon —— 设置图标（IDOR 门禁，与 PUT icon 同一落库语义）。
+pub async fn query_icon_set(
+    pool: Extension<Pool>,
+    session: Extension<Session>,
+    Path(flag): Path<String>,
+    Json(body): Json<Value>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+
+    let found = guard_write(
+        &pool,
+        &session,
+        &client,
+        "SELECT COALESCE(creator_person, creator, '') AS owner FROM x_query_design \
+         WHERE flag = $1 OR id = $1 LIMIT 1",
+        &flag,
+    )
+    .await?;
+    if !found {
+        return Ok(Json(ActionResult::error("query not found")));
+    }
+
+    let icon = body_str(&body, &["icon"]).unwrap_or("");
+    let result = client
+        .execute(
+            "UPDATE x_query_design SET icon = $1, update_time = NOW() \
+             WHERE (flag = $2 OR id = $2) AND deleted_at IS NULL",
+            &[&icon, &flag],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    if result == 0 {
+        return Ok(Json(ActionResult::error("query not found")));
+    }
+
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("flag".to_string(), Value::String(flag)),
+            ("iconUpdated".to_string(), Value::Bool(true)),
+        ]),
+    ))))
+}
+
+/// POST /{resource}/{flag}/permission 族共用实现：权限体序列化后写 permission 列。
+async fn set_permission_generic(
+    pool: &Pool,
+    session: &Session,
+    resource: PermissionResource,
+    flag: &str,
+    body: &Value,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+
+    let sql = format!(
+        "SELECT COALESCE(creator_person, creator, '') AS owner FROM {} WHERE {} LIMIT 1",
+        resource.table, resource.predicate
+    );
+    let found = guard_write(pool, session, &client, &sql, flag).await?;
+    if !found {
+        return Ok(Json(ActionResult::error(format!("{} not found", resource.label))));
+    }
+
+    let permission = serde_json::to_string(
+        body.get("permissionList").unwrap_or(&Value::Array(Vec::new())),
+    )
+    .map_err(|_| AppError::Internal)?;
+
+    let update_sql = format!(
+        "UPDATE {} SET permission = $1, update_time = {} WHERE {}",
+        resource.table, resource.time_expr, resource.predicate
+    );
+    let result = client
+        .execute(update_sql.as_str(), &[&permission, &flag])
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    if result == 0 {
+        return Ok(Json(ActionResult::error(format!("{} not found", resource.label))));
+    }
+
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("id".to_string(), Value::String(flag.to_string())),
+            ("permissionSet".to_string(), Value::Bool(true)),
+        ]),
+    ))))
+}
+
+/// 权限写入口的目标资源描述（表/谓词/时间表达式均为编译期常量，无注入面）。
+/// update_time 列类型随表而异（TEXT/TIMESTAMP），时间表达式必须匹配列类型。
+struct PermissionResource {
+    table: &'static str,
+    predicate: &'static str,
+    label: &'static str,
+    time_expr: &'static str,
+}
+
+const TS_TEXT: &str = "to_char(NOW(),'YYYY-MM-DD HH24:MI:SS')";
+const TS_TIMESTAMP: &str = "NOW()";
+
+const PERM_QUERY: PermissionResource = PermissionResource {
+    table: "x_query_design",
+    predicate: "(flag = $1 OR id = $1)",
+    label: "query",
+    time_expr: TS_TIMESTAMP,
+};
+const PERM_STAT: PermissionResource = PermissionResource {
+    table: "x_query_stat",
+    predicate: "id = $1",
+    label: "stat",
+    time_expr: TS_TEXT,
+};
+const PERM_TABLE: PermissionResource = PermissionResource {
+    table: "x_query_table",
+    predicate: "(table_flag = $1 OR id = $1)",
+    label: "table",
+    time_expr: TS_TEXT,
+};
+const PERM_VIEW: PermissionResource = PermissionResource {
+    table: "x_query_view",
+    predicate: "(id = $1 OR view_flag = $1)",
+    label: "view",
+    time_expr: TS_TIMESTAMP,
+};
+
+/// POST /query/{flag}/permission
+pub async fn query_permission_set(
+    pool: Extension<Pool>,
+    session: Extension<Session>,
+    Path(flag): Path<String>,
+    Json(body): Json<Value>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    set_permission_generic(&pool, &session, PERM_QUERY, &flag, &body).await
+}
+
+/// POST /stat/{id}/permission
+pub async fn stat_permission_set(
+    pool: Extension<Pool>,
+    session: Extension<Session>,
+    Path(id): Path<String>,
+    Json(body): Json<Value>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    set_permission_generic(&pool, &session, PERM_STAT, &id, &body).await
+}
+
+/// POST /table/{flag}/permission
+pub async fn table_permission_set(
+    pool: Extension<Pool>,
+    session: Extension<Session>,
+    Path(flag): Path<String>,
+    Json(body): Json<Value>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    set_permission_generic(&pool, &session, PERM_TABLE, &flag, &body).await
+}
+
+/// POST /view/{id}/permission
+pub async fn view_permission_set(
+    pool: Extension<Pool>,
+    session: Extension<Session>,
+    Path(id): Path<String>,
+    Json(body): Json<Value>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    set_permission_generic(&pool, &session, PERM_VIEW, &id, &body).await
+}
+
+/// GET /table/{flag}/build/dispatch —— 按 table_flag 触发构建（真实状态落库）。
+pub async fn table_build_dispatch_flag(
+    pool: Extension<Pool>,
+    Path(flag): Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+
+    let result = client
+        .execute(
+            "UPDATE x_query_table SET status = 'build', reloaded = FALSE, update_time = to_char(NOW(),'YYYY-MM-DD HH24:MI:SS') \
+             WHERE table_flag = $1 AND deleted_at IS NULL",
+            &[&flag],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("tableFlag".to_string(), Value::String(flag)),
+            ("dispatched".to_string(), Value::Number(serde_json::Number::from(result as i64))),
+        ]),
+    ))))
+}
+
+/// stat/view simulate 共用执行核心：config/content JSON 中提取 sql，
+/// sqlparser 校验后真实执行返回聚合行；无可执行定义时如实返回 calculated=false。
+async fn execute_configured_sql(
+    client: &deadpool_postgres::Client,
+    config_raw: &str,
+) -> Result<(bool, Value), AppError> {
+    let config: Value = serde_json::from_str(config_raw).unwrap_or(Value::Null);
+    let sql_opt = config
+        .get("sql")
+        .and_then(|v| v.as_str())
+        .map(|s| s.to_string());
+
+    match sql_opt {
+        Some(sql) if !sql.trim().is_empty() => {
+            validate_single_select(&sql).map_err(AppError::BadRequest)?;
+            let trimmed = sql.trim().trim_end_matches(';');
+            let limited = ensure_limit(trimmed, 500);
+            let rows = client
+                .query(&limited, &[])
+                .await
+                .map_err(|_| AppError::Internal)?;
+            let data: Vec<Value> = rows.iter().map(row_to_json).collect();
+            let mut payload = serde_json::Map::new();
+            payload.insert("calculated".to_string(), Value::Bool(true));
+            payload.insert(
+                "count".to_string(),
+                Value::Number(serde_json::Number::from(data.len() as i64)),
+            );
+            payload.insert("calculateGrid".to_string(), Value::Array(data));
+            Ok((true, Value::Object(payload)))
+        }
+        _ => {
+            tracing::warn!("simulate requested but no executable config.sql; returning metadata only");
+            Ok((
+                false,
+                serde_json::json!({ "calculated": false, "config": config }),
+            ))
+        }
+    }
+}
+
+/// PUT /stat/{id}/simulate —— 统计模拟（IDOR 门禁 + config.sql 真实执行）。
+pub async fn stat_simulate_put(
+    pool: Extension<Pool>,
+    session: Extension<Session>,
+    Path(id): Path<String>,
+    Json(_body): Json<Value>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+
+    let found = guard_write(
+        &pool,
+        &session,
+        &client,
+        "SELECT COALESCE(creator_person, creator, '') AS owner FROM x_query_stat WHERE id = $1",
+        &id,
+    )
+    .await?;
+    if !found {
+        return Ok(Json(ActionResult::error("stat not found")));
+    }
+
+    let row = client
+        .query_opt(
+            "SELECT id, name, config FROM x_query_stat WHERE id = $1",
+            &[&id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    let row = match row {
+        Some(r) => r,
+        None => return Ok(Json(ActionResult::error("stat not found"))),
+    };
+
+    let config_raw: String = row.get::<_, Option<String>>("config").unwrap_or_default();
+    let (calculated, mut payload_map) = execute_configured_sql(&client, &config_raw).await?;
+
+    if let Some(payload) = payload_map.as_object_mut() {
+        payload.insert("id".to_string(), Value::String(row.get("id")));
+        payload.insert(
+            "name".to_string(),
+            Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
+        );
+        payload.insert("calculated".to_string(), Value::Bool(calculated));
+    }
+
+    Ok(Json(ActionResult::success(payload_map)))
+}
+
+/// PUT /view/{id}/bundle —— 保存视图 bundle（IDOR 门禁）。
+pub async fn view_bundle_put(
+    pool: Extension<Pool>,
+    session: Extension<Session>,
+    Path(id): Path<String>,
+    Json(body): Json<Value>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+
+    let found = guard_write(
+        &pool,
+        &session,
+        &client,
+        "SELECT COALESCE(creator_person, creator, '') AS owner FROM x_query_view WHERE id = $1",
+        &id,
+    )
+    .await?;
+    if !found {
+        return Ok(Json(ActionResult::error("view not found")));
+    }
+
+    let bundle_str = serde_json::to_string(&body).map_err(|_| AppError::Internal)?;
+    let result = client
+        .execute(
+            "UPDATE x_query_view SET bundle_data = $1, update_time = NOW() WHERE id = $2",
+            &[&bundle_str, &id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    if result == 0 {
+        return Ok(Json(ActionResult::error("view not found")));
+    }
+
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("id".to_string(), Value::String(id)),
+            ("bundleSaved".to_string(), Value::Bool(true)),
+        ]),
+    ))))
+}
+
+/// PUT /view/{id}/simulate —— 视图模拟：content JSON 提取 sql 校验后真实执行。
+pub async fn view_simulate_put(
+    pool: Extension<Pool>,
+    session: Extension<Session>,
+    Path(id): Path<String>,
+    Json(_body): Json<Value>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+
+    let found = guard_write(
+        &pool,
+        &session,
+        &client,
+        "SELECT COALESCE(creator_person, creator, '') AS owner FROM x_query_view WHERE id = $1",
+        &id,
+    )
+    .await?;
+    if !found {
+        return Ok(Json(ActionResult::error("view not found")));
+    }
+
+    let row = client
+        .query_opt(
+            "SELECT id, view_flag, content FROM x_query_view WHERE id = $1",
+            &[&id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    let row = match row {
+        Some(r) => r,
+        None => return Ok(Json(ActionResult::error("view not found")))
+    };
+
+    let content_raw: String = row.get::<_, Option<String>>("content").unwrap_or_default();
+    let (calculated, mut payload_map) = execute_configured_sql(&client, &content_raw).await?;
+
+    if let Some(payload) = payload_map.as_object_mut() {
+        payload.insert("id".to_string(), Value::String(row.get("id")));
+        payload.insert(
+            "viewFlag".to_string(),
+            Value::String(row.get::<_, Option<String>>("view_flag").unwrap_or_default()),
+        );
+        payload.insert("calculated".to_string(), Value::Bool(calculated));
+    }
+
+    Ok(Json(ActionResult::success(payload_map)))
 }

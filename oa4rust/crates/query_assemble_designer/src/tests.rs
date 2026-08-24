@@ -418,3 +418,297 @@ fn test_u2_normalize_identifier_for_dedup() {
     );
     assert_eq!(u2_closures::normalize_identifier("ABC"), "abc");
 }
+
+
+// ──────────────────────────────────────────────────────────────────────────────
+// plan002 U2 v9 缺口闭合测试：Java 精确路径/动词注册 + 纯函数契约
+// 路由存在性口径：空 Config 池 → handler 执行到池获取失败 → 500（404 即路由缺失）
+// ──────────────────────────────────────────────────────────────────────────────
+
+#[test]
+fn test_v9_id_generate_clamps_count_and_generates_uuids() {
+    // Java ActionGet: 0 < count < 200 逐一生成，越界截断
+    let rt = tokio::runtime::Runtime::new().unwrap();
+    rt.block_on(async {
+        let resp = u2_closures::id_generate(axum::extract::Path(3i64)).await.unwrap();
+        let data = resp.0.data.unwrap();
+        assert_eq!(data["count"], 3, "count=3 应生成 3 个 id");
+        assert_eq!(data["data"].as_array().unwrap().len(), 3);
+
+        let resp = u2_closures::id_generate(axum::extract::Path(500i64)).await.unwrap();
+        assert_eq!(resp.0.data.unwrap()["count"], 199, "count>200 截断为 199");
+
+        let resp = u2_closures::id_generate(axum::extract::Path(0i64)).await.unwrap();
+        assert_eq!(resp.0.data.unwrap()["count"], 0, "count=0 不生成");
+    });
+}
+
+#[tokio::test]
+async fn test_v9_designer_search_java_path_route_exists() {
+    let pool = build_test_pool();
+    let app = crate::router(pool);
+    let response = app
+        .oneshot(
+            Request::builder()
+                .uri("/jaxrs/query/assemble/designer/designer/search")
+                .method(Method::POST)
+                .header("content-type", "application/json")
+                .body(Body::from(r#"{"key":"test"}"#))
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(response.status(), StatusCode::INTERNAL_SERVER_ERROR);
+}
+
+#[tokio::test]
+async fn test_v9_importmodel_flag_crud_routes_exist() {
+    let pool = build_test_pool();
+
+    let get = crate::router(pool.clone())
+        .oneshot(
+            Request::builder()
+                .uri("/jaxrs/query/assemble/designer/importmodel/im-flag-1")
+                .method(Method::GET)
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(get.status(), StatusCode::INTERNAL_SERVER_ERROR, "GET /importmodel/{{flag}}");
+
+    let put = crate::router(pool.clone())
+        .oneshot(
+            Request::builder()
+                .uri("/jaxrs/query/assemble/designer/importmodel/im-flag-1")
+                .method(Method::PUT)
+                .header("content-type", "application/json")
+                .body(Body::from(r#"{"name":"n1"}"#))
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(put.status(), StatusCode::INTERNAL_SERVER_ERROR, "PUT /importmodel/{{flag}}");
+
+    let del = crate::router(pool)
+        .oneshot(
+            Request::builder()
+                .uri("/jaxrs/query/assemble/designer/importmodel/im-flag-1")
+                .method(Method::DELETE)
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(del.status(), StatusCode::INTERNAL_SERVER_ERROR, "DELETE /importmodel/{{flag}}");
+}
+
+#[tokio::test]
+async fn test_v9_importmodel_permission_java_path_route_exists() {
+    let pool = build_test_pool();
+    let response = crate::router(pool)
+        .oneshot(
+            Request::builder()
+                .uri("/jaxrs/query/assemble/designer/importmodel/im-flag-1/permission")
+                .method(Method::POST)
+                .header("content-type", "application/json")
+                .body(Body::from(r#"{"permissionList":[]}"#))
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(response.status(), StatusCode::INTERNAL_SERVER_ERROR);
+}
+
+#[tokio::test]
+async fn test_v9_neural_model_reset_status_java_path_route_exists() {
+    let pool = build_test_pool();
+    let response = crate::router(pool)
+        .oneshot(
+            Request::builder()
+                .uri("/jaxrs/query/assemble/designer/neural/model/m1/reset/status")
+                .method(Method::GET)
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(response.status(), StatusCode::INTERNAL_SERVER_ERROR);
+}
+
+#[tokio::test]
+async fn test_v9_query_put_delete_java_verb_routes_exist() {
+    let pool = build_test_pool();
+
+    let put = crate::router(pool.clone())
+        .oneshot(
+            Request::builder()
+                .uri("/jaxrs/query/assemble/designer/query/q-flag-1")
+                .method(Method::PUT)
+                .header("content-type", "application/json")
+                .body(Body::from(r#"{"name":"q1"}"#))
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(put.status(), StatusCode::INTERNAL_SERVER_ERROR, "PUT /query/{{flag}} 动词补齐");
+
+    let del = crate::router(pool)
+        .oneshot(
+            Request::builder()
+                .uri("/jaxrs/query/assemble/designer/query/q-flag-1")
+                .method(Method::DELETE)
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(del.status(), StatusCode::INTERNAL_SERVER_ERROR, "DELETE /query/{{flag}} 动词补齐");
+}
+
+#[tokio::test]
+async fn test_v9_query_list_all_java_path_route_exists() {
+    let pool = build_test_pool();
+    let response = crate::router(pool)
+        .oneshot(
+            Request::builder()
+                .uri("/jaxrs/query/assemble/designer/query/list/all")
+                .method(Method::GET)
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(response.status(), StatusCode::INTERNAL_SERVER_ERROR);
+}
+
+#[tokio::test]
+async fn test_v9_stat_simulate_java_verb_route_exists() {
+    let pool = build_test_pool();
+    let response = crate::router(pool)
+        .oneshot(
+            Request::builder()
+                .uri("/jaxrs/query/assemble/designer/stat/s1/simulate")
+                .method(Method::PUT)
+                .header("content-type", "application/json")
+                .body(Body::from("{}"))
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(response.status(), StatusCode::INTERNAL_SERVER_ERROR);
+}
+
+#[tokio::test]
+async fn test_v9_statement_execute_java_path_route_exists() {
+    let pool = build_test_pool();
+    let app = crate::router(pool);
+    // Java 精确段序：statement/{{flag}}/execute/page/{{page}}/size/{{size}}
+    let response = app
+        .oneshot(
+            Request::builder()
+                .uri("/jaxrs/query/assemble/designer/statement/st-1/execute/page/1/size/20")
+                .method(Method::POST)
+                .header("content-type", "application/json")
+                .body(Body::from("{}"))
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(response.status(), StatusCode::INTERNAL_SERVER_ERROR);
+
+    let mode_response = crate::router(build_test_pool())
+        .oneshot(
+            Request::builder()
+                .uri("/jaxrs/query/assemble/designer/statement/st-1/execute/mode/count/page/1/size/20")
+                .method(Method::POST)
+                .header("content-type", "application/json")
+                .body(Body::from("{}"))
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(mode_response.status(), StatusCode::INTERNAL_SERVER_ERROR);
+}
+
+#[tokio::test]
+async fn test_v9_table_row_java_paths_route_exists() {
+    let pool = build_test_pool();
+
+    let get_row = crate::router(pool.clone())
+        .oneshot(
+            Request::builder()
+                .uri("/jaxrs/query/assemble/designer/table/tf-1/row/r-1")
+                .method(Method::GET)
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(get_row.status(), StatusCode::INTERNAL_SERVER_ERROR);
+
+    let insert = crate::router(pool.clone())
+        .oneshot(
+            Request::builder()
+                .uri("/jaxrs/query/assemble/designer/table/tf-1/row")
+                .method(Method::POST)
+                .header("content-type", "application/json")
+                .body(Body::from(r#"{"k":"v"}"#))
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(insert.status(), StatusCode::INTERNAL_SERVER_ERROR);
+
+    let count_where = crate::router(pool)
+        .oneshot(
+            Request::builder()
+                .uri("/jaxrs/query/assemble/designer/table/tf-1/row/count/where/name='x'")
+                .method(Method::GET)
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(count_where.status(), StatusCode::INTERNAL_SERVER_ERROR);
+}
+
+#[tokio::test]
+async fn test_v9_view_bundle_simulate_java_verb_routes_exist() {
+    let pool = build_test_pool();
+
+    let bundle = crate::router(pool.clone())
+        .oneshot(
+            Request::builder()
+                .uri("/jaxrs/query/assemble/designer/view/v-1/bundle")
+                .method(Method::PUT)
+                .header("content-type", "application/json")
+                .body(Body::from(r#"{"grid":[]}"#))
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(bundle.status(), StatusCode::INTERNAL_SERVER_ERROR, "PUT /view/{{id}}/bundle");
+
+    let simulate = crate::router(pool)
+        .oneshot(
+            Request::builder()
+                .uri("/jaxrs/query/assemble/designer/view/v-1/simulate")
+                .method(Method::PUT)
+                .header("content-type", "application/json")
+                .body(Body::from("{}"))
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(simulate.status(), StatusCode::INTERNAL_SERVER_ERROR, "PUT /view/{{id}}/simulate");
+}
+
+#[test]
+fn test_v9_normalize_dedup_semantics_for_new_create_paths() {
+    // v9 新增 create/edit 均以 normalize_identifier（trim+小写）做归一化查重：
+    // 大小写与首尾空白差异必须视为同名。
+    let a = u2_closures::normalize_identifier("  MyQuery ");
+    let b = u2_closures::normalize_identifier("myquery");
+    assert_eq!(a, b, "归一化后必须等价，查重才能命中");
+}
