@@ -3684,6 +3684,7 @@ dependencies = [
  "organization_assemble_personal",
  "organization_core_entity",
  "organization_core_express",
+ "parity",
  "personal",
  "personal_extend",
  "portal",
