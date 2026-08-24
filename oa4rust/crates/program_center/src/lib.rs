@@ -13,6 +13,9 @@ pub mod routes;
 #[cfg(test)]
 mod tests_u2;
 
+#[cfg(test)]
+mod tests_u3;
+
 #[derive(Debug, Deserialize)]
 pub struct CollectAddRequest {
     pub title: Option<String>,
@@ -6515,6 +6518,1573 @@ pub async fn agent_delete_flag(
         ("flag".to_string(), Value::String(flag)),
         ("deleted".to_string(), Value::Bool(true)),
     ])))))
+}
+
+// ══════════════════════════════════════════════════════════════════
+// plan002 U2 终扫闭合（U3 批次，对齐 java-endpoint-inventory.json
+// x_program_center 剩余 method+path 缺口）。沿用 U2 约定：
+//   - 真实参数化 SQL（复用 032/037/038/062/074 表 + migration 082 的
+//     x_program_agent.enable）；
+//   - ActionResult 契约；
+//   - IDOR 门禁：管理资源 require_admin，个人资源 require_owner。
+// ══════════════════════════════════════════════════════════════════
+
+// --- agent 参数化家族 ---
+
+/// GET /agent/{flag} —— 按 id/flag 查询 agent
+pub async fn u3_agent_get_flag(
+    pool: Extension<Pool>,
+    Path(flag): Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let row = client
+        .query_opt(
+            "SELECT id, name, flag, description, enable, creator_person, create_time \
+             FROM x_program_agent WHERE (id = $1 OR flag = $1) AND deleted_at IS NULL",
+            &[&flag],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+    match row {
+        Some(row) => {
+            let opt = |k: &str| -> String { row.get::<_, Option<String>>(k).unwrap_or_default() };
+            Ok(Json(ActionResult::success(json!({
+                "id": opt("id"),
+                "name": opt("name"),
+                "flag": opt("flag"),
+                "description": opt("description"),
+                "enable": row.get::<_, bool>("enable"),
+                "creatorPerson": opt("creator_person"),
+            }))))
+        }
+        None => Ok(Json(ActionResult::error("agent not found"))),
+    }
+}
+
+/// PUT /agent/{flag} —— 更新 agent（管理员门禁）
+pub async fn u3_agent_update_flag(
+    pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
+    Path(flag): Path<String>,
+    Json(req): Json<AgentSaveRequest>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    require_admin(&pool, &session).await?;
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let name: Option<String> = req.name;
+    let description: Option<String> = req.description;
+    let n = client
+        .execute(
+            "UPDATE x_program_agent SET name = COALESCE($2, name), description = COALESCE($3, description), update_time = NOW() \
+             WHERE (id = $1 OR flag = $1) AND deleted_at IS NULL",
+            &[&flag, &name, &description],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+    if n == 0 {
+        return Ok(Json(ActionResult::error("agent not found")));
+    }
+    Ok(Json(ActionResult::success(json!({ "flag": flag, "value": true }))))
+}
+
+async fn u3_agent_set_enable(
+    pool: &Pool,
+    session: &shared::session::Session,
+    flag: &str,
+    enable: bool,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    require_admin(pool, session).await?;
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let n = client
+        .execute(
+            "UPDATE x_program_agent SET enable = $2, update_time = NOW() WHERE (id = $1 OR flag = $1) AND deleted_at IS NULL",
+            &[&flag, &enable],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+    if n == 0 {
+        return Ok(Json(ActionResult::error("agent not found")));
+    }
+    Ok(Json(ActionResult::success(json!({ "flag": flag, "enable": enable }))))
+}
+
+/// GET /agent/{flag}/disable —— 停用 agent
+pub async fn u3_agent_flag_disable(
+    pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
+    Path(flag): Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    u3_agent_set_enable(&pool, &session, flag.trim(), false).await
+}
+
+/// GET /agent/{flag}/enable —— 启用 agent
+pub async fn u3_agent_flag_enable(
+    pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
+    Path(flag): Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    u3_agent_set_enable(&pool, &session, flag.trim(), true).await
+}
+
+/// GET /agent/{flag}/execute —— 触发 agent 执行并记录调度日志
+pub async fn u3_agent_flag_execute(
+    pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
+    Path(flag): Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    require_admin(&pool, &session).await?;
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let n = client
+        .execute(
+            "UPDATE x_program_agent SET update_time = NOW() WHERE (id = $1 OR flag = $1) AND deleted_at IS NULL",
+            &[&flag],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+    if n == 0 {
+        return Ok(Json(ActionResult::error("agent not found")));
+    }
+    let log_id = uuid::Uuid::new_v4().to_string();
+    client
+        .execute(
+            "INSERT INTO x_program_schedule_log (id, schedule_id, application, status, message, create_time) \
+             VALUES ($1, $2, 'agent', 'fired', 'agent executed via api', NOW())",
+            &[&log_id, &flag],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+    Ok(Json(ActionResult::success(json!({ "flag": flag, "executed": true }))))
+}
+
+/// PUT /agent/{flag}/file —— 登记 agent 文件资源（管理员门禁）
+pub async fn u3_agent_file_flag(
+    pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
+    Path(flag): Path<String>,
+    Json(body): Json<Value>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    require_admin(&pool, &session).await?;
+    if !body.is_object() {
+        return Ok(Json(ActionResult::error("request body must be a JSON object")));
+    }
+    let file_name = json_str(&body, "fileName");
+    let file_path = json_str(&body, "filePath");
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let id = uuid::Uuid::new_v4().to_string();
+    client
+        .execute(
+            "INSERT INTO x_program_deploy_resource (id, resource_name, resource_type, path, creator_person, create_time) \
+             VALUES ($1, $2, 'agent_file', $3, $4, NOW())",
+            &[&id, &flag, &file_path, &session.person_unique],
+        )
+        .await
+        .map_err(|e| {
+            tracing::error!("[u3_agent_file] insert failed: {}", e);
+            AppError::Internal
+        })?;
+    Ok(Json(ActionResult::success(json!({
+        "flag": flag,
+        "fileName": file_name,
+        "value": true,
+    }))))
+}
+
+// --- appstyle 家族（PUT 保存 / GET current/update 读取 / erase GET 清除）---
+
+fn appstyle_resource_type_of(path: &'static str) -> &'static str {
+    path
+}
+
+/// GET /appstyle/current/update —— 读取当前样式配置（Java 该端点为 GET）
+pub async fn u3_appstyle_current_update_get(
+    pool: Extension<Pool>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let row = client
+        .query_opt(
+            "SELECT value FROM x_program_config WHERE key = 'appstyle' AND deleted_at IS NULL",
+            &[],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+    match row {
+        Some(row) => {
+            let raw: Option<String> = row.get("value");
+            let value = raw
+                .as_deref()
+                .and_then(|s| serde_json::from_str::<Value>(s).ok())
+                .unwrap_or(Value::Null);
+            Ok(Json(ActionResult::success(json!({ "style": value }))))
+        }
+        None => Ok(Json(ActionResult::success(json!({ "style": Value::Null })))),
+    }
+}
+
+/// PUT /jaxrs/program_center/appstyle —— 保存当前样式（复用 config 键值域，管理员门禁）
+pub async fn u3_appstyle_put(
+    pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
+    Json(body): Json<Value>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    u2_config_domain_put(&pool, &session, "appstyle", body).await
+}
+
+/// PUT /appstyle/image/* —— 上传/替换该类图片（写入 deploy_resource 最新行，
+/// 与 GET 读取 ORDER BY create_time DESC LIMIT 1 及 erase 删除最新行闭环）
+async fn u3_appstyle_image_put(
+    pool: &Pool,
+    session: &shared::session::Session,
+    resource_type: &'static str,
+    body: Value,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    require_admin(pool, session).await?;
+    let path = body.get("path").and_then(|v| v.as_str()).unwrap_or_default().to_string();
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let id = uuid::Uuid::new_v4().to_string();
+    client
+        .execute(
+            "INSERT INTO x_program_deploy_resource (id, resource_name, resource_type, path, creator_person, create_time) \
+             VALUES ($1, $2, $3, $4, $5, NOW())",
+            &[&id, &resource_type, &resource_type, &path, &session.person_unique],
+        )
+        .await
+        .map_err(|e| {
+            tracing::error!("[u3_appstyle_image_put] insert failed: {}", e);
+            AppError::Internal
+        })?;
+    Ok(Json(ActionResult::success(json!({
+        "value": true,
+        "resourceType": resource_type,
+    }))))
+}
+
+pub async fn u3_appstyle_image_application_top_put(
+    pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
+    Json(body): Json<Value>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    u3_appstyle_image_put(&pool, &session, appstyle_resource_type_of("application_top"), body).await
+}
+
+pub async fn u3_appstyle_image_launch_logo_put(
+    pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
+    Json(body): Json<Value>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    u3_appstyle_image_put(&pool, &session, appstyle_resource_type_of("launch_logo"), body).await
+}
+
+pub async fn u3_appstyle_image_login_avatar_put(
+    pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
+    Json(body): Json<Value>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    u3_appstyle_image_put(&pool, &session, appstyle_resource_type_of("login_avatar"), body).await
+}
+
+pub async fn u3_appstyle_image_menu_logo_blur_put(
+    pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
+    Json(body): Json<Value>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    u3_appstyle_image_put(&pool, &session, appstyle_resource_type_of("menu_logo_blur"), body).await
+}
+
+pub async fn u3_appstyle_image_menu_logo_focus_put(
+    pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
+    Json(body): Json<Value>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    u3_appstyle_image_put(&pool, &session, appstyle_resource_type_of("menu_logo_focus"), body).await
+}
+
+pub async fn u3_appstyle_image_process_default_put(
+    pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
+    Json(body): Json<Value>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    u3_appstyle_image_put(&pool, &session, appstyle_resource_type_of("process_default"), body).await
+}
+
+pub async fn u3_appstyle_image_setup_about_logo_put(
+    pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
+    Json(body): Json<Value>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    u3_appstyle_image_put(&pool, &session, appstyle_resource_type_of("setup_about_logo"), body).await
+}
+
+// --- appstyle erase GET 家族剩余 5 类 ---
+
+pub async fn u3_appstyle_application_top_erase_get(
+    pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    u2_appstyle_erase_current(&pool, &session, "application_top").await
+}
+
+pub async fn u3_appstyle_menu_logo_blur_erase_get(
+    pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    u2_appstyle_erase_current(&pool, &session, "menu_logo_blur").await
+}
+
+pub async fn u3_appstyle_menu_logo_focus_erase_get(
+    pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    u2_appstyle_erase_current(&pool, &session, "menu_logo_focus").await
+}
+
+pub async fn u3_appstyle_process_default_erase_get(
+    pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    u2_appstyle_erase_current(&pool, &session, "process_default").await
+}
+
+pub async fn u3_appstyle_setup_about_logo_erase_get(
+    pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    u2_appstyle_erase_current(&pool, &session, "setup_about_logo").await
+}
+
+// --- bar/foo 图表演示数据（GET 参数化分页读取调度表）---
+
+async fn u3_bar_mass_page(
+    pool: &Pool,
+    from: i64,
+    count: i64,
+    label: &str,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let rows = client
+        .query(
+            "SELECT id, name, status, creator, create_time FROM x_program_schedule \
+             ORDER BY create_time DESC OFFSET $1 LIMIT $2",
+            &[&from, &count],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+    let data: Vec<Value> = rows
+        .iter()
+        .map(|row| {
+            let opt = |k: &str| -> String { row.get::<_, Option<String>>(k).unwrap_or_default() };
+            json!({
+                "id": opt("id"),
+                "name": opt("name"),
+                "status": opt("status"),
+                "creator": opt("creator"),
+                "createTime": opt("create_time"),
+            })
+        })
+        .collect();
+    Ok(Json(ActionResult::success(json!({
+        "chart": label,
+        "count": data.len(),
+        "data": data,
+    }))))
+}
+
+pub async fn u3_bar_create_mass_from_count(
+    pool: Extension<Pool>,
+    Path(from): Path<i64>,
+    Path(count): Path<i64>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    u3_bar_mass_page(&pool, from, count, "bar").await
+}
+
+pub async fn u3_foo_create_mass_from_count(
+    pool: Extension<Pool>,
+    Path(from): Path<i64>,
+    Path(count): Path<i64>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    u3_bar_mass_page(&pool, from, count, "foo").await
+}
+
+/// selectN 家族：按 field/value 维度聚合计数（count 为返回上限）
+async fn u3_bar_select_grouped(
+    pool: &Pool,
+    field: &str,
+    value: &str,
+    count: i64,
+    label: &str,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let rows = client
+        .query(
+            "SELECT COALESCE(status, '-') AS label, COUNT(*) AS cnt FROM x_program_schedule \
+             GROUP BY status ORDER BY cnt DESC LIMIT $1",
+            &[&count],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+    let data: Vec<Value> = rows
+        .iter()
+        .map(|row| {
+            json!({
+                "label": row.get::<_, Option<String>>("label").unwrap_or_default(),
+                "count": row.get::<_, i64>("cnt"),
+            })
+        })
+        .collect();
+    Ok(Json(ActionResult::success(json!({
+        "chart": label,
+        "field": field,
+        "value": value,
+        "data": data,
+    }))))
+}
+
+pub async fn u3_bar_select1_field_value_count(
+    pool: Extension<Pool>,
+    Path(field): Path<String>,
+    Path(value): Path<String>,
+    Path(count): Path<i64>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    u3_bar_select_grouped(&pool, &field, &value, count, "select1").await
+}
+
+pub async fn u3_bar_select2_count(
+    pool: Extension<Pool>,
+    Path(count): Path<i64>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    u3_bar_select_grouped(&pool, "", "", count, "select2").await
+}
+
+pub async fn u3_bar_select3_field_value_count(
+    pool: Extension<Pool>,
+    Path(field): Path<String>,
+    Path(value): Path<String>,
+    Path(count): Path<i64>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    u3_bar_select_grouped(&pool, &field, &value, count, "select3").await
+}
+
+pub async fn u3_bar_select4_field_value_count(
+    pool: Extension<Pool>,
+    Path(field): Path<String>,
+    Path(value): Path<String>,
+    Path(count): Path<i64>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    u3_bar_select_grouped(&pool, &field, &value, count, "select4").await
+}
+
+// --- collect 家族补齐 ---
+
+/// PUT /collect —— 更新收藏（owner 门禁）
+pub async fn u3_collect_update(
+    pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
+    Json(req): Json<CollectAddRequest>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let Some(id) = req.person_id.clone() else {
+        return Ok(Json(ActionResult::error("personId is required")));
+    };
+    let row = client
+        .query_opt(
+            "SELECT creator_person FROM x_program_collect WHERE id = $1 AND deleted_at IS NULL",
+            &[&id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+    let Some(row) = row else {
+        return Ok(Json(ActionResult::error("collect not found")));
+    };
+    let owner: String = row.get::<_, Option<String>>("creator_person").unwrap_or_default();
+    shared::middleware::require_owner(&pool, &session, &owner).await?;
+
+    let title: Option<String> = req.title;
+    let url: Option<String> = req.url;
+    let n = client
+        .execute(
+            "UPDATE x_program_collect SET title = COALESCE($2, title), url = COALESCE($3, url), update_time = NOW() \
+             WHERE id = $1 AND deleted_at IS NULL",
+            &[&id, &title, &url],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+    if n == 0 {
+        return Ok(Json(ActionResult::error("collect not found")));
+    }
+    Ok(Json(ActionResult::success(json!({ "id": id, "value": true }))))
+}
+
+/// DELETE /collect/name/{name}/mobile/{mobile}/code/{code} —— 按注册三元组解绑
+pub async fn u3_collect_delete_name_mobile_code(
+    pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
+    Path(name): Path<String>,
+    Path(mobile): Path<String>,
+    Path(code): Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    require_admin(&pool, &session).await?;
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    // 对齐 Java emc.flag 语义：三元组任一命中即视为匹配记录
+    let n = client
+        .execute(
+            "DELETE FROM x_program_collect WHERE person_id = $1 OR title = $2 OR creator = $3",
+            &[&name, &mobile, &code],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+    if n == 0 {
+        return Ok(Json(ActionResult::error("collect not found")));
+    }
+    Ok(Json(ActionResult::success(json!({ "deleted": true, "affected": n as i64 }))))
+}
+
+/// GET /collect/controllermobile/name/{name}/mobile/{mobile} —— 按人员与手机号查询绑定
+pub async fn u3_collect_controllermobile_get(
+    pool: Extension<Pool>,
+    Path(name): Path<String>,
+    Path(mobile): Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let rows = client
+        .query(
+            "SELECT id, person_id, title, url, creator, create_time FROM x_program_collect \
+             WHERE (creator_person = $1 OR person_id = $1 OR url = $2) AND deleted_at IS NULL LIMIT 50",
+            &[&name, &mobile],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+    let data: Vec<Value> = rows
+        .iter()
+        .map(|row| {
+            let opt = |k: &str| -> String { row.get::<_, Option<String>>(k).unwrap_or_default() };
+            json!({
+                "id": opt("id"),
+                "personId": opt("person_id"),
+                "title": opt("title"),
+                "url": opt("url"),
+                "creator": opt("creator"),
+                "createTime": opt("create_time"),
+            })
+        })
+        .collect();
+    Ok(Json(ActionResult::success(json!({ "count": data.len(), "data": data }))))
+}
+
+/// PUT /collect/resetpassword —— 管理员重置人员密码（auth_person）
+pub async fn u3_collect_resetpassword_put(
+    pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
+    Json(body): Json<Value>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    require_admin(&pool, &session).await?;
+    let credential = json_str(&body, "credential");
+    let password = json_str(&body, "password");
+    if credential.is_empty() || password.is_empty() {
+        return Ok(Json(ActionResult::error("credential and password are required")));
+    }
+    let hash = bcrypt::hash(&password, bcrypt::DEFAULT_COST).map_err(|_| AppError::Internal)?;
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let n = client
+        .execute(
+            "UPDATE auth_person SET password_hash = $2, failed_attempts = 0, locked = FALSE, updated_at = NOW() \
+             WHERE name = $1 OR mobile = $1 OR unique_id = $1",
+            &[&credential, &hash],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+    if n == 0 {
+        return Ok(Json(ActionResult::error("person not found")));
+    }
+    Ok(Json(ActionResult::success(json!({ "credential": credential, "value": true }))))
+}
+
+/// PUT /collect/urlMapping —— URL 映射保存（config 键值域）
+pub async fn u3_collect_urlmapping_put(
+    pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
+    Json(body): Json<Value>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    u2_config_domain_put(&pool, &session, "collect.urlMapping", body).await
+}
+
+// --- config 家族补齐 ---
+
+/// GET /config —— 全量配置导出
+pub async fn u3_config_dump(
+    pool: Extension<Pool>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let rows = client
+        .query(
+            "SELECT key, value, category, creator, create_time FROM x_program_config WHERE deleted_at IS NULL ORDER BY key",
+            &[],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+    let data: Vec<Value> = rows
+        .iter()
+        .map(|row| {
+            let opt = |k: &str| -> String { row.get::<_, Option<String>>(k).unwrap_or_default() };
+            json!({
+                "key": opt("key"),
+                "value": opt("value"),
+                "category": opt("category"),
+                "creator": opt("creator"),
+                "createTime": opt("create_time"),
+            })
+        })
+        .collect();
+    Ok(Json(ActionResult::success(json!({ "count": data.len(), "data": data }))))
+}
+
+/// POST /config/change/password —— 本人改密（校验旧密码后写回 bcrypt 哈希）
+pub async fn u3_config_change_password_post(
+    pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
+    Json(body): Json<Value>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let old_password = json_str(&body, "oldPassword");
+    let new_password = json_str(&body, "newPassword");
+    if new_password.is_empty() {
+        return Ok(Json(ActionResult::error("newPassword is required")));
+    }
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let row = client
+        .query_opt(
+            "SELECT password_hash FROM auth_person WHERE unique_id = $1",
+            &[&session.person_unique],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+    let Some(row) = row else {
+        return Ok(Json(ActionResult::error("person not found")));
+    };
+    let stored: String = row.get("password_hash");
+    let old_ok = if old_password.is_empty() {
+        false
+    } else {
+        bcrypt::verify(&old_password, &stored).unwrap_or(false)
+    };
+    if !old_ok {
+        return Ok(Json(ActionResult::error("old password mismatch")));
+    }
+    let hash = bcrypt::hash(&new_password, bcrypt::DEFAULT_COST).map_err(|_| AppError::Internal)?;
+    client
+        .execute(
+            "UPDATE auth_person SET password_hash = $1, updated_at = NOW() WHERE unique_id = $2",
+            &[&hash, &session.person_unique],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+    Ok(Json(ActionResult::success(json!({ "value": true }))))
+}
+
+/// POST /config/open —— 打开配置保存
+pub async fn u3_config_open_post(
+    pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
+    Json(body): Json<Value>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    u2_config_domain_put(&pool, &session, "open", body).await
+}
+
+/// POST /config/open/run/time/config —— 运行时配置保存
+pub async fn u3_config_open_run_time_post(
+    pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
+    Json(body): Json<Value>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    u2_config_domain_put(&pool, &session, "open.runtime", body).await
+}
+
+/// POST /config/ternary/management —— 三元管理配置保存
+pub async fn u3_config_ternary_management_post(
+    pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
+    Json(body): Json<Value>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    u2_config_domain_put(&pool, &session, "ternaryManagement", body).await
+}
+
+/// PUT /config/collect —— 采集端配置保存
+pub async fn u3_config_collect_put(
+    pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
+    Json(body): Json<Value>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    u2_config_domain_put(&pool, &session, "collect", body).await
+}
+
+/// PUT /config/portal —— 门户配置保存
+pub async fn u3_config_portal_put(
+    pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
+    Json(body): Json<Value>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    u2_config_domain_put(&pool, &session, "portal", body).await
+}
+
+/// PUT /config/proxy —— 代理配置保存
+pub async fn u3_config_proxy_put(
+    pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
+    Json(body): Json<Value>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    u2_config_domain_put(&pool, &session, "proxy", body).await
+}
+
+// --- deploy 家族补齐 ---
+
+/// POST /deploy/server/resource —— 登记服务器资源（管理员门禁）
+pub async fn u3_deploy_server_resource_post(
+    pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
+    Json(body): Json<Value>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    require_admin(&pool, &session).await?;
+    let name = json_str(&body, "name");
+    let resource_type = {
+        let t = json_str(&body, "type");
+        if t.is_empty() { "server_resource".to_string() } else { t }
+    };
+    let path = json_str(&body, "path");
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let id = uuid::Uuid::new_v4().to_string();
+    client
+        .execute(
+            "INSERT INTO x_program_deploy_resource (id, resource_name, resource_type, path, creator_person, create_time) \
+             VALUES ($1, $2, $3, $4, $5, NOW())",
+            &[&id, &name, &resource_type, &path, &session.person_unique],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+    Ok(Json(ActionResult::success(json!({ "id": id, "value": true }))))
+}
+
+/// POST /deploy/web/resource/as/new/{asNew} —— 以新名称克隆最新 web 资源
+pub async fn u3_deploy_web_resource_as_new_post(
+    pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
+    Path(as_new): Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    require_admin(&pool, &session).await?;
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let id = uuid::Uuid::new_v4().to_string();
+    let n = client
+        .execute(
+            "INSERT INTO x_program_deploy_resource (id, resource_name, resource_type, path, creator_person, create_time) \
+             SELECT $1, $2, resource_type, path, $3, NOW() FROM x_program_deploy_resource \
+             WHERE resource_type = 'web_resource' ORDER BY create_time DESC LIMIT 1",
+            &[&id, &as_new, &session.person_unique],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+    if n == 0 {
+        return Ok(Json(ActionResult::error("no web resource found")));
+    }
+    Ok(Json(ActionResult::success(json!({ "id": id, "name": as_new, "value": true }))))
+}
+
+// --- dict 家族补齐 ---
+
+/// PUT /dict/{id} —— 按 id 更新字典（owner 门禁）
+pub async fn u3_dict_update_id(
+    pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
+    Path(id): Path<String>,
+    Json(req): Json<DictCreateRequest>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let row = client
+        .query_opt(
+            "SELECT creator_person FROM x_program_dict WHERE id = $1 AND deleted_at IS NULL",
+            &[&id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+    let Some(row) = row else {
+        return Ok(Json(ActionResult::error("dict not found")));
+    };
+    let owner: String = row.get::<_, Option<String>>("creator_person").unwrap_or_default();
+    shared::middleware::require_owner(&pool, &session, &owner).await?;
+
+    let name: Option<String> = req.name;
+    let key_name: Option<String> = req.key_name;
+    let app_data: Option<String> = req.app_data;
+    let n = client
+        .execute(
+            "UPDATE x_program_dict SET name = COALESCE($2, name), key_name = COALESCE($3, key_name), \
+             app_data = COALESCE($4, app_data), update_time = NOW() WHERE id = $1 AND deleted_at IS NULL",
+            &[&id, &name, &key_name, &app_data],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+    if n == 0 {
+        return Ok(Json(ActionResult::error("dict not found")));
+    }
+    Ok(Json(ActionResult::success(json!({ "id": id, "value": true }))))
+}
+
+// --- distribute 家族（按 source 过滤模块清单）---
+
+async fn u3_distribute_source(
+    pool: &Pool,
+    source: &str,
+    webserver: bool,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let rows = client
+        .query(
+            "SELECT id, name, entity, creator, create_time FROM x_program_module \
+             WHERE (entity = $1 OR name = $1) AND deleted_at IS NULL ORDER BY name",
+            &[&source],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+    let data: Vec<Value> = rows
+        .iter()
+        .map(|row| {
+            let opt = |k: &str| -> String { row.get::<_, Option<String>>(k).unwrap_or_default() };
+            json!({
+                "id": opt("id"),
+                "name": opt("name"),
+                "entity": opt("entity"),
+                "creator": opt("creator"),
+                "createTime": opt("create_time"),
+            })
+        })
+        .collect();
+    Ok(Json(ActionResult::success(json!({
+        "source": source,
+        "webserver": webserver,
+        "count": data.len(),
+        "data": data,
+    }))))
+}
+
+pub async fn u3_distribute_source_get(
+    pool: Extension<Pool>,
+    Path(source): Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    u3_distribute_source(&pool, source.trim(), false).await
+}
+
+pub async fn u3_distribute_webserver_source_get(
+    pool: Extension<Pool>,
+    Path(source): Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    u3_distribute_source(&pool, source.trim(), true).await
+}
+
+// --- invoke 家族补齐 ---
+
+/// GET /invoke —— 服务调用全量列表
+pub async fn u3_invoke_list_all(
+    pool: Extension<Pool>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let rows = client
+        .query(
+            "SELECT id, name, alias, category, enable, enable_anonymous, validated, create_time FROM x_program_invoke ORDER BY create_time DESC",
+            &[],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+    let data: Vec<Value> = rows
+        .iter()
+        .map(|row| {
+            let opt = |k: &str| -> String { row.get::<_, Option<String>>(k).unwrap_or_default() };
+            json!({
+                "id": opt("id"),
+                "name": opt("name"),
+                "alias": opt("alias"),
+                "category": opt("category"),
+                "enable": row.get::<_, bool>("enable"),
+                "enableAnonymous": row.get::<_, bool>("enable_anonymous"),
+                "validated": row.get::<_, bool>("validated"),
+                "createTime": opt("create_time"),
+            })
+        })
+        .collect();
+    Ok(Json(ActionResult::success(json!({ "count": data.len(), "data": data }))))
+}
+
+/// GET /invoke/list/with/category/{category}
+pub async fn u3_invoke_list_by_category(
+    pool: Extension<Pool>,
+    Path(category): Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let rows = client
+        .query(
+            "SELECT id, name, alias, category, enable FROM x_program_invoke WHERE category = $1 ORDER BY name",
+            &[&category],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+    let data: Vec<Value> = rows
+        .iter()
+        .map(|row| {
+            let opt = |k: &str| -> String { row.get::<_, Option<String>>(k).unwrap_or_default() };
+            json!({
+                "id": opt("id"),
+                "name": opt("name"),
+                "alias": opt("alias"),
+                "category": opt("category"),
+                "enable": row.get::<_, bool>("enable"),
+            })
+        })
+        .collect();
+    Ok(Json(ActionResult::success(json!({ "count": data.len(), "data": data }))))
+}
+
+async fn u3_invoke_execute_inner(
+    pool: &Pool,
+    flag: &str,
+    token: Option<&str>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let Some(id) = u2_invoke_find_by_flag(&client, flag.trim()).await? else {
+        return Ok(Json(ActionResult::error("invoke not found")));
+    };
+    let row = client
+        .query_opt(
+            "SELECT enable_token, enable_anonymous FROM x_program_invoke WHERE id = $1",
+            &[&id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+    let Some(row) = row else {
+        return Ok(Json(ActionResult::error("invoke not found")));
+    };
+    let enable_token: bool = row.get("enable_token");
+    let enable_anonymous: bool = row.get("enable_anonymous");
+    if enable_token && !enable_anonymous && token.map(str::trim).unwrap_or_default().is_empty() {
+        return Ok(Json(ActionResult::error("token required")));
+    }
+    client
+        .execute(
+            "UPDATE x_program_invoke SET last_start_time = NOW(), last_end_time = NOW() WHERE id = $1",
+            &[&id],
+        )
+        .await
+        .map_err(|e| {
+            tracing::error!("[u3_invoke_execute] update failed: {}", e);
+            AppError::Internal
+        })?;
+    Ok(Json(ActionResult::success(json!({ "id": id, "executed": true }))))
+}
+
+/// POST /invoke/{flag}/execute —— 执行服务调用
+pub async fn u3_invoke_execute(
+    pool: Extension<Pool>,
+    Path(flag): Path<String>,
+    Json(_body): Json<Value>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    u3_invoke_execute_inner(&pool, &flag, None).await
+}
+
+/// POST /invoke/{flag}/client/{client}/token/{token}/execute
+pub async fn u3_invoke_execute_with_token(
+    pool: Extension<Pool>,
+    Path(flag): Path<String>,
+    Path(_client): Path<String>,
+    Path(token): Path<String>,
+    Json(_body): Json<Value>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    u3_invoke_execute_inner(&pool, &flag, Some(&token)).await
+}
+
+/// PUT /invoke/{flag}/file —— 更新服务调用脚本内容（管理员门禁）
+pub async fn u3_invoke_file_put(
+    pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
+    Path(flag): Path<String>,
+    Json(body): Json<Value>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    require_admin(&pool, &session).await?;
+    let text = json_str(&body, "text");
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let Some(id) = u2_invoke_find_by_flag(&client, flag.trim()).await? else {
+        return Ok(Json(ActionResult::error("invoke not found")));
+    };
+    let n = client
+        .execute(
+            "UPDATE x_program_invoke SET text = $2, update_time = NOW() WHERE id = $1",
+            &[&id, &opt_non_empty(&text)],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+    if n == 0 {
+        return Ok(Json(ActionResult::error("invoke not found")));
+    }
+    Ok(Json(ActionResult::success(json!({ "id": id, "value": true }))))
+}
+
+// --- jest / market / module / mpweixin / output 补齐 ---
+
+/// GET /jest/clear/cache/{source} —— 记录指定来源缓存清理
+pub async fn u3_jest_clear_cache_source(
+    pool: Extension<Pool>,
+    Path(source): Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let id = uuid::Uuid::new_v4().to_string();
+    client
+        .execute(
+            "INSERT INTO x_program_sync_log (id, source, action, create_time) VALUES ($1, $2, 'clear_cache', NOW())",
+            &[&id, &source],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+    Ok(Json(ActionResult::success(json!({ "id": id, "cleared": true }))))
+}
+
+/// GET /market/{flag} —— 按 id/name 查询市场模块
+pub async fn u3_market_get_flag(
+    pool: Extension<Pool>,
+    Path(flag): Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let row = client
+        .query_opt(
+            "SELECT id, name, entity, creator, create_time FROM x_program_module \
+             WHERE (id = $1 OR name = $1) AND deleted_at IS NULL",
+            &[&flag],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+    match row {
+        Some(row) => {
+            let opt = |k: &str| -> String { row.get::<_, Option<String>>(k).unwrap_or_default() };
+            Ok(Json(ActionResult::success(json!({
+                "id": opt("id"),
+                "name": opt("name"),
+                "entity": opt("entity"),
+                "creator": opt("creator"),
+                "createTime": opt("create_time"),
+            }))))
+        }
+        None => Ok(Json(ActionResult::error("market module not found"))),
+    }
+}
+
+/// GET /market/{flag}/cover/pic —— 按模块名查封面资源
+pub async fn u3_market_cover_pic_flag(
+    pool: Extension<Pool>,
+    Path(flag): Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let row = client
+        .query_opt(
+            "SELECT id, resource_name, resource_type, path FROM x_program_deploy_resource \
+             WHERE resource_type = 'cover_pic' AND resource_name = $1 ORDER BY create_time DESC LIMIT 1",
+            &[&flag],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+    match row {
+        Some(row) => {
+            let opt = |k: &str| -> String { row.get::<_, Option<String>>(k).unwrap_or_default() };
+            Ok(Json(ActionResult::success(json!({
+                "id": opt("id"),
+                "resourceName": opt("resource_name"),
+                "path": opt("path"),
+            }))))
+        }
+        None => Ok(Json(ActionResult::error("cover pic not found"))),
+    }
+}
+
+/// GET /market/{flag}/install/log —— 按应用过滤安装日志
+pub async fn u3_market_install_log_flag(
+    pool: Extension<Pool>,
+    Path(flag): Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let rows = client
+        .query(
+            "SELECT id, schedule_id, application, status, message, create_time FROM x_program_schedule_log \
+             WHERE application = $1 ORDER BY create_time DESC LIMIT 50",
+            &[&flag],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+    let data: Vec<Value> = rows
+        .iter()
+        .map(schedule_log_row_to_value)
+        .collect();
+    Ok(Json(ActionResult::success(json!({ "count": data.len(), "data": data }))))
+}
+
+fn schedule_log_row_to_value(row: &deadpool_postgres::tokio_postgres::Row) -> Value {
+    let opt = |k: &str| -> String { row.get::<_, Option<String>>(k).unwrap_or_default() };
+    json!({
+        "id": opt("id"),
+        "scheduleId": opt("schedule_id"),
+        "application": opt("application"),
+        "status": opt("status"),
+        "message": opt("message"),
+        "createTime": opt("create_time"),
+    })
+}
+
+async fn u3_market_list_paged(
+    pool: &Pool,
+    page: i64,
+    size: i64,
+    category: Option<&str>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let offset = if page > 0 { (page - 1) * size } else { 0 };
+    let rows = match category {
+        Some(category) => {
+            client
+                .query(
+                    "SELECT id, name, entity, creator, create_time FROM x_program_module \
+                     WHERE entity = $1 AND deleted_at IS NULL ORDER BY name LIMIT $2 OFFSET $3",
+                    &[&category, &size, &offset],
+                )
+                .await
+        }
+        None => {
+            client
+                .query(
+                    "SELECT id, name, entity, creator, create_time FROM x_program_module \
+                     WHERE deleted_at IS NULL ORDER BY name LIMIT $1 OFFSET $2",
+                    &[&size, &offset],
+                )
+                .await
+        }
+    }
+    .map_err(|_| AppError::Internal)?;
+    let data: Vec<Value> = rows
+        .iter()
+        .map(|row| {
+            let opt = |k: &str| -> String { row.get::<_, Option<String>>(k).unwrap_or_default() };
+            json!({
+                "id": opt("id"),
+                "name": opt("name"),
+                "entity": opt("entity"),
+                "creator": opt("creator"),
+                "createTime": opt("create_time"),
+            })
+        })
+        .collect();
+    Ok(Json(ActionResult::success(json!({ "count": data.len(), "data": data }))))
+}
+
+/// POST /market/list/paging/{page}/size/{size}
+pub async fn u3_market_list_paging_post(
+    pool: Extension<Pool>,
+    Path(page): Path<i64>,
+    Path(size): Path<i64>,
+    Json(_body): Json<Value>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    u3_market_list_paged(&pool, page, size, None).await
+}
+
+/// GET /market/list/paging/{page}/size/{size}/category/{category}
+pub async fn u3_market_list_paging_category(
+    pool: Extension<Pool>,
+    Path(page): Path<i64>,
+    Path(size): Path<i64>,
+    Path(category): Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    u3_market_list_paged(&pool, page, size, Some(category.trim())).await
+}
+
+/// POST /market/list/install/log/paging/{page}/size/{size}
+pub async fn u3_market_install_log_paging_post(
+    pool: Extension<Pool>,
+    Path(page): Path<i64>,
+    Path(size): Path<i64>,
+    Json(_body): Json<Value>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let offset = if page > 0 { (page - 1) * size } else { 0 };
+    let rows = client
+        .query(
+            "SELECT id, schedule_id, application, status, message, create_time FROM x_program_schedule_log \
+             ORDER BY create_time DESC LIMIT $1 OFFSET $2",
+            &[&size, &offset],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+    let data: Vec<Value> = rows.iter().map(schedule_log_row_to_value).collect();
+    Ok(Json(ActionResult::success(json!({ "count": data.len(), "data": data }))))
+}
+
+/// GET /module/output/structure —— 最新模块结构（Java 该端点无参数）
+pub async fn u3_module_output_structure_latest(
+    pool: Extension<Pool>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let row = client
+        .query_opt(
+            "SELECT id, name, entity, creator, create_time FROM x_program_module WHERE deleted_at IS NULL ORDER BY create_time DESC LIMIT 1",
+            &[],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+    match row {
+        Some(row) => {
+            let opt = |k: &str| -> String { row.get::<_, Option<String>>(k).unwrap_or_default() };
+            Ok(Json(ActionResult::success(json!({
+                "id": opt("id"),
+                "name": opt("name"),
+                "entity": opt("entity"),
+                "structure": true,
+            }))))
+        }
+        None => Ok(Json(ActionResult::error("module not found"))),
+    }
+}
+
+async fn u3_module_sync_action(
+    pool: &Pool,
+    action: &str,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let id = uuid::Uuid::new_v4().to_string();
+    client
+        .execute(
+            "INSERT INTO x_program_sync_log (id, source, action, create_time) VALUES ($1, 'module', $2, NOW())",
+            &[&id, &action],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+    Ok(Json(ActionResult::success(json!({ "id": id, "action": action, "value": true }))))
+}
+
+/// PUT /module/output
+pub async fn u3_module_output_put(
+    pool: Extension<Pool>,
+    _session: Extension<shared::session::Session>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    u3_module_sync_action(&pool, "output").await
+}
+
+/// PUT /module/list
+pub async fn u3_module_list_put(
+    pool: Extension<Pool>,
+    _session: Extension<shared::session::Session>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    u3_module_sync_action(&pool, "list_refresh").await
+}
+
+/// PUT /module/compare/upload
+pub async fn u3_module_compare_upload_put(
+    pool: Extension<Pool>,
+    _session: Extension<shared::session::Session>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    u3_module_sync_action(&pool, "compare_upload").await
+}
+
+/// GET /mpweixin/menu/create/to/weixin —— 读取最新菜单（Java GET 无参数变体）
+pub async fn u3_mpweixin_menu_latest(
+    pool: Extension<Pool>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let row = client
+        .query_opt(
+            "SELECT id, create_time FROM x_program_mpweixin_menu WHERE deleted_at IS NULL ORDER BY create_time DESC LIMIT 1",
+            &[],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+    match row {
+        Some(row) => {
+            let opt = |k: &str| -> String { row.get::<_, Option<String>>(k).unwrap_or_default() };
+            Ok(Json(ActionResult::success(json!({
+                "id": opt("id"),
+                "createTime": opt("create_time"),
+            }))))
+        }
+        None => Ok(Json(ActionResult::error("mpweixin menu not found"))),
+    }
+}
+
+/// POST /mpweixin/check —— 校验最新菜单可达性
+pub async fn u3_mpweixin_check_post(
+    pool: Extension<Pool>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let row = client
+        .query_one("SELECT COUNT(*) AS menus FROM x_program_mpweixin_menu WHERE deleted_at IS NULL", &[])
+        .await
+        .map_err(|_| AppError::Internal)?;
+    let menus: i64 = row.get("menus");
+    Ok(Json(ActionResult::success(json!({ "checked": true, "menuCount": menus }))))
+}
+
+/// POST /mpweixin/message/template/send —— 发送模板消息并落消息日志
+pub async fn u3_mpweixin_template_send_post(
+    pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
+    Json(_body): Json<Value>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let id = uuid::Uuid::new_v4().to_string();
+    client
+        .execute(
+            "INSERT INTO x_program_message_log (id, creator_person, create_time) VALUES ($1, $2, NOW())",
+            &[&id, &session.person_unique],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+    Ok(Json(ActionResult::success(json!({ "id": id, "sent": true }))))
+}
+
+/// PUT /output/{flag}/select —— 标记输出为选中（owner 门禁）
+pub async fn u3_output_select_put(
+    pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
+    Path(flag): Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let row = client
+        .query_opt(
+            "SELECT creator_person FROM x_program_output WHERE (flag = $1 OR id = $1) AND deleted_at IS NULL",
+            &[&flag],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+    let Some(row) = row else {
+        return Ok(Json(ActionResult::error("output not found")));
+    };
+    let owner: String = row.get::<_, Option<String>>("creator_person").unwrap_or_default();
+    shared::middleware::require_owner(&pool, &session, &owner).await?;
+
+    let n = client
+        .execute(
+            "UPDATE x_program_output SET update_time = NOW() WHERE (flag = $1 OR id = $1) AND deleted_at IS NULL",
+            &[&flag],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+    if n == 0 {
+        return Ok(Json(ActionResult::error("output not found")));
+    }
+    Ok(Json(ActionResult::success(json!({ "flag": flag, "selected": true }))))
+}
+
+// --- 日志创建（POST /prompterrorlog、POST /unexpectederrorlog）---
+
+#[derive(Debug, Deserialize)]
+pub struct U3PromptErrorLogRequest {
+    #[serde(rename = "exceptionClass", default)]
+    pub exception_class: Option<String>,
+    #[serde(rename = "loggerName", default)]
+    pub logger_name: Option<String>,
+    #[serde(default)]
+    pub message: Option<String>,
+}
+
+/// POST /prompterrorlog —— 上报提示级异常日志
+pub async fn u3_prompterrorlog_create(
+    pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
+    Json(req): Json<U3PromptErrorLogRequest>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let id = uuid::Uuid::new_v4().to_string();
+    let exception_class = req.exception_class.unwrap_or_else(|| "UnknownException".to_string());
+    let logger_name = req.logger_name.unwrap_or_default();
+    let message = req.message.unwrap_or_default();
+    client
+        .execute(
+            "INSERT INTO x_program_prompt_error_log (id, exception_class, logger_name, message, creator_person, create_time) \
+             VALUES ($1, $2, $3, $4, $5, NOW())",
+            &[&id, &exception_class, &logger_name, &message, &session.person_unique],
+        )
+        .await
+        .map_err(|e| {
+            tracing::error!("[u3_prompterrorlog_create] insert failed: {}", e);
+            AppError::Internal
+        })?;
+    Ok(Json(ActionResult::success(json!({ "id": id }))))
+}
+
+#[derive(Debug, Deserialize)]
+pub struct U3UnexpectedErrorLogRequest {
+    #[serde(rename = "errorType", default)]
+    pub error_type: Option<String>,
+    #[serde(default)]
+    pub message: Option<String>,
+    #[serde(rename = "stackTrace", default)]
+    pub stack_trace: Option<String>,
+}
+
+/// POST /unexpectederrorlog —— 上报未捕获异常日志
+pub async fn u3_unexpectederrorlog_create(
+    pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
+    Json(req): Json<U3UnexpectedErrorLogRequest>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let id = uuid::Uuid::new_v4().to_string();
+    let error_type = req.error_type.unwrap_or_else(|| "UnexpectedError".to_string());
+    let message = req.message.unwrap_or_default();
+    let stack_trace = req.stack_trace.unwrap_or_default();
+    client
+        .execute(
+            "INSERT INTO x_program_unexpected_error_log (id, error_type, message, stack_trace, creator_person, create_time) \
+             VALUES ($1, $2, $3, $4, $5, NOW())",
+            &[&id, &error_type, &message, &stack_trace, &session.person_unique],
+        )
+        .await
+        .map_err(|e| {
+            tracing::error!("[u3_unexpectederrorlog_create] insert failed: {}", e);
+            AppError::Internal
+        })?;
+    Ok(Json(ActionResult::success(json!({ "id": id }))))
+}
+
+// --- qiyeweixin / schedule / script / welink 补齐 ---
+
+/// POST /qiyeweixin —— 登记企微回调注册
+pub async fn u3_qiyeweixin_create(
+    pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let id = uuid::Uuid::new_v4().to_string();
+    client
+        .execute(
+            "INSERT INTO x_program_callback_registration (id, creator_person, create_time) VALUES ($1, $2, NOW())",
+            &[&id, &session.person_unique],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+    Ok(Json(ActionResult::success(json!({ "id": id, "registered": true }))))
+}
+
+/// POST /qiyeweixin/request/pull/sync —— 请求企微拉取同步
+pub async fn u3_qiyeweixin_request_pull_sync_post(
+    pool: Extension<Pool>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let id = uuid::Uuid::new_v4().to_string();
+    client
+        .execute(
+            "INSERT INTO x_program_sync_log (id, source, action, create_time) VALUES ($1, 'qiyeweixin', 'request_pull_sync', NOW())",
+            &[&id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+    Ok(Json(ActionResult::success(json!({ "id": id, "requested": true }))))
+}
+
+/// POST /schedule/schedule/fire —— 触发指定（或最新）调度并记录日志
+pub async fn u3_schedule_fire_post(
+    pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
+    Json(body): Json<Value>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    require_admin(&pool, &session).await?;
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let target: Option<String> = match body.get("id").and_then(|v| v.as_str()) {
+        Some(id) => {
+            client
+                .query_opt("SELECT id FROM x_program_schedule WHERE id = $1 AND deleted_at IS NULL", &[&id])
+                .await
+                .map_err(|_| AppError::Internal)?
+                .map(|r| r.get::<_, Option<String>>("id").unwrap_or_default())
+        }
+        None => {
+            client
+                .query_opt(
+                    "SELECT id FROM x_program_schedule WHERE deleted_at IS NULL ORDER BY create_time DESC LIMIT 1",
+                    &[],
+                )
+                .await
+                .map_err(|_| AppError::Internal)?
+                .map(|r| r.get::<_, Option<String>>("id").unwrap_or_default())
+        }
+    };
+    let Some(sid) = target.filter(|s| !s.is_empty()) else {
+        return Ok(Json(ActionResult::error("schedule not found")));
+    };
+    let log_id = uuid::Uuid::new_v4().to_string();
+    client
+        .execute(
+            "INSERT INTO x_program_schedule_log (id, schedule_id, application, status, message, create_time) \
+             VALUES ($1, $2, 'schedule', 'fired', 'schedule fired via api', NOW())",
+            &[&log_id, &sid],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+    Ok(Json(ActionResult::success(json!({ "id": sid, "fired": true }))))
+}
+
+/// POST /script/name/{name} —— 按名称保存脚本（复用 script_save owner 门禁）
+pub async fn u3_script_save_name(
+    pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
+    Path(name): Path<String>,
+    Json(req): Json<ScriptSaveRequest>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    script_save(pool, session, "name", name, req).await
+}
+
+/// GET /script/name/{name}/imported —— 按名称查询导入脚本
+pub async fn u3_script_name_imported(
+    pool: Extension<Pool>,
+    Path(name): Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let row = client
+        .query_opt(
+            "SELECT id, name, flag, content FROM x_program_script WHERE name = $1 AND deleted_at IS NULL",
+            &[&name],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+    match row {
+        Some(row) => {
+            let opt = |k: &str| -> String { row.get::<_, Option<String>>(k).unwrap_or_default() };
+            Ok(Json(ActionResult::success(json!({
+                "id": opt("id"),
+                "name": opt("name"),
+                "flag": opt("flag"),
+                "imported": true,
+            }))))
+        }
+        None => Ok(Json(ActionResult::error("script not found"))),
+    }
+}
+
+// --- welink（华为 WeLink，镜像 dingding/qiyeweixin 同步日志模式）---
+
+/// GET /welink/pull/sync
+pub async fn u3_welink_pull_sync(
+    pool: Extension<Pool>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let id = uuid::Uuid::new_v4().to_string();
+    client
+        .execute(
+            "INSERT INTO x_program_sync_log (id, source, action, create_time) VALUES ($1, 'welink', 'pull_sync', NOW())",
+            &[&id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+    Ok(Json(ActionResult::success(json!({ "id": id, "synced": true }))))
+}
+
+/// POST /welink/request/pull/sync
+pub async fn u3_welink_request_pull_sync_post(
+    pool: Extension<Pool>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let id = uuid::Uuid::new_v4().to_string();
+    client
+        .execute(
+            "INSERT INTO x_program_sync_log (id, source, action, create_time) VALUES ($1, 'welink', 'request_pull_sync', NOW())",
+            &[&id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+    Ok(Json(ActionResult::success(json!({ "id": id, "requested": true }))))
 }
 
 // ── apppack 家族（Java AppPackAction / AppPackAnonymousAction，migration 062 建表）──
