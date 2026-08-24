@@ -228,14 +228,73 @@ async fn test_surface_publish_returns_error_without_db() {
     let response = app
         .oneshot(
             Request::builder()
-                .uri("/jaxrs/portal/surface/publish")
-                .method(Method::POST)
-                .header("content-type", "application/json")
-                .body(Body::from(req))
-                .unwrap(),
+        .uri("/jaxrs/portal/surface/publish")
+        .method(Method::POST)
+        .header("content-type", "application/json")
+        .body(Body::from(req))
+        .unwrap(),
         )
         .await
         .unwrap();
 
     assert_eq!(response.status(), axum::http::StatusCode::INTERNAL_SERVER_ERROR);
+}
+
+#[tokio::test]
+async fn test_u2_surface_gap_routes_exist() {
+    let app = portal_assemble_surface_router();
+    use axum::body::Body;
+    use axum::http::{Request, Method, StatusCode};
+
+    let cases: Vec<(&str, &str)> = vec![
+        ("GET", "/jaxrs/portal/assemble/surface/dict/d1/portal/p1"),
+        ("GET", "/jaxrs/portal/assemble/surface/dict/d1/portal/p1/data"),
+        ("DELETE", "/jaxrs/portal/assemble/surface/dict/d1/portal/p1/x/data"),
+        ("GET", "/jaxrs/portal/assemble/surface/dict/d1/portal/p1/x/data"),
+        ("POST", "/jaxrs/portal/assemble/surface/dict/d1/portal/p1/x/data"),
+        ("PUT", "/jaxrs/portal/assemble/surface/dict/d1/portal/p1/x/data"),
+        ("GET", "/jaxrs/portal/assemble/surface/dict/d1/portal/p1/x/data/mockdeletetoget"),
+        ("POST", "/jaxrs/portal/assemble/surface/dict/d1/portal/p1/x/data/mockputtopost"),
+        ("GET", "/jaxrs/portal/assemble/surface/file/f1/portal/p1/content"),
+        ("GET", "/jaxrs/portal/assemble/surface/file/f1/portal/p1/download"),
+        ("GET", "/jaxrs/portal/assemble/surface/page/list/portal/p1"),
+        ("GET", "/jaxrs/portal/assemble/surface/page/v2/id1"),
+        ("GET", "/jaxrs/portal/assemble/surface/page/v2/id1/mobile"),
+        ("GET", "/jaxrs/portal/assemble/surface/page/v2/f1/portal/p1"),
+        ("GET", "/jaxrs/portal/assemble/surface/page/v2/f1/portal/p1/mobile"),
+        ("GET", "/jaxrs/portal/assemble/surface/page/id1/mobile"),
+        ("GET", "/jaxrs/portal/assemble/surface/page/f1/portal/p1"),
+        ("GET", "/jaxrs/portal/assemble/surface/page/f1/portal/p1/mobile"),
+        ("GET", "/jaxrs/portal/assemble/surface/portal/list/mobile"),
+        ("GET", "/jaxrs/portal/assemble/surface/portal/f1/corner/mark"),
+        ("GET", "/jaxrs/portal/assemble/surface/portal/id1/icon"),
+        ("GET", "/jaxrs/portal/assemble/surface/portal/id1/icon/base64"),
+        ("POST", "/jaxrs/portal/assemble/surface/script/portal/p1/name/n1"),
+        ("GET", "/jaxrs/portal/assemble/surface/script/portal/p1/name/n1/imported"),
+        ("GET", "/jaxrs/portal/assemble/surface/widget/w1/mobile"),
+        ("GET", "/jaxrs/portal/assemble/surface/widget/f1/portal/p1"),
+        ("GET", "/jaxrs/portal/assemble/surface/widget/f1/portal/p1/mobile"),
+    ];
+
+    for (m, uri) in cases {
+        let method = Method::from_bytes(m.as_bytes()).unwrap();
+        let body = if m == "GET" || m == "DELETE" {
+            Body::empty()
+        } else {
+            Body::from("{}")
+        };
+        let req = Request::builder()
+            .method(method)
+            .uri(uri)
+            .body(body)
+            .unwrap();
+        let resp = app.clone().oneshot(req).await.unwrap();
+        assert_ne!(
+            resp.status(),
+            StatusCode::NOT_FOUND,
+            "route missing: {} {}",
+            m,
+            uri
+        );
+    }
 }
