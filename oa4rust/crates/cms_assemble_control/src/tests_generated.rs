@@ -5518,7 +5518,17 @@ mod tests {
     #[tokio::test]
     async fn test_document_id_view_count() {
         let pool = shared::testing::test_pool();
-        let app = crate::router(pool);
+        let app = crate::router(pool.clone());
+        // 该端点对不存在的文档返回 AppError::NotFound(404)；
+        // 先种入目标行，避免依赖外部数据库状态。
+        if let Ok(client) = pool.get().await {
+            let _ = client
+                .execute(
+                    "INSERT INTO x_cms_document (id) VALUES ('test-id') ON CONFLICT (id) DO NOTHING",
+                    &[],
+                )
+                .await;
+        }
         let response = app
             .oneshot(
                 Request::builder()
