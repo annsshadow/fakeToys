@@ -157,7 +157,7 @@ mod u3_tests {
         for uri in [
             "/jaxrs/design/appdict",
             "/jaxrs/design/appdict/da-1/mockputtopost",
-            "/jaxrs/design/appdict/list/paging/1/10",
+            "/jaxrs/design/appdict/list/paging/1/size/10",
             "/jaxrs/review/v2/search",
             "/jaxrs/docpermission",
             "/jaxrs/comment/c-1/commend",
@@ -173,7 +173,7 @@ mod u3_tests {
             "/jaxrs/viewrecord/unread/mockputtopost",
             "/jaxrs/output/o-1/select/mockputtopost",
             "/jaxrs/log/list/filter/1/size/10",
-            "/jaxrs/image/encode",
+            "/jaxrs/image/encode/base64",
         ] {
             assert_ne!(status_of("POST", uri).await, StatusCode::NOT_FOUND, "POST {uri}");
         }
@@ -417,7 +417,7 @@ mod u3_tests {
         let client = pool.get().await.unwrap();
         let _ = client
             .execute(
-                "DELETE FROM x_cms_data_document WHERE batch_name LIKE 'u3-batch-%'",
+                "DELETE FROM x_cms_data_document WHERE batch_name LIKE 'u3-batch-%' OR id LIKE 'u3-batch-%'",
                 &[],
             )
             .await;

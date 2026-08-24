@@ -4809,6 +4809,24 @@ pub async fn image_resize_id_id_width_width_height_height(
     ))))
 }
 
+// STUB: export_app_info_app_info_flag - U2 收尾对齐：Java GET /export/appInfo/{appInfoFlag}
+#[axum::debug_handler]
+pub async fn export_app_info_app_info_flag(
+    pool: Extension<Pool>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let data = list_from_table_filtered(&pool, "x_cms_appinfo", "deleted_at IS NULL", &[]).await?;
+    Ok(Json(ActionResult::success(data)))
+}
+
+// STUB: import_app_info_app_info_flag - U2 收尾对齐：Java GET /import/appInfo/{appInfoFlag}
+#[axum::debug_handler]
+pub async fn import_app_info_app_info_flag(
+    pool: Extension<Pool>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let data = list_from_table_filtered(&pool, "x_cms_appinfo", "deleted_at IS NULL", &[]).await?;
+    Ok(Json(ActionResult::success(data)))
+}
+
 // STUB: input_compare - input processing utility, no DB table mapping
 #[axum::debug_handler]
 pub async fn input_compare(
