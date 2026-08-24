@@ -21,8 +21,12 @@ pub fn router(pool: Pool, session_manager: SessionManager) -> Router {
         .route("/jaxrs/person/empower/{id}", get(empower_get))
         .route("/jaxrs/person/empower/{id}", put(update))
         .route("/jaxrs/person/empower/{id}", delete(empower_delete))
-        .route("/jaxrs/person/empower/{id}/enable", post(enable))
-        .route("/jaxrs/person/empower/{id}/disable", post(disable))
+        // enable/disable 主注册为 POST（防 CSRF），追加 GET 变体对齐 Java 契约
+        .route("/jaxrs/person/empower/{id}/enable", post(enable).get(enable))
+        .route(
+            "/jaxrs/person/empower/{id}/disable",
+            post(disable).get(disable),
+        )
         // 管理员端点
         .route("/jaxrs/person/empower/manager", post(manager_create))
         .route("/jaxrs/person/empower/manager/{id}", put(manager_update))
