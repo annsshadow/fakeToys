@@ -11,6 +11,7 @@ use uuid::Uuid;
 use chrono::NaiveDateTime;
 
 pub mod routes;
+pub mod u2;
 
 #[derive(Debug, Deserialize)]
 pub struct CreateProcessRequest {
@@ -2859,5 +2860,8 @@ pub async fn cancel_timer(
     ))))
 }
 
+#[cfg(test)]
+#[cfg(test)]
+mod tests;
 #[cfg(test)]
 mod tests_generated;
