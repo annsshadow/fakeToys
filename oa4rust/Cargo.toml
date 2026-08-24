@@ -239,6 +239,15 @@ serde.workspace = true
 mysql_async = "0.37.0"
 mysql_common = "0.37"
 tower.workspace = true
+parity = { path = "crates/parity" }
+mcp_server = { path = "crates/mcp_server" }
+shared = { path = "crates/shared" }
+express = { path = "crates/express" }
+message = { path = "crates/message" }
+portal = { path = "crates/portal" }
+bbs = { path = "crates/bbs" }
+calendar = { path = "crates/calendar" }
+component = { path = "crates/component" }
 
 [workspace.dependencies]
 axum = { version = "0.8", features = ["macros", "json", "ws"] }
