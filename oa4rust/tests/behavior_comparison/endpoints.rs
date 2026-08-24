@@ -1,6 +1,6 @@
 /// 行为对比测试端点列表（自动生成）
 
-/// 生成时间: 2026-08-24 12:38:46
+/// 生成时间: 2026-08-24 13:59:30
 use super::EndpointDef;
 
 pub const ENDPOINTS: &[EndpointDef] = &[
@@ -238,6 +238,36 @@ pub const ENDPOINTS: &[EndpointDef] = &[
     EndpointDef {
         crate_name: "ai_assemble_control",
         method: "GET",
+        rust_path: "/jaxrs/ai_assemble_control/chat/delete/{clueId}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "ai_assemble_control",
+        method: "GET",
+        rust_path: "/jaxrs/ai_assemble_control/chat/list/completion/{clueId}/paging/{page}/size/{size}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "ai_assemble_control",
+        method: "GET",
+        rust_path: "/jaxrs/ai_assemble_control/chat/list/paging/{page}/size/{size}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "ai_assemble_control",
+        method: "GET",
         rust_path: "/jaxrs/ai_assemble_control/config/base/config",
         java_war: "",
         java_action: "",
@@ -248,7 +278,7 @@ pub const ENDPOINTS: &[EndpointDef] = &[
     EndpointDef {
         crate_name: "ai_assemble_control",
         method: "GET",
-        rust_path: "/jaxrs/ai_assemble_control/config/create/mcp",
+        rust_path: "/jaxrs/ai_assemble_control/config/delete/mcp/{flag}",
         java_war: "",
         java_action: "",
         body: None,
@@ -258,7 +288,7 @@ pub const ENDPOINTS: &[EndpointDef] = &[
     EndpointDef {
         crate_name: "ai_assemble_control",
         method: "GET",
-        rust_path: "/jaxrs/ai_assemble_control/config/create/model",
+        rust_path: "/jaxrs/ai_assemble_control/config/delete/model/{flag}",
         java_war: "",
         java_action: "",
         body: None,
@@ -268,7 +298,7 @@ pub const ENDPOINTS: &[EndpointDef] = &[
     EndpointDef {
         crate_name: "ai_assemble_control",
         method: "GET",
-        rust_path: "/jaxrs/ai_assemble_control/config/delete/mcp/flag",
+        rust_path: "/jaxrs/ai_assemble_control/config/get",
         java_war: "",
         java_action: "",
         body: None,
@@ -278,7 +308,7 @@ pub const ENDPOINTS: &[EndpointDef] = &[
     EndpointDef {
         crate_name: "ai_assemble_control",
         method: "GET",
-        rust_path: "/jaxrs/ai_assemble_control/config/delete/model/flag",
+        rust_path: "/jaxrs/ai_assemble_control/config/get/mcp/ext/{flag}",
         java_war: "",
         java_action: "",
         body: None,
@@ -288,7 +318,7 @@ pub const ENDPOINTS: &[EndpointDef] = &[
     EndpointDef {
         crate_name: "ai_assemble_control",
         method: "GET",
-        rust_path: "/jaxrs/ai_assemble_control/config/get/mcp/ext/flag",
+        rust_path: "/jaxrs/ai_assemble_control/config/get/mcp/{flag}",
         java_war: "",
         java_action: "",
         body: None,
@@ -298,17 +328,7 @@ pub const ENDPOINTS: &[EndpointDef] = &[
     EndpointDef {
         crate_name: "ai_assemble_control",
         method: "GET",
-        rust_path: "/jaxrs/ai_assemble_control/config/get/mcp/flag",
-        java_war: "",
-        java_action: "",
-        body: None,
-        requires_auth: false,
-    },
-
-    EndpointDef {
-        crate_name: "ai_assemble_control",
-        method: "GET",
-        rust_path: "/jaxrs/ai_assemble_control/config/get/model/flag",
+        rust_path: "/jaxrs/ai_assemble_control/config/get/model/{flag}",
         java_war: "",
         java_action: "",
         body: None,
@@ -348,7 +368,7 @@ pub const ENDPOINTS: &[EndpointDef] = &[
     EndpointDef {
         crate_name: "ai_assemble_control",
         method: "GET",
-        rust_path: "/jaxrs/ai_assemble_control/config/save",
+        rust_path: "/jaxrs/ai_assemble_control/file/delete/{flag}",
         java_war: "",
         java_action: "",
         body: None,
@@ -358,7 +378,7 @@ pub const ENDPOINTS: &[EndpointDef] = &[
     EndpointDef {
         crate_name: "ai_assemble_control",
         method: "GET",
-        rust_path: "/jaxrs/ai_assemble_control/config/update/mcp/flag",
+        rust_path: "/jaxrs/ai_assemble_control/file/{flag}",
         java_war: "",
         java_action: "",
         body: None,
@@ -368,7 +388,7 @@ pub const ENDPOINTS: &[EndpointDef] = &[
     EndpointDef {
         crate_name: "ai_assemble_control",
         method: "GET",
-        rust_path: "/jaxrs/ai_assemble_control/config/update/model/flag",
+        rust_path: "/jaxrs/ai_assemble_control/file/{flag}/download",
         java_war: "",
         java_action: "",
         body: None,
@@ -378,77 +398,7 @@ pub const ENDPOINTS: &[EndpointDef] = &[
     EndpointDef {
         crate_name: "ai_assemble_control",
         method: "GET",
-        rust_path: "/jaxrs/ai_assemble_control/file/copy/file",
-        java_war: "",
-        java_action: "",
-        body: None,
-        requires_auth: false,
-    },
-
-    EndpointDef {
-        crate_name: "ai_assemble_control",
-        method: "GET",
-        rust_path: "/jaxrs/ai_assemble_control/file/delete/flag",
-        java_war: "",
-        java_action: "",
-        body: None,
-        requires_auth: false,
-    },
-
-    EndpointDef {
-        crate_name: "ai_assemble_control",
-        method: "GET",
-        rust_path: "/jaxrs/ai_assemble_control/file/flag",
-        java_war: "",
-        java_action: "",
-        body: None,
-        requires_auth: false,
-    },
-
-    EndpointDef {
-        crate_name: "ai_assemble_control",
-        method: "GET",
-        rust_path: "/jaxrs/ai_assemble_control/file/id/download",
-        java_war: "",
-        java_action: "",
-        body: None,
-        requires_auth: false,
-    },
-
-    EndpointDef {
-        crate_name: "ai_assemble_control",
-        method: "GET",
-        rust_path: "/jaxrs/ai_assemble_control/file/id/download/scale",
-        java_war: "",
-        java_action: "",
-        body: None,
-        requires_auth: false,
-    },
-
-    EndpointDef {
-        crate_name: "ai_assemble_control",
-        method: "GET",
-        rust_path: "/jaxrs/ai_assemble_control/file/list",
-        java_war: "",
-        java_action: "",
-        body: None,
-        requires_auth: false,
-    },
-
-    EndpointDef {
-        crate_name: "ai_assemble_control",
-        method: "GET",
-        rust_path: "/jaxrs/ai_assemble_control/file/list/paging/{page}/size/{size}",
-        java_war: "",
-        java_action: "",
-        body: None,
-        requires_auth: false,
-    },
-
-    EndpointDef {
-        crate_name: "ai_assemble_control",
-        method: "GET",
-        rust_path: "/jaxrs/ai_assemble_control/file/upload",
+        rust_path: "/jaxrs/ai_assemble_control/file/{flag}/download/scale",
         java_war: "",
         java_action: "",
         body: None,
@@ -478,7 +428,7 @@ pub const ENDPOINTS: &[EndpointDef] = &[
     EndpointDef {
         crate_name: "ai_assemble_control",
         method: "GET",
-        rust_path: "/jaxrs/ai_assemble_control/index/cms/doc/docId",
+        rust_path: "/jaxrs/ai_assemble_control/index/cms/doc/with/app/{appId}",
         java_war: "",
         java_action: "",
         body: None,
@@ -488,7 +438,7 @@ pub const ENDPOINTS: &[EndpointDef] = &[
     EndpointDef {
         crate_name: "ai_assemble_control",
         method: "GET",
-        rust_path: "/jaxrs/ai_assemble_control/index/cms/doc/with/app/appId",
+        rust_path: "/jaxrs/ai_assemble_control/index/cms/doc/{docId}",
         java_war: "",
         java_action: "",
         body: None,
@@ -498,17 +448,7 @@ pub const ENDPOINTS: &[EndpointDef] = &[
     EndpointDef {
         crate_name: "ai_assemble_control",
         method: "GET",
-        rust_path: "/jaxrs/ai_assemble_control/index/delete/flag",
-        java_war: "",
-        java_action: "",
-        body: None,
-        requires_auth: false,
-    },
-
-    EndpointDef {
-        crate_name: "ai_assemble_control",
-        method: "GET",
-        rust_path: "/jaxrs/ai_assemble_control/index/list/paging/{page}/size/{size}",
+        rust_path: "/jaxrs/ai_assemble_control/index/delete/{flag}",
         java_war: "",
         java_action: "",
         body: None,
@@ -589,6 +529,116 @@ pub const ENDPOINTS: &[EndpointDef] = &[
         crate_name: "ai_assemble_control",
         method: "POST",
         rust_path: "/jaxrs/ai_assemble_control/chat/completion/stream",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "ai_assemble_control",
+        method: "POST",
+        rust_path: "/jaxrs/ai_assemble_control/chat/write/completion/extra",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "ai_assemble_control",
+        method: "POST",
+        rust_path: "/jaxrs/ai_assemble_control/config/create/mcp",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "ai_assemble_control",
+        method: "POST",
+        rust_path: "/jaxrs/ai_assemble_control/config/create/model",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "ai_assemble_control",
+        method: "POST",
+        rust_path: "/jaxrs/ai_assemble_control/config/save",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "ai_assemble_control",
+        method: "POST",
+        rust_path: "/jaxrs/ai_assemble_control/config/update/mcp/{flag}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "ai_assemble_control",
+        method: "POST",
+        rust_path: "/jaxrs/ai_assemble_control/config/update/model/{flag}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "ai_assemble_control",
+        method: "POST",
+        rust_path: "/jaxrs/ai_assemble_control/file/copy/file",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "ai_assemble_control",
+        method: "POST",
+        rust_path: "/jaxrs/ai_assemble_control/file/list",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "ai_assemble_control",
+        method: "POST",
+        rust_path: "/jaxrs/ai_assemble_control/file/list/paging/{page}/size/{size}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "ai_assemble_control",
+        method: "POST",
+        rust_path: "/jaxrs/ai_assemble_control/file/upload",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "ai_assemble_control",
+        method: "POST",
+        rust_path: "/jaxrs/ai_assemble_control/index/list/paging/{page}/size/{size}",
         java_war: "",
         java_action: "",
         body: None,
@@ -34757,6 +34807,216 @@ pub const ENDPOINTS: &[EndpointDef] = &[
 
     EndpointDef {
         crate_name: "processplatform_service_processing",
+        method: "DELETE",
+        rust_path: "/jaxrs/processplatform/service/processing/applicationdict/{id}/{p0}/data",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_service_processing",
+        method: "DELETE",
+        rust_path: "/jaxrs/processplatform/service/processing/applicationdict/{id}/{p0}/{p1}/data",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_service_processing",
+        method: "DELETE",
+        rust_path: "/jaxrs/processplatform/service/processing/applicationdict/{id}/{p0}/{p1}/{p2}/data",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_service_processing",
+        method: "DELETE",
+        rust_path: "/jaxrs/processplatform/service/processing/applicationdict/{id}/{p0}/{p1}/{p2}/{p3}/data",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_service_processing",
+        method: "DELETE",
+        rust_path: "/jaxrs/processplatform/service/processing/applicationdict/{id}/{p0}/{p1}/{p2}/{p3}/{p4}/data",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_service_processing",
+        method: "DELETE",
+        rust_path: "/jaxrs/processplatform/service/processing/applicationdict/{id}/{p0}/{p1}/{p2}/{p3}/{p4}/{p5}/data",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_service_processing",
+        method: "DELETE",
+        rust_path: "/jaxrs/processplatform/service/processing/applicationdict/{id}/{p0}/{p1}/{p2}/{p3}/{p4}/{p5}/{p6}/data",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_service_processing",
+        method: "DELETE",
+        rust_path: "/jaxrs/processplatform/service/processing/applicationdict/{id}/{p0}/{p1}/{p2}/{p3}/{p4}/{p5}/{p6}/{p7}/data",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_service_processing",
+        method: "DELETE",
+        rust_path: "/jaxrs/processplatform/service/processing/attachment/{id}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_service_processing",
+        method: "DELETE",
+        rust_path: "/jaxrs/processplatform/service/processing/attachment/{id}/work/{workId}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_service_processing",
+        method: "DELETE",
+        rust_path: "/jaxrs/processplatform/service/processing/attachment/{id}/workcompleted/{workCompletedId}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_service_processing",
+        method: "DELETE",
+        rust_path: "/jaxrs/processplatform/service/processing/job/{job}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_service_processing",
+        method: "DELETE",
+        rust_path: "/jaxrs/processplatform/service/processing/read/{id}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_service_processing",
+        method: "DELETE",
+        rust_path: "/jaxrs/processplatform/service/processing/readcompleted/{id}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_service_processing",
+        method: "DELETE",
+        rust_path: "/jaxrs/processplatform/service/processing/record/{id}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_service_processing",
+        method: "DELETE",
+        rust_path: "/jaxrs/processplatform/service/processing/review/{id}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_service_processing",
+        method: "DELETE",
+        rust_path: "/jaxrs/processplatform/service/processing/snap/{id}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_service_processing",
+        method: "DELETE",
+        rust_path: "/jaxrs/processplatform/service/processing/task/{id}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_service_processing",
+        method: "DELETE",
+        rust_path: "/jaxrs/processplatform/service/processing/taskcompleted/{id}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_service_processing",
+        method: "DELETE",
+        rust_path: "/jaxrs/processplatform/service/processing/work/{id}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_service_processing",
+        method: "DELETE",
+        rust_path: "/jaxrs/processplatform/service/processing/work/{id}/draft",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_service_processing",
         method: "GET",
         rust_path: "/jaxrs/processplatform/service/processing/applicationdict/path0/data/{id}",
         java_war: "",
@@ -34968,6 +35228,26 @@ pub const ENDPOINTS: &[EndpointDef] = &[
     EndpointDef {
         crate_name: "processplatform_service_processing",
         method: "GET",
+        rust_path: "/jaxrs/processplatform/service/processing/job/v2/{job}/person/{person}/view",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_service_processing",
+        method: "GET",
+        rust_path: "/jaxrs/processplatform/service/processing/job/v2/{job}/projection",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_service_processing",
+        method: "GET",
         rust_path: "/jaxrs/processplatform/service/processing/list/{category}",
         java_war: "",
         java_action: "",
@@ -35128,6 +35408,36 @@ pub const ENDPOINTS: &[EndpointDef] = &[
     EndpointDef {
         crate_name: "processplatform_service_processing",
         method: "GET",
+        rust_path: "/jaxrs/processplatform/service/processing/snap/work/{workId}/type/abandoned",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_service_processing",
+        method: "GET",
+        rust_path: "/jaxrs/processplatform/service/processing/snap/work/{workId}/type/snap",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_service_processing",
+        method: "GET",
+        rust_path: "/jaxrs/processplatform/service/processing/snap/work/{workId}/type/suspend",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_service_processing",
+        method: "GET",
         rust_path: "/jaxrs/processplatform/service/processing/snap/workcompleted/abandonedworkcompleted/{workCompletedId}/{type}",
         java_war: "",
         java_action: "",
@@ -35148,7 +35458,37 @@ pub const ENDPOINTS: &[EndpointDef] = &[
     EndpointDef {
         crate_name: "processplatform_service_processing",
         method: "GET",
+        rust_path: "/jaxrs/processplatform/service/processing/snap/workcompleted/{workCompletedId}/type/abandonedworkcompleted",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_service_processing",
+        method: "GET",
+        rust_path: "/jaxrs/processplatform/service/processing/snap/workcompleted/{workCompletedId}/type/snapworkcompleted",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_service_processing",
+        method: "GET",
         rust_path: "/jaxrs/processplatform/service/processing/snap/{id}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_service_processing",
+        method: "GET",
+        rust_path: "/jaxrs/processplatform/service/processing/snap/{id}/restore",
         java_war: "",
         java_action: "",
         body: None,
@@ -35218,7 +35558,77 @@ pub const ENDPOINTS: &[EndpointDef] = &[
     EndpointDef {
         crate_name: "processplatform_service_processing",
         method: "GET",
+        rust_path: "/jaxrs/processplatform/service/processing/task/v2/{id}/pause",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_service_processing",
+        method: "GET",
+        rust_path: "/jaxrs/processplatform/service/processing/task/v2/{id}/resume",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_service_processing",
+        method: "GET",
         rust_path: "/jaxrs/processplatform/service/processing/task/{id}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_service_processing",
+        method: "GET",
+        rust_path: "/jaxrs/processplatform/service/processing/task/{id}/expire",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_service_processing",
+        method: "GET",
+        rust_path: "/jaxrs/processplatform/service/processing/task/{id}/pass/expired",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_service_processing",
+        method: "GET",
+        rust_path: "/jaxrs/processplatform/service/processing/task/{id}/press",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_service_processing",
+        method: "GET",
+        rust_path: "/jaxrs/processplatform/service/processing/task/{id}/urge",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_service_processing",
+        method: "GET",
+        rust_path: "/jaxrs/processplatform/service/processing/task/{id}/will",
         java_war: "",
         java_action: "",
         body: None,
@@ -35239,6 +35649,96 @@ pub const ENDPOINTS: &[EndpointDef] = &[
         crate_name: "processplatform_service_processing",
         method: "GET",
         rust_path: "/jaxrs/processplatform/service/processing/taskcompleted/{id}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_service_processing",
+        method: "GET",
+        rust_path: "/jaxrs/processplatform/service/processing/taskcompleted/{id}/press/work/{work}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_service_processing",
+        method: "GET",
+        rust_path: "/jaxrs/processplatform/service/processing/touch/cleanevent",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_service_processing",
+        method: "GET",
+        rust_path: "/jaxrs/processplatform/service/processing/touch/deletedraft",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_service_processing",
+        method: "GET",
+        rust_path: "/jaxrs/processplatform/service/processing/touch/handoverjob",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_service_processing",
+        method: "GET",
+        rust_path: "/jaxrs/processplatform/service/processing/touch/loglongdetained",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_service_processing",
+        method: "GET",
+        rust_path: "/jaxrs/processplatform/service/processing/touch/merge",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_service_processing",
+        method: "GET",
+        rust_path: "/jaxrs/processplatform/service/processing/touch/mergeitem",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_service_processing",
+        method: "GET",
+        rust_path: "/jaxrs/processplatform/service/processing/touch/touchdelay",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_service_processing",
+        method: "GET",
+        rust_path: "/jaxrs/processplatform/service/processing/touch/urge",
         java_war: "",
         java_action: "",
         body: None,
@@ -35318,6 +35818,46 @@ pub const ENDPOINTS: &[EndpointDef] = &[
     EndpointDef {
         crate_name: "processplatform_service_processing",
         method: "GET",
+        rust_path: "/jaxrs/processplatform/service/processing/work/v2/{id}/terminate",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_service_processing",
+        method: "GET",
+        rust_path: "/jaxrs/processplatform/service/processing/work/{id}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_service_processing",
+        method: "GET",
+        rust_path: "/jaxrs/processplatform/service/processing/work/{id}/projection",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_service_processing",
+        method: "GET",
+        rust_path: "/jaxrs/processplatform/service/processing/work/{id}/series/{series}/activitytoken/{activityToken}/processing/signal",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_service_processing",
+        method: "GET",
         rust_path: "/jaxrs/processplatform/service/processing/workcompleted/process/{processFlag}",
         java_war: "",
         java_action: "",
@@ -35348,6 +35888,16 @@ pub const ENDPOINTS: &[EndpointDef] = &[
     EndpointDef {
         crate_name: "processplatform_service_processing",
         method: "GET",
+        rust_path: "/jaxrs/processplatform/service/processing/workcompleted/{flag}/merge",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_service_processing",
+        method: "GET",
         rust_path: "/jaxrs/processplatform/service/processing/{job}/{job}",
         java_war: "",
         java_action: "",
@@ -35359,6 +35909,96 @@ pub const ENDPOINTS: &[EndpointDef] = &[
         crate_name: "processplatform_service_processing",
         method: "POST",
         rust_path: "/jaxrs/gateway/{work_id}/{activity_token}/join",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_service_processing",
+        method: "POST",
+        rust_path: "/jaxrs/processplatform/service/processing/applicationdict/{id}/{p0}/data",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_service_processing",
+        method: "POST",
+        rust_path: "/jaxrs/processplatform/service/processing/applicationdict/{id}/{p0}/{p1}/data",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_service_processing",
+        method: "POST",
+        rust_path: "/jaxrs/processplatform/service/processing/applicationdict/{id}/{p0}/{p1}/{p2}/data",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_service_processing",
+        method: "POST",
+        rust_path: "/jaxrs/processplatform/service/processing/applicationdict/{id}/{p0}/{p1}/{p2}/{p3}/data",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_service_processing",
+        method: "POST",
+        rust_path: "/jaxrs/processplatform/service/processing/applicationdict/{id}/{p0}/{p1}/{p2}/{p3}/{p4}/data",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_service_processing",
+        method: "POST",
+        rust_path: "/jaxrs/processplatform/service/processing/applicationdict/{id}/{p0}/{p1}/{p2}/{p3}/{p4}/{p5}/data",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_service_processing",
+        method: "POST",
+        rust_path: "/jaxrs/processplatform/service/processing/applicationdict/{id}/{p0}/{p1}/{p2}/{p3}/{p4}/{p5}/{p6}/data",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_service_processing",
+        method: "POST",
+        rust_path: "/jaxrs/processplatform/service/processing/applicationdict/{id}/{p0}/{p1}/{p2}/{p3}/{p4}/{p5}/{p6}/{p7}/data",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_service_processing",
+        method: "POST",
+        rust_path: "/jaxrs/processplatform/service/processing/attachment/copy/work/{workId}",
         java_war: "",
         java_action: "",
         body: None,
@@ -35438,6 +36078,66 @@ pub const ENDPOINTS: &[EndpointDef] = &[
     EndpointDef {
         crate_name: "processplatform_service_processing",
         method: "POST",
+        rust_path: "/jaxrs/processplatform/service/processing/data/work/{id}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_service_processing",
+        method: "POST",
+        rust_path: "/jaxrs/processplatform/service/processing/data/work/{id}/delete",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_service_processing",
+        method: "POST",
+        rust_path: "/jaxrs/processplatform/service/processing/data/work/{id}/{path}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_service_processing",
+        method: "POST",
+        rust_path: "/jaxrs/processplatform/service/processing/data/work/{id}/{path}/delete",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_service_processing",
+        method: "POST",
+        rust_path: "/jaxrs/processplatform/service/processing/documentversion/work/{work}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_service_processing",
+        method: "POST",
+        rust_path: "/jaxrs/processplatform/service/processing/event/add/update/table",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_service_processing",
+        method: "POST",
         rust_path: "/jaxrs/processplatform/service/processing/execute/{id}",
         java_war: "",
         java_action: "",
@@ -35468,6 +36168,56 @@ pub const ENDPOINTS: &[EndpointDef] = &[
     EndpointDef {
         crate_name: "processplatform_service_processing",
         method: "POST",
+        rust_path: "/jaxrs/processplatform/service/processing/read/work/{workId}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_service_processing",
+        method: "POST",
+        rust_path: "/jaxrs/processplatform/service/processing/read/workcompleted/{workCompletedId}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_service_processing",
+        method: "POST",
+        rust_path: "/jaxrs/processplatform/service/processing/read/{id}/replace",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_service_processing",
+        method: "POST",
+        rust_path: "/jaxrs/processplatform/service/processing/read/{id}/reset",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_service_processing",
+        method: "POST",
+        rust_path: "/jaxrs/processplatform/service/processing/record/job/{job}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_service_processing",
+        method: "POST",
         rust_path: "/jaxrs/processplatform/service/processing/record/processing/{work}",
         java_war: "",
         java_action: "",
@@ -35488,6 +36238,56 @@ pub const ENDPOINTS: &[EndpointDef] = &[
     EndpointDef {
         crate_name: "processplatform_service_processing",
         method: "POST",
+        rust_path: "/jaxrs/processplatform/service/processing/record/work/processing",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_service_processing",
+        method: "POST",
+        rust_path: "/jaxrs/processplatform/service/processing/record/work/terminate",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_service_processing",
+        method: "POST",
+        rust_path: "/jaxrs/processplatform/service/processing/review/create/work",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_service_processing",
+        method: "POST",
+        rust_path: "/jaxrs/processplatform/service/processing/review/create/workcompleted",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_service_processing",
+        method: "POST",
+        rust_path: "/jaxrs/processplatform/service/processing/review/init/review",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_service_processing",
+        method: "POST",
         rust_path: "/jaxrs/processplatform/service/processing/series/series/activitytoken/processing/signal/{work}/{id}/{activityToken}",
         java_war: "",
         java_action: "",
@@ -35499,6 +36299,16 @@ pub const ENDPOINTS: &[EndpointDef] = &[
         crate_name: "processplatform_service_processing",
         method: "POST",
         rust_path: "/jaxrs/processplatform/service/processing/service/touch/{work}/{id}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_service_processing",
+        method: "POST",
+        rust_path: "/jaxrs/processplatform/service/processing/snap/upload",
         java_war: "",
         java_action: "",
         body: None,
@@ -35558,7 +36368,27 @@ pub const ENDPOINTS: &[EndpointDef] = &[
     EndpointDef {
         crate_name: "processplatform_service_processing",
         method: "POST",
+        rust_path: "/jaxrs/processplatform/service/processing/task/v3/{id}/add",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_service_processing",
+        method: "POST",
         rust_path: "/jaxrs/processplatform/service/processing/task/will/{id}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_service_processing",
+        method: "POST",
+        rust_path: "/jaxrs/processplatform/service/processing/task/{id}/replace",
         java_war: "",
         java_action: "",
         body: None,
@@ -35668,7 +36498,107 @@ pub const ENDPOINTS: &[EndpointDef] = &[
     EndpointDef {
         crate_name: "processplatform_service_processing",
         method: "POST",
+        rust_path: "/jaxrs/processplatform/service/processing/work",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_service_processing",
+        method: "POST",
+        rust_path: "/jaxrs/processplatform/service/processing/work/manual/after/processing",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_service_processing",
+        method: "POST",
+        rust_path: "/jaxrs/processplatform/service/processing/work/process/{processId}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_service_processing",
+        method: "POST",
+        rust_path: "/jaxrs/processplatform/service/processing/work/process/{processId}/name/{name}/serial",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_service_processing",
+        method: "POST",
+        rust_path: "/jaxrs/processplatform/service/processing/work/v2/{id}/add/manual/task/identity/matrix",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_service_processing",
+        method: "POST",
+        rust_path: "/jaxrs/processplatform/service/processing/work/v2/{id}/goback",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_service_processing",
+        method: "POST",
+        rust_path: "/jaxrs/processplatform/service/processing/work/v3/retract",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_service_processing",
+        method: "POST",
+        rust_path: "/jaxrs/processplatform/service/processing/work/{id}/processing",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_service_processing",
+        method: "POST",
         rust_path: "/jaxrs/processplatform/service/processing/workcompleted/merge/{flag}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_service_processing",
+        method: "POST",
+        rust_path: "/jaxrs/processplatform/service/processing/workcompleted/process/{processFlag}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_service_processing",
+        method: "POST",
+        rust_path: "/jaxrs/processplatform/service/processing/workcompleted/shift/time",
         java_war: "",
         java_action: "",
         body: None,
@@ -35749,6 +36679,336 @@ pub const ENDPOINTS: &[EndpointDef] = &[
         crate_name: "processplatform_service_processing",
         method: "POST",
         rust_path: "/jaxrs/work/{id}/terminate",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_service_processing",
+        method: "PUT",
+        rust_path: "/jaxrs/processplatform/service/processing/applicationdict/{id}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_service_processing",
+        method: "PUT",
+        rust_path: "/jaxrs/processplatform/service/processing/applicationdict/{id}/{p0}/data",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_service_processing",
+        method: "PUT",
+        rust_path: "/jaxrs/processplatform/service/processing/applicationdict/{id}/{p0}/{p1}/data",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_service_processing",
+        method: "PUT",
+        rust_path: "/jaxrs/processplatform/service/processing/applicationdict/{id}/{p0}/{p1}/{p2}/data",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_service_processing",
+        method: "PUT",
+        rust_path: "/jaxrs/processplatform/service/processing/applicationdict/{id}/{p0}/{p1}/{p2}/{p3}/data",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_service_processing",
+        method: "PUT",
+        rust_path: "/jaxrs/processplatform/service/processing/applicationdict/{id}/{p0}/{p1}/{p2}/{p3}/{p4}/data",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_service_processing",
+        method: "PUT",
+        rust_path: "/jaxrs/processplatform/service/processing/applicationdict/{id}/{p0}/{p1}/{p2}/{p3}/{p4}/{p5}/data",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_service_processing",
+        method: "PUT",
+        rust_path: "/jaxrs/processplatform/service/processing/applicationdict/{id}/{p0}/{p1}/{p2}/{p3}/{p4}/{p5}/{p6}/data",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_service_processing",
+        method: "PUT",
+        rust_path: "/jaxrs/processplatform/service/processing/applicationdict/{id}/{p0}/{p1}/{p2}/{p3}/{p4}/{p5}/{p6}/{p7}/data",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_service_processing",
+        method: "PUT",
+        rust_path: "/jaxrs/processplatform/service/processing/attachment/edit/{id}/text",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_service_processing",
+        method: "PUT",
+        rust_path: "/jaxrs/processplatform/service/processing/attachment/{id}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_service_processing",
+        method: "PUT",
+        rust_path: "/jaxrs/processplatform/service/processing/data/job/{job}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_service_processing",
+        method: "PUT",
+        rust_path: "/jaxrs/processplatform/service/processing/data/job/{job}/{path}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_service_processing",
+        method: "PUT",
+        rust_path: "/jaxrs/processplatform/service/processing/data/work/{id}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_service_processing",
+        method: "PUT",
+        rust_path: "/jaxrs/processplatform/service/processing/data/work/{id}/{path}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_service_processing",
+        method: "PUT",
+        rust_path: "/jaxrs/processplatform/service/processing/data/workcompleted/{id}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_service_processing",
+        method: "PUT",
+        rust_path: "/jaxrs/processplatform/service/processing/data/workcompleted/{id}/{path}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_service_processing",
+        method: "PUT",
+        rust_path: "/jaxrs/processplatform/service/processing/read/{id}/processing",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_service_processing",
+        method: "PUT",
+        rust_path: "/jaxrs/processplatform/service/processing/record/{id}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_service_processing",
+        method: "PUT",
+        rust_path: "/jaxrs/processplatform/service/processing/service/work/{id}/touch",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_service_processing",
+        method: "PUT",
+        rust_path: "/jaxrs/processplatform/service/processing/task/v2/{id}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_service_processing",
+        method: "PUT",
+        rust_path: "/jaxrs/processplatform/service/processing/task/v2/{id}/reset",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_service_processing",
+        method: "PUT",
+        rust_path: "/jaxrs/processplatform/service/processing/task/{id}/processing",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_service_processing",
+        method: "PUT",
+        rust_path: "/jaxrs/processplatform/service/processing/taskcompleted/next/task/identity",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_service_processing",
+        method: "PUT",
+        rust_path: "/jaxrs/processplatform/service/processing/work/v2/{id}/add/split",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_service_processing",
+        method: "PUT",
+        rust_path: "/jaxrs/processplatform/service/processing/work/v2/{id}/reroute",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_service_processing",
+        method: "PUT",
+        rust_path: "/jaxrs/processplatform/service/processing/work/v2/{id}/retract",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_service_processing",
+        method: "PUT",
+        rust_path: "/jaxrs/processplatform/service/processing/work/v2/{id}/rollback",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_service_processing",
+        method: "PUT",
+        rust_path: "/jaxrs/processplatform/service/processing/work/{id}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_service_processing",
+        method: "PUT",
+        rust_path: "/jaxrs/processplatform/service/processing/work/{id}/add/split",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_service_processing",
+        method: "PUT",
+        rust_path: "/jaxrs/processplatform/service/processing/work/{id}/manual/append/identity",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_service_processing",
+        method: "PUT",
+        rust_path: "/jaxrs/processplatform/service/processing/work/{id}/processing",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_service_processing",
+        method: "PUT",
+        rust_path: "/jaxrs/processplatform/service/processing/workcompleted/{flag}/rollback",
         java_war: "",
         java_action: "",
         body: None,
