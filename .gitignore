@@ -40,7 +40,10 @@ Thumbs.db
 oa4rust/target*/
 oa4rust/.pgdata/
 oa4rust/__pycache__/
-oa4rust/scripts/
+# scripts 目录整体忽略，但端点生成器必须纳入版本控制以保证可复现（plan002 U9）
+oa4rust/scripts/**
+!oa4rust/scripts/
+!oa4rust/scripts/gen_openapi_paths.py
 
 # log
 *.log
