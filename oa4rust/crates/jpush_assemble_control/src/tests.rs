@@ -164,3 +164,44 @@ async fn test_device_bind_java_path() {
 
     assert_eq!(response.status(), StatusCode::INTERNAL_SERVER_ERROR);
 }
+
+#[tokio::test]
+async fn test_u2_post_message_send_route() {
+    let pool = build_test_pool();
+    let app = crate::router(pool);
+    let body = serde_json::to_string(&json!({"title": "t", "content": "c", "target": "u"})).unwrap();
+    let response = app.oneshot(
+        Request::builder()
+            .uri("/jaxrs/jpush_assemble_control/message/send")
+            .method(Method::POST)
+            .header("content-type", "application/json")
+            .body(Body::from(body)).unwrap(),
+    ).await.unwrap();
+    assert_ne!(response.status(), StatusCode::NOT_FOUND);
+}
+
+#[tokio::test]
+async fn test_u2_post_device_admin_unbind_route() {
+    let pool = build_test_pool();
+    let app = crate::router(pool);
+    let response = app.oneshot(
+        Request::builder()
+            .uri("/jaxrs/jpush_assemble_control/device/admin/unbind/all/person")
+            .method(Method::POST)
+            .body(Body::empty()).unwrap(),
+    ).await.unwrap();
+    assert_ne!(response.status(), StatusCode::NOT_FOUND);
+}
+
+#[tokio::test]
+async fn test_u2_delete_device_unbind_route() {
+    let pool = build_test_pool();
+    let app = crate::router(pool);
+    let response = app.oneshot(
+        Request::builder()
+            .uri("/jaxrs/jpush_assemble_control/device/unbind/a/b")
+            .method(Method::DELETE)
+            .body(Body::empty()).unwrap(),
+    ).await.unwrap();
+    assert_ne!(response.status(), StatusCode::NOT_FOUND);
+}

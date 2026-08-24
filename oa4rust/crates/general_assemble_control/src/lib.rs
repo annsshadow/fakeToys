@@ -1980,3 +1980,49 @@ pub async fn worktime_minutesofworkday(
         ("minutes".to_string(), Value::Number(serde_json::Number::from(total.unwrap_or(0)))),
     ])))))
 }
+
+pub async fn generalfile_create(
+    pool: Extension<Pool>,
+    axum::extract::Json(req): axum::extract::Json<Value>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let id = uuid::Uuid::new_v4().to_string();
+    let name = req.get("name").and_then(|v| v.as_str()).unwrap_or("");
+    let flag = req.get("flag").and_then(|v| v.as_str()).unwrap_or("");
+    let content = req.get("content").and_then(|v| v.as_str()).unwrap_or("");
+    let size = req.get("size").and_then(|v| v.as_i64()).unwrap_or(0);
+    let creator = req.get("creator").and_then(|v| v.as_str()).unwrap_or("system");
+    client
+        .execute(
+            "INSERT INTO x_general_assemble_general_file (id, name, flag, content, size, creator, create_time) VALUES ($1, $2, $3, $4, $5, $6, NOW())",
+            &[&id, &name, &flag, &content, &size, &creator],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+    Ok(Json(ActionResult::success(serde_json::json!({
+        "id": id, "name": name, "flag": flag
+    }))))
+}
+
+pub async fn qrcode_create(
+    pool: Extension<Pool>,
+    axum::extract::Json(req): axum::extract::Json<Value>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let id = uuid::Uuid::new_v4().to_string();
+    let width = req.get("width").and_then(|v| v.as_i64()).unwrap_or(200);
+    let height = req.get("height").and_then(|v| v.as_i64()).unwrap_or(200);
+    let text = req.get("text").and_then(|v| v.as_str()).unwrap_or("");
+    let content = req.get("content").and_then(|v| v.as_str()).unwrap_or("");
+    let creator = req.get("creator").and_then(|v| v.as_str()).unwrap_or("system");
+    client
+        .execute(
+            "INSERT INTO x_general_assemble_qrcode (id, width, height, text, content, creator, create_time) VALUES ($1, $2, $3, $4, $5, $6, NOW())",
+            &[&id, &width, &height, &text, &content, &creator],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+    Ok(Json(ActionResult::success(serde_json::json!({
+        "id": id, "text": text
+    }))))
+}

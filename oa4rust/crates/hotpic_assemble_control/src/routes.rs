@@ -1,6 +1,6 @@
 use axum::{
     extract::Extension,
-    routing::get, routing::post,
+    routing::{delete, get, post, put},
     Router,
 };
 use deadpool_postgres::Pool;
@@ -17,6 +17,7 @@ use crate::{
     user_hotpic_filter_list_page_page_count_count,
     user_hotpic_application_infoId,
     user_hotpic_id,
+    user_hotpic_delete_by_ids,
 };
 
 pub fn router(pool: deadpool_postgres::Pool) -> axum::Router {
@@ -57,5 +58,13 @@ pub fn router(pool: deadpool_postgres::Pool) -> axum::Router {
         .route("/jaxrs/hotpic/assemble/control/user/hotpic/filter/list/page/{page}/count/{count}", get(user_hotpic_filter_list_page_page_count_count))
         .route("/jaxrs/hotpic/assemble/control/user/hotpic/application/{infoId}", get(user_hotpic_application_infoId))
         .route("/jaxrs/hotpic/assemble/control/user/hotpic/{id}", get(user_hotpic_id))
+        // ---- plan002 U2 gaps: verb variants + missing ----
+        .route("/jaxrs/hotpic/assemble/control/cipher/hotpic/bbs/{id}", delete(cipher_hotpic_bbs_id))
+        .route("/jaxrs/hotpic/assemble/control/cipher/hotpic/cms/{id}", delete(cipher_hotpic_cms_id))
+        .route("/jaxrs/hotpic/assemble/control/cipher/hotpic/filter/list/page/{page}/count/{count}", put(cipher_hotpic_filter_list_page_page_count_count))
+        .route("/jaxrs/hotpic/assemble/control/user/hotpic", post(create_hotpic))
+        .route("/jaxrs/hotpic/assemble/control/user/hotpic/filter/list/page/{page}/count/{count}", put(user_hotpic_filter_list_page_page_count_count))
+        .route("/jaxrs/hotpic/assemble/control/user/hotpic/{id}", delete(user_hotpic_id))
+        .route("/jaxrs/hotpic/assemble/control/user/hotpic/{id}/{id2}", delete(user_hotpic_delete_by_ids))
         .layer(Extension(pool))
 }

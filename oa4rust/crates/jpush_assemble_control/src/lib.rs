@@ -715,3 +715,25 @@ impl PushGateway for JPushGateway {
 }
 
 
+
+pub async fn message_send(
+    pool: Extension<Pool>,
+    axum::extract::Json(req): Json<Value>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let id = uuid::Uuid::new_v4().to_string();
+    let title = req.get("title").and_then(|v| v.as_str()).unwrap_or_default();
+    let content = req.get("content").and_then(|v| v.as_str()).unwrap_or_default();
+    let target = req.get("target").and_then(|v| v.as_str()).unwrap_or_default();
+    let creator = req.get("creator").and_then(|v| v.as_str()).unwrap_or("system");
+    client
+        .execute(
+            "INSERT INTO x_jpush (id, title, content, target, creator, create_time) VALUES ($1, $2, $3, $4, $5, NOW())",
+            &[&id, &title, &content, &target, &creator],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+    Ok(Json(ActionResult::success(serde_json::json!({
+        "id": id, "title": title, "target": target
+    }))))
+}

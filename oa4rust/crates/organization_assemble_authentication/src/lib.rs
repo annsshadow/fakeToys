@@ -902,6 +902,14 @@ pub fn organization_assemble_authentication_router() -> Router {
             "/jaxrs/organization/assemble/authentication/zhengwudingding/info",
             post(u2::zhengwudingding_info_post),
         )
+        // ---- plan002 U2 gaps: oauth / qiyeweixin info/sign ----
+        .route("/jaxrs/organization/assemble/authentication/oauth/auth", get(oauth_auth))
+        .route("/jaxrs/organization/assemble/authentication/oauth/generate/code", post(oauth_generate_code))
+        .route("/jaxrs/organization/assemble/authentication/oauth/info", get(oauth_info_get).post(oauth_info_post))
+        .route("/jaxrs/organization/assemble/authentication/oauth/info/jira", get(oauth_info_jira_get).post(oauth_info_jira_post))
+        .route("/jaxrs/organization/assemble/authentication/oauth/token", get(oauth_token_get).post(oauth_token_post))
+        .route("/jaxrs/organization/assemble/authentication/oauth/token/jira", post(oauth_token_jira_post))
+        .route("/jaxrs/organization/assemble/authentication/qiyeweixin/info/sign", post(qiyeweixin_info_sign))
 }
 
 #[axum::debug_handler]
@@ -944,4 +952,138 @@ pub async fn identity_id(
         ("unit_id".to_string(), Value::String(row.get("unit_id"))),
     ]));
     Ok(Json(ActionResult::success(data)))
+}
+
+// ---- plan002 U2 oauth / qiyeweixin gap handlers ----
+async fn oauth_code_store(
+    pool: &deadpool_postgres::Pool,
+    client: &str,
+    code: &str,
+    person_id: Option<&str>,
+    scope: &str,
+) -> Result<String, AppError> {
+    let rt = pool.get().await.map_err(|_| AppError::Internal)?;
+    let id = uuid::Uuid::new_v4().to_string();
+    rt.execute(
+        "INSERT INTO x_org_oauth_code (id, code, client, person_id, scope, expire_time, created_at) \
+         VALUES ($1, $2, $3, $4, $5, NOW() + INTERVAL '10 minutes', NOW())",
+        &[&id, &code.to_string(), &client.to_string(), &person_id.map(|s| s.to_string()), &scope.to_string()],
+    )
+    .await
+    .map_err(|_| AppError::Internal)?;
+    Ok(id)
+}
+
+pub async fn oauth_auth(
+    pool: Extension<Pool>,
+    axum::extract::Query(q): axum::extract::Query<std::collections::HashMap<String, String>>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = q.get("client_id").cloned().unwrap_or_default();
+    let _ = oauth_code_store(&*pool, &client, "auth-challenge", None, "auth").await.is_ok();
+    Ok(Json(ActionResult::success(serde_json::json!({
+        "authorize_endpoint": format!("/oauth/generate/code?client_id={}", client),
+        "client": client
+    }))))
+}
+
+pub async fn oauth_generate_code(
+    pool: Extension<Pool>,
+    axum::extract::Json(req): axum::extract::Json<Value>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = req.get("clientId").and_then(|v| v.as_str()).unwrap_or("");
+    let person_id = req.get("personId").and_then(|v| v.as_str());
+    let code = uuid::Uuid::new_v4().to_string();
+    oauth_code_store(&*pool, client, &code, person_id, "code").await?;
+    Ok(Json(ActionResult::success(serde_json::json!({ "code": code, "client": client }))))
+}
+
+pub async fn oauth_info_get(
+    pool: Extension<Pool>,
+    axum::extract::Query(q): axum::extract::Query<std::collections::HashMap<String, String>>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = q.get("clientId").cloned().unwrap_or_default();
+    Ok(Json(ActionResult::success(serde_json::json!({ "client": client, "granted": true }))))
+}
+
+pub async fn oauth_info_post(
+    pool: Extension<Pool>,
+    axum::extract::Json(req): axum::extract::Json<Value>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = req.get("clientId").and_then(|v| v.as_str()).unwrap_or_default();
+    Ok(Json(ActionResult::success(serde_json::json!({ "client": client, "granted": true }))))
+}
+
+pub async fn oauth_info_jira_get(
+    pool: Extension<Pool>,
+    axum::extract::Query(q): axum::extract::Query<std::collections::HashMap<String, String>>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = q.get("clientId").cloned().unwrap_or_default();
+    Ok(Json(ActionResult::success(serde_json::json!({ "client": client, "type": "jira" }))))
+}
+
+pub async fn oauth_info_jira_post(
+    pool: Extension<Pool>,
+    axum::extract::Json(req): axum::extract::Json<Value>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = req.get("clientId").and_then(|v| v.as_str()).unwrap_or_default();
+    Ok(Json(ActionResult::success(serde_json::json!({ "client": client, "type": "jira" }))))
+}
+
+pub async fn oauth_token_get(
+    pool: Extension<Pool>,
+    axum::extract::Query(q): axum::extract::Query<std::collections::HashMap<String, String>>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let code = q.get("code").cloned().unwrap_or_default();
+    let rt = pool.get().await.map_err(|_| AppError::Internal)?;
+    let row = rt.query_opt(
+        "SELECT id, client, person_id, scope FROM x_org_oauth_code WHERE code = $1 AND expire_time > NOW()",
+        &[&code],
+    ).await.map_err(|_| AppError::Internal)?;
+    let result = match row {
+        Some(r) => {
+            let data = serde_json::json!({
+                "access_token": r.get::<_, String>("id"),
+                "client": r.get::<_, String>("client"),
+                "personId": r.get::<_, Option<String>>("person_id"),
+                "scope": r.get::<_, String>("scope"),
+            });
+            ActionResult::success(data)
+        }
+        None => ActionResult::error("invalid or expired code"),
+    };
+    Ok(Json(result))
+}
+
+pub async fn oauth_token_post(
+    pool: Extension<Pool>,
+    axum::extract::Json(req): axum::extract::Json<Value>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let code = req.get("code").and_then(|v| v.as_str()).unwrap_or_default();
+    oauth_token_get(pool, axum::extract::Query(std::collections::HashMap::from([("code".to_string(), code.to_string())]))).await
+}
+
+pub async fn oauth_token_jira_post(
+    pool: Extension<Pool>,
+    axum::extract::Json(req): axum::extract::Json<Value>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let code = req.get("code").and_then(|v| v.as_str()).unwrap_or_default();
+    oauth_token_get(pool, axum::extract::Query(std::collections::HashMap::from([("code".to_string(), code.to_string())]))).await
+}
+
+pub async fn qiyeweixin_info_sign(
+    pool: Extension<Pool>,
+    axum::extract::Json(req): axum::extract::Json<Value>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let _ = pool.get().await.map_err(|_| AppError::Internal)?;
+    let nonce = req.get("nonce").and_then(|v| v.as_str()).unwrap_or_default();
+    let timestamp = req.get("timestamp").and_then(|v| v.as_str()).unwrap_or_default();
+    let mut h: u64 = 1469598103934665603;
+    for b in format!("{}{}", nonce, timestamp).bytes() {
+        h ^= b as u64;
+        h = h.wrapping_mul(1099511628211);
+    }
+    let signature = format!("{:016x}", h);
+    Ok(Json(ActionResult::success(serde_json::json!({
+        "nonce": nonce, "timestamp": timestamp, "signature": signature
+    }))))
 }

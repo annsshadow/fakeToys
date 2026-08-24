@@ -1,4 +1,4 @@
-use axum::{extract::{Extension, Path}, Json, Router, routing::get};
+use axum::{extract::{Extension, Path}, Json, Router, routing::{get, post}};
 use deadpool_postgres::Pool;
 use serde_json::Value;
 use shared::{error::AppError, response::ActionResult};
@@ -83,6 +83,26 @@ pub fn organization_assemble_personal_router() -> Router {
     Router::new()
         .route("/jaxrs/organization/assemble/personal/{id}/setting", get(user_setting))
         .route("/jaxrs/organization/assemble/personal/{id}/role/list", get(user_role_list))
+        .route("/jaxrs/organization/assemble/personal/custom/{id}/mockputtopost", post(custom_mockputtopost))
+}
+
+pub async fn custom_mockputtopost(
+    pool: Extension<Pool>,
+    Path(id): Path<String>,
+    Json(req): Json<Value>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let value = req.get("fieldValue").and_then(|v| v.as_str()).unwrap_or("");
+    let n = client
+        .execute(
+            "UPDATE x_org_custom SET field_value = $2 WHERE id = $1 AND deleted_at IS NULL",
+            &[&id, &value],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+    Ok(Json(ActionResult::success(serde_json::json!({
+        "id": id, "updated": n
+    }))))
 }
 
 pub fn router(pool: Pool) -> Router {

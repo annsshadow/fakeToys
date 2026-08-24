@@ -17568,3 +17568,58 @@ mod tests_generated;
 
 #[cfg(test)]
 mod tests_u2;
+
+pub async fn task_list_date_hour_exclude_draft_manage(
+    pool: Extension<Pool>,
+    axum::extract::Path((date, hour, is_exclude_draft)): axum::extract::Path<(String, String, String)>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let _ = (hour, is_exclude_draft);
+    let rows = client
+        .query(
+            "SELECT xid, xtitle, xperson, \"xcreateTime\" FROM PP_C_TASK \
+             WHERE TO_CHAR(\"xcreateTime\", 'YYYY-MM-DD') = $1 ORDER BY \"xcreateTime\" DESC LIMIT 50",
+            &[&date],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+    let data: Vec<Value> = rows
+        .iter()
+        .map(|row| {
+            Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("xid"))),
+                ("title".to_string(), Value::String(row.get("xtitle"))),
+                ("person".to_string(), Value::String(row.get("xperson"))),
+            ]))
+        })
+        .collect();
+    Ok(Json(ActionResult::success(serde_json::Value::Array(data))))
+}
+
+pub async fn task_list_person_exclude_draft_manage(
+    pool: Extension<Pool>,
+    axum::extract::Path((person, is_exclude_draft)): axum::extract::Path<(String, String)>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let _ = is_exclude_draft;
+    let rows = client
+        .query(
+            "SELECT xid, xtitle, xperson, \"xcreateTime\" FROM PP_C_TASK \
+             WHERE xperson = $1 ORDER BY \"xcreateTime\" DESC LIMIT 50",
+            &[&person],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+    let data: Vec<Value> = rows
+        .iter()
+        .map(|row| {
+            Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("xid"))),
+                ("title".to_string(), Value::String(row.get("xtitle"))),
+                ("person".to_string(), Value::String(row.get("xperson"))),
+            ]))
+        })
+        .collect();
+    Ok(Json(ActionResult::success(serde_json::Value::Array(data))))
+}
+

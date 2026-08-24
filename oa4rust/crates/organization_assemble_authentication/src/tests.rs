@@ -354,4 +354,56 @@ mod u2_contract {
     async fn u2_full_router_still_builds() {
         let _ = router(test_pool());
     }
+
+    #[tokio::test]
+    async fn u2_test_get_oauth_auth_route() {
+        let app = router(test_pool());
+        let response = app
+            .oneshot(
+                axum::http::Request::builder()
+                    .uri("/jaxrs/organization/assemble/authentication/oauth/auth?client_id=test")
+                    .method(axum::http::Method::GET)
+                    .body(axum::body::Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_ne!(response.status(), StatusCode::NOT_FOUND);
+    }
+
+    #[tokio::test]
+    async fn u2_test_post_oauth_info_route() {
+        let app = router(test_pool());
+        let body = serde_json::to_string(&serde_json::json!({"clientId": "test"})).unwrap();
+        let response = app
+            .oneshot(
+                axum::http::Request::builder()
+                    .uri("/jaxrs/organization/assemble/authentication/oauth/info")
+                    .method(axum::http::Method::POST)
+                    .header("content-type", "application/json")
+                    .body(axum::body::Body::from(body))
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_ne!(response.status(), StatusCode::NOT_FOUND);
+    }
+
+    #[tokio::test]
+    async fn u2_test_post_qiyeweixin_info_sign_route() {
+        let app = router(test_pool());
+        let body = serde_json::to_string(&serde_json::json!({"nonce": "n", "timestamp": "t"})).unwrap();
+        let response = app
+            .oneshot(
+                axum::http::Request::builder()
+                    .uri("/jaxrs/organization/assemble/authentication/qiyeweixin/info/sign")
+                    .method(axum::http::Method::POST)
+                    .header("content-type", "application/json")
+                    .body(axum::body::Body::from(body))
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_ne!(response.status(), StatusCode::NOT_FOUND);
+    }
 }

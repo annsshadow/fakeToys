@@ -429,3 +429,56 @@ mod tests {
         assert_ne!(response.status(), StatusCode::NOT_FOUND);
     }
 }
+
+#[tokio::test]
+async fn test_u2_put_im_conversation_route() {
+    let pool = build_test_pool();
+    let app = crate::router(pool);
+    let response = app
+        .oneshot(
+            Request::builder()
+                .uri("/jaxrs/message/assemble/communicate/im/conversation")
+                .method(Method::PUT)
+                .header("content-type", "application/json")
+                .body(Body::from("{}"))
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_ne!(response.status(), StatusCode::NOT_FOUND);
+}
+
+#[tokio::test]
+async fn test_u2_delete_im_conversation_group_route() {
+    let pool = build_test_pool();
+    let app = crate::router(pool);
+    let response = app
+        .oneshot(
+            Request::builder()
+                .uri("/jaxrs/message/assemble/communicate/im/conversation/test-id/group")
+                .method(Method::DELETE)
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_ne!(response.status(), StatusCode::NOT_FOUND);
+}
+
+#[tokio::test]
+async fn test_u2_post_im_conversation_route() {
+    let pool = build_test_pool();
+    let app = crate::router(pool);
+    let response = app
+        .oneshot(
+            Request::builder()
+                .uri("/jaxrs/message/assemble/communicate/im/conversation")
+                .method(Method::POST)
+                .header("content-type", "application/json")
+                .body(Body::from("{}"))
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_ne!(response.status(), StatusCode::NOT_FOUND);
+}
