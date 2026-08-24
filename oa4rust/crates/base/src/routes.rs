@@ -9,6 +9,7 @@ use crate::{cache_detail, echo_get, openapi_info};
 pub fn build_router(pool: Pool) -> Router {
     Router::new()
         .route("/jaxrs/base/echo/get", get(echo_get))
+        .route("/jaxrs/base/echo", get(echo_get))
         .route("/jaxrs/base/cache/detail", get(cache_detail))
         .route("/jaxrs/base/openapi/info", get(openapi_info))
         // plan002 U2：Java 全集对齐（x_base_core_project jaxrs，补齐 5 条）

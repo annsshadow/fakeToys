@@ -134,6 +134,10 @@ use crate::{
     attachment_u2b_delete_by_workcompleted, attachment_u2b_get_by_work_mockdeletetoget,
     attachment_u2b_get_by_wc_mockdeletetoget,
 };
+use crate::{
+    task_list_date_hour_exclude_draft_manage,
+    task_list_person_exclude_draft_manage,
+};
 
 pub fn router(pool: Pool) -> Router {
     Router::new()
@@ -1208,5 +1212,8 @@ pub fn router(pool: Pool) -> Router {
         .route("/jaxrs/processplatform/assemble/surface/attachment/download/{id}/work/{workId}/{fileName}", get(attachment_u2c_download_work_ext))
         .route("/jaxrs/processplatform/assemble/surface/attachment/download/{id}/workcompleted/{workCompletedId}/stream/{fileName}", get(attachment_u2c_download_wc_stream_ext))
         .route("/jaxrs/processplatform/assemble/surface/attachment/download/{id}/workcompleted/{workCompletedId}/{fileName}", get(attachment_u2c_download_wc_ext))
+        // ---- plan002 U2 gaps: task-list (closeable) ----
+        .route("/jaxrs/processplatform/assemble/surface/task/list/date/{date}/hour/{hour}/exclude/draft/{isExcludeDraft}/manage", get(task_list_date_hour_exclude_draft_manage))
+        .route("/jaxrs/processplatform/assemble/surface/task/list/person/{person}/exclude/draft/{isExcludeDraft}/manage", get(task_list_person_exclude_draft_manage))
 .layer(Extension(pool))
 }
