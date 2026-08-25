@@ -189,8 +189,10 @@ mod u2_tests {
         let result: ActionResult<serde_json::Value> =
             ActionResult::success(serde_json::json!({ "id": "snap-1" }));
         let json = serde_json::to_value(&result).unwrap();
+        // Java 对齐（11521a43）：成功信封恒携带 8 字段；prompt 仅出现在
+        // 错误信封（异常类名），None 时整体省略——不得回退为恒输出 9 字段。
         for field in [
-            "data", "type", "message", "date", "spent", "size", "count", "position", "prompt",
+            "data", "type", "message", "date", "spent", "size", "count", "position",
         ] {
             assert!(
                 json.get(field).is_some(),
@@ -198,6 +200,10 @@ mod u2_tests {
                 field
             );
         }
+        assert!(
+            json.get("prompt").is_none(),
+            "success envelope must omit prompt (Java parity)"
+        );
         assert_eq!(json["type"], "success");
     }
 
@@ -476,8 +482,6 @@ mod u2b_tests {
             ("GET", format!("{b}/att-1/preview/image/page/2")),
             ("GET", format!("{b}/preview/pdf/f-1/result")),
             ("GET", format!("{b}/preview/image/f-1/result")),
-            ("GET", format!("{b}/invoice/f-1/joborworkorworkcompleted/w-1")),
-            ("GET", format!("{b}/download/invoice/f-1/joborworkorworkcompleted/w-1")),
             ("POST", format!("{b}/upload/with/url")),
             ("GET", format!("{b}/batch/download/job/j-1/site/s-1")),
             ("GET", format!("{b}/batch/download/work/w-1/site/s-1")),
@@ -488,6 +492,25 @@ mod u2b_tests {
                 status_of(method, &path).await,
                 StatusCode::NOT_IMPLEMENTED,
                 "engine-less endpoint must answer exact 501: {path}"
+            );
+        }
+    }
+
+    // invoice 族已由 capability 桩升级为真实现（62fdf48d：require_owner 门禁 +
+    // x_general_invoice 查询），不再属于"精确 501"契约；仅断言路由可达
+    // （无 DB/session 时为 500，但绝不能退回 404）。
+    #[tokio::test]
+    async fn u2b_invoice_endpoints_are_real_routes_not_stubs() {
+        let b = "/jaxrs/processplatform/assemble/surface/attachment";
+        let cases: Vec<(&str, String)> = vec![
+            ("GET", format!("{b}/invoice/f-1/joborworkorworkcompleted/w-1")),
+            ("GET", format!("{b}/download/invoice/f-1/joborworkorworkcompleted/w-1")),
+        ];
+        for (method, path) in cases {
+            assert_ne!(
+                status_of(method, &path).await,
+                StatusCode::NOT_FOUND,
+                "invoice route missing after stub replacement: {method} {path}"
             );
         }
     }

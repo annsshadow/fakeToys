@@ -110,6 +110,16 @@ pub fn list_ok(rows: Vec<Value>) -> HandlerResult {
     ))
 }
 
+/// Java 裸数组契约（行为对齐）：data 为数组、count 入信封、size 恒 0。
+pub fn list_ok_java(rows: Vec<Value>) -> HandlerResult {
+    let count = rows.len() as i64;
+    Ok(Json(ActionResult::java_success(
+        Value::Array(rows),
+        count,
+        0,
+    )))
+}
+
 pub async fn resolve_generic_id(
     client: &Client,
     table: &str,
@@ -205,7 +215,7 @@ pub async fn generic_list_all(
         "SELECT {cols} FROM {table} WHERE deleted_at IS NULL ORDER BY create_time::text DESC"
     );
     let rows = client.query(&sql, &[]).await.map_err(|_| AppError::Internal)?;
-    list_ok(rows.iter().map(|r| entity_row_json(r, extra_cols)).collect())
+    list_ok_java(rows.iter().map(|r| entity_row_json(r, extra_cols)).collect())
 }
 
 pub async fn generic_like_search(
@@ -214,6 +224,7 @@ pub async fn generic_like_search(
     key: &str,
     pinyin_mode: bool,
     extra_cols: &[&str],
+    java_bare: bool,
 ) -> HandlerResult {
     let client = client_of(pool).await?;
     let cols = select_cols(extra_cols);
@@ -223,7 +234,11 @@ pub async fn generic_like_search(
             "SELECT {cols} FROM {table} WHERE deleted_at IS NULL ORDER BY create_time::text DESC"
         );
         let rows = client.query(&sql, &[]).await.map_err(|_| AppError::Internal)?;
-        return list_ok(rows.iter().map(|r| entity_row_json(r, extra_cols)).collect());
+        return if java_bare {
+            list_ok_java(rows.iter().map(|r| entity_row_json(r, extra_cols)).collect())
+        } else {
+            list_ok(rows.iter().map(|r| entity_row_json(r, extra_cols)).collect())
+        };
     }
     let (pattern, cond) = if pinyin_mode {
         (
@@ -237,7 +252,11 @@ pub async fn generic_like_search(
         "SELECT {cols} FROM {table} WHERE deleted_at IS NULL AND {cond} ORDER BY create_time::text DESC"
     );
     let rows = client.query(&sql, &[&pattern]).await.map_err(|_| AppError::Internal)?;
-    list_ok(rows.iter().map(|r| entity_row_json(r, extra_cols)).collect())
+    if java_bare {
+        list_ok_java(rows.iter().map(|r| entity_row_json(r, extra_cols)).collect())
+    } else {
+        list_ok(rows.iter().map(|r| entity_row_json(r, extra_cols)).collect())
+    }
 }
 
 pub async fn generic_pinyininitial_filter(
@@ -245,6 +264,7 @@ pub async fn generic_pinyininitial_filter(
     table: &str,
     initials: &[String],
     extra_cols: &[&str],
+    java_bare: bool,
 ) -> HandlerResult {
     check_batch_len(initials.len())?;
     let client = client_of(pool).await?;
@@ -254,14 +274,22 @@ pub async fn generic_pinyininitial_filter(
             "SELECT {cols} FROM {table} WHERE deleted_at IS NULL ORDER BY create_time::text DESC"
         );
         let rows = client.query(&sql, &[]).await.map_err(|_| AppError::Internal)?;
-        return list_ok(rows.iter().map(|r| entity_row_json(r, extra_cols)).collect());
+        return if java_bare {
+            list_ok_java(rows.iter().map(|r| entity_row_json(r, extra_cols)).collect())
+        } else {
+            list_ok(rows.iter().map(|r| entity_row_json(r, extra_cols)).collect())
+        };
     }
     let owned: Vec<String> = initials.to_vec();
     let sql = format!(
         "SELECT {cols} FROM {table} WHERE deleted_at IS NULL AND LEFT(LOWER(COALESCE(pinyin_initial, name)), 1) = ANY($1)"
     );
     let rows = client.query(&sql, &[&owned]).await.map_err(|_| AppError::Internal)?;
-    list_ok(rows.iter().map(|r| entity_row_json(r, extra_cols)).collect())
+    if java_bare {
+        list_ok_java(rows.iter().map(|r| entity_row_json(r, extra_cols)).collect())
+    } else {
+        list_ok(rows.iter().map(|r| entity_row_json(r, extra_cols)).collect())
+    }
 }
 
 pub const UNIT_TABLE: &str = "x_org_unit";

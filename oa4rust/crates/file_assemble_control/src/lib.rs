@@ -984,12 +984,8 @@ pub async fn attachment2_list_filter_name(
             ("createTime".to_string(), Value::String(row.get("create_time"))),
         ]))
     }).collect();
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
-            ("data".to_string(), Value::Array(data)),
-        ]),
-    ))))
+    let count = data.len() as i64;
+    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
 }
 
 #[axum::debug_handler]
@@ -1701,12 +1697,8 @@ pub async fn editor_list(
             ("person".to_string(), Value::String(row.get("person"))),
         ]))
     }).collect();
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
-            ("data".to_string(), Value::Array(data)),
-        ]),
-    ))))
+    let count = data.len() as i64;
+    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
 }
 
 #[axum::debug_handler]
@@ -1839,12 +1831,8 @@ pub async fn file_list_unused_referencetype_cmsdocument_manage(
             ("length".to_string(), Value::Number(serde_json::Number::from(row.get::<_, i64>("length")))),
         ]))
     }).collect();
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
-            ("data".to_string(), Value::Array(data)),
-        ]),
-    ))))
+    let count = data.len() as i64;
+    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
 }
 
 #[axum::debug_handler]
@@ -2187,12 +2175,8 @@ pub async fn folder_list_top(
             map
         })
     }).collect();
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
-            ("data".to_string(), Value::Array(data)),
-        ]),
-    ))))
+    let count = data.len() as i64;
+    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
 }
 
 #[axum::debug_handler]
@@ -2282,12 +2266,8 @@ pub async fn folder2_list_top(
             map
         })
     }).collect();
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
-            ("data".to_string(), Value::Array(data)),
-        ]),
-    ))))
+    let count = data.len() as i64;
+    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
 }
 
 #[axum::debug_handler]
@@ -2358,12 +2338,8 @@ pub async fn recycle_list(
             ("deletedAt".to_string(), Value::String(row.get("deleted_at"))),
         ]))
     }).collect();
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
-            ("data".to_string(), Value::Array(data)),
-        ]),
-    ))))
+    let count = data.len() as i64;
+    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
 }
 
 #[axum::debug_handler]
@@ -2595,12 +2571,8 @@ pub async fn share_list_my2_shareType_fileType(
             ("length".to_string(), Value::Number(serde_json::Number::from(row.get::<_, i64>("length")))),
         ]))
     }).collect();
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
-            ("data".to_string(), Value::Array(data)),
-        ]),
-    ))))
+    let count = data.len() as i64;
+    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
 }
 
 #[axum::debug_handler]
@@ -2609,12 +2581,7 @@ pub async fn share_list_to_me(
     Extension(session): Extension<shared::session::Session>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let _ = (pool, session);
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("count".to_string(), Value::Number(serde_json::Number::from(0i64))),
-            ("data".to_string(), Value::Array(vec![])),
-        ]),
-    ))))
+    Ok(Json(ActionResult::java_success(Value::Array(vec![]), 0, 0)))
 }
 
 #[axum::debug_handler]
@@ -2624,12 +2591,7 @@ pub async fn share_list_to_me2_fileType(
     axum::extract::Path(file_type): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let _ = (pool, session, file_type);
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("count".to_string(), Value::Number(serde_json::Number::from(0i64))),
-            ("data".to_string(), Value::Array(vec![])),
-        ]),
-    ))))
+    Ok(Json(ActionResult::java_success(Value::Array(vec![]), 0, 0)))
 }
 
 #[axum::debug_handler]

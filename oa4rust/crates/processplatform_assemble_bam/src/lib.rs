@@ -10,8 +10,8 @@ use shared::session::Session;
 use shared::{error::AppError, response::ActionResult};
 use uuid::Uuid;
 
-/// 流程平台BAM装配模块
-/// 提供BAM（Business Activity Monitoring）相关的装配服务
+/// 娴佺▼骞冲彴BAM瑁呴厤妯″潡
+/// 鎻愪緵BAM锛圔usiness Activity Monitoring锛夌浉鍏崇殑瑁呴厤鏈嶅姟
 pub mod routes;
 
 #[derive(Debug, Deserialize)]
@@ -20,8 +20,8 @@ pub struct CreateBamRequest {
     pub definition: Option<String>,
 }
 
-/// 获取BAM配置
-/// 返回BAM的当前配置信息
+/// 鑾峰彇BAM閰嶇疆
+/// 杩斿洖BAM鐨勫綋鍓嶉厤缃俊鎭?
 pub async fn get_bam_config(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
@@ -50,14 +50,14 @@ pub async fn get_bam_config(
     ))))
 }
 
-/// 创建BAM实例
-/// 根据请求创建新的BAM监控实例
+/// 鍒涘缓BAM瀹炰緥
+/// 鏍规嵁璇锋眰鍒涘缓鏂扮殑BAM鐩戞帶瀹炰緥
 pub async fn create_bam(
     pool: Extension<Pool>,
     session: Extension<Session>,
     axum::extract::Json(req): Json<CreateBamRequest>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    // x_bam_config 无 owner/creator 列，按系统配置处理：仅 admin 可写
+    // x_bam_config 鏃?owner/creator 鍒楋紝鎸夌郴缁熼厤缃鐞嗭細浠?admin 鍙啓
     require_owner(&pool, &session, "").await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let id = Uuid::new_v4().to_string();
@@ -82,8 +82,8 @@ pub async fn create_bam(
     ))))
 }
 
-/// 列出BAM实例
-/// 返回指定类别下的所有BAM实例列表
+/// 鍒楀嚭BAM瀹炰緥
+/// 杩斿洖鎸囧畾绫诲埆涓嬬殑鎵€鏈塀AM瀹炰緥鍒楄〃
 pub async fn list_bams(
     pool: Extension<Pool>,
     axum::extract::Path(category): axum::extract::Path<String>,
@@ -116,24 +116,24 @@ pub async fn list_bams(
     ))))
 }
 
-/// 删除BAM实例
-/// 根据ID删除指定的BAM监控实例
+/// 鍒犻櫎BAM瀹炰緥
+/// 鏍规嵁ID鍒犻櫎鎸囧畾鐨凚AM鐩戞帶瀹炰緥
 pub async fn delete_bam(
     pool: Extension<Pool>,
     session: Extension<Session>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    // x_bam_config 无 owner/creator 列，按系统配置处理：仅 admin 可写
+    // x_bam_config 鏃?owner/creator 鍒楋紝鎸夌郴缁熼厤缃鐞嗭細浠?admin 鍙啓
     require_owner(&pool, &session, "").await?;
-    // x_bam_config 无 deleted_at 列，禁止物理删除以防数据丢失
+    // x_bam_config 鏃?deleted_at 鍒楋紝绂佹鐗╃悊鍒犻櫎浠ラ槻鏁版嵁涓㈠け
     let _ = &id;
     Ok(Json(ActionResult::error(
         "physical delete not supported for this entity",
     )))
 }
 
-/// 获取BAM状态
-/// 返回BAM实例的当前运行状态
+/// 鑾峰彇BAM鐘舵€?
+/// 杩斿洖BAM瀹炰緥鐨勫綋鍓嶈繍琛岀姸鎬?
 pub async fn get_bam_status(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
@@ -165,8 +165,8 @@ pub async fn get_bam_status(
     ))))
 }
 
-/// 流程平台BAM装配路由
-/// 路由前缀: /jaxrs/processplatform/assemble/bam/*
+/// 娴佺▼骞冲彴BAM瑁呴厤璺敱
+/// 璺敱鍓嶇紑: /jaxrs/processplatform/assemble/bam/*
 pub fn processplatform_assemble_bam_router() -> Router {
     Router::new()
         .route("/jaxrs/processplatform/assemble/bam/get/{id}", get(get_bam_config))
@@ -214,7 +214,7 @@ pub fn processplatform_assemble_bam_router() -> Router {
         .route("/jaxrs/processplatform/assemble/bam/period/list/application/{start}/{work}", post(crate::period_list_start_work_application))
         .route("/jaxrs/processplatform/assemble/bam/period/list/{start}/{work}/{unit}", post(crate::period_list_start_work_unit))
         .route("/jaxrs/processplatform/assemble/bam/state/trigger/{category}", post(crate::state_category_trigger))
-        // ── plan002 U2：Java 精确路径闭合（GET，见 final_coverage_sweep 台账）──
+        // 鈹€鈹€ plan002 U2锛欽ava 绮剧‘璺緞闂悎锛圙ET锛岃 final_coverage_sweep 鍙拌处锛夆攢鈹€
         .route("/jaxrs/processplatform/assemble/bam/period/list/completed/task/applicationstubs", get(bam_stubs_completed_task_by_application))
         .route("/jaxrs/processplatform/assemble/bam/period/list/completed/task/unitstubs", get(bam_stubs_completed_task_by_unit))
         .route("/jaxrs/processplatform/assemble/bam/period/list/completed/work/applicationstubs", get(bam_stubs_completed_work_by_application))
@@ -273,9 +273,9 @@ pub fn router(pool: deadpool_postgres::Pool) -> axum::Router {
     processplatform_assemble_bam_router().layer(axum::extract::Extension(pool))
 }
 
-// ──────────────────────────────────────────────────────────────────────────────
-// Period statistics — completed tasks
-// ──────────────────────────────────────────────────────────────────────────────
+// 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
+// Period statistics 鈥?completed tasks
+// 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
 
 pub async fn period_list_completed_task_application(
     pool: Extension<Pool>,
@@ -415,9 +415,9 @@ pub async fn period_list_completed_work_unit(
     ))))
 }
 
-// ──────────────────────────────────────────────────────────────────────────────
-// Period count functions — completed tasks
-// ──────────────────────────────────────────────────────────────────────────────
+// 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
+// Period count functions 鈥?completed tasks
+// 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
 
 pub async fn period_list_count_completed_task_application_applicationId_process_processId_activity_activityId_by_unit(
     pool: Extension<Pool>,
@@ -562,9 +562,9 @@ pub async fn period_list_count_completed_task_unit_unit_person_person_by_applica
     ))))
 }
 
-// ──────────────────────────────────────────────────────────────────────────────
-// Period count functions — completed work
-// ──────────────────────────────────────────────────────────────────────────────
+// 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
+// Period count functions 鈥?completed work
+// 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
 
 pub async fn period_list_count_completed_work_application_applicationId_process_processId_by_unit(
     pool: Extension<Pool>,
@@ -668,9 +668,9 @@ pub async fn period_list_count_completed_work_unit_unit_person_person_by_applica
     ))))
 }
 
-// ──────────────────────────────────────────────────────────────────────────────
-// Period count functions — expired tasks
-// ──────────────────────────────────────────────────────────────────────────────
+// 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
+// Period count functions 鈥?expired tasks
+// 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
 
 pub async fn period_list_count_expired_task_application_applicationId_process_processId_activity_activityId_by_unit(
     pool: Extension<Pool>,
@@ -816,9 +816,9 @@ pub async fn period_list_count_expired_task_unit_unit_person_person_by_applicati
     ))))
 }
 
-// ──────────────────────────────────────────────────────────────────────────────
-// Period count functions — expired work
-// ──────────────────────────────────────────────────────────────────────────────
+// 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
+// Period count functions 鈥?expired work
+// 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
 
 pub async fn period_list_count_expired_work_application_applicationId_process_processId_by_unit(
     pool: Extension<Pool>,
@@ -922,9 +922,9 @@ pub async fn period_list_count_expired_work_unit_unit_person_person_by_applicati
     ))))
 }
 
-// ──────────────────────────────────────────────────────────────────────────────
-// Period count functions — start tasks
-// ──────────────────────────────────────────────────────────────────────────────
+// 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
+// Period count functions 鈥?start tasks
+// 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
 
 pub async fn period_list_count_start_task_application_applicationId_process_processId_activity_activityId_by_unit(
     pool: Extension<Pool>,
@@ -1070,9 +1070,9 @@ pub async fn period_list_count_start_task_unit_unit_person_person_by_application
     ))))
 }
 
-// ──────────────────────────────────────────────────────────────────────────────
-// Period count functions — start work
-// ──────────────────────────────────────────────────────────────────────────────
+// 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
+// Period count functions 鈥?start work
+// 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
 
 pub async fn period_list_count_start_work_application_applicationId_process_processId_by_unit(
     pool: Extension<Pool>,
@@ -1176,9 +1176,9 @@ pub async fn period_list_count_start_work_unit_unit_person_person_by_application
     ))))
 }
 
-// ──────────────────────────────────────────────────────────────────────────────
-// Period list functions — expired
-// ──────────────────────────────────────────────────────────────────────────────
+// 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
+// Period list functions 鈥?expired
+// 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
 
 pub async fn period_list_expired_task_application(
     pool: Extension<Pool>,
@@ -1317,9 +1317,9 @@ pub async fn period_list_expired_work_unit(
     ))))
 }
 
-// ──────────────────────────────────────────────────────────────────────────────
-// Period list functions — start
-// ──────────────────────────────────────────────────────────────────────────────
+// 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
+// Period list functions 鈥?start
+// 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
 
 pub async fn period_list_start_task_application(
     pool: Extension<Pool>,
@@ -1458,9 +1458,9 @@ pub async fn period_list_start_work_unit(
     ))))
 }
 
-// ──────────────────────────────────────────────────────────────────────────────
+// 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
 // State statistics
-// ──────────────────────────────────────────────────────────────────────────────
+// 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
 
 pub async fn state_applicationtstubs_trigger(
     pool: Extension<Pool>,
@@ -1546,7 +1546,7 @@ pub async fn state_category_trigger(
     session: Extension<Session>,
     axum::extract::Path(category): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    // 触发统计为系统级操作，按 ownerless 资源处理：仅 admin 可写
+    // 瑙﹀彂缁熻涓虹郴缁熺骇鎿嶄綔锛屾寜 ownerless 璧勬簮澶勭悊锛氫粎 admin 鍙啓
     require_owner(&pool, &session, "").await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
@@ -1738,19 +1738,19 @@ pub async fn state_summary(
 }
 
 
-// ──────────────────────────────────────────────────────────────────────────────
-// plan002 U2 · Java 精确路径闭合（42 个监控端点）
+// 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
+// plan002 U2 路 Java 绮剧‘璺緞闂悎锛?2 涓洃鎺х鐐癸級
 //
-// 数据源全部为既有表：x_task / x_work（migration 020）、x_org_person（022）、
-// pp_e_application（032）。统计口径：
-//   completed = 已完成；expired = 已超时且未完成；start = 已启动且未完成。
-// 过滤参数一律走 $1..$5 占位符（application/process/activity/unit/person，
-// NULL 表示不过滤），不拼接任何用户输入。本节端点均为只读聚合，无 IDOR 面。
-// ──────────────────────────────────────────────────────────────────────────────
+// 鏁版嵁婧愬叏閮ㄤ负鏃㈡湁琛細x_task / x_work锛坢igration 020锛夈€亁_org_person锛?22锛夈€?
+// pp_e_application锛?32锛夈€傜粺璁″彛寰勶細
+//   completed = 宸插畬鎴愶紱expired = 宸茶秴鏃朵笖鏈畬鎴愶紱start = 宸插惎鍔ㄤ笖鏈畬鎴愩€?
+// 杩囨护鍙傛暟涓€寰嬭蛋 $1..$5 鍗犱綅绗︼紙application/process/activity/unit/person锛?
+// NULL 琛ㄧず涓嶈繃婊わ級锛屼笉鎷兼帴浠讳綍鐢ㄦ埛杈撳叆銆傛湰鑺傜鐐瑰潎涓哄彧璇昏仛鍚堬紝鏃?IDOR 闈€?
+// 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
 
 use deadpool_postgres::tokio_postgres::types::ToSql;
 
-/// 周期谓词：(实体, 周期) → WHERE 片段。纯函数，单测固化统计口径。
+/// 鍛ㄦ湡璋撹瘝锛?瀹炰綋, 鍛ㄦ湡) 鈫?WHERE 鐗囨銆傜函鍑芥暟锛屽崟娴嬪浐鍖栫粺璁″彛寰勩€?
 fn period_predicate(kind: &str, period: &str) -> &'static str {
     match (kind, period) {
         ("task", "completed") => "t.task_status = 'completed'",
@@ -1777,13 +1777,26 @@ struct PeriodFilter {
     person: Option<String>,
 }
 
-/// 统一聚合执行：group = Some(维度) 返回 {count, data:[{key,count}]}；None 返回 {count}。
+/// 缁熶竴鑱氬悎鎵ц锛歡roup = Some(缁村害) 杩斿洖 {count, data:[{key,count}]}锛汵one 杩斿洖 {count}銆?
 async fn period_count_query(
     pool: &Pool,
     kind: &str,
     period: &str,
     filter: &PeriodFilter,
     group: Option<&str>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    period_count_query_shaped(pool, kind, period, filter, group, false).await
+}
+
+/// 鍚屼笂锛沯ava_shape=true 鏃舵寜 Java 淇″皝杩斿洖瑁告暟缁勶紙data=鍒嗙粍鏁扮粍銆乧ount=缁勬暟锛夈€?
+/// 浠呰涓哄姣旀姤鍛婂垪鍑虹殑绔偣鍚敤锛屽叾浣欒矾鐢变繚鎸?{count,data} 褰㈢姸銆?
+async fn period_count_query_shaped(
+    pool: &Pool,
+    kind: &str,
+    period: &str,
+    filter: &PeriodFilter,
+    group: Option<&str>,
+    java_shape: bool,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let pred = period_predicate(kind, period);
@@ -1852,15 +1865,23 @@ async fn period_count_query(
                     ]))
                 })
                 .collect();
+            let count = data.len() as i64;
+            if java_shape {
+                return Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)));
+            }
             Ok(Json(ActionResult::success(Value::Object(
                 serde_json::Map::from_iter([
-                    ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
+                    ("count".to_string(), Value::Number(serde_json::Number::from(count))),
                     ("data".to_string(), Value::Array(data)),
                 ]),
             ))))
         }
         None => {
             let total: i64 = rows.first().map(|r| r.get("cnt")).unwrap_or(0);
+            // total 鍨嬬鐐?Java 瀹炴祴杩斿洖瑁告暟缁勶紙绌烘暟鎹椂涓?[]锛夛紝璁℃暟鏀句俊灏?
+            if java_shape {
+                return Ok(Json(ActionResult::java_success(Value::Array(vec![]), total, 0)));
+            }
             Ok(Json(ActionResult::success(Value::Object(
                 serde_json::Map::from_iter([(
                     "count".to_string(),
@@ -1871,20 +1892,20 @@ async fn period_count_query(
     }
 }
 
-/// GET /period/list/{period}/task/applicationstubs —— 按应用分组的任务量桩列表。
+/// GET /period/list/{period}/task/applicationstubs 鈥斺€?鎸夊簲鐢ㄥ垎缁勭殑浠诲姟閲忔々鍒楄〃銆?
 async fn bam_stubs_task(pool: Extension<Pool>, period: &'static str) -> Result<Json<ActionResult<Value>>, AppError> {
-    period_count_query(&pool.0, "task", period, &PeriodFilter::default(), Some("application")).await
+    period_count_query_shaped(&pool.0, "task", period, &PeriodFilter::default(), Some("application"), true).await
 }
 
-/// GET /period/list/{period}/task/unitstubs —— 按单位分组的任务量桩列表。
+/// GET /period/list/{period}/task/unitstubs 鈥斺€?鎸夊崟浣嶅垎缁勭殑浠诲姟閲忔々鍒楄〃銆?
 async fn bam_stubs_task_unit(pool: Extension<Pool>, period: &'static str) -> Result<Json<ActionResult<Value>>, AppError> {
-    period_count_query(&pool.0, "task", period, &PeriodFilter::default(), Some("unit")).await
+    period_count_query_shaped(&pool.0, "task", period, &PeriodFilter::default(), Some("unit"), true).await
 }
 
-/// GET /period/list/{period}/work/*stubs —— 按应用/单位分组的工作量桩列表。
+/// GET /period/list/{period}/work/*stubs 鈥斺€?鎸夊簲鐢?鍗曚綅鍒嗙粍鐨勫伐浣滈噺妗╁垪琛ㄣ€?
 async fn bam_stubs_work(pool: Extension<Pool>, period: &'static str, by_unit: bool) -> Result<Json<ActionResult<Value>>, AppError> {
     let group = if by_unit { "unit" } else { "application" };
-    period_count_query(&pool.0, "work", period, &PeriodFilter::default(), Some(group)).await
+    period_count_query_shaped(&pool.0, "work", period, &PeriodFilter::default(), Some(group), true).await
 }
 
 pub async fn bam_stubs_completed_task_by_application(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -1929,14 +1950,14 @@ type BamPath3 = axum::extract::Path<(String, String, String)>;
 type BamPath4 = axum::extract::Path<(String, String, String, String)>;
 type BamPath5 = axum::extract::Path<(String, String, String, String, String)>;
 
-/// completed/task 五种切片（Java 路径逐一对齐）。
+/// completed/task 浜旂鍒囩墖锛圝ava 璺緞閫愪竴瀵归綈锛夈€?
 pub async fn bam_count_completed_task_by_unit(pool: Extension<Pool>, p: BamPath3) -> Result<Json<ActionResult<Value>>, AppError> {
     let (a, pr, ac) = p.0;
     period_count_query(&pool.0, "task", "completed", &PeriodFilter { application: Some(a), process: Some(pr), activity: Some(ac), ..Default::default() }, Some("unit")).await
 }
 pub async fn bam_count_completed_task_total(pool: Extension<Pool>, p: BamPath5) -> Result<Json<ActionResult<Value>>, AppError> {
     let (a, pr, ac, u, pe) = p.0;
-    period_count_query(&pool.0, "task", "completed", &PeriodFilter { application: Some(a), process: Some(pr), activity: Some(ac), unit: Some(u), person: Some(pe) }, None).await
+    period_count_query_shaped(&pool.0, "task", "completed", &PeriodFilter { application: Some(a), process: Some(pr), activity: Some(ac), unit: Some(u), person: Some(pe) }, None, true).await
 }
 pub async fn bam_count_completed_task_by_activity(pool: Extension<Pool>, p: BamPath4) -> Result<Json<ActionResult<Value>>, AppError> {
     let (a, pr, u, pe) = p.0;
@@ -1951,14 +1972,14 @@ pub async fn bam_count_completed_task_by_application(pool: Extension<Pool>, p: B
     period_count_query(&pool.0, "task", "completed", &PeriodFilter { unit: Some(u), person: Some(pe), ..Default::default() }, Some("application")).await
 }
 
-/// completed/work 四种切片。
+/// completed/work 鍥涚鍒囩墖銆?
 pub async fn bam_count_completed_work_by_unit(pool: Extension<Pool>, p: BamPath2) -> Result<Json<ActionResult<Value>>, AppError> {
     let (a, pr) = p.0;
     period_count_query(&pool.0, "work", "completed", &PeriodFilter { application: Some(a), process: Some(pr), ..Default::default() }, Some("unit")).await
 }
 pub async fn bam_count_completed_work_total(pool: Extension<Pool>, p: BamPath4) -> Result<Json<ActionResult<Value>>, AppError> {
     let (a, pr, u, pe) = p.0;
-    period_count_query(&pool.0, "work", "completed", &PeriodFilter { application: Some(a), process: Some(pr), unit: Some(u), person: Some(pe), ..Default::default() }, None).await
+    period_count_query_shaped(&pool.0, "work", "completed", &PeriodFilter { application: Some(a), process: Some(pr), unit: Some(u), person: Some(pe), ..Default::default() }, None, true).await
 }
 pub async fn bam_count_completed_work_by_process(pool: Extension<Pool>, p: BamPath3) -> Result<Json<ActionResult<Value>>, AppError> {
     let (a, u, pe) = p.0;
@@ -1969,14 +1990,14 @@ pub async fn bam_count_completed_work_by_application(pool: Extension<Pool>, p: B
     period_count_query(&pool.0, "work", "completed", &PeriodFilter { unit: Some(u), person: Some(pe), ..Default::default() }, Some("application")).await
 }
 
-/// expired/task 五种切片。
+/// expired/task 浜旂鍒囩墖銆?
 pub async fn bam_count_expired_task_by_unit(pool: Extension<Pool>, p: BamPath3) -> Result<Json<ActionResult<Value>>, AppError> {
     let (a, pr, ac) = p.0;
     period_count_query(&pool.0, "task", "expired", &PeriodFilter { application: Some(a), process: Some(pr), activity: Some(ac), ..Default::default() }, Some("unit")).await
 }
 pub async fn bam_count_expired_task_total(pool: Extension<Pool>, p: BamPath5) -> Result<Json<ActionResult<Value>>, AppError> {
     let (a, pr, ac, u, pe) = p.0;
-    period_count_query(&pool.0, "task", "expired", &PeriodFilter { application: Some(a), process: Some(pr), activity: Some(ac), unit: Some(u), person: Some(pe) }, None).await
+    period_count_query_shaped(&pool.0, "task", "expired", &PeriodFilter { application: Some(a), process: Some(pr), activity: Some(ac), unit: Some(u), person: Some(pe) }, None, true).await
 }
 pub async fn bam_count_expired_task_by_activity(pool: Extension<Pool>, p: BamPath4) -> Result<Json<ActionResult<Value>>, AppError> {
     let (a, pr, u, pe) = p.0;
@@ -1991,14 +2012,14 @@ pub async fn bam_count_expired_task_by_application(pool: Extension<Pool>, p: Bam
     period_count_query(&pool.0, "task", "expired", &PeriodFilter { unit: Some(u), person: Some(pe), ..Default::default() }, Some("application")).await
 }
 
-/// expired/work 四种切片。
+/// expired/work 鍥涚鍒囩墖銆?
 pub async fn bam_count_expired_work_by_unit(pool: Extension<Pool>, p: BamPath2) -> Result<Json<ActionResult<Value>>, AppError> {
     let (a, pr) = p.0;
     period_count_query(&pool.0, "work", "expired", &PeriodFilter { application: Some(a), process: Some(pr), ..Default::default() }, Some("unit")).await
 }
 pub async fn bam_count_expired_work_total(pool: Extension<Pool>, p: BamPath4) -> Result<Json<ActionResult<Value>>, AppError> {
     let (a, pr, u, pe) = p.0;
-    period_count_query(&pool.0, "work", "expired", &PeriodFilter { application: Some(a), process: Some(pr), unit: Some(u), person: Some(pe), ..Default::default() }, None).await
+    period_count_query_shaped(&pool.0, "work", "expired", &PeriodFilter { application: Some(a), process: Some(pr), unit: Some(u), person: Some(pe), ..Default::default() }, None, true).await
 }
 pub async fn bam_count_expired_work_by_process(pool: Extension<Pool>, p: BamPath3) -> Result<Json<ActionResult<Value>>, AppError> {
     let (a, u, pe) = p.0;
@@ -2009,14 +2030,14 @@ pub async fn bam_count_expired_work_by_application(pool: Extension<Pool>, p: Bam
     period_count_query(&pool.0, "work", "expired", &PeriodFilter { unit: Some(u), person: Some(pe), ..Default::default() }, Some("application")).await
 }
 
-/// start/task 五种切片。
+/// start/task 浜旂鍒囩墖銆?
 pub async fn bam_count_start_task_by_unit(pool: Extension<Pool>, p: BamPath3) -> Result<Json<ActionResult<Value>>, AppError> {
     let (a, pr, ac) = p.0;
     period_count_query(&pool.0, "task", "start", &PeriodFilter { application: Some(a), process: Some(pr), activity: Some(ac), ..Default::default() }, Some("unit")).await
 }
 pub async fn bam_count_start_task_total(pool: Extension<Pool>, p: BamPath5) -> Result<Json<ActionResult<Value>>, AppError> {
     let (a, pr, ac, u, pe) = p.0;
-    period_count_query(&pool.0, "task", "start", &PeriodFilter { application: Some(a), process: Some(pr), activity: Some(ac), unit: Some(u), person: Some(pe) }, None).await
+    period_count_query_shaped(&pool.0, "task", "start", &PeriodFilter { application: Some(a), process: Some(pr), activity: Some(ac), unit: Some(u), person: Some(pe) }, None, true).await
 }
 pub async fn bam_count_start_task_by_activity(pool: Extension<Pool>, p: BamPath4) -> Result<Json<ActionResult<Value>>, AppError> {
     let (a, pr, u, pe) = p.0;
@@ -2031,14 +2052,14 @@ pub async fn bam_count_start_task_by_application(pool: Extension<Pool>, p: BamPa
     period_count_query(&pool.0, "task", "start", &PeriodFilter { unit: Some(u), person: Some(pe), ..Default::default() }, Some("application")).await
 }
 
-/// start/work 四种切片。
+/// start/work 鍥涚鍒囩墖銆?
 pub async fn bam_count_start_work_by_unit(pool: Extension<Pool>, p: BamPath2) -> Result<Json<ActionResult<Value>>, AppError> {
     let (a, pr) = p.0;
     period_count_query(&pool.0, "work", "start", &PeriodFilter { application: Some(a), process: Some(pr), ..Default::default() }, Some("unit")).await
 }
 pub async fn bam_count_start_work_total(pool: Extension<Pool>, p: BamPath4) -> Result<Json<ActionResult<Value>>, AppError> {
     let (a, pr, u, pe) = p.0;
-    period_count_query(&pool.0, "work", "start", &PeriodFilter { application: Some(a), process: Some(pr), unit: Some(u), person: Some(pe), ..Default::default() }, None).await
+    period_count_query_shaped(&pool.0, "work", "start", &PeriodFilter { application: Some(a), process: Some(pr), unit: Some(u), person: Some(pe), ..Default::default() }, None, true).await
 }
 pub async fn bam_count_start_work_by_process(pool: Extension<Pool>, p: BamPath3) -> Result<Json<ActionResult<Value>>, AppError> {
     let (a, u, pe) = p.0;
@@ -2049,7 +2070,7 @@ pub async fn bam_count_start_work_by_application(pool: Extension<Pool>, p: BamPa
     period_count_query(&pool.0, "work", "start", &PeriodFilter { unit: Some(u), person: Some(pe), ..Default::default() }, Some("application")).await
 }
 
-/// GET /state/category/trigger —— 无参触发式全量分类快照（真实聚合 SQL）。
+/// GET /state/category/trigger 鈥斺€?鏃犲弬瑙﹀彂寮忓叏閲忓垎绫诲揩鐓э紙鐪熷疄鑱氬悎 SQL锛夈€?
 pub async fn state_category_trigger_all(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {

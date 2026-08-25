@@ -133,12 +133,8 @@ pub async fn modules_all(
         })
         .collect();
 
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
-            ("data".to_string(), Value::Array(data)),
-        ]),
-    ))))
+    let count = data.len() as i64;
+    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
 }
 
 pub fn router(pool: deadpool_postgres::Pool) -> axum::Router {
@@ -1063,12 +1059,8 @@ pub async fn captcha_list(pool: Extension<Pool>) -> Result<Json<ActionResult<Val
         })
         .collect();
 
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
-            ("data".to_string(), Value::Array(data)),
-        ]),
-    ))))
+    let count = data.len() as i64;
+    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
 }
 
 
@@ -1232,12 +1224,8 @@ pub async fn code_list(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>
         })
         .collect();
 
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
-            ("data".to_string(), Value::Array(data)),
-        ]),
-    ))))
+    let count = data.len() as i64;
+    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
 }
 
 
@@ -2391,10 +2379,8 @@ pub async fn datastructure_modules_all(
         })
         .collect();
 
-    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
-        ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
-        ("data".to_string(), Value::Array(data)),
-    ])))))
+    let count = data.len() as i64;
+    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
 }
 
 pub async fn datastructure_tables_all(
@@ -2423,10 +2409,8 @@ pub async fn datastructure_tables_all(
         })
         .collect();
 
-    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
-        ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
-        ("data".to_string(), Value::Array(data)),
-    ])))))
+    let count = data.len() as i64;
+    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
 }
 
 pub async fn deploy_list_paging_page_size_size(
@@ -3241,12 +3225,8 @@ pub async fn invoke_list_category(pool: Extension<Pool>) -> Result<Json<ActionRe
         })
         .collect();
 
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
-            ("data".to_string(), Value::Array(data)),
-        ]),
-    ))))
+    let count = data.len() as i64;
+    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
 }
 
 
@@ -3514,12 +3494,8 @@ pub async fn jest_list(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>
         })
         .collect();
 
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
-            ("data".to_string(), Value::Array(data)),
-        ]),
-    ))))
+    let count = data.len() as i64;
+    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
 }
 
 
@@ -3736,12 +3712,8 @@ pub async fn market_list_top_three(pool: Extension<Pool>) -> Result<Json<ActionR
         })
         .collect();
 
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
-            ("data".to_string(), Value::Array(data)),
-        ]),
-    ))))
+    let count = data.len() as i64;
+    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
 }
 
 
@@ -4037,12 +4009,7 @@ pub async fn module_output(pool: Extension<Pool>, Path(id): Path<String>) -> Res
 
 
 pub async fn module_output_list_structure() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("count".to_string(), Value::Number(serde_json::Number::from(0i64))),
-            ("data".to_string(), Value::Array(vec![])),
-        ]),
-    ))))
+    Ok(Json(ActionResult::java_success(Value::Array(vec![]), 0, 0)))
 }
 
 pub async fn module_output_structure(pool: Extension<Pool>, Path(id): Path<String>) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -4394,10 +4361,8 @@ pub async fn output_list(
         })
         .collect();
 
-    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
-        ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
-        ("data".to_string(), Value::Array(data)),
-    ])))))
+    let count = data.len() as i64;
+    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
 }
 
 pub async fn output_appInfoFlag_select(
@@ -4489,10 +4454,8 @@ pub async fn prompterrorlog_count_exceptionclass(
         })
         .collect();
 
-    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
-        ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
-        ("data".to_string(), Value::Array(data)),
-    ])))))
+    let count = data.len() as i64;
+    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
 }
 
 pub async fn prompterrorlog_count_loggername(
@@ -4521,10 +4484,8 @@ pub async fn prompterrorlog_count_loggername(
         })
         .collect();
 
-    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
-        ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
-        ("data".to_string(), Value::Array(data)),
-    ])))))
+    let count = data.len() as i64;
+    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
 }
 
 pub async fn prompterrorlog_list_id_next_count(
@@ -5113,10 +5074,8 @@ pub async fn schedule_list_schedule(
         })
         .collect();
 
-    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
-        ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
-        ("data".to_string(), Value::Array(data)),
-    ])))))
+    let count = data.len() as i64;
+    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
 }
 
 pub async fn schedule_list_schedulelocal(
@@ -5147,10 +5106,8 @@ pub async fn schedule_list_schedulelocal(
         })
         .collect();
 
-    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
-        ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
-        ("data".to_string(), Value::Array(data)),
-    ])))))
+    let count = data.len() as i64;
+    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
 }
 
 pub async fn schedule_list_schedulelog_application_application(
@@ -5181,10 +5138,8 @@ pub async fn schedule_list_schedulelog_application_application(
         })
         .collect();
 
-    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
-        ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
-        ("data".to_string(), Value::Array(data)),
-    ])))))
+    let count = data.len() as i64;
+    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
 }
 
 pub async fn schedule_report(
@@ -6488,10 +6443,8 @@ pub async fn agent_list_all(
         })
         .collect();
 
-    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
-        ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
-        ("data".to_string(), Value::Array(data)),
-    ])))))
+    let count = data.len() as i64;
+    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
 }
 
 pub async fn agent_delete_flag(
@@ -7404,7 +7357,8 @@ pub async fn u3_invoke_list_all(
             })
         })
         .collect();
-    Ok(Json(ActionResult::success(json!({ "count": data.len(), "data": data }))))
+    let count = data.len() as i64;
+    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
 }
 
 /// GET /invoke/list/with/category/{category}
@@ -7433,7 +7387,8 @@ pub async fn u3_invoke_list_by_category(
             })
         })
         .collect();
-    Ok(Json(ActionResult::success(json!({ "count": data.len(), "data": data }))))
+    let count = data.len() as i64;
+    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
 }
 
 async fn u3_invoke_execute_inner(

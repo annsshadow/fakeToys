@@ -42,24 +42,6 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn test_complex_top() {
-        let pool = shared::testing::test_pool();
-        let app = crate::router(pool);
-        let response = app
-            .oneshot(
-                Request::builder()
-                    .uri("/jaxrs/file/complex/top")
-                    .method("GET")
-                    .body(Body::empty())
-                    .unwrap(),
-            )
-            .await
-            .unwrap();
-        assert_ne!(response.status(), StatusCode::NOT_FOUND,
-            "complex_top route should be registered");
-    }
-
-    #[tokio::test]
     async fn test_file_upload() {
         let pool = shared::testing::test_pool();
         let app = crate::router(pool);

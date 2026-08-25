@@ -84,7 +84,7 @@ pub async fn unit_list_all_object(
         .await
         .map_err(|_| AppError::Internal)?;
     let data: Vec<Value> = rows.iter().map(crate::endpoints::row_to_map).collect();
-    ok_json(count_data(data.len(), data))
+    crate::endpoints::ok_java_list(data.len(), data)
 }
 
 async fn unit_tree_scope(

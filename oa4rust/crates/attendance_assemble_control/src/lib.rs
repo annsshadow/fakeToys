@@ -993,12 +993,8 @@ pub async fn attendancedetail_list_file_id(
         })
         .collect();
 
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
-            ("data".to_string(), Value::Array(data)),
-        ]),
-    ))))
+    let count = data.len() as i64;
+    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
 }
 
 /// GET /jaxrs/attendance/assemble/control/attendancedetail/mobile/filter/list/page/{page}/count/{count}
@@ -1262,12 +1258,8 @@ pub async fn attendanceemployeeconfig_list_all(
         })
         .collect();
 
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
-            ("data".to_string(), Value::Array(data)),
-        ]),
-    ))))
+    let count = data.len() as i64;
+    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
 }
 
 /// GET /jaxrs/attendance/assemble/control/attendanceemployeeconfig/{id}
@@ -1323,12 +1315,8 @@ pub async fn attendanceimportfileinfo_list_all(
         })
         .collect();
 
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
-            ("data".to_string(), Value::Array(data)),
-        ]),
-    ))))
+    let count = data.len() as i64;
+    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
 }
 
 /// GET /jaxrs/attendance/assemble/control/attendanceimportfileinfo/{id}
@@ -1384,12 +1372,8 @@ pub async fn attendanceschedulesetting_list_all(
         })
         .collect();
 
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
-            ("data".to_string(), Value::Array(data)),
-        ]),
-    ))))
+    let count = data.len() as i64;
+    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
 }
 
 /// GET /jaxrs/attendance/assemble/control/attendanceschedulesetting/list/topUnit/{name}
@@ -1418,12 +1402,8 @@ pub async fn attendanceschedulesetting_list_topUnit_name(
         })
         .collect();
 
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
-            ("data".to_string(), Value::Array(data)),
-        ]),
-    ))))
+    let count = data.len() as i64;
+    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
 }
 
 /// GET /jaxrs/attendance/assemble/control/attendanceschedulesetting/list/unit/{name}
@@ -1453,12 +1433,8 @@ pub async fn attendanceschedulesetting_list_unit_name(
         })
         .collect();
 
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
-            ("data".to_string(), Value::Array(data)),
-        ]),
-    ))))
+    let count = data.len() as i64;
+    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
 }
 
 /// GET /jaxrs/attendance/assemble/control/attendanceschedulesetting/{id}
@@ -1583,12 +1559,8 @@ pub async fn attendanceselfholiday_list_all(
         })
         .collect();
 
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
-            ("data".to_string(), Value::Array(data)),
-        ]),
-    ))))
+    let count = data.len() as i64;
+    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
 }
 
 /// GET /jaxrs/attendance/assemble/control/attendanceselfholiday/{id}
@@ -1708,12 +1680,8 @@ pub async fn attendancesetting_list_all(
         })
         .collect();
 
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
-            ("data".to_string(), Value::Array(data)),
-        ]),
-    ))))
+    let count = data.len() as i64;
+    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
 }
 
 /// GET /jaxrs/attendance/assemble/control/attendancesetting/{id}
@@ -1800,12 +1768,8 @@ pub async fn attendancestatisticalcycle_list_all(
         })
         .collect();
 
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
-            ("data".to_string(), Value::Array(data)),
-        ]),
-    ))))
+    let count = data.len() as i64;
+    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
 }
 
 /// GET /jaxrs/attendance/assemble/control/attendancestatisticalcycle/{id}
@@ -1862,12 +1826,8 @@ pub async fn attendancestatisticrequirelog_list_all(
         })
         .collect();
 
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
-            ("data".to_string(), Value::Array(data)),
-        ]),
-    ))))
+    let count = data.len() as i64;
+    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
 }
 
 /// GET /jaxrs/attendance/assemble/control/attendancestatisticrequirelog/{id}
@@ -1960,12 +1920,8 @@ pub async fn attendanceworkdayconfig_list_all(
         })
         .collect();
 
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
-            ("data".to_string(), Value::Array(data)),
-        ]),
-    ))))
+    let count = data.len() as i64;
+    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
 }
 
 /// GET /jaxrs/attendance/assemble/control/attendanceworkdayconfig/{id}
@@ -2843,12 +2799,8 @@ pub async fn workplace_list_all(
         })
         .collect();
 
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
-            ("data".to_string(), Value::Array(data)),
-        ]),
-    ))))
+    let count = data.len() as i64;
+    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
 }
 
 /// GET /jaxrs/attendance/assemble/control/workplace/{id}
@@ -4955,11 +4907,8 @@ async fn stat_person_month_query(
     let rows = client.query(&sql, &[&person_v, &year, &month, &unit]).await.map_err(|_| AppError::Internal)?;
 
     let data: Vec<Value> = rows.iter().map(stat_row_to_value).collect();
-
-    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
-        ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
-        ("data".to_string(), Value::Array(data)),
-    ])))))
+    let count = data.len() as i64;
+    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
 }
 
 async fn stat_unit_month_query(
@@ -6605,10 +6554,8 @@ pub async fn v2_workplace_list_all(
         .map(workplace_row_value)
         .collect();
 
-    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
-        ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
-        ("data".to_string(), Value::Array(data)),
-    ])))))
+    let count = data.len() as i64;
+    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
 }
 
 fn workplace_row_value(row: &deadpool_postgres::tokio_postgres::Row) -> Value {

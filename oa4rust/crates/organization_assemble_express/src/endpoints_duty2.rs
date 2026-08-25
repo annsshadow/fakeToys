@@ -10,7 +10,7 @@ use deadpool_postgres::Pool;
 use serde_json::Value;
 use shared::{error::AppError, response::ActionResult};
 
-use crate::endpoints::{capped, count_data, normalize_flags, ok_json, row_to_map, string_field, string_list, PICK_ANY};
+use crate::endpoints::{capped, count_data, normalize_flags, ok_java_list, ok_json, row_to_map, string_field, string_list, PICK_ANY};
 
 fn finish_rows(
     rows: Vec<deadpool_postgres::tokio_postgres::Row>,
@@ -77,7 +77,7 @@ fn finish_duty_rows(
 ) -> Result<AxumJson<ActionResult<Value>>, AppError> {
     if objects {
         let data: Vec<Value> = rows.iter().map(row_to_map).collect();
-        ok_json(count_data(data.len(), data))
+        ok_java_list(data.len(), data)
     } else {
         let list: Vec<String> = rows.iter().map(|r| r.get(0)).collect();
         Ok(AxumJson(ActionResult::success(Value::Object(
@@ -108,7 +108,11 @@ async fn duty_identities_by_unit_name(
     capped(&names)?;
     capped(&units)?;
     if names.is_empty() || units.is_empty() {
-        return ok_json(count_data(0, vec![]));
+        return if objects {
+            ok_java_list(0, vec![])
+        } else {
+            ok_json(count_data(0, vec![]))
+        };
     }
     let recursive = body
         .get("recursiveUnit")
@@ -210,7 +214,7 @@ pub async fn unitduty_list_unit_object(
     let flags = normalize_flags(string_list(&body, "unitList"));
     capped(&flags)?;
     if flags.is_empty() {
-        return ok_json(count_data(0, vec![]));
+        return ok_java_list(0, vec![]);
     }
     const SQL: &str = "SELECT d.id, d.name, d.unit_id, d.identity_id FROM x_org_duty d \
          JOIN x_org_unit u ON u.id = d.unit_id AND u.deleted_at IS NULL \
@@ -218,7 +222,7 @@ pub async fn unitduty_list_unit_object(
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let rows = client.query(SQL, &[&flags]).await.map_err(|_| AppError::Internal)?;
     let data: Vec<Value> = rows.iter().map(row_to_map).collect();
-    ok_json(count_data(data.len(), data))
+    ok_java_list(data.len(), data)
 }
 
 /// POST /jaxrs/unitduty/find/by/unit/name (Java ActionGetWithUnitWithName，

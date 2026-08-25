@@ -80,7 +80,7 @@ pub async fn room_list(
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let rows = client
         .query(
-            "SELECT id, name, building_id, floor, capacity, equipment, description, photo, order_number FROM x_meeting_room ORDER BY name LIMIT 50",
+            "SELECT id, name, building_id, floor, capacity, equipment::text AS equipment, description, photo, order_number FROM x_meeting_room ORDER BY name LIMIT 50",
             &[],
         )
         .await
@@ -117,12 +117,8 @@ pub async fn room_list(
         })
         .collect();
 
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
-            ("data".to_string(), Value::Array(data)),
-        ]),
-    ))))
+    let count = data.len() as i64;
+    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
 }
 
 #[utoipa::path(
@@ -168,12 +164,8 @@ pub async fn building_list(
         })
         .collect();
 
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
-            ("data".to_string(), Value::Array(data)),
-        ]),
-    ))))
+    let count = data.len() as i64;
+    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
 }
 
 #[utoipa::path(
@@ -212,12 +204,8 @@ pub async fn openmeeting_list_room(
         })
         .collect();
 
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
-            ("data".to_string(), Value::Array(data)),
-        ]),
-    ))))
+    let count = data.len() as i64;
+    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
 }
 
 #[utoipa::path(

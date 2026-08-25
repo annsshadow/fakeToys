@@ -13,7 +13,7 @@ use deadpool_postgres::Pool;
 use serde_json::Value;
 use shared::{error::AppError, response::ActionResult};
 
-use crate::endpoints::{capped, count_data, normalize_flags, ok_json, string_field, string_list};
+use crate::endpoints::{capped, normalize_flags, ok_java_list, ok_json, string_field, string_list};
 
 // ── personattribute ───────────────────────────────────────────────────────────
 
@@ -70,7 +70,7 @@ pub async fn personattr_list_person_object(
     let flags = normalize_flags(string_list(&body, "personList"));
     capped(&flags)?;
     if flags.is_empty() {
-        return ok_json(count_data(0, vec![]));
+        return ok_java_list(0, vec![]);
     }
     const SQL: &str = "SELECT a.id, a.person_id, a.attribute_key, a.attribute_value \
          FROM x_org_person_attribute a \
@@ -99,7 +99,7 @@ pub async fn personattr_list_person_object(
             }
         }
     }
-    ok_json(count_data(data.len(), data))
+    ok_java_list(data.len(), data)
 }
 
 async fn attr_write_values(
@@ -270,7 +270,7 @@ pub async fn unitattr_list_unit_object(
     let flags = normalize_flags(string_list(&body, "unitList"));
     capped(&flags)?;
     if flags.is_empty() {
-        return ok_json(count_data(0, vec![]));
+        return ok_java_list(0, vec![]);
     }
     const SQL: &str = "SELECT a.id, a.unit_id, a.attribute_key, a.attribute_value \
          FROM x_org_unit_attribute a \
@@ -299,7 +299,7 @@ pub async fn unitattr_list_unit_object(
             }
         }
     }
-    ok_json(count_data(data.len(), data))
+    ok_java_list(data.len(), data)
 }
 
 /// POST /jaxrs/unitattribute/set/unit/name：全量替换组织属性值。
@@ -333,7 +333,7 @@ pub async fn empower_list_identity_object(
     let flags = normalize_flags(string_list(&body, "identityList"));
     capped(&flags)?;
     if flags.is_empty() {
-        return ok_json(count_data(0, vec![]));
+        return ok_java_list(0, vec![]);
     }
     const SQL: &str = "SELECT id, from_person, to_person, from_identity, to_identity, role_id, enabled \
          FROM x_empower WHERE deleted_at IS NULL \
@@ -351,7 +351,7 @@ pub async fn empower_list_identity_object(
         obj.insert("enabled".to_string(), Value::Bool(row.get::<_, Option<bool>>("enabled").unwrap_or(false)));
         data.push(Value::Object(obj));
     }
-    ok_json(count_data(data.len(), data))
+    ok_java_list(data.len(), data)
 }
 
 /// POST /jaxrs/empowerlog (Java EmpowerLogAction#create，Wi extends EmpowerLog)：

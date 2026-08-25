@@ -134,7 +134,7 @@ pub async fn unit_mock_delete_to_get(
     unit_delete(pool, session, Path(flag)).await
 }
 
-async fn top_units(pool: &Pool, unit_type: Option<&str>) -> HandlerResult {
+async fn top_units(pool: &Pool, unit_type: Option<&str>, java_bare: bool) -> HandlerResult {
     let client = client_of(pool).await?;
     let rows = match unit_type {
         Some(t) => {
@@ -156,26 +156,30 @@ async fn top_units(pool: &Pool, unit_type: Option<&str>) -> HandlerResult {
                 .map_err(|_| AppError::Internal)?
         }
     };
-    list_ok(rows.iter().map(unit_row_json).collect())
+    if java_bare {
+        list_ok_java(rows.iter().map(unit_row_json).collect())
+    } else {
+        list_ok(rows.iter().map(unit_row_json).collect())
+    }
 }
 
 pub async fn unit_get_root(pool: Extension<Pool>) -> HandlerResult {
-    top_units(&pool, None).await
+    top_units(&pool, None, false).await
 }
 
 pub async fn unit_list_top_root(pool: Extension<Pool>) -> HandlerResult {
-    top_units(&pool, None).await
+    top_units(&pool, None, true).await
 }
 
 pub async fn unit_list_top_with_type(
     pool: Extension<Pool>,
     Path(unit_type): Path<String>,
 ) -> HandlerResult {
-    top_units(&pool, Some(&unit_type)).await
+    top_units(&pool, Some(&unit_type), true).await
 }
 
 pub async fn unit_control_top(pool: Extension<Pool>) -> HandlerResult {
-    top_units(&pool, None).await
+    top_units(&pool, None, true).await
 }
 
 pub async fn unit_list_types(pool: Extension<Pool>) -> HandlerResult {
@@ -352,7 +356,7 @@ async fn units_by_flags(pool: &Pool, flags: &[String]) -> HandlerResult {
             }
         }
     }
-    list_ok(data)
+    list_ok_java(data)
 }
 
 pub async fn unit_list_by_body(pool: Extension<Pool>, Json(body): Json<Value>) -> HandlerResult {
@@ -413,12 +417,12 @@ pub async fn unit_list_pinyininitial(
     Json(body): Json<Value>,
 ) -> HandlerResult {
     let initials = initials_from_body(&body);
-    generic_pinyininitial_filter(&pool, UNIT_TABLE, &initials, UNIT_EXTRA).await
+    generic_pinyininitial_filter(&pool, UNIT_TABLE, &initials, UNIT_EXTRA, true).await
 }
 
 pub async fn unit_list_like(pool: Extension<Pool>, Json(body): Json<Value>) -> HandlerResult {
     let key = opt(&body, &["key", "name"]).unwrap_or_default();
-    generic_like_search(&pool, UNIT_TABLE, key, false, UNIT_EXTRA).await
+    generic_like_search(&pool, UNIT_TABLE, key, false, UNIT_EXTRA, true).await
 }
 
 pub async fn unit_list_like_pinyin(
@@ -426,7 +430,7 @@ pub async fn unit_list_like_pinyin(
     Json(body): Json<Value>,
 ) -> HandlerResult {
     let key = opt(&body, &["key"]).unwrap_or_default();
-    generic_like_search(&pool, UNIT_TABLE, key, true, UNIT_EXTRA).await
+    generic_like_search(&pool, UNIT_TABLE, key, true, UNIT_EXTRA, true).await
 }
 
 // 鈹€鈹€ identity 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
@@ -545,7 +549,7 @@ pub async fn identity_list_like(
     Json(body): Json<Value>,
 ) -> HandlerResult {
     let key = opt(&body, &["key", "name"]).unwrap_or_default();
-    generic_like_search(&pool, IDENTITY_TABLE, key, false, IDENTITY_EXTRA).await
+    generic_like_search(&pool, IDENTITY_TABLE, key, false, IDENTITY_EXTRA, false).await
 }
 
 pub async fn identity_list_like_pinyin(
@@ -553,7 +557,7 @@ pub async fn identity_list_like_pinyin(
     Json(body): Json<Value>,
 ) -> HandlerResult {
     let key = opt(&body, &["key"]).unwrap_or_default();
-    generic_like_search(&pool, IDENTITY_TABLE, key, true, IDENTITY_EXTRA).await
+    generic_like_search(&pool, IDENTITY_TABLE, key, true, IDENTITY_EXTRA, false).await
 }
 
 pub async fn identity_list_pinyininitial(
@@ -561,7 +565,7 @@ pub async fn identity_list_pinyininitial(
     Json(body): Json<Value>,
 ) -> HandlerResult {
     let initials = initials_from_body(&body);
-    generic_pinyininitial_filter(&pool, IDENTITY_TABLE, &initials, IDENTITY_EXTRA).await
+    generic_pinyininitial_filter(&pool, IDENTITY_TABLE, &initials, IDENTITY_EXTRA, false).await
 }
 
 // 鈹€鈹€ group 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
@@ -775,7 +779,7 @@ pub async fn group_delete_member_mock_put_to_post(
 
 pub async fn group_list_like(pool: Extension<Pool>, Json(body): Json<Value>) -> HandlerResult {
     let key = opt(&body, &["key", "name"]).unwrap_or_default();
-    generic_like_search(&pool, GROUP_TABLE, key, false, GROUP_EXTRA).await
+    generic_like_search(&pool, GROUP_TABLE, key, false, GROUP_EXTRA, false).await
 }
 
 pub async fn group_list_like_pinyin(
@@ -783,7 +787,7 @@ pub async fn group_list_like_pinyin(
     Json(body): Json<Value>,
 ) -> HandlerResult {
     let key = opt(&body, &["key"]).unwrap_or_default();
-    generic_like_search(&pool, GROUP_TABLE, key, true, GROUP_EXTRA).await
+    generic_like_search(&pool, GROUP_TABLE, key, true, GROUP_EXTRA, false).await
 }
 
 pub async fn group_list_pinyininitial(
@@ -791,7 +795,7 @@ pub async fn group_list_pinyininitial(
     Json(body): Json<Value>,
 ) -> HandlerResult {
     let initials = initials_from_body(&body);
-    generic_pinyininitial_filter(&pool, GROUP_TABLE, &initials, GROUP_EXTRA).await
+    generic_pinyininitial_filter(&pool, GROUP_TABLE, &initials, GROUP_EXTRA, false).await
 }
 
 // 鈹€鈹€ role 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
@@ -896,7 +900,7 @@ pub async fn role_delete(
 
 pub async fn role_list_like(pool: Extension<Pool>, Json(body): Json<Value>) -> HandlerResult {
     let key = opt(&body, &["key", "name"]).unwrap_or_default();
-    generic_like_search(&pool, ROLE_TABLE, key, false, ROLE_EXTRA).await
+    generic_like_search(&pool, ROLE_TABLE, key, false, ROLE_EXTRA, false).await
 }
 
 pub async fn role_list_like_pinyin(
@@ -904,7 +908,7 @@ pub async fn role_list_like_pinyin(
     Json(body): Json<Value>,
 ) -> HandlerResult {
     let key = opt(&body, &["key"]).unwrap_or_default();
-    generic_like_search(&pool, ROLE_TABLE, key, true, ROLE_EXTRA).await
+    generic_like_search(&pool, ROLE_TABLE, key, true, ROLE_EXTRA, false).await
 }
 
 pub async fn role_list_pinyininitial(
@@ -912,7 +916,7 @@ pub async fn role_list_pinyininitial(
     Json(body): Json<Value>,
 ) -> HandlerResult {
     let initials = initials_from_body(&body);
-    generic_pinyininitial_filter(&pool, ROLE_TABLE, &initials, ROLE_EXTRA).await
+    generic_pinyininitial_filter(&pool, ROLE_TABLE, &initials, ROLE_EXTRA, false).await
 }
 
 // 鈹€鈹€ unitduty 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
@@ -1078,5 +1082,5 @@ pub async fn duty_update_member(
 
 pub async fn duty_list_like(pool: Extension<Pool>, Json(body): Json<Value>) -> HandlerResult {
     let key = opt(&body, &["key", "name"]).unwrap_or_default();
-    generic_like_search(&pool, DUTY_TABLE, key, false, DUTY_EXTRA).await
+    generic_like_search(&pool, DUTY_TABLE, key, false, DUTY_EXTRA, false).await
 }
