@@ -1,0 +1,7 @@
+ALTER TABLE x_general_invoice
+  DROP COLUMN IF EXISTS xname,
+  DROP COLUMN IF EXISTS xstorage,
+  DROP COLUMN IF EXISTS xextension,
+  DROP COLUMN IF EXISTS xperson,
+  DROP COLUMN IF EXISTS xfiletype,
+  DROP COLUMN IF EXISTS xlength;

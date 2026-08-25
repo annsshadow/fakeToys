@@ -15809,15 +15809,71 @@ pub async fn attachment_u2b_preview_image_result(
 }
 
 pub async fn attachment_u2b_invoice_info(
-    axum::extract::Path((_flag, _ref)): axum::extract::Path<(String, String)>,
+    pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
+    axum::extract::Path((flag, _ref)): axum::extract::Path<(String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    Err(u2_capability_unavailable("invoice parsing"))
+    match u2_invoice_check_owner(&pool, &flag, &session.person_unique).await? {
+        U2Gate::NotFound => Ok(Json(ActionResult::error("invoice not found"))),
+        U2Gate::Forbidden => Err(AppError::Forbidden),
+        U2Gate::Allowed => {
+            let client = pool.get().await.map_err(|_| AppError::Internal)?;
+            let row = client
+                .query_opt(
+                    "SELECT id, number, date, amount::double precision AS amount, status, \
+                     xperson, xname, xextension FROM x_general_invoice WHERE id = $1",
+                    &[&flag],
+                )
+                .await
+                .map_err(|_| AppError::Internal)?;
+            match row {
+                Some(row) => {
+                    let amount: f64 = row.get("amount");
+                    let result = Value::Object(serde_json::Map::from_iter([
+                        ("id".to_string(), Value::String(row.get::<_, Option<String>>("id").unwrap_or_default())),
+                        ("number".to_string(), Value::String(row.get::<_, Option<String>>("number").unwrap_or_default())),
+                        ("date".to_string(), Value::String(row.get::<_, Option<String>>("date").unwrap_or_default())),
+                        ("amount".to_string(), Value::Number(serde_json::Number::from_f64(amount).unwrap_or(serde_json::Number::from(0)))),
+                        ("status".to_string(), Value::String(row.get::<_, Option<String>>("status").unwrap_or_default())),
+                        ("person".to_string(), Value::String(row.get::<_, Option<String>>("xperson").unwrap_or_default())),
+                        ("name".to_string(), Value::String(row.get::<_, Option<String>>("xname").unwrap_or_default())),
+                        ("extension".to_string(), Value::String(row.get::<_, Option<String>>("xextension").unwrap_or_default())),
+                    ]));
+                    Ok(Json(ActionResult::success(result)))
+                }
+                None => Ok(Json(ActionResult::error("invoice not found"))),
+            }
+        }
+    }
 }
 
 pub async fn attachment_u2b_invoice_download(
-    axum::extract::Path((_flag, _ref)): axum::extract::Path<(String, String)>,
+    pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
+    axum::extract::Path((flag, _ref)): axum::extract::Path<(String, String)>,
 ) -> Result<axum::response::Response, AppError> {
-    Err(u2_capability_unavailable("invoice parsing"))
+    use axum::response::IntoResponse;
+    match u2_invoice_check_owner(&pool, &flag, &session.person_unique).await? {
+        U2Gate::NotFound => {
+            Ok(Json(ActionResult::<Value>::error("invoice not found")).into_response())
+        }
+        U2Gate::Forbidden => Err(AppError::Forbidden),
+        U2Gate::Allowed => {
+            let client = pool.get().await.map_err(|_| AppError::Internal)?;
+            let row = client
+                .query_opt(
+                    "SELECT xname, xstorage FROM x_general_invoice WHERE id = $1",
+                    &[&flag],
+                )
+                .await
+                .map_err(|_| AppError::Internal)?;
+            let blob = row.map(|r| U2AttBlobRow {
+                name: r.get::<_, Option<String>>("xname"),
+                key: r.get::<_, Option<String>>("xstorage"),
+            });
+            u2_att_download_response(blob, &flag).await
+        }
+    }
 }
 
 pub async fn attachment_u2b_upload_with_url() -> Result<Json<ActionResult<Value>>, AppError> {
@@ -17461,6 +17517,40 @@ u2_att_ext_download_handler!(attachment_u2c_download_work_stream_ext, "\"xwork\"
 u2_att_ext_download_handler!(attachment_u2c_download_work_ext, "\"xwork\"");
 u2_att_ext_download_handler!(attachment_u2c_download_wc_stream_ext, "\"xworkCompleted\"");
 u2_att_ext_download_handler!(attachment_u2c_download_wc_ext, "\"xworkCompleted\"");
+
+// ── invoice 文档信息/下载 ×2（StorageObject on x_general_invoice）──
+// 对齐 o2server ActionGetInvoiceInfo / ActionDownloadInvoice（原 u2_capability_unavailable 桩已替换）。
+// 权限：owner(xperson 或 creator) —— JobControlBuilder allowVisit 边缘情况记为语义留档。
+// 依赖迁移 087_add_invoice_storage_columns.sql 为 x_general_invoice 补齐 xname/xstorage/xextension/xperson 等列。
+
+async fn u2_invoice_check_owner(
+    pool: &Pool,
+    id: &str,
+    person_unique: &str,
+) -> Result<U2Gate, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let row = client
+        .query_opt(
+            "SELECT xperson, creator FROM x_general_invoice WHERE id = $1",
+            &[&id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+    match row {
+        None => Ok(U2Gate::NotFound),
+        Some(r) => {
+            let xperson: Option<String> = r.get("xperson");
+            let creator: Option<String> = r.get("creator");
+            let owner = xperson.as_deref() == Some(person_unique)
+                || creator.as_deref() == Some(person_unique);
+            if owner {
+                Ok(U2Gate::Allowed)
+            } else {
+                Ok(U2Gate::Forbidden)
+            }
+        }
+    }
+}
 
 // ── review filter/create/entry：person+creatorPerson 双作用域可建阅评入口清单 ──
 
