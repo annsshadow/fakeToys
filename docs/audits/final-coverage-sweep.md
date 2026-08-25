@@ -126,6 +126,16 @@
 
 > 注：4 条 `attachment/download/{}/work.../{}.{}` 已用整段 `Path<String>` 捕获闭环（U1，commit 62fdf48d），仍记为 axum 单段多参数表达受限例外，属已闭环非回归。
 
+### 计数口径勘误与全量重验（2026-08-25）
+
+上文"共 1491 条期望端点"为复核时点临时差分脚本的口径，经 git 回溯核验**无法对应任何已提交版本**（该文件历次提交条目数：`4f0cf03d`=1012 → `14def34e`=1221 → … → `261e711f`=4510 → HEAD `fdf483d9`=**4513**）。两个数字维度不同：1491 是当时临时脚本的"期望端点"口径；4510/4513 是 `tests/behavior_comparison/endpoints.rs` 的实际条目数。实际增长由两因素叠加：① `14def34e`（08-20）起生成器由 `extract_endpoints.py`（仅取链式注册首个 method）换成 `regen_endpoints.py`（`.route("p", get(a).put(b))` 展开为多条）；② plan002 U2 战役补注册路由后反复再生成。missing=0 复核结论不受影响。
+
+同日按修复后的 `extract_routes.py` 逻辑（平衡括号提取 `.route(`、链式所有 method 计入、转义感知、剔除字符串字面量干扰）对 `crates/*/src/**/*.rs` 全注册面重验，唯一注册 4697 条 vs 清单 4513 条（内含 1 条手工占位 `parity/GET/...`，系 `47fdeca9` 引入）：
+
+- **真实缺口 159 条**（运行时已挂载、清单未收录）：`organization_assemble_control/u2_router.rs` 119（lib.rs:3566 已 merge）、auth 子模块路由 20（auth/lib.rs:812-819）、general 3、query_service 3、signature 3、preview 2、personal_extend 2、转义引号路径 `{\"param\"}` 共 5（general_assemble_control excel 2 / meeting participant 2 / meeting_assemble_control list 1）、personal `axum::routing::delete(`/empowerlog 1、shared `/health` 1。三类根因：生成器只扫 `src/routes.rs`+`src/lib.rs`（148 条）、路径含转义引号致正则截断（5 条）、全限定 `axum::routing::method(` 写法不被识别（6 条）。
+- **不计缺口 26 条**：empower 死代码 16（其 router 无任何挂载点，功能已由 personal crate 重实现）、shared/testing.rs 测试辅助 4、mcp_server 独立二进制 2、tests_u2.rs 字符串字面量伪影 4。
+- §一/§二的 Java 对齐覆盖率基于 `java-endpoint-inventory.json` × 全部 `.rs` 注册面（4573 条 `.route(`）计算，不依赖 endpoints.rs，故不受此清单缺口影响；但 behavior_compare 回归保护面存在上述盲区，建议后续将 `regen_endpoints.py` 扫描面扩至全 `src/**` 并修正转义引号与全限定写法两类正则。
+
 ## 相关文档
 
 - **收官复盘：** `docs/solutions/best-practices/oa4rust-o2server-parity-closure-campaign-2026-08-25.md`
