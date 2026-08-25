@@ -357,10 +357,8 @@ pub async fn application_list(
         })
         .collect();
 
-    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
-        ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
-        ("data".to_string(), Value::Array(data)),
-    ])))))
+    let count = data.len() as i64;
+    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
 }
 
 pub async fn application_list_complex(
@@ -386,10 +384,8 @@ pub async fn application_list_complex(
         })
         .collect();
 
-    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
-        ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
-        ("data".to_string(), Value::Array(data)),
-    ])))))
+    let count = data.len() as i64;
+    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
 }
 
 pub async fn application_list_complex_manage_person(
@@ -483,10 +479,8 @@ pub async fn application_list_range(
         })
         .collect();
 
-    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
-        ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
-        ("data".to_string(), Value::Array(data)),
-    ])))))
+    let count = data.len() as i64;
+    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
 }
 
 pub async fn application_list_terminal_terminal(
@@ -4171,10 +4165,8 @@ pub async fn datarecord_list_job_job(
         })
         .collect();
 
-    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
-        ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
-        ("data".to_string(), Value::Array(data)),
-    ])))))
+    let count = data.len() as i64;
+    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
 }
 
 pub async fn documentversion_list_job_job(
@@ -5535,10 +5527,8 @@ pub async fn process_list_ids(
         })
         .collect();
 
-    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
-        ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
-        ("data".to_string(), Value::Array(data)),
-    ])))))
+    let count = data.len() as i64;
+    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
 }
 
 pub async fn process_flag(
@@ -5773,11 +5763,7 @@ pub async fn read_list_count_application(
         .map_err(|_| AppError::Internal)?
         .get(0);
 
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("count".to_string(), Value::Number(serde_json::Number::from(count))),
-        ]),
-    ))))
+    Ok(Json(ActionResult::java_success(Value::Array(vec![]), count, 0)))
 }
 
 pub async fn read_list_count_application_applicationFlag_process(
@@ -6307,10 +6293,8 @@ pub async fn read_v2_list(
         })
         .collect();
 
-    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
-        ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
-        ("data".to_string(), Value::Array(data)),
-    ])))))
+    let count = data.len() as i64;
+    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
 }
 
 pub async fn read_v2_list_create_paging_page_size_size(pool: Extension<Pool>,
@@ -7003,11 +6987,7 @@ pub async fn readcompleted_list_count_application(
         .map_err(|_| AppError::Internal)?
         .get(0);
 
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("count".to_string(), Value::Number(serde_json::Number::from(count))),
-        ]),
-    ))))
+    Ok(Json(ActionResult::java_success(Value::Array(vec![]), count, 0)))
 }
 
 pub async fn readcompleted_list_count_application_applicationFlag_process(
@@ -7511,10 +7491,8 @@ pub async fn readcompleted_v2_list(
         })
         .collect();
 
-    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
-        ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
-        ("data".to_string(), Value::Array(data)),
-    ])))))
+    let count = data.len() as i64;
+    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
 }
 
 pub async fn readcompleted_v2_list_create_paging_page_size_size(pool: Extension<Pool>,
@@ -8399,10 +8377,8 @@ pub async fn review_v2_list(
         })
         .collect();
 
-    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
-        ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
-        ("data".to_string(), Value::Array(data)),
-    ])))))
+    let count = data.len() as i64;
+    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
 }
 
 pub async fn review_v2_list_create_paging_page_size_size(pool: Extension<Pool>,
@@ -8770,10 +8746,8 @@ pub async fn route_list(
         })
         .collect();
 
-    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
-        ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
-        ("data".to_string(), Value::Array(data)),
-    ])))))
+    let count = data.len() as i64;
+    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
 }
 
 pub async fn route_list_mockputtopost(
@@ -9528,11 +9502,7 @@ pub async fn task_list_count_application(
         .map_err(|_| AppError::Internal)?
         .get(0);
 
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("count".to_string(), Value::Number(serde_json::Number::from(count))),
-        ]),
-    ))))
+    Ok(Json(ActionResult::java_success(Value::Array(vec![]), count, 0)))
 }
 
 pub async fn task_list_count_application_applicationFlag_process(
@@ -10128,10 +10098,8 @@ pub async fn task_v2_list(
         })
         .collect();
 
-    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
-        ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
-        ("data".to_string(), Value::Array(data)),
-    ])))))
+    let count = data.len() as i64;
+    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
 }
 
 pub async fn task_v2_list_create_paging_page_size_size(pool: Extension<Pool>,
@@ -11056,11 +11024,7 @@ pub async fn taskcompleted_list_count_application(
         .map_err(|_| AppError::Internal)?
         .get(0);
 
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("count".to_string(), Value::Number(serde_json::Number::from(count))),
-        ]),
-    ))))
+    Ok(Json(ActionResult::java_success(Value::Array(vec![]), count, 0)))
 }
 
 pub async fn taskcompleted_list_count_application_applicationFlag_process(
@@ -11618,10 +11582,8 @@ pub async fn taskcompleted_v2_list(
         })
         .collect();
 
-    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
-        ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
-        ("data".to_string(), Value::Array(data)),
-    ])))))
+    let count = data.len() as i64;
+    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
 }
 
 pub async fn taskcompleted_v2_list_create_paging_page_size_size(pool: Extension<Pool>,
@@ -12219,11 +12181,7 @@ pub async fn work_list_count_application(
         .map_err(|_| AppError::Internal)?
         .get(0);
 
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("count".to_string(), Value::Number(serde_json::Number::from(count))),
-        ]),
-    ))))
+    Ok(Json(ActionResult::java_success(Value::Array(vec![]), count, 0)))
 }
 
 pub async fn work_list_count_application_applicationFlag_process(
@@ -12817,10 +12775,8 @@ pub async fn work_v2_list(
         })
         .collect();
 
-    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
-        ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
-        ("data".to_string(), Value::Array(data)),
-    ])))))
+    let count = data.len() as i64;
+    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
 }
 
 pub async fn work_v2_list_paging_page_size_size(pool: Extension<Pool>,
@@ -13916,11 +13872,7 @@ pub async fn workcompleted_list_count_application(
         .map_err(|_| AppError::Internal)?
         .get(0);
 
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("count".to_string(), Value::Number(serde_json::Number::from(count))),
-        ]),
-    ))))
+    Ok(Json(ActionResult::java_success(Value::Array(vec![]), count, 0)))
 }
 
 pub async fn workcompleted_list_count_application_applicationFlag_process(
@@ -15029,6 +14981,16 @@ async fn u2_att_list(
     where_clause: &str,
     param: &str,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    u2_att_list_shaped(pool, where_clause, param, false).await
+}
+
+/// 同上；java_shape=true 时按 Java 信封返回裸数组（仅行为对比报告列出的端点）。
+async fn u2_att_list_shaped(
+    pool: &Pool,
+    where_clause: &str,
+    param: &str,
+    java_shape: bool,
+) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let sql = format!(
         "SELECT {} FROM \"pp_c_attachment\" WHERE {} ORDER BY \"xcreateTime\" DESC",
@@ -15036,6 +14998,10 @@ async fn u2_att_list(
     );
     let rows = client.query(&sql, &[&param]).await.map_err(|_| AppError::Internal)?;
     let data: Vec<Value> = rows.iter().map(u2_att_json).collect();
+    if java_shape {
+        let count = data.len() as i64;
+        return Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)));
+    }
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
@@ -15048,7 +15014,7 @@ pub async fn attachment_u2_list_job_job(
     pool: Extension<Pool>,
     axum::extract::Path(job): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    u2_att_list(&pool, "\"xjob\" = $1", &job).await
+    u2_att_list_shaped(&pool, "\"xjob\" = $1", &job, true).await
 }
 
 pub async fn attachment_u2_list_work_work_id(
@@ -15069,7 +15035,7 @@ pub async fn attachment_u2_list_workorworkcompleted_flag(
     pool: Extension<Pool>,
     axum::extract::Path(flag): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    u2_att_list(&pool, "\"xwork\" = $1 OR \"xworkCompleted\" = $1", &flag).await
+    u2_att_list_shaped(&pool, "\"xwork\" = $1 OR \"xworkCompleted\" = $1", &flag, true).await
 }
 
 pub async fn attachment_u2_id_available(

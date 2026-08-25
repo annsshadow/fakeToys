@@ -144,12 +144,12 @@ pub fn router(pool: deadpool_postgres::Pool) -> axum::Router {
 
 // ─── Helper: generic list handler ───────────────────────────────────────────
 
-async fn list_from_table(
+async fn list_from_table_inner(
     pool: &Pool,
     table: &str,
     where_clause: &str,
     params: &[(&(dyn ToSql + Sync), &str)],
-) -> Result<Value, AppError> {
+) -> Result<(i64, Vec<Value>), AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let count_sql = format!(
@@ -175,18 +175,44 @@ async fn list_from_table(
 
     let data: Vec<Value> = rows.iter().map(|r| row_to_json(r)).collect();
 
+    Ok((count, data))
+}
+
+async fn list_from_table(
+    pool: &Pool,
+    table: &str,
+    where_clause: &str,
+    params: &[(&(dyn ToSql + Sync), &str)],
+) -> Result<Value, AppError> {
+    let (count, data) = list_from_table_inner(pool, table, where_clause, params).await?;
     Ok(Value::Object(serde_json::Map::from_iter([
         ("count".to_string(), Value::Number(serde_json::Number::from(count))),
         ("data".to_string(), Value::Array(data)),
     ])))
 }
 
-async fn list_from_table_filtered(
+// Java 裸数组契约（行为对齐）：data 为数组、count 入信封、size 恒 0。
+#[allow(clippy::too_many_arguments)]
+async fn list_from_table_java(
+    pool: &Pool,
+    table: &str,
+    where_clause: &str,
+    params: &[(&(dyn ToSql + Sync), &str)],
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let (count, data) = list_from_table_inner(pool, table, where_clause, params).await?;
+    Ok(Json(ActionResult::java_success(
+        Value::Array(data),
+        count,
+        0,
+    )))
+}
+
+async fn list_from_table_filtered_inner(
     pool: &Pool,
     table: &str,
     where_clause: &str,
     params: &[&(dyn ToSql + Sync)],
-) -> Result<Value, AppError> {
+) -> Result<(i64, Vec<Value>), AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let count_sql = format!(
@@ -212,10 +238,35 @@ async fn list_from_table_filtered(
 
     let data: Vec<Value> = rows.iter().map(|r| row_to_json(r)).collect();
 
+    Ok((count, data))
+}
+
+async fn list_from_table_filtered(
+    pool: &Pool,
+    table: &str,
+    where_clause: &str,
+    params: &[&(dyn ToSql + Sync)],
+) -> Result<Value, AppError> {
+    let (count, data) = list_from_table_filtered_inner(pool, table, where_clause, params).await?;
     Ok(Value::Object(serde_json::Map::from_iter([
         ("count".to_string(), Value::Number(serde_json::Number::from(count))),
         ("data".to_string(), Value::Array(data)),
     ])))
+}
+
+// Java 裸数组契约（行为对齐）：data 为数组、count 入信封、size 恒 0。
+async fn list_from_table_filtered_java(
+    pool: &Pool,
+    table: &str,
+    where_clause: &str,
+    params: &[&(dyn ToSql + Sync)],
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let (count, data) = list_from_table_filtered_inner(pool, table, where_clause, params).await?;
+    Ok(Json(ActionResult::java_success(
+        Value::Array(data),
+        count,
+        0,
+    )))
 }
 
 async fn delete_by_id(pool: &Pool, table: &str, id: &str) -> Result<Value, AppError> {
@@ -383,8 +434,7 @@ pub async fn anonymous_document_id_view(
 pub async fn anonymous_fileinfo_list_document_documentId(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let data = list_from_table_filtered(&pool, "x_cms_fileinfo", "deleted_at IS NULL", &[]).await?;
-    Ok(Json(ActionResult::success(data)))
+    list_from_table_filtered_java(&pool, "x_cms_fileinfo", "deleted_at IS NULL", &[]).await
 }
 
 // ─── appinfo_* stubs ────────────────────────────────────────────────────────
@@ -505,56 +555,49 @@ pub async fn appinfo_get_user_publish_appId(
 pub async fn appinfo_list_all(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let data = list_from_table_filtered(&pool, "x_cms_appinfo", "deleted_at IS NULL", &[]).await?;
-    Ok(Json(ActionResult::success(data)))
+    list_from_table_filtered_java(&pool, "x_cms_appinfo", "deleted_at IS NULL", &[]).await
 }
 
 #[axum::debug_handler]
 pub async fn appinfo_list_appType(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let data = list_from_table_filtered(&pool, "x_cms_appinfo", "deleted_at IS NULL", &[]).await?;
-    Ok(Json(ActionResult::success(data)))
+    list_from_table_filtered_java(&pool, "x_cms_appinfo", "deleted_at IS NULL", &[]).await
 }
 
 #[axum::debug_handler]
 pub async fn appinfo_list_appType_manager(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let data = list_from_table_filtered(&pool, "x_cms_appinfo", "deleted_at IS NULL", &[]).await?;
-    Ok(Json(ActionResult::success(data)))
+    list_from_table_filtered_java(&pool, "x_cms_appinfo", "deleted_at IS NULL", &[]).await
 }
 
 #[axum::debug_handler]
 pub async fn appinfo_list_has_document(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let data = list_from_table_filtered(&pool, "x_cms_appinfo", "deleted_at IS NULL", &[]).await?;
-    Ok(Json(ActionResult::success(data)))
+    list_from_table_filtered_java(&pool, "x_cms_appinfo", "deleted_at IS NULL", &[]).await
 }
 
 #[axum::debug_handler]
 pub async fn appinfo_list_has_document_appType(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let data = list_from_table_filtered(&pool, "x_cms_appinfo", "deleted_at IS NULL", &[]).await?;
-    Ok(Json(ActionResult::success(data)))
+    list_from_table_filtered_java(&pool, "x_cms_appinfo", "deleted_at IS NULL", &[]).await
 }
 
 #[axum::debug_handler]
 pub async fn appinfo_list_has_document_type_appType(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let data = list_from_table_filtered(&pool, "x_cms_appinfo", "deleted_at IS NULL", &[]).await?;
-    Ok(Json(ActionResult::success(data)))
+    list_from_table_filtered_java(&pool, "x_cms_appinfo", "deleted_at IS NULL", &[]).await
 }
 
 #[axum::debug_handler]
 pub async fn appinfo_list_manage(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let data = list_from_table_filtered(&pool, "x_cms_appinfo", "deleted_at IS NULL", &[]).await?;
-    Ok(Json(ActionResult::success(data)))
+    list_from_table_filtered_java(&pool, "x_cms_appinfo", "deleted_at IS NULL", &[]).await
 }
 
 #[axum::debug_handler]
@@ -585,32 +628,28 @@ pub async fn appinfo_list_user_publish_type_appType(
 pub async fn appinfo_list_user_publish_with_process(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let data = list_from_table_filtered(&pool, "x_cms_appinfo", "deleted_at IS NULL", &[]).await?;
-    Ok(Json(ActionResult::success(data)))
+    list_from_table_filtered_java(&pool, "x_cms_appinfo", "deleted_at IS NULL", &[]).await
 }
 
 #[axum::debug_handler]
 pub async fn appinfo_list_user_view(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let data = list_from_table_filtered(&pool, "x_cms_appinfo", "deleted_at IS NULL", &[]).await?;
-    Ok(Json(ActionResult::success(data)))
+    list_from_table_filtered_java(&pool, "x_cms_appinfo", "deleted_at IS NULL", &[]).await
 }
 
 #[axum::debug_handler]
 pub async fn appinfo_list_user_view_all(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let data = list_from_table_filtered(&pool, "x_cms_appinfo", "deleted_at IS NULL", &[]).await?;
-    Ok(Json(ActionResult::success(data)))
+    list_from_table_filtered_java(&pool, "x_cms_appinfo", "deleted_at IS NULL", &[]).await
 }
 
 #[axum::debug_handler]
 pub async fn appinfo_list_user_view_all_type_appType(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let data = list_from_table_filtered(&pool, "x_cms_appinfo", "deleted_at IS NULL", &[]).await?;
-    Ok(Json(ActionResult::success(data)))
+    list_from_table_filtered_java(&pool, "x_cms_appinfo", "deleted_at IS NULL", &[]).await
 }
 
 #[axum::debug_handler]
@@ -2787,16 +2826,14 @@ pub async fn fileinfo_edit_id_doc_docId_mockputtopost(
 pub async fn fileinfo_list_all(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let data = list_from_table_filtered(&pool, "x_cms_fileinfo", "deleted_at IS NULL", &[]).await?;
-    Ok(Json(ActionResult::success(data)))
+    list_from_table_filtered_java(&pool, "x_cms_fileinfo", "deleted_at IS NULL", &[]).await
 }
 
 #[axum::debug_handler]
 pub async fn fileinfo_list_document_documentId(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let data = list_from_table_filtered(&pool, "x_cms_fileinfo", "deleted_at IS NULL", &[]).await?;
-    Ok(Json(ActionResult::success(data)))
+    list_from_table_filtered_java(&pool, "x_cms_fileinfo", "deleted_at IS NULL", &[]).await
 }
 
 #[axum::debug_handler]
@@ -3203,16 +3240,14 @@ pub async fn form_filter_list_id_prev_count_app_appId_mockputtopost(
 pub async fn form_list_all(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let data = list_from_table_filtered(&pool, "x_cms_form", "deleted_at IS NULL", &[]).await?;
-    Ok(Json(ActionResult::success(data)))
+    list_from_table_filtered_java(&pool, "x_cms_form", "deleted_at IS NULL", &[]).await
 }
 
 #[axum::debug_handler]
 pub async fn form_list_app_appId(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let data = list_from_table_filtered(&pool, "x_cms_form", "deleted_at IS NULL", &[]).await?;
-    Ok(Json(ActionResult::success(data)))
+    list_from_table_filtered_java(&pool, "x_cms_form", "deleted_at IS NULL", &[]).await
 }
 
 #[axum::debug_handler]
@@ -3564,8 +3599,7 @@ pub async fn formversion_list_form_formId(
     pool: Extension<Pool>,
     axum::extract::Path(form_id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let data = list_from_table_filtered(&pool, "x_cms_form_v2", &format!("deleted_at IS NULL AND id = '{}'", form_id), &[]).await?;
-    Ok(Json(ActionResult::success(data)))
+    list_from_table_filtered_java(&pool, "x_cms_form_v2", &format!("deleted_at IS NULL AND id = '{}'", form_id), &[]).await
 }
 
 #[axum::debug_handler]
@@ -3668,8 +3702,7 @@ pub async fn log_id(
 pub async fn output_list(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let data = list_from_table_filtered(&pool, "x_cms_output", "deleted_at IS NULL", &[]).await?;
-    Ok(Json(ActionResult::success(data)))
+    list_from_table_filtered_java(&pool, "x_cms_output", "deleted_at IS NULL", &[]).await
 }
 
 #[axum::debug_handler]
@@ -4065,8 +4098,7 @@ pub async fn scriptversion_list_script_scriptId(
     pool: Extension<Pool>,
     axum::extract::Path(script_id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let data = list_from_table_filtered(&pool, "x_cms_script", &format!("deleted_at IS NULL AND id = '{}'", script_id), &[]).await?;
-    Ok(Json(ActionResult::success(data)))
+    list_from_table_filtered_java(&pool, "x_cms_script", &format!("deleted_at IS NULL AND id = '{}'", script_id), &[]).await
 }
 
 #[axum::debug_handler]
@@ -4607,16 +4639,14 @@ pub async fn templateform_list(
 pub async fn templateform_list_category(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let data = list_from_table_filtered(&pool, "x_cms_form_v2", "deleted_at IS NULL", &[]).await?;
-    Ok(Json(ActionResult::success(data)))
+    list_from_table_filtered_java(&pool, "x_cms_form_v2", "deleted_at IS NULL", &[]).await
 }
 
 #[axum::debug_handler]
 pub async fn templateform_list_category_mockputtopost(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let data = list_from_table_filtered(&pool, "x_cms_form_v2", "deleted_at IS NULL", &[]).await?;
-    Ok(Json(ActionResult::success(data)))
+    list_from_table_filtered_java(&pool, "x_cms_form_v2", "deleted_at IS NULL", &[]).await
 }
 
 #[axum::debug_handler]
@@ -4774,24 +4804,21 @@ pub async fn view_id_mockputtopost(
 pub async fn viewcategory_list_all(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let data = list_from_table_filtered(&pool, "x_cms_viewcategory", "deleted_at IS NULL", &[]).await?;
-    Ok(Json(ActionResult::success(data)))
+    list_from_table_filtered_java(&pool, "x_cms_viewcategory", "deleted_at IS NULL", &[]).await
 }
 
 #[axum::debug_handler]
 pub async fn viewcategory_list_category_categoryId(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let data = list_from_table_filtered(&pool, "x_cms_viewcategory", "deleted_at IS NULL", &[]).await?;
-    Ok(Json(ActionResult::success(data)))
+    list_from_table_filtered_java(&pool, "x_cms_viewcategory", "deleted_at IS NULL", &[]).await
 }
 
 #[axum::debug_handler]
 pub async fn viewcategory_list_view_viewId(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let data = list_from_table_filtered(&pool, "x_cms_viewcategory", "deleted_at IS NULL", &[]).await?;
-    Ok(Json(ActionResult::success(data)))
+    list_from_table_filtered_java(&pool, "x_cms_viewcategory", "deleted_at IS NULL", &[]).await
 }
 
 #[axum::debug_handler]
@@ -4817,16 +4844,14 @@ pub async fn viewcategory_id_mockdeletetoget(
 pub async fn viewfieldconfig_list_all(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let data = list_from_table_filtered(&pool, "x_cms_viewfieldconfig", "deleted_at IS NULL", &[]).await?;
-    Ok(Json(ActionResult::success(data)))
+    list_from_table_filtered_java(&pool, "x_cms_viewfieldconfig", "deleted_at IS NULL", &[]).await
 }
 
 #[axum::debug_handler]
 pub async fn viewfieldconfig_list_view_viewId(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let data = list_from_table_filtered(&pool, "x_cms_viewfieldconfig", "deleted_at IS NULL", &[]).await?;
-    Ok(Json(ActionResult::success(data)))
+    list_from_table_filtered_java(&pool, "x_cms_viewfieldconfig", "deleted_at IS NULL", &[]).await
 }
 
 #[axum::debug_handler]
@@ -6088,12 +6113,11 @@ pub async fn fileinfo_u2_filter(
         .await
         .map_err(|_| AppError::Internal)?;
     let data: Vec<Value> = rows.iter().map(|r| row_to_json(r)).collect();
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("count".to_string(), Value::Number(serde_json::Number::from(total))),
-            ("data".to_string(), Value::Array(data)),
-        ]),
-    ))))
+    Ok(Json(ActionResult::java_success(
+        Value::Array(data),
+        total,
+        0,
+    )))
 }
 
 async fn fileinfo_u2_doc_gate(
@@ -8072,12 +8096,12 @@ pub async fn document_list_document_data_u3(
         }
         data.push(obj);
     }
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
-            ("data".to_string(), Value::Array(data)),
-        ]),
-    ))))
+    let count = data.len() as i64;
+    Ok(Json(ActionResult::java_success(
+        Value::Array(data),
+        count,
+        0,
+    )))
 }
 
 // ── file 域（canonical 写路径与复制）───────────────────────────────────────

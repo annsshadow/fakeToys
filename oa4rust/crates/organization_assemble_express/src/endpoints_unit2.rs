@@ -12,8 +12,8 @@ use serde_json::Value;
 use shared::{error::AppError, response::ActionResult};
 
 use crate::endpoints::{
-    bool_field, capped, count_data, int_list, named_list, normalize_flags, ok_json, row_to_map,
-    string_field, string_list, wrap_bool,
+    bool_field, capped, count_data, int_list, named_list, normalize_flags, ok_java_list, ok_json,
+    row_to_map, string_field, string_list, wrap_bool,
 };
 
 const UNIT_COLS: &str = "id, name, parent_id, level";
@@ -542,11 +542,16 @@ pub async fn unit_check_unit_has_unit(
 async fn types_query(
     types: Vec<String>,
     objects: bool,
+    java_bare: bool,
     pool: Extension<Pool>,
 ) -> Result<AxumJson<ActionResult<Value>>, AppError> {
     capped(&types)?;
     if types.is_empty() {
-        return ok_json(count_data(0, vec![]));
+        return if java_bare {
+            ok_java_list(0, vec![])
+        } else {
+            ok_json(count_data(0, vec![]))
+        };
     }
     let sql = format!(
         "SELECT {} FROM x_org_unit WHERE deleted_at IS NULL AND \"type\" = ANY($1) ORDER BY level, id",
@@ -554,7 +559,12 @@ async fn types_query(
     );
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let rows = client.query(&sql, &[&types]).await.map_err(|_| AppError::Internal)?;
-    finish_rows(rows, objects)
+    let data: Vec<Value> = rows.iter().map(row_to_map).collect();
+    if java_bare {
+        ok_java_list(data.len(), data)
+    } else {
+        finish_rows(rows, objects)
+    }
 }
 
 /// POST /jaxrs/unit/list/types (Java ActionListWithTypes，Wi{typeList})。
@@ -562,7 +572,7 @@ pub async fn unit_list_types(
     pool: Extension<Pool>,
     Json(body): Json<Value>,
 ) -> Result<AxumJson<ActionResult<Value>>, AppError> {
-    types_query(normalize_flags(string_list(&body, "typeList")), false, pool).await
+    types_query(normalize_flags(string_list(&body, "typeList")), false, false, pool).await
 }
 
 /// POST /jaxrs/unit/list/types/object。
@@ -570,7 +580,7 @@ pub async fn unit_list_types_object(
     pool: Extension<Pool>,
     Json(body): Json<Value>,
 ) -> Result<AxumJson<ActionResult<Value>>, AppError> {
-    types_query(normalize_flags(string_list(&body, "typeList")), true, pool).await
+    types_query(normalize_flags(string_list(&body, "typeList")), true, false, pool).await
 }
 
 /// GET /jaxrs/unit/list/type/{type}/object (Java ActionListWithTypeObject)。
@@ -578,7 +588,7 @@ pub async fn unit_list_type_type_object(
     pool: Extension<Pool>,
     Path(unit_type): Path<String>,
 ) -> Result<AxumJson<ActionResult<Value>>, AppError> {
-    types_query(vec![unit_type], true, pool).await
+    types_query(vec![unit_type], true, true, pool).await
 }
 
 /// POST /jaxrs/unit/list/unit/tree (Java ActionListWithUnitTree，Wi{unitList})：

@@ -368,10 +368,8 @@ pub async fn application_list_applicationcategory_applicationCategory(
         .map(|row| row_to_app_data(row))
         .collect();
 
-    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
-        ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
-        ("data".to_string(), Value::Array(data)),
-    ])))))
+    let count = data.len() as i64;
+    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
 }
 
 pub async fn application_list_summary(
@@ -389,12 +387,7 @@ pub async fn application_list_summary_applicationcategory_applicationCategory(
     pool: Extension<Pool>,
     axum::extract::Path(applicationCategory): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("count".to_string(), Value::Number(0.into())),
-            ("data".to_string(), Value::Array(vec![])),
-        ]),
-    ))))
+    Ok(Json(ActionResult::java_success(Value::Array(vec![]), 0, 0)))
 }
 
 pub async fn application_id(
@@ -514,10 +507,8 @@ pub async fn applicationcategory_list(
         .map(|row| row_to_basic_data(row))
         .collect();
 
-    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
-        ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
-        ("data".to_string(), Value::Array(data)),
-    ])))))
+    let count = data.len() as i64;
+    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
 }
 
 // ──────────────────────────────────────────────────────────────────────────────
@@ -1081,10 +1072,8 @@ pub async fn formversion_list_form_formId(
         ])))
         .collect();
 
-    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
-        ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
-        ("data".to_string(), Value::Array(data)),
-    ])))))
+    let count = data.len() as i64;
+    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
 }
 
 pub async fn formversion_id(
@@ -2165,10 +2154,8 @@ pub async fn processversion_list_process_processId(
         ])))
         .collect();
 
-    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
-        ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
-        ("data".to_string(), Value::Array(data)),
-    ])))))
+    let count = data.len() as i64;
+    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
 }
 
 pub async fn processversion_id(
@@ -2395,10 +2382,8 @@ pub async fn scriptversion_list_script_scriptId(
         ])))
         .collect();
 
-    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
-        ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
-        ("data".to_string(), Value::Array(data)),
-    ])))))
+    let count = data.len() as i64;
+    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
 }
 
 pub async fn scriptversion_id(
@@ -3109,12 +3094,8 @@ pub async fn item_access_path_list(
         .await
         .map_err(|_| AppError::Internal)?;
     let data: Vec<Value> = rows.iter().map(row_to_item_access_data).collect();
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
-            ("data".to_string(), Value::Array(data)),
-        ]),
-    ))))
+    let count = data.len() as i64;
+    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
 }
 
 /// GET /item-access/process/{processId}/path/{path} —— 双条件精确查询。
