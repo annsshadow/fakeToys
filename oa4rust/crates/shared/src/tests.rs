@@ -415,7 +415,8 @@ mod tests {
         let result: ActionResult<String> = ActionResult::success("test".to_string());
         assert_eq!(result.r#type, Some("success".to_string()));
         assert_eq!(result.data, Some("test".to_string()));
-        assert_eq!(result.message, None);
+        // Java 成功信封实测恒填空串 message（Gson 对齐）
+        assert_eq!(result.message, Some(String::new()));
     }
 
     #[test]
@@ -432,7 +433,8 @@ mod tests {
 
         assert_eq!(json["type"], "success");
         assert_eq!(json["data"], 42);
-        assert_eq!(json["message"], serde_json::Value::Null);
+        // Java 成功信封实测 message 为空串而非 null
+        assert_eq!(json["message"], serde_json::Value::String(String::new()));
     }
 
     #[test]

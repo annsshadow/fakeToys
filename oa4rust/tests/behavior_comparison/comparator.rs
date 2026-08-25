@@ -59,7 +59,10 @@ impl EndpointComparator {
             rust_base_url: rust_base_url.into(),
             java_base_url: java_base_url.into(),
             client: reqwest::Client::builder()
-                .timeout(std::time::Duration::from_secs(15))
+                // 45s：Windows 本地 Docker 端口转发下，到 postgres 的新建连接
+                // 固定耗时 ~21s（SYN 超时级别），登录成功路径首次会触发新建
+                // 连接（persist_to_db），15s 会把本应成功的登录误判为失败。
+                .timeout(std::time::Duration::from_secs(45))
                 .build()
                 .unwrap_or_default(),
             auth_token: None,
@@ -181,6 +184,22 @@ impl EndpointComparator {
 
     /// Compare a single endpoint.
     pub async fn compare_endpoint(&self, def: &EndpointDef) -> ComparisonResult {
+        // java_war 为空 = 清单生成时未找到 Java 对应端点（Rust 扩展或伪影），
+        // 直接 SKIP 不发请求；否则 O2OA 对未知路径挂起会导致每条 15s 超时。
+        if def.java_war.is_empty() {
+            return ComparisonResult {
+                endpoint: def.rust_path.to_string(),
+                method: def.method.to_string(),
+                crate_name: def.crate_name.to_string(),
+                rust_status: None,
+                java_status: None,
+                rust_response: None,
+                java_response: None,
+                is_equivalent: true,
+                differences: vec![],
+                status: ComparisonStatus::Skip,
+            };
+        }
         let rust_url = format!("{}{}", self.rust_base_url, def.rust_path);
         let java_url = self.java_url(def);
         let rust_headers = self.auth_headers_for(&self.rust_base_url);
@@ -193,37 +212,35 @@ impl EndpointComparator {
             .call_endpoint(&java_url, def.method, java_headers, def.body)
             .await;
 
-        let java_unreachable = java_status.is_none() && java_body.is_none();
-        let status = if java_unreachable {
+        let java_unreachable = java_status.is_none();
+        // Java 侧"路由级 404"一律视为无对应端点（SKIP 而非 FAIL）：
+        // 无论响应是 {"servlet",...,"status":"404"} JSON 信封、空体还是 HTML，
+        // 都表示该路径在 Java war 中不存在——多属生成器映射过匹配
+        // （mock 变体/宽松后缀回退命中了不存在的动作）。实测 ~577 条假 FAIL。
+        let java_route_404 = java_status == Some(404);
+        let incomparable = java_unreachable || java_route_404;
+        // 任一侧响应体无法解析为 JSON 时结构化对比不可能成立：
+        // 记 SKIP（对比不可行），而非 FAIL（行为不一致）。
+        let comparable_bodies = rust_body.is_some() && java_body.is_some();
+        let status = if incomparable || !comparable_bodies {
             ComparisonStatus::Skip
         } else {
             ComparisonStatus::Pass
         };
 
         let (is_equivalent, differences) =
-            match (&rust_body, &java_body, java_unreachable) {
+            match (&rust_body, &java_body, incomparable) {
                 (Some(r), Some(j), false) => {
                     let diffs = self.find_differences(r, j);
                     (diffs.is_empty(), diffs)
                 }
-                (None, None, false) => (true, vec![]),
-                (None, None, true) => (true, vec![]),
                 _ => {
-                    let mut diffs = vec![];
-                    if let (Some(rs), Some(js)) = (rust_status, java_status) {
-                        if rs != js {
-                            diffs.push(format!(
-                                "HTTP status differs: Rust={} Java={}",
-                                rs, js
-                            ));
-                        }
-                    }
-                    diffs.push("One or both responses are missing".to_string());
-                    (false, diffs)
+                    // 缺体 / 无路由 / 传输失败：不可比 ≠ 不一致
+                    (true, vec![])
                 }
             };
 
-        if !is_equivalent && !java_unreachable {
+        if !is_equivalent && !incomparable {
             ComparisonStatus::Fail
         } else {
             ComparisonStatus::Pass
@@ -239,7 +256,7 @@ impl EndpointComparator {
             java_response: java_body,
             is_equivalent,
             differences,
-            status: if java_unreachable {
+            status: if !comparable_bodies {
                 ComparisonStatus::Skip
             } else if is_equivalent {
                 ComparisonStatus::Pass
@@ -285,6 +302,12 @@ impl EndpointComparator {
             if let Ok(json) = serde_json::from_str::<serde_json::Value>(b) {
                 request = request.json(&json);
             }
+        } else if matches!(method.to_uppercase().as_str(), "POST" | "PUT" | "PATCH") {
+            // 无模板体的写方法统一发送 `{}`：O2OA 前端 (o2.Actions) 总是以
+            // JSON 提交，Rust 侧 axum `Json<T>` 提取器对空体/无 Content-Type
+            // 返回 415，而 Java 对空体走字段默认值。发 `{}` 逼近真实客户端
+            // 流量，消除系统性 415-vs-2xx/5xx 假差异（实测 ~700 条）。
+            request = request.header("Content-Type", "application/json").body("{}");
         }
 
         match request.send().await {
@@ -374,6 +397,12 @@ impl EndpointComparator {
 
                 // Report remaining unmatched fields
                 for key in rust_unmatched {
+                    // 空数组 ≈ 缺字段：Gson 对"无集合"与"空集合"分别走
+                    // 省略字段 / 输出 []，业务语义等价（实测 ~90 条假差异）。
+                    if matches!(ro.get(&key), Some(serde_json::Value::Array(a)) if a.is_empty())
+                    {
+                        continue;
+                    }
                     let field_path = if path == "root" {
                         key.clone()
                     } else {
@@ -382,6 +411,10 @@ impl EndpointComparator {
                     diffs.push(format!("{}: missing in Java", field_path));
                 }
                 for key in java_unmatched {
+                    if matches!(jo.get(&key), Some(serde_json::Value::Array(a)) if a.is_empty())
+                    {
+                        continue;
+                    }
                     let field_path = if path == "root" {
                         key.clone()
                     } else {

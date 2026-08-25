@@ -36,6 +36,34 @@ const REPORT_PATH: &str = "target/debug/behavior-report.md";
 // 端点定义
 // ──────────────────────────────────────────────────────────────────────────────
 
+/// CI 同款 Java 就绪探针（.github/workflows/ci.yml "Wait for o2server readiness"）：
+/// POST /jaxrs/secret/set 返回任意非 502/503 的 HTTP 状态码即视为就绪。
+/// （401/404 同样证明 HTTP 栈在正常应答；连接拒绝/超时才不可达。
+/// 本机实测：o2server 镜像对未知裸 /jaxrs/* 直接 RST，故 CI 的第二探针
+/// server/execute 在 reqwest 下恒为 Err，不能作为必要条件。）
+async fn probe_java_readiness(base_url: &str) -> bool {    let client = match reqwest::Client::builder()
+        .timeout(std::time::Duration::from_secs(15))
+        .build()
+    {
+        Ok(c) => c,
+        Err(_) => return false,
+    };
+    let secret_url = format!("{}/jaxrs/secret/set", base_url.trim_end_matches('/'));
+    match client
+        .post(&secret_url)
+        .header("Content-Type", "application/json")
+        .body(r#"{"secret":"o2oa@2022"}"#)
+        .send()
+        .await
+    {
+        Ok(resp) => {
+            let code = resp.status().as_u16();
+            code != 502 && code != 503
+        }
+        Err(_) => false,
+    }
+}
+
 /// 合并自动生成端点清单，按 rust_path 去重。
 fn all_endpoints() -> Vec<EndpointDef> {
     let mut seen: std::collections::HashSet<&str> = std::collections::HashSet::new();
@@ -46,6 +74,52 @@ fn all_endpoints() -> Vec<EndpointDef> {
         }
     }
     result
+}
+
+/// 幂等种子对比账户（Rust 库）。与 behavior_compare_sample 的 seed_testadmin
+/// 同款 SQL，但直连 DATABASE_URL（主测试面向外部启动的服务，不持有测试池）。
+/// 任一步失败仅告警：无 DB 凭据/库不可达时仍可跑匿名对比子集。
+async fn seed_testadmin(credential: &str, password: &str) {
+    let url = match std::env::var("DATABASE_URL") {
+        Ok(u) if !u.is_empty() => u,
+        _ => {
+            eprintln!("[behavior_compare] DATABASE_URL not set — skip seeding {} (protected endpoints may 401)", credential);
+            return;
+        }
+    };
+    let config: deadpool_postgres::tokio_postgres::Config = match url.parse() {
+        Ok(c) => c,
+        Err(e) => {
+            eprintln!("[behavior_compare] bad DATABASE_URL: {} — skip seeding", e);
+            return;
+        }
+    };
+    let mgr = deadpool_postgres::Manager::new(config, deadpool_postgres::tokio_postgres::NoTls);
+    let pool = match deadpool_postgres::Pool::builder(mgr).max_size(1).build() {
+        Ok(p) => p,
+        Err(e) => {
+            eprintln!("[behavior_compare] pool build failed: {} — skip seeding", e);
+            return;
+        }
+    };
+    let client = match pool.get().await {
+        Ok(c) => c,
+        Err(e) => {
+            eprintln!("[behavior_compare] db connect failed: {} — skip seeding", e);
+            return;
+        }
+    };
+    let hash = oa4rust::auth::password::hash_password(password);
+    let sql = "INSERT INTO auth_person (id, unique_id, name, password_hash, locked, deleted_at) \
+               VALUES ($1, $2, $3, $4, false, NULL) \
+               ON CONFLICT (unique_id) DO UPDATE SET password_hash = EXCLUDED.password_hash";
+    match client
+        .execute(sql, &[&"person-behavior-testadmin", &credential, &credential, &hash])
+        .await
+    {
+        Ok(_) => eprintln!("[behavior_compare] seeded test account '{}' into Rust DB", credential),
+        Err(e) => eprintln!("[behavior_compare] seed failed: {} — protected endpoints may 401", e),
+    }
 }
 
 // ──────────────────────────────────────────────────────────────────────────────
@@ -71,8 +145,13 @@ async fn behavior_compare_rust_vs_java() {
     eprintln!("[behavior_compare] Rust service reachable");
 
     // ── 检查 Java 服务可达性 ──────────────────────────────────────────────
-    let java_reachable =
+    // O2OA v9 无 /health 端点，/health 探测失败时回退 CI 就绪探针
+    // （POST /jaxrs/secret/set + GET /jaxrs/server/execute）。
+    let mut java_reachable =
         behavior_comparison::comparator::is_service_reachable(&java_url).await;
+    if !java_reachable {
+        java_reachable = probe_java_readiness(&java_url).await;
+    }
     if !java_reachable {
         eprintln!("[behavior_compare] Java service unreachable at {} — all Java results will be SKIP", java_url);
     } else {
@@ -97,13 +176,34 @@ async fn behavior_compare_rust_vs_java() {
     let credential = std::env::var("BEHAVIOR_TEST_CREDENTIAL").unwrap_or_else(|_| DEFAULT_CREDENTIAL.to_string());
     let password = std::env::var("BEHAVIOR_TEST_PASSWORD").unwrap_or_else(|_| DEFAULT_PASSWORD.to_string());
 
+    // Rust 库种子对比账户（幂等）：CI 的 postgres 服务容器与本地库默认都没有
+    // testadmin 账户，缺种子会导致全部保护端点 401（实测 76 个 FAIL 中 ~60 个
+    // 由此引起）。复用样例套件的种法；DATABASE_URL 未设置时跳过并告警。
+    seed_testadmin(&credential, &password).await;
+
     let comparator = if java_reachable {
         match comparator.login(RUST_BASE_URL, &credential, &password).await {
             Some(rust_token) => {
                 eprintln!("[behavior_compare] Rust login successful, token acquired");
-                if let Some(java_token) = comparator.login(&java_url, &credential, &password).await {
-                    eprintln!("[behavior_compare] Java login successful, token acquired");
-                    comparator.with_auth_token(java_token)
+                // Java 侧依次尝试：对比账户 → O2OA v9 内置管理员 xadmin
+                // （密码为 /jaxrs/secret/set 初始化的密钥，CI 同款 o2oa@2022）。
+                // Java 登录失败时其保护端点返回带 prompt 的错误信封，与 Rust
+                // 成功信封逐条产生假差异（实测一次 1470 FAIL 中大多数属此类）。
+                let java_login = match comparator
+                    .login(&java_url, &credential, &password)
+                    .await
+                {
+                    Some(t) => Some(("testadmin".to_string(), t)),
+                    None => comparator
+                        .login(&java_url, "xadmin", "o2oa@2022")
+                        .await
+                        .map(|t| ("xadmin".to_string(), t)),
+                };
+                if let Some((who, java_token)) = java_login {
+                    eprintln!("[behavior_compare] Java login successful as '{}' — token acquired", who);
+                    // 两侧 token 互不通用，必须按侧分发（此前误将 Java token 设为
+                    // 全局，导致 Rust 侧全程 401 走错误信封）。
+                    comparator.with_tokens(rust_token, java_token)
                 } else {
                     eprintln!("[behavior_compare] Java login failed — protected endpoints will be SKIP");
                     comparator.with_auth_token(rust_token)

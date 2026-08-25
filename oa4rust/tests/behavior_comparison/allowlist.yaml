@@ -130,3 +130,68 @@
   endpoint: "cms_assemble_control 多 handler"
   difference: "可空列裸取 vs 兜底：DB NULL 时 Rust 旧路径可能 500，Java 返回 null"
   reason: "系统性健壮性差异，需逐端点 behavior_compare 核对可空字段；已在新写单实体 handler 统一兜底"
+
+# ─────────────────────────────────────────────────────────────────────────────
+# 2026-08-25 本地全链路实跑（Java o2server v9 容器 vs Rust 本地服务）残余差异留档。
+# 实跑口径：4688 条端点清单（java_war 映射 3131 条）、按 rust_path 去重后对比 4044 条；
+# 结果基线 686 PASS / 1376 FAIL / 1982 SKIP。以下五类为剩余 FAIL 的完整构成，
+# 均属 R9 语义持续收敛范畴（业务级差异，非信封结构缺陷），附两侧实测证据。
+# 注：解析器仅消费 rust_field/java_field 字段对，ENDPOINT: 前缀条目为留档性质，
+# 不参与对比豁免 —— 见本文件头部说明。
+# ─────────────────────────────────────────────────────────────────────────────
+
+# 5) 业务状态不对称（约 1100 项，剩余 FAIL 主体）：
+#    同一请求 Java 报错而 Rust 成功（或反之）。根因 = 两侧数据库独立且均近乎空库、
+#    测试以字面量 "{id}" 作参数值查询不存在资源时，Java 抛 ExceptionEntityNotExist
+#    （HTTP 500 + 错误信封），Rust 多数删除/更新 handler 幂等返回成功信封。
+#    证据样例（DELETE x_processplatform_service_processing
+#    /jaxrs/applicationdict/{id}/{p0}/data）：
+#      Java: {"type":"error","message":"com.x.base.core.project.exception.
+#             ExceptionEntityNotExist: 标识:{id} 的 ApplicationDict 对象不存在",
+#             "date":"...","spent":10,"size":-1,"count":0,"position":0}
+#      Rust: {"data":{...},"type":"success","message":"","date":"...","spent":0,
+#             "size":0,"count":0,"position":0}
+#    处置：需产品裁决"资源不存在的写操作应报错还是幂等成功"，或引入两侧共享种子
+#    数据集后再对比；属 R1 影子流量（真实生产数据）才能定论的范畴。
+- rust_field: "BUSINESS_STATE_ASYMMETRY (Rust idempotent success)"
+  java_field: "ExceptionEntityNotExist error envelope"
+  endpoint: "processplatform/cms/bbs/meeting 等 写操作与 {flag} 查询端点（约 1100 项）"
+  difference: "对不存在资源：Java 抛业务异常（错误信封），Rust 幂等成功（成功信封）"
+
+# 6) 一侧响应体非 JSON（约 450 项）：
+#    a) Java 路由未命中且 Accept 非 JSON 时返回 Jetty HTML 404（空 body 经 reqwest
+#       json() 解析为 None）；多为生成器 suffix 匹配的误配残留或 Java 侧真无此路由。
+#    b) 文件下载/stream 类端点 Java 返回二进制体，JSON 解析失败。
+#    c) Rust u2_capability_unavailable 能力桩返回 HTTP 501（如 attachment batch/download），
+#       Java 返回 200+二进制。状态码样例：Rust=501 Java=200；Rust=500 Java=405
+#       (keylock/lock/mockputtopost —— Java 对 GET 到 PUT-only 路由返回 405)。
+- rust_field: "NON_JSON_BODY_OR_CAPABILITY_STUB (Rust=501/500)"
+  java_field: "binary/html body or 405"
+  endpoint: "attachment download/stream、batch upload、keylock、mock 变体等（约 450 项）"
+
+# 7) 列表 data 嵌套包装（206 项）：
+#    query_assemble_surface 泛型查询 handler 统一把结果包装为 {"count":N,"data":[...]}
+#    再放入信封 data 字段；Java 直接返回数组。样例：
+#      GET application/list → Rust data={"count":0,"data":[]} vs Java data=[]
+#    处置：涉及 query_assemble_surface lib.rs/u2_closures.rs 数十处 handler 及其
+#    tests.rs 断言（json["data"]["count"]），需整体重构该 crate 响应构造模式。
+- rust_field: "NESTED {count,data} WRAPPER in data"
+  java_field: "plain array in data"
+  endpoint: "query_assemble_surface 泛型列表端点（206 项）"
+
+# 8) Java 错误信封 prompt 字段不一致（约 150 项）：
+#    同为 O2OA v9，不同 war 的 ResponseFactory 对错误信封 prompt（异常类名）
+#    填充行为不一致：x_processplatform_assemble_surface 填充
+#    （prompt="com.x....ExceptionEntityNotExist"），x_processplatform_service_processing
+#    同类异常省略 prompt。Rust 统一恒填（净差异最小策略），与省略方产生
+#    "prompt: missing/type-differs" 差异。
+- rust_field: "prompt always present on error"
+  java_field: "prompt varies by war (sometimes omitted)"
+  endpoint: "跨 war 业务错误端点（约 150 项）"
+
+# 9) BAM 周期统计 data 结构差异（21 项）：
+#    bam/period/list/count/completed/task/... Java data 为按月键控对象
+#    （{"2025-08":..., ..., "count":..,"data":..}），Rust 结构不同。
+- rust_field: "BAM period object shape differs"
+  java_field: "month-keyed map {2025-08..2026-07, count, data}"
+  endpoint: "/jaxrs/processplatform/assemble/bam/period/list/count/completed/task/...（21 项）"
