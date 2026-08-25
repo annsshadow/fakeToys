@@ -1,6 +1,8 @@
 use axum::response::IntoResponse;
 use thiserror::Error;
 
+use super::response::{java_date_now, java_exception_for};
+
 // ──────────────────────────────────────────────────────────────────────────────
 // AppError
 //
@@ -53,32 +55,34 @@ pub enum AppError {
 //   - Forbidden            → 403 Forbidden
 //   - NotFound             → 404 Not Found
 //
-// 响应体统一使用 ActionResult 格式的 JSON，错误时 data 字段为 null。
+// 错误体与 Java 错误信封实测形状一致（2026-08-25 行为对比实跑结论）：
+// 无 data 字段，date/spent/size/count/position 恒填充，
+// prompt 承载 Java 异常类名风格字符串。
 impl IntoResponse for AppError {
     fn into_response(self) -> axum::response::Response {
-        let status = match &self {
-            AppError::Database(_) => axum::http::StatusCode::INTERNAL_SERVER_ERROR,
-            AppError::Internal => axum::http::StatusCode::INTERNAL_SERVER_ERROR,
-            AppError::Redis(_) => axum::http::StatusCode::INTERNAL_SERVER_ERROR,
-            AppError::InternalAnyhow(_) => axum::http::StatusCode::INTERNAL_SERVER_ERROR,
-            AppError::BadRequest(_) => axum::http::StatusCode::BAD_REQUEST,
-            AppError::Unauthorized => axum::http::StatusCode::UNAUTHORIZED,
-            AppError::Forbidden => axum::http::StatusCode::FORBIDDEN,
-            AppError::NotFound => axum::http::StatusCode::NOT_FOUND,
-            AppError::NotImplemented => axum::http::StatusCode::NOT_IMPLEMENTED,
+        let (status, prompt_kind) = match &self {
+            AppError::Database(_) => (axum::http::StatusCode::INTERNAL_SERVER_ERROR, "ExceptionInternal"),
+            AppError::Internal => (axum::http::StatusCode::INTERNAL_SERVER_ERROR, "ExceptionInternal"),
+            AppError::Redis(_) => (axum::http::StatusCode::INTERNAL_SERVER_ERROR, "ExceptionInternal"),
+            AppError::InternalAnyhow(_) => (axum::http::StatusCode::INTERNAL_SERVER_ERROR, "ExceptionInternal"),
+            AppError::BadRequest(_) => (axum::http::StatusCode::BAD_REQUEST, "ExceptionBadRequest"),
+            AppError::Unauthorized => (axum::http::StatusCode::UNAUTHORIZED, "ExceptionUnauthorized"),
+            AppError::Forbidden => (axum::http::StatusCode::FORBIDDEN, "ExceptionAccessDenied"),
+            AppError::NotFound => (axum::http::StatusCode::NOT_FOUND, "ExceptionEntityNotExist"),
+            AppError::NotImplemented => (axum::http::StatusCode::NOT_IMPLEMENTED, "ExceptionNotImplemented"),
         };
 
-        // 错误响应与成功响应使用相同的 JSON 结构，便于前端统一处理。
+        // 恒填 prompt：O2OA ResponseFactory 多数 war 的错误路径填充异常类名
+        // （个别模块省略，见 allowlist 留档「java-error-prompt-inconsistent」）。
         let body = axum::Json(serde_json::json!({
-            "data": None::<serde_json::Value>,
             "type": "error",
             "message": self.to_string(),
-            "date": None::<Option<String>>,
-            "spent": None::<Option<i64>>,
-            "size": None::<Option<i64>>,
-            "count": None::<Option<i64>>,
-            "position": None::<Option<String>>,
-            "prompt": None::<Option<String>>,
+            "date": java_date_now(),
+            "spent": 0,
+            "size": -1,
+            "count": 0,
+            "position": 0,
+            "prompt": java_exception_for(prompt_kind),
         }));
 
         (status, body).into_response()
