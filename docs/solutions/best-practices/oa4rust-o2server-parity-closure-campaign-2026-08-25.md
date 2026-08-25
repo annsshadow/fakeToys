@@ -53,9 +53,9 @@ oa4rust（Rust 重写）长期以"crate 个数 / handler 数 / 测试通过率"�
 **3. 残差缺口分类与处置（residual-gap taxonomy）**
 每类残差用不同处置策略，避免一刀切（证据：`docs/plans/2026-08-21-002-feat-remaining-work-consolidation-plan.md` 实现情况更新 §残差、`docs/brainstorms/2026-08-25-oa4rust-o2server-residual-gaps-requirements.md` Requirements）：
 - **外部阻塞（external-blocked）**：影子流量灰度验证与切流（U3）——脚本就绪，需生产环境 + ≥2 周观察期，唯一真正阻断"可替代"判定宣告的项。
-- **微小代码缺口（tiny code gaps）**：3 条真实缺失端点（processplatform_assemble_surface 2 条、bbs_assemble_control 1 条），逐条仿现有 handler 补齐（证据：`docs/audits/final-coverage-sweep.md` §四）。
-- **框架平台限制（framework platform-limit）**：4 条 axum 单段多参数 `{}.{}` 路由（attachment/download/*/{}.{}），axum 无法表达，留档为已知接受缺口、不实现（证据：`docs/audits/final-coverage-sweep.md` 附录）。
-- **大型潜在缺口（large latent gap）**：BAM 业务活动监控模块（Java `x_processplatform_assemble_bam` 131 @Path vs Rust 5 路由），决策补齐闭合（证据：`docs/brainstorms/2026-08-25` R4/Key Decisions）。
+- **微小代码缺口（tiny code gaps，已闭环）**：原 3 条真实缺失端点（processplatform_assemble_surface 2 条、bbs_assemble_control 1 条），逐条仿现有 handler 补齐，已于 U1 闭环（证据：`docs/audits/final-coverage-sweep.md` §四）。
+- **框架平台限制（framework platform-limit，已消解）**：原 4 条 axum 单段多参数 `{}.{}` 路由（attachment/download/*/{}.{}）经 U1 用整段 `Path<String>` 捕获模式闭环（commit 62fdf48d），不再记为"不实现"；axum 单段多参数客观限制仍作为表达受限例外留档，不影响"可替代"判定（证据：`docs/audits/final-coverage-sweep.md` 附录）。
+- **大型潜在缺口（large latent gap，已闭环）**：BAM 业务活动监控模块（Java `x_processplatform_assemble_bam` 131 @Path vs Rust 80+ 路由），经 R4 核验已闭环（证据：`docs/brainstorms/2026-08-25` R4/Key Decisions；终扫 §二 该模块 45/45 100%）。
 - **设计性范围外（out-of-scope-by-design）**：IM/XMPP/WebRTC 完整即时通讯协议，沿用 2026-08-19-002 范围约束排除 v1（证据：`docs/plans/2026-08-21-002` Scope Boundaries；brainstorm Key Decisions）。
 - **人工/独立工程（human/standalone engineering）**：Linux 文档翻译校正 266+ 处、7 语种 `?` 损坏，需逐文件对照 kernel.org 上游 RST，作为独立轨道不与替代判定耦合（证据：`docs/plans/2026-08-21-002` U11、L11.1/L11.2）。
 
@@ -92,7 +92,7 @@ oa4rust（Rust 重写）长期以"crate 个数 / handler 数 / 测试通过率"�
 
 **例 3 — 残差分类处置（concrete usage）**
 - 微小缺口：`docs/audits/final-coverage-sweep.md` §四列出 3 条真实缺失端点，建议"零星补齐：逐条仿既有 handler + 注册"。
-- 平台限制：同文件附录列出 4 条 `attachment/download/{}/work/{}/stream/{}.{}` 等 axum 单段多参数不可表达，留档不实现。
+- 平台限制（已消解）：同文件附录原列 4 条 `attachment/download/{}/work/{}/stream/{}.{}` 等，经 U1 整段 `Path<String>` 捕获闭环（commit 62fdf48d），由"留档不实现"更新为"已闭环（整段捕获）"，仍记 axum 单段多参数表达受限例外。
 - 外部阻塞：U3 影子流量在 `docs/plans/2026-08-21-002` 实现情况更新中标注为唯一未竟单元（需生产环境 + ≥2 周），脚本 `deploy/shadow-traffic.sh`、`toggle_module.sh` 等已就绪。
 - 设计性范围外：IM/XMPP/WebRTC 在 brainstorm `2026-08-25` R6 中明确排除 v1。
 
