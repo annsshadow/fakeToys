@@ -45,6 +45,16 @@ oa4rust/scripts/**
 !oa4rust/scripts/
 !oa4rust/scripts/gen_openapi_paths.py
 !oa4rust/scripts/extract_routes.py
+# 端点/路由/测试生成器：其产物（openapi/src/lib.rs、tests_generated.rs、
+# generated_tests.rs、generated_routes.rs、tests/behavior_comparison/endpoints.rs）
+# 已纳入版本控制，故生成器自身也须纳入以保证可复现（plan002 U9 / R8）。
+!oa4rust/scripts/extract_endpoints.py
+!oa4rust/scripts/regen_endpoints.py
+!oa4rust/scripts/generate_handler_tests.py
+!oa4rust/scripts/generate_parity_tests.py
+!oa4rust/scripts/gen_mcp_tools.py
+# OpenAPI 安全方案守卫脚本（CI 调用，见 oa4rust/.github/workflows/ci.yml）
+!oa4rust/scripts/check_openapi_security.py
 
 # log
 *.log
