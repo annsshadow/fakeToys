@@ -1,7 +1,7 @@
-﻿## device-mapper uevent锛堣澶囨槧灏勫櫒 uevent锛?
+﻿## device-mapper uevent（设备映射器 uevent
 
-device-mapper uevent 浠ｇ爜涓?device-mapper 澧炲姞浜嗗垱寤哄苟鍙戦€?kobject uevent锛坲event锛夌殑鑳藉姏銆傛鍓?device-mapper 浜嬩欢浠呴€氳繃 ioctl 鎺ュ彛鍙敤銆倁event 鎺ュ彛鐨勪紭鍔垮湪浜庯紝浜嬩欢鍖呭惈鐜灞炴€э紝涓轰簨浠舵彁渚涗簡鏇村涓婁笅鏂囷紝浠庤€屾棤闇€鍦ㄦ敹鍒颁簨浠跺悗鍐嶅幓鏌ヨ device-mapper 璁惧鐨勭姸鎬併€?
-鐩墠 device-mapper 浜嬩欢鏈変袱涓嚱鏁般€傜涓€涓嚱鏁?```
+device-mapper uevent 代码device-mapper 增加了创建并发kobject uevent（uevent）的能力。此device-mapper 事件仅通过 ioctl 接口可用。uevent 接口的优势在于，事件包含环境属性，为事件提供了更多上下文，从而无需在收到事件后再去查询 device-mapper 设备的状态
+目前 device-mapper 事件有两个函数。第一个函```
 
   void dm_path_uevent(enum dm_uevent_type event_type, struct dm_target *ti,
                       const char *path, unsigned nr_valid_paths)
@@ -10,48 +10,48 @@ device-mapper uevent 浠ｇ爜涓?device-mapper 澧炲姞浜嗗垱寤哄苟鍙�
 
 
 ```
-娣诲姞鍒?uevent 鐜鐨勫彉閲忔湁锛?
-### 鍙橀噺鍚嶏細DM_TARGET
+添加uevent 环境的变量有
+### 变量名：DM_TARGET
 
 :Uevent Action(s): KOBJ_CHANGE
 :Type: string
 :Description:
-:Value: 浜х敓璇ヤ簨浠剁殑 device-mapper 鐩爣鐨勫悕绉般€?
-### 鍙橀噺鍚嶏細DM_ACTION
+:Value: 产生该事件的 device-mapper 目标的名称
+### 变量名：DM_ACTION
 
 :Uevent Action(s): KOBJ_CHANGE
 :Type: string
 :Description:
-:Value: 瀵艰嚧璇?uevent 鍔ㄤ綔鐨?device-mapper 鐗瑰畾鍔ㄤ綔銆?	PATH_FAILED - 涓€鏉¤矾寰勫凡澶辫触锛?	PATH_REINSTATED - 涓€鏉¤矾寰勫凡琚仮澶嶃€?
-### 鍙橀噺鍚嶏細DM_SEQNUM
+:Value: 导致uevent 动作device-mapper 特定动作	PATH_FAILED - 一条路径已失败	PATH_REINSTATED - 一条路径已被恢复
+### 变量名：DM_SEQNUM
 
 :Uevent Action(s): KOBJ_CHANGE
 :Type: unsigned integer
-:Description: 璇ョ壒瀹?device-mapper 璁惧鐨勫簭鍒楀彿銆?:Value: 鏈夋晥鐨勬棤绗﹀彿鏁存暟鑼冨洿銆?
-### 鍙橀噺鍚嶏細DM_PATH
+:Description: 该特device-mapper 设备的序列号:Value: 有效的无符号整数范围
+### 变量名：DM_PATH
 
 :Uevent Action(s): KOBJ_CHANGE
 :Type: string
-:Description: 涓庢湰娆′簨浠剁浉鍏崇殑璺緞璁惧鐨勪富璁惧鍙峰拰娆¤澶囧彿銆?:Value: 褰㈠ "Major:Minor" 鐨勮矾寰勫悕銆?
-### 鍙橀噺鍚嶏細DM_NR_VALID_PATHS
+:Description: 与本次事件相关的路径设备的主设备号和次设备号:Value: 形如 "Major:Minor" 的路径名
+### 变量名：DM_NR_VALID_PATHS
 
 :Uevent Action(s): KOBJ_CHANGE
 :Type: unsigned integer
 :Description:
-:Value: 鏈夋晥鐨勬棤绗﹀彿鏁存暟鑼冨洿銆?
-### 鍙橀噺鍚嶏細DM_NAME
+:Value: 有效的无符号整数范围
+### 变量名：DM_NAME
 
 :Uevent Action(s): KOBJ_CHANGE
 :Type: string
-:Description: device-mapper 璁惧鐨勫悕绉般€?:Value: 鍚嶇О
+:Description: device-mapper 设备的名称:Value: 名称
 
-### 鍙橀噺鍚嶏細DM_UUID
+### 变量名：DM_UUID
 
 :Uevent Action(s): KOBJ_CHANGE
 :Type: string
-:Description: device-mapper 璁惧鐨?UUID銆?:Value: UUID銆傦紙濡傛灉娌℃湁鍒欎负绌哄瓧绗︿覆銆傦級
+:Description: device-mapper 设备UUID:Value: UUID。（如果没有则为空字符串。）
 
-涓嬮潰鏄敱 udevmonitor 鎹曡幏鐨勬墍鐢熸垚 uevent 鐨勭ず渚?
+下面是由 udevmonitor 捕获的所生成 uevent 的示
 ```
 
 	UEVENT[1192521009.711215] change@/block/dm-3

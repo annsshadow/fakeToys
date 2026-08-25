@@ -1,18 +1,18 @@
 ﻿
-## dvb-usb-vp7045 缃戝崱鍒楄〃
+## dvb-usb-vp7045 网卡列表
 
-鏈枃浠跺垪鍑?dvb-usb-vp7045 椹卞姩鎵€鏀寔鐨?DVB 缃戝崱娓呭崟锛屽寘鍚骇鍝佸悕绉颁笌 USB ID锛屼緵椹卞姩閫傞厤涓庣‖浠堕€夊瀷鏃跺鐓ф煡闃呫€?
+本文件列dvb-usb-vp7045 驱动所支持DVB 网卡清单，包含产品名称与 USB ID，供驱动适配与硬件选型时对照查阅
 
 
 
-浠ヤ笅涓?dvb-usb-vp7045 椹卞姩鏀寔鐨勭綉鍗″垪琛細
+以下dvb-usb-vp7045 驱动支持的网卡列表：
 
 
    :header-rows: 1
    :widths: 7 13
    :stub-columns: 0
 
-   - - 缃戝崱鍚嶇О
+   - - 网卡名称
      - USB ID
    - - DigitalNow TinyUSB 2 DVB-t Receiver
      - 13d3:3223, 13d3:3224

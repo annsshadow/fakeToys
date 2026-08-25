@@ -4,30 +4,30 @@
 ######## ioctl DMX_EXPBUF
 
 
-## 鍚嶇О
+## 名称
 
 
-DMX_EXPBUF - 灏嗕竴涓紦鍐插尯瀵煎嚭涓?DMABUF 鏂囦欢鎻忚堪绗︺€?
+DMX_EXPBUF - 将一个缓冲区导出DMABUF 文件描述符
 
-## 姒傝
+## 概要
 
 
 `int ioctl(int fd, DMX_EXPBUF, struct dmx_exportbuffer *argp)`
 
-## 鍙傛暟
+## 参数
 
 
 `fd`
-    `open()` 杩斿洖鐨勬枃浠舵弿杩扮銆?
+    `open()` 返回的文件描述符
 `argp`
-    鎸囧悜 struct `dmx_exportbuffer` 鐨勬寚閽堛€?
-## 鎻忚堪
+    指向 struct `dmx_exportbuffer` 的指针
+## 描述
 
 
-璇?ioctl 鏄唴瀛樻槧灏?I/O 鏂规硶鐨勬墿灞曘€?瀹冨彲鐢ㄤ簬鍦ㄩ€氳繃 DMX_REQBUFS ioctl 鍒嗛厤缂撳啿鍖轰箣鍚庣殑浠绘剰鏃跺埢锛屽皢涓€涓紦鍐插尯瀵煎嚭涓?DMABUF 鏂囦欢銆?
-瑕佸鍑轰竴涓紦鍐插尯锛屽簲鐢ㄧ▼搴忛渶瑕佸～鍏?struct `dmx_exportbuffer`銆?搴旂敤绋嬪簭蹇呴』璁剧疆 `index` 瀛楁銆傛湁鏁堢殑绱㈠紩缂栧彿鑼冨洿浠庨浂鍒颁娇鐢?DMX_REQBUFS 鍒嗛厤鐨勭紦鍐插尯鏁伴噺锛坰truct `dmx_requestbuffers` 鐨?`count`锛夊噺涓€銆?鍙互鍦?`flags` 瀛楁涓缃澶栫殑鏍囧織銆傛湁鍏宠缁嗕俊鎭紝璇峰弬鑰?open() 鐨勬墜鍐岄〉銆傜洰鍓嶄粎鏀寔 O_CLOEXEC銆丱_RDONLY銆丱_WRONLY 鍜?O_RDWR銆?鎵€鏈夊叾浠栧瓧娈靛繀椤昏缃负闆躲€傚湪澶氬钩闈紙multi-planar锛堿PI 鐨勬儏鍐典笅锛屾瘡涓钩闈㈤兘閫氳繃澶氭 DMX_EXPBUF 璋冪敤鍒嗗埆瀵煎嚭銆?
-璋冪敤 DMX_EXPBUF 鍚庯紝鑻ユ垚鍔燂紝`fd` 瀛楁灏嗚椹卞姩璁剧疆銆傝繖鏄竴涓?DMABUF 鏂囦欢鎻忚堪绗︺€傚簲鐢ㄧ▼搴忓彲浠ュ皢鍏朵紶閫掔粰鍏朵粬鏀寔 DMABUF 鐨勮澶囥€傚缓璁湪涓嶄娇鐢ㄨ DMABUF 鏂囦欢鏃跺皢鍏跺叧闂紝浠ヤ究鍥炴敹鐩稿叧鐨勫唴瀛樸€?
-## 绀轰緥
+ioctl 是内存映I/O 方法的扩展它可用于在通过 DMX_REQBUFS ioctl 分配缓冲区之后的任意时刻，将一个缓冲区导出DMABUF 文件
+要导出一个缓冲区，应用程序需要填struct `dmx_exportbuffer`应用程序必须设置 `index` 字段。有效的索引编号范围从零到使DMX_REQBUFS 分配的缓冲区数量（struct `dmx_requestbuffers` `count`）减一可以`flags` 字段中设置额外的标志。有关详细信息，请参open() 的手册页。目前仅支持 O_CLOEXEC、O_RDONLY、O_WRONLY O_RDWR所有其他字段必须设置为零。在多平面（multi-planar）API 的情况下，每个平面都通过多次 DMX_EXPBUF 调用分别导出
+调用 DMX_EXPBUF 后，若成功，`fd` 字段将被驱动设置。这是一DMABUF 文件描述符。应用程序可以将其传递给其他支持 DMABUF 的设备。建议在不使用该 DMABUF 文件时将其关闭，以便回收相关的内存
+## 示例
 
 
     int buffer_export(int v4lfd, enum dmx_buf_type bt, int index, int *dmafd)
@@ -47,8 +47,8 @@ DMX_EXPBUF - 灏嗕竴涓紦鍐插尯瀵煎嚭涓?DMABUF 鏂囦欢鎻忚堪�
 	return 0;
     }
 
-## 杩斿洖鍊?
+## 杩斿洖鍊。
 
-鎴愬姛鏃惰繑鍥?0锛屽嚭閿欐椂杩斿洖 -1锛屽苟鐩稿簲鍦拌缃?`errno` 鍙橀噺銆傞€氱敤鐨勯敊璇爜鍦?Generic Error Codes <gen-errors> 绔犺妭涓弿杩般€?
+成功时返0，出错时返回 -1，并相应地设`errno` 变量。通用的错误码Generic Error Codes <gen-errors> 章节中描述
 EINVAL
-    闃熷垪涓嶅浜?MMAP 妯″紡锛屾垨涓嶆敮鎸?DMABUF 瀵煎嚭锛屾垨 `flags`銆乣index` 瀛楁鏃犳晥銆?
+    队列不处MMAP 模式，或不支DMABUF 导出，或 `flags`、`index` 字段无效

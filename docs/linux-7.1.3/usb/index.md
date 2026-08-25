@@ -1,35 +1,35 @@
-﻿## USB 鏀寔锛圲SB support锛?
+﻿## USB 支持（USB support
 
-鏈〉鏄?USB 瀛愮郴缁熺殑鏂囨。绱㈠紩锛屾眹鎬讳簡 USB 涓绘満鎺у埗鍣ㄣ€丟adget 妗嗘灦浠ュ強鍚勭被 USB 璁惧椹卞姩鐨勪娇鐢ㄤ笌寮€鍙戣鏄庯紝渚夸簬璇昏€呮寜涓婚蹇€熷畾浣嶇浉鍏虫枃妗ｃ€?
+本页USB 子系统的文档索引，汇总了 USB 主机控制器、Gadget 框架以及各类 USB 设备驱动的使用与开发说明，便于读者按主题快速定位相关文档
 
 
-鏈〉鎻愪緵 USB 涓绘満銆佸皬宸ュ叿锛坓adget锛変笌鍚勭被 USB 璁惧椹卞姩鐨勬枃妗ｇ储寮曘€?
+本页提供 USB 主机、小工具（gadget）与各类 USB 设备驱动的文档索引
 
 
 
 - [acm](acm)
-- [鎺堟潈](authorization)
+- [授权](authorization)
 - [chipidea](chipidea)
 - [dwc3](dwc3)
 - [ehci](ehci)
 - [functionfs](functionfs)
-- [FunctionFS 鎻忚堪绗(functionfs-desc)
+- [FunctionFS 描述符](functionfs-desc)
 - [gadget_configfs](gadget_configfs)
 - [gadget_hid](gadget_hid)
 - [gadget_multi](gadget_multi)
 - [gadget_printer](gadget_printer)
 - [gadget_serial](gadget_serial)
 - [gadget_uvc](gadget_uvc)
-- [澶嶅悎璁惧娴嬭瘯](gadget_testing)
+- [复合设备测试](gadget_testing)
 - [iuu_phoenix](iuu_phoenix)
-- [澶у閲忓瓨鍌╙(mass-storage)
+- [大容量存储](mass-storage)
 - [misc_usbsevseg](misc_usbsevseg)
 - [mtouchusb](mtouchusb)
 - [ohci](ohci)
-- [鍘熷澶嶅悎璁惧](raw-gadget)
+- [原始复合设备](raw-gadget)
 - [usbip_protocol](usbip_protocol)
-- [USB 鐩戣](usbmon)
-- [USB 涓插彛](usb-serial)
-- [USB 甯姪](usb-help)
+- [USB 监视](usbmon)
+- [USB 串口](usb-serial)
+- [USB 帮助](usb-help)
 - [text_files](text_files)
 

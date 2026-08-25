@@ -1,9 +1,9 @@
-﻿## 杩愯鏃堕獙璇侊紙Runtime Verification锛?
+﻿## 运行时验证（Runtime Verification
 
-鏈〉鏄繍琛屾椂楠岃瘉锛圧untime Verification锛夊瓙绯荤粺鏂囨。鐨勭储寮曪紝姹囨€讳簡纭畾鎬ц嚜鍔ㄦ満銆佺嚎鎬ф椂搴忛€昏緫銆佺洃瑙嗗櫒鍚堟垚涓庡悇绫昏繍琛屾椂鐩戣鍣ㄧ殑鍙傝€冨叆鍙ｏ紝渚夸簬鎸変富棰樺畾浣?RV 鐩稿叧璇存槑銆?
+本页是运行时验证（Runtime Verification）子系统文档的索引，汇总了确定性自动机、线性时序逻辑、监视器合成与各类运行时监视器的参考入口，便于按主题定RV 相关说明
 
 
-鏈〉鎻愪緵杩愯鏃堕獙璇侊紙Runtime Verification锛夊瓙绯荤粺鐩稿叧鐨勬枃妗ｃ€?
+本页提供运行时验证（Runtime Verification）子系统相关的文档
 
 
 

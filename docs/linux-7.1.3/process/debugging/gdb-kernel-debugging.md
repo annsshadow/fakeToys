@@ -1,38 +1,38 @@
 ﻿
-## 閫氳繃 gdb 璋冭瘯鍐呮牳涓庢ā鍧?
+## 通过 gdb 调试内核与模
 
-鍐呮牳璋冭瘯鍣?kgdb銆佸儚 QEMU 杩欐牱鐨?hypervisor 鎴栧熀浜?JTAG 鐨勭‖浠舵帴鍙ｏ紝鍏佽鍦ㄨ繍琛屾椂浣跨敤 gdb 璋冭瘯 Linux 鍐呮牳鍙婂叾妯″潡銆侴db 甯︽湁涓€涓己澶х殑 python 鑴氭湰鎺ュ彛銆傚唴鏍告彁渚涗簡涓€缁勮緟鍔╄剼鏈紝鍙互绠€鍖栧吀鍨嬬殑鍐呮牳璋冭瘯姝ラ銆傝繖鏄竴涓叧浜庡浣曞惎鐢ㄥ拰浣跨敤瀹冧滑鐨勭畝鐭暀绋嬨€傚畠鑱氱劍浜庝互 QEMU/KVM 铏氭嫙鏈轰綔涓虹洰鏍囷紝浣嗙ず渚嬩篃鍙互绉绘鍒板叾浠?gdb stub 涓娿€?
-### 瑕佹眰
-
-
-- gdb 7.2+锛堟帹鑽愶細7.4+锛夛紝鍚敤浜?python 鏀寔锛堝浜庡彂琛岀増閫氬父涓虹湡锛?
-### 璁剧疆
+内核调试kgdb、像 QEMU 这样hypervisor 或基JTAG 的硬件接口，允许在运行时使用 gdb 调试 Linux 内核及其模块。Gdb 带有一个强大的 python 脚本接口。内核提供了一组辅助脚本，可以简化典型的内核调试步骤。这是一个关于如何启用和使用它们的简短教程。它聚焦于以 QEMU/KVM 虚拟机作为目标，但示例也可以移植到其gdb stub 上
+### 要求
 
 
-- 涓?QEMU/KVM 鍒涘缓涓€涓櫄鎷?Linux 鏈哄櫒锛堟洿澶氱粏鑺傝 www.linux-kvm.org 鍜?www.qemu.org锛夈€傚浜庝氦鍙夊紑鍙戯紝https://landley.net/aboriginal/bin 淇濈暀浜嗕竴鎵规満鍣ㄩ暅鍍忓拰宸ュ叿閾撅紝鍙互浣滀负璧风偣浣跨敤銆?
-- 鏋勫缓鍐呮牳鏃跺惎鐢?CONFIG_GDB_SCRIPTS锛屼絾淇濇寔 CONFIG_DEBUG_INFO_REDUCED 鍏抽棴銆傚鏋滀綘鐨勬灦鏋勬敮鎸?CONFIG_FRAME_POINTER锛岃淇濇寔鍚敤銆?
-- 灏嗚鍐呮牳瀹夎鍒板鎴锋満涓婏紝濡傛湁蹇呰锛岄€氳繃鍦ㄥ唴鏍稿懡浠よ娣诲姞 "nokaslr" 鍏抽棴 KASLR銆?  鎴栬€咃紝QEMU 鍏佽浣跨敤 -kernel銆?append銆?initrd 鍛戒护琛屽紑鍏崇洿鎺ュ惎鍔ㄥ唴鏍搞€傚鏋滀綘涓嶄緷璧栨ā鍧楋紝杩欓€氬父鎵嶆湁鐢ㄣ€傚叧浜庢妯″紡鐨勬洿澶氱粏鑺傝鍙傞槄 QEMU 鏂囨。銆傚湪杩欑鎯呭喌涓嬶紝濡傛灉浣犵殑鏋舵瀯鏀寔 KASLR锛屼綘搴旇鏋勫缓鏃剁鐢?CONFIG_RANDOMIZE_BASE銆?
+- gdb 7.2+（推荐：7.4+），启用python 支持（对于发行版通常为真
+### 设置
+
+
+- QEMU/KVM 创建一个虚Linux 机器（更多细节见 www.linux-kvm.org www.qemu.org）。对于交叉开发，https://landley.net/aboriginal/bin 保留了一批机器镜像和工具链，可以作为起点使用
+- 构建内核时启CONFIG_GDB_SCRIPTS，但保持 CONFIG_DEBUG_INFO_REDUCED 关闭。如果你的架构支CONFIG_FRAME_POINTER，请保持启用
+- 将该内核安装到客户机上，如有必要，通过在内核命令行添加 "nokaslr" 关闭 KASLR  或者，QEMU 允许使用 -kernelappendinitrd 命令行开关直接启动内核。如果你不依赖模块，这通常才有用。关于此模式的更多细节请参阅 QEMU 文档。在这种情况下，如果你的架构支持 KASLR，你应该构建时禁CONFIG_RANDOMIZE_BASE
 ```
 
     make scripts_gdb
 
 ```
-- 鍚敤 QEMU/KVM 鐨?gdb stub锛屽彲浠ワ細
+- 启用 QEMU/KVM gdb stub，可以：
 
-    - 鍦?VM 鍚姩鏃堕€氳繃鍚?QEMU 鍛戒护琛岃拷鍔?"-s"
+    - VM 启动时通过QEMU 命令行追"-s"
 
-  鎴?
-    - 鍦ㄨ繍琛屾椂閫氳繃 QEMU monitor 鎺у埗鍙板彂鍑?"gdbserver"
+  鎴。
+    - 在运行时通过 QEMU monitor 控制台发"gdbserver"
 
 - cd /path/to/linux-build
 
-- 鍚姩 gdb锛歡db vmlinux
+- 启动 gdb：gdb vmlinux
 
-  娉ㄦ剰锛氭煇浜涘彂琛岀増鍙兘闄愬埗 gdb 鑴氭湰鑷姩鍔犺浇鍒板凡鐭ュ畨鍏ㄨ矾寰?```
+  注意：某些发行版可能限制 gdb 脚本自动加载到已知安全路```
 
     add-auto-load-safe-path /path/to/linux-build
 
-  鍒?~/.gdbinit銆傛洿澶氱粏鑺傝鍙傞槄 gdb 甯姪銆?
+  ~/.gdbinit。更多细节请参阅 gdb 帮助
 ```
 ```
 
@@ -40,7 +40,7 @@
 
 
 ```
-### 浣跨敤 Linux 鎻愪緵鐨?gdb 杈呭姪鍑芥暟鐨勭ず渚?
+### 使用 Linux 提供gdb 辅助函数的示
 
 ```
 
@@ -69,7 +69,7 @@
     (gdb) c
 
 ```
-- 鍦ㄧ洰鏍囦笂鍔犺浇妯″潡锛屽苟瑙傚療绗﹀彿琚姞杞斤紝浠ュ強
+- 在目标上加载模块，并观察符号被加载，以及
 ```
 
     loading @0xffffffffa0034000: /home/user/linux/build/lib/libcrc32c.ko
@@ -134,9 +134,9 @@
 
 
 ```
-### 鍛戒护涓庡嚱鏁板垪琛?
+### 命令与函数列
 
-鍛戒护鍜屼究鎹峰嚱鏁扮殑鏁伴噺鍙兘浼氶殢鏃堕棿婕斿彉锛?```
+命令和便捷函数的数量可能会随时间演变```
 
  (gdb) apropos lx
  function lx_current -- Return current task
@@ -149,11 +149,11 @@
  lx-symbols -- (Re-)load symbols of Linux kernel and currently loaded modules
 
 ```
-鍙互閫氳繃 "help <鍛戒护鍚?" 鑾峰彇鍛戒护鐨勮缁嗗府鍔╋紝閫氳繃 "help function <鍑芥暟鍚?" 鑾峰彇渚挎嵎鍑芥暟鐨勮缁嗗府鍔┿€?
-### 璋冭瘯 GDB 鑴氭湰
+可以通过 "help <命令" 获取命令的详细帮助，通过 "help function <函数" 获取便捷函数的详细帮助
+### 调试 GDB 脚本
 
 
-GDB 榛樿涓嶅惎鐢ㄥ畬鏁寸殑 Python 鍥炴函锛岃繖鍙兘浣胯皟璇?GDB 鑴氭湰姣斿繀瑕佺殑鏇村洶闅俱€備互涓嬪唴瀹瑰皢鍏佽鎵撳嵃
+GDB 默认不启用完整的 Python 回溯，这可能使调GDB 脚本比必要的更困难。以下内容将允许打印
 ```
 
  (gdb) set python print-stack full

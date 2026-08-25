@@ -1,7 +1,7 @@
-﻿## 璁惧鏍戯紙OF锛堿PI
+﻿## 设备树（OF）API
 
 
-KUnit 璁惧鏍?API 鐢ㄤ簬娴嬭瘯渚濊禆璁惧鏍戯紙of_*锛夌殑浠ｇ爜銆?
+KUnit 设备API 用于测试依赖设备树（of_*）的代码
 
    :internal:
 

@@ -1,31 +1,31 @@
-﻿## STM32MP13 姒傝堪
+﻿## STM32MP13 概述
 
 
-### 绠€浠?
+### 简
 
 
-STM32MP131/STM32MP133/STM32MP135 鏄潰鍚戝悇绉嶅簲鐢ㄧ殑 Cortex-A MPU銆傚畠浠叿鏈変互涓嬬壒鎬э細
+STM32MP131/STM32MP133/STM32MP135 是面向各种应用的 Cortex-A MPU。它们具有以下特性：
 
-- 涓€涓?Cortex-A7 搴旂敤鏍?
-- 鏍囧噯瀛樺偍鍣ㄦ帴鍙ｆ敮鎸?
-- 鏍囧噯杩炴帴鎬э紝骞挎硾缁ф壙鑷?STM32 MCU 绯诲垪
-- 鍏ㄩ潰鐨勫畨鍏ㄦ敮鎸?
+- 一Cortex-A7 应用
+- 标准存储器接口支
+- 标准连接性，广泛继承STM32 MCU 系列
+- 全面的安全支
 
-鏇村缁嗚妭锛?
+更多细节
 
-- Cortex-A7 鏍稿績杩愯棰戠巼鏈€楂樿揪 900MHz
-- 鐢ㄤ簬杩炴帴 SDRAM銆丯OR 鍜?NAND 瀛樺偍鍣ㄧ殑 FMC 鎺у埗鍣?
+- Cortex-A7 核心运行频率最高达 900MHz
+- 用于连接 SDRAM、NOR NAND 存储器的 FMC 控制
 - QSPI
-- SD/MMC/SDIO 鏀寔
-- 2 涓互澶綉鎺у埗鍣?
+- SD/MMC/SDIO 支持
+- 2 个以太网控制
 - CAN
 - ADC/DAC
-- USB EHCI/OHCI 鎺у埗鍣?
+- USB EHCI/OHCI 鎺у埗鍣。
 - USB OTG
-- I2C銆丼PI銆丆AN 鎬荤嚎鏀寔
-- 澶氫釜閫氱敤瀹氭椂鍣?
-- 涓茶闊抽鎺ュ彛
-- LCD 鎺у埗鍣?
+- I2C、SPI、CAN 总线支持
+- 澶氫釜閫氱敤瀹氭椂鍣。
+- 串行音频接口
+- LCD 鎺у埗鍣。
 - DCMIPP
 - SPDIFRX
 - DFSDM

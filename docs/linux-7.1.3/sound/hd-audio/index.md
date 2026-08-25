@@ -1,9 +1,9 @@
-﻿## 楂樹繚鐪熼煶棰戯紙HD-Audio锛?
+﻿## 高保真音频（HD-Audio
 
 
-- [璇存槑](notes)
-- [鍨嬪彿](models)
-- [鎺у埗](controls)
-- [鏄剧ず绔彛澶氭祦浼犺緭锛圖P MST锛塢(dp-mst)
-- [Realtek PC 铚傞福](realtek-pc-beep)
-- [Intel 澶氶摼璺痌(intel-multi-link)
+- [说明](notes)
+- [型号](models)
+- [控制](controls)
+- [显示端口多流传输（DP MST）](dp-mst)
+- [Realtek PC 蜂鸣](realtek-pc-beep)
+- [Intel 多链路](intel-multi-link)

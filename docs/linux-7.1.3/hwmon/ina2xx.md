@@ -89,14 +89,14 @@ Author: Lothar Felten <lothar.felten@gmail.com>
 ### Description
 
 
-INA219 鏄竴娆惧甫鏈?I2C 鎺ュ彛鐨勯珮绔數娴佸垎娴佷笌鍔熺巼鐩戣鍣ㄣ€侷NA219 鍚屾椂鐩戣鍒嗘祦鍘嬮檷鍜岀數婧愮數鍘嬶紝鍏锋湁鍙紪绋嬬殑杞崲鏃堕棿鍜屾护娉㈠姛鑳姐€?
-INA220 鏄竴娆惧甫鏈?I2C 鎺ュ彛鐨勯珮杈规垨浣庤竟鐢垫祦鍒嗘祦涓庡姛鐜囩洃瑙嗗櫒銆侷NA220 鍚屾椂鐩戣鍒嗘祦鍘嬮檷鍜岀數婧愮數鍘嬨€?
-INA226 鏄竴娆惧甫鏈?I2C 鎺ュ彛鐨勭數娴佸垎娴佷笌鍔熺巼鐩戣鍣ㄣ€侷NA226 鍚屾椂鐩戣鍒嗘祦鐢靛帇闄嶅拰鎬荤嚎鐢垫簮鐢靛帇銆?
-INA230銆両NA231 鍜?INA234 鏄甫鏈?I2C 鎺ュ彛鐨勯珮杈规垨浣庤竟鐢垫祦鍒嗘祦涓庡姛鐜囩洃瑙嗗櫒銆傝繖浜涜姱鐗囧悓鏃剁洃瑙嗗垎娴佺數鍘嬮檷鍜屾€荤嚎鐢垫簮鐢靛帇銆?
-INA260 鏄竴娆惧甫鏈夐泦鎴愬垎娴佺數闃荤殑楂樿竟鎴栦綆杈圭數娴佷笌鍔熺巼鐩戣鍣ㄣ€?
-SY24655 鏄竴娆惧甫鏈?I2C 鎺ュ彛鐨勯珮杈瑰拰浣庤竟鐢垫祦鍒嗘祦涓庡姛鐜囩洃瑙嗗櫒銆係Y24655 鏀寔鍒嗘祦鍘嬮檷鍜岀數婧愮數鍘嬶紝鍏锋湁鍙紪绋嬬殑鏍″噯鍊煎拰杞崲鏃堕棿銆係Y24655 杩樺彲浠ヨ绠楀钩鍧囧姛鐜囷紝鐢ㄤ簬鑳介噺杞崲銆?
-鍒嗘祦鐢甸樆鍊硷紙浠ュ井娆т负鍗曚綅锛夊彲鍦ㄧ紪璇戞椂閫氳繃 platform data 鎴?device tree 璁剧疆锛屼篃鍙湪杩愯鏃堕€氳繃 sysfs 涓殑 shunt_resistor 灞炴€ц缃€傚鏋滀娇鐢?device tree锛岃鍙傞槄 Documentation/devicetree/bindings/hwmon/ti,ina2xx.yaml 浜嗚В鐩稿叧缁戝畾銆?
-姝ゅ锛宨na226 鏀寔 update_interval 灞炴€э紝璇﹁ Documentation/hwmon/sysfs-interface.rst銆傚湪鍐呴儴锛岃闂撮殧绛変簬鎬荤嚎鐢靛帇鍜屽垎娴佺數鍘嬭浆鎹㈡椂闂翠箣鍜屼箻浠ュ钩鍧囬€熺巼銆傛垜浠笉浼氭敼鍔ㄨ浆鎹㈡椂闂达紝鍙慨鏀瑰钩鍧囨鏁般€倁pdate_interval 鐨勪笅闄愪负 2 ms锛屼笂闄愪负 2253 ms銆傚疄闄呯紪绋嬬殑闂撮殧鍙兘浼氫笌鏈熸湜鍊兼湁鎵€鍋忓樊銆?
+INA219 是一款带I2C 接口的高端电流分流与功率监视器。INA219 同时监视分流压降和电源电压，具有可编程的转换时间和滤波功能
+INA220 是一款带I2C 接口的高边或低边电流分流与功率监视器。INA220 同时监视分流压降和电源电压
+INA226 是一款带I2C 接口的电流分流与功率监视器。INA226 同时监视分流电压降和总线电源电压
+INA230、INA231 INA234 是带I2C 接口的高边或低边电流分流与功率监视器。这些芯片同时监视分流电压降和总线电源电压
+INA260 是一款带有集成分流电阻的高边或低边电流与功率监视器
+SY24655 是一款带I2C 接口的高边和低边电流分流与功率监视器。SY24655 支持分流压降和电源电压，具有可编程的校准值和转换时间。SY24655 还可以计算平均功率，用于能量转换
+分流电阻值（以微欧为单位）可在编译时通过 platform data device tree 设置，也可在运行时通过 sysfs 中的 shunt_resistor 属性设置。如果使device tree，请参阅 Documentation/devicetree/bindings/hwmon/ti,ina2xx.yaml 了解相关绑定
+此外，ina226 支持 update_interval 属性，详见 Documentation/hwmon/sysfs-interface.rst。在内部，该间隔等于总线电压和分流电压转换时间之和乘以平均速率。我们不会改动转换时间，只修改平均次数。update_interval 的下限为 2 ms，上限为 2253 ms。实际编程的间隔可能会与期望值有所偏差
 ### General sysfs entries
 
 
@@ -111,7 +111,7 @@ shunt_resistor		Shunt resistance(uOhm) channel (not for ina260)
 ### Additional sysfs entries
 
 
-浠ヤ笅鑺墖杩樻彁渚涢澶栫殑 sysfs 灞炴€э細
+以下芯片还提供额外的 sysfs 属性：
 
   - ina226
   - ina230
@@ -147,4 +147,4 @@ power1_average		average power from last reading to the present.
 ======================= ====================================================
 
 
-   - 鍦ㄩ厤缃?`power1_crit` 涔嬪墠鍏堥厤缃?`shunt_resistor`锛屽洜涓?power 鍊兼槸鍩轰簬鎵€璁剧疆鐨?`shunt_resistor` 璁＄畻寰楀嚭鐨勩€?   - 鐢变簬搴曞眰鐨勫瘎瀛樺櫒瀹炵幇锛屽悓涓€鏃跺埢鍙兘鏈変竴涓?`*crit` 璁剧疆鍙婂叾 `alarm` 澶勪簬娲诲姩鐘舵€併€傚啓鍏ユ煇涓?`*crit` 璁剧疆浼氭竻闄ゅ叾浠栫殑 `*crit` 璁剧疆鍜?alarm銆傚悜浠绘剰 `**crit` 璁剧疆鍐欏叆 0 浼氭竻闄ゆ墍鏈?`*crit` 璁剧疆鍜?alarm銆?
+   - 在配`power1_crit` 之前先配`shunt_resistor`，因power 值是基于所设置`shunt_resistor` 计算得出的   - 由于底层的寄存器实现，同一时刻只能有一`*crit` 设置及其 `alarm` 处于活动状态。写入某`*crit` 设置会清除其他的 `*crit` 设置alarm。向任意 `**crit` 设置写入 0 会清除所`*crit` 设置alarm

@@ -1,12 +1,12 @@
 ﻿######## ioctl VIDIOC_QUERY_DV_TIMINGS
 
 
-## 鍚嶇О
+## 名称
 
 
-VIDIOC_QUERY_DV_TIMINGS - VIDIOC_SUBDEV_QUERY_DV_TIMINGS - 妫€娴嬪綋鍓嶈緭鍏ユ敹鍒扮殑 DV 棰勮
+VIDIOC_QUERY_DV_TIMINGS - VIDIOC_SUBDEV_QUERY_DV_TIMINGS - 检测当前输入收到的 DV 预设
 
-## 鎽樿
+## 摘要
 
 
 `int ioctl(int fd, VIDIOC_QUERY_DV_TIMINGS, struct v4l2_dv_timings *argp)`
@@ -14,34 +14,34 @@ VIDIOC_QUERY_DV_TIMINGS - VIDIOC_SUBDEV_QUERY_DV_TIMINGS - 妫€娴嬪綋鍓嶈
 
 `int ioctl(int fd, VIDIOC_SUBDEV_QUERY_DV_TIMINGS, struct v4l2_dv_timings *argp)`
 
-## 鍙傛暟
+## 参数
 
 
 `fd`
-    鐢?`open()` 杩斿洖鐨勬枃浠舵弿杩扮銆?
+    `open()` 返回的文件描述符
 `argp`
-    鎸囧悜 struct `v4l2_dv_timings` 鐨勬寚閽堛€?
-## 鎻忚堪
+    指向 struct `v4l2_dv_timings` 的指针
+## 描述
 
 
-纭欢鍙兘鑳藉鑷姩妫€娴嬪綋鍓嶇殑 DV 鏃跺簭锛岀被浼间簬妫€娴嬭棰戞爣鍑嗐€備负姝わ紝搴旂敤绋嬪簭浠ユ寚鍚?涓€涓?struct `v4l2_dv_timings` 鐨勬寚閽堣皟鐢?VIDIOC_QUERY_DV_TIMINGS銆備竴鏃︾‖浠舵娴嬪埌
-鏃跺簭锛屽畠灏嗗～鍏呰鏃跺簭缁撴瀯銆?
+硬件可能能够自动检测当前的 DV 时序，类似于检测视频标准。为此，应用程序以指一struct `v4l2_dv_timings` 的指针调VIDIOC_QUERY_DV_TIMINGS。一旦硬件检测到
+时序，它将填充该时序结构
 
-   椹卞姩**涓嶅緱**鍦ㄦ娴嬪埌鏂版椂搴忔椂鑷姩鍒囨崲鏃跺簭銆傜浉鍙嶏紝椹卞姩搴斿彂閫?   `V4L2_EVENT_SOURCE_CHANGE` 浜嬩欢锛堝鏋滃畠浠敮鎸侊級锛屽苟鏈熸湜鐢ㄦ埛绌洪棿閫氳繃璋冪敤
-   VIDIOC_QUERY_DV_TIMINGS 鏉ラ噰鍙栬鍔ㄣ€傚師鍥犳槸鏂版椂搴忛€氬父涔熸剰鍛崇潃涓嶅悓鐨勭紦鍐插尯澶у皬锛?   鑰屼綘鏃犳硶鍦ㄨ繍琛屾椂鏇存敼缂撳啿鍖哄ぇ灏忋€備竴鑸€岃█锛屾帴鏀跺埌 Source Change 浜嬩欢鐨勫簲鐢ㄧ▼搴?   蹇呴』璋冪敤 VIDIOC_QUERY_DV_TIMINGS锛屽鏋滄娴嬪埌鐨勬椂搴忔湁鏁堬紝鍒欏繀椤诲仠姝㈡祦浼犺緭銆佽缃?   鏂版椂搴忋€佸垎閰嶆柊缂撳啿鍖哄苟閲嶆柊鍚姩娴佷紶杈撱€?
-濡傛灉鍥犱负鏃犱俊鍙疯€屾棤娉曟娴嬫椂搴忥紝鍒欒繑鍥?ENOLINK銆傚鏋滄娴嬪埌淇″彿锛屼絾瀹冧笉绋冲畾涓旀帴鏀跺櫒
-鏃犳硶閿佸畾鍒拌淇″彿锛屽垯杩斿洖 `ENOLCK`銆傚鏋滄帴鏀跺櫒鑳藉閿佸畾鍒颁俊鍙凤紝浣嗘牸寮忎笉鍙楁敮鎸侊紙渚嬪
-鍥犱负鍍忕礌鏃堕挓瓒呭嚭纭欢鑳藉姏鑼冨洿锛夛紝鍒欓┍鍔ㄥ～鍏呭畠鎵€鑳芥壘鍒扮殑浠绘剰鏃跺簭骞惰繑鍥?`ERANGE`銆傚湪
-璇ユ儏鍐典笅锛屽簲鐢ㄧ▼搴忓彲浠ヨ皟鐢?VIDIOC_DV_TIMINGS_CAP锛屽皢鎵惧埌鐨勬椂搴忎笌纭欢鑳藉姏杩涜姣旇緝锛?浠ヤ究鍚戠敤鎴锋彁渚涙洿鍏峰弽棣堛€?
-## 杩斿洖鍊?
+   驱动**不得**在检测到新时序时自动切换时序。相反，驱动应发   `V4L2_EVENT_SOURCE_CHANGE` 事件（如果它们支持），并期望用户空间通过调用
+   VIDIOC_QUERY_DV_TIMINGS 来采取行动。原因是新时序通常也意味着不同的缓冲区大小   而你无法在运行时更改缓冲区大小。一般而言，接收到 Source Change 事件的应用程   必须调用 VIDIOC_QUERY_DV_TIMINGS，如果检测到的时序有效，则必须停止流传输、设   新时序、分配新缓冲区并重新启动流传输
+如果因为无信号而无法检测时序，则返ENOLINK。如果检测到信号，但它不稳定且接收器
+无法锁定到该信号，则返回 `ENOLCK`。如果接收器能够锁定到信号，但格式不受支持（例如
+因为像素时钟超出硬件能力范围），则驱动填充它所能找到的任意时序并返`ERANGE`。在
+该情况下，应用程序可以调VIDIOC_DV_TIMINGS_CAP，将找到的时序与硬件能力进行比较以便向用户提供更具反馈
+## 杩斿洖鍊。
 
-鎴愬姛鏃惰繑鍥?0锛屽嚭閿欐椂杩斿洖 -1 骞剁浉搴斿湴璁剧疆 `errno` 鍙橀噺銆傞€氱敤閿欒鐮佸湪
-Generic Error Codes <gen-errors> 绔犺妭涓弿杩般€?
+成功时返0，出错时返回 -1 并相应地设置 `errno` 变量。通用错误码在
+Generic Error Codes <gen-errors> 章节中描述
 ENODATA
-    璇ヨ緭鍏ユ垨杈撳嚭涓嶆敮鎸佹暟瀛楄棰戞椂搴忋€?
+    该输入或输出不支持数字视频时序
 ENOLINK
-    鍥犱负鏈壘鍒颁俊鍙凤紝鏃犳硶妫€娴嬪埌浠讳綍鏃跺簭銆?
+    因为未找到信号，无法检测到任何时序
 ENOLCK
-    淇″彿涓嶇ǔ瀹氾紝纭欢鏃犳硶閿佸畾鍒板畠銆?
+    信号不稳定，硬件无法锁定到它
 ERANGE
-    鎵惧埌浜嗘椂搴忥紝浣嗗畠浠秴鍑轰簡纭欢鑳藉姏鑼冨洿銆?
+    找到了时序，但它们超出了硬件能力范围

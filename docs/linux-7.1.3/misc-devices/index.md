@@ -1,9 +1,9 @@
-﻿## 鍚勭被鏉傞」璁惧鏂囨。锛圓ssorted Miscellaneous Devices Documentation锛?
+﻿## 各类杂项设备文档（Assorted Miscellaneous Devices Documentation
 
-鏈〉鏄潅椤硅澶囷紙Miscellaneous Devices锛夋枃妗ｇ殑绱㈠紩锛屾眹鎬讳簡涓嶅睘浜庡叾浠栬澶囩被鍒殑鍚勭澶栧洿璁惧鐨勮鏄庢枃妗ｅ叆鍙ｏ紝渚夸簬璇昏€呮寜璁惧蹇€熷畾浣嶇浉鍏宠鏄庛€?
+本页是杂项设备（Miscellaneous Devices）文档的索引，汇总了不属于其他设备类别的各种外围设备的说明文档入口，便于读者按设备快速定位相关说明
 
 
-鏈枃妗ｅ寘鍚笉灞炰簬鍏朵粬绫诲埆鐨勫悇绉嶈澶囩殑淇℃伅銆?
+本文档包含不属于其他类别的各种设备的信息
 
 - [ad525x_dpot](ad525x_dpot)
 - [amd-sbi](amd-sbi)

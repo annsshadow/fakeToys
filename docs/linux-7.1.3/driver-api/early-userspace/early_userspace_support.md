@@ -1,69 +1,69 @@
-﻿## 鏃╂湡鐢ㄦ埛绌洪棿鏀寔
+﻿## 早期用户空间支持
 
 
 Last update: 2004-12-20 tlh
 
 
-"鏃╂湡鐢ㄦ埛绌洪棿"锛圗arly userspace锛夋槸涓€缁勫簱鍜岀▼搴忥紝瀹冧滑鎻愪緵鍚勭閲嶈鐨勫姛鑳斤紝杩欎簺鍔熻兘
-鍦?Linux 鍐呮牳鍚姩杩囩▼涓氨闇€瑕佸彲鐢紝浣嗕笉闇€瑕佸湪鍐呮牳鏈韩鍐呴儴杩愯銆?
-瀹冪敱鍑犱釜涓昏鐨勫熀纭€璁炬柦缁勪欢缁勬垚锛?
-- gen_init_cpio锛屼竴涓瀯寤哄寘鍚牴鏂囦欢绯荤粺鏄犲儚鐨?cpio 鏍煎紡褰掓。鐨勭▼搴忋€傝褰掓。琚帇缂╋紝
-  鍘嬬缉鍚庣殑鏄犲儚琚摼鎺ヨ繘鍐呮牳鏄犲儚銆?- initramfs锛屼竴娈靛湪鍐呮牳寮曞杩囩▼涓€旇В鍖呭帇缂╃殑 cpio 鏄犲儚鐨勪唬鐮併€?- klibc锛屼竴涓敤鎴风┖闂?C 搴擄紝鐩墠鍗曠嫭鎵撳寘锛岄拡瀵规纭€у拰灏忎綋绉繘琛屼簡浼樺寲銆?
-initramfs 浣跨敤鐨?cpio 鏂囦欢鏍煎紡鏄?"newc"锛堝嵆 "cpio -H newc"锛夋牸寮忥紝骞跺湪鏂囦欢
-"buffer-format.txt" 涓湁鏂囨。璇存槑銆傛湁涓ょ鏂瑰紡娣诲姞鏃╂湡鐢ㄦ埛绌洪棿鏄犲儚锛氭寚瀹氫竴涓幇鏈夌殑
-cpio 褰掓。鐢ㄤ綔鏄犲儚锛屾垨鑰呰鍐呮牳鏋勫缓杩囩▼鏍规嵁瑙勬牸璇存槑鏋勫缓鏄犲儚銆?
-### CPIO 褰掓。鏂规硶
+"早期用户空间"（Early userspace）是一组库和程序，它们提供各种重要的功能，这些功能
+Linux 内核启动过程中就需要可用，但不需要在内核本身内部运行
+它由几个主要的基础设施组件组成
+- gen_init_cpio，一个构建包含根文件系统映像cpio 格式归档的程序。该归档被压缩，
+  压缩后的映像被链接进内核映像- initramfs，一段在内核引导过程中途解包压缩的 cpio 映像的代码- klibc，一个用户空C 库，目前单独打包，针对正确性和小体积进行了优化
+initramfs 使用cpio 文件格式"newc"（即 "cpio -H newc"）格式，并在文件
+"buffer-format.txt" 中有文档说明。有两种方式添加早期用户空间映像：指定一个现有的
+cpio 归档用作映像，或者让内核构建过程根据规格说明构建映像
+### CPIO 归档方法
 
 
-浣犲彲浠ュ垱寤轰竴涓寘鍚棭鏈熺敤鎴风┖闂存槧鍍忕殑 cpio 褰掓。銆備綘鐨?cpio 褰掓。搴斿湪
-CONFIG_INITRAMFS_SOURCE 涓寚瀹氾紝骞跺皢琚洿鎺ヤ娇鐢ㄣ€侰ONFIG_INITRAMFS_SOURCE 涓彧鑳芥寚瀹?鍗曚釜 cpio 鏂囦欢锛屽苟涓旂洰褰曞拰鏂囦欢鍚嶄笉鍏佽涓?cpio 褰掓。缁勫悎浣跨敤銆?
-### 鏄犲儚鏋勫缓鏂规硶
+你可以创建一个包含早期用户空间映像的 cpio 归档。你cpio 归档应在
+CONFIG_INITRAMFS_SOURCE 中指定，并将被直接使用。CONFIG_INITRAMFS_SOURCE 中只能指单个 cpio 文件，并且目录和文件名不允许cpio 归档组合使用
+### 映像构建方法
 
 
-鍐呮牳鏋勫缓杩囩▼涔熷彲浠ヤ粠婧愰儴浠舵瀯寤烘棭鏈熺敤鎴风┖闂存槧鍍忥紝鑰屼笉鏄彁渚?cpio 褰掓。銆傛鏂规硶鎻愪緵浜?涓€绉嶅垱寤哄叿鏈?root 鎷ユ湁鏂囦欢鏄犲儚鐨勬柟寮忥紝鍗充娇璇ユ槧鍍忔槸鐢遍潪鐗规潈鐢ㄦ埛鏋勫缓鐨勩€?
-璇ユ槧鍍忓湪 CONFIG_INITRAMFS_SOURCE 涓寚瀹氫负涓€涓垨澶氫釜婧愩€傛簮鍙互鏄洰褰曟垨鏂囦欢鈥斺€斾粠婧?鏋勫缓鏃?*涓?*鍏佽浣跨敤 cpio 褰掓。銆?
-涓€涓簮鐩綍灏嗚繛鍚屽叾鎵€鏈夊唴瀹逛竴璧疯鎵撳寘銆傛寚瀹氱殑鐩綍鍚嶅皢琚槧灏勫埌 '/'銆傚湪鎵撳寘鐩綍鏃讹紝鍙互
-鎵ц鏈夐檺鐨勭敤鎴峰拰缁?ID 杞崲銆侷NITRAMFS_ROOT_UID 鍙互璁剧疆涓洪渶瑕佹槧灏勫埌鐢ㄦ埛 root锛?锛夌殑
-鐢ㄦ埛 ID銆侷NITRAMFS_ROOT_GID 鍙互璁剧疆涓洪渶瑕佹槧灏勫埌缁?root锛?锛夌殑缁?ID銆?
-涓€涓簮鏂囦欢蹇呴』鏄?usr/gen_init_cpio 宸ュ叿鎵€闇€鐨勬牸寮忔寚浠わ紙杩愯 'usr/gen_init_cpio -h'
-鑾峰彇鏂囦欢鏍煎紡锛夈€傛枃浠朵腑鐨勬寚浠ゅ皢琚洿鎺ヤ紶閫掔粰 usr/gen_init_cpio銆?
-褰撴寚瀹氱洰褰曞拰鏂囦欢鐨勭粍鍚堟椂锛宨nitramfs 鏄犲儚灏嗘槸瀹冧滑鎵€鏈夊唴瀹圭殑鑱氬悎銆傞€氳繃杩欑鏂瑰紡锛岀敤鎴?鍙互鍒涘缓涓€涓?'root-image' 鐩綍骞跺皢鎵€鏈夋枃浠跺畨瑁呭埌鍏朵腑銆傜敱浜庤澶囩壒娈婃枃浠舵棤娉曠敱闈炵壒鏉?鐢ㄦ埛鍒涘缓锛岀壒娈婃枃浠跺彲浠ュ垪鍦?'root-files' 鏂囦欢涓€?root-image' 鍜?'root-files' 閮藉彲浠?鍒楀湪 CONFIG_INITRAMFS_SOURCE 涓紝骞朵笖瀹屾暣鐨勬棭鏈熺敤鎴风┖闂存槧鍍忓彲浠ョ敱闈炵壒鏉冪敤鎴锋瀯寤恒€?
-浣滀负涓€涓妧鏈鏄庯紝褰撴寚瀹氱洰褰曞拰鏂囦欢鏃讹紝鏁翠釜 CONFIG_INITRAMFS_SOURCE 琚紶閫掔粰
-usr/gen_initramfs.sh銆傝繖鎰忓懗鐫€ CONFIG_INITRAMFS_SOURCE 瀹為檯涓婂彲浠ヨ瑙ｉ噴涓轰紶缁?gen_initramfs.sh 鐨勪换浣曞悎娉曞弬鏁般€傚鏋滄寚瀹氫簡涓€涓洰褰曚綔涓哄弬鏁帮紝鍒欐壂鎻忓叾鍐呭锛屾墽琛?uid/gid 杞崲锛屽苟杈撳嚭 usr/gen_init_cpio 鏂囦欢鎸囦护銆傚鏋滄寚瀹氫簡涓€涓枃浠朵綔涓?usr/gen_initramfs.sh 鐨勫弬鏁帮紝鍒欐枃浠跺唴瀹硅绠€鍗曞湴澶嶅埗鍒拌緭鍑恒€傛潵鑷洰褰曟壂鎻忓拰鏂囦欢鍐呭
-澶嶅埗鐨勬墍鏈夎緭鍑烘寚浠ら兘鐢?usr/gen_init_cpio 澶勭悊銆?
-鍙﹁鍙傞槄 'usr/gen_initramfs.sh -h'銆?
-## 杩欎竴鍒囧皢璧板悜浣曟柟锛?
+内核构建过程也可以从源部件构建早期用户空间映像，而不是提cpio 归档。此方法提供一种创建具root 拥有文件映像的方式，即使该映像是由非特权用户构建的
+该映像在 CONFIG_INITRAMFS_SOURCE 中指定为一个或多个源。源可以是目录或文件——从构建**允许使用 cpio 归档
+一个源目录将连同其所有内容一起被打包。指定的目录名将被映射到 '/'。在打包目录时，可以
+执行有限的用户和ID 转换。INITRAMFS_ROOT_UID 可以设置为需要映射到用户 root）的
+用户 ID。INITRAMFS_ROOT_GID 可以设置为需要映射到root）的ID
+一个源文件必须usr/gen_init_cpio 工具所需的格式指令（运行 'usr/gen_init_cpio -h'
+获取文件格式）。文件中的指令将被直接传递给 usr/gen_init_cpio
+当指定目录和文件的组合时，initramfs 映像将是它们所有内容的聚合。通过这种方式，用可以创建一'root-image' 目录并将所有文件安装到其中。由于设备特殊文件无法由非特用户创建，特殊文件可以列'root-files' 文件中root-image' 'root-files' 都可列在 CONFIG_INITRAMFS_SOURCE 中，并且完整的早期用户空间映像可以由非特权用户构建
+作为一个技术说明，当指定目录和文件时，整个 CONFIG_INITRAMFS_SOURCE 被传递给
+usr/gen_initramfs.sh。这意味着 CONFIG_INITRAMFS_SOURCE 实际上可以被解释为传gen_initramfs.sh 的任何合法参数。如果指定了一个目录作为参数，则扫描其内容，执uid/gid 转换，并输出 usr/gen_init_cpio 文件指令。如果指定了一个文件作usr/gen_initramfs.sh 的参数，则文件内容被简单地复制到输出。来自目录扫描和文件内容
+复制的所有输出指令都usr/gen_init_cpio 处理
+另请参阅 'usr/gen_initramfs.sh -h'
+## 这一切将走向何方
 
-klibc 鍙戣鐗堝寘鍚竴浜涗娇鏃╂湡鐢ㄦ埛绌洪棿鏈夌敤鎵€闇€鐨勫繀瑕佽蒋浠躲€俴libc 鍙戣鐗堢洰鍓嶄笌鍐呮牳鍒嗗紑
-缁存姢銆?
-浣犲彲浠ヤ粠 https://www.kernel.org/pub/linux/libs/klibc/ 鑾峰彇涓嶅お棰戠箒鐨?klibc 蹇収銆?
-瀵逛簬娲昏穬鐢ㄦ埛锛屼綘鏈€濂戒娇鐢?klibc 鐨?git 浠撳簱锛屼綅浜?https://git.kernel.org/?p=libs/klibc/klibc.git
+klibc 发行版包含一些使早期用户空间有用所需的必要软件。klibc 发行版目前与内核分开
+维护
+你可以从 https://www.kernel.org/pub/linux/libs/klibc/ 获取不太频繁klibc 快照
+对于活跃用户，你最好使klibc git 仓库，位https://git.kernel.org/p=libs/klibc/klibc.git
 
-闄や簡 klibc 搴撲箣澶栵紝鐙珛鐨?klibc 鍙戣鐗堢洰鍓嶆彁渚涗笁涓粍浠讹細
+除了 klibc 库之外，独立klibc 发行版目前提供三个组件：
 
-- ipconfig锛屼竴涓厤缃綉缁滄帴鍙ｇ殑绋嬪簭銆傚畠鍙互闈欐€侀厤缃畠浠紝鎴栬€呬娇鐢?DHCP 鍔ㄦ€佽幏鍙?  淇℃伅锛堝嵆 "IP 鑷姩閰嶇疆"锛夈€?- nfsmount锛屼竴涓彲浠ユ寕杞?NFS 鏂囦欢绯荤粺鐨勭▼搴忋€?- kinit锛屼娇鐢?ipconfig 鍜?nfsmount 鏉ユ浛鎹㈡棫鐨?IP 鑷姩閰嶇疆鏀寔銆侀€氳繃 NFS 鎸傝浇鏂囦欢
-  绯荤粺銆佸苟浣跨敤璇ユ枃浠剁郴缁熶綔涓烘牴缁х画绯荤粺寮曞鐨?绮樺悎鍓?銆?
-kinit 琚瀯寤轰负鍗曚釜闈欐€侀摼鎺ョ殑浜岃繘鍒朵互鑺傜渷绌洪棿銆?
-鏈€缁堬紝甯屾湜鏈夋洿澶氱殑鍐呮牳鍔熻兘鍧楃Щ鍔ㄥ埌鏃╂湡鐢ㄦ埛绌洪棿锛?
-- 鍑犱箮鍏ㄩ儴鐨?init/do_mounts*锛堣繖閮ㄥ垎鐨勫紑澶村凡缁忓氨浣嶏級
-- ACPI 琛ㄨВ鏋?- 鎻掑叆瀹為檯涓婁笉闇€瑕佸湪鍐呮牳绌洪棿鐨勪笉鏄撳鐞嗙殑瀛愮郴缁?
-濡傛灉 kinit 涓嶈兘婊¤冻浣犲綋鍓嶇殑闇€姹傚苟涓斾綘鏈夊瓧鑺傚彲鎸ラ湇锛宬libc 鍙戣鐗堝寘鍚竴涓皬鍨嬬殑
-Bourne 鍏煎 shell锛坅sh锛変互鍙婅澶氬叾浠栧疄鐢ㄧ▼搴忥紝鍥犳浣犲彲浠ユ浛鎹?kinit 骞舵瀯寤哄畬鍏ㄦ弧瓒?浣犻渶姹傜殑鑷畾涔?initramfs 鏄犲儚銆?
-鏈夊叧闂鍜屽府鍔╋紝浣犲彲浠ュ湪 https://www.zytor.com/mailman/listinfo/klibc 娉ㄥ唽鏃╂湡鐢ㄦ埛绌洪棿
-閭欢鍒楄〃銆?
-## 瀹冩槸濡備綍宸ヤ綔鐨勶紵
+- ipconfig，一个配置网络接口的程序。它可以静态配置它们，或者使DHCP 动态获  信息（即 "IP 自动配置"）- nfsmount，一个可以挂NFS 文件系统的程序- kinit，使ipconfig nfsmount 来替换旧IP 自动配置支持、通过 NFS 挂载文件
+  系统、并使用该文件系统作为根继续系统引导粘合
+kinit 被构建为单个静态链接的二进制以节省空间
+最终，希望有更多的内核功能块移动到早期用户空间
+- 几乎全部init/do_mounts*（这部分的开头已经就位）
+- ACPI 表解- 插入实际上不需要在内核空间的不易处理的子系
+如果 kinit 不能满足你当前的需求并且你有字节可挥霍，klibc 发行版包含一个小型的
+Bourne 兼容 shell（ash）以及许多其他实用程序，因此你可以替kinit 并构建完全满你需求的自定initramfs 映像
+有关问题和帮助，你可以在 https://www.zytor.com/mailman/listinfo/klibc 注册早期用户空间
+邮件列表
+## 它是如何工作的？
 
 
-鍐呮牳鐩墠鏈?3 绉嶆柟寮忔潵鎸傝浇鏍规枃浠剁郴缁燂細
+内核目前3 种方式来挂载根文件系统：
 
-a) 鎵€鏈夊繀闇€鐨勮澶囧拰鏂囦欢绯荤粺椹卞姩閮界紪璇戣繘鍐呮牳锛屾病鏈?initrd銆俰nit/main.c:init() 灏嗚皟鐢?   prepare_namespace() 鏉ユ寕杞芥渶缁堢殑鏍规枃浠剁郴缁燂紝鍩轰簬 root= 閫夐」鍜屽彲閫夌殑 init= 鏉ヨ繍琛?   涓嶅悓浜?init/main.c:init() 鏈熬鍒楀嚭鐨勬煇涓叾浠?init 浜岃繘鍒躲€?
-b) 涓€浜涜澶囧拰鏂囦欢绯荤粺椹卞姩鏋勫缓涓烘ā鍧楀苟瀛樺偍鍦?initrd 涓€俰nitrd 蹇呴』鍖呭惈涓€涓簩杩涘埗
-   '/linuxrc'锛屽畠搴旇鍔犺浇杩欎簺椹卞姩妯″潡銆備篃鍙互閫氳繃 linuxrc 鎸傝浇鏈€缁堢殑鏍规枃浠剁郴缁熷苟浣跨敤
-   pivot_root 绯荤粺璋冪敤銆俰nitrd 閫氳繃 prepare_namespace() 鎸傝浇骞舵墽琛屻€?
-c) 浣跨敤 initramfs銆傚繀椤昏烦杩囧 prepare_namespace() 鐨勮皟鐢ㄣ€傝繖鎰忓懗鐫€蹇呴』鏈変竴涓簩杩涘埗鏉ュ仛
-   鎵€鏈夊伐浣溿€傝浜岃繘鍒跺彲浠ラ€氳繃淇敼 usr/gen_init_cpio.c 鎴栭€氳繃鏂扮殑 initrd 鏍煎紡锛堜竴涓?cpio
-   褰掓。锛夊瓨鍌ㄥ埌 initramfs 涓€傚畠蹇呴』琚懡鍚嶄负 "/init"銆傝浜岃繘鍒惰礋璐ｅ畬鎴?prepare_namespace()
-   浼氬仛鐨勬墍鏈変簨鎯呫€?
-   涓轰簡淇濇寔鍚戝悗鍏煎鎬э紝/init 浜岃繘鍒跺彧鏈夊湪瀹冩潵鑷?initramfs cpio 褰掓。鏃舵墠浼氳繍琛屻€傚鏋滀笉鏄?   杩欑鎯呭喌锛宨nit/main.c:init() 灏嗚繍琛?prepare_namespace() 鏉ユ寕杞芥渶缁堢殑鏍瑰苟鎵ц棰勫畾涔夌殑
-   init 浜岃繘鍒朵箣涓€銆?
+a) 所有必需的设备和文件系统驱动都编译进内核，没initrd。init/main.c:init() 将调   prepare_namespace() 来挂载最终的根文件系统，基于 root= 选项和可选的 init= 来运   不同init/main.c:init() 末尾列出的某个其init 二进制
+b) 一些设备和文件系统驱动构建为模块并存储initrd 中。initrd 必须包含一个二进制
+   '/linuxrc'，它应该加载这些驱动模块。也可以通过 linuxrc 挂载最终的根文件系统并使用
+   pivot_root 系统调用。initrd 通过 prepare_namespace() 挂载并执行
+c) 使用 initramfs。必须跳过对 prepare_namespace() 的调用。这意味着必须有一个二进制来做
+   所有工作。该二进制可以通过修改 usr/gen_init_cpio.c 或通过新的 initrd 格式（一cpio
+   归档）存储到 initramfs 中。它必须被命名为 "/init"。该二进制负责完prepare_namespace()
+   会做的所有事情
+   为了保持向后兼容性，/init 二进制只有在它来initramfs cpio 归档时才会运行。如果不   这种情况，init/main.c:init() 将运prepare_namespace() 来挂载最终的根并执行预定义的
+   init 二进制之一
 Bryan O'Sullivan <bos@serpentine.com>

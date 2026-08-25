@@ -1,5 +1,5 @@
 ﻿
-## CPU 绌洪棽鏃堕棿绠＄悊
+## CPU 空闲时间管理
 
 
 :Copyright: |copy| 2019 Intel Corporation
@@ -7,38 +7,38 @@
 :Author: Rafael J. Wysocki <rafael.j.wysocki@intel.com>
 
 
-## CPU 绌洪棽鏃堕棿绠＄悊瀛愮郴缁?
+## CPU 绌洪棽鏃堕棿绠＄悊瀛愮郴缁。
 
-绯荤粺涓瘡褰撲竴涓€昏緫 CPU锛堝嵆閭ｄ簺鐪嬭捣鏉ヤ細鍙栨寚骞舵墽琛屾寚浠ょ殑瀹炰綋锛氳嫢鏀寔鍒欎负纭欢绾跨▼锛?鍚﹀垯涓哄鐞嗗櫒鏍稿績锛夊湪涓柇鎴栫瓑鏁堝敜閱掍簨浠朵箣鍚庡浜庣┖闂茬姸鎬侊紝鍗抽櫎涓庝箣鍏宠仈鐨勭壒瀹氣€滅┖闂测€?浠诲姟澶栨病鏈変换鍔″彲鍦ㄥ叾涓婅繍琛屾椂锛屽氨瀛樺湪涓哄畠鎵€灞炵殑澶勭悊鍣ㄨ妭鐪佽兘閲忕殑鏈轰細銆傝繖鍙互閫氳繃
-璁╃┖闂茬殑閫昏緫 CPU 鍋滄浠庡唴瀛樺彇鎸囷紝骞跺皢鍏舵墍渚濊禆鐨勯儴鍒嗗鐞嗗櫒鍔熻兘鍗曞厓缃簬涓€绉嶅姛鑰?鏇翠綆鐨勭┖闂茬姸鎬佹潵瀹炵幇銆?
-鐒惰€岋紝鍘熷垯涓婂湪杩欑鎯呭喌涓嬪彲鑳芥湁澶氫釜涓嶅悓鐨勭┖闂茬姸鎬佸彲鐢紝鍥犳鍙兘闇€瑕佹壘鍒版渶鍚堥€傜殑
-涓€涓紙浠庡唴鏍歌搴︾湅锛夛紝骞惰姹傚鐞嗗櫒浣跨敤锛堟垨鈥滆繘鍏モ€濓級璇ョ壒瀹氱┖闂茬姸鎬併€傝繖姝ｆ槸鍐呮牳涓?绉颁负 `CPUIdle` 鐨?CPU 绌洪棽鏃堕棿绠＄悊瀛愮郴缁熺殑鑱岃矗銆?
-`CPUIdle` 鐨勮璁℃槸妯″潡鍖栫殑锛屽苟鍩轰簬閬垮厤浠ｇ爜閲嶅鐨勫師鍒欙紝鍥犳鍘熷垯涓婁笉蹇呬緷璧栧叾涓?纭欢鎴栧钩鍙拌璁＄粏鑺傜殑閫氱敤浠ｇ爜锛屼笌鍜岀‖浠朵氦浜掔殑浠ｇ爜鏄垎绂荤殑銆傚畠閫氬父鍒嗕负涓夌被鍔熻兘鍗曞厓锛?璐熻矗閫夋嫨瑕佽姹傚鐞嗗櫒杩涘叆鐨勭┖闂茬姸鎬佺殑**璋冭妭鍣紙governor锛?*銆佸皢璋冭妭鍣ㄧ殑鍐崇瓥浼犻€掔粰
-纭欢鐨?*椹卞姩锛坉river锛?*锛屼互鍙婁负瀹冧滑鎻愪緵閫氱敤妗嗘灦鐨?*鏍稿績锛坈ore锛?*銆?
+系统中每当一个逻辑 CPU（即那些看起来会取指并执行指令的实体：若支持则为硬件线程否则为处理器核心）在中断或等效唤醒事件之后处于空闲状态，即除与之关联的特定“空闲任务外没有任务可在其上运行时，就存在为它所属的处理器节省能量的机会。这可以通过
+让空闲的逻辑 CPU 停止从内存取指，并将其所依赖的部分处理器功能单元置于一种功更低的空闲状态来实现
+然而，原则上在这种情况下可能有多个不同的空闲状态可用，因此可能需要找到最合适的
+一个（从内核角度看），并请求处理器使用（或“进入”）该特定空闲状态。这正是内核称为 `CPUIdle` CPU 空闲时间管理子系统的职责
+`CPUIdle` 的设计是模块化的，并基于避免代码重复的原则，因此原则上不必依赖其硬件或平台设计细节的通用代码，与和硬件交互的代码是分离的。它通常分为三类功能单元负责选择要请求处理器进入的空闲状态的**调节器（governor*、将调节器的决策传递给
+硬件*驱动（driver*，以及为它们提供通用框架*核心（core*
 
-## CPU 绌洪棽鏃堕棿璋冭妭鍣?
-涓€涓?CPU 绌洪棽鏃堕棿锛坄CPUIdle`锛夎皟鑺傚櫒鏄竴鏉熺瓥鐣ヤ唬鐮侊紝鍦ㄧ郴缁熶腑鏌愪釜閫昏緫 CPU 鍙樹负
-绌洪棽鏃惰璋冪敤銆傚畠鐨勪綔鐢ㄦ槸閫夋嫨涓€涓┖闂茬姸鎬侊紝璇锋眰澶勭悊鍣ㄨ繘鍏ヤ互鑺傜渷涓€浜涜兘閲忋€?
-`CPUIdle` 璋冭妭鍣ㄦ槸閫氱敤鐨勶紝鍏朵腑浠讳綍涓€涓兘鍙敤浜?Linux 鍐呮牳鍙繍琛岀殑浠讳綍纭欢骞冲彴銆?鍥犳锛屽畠浠墍鎿嶄綔鐨勬暟鎹粨鏋勪篃涓嶈兘渚濊禆浠讳綍纭欢鏋舵瀯鎴栧钩鍙拌璁＄粏鑺傘€?
-璋冭妭鍣ㄦ湰韬敱涓€涓?struct cpuidle_governor 瀵硅薄琛ㄧず锛屽叾涓寘鍚洓涓洖璋冩寚閽?:c`enable`銆?c`disable`銆?c`select`銆?c`reflect`锛屼竴涓涓嬫墍杩扮殑
-:c`rating` 瀛楁锛屼互鍙婁竴涓敤浜庢爣璇嗗畠鐨勫悕绉帮紙瀛楃涓诧級銆?
-瑕佷娇璋冭妭鍣ㄥ彲鐢紝闇€瑕佸皢璇ュ璞￠€氳繃璋冪敤 `cpuidle_register_governor()` 骞朵紶鍏ユ寚鍚?瀹冪殑鎸囬拡浣滀负鍙傛暟锛屾敞鍐屽埌 `CPUIdle` 鏍稿績銆傝嫢鎴愬姛锛屾牳蹇冧細灏嗚璋冭妭鍣ㄥ姞鍏ュ叏灞€鍙敤
-璋冭妭鍣ㄥ垪琛紱骞朵笖锛屽鏋滃畠鏄垪琛ㄤ腑鐨勫敮涓€涓€涓紙鍗虫鍓嶅垪琛ㄤ负绌猴級锛屾垨鑰呭叾 :c`rating`
-瀛楁鐨勫€煎ぇ浜庡綋鍓嶆墍鐢ㄨ皟鑺傚櫒鐨勮瀛楁鍊硷紝鎴栬€呮柊璋冭妭鍣ㄧ殑鍚嶇О浣滀负 `cpuidle.governor=`
-鍛戒护琛屽弬鏁扮殑鍊间紶閫掔粰浜嗗唴鏍革紝閭ｄ箞浠庤鏃跺埢璧峰氨灏嗕娇鐢ㄦ柊璋冭妭鍣紙鍚屼竴鏃跺埢鍙兘鏈変竴涓?`CPUIdle` 璋冭妭鍣ㄥ湪浣跨敤锛夈€傛澶栵紝鐢ㄦ埛绌洪棿涔熷彲浠ラ€氳繃 `sysfs` 鍦ㄨ繍琛屾椂閫夋嫨瑕佷娇鐢ㄧ殑
-`CPUIdle` 璋冭妭鍣ㄣ€?
-涓€鏃︽敞鍐岋紝`CPUIdle` 璋冭妭鍣ㄤ究鏃犳硶娉ㄩ攢锛屽洜姝ゅ皢瀹冧滑鏀惧叆鍙姞杞藉唴鏍告ā鍧楀苟涓嶇幇瀹炪€?
-`CPUIdle` 璋冭妭鍣ㄤ笌鏍稿績涔嬮棿鐨勬帴鍙ｇ敱鍥涗釜鍥炶皟缁勬垚锛?
+## CPU 绌洪棽鏃堕棿璋冭妭鍣。
+一CPU 空闲时间（`CPUIdle`）调节器是一束策略代码，在系统中某个逻辑 CPU 变为
+空闲时被调用。它的作用是选择一个空闲状态，请求处理器进入以节省一些能量
+`CPUIdle` 调节器是通用的，其中任何一个都可用Linux 内核可运行的任何硬件平台因此，它们所操作的数据结构也不能依赖任何硬件架构或平台设计细节
+调节器本身由一struct cpuidle_governor 对象表示，其中包含四个回调指:c`enable`c`disable`c`select`c`reflect`，一个如下所述的
+:c`rating` 字段，以及一个用于标识它的名称（字符串）
+要使调节器可用，需要将该对象通过调用 `cpuidle_register_governor()` 并传入指它的指针作为参数，注册到 `CPUIdle` 核心。若成功，核心会将该调节器加入全局可用
+调节器列表；并且，如果它是列表中的唯一一个（即此前列表为空），或者其 :c`rating`
+字段的值大于当前所用调节器的该字段值，或者新调节器的名称作为 `cpuidle.governor=`
+命令行参数的值传递给了内核，那么从该时刻起就将使用新调节器（同一时刻只能有一`CPUIdle` 调节器在使用）。此外，用户空间也可以通过 `sysfs` 在运行时选择要使用的
+`CPUIdle` 调节器
+一旦注册，`CPUIdle` 调节器便无法注销，因此将它们放入可加载内核模块并不现实
+`CPUIdle` 调节器与核心之间的接口由四个回调组成
 :c`enable`
 ```
 
 	  int (*enable) (struct cpuidle_driver *drv, struct cpuidle_device *dev);
 
-	姝ゅ洖璋冪殑浣滅敤鏄负澶勭悊鐢?``dev`` 鍙傛暟鎵€鎸囧悜鐨?struct cpuidle_device 瀵硅薄鎵€琛ㄧず
-	鐨勶紙閫昏緫锛塁PU 鍋氬ソ鍑嗗銆傜敱 ``drv`` 鍙傛暟鎵€鎸囧悜鐨?struct cpuidle_driver 瀵硅薄琛ㄧず
-	瑕佷笌璇?CPU 涓€璧蜂娇鐢ㄧ殑 ``CPUIdle`` 椹卞姩锛堥櫎鍏朵粬澶栵紝瀹冨簲鍖呭惈浠ｈ〃鍙姹傚鐞嗗櫒杩涘叆鐨?	绌洪棽鐘舵€佺殑 struct cpuidle_state 瀵硅薄鍒楄〃锛夈€?
-	瀹冨彲鑳藉け璐ワ紝姝ゆ椂搴旇繑鍥炶礋鐨勯敊璇爜锛岃繖浼氬鑷村唴鏍稿湪璇?CPU 涓婅繍琛屾灦鏋勭壒瀹氱殑榛樿
-	绌洪棽 CPU 浠ｇ爜锛岃€屼笉鏄?``CPUIdle``锛岀洿鍒伴拡瀵硅 CPU 鍐嶆璋冪敤 ``->enable()`` 璋冭妭鍣?	鍥炶皟銆?
+	此回调的作用是为处理``dev`` 参数所指向struct cpuidle_device 对象所表示
+	的（逻辑）CPU 做好准备。由 ``drv`` 参数所指向struct cpuidle_driver 对象表示
+	要与CPU 一起使用的 ``CPUIdle`` 驱动（除其他外，它应包含代表可请求处理器进入	空闲状态的 struct cpuidle_state 对象列表）
+	它可能失败，此时应返回负的错误码，这会导致内核在CPU 上运行架构特定的默认
+	空闲 CPU 代码，而不``CPUIdle``，直到针对该 CPU 再次调用 ``->enable()`` 调节	回调
 ```
 
 :c`disable`
@@ -46,8 +46,8 @@
 
 	  void (*disable) (struct cpuidle_driver *drv, struct cpuidle_device *dev);
 
-	璋冪敤浠ヤ娇璋冭妭鍣ㄥ仠姝㈠鐞嗙敱 ``dev`` 鍙傛暟鎵€鎸囧悜鐨?struct cpuidle_device 瀵硅薄鎵€琛ㄧず鐨?	锛堥€昏緫锛塁PU銆?
-	瀹冨簲褰撴挙閿€涓婃涓虹洰鏍?CPU 璋冪敤 ``->enable()`` 鍥炶皟鏃舵墍鍋氱殑浠讳綍鏇存敼銆侀噴鏀捐鍥炶皟鍒嗛厤鐨?	鎵€鏈夊唴瀛樼瓑銆?
+	调用以使调节器停止处理由 ``dev`` 参数所指向struct cpuidle_device 对象所表示	（逻辑）CPU
+	它应当撤销上次为目CPU 调用 ``->enable()`` 回调时所做的任何更改、释放该回调分配	所有内存等
 ```
 
 :c`select`
@@ -56,11 +56,11 @@
 	  int (*select) (struct cpuidle_driver *drv, struct cpuidle_device *dev,
 	                 bool *stop_tick);
 
-	璋冪敤浠ヤ负鎸佹湁鐢?``dev`` 鍙傛暟鎵€鎸囧悜鐨?struct cpuidle_device 瀵硅薄鎵€琛ㄧず鐨勶紙閫昏緫锛塁PU 鐨?	澶勭悊鍣ㄩ€夋嫨涓€涓┖闂茬姸鎬併€?
-	闇€瑕佽€冭檻鐨勭┖闂茬姸鎬佸垪琛ㄧ敱 ``drv`` 鍙傛暟鎵€鎸囧悜鐨?struct cpuidle_driver 瀵硅薄鎵€鎸佹湁鐨?	struct cpuidle_state 瀵硅薄鐨?:c:member:`states` 鏁扮粍琛ㄧず锛堣瀵硅薄浠ｈ〃瑕佷笌姝?CPU 涓€璧?	浣跨敤鐨?``CPUIdle`` 椹卞姩锛夈€傛鍥炶皟杩斿洖鐨勫€艰瑙ｉ噴涓烘寚鍚戣鏁扮粍鐨勭储寮曪紙闄ら潪瀹冩槸璐熺殑閿欒鐮侊級銆?
-	``stop_tick`` 鍙傛暟鐢ㄤ簬鎸囩ず鍦ㄨ姹傚鐞嗗櫒杩涘叆鎵€閫夌┖闂茬姸鎬佷箣鍓嶏紝鏄惁鍋滄璋冨害鍣ㄨ妭鎷?	锛坱ick锛夈€傚綋瀹冩寚鍚戠殑 ``bool`` 鍙橀噺锛堝湪璋冪敤姝ゅ洖璋冧箣鍓嶈璁句负 ``true``锛夎娓呬负 ``false``
-	鏃讹紝澶勭悊鍣ㄥ皢琚姹傝繘鍏ユ墍閫夌┖闂茬姸鎬佽€屼笉鍋滄璇?CPU 涓婄殑璋冨害鍣ㄨ妭鎷嶏紙浣嗘槸锛屽鏋滆 CPU 涓?	鐨勮妭鎷嶅凡缁忓仠姝紝鍒欏湪璇锋眰澶勭悊鍣ㄨ繘鍏ョ┖闂茬姸鎬佷箣鍓嶄笉浼氶噸鍚畠锛夈€?
-	姝ゅ洖璋冩槸寮哄埗鎬х殑锛堝嵆 struct cpuidle_governor 涓殑 :c:member:`select` 鍥炶皟鎸囬拡涓嶈兘涓?	``NULL``锛屽惁鍒欒皟鑺傚櫒娉ㄥ唽灏嗗け璐ワ級銆?
+	调用以为持有``dev`` 参数所指向struct cpuidle_device 对象所表示的（逻辑）CPU 	处理器选择一个空闲状态
+	需要考虑的空闲状态列表由 ``drv`` 参数所指向struct cpuidle_driver 对象所持有	struct cpuidle_state 对象:c:member:`states` 数组表示（该对象代表要与CPU 一	使用``CPUIdle`` 驱动）。此回调返回的值被解释为指向该数组的索引（除非它是负的错误码）
+	``stop_tick`` 参数用于指示在请求处理器进入所选空闲状态之前，是否停止调度器节	（tick）。当它指向的 ``bool`` 变量（在调用此回调之前被设为 ``true``）被清为 ``false``
+	时，处理器将被请求进入所选空闲状态而不停止CPU 上的调度器节拍（但是，如果该 CPU 	的节拍已经停止，则在请求处理器进入空闲状态之前不会重启它）
+	此回调是强制性的（即 struct cpuidle_governor 中的 :c:member:`select` 回调指针不能	``NULL``，否则调节器注册将失败）
 ```
 
 :c`reflect`
@@ -68,33 +68,33 @@
 
 	  void (*reflect) (struct cpuidle_device *dev, int index);
 
-	璋冪敤浠ュ厑璁歌皟鑺傚櫒璇勪及涓婃璋冪敤 ``->select()`` 鍥炶皟鏃舵墍鍋氱┖闂茬姸鎬侀€夋嫨鐨勫噯纭€э紝骞跺彲鑳?	鍒╃敤璇ョ粨鏋滃湪鏈潵鎻愰珮绌洪棽鐘舵€侀€夋嫨鐨勫噯纭€с€?
+	调用以允许调节器评估上次调用 ``->select()`` 回调时所做空闲状态选择的准确性，并可	利用该结果在未来提高空闲状态选择的准确性
 ```
 
-姝ゅ锛宍CPUIdle` 璋冭妭鍣ㄥ湪閫夋嫨绌洪棽鐘舵€佹椂蹇呴』鑰冭檻澶勭悊鍣ㄥ敜閱掑欢杩熸柟闈㈢殑鐢垫簮绠＄悊鏈嶅姟璐ㄩ噺
-锛圥M QoS锛夌害鏉熴€備负浜嗚幏鍙栫粰瀹?CPU 褰撳墠鐨勭敓鏁?PM QoS 鍞ら啋寤惰繜绾︽潫锛宍CPUIdle` 璋冭妭鍣ㄥ簲灏?璇?CPU 鐨勭紪鍙蜂紶閫掔粰 `cpuidle_governor_latency_req()`銆傞殢鍚庯紝璋冭妭鍣ㄧ殑 `->select()`
-鍥炶皟涓嶅緱杩斿洖涓€涓叾 :c`exit_latency` 鍊煎ぇ浜庤鍑芥暟鎵€杩斿洖鏁板瓧鐨勭┖闂茬姸鎬佺殑绱㈠紩銆?
+此外，`CPUIdle` 调节器在选择空闲状态时必须考虑处理器唤醒延迟方面的电源管理服务质量
+（PM QoS）约束。为了获取给CPU 当前的生PM QoS 唤醒延迟约束，`CPUIdle` 调节器应CPU 的编号传递给 `cpuidle_governor_latency_req()`。随后，调节器的 `->select()`
+回调不得返回一个其 :c`exit_latency` 值大于该函数所返回数字的空闲状态的索引
 
-## CPU 绌洪棽鏃堕棿绠＄悊椹卞姩
+## CPU 空闲时间管理驱动
 
-CPU 绌洪棽鏃堕棿绠＄悊锛坄CPUIdle`锛夐┍鍔ㄥ湪 `CPUIdle` 鐨勫叾浠栭儴鍒嗕笌纭欢涔嬮棿鎻愪緵鎺ュ彛銆?
-棣栧厛锛宍CPUIdle` 椹卞姩蹇呴』濉厖浠ｈ〃瀹冪殑 struct cpuidle_driver 瀵硅薄涓墍鍖呭惈鐨?struct cpuidle_state 瀵硅薄鐨?:c`states` 鏁扮粍銆傛鍚庯紝璇ユ暟缁勫皢浠ｈ〃鐢辩粰瀹氶┍鍔ㄦ墍澶勭悊鐨?鎵€鏈夐€昏緫 CPU 鍏变韩銆佸彲璇锋眰澶勭悊鍣ㄨ繘鍏ョ殑鍙敤绌洪棽鐘舵€佸垪琛ㄣ€?
-:c`states` 鏁扮粍涓殑鍚勯」棰勬湡鎸?struct cpuidle_state 涓?:c`target_residency` 瀛楁鐨勫€?浠ュ崌搴忔帓搴忥紙鍗崇储寮?0 搴斿搴斾簬鍏锋湁鏈€灏?:c`target_residency` 鍊肩殑绌洪棽鐘舵€侊級銆俒鐢变簬
-:c`target_residency` 鍊奸鏈熷弽鏄犳寔鏈夊畠鐨?struct cpuidle_state 瀵硅薄鎵€浠ｈ〃鐨勭┖闂茬姸鎬佺殑
-鈥滄繁搴︹€濓紝鍥犳姝ゆ帓搴忛『搴忓簲涓庢寜绌洪棽鐘舵€佲€滄繁搴︹€濈殑鍗囧簭鎺掑簭鐩稿悓銆俔
+CPU 空闲时间管理（`CPUIdle`）驱动在 `CPUIdle` 的其他部分与硬件之间提供接口
+首先，`CPUIdle` 驱动必须填充代表它的 struct cpuidle_driver 对象中所包含struct cpuidle_state 对象:c`states` 数组。此后，该数组将代表由给定驱动所处理所有逻辑 CPU 共享、可请求处理器进入的可用空闲状态列表
+:c`states` 数组中的各项预期struct cpuidle_state :c`target_residency` 字段的以升序排序（即索0 应对应于具有最:c`target_residency` 值的空闲状态）。[由于
+:c`target_residency` 值预期反映持有它struct cpuidle_state 对象所代表的空闲状态的
+“深度”，因此此排序顺序应与按空闲状态“深度”的升序排序相同。]
 
-鐜版湁 `CPUIdle` 璋冭妭鍣ㄤ娇鐢?struct cpuidle_state 涓殑涓変釜瀛楁杩涜涓庣┖闂茬姸鎬侀€夋嫨鐩稿叧鐨?璁＄畻锛?
+现有 `CPUIdle` 调节器使struct cpuidle_state 中的三个字段进行与空闲状态选择相关计算
 :c`target_residency`
-	鍦ㄦ绌洪棽鐘舵€佷腑鍋滅暀鐨勬渶鐭椂闂达紙鍖呮嫭杩涘叆瀹冩墍闇€鐨勬椂闂达紝杩欓儴鍒嗗彲鑳界浉褰撳彲瑙傦級锛屼互浣?	鑺傜渷鐨勮兘閲忓浜庡湪鐩稿悓鏃堕棿鍐呯暀鍦ㄨ緝娴呯┖闂茬姸鎬佹墍鑳借妭鐪佺殑鑳介噺锛屽崟浣嶄负寰銆?
+	在此空闲状态中停留的最短时间（包括进入它所需的时间，这部分可能相当可观），以	节省的能量多于在相同时间内留在较浅空闲状态所能节省的能量，单位为微秒
 :c`exit_latency`
-	璇锋眰澶勭悊鍣ㄨ繘鍏ユ绌洪棽鐘舵€佺殑 CPU锛屽湪浠庝腑鍞ら啋鍚庡紑濮嬫墽琛岀涓€鏉℃寚浠ゆ墍闇€鐨勬渶闀挎椂闂达紝
-	鍗曚綅涓哄井绉掋€?
+	请求处理器进入此空闲状态的 CPU，在从中唤醒后开始执行第一条指令所需的最长时间，
+	单位为微秒
 :c`flags`
-	浠ｈ〃绌洪棽鐘舵€佸睘鎬х殑鏍囧織銆傜洰鍓嶈皟鑺傚櫒鍙娇鐢?`CPUIDLE_FLAG_POLLING` 鏍囧織锛屽綋缁欏畾瀵硅薄
-	涓嶄唬琛ㄧ湡瀹炵殑绌洪棽鐘舵€併€佽€屽彧鏄竴涓彲鐢ㄤ簬閬垮厤璇锋眰澶勭悊鍣ㄨ繘鍏ヤ换浣曠┖闂茬姸鎬佺殑杞欢鈥滃惊鐜€?	鎺ュ彛鏃惰缃鏍囧織銆俒`CPUIdle` 鏍稿績鍦ㄧ壒娈婃儏鍐典笅杩樹細浣跨敤鍏朵粬鏍囧織銆俔
+	代表空闲状态属性的标志。目前调节器只使`CPUIDLE_FLAG_POLLING` 标志，当给定对象
+	不代表真实的空闲状态、而只是一个可用于避免请求处理器进入任何空闲状态的软件“循环	接口时设置该标志。[`CPUIdle` 核心在特殊情况下还会使用其他标志。]
 
-struct cpuidle_state 涓笉鑳戒负 `NULL` 鐨?:c`enter` 鍥炶皟鎸囬拡锛屾寚鍚戜负璇锋眰澶勭悊鍣ㄨ繘鍏ユ
-鐗瑰畾绌洪棽鐘舵€佽€岃鎵ц鐨勪緥绋嬶細
+struct cpuidle_state 中不能为 `NULL` :c`enter` 回调指针，指向为请求处理器进入此
+特定空闲状态而要执行的例程：
 
 ```
 
@@ -103,27 +103,27 @@ struct cpuidle_state 涓笉鑳戒负 `NULL` 鐨?:c`enter` 鍥炶皟鎸囬拡�
 
 ```
 
-瀹冪殑鍓嶄袱涓弬鏁板垎鍒寚鍚戜唬琛ㄨ繍琛屾鍥炶皟鐨勯€昏緫 CPU 鐨?struct cpuidle_device 瀵硅薄锛屼互鍙?浠ｈ〃椹卞姩鏈韩鐨?struct cpuidle_driver 瀵硅薄锛屾渶鍚庝竴涓弬鏁版槸椹卞姩 :c`states` 鏁扮粍涓唬琛?瑕佽姹傚鐞嗗櫒杩涘叆鐨勭┖闂茬姸鎬佺殑 struct cpuidle_state 椤圭殑绱㈠紩銆?
-struct cpuidle_state 涓被浼肩殑 `->enter_s2idle()` 鍥炶皟浠呯敤浜庡疄鐜版寕璧峰埌绌洪棽
-锛坰uspend-to-idle锛夌殑绯荤粺鎬х數婧愮鐞嗙壒鎬с€傚畠涓?`->enter()` 鐨勫尯鍒湪浜庯細瀹冧笉寰楀湪浠讳綍
-鏃跺€欙紙鍗充究鏄复鏃讹級閲嶆柊鍚敤涓柇锛屾垨璇曞浘鏀瑰彉鏃堕挓浜嬩欢璁惧鐨勭姸鎬侊紝鑰?`->enter()` 鍥炶皟
-鏈夋椂鍙互杩欐牱鍋氥€?
-涓€鏃?:c`states` 鏁扮粍琚～鍏咃紝鍏朵腑鏈夋晥椤圭殑鏁伴噺蹇呴』瀛樺叆浠ｈ〃椹卞姩鐨?struct cpuidle_driver
-瀵硅薄鐨?:c`state_count` 瀛楁銆傛澶栵紝濡傛灉 :c`states` 鏁扮粍涓殑浠讳綍椤逛唬琛ㄢ€滆€﹀悎锛坈oupled锛夆€?绌洪棽鐘舵€侊紙鍗冲彧鏈夊涓浉鍏抽€昏緫 CPU 閮界┖闂叉椂鎵嶈兘璇锋眰鐨勭┖闂茬姸鎬侊級锛宻truct cpuidle_driver
-涓殑 :c`safe_state_index` 瀛楁闇€瑕佹槸涓€涓潪鈥滆€﹀悎鈥濈┖闂茬姸鎬佺殑绱㈠紩锛堝嵆浠呭綋涓€涓€昏緫 CPU
-绌洪棽鏃朵篃鑳借姹傜殑閭ｄ釜锛夈€?
-闄ゆ涔嬪锛屽鏋滅粰瀹氱殑 `CPUIdle` 椹卞姩鍙墦绠楀鐞嗙郴缁熶腑閫昏緫 CPU 鐨勪竴涓瓙闆嗭紝鍏?struct cpuidle_driver 瀵硅薄涓殑 :c`cpumask` 瀛楁蹇呴』鎸囧悜灏嗙敱瀹冨鐞嗙殑 CPU 闆嗗悎锛堟帺鐮侊級銆?
-`CPUIdle` 椹卞姩鍙湁鍦ㄦ敞鍐屼箣鍚庢墠鑳戒娇鐢ㄣ€傚鏋滈┍鍔ㄧ殑 :c`states` 鏁扮粍涓病鏈夆€滆€﹀悎鈥濈┖闂茬姸鎬?椤癸紝鍙互閫氳繃灏嗗叾 struct cpuidle_driver 瀵硅薄浼犻€掔粰 `cpuidle_register_driver()` 鏉ュ畬鎴?娉ㄥ唽锛涘惁鍒欏簲浣跨敤 `cpuidle_register()` 鏉ュ畬鎴愭鐩殑銆?
-鐒惰€岋紝杩橀渶瑕佸€熷姪 `cpuidle_register_device()` 涓虹粰瀹?`CPUIdle` 椹卞姩鎵€澶勭悊鐨勬墍鏈夐€昏緫 CPU
-娉ㄥ唽 struct cpuidle_device 瀵硅薄锛岃鎿嶄綔鍦ㄩ┍鍔ㄦ敞鍐屼箣鍚庤繘琛岋紝鑰?`cpuidle_register_driver()`
-涓?`cpuidle_register()` 涓嶅悓锛屼笉浼氳嚜鍔ㄥ畬鎴愭宸ヤ綔銆傚洜姝わ紝浣跨敤 `cpuidle_register_driver()`
-娉ㄥ唽鑷韩鐨勯┍鍔ㄨ繕蹇呴』璐熻矗鎸夐渶娉ㄥ唽 struct cpuidle_device 瀵硅薄锛屾墍浠ラ€氬父寤鸿鍦ㄦ墍鏈夋儏鍐典笅閮?浣跨敤 `cpuidle_register()` 鏉ユ敞鍐?`CPUIdle` 椹卞姩銆?
-娉ㄥ唽 struct cpuidle_device 瀵硅薄浼氬鑷村垱寤?`CPUIdle` 鐨?`sysfs` 鎺ュ彛锛屽苟涓哄畠鎵€浠ｈ〃鐨勯€昏緫
-CPU 璋冪敤璋冭妭鍣ㄧ殑 `->enable()` 鍥炶皟锛屽洜姝よ鎿嶄綔蹇呴』鍙戠敓鍦ㄦ敞鍐屽皢瑕佸鐞嗚 CPU 鐨勯┍鍔ㄤ箣鍚庛€?
-褰?`CPUIdle` 椹卞姩鍜?struct cpuidle_device 瀵硅薄涓嶅啀闇€瑕佹椂锛屽彲浠ユ敞閿€瀹冧滑锛屼粠鑰岄噴鏀句笌涔嬪叧鑱旂殑
-閮ㄥ垎璧勬簮銆傜敱浜庡畠浠箣闂寸浉浜掍緷璧栵紝鍦ㄨ皟鐢?`cpuidle_unregister_driver()` 娉ㄩ攢椹卞姩涔嬪墠锛屽繀椤诲厛
-鍊熷姪 `cpuidle_unregister_device()` 娉ㄩ攢鐢辩粰瀹?`CPUIdle` 椹卞姩鎵€浠ｈ〃鐨勬墍鏈?CPU 鐨?struct cpuidle_device 瀵硅薄銆傛垨鑰咃紝鍙互璋冪敤 `cpuidle_unregister()` 鏉ユ敞閿€涓€涓?`CPUIdle`
-椹卞姩浠ュ強浠ｈ〃鍏舵墍鏈夊彈澶勭悊 CPU 鐨?struct cpuidle_device 瀵硅薄銆?
-`CPUIdle` 椹卞姩鍙互鍝嶅簲瀵艰嚧鍙敤澶勭悊鍣ㄧ┖闂茬姸鎬佸垪琛ㄦ洿鏀圭殑杩愯鏃剁郴缁熼厤缃彉鍖栵紙渚嬪锛屽綋绯荤粺鐨?鐢垫簮浠庝氦娴侊紙AC锛夊垏鎹㈠埌鐢垫睜锛屾垨鍙嶄箣锛夈€傚湪鏀跺埌姝ょ被鍙樺寲鐨勯€氱煡鍚庯紝`CPUIdle` 椹卞姩搴旇皟鐢?`cpuidle_pause_and_lock()` 鏆傛椂鍏抽棴 `CPUIdle`锛岀劧鍚庨拡瀵规墍鏈夊彈璇ュ彉鍖栧奖鍝嶇殑 struct cpuidle_device
-瀵硅薄璋冪敤 `cpuidle_disable_device()`銆傛帴涓嬫潵锛屽畠鍙互鏍规嵁绯荤粺鐨勬柊閰嶇疆鏇存柊鍏?:c`states` 鏁扮粍锛?閽堝鎵€鏈夌浉鍏崇殑 struct cpuidle_device 瀵硅薄璋冪敤 `cpuidle_enable_device()`锛屽苟璋冪敤
-`cpuidle_resume_and_unlock()` 浠ュ厑璁稿啀娆′娇鐢?`CPUIdle`銆?
+它的前两个参数分别指向代表运行此回调的逻辑 CPU struct cpuidle_device 对象，以代表驱动本身struct cpuidle_driver 对象，最后一个参数是驱动 :c`states` 数组中代要请求处理器进入的空闲状态的 struct cpuidle_state 项的索引
+struct cpuidle_state 中类似的 `->enter_s2idle()` 回调仅用于实现挂起到空闲
+（suspend-to-idle）的系统性电源管理特性。它`->enter()` 的区别在于：它不得在任何
+时候（即便是临时）重新启用中断，或试图改变时钟事件设备的状态，`->enter()` 回调
+有时可以这样做
+一:c`states` 数组被填充，其中有效项的数量必须存入代表驱动struct cpuidle_driver
+对象:c`state_count` 字段。此外，如果 :c`states` 数组中的任何项代表“耦合（coupled）空闲状态（即只有多个相关逻辑 CPU 都空闲时才能请求的空闲状态），struct cpuidle_driver
+中的 :c`safe_state_index` 字段需要是一个非“耦合”空闲状态的索引（即仅当一个逻辑 CPU
+空闲时也能请求的那个）
+除此之外，如果给定的 `CPUIdle` 驱动只打算处理系统中逻辑 CPU 的一个子集，struct cpuidle_driver 对象中的 :c`cpumask` 字段必须指向将由它处理的 CPU 集合（掩码）
+`CPUIdle` 驱动只有在注册之后才能使用。如果驱动的 :c`states` 数组中没有“耦合”空闲状项，可以通过将其 struct cpuidle_driver 对象传递给 `cpuidle_register_driver()` 来完注册；否则应使用 `cpuidle_register()` 来完成此目的
+然而，还需要借助 `cpuidle_register_device()` 为给`CPUIdle` 驱动所处理的所有逻辑 CPU
+注册 struct cpuidle_device 对象，该操作在驱动注册之后进行，`cpuidle_register_driver()`
+`cpuidle_register()` 不同，不会自动完成此工作。因此，使用 `cpuidle_register_driver()`
+注册自身的驱动还必须负责按需注册 struct cpuidle_device 对象，所以通常建议在所有情况下使用 `cpuidle_register()` 来注`CPUIdle` 驱动
+注册 struct cpuidle_device 对象会导致创`CPUIdle` `sysfs` 接口，并为它所代表的逻辑
+CPU 调用调节器的 `->enable()` 回调，因此该操作必须发生在注册将要处理该 CPU 的驱动之后
+`CPUIdle` 驱动struct cpuidle_device 对象不再需要时，可以注销它们，从而释放与之关联的
+部分资源。由于它们之间相互依赖，在调`cpuidle_unregister_driver()` 注销驱动之前，必须先
+借助 `cpuidle_unregister_device()` 注销由给`CPUIdle` 驱动所代表的所CPU struct cpuidle_device 对象。或者，可以调用 `cpuidle_unregister()` 来注销一`CPUIdle`
+驱动以及代表其所有受处理 CPU struct cpuidle_device 对象
+`CPUIdle` 驱动可以响应导致可用处理器空闲状态列表更改的运行时系统配置变化（例如，当系统电源从交流（AC）切换到电池，或反之）。在收到此类变化的通知后，`CPUIdle` 驱动应调`cpuidle_pause_and_lock()` 暂时关闭 `CPUIdle`，然后针对所有受该变化影响的 struct cpuidle_device
+对象调用 `cpuidle_disable_device()`。接下来，它可以根据系统的新配置更新:c`states` 数组针对所有相关的 struct cpuidle_device 对象调用 `cpuidle_enable_device()`，并调用
+`cpuidle_resume_and_unlock()` 以允许再次使`CPUIdle`

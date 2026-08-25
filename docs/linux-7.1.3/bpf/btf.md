@@ -1,33 +1,33 @@
-﻿## BPF Type Format锛圔TF锛孊PF 绫诲瀷鏍煎紡锛?
+﻿## BPF Type Format（BTF，BPF 类型格式
 
 
-## 1. 绠€浠?
+## 1. 简
 
 
-BTF锛圔PF Type Format锛孊PF 绫诲瀷鏍煎紡锛夋槸涓€绉嶅厓鏁版嵁鏍煎紡锛岀敤浜庣紪鐮佷笌 BPF
-绋嬪簭/鏄犲皠锛坢ap锛夌浉鍏崇殑璋冭瘯淇℃伅銆侭TF 杩欎釜鍚嶅瓧鏈€鍒濈敤浜庢弿杩版暟鎹被鍨嬨€傚悗鏉?BTF
-琚墿灞曚负鍚屾椂鍖呭惈宸插畾涔夊瓙渚嬬▼鐨勫嚱鏁颁俊鎭紝浠ュ強婧愭枃浠?琛屽彿淇℃伅銆?
+BTF（BPF Type Format，BPF 类型格式）是一种元数据格式，用于编码与 BPF
+程序/映射（map）相关的调试信息。BTF 这个名字最初用于描述数据类型。后BTF
+被扩展为同时包含已定义子例程的函数信息，以及源文行号信息
 
-杩欎簺璋冭瘯淇℃伅鍙敤浜庢槧灏勭殑鍙嬪ソ鎵撳嵃锛坧retty print锛夈€佸嚱鏁扮鍚嶇瓑銆傚嚱鏁扮鍚?
-浣垮緱 BPF 绋嬪簭/鍑芥暟鐨勫唴鏍哥鍙锋樉绀哄緱鏇村ソ銆傝鍙蜂俊鎭湁鍔╀簬鐢熸垚甯︽簮鐮佹爣娉ㄧ殑
-缈昏瘧鍚庡瓧鑺傜爜銆丣IT 鍚庝唬鐮佷互鍙婇獙璇佸櫒锛坴erifier锛夋棩蹇椼€?
+这些调试信息可用于映射的友好打印（pretty print）、函数签名等。函数签
+使得 BPF 程序/函数的内核符号显示得更好。行号信息有助于生成带源码标注的
+翻译后字节码、JIT 后代码以及验证器（verifier）日志
 
-BTF 瑙勮寖鍖呭惈涓や釜閮ㄥ垎锛?
-  - BTF 鍐呮牳 API
-  - BTF ELF 鏂囦欢鏍煎紡
+BTF 规范包含两个部分
+  - BTF 内核 API
+  - BTF ELF 文件格式
 
-鍐呮牳 API 鏄敤鎴风┖闂翠笌鍐呮牳涔嬮棿鐨勫绾︺€傚唴鏍稿湪浣跨敤 BTF 淇℃伅涔嬪墠浼氬厛瀵瑰叾
-杩涜鏍￠獙銆侲LF 鏂囦欢鏍煎紡鍒欐槸 ELF 鏂囦欢涓?libbpf 鍔犺浇鍣ㄤ箣闂寸殑鐢ㄦ埛绌洪棿濂戠害銆?
+内核 API 是用户空间与内核之间的契约。内核在使用 BTF 信息之前会先对其
+进行校验。ELF 文件格式则是 ELF 文件libbpf 加载器之间的用户空间契约
 
-绫诲瀷锛坱ype锛夊拰瀛楃涓诧紙string锛夋灞炰簬 BTF 鍐呮牳 API 鐨勪竴閮ㄥ垎锛屾弿杩颁簡琚?BPF
-绋嬪簭寮曠敤鐨勮皟璇曚俊鎭紙涓昏鏄笌绫诲瀷鐩稿叧鐨勪俊鎭級銆傝繖涓ゆ鍦?BTF_Type_String
-涓湁璇︾粏璁ㄨ銆?
-
-
-## 2. BTF 绫诲瀷涓庡瓧绗︿覆缂栫爜
+类型（type）和字符串（string）段属于 BTF 内核 API 的一部分，描述了BPF
+程序引用的调试信息（主要是与类型相关的信息）。这两段BTF_Type_String
+中有详细讨论
 
 
-鏂囦欢 `include/uapi/linux/btf.h` 鎻愪緵浜嗙被鍨?瀛楃涓插浣曠紪鐮佺殑楂樺眰瀹氫箟銆?
+## 2. BTF 类型与字符串编码
+
+
+文件 `include/uapi/linux/btf.h` 提供了类字符串如何编码的高层定义
 
 ```
 
@@ -37,29 +37,29 @@ BTF 瑙勮寖鍖呭惈涓や釜閮ㄥ垎锛?
         __u8    flags;
         __u32   hdr_len;
 
-        /* 鎵€鏈夊亸绉婚噺閮戒互瀛楄妭涓哄崟浣嶏紝鐩稿浜庢湰澶撮儴鏈熬 */
-        __u32   type_off;       /* 绫诲瀷娈靛亸绉?      */
-        __u32   type_len;       /* 绫诲瀷娈甸暱搴?      */
-        __u32   str_off;        /* 瀛楃涓叉鍋忕Щ     */
-        __u32   str_len;        /* 瀛楃涓叉闀垮害     */
+        /* 所有偏移量都以字节为单位，相对于本头部末尾 */
+        __u32   type_off;       /* 类型段偏      */
+        __u32   type_len;       /* 类型段长      */
+        __u32   str_off;        /* 字符串段偏移     */
+        __u32   str_len;        /* 字符串段长度     */
     };
 
 ```
-magic 涓?`0xeB9F`锛屽湪澶х鍜屽皬绔郴缁熶笂缂栫爜涓嶅悓锛屽彲鐢ㄤ簬娴嬭瘯 BTF 鏄负澶х
-杩樻槸灏忕鐩爣鐢熸垚鐨勩€傝璁?`btf_header` 鏃朵繚鐣欎簡鍙墿灞曟€э紝褰撶敓鎴愭暟鎹潡鏃?
-`hdr_len` 绛変簬 `sizeof(struct btf_header)`銆?
+magic `0xeB9F`，在大端和小端系统上编码不同，可用于测试 BTF 是为大端
+还是小端目标生成的。设`btf_header` 时保留了可扩展性，当生成数据块
+`hdr_len` 等于 `sizeof(struct btf_header)`
 
-### 2.1 瀛楃涓茬紪鐮?
-
-
-瀛楃涓叉涓殑绗竴涓瓧绗︿覆蹇呴』鏄┖瀛楃涓层€傚瓧绗︿覆琛ㄧ殑鍏朵綑閮ㄥ垎鏄叾浠?
-浠?null 缁撳熬鐨勫瓧绗︿覆鐨勬嫾鎺ャ€?
-
-### 2.2 绫诲瀷缂栫爜
+### 2.1 字符串编
 
 
-绫诲瀷 id `0` 淇濈暀缁?`void` 绫诲瀷銆傜被鍨嬫琚『搴忚В鏋愶紝绫诲瀷 id 浠?1 寮€濮?
-渚濇鍒嗛厤缁欐瘡涓璇嗗埆鍑虹殑绫诲瀷銆?
+字符串段中的第一个字符串必须是空字符串。字符串表的其余部分是其
+null 结尾的字符串的拼接
+
+### 2.2 类型编码
+
+
+类型 id `0` 保留`void` 类型。类型段被顺序解析，类型 id 1 开
+依次分配给每个被识别出的类型
 ```
 
     #define BTF_KIND_INT            1       /* Integer      */
@@ -83,29 +83,29 @@ magic 涓?`0xeB9F`锛屽湪澶х鍜屽皬绔郴缁熶笂缂栫爜涓嶅悓
     #define BTF_KIND_ENUM64         19      /* Enumeration up to 64-bit values */
 
 ```
-娉ㄦ剰绫诲瀷娈电紪鐮佺殑鏄皟璇曚俊鎭紝鑰屼笉浠呬粎鏄函绮圭殑绫诲瀷銆俙BTF_KIND_FUNC` 涓嶆槸
-涓€涓被鍨嬶紝瀹冭〃绀轰竴涓凡瀹氫箟鐨勫瓙绋嬪簭銆?
+注意类型段编码的是调试信息，而不仅仅是纯粹的类型。`BTF_KIND_FUNC` 不是
+一个类型，它表示一个已定义的子程序
 
 ```
 
     struct btf_type {
         __u32 name_off;
-        /* "info" 浣嶇殑鎺掑竷
-         * bits  0-15: vlen锛堜緥濡?struct 鐨勬垚鍛樻暟锛?
-         * bits 16-23: 鏈娇鐢?
-         * bits 24-28: kind锛堜緥濡?int銆乸tr銆乤rray鈥︹€︾瓑锛?
-         * bits 29-30: 鏈娇鐢?
-         * bit     31: kind_flag锛岀洰鍓嶇敤浜?
-         *             struct銆乽nion銆乪num銆乫wd銆乪num64銆?
+        /* "info" 位的排布
+         * bits  0-15: vlen（例struct 的成员数
+         * bits 16-23: 未使
+         * bits 24-28: kind（例int、ptr、array……等
+         * bits 29-30: 未使
+         * bit     31: kind_flag，目前用
+         *             struct、union、enum、fwd、enum64
          *             decl_tag 鍜?type_tag
          */
         __u32 info;
-        /* "size" 鐢ㄤ簬 INT銆丒NUM銆丼TRUCT銆乁NION 鍜?ENUM64銆?
-         * "size" 琛ㄧず瀹冩墍鎻忚堪绫诲瀷鐨勫ぇ灏忋€?
+        /* "size" 用于 INT、ENUM、STRUCT、UNION ENUM64
+         * "size" 表示它所描述类型的大小
          *
-         * "type" 鐢ㄤ簬 PTR銆乀YPEDEF銆乂OLATILE銆丆ONST銆丷ESTRICT銆?
-         * FUNC銆丗UNC_PROTO銆丏ECL_TAG 鍜?TYPE_TAG銆?
-         * "type" 鏄竴涓寚鍚戝彟涓€涓被鍨嬬殑 type_id銆?
+         * "type" 用于 PTR、TYPEDEF、VOLATILE、CONST、RESTRICT
+         * FUNC、FUNC_PROTO、DECL_TAG TYPE_TAG
+         * "type" 是一个指向另一个类型的 type_id
          */
         union {
                 __u32 size;
@@ -114,19 +114,19 @@ magic 涓?`0xeB9F`锛屽湪澶х鍜屽皬绔郴缁熶笂缂栫爜涓嶅悓
     };
 
 ```
-瀵逛簬鏌愪簺 kind锛屽叕鍏辨暟鎹箣鍚庝細璺熼殢璇?kind 鐗规湁鐨勬暟鎹€俙struct btf_type`
-涓殑 `name_off` 鎸囧畾浜嗗湪瀛楃涓茶〃涓殑鍋忕Щ閲忋€備互涓嬪悇灏忚妭璇︾粏璇存槑浜嗘瘡绉?
-kind 鐨勭紪鐮併€?
+对于某些 kind，公共数据之后会跟随kind 特有的数据。`struct btf_type`
+中的 `name_off` 指定了在字符串表中的偏移量。以下各小节详细说明了每
+kind 的编码
 
 #### 2.2.1 BTF_KIND_INT
 
 
-`struct btf_type` 缂栫爜瑕佹眰锛?
- - `name_off`锛氫换鎰忔湁鏁堝亸绉?
- - `info.kind_flag`锛?
- - `info.kind`锛欱TF_KIND_INT
- - `info.vlen`锛?
- - `size`锛歩nt 绫诲瀷鐨勫ぇ灏忥紙瀛楄妭鏁帮級
+`struct btf_type` 编码要求
+ - `name_off`：任意有效偏
+ - `info.kind_flag`锛。
+ - `info.kind`：BTF_KIND_INT
+ - `info.vlen`锛。
+ - `size`：int 类型的大小（字节数）
 
 ```
 
@@ -142,53 +142,53 @@ kind 鐨勭紪鐮併€?
   #define BTF_INT_BOOL    (1 << 2)
 
 ```
-`BTF_INT_ENCODING()` 鎻愪緵棰濆淇℃伅锛氭湁绗﹀彿鎬э紙signedness锛夈€乧har 鎴?
-bool锛岄拡瀵?int 绫诲瀷銆俢har 鍜?bool 缂栫爜涓昏鐢ㄤ簬鍙嬪ソ鎵撳嵃銆俰nt 绫诲瀷
-鏈€澶氬彧鑳芥寚瀹氫竴绉嶇紪鐮併€?
+`BTF_INT_ENCODING()` 提供额外信息：有符号性（signedness）、char 
+bool，针int 类型。char bool 编码主要用于友好打印。int 类型
+最多只能指定一种编码
 
-`BTF_INT_BITS()` 鎸囧畾璇?int 绫诲瀷鎵€鎸佹湁鐨勫疄闄呬綅鏁般€備緥濡傦紝涓€涓?4 浣嶇殑浣嶅煙
-缂栫爜涓?`BTF_INT_BITS()` 绛変簬 4銆俙btf_type.size * 8` 蹇呴』
-澶т簬鎴栫瓑浜庤绫诲瀷鐨?`BTF_INT_BITS()`銆俙BTF_INT_BITS()` 鐨勬渶澶у€间负 128銆?
+`BTF_INT_BITS()` 指定int 类型所持有的实际位数。例如，一4 位的位域
+编码`BTF_INT_BITS()` 等于 4。`btf_type.size * 8` 必须
+大于或等于该类型`BTF_INT_BITS()`。`BTF_INT_BITS()` 的最大值为 128
 
-`BTF_INT_OFFSET()` 鎸囧畾璁＄畻璇?int 鍊兼椂鐨勮捣濮嬩綅鍋忕Щ銆備緥濡傦紝涓€涓綅鍩?
-struct 鎴愬憳鍏锋湁锛?
+`BTF_INT_OFFSET()` 指定计算int 值时的起始位偏移。例如，一个位
+struct 成员具有
 
- - btf 鎴愬憳鐩稿缁撴瀯浣撹捣濮嬬殑浣嶅亸绉讳负 100锛?
- - btf 鎴愬憳鎸囧悜涓€涓?int 绫诲瀷锛?
- - 璇?int 绫诲瀷鐨?`BTF_INT_OFFSET() = 2` 涓?`BTF_INT_BITS() = 4`
+ - btf 成员相对结构体起始的位偏移为 100
+ - btf 成员指向一int 类型
+ - int 类型`BTF_INT_OFFSET() = 2` `BTF_INT_BITS() = 4`
 
-閭ｄ箞鍦ㄧ粨鏋勪綋鍐呭瓨甯冨眬涓紝璇ユ垚鍛樺皢鍗犳嵁浠庝綅 `100 + 2 = 102` 寮€濮嬬殑 `4` 浣嶃€?
+那么在结构体内存布局中，该成员将占据从位 `100 + 2 = 102` 开始的 `4` 位
 
-鍙︿竴绉嶆柟寮忔槸锛屼笅闈㈢殑浣嶅煙 struct 鎴愬憳鍙互璁块棶涓庝笂杩扮浉鍚岀殑浣嶏細
+另一种方式是，下面的位域 struct 成员可以访问与上述相同的位：
 
- - btf 鎴愬憳浣嶅亸绉讳负 102锛?
- - btf 鎴愬憳鎸囧悜涓€涓?int 绫诲瀷锛?
- - 璇?int 绫诲瀷鐨?`BTF_INT_OFFSET() = 0` 涓?`BTF_INT_BITS() = 4`
+ - btf 成员位偏移为 102
+ - btf 成员指向一int 类型
+ - int 类型`BTF_INT_OFFSET() = 0` `BTF_INT_BITS() = 4`
 
-`BTF_INT_OFFSET()` 鐨勫師濮嬫剰鍥炬槸涓轰簡鎻愪緵浣嶅煙缂栫爜鐨勭伒娲绘€с€傜洰鍓嶏紝llvm 鍜?
-pahole 瀵规墍鏈?int 绫诲瀷閮界敓鎴?`BTF_INT_OFFSET() = 0`銆?
+`BTF_INT_OFFSET()` 的原始意图是为了提供位域编码的灵活性。目前，llvm 
+pahole 对所int 类型都生`BTF_INT_OFFSET() = 0`
 
 #### 2.2.2 BTF_KIND_PTR
 
 
-`struct btf_type` 缂栫爜瑕佹眰锛?
-  - `name_off`锛?
-  - `info.kind_flag`锛?
-  - `info.kind`锛欱TF_KIND_PTR
-  - `info.vlen`锛?
-  - `type`锛氳鎸囬拡鎵€鎸囧悜鐨勭被鍨?
+`struct btf_type` 编码要求
+  - `name_off`锛。
+  - `info.kind_flag`锛。
+  - `info.kind`：BTF_KIND_PTR
+  - `info.vlen`锛。
+  - `type`：该指针所指向的类
 
-`btf_type` 涔嬪悗娌℃湁棰濆鐨勭被鍨嬫暟鎹€?
+`btf_type` 之后没有额外的类型数据
 
 #### 2.2.3 BTF_KIND_ARRAY
 
 
-`struct btf_type` 缂栫爜瑕佹眰锛?
-  - `name_off`锛?
-  - `info.kind_flag`锛?
-  - `info.kind`锛欱TF_KIND_ARRAY
-  - `info.vlen`锛?
-  - `size/type`锛?锛屾湭浣跨敤
+`struct btf_type` 编码要求
+  - `name_off`锛。
+  - `info.kind_flag`锛。
+  - `info.kind`：BTF_KIND_ARRAY
+  - `info.vlen`锛。
+  - `size/type`，未使用
 
 ```
 
@@ -199,40 +199,40 @@ pahole 瀵规墍鏈?int 绫诲瀷閮界敓鎴?`BTF_INT_OFFSET() = 0`銆?
     };
 
 ```
-`struct btf_array` 鐨勭紪鐮侊細
-  - `type`锛氬厓绱犵被鍨?
-  - `index_type`锛氱储寮曠被鍨?
-  - `nelems`锛氳鏁扮粍鐨勫厓绱犱釜鏁帮紙`0` 涔熷厑璁革級
+`struct btf_array` 的编码：
+  - `type`：元素类
+  - `index_type`：索引类
+  - `nelems`：该数组的元素个数（`0` 也允许）
 
-`index_type` 鍙互鏄换鎰忓父瑙?int 绫诲瀷锛坄u8`銆乣u16`銆乣u32`銆乣u64`銆?
-`unsigned __int128`锛夈€傚寘鍚?`index_type` 鐨勫師濮嬭璁￠伒寰?DWARF锛屽洜涓?
-DWARF 鐨勬暟缁勭被鍨嬩篃甯︽湁涓€涓?`index_type`銆傜洰鍓嶅湪 BTF 涓紝闄や簡绫诲瀷鏍￠獙涔嬪锛?
-`index_type` 骞舵湭琚娇鐢ㄣ€?
+`index_type` 可以是任意常int 类型（`u8`、`u16`、`u32`、`u64`
+`unsigned __int128`）。包`index_type` 的原始设计遵DWARF，因
+DWARF 的数组类型也带有一`index_type`。目前在 BTF 中，除了类型校验之外
+`index_type` 并未被使用
 
-`struct btf_array` 閫氳繃鍏冪礌绫诲瀷閾惧寲浠ユ敮鎸佸缁存暟缁勩€備緥濡傦紝瀵逛簬
-`int a[^5^][^6^]`锛屼笅闈㈢被鍨嬩俊鎭睍绀轰簡閾惧寲杩囩▼锛?
+`struct btf_array` 通过元素类型链化以支持多维数组。例如，对于
+`int a[^5^][^6^]`，下面类型信息展示了链化过程
 
-  - [^1^]锛歩nt
-  - [^2^]锛歛rray锛宍btf_array.type = [^1^]`锛宍btf_array.nelems = 6`
-  - [^3^]锛歛rray锛宍btf_array.type = [^2^]`锛宍btf_array.nelems = 5`
+  - [^1^]：int
+  - [^2^]：array，`btf_array.type = [^1^]`，`btf_array.nelems = 6`
+  - [^3^]：array，`btf_array.type = [^2^]`，`btf_array.nelems = 5`
 
-鐩墠锛宲ahole 鍜?llvm 閮戒細鎶婂缁存暟缁勬姌鍙犳垚涓€缁存暟缁勶紝渚嬪瀵逛簬
-`a[^5^][^6^]`锛宍btf_array.nelems` 绛変簬 `30`銆傝繖鏄洜涓烘渶鍒濈殑浣跨敤鍦烘櫙鏄?
-map 鍙嬪ソ鎵撳嵃锛屽湪閭ｉ噷鏁翠釜鏁扮粍閮借 dump 鍑烘潵锛屾墍浠ヤ竴缁存暟缁勫氨瓒冲浜嗐€傞殢鐫€
-鏇村 BTF 鐢ㄩ€旇鎸栨帢锛宲ahole 鍜?llvm 鍙互鏀逛负鐢熸垚閽堝澶氱淮鏁扮粍鐨勬伆褰撻摼鍖?
-琛ㄧず銆?
+目前，pahole llvm 都会把多维数组折叠成一维数组，例如对于
+`a[^5^][^6^]`，`btf_array.nelems` 等于 `30`。这是因为最初的使用场景
+map 友好打印，在那里整个数组都被 dump 出来，所以一维数组就足够了。随着
+更多 BTF 用途被挖掘，pahole llvm 可以改为生成针对多维数组的恰当链
+表示
 
 #### 2.2.4 BTF_KIND_STRUCT
 
 #### 2.2.5 BTF_KIND_UNION
 
 
-`struct btf_type` 缂栫爜瑕佹眰锛?
-  - `name_off`锛? 鎴栨寚鍚戜竴涓湁鏁?C 鏍囪瘑绗︾殑鍋忕Щ
+`struct btf_type` 编码要求
+  - `name_off` 或指向一个有C 标识符的偏移
   - `info.kind_flag`锛? 鎴?1
-  - `info.kind`锛欱TF_KIND_STRUCT 鎴?BTF_KIND_UNION
-  - `info.vlen`锛歴truct/union 鎴愬憳鐨勪釜鏁?
-  - `info.size`锛歴truct/union 鐨勫ぇ灏忥紙瀛楄妭鏁帮級
+  - `info.kind`：BTF_KIND_STRUCT BTF_KIND_UNION
+  - `info.vlen`：struct/union 成员的个
+  - `info.size`：struct/union 的大小（字节数）
 
 ```
 
@@ -243,39 +243,39 @@ map 鍙嬪ソ鎵撳嵃锛屽湪閭ｉ噷鏁翠釜鏁扮粍閮借 dump 鍑烘�
     };
 
 ```
-`struct btf_member` 缂栫爜锛?
-  - `name_off`锛氭寚鍚戜竴涓湁鏁?C 鏍囪瘑绗︾殑鍋忕Щ
-  - `type`锛氭垚鍛樼被鍨?
-  - `offset`锛?瑙佷笅鏂?
+`struct btf_member` 编码
+  - `name_off`：指向一个有C 标识符的偏移
+  - `type`：成员类
+  - `offset`见下
 
-濡傛灉绫诲瀷淇℃伅 `kind_flag` 鏈疆浣嶏紝offset 鍙惈鏈夎鎴愬憳鐨勪綅鍋忕Щ銆傛敞鎰忎綅鍩熺殑
-鍩虹被鍨嬪彧鑳芥槸 int 鎴?enum 绫诲瀷銆傚鏋滀綅鍩熷ぇ灏忎负 32锛屽熀绫诲瀷鍙互鏄?int 鎴?
-enum 绫诲瀷銆傚鏋滀綅鍩熷ぇ灏忎笉涓?32锛屽熀绫诲瀷蹇呴』鏄?int锛屼笖 int 绫诲瀷鐨?
-`BTF_INT_BITS()` 缂栫爜浜嗕綅鍩熷ぇ灏忋€?
+如果类型信息 `kind_flag` 未置位，offset 只含有该成员的位偏移。注意位域的
+基类型只能是 int enum 类型。如果位域大小为 32，基类型可以int 
+enum 类型。如果位域大小不32，基类型必须int，且 int 类型
+`BTF_INT_BITS()` 编码了位域大小
 
-濡傛灉 `kind_flag` 琚疆浣嶏紝`btf_member.offset` 鍚屾椂鍖呭惈鎴愬憳鐨勪綅鍩熷ぇ灏忓拰浣嶅亸绉汇€?
-浣嶅煙澶у皬鍜屼綅鍋忕Щ鎸夊涓嬫柟寮忚绠楋細
+如果 `kind_flag` 被置位，`btf_member.offset` 同时包含成员的位域大小和位偏移
+位域大小和位偏移按如下方式计算：
 ```
 
   #define BTF_MEMBER_BITFIELD_SIZE(val)   ((val) >> 24)
   #define BTF_MEMBER_BIT_OFFSET(val)      ((val) & 0xffffff)
 
 ```
-鍦ㄨ繖绉嶆儏鍐典笅锛屽鏋滃熀绫诲瀷鏄?int 绫诲瀷锛屽畠蹇呴』鏄父瑙?int 绫诲瀷锛?
+在这种情况下，如果基类型int 类型，它必须是常int 类型
 
-  - `BTF_INT_OFFSET()` 蹇呴』涓?0銆?
-  - `BTF_INT_BITS()` 蹇呴』绛変簬 `{1,2,4,8,16} * 8`銆?
+  - `BTF_INT_OFFSET()` 必须0
+  - `BTF_INT_BITS()` 必须等于 `{1,2,4,8,16} * 8`
 
-commit 9d5f9f701b18 寮曞叆浜?`kind_flag`锛屽苟瑙ｉ噴浜嗕负浣曚袱绉嶆ā寮忓苟瀛樸€?
+commit 9d5f9f701b18 引入`kind_flag`，并解释了为何两种模式并存
 
 #### 2.2.6 BTF_KIND_ENUM
 
 
-`struct btf_type` 缂栫爜瑕佹眰锛?
-  - `name_off`锛? 鎴栨寚鍚戜竴涓湁鏁?C 鏍囪瘑绗︾殑鍋忕Щ
-  - `info.kind_flag`锛氭棤绗﹀彿涓?0锛屾湁绗﹀彿涓?1
-  - `info.kind`锛欱TF_KIND_ENUM
-  - `info.vlen`锛歟num 鍊肩殑涓暟
+`struct btf_type` 编码要求
+  - `name_off` 或指向一个有C 标识符的偏移
+  - `info.kind_flag`：无符号0，有符号1
+  - `info.kind`：BTF_KIND_ENUM
+  - `info.vlen`：enum 值的个数
   - `size`锛?/2/4/8
 
 ```
@@ -286,102 +286,102 @@ commit 9d5f9f701b18 寮曞叆浜?`kind_flag`锛屽苟瑙ｉ噴浜嗕负浣曚袱
     };
 
 ```
-`btf_enum` 缂栫爜锛?
-  - `name_off`锛氭寚鍚戜竴涓湁鏁?C 鏍囪瘑绗︾殑鍋忕Щ
-  - `val`锛氫换鎰忓€?
+`btf_enum` 编码
+  - `name_off`：指向一个有C 标识符的偏移
+  - `val`：任意
 
-濡傛灉鍘熷 enum 鍊兼槸鏈夌鍙风殑涓斿ぇ灏忓皬浜?4锛岃鍊间細琚鍙锋墿灞曚负 4 瀛楄妭銆傚鏋?
-澶у皬涓?8锛岃鍊间細琚埅鏂负 4 瀛楄妭銆?
+如果原始 enum 值是有符号的且大小小4，该值会被符号扩展为 4 字节。如
+大小8，该值会被截断为 4 字节
 
 #### 2.2.7 BTF_KIND_FWD
 
 
-`struct btf_type` 缂栫爜瑕佹眰锛?
-  - `name_off`锛氭寚鍚戜竴涓湁鏁?C 鏍囪瘑绗︾殑鍋忕Щ
-  - `info.kind_flag`锛歴truct 涓?0锛寀nion 涓?1
-  - `info.kind`锛欱TF_KIND_FWD
-  - `info.vlen`锛?
-  - `type`锛?
+`struct btf_type` 编码要求
+  - `name_off`：指向一个有C 标识符的偏移
+  - `info.kind_flag`：struct 0，union 1
+  - `info.kind`：BTF_KIND_FWD
+  - `info.vlen`锛。
+  - `type`锛。
 
-`btf_type` 涔嬪悗娌℃湁棰濆鐨勭被鍨嬫暟鎹€?
+`btf_type` 之后没有额外的类型数据
 
 #### 2.2.8 BTF_KIND_TYPEDEF
 
 
-`struct btf_type` 缂栫爜瑕佹眰锛?
-  - `name_off`锛氭寚鍚戜竴涓湁鏁?C 鏍囪瘑绗︾殑鍋忕Щ
-  - `info.kind_flag`锛?
-  - `info.kind`锛欱TF_KIND_TYPEDEF
-  - `info.vlen`锛?
-  - `type`锛歚name_off` 澶勫悕瀛楁墍鑳芥寚浠ｇ殑绫诲瀷
+`struct btf_type` 编码要求
+  - `name_off`：指向一个有C 标识符的偏移
+  - `info.kind_flag`锛。
+  - `info.kind`：BTF_KIND_TYPEDEF
+  - `info.vlen`锛。
+  - `type`：`name_off` 处名字所能指代的类型
 
-`btf_type` 涔嬪悗娌℃湁棰濆鐨勭被鍨嬫暟鎹€?
+`btf_type` 之后没有额外的类型数据
 
 #### 2.2.9 BTF_KIND_VOLATILE
 
 
-`struct btf_type` 缂栫爜瑕佹眰锛?
-  - `name_off`锛?
-  - `info.kind_flag`锛?
-  - `info.kind`锛欱TF_KIND_VOLATILE
-  - `info.vlen`锛?
-  - `type`锛氬甫鏈?`volatile` 闄愬畾鐨勭被鍨?
+`struct btf_type` 编码要求
+  - `name_off`锛。
+  - `info.kind_flag`锛。
+  - `info.kind`：BTF_KIND_VOLATILE
+  - `info.vlen`锛。
+  - `type`：带`volatile` 限定的类
 
-`btf_type` 涔嬪悗娌℃湁棰濆鐨勭被鍨嬫暟鎹€?
+`btf_type` 之后没有额外的类型数据
 
 #### 2.2.10 BTF_KIND_CONST
 
 
-`struct btf_type` 缂栫爜瑕佹眰锛?
-  - `name_off`锛?
-  - `info.kind_flag`锛?
-  - `info.kind`锛欱TF_KIND_CONST
-  - `info.vlen`锛?
-  - `type`锛氬甫鏈?`const` 闄愬畾鐨勭被鍨?
+`struct btf_type` 编码要求
+  - `name_off`锛。
+  - `info.kind_flag`锛。
+  - `info.kind`：BTF_KIND_CONST
+  - `info.vlen`锛。
+  - `type`：带`const` 限定的类
 
-`btf_type` 涔嬪悗娌℃湁棰濆鐨勭被鍨嬫暟鎹€?
+`btf_type` 之后没有额外的类型数据
 
 #### 2.2.11 BTF_KIND_RESTRICT
 
 
-`struct btf_type` 缂栫爜瑕佹眰锛?
-  - `name_off`锛?
-  - `info.kind_flag`锛?
-  - `info.kind`锛欱TF_KIND_RESTRICT
-  - `info.vlen`锛?
-  - `type`锛氬甫鏈?`restrict` 闄愬畾鐨勭被鍨?
+`struct btf_type` 编码要求
+  - `name_off`锛。
+  - `info.kind_flag`锛。
+  - `info.kind`：BTF_KIND_RESTRICT
+  - `info.vlen`锛。
+  - `type`：带`restrict` 限定的类
 
-`btf_type` 涔嬪悗娌℃湁棰濆鐨勭被鍨嬫暟鎹€?
+`btf_type` 之后没有额外的类型数据
 
 #### 2.2.12 BTF_KIND_FUNC
 
 
-`struct btf_type` 缂栫爜瑕佹眰锛?
-  - `name_off`锛氭寚鍚戜竴涓湁鏁?C 鏍囪瘑绗︾殑鍋忕Щ
-  - `info.kind_flag`锛?
-  - `info.kind`锛欱TF_KIND_FUNC
-  - `info.vlen`锛氶摼鎺ヤ俊鎭紙BTF_FUNC_STATIC銆丅TF_FUNC_GLOBAL
-                   鎴?BTF_FUNC_EXTERN 鈥斺€?瑙?BTF_Function_Linkage_Constants锛?
-  - `type`锛氫竴涓?BTF_KIND_FUNC_PROTO 绫诲瀷
+`struct btf_type` 编码要求
+  - `name_off`：指向一个有C 标识符的偏移
+  - `info.kind_flag`锛。
+  - `info.kind`：BTF_KIND_FUNC
+  - `info.vlen`：链接信息（BTF_FUNC_STATIC、BTF_FUNC_GLOBAL
+                   鎴?BTF_FUNC_EXTERN 鈥斺€?瑙?BTF_Function_Linkage_Constants锛。
+  - `type`：一BTF_KIND_FUNC_PROTO 类型
 
-`btf_type` 涔嬪悗娌℃湁棰濆鐨勭被鍨嬫暟鎹€?
+`btf_type` 之后没有额外的类型数据
 
-BTF_KIND_FUNC 瀹氫箟鐨勪笉鏄竴涓被鍨嬶紝鑰屾槸涓€涓瓙绋嬪簭锛堝嚱鏁帮級锛屽叾绛惧悕鐢?`type`
-瀹氫箟銆傚洜姝よ瀛愮▼搴忔槸閭ｄ釜绫诲瀷鐨勪竴涓疄渚嬨€侭TF_KIND_FUNC 鍙嶈繃鏉ュ張鍙兘琚?
-BTF_Ext_Section锛圗LF锛変腑鐨?func_info 鎴?BPF_Prog_Load 鐨勫弬鏁帮紙ABI锛夋墍
-寮曠敤銆?
+BTF_KIND_FUNC 定义的不是一个类型，而是一个子程序（函数），其签名`type`
+定义。因此该子程序是那个类型的一个实例。BTF_KIND_FUNC 反过来又可能
+BTF_Ext_Section（ELF）中func_info BPF_Prog_Load 的参数（ABI）所
+引用
 
-鐩墠锛屽唴鏍稿彧鏀寔 BTF_FUNC_STATIC 鍜?BTF_FUNC_GLOBAL 杩欎袱绉嶉摼鎺ュ€笺€?
+目前，内核只支持 BTF_FUNC_STATIC BTF_FUNC_GLOBAL 这两种链接值
 
 #### 2.2.13 BTF_KIND_FUNC_PROTO
 
 
-`struct btf_type` 缂栫爜瑕佹眰锛?
-  - `name_off`锛?
-  - `info.kind_flag`锛?
-  - `info.kind`锛欱TF_KIND_FUNC_PROTO
-  - `info.vlen`锛氬弬鏁颁釜鏁?
-  - `type`锛氳繑鍥炵被鍨?
+`struct btf_type` 编码要求
+  - `name_off`锛。
+  - `info.kind_flag`锛。
+  - `info.kind`：BTF_KIND_FUNC_PROTO
+  - `info.vlen`：参数个
+  - `type`：返回类
 
 ```
 
@@ -391,23 +391,23 @@ BTF_Ext_Section锛圗LF锛変腑鐨?func_info 鎴?BPF_Prog_Load 鐨勫弬鏁帮�
     };
 
 ```
-濡傛灉涓€涓?BTF_KIND_FUNC_PROTO 绫诲瀷琚煇涓?BTF_KIND_FUNC 绫诲瀷寮曠敤锛岄偅涔?
-`btf_param.name_off` 蹇呴』鎸囧悜涓€涓湁鏁堢殑 C 鏍囪瘑绗︼紝鍙兘鐨勬渶鍚庝竴涓〃绀哄彲鍙?
-鍙傛暟鐨勫弬鏁伴櫎澶栥€俙btf_param.type` 鎸囧悜鍙傛暟绫诲瀷銆?
+如果一BTF_KIND_FUNC_PROTO 类型被某BTF_KIND_FUNC 类型引用，那
+`btf_param.name_off` 必须指向一个有效的 C 标识符，可能的最后一个表示可
+参数的参数除外。`btf_param.type` 指向参数类型
 
-濡傛灉鍑芥暟甯︽湁鍙彉鍙傛暟锛屾渶鍚庝竴涓弬鏁扮紪鐮佷负 `name_off = 0` 涓?`type = 0`銆?
+如果函数带有可变参数，最后一个参数编码为 `name_off = 0` `type = 0`
 
 #### 2.2.14 BTF_KIND_VAR
 
 
-`struct btf_type` 缂栫爜瑕佹眰锛?
-  - `name_off`锛氭寚鍚戜竴涓湁鏁?C 鏍囪瘑绗︾殑鍋忕Щ
-  - `info.kind_flag`锛?
-  - `info.kind`锛欱TF_KIND_VAR
-  - `info.vlen`锛?
-  - `type`锛氬彉閲忕殑绫诲瀷
+`struct btf_type` 编码要求
+  - `name_off`：指向一个有C 标识符的偏移
+  - `info.kind_flag`锛。
+  - `info.kind`：BTF_KIND_VAR
+  - `info.vlen`锛。
+  - `type`：变量的类型
 
-`btf_type` 涔嬪悗璺熼殢涓€涓崟鐙殑 `struct btf_variable`锛屽叾
+`btf_type` 之后跟随一个单独的 `struct btf_variable`，其
 ```
 
     struct btf_var {
@@ -415,27 +415,27 @@ BTF_Ext_Section锛圗LF锛変腑鐨?func_info 鎴?BPF_Prog_Load 鐨勫弬鏁帮�
     };
 
 ```
-`btf_var.linkage` 鍙彇浠ヤ笅鍊硷細BTF_VAR_STATIC銆丅TF_VAR_GLOBAL_ALLOCATED 鎴?
-BTF_VAR_GLOBAL_EXTERN 鈥斺€?瑙?BTF_Var_Linkage_Constants銆?
+`btf_var.linkage` 可取以下值：BTF_VAR_STATIC、BTF_VAR_GLOBAL_ALLOCATED 
+BTF_VAR_GLOBAL_EXTERN 鈥斺€?瑙?BTF_Var_Linkage_Constants銆。
 
-鐩墠 LLVM 骞堕潪鏀寔鎵€鏈夌被鍨嬬殑鍏ㄥ眬鍙橀噺銆傚綋鍓嶅彲鐢ㄧ殑鏄細
+目前 LLVM 并非支持所有类型的全局变量。当前可用的是：
 
-  - 甯︽垨涓嶅甫 section 灞炴€х殑闈欐€佸彉閲?
-  - 甯?section 灞炴€х殑鍏ㄥ眬鍙橀噺
+  - 带或不带 section 属性的静态变
+  - section 属性的全局变量
 
-鍚庤€呯敤浜庡皢鏉ヤ粠 map 瀹氫箟涓娊鍙?map 閿?鍊肩被鍨?id銆?
+后者用于将来从 map 定义中抽map 值类id
 
 #### 2.2.15 BTF_KIND_DATASEC
 
 
-`struct btf_type` 缂栫爜瑕佹眰锛?
-  - `name_off`锛氭寚鍚戜笌鏌愪釜鍙橀噺鐩稿叧鑱旂殑鏈夋晥鍚嶅瓧鐨勫亸绉伙紝鎴栦负
-                  .data/.bss/.rodata 涔嬩竴
-  - `info.kind_flag`锛?
-  - `info.kind`锛欱TF_KIND_DATASEC
-  - `info.vlen`锛氬彉閲忎釜鏁?
-  - `size`锛氭鎬诲ぇ灏忥紙瀛楄妭鏁帮紝缂栬瘧鏃朵负 0锛岀敱 libbpf 绛?BPF 鍔犺浇鍣?
-              琛ヤ竵涓哄疄闄呭ぇ灏忥級
+`struct btf_type` 编码要求
+  - `name_off`：指向与某个变量相关联的有效名字的偏移，或为
+                  .data/.bss/.rodata 之一
+  - `info.kind_flag`锛。
+  - `info.kind`：BTF_KIND_DATASEC
+  - `info.vlen`：变量个
+  - `size`：段总大小（字节数，编译时为 0，由 libbpf BPF 加载
+              补丁为实际大小）
 
 ```
 
@@ -446,32 +446,32 @@ BTF_VAR_GLOBAL_EXTERN 鈥斺€?瑙?BTF_Var_Linkage_Constants銆?
     };
 
 ```
-`struct btf_var_secinfo` 缂栫爜锛?
-  - `type`锛欱TF_KIND_VAR 鍙橀噺鐨勭被鍨?
-  - `offset`锛氬彉閲忓湪娈靛唴鐨勫亸绉?
-  - `size`锛氬彉閲忓ぇ灏忥紙瀛楄妭鏁帮級
+`struct btf_var_secinfo` 编码
+  - `type`：BTF_KIND_VAR 变量的类
+  - `offset`：变量在段内的偏
+  - `size`：变量大小（字节数）
 
 #### 2.2.16 BTF_KIND_FLOAT
 
 
-`struct btf_type` 缂栫爜瑕佹眰锛?
- - `name_off`锛氫换鎰忔湁鏁堝亸绉?
- - `info.kind_flag`锛?
- - `info.kind`锛欱TF_KIND_FLOAT
- - `info.vlen`锛?
- - `size`锛歠loat 绫诲瀷鐨勫ぇ灏忥紙瀛楄妭鏁帮級锛?銆?銆?銆?2 鎴?16銆?
+`struct btf_type` 编码要求
+ - `name_off`：任意有效偏
+ - `info.kind_flag`锛。
+ - `info.kind`：BTF_KIND_FLOAT
+ - `info.vlen`锛。
+ - `size`：float 类型的大小（字节数）2 16
 
-`btf_type` 涔嬪悗娌℃湁棰濆鐨勭被鍨嬫暟鎹€?
+`btf_type` 之后没有额外的类型数据
 
 #### 2.2.17 BTF_KIND_DECL_TAG
 
 
-`struct btf_type` 缂栫爜瑕佹眰锛?
- - `name_off`锛氭寚鍚戜竴涓潪绌哄瓧绗︿覆鐨勫亸绉?
+`struct btf_type` 编码要求
+ - `name_off`：指向一个非空字符串的偏
  - `info.kind_flag`锛? 鎴?1
- - `info.kind`锛欱TF_KIND_DECL_TAG
- - `info.vlen`锛?
- - `type`锛歚struct`銆乣union`銆乣func`銆乣var` 鎴?`typedef`
+ - `info.kind`：BTF_KIND_DECL_TAG
+ - `info.vlen`锛。
+ - `type`：`struct`、`union`、`func`、`var` `typedef`
 
 ```
 
@@ -480,31 +480,31 @@ BTF_VAR_GLOBAL_EXTERN 鈥斺€?瑙?BTF_Var_Linkage_Constants銆?
     };
 
 ```
-`type` 搴斾负 `struct`銆乣union`銆乣func`銆乣var` 鎴?`typedef`銆傚浜?`var` 鎴?
-`typedef` 绫诲瀷锛宍btf_decl_tag.component_idx` 蹇呴』涓?`-1`銆傚浜庡彟澶栦笁绉嶇被鍨嬶紝
-濡傛灉 btf_decl_tag 灞炴€у簲鐢ㄤ簬 `struct`銆乣union` 鎴?`func` 鑷韩锛?
-`btf_decl_tag.component_idx` 蹇呴』涓?`-1`銆傚惁鍒欙紝璇ュ睘鎬у簲鐢ㄤ簬鏌愪釜
-`struct`/`union` 鎴愬憳鎴栨煇涓?`func` 鍙傛暟锛宍btf_decl_tag.component_idx` 搴斾负
-涓€涓湁鏁堢储寮曪紙浠?0 寮€濮嬶級锛屾寚鍚戞煇涓垚鍛樻垨鍙傛暟銆?
+`type` 应为 `struct`、`union`、`func`、`var` `typedef`。对`var` 
+`typedef` 类型，`btf_decl_tag.component_idx` 必须`-1`。对于另外三种类型，
+如果 btf_decl_tag 属性应用于 `struct`、`union` `func` 自身
+`btf_decl_tag.component_idx` 必须`-1`。否则，该属性应用于某个
+`struct`/`union` 成员或某`func` 参数，`btf_decl_tag.component_idx` 应为
+一个有效索引（0 开始），指向某个成员或参数
 
-濡傛灉 `info.kind_flag` 涓?0锛屽垯杩欐槸涓€涓櫘閫氱殑 decl tag锛宍name_off` 缂栫爜鐨勬槸
-btf_decl_tag 灞炴€у瓧绗︿覆銆?
+如果 `info.kind_flag` 0，则这是一个普通的 decl tag，`name_off` 编码的是
+btf_decl_tag 属性字符串
 
-濡傛灉 `info.kind_flag` 涓?1锛屽垯璇?decl tag 琛ㄧず浠绘剰鐨?`__attribute__`銆傚湪杩欑
-鎯呭喌涓嬶紝`name_off` 缂栫爜鐨勬槸涓€涓唬琛ㄥ睘鎬ц鏄庣锛坅ttribute specifier锛夊睘鎬у垪琛?
-鐨勫瓧绗︿覆銆備緥濡傦紝瀵逛簬 `__attribute__((aligned(4)))`锛屽瓧绗︿覆鍐呭涓?`aligned(4)`銆?
+如果 `info.kind_flag` 1，则decl tag 表示任意`__attribute__`。在这种
+情况下，`name_off` 编码的是一个代表属性说明符（attribute specifier）属性列
+的字符串。例如，对于 `__attribute__((aligned(4)))`，字符串内容`aligned(4)`
 
 #### 2.2.18 BTF_KIND_TYPE_TAG
 
 
-`struct btf_type` 缂栫爜瑕佹眰锛?
- - `name_off`锛氭寚鍚戜竴涓潪绌哄瓧绗︿覆鐨勫亸绉?
+`struct btf_type` 编码要求
+ - `name_off`：指向一个非空字符串的偏
  - `info.kind_flag`锛? 鎴?1
- - `info.kind`锛欱TF_KIND_TYPE_TAG
- - `info.vlen`锛?
- - `type`锛氬甫鏈?`btf_type_tag` 灞炴€х殑绫诲瀷
+ - `info.kind`：BTF_KIND_TYPE_TAG
+ - `info.vlen`锛。
+ - `type`：带`btf_type_tag` 属性的类型
 
-鐩墠锛宍BTF_KIND_TYPE_TAG` 浠呴拡瀵规寚閽堢被鍨嬬敓鎴愩€傚畠鍏锋湁濡備笅 btf 绫诲瀷閾撅細
+目前，`BTF_KIND_TYPE_TAG` 仅针对指针类型生成。它具有如下 btf 类型链：
 ```
 
   ptr -> [type_tag]*
@@ -512,24 +512,24 @@ btf_decl_tag 灞炴€у瓧绗︿覆銆?
       -> base_type
 
 ```
-鍩烘湰涓婏紝涓€涓寚閽堢被鍨嬫寚鍚戦浂涓垨澶氫釜 type_tag锛岀劧鍚庢槸闆朵釜鎴栧涓?
-const/volatile/restrict/typedef锛屾渶鍚庢槸鍩虹被鍨嬨€傚熀绫诲瀷鏄?int銆乸tr銆?
-array銆乻truct銆乽nion銆乪num銆乫unc_proto 鍜?float 绫诲瀷涔嬩竴銆?
+基本上，一个指针类型指向零个或多个 type_tag，然后是零个或多
+const/volatile/restrict/typedef，最后是基类型。基类型int、ptr
+array、struct、union、enum、func_proto float 类型之一
 
-涓?decl tag 绫讳技锛屽鏋?`info.kind_flag` 涓?0锛屽垯杩欐槸涓€涓櫘閫氱殑 type tag锛?
-`name_off` 缂栫爜鐨勬槸 btf_type_tag 灞炴€у瓧绗︿覆銆?
+decl tag 类似，如`info.kind_flag` 0，则这是一个普通的 type tag
+`name_off` 编码的是 btf_type_tag 属性字符串
 
-濡傛灉 `info.kind_flag` 涓?1锛屽垯璇?type tag 琛ㄧず浠绘剰鐨?`__attribute__`锛?
-`name_off` 缂栫爜鐨勬槸涓€涓唬琛ㄥ睘鎬ц鏄庣灞炴€у垪琛ㄧ殑瀛楃涓层€?
+如果 `info.kind_flag` 1，则type tag 表示任意`__attribute__`
+`name_off` 编码的是一个代表属性说明符属性列表的字符串
 
 #### 2.2.19 BTF_KIND_ENUM64
 
 
-`struct btf_type` 缂栫爜瑕佹眰锛?
-  - `name_off`锛? 鎴栨寚鍚戜竴涓湁鏁?C 鏍囪瘑绗︾殑鍋忕Щ
-  - `info.kind_flag`锛氭棤绗﹀彿涓?0锛屾湁绗﹀彿涓?1
-  - `info.kind`锛欱TF_KIND_ENUM64
-  - `info.vlen`锛歟num 鍊肩殑涓暟
+`struct btf_type` 编码要求
+  - `name_off` 或指向一个有C 标识符的偏移
+  - `info.kind_flag`：无符号0，有符号1
+  - `info.kind`：BTF_KIND_ENUM64
+  - `info.vlen`：enum 值的个数
   - `size`锛?/2/4/8
 
 ```
@@ -541,50 +541,50 @@ array銆乻truct銆乽nion銆乪num銆乫unc_proto 鍜?float 绫诲瀷涔嬩竴�
     };
 
 ```
-`btf_enum64` 缂栫爜锛?
-  - `name_off`锛氭寚鍚戜竴涓湁鏁?C 鏍囪瘑绗︾殑鍋忕Щ
-  - `val_lo32`锛?4 浣嶅€肩殑浣?32 浣?
-  - `val_hi32`锛?4 浣嶅€肩殑楂?32 浣?
+`btf_enum64` 编码
+  - `name_off`：指向一个有C 标识符的偏移
+  - `val_lo32`4 位值的32 
+  - `val_hi32`4 位值的32 
 
-濡傛灉鍘熷 enum 鍊兼槸鏈夌鍙风殑涓斿ぇ灏忓皬浜?8锛岃鍊间細琚鍙锋墿灞曚负 8 瀛楄妭銆?
+如果原始 enum 值是有符号的且大小小8，该值会被符号扩展为 8 字节
 
-### 2.3 甯搁噺鍊?
+### 2.3 甯搁噺鍊。
 
 
-#### 2.3.1 鍑芥暟閾炬帴甯搁噺鍊?
+#### 2.3.1 函数链接常量
 
 
   ===================  =====  ===========
   kind                 value  description
   ===================  =====  ===========
-  `BTF_FUNC_STATIC`  0x0    瀛愮▼搴忓畾涔夛紝鍦ㄦ墍灞炵紪璇戝崟鍏冧箣澶栦笉鍙
-  `BTF_FUNC_GLOBAL`  0x1    瀛愮▼搴忓畾涔夛紝鍦ㄦ墍灞炵紪璇戝崟鍏冧箣澶栧彲瑙?
-  `BTF_FUNC_EXTERN`  0x2    瀛愮▼搴忓０鏄庯紝鍏跺畾涔夊湪鎵€灞炵紪璇戝崟鍏冧箣澶?
+  `BTF_FUNC_STATIC`  0x0    子程序定义，在所属编译单元之外不可见
+  `BTF_FUNC_GLOBAL`  0x1    子程序定义，在所属编译单元之外可
+  `BTF_FUNC_EXTERN`  0x2    子程序声明，其定义在所属编译单元之
   ===================  =====  ===========
 
-#### 2.3.2 鍙橀噺閾炬帴甯搁噺鍊?
+#### 2.3.2 鍙橀噺閾炬帴甯搁噺鍊。
 
 
   ============================  =====  ===========
   kind                          value  description
   ============================  =====  ===========
-  `BTF_VAR_STATIC`            0x0    鍏ㄥ眬鍙橀噺瀹氫箟锛屽湪鎵€灞炵紪璇戝崟鍏冧箣澶栦笉鍙
-  `BTF_VAR_GLOBAL_ALLOCATED`  0x1    鍏ㄥ眬鍙橀噺瀹氫箟锛屽湪鎵€灞炵紪璇戝崟鍏冧箣澶栧彲瑙?
-  `BTF_VAR_GLOBAL_EXTERN`     0x2    鍏ㄥ眬鍙橀噺澹版槑锛屽叾瀹氫箟鍦ㄦ墍灞炵紪璇戝崟鍏冧箣澶?
+  `BTF_VAR_STATIC`            0x0    全局变量定义，在所属编译单元之外不可见
+  `BTF_VAR_GLOBAL_ALLOCATED`  0x1    全局变量定义，在所属编译单元之外可
+  `BTF_VAR_GLOBAL_EXTERN`     0x2    全局变量声明，其定义在所属编译单元之
   ============================  =====  ===========
 
-## 3. BTF 鍐呮牳 API
+## 3. BTF 内核 API
 
 
-浠ヤ笅 bpf 绯荤粺璋冪敤鍛戒护娑夊強 BTF锛?
-   - BPF_BTF_LOAD锛氬皢涓€鍧?BTF 鏁版嵁鍔犺浇杩涘唴鏍?
-   - BPF_MAP_CREATE锛氬垱寤哄甫 btf 閿拰鍊肩被鍨嬩俊鎭殑 map
-   - BPF_PROG_LOAD锛氬甫 btf 鍑芥暟鍜岃鍙蜂俊鎭姞杞界▼搴?
-   - BPF_BTF_GET_FD_BY_ID锛氳幏鍙栦竴涓?btf 鏂囦欢鎻忚堪绗︼紙fd锛?
-   - BPF_OBJ_GET_INFO_BY_FD锛氳繑鍥?btf銆乫unc_info銆乴ine_info
-     鍙婂叾浠?btf 鐩稿叧淇℃伅
+以下 bpf 系统调用命令涉及 BTF
+   - BPF_BTF_LOAD：将一BTF 数据加载进内
+   - BPF_MAP_CREATE：创建带 btf 键和值类型信息的 map
+   - BPF_PROG_LOAD：带 btf 函数和行号信息加载程
+   - BPF_BTF_GET_FD_BY_ID：获取一btf 文件描述符（fd
+   - BPF_OBJ_GET_INFO_BY_FD：返btf、func_info、line_info
+     及其btf 相关信息
 
-鍏稿瀷鐨勫伐浣滄祦绋嬪涓嬶細
+典型的工作流程如下：
 ```
 
   Application:
@@ -598,41 +598,41 @@ array銆乻truct銆乽nion銆乪num銆乫unc_proto 鍜?float 绫诲瀷涔嬩竴�
 
   Introspection tool:
       ......
-      BPF_{PROG,MAP}_GET_NEXT_ID (鑾峰彇 prog/map 鐨?id)
+      BPF_{PROG,MAP}_GET_NEXT_ID (获取 prog/map id)
           |
           V
-      BPF_{PROG,MAP}_GET_FD_BY_ID (鑾峰彇涓€涓?prog/map 鐨?fd)
+      BPF_{PROG,MAP}_GET_FD_BY_ID (获取一prog/map fd)
           |
           V
-      BPF_OBJ_GET_INFO_BY_FD (鐢?btf_id 鑾峰彇 bpf_prog_info/bpf_map_info)
+      BPF_OBJ_GET_INFO_BY_FD (btf_id 获取 bpf_prog_info/bpf_map_info)
           |                                     |
           V                                     |
-      BPF_BTF_GET_FD_BY_ID (鑾峰彇 btf_fd)         |
+      BPF_BTF_GET_FD_BY_ID (获取 btf_fd)         |
           |                                     |
           V                                     |
-      BPF_OBJ_GET_INFO_BY_FD (鑾峰彇 btf)          |
+      BPF_OBJ_GET_INFO_BY_FD (获取 btf)          |
           |                                     |
           V                                     V
-      pretty print 绫诲瀷銆乨ump 鍑芥暟绛惧悕涓庤鍙蜂俊鎭瓑
+      pretty print 类型、dump 函数签名与行号信息等
 
 ```
 ### 3.1 BPF_BTF_LOAD
 
 
-灏嗕竴鍧?BTF 鏁版嵁鍔犺浇杩涘唴鏍搞€備竴鍧楁暟鎹紙濡?BTF_Type_String 鎵€杩帮級鍙互鐩存帴鍔犺浇
-杩涘唴鏍搞€備細鍚戠敤鎴风┖闂磋繑鍥炰竴涓?`btf_fd`銆?
+将一BTF 数据加载进内核。一块数据（BTF_Type_String 所述）可以直接加载
+进内核。会向用户空间返回一`btf_fd`
 
 ### 3.2 BPF_MAP_CREATE
 
 
 ```
 
-    __u32   btf_fd;         /* 鎸囧悜 BTF 绫诲瀷鏁版嵁鐨?fd */
-    __u32   btf_key_type_id;        /* 閿殑 BTF type_id */
-    __u32   btf_value_type_id;      /* 鍊肩殑 BTF type_id */
+    __u32   btf_fd;         /* 指向 BTF 类型数据fd */
+    __u32   btf_key_type_id;        /* 键的 BTF type_id */
+    __u32   btf_value_type_id;      /* 值的 BTF type_id */
 
 ```
-鍦?libbpf 涓紝鍙互鍍忎笅闈㈣繖鏍风敤棰濆娉ㄨВ鏉ュ畾涔?map锛?
+libbpf 中，可以像下面这样用额外注解来定map
 ```
 
     struct {
@@ -643,55 +643,55 @@ array銆乻truct銆乽nion銆乪num銆乫unc_proto 鍜?float 绫诲瀷涔嬩竴�
     } btf_map SEC(".maps");
 
 ```
-鍦?ELF 瑙ｆ瀽鏈熼棿锛宭ibbpf 鑳藉鎶藉嚭閿?鍊?type_id 骞惰嚜鍔ㄨ祴鍊肩粰 BPF_MAP_CREATE
-鐨勫睘鎬с€?
+ELF 解析期间，libbpf 能够抽出type_id 并自动赋值给 BPF_MAP_CREATE
+的属性
 
 
 ### 3.3 BPF_PROG_LOAD
 
 
-鍦?prog_load 鏈熼棿锛屽彲浠ュ皢 func_info 鍜?line_info 杩炲悓浠ヤ笅灞炴€х殑鎭板綋鍙栧€?
-浼犲叆鍐呮牳锛?
+prog_load 期间，可以将 func_info line_info 连同以下属性的恰当取
+传入内核
 ```
 
     __u32           insn_cnt;
     __aligned_u64   insns;
     ......
-    __u32           prog_btf_fd;    /* 鎸囧悜 BTF 绫诲瀷鏁版嵁鐨?fd */
-    __u32           func_info_rec_size;     /* 鐢ㄦ埛绌洪棿 bpf_func_info 澶у皬 */
-    __aligned_u64   func_info;      /* func 淇℃伅 */
-    __u32           func_info_cnt;  /* bpf_func_info 璁板綍鏁?*/
-    __u32           line_info_rec_size;     /* 鐢ㄦ埛绌洪棿 bpf_line_info 澶у皬 */
-    __aligned_u64   line_info;      /* line 淇℃伅 */
-    __u32           line_info_cnt;  /* bpf_line_info 璁板綍鏁?*/
+    __u32           prog_btf_fd;    /* 指向 BTF 类型数据fd */
+    __u32           func_info_rec_size;     /* 用户空间 bpf_func_info 大小 */
+    __aligned_u64   func_info;      /* func 信息 */
+    __u32           func_info_cnt;  /* bpf_func_info 记录*/
+    __u32           line_info_rec_size;     /* 用户空间 bpf_line_info 大小 */
+    __aligned_u64   line_info;      /* line 信息 */
+    __u32           line_info_cnt;  /* bpf_line_info 记录*/
 
 ```
 ```
 
     struct bpf_func_info {
         __u32   insn_off; /* [0, insn_cnt - 1] */
-        __u32   type_id;  /* 鎸囧悜涓€涓?BTF_KIND_FUNC 绫诲瀷 */
+        __u32   type_id;  /* 指向一BTF_KIND_FUNC 类型 */
     };
     struct bpf_line_info {
         __u32   insn_off; /* [0, insn_cnt - 1] */
-        __u32   file_name_off; /* 鎸囧悜鏂囦欢鍚嶇殑瀛楃涓茶〃鍋忕Щ */
-        __u32   line_off; /* 鎸囧悜婧愮爜琛岀殑瀛楃涓茶〃鍋忕Щ */
-        __u32   line_col; /* 琛屽彿涓庡垪鍙?*/
+        __u32   file_name_off; /* 指向文件名的字符串表偏移 */
+        __u32   line_off; /* 指向源码行的字符串表偏移 */
+        __u32   line_col; /* 行号与列*/
     };
 
 ```
-func_info_rec_size 鏄瘡鏉?func_info 璁板綍鐨勫ぇ灏忥紝line_info_rec_size 鏄瘡鏉?
-line_info 璁板綍鐨勫ぇ灏忋€傚皢璁板綍澶у皬浼犵粰鍐呮牳锛屼娇寰楀皢鏉ユ墿灞曡褰曟湰韬垚涓哄彲鑳姐€?
+func_info_rec_size 是每func_info 记录的大小，line_info_rec_size 是每
+line_info 记录的大小。将记录大小传给内核，使得将来扩展记录本身成为可能
 
-浠ヤ笅鏄?func_info 鐨勮姹傦細
-  - func_info[^0^].insn_off 蹇呴』涓?0銆?
-  - func_info 鐨?insn_off 蹇呴』涓ユ牸閫掑锛屽苟涓斾笌 bpf 鍑芥暟杈圭晫鍖归厤銆?
+以下func_info 的要求：
+  - func_info[^0^].insn_off 必须0
+  - func_info insn_off 必须严格递增，并且与 bpf 函数边界匹配
 
-浠ヤ笅鏄?line_info 鐨勮姹傦細
-  - 姣忎釜鍑芥暟涓殑绗竴鏉℃寚浠ゅ繀椤绘湁涓€鏉℃寚鍚戝畠鐨?line_info 璁板綍銆?
-  - line_info 鐨?insn_off 蹇呴』涓ユ牸閫掑銆?
+以下line_info 的要求：
+  - 每个函数中的第一条指令必须有一条指向它line_info 记录
+  - line_info insn_off 必须严格递增
 
-瀵逛簬 line_info锛岃鍙峰拰鍒楀彿瀹氫箟濡備笅锛?
+对于 line_info，行号和列号定义如下
 ```
 
     #define BPF_LINE_INFO_LINE_NUM(line_col)        ((line_col) >> 10)
@@ -701,53 +701,53 @@ line_info 璁板綍鐨勫ぇ灏忋€傚皢璁板綍澶у皬浼犵粰鍐呮牳�
 ### 3.4 BPF_{PROG,MAP}_GET_NEXT_ID
 
 
-鍦ㄥ唴鏍镐腑锛屾瘡涓鍔犺浇鐨勭▼搴忋€乵ap 鎴?btf 閮芥湁涓€涓敮涓€ id銆傝 id 鍦ㄧ▼搴忋€乵ap
-鎴?btf 鐨勭敓鍛藉懆鏈熷唴涓嶄細鏀瑰彉銆?
+在内核中，每个被加载的程序、map btf 都有一个唯一 id。该 id 在程序、map
+btf 的生命周期内不会改变
 
-bpf 绯荤粺璋冪敤鍛戒护 BPF_{PROG,MAP}_GET_NEXT_ID 浼氬垎鍒繑鍥?bpf 绋嬪簭鎴?map 鐨勬墍鏈?
-id锛堟瘡涓懡浠や竴涓級锛屼氦缁欑敤鎴风┖闂达紝浠ヤ究涓€涓唴鐪佸伐鍏峰彲浠ユ鏌ユ墍鏈夌殑绋嬪簭鍜?map銆?
+bpf 系统调用命令 BPF_{PROG,MAP}_GET_NEXT_ID 会分别返bpf 程序map 的所
+id（每个命令一个），交给用户空间，以便一个内省工具可以检查所有的程序map
 
 ### 3.5 BPF_{PROG,MAP}_GET_FD_BY_ID
 
 
-鍐呯渷宸ュ叿鏃犳硶鐩存帴浣跨敤 id 鏉ヨ幏鍙栫▼搴忔垨 map 鐨勮缁嗕俊鎭€傞渶瑕佸厛鑾峰彇涓€涓枃浠?
-鎻忚堪绗︼紝浠ヤ究杩涜寮曠敤璁℃暟銆?
+内省工具无法直接使用 id 来获取程序或 map 的详细信息。需要先获取一个文
+描述符，以便进行引用计数
 
 ### 3.6 BPF_OBJ_GET_INFO_BY_FD
 
 
-涓€鏃︽嬁鍒扮▼搴?map 鐨?fd锛屽唴鐪佸伐鍏峰氨鍙互浠庡唴鏍歌幏鍙栧叧浜庤 fd 鐨勮缁嗕俊鎭紝鍏朵腑
-涓€浜涗笌 BTF 鐩稿叧銆備緥濡傦紝`bpf_map_info` 杩斿洖 `btf_id` 浠ュ強閿?鍊肩被鍨?id銆?
-`bpf_prog_info` 杩斿洖 `btf_id`銆乫unc_info锛屼互鍙婄炕璇戝悗鐨?bpf 瀛楄妭鐮佺殑 line info
-鍜?jited_line_info銆?
+一旦拿到程map fd，内省工具就可以从内核获取关于该 fd 的详细信息，其中
+一些与 BTF 相关。例如，`bpf_map_info` 返回 `btf_id` 以及值类id
+`bpf_prog_info` 返回 `btf_id`、func_info，以及翻译后bpf 字节码的 line info
+鍜?jited_line_info銆。
 
 ### 3.7 BPF_BTF_GET_FD_BY_ID
 
 
-鍊熷姪鍦?`bpf_map_info` 鍜?`bpf_prog_info` 涓幏鍙栫殑 `btf_id`锛宐pf 绯荤粺璋冪敤鍛戒护
-BPF_BTF_GET_FD_BY_ID 鍙互鍙栧嚭涓€涓?btf fd銆傜劧鍚庯紝閫氳繃鍛戒护 BPF_OBJ_GET_INFO_BY_FD锛?
-鍙互鎶婃渶鍒濈敤 BPF_BTF_LOAD 鍔犺浇杩涘唴鏍哥殑 btf 鏁版嵁鍧楀彇鍥炪€?
+借助`bpf_map_info` `bpf_prog_info` 中获取的 `btf_id`，bpf 系统调用命令
+BPF_BTF_GET_FD_BY_ID 可以取出一btf fd。然后，通过命令 BPF_OBJ_GET_INFO_BY_FD
+可以把最初用 BPF_BTF_LOAD 加载进内核的 btf 数据块取回
 
-鎷ユ湁浜?btf 鏁版嵁鍧椼€乣bpf_map_info` 鍜?`bpf_prog_info`锛屽唴鐪佸伐鍏峰氨鎺屾彙浜嗗畬鏁寸殑
-btf 鐭ヨ瘑锛岃兘澶熷弸濂芥墦鍗?map 鐨勯敭/鍊笺€乨ump 鍑芥暟绛惧悕涓庤鍙蜂俊鎭紝浠ュ強瀛楄妭鐮?JIT
-浠ｇ爜銆?
+拥有btf 数据块、`bpf_map_info` `bpf_prog_info`，内省工具就掌握了完整的
+btf 知识，能够友好打map 的键/值、dump 函数签名与行号信息，以及字节JIT
+代码
 
-## 4. ELF 鏂囦欢鏍煎紡鎺ュ彛
-
-
-### 4.1 .BTF 娈?
+## 4. ELF 文件格式接口
 
 
-.BTF 娈靛寘鍚被鍨嬪拰瀛楃涓叉暟鎹€傝娈电殑鏍煎紡涓?BTF_Type_String 涓弿杩扮殑鐩稿悓銆?
+### 4.1 .BTF 娈。
 
 
-### 4.2 .BTF.ext 娈?
+.BTF 段包含类型和字符串数据。该段的格式BTF_Type_String 中描述的相同
 
 
-.BTF.ext 娈电紪鐮?func_info銆乴ine_info 浠ュ強 CO-RE 閲嶅畾浣嶄俊鎭紝杩欎簺鍐呭鍦ㄥ姞杞借繘
-鍐呮牳涔嬪墠闇€瑕佸姞杞藉櫒杩涜澶勭悊銆?
+### 4.2 .BTF.ext 娈。
 
-.BTF.ext 娈电殑瑙勮寖瀹氫箟浜?`tools/lib/bpf/btf.h` 鍜?`tools/lib/bpf/btf.c`銆?
+
+.BTF.ext 段编func_info、line_info 以及 CO-RE 重定位信息，这些内容在加载进
+内核之前需要加载器进行处理
+
+.BTF.ext 段的规范定义`tools/lib/bpf/btf.h` `tools/lib/bpf/btf.c`
 
 ```
 
@@ -757,20 +757,20 @@ btf 鐭ヨ瘑锛岃兘澶熷弸濂芥墦鍗?map 鐨勯敭/鍊笺€乨ump 鍑芥
         __u8    flags;
         __u32   hdr_len;
 
-        /* 鎵€鏈夊亸绉婚噺閮戒互瀛楄妭涓哄崟浣嶏紝鐩稿浜庢湰澶撮儴鏈熬 */
+        /* 所有偏移量都以字节为单位，相对于本头部末尾 */
         __u32   func_info_off;
         __u32   func_info_len;
         __u32   line_info_off;
         __u32   line_info_len;
 
-        /* .BTF.ext 澶撮儴鐨勫彲閫夐儴鍒?*/
+        /* .BTF.ext 头部的可选部*/
         __u32   core_relo_off;
         __u32   core_relo_len;
     };
 
 ```
-瀹冧笌 .BTF 娈甸潪甯哥浉浼笺€傚畠涓嶅寘鍚被鍨?瀛楃涓叉锛岃€屾槸鍖呭惈 func_info銆乴ine_info
-鍜?core_relo 瀛愭銆傚叧浜?func_info 鍜?line_info 璁板綍鏍煎紡鐨勮鎯咃紝瑙?BPF_Prog_Load銆?
+它与 .BTF 段非常相似。它不包含类字符串段，而是包含 func_info、line_info
+core_relo 子段。关func_info line_info 记录格式的详情，BPF_Prog_Load
 
 ```
 
@@ -780,19 +780,19 @@ btf 鐭ヨ瘑锛岃兘澶熷弸濂芥墦鍗?map 鐨勯敭/鍊笺€乨ump 鍑芥
      ...
 
 ```
-`func_info_rec_size` 鎸囧畾鐢熸垚 .BTF.ext 鏃?`bpf_func_info` 缁撴瀯鐨勫ぇ灏忋€?
-`btf_ext_info_sec`锛堝畾涔夊涓嬶級鏄竴涓泦鍚堬細
+`func_info_rec_size` 指定生成 .BTF.ext `bpf_func_info` 结构的大小
+`btf_ext_info_sec`（定义如下）是一个集合：
 ```
 
      struct btf_ext_info_sec {
-        __u32   sec_name_off; /* 娈靛悕鍋忕Щ */
+        __u32   sec_name_off; /* 段名偏移 */
         __u32   num_info;
-        /* 绱ц窡鐫€ num_info * record_size 涓瓧鑺?*/
+        /* 紧跟着 num_info * record_size 个字*/
         __u8    data[0];
      };
 
 ```
-姝ゅ num_info 蹇呴』澶т簬 0銆?
+此处 num_info 必须大于 0
 
 ```
 
@@ -802,12 +802,12 @@ btf 鐭ヨ瘑锛岃兘澶熷弸濂芥墦鍗?map 鐨勯敭/鍊笺€乨ump 鍑芥
      ...
 
 ```
-`line_info_rec_size` 鎸囧畾鐢熸垚 .BTF.ext 鏃?`bpf_line_info` 缁撴瀯鐨勫ぇ灏忋€?
+`line_info_rec_size` 指定生成 .BTF.ext `bpf_line_info` 结构的大小
 
-`bpf_func_info->insn_off` 鍜?`bpf_line_info->insn_off` 鍦ㄢ€滃唴鏍?API鈥濅笌鈥淓LF API鈥?
-涓殑瑙ｉ噴涓嶅悓銆傚浜庡唴鏍?API锛宍insn_off` 鏄互 ``struct bpf_insn` 涓哄崟浣嶇殑鎸囦护
-鍋忕Щ銆傚浜?ELF API锛宍insn_off` 鏄粠娈靛紑澶寸畻璧风殑瀛楄妭鍋忕Щ
-锛坄btf_ext_info_sec->sec_name_off`锛夈€?
+`bpf_func_info->insn_off` `bpf_line_info->insn_off` 在“内API”与“ELF API
+中的解释不同。对于内API，`insn_off` 是以 ``struct bpf_insn` 为单位的指令
+偏移。对ELF API，`insn_off` 是从段开头算起的字节偏移
+（`btf_ext_info_sec->sec_name_off`）
 
 ```
 
@@ -816,22 +816,22 @@ btf 鐭ヨ瘑锛岃兘澶熷弸濂芥墦鍗?map 鐨勯敭/鍊笺€乨ump 鍑芥
      btf_ext_info_sec for section #2 /* section #2 鐨?core_relo */
 
 ```
-`core_relo_rec_size` 鎸囧畾鐢熸垚 .BTF.ext 鏃?`bpf_core_relo` 缁撴瀯鐨勫ぇ灏忋€傚崟涓?
-`btf_ext_info_sec` 鍐呯殑鎵€鏈?`bpf_core_relo` 缁撴瀯鎻忚堪搴旂敤浜庣敱
-`btf_ext_info_sec->sec_name_off` 鍛藉悕鐨勬涓婄殑閲嶅畾浣嶃€?
+`core_relo_rec_size` 指定生成 .BTF.ext `bpf_core_relo` 结构的大小。单
+`btf_ext_info_sec` 内的所`bpf_core_relo` 结构描述应用于由
+`btf_ext_info_sec->sec_name_off` 命名的段上的重定位
 
-璇﹁ Documentation/bpf/llvm_reloc.rst <btf-co-re-relocations>
-浜嗚В鍏充簬 CO-RE 閲嶅畾浣嶇殑鏇村淇℃伅銆?
+详见 Documentation/bpf/llvm_reloc.rst <btf-co-re-relocations>
+了解关于 CO-RE 重定位的更多信息
 
-### 4.3 .BTF_ids 娈?
+### 4.3 .BTF_ids 娈。
 
 
-.BTF_ids 娈电紪鐮佸唴鏍镐腑浣跨敤鐨?BTF ID 鍊笺€?
+.BTF_ids 段编码内核中使用BTF ID 值
 
-璇ユ鍦ㄥ唴鏍哥紪璇戞湡闂村€熷姪 `include/linux/btf_ids.h` 澶存枃浠朵腑瀹氫箟鐨勫畯鍒涘缓銆傚唴鏍?
-浠ｇ爜鍙互鐢ㄥ畠浠潵鍒涘缓 BTF ID 鍊肩殑鍒楄〃鍜岄泦鍚堬紙鏈夊簭鍒楄〃锛夈€?
+该段在内核编译期间借助 `include/linux/btf_ids.h` 头文件中定义的宏创建。内
+代码可以用它们来创建 BTF ID 值的列表和集合（有序列表）
 
-`BTF_ID_LIST` 鍜?`BTF_ID` 瀹忓畾涔夋棤搴忕殑 BTF ID 鍊煎垪琛紝
+`BTF_ID_LIST` `BTF_ID` 宏定义无序的 BTF ID 值列表，
 ```
 
   BTF_ID_LIST(list)
@@ -847,9 +847,9 @@ btf 鐭ヨ瘑锛岃兘澶熷弸濂芥墦鍗?map 鐨勯敭/鍊笺€乨ump 鍑芥
   .zero 4
 
 ```
-瀹氫箟浜?`u32 list[];` 鍙橀噺鏉ヨ闂鍒楄〃銆?
+定义`u32 list[];` 变量来访问该列表
 
-`BTF_ID_UNUSED` 瀹忓畾涔?4 涓浂瀛楄妭銆傚綋鎴戜滑闇€瑕佸崰浣嶆椂浣跨敤瀹冿紝渚嬪
+`BTF_ID_UNUSED` 宏定4 个零字节。当我们需要占位时使用它，例如
 ```
 
       BTF_ID_LIST(bpf_skb_output_btf_ids)
@@ -858,7 +858,7 @@ btf 鐭ヨ瘑锛岃兘澶熷弸濂芥墦鍗?map 鐨勯敭/鍊笺€乨ump 鍑芥
       BTF_ID(struct, task_struct)
 
 ```
-`BTF_SET_START/END` 瀹忓瀹氫箟鏈夊簭鐨?BTF ID 鍊奸泦鍚?
+`BTF_SET_START/END` 宏对定义有序BTF ID 值集
 ```
 
   BTF_SET_START(set)
@@ -877,42 +877,42 @@ btf 鐭ヨ瘑锛岃兘澶熷弸濂芥墦鍗?map 鐨勯敭/鍊笺€乨ump 鍑芥
   .zero 4
 
 ```
-瀹氫箟浜?`struct btf_id_set set;` 鍙橀噺鏉ヨ闂鍒楄〃銆?
+定义`struct btf_id_set set;` 变量来访问该列表
 
 ```
 
    struct, union, typedef, func
 
 ```
-骞跺湪瑙ｆ瀽 BTF ID 鍊兼椂浣滀负杩囨护鍣ㄤ娇鐢ㄣ€?
+并在解析 BTF ID 值时作为过滤器使用
 
-鎵€鏈夌殑 BTF ID 鍒楄〃鍜岄泦鍚堥兘琚紪璇戣繘 .BTF_ids 娈碉紝骞跺湪鍐呮牳鏋勫缓鐨勯摼鎺ラ樁娈电敱
-`resolve_btfids` 宸ュ叿瑙ｆ瀽銆?
+所有的 BTF ID 列表和集合都被编译进 .BTF_ids 段，并在内核构建的链接阶段由
+`resolve_btfids` 工具解析
 
-### 4.4 .BTF.base 娈?
+### 4.4 .BTF.base 娈。
 
 
-鎷嗗垎 BTF锛圫plit BTF锛夆€斺€斿叾涓?.BTF 娈靛彧鍖呭惈涓嶅湪鍏宠仈鐨勫熀纭€ .BTF 娈典腑鐨勭被鍨嬧€斺€旀槸
-缂栫爜鍐呮牳妯″潡绫诲瀷淇℃伅鐨勪竴绉嶆瀬鍏堕珮鏁堢殑鏂瑰紡锛屽洜涓哄唴鏍告ā鍧楅€氬父鐢卞皯閲忔ā鍧椾笓灞炵被鍨?
-鍔犱笂澶ч噺鍏变韩鐨勫唴鏍哥被鍨嬬粍鎴愩€傚墠鑰呯紪鐮佸湪鎷嗗垎 BTF 涓紝鑰屽悗鑰呯紪鐮佸湪鍩虹 BTF 涓紝
-浠庤€屽緱鍒版洿绱у噾鐨勮〃绀恒€傛媶鍒?BTF 涓寚鍚戝熀纭€ BTF 涓煇涓被鍨嬬殑绫诲瀷锛屼娇鐢ㄥ叾鍩虹 BTF
-ID 鏉ュ紩鐢ㄥ畠锛岃€屾媶鍒?BTF 鐨?ID 浠?last_base_BTF_ID + 1 寮€濮嬨€?
+拆分 BTF（Split BTF）——其.BTF 段只包含不在关联的基础 .BTF 段中的类型——是
+编码内核模块类型信息的一种极其高效的方式，因为内核模块通常由少量模块专属类
+加上大量共享的内核类型组成。前者编码在拆分 BTF 中，而后者编码在基础 BTF 中，
+从而得到更紧凑的表示。拆BTF 中指向基础 BTF 中某个类型的类型，使用其基础 BTF
+ID 来引用它，而拆BTF ID last_base_BTF_ID + 1 开始
 
-鐒惰€岃繖绉嶅仛娉曠殑缂虹偣鏄鎷嗗垎 BTF 鏈夌偣鑴嗗急鈥斺€斿綋鍩虹 BTF 鍙戠敓鍙樺寲鏃讹紝鍩虹 BTF ID
-寮曠敤灏变笉鍐嶆湁鏁堬紝鎷嗗垎 BTF 鏈韩涔熷氨姣棤鐢ㄥ浜嗐€?BTF.base 娈电殑浣滅敤灏辨槸璁╂媶鍒?BTF
-鍦ㄩ潰瀵瑰熀纭€ BTF 鍙兘鍙樺寲鐨勬儏鍐典笅鏇村叿闊ф€э紝鍐呮牳妯″潡骞堕潪姣忔閮介殢鍐呮牳涓€璧锋瀯寤虹殑
-鎯呭舰姝ｆ槸濡傛銆?BTF.base 鍖呭惈鏈夊悕瀛楃殑鍩虹绫诲瀷锛欼NT銆丗LOAT銆丼TRUCT銆乁NION銆?
-ENUM[^64^] 鍜?FWD銆侷NT 鍜?FLOAT 鍦?.BTF.base 娈典腑琚畬鏁存弿杩帮紝鑰屽儚 struct 鍜?
-union 杩欐牱鐨勫鍚堢被鍨嬪垯鏈瀹屾暣瀹氫箟鈥斺€?BTF.base 绫诲瀷浠呬綔涓烘媶鍒?BTF 鎵€鎸囩被鍨嬬殑
-鎻忚堪锛屽洜姝?struct/union 鍦?.BTF.base 娈典腑鏈?0 涓垚鍛樸€侲NUM[^64^] 鍚屾牱浠?0 涓?
-鎴愬憳璁板綍銆備换浣曞叾浠栫被鍨嬮兘琚姞鍏ユ媶鍒?BTF銆傝繖涓€鈥滆捀棣忊€濊繃绋嬫渶缁堝緱鍒颁竴涓甫鏈夋绫?
-鏈€灏忓寲鍩虹绫诲瀷鎻忚堪鐨?.BTF.base 娈碉紝浠ュ強涓€涓紩鐢ㄩ偅浜涘熀纭€绫诲瀷鐨?.BTF 鎷嗗垎娈点€備箣鍚庯紝
-鎴戜滑鍙互缁撳悎 .BTF.base 娈典腑瀛樺偍鐨勪俊鎭拰鏂扮殑 .BTF 鍩虹娈垫潵瀵规媶鍒?BTF 杩涜閲嶅畾浣嶏紱
-.BTF.base 娈典腑鐨勭被鍨嬩俊鎭鎴戜滑鑳藉鏇存柊鎷嗗垎 BTF 鐨勫紩鐢紝浣垮叾鎸囧悜瀵瑰簲鐨勬柊鍩虹 BTF
-ID銆?
+然而这种做法的缺点是让拆分 BTF 有点脆弱——当基础 BTF 发生变化时，基础 BTF ID
+引用就不再有效，拆分 BTF 本身也就毫无用处了BTF.base 段的作用就是让拆BTF
+在面对基础 BTF 可能变化的情况下更具韧性，内核模块并非每次都随内核一起构建的
+情形正是如此BTF.base 包含有名字的基础类型：INT、FLOAT、STRUCT、UNION
+ENUM[^64^] FWD。INT FLOAT .BTF.base 段中被完整描述，而像 struct 
+union 这样的复合类型则未被完整定义—BTF.base 类型仅作为拆BTF 所指类型的
+描述，因struct/union .BTF.base 段中0 个成员。ENUM[^64^] 同样0 
+成员记录。任何其他类型都被加入拆BTF。这一“蒸馏”过程最终得到一个带有此
+最小化基础类型描述.BTF.base 段，以及一个引用那些基础类型.BTF 拆分段。之后，
+我们可以结合 .BTF.base 段中存储的信息和新的 .BTF 基础段来对拆BTF 进行重定位；
+.BTF.base 段中的类型信息让我们能够更新拆分 BTF 的引用，使其指向对应的新基础 BTF
+ID銆。
 
-BTF 閲嶅畾浣嶅湪鍐呮牳妯″潡鍔犺浇鏃跺彂鐢燂紙褰撳唴鏍告ā鍧楀甫鏈?.BTF.base 娈垫椂锛夛紝libbpf 涔熸彁渚?
-浜?btf__relocate() API 鏉ュ畬鎴愭浜嬨€?
+BTF 重定位在内核模块加载时发生（当内核模块带.BTF.base 段时），libbpf 也提
+btf__relocate() API 来完成此事
 
 ```
 
@@ -927,7 +927,7 @@ BTF 閲嶅畾浣嶅湪鍐呮牳妯″潡鍔犺浇鏃跺彂鐢燂紙褰撳唴鏍�
       [3] PTR '(anon)' type_id=2
 
 ```
-鍗虫媶鍒?BTF 鎻忚堪浜嗕竴涓寚鍚?struct foo { int f1; int f2 }; 鐨勬寚閽?
+即拆BTF 描述了一个指struct foo { int f1; int f2 }; 的指
 
 ```
 
@@ -944,28 +944,28 @@ BTF 閲嶅畾浣嶅湪鍐呮牳妯″潡鍔犺浇鏃跺彂鐢燂紙褰撳唴鏍�
               'f2' type_id=2 bits_offset=32
 
 ```
-鈥︹€︽垜浠彲浠ュ埄鐢ㄦ垜浠殑 .BTF.base 鎻忚堪鏉ョ煡閬撹鎷嗗垎 BTF 寮曠敤
+……我们可以利用我们的 .BTF.base 描述来知道该拆分 BTF 引用
 ```
 
       [4] PTR '(anon)' type_id=3
 
 ```
-娉ㄦ剰鎴戜滑涓嶅緱涓嶆洿鏂版媶鍒?BTF 鐨?BTF ID 鍜岃捣濮?BTF ID銆?
+注意我们不得不更新拆BTF BTF ID 和起BTF ID
 
-鐢辨鍙 .BTF.base 濡備綍璧峰埌淇冭繘鍚庣画閲嶅畾浣嶇殑浣滅敤锛屼粠鑰屽甫鏉ユ洿鍏烽煣鎬х殑鎷嗗垎 BTF銆?
+由此可见 .BTF.base 如何起到促进后续重定位的作用，从而带来更具韧性的拆分 BTF
 
-.BTF.base 娈典細鍦ㄦ爲澶栵紙out-of-tree锛夊唴鏍告ā鍧楁瀯寤烘椂鑷姩鐢熸垚鈥斺€斿嵆璁剧疆浜?KBUILD_EXTMOD
-鐨勬儏褰紙灏卞儚 "make M=path/2/mod" 閭ｆ牱锛夈€?BTF.base 鐨勭敓鎴愰渶瑕?pahole 瀵?
-"distilled_base" BTF 鐗规€х殑鏀寔锛涜繖鍦?pahole v1.28 鍙婃洿楂樼増鏈腑鍙敤銆?
+.BTF.base 段会在树外（out-of-tree）内核模块构建时自动生成——即设置KBUILD_EXTMOD
+的情形（就像 "make M=path/2/mod" 那样）BTF.base 的生成需pahole 
+"distilled_base" BTF 特性的支持；这pahole v1.28 及更高版本中可用
 
-## 5. 浣跨敤 BTF
-
-
-### 5.1 bpftool map 鍙嬪ソ鎵撳嵃
+## 5. 使用 BTF
 
 
-鍊熷姪 BTF锛宮ap 鐨勯敭/鍊煎彲浠ュ熀浜庡瓧娈垫墦鍗帮紝鑰岄潪绠€鍗曞湴鎸夊師濮嬪瓧鑺傛墦鍗般€傝繖瀵逛簬澶у瀷
-缁撴瀯浣撴垨鑰呭綋浣犵殑鏁版嵁
+### 5.1 bpftool map 友好打印
+
+
+借助 BTF，map 的键/值可以基于字段打印，而非简单地按原始字节打印。这对于大型
+结构体或者当你的数据
 ```
 
       enum A { A1, A2, A3, A4, A5 };
@@ -987,7 +987,7 @@ BTF 閲嶅畾浣嶅湪鍐呮牳妯″潡鍔犺浇鏃跺彂鐢燂紙褰撳唴鏍�
       } tmpmap SEC(".maps");
 
 ```
-bpftool 鑳藉鍍忎笅闈㈣繖鏍峰弸濂芥墦鍗帮細
+bpftool 能够像下面这样友好打印：
 ```
 
       [{
@@ -1007,8 +1007,8 @@ bpftool 鑳藉鍍忎笅闈㈣繖鏍峰弸濂芥墦鍗帮細
 ### 5.2 bpftool prog dump
 
 
-涓嬮潰鏄竴涓ず渚嬶紝灞曠ず func_info 鍜?line_info 濡備綍鍊熷姪鏇村ソ鐨勫唴鏍哥鍙峰悕銆佸嚱鏁板師鍨?
-鍜岃鍙蜂俊鎭潵甯姪 prog dump
+下面是一个示例，展示 func_info line_info 如何借助更好的内核符号名、函数原
+和行号信息来帮助 prog dump
 ```
 
     $ bpftool prog dump jited pinned /sys/fs/bpf/test_btf_haskv
@@ -1039,14 +1039,14 @@ bpftool 鑳藉鍍忎笅闈㈣繖鏍峰弸濂芥墦鍗帮細
     [...]
 
 ```
-### 5.3 楠岃瘉鍣ㄦ棩蹇?
+### 5.3 验证器日
 
 
-涓嬮潰鏄竴涓ず渚嬶紝灞曠ず line_info 濡備綍甯姪璋冭瘯楠岃瘉杩囩▼
+下面是一个示例，展示 line_info 如何帮助调试验证过程
 ```
 
-       /* tools/testing/selftests/bpf/test_xdp_noinline.c 涓殑浠ｇ爜
-        * 琚慨鏀瑰涓嬨€?
+       /* tools/testing/selftests/bpf/test_xdp_noinline.c 中的代码
+        * 被修改如下
         */
        data = (void *)(long)xdp->data;
        data_end = (void *)(long)xdp->data_end;
@@ -1066,14 +1066,14 @@ bpftool 鑳藉鍍忎笅闈㈣繖鏍峰弸濂芥墦鍗帮細
         R2 offset is outside of the packet
 
 ```
-## 6. BTF 鐢熸垚
+## 6. BTF 生成
 
 
-浣犻渶瑕佹渶鏂扮増鏈殑 pahole
+你需要最新版本的 pahole
 
   https://git.kernel.org/pub/scm/devel/pahole/pahole.git/
 
-鎴?llvm锛?.0 鎴栨洿楂樼増鏈級銆俻ahole 鍏呭綋 dwarf2btf 杞崲鍣ㄣ€傚畠涓?
+llvm.0 或更高版本）。pahole 充当 dwarf2btf 转换器。它
 ```
 
       -bash-4.4$ cat t.c
@@ -1092,8 +1092,8 @@ bpftool 鑳藉鍍忎笅闈㈣繖鏍峰弸濂芥墦鍗帮細
       [2] INT int size=4 bit_offset=0 nr_bits=32 encoding=SIGNED
 
 ```
-llvm 鑳藉鐩存帴鐢?-g 涓?bpf 鐩爣鐢熸垚 .BTF 鍜?.BTF.ext锛堜粎闄?bpf 鐩爣锛夈€傛眹缂栦唬鐮?
-锛?S锛夎兘澶熷睍绀?BTF 鍦ㄦ眹缂栦腑鐨勭紪鐮?
+llvm 能够直接-g bpf 目标生成 .BTF .BTF.ext（仅bpf 目标）。汇编代
+S）能够展BTF 在汇编中的编
 ```
 
     -bash-4.4$ cat t2.c
@@ -1175,10 +1175,10 @@ llvm 鑳藉鐩存帴鐢?-g 涓?bpf 鐩爣鐢熸垚 .BTF 鍜?.BTF.ext锛堜
             .long   8206                    # Line 8 Col 14
 
 ```
-## 7. 娴嬭瘯
+## 7. 测试
 
 
-鍐呮牳 BPF 鑷祴璇?`tools/testing/selftests/bpf/prog_tests/btf.c`_
-鎻愪緵浜嗕竴濂楀箍娉涚殑 BTF 鐩稿叧娴嬭瘯銆?
+内核 BPF 自测`tools/testing/selftests/bpf/prog_tests/btf.c`_
+提供了一套广泛的 BTF 相关测试
 
    https://git.kernel.org/pub/scm/linux/kernel/git/stable/linux.git/tree/tools/testing/selftests/bpf/prog_tests/btf.c

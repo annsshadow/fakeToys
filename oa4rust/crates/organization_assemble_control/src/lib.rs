@@ -12,6 +12,12 @@ use serde_json::Value;
 use shared::{error::AppError, response::ActionResult};
 use uuid::Uuid;
 
+mod u2_helpers;
+mod u2_misc;
+mod u2_org;
+mod u2_person;
+mod u2_router;
+
 #[derive(Debug, Deserialize)]
 pub struct PersonLikeRequest {
     pub name: Option<String>,
@@ -3546,6 +3552,18 @@ pub fn router(pool: deadpool_postgres::Pool) -> Router {
     .route("/jaxrs/organization/assemble/control/unit/{flag}", get(organization_assemble_control_unit_flag))
     .route("/jaxrs/organization/assemble/control/person/list/like", post(organization_assemble_control_person_list_like))
     .route("/jaxrs/identity/{id}", get(identity_id))
+    .route("/jaxrs/organization/assemble/control/group/{flag}/delete/member", delete(group_flag_delete_member))
+    .route("/jaxrs/organization/assemble/control/group/{flag}/delete/member/mockputtopost", delete(group_flag_delete_member_mockputtopost))
+    .route("/jaxrs/organization/assemble/control/group/{flag}/mockdeletetoget", delete(group_flag_mockdeletetoget))
+    .route("/jaxrs/organization/assemble/control/identity/{flag}/mockdeletetoget", delete(identity_flag_mockdeletetoget))
+    .route("/jaxrs/organization/assemble/control/permissionsetting/{flag}/mockdeletetoget", delete(permissionsetting_flag_mockdeletetoget))
+    .route("/jaxrs/organization/assemble/control/personattribute/{flag}/mockdeletetoget", delete(personattribute_flag_mockdeletetoget))
+    .route("/jaxrs/organization/assemble/control/personcard/{flag}/mockdeletetoget", delete(personcard_flag_mockdeletetoget))
+    .route("/jaxrs/organization/assemble/control/role/{flag}/mockdeletetoget", delete(role_flag_mockdeletetoget))
+    .route("/jaxrs/organization/assemble/control/unitattribute/{flag}/mockdeletetoget", delete(unitattribute_flag_mockdeletetoget))
+    .route("/jaxrs/organization/assemble/control/unitduty/{flag}/mockdeletetoget", delete(unitduty_flag_mockdeletetoget))
+    .route("/jaxrs/organization/assemble/control/unitduty/update/member", put(unitduty_update_member))
+    .merge(u2_router::router())
     .layer(Extension(pool));
     router
 }
@@ -3554,6 +3572,8 @@ pub fn router(pool: deadpool_postgres::Pool) -> Router {
 mod tests;
 #[cfg(test)]
 mod tests_generated;
+#[cfg(test)]
+mod tests_u2;
 
 
 

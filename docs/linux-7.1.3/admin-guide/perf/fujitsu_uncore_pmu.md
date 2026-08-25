@@ -1,104 +1,104 @@
-﻿## Fujitsu Uncore 鎬ц兘鐩戞帶鍗曞厓锛圥MU锛?
+﻿## Fujitsu Uncore 性能监控单元（PMU
 
 
-鏈┍鍔ㄦ敮鎸?Fujitsu 鑺墖涓殑 Uncore MAC PMU 涓?Uncore PCI PMU銆?
-杩欎簺鑺墖涓婄殑姣忎釜 MAC PMU 閮戒綔涓轰竴涓?uncore perf PMU 鏆撮湶鍑烘潵锛岃澶囧悕涓?
-mac_iod<iod>_mac<mac>_ch<ch>銆?
-姣忎釜 PCI PMU 浣滀负 uncore perf PMU 鏆撮湶锛岃澶囧悕涓?pci_iod<iod>_pci<pci>銆?
+本驱动支Fujitsu 芯片中的 Uncore MAC PMU Uncore PCI PMU
+这些芯片上的每个 MAC PMU 都作为一uncore perf PMU 暴露出来，设备名
+mac_iod<iod>_mac<mac>_ch<ch>銆。
+每个 PCI PMU 作为 uncore perf PMU 暴露，设备名pci_iod<iod>_pci<pci>
 
-椹卞姩鍦?sysfs 涓彁渚涘叾鍙敤浜嬩欢涓庨厤缃€夐」鐨勬弿杩帮紝鍙傝
+驱动sysfs 中提供其可用事件与配置选项的描述，参见
 /sys/bus/event_sources/devices/mac_iod<iod>_mac<mac>_ch<ch>/
-涓?/sys/bus/event_sources/devices/pci_iod<iod>_pci<pci>/銆?
-鏈┍鍔ㄥ鍑猴細
+涓?/sys/bus/event_sources/devices/pci_iod<iod>_pci<pci>/銆。
+本驱动导出：
 
-- formats锛氫緵 perf 鐢ㄦ埛绌洪棿鍙婂叾浠栧伐鍏烽厤缃簨浠朵娇鐢?
-- events锛氫緵 perf 鐢ㄦ埛绌洪棿鍙婂叾浠栧伐鍏峰垱寤轰簨浠朵娇鐢?
+- formats：供 perf 用户空间及其他工具配置事件使
+- events：供 perf 用户空间及其他工具创建事件使
 ```
 
     perf stat -a -e mac_iod0_mac0_ch0/event=0x21/ ls
     perf stat -a -e pci_iod0_pci0/event=0x24/ ls
 
 ```
-- cpumask锛氫緵 perf 鐢ㄦ埛绌洪棿鍙婂叾浠栧伐鍏蜂簡瑙ｅ簲鍦ㄥ摢浜?CPU 涓婃墦寮€浜嬩欢
+- cpumask：供 perf 用户空间及其他工具了解应在哪CPU 上打开事件
 
-鏈┍鍔ㄤ负 MAC 鏀寔浠ヤ笅浜嬩欢锛?
+本驱动为 MAC 支持以下事件
 
 - cycles
-  姝や簨浠剁粺璁?MAC 鍦?MAC 棰戠巼涓嬬殑鍛ㄦ湡鏁般€?
+  此事件统MAC MAC 频率下的周期数
 - read-count
-  姝や簨浠剁粺璁″彂寰€ MAC 鐨勮璇锋眰鏁伴噺銆?
+  此事件统计发往 MAC 的读请求数量
 - read-count-request
-  姝や簨浠剁粺璁″寘鍚噸璇曠殑銆佸彂寰€ MAC 鐨勮璇锋眰鏁伴噺銆?
+  此事件统计包含重试的、发往 MAC 的读请求数量
 - read-count-return
-  姝や簨浠剁粺璁″鍙戝線 MAC 鐨勮璇锋眰鐨勫搷搴旀暟閲忋€?
+  此事件统计对发往 MAC 的读请求的响应数量
 - read-count-request-pftgt
-  姝や簨浠剁粺璁″甫鏈?PFTGT 鏍囧織銆佸寘鍚噸璇曠殑璇昏姹傛暟閲忋€?
+  此事件统计带PFTGT 标志、包含重试的读请求数量
 - read-count-request-normal
-  姝や簨浠剁粺璁′笉甯?PFTGT 鏍囧織銆佸寘鍚噸璇曠殑璇昏姹傛暟閲忋€?
+  此事件统计不PFTGT 标志、包含重试的读请求数量
 - read-count-return-pftgt-hit
-  姝や簨浠剁粺璁″懡涓?PFTGT 缂撳啿鍖虹殑璇昏姹傚搷搴旀暟閲忋€?
+  此事件统计命PFTGT 缓冲区的读请求响应数量
 - read-count-return-pftgt-miss
-  姝や簨浠剁粺璁℃湭鍛戒腑 PFTGT 缂撳啿鍖虹殑璇昏姹傚搷搴旀暟閲忋€?
+  此事件统计未命中 PFTGT 缓冲区的读请求响应数量
 - read-wait
-  姝や簨浠剁粺璁℃瘡涓懆鏈熺敱 DDR 鍐呭瓨鎺у埗鍣ㄥ彂鍑虹殑鏈畬鎴愯璇锋眰鏁伴噺銆?
+  此事件统计每个周期由 DDR 内存控制器发出的未完成读请求数量
 - write-count
-  姝や簨浠剁粺璁″彂寰€ MAC 鐨勫啓璇锋眰鏁伴噺锛堝寘鎷浂鍐欍€佸叏鍐欍€侀儴鍒嗗啓銆佸啓鍙栨秷锛夈€?
+  此事件统计发往 MAC 的写请求数量（包括零写、全写、部分写、写取消）
 - write-count-write
-  姝や簨浠剁粺璁″彂寰€ MAC 鐨勫叏鍐欒姹傛暟閲忥紙涓嶅寘鎷浂鍐欙級銆?
+  此事件统计发往 MAC 的全写请求数量（不包括零写）
 - write-count-pwrite
-  姝や簨浠剁粺璁″彂寰€ MAC 鐨勯儴鍒嗗啓璇锋眰鏁伴噺銆?
+  此事件统计发往 MAC 的部分写请求数量
 - memory-read-count
-  姝や簨浠剁粺璁?MAC 鍙戝線鍐呭瓨鐨勮璇锋眰鏁伴噺銆?
+  此事件统MAC 发往内存的读请求数量
 - memory-write-count
-  姝や簨浠剁粺璁?MAC 鍙戝線鍐呭瓨鐨勫叏鍐欒姹傛暟閲忋€?
+  此事件统MAC 发往内存的全写请求数量
 - memory-pwrite-count
-  姝や簨浠剁粺璁?MAC 鍙戝線鍐呭瓨鐨勯儴鍒嗗啓璇锋眰鏁伴噺銆?
+  此事件统MAC 发往内存的部分写请求数量
 - ea-mac
-  姝や簨浠剁粺璁?MAC 鐨勮兘鑰椼€?
+  此事件统MAC 的能耗
 - ea-memory
-  姝や簨浠剁粺璁″唴瀛樼殑鑳借€椼€?
+  此事件统计内存的能耗
 - ea-memory-mac-write
-  姝や簨浠剁粺璁?MAC 鍙戝線鍐呭瓨鐨勫啓璇锋眰鏁伴噺銆?
+  此事件统MAC 发往内存的写请求数量
 - ea-ha
-  姝や簨浠剁粺璁?HA 鐨勮兘鑰椼€?
+  此事件统HA 的能耗
 
-  'ea' 鏄?'Energy Analyzer'锛堣兘鑰楀垎鏋愬櫒锛夌殑缂╁啓銆?
+  'ea' 'Energy Analyzer'（能耗分析器）的缩写
 
 ```
 
   perf stat -e mac_iod0_mac0_ch0/ea-mac/ ls
 
 ```
-姝ゅ锛屾湰椹卞姩涓?PCI 鏀寔浠ヤ笅浜嬩欢锛?
+此外，本驱动PCI 支持以下事件
 
 - pci-port0-cycles
-  姝や簨浠剁粺璁?port0 涓?PCI 鍦?PCI 棰戠巼涓嬬殑鍛ㄦ湡鏁般€?
+  此事件统port0 PCI PCI 频率下的周期数
 - pci-port0-read-count
-  姝や簨浠剁粺璁?port0 涓敤浜庢暟鎹紶杈撶殑璇讳簨鍔℃暟閲忋€?
+  此事件统port0 中用于数据传输的读事务数量
 - pci-port0-read-count-bus
-  姝や簨浠剁粺璁?port0 涓敤浜庢€荤嚎鍗犵敤鐨勮浜嬪姟鏁伴噺銆?
+  此事件统port0 中用于总线占用的读事务数量
 - pci-port0-write-count
-  姝や簨浠剁粺璁?port0 涓敤浜庢暟鎹紶杈撶殑鍐欎簨鍔℃暟閲忋€?
+  此事件统port0 中用于数据传输的写事务数量
 - pci-port0-write-count-bus
-  姝や簨浠剁粺璁?port0 涓敤浜庢€荤嚎鍗犵敤鐨勫啓浜嬪姟鏁伴噺銆?
+  此事件统port0 中用于总线占用的写事务数量
 - pci-port1-cycles
-  姝や簨浠剁粺璁?port1 涓?PCI 鍦?PCI 棰戠巼涓嬬殑鍛ㄦ湡鏁般€?
+  此事件统port1 PCI PCI 频率下的周期数
 - pci-port1-read-count
-  姝や簨浠剁粺璁?port1 涓敤浜庢暟鎹紶杈撶殑璇讳簨鍔℃暟閲忋€?
+  此事件统port1 中用于数据传输的读事务数量
 - pci-port1-read-count-bus
-  姝や簨浠剁粺璁?port1 涓敤浜庢€荤嚎鍗犵敤鐨勮浜嬪姟鏁伴噺銆?
+  此事件统port1 中用于总线占用的读事务数量
 - pci-port1-write-count
-  姝や簨浠剁粺璁?port1 涓敤浜庢暟鎹紶杈撶殑鍐欎簨鍔℃暟閲忋€?
+  此事件统port1 中用于数据传输的写事务数量
 - pci-port1-write-count-bus
-  姝や簨浠剁粺璁?port1 涓敤浜庢€荤嚎鍗犵敤鐨勫啓浜嬪姟鏁伴噺銆?
+  此事件统port1 中用于总线占用的写事务数量
 - ea-pci
-  姝や簨浠剁粺璁?PCI 鐨勮兘鑰椼€?
+  此事件统PCI 的能耗
 
-  'ea' 鏄?'Energy Analyzer'锛堣兘鑰楀垎鏋愬櫒锛夌殑缂╁啓銆?
+  'ea' 'Energy Analyzer'（能耗分析器）的缩写
 
 ```
 
   perf stat -e pci_iod0_pci0/ea-pci/ ls
 
 ```
-鐢变簬杩欎簺鏄?uncore PMU锛岄┍鍔ㄤ笉鏀寔閲囨牱锛屽洜姝?"perf record" 鏃犳硶浣跨敤銆備篃涓嶆敮鎸佹寜浠诲姟鐨?perf 浼氳瘽銆?
+由于这些uncore PMU，驱动不支持采样，因"perf record" 无法使用。也不支持按任务perf 会话

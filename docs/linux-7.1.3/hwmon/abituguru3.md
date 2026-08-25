@@ -1,15 +1,15 @@
-﻿## 鍐呮牳椹卞姩 abituguru3
+﻿## 内核驱动 abituguru3
 
 
-鏀寔鑺墖锛?  - Abit uGuru revision 3锛堢‖浠剁洃鎺ч儴鍒嗭紝浠呰鍙栵級
+支持芯片  - Abit uGuru revision 3（硬件监控部分，仅读取）
 
     Prefix: 'abituguru3'
 
     Addresses scanned: ISA 0x0E0
 
-    Datasheet: 涓嶅彲鐢紝璇ラ┍鍔ㄥ熀浜庨€嗗悜宸ョ▼銆?
+    Datasheet: 不可用，该驱动基于逆向工程
     Note:
-	The uGuru 鏄竴涓甫鏉胯浇鍥轰欢鐨勫井鎺у埗鍣紝鍥轰欢灏嗗叾缂栫▼涓鸿〃鐜板緱鍍忎竴涓?	hwmon IC銆傚浐浠舵湁璁稿涓嶅悓鐨勭増鏈紝鍥犳瀹為檯涓婁篃鏈夎澶氫笉鍚岀増鏈殑 uGuru銆?	浠ヤ笅鏄悇涓绘澘浣跨敤鍝簺鐗堟湰鐨勪笉瀹屾暣鍒楄〃锛?
+	The uGuru 是一个带板载固件的微控制器，固件将其编程为表现得像一	hwmon IC。固件有许多不同的版本，因此实际上也有许多不同版本的 uGuru	以下是各主板使用哪些版本的不完整列表
  - uGuru 1.00    ~ 1.24    (AI7, KV8-MAX3, AN7)
  - uGuru 2.0.0.0 ~ 2.0.4.2 (KV8-PRO)
  - uGuru 2.1.0.0 ~ 2.1.2.8 (AS8, AV8, AA8, AG8, AA8XE, AX8)
@@ -17,32 +17,32 @@
  - uGuru 3.0.0.0 ~ 3.0.x.x (AW8, AL8, AT8, NI8 SLI, AT8 32X, AN8 32X,
 	  AW9D-MAX)
 
-	abituguru3 椹卞姩浠呴€傜敤浜?3.0.x.x 鐗堟湰鐨勪富鏉匡紝璇ラ┍鍔ㄥ湪杈冩棫鐨勪富鏉夸笂
-	鏃犳硶宸ヤ綔銆傚浜庤緝鏃х殑涓绘澘锛岃浣跨敤 abituguru锛堜笉甯?3锛侊級椹卞姩銆?
+	abituguru3 驱动仅适用3.0.x.x 版本的主板，该驱动在较旧的主板上
+	无法工作。对于较旧的主板，请使用 abituguru（不3！）驱动
 Authors:
  - Hans de Goede <j.w.r.degoede@hhs.nl>,
- - 锛堢敱 Louis Kruger 瀹屾垚鍒濆閫嗗悜宸ョ▼锛?
-### 妯″潡鍙傛暟
+ - （由 Louis Kruger 完成初始逆向工程
+### 模块参数
 
 
 - force: bool
-			寮哄埗妫€娴嬨€傛敞鎰忚鍙傛暟鍙細瀵艰嚧璺宠繃妫€娴嬶紝浠庤€?			浣?insmod 鎴愬姛銆傚鏋滄棤娉曡鍙?uGuru锛屽疄闄呯殑 hwmon
-			椹卞姩灏嗕笉浼氬姞杞斤紝鍥犳涓嶄細鏈?hwmon 璁惧琚敞鍐屻€?- verbose: bool
-			椹卞姩鏄惁搴斿綋杈撳嚭璇︾粏淇℃伅锛?
-   - 0/off/false  姝ｅ父杈撳嚭
-   - 1/on/true    + 璇︾粏閿欒鎶ュ憡锛堥粯璁わ級
+			强制检测。注意该参数只会导致跳过检测，从			insmod 成功。如果无法读uGuru，实际的 hwmon
+			驱动将不会加载，因此不会hwmon 设备被注册- verbose: bool
+			驱动是否应当输出详细信息
+   - 0/off/false  正常输出
+   - 1/on/true    + 详细错误报告（默认）
 
-			榛樿锛?锛堥┍鍔ㄤ粛澶勪簬娴嬭瘯闃舵锛?
-### 鎻忚堪
-
-
-璇ラ┍鍔ㄦ敮鎸佹渶杩戝甫鏈?Abit uGuru 鐨勪富鏉夸笂鎵€浣跨敤鐨勭涓変唬 Abit uGuru 鑺墖鐨勭‖浠剁洃鎺х壒鎬с€?
-uGuru 鑺墖鐨勭涓夌増瀹為檯涓婃槸涓€涓?Winbond W83L951G銆傞仐鎲剧殑鏄繖骞舵棤甯姪锛屽洜涓?W83L951G
-鏄竴涓繍琛岀潃瀹氬埗 Abit 搴旂敤鐨勯€氱敤寰帶鍒跺櫒銆?
-灏界 Abit 娌℃湁鍙戝竷浠讳綍鍏充簬 uGuru 绗笁鐗堢殑淇℃伅锛孡ouis Kruger 杩樻槸鎴愬姛閫嗗悜宸ョ▼浜?uGuru
-鐨勪紶鎰熷櫒閮ㄥ垎銆傛病鏈変粬鐨勫伐浣滐紝璇ラ┍鍔ㄥ氨涓嶅彲鑳藉疄鐜般€?
-### 宸茬煡闂
+			默认（驱动仍处于测试阶段
+### 描述
 
 
-Abit uGuru 鐨勭數鍘嬪拰棰戠巼鎺у埗閮ㄥ垎涓嶅彈鏀寔锛屽啓鍏ヤ换浣曚紶鎰熷櫒璁剧疆浠ュ強鍐欏叆/璇诲彇椋庢墖杞€熸帶鍒?瀵勫瓨鍣紙FanEQ锛変篃涓嶅彈鏀寔銆?
-濡傛灉閬囧埌浠讳綍闂锛岃鍙戦偖浠剁粰鎴?<j.w.r.degoede@hhs.nl> 骞堕檮涓婁互涓嬪懡浠ょ殑杈撳嚭锛?`dmesg | grep abituguru`
+该驱动支持最近带Abit uGuru 的主板上所使用的第三代 Abit uGuru 芯片的硬件监控特性
+uGuru 芯片的第三版实际上是一Winbond W83L951G。遗憾的是这并无帮助，因W83L951G
+是一个运行着定制 Abit 应用的通用微控制器
+尽管 Abit 没有发布任何关于 uGuru 第三版的信息，Louis Kruger 还是成功逆向工程uGuru
+的传感器部分。没有他的工作，该驱动就不可能实现
+### 已知问题
+
+
+Abit uGuru 的电压和频率控制部分不受支持，写入任何传感器设置以及写入/读取风扇转速控寄存器（FanEQ）也不受支持
+如果遇到任何问题，请发邮件给<j.w.r.degoede@hhs.nl> 并附上以下命令的输出`dmesg | grep abituguru`

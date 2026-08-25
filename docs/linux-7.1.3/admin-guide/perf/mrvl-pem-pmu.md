@@ -1,15 +1,15 @@
-﻿## Marvell Odyssey PEM 鎬ц兘鐩戞帶鍗曞厓锛圥MU UNCORE锛?
+﻿## Marvell Odyssey PEM 性能监控单元（PMU UNCORE
 
-PCI Express 鎺ュ彛鍗曞厓锛圥EM锛夊叧鑱旂潃涓€涓浉搴旂殑鐩戞帶鍗曞厓銆傚叾涓寘鍚敤浜庤窡韪€氳繃
-PCIe 閾捐矾浼犺緭鐨勫悇绉嶆暟鎹壒寰佺殑鎬ц兘璁℃暟鍣ㄣ€?
-璁℃暟鍣ㄨ窡韪叆绔欎笌鍑虹珯浜嬪姟锛屽叾涓寘鎷拡瀵?posted/non-posted/completion TLP 鐨?鐙珛璁℃暟鍣ㄣ€傛澶栵紝鍏ョ珯涓庡嚭绔欑殑鍐呭瓨璇昏姹傚強鍏跺欢杩熶篃鍙互琚洃鎺с€傚湴鍧€杞崲鏈嶅姟
-锛圓TS锛変簨浠讹紝渚嬪 ATS Translation銆丄TS Page Request銆丄TS Invalidation 鍙婂叾
-鐩稿簲鐨勫欢杩熶篃閮戒細琚窡韪€?
-鏈夌嫭绔嬬殑 64 浣嶈鏁板櫒鐢ㄤ簬娴嬮噺鍏ョ珯涓庡嚭绔欎簨鍔′腑鐨?posted/non-posted/completion
-TLP銆侫TS 浜嬩欢鍒欑敱涓嶅悓鐨勮鏁板櫒娴嬮噺銆?
-PMU 椹卞姩閫氳繃 sysfs 涓嬬殑 /sys/bus/event_source/devices/mrvl_pcie_rc_pmu_<>/events/
-涓?/sys/bus/event_source/devices/mrvl_pcie_rc_pmu_<>/format/ 鏆撮湶鍙敤鐨勪簨浠朵笌
-鏍煎紡閫夐」銆?
+PCI Express 接口单元（PEM）关联着一个相应的监控单元。其中包含用于跟踪通过
+PCIe 链路传输的各种数据特征的性能计数器
+计数器跟踪入站与出站事务，其中包括针posted/non-posted/completion TLP 独立计数器。此外，入站与出站的内存读请求及其延迟也可以被监控。地址转换服务
+（ATS）事件，例如 ATS Translation、ATS Page Request、ATS Invalidation 及其
+相应的延迟也都会被跟踪
+有独立的 64 位计数器用于测量入站与出站事务中posted/non-posted/completion
+TLP。ATS 事件则由不同的计数器测量
+PMU 驱动通过 sysfs 下的 /sys/bus/event_source/devices/mrvl_pcie_rc_pmu_<>/events/
+/sys/bus/event_source/devices/mrvl_pcie_rc_pmu_<>/format/ 暴露可用的事件与
+格式选项
 ```
 
   # perf list | grep mrvl_pcie_rc_pmu

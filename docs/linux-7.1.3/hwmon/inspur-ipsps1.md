@@ -1,50 +1,50 @@
-﻿## 鍐呮牳椹卞姩 inspur-ipsps1
+﻿## 内核驱动 inspur-ipsps1
 
 
-鏀寔鐨勮姱鐗囷細
+支持的芯片：
 
-  - Inspur Power System 鐢垫簮渚涘簲鍗曞厓
+  - Inspur Power System 电源供应单元
 
 Author: John Wang <wangzqbj@inspur.com>
 
-### 鎻忚堪
+### 描述
 
 
-璇ラ┍鍔ㄦ敮鎸?Inspur Power System 鐢垫簮銆傝椹卞姩鏄牳蹇?PMBus 椹卞姩鐨勪竴涓鎴风銆?
-### 浣跨敤璇存槑
+该驱动支Inspur Power System 电源。该驱动是核PMBus 驱动的一个客户端
+### 使用说明
 
 
-璇ラ┍鍔ㄤ笉浼氳嚜鍔ㄦ娴嬭澶囥€備綘蹇呴』鏄惧紡瀹炰緥鍖栬澶囥€傝缁嗕俊鎭鍙傞槄 Documentation/i2c/instantiating-devices.rst銆?
-### Sysfs 鎺ュ彛
+该驱动不会自动检测设备。你必须显式实例化设备。详细信息请参阅 Documentation/i2c/instantiating-devices.rst
+### Sysfs 接口
 
 
-鏀寔浠ヤ笅灞炴€э細
+支持以下属性：
 
 ======================= ======================================================
-curr1_input		娴嬪緱鐨勮緭鍏ョ數娴?curr1_label		"iin"
-curr1_max		鏈€澶х數娴?curr1_max_alarm		鐢垫祦杩囬珮鎶ヨ
-curr2_input		娴嬪緱鐨勮緭鍑虹數娴侊紙鍗曚綅 mA锛夈€?curr2_label		"iout1"
-curr2_crit		涓寸晫鏈€澶х數娴?curr2_crit_alarm	鐢垫祦涓寸晫杩囬珮鎶ヨ
-curr2_max		鏈€澶х數娴?curr2_max_alarm		鐢垫祦杩囬珮鎶ヨ
+curr1_input		测得的输入电curr1_label		"iin"
+curr1_max		最大电curr1_max_alarm		电流过高报警
+curr2_input		测得的输出电流（单位 mA）curr2_label		"iout1"
+curr2_crit		临界最大电curr2_crit_alarm	电流临界过高报警
+curr2_max		最大电curr2_max_alarm		电流过高报警
 
-fan1_alarm		椋庢墖 1 璀﹀憡銆?fan1_fault		椋庢墖 1 鏁呴殰銆?fan1_input		椋庢墖 1 杞€燂紙鍗曚綅 RPM锛夈€?
-in1_alarm		杈撳叆鐢靛帇娆犲帇鎶ヨ銆?in1_input		娴嬪緱鐨勮緭鍏ョ數鍘嬶紙鍗曚綅 mV锛夈€?in1_label		"vin"
-in2_input		娴嬪緱鐨勮緭鍑虹數鍘嬶紙鍗曚綅 mV锛夈€?in2_label		"vout1"
-in2_lcrit		涓寸晫鏈€灏忚緭鍑虹數鍘?in2_lcrit_alarm		杈撳嚭鐢靛帇涓寸晫杩囦綆鎶ヨ
-in2_max			鏈€澶ц緭鍑虹數鍘?in2_max_alarm		杈撳嚭鐢靛帇杩囬珮鎶ヨ
-in2_min			鏈€灏忚緭鍑虹數鍘?in2_min_alarm		杈撳嚭鐢靛帇杩囦綆鎶ヨ
+fan1_alarm		风扇 1 警告fan1_fault		风扇 1 故障fan1_input		风扇 1 转速（单位 RPM）
+in1_alarm		输入电压欠压报警in1_input		测得的输入电压（单位 mV）in1_label		"vin"
+in2_input		测得的输出电压（单位 mV）in2_label		"vout1"
+in2_lcrit		临界最小输出电in2_lcrit_alarm		输出电压临界过低报警
+in2_max			最大输出电in2_max_alarm		输出电压过高报警
+in2_min			最小输出电in2_min_alarm		输出电压过低报警
 
-power1_alarm		杈撳叆鏁呴殰鎴栨姤璀︺€?power1_input		娴嬪緱鐨勮緭鍏ュ姛鐜囷紙鍗曚綅 uW锛夈€?power1_label		"pin"
-power1_max		杈撳叆鍔熺巼闄愬埗
-power2_max_alarm	杈撳嚭鍔熺巼杩囬珮鎶ヨ
-power2_max		杈撳嚭鍔熺巼闄愬埗
-power2_input		娴嬪緱鐨勮緭鍑哄姛鐜囷紙鍗曚綅 uW锛夈€?power2_label		"pout"
+power1_alarm		输入故障或报警power1_input		测得的输入功率（单位 uW）power1_label		"pin"
+power1_max		输入功率限制
+power2_max_alarm	输出功率过高报警
+power2_max		输出功率限制
+power2_input		测得的输出功率（单位 uW）power2_label		"pout"
 
-temp[1-3]_input		娴嬪緱鐨勬俯搴?temp[1-2]_max		鏈€澶ф俯搴?temp[1-3]_max_alarm	娓╁害杩囬珮鎶ヨ
+temp[1-3]_input		测得的温temp[1-2]_max		最大温temp[1-3]_max_alarm	温度过高报警
 
-vendor			鍒堕€犲晢鍚嶇О
-model			浜у搧鍨嬪彿
-part_number		浜у搧閮ㄤ欢鍙?serial_number		浜у搧搴忓垪鍙?fw_version		鍥轰欢鐗堟湰
-hw_version		纭欢鐗堟湰
-mode			宸ヤ綔妯″紡銆傚彲璁剧疆涓?active 鎴?			standby锛屽綋璁剧疆涓?standby 鏃讹紝PSU 灏嗗湪
-			standby 涓?redundancy 妯″紡涔嬮棿鑷姩鍒囨崲銆?======================= ======================================================
+vendor			制造商名称
+model			产品型号
+part_number		产品部件serial_number		产品序列fw_version		固件版本
+hw_version		硬件版本
+mode			工作模式。可设置active 			standby，当设置standby 时，PSU 将在
+			standby redundancy 模式之间自动切换======================= ======================================================

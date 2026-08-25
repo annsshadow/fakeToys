@@ -17,6 +17,12 @@
 - com.x.organization.assemble.control.factory.IdentityFactory
 - com.x.organization.assemble.control.factory.PermissionSettingFactory
 
+## Key Flows
+
+- 组织实体软删：identity/person/unit/role/group/permissionsetting 的 `{flag}/mockdeletetoget` 族 → `UPDATE x_org_* SET deleted_at = NOW()`（软删除）→ 返回 ActionResult 布尔结果
+- 用户组成员管理：`GET .../group/{flag}/add/member` → INSERT INTO `x_org_group_member`（ON CONFLICT DO NOTHING）；delete member → DELETE FROM `x_org_group_member`
+- 检索与导出：group/identity/role/unitduty 的 like/pinyin/paging 列表 → ILIKE/分页查询 `x_org_identity`/`x_org_duty` 等；`GET .../export/export/all` → INSERT INTO `x_org_export`（pending）登记导出任务
+
 ## Dependencies
 
 
@@ -24,6 +30,11 @@
 - x_base_core_project
 - x_organization_core_entity
 - x_general_core_entity
+
+**Rust（oa4rust/crates/organization_assemble_control）：**
+
+- 内部 path 依赖：shared
+- 关键外部依赖：axum、deadpool-postgres、tokio
 
 ## REST Endpoints
 

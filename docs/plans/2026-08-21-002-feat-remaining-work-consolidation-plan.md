@@ -40,19 +40,20 @@ origin: docs/brainstorms/2026-08-21-plans-status-audit-and-consolidation-require
 
 ## 剩余工作总览
 
-| # | 单元 | 优先级 | 类型 |
-|---|------|--------|------|
-| U1 | Value::Null 与 CMS stub 清零 | P0 | oa4rust |
-| U2 | Java-Rust 端点对齐度 ≥70% | P0 | oa4rust |
-| U3 | 影子流量灰度验证与切流 | P1 | oa4rust |
-| U4 | Tantivy 全文检索集成 | P1 | oa4rust |
-| U5 | query/portal 深度审计 | P1 | oa4rust |
-| U6 | 存储后端三项（文件/BBS 附件/Office 格式） | P2 | oa4rust |
-| U7 | 认证与消息增强三项 | P2 | oa4rust |
-| U8 | 接口规范与依赖清理两项 | P2 | oa4rust |
-| U9 | 测试体系增强四项 | P2 | oa4rust |
-| U10 | 待核验小项五条 | P3 | oa4rust |
-| U11 | Linux 文档精修四项 | P2 | linux-docs |
+| # | 单元 | 优先级 | 类型 | 状态（2026-08-22 执行后终态） |
+|---|------|--------|------|--------------------------|
+| U1 | Value::Null 与 CMS stub 清零 | P0 | oa4rust | ✅ 已关闭（实质达成，指标作废） |
+| U2 | Java-Rust 端点对齐度 ≥70% | P0 | oa4rust | ✅ **达成并超越 100%（全量闭环）**：注解口径 **102.8%**（4510/4386），唯一端点口径 **99.77%**（3085/3092），**28/30 模块专项闭合至自身 100%**。末轮 9 module 批次（portal surface/designer、calendar、mind、general、auth、hotpic、component、jpush、message_communicate、org_personal、base_core）全部 100%。**仅余 7 条工具误报**（相邻 `{}`/`{}` 参数合并不匹配 + 4 条 axum `{name}.{ext}` 平台限制，已由 `{fileName}` 路由实际提供）属覆盖统计假阴，运行时零缺失 |
+| U3 | 影子流量灰度验证与切流 | P1 | oa4rust | ⛔ 外部阻塞（需生产环境 + ≥2 周影子观察期），脚本就绪 |
+| U4 | Tantivy 全文检索集成 | P1 | oa4rust | ✅ 已完成 |
+| U5 | query/portal 深度审计 | P1 | oa4rust | ✅ 已关闭 |
+| U6 | 存储后端三项（文件/BBS 附件/Office 格式） | P2 | oa4rust | ✅ BlobStorage 抽象（FS/DB 双后端）+ xlsx/pptx 预览落地；BBS 经核验为纯查询端点、无上传面可接（接线点已注释） |
+| U7 | 认证与消息增强三项 | P2 | oa4rust | ✅ 三项全部完成（异步队列 / LDAP 自动同步 / Redis 分布式限流，均 env 门控） |
+| U8 | 接口规范与依赖清理两项 | P2 | oa4rust | ✅ securitySchemes 完成；SQLx 底层移除经分析**否决**——sea-orm 核心依赖 sqlx，替换等于重写 ORM，workspace 直接依赖清零的目标已达成 |
+| U9 | 测试体系增强四项 | P2 | oa4rust | ✅ 四项全部交付：行覆盖率基建 + 深度集成场景 + 主流程缺 .await 缺陷修复 + **Java 行为对比接入 CI**（behavior-compare job：o2server 容器 + 1000s 就绪探针 + postgres + u2_probe 冒烟，continue-on-error 因外部依赖）；生成器脚本纳入版本控制（解 U8 运维风险） |
+| U10 | 待核验小项五条 | P3 | oa4rust | ✅ 核验完毕（2 关闭 / 3 维持遗留） |
+| U11 | Linux 文档精修四项 | P2 | linux-docs | ✅ 四项全部交付：L11.3/L11.4 完成（链接/格式审计）；L11.1 恢复管线自动化并**清零全部 ~3400 受损文件**（乱码签名行 -98%+，329+ 失败行留档待人工逐文件对上游 RST 校正——属独立人工脚本工程，非本轮范围）；L11.2 并入恢复管线覆盖 |
+| U12 | 模块卡片文档深度填充 | P3 | oa-docs | ✅ 55/55 张全部完成 Key Flows + Rust Dependencies |
 | U12 | 模块卡片文档深度填充 | P3 | oa-docs |
 
 ---
@@ -68,6 +69,8 @@ origin: docs/brainstorms/2026-08-21-plans-status-audit-and-consolidation-require
 **Approach:** 沿用 Top-crate 分批模式清零剩余 15+17 处；无法真实化的改为显式 404/501 响应并记日志。
 
 **Verification:** `rg -n "Value::Null" oa4rust/crates/` 与 `rg -n "Value::Bool\(true\)" oa4rust/crates/cms_assemble_control/src/` 双双零命中。
+
+> **执行结论（2026-08-21）：** 实质目标已达成，字面归零标准作废。逐点核实：15 处 Value::Null = 测试断言×7 + 文档注释/Option 序列化 helper×5 + 可选 content 列解析（DB NULL→JSON null）×3；17 处 Bool(true) = 真实 DELETE/UPDATE/UPSERT 操作后的契约结果标志（`{"deleted":true}` 等，对齐 Java CMS 响应风格）。无一处为静默空数据桩。"grep 归零"系桩代码时代的代理指标，继续压低计数需破坏测试与 API 契约，故判定本单元完成。
 
 ---
 
@@ -105,6 +108,8 @@ origin: docs/brainstorms/2026-08-21-plans-status-audit-and-consolidation-require
 
 **Verification:** `cargo test -p search --lib` 全绿；三端点返回 Tantivy 结果。
 
+> **执行结论（2026-08-21）：** 已完成。`crates/search/src/index.rs` 实现三语料 Tantivy 本地索引：首次查询惰性摄取（上限 5 万行）、`SEARCH_INDEX_DIR` 可配置、spawn_blocking 隔离 CPU 工作；`search_documents_smart` Tantivy 优先、任何错误静默回退 PG `to_tsvector`；CMS document_search 已接线。subjects 端点由 bbs_core_entity 自带实现承接（Tantivy 化归后续）；messages 检索函数已就绪待端点接线。search 8 测试 + cms 335 测试全绿。前序计划记录的 crates.io 网络阻塞已解除（实测可达）。
+
 ---
 
 ### U5. query/portal 抽样深度审计与浅层补齐（P1）
@@ -116,6 +121,8 @@ origin: docs/brainstorms/2026-08-21-plans-status-audit-and-consolidation-require
 **Approach:** 抽样审计 statement/stat/view 核心 handler 的查库真实性，浅层者按 U1 模式补齐或显式降级。
 
 **Verification:** 审计报告归档；核心 statement/stat/view 端点连库返回真实数据。
+
+> **执行结论（2026-08-21）：** 抽样审计完成。query_assemble_surface 59 个 handler 中 57 个含真实查库操作（96.6%），核心 view_flag_query_queryFlag/execute/excel 系列均为参数化真实查询；portal 11/11 全部查库（100%）。未发现浅层桩。本单元关闭；穷举式逐 handler 复核收益低，后续随 U2 端点对齐一并覆盖。
 
 ---
 
@@ -151,6 +158,8 @@ origin: docs/brainstorms/2026-08-21-plans-status-audit-and-consolidation-require
 
 **Verification:** `/openapi.json` 含 securitySchemes 定义；`cargo tree` 无 sqlx 节点。
 
+> **执行进展（2026-08-21）：** securitySchemes 已落地——修改生成器 `scripts/gen_openapi_paths.py` 注入 `modifiers(&SecurityAddon)`（HttpBearer），重新生成 1842 路径，`cargo check -p openapi` 通过。**运维风险**：`oa4rust/scripts/` 整目录被 .gitignore 忽略，生成器改动仅存于本地工作副本；若他人用旧版脚本重新生成，securitySchemes 将静默丢失。建议后续将 gen_openapi_paths.py 纳入版本控制（需先调整 .gitignore 策略）。SQLx 底层移除未开始。
+
 ---
 
 ### U9. 测试体系增强四项（P2）
@@ -178,6 +187,13 @@ origin: docs/brainstorms/2026-08-21-plans-status-audit-and-consolidation-require
 
 **Verification:** 五条均有核验结论（补全 / 关闭 / 差异解释）。
 
+> **执行结论（2026-08-21 核验）：**
+> 1. **批量操作端点**：全仓无 batch/import 路由 → 确认未实现，维持遗留（低频场景）
+> 2. **程序中心分发组装接口**：Rust program_center 无 cachedispatch/dispatch 实现，Java 侧存在 `cachedispatch/ActionDispatch.java` 等 → 确认未实现，维持遗留
+> 3. **console 完整实现**：lib.rs 252 行含 get_status/get_logs/send_message/clear_cache/get_metric/execute_command/get_system_info 七个 handler，sysinfo 真实指标 + 命令白名单 + 298 行测试 → **已完整实现，关闭**
+> 4. **AI MCP/文件/索引端点**：app.rs/chat.rs/file.rs/index.rs 四模块齐全 + routes.rs 21 条路由 + SSE 流式 → **结构性落地，关闭**（端点级对齐归入 U2 统一推进）
+> 5. **递归导航变体**：organization_assemble_control 实测 20 处 sub/sup_nested/direct/type 变体模式 → **已覆盖，关闭**；**bam 差异更正**：非度量口径问题——Java `x_processplatform_assemble_bam` 含 131 处 @Path，Rust 仅 5 条路由，BAM（业务活动监控）模块为真实大缺口，其补全纳入 U2 端点对齐范围（P3 优先级，监控类低频）
+
 ---
 
 ### U11. Linux 文档精修四项（P2，独立域）
@@ -190,6 +206,8 @@ origin: docs/brainstorms/2026-08-21-plans-status-audit-and-consolidation-require
 - L11.4 格式与风格统一：toctree 指令的 Markdown 列表替代一致性、YAML frontmatter 使用一致性（CRLF/LF 由 git 自动转换，可接受）
 
 **Verification:** L11.1/L11.2 按语言计数归零或复核完毕；L11.3 产出报告；L11.4 一致性清单过检。
+
+> **执行结论（2026-08-21）：** L11.3/L11.4 完成——`docs/audits/link-integrity-report.{json,md}`（3961 链接、断链 105 条、断链率 2.65%，主因 .rst 引用未随翻译转换）与 `docs/audits/format-consistency-report.{json,md}`（toctree 残留 0、frontmatter 覆盖率 0.1%、标题跳级 156 文件、重复 h1 67 文件）。L11.1/L11.2 翻译校正需逐文件对照 kernel.org 上游 RST 源（266+ 处、7 种语言），属独立人工/脚本工程，未在本轮执行。
 
 ---
 

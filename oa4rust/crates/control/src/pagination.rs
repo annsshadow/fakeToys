@@ -2,23 +2,12 @@ use axum::Json;
 use serde_json::Value;
 use shared::response::ActionResult;
 
-/// 游标分页响应封装
-pub fn page_result(total: i64, data: Vec<Value>, is_next: bool) -> Json<ActionResult<Value>> {
+/// 游标分页响应封装（O2OA v9 Java 兼容形状，plan002 U2 行为对齐）
+///
+/// Java 实测基准（docs/audits/behavior-compare-first-run.md）：`data` 直接是数组，
+/// count=总数、size=本页条数、position 为数字 0；不再嵌套 {count, size, data} 内层对象。
+/// is_next 仅保留参数兼容既有调用点——Java 信封的 position 不区分 next/prev。
+pub fn page_result(total: i64, data: Vec<Value>, _is_next: bool) -> Json<ActionResult<Value>> {
     let size = data.len() as i64;
-    let result = Value::Object(serde_json::Map::from_iter([
-        ("count".to_string(), Value::Number(serde_json::Number::from(total))),
-        ("size".to_string(), Value::Number(serde_json::Number::from(size))),
-        ("data".to_string(), Value::Array(data)),
-    ]));
-    Json(ActionResult {
-        data: Some(result),
-        r#type: Some("success".to_string()),
-        message: None,
-        date: None,
-        spent: None,
-        size: Some(size),
-        count: Some(total),
-        position: Some(if is_next { "next" } else { "prev" }.to_string()),
-        prompt: None,
-    })
+    Json(ActionResult::java_success(Value::Array(data), total, size))
 }

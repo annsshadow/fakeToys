@@ -2,20 +2,20 @@
 ## BPF_MAP_TYPE_CPUMAP
 
 
-   - `BPF_MAP_TYPE_CPUMAP` 鍦?4.15 鐗堟湰鐨勫唴鏍镐腑琚紩鍏?
+   - `BPF_MAP_TYPE_CPUMAP` 4.15 版本的内核中被引
  :doc: cpu map
 
-杩欑鏄犲皠绫诲瀷鐨勪竴涓ず渚嬬敤渚嬫槸鍩轰簬杞欢鐨勬帴鏀剁缂╂斁锛圧eceive Side Scaling锛孯SS锛夈€?
-CPUMAP 琛ㄧず绯荤粺涓殑 CPU锛屼互 map-key 涓虹储寮曪紝鑰?map-value 鏄厤缃缃紙姣忎釜 CPUMAP 鏉＄洰锛夈€傛瘡涓?CPUMAP 鏉＄洰閮芥湁涓€涓笓鐢ㄤ簬
-缁欏畾 CPU 鐨勫唴鏍哥嚎绋嬶紝鐢ㄤ互琛ㄧず杩滅▼ CPU 鎵ц鍗曞厓銆?
-浠?Linux 鍐呮牳 5.9 鐗堟湰寮€濮嬶紝CPUMAP 鍙互鍦ㄨ繙绋?CPU 涓?杩愯绗簩涓?XDP 绋嬪簭銆傝繖鍏佽 XDP 绋嬪簭灏嗗叾澶勭悊鎷嗗垎鍒?澶氫釜 CPU 涓娿€備緥濡傦紝杩欐牱涓€绉嶅満鏅細鍒濆 CPU锛堢湅鍒?鎺ユ敹
-鏁版嵁鍖呯殑閭ｄ釜锛夊彧闇€鍋氭渶灏戠殑鍖呭鐞嗭紝鑰岃繙绋?CPU锛堟暟鎹寘
-琚畾鍚戝埌鐨勯偅涓級鍙互鑺辫垂鏇村鍛ㄦ湡鏉ュ鐞嗚甯с€傚垵濮?CPU
-鏄墽琛?XDP redirect 绋嬪簭鐨勫湴鏂广€傝繙绋?CPU 鎺ユ敹鍘熷鐨?`xdp_frame` 瀵硅薄銆?
-## 鐢ㄦ硶
+这种映射类型的一个示例用例是基于软件的接收端缩放（Receive Side Scaling，RSS）
+CPUMAP 表示系统中的 CPU，以 map-key 为索引，map-value 是配置设置（每个 CPUMAP 条目）。每CPUMAP 条目都有一个专用于
+给定 CPU 的内核线程，用以表示远程 CPU 执行单元
+Linux 内核 5.9 版本开始，CPUMAP 可以在远CPU 运行第二XDP 程序。这允许 XDP 程序将其处理拆分多个 CPU 上。例如，这样一种场景：初始 CPU（看接收
+数据包的那个）只需做最少的包处理，而远CPU（数据包
+被定向到的那个）可以花费更多周期来处理该帧。初CPU
+是执XDP redirect 程序的地方。远CPU 接收原始`xdp_frame` 对象
+## 用法
 
 
-### 鍐呮牳 BPF
+### 内核 BPF
 
 
 ##### bpf_redirect_map()
@@ -23,20 +23,20 @@ CPUMAP 琛ㄧず绯荤粺涓殑 CPU锛屼互 map-key 涓虹储寮曪紝鑰?ma
 
      long bpf_redirect_map(struct bpf_map *map, u32 key, u64 flags)
 
-灏嗘暟鎹寘閲嶅畾鍚戝埌 `map` 涓储寮曚负 `key` 鐨勭鐐广€?瀵逛簬 `BPF_MAP_TYPE_CPUMAP`锛岃鏄犲皠鍖呭惈瀵?CPU 鐨勫紩鐢ㄣ€?
-濡傛灉鏄犲皠鏌ユ壘澶辫触锛宍flags` 鐨勪綆浣嶄袱浣嶅皢鐢ㄤ綔杩斿洖鐮併€?杩欐牱杩斿洖鍊煎彲浠ユ槸璋冪敤鑰呮墍閫夌殑銆佹渶楂樺埌 `XDP_TX` 鐨?XDP 绋嬪簭杩斿洖鐮佷箣涓€銆?
-### 鐢ㄦ埛绌洪棿
+将数据包重定向到 `map` 中索引为 `key` 的端点对于 `BPF_MAP_TYPE_CPUMAP`，该映射包含CPU 的引用
+如果映射查找失败，`flags` 的低位两位将用作返回码这样返回值可以是调用者所选的、最高到 `XDP_TX` XDP 程序返回码之一
+### 用户空间
 
 
-    CPUMAP 鏉＄洰鍙兘浠庣敤鎴风┖闂存洿鏂?鏌ユ壘/鍒犻櫎锛岃€屼笉鑳?    浠?eBPF 绋嬪簭涓繘琛屻€傝瘯鍥句粠鍐呮牳 eBPF 绋嬪簭璋冪敤杩欎簺鍑芥暟
-    灏嗗鑷寸▼搴忓姞杞藉け璐ュ苟鍑虹幇楠岃瘉鍣紙verifier锛夎鍛娿€?
+    CPUMAP 条目只能从用户空间更查找/删除，而不    eBPF 程序中进行。试图从内核 eBPF 程序调用这些函数
+    将导致程序加载失败并出现验证器（verifier）警告
 ##### bpf_map_update_elem()
 
 
     int bpf_map_update_elem(int fd, const void **key, const void **value, __u64 flags);
 
-鍙互浣跨敤 `bpf_map_update_elem()` helper 娣诲姞鎴栨洿鏂?CPU 鏉＄洰銆傝 helper 浠ュ師瀛愭柟寮忔浛鎹㈢幇鏈夊厓绱犮€俙value` 鍙傛暟
-鍙互鏄?`struct bpf_cpumap_val`銆?
+可以使用 `bpf_map_update_elem()` helper 添加或更CPU 条目。该 helper 以原子方式替换现有元素。`value` 参数
+可以`struct bpf_cpumap_val`
  .. code-block:: c
 
     struct bpf_cpumap_val {
@@ -47,27 +47,27 @@ CPUMAP 琛ㄧず绯荤粺涓殑 CPU锛屼互 map-key 涓虹储寮曪紝鑰?ma
         } bpf_prog;
     };
 
-flags 鍙傛暟鍙互鏄互涓嬩箣涓€锛?  - BPF_ANY锛氬垱寤轰竴涓柊鍏冪礌鎴栨洿鏂颁竴涓凡瀛樺湪鐨勫厓绱犮€?  - BPF_NOEXIST锛氫粎褰撳厓绱犱笉瀛樺湪鏃舵墠鍒涘缓涓€涓柊鍏冪礌銆?  - BPF_EXIST锛氭洿鏂颁竴涓凡瀛樺湪鐨勫厓绱犮€?
+flags 参数可以是以下之一  - BPF_ANY：创建一个新元素或更新一个已存在的元素  - BPF_NOEXIST：仅当元素不存在时才创建一个新元素  - BPF_EXIST：更新一个已存在的元素
 ##### bpf_map_lookup_elem()
 
 
     int bpf_map_lookup_elem(int fd, const void **key, void **value);
 
-鍙互浣跨敤 `bpf_map_lookup_elem()` helper 妫€绱?CPU 鏉＄洰銆?
+可以使用 `bpf_map_lookup_elem()` helper 检CPU 条目
 ##### bpf_map_delete_elem()
 
 
     int bpf_map_delete_elem(int fd, const void *key);
 
-鍙互浣跨敤 `bpf_map_delete_elem()` helper 鍒犻櫎
-CPU 鏉＄洰銆傛垚鍔熸椂璇?helper 杩斿洖 0锛屽け璐ユ椂杩斿洖璐熺殑閿欒鐮併€?
-## 绀轰緥
+可以使用 `bpf_map_delete_elem()` helper 删除
+CPU 条目。成功时helper 返回 0，失败时返回负的错误码
+## 示例
 
 
-### 鍐呮牳
+### 内核
 
 
-浠ヤ笅浠ｇ爜鐗囨灞曠ず浜嗗浣曞０鏄庝竴涓悕涓?`cpu_map` 鐨?`BPF_MAP_TYPE_CPUMAP`锛屼互鍙婂浣曚娇鐢ㄨ疆璇紙round robin锛夋柟妗?灏嗘暟鎹寘閲嶅畾鍚戝埌杩滅▼ CPU銆?
+以下代码片段展示了如何声明一个名`cpu_map` `BPF_MAP_TYPE_CPUMAP`，以及如何使用轮询（round robin）方将数据包重定向到远程 CPU
 
    struct {
         __uint(type, BPF_MAP_TYPE_CPUMAP);
@@ -118,11 +118,11 @@ CPU 鏉＄洰銆傛垚鍔熸椂璇?helper 杩斿洖 0锛屽け璐ユ椂杩斿洖
         return bpf_redirect_map(&cpu_map, cpu_dest, 0);
     }
 
-### 鐢ㄦ埛绌洪棿
+### 用户空间
 
 
-浠ヤ笅浠ｇ爜鐗囨灞曠ず浜嗗浣曞皢 CPUMAP 鐨?max_entries
-鍔ㄦ€佽缃负绯荤粺涓婂彲鐢ㄧ殑 CPU 鏈€澶ф暟閲忋€?
+以下代码片段展示了如何将 CPUMAP max_entries
+动态设置为系统上可用的 CPU 最大数量
 
     int set_max_cpu_entries(struct bpf_map *cpu_map)
     {
@@ -134,6 +134,6 @@ CPU 鏉＄洰銆傛垚鍔熸椂璇?helper 杩斿洖 0锛屽け璐ユ椂杩斿洖
         return 0;
     }
 
-## 鍙傝€?
+## 参
 
 - https://developers.redhat.com/blog/2021/05/13/receive-side-scaling-rss-with-ebpf-and-cpumap#redirecting_into_a_cpumap

@@ -1,33 +1,33 @@
 ﻿
-## Clang 瀹炵幇璇存槑
+## Clang 实现说明
 
 
-鏈枃妗ｆ彁渚涗簡鐗瑰畾浜?eBPF 鎸囦护闆嗙殑 Clang/LLVM 瀹炵幇鐨勬洿澶氳缁嗕俊鎭€?
+本文档提供了特定eBPF 指令集的 Clang/LLVM 实现的更多详细信息
 
-## 鐗堟湰
-
-
-Clang 瀹氫箟浜嗏€淐PU鈥濈増鏈紝鍏朵腑 CPU 鐗堟湰 3 瀵瑰簲浜庡綋鍓嶇殑 eBPF ISA銆?
-
-Clang 鍙互浣跨敤鈥?0000鈥濋€夋嫨 eBPF ISA 鐗堟湰锛屼緥濡傞€夋嫨鐗堟湰 3銆?
-
-## 绠楁湳鎸囦护
+## 版本
 
 
-瀵逛簬 3 涔嬪墠鐨?CPU 鐗堟湰锛孋lang v7.0 鍙婃洿楂樼増鏈彲浠ュ惎鐢?`BPF_ALU` 鏀寔
-`-Xclang -target-feature -Xclang +alu32`銆? 鍦?CPU 鐗堟湰 3 涓紝鑷姩鍖呭惈鏀寔銆?
+Clang 定义了“CPU”版本，其中 CPU 版本 3 对应于当前的 eBPF ISA
 
-## 璺宠浆鎸囦护
+Clang 可以使用0000”选择 eBPF ISA 版本，例如选择版本 3
 
-
-濡傛灉浣跨敤`-O0`锛孋lang灏嗙敓鎴恅BPF_CALL | BPF_X | BPF_JMP`锛?x8d锛?
-鎸囦护锛孡inux 鍐呮牳楠岃瘉鍣ㄤ笉鏀寔璇ユ寚浠ゃ€?
-
-## 鍘熷瓙鎿嶄綔
+## 算术指令
 
 
-褰揱-mcpu=v3`涓烘椂锛孋lang鍙互榛樿鐢熸垚鍘熷瓙鎸囦护
-宸插惎鐢ㄣ€傚鏋滆缃簡杈冧綆鐗堟湰鐨刞-mcpu`锛屽垯鍞竴鐨勫師瀛愭寚浠?
-Clang 鍙互鐢熸垚鐨勬槸 `BPF_ADD` **娌℃湁** `BPF_FETCH`銆傚鏋滄偍闇€瑕佸惎鐢?
-鍘熷瓙鍔熻兘锛屽悓鏃朵繚鎸佽緝浣庣殑 `-mcpu` 鐗堟湰锛屾偍鍙互浣跨敤
-`-Xclang -target-feature -Xclang +alu32`銆?
+对于 3 之前CPU 版本，Clang v7.0 及更高版本可以启`BPF_ALU` 支持
+`-Xclang -target-feature -Xclang +alu32` CPU 版本 3 中，自动包含支持
+
+## 跳转指令
+
+
+如果使用`-O0`，Clang将生成`BPF_CALL | BPF_X | BPF_JMP`x8d
+指令，Linux 内核验证器不支持该指令
+
+## 原子操作
+
+
+当`-mcpu=v3`为时，Clang可以默认生成原子指令
+已启用。如果设置了较低版本的`-mcpu`，则唯一的原子指
+Clang 可以生成的是 `BPF_ADD` **没有** `BPF_FETCH`。如果您需要启
+原子功能，同时保持较低的 `-mcpu` 版本，您可以使用
+`-Xclang -target-feature -Xclang +alu32`銆。

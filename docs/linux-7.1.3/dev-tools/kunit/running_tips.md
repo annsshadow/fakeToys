@@ -1,63 +1,63 @@
 ﻿
-## 杩愯 KUnit 娴嬭瘯鐨勬彁绀?
+## 运行 KUnit 测试的提
 
-## 浣跨敤 ``kunit.py run``锛?kunit 宸ュ叿"锛?
+## 使用 ``kunit.py run``kunit 工具"
 
-### 浠庝换鎰忕洰褰曡繍琛?
+### 从任意目录运
 
-鍒涘缓涓€涓被浼间笅闈㈣繖鏍风殑 bash 鍑芥暟浼氬緢鏂逛究锛?
+创建一个类似下面这样的 bash 函数会很方便
 
 	function run_kunit() {
 	  ( cd "$(git rev-parse --show-toplevel)" && ./tools/testing/kunit/kunit.py run "$@" )
 	}
 
-	`kunit.py` 鐨勬棭鏈熺増鏈紙5.6 涔嬪墠锛夊彧鏈夊湪浠庡唴鏍告牴鐩綍杩愯鏃舵墠宸ヤ綔锛屽洜姝よ繖閲屼娇鐢ㄤ簡瀛?shell 鍜?`cd`銆?
-### 杩愯娴嬭瘯瀛愰泦
+	`kunit.py` 的早期版本（5.6 之前）只有在从内核根目录运行时才工作，因此这里使用了shell `cd`
+### 运行测试子集
 
 
-`kunit.py run` 鎺ュ彈涓€涓彲閫夌殑 glob 鍙傛暟鏉ヨ繃婊ゆ祴璇曘€傛牸寮忎负 `"<suite_glob>[.test_glob]"`銆?
-鍋囪鎴戜滑鎯宠繍琛?sysctl 娴嬭瘯锛屽彲浠ヨ繖鏍凤細
+`kunit.py run` 接受一个可选的 glob 参数来过滤测试。格式为 `"<suite_glob>[.test_glob]"`
+假设我们想运sysctl 测试，可以这样：
 
 
 	$ echo -e 'CONFIG_KUNIT=y\nCONFIG_KUNIT_ALL_TESTS=y' > .kunit/.kunitconfig
 	$ ./tools/testing/kunit/kunit.py run 'sysctl*'
 
-鎴戜滑鍙互閫氳繃浠ヤ笅鏂瑰紡杩涗竴姝ヨ繃婊わ紝鍙繍琛?write"娴嬭瘯锛?
+我们可以通过以下方式进一步过滤，只运write"测试
 
 	$ echo -e 'CONFIG_KUNIT=y\nCONFIG_KUNIT_ALL_TESTS=y' > .kunit/.kunitconfig
 	$ ./tools/testing/kunit/kunit.py run 'sysctl**.**write*'
 
-浠ヨ繖绉嶆柟寮忔垜浠粯鍑轰簡鏋勫缓澶氫簬鎵€闇€娴嬭瘯鐨勬垚鏈紝浣嗗畠姣旀憜寮?`.kunitconfig` 鏂囦欢鎴栨敞閲婃帀 `kunit_suite` 瑕佸鏄撱€?
-涓嶈繃锛屽鏋滀綘鎯充互涓嶉偅涔堜复鏃剁殑鏂瑰紡鏉ュ畾涔変竴缁勬祴璇曪紝涓嬩竴鏉℃彁绀轰細寰堟湁鐢ㄣ€?
-### 瀹氫箟涓€缁勬祴璇?
+以这种方式我们付出了构建多于所需测试的成本，但它比摆`.kunitconfig` 文件或注释掉 `kunit_suite` 要容易
+不过，如果你想以不那么临时的方式来定义一组测试，下一条提示会很有用
+### 定义一组测
 
-`kunit.py run`锛堜互鍙?`build` 鍜?`config`锛夋敮鎸佷竴涓?`--kunitconfig` 鏍囧織銆傚洜姝わ紝濡傛灉浣犳湁涓€缁勬兂瑕佸畾鏈熻繍琛岀殑娴嬭瘯锛堝挨鍏舵槸瀹冧滑杩樻湁鍏朵粬渚濊禆鏃讹級锛屽彲浠ヤ负瀹冧滑鍒涘缓涓€涓壒瀹氱殑 `.kunitconfig`銆?
-渚嬪锛宬unit 涓哄叾娴嬭瘯灏辨湁涓€涓細
+`kunit.py run`（以`build` `config`）支持一`--kunitconfig` 标志。因此，如果你有一组想要定期运行的测试（尤其是它们还有其他依赖时），可以为它们创建一个特定的 `.kunitconfig`
+例如，kunit 为其测试就有一个：
 
 
 	$ ./tools/testing/kunit/kunit.py run --kunitconfig=lib/kunit/.kunitconfig
 
-鎴栬€咃紝濡傛灉浣犻伒寰皢鏂囦欢鍛藉悕涓?`.kunitconfig` 鐨勭害瀹氾紝浣犲彲浠ュ彧浼犲叆鐩綍锛屼緥濡傦細
+或者，如果你遵循将文件命名`.kunitconfig` 的约定，你可以只传入目录，例如：
 
 
 	$ ./tools/testing/kunit/kunit.py run --kunitconfig=lib/kunit
 
-	杩欐槸涓€涓浉瀵硅緝鏂扮殑鐗规€э紙5.12+锛夛紝鍥犳鍏充簬鍝簺鏂囦欢搴斿綋妫€鍏ャ€佸摢浜涘彧淇濈暀鍦ㄦ湰鍦帮紝鎴戜滑杩樻病鏈変换浣曠害瀹氥€備竴涓厤缃槸鍚︽湁鐢ㄥ埌鍊煎緱鎻愪氦锛堝苟鍥犳蹇呴』缁存姢锛夛紝鐢变綘鍜屼綘鐨勭淮鎶よ€呭喅瀹氥€?
-	鍦ㄧ埗鐩綍鍜屽瓙鐩綍涓悓鏃舵嫢鏈?`.kunitconfig` 鐗囨鏄垚闂鐨勩€傛湁浜哄湪璁ㄨ鍦ㄨ繖浜涙枃浠朵腑娣诲姞涓€鏉?import"璇彞锛屼互渚胯椤跺眰閰嶇疆鑳藉杩愯鏉ヨ嚜鎵€鏈夊瓙鐩綍鐨勬祴璇曘€備絾閭ｅ皢鎰忓懗鐫€ `.kunitconfig` 鏂囦欢涓嶅啀鏄畝鍗曠殑 .config 鐗囨銆?
-	鍙︿竴绉嶆浛浠ｆ柟妗堟槸璁?kunit 宸ュ叿鑷姩閫掑綊鍚堝苟閰嶇疆锛屼絾娴嬭瘯鍦ㄧ悊璁轰笂鍙兘渚濊禆浜庝笉鍏煎鐨勯€夐」锛屽洜姝ゅ鐞嗚捣鏉ヤ細寰堟鎵嬨€?
-### 璁剧疆鍐呮牳鍛戒护琛屽弬鏁?
+	这是一个相对较新的特性（5.12+），因此关于哪些文件应当检入、哪些只保留在本地，我们还没有任何约定。一个配置是否有用到值得提交（并因此必须维护），由你和你的维护者决定
+	在父目录和子目录中同时拥`.kunitconfig` 片段是成问题的。有人在讨论在这些文件中添加一import"语句，以便让顶层配置能够运行来自所有子目录的测试。但那将意味着 `.kunitconfig` 文件不再是简单的 .config 片段
+	另一种替代方案是kunit 工具自动递归合并配置，但测试在理论上可能依赖于不兼容的选项，因此处理起来会很棘手
+### 设置内核命令行参
 
-浣犲彲浠ヤ娇鐢?`--kernel_args` 鏉ヤ紶閫掍换鎰忓唴鏍稿弬鏁帮紝渚嬪锛?
+你可以使`--kernel_args` 来传递任意内核参数，例如
 
 	$ ./tools/testing/kunit/kunit.py run --kernel_args=param=42 --kernel_args=param2=false
 
 
-### 鍦?UML 涓嬬敓鎴愪唬鐮佽鐩栫巼鎶ュ憡
+### UML 下生成代码覆盖率报告
 
 
-	TODO(brendanhiggins@google.com): UML 涓?gcc 7 鍙婃洿楂樼増鏈瓨鍦ㄥ悇绉嶉棶棰樸€備綘寰堝彲鑳戒細閬囧埌缂哄け鐨?`.gcda` 鏂囦欢鎴栫紪璇戦敊璇€?
-杩欎笌 Documentation/dev-tools/gcov.rst 涓褰曠殑鑾峰彇瑕嗙洊鐜囦俊鎭殑"甯歌"鏂瑰紡涓嶅悓銆?
-鎴戜滑鍙互涓嶅惎鐢?`CONFIG_GCOV_KERNEL=y`锛岃€屾槸璁剧疆杩欎簺閫夐」锛?
+	TODO(brendanhiggins@google.com): UML gcc 7 及更高版本存在各种问题。你很可能会遇到缺失`.gcda` 文件或编译错误
+这与 Documentation/dev-tools/gcov.rst 中记录的获取覆盖率信息的"常规"方式不同
+我们可以不启`CONFIG_GCOV_KERNEL=y`，而是设置这些选项
 
 	CONFIG_DEBUG_KERNEL=y
 	CONFIG_DEBUG_INFO=y
@@ -65,47 +65,47 @@
 	CONFIG_GCOV=y
 
 
-灏嗗叾缁勫悎鎴愪竴涓彲澶嶅埗绮樿创鐨勫懡浠ゅ簭鍒楋細
+将其组合成一个可复制粘贴的命令序列：
 
 
-	# 灏嗚鐩栫巼閫夐」杩藉姞鍒板綋鍓嶉厤缃?	$ ./tools/testing/kunit/kunit.py run --kunitconfig=.kunit/ --kunitconfig=tools/testing/kunit/configs/coverage_uml.config
-	# 浠庢瀯寤虹洰褰曪紙.kunit/锛変腑鎻愬彇瑕嗙洊鐜囦俊鎭?	$ lcov -t "my_kunit_tests" -o coverage.info -c -d .kunit/
+	# 将覆盖率选项追加到当前配	$ ./tools/testing/kunit/kunit.py run --kunitconfig=.kunit/ --kunitconfig=tools/testing/kunit/configs/coverage_uml.config
+	# 从构建目录（.kunit/）中提取覆盖率信	$ lcov -t "my_kunit_tests" -o coverage.info -c -d .kunit/
 
-	# 浠庤繖閲屽紑濮嬶紝杩囩▼涓?CONFIG_GCOV_KERNEL=y 鏃剁浉鍚?	# 渚嬪锛屽彲浠ュ湪 tmp 鐩綍涓敓鎴?HTML 鎶ュ憡锛屽涓嬶細
+	# 从这里开始，过程CONFIG_GCOV_KERNEL=y 时相	# 例如，可以在 tmp 目录中生HTML 报告，如下：
 	$ genhtml -o /tmp/coverage_html coverage.info
 
 
-濡傛灉浣犲畨瑁呯殑 gcc 鐗堟湰涓嶅伐浣滐紝浣犲彲浠ヨ皟鏁存楠わ細
+如果你安装的 gcc 版本不工作，你可以调整步骤：
 
 
 	$ ./tools/testing/kunit/kunit.py run --make_options=CC=/usr/bin/gcc-6
 	$ lcov -t "my_kunit_tests" -o coverage.info -c -d .kunit/ --gcov-tool=/usr/bin/gcov-6
 
-鎴栬€咃紝涔熷彲浠ヤ娇鐢ㄥ熀浜?LLVM 鐨勫伐鍏烽摼锛?
+或者，也可以使用基LLVM 的工具链
 
-	# 浣跨敤 LLVM 鏋勫缓骞跺皢瑕嗙洊鐜囬€夐」杩藉姞鍒板綋鍓嶉厤缃?	$ ./tools/testing/kunit/kunit.py run --make_options LLVM=1 --kunitconfig=.kunit/ --kunitconfig=tools/testing/kunit/configs/coverage_uml.config
+	# 使用 LLVM 构建并将覆盖率选项追加到当前配	$ ./tools/testing/kunit/kunit.py run --make_options LLVM=1 --kunitconfig=.kunit/ --kunitconfig=tools/testing/kunit/configs/coverage_uml.config
 	$ llvm-profdata merge -sparse default.profraw -o default.profdata
 	$ llvm-cov export --format=lcov .kunit/vmlinux -instr-profile default.profdata > coverage.info
-	# coverage.info 鏂囦欢鏄?lcov 鍏煎鏍煎紡锛屽彲鐢ㄤ簬渚嬪鐢熸垚 HTML 鎶ュ憡
+	# coverage.info 文件lcov 兼容格式，可用于例如生成 HTML 报告
 	$ genhtml -o /tmp/coverage_html coverage.info
 
 
-## 鎵嬪姩杩愯娴嬭瘯
+## 手动运行测试
 
 
-涓嶄娇鐢?`kunit.py run` 鏉ヨ繍琛屾祴璇曚篃鏄竴涓噸瑕佺殑浣跨敤鍦烘櫙銆傜洰鍓嶏紝濡傛灉浣犳兂鍦?UML 涔嬪鐨勬灦鏋勪笂娴嬭瘯锛岃繖鏄綘鍞竴鐨勯€夋嫨銆?
-鐢变簬鍦?UML 涓嬭繍琛屾祴璇曠浉褰撶洿鎺ワ紙閰嶇疆骞剁紪璇戝唴鏍革紝杩愯 `./linux` 浜岃繘鍒讹級锛屾湰鑺傚皢鑱氱劍浜庢祴璇曢潪 UML 鏋舵瀯銆?
+不使`kunit.py run` 来运行测试也是一个重要的使用场景。目前，如果你想UML 之外的架构上测试，这是你唯一的选择
+由于UML 下运行测试相当直接（配置并编译内核，运行 `./linux` 二进制），本节将聚焦于测试非 UML 架构
 
-### 杩愯鍐呭缓娴嬭瘯
+### 运行内建测试
 
 
-褰撳皢娴嬭瘯璁剧疆涓?`=y` 鏃讹紝娴嬭瘯浼氫綔涓哄惎鍔ㄧ殑涓€閮ㄥ垎杩愯锛屽苟浠?TAP 鏍煎紡灏嗙粨鏋滄墦鍗板埌 dmesg銆傚洜姝や綘鍙渶瑕佸儚寰€甯镐竴鏍峰皢娴嬭瘯鍔犲叆浣犵殑 `.config`锛屾瀯寤哄苟鍚姩鍐呮牳銆?
-鍥犳锛屽鏋滄垜浠敤浠ヤ笅閰嶇疆缂栬瘧鍐呮牳锛?
+当将测试设置`=y` 时，测试会作为启动的一部分运行，并TAP 格式将结果打印到 dmesg。因此你只需要像往常一样将测试加入你的 `.config`，构建并启动内核
+因此，如果我们用以下配置编译内核
 
 	CONFIG_KUNIT=y
 	CONFIG_KUNIT_EXAMPLE_TEST=y
 
-閭ｄ箞鎴戜滑浼氱湅鍒?dmesg 涓嚭鐜扮被浼煎涓嬬殑杈撳嚭锛岃〃鏄庢祴璇曞凡杩愯骞堕€氳繃锛?
+那么我们会看dmesg 中出现类似如下的输出，表明测试已运行并通过
 
 	TAP version 14
 	1..1
@@ -115,68 +115,68 @@
 	    ok 1 - example_simple_test
 	ok 1 - example
 
-### 浠ユā鍧楁柟寮忚繍琛屾祴璇?
+### 以模块方式运行测
 
-鏍规嵁娴嬭瘯鐨勪笉鍚岋紝浣犲彲浠ュ皢瀹冧滑鏋勫缓涓哄彲鍔犺浇妯″潡銆?
-渚嬪锛屾垜浠皢涔嬪墠鐨勯厤缃€夐」鏀逛负
+根据测试的不同，你可以将它们构建为可加载模块
+例如，我们将之前的配置选项改为
 
 
 	CONFIG_KUNIT=y
 	CONFIG_KUNIT_EXAMPLE_TEST=m
 
-鐒跺悗鍦ㄥ惎鍔ㄨ繘鍏ユ垜浠殑鍐呮牳涔嬪悗锛屾垜浠彲浠ラ€氳繃浠ヤ笅鏂瑰紡杩愯娴嬭瘯锛?
+然后在启动进入我们的内核之后，我们可以通过以下方式运行测试
 
 	$ modprobe kunit-example-test
 
-闅忓悗瀹冨皢鍚?stdout 鎵撳嵃 TAP 杈撳嚭銆?
-	`modprobe` 鍦ㄤ换浣曟祴璇曞け璐ユ椂锛堟埅鑷?5.13锛?*涓嶄細**鏈夐潪闆堕€€鍑虹爜銆備絾 `kunit.py parse` 浼氭湁锛岃涓嬫枃銆?
-	浣犱篃鍙互璁剧疆 `CONFIG_KUNIT=m`锛屼絾鏄紝鏌愪簺鐗规€у皢涓嶈兘宸ヤ綔锛屽洜姝ゆ煇浜涙祴璇曞彲鑳戒細鍑洪敊銆傜悊鎯虫儏鍐典笅锛屾祴璇曚細鍦ㄥ叾 `Kconfig` 涓０鏄庡畠浠緷璧栦簬 `KUNIT=y`锛屼絾杩欐槸涓€涓ぇ澶氭暟娴嬭瘯浣滆€呬笉浼氳€冭檻鐨勮竟鐣屾儏鍐点€?	鎴嚦 5.13锛屽敮涓€鐨勫尯鍒槸 `current->kunit_test` 灏嗕笉瀛樺湪銆?
-### 缇庡寲鎵撳嵃缁撴灉
+随后它将stdout 打印 TAP 输出
+	`modprobe` 在任何测试失败时（截5.13*不会**有非零退出码。但 `kunit.py parse` 会有，见下文
+	你也可以设置 `CONFIG_KUNIT=m`，但是，某些特性将不能工作，因此某些测试可能会出错。理想情况下，测试会在其 `Kconfig` 中声明它们依赖于 `KUNIT=y`，但这是一个大多数测试作者不会考虑的边界情况	截至 5.13，唯一的区别是 `current->kunit_test` 将不存在
+### 美化打印结果
 
 
-浣犲彲浠ヤ娇鐢?`kunit.py parse` 鏉ヨВ鏋?dmesg 涓殑娴嬭瘯杈撳嚭锛屽苟浠?`kunit.py run` 閭ｆ牱鐔熸倝鐨勬牸寮忔墦鍗扮粨鏋溿€?
+你可以使`kunit.py parse` 来解dmesg 中的测试输出，并`kunit.py run` 那样熟悉的格式打印结果
 
 	$ ./tools/testing/kunit/kunit.py parse /var/log/dmesg
 
 
-### 鑾峰彇姣忎釜娴嬭瘯濂椾欢鐨勭粨鏋?
+### 获取每个测试套件的结
 
-鏃犺浣犲浣曡繍琛屾祴璇曪紝閮藉彲浠ュ惎鐢?`CONFIG_KUNIT_DEBUGFS` 鏉ュ鍑烘瘡涓浠朵互 TAP 鏍煎紡鍛堢幇鐨勭粨鏋滐細
+无论你如何运行测试，都可以启`CONFIG_KUNIT_DEBUGFS` 来导出每个套件以 TAP 格式呈现的结果：
 
 
 	CONFIG_KUNIT=y
 	CONFIG_KUNIT_EXAMPLE_TEST=m
 	CONFIG_KUNIT_DEBUGFS=y
 
-姣忎釜濂椾欢鐨勭粨鏋滃皢鏆撮湶鍦?`/sys/kernel/debug/kunit/<suite>/results` 涓嬨€傚洜姝や娇鐢ㄦ垜浠殑绀轰緥閰嶇疆锛?
+每个套件的结果将暴露`/sys/kernel/debug/kunit/<suite>/results` 下。因此使用我们的示例配置
 
 	$ modprobe kunit-example-test > /dev/null
 	$ cat /sys/kernel/debug/kunit/example/results
 	... <TAP output> ...
 
-	# 绉婚櫎妯″潡鍚庯紝鐩稿簲鐨勬枃浠朵細娑堝け
+	# 移除模块后，相应的文件会消失
 	$ modprobe -r kunit-example-test
 	$ cat /sys/kernel/debug/kunit/example/results
 	/sys/kernel/debug/kunit/example/results: No such file or directory
 
-### 鐢熸垚浠ｇ爜瑕嗙洊鐜囨姤鍛?
+### 生成代码覆盖率报
 
-璇﹁ Documentation/dev-tools/gcov.rst 浜嗚В濡備綍鎵ц姝ゆ搷浣溿€?
-杩欓噷鍞竴鏈夌偣 KUnit 鐗规€х殑寤鸿鏄紝浣犲彲鑳藉笇鏈涘皢娴嬭瘯鏋勫缓涓烘ā鍧椼€傝繖鏍蜂綘鍙互灏嗘祴璇曠殑瑕嗙洊鐜囦笌鍚姩鏈熼棿鎵ц鐨勫叾浠栦唬鐮佺殑瑕嗙洊鐜囬殧绂诲紑锛屼緥濡傦細
+详见 Documentation/dev-tools/gcov.rst 了解如何执行此操作
+这里唯一有点 KUnit 特性的建议是，你可能希望将测试构建为模块。这样你可以将测试的覆盖率与启动期间执行的其他代码的覆盖率隔离开，例如：
 
 
-	# 鍦ㄨ繍琛屾祴璇曞墠閲嶇疆瑕嗙洊鐜囪鏁板櫒銆?	$ echo 0 > /sys/kernel/debug/gcov/reset
+	# 在运行测试前重置覆盖率计数器	$ echo 0 > /sys/kernel/debug/gcov/reset
 	$ modprobe kunit-example-test
 
 
-## 娴嬭瘯灞炴€т笌杩囨护
+## 测试属性与过滤
 
 
-娴嬭瘯濂椾欢鍜屾祴璇曠敤渚嬪彲浠ョ敤娴嬭瘯灞炴€э紙渚嬪娴嬭瘯鐨勯€熷害锛夋潵鏍囪銆傝繖浜涘睘鎬х◢鍚庝細鎵撳嵃鍦ㄦ祴璇曡緭鍑轰腑锛屽苟鍙敤浜庤繃婊ゆ祴璇曟墽琛屻€?
-### 鏍囪娴嬭瘯灞炴€?
+测试套件和测试用例可以用测试属性（例如测试的速度）来标记。这些属性稍后会打印在测试输出中，并可用于过滤测试执行
+### 标记测试属
 
-閫氳繃鍦ㄦ祴璇曞畾涔変腑鍖呭惈涓€涓?`kunit_attributes` 瀵硅薄鏉ョ敤灞炴€ф爣璁版祴璇曘€?
-娴嬭瘯鐢ㄤ緥鍙互浣跨敤 `KUNIT_CASE_ATTR(test_name, attributes)` 瀹忔潵瀹氫箟娴嬭瘯鐢ㄤ緥锛屼互鏇夸唬 `KUNIT_CASE(test_name)`銆?
+通过在测试定义中包含一`kunit_attributes` 对象来用属性标记测试
+测试用例可以使用 `KUNIT_CASE_ATTR(test_name, attributes)` 宏来定义测试用例，以替代 `KUNIT_CASE(test_name)`
 
 	static const struct kunit_attributes example_attr = {
 		.speed = KUNIT_VERY_SLOW,
@@ -186,8 +186,8 @@
 		KUNIT_CASE_ATTR(example_test, example_attr),
 	};
 
-	瑕佸皢涓€涓祴璇曠敤渚嬫爣璁颁负鎱㈤€燂紝浣犱篃鍙互浣跨敤 `KUNIT_CASE_SLOW(test_name)`銆?	杩欐槸涓€涓湁鐢ㄧ殑瀹忥紝鍥犱负 slow 灞炴€ф槸鏈€甯哥敤鐨勩€?
-娴嬭瘯濂椾欢鍙互閫氳繃鍦ㄥ浠跺畾涔変腑璁剧疆 "attr" 瀛楁鏉ョ敤灞炴€ф爣璁般€?
+	要将一个测试用例标记为慢速，你也可以使用 `KUNIT_CASE_SLOW(test_name)`	这是一个有用的宏，因为 slow 属性是最常用的
+测试套件可以通过在套件定义中设置 "attr" 字段来用属性标记
 
 	static const struct kunit_attributes example_attr = {
 		.speed = KUNIT_VERY_SLOW,
@@ -198,16 +198,16 @@
 		.attr = example_attr,
 	};
 
-	骞堕潪 `kunit_attributes` 瀵硅薄涓殑鎵€鏈夊睘鎬ч兘闇€瑕佽缃€傛湭璁剧疆鐨勫睘鎬у皢淇濇寔鏈垵濮嬪寲锛屽苟琛ㄧ幇寰楀鍚岃灞炴€ц璁句负 0 鎴?NULL銆傚洜姝わ紝濡傛灉涓€涓睘鎬ц璁句负 0锛屽畠琚涓烘湭璁剧疆銆?	杩欎簺鏈缃殑灞炴€т笉浼氳鎶ュ憡锛屽苟鍙兘浣滀负杩囨护鐩殑鐨勯粯璁ゅ€笺€?
-### 鎶ュ憡灞炴€?
+	并非 `kunit_attributes` 对象中的所有属性都需要设置。未设置的属性将保持未初始化，并表现得如同该属性被设为 0 NULL。因此，如果一个属性被设为 0，它被视为未设置	这些未设置的属性不会被报告，并可能作为过滤目的的默认值
+### 报告属
 
-褰撶敤鎴疯繍琛屾祴璇曟椂锛屽睘鎬т細瀛樺湪浜庡師濮嬪唴鏍歌緭鍑轰腑锛堜互 KTAP 鏍煎紡锛夈€傛敞鎰忥紝瀵逛簬鎵€鏈夐€氳繃鐨勬祴璇曪紝灞炴€ч粯璁や細鍦?kunit.py 杈撳嚭涓殣钘忥紝浣嗗彲浠ヤ娇鐢?`--raw_output` 鏍囧織璁块棶鍘熷鍐呮牳杈撳嚭銆備笅闈㈡槸娴嬭瘯鐢ㄤ緥鐨勬祴璇曞睘鎬у湪鍐呮牳杈撳嚭涓殑鏍煎紡鍖栫ず渚嬶細
+当用户运行测试时，属性会存在于原始内核输出中（以 KTAP 格式）。注意，对于所有通过的测试，属性默认会kunit.py 输出中隐藏，但可以使`--raw_output` 标志访问原始内核输出。下面是测试用例的测试属性在内核输出中的格式化示例：
 
 
 	# example_test.speed: slow
 	ok 1 example_test
 
-涓嬮潰鏄祴璇曞浠剁殑娴嬭瘯灞炴€у湪鍐呮牳杈撳嚭涓殑鏍煎紡鍖栫ず渚嬶細
+下面是测试套件的测试属性在内核输出中的格式化示例：
 
 
 	  KTAP version 2
@@ -217,55 +217,55 @@
 	  ...
 	ok 1 example_suite
 
-姝ゅ锛岀敤鎴峰彲浠ヤ娇鐢ㄥ懡浠よ鏍囧織 `--list_tests_attr` 杈撳嚭甯︽湁鍏跺睘鎬х殑娴嬭瘯鐨勫畬鏁村睘鎬ф姤鍛婏細
+此外，用户可以使用命令行标志 `--list_tests_attr` 输出带有其属性的测试的完整属性报告：
 
 
 	kunit.py run "example" --list_tests_attr
 
-	鍦ㄦ墜鍔ㄨ繍琛?KUnit 鏃讹紝鍙互閫氳繃浼犲叆妯″潡鍙傛暟 `kunit.action=list_attr` 鏉ヨ闂鎶ュ憡銆?
-### 杩囨护
+	在手动运KUnit 时，可以通过传入模块参数 `kunit.action=list_attr` 来访问此报告
+### 过滤
 
 
-鐢ㄦ埛鍙互鍦ㄨ繍琛屾祴璇曟椂浣跨敤 `--filter` 鍛戒护琛屾爣蹇楁潵杩囨护娴嬭瘯銆備緥濡傦細
+用户可以在运行测试时使用 `--filter` 命令行标志来过滤测试。例如：
 
 
 	kunit.py run --filter speed=slow
 
 
-浣犺繕鍙互瀵硅繃婊ゅ櫒浣跨敤浠ヤ笅杩愮畻绗︼細"<"銆?>"銆?<="銆?>="銆?!=" 鍜?"="銆備緥濡傦細
+你还可以对过滤器使用以下运算符："<">"<=">="!=" "="。例如：
 
 
 	kunit.py run --filter "speed>slow"
 
-姝ょず渚嬪皢杩愯鎵€鏈夐€熷害姣?slow 鏇村揩鐨勬祴璇曘€傛敞鎰忥紝瀛楃 < 鍜?> 缁忓父琚?shell 瑙ｉ噴锛屽洜姝ゅ彲鑳介渶瑕佸儚涓婇潰閭ｆ牱鍔犲紩鍙锋垨杞箟銆?
-姝ゅ锛屼綘鍙互涓€娆′娇鐢ㄥ涓繃婊ゅ櫒銆傚彧闇€鐢ㄩ€楀彿鍒嗛殧杩囨护鍣ㄥ嵆鍙€備緥濡傦細
+此示例将运行所有速度slow 更快的测试。注意，字符 < > 经常shell 解释，因此可能需要像上面那样加引号或转义
+此外，你可以一次使用多个过滤器。只需用逗号分隔过滤器即可。例如：
 
 
 	kunit.py run --filter "speed>slow, module=kunit_example_test"
 
-	鍦ㄦ墜鍔ㄨ繍琛?KUnit 鏃讹紝浣犲彲浠ラ€氳繃灏嗚繃婊ゅ櫒浣滀负妯″潡鍙傛暟浼犲叆鏉ヤ娇鐢ㄦ杩囨护鐗规€э細`kunit.filter="speed>slow, speed<=normal"`銆?
-琚繃婊ゆ帀鐨勬祴璇曞皢涓嶄細杩愯锛屼篃涓嶄細鍑虹幇鍦ㄦ祴璇曡緭鍑轰腑銆備綘鍙互浣跨敤 `--filter_action=skip` 鏍囧織鏉ユ敼涓鸿烦杩囪杩囨护鐨勬祴璇曘€傝繖浜涙祴璇曚細鏄剧ず鍦ㄦ祴璇曡緭鍑轰腑浣嗕笉浼氳繍琛屻€傚湪鎵嬪姩杩愯 KUnit 鏃讹紝浣跨敤妯″潡鍙傛暟 `kunit.filter_action=skip` 鏉ュ惎鐢ㄦ鐗规€с€?
-### 杩囨护杩囩▼瑙勫垯
+	在手动运KUnit 时，你可以通过将过滤器作为模块参数传入来使用此过滤特性：`kunit.filter="speed>slow, speed<=normal"`
+被过滤掉的测试将不会运行，也不会出现在测试输出中。你可以使用 `--filter_action=skip` 标志来改为跳过被过滤的测试。这些测试会显示在测试输出中但不会运行。在手动运行 KUnit 时，使用模块参数 `kunit.filter_action=skip` 来启用此特性
+### 过滤过程规则
 
 
-鐢变簬濂椾欢鍜屾祴璇曠敤渚嬮兘鍙互鍏锋湁灞炴€э紝杩囨护鏈熼棿灞炴€т箣闂村彲鑳藉瓨鍦ㄥ啿绐併€傝繃婊よ繃绋嬮伒寰互涓嬭鍒欙細
+由于套件和测试用例都可以具有属性，过滤期间属性之间可能存在冲突。过滤过程遵循以下规则：
 
-- 杩囨护濮嬬粓鍦ㄥ崟涓祴璇曠骇鍒繘琛屻€?
-- 濡傛灉涓€涓祴璇曡缃簡鏌愪釜灞炴€э紝鍒欐牴鎹娴嬭瘯鐨勫€艰繘琛岃繃婊ゃ€?
-- 鍚﹀垯锛屽洖閫€鍒拌濂椾欢鐨勫€笺€?
-- 濡傛灉涓よ€呴兘鏈缃紝鍒欎娇鐢ㄨ灞炴€х殑鍏ㄥ眬"榛樿"鍊笺€?
-### 褰撳墠灞炴€у垪琛?
+- 过滤始终在单个测试级别进行
+- 如果一个测试设置了某个属性，则根据该测试的值进行过滤
+- 否则，回退到该套件的值
+- 如果两者都未设置，则使用该属性的全局"默认"值
+### 当前属性列
 
 `speed`
 
-姝ゅ睘鎬ф寚绀烘祴璇曟墽琛岀殑閫熷害锛堟祴璇曟槸鎱㈣繕鏄揩锛夈€?
-姝ゅ睘鎬т繚瀛樹负涓€涓灇涓撅紝鍖呭惈浠ヤ笅绫诲埆锛?normal"銆?slow" 鎴?"very_slow"銆傛祴璇曠殑鍋囧畾榛樿閫熷害涓?"normal"銆傝繖琛ㄧず娴嬭瘯鑺辫垂鐨勬椂闂寸浉瀵瑰井涓嶈冻閬擄紙灏戜簬 1 绉掞級锛屾棤璁哄叾杩愯鐨勬満鍣ㄥ浣曘€備换浣曟瘮杩欐洿鎱㈢殑娴嬭瘯閮藉彲浠ユ爣璁颁负 "slow" 鎴?"very_slow"銆?
-瀹?`KUNIT_CASE_SLOW(test_name)` 鍙互鏂逛究鍦扮敤浜庡皢娴嬭瘯鐢ㄤ緥鐨勯€熷害璁句负 "slow"銆?
+此属性指示测试执行的速度（测试是慢还是快）
+此属性保存为一个枚举，包含以下类别normal"slow" "very_slow"。测试的假定默认速度"normal"。这表示测试花费的时间相对微不足道（少于 1 秒），无论其运行的机器如何。任何比这更慢的测试都可以标记为 "slow" "very_slow"
+`KUNIT_CASE_SLOW(test_name)` 可以方便地用于将测试用例的速度设为 "slow"
 `module`
 
-姝ゅ睘鎬ф寚绀轰笌娴嬭瘯鐩稿叧鑱旂殑妯″潡鐨勫悕绉般€?
-姝ゅ睘鎬ц嚜鍔ㄤ繚瀛樹负瀛楃涓诧紝骞朵负姣忎釜濂椾欢鎵撳嵃銆傛祴璇曚篃鍙互浣跨敤姝ゅ睘鎬ц繘琛岃繃婊ゃ€?
+此属性指示与测试相关联的模块的名称
+此属性自动保存为字符串，并为每个套件打印。测试也可以使用此属性进行过滤
 `is_init`
 
-姝ゅ睘鎬ф寚绀烘祴璇曟槸鍚︿娇鐢ㄤ簡 init 鏁版嵁鎴栧嚱鏁般€?
-姝ゅ睘鎬ц嚜鍔ㄤ繚瀛樹负甯冨皵鍊硷紝娴嬭瘯涔熷彲浠ヤ娇鐢ㄦ灞炴€ц繘琛岃繃婊ゃ€?
+此属性指示测试是否使用了 init 数据或函数
+此属性自动保存为布尔值，测试也可以使用此属性进行过滤

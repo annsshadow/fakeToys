@@ -1,10 +1,10 @@
-﻿## MMC 宸ュ叿绠€浠?
+﻿## MMC 工具简
 
-鏈変竴涓悕涓?mmc-utils 鐨?MMC 娴嬭瘯宸ュ叿锛岀敱 Ulf Hansson 缁存姢锛屼綘鍙互鍦ㄤ互涓嬪叕鍏?git 浠撳簱涓壘鍒板畠锛?
+有一个名mmc-utils MMC 测试工具，由 Ulf Hansson 维护，你可以在以下公git 仓库中找到它
 	https://git.kernel.org/pub/scm/utils/mmc/mmc-utils.git
 
-## 鍔熻兘
+## 功能
 
 
-mmc-utils 宸ュ叿鍙互瀹屾垚浠ヤ笅鎿嶄綔锛?
- - 鎵撳嵃骞惰В鏋?extcsd 鏁版嵁銆? - 纭畾 eMMC 鍐欎繚鎶わ紙writeprotect锛夌姸鎬併€? - 璁剧疆 eMMC 鍐欎繚鎶ょ姸鎬併€? - 閫氳繃绂佺敤浠跨湡锛坋mulation锛夊皢 eMMC 鏁版嵁鎵囧尯澶у皬璁剧疆涓?4KB銆? - 鍒涘缓閫氱敤鍒嗗尯锛坓eneral purpose partition锛夈€? - 鍚敤澧炲己鐢ㄦ埛鍖猴紙enhanced user area锛夈€? - 鎸夊垎鍖哄惎鐢ㄥ啓鍙潬鎬э紙write reliability锛夈€? - 鎵撳嵃瀵?STATUS_SEND锛圕MD13锛夌殑鍝嶅簲銆? - 鍚敤鍚姩鍒嗗尯锛坆oot partition锛夈€? - 璁剧疆鍚姩鎬荤嚎鏉′欢锛圔oot Bus Conditions锛夈€? - 鍚敤 eMMC BKOPS 鍔熻兘銆? - 姘镐箙鍚敤 eMMC 纭欢澶嶄綅锛圚/W Reset锛夊姛鑳姐€? - 姘镐箙绂佺敤 eMMC 纭欢澶嶄綅鍔熻兘銆? - 鍙戦€?Sanitize 鍛戒护銆? - 涓鸿澶囩紪绋嬭璇佸瘑閽ワ紙authentication key锛夈€? - 灏?rpmb 璁惧鐨勮鏁板€艰鍙栧埌 stdout銆? - 浠?rpmb 璁惧璇诲彇鍒拌緭鍑恒€? - 浠庢暟鎹枃浠跺啓鍏?rpmb 璁惧銆? - 鍚敤 eMMC 缂撳瓨锛坈ache锛夊姛鑳姐€? - 绂佺敤 eMMC 缂撳瓨鍔熻兘銆? - 鎵撳嵃骞惰В鏋?CID 鏁版嵁銆? - 鎵撳嵃骞惰В鏋?CSD 鏁版嵁銆? - 鎵撳嵃骞惰В鏋?SCR 鏁版嵁銆?
+mmc-utils 工具可以完成以下操作
+ - 打印并解extcsd 数据 - 确定 eMMC 写保护（writeprotect）状态 - 设置 eMMC 写保护状态 - 通过禁用仿真（emulation）将 eMMC 数据扇区大小设置4KB - 创建通用分区（general purpose partition） - 启用增强用户区（enhanced user area） - 按分区启用写可靠性（write reliability） - 打印STATUS_SEND（CMD13）的响应 - 启用启动分区（boot partition） - 设置启动总线条件（Boot Bus Conditions） - 启用 eMMC BKOPS 功能 - 永久启用 eMMC 硬件复位（H/W Reset）功能 - 永久禁用 eMMC 硬件复位功能 - 发Sanitize 命令 - 为设备编程认证密钥（authentication key） - rpmb 设备的计数值读取到 stdout - rpmb 设备读取到输出 - 从数据文件写rpmb 设备 - 启用 eMMC 缓存（cache）功能 - 禁用 eMMC 缓存功能 - 打印并解CID 数据 - 打印并解CSD 数据 - 打印并解SCR 数据

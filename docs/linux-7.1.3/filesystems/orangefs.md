@@ -2,58 +2,58 @@
 ## ORANGEFS
 
 
-OrangeFS 鏄竴涓?LGPL 鐨勭敤鎴风┖闂存í鍚戞墿灞曪紙scale-out锛夊苟琛屽瓨鍌ㄧ郴缁熴€傚畠闈炲父閫傚悎 HPC銆?
-澶ф暟鎹紙BigData锛夈€佹祦濯掍綋瑙嗛锛圫treaming Video锛夈€佸熀鍥犵粍瀛︼紙Genomics锛夈€佺敓鐗╀俊鎭
-锛圔ioinformatics锛夋墍闈复鐨勫ぇ瑙勬ā瀛樺偍闂銆?
+OrangeFS 是一LGPL 的用户空间横向扩展（scale-out）并行存储系统。它非常适合 HPC
+大数据（BigData）、流媒体视频（Streaming Video）、基因组学（Genomics）、生物信息学
+（Bioinformatics）所面临的大规模存储问题
 
-Orangefs 鏈€鍒濈О涓?PVFS锛屼簬 1993 骞寸敱 Walt Ligon 鍜?Eric Blumer 棣栨寮€鍙戯紝浣滀负涓€涓?
-骞惰铏氭嫙鏈猴紙Parallel Virtual Machine, PVM锛夌殑骞惰鏂囦欢绯荤粺锛屼綔涓?NASA 璧勫姪鐮旂┒骞惰
-绋嬪簭 I/O 妯″紡鐨勪竴閮ㄥ垎銆?
+Orangefs 最初称PVFS，于 1993 年由 Walt Ligon Eric Blumer 首次开发，作为一
+并行虚拟机（Parallel Virtual Machine, PVM）的并行文件系统，作NASA 资助研究并行
+程序 I/O 模式的一部分
 
-Orangefs 鐨勭壒鎬у寘鎷細
+Orangefs 的特性包括：
 
-  - 鍦ㄥ涓枃浠舵湇鍔″櫒涔嬮棿鍒嗗竷鏂囦欢鏁版嵁
-  - 鏀寔澶氫釜瀹㈡埛绔悓鏃惰闂?
-  - 浣跨敤鏈湴鏂囦欢绯荤粺鍜岃闂柟娉曞湪鏈嶅姟鍣ㄤ笂瀛樺偍鏂囦欢鏁版嵁鍜屽厓鏁版嵁
-  - 鐢ㄦ埛绌洪棿瀹炵幇鏄撲簬瀹夎鍜岀淮鎶?
-  - 鐩存帴鐨?MPI 鏀寔
-  - 鏃犵姸鎬侊紙Stateless锛?
+  - 在多个文件服务器之间分布文件数据
+  - 支持多个客户端同时访
+  - 使用本地文件系统和访问方法在服务器上存储文件数据和元数据
+  - 用户空间实现易于安装和维
+  - 直接MPI 支持
+  - 无状态（Stateless
 
 
-## 閭欢鍒楄〃褰掓。
+## 邮件列表归档
 
 
 http://lists.orangefs.org/pipermail/devel_lists.orangefs.org/
 
 
-## 閭欢鍒楄〃鎶曠
+## 邮件列表投稿
 
 
 devel@lists.orangefs.org
 
 
-## 鏂囨。
+## 文档
 
 
 http://www.orangefs.org/documentation/
 
-## 鍦ㄥ崟鍙版湇鍔″櫒涓婅繍琛?ORANGEFS
+## 在单台服务器上运ORANGEFS
 
 
-OrangeFS 閫氬父鍦ㄥ叿鏈夊涓湇鍔″櫒鍜屽鎴风鐨勫簽澶ч儴缃蹭腑杩愯锛屼絾涓轰簡寮€鍙戝拰娴嬭瘯锛屼篃鍙互鍦ㄥ崟鍙?
-鏈哄櫒涓婅繍琛屼竴涓畬鏁寸殑鏂囦欢绯荤粺銆?
+OrangeFS 通常在具有多个服务器和客户端的庞大部署中运行，但为了开发和测试，也可以在单
+机器上运行一个完整的文件系统
 
 ```
     dnf -y install orangefs orangefs-server
 ```
 
-鍦?/etc/orangefs/orangefs.conf 涓湁涓€涓ず渚嬫湇鍔″櫒閰嶇疆鏂囦欢銆傚鏈夊繀瑕侊紝灏?localhost 鏀逛负
-浣犵殑涓绘満鍚嶏紙hostname锛夈€?
+/etc/orangefs/orangefs.conf 中有一个示例服务器配置文件。如有必要，localhost 改为
+你的主机名（hostname）
 
-鍏充簬鐢熸垚涓€涓敤浜庤繍琛?xfstests 鐨勬枃浠剁郴缁燂紝璇疯涓嬫枃銆?
+关于生成一个用于运xfstests 的文件系统，请见下文
 
-鍦?/etc/pvfs2tab 涓湁涓€涓ず渚嬪鎴风閰嶇疆鏂囦欢銆傚畠鏄崟琛屻€傚彇娑堝叾娉ㄩ噴锛屽苟鍦ㄥ繀瑕佹椂鏇存敼
-涓绘満鍚嶃€傝繖鎺у埗浣跨敤 libpvfs2 鐨勫鎴风銆傝繖骞朵笉鎺у埗 pvfs2-client-core銆?
+/etc/pvfs2tab 中有一个示例客户端配置文件。它是单行。取消其注释，并在必要时更改
+主机名。这控制使用 libpvfs2 的客户端。这并不控制 pvfs2-client-core
 
 ```
     pvfs2-server -f /etc/orangefs/orangefs.conf
@@ -67,7 +67,7 @@ OrangeFS 閫氬父鍦ㄥ叿鏈夊涓湇鍔″櫒鍜屽鎴风鐨勫�
     pvfs2-ping -m /pvfsmnt
 ```
 
-鍚姩瀹㈡埛绔€傚湪姝ゆ搷浣滀箣鍓嶏紝妯″潡蹇呴』宸茬紪璇戣繘鍐呮牳鎴栧凡鍔犺浇锛?
+启动客户端。在此操作之前，模块必须已编译进内核或已加载
 
 ```
     systemctl start orangefs-client
@@ -77,21 +77,21 @@ OrangeFS 閫氬父鍦ㄥ叿鏈夊涓湇鍔″櫒鍜屽鎴风鐨勫�
     mount -t pvfs2 tcp://localhost:3334/orangefs /pvfsmnt
 ```
 
-## 鐢ㄦ埛绌洪棿鏂囦欢绯荤粺婧愮爜
+## 用户空间文件系统源码
 
 
 http://www.orangefs.org/download
 
-2.9.3 涔嬪墠鐨?Orangefs 鐗堟湰涓庝笂娓哥増鏈殑鍐呮牳瀹㈡埛绔笉鍏煎銆?
+2.9.3 之前Orangefs 版本与上游版本的内核客户端不兼容
 
 
-## 鍦ㄥ崟鍙版湇鍔″櫒涓婃瀯寤?ORANGEFS
+## 在单台服务器上构ORANGEFS
 
 
-濡傛灉 OrangeFS 鏃犳硶浠庡彂琛岀増杞欢鍖呭畨瑁咃紝鍙互浠庢簮鐮佹瀯寤恒€?
+如果 OrangeFS 无法从发行版软件包安装，可以从源码构建
 
-濡傛灉浣犱笉浠嬫剰涓滆タ鏁ｈ惤鍦?/usr/local 鍚勫锛屽彲浠ョ渷鐣?--prefix銆備粠 2.9.6 鐗堟湰璧凤紝OrangeFS
-榛樿浣跨敤 Berkeley DB锛屾垜浠彲鑳藉緢蹇細灏嗛粯璁ゅ€兼敼涓?LMDB銆?
+如果你不介意东西散落/usr/local 各处，可以省--prefix。从 2.9.6 版本起，OrangeFS
+默认使用 Berkeley DB，我们可能很快会将默认值改LMDB
 
 ```
     ./configure --prefix=/opt/ofs --with-db-backend=lmdb --disable-usrint
@@ -101,9 +101,9 @@ http://www.orangefs.org/download
     make install
 ```
 
-閫氳繃杩愯 pvfs2-genconfig 骞舵寚瀹氫竴涓洰鏍囬厤缃枃浠舵潵鍒涘缓 orangefs 閰嶇疆鏂囦欢銆侾vfs2-genconfig
-浼氶€氳繃鎻愮ず寮曞浣犲畬鎴愩€傞€氬父鐩存帴閲囩敤榛樿鍊煎嵆鍙紝浣嗕綘搴斿綋浣跨敤浣犵殑鏈嶅姟鍣ㄤ富鏈哄悕锛岃€屼笉鏄?
-鈥渓ocalhost鈥濓細
+通过运行 pvfs2-genconfig 并指定一个目标配置文件来创建 orangefs 配置文件。Pvfs2-genconfig
+会通过提示引导你完成。通常直接采用默认值即可，但你应当使用你的服务器主机名，而不
+“localhost”：
 
 ```
     /opt/ofs/bin/pvfs2-genconfig /etc/pvfs2.conf
@@ -126,13 +126,13 @@ http://www.orangefs.org/download
     /opt/ofs/sbin/pvfs2-server /etc/pvfs2.conf
 ```
 
-鐜板湪鏈嶅姟鍣ㄥ簲褰撳凡缁忓湪杩愯銆侾vfs2-ls 鏄竴涓畝鍗曠殑锛?
+现在服务器应当已经在运行。Pvfs2-ls 是一个简单的
 
 ```
     /opt/ofs/bin/pvfs2-ls /pvfsmnt
 ```
 
-濡傛灉涓€鍒囦技涔庡伐浣滄甯革紝鍔犺浇鍐呮牳妯″潡骞舵墽琛岋細
+如果一切似乎工作正常，加载内核模块并执行：
 
 ```
     /opt/ofs/sbin/pvfs2-client -p /opt/ofs/sbin/pvfs2-client-core
@@ -142,17 +142,17 @@ http://www.orangefs.org/download
     mount -t pvfs2 tcp://`hostname`:3334/orangefs /pvfsmnt
 ```
 
-## 杩愯 xfstests
+## 运行 xfstests
 
 
-灏?xfstests 涓?scratch 鏂囦欢绯荤粺閰嶅悎浣跨敤寰堟湁鐢ㄣ€傝繖鍙互鍙娇鐢ㄤ竴鍙版湇鍔″櫒鏉ュ畬鎴愩€?
+xfstests scratch 文件系统配合使用很有用。这可以只使用一台服务器来完成
 
-鍦ㄦ湇鍔″櫒閰嶇疆鏂囦欢锛堝嵆 /etc/orangefs/orangefs.conf锛変腑澶嶅埗涓€浠?FileSystem 娈点€傚皢 Name
-鏀逛负 scratch銆傚皢 ID 鏀逛负涓庣涓€涓?FileSystem 娈电殑 ID 涓嶅悓鐨勫€硷紙2 閫氬父鏄釜濂介€夋嫨锛夈€?
+在服务器配置文件（即 /etc/orangefs/orangefs.conf）中复制一FileSystem 段。将 Name
+改为 scratch。将 ID 改为与第一FileSystem 段的 ID 不同的值（2 通常是个好选择）
 
-杩欐牱灏辨湁涓や釜 FileSystem 娈碉細orangefs 鍜?scratch銆?
+这样就有两个 FileSystem 段：orangefs scratch
 
-姝ゆ洿鏀瑰簲鍦ㄥ垱寤烘枃浠剁郴缁熶箣鍓嶈繘琛屻€?
+此更改应在创建文件系统之前进行
 
 ```
     pvfs2-server -f /etc/orangefs/orangefs.conf
@@ -169,28 +169,28 @@ http://www.orangefs.org/download
     ./check -pvfs2
 ```
 
-## 閫夐」
+## 选项
 
 
-鎺ュ彈浠ヤ笅鎸傝浇锛坢ount锛夐€夐」锛?
+接受以下挂载（mount）选项
 
   acl
-    鍏佽鍦ㄦ枃浠跺拰鐩綍涓婁娇鐢ㄨ闂帶鍒跺垪琛紙Access Control List锛夈€?
+    允许在文件和目录上使用访问控制列表（Access Control List）
 
   intr
-    鍐呮牳瀹㈡埛绔笌鐢ㄦ埛绌洪棿鏂囦欢绯荤粺涔嬮棿鐨勪竴浜涙搷浣滃彲浠ヨ涓柇锛坕nterruptible锛夛紝渚嬪
-    璋冭瘯锛坉ebug锛夌骇鍒殑鏇存敼鍜?tunable 鍙傛暟鐨勮缃€?
+    内核客户端与用户空间文件系统之间的一些操作可以被中断（interruptible），例如
+    调试（debug）级别的更改tunable 参数的设置
 
   local_lock
-    浠?鈥滄湰鈥?鍐呮牳鐨勮瑙掑惎鐢?posix 閿佸畾銆傞粯璁ょ殑 file_operations 閿佸畾鍔ㄤ綔鏄繑鍥?ENOSYS銆?
-    濡傛灉鏂囦欢绯荤粺浠?-o local_lock 鎸傝浇锛屽垯 posix 閿佸畾鐢熸晥銆傚垎甯冨紡閿佸畾姝ｅ湪涓烘湭鏉ヨ繘琛?
-    寮€鍙戜腑銆?
+    “本内核的视角启posix 锁定。默认的 file_operations 锁定动作是返ENOSYS
+    如果文件系统-o local_lock 挂载，则 posix 锁定生效。分布式锁定正在为未来进
+    开发中
 
 
-## 璋冭瘯
+## 调试
 
 
-濡傛灉浣犳兂鍦ㄧ壒瀹氱殑 GOSSIP 璇彞涓惎鐢ㄨ皟璇曪紝鍒欙細
+如果你想在特定的 GOSSIP 语句中启用调试，则：
 
 ```
   echo inode > /sys/kernel/debug/orangefs/kernel-debug
@@ -212,45 +212,45 @@ http://www.orangefs.org/download
   cat /sys/kernel/debug/orangefs/debug-help
 ```
 
-## 鍐呮牳妯″潡涓庣敤鎴风┖闂翠箣闂寸殑鍗忚
+## 内核模块与用户空间之间的协议
 
 
-Orangefs 鏄竴涓敤鎴风┖闂存枃浠剁郴缁熶互鍙婄浉鍏宠仈鐨勫唴鏍告ā鍧椼€傛鍚庢垜浠皢 Orangefs 鐨勭敤鎴风┖闂?
-閮ㄥ垎绠€绉颁负 鈥渦serspace鈥濄€侽rangefs 婧愯嚜 PVFS锛岃€岀敤鎴风┖闂翠唬鐮佸湪鍑芥暟鍜屽彉閲忓悕涓粛鐒朵娇鐢?
-PVFS銆傜敤鎴风┖闂?typedef 浜嗚澶氶噸瑕佺殑缁撴瀯銆傚唴鏍告ā鍧椾腑鐨勫嚱鏁板拰鍙橀噺鍚嶅凡缁忚繃娓″埌
-鈥渙rangefs鈥濓紝鑰屼笖 Linux 缂栫爜椋庢牸锛圕oding Style锛夐伩鍏嶄娇鐢?typedef锛屽洜姝や笌鐢ㄦ埛绌洪棿缁撴瀯
-瀵瑰簲鐨勫唴鏍告ā鍧楃粨鏋勬病鏈夎 typedef銆?
+Orangefs 是一个用户空间文件系统以及相关联的内核模块。此后我们将 Orangefs 的用户空
+部分简称为 “userspace”。Orangefs 源自 PVFS，而用户空间代码在函数和变量名中仍然使
+PVFS。用户空typedef 了许多重要的结构。内核模块中的函数和变量名已经过渡到
+“orangefs”，而且 Linux 编码风格（Coding Style）避免使typedef，因此与用户空间结构
+对应的内核模块结构没有被 typedef
 
-鍐呮牳妯″潡瀹炵幇浜嗕竴涓吉璁惧锛坧seudo device锛夛紝鐢ㄦ埛绌洪棿鍙互瀵瑰叾杩涜璇诲拰鍐欍€傜敤鎴风┖闂磋繕鍙互
-閫氳繃浼澶囩敤 ioctl 鎿嶆帶鍐呮牳妯″潡銆?
+内核模块实现了一个伪设备（pseudo device），用户空间可以对其进行读和写。用户空间还可以
+通过伪设备用 ioctl 操控内核模块
 
-### Bufmap锛堢紦鍐插尯鏄犲皠锛?
+### Bufmap（缓冲区映射
 
 
-鍦ㄥ惎鍔ㄦ椂锛岀敤鎴风┖闂村垎閰嶄袱涓寜椤靛ぇ灏忓榻愶紙posix_memalign锛夌殑 mlocked 鍐呭瓨缂撳啿鍖猴紝涓€涓?
-鐢ㄤ簬 IO锛屼竴涓敤浜?readdir 鎿嶄綔銆侷O 缂撳啿鍖轰负 41943040 瀛楄妭锛宺eaddir 缂撳啿鍖轰负 4194304
-瀛楄妭銆傛瘡涓紦鍐插尯鍖呭惈閫昏緫鍧楋紙chunk锛夋垨鍒嗗尯锛坧artition锛夛紝骞朵笖姣忎釜缂撳啿鍖虹殑鎸囬拡琚姞鍏ュ叾
-鑷繁鐨?PVFS_dev_map_desc 缁撴瀯涓紝璇ョ粨鏋勮繕鎻忚堪浜嗗叾鎬诲ぇ灏忥紝浠ュ強鍒嗗尯鐨勫ぇ灏忓拰鏁伴噺銆?
+在启动时，用户空间分配两个按页大小对齐（posix_memalign）的 mlocked 内存缓冲区，一
+用于 IO，一个用readdir 操作。IO 缓冲区为 41943040 字节，readdir 缓冲区为 4194304
+字节。每个缓冲区包含逻辑块（chunk）或分区（partition），并且每个缓冲区的指针被加入其
+自己PVFS_dev_map_desc 结构中，该结构还描述了其总大小，以及分区的大小和数量
 
-鎸囧悜 IO 缂撳啿鍖虹殑 PVFS_dev_map_desc 缁撴瀯鐨勬寚閽堥€氳繃 ioctl 琚彂閫佺粰鍐呮牳妯″潡涓殑涓€涓槧灏?
-渚嬬▼銆傝缁撴瀯閫氳繃 copy_from_user 浠庣敤鎴风┖闂村鍒跺埌鍐呮牳绌洪棿锛屽苟鐢ㄤ簬鍒濆鍖栧唴鏍告ā鍧楃殑
-鈥渂ufmap鈥濓紙struct orangefs_bufmap锛夛紝鍏堕殢鍚庡寘鍚細
+指向 IO 缓冲区的 PVFS_dev_map_desc 结构的指针通过 ioctl 被发送给内核模块中的一个映
+例程。该结构通过 copy_from_user 从用户空间复制到内核空间，并用于初始化内核模块的
+“bufmap”（struct orangefs_bufmap），其随后包含：
 
   - refcnt
-    - 涓€涓紩鐢ㄨ鏁板櫒
-  - desc_size - PVFS2_BUFMAP_DEFAULT_DESC_SIZE (4194304) - IO 缂撳啿鍖虹殑
-    鍒嗗尯澶у皬锛屼唬琛ㄦ枃浠剁郴缁熺殑鍧楀ぇ灏忥紝骞剁敤浜庤秴绾у潡锛坰uper block锛変腑鐨?s_blocksize銆?
-  - desc_count - PVFS2_BUFMAP_DEFAULT_DESC_COUNT (10) - IO 缂撳啿鍖轰腑鐨勫垎鍖烘暟閲忋€?
-  - desc_shift - log2(desc_size)锛岀敤浜庤秴绾у潡涓殑 s_blocksize_bits銆?
-  - total_size - IO 缂撳啿鍖虹殑鎬诲ぇ灏忋€?
-  - page_count - IO 缂撳啿鍖轰腑 4096 瀛楄妭椤电殑鏁伴噺銆?
-  - page_array - 鎸囧悜 `page_count * (sizeof(struct page *))` 瀛楄妭鐨?kcalloced
-    鍐呭瓨鐨勬寚閽堛€傝鍐呭瓨閫氳繃璋冪敤 get_user_pages 琚敤浣滄寚鍚?IO 缂撳啿鍖轰腑姣忎釜椤电殑鎸囬拡鏁扮粍銆?
-  - desc_array - 鎸囧悜 `desc_count * (sizeof(struct orangefs_bufmap_desc))` 瀛楄妭鐨?
-    kcalloced 鍐呭瓨鐨勬寚閽堛€傝鍐呭瓨琚繘涓€姝ュ垵濮嬪寲锛?
+    - 一个引用计数器
+  - desc_size - PVFS2_BUFMAP_DEFAULT_DESC_SIZE (4194304) - IO 缓冲区的
+    分区大小，代表文件系统的块大小，并用于超级块（super block）中s_blocksize
+  - desc_count - PVFS2_BUFMAP_DEFAULT_DESC_COUNT (10) - IO 缓冲区中的分区数量
+  - desc_shift - log2(desc_size)，用于超级块中的 s_blocksize_bits
+  - total_size - IO 缓冲区的总大小
+  - page_count - IO 缓冲区中 4096 字节页的数量
+  - page_array - 指向 `page_count * (sizeof(struct page *))` 字节kcalloced
+    内存的指针。该内存通过调用 get_user_pages 被用作指IO 缓冲区中每个页的指针数组
+  - desc_array - 指向 `desc_count * (sizeof(struct orangefs_bufmap_desc))` 字节
+    kcalloced 内存的指针。该内存被进一步初始化
 
-      user_desc 鏄?IO 缂撳啿鍖虹殑 ORANGEFS_dev_map_desc 缁撴瀯鐨勫唴鏍稿壇鏈€?
-      user_desc->ptr 鎸囧悜 IO 缂撳啿鍖恒€?
+      user_desc IO 缓冲区的 ORANGEFS_dev_map_desc 结构的内核副本
+      user_desc->ptr 指向 IO 缓冲区
 
 ```
 	pages_per_desc = bufmap->desc_size / PAGE_SIZE
@@ -269,102 +269,102 @@ PVFS銆傜敤鎴风┖闂?typedef 浜嗚澶氶噸瑕佺殑缁撴瀯銆傚唴�
                                                (9 * 1024 * 4096)
         offset += 1024
 
-  * buffer_index_array - 涓€涓?desc_count 澶у皬鐨?int 鏁扮粍锛岀敤浜庢寚绀?IO 缂撳啿鍖虹殑
-    鍝簺鍒嗗尯鍙緵浣跨敤銆?
-  * buffer_index_lock - 涓€涓嚜鏃嬮攣锛坰pinlock锛夛紝鐢ㄤ簬鍦ㄦ洿鏂版湡闂翠繚鎶?buffer_index_array銆?
-  * readdir_index_array - 涓€涓簲锛圤RANGEFS_READDIR_DEFAULT_DESC_COUNT锛夊厓绱犵殑 int
-    鏁扮粍锛岀敤浜庢寚绀?readdir 缂撳啿鍖虹殑鍝簺鍒嗗尯鍙緵浣跨敤銆?
-  * readdir_index_lock - 涓€涓嚜鏃嬮攣锛岀敤浜庡湪鏇存柊鏈熼棿淇濇姢 readdir_index_array銆?
+  * buffer_index_array - 一desc_count 大小int 数组，用于指IO 缓冲区的
+    哪些分区可供使用
+  * buffer_index_lock - 一个自旋锁（spinlock），用于在更新期间保buffer_index_array
+  * readdir_index_array - 一个五（ORANGEFS_READDIR_DEFAULT_DESC_COUNT）元素的 int
+    数组，用于指readdir 缓冲区的哪些分区可供使用
+  * readdir_index_lock - 一个自旋锁，用于在更新期间保护 readdir_index_array
 ```
 
-### 鎿嶄綔锛圤perations锛?
+### 操作（Operations
 
 
-褰撳唴鏍告ā鍧楅渶瑕佷笌鐢ㄦ埛绌洪棿閫氫俊鏃讹紝瀹冧細鏋勫缓涓€涓?鈥渙p鈥濓紙struct orangefs_kernel_op_s锛夈€俹p
-鐨勪竴閮ㄥ垎鍖呭惈鍚戠敤鎴风┖闂磋〃杈捐姹傜殑 鈥渦pcall锛堜笂琛岃皟鐢級鈥濄€俹p 鐨勪竴閮ㄥ垎鏈€缁堝寘鍚〃杈捐姹?
-缁撴灉鐨?鈥渄owncall锛堜笅琛岃皟鐢級鈥濄€?
+当内核模块需要与用户空间通信时，它会构建一“op”（struct orangefs_kernel_op_s）。op
+的一部分包含向用户空间表达请求的 “upcall（上行调用）”。op 的一部分最终包含表达请
+结果“downcall（下行调用）”
 
-slab 鍒嗛厤鍣ㄨ鐢ㄦ潵淇濇寔涓€涓殢鏃跺彲鐢ㄧ殑 op 缁撴瀯缂撳瓨銆?
+slab 分配器被用来保持一个随时可用的 op 结构缓存
 
-鍦ㄥ垵濮嬪寲鏃讹紝鍐呮牳妯″潡瀹氫箟骞跺垵濮嬪寲涓€涓姹傚垪琛紙request list锛夊拰涓€涓?in_progress 鍝堝笇琛?
-锛坔ash table锛夛紝浠ヨ窡韪湪浠讳綍缁欏畾鏃跺埢鎵€鏈夊湪閫旓紙in flight锛夌殑 op銆?
+在初始化时，内核模块定义并初始化一个请求列表（request list）和一in_progress 哈希
+（hash table），以跟踪在任何给定时刻所有在途（in flight）的 op
 
-Op 鏄湁鐘舵€佺殑锛?
+Op 是有状态的
 
  - unknown
-     - op 鍒氬垰琚垵濮嬪寲
+     - op 刚刚被初始化
  - waiting
-     - op 鍦?request_list 涓婏紙鍚戜笂绛夊緟锛?
+     - op request_list 上（向上等待
  - inprogr
-     - op 姝ｅ湪杩涜涓紙绛夊緟 downcall锛?
+     - op 正在进行中（等待 downcall
  - serviced
-     - op 鏈夊尮閰嶇殑 downcall锛涙甯?
+     - op 有匹配的 downcall；正
  - purged
-     - op 蹇呴』鍚姩涓€涓畾鏃跺櫒锛屽洜涓?client-core 鍦ㄦ湇鍔′簬璇?op 涔嬪墠涓嶅共鍑€鍦伴€€鍑轰簡
+     - op 必须启动一个定时器，因client-core 在服务于op 之前不干净地退出了
  - given up
-     - 鎻愪氦鑰呭凡鏀惧純绛夊緟瀹?
+     - 提交者已放弃等待
 
-褰撴煇涓换鎰忕殑鐢ㄦ埛绌洪棿绋嬪簭闇€瑕佸湪 Orangefs 涓婃墽琛屼竴涓枃浠剁郴缁熸搷浣滐紙readdir銆両/O銆乧reate
-鎴栧叾瀹冿級鏃讹紝浼氬垵濮嬪寲涓€涓?op 缁撴瀯骞舵墦涓婁竴涓敤浜庡尯鍒嗙殑 ID 鍙锋爣绛俱€俹p 鐨?upcall 閮ㄥ垎琚?
-濉厖锛岀劧鍚庤 op 琚紶閫掔粰 鈥渟ervice_operation鈥?鍑芥暟銆?
+当某个任意的用户空间程序需要在 Orangefs 上执行一个文件系统操作（readdir、I/O、create
+或其它）时，会初始化一op 结构并打上一个用于区分的 ID 号标签。op upcall 部分
+填充，然后该 op 被传递给 “service_operation函数
 
-service_operation 灏?op 鐨勭姸鎬佹敼涓?鈥渨aiting鈥濓紝灏嗗叾鏀惧叆璇锋眰鍒楄〃锛屽苟閫氳繃绛夊緟闃熷垪锛坵ait
-queue锛夊悜 Orangefs 鐨?file_operations.poll 鍑芥暟鍙戜俊鍙枫€傜敤鎴风┖闂存鍦ㄨ疆璇紙poll锛変吉璁惧锛?
-浠庤€屽緱鐭ラ渶瑕佽璇诲彇鐨?upcall 璇锋眰銆?
+service_operation op 的状态改“waiting”，将其放入请求列表，并通过等待队列（wait
+queue）向 Orangefs file_operations.poll 函数发信号。用户空间正在轮询（poll）伪设备
+从而得知需要被读取upcall 请求
 
-褰?Orangefs 鐨?file_operations.read 鍑芥暟琚Е鍙戞椂锛屼細鍦ㄨ姹傚垪琛ㄤ腑鎼滅储涓€涓技涔庡凡鍑嗗濂?
-澶勭悊鐨?op銆傝 op 浠庤姹傚垪琛ㄤ腑绉婚櫎銆俹p 鐨?tag 鍜屽凡濉厖鐨?upcall 缁撴瀯閫氳繃 copy_to_user
-澶嶅埗鍥炵敤鎴风┖闂淬€?
+Orangefs file_operations.read 函数被触发时，会在请求列表中搜索一个似乎已准备
+处理op。该 op 从请求列表中移除。op tag 和已填充upcall 结构通过 copy_to_user
+复制回用户空间
 
-濡傛灉杩欎簺 copy_to_user锛堜互鍙婁竴浜涢澶栫殑鍗忚锛変腑鏈変换浣曞け璐ワ紝op 鐨勭姸鎬佽璁句负 鈥渨aiting鈥濓紝
-骞朵笖璇?op 琚姞鍥炶姹傚垪琛ㄣ€傚惁鍒欙紝op 鐨勭姸鎬佽鏀逛负 鈥渋n progress鈥濓紝骞朵笖璇?op 鎸夊叾 tag 琚?
-鍝堝笇锛坔ash锛夛紝鏀惧埌 in_progress 鍝堝笇琛ㄤ腑璇?tag 鎵€鍝堝笇鍒扮殑绱㈠紩澶勭殑鍒楄〃鏈熬銆?
+如果这些 copy_to_user（以及一些额外的协议）中有任何失败，op 的状态被设为 “waiting”，
+并且op 被加回请求列表。否则，op 的状态被改为 “in progress”，并且op 按其 tag 
+哈希（hash），放到 in_progress 哈希表中tag 所哈希到的索引处的列表末尾
 
-褰撶敤鎴风┖闂寸粍瑁呭ソ瀵?upcall 鐨勫搷搴斿悗锛屽畠灏嗗寘鍚鍖哄垎 tag 鐨勫搷搴旓紝浠ヤ竴绯诲垪 io_vecs 鍐欏洖
-浼澶囥€傝繖浼氳Е鍙?Orangefs 鐨?file_operations.write_iter 鍑芥暟鎵惧埌鍏锋湁鍏宠仈 tag 鐨?op锛屽苟
-灏嗗叾浠?in_progress 鍝堝笇琛ㄤ腑绉婚櫎銆傚彧瑕佽 op 鐨勭姸鎬佷笉鏄?鈥渃anceled鈥?鎴?鈥済iven up鈥濓紝鍏?
-鐘舵€佸氨琚涓?鈥渟erviced鈥濄€俧ile_operations.write_iter 鍑芥暟杩斿洖鍒扮瓑寰呬腑鐨?vfs锛屽苟缁忕敱
-wait_for_matching_downcall 杩斿洖鍒?service_operation銆?
+当用户空间组装好upcall 的响应后，它将包含该区分 tag 的响应，以一系列 io_vecs 写回
+伪设备。这会触Orangefs file_operations.write_iter 函数找到具有关联 tag op，并
+将其in_progress 哈希表中移除。只要该 op 的状态不“canceled“given up”，
+状态就被设“serviced”。file_operations.write_iter 函数返回到等待中vfs，并经由
+wait_for_matching_downcall 返回service_operation
 
-service_operation 甯︾潃 op 鐨?downcall 閮ㄥ垎锛堝 upcall 鐨勫搷搴旓級琚～鍏呭畬姣曡€岃繑鍥炵粰鍏惰皟鐢ㄨ€呫€?
+service_operation 带着 op downcall 部分（对 upcall 的响应）被填充完毕而返回给其调用者
 
-鈥渃lient-core鈥?鏄唴鏍告ā鍧椾笌鐢ㄦ埛绌洪棿涔嬮棿鐨勬ˉ姊併€俢lient-core 鏄竴涓畧鎶よ繘绋嬶紙daemon锛夈€?
-client-core 鏈変竴涓浉鍏宠仈鐨勭湅闂ㄧ嫍锛坵atchdog锛夊畧鎶よ繘绋嬨€傚鏋?client-core 琚俊鍙疯姹傞€€鍑猴紝
-鐪嬮棬鐙楀畧鎶よ繘绋嬩細閲嶅惎 client-core銆傚嵆浣?client-core 琚?鈥滅珛鍗斥€?閲嶅惎锛屽湪姝ょ被浜嬩欢鍙戠敓鏈熼棿
-浠嶆湁涓€娈垫椂闂?client-core 鏄鐨勩€傛鐨?client-core 鏃犳硶琚?Orangefs 鐨?
-file_operations.poll 鍑芥暟瑙﹀彂銆傚湪 鈥滄浜℃湡鈥?闂撮€氳繃 service_operation 鐨?op 鍙兘浼氬湪绛夊緟
-闃熷垪涓婅秴鏃讹紝姝ゆ椂浼氬皾璇曞洖鏀跺畠浠竴娆°€傛樉鐒讹紝濡傛灉 client-core 姝讳骸鏃堕棿杩囬暱锛岃瘯鍥句娇鐢?
-Orangefs 鐨勯偅浜涗换鎰忕敤鎴风┖闂磋繘绋嬪皢鍙楀埌璐熼潰褰卞搷銆傛棤娉曡鏈嶅姟鐨勭瓑寰呬腑鐨?op 灏嗕粠璇锋眰鍒楄〃涓?
-绉婚櫎锛屽苟灏嗗叾鐘舵€佽涓?鈥済iven up鈥濄€傛棤娉曡鏈嶅姟涓殑杩涜涓殑 op 灏嗕粠 in_progress 鍝堝笇琛ㄤ腑
-绉婚櫎锛屽苟灏嗗叾鐘舵€佽涓?鈥済iven up鈥濄€?
+“client-core是内核模块与用户空间之间的桥梁。client-core 是一个守护进程（daemon）
+client-core 有一个相关联的看门狗（watchdog）守护进程。如client-core 被信号要求退出，
+看门狗守护进程会重启 client-core。即client-core “立即重启，在此类事件发生期间
+仍有一段时client-core 是死的。死client-core 无法Orangefs 
+file_operations.poll 函数触发。在 “死亡期间通过 service_operation op 可能会在等待
+队列上超时，此时会尝试回收它们一次。显然，如果 client-core 死亡时间过长，试图使
+Orangefs 的那些任意用户空间进程将受到负面影响。无法被服务的等待中op 将从请求列表
+移除，并将其状态设“given up”。无法被服务中的进行中的 op 将从 in_progress 哈希表中
+移除，并将其状态设“given up”
 
-readdir 鍜?I/O op 鍦ㄨ礋杞斤紙payload锛夋柟闈㈡槸涓嶅吀鍨嬬殑銆?
+readdir I/O op 在负载（payload）方面是不典型的
 
-  - readdir op 浣跨敤涓や釜棰勫垎閰嶃€侀鍒嗗尯鐨勮緝灏忓唴瀛樼紦鍐插尯涔嬩竴銆俽eaddir 缂撳啿鍖哄彧鑳借鐢ㄦ埛绌洪棿
-    浣跨敤銆傚唴鏍告ā鍧楀湪鍙戣捣 readdir op 涔嬪墠鑾峰彇涓€涓┖闂插垎鍖虹殑绱㈠紩銆傜敤鎴风┖闂村皢缁撴灉瀛樺叆璇?
-    绱㈠紩鍒嗗尯锛岀劧鍚庡皢鍏跺啓鍥?pvfs 璁惧銆?
+  - readdir op 使用两个预分配、预分区的较小内存缓冲区之一。readdir 缓冲区只能被用户空间
+    使用。内核模块在发起 readdir op 之前获取一个空闲分区的索引。用户空间将结果存入
+    索引分区，然后将其写pvfs 设备
 
-  - io锛堣鍜屽啓锛塷p 浣跨敤涓や釜棰勫垎閰嶃€侀鍒嗗尯鐨勮緝澶у唴瀛樼紦鍐插尯涔嬩竴銆侷O 缂撳啿鍖烘棦鍙粠鐢ㄦ埛绌洪棿
-    涔熷彲浠庡唴鏍告ā鍧楄闂€傚唴鏍告ā鍧楀湪鍙戣捣 io op 涔嬪墠鑾峰彇涓€涓┖闂插垎鍖虹殑绱㈠紩銆傚唴鏍告ā鍧楀皢鍐?
-    鏁版嵁瀛樺叆绱㈠紩鍒嗗尯锛岀洿鎺ヤ緵鐢ㄦ埛绌洪棿娑堣垂銆傜敤鎴风┖闂村皢璇昏姹傜殑缁撴灉瀛樺叆绱㈠紩鍒嗗尯锛岀洿鎺ヤ緵
-    鍐呮牳妯″潡娑堣垂銆?
+  - io（读和写）op 使用两个预分配、预分区的较大内存缓冲区之一。IO 缓冲区既可从用户空间
+    也可从内核模块访问。内核模块在发起 io op 之前获取一个空闲分区的索引。内核模块将
+    数据存入索引分区，直接供用户空间消费。用户空间将读请求的结果存入索引分区，直接供
+    内核模块消费
 
-瀵瑰唴鏍歌姹傜殑鍝嶅簲閮借鎵撳寘鍦?pvfs2_downcall_t 缁撴瀯涓€傞櫎浜嗗皯鏁板嚑涓叾瀹冩垚鍛樺锛?
-pvfs2_downcall_t 鍖呭惈涓€涓粨鏋勪綋鑱斿悎浣擄紙union锛夛紝鍏朵腑姣忎釜缁撴瀯浣撻兘涓庝竴绉嶇壒瀹氱殑鍝嶅簲绫诲瀷
-鐩稿叧鑱斻€?
+对内核请求的响应都被打包pvfs2_downcall_t 结构中。除了少数几个其它成员外
+pvfs2_downcall_t 包含一个结构体联合体（union），其中每个结构体都与一种特定的响应类型
+相关联
 
-鑱斿悎浣撳闈㈢殑鍑犱釜鎴愬憳鏄細
+联合体外面的几个成员是：
 
  `int32_t type`
-    - 鎿嶄綔绫诲瀷銆?
+    - 操作类型
  `int32_t status`
-    - 鎿嶄綔鐨勮繑鍥炵爜銆?
+    - 操作的返回码
  `int64_t trailer_size`
-    - 闄ら潪鏄?readdir 鎿嶄綔锛屽惁鍒欎负 0銆?
+    - 除非readdir 操作，否则为 0
  `char *trailer_buf`
-    - 鍒濆鍖栦负 NULL锛屽湪 readdir 鎿嶄綔鏈熼棿浣跨敤銆?
+    - 初始化为 NULL，在 readdir 操作期间使用
 
-鑱斿悎浣撳唴閮ㄩ€傚綋鐨勬垚鍛樹細琚拡瀵逛换浣曠壒瀹氬搷搴旇€屽～鍏呫€?
+联合体内部适当的成员会被针对任何特定响应而填充
 
   PVFS2_VFS_OP_FILE_IO
     fill a pvfs2_io_response_t
@@ -379,19 +379,19 @@ pvfs2_downcall_t 鍖呭惈涓€涓粨鏋勪綋鑱斿悎浣擄紙union锛夛�
     fill a PVFS_object_kref
 
   PVFS2_VFS_OP_GETATTR
-    fill in a PVFS_sys_attr_s锛堝唴鏍镐笉闇€瑕佺殑澶ч噺鍐呭锛?
-    褰撳璞℃槸绗﹀彿閾炬帴锛坰ymlink锛夋椂锛岀敤涓€涓寘鍚摼鎺ョ洰鏍囩殑瀛楃涓插～鍏呫€?
+    fill in a PVFS_sys_attr_s（内核不需要的大量内容
+    当对象是符号链接（symlink）时，用一个包含链接目标的字符串填充
 
   PVFS2_VFS_OP_MKDIR
     fill a PVFS_object_kref
 
   PVFS2_VFS_OP_STATFS
-    fill a pvfs2_statfs_response_t with useless info <g>銆傛垜浠緢闅惧強鏃跺湴鐭ラ亾
-    鍏充簬鎴戜滑杩欎釜鍒嗗竷寮忕綉缁滄枃浠剁郴缁熺殑杩欎簺缁熻淇℃伅銆?
+    fill a pvfs2_statfs_response_t with useless info <g>。我们很难及时地知道
+    关于我们这个分布式网络文件系统的这些统计信息
 
   PVFS2_VFS_OP_FS_MOUNT
-    fill a pvfs2_fs_mount_response_t锛屽畠涓?PVFS_object_kref 绫讳技锛屽彧鏄叾鎴愬憳椤哄簭涓嶅悓锛?
-    骞朵笖 鈥淿_pad1鈥?琚浛鎹负 鈥渋d鈥濄€?
+    fill a pvfs2_fs_mount_response_t，它PVFS_object_kref 类似，只是其成员顺序不同
+    并且 “__pad1被替换为 “id”
 
   PVFS2_VFS_OP_GETXATTR
     fill a pvfs2_getxattr_response_t
@@ -410,20 +410,20 @@ pvfs2_downcall_t 鍖呭惈涓€涓粨鏋勪綋鑱斿悎浣擄紙union锛夛�
 
   PVFS2_VFS_OP_READDIR
     jamb everything needed to represent a pvfs2_readdir_response_t into
-    the readdir buffer descriptor specified in the upcall銆?
+    the readdir buffer descriptor specified in the upcall銆。
 
-鐢ㄦ埛绌洪棿浣跨敤 writev() 鍦?/dev/pvfs2-req 涓婁紶閫掑鍐呮牳渚ф墍鍙戝嚭璇锋眰鐨勫搷搴斻€?
+用户空间使用 writev() /dev/pvfs2-req 上传递对内核侧所发出请求的响应
 
-涓€涓?buffer_list 鍖呭惈锛?
+一buffer_list 包含
 
-  - 涓€涓寚鍚戝唴鏍歌姹傚搷搴旓紙struct pvfs2_downcall_t锛夌殑鎸囬拡銆?
-  - 姝ゅ锛屽湪 readdir 璇锋眰鐨勬儏鍐典笅锛屼竴涓寚鍚戝寘鍚洰鏍囩洰褰曚腑瀵硅薄鎻忚堪绗︾殑缂撳啿鍖虹殑鎸囬拡銆?
+  - 一个指向内核请求响应（struct pvfs2_downcall_t）的指针
+  - 此外，在 readdir 请求的情况下，一个指向包含目标目录中对象描述符的缓冲区的指针
 
-... 琚彂閫佺粰鎵ц writev 鐨勫嚱鏁帮紙PINT_dev_write_list锛夈€?
+... 被发送给执行 writev 的函数（PINT_dev_write_list）
 
-PINT_dev_write_list 鏈変竴涓眬閮?iovec 鏁扮粍锛歴truct iovec io_array[^10^];
+PINT_dev_write_list 有一个局iovec 数组：struct iovec io_array[^10^];
 
-io_array 鐨勫墠鍥涗釜鍏冪礌瀵规墍鏈夊搷搴旈兘鍍忚繖鏍峰垵濮嬪寲锛?
+io_array 的前四个元素对所有响应都像这样初始化
 
 ```
   io_array[0].iov_base = address of local variable "proto_ver" (int32_t)
@@ -449,32 +449,32 @@ io_array 鐨勫墠鍥涗釜鍏冪礌瀵规墍鏈夊搷搴旈兘鍍忚繖鏍峰�
                         vfs_request
 ```
 
-Orangefs 鍒╃敤 dcache 浠ラ伩鍏嶅悜鐢ㄦ埛绌洪棿鍙戦€佸啑浣欒姹傘€傛垜浠€氳繃 orangefs_inode_getattr
-浣垮璞＄殑 inode 灞炴€т繚鎸佹渶鏂般€俹rangefs_inode_getattr 浣跨敤涓や釜鍙傛暟鏉ュ府鍔╁畠鍐冲畾鏄惁鏇存柊
-涓€涓?inode锛氣€渘ew鈥?鍜?鈥渂ypass鈥濄€侽rangefs 鍦ㄥ璞＄殑 inode 涓繚瀛樼鏈夋暟鎹紝鍏朵腑鍖呮嫭涓€涓?
-杈冪煭鐨勮秴鏃跺€?getattr_time锛屽畠浣?orangefs_inode_getattr 鐨勪换浣曚竴娆¤凯浠ｉ兘鑳界煡閬撹 inode
-鑷笂娆℃洿鏂颁互鏉ョ粡杩囦簡澶氫箙銆傚綋瀵硅薄涓嶆槸鏂扮殑锛坣ew == 0锛変笖 bypass 鏍囧織鏈缃紙bypass == 0锛?
-鏃讹紝濡傛灉 getattr_time 灏氭湭瓒呮椂锛宱rangefs_inode_getattr 浼氫笉缁忔洿鏂扮洿鎺ヨ繑鍥炪€俫etattr_time
-鍦ㄦ瘡娆℃洿鏂?inode 鏃惰鍒锋柊銆?
+Orangefs 利用 dcache 以避免向用户空间发送冗余请求。我们通过 orangefs_inode_getattr
+使对象的 inode 属性保持最新。orangefs_inode_getattr 使用两个参数来帮助它决定是否更新
+一inode：“new“bypass”。Orangefs 在对象的 inode 中保存私有数据，其中包括一
+较短的超时getattr_time，它orangefs_inode_getattr 的任何一次迭代都能知道该 inode
+自上次更新以来经过了多久。当对象不是新的（new == 0）且 bypass 标志未设置（bypass == 0
+时，如果 getattr_time 尚未超时，orangefs_inode_getattr 会不经更新直接返回。getattr_time
+在每次更inode 时被刷新
 
-鍒涘缓涓€涓柊瀵硅薄锛堟枃浠躲€佺洰褰曘€佺鍙烽摼鎺ワ級鍖呮嫭瀵瑰叾璺緞鍚嶇殑瑙ｆ瀽锛岀粨鏋滀负璇ュ璞＄殑涓€涓礋鐩綍椤?
-锛坣egative directory entry锛夈€傚垎閰嶄竴涓柊鐨?inode 骞朵笌璇?dentry 鍏宠仈锛屽皢鍏朵粠涓€涓礋 dentry
-鍙樻垚 鈥滃绀句細鏈夎础鐚殑姝ｅ紡涓€鍛樷€濄€侽rangefs 閫氳繃 new_inode() 浠?Linux 鑾峰彇鏂扮殑 inode锛屽苟閫氳繃
-鐢?d_instantiate() 灏嗚瀵癸紙inode 鍜?dentry锛夐€佸洖 Linux 鏉ュ皢 inode 涓?dentry 鍏宠仈銆?
+创建一个新对象（文件、目录、符号链接）包括对其路径名的解析，结果为该对象的一个负目录
+（negative directory entry）。分配一个新inode 并与dentry 关联，将其从一个负 dentry
+变成 “对社会有贡献的正式一员”。Orangefs 通过 new_inode() Linux 获取新的 inode，并通过
+d_instantiate() 将该对（inode dentry）送回 Linux 来将 inode dentry 关联
 
-瀵瑰璞¤矾寰勫悕鐨勮В鏋愪細瀵瑰簲鍒板叾 dentry銆傚鏋滄病鏈夊搴旂殑 dentry锛屽垯鍦?dcache 涓负瀹冨垱寤轰竴涓€?
-姣忓綋涓€涓?dentry 琚慨鏀规垨楠岃瘉鏃讹紝Orangefs 浼氬湪璇?dentry 鐨?d_time 涓瓨鍌ㄤ竴涓緝鐭殑瓒呮椂鍊硷紝
-鍦ㄨ娈垫椂闂村収璇?dentry 浼氳淇′换銆侽rangefs 鏄竴涓綉缁滄枃浠剁郴缁燂紝瀵硅薄鏈夊彲鑳藉湪甯﹀锛坥ut-of-band锛?
-琚换浣曠壒瀹氱殑 Orangefs 鍐呮牳妯″潡瀹炰緥鏀瑰彉锛屽洜姝や俊浠?dentry 鏄湁椋庨櫓鐨勩€備俊浠?dentry 鐨勬浛浠?
-鏂规鏄€绘槸浠庣敤鎴风┖闂磋幏鍙栨墍闇€淇℃伅鈥斺€旇嚦灏戞槸涓€娆″埌 client-core 鐨勫線杩旓紝鎴栬杩樿鍒版湇鍔″櫒銆?
-浠?dentry 鑾峰彇淇℃伅寰堜究瀹滐紝鑰屼粠鐢ㄦ埛绌洪棿鑾峰彇淇℃伅鐩稿鏄傝吹锛岃繖灏辨槸灏藉彲鑳戒娇鐢?dentry 鐨勫姩鏈恒€?
+对对象路径名的解析会对应到其 dentry。如果没有对应的 dentry，则dcache 中为它创建一个
+每当一dentry 被修改或验证时，Orangefs 会在dentry d_time 中存储一个较短的超时值，
+在该段时间內dentry 会被信任。Orangefs 是一个网络文件系统，对象有可能在带外（out-of-band
+被任何特定的 Orangefs 内核模块实例改变，因此信dentry 是有风险的。信dentry 的替
+方案是总是从用户空间获取所需信息——至少是一次到 client-core 的往返，或许还要到服务器
+dentry 获取信息很便宜，而从用户空间获取信息相对昂贵，这就是尽可能使dentry 的动机
 
-瓒呮椂鍊?d_time 鍜?getattr_time 鏄熀浜?jiffy 鐨勶紝骞朵笖锛?
+超时d_time getattr_time 是基jiffy 的，并且
 
 ```
-    "涓€鑸€岃█锛屽鏋滄椂閽熷彲鑳藉凡缁忓洖缁曪紙wrap around锛夎秴杩囦竴娆★紝灏辨棤娉曞垽鏂凡缁忚繃鍘讳簡澶氬皯
-    鏃堕棿銆傜劧鑰岋紝濡傛灉宸茬煡鏃堕棿 t1 鍜?t2 鐩稿綋鎺ヨ繎锛屾垜浠氨鍙互浠ヤ竴绉嶈€冭檻鍒版椂閽熷彲鑳藉湪涓ゆ
-    鏃堕棿涔嬮棿鍙戠敓杩囧洖缁曠殑鍙兘鎬х殑鏂瑰紡锛屽彲闈犲湴璁＄畻鍑哄樊鍊笺€?
+    "一般而言，如果时钟可能已经回绕（wrap around）超过一次，就无法判断已经过去了多少
+    时间。然而，如果已知时间 t1 t2 相当接近，我们就可以以一种考虑到时钟可能在两次
+    时间之间发生过回绕的可能性的方式，可靠地计算出差值
 ```
 
-锛堝紩鑷?Andy Wang 璁插笀鐨勮绋嬬瑪璁帮級
+（引Andy Wang 讲师的课程笔记）

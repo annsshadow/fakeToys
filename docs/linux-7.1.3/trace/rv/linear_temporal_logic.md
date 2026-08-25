@@ -1,70 +1,70 @@
-﻿## 绾挎€ф椂搴忛€昏緫锛圠inear temporal logic锛?
+﻿## 线性时序逻辑（Linear temporal logic
 
-### 绠€浠?
+### 简
 
-杩愯鏃堕獙璇佺洃瑙嗗櫒锛圧untime verification monitor锛夋槸涓€绉嶉獙璇佹妧鏈紝鐢ㄤ簬妫€鏌ュ唴鏍告槸鍚﹂伒寰煇瑙勬牸璇存槑锛坰pecification锛夈€傚畠閫氳繃浣跨敤 tracepoint 鐩戣鍐呮牳鐨勬墽琛岃建杩癸紝骞堕獙璇佽鎵ц杞ㄨ抗婊¤冻瑙勬牸璇存槑鏉ュ疄鐜般€?
-鏈€鍒濓紝瑙勬牸璇存槑鍙兘浠ョ‘瀹氭€ц嚜鍔ㄦ満锛圖A锛夌殑褰㈠紡缂栧啓銆傜劧鑰岋紝鍦ㄥ皾璇曚负涓€浜涘鏉傝鏍艰鏄庡疄鐜?DA 鐩戣鍣ㄦ椂锛屼汉浠彂鐜扮‘瀹氭€ц嚜鍔ㄦ満浣滀负瑙勬牸璇存槑璇█骞朵笉鍚堥€傘€傝鑷姩鏈哄鏉傘€侀毦浠ョ悊瑙ｄ笖瀹规槗鍑洪敊銆?
-鍥犳锛屽紩鍏ヤ簡鍩轰簬绾挎€ф椂搴忛€昏緫锛圠TL锛夌殑 RV 鐩戣鍣ㄣ€傝繖绫荤洃瑙嗗櫒浣跨敤 LTL 鑰岄潪 DA 浣滀负瑙勬牸璇存槑銆傚湪鏌愪簺鎯呭喌涓嬶紝灏嗚鏍艰鏄庡啓鎴?LTL 鏇翠负绠€娲佸拰鐩磋銆?```
+运行时验证监视器（Runtime verification monitor）是一种验证技术，用于检查内核是否遵循某规格说明（specification）。它通过使用 tracepoint 监视内核的执行轨迹，并验证该执行轨迹满足规格说明来实现
+最初，规格说明只能以确定性自动机（DA）的形式编写。然而，在尝试为一些复杂规格说明实DA 监视器时，人们发现确定性自动机作为规格说明语言并不合适。该自动机复杂、难以理解且容易出错
+因此，引入了基于线性时序逻辑（LTL）的 RV 监视器。这类监视器使用 LTL 而非 DA 作为规格说明。在某些情况下，将规格说明写LTL 更为简洁和直观```
 
   Christel Baier and Joost-Pieter Katoen: Principles of Model Checking, The MIT
   Press, 2008.
 
 ```
-### 璇硶锛圙rammar锛?
+### 语法（Grammar
 
-涓庢煇浜涚幇鏈夎娉曚笉鍚岋紝鍐呮牳鐨?LTL 瀹炵幇鏇翠负鍐楅暱銆傝繖鏄€冭檻鍒伴槄璇?LTL 瑙勬牸璇存槑鐨勪汉鍙兘骞朵笉绮鹃€?LTL銆?
-璇硶锛?    ltl ::= opd | ( ltl ) | ltl binop ltl | unop ltl
+与某些现有语法不同，内核LTL 实现更为冗长。这是考虑到阅LTL 规格说明的人可能并不精LTL
+语法    ltl ::= opd | ( ltl ) | ltl binop ltl | unop ltl
 
-鎿嶄綔鏁帮紙opd锛夛細
-    true銆乫alse銆佺敱澶у啓瀛楁瘝銆佹暟瀛楀拰涓嬪垝绾跨粍鎴愮殑鐢ㄦ埛瀹氫箟鍚嶇О銆?
-涓€鍏冭繍绠楃锛坲nop锛夛細
-    always锛堟€绘槸锛?    eventually锛堟渶缁堬級
-    next锛堜笅涓€鏃跺埢锛?    not锛堥潪锛?
-浜屽厓杩愮畻绗︼紙binop锛夛細
-    until锛堢洿鍒帮級
-    and锛堜笌锛?    or锛堟垨锛?    imply锛堣暣鍚級
-    equivalent锛堢瓑浠凤級
+操作数（opd）：
+    true、false、由大写字母、数字和下划线组成的用户定义名称
+一元运算符（unop）：
+    always（总是    eventually（最终）
+    next（下一时刻    not（非
+二元运算符（binop）：
+    until（直到）
+    and（与    or（或    imply（蕴含）
+    equivalent（等价）
 
-璇ヨ娉曟槸姝т箟鐨勶細鏈畾涔夎繍绠楃浼樺厛绾с€傚繀椤讳娇鐢ㄦ嫭鍙枫€?
-### 绾挎€ф椂搴忛€昏緫绀轰緥
+该语法是歧义的：未定义运算符优先级。必须使用括号
+### 线性时序逻辑示例
 
 
    RAIN imply (GO_OUTSIDE imply HAVE_UMBRELLA)
 
-鍚箟锛氬鏋滄鍦ㄤ笅闆紝閭ｄ箞澶栧嚭鎰忓懗鐫€甯︿簡浼炪€?
+含义：如果正在下雨，那么外出意味着带了伞
 
    RAIN imply (WET until not RAIN)
 
-鍚箟锛氬鏋滄鍦ㄤ笅闆紝閭ｄ箞鍦ㄤ笅闆ㄥ仠姝箣鍓嶉兘浼氭槸婀跨殑銆?
+含义：如果正在下雨，那么在下雨停止之前都会是湿的
 
    RAIN imply eventually not RAIN
 
-鍚箟锛氬鏋滄鍦ㄤ笅闆紝闆ㄦ渶缁堜細鍋溿€?
-涓婅堪绀轰緥浠呮寚褰撳墠鏃堕棿瀹炰緥銆傚浜庡唴鏍搁獙璇侊紝閫氬父甯屾湜浣跨敤 `always` 杩愮畻绗︽潵鎸囧畾
+含义：如果正在下雨，雨最终会停
+上述示例仅指当前时间实例。对于内核验证，通常希望使用 `always` 运算符来指定
 ```
 
     always (RAIN imply eventually not RAIN)
 
 ```
-鍚箟锛?*鎵€鏈?*闆ㄦ渶缁堥兘浼氬仠銆?
-鍦ㄤ笂杩扮ず渚嬩腑锛宍RAIN`銆乣GO_OUTSIDE`銆乣HAVE_UMBRELLA` 鍜?`WET` 鏄€滃師瀛愬懡棰橈紙atomic propositions锛夆€濄€?
-### 鐩戣鍣ㄧ患鍚?
+含义*所*雨最终都会停
+在上述示例中，`RAIN`、`GO_OUTSIDE`、`HAVE_UMBRELLA` `WET` 是“原子命题（atomic propositions）”
+### 监视器综
 
-瑕佸皢 LTL 缁煎悎涓哄唴鏍哥洃瑙嗗櫒锛屽彲浠ヤ娇鐢?`rvgen` 宸ュ叿锛歚tools/verification/rvgen`銆傝鏍艰鏄庨渶瑕佷互鏂囦欢褰㈠紡鎻愪緵锛?```
+要将 LTL 综合为内核监视器，可以使`rvgen` 工具：`tools/verification/rvgen`。规格说明需要以文件形式提供```
 
     RULE = always (ACQUIRE imply ((not KILLED and not CRASHED) until RELEASE))
 
 ```
-鍏跺惈涔夋槸锛氬鏋滃彂鐢?`ACQUIRE`锛屽垯蹇呴』鍦?`KILLED` 鎴?`CRASHED` 涔嬪墠鍙戠敓 `RELEASE`銆?
-鍙互浣跨敤瀛愯〃杈惧紡灏?LTL 鎷嗗垎銆備笂杩扮瓑浠蜂簬锛?
+其含义是：如果发`ACQUIRE`，则必须`KILLED` `CRASHED` 之前发生 `RELEASE`
+可以使用子表达式LTL 拆分。上述等价于
 ```
 
     RULE = always (ACQUIRE imply (ALIVE until RELEASE))
     ALIVE = not KILLED and not CRASHED
 
 ```
-鏍规嵁璇ヨ鏍艰鏄庯紝`rvgen` 浼氱敓鎴愪竴涓?B眉chi 鑷姩鏈虹殑 C 瀹炵幇鈥斺€斾竴涓敤浜庢鏌?LTL 鍙弧瓒虫€х殑闈炵‘瀹氭€х姸鎬佹満銆傚叧浜庝娇鐢?`rvgen` 鐨勭粏鑺傦紝璇峰弬瑙?Documentation/trace/rv/monitor_synthesis.rst銆?
-### 鍙傝€冩枃鐚?
+根据该规格说明，`rvgen` 会生成一Büchi 自动机的 C 实现——一个用于检LTL 可满足性的非确定性状态机。关于使`rvgen` 的细节，请参Documentation/trace/rv/monitor_synthesis.rst
+### 参考文
 
 ```
 

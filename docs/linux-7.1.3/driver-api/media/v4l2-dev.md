@@ -1,8 +1,8 @@
 ﻿
-## 瑙嗛璁惧鐨勫唴閮ㄨ〃绀?
+## 视频设备的内部表
 
-`/dev` 鐩綍涓殑瀹為檯璁惧鑺傜偣鏄娇鐢?`video_device` 缁撴瀯浣擄紙`v4l2-dev.h`锛?鍒涘缓鐨勩€傝缁撴瀯浣撴棦鍙互鍔ㄦ€佸垎閰嶏紝涔熷彲浠ュ唴宓屽埌鏇村ぇ鐨勭粨鏋勪綋涓€?
-瑕佸姩鎬佸垎閰嶅畠锛屼娇鐢?`video_device_alloc`锛?
+`/dev` 目录中的实际设备节点是使`video_device` 结构体（`v4l2-dev.h`创建的。该结构体既可以动态分配，也可以内嵌到更大的结构体中
+要动态分配它，使`video_device_alloc`
 
 	struct video_device *vdev = video_device_alloc();
 
@@ -11,51 +11,51 @@
 
 	vdev->release = video_device_release;
 
-濡傛灉浣犳妸瀹冨唴宓屽埌鏇村ぇ鐨勭粨鏋勪綋涓紝閭ｄ箞蹇呴』灏?`release()` 鍥炶皟璁剧疆涓轰綘
-鑷繁鐨勫嚱鏁帮細
+如果你把它内嵌到更大的结构体中，那么必须`release()` 回调设置为你
+自己的函数：
 
 
 	struct video_device *vdev = &my_vdev->vdev;
 
 	vdev->release = my_vdev_release;
 
-蹇呴』璁剧疆 `release()` 鍥炶皟锛屽畠浼氬湪瑙嗛璁惧鐨勬渶鍚庝竴涓娇鐢ㄨ€呴€€鍑烘椂琚皟鐢ㄣ€?
-榛樿鐨?`video_device_release` 鍥炶皟鐩墠鍙槸璋冪敤 `kfree` 鏉ラ噴鏀炬墍鍒嗛厤鐨?鍐呭瓨銆?
-杩樻湁涓€涓?`video_device_release_empty` 鍑芥暟锛屽畠浠€涔堜篃涓嶅仛锛堜负绌猴級锛屽綋缁撴瀯浣?琚唴宓屻€佷笖閲婃斁鏃舵棤浜嬪彲鍋氭椂搴斿綋浣跨敤瀹冦€?
-浣犺繕搴斿綋璁剧疆 `video_device` 鐨勪互涓嬪瓧娈碉細
+必须设置 `release()` 回调，它会在视频设备的最后一个使用者退出时被调用
+默认`video_device_release` 回调目前只是调用 `kfree` 来释放所分配内存
+还有一`video_device_release_empty` 函数，它什么也不做（为空），当结构被内嵌、且释放时无事可做时应当使用它
+你还应当设置 `video_device` 的以下字段：
 
-- `video_device`->v4l2_dev锛氬繀椤昏缃负鐖惰澶?`v4l2_device`銆?
-- `video_device`->name锛氳缃负鏈夋弿杩版€т笖鍞竴鐨勫€笺€?
-- `video_device`->vfl_dir锛氬浜庨噰闆嗚澶囷紙capture锛夎缃负
-  `VFL_DIR_RX`锛坄VFL_DIR_RX` 鐨勫€间负 0锛屾墍浠ヨ繖閫氬父宸茬粡鏄粯璁ゅ€硷級锛?  瀵逛簬杈撳嚭璁惧璁剧疆涓?`VFL_DIR_TX`锛屽浜?mem2mem锛堢紪瑙ｇ爜锛夎澶囪缃负
-  `VFL_DIR_M2M`銆?
-- `video_device`->fops锛氳缃负 `v4l2_file_operations` 缁撴瀯浣撱€?
-- `video_device`->ioctl_ops锛氬鏋滀綘浣跨敤 `v4l2_ioctl_ops`
-  鏉ョ畝鍖?ioctl 鐨勭淮鎶わ紙寮虹儓寤鸿浣跨敤锛屽苟涓斿皢鏉ュ彲鑳藉彉涓哄己鍒惰姹傦紒锛夛紝
-  鍒欏皢鍏惰缃负浣犵殑 `v4l2_ioctl_ops` 缁撴瀯浣撱€俙video_device`->vfl_type 鍜?  `video_device`->vfl_dir 瀛楁鐢ㄤ簬绂佺敤涓庣被鍨?鏂瑰悜缁勫悎涓嶅尮閰嶇殑鎿嶄綔銆?  渚嬪锛岄潪 VBI 鑺傜偣浼氱鐢?VBI 鎿嶄綔锛岄噰闆嗚澶囦細绂佺敤杈撳嚭鎿嶄綔銆傝繖鏍峰氨鏈夊彲鑳?  浠呬负 vbi 鍜?video 鑺傜偣鎻愪緵鍚屼竴涓?`v4l2_ioctl_ops` 缁撴瀯浣撱€?
-- `video_device`->lock锛氬鏋滀綘鎯冲湪椹卞姩涓畬鎴愭墍鏈夌殑鍔犻攣锛屽垯淇濈暀涓?  `NULL`銆傚惁鍒欎綘瑕佺粰瀹冧竴涓寚鍚?`mutex_lock` 缁撴瀯浣撶殑鎸囬拡锛屽湪
-  `video_device`->unlocked_ioctl 鏂囦欢鎿嶄綔琚皟鐢ㄤ箣鍓嶏紝鏍稿績灞備細鑾峰彇璇ラ攣锛?  骞跺湪璋冪敤涔嬪悗閲婃斁瀹冦€傛洿澶氱粏鑺傝鍙傞槄涓嬩竴鑺傘€?
-- `video_device`->queue锛氫竴涓寚鍚戜笌鏈澶囪妭鐐瑰叧鑱旂殑 struct vb2_queue
-  鐨勬寚閽堛€傚鏋?queue 涓嶄负 `NULL`锛屼笖 queue->lock 涓嶄负 `NULL`锛岄偅涔堝浜?  鎺掗槦绫?ioctl锛坄VIDIOC_REQBUFS`銆乣CREATE_BUFS`銆乣QBUF`銆乣DQBUF`銆?  `QUERYBUF`銆乣PREPARE_BUF`銆乣STREAMON` 鍜?`STREAMOFF`锛夛紝浼氫娇鐢?  queue->lock 鑰岄潪涓婇潰鐨勯攣銆傝繖鏍?vb2 <vb2_framework> 鎺掗槦妗嗘灦灏辨棤闇€
-  绛夊緟鍏朵粬 ioctl銆傝 queue 鎸囬拡涔熻 vb2 <vb2_framework> 杈呭姪鍑芥暟鐢ㄦ潵
-  妫€鏌ユ帓闃熺殑褰掑睘锛堝嵆璋冪敤瀹冪殑鏂囦欢鍙ユ焺鏄惁琚厑璁告墽琛岃鎿嶄綔锛夈€?
-- `video_device`->prio锛氳窡韪紭鍏堢骇銆傜敤浜庡疄鐜?`VIDIOC_G_PRIORITY`
-  鍜?`VIDIOC_S_PRIORITY`銆傚鏋滀繚鐣欎负 `NULL`锛屽垯浼氫娇鐢?`v4l2_device`
-  涓殑 struct v4l2_prio_state銆傚鏋滀綘鎯宠姣忎釜锛堢粍锛夎澶囪妭鐐规嫢鏈夌嫭绔嬬殑
-  浼樺厛绾х姸鎬侊紝閭ｄ箞鍙互灏嗗叾鎸囧悜浣犺嚜宸辩殑 struct `v4l2_prio_state`銆?
-- `video_device`->dev_parent锛氫粎褰?v4l2_device 浠?`NULL` 浣滀负鐖?  `device` 缁撴瀯浣撴敞鍐屾椂鎵嶈缃畠銆傝繖绉嶆儏鍐靛彧鍑虹幇鍦ㄤ竴涓‖浠惰澶囨嫢鏈夊涓?  鍏变韩鍚屼竴涓?`v4l2_device` 鏍稿績鐨?PCI 璁惧鏃躲€?
-  cx88 椹卞姩灏辨槸涓€涓緥瀛愶細涓€涓牳蹇?`v4l2_device` 缁撴瀯浣擄紝浣嗚涓€涓師濮嬭棰?  PCI 璁惧锛坈x8800锛夊拰涓€涓?MPEG PCI 璁惧锛坈x8802锛夊叡鍚屼娇鐢ㄣ€傜敱浜?  `v4l2_device` 涓嶈兘鍚屾椂鍏宠仈涓や釜 PCI 璁惧锛屽畠鍦ㄥ缓绔嬫椂鏈缃埗璁惧銆?  浣嗗湪鍒濆鍖?struct video_device 鏃朵綘**纭疄**鐭ラ亾璇ヤ娇鐢ㄥ摢涓埗 PCI 璁惧锛?  鍥犳浣犲皢 `dev_device` 璁剧疆涓烘纭殑 PCI 璁惧銆?
-濡傛灉浣犱娇鐢?`v4l2_ioctl_ops`锛岄偅涔堝簲褰撳湪浣犵殑 `v4l2_file_operations`
-缁撴瀯浣撲腑鎶?`video_device`->unlocked_ioctl 璁剧疆涓?`video_ioctl2`銆?
-鍦ㄦ煇浜涙儏鍐典笅锛屼綘鎯冲憡鐭ユ牳蹇冿細浣犲湪 `v4l2_ioctl_ops` 涓寚瀹氱殑鏌愪釜鍑芥暟搴斿綋琚?蹇界暐銆備綘鍙互鍦ㄨ皟鐢?`video_register_device` 涔嬪墠閫氳繃璋冪敤浠ヤ笅鍑芥暟鏉ユ爣璁版绫?ioctl锛?
+- `video_device`->v4l2_dev：必须设置为父设`v4l2_device`
+- `video_device`->name：设置为有描述性且唯一的值
+- `video_device`->vfl_dir：对于采集设备（capture）设置为
+  `VFL_DIR_RX`（`VFL_DIR_RX` 的值为 0，所以这通常已经是默认值）  对于输出设备设置`VFL_DIR_TX`，对mem2mem（编解码）设备设置为
+  `VFL_DIR_M2M`銆。
+- `video_device`->fops：设置为 `v4l2_file_operations` 结构体
+- `video_device`->ioctl_ops：如果你使用 `v4l2_ioctl_ops`
+  来简ioctl 的维护（强烈建议使用，并且将来可能变为强制要求！），
+  则将其设置为你的 `v4l2_ioctl_ops` 结构体。`video_device`->vfl_type   `video_device`->vfl_dir 字段用于禁用与类方向组合不匹配的操作  例如，非 VBI 节点会禁VBI 操作，采集设备会禁用输出操作。这样就有可  仅为 vbi video 节点提供同一`v4l2_ioctl_ops` 结构体
+- `video_device`->lock：如果你想在驱动中完成所有的加锁，则保留  `NULL`。否则你要给它一个指`mutex_lock` 结构体的指针，在
+  `video_device`->unlocked_ioctl 文件操作被调用之前，核心层会获取该锁  并在调用之后释放它。更多细节请参阅下一节
+- `video_device`->queue：一个指向与本设备节点关联的 struct vb2_queue
+  的指针。如queue 不为 `NULL`，且 queue->lock 不为 `NULL`，那么对  排队ioctl（`VIDIOC_REQBUFS`、`CREATE_BUFS`、`QBUF`、`DQBUF`  `QUERYBUF`、`PREPARE_BUF`、`STREAMON` `STREAMOFF`），会使  queue->lock 而非上面的锁。这vb2 <vb2_framework> 排队框架就无需
+  等待其他 ioctl。该 queue 指针也被 vb2 <vb2_framework> 辅助函数用来
+  检查排队的归属（即调用它的文件句柄是否被允许执行该操作）
+- `video_device`->prio：跟踪优先级。用于实`VIDIOC_G_PRIORITY`
+  `VIDIOC_S_PRIORITY`。如果保留为 `NULL`，则会使`v4l2_device`
+  中的 struct v4l2_prio_state。如果你想让每个（组）设备节点拥有独立的
+  优先级状态，那么可以将其指向你自己的 struct `v4l2_prio_state`
+- `video_device`->dev_parent：仅v4l2_device `NULL` 作为  `device` 结构体注册时才设置它。这种情况只出现在一个硬件设备拥有多  共享同一`v4l2_device` 核心PCI 设备时
+  cx88 驱动就是一个例子：一个核`v4l2_device` 结构体，但被一个原始视  PCI 设备（cx8800）和一MPEG PCI 设备（cx8802）共同使用。由  `v4l2_device` 不能同时关联两个 PCI 设备，它在建立时未设置父设备  但在初始struct video_device 时你**确实**知道该使用哪个父 PCI 设备  因此你将 `dev_device` 设置为正确的 PCI 设备
+如果你使`v4l2_ioctl_ops`，那么应当在你的 `v4l2_file_operations`
+结构体中`video_device`->unlocked_ioctl 设置`video_ioctl2`
+在某些情况下，你想告知核心：你在 `v4l2_ioctl_ops` 中指定的某个函数应当忽略。你可以在调`video_register_device` 之前通过调用以下函数来标记此ioctl
 	`v4l2_disable_ioctl <v4l2_disable_ioctl>`
 	(`vdev <video_device>`, cmd).
 
-濡傛灉浣犲笇鏈涘熀浜庡閮ㄥ洜绱狅紙渚嬪鎵€浣跨敤鐨勫崱锛夊叧闂?`v4l2_ioctl_ops` 涓殑鏌愪簺
-鐗规€э紝鑰屽張涓嶆兂鏂板缓涓€涓粨鏋勪綋锛岄€氬父灏遍渶瑕佽繖鏍峰仛銆?
-`v4l2_file_operations` 缁撴瀯浣撴槸 file_operations 鐨勪竴涓瓙闆嗐€備富瑕佸尯鍒湪浜?鐪佺暐浜?inode 鍙傛暟锛屽洜涓哄畠浠庢湭琚娇鐢ㄣ€?
-濡傛灉闇€瑕佷笌 media framework 闆嗘垚锛屼綘蹇呴』閫氳繃璋冪敤 `media_entity_pads_init`
-鏉ュ垵濮嬪寲鍐呭祵鍦?`video_device` 缁撴瀯浣撲腑鐨?`media_entity` 缁撴瀯浣?锛坋ntity 瀛楁锛夛細
+如果你希望基于外部因素（例如所使用的卡）关`v4l2_ioctl_ops` 中的某些
+特性，而又不想新建一个结构体，通常就需要这样做
+`v4l2_file_operations` 结构体是 file_operations 的一个子集。主要区别在省略inode 参数，因为它从未被使用
+如果需要与 media framework 集成，你必须通过调用 `media_entity_pads_init`
+来初始化内嵌`video_device` 结构体中`media_entity` 结构（entity 字段）：
 
 
 	struct media_pad *pad = &my_vdev->pad;
@@ -63,29 +63,29 @@
 
 	err = media_entity_pads_init(&vdev->entity, 1, pad);
 
-pads 鏁扮粍蹇呴』浜嬪厛鍒濆鍖栧畬姣曘€傛棤闇€鎵嬪姩璁剧疆 struct media_entity 鐨?type 鍜?name 瀛楁銆?
-褰撹棰戣澶囪鎵撳紑/鍏抽棴鏃讹紝瀵硅 entity 鐨勫紩鐢ㄤ細琚嚜鍔ㄨ幏鍙?閲婃斁銆?
-### ioctls 涓庡姞閿?
+pads 数组必须事先初始化完毕。无需手动设置 struct media_entity type name 字段
+当视频设备被打开/关闭时，对该 entity 的引用会被自动获释放
+### ioctls 与加
 
-V4L 鏍稿績鎻愪緵鍙€夌殑鍔犻攣鏈嶅姟銆備富瑕佺殑鏈嶅姟鏄?struct video_device 涓殑 lock
-瀛楁锛屽畠鏄竴涓寚鍚戜簰鏂ヤ綋鐨勬寚閽堛€傚鏋滀綘璁剧疆浜嗚鎸囬拡锛岄偅涔?unlocked_ioctl
-灏嗕娇鐢ㄥ畠鏉ヤ覆琛屽寲鎵€鏈?ioctl銆?
-濡傛灉浣犱娇鐢ㄧ殑鏄?videobuf2 妗嗘灦 <vb2_framework>锛岄偅涔堣繕鍙互璁剧疆绗簩涓攣锛?`video_device`->queue->lock銆傚鏋滆缃簡瀹冿紝閭ｄ箞瀵逛簬鎵€鏈夋帓闃熺被 ioctl
-锛堝畬鏁村垪琛ㄨ涓婁竴鑺傦級锛屽皢浣跨敤璇ラ攣鑰岄潪 `video_device`->lock 鏉ヤ覆琛屽寲銆?
-瀵规帓闃熺被 ioctl 浣跨敤涓嶅悓閿佺殑濂藉鍦ㄤ簬锛屽浜庢煇浜涢┍鍔紙灏ゅ叾鏄?USB 椹卞姩锛夛紝
-鏌愪簺鍛戒护锛堜緥濡傝缃帶鍒堕」锛夊彲鑳借€楁椂杈冮暱锛屽洜姝や綘甯屾湜瀵圭紦鍐插尯鎺掗槦绫?ioctl
-浣跨敤鐙珛鐨勯攣銆傝繖鏍蜂綘鐨?`VIDIOC_DQBUF` 灏变笉浼氬洜涓洪┍鍔ㄦ蹇欎簬鏇存敼锛堜緥濡傦級
-鎽勫儚澶存洕鍏夊弬鏁拌€屽仠婊炪€?
-褰撶劧锛屼綘涔熷彲浠ュ缁堝皢閭ｄ袱涓攣鎸囬拡閮戒繚鐣欎负 `NULL`锛岃嚜琛屽畬鎴愭墍鏈夌殑鍔犻攣銆?
-鍦ㄤ娇鐢?videobuf2 <vb2_framework> 鐨勬儏鍐典笅锛屼綘蹇呴』灏?`queue->lock`
-鎸囬拡璁剧疆涓轰綘鐢ㄤ簬涓茶鍖栨帓闃熺被 ioctl 鐨勯攣銆傝繖鑳界‘淇濆湪 `VIDIOC_DQBUF`
-绛夊緟缂撳啿鍖哄埌杈炬椂璇ラ攣琚噴鏀撅紝骞跺湪涔嬪悗閲嶆柊鑾峰彇銆?
-鐑彃鎷旀柇寮€鐨勫疄鐜颁篃搴斿綋鍦ㄨ皟鐢?v4l2_device_disconnect 涔嬪墠鑾峰彇
-`video_device` 涓婄殑閿併€傚鏋滀綘杩樹娇鐢ㄤ簡 `video_device`->queue->lock锛岄偅涔?蹇呴』鍏堥攣瀹?`video_device`->queue->lock锛屽啀閿佸畾 `video_device`->lock銆?杩欐牱浣犲彲浠ョ‘淇濊皟鐢?`v4l2_device_disconnect` 鏃舵病鏈?ioctl 姝ｅ湪杩愯銆?
-### 瑙嗛璁惧娉ㄥ唽
+V4L 核心提供可选的加锁服务。主要的服务struct video_device 中的 lock
+字段，它是一个指向互斥体的指针。如果你设置了该指针，那unlocked_ioctl
+将使用它来串行化所ioctl
+如果你使用的videobuf2 框架 <vb2_framework>，那么还可以设置第二个锁`video_device`->queue->lock。如果设置了它，那么对于所有排队类 ioctl
+（完整列表见上一节），将使用该锁而非 `video_device`->lock 来串行化
+对排队类 ioctl 使用不同锁的好处在于，对于某些驱动（尤其USB 驱动），
+某些命令（例如设置控制项）可能耗时较长，因此你希望对缓冲区排队ioctl
+使用独立的锁。这样你`VIDIOC_DQBUF` 就不会因为驱动正忙于更改（例如）
+摄像头曝光参数而停滞
+当然，你也可以始终将那两个锁指针都保留为 `NULL`，自行完成所有的加锁
+在使videobuf2 <vb2_framework> 的情况下，你必须`queue->lock`
+指针设置为你用于串行化排队类 ioctl 的锁。这能确保在 `VIDIOC_DQBUF`
+等待缓冲区到达时该锁被释放，并在之后重新获取
+热插拔断开的实现也应当在调v4l2_device_disconnect 之前获取
+`video_device` 上的锁。如果你还使用了 `video_device`->queue->lock，那必须先锁`video_device`->queue->lock，再锁定 `video_device`->lock这样你可以确保调`v4l2_device_disconnect` 时没ioctl 正在运行
+### 视频设备注册
 
 
-鎺ヤ笅鏉ワ紝浣犱娇鐢?`video_register_device` 娉ㄥ唽瑙嗛璁惧銆傝繖浼氫负浣犲垱寤哄瓧绗?璁惧銆?
+接下来，你使`video_register_device` 注册视频设备。这会为你创建字设备
 
 	err = video_register_device(vdev, VFL_TYPE_VIDEO, -1);
 	if (err) {
@@ -93,94 +93,94 @@ V4L 鏍稿績鎻愪緵鍙€夌殑鍔犻攣鏈嶅姟銆備富瑕佺殑鏈嶅�
 		return err;
 	}
 
-濡傛灉 `v4l2_device` 鐖惰澶囨嫢鏈夐潪 `NULL` 鐨?mdev 瀛楁锛岄偅涔堣瑙嗛璁惧鐨?entity 浼氳嚜鍔ㄦ敞鍐屽埌 media 璁惧銆?
-娉ㄥ唽鍝釜璁惧鍙栧喅浜?type 鍙傛暟銆傜幇鏈夌殑绫诲瀷濡備笅锛?
+如果 `v4l2_device` 父设备拥有非 `NULL` mdev 字段，那么该视频设备entity 会自动注册到 media 设备
+注册哪个设备取决type 参数。现有的类型如下
 ========================== ====================	 ==============================
-`vfl_devnode_type` 璁惧鍚?	     鐢ㄩ€?========================== ====================	 ==============================
-`VFL_TYPE_VIDEO`         `/dev/videoX`       鐢ㄤ簬瑙嗛杈撳叆/杈撳嚭璁惧
-`VFL_TYPE_VBI`           `/dev/vbiX`         鐢ㄤ簬鍨傜洿娑堥殣鏁版嵁锛堝嵆瀛楀箷銆?					     鍥炬枃鐢佃锛?`VFL_TYPE_RADIO`         `/dev/radioX`       鐢ㄤ簬鏀堕煶鏈鸿皟璋愬櫒
-`VFL_TYPE_SUBDEV`        `/dev/v4l-subdevX`  鐢ㄤ簬 V4L2 瀛愯澶?`VFL_TYPE_SDR`           `/dev/swradioX`     鐢ㄤ簬杞欢瀹氫箟鏃犵嚎鐢碉紙SDR锛?					     璋冭皭鍣?`VFL_TYPE_TOUCH`         `/dev/v4l-touchX`   鐢ㄤ簬瑙︽懜浼犳劅鍣?========================== ====================	 ==============================
+`vfl_devnode_type` 设备	     用========================== ====================	 ==============================
+`VFL_TYPE_VIDEO`         `/dev/videoX`       用于视频输入/输出设备
+`VFL_TYPE_VBI`           `/dev/vbiX`         用于垂直消隐数据（即字幕					     图文电视`VFL_TYPE_RADIO`         `/dev/radioX`       用于收音机调谐器
+`VFL_TYPE_SUBDEV`        `/dev/v4l-subdevX`  用于 V4L2 子设`VFL_TYPE_SDR`           `/dev/swradioX`     用于软件定义无线电（SDR					     调谐`VFL_TYPE_TOUCH`         `/dev/v4l-touchX`   用于触摸传感========================== ====================	 ==============================
 
-鏈€鍚庝竴涓弬鏁拌浣犲彲浠ュ鎵€浣跨敤鐨勮澶囪妭鐐圭紪鍙凤紙鍗?`videoX` 涓殑 X锛夋柦鍔犱竴瀹?绋嬪害鐨勬帶鍒躲€傞€氬父浣犱細浼犲叆 -1锛岃 v4l2 妗嗘灦鎸戦€夌涓€涓┖闂茬紪鍙枫€備絾鏈夋椂鐢ㄦ埛
-甯屾湜閫夋嫨鐗瑰畾鐨勮妭鐐圭紪鍙枫€傞┍鍔ㄩ€氬父鍏佽鐢ㄦ埛鍦ㄩ┍鍔ㄦā鍧楅€夐」涓寚瀹氱壒瀹氱殑璁惧鑺傜偣
-缂栧彿銆傝缂栧彿闅忓悗琚紶缁欐鍑芥暟锛寁ideo_register_device 浼氬皾璇曢€夋嫨璇ヨ澶囪妭鐐?缂栧彿銆傚鏋滆缂栧彿宸茶鍗犵敤锛屽垯浼氶€夋嫨涓嬩竴涓┖闂茬殑璁惧鑺傜偣缂栧彿锛屽苟鍚戝唴鏍告棩蹇?鍙戦€佷竴鏉¤鍛娿€?
-鍙︿竴涓娇鐢ㄥ満鏅槸锛氬鏋滈┍鍔ㄥ垱寤轰簡寰堝璁惧銆傛鏃舵妸涓嶅悓鐨勮棰戣澶囨斁鍦ㄤ笉鍚岀殑
-鍖洪棿涓彲鑳戒細寰堟湁鐢ㄣ€備緥濡傦紝瑙嗛閲囬泦璁惧浠?0 寮€濮嬶紝瑙嗛杈撳嚭璁惧浠?16 寮€濮嬨€?鍥犳浣犲彲浠ヤ娇鐢ㄦ渶鍚庝竴涓弬鏁版潵鎸囧畾鏈€灏忕殑璁惧鑺傜偣缂栧彿锛寁4l2 妗嗘灦浼氬皾璇曟寫閫?绛変簬鎴栧ぇ浜庝綘鎵€浼犲叆鍊肩殑绗竴涓┖闂茬紪鍙枫€傚鏋滃け璐ワ紝鍒欏彧浼氭寫閫夌涓€涓┖闂茬紪鍙枫€?
-鏃㈢劧鍦ㄨ繖绉嶆儏鍐典笅浣犲苟涓嶅叧蹇冩棤娉曢€夋嫨鎸囧畾璁惧鑺傜偣缂栧彿鐨勮鍛婏紝浣犲彲浠ユ敼涓鸿皟鐢?`video_register_device_no_warn` 鍑芥暟銆?
-姣忓綋鍒涘缓璁惧鑺傜偣鏃讹紝涔熶細涓轰綘鍒涘缓涓€浜涘睘鎬с€傚鏋滀綘鏌ョ湅
-`/sys/class/video4linux`锛屽氨鑳界湅鍒拌繖浜涜澶囥€傝繘鍏ヤ緥濡?`video0`锛屼綘浼氱湅鍒?'name'銆?dev_debug' 鍜?'index' 灞炴€с€?name' 灞炴€у氨鏄?video_device 缁撴瀯浣撶殑
-'name' 瀛楁銆?dev_debug' 灞炴€у彲鐢ㄤ簬鍚敤鏍稿績璋冭瘯銆傛洿璇︾粏鐨勪俊鎭鍙傞槄涓嬩竴鑺傘€?
-'index' 灞炴€ф槸璁惧鑺傜偣鐨勭储寮曪細姣忚皟鐢ㄤ竴娆?`video_register_device()`锛岀储寮曞氨
-鍔?1銆備綘娉ㄥ唽鐨勭涓€涓棰戣澶囪妭鐐规€绘槸浠庣储寮?0 寮€濮嬨€?
-鐢ㄦ埛鍙互璁剧疆鍒╃敤 index 灞炴€х殑 udev 瑙勫垯锛屼互鐢熸垚鑺卞摠鐨勮澶囧悕锛堜緥濡傜敤浜?MPEG
-瑙嗛閲囬泦璁惧鑺傜偣鐨?'`mpegX`'锛夈€?
-璁惧鎴愬姛娉ㄥ唽鍚庯紝浣犲彲浠ヤ娇鐢ㄤ互涓嬪瓧娈碉細
+最后一个参数让你可以对所使用的设备节点编号（`videoX` 中的 X）施加一程度的控制。通常你会传入 -1，让 v4l2 框架挑选第一个空闲编号。但有时用户
+希望选择特定的节点编号。驱动通常允许用户在驱动模块选项中指定特定的设备节点
+编号。该编号随后被传给此函数，video_register_device 会尝试选择该设备节编号。如果该编号已被占用，则会选择下一个空闲的设备节点编号，并向内核日发送一条警告
+另一个使用场景是：如果驱动创建了很多设备。此时把不同的视频设备放在不同的
+区间中可能会很有用。例如，视频采集设备0 开始，视频输出设备16 开始因此你可以使用最后一个参数来指定最小的设备节点编号，v4l2 框架会尝试挑等于或大于你所传入值的第一个空闲编号。如果失败，则只会挑选第一个空闲编号
+既然在这种情况下你并不关心无法选择指定设备节点编号的警告，你可以改为调`video_register_device_no_warn` 函数
+每当创建设备节点时，也会为你创建一些属性。如果你查看
+`/sys/class/video4linux`，就能看到这些设备。进入例`video0`，你会看'name'dev_debug' 'index' 属性name' 属性就video_device 结构体的
+'name' 字段dev_debug' 属性可用于启用核心调试。更详细的信息请参阅下一节
+'index' 属性是设备节点的索引：每调用一`video_register_device()`，索引就
+1。你注册的第一个视频设备节点总是从索0 开始
+用户可以设置利用 index 属性的 udev 规则，以生成花哨的设备名（例如用MPEG
+视频采集设备节点'`mpegX`'）
+设备成功注册后，你可以使用以下字段：
 
-- `video_device`->vfl_type锛氫紶缁?`video_register_device` 鐨勮澶囩被鍨嬨€?- `video_device`->minor锛氭墍鍒嗛厤鐨勮澶囨璁惧鍙枫€?- `video_device`->num锛氳澶囪妭鐐圭紪鍙凤紙鍗?`videoX` 涓殑 X锛夈€?- `video_device`->index锛氳澶囩储寮曞彿銆?
-濡傛灉娉ㄥ唽澶辫触锛岄偅涔堜綘闇€瑕佽皟鐢?`video_device_release` 鏉ラ噴鏀炬墍鍒嗛厤鐨?`video_device` 缁撴瀯浣擄紝鎴栬€呭鏋滆 `video_device` 鏄唴宓岀殑锛屽垯閲婃斁浣犺嚜宸辩殑
-缁撴瀯浣撱€傚鏋滄敞鍐屽け璐ワ紝`vdev->release()` 鍥炶皟姘歌繙涓嶄細琚皟鐢紝浣犱篃涓嶅簲灏濊瘯
-鍦ㄦ敞鍐屽け璐ョ殑鎯呭喌涓嬫敞閿€璇ヨ澶囥€?
-### 瑙嗛璁惧璋冭瘯
+- `video_device`->vfl_type：传`video_register_device` 的设备类型- `video_device`->minor：所分配的设备次设备号- `video_device`->num：设备节点编号（`videoX` 中的 X）- `video_device`->index：设备索引号
+如果注册失败，那么你需要调`video_device_release` 来释放所分配`video_device` 结构体，或者如果该 `video_device` 是内嵌的，则释放你自己的
+结构体。如果注册失败，`vdev->release()` 回调永远不会被调用，你也不应尝试
+在注册失败的情况下注销该设备
+### 视频设备调试
 
 
-涓烘瘡涓棰戙€乿bi銆乺adio 鎴?swradio 璁惧鍦?`/sys/class/video4linux/<devX>/`
-涓嬪垱寤虹殑 'dev_debug' 灞炴€э紝鍙敤浜庡惎鐢ㄦ枃浠舵搷浣滅殑鏃ュ織銆?
-瀹冩槸涓€涓綅鎺╃爜锛屽彲浠ヨ缃互涓嬩綅锛?
+为每个视频、vbi、radio swradio 设备`/sys/class/video4linux/<devX>/`
+下创建的 'dev_debug' 属性，可用于启用文件操作的日志
+它是一个位掩码，可以设置以下位
 ===== ================================================================
-鎺╃爜  鎻忚堪
+掩码  描述
 ===== ================================================================
-0x01  璁板綍 ioctl 鍚嶇О涓庨敊璇爜銆俈IDIOC_(D)QBUF ioctl 浠呭湪 0x08 浣嶄篃琚?      璁剧疆鏃舵墠浼氳璁板綍銆?0x02  璁板綍 ioctl 鍚嶇О鍙傛暟涓庨敊璇爜銆俈IDIOC_(D)QBUF ioctl 浠呭湪 0x08 浣?      涔熻璁剧疆鏃舵墠浼氳璁板綍銆?0x04  璁板綍鏂囦欢鎿嶄綔 open銆乺elease銆乺ead銆亀rite銆乵map 鍜?      get_unmapped_area銆俽ead 鍜?write 鎿嶄綔浠呭湪 0x08 浣嶈璁剧疆鏃?      鎵嶄細琚褰曘€?0x08  璁板綍 read 鍜?write 鏂囦欢鎿嶄綔锛屼互鍙?VIDIOC_QBUF 鍜?      VIDIOC_DQBUF ioctl銆?0x10  璁板綍 poll 鏂囦欢鎿嶄綔銆?0x20  璁板綍鎺у埗鎿嶄綔涓殑閿欒涓庢秷鎭€?===== ================================================================
+0x01  记录 ioctl 名称与错误码。VIDIOC_(D)QBUF ioctl 仅在 0x08 位也      设置时才会被记录0x02  记录 ioctl 名称参数与错误码。VIDIOC_(D)QBUF ioctl 仅在 0x08       也被设置时才会被记录0x04  记录文件操作 open、release、read、write、mmap       get_unmapped_area。read write 操作仅在 0x08 位被设置      才会被记录0x08  记录 read write 文件操作，以VIDIOC_QBUF       VIDIOC_DQBUF ioctl0x10  记录 poll 文件操作0x20  记录控制操作中的错误与消息===== ================================================================
 
-### 瑙嗛璁惧娓呯悊
+### 视频设备清理
 
 
-褰撳繀椤荤Щ闄よ棰戣澶囪妭鐐规椂锛堟棤璁烘槸椹卞姩鍗歌浇鏈熼棿锛岃繕鏄洜涓?USB 璁惧琚柇寮€锛夛紝
-浣犲簲褰撲娇鐢ㄤ互涓嬫柟寮忔敞閿€瀹冧滑锛?
+当必须移除视频设备节点时（无论是驱动卸载期间，还是因USB 设备被断开），
+你应当使用以下方式注销它们
 	`video_unregister_device`
 	(`vdev <video_device>`);
 
-杩欎細灏嗚澶囪妭鐐逛粠 sysfs 涓Щ闄わ紙瀵艰嚧 udev 灏嗗畠浠粠 `/dev` 涓Щ闄わ級銆?
-`video_unregister_device` 杩斿洖鍚庯紝涓嶈兘鍐嶆墦寮€鏂扮殑璁惧銆備絾鏄紝瀵逛簬 USB 璁惧锛?鏌愪簺搴旂敤绋嬪簭鍙兘浠嶇劧鎵撳紑浜嗗叾涓竴涓澶囪妭鐐广€傚洜姝ゅ湪娉ㄩ攢涔嬪悗锛屾墍鏈夋枃浠舵搷浣?锛堝綋鐒讹紝release 闄ゅ锛変篃閮戒細杩斿洖閿欒銆?
-褰撹棰戣澶囪妭鐐圭殑鏈€鍚庝竴涓娇鐢ㄨ€呴€€鍑烘椂锛屼細璋冪敤 `vdev->release()`
-鍥炶皟锛屼綘鍙互鍦ㄩ偅閲岃繘琛屾渶缁堢殑娓呯悊銆?
-濡傛灉宸插垵濮嬪寲锛屽埆蹇樹簡娓呯悊涓庤棰戣澶囧叧鑱旂殑 media entity锛?
+这会将设备节点从 sysfs 中移除（导致 udev 将它们从 `/dev` 中移除）
+`video_unregister_device` 返回后，不能再打开新的设备。但是，对于 USB 设备某些应用程序可能仍然打开了其中一个设备节点。因此在注销之后，所有文件操（当然，release 除外）也都会返回错误
+当视频设备节点的最后一个使用者退出时，会调用 `vdev->release()`
+回调，你可以在那里进行最终的清理
+如果已初始化，别忘了清理与视频设备关联的 media entity
 	`media_entity_cleanup <media_entity_cleanup>`
 	(&vdev->entity);
 
-杩欏彲浠ヤ粠 release 鍥炶皟涓畬鎴愩€?
+这可以从 release 回调中完成
 
-### 杈呭姪鍑芥暟
+### 辅助函数
 
 
-鏈変竴浜涙湁鐢ㄧ殑杈呭姪鍑芥暟锛?
-- 鏂囦欢涓?`video_device` 绉佹湁鏁版嵁
+有一些有用的辅助函数
+- 文件`video_device` 私有数据
 
-浣犲彲浠ヤ娇鐢ㄤ互涓嬫柟寮忓湪 video_device 缁撴瀯浣撲腑璁剧疆/鑾峰彇椹卞姩绉佹湁鏁版嵁锛?
+你可以使用以下方式在 video_device 结构体中设置/获取驱动私有数据
 	`video_get_drvdata <video_get_drvdata>`
 	(`vdev <video_device>`);
 
 	`video_set_drvdata <video_set_drvdata>`
 	(`vdev <video_device>`);
 
-娉ㄦ剰锛屼綘鍙互鍦ㄨ皟鐢?`video_register_device` 涔嬪墠瀹夊叏鍦拌皟鐢?`video_set_drvdata`銆?
-杩樻湁杩欎釜鍑芥暟锛?
+注意，你可以在调`video_register_device` 之前安全地调`video_set_drvdata`
+还有这个函数
 	`video_devdata <video_devdata>`
 	(struct file \*file);
 
-杩斿洖灞炰簬璇?file 缁撴瀯浣撶殑 video_device銆?
-`video_devdata` 鍑芥暟灏?`video_get_drvdata` 涓?`video_devdata` 缁撳悎璧锋潵锛?
+返回属于file 结构体的 video_device
+`video_devdata` 函数`video_get_drvdata` `video_devdata` 结合起来
 	`video_drvdata <video_drvdata>`
 	(struct file \*file);
 
-浣犲彲浠ヤ娇鐢ㄤ互涓嬫柟寮忎粠 `video_device` 缁撴瀯浣撹浆鍒?v4l2_device 缁撴瀯浣擄細
+你可以使用以下方式从 `video_device` 结构体转v4l2_device 结构体：
 
 
 	struct v4l2_device *v4l2_dev = vdev->v4l2_dev;
 
-- 璁惧鑺傜偣鍚?
-`video_device` 鑺傜偣鐨勫唴鏍稿悕鍙互浣跨敤浠ヤ笅鏂瑰紡鑾峰彇锛?
+- 设备节点
+`video_device` 节点的内核名可以使用以下方式获取
 	`video_device_node_name <video_device_node_name>`
 	(`vdev <video_device>`);
 
-璇ュ悕绉拌 udev 绛夌敤鎴风┖闂村伐鍏风敤浣滄彁绀恒€傚簲褰撳敖鍙兘浣跨敤璇ュ嚱鏁帮紝鑰屼笉瑕佺洿鎺?璁块棶 video_device 鐨?**num** 涓?**video_device** 鐨?**minor** 瀛楁銆?
-### video_device 鍑芥暟涓庢暟鎹粨鏋?
+该名称被 udev 等用户空间工具用作提示。应当尽可能使用该函数，而不要直访问 video_device **num** **video_device** **minor** 字段
+### video_device 函数与数据结

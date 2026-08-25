@@ -1,37 +1,37 @@
 ﻿## CA_GET_SLOT_INFO
 
 
-### 鍚嶇О
+### 名称
 
 
 CA_GET_SLOT_INFO
 
-### 鎽樿
+### 摘要
 
 
 
 `int ioctl(fd, CA_GET_SLOT_INFO, struct ca_slot_info *info)`
 
-### 鍙傛暟
+### 参数
 
 
 `fd`
-  鐢卞厛鍓?`open()` 璋冪敤杩斿洖鐨勬枃浠舵弿杩扮銆?
+  由先`open()` 调用返回的文件描述符
 
 `info`
-  鎸囧悜缁撴瀯浣?`ca_slot_info` 鐨勬寚閽堛€?
+  指向结构`ca_slot_info` 的指针
 
-### 璇存槑
-
-
-杩斿洖鐢?`ca_slot_info`.slot_num 鏍囪瘑鐨?CA 鎻掓Ы鐨勪俊鎭€?
-
-### 杩斿洖鍊?
+### 说明
 
 
-鎴愬姛鏃惰繑鍥?0锛屽苟濉厖 `ca_slot_info`銆?
+返回`ca_slot_info`.slot_num 标识CA 插槽的信息
 
-鍑洪敊鏃惰繑鍥?-1锛屽苟鐩稿簲鍦拌缃?`errno` 鍙橀噺銆?
+### 杩斿洖鍊。
+
+
+成功时返0，并填充 `ca_slot_info`
+
+出错时返-1，并相应地设`errno` 变量
 
 
     :header-rows:  0
@@ -39,6 +39,6 @@ CA_GET_SLOT_INFO
     :widths: 1 16
 
     - -  `ENODEV`
-       - 璇ユ彃妲戒笉鍙敤銆?
+       - 该插槽不可用
 
-閫氱敤閿欒鐮佸湪 Generic Error Codes <gen-errors> 绔犺妭涓弿杩般€?
+通用错误码在 Generic Error Codes <gen-errors> 章节中描述

@@ -1,25 +1,25 @@
-﻿## tcm_qla2xxx 椹卞姩璇存槑
+﻿## tcm_qla2xxx 驱动说明
 
 
-### tcm_qla2xxx jam_host 灞炴€?
+### tcm_qla2xxx jam_host 属
 
-鐜板湪鏂板浜嗕竴涓悕涓?jam_host 鐨勬ā鍧楃鐐瑰睘鎬?
+现在新增了一个名jam_host 的模块端点属
 ```
 
 	jam_host: boolean=0/1
 
 ```
-璇ュ睘鎬у強閰嶅浠ｇ爜浠呭湪灏?Kconfig 鍙傛暟 TCM_QLA2XXX_DEBUG 璁句负 Y 鏃舵墠琚寘鍚€?
+该属性及配套代码仅在Kconfig 参数 TCM_QLA2XXX_DEBUG 设为 Y 时才被包含
 
-榛樿鎯呭喌涓嬭骞叉壈锛坖ammer锛変唬鐮佸拰鍔熻兘鏄鐢ㄧ殑銆?
+默认情况下该干扰（jammer）代码和功能是禁用的
 
-浣跨敤璇ュ睘鎬у彲浠ユ帶鍒跺鍙戝線鎵€閫変富鏈虹殑 SCSI 鍛戒护鐨勪涪寮冦€?
+使用该属性可以控制对发往所选主机的 SCSI 命令的丢弃
 
-杩欏浜庢祴璇曢敊璇鐞嗐€佹ā鎷熺紦鎱㈡帓绌猴紙slow drain锛変互鍙婂叾浠?fabrics 闂鍙兘鏈夌敤銆?
+这对于测试错误处理、模拟缓慢排空（slow drain）以及其fabrics 问题可能有用
 
-灏嗘煇涓富鏈虹殑 jam_host 灞炴€ц涓哄竷灏斿€?1锛屽皢涓㈠純鍙戝線璇ヤ富鏈虹殑鍛戒护銆?
+将某个主机的 jam_host 属性设为布尔1，将丢弃发往该主机的命令
 
-閲嶇疆鍥?0 浠ュ仠姝㈠共鎵般€?
+重置0 以停止干扰
 
 ```
   echo 1 > /sys/kernel/config/target/qla2xxx/21:00:00:24:ff:27:8f:ae/tpgt_1/attrib/jam_host

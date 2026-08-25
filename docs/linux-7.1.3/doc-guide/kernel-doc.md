@@ -1,42 +1,42 @@
 ﻿
-## 缂栧啓 kernel-doc 娉ㄩ噴
+## 编写 kernel-doc 注释
 
 
-Linux 鍐呮牳婧愭枃浠朵腑鍙兘鍖呭惈閲囩敤 kernel-doc 鏍煎紡鐨勭粨鏋勫寲鏂囨。娉ㄩ噴锛岀敤浜庢弿杩颁唬鐮佺殑鍑芥暟銆佺被鍨嬪拰璁捐銆傚綋鏂囨。宓屽叆鍦ㄦ簮鏂囦欢涓椂锛屾洿瀹规槗淇濇寔鏂囨。涓庝唬鐮佸悓姝ユ洿鏂般€?
+Linux 内核源文件中可能包含采用 kernel-doc 格式的结构化文档注释，用于描述代码的函数、类型和设计。当文档嵌入在源文件中时，更容易保持文档与代码同步更新
 
-   gtk-doc 鎴?Doxygen 绫讳技锛屼絾鐢变簬鍘嗗彶鍘熷洜鍙堟槑鏄句笉鍚屻€傚唴鏍告簮鐮佷腑鍖呭惈鏁颁互涓囪鐨?kernel-doc 娉ㄩ噴銆傝閬靛惊姝ゅ鎻忚堪鐨勯鏍笺€?
+   gtk-doc Doxygen 类似，但由于历史原因又明显不同。内核源码中包含数以万计kernel-doc 注释。请遵循此处描述的风格
 
-   璇峰弬闃?Documentation/rust/general-information.rst銆?
+   请参Documentation/rust/general-information.rst
 
-kernel-doc 缁撴瀯浼氫粠娉ㄩ噴涓彁鍙栧嚭鏉ワ紝骞舵嵁姝ょ敓鎴愬甫閿氱偣鐨勩€佹牸寮忔纭殑 `Sphinx C Domain`_ 鍑芥暟涓庣被鍨嬫弿杩般€傝繖浜涙弿杩颁細缁忚繃鐗规畩 kernel-doc 楂樹寒涓庝氦鍙夊紩鐢ㄧ殑杩囨护澶勭悊銆傝瑙佷笅鏂囥€?
-
-
-姣忎釜閫氳繃 `EXPORT_SYMBOL` 鎴?`EXPORT_SYMBOL_GPL` 瀵煎嚭缁欏彲鍔犺浇妯″潡鐨勫嚱鏁伴兘搴旀嫢鏈?kernel-doc 娉ㄩ噴銆傚ご鏂囦欢涓緵妯″潡浣跨敤鐨勫嚱鏁颁笌鏁版嵁缁撴瀯鍚屾牱搴斿綋鎷ユ湁 kernel-doc 娉ㄩ噴銆?
-
-涓哄叾浠栧唴鏍告枃浠跺彲瑙侊紙鏈爣璁颁负 `static`锛夌殑鍑芥暟鎻愪緵 kernel-doc 鏍煎紡鐨勬枃妗ｄ篃鏄竴绉嶈壇濂界殑瀹炶返銆傛垜浠繕寤鸿涓虹鏈夛紙鏂囦欢绾?`static`锛夊嚱鏁颁篃鎻愪緵 kernel-doc 鏍煎紡鏂囨。锛屼互淇濇寔鍐呮牳婧愮爜甯冨眬鐨勪竴鑷存€с€傝繖灞炰簬杈冧綆浼樺厛绾э紝鐢辫鍐呮牳婧愭枃浠剁淮鎶よ€呰嚜琛屽喅瀹氥€?
-
-### 濡備綍鏍煎紡鍖?kernel-doc 娉ㄩ噴
+kernel-doc 结构会从注释中提取出来，并据此生成带锚点的、格式正确的 `Sphinx C Domain`_ 函数与类型描述。这些描述会经过特殊 kernel-doc 高亮与交叉引用的过滤处理。详见下文
 
 
-kernel-doc 娉ㄩ噴浣跨敤寮€澶寸殑娉ㄩ噴鏍囪 `/**`銆俙kernel-doc` 宸ュ叿浼氭彁鍙栦互姝ゆ柟寮忔爣璁扮殑娉ㄩ噴銆傛敞閲婄殑鍏朵綑閮ㄥ垎鏍煎紡濡傚悓鏅€氱殑澶氳娉ㄩ噴锛屽乏渚ф湁涓€鍒楁槦鍙凤紝骞朵互鐙崰涓€琛岀殑 `*/` 缁撴潫銆?
+每个通过 `EXPORT_SYMBOL` `EXPORT_SYMBOL_GPL` 导出给可加载模块的函数都应拥kernel-doc 注释。头文件中供模块使用的函数与数据结构同样应当拥有 kernel-doc 注释
 
-鍑芥暟涓庣被鍨嬬殑 kernel-doc 娉ㄩ噴搴旂揣閭绘墍鎻忚堪鐨勫嚱鏁版垨绫诲瀷涔嬪墠鏀剧疆锛屼互鏈€澶х▼搴︽彁楂樹唬鐮佹敼鍔ㄨ€呭悓鏃舵洿鏂版枃妗ｇ殑鍙兘鎬с€傛杩扮被锛坥verview锛夌殑 kernel-doc 娉ㄩ噴鍙互鏀惧湪椤跺眰缂╄繘绾у埆鐨勪换鎰忎綅缃€?
+为其他内核文件可见（未标记为 `static`）的函数提供 kernel-doc 格式的文档也是一种良好的实践。我们还建议为私有（文件`static`）函数也提供 kernel-doc 格式文档，以保持内核源码布局的一致性。这属于较低优先级，由该内核源文件维护者自行决定
 
-浠ユ洿楂樼殑璇︾粏绋嬪害杩愯 `kernel-doc` 宸ュ叿涓斾笉瀹為檯鐢熸垚杈撳嚭锛屽彲鐢ㄤ簬楠岃瘉 kernel-doc 娉ㄩ噴鏍煎紡鏄惁姝ｇ‘锛?
+### 如何格式kernel-doc 注释
+
+
+kernel-doc 注释使用开头的注释标记 `/**`。`kernel-doc` 工具会提取以此方式标记的注释。注释的其余部分格式如同普通的多行注释，左侧有一列星号，并以独占一行的 `*/` 结束
+
+函数与类型的 kernel-doc 注释应紧邻所描述的函数或类型之前放置，以最大程度提高代码改动者同时更新文档的可能性。概述类（overview）的 kernel-doc 注释可以放在顶层缩进级别的任意位置
+
+以更高的详细程度运行 `kernel-doc` 工具且不实际生成输出，可用于验证 kernel-doc 注释格式是否正确
 
 ```
 	tools/docs/kernel-doc -v -none drivers/foo/bar.c
 ```
 
-`.c` 鏂囦欢鐨勬枃妗ｆ牸寮忎篃浼氱敱鍐呮牳鏋勫缓杩囩▼楠岃瘉锛?
+`.c` 文件的文档格式也会由内核构建过程验证
 
 ```
 	make W=n
 ```
 
-涓嶈繃锛屼笂杩板懡浠や笉浼氶獙璇佸ご鏂囦欢銆傚ご鏂囦欢搴斾娇鐢?`kernel-doc` 鍗曠嫭妫€鏌ャ€?
+不过，上述命令不会验证头文件。头文件应使`kernel-doc` 单独检查
 
-### 鍑芥暟鏂囨。
+### 函数文档
 
 
 ```
@@ -64,14 +64,14 @@ kernel-doc 娉ㄩ噴浣跨敤寮€澶寸殑娉ㄩ噴鏍囪 `/**`銆俙kernel
    */
 ```
 
-鍑芥暟鍚嶄箣鍚庣殑绠€瑕佹弿杩板彲浠ヨ法瓒婂琛岋紝骞跺湪鍙傛暟鎻忚堪銆佺┖娉ㄩ噴琛屾垨娉ㄩ噴鍧楃粨鏉熸椂缁堟銆?
+函数名之后的简要描述可以跨越多行，并在参数描述、空注释行或注释块结束时终止
 
-#### 鍑芥暟鍙傛暟
+#### 函数参数
 
 
-姣忎釜鍑芥暟鍙傛暟搴旀寜椤哄簭绱ч殢绠€鐭殑鍑芥暟鎻忚堪涔嬪悗杩涜鎻忚堪銆傚嚱鏁版弿杩颁笌鍙傛暟涔嬮棿銆佷互鍙婂悇鍙傛暟涔嬮棿涓嶈鐣欑┖琛屻€?
+每个函数参数应按顺序紧随简短的函数描述之后进行描述。函数描述与参数之间、以及各参数之间不要留空行
 
-姣忎釜 `@argument:` 鎻忚堪鍙互璺ㄨ秺澶氳銆?
+每个 `@argument:` 描述可以跨越多行
 
 
    If the `@argument` description has multiple lines, the continuation
@@ -86,16 +86,16 @@ kernel-doc 娉ㄩ噴浣跨敤寮€澶寸殑娉ㄩ噴鏍囪 `/**`銆俙kernel
       *		that continues on next lines
 ```
 
-濡傛灉鍑芥暟鎷ユ湁鏁伴噺鍙彉鐨勫弬鏁帮紝鍏舵弿杩板簲涓猴細
+如果函数拥有数量可变的参数，其描述应为：
 
 ```
       * @...: description
 ```
 
-#### 鍑芥暟涓婁笅鏂?
+#### 函数上下
 
 
-鍑芥暟鍙璋冪敤鐨勪笂涓嬫枃搴斿湪涓€涓悕涓?`Context` 鐨勫皬鑺備腑鎻忚堪銆傚叾涓簲鍖呮嫭璇ュ嚱鏁版槸鍚︿細浼戠湢銆佽兘鍚﹀湪涓柇涓婁笅鏂囦腑璋冪敤锛屼互鍙婂畠鑾峰彇銆侀噴鏀炬垨鏈熸湜鍏惰皟鐢ㄨ€呮寔鏈夊摢浜涢攣銆?
+函数可被调用的上下文应在一个名`Context` 的小节中描述。其中应包括该函数是否会休眠、能否在中断上下文中调用，以及它获取、释放或期望其调用者持有哪些锁
 
 ```
   * Context: Any context.
@@ -107,13 +107,13 @@ kernel-doc 娉ㄩ噴浣跨敤寮€澶寸殑娉ㄩ噴鏍囪 `/**`銆俙kernel
   * Context: Interrupt context.
 ```
 
-#### 杩斿洖鍊?
+#### 杩斿洖鍊。
 
 
-杩斿洖鍊硷紙鑻ユ湁锛夊簲鍦ㄤ竴涓悕涓?`Return`锛堟垨 `Returns`锛夌殑涓撶敤灏忚妭涓弿杩般€?
+返回值（若有）应在一个名`Return`（或 `Returns`）的专用小节中描述
 
 
-  #) 浣犳彁渚涚殑澶氳鎻忚堪鎬ф枃鏈?*涓嶄細**琚瘑鍒负锛?
+  #) 你提供的多行描述性文*不会**被识别为
 
 ```
 	* Return:
@@ -122,13 +122,13 @@ kernel-doc 娉ㄩ噴浣跨敤寮€澶寸殑娉ㄩ噴鏍囪 `/**`銆俙kernel
 	* %-ENOMEM - out of memory
 ```
 
-     涓婅堪鍐欐硶浼氳鍏ㄩ儴鎷兼帴鍦ㄤ竴璧凤紝浜х敓锛?
+     上述写法会被全部拼接在一起，产生
 
 ```
 	Return: 0 - OK -EINVAL - invalid argument -ENOMEM - out of memory
 ```
 
-     鍥犳锛屼负浜嗕骇鐢熸湡鏈涚殑鎹㈣锛岄渶瑕佷娇鐢?ReST 鍒楄〃锛屼緥濡傦細
+     因此，为了产生期望的换行，需要使ReST 列表，例如：
 
 ```
       * Return:
@@ -136,12 +136,12 @@ kernel-doc 娉ㄩ噴浣跨敤寮€澶寸殑娉ㄩ噴鏍囪 `/**`銆俙kernel
       * * %-EBUSY	- Device should not be runtime suspended
 ```
 
-  #) 濡傛灉浣犳彁渚涚殑鎻忚堪鎬ф枃鏈腑鏈変互鈥滅煭璇姞鍐掑彿鈥濆紑澶寸殑琛岋紝姣忎釜杩欐牱鐨勭煭璇兘浼氳褰撲綔鏂扮殑灏忚妭鏍囬锛岃繖寰堝彲鑳芥棤娉曚骇鐢熸湡鏈涚殑鏁堟灉銆?
+  #) 如果你提供的描述性文本中有以“短语加冒号”开头的行，每个这样的短语都会被当作新的小节标题，这很可能无法产生期望的效果
 
-### 缁撴瀯浣撱€佽仈鍚堜綋涓庢灇涓炬枃妗?
+### 结构体、联合体与枚举文
 
 
-`struct`銆乣union` 涓?`enum` 鐨?kernel-doc 閫氱敤鏍煎紡涓猴細
+`struct`、`union` `enum` kernel-doc 通用格式为：
 
 ```
   /**
@@ -155,20 +155,20 @@ kernel-doc 娉ㄩ噴浣跨敤寮€澶寸殑娉ㄩ噴鏍囪 `/**`銆俙kernel
    */
 ```
 
-浣犲彲浠ュ皢涓婅堪绀轰緥涓殑 `struct` 鏇挎崲涓?`union` 鎴?`enum` 鏉ユ弿杩拌仈鍚堜綋鎴栨灇涓俱€俙member` 涓€璇嶆棦鐢ㄤ簬鎸囦唬 `struct` 鍜?`union` 鐨勬垚鍛樺悕锛屼篃鐢ㄤ簬鎸囦唬 `enum` 涓殑鏋氫妇椤广€?
+你可以将上述示例中的 `struct` 替换`union` `enum` 来描述联合体或枚举。`member` 一词既用于指代 `struct` `union` 的成员名，也用于指代 `enum` 中的枚举项
 
-缁撴瀯浣撳悕涔嬪悗鐨勭畝瑕佹弿杩板彲浠ヨ法瓒婂琛岋紝骞跺湪鎴愬憳鎻忚堪銆佺┖娉ㄩ噴琛屾垨娉ㄩ噴鍧楃粨鏉熸椂缁堟銆?
+结构体名之后的简要描述可以跨越多行，并在成员描述、空注释行或注释块结束时终止
 
-#### 鎴愬憳
+#### 成员
 
 
-缁撴瀯浣撱€佽仈鍚堜綋涓庢灇涓剧殑鎴愬憳搴斿鍚屽嚱鏁板弬鏁颁竴鏍疯繘琛屾枃妗ｅ寲锛涘畠浠揣璺熺畝鐭弿杩颁箣鍚庯紝骞朵笖鍙互璺ㄥ琛屻€?
+结构体、联合体与枚举的成员应如同函数参数一样进行文档化；它们紧跟简短描述之后，并且可以跨多行
 
-鍦?`struct` 鎴?`union` 鎻忚堪鍐呴儴锛屼綘鍙互浣跨敤 `private:` 涓?`public:` 娉ㄩ噴鏍囩銆備綅浜?`private:` 鍖哄煙鍐呴儴鐨勭粨鏋勪綋瀛楁涓嶄細鍦ㄧ敓鎴愮殑杈撳嚭鏂囨。涓垪鍑恒€?
+`struct` `union` 描述内部，你可以使用 `private:` `public:` 注释标签。位`private:` 区域内部的结构体字段不会在生成的输出文档中列出
 
-`private:` 涓?`public:` 鏍囩蹇呴』绱ц窡鍦?`/*` 娉ㄩ噴鏍囪涔嬪悗寮€濮嬨€傚畠浠彲浠ュ彲閫夊湴鍖呭惈浣嶄簬 `:` 涓庣粨鏉熺殑 `*/` 鏍囪涔嬮棿鐨勬敞閲娿€?
+`private:` `public:` 标签必须紧跟`/*` 注释标记之后开始。它们可以可选地包含位于 `:` 与结束的 `*/` 标记之间的注释
 
-褰?`private:` 鐢ㄤ簬宓屽缁撴瀯浣撴椂锛屽畠鍙細浼犳挱鍒板唴灞傜粨鏋勪綋/鑱斿悎浣撱€?
+`private:` 用于嵌套结构体时，它只会传播到内层结构体/联合体
 
 
 ```
@@ -190,7 +190,7 @@ kernel-doc 娉ㄩ噴浣跨敤寮€澶寸殑娉ㄩ噴鏍囪 `/**`銆俙kernel
   };
 ```
 
-#### 宓屽缁撴瀯浣?鑱斿悎浣?
+#### 嵌套结构联合
 
 
 ```
@@ -235,13 +235,13 @@ kernel-doc 娉ㄩ噴浣跨敤寮€澶寸殑娉ㄩ噴鏍囪 `/**`銆俙kernel
       };
 ```
 
-   #) 鍦ㄤ负宓屽缁撴瀯浣撴垨鑱斿悎浣撶紪鍐欐枃妗ｆ椂锛屽鏋?`struct`/`union` `foo` 鍏峰悕锛屽垯鍏跺唴閮ㄧ殑鎴愬憳 `bar` 搴旇涓?`@foo.bar:`銆?
-   #) 褰撳祵濂楃殑 `struct`/`union` 涓哄尶鍚嶆椂锛屽叾涓殑鎴愬憳 `bar` 搴旇涓?`@bar:`銆?
+   #) 在为嵌套结构体或联合体编写文档时，如`struct`/`union` `foo` 具名，则其内部的成员 `bar` 应记`@foo.bar:`
+   #) 当嵌套的 `struct`/`union` 为匿名时，其中的成员 `bar` 应记`@bar:`
 
-#### 琛屽唴鎴愬憳鏂囨。娉ㄩ噴
+#### 行内成员文档注释
 
 
-缁撴瀯浣撴垚鍛樹篃鍙互鍦ㄥ叾瀹氫箟鍐呴儴浠ヨ鍐呮柟寮忕紪鍐欐枃妗ｃ€傛湁涓ょ椋庢牸锛氬崟琛屾敞閲婏紙寮€澶?`/**` 涓庣粨灏?`*/` 浣嶄簬鍚屼竴琛岋級锛屼互鍙婂琛屾敞閲婏紙浜岃€呭悇鍗犱竴琛岋級锛?
+结构体成员也可以在其定义内部以行内方式编写文档。有两种风格：单行注释（开`/**` 与结`*/` 位于同一行），以及多行注释（二者各占一行）
 
 ```
   /**
@@ -274,7 +274,7 @@ kernel-doc 娉ㄩ噴浣跨敤寮€澶寸殑娉ㄩ噴鏍囪 `/**`銆俙kernel
   };
 ```
 
-### Typedef 鏂囨。
+### Typedef 文档
 
 
 ```
@@ -299,7 +299,7 @@ kernel-doc 娉ㄩ噴浣跨敤寮€澶寸殑娉ㄩ噴鏍囪 `/**`銆俙kernel
    typedef void (*type_name)(struct v4l2_ctrl *arg1, void *arg2);
 ```
 
-### 鍙橀噺鏂囨。
+### 变量文档
 
 
 ```
@@ -311,12 +311,12 @@ kernel-doc 娉ㄩ噴浣跨敤寮€澶寸殑娉ㄩ噴鏍囪 `/**`銆俙kernel
    extern int var_name;
 ```
 
-### 绫诲璞″畯鏂囨。
+### 类对象宏文档
 
 
-绫诲璞″畯锛坥bject-like macro锛変笌绫诲嚱鏁板畯锛坒unction-like macro锛変笉鍚屻€備簩鑰呯殑鍖哄垎鍦ㄤ簬锛氱被鍑芥暟瀹忕殑瀹忓悕鏄惁绱ф帴宸﹀渾鎷彿 `'('`锛岀被瀵硅薄瀹忕殑瀹忓悕鍒欎笉绱ч殢宸﹀渾鎷彿銆?
+类对象宏（object-like macro）与类函数宏（function-like macro）不同。二者的区分在于：类函数宏的宏名是否紧接左圆括号 `'('`，类对象宏的宏名则不紧随左圆括号
 
-绫诲嚱鏁板畯鐢?`tools/docs/kernel-doc` 鍍忓嚱鏁颁竴鏍峰鐞嗐€傚畠浠彲鑳藉甫鏈夊弬鏁板垪琛ㄣ€傜被瀵硅薄瀹忔病鏈夊弬鏁板垪琛ㄣ€?
+类函数宏`tools/docs/kernel-doc` 像函数一样处理。它们可能带有参数列表。类对象宏没有参数列表
 
 ```
   /**
@@ -350,55 +350,55 @@ kernel-doc 娉ㄩ噴浣跨敤寮€澶寸殑娉ㄩ噴鏍囪 `/**`銆俙kernel
 	.cleanup_fb = drm_gem_vram_plane_helper_cleanup_fb
 ```
 
-### 楂樹寒涓庝氦鍙夊紩鐢?
+### 高亮与交叉引
 
 
-浠ヤ笅鐗规畩妯″紡浼氬湪 kernel-doc 娉ㄩ噴鐨勬弿杩版€ф枃鏈腑琚瘑鍒紝骞惰杞崲涓烘纭殑 reStructuredText 鏍囪涓?`Sphinx C Domain`_ 寮曠敤銆?
+以下特殊模式会在 kernel-doc 注释的描述性文本中被识别，并被转换为正确的 reStructuredText 标记`Sphinx C Domain`_ 引用
 
-	       娉ㄦ剰锛?*涓嶈兘**鍦ㄦ櫘閫氱殑 reStructuredText 鏂囨。涓娇鐢ㄣ€?
+	       注意*不能**在普通的 reStructuredText 文档中使用
 
 `funcname()`
-  鍑芥暟寮曠敤銆?
+  函数引用
 
 `@parameter`
-  鍑芥暟鍙傛暟鐨勫悕绉般€傦紙浠呬綔鏍煎紡鍖栵紝涓嶈繘琛屼氦鍙夊紩鐢ㄣ€傦級
+  函数参数的名称。（仅作格式化，不进行交叉引用。）
 
 `%CONST`
-  甯搁噺鐨勫悕绉般€傦紙浠呬綔鏍煎紡鍖栵紝涓嶈繘琛屼氦鍙夊紩鐢ㄣ€傦級
+  常量的名称。（仅作格式化，不进行交叉引用。）
 
 ```
     %0    %NULL    %-1    %-EFAULT    %-EINVAL    %-ENOMEM
 ```
 
 ```literal```
-  涓€涓簲鍘熸牱澶勭悊鐨勫瓧闈㈠潡銆傝緭鍑哄皢浣跨敤 `绛夊瀛椾綋`銆?
+  一个应原样处理的字面块。输出将使用 `等宽字体`
 
-  濡傛灉浣犻渶瑕佷娇鐢ㄤ竴浜涚壒娈婂瓧绗︼紙鍚﹀垯杩欎簺瀛楃浼氳 kernel-doc 鑴氭湰鎴?reStructuredText 璧嬩簣鐗瑰畾鍚箟锛夛紝璇ヨ娉曠壒鍒湁鐢ㄣ€?
+  如果你需要使用一些特殊字符（否则这些字符会被 kernel-doc 脚本reStructuredText 赋予特定含义），该语法特别有用
 
-  褰撲綘闇€瑕佸湪鍑芥暟鎻忚堪涓娇鐢ㄧ被浼?`%ph` 杩欐牱鐨勪笢瑗挎椂锛岃繖灏ゅ叾鏈夌敤銆?
+  当你需要在函数描述中使用类`%ph` 这样的东西时，这尤其有用
 
 `$ENVVAR`
-  鐜鍙橀噺鐨勫悕绉般€傦紙浠呬綔鏍煎紡鍖栵紝涓嶈繘琛屼氦鍙夊紩鐢ㄣ€傦級
+  环境变量的名称。（仅作格式化，不进行交叉引用。）
 
 `&struct name`
-  缁撴瀯浣撳紩鐢ㄣ€?
+  结构体引用
 
 `&enum name`
-  鏋氫妇寮曠敤銆?
+  枚举引用
 
 `&typedef name`
-  Typedef 寮曠敤銆?
+  Typedef 引用
 
 `&struct_name->member` 鎴?`&struct_name.member`
-  `struct` 鎴?`union` 鎴愬憳寮曠敤銆備氦鍙夊紩鐢ㄦ寚鍚?`struct` 鎴?`union` 鐨勫畾涔夛紝鑰岄潪鐩存帴鎸囧悜鎴愬憳銆?
+  `struct` `union` 成员引用。交叉引用指`struct` `union` 的定义，而非直接指向成员
 
 `&name`
-  閫氱敤绫诲瀷寮曠敤銆傚缓璁紭鍏堜娇鐢ㄤ笂杩板畬鏁村紩鐢ㄥ舰寮忋€傝繖涓昏鐢ㄤ簬閬楃暀娉ㄩ噴銆?
+  通用类型引用。建议优先使用上述完整引用形式。这主要用于遗留注释
 
-#### 浠?reStructuredText 杩涜浜ゅ弶寮曠敤
+#### reStructuredText 进行交叉引用
 
 
-浠?reStructuredText 鏂囨。涓氦鍙夊紩鐢?kernel-doc 娉ㄩ噴閲屽畾涔夌殑鍑芥暟涓庣被鍨嬫棤闇€棰濆璇硶銆傚彧闇€鍦ㄥ嚱鏁板悕鍚庡姞涓?`()`锛屽苟鍦ㄧ被鍨嬪墠鍐欎笂 `struct`銆乣union`銆乣enum` 鎴?`typedef` 鍗冲彲銆?
+reStructuredText 文档中交叉引kernel-doc 注释里定义的函数与类型无需额外语法。只需在函数名后加`()`，并在类型前写上 `struct`、`union`、`enum` `typedef` 即可
 
 ```
   See foo().
@@ -408,23 +408,23 @@ kernel-doc 娉ㄩ噴浣跨敤寮€澶寸殑娉ㄩ噴鏍囪 `/**`銆俙kernel
   See typedef meh.
 ```
 
-涓嶈繃锛屽鏋滀綘甯屾湜浜ゅ弶寮曠敤閾炬帴浣跨敤鑷畾涔夋枃瀛楋紝鍙互杩欐牱鍐欙細
+不过，如果你希望交叉引用链接使用自定义文字，可以这样写：
 
 ```
   See :c:func:`my custom link text for function foo <foo>`.
   See :c:type:`my custom link text for struct bar <bar>`.
 ```
 
-鏇村缁嗚妭璇峰弬鑰?`Sphinx C Domain`_ 鏂囨。銆?
+更多细节请参`Sphinx C Domain`_ 文档
 
-   鍙橀噺涓嶄細琚嚜鍔ㄨ繘琛屼氦鍙夊紩鐢ㄣ€傚浜庤繖浜涘彉閲忥紝浣犻渶瑕佹樉寮忔坊鍔?C 鍩熶氦鍙夊紩鐢ㄣ€?
+   变量不会被自动进行交叉引用。对于这些变量，你需要显式添C 域交叉引用
 
-### 姒傝堪鏂囨。娉ㄩ噴
+### 概述文档注释
 
 
-涓轰簡渚夸簬璁╂簮浠ｇ爜涓庢敞閲婂郊姝ら潬杩戯紝浣犲彲浠ュ寘鍚?kernel-doc 鏂囨。鍧楋紝瀹冧滑鏄嚜鐢辨牸寮忔敞閲婏紝鑰屼笉鏄拡瀵瑰嚱鏁般€佺粨鏋勪綋銆佽仈鍚堜綋銆佹灇涓俱€乼ypedef 鎴栧彉閲忕殑 kernel-doc銆備緥濡傦紝杩欏彲鐢ㄤ簬鎻忚堪鏌愪釜椹卞姩鎴栧簱浠ｇ爜鐨勮繍琛屽師鐞嗐€?
+为了便于让源代码与注释彼此靠近，你可以包kernel-doc 文档块，它们是自由格式注释，而不是针对函数、结构体、联合体、枚举、typedef 或变量的 kernel-doc。例如，这可用于描述某个驱动或库代码的运行原理
 
-杩欓€氳繃浣跨敤甯︽湁灏忚妭鏍囬鐨?`DOC:` 娈靛叧閿瓧鏉ュ疄鐜般€?
+这通过使用带有小节标题`DOC:` 段关键字来实现
 
 ```
   /**
@@ -440,24 +440,24 @@ kernel-doc 娉ㄩ噴浣跨敤寮€澶寸殑娉ㄩ噴鏍囪 `/**`銆俙kernel
    */
 ```
 
-`DOC:` 涔嬪悗鐨勬爣棰樻棦浣滀负婧愭枃浠朵腑鐨勬爣棰橈紝涔熶綔涓烘彁鍙栬鏂囨。娉ㄩ噴鐨勬爣璇嗙銆傚洜姝わ紝鏍囬鍦ㄦ枃浠跺唴蹇呴』鍞竴銆?
+`DOC:` 之后的标题既作为源文件中的标题，也作为提取该文档注释的标识符。因此，标题在文件内必须唯一
 
-## 鍖呭惈 kernel-doc 娉ㄩ噴
+## 包含 kernel-doc 注释
 
 
-鏂囨。娉ㄩ噴鍙互浣跨敤涓撶敤鐨?kernel-doc Sphinx 鎸囦护鎵╁睍锛屽寘鍚繘浠绘剰 reStructuredText 鏂囨。涓€?
+文档注释可以使用专用kernel-doc Sphinx 指令扩展，包含进任意 reStructuredText 文档中
 
 ```
   .. kernel-doc:: source
      :option:
 ```
 
-**source** 鏄浉瀵逛簬鍐呮牳婧愮爜鏍戠殑婧愭枃浠惰矾寰勩€傛敮鎸佷互涓嬫寚浠ら€夐」锛?
+**source** 是相对于内核源码树的源文件路径。支持以下指令选项
 
 export: **[source-pattern ...]**
-  鍖呭惈 **source** 涓墍鏈夊凡閫氳繃 `EXPORT_SYMBOL` 鎴?`EXPORT_SYMBOL_GPL` 瀵煎嚭鐨勫嚱鏁扮殑鏂囨。锛屽鍑轰綅缃彲浠ユ槸 **source** 鏈韩锛屼篃鍙互鏄?**source-pattern** 鎸囧畾鐨勪换鎰忔枃浠躲€?
+  包含 **source** 中所有已通过 `EXPORT_SYMBOL` `EXPORT_SYMBOL_GPL` 导出的函数的文档，导出位置可以是 **source** 本身，也可以**source-pattern** 指定的任意文件
 
-  **source-pattern** 鍦?kernel-doc 娉ㄩ噴琚斁鍦ㄥご鏂囦欢涓€佽€?`EXPORT_SYMBOL` 涓?`EXPORT_SYMBOL_GPL` 绱ч偦鍑芥暟瀹氫箟鏃堕潪甯告湁鐢ㄣ€?
+  **source-pattern** kernel-doc 注释被放在头文件中、`EXPORT_SYMBOL` `EXPORT_SYMBOL_GPL` 紧邻函数定义时非常有用
 
 ```
     .. kernel-doc:: lib/bitmap.c
@@ -468,7 +468,7 @@ export: **[source-pattern ...]**
 ```
 
 internal: **[source-pattern ...]**
-  鍖呭惈 **source** 涓墍鏈?*鏈?*閫氳繃 `EXPORT_SYMBOL` 鎴?`EXPORT_SYMBOL_GPL` 瀵煎嚭鐨勫嚱鏁颁笌绫诲瀷鐨勬枃妗ｏ紝瀵煎嚭浣嶇疆鍙互鏄?**source** 鏈韩锛屼篃鍙互鏄?**source-pattern** 鎸囧畾鐨勪换鎰忔枃浠躲€?
+  包含 **source** 中所**通过 `EXPORT_SYMBOL` `EXPORT_SYMBOL_GPL` 导出的函数与类型的文档，导出位置可以**source** 本身，也可以**source-pattern** 指定的任意文件
 
 ```
     .. kernel-doc:: drivers/gpu/drm/i915/intel_audio.c
@@ -476,7 +476,7 @@ internal: **[source-pattern ...]**
 ```
 
 identifiers: **[ function/type ...]**
-  鍖呭惈 **source** 涓瘡涓?**function** 涓?**type** 鐨勬枃妗ｃ€傚鏋滄湭鎸囧畾 **function**锛屽垯浼氬寘鍚?**source** 涓墍鏈夊嚱鏁颁笌绫诲瀷鐨勬枃妗ｃ€?*type** 鍙互鏄?`struct`銆乣union`銆乣enum`銆乣typedef` 鎴?`var` 鏍囪瘑绗︺€?
+  包含 **source** 中每**function** **type** 的文档。如果未指定 **function**，则会包**source** 中所有函数与类型的文档*type** 可以`struct`、`union`、`enum`、`typedef` `var` 标识符
 
 ```
     .. kernel-doc:: lib/bitmap.c
@@ -487,7 +487,7 @@ identifiers: **[ function/type ...]**
 ```
 
 no-identifiers: **[ function/type ...]**
-  鎺掗櫎 **source** 涓瘡涓?**function** 涓?**type** 鐨勬枃妗ｃ€?
+  排除 **source** 中每**function** **type** 的文档
 
 ```
     .. kernel-doc:: lib/bitmap.c
@@ -495,21 +495,21 @@ no-identifiers: **[ function/type ...]**
 ```
 
 functions: **[ function/type ...]**
-  杩欐槸 `identifiers` 鎸囦护鐨勫埆鍚嶏紝宸插簾寮冦€?
+  这是 `identifiers` 指令的别名，已废弃
 
 doc: **title**
-  鍖呭惈 **source** 涓敱 **title** 鏍囪瘑鐨?`DOC:` 娈佃惤鐨勬枃妗ｃ€?*title** 涓厑璁稿寘鍚┖鏍硷紱涓嶈涓?**title** 鍔犲紩鍙枫€?*title** 浠呬綔涓鸿娈佃惤鐨勬爣璇嗙锛屼笉浼氬寘鍚湪杈撳嚭涓€傝纭繚鍦ㄥ鍥寸殑 reStructuredText 鏂囨。涓湁鍚堥€傜殑鏍囬銆?
+  包含 **source** 中由 **title** 标识`DOC:` 段落的文档*title** 中允许包含空格；不要**title** 加引号*title** 仅作为该段落的标识符，不会包含在输出中。请确保在外围的 reStructuredText 文档中有合适的标题
 
 ```
     .. kernel-doc:: drivers/gpu/drm/i915/intel_audio.c
        :doc: High Definition Audio over HDMI and Display Port
 ```
 
-涓嶅甫閫夐」鏃讹紝kernel-doc 鎸囦护浼氬寘鍚簮鏂囦欢涓墍鏈夌殑鏂囨。娉ㄩ噴銆?
+不带选项时，kernel-doc 指令会包含源文件中所有的文档注释
 
-kernel-doc 鎵╁睍浣嶄簬鍐呮牳婧愮爜鏍戜腑锛岃矾寰勪负 `Documentation/sphinx/kerneldoc.py`銆傚畠鍦ㄥ唴閮ㄤ娇鐢?`tools/docs/kernel-doc` 鑴氭湰鏉ヤ粠婧愮爜涓彁鍙栨枃妗ｆ敞閲娿€?
+kernel-doc 扩展位于内核源码树中，路径为 `Documentation/sphinx/kerneldoc.py`。它在内部使`tools/docs/kernel-doc` 脚本来从源码中提取文档注释
 
-### 濡備綍浣跨敤 kernel-doc 鐢熸垚 man 鎵嬪唽椤?
+### 如何使用 kernel-doc 生成 man 手册
 
 
 ```
@@ -519,11 +519,11 @@ kernel-doc 鎵╁睍浣嶄簬鍐呮牳婧愮爜鏍戜腑锛岃矾寰勪负 `Docu
 ```
   $ ./tools/docs/sphinx-build-wrapper mandocs
 
-杈撳嚭浼氫綅浜庤緭鍑虹洰褰曚笅鐨?`/man` 鐩綍涓紙榛樿锛歚Documentation/output`锛夈€?
+输出会位于输出目录下`/man` 目录中（默认：`Documentation/output`）
 
-鍙€夊湴锛屼篃鍙互閫氳繃浣跨敤 SPHINXDIRS 鏉ョ敓鎴愰儴鍒?man 鎵嬪唽椤甸泦鍚堬細
+可选地，也可以通过使用 SPHINXDIRS 来生成部man 手册页集合：
 
   $ make SPHINXDIRS=driver-api/media mandocs
 
 
-   褰撲娇鐢?SPHINXDIRS={subdir} 鏃讹紝瀹冨彧浼氫负鏄惧紡浣嶄簬 `Documentation/{subdir}/.../*.rst` 鏂囦欢涓殑鍐呭鐢熸垚 man 鎵嬪唽椤点€?
+   当使SPHINXDIRS={subdir} 时，它只会为显式位于 `Documentation/{subdir}/.../*.rst` 文件中的内容生成 man 手册页

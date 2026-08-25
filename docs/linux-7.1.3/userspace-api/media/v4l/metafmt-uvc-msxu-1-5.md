@@ -2,16 +2,16 @@
 ######## V4L2_META_FMT_UVC_MSXU_1_5 ('UVCM')
 
 
-Microsoft(R) 鐨?UVC 璐熻浇鍏冩暟鎹€?
+Microsoft(R) UVC 负载元数据
 
 
-## 鎻忚堪
+## 描述
 
 
-V4L2_META_FMT_UVC_MSXU_1_5 缂撳啿鍖洪伒寰?V4L2_META_FMT_UVC 鐨勫厓鏁版嵁缂撳啿鍖哄竷灞€锛屽敮涓€
-鍖哄埆鍦ㄤ簬瀹冨湪 `buffer[]` 瀛楁涓寘鍚簡鎵€鏈?UVC 鍏冩暟鎹紝鑰屼笉浠呮槸鍓?2-12 瀛楄妭銆?
+V4L2_META_FMT_UVC_MSXU_1_5 缓冲区遵V4L2_META_FMT_UVC 的元数据缓冲区布局，唯一
+区别在于它在 `buffer[]` 字段中包含了所UVC 元数据，而不仅是2-12 字节
 
-鍏冩暟鎹牸寮忛伒寰?Microsoft(R) [^1^] 鐨勮鑼冦€?
+元数据格式遵Microsoft(R) [^1^] 的规范
 
 
 [^1^] https://docs.microsoft.com/en-us/windows-hardware/drivers/stream/uvc-extensions-1-5

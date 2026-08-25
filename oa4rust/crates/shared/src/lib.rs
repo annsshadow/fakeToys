@@ -24,6 +24,7 @@ pub mod scheduler;
 pub mod response;
 pub mod router;
 pub mod session;
+pub mod storage;
 pub mod testing;
 
 pub use deadpool_postgres::Pool;

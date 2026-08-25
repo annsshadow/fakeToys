@@ -1,17 +1,17 @@
 ﻿
-## HTE 鍐呮牳鎻愪緵鑰呴┍鍔?
+## HTE 鍐呮牳鎻愪緵鑰呴┍鍔。
 
-### 鎻忚堪
+### 描述
 
-Nvidia tegra HTE 鎻愪緵鑰咃紙涔熺О涓?GTE锛孏eneric Timestamping Engine锛岄€氱敤鏃堕棿鎴冲紩鎿庯級椹卞姩瀹炵幇浜嗕袱涓?GTE 瀹炰緥锛?) GPIO GTE 鍜?2) LIC锛圠egacy Interrupt Controller锛屼紶缁熶腑鏂帶鍒跺櫒锛塈RQ GTE銆備袱涓?GTE 瀹炰緥閮戒粠绯荤粺璁℃暟鍣?TSC 鑾峰彇鏃堕棿鎴筹紝鍏舵椂閽熼鐜囦负 31.25MHz锛岄┍鍔ㄥ湪灏嗗叾瀛樺偍涓烘椂闂存埑鍊间箣鍓嶄細灏嗘椂閽熻妭鎷嶇巼杞崲涓虹撼绉掋€?
+Nvidia tegra HTE 提供者（也称GTE，Generic Timestamping Engine，通用时间戳引擎）驱动实现了两GTE 实例) GPIO GTE 2) LIC（Legacy Interrupt Controller，传统中断控制器）IRQ GTE。两GTE 实例都从系统计数TSC 获取时间戳，其时钟频率为 31.25MHz，驱动在将其存储为时间戳值之前会将时钟节拍率转换为纳秒
 ### GPIO GTE
 
 
-璇?GTE 瀹炰緥瀵?GPIO 杩涜瀹炴椂鏃堕棿鎴虫爣璁般€備负姝わ紝GPIO 闇€瑕佽閰嶇疆涓鸿緭鍏ャ€傚彧鏈夊父寮€锛圓ON锛塆PIO 鎺у埗鍣ㄥ疄渚嬫敮鎸佸 GPIO 杩涜瀹炴椂鏃堕棿鎴虫爣璁帮紝鍥犱负瀹冧笌 GPIO GTE 绱у瘑鑰﹀悎銆備负姝わ紝GPIOLIB 鏂板浜嗕袱涓彲閫?API锛屽涓嬫墍杩般€侴PIO GTE 浠ｇ爜鍚屾椂鏀寔鍐呮牳鎬佸拰鐢ㄦ埛鎬佹秷璐硅€呫€傚唴鏍告€佹秷璐硅€呭彲浠ョ洿鎺ヤ笌 HTE 瀛愮郴缁熼€氫俊锛岃€岀敤鎴锋€佹秷璐硅€呯殑鏃堕棿鎴宠姹傚垯缁忕敱 GPIOLIB CDEV 妗嗘灦鍒拌揪 HTE 瀛愮郴缁熴€備綅浜?`Documentation/devicetree/bindings/timestamp` 鐨?hte 璁惧鏍戠粦瀹氭彁渚涗簡涓€涓秷璐硅€呭浣曡姹備竴鏉?GPIO 绾跨殑绀轰緥銆?
-鍙傝 gpiod_enable_hw_timestamp_ns() 鍜?gpiod_disable_hw_timestamp_ns()銆?
-瀵逛簬鐢ㄦ埛鎬佹秷璐硅€咃紝蹇呴』鍦?IOCTL 璋冪敤鏈熼棿鎸囧畾 GPIO_V2_LINE_FLAG_EVENT_CLOCK_HTE 鏍囧織銆傚弬鑰?`tools/gpio/gpio-event-mon.c`锛屽畠浼氫互绾崇涓哄崟浣嶈繑鍥炴椂闂存埑銆?
-### LIC锛圠egacy Interrupt Controller锛屼紶缁熶腑鏂帶鍒跺櫒锛塈RQ GTE
+GTE 实例GPIO 进行实时时间戳标记。为此，GPIO 需要被配置为输入。只有常开（AON）GPIO 控制器实例支持对 GPIO 进行实时时间戳标记，因为它与 GPIO GTE 紧密耦合。为此，GPIOLIB 新增了两个可API，如下所述。GPIO GTE 代码同时支持内核态和用户态消费者。内核态消费者可以直接与 HTE 子系统通信，而用户态消费者的时间戳请求则经由 GPIOLIB CDEV 框架到达 HTE 子系统。位`Documentation/devicetree/bindings/timestamp` hte 设备树绑定提供了一个消费者如何请求一GPIO 线的示例
+参见 gpiod_enable_hw_timestamp_ns() gpiod_disable_hw_timestamp_ns()
+对于用户态消费者，必须IOCTL 调用期间指定 GPIO_V2_LINE_FLAG_EVENT_CLOCK_HTE 标志。参`tools/gpio/gpio-event-mon.c`，它会以纳秒为单位返回时间戳
+### LIC（Legacy Interrupt Controller，传统中断控制器）IRQ GTE
 
 
-璇?GTE 瀹炰緥瀵?LIC IRQ 绾胯繘琛屽疄鏃舵椂闂存埑鏍囪銆備綅浜?`Documentation/devicetree/bindings/timestamp` 鐨?hte 璁惧鏍戠粦瀹氭彁渚涗簡涓€涓秷璐硅€呭浣曡姹備竴鏉?IRQ 绾跨殑绀轰緥銆傜敱浜庡畠涓?IRQ GTE 鎻愪緵鑰呮槸鈥斺€斿搴旂殑鏄犲皠鍏崇郴锛屾秷璐硅€呭彧闇€鐩存帴鎸囧畾鍏舵劅鍏磋叮鐨?IRQ 鍙峰嵆鍙€侶TE 妗嗘灦鐩墠涓嶆敮鎸佽 GTE 瀹炰緥鐨勭敤鎴锋€佹秷璐硅€呫€?
-涓や釜 IRQ 鍜?GPIO GTE 瀹炰緥鐨勬彁渚涜€呮簮浠ｇ爜浣嶄簬 `drivers/hte/hte-tegra194.c`銆傛祴璇曢┍鍔?`drivers/hte/hte-tegra194-test.c` 婕旂ず浜?IRQ 鍜?GPIO GTE 鐨?HTE API 鐢ㄦ硶銆?
+GTE 实例LIC IRQ 线进行实时时间戳标记。位`Documentation/devicetree/bindings/timestamp` hte 设备树绑定提供了一个消费者如何请求一IRQ 线的示例。由于它IRQ GTE 提供者是——对应的映射关系，消费者只需直接指定其感兴趣IRQ 号即可。HTE 框架目前不支持该 GTE 实例的用户态消费者
+两个 IRQ GPIO GTE 实例的提供者源代码位于 `drivers/hte/hte-tegra194.c`。测试驱`drivers/hte/hte-tegra194-test.c` 演示IRQ GPIO GTE HTE API 用法

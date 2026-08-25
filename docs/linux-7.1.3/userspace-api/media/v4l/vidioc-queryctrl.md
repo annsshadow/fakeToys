@@ -7,7 +7,7 @@
 ## Name
 
 
-VIDIOC_QUERYCTRL - VIDIOC_QUERY_EXT_CTRL - VIDIOC_QUERYMENU - 鏋氫妇鎺т欢鍜岃彍鍗曟帶浠堕」
+VIDIOC_QUERYCTRL - VIDIOC_QUERY_EXT_CTRL - VIDIOC_QUERYMENU - 枚举控件和菜单控件项
 
 ## Synopsis
 
@@ -24,33 +24,33 @@ VIDIOC_QUERYCTRL - VIDIOC_QUERY_EXT_CTRL - VIDIOC_QUERYMENU - 鏋氫妇鎺т欢�
 
 
 `fd`
-    鐢?`open()` 杩斿洖鐨勬枃浠舵弿杩扮銆?
+    `open()` 返回的文件描述符
 `argp`
-    鎸囧悜 struct `v4l2_queryctrl`銆乣v4l2_query_ext_ctrl`
-    鎴?`v4l2_querymenu` 鐨勬寚閽堬紙鍙栧喅浜庡叿浣撶殑 ioctl锛夈€?
+    指向 struct `v4l2_queryctrl`、`v4l2_query_ext_ctrl`
+    `v4l2_querymenu` 的指针（取决于具体的 ioctl）
 ## Description
 
 
-涓轰簡鏌ヨ涓€涓帶浠剁殑灞炴€э紝搴旂敤绋嬪簭璁剧疆 struct v4l2_queryctrl <v4l2-queryctrl> 鐨?`id` 瀛楁锛屽苟璋冪敤 `VIDIOC_QUERYCTRL` ioctl锛屼紶鍏ユ寚鍚戣缁撴瀯鐨勬寚閽堛€傞┍鍔ㄥ～鍏呯粨鏋勭殑
-鍏朵綑閮ㄥ垎锛屾垨鑰呭綋 `id` 鏃犳晥鏃惰繑鍥?`EINVAL` 閿欒鐮併€?
-鍙互閫氳繃浠?`V4L2_CID_BASE` 寮€濮嬨€佸埌锛堜笉鍚級`V4L2_CID_LASTP1` 涓烘锛屼互杩炵画鐨?`id` 鍊艰皟鐢?`VIDIOC_QUERYCTRL` 鏉ユ灇涓炬帶浠躲€傚鏋滄鑼冨洿鍐呯殑鏌愪釜鎺т欢涓嶅彈鏀寔锛岄┍鍔?鍙兘杩斿洖 `EINVAL`銆傝繘涓€姝ワ紝搴旂敤绋嬪簭鍙互閫氳繃浠?`V4L2_CID_PRIVATE_BASE` 寮€濮嬪苟閫掑
-`id`锛岀洿鍒伴┍鍔ㄨ繑鍥?`EINVAL`锛屾潵鏋氫妇鏈鑼冩湭瀹氫箟鐨勭鏈夋帶浠躲€?
-鍦ㄨ繖涓ょ鎯呭喌涓嬶紝褰撻┍鍔ㄥ湪 `flags` 瀛楁涓缃簡 `V4L2_CTRL_FLAG_DISABLED` 鏍囧織鏃讹紝
-璇ユ帶浠惰姘镐箙绂佺敤锛屽簲鐢ㄧ▼搴忓簲蹇界暐瀹冦€?[#f1]_
+为了查询一个控件的属性，应用程序设置 struct v4l2_queryctrl <v4l2-queryctrl> `id` 字段，并调用 `VIDIOC_QUERYCTRL` ioctl，传入指向该结构的指针。驱动填充结构的
+其余部分，或者当 `id` 无效时返`EINVAL` 错误码
+可以通过`V4L2_CID_BASE` 开始、到（不含）`V4L2_CID_LASTP1` 为止，以连续`id` 值调`VIDIOC_QUERYCTRL` 来枚举控件。如果此范围内的某个控件不受支持，驱可能返回 `EINVAL`。进一步，应用程序可以通过`V4L2_CID_PRIVATE_BASE` 开始并递增
+`id`，直到驱动返`EINVAL`，来枚举本规范未定义的私有控件
+在这两种情况下，当驱动在 `flags` 字段中设置了 `V4L2_CTRL_FLAG_DISABLED` 标志时，
+该控件被永久禁用，应用程序应忽略它[#f1]_
 
-褰撳簲鐢ㄧ▼搴忓皢 `id` 涓?`V4L2_CTRL_FLAG_NEXT_CTRL` 鍋?OR 杩愮畻鏃讹紝椹卞姩杩斿洖涓嬩竴涓彈鏀寔鐨?闈炲鍚堟帶浠讹紝濡傛灉娌℃湁鍒欒繑鍥?`EINVAL`銆傛澶栵紝鍙互鎸囧畾 `V4L2_CTRL_FLAG_NEXT_COMPOUND`
-鏍囧織鏉ユ灇涓炬墍鏈夌殑澶嶅悎鎺т欢锛堝嵆绫诲瀷 鈮?`V4L2_CTRL_COMPOUND_TYPES` 鍜?鎴栨暟缁勬帶浠讹紝鎹㈣█涔?鍖呭惈澶氫釜鍊肩殑鎺т欢锛夈€傚悓鏃舵寚瀹?`V4L2_CTRL_FLAG_NEXT_CTRL` 鍜?`V4L2_CTRL_FLAG_NEXT_COMPOUND` 浠ユ灇涓炬墍鏈夋帶浠讹紙鏃犺鏄惁澶嶅悎锛夈€傚皻涓嶆敮鎸佽繖浜涙爣蹇楃殑
-椹卞姩鎬绘槸杩斿洖 `EINVAL`銆?
-寮曞叆 `VIDIOC_QUERY_EXT_CTRL` ioctl 鏄负浜嗘洿濂藉湴鏀寔鍙互浣跨敤澶嶅悎绫诲瀷鐨勬帶浠讹紝骞舵毚闇?鏃犳硶鍦?struct v4l2_queryctrl <v4l2-queryctrl> 涓繑鍥烇紙鍥犱负璇ョ粨鏋勫凡婊★級鐨勯澶栨帶浠?淇℃伅銆?
-`VIDIOC_QUERY_EXT_CTRL` 鐨勪娇鐢ㄦ柟寮忎笌 `VIDIOC_QUERYCTRL` 鐩稿悓锛屽彧鏄?`reserved`
-鏁扮粍涔熷繀椤昏缃浂銆?
-鑿滃崟鎺т欢闇€瑕侀澶栫殑淇℃伅锛氳彍鍗曢」鐨勫悕绉般€備负浜嗘煡璇㈠畠浠紝搴旂敤绋嬪簭璁剧疆 struct
-v4l2_querymenu <v4l2-querymenu> 鐨?`id` 鍜?`index` 瀛楁锛屽苟璋冪敤 `VIDIOC_QUERYMENU`
-ioctl锛屼紶鍏ユ寚鍚戣缁撴瀯鐨勬寚閽堛€傞┍鍔ㄥ～鍏呯粨鏋勭殑鍏朵綑閮ㄥ垎锛屾垨鑰呭綋 `id` 鎴?`index` 鏃犳晥鏃?杩斿洖 `EINVAL` 閿欒鐮併€傝彍鍗曢」閫氳繃浠ヤ粠 struct v4l2_queryctrl <v4l2-queryctrl> 鐨?`minimum` 鍒?`maximum`锛堝惈锛夌殑杩炵画 `index` 鍊艰皟鐢?`VIDIOC_QUERYMENU` 鏉ユ灇涓俱€?
+当应用程序将 `id` `V4L2_CTRL_FLAG_NEXT_CTRL` OR 运算时，驱动返回下一个受支持非复合控件，如果没有则返`EINVAL`。此外，可以指定 `V4L2_CTRL_FLAG_NEXT_COMPOUND`
+标志来枚举所有的复合控件（即类型 `V4L2_CTRL_COMPOUND_TYPES` 或数组控件，换言包含多个值的控件）。同时指`V4L2_CTRL_FLAG_NEXT_CTRL` `V4L2_CTRL_FLAG_NEXT_COMPOUND` 以枚举所有控件（无论是否复合）。尚不支持这些标志的
+驱动总是返回 `EINVAL`
+引入 `VIDIOC_QUERY_EXT_CTRL` ioctl 是为了更好地支持可以使用复合类型的控件，并暴无法struct v4l2_queryctrl <v4l2-queryctrl> 中返回（因为该结构已满）的额外控信息
+`VIDIOC_QUERY_EXT_CTRL` 的使用方式与 `VIDIOC_QUERYCTRL` 相同，只`reserved`
+数组也必须被置零
+菜单控件需要额外的信息：菜单项的名称。为了查询它们，应用程序设置 struct
+v4l2_querymenu <v4l2-querymenu> `id` `index` 字段，并调用 `VIDIOC_QUERYMENU`
+ioctl，传入指向该结构的指针。驱动填充结构的其余部分，或者当 `id` `index` 无效返回 `EINVAL` 错误码。菜单项通过以从 struct v4l2_queryctrl <v4l2-queryctrl> `minimum` `maximum`（含）的连续 `index` 值调`VIDIOC_QUERYMENU` 来枚举
 
-   `VIDIOC_QUERYMENU` 鏈夊彲鑳藉 `minimum` 鍜?`maximum` 涔嬮棿鐨勬煇浜涚储寮曡繑鍥?   `EINVAL` 閿欒鐮併€傚湪杩欑鎯呭喌涓嬶紝璇ョ壒瀹氱殑鑿滃崟椤逛笉鍙楁椹卞姩鏀寔銆傚彟璇锋敞鎰忥紝
-   `minimum` 鍊间笉涓€瀹氫负 0銆?
-鍙﹁鍙傝 control 涓殑绀轰緥銆?
+   `VIDIOC_QUERYMENU` 有可能对 `minimum` `maximum` 之间的某些索引返   `EINVAL` 错误码。在这种情况下，该特定的菜单项不受此驱动支持。另请注意，
+   `minimum` 值不一定为 0
+另请参见 control 中的示例
 
 
     :header-rows:  0
@@ -59,24 +59,24 @@ ioctl锛屼紶鍏ユ寚鍚戣缁撴瀯鐨勬寚閽堛€傞┍鍔ㄥ～鍏呯
 
     - - __u32
       - `id`
-      - 鏍囪瘑鎺т欢锛岀敱搴旂敤绋嬪簭璁剧疆銆傞瀹氫箟 ID 鍙傝 control-id銆傚綋 ID 涓?	V4L2_CTRL_FLAG_NEXT_CTRL 鍋?OR 杩愮畻鏃讹紝椹卞姩娓呴櫎璇ユ爣蹇楀苟杩斿洖鍏锋湁鏇撮珮 ID 鐨?	绗竴涓帶浠躲€傚皻涓嶆敮鎸佹鏍囧織鐨勯┍鍔ㄦ€绘槸杩斿洖 `EINVAL` 閿欒鐮併€?    - - __u32
+      - 标识控件，由应用程序设置。预定义 ID 参见 control-id。当 ID 	V4L2_CTRL_FLAG_NEXT_CTRL OR 运算时，驱动清除该标志并返回具有更高 ID 	第一个控件。尚不支持此标志的驱动总是返回 `EINVAL` 错误码    - - __u32
       - `type`
-      - 鎺т欢绫诲瀷锛屽弬瑙?`v4l2_ctrl_type`銆?    - - __u8
+      - 控件类型，参`v4l2_ctrl_type`    - - __u8
       - `name`\ [^32^]
-      - 鎺т欢鍚嶇О锛屼竴涓互 NUL 缁撳熬鐨?ASCII 瀛楃涓层€傛淇℃伅渚涚敤鎴蜂娇鐢ㄣ€?    - - __s32
+      - 控件名称，一个以 NUL 结尾ASCII 字符串。此信息供用户使用    - - __s32
       - `minimum`
-      - 鏈€灏忓€硷紝鍚€傝瀛楁缁欏嚭鎺т欢鐨勪竴涓笅鐣屻€傚叧浜庢瘡绉嶅彲鑳界殑鎺т欢绫诲瀷搴斿浣曚娇鐢?	鏈€灏忓€硷紝鍙傝鏋氫妇 `v4l2_ctrl_type`銆傛敞鎰忚繖鏄竴涓湁绗﹀彿鐨?32 浣嶅€笺€?    - - __s32
+      - 最小值，含。该字段给出控件的一个下界。关于每种可能的控件类型应如何使	最小值，参见枚举 `v4l2_ctrl_type`。注意这是一个有符号32 位值    - - __s32
       - `maximum`
-      - 鏈€澶у€硷紝鍚€傝瀛楁缁欏嚭鎺т欢鐨勪竴涓笂鐣屻€傚叧浜庢瘡绉嶅彲鑳界殑鎺т欢绫诲瀷搴斿浣曚娇鐢?	鏈€澶у€硷紝鍙傝鏋氫妇 `v4l2_ctrl_type`銆傛敞鎰忚繖鏄竴涓湁绗﹀彿鐨?32 浣嶅€笺€?    - - __s32
+      - 最大值，含。该字段给出控件的一个上界。关于每种可能的控件类型应如何使	最大值，参见枚举 `v4l2_ctrl_type`。注意这是一个有符号32 位值    - - __s32
       - `step`
-      - 璇ュ瓧娈电粰鍑烘帶浠剁殑姝ラ暱銆傚叧浜庢瘡绉嶅彲鑳界殑鎺т欢绫诲瀷搴斿浣曚娇鐢ㄦ闀垮€硷紝鍙傝鏋氫妇
-	`v4l2_ctrl_type`銆傛敞鎰忚繖鏄竴涓棤绗﹀彿鐨?32 浣嶅€笺€?
-	閫氬父椹卞姩涓嶅簲缂╂斁纭欢鎺у埗鍊笺€備緥濡傚綋 `name` 鎴?`id` 鏆楃ず浜嗘煇涓壒瀹氬崟浣嶏紝鑰?	纭欢瀹為檯涓婂彧鎺ュ彈璇ュ崟浣嶇殑鏁存暟鍊嶆椂锛屽彲鑳藉氨鏈夋蹇呰銆傚鏋滄槸杩欐牱锛岄┍鍔ㄥ繀椤绘敞鎰?	鍦ㄧ缉鏀炬椂姝ｇ‘鍦板鍊艰繘琛屽洓鑸嶄簲鍏ワ紝浠ヤ娇閿欒涓嶄細鍦ㄥ弽澶嶇殑璇?鍐欏惊鐜腑绱Н銆?
-	璇ュ瓧娈电粰鍑哄疄闄呭奖鍝嶇‖浠剁殑鏁存暟鎺т欢鐨勬渶灏忓彉鍖栭噺銆傚綋鐢ㄦ埛鍙互閫氳繃閿洏鎴?GUI 鎸夐挳
-	锛堣€岄潪婊戝潡锛夋敼鍙樻帶浠舵椂锛屽父甯搁渶瑕佹淇℃伅銆備緥濡傦紝褰撶‖浠跺瘎瀛樺櫒鎺ュ彈鍊?0-511锛岃€?	椹卞姩鎶ュ憡 0-65535 鏃讹紝step 搴斾负 128銆?
-	娉ㄦ剰锛屽敖绠℃槸鏈夌鍙风殑锛屼絾 step 鍊煎簲褰撳缁堜负姝ｃ€?    - - __s32
+      - 该字段给出控件的步长。关于每种可能的控件类型应如何使用步长值，参见枚举
+	`v4l2_ctrl_type`。注意这是一个无符号32 位值
+	通常驱动不应缩放硬件控制值。例如当 `name` `id` 暗示了某个特定单位，	硬件实际上只接受该单位的整数倍时，可能就有此必要。如果是这样，驱动必须注	在缩放时正确地对值进行四舍五入，以使错误不会在反复的写循环中累积
+	该字段给出实际影响硬件的整数控件的最小变化量。当用户可以通过键盘GUI 按钮
+	（而非滑块）改变控件时，常常需要此信息。例如，当硬件寄存器接受0-511，	驱动报告 0-65535 时，step 应为 128
+	注意，尽管是有符号的，但 step 值应当始终为正    - - __s32
       - `default_value`
-      - `V4L2_CTRL_TYPE_INTEGER`銆乣_BOOLEAN`銆乣_BITMASK`銆乣_MENU` 鎴?	`_INTEGER_MENU` 鎺т欢鐨勯粯璁ゅ€笺€傚鍏朵粬绫诲瀷鐨勬帶浠舵棤鏁堛€?
+      - `V4L2_CTRL_TYPE_INTEGER`、`_BOOLEAN`、`_BITMASK`、`_MENU` 	`_INTEGER_MENU` 控件的默认值。对其他类型的控件无效
 ```
 
 	   Drivers reset controls to their default value only when
@@ -101,25 +101,25 @@ ioctl锛屼紶鍏ユ寚鍚戣缁撴瀯鐨勬寚閽堛€傞┍鍔ㄥ～鍏呯
 
     - - __u32
       - `id`
-      - 鏍囪瘑鎺т欢锛岀敱搴旂敤绋嬪簭璁剧疆銆傞瀹氫箟 ID 鍙傝 control-id銆傚綋 ID 涓?	V4L2_CTRL_FLAG_NEXT_CTRL 鍋?OR 杩愮畻鏃讹紝椹卞姩娓呴櫎璇ユ爣蹇楀苟杩斿洖鍏锋湁鏇撮珮 ID 鐨?	绗竴涓潪澶嶅悎鎺т欢銆傚綋 ID 涓?`V4L2_CTRL_FLAG_NEXT_COMPOUND` 鍋?OR 杩愮畻鏃讹紝椹卞姩
-	娓呴櫎璇ユ爣蹇楀苟杩斿洖鍏锋湁鏇撮珮 ID 鐨勭涓€涓鍚堟帶浠躲€傚悓鏃惰缃袱鑰呬互鑾峰彇鍏锋湁鏇撮珮 ID
-	鐨勭涓€涓帶浠讹紙鏃犺鏄惁澶嶅悎锛夈€?    - - __u32
+      - 标识控件，由应用程序设置。预定义 ID 参见 control-id。当 ID 	V4L2_CTRL_FLAG_NEXT_CTRL OR 运算时，驱动清除该标志并返回具有更高 ID 	第一个非复合控件。当 ID `V4L2_CTRL_FLAG_NEXT_COMPOUND` OR 运算时，驱动
+	清除该标志并返回具有更高 ID 的第一个复合控件。同时设置两者以获取具有更高 ID
+	的第一个控件（无论是否复合）    - - __u32
       - `type`
-      - 鎺т欢绫诲瀷锛屽弬瑙?`v4l2_ctrl_type`銆?    - - char
+      - 控件类型，参`v4l2_ctrl_type`    - - char
       - `name`\ [^32^]
-      - 鎺т欢鍚嶇О锛屼竴涓互 NUL 缁撳熬鐨?ASCII 瀛楃涓层€傛淇℃伅渚涚敤鎴蜂娇鐢ㄣ€?    - - __s64
+      - 控件名称，一个以 NUL 结尾ASCII 字符串。此信息供用户使用    - - __s64
       - `minimum`
-      - 鏈€灏忓€硷紝鍚€傝瀛楁缁欏嚭鎺т欢鐨勪竴涓笅鐣屻€傚叧浜庢瘡绉嶅彲鑳界殑鎺т欢绫诲瀷搴斿浣曚娇鐢?	鏈€灏忓€硷紝鍙傝鏋氫妇 `v4l2_ctrl_type`銆傛敞鎰忚繖鏄竴涓湁绗﹀彿鐨?64 浣嶅€笺€?    - - __s64
+      - 最小值，含。该字段给出控件的一个下界。关于每种可能的控件类型应如何使	最小值，参见枚举 `v4l2_ctrl_type`。注意这是一个有符号64 位值    - - __s64
       - `maximum`
-      - 鏈€澶у€硷紝鍚€傝瀛楁缁欏嚭鎺т欢鐨勪竴涓笂鐣屻€傚叧浜庢瘡绉嶅彲鑳界殑鎺т欢绫诲瀷搴斿浣曚娇鐢?	鏈€澶у€硷紝鍙傝鏋氫妇 `v4l2_ctrl_type`銆傛敞鎰忚繖鏄竴涓湁绗﹀彿鐨?64 浣嶅€笺€?    - - __u64
+      - 最大值，含。该字段给出控件的一个上界。关于每种可能的控件类型应如何使	最大值，参见枚举 `v4l2_ctrl_type`。注意这是一个有符号64 位值    - - __u64
       - `step`
-      - 璇ュ瓧娈电粰鍑烘帶浠剁殑姝ラ暱銆傚叧浜庢瘡绉嶅彲鑳界殑鎺т欢绫诲瀷搴斿浣曚娇鐢ㄦ闀垮€硷紝鍙傝鏋氫妇
-	`v4l2_ctrl_type`銆傛敞鎰忚繖鏄竴涓棤绗﹀彿鐨?64 浣嶅€笺€?
-	閫氬父椹卞姩涓嶅簲缂╂斁纭欢鎺у埗鍊笺€備緥濡傚綋 `name` 鎴?`id` 鏆楃ず浜嗘煇涓壒瀹氬崟浣嶏紝鑰?	纭欢瀹為檯涓婂彧鎺ュ彈璇ュ崟浣嶇殑鏁存暟鍊嶆椂锛屽彲鑳藉氨鏈夋蹇呰銆傚鏋滄槸杩欐牱锛岄┍鍔ㄥ繀椤绘敞鎰?	鍦ㄧ缉鏀炬椂姝ｇ‘鍦板鍊艰繘琛屽洓鑸嶄簲鍏ワ紝浠ヤ娇閿欒涓嶄細鍦ㄥ弽澶嶇殑璇?鍐欏惊鐜腑绱Н銆?
-	璇ュ瓧娈电粰鍑哄疄闄呭奖鍝嶇‖浠剁殑鏁存暟鎺т欢鐨勬渶灏忓彉鍖栭噺銆傚綋鐢ㄦ埛鍙互閫氳繃閿洏鎴?GUI 鎸夐挳
-	锛堣€岄潪婊戝潡锛夋敼鍙樻帶浠舵椂锛屽父甯搁渶瑕佹淇℃伅銆備緥濡傦紝褰撶‖浠跺瘎瀛樺櫒鎺ュ彈鍊?0-511锛岃€?	椹卞姩鎶ュ憡 0-65535 鏃讹紝step 搴斾负 128銆?    - - __s64
+      - 该字段给出控件的步长。关于每种可能的控件类型应如何使用步长值，参见枚举
+	`v4l2_ctrl_type`。注意这是一个无符号64 位值
+	通常驱动不应缩放硬件控制值。例如当 `name` `id` 暗示了某个特定单位，	硬件实际上只接受该单位的整数倍时，可能就有此必要。如果是这样，驱动必须注	在缩放时正确地对值进行四舍五入，以使错误不会在反复的写循环中累积
+	该字段给出实际影响硬件的整数控件的最小变化量。当用户可以通过键盘GUI 按钮
+	（而非滑块）改变控件时，常常需要此信息。例如，当硬件寄存器接受0-511，	驱动报告 0-65535 时，step 应为 128    - - __s64
       - `default_value`
-      - `V4L2_CTRL_TYPE_INTEGER`銆乣_INTEGER64`銆乣_BOOLEAN`銆乣_BITMASK`銆乣_MENU`銆?	`_INTEGER_MENU`銆乣_U8` 鎴?`_U16` 鎺т欢鐨勯粯璁ゅ€笺€傚鍏朵粬绫诲瀷鐨勬帶浠舵棤鏁堛€?
+      - `V4L2_CTRL_TYPE_INTEGER`、`_INTEGER64`、`_BOOLEAN`、`_BITMASK`、`_MENU`	`_INTEGER_MENU`、`_U8` `_U16` 控件的默认值。对其他类型的控件无效
 ```
 
 	   Drivers reset controls to their default value only when
@@ -166,20 +166,20 @@ ioctl锛屼紶鍏ユ寚鍚戣缁撴瀯鐨勬寚閽堛€傞┍鍔ㄥ～鍏呯
 
     - - __u32
       - `id`
-      - 鏍囪瘑鎺т欢锛岀敱搴旂敤绋嬪簭鏍规嵁鐩稿簲鐨?struct v4l2_queryctrl <v4l2-queryctrl>
-	`id` 璁剧疆銆?    - - __u32
+      - 标识控件，由应用程序根据相应struct v4l2_queryctrl <v4l2-queryctrl>
+	`id` 设置    - - __u32
       - `index`
-      - 鑿滃崟椤圭殑绱㈠紩锛屼粠闆跺紑濮嬶紝鐢卞簲鐢ㄧ▼搴忚缃€?    - - union {
+      - 菜单项的索引，从零开始，由应用程序设置    - - union {
       - (anonymous)
     - - __u8
       - `name`\ [^32^]
-      - 鑿滃崟椤瑰悕绉帮紝涓€涓互 NUL 缁撳熬鐨?ASCII 瀛楃涓层€傛淇℃伅渚涚敤鎴蜂娇鐢ㄣ€傝瀛楁瀵?	`V4L2_CTRL_TYPE_MENU` 绫诲瀷鐨勬帶浠舵湁鏁堛€?    - - __s64
+      - 菜单项名称，一个以 NUL 结尾ASCII 字符串。此信息供用户使用。该字段	`V4L2_CTRL_TYPE_MENU` 类型的控件有效    - - __s64
       - `value`
-      - 鏁存暟鑿滃崟椤圭殑鍊笺€傝瀛楁瀵?`V4L2_CTRL_TYPE_INTEGER_MENU` 绫诲瀷鐨勬帶浠舵湁鏁堛€?    - - }
+      - 整数菜单项的值。该字段`V4L2_CTRL_TYPE_INTEGER_MENU` 类型的控件有效    - - }
       -
     - - __u32
       - `reserved`
-      - 涓哄皢鏉ユ墿灞曚繚鐣欍€傞┍鍔ㄥ繀椤诲皢鏁扮粍缃浂銆?
+      - 为将来扩展保留。驱动必须将数组置零
 
 
    \footnotesize
@@ -200,174 +200,174 @@ ioctl锛屼紶鍏ユ寚鍚戣缁撴瀯鐨勬寚閽堛€傞┍鍔ㄥ～鍏呯
       - any
       - any
       - any
-      - 涓€涓彇鍊艰寖鍥翠粠 minimum 鍒?maximum锛堝惈锛夌殑鏁存暟鍊兼帶浠躲€俿tep 鍊艰〃绀哄彇鍊间箣闂寸殑
-	澧為噺銆?    - - `V4L2_CTRL_TYPE_BOOLEAN`
+      - 一个取值范围从 minimum maximum（含）的整数值控件。step 值表示取值之间的
+	增量    - - `V4L2_CTRL_TYPE_BOOLEAN`
       - 0
       - 1
       - 1
-      - 涓€涓竷灏斿€兼帶浠躲€傞浂瀵瑰簲鈥渄isabled锛堢鐢級鈥濓紝涓€瀵瑰簲鈥渆nabled锛堝惎鐢級鈥濄€?    - - `V4L2_CTRL_TYPE_MENU`
+      - 一个布尔值控件。零对应“disabled（禁用）”，一对应“enabled（启用）”    - - `V4L2_CTRL_TYPE_MENU`
       - 鈮?0
       - 1
       - N-1
-      - 璇ユ帶浠舵湁涓€涓寘鍚?N 涓€夐」鐨勮彍鍗曘€傝彍鍗曢」鐨勫悕绉板彲浠ラ€氳繃 `VIDIOC_QUERYMENU`
-	ioctl 鏋氫妇銆?    - - `V4L2_CTRL_TYPE_INTEGER_MENU`
+      - 该控件有一个包N 个选项的菜单。菜单项的名称可以通过 `VIDIOC_QUERYMENU`
+	ioctl 枚举    - - `V4L2_CTRL_TYPE_INTEGER_MENU`
       - 鈮?0
       - 1
       - N-1
-      - 璇ユ帶浠舵湁涓€涓寘鍚?N 涓€夐」鐨勮彍鍗曘€傝彍鍗曢」鐨勫€煎彲浠ラ€氳繃 `VIDIOC_QUERYMENU`
-	ioctl 鏋氫妇銆傝繖涓?`V4L2_CTRL_TYPE_MENU` 绫讳技锛屽彧鏄彍鍗曢」鏄甫绗﹀彿鐨?64 浣?	鏁存暟锛岃€岄潪瀛楃涓层€?    - - `V4L2_CTRL_TYPE_BITMASK`
+      - 该控件有一个包N 个选项的菜单。菜单项的值可以通过 `VIDIOC_QUERYMENU`
+	ioctl 枚举。这`V4L2_CTRL_TYPE_MENU` 类似，只是菜单项是带符号64 	整数，而非字符串    - - `V4L2_CTRL_TYPE_BITMASK`
       - 0
       - n/a
       - any
-      - 涓€涓綅鎺╃爜瀛楁銆傛渶澶у€兼槸鍙互浣跨敤鐨勪竴缁勪綅锛屾墍鏈夊叾浠栦綅搴斾负 0銆傛渶澶у€艰瑙ｉ噴涓?	涓€涓?__u32锛屽厑璁镐娇鐢ㄤ綅鎺╃爜涓殑绗?31 浣嶃€?    - - `V4L2_CTRL_TYPE_BUTTON`
+      - 一个位掩码字段。最大值是可以使用的一组位，所有其他位应为 0。最大值被解释	一__u32，允许使用位掩码中的31 位    - - `V4L2_CTRL_TYPE_BUTTON`
       - 0
       - 0
       - 0
-      - 涓€涓湪璁剧疆鏃舵墽琛屾煇涓姩浣滅殑鎺т欢銆傞┍鍔ㄥ繀椤诲拷鐣ラ殢 `VIDIOC_S_CTRL` 浼犲叆鐨勫€硷紝
-	骞跺湪 `VIDIOC_G_CTRL` 灏濊瘯鏃惰繑鍥?`EACCES` 閿欒鐮併€?    - - `V4L2_CTRL_TYPE_INTEGER64`
+      - 一个在设置时执行某个动作的控件。驱动必须忽略随 `VIDIOC_S_CTRL` 传入的值，
+	并在 `VIDIOC_G_CTRL` 尝试时返`EACCES` 错误码    - - `V4L2_CTRL_TYPE_INTEGER64`
       - any
       - any
       - any
-      - 涓€涓?64 浣嶆暣鏁板€兼帶浠躲€傛渶灏忓€笺€佹渶澶у€煎拰姝ラ暱鏃犳硶浣跨敤 `VIDIOC_QUERYCTRL`
-	鏌ヨ銆傚彧鏈?`VIDIOC_QUERY_EXT_CTRL` 鍙互妫€绱?64 浣嶇殑鏈€灏忓€?鏈€澶у€?姝ラ暱鍊硷紝
-	鍦ㄤ娇鐢?`VIDIOC_QUERYCTRL` 鏃跺簲灏嗗畠浠В閲婁负 n/a銆?    - - `V4L2_CTRL_TYPE_STRING`
+      - 一64 位整数值控件。最小值、最大值和步长无法使用 `VIDIOC_QUERYCTRL`
+	查询。只`VIDIOC_QUERY_EXT_CTRL` 可以检64 位的最小最大步长值，
+	在使`VIDIOC_QUERYCTRL` 时应将它们解释为 n/a    - - `V4L2_CTRL_TYPE_STRING`
       - 鈮?0
       - 鈮?1
       - 鈮?0
-      - 瀛楃涓茬殑鏈€灏忓拰鏈€澶ч暱搴︺€傛闀挎剰鍛崇潃瀛楃涓茬殑闀垮害蹇呴』涓猴紙minimum + N * step锛?	涓瓧绗︼紝鍏朵腑 N 鈮?0銆傝繖浜涢暱搴︿笉鍖呭惈缁堟闆讹紝鍥犳涓轰簡灏嗛暱搴︿负 8 鐨勫瓧绗︿覆浼犵粰
-	VIDIOC_S_EXT_CTRLS <VIDIOC_G_EXT_CTRLS>锛屼綘闇€瑕佸皢 struct
-	`v4l2_ext_control` 鐨?`size` 瀛楁璁剧疆涓?9銆傚浜?VIDIOC_G_EXT_CTRLS
-	<VIDIOC_G_EXT_CTRLS>锛屼綘鍙互灏?`size` 瀛楁璁剧疆涓?`maximum` + 1銆備娇鐢ㄤ綍绉?	瀛楃缂栫爜鍙栧喅浜庡瓧绗︿覆鎺т欢鏈韩锛屽苟搴斾綔涓烘帶浠舵枃妗ｇ殑涓€閮ㄥ垎銆?    - - `V4L2_CTRL_TYPE_CTRL_CLASS`
+      - 字符串的最小和最大长度。步长意味着字符串的长度必须为（minimum + N * step	个字符，其中 N 0。这些长度不包含终止零，因此为了将长度为 8 的字符串传给
+	VIDIOC_S_EXT_CTRLS <VIDIOC_G_EXT_CTRLS>，你需要将 struct
+	`v4l2_ext_control` `size` 字段设置9。对VIDIOC_G_EXT_CTRLS
+	<VIDIOC_G_EXT_CTRLS>，你可以`size` 字段设置`maximum` + 1。使用何	字符编码取决于字符串控件本身，并应作为控件文档的一部分    - - `V4L2_CTRL_TYPE_CTRL_CLASS`
       - n/a
       - n/a
       - n/a
-      - 杩欎笉鏄竴涓帶浠躲€傚綋浠ョ瓑浜庢帶浠剁被浠ｇ爜锛堝弬瑙?ctrl-class锛夌殑鎺т欢 ID 鍑?1 璋冪敤
-	`VIDIOC_QUERYCTRL` 鏃讹紝ioctl 杩斿洖璇ユ帶浠剁被鐨勫悕绉颁互鍙婃鎺т欢绫诲瀷銆備笉鏀寔姝?	鐗规€х殑杈冩棫椹卞姩杩斿洖 `EINVAL` 閿欒鐮併€?    - - `V4L2_CTRL_TYPE_U8`
+      - 这不是一个控件。当以等于控件类代码（参ctrl-class）的控件 ID 1 调用
+	`VIDIOC_QUERYCTRL` 时，ioctl 返回该控件类的名称以及此控件类型。不支持	特性的较旧驱动返回 `EINVAL` 错误码    - - `V4L2_CTRL_TYPE_U8`
       - any
       - any
       - any
-      - 涓€涓彇鍊艰寖鍥翠粠 minimum 鍒?maximum锛堝惈锛夌殑鏃犵鍙?8 浣嶅€兼帶浠躲€俿tep 鍊艰〃绀?	鍙栧€间箣闂寸殑澧為噺銆?    - - `V4L2_CTRL_TYPE_U16`
+      - 一个取值范围从 minimum maximum（含）的无符8 位值控件。step 值表	取值之间的增量    - - `V4L2_CTRL_TYPE_U16`
       - any
       - any
       - any
-      - 涓€涓彇鍊艰寖鍥翠粠 minimum 鍒?maximum锛堝惈锛夌殑鏃犵鍙?16 浣嶅€兼帶浠躲€俿tep 鍊艰〃绀?	鍙栧€间箣闂寸殑澧為噺銆?    - - `V4L2_CTRL_TYPE_U32`
+      - 一个取值范围从 minimum maximum（含）的无符16 位值控件。step 值表	取值之间的增量    - - `V4L2_CTRL_TYPE_U32`
       - any
       - any
       - any
-      - 涓€涓彇鍊艰寖鍥翠粠 minimum 鍒?maximum锛堝惈锛夌殑鏃犵鍙?32 浣嶅€兼帶浠躲€俿tep 鍊艰〃绀?	鍙栧€间箣闂寸殑澧為噺銆?    - - `V4L2_CTRL_TYPE_MPEG2_QUANTISATION`
+      - 一个取值范围从 minimum maximum（含）的无符32 位值控件。step 值表	取值之间的增量    - - `V4L2_CTRL_TYPE_MPEG2_QUANTISATION`
       - n/a
       - n/a
       - n/a
-      - 涓€涓?struct `v4l2_ctrl_mpeg2_quantisation`锛屽寘鍚敤浜庢棤鐘舵€佽棰戣В鐮佸櫒鐨?	MPEG-2 閲忓寲鐭╅樀銆?    - - `V4L2_CTRL_TYPE_MPEG2_SEQUENCE`
+      - 一struct `v4l2_ctrl_mpeg2_quantisation`，包含用于无状态视频解码器	MPEG-2 量化矩阵    - - `V4L2_CTRL_TYPE_MPEG2_SEQUENCE`
       - n/a
       - n/a
       - n/a
-      - 涓€涓?struct `v4l2_ctrl_mpeg2_sequence`锛屽寘鍚敤浜庢棤鐘舵€佽棰戣В鐮佸櫒鐨?MPEG-2
-	搴忓垪鍙傛暟銆?    - - `V4L2_CTRL_TYPE_MPEG2_PICTURE`
+      - 一struct `v4l2_ctrl_mpeg2_sequence`，包含用于无状态视频解码器MPEG-2
+	序列参数    - - `V4L2_CTRL_TYPE_MPEG2_PICTURE`
       - n/a
       - n/a
       - n/a
-      - 涓€涓?struct `v4l2_ctrl_mpeg2_picture`锛屽寘鍚敤浜庢棤鐘舵€佽棰戣В鐮佸櫒鐨?MPEG-2
-	鍥惧儚鍙傛暟銆?    - - `V4L2_CTRL_TYPE_AREA`
+      - 一struct `v4l2_ctrl_mpeg2_picture`，包含用于无状态视频解码器MPEG-2
+	图像参数    - - `V4L2_CTRL_TYPE_AREA`
       - n/a
       - n/a
       - n/a
-      - 涓€涓?struct `v4l2_area`锛屽寘鍚煩褰㈠尯鍩熺殑瀹藉害鍜岄珮搴︺€傚崟浣嶅彇鍐充簬鍏蜂綋鐢ㄤ緥銆?    - - `V4L2_CTRL_TYPE_RECT`
+      - 一struct `v4l2_area`，包含矩形区域的宽度和高度。单位取决于具体用例    - - `V4L2_CTRL_TYPE_RECT`
       - n/a
       - n/a
       - n/a
-      - 涓€涓?struct `v4l2_rect`锛屽寘鍚敱宸︿笂瑙掍綅缃€佸搴﹀拰楂樺害鎻忚堪鐨勭煩褰€傚崟浣?	鍙栧喅浜庡叿浣撶敤渚嬨€傚 `V4L2_CTRL_WHICH_MIN_VAL` 鍜?`V4L2_CTRL_WHICH_MAX_VAL`
-	鐨勬敮鎸佹槸鍙€夌殑锛屽彇鍐充簬 `V4L2_CTRL_FLAG_HAS_WHICH_MIN_MAX` 鏍囧織銆傚叧浜庡浣?	瑙ｉ噴鏈€灏忓€煎拰鏈€澶у€硷紝璇峰弬瑙佸叿浣撴帶浠剁殑鏂囨。銆?    - - `V4L2_CTRL_TYPE_H264_SPS`
+      - 一struct `v4l2_rect`，包含由左上角位置、宽度和高度描述的矩形。单	取决于具体用例。对 `V4L2_CTRL_WHICH_MIN_VAL` `V4L2_CTRL_WHICH_MAX_VAL`
+	的支持是可选的，取决于 `V4L2_CTRL_FLAG_HAS_WHICH_MIN_MAX` 标志。关于如	解释最小值和最大值，请参见具体控件的文档    - - `V4L2_CTRL_TYPE_H264_SPS`
       - n/a
       - n/a
       - n/a
-      - 涓€涓?struct `v4l2_ctrl_h264_sps`锛屽寘鍚敤浜庢棤鐘舵€佽棰戣В鐮佸櫒鐨?H264 搴忓垪
-	鍙傛暟銆?    - - `V4L2_CTRL_TYPE_H264_PPS`
+      - 一struct `v4l2_ctrl_h264_sps`，包含用于无状态视频解码器H264 序列
+	参数    - - `V4L2_CTRL_TYPE_H264_PPS`
       - n/a
       - n/a
       - n/a
-      - 涓€涓?struct `v4l2_ctrl_h264_pps`锛屽寘鍚敤浜庢棤鐘舵€佽棰戣В鐮佸櫒鐨?H264 鍥惧儚
-	鍙傛暟銆?    - - `V4L2_CTRL_TYPE_H264_SCALING_MATRIX`
+      - 一struct `v4l2_ctrl_h264_pps`，包含用于无状态视频解码器H264 图像
+	参数    - - `V4L2_CTRL_TYPE_H264_SCALING_MATRIX`
       - n/a
       - n/a
       - n/a
-      - 涓€涓?struct `v4l2_ctrl_h264_scaling_matrix`锛屽寘鍚敤浜庢棤鐘舵€佽棰戣В鐮佸櫒鐨?	H264 缂╂斁鐭╅樀銆?    - - `V4L2_CTRL_TYPE_H264_SLICE_PARAMS`
+      - 一struct `v4l2_ctrl_h264_scaling_matrix`，包含用于无状态视频解码器	H264 缩放矩阵    - - `V4L2_CTRL_TYPE_H264_SLICE_PARAMS`
       - n/a
       - n/a
       - n/a
-      - 涓€涓?struct `v4l2_ctrl_h264_slice_params`锛屽寘鍚敤浜庢棤鐘舵€佽棰戣В鐮佸櫒鐨?	H264 鍒囩墖鍙傛暟銆?    - - `V4L2_CTRL_TYPE_H264_DECODE_PARAMS`
+      - 一struct `v4l2_ctrl_h264_slice_params`，包含用于无状态视频解码器	H264 切片参数    - - `V4L2_CTRL_TYPE_H264_DECODE_PARAMS`
       - n/a
       - n/a
       - n/a
-      - 涓€涓?struct `v4l2_ctrl_h264_decode_params`锛屽寘鍚敤浜庢棤鐘舵€佽棰戣В鐮佸櫒鐨?	H264 瑙ｇ爜鍙傛暟銆?    - - `V4L2_CTRL_TYPE_FWHT_PARAMS`
+      - 一struct `v4l2_ctrl_h264_decode_params`，包含用于无状态视频解码器	H264 解码参数    - - `V4L2_CTRL_TYPE_FWHT_PARAMS`
       - n/a
       - n/a
       - n/a
-      - 涓€涓?struct `v4l2_ctrl_fwht_params`锛屽寘鍚敤浜庢棤鐘舵€佽棰戣В鐮佸櫒鐨?FWHT 鍙傛暟銆?    - - `V4L2_CTRL_TYPE_HEVC_SPS`
+      - 一struct `v4l2_ctrl_fwht_params`，包含用于无状态视频解码器FWHT 参数    - - `V4L2_CTRL_TYPE_HEVC_SPS`
       - n/a
       - n/a
       - n/a
-      - 涓€涓?struct `v4l2_ctrl_hevc_sps`锛屽寘鍚敤浜庢棤鐘舵€佽棰戣В鐮佸櫒鐨?HEVC 搴忓垪
-	鍙傛暟闆嗐€?    - - `V4L2_CTRL_TYPE_HEVC_PPS`
+      - 一struct `v4l2_ctrl_hevc_sps`，包含用于无状态视频解码器HEVC 序列
+	参数集    - - `V4L2_CTRL_TYPE_HEVC_PPS`
       - n/a
       - n/a
       - n/a
-      - 涓€涓?struct `v4l2_ctrl_hevc_pps`锛屽寘鍚敤浜庢棤鐘舵€佽棰戣В鐮佸櫒鐨?HEVC 鍥惧儚
-	鍙傛暟闆嗐€?    - - `V4L2_CTRL_TYPE_HEVC_SLICE_PARAMS`
+      - 一struct `v4l2_ctrl_hevc_pps`，包含用于无状态视频解码器HEVC 图像
+	参数集    - - `V4L2_CTRL_TYPE_HEVC_SLICE_PARAMS`
       - n/a
       - n/a
       - n/a
-      - 涓€涓?struct `v4l2_ctrl_hevc_slice_params`锛屽寘鍚敤浜庢棤鐘舵€佽棰戣В鐮佸櫒鐨?HEVC
-	鍒囩墖鍙傛暟銆?    - - `V4L2_CTRL_TYPE_HEVC_SCALING_MATRIX`
+      - 一struct `v4l2_ctrl_hevc_slice_params`，包含用于无状态视频解码器HEVC
+	切片参数    - - `V4L2_CTRL_TYPE_HEVC_SCALING_MATRIX`
       - n/a
       - n/a
       - n/a
-      - 涓€涓?struct `v4l2_ctrl_hevc_scaling_matrix`锛屽寘鍚敤浜庢棤鐘舵€佽棰戣В鐮佸櫒鐨?	HEVC 缂╂斁鐭╅樀銆?    - - `V4L2_CTRL_TYPE_VP8_FRAME`
+      - 一struct `v4l2_ctrl_hevc_scaling_matrix`，包含用于无状态视频解码器	HEVC 缩放矩阵    - - `V4L2_CTRL_TYPE_VP8_FRAME`
       - n/a
       - n/a
       - n/a
-      - 涓€涓?struct `v4l2_ctrl_vp8_frame`锛屽寘鍚敤浜庢棤鐘舵€佽棰戣В鐮佸櫒鐨?VP8 甯у弬鏁般€?    - - `V4L2_CTRL_TYPE_HEVC_DECODE_PARAMS`
+      - 一struct `v4l2_ctrl_vp8_frame`，包含用于无状态视频解码器VP8 帧参数    - - `V4L2_CTRL_TYPE_HEVC_DECODE_PARAMS`
       - n/a
       - n/a
       - n/a
-      - 涓€涓?struct `v4l2_ctrl_hevc_decode_params`锛屽寘鍚敤浜庢棤鐘舵€佽棰戣В鐮佸櫒鐨?HEVC
-	瑙ｇ爜鍙傛暟銆?    - - `V4L2_CTRL_TYPE_HEVC_EXT_SPS_LT_RPS`
+      - 一struct `v4l2_ctrl_hevc_decode_params`，包含用于无状态视频解码器HEVC
+	解码参数    - - `V4L2_CTRL_TYPE_HEVC_EXT_SPS_LT_RPS`
       - n/a
       - n/a
       - n/a
-      - 涓€涓?struct `v4l2_ctrl_hevc_ext_sps_lt_rps`锛屽寘鍚敤浜庢棤鐘舵€佽棰戣В鐮佸櫒鐨?	HEVC 鎵╁睍闀挎湡 RPS銆?    - - `V4L2_CTRL_TYPE_HEVC_EXT_SPS_ST_RPS`
+      - 一struct `v4l2_ctrl_hevc_ext_sps_lt_rps`，包含用于无状态视频解码器	HEVC 扩展长期 RPS    - - `V4L2_CTRL_TYPE_HEVC_EXT_SPS_ST_RPS`
       - n/a
       - n/a
       - n/a
-      - 涓€涓?struct `v4l2_ctrl_hevc_ext_sps_st_rps`锛屽寘鍚敤浜庢棤鐘舵€佽棰戣В鐮佸櫒鐨?	HEVC 鎵╁睍鐭湡 RPS銆?    - - `V4L2_CTRL_TYPE_VP9_COMPRESSED_HDR`
+      - 一struct `v4l2_ctrl_hevc_ext_sps_st_rps`，包含用于无状态视频解码器	HEVC 扩展短期 RPS    - - `V4L2_CTRL_TYPE_VP9_COMPRESSED_HDR`
       - n/a
       - n/a
       - n/a
-      - 涓€涓?struct `v4l2_ctrl_vp9_compressed_hdr`锛屽寘鍚敤浜庢棤鐘舵€佽棰戣В鐮佸櫒鐨?VP9
-	姒傜巼鏇存柊銆?    - - `V4L2_CTRL_TYPE_VP9_FRAME`
+      - 一struct `v4l2_ctrl_vp9_compressed_hdr`，包含用于无状态视频解码器VP9
+	概率更新    - - `V4L2_CTRL_TYPE_VP9_FRAME`
       - n/a
       - n/a
       - n/a
-      - 涓€涓?struct `v4l2_ctrl_vp9_frame`锛屽寘鍚敤浜庢棤鐘舵€佽棰戣В鐮佸櫒鐨?VP9 甯цВ鐮?	鍙傛暟銆?    - - `V4L2_CTRL_TYPE_AV1_SEQUENCE`
+      - 一struct `v4l2_ctrl_vp9_frame`，包含用于无状态视频解码器VP9 帧解	参数    - - `V4L2_CTRL_TYPE_AV1_SEQUENCE`
       - n/a
       - n/a
       - n/a
-      - 涓€涓?struct `v4l2_ctrl_av1_sequence`锛屽寘鍚敤浜庢棤鐘舵€佽棰戣В鐮佸櫒鐨?AV1 Sequence
-	OBU 瑙ｇ爜鍙傛暟銆?    - - `V4L2_CTRL_TYPE_AV1_TILE_GROUP_ENTRY`
+      - 一struct `v4l2_ctrl_av1_sequence`，包含用于无状态视频解码器AV1 Sequence
+	OBU 解码参数    - - `V4L2_CTRL_TYPE_AV1_TILE_GROUP_ENTRY`
       - n/a
       - n/a
       - n/a
-      - 涓€涓?struct `v4l2_ctrl_av1_tile_group_entry`锛屽寘鍚敤浜庢棤鐘舵€佽棰戣В鐮佸櫒鐨?	AV1 Tile Group OBU 瑙ｇ爜鍙傛暟銆?    - - `V4L2_CTRL_TYPE_AV1_FRAME`
+      - 一struct `v4l2_ctrl_av1_tile_group_entry`，包含用于无状态视频解码器	AV1 Tile Group OBU 解码参数    - - `V4L2_CTRL_TYPE_AV1_FRAME`
       - n/a
       - n/a
       - n/a
-      - 涓€涓?struct `v4l2_ctrl_av1_frame`锛屽寘鍚敤浜庢棤鐘舵€佽棰戣В鐮佸櫒鐨?AV1 Frame/Frame
-	Header OBU 瑙ｇ爜鍙傛暟銆?    - - `V4L2_CTRL_TYPE_AV1_FILM_GRAIN`
+      - 一struct `v4l2_ctrl_av1_frame`，包含用于无状态视频解码器AV1 Frame/Frame
+	Header OBU 解码参数    - - `V4L2_CTRL_TYPE_AV1_FILM_GRAIN`
       - n/a
       - n/a
       - n/a
-      - 涓€涓?struct `v4l2_ctrl_av1_film_grain`锛屽寘鍚敤浜庢棤鐘舵€佽棰戣В鐮佸櫒鐨?AV1 鑳剁墖
-	棰楃矑鍙傛暟銆?
+      - 一struct `v4l2_ctrl_av1_film_grain`，包含用于无状态视频解码器AV1 胶片
+	颗粒参数
 
    \normalsize
 
@@ -380,24 +380,24 @@ ioctl锛屼紶鍏ユ寚鍚戣缁撴瀯鐨勬寚閽堛€傞┍鍔ㄥ～鍏呯
 
     - - `V4L2_CTRL_FLAG_DISABLED`
       - 0x0001
-      - 璇ユ帶浠惰姘镐箙绂佺敤锛屽簲鐢ㄧ▼搴忓簲蹇界暐瀹冦€備换浣曞皾璇曟敼鍙樿鎺т欢鐨勬搷浣滈兘灏嗗鑷?	`EINVAL` 閿欒鐮併€?    - - `V4L2_CTRL_FLAG_GRABBED`
+      - 该控件被永久禁用，应用程序应忽略它。任何尝试改变该控件的操作都将导	`EINVAL` 错误码    - - `V4L2_CTRL_FLAG_GRABBED`
       - 0x0002
-      - 璇ユ帶浠舵殏鏃朵笉鍙洿鏀癸紝渚嬪鍥犱负鍙︿竴涓簲鐢ㄧ▼搴忔帴绠′簡瀵圭浉搴旇祫婧愮殑鎺у埗銆傛绫绘帶浠?	鍦ㄧ敤鎴风晫闈腑鍙兘浼氫互鐗规畩鏂瑰紡鏄剧ず銆傚皾璇曟敼鍙樿鎺т欢鍙兘瀵艰嚧 `EBUSY` 閿欒鐮併€?    - - `V4L2_CTRL_FLAG_READ_ONLY`
+      - 该控件暂时不可更改，例如因为另一个应用程序接管了对相应资源的控制。此类控	在用户界面中可能会以特殊方式显示。尝试改变该控件可能导致 `EBUSY` 错误码    - - `V4L2_CTRL_FLAG_READ_ONLY`
       - 0x0004
-      - 璇ユ帶浠舵槸姘镐箙鍙鐨勩€備换浣曞皾璇曟敼鍙樿鎺т欢鐨勬搷浣滈兘灏嗗鑷?`EINVAL` 閿欒鐮併€?    - - `V4L2_CTRL_FLAG_UPDATE`
+      - 该控件是永久只读的。任何尝试改变该控件的操作都将导`EINVAL` 错误码    - - `V4L2_CTRL_FLAG_UPDATE`
       - 0x0008
-      - 涓€涓彁绀猴紝琛ㄦ槑鏀瑰彉姝ゆ帶浠跺彲鑳戒細褰卞搷鍚屼竴鎺т欢绫讳腑鍏朵粬鎺т欢鐨勫€笺€傚簲鐢ㄧ▼搴忓簲鐩稿簲鍦?	鏇存柊鍏剁敤鎴风晫闈€?    - - `V4L2_CTRL_FLAG_INACTIVE`
+      - 一个提示，表明改变此控件可能会影响同一控件类中其他控件的值。应用程序应相应	更新其用户界面    - - `V4L2_CTRL_FLAG_INACTIVE`
       - 0x0010
-      - 璇ユ帶浠朵笉閫傜敤浜庡綋鍓嶉厤缃紝鍦ㄧ敤鎴风晫闈腑搴旂浉搴斿湴鏄剧ず銆備緥濡傦紝褰撲娇鐢ㄥ彟涓€涓帶浠堕€夋嫨浜?	MPEG 闊抽缂栫爜绾у埆 1 鏃讹紝鍙兘浼氬湪 MPEG 闊抽绾у埆 2 鐮佺巼鎺т欢涓婅缃鏍囧織銆?    - - `V4L2_CTRL_FLAG_SLIDER`
+      - 该控件不适用于当前配置，在用户界面中应相应地显示。例如，当使用另一个控件选择	MPEG 音频编码级别 1 时，可能会在 MPEG 音频级别 2 码率控件上设置此标志    - - `V4L2_CTRL_FLAG_SLIDER`
       - 0x0020
-      - 涓€涓彁绀猴紝琛ㄦ槑璇ユ帶浠跺湪鐢ㄦ埛鐣岄潰涓渶閫傚悎琛ㄧず涓烘粦鍧楀紡鐨勫厓绱犮€?    - - `V4L2_CTRL_FLAG_WRITE_ONLY`
+      - 一个提示，表明该控件在用户界面中最适合表示为滑块式的元素    - - `V4L2_CTRL_FLAG_WRITE_ONLY`
       - 0x0040
-      - 璇ユ帶浠舵槸姘镐箙鍙啓鐨勩€備换浣曞皾璇曡鍙栬鎺т欢鐨勬搷浣滈兘灏嗗鑷?`EACCES` 閿欒鐮併€傛鏍囧織
-	閫氬父鍑虹幇鍦ㄧ浉瀵规帶浠舵垨鍔ㄤ綔鎺т欢涓婏紝鍏朵腑鍐欏叆涓€涓€煎皢瀵艰嚧璁惧鎵ц缁欏畾鍔ㄤ綔锛堜緥濡?	鐢垫満鎺у埗锛夛紝浣嗘棤娉曡繑鍥炴湁鎰忎箟鐨勫€笺€?    - - `V4L2_CTRL_FLAG_VOLATILE`
+      - 该控件是永久只写的。任何尝试读取该控件的操作都将导`EACCES` 错误码。此标志
+	通常出现在相对控件或动作控件上，其中写入一个值将导致设备执行给定动作（例	电机控制），但无法返回有意义的值    - - `V4L2_CTRL_FLAG_VOLATILE`
       - 0x0080
-      - 璇ユ帶浠舵槸鏄撳彉鐨勶紙volatile锛夛紝杩欐剰鍛崇潃鎺т欢鐨勫€间細鎸佺画鍙樺寲銆備竴涓吀鍨嬬殑渚嬪瓙鏄綋璁惧
-	澶勪簬鑷姩澧炵泭妯″紡鏃剁殑褰撳墠澧炵泭鍊笺€傚湪杩欑鎯呭喌涓嬶紝纭欢鏍规嵁鍙兘闅忔椂闂村彉鍖栫殑鐓ф槑
-	鏉′欢璁＄畻澧炵泭鍊笺€?
+      - 该控件是易变的（volatile），这意味着控件的值会持续变化。一个典型的例子是当设备
+	处于自动增益模式时的当前增益值。在这种情况下，硬件根据可能随时间变化的照明
+	条件计算增益值
 ```
 
 	   Setting a new value for a volatile control will be ignored
@@ -454,13 +454,13 @@ ioctl锛屼紶鍏ユ寚鍚戣缁撴瀯鐨勬寚閽堛€傞┍鍔ㄥ～鍏呯
 ## Return Value
 
 
-鎴愬姛鏃惰繑鍥?0锛屽嚭閿欐椂杩斿洖 -1 骞剁浉搴斿湴璁剧疆 `errno` 鍙橀噺銆傞€氱敤閿欒鐮佸湪
-Generic Error Codes <gen-errors> 涓€绔犱腑鎻忚堪銆?
+成功时返0，出错时返回 -1 并相应地设置 `errno` 变量。通用错误码在
+Generic Error Codes <gen-errors> 一章中描述
 EINVAL
-    struct v4l2_queryctrl <v4l2-queryctrl> 鐨?`id` 鏃犳晥銆俿truct
-    v4l2_querymenu <v4l2-querymenu> 鐨?`id` 鏃犳晥锛屾垨 `index` 瓒呭嚭鑼冨洿锛堝皬浜?    `minimum` 鎴栧ぇ浜?`maximum`锛夛紝鎴栬€呰鐗瑰畾鐨勮彍鍗曢」涓嶅彈椹卞姩鏀寔銆?
+    struct v4l2_queryctrl <v4l2-queryctrl> `id` 无效。struct
+    v4l2_querymenu <v4l2-querymenu> `id` 无效，或 `index` 超出范围（小    `minimum` 或大`maximum`），或者该特定的菜单项不受驱动支持
 EACCES
-    灏濊瘯璇诲彇涓€涓彧鍐欐帶浠躲€?
-   `V4L2_CTRL_FLAG_DISABLED` 鏈変袱涓敤閫旓細椹卞姩鍙互璺宠繃纭欢涓嶆敮鎸佺殑棰勫畾涔夋帶浠?   锛堝敖绠¤繑鍥?`EINVAL` 涔熷悓鏍峰彲浠ワ級锛屾垨鑰呭湪纭欢妫€娴嬪悗绂佺敤棰勫畾涔夊拰绉佹湁鎺т欢锛岃€屾棤闇€
-   閲嶆柊鎺掑簭鎺т欢鏁扮粍鍜岀储寮曠殑楹荤儲锛坄EINVAL` 涓嶈兘鐢ㄤ簬璺宠繃绉佹湁鎺т欢锛屽洜涓洪偅浼氳繃鏃╁湴
-   缁撴潫鏋氫妇锛夈€?
+    尝试读取一个只写控件
+   `V4L2_CTRL_FLAG_DISABLED` 有两个用途：驱动可以跳过硬件不支持的预定义控   （尽管返`EINVAL` 也同样可以），或者在硬件检测后禁用预定义和私有控件，而无需
+   重新排序控件数组和索引的麻烦（`EINVAL` 不能用于跳过私有控件，因为那会过早地
+   结束枚举）

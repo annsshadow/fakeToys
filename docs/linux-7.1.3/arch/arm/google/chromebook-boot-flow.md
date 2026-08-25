@@ -1,26 +1,26 @@
 ﻿
-## Chromebook 鍚姩娴佺▼
+## Chromebook 启动流程
 
 
-澶у鏁拌繎鏈熶娇鐢ㄨ澶囨爲锛坉evice tree锛夌殑 Chromebook 浣跨敤寮€婧愮殑 depthcharge_ 寮曞鍔犺浇绋嬪簭銆俤epthcharge_ 鏈熸湜鎿嶄綔绯荤粺琚墦鍖呬负涓€涓?`FIT Image`_锛屽叾涓寘鍚搷浣滅郴缁熼暅鍍忎互鍙婁竴缁勮澶囨爲銆傜敱 depthcharge_ 浠?`FIT Image`_ 涓寫閫夊嚭姝ｇ‘鐨勮澶囨爲骞舵彁渚涚粰鎿嶄綔绯荤粺銆?
-depthcharge_ 鐢ㄦ潵鎸戦€夎澶囨爲鐨勬柟妗堣€冭檻浜嗕笁涓彉閲忥細
+大多数近期使用设备树（device tree）的 Chromebook 使用开源的 depthcharge_ 引导加载程序。depthcharge_ 期望操作系统被打包为一`FIT Image`_，其中包含操作系统镜像以及一组设备树。由 depthcharge_ `FIT Image`_ 中挑选出正确的设备树并提供给操作系统
+depthcharge_ 用来挑选设备树的方案考虑了三个变量：
 
-- 鏉垮悕锛圔oard name锛夛紝鍦?depthcharge_ 缂栬瘧鏃舵寚瀹氥€傚嵆涓嬮潰鐨?$(BOARD)銆?- 鏉夸慨璁㈠彿锛圔oard revision number锛夛紝鍦ㄨ繍琛屾椂纭畾锛堝彲鑳介€氳繃璇诲彇 GPIO 纭欢閰嶇疆锛坰trapping锛夛紝涔熷彲鑳介€氳繃鍏朵粬鏂规硶锛夈€傚嵆涓嬮潰鐨?$(REV)銆?- SKU 鍙凤紝鍦ㄥ惎鍔ㄦ椂浠?GPIO 纭欢閰嶇疆涓鍙栥€傚嵆涓嬮潰鐨?$(SKU)銆?
-瀵逛簬杩戞湡鐨?Chromebook锛宒epthcharge_ 鍒涘缓鐨勫尮閰嶅垪琛ㄥ涓嬶細
+- 板名（Board name），depthcharge_ 编译时指定。即下面$(BOARD)- 板修订号（Board revision number），在运行时确定（可能通过读取 GPIO 硬件配置（strapping），也可能通过其他方法）。即下面$(REV)- SKU 号，在启动时GPIO 硬件配置中读取。即下面$(SKU)
+对于近期Chromebook，depthcharge_ 创建的匹配列表如下：
 
 - google,$(BOARD)-rev$(REV)-sku$(SKU)
 - google,$(BOARD)-rev$(REV)
 - google,$(BOARD)-sku$(SKU)
 - google,$(BOARD)
 
-娉ㄦ剰锛屼竴浜涜緝鏃х殑 Chromebook 浣跨敤鐣ユ湁涓嶅悓銆佸彲鑳戒笉鍖呭惈 SKU 鍖归厤鎴栧彲鑳戒互涓嶅悓浼樺厛绾у寰?SKU/rev 鐨勫垪琛ㄣ€?
-娉ㄦ剰锛屽浜庢煇浜涙澘瀛愶紝鍙兘鏈夐澶栫殑鏉跨骇鐗瑰畾閫昏緫鍚戝垪琛ㄤ腑娉ㄥ叆棰濆鐨?compatible 瀛楃涓诧紝浣嗚繖骞朵笉甯歌銆?
-depthcharge_ 浼氶亶鍘?`FIT Image`_ 涓殑鎵€鏈夎澶囨爲锛岃瘯鍥炬壘鍒板尮閰嶆渶鍏蜂綋锛坢ost specific锛塩ompatible 鐨勯偅涓€涓€傜劧鍚庡畠浼氶亶鍘?`FIT Image`_ 涓殑鎵€鏈夎澶囨爲锛岃瘯鍥炬壘鍒板尮閰?*绗簩鍏蜂綋** compatible 鐨勯偅涓€涓紝渚濇绫绘帹銆?
-鍦ㄦ悳绱㈣澶囨爲鏃讹紝depthcharge_ 骞朵笉鍏冲績 compatible 瀛楃涓插湪璁惧鏍戞牴 compatible 瀛楃涓叉暟缁勪腑鐨勪綅缃€備緥濡傦紝濡傛灉鎴戜滑鍦?"lazor" 鏉裤€乺ev 4銆丼KU 0 涓婏紝骞朵笖鏈変袱妫佃澶囨爲锛?
+注意，一些较旧的 Chromebook 使用略有不同、可能不包含 SKU 匹配或可能以不同优先级对SKU/rev 的列表
+注意，对于某些板子，可能有额外的板级特定逻辑向列表中注入额外compatible 字符串，但这并不常见
+depthcharge_ 会遍`FIT Image`_ 中的所有设备树，试图找到匹配最具体（most specific）compatible 的那一个。然后它会遍`FIT Image`_ 中的所有设备树，试图找到匹*第二具体** compatible 的那一个，依此类推
+在搜索设备树时，depthcharge_ 并不关心 compatible 字符串在设备树根 compatible 字符串数组中的位置。例如，如果我们"lazor" 板、rev 4、SKU 0 上，并且有两棵设备树
 - "google,lazor-rev5-sku0", "google,lazor-rev4-sku0", "qcom,sc7180"
 - "google,lazor", "qcom,sc7180"
 
-閭ｄ箞 depthcharge_ 浼氶€夋嫨绗竴妫佃澶囨爲锛屽嵆浣?"google,lazor-rev4-sku0" 鏄偅妫佃澶囨爲涓垪鍑虹殑绗簩涓?compatible銆傝繖鏄洜涓哄畠姣?"google,lazor" 鏇村叿浣撱€?
-闇€瑕佹敞鎰忕殑鏄紝depthcharge_ 娌℃湁浠讳綍鏅鸿兘鍘诲皾璇曞尮閰?鐩歌繎"鐨勬澘瀛愭垨 SKU 淇鐗堟湰銆備篃灏辨槸璇达紝濡傛灉 depthcharge_ 鐭ラ亾鑷繁鍦ㄦ煇鍧楁澘鐨?"rev4" 涓婏紝浣嗘病鏈?"rev4" 鐨勮澶囨爲锛岄偅涔?depthcharge_ **涓嶄細**鍘诲鎵?"rev3" 鐨勮澶囨爲銆?
-涓€鑸€岃█锛屽綋瀵逛竴鍧楁澘瀛愬仛鍑轰换浣曢噸澶ф敼鍔ㄦ椂锛屽嵆浣垮叾涓病鏈変换浣曟敼鍔ㄩ渶瑕佸湪璁惧鏍戜腑浣撶幇锛屾澘淇鍙蜂篃浼氬鍔犮€傚洜姝ょ湅鍒板寘鍚涓慨璁㈢増鏈殑璁惧鏍戞槸鐩稿綋甯歌鐨勩€?
-搴斿綋娉ㄦ剰锛岃€冭檻鍒?depthcharge_ 涓婅堪鐨勮繖濂楁満鍒讹紝濡傛灉鏀寔鏌愬潡鏉挎渶鏂颁慨璁㈢増鏈殑璁惧鏍戠渷鐣ヤ簡 "-rev{REV}" compatible 瀛楃涓诧紝灏辫兘鑾峰緱鏈€澶х殑鐏垫椿鎬с€傝繖鏍峰仛涔嬪悗锛屽鏋滀綘鎷垮埌涓€鍧楁柊鐨勬澘淇鐗堟湰骞惰瘯鍥惧湪鍏朵笂杩愯鏃ц蒋浠讹紝閭ｄ箞鎴戜滑鑷冲皯鑳芥寫閫夊埌鎴戜滑鎵€鐭ョ殑鏈€鏂扮殑璁惧鏍戙€?
+那么 depthcharge_ 会选择第一棵设备树，即"google,lazor-rev4-sku0" 是那棵设备树中列出的第二compatible。这是因为它"google,lazor" 更具体
+需要注意的是，depthcharge_ 没有任何智能去尝试匹相近"的板子或 SKU 修订版本。也就是说，如果 depthcharge_ 知道自己在某块板"rev4" 上，但没"rev4" 的设备树，那depthcharge_ **不会**去寻"rev3" 的设备树
+一般而言，当对一块板子做出任何重大改动时，即使其中没有任何改动需要在设备树中体现，板修订号也会增加。因此看到包含多个修订版本的设备树是相当常见的
+应当注意，考虑depthcharge_ 上述的这套机制，如果支持某块板最新修订版本的设备树省略了 "-rev{REV}" compatible 字符串，就能获得最大的灵活性。这样做之后，如果你拿到一块新的板修订版本并试图在其上运行旧软件，那么我们至少能挑选到我们所知的最新的设备树

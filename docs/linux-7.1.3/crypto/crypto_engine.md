@@ -1,14 +1,14 @@
 ﻿
-## 鍔犲瘑寮曟搸锛圕rypto Engine锛?
+## 加密引擎（Crypto Engine
 
-### 姒傝堪
-
-
-鍔犲瘑寮曟搸锛圕E锛堿PI 鏄竴涓姞瀵嗚姹傞槦鍒楃鐞嗗櫒銆?
-### 瑕佹眰
+### 概述
 
 
-浣犲繀椤诲湪浣犵殑杞崲涓婁笅鏂?your_tfm_ctx 鐨勮捣濮嬪鏀剧疆缁撴瀯浣?crypto_engine锛?
+加密引擎（CE）API 是一个加密请求队列管理器
+### 要求
+
+
+你必须在你的转换上下your_tfm_ctx 的起始处放置结构crypto_engine
 ```
 
 	struct your_tfm_ctx {
@@ -17,27 +17,27 @@
 	};
 
 ```
-鍔犲瘑寮曟搸鍙互 crypto_async_request 鐨勫舰寮忕鐞嗗紓姝ヨ姹傘€傚畠鏃犳硶鐭ユ檽
-搴曞眰璇锋眰绫诲瀷锛屽洜姝ゅ彧鑳借闂浆鎹㈢粨鏋勪綋銆傛棤娉曚娇鐢?container_of 璁块棶
-涓婁笅鏂囥€傛澶栵紝寮曟搸瀵逛綘鐨勭粨鏋勪綋 "`struct your_tfm_ctx`" 涓€鏃犳墍鐭ャ€?寮曟搸鍋囧畾锛堣姹傦級灏嗗凡鐭ョ殑鎴愬憳 `struct crypto_engine` 鏀惧湪璧峰浣嶇疆銆?
-### 鎿嶄綔椤哄簭
+加密引擎只以 crypto_async_request 的形式管理异步请求。它无法知晓
+底层请求类型，因此只能访问转换结构体。无法使container_of 访问
+上下文。此外，引擎对你的结构体 "`struct your_tfm_ctx`" 一无所知引擎假定（要求）将已知的成员 `struct crypto_engine` 放在起始位置
+### 操作顺序
 
 
-浣犻渶瑕侀€氳繃 `crypto_engine_alloc_init()` 鑾峰彇涓€涓?struct crypto_engine銆?閫氳繃 `crypto_engine_start()` 鍚姩瀹冦€傚畬鎴愬伐浣滃悗锛屼娇鐢?`crypto_engine_stop()`
-鍏抽棴寮曟搸锛屽苟浣跨敤 `crypto_engine_exit()` 閿€姣佸紩鎿庛€?
-鍦ㄤ紶杈撲换浣曡姹備箣鍓嶏紝浣犲繀椤婚€氳繃鎻愪緵浠ヤ笅鍑芥暟鏉ュ～鍏呬笂涓嬫枃 enginectx锛?
-- `prepare_cipher_request`/`prepare_hash_request`锛氬湪姣忔瀵瑰簲鐨?  璇锋眰鎵ц鍓嶈璋冪敤銆傚鏋滈渶瑕佹煇浜涘鐞嗘垨鍏跺畠鍑嗗宸ヤ綔锛屽湪姝ゅ瀹屾垚銆?
-- `unprepare_cipher_request`/`unprepare_hash_request`锛氬湪姣忔
-  璇锋眰澶勭悊鍚庤璋冪敤銆傛竻鐞?/ 鎾ら攢鍦?prepare 鍑芥暟涓畬鎴愮殑宸ヤ綔銆?
-- `cipher_one_request`/`hash_one_request`锛氶€氳繃鎵ц鎿嶄綔鏉ュ鐞嗗綋鍓嶈姹傘€?
-娉ㄦ剰锛岃繖浜涘嚱鏁拌闂笌鏀跺埌鐨勮姹傜浉鍏宠仈鐨?crypto_async_request 缁撴瀯浣撱€?浣犲彲浠ラ€氳繃濡備笅鏂瑰紡鍙栧洖鍘熷璇锋眰锛?
+你需要通过 `crypto_engine_alloc_init()` 获取一struct crypto_engine通过 `crypto_engine_start()` 启动它。完成工作后，使`crypto_engine_stop()`
+关闭引擎，并使用 `crypto_engine_exit()` 销毁引擎
+在传输任何请求之前，你必须通过提供以下函数来填充上下文 enginectx
+- `prepare_cipher_request`/`prepare_hash_request`：在每次对应  请求执行前被调用。如果需要某些处理或其它准备工作，在此处完成
+- `unprepare_cipher_request`/`unprepare_hash_request`：在每次
+  请求处理后被调用。清/ 撤销prepare 函数中完成的工作
+- `cipher_one_request`/`hash_one_request`：通过执行操作来处理当前请求
+注意，这些函数访问与收到的请求相关联crypto_async_request 结构体你可以通过如下方式取回原始请求
 ```
 
 	container_of(areq, struct yourrequesttype_request, base);
 
 ```
-褰撲綘鐨勯┍鍔ㄦ敹鍒颁竴涓?crypto_request 鏃讹紝浣犲繀椤婚€氳繃浠ヤ笅涔嬩竴灏嗗叾
-浼犺緭缁欏姞瀵嗗紩鎿庯細
+当你的驱动收到一crypto_request 时，你必须通过以下之一将其
+传输给加密引擎：
 
 - crypto_transfer_aead_request_to_engine()
 
@@ -49,7 +49,7 @@
 
 - crypto_transfer_skcipher_request_to_engine()
 
-鍦ㄨ姹傚鐞嗙粨鏉熸椂锛岄渶瑕佽皟鐢ㄤ互涓嬪嚱鏁颁箣涓€锛?
+在请求处理结束时，需要调用以下函数之一
 - crypto_finalize_aead_request()
 
 - crypto_finalize_akcipher_request()

@@ -1,14 +1,14 @@
-﻿## 鏍稿績 API 鏂囨。
+﻿## 核心 API 文档
 
-鏈〉鏄牳蹇冨唴鏍?API 鏂囨。鎵嬪唽鐨勭储寮曪紝姹囨€讳簡鏍稿績宸ュ叿銆佹暟鎹粨鏋勪笌搴曞眰搴擄紝浠ュ強鍐呭瓨绠＄悊銆侀攣涓庡苟鍙戠瓑閫氱敤鍐呮牳鏈哄埗鍚勭珷鑺傜殑鍏ュ彛锛屼究浜庡紑鍙戣€呮寜涓婚鏌ラ槄鍐呮牳鏍稿績 API銆?
-
-
-杩欐槸鏍稿績鍐呮牳 API 鎵嬪唽鐨勫紑绡囥€傞潪甯告杩庝负杩欐湰鎵嬪唽杩涜鏂囨。杞崲锛堝拰鎾板啓锛侊級宸ヤ綔锛?
-
-## 鏍稿績宸ュ叿
+本页是核心内API 文档手册的索引，汇总了核心工具、数据结构与底层库，以及内存管理、锁与并发等通用内核机制各章节的入口，便于开发者按主题查阅内核核心 API
 
 
-鏈妭鍖呭惈閫氱敤浠ュ強鈥滄牳蹇冧腑鐨勬牳蹇冣€濇枃妗ｃ€傚墠鑰呮槸 docbook 鏃朵唬閬楃暀鐨勫ぇ閲?kerneldoc 淇℃伅澶ф潅鐑╋紱濡傛灉鍝ぉ鏈変汉鏈夌簿鍔涳紝纭疄搴旇鎶婂畠鎷嗗垎鏁寸悊銆?
+这是核心内核 API 手册的开篇。非常欢迎为这本手册进行文档转换（和撰写！）工作
+
+## 核心工具
+
+
+本节包含通用以及“核心中的核心”文档。前者是 docbook 时代遗留的大kerneldoc 信息大杂烩；如果哪天有人有精力，确实应该把它拆分整理
 
 - [kernel-api](kernel-api)
 - [workqueue](workqueue)
@@ -21,10 +21,10 @@
 - [real-time/index](real-time/index)
 - [housekeeping.rst](housekeeping.rst)
 
-## 鏁版嵁缁撴瀯涓庡簳灞傚伐鍏?
+## 数据结构与底层工
 
 
-鍐呮牳鍚勫閮戒細鐢ㄥ埌鐨勫簱鍔熻兘銆?
+内核各处都会用到的库功能
 
 - [kobject](kobject)
 - [kref](kref)
@@ -49,15 +49,15 @@
 - [parser](parser)
 - [list](list)
 
-## 搴曞眰杩涘叆涓庨€€鍑?
+## 底层进入与退
 
 
 - [entry](entry)
 
-## 骞跺彂鍘熻
+## 并发原语
 
 
-Linux 濡備綍閬垮厤鎵€鏈変簨鎯呭悓鏃跺彂鐢熴€傛洿澶氱浉鍏虫枃妗ｈ鍙傞槄 Documentation/locking/index.rst銆?
+Linux 如何避免所有事情同时发生。更多相关文档请参阅 Documentation/locking/index.rst
 
 - [refcount-vs-atomic](refcount-vs-atomic)
 - [irq/index](irq/index)
@@ -66,10 +66,10 @@ Linux 濡備綍閬垮厤鎵€鏈変簨鎯呭悓鏃跺彂鐢熴€傛洿澶氱�
 - [../RCU/index](../RCU/index)
 - [wrappers/memory-barriers.rst](wrappers/memory-barriers.rst)
 
-## 搴曞眰纭欢绠＄悊
+## 底层硬件管理
 
 
-缂撳瓨绠＄悊銆丆PU 鐑彃鎷旂鐞嗙瓑銆?
+缓存管理、CPU 热插拔管理等
 
 - [cachetlb](cachetlb)
 - [cpu_hotplug](cpu_hotplug)
@@ -77,10 +77,10 @@ Linux 濡備綍閬垮厤鎵€鏈変簨鎯呭悓鏃跺彂鐢熴€傛洿澶氱�
 - [genericirq](genericirq)
 - [protection-keys](protection-keys)
 
-## 鍐呭瓨绠＄悊
+## 内存管理
 
 
-濡備綍鍦ㄥ唴鏍镐腑鍒嗛厤鍜屼娇鐢ㄥ唴瀛樸€傛敞鎰忥紝鍦?Documentation/mm/index.rst 涓湁澶ч噺鏇村鍏充簬鍐呭瓨绠＄悊鐨勬枃妗ｃ€?
+如何在内核中分配和使用内存。注意，Documentation/mm/index.rst 中有大量更多关于内存管理的文档
 
 - [memory-allocation](memory-allocation)
 - [unaligned-memory-access](unaligned-memory-access)
@@ -97,17 +97,17 @@ Linux 濡備綍閬垮厤鎵€鏈変簨鎯呭悓鏃跺彂鐢熴€傛洿澶氱�
 - [gfp_mask-from-fs-io](gfp_mask-from-fs-io)
 - [kho/index](kho/index)
 
-## 鍐呮牳璋冭瘯鎺ュ彛
+## 内核调试接口
 
 
 - [debug-objects](debug-objects)
 - [tracepoint](tracepoint)
 - [debugging-via-ohci1394](debugging-via-ohci1394)
 
-## 鍏朵粬
+## 其他
 
 
-涓嶉€傚悎鏀惧湪鍏朵粬鍦版柟銆佹垨灏氭湭鍒嗙被鐨勬枃妗ｃ€?
+不适合放在其他地方、或尚未分类的文档
 
 - [librs](librs)
 - [liveupdate](liveupdate)

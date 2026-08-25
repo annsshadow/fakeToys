@@ -1,30 +1,30 @@
-﻿## STM32MP151 姒傝堪
+﻿## STM32MP151 概述
 
 
-### 绠€浠?
+### 简
 
 
-STM32MP151 鏄潰鍚戝悇绉嶅簲鐢ㄧ殑 Cortex-A MPU銆傚畠鍏锋湁浠ヤ笅鐗规€э細
+STM32MP151 是面向各种应用的 Cortex-A MPU。它具有以下特性：
 
-- 鍗曚釜 Cortex-A7 搴旂敤鏍?
-- 鏍囧噯瀛樺偍鍣ㄦ帴鍙ｆ敮鎸?
-- 鏍囧噯杩炴帴鎬э紝骞挎硾缁ф壙鑷?STM32 MCU 绯诲垪
-- 鍏ㄩ潰鐨勫畨鍏ㄦ敮鎸?
+- 鍗曚釜 Cortex-A7 搴旂敤鏍。
+- 标准存储器接口支
+- 标准连接性，广泛继承STM32 MCU 系列
+- 全面的安全支
 
-鏇村缁嗚妭锛?
+更多细节
 
-- 杩愯棰戠巼鏈€楂樿揪 800MHz 鐨?Cortex-A7 鏍稿績
-- 鐢ㄤ簬杩炴帴 SDRAM銆丯OR 鍜?NAND 瀛樺偍鍣ㄧ殑 FMC 鎺у埗鍣?
+- 运行频率最高达 800MHz Cortex-A7 核心
+- 用于连接 SDRAM、NOR NAND 存储器的 FMC 控制
 - QSPI
-- SD/MMC/SDIO 鏀寔
-- 浠ュお缃戞帶鍒跺櫒
+- SD/MMC/SDIO 支持
+- 以太网控制器
 - ADC/DAC
-- USB EHCI/OHCI 鎺у埗鍣?
+- USB EHCI/OHCI 鎺у埗鍣。
 - USB OTG
-- I2C銆丼PI 鎬荤嚎鏀寔
-- 澶氫釜閫氱敤瀹氭椂鍣?
-- 涓茶闊抽鎺ュ彛
-- LCD-TFT 鎺у埗鍣?
+- I2C、SPI 总线支持
+- 澶氫釜閫氱敤瀹氭椂鍣。
+- 串行音频接口
+- LCD-TFT 鎺у埗鍣。
 - DCMIPP
 - SPDIFRX
 - DFSDM

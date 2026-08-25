@@ -1,32 +1,32 @@
-﻿## Imagination Technologies SPDIF 杈撳叆鎺у埗鍣?
+﻿## Imagination Technologies SPDIF 杈撳叆鎺у埗鍣。
 
-Imagination Technologies SPDIF 杈撳叆鎺у埗鍣ㄥ寘鍚互涓嬫帶浠讹細
+Imagination Technologies SPDIF 输入控制器包含以下控件：
 
 - name='IEC958 Capture Mask',index=0
 
-姝ゆ帶浠惰繑鍥炰竴涓帺鐮侊紝鏄剧ず鍝簺 IEC958 鐘舵€佷綅鍙互浣跨敤 'IEC958 Capture Default' 鎺т欢璇诲彇銆?
+此控件返回一个掩码，显示哪些 IEC958 状态位可以使用 'IEC958 Capture Default' 控件读取
 - name='IEC958 Capture Default',index=0
 
-姝ゆ帶浠惰繑鍥炴鍦ㄦ帴鏀剁殑 SPDIF 娴佷腑鎵€鍖呭惈鐨勭姸鎬佷綅銆?IEC958 Capture Mask' 鏄剧ず鍙互浠庤鎺т欢璇诲彇鍝簺浣嶃€?
+此控件返回正在接收的 SPDIF 流中所包含的状态位IEC958 Capture Mask' 显示可以从该控件读取哪些位
 - name='SPDIF In Multi Frequency Acquire',index=0
 - name='SPDIF In Multi Frequency Acquire',index=1
 - name='SPDIF In Multi Frequency Acquire',index=2
 - name='SPDIF In Multi Frequency Acquire',index=3
 
-姝ゆ帶浠剁敤浜庡皾璇曡幏鍙栨渶澶氬洓绉嶄笉鍚岀殑閲囨牱鐜囥€傛椿鍔ㄩ€熺巼鍙€氳繃璇诲彇 'SPDIF In Lock Frequency' 鎺т欢鑾峰緱銆?
-褰撴鎺т欢鐨勫€艰璁句负 {0,0,0,0} 鏃讹紝鎻愪緵缁?hw_params 鐨勯€熺巼灏嗗喅瀹氳妯″潡鎹曡幏鐨勫崟涓€閫熺巼銆傚惁鍒欙紝鎻愪緵缁?hw_params 鐨勯€熺巼灏嗚蹇界暐锛岃妯″潡灏嗗皾璇曟崟鑾锋澶勮缃殑鍥涚閲囨牱鐜囦腑鐨勬瘡涓€涓€?
-濡傛灉闇€瑕佺殑閫熺巼灏戜簬鍥涚锛屽彲浠ュ娆℃寚瀹氱浉鍚岀殑閫熺巼
+此控件用于尝试获取最多四种不同的采样率。活动速率可通过读取 'SPDIF In Lock Frequency' 控件获得
+当此控件的值被设为 {0,0,0,0} 时，提供hw_params 的速率将决定该模块捕获的单一速率。否则，提供hw_params 的速率将被忽略，该模块将尝试捕获此处设置的四种采样率中的每一个
+如果需要的速率少于四种，可以多次指定相同的速率
 
 - name='SPDIF In Lock Frequency',index=0
 
-姝ゆ帶浠惰繑鍥炴椿鍔ㄦ崟鑾烽€熺巼锛屽鏋滃皻鏈幏鍙栭攣瀹氬垯杩斿洖 0
+此控件返回活动捕获速率，如果尚未获取锁定则返回 0
 
 - name='SPDIF In Lock TRK',index=0
 
-姝ゆ帶浠剁敤浜庝慨鏀硅妯″潡鐨勯攣瀹?鎶栧姩鎶戝埗鐗规€с€傝緝澶х殑鍊间細鎵╁ぇ閿佸畾鑼冨洿锛屼絾闄嶄綆鎶栧姩鎶戝埗鑳藉姏銆?
+此控件用于修改该模块的锁抖动抑制特性。较大的值会扩大锁定范围，但降低抖动抑制能力
 - name='SPDIF In Lock Acquire Threshold',index=0
 
-姝ゆ帶浠剁敤浜庢洿鏀硅幏鍙栭攣瀹氭椂鎵€闇€鐨勯槇鍊笺€?
+此控件用于更改获取锁定时所需的阈值
 - name='SPDIF In Lock Release Threshold',index=0
 
-姝ゆ帶浠剁敤浜庢洿鏀归噴鏀鹃攣瀹氭椂鎵€闇€鐨勯槇鍊笺€?
+此控件用于更改释放锁定时所需的阈值

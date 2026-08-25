@@ -1,60 +1,60 @@
 ﻿
-## Linux 铏氭嫙鏂囦欢绯荤粺姒傝堪
+## Linux 虚拟文件系统概述
 
 
-鍘熷浣滆€咃細Richard Gooch <rgooch@atnf.csiro.au>
+原始作者：Richard Gooch <rgooch@atnf.csiro.au>
 
-- 鐗堟潈鎵€鏈?(C) 1999 Richard Gooch
-- 鐗堟潈鎵€鏈?(C) 2005 Pekka Enberg
+- 版权所(C) 1999 Richard Gooch
+- 版权所(C) 2005 Pekka Enberg
 
 
-## 寮曡█
+## 引言
 
-铏氭嫙鏂囦欢绯荤粺锛圴irtual File System锛屼篃绉颁负铏氭嫙鏂囦欢绯荤粺浜ゆ崲鏈猴紝Virtual
-Filesystem Switch锛夋槸鍐呮牳涓彁渚涙枃浠剁郴缁熸帴鍙ｇ粰鐢ㄦ埛绌洪棿绋嬪簭鐨勮蒋浠跺眰銆傚畠杩樺湪
-鍐呮牳鍐呴儴鎻愪緵浜嗕竴绉嶆娊璞★紝浣垮緱涓嶅悓鐨勬枃浠剁郴缁熷疄鐜拌兘澶熷叡瀛樸€?
-VFS 绯荤粺璋冪敤 open(2)銆乻tat(2)銆乺ead(2)銆亀rite(2)銆乧hmod(2) 绛夋槸浠庤繘绋嬩笂涓嬫枃涓?璋冪敤鐨勩€傛枃浠剁郴缁熷姞閿佸湪鏂囨。 Documentation/filesystems/locking.rst 涓弿杩般€?
+虚拟文件系统（Virtual File System，也称为虚拟文件系统交换机，Virtual
+Filesystem Switch）是内核中提供文件系统接口给用户空间程序的软件层。它还在
+内核内部提供了一种抽象，使得不同的文件系统实现能够共存
+VFS 系统调用 open(2)、stat(2)、read(2)、write(2)、chmod(2) 等是从进程上下文调用的。文件系统加锁在文档 Documentation/filesystems/locking.rst 中描述
 
-### 鐩綍椤圭紦瀛橈紙dcache锛?
-VFS 瀹炵幇浜?open(2)銆乻tat(2)銆乧hmod(2) 鍙婄被浼肩殑绯荤粺璋冪敤銆備紶閫掔粰瀹冧滑鐨勮矾寰勫悕
-鍙傛暟琚?VFS 鐢ㄦ潵鍦ㄧ洰褰曢」缂撳瓨锛堜篃绉颁负 dentry 缂撳瓨鎴?dcache锛変腑杩涜鏌ユ壘銆傝繖鎻愪緵
-浜嗕竴绉嶉潪甯稿揩閫熺殑鏌ユ壘鏈哄埗锛岀敤浜庡皢璺緞鍚嶏紙鏂囦欢鍚嶏級杞崲涓虹壒瀹氱殑 dentry銆侱entry
-瀛樺湪浜?RAM 涓紝浠庝笉琚繚瀛樺埌纾佺洏锛氬畠浠粎涓烘€ц兘鑰屽瓨鍦ㄣ€?
-dentry 缂撳瓨鏃ㄥ湪浣滀负浣犳暣涓枃浠剁┖闂寸殑瑙嗗浘銆傜敱浜庡ぇ澶氭暟璁＄畻鏈烘棤娉曞悓鏃跺皢鍏ㄩ儴
-dentry 鏀惧叆 RAM锛岀紦瀛樹腑鏌愪簺閮ㄥ垎鏄己澶辩殑銆備负浜嗗皢浣犵殑璺緞鍚嶈В鏋愪负涓€涓?dentry锛?VFS 鍙兘涓嶅緱涓嶆部閫斿垱寤?dentry锛岀劧鍚庡姞杞?inode銆傝繖鏄€氳繃鏌ユ壘 inode 鏉ュ畬鎴愮殑銆?
+### 目录项缓存（dcache
+VFS 实现open(2)、stat(2)、chmod(2) 及类似的系统调用。传递给它们的路径名
+参数VFS 用来在目录项缓存（也称为 dentry 缓存dcache）中进行查找。这提供
+了一种非常快速的查找机制，用于将路径名（文件名）转换为特定的 dentry。Dentry
+存在RAM 中，从不被保存到磁盘：它们仅为性能而存在
+dentry 缓存旨在作为你整个文件空间的视图。由于大多数计算机无法同时将全部
+dentry 放入 RAM，缓存中某些部分是缺失的。为了将你的路径名解析为一dentryVFS 可能不得不沿途创dentry，然后加inode。这是通过查找 inode 来完成的
 
-### Inode 瀵硅薄
+### Inode 对象
 
-鍗曚釜 dentry 閫氬父鏈変竴涓寚鍚?inode 鐨勬寚閽堛€侷node 鏄枃浠剁郴缁熷璞★紝渚嬪鏅€氭枃浠躲€?鐩綍銆丗IFO 鍙婂叾浠栦竴浜涘璞°€傚畠浠涔堜綅浜庣鐩樹笂锛堝浜庡潡璁惧鏂囦欢绯荤粺锛夛紝瑕佷箞浣嶄簬
-鍐呭瓨涓紙瀵逛簬浼枃浠剁郴缁燂級銆備綅浜庣鐩樹笂鐨?inode 鍦ㄩ渶瑕佹椂琚鍒跺埌鍐呭瓨涓紝瀵?inode
-鐨勪慨鏀逛細琚啓鍥炵鐩樸€傚崟涓?inode 鍙互琚涓?dentry 鎸囧悜锛堜緥濡傜‖閾炬帴灏辨槸杩欐牱鍋氱殑锛夈€?
-瑕佹煡鎵句竴涓?inode锛岄渶瑕?VFS 璋冪敤鐖剁洰褰?inode 鐨?lookup() 鏂规硶銆傝鏂规硶鐢?inode
-鎵€鍦ㄧ殑鐗瑰畾鏂囦欢绯荤粺瀹炵幇瀹夎銆備竴鏃?VFS 鎷垮埌浜嗘墍闇€鐨?dentry锛堣繘鑰屾嬁鍒?inode锛夛紝
-鎴戜滑灏卞彲浠ュ仛閭ｄ簺鏃犺亰鐨勪簨鎯呬簡锛屾瘮濡傜敤 open(2) 鎵撳紑鏂囦欢锛屾垨鐢?stat(2) 鍋风湅 inode
-鏁版嵁銆俿tat(2) 鎿嶄綔鐩稿綋绠€鍗曪細涓€鏃?VFS 鎷垮埌 dentry锛屽畠灏卞伔鐪?inode 鏁版嵁骞跺皢鍏朵腑
-涓€閮ㄥ垎浼犲洖鐢ㄦ埛绌洪棿銆?
+单个 dentry 通常有一个指inode 的指针。Inode 是文件系统对象，例如普通文件目录、FIFO 及其他一些对象。它们要么位于磁盘上（对于块设备文件系统），要么位于
+内存中（对于伪文件系统）。位于磁盘上inode 在需要时被复制到内存中，inode
+的修改会被写回磁盘。单inode 可以被多dentry 指向（例如硬链接就是这样做的）
+要查找一inode，需VFS 调用父目inode lookup() 方法。该方法inode
+所在的特定文件系统实现安装。一VFS 拿到了所需dentry（进而拿inode），
+我们就可以做那些无聊的事情了，比如用 open(2) 打开文件，或stat(2) 偷看 inode
+数据。stat(2) 操作相当简单：一VFS 拿到 dentry，它就偷inode 数据并将其中
+一部分传回用户空间
 
-### File 瀵硅薄
+### File 对象
 
-鎵撳紑涓€涓枃浠堕渶瑕佸彟涓€涓搷浣滐細鍒嗛厤涓€涓?file 缁撴瀯锛堣繖鏄枃浠舵弿杩扮鍦ㄥ唴鏍镐晶鐨?瀹炵幇锛夈€傛柊鍒嗛厤鐨?file 缁撴瀯鐢ㄦ寚鍚?dentry 鐨勪竴缁勬枃浠舵搷浣滄垚鍛樺嚱鏁颁互鍙婁竴涓寚鍚?dentry 鐨勬寚閽堝垵濮嬪寲銆傝繖浜涘彇鑷?inode 鏁版嵁銆傜劧鍚庤皟鐢?open() 鏂囦欢鏂规硶锛屼互渚跨壒瀹氱殑
-鏂囦欢绯荤粺瀹炵幇鑳藉瀹屾垚瀹冪殑宸ヤ綔銆備綘鍙互鐪嬪埌杩欐槸 VFS 鎵ц鐨勫張涓€涓垏鎹€傝 file
-缁撴瀯琚斁鍏ヨ繘绋嬬殑 file descriptor 琛ㄤ腑銆?
-璇诲彇銆佸啓鍏ュ拰鍏抽棴鏂囦欢锛堜互鍙婂叾浠栧悇绉?VFS 鎿嶄綔锛夋槸閫氳繃浣跨敤鐢ㄦ埛绌洪棿鏂囦欢鎻忚堪绗?鏉ヨ幏鍙栫浉搴旂殑 file 缁撴瀯锛岀劧鍚庤皟鐢ㄦ墍闇€鐨?file 缁撴瀯鏂规硶浠ュ畬鎴愭墍闇€宸ヤ綔鏉ュ畬鎴愮殑銆?鍙鏂囦欢鏄墦寮€鐨勶紝瀹冨氨淇濇寔 dentry 鍦ㄤ娇鐢ㄤ腑锛岃€岃繖鍙堟剰鍛崇潃 VFS inode 浠嶅湪浣跨敤涓€?
+打开一个文件需要另一个操作：分配一file 结构（这是文件描述符在内核侧实现）。新分配file 结构用指dentry 的一组文件操作成员函数以及一个指dentry 的指针初始化。这些取inode 数据。然后调open() 文件方法，以便特定的
+文件系统实现能够完成它的工作。你可以看到这是 VFS 执行的又一个切换。该 file
+结构被放入进程的 file descriptor 表中
+读取、写入和关闭文件（以及其他各VFS 操作）是通过使用用户空间文件描述来获取相应的 file 结构，然后调用所需file 结构方法以完成所需工作来完成的只要文件是打开的，它就保持 dentry 在使用中，而这又意味着 VFS inode 仍在使用中
 
-## 娉ㄥ唽涓庢寕杞戒竴涓枃浠剁郴缁?
-瑕佹敞鍐屽拰娉ㄩ攢涓€涓枃浠剁郴缁燂紝璇蜂娇鐢ㄤ互涓?API 鍑芥暟锛?
+## 注册与挂载一个文件系
+要注册和注销一个文件系统，请使用以API 函数
 
 	#include <linux/fs.h>
 
 	extern int register_filesystem(struct file_system_type *);
 	extern int unregister_filesystem(struct file_system_type *);
 
-鎵€浼犲叆鐨?struct file_system_type 鎻忚堪浜嗕綘鐨勬枃浠剁郴缁熴€傚綋璇锋眰灏嗘煇涓枃浠剁郴缁熸寕杞?鍒颁綘鐨勫懡鍚嶇┖闂翠腑鐨勬煇涓洰褰曟椂锛孷FS 浼氳皟鐢ㄨ鐗瑰畾鏂囦欢绯荤粺鐨勭浉搴?get_tree() 鏂规硶銆?璇﹁ Documentation/filesystems/mount_api.rst銆?
-浣犲彲浠ュ湪 /proc/filesystems 鏂囦欢涓湅鍒版敞鍐屽埌鍐呮牳鐨勬墍鏈夋枃浠剁郴缁熴€?
+所传入struct file_system_type 描述了你的文件系统。当请求将某个文件系统挂到你的命名空间中的某个目录时，VFS 会调用该特定文件系统的相get_tree() 方法详见 Documentation/filesystems/mount_api.rst
+你可以在 /proc/filesystems 文件中看到注册到内核的所有文件系统
 
 ### struct file_system_type
 
-杩欐弿杩颁簡鏂囦欢绯荤粺銆傚畾涔変簡浠ヤ笅鎴愬憳锛?
+这描述了文件系统。定义了以下成员
 
 	struct file_system_type {
 		const char *name;
@@ -78,33 +78,33 @@ dentry 鏀惧叆 RAM锛岀紦瀛樹腑鏌愪簺閮ㄥ垎鏄己澶辩殑銆備
 	};
 
 `name`
-	鏂囦欢绯荤粺绫诲瀷鐨勫悕绉帮紝渚嬪 "ext2"銆?iso9660"銆?msdos" 绛?
+	文件系统类型的名称，例如 "ext2"iso9660"msdos" 
 `fs_flags`
-	鍚勭鏍囧織锛堝 FS_REQUIRES_DEV銆丗S_NO_DCACHE 绛夛級
+	各种标志（如 FS_REQUIRES_DEV、FS_NO_DCACHE 等）
 
 `init_fs_context`
-	鐢ㄦ枃浠剁郴缁熺壒瀹氱殑鏁版嵁鍒濆鍖?'struct fs_context' 鐨?->ops 涓?->fs_private 瀛楁銆?
+	用文件系统特定的数据初始'struct fs_context' ->ops ->fs_private 字段
 `parameters`
-	鎸囧悜鏂囦欢绯荤粺鍙傛暟鎻忚堪绗︽暟缁?'struct fs_parameter_spec' 鐨勬寚閽堛€?	鏇村淇℃伅瑙?Documentation/filesystems/mount_api.rst銆?
+	指向文件系统参数描述符数'struct fs_parameter_spec' 的指针	更多信息Documentation/filesystems/mount_api.rst
 `kill_sb`
-	褰撹鏂囦欢绯荤粺鐨勪竴涓疄渚嬪簲褰撳叧闂椂璋冪敤鐨勬柟娉?
+	当该文件系统的一个实例应当关闭时调用的方
 `owner`
-	渚?VFS 鍐呴儴浣跨敤锛氬湪澶у鏁版儏鍐典笅浣犲簲灏嗗叾鍒濆鍖栦负 THIS_MODULE銆?
+	VFS 内部使用：在大多数情况下你应将其初始化为 THIS_MODULE
 `next`
-	渚?VFS 鍐呴儴浣跨敤锛氫綘搴斿皢鍏跺垵濮嬪寲涓?NULL
+	VFS 内部使用：你应将其初始化NULL
 
 `fs_supers`
-	渚?VFS 鍐呴儴浣跨敤锛氭枃浠剁郴缁熷疄渚嬶紙瓒呯骇鍧楋級鐨?hlist
+	VFS 内部使用：文件系统实例（超级块）hlist
 
-  s_lock_key銆乻_umount_key銆乻_vfs_rename_key銆乻_writers_key銆?  i_lock_key銆乮_mutex_key銆乮nvalidate_lock_key銆乮_mutex_dir_key锛歭ockdep 涓撶敤
+  s_lock_key、s_umount_key、s_vfs_rename_key、s_writers_key  i_lock_key、i_mutex_key、invalidate_lock_key、i_mutex_dir_key：lockdep 专用
 
-## 瓒呯骇鍧楋紙Superblock锛夊璞?
+## 超级块（Superblock）对
 
-涓€涓秴绾у潡瀵硅薄浠ｈ〃涓€涓凡鎸傝浇鐨勬枃浠剁郴缁熴€?
+一个超级块对象代表一个已挂载的文件系统
 
 ### struct super_operations
 
-杩欐弿杩颁簡 VFS 濡備綍鎿嶄綔浣犵殑鏂囦欢绯荤粺鐨勮秴绾у潡銆傚畾涔変簡浠ヤ笅鎴愬憳锛?
+这描述了 VFS 如何操作你的文件系统的超级块。定义了以下成员
 
 	struct super_operations {
 		struct inode **(**alloc_inode)(struct super_block *sb);
@@ -141,100 +141,100 @@ dentry 鏀惧叆 RAM锛岀紦瀛樹腑鏌愪簺閮ㄥ垎鏄己澶辩殑銆備
 					struct shrink_control *);
 	};
 
-闄ら潪鍙︽湁璇存槑锛屾墍鏈夋柟娉曢兘鍦ㄤ笉鎸佹湁浠讳綍閿佺殑鎯呭喌涓嬭皟鐢ㄣ€傝繖鎰忓懗鐫€澶у鏁版柟娉曞彲浠?瀹夊叏鍦伴樆濉炪€傛墍鏈夋柟娉曢兘鍙粠杩涚▼涓婁笅鏂囪皟鐢紙鍗充笉鏄粠涓柇澶勭悊绋嬪簭鎴栧簳鍗婇儴璋冪敤锛夈€?
+除非另有说明，所有方法都在不持有任何锁的情况下调用。这意味着大多数方法可安全地阻塞。所有方法都只从进程上下文调用（即不是从中断处理程序或底半部调用）
 `alloc_inode`
-	璇ユ柟娉曠敱 alloc_inode() 璋冪敤锛屼负 struct inode 鍒嗛厤鍐呭瓨骞跺垵濮嬪寲瀹冦€傚鏋滄湭
-	瀹氫箟姝ゅ嚱鏁帮紝鍒欏垎閰嶄竴涓畝鍗曠殑 'struct inode'銆傞€氬父 alloc_inode 浼氳鐢ㄦ潵
-	鍒嗛厤涓€涓洿澶х殑銆佸叾涓唴宓屼簡 'struct inode' 鐨勭粨鏋勩€?
+	该方法由 alloc_inode() 调用，为 struct inode 分配内存并初始化它。如果未
+	定义此函数，则分配一个简单的 'struct inode'。通常 alloc_inode 会被用来
+	分配一个更大的、其中内嵌了 'struct inode' 的结构
 `destroy_inode`
-	璇ユ柟娉曠敱 destroy_inode() 璋冪敤锛屼互閲婃斁涓?struct inode 鍒嗛厤鐨?resource銆?	浠呭綋瀹氫箟浜?->alloc_inode锛屽苟涓斿彧鏄挙閿€ ->alloc_inode 鎵€鍋氱殑涓€鍒囨椂鎵嶉渶瑕佸畠銆?
+	该方法由 destroy_inode() 调用，以释放struct inode 分配resource	仅当定义->alloc_inode，并且只是撤销 ->alloc_inode 所做的一切时才需要它
 `free_inode`
-	璇ユ柟娉曚粠 RCU 鍥炶皟涓皟鐢ㄣ€傚鏋滀綘鍦?->destroy_inode 涓娇鐢?call_rcu() 鏉?	閲婃斁 'struct inode' 鍐呭瓨锛岄偅涔堟渶濂藉湪璇ユ柟娉曚腑閲婃斁鍐呭瓨銆?
+	该方法从 RCU 回调中调用。如果你->destroy_inode 中使call_rcu() 	释放 'struct inode' 内存，那么最好在该方法中释放内存
 `dirty_inode`
-	褰?inode 琚爣璁颁负鑴忔椂鐢?VFS 璋冪敤銆傝繖鐗规寚 inode 鑷韩琚爣璁颁负鑴忥紝鑰岄潪鍏?	鏁版嵁銆傚鏋滄洿鏂伴渶瑕佺敱 fdatasync() 鎸佷箙鍖栵紝鍒欎細鍦?flags 鍙傛暟涓缃?	I_DIRTY_DATASYNC銆傚鏋滃惎鐢ㄤ簡 lazytime锛屼笖 struct inode 鑷笂娆?->dirty_inode
-	璋冪敤浠ユ潵鏇存柊浜嗘椂闂达紝鍒欎細鍦?flags 涓缃?I_DIRTY_TIME銆?
+	inode 被标记为脏时VFS 调用。这特指 inode 自身被标记为脏，而非	数据。如果更新需要由 fdatasync() 持久化，则会flags 参数中设	I_DIRTY_DATASYNC。如果启用了 lazytime，且 struct inode 自上->dirty_inode
+	调用以来更新了时间，则会flags 中设I_DIRTY_TIME
 `write_inode`
-	褰?VFS 闇€瑕佸皢涓€涓?inode 鍐欏叆纾佺洏鏃惰皟鐢ㄣ€傜浜屼釜鍙傛暟鎸囩ず鍐欏叆鏄惁搴斾负鍚屾鐨勶紝
-	骞堕潪鎵€鏈夋枃浠剁郴缁熼兘浼氭鏌ヨ鏍囧織銆?
+	VFS 需要将一inode 写入磁盘时调用。第二个参数指示写入是否应为同步的，
+	并非所有文件系统都会检查该标志
 `drop_inode`
-	褰撳 inode 鐨勬渶鍚庝竴娆¤闂鏀惧純鏃惰皟鐢紝姝ゆ椂鎸佹湁 inode->i_lock 鑷棆閿併€?
-	璇ユ柟娉曞簲涓?NULL锛堟櫘閫?UNIX 鏂囦欢绯荤粺璇箟锛夛紝鎴栦负 "inode_just_drop"锛堝浜?	涓嶅笇鏈涚紦瀛?inode 鐨勬枃浠剁郴缁熲€斺€斿鑷存棤璁?i_nlink 鍊间负浣曪紝"delete_inode" 鎬绘槸
-	琚皟鐢級銆?
-	"inode_just_drop()" 琛屼负涓庡湪 put_inode() 鎯呭喌涓嬩娇鐢?"force_delete" 鐨勬棫鍋氭硶
-	绛夋晥锛屼絾娌℃湁 "force_delete()" 鏂规硶鎵€瀛樺湪鐨勭珵鎬併€?
+	当对 inode 的最后一次访问被放弃时调用，此时持有 inode->i_lock 自旋锁
+	该方法应NULL（普UNIX 文件系统语义），或为 "inode_just_drop"（对	不希望缓inode 的文件系统——导致无i_nlink 值为何，"delete_inode" 总是
+	被调用）
+	"inode_just_drop()" 行为与在 put_inode() 情况下使"force_delete" 的旧做法
+	等效，但没有 "force_delete()" 方法所存在的竞态
 `evict_inode`
-	褰?VFS 鎯宠椹遍€愶紙evict锛変竴涓?inode 鏃惰皟鐢ㄣ€傝皟鐢ㄨ€?*涓嶄細**椹遍€?pagecache 鎴?	inode 鍏宠仈鐨勫厓鏁版嵁缂撳啿鍖猴紱璇ユ柟娉曞繀椤讳娇鐢?truncate_inode_pages_final() 鏉?	娓呴櫎瀹冧滑銆傝皟鐢ㄨ€呯‘淇濆湪 ->evict_inode() 琚皟鐢ㄦ湡闂达紙鎴栦箣鍚庯級涓嶄細鏈夐拡瀵硅
-	inode 鐨勫紓姝ュ洖鍐欒繍琛屻€傚彲閫夈€?
+	VFS 想要驱逐（evict）一inode 时调用。调用*不会**驱pagecache 	inode 关联的元数据缓冲区；该方法必须使truncate_inode_pages_final() 	清除它们。调用者确保在 ->evict_inode() 被调用期间（或之后）不会有针对该
+	inode 的异步回写运行。可选
 `put_super`
-	褰?VFS 甯屾湜閲婃斁瓒呯骇鍧楋紙鍗冲嵏杞斤級鏃惰皟鐢ㄣ€傝皟鐢ㄦ椂鎸佹湁瓒呯骇鍧楅攣銆?
+	VFS 希望释放超级块（即卸载）时调用。调用时持有超级块锁
 `sync_fs`
-	褰?VFS 姝ｅ湪鍐欏嚭涓庝竴涓秴绾у潡鍏宠仈鐨勬墍鏈夎剰鏁版嵁鏃惰皟鐢ㄣ€傜浜屼釜鍙傛暟鎸囩ず璇ユ柟娉曟槸
-	鍚﹀簲绛夊緟鍐欏嚭瀹屾垚銆傚彲閫夈€?
+	VFS 正在写出与一个超级块关联的所有脏数据时调用。第二个参数指示该方法是
+	否应等待写出完成。可选
 `freeze_super`
-	濡傛灉鎻愪緵锛屽垯浠ｆ浛 ->freeze_fs 鍥炶皟璋冪敤銆備富瑕佸尯鍒湪浜?->freeze_super 鍦?	涓嶈幏鍙?down_write(&sb->s_umount) 鐨勬儏鍐典笅璋冪敤銆傚鏋滄枃浠剁郴缁熷疄鐜颁簡瀹冨苟涓?	涔熷笇鏈涜皟鐢?->freeze_fs锛屽垯瀹冨繀椤绘樉寮忓湴浠庢鍥炶皟涓皟鐢?->freeze_fs銆傚彲閫夈€?
+	如果提供，则代替 ->freeze_fs 回调调用。主要区别在->freeze_super 	不获down_write(&sb->s_umount) 的情况下调用。如果文件系统实现了它并	也希望调->freeze_fs，则它必须显式地从此回调中调->freeze_fs。可选
 `freeze_fs`
-	褰?VFS 閿佸畾涓€涓枃浠剁郴缁熷苟寮哄埗鍏惰繘鍏ヤ竴鑷寸姸鎬佹椂璋冪敤銆傝鏂规硶褰撳墠琚€昏緫鍗风鐞嗗櫒
-	锛圠VM锛夊拰 ioctl(FIFREEZE) 浣跨敤銆傚彲閫夈€?
+	VFS 锁定一个文件系统并强制其进入一致状态时调用。该方法当前被逻辑卷管理器
+	（LVM）和 ioctl(FIFREEZE) 使用。可选
 `thaw_super`
-	褰?VFS 鍦?->freeze_super 涔嬪悗瑙ｉ攣涓€涓枃浠剁郴缁熷苟浣垮叾鍐嶆鍙啓鏃惰皟鐢ㄣ€傚彲閫夈€?
+	VFS ->freeze_super 之后解锁一个文件系统并使其再次可写时调用。可选
 `unfreeze_fs`
-	褰?VFS 鍦?->freeze_fs 涔嬪悗瑙ｉ攣涓€涓枃浠剁郴缁熷苟浣垮叾鍐嶆鍙啓鏃惰皟鐢ㄣ€傚彲閫夈€?
+	VFS ->freeze_fs 之后解锁一个文件系统并使其再次可写时调用。可选
 `statfs`
-	褰?VFS 闇€瑕佽幏鍙栨枃浠剁郴缁熺粺璁′俊鎭椂璋冪敤銆?
+	VFS 需要获取文件系统统计信息时调用
 `umount_begin`
-	褰?VFS 姝ｅ湪鍗歌浇涓€涓枃浠剁郴缁熸椂璋冪敤銆?
+	VFS 正在卸载一个文件系统时调用
 `show_options`
-	鐢?VFS 璋冪敤锛岀敤浜庢樉绀?/proc/<pid>/mounts 涓?/proc/<pid>/mountinfo 鐨勬寕杞?	閫夐」銆傦紙瑙?鎸傝浇閫夐」"涓€鑺傦級
+	VFS 调用，用于显/proc/<pid>/mounts /proc/<pid>/mountinfo 的挂	选项。（挂载选项"一节）
 
 `show_devname`
-	鍙€夈€傜敱 VFS 璋冪敤锛岀敤浜庢樉绀?/proc/<pid>/{mounts,mountinfo,mountstats} 鐨?	璁惧鍚嶃€傚鏋滄湭鎻愪緵锛屽垯灏嗕娇鐢?'(struct mount).mnt_devname'銆?
+	可选。由 VFS 调用，用于显/proc/<pid>/{mounts,mountinfo,mountstats} 	设备名。如果未提供，则将使'(struct mount).mnt_devname'
 `show_path`
-	鍙€夈€傜敱 VFS 璋冪敤锛堥拡瀵?/proc/<pid>/mountinfo锛夛紝鐢ㄤ簬鏄剧ず鐩稿浜庢枃浠剁郴缁熸牴鐨?	鎸傝浇鏍?dentry 璺緞銆?
+	可选。由 VFS 调用（针/proc/<pid>/mountinfo），用于显示相对于文件系统根	挂载dentry 路径
 `show_stats`
-	鍙€夈€傜敱 VFS 璋冪敤锛堥拡瀵?/proc/<pid>/mountstats锛夛紝鐢ㄤ簬鏄剧ず鏂囦欢绯荤粺鐗瑰畾鐨勬寕杞?	缁熻淇℃伅銆?
+	可选。由 VFS 调用（针/proc/<pid>/mountstats），用于显示文件系统特定的挂	统计信息
 `quota_read`
-	鐢?VFS 璋冪敤锛屼互浠庢枃浠剁郴缁熼厤棰濇枃浠惰鍙栥€?
+	VFS 调用，以从文件系统配额文件读取
 `quota_write`
-	鐢?VFS 璋冪敤锛屼互鍚戞枃浠剁郴缁熼厤棰濇枃浠跺啓鍏ャ€?
+	VFS 调用，以向文件系统配额文件写入
 `get_dquots`
-	鐢?quota 璋冪敤锛屼互鑾峰彇鏌愪釜鐗瑰畾 inode 鐨?'struct dquot' 鏁扮粍銆傚彲閫夈€?
+	quota 调用，以获取某个特定 inode 'struct dquot' 数组。可选
 `nr_cached_objects`
-	鐢辨枃浠剁郴缁熺殑 sb 缂撳瓨鏀剁缉鍑芥暟璋冪敤锛屼互杩斿洖瀹冩墍鍖呭惈鐨勩€佸彲閲婃斁鐨勭紦瀛樺璞℃暟閲忋€?	鍙€夈€?
+	由文件系统的 sb 缓存收缩函数调用，以返回它所包含的、可释放的缓存对象数量	可选
 `free_cache_objects`
-	鐢辨枃浠剁郴缁熺殑 sb 缂撳瓨鏀剁缉鍑芥暟璋冪敤锛屼互鎵弿鎸囧畾鏁伴噺鐨勫璞＄殑灏濊瘯閲婃斁瀹冧滑銆?	鍙€夛紝浣嗕换浣曞疄鐜版鏂规硶鐨勬枃浠剁郴缁熶篃闇€瑕佸疄鐜?->nr_cached_objects 鎵嶈兘琚纭?	璋冪敤銆?
-	鎴戜滑瀵规枃浠剁郴缁熷彲鑳介亣鍒扮殑浠讳綍閿欒閮芥棤鑳戒负鍔涳紝鍥犳杩斿洖绫诲瀷涓?void銆傚鏋?VM
-	璇曞浘鍦?GFP_NOFS 鏉′欢涓嬪洖鏀讹紝鍒欐案杩滀笉浼氳皟鐢ㄥ畠锛屽洜姝よ鏂规硶鑷韩鏃犻渶澶勭悊閭ｇ
-	鎯呭喌銆?
-	瀹炵幇蹇呴』鍦ㄤ换浣曟墍鍋氱殑鎵弿寰幆涓寘鍚湁鏉′欢鐨勯噸璋冨害锛坮eschedule锛夎皟鐢ㄣ€傝繖浣垮緱
-	VFS 鑳藉纭畾鍚堥€傜殑鎵弿鎵瑰ぇ灏忥紝鑰屾棤闇€鎷呭績瀹炵幇浼氬洜涓哄ぇ鐨勬壂鎻忔壒澶у皬鑰屽鑷?	鍋滈】锛坔oldoff锛夐棶棰樸€?
-璁剧疆 inode 鐨勪汉璐熻矗濉啓 "i_op" 瀛楁銆傝繖鏄竴涓寚鍚?"struct inode_operations" 鐨?鎸囬拡锛屽悗鑰呮弿杩颁簡鍙湪鍗曚釜 inode 涓婃墽琛岀殑鏂规硶銆?
+	由文件系统的 sb 缓存收缩函数调用，以扫描指定数量的对象的尝试释放它们	可选，但任何实现此方法的文件系统也需要实->nr_cached_objects 才能被正	调用
+	我们对文件系统可能遇到的任何错误都无能为力，因此返回类型void。如VM
+	试图GFP_NOFS 条件下回收，则永远不会调用它，因此该方法自身无需处理那种
+	情况
+	实现必须在任何所做的扫描循环中包含有条件的重调度（reschedule）调用。这使得
+	VFS 能够确定合适的扫描批大小，而无需担心实现会因为大的扫描批大小而导	停顿（holdoff）问题
+设置 inode 的人负责填写 "i_op" 字段。这是一个指"struct inode_operations" 指针，后者描述了可在单个 inode 上执行的方法
 
 ### struct xattr_handler
 
 
-鍦ㄦ敮鎸佹墿灞曞睘鎬э紙xattr锛夌殑鏂囦欢绯荤粺涓婏紝s_xattr 瓒呯骇鍧楀瓧娈垫寚鍚戜竴涓互 NULL 缁撳熬鐨?xattr 澶勭悊鍣ㄦ暟缁勩€傛墿灞曞睘鎬ф槸 鍚嶇О:鍊?瀵广€?
+在支持扩展属性（xattr）的文件系统上，s_xattr 超级块字段指向一个以 NULL 结尾xattr 处理器数组。扩展属性是 名称:对
 `name`
-	鎸囩ず璇ュ鐞嗗櫒鍖归厤鍏锋湁鎸囧畾鍚嶇О锛堝 "system.posix_acl_access"锛夌殑灞炴€э紱prefix
-	瀛楁蹇呴』涓?NULL銆?
+	指示该处理器匹配具有指定名称（如 "system.posix_acl_access"）的属性；prefix
+	字段必须NULL
 `prefix`
-	鎸囩ず璇ュ鐞嗗櫒鍖归厤鍏锋湁鎸囧畾鍚嶇О鍓嶇紑锛堝 "user."锛夌殑鎵€鏈夊睘鎬э紱name 瀛楁蹇呴』涓?	NULL銆?
+	指示该处理器匹配具有指定名称前缀（如 "user."）的所有属性；name 字段必须	NULL
 `list`
-	纭畾鏄惁搴斿綋涓烘煇涓壒瀹?dentry 鍒楀嚭鍖归厤姝?xattr 澶勭悊鍣ㄧ殑灞炴€с€傝鏌愪簺
-	listxattr 瀹炵幇锛堝 generic_listxattr锛変娇鐢ㄣ€?
+	确定是否应当为某个特dentry 列出匹配xattr 处理器的属性。被某些
+	listxattr 实现（如 generic_listxattr）使用
 `get`
-	鐢?VFS 璋冪敤锛屼互鑾峰彇鏌愪釜鐗瑰畾鎵╁睍灞炴€х殑鍊笺€傝鏂规硶鐢?getxattr(2) 绯荤粺璋冪敤璋冪敤銆?
+	VFS 调用，以获取某个特定扩展属性的值。该方法getxattr(2) 系统调用调用
 `set`
-	鐢?VFS 璋冪敤锛屼互璁剧疆鏌愪釜鐗瑰畾鎵╁睍灞炴€х殑鍊笺€傚綋鏂板€间负 NULL 鏃讹紝璋冪敤浠ョЩ闄ゆ煇涓?	鐗瑰畾鎵╁睍灞炴€с€傝鏂规硶鐢?setxattr(2) 涓?removexattr(2) 绯荤粺璋冪敤璋冪敤銆?
-褰撴枃浠剁郴缁熺殑 xattr 澶勭悊鍣ㄩ兘涓嶅尮閰嶆寚瀹氱殑灞炴€у悕锛屾垨鑰呮枃浠剁郴缁熶笉鏀寔鎵╁睍灞炴€ф椂锛?鍚勭 `*xattr(2)` 绯荤粺璋冪敤杩斿洖 -EOPNOTSUPP銆?
+	VFS 调用，以设置某个特定扩展属性的值。当新值为 NULL 时，调用以移除某	特定扩展属性。该方法setxattr(2) removexattr(2) 系统调用调用
+当文件系统的 xattr 处理器都不匹配指定的属性名，或者文件系统不支持扩展属性时各种 `*xattr(2)` 系统调用返回 -EOPNOTSUPP
 
-## Inode 瀵硅薄
+## Inode 对象
 
 
-涓€涓?inode 瀵硅薄浠ｈ〃鏂囦欢绯荤粺涓殑涓€涓璞°€?
+一inode 对象代表文件系统中的一个对象
 
 ### struct inode_operations
 
-杩欐弿杩颁簡 VFS 濡備綍鎿嶄綔浣犵殑鏂囦欢绯荤粺涓殑 inode銆傝嚜鍐呮牳 2.6.22 璧凤紝瀹氫箟浜嗕互涓嬫垚鍛橈細
+这描述了 VFS 如何操作你的文件系统中的 inode。自内核 2.6.22 起，定义了以下成员：
 
 
 	struct inode_operations {
@@ -270,118 +270,118 @@ dentry 鏀惧叆 RAM锛岀紦瀛樹腑鏌愪簺閮ㄥ垎鏄己澶辩殑銆備
 	        struct offset_ctx **(**get_offset_ctx)(struct inode *inode);
 	};
 
-鍚屾牱锛岄櫎闈炲彟鏈夎鏄庯紝鎵€鏈夋柟娉曢兘鍦ㄤ笉鎸佹湁浠讳綍閿佺殑鎯呭喌涓嬭皟鐢ㄣ€?
+同样，除非另有说明，所有方法都在不持有任何锁的情况下调用
 `create`
-	鐢?open(2) 涓?creat(2) 绯荤粺璋冪敤璋冪敤銆備粎褰撲綘鎯宠鏀寔鏅€氭枃浠舵椂鎵嶉渶瑕併€備綘寰楀埌鐨?	dentry 涓嶅簲鏈?inode锛堝嵆瀹冨簲鏄竴涓礋 dentry锛夈€傝繖閲屼綘澶ф浼氱敤 d_instantiate()
-	杩炲悓 dentry 涓庢柊寤虹殑 inode 涓€璧疯皟鐢ㄣ€?
+	open(2) creat(2) 系统调用调用。仅当你想要支持普通文件时才需要。你得到	dentry 不应inode（即它应是一个负 dentry）。这里你大概会用 d_instantiate()
+	连同 dentry 与新建的 inode 一起调用
 `lookup`
-	褰?VFS 闇€瑕佸湪鐖剁洰褰曚腑鏌ユ壘涓€涓?inode 鏃惰皟鐢ㄣ€傝鏌ユ壘鐨勫悕绉板湪 dentry 涓€傝
-	鏂规硶蹇呴』璋冪敤 d_add() 灏嗘壘鍒扮殑 inode 鎻掑叆 dentry銆俰node 缁撴瀯涓殑 "i_count"
-	瀛楁搴斿綋閫掑銆傚鏋滄寚瀹氱殑 inode 涓嶅瓨鍦紝鍒欏簲鍚?dentry 涓彃鍏ヤ竴涓?NULL inode
-	锛堣繖绉颁负璐?dentry锛夈€備粠璇ヤ緥绋嬭繑鍥為敊璇爜蹇呴』鍙湪鍙戠敓鐪熷疄閿欒鏃舵墠杩涜锛屽惁鍒?	浣跨敤 create(2)銆乵knod(2)銆乵kdir(2) 绛夌郴缁熻皟鐢ㄥ垱寤?inode 灏嗕細澶辫触銆傚鏋滀綘甯屾湜
-	閲嶈浇 dentry 鏂规硶锛岄偅涔堜綘搴旇鍒濆鍖?dentry 涓殑 "d_dop" 瀛楁锛涜繖鏄竴涓寚鍚?	struct "dentry_operations" 鐨勬寚閽堛€傝皟鐢ㄨ鏂规硶鏃舵寔鏈夌洰褰?inode 淇″彿閲忋€?
+	VFS 需要在父目录中查找一inode 时调用。要查找的名称在 dentry 中。该
+	方法必须调用 d_add() 将找到的 inode 插入 dentry。inode 结构中的 "i_count"
+	字段应当递增。如果指定的 inode 不存在，则应dentry 中插入一NULL inode
+	（这称为dentry）。从该例程返回错误码必须只在发生真实错误时才进行，否	使用 create(2)、mknod(2)、mkdir(2) 等系统调用创inode 将会失败。如果你希望
+	重载 dentry 方法，那么你应该初始dentry 中的 "d_dop" 字段；这是一个指	struct "dentry_operations" 的指针。调用该方法时持有目inode 信号量
 `link`
-	鐢?link(2) 绯荤粺璋冪敤璋冪敤銆備粎褰撲綘鎯宠鏀寔纭摼鎺ユ椂鎵嶉渶瑕併€備綘澶ф闇€瑕佸儚鍦?	create() 鏂规硶涓偅鏍疯皟鐢?d_instantiate()銆?
+	link(2) 系统调用调用。仅当你想要支持硬链接时才需要。你大概需要像	create() 方法中那样调d_instantiate()
 `unlink`
-	鐢?unlink(2) 绯荤粺璋冪敤璋冪敤銆備粎褰撲綘鎯宠鏀寔鍒犻櫎 inode 鏃舵墠闇€瑕併€?
+	unlink(2) 系统调用调用。仅当你想要支持删除 inode 时才需要
 `symlink`
-	鐢?symlink(2) 绯荤粺璋冪敤璋冪敤銆備粎褰撲綘鎯宠鏀寔绗﹀彿閾炬帴鏃舵墠闇€瑕併€備綘澶ф闇€瑕佸儚鍦?	create() 鏂规硶涓偅鏍疯皟鐢?d_instantiate()銆?
+	symlink(2) 系统调用调用。仅当你想要支持符号链接时才需要。你大概需要像	create() 方法中那样调d_instantiate()
 `mkdir`
-	鐢?mkdir(2) 绯荤粺璋冪敤璋冪敤銆備粎褰撲綘鎯宠鏀寔鍒涘缓瀛愮洰褰曟椂鎵嶉渶瑕併€備綘澶ф闇€瑕佸儚鍦?	create() 鏂规硶涓偅鏍疯皟鐢?d_instantiate_new()銆?
-	濡傛灉鏈娇鐢?d_instantiate_new()锛屼笖鎻愪緵浜?fh_to_dentry() 瀵煎嚭鎿嶄綔锛屾垨鑰呭瓨鍌ㄥ彲鑳?	閫氳繃鍙︿竴鏉¤矾寰勶紙渚嬪閫氳繃缃戠粶鏂囦欢绯荤粺锛夎璁块棶锛屽垯鍙兘闇€瑕佹洿鍔犲皬蹇冦€傞噸瑕佺殑
-	鏄紝濡傛灉 inode 宸蹭笉鍐嶆槸 I_NEW 涓斿瓨鍦ㄨ inode 鍙兘宸茬粡琚檮鍔犲埌鏌愪釜 dentry 鐨勪换浣?	鍙兘锛屽垯涓嶅簲浣跨敤 d_instantate()銆傝繖鏄洜涓?VFS 涓竴鏉＄‖鎬ц鍒欙細涓€涓洰褰曞彧鑳芥湁
-	涓€涓?dentry銆?
-	渚嬪锛屽鏋滀竴涓?NFS 鏂囦欢绯荤粺琚寕杞戒袱娆★紝鏂扮殑鐩綍鍙兘鍦ㄥ師濮嬫寕杞界偣涔嬪墠灏卞湪鍙︿竴涓?	鎸傝浇鐐逛笂鍙锛屽苟涓斾竴瀵?name_to_handle_at()銆乷pen_by_handle_at() 璋冪敤鍙兘鍦ㄧ涓€涓?	mkdir 杩斿洖涔嬪墠锛岀敤涓€涓?IS_ROOT() dentry 瀹炰緥鍖栬鐩綍 inode銆?
-	濡傛灉瀛樺湪浠讳綍杩欑鍙兘鎬э紝鍒欐柊鐨?inode 搴斿綋琚?d_drop() 鎺夛紝骞剁敤 d_splice_alias()
-	闄勫姞銆傝繑鍥炵殑 dentry锛堝鏋滄湁锛夊簲鐢?->mkdir() 杩斿洖銆?
+	mkdir(2) 系统调用调用。仅当你想要支持创建子目录时才需要。你大概需要像	create() 方法中那样调d_instantiate_new()
+	如果未使d_instantiate_new()，且提供fh_to_dentry() 导出操作，或者存储可	通过另一条路径（例如通过网络文件系统）被访问，则可能需要更加小心。重要的
+	是，如果 inode 已不再是 I_NEW 且存在该 inode 可能已经被附加到某个 dentry 的任	可能，则不应使用 d_instantate()。这是因VFS 中一条硬性规则：一个目录只能有
+	一dentry
+	例如，如果一NFS 文件系统被挂载两次，新的目录可能在原始挂载点之前就在另一	挂载点上可见，并且一name_to_handle_at()、open_by_handle_at() 调用可能在第一	mkdir 返回之前，用一IS_ROOT() dentry 实例化该目录 inode
+	如果存在任何这种可能性，则新inode 应当d_drop() 掉，并用 d_splice_alias()
+	附加。返回的 dentry（如果有）应->mkdir() 返回
 `rmdir`
-	鐢?rmdir(2) 绯荤粺璋冪敤璋冪敤銆備粎褰撲綘鎯宠鏀寔鍒犻櫎瀛愮洰褰曟椂鎵嶉渶瑕併€?
+	rmdir(2) 系统调用调用。仅当你想要支持删除子目录时才需要
 `mknod`
-	鐢?mknod(2) 绯荤粺璋冪敤璋冪敤锛屼互鍒涘缓璁惧锛堝瓧绗︺€佸潡锛塱node 鎴栧懡鍚嶇閬擄紙FIFO锛夋垨
-	濂楁帴瀛椼€備粎褰撲綘鎯宠鏀寔鍒涘缓杩欎簺绫诲瀷鐨?inode 鏃舵墠闇€瑕併€備綘澶ф闇€瑕佸儚鍦?create()
-	鏂规硶涓偅鏍疯皟鐢?d_instantiate()銆?
+	mknod(2) 系统调用调用，以创建设备（字符、块）inode 或命名管道（FIFO）或
+	套接字。仅当你想要支持创建这些类型inode 时才需要。你大概需要像create()
+	方法中那样调d_instantiate()
 `rename`
-	鐢?rename(2) 绯荤粺璋冪敤璋冪敤锛屼互灏嗚瀵硅薄閲嶅懡鍚嶄负鐢辩浜屼釜 inode 涓?dentry 缁欏嚭鐨?	鐖剁洰褰曞拰鍚嶇О銆?
-	鏂囦欢绯荤粺蹇呴』涓轰换浣曚笉鍙楁敮鎸佹垨鏈煡鐨?flags 杩斿洖 -EINVAL銆傚綋鍓嶅疄鐜颁簡浠ヤ笅鏍囧織锛?	(1) RENAME_NOREPLACE锛氳鏍囧織琛ㄧず锛屽鏋?rename 鐨勭洰鏍囧瓨鍦紝鍒?rename 搴斿綋
-	浠?-EEXIST 澶辫触锛岃€岄潪鏇挎崲鐩爣銆俈FS 宸茬粡妫€鏌ヤ簡瀛樺湪鎬э紝鍥犳瀵逛簬鏈湴鏂囦欢绯荤粺锛?	RENAME_NOREPLACE 鐨勫疄鐜扮瓑鍚屼簬鏅€氱殑 rename銆?	(2) RENAME_EXCHANGE锛氫氦鎹㈡簮涓庣洰鏍囥€備袱鑰呴兘蹇呴』瀛樺湪锛涜繖鐢?VFS 妫€鏌ャ€備笌鏅€?	rename 涓嶅悓锛屾簮涓庣洰鏍囧彲浠ユ槸涓嶅悓鐨勭被鍨嬨€?
+	rename(2) 系统调用调用，以将该对象重命名为由第二个 inode dentry 给出	父目录和名称
+	文件系统必须为任何不受支持或未知flags 返回 -EINVAL。当前实现了以下标志	(1) RENAME_NOREPLACE：该标志表示，如rename 的目标存在，rename 应当
+	-EEXIST 失败，而非替换目标。VFS 已经检查了存在性，因此对于本地文件系统	RENAME_NOREPLACE 的实现等同于普通的 rename	(2) RENAME_EXCHANGE：交换源与目标。两者都必须存在；这VFS 检查。与普	rename 不同，源与目标可以是不同的类型
 `get_link`
-	鐢?VFS 璋冪敤锛屼互璺熼殢涓€涓鍙烽摼鎺ュ埌瀹冩墍鎸囧悜鐨?inode銆備粎褰撲綘鎯宠鏀寔绗﹀彿閾炬帴鏃?	鎵嶉渶瑕併€傝鏂规硶杩斿洖瑕侀亶鍘嗙殑绗﹀彿閾炬帴浣擄紙骞跺彲鑳界敤 nd_jump_link() 閲嶇疆褰撳墠浣嶇疆锛夈€?	濡傛灉绗﹀彿閾炬帴浣撳湪 inode 娑堝け涔嬪墠閮戒笉浼氭秷澶憋紝鍒欐棤闇€鍋氬叾浠栦簨鎯咃紱濡傛灉瀹冮渶瑕佷互
-	鍏朵粬鏂瑰紡琚浐瀹氾紙pinned锛夛紝鍒欓€氳繃璁?get_link(..., ..., done) 璋冪敤
-	set_delayed_call(done, destructor, argument) 鏉ュ畨鎺掑叾閲婃斁銆傚湪閭ｇ鎯呭喌涓嬶紝涓€鏃?	VFS 澶勭悊瀹屼綘杩斿洖鐨勯摼鎺ヤ綋锛屽氨浼氳皟鐢?destructor(argument)銆傚彲鑳藉湪 RCU 妯″紡涓?	璋冪敤锛涜繖鐢?NULL dentry 鍙傛暟鎸囩ず銆傚鏋滄棤娉曞湪涓嶇寮€ RCU 妯″紡鐨勬儏鍐典笅澶勭悊璇锋眰锛?	鍒欒瀹冭繑鍥?ERR_PTR(-ECHILD)銆?
-	濡傛灉鏂囦欢绯荤粺灏嗙鍙烽摼鎺ョ洰鏍囧瓨鍌ㄥ湪 ->i_link 涓紝VFS 鍙兘鐩存帴浣跨敤瀹冭€屾棤闇€璋冪敤
-	->get_link()锛涚劧鑰岋紝->get_link() 浠嶅繀椤绘彁渚涖€?>i_link 鍦?RCU 瀹介檺鏈熶箣鍚庢墠鑳?	琚噴鏀俱€傚湪 iget() 涔嬪悗鐨勬椂闂村啓鍏?->i_link 闇€瑕佷竴涓?'release' 鍐呭瓨灞忛殰銆?
+	VFS 调用，以跟随一个符号链接到它所指向inode。仅当你想要支持符号链接	才需要。该方法返回要遍历的符号链接体（并可能用 nd_jump_link() 重置当前位置）	如果符号链接体在 inode 消失之前都不会消失，则无需做其他事情；如果它需要以
+	其他方式被固定（pinned），则通过get_link(..., ..., done) 调用
+	set_delayed_call(done, destructor, argument) 来安排其释放。在那种情况下，一	VFS 处理完你返回的链接体，就会调destructor(argument)。可能在 RCU 模式	调用；这NULL dentry 参数指示。如果无法在不离开 RCU 模式的情况下处理请求	则让它返ERR_PTR(-ECHILD)
+	如果文件系统将符号链接目标存储在 ->i_link 中，VFS 可能直接使用它而无需调用
+	->get_link()；然而，->get_link() 仍必须提供>i_link RCU 宽限期之后才	被释放。在 iget() 之后的时间写->i_link 需要一'release' 内存屏障
 `readlink`
-	鐜板湪瀹冨彧鏄?readlink(2) 鍦ㄦ煇浜涙儏鍐典笅浣跨敤鐨勪竴涓鐩栵細褰?->get_link 浣跨敤
-	nd_jump_link() 鎴栧璞″疄闄呬笂涓嶆槸绗﹀彿閾炬帴鏃躲€傞€氬父鏂囦欢绯荤粺搴斿綋鍙疄鐜?->get_link
-	鐢ㄤ簬绗﹀彿閾炬帴锛岃€?readlink(2) 灏嗚嚜鍔ㄤ娇鐢ㄥ畠銆?
+	现在它只readlink(2) 在某些情况下使用的一个覆盖：->get_link 使用
+	nd_jump_link() 或对象实际上不是符号链接时。通常文件系统应当只实->get_link
+	用于符号链接，readlink(2) 将自动使用它
 `permission`
-	鐢?VFS 璋冪敤锛屼互妫€鏌ョ被 POSIX 鏂囦欢绯荤粺鐨勮闂潈闄愩€?
-	鍙兘鍦?rcu-walk 妯″紡涓嬭皟鐢紙mask & MAY_NOT_BLOCK锛夈€傚鏋滃湪 rcu-walk 妯″紡涓嬶紝
-	鏂囦欢绯荤粺蹇呴』鍦ㄤ笉闃诲鎴栦笉鍐欏叆 inode 鐨勬儏鍐典笅妫€鏌ユ潈闄愩€?
-	濡傛灉閬囧埌 rcu-walk 鏃犳硶澶勭悊鐨勬儏鍐碉紝杩斿洖 -ECHILD锛屽畠灏嗗湪 ref-walk 妯″紡涓嬪啀娆¤璋冪敤銆?
+	VFS 调用，以检查类 POSIX 文件系统的访问权限
+	可能rcu-walk 模式下调用（mask & MAY_NOT_BLOCK）。如果在 rcu-walk 模式下，
+	文件系统必须在不阻塞或不写入 inode 的情况下检查权限
+	如果遇到 rcu-walk 无法处理的情况，返回 -ECHILD，它将在 ref-walk 模式下再次被调用
 `setattr`
-	鐢?VFS 璋冪敤锛屼互璁剧疆鏂囦欢鐨勫睘鎬с€傝鏂规硶鐢?chmod(2) 鍙婄浉鍏崇殑绯荤粺璋冪敤璋冪敤銆?
+	VFS 调用，以设置文件的属性。该方法chmod(2) 及相关的系统调用调用
 `getattr`
-	鐢?VFS 璋冪敤锛屼互鑾峰彇鏂囦欢鐨勫睘鎬с€傝鏂规硶鐢?stat(2) 鍙婄浉鍏崇殑绯荤粺璋冪敤璋冪敤銆?
+	VFS 调用，以获取文件的属性。该方法stat(2) 及相关的系统调用调用
 `listxattr`
-	鐢?VFS 璋冪敤锛屼互鍒楀嚭缁欏畾鏂囦欢鐨勬墍鏈夋墿灞曞睘鎬с€傝鏂规硶鐢?listxattr(2) 绯荤粺璋冪敤璋冪敤銆?
+	VFS 调用，以列出给定文件的所有扩展属性。该方法listxattr(2) 系统调用调用
 `update_time`
-	鐢?VFS 璋冪敤锛屼互鏇存柊 inode 鐨勭壒瀹氭椂闂存垨 i_version銆傚鏋滄湭瀹氫箟姝ゅ嚱鏁帮紝VFS 灏?	鑷鏇存柊 inode 骞惰皟鐢?mark_inode_dirty_sync銆?
-`sync_lazytime`锛?	鐢卞洖鍐欙紙writeback锛変唬鐮佽皟鐢紝浠ュ皢鎯版€ф椂闂存埑鏇存柊涓轰細琚悓姝ヨ繘纾佺洏 inode 鐨?	甯歌鏃堕棿鎴虫洿鏂般€?
+	VFS 调用，以更新 inode 的特定时间或 i_version。如果未定义此函数，VFS 	自行更新 inode 并调mark_inode_dirty_sync
+`sync_lazytime`	由回写（writeback）代码调用，以将惰性时间戳更新为会被同步进磁盘 inode 	常规时间戳更新
 `atomic_open`
-	鍦?open 鐨勬渶鍚庝竴涓垎閲忎笂璋冪敤銆備娇鐢ㄨ鍙€夋柟娉曪紝鏂囦欢绯荤粺鍙互鍦ㄤ竴娆″師瀛愭搷浣滀腑
-	鏌ユ壘銆佸彲鑳藉垱寤哄苟鎵撳紑鏂囦欢銆傚鏋滃畠鎯虫妸瀹為檯鐨勬墦寮€鐣欑粰璋冪敤鑰咃紙渚嬪锛屽鏋滄枃浠?	缁撴灉鏄鍙烽摼鎺ャ€佽澶囷紝鎴栧彧鏄枃浠剁郴缁熶笉浼氳繘琛屽師瀛愭墦寮€鐨勪笢瑗匡級锛屽畠鍙互閫氳繃
-	杩斿洖 finish_no_open(file, dentry) 鏉ュ彂鍑烘淇″彿銆傝鏂规硶浠呭湪鏈€鍚庝竴涓垎閲忔槸璐熺殑
-	鎴栭渶瑕佹煡鎵炬椂鎵嶈璋冪敤銆傜紦瀛樼殑姝?dentry 浠嶇敱 f_op->open() 澶勭悊銆傚鏋滄枃浠惰鍒涘缓锛?	鍒欏簲鍦?file->f_mode 涓缃?FMODE_CREATED 鏍囧織銆傚湪 O_EXCL 鐨勬儏鍐典笅锛岃鏂规硶蹇呴』
-	浠呭綋鏂囦欢涓嶅瓨鍦ㄦ椂鎵嶆垚鍔燂紝鍥犳 FMODE_CREATED 鍦ㄦ垚鍔熸椂搴斿綋鎬绘槸琚缃€?
+	open 的最后一个分量上调用。使用该可选方法，文件系统可以在一次原子操作中
+	查找、可能创建并打开文件。如果它想把实际的打开留给调用者（例如，如果文	结果是符号链接、设备，或只是文件系统不会进行原子打开的东西），它可以通过
+	返回 finish_no_open(file, dentry) 来发出此信号。该方法仅在最后一个分量是负的
+	或需要查找时才被调用。缓存的dentry 仍由 f_op->open() 处理。如果文件被创建	则应file->f_mode 中设FMODE_CREATED 标志。在 O_EXCL 的情况下，该方法必须
+	仅当文件不存在时才成功，因此 FMODE_CREATED 在成功时应当总是被设置
 `tmpfile`
-	鍦?O_TMPFILE open() 鐨勬湯灏捐皟鐢ㄣ€傚彲閫夛紝绛変环浜庡湪缁欏畾鐩綍涓師瀛愬湴鍒涘缓銆佹墦寮€骞?	瑙ｉ櫎閾炬帴涓€涓枃浠躲€傛垚鍔熸椂闇€瑕佽繑鍥炴椂鏂囦欢宸茬粡鎵撳紑锛涜繖鍙互閫氳繃鍦ㄦ湯灏剧洿鎺ヨ皟鐢?	finish_open_simple() 鏉ュ畬鎴愩€?
+	O_TMPFILE open() 的末尾调用。可选，等价于在给定目录中原子地创建、打开	解除链接一个文件。成功时需要返回时文件已经打开；这可以通过在末尾直接调	finish_open_simple() 来完成
 `fileattr_get`
-	鍦?ioctl(FS_IOC_GETFLAGS) 涓?ioctl(FS_IOC_FSGETXATTR) 涓婅皟鐢紝浠ユ绱㈡潅椤规枃浠?	鏍囧織涓庡睘鎬с€傚湪鐩稿叧鐨?SET 鎿嶄綔涔嬪墠涔熶細琚皟鐢紝浠ユ鏌ュ皢瑕佹敼鍙樼殑鍐呭锛堟鏃?	鎸佹湁 i_rwsem 鎺掍粬閿侊級銆傚鏋滄湭璁剧疆锛屽垯鍥為€€鍒?f_op->ioctl()銆?
+	ioctl(FS_IOC_GETFLAGS) ioctl(FS_IOC_FSGETXATTR) 上调用，以检索杂项文	标志与属性。在相关SET 操作之前也会被调用，以检查将要改变的内容（此	持有 i_rwsem 排他锁）。如果未设置，则回退f_op->ioctl()
 `fileattr_set`
-	鍦?ioctl(FS_IOC_SETFLAGS) 涓?ioctl(FS_IOC_FSSETXATTR) 涓婅皟鐢紝浠ユ洿鏀规潅椤规枃浠?	鏍囧織涓庡睘鎬с€傝皟鐢ㄨ€呮寔鏈?i_rwsem 鎺掍粬閿併€傚鏋滄湭璁剧疆锛屽垯鍥為€€鍒?f_op->ioctl()銆?
+	ioctl(FS_IOC_SETFLAGS) ioctl(FS_IOC_FSSETXATTR) 上调用，以更改杂项文	标志与属性。调用者持i_rwsem 排他锁。如果未设置，则回退f_op->ioctl()
 `get_offset_ctx`
-	琚皟鐢ㄤ互鑾峰彇鐩綍 inode 鐨?offset 涓婁笅鏂囥€傛枃浠剁郴缁熷繀椤诲畾涔夋鎿嶄綔鎵嶈兘浣跨敤
-	simple_offset_dir_operations銆?
-## 鍦板潃绌洪棿锛圓ddress Space锛夊璞?
+	被调用以获取目录 inode offset 上下文。文件系统必须定义此操作才能使用
+	simple_offset_dir_operations銆。
+## 地址空间（Address Space）对
 
-鍦板潃绌洪棿瀵硅薄鐢ㄤ簬瀵归〉缂撳瓨锛坧age cache锛変腑鐨勯〉杩涜鍒嗙粍涓庣鐞嗐€傚畠鍙敤浜庤窡韪竴涓?鏂囦欢锛堟垨鍏朵粬浠讳綍涓滆タ锛変腑鐨勯〉锛屽苟璺熻釜鏂囦欢鍚勬鍒拌繘绋嬪湴鍧€绌洪棿鐨勬槧灏勩€?
-鍦板潃绌洪棿鍙互鎻愪緵鑻ュ共涓嶅悓浣嗙浉鍏崇殑鏈嶅姟銆傝繖浜涘寘鎷紶杈惧唴瀛樺帇鍔涖€佹寜鍦板潃杩涜椤垫煡鎵撅紝
-浠ュ強璺熻釜琚爣璁颁负鑴忥紙Dirty锛夋垨鍥炲啓锛圵riteback锛夌殑椤点€?
-绗竴涓彲浠ョ嫭绔嬩簬鍏朵粬鏈嶅姟浣跨敤銆俈M 鍙互灏濊瘯閲婃斁骞插噣椤典互閲嶇敤瀹冧滑銆備负姝わ紝瀹冨彲浠?鍦ㄥ甫鏈?private 鏍囧織鐨勫共鍑€ folio 涓婅皟鐢?->release_folio銆傛病鏈?PagePrivate 涓?娌℃湁澶栭儴寮曠敤鐨勫共鍑€椤靛皢鍦ㄤ笉閫氱煡鍦板潃绌洪棿鐨勬儏鍐典笅琚噴鏀俱€?
-涓轰簡瀹炵幇璇ュ姛鑳斤紝椤甸渶瑕佽鏀惧湪涓€涓?LRU 涓婏紙閫氳繃 lru_cache_add锛夛紝骞朵笖姣忓綋椤佃
-浣跨敤鏃堕兘闇€瑕佽皟鐢?mark_page_active銆?
-椤甸€氬父鎸?->index 淇濆瓨鍦ㄤ竴涓熀鏁版爲锛坮adix tree锛夌储寮曚腑銆傝鏍戠淮鎶ゆ瘡涓〉鐨?PG_Dirty
-涓?PG_Writeback 鐘舵€佷俊鎭紝浠ヤ究鍙互蹇€熸壘鍒板甫鏈夎繖涓や釜鏍囧織涓换鎰忎竴涓殑椤点€?
-Dirty 鏍囩涓昏琚?mpage_writepages鈥斺€旈粯璁ょ殑 ->writepages 鏂规硶浣跨敤銆傚畠浣跨敤璇ユ爣绛?鏉ユ煡鎵捐鍥炲啓鐨勮剰椤点€傚鏋滄湭浣跨敤 mpage_writepages锛堝嵆鍦板潃绌洪棿鎻愪緵浜嗚嚜宸辩殑
-->writepages锛夛紝鍒?PAGECACHE_TAG_DIRTY 鏍囩鍑犱箮鏈浣跨敤銆倃rite_inode_now 涓?sync_inode 纭疄浣跨敤瀹冿紙閫氳繃 __sync_single_inode锛夋潵妫€鏌?->writepages 鏄惁鎴愬姛
-鍐欏嚭浜嗘暣涓湴鍧€绌洪棿銆?
-Writeback 鏍囩琚?filemap**wait** 涓?sync_page* 鍑芥暟閫氳繃 filemap_fdatawait_range
-浣跨敤锛屼互绛夊緟鎵€鏈夊洖鍐欏畬鎴愩€?
-鍦板潃绌洪棿澶勭悊鍣ㄥ彲浠ュ皢棰濆淇℃伅闄勫姞鍒伴〉涓婏紝閫氬父浣跨敤 'struct page' 涓殑 'private'
-瀛楁銆傚鏋滈檮鍔犱簡姝ょ被淇℃伅锛屽垯搴斿綋璁剧疆 PG_Private 鏍囧織銆傝繖灏嗗鑷村悇绉?VM 渚嬬▼瀵?鍦板潃绌洪棿澶勭悊鍣ㄨ繘琛岄澶栬皟鐢紝浠ュ鐞嗚鏁版嵁銆?
-鍦板潃绌洪棿鍏呭綋瀛樺偍涓庡簲鐢ㄧ▼搴忎箣闂寸殑涓粙銆傛暟鎹互鏁撮〉涓哄崟浣嶈鍏ュ湴鍧€绌洪棿锛屽苟閫氳繃
-澶嶅埗璇ラ〉鎴栧唴瀛樻槧灏勮椤垫彁渚涚粰搴旂敤绋嬪簭銆傛暟鎹敱搴旂敤绋嬪簭鍐欏叆鍦板潃绌洪棿锛岀劧鍚庨€氬父浠?鏁撮〉鍐欏洖瀛樺偍锛屼笉杩囧湴鍧€绌洪棿瀵瑰啓鍏ュぇ灏忔湁鏇寸簿缁嗙殑鎺у埗銆?
-璇诲彇杩囩▼鏈川涓婂彧闇€瑕?'read_folio'銆傚啓鍏ヨ繃绋嬫洿澶嶆潅锛屽畠浣跨敤 write_begin/write_end
-鎴?dirty_folio 灏嗘暟鎹啓鍏ュ湴鍧€绌洪棿锛屽苟浣跨敤 writepages 灏嗘暟鎹洖鍐欒嚦瀛樺偍銆?
-浠庡湴鍧€绌洪棿绉婚櫎椤甸渶瑕佹帓浠栧湴鎸佹湁 inode 鐨?i_rwsem锛岃€屽悜鍦板潃绌洪棿娣诲姞椤甸渶瑕佹帓浠栧湴
-鎸佹湁 inode 鐨?i_mapping->invalidate_lock銆?
-褰撴暟鎹鍐欏叆椤垫椂锛屽簲褰撹缃?PG_Dirty 鏍囧織銆傚畠閫氬父涓€鐩翠繚鎸佽缃紝鐩村埌 writepages
-瑕佹眰灏嗗叾鍐欏嚭銆傝繖搴斿綋娓呴櫎 PG_Dirty 骞惰缃?PG_Writeback銆傚湪 PG_Dirty 琚竻闄ゅ悗鐨?浠讳綍鏃跺埢閮藉彲浠ュ疄闄呭啓鍑恒€備竴鏃︾‘瀹氬畨鍏紝PG_Writeback 琚竻闄ゃ€?
-鍥炲啓鍒╃敤浜?writeback_control 缁撴瀯鏉ユ寚瀵兼搷浣溿€傝繖涓?writepages 鎿嶄綔鎻愪緵浜嗕竴浜涘叧浜?鍥炲啓璇锋眰鐨勬€ц川涓庡師鍥犮€佷互鍙婃墽琛屾椂绾︽潫鏉′欢鐨勪俊鎭€傚畠涔熻鐢ㄦ潵灏嗙粨鏋滀俊鎭繑鍥炵粰璋冪敤鑰呫€?
-### 鍥炲啓鏈熼棿鐨勯敊璇鐞?
-澶у鏁拌繘琛岀紦鍐?I/O 鐨勫簲鐢ㄧ▼搴忎細瀹氭湡璋冪敤鏂囦欢鍚屾璋冪敤锛坒sync銆乫datasync銆乵sync 鎴?sync_file_range锛夛紝浠ョ‘淇濆啓鍏ョ殑鏁版嵁宸茬粡鍒拌揪鍚庡瀛樺偍銆傚綋鍥炲啓鏈熼棿鍙戠敓閿欒鏃讹紝瀹冧滑
-鏈熸湜鍦ㄥ彂鍑烘枃浠跺悓姝ヨ姹傛椂鎶ュ憡璇ラ敊璇€傚湪涓€涓姹備笂鎶ュ憡閿欒涔嬪悗锛屽悓涓€鏂囦欢鎻忚堪绗︿笂鐨?鍚庣画璇锋眰搴斿綋杩斿洖 0锛岄櫎闈炶嚜涓婃鏂囦欢鍚屾浠ユ潵鍙戠敓浜嗚繘涓€姝ョ殑鍥炲啓閿欒銆?
-鐞嗘兂鎯呭喌涓嬶紝鍐呮牳鍙細鍚戦偅浜涚‘瀹炶繘琛屼簡鍐欏叆銆佷絾闅忓悗鍥炲啓澶辫触鐨勬枃浠舵弿杩扮鎶ュ憡閿欒銆?鐒惰€岋紝閫氱敤鐨勯〉缂撳瓨鍩虹璁炬柦骞朵笉璺熻釜寮勮剰浜嗘瘡涓崟鐙〉鐨勬枃浠舵弿杩扮锛屽洜姝ゆ棤娉曠‘瀹?鍝簺鏂囦欢鎻忚堪绗﹀簲褰撴敹鍒伴敊璇€?
-鐩稿弽锛屽唴鏍镐腑閫氱敤鐨勫洖鍐欓敊璇窡韪熀纭€璁炬柦婊¤冻浜庡皢閿欒鎶ュ憡缁欏湪鍙戠敓閿欒鏃舵墦寮€鐨勬墍鏈?鏂囦欢鎻忚堪绗︿笂鐨?fsync銆傚湪澶氫釜鍐欏叆鑰呯殑鎯呭喌涓嬶紝瀹冧滑閮戒細鍦ㄥ悗缁殑 fsync 涓婃敹鍒颁竴涓敊璇紝
-鍗充娇閫氳繃璇ョ壒瀹氭枃浠舵弿杩扮鎵€鍋氱殑鎵€鏈夊啓鍏ラ兘鎴愬姛浜嗭紙鐢氳嚦鍗充娇璇ユ枃浠舵弿杩扮涓婃牴鏈病鏈?浠讳綍鍐欏叆锛夈€?
-甯屾湜浣跨敤姝ゅ熀纭€璁炬柦鐨勬枃浠剁郴缁熷簲璇ュ湪閿欒鍙戠敓鏃惰皟鐢?mapping_set_error锛屽皢閿欒璁板綍
-鍦ㄥ湴鍧€绌洪棿涓€傜劧鍚庯紝鍦ㄩ€氳繃瀹冧滑鐨?file->fsync 鎿嶄綔浠庨〉缂撳瓨鍥炲啓鏁版嵁涔嬪悗锛屽畠浠簲褰?璋冪敤 file_check_and_advance_wb_err锛屼互纭繚 struct file 鐨勯敊璇父鏍囧凡缁忔帹杩涘埌鍚庡
-璁惧鍙戝嚭鐨勯敊璇祦涓殑姝ｇ‘浣嶇疆銆?
+地址空间对象用于对页缓存（page cache）中的页进行分组与管理。它可用于跟踪一文件（或其他任何东西）中的页，并跟踪文件各段到进程地址空间的映射
+地址空间可以提供若干不同但相关的服务。这些包括传达内存压力、按地址进行页查找，
+以及跟踪被标记为脏（Dirty）或回写（Writeback）的页
+第一个可以独立于其他服务使用。VM 可以尝试释放干净页以重用它们。为此，它可在带private 标志的干净 folio 上调->release_folio。没PagePrivate 没有外部引用的干净页将在不通知地址空间的情况下被释放
+为了实现该功能，页需要被放在一LRU 上（通过 lru_cache_add），并且每当页被
+使用时都需要调mark_page_active
+页通常->index 保存在一个基数树（radix tree）索引中。该树维护每个页PG_Dirty
+PG_Writeback 状态信息，以便可以快速找到带有这两个标志中任意一个的页
+Dirty 标签主要mpage_writepages——默认的 ->writepages 方法使用。它使用该标来查找要回写的脏页。如果未使用 mpage_writepages（即地址空间提供了自己的
+->writepages），PAGECACHE_TAG_DIRTY 标签几乎未被使用。write_inode_now sync_inode 确实使用它（通过 __sync_single_inode）来检->writepages 是否成功
+写出了整个地址空间
+Writeback 标签filemap**wait** sync_page* 函数通过 filemap_fdatawait_range
+使用，以等待所有回写完成
+地址空间处理器可以将额外信息附加到页上，通常使用 'struct page' 中的 'private'
+字段。如果附加了此类信息，则应当设置 PG_Private 标志。这将导致各VM 例程地址空间处理器进行额外调用，以处理该数据
+地址空间充当存储与应用程序之间的中介。数据以整页为单位读入地址空间，并通过
+复制该页或内存映射该页提供给应用程序。数据由应用程序写入地址空间，然后通常整页写回存储，不过地址空间对写入大小有更精细的控制
+读取过程本质上只需'read_folio'。写入过程更复杂，它使用 write_begin/write_end
+dirty_folio 将数据写入地址空间，并使用 writepages 将数据回写至存储
+从地址空间移除页需要排他地持有 inode i_rwsem，而向地址空间添加页需要排他地
+持有 inode i_mapping->invalidate_lock
+当数据被写入页时，应当设PG_Dirty 标志。它通常一直保持设置，直到 writepages
+要求将其写出。这应当清除 PG_Dirty 并设PG_Writeback。在 PG_Dirty 被清除后任何时刻都可以实际写出。一旦确定安全，PG_Writeback 被清除
+回写利用writeback_control 结构来指导操作。这writepages 操作提供了一些关回写请求的性质与原因、以及执行时约束条件的信息。它也被用来将结果信息返回给调用者
+### 回写期间的错误处
+大多数进行缓I/O 的应用程序会定期调用文件同步调用（fsync、fdatasync、msync sync_file_range），以确保写入的数据已经到达后备存储。当回写期间发生错误时，它们
+期望在发出文件同步请求时报告该错误。在一个请求上报告错误之后，同一文件描述符上后续请求应当返回 0，除非自上次文件同步以来发生了进一步的回写错误
+理想情况下，内核只会向那些确实进行了写入、但随后回写失败的文件描述符报告错误然而，通用的页缓存基础设施并不跟踪弄脏了每个单独页的文件描述符，因此无法确哪些文件描述符应当收到错误
+相反，内核中通用的回写错误跟踪基础设施满足于将错误报告给在发生错误时打开的所文件描述符上fsync。在多个写入者的情况下，它们都会在后续的 fsync 上收到一个错误，
+即使通过该特定文件描述符所做的所有写入都成功了（甚至即使该文件描述符上根本没任何写入）
+希望使用此基础设施的文件系统应该在错误发生时调mapping_set_error，将错误记录
+在地址空间中。然后，在通过它们file->fsync 操作从页缓存回写数据之后，它们应调用 file_check_and_advance_wb_err，以确保 struct file 的错误游标已经推进到后备
+设备发出的错误流中的正确位置
 
 ### struct address_space_operations
 
-杩欐弿杩颁簡 VFS 濡備綍鎿嶄綔浣犵殑鏂囦欢绯荤粺涓枃浠跺埌椤电紦瀛樼殑鏄犲皠銆傚畾涔変簡浠ヤ笅鎴愬憳锛?
+这描述了 VFS 如何操作你的文件系统中文件到页缓存的映射。定义了以下成员
 
 	struct address_space_operations {
 		int (**read_folio)(struct file **, struct folio *);
@@ -413,86 +413,86 @@ Writeback 鏍囩琚?filemap**wait** 涓?sync_page* 鍑芥暟閫氳繃 filemap
 	};
 
 `read_folio`
-	鐢遍〉缂撳瓨璋冪敤锛屼互浠庡悗澶囧瓨鍌ㄨ鍙栦竴涓?folio銆?file' 鍙傛暟涓虹綉缁滄枃浠剁郴缁熸彁渚涜璇?	淇℃伅锛屽潡璁惧鏂囦欢绯荤粺閫氬父涓嶄娇鐢ㄥ畠銆傚鏋滆皟鐢ㄨ€呮病鏈夋墦寮€鐨勬枃浠讹紙渚嬪锛屽鏋滃唴鏍?	姝ｅ湪涓鸿嚜宸辨墽琛岃鍙栵紝鑰岄潪浠ｈ〃甯︽湁鎵撳紑鏂囦欢鐨勭敤鎴风┖闂磋繘绋嬶級锛屽畠鍙兘涓?NULL銆?
-	濡傛灉鏄犲皠涓嶆敮鎸佸ぇ folio锛屽垯 folio 灏嗗寘鍚崟涓〉銆傝皟鐢?read_folio 鏃?folio 浼氳
-	閿佸畾銆傚鏋滆鍙栨垚鍔熷畬鎴愶紝鍒?folio 搴旇鏍囪涓?uptodate銆傛棤璁烘垚鍔熶笌鍚︼紝鏂囦欢绯荤粺閮?	搴斿湪璇诲彇瀹屾垚鍚庤В閿?folio銆傛枃浠剁郴缁熸棤闇€淇敼 folio 涓婄殑寮曠敤璁℃暟锛涢〉缂撳瓨鎸佹湁寮曠敤
-	璁℃暟锛屽苟涓斿湪 folio 瑙ｉ攣涔嬪墠涓嶄細閲婃斁瀹冦€?
-	鏂囦欢绯荤粺鍙互鍚屾鍦板疄鐜?->read_folio()銆傚湪姝ｅ父鎿嶄綔涓紝folio 鏄€氳繃 ->readahead()
-	鏂规硶璇诲彇鐨勩€傚彧鏈夊湪璇ユ柟娉曞け璐ワ紝鎴栬皟鐢ㄨ€呴渶瑕佺瓑寰呰鍙栧畬鎴愭椂锛岄〉缂撳瓨鎵嶄細璋冪敤
-	->read_folio()銆傛枃浠剁郴缁熶笉搴斿皾璇曞湪 ->read_folio() 鎿嶄綔涓墽琛岃嚜宸辩殑棰勮銆?
-	濡傛灉鏂囦欢绯荤粺姝ゆ椂鏃犳硶鎵ц璇诲彇锛屽畠鍙互瑙ｉ攣 folio锛屾墽琛屽畠闇€瑕佺‘淇濊鍙栧皢鏉ヤ細鎴愬姛
-	鎵€闇€鐨勪换浣曞姩浣滐紝骞惰繑鍥?AOP_TRUNCATED_PAGE銆傚湪杩欑鎯呭喌涓嬶紝璋冪敤鑰呭簲褰撴煡鎵?folio銆?	閿佸畾瀹冿紝骞跺啀娆¤皟鐢?->read_folio銆?
-	璋冪敤鑰呭彲浠ョ洿鎺ヨ皟鐢?->read_folio() 鏂规硶锛屼絾浣跨敤 read_mapping_folio() 灏嗚礋璐ｅ姞閿併€?	绛夊緟璇诲彇瀹屾垚锛屽苟澶勭悊 AOP_TRUNCATED_PAGE 绛夋儏鍐点€?
+	由页缓存调用，以从后备存储读取一foliofile' 参数为网络文件系统提供认	信息，块设备文件系统通常不使用它。如果调用者没有打开的文件（例如，如果内	正在为自己执行读取，而非代表带有打开文件的用户空间进程），它可能NULL
+	如果映射不支持大 folio，则 folio 将包含单个页。调read_folio folio 会被
+	锁定。如果读取成功完成，folio 应被标记uptodate。无论成功与否，文件系统	应在读取完成后解folio。文件系统无需修改 folio 上的引用计数；页缓存持有引用
+	计数，并且在 folio 解锁之前不会释放它
+	文件系统可以同步地实->read_folio()。在正常操作中，folio 是通过 ->readahead()
+	方法读取的。只有在该方法失败，或调用者需要等待读取完成时，页缓存才会调用
+	->read_folio()。文件系统不应尝试在 ->read_folio() 操作中执行自己的预读
+	如果文件系统此时无法执行读取，它可以解锁 folio，执行它需要确保读取将来会成功
+	所需的任何动作，并返AOP_TRUNCATED_PAGE。在这种情况下，调用者应当查folio	锁定它，并再次调->read_folio
+	调用者可以直接调->read_folio() 方法，但使用 read_mapping_folio() 将负责加锁	等待读取完成，并处理 AOP_TRUNCATED_PAGE 等情况
 `writepages`
-	鐢?VM 璋冪敤锛屼互鍐欏嚭涓庡湴鍧€绌洪棿瀵硅薄鍏宠仈鐨勯〉銆傚鏋?wbc->sync_mode 鏄?WB_SYNC_ALL锛?	鍒?writeback_control 灏嗘寚瀹氫竴涓繀椤昏鍐欏嚭鐨勯〉鑼冨洿銆傚鏋滃畠鏄?WB_SYNC_NONE锛屽垯
-	缁欏嚭 nr_to_write锛屽苟搴斿綋灏藉彲鑳藉鍦板啓鍑洪偅涔堝鐨勯〉銆傚鏋滄病鏈夌粰鍑?->writepages锛?	鍒欐敼鐢?mpage_writepages銆傚畠灏嗕粠鍦板潃绌洪棿涓€夋嫨琚爣璁颁负 DIRTY 鐨勯〉骞跺皢瀹冧滑鍥炲啓銆?
+	VM 调用，以写出与地址空间对象关联的页。如wbc->sync_mode WB_SYNC_ALL	writeback_control 将指定一个必须被写出的页范围。如果它WB_SYNC_NONE，则
+	给出 nr_to_write，并应当尽可能多地写出那么多的页。如果没有给->writepages	则改mpage_writepages。它将从地址空间中选择被标记为 DIRTY 的页并将它们回写
 `dirty_folio`
-	鐢?VM 璋冪敤锛屼互灏嗕竴涓?folio 鏍囪涓鸿剰銆傚鏋滃湴鍧€绌洪棿灏嗙鏈夋暟鎹檮鍔犲埌 folio锛屽苟涓?	璇ユ暟鎹渶瑕佸湪 folio 鍙樿剰鏃舵洿鏂帮紝鍒欑壒鍒渶瑕佸畠銆備緥濡傦紝褰撲竴涓唴瀛樻槧灏勭殑椤佃淇敼鏃?	灏变細璋冪敤瀹冦€傚鏋滃畾涔変簡瀹冿紝瀹冨簲褰撹缃?folio 鐨勮剰鏍囧織锛屼互鍙?i_pages 涓殑
-	PAGECACHE_TAG_DIRTY 鎼滅储鏍囪銆?
+	VM 调用，以将一folio 标记为脏。如果地址空间将私有数据附加到 folio，并	该数据需要在 folio 变脏时更新，则特别需要它。例如，当一个内存映射的页被修改	就会调用它。如果定义了它，它应当设folio 的脏标志，以i_pages 中的
+	PAGECACHE_TAG_DIRTY 搜索标记
 `readahead`
-	鐢?VM 璋冪敤锛屼互璇诲彇涓庡湴鍧€绌洪棿瀵硅薄鍏宠仈鐨勯〉銆傝繖浜涢〉鍦ㄩ〉缂撳瓨涓槸杩炵画鐨勶紝骞朵笖鏄?	琚攣瀹氱殑銆傚疄鐜板簲褰撳湪瀵规瘡涓〉鍚姩 I/O 涔嬪悗閫掑噺椤靛紩鐢ㄨ鏁般€傞€氬父璇ラ〉浼氱敱 I/O
-	瀹屾垚澶勭悊绋嬪簭瑙ｉ攣銆傝繖缁勯〉琚垎鎴愪竴浜涘悓姝ラ〉锛屽悗璺熶竴浜涘紓姝ラ〉锛宺ac->ra->async_size
-	缁欏嚭寮傛椤电殑鏁伴噺銆傛枃浠剁郴缁熷簲褰撳皾璇曡鍙栨墍鏈夊悓姝ラ〉锛屼絾涓€鏃﹀埌杈惧紓姝ラ〉灏卞彲浠ュ喅瀹?	鍋滄銆傚鏋滃畠纭疄鍐冲畾鍋滄灏濊瘯 I/O锛屽畠鍙互绠€鍗曞湴杩斿洖銆傝皟鐢ㄨ€呭皢浠庡湴鍧€绌洪棿涓Щ闄?	鍓╀綑鐨勯〉銆佽В閿佸畠浠苟閫掑噺椤靛紩鐢ㄨ鏁般€傚鏋?I/O 鎴愬姛瀹屾垚锛屽垯璁剧疆 PageUptodate銆?
+	VM 调用，以读取与地址空间对象关联的页。这些页在页缓存中是连续的，并且	被锁定的。实现应当在对每个页启动 I/O 之后递减页引用计数。通常该页会由 I/O
+	完成处理程序解锁。这组页被分成一些同步页，后跟一些异步页，rac->ra->async_size
+	给出异步页的数量。文件系统应当尝试读取所有同步页，但一旦到达异步页就可以决	停止。如果它确实决定停止尝试 I/O，它可以简单地返回。调用者将从地址空间中移	剩余的页、解锁它们并递减页引用计数。如I/O 成功完成，则设置 PageUptodate
 `write_begin`
-	鐢遍€氱敤鐨勭紦鍐插啓鍏ヤ唬鐮佽皟鐢紝浠ヨ鏂囦欢绯荤粺鍑嗗鍦ㄦ枃浠朵腑缁欏畾鍋忕Щ澶勫啓鍏?len 瀛楄妭銆?	鍦板潃绌洪棿搴斿綋閫氳繃蹇呰鍦板垎閰嶇┖闂翠互鍙婅繘琛屼换浣曞叾浠栧唴閮ㄨ璐︼紝鏉ユ鏌ュ啓鍏ユ槸鍚﹁兘澶?	瀹屾垚銆傚鏋滃啓鍏ュ皢鏇存柊瀛樺偍涓婁换浣曞熀鏈潡锛坆asic-block锛夌殑閮ㄥ垎锛岄偅涔堥偅浜涘潡搴斿綋琚?	棰勮锛堝鏋滃皻鏈鍙栵級锛屼互渚挎洿鏂板悗鐨勫潡鑳藉琚纭啓鍑恒€?
-	鏂囦欢绯荤粺蹇呴』涓烘寚瀹氬亸绉诲杩斿洖閿佸畾鐨勯〉缂撳瓨 folio锛屾斁鍦?`*foliop` 涓紝渚涜皟鐢ㄨ€?	鍐欏叆銆?
-	瀹冨繀椤昏兘澶熷鐞嗙煭鍐欏叆锛堜紶閫掔粰 write_begin 鐨勯暱搴﹀ぇ浜庤澶嶅埗鍒?folio 涓殑瀛楄妭鏁?	鐨勬儏鍐碉級銆?
-	鍙互鍦?fsdata 涓繑鍥炰竴涓?void *锛屽畠闅忓悗琚紶鍏?write_end銆?
-	鎴愬姛鏃惰繑鍥?0锛涘け璐ユ椂杩斿洖 < 0锛堝嵆閿欒鐮侊級锛屾鏃朵笉璋冪敤 write_end銆?
+	由通用的缓冲写入代码调用，以请文件系统准备在文件中给定偏移处写len 字节	地址空间应当通过必要地分配空间以及进行任何其他内部记账，来检查写入是否能	完成。如果写入将更新存储上任何基本块（basic-block）的部分，那么那些块应当	预读（如果尚未读取），以便更新后的块能够被正确写出
+	文件系统必须为指定偏移处返回锁定的页缓存 folio，放`*foliop` 中，供调用	写入
+	它必须能够处理短写入（传递给 write_begin 的长度大于被复制folio 中的字节	的情况）
+	可以fsdata 中返回一void *，它随后被传write_end
+	成功时返0；失败时返回 < 0（即错误码），此时不调用 write_end
 `write_end`
-	鍦ㄦ垚鍔熺殑 write_begin 涓庢暟鎹鍒朵箣鍚庯紝蹇呴』璋冪敤 write_end銆俵en 鏄紶鍏?write_begin
-	鐨勫師濮?len锛宑opied 鏄兘澶熷鍒剁殑瀛楄妭鏁般€?
-	鏂囦欢绯荤粺蹇呴』璐熻矗瑙ｉ攣 folio銆侀€掑噺鍏跺紩鐢ㄨ鏁板苟鏇存柊 i_size銆?
-	澶辫触鏃惰繑鍥?< 0锛屽惁鍒欒繑鍥炶兘澶熷鍒跺埌椤电紦瀛樹腑鐨勫瓧鑺傛暟锛?= 'copied'锛夈€?
+	在成功的 write_begin 与数据复制之后，必须调用 write_end。len 是传write_begin
+	的原len，copied 是能够复制的字节数
+	文件系统必须负责解锁 folio、递减其引用计数并更新 i_size
+	失败时返< 0，否则返回能够复制到页缓存中的字节数= 'copied'）
 `bmap`
-	鐢?VFS 璋冪敤锛屼互灏嗗璞″唴鐨勯€昏緫鍧楀亸绉绘槧灏勪负鐗╃悊鍧楀彿銆傝鏂规硶琚?FIBMAP ioctl 浠ュ強
-	鐢ㄤ簬澶勭悊浜ゆ崲鏂囦欢锛坰wap-file锛変娇鐢ㄣ€備负浜嗚兘澶熶氦鎹㈠埌鏂囦欢锛岃鏂囦欢蹇呴』鍏锋湁鍒板潡璁惧
-	鐨勭ǔ瀹氭槧灏勩€備氦鎹㈢郴缁熶笉缁忚繃鏂囦欢绯荤粺锛岃€屾槸浣跨敤 bmap 鎵惧嚭鏂囦欢涓潡鐨勪綅缃苟鐩存帴浣跨敤
-	閭ｄ簺鍦板潃銆?
+	VFS 调用，以将对象内的逻辑块偏移映射为物理块号。该方法FIBMAP ioctl 以及
+	用于处理交换文件（swap-file）使用。为了能够交换到文件，该文件必须具有到块设备
+	的稳定映射。交换系统不经过文件系统，而是使用 bmap 找出文件中块的位置并直接使用
+	那些地址
 `invalidate_folio`
-	濡傛灉 folio 甯︽湁绉佹湁鏁版嵁锛岄偅涔堝綋 folio 鐨勯儴鍒嗘垨鍏ㄩ儴瑕佷粠鍦板潃绌洪棿绉婚櫎鏃讹紝灏嗚皟鐢?	invalidate_folio銆傝繖閫氬父瀵瑰簲浜庢埅鏂€佹墦娲烇紙punch hole锛夋垨鍦板潃绌洪棿鐨勫畬鍏ㄥけ鏁堬紙鍦?	鍚庝竴绉嶆儏鍐典笅 'offset' 鎬绘槸涓?0锛?length' 涓?folio_size()锛夈€備换浣曚笌 folio 鍏宠仈鐨?	绉佹湁鏁版嵁閮藉簲褰撹鏇存柊浠ュ弽鏄犳鎴柇銆傚鏋?offset 涓?0 涓?length 涓?folio_size()锛?	鍒欏簲褰撻噴鏀剧鏈夋暟鎹紝鍥犱负 folio 蹇呴』鑳藉琚畬鍏ㄤ涪寮冦€傝繖鍙互閫氳繃璋冪敤 ->release_folio
-	鍑芥暟鏉ュ畬鎴愶紝浣嗗湪杩欑鎯呭喌涓嬮噴鏀惧繀椤绘垚鍔熴€?
+	如果 folio 带有私有数据，那么当 folio 的部分或全部要从地址空间移除时，将调	invalidate_folio。这通常对应于截断、打洞（punch hole）或地址空间的完全失效（	后一种情况下 'offset' 总是0length' folio_size()）。任何与 folio 关联	私有数据都应当被更新以反映此截断。如offset 0 length folio_size()	则应当释放私有数据，因为 folio 必须能够被完全丢弃。这可以通过调用 ->release_folio
+	函数来完成，但在这种情况下释放必须成功
 `release_folio`
-	release_folio 鍦ㄥ甫鏈夌鏈夋暟鎹殑 folio 涓婅皟鐢紝浠ュ憡鐭ユ枃浠剁郴缁熻 folio 鍗冲皢琚噴鏀俱€?	->release_folio 搴斿綋浠庤 folio 涓Щ闄や换浣曠鏈夋暟鎹苟娓呴櫎 private 鏍囧織銆傚鏋?	release_folio() 澶辫触锛屽畠搴斿綋杩斿洖 false銆俽elease_folio() 鐢ㄤ簬涓や釜涓嶅悓浣嗙浉鍏崇殑
-	鎯呭喌銆傜涓€涓槸褰?VM 鎯宠閲婃斁涓€涓病鏈夋椿鍔ㄧ敤鎴风殑骞插噣 folio 鏃躲€傚鏋?->release_folio
-	鎴愬姛锛岃 folio 灏嗕粠鍦板潃绌洪棿绉婚櫎骞惰閲婃斁銆?
-	绗簩绉嶆儏鍐垫槸褰撹姹備娇鍦板潃绌洪棿涓殑閮ㄥ垎鎴栧叏閮?folio 澶辨晥鏃躲€傝繖鍙兘閫氳繃
-	fadvise(POSIX_FADV_DONTNEED) 绯荤粺璋冪敤鍙戠敓锛屾垨鑰呯敱鏂囦欢绯荤粺鏄惧紡璇锋眰锛堝鍚?nfs 涓?	9p 鎵€鍋氱殑锛屽綋瀹冧滑璁や负缂撳瓨鍙兘涓庡瓨鍌ㄤ笉涓€鑷存椂锛夐€氳繃璋冪敤 invalidate_inode_pages2()銆?	濡傛灉鏂囦欢绯荤粺杩涜浜嗚繖鏍风殑璋冪敤锛屽苟涓旈渶瑕佺‘淇濇墍鏈夌殑 folio 閮借澶辨晥锛岄偅涔堝畠鐨?	release_folio 灏嗛渶瑕佺‘淇濊繖涓€鐐广€傚鏋滃畠灏氫笉鑳介噴鏀剧鏈夋暟鎹紝瀹冩垨璁稿彲浠ユ竻闄?uptodate
-	鏍囧織銆?
+	release_folio 在带有私有数据的 folio 上调用，以告知文件系统该 folio 即将被释放	->release_folio 应当从该 folio 中移除任何私有数据并清除 private 标志。如	release_folio() 失败，它应当返回 false。release_folio() 用于两个不同但相关的
+	情况。第一个是VM 想要释放一个没有活动用户的干净 folio 时。如->release_folio
+	成功，该 folio 将从地址空间移除并被释放
+	第二种情况是当请求使地址空间中的部分或全folio 失效时。这可能通过
+	fadvise(POSIX_FADV_DONTNEED) 系统调用发生，或者由文件系统显式请求（如nfs 	9p 所做的，当它们认为缓存可能与存储不一致时）通过调用 invalidate_inode_pages2()	如果文件系统进行了这样的调用，并且需要确保所有的 folio 都被失效，那么它	release_folio 将需要确保这一点。如果它尚不能释放私有数据，它或许可以清uptodate
+	标志
 `free_folio`
-	涓€鏃?folio 鍦ㄩ〉缂撳瓨涓笉鍐嶅彲瑙侊紝灏辫皟鐢?free_folio锛屼互鍏佽娓呯悊浠讳綍绉佹湁鏁版嵁銆傜敱浜?	瀹冨彲鑳界敱鍐呭瓨鍥炴敹鍣ㄨ皟鐢紝瀹冧笉搴斿亣璁惧師濮嬬殑鍦板潃绌洪棿鏄犲皠浠嶇劧瀛樺湪锛屽苟涓斾笉搴旈樆濉炪€?
+	一folio 在页缓存中不再可见，就调free_folio，以允许清理任何私有数据。由	它可能由内存回收器调用，它不应假设原始的地址空间映射仍然存在，并且不应阻塞
 `direct_IO`
-	鐢遍€氱敤鐨勮/鍐欎緥绋嬭皟鐢紝浠ユ墽琛?direct_IO鈥斺€斿嵆缁曡繃椤电紦瀛樸€佺洿鎺ュ湪瀛樺偍涓庡簲鐢ㄧ▼搴?	鍦板潃绌洪棿涔嬮棿浼犺緭鏁版嵁鐨?I/O 璇锋眰銆?
+	由通用的读/写例程调用，以执direct_IO——即绕过页缓存、直接在存储与应用程	地址空间之间传输数据I/O 请求
 `migrate_folio`
-	杩欑敤浜庡帇缂╃墿鐞嗗唴瀛樼殑浣跨敤銆傚鏋?VM 鎯宠閲嶅畾浣嶄竴涓?folio锛堜篃璁镐粠涓€涓彂鍑哄嵆灏?	鏁呴殰淇″彿鐨勫瓨鍌ㄨ澶囷級锛屽畠浼氬悜璇ュ嚱鏁颁紶鍏ヤ竴涓柊鐨?folio 涓庝竴涓棫鐨?folio銆?	migrate_folio 搴斿綋杞Щ浠讳綍绉佹湁鏁版嵁锛屽苟鏇存柊瀹冨 folio 鐨勪换浣曞紩鐢ㄣ€?
+	这用于压缩物理内存的使用。如VM 想要重定位一folio（也许从一个发出即	故障信号的存储设备），它会向该函数传入一个新folio 与一个旧folio	migrate_folio 应当转移任何私有数据，并更新它对 folio 的任何引用
 `launder_folio`
-	鍦ㄩ噴鏀?folio 涔嬪墠璋冪敤鈥斺€斿畠灏嗚剰 folio 鍥炲啓銆備负浜嗛槻姝?folio 鍐嶆鍙樿剰锛屽畠鍦ㄦ暣涓?	鎿嶄綔鏈熼棿淇濇寔閿佸畾銆?
+	在释folio 之前调用——它将脏 folio 回写。为了防folio 再次变脏，它在整	操作期间保持锁定
 `is_partially_uptodate`
-	褰撻€氳繃椤电紦瀛樿鍙栨枃浠讹紝涓斿簳灞傚潡澶у皬灏忎簬 folio 澶у皬鏃剁敱 VM 璋冪敤銆傚鏋滄墍闇€鐨勫潡
-	鏄渶鏂扮殑锛屽垯璇诲彇鏃犻渶 I/O 鍗冲彲瀹屾垚锛岃€屾棤闇€灏嗘暣涓〉鏇存柊鍒版渶鏂般€?
+	当通过页缓存读取文件，且底层块大小小于 folio 大小时由 VM 调用。如果所需的块
+	是最新的，则读取无需 I/O 即可完成，而无需将整个页更新到最新
 `is_dirty_writeback`
-	褰?VM 灏濊瘯鍥炴敹涓€涓?folio 鏃惰皟鐢ㄣ€俈M 浣跨敤鑴忎笌鍥炲啓淇℃伅鏉ョ‘瀹氭槸鍚﹂渶瑕佸仠椤匡紙stall锛?	浠ョ粰 flusher 涓€涓畬鎴愭煇浜?I/O 鐨勬満浼氥€傞€氬父瀹冨彲浠ヤ娇鐢?folio_test_dirty 涓?	folio_test_writeback锛屼絾鏌愪簺鏂囦欢绯荤粺鏈夋洿澶嶆潅鐨勭姸鎬侊紙NFS 涓笉绋冲畾鐨?folio 浼氶樆姝?	鍥炴敹锛夛紝鎴栬€呯敱浜庡姞閿侀棶棰樿€屼笉璁剧疆閭ｄ簺鏍囧織銆傝鍥炶皟鍏佽鏂囦欢绯荤粺鍚?VM 鎸囩ず涓€涓?	folio 鏄惁搴斿綋涓轰簡鍋滈】鐨勭洰鐨勮€岃褰撲綔鑴忕殑鎴栧洖鍐欑殑銆?
+	VM 尝试回收一folio 时调用。VM 使用脏与回写信息来确定是否需要停顿（stall	以给 flusher 一个完成某I/O 的机会。通常它可以使folio_test_dirty 	folio_test_writeback，但某些文件系统有更复杂的状态（NFS 中不稳定folio 会阻	回收），或者由于加锁问题而不设置那些标志。该回调允许文件系统VM 指示一	folio 是否应当为了停顿的目的而被当作脏的或回写的
 `error_remove_folio`
-	濡傛灉瀵硅鍦板潃绌洪棿鍏佽鎴柇锛岄€氬父璁句负 generic_error_remove_folio銆傜敤浜庡唴瀛樻晠闅?	锛坢emory failure锛夊鐞嗐€傝缃畠鎰忓懗鐫€浣犺澶勭悊椤靛湪浣犱箣涓嬫秷澶辩殑鎯呭喌锛岄櫎闈炰綘宸?	灏嗗畠浠攣瀹氭垨澧炲姞浜嗗紩鐢ㄨ鏁般€?
+	如果对该地址空间允许截断，通常设为 generic_error_remove_folio。用于内存故	（memory failure）处理。设置它意味着你要处理页在你之下消失的情况，除非你	将它们锁定或增加了引用计数
 `swap_activate`
-	琚皟鐢ㄤ互涓虹粰瀹氱殑鏂囦欢鍑嗗浜ゆ崲銆傚畠搴斿綋鎵ц浠讳綍蹇呰鐨勯獙璇佷笌鍑嗗锛屼互纭繚鍐欏叆鑳藉
-	浠ユ渶灏忕殑鍐呭瓨鍒嗛厤瀹屾垚銆傚畠搴斿綋璋冪敤 add_swap_extent()锛屾垨杈呭姪鍑芥暟
-	iomap_swapfile_activate()锛屽苟杩斿洖鎵€娣诲姞鐨勫尯娈碉紙extent锛夋暟閲忋€傚鏋?I/O 搴斿綋閫氳繃
-	->swap_rw() 鎻愪氦锛屽畠搴斿綋璁剧疆 SWP_FS_OPS锛屽惁鍒?I/O 灏嗚鐩存帴鎻愪氦鍒板潡璁惧
-	`sis->bdev`銆?
+	被调用以为给定的文件准备交换。它应当执行任何必要的验证与准备，以确保写入能够
+	以最小的内存分配完成。它应当调用 add_swap_extent()，或辅助函数
+	iomap_swapfile_activate()，并返回所添加的区段（extent）数量。如I/O 应当通过
+	->swap_rw() 提交，它应当设置 SWP_FS_OPS，否I/O 将被直接提交到块设备
+	`sis->bdev`銆。
 `swap_deactivate`
-	鍦ㄥ swap_activate 鎴愬姛鐨勬枃浠舵墽琛?swapoff 鏈熼棿璋冪敤銆?
+	在对 swap_activate 成功的文件执swapoff 期间调用
 `swap_rw`
-	褰撹缃簡 SWP_FS_OPS 鏃惰皟鐢紝浠ヨ鍙栨垨鍐欏叆浜ゆ崲椤点€?
-## File 瀵硅薄
+	当设置了 SWP_FS_OPS 时调用，以读取或写入交换页
+## File 对象
 
 
-涓€涓?file 瀵硅薄浠ｈ〃涓€涓杩涚▼鎵撳紑鐨勬枃浠躲€傚湪 POSIX 鏈涓紝杩欎篃琚О涓?鎵撳紑鏂囦欢
-鎻忚堪"锛坥pen file description锛夈€?
+一file 对象代表一个被进程打开的文件。在 POSIX 术语中，这也被称打开文件
+描述"（open file description）
 
 ### struct file_operations
 
-杩欐弿杩颁簡 VFS 濡備綍鎿嶄綔涓€涓墦寮€鐨勬枃浠躲€傝嚜鍐呮牳 4.18 璧凤紝瀹氫箟浜嗕互涓嬫垚鍛橈細
+这描述了 VFS 如何操作一个打开的文件。自内核 4.18 起，定义了以下成员：
 
 
 	struct file_operations {
@@ -541,88 +541,88 @@ Writeback 鏍囩琚?filemap**wait** 涓?sync_page* 鍑芥暟閫氳繃 filemap
 		int (**mmap_prepare)(struct vm_area_desc **);
 	};
 
-鍚屾牱锛岄櫎闈炲彟鏈夎鏄庯紝鎵€鏈夋柟娉曢兘鍦ㄤ笉鎸佹湁浠讳綍閿佺殑鎯呭喌涓嬭皟鐢ㄣ€?
+同样，除非另有说明，所有方法都在不持有任何锁的情况下调用
 `llseek`
-	褰?VFS 闇€瑕佺Щ鍔ㄦ枃浠朵綅缃储寮曟椂璋冪敤
+	VFS 需要移动文件位置索引时调用
 
 `read`
-	鐢?read(2) 鍙婄浉鍏崇殑绯荤粺璋冪敤璋冪敤
+	read(2) 及相关的系统调用调用
 
 `read_iter`
-	鍙兘寮傛鐨勮鍙栵紝浠?iov_iter 涓虹洰鏍?
+	可能异步的读取，iov_iter 为目
 `write`
-	鐢?write(2) 鍙婄浉鍏崇殑绯荤粺璋冪敤璋冪敤
+	write(2) 及相关的系统调用调用
 
 `write_iter`
-	鍙兘寮傛鐨勫啓鍏ワ紝浠?iov_iter 涓烘簮
+	可能异步的写入，iov_iter 为源
 
 `iopoll`
-	褰?aio 鎯宠鍦?HIPRI iocb 涓婅疆璇㈠畬鎴愭椂璋冪敤
+	aio 想要HIPRI iocb 上轮询完成时调用
 
 `iterate_shared`
-	褰?VFS 闇€瑕佽鍙栫洰褰曞唴瀹规椂璋冪敤
+	VFS 需要读取目录内容时调用
 
 `poll`
-	褰撹繘绋嬫兂瑕佹鏌ヨ鏂囦欢涓婃槸鍚︽湁娲诲姩锛屽苟锛堝彲閫夊湴锛変竴鐩寸潯鐪犵洿鍒版湁娲诲姩鏃讹紝鐢?VFS
-	璋冪敤銆傜敱 select(2) 涓?poll(2) 绯荤粺璋冪敤璋冪敤銆?
+	当进程想要检查该文件上是否有活动，并（可选地）一直睡眠直到有活动时，VFS
+	调用。由 select(2) poll(2) 系统调用调用
 `unlocked_ioctl`
-	鐢?ioctl(2) 绯荤粺璋冪敤璋冪敤銆?
+	ioctl(2) 系统调用调用
 `compat_ioctl`
-	褰撳湪 64 浣嶅唴鏍镐笂浣跨敤 32 浣嶇郴缁熻皟鐢ㄦ椂锛岀敱 ioctl(2) 绯荤粺璋冪敤璋冪敤銆?
+	当在 64 位内核上使用 32 位系统调用时，由 ioctl(2) 系统调用调用
 `mmap`
-	鐢?mmap(2) 绯荤粺璋冪敤璋冪敤銆傚凡搴熷純锛屾帹鑽愪娇鐢?`mmap_prepare`銆?
+	mmap(2) 系统调用调用。已废弃，推荐使`mmap_prepare`
 `open`
-	褰撳簲褰撴墦寮€涓€涓?inode 鏃剁敱 VFS 璋冪敤銆傚綋 VFS 鎵撳紑涓€涓枃浠舵椂锛屽畠鍒涘缓涓€涓柊鐨?	"struct file"銆傜劧鍚庡畠涓鸿繖涓柊鍒嗛厤鐨勬枃浠剁粨鏋勮皟鐢?open 鏂规硶銆備綘涔熻浼氳涓?open
-	鏂规硶纭疄灞炰簬 "struct inode_operations"锛屼綘涔熻鏄鐨勩€傛垜鎯冲畠鏄互鐜板湪杩欑鏂瑰紡
-	瀹屾垚鐨勶紝鍥犱负杩欒鏂囦欢绯荤粺瀹炵幇璧锋潵鏇寸畝鍗曘€傚鏋滀綘鎯宠鎸囧悜涓€涓澶囩粨鏋勶紝open()
-	鏂规硶鏄垵濮嬪寲 file 缁撴瀯涓殑 "private_data" 鎴愬憳鐨勫ソ鍦版柟銆?
+	当应当打开一inode 时由 VFS 调用。当 VFS 打开一个文件时，它创建一个新	"struct file"。然后它为这个新分配的文件结构调open 方法。你也许会认open
+	方法确实属于 "struct inode_operations"，你也许是对的。我想它是以现在这种方式
+	完成的，因为这让文件系统实现起来更简单。如果你想要指向一个设备结构，open()
+	方法是初始化 file 结构中的 "private_data" 成员的好地方
 `flush`
-	鐢?close(2) 绯荤粺璋冪敤璋冪敤锛屼互鍒锋柊涓€涓枃浠躲€?
+	close(2) 系统调用调用，以刷新一个文件
 `release`
-	褰撳涓€涓墦寮€鏂囦欢鐨勬渶鍚庝竴娆″紩鐢ㄨ鍏抽棴鏃惰皟鐢ㄣ€?
+	当对一个打开文件的最后一次引用被关闭时调用
 `fsync`
-	鐢?fsync(2) 绯荤粺璋冪敤璋冪敤銆傚彟瑙佷笂鏂囨爣棰樹负"鍥炲啓鏈熼棿鐨勯敊璇鐞?涓€鑺傘€?
+	fsync(2) 系统调用调用。另见上文标题为"回写期间的错误处一节
 `fasync`
-	褰撲负鏂囦欢鍚敤寮傛锛堥潪闃诲锛夋ā寮忔椂锛岀敱 fcntl(2) 绯荤粺璋冪敤璋冪敤銆?
+	当为文件启用异步（非阻塞）模式时，由 fcntl(2) 系统调用调用
 `lock`
-	鐢?fcntl(2) 绯荤粺璋冪敤閽堝 F_GETLK銆丗_SETLK 涓?F_SETLKW 鍛戒护璋冪敤銆?
+	fcntl(2) 系统调用针对 F_GETLK、F_SETLK F_SETLKW 命令调用
 `get_unmapped_area`
-	鐢?mmap(2) 绯荤粺璋冪敤璋冪敤銆?
+	mmap(2) 系统调用调用
 `check_flags`
-	鐢?fcntl(2) 绯荤粺璋冪敤閽堝 F_SETFL 鍛戒护璋冪敤銆?
+	fcntl(2) 系统调用针对 F_SETFL 命令调用
 `flock`
-	鐢?flock(2) 绯荤粺璋冪敤璋冪敤銆?
+	flock(2) 系统调用调用
 `splice_write`
-	鐢?VFS 璋冪敤锛屼互灏嗘暟鎹粠绠￠亾鎷兼帴锛坰plice锛夊埌鏂囦欢銆傝鏂规硶琚?splice(2) 绯荤粺璋冪敤浣跨敤銆?
+	VFS 调用，以将数据从管道拼接（splice）到文件。该方法splice(2) 系统调用使用
 `splice_read`
-	鐢?VFS 璋冪敤锛屼互灏嗘暟鎹粠鏂囦欢鎷兼帴鍒扮閬撱€傝鏂规硶琚?splice(2) 绯荤粺璋冪敤浣跨敤銆?
+	VFS 调用，以将数据从文件拼接到管道。该方法splice(2) 系统调用使用
 `setlease`
-	鐢?VFS 璋冪敤锛屼互璁剧疆鎴栭噴鏀炬枃浠堕攣绉熺害锛坙ease锛夈€傚笇鏈涗娇鐢ㄥ唴鏍稿唴閮ㄧ绾﹀疄鐜扮殑鏈湴
-	鏂囦欢绯荤粺搴斿皢姝よ涓?generic_setlease()銆傚叾浠?setlease 瀹炵幇搴斿湪璁剧疆涔嬪悗璋冪敤
-	generic_setlease() 鏉ヨ褰曟垨绉婚櫎 inode 涓殑绉熺害銆傚綋璁句负 NULL 鏃讹紝灏濊瘯璁剧疆鎴栫Щ闄?	绉熺害灏嗚繑鍥?-EINVAL銆?
+	VFS 调用，以设置或释放文件锁租约（lease）。希望使用内核内部租约实现的本地
+	文件系统应将此设generic_setlease()。其setlease 实现应在设置之后调用
+	generic_setlease() 来记录或移除 inode 中的租约。当设为 NULL 时，尝试设置或移	租约将返-EINVAL
 `fallocate`
-	鐢?VFS 璋冪敤锛屼互棰勫垎閰嶅潡鎴栨墦娲烇紙punch a hole锛夈€?
+	VFS 调用，以预分配块或打洞（punch a hole）
 `copy_file_range`
-	鐢?copy_file_range(2) 绯荤粺璋冪敤璋冪敤銆?
+	copy_file_range(2) 系统调用调用
 `remap_file_range`
-	鐢?ioctl(2) 绯荤粺璋冪敤閽堝 FICLONERANGE銆丗ICLONE 涓?FIDEDUPERANGE 鍛戒护璋冪敤锛屼互閲嶆槧灏?	鏂囦欢鑼冨洿銆備竴涓疄鐜板簲褰撳皢婧愭枃浠?pos_in 澶勭殑 len 瀛楄妭閲嶆槧灏勫埌鐩爣鏂囦欢 pos_out 澶勩€?	瀹炵幇蹇呴』澶勭悊璋冪敤鑰呬紶鍏?len == 0 鐨勬儏鍐碉紱杩欐剰鍛崇潃"閲嶆槧灏勫埌婧愭枃浠剁殑鏈熬"銆傝繑鍥炲€?	搴旀槸琚噸鏄犲皠鐨勫瓧鑺傛暟锛屾垨鑰呭鏋滃湪浠讳綍瀛楄妭琚噸鏄犲皠涔嬪墠鍙戠敓閿欒锛屽垯鏄€氬父鐨勮礋閿欒鐮併€?	remap_flags 鍙傛暟鎺ュ彈 REMAP_FILE_* 鏍囧織銆傚鏋滆缃簡 REMAP_FILE_DEDUP锛屽垯瀹炵幇蹇呴』
-	浠呭湪鎵€璇锋眰鐨勬枃浠惰寖鍥村唴瀹瑰畬鍏ㄧ浉鍚屾椂鎵嶉噸鏄犲皠銆傚鏋滆缃簡 REMAP_FILE_CAN_SHORTEN锛?	璋冪敤鑰呭彲浠ユ帴鍙楀疄鐜扮缉鐭姹傞暱搴︿互婊¤冻瀵归綈鎴?EOF 瑕佹眰锛堟垨浠讳綍鍏朵粬鍘熷洜锛夈€?
+	ioctl(2) 系统调用针对 FICLONERANGE、FICLONE FIDEDUPERANGE 命令调用，以重映	文件范围。一个实现应当将源文pos_in 处的 len 字节重映射到目标文件 pos_out 处	实现必须处理调用者传len == 0 的情况；这意味着"重映射到源文件的末尾"。返回	应是被重映射的字节数，或者如果在任何字节被重映射之前发生错误，则是通常的负错误码	remap_flags 参数接受 REMAP_FILE_* 标志。如果设置了 REMAP_FILE_DEDUP，则实现必须
+	仅在所请求的文件范围内容完全相同时才重映射。如果设置了 REMAP_FILE_CAN_SHORTEN	调用者可以接受实现缩短请求长度以满足对齐EOF 要求（或任何其他原因）
 `fadvise`
-	鍙兘鐢?fadvise64() 绯荤粺璋冪敤璋冪敤銆?
+	可能fadvise64() 系统调用调用
 `mmap_prepare`
-	鐢?mmap(2) 绯荤粺璋冪敤璋冪敤銆傚厑璁?VFS 寤虹珛鏂囦欢鏀寔鐨勶紙file-backed锛夊唴瀛樻槧灏勶紝鏈€鏄捐憲鍦?	鏄缓绔嬬浉鍏崇殑绉佹湁鐘舵€佷笌 VMA 鍥炶皟銆?
-	濡傛灉杩橀渶瑕佽繘涓€姝ョ殑鎿嶄綔锛屼緥濡傞〉琛ㄧ殑棰勫～鍏咃紙pre-population锛夛紝杩欏彲浠ラ€氳繃
-	vm_area_desc->action 瀛楁鍙婄浉鍏崇殑鍙傛暟鏉ユ寚瀹氥€?
-娉ㄦ剰锛屾枃浠舵搷浣滄槸鐢?inode 鎵€鍦ㄧ殑鐗瑰畾鏂囦欢绯荤粺瀹炵幇鐨勩€傚綋鎵撳紑涓€涓澶囪妭鐐癸紙瀛楃鎴栧潡
-鐗规畩鏂囦欢锛夋椂锛屽ぇ澶氭暟鏂囦欢绯荤粺浼氳皟鐢?VFS 涓殑鐗规畩鏀寔渚嬬▼锛岃繖浜涗緥绋嬪皢瀹氫綅鎵€闇€鐨勮澶?椹卞姩淇℃伅銆傝繖浜涙敮鎸佷緥绋嬪皢鏂囦欢绯荤粺鐨勬枃浠舵搷浣滄浛鎹负璁惧椹卞姩鐨勯偅浜涙搷浣滐紝鐒跺悗缁х画璋冪敤
-璇ユ枃浠舵柊鐨?open() 鏂规硶銆傝繖灏辨槸鍦ㄦ枃浠剁郴缁熶腑鎵撳紑涓€涓澶囨枃浠舵渶缁堜細璋冪敤鍒拌澶囬┍鍔?open() 鏂规硶鐨勬柟寮忋€?
+	mmap(2) 系统调用调用。允VFS 建立文件支持的（file-backed）内存映射，最显著	是建立相关的私有状态与 VMA 回调
+	如果还需要进一步的操作，例如页表的预填充（pre-population），这可以通过
+	vm_area_desc->action 字段及相关的参数来指定
+注意，文件操作是inode 所在的特定文件系统实现的。当打开一个设备节点（字符或块
+特殊文件）时，大多数文件系统会调VFS 中的特殊支持例程，这些例程将定位所需的设驱动信息。这些支持例程将文件系统的文件操作替换为设备驱动的那些操作，然后继续调用
+该文件新open() 方法。这就是在文件系统中打开一个设备文件最终会调用到设备驱open() 方法的方式
 
-## 鐩綍椤圭紦瀛橈紙dcache锛?
+## 目录项缓存（dcache
 
 
 ### struct dentry_operations
 
-杩欐弿杩颁簡鏂囦欢绯荤粺濡備綍閲嶈浇鏍囧噯鐨?dentry 鎿嶄綔銆侱entry 涓?dcache 鏄?VFS 涓庡悇涓枃浠剁郴缁?瀹炵幇鐨勫湴鐩樸€傝澶囬┍鍔ㄤ笌姝ゆ棤鍏炽€傝繖浜涙柟娉曞彲浠ヨ涓?NULL锛屽洜涓哄畠浠涔堟槸鍙€夌殑锛岃涔?VFS 浣跨敤榛樿鍊笺€傝嚜鍐呮牳 2.6.22 璧凤紝瀹氫箟浜嗕互涓嬫垚鍛橈細
+这描述了文件系统如何重载标准dentry 操作。Dentry dcache VFS 与各个文件系实现的地盘。设备驱动与此无关。这些方法可以设NULL，因为它们要么是可选的，要VFS 使用默认值。自内核 2.6.22 起，定义了以下成员：
 
 
 	struct dentry_operations {
@@ -645,44 +645,44 @@ Writeback 鏍囩琚?filemap**wait** 涓?sync_page* 鍑芥暟閫氳繃 filemap
 	};
 
 `d_revalidate`
-	褰?VFS 闇€瑕侀噸鏂伴獙璇侊紙revalidate锛変竴涓?dentry 鏃惰皟鐢ㄣ€傛瘡褰撳悕绉版煡鎵惧湪 dcache 涓?	鎵惧埌涓€涓?dentry 鏃跺氨浼氳皟鐢ㄥ畠銆傚ぇ澶氭暟鏈湴鏂囦欢绯荤粺灏嗗叾淇濈暀涓?NULL锛屽洜涓哄畠浠湪
-	dcache 涓殑鎵€鏈?dentry 閮芥槸鏈夋晥鐨勩€傜綉缁滄枃浠剁郴缁熷垯涓嶅悓锛屽洜涓烘湇鍔″櫒涓婄殑浜嬫儏鍙互鍦?	瀹㈡埛绔湭蹇呯煡鎯呯殑鎯呭喌涓嬪彂鐢熷彉鍖栥€?
-	濡傛灉 dentry 浠嶇劧鏈夋晥锛岃鍑芥暟搴旇繑鍥炰竴涓鍊硷紱濡傛灉鏃犳晥锛屽垯杩斿洖闆舵垨涓€涓礋鐨勯敊璇爜銆?
-	d_revalidate 鍙兘鍦?rcu-walk 妯″紡涓嬭皟鐢紙flags & LOOKUP_RCU锛夈€傚鏋滃湪 rcu-walk
-	妯″紡涓嬶紝鏂囦欢绯荤粺蹇呴』鍦ㄤ笉闃诲鎴栦笉鍐欏叆 dentry 鐨勬儏鍐典笅閲嶆柊楠岃瘉 dentry锛宒_parent 涓?	d_inode 涓嶅簲鍦ㄦ病鏈夊皬蹇冪殑鎯呭喌涓嬩娇鐢紙鍥犱负瀹冧滑鍙兘鏀瑰彉锛屽苟涓斿湪 d_inode 鐨勬儏鍐典笅锛?	鐢氳嚦鍙兘鍦ㄦ垜浠殑澶勭悊杩囩▼涓彉鎴?NULL锛夈€?
-	濡傛灉閬囧埌 rcu-walk 鏃犳硶澶勭悊鐨勬儏鍐碉紝杩斿洖 -ECHILD锛屽畠灏嗗湪 ref-walk 妯″紡涓嬪啀娆¤璋冪敤銆?
+	VFS 需要重新验证（revalidate）一dentry 时调用。每当名称查找在 dcache 	找到一dentry 时就会调用它。大多数本地文件系统将其保留NULL，因为它们在
+	dcache 中的所dentry 都是有效的。网络文件系统则不同，因为服务器上的事情可以	客户端未必知情的情况下发生变化
+	如果 dentry 仍然有效，该函数应返回一个正值；如果无效，则返回零或一个负的错误码
+	d_revalidate 可能rcu-walk 模式下调用（flags & LOOKUP_RCU）。如果在 rcu-walk
+	模式下，文件系统必须在不阻塞或不写入 dentry 的情况下重新验证 dentry，d_parent 	d_inode 不应在没有小心的情况下使用（因为它们可能改变，并且在 d_inode 的情况下	甚至可能在我们的处理过程中变NULL）
+	如果遇到 rcu-walk 无法处理的情况，返回 -ECHILD，它将在 ref-walk 模式下再次被调用
 `d_weak_revalidate`
-	褰?VFS 闇€瑕侀噸鏂伴獙璇佷竴涓?璺宠繃鐨?锛坖umped锛塪entry 鏃惰皟鐢ㄣ€傝繖鍦ㄤ竴涓矾寰勯亶鍘嗙粨鏉熶簬
-	涓€涓笉鏄€氳繃鍦ㄧ埗鐩綍涓煡鎵捐€岃幏寰楃殑 dentry 鏃惰皟鐢ㄣ€傝繖鍖呮嫭 "/"銆?." 涓?".."锛?	浠ュ強 procfs 椋庢牸鐨勭鍙烽摼鎺ヤ笌鎸傝浇鐐归亶鍘嗐€?
-	鍦ㄨ繖绉嶆儏鍐典笅锛屾垜浠緝灏戝叧蹇?dentry 鏄惁浠嶇劧瀹屽叏姝ｇ‘锛岃€屾洿鍏冲績 inode 鏄惁浠嶇劧鏈夋晥銆?	涓?d_revalidate 涓€鏍凤紝澶у鏁版湰鍦版枃浠剁郴缁熶細灏嗗叾璁句负 NULL锛屽洜涓哄畠浠殑 dcache 鏉＄洰
-	鎬绘槸鏈夋晥鐨勩€?
-	璇ュ嚱鏁扮殑杩斿洖鐮佽涔変笌 d_revalidate 鐩稿悓銆?
-	d_weak_revalidate 鍙湪绂诲紑 rcu-walk 妯″紡涔嬪悗璋冪敤銆?
+	VFS 需要重新验证一跳过（jumped）dentry 时调用。这在一个路径遍历结束于
+	一个不是通过在父目录中查找而获得的 dentry 时调用。这包括 "/"." ".."	以及 procfs 风格的符号链接与挂载点遍历
+	在这种情况下，我们较少关dentry 是否仍然完全正确，而更关心 inode 是否仍然有效	d_revalidate 一样，大多数本地文件系统会将其设为 NULL，因为它们的 dcache 条目
+	总是有效的
+	该函数的返回码语义与 d_revalidate 相同
+	d_weak_revalidate 只在离开 rcu-walk 模式之后调用
 `d_hash`
-	褰?VFS 灏嗕竴涓?dentry 鍔犲叆鍝堝笇琛ㄦ椂璋冪敤銆備紶缁?d_hash 鐨勭涓€涓?dentry 鏄灏嗗悕绉?	鍝堝笇鍒扮殑鐖剁洰褰曘€?
-	鍏充簬浠€涔堝彲浠ュ畨鍏ㄨВ寮曠敤绛夛紝涓?d_compare 鏈夌浉鍚岀殑鍔犻攣涓庡悓姝ヨ鍒欍€?
+	VFS 将一dentry 加入哈希表时调用。传d_hash 的第一dentry 是要将名	哈希到的父目录
+	关于什么可以安全解引用等，d_compare 有相同的加锁与同步规则
 `d_compare`
-	璋冪敤浠ュ皢 dentry 鍚嶇О涓庣粰瀹氬悕绉版瘮杈冦€傜涓€涓?dentry 鏄姣旇緝鐨?dentry 鐨勭埗鐩綍锛?	绗簩涓槸瀛?dentry銆俵en 涓?name 瀛楃涓叉槸瑕佹瘮杈冪殑 dentry 鐨勫睘鎬с€俼str 鏄涓庝箣
-	姣旇緝鐨勫悕绉般€?
-	蹇呴』鏄父閲忎笖骞傜瓑鐨勶紝骞跺簲灏藉彲鑳戒笉鍔犻攣锛屼笖涓嶅簲鍐欏叆 dentry銆備笉搴斿湪娌℃湁澶ч噺灏忓績鐨?	鎯呭喌涓嬭В寮曠敤 dentry 涔嬪鐨勬寚閽堬紙渚嬪锛屼笉搴斾娇鐢?d_parent銆乨_inode銆乨_name锛夈€?
-	鐒惰€岋紝鎴戜滑鐨?vfsmount 鏄鍥哄畾鐨勶紝涓旀寔鏈?RCU锛屽洜姝?dentry 涓?inode 涓嶄細娑堝け锛屾垜浠?	鐨?sb 鎴栨枃浠剁郴缁熸ā鍧椾篃涓嶄細銆傚彲浠ヤ娇鐢?->d_sb銆?
-	杩欐槸涓€涓鎵嬬殑璋冪敤绾﹀畾锛屽洜涓哄畠闇€瑕佸湪"rcu-walk"涓嬭皟鐢紝鍗虫病鏈変换浣曢攣鎴栧浜嬬墿鐨?	寮曠敤銆?
+	调用以将 dentry 名称与给定名称比较。第一dentry 是要比较dentry 的父目录	第二个是dentry。len name 字符串是要比较的 dentry 的属性。qstr 是要与之
+	比较的名称
+	必须是常量且幂等的，并应尽可能不加锁，且不应写入 dentry。不应在没有大量小心	情况下解引用 dentry 之外的指针（例如，不应使d_parent、d_inode、d_name）
+	然而，我们vfsmount 是被固定的，且持RCU，因dentry inode 不会消失，我	sb 或文件系统模块也不会。可以使->d_sb
+	这是一个棘手的调用约定，因为它需要在"rcu-walk"下调用，即没有任何锁或对事物	引用
 `d_delete`
-	褰撳涓€涓?dentry 鐨勬渶鍚庝竴娆″紩鐢ㄨ鏀惧純銆佷笖 dcache 姝ｅ湪鍐冲畾鏄惁缂撳瓨瀹冩椂璋冪敤銆傝繑鍥?1
-	琛ㄧず绔嬪嵆鍒犻櫎锛屾垨杩斿洖 0 琛ㄧず缂撳瓨璇?dentry銆傞粯璁ゆ槸 NULL锛屾剰鍛崇潃鎬绘槸缂撳瓨涓€涓彲杈剧殑
-	dentry銆俤_delete 蹇呴』鏄父閲忎笖骞傜瓑鐨勩€?
+	当对一dentry 的最后一次引用被放弃、且 dcache 正在决定是否缓存它时调用。返1
+	表示立即删除，或返回 0 表示缓存dentry。默认是 NULL，意味着总是缓存一个可达的
+	dentry。d_delete 必须是常量且幂等的
 `d_init`
-	褰撲竴涓?dentry 琚垎閰嶆椂璋冪敤銆?
+	当一dentry 被分配时调用
 `d_release`
-	褰撲竴涓?dentry 鐪熸琚噴鏀炬椂璋冪敤銆?
+	当一dentry 真正被释放时调用
 `d_iput`
-	褰撲竴涓?dentry 澶卞幓鍏?inode 鏃讹紙灏卞湪瀹冭閲婃斁涔嬪墠锛夎皟鐢ㄣ€傚綋瀹冧负 NULL 鏃剁殑榛樿琛屼负鏄?	VFS 璋冪敤 iput()銆傚鏋滀綘瀹氫箟浜嗚鏂规硶锛屽垯蹇呴』鑷繁璋冪敤 iput()銆?
+	当一dentry 失去inode 时（就在它被释放之前）调用。当它为 NULL 时的默认行为	VFS 调用 iput()。如果你定义了该方法，则必须自己调用 iput()
 `d_dname`
-	褰撻渶瑕佺敓鎴愪竴涓?dentry 鐨勮矾寰勫悕鏃惰皟鐢ㄣ€傚鏌愪簺浼枃浠剁郴缁燂紙sockfs銆乸ipefs 绛夛級鏈夌敤锛?	鐢ㄤ簬寤惰繜璺緞鍚嶇敓鎴愩€傦紙涓嶆槸鍦?dentry 鍒涘缓鏃跺仛锛岃€屾槸浠呭湪闇€瑕佽矾寰勬椂鎵嶅仛銆傦級鐪熷疄鏂囦欢
-	绯荤粺澶ф涓嶆兂瑕佷娇鐢ㄥ畠锛屽洜涓哄畠浠殑 dentry 瀛樺湪浜庡叏灞€ dcache 鍝堝笇涓紝鍥犳瀹冧滑鐨勫搱甯?	搴斿綋鏄笉鍙樼殑銆傜敱浜庢病鏈夋寔閿侊紝d_dname() 涓嶅簲灏濊瘯淇敼 dentry 鏈韩锛岄櫎闈炰娇鐢ㄤ簡閫傚綋鐨?	SMP 瀹夊叏鎵嬫銆傛敞鎰忥細d_path() 鐨勯€昏緫鐩稿綋妫樻墜銆備緥濡傝繑鍥?"Hello" 鐨勬纭柟寮忔槸灏嗗畠
-	鏀惧湪缂撳啿鍖虹殑鏈熬锛屽苟杩斿洖涓€涓寚鍚戠涓€涓瓧绗︾殑鎸囬拡銆傛彁渚涗簡 dynamic_dname() 杈呭姪
-	鍑芥暟鏉ュ鐞嗚繖浠朵簨銆?
-	绀轰緥锛?
+	当需要生成一dentry 的路径名时调用。对某些伪文件系统（sockfs、pipefs 等）有用	用于延迟路径名生成。（不是dentry 创建时做，而是仅在需要路径时才做。）真实文件
+	系统大概不想要使用它，因为它们的 dentry 存在于全局 dcache 哈希中，因此它们的哈	应当是不变的。由于没有持锁，d_dname() 不应尝试修改 dentry 本身，除非使用了适当	SMP 安全手段。注意：d_path() 的逻辑相当棘手。例如返"Hello" 的正确方式是将它
+	放在缓冲区的末尾，并返回一个指向第一个字符的指针。提供了 dynamic_dname() 辅助
+	函数来处理这件事
+	示例
 
 	static char **pipefs_dname(struct dentry **dent, char *buffer, int buflen)
 	{
@@ -691,91 +691,91 @@ Writeback 鏍囩琚?filemap**wait** 涓?sync_page* 鍑芥暟閫氳繃 filemap
 	}
 
 `d_automount`
-	褰撹閬嶅巻涓€涓嚜鍔ㄦ寕杞斤紙automount锛塪entry 鏃惰皟鐢紙鍙€夛級銆傝繖搴斿綋鍒涘缓涓€涓柊鐨?VFS
-	鎸傝浇璁板綍锛屽苟灏嗚璁板綍杩斿洖缁欒皟鐢ㄨ€呫€傝皟鐢ㄨ€呰鎻愪緵涓€涓?path 鍙傛暟锛岀粰鍑虹敤浜庢弿杩拌嚜鍔ㄦ寕杞?	鐩爣鐨勮嚜鍔ㄦ寕杞界洰褰曪紝浠ュ強鎻愪緵鍙户鎵挎寕杞藉弬鏁扮殑鐖?VFS 鎸傝浇璁板綍銆傚鏋滃叾浠栦汉鐜囧厛瀹屾垚浜?	鑷姩鎸傝浇锛屽垯搴旇繑鍥?NULL銆傚鏋?vfsmount 鍒涘缓澶辫触锛屽垯搴旇繑鍥炰竴涓敊璇爜銆傚鏋滆繑鍥?	-EISDIR锛屽垯璇ョ洰褰曞皢琚涓烘櫘閫氱洰褰曞苟杩旇繕缁?pathwalk 浠ョ户缁亶鍘嗐€?
-	濡傛灉杩斿洖浜嗕竴涓?vfsmount锛岃皟鐢ㄨ€呭皢灏濊瘯灏嗗叾鎸傝浇鍒版寕杞界偣涓婏紝骞跺湪澶辫触鐨勬儏鍐典笅灏嗗叾浠?	杩囨湡鍒楄〃涓Щ闄ゃ€?
-	璇ュ嚱鏁颁粎鍦?dentry 涓婅缃簡 DCACHE_NEED_AUTOMOUNT 鏃朵娇鐢ㄣ€傚鏋滄坊鍔犲埌 inode 鏃惰缃簡
-	S_AUTOMOUNT锛屽垯杩欑敱 __d_instantiate() 璁剧疆銆?
+	当要遍历一个自动挂载（automount）dentry 时调用（可选）。这应当创建一个新VFS
+	挂载记录，并将该记录返回给调用者。调用者被提供一path 参数，给出用于描述自动挂	目标的自动挂载目录，以及提供可继承挂载参数的VFS 挂载记录。如果其他人率先完成	自动挂载，则应返NULL。如vfsmount 创建失败，则应返回一个错误码。如果返	-EISDIR，则该目录将被视为普通目录并返还pathwalk 以继续遍历
+	如果返回了一vfsmount，调用者将尝试将其挂载到挂载点上，并在失败的情况下将其	过期列表中移除
+	该函数仅dentry 上设置了 DCACHE_NEED_AUTOMOUNT 时使用。如果添加到 inode 时设置了
+	S_AUTOMOUNT，则这由 __d_instantiate() 设置
 `d_manage`
-	璋冪敤浠ュ厑璁告枃浠剁郴缁熺鐞嗕粠涓€涓?dentry 鐨勮繃娓★紙鍙€夛級銆傝繖鍏佽 autofs 渚嬪鐣欎綇绛夊緟鍦?	"鎸傝浇鐐?鍚庨潰鎺㈢储鐨勫鎴风锛屽悓鏃惰瀹堟姢杩涚▼杩囧幓骞跺湪閭ｉ噷鏋勯€犲瓙鏍戙€傚簲褰撹繑鍥?0 浠ヨ璋冪敤
-	杩涚▼缁х画銆傚彲浠ヨ繑鍥?-EISDIR 浠ュ憡璇?pathwalk 灏嗚鐩綍鐢ㄤ綔鏅€氱洰褰曪紝蹇界暐鎸傝浇鍦ㄥ叾涓婄殑
-	浠讳綍涓滆タ锛屽苟涓斾笉妫€鏌ヨ嚜鍔ㄦ寕杞芥爣蹇椼€備换浣曞叾浠栭敊璇爜灏嗗畬鍏ㄤ腑姝?pathwalk銆?
-	濡傛灉 'rcu_walk' 鍙傛暟涓虹湡锛屽垯璋冪敤鑰呮鍦?RCU-walk 妯″紡涓嬭繘琛岃矾寰勯亶鍘嗐€傚湪璇ユā寮忎笅
-	涓嶅厑璁哥潯鐪狅紝骞朵笖鍙互閫氳繃杩斿洖 -ECHILD 鏉ヨ璋冪敤鑰呯寮€璇ユā寮忓苟鍐嶆璋冪敤銆備篃鍙互杩斿洖
-	-EISDIR 浠ュ憡璇?pathwalk 蹇界暐 d_automount 鎴栦换浣曟寕杞姐€?
-	璇ュ嚱鏁颁粎鍦ㄦ琚寮€鐨?dentry 涓婅缃簡 DCACHE_MANAGE_TRANSIT 鏃朵娇鐢ㄣ€?
+	调用以允许文件系统管理从一dentry 的过渡（可选）。这允许 autofs 例如留住等待	"挂载后面探索的客户端，同时让守护进程过去并在那里构造子树。应当返0 以让调用
+	进程继续。可以返-EISDIR 以告pathwalk 将该目录用作普通目录，忽略挂载在其上的
+	任何东西，并且不检查自动挂载标志。任何其他错误码将完全中pathwalk
+	如果 'rcu_walk' 参数为真，则调用者正RCU-walk 模式下进行路径遍历。在该模式下
+	不允许睡眠，并且可以通过返回 -ECHILD 来请调用者离开该模式并再次调用。也可以返回
+	-EISDIR 以告pathwalk 忽略 d_automount 或任何挂载
+	该函数仅在正被离开dentry 上设置了 DCACHE_MANAGE_TRANSIT 时使用
 `d_real`
-	overlay/union 绫诲瀷鏂囦欢绯荤粺瀹炵幇姝ゆ柟娉曪紝浠ヨ繑鍥炶 overlay 闅愯棌鐨勬櫘閫氭枃浠剁殑涓€涓簳灞?	dentry銆?
-	'type' 鍙傛暟鍙栧€?D_REAL_DATA 鎴?D_REAL_METADATA锛岀敤浜庤繑鍥炴寚鍚戞墭绠¤鏂囦欢鏁版嵁鎴?	鍏冩暟鎹殑 inode 鐨勭湡瀹炲簳灞?dentry銆?
-	瀵逛簬闈炴櫘閫氭枃浠讹紝杩斿洖 'dentry' 鍙傛暟銆?
+	overlay/union 类型文件系统实现此方法，以返回被 overlay 隐藏的普通文件的一个底	dentry
+	'type' 参数取D_REAL_DATA D_REAL_METADATA，用于返回指向托管该文件数据	元数据的 inode 的真实底dentry
+	对于非普通文件，返回 'dentry' 参数
 `d_unalias_trylock`
-	濡傛灉瀛樺湪锛屽皢鐢?d_splice_alias() 鍦ㄧЩ鍔ㄤ竴涓鍏堝瓨鍦ㄧ殑宸查檮鍔犲埆鍚嶄箣鍓嶈皟鐢ㄣ€傝繑鍥?false
-	浼氶樆姝?__d_move()锛屼娇 d_splice_alias() 浠?-ESTALE 澶辫触銆?
-	鐞嗙敱锛氳缃?FS_RENAME_DOES_D_MOVE 灏嗛樆姝㈡潵鑷枃浠剁郴缁熸柟娉曞閮ㄧ殑 d_move() 涓?	d_exchange() 璋冪敤锛涚劧鑰岋紝瀹冧笉鑳戒繚璇佸凡闄勫姞鐨?dentry 涓嶄細琚?d_splice_alias() 鎵惧埌
-	鐩綍 inode 鐨勯鍏堝瓨鍦ㄧ殑鍒悕鑰岄噸鍛藉悕鎴栫Щ鍔ㄣ€傞€氬父鎴戜滑涓嶄細鍦ㄦ剰锛涗笉杩囷紝鏈夋煇绉嶄笢瑗挎兂瑕?	鍦ㄩ樆濉炴搷浣滄湡闂寸ǔ瀹氭暣涓埌鏍圭殑璺緞鏃跺彲鑳介渶瑕佸畠銆傚弬瑙?9p 浣滀负涓€涓紙涓斿笇鏈涙槸鍞竴鐨勶級
-	渚嬪瓙銆?
+	如果存在，将d_splice_alias() 在移动一个预先存在的已附加别名之前调用。返false
+	会阻__d_move()，使 d_splice_alias() -ESTALE 失败
+	理由：设FS_RENAME_DOES_D_MOVE 将阻止来自文件系统方法外部的 d_move() 	d_exchange() 调用；然而，它不能保证已附加dentry 不会d_splice_alias() 找到
+	目录 inode 的预先存在的别名而重命名或移动。通常我们不会在意；不过，有某种东西想	在阻塞操作期间稳定整个到根的路径时可能需要它。参9p 作为一个（且希望是唯一的）
+	例子
 `d_unalias_unlock`
-	搴斾笌 `d_unalias_trylock` 閰嶅锛涘悗鑰呭湪 __d_unalias() 涓殑 __d_move() 璋冪敤涔嬪悗璋冪敤銆?
+	应与 `d_unalias_trylock` 配对；后者在 __d_unalias() 中的 __d_move() 调用之后调用
 
-姣忎釜 dentry 閮芥湁涓€涓寚鍚戝叾鐖?dentry 鐨勬寚閽堬紝浠ュ強涓€涓瓙 dentry 鐨勫搱甯屽垪琛ㄣ€傚瓙 dentry
-鍩烘湰涓婂氨鍍忕洰褰曚腑鐨勬枃浠躲€?
+每个 dentry 都有一个指向其dentry 的指针，以及一个子 dentry 的哈希列表。子 dentry
+基本上就像目录中的文件
 
-### 鐩綍椤圭紦瀛?API
+### 目录项缓API
 
-瀹氫箟浜嗚澶氬厑璁告枃浠剁郴缁熸搷浣?dentry 鐨勫嚱鏁帮細
+定义了许多允许文件系统操dentry 的函数：
 
 `dget`
-	涓哄凡瀛樺湪鐨?dentry 鎵撳紑涓€涓柊鍙ユ焺锛堣繖鍙槸閫掑浣跨敤璁℃暟锛夈€?
+	为已存在dentry 打开一个新句柄（这只是递增使用计数）
 `dput`
-	鍏抽棴涓€涓?dentry 鐨勫彞鏌勶紙閫掑噺浣跨敤璁℃暟锛夈€傚鏋滀娇鐢ㄨ鏁伴檷鍒?0锛屼笖 dentry 浠嶅湪瀹冪埗
-	鐩綍鐨勫搱甯屼腑锛屽垯璋冪敤 "d_delete" 鏂规硶妫€鏌ュ畠鏄惁搴斿綋琚紦瀛樸€傚鏋滀笉搴旇缂撳瓨锛屾垨鑰?	濡傛灉 dentry 鏈鍝堝笇锛屽垯瀹冭鍒犻櫎銆傚惁鍒欙紝缂撳瓨鐨?dentry 琚斁鍏ヤ竴涓?LRU 鍒楄〃锛屼互渚垮湪
-	鍐呭瓨涓嶈冻鏃惰鍥炴敹銆?
+	关闭一dentry 的句柄（递减使用计数）。如果使用计数降0，且 dentry 仍在它父
+	目录的哈希中，则调用 "d_delete" 方法检查它是否应当被缓存。如果不应被缓存，或	如果 dentry 未被哈希，则它被删除。否则，缓存dentry 被放入一LRU 列表，以便在
+	内存不足时被回收
 `d_drop`
-	杩欏皢涓€涓?dentry 浠庡畠鐖剁洰褰曠殑鍝堝笇鍒楄〃涓彇娑堝搱甯屻€傞殢鍚庡 dput() 鐨勮皟鐢ㄥ皢鍦ㄦ dentry
-	鐨勪娇鐢ㄨ鏁伴檷鍒?0 鏃堕噴鏀惧畠銆?
+	这将一dentry 从它父目录的哈希列表中取消哈希。随后对 dput() 的调用将在此 dentry
+	的使用计数降0 时释放它
 `d_delete`
-	鍒犻櫎涓€涓?dentry銆傚鏋滄病鏈夊叾浠栧璇?dentry 鐨勬墦寮€寮曠敤锛屽垯璇?dentry 琚浆涓轰竴涓礋 dentry
-	锛堣皟鐢?d_iput() 鏂规硶锛夈€傚鏋滄湁鍏朵粬寮曠敤锛屽垯鏀逛负璋冪敤 d_drop()銆?
+	删除一dentry。如果没有其他对dentry 的打开引用，则dentry 被转为一个负 dentry
+	（调d_iput() 方法）。如果有其他引用，则改为调用 d_drop()
 `d_add`
-	灏嗕竴涓?dentry 娣诲姞鍒板畠鐖剁洰褰曠殑鍝堝笇鍒楄〃锛岀劧鍚庤皟鐢?d_instantiate()銆?
+	将一dentry 添加到它父目录的哈希列表，然后调d_instantiate()
 `d_instantiate`
-	灏嗕竴涓?dentry 娣诲姞鍒拌 inode 鐨勫埆鍚嶅搱甯屽垪琛紝骞舵洿鏂?"d_inode" 鎴愬憳銆俰node 缁撴瀯涓殑
-	"i_count" 鎴愬憳搴斿綋琚缃?閫掑銆傚鏋?inode 鎸囬拡涓?NULL锛岃 dentry 琚О涓?璐?dentry"銆?	褰撲竴涓?inode 涓哄凡瀛樺湪鐨勮礋 dentry 鍒涘缓鏃讹紝閫氬父浼氳皟鐢ㄦ鍑芥暟銆?
+	将一dentry 添加到该 inode 的别名哈希列表，并更"d_inode" 成员。inode 结构中的
+	"i_count" 成员应当被设递增。如inode 指针NULL，该 dentry 被称dentry"	当一inode 为已存在的负 dentry 创建时，通常会调用此函数
 `d_lookup`
-	缁欏畾鍏剁埗鐩綍涓庤矾寰勫悕鍒嗛噺锛屾煡鎵句竴涓?dentry銆傚畠浠?dcache 鍝堝笇琛ㄤ腑鏌ユ壘鍏锋湁璇ュ悕绉扮殑
-	瀛愰」銆傚鏋滄壘鍒帮紝鍒欓€掑寮曠敤璁℃暟骞惰繑鍥炶 dentry銆傝皟鐢ㄨ€呬娇鐢ㄥ畬姣曞悗蹇呴』鐢?dput() 閲婃斁
-	璇?dentry銆?
+	给定其父目录与路径名分量，查找一dentry。它dcache 哈希表中查找具有该名称的
+	子项。如果找到，则递增引用计数并返回该 dentry。调用者使用完毕后必须dput() 释放
+	璇?dentry銆。
 
-## 鎸傝浇閫夐」
+## 挂载选项
 
 
 
-### 瑙ｆ瀽閫夐」
+### 解析选项
 
-鍦ㄦ寕杞戒笌閲嶆柊鎸傝浇鏃讹紝鏂囦欢绯荤粺浼氭敹鍒颁竴涓瓧绗︿覆锛屽叾涓寘鍚互閫楀彿鍒嗛殧鐨勬寕杞介€夐」鍒楄〃銆?閫夐」鍙互鏄互涓嬩袱绉嶅舰寮忎箣涓€锛?
+在挂载与重新挂载时，文件系统会收到一个字符串，其中包含以逗号分隔的挂载选项列表选项可以是以下两种形式之一
   option
   option=value
 
-<linux/parser.h> 澶存枃浠跺畾涔変簡涓€涓湁鍔╀簬瑙ｆ瀽杩欎簺閫夐」鐨?API銆傚湪鐜版湁鐨勬枃浠剁郴缁熶腑锛屾湁
-澶ч噺濡備綍浣跨敤瀹冪殑绀轰緥銆?
+<linux/parser.h> 头文件定义了一个有助于解析这些选项API。在现有的文件系统中，有
+大量如何使用它的示例
 
-### 鏄剧ず閫夐」
+### 显示选项
 
-濡傛灉涓€涓枃浠剁郴缁熸帴鍙楁寕杞介€夐」锛屽畠蹇呴』瀹氫箟 show_options() 浠ユ樉绀烘墍鏈夊綋鍓嶆椿鍔ㄧ殑閫夐」銆?瑙勫垯鏄細
+如果一个文件系统接受挂载选项，它必须定义 show_options() 以显示所有当前活动的选项规则是：
 
-  - 蹇呴』鏄剧ず閭ｄ簺闈為粯璁ゃ€佹垨鍏跺€间笌榛樿鍊间笉鍚岀殑閫夐」
+  - 必须显示那些非默认、或其值与默认值不同的选项
 
-  - 鍙互鏄剧ず閭ｄ簺榛樿鍚敤銆佹垨鍏锋湁榛樿鍊肩殑閫夐」
+  - 可以显示那些默认启用、或具有默认值的选项
 
-浠呭湪鎸傝浇杈呭姪绋嬪簭涓庡唴鏍镐箣闂村唴閮ㄤ娇鐢紙渚嬪鏂囦欢鎻忚堪绗︼級锛屾垨浠呭湪鎸傝浇鏈熼棿璧蜂綔鐢紙渚嬪
-鎺у埗鏃ュ織锛坖ournal锛夊垱寤虹殑閭ｄ簺锛夌殑閫夐」鍏嶄簬涓婅堪瑙勫垯銆?
-涓婅堪瑙勫垯鐨勬牴鏈師鍥犳槸纭繚鍙互鍩轰簬 /proc/mounts 涓壘鍒扮殑淇℃伅鍑嗙‘鍦板鍒朵竴娆℃寕杞斤紙渚嬪
-鍗歌浇鍚庡啀娆℃寕杞斤級銆?
+仅在挂载辅助程序与内核之间内部使用（例如文件描述符），或仅在挂载期间起作用（例如
+控制日志（journal）创建的那些）的选项免于上述规则
+上述规则的根本原因是确保可以基于 /proc/mounts 中找到的信息准确地复制一次挂载（例如
+卸载后再次挂载）
 
-## 璧勬簮
+## 资源
 
 
-锛堟敞鎰忥紝鍏朵腑涓€浜涜祫婧愭湭涓庢渶鏂板唴鏍哥増鏈繚鎸佸悓姝ャ€傦級
+（注意，其中一些资源未与最新内核版本保持同步。）
 
 Creating Linux virtual filesystems. 2002
     <https://lwn.net/Articles/13325/>

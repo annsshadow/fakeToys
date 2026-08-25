@@ -1,48 +1,48 @@
 ﻿
-## Linux 鐨?Macintosh HFS 鏂囦欢绯荤粺
+## Linux Macintosh HFS 文件系统
 
 
-HFS 浠ｈ〃 `Hierarchical File System`锛堝垎灞傛枃浠剁郴缁燂級锛屾槸 Mac Plus 鍙婃墍鏈夊悗缁?Macintosh 鏈哄瀷鎵€浣跨敤鐨勬枃浠剁郴缁熴€傛洿鏃╃殑 Macintosh 鏈哄瀷浣跨敤 MFS锛坄Macintosh File
-System`锛孧acintosh 鏂囦欢绯荤粺锛夛紝璇ユ牸寮忎笉鍙楁敮鎸侊紱MacOS 8.1 鍙婃洿鏂扮増鏈敮鎸佷竴绉?鍚嶄负 HFS+ 鐨勬枃浠剁郴缁燂紝瀹冧笌 HFS 绫讳技浣嗗湪澶氫釜鏂归潰杩涜浜嗘墿灞曘€傝浠?Linux 璁块棶
-姝ょ被鏂囦欢绯荤粺锛岃浣跨敤 hfsplus 鏂囦欢绯荤粺椹卞姩銆?
-## 鎸傝浇閫夐」
+HFS 代表 `Hierarchical File System`（分层文件系统），是 Mac Plus 及所有后Macintosh 机型所使用的文件系统。更早的 Macintosh 机型使用 MFS（`Macintosh File
+System`，Macintosh 文件系统），该格式不受支持；MacOS 8.1 及更新版本支持一名为 HFS+ 的文件系统，它与 HFS 类似但在多个方面进行了扩展。要Linux 访问
+此类文件系统，请使用 hfsplus 文件系统驱动
+## 挂载选项
 
 
-鎸傝浇 HFS 鏂囦欢绯荤粺鏃讹紝鎺ュ彈浠ヤ笅閫夐」锛?
+挂载 HFS 文件系统时，接受以下选项
   creator=cccc, type=cccc
-	鎸囧畾鐢?MacOS finder 鏄剧ず鐨?creator/type 鍊硷紝鐢ㄤ簬鍒涘缓鏂版枃浠躲€?	榛樿鍊硷細'????'銆?
+	指定MacOS finder 显示creator/type 值，用于创建新文件	默认值：''
   uid=n, gid=n
-  	鎸囧畾鎷ユ湁鏂囦欢绯荤粺涓墍鏈夋枃浠剁殑鐢ㄦ埛/缁勩€?	榛樿鍊硷細鎸傝浇杩涚▼鐨勭敤鎴?缁?id銆?
+  	指定拥有文件系统中所有文件的用户/组	默认值：挂载进程的用id
   dir_umask=n, file_umask=n, umask=n
-	鎸囧畾鐢ㄤ簬鎵€鏈夋枃浠躲€佹墍鏈夌洰褰曟垨鎵€鏈夋枃浠朵笌鐩綍鐨?umask銆?	榛樿鍊间负鎸傝浇杩涚▼鐨?umask銆?
+	指定用于所有文件、所有目录或所有文件与目录umask	默认值为挂载进程umask
   session=n
-  	閫夋嫨瑕佷綔涓?HFS 鏂囦欢绯荤粺鎸傝浇鐨?CDROM 浼氳瘽銆傞粯璁や氦鐢?CDROM 椹卞姩
-	鏉ュ喅瀹氥€傝閫夐」鍦ㄥ簳灞傝澶囦笉鏄?CDROM 鏃朵細澶辫触銆?
+  	选择要作HFS 文件系统挂载CDROM 会话。默认交CDROM 驱动
+	来决定。该选项在底层设备不CDROM 时会失败
   part=n
-  	浠庤澶囦腑閫夋嫨绗?n 涓垎鍖恒€傝繖鍙 CDROM 鏈夋剰涔夛紝鍥犱负 CDROM 鏃犳硶鍦?	Linux 涓嬭鍒嗗尯銆傚浜庣鐩樿澶囷紝閫氱敤鐨勫垎鍖鸿В鏋愪唬鐮佷細鏇挎垜浠畬鎴愭浜嬨€?	榛樿瀹屽叏涓嶈В鏋愬垎鍖鸿〃銆?
+  	从设备中选择n 个分区。这只对 CDROM 有意义，因为 CDROM 无法	Linux 下被分区。对于磁盘设备，通用的分区解析代码会替我们完成此事	默认完全不解析分区表
   quiet
-  	蹇界暐鏃犳晥鐨勬寕杞介€夐」锛岃€屼笉鏄姤閿欍€?
+  	忽略无效的挂载选项，而不是报错
 
-## 鍐欏叆 HFS 鏂囦欢绯荤粺
-
-
-HFS 骞堕潪 UNIX 鏂囦欢绯荤粺锛屽洜姝ゅ畠涓嶅叿澶囦綘鎵€鏈熸湜鐨勫父瑙佺壒鎬э細
-
- - 浣犳棤娉曚慨鏀规枃浠剁殑 set-uid銆乻et-gid銆乻ticky 鎴栧彲鎵ц浣嶏紝涔熸棤娉曚慨鏀瑰叾 uid
-   鍜?gid銆? - 浣犳棤娉曞垱寤虹‖閾炬帴鎴栫鍙烽摼鎺ャ€佽澶囨枃浠躲€乻ocket 鎴?FIFO銆?
-涓嶈繃 HFS 鍏锋湁姣忎釜鏂囦欢澶氫釜 fork 鐨勬蹇点€傝繖浜涢潪鏍囧噯鐨?fork 鍦ㄥ父瑙勬枃浠剁郴缁熷懡鍚?绌洪棿涓琛ㄧず涓洪殣钘忕殑闄勫姞鏂囦欢锛岃繖澶氬皯鏈変簺 hack 鐨勫懗閬擄紝骞朵娇寰楀叾璇箟鏄惧緱鏈変簺
-濂囨€細
-
- - 浣犳棤娉曞垱寤恒€佸垹闄ゆ垨閲嶅懡鍚嶆枃浠剁殑璧勬簮 fork 鎴?Finder 鐨勫厓鏁版嵁銆? - 涓嶈繃瀹冧滑浼氶殢鐩稿簲鐨勬暟鎹?fork 鎴栫洰褰曚竴璧疯鍒涘缓锛堜娇鐢ㄩ粯璁ゅ€硷級銆佸垹闄ゅ拰閲嶅懡鍚嶃€? - 灏嗘枃浠跺鍒跺埌鍙︿竴绉嶆枃浠剁郴缁熸椂浼氫涪澶遍偅浜涘 MacOS 姝ｅ父宸ヤ綔蹇呬笉鍙皯鐨勫睘鎬с€?
-
-## 鍒涘缓 HFS 鏂囦欢绯荤粺
+## 写入 HFS 文件系统
 
 
-Robert Leslie 鐨?hfsutils 杞欢鍖呬腑鍖呭惈涓€涓悕涓?hformat 鐨勭▼搴忥紝鍙敤浜庡垱寤?HFS 鏂囦欢绯荤粺銆傝瑙?<https://www.mars.org/home/rob/proj/hfs/>銆?
+HFS 并非 UNIX 文件系统，因此它不具备你所期望的常见特性：
 
-## 鑷磋阿
+ - 你无法修改文件的 set-uid、set-gid、sticky 或可执行位，也无法修改其 uid
+   gid - 你无法创建硬链接或符号链接、设备文件、socket FIFO
+不过 HFS 具有每个文件多个 fork 的概念。这些非标准fork 在常规文件系统命空间中被表示为隐藏的附加文件，这多少有些 hack 的味道，并使得其语义显得有些
+奇怪：
+
+ - 你无法创建、删除或重命名文件的资源 fork Finder 的元数据 - 不过它们会随相应的数fork 或目录一起被创建（使用默认值）、删除和重命名 - 将文件复制到另一种文件系统时会丢失那些对 MacOS 正常工作必不可少的属性
+
+## 创建 HFS 文件系统
 
 
-HFS 椹卞姩鐢?Paul H. Hargrove锛坔argrove@sccm.Stanford.EDU锛夌紪鍐欍€俁oman Zippel
-锛坮oman@ardistech.com锛夐噸鍐欎簡浠ｇ爜鐨勫ぇ閮ㄥ垎锛屽苟寮曞叆浜嗘簮鑷?Brad Boyer 鐨?hfsplus
-椹卞姩鐨?btree 渚嬬▼銆?
+Robert Leslie hfsutils 软件包中包含一个名hformat 的程序，可用于创HFS 文件系统。详<https://www.mars.org/home/rob/proj/hfs/>
+
+## 致谢
+
+
+HFS 驱动Paul H. Hargrove（hargrove@sccm.Stanford.EDU）编写。Roman Zippel
+（roman@ardistech.com）重写了代码的大部分，并引入了源Brad Boyer hfsplus
+驱动btree 例程

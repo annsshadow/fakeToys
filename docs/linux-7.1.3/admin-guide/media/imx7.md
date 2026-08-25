@@ -1,16 +1,16 @@
-﻿## i.MX7 瑙嗛閲囬泦椹卞姩
+﻿## i.MX7 视频采集驱动
 
-鏈枃妗ｈ鏄?i.MX7 澶勭悊鍣ㄧ殑瑙嗛閲囬泦椹卞姩鏋舵瀯涓庡獟浣撶绾匡紝娑电洊 MIPI CSI-2 鎺ユ敹鍣ㄣ€佽棰戝璺鐢ㄥ櫒涓?CMOS 浼犳劅鍣ㄦ帴鍙ｏ紙CSI锛夌瓑纭欢鍗曞厓锛屼互鍙婂畠浠湪 V4L2 妗嗘灦涓嬫毚闇茬殑瀹炰綋涓庢暟鎹矾寰勩€?
+本文档说i.MX7 处理器的视频采集驱动架构与媒体管线，涵盖 MIPI CSI-2 接收器、视频多路复用器CMOS 传感器接口（CSI）等硬件单元，以及它们在 V4L2 框架下暴露的实体与数据路径
 
-### 绠€浠嬶紙Introduction锛?
+### 简介（Introduction
 
 
-涓?i.MX5/6 绯诲垪涓嶅悓锛宨.MX7 涓嶅寘鍚浘鍍忓鐞嗗崟鍏冿紙IPU锛夛紱鍥犳锛屾墽琛屾搷浣滄垨澶勭悊閲囬泦甯х殑鑳藉姏鍦ㄥ姛鑳戒笂杈冧笉涓板瘜銆?
+i.MX5/6 系列不同，i.MX7 不包含图像处理单元（IPU）；因此，执行操作或处理采集帧的能力在功能上较不丰富
 
-i.MX7 鐨勯噰闆嗗寘鍚笁涓崟鍏冿細
-- CMOS 浼犳劅鍣ㄦ帴鍙ｏ紙CSI锛?
-- 瑙嗛澶氳矾澶嶇敤鍣紙Video Multiplexer锛?
-- MIPI CSI-2 鎺ユ敹鍣紙MIPI CSI-2 Receiver锛?
+i.MX7 的采集包含三个单元：
+- CMOS 传感器接口（CSI
+- 视频多路复用器（Video Multiplexer
+- MIPI CSI-2 接收器（MIPI CSI-2 Receiver
 
 
    MIPI Camera Input ---> MIPI CSI-2 --- > |\
@@ -23,37 +23,37 @@ i.MX7 鐨勯噰闆嗗寘鍚笁涓崟鍏冿細
    Parallel Camera Input ----------------> | /
                                            |/
 
-鏇村淇℃伅锛岃鍙傝€冩渶鏂扮増鏈殑 i.MX7 鍙傝€冩墜鍐?[#f1]_銆?
+更多信息，请参考最新版本的 i.MX7 参考手[#f1]_
 
-### 瀹炰綋锛圗ntities锛?
+### 实体（Entities
 
 
 ### imx-mipi-csi2
 
 
-杩欐槸 MIPI CSI-2 鎺ユ敹鍣ㄥ疄浣撱€傚畠鏈変竴涓?sink pad 鐢ㄤ簬鎺ユ敹鏉ヨ嚜 MIPI CSI-2 鎽勫儚澶翠紶鎰熷櫒鐨勫儚绱犳暟鎹€傚畠鏈変竴涓?source pad锛屽搴斾簬铏氭嫙閫氶亾 0銆傝妯″潡鍏煎鏃╂湡鐗堟湰鐨?Samsung D-phy锛屽苟鏀寔涓ゆ潯 D-PHY Rx 鏁版嵁閫氶亾銆?
+这是 MIPI CSI-2 接收器实体。它有一sink pad 用于接收来自 MIPI CSI-2 摄像头传感器的像素数据。它有一source pad，对应于虚拟通道 0。该模块兼容早期版本Samsung D-phy，并支持两条 D-PHY Rx 数据通道
 
 ### csi-mux
 
 
-杩欐槸瑙嗛澶氳矾澶嶇敤鍣ㄣ€傚畠鏈変袱涓?sink pad锛岀敤浜庝粠甯︽湁骞惰鎺ュ彛鐨勬憚鍍忓ご浼犳劅鍣ㄦ垨 MIPI CSI-2 铏氭嫙閫氶亾 0 涓€夋嫨銆傚畠鏈変竴涓崟涓€鐨?source pad 璺敱鍒?CSI銆?
+这是视频多路复用器。它有两sink pad，用于从带有并行接口的摄像头传感器或 MIPI CSI-2 虚拟通道 0 中选择。它有一个单一source pad 路由CSI
 
 ### csi
 
 
-CSI 浣胯姱鐗囪兘澶熺洿鎺ヨ繛鎺ュ埌澶栭儴 CMOS 鍥惧儚浼犳劅鍣ㄣ€侰SI 鍙互鐩存帴涓庡苟琛屽拰 MIPI CSI-2 鎬荤嚎鎺ュ彛銆傚畠鎷ユ湁 256 x 64 鐨?FIFO 鐢ㄤ簬瀛樺偍鎺ユ敹鍒扮殑鍥惧儚鍍忕礌鏁版嵁锛屼互鍙婂祵鍏ュ紡 DMA 鎺у埗鍣ㄧ敤浜庨€氳繃 AHB 鎬荤嚎浠?FIFO 浼犺緭鏁版嵁銆?
+CSI 使芯片能够直接连接到外部 CMOS 图像传感器。CSI 可以直接与并行和 MIPI CSI-2 总线接口。它拥有 256 x 64 FIFO 用于存储接收到的图像像素数据，以及嵌入式 DMA 控制器用于通过 AHB 总线FIFO 传输数据
 
-璇ュ疄浣撴湁涓€涓?sink pad 浠?csi-mux 瀹炰綋鎺ユ敹鏁版嵁锛屼互鍙婁竴涓崟涓€鐨?source pad 灏嗚棰戝抚鐩存帴璺敱鍒板唴瀛樼紦鍐插尯銆傝 pad 璺敱鍒颁竴涓噰闆嗚澶囪妭鐐广€?
+该实体有一sink pad csi-mux 实体接收数据，以及一个单一source pad 将视频帧直接路由到内存缓冲区。该 pad 路由到一个采集设备节点
 
-### 浣跨敤璇存槑锛圲sage Notes锛?
-
-
-涓轰簡杈呭姪閰嶇疆锛屽苟涓轰簡涓庨偅浜涗粎浠庤棰戣澶囪妭鐐硅闂帶鍒堕」鐨?V4L2 搴旂敤绋嬪簭鍚戝悗鍏煎锛岄噰闆嗚澶囨帴鍙ｄ細浠庡綋鍓嶆祦姘寸嚎涓殑娲诲姩瀹炰綋缁ф壙鎺у埗椤癸紝鍥犳鏃㈠彲浠ョ洿鎺ヤ粠瀛愯澶囷紙subdev锛夎闂帶鍒堕」锛屼篃鍙互浠庢椿鍔ㄩ噰闆嗚澶囨帴鍙ｈ闂€備緥濡傦紝浼犳劅鍣ㄦ帶鍒堕」鏃㈠彲浠ヤ粠浼犳劅鍣ㄥ瓙璁惧鑾峰彇锛屼篃鍙互浠庢椿鍔ㄩ噰闆嗚澶囪幏鍙栥€?
-
-### 鎼厤 OV2680 鐨?Warp7
+### 使用说明（Usage Notes
 
 
-鍦ㄦ骞冲彴涓婏紝涓€涓?OV2680 MIPI CSI-2 妯″潡杩炴帴鍒板唴閮?MIPI CSI-2 鎺ユ敹鍣ㄣ€備互涓嬬ず渚嬮厤缃簡涓€鏉¤棰戦噰闆嗘祦姘寸嚎锛岃緭鍑轰负 800x600锛孊GGR 10 浣?bayer 鏍煎紡锛?
+为了辅助配置，并为了与那些仅从视频设备节点访问控制项V4L2 应用程序向后兼容，采集设备接口会从当前流水线中的活动实体继承控制项，因此既可以直接从子设备（subdev）访问控制项，也可以从活动采集设备接口访问。例如，传感器控制项既可以从传感器子设备获取，也可以从活动采集设备获取
+
+### 搭配 OV2680 Warp7
+
+
+在此平台上，一OV2680 MIPI CSI-2 模块连接到内MIPI CSI-2 接收器。以下示例配置了一条视频采集流水线，输出为 800x600，BGGR 10 bayer 格式
 
 
    # Setup links
@@ -69,7 +69,7 @@ CSI 浣胯姱鐗囪兘澶熺洿鎺ヨ繛鎺ュ埌澶栭儴 CMOS 鍥惧儚浼犳�
    media-ctl -V "'imx7-mipi-csis.0':0 [fmt:SBGGR10_1X10/800x600 field:none]"
    media-ctl -V "'csi':0 [fmt:SBGGR10_1X10/800x600 field:none]"
 
-姝ゅ悗鍗冲彲寮€濮嬫祦寮忎紶杈撱€倂4l2-ctl 宸ュ叿鍙敤浜庨€夋嫨浼犳劅鍣ㄦ敮鎸佺殑浠讳綍鍒嗚鲸鐜囥€?
+此后即可开始流式传输。v4l2-ctl 工具可用于选择传感器支持的任何分辨率
 
 
 	# media-ctl -p
@@ -130,11 +130,11 @@ CSI 浣胯姱鐗囪兘澶熺洿鎺ヨ繛鎺ュ埌澶栭儴 CMOS 鍥惧儚浼犳�
 	                [fmt:SBGGR10_1X10/800x600@1/30 field:none colorspace:srgb]
 	                -> "imx7-mipi-csis.0":0 [ENABLED]
 
-### 鎼厤 OV5640 鐨?i.MX6ULL-EVK
+### 搭配 OV5640 i.MX6ULL-EVK
 
 
-鍦ㄦ骞冲彴涓婏紝涓€涓苟琛岀殑 OV5640 浼犳劅鍣ㄨ繛鎺ュ埌 CSI 绔彛銆?
-浠ヤ笅绀轰緥閰嶇疆浜嗕竴鏉¤棰戦噰闆嗘祦姘寸嚎锛岃緭鍑轰负 640x480锛屾牸寮忎负 UYVY8_2X8锛?
+在此平台上，一个并行的 OV5640 传感器连接到 CSI 端口
+以下示例配置了一条视频采集流水线，输出为 640x480，格式为 UYVY8_2X8
 
 
    # Setup links
@@ -144,7 +144,7 @@ CSI 浣胯姱鐗囪兘澶熺洿鎺ヨ繛鎺ュ埌澶栭儴 CMOS 鍥惧儚浼犳�
    # Configure pads for pipeline
    media-ctl -v -V "'ov5640 1-003c':0 [fmt:UYVY8_2X8/640x480 field:none]"
 
-姝ゅ悗鍗冲彲寮€濮嬫祦寮忎紶杈擄細
+此后即可开始流式传输：
 
 
    gst-launch-1.0 -v v4l2src device=/dev/video1 ! video/x-raw,format=UYVY,width=640,height=480 ! v4l2convert ! fbdevsink
@@ -186,4 +186,4 @@ CSI 浣胯姱鐗囪兘澶熺洿鎺ヨ繛鎺ュ埌澶栭儴 CMOS 鍥惧儚浼犳�
 	                [fmt:UYVY8_2X8/640x480@1/30 field:none colorspace:srgb xfer:srgb ycbcr:601 quantization:full-range]
 	                -> "csi":0 [ENABLED,IMMUTABLE]
 
-### 鍙傝€冿紙References锛?
+### 参考（References

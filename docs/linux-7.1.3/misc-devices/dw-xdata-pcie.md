@@ -1,25 +1,25 @@
 ﻿
-## Synopsys DesignWare PCIe 娴侀噺鐢熸垚鍣紙浜︾О xData锛夐┍鍔?
+## Synopsys DesignWare PCIe 流量生成器（亦称 xData）驱
 
-鏀寔鐨勮姱鐗囷細
-Synopsys DesignWare PCIe 鍘熷瀷鏂规
+支持的芯片：
+Synopsys DesignWare PCIe 原型方案
 
-鏁版嵁鎵嬪唽锛?涓嶅叕寮€鎻愪緵
+数据手册不公开提供
 
-浣滆€咃細
+作者：
 Gustavo Pimentel <gustavo.pimentel@synopsys.com>
 
-### 鎻忚堪
+### 描述
 
 
-璇ラ┍鍔ㄥ簲浣滀负涓绘満渚э紙Root Complex锛夐┍鍔ㄤ互鍙婂寘鍚 IP 鐨?Synopsys DesignWare
-鍘熷瀷浣跨敤銆?
-dw-xdata-pcie 椹卞姩鍙敤浜庡惎鐢?绂佺敤浠讳竴鏂瑰悜锛堜簰鏂ワ級鐨?PCIe 娴侀噺鐢熸垚鍣紝骞跺厑璁?杩涜 PCIe 閾捐矾鎬ц兘鍒嗘瀽銆?
-涓庤椹卞姩鐨勪氦浜掗€氳繃妯″潡鍙傛暟瀹屾垚锛屽苟鍙湪杩愯鏃舵洿鏀广€傞┍鍔ㄥ皢璇锋眰鐨勫懡浠ょ姸鎬?淇℃伅杈撳嚭鍒?`/var/log/kern.log` 鎴?dmesg銆?
-### 绀轰緥
+该驱动应作为主机侧（Root Complex）驱动以及包含此 IP Synopsys DesignWare
+原型使用
+dw-xdata-pcie 驱动可用于启禁用任一方向（互斥）PCIe 流量生成器，并允进行 PCIe 链路性能分析
+与该驱动的交互通过模块参数完成，并可在运行时更改。驱动将请求的命令状信息输出`/var/log/kern.log` dmesg
+### 示例
 
 
-#### 鍐?TLPs 娴侀噺鐢熸垚 - Root Complex 鍒?Endpoint 鏂瑰悜
+#### TLPs 流量生成 - Root Complex Endpoint 方向
 
 
 ```
@@ -41,7 +41,7 @@ dw-xdata-pcie 椹卞姩鍙敤浜庡惎鐢?绂佺敤浠讳竴鏂瑰悜锛堜�
 
 
 ```
-#### 璇?TLPs 娴侀噺鐢熸垚 - Endpoint 鍒?Root Complex 鏂瑰悜
+#### TLPs 流量生成 - Endpoint Root Complex 方向
 
 
 ```

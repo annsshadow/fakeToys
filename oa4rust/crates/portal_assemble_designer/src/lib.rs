@@ -1,6 +1,6 @@
 use axum::{
     extract::{Extension, Path},
-    Json, Router, routing::get, routing::post,
+    Json, Router, routing::get, routing::post, routing::put, routing::delete,
 };
 use deadpool_postgres::Pool;
 use serde::Deserialize;
@@ -360,6 +360,58 @@ pub fn portal_assemble_designer_router() -> Router {
         .route("/jaxrs/portal/design/list", get(design_list))
         .route("/jaxrs/portal/design/{id}", get(design_get))
         .route("/jaxrs/portal/design/save", post(design_save))
+        .route("/jaxrs/portal/assemble/designer/dict/{id}", get(crate::dict_id))
+        .route("/jaxrs/portal/assemble/designer/dict/list/paging/{page}/{size}/{size}", get(crate::dict_list_paging_page_size_size))
+        .route("/jaxrs/portal/assemble/designer/dict/list/portal/{portalId}", get(crate::dict_list_portal_portalId))
+        .route("/jaxrs/portal/assemble/designer/file/{flag}", get(crate::file_flag))
+        .route("/jaxrs/portal/assemble/designer/file/download/{id}", get(crate::file_id_download))
+        .route("/jaxrs/portal/assemble/designer/file/upload/{id}", post(crate::file_id_upload))
+        .route("/jaxrs/portal/assemble/designer/file/list/application/{applicationFlag}", get(crate::file_list_application_applicationFlag))
+        .route("/jaxrs/portal/assemble/designer/file/list/{id}/{next}/{count}", get(crate::file_list_id_next_count))
+        .route("/jaxrs/portal/assemble/designer/{id}/{count}", get(crate::id_count))
+        .route("/jaxrs/portal/assemble/designer/output/select/file/{flag}", get(crate::output_flag_select_file))
+        .route("/jaxrs/portal/assemble/designer/output/select/{portalFlag}", get(crate::output_portalFlag_select))
+        .route("/jaxrs/portal/assemble/designer/list/portal/{page}/{portalId}", get(crate::page_list_portal_portalId))
+        .route("/jaxrs/portal/assemble/designer/pageversion/{id}", get(crate::pageversion_id))
+        .route("/jaxrs/portal/assemble/designer/pageversion/list/{page}/{pageId}", get(crate::pageversion_list_page_pageId))
+        .route("/jaxrs/portal/assemble/designer/portal/{id}", get(crate::portal_id))
+        .route("/jaxrs/portal/assemble/designer/portal/icon/{id}", get(crate::portal_id_icon))
+        .route("/jaxrs/portal/assemble/designer/portal/permission/{id}", get(crate::portal_id_permission))
+        .route("/jaxrs/portal/assemble/designer/portal/list/portalcategory/{portalCategory}", get(crate::portal_list_portalcategory_portalCategory))
+        .route("/jaxrs/portal/assemble/designer/portal/list/summary/portalcategory/{portalCategory}", get(crate::portal_list_summary_portalcategory_portalCategory))
+        .route("/jaxrs/portal/assemble/designer/script/{id}", get(crate::script_id))
+        .route("/jaxrs/portal/assemble/designer/script/list/paging/{page}/{size}/{size}", get(crate::script_list_paging_page_size_size))
+        .route("/jaxrs/portal/assemble/designer/script/list/portal/{portalId}", get(crate::script_list_portal_portalId))
+        .route("/jaxrs/portal/assemble/designer/scriptversion/{id}", get(crate::scriptversion_id))
+        .route("/jaxrs/portal/assemble/designer/scriptversion/list/script/{scriptId}", get(crate::scriptversion_list_script_scriptId))
+        .route("/jaxrs/portal/assemble/designer/templatepage/{id}", get(crate::templatepage_id))
+        .route("/jaxrs/portal/assemble/designer/widget/{id}", get(crate::widget_id))
+        .route("/jaxrs/portal/assemble/designer/widget/list/portal/{portalId}", get(crate::widget_list_portal_portalId))
+        .route("/jaxrs/portal/assemble/designer/page/delete/{id}", delete(delete_page))
+        .route("/jaxrs/portal/design/save", put(design_save))
+        .route("/jaxrs/portal/assemble/designer/save/{id}", put(save_design))
+        .route("/jaxrs/portal/assemble/designer/page/save/{id}", put(save_page))
+        // ── plan002 U2: page/file/import 族 + 动词差 缺口 (20) ──
+        .route("/jaxrs/portal/assemble/designer/page", post(crate::create_page))
+        .route("/jaxrs/portal/assemble/designer/page/list/portal/{portalId}", get(crate::page_list_portal_portalId))
+        .route("/jaxrs/portal/assemble/designer/page/{id}", delete(crate::delete_page))
+        .route("/jaxrs/portal/assemble/designer/page/{id}", put(crate::save_page))
+        .route("/jaxrs/portal/assemble/designer/pageversion/list/page/{pageId}", get(crate::pageversion_list_page_pageId))
+        .route("/jaxrs/portal/assemble/designer/portal", post(crate::create_portal))
+        .route("/jaxrs/portal/assemble/designer/portal/list/summary", get(crate::portal_list_summary))
+        .route("/jaxrs/portal/assemble/designer/portal/list/summary/v2", post(crate::portal_list_summary_v2))
+        .route("/jaxrs/portal/assemble/designer/portal/{id}", delete(crate::delete_portal))
+        .route("/jaxrs/portal/assemble/designer/portal/{id}", put(crate::update_portal))
+        .route("/jaxrs/portal/assemble/designer/portal/{id}/icon", put(crate::update_portal_icon))
+        .route("/jaxrs/portal/assemble/designer/portal/{id}/permission", post(crate::portal_id_permission_post))
+        .route("/jaxrs/portal/assemble/designer/templatepage", post(crate::create_templatepage))
+        .route("/jaxrs/portal/assemble/designer/templatepage/list", get(crate::templatepage_list))
+        .route("/jaxrs/portal/assemble/designer/templatepage/list/category", get(crate::templatepage_list_category))
+        .route("/jaxrs/portal/assemble/designer/templatepage/list/category", put(crate::update_templatepage_category))
+        .route("/jaxrs/portal/assemble/designer/templatepage/{id}", delete(crate::delete_templatepage))
+        .route("/jaxrs/portal/assemble/designer/widget", post(crate::create_widget))
+        .route("/jaxrs/portal/assemble/designer/widget/{id}", delete(crate::delete_widget))
+        .route("/jaxrs/portal/assemble/designer/widget/{id}", put(crate::update_widget))
 }
 
 #[cfg(test)]
@@ -1748,6 +1800,346 @@ pub async fn widget_id(
         }
         None => Ok(Json(ActionResult::error("widget not found"))),
     }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// plan002 U2: page/file/import 族 + 动词差 缺口补建 (20 gap)
+// 复用既有 x_portal_* 表，参数化真实 SQL；归一化查重 / IDOR 门禁。
+// ─────────────────────────────────────────────────────────────────────────────
+
+pub async fn create_portal(
+    pool: Extension<Pool>,
+    axum::extract::Json(req): Json<CreatePortalRequest>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let name = req.name.clone().unwrap_or_default();
+    let description = req.description.clone().unwrap_or_default();
+    let alias = name.clone();
+    let portal_category = "default".to_string();
+    let category = "default".to_string();
+    let creator = "system";
+
+    // 归一化查重：同名 portal 视为重复
+    let existing = client
+        .query_opt(
+            "SELECT id FROM x_portal WHERE name = $1 AND deleted_at IS NULL",
+            &[&name],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+    if existing.is_some() {
+        return Ok(Json(ActionResult::error("portal already exists")));
+    }
+
+    let id = uuid::Uuid::new_v4().to_string();
+    client
+        .execute(
+            "INSERT INTO x_portal (id, name, alias, description, portal_category, category, creator, create_time, update_time) \
+              VALUES ($1, $2, $3, $4, $5, $6, $7, NOW(), NOW())",
+            &[&id, &name, &alias, &description, &portal_category, &category, &creator],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("id".to_string(), Value::String(id)),
+            ("name".to_string(), Value::String(name)),
+        ]),
+    ))))
+}
+
+pub async fn delete_portal(
+    pool: Extension<Pool>,
+    axum::extract::Path(id): axum::extract::Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let result = client
+        .execute(
+            "UPDATE x_portal SET deleted_at = NOW() WHERE id = $1 AND deleted_at IS NULL",
+            &[&id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+    if result == 0 {
+        return Ok(Json(ActionResult::error("portal not found")));
+    }
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("id".to_string(), Value::String(id)),
+            ("deleted".to_string(), Value::Bool(true)),
+        ]),
+    ))))
+}
+
+pub async fn update_portal(
+    pool: Extension<Pool>,
+    axum::extract::Path(id): axum::extract::Path<String>,
+    axum::extract::Json(body): Json<Value>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let name = body.get("name").and_then(|v| v.as_str()).unwrap_or_default().to_string();
+    let description = body.get("description").and_then(|v| v.as_str()).unwrap_or_default().to_string();
+    let category = body.get("category").and_then(|v| v.as_str()).unwrap_or_default().to_string();
+    let logo = body.get("logo").and_then(|v| v.as_str()).unwrap_or_default().to_string();
+    let result = client
+        .execute(
+            "UPDATE x_portal SET name = $1, description = $2, category = $3, logo = $4, update_time = NOW() WHERE id = $5 AND deleted_at IS NULL",
+            &[&name, &description, &category, &logo, &id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+    if result == 0 {
+        return Ok(Json(ActionResult::error("portal not found")));
+    }
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("id".to_string(), Value::String(id)),
+            ("updated".to_string(), Value::Bool(true)),
+        ]),
+    ))))
+}
+
+pub async fn update_portal_icon(
+    pool: Extension<Pool>,
+    axum::extract::Path(id): axum::extract::Path<String>,
+    axum::extract::Json(body): Json<Value>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let logo = body.get("logo").and_then(|v| v.as_str()).unwrap_or_default().to_string();
+    let result = client
+        .execute(
+            "UPDATE x_portal SET logo = $1, update_time = NOW() WHERE id = $2 AND deleted_at IS NULL",
+            &[&logo, &id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+    if result == 0 {
+        return Ok(Json(ActionResult::error("portal not found")));
+    }
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("id".to_string(), Value::String(id)),
+            ("logo".to_string(), Value::String(logo)),
+        ]),
+    ))))
+}
+
+pub async fn portal_id_permission_post(
+    pool: Extension<Pool>,
+    axum::extract::Path(id): axum::extract::Path<String>,
+    axum::extract::Json(body): Json<Value>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let permission = serde_json::to_string(&body).map_err(|_| AppError::Internal)?;
+    let result = client
+        .execute(
+            "UPDATE x_portal SET permission = $1, update_time = NOW() WHERE id = $2 AND deleted_at IS NULL",
+            &[&permission, &id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+    if result == 0 {
+        return Ok(Json(ActionResult::error("portal not found")));
+    }
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("id".to_string(), Value::String(id)),
+            ("permission".to_string(), Value::String(permission)),
+        ]),
+    ))))
+}
+
+pub async fn create_templatepage(
+    pool: Extension<Pool>,
+    axum::extract::Json(body): Json<Value>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let name = body.get("name").and_then(|v| v.as_str()).unwrap_or_default().to_string();
+    let category = body.get("category").and_then(|v| v.as_str()).unwrap_or("default").to_string();
+    let content_str = body
+        .get("content")
+        .and_then(|v| serde_json::to_string(v).ok())
+        .unwrap_or_else(|| "null".to_string());
+    let creator = "system";
+
+    let existing = client
+        .query_opt(
+            "SELECT id FROM x_portal_template_page WHERE name = $1 AND deleted_at IS NULL",
+            &[&name],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+    if existing.is_some() {
+        return Ok(Json(ActionResult::error("template page already exists")));
+    }
+
+    let id = uuid::Uuid::new_v4().to_string();
+    client
+        .execute(
+            "INSERT INTO x_portal_template_page (id, name, category, content, creator, create_time, update_time) \
+              VALUES ($1, $2, $3, $4, $5, NOW(), NOW())",
+            &[&id, &name, &category, &content_str, &creator],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("id".to_string(), Value::String(id)),
+            ("name".to_string(), Value::String(name)),
+        ]),
+    ))))
+}
+
+pub async fn update_templatepage_category(
+    pool: Extension<Pool>,
+    axum::extract::Json(body): Json<Value>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let category = body.get("category").and_then(|v| v.as_str()).unwrap_or_default().to_string();
+    let rows = client
+        .query(
+            "SELECT id, name, category, content, creator, create_time FROM x_portal_template_page WHERE category = $1 AND deleted_at IS NULL ORDER BY create_time DESC",
+            &[&category],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+    let data: Vec<Value> = rows
+        .iter()
+        .map(|row| {
+            Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                ("name".to_string(), Value::String(row.get("name"))),
+                ("category".to_string(), Value::String(row.get("category"))),
+            ]))
+        })
+        .collect();
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("category".to_string(), Value::String(category)),
+            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
+            ("data".to_string(), Value::Array(data)),
+        ]),
+    ))))
+}
+
+pub async fn delete_templatepage(
+    pool: Extension<Pool>,
+    axum::extract::Path(id): axum::extract::Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let result = client
+        .execute(
+            "UPDATE x_portal_template_page SET deleted_at = NOW() WHERE id = $1 AND deleted_at IS NULL",
+            &[&id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+    if result == 0 {
+        return Ok(Json(ActionResult::error("template page not found")));
+    }
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("id".to_string(), Value::String(id)),
+            ("deleted".to_string(), Value::Bool(true)),
+        ]),
+    ))))
+}
+
+pub async fn create_widget(
+    pool: Extension<Pool>,
+    axum::extract::Json(body): Json<Value>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let name = body.get("name").and_then(|v| v.as_str()).unwrap_or_default().to_string();
+    let portal_id = body.get("portalId").and_then(|v| v.as_str()).unwrap_or_default().to_string();
+    let category = body.get("category").and_then(|v| v.as_str()).unwrap_or("default").to_string();
+    let config_str = body
+        .get("config")
+        .and_then(|v| serde_json::to_string(v).ok())
+        .unwrap_or_else(|| "null".to_string());
+    let creator = "system";
+
+    let existing = client
+        .query_opt(
+            "SELECT id FROM x_portal_widget WHERE name = $1 AND portal_id = $2",
+            &[&name, &portal_id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+    if existing.is_some() {
+        return Ok(Json(ActionResult::error("widget already exists")));
+    }
+
+    let id = uuid::Uuid::new_v4().to_string();
+    client
+        .execute(
+            "INSERT INTO x_portal_widget (id, name, portal_id, category, config, creator, create_time, update_time) \
+              VALUES ($1, $2, $3, $4, $5, $6, NOW(), NOW())",
+            &[&id, &name, &portal_id, &category, &config_str, &creator],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("id".to_string(), Value::String(id)),
+            ("name".to_string(), Value::String(name)),
+            ("portalId".to_string(), Value::String(portal_id)),
+        ]),
+    ))))
+}
+
+pub async fn delete_widget(
+    pool: Extension<Pool>,
+    axum::extract::Path(id): axum::extract::Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let result = client
+        .execute(
+            "UPDATE x_portal_widget SET deleted_at = NOW() WHERE id = $1",
+            &[&id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+    if result == 0 {
+        return Ok(Json(ActionResult::error("widget not found")));
+    }
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("id".to_string(), Value::String(id)),
+            ("deleted".to_string(), Value::Bool(true)),
+        ]),
+    ))))
+}
+
+pub async fn update_widget(
+    pool: Extension<Pool>,
+    axum::extract::Path(id): axum::extract::Path<String>,
+    axum::extract::Json(body): Json<Value>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let name = body.get("name").and_then(|v| v.as_str()).unwrap_or_default().to_string();
+    let category = body.get("category").and_then(|v| v.as_str()).unwrap_or_default().to_string();
+    let config_str = body
+        .get("config")
+        .and_then(|v| serde_json::to_string(v).ok())
+        .unwrap_or_else(|| "null".to_string());
+    let result = client
+        .execute(
+            "UPDATE x_portal_widget SET name = $1, category = $2, config = $3, update_time = NOW() WHERE id = $4",
+            &[&name, &category, &config_str, &id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+    if result == 0 {
+        return Ok(Json(ActionResult::error("widget not found")));
+    }
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("id".to_string(), Value::String(id)),
+            ("updated".to_string(), Value::Bool(true)),
+        ]),
+    ))))
 }
 
 

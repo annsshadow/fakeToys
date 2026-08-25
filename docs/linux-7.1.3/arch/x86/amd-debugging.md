@@ -2,33 +2,33 @@
 Debugging AMD Zen systems
 +++++++++++++++++++++++++
 
-## 绠€浠?
+## 简
 
-鏈枃妗ｆ弿杩颁簡鍙敤浜庤皟璇?AMD Zen 绯荤粺闂鐨勬妧鏈€傚畠闈㈠悜寮€鍙戣€呭拰鎶€鏈汉鍛橈紝浠ュ府鍔╀粬浠瘑鍒拰瑙ｅ喅闂銆?
+本文档描述了可用于调AMD Zen 系统问题的技术。它面向开发者和技术人员，以帮助他们识别和解决问题
 ## S3 涓?s2idle
 
 
-鍦?AMD 绯荤粺涓婏紝鏃犳硶鍚屾椂鏀寔鎸傝捣鍒?RAM锛圫3锛夊拰鎸傝捣鍒扮┖闂诧紙s2idle锛夈€傝纭浣犵殑绯荤粺鏀寔鍝妯″紡锛屽彲浠ユ煡鐪?`cat /sys/power/mem_sleep`銆傚鏋滃畠鏄剧ず `s2idle [deep]`锛屽垯鏀寔 **S3**锛涘鏋滄樉绀?`[s2idle]`锛屽垯鏀寔 **s2idle**銆?
-鍦ㄦ敮鎸?**S3** 鐨勭郴缁熶笂锛屽浐浠跺皢琚敤鏉ュ皢鎵€鏈夌‖浠剁疆浜庨€傚綋鐨勪綆鍔熻€楃姸鎬併€?
-鍦ㄦ敮鎸?**s2idle** 鐨勭郴缁熶笂锛屽唴鏍稿皢璐熻矗灏嗚澶囪浆鎹㈠埌閫傚綋鐨勪綆鍔熻€楃姸鎬併€傚綋鎵€鏈夎澶囬兘澶勪簬閫傚綋鐨勪綆鍔熻€楃姸鎬佹椂锛岀‖浠跺皢杞崲鍒扮‖浠朵紤鐪犵姸鎬併€?
-鍦ㄤ竴涓寕璧峰懆鏈熶箣鍚庯紝浣犲彲浠ラ€氳繃鏌ョ湅 `cat /sys/power/suspend_stats/last_hw_sleep` 鏉ヤ簡瑙ｅ湪纭欢浼戠湢鐘舵€佷腑鑺辫垂浜嗗灏戞椂闂淬€?
-姝ゆ祦绋嬪浘璇存槑浜?AMD s2idle 鎸傝捣娴佺▼鏄浣曞伐浣滅殑銆?
+AMD 系统上，无法同时支持挂起RAM（S3）和挂起到空闲（s2idle）。要确认你的系统支持哪种模式，可以查`cat /sys/power/mem_sleep`。如果它显示 `s2idle [deep]`，则支持 **S3**；如果显`[s2idle]`，则支持 **s2idle**
+在支**S3** 的系统上，固件将被用来将所有硬件置于适当的低功耗状态
+在支**s2idle** 的系统上，内核将负责将设备转换到适当的低功耗状态。当所有设备都处于适当的低功耗状态时，硬件将转换到硬件休眠状态
+在一个挂起周期之后，你可以通过查看 `cat /sys/power/suspend_stats/last_hw_sleep` 来了解在硬件休眠状态中花费了多少时间
+此流程图说明AMD s2idle 挂起流程是如何工作的
 
-姝ゆ祦绋嬪浘璇存槑浜?AMD s2idle 鎭㈠娴佺▼鏄浣曞伐浣滅殑銆?
+此流程图说明AMD s2idle 恢复流程是如何工作的
 
-## s2idle 璋冭瘯宸ュ叿
+## s2idle 调试工具
 
 
-鐢变簬闂鍙兘鍑虹幇鍦ㄨ澶氬湴鏂癸紝鍥犳宸茬粡鍒涘缓浜嗕竴涓皟璇曞伐鍏凤紝浣嶄簬
-`amd-debug-tools <https://git.kernel.org/pub/scm/linux/kernel/git/superm1/amd-debug-tools.git/about/>`_锛?瀹冨彲浠ュ府鍔╂祴璇曞父瑙侀棶棰樺苟鎻愪緵寤鸿銆?
-濡傛灉浣犳湁 s2idle 闂锛屾渶濂戒粠杩欓噷寮€濮嬶紝骞堕伒寰叾鍙戠幇缁撴灉涓殑璇存槑銆傚鏋滀綘浠嶇劧鏈夐棶棰橈紝璇峰甫鐫€姝よ剼鏈敓鎴愮殑鎶ュ憡锛屽悜
+由于问题可能出现在许多地方，因此已经创建了一个调试工具，位于
+`amd-debug-tools <https://git.kernel.org/pub/scm/linux/kernel/git/superm1/amd-debug-tools.git/about/>`_它可以帮助测试常见问题并提供建议
+如果你有 s2idle 问题，最好从这里开始，并遵循其发现结果中的说明。如果你仍然有问题，请带着此脚本生成的报告，向
 `drm/amd gitlab <https://gitlab.freedesktop.org/drm/amd/-/issues/new?issuable_template=s2idle_BUG_TEMPLATE>`_
-鎻愪氦涓€涓己闄枫€?
-## 鏉ヨ嚜 IRQ 鐨勪吉 s2idle 鍞ら啋
+提交一个缺陷
+## 来自 IRQ 的伪 s2idle 唤醒
 
 
-浼敜閱掗€氬父浼氭湁涓€涓?IRQ 琚缃埌 `/sys/power/pm_wakeup_irq`銆傝繖鍙互鍖归厤鍒?`/proc/interrupts` 鏉ョ‘瀹氭槸浠€涔堣澶囧敜閱掍簡绯荤粺銆?
-濡傛灉杩欒繕涓嶈冻浠ヨ皟璇曢棶棰橈紝閭ｄ箞鍙互浣跨敤浠ヤ笅 sysfs 鏂囦欢
+伪唤醒通常会有一IRQ 被设置到 `/sys/power/pm_wakeup_irq`。这可以匹配`/proc/interrupts` 来确定是什么设备唤醒了系统
+如果这还不足以调试问题，那么可以使用以下 sysfs 文件
 
 ```
 
@@ -36,9 +36,9 @@ Debugging AMD Zen systems
   # echo 1 | sudo tee /sys/power/pm_print_times
 
 ```
-鍦ㄨ繘琛岃繖浜涙洿鏀逛箣鍚庯紝鍐呮牳灏嗘樉绀哄彲浠ュ洖婧埌鍐呮牳 s2idle 寰幆浠ｇ爜鐨勬秷鎭紝骞跺湪鍞ら啋鏃舵樉绀轰换浣曟椿璺冪殑
-GPIO 鏉ユ簮銆?
-濡傛灉鍞ら啋鏄敱 ACPI SCI 寮曡捣鐨勶紝鍙兘闇€瑕侀澶栫殑 ACPI 璋冭瘯
+在进行这些更改之后，内核将显示可以回溯到内核 s2idle 循环代码的消息，并在唤醒时显示任何活跃的
+GPIO 来源
+如果唤醒是由 ACPI SCI 引起的，可能需要额外的 ACPI 调试
 
 ```
 
@@ -48,11 +48,11 @@ GPIO 鏉ユ簮銆?
   # echo 0xffff0000 | sudo tee /sys/module/acpi/parameters/debug_layer
 
 ```
-## 鏉ヨ嚜 GPIO 鐨勪吉 s2idle 鍞ら啋
+## 来自 GPIO 的伪 s2idle 唤醒
 
 
-濡傛灉鍦ㄥ敜閱掔郴缁熸椂鏌愪釜 GPIO 澶勪簬娲昏穬鐘舵€侊紝鐞嗘兂鎯呭喌涓嬩綘搴旇鏌ョ湅鍘熺悊鍥炬潵纭畾瀹冧笌浠€涔堣澶囩浉鍏宠仈銆傚鏋滃師鐞嗗浘涓嶅彲鐢紝鍙︿竴绉嶇瓥鐣ユ槸鏌ョ湅 ACPI _EVT() 鏉＄洰锛屼互纭畾褰撹 GPIO 娲昏穬鏃朵細閫氱煡浠€涔堣澶囥€?
-涓句竴涓亣璁剧殑渚嬪瓙锛屽亣璁?GPIO 59 鍞ら啋浜嗙郴缁熴€備綘鍙互鏌ョ湅 SSDT 鏉ョ‘瀹?GPIO 59 娲昏穬鏃朵細閫氱煡浠€涔堣澶囥€?
+如果在唤醒系统时某个 GPIO 处于活跃状态，理想情况下你应该查看原理图来确定它与什么设备相关联。如果原理图不可用，另一种策略是查看 ACPI _EVT() 条目，以确定当该 GPIO 活跃时会通知什么设备
+举一个假设的例子，假GPIO 59 唤醒了系统。你可以查看 SSDT 来确GPIO 59 活跃时会通知什么设备
 ```
 
   $ python3 -c "print(hex(59))"
@@ -84,7 +84,7 @@ GPIO 鏉ユ簮銆?
   }
 
 ```
-浣犲彲浠ョ湅鍒帮紝鍦ㄨ繖绉嶆儏鍐典笅锛屽綋 GPIO 59 娲昏穬鏃朵細閫氱煡璁惧 `\_SB.PCI0.GP17.XHC1`銆傛樉鐒惰繖鏄竴涓?XHCI 鎺у埗鍣紝浣嗚鏇磋繘涓€姝ワ紝浣犲彲浠ラ€氳繃灏嗗畠涓庝互涓嬪唴瀹瑰尮閰嶆潵纭畾瀹冩槸鍝釜 XHCI 鎺у埗鍣?
+你可以看到，在这种情况下，当 GPIO 59 活跃时会通知设备 `\_SB.PCI0.GP17.XHC1`。显然这是一XHCI 控制器，但要更进一步，你可以通过将它与以下内容匹配来确定它是哪个 XHCI 控制
 ```
 
   $ grep "PCI0.GP17.XHC1" /sys/bus/acpi/devices/*/path
@@ -97,7 +97,7 @@ GPIO 鏉ユ簮銆?
   /sys/bus/acpi/devices/LNXPOWER:0d/path:\_SB_.PCI0.GP17.XHC1.PWRS
 
 ```
-杩欓噷浣犲彲浠ョ湅鍒板畠鍖归厤鍒颁簡 `device:2d`銆傛煡鐪?`physical_node`
+这里你可以看到它匹配到了 `device:2d`。查`physical_node`
 
 ```
 
@@ -105,14 +105,14 @@ GPIO 鏉ユ簮銆?
   lrwxrwxrwx 1 root root 0 Feb 12 13:22 /sys/bus/acpi/devices/device:2d/physical_node -> ../../../../../pci0000:00/0000:00:08.1/0000:c2:00.4
 
 ```
-浜庢槸鐪熺浉澶х櫧锛氫笌姝?GPIO 鍞ら啋鐩稿叧鑱旂殑 PCI 璁惧鏄?`0000:c2:00.4`銆?
-`amd_s2idle.py` 鑴氭湰灏嗕负浣犳崟鑾峰ぇ閮ㄥ垎杩欎簺宸ヤ欢銆?
-## s2idle PM 璋冭瘯娑堟伅
+于是真相大白：与GPIO 唤醒相关联的 PCI 设备`0000:c2:00.4`
+`amd_s2idle.py` 脚本将为你捕获大部分这些工件
+## s2idle PM 调试消息
 
 
-鍦?AMD 绯荤粺鐨?s2idle 娴佺▼涓紝ACPI LPS0 椹卞姩璐熻矗妫€鏌ユ墍鏈?uPEP 绾︽潫銆傛湭婊¤冻 uPEP 绾︽潫骞朵笉浼氶樆姝?s0i3 杩涘叆銆傝繖鎰忓懗鐫€濡傛灉鏈変竴浜涚害鏉熸湭婊¤冻锛屽嵆浣垮瓨鍦ㄦ煇浜涘凡鐭ラ棶棰橈紝鍐呮牳浠嶅彲鑳藉皾璇曡繘鍏?s2idle銆?
-瑕佹縺娲?PM 璋冭瘯锛屽彲浠ュ湪寮曞鏃舵寚瀹?`pm_debug_messagess` 鍐呮牳鍛戒护琛岄€夐」锛屾垨鑰呭啓鍏?`/sys/power/pm_debug_messages`銆傛湭婊¤冻鐨勭害鏉熶細鏄剧ず鍦ㄥ唴鏍告棩蹇椾腑锛屽苟鍙互閫氳繃澶勭悊鍐呮牳鐜舰缂撳啿鍖虹殑鏃ュ織宸ュ叿锛堝 `dmesg` 鎴?`journalctl`锛夋煡鐪嬨€?
-濡傛灉绯荤粺鍦ㄥ埛鏂拌繖浜涙秷鎭箣鍓嶅湪杩涘嚭鏃跺喕缁擄紝涓€涓湁鐢ㄧ殑璋冭瘯绛栫暐鏄В缁?`amd_pmc` 椹卞姩锛屼互闃绘鍚戝钩鍙板彂鍑哄紑濮?s0i3 杩涘叆鐨勯€氱煡銆傝繖灏嗛樆姝㈢郴缁熷湪杩涘叆鎴栭€€鍑烘椂鍐荤粨锛屽苟璁╀綘鏌ョ湅鎵€鏈夊け璐ョ殑
+AMD 系统s2idle 流程中，ACPI LPS0 驱动负责检查所uPEP 约束。未满足 uPEP 约束并不会阻s0i3 进入。这意味着如果有一些约束未满足，即使存在某些已知问题，内核仍可能尝试进s2idle
+要激PM 调试，可以在引导时指`pm_debug_messagess` 内核命令行选项，或者写`/sys/power/pm_debug_messages`。未满足的约束会显示在内核日志中，并可以通过处理内核环形缓冲区的日志工具（如 `dmesg` `journalctl`）查看
+如果系统在刷新这些消息之前在进出时冻结，一个有用的调试策略是解`amd_pmc` 驱动，以阻止向平台发出开s0i3 进入的通知。这将阻止系统在进入或退出时冻结，并让你查看所有失败的
 
 ```
 
@@ -126,80 +126,80 @@ GPIO 鏉ユ簮銆?
   ACPI: LPI: Constraint not met; min power state:%s current power state:%s
 
 ```
-## s2idle 闂鐨勫巻鍙茬ず渚?
+## s2idle 问题的历史示
 
-涓轰簡甯姪鐞嗚В鍙兘鍙戠敓鐨勯棶棰樼被鍨嬩互鍙婂浣曡皟璇曞畠浠紝杩欓噷鎻愪緵涓€浜涘凡瑙ｅ喅鐨?s2idle 闂鐨勫巻鍙茬ず渚嬨€?
-### 鏍稿績绂荤嚎鍖栵紙Core offlining锛?
+为了帮助理解可能发生的问题类型以及如何调试它们，这里提供一些已解决s2idle 问题的历史示例
+### 核心离线化（Core offlining
 
-涓€浣嶆渶缁堢敤鎴锋姤鍛婅锛屽皢涓€涓牳蹇冪绾夸細闃绘绯荤粺姝ｇ‘杩涘叆 s0i3銆傝繖閫氳繃浣跨敤鍐呴儴 AMD 宸ュ叿璋冭瘯鏉ユ崟鑾峰拰鏄剧ず鏉ヨ嚜纭欢鐨勪竴涓叉寚鏍囷紝鏄剧ず浜嗘牳蹇冪绾挎椂鍙戠敓浜嗕粈涔堝彉鍖栥€傜‘瀹氱殑鏄紝纭欢娌℃湁鏀跺埌绂荤嚎鏍稿績宸茶繘鍏ユ渶娣辩姸鎬佺殑閫氱煡锛屽洜姝ゅ畠闃绘浜?CPU 杩涘叆鏈€娣辩姸鎬併€傝闂琚皟璇曚负涓€涓己澶辩殑鍛戒护鈥斺€斿湪绂荤嚎鏃惰鏍稿績杩涘叆 C3 鐘舵€併€?
+一位最终用户报告说，将一个核心离线会阻止系统正确进入 s0i3。这通过使用内部 AMD 工具调试来捕获和显示来自硬件的一串指标，显示了核心离线时发生了什么变化。确定的是，硬件没有收到离线核心已进入最深状态的通知，因此它阻止CPU 进入最深状态。该问题被调试为一个缺失的命令——在离线时让核心进入 C3 状态
 `commit d6b88ce2eb9d2 ("ACPI: processor idle: Allow playing dead in C3 state") <https://git.kernel.org/torvalds/c/d6b88ce2eb9d2>`_
 
-### 鎭㈠鍚庢崯鍧忥紙Corruption after resume锛?
+### 恢复后损坏（Corruption after resume
 
-Rembrandt 鍑虹幇鐨勪竴涓ぇ闂鏄仮澶嶅悗鍥惧舰鎹熷潖銆傝繖鏄敱浜?PSP 鍜岄┍鍔ㄨ亴璐ｄ箣闂寸殑閿欎綅閫犳垚鐨勩€侾SP 浼氫繚瀛樺拰鎭㈠ DMCUB锛屼絾椹卞姩鍋囧畾瀹冮渶瑕佸湪鎭㈠鏃堕噸缃?DMCUB銆傚疄闄呬笂锛岃繖绉嶉敊浣嶅湪鏇存棭鐨勭鐗囦笂涔熷瓨鍦ㄤ簬锛屽彧鏄病鏈夎瑙傚療鍒般€?
+Rembrandt 出现的一个大问题是恢复后图形损坏。这是由PSP 和驱动职责之间的错位造成的。PSP 会保存和恢复 DMCUB，但驱动假定它需要在恢复时重DMCUB。实际上，这种错位在更早的硅片上也存在于，只是没有被观察到
 `commit 79d6b9351f086 ("drm/amd/display: Don't reinitialize DMCUB on s0ix resume") <https://git.kernel.org/torvalds/c/79d6b9351f086>`_
 
-### 杩炵画鎸傝捣澶辫触锛圔ack to Back suspends fail锛?
+### 连续挂起失败（Back to Back suspends fail
 
-褰撲娇鐢ㄤ竴涓Е鍙?IRQ 鏉ュ敜閱掔殑鍞ら啋婧愭椂锛宲inctrl-amd 椹卞姩涓殑涓€涓己闄峰彲鑳戒細鎹曡幏鍒?IRQ 鐨勯敊璇姸鎬侊紝浠庤€岄樆姝㈢郴缁熸纭洖鍒扮潯鐪犵姸鎬併€?
+当使用一个触IRQ 来唤醒的唤醒源时，pinctrl-amd 驱动中的一个缺陷可能会捕获IRQ 的错误状态，从而阻止系统正确回到睡眠状态
 `commit b8c824a869f22 ("pinctrl: amd: Don't save/restore interrupt status and wake status bits") <https://git.kernel.org/torvalds/c/b8c824a869f22>`_
 
-### 5 鍒嗛挓鍚庣殑浼畾鏃跺櫒鍞ら啋锛圫purious timer based wakeup after 5 minutes锛?
+### 5 分钟后的伪定时器唤醒（Spurious timer based wakeup after 5 minutes
 
-HPET 鏇捐鐢ㄦ潵涓虹郴缁熺紪绋嬪敜閱掓簮锛岀劧鑰岃繖瀵艰嚧浜?5 鍒嗛挓鍚庣殑浼敜閱掋€傛纭娇鐢ㄧ殑闂归挓搴旇鏄?ACPI 闂归挓銆?
+HPET 曾被用来为系统编程唤醒源，然而这导致5 分钟后的伪唤醒。正确使用的闹钟应该ACPI 闹钟
 `commit 3d762e21d5637 ("rtc: cmos: Use ACPI alarm for non-Intel x86 systems too") <https://git.kernel.org/torvalds/c/3d762e21d5637>`_
 
-### 鎭㈠鍚庣鐩樻秷澶憋紙Disk disappears after resume锛?
+### 恢复后磁盘消失（Disk disappears after resume
 
-浠?s2idle 鎭㈠鍚庯紝NVME 纾佺洏浼氭秷澶便€傝繖鏄敱浜?BIOS 娌℃湁鎸囧畾 _DSD StorageD3Enable 灞炴€ч€犳垚鐨勩€傝繖瀵艰嚧 NVME 椹卞姩娌℃湁鍦ㄦ寕璧锋椂灏嗙鐩樼疆浜庨鏈熺姸鎬侊紝骞跺湪鎭㈠鏃跺け璐ャ€?
+s2idle 恢复后，NVME 磁盘会消失。这是由BIOS 没有指定 _DSD StorageD3Enable 属性造成的。这导致 NVME 驱动没有在挂起时将磁盘置于预期状态，并在恢复时失败
 `commit e79a10652bbd3 ("ACPI: x86: Force StorageD3Enable on more products") <https://git.kernel.org/torvalds/c/e79a10652bbd3>`_
 
-### 浼?IRQ1锛圫purious IRQ1锛?
+### IRQ1（Spurious IRQ1
 
-璁稿 Renoir銆丩ucienne銆丆ezanne 鍜?Barcelo 骞冲彴瀛樺湪涓€涓钩鍙板浐浠剁己闄凤紝鍗冲湪 s0i3 鎭㈠鏈熼棿瑙﹀彂 IRQ1銆?
-璇ラ棶棰樺凡鍦ㄥ钩鍙板浐浠朵腑淇锛屼絾璁稿绯荤粺涓嶅啀鎺ユ敹浠讳綍骞冲彴鍥轰欢鏇存柊銆?
+许多 Renoir、Lucienne、Cezanne Barcelo 平台存在一个平台固件缺陷，即在 s0i3 恢复期间触发 IRQ1
+该问题已在平台固件中修复，但许多系统不再接收任何平台固件更新
 `commit 8e60615e89321 ("platform/x86/amd: pmc: Disable IRQ1 wakeup for RN/CZN") <https://git.kernel.org/torvalds/c/8e60615e89321>`_
 
-### 纭欢瓒呮椂锛圚ardware timeout锛?
+### 硬件超时（Hardware timeout
 
-纭欢闄や簡鎺ュ彈鏉ヨ嚜 amd-pmc 椹卞姩鐨勫€间箣澶栵紝杩樻墽琛岃澶氭搷浣溿€傜敱浜庝笌纭欢鐨勯€氫俊璺緞鏄竴涓偖绠憋紝瀹冨彲鑳芥棤娉曡冻澶熷揩鍦板搷搴斻€?
+硬件除了接受来自 amd-pmc 驱动的值之外，还执行许多操作。由于与硬件的通信路径是一个邮箱，它可能无法足够快地响应
 ```
 
   PM: dpm_run_callback(): acpi_subsys_suspend_noirq+0x0/0x50 returns -110
   amd_pmc AMDI0005:00: PM: failed to suspend noirq: error -110
 
 ```
-璁℃椂闂鏄€氳繃姣旇緝绌洪棽鎺╃爜鐨勫€兼潵纭畾鐨勩€?
+计时问题是通过比较空闲掩码的值来确定的
 `commit 3c3c8e88c8712 ("platform/x86: amd-pmc: Increase the response register timeout") <https://git.kernel.org/torvalds/c/3c3c8e88c8712>`_
 
-### 闈㈡澘寮€鍚椂鏃犳硶杩涘叆纭欢浼戠湢鐘舵€侊紙Failed to reach hardware sleep state with panel on锛?
+### 面板开启时无法进入硬件休眠状态（Failed to reach hardware sleep state with panel on
 
-鍦ㄤ竴浜?Strix 绯荤粺涓婏紝瑙傚療鍒版煇浜涢潰鏉夸細鍦ㄥ唴閮ㄩ潰鏉垮紑鍚椂闃绘绯荤粺杩涘叆纭欢浼戠湢鐘舵€併€?
-灏界闈㈡澘鍦ㄦ寕璧锋湡闂磋鍏抽棴锛屼絾瀹冩毚闇蹭簡涓€涓鏃堕棶棰橈細涓€涓腑鏂鑷存樉绀虹‖浠跺敜閱掑苟闃绘浜嗕綆鍔熻€楃姸鎬佺殑杩涘叆銆?
+在一Strix 系统上，观察到某些面板会在内部面板开启时阻止系统进入硬件休眠状态
+尽管面板在挂起期间被关闭，但它暴露了一个计时问题：一个中断导致显示硬件唤醒并阻止了低功耗状态的进入
 `commit 40b8c14936bd2 ("drm/amd/display: Disable unneeded hpd interrupts during dm_init") <https://git.kernel.org/torvalds/c/40b8c14936bd2>`_
 
-## 杩愯鏃跺姛鑰楅棶棰?
+## 运行时功耗问
 
-杩愯鏃跺姛鑰楀彈璁稿鍥犵礌褰卞搷锛屽寘鎷絾涓嶉檺浜?PCIe 涓诲姩鐘舵€佺數婧愮鐞嗭紙ASPM锛夌殑閰嶇疆銆佹樉绀轰寒搴︺€丆PU 鐨?EPP 绛栫暐锛屼互鍙婅澶囩殑鐢垫簮绠＄悊銆?
+运行时功耗受许多因素影响，包括但不限PCIe 主动状态电源管理（ASPM）的配置、显示亮度、CPU EPP 策略，以及设备的电源管理
 ### ASPM
 
 
-涓轰簡鑾峰緱鏈€浣崇殑杩愯鏃跺姛鑰楋紝ASPM 搴旇鎸夌収纭欢鍘傚晢鐨?BIOS 棰勬湡杩涜缂栫▼銆備负浜嗗疄鐜拌繖涓€鐐癸紝Linux 鍐呮牳搴旇浠?`CONFIG_PCIEASPM_DEFAULT` 璁句负 `y` 鐨勬柟寮忕紪璇戯紝骞朵笖涓嶅簲淇敼 sysfs 鏂囦欢 `/sys/module/pcie_aspm/parameters/policy`銆?
-鏈€鍊煎緱娉ㄦ剰鐨勬槸锛屽鏋滀换浣曡澶囩殑 L1.2 娌℃湁姝ｇ‘閰嶇疆锛孲oC 灏嗘棤娉曡繘鍏ユ渶娣辩殑绌洪棽鐘舵€併€?
-### EPP 绛栫暐
+为了获得最佳的运行时功耗，ASPM 应该按照硬件厂商BIOS 预期进行编程。为了实现这一点，Linux 内核应该`CONFIG_PCIEASPM_DEFAULT` 设为 `y` 的方式编译，并且不应修改 sysfs 文件 `/sys/module/pcie_aspm/parameters/policy`
+最值得注意的是，如果任何设备的 L1.2 没有正确配置，SoC 将无法进入最深的空闲状态
+### EPP 策略
 
 
-`energy_performance_preference` sysfs 鏂囦欢鍙敤浜庝负 CPU 璁剧疆鍋忓悜鏁堢巼鎴栨€ц兘銆傚綋瀹冩洿鍋忓悜鎬ц兘鏃讹紝涓庣數姹犵画鑸椂闂存湁鐩存帴鍏崇郴銆?
+`energy_performance_preference` sysfs 文件可用于为 CPU 设置偏向效率或性能。当它更偏向性能时，与电池续航时间有直接关系
 
-## BIOS 璋冭瘯娑堟伅
+## BIOS 调试消息
 
 
-澶у鏁?OEM 鏈哄櫒娌℃湁鐢ㄤ簬杈撳嚭鍐呮牳鎴?BIOS 璋冭瘯娑堟伅鐨勪覆鍙?UART銆傜劧鑰?BIOS 璋冭瘯娑堟伅瀵逛簬鐞嗚В BIOS 缂洪櫡浠ュ強璋冪敤 BIOS AML 鐨?Linux 鍐呮牳椹卞姩缂洪櫡寰堟湁鐢ㄣ€?
-鐢变簬澶у鏁?OEM AMD 绯荤粺涓婄殑 BIOS 鍩轰簬 AMD 鍙傝€?BIOS锛岀敤浜庡鍑鸿皟璇曟秷鎭殑鍩虹璁炬柦閫氬父涓?AMD 鍙傝€?BIOS 鐩稿悓銆?
-### 鎵嬪姩瑙ｆ瀽锛圡anually Parsing锛?
+大多OEM 机器没有用于输出内核BIOS 调试消息的串UART。然BIOS 调试消息对于理解 BIOS 缺陷以及调用 BIOS AML Linux 内核驱动缺陷很有用
+由于大多OEM AMD 系统上的 BIOS 基于 AMD 参BIOS，用于导出调试消息的基础设施通常AMD 参BIOS 相同
+### 手动解析（Manually Parsing
 
-閫氬父鏈変竴涓?ACPI 鏂规硶 `\M460`锛孉ML 鐨勪笉鍚岃矾寰勪細璋冪敤瀹冩潵鍚?BIOS 涓茶鏃ュ織鍙戝嚭涓€鏉℃秷鎭€傛鏂规硶鎺ュ彈
-7 涓弬鏁帮紝绗竴涓槸瀛楃涓诧紝鍏朵綑鏄彲閫夌殑
+通常有一ACPI 方法 `\M460`，AML 的不同路径会调用它来BIOS 串行日志发出一条消息。此方法接受
+7 个参数，第一个是字符串，其余是可选的
 
 ```
 
@@ -212,55 +212,55 @@ HPET 鏇捐鐢ㄦ潵涓虹郴缁熺紪绋嬪敜閱掓簮锛岀劧鑰岃繖瀵
   M460 ("  OEM-ASL-PCIe Address (0x%X)._REG (%d %d)  PCSA = %d\n", DADR, Arg0, Arg1, PCSA, Zero, Zero)
 
 ```
-閫氬父鎵ц鏃讹紝`\M460` 鏂规硶浼氬皢闄勫姞鍙傛暟濉厖鍒板瓧绗︿覆涓€備负浜嗕粠 Linux 鍐呮牳鑾峰彇杩欎簺娑堟伅锛孉CPICA 涓?鍔犲叆浜嗕竴涓挬瀛愶紝瀹冨彲浠ユ崟鑾峰彂閫佺粰 `\M460` 鐨?*鍙傛暟**骞跺皢鍏舵墦鍗板埌鍐呮牳鐜舰缂撳啿鍖恒€?
+通常执行时，`\M460` 方法会将附加参数填充到字符串中。为了从 Linux 内核获取这些消息，ACPICA 加入了一个钩子，它可以捕获发送给 `\M460` *参数**并将其打印到内核环形缓冲区
 ```
 
   extrace-0174 ex_trace_args         :  "  OEM-ASL-PCIe Address (0x%X)._REG (%d %d)  PCSA = %d\n", ec106000, 2, 1, 1, 0, 0
 
 ```
-涓轰簡鑾峰彇杩欎簺娑堟伅锛屼綘闇€瑕佷互 `CONFIG_ACPI_DEBUG` 缂栬瘧锛岀劧鍚庢墦寮€浠ヤ笅 ACPICA 璺熻釜鍙傛暟銆?杩欏彲浠ュ湪鍐呮牳鍛戒护琛屾垨杩愯鏃跺畬鎴愶細
+为了获取这些消息，你需要以 `CONFIG_ACPI_DEBUG` 编译，然后打开以下 ACPICA 跟踪参数这可以在内核命令行或运行时完成：
 
 - `acpi.trace_method_name=\M460`
 - `acpi.trace_state=method`
 
-娉ㄦ剰锛氳繖浜涘湪寮曞鏃跺彲鑳介潪甯稿槇鏉傘€傚鏋滀綘鍦ㄥ唴鏍稿懡浠よ涓婃墦寮€杩欎簺鍙傛暟锛岃鍚屾椂鑰冭檻灏?`CONFIG_LOG_BUF_SHIFT` 璋冨ぇ鍒版洿澶х殑鍊硷紙濡?17锛夛紝浠ラ伩鍏嶄涪澶辨棭鏈熷紩瀵兼秷鎭€?
-### 宸ュ叿杈呭姪瑙ｆ瀽锛圱ool assisted Parsing锛?
+注意：这些在引导时可能非常嘈杂。如果你在内核命令行上打开这些参数，请同时考虑`CONFIG_LOG_BUF_SHIFT` 调大到更大的值（17），以避免丢失早期引导消息
+### 工具辅助解析（Tool assisted Parsing
 
-濡備笂鎵€杩帮紝鎵嬪姩瑙ｆ瀽鍙兘寰堢箒鐞愶紝灏ゅ叾鏄湪鏈夊ぇ閲忔秷鎭椂銆備负浜嗗府鍔╄В鍐宠繖涓棶棰橈紝宸茬粡鍒涘缓浜嗕竴涓伐鍏凤紝浣嶄簬
-`amd-debug-tools <https://git.kernel.org/pub/scm/linux/kernel/git/superm1/amd-debug-tools.git/about/>`_锛?鐢ㄤ簬甯姪瑙ｆ瀽杩欎簺娑堟伅銆?
-## 闅忔満閲嶅惎闂
+如上所述，手动解析可能很繁琐，尤其是在有大量消息时。为了帮助解决这个问题，已经创建了一个工具，位于
+`amd-debug-tools <https://git.kernel.org/pub/scm/linux/kernel/git/superm1/amd-debug-tools.git/about/>`_用于帮助解析这些消息
+## 随机重启问题
 
 
-褰撳彂鐢熼殢鏈洪噸鍚椂锛岄噸鍚殑楂樺眰鍘熷洜瀛樺偍鍦ㄤ竴涓瘎瀛樺櫒涓紝骞朵細淇濈暀鍒颁笅涓€娆″紩瀵笺€?
-閲嶅惎鍘熷洜鍒嗕负 6 绫伙細
- - Software induced锛堣蒋浠跺紩鍙戯級
- - Power state transition锛堢數婧愮姸鎬佽浆鎹級
- - Pin induced锛堝紩鑴氬紩鍙戯級
- - Hardware induced锛堢‖浠跺紩鍙戯級
- - Remote reset锛堣繙绋嬪浣嶏級
- - Internal CPU event锛堝唴閮?CPU 浜嬩欢锛?
+当发生随机重启时，重启的高层原因存储在一个寄存器中，并会保留到下一次引导
+重启原因分为 6 类：
+ - Software induced（软件引发）
+ - Power state transition（电源状态转换）
+ - Pin induced（引脚引发）
+ - Hardware induced（硬件引发）
+ - Remote reset（远程复位）
+ - Internal CPU event（内CPU 事件
    :header: "Bit", "Type", "Reason"
    :align: left
 
-   "0",  "Pin",      "鐑紩鑴?BP_THERMTRIP_L 琚Е鍙?
-   "1",  "Pin",      "鐢垫簮鎸夐挳琚寜涓嬩簡 4 绉?
-   "2",  "Pin",      "鍏虫満寮曡剼琚Е鍙?
-   "4",  "Remote",   "鎺ユ敹鍒拌繙绋?ASF 鍏虫満鍛戒护"
-   "9",  "Internal", "鍐呴儴 CPU 鐑檺鍒惰瑙﹀彂"
-   "16", "Pin",      "绯荤粺澶嶄綅寮曡剼 BP_SYS_RST_L 琚Е鍙?
-   "17", "Software", "杞欢鍙戝嚭浜?PCI 澶嶄綅"
-   "18", "Software", "杞欢鍚戝浣嶆帶鍒跺瘎瀛樺櫒 0xCF9 鍐欏叆浜?0x4"
-   "19", "Software", "杞欢鍚戝浣嶆帶鍒跺瘎瀛樺櫒 0xCF9 鍐欏叆浜?0x6"
-   "20", "Software", "杞欢鍚戝浣嶆帶鍒跺瘎瀛樺櫒 0xCF9 鍐欏叆浜?0xE"
-   "21", "ACPI-state", "鍙戠敓浜?ACPI 鐢垫簮鐘舵€佽浆鎹?
-   "22", "Pin",      "閿洏澶嶄綅寮曡剼 KB_RST_L 琚Е鍙?
-   "23", "Internal", "鍙戠敓浜嗗唴閮?CPU 鍏虫満浜嬩欢"
-   "24", "Hardware", "绯荤粺鍦ㄥけ璐ュ惎鍔ㄥ畾鏃跺櫒鍒版湡鍓嶆湭鑳藉紩瀵?
-   "25", "Hardware", "纭欢鐪嬮棬鐙楀畾鏃跺櫒鍒版湡"
-   "26", "Remote",   "鎺ユ敹鍒拌繙绋?ASF 澶嶄綅鍛戒护"
-   "27", "Internal", "涓€涓湭绾犳閿欒瀵艰嚧浜嗘暟鎹粐鐗╋紙data fabric锛夊悓姝ユ椽娉涗簨浠?
-   "29", "Internal", "FCH 鍜?MP1 鏈兘瀹屾垚鐑浣嶆彙鎵?
-   "30", "Internal", "鍙戠敓浜嗗鍋舵牎楠岄敊璇?
-   "31", "Internal", "鍙戠敓浜嗚蒋浠跺悓姝ユ椽娉涗簨浠?
+   "0",  "Pin",      "热引BP_THERMTRIP_L 被触
+   "1",  "Pin",      "电源按钮被按下了 4 
+   "2",  "Pin",      "关机引脚被触
+   "4",  "Remote",   "接收到远ASF 关机命令"
+   "9",  "Internal", "内部 CPU 热限制被触发"
+   "16", "Pin",      "系统复位引脚 BP_SYS_RST_L 被触
+   "17", "Software", "软件发出PCI 复位"
+   "18", "Software", "软件向复位控制寄存器 0xCF9 写入0x4"
+   "19", "Software", "软件向复位控制寄存器 0xCF9 写入0x6"
+   "20", "Software", "软件向复位控制寄存器 0xCF9 写入0xE"
+   "21", "ACPI-state", "发生ACPI 电源状态转
+   "22", "Pin",      "键盘复位引脚 KB_RST_L 被触
+   "23", "Internal", "发生了内CPU 关机事件"
+   "24", "Hardware", "系统在失败启动定时器到期前未能引
+   "25", "Hardware", "硬件看门狗定时器到期"
+   "26", "Remote",   "接收到远ASF 复位命令"
+   "27", "Internal", "一个未纠正错误导致了数据织物（data fabric）同步洪泛事
+   "29", "Internal", "FCH MP1 未能完成热复位握
+   "30", "Internal", "发生了奇偶校验错
+   "31", "Internal", "发生了软件同步洪泛事
 
-姝や俊鎭湪鍐呮牳寮曞鏃惰鍙栧苟鎵撳嵃鍒?syslog 涓€傚綋鍙戠敓闅忔満閲嶅惎鏃讹紝姝ゆ秷鎭湁鍔╀簬纭畾涓嬩竴涓璋冭瘯鐨勭粍浠躲€?
+此信息在内核引导时读取并打印syslog 中。当发生随机重启时，此消息有助于确定下一个要调试的组件

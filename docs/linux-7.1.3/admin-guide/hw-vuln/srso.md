@@ -1,91 +1,91 @@
-﻿## 鎺ㄦ祴杩斿洖鏍堟孩鍑猴紙Speculative Return Stack Overflow锛孲RSO锛?
+﻿## 推测返回栈溢出（Speculative Return Stack Overflow，SRSO
 
-杩欐槸閽堝鍦?AMD 澶勭悊鍣ㄤ笂鍙戠幇鐨勬帹娴嬭繑鍥炴爤婧㈠嚭锛圫RSO锛夋紡娲炵殑缂撹В鎺柦銆傚叾鏈哄埗濡備粖鏄紬鎵€鍛ㄧ煡鐨勫満鏅細姣掑寲锛坧oisoning锛塁PU 鍔熻兘鍗曞厓 鈥斺€?鍦ㄨ繖绉嶆儏鍐典笅鏄垎鏀洰鏍囩紦鍐插尯锛圔TB锛夊拰杩斿洖鍦板潃棰勬祴鍣紙RAP锛?鈥斺€?鐒跺悗璇遍獥鎻愬崌鐨勭壒鏉冨煙锛堝唴鏍革級娉勬紡鏁忔劅鏁版嵁銆?
-AMD CPU 浣跨敤杩斿洖鍦板潃棰勬祴鍣紙鍙堢О杩斿洖鍦板潃鏍?杩斿洖鏍堢紦鍐插尯锛孯eturn Address Stack/Return Stack Buffer锛夋潵棰勬祴 RET 鎸囦护銆傚湪鏌愪簺鎯呭喌涓嬶紝涓€涓潪鏋舵瀯锛坣on-architectural锛夌殑 CALL 鎸囦护锛堝嵆琚娴嬩负 CALL 浣嗗疄闄呭苟闈?CALL 鐨勬寚浠わ級鍙互鍦?RAP 涓垱寤轰竴涓潯鐩紝璇ユ潯鐩彲鑳借鐢ㄦ潵棰勬祴鍚庣画 RET 鎸囦护鐨勭洰鏍囥€?
-瀵艰嚧杩欎竴鐐圭殑鍏蜂綋鎯呭喌鍥犲井鏋舵瀯鑰屽紓锛屼絾浠や汉鎷呭咖鐨勬槸锛屾敾鍑昏€呭彲浠ラ敊璇湴璁粌锛坢is-train锛塁PU BTB 鏉ラ娴嬪唴鏍哥┖闂翠腑鐨勯潪鏋舵瀯 CALL 鎸囦护锛屽苟鍒╃敤瀹冩潵鎺у埗鍚庣画鍐呮牳 RET 鐨勬帹娴嬬洰鏍囷紝浠庤€屽彲鑳介€氳繃鎺ㄦ祴渚т俊閬擄紙speculative side-channel锛夊鑷翠俊鎭硠闇层€?
-璇ラ棶棰樺湪 CVE-2023-20569 涓嬭璺熻釜銆?
-### 鍙楀奖鍝嶇殑澶勭悊鍣?
+这是针对AMD 处理器上发现的推测返回栈溢出（SRSO）漏洞的缓解措施。其机制如今是众所周知的场景：毒化（poisoning）CPU 功能单元 —在这种情况下是分支目标缓冲区（BTB）和返回地址预测器（RAP—然后诱骗提升的特权域（内核）泄漏敏感数据
+AMD CPU 使用返回地址预测器（又称返回地址返回栈缓冲区，Return Address Stack/Return Stack Buffer）来预测 RET 指令。在某些情况下，一个非架构（non-architectural）的 CALL 指令（即被预测为 CALL 但实际并CALL 的指令）可以RAP 中创建一个条目，该条目可能被用来预测后续 RET 指令的目标
+导致这一点的具体情况因微架构而异，但令人担忧的是，攻击者可以错误地训练（mis-train）CPU BTB 来预测内核空间中的非架构 CALL 指令，并利用它来控制后续内核 RET 的推测目标，从而可能通过推测侧信道（speculative side-channel）导致信息泄露
+该问题在 CVE-2023-20569 下被跟踪
+### 受影响的处理
 
-AMD Zen锛岀 1-4 浠ｃ€傚嵆鎵€鏈?family 0x17 鍜?0x19銆傝緝鏃х殑澶勭悊鍣ㄥ皻鏈鐮旂┒銆?
-### 绯荤粺淇℃伅涓庨€夐」
+AMD Zen，第 1-4 代。即所family 0x17 0x19。较旧的处理器尚未被研究
+### 系统信息与选项
 
 
-棣栧厛锛岃浣跨紦瑙ｆ帾鏂芥湁鏁堬紝蹇呴』鍔犺浇鏈€鏂扮殑寰爜锛坢icrocode锛夈€?
-鏄剧ず SRSO 缂撹В鐘舵€佺殑 sysfs 鏂囦欢鏄細
+首先，要使缓解措施有效，必须加载最新的微码（microcode）
+显示 SRSO 缓解状态的 sysfs 文件是：
 
   /sys/devices/system/cpu/vulnerabilities/spec_rstack_overflow
 
-姝ゆ枃浠朵腑鍙兘鐨勫€间负锛?
- - 'Not affected'锛堜笉鍙楀奖鍝嶏級锛?
-   澶勭悊鍣ㄤ笉鏄撳彈鏀诲嚮銆?
-- 'Vulnerable'锛堟槗鍙楁敾鍑伙級锛?
-   澶勭悊鍣ㄦ槗鍙楁敾鍑讳笖鏈簲鐢ㄤ换浣曠紦瑙ｆ帾鏂姐€?
- - 'Vulnerable: No microcode'锛堟槗鍙楁敾鍑伙細鏃犲井鐮侊級锛?
-   澶勭悊鍣ㄦ槗鍙楁敾鍑伙紝鏈簲鐢ㄦ墿灞?IBPB 鍔熻兘浠ヨВ鍐宠婕忔礊鐨勫井鐮併€?
- - 'Vulnerable: Safe RET, no microcode'锛堟槗鍙楁敾鍑伙細Safe RET锛屾棤寰爜锛夛細
+此文件中可能的值为
+ - 'Not affected'（不受影响）
+   处理器不易受攻击
+- 'Vulnerable'（易受攻击）
+   处理器易受攻击且未应用任何缓解措施
+ - 'Vulnerable: No microcode'（易受攻击：无微码）
+   处理器易受攻击，未应用扩IBPB 功能以解决该漏洞的微码
+ - 'Vulnerable: Safe RET, no microcode'（易受攻击：Safe RET，无微码）：
 
-   宸插簲鐢?鈥淪afe RET鈥?缂撹В鎺柦锛堣涓嬫枃锛変互淇濇姢鍐呮牳锛屼絾鏈簲鐢ㄦ墿灞?IBPB 鐨勫井鐮併€傜敤鎴风┖闂翠换鍔″彲鑳戒粛鐒舵槗鍙楁敾鍑汇€?
- - 'Vulnerable: Microcode, no safe RET'锛堟槗鍙楁敾鍑伙細寰爜锛屾棤 Safe RET锛夛細
+   已应“Safe RET缓解措施（见下文）以保护内核，但未应用扩IBPB 的微码。用户空间任务可能仍然易受攻击
+ - 'Vulnerable: Microcode, no safe RET'（易受攻击：微码，无 Safe RET）：
 
-   宸插簲鐢ㄦ墿灞?IBPB 鍔熻兘寰爜琛ヤ竵銆傚畠涓嶈В鍐?User->Kernel 鍜?Guest->Host 杞崲淇濇姢锛屼絾瀹冭В鍐充簡 User->User 鍜?VM->VM 鏀诲嚮鍚戦噺銆?
-   娉ㄦ剰锛孶ser->User 缂撹В鐢?Spectre v2 缂撹В涓?IBPB 鏂归潰鐨勯€夋嫨鏂瑰紡鎺у埗锛?
-     - conditional IBPB锛堟潯浠?IBPB锛夛細
+   已应用扩IBPB 功能微码补丁。它不解User->Kernel Guest->Host 转换保护，但它解决了 User->User VM->VM 攻击向量
+   注意，User->User 缓解Spectre v2 缓解IBPB 方面的选择方式控制
+     - conditional IBPB（条IBPB）：
 
-       姣忎釜杩涚▼鍙互閫夋嫨鏄惁闇€瑕佸湪鍏跺懆鍥村彂鍑?IBPB锛岄€氳繃 PR_SPEC_DISABLE/_ENABLE 绛夛紝鍙傝 [spectre](spectre)
+       每个进程可以选择是否需要在其周围发IBPB，通过 PR_SPEC_DISABLE/_ENABLE 等，参见 [spectre](spectre)
 
-     - strict锛堜弗鏍硷級锛?
-       鍗冲缁堝紑鍚?鈥斺€?閫氳繃鍦ㄥ唴鏍稿懡浠よ涓婃彁渚?spectre_v2_user=on
+     - strict（严格）
+       即始终开—通过在内核命令行上提spectre_v2_user=on
 
    (spec_rstack_overflow=microcode)
 
- - 'Mitigation: Safe RET'锛堢紦瑙ｏ細Safe RET锛夛細
+ - 'Mitigation: Safe RET'（缓解：Safe RET）：
 
-   寰爜/杞欢缁勫悎缂撹В銆傚畠閫氳繃瑙ｅ喅 User->Kernel 鍜?Guest->Host 杞崲淇濇姢鏉ヨˉ鍏呮墿灞?IBPB 寰爜琛ヤ竵鍔熻兘銆?
-   榛樿閫夋嫨鎴栫粡鐢?spec_rstack_overflow=safe-ret 閫夋嫨銆?
- - 'Mitigation: IBPB'锛堢紦瑙ｏ細IBPB锛夛細
+   微码/软件组合缓解。它通过解决 User->Kernel Guest->Host 转换保护来补充扩IBPB 微码补丁功能
+   默认选择或经spec_rstack_overflow=safe-ret 选择
+ - 'Mitigation: IBPB'（缓解：IBPB）：
 
-   涓庝笂闈㈢殑 鈥渟afe RET鈥?绫讳技鐨勪繚鎶わ紝浣嗗湪鐗规潈鍩熶氦鍙夛紙User->Kernel锛孏uest->Host锛夋椂閲囩敤 IBPB 灞忛殰銆?
+   与上面的 “safe RET类似的保护，但在特权域交叉（User->Kernel，Guest->Host）时采用 IBPB 屏障
   (spec_rstack_overflow=ibpb)
 
- - 'Mitigation: IBPB on VMEXIT'锛堢紦瑙ｏ細VMEXIT 涓婄殑 IBPB锛夛細
+ - 'Mitigation: IBPB on VMEXIT'（缓解：VMEXIT 上的 IBPB）：
 
-   瑙ｅ喅浜戞彁渚涘晢鍦烘櫙鐨勭紦瑙?鈥斺€?浠?Guest->Host 杞崲銆?
+   解决云提供商场景的缓—Guest->Host 转换
    (spec_rstack_overflow=ibpb-vmexit)
 
- - 'Mitigation: Reduced Speculation'锛堢紦瑙ｏ細鍑忓皯鐨勬帹娴嬶級锛?
-   褰撻€夋嫨浜嗕笂闈㈢殑 鈥淚BPB on VMEXIT鈥?骞朵笖 CPU 鏀寔 BpSpecReduce 浣嶆椂锛屾缂撹В浼氳嚜鍔ㄥ惎鐢ㄣ€?
-   瀹冨湪鍏锋湁 SRSO_USER_KERNEL_NO=1 CPUID 浣嶇殑鏈哄櫒涓婅嚜鍔ㄥ惎鐢ㄣ€傚湪杩欑鎯呭喌涓嬶紝浠ｇ爜閫昏緫鍒囨崲鍒颁笂闈㈢殑 =ibpb-vmexit 缂撹В锛屽洜涓虹敤鎴?鍐呮牳杈圭晫涓嶅啀鍙楀奖鍝嶏紝鍥犳涓嶅啀闇€瑕?鈥渟afe RET鈥濄€?
-   鍦ㄥ惎鐢?IBPB on VMEXIT 缂撹В閫夐」鍚庯紝浼氭娴嬪埌 BpSpecReduce 浣嶏紙鎵€鏈夋绫绘満鍣ㄤ笂閮藉瓨鍦ㄨ鍔熻兘锛夛紝杩欏疄闄呬笂浼氳鐩?IBPB on VMEXIT锛屽洜涓哄畠鐨勬€ц兘褰卞搷灏忓緱澶氾紝骞朵笖涔熷鐞嗕簡 guest->host 鏀诲嚮鍚戦噺銆?
-瑕佸埄鐢ㄨ婕忔礊锛屾敾鍑昏€呴渶瑕侊細
+ - 'Mitigation: Reduced Speculation'（缓解：减少的推测）
+   当选择了上面的 “IBPB on VMEXIT并且 CPU 支持 BpSpecReduce 位时，此缓解会自动启用
+   它在具有 SRSO_USER_KERNEL_NO=1 CPUID 位的机器上自动启用。在这种情况下，代码逻辑切换到上面的 =ibpb-vmexit 缓解，因为用内核边界不再受影响，因此不再需“safe RET”
+   在启IBPB on VMEXIT 缓解选项后，会检测到 BpSpecReduce 位（所有此类机器上都存在该功能），这实际上会覆IBPB on VMEXIT，因为它的性能影响小得多，并且也处理了 guest->host 攻击向量
+要利用该漏洞，攻击者需要：
 
- - 鍦ㄦ満鍣ㄤ笂鑾峰緱鏈湴璁块棶鏉冮檺
+ - 在机器上获得本地访问权限
 
- - 绐佺牬 kASLR
+ - 突破 kASLR
 
- - 鍦ㄨ繍琛岀殑鍐呮牳涓壘鍒板彲鐢ㄤ簬婕忔礊鍒╃敤鐨?gadget
+ - 在运行的内核中找到可用于漏洞利用gadget
 
- - 鏍规嵁寰灦鏋勶紝鍙兘闇€瑕佸湪鍏勫紵绾跨▼涓婂垱寤哄苟鍥哄畾涓€涓澶栫殑宸ヤ綔璐熻浇锛堝湪 fam 0x19 涓婁笉蹇呰锛?
- - 杩愯婕忔礊鍒╃敤
+ - 根据微架构，可能需要在兄弟线程上创建并固定一个额外的工作负载（在 fam 0x19 上不必要
+ - 运行漏洞利用
 
-鑰冭檻鍒版瘡绉嶇紦瑙ｇ被鍨嬬殑鎬ц兘褰卞搷锛岄粯璁ょ殑鏄?'Mitigation: safe RET'锛屽畠搴斿鐞嗗ぇ澶氭暟鏀诲嚮鍚戦噺锛屽寘鎷湰鍦扮殑 User->Kernel 鍚戦噺銆?
-涓€濡傛棦寰€锛屽缓璁敤鎴烽€氳繃瀹氭湡搴旂敤杞欢鏇存柊鏉ヤ繚鎸佸叾绯荤粺澶勪簬鏈€鏂扮姸鎬併€?
-榛樿璁剧疆灏嗗湪闇€瑕佹椂閲嶆柊璇勪及锛岀壒鍒槸褰撳嚭鐜版柊鐨勬敾鍑诲悜閲忔椂銆?
-姝ｅ鍙互鎺ㄦ祴鐨勶紝'Mitigation: safe RET' 纭疄浼氫互涓€瀹氱殑鎬ц兘涓轰唬浠凤紝鍏蜂綋鍙栧喅浜庡伐浣滆礋杞姐€傚鏋滀綘淇′换浣犵殑鐢ㄦ埛绌洪棿骞朵笖涓嶆兂鎵垮彈鎬ц兘褰卞搷锛屼綘鎬绘槸鍙互浣跨敤 spec_rstack_overflow=off 绂佺敤璇ョ紦瑙ｆ帾鏂姐€?
-绫讳技鍦帮紝'Mitigation: IBPB' 鏄彟涓€绉嶅畬鏁寸殑缂撹В绫诲瀷锛屽湪搴旂敤浜嗙郴缁熸墍闇€鐨勫井鐮佽ˉ涓佸悗浣跨敤闂存帴鍒嗘敮棰勬祴灞忛殰銆傛缂撹В涔熶細甯︽潵鎬ц兘鎴愭湰銆?
-### 缂撹В锛歋afe RET
-
-
-璇ョ紦瑙ｉ€氳繃纭繚鎵€鏈?RET 鎸囦护閮芥帹娴嬪埌涓€涓彈鎺х殑浣嶇疆鏉ュ伐浣滐紝绫讳技浜庡湪 retpoline 搴忓垪涓帶鍒舵帹娴嬬殑鏂瑰紡銆備负姝わ紝__x86_return_thunk 寮哄埗 CPU 浣跨敤 鈥渟afe return鈥?搴忓垪鏉ヨ棰勬祴姣忎釜鍑芥暟杩斿洖銆?
-涓轰簡纭繚姝ょ紦瑙ｇ殑瀹夊叏鎬э紝鍐呮牳蹇呴』纭繚 safe return 搴忓垪鏈韩涓嶅彈鏀诲嚮鑰呭共鎵般€傚湪 Zen3 鍜?Zen4 涓紝杩欐槸閫氳繃鍦ㄥ幓璁粌锛坲ntraining锛夊嚱鏁?srso_alias_untrain_ret() 鍜?safe return 鍑芥暟 srso_alias_safe_ret() 涔嬮棿鍒涘缓 BTB 鍒悕鏉ュ疄鐜扮殑锛岃繖浼氶┍閫愬彲鑳戒腑姣掔殑 BTB 鏉＄洰锛屽苟灏嗚瀹夊叏鐨勬潯鐩敤浜庢墍鏈夊嚱鏁拌繑鍥炪€?
-鍦ㄨ緝鏃х殑 Zen1 鍜?Zen2 涓紝杩欐槸閫氳繃浣跨敤绫讳技浜?Retbleed 鐨勯噸瑙ｉ噴锛坮einterpretation锛夋妧鏈疄鐜扮殑锛歴rso_untrain_ret() 鍜?srso_safe_ret()銆?
-### 妫€鏌?Safe RET 缂撹В纭疄鏈夋晥
+考虑到每种缓解类型的性能影响，默认的'Mitigation: safe RET'，它应处理大多数攻击向量，包括本地的 User->Kernel 向量
+一如既往，建议用户通过定期应用软件更新来保持其系统处于最新状态
+默认设置将在需要时重新评估，特别是当出现新的攻击向量时
+正如可以推测的，'Mitigation: safe RET' 确实会以一定的性能为代价，具体取决于工作负载。如果你信任你的用户空间并且不想承受性能影响，你总是可以使用 spec_rstack_overflow=off 禁用该缓解措施
+类似地，'Mitigation: IBPB' 是另一种完整的缓解类型，在应用了系统所需的微码补丁后使用间接分支预测屏障。此缓解也会带来性能成本
+### 缓解：Safe RET
 
 
-濡傛灉鏈変汉鎯抽獙璇?SRSO safe RET 缂撹В鍦ㄥ唴鏍镐笂鏄惁宸ヤ綔锛屽彲浠ヤ娇鐢ㄤ袱涓€ц兘璁℃暟鍣細
+该缓解通过确保所RET 指令都推测到一个受控的位置来工作，类似于在 retpoline 序列中控制推测的方式。为此，__x86_return_thunk 强制 CPU 使用 “safe return序列来误预测每个函数返回
+为了确保此缓解的安全性，内核必须确保 safe return 序列本身不受攻击者干扰。在 Zen3 Zen4 中，这是通过在去训练（untraining）函srso_alias_untrain_ret() safe return 函数 srso_alias_safe_ret() 之间创建 BTB 别名来实现的，这会驱逐可能中毒的 BTB 条目，并将该安全的条目用于所有函数返回
+在较旧的 Zen1 Zen2 中，这是通过使用类似Retbleed 的重解释（reinterpretation）技术实现的：srso_untrain_ret() srso_safe_ret()
+### 检Safe RET 缓解确实有效
 
-- PMC_0xc8 - 閫€褰圭殑 RET/RET lw 璁℃暟
-- PMC_0xc9 - 閫€褰圭殑 RET/RET lw 璇娴嬭鏁?
-骞舵瘮杈冨湪鍐呮牳妯″紡涓嬫纭€€褰圭殑 RET 鏁颁笌璇娴嬮€€褰圭殑 RET 鏁般€傚彟涓€绉嶆寚瀹氳繖浜涗簨浠剁殑鏂瑰紡
+
+如果有人想验SRSO safe RET 缓解在内核上是否工作，可以使用两个性能计数器：
+
+- PMC_0xc8 - 退役的 RET/RET lw 计数
+- PMC_0xc9 - 退役的 RET/RET lw 误预测计
+并比较在内核模式下正确退役的 RET 数与误预测退役的 RET 数。另一种指定这些事件的方式
 
 ```
         # perf list ex_ret_near_ret
@@ -104,7 +104,7 @@ AMD Zen锛岀 1-4 浠ｃ€傚嵆鎵€鏈?family 0x17 鍜?0x19銆傝緝鏃х
 ```
         # perf stat -e cpu/event=0xc8,umask=0/k -e cpu/event=0xc9,umask=0/k sleep 10s
 ```
-搴旇缁欏嚭鐩稿悓鐨勬暟閲忋€傚嵆锛屾瘡涓€€褰圭殑 RET 搴?
+应该给出相同的数量。即，每个退役的 RET 
 ```
         [root@brent: ~/kernel/linux/tools/perf> ./perf stat -e cpu/event=0xc8,umask=0/k -e cpu/event=0xc9,umask=0/k sleep 10s
 
@@ -118,7 +118,7 @@ AMD Zen锛岀 1-4 浠ｃ€傚嵆鎵€鏈?family 0x17 鍜?0x19銆傝緝鏃х
                0.000000000 seconds user
                0.004462000 seconds sys
 ```
-鐩稿浜庣紦瑙ｈ绂佺敤锛坰pec_rstack_overflow=off锛夋垨杩愪綔涓嶆甯哥殑鎯呭喌锛屽悗鑰呴€氬父鏄剧ず璇娴嬮€€褰?RET 鐨勬暟閲忚繙灏忎簬閫€褰?RET 鐨勬€绘暟锛屽湪
+相对于缓解被禁用（spec_rstack_overflow=off）或运作不正常的情况，后者通常显示误预测退RET 的数量远小于退RET 的总数，在
 
 ```
        [root@brent: ~/kernel/linux/tools/perf> ./perf stat -e cpu/event=0xc8,umask=0/k -e cpu/event=0xc9,umask=0/k sleep 10s
@@ -133,7 +133,7 @@ AMD Zen锛岀 1-4 浠ｃ€傚嵆鎵€鏈?family 0x17 鍜?0x19銆傝緝鏃х
               0.002729000 seconds user
               0.000000000 seconds sys
 ```
-鍙﹀锛岃繕鏈変竴涓墽琛屼笂杩版搷浣滅殑 selftest锛屽墠寰€
+另外，还有一个执行上述操作的 selftest，前往
 
 ```
         make srso

@@ -1,121 +1,121 @@
 ﻿
-## SCSI EH锛圫CSI 閿欒澶勭悊锛?
+## SCSI EH（SCSI 错误处理
 
-鏈枃妗ｆ弿杩颁簡 SCSI 涓棿灞傦紙midlayer锛夌殑閿欒澶勭悊鍩虹璁炬柦銆?鏈夊叧 SCSI 涓棿灞傜殑鏇村淇℃伅锛岃鍙傞槄 Documentation/scsi/scsi_mid_low_api.rst銆?
+本文档描述了 SCSI 中间层（midlayer）的错误处理基础设施有关 SCSI 中间层的更多信息，请参阅 Documentation/scsi/scsi_mid_low_api.rst
 
-   [^1^] SCSI 鍛戒护濡備綍绌胯繃涓棿灞傚苟杩涘叆 EH
+   [^1^] SCSI 命令如何穿过中间层并进入 EH
        [1-1] struct scsi_cmnd
-       [1-2] scmd 鏄浣曡瀹屾垚鐨勶紵
-   	[1-2-1] 鐢?scsi_done 瀹屾垚涓€涓?scmd
-   	[1-2-2] 鐢ㄨ秴鏃跺畬鎴愪竴涓?scmd
-       [1-3] EH 濡備綍鎺ョ
-   [^2^] SCSI EH 濡備綍宸ヤ綔
-       [2-1] 閫氳繃缁嗙矑搴﹀洖璋冪殑 EH
-   	[2-1-1] 姒傝堪
-   	[2-1-2] scmd 娴佺粡 EH 鐨勮繃绋?   	[2-1-3] 鎺у埗娴?       [2-2] 閫氳繃 transportt->eh_strategy_handler() 鐨?EH
-   	[2-2-1] transportt->eh_strategy_handler() 涔嬪墠鐨?SCSI 涓棿灞傛潯浠?   	[2-2-2] transportt->eh_strategy_handler() 涔嬪悗鐨?SCSI 涓棿灞傛潯浠?   	[2-2-3] 闇€瑕佽€冭檻鐨勪簨椤?
+       [1-2] scmd 是如何被完成的？
+   	[1-2-1] scsi_done 完成一scmd
+   	[1-2-2] 用超时完成一scmd
+       [1-3] EH 如何接管
+   [^2^] SCSI EH 如何工作
+       [2-1] 通过细粒度回调的 EH
+   	[2-1-1] 概述
+   	[2-1-2] scmd 流经 EH 的过   	[2-1-3] 控制       [2-2] 通过 transportt->eh_strategy_handler() EH
+   	[2-2-1] transportt->eh_strategy_handler() 之前SCSI 中间层条   	[2-2-2] transportt->eh_strategy_handler() 之后SCSI 中间层条   	[2-2-3] 需要考虑的事
 
-## 1. SCSI 鍛戒护濡備綍绌胯繃涓棿灞傚苟杩涘叆 EH
+## 1. SCSI 命令如何穿过中间层并进入 EH
 
 
 ### 1.1 struct scsi_cmnd
 
 
-姣忎釜 SCSI 鍛戒护閮界敤 struct scsi_cmnd锛堝嵆 scmd锛夎〃绀恒€備竴涓?scmd 鏈変袱涓?list_head 灏嗚嚜宸遍摼鎺ヨ繘閾捐〃銆傝繖涓や釜鍒嗗埆鏄?scmd->list 涓?scmd->eh_entry銆?鍓嶈€呯敤浜庣┖闂查摼琛ㄦ垨姣忚澶囧垎閰嶇殑 scmd 閾捐〃锛屽湪鏈 EH 璁ㄨ涓苟涓嶉噸瑕併€傚悗鑰?鐢ㄤ簬瀹屾垚涓?EH 閾捐〃锛岄櫎闈炲彟鏈夎鏄庯紝鏈璁轰腑 scmd 鎬绘槸閫氳繃 scmd->eh_entry
-閾炬帴銆?
+每个 SCSI 命令都用 struct scsi_cmnd（即 scmd）表示。一scmd 有两list_head 将自己链接进链表。这两个分别scmd->list scmd->eh_entry前者用于空闲链表或每设备分配的 scmd 链表，在本次 EH 讨论中并不重要。后用于完成EH 链表，除非另有说明，本讨论中 scmd 总是通过 scmd->eh_entry
+链接
 
-### 1.2 scmd 鏄浣曡瀹屾垚鐨勶紵
-
-
-涓€鏃?LLDD 鍙栧緱涓€涓?scmd锛岃涔堢敱 LLDD 璋冪敤鍦ㄨ皟鐢?hostt->queuecommand() 鏃?浠庝腑闂村眰浼犲叆鐨?scsi_done 鍥炶皟鏉ュ畬鎴愬懡浠わ紝瑕佷箞鐢卞潡灞傚皢鍏惰秴鏃躲€?
-
-##### 1.2.1 鐢?scsi_done 瀹屾垚涓€涓?scmd
+### 1.2 scmd 是如何被完成的？
 
 
-瀵逛簬鎵€鏈夐潪 EH 鍛戒护锛宻csi_done() 鏄畬鎴愬洖璋冦€傚畠鍙槸璋冪敤
-blk_mq_complete_request() 鏉ュ垹闄ゅ潡灞傚畾鏃跺櫒骞惰Е鍙?BLOCK_SOFTIRQ銆?
-BLOCK_SOFTIRQ 闂存帴璋冪敤 scsi_complete()锛屽悗鑰呰皟鐢?scsi_decide_disposition()
-鏉ュ喅瀹氬浣曞鐞嗚鍛戒护銆俿csi_decide_disposition() 鏌ョ湅 scmd->result 鍊间笌
-sense 鏁版嵁鏉ュ喅瀹氬浣曞鐞嗚鍛戒护銆?
- - SUCCESS锛堟垚鍔燂級
+一LLDD 取得一scmd，要么由 LLDD 调用在调hostt->queuecommand() 从中间层传入scsi_done 回调来完成命令，要么由块层将其超时
 
-	涓鸿鍛戒护璋冪敤 scsi_finish_command()銆傝鍑芥暟鍋氫竴浜涚淮鎶ゅ伐浣滐紝鐒跺悗璋冪敤
-	scsi_io_completion() 鏉ュ畬鎴?I/O銆俿csi_io_completion() 閫氳繃璋冪敤
-	blk_end_request 鍙婂叾鐩稿叧鍑芥暟鏉ラ€氱煡鍧楀眰璇ヨ姹傚凡瀹屾垚锛屾垨鑰呭湪鍑洪敊鏃?	寮勬竻妤氬浣曞鐞嗗墿浣欑殑鏁版嵁銆?
- - NEEDS_RETRY锛堥渶瑕侀噸璇曪級
-
- - ADD_TO_MLQUEUE锛堝姞鍏ヤ腑闂村眰闃熷垪锛?
-	scmd 琚噸鏂板叆闃熷埌 blk 闃熷垪銆?
- - otherwise锛堝叾浠栨儏鍐碉級
-
-	涓鸿鍛戒护璋冪敤 scsi_eh_scmd_add(scmd)銆傝鍑芥暟鐨勭粏鑺傚弬瑙?[1-3]銆?
-
-##### 1.2.2 鐢ㄨ秴鏃跺畬鎴愪竴涓?scmd
+##### 1.2.1 scsi_done 完成一scmd
 
 
-瓒呮椂澶勭悊鍑芥暟鏄?scsi_timeout()銆傚綋鍙戠敓瓒呮椂鏃讹紝璇ュ嚱鏁?
- 1. 璋冪敤鍙€夌殑 hostt->eh_timed_out() 鍥炶皟銆傝繑鍥炲€煎彲浠ユ槸涓嬪垪涔嬩竴
+对于所有非 EH 命令，scsi_done() 是完成回调。它只是调用
+blk_mq_complete_request() 来删除块层定时器并触BLOCK_SOFTIRQ
+BLOCK_SOFTIRQ 间接调用 scsi_complete()，后者调scsi_decide_disposition()
+来决定如何处理该命令。scsi_decide_disposition() 查看 scmd->result 值与
+sense 数据来决定如何处理该命令
+ - SUCCESS（成功）
 
-    - SCSI_EH_RESET_TIMER锛堥噸缃畾鏃跺櫒锛?	琛ㄧず闇€瑕佹洿澶氭椂闂存潵瀹屾垚鍛戒护銆傚畾鏃跺櫒琚噸鏂板惎鍔ㄣ€?
-    - SCSI_EH_NOT_HANDLED锛堟湭澶勭悊锛?        eh_timed_out() 鍥炶皟娌℃湁澶勭悊璇ュ懡浠ゃ€傞噰鍙栫 2 姝ャ€?
-    - SCSI_EH_DONE锛堝凡瀹屾垚锛?        eh_timed_out() 瀹屾垚浜嗚鍛戒护銆?
- 2. 璋冪敤 scsi_abort_command() 鏉ヨ皟搴︿竴涓紓姝ヤ腑姝紝瀹冨彲鑳戒細閲嶈瘯
-    scmd->allowed + 1 娆°€傚浜庡凡缁忚缃簡 SCSI_EH_ABORT_SCHEDULED 鏍囧織鐨勫懡浠?    锛堣繖琛ㄦ槑璇ュ懡浠ゅ凡缁忚涓杩囦竴娆★紝鑰岃繖鏄竴娆″け璐ョ殑閲嶈瘯锛夈€佸綋閲嶈瘯娆℃暟
-    鐢ㄥ敖鏃躲€佹垨褰?EH 鎴鏃堕棿宸茶繃鏈熸椂锛屼笉浼氳皟鐢ㄥ紓姝ヤ腑姝€傚湪杩欎簺鎯呭喌涓嬮噰鍙?    绗?3 姝ャ€?
- 3. 涓鸿鍛戒护璋冪敤 scsi_eh_scmd_add(scmd)銆傛洿澶氫俊鎭弬瑙?[1-4]銆?
-### 1.3 寮傛鍛戒护涓
+	为该命令调用 scsi_finish_command()。该函数做一些维护工作，然后调用
+	scsi_io_completion() 来完I/O。scsi_io_completion() 通过调用
+	blk_end_request 及其相关函数来通知块层该请求已完成，或者在出错	弄清楚如何处理剩余的数据
+ - NEEDS_RETRY（需要重试）
+
+ - ADD_TO_MLQUEUE（加入中间层队列
+	scmd 被重新入队到 blk 队列
+ - otherwise（其他情况）
+
+	为该命令调用 scsi_eh_scmd_add(scmd)。该函数的细节参[1-3]
+
+##### 1.2.2 用超时完成一scmd
 
 
- 瓒呮椂鍙戠敓鍚庯紝浼氫粠 scsi_abort_command() 璋冨害涓€娆″懡浠や腑姝€傚鏋滀腑姝㈡垚鍔燂紝
- 璇ュ懡浠よ涔堣閲嶈瘯锛堝鏋滈噸璇曟鏁板皻鏈敤灏斤級锛岃涔堜互 DID_TIME_OUT 缁堟銆?
- 鍚﹀垯涓鸿鍛戒护璋冪敤 scsi_eh_scmd_add()銆傛洿澶氫俊鎭弬瑙?[1-4]銆?
-### 1.4 EH 濡備綍鎺ョ
+超时处理函数scsi_timeout()。当发生超时时，该函
+ 1. 调用可选的 hostt->eh_timed_out() 回调。返回值可以是下列之一
+
+    - SCSI_EH_RESET_TIMER（重置定时器	表示需要更多时间来完成命令。定时器被重新启动
+    - SCSI_EH_NOT_HANDLED（未处理        eh_timed_out() 回调没有处理该命令。采取第 2 步
+    - SCSI_EH_DONE（已完成        eh_timed_out() 完成了该命令
+ 2. 调用 scsi_abort_command() 来调度一个异步中止，它可能会重试
+    scmd->allowed + 1 次。对于已经设置了 SCSI_EH_ABORT_SCHEDULED 标志的命    （这表明该命令已经被中止过一次，而这是一次失败的重试）、当重试次数
+    用尽时、或EH 截止时间已过期时，不会调用异步中止。在这些情况下采    3 步
+ 3. 为该命令调用 scsi_eh_scmd_add(scmd)。更多信息参[1-4]
+### 1.3 异步命令中止
 
 
-scmd 閫氳繃 scsi_eh_scmd_add() 杩涘叆 EH锛岃鍑芥暟鎵ц浠ヤ笅鎿嶄綔銆?
- 1. 灏?scmd->eh_entry 閾炬帴鍒?shost->eh_cmd_q
+ 超时发生后，会从 scsi_abort_command() 调度一次命令中止。如果中止成功，
+ 该命令要么被重试（如果重试次数尚未用尽），要么以 DID_TIME_OUT 终止
+ 否则为该命令调用 scsi_eh_scmd_add()。更多信息参[1-4]
+### 1.4 EH 如何接管
 
- 2. 璁剧疆 shost->shost_state 涓殑 SHOST_RECOVERY 浣?
- 3. 閫掑 shost->host_failed
+
+scmd 通过 scsi_eh_scmd_add() 进入 EH，该函数执行以下操作
+ 1. scmd->eh_entry 链接shost->eh_cmd_q
+
+ 2. 设置 shost->shost_state 中的 SHOST_RECOVERY 
+ 3. 递增 shost->host_failed
 
  4. 褰?shost->host_busy == shost->host_failed 鏃跺敜閱?SCSI EH 绾跨▼
 
-濡備笂鎵€瑙侊紝涓€鏃︽湁浠讳綍 scmd 琚姞鍏?shost->eh_cmd_q锛孲HOST_RECOVERY
-shost_state 浣嶅氨浼氳鎵撳紑銆傝繖浼氶樆姝换浣曟柊鐨?scmd 浠?blk 闃熷垪涓嬪彂鍒颁富鏈猴紱
-鏈€缁堬紝涓绘満涓婄殑鎵€鏈?scmd 瑕佷箞姝ｅ父瀹屾垚锛岃涔堝け璐ュ苟琚姞鍏?eh_cmd_q锛岃涔?瓒呮椂骞惰鍔犲叆 shost->eh_cmd_q銆?
-濡傛灉鎵€鏈?scmd 閮藉畬鎴愭垨澶辫触锛屽湪閫?scmd 鐨勬暟閲忓氨浼氱瓑浜庡け璐ョ殑 scmd 鏁伴噺鈥斺€?鍗?shost->host_busy == shost->host_failed銆傝繖浼氬敜閱?SCSI EH 绾跨▼銆傚洜姝わ紝涓€鏃?琚敜閱掞紝SCSI EH 绾跨▼鍙互棰勬湡鎵€鏈夊湪閫斿懡浠ら兘宸插け璐ュ苟閾炬帴鍦?shost->eh_cmd_q 涓娿€?
-娉ㄦ剰锛岃繖骞朵笉琛ㄧず搴曞眰宸茬粡闈欐銆傚鏋?LLDD 浠ヤ竴涓敊璇姸鎬佸畬鎴愪簡涓€涓?scmd锛屽垯
-鍋囧畾 LLDD 涓庡簳灞傚湪閭ｄ竴鍒诲凡缁忛仐蹇樹簡璇?scmd銆傜劧鑰岋紝濡傛灉涓€涓?scmd 瓒呮椂浜嗭紝闄ら潪
-hostt->eh_timed_out() 璁╁簳灞傞仐蹇樹簡璇?scmd锛堢洰鍓嶆病鏈変换浣?LLDD 杩欐牱鍋氾級锛屽惁鍒?灏卞簳灞傝€岃█璇ュ懡浠や粛鐒舵槸娲昏穬鐨勶紝骞朵笖闅忔椂鍙兘瀹屾垚銆傚綋鐒讹紝鐢变簬瀹氭椂鍣ㄥ凡缁忚繃鏈燂紝
-鎵€鏈夎繖浜涘畬鎴愰兘浼氳蹇界暐銆?
-鎴戜滑绋嶅悗璁ㄨ SCSI EH 濡備綍閲囧彇琛屽姩鏉ヤ腑姝⑩€斺€旇 LLDD 閬楀繕鈥斺€旇秴鏃剁殑 scmd銆?
+如上所见，一旦有任何 scmd 被加shost->eh_cmd_q，SHOST_RECOVERY
+shost_state 位就会被打开。这会阻止任何新scmd blk 队列下发到主机；
+最终，主机上的所scmd 要么正常完成，要么失败并被加eh_cmd_q，要超时并被加入 shost->eh_cmd_q
+如果所scmd 都完成或失败，在scmd 的数量就会等于失败的 scmd 数量—shost->host_busy == shost->host_failed。这会唤SCSI EH 线程。因此，一被唤醒，SCSI EH 线程可以预期所有在途命令都已失败并链接shost->eh_cmd_q 上
+注意，这并不表示底层已经静止。如LLDD 以一个错误状态完成了一scmd，则
+假定 LLDD 与底层在那一刻已经遗忘了scmd。然而，如果一scmd 超时了，除非
+hostt->eh_timed_out() 让底层遗忘了scmd（目前没有任LLDD 这样做），否就底层而言该命令仍然是活跃的，并且随时可能完成。当然，由于定时器已经过期，
+所有这些完成都会被忽略
+我们稍后讨论 SCSI EH 如何采取行动来中止——让 LLDD 遗忘——超时的 scmd
 
-## 2. SCSI EH 濡備綍宸ヤ綔
-
-
-LLDD 鍙互閫氳繃浠ヤ笅涓ょ鏂瑰紡涔嬩竴鏉ュ疄鐜?SCSI EH 鍔ㄤ綔銆?
- - Fine-grained EH callbacks锛堢粏绮掑害 EH 鍥炶皟锛?	LLDD 鍙互瀹炵幇缁嗙矑搴︾殑 EH 鍥炶皟锛屽苟璁?SCSI 涓棿灞傞┍鍔ㄩ敊璇鐞嗭紝
-	璋冪敤閫傚綋鐨勫洖璋冦€傝繖灏嗗湪 [2-1] 涓繘涓€姝ヨ璁恒€?
- - eh_strategy_handler() callback锛坋h_strategy_handler() 鍥炶皟锛?	杩欐槸涓€涓ぇ鐨勫洖璋冿紝搴斿綋鎵ц鏁翠釜閿欒澶勭悊銆傚洜姝わ紝瀹冨簲褰撳畬鎴?SCSI
-	涓棿灞傚湪鎭㈠鏈熼棿鎵ц鐨勬墍鏈夋潅鍔°€傝繖灏嗗湪 [2-2] 涓璁恒€?
-涓€鏃︽仮澶嶅畬鎴愶紝SCSI EH 閫氳繃璋冪敤 scsi_restart_operations() 鎭㈠姝ｅ父杩愯锛岃鍑芥暟
-
- 1. 妫€鏌ユ槸鍚﹂渶瑕侀攣闂ㄥ苟閿侀棬銆?
- 2. 娓呴櫎 SHOST_RECOVERY shost_state 浣?
- 3. 鍞ら啋鍦?shost->host_wait 涓婄瓑寰呯殑杩涚▼銆傝繖鍙戠敓鍦ㄦ湁浜哄涓绘満璋冪敤
-    scsi_block_when_processing_errors() 鏃躲€傦紙**鐤戦棶** 涓轰粈涔堥渶瑕佸畠锛熷湪鍒拌揪
-    blk 闃熷垪涔嬪悗锛屾墍鏈夋搷浣滄棤璁哄浣曢兘浼氳闃诲銆傦級
-
- 4. 韪㈠姩涓绘満涓婃墍鏈夎澶囦腑鐨勯槦鍒?
-
-### 2.1 EH through fine-grained callbacks锛堥€氳繃缁嗙矑搴﹀洖璋冪殑 EH锛?
-
-##### 2.1.1 姒傝堪
+## 2. SCSI EH 如何工作
 
 
-濡傛灉涓嶅瓨鍦?eh_strategy_handler()锛孲CSI 涓棿灞傝礋璐ｉ┍鍔ㄩ敊璇鐞嗐€侲H 鏈変袱涓洰鏍団€斺€?璁?LLDD銆佷富鏈轰笌璁惧閬楀繕瓒呮椂鐨?scmd锛屽苟璁╁畠浠噯澶囧ソ鎺ュ彈鏂板懡浠ゃ€傚綋涓€涓?scmd 琚?搴曞眰閬楀繕銆佷笖搴曞眰鍑嗗濂藉啀娆″鐞嗘垨澶辫触璇?scmd 鏃讹紝绉拌 scmd 宸茶鎭㈠銆?
-涓轰簡瀹炵幇杩欎簺鐩爣锛孍H 浠ラ€掑鐨勪弗閲嶆€ф墽琛屾仮澶嶅姩浣溿€傛湁浜涘姩浣滈€氳繃鍙戝嚭 SCSI 鍛戒护
-鏉ユ墽琛岋紝鍙︿竴浜涘垯閫氳繃璋冪敤涓嬪垪缁嗙矑搴?hostt EH 鍥炶皟涔嬩竴鏉ユ墽琛屻€傚洖璋冨彲浠ヨ鐪佺暐锛?琚渷鐣ョ殑鍥炶皟琚涓烘€绘槸澶辫触銆?
+LLDD 可以通过以下两种方式之一来实SCSI EH 动作
+ - Fine-grained EH callbacks（细粒度 EH 回调	LLDD 可以实现细粒度的 EH 回调，并SCSI 中间层驱动错误处理，
+	调用适当的回调。这将在 [2-1] 中进一步讨论
+ - eh_strategy_handler() callback（eh_strategy_handler() 回调	这是一个大的回调，应当执行整个错误处理。因此，它应当完SCSI
+	中间层在恢复期间执行的所有杂务。这将在 [2-2] 中讨论
+一旦恢复完成，SCSI EH 通过调用 scsi_restart_operations() 恢复正常运行，该函数
+
+ 1. 检查是否需要锁门并锁门
+ 2. 清除 SHOST_RECOVERY shost_state 
+ 3. 唤醒shost->host_wait 上等待的进程。这发生在有人对主机调用
+    scsi_block_when_processing_errors() 时。（**疑问** 为什么需要它？在到达
+    blk 队列之后，所有操作无论如何都会被阻塞。）
+
+ 4. 踢动主机上所有设备中的队
+
+### 2.1 EH through fine-grained callbacks（通过细粒度回调的 EH
+
+##### 2.1.1 概述
+
+
+如果不存eh_strategy_handler()，SCSI 中间层负责驱动错误处理。EH 有两个目标—LLDD、主机与设备遗忘超时scmd，并让它们准备好接受新命令。当一scmd 底层遗忘、且底层准备好再次处理或失败scmd 时，称该 scmd 已被恢复
+为了实现这些目标，EH 以递增的严重性执行恢复动作。有些动作通过发出 SCSI 命令
+来执行，另一些则通过调用下列细粒hostt EH 回调之一来执行。回调可以被省略被省略的回调被视为总是失败
 ```
     int (* eh_abort_handler)(struct scsi_cmnd *);
     int (* eh_device_reset_handler)(struct scsi_cmnd *);
@@ -123,156 +123,156 @@ LLDD 鍙互閫氳繃浠ヤ笅涓ょ鏂瑰紡涔嬩竴鏉ュ疄鐜?SCSI EH 
     int (* eh_host_reset_handler)(struct scsi_cmnd *);
 
 ```
-涓ラ噸鎬ф洿楂樼殑鍔ㄤ綔鍙湁鍦ㄤ弗閲嶆€ф洿浣庣殑鍔ㄤ綔鏃犳硶鎭㈠閮ㄥ垎澶辫触鐨?scmd 鏃舵墠浼氶噰鍙栥€?鍙﹁娉ㄦ剰锛屾渶楂樹弗閲嶆€у姩浣滅殑澶辫触鎰忓懗鐫€ EH 澶辫触锛屽苟瀵艰嚧鎵€鏈夋湭鎭㈠鐨勮澶囪涓嬬嚎銆?
-鍦ㄦ仮澶嶆湡闂达紝閬靛惊浠ヤ笅瑙勫垯
+严重性更高的动作只有在严重性更低的动作无法恢复部分失败scmd 时才会采取另请注意，最高严重性动作的失败意味着 EH 失败，并导致所有未恢复的设备被下线
+在恢复期间，遵循以下规则
 
- - 鎭㈠鍔ㄤ綔鍦ㄥ緟鍔炲垪琛?eh_work_q 涓婂け璐ョ殑 scmd 涓婃墽琛屻€傚鏋滄煇涓仮澶嶅姩浣滃
-   涓€涓?scmd 鎴愬姛锛屽凡鎭㈠鐨?scmd 浼氫粠 eh_work_q 涓Щ闄ゃ€?
-   娉ㄦ剰锛屽鍗曚釜 scmd 鐨勪竴涓仮澶嶅姩浣滃彲浠ユ仮澶嶅涓?scmd銆備緥濡傦紝閲嶇疆涓€涓澶?   浼氭仮澶嶈璁惧涓婃墍鏈夊け璐ョ殑 scmd銆?
- - 鍙湁褰撲綆涓ラ噸鎬у姩浣滃畬鎴愬悗 eh_work_q 闈炵┖鏃讹紝鎵嶉噰鍙栨洿楂樹弗閲嶆€х殑鍔ㄤ綔銆?
- - EH 澶嶇敤澶辫触鐨?scmd 鏉ュ彂鍑虹敤浜庢仮澶嶇殑鍛戒护銆傚浜庤秴鏃剁殑 scmd锛孲CSI EH 纭繚鍦?   澶嶇敤鍏惰繘琛?EH 鍛戒护涔嬪墠锛孡LDD 宸茬粡閬楀繕浜嗚 scmd銆?
-褰撲竴涓?scmd 琚仮澶嶆椂锛屼娇鐢?scsi_eh_finish_cmd() 灏嗗叾浠?eh_work_q 绉诲姩鍒?EH
-鏈湴鐨?eh_done_q銆傚湪鎵€鏈?scmd 閮借鎭㈠锛坋h_work_q 涓虹┖锛夊悗锛岃皟鐢?scsi_eh_flush_done_q() 鏉ラ噸璇曟垨閿欒瀹屾垚锛堝悜涓婂眰閫氱煡澶辫触锛夊凡鎭㈠鐨?scmd銆?
-褰撲笖浠呭綋鍏?sdev 浠嶇劧鍦ㄧ嚎锛堟湭鍦?EH 鏈熼棿琚笅绾匡級銆佹湭璁剧疆 REQ_FAILFAST銆佷笖
-++scmd->retries 灏忎簬 scmd->allowed 鏃讹紝scmd 鎵嶄細琚噸璇曘€?
+ - 恢复动作在待办列eh_work_q 上失败的 scmd 上执行。如果某个恢复动作对
+   一scmd 成功，已恢复scmd 会从 eh_work_q 中移除
+   注意，对单个 scmd 的一个恢复动作可以恢复多scmd。例如，重置一个设   会恢复该设备上所有失败的 scmd
+ - 只有当低严重性动作完成后 eh_work_q 非空时，才采取更高严重性的动作
+ - EH 复用失败scmd 来发出用于恢复的命令。对于超时的 scmd，SCSI EH 确保   复用其进EH 命令之前，LLDD 已经遗忘了该 scmd
+当一scmd 被恢复时，使scsi_eh_finish_cmd() 将其eh_work_q 移动EH
+本地eh_done_q。在所scmd 都被恢复（eh_work_q 为空）后，调scsi_eh_flush_done_q() 来重试或错误完成（向上层通知失败）已恢复scmd
+当且仅当sdev 仍然在线（未EH 期间被下线）、未设置 REQ_FAILFAST、且
+++scmd->retries 小于 scmd->allowed 时，scmd 才会被重试
 
-##### 2.1.2 Flow of scmds through EH锛坰cmd 娴佺粡 EH 鐨勮繃绋嬶級
+##### 2.1.2 Flow of scmds through EH（scmd 流经 EH 的过程）
 
 
- 1. 閿欒瀹屾垚 / 瓒呮椂
+ 1. 错误完成 / 超时
 
-    :ACTION: 涓鸿 scmd 璋冪敤 scsi_eh_scmd_add()
+    :ACTION: 为该 scmd 调用 scsi_eh_scmd_add()
 
  - 灏?scmd 鍔犲叆 shost->eh_cmd_q
- - 璁剧疆 SHOST_RECOVERY
+ - 设置 SHOST_RECOVERY
  - shost->host_failed++
 
     :LOCKING: shost->host_lock
 
- 2. EH 鍚姩
+ 2. EH 启动
 
-    :ACTION: 灏嗘墍鏈?scmd 绉诲姩鍒?EH 鏈湴鐨?eh_work_q銆俿host->eh_cmd_q 琚竻绌恒€?
-    :LOCKING: shost->host_lock锛堝苟闈炰弗鏍煎繀瑕侊紝浠呬负涓€鑷存€э級
+    :ACTION: 将所scmd 移动EH 本地eh_work_q。shost->eh_cmd_q 被清空
+    :LOCKING: shost->host_lock（并非严格必要，仅为一致性）
 
- 3. scmd 宸叉仮澶?
-    :ACTION: 璋冪敤 scsi_eh_finish_cmd() 鏉?EH-瀹屾垚璇?scmd
+ 3. scmd 宸叉仮澶。
+    :ACTION: 调用 scsi_eh_finish_cmd() EH-完成scmd
 
- - 浠庢湰鍦?eh_work_q 绉诲姩鍒版湰鍦?eh_done_q
+ - 从本eh_work_q 移动到本eh_done_q
 
-    :LOCKING: none锛堟棤锛?
-    :CONCURRENCY: 姣忎釜鐙珛鐨?eh_work_q 鏈€澶氫竴涓嚎绋嬶紝浠ヤ繚鎸侀槦鍒楁搷浣滅殑
-		  鏃犻攣鎬?
- 4. EH 瀹屾垚
+    :LOCKING: none（无
+    :CONCURRENCY: 每个独立eh_work_q 最多一个线程，以保持队列操作的
+		  鏃犻攣鎬。
+ 4. EH 完成
 
-    :ACTION: scsi_eh_flush_done_q() 閲嶈瘯 scmd 鎴栧悜涓婂眰閫氱煡澶辫触銆傚彲浠ュ苟鍙?	    璋冪敤锛屼絾姣忎釜鐙珛鐨?eh_work_q 蹇呴』鏈€澶氬彧鏈変竴涓嚎绋嬶紝浠ユ棤閿佹柟寮?	    鎿嶄綔闃熷垪
+    :ACTION: scsi_eh_flush_done_q() 重试 scmd 或向上层通知失败。可以并	    调用，但每个独立eh_work_q 必须最多只有一个线程，以无锁方	    操作队列
 
-      - scmd 浠?eh_done_q 涓Щ闄わ紝骞舵竻闄?scmd->eh_entry
-      - 濡傛灉闇€瑕侀噸璇曪紝浣跨敤 scsi_queue_insert() 閲嶆柊鍏ラ槦璇?scmd
-      - 鍚﹀垯锛屼负璇?scmd 璋冪敤 scsi_finish_command()
-      - 灏?shost->host_failed 娓呴浂
+      - scmd eh_done_q 中移除，并清scmd->eh_entry
+      - 如果需要重试，使用 scsi_queue_insert() 重新入队scmd
+      - 否则，为scmd 调用 scsi_finish_command()
+      - shost->host_failed 清零
 
-    :LOCKING: 闃熷垪鎴栧畬鎴愬嚱鏁版墽琛岄€傚綋鐨勫姞閿?
+    :LOCKING: 队列或完成函数执行适当的加
 
-##### 2.1.3 Flow of control锛堟帶鍒舵祦锛?
+##### 2.1.3 Flow of control（控制流
 
- 閫氳繃缁嗙矑搴﹀洖璋冪殑 EH 浠?scsi_unjam_host() 寮€濮嬨€?
+ 通过细粒度回调的 EH scsi_unjam_host() 开始
 `scsi_unjam_host`
 
-    1. 閿佸畾 shost->host_lock锛屽皢 shost->eh_cmd_q splice_init 鍒版湰鍦?       eh_work_q锛屽苟瑙ｉ攣 host_lock銆傛敞鎰忥紝shost->eh_cmd_q 浼氳姝ゅ姩浣滄竻绌恒€?
-    2. 璋冪敤 scsi_eh_get_sense銆?
+    1. 锁定 shost->host_lock，将 shost->eh_cmd_q splice_init 到本       eh_work_q，并解锁 host_lock。注意，shost->eh_cmd_q 会被此动作清空
+    2. 调用 scsi_eh_get_sense
     `scsi_eh_get_sense`
 
-	瀵逛簬姣忎釜娌℃湁鏈夋晥 sense 鏁版嵁鐨勯敊璇畬鎴愬懡浠わ紝浼氶噰鍙栨鍔ㄤ綔銆傚ぇ澶氭暟
-	SCSI 浼犺緭灞?LLDD 浼氬湪鍛戒护澶辫触鏃惰嚜鍔ㄨ幏鍙?sense 鏁版嵁锛坅utosense锛?	鑷姩鎰熺煡锛夈€傚嚭浜庢€ц兘鍘熷洜锛屼互鍙婂洜涓?sense 淇℃伅鍙兘鍦?CHECK CONDITION
-	鍙戠敓涓庢鍔ㄤ綔涔嬮棿澶卞幓鍚屾锛屾帹鑽愪娇鐢?autosense銆?
-	娉ㄦ剰锛屽鏋滀笉鏀寔 autosense锛屽綋鐢?scsi_done() 閿欒瀹屾垚璇?scmd 鏃讹紝
-	scmd->sense_buffer 鍖呭惈鏃犳晥鐨?sense 鏁版嵁銆俿csi_decide_disposition()
-	鍦ㄨ繖绉嶆儏鍐典笅鎬绘槸杩斿洖 FAILED锛屼粠鑰岃皟鐢?SCSI EH銆傚綋 scmd 鍒拌揪姝ゅ鏃讹紝
-	浼氳幏鍙?sense 鏁版嵁骞跺啀娆¤皟鐢?scsi_decide_disposition()銆?
- 1. 璋冪敤 scsi_request_sense()锛屽畠鍙戝嚭 REQUEST_SENSE 鍛戒护銆傚鏋滃け璐ワ紝鍒欎笉
-           閲囧彇鍔ㄤ綔銆傛敞鎰忥紝涓嶉噰鍙栧姩浣滀細瀵艰嚧瀵硅 scmd 閲囧彇鏇撮珮涓ラ噸鎬х殑鎭㈠銆?
- 2. 瀵硅 scmd 璋冪敤 scsi_decide_disposition()
+	对于每个没有有效 sense 数据的错误完成命令，会采取此动作。大多数
+	SCSI 传输LLDD 会在命令失败时自动获sense 数据（autosense	自动感知）。出于性能原因，以及因sense 信息可能CHECK CONDITION
+	发生与此动作之间失去同步，推荐使autosense
+	注意，如果不支持 autosense，当scsi_done() 错误完成scmd 时，
+	scmd->sense_buffer 包含无效sense 数据。scsi_decide_disposition()
+	在这种情况下总是返回 FAILED，从而调SCSI EH。当 scmd 到达此处时，
+	会获sense 数据并再次调scsi_decide_disposition()
+ 1. 调用 scsi_request_sense()，它发出 REQUEST_SENSE 命令。如果失败，则不
+           采取动作。注意，不采取动作会导致对该 scmd 采取更高严重性的恢复
+ 2. 对该 scmd 调用 scsi_decide_disposition()
 
-    - SUCCESS锛堟垚鍔燂級
-		scmd->retries 琚涓?scmd->allowed锛岄樆姝?scsi_eh_flush_done_q()
-		閲嶈瘯璇?scmd锛屽苟璋冪敤 scsi_eh_finish_cmd()銆?
-    - NEEDS_RETRY锛堥渶瑕侀噸璇曪級
-		scsi_eh_finish_cmd() 琚皟鐢?
-    - otherwise锛堝叾浠栨儏鍐碉級
-		涓嶉噰鍙栧姩浣溿€?
-    4. 濡傛灉 !list_empty(&eh_work_q)锛岃皟鐢?scsi_eh_ready_devs()
+    - SUCCESS（成功）
+		scmd->retries 被设scmd->allowed，阻scsi_eh_flush_done_q()
+		重试scmd，并调用 scsi_eh_finish_cmd()
+    - NEEDS_RETRY（需要重试）
+		scsi_eh_finish_cmd() 被调
+    - otherwise（其他情况）
+		不采取动作
+    4. 如果 !list_empty(&eh_work_q)，调scsi_eh_ready_devs()
 
     `scsi_eh_ready_devs`
 
-	璇ュ嚱鏁伴噰鍙栧洓绉嶈秺鏉ヨ秺涓ュ帀鐨勬帾鏂斤紝浣垮け璐ョ殑 sdev 鍑嗗濂芥帴鍙楁柊鍛戒护銆?
- 1. 璋冪敤 scsi_eh_stu()
+	该函数采取四种越来越严厉的措施，使失败的 sdev 准备好接受新命令
+ 1. 调用 scsi_eh_stu()
 
 	`scsi_eh_stu`
 
-	    瀵逛簬姣忎釜鏈夊け璐?scmd 涓斿甫鏈夋湁鏁?sense 鏁版嵁銆佷笖 scsi_check_sense()
-	    鐨勫垽瀹氫负 FAILED 鐨?sdev锛屽彂鍑?start=1 鐨?START STOP UNIT 鍛戒护銆?	    娉ㄦ剰锛岀敱浜庢垜浠槑纭€夋嫨浜嗛敊璇畬鎴愮殑 scmd锛屽凡鐭ュ簳灞傚凡缁忛仐蹇樹簡璇?	    scmd锛屽洜姝ゆ垜浠彲浠ュ鐢ㄥ畠鏉ヨ繘琛?STU銆?
-	    濡傛灉 STU 鎴愬姛涓?sdev 澶勪簬绂荤嚎鎴栧氨缁姸鎬侊紝璇?sdev 涓婃墍鏈夊け璐ョ殑
-	    scmd 閮戒細閫氳繃 scsi_eh_finish_cmd() 瀹屾垚 EH銆?
-	    **娉ㄦ剰** 濡傛灉鏈疄鐜?hostt->eh_abort_handler() 鎴栧畠澶辫触锛屾鏃舵垜浠?	    鍙兘浠嶆湁瓒呮椂鐨?scmd锛岃€?STU 骞朵笉鑳借搴曞眰閬楀繕閭ｄ簺 scmd銆傜劧鑰岋紝濡傛灉
-	    STU 鎴愬姛锛岃鍑芥暟浼氬畬鎴愯 sdev 涓婃墍鏈?scmd 鐨?EH锛屼娇搴曞眰澶勪簬涓嶄竴鑷?	    鐨勭姸鎬併€備技涔?STU 鍔ㄤ綔鍙簲鍦ㄦ煇涓?sdev 娌℃湁瓒呮椂 scmd 鏃舵墠搴旈噰鍙栥€?
- 2. 濡傛灉 !list_empty(&eh_work_q)锛岃皟鐢?scsi_eh_bus_device_reset()銆?
+	    对于每个有失scmd 且带有有sense 数据、且 scsi_check_sense()
+	    的判定为 FAILED sdev，发start=1 START STOP UNIT 命令	    注意，由于我们明确选择了错误完成的 scmd，已知底层已经遗忘了	    scmd，因此我们可以复用它来进STU
+	    如果 STU 成功sdev 处于离线或就绪状态，sdev 上所有失败的
+	    scmd 都会通过 scsi_eh_finish_cmd() 完成 EH
+	    **注意** 如果未实hostt->eh_abort_handler() 或它失败，此时我	    可能仍有超时scmd，STU 并不能让底层遗忘那些 scmd。然而，如果
+	    STU 成功，该函数会完成该 sdev 上所scmd EH，使底层处于不一	    的状态。似STU 动作只应在某sdev 没有超时 scmd 时才应采取
+ 2. 如果 !list_empty(&eh_work_q)，调scsi_eh_bus_device_reset()
 	`scsi_eh_bus_device_reset`
 
-	    姝ゅ姩浣滀笌 scsi_eh_stu() 闈炲父鐩镐技锛屽彧鏄畠浣跨敤
-	    hostt->eh_device_reset_handler() 鑰屼笉鏄彂鍑?STU銆傛澶栵紝鐢变簬鎴戜滑涓?	    鍙戝嚭 SCSI 鍛戒护锛屼笖閲嶇疆浼氭竻闄よ sdev 涓婄殑鎵€鏈?scmd锛屽洜姝ゆ棤闇€鎸戦€?	    閿欒瀹屾垚鐨?scmd銆?
- 3. 濡傛灉 !list_empty(&eh_work_q)锛岃皟鐢?scsi_eh_bus_reset()銆?
+	    此动作与 scsi_eh_stu() 非常相似，只是它使用
+	    hostt->eh_device_reset_handler() 而不是发STU。此外，由于我们	    发出 SCSI 命令，且重置会清除该 sdev 上的所scmd，因此无需挑	    错误完成scmd
+ 3. 如果 !list_empty(&eh_work_q)，调scsi_eh_bus_reset()
 	`scsi_eh_bus_reset`
 
-	    hostt->eh_bus_reset_handler() 瀵规瘡涓湁澶辫触 scmd 鐨勯€氶亾璋冪敤銆傚鏋?	    鎬荤嚎閲嶇疆鎴愬姛锛岃閫氶亾涓婃墍鏈夊氨缁垨绂荤嚎鐨?sdev 涓婂け璐ョ殑 scmd 閮戒細
-	    瀹屾垚 EH銆?
- 4. 濡傛灉 !list_empty(&eh_work_q)锛岃皟鐢?scsi_eh_host_reset()銆?
+	    hostt->eh_bus_reset_handler() 对每个有失败 scmd 的通道调用。如	    总线重置成功，该通道上所有就绪或离线sdev 上失败的 scmd 都会
+	    完成 EH
+ 4. 如果 !list_empty(&eh_work_q)，调scsi_eh_host_reset()
 	`scsi_eh_host_reset`
 
-	    杩欐槸鏈€鍚庢墜娈点€傝皟鐢?hostt->eh_host_reset_handler()銆傚鏋滀富鏈洪噸缃?	    鎴愬姛锛岃涓绘満涓婃墍鏈夊氨缁垨绂荤嚎鐨?sdev 涓婂け璐ョ殑 scmd 閮戒細瀹屾垚 EH銆?
- 5. 濡傛灉 !list_empty(&eh_work_q)锛岃皟鐢?scsi_eh_offline_sdevs()銆?
+	    这是最后手段。调hostt->eh_host_reset_handler()。如果主机重	    成功，该主机上所有就绪或离线sdev 上失败的 scmd 都会完成 EH
+ 5. 如果 !list_empty(&eh_work_q)，调scsi_eh_offline_sdevs()
 	`scsi_eh_offline_sdevs`
 
-	    灏嗘墍鏈変粛鏈夋湭鎭㈠ scmd 鐨?sdev 涓嬬嚎锛屽苟瀹屾垚杩欎簺 scmd 鐨?EH銆?
-    5. 璋冪敤 scsi_eh_flush_done_q()銆?
+	    将所有仍有未恢复 scmd sdev 下线，并完成这些 scmd EH
+    5. 调用 scsi_eh_flush_done_q()
 	`scsi_eh_flush_done_q`
 
-	    姝ゆ椂鎵€鏈?scmd 閮藉凡鎭㈠锛堟垨鏀惧純锛夛紝骞剁敱 scsi_eh_finish_cmd() 鏀惧埌浜?	    eh_done_q 涓娿€傝鍑芥暟閫氳繃閲嶈瘯鎴栧悜涓婂眰閫氱煡 scmd 澶辫触鏉ュ埛鏂?	    eh_done_q銆?
+	    此时所scmd 都已恢复（或放弃），并由 scsi_eh_finish_cmd() 放到	    eh_done_q 上。该函数通过重试或向上层通知 scmd 失败来刷	    eh_done_q
 
-### 2.2 EH through transportt->eh_strategy_handler()锛堥€氳繃 transportt->eh_strategy_handler() 鐨?EH锛?
+### 2.2 EH through transportt->eh_strategy_handler()（通过 transportt->eh_strategy_handler() EH
 
-transportt->eh_strategy_handler() 鍦?scsi_unjam_host() 鐨勪綅缃璋冪敤锛屽畠璐熻矗
-鏁翠釜鎭㈠杩囩▼銆傚湪瀹屾垚鍚庯紝璇ュ鐞嗙▼搴忓簲褰撳凡缁忚搴曞眰閬楀繕浜嗘墍鏈夊け璐ョ殑 scmd锛屽苟涓?瑕佷箞鍑嗗濂芥帴鍙楁柊鍛戒护锛岃涔堝凡涓嬬嚎銆傛澶栵紝瀹冨簲褰撴墽琛?SCSI EH 缁存姢鏉傚姟浠ョ淮鎶?SCSI 涓棿灞傜殑瀹屾暣鎬с€傛崲瑷€涔嬶紝鍦?[2-1-2] 鎻忚堪鐨勬楠や腑锛岄櫎浜嗙 1 姝ヤ箣澶栫殑鎵€鏈?姝ラ閮藉繀椤荤敱 eh_strategy_handler() 瀹炵幇銆?
+transportt->eh_strategy_handler() scsi_unjam_host() 的位置被调用，它负责
+整个恢复过程。在完成后，该处理程序应当已经让底层遗忘了所有失败的 scmd，并要么准备好接受新命令，要么已下线。此外，它应当执SCSI EH 维护杂务以维SCSI 中间层的完整性。换言之，[2-1-2] 描述的步骤中，除了第 1 步之外的所步骤都必须由 eh_strategy_handler() 实现
 
-##### 2.2.1 Pre transportt->eh_strategy_handler() SCSI midlayer conditions锛坱ransportt->eh_strategy_handler() 涔嬪墠鐨?SCSI 涓棿灞傛潯浠讹級
+##### 2.2.1 Pre transportt->eh_strategy_handler() SCSI midlayer conditions（transportt->eh_strategy_handler() 之前SCSI 中间层条件）
 
 
- 杩涘叆澶勭悊绋嬪簭鏃讹紝浠ヤ笅鏉′欢涓虹湡銆?
- - 姣忎釜澶辫触 scmd 鐨?eh_flags 瀛楁琚€傚綋璁剧疆銆?
- - 姣忎釜澶辫触鐨?scmd 閫氳繃 scmd->eh_entry 閾炬帴鍦?scmd->eh_cmd_q 涓娿€?
- - SHOST_RECOVERY 宸茶缃€?
+ 进入处理程序时，以下条件为真
+ - 每个失败 scmd eh_flags 字段被适当设置
+ - 每个失败scmd 通过 scmd->eh_entry 链接scmd->eh_cmd_q 上
+ - SHOST_RECOVERY 已设置
  - shost->host_failed == shost->host_busy
 
 
-##### 2.2.2 Post transportt->eh_strategy_handler() SCSI midlayer conditions锛坱ransportt->eh_strategy_handler() 涔嬪悗鐨?SCSI 涓棿灞傛潯浠讹級
+##### 2.2.2 Post transportt->eh_strategy_handler() SCSI midlayer conditions（transportt->eh_strategy_handler() 之后SCSI 中间层条件）
 
 
- 閫€鍑哄鐞嗙▼搴忔椂锛屼互涓嬫潯浠跺繀椤讳负鐪熴€?
- - shost->host_failed 涓洪浂銆?
- - shost->eh_cmd_q 宸叉竻绌恒€?
- - 姣忎釜 scmd->eh_entry 宸叉竻绌恒€?
- - 瀵规瘡涓?scmd 閮借皟鐢ㄤ簡 scsi_queue_insert() 鎴?scsi_finish_command()銆傛敞鎰忥紝
-   澶勭悊绋嬪簭鍙嚜鐢变娇鐢?scmd->retries 涓?->allowed 鏉ラ檺鍒堕噸璇曟鏁般€?
+ 退出处理程序时，以下条件必须为真
+ - shost->host_failed 为零
+ - shost->eh_cmd_q 已清空
+ - 每个 scmd->eh_entry 已清空
+ - 对每scmd 都调用了 scsi_queue_insert() scsi_finish_command()。注意，
+   处理程序可自由使scmd->retries ->allowed 来限制重试次数
 
-##### 2.2.3 Things to consider锛堥渶瑕佽€冭檻鐨勪簨椤癸級
+##### 2.2.3 Things to consider（需要考虑的事项）
 
 
- - 瑕佺煡閬撹秴鏃剁殑 scmd 鍦ㄥ簳灞備粛鐒舵槸娲昏穬鐨勩€傚湪瀵归偅浜?scmd 鍋氫换浣曞叾浠栦簨鎯呬箣鍓嶏紝
-   鍏堣搴曞眰閬楀繕瀹冧滑銆?
- - 涓轰繚鎸佷竴鑷达紝鍦ㄨ闂?淇敼 shost 鏁版嵁缁撴瀯鏃讹紝鑾峰彇 shost->host_lock銆?
- - 鍦ㄥ畬鎴愬悗锛屾瘡涓け璐ョ殑 sdev 蹇呴』宸茬粡閬楀繕浜嗘墍鏈夋椿璺冪殑 scmd銆?
- - 鍦ㄥ畬鎴愬悗锛屾瘡涓け璐ョ殑 sdev 蹇呴』鍑嗗濂芥帴鍙楁柊鍛戒护鎴栧凡涓嬬嚎銆?
+ - 要知道超时的 scmd 在底层仍然是活跃的。在对那scmd 做任何其他事情之前，
+   先让底层遗忘它们
+ - 为保持一致，在访修改 shost 数据结构时，获取 shost->host_lock
+ - 在完成后，每个失败的 sdev 必须已经遗忘了所有活跃的 scmd
+ - 在完成后，每个失败的 sdev 必须准备好接受新命令或已下线
 
 Tejun Heo
 htejun@gmail.com
 
-2005 骞?9 鏈?11 鏃?
+2005 骞?9 鏈?11 鏃。

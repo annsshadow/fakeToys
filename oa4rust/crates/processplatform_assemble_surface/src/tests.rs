@@ -348,4 +348,52 @@ mod tests {
             .unwrap();
         assert_ne!(response.status(), StatusCode::NOT_FOUND);
     }
+
+    #[tokio::test]
+    async fn u2_test_get_task_list_date_manage_route() {
+        let app = crate::router(build_test_pool());
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/processplatform/assemble/surface/task/list/date/2024-01-01/hour/09/exclude/draft/true/manage")
+                    .method(Method::GET)
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_ne!(response.status(), StatusCode::NOT_FOUND);
+    }
+
+    #[tokio::test]
+    async fn u2_test_get_task_list_person_manage_route() {
+        let app = crate::router(build_test_pool());
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/processplatform/assemble/surface/task/list/person/p1/exclude/draft/true/manage")
+                    .method(Method::GET)
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_ne!(response.status(), StatusCode::NOT_FOUND);
+    }
+
+    #[tokio::test]
+    async fn u2_test_get_attachment_ext_unsupported_route() {
+        let app = crate::router(build_test_pool());
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/processplatform/assemble/surface/attachment/download/x/work/w/abc.txt.def")
+                    .method(Method::GET)
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_ne!(response.status(), StatusCode::NOT_FOUND);
+    }
 }

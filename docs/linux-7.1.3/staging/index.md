@@ -1,12 +1,12 @@
 ﻿
-## 鏈垎绫绘枃妗?
+## 未分类文
 
 
-- [CRC32 绠楁硶](crc32)
-- [LZO 鍘嬬缉](lzo)
-- [榄旀湳鏁板瓧](magic-number)
-- [杩滅▼澶勭悊鍣紙remoteproc锛塢(remoteproc)
-- [杩滅▼娑堟伅锛坮pmsg锛塢(rpmsg)
-- [鎺ㄦ祴鎵ц](speculation)
-- [闈欐€侀敭锛坰tatic keys锛塢(static-keys)
-- [XZ 鍘嬬缉](xz)
+- [CRC32 算法](crc32)
+- [LZO 压缩](lzo)
+- [魔术数字](magic-number)
+- [远程处理器（remoteproc）](remoteproc)
+- [远程消息（rpmsg）](rpmsg)
+- [推测执行](speculation)
+- [静态键（static keys）](static-keys)
+- [XZ 压缩](xz)

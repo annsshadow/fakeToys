@@ -1,26 +1,26 @@
-﻿## 鍏充簬 kobjects銆乲sets 鍜?ktypes 閭ｄ簺浣犱粠涓嶆兂浜嗚В鐨勪簨
+﻿## 关于 kobjects、ksets ktypes 那些你从不想了解的事
 
 
 :Author: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
 :Last updated: December 19, 2007
 
-鍩轰簬 Jon Corbet 涓?lwn.net 鎵€鍐欍€佸彂琛ㄤ簬 2003 骞?10 鏈?1 鏃ャ€佷綅浜?https://lwn.net/Articles/51437/ 鐨勫師鍒涙枃绔犮€?
-鐞嗚В椹卞姩妯″瀷 鈥斺€?浠ュ強鏋勫缓浜庡叾涓婄殑 kobject 鎶借薄 鈥斺€?鐨勫洶闅句箣涓€鍦ㄤ簬娌℃湁鏄捐€屾槗瑙佺殑璧风偣銆傚鐞?kobject 闇€瑕佺悊瑙ｅ嚑绉嶄笉鍚岀殑绫诲瀷锛岃€屽畠浠郊姝ょ浉浜掑紩鐢ㄣ€備负浜嗚浜嬫儏鏇寸畝鍗曪紝鎴戜滑灏嗛噰鐢ㄥ娆￠€掕繘鐨勬柟寮忥紝浠庢ā绯婄殑鏈寮€濮嬶紝骞堕€愭琛ュ厖缁嗚妭銆備负姝わ紝涓嬮潰鍏堢粰鍑烘垜浠皢鐢ㄥ埌鐨勪竴浜涙湳璇殑蹇€熷畾涔夈€?
- - kobject 鏄?struct kobject 绫诲瀷鐨勫璞°€俴object 鍏锋湁涓€涓悕绉板拰寮曠敤璁℃暟銆俴object 杩樻湁涓€涓埗鎸囬拡锛堝厑璁稿皢瀵硅薄鎺掑垪鎴愬眰绾х粨鏋勶級銆佷竴涓壒瀹氱被鍨嬶紝浠ュ強閫氬父鍦?sysfs 铏氭嫙鏂囦欢绯荤粺涓殑涓€绉嶈〃绀恒€?
-   kobject 鏈韩涓€鑸苟涓嶅紩浜哄叧娉紱鐩稿弽锛屽畠浠€氬父宓屽叆鍦ㄥ寘鍚唬鐮佺湡姝ｆ劅鍏磋叮鍐呭鐨勫叾浠栫粨鏋勪腑銆?
-   浠讳綍缁撴瀯浣撻兘**缁濅笉搴?*宓屽叆澶氫簬涓€涓?kobject銆傚鏋滄湁锛岃瀵硅薄鐨勫紩鐢ㄨ鏁板繀瀹氫細娣蜂贡涓斾笉姝ｇ‘锛屼綘鐨勪唬鐮佸氨浼氭湁 bug銆傛墍浠ヤ笉瑕佽繖鏍峰仛銆?
- - ktype 鏄祵鍏ヤ簡 kobject 鐨勫璞＄殑绫诲瀷銆傛瘡涓祵鍏ヤ簡 kobject 鐨勭粨鏋勪綋閮介渶瑕佷竴涓搴旂殑 ktype銆俴type 鎺у埗鍦?kobject 琚垱寤哄拰閿€姣佹椂鍙戠敓鐨勪簨鎯呫€?
- - kset 鏄竴缁?kobject銆傝繖浜?kobject 鍙互鏄浉鍚岀殑 ktype锛屼篃鍙互灞炰簬涓嶅悓鐨?ktype銆俴set 鏄?kobject 闆嗗悎鐨勫熀鏈鍣ㄧ被鍨嬨€俴set 鍖呭惈瀹冧滑鑷繁鐨?kobject锛屼絾浣犲彲浠ユ斁蹇冨湴蹇界暐杩欎竴瀹炵幇缁嗚妭锛屽洜涓?kset 鏍稿績浠ｇ爜浼氳嚜鍔ㄥ鐞嗚繖涓?kobject銆?
-   褰撲綘鐪嬪埌涓€涓～婊″叾浠栫洰褰曠殑 sysfs 鐩綍鏃讹紝閫氬父鍏朵腑姣忎釜鐩綍閮藉搴斾簬鍚屼竴涓?kset 涓殑涓€涓?kobject銆?
-鎴戜滑灏嗕簡瑙ｅ浣曞垱寤哄拰鎿嶄綔鎵€鏈夎繖浜涚被鍨嬨€傛垜浠皢閲囩敤鑷簳鍚戜笂鐨勬柟娉曪紝鍥犳鍏堝洖鍒?kobject銆?
+基于 Jon Corbet lwn.net 所写、发表于 2003 10 1 日、位https://lwn.net/Articles/51437/ 的原创文章
+理解驱动模型 —以及构建于其上的 kobject 抽象 —的困难之一在于没有显而易见的起点。处kobject 需要理解几种不同的类型，而它们彼此相互引用。为了让事情更简单，我们将采用多次递进的方式，从模糊的术语开始，并逐步补充细节。为此，下面先给出我们将用到的一些术语的快速定义
+ - kobject struct kobject 类型的对象。kobject 具有一个名称和引用计数。kobject 还有一个父指针（允许将对象排列成层级结构）、一个特定类型，以及通常sysfs 虚拟文件系统中的一种表示
+   kobject 本身一般并不引人关注；相反，它们通常嵌入在包含代码真正感兴趣内容的其他结构中
+   任何结构体都**绝不*嵌入多于一kobject。如果有，该对象的引用计数必定会混乱且不正确，你的代码就会有 bug。所以不要这样做
+ - ktype 是嵌入了 kobject 的对象的类型。每个嵌入了 kobject 的结构体都需要一个对应的 ktype。ktype 控制kobject 被创建和销毁时发生的事情
+ - kset 是一kobject。这kobject 可以是相同的 ktype，也可以属于不同ktype。kset kobject 集合的基本容器类型。kset 包含它们自己kobject，但你可以放心地忽略这一实现细节，因kset 核心代码会自动处理这kobject
+   当你看到一个填满其他目录的 sysfs 目录时，通常其中每个目录都对应于同一kset 中的一kobject
+我们将了解如何创建和操作所有这些类型。我们将采用自底向上的方法，因此先回kobject
 
-## 宓屽叆 kobject
+## 嵌入 kobject
 
 
-鍐呮牳浠ｇ爜寰堝皯浼氬垱寤轰竴涓嫭绔嬬殑 kobject锛屽敮涓€鐨勯噸澶т緥澶栧皢鍦ㄤ笅鏂囪鏄庛€傜浉鍙嶏紝kobject 琚敤鏉ユ帶鍒跺鏇村ぇ鐨勩€佺壒瀹氶鍩熷璞＄殑璁块棶銆備负姝わ紝kobject 浼氬祵鍏ュ湪鍏朵粬缁撴瀯涓€傚鏋滀綘涔犳儻浜庣敤闈㈠悜瀵硅薄鐨勬湳璇€濊€冮棶棰橈紝kobject 鍙瑙嗕负涓€涓《灞傜殑鎶借薄绫伙紝鍏朵粬绫讳粠瀹冩淳鐢熴€俴object 瀹炵幇浜嗕竴缁勬湰韬敤澶勪笉澶с€佷絾鍦ㄥ叾浠栧璞′腑寰堝ソ鐢ㄧ殑鑳藉姏銆侰 璇█涓嶅厑璁哥洿鎺ヨ〃杈剧户鎵匡紝鍥犳蹇呴』浣跨敤鍏朵粬鎶€鏈€斺€斾緥濡傜粨鏋勪綋宓屽叆銆?
-锛堥『渚胯涓€鍙ワ紝瀵逛簬鐔熸倝鍐呮牳閾捐〃瀹炵幇鐨勪汉锛岃繖绫讳技浜?"list_head" 缁撴瀯浣撴湰韬緢灏戝崟鐙湁鐢紝浣嗘€绘槸浼氬祵鍏ュ湪鎰熷叴瓒ｇ殑澶у璞′腑銆傦級
+内核代码很少会创建一个独立的 kobject，唯一的重大例外将在下文说明。相反，kobject 被用来控制对更大的、特定领域对象的访问。为此，kobject 会嵌入在其他结构中。如果你习惯于用面向对象的术语思考问题，kobject 可被视为一个顶层的抽象类，其他类从它派生。kobject 实现了一组本身用处不大、但在其他对象中很好用的能力。C 语言不允许直接表达继承，因此必须使用其他技术——例如结构体嵌入
+（顺便说一句，对于熟悉内核链表实现的人，这类似"list_head" 结构体本身很少单独有用，但总是会嵌入在感兴趣的大对象中。）
 
-鍥犳锛屼緥濡?`drivers/uio/uio.c` 涓殑 UIO 浠ｇ爜鏈変竴涓粨鏋勪綋
+因此，例`drivers/uio/uio.c` 中的 UIO 代码有一个结构体
 ```
 
     struct uio_map {
@@ -29,21 +29,21 @@
     };
 
 ```
-濡傛灉浣犳湁涓€涓?struct uio_map 缁撴瀯浣擄紝鎵惧埌鍏跺祵鍏ョ殑 kobject 鍙渶浣跨敤 kobj 鎴愬憳銆備笉杩囷紝澶勭悊 kobject 鐨勪唬鐮侀€氬父浼氶亣鍒扮浉鍙嶇殑闂锛氱粰瀹氫竴涓?struct kobject 鎸囬拡锛屾寚鍚戝寘鍚畠鐨勭粨鏋勪綋鐨勬寚閽堟槸浠€涔堬紵浣犲繀椤婚伩鍏嶉偅浜涘彇宸ф墜娈碉紙渚嬪鍋囪 kobject 浣嶄簬缁撴瀯浣撶殑寮€澶达級
+如果你有一struct uio_map 结构体，找到其嵌入的 kobject 只需使用 kobj 成员。不过，处理 kobject 的代码通常会遇到相反的问题：给定一struct kobject 指针，指向包含它的结构体的指针是什么？你必须避免那些取巧手段（例如假设 kobject 位于结构体的开头）
 ```
 
     container_of(ptr, type, member)
 
 ```
-鍏朵腑锛?
-  - `ptr` 鏄寚鍚戝祵鍏ョ殑 kobject 鐨勬寚閽堬紝
-  - `type` 鏄寘鍚缁撴瀯浣撶殑绫诲瀷锛屽苟涓?  - `member` 鏄?`pointer` 鎵€鎸囧悜鐨勭粨鏋勪綋瀛楁鐨勫悕绉般€?
-container_of() 鐨勮繑鍥炲€兼槸鎸囧悜鐩稿簲瀹瑰櫒绫诲瀷鐨勬寚閽堛€傚洜姝わ紝渚嬪锛屼竴涓寚鍚戝祵鍏?*浜?* struct uio_map 涓殑 struct kobject 鐨勬寚閽?`kp` 鍙互琚浆鎹负鎸囧悜璇?```
+其中
+  - `ptr` 是指向嵌入的 kobject 的指针，
+  - `type` 是包含该结构体的类型，并  - `member` `pointer` 所指向的结构体字段的名称
+container_of() 的返回值是指向相应容器类型的指针。因此，例如，一个指向嵌** struct uio_map 中的 struct kobject 的指`kp` 可以被转换为指向```
 
     struct uio_map *u_map = container_of(kp, struct uio_map, kobj);
 
 ```
-涓轰簡鏂逛究锛岀▼搴忓憳甯稿父瀹氫箟涓€涓畝鍗曠殑瀹忥紝鐢ㄤ簬灏?kobject 鎸囬拡**鍙嶅悜杞崲**鍥炲寘鍚畠鐨勭被鍨嬨€傚湪涓嬮潰杩欑鎯呭喌涓鏄姝?```
+为了方便，程序员常常定义一个简单的宏，用于kobject 指针**反向转换**回包含它的类型。在下面这种情况中正是如```
 
     struct uio_map {
             struct kobject kobj;
@@ -53,86 +53,86 @@ container_of() 鐨勮繑鍥炲€兼槸鎸囧悜鐩稿簲瀹瑰櫒绫诲瀷鐨�
     #define to_map(map) container_of(map, struct uio_map, kobj)
 
 ```
-鍏朵腑瀹忓弬鏁?"map" 鏄寚鍚?struct uio_map 涓?struct kobject 鐨勬寚閽堬紝浣嶄簬
+其中宏参"map" 是指struct uio_map struct kobject 的指针，位于
 ```
 
     struct uio_map *map = to_map(kobj);
 
 
 ```
-## kobject 鐨勫垵濮嬪寲
+## kobject 的初始化
 
 
-鍒涘缓 kobject 鐨勪唬鐮佸綋鐒跺繀椤诲垵濮嬪寲璇ュ璞°€備竴浜?```
+创建 kobject 的代码当然必须初始化该对象。一```
 
     void kobject_init(struct kobject *kobj, const struct kobj_type *ktype);
 
 ```
-瑕佷娇 kobject 琚纭垱寤猴紝ktype 鏄繀闇€鐨勶紝鍥犱负姣忎釜 kobject 閮藉繀椤绘湁涓€涓叧鑱旂殑 kobj_type銆傝皟鐢?kobject_init() 涔嬪悗锛岃
+要使 kobject 被正确创建，ktype 是必需的，因为每个 kobject 都必须有一个关联的 kobj_type。调kobject_init() 之后，要
 ```
 
     int kobject_add(struct kobject *kobj, struct kobject *parent,
                     const char *fmt, ...);
 
 ```
-杩欎細姝ｇ‘璁剧疆 kobject 鐨勭埗瀵硅薄鍙婂叾鍚嶇О銆傚鏋?kobject 瑕佸叧鑱斿埌鐗瑰畾鐨?kset锛屽垯蹇呴』鍦ㄨ皟鐢?kobject_add() 涔嬪墠璧嬪€?kobj->kset銆傚鏋?kset 涓?kobject 鍏宠仈锛岄偅涔堝湪璋冪敤 kobject_add() 鏃跺彲灏?kobject 鐨勭埗瀵硅薄璁句负 NULL锛屾鏃?kobject 鐨勭埗瀵硅薄灏嗘槸 kset 鑷韩銆?
-鐢变簬 kobject 鐨勫悕绉版槸鍦ㄥ畠琚姞鍏ュ唴鏍告椂璁剧疆鐨勶紝鍥犳缁濅笉搴旂洿鎺ユ搷绾?kobject 鐨勫悕绉般€傚鏋滀綘蹇呴』鏇存敼
+这会正确设置 kobject 的父对象及其名称。如kobject 要关联到特定kset，则必须在调kobject_add() 之前赋kobj->kset。如kset kobject 关联，那么在调用 kobject_add() 时可kobject 的父对象设为 NULL，此kobject 的父对象将是 kset 自身
+由于 kobject 的名称是在它被加入内核时设置的，因此绝不应直接操kobject 的名称。如果你必须更改
 ```
 
     int kobject_rename(struct kobject *kobj, const char *new_name);
 
 ```
-   kobject_rename() 涓嶆墽琛屼换浣曞姞閿侊紝涔熸病鏈夊叧浜庡摢浜涘悕绉版湁鏁堢殑纭垏姒傚康锛屽洜姝よ皟鐢ㄨ€呭繀椤昏嚜宸辨彁渚涘仴鍏ㄦ€ф鏌ュ拰涓茶鍖栥€?
-鏈変竴涓悕涓?kobject_set_name() 鐨勫嚱鏁帮紝浣嗛偅灞炰簬鍘嗗彶閬楃暀鍨冨溇锛屾鍦ㄨ绉婚櫎銆傚鏋滀綘鐨勪唬鐮侀渶瑕佽皟鐢ㄨ繖涓嚱鏁帮紝閭ｆ槸涓嶆纭殑锛岄渶瑕佷慨澶嶃€?
-瑕佹纭闂?kobject 鐨勫悕绉帮紝浣跨敤鍑芥暟
+   kobject_rename() 不执行任何加锁，也没有关于哪些名称有效的确切概念，因此调用者必须自己提供健全性检查和串行化
+有一个名kobject_set_name() 的函数，但那属于历史遗留垃圾，正在被移除。如果你的代码需要调用这个函数，那是不正确的，需要修复
+要正确访kobject 的名称，使用函数
 ```
 
     const char *kobject_name(const struct kobject * kobj);
 
 ```
-鏈変竴涓緟鍔╁嚱鏁板彲鍚屾椂鍒濆鍖?kobject 骞跺皢鍏跺姞鍏?```
+有一个辅助函数可同时初始kobject 并将其加```
 
     int kobject_init_and_add(struct kobject *kobj, const struct kobj_type *ktype,
                              struct kobject *parent, const char *fmt, ...);
 
 ```
-   鍏跺弬鏁颁笌鍓嶉潰鎻忚堪鐨?kobject_init() 鍜?kobject_add() 鍑芥暟鐩稿悓銆?
+   其参数与前面描述kobject_init() kobject_add() 函数相同
 
-## Uevents锛堢敤鎴锋€佷簨浠讹級
+## Uevents（用户态事件）
 
 
-鍦?kobject 鍚?kobject 鏍稿績娉ㄥ唽涔嬪悗锛屼綘闇€瑕佸悜澶栫晫瀹ｅ憡瀹冨凡琚垱寤恒€傝繖鍙互閫氳繃
+kobject kobject 核心注册之后，你需要向外界宣告它已被创建。这可以通过
 ```
 
     int kobject_uevent(struct kobject *kobj, enum kobject_action action);
 
 ```
-   褰?kobject 棣栨鍔犲叆鍐呮牳鏃朵娇鐢?**KOBJ_ADD** 鍔ㄤ綔銆傝繖搴斿綋浠呭湪 kobject 鐨勪换浣曞睘鎬ф垨瀛愬璞￠兘宸叉纭垵濮嬪寲涔嬪悗杩涜锛屽洜涓鸿璋冪敤鍙戠敓鏃剁敤鎴风┖闂翠細绔嬪嵆寮€濮嬫煡鎵惧畠浠€?
-   褰?kobject 浠庡唴鏍哥Щ闄ゆ椂锛堝浣曟搷浣滅殑缁嗚妭瑙佷笅鏂囷級锛?*KOBJ_REMOVE** 鐨?uevent 浼氱敱 kobject 鏍稿績鑷姩鍒涘缓锛屽洜姝よ皟鐢ㄨ€呮棤闇€鎿嶅績鎵嬪姩鍘诲仛銆?
+   kobject 首次加入内核时使**KOBJ_ADD** 动作。这应当仅在 kobject 的任何属性或子对象都已正确初始化之后进行，因为该调用发生时用户空间会立即开始查找它们
+   kobject 从内核移除时（如何操作的细节见下文）*KOBJ_REMOVE** uevent 会由 kobject 核心自动创建，因此调用者无需操心手动去做
 
-## 寮曠敤璁℃暟
+## 引用计数
 
 
-kobject 鐨勫叧閿姛鑳戒箣涓€鏄厖褰撳叾鎵€宓屽叆瀵硅薄鐨勫紩鐢ㄨ鏁板櫒銆傚彧瑕佸璇ュ璞＄殑寮曠敤瀛樺湪锛岃瀵硅薄锛堝強鍏舵敮鎾戜唬鐮侊級灏卞繀椤荤户缁瓨鍦ㄣ€?```
+kobject 的关键功能之一是充当其所嵌入对象的引用计数器。只要对该对象的引用存在，该对象（及其支撑代码）就必须继续存在```
 
     struct kobject *kobject_get(struct kobject *kobj);
     void kobject_put(struct kobject *kobj);
 
 ```
-   鎴愬姛璋冪敤 kobject_get() 浼氶€掑 kobject 鐨勫紩鐢ㄨ鏁帮紝骞惰繑鍥炴寚鍚戣 kobject 鐨勬寚閽堛€?
-   褰撻噴鏀句竴涓紩鐢ㄦ椂锛岃皟鐢?kobject_put() 浼氶€掑噺寮曠敤璁℃暟锛屽苟鍙兘閲婃斁璇ュ璞°€傛敞鎰?kobject_init() 灏嗗紩鐢ㄨ鏁拌涓?1锛屽洜姝よ缃?kobject 鐨勪唬鐮佹渶缁堥渶瑕佽皟鐢ㄤ竴娆?kobject_put() 鏉ラ噴鏀捐寮曠敤銆?
-鐢变簬 kobject 鏄姩鎬佺殑锛屽畠浠粷涓嶈兘闈欐€佸０鏄庢垨鍦ㄦ爤涓婂０鏄庯紝鑰屽繀椤诲缁堝姩鎬佸垎閰嶃€傛湭鏉ョ殑鍐呮牳鐗堟湰灏嗗寘鍚闈欐€佸垱寤虹殑 kobject 鐨勮繍琛屾椂妫€鏌ワ紝骞跺悜寮€鍙戣€呰鍛婅繖绉嶄笉褰撶敤娉曘€?
-濡傛灉浣犵殑鍏ㄩ儴闇€姹傚彧鏄负浣犵殑缁撴瀯浣撴彁渚涘紩鐢ㄨ鏁板櫒锛岃鏀圭敤 struct kref锛涗娇鐢?kobject 鍒欒繃浜庨噸閲忕骇銆傛湁鍏冲浣曚娇鐢?struct kref 鐨勬洿澶氫俊鎭紝璇峰弬闃?Linux 鍐呮牳婧愪唬鐮佹爲涓殑 Documentation/core-api/kref.rst 鏂囦欢銆?
+   成功调用 kobject_get() 会递增 kobject 的引用计数，并返回指向该 kobject 的指针
+   当释放一个引用时，调kobject_put() 会递减引用计数，并可能释放该对象。注kobject_init() 将引用计数设1，因此设kobject 的代码最终需要调用一kobject_put() 来释放该引用
+由于 kobject 是动态的，它们绝不能静态声明或在栈上声明，而必须始终动态分配。未来的内核版本将包含对静态创建的 kobject 的运行时检查，并向开发者警告这种不当用法
+如果你的全部需求只是为你的结构体提供引用计数器，请改用 struct kref；使kobject 则过于重量级。有关如何使struct kref 的更多信息，请参Linux 内核源代码树中的 Documentation/core-api/kref.rst 文件
 
-## 鍒涘缓鈥滅畝鍗曗€濈殑 kobject
+## 创建“简单”的 kobject
 
 
-鏈夋椂寮€鍙戣€呮兂瑕佺殑鍙槸鍦?sysfs 灞傜骇涓垱寤轰竴涓畝鍗曠洰褰曠殑鏂规硶锛岃€屼笉蹇呭幓澶勭悊 kset銆乻how 鍜?store 鍑芥暟浠ュ強鍏朵粬缁嗚妭杩欎竴鏁村澶嶆潅鎬с€傝繖鏄簲褰撳垱寤哄崟涓?kobject 鐨勫敮涓€渚嬪鎯呭喌銆傝鍒涘缓杩欐牱涓€涓?```
+有时开发者想要的只是sysfs 层级中创建一个简单目录的方法，而不必去处理 kset、show store 函数以及其他细节这一整套复杂性。这是应当创建单kobject 的唯一例外情况。要创建这样一```
 
     struct kobject *kobject_create_and_add(const char *name, struct kobject *parent);
 
 ```
-璇ュ嚱鏁板皢鍒涘缓涓€涓?kobject锛屽苟灏嗗叾缃簬 sysfs 涓寚瀹氱埗 kobject 涓嬫柟鐨勪綅缃€傝鍒涘缓绠€鍗曞睘鎬?```
+该函数将创建一kobject，并将其置于 sysfs 中指定父 kobject 下方的位置。要创建简单属```
 
     int sysfs_create_file(struct kobject *kobj, const struct attribute *attr);
 
@@ -142,15 +142,15 @@ kobject 鐨勫叧閿姛鑳戒箣涓€鏄厖褰撳叾鎵€宓屽叆瀵硅
     int sysfs_create_group(struct kobject *kobj, const struct attribute_group *grp);
 
 ```
-   杩欓噷浣跨敤鐨勪袱绫诲睘鎬э紝閰嶅悎鐢?kobject_create_and_add() 鍒涘缓鐨?kobject锛岄兘鍙互鏄?kobj_attribute 绫诲瀷锛屽洜姝ゆ棤闇€鍒涘缓鐗规畩鐨勮嚜瀹氫箟灞炴€с€?
-鏈夊叧绠€鍗?kobject 鍜屽睘鎬х殑瀹炵幇锛岃鍙傝绀轰緥妯″潡 `samples/kobject/kobject-example.c`銆?
+   这里使用的两类属性，配合kobject_create_and_add() 创建kobject，都可以kobj_attribute 类型，因此无需创建特殊的自定义属性
+有关简kobject 和属性的实现，请参见示例模块 `samples/kobject/kobject-example.c`
 
-## ktype 涓庨噴鏀炬柟娉?
+## ktype 与释放方
 
-璁ㄨ涓粛鐒剁己灏戠殑涓€涓噸瑕侀棶棰樻槸锛氬綋 kobject 鐨勫紩鐢ㄨ鏁伴檷涓洪浂鏃朵細鍙戠敓浠€涔堛€傚垱寤?kobject 鐨勪唬鐮侀€氬父涓嶇煡閬撹繖浣曟椂浼氬彂鐢燂紱濡傛灉鐭ラ亾锛屼竴寮€濮嬩篃灏辨病澶氬ぇ蹇呰浣跨敤 kobject 浜嗐€傚綋寮曞叆 sysfs 鍚庯紝鍗充究鏄彲棰勬祴鐨勫璞＄敓鍛藉懆鏈熶篃浼氬彉寰楁洿澶嶆潅锛屽洜涓哄唴鏍哥殑鍏朵粬閮ㄥ垎鍙互鑾峰彇绯荤粺涓换浣曞凡娉ㄥ唽 kobject 鐨勫紩鐢ㄣ€?
-鏈€缁堢粨鏋滄槸锛屽彈 kobject 淇濇姢鐨勭粨鏋勪綋鍦ㄥ叾寮曠敤璁℃暟褰掗浂涔嬪墠涓嶈兘琚噴鏀俱€傚紩鐢ㄨ鏁颁笉鍙楀垱寤?kobject 鐨勪唬鐮佺殑鐩存帴鎺у埗銆傚洜姝わ紝姣忓綋鍏舵煇涓?kobject 鐨勬渶鍚庝竴涓紩鐢ㄦ秷澶辨椂锛岃浠ｇ爜蹇呴』浠ュ紓姝ユ柟寮忓緱鍒伴€氱煡銆?
-涓€鏃︿綘閫氳繃 kobject_add() 娉ㄥ唽浜?kobject锛屽氨缁濅笉鑳界敤 kfree() 鐩存帴閲婃斁瀹冦€傚敮涓€瀹夊叏鐨勬柟寮忔槸浣跨敤 kobject_put()銆傝壇濂藉疄璺垫槸濮嬬粓鍦?kobject_init() 涔嬪悗浣跨敤 kobject_put()锛屼互閬垮厤閿欒鎮勬倓娣峰叆銆?
-杩欑閫氱煡閫氳繃 kobject 鐨?release() 鏂规硶瀹屾垚銆傞€氬父
+讨论中仍然缺少的一个重要问题是：当 kobject 的引用计数降为零时会发生什么。创kobject 的代码通常不知道这何时会发生；如果知道，一开始也就没多大必要使用 kobject 了。当引入 sysfs 后，即便是可预测的对象生命周期也会变得更复杂，因为内核的其他部分可以获取系统中任何已注册 kobject 的引用
+最终结果是，受 kobject 保护的结构体在其引用计数归零之前不能被释放。引用计数不受创kobject 的代码的直接控制。因此，每当其某kobject 的最后一个引用消失时，该代码必须以异步方式得到通知
+一旦你通过 kobject_add() 注册kobject，就绝不能用 kfree() 直接释放它。唯一安全的方式是使用 kobject_put()。良好实践是始终kobject_init() 之后使用 kobject_put()，以避免错误悄悄混入
+这种通知通过 kobject release() 方法完成。通常
 ```
 
     void my_object_release(struct kobject *kobj)
@@ -162,10 +162,10 @@ kobject 鐨勫叧閿姛鑳戒箣涓€鏄厖褰撳叾鎵€宓屽叆瀵硅
     }
 
 ```
-   鏈変竴涓鐐规€庝箞寮鸿皟閮戒笉涓鸿繃锛氭瘡涓?kobject 閮藉繀椤绘湁涓€涓?release() 鏂规硶锛屽苟涓?kobject 蹇呴』淇濇寔瀛樺湪锛堝浜庝竴鑷寸姸鎬侊級鐩村埌璇ユ柟娉曡璋冪敤銆傚鏋滀笉婊¤冻杩欎簺绾︽潫锛屼唬鐮佸氨鏄湁缂洪櫡鐨勩€傛敞鎰忥紝濡傛灉浣犲繕璁版彁渚?release() 鏂规硶锛屽唴鏍镐細璀﹀憡浣犮€備笉瑕佽瘯鍥鹃€氳繃鎻愪緵涓€涓€滅┖鈥濈殑 release 鍑芥暟鏉ユ秷闄よ繖涓鍛娿€?
-   濡傛灉浣犵殑娓呯悊鍑芥暟鍙渶璋冪敤 kfree()锛岄偅涔堜綘蹇呴』鍒涘缓涓€涓寘瑁呭嚱鏁帮紝浣跨敤 container_of() 鍚戜笂杞瀷涓烘纭殑绫诲瀷锛堝涓婇潰鐨勪緥瀛愭墍绀猴級锛岀劧鍚庡鏁翠釜缁撴瀯浣撹皟鐢?kfree()銆?
-   娉ㄦ剰锛宬object 鐨勫悕绉板湪 release 鍑芥暟涓彲鐢紝浣嗙粷涓嶅簲鍦ㄦ鍥炶皟涓洿鏀瑰畠銆傚惁鍒?kobject 鏍稿績涓細鍑虹幇鍐呭瓨娉勬紡锛岃繖浼氳浜轰笉蹇€?
-鏈夎叮鐨勬槸锛宺elease() 鏂规硶骞朵笉瀛樺偍鍦?kobject 鑷韩涓紝鑰屾槸涓?ktype 鍏宠仈銆傚洜姝よ鎴戜滑寮曞叆 struct
+   有一个要点怎么强调都不为过：每kobject 都必须有一release() 方法，并kobject 必须保持存在（处于一致状态）直到该方法被调用。如果不满足这些约束，代码就是有缺陷的。注意，如果你忘记提release() 方法，内核会警告你。不要试图通过提供一个“空”的 release 函数来消除这个警告
+   如果你的清理函数只需调用 kfree()，那么你必须创建一个包装函数，使用 container_of() 向上转型为正确的类型（如上面的例子所示），然后对整个结构体调kfree()
+   注意，kobject 的名称在 release 函数中可用，但绝不应在此回调中更改它。否kobject 核心中会出现内存泄漏，这会让人不快
+有趣的是，release() 方法并不存储kobject 自身中，而是ktype 关联。因此让我们引入 struct
 ```
 
     struct kobj_type {
@@ -178,21 +178,21 @@ kobject 鐨勫叧閿姛鑳戒箣涓€鏄厖褰撳叾鎵€宓屽叆瀵硅
     };
 
 ```
-   璇ョ粨鏋勪綋鐢ㄤ簬鎻忚堪涓€绉嶇壒瀹氱被鍨嬬殑 kobject锛堟垨鑰呮洿鍑嗙‘鍦拌锛屾槸鍖呭惈瀹冪殑瀵硅薄锛夈€傛瘡涓?kobject 閮介渶瑕佹湁涓€涓叧鑱旂殑 kobj_type 缁撴瀯浣擄紱鍦ㄨ皟鐢?kobject_init() 鎴?kobject_init_and_add() 鏃跺繀椤绘寚瀹氭寚鍚戣缁撴瀯浣撶殑鎸囬拡銆?
-struct kobj_type 涓殑 release 瀛楁褰撶劧鏄寚鍚戞绫?kobject 鐨?release() 鏂规硶鐨勬寚閽堛€傚彟澶栦袱涓瓧娈碉紙sysfs_ops 鍜?default_groups锛夋帶鍒舵绫诲璞″湪 sysfs 涓殑琛ㄧず鏂瑰紡锛涜繖瓒呭嚭浜嗘湰鏂囨。鐨勮寖鍥淬€?
-default_groups 鎸囬拡鏄竴涓粯璁ゅ睘鎬у垪琛紝浼氫负娉ㄥ唽鍒拌 ktype 鐨勪换浣?kobject 鑷姩鍒涘缓銆?
+   该结构体用于描述一种特定类型的 kobject（或者更准确地说，是包含它的对象）。每kobject 都需要有一个关联的 kobj_type 结构体；在调kobject_init() kobject_init_and_add() 时必须指定指向该结构体的指针
+struct kobj_type 中的 release 字段当然是指向此kobject release() 方法的指针。另外两个字段（sysfs_ops default_groups）控制此类对象在 sysfs 中的表示方式；这超出了本文档的范围
+default_groups 指针是一个默认属性列表，会为注册到该 ktype 的任kobject 自动创建
 
 ## kset
 
 
-kset 浠呬粎鏄竴缁勫笇鏈涘郊姝ゅ叧鑱旂殑 kobject 鐨勯泦鍚堛€傚苟涓嶈姹傚畠浠睘浜庣浉鍚岀殑 ktype锛屼絾濡傛灉涓嶆槸锛屽垯瑕侀潪甯稿皬蹇冦€?
-kset 鎻愪緵浠ヤ笅鍔熻兘锛?
- - 瀹冨厖褰撲竴涓绾充竴缁勫璞＄殑琚嬪瓙銆傚唴鏍稿彲浠ョ敤 kset 鏉ヨ窡韪€滄墍鏈夊潡璁惧鈥濇垨鈥滄墍鏈?PCI 璁惧椹卞姩鈥濄€?
- - kset 涔熸槸 sysfs 涓殑涓€涓瓙鐩綍锛屽叧鑱旂殑 kobject 鍙互鍑虹幇鍏朵腑銆傛瘡涓?kset 鍖呭惈涓€涓?kobject锛岃 kobject 鍙璁剧疆涓哄叾浠?kobject 鐨勭埗瀵硅薄锛泂ysfs 灞傜骇涓殑椤剁骇鐩綍灏辨槸浠ヨ繖绉嶆柟寮忔瀯寤虹殑銆?
- - kset 鍙互鏀寔 kobject 鐨勨€滅儹鎻掓嫈鈥濓紝骞跺奖鍝?uevent 浜嬩欢濡備綍涓婃姤缁欑敤鎴风┖闂淬€?
-鐢ㄩ潰鍚戝璞＄殑鏈璇达紝鈥渒set鈥?鏄《灞傜殑瀹瑰櫒绫伙紱kset 鍖呭惈瀹冧滑鑷繁鐨?kobject锛屼絾閭ｄ釜 kobject 鐢?kset 浠ｇ爜绠＄悊锛屼笉搴旇浠讳綍鍏朵粬鐢ㄦ埛鎿嶇旱銆?
-kset 灏嗗叾瀛愬璞′繚瀛樺湪涓€涓爣鍑嗙殑 kernel 閾捐〃涓€俴object 閫氳繃瀹冧滑鐨?kset 瀛楁鎸囧洖鍏舵墍灞炵殑 kset銆傚湪鍑犱箮鎵€鏈夋儏鍐典笅锛屽睘浜庢煇涓?kset 鐨?kobject 鍦ㄥ叾鐖跺璞′腑鎷ユ湁璇?kset锛堜弗鏍煎湴璇达紝鏄叾宓屽叆鐨?kobject锛夈€?
-鐢变簬 kset 鍐呴儴鍖呭惈涓€涓?kobject锛屽畠搴斿缁堣鍔ㄦ€佸垱寤猴紝鑰岀粷涓嶈兘闈欐€佸０鏄庢垨鍦ㄦ爤涓婂０鏄庛€傝鍒涘缓涓€涓柊鐨?```
+kset 仅仅是一组希望彼此关联的 kobject 的集合。并不要求它们属于相同的 ktype，但如果不是，则要非常小心
+kset 提供以下功能
+ - 它充当一个容纳一组对象的袋子。内核可以用 kset 来跟踪“所有块设备”或“所PCI 设备驱动”
+ - kset 也是 sysfs 中的一个子目录，关联的 kobject 可以出现其中。每kset 包含一kobject，该 kobject 可被设置为其kobject 的父对象；sysfs 层级中的顶级目录就是以这种方式构建的
+ - kset 可以支持 kobject 的“热插拔”，并影uevent 事件如何上报给用户空间
+用面向对象的术语说，“kset是顶层的容器类；kset 包含它们自己kobject，但那个 kobject kset 代码管理，不应被任何其他用户操纵
+kset 将其子对象保存在一个标准的 kernel 链表中。kobject 通过它们kset 字段指回其所属的 kset。在几乎所有情况下，属于某kset kobject 在其父对象中拥有kset（严格地说，是其嵌入kobject）
+由于 kset 内部包含一kobject，它应始终被动态创建，而绝不能静态声明或在栈上声明。要创建一个新```
 
   struct kset *kset_create_and_add(const char *name,
                                    const struct kset_uevent_ops *uevent_ops,
@@ -204,9 +204,9 @@ kset 灏嗗叾瀛愬璞′繚瀛樺湪涓€涓爣鍑嗙殑 kernel 閾捐�
   void kset_unregister(struct kset *k);
 
 ```
-   鏉ラ攢姣佸畠銆傝繖浼氫粠 sysfs 涓Щ闄?kset 骞堕€掑噺鍏跺紩鐢ㄨ鏁般€傚綋寮曠敤璁℃暟褰掗浂鏃讹紝kset 灏嗚閲婃斁銆傜敱浜庡彲鑳戒粛瀛樺湪瀵?kset 鐨勫叾浠栧紩鐢紝閲婃斁鍙兘鍙戠敓鍦?kset_unregister() 杩斿洖涔嬪悗銆?
-浣跨敤 kset 鐨勭ず渚嬪彲鍙傝鍐呮牳鏍戜腑鐨?`samples/kobject/kset-example.c` 鏂囦欢銆?
-濡傛灉 kset 甯屾湜鎺у埗 kobject 鐨?uevent 鎿嶄綔
+   来销毁它。这会从 sysfs 中移kset 并递减其引用计数。当引用计数归零时，kset 将被释放。由于可能仍存在kset 的其他引用，释放可能发生kset_unregister() 返回之后
+使用 kset 的示例可参见内核树中`samples/kobject/kset-example.c` 文件
+如果 kset 希望控制 kobject uevent 操作
 ```
 
   struct kset_uevent_ops {
@@ -217,19 +217,19 @@ kset 灏嗗叾瀛愬璞′繚瀛樺湪涓€涓爣鍑嗙殑 kernel 閾捐�
 
 
 ```
-   filter 鍑芥暟鍏佽 kset 闃绘涓烘煇涓壒瀹?kobject 鍚戠敤鎴风┖闂村彂鍑?uevent銆傚鏋滃嚱鏁拌繑鍥?0锛屽垯涓嶄細鍙戝嚭 uevent銆?
-   name 鍑芥暟浼氳璋冪敤锛屼互瑕嗙洊 uevent 鍙戦€佺粰鐢ㄦ埛绌洪棿鐨?kset 鐨勯粯璁ゅ悕绉般€傞粯璁ゆ儏鍐典笅鍚嶇О涓?kset 鏈韩鐩稿悓锛屼絾鑻ユ彁渚涗簡姝ゅ嚱鏁帮紝瀹冨彲浠ヨ鐩栬鍚嶇О銆?
-   uevent 鍑芥暟浼氬湪 uevent 鍗冲皢鍙戦€佺粰鐢ㄦ埛绌洪棿鏃惰璋冪敤锛屼互渚垮悜 uevent 娣诲姞鏇村鐜鍙橀噺銆?
-   鏈変汉鍙兘浼氶棶锛屾棦鐒舵病鏈夌粰鍑烘墽琛岃鍔熻兘鐨勫嚱鏁帮紝kobject 绌剁珶鏄浣曡鍔犲叆 kset 鐨勩€傜瓟妗堟槸杩欎釜浠诲姟鐢?kobject_add() 澶勭悊銆傚綋 kobject 琚紶缁?kobject_add() 鏃讹紝瀹冪殑 kset 鎴愬憳搴旀寚鍚戣 kobject 灏嗗綊灞炵殑 kset銆俴object_add() 浼氬鐞嗗叾浣欎簨瀹溿€?
-   濡傛灉灞炰簬鏌愪釜 kset 鐨?kobject 娌℃湁璁剧疆鐖?kobject锛屽畠灏嗚鍔犲叆璇?kset 鐨勭洰褰曘€傚苟闈?kset 鐨勬墍鏈夋垚鍛橀兘涓€瀹氫綅浜?kset 鐩綍涓€傚鏋滃湪 kobject 琚姞鍏ヤ箣鍓嶆樉寮忔寚瀹氫簡鐖?kobject锛岄偅涔堣 kobject 浼氳娉ㄥ唽鍒?kset锛屼絾浼氭坊鍔犲湪鐖?kobject 涔嬩笅銆?
+   filter 函数允许 kset 阻止为某个特kobject 向用户空间发uevent。如果函数返0，则不会发出 uevent
+   name 函数会被调用，以覆盖 uevent 发送给用户空间kset 的默认名称。默认情况下名称kset 本身相同，但若提供了此函数，它可以覆盖该名称
+   uevent 函数会在 uevent 即将发送给用户空间时被调用，以便向 uevent 添加更多环境变量
+   有人可能会问，既然没有给出执行该功能的函数，kobject 究竟是如何被加入 kset 的。答案是这个任务kobject_add() 处理。当 kobject 被传kobject_add() 时，它的 kset 成员应指向该 kobject 将归属的 kset。kobject_add() 会处理其余事宜
+   如果属于某个 kset kobject 没有设置kobject，它将被加入kset 的目录。并kset 的所有成员都一定位kset 目录中。如果在 kobject 被加入之前显式指定了kobject，那么该 kobject 会被注册kset，但会添加在kobject 之下
 
-## kobject 鐨勭Щ闄?
+## kobject 的移
 
-鍦?kobject 鎴愬姛鍚?kobject 鏍稿績娉ㄥ唽涔嬪悗锛屽綋浠ｇ爜浣跨敤瀹屾瘯鏃跺繀椤绘竻鐞嗗畠銆傝鍋氬埌杩欎竴鐐癸紝璋冪敤 kobject_put()銆傝繖鏍凤紝kobject 鏍稿績浼氳嚜鍔ㄦ竻鐞嗚 kobject 鍒嗛厤鐨勬墍鏈夊唴瀛樸€傚鏋滃凡涓鸿瀵硅薄鍙戦€佷簡 `KOBJ_ADD` uevent锛屽垯浼氬彂閫佺浉搴旂殑 `KOBJ_REMOVE` uevent锛屽苟涓斾换浣曞叾浠?sysfs 鍐呭姟宸ヤ綔涔熶細涓鸿皟鐢ㄨ€呭Ε鍠勫鐞嗐€?
-濡傛灉浣犻渶瑕佸 kobject 杩涜涓ら樁娈靛垹闄わ紙渚嬪鍦ㄤ綘涓嶈兘鐫＄湢鐨勬椂鍊欓渶瑕侀攢姣佽瀵硅薄锛夛紝閭ｄ箞璋冪敤 kobject_del()锛屽畠浼氬皢 kobject 浠?sysfs 娉ㄩ攢銆傝繖浼氳 kobject 鈥滀笉鍙鈥濓紝浣嗗畠骞舵湭琚竻鐞嗭紝瀵硅薄鐨勫紩鐢ㄨ鏁颁粛鐒剁浉鍚屻€傜◢鍚庤皟鐢?kobject_put() 鏉ュ畬鎴愪笌璇?kobject 鍏宠仈鐨勫唴瀛樻竻鐞嗐€?
-濡傛灉瀛樺湪寰幆寮曠敤锛宬object_del() 鍙敤浜庝涪寮冨鐖跺璞＄殑寮曠敤銆傚湪鏌愪簺鎯呭喌涓嬬埗瀵硅薄寮曠敤瀛愬璞℃槸鍚堟硶鐨勩€傚惊鐜紩鐢╛蹇呴』_閫氳繃鏄惧紡璋冪敤 kobject_del() 鏉ユ墦鐮达紝浠ヤ究璋冪敤 release 鍑芥暟锛屼娇鍓嶅惊鐜腑鐨勫璞″郊姝ら噴鏀俱€?
+kobject 成功kobject 核心注册之后，当代码使用完毕时必须清理它。要做到这一点，调用 kobject_put()。这样，kobject 核心会自动清理该 kobject 分配的所有内存。如果已为该对象发送了 `KOBJ_ADD` uevent，则会发送相应的 `KOBJ_REMOVE` uevent，并且任何其sysfs 内务工作也会为调用者妥善处理
+如果你需要对 kobject 进行两阶段删除（例如在你不能睡眠的时候需要销毁该对象），那么调用 kobject_del()，它会将 kobject sysfs 注销。这会让 kobject “不可见”，但它并未被清理，对象的引用计数仍然相同。稍后调kobject_put() 来完成与kobject 关联的内存清理
+如果存在循环引用，kobject_del() 可用于丢弃对父对象的引用。在某些情况下父对象引用子对象是合法的。循环引用_必须_通过显式调用 kobject_del() 来打破，以便调用 release 函数，使前循环中的对象彼此释放
 
-## 鍙弬鑰冪殑绀轰緥浠ｇ爜
+## 可参考的示例代码
 
 
-鏈夊叧姝ｇ‘浣跨敤 kset 鍜?kobject 鐨勬洿瀹屾暣绀轰緥锛岃鍙傞槄绀轰緥绋嬪簭 `samples/kobject/{kobject-example.c,kset-example.c}`锛屽鏋滀綘閫夋嫨浜?`CONFIG_SAMPLE_KOBJECT`锛屽畠浠皢琚瀯寤轰负鍙姞杞芥ā鍧椼€?
+有关正确使用 kset kobject 的更完整示例，请参阅示例程序 `samples/kobject/{kobject-example.c,kset-example.c}`，如果你选择`CONFIG_SAMPLE_KOBJECT`，它们将被构建为可加载模块

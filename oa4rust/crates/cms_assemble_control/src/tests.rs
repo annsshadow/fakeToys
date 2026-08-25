@@ -125,11 +125,12 @@ async fn test_get_jaxrs_data_document_id_array_data() {
     let pool = build_test_pool();
     let app = crate::cms_assemble_control_router(pool);
 
+    // Java DataAction：array/data 为 POST（ActionUpdateArrayDataWithDocument）
     let response = app
         .oneshot(
             Request::builder()
                 .uri("/jaxrs/data/document/test-id/array/data")
-                .method(Method::GET)
+                .method(Method::POST)
                 .body(Body::empty())
                 .unwrap(),
         )
@@ -365,6 +366,7 @@ async fn test_document_crud_end_to_end() {
 
 #[tokio::test]
 async fn test_document_soft_delete() {
+    use shared::session::Session;
     use shared::testing::{is_db_available, test_pool};
 
     if !is_db_available().await {
@@ -372,59 +374,87 @@ async fn test_document_soft_delete() {
         return;
     }
 
-    let pool = test_pool();
-    let client = pool.get().await.ok();
-
+    // Java ActionDeleteWithDocument 语义：删除的是文档数据（字段行），
+    // 而非文档实体；且需要文档编辑者会话（IDOR 门禁）。
+    let owner = "test-doc-softdelete-owner";
     let doc_id = "test-doc-softdelete-001";
+    let now = chrono::Utc::now().naive_utc();
+    let session = Session {
+        token: "test-doc-softdelete-token".to_string(),
+        person_unique: owner.to_string(),
+        created_at: now,
+        expires_at: now + chrono::Duration::hours(2),
+    };
 
-    if let Some(c) = &client {
-        let _ = c
+    {
+        let pool = test_pool();
+        let client = pool.get().await.unwrap();
+        let _ = client
             .execute(
-                "INSERT INTO x_cms_data_document (id, title, content, author_id, status) \
-                 VALUES ($1, $2, $3, $4, $5) \
-                 ON CONFLICT (id) DO UPDATE SET title = $2, content = $3, author_id = $4, status = $5",
-                &[&doc_id, &"Test Title", &"Test Content", &"test-author", &"draft"],
+                "DELETE FROM x_cms_data_document_field WHERE doc_id = $1",
+                &[&doc_id],
             )
             .await;
+        let _ = client
+            .execute(
+                "INSERT INTO x_cms_data_document (id, title, creator) VALUES ($1, 'Test Title', $2) \
+                 ON CONFLICT (id) DO UPDATE SET title = $2, creator = $2, deleted_at = NULL",
+                &[&doc_id, &owner],
+            )
+            .await;
+        client
+            .execute(
+                "INSERT INTO x_cms_data_document_field (id, doc_id, field_name, field_value) \
+                 VALUES ('test-doc-softdelete-field', $1, 'title', 'Test Title')",
+                &[&doc_id],
+            )
+            .await
+            .unwrap();
     }
 
-    let app = crate::router(pool);
-
-    let response = app
-        .clone()
-        .oneshot(
-            Request::builder()
-                .uri(format!("/jaxrs/data/document/{}/mockdeletetoget", doc_id))
-                .method(Method::GET)
-                .body(Body::empty())
-                .unwrap(),
-        )
-        .await
+    let app = crate::router(test_pool());
+    let req = Request::builder()
+        .uri(format!("/jaxrs/data/document/{}/mockdeletetoget", doc_id))
+        .method(Method::GET)
+        .extension(session)
+        .body(Body::empty())
         .unwrap();
 
+    let response = app.oneshot(req).await.unwrap();
     assert_eq!(response.status(), StatusCode::OK);
     let bytes = axum::body::to_bytes(response.into_body(), 4096).await.unwrap();
     let json: serde_json::Value = serde_json::from_slice(&bytes).unwrap();
     assert_eq!(json["type"], "success");
-    assert_eq!(json["data"]["deleted"], true);
+    assert!(json["data"]["deleted"].as_i64().unwrap() >= 1);
 
-    let response = app
-        .clone()
-        .oneshot(
-            Request::builder()
-                .uri(format!("/jaxrs/anonymous/document/{}/view", doc_id))
-                .method(Method::GET)
-                .body(Body::empty())
-                .unwrap(),
-        )
-        .await
-        .unwrap();
-
-    assert_eq!(response.status(), StatusCode::OK);
-    let bytes = axum::body::to_bytes(response.into_body(), 4096).await.unwrap();
-    let json: serde_json::Value = serde_json::from_slice(&bytes).unwrap();
-    assert_eq!(json["type"], "error");
-    assert_eq!(json["message"], "document not found");
+    // 文档实体仍在，数据字段已被软删
+    {
+        let client = test_pool().get().await.unwrap();
+        let row = client
+            .query_opt(
+                "SELECT 1 FROM x_cms_data_document WHERE id = $1 AND deleted_at IS NULL",
+                &[&doc_id],
+            )
+            .await
+            .unwrap();
+        assert!(row.is_some(), "document entity should survive data deletion");
+        let remaining = client
+            .query_one(
+                "SELECT COUNT(*) AS n FROM x_cms_data_document_field \
+                 WHERE doc_id = $1 AND deleted_at IS NULL",
+                &[&doc_id],
+            )
+            .await
+            .unwrap();
+        let n: i64 = remaining.get("n");
+        assert_eq!(n, 0, "data fields should be soft-deleted");
+        let _ = client
+            .execute(
+                "DELETE FROM x_cms_data_document WHERE id = $1",
+                &[&doc_id],
+            )
+            .await;
+    }
 }
 
 #[cfg(test)]

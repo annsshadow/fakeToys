@@ -1,9 +1,9 @@
 ﻿# dm-crypt
 
 
-Device-Mapper 鐨?鈥渃rypt鈥?鐩爣鍒╃敤鍐呮牳 crypto API 鎻愪緵瀵瑰潡璁惧鐨勯€忔槑鍔犲瘑銆?
+Device-Mapper “crypt目标利用内核 crypto API 提供对块设备的透明加密
 
-鏈夊叧鎵€鏀寔鍙傛暟鐨勬洿璇︾粏鎻忚堪锛岃鍙傝锛?
+有关所支持参数的更详细描述，请参见
 https://gitlab.com/cryptsetup/cryptsetup/wikis/DMCrypt
 
 ```
@@ -13,7 +13,7 @@ https://gitlab.com/cryptsetup/cryptsetup/wikis/DMCrypt
 
 ```
 <cipher>
-    鍔犲瘑绠楁硶锛坈ipher锛夈€佸姞瀵嗘ā寮忎互鍙婂垵濮嬪悜閲忥紙IV锛夌敓鎴愬櫒銆?
+    加密算法（cipher）、加密模式以及初始向量（IV）生成器
 
 ```
 
@@ -49,7 +49,7 @@ https://gitlab.com/cryptsetup/cryptsetup/wikis/DMCrypt
 
 ```
 <key>
-    鐢ㄤ簬鍔犲瘑鐨勫瘑閽ャ€傚畠鏃㈠彲浠ョ紪鐮佷负鍗佸叚杩涘埗鏁板瓧
+    用于加密的密钥。它既可以编码为十六进制数字
     or it can be passed as <key_string> prefixed with single colon
     character (':') for keys residing in kernel keyring service.
     You can only use key sizes that are valid for the selected cipher
@@ -59,17 +59,17 @@ https://gitlab.com/cryptsetup/cryptsetup/wikis/DMCrypt
     into a single string.
 
 <key_string>
-    鍐呮牳瀵嗛挜鐜紙keyring锛夊瘑閽ラ€氳繃浠ヤ笅鏍煎紡鐨勫瓧绗︿覆鏍囪瘑锛?
-    <key_size>:<key_type>:<key_description>銆?
+    内核密钥环（keyring）密钥通过以下格式的字符串标识
+    <key_size>:<key_type>:<key_description>銆。
 
 <key_size>
-    鍔犲瘑瀵嗛挜鐨勫ぇ灏忥紙浠ュ瓧鑺備负鍗曚綅锛夈€傚唴鏍稿瘑閽ョ殑杞借嵎澶у皬蹇呴』涓?<key_size> 涓紶鍏ョ殑鍊肩浉鍖归厤銆?
+    加密密钥的大小（以字节为单位）。内核密钥的载荷大小必须<key_size> 中传入的值相匹配
 
 <key_type>
-    鈥榣ogon鈥欍€佲€榰ser鈥欍€佲€榚ncrypted鈥?鎴?鈥榯rusted鈥?鍐呮牳瀵嗛挜绫诲瀷涔嬩竴銆?
+    ‘logon’、‘user’、‘encrypted‘trusted内核密钥类型之一
 
 <key_description>
-    crypt 鐩爣鍦ㄥ姞杞?<key_type> 绫诲瀷瀵嗛挜鏃跺簲鏌ユ壘鐨勫唴鏍稿瘑閽ョ幆瀵嗛挜鎻忚堪銆?
+    crypt 目标在加<key_type> 类型密钥时应查找的内核密钥环密钥描述
 
 <keycount>
     Multi-key compatibility mode. You can define <keycount> keys and
@@ -77,39 +77,39 @@ https://gitlab.com/cryptsetup/cryptsetup/wikis/DMCrypt
     sector 1 uses key1 etc.).  <keycount> must be a power of two.
 
 <iv_offset>
-    IV 鍋忕Щ鏄竴涓墖鍖鸿鏁帮紝鍦ㄥ垱寤?IV 涔嬪墠浼氳鍔犲埌鎵囧尯鍙蜂笂銆?
+    IV 偏移是一个扇区计数，在创IV 之前会被加到扇区号上
 
 <device path>
-    杩欐槸灏嗙敤浣滃悗绔苟鍖呭惈鍔犲瘑鏁版嵁鐨勮澶囥€備綘鍙互灏嗗叾鎸囧畾涓虹被浼?/dev/xxx 鐨勮矾寰勶紝鎴栨寚瀹氫负璁惧鍙?<major>:<minor>銆?
+    这是将用作后端并包含加密数据的设备。你可以将其指定为类/dev/xxx 的路径，或指定为设备<major>:<minor>
 
 <offset>
-    璁惧鍐呭姞瀵嗘暟鎹紑濮嬬殑璧峰鎵囧尯銆?
+    设备内加密数据开始的起始扇区
 
 <#opt_params>
-    鍙€夊弬鏁扮殑鏁伴噺銆傚鏋滄病鏈夊彲閫夊弬鏁帮紝鍒欏彲浠ヨ烦杩囧彲閫夊弬鏁伴儴鍒嗭紝鎴栬€呭皢 #opt_params 璁句负闆躲€傚惁鍒?#opt_params 涓哄悗缁弬鏁扮殑鏁伴噺銆?
+    可选参数的数量。如果没有可选参数，则可以跳过可选参数部分，或者将 #opt_params 设为零。否#opt_params 为后续参数的数量
 
-    鍙€夊弬鏁伴儴鍒嗙ず渚嬶細
+    可选参数部分示例：
         3 allow_discards same_cpu_crypt submit_from_crypt_cpus
 
 allow_discards
-    鍧椾涪寮冭姹傦紙鍗?TRIM锛変細琚€忎紶鍒?crypt 璁惧銆傞粯璁よ涓烘槸蹇界暐涓㈠純璇锋眰銆?
+    块丢弃请求（TRIM）会被透传crypt 设备。默认行为是忽略丢弃请求
 
-    WARNING锛氬湪鍚敤姝ら€夐」涔嬪墠锛岃浠旂粏璇勪及鐗瑰畾鐨勫畨鍏ㄩ闄┿€備緥濡傦紝鍦ㄥ姞瀵嗚澶囦笂鍏佽涓㈠純鍙兘瀵艰嚧瀵嗘枃璁惧锛堟枃浠剁郴缁熺被鍨嬨€佸凡鐢ㄧ┖闂寸瓑锛夌殑淇℃伅娉勯湶锛屽墠鎻愭槸鍚庣画鍙互鍦ㄨ澶囦笂杞绘槗瀹氫綅鍒拌涓㈠純鐨勫潡銆?
+    WARNING：在启用此选项之前，请仔细评估特定的安全风险。例如，在加密设备上允许丢弃可能导致密文设备（文件系统类型、已用空间等）的信息泄露，前提是后续可以在设备上轻易定位到被丢弃的块
 
 same_cpu_crypt
-    浣跨敤鎻愪氦 IO 鏃舵墍鐢ㄧ殑鍚屼竴涓?CPU 鎵ц鍔犲瘑銆傞粯璁ゆ槸浣跨敤鏈粦瀹氱殑宸ヤ綔闃熷垪锛屼粠鑰岃鍔犲瘑宸ヤ綔鍦ㄥ悇鍙敤 CPU 涔嬮棿鑷姩鍧囪　銆?
+    使用提交 IO 时所用的同一CPU 执行加密。默认是使用未绑定的工作队列，从而让加密工作在各可用 CPU 之间自动均衡
 
 high_priority
-    灏?dm-crypt 宸ヤ綔闃熷垪鍜屽啓鍏ョ嚎绋嬭涓洪珮浼樺厛绾с€傝繖浼氬湪闄嶄綆绯荤粺鏁翠綋鍝嶅簲鑳藉姏鐨勫悓鏃讹紝鎻愬崌 dm-crypt 鐨勫悶鍚愰噺涓庡欢杩熴€?
+    dm-crypt 工作队列和写入线程设为高优先级。这会在降低系统整体响应能力的同时，提升 dm-crypt 的吞吐量与延迟
 
 submit_from_crypt_cpus
-    绂佺敤鍔犲瘑鍚庡皢鍐欏叆鎿嶄綔鍗歌浇鍒板崟鐙嚎绋嬬殑鍋氭硶銆傚湪鏌愪簺鎯呭喌涓嬶紝灏嗗啓鍏?bio 浠庡姞瀵嗙嚎绋嬪嵏杞藉埌鍗曚釜绾跨▼浼氭樉钁楅檷浣庢€ц兘銆傞粯璁ゆ槸灏嗗啓鍏?bio 鍗歌浇鍒板悓涓€绾跨▼锛屽洜涓轰娇鐢ㄧ浉鍚屼笂涓嬫枃鎻愪氦鍐欏叆瀵?CFQ 鏈夌泭銆?
+    禁用加密后将写入操作卸载到单独线程的做法。在某些情况下，将写bio 从加密线程卸载到单个线程会显著降低性能。默认是将写bio 卸载到同一线程，因为使用相同上下文提交写入CFQ 有益
 
 no_read_workqueue
-    缁曡繃 dm-crypt 鍐呴儴宸ヤ綔闃熷垪锛屽苟鍚屾澶勭悊璇诲彇璇锋眰銆?
+    绕过 dm-crypt 内部工作队列，并同步处理读取请求
 
 no_write_workqueue
-    缁曡繃 dm-crypt 鍐呴儴宸ヤ綔闃熷垪锛屽苟鍚屾澶勭悊鍐欏叆璇锋眰銆傚浜庝富鏈虹鐞嗙殑瑙勫尯锛坺oned锛夊潡璁惧锛堜緥濡備富鏈虹鐞嗙殑 SMR 纭洏锛夛紝姝ら€夐」浼氳嚜鍔ㄥ惎鐢ㄣ€?
+    绕过 dm-crypt 内部工作队列，并同步处理写入请求。对于主机管理的规区（zoned）块设备（例如主机管理的 SMR 硬盘），此选项会自动启用
 
 integrity:<bytes>:<type>
     The device requires additional <bytes> metadata per-sector stored
@@ -124,7 +124,7 @@ integrity:<bytes>:<type>
     used for storing authentication tag (and persistent IV if needed).
 
 integrity_key_size:<bytes>
-    濡傛灉涓庢憳瑕佸ぇ灏忎笉鍚岋紝鍙€夋嫨鎬у湴璁剧疆瀹屾暣鎬у瘑閽ュぇ灏忋€傚畠鍏佽浣跨敤灏佽瀵嗛挜锛坵rapped key锛夌畻娉曪紝鍏朵腑瀵嗛挜澶у皬涓庡姞瀵嗗瘑閽ュぇ灏忔棤鍏炽€?
+    如果与摘要大小不同，可选择性地设置完整性密钥大小。它允许使用封装密钥（wrapped key）算法，其中密钥大小与加密密钥大小无关
 
 sector_size:<bytes>
     Use <bytes> as the encryption unit instead of 512 bytes sectors.
@@ -132,12 +132,12 @@ sector_size:<bytes>
     Virtual device will announce this size as a minimal IO and logical sector.
 
 iv_large_sectors
-   IV 鐢熸垚鍣ㄥ皢浣跨敤浠?<sector_size> 涓哄崟浣嶈鏁扮殑鎵囧尯鍙凤紝鑰屼笉鏄粯璁ょ殑 512 瀛楄妭鎵囧尯銆?
+   IV 生成器将使用<sector_size> 为单位计数的扇区号，而不是默认的 512 字节扇区
 
-   渚嬪锛屽鏋?<sector_size> 涓?4096 瀛楄妭锛屽垯绗簩涓墖鍖虹殑 plain64 IV 鍦ㄦ病鏈夎鏍囧織鏃朵负 8锛岃€屽湪瀛樺湪 iv_large_sectors 鏃朵负 1銆傚鏋滄寚瀹氫簡璇ユ爣蹇楋紝鍒?<iv_offset> 蹇呴』鏄?<sector_size> 鐨勫€嶆暟锛堜互 512 瀛楄妭涓哄崟浣嶏級銆?
+   例如，如<sector_size> 4096 字节，则第二个扇区的 plain64 IV 在没有该标志时为 8，而在存在 iv_large_sectors 时为 1。如果指定了该标志，<iv_offset> 必须<sector_size> 的倍数（以 512 字节为单位）
 
 integrity_key_size:<bytes>
-   浣跨敤澶у皬涓?<bytes> 鐨勫畬鏁存€у瘑閽ワ紝鑰屼笉鏄娇鐢ㄦ墍鐢?HMAC 绠楁硶鐨勬憳瑕佸ぇ灏忕殑瀹屾暣鎬у瘑閽ャ€?
+   使用大小<bytes> 的完整性密钥，而不是使用所HMAC 算法的摘要大小的完整性密钥
 
 
 ```
@@ -157,9 +157,9 @@ integrity_key_size:<bytes>
 
 
 ```
-绀轰緥鑴氭湰
+示例脚本
 
-LUKS锛圠inux Unified Key Setup锛夌幇鍦ㄦ槸浣跨敤 'cryptsetup' 宸ュ叿閰嶅悎 dm-crypt 璁剧疆纾佺洏鍔犲瘑鐨勯閫夋柟寮忥紝璇峰弬瑙?
+LUKS（Linux Unified Key Setup）现在是使用 'cryptsetup' 工具配合 dm-crypt 设置磁盘加密的首选方式，请参
 https://gitlab.com/cryptsetup/cryptsetup
 
 

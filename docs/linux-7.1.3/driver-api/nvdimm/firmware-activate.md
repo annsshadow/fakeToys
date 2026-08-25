@@ -1,33 +1,33 @@
 ﻿
-## NVDIMM 杩愯鏃跺浐浠舵縺娲?
+## NVDIMM 运行时固件激
 
-涓€浜涙寔涔呭唴瀛樿澶囧湪璁惧/鈥淒IMM鈥濇湰鍦拌繍琛屽浐浠讹紝浠ユ墽琛屽獟浣撶鐞嗐€佸閲忛厤缃互鍙婂仴搴风洃鎺х瓑浠诲姟銆?鏇存柊璇ュ浐浠剁殑杩囩▼閫氬父娑夊強閲嶅惎锛屽洜涓鸿繖浼氬奖鍝嶆鍦ㄨ繘琛岀殑鍐呭瓨浜嬪姟銆傜劧鑰岋紝閲嶅惎鍏锋湁鐮村潖鎬э紝鑷冲皯
-鐢?Intel ACPI DSM 瑙勮寖 [^1^] 鎵€鎻忚堪鐨?Intel 鎸佷箙鍐呭瓨骞冲彴瀹炵幇澧炲姞浜嗗湪杩愯鏃舵縺娲诲浐浠剁殑鏀寔銆?
-libnvdimm 涓疄鐜颁簡涓€涓師鐢熺殑 sysfs 鎺ュ彛锛屼互鍏佽骞冲彴閫氬憡骞舵帶鍒跺叾鏈湴鐨勮繍琛屾椂鍥轰欢婵€娲昏兘鍔涖€?
-libnvdimm 鐨勬€荤嚎瀵硅薄 ndbusX 瀹炵幇浜嗕竴涓?ndbusX/firmware/activate 灞炴€э紝浠?'idle'銆?armed'銆?'overflow'銆?busy' 涔嬩竴鏄剧ず鍥轰欢婵€娲荤殑鐘舵€併€?
-- idle锛堢┖闂诧級锛?  娌℃湁璁惧琚缃?姝﹁锛坅rmed锛変互婵€娲诲浐浠?
-- armed锛堝凡姝﹁锛夛細
-  鑷冲皯鏈変竴涓澶囧凡琚瑁?
-- busy锛堝繖纰岋級锛?  鍦?busy 鐘舵€佷笅锛屽凡姝﹁鐨勮澶囨鍦ㄨ浆鍥?idle 骞跺畬鎴愪竴涓縺娲诲懆鏈熴€?
-- overflow锛堟孩鍑猴級锛?  濡傛灉骞冲彴瀛樺湪鎵ц婵€娲绘墍闇€鐨勫閲忓伐浣滅殑姒傚康锛屽垯鍙兘鍑虹幇涓烘縺娲绘瑁呬簡杩囧 DIMM 鐨勬儏鍐点€傚湪璇?  鍦烘櫙涓嬶紝'overflow' 鐘舵€佽〃鏄庡浐浠舵縺娲绘湁鍙兘瓒呮椂銆?
-'ndbusX/firmware/activate' 灞炴€у彲浠ヨ鍐欏叆 'live' 鎴?'quiesce' 鍊笺€?quiesce' 鍊间細瑙﹀彂鍐呮牳
-鍦ㄧ浉褰撲簬 hibernation锛堜紤鐪狅級'freeze' 鐘舵€佺殑鐜涓繍琛屽浐浠舵縺娲伙紝姝ゆ椂椹卞姩涓庡簲鐢ㄧ▼搴忎細琚€氱煡
-鍋滄瀵圭郴缁熷唴瀛樼殑淇敼銆?live' 鍊煎垯灏濊瘯涓嶈繘琛岃繖涓€浼戠湢鍛ㄦ湡鏉ュ畬鎴愬浐浠舵縺娲汇€傚鏋滄湭妫€娴嬪埌浠讳綍
-鍥轰欢婵€娲昏兘鍔涳紝鍒?'ndbusX/firmware/activate' 灞炴€т細琚畬鍏ㄧ渷鐣ャ€?
-鍙︿竴涓睘鎬?'ndbusX/firmware/capability' 鎸囩ず 'live' 鎴?'quiesce' 鍊硷紝鍏朵腑 'live' 琛ㄧず鍥轰欢
-鏇存柊涓嶉渶瑕佹垨涓嶄細瀵圭郴缁熸柦鍔犱换浣曢潤榛橈紙quiesce锛夋湡銆?quiesce' 鑳藉姏鍊艰〃绀哄浐浠剁‘瀹炴湡鏈涘苟涓哄唴瀛?鎺у埗鍣ㄦ敞鍏ヤ竴涓潤榛樻湡锛屼絾 'live' 浠嶅彲琚啓鍏?'ndbusX/firmware/activate' 浣滀负瑕嗙洊锛屼互鎵挎媴鍥轰欢
-鏇存柊涓庡湪閫旇澶囧強搴旂敤娲诲姩鐩镐簰绔炰簤鐨勯闄┿€傚鏋滄湭妫€娴嬪埌浠讳綍鍥轰欢婵€娲昏兘鍔涳紝鍒?'ndbusX/firmware/capability' 灞炴€т細琚畬鍏ㄧ渷鐣ャ€?
-libnvdimm 鐨勫唴瀛樿澶?DIMM 瀵硅薄 nmemX 瀹炵幇浜?'nmemX/firmware/activate' 涓?'nmemX/firmware/result'
-灞炴€э紝浠ヤ紶杈炬瘡璁惧鐨勫浐浠舵縺娲荤姸鎬併€備笌 'ndbusX/firmware/activate' 灞炴€х被浼硷紝'nmemX/firmware/activate'
-灞炴€ф寚绀?'idle'銆?armed' 鎴?'busy'銆傚綋绯荤粺鍑嗗濂芥縺娲诲浐浠躲€佸浐浠跺凡鏆傚瓨涓旂姸鎬佽璁句负 armed銆佸苟
-瑙﹀彂 'ndbusX/firmware/activate' 鏃讹紝鐘舵€佷粠 'armed' 杞彉涓?'idle'銆傚湪璇ユ縺娲讳簨浠朵箣鍚庯紝
-nmemX/firmware/result 灞炴€т互浠ヤ笅涔嬩竴鍙嶆槧涓婁竴娆℃縺娲荤殑鐘舵€侊細
+一些持久内存设备在设备/“DIMM”本地运行固件，以执行媒体管理、容量配置以及健康监控等任务更新该固件的过程通常涉及重启，因为这会影响正在进行的内存事务。然而，重启具有破坏性，至少
+Intel ACPI DSM 规范 [^1^] 所描述Intel 持久内存平台实现增加了在运行时激活固件的支持
+libnvdimm 中实现了一个原生的 sysfs 接口，以允许平台通告并控制其本地的运行时固件激活能力
+libnvdimm 的总线对象 ndbusX 实现了一ndbusX/firmware/activate 属性，'idle'armed''overflow'busy' 之一显示固件激活的状态
+- idle（空闲）  没有设备被设武装（armed）以激活固
+- armed（已武装）：
+  至少有一个设备已被武
+- busy（忙碌）  busy 状态下，已武装的设备正在转idle 并完成一个激活周期
+- overflow（溢出）  如果平台存在执行激活所需的增量工作的概念，则可能出现为激活武装了过多 DIMM 的情况。在  场景下，'overflow' 状态表明固件激活有可能超时
+'ndbusX/firmware/activate' 属性可以被写入 'live' 'quiesce' 值quiesce' 值会触发内核
+在相当于 hibernation（休眠）'freeze' 状态的环境中运行固件激活，此时驱动与应用程序会被通知
+停止对系统内存的修改live' 值则尝试不进行这一休眠周期来完成固件激活。如果未检测到任何
+固件激活能力，'ndbusX/firmware/activate' 属性会被完全省略
+另一个属'ndbusX/firmware/capability' 指示 'live' 'quiesce' 值，其中 'live' 表示固件
+更新不需要或不会对系统施加任何静默（quiesce）期quiesce' 能力值表示固件确实期望并为内控制器注入一个静默期，但 'live' 仍可被写'ndbusX/firmware/activate' 作为覆盖，以承担固件
+更新与在途设备及应用活动相互竞争的风险。如果未检测到任何固件激活能力，'ndbusX/firmware/capability' 属性会被完全省略
+libnvdimm 的内存设DIMM 对象 nmemX 实现'nmemX/firmware/activate' 'nmemX/firmware/result'
+属性，以传达每设备的固件激活状态。与 'ndbusX/firmware/activate' 属性类似，'nmemX/firmware/activate'
+属性指'idle'armed' 'busy'。当系统准备好激活固件、固件已暂存且状态被设为 armed、并
+触发 'ndbusX/firmware/activate' 时，状态从 'armed' 转变'idle'。在该激活事件之后，
+nmemX/firmware/result 属性以以下之一反映上一次激活的状态：
 
-- none锛堟棤锛夛細
-  鑷笂涓€娆¤澶囧浣嶄互鏉ワ紝鏈Е鍙戜换浣曡繍琛屾椂婵€娲?
-- success锛堟垚鍔燂級锛?  涓婁竴娆¤繍琛屾椂婵€娲绘垚鍔熷畬鎴愩€?
-- fail锛堝け璐ワ級锛?  涓婁竴娆¤繍琛屾椂婵€娲诲洜璁惧鐗瑰畾鐨勫師鍥犺€屽け璐ャ€?
-- not_staged锛堟湭鏆傚瓨锛夛細
-  涓婁竴娆¤繍琛屾椂婵€娲诲け璐ワ紝鍘熷洜鏄浐浠堕暅鍍忔湭琚殏瀛樿€屽鑷撮『搴忛敊璇€?
-- need_reset锛堥渶瑕佸浣嶏級锛?  杩愯鏃跺浐浠舵縺娲诲け璐ワ紝浣嗗浐浠朵粛鍙€氳繃閲嶅惎绯荤粺鐨勪紶缁熸柟娉曟縺娲汇€?
+- none（无）：
+  自上一次设备复位以来，未触发任何运行时激
+- success（成功）  上一次运行时激活成功完成
+- fail（失败）  上一次运行时激活因设备特定的原因而失败
+- not_staged（未暂存）：
+  上一次运行时激活失败，原因是固件镜像未被暂存而导致顺序错误
+- need_reset（需要复位）  运行时固件激活失败，但固件仍可通过重启系统的传统方法激活
 [^1^]: https://docs.pmem.io/persistent-memory/

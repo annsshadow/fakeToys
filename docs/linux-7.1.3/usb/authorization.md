@@ -1,10 +1,10 @@
-﻿## 鎺堟潈锛堟垨涓嶆巿鏉冿級浣犵殑 USB 璁惧杩炴帴鍒扮郴缁?
+﻿## 授权（或不授权）你的 USB 设备连接到系
 
 Copyright (C) 2007 Inaky Perez-Gonzalez <inaky@linux.intel.com> Intel Corporation
 
-姝ょ壒鎬у厑璁镐綘鎺у埗涓€涓?USB 璁惧鏄惁鍙互鍦ㄧ郴缁熶腑浣跨敤锛堟垨涓嶈浣跨敤锛夈€傛鐗规€у皢鍏佽浣?瀹炵幇鐢辩敤鎴风┖闂村畬鍏ㄦ帶鍒剁殑 USB 璁惧閿佸畾锛坙ock-down锛夈€?
-鎴嚦鐩墠锛屽綋杩炴帴涓€涓?USB 璁惧鏃讹紝瀹冧細琚厤缃紝鍏舵帴鍙ｄ細绔嬪嵆瀵圭敤鎴峰彲鐢ㄣ€傜粡杩囨淇敼锛?鍙湁褰?root 鎺堟潈璇ヨ澶囪繘琛岄厤缃悗锛屾墠鑳戒娇鐢ㄥ畠銆?
-## 鐢ㄦ硶
+此特性允许你控制一USB 设备是否可以在系统中使用（或不被使用）。此特性将允许实现由用户空间完全控制的 USB 设备锁定（lock-down）
+截至目前，当连接一USB 设备时，它会被配置，其接口会立即对用户可用。经过此修改只有root 授权该设备进行配置后，才能使用它
+## 用法
 
 
 ```
@@ -17,7 +17,7 @@ Copyright (C) 2007 Inaky Perez-Gonzalez <inaky@linux.intel.com> Intel Corporatio
 	$ echo 0 > /sys/bus/usb/devices/DEVICE/authorized
 
 ```
-榛樿灏嗚繛鎺ュ埌 hostX 鐨勬柊璁惧璁句负榛樿涓嶆巿鏉冿紙鍗筹細
+默认将连接到 hostX 的新设备设为默认不授权（即：
 ```
 
 	$ echo 0 > /sys/bus/usb/devices/usbX/authorized_default
@@ -28,13 +28,13 @@ Copyright (C) 2007 Inaky Perez-Gonzalez <inaky@linux.intel.com> Intel Corporatio
 	$ echo 1 > /sys/bus/usb/devices/usbX/authorized_default
 
 ```
-榛樿鎯呭喌涓嬶紝鎵€鏈?USB 璁惧閮芥槸琚巿鏉冪殑銆傚悜 authorized_default 灞炴€у啓鍏?"2" 浼氫娇鍐呮牳
-榛樿浠呮巿鏉冭繛鎺ュ埌鍐呴儴 USB 绔彛鐨勮澶囥€?
-### 绯荤粺閿佸畾绀轰緥锛堢畝闄嬬増锛?
+默认情况下，所USB 设备都是被授权的。向 authorized_default 属性写"2" 会使内核
+默认仅授权连接到内部 USB 端口的设备
+### 系统锁定示例（简陋版
 
-璁炬兂浣犳兂瀹炵幇涓€绉嶉攣瀹氾紝浣垮緱鍙湁 XYZ 绫诲瀷鐨勮澶囧彲浠ヨ繛鎺ワ紙渚嬪锛岃繖鏄竴鍙板甫鏈夊彲瑙?```
+设想你想实现一种锁定，使得只有 XYZ 类型的设备可以连接（例如，这是一台带有可```
 
-  鍚姩
+  启动
   rc.local ->
 
    for host in /sys/bus/usb/devices/usb*
@@ -52,29 +52,29 @@ Copyright (C) 2007 Inaky Perez-Gonzalez <inaky@linux.intel.com> Intel Corporatio
 
 
 ```
-鐜板湪锛宒evice_is_my_type() 鎵嶆槸閿佸畾鐪熸鐨勭簿楂撴墍鍦ㄣ€備粎浠呮鏌?class銆乼ype 涓?protocol 鏄惁
-鍖归厤鏌愪簨鐗╋紝鏄綘鎵€鑳藉仛鐨勬渶绯熺硶鐨勫畨鍏ㄩ獙璇侊紙鎴栬€呭浜庢兂绐佺牬瀹冪殑浜烘潵璇存槸鏈€濂界殑锛夈€傚鏋滀綘闇€瑕?瀹夊叏鐨勬柟妗堬紝璇蜂娇鐢ㄥ姞瀵嗕笌璇佷功璁よ瘉鎴栫被浼兼墜娈点€傚浜庡瓨鍌ㄥ瘑閽ヨ繖绫荤畝鍗曞満鏅?```
+现在，device_is_my_type() 才是锁定真正的精髓所在。仅仅检class、type protocol 是否
+匹配某事物，是你所能做的最糟糕的安全验证（或者对于想突破它的人来说是最好的）。如果你需安全的方案，请使用加密与证书认证或类似手段。对于存储密钥这类简单场```
 
   function device_is_my_type()
   {
-    echo 1 > authorized		# 涓存椂鎺堟潈瀹?                                # FIXME锛氱‘淇濇棤浜鸿兘鎸傝浇瀹?    mount DEVICENODE /mntpoint
+    echo 1 > authorized		# 临时授权                                # FIXME：确保无人能挂载    mount DEVICENODE /mntpoint
     sum=$(md5sum /mntpoint/.signature)
     if [ $sum = $(cat /etc/lockdown/keysum) ]
     then
          echo "We are good, connected"
          umount /mntpoint
-         # 鍏朵粬鎿嶄綔浠ヤ究浠栦汉鍙互浣跨敤瀹?    else
+         # 其他操作以便他人可以使用    else
          echo 0 > authorized
     fi
   }
 
 
 ```
-褰撶劧锛岃繖寰堢畝闄嬶紝浣犱細鎯宠鐢?PKI 鍋氱湡姝ｇ殑璇佷功楠岃瘉锛岃繖鏍峰氨涓嶄緷璧栧叡浜瘑閽ョ瓑绛夛紝浣嗘€濊矾灏辨槸杩欐牱銆?浠讳綍鑳藉鎺ヨЕ鍒拌澶囧皬宸ュ叿濂椾欢鐨勪汉閮藉彲浠ヤ吉閫犳弿杩扮涓庤澶囦俊鎭€備笉瑕佷俊浠昏繖浜涖€備笉瀹㈡皵銆?
-### 鎺ュ彛鎺堟潈
+当然，这很简陋，你会想要PKI 做真正的证书验证，这样就不依赖共享密钥等等，但思路就是这样任何能够接触到设备小工具套件的人都可以伪造描述符与设备信息。不要信任这些。不客气
+### 接口授权
 
 
-鏈変竴绉嶇被浼肩殑鏂规硶鍙互鍏佽鎴栨嫆缁濈壒瀹氱殑 USB 鎺ュ彛銆傝繖鍏佽鍙睆钄戒竴涓?USB 璁惧鐨勫瓙闆嗐€?
+有一种类似的方法可以允许或拒绝特定的 USB 接口。这允许只屏蔽一USB 设备的子集
 ```
 
 	$ echo 1 > /sys/bus/usb/devices/INTERFACE/authorized
@@ -85,7 +85,7 @@ Copyright (C) 2007 Inaky Perez-Gonzalez <inaky@linux.intel.com> Intel Corporatio
 	$ echo 0 > /sys/bus/usb/devices/INTERFACE/authorized
 
 ```
-鍦ㄧ壒瀹?USB 鎬荤嚎涓婏紝鏂版帴鍙ｇ殑榛樿鍊间篃鍙互琚洿鏀广€?
+在特USB 总线上，新接口的默认值也可以被更改
 ```
 
 	$ echo 1 > /sys/bus/usb/devices/usbX/interface_authorized_default
@@ -96,7 +96,7 @@ Copyright (C) 2007 Inaky Perez-Gonzalez <inaky@linux.intel.com> Intel Corporatio
 	$ echo 0 > /sys/bus/usb/devices/usbX/interface_authorized_default
 
 ```
-榛樿鎯呭喌涓?interface_authorized_default 浣嶄负 1銆?鍥犳鎵€鏈夋帴鍙ｉ粯璁ら兘浼氳鎺堟潈銆?
-娉ㄦ剰锛?  濡傛灉涓€涓鍙栨秷鎺堟潈鐨勬帴鍙ｈ閲嶆柊鎺堟潈锛屽垯椹卞姩鎺㈡祴蹇呴』閫氳繃灏?INTERFACE 鍐欏叆
-  /sys/bus/usb/drivers_probe 鎵嬪姩瑙﹀彂銆?
-瀵逛簬闇€瑕佸涓帴鍙ｇ殑椹卞姩锛屽簲棣栧厛鎺堟潈鎵€鏈夐渶瑕佺殑鎺ュ彛銆備箣鍚庡啀杩涜椹卞姩鎺㈡祴銆?杩欐牱鍙互閬垮厤鍓綔鐢ㄣ€?
+默认情况interface_authorized_default 位为 1因此所有接口默认都会被授权
+注意  如果一个被取消授权的接口被重新授权，则驱动探测必须通过INTERFACE 写入
+  /sys/bus/usb/drivers_probe 手动触发
+对于需要多个接口的驱动，应首先授权所有需要的接口。之后再进行驱动探测这样可以避免副作用

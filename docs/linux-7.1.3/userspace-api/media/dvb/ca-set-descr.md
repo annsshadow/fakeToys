@@ -16,21 +16,21 @@ CA_SET_DESCR
 
 
 `fd`
-  鐢卞厛鍓?`open()` 璋冪敤杩斿洖鐨勬枃浠舵弿杩扮銆?
+  由先`open()` 调用返回的文件描述符
 
 `msg`
-  鎸囧悜 struct `ca_descr` 鐨勬寚閽堛€?
+  指向 struct `ca_descr` 的指针
 
 ### Description
 
 
-CA_SET_DESCR 鐢ㄤ簬鍚戣В鎵板櫒 CA 鎻掓Ы鎻愪緵瑙ｆ壈瀵嗛挜锛堢О涓烘帶鍒跺瓧锛夈€?
+CA_SET_DESCR 用于向解扰器 CA 插槽提供解扰密钥（称为控制字）
 
 ### Return Value
 
 
-鎴愬姛鏃惰繑鍥?0銆?
+成功时返0
 
-鍑洪敊鏃惰繑鍥?-1锛屽苟鐩稿簲鍦拌缃?`errno` 鍙橀噺銆?
+出错时返-1，并相应地设`errno` 变量
 
-閫氱敤閿欒鐮佸湪 Generic Error Codes <gen-errors> 绔犺妭涓弿杩般€?
+通用错误码在 Generic Error Codes <gen-errors> 章节中描述

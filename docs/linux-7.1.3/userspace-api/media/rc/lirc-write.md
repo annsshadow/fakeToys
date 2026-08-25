@@ -4,34 +4,34 @@
 ######## LIRC write()
 
 
-## 鍚嶇О
+## 名称
 
 
-lirc-write - 鍐欏叆涓€涓?LIRC 璁惧
+lirc-write - 写入一LIRC 设备
 
-## 姒傝
+## 概要
 
 
     #include <unistd.h>
 
 
-## 鍙傛暟
+## 参数
 
 
 `fd`
-    鐢?`open()` 杩斿洖鐨勬枃浠舵弿杩扮銆?
+    `open()` 返回的文件描述符
 `buf`
-    鍖呭惈寰呭啓鍏ユ暟鎹殑缂撳啿鍖?
+    包含待写入数据的缓冲
 `count`
-    缂撳啿鍖轰腑鐨勫瓧鑺傛暟
+    缓冲区中的字节数
 
-## 鎻忚堪
+## 描述
 
 
-`write()` 灏嗕粠 `buf` 寮€濮嬬殑缂撳啿鍖轰腑鏈€澶?`count` 涓瓧鑺傚啓鍏ョ敱鏂囦欢鎻忚堪绗?`fd` 鎵€寮曠敤鐨勮澶囥€?
-鏁版嵁鐨勭‘鍒囨牸寮忓彇鍐充簬椹卞姩鎵€澶勭殑妯″紡锛岃浣跨敤 lirc_get_features 鑾峰彇鎵€鏀寔鐨勬ā寮忥紝骞朵娇鐢?lirc_set_send_mode 璁剧疆妯″紡銆?
-褰撳浜?LIRC_MODE_PULSE <lirc-mode-PULSE> 妯″紡鏃讹紝鍐欏叆 chardev 鐨勬暟鎹槸涓€涓叉暣鏁板€艰〃绀虹殑鑴夊啿/绌虹櫧锛坧ulse/space锛夊簭鍒椼€傝剦鍐插拰绌虹櫧浠呴€氳繃瀹冧滑鐨勪綅缃殣寮忔爣璁般€傛暟鎹繀椤讳互涓€涓剦鍐插紑濮嬪苟浠ヤ竴涓剦鍐茬粨鏉燂紝鍥犳鏁版嵁蹇呴』濮嬬粓鍖呭惈濂囨暟涓噰鏍枫€倃rite 鍑芥暟浼氶樆濉烇紝鐩村埌纭欢浼犺緭瀹屾暟鎹负姝€傚鏋滄彁渚涚殑鏁版嵁澶氫簬纭欢鑳藉鍙戦€佺殑閲忥紝椹卞姩杩斿洖 `EINVAL`銆?
-褰撳浜?LIRC_MODE_SCANCODE <lirc-mode-scancode> 妯″紡鏃讹紝姣忔蹇呴』鍚?chardev 鍐欏叆涓€涓?`struct lirc_scancode`锛屽惁鍒欒繑鍥?`EINVAL`銆傚湪 `scancode` 鎴愬憳涓缃墍闇€鐨勬壂鎻忕爜锛屽湪 `rc_proto`锛氭垚鍛樹腑璁剧疆 IR 鍗忚 <Remote_controllers_Protocols>銆傛墍鏈夊叾浠栨垚鍛樺繀椤昏缃负 0锛屽惁鍒欒繑鍥?`EINVAL`銆傚鏋滄病鏈夎鍗忚鐨勫崗璁紪鐮佸櫒锛屾垨鑰呰鎵弿鐮佸鎸囧畾鍗忚鏃犳晥锛屽垯杩斿洖 `EINVAL`銆倃rite 鍑芥暟浼氶樆濉烇紝鐩村埌鎵弿鐮佽纭欢浼犺緭瀹屾瘯銆?
-## 杩斿洖鍊?
+`write()` 将从 `buf` 开始的缓冲区中最`count` 个字节写入由文件描述`fd` 所引用的设备
+数据的确切格式取决于驱动所处的模式，请使用 lirc_get_features 获取所支持的模式，并使lirc_set_send_mode 设置模式
+当处LIRC_MODE_PULSE <lirc-mode-PULSE> 模式时，写入 chardev 的数据是一串整数值表示的脉冲/空白（pulse/space）序列。脉冲和空白仅通过它们的位置隐式标记。数据必须以一个脉冲开始并以一个脉冲结束，因此数据必须始终包含奇数个采样。write 函数会阻塞，直到硬件传输完数据为止。如果提供的数据多于硬件能够发送的量，驱动返回 `EINVAL`
+当处LIRC_MODE_SCANCODE <lirc-mode-scancode> 模式时，每次必须chardev 写入一`struct lirc_scancode`，否则返`EINVAL`。在 `scancode` 成员中设置所需的扫描码，在 `rc_proto`：成员中设置 IR 协议 <Remote_controllers_Protocols>。所有其他成员必须设置为 0，否则返`EINVAL`。如果没有该协议的协议编码器，或者该扫描码对指定协议无效，则返回 `EINVAL`。write 函数会阻塞，直到扫描码被硬件传输完毕
+## 杩斿洖鍊。
 
-鎴愬姛鏃惰繑鍥炲啓鍏ョ殑瀛楄妭鏁般€傚鏋滆繖涓暟灏忎簬璇锋眰鐨勫瓧鑺傛暟锛屾垨灏忎簬涓€甯ф墍闇€鐨勬暟鎹噺锛岃繖骞朵笉绠楅敊璇€傚嚭閿欐椂杩斿洖 -1锛屽苟鐩稿簲鍦拌缃?`errno` 鍙橀噺銆傞€氱敤閿欒鐮佸湪 Generic Error Codes <gen-errors> 绔犺妭涓弿杩般€?
+成功时返回写入的字节数。如果这个数小于请求的字节数，或小于一帧所需的数据量，这并不算错误。出错时返回 -1，并相应地设`errno` 变量。通用错误码在 Generic Error Codes <gen-errors> 章节中描述

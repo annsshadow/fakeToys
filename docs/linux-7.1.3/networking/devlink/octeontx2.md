@@ -1,11 +1,11 @@
-﻿## octeontx2 devlink 鏀寔
+﻿## octeontx2 devlink 支持
 
 
-鏈枃妗ｆ弿杩颁簡 `octeontx2 AF銆丳F 鍜?VF` 璁惧椹卞姩瀹炵幇鐨?devlink 鐗规€с€?
-## 鍙傛暟
+本文档描述了 `octeontx2 AF、PF VF` 设备驱动实现devlink 特性
+## 参数
 
 
-`octeontx2 PF 鍜?VF` 椹卞姩瀹炵幇浜嗕互涓嬮┍鍔ㄧ壒瀹氱殑鍙傛暟銆?
+`octeontx2 PF VF` 驱动实现了以下驱动特定的参数
    :widths: 5 5 5 85
 
    - - Name
@@ -15,8 +15,8 @@
    - - `mcam_count`
      - u16
      - runtime
-     - 閫夋嫨涓烘煇涓帴鍙ｅ垎閰嶇殑鍖归厤 CAM 鏉＄洰鏁伴噺銆?       璇ユ暟閲忓悓鏍风敤浜庤鎺ュ彛鐨?ntuple 杩囨护鍣ㄣ€傜敱 PF 鍜?VF 椹卞姩鏀寔銆?
-`octeontx2 AF` 椹卞姩瀹炵幇浜嗕互涓嬮┍鍔ㄧ壒瀹氱殑鍙傛暟銆?
+     - 选择为某个接口分配的匹配 CAM 条目数量       该数量同样用于该接口ntuple 过滤器。由 PF VF 驱动支持
+`octeontx2 AF` 驱动实现了以下驱动特定的参数
    :widths: 5 5 5 85
 
    - - Name
@@ -26,20 +26,20 @@
    - - `dwrr_mtu`
      - u32
      - runtime
-     - 鐢ㄤ簬璁剧疆纭欢鍦ㄤ紶杈撻槦鍒椾箣闂磋皟搴︽椂浣跨敤鐨勯噺瀛愶紙quantum锛夈€?       纭欢浣跨敤鍔犳潈 DWRR 绠楁硶鍦ㄦ墍鏈変紶杈撻槦鍒椾箣闂磋繘琛岃皟搴︺€?   - - `npc_mcam_high_zone_percent`
+     - 用于设置硬件在传输队列之间调度时使用的量子（quantum）       硬件使用加权 DWRR 算法在所有传输队列之间进行调度   - - `npc_mcam_high_zone_percent`
      - u8
      - runtime
-     - 鐢ㄤ簬璁剧疆鐢ㄦ埛鍙湪 NPC MCAM 涓垎閰嶇殑楂樹紭鍏堢骇鍖哄煙鏉＄洰鏁伴噺锛屼粠 high銆乵id 鍜?low
-       涓変釜浼樺厛绾у尯鍩熺被鍒腑鍒掑垎銆?   - - `npc_def_rule_cntr`
+     - 用于设置用户可在 NPC MCAM 中分配的高优先级区域条目数量，从 high、mid low
+       三个优先级区域类别中划分   - - `npc_def_rule_cntr`
      - bool
      - runtime
-     - 鐢ㄤ簬鍚敤鎴栫鐢?NPC MCAM 涓粯璁よ鍒欑殑鍛戒腑璁℃暟鍣ㄣ€?       涓嶈兘淇濊瘉璁℃暟鍣ㄤ細琚惎鐢ㄥ苟鏄犲皠鍒版墍鏈夐粯璁よ鍒欙紝鍥犱负璁℃暟鍣ㄧ█缂猴紝椹卞姩閲囩敤灏藉姏鑰屼负鐨勬柟寮忋€?       榛樿瑙勫垯浣滀负鐗瑰畾 PF 鎴?VF 鐨勪富瑕佹暟鎹寘瀵煎悜锛坰teering锛夎鍒欙紝鍩轰簬鍏剁敱 AF 椹卞姩鍦ㄥ垵濮嬪寲
-       鏃跺畨瑁呯殑 DMAC 鍦板潃銆備粠 debugfs 璇诲彇榛樿瑙勫垯鍛戒腑璁℃暟鍣ㄧ殑绀轰緥鍛戒护濡備笅锛?       cat /sys/kernel/debug/cn10k/npc/mcam_rules
+     - 用于启用或禁NPC MCAM 中默认规则的命中计数器       不能保证计数器会被启用并映射到所有默认规则，因为计数器稀缺，驱动采用尽力而为的方式       默认规则作为特定 PF VF 的主要数据包导向（steering）规则，基于其由 AF 驱动在初始化
+       时安装的 DMAC 地址。从 debugfs 读取默认规则命中计数器的示例命令如下       cat /sys/kernel/debug/cn10k/npc/mcam_rules
    - - `nix_maxlf`
      - u16
      - runtime
-     - 鐢ㄤ簬璁剧疆 NIX 纭欢鍧椾腑 LF 鐨勬渶澶ф暟閲忋€傝繖鏈夊姪浜庡鍔犲垎閰嶇粰宸插惎鐢?LF锛堜緥濡?MCAM 鏉＄洰锛?       鐨勯粯璁よ祫婧愮殑鍙敤鎬с€?
-`octeontx2 PF` 椹卞姩瀹炵幇浜嗕互涓嬮┍鍔ㄧ壒瀹氱殑鍙傛暟銆?
+     - 用于设置 NIX 硬件块中 LF 的最大数量。这有助于增加分配给已启LF（例MCAM 条目       的默认资源的可用性
+`octeontx2 PF` 驱动实现了以下驱动特定的参数
    :widths: 5 5 5 85
 
    - - Name
@@ -49,4 +49,4 @@
    - - `unicast_filter_count`
      - u8
      - runtime
-     - 璁剧疆鍙负璇ヨ澶囩紪绋嬬殑鍗曟挱杩囨护鍣ㄧ殑鏈€澶ф暟閲忋€傝繖鍙敤浜庡疄鐜版洿濂界殑璁惧璧勬簮鍒╃敤锛?       閬垮厤杩囬噺娑堣€楁湭浣跨敤鐨?MCAM 琛ㄦ潯鐩€?
+     - 设置可为该设备编程的单播过滤器的最大数量。这可用于实现更好的设备资源利用       避免过量消耗未使用MCAM 表条目

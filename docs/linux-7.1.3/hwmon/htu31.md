@@ -1,7 +1,7 @@
-﻿## 鍐呮牳椹卞姩 HTU31
+﻿## 内核驱动 HTU31
 
 
-鏀寔鑺墖锛?
+支持芯片
 
   - Measurement Specialties HTU31
 
@@ -9,26 +9,26 @@
 
     Addresses scanned: -
 
-    Datasheet: 鍏紑鍙粠 https://www.te.com/en/product-CAT-HSC0007.html 鑾峰彇
+    Datasheet: 公开可从 https://www.te.com/en/product-CAT-HSC0007.html 获取
 
 Author:
 
   - Andrei Lalaev <andrey.lalaev@gmail.com>
 
-### 璇存槑
+### 说明
 
 
-HTU31 鏄竴娆炬箍搴︿笌娓╁害浼犳劅鍣ㄣ€?
+HTU31 是一款湿度与温度传感器
 
-鏀寔鐨勬俯搴﹁寖鍥翠负 -40 鍒?125 鎽勬皬搴︺€?
+支持的温度范围为 -40 125 摄氏度
 
-涓庤澶囩殑閫氫俊閫氳繃 I2C 鍗忚杩涜銆備紶鎰熷櫒榛樿鍦板潃涓?0x40銆?
+与设备的通信通过 I2C 协议进行。传感器默认地址0x40
 
-### sysfs 鎺ュ彛
+### sysfs 接口
 
 
 =================== =================
-temp1_input:        娓╁害杈撳叆
-humidity1_input:    婀垮害杈撳叆
-heater_enable:      鍔犵儹鍣ㄦ帶鍒?
+temp1_input:        温度输入
+humidity1_input:    湿度输入
+heater_enable:      加热器控
 =================== =================

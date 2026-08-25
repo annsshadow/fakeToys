@@ -1,94 +1,94 @@
 ﻿
-### 鍘熷瓙鍧楀啓鍏ワ紙Atomic Block Writes锛?
+### 原子块写入（Atomic Block Writes
 
-#### 绠€浠?
+#### 简
 
-鍘熷瓙锛坲ntorn锛屼笉鎾曡锛夊潡鍐欏叆纭繚鏁翠釜鍐欏叆瑕佷箞鍏ㄩ儴鎻愪氦鍒扮鐩橈紝瑕佷箞閮戒笉鎻愪氦銆傝繖鍙互闃叉鍦ㄦ柇鐢垫垨绯荤粺宕╂簝鏈熼棿鍑虹幇 鈥渢orn writes锛堟挄瑁傚啓鍏ワ級鈥濄€俥xt4 鏂囦欢绯荤粺鏀寔鍦ㄥ甫鏈?extents 鐨勫父瑙勬枃浠朵笂杩涜鍘熷瓙鍐欏叆锛堜粎闄?Direct I/O锛夛紝鍓嶆彁鏄簳灞傚瓨鍌ㄨ澶囨敮鎸佺‖浠跺師瀛愬啓鍏ャ€傝繖閫氳繃浠ヤ笅涓ょ鏂瑰紡鏀寔锛?
-1. **鍗?fsblock 鍘熷瓙鍐欏叆**锛?   EXT4 鑷?v6.13 璧锋敮鎸佷互鍗曚釜鏂囦欢绯荤粺鍧椾负鍗曚綅鐨勫師瀛愬啓鍏ユ搷浣溿€傚湪姝ゆ儏鍐典笅锛屽師瀛愬啓鍏ュ崟鍏冪殑鏈€灏忓拰鏈€澶у昂瀵搁兘璁剧疆涓烘枃浠剁郴缁熷潡澶у皬銆?   渚嬪锛屽湪椤甸潰澶у皬涓?64KB 鐨勭郴缁熶笂锛屼娇鐢?16KB 鏂囦欢绯荤粺鍧楀ぇ灏忚繘琛?16KB 鐨勫師瀛愬啓鍏ユ槸鍙鐨勩€?
-2. **浣跨敤 Bigalloc 鐨勫 fsblock 鍘熷瓙鍐欏叆**锛?   EXT4 鐜板湪涔熸敮鎸佷娇鐢ㄥ悕涓?bigalloc 鐨勭壒鎬ц法瓒婂涓枃浠剁郴缁熷潡鐨勫師瀛愬啓鍏ャ€傚師瀛愬啓鍏ュ崟鍏冪殑鏈€灏忓拰鏈€澶у昂瀵哥敱鏂囦欢绯荤粺鍧楀ぇ灏忓拰绨囧ぇ灏忓喅瀹氾紝鍩轰簬搴曞眰璁惧鏀寔鐨勫師瀛愬啓鍏ュ崟鍏冮檺鍒躲€?
-#### 瑕佹眰
+原子（untorn，不撕裂）块写入确保整个写入要么全部提交到磁盘，要么都不提交。这可以防止在断电或系统崩溃期间出现 “torn writes（撕裂写入）”。ext4 文件系统支持在带extents 的常规文件上进行原子写入（仅Direct I/O），前提是底层存储设备支持硬件原子写入。这通过以下两种方式支持
+1. **fsblock 原子写入**   EXT4 v6.13 起支持以单个文件系统块为单位的原子写入操作。在此情况下，原子写入单元的最小和最大尺寸都设置为文件系统块大小   例如，在页面大小64KB 的系统上，使16KB 文件系统块大小进16KB 的原子写入是可行的
+2. **使用 Bigalloc 的多 fsblock 原子写入**   EXT4 现在也支持使用名bigalloc 的特性跨越多个文件系统块的原子写入。原子写入单元的最小和最大尺寸由文件系统块大小和簇大小决定，基于底层设备支持的原子写入单元限制
+#### 要求
 
 
-ext4 涓師瀛愬啓鍏ョ殑鍩烘湰瑕佹眰锛?
- 1. 蹇呴』鍚敤 extents 鐗规€э紙ext4 榛樿寮€鍚級
- 2. 搴曞眰鍧楄澶囧繀椤绘敮鎸佸師瀛愬啓鍏? 3. 瀵逛簬鍗?fsblock 鍘熷瓙鍐欏叆锛?
-    1. 鍏锋湁閫傚綋鍧楀ぇ灏忥紙鏈€澶у埌椤甸潰澶у皬锛夌殑鏂囦欢绯荤粺
- 4. 瀵逛簬澶?fsblock 鍘熷瓙鍐欏叆锛?
-    1. 蹇呴』鍚敤 bigalloc 鐗规€?    2. 蹇呴』閫傚綋閰嶇疆绨囧ぇ灏?
-娉ㄦ剰锛欵XT4 涓嶆敮鎸佸熀浜庤蒋浠舵垨 COW 鐨勫師瀛愬啓鍏ワ紝杩欐剰鍛崇潃鍙湁褰撳簳灞傚瓨鍌ㄨ澶囨敮鎸佹椂锛宔xt4 涓婄殑鍘熷瓙鍐欏叆鎵嶅彈鏀寔銆?
+ext4 中原子写入的基本要求
+ 1. 必须启用 extents 特性（ext4 默认开启）
+ 2. 底层块设备必须支持原子写 3. 对于fsblock 原子写入
+    1. 具有适当块大小（最大到页面大小）的文件系统
+ 4. 对于fsblock 原子写入
+    1. 必须启用 bigalloc 特    2. 必须适当配置簇大
+注意：EXT4 不支持基于软件或 COW 的原子写入，这意味着只有当底层存储设备支持时，ext4 上的原子写入才受支持
 #### 澶?fsblock 瀹炵幇缁嗚妭
 
 
-bigalloc 鐗规€у皢 ext4 鏀逛负浠ュ涓枃浠剁郴缁熷潡锛堜篃绉颁负绨囷級涓哄崟浣嶈繘琛屽垎閰嶃€備娇鐢?bigalloc 鏃讹紝鍧椾綅鍥句腑鐨勬瘡涓綅浠ｈ〃涓€涓皣锛? 鐨勫箓涓潡锛夛紝鑰屼笉鏄崟涓枃浠剁郴缁熷潡銆?EXT4 閫氳繃 bigalloc 鏀寔澶?fsblock 鍘熷瓙鍐欏叆锛屼絾鍙椾互涓嬬害鏉熴€傛渶灏忓師瀛愬啓鍏ュ昂瀵告槸 fs 鍧楀ぇ灏忓拰鏈€灏忕‖浠跺師瀛愬啓鍏ュ崟鍏冧腑杈冨ぇ鐨勪竴涓紱鏈€澶у師瀛愬啓鍏ュ昂瀵告槸 bigalloc 绨囧ぇ灏忓拰鏈€澶х‖浠跺師瀛愬啓鍏ュ崟鍏冧腑杈冨皬鐨勪竴涓€侭igalloc 纭繚鎵€鏈夊垎閰嶉兘涓庣皣澶у皬瀵归綈锛屽鏋滃垎鍖?閫昏緫鍗风殑璧峰鏈韩姝ｇ‘瀵归綈锛岃繖灏辨弧瓒充簡纭欢璁惧鐨?LBA 瀵归綈瑕佹眰銆?
-浠ヤ笅鏄?bigalloc 涓師瀛愬啓鍏ョ殑鍧楀垎閰嶇瓥鐣ワ細
+bigalloc 特性将 ext4 改为以多个文件系统块（也称为簇）为单位进行分配。使bigalloc 时，块位图中的每个位代表一个簇 的幂个块），而不是单个文件系统块EXT4 通过 bigalloc 支持fsblock 原子写入，但受以下约束。最小原子写入尺寸是 fs 块大小和最小硬件原子写入单元中较大的一个；最大原子写入尺寸是 bigalloc 簇大小和最大硬件原子写入单元中较小的一个。Bigalloc 确保所有分配都与簇大小对齐，如果分逻辑卷的起始本身正确对齐，这就满足了硬件设备LBA 对齐要求
+以下bigalloc 中原子写入的块分配策略：
 
- - 瀵逛簬鍏锋湁瀹屽叏宸叉槧灏?extents 鐨勫尯鍩燂紝涓嶉渶瑕侀澶栫殑宸ヤ綔
- - 瀵逛簬杩藉姞鍐欏叆锛屽垎閰嶄竴涓柊鐨勫凡鏄犲皠 extent
- - 瀵逛簬瀹屽叏鏄┖娲烇紙hole锛夌殑鍖哄煙锛屽垱寤?unwritten extent
- - 瀵逛簬杈冨ぇ鐨?unwritten extent锛岃 extent 琚媶鍒嗕负涓や釜閫傚綋璇锋眰澶у皬鐨?unwritten extent
- - 瀵逛簬娣峰悎鏄犲皠鍖哄煙锛坔ole銆乽nwritten extent 鎴?mapped extent 鐨勭粍鍚堬級锛屽皢浠ュ惊鐜柟寮忚皟鐢?ext4_map_blocks()锛屽苟浼犲叆 EXT4_GET_BLOCKS_ZERO 鏍囧織锛岄€氳繃鍚戣鍖哄煙鍐欏叆闆跺苟灏嗗叾涓殑浠讳綍 unwritten extent 杞崲涓?written锛堝鏋滃湪璇ヨ寖鍥村唴鎵惧埌锛夛紝浠庤€屽皢璇ュ尯鍩熻浆鎹负鍗曚釜杩炵画鐨?mapped extent銆?
-娉ㄦ剰锛氬湪鍗曚釜杩炵画鐨勫簳灞?extent锛堟棤璁烘槸 mapped 杩樻槸 unwritten锛変笂鍐欏叆鏈韩娌℃湁闂銆備絾鏄紝鍦ㄦ墽琛屽師瀛愬啓鍏ユ椂锛屽繀椤婚伩鍏嶅啓鍏ユ贩鍚堟槧灏勫尯鍩燂紙鍗冲寘鍚?mapped 鍜?unwritten extent 缁勫悎鐨勫尯鍩燂級銆?
-鍘熷洜鏄紝閫氳繃甯?RWF_ATOMIC 鏍囧織鐨?pwritev2() 鍙戝嚭鐨勫師瀛愬啓鍏ワ紝瑕佹眰瑕佷箞鍐欏叆鍏ㄩ儴鏁版嵁锛岃涔堜粈涔堜篃涓嶅啓銆傚鏋滃湪鍐欏叆鎿嶄綔鏈熼棿鍙戠敓绯荤粺宕╂簝鎴栨剰澶栨柇鐢碉紝鍙楀奖鍝嶇殑鍖哄煙锛堝湪鍚庣画璇诲彇鏃讹級蹇呴』鍙嶆槧瀹屾暣鐨勬棫鏁版嵁鎴栧畬鏁寸殑鏂版暟鎹紝鑰岀粷涓嶈兘鏄袱鑰呯殑娣峰悎銆?
-涓轰簡寮哄埗鎵ц杩欎竴淇濊瘉锛屾垜浠‘淇濆湪鍐欏叆浠讳綍鏁版嵁涔嬪墠锛屽啓鍏ョ洰鏍囩敱鍗曚釜杩炵画鐨?extent 鏀寔銆傝繖寰堝叧閿紝鍥犱负 ext4 灏?unwritten extent 鍒?written extent 鐨勮浆鎹㈡帹杩熷埌 I/O 瀹屾垚璺緞锛堥€氬父鍦?->end_io() 涓級銆傚鏋滃厑璁稿啓鍏ュ湪娣峰悎鏄犲皠鍖哄煙锛堝甫鏈?mapped 鍜?unwritten extent锛変笂杩涜锛屽苟涓斿啓鍏ヤ腑閫斿彂鐢熸晠闅滐紝绯荤粺鍦ㄩ噸鍚悗鍙兘浼氳瀵熷埌閮ㄥ垎鏇存柊鐨勫尯鍩燂紝鍗冲湪 mapped 鍖哄煙涓婃槸鏂版暟鎹紝鑰屽湪浠庢湭鏍囪涓?written 鐨?unwritten extent 涓婃槸闄堟棫锛堟棫锛夋暟鎹€傝繖灏辫繚鍙嶄簡鍘熷瓙鎬у拰/鎴栨挄瑁傚啓鍏ラ槻鎶や繚璇併€?
-涓轰簡闃叉姝ょ被鎾曡鍐欏叆锛宔xt4 閫氳繃 ext4_iomap_alloc 涓殑 ext4_map_blocks_atomic() 涓诲姩涓烘暣涓姹傚尯鍩熷垎閰嶅崟涓繛缁?extent銆傚鏋滃垎閰嶆槸鍦ㄦ贩鍚堟槧灏勪笂杩涜鐨勶紝EXT4 杩樹細寮哄埗鎻愪氦褰撳墠鏃ュ織浜嬪姟銆傝繖纭繚浜嗗湪鎵ц瀹為檯鍐欏叆 I/O 涔嬪墠锛屾鑼冨洿鍐呯殑浠讳綍鎸傝捣鍏冩暟鎹洿鏂帮紙濡?unwritten 鍒?written extent 鐨勮浆鎹級涓庢枃浠舵暟鎹潡澶勪簬涓€鑷寸姸鎬併€傚鏋滄彁浜ゅけ璐ワ紝蹇呴』涓鏁翠釜 I/O 浠ラ槻姝换浣曞彲鑳界殑鎾曡鍐欏叆銆?鍙湁鍦ㄨ繖涓€姝ヤ箣鍚庯紝瀹為檯鐨勬暟鎹啓鍏ユ搷浣滄墠鐢?iomap 鎵ц銆?
-#### 澶勭悊璺ㄨ秺鍙跺瓙鍧楃殑鍒嗚 Extent
-
-
-瀛樺湪涓€绉嶇壒娈婄殑杈圭紭鎯呭喌锛氭垜浠湪閫昏緫鍜岀墿鐞嗕笂杩炵画鐨?extent 琚瓨鍌ㄥ湪纾佺洏 extent 鏍戠殑涓嶅悓鍙跺瓙鑺傜偣涓€傝繖鏄洜涓虹鐩?extent 鏍戜粎鍦ㄥ彾瀛愬潡鍐呴儴杩涜鍚堝苟锛岄櫎浜嗕竴绉嶆儏鍐碘€斺€斾袱绾х殑鏍戝彲浠ヨ瀹屽叏鍚堝苟骞舵姌鍙犺繘 inode銆?
-濡傛灉杩欐牱鐨勫竷灞€瀛樺湪锛屽苟涓斿湪鏈€鍧忔儏鍐典笅锛宔xtent 鐘舵€佺紦瀛樻潯鐩敱浜庡唴瀛樺帇鍔涜鍥炴敹锛宔xt4_map_blocks() 鍙兘姘歌繙涓嶄細涓鸿繖浜涘垎瑁傜殑鍙跺瓙 extent 杩斿洖鍗曚釜杩炵画鐨?extent銆?
-涓轰簡瑙ｅ喅杩欎竴杈圭紭鎯呭喌锛屾柊澧炰簡涓€涓?get block 鏍囧織 EXT4_GET_BLOCKS_QUERY_LEAF_BLOCKS flag 浠ュ寮?ext4_map_query_blocks() 鐨勬煡鎵捐涓恒€?
-杩欎釜鏂扮殑 get block 鏍囧織鍏佽 ext4_map_blocks() 棣栧厛妫€鏌?extent 鐘舵€佺紦瀛樹腑鏄惁瀛樺湪鏁翠釜鑼冨洿鐨勬潯鐩€?濡傛灉涓嶅瓨鍦紝瀹冧細浣跨敤 ext4_map_query_blocks() 鏌ヨ纾佺洏 extent 鏍戙€?濡傛灉瀹氫綅鍒扮殑 extent 浣嶄簬鍙跺瓙鑺傜偣鐨勬湯灏撅紝瀹冧細鎺㈡祴涓嬩竴涓€昏緫鍧楋紙lblk锛変互妫€娴嬬浉閭诲彾瀛愪腑鐨勮繛缁?extent銆?
-鐩墠鍙煡璇竴涓澶栫殑鍙跺瓙鍧椾互淇濇寔鏁堢巼锛屽洜涓哄師瀛愬啓鍏ラ€氬父鍙楅檺浜庤緝灏忕殑灏哄
-锛堜緥濡?[blocksize, clustersize]锛夈€?
-
-#### 澶勭悊鏃ュ織浜嬪姟
+ - 对于具有完全已映extents 的区域，不需要额外的工作
+ - 对于追加写入，分配一个新的已映射 extent
+ - 对于完全是空洞（hole）的区域，创unwritten extent
+ - 对于较大unwritten extent，该 extent 被拆分为两个适当请求大小unwritten extent
+ - 对于混合映射区域（hole、unwritten extent mapped extent 的组合），将以循环方式调ext4_map_blocks()，并传入 EXT4_GET_BLOCKS_ZERO 标志，通过向该区域写入零并将其中的任何 unwritten extent 转换written（如果在该范围内找到），从而将该区域转换为单个连续mapped extent
+注意：在单个连续的底extent（无论是 mapped 还是 unwritten）上写入本身没有问题。但是，在执行原子写入时，必须避免写入混合映射区域（即包mapped unwritten extent 组合的区域）
+原因是，通过RWF_ATOMIC 标志pwritev2() 发出的原子写入，要求要么写入全部数据，要么什么也不写。如果在写入操作期间发生系统崩溃或意外断电，受影响的区域（在后续读取时）必须反映完整的旧数据或完整的新数据，而绝不能是两者的混合
+为了强制执行这一保证，我们确保在写入任何数据之前，写入目标由单个连续extent 支持。这很关键，因为 ext4 unwritten extent written extent 的转换推迟到 I/O 完成路径（通常->end_io() 中）。如果允许写入在混合映射区域（带mapped unwritten extent）上进行，并且写入中途发生故障，系统在重启后可能会观察到部分更新的区域，即在 mapped 区域上是新数据，而在从未标记written unwritten extent 上是陈旧（旧）数据。这就违反了原子性和/或撕裂写入防护保证
+为了防止此类撕裂写入，ext4 通过 ext4_iomap_alloc 中的 ext4_map_blocks_atomic() 主动为整个请求区域分配单个连extent。如果分配是在混合映射上进行的，EXT4 还会强制提交当前日志事务。这确保了在执行实际写入 I/O 之前，此范围内的任何挂起元数据更新（unwritten written extent 的转换）与文件数据块处于一致状态。如果提交失败，必须中止整个 I/O 以防止任何可能的撕裂写入只有在这一步之后，实际的数据写入操作才iomap 执行
+#### 处理跨越叶子块的分裂 Extent
 
 
-涓轰簡鏀寔澶?fsblock 鍘熷瓙鍐欏叆锛屾垜浠‘淇濆湪浠ヤ笅鏃跺埢棰勭暀瓒冲鐨勬棩蹇楅搴︼紙credits锛夛細
+存在一种特殊的边缘情况：我们在逻辑和物理上连续extent 被存储在磁盘 extent 树的不同叶子节点中。这是因为磁extent 树仅在叶子块内部进行合并，除了一种情况——两级的树可以被完全合并并折叠进 inode
+如果这样的布局存在，并且在最坏情况下，extent 状态缓存条目由于内存压力被回收，ext4_map_blocks() 可能永远不会为这些分裂的叶子 extent 返回单个连续extent
+为了解决这一边缘情况，新增了一get block 标志 EXT4_GET_BLOCKS_QUERY_LEAF_BLOCKS flag 以增ext4_map_query_blocks() 的查找行为
+这个新的 get block 标志允许 ext4_map_blocks() 首先检extent 状态缓存中是否存在整个范围的条目如果不存在，它会使用 ext4_map_query_blocks() 查询磁盘 extent 树如果定位到的 extent 位于叶子节点的末尾，它会探测下一个逻辑块（lblk）以检测相邻叶子中的连extent
+目前只查询一个额外的叶子块以保持效率，因为原子写入通常受限于较小的尺寸
+（例[blocksize, clustersize]）
 
- 1. 鍦?ext4_iomap_alloc() 涓殑鍧楀垎閰嶆椂鍒汇€傛垜浠鍏堟煡璇㈠簳灞傝姹傝寖鍥存槸鍚﹀彲鑳藉瓨鍦ㄦ贩鍚堟槧灏勩€傚鏋滄槸锛屽垯棰勭暀鏈€澶?m_len 鐨勯搴︼紝鍋囪姣忎釜浜ゆ浛鐨勫潡鍙互鏄悗璺熶竴涓?hole 鐨?unwritten extent銆?
- 2. 鍦?->end_io() 璋冪敤鏈熼棿锛屾垜浠‘淇濅负杩涜 unwritten 鍒?written 鐨勮浆鎹㈠惎鍔ㄥ崟涓簨鍔°€傝浆鎹㈠惊鐜富瑕佸彧闇€鐢ㄦ潵澶勭悊璺ㄨ秺鍙跺瓙鍧楃殑鍒嗚 extent銆?
-#### 濡備綍鎿嶄綔
-
-
-##### 鍒涘缓鏀寔鍘熷瓙鍐欏叆鐨勬枃浠剁郴缁?
-
-棣栧厛鏌ョ湅鍧楄澶囨敮鎸佺殑鍘熷瓙鍐欏叆鍗曞厓銆?璇﹁ atomic_write_bdev_support銆?
-瀵逛簬浣跨敤杈冨ぇ鍧楀ぇ灏忕殑鍗?fsblock 鍘熷瓙鍐欏叆
-锛堝湪鍧楀ぇ灏?< 椤甸潰澶у皬鐨勭郴缁熶笂锛夛細
+#### 处理日志事务
 
 
-    # 鍒涘缓涓€涓潡澶у皬涓?16KB 鐨?ext4 鏂囦欢绯荤粺
-    # 锛堣姹傞〉闈㈠ぇ灏?>= 16KB锛?    mkfs.ext4 -b 16384 /dev/device
+为了支持fsblock 原子写入，我们确保在以下时刻预留足够的日志额度（credits）：
 
-瀵逛簬浣跨敤 bigalloc 鐨勫 fsblock 鍘熷瓙鍐欏叆锛?
+ 1. ext4_iomap_alloc() 中的块分配时刻。我们首先查询底层请求范围是否可能存在混合映射。如果是，则预留最m_len 的额度，假设每个交替的块可以是后跟一hole unwritten extent
+ 2. ->end_io() 调用期间，我们确保为进行 unwritten written 的转换启动单个事务。转换循环主要只需用来处理跨越叶子块的分裂 extent
+#### 如何操作
 
-    # 鍒涘缓甯︽湁 bigalloc銆佺皣澶у皬涓?64KB 鐨?ext4 鏂囦欢绯荤粺
+
+##### 创建支持原子写入的文件系
+
+首先查看块设备支持的原子写入单元详见 atomic_write_bdev_support
+对于使用较大块大小的fsblock 原子写入
+（在块大< 页面大小的系统上）：
+
+
+    # 创建一个块大小16KB ext4 文件系统
+    # （要求页面大>= 16KB    mkfs.ext4 -b 16384 /dev/device
+
+对于使用 bigalloc 的多 fsblock 原子写入
+
+    # 创建带有 bigalloc、簇大小64KB ext4 文件系统
     mkfs.ext4 -F -O bigalloc -b 4096 -C 65536 /dev/device
 
-鍏朵腑 `-b` 鎸囧畾鍧楀ぇ灏忥紝`-C` 鎸囧畾绨囧ぇ灏忥紙瀛楄妭锛夛紝`-O bigalloc` 鍚敤 bigalloc 鐗规€с€?
-##### 搴旂敤绋嬪簭鎺ュ彛
+其中 `-b` 指定块大小，`-C` 指定簇大小（字节），`-O bigalloc` 启用 bigalloc 特性
+##### 应用程序接口
 
 
-搴旂敤绋嬪簭鍙互浣跨敤甯?RWF_ATOMIC 鏍囧織鐨?pwritev2() 绯荤粺璋冪敤鏉ユ墽琛屽師瀛愬啓鍏ワ細
+应用程序可以使用RWF_ATOMIC 标志pwritev2() 系统调用来执行原子写入：
 
 
     pwritev2(fd, iov, iovcnt, offset, RWF_ATOMIC);
 
-璇ュ啓鍏ュ繀椤讳笌鏂囦欢绯荤粺鍧楀ぇ灏忓榻愶紝涓斾笉寰楄秴杩囨枃浠剁郴缁熺殑鏈€澶у師瀛愬啓鍏ュ崟鍏冨昂瀵搞€?璇﹁ generic_atomic_write_valid()銆?
-甯?STATX_WRITE_ATOMIC 鏍囧織鐨?statx() 绯荤粺璋冪敤鍙互鎻愪緵浠ヤ笅璇︽儏锛?
- - `stx_atomic_write_unit_min`锛氬師瀛愬啓鍏ヨ姹傜殑鏈€灏忓昂瀵搞€? - `stx_atomic_write_unit_max`锛氬師瀛愬啓鍏ヨ姹傜殑鏈€澶у昂瀵搞€? - `stx_atomic_write_segments_max`锛氭鐨勪笂闄愩€傚彲浠ヨ仛闆嗗埌涓€涓啓鍏ユ搷浣滀腑鐨勭嫭绔嬪唴瀛樼紦鍐插尯鐨勬暟閲忥紙渚嬪 IOV_ITER 鐨?iovcnt 鍙傛暟锛夈€傜洰鍓嶅缁堣缃负 1銆?
-濡傛灉鏀寔鍘熷瓙鍐欏叆锛屽垯浼氳缃?statx->attributes 涓殑 STATX_ATTR_WRITE_ATOMIC 鏍囧織銆?
+该写入必须与文件系统块大小对齐，且不得超过文件系统的最大原子写入单元尺寸详见 generic_atomic_write_valid()
+STATX_WRITE_ATOMIC 标志statx() 系统调用可以提供以下详情
+ - `stx_atomic_write_unit_min`：原子写入请求的最小尺寸 - `stx_atomic_write_unit_max`：原子写入请求的最大尺寸 - `stx_atomic_write_segments_max`：段的上限。可以聚集到一个写入操作中的独立内存缓冲区的数量（例如 IOV_ITER iovcnt 参数）。目前始终设置为 1
+如果支持原子写入，则会设statx->attributes 中的 STATX_ATTR_WRITE_ATOMIC 标志
 
-#### 纭欢鏀寔
-
-
-搴曞眰瀛樺偍璁惧蹇呴』鏀寔鍘熷瓙鍐欏叆鎿嶄綔銆?鐜颁唬 NVMe 鍜?SCSI 璁惧閫氬父鎻愪緵姝よ兘鍔涖€?Linux 鍐呮牳閫氳繃 sysfs 鏆撮湶姝や俊鎭細
-
-- `/sys/block/<device>/queue/atomic_write_unit_min` - 鏈€灏忓師瀛愬啓鍏ュ昂瀵?- `/sys/block/<device>/queue/atomic_write_unit_max` - 鏈€澶у師瀛愬啓鍏ュ昂瀵?
-杩欎簺灞炴€х殑闈為浂鍊艰〃绀鸿璁惧鏀寔鍘熷瓙鍐欏叆銆?
-#### 鍙﹁鍙傞槄
+#### 硬件支持
 
 
-- [bigalloc](bigalloc) - 鍏充簬 bigalloc 鐗规€х殑鏂囨。
-- [allocators](allocators) - 鍏充簬 ext4 涓潡鍒嗛厤鐨勬枃妗?- 6.13 涓鍘熷瓙鍧楀啓鍏ョ殑鏀寔锛?  https://lwn.net/Articles/1009298/
+底层存储设备必须支持原子写入操作现代 NVMe SCSI 设备通常提供此能力Linux 内核通过 sysfs 暴露此信息：
+
+- `/sys/block/<device>/queue/atomic_write_unit_min` - 最小原子写入尺- `/sys/block/<device>/queue/atomic_write_unit_max` - 最大原子写入尺
+这些属性的非零值表示该设备支持原子写入
+#### 另请参阅
+
+
+- [bigalloc](bigalloc) - 关于 bigalloc 特性的文档
+- [allocators](allocators) - 关于 ext4 中块分配的文- 6.13 中对原子块写入的支持  https://lwn.net/Articles/1009298/

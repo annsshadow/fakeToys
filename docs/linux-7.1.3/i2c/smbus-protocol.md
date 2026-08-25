@@ -1,183 +1,183 @@
-﻿## The SMBus Protocol锛圫MBus 鍗忚锛?
+﻿## The SMBus Protocol（SMBus 协议
 
-浠ヤ笅鏄 SMBus 鍗忚鐨勬瑕佽鏄庯紝閫傜敤浜庤鍗忚鐨勬墍鏈変慨璁㈢増鏈紙1.0銆?.1 涓?2.0锛夈€傛煇浜涗笉琚湰杞欢鍖呮敮鎸佺殑鍗忚鐗规€э紝灏嗗湪鏈枃妗ｆ湯灏剧畝瑕佽鏄庛€?
+以下是对 SMBus 协议的概要说明，适用于该协议的所有修订版本（1.0.1 2.0）。某些不被本软件包支持的协议特性，将在本文档末尾简要说明
 
-閮ㄥ垎閫傞厤鍣ㄥ彧鑳界悊瑙?SMBus锛圫ystem Management Bus锛岀郴缁熺鐞嗘€荤嚎锛夊崗璁紝瀹冩槸 I2C 鍗忚鐨勪竴涓瓙闆嗐€傚垢杩愮殑鏄紝璁稿璁惧鍙娇鐢ㄤ簡鐩稿悓鐨勮繖涓瓙闆嗭紝鍥犺€屽彲浠ユ妸瀹冧滑鎸傚湪 SMBus 涓娿€?
+部分适配器只能理SMBus（System Management Bus，系统管理总线）协议，它是 I2C 协议的一个子集。幸运的是，许多设备只使用了相同的这个子集，因而可以把它们挂在 SMBus 上
 
-濡傛灉浣犱负鏌愪釜 I2C 璁惧缂栧啓椹卞姩锛岃灏藉彲鑳戒娇鐢?SMBus 鍛戒护锛堝墠鎻愭槸璁惧鍙娇鐢ㄤ簡 I2C 鍗忚鐨勮瀛愰泦锛夈€傝繖鏍峰氨鑳借鍚屼竴椹卞姩鏃㈠彲鐢ㄤ簬 SMBus 閫傞厤鍣紝涔熷彲鐢ㄤ簬 I2C 閫傞厤鍣紙鍦?I2C 閫傞厤鍣ㄤ笂锛孲MBus 鍛戒护闆嗕細鑷姩杞崲涓?I2C锛涗絾绾?I2C 鍛戒护鍦ㄥぇ澶氭暟绾?SMBus 閫傞厤鍣ㄤ笂瀹屽叏鏃犳硶澶勭悊锛夈€?
+如果你为某个 I2C 设备编写驱动，请尽可能使SMBus 命令（前提是设备只使用了 I2C 协议的该子集）。这样就能让同一驱动既可用于 SMBus 适配器，也可用于 I2C 适配器（I2C 适配器上，SMBus 命令集会自动转换I2C；但I2C 命令在大多数SMBus 适配器上完全无法处理）
 
-涓嬮潰鍒楀嚭 SMBus 鍗忚鎿嶄綔鍙婂叾瀵瑰簲鐨勬墽琛屽嚱鏁般€傝娉ㄦ剰锛孲MBus 鍗忚瑙勮寖涓娇鐢ㄧ殑鍚嶇О閫氬父涓庤繖浜涘嚱鏁板悕骞朵笉涓€鑷达紱瀵逛簬鏌愪簺鍙紶閫掑崟涓暟鎹瓧鑺傜殑鎿嶄綔锛屼娇鐢?SMBus 鍗忚鎿嶄綔鍚嶇殑鍑芥暟瀹為檯涓婃墽琛岀殑鏄畬鍏ㄤ笉鍚岀殑鍗忚鎿嶄綔銆?
+下面列出 SMBus 协议操作及其对应的执行函数。请注意，SMBus 协议规范中使用的名称通常与这些函数名并不一致；对于某些只传递单个数据字节的操作，使SMBus 协议操作名的函数实际上执行的是完全不同的协议操作
 
-姣忕浜嬪姟绫诲瀷閮藉搴斾竴涓姛鑳芥爣蹇楋紙functionality flag锛夈€傚湪璋冪敤鏌愪釜浜嬪姟鍑芥暟涔嬪墠锛岃澶囬┍鍔ㄥ簲褰擄紙鍙渶涓€娆★級鍏堟鏌ョ浉搴旂殑鍔熻兘鏍囧織锛屼互纭搴曞眰 I2C 閫傞厤鍣ㄦ敮鎸佽浜嬪姟銆傝瑙?Documentation/i2c/functionality.rst銆?
+每种事务类型都对应一个功能标志（functionality flag）。在调用某个事务函数之前，设备驱动应当（只需一次）先检查相应的功能标志，以确认底层 I2C 适配器支持该事务。详Documentation/i2c/functionality.rst
 
-## Key to symbols锛堢鍙疯鏄庯級
+## Key to symbols（符号说明）
 
 =============== =============================================================
-S               Start 鏉′欢锛堣捣濮嬫潯浠讹級
-Sr              Repeated start 鏉′欢锛堥噸澶嶈捣濮嬫潯浠讹級锛岀敤浜庡湪鍐欎笌璇讳箣闂村垏鎹?
-P               Stop 鏉′欢锛堝仠姝㈡潯浠讹級
-Rd/Wr (1 bit)   Read/Write 浣嶃€俁d 绛変簬 1锛學r 绛変簬 0銆?
-A, NA (1 bit)   搴旂瓟锛圓CK锛変笌闈炲簲绛旓紙NACK锛変綅
-Addr  (7 bits)  I2C 7 浣嶅湴鍧€銆傛敞鎰忚鍦板潃鍙墿灞曚负 10 浣嶃€?
-Comm  (8 bits)  鍛戒护瀛楄妭锛屼竴涓暟鎹瓧鑺傦紝閫氬父鐢ㄦ潵閫夋嫨璁惧涓婄殑鏌愪釜瀵勫瓨鍣ㄣ€?
-Data  (8 bits)  涓€涓櫘閫氱殑鏁版嵁瀛楄妭銆侱ataLow 涓?DataHigh 琛ㄧず 16 浣嶅瓧涓殑浣庡瓧鑺備笌楂樺瓧鑺傘€?
-Count (8 bits)  涓€涓寘鍚潡鎿嶄綔闀垮害鐨勬暟鎹瓧鑺傘€?
-[..]            鐢?I2C 璁惧鍙戦€佺殑鏁版嵁锛屼笌涓绘満閫傞厤鍣ㄥ彂閫佺殑鏁版嵁鐩稿銆?
+S               Start 条件（起始条件）
+Sr              Repeated start 条件（重复起始条件），用于在写与读之间切
+P               Stop 条件（停止条件）
+Rd/Wr (1 bit)   Read/Write 位。Rd 等于 1，Wr 等于 0
+A, NA (1 bit)   应答（ACK）与非应答（NACK）位
+Addr  (7 bits)  I2C 7 位地址。注意该地址可扩展为 10 位
+Comm  (8 bits)  命令字节，一个数据字节，通常用来选择设备上的某个寄存器
+Data  (8 bits)  一个普通的数据字节。DataLow DataHigh 表示 16 位字中的低字节与高字节
+Count (8 bits)  一个包含块操作长度的数据字节
+[..]            I2C 设备发送的数据，与主机适配器发送的数据相对
 =============== =============================================================
 
 ## SMBus Quick Command
 
   S Addr Rd/Wr [A] P
 
-鍔熻兘鏍囧織锛欼2C_FUNC_SMBUS_QUICK
+功能标志：I2C_FUNC_SMBUS_QUICK
 
-璇ュ懡浠ゅ悜璁惧鍐欏叆涓€涓瘮鐗癸紙浣嶄簬 Rd/Wr 浣嶄腑锛夈€傞儴鍒嗚澶囦細鍊熸瑙﹀彂鏌愪釜鍔ㄤ綔銆?
+该命令向设备写入一个比特（位于 Rd/Wr 位中）。部分设备会借此触发某个动作
 
 ## SMBus Receive Byte
 
   S Addr Rd [A] [Data] NA P
 
-鍔熻兘鏍囧織锛欼2C_FUNC_SMBUS_READ_BYTE
+功能标志：I2C_FUNC_SMBUS_READ_BYTE
 
-鐢?i2c_smbus_read_byte() 瀹炵幇銆?
+i2c_smbus_read_byte() 实现
 
-姝ゆ搷浣滀粠璁惧璇诲彇涓€涓瓧鑺傦紝涓斾笉鎸囧畾璁惧瀵勫瓨鍣ㄣ€傛湁浜涜澶囬潪甯哥畝鍗曪紝杩欎釜鎺ュ彛灏辫冻澶熶簡锛涘浜庡叾瀹冭澶囷紝濡傛灉浣犲笇鏈涜鍙栦笌涓嬫枃鐩稿悓鐨勫瘎瀛樺櫒锛屽畠鍙槸涓€绉嶇畝鍐欏舰寮忋€?
+此操作从设备读取一个字节，且不指定设备寄存器。有些设备非常简单，这个接口就足够了；对于其它设备，如果你希望读取与下文相同的寄存器，它只是一种简写形式
 
 ## SMBus Send Byte
 
   S Addr Wr [A] [Data] NA P
 
-鍔熻兘鏍囧織锛欼2C_FUNC_SMBUS_WRITE_BYTE
+功能标志：I2C_FUNC_SMBUS_WRITE_BYTE
 
-鐢?i2c_smbus_write_byte() 瀹炵幇銆?
+i2c_smbus_write_byte() 实现
 
-杩欐槸 Receive Byte 鐨勯€嗘搷浣滐細瀹冨悜璁惧鍙戦€佷竴涓瓧鑺傘€傛洿澶氫俊鎭鍙傞槄鈥淩eceive Byte鈥濄€?
+这是 Receive Byte 的逆操作：它向设备发送一个字节。更多信息请参阅“Receive Byte”
 
 ## SMBus Read Byte
 
   S Addr Wr [A] Comm [A] Sr Addr Rd [A] [Data] NA P
 
-鍔熻兘鏍囧織锛欼2C_FUNC_SMBUS_READ_BYTE_DATA
+功能标志：I2C_FUNC_SMBUS_READ_BYTE_DATA
 
-鐢?i2c_smbus_read_byte_data() 瀹炵幇銆?
+i2c_smbus_read_byte_data() 实现
 
-姝ゆ搷浣滀粠涓€涓寚瀹氱殑璁惧瀵勫瓨鍣紙閫氳繃 Comm 鎸囧畾锛夎鍙栦竴涓瓧鑺傘€?
+此操作从一个指定的设备寄存器（通过 Comm 指定）读取一个字节
 
 ## SMBus Read Word
 
   S Addr Wr [A] Comm [A] Sr Addr Rd [A] [DataLow] A [DataHigh] NA P
 
-鍔熻兘鏍囧織锛欼2C_FUNC_SMBUS_READ_WORD_DATA
+功能标志：I2C_FUNC_SMBUS_READ_WORD_DATA
 
-鐢?i2c_smbus_read_word_data() 瀹炵幇銆?
+i2c_smbus_read_word_data() 实现
 
-璇ユ搷浣滀笌 Read Byte 闈炲父鐩镐技锛涘悓鏍锋槸浠庤澶囥€佷粠涓€涓€氳繃 Comm 鎸囧畾鐨勫瘎瀛樺櫒璇诲彇鏁版嵁銆傛敞鎰忥紝瀵逛簬涓や釜鏁版嵁瀛楄妭椤哄簭鐩稿弽锛堜笉绗﹀悎 SMBus锛屼絾闈炲父娴佽锛夌殑璇诲彇锛屽彲浠ヤ娇鐢ㄤ究鎹峰嚱鏁?i2c_smbus_read_word_swapped()銆?
+该操作与 Read Byte 非常相似；同样是从设备、从一个通过 Comm 指定的寄存器读取数据。注意，对于两个数据字节顺序相反（不符合 SMBus，但非常流行）的读取，可以使用便捷函i2c_smbus_read_word_swapped()
 
 ## SMBus Write Byte
 
   S Addr Wr [A] Comm [A] [Data] NA P
 
-鍔熻兘鏍囧織锛欼2C_FUNC_SMBUS_WRITE_BYTE_DATA
+功能标志：I2C_FUNC_SMBUS_WRITE_BYTE_DATA
 
-鐢?i2c_smbus_write_byte_data() 瀹炵幇銆?
+i2c_smbus_write_byte_data() 实现
 
-姝ゆ搷浣滃悜璁惧鐨勪竴涓寚瀹氬瘎瀛樺櫒鍐欏叆涓€涓瓧鑺傘€傚瘎瀛樺櫒閫氳繃 Comm 瀛楄妭鎸囧畾銆傝繖鏄?Read Byte 鎿嶄綔鐨勯€嗘搷浣溿€?
+此操作向设备的一个指定寄存器写入一个字节。寄存器通过 Comm 字节指定。这Read Byte 操作的逆操作
 
 ## SMBus Write Word
 
   S Addr Wr [A] Comm [A] [DataLow] A [DataHigh] NA P
 
-鍔熻兘鏍囧織锛欼2C_FUNC_SMBUS_WRITE_WORD_DATA
+功能标志：I2C_FUNC_SMBUS_WRITE_WORD_DATA
 
-鐢?i2c_smbus_write_word_data() 瀹炵幇銆?
+i2c_smbus_write_word_data() 实现
 
-杩欐槸 Read Word 鎿嶄綔鐨勯€嗘搷浣滐紝鍚戣澶囥€佸悜鎸囧畾鐨勫瘎瀛樺櫒鍐欏叆 16 浣嶆暟鎹€傛敞鎰忥紝瀵逛簬涓や釜鏁版嵁瀛楄妭椤哄簭鐩稿弽锛堜笉绗﹀悎 SMBus锛屼絾闈炲父娴佽锛夌殑鍐欏叆锛屽彲浠ヤ娇鐢ㄤ究鎹峰嚱鏁?i2c_smbus_write_word_swapped()銆?
+这是 Read Word 操作的逆操作，向设备、向指定的寄存器写入 16 位数据。注意，对于两个数据字节顺序相反（不符合 SMBus，但非常流行）的写入，可以使用便捷函i2c_smbus_write_word_swapped()
 
 ## SMBus Process Call
 
   S Addr Wr [A] Comm [A] [DataLow] A [DataHigh] NA Sr Addr Rd [A] [DataLow] A [DataHigh] NA P
 
-鍔熻兘鏍囧織锛欼2C_FUNC_SMBUS_PROC_CALL
+功能标志：I2C_FUNC_SMBUS_PROC_CALL
 
-鐢?i2c_smbus_proc_call() 瀹炵幇銆?
+i2c_smbus_proc_call() 实现
 
-璇ュ懡浠ら€夋嫨涓€涓澶囧瘎瀛樺櫒锛堥€氳繃 Comm 瀛楄妭锛夛紝鍙戦€?16 浣嶆暟鎹紝鍐嶈鍥?16 浣嶆暟鎹€?
+该命令选择一个设备寄存器（通过 Comm 字节），发16 位数据，再读16 位数据
 
 ## SMBus Block Read
 
   S Addr Wr [A] Comm [A] Sr Addr Rd [A] [Count] A [Data] ... A P
 
-鍔熻兘鏍囧織锛欼2C_FUNC_SMBUS_READ_BLOCK_DATA
+功能标志：I2C_FUNC_SMBUS_READ_BLOCK_DATA
 
-鐢?i2c_smbus_read_block_data() 瀹炵幇銆?
+i2c_smbus_read_block_data() 实现
 
-姝ゅ懡浠や粠涓€涓寚瀹氱殑璁惧瀵勫瓨鍣紙閫氳繃 Comm 瀛楄妭鎸囧畾锛夎鍙栨渶澶?32 瀛楄妭鐨勫潡銆傛暟鎹噺鐢辫澶囬€氳繃 Count 瀛楄妭鎸囧畾銆?
+此命令从一个指定的设备寄存器（通过 Comm 字节指定）读取最32 字节的块。数据量由设备通过 Count 字节指定
 
 ## SMBus Block Write
 
   S Addr Wr [A] Comm [A] [Count] A [Data] ... A P
 
-鍔熻兘鏍囧織锛欼2C_FUNC_SMBUS_WRITE_BLOCK_DATA
+功能标志：I2C_FUNC_SMBUS_WRITE_BLOCK_DATA
 
-鐢?i2c_smbus_write_block_data() 瀹炵幇銆?
+i2c_smbus_write_block_data() 实现
 
-杩欐槸 Block Read 鍛戒护鐨勯€嗘搷浣滐紝鍚戣澶囥€佸悜閫氳繃 Comm 瀛楄妭鎸囧畾鐨勫瘎瀛樺櫒鍐欏叆鏈€澶?32 瀛楄妭銆傛暟鎹噺鍦?Count 瀛楄妭涓寚瀹氥€?
+这是 Block Read 命令的逆操作，向设备、向通过 Comm 字节指定的寄存器写入最32 字节。数据量Count 字节中指定
 
 ## SMBus Block Write - Block Read Process Call
 
   S Addr Wr [A] Comm [A] [Count] A [Data] ... A Sr Addr Rd [A] [Count] A [Data] ... A P
 
-鍔熻兘鏍囧織锛欼2C_FUNC_SMBUS_BLOCK_PROC_CALL
+功能标志：I2C_FUNC_SMBUS_BLOCK_PROC_CALL
 
-鐢?i2c_smbus_block_proc_call() 瀹炵幇銆?
+i2c_smbus_block_proc_call() 实现
 
-SMBus Block Write - Block Read Process Call 鍦ㄨ鑼冪殑 2.0 淇鐗堜腑寮曞叆銆傚畠鍏堝啓鍏ヤ竴涓暟鎹潡锛屽啀璇诲洖涓€涓暟鎹潡銆?
+SMBus Block Write - Block Read Process Call 在规范的 2.0 修订版中引入。它先写入一个数据块，再读回一个数据块
 
 ## SMBus Host Notify
 
   [S] [HostAddr] [Wr] A [DevAddr] A [DataLow] A [DataHigh] A [P]
 
-鍔熻兘鏍囧織锛欼2C_FUNC_SMBUS_HOST_NOTIFY
+功能标志：I2C_FUNC_SMBUS_HOST_NOTIFY
 
-璇ュ懡浠ょ敱鍏呭綋涓昏澶囩殑 SMBus 璁惧鍙戦€佺粰鍏呭綋浠庤澶囩殑 SMBus 涓绘満銆傚畠鐨勫舰寮忎笌 Write Word 鐩稿悓锛屽彧鏄懡浠ょ爜琚浛鎹负鎶ヨ璁惧鐨勫湴鍧€銆?
+该命令由充当主设备的 SMBus 设备发送给充当从设备的 SMBus 主机。它的形式与 Write Word 相同，只是命令码被替换为报警设备的地址
 
-鍦?Linux 鍐呮牳涓紝瀹冪殑瀹炵幇鏂瑰紡濡備笅锛?
+Linux 内核中，它的实现方式如下
 
-- 鏀寔 SMBus Host Notify 鐨?I2C 鎬荤嚎椹卞姩搴旀姤鍛?I2C_FUNC_SMBUS_HOST_NOTIFY銆?
-- 瀵逛簬鑳藉瑙﹀彂 SMBus Host Notify 鐨勮澶囷紝鍏?I2C 椹卞姩濡傛灉娌℃湁琚叾浠栦汉鎸囧畾鍏跺畠涓柇锛屽垯 client->irq 浼氳鍒嗛厤涓轰竴涓?Host Notify IRQ銆?
+- 支持 SMBus Host Notify I2C 总线驱动应报I2C_FUNC_SMBUS_HOST_NOTIFY
+- 对于能够触发 SMBus Host Notify 的设备，I2C 驱动如果没有被其他人指定其它中断，则 client->irq 会被分配为一Host Notify IRQ
 
 ## Packet Error Checking (PEC)
 
-Packet Error Checking 鍦ㄨ鑼冪殑 1.1 淇鐗堜腑寮曞叆銆侾EC 鍦ㄤ娇鐢ㄥ畠鐨勪紶杈撲腑銆佺揣鎺ュ湪缁堟鐨?STOP 涔嬪墠锛屾坊鍔犱竴涓?CRC-8 閿欒妫€鏌ュ瓧鑺傘€?
+Packet Error Checking 在规范的 1.1 修订版中引入。PEC 在使用它的传输中、紧接在终止STOP 之前，添加一CRC-8 错误检查字节
 
 ## Address Resolution Protocol (ARP)
 
-鍦板潃瑙ｆ瀽鍗忚锛圓ddress Resolution Protocol锛夋槸鍦ㄨ鑼冪殑 2.0 淇鐗堜腑寮曞叆鐨勩€傚畠鏄竴涓娇鐢ㄤ笂杩版秷鎭殑鏇撮珮灞傚崗璁€侫RP 涓哄崗璁鍔犱簡璁惧鏋氫妇涓庡姩鎬佸湴鍧€鍒嗛厤鍔熻兘銆傛墍鏈?ARP 閫氫俊閮戒娇鐢ㄤ粠鏈哄湴鍧€ 0x61锛屽苟涓旈渶瑕?PEC 鏍￠獙鍜屻€?
+地址解析协议（Address Resolution Protocol）是在规范的 2.0 修订版中引入的。它是一个使用上述消息的更高层协议。ARP 为协议增加了设备枚举与动态地址分配功能。所ARP 通信都使用从机地址 0x61，并且需PEC 校验和
 
 ## SMBus Alert
 
-SMBus 鎶ヨ鍗忚鍦ㄨ鑼冪殑 1.0 淇鐗堜腑寮曞叆銆係MBus 鎶ヨ鍗忚鍏佽澶氫釜 SMBus 浠庤澶囧叡浜?SMBus 涓昏澶囦笂鐨勪竴涓腑鏂紩鑴氾紝鍚屾椂浠嶅厑璁镐富璁惧鐭ラ亾鏄摢涓粠璁惧瑙﹀彂浜嗕腑鏂€?
+SMBus 报警协议在规范的 1.0 修订版中引入。SMBus 报警协议允许多个 SMBus 从设备共SMBus 主设备上的一个中断引脚，同时仍允许主设备知道是哪个从设备触发了中断
 
-杩欏湪 Linux 鍐呮牳涓寜浠ヤ笅鏂瑰紡瀹炵幇锛?
+这在 Linux 内核中按以下方式实现
 
-- 鏀寔 SMBus Alert 鐨?I2C 鎬荤嚎椹卞姩搴旇皟鐢?i2c_new_smbus_alert_device() 鏉ュ畨瑁?SMBus Alert 鏀寔銆?
-- I2C 鎬荤嚎椹卞姩閫氳繃璋冪敤鐩稿簲鎺ュ彛鏉ヨЕ鍙?SMBus Host Notify銆?
+- 支持 SMBus Alert I2C 总线驱动应调i2c_new_smbus_alert_device() 来安SMBus Alert 支持
+- I2C 总线驱动通过调用相应接口来触SMBus Host Notify
 
-## I2C 鍧椾簨鍔?
+## I2C 鍧椾簨鍔。
 
-I2C 鍧椾簨鍔′笉闄愬埗浼犺緭鐨勫瓧鑺傛暟锛屼絾 SMBus 灞傛柦鍔犱簡 32 瀛楄妭鐨勯檺鍒躲€?
+I2C 块事务不限制传输的字节数，但 SMBus 层施加了 32 字节的限制
 
   S Addr Wr [A] Comm [A]
             Sr Addr Rd [A] [Data] A [Data] A ... A [Data] NA P
 
-鍔熻兘鏍囧織锛欼2C_FUNC_SMBUS_READ_I2C_BLOCK
+功能标志：I2C_FUNC_SMBUS_READ_I2C_BLOCK
 
-鐢?i2c_smbus_read_i2c_block_data() 瀹炵幇銆?
+i2c_smbus_read_i2c_block_data() 实现
 
-姝ゅ懡浠や粠涓€涓寚瀹氬瘎瀛樺櫒璇诲彇瀛楄妭銆傛敞鎰忥紝闀垮害涓?0銆? 鎴栨洿澶氬瓧鑺傜殑鍛戒护鏄彈鏀寔鐨勶紝鍥犱负瀹冧滑涓庢暟鎹棤娉曞尯鍒嗐€?
+此命令从一个指定寄存器读取字节。注意，长度0 或更多字节的命令是受支持的，因为它们与数据无法区分
 
   S Addr Wr [A] Comm [A] Data [A] Data [A] ... [A] Data [A] P
 
-鐢?i2c_smbus_write_i2c_block_data() 瀹炵幇銆?
+i2c_smbus_write_i2c_block_data() 实现
 
-杩欐槸鍧楄鍙栧懡浠ょ殑閫嗘搷浣滐紝鍚戣澶囥€佸悜閫氳繃 Comm 瀛楄妭鎸囧畾鐨勫瘎瀛樺櫒鍐欏叆瀛楄妭銆?
+这是块读取命令的逆操作，向设备、向通过 Comm 字节指定的寄存器写入字节

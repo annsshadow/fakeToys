@@ -1,54 +1,54 @@
 ﻿
-## IAA 鍘嬬缉鍔犻€熷櫒鍔犲瘑椹卞姩
+## IAA 压缩加速器加密驱动
 
 
 Tom Zanussi <tom.zanussi@linux.intel.com>
 
-IAA 鍔犲瘑椹卞姩鏀寔绗﹀悎 RFC 1951 鎵€鎻忚堪 DEFLATE 鍘嬬缉鏍囧噯鐨勫帇缂?瑙ｅ帇缂╋紝
-杩欎篃鏄湰妯″潡瀵煎嚭鐨勫帇缂?瑙ｅ帇缂╃畻娉曘€?
+IAA 加密驱动支持符合 RFC 1951 所描述 DEFLATE 压缩标准的压解压缩，
+这也是本模块导出的压解压缩算法
 
-IAA 纭欢瑙勬牸鍙湪姝ゅ鎵惧埌锛?
+IAA 硬件规格可在此处找到
 
   https://cdrdv2.intel.com/v1/dl/getContent/721858
 
-iaa_crypto 椹卞姩琚璁′负楂橀樁灞傚帇缂╄澶囷紙濡?zswap锛変箣涓嬬殑涓€灞傘€?
+iaa_crypto 驱动被设计为高阶层压缩设备（zswap）之下的一层
 
-鐢ㄦ埛鍙互閫氳繃鍦ㄥ厑璁搁€夋嫨鍘嬬缉绠楁硶鐨勪换浣曡鏂戒腑鎸囧畾鍙楁敮鎸佺殑 IAA 鍘嬬缉绠楁硶涔嬩竴锛?
-鏉ラ€夋嫨 IAA 鍘嬬缉/瑙ｅ帇缂╁姞閫熴€?
+用户可以通过在允许选择压缩算法的任何设施中指定受支持的 IAA 压缩算法之一
+来选择 IAA 压缩/解压缩加速
 
-渚嬪锛寊swap 璁惧鍙互閫氳繃閫夋嫨 'deflate-iaa' 鍔犲瘑鍘嬬缉绠楁硶鏉ラ€夋嫨 IAA 鐨?
-'fixed' 妯″紡锛?
+例如，zswap 设备可以通过选择 'deflate-iaa' 加密压缩算法来选择 IAA 
+'fixed' 模式
 ```
   # echo deflate-iaa > /sys/module/zswap/parameters/compressor
 
 ```
-杩欏皢鍛婄煡 zswap 鍦ㄦ墍鏈夊帇缂╁拰瑙ｅ帇缂╀腑浣跨敤 IAA 鐨?'fixed' 鍘嬬缉妯″紡銆?
+这将告知 zswap 在所有压缩和解压缩中使用 IAA 'fixed' 压缩模式
 
-鐩墠鍙湁涓€绉嶅帇缂╂ā寮忓彲鐢紝鍗?'fixed' 妯″紡銆?
+目前只有一种压缩模式可用，'fixed' 模式
 
-'fixed' 鍘嬬缉妯″紡瀹炵幇浜?RFC 1951 鎵€鎸囧畾鐨勫帇缂╂柟妗堬紝骞惰璧嬩簣鍔犲瘑绠楁硶鍚嶇О
-'deflate-iaa'銆傦紙鐢变簬 IAA 纭欢鍏锋湁 4k 鍘嗗彶绐楀彛闄愬埗锛屽彧鏈?<= 4k 鐨勭紦鍐插尯锛?
-鎴栭噰鐢?<= 4k 鍘嗗彶绐楀彛鍘嬬缉鐨勭紦鍐插尯锛屾墠鍦ㄦ妧鏈笂绗﹀悎 deflate 瑙勮寖锛岃€岃瑙勮寖
-鍏佽鏈€澶?32k 鐨勭獥鍙ｃ€傜敱浜庢闄愬埗锛孖AA fixed 妯″紡 deflate 绠楁硶琚祴浜堜簡鑷繁鐨?
-绠楁硶鍚嶇О锛岃€岄潪绠€鍗曠殑 'deflate'锛夈€?
-
-
-## 閰嶇疆閫夐」涓庡叾浠栬缃?
+'fixed' 压缩模式实现RFC 1951 所指定的压缩方案，并被赋予加密算法名称
+'deflate-iaa'。（由于 IAA 硬件具有 4k 历史窗口限制，只<= 4k 的缓冲区
+或采<= 4k 历史窗口压缩的缓冲区，才在技术上符合 deflate 规范，而该规范
+允许最32k 的窗口。由于此限制，IAA fixed 模式 deflate 算法被赋予了自己
+算法名称，而非简单的 'deflate'）
 
 
-IAA 鍔犲瘑椹卞姩鍙€氳繃 menuconfig 浣跨敤濡備笅閫夐」鑾峰緱锛?
+## 配置选项与其他设
+
+
+IAA 加密驱动可通过 menuconfig 使用如下选项获得
 ```
   Cryptographic API -> Hardware crypto devices -> Support for Intel(R) IAA Compression Accelerator
 
 ```
-鍦ㄩ厤缃枃浠朵腑锛岃閫夐」鍚嶄负 CONFIG_CRYPTO_DEV_IAA_CRYPTO銆?
+在配置文件中，该选项名为 CONFIG_CRYPTO_DEV_IAA_CRYPTO
 
-IAA 鍔犲瘑椹卞姩杩樻敮鎸佺粺璁″姛鑳斤紝鍙€氳繃浠ヤ笅閫夐」鑾峰緱锛?
+IAA 加密驱动还支持统计功能，可通过以下选项获得
 ```
   Cryptographic API -> Hardware crypto devices -> Support for Intel(R) IAA Compression -> Enable Intel(R) IAA Compression Accelerator Statistics
 
 ```
-鍦ㄩ厤缃枃浠朵腑锛岃閫夐」鍚嶄负 CONFIG_CRYPTO_DEV_IAA_CRYPTO_STATS銆?
+在配置文件中，该选项名为 CONFIG_CRYPTO_DEV_IAA_CRYPTO_STATS
 
 ```
   CONFIG_IRQ_REMAP=y
@@ -61,7 +61,7 @@ IAA 鍔犲瘑椹卞姩杩樻敮鎸佺粺璁″姛鑳斤紝鍙€氳繃浠ヤ�
   CONFIG_INTEL_IDXD_SVM=y
 
 ```
-IAA 鏄彲涓?Intel IOMMU 鍗忓悓宸ヤ綔鐨勯鎵?Intel 鍔犻€熷櫒 IP 涔嬩竴銆傚瓨鍦ㄥ绉嶆ā寮忥細
+IAA 是可Intel IOMMU 协同工作的首Intel 加速器 IP 之一。存在多种模式：
 ```
   - Scalable
   - Legacy
@@ -69,17 +69,17 @@ IAA 鏄彲涓?Intel IOMMU 鍗忓悓宸ヤ綔鐨勯鎵?Intel 鍔犻€熷�
 
 
 ```
-### 鍙墿灞曟ā寮忥紙Scalable mode锛?
+### 可扩展模式（Scalable mode
 
 
-鍙墿灞曟ā寮忔敮鎸佸叡浜櫄鎷熷唴瀛橈紙SVM 鎴?SVA锛夈€傚畠閫氳繃浠ヤ笅鏂瑰紡鍚敤锛?
+可扩展模式支持共享虚拟内存（SVM SVA）。它通过以下方式启用
 ```
   intel_iommu=on,sm_on
 
 ```
-涓?BIOS 涓紑鍚簡 VT-d銆?
+BIOS 中开启了 VT-d
 
-鍦ㄥ彲鎵╁睍妯″紡涓嬶紝鍏变韩鍜屼笓鐢ㄥ伐浣滈槦鍒楀潎鍙娇鐢ㄣ€?
+在可扩展模式下，共享和专用工作队列均可使用
 
 ```
   Socket Configuration > IIO Configuration > Intel VT for Directed I/O (VT-d) > Intel VT for Directed I/O
@@ -88,67 +88,67 @@ IAA 鏄彲涓?Intel IOMMU 鍗忓悓宸ヤ綔鐨勯鎵?Intel 鍔犻€熷�
 
 
 ```
-### 浼犵粺妯″紡锛圠egacy mode锛?
+### 传统模式（Legacy mode
 
 
 ```
   intel_iommu=off
 
 ```
-鎴?BIOS 涓湭寮€鍚?VT-d銆?
+BIOS 中未开VT-d
 
-濡傛灉浣犲凡鍚姩杩涘叆 Linux 浣嗕笉纭畾 VT-d 鏄惁寮€鍚紝鍙墽琛?"dmesg | grep -i dmar"銆?
-濡傛灉娌℃湁鐪嬪埌鑻ュ共 DMAR 璁惧琚灇涓撅紝鍒欏緢鍙兘 VT-d 鏈紑鍚€?
+如果你已启动进入 Linux 但不确定 VT-d 是否开启，可执"dmesg | grep -i dmar"
+如果没有看到若干 DMAR 设备被枚举，则很可能 VT-d 未开启
 
-鍦ㄤ紶缁熸ā寮忎笅锛屽彧鏈変笓鐢ㄥ伐浣滈槦鍒楀彲渚涗娇鐢ㄣ€?
+在传统模式下，只有专用工作队列可供使用
 
 
-### 鏃?IOMMU 妯″紡锛圢o IOMMU mode锛?
+### IOMMU 模式（No IOMMU mode
 
 
 ```
   iommu=off.
 
 ```
-鍦ㄦ棤 IOMMU 妯″紡涓嬶紝鍙湁涓撶敤宸ヤ綔闃熷垪鍙緵浣跨敤銆?
+在无 IOMMU 模式下，只有专用工作队列可供使用
 
 
-## 浣跨敤鏂规硶
+## 使用方法
 
 
 ### accel-config
 
 
-鍔犺浇鏃讹紝iaa_crypto 椹卞姩浼氳嚜鍔ㄥ垱寤轰竴涓粯璁ら厤缃苟鍚敤瀹冿紝鍚屾椂鍒嗛厤榛樿椹卞姩灞炴€с€?
-濡傛灉闇€瑕佷笉鍚岀殑閰嶇疆鎴栭┍鍔ㄥ睘鎬ч泦鍚堬紝鐢ㄦ埛蹇呴』鍏堢鐢?IAA 璁惧鍜屽伐浣滈槦鍒椼€侀噸缃厤缃紝
-鐒跺悗閫氳繃绉婚櫎骞堕噸鏂版彃鍏?iaa_crypto 妯″潡锛屽悜鍔犲瘑瀛愮郴缁熼噸鏂版敞鍐?deflate-iaa 绠楁硶銆?
+加载时，iaa_crypto 驱动会自动创建一个默认配置并启用它，同时分配默认驱动属性
+如果需要不同的配置或驱动属性集合，用户必须先禁IAA 设备和工作队列、重置配置，
+然后通过移除并重新插iaa_crypto 模块，向加密子系统重新注deflate-iaa 算法
 
-涓嬮潰銆庣敤渚嬨€忓皬鑺備腑鐨?iaa_disable_script 鍙敤浜庣鐢ㄩ粯璁ら厤缃€?
+下面『用例』小节中iaa_disable_script 可用于禁用默认配置
 
-鏈夊叧榛樿閰嶇疆鐨勮缁嗕俊鎭紝璇峰弬瑙佷笅鏂囩殑 iaa_default_config銆?
+有关默认配置的详细信息，请参见下文的 iaa_default_config
 
-涓嶈繃锛岀敱浜庡姞閫熷櫒璁惧鐨勫鏉傛€у拰鍙厤缃€э紝鐢ㄦ埛鏇村彲鑳介渶瑕侀厤缃澶囧苟鎵嬪姩鍚敤鎵€闇€鐨?
-璁惧鍜屽伐浣滈槦鍒椼€?
+不过，由于加速器设备的复杂性和可配置性，用户更可能需要配置设备并手动启用所需
+设备和工作队列
 
-甯姪鐢ㄦ埛瀹屾垚姝ゆ搷浣滅殑鐢ㄦ埛绌洪棿宸ュ叿鍚嶄负 accel-config銆傚己鐑堝缓璁娇鐢?accel-config
-鏉ラ厤缃澶囨垨鍔犺浇鍏堝墠淇濆瓨鐨勯厤缃€備篃鍙互閫氳繃 sysfs 鐩存帴鎺у埗璁惧锛屼絾闇€鐗瑰埆璀﹀憡锛?
-鍙湁鍦ㄤ綘纭垏鐭ラ亾鑷繁鍦ㄥ仛浠€涔堟椂鎵嶅簲杩欐牱鍋氥€傚悗缁珷鑺備笉浼氭兜鐩?sysfs 鎺ュ彛锛岃€屾槸鍋囧畾
-浣犲皢浣跨敤 accel-config銆?
+帮助用户完成此操作的用户空间工具名为 accel-config。强烈建议使accel-config
+来配置设备或加载先前保存的配置。也可以通过 sysfs 直接控制设备，但需特别警告
+只有在你确切知道自己在做什么时才应这样做。后续章节不会涵sysfs 接口，而是假定
+你将使用 accel-config
 
-濡傛湁鍏磋叮锛屽彲鏌ラ槄闄勫綍涓殑 iaa_sysfs_config 灏忚妭浠ヤ簡瑙?sysfs 鎺ュ彛璇︽儏銆?
+如有兴趣，可查阅附录中的 iaa_sysfs_config 小节以了sysfs 接口详情
 
-accel-config 宸ュ叿鍙婂叾鏋勫缓璇存槑鍙湪姝ゅ鎵惧埌锛?
+accel-config 工具及其构建说明可在此处找到
 
   https://github.com/intel/idxd-config/#readme
 
-### 鍏稿瀷鐢ㄦ硶
+### 典型用法
 
 
-涓轰簡璁?iaa_crypto 妯″潡鐪熸浠ｈ〃鏌愪釜璁炬柦鎵ц鍘嬬缉/瑙ｅ帇缂╁伐浣滐紝闇€瑕佸皢涓€涓垨澶氫釜
-IAA 宸ヤ綔闃熷垪缁戝畾鍒?iaa_crypto 椹卞姩銆?
+为了iaa_crypto 模块真正代表某个设施执行压缩/解压缩工作，需要将一个或多个
+IAA 工作队列绑定iaa_crypto 驱动
 
-渚嬪锛屼笅闈㈡槸涓€涓厤缃?IAA 宸ヤ綔闃熷垪骞跺皢鍏剁粦瀹氬埌 iaa_crypto 椹卞姩鐨勭ず渚嬶紙娉ㄦ剰璁惧鍚?
-浠?'iax' 鑰岄潪 'iaa' 鎸囧畾鈥斺€旇繖鏄洜涓轰笂娓镐粛鐒?
+例如，下面是一个配IAA 工作队列并将其绑定到 iaa_crypto 驱动的示例（注意设备
+'iax' 而非 'iaa' 指定——这是因为上游仍
 ```
   # configure wq1.0
 
@@ -165,82 +165,82 @@ IAA 宸ヤ綔闃熷垪缁戝畾鍒?iaa_crypto 椹卞姩銆?
   accel-config enable-wq iax1/wq1.0
 
 ```
-姣忓綋鏈夋柊鐨勫伐浣滈槦鍒楃粦瀹氬埌鎴栬В缁戣嚜 iaa_crypto 椹卞姩鏃讹紝鍙敤鐨勫伐浣滈槦鍒椾細琚€庨噸鏂板钩琛°€忥紝
-浣垮緱浠庣壒瀹?CPU 鎻愪氦鐨勫伐浣滆鍒嗛厤缁欐渶鍚堥€傜殑鍙敤宸ヤ綔闃熷垪銆傚綋鍓嶇殑鏈€浣冲疄璺垫槸涓烘瘡涓?IAA
-璁惧閰嶇疆骞剁粦瀹氳嚦灏戜竴涓伐浣滈槦鍒楋紝浣嗗彧瑕佺郴缁熶腑瀛樺湪鑷冲皯涓€涓厤缃苟缁戝畾鍒颁换鎰?IAA 璁惧鐨?
-宸ヤ綔闃熷垪锛宨aa_crypto 椹卞姩灏辫兘宸ヤ綔锛屽敖绠℃晥鐜囧緢鍙兘涓嶅鍓嶈€呫€?
+每当有新的工作队列绑定到或解绑自 iaa_crypto 驱动时，可用的工作队列会被『重新平衡』，
+使得从特CPU 提交的工作被分配给最合适的可用工作队列。当前的最佳实践是为每IAA
+设备配置并绑定至少一个工作队列，但只要系统中存在至少一个配置并绑定到任IAA 设备
+工作队列，iaa_crypto 驱动就能工作，尽管效率很可能不如前者
 
-鍦ㄧ涓€涓?IAA 宸ヤ綔闃熷垪鎴愬姛缁戝畾鍒?iaa_crypto 椹卞姩鍚庯紝IAA 鍔犲瘑绠楁硶鍗宠繘鍏ュ彲杩愯鐘舵€侊紝
-鍘嬬缉鍜岃В鍘嬬缉鎿嶄綔琚畬鍏ㄥ惎鐢ㄣ€?
+在第一IAA 工作队列成功绑定iaa_crypto 驱动后，IAA 加密算法即进入可运行状态，
+压缩和解压缩操作被完全启用
 
-绫讳技鍦帮紝鍦ㄦ渶鍚庝竴涓?IAA 宸ヤ綔闃熷垪浠?iaa_crypto 椹卞姩瑙ｇ粦鍚庯紝IAA 鍔犲瘑绠楁硶灏嗕笉鍐嶅彲杩愯锛?
-鍘嬬缉鍜岃В鍘嬬缉鎿嶄綔琚鐢ㄣ€?
+类似地，在最后一IAA 工作队列iaa_crypto 驱动解绑后，IAA 加密算法将不再可运行
+压缩和解压缩操作被禁用
 
-鍥犳锛屽彧鏈夊綋涓€涓垨澶氫釜宸ヤ綔闃熷垪缁戝畾鍒?iaa_crypto 椹卞姩鏃讹紝IAA 鍔犲瘑绠楁硶浠ュ強 IAA 纭欢
-鎵嶅彲鐢ㄣ€?
+因此，只有当一个或多个工作队列绑定iaa_crypto 驱动时，IAA 加密算法以及 IAA 硬件
+才可用
 
-褰撴病鏈?IAA 宸ヤ綔闃熷垪缁戝畾鍒伴┍鍔ㄦ椂锛屽彲浠ラ€氳繃绉婚櫎妯″潡鏉ユ敞閿€ IAA 鍔犲瘑绠楁硶銆?
-
-
-### 椹卞姩灞炴€?
+当没IAA 工作队列绑定到驱动时，可以通过移除模块来注销 IAA 加密算法
 
 
-鏈夎嫢骞茬敤鎴峰彲閰嶇疆鐨勯┍鍔ㄥ睘鎬у彲鐢ㄤ簬閰嶇疆鍚勭鎿嶄綔妯″紡銆傚畠浠強鍏堕粯璁ゅ€煎涓嬫墍鍒椼€傝璁剧疆
-鍏朵腑浠讳竴灞炴€э紝璇峰皢鐩稿簲鍊?echo 鍒颁綅浜?/sys/bus/dsa/drivers/crypto/ 涓嬬殑灞炴€ф枃浠朵腑銆?
+### 驱动属
 
-鍦?IAA 绠楁硶娉ㄥ唽鏃舵崟鑾风殑灞炴€ц缃細琚繚瀛樺湪鍚勭畻娉曠殑 crypto_ctx 涓紝骞跺湪浣跨敤璇ョ畻娉曟椂
-搴旂敤浜庢墍鏈夊帇缂╁拰瑙ｅ帇缂┿€?
 
-鍙敤灞炴€у涓嬶細
+有若干用户可配置的驱动属性可用于配置各种操作模式。它们及其默认值如下所列。要设置
+其中任一属性，请将相应echo 到位/sys/bus/dsa/drivers/crypto/ 下的属性文件中
+
+IAA 算法注册时捕获的属性设置会被保存在各算法的 crypto_ctx 中，并在使用该算法时
+应用于所有压缩和解压缩
+
+可用属性如下：
 
   - verify_compress
 
-    鍒囨崲鍘嬬缉鏍￠獙銆傝嫢璁剧疆锛屾瘡娆″帇缂╁皢鍦ㄥ唴閮ㄨ繘琛岃В鍘嬬缉骞舵牎楠屽唴瀹癸紝杩斿洖閿欒锛?
+    切换压缩校验。若设置，每次压缩将在内部进行解压缩并校验内容，返回错误
 ```
       echo 0 > /sys/bus/dsa/drivers/crypto/verify_compress
 
 ```
-    榛樿璁剧疆涓?'1'鈥斺€旀牎楠屾墍鏈夊帇缂┿€?
+    默认设置'1'——校验所有压缩
 
   - sync_mode
 
-    閫夋嫨鐢ㄤ簬绛夊緟姣忔鍘嬬缉鍜岃В鍘嬬缉鎿嶄綔瀹屾垚鐨勬ā寮忋€?
+    选择用于等待每次压缩和解压缩操作完成的模式
 
-    iaa_crypto 瀹炵幇鐨勫姞瀵嗗紓姝ユ帴鍙ｆ敮鎸佹彁渚涗簡涓€涓弧瓒宠鎺ュ彛鐨勫疄鐜帮紝浣嗛噰鐢ㄧ殑鏄悓姝ユ柟寮忊€斺€?
-    瀹冨～鍏呭苟鎻愪氦 IDXD 鎻忚堪绗︼紝鐒跺悗寰幆绛夊緟鍏跺畬鎴愬啀杩斿洖銆傜洰鍓嶈繖涓嶆槸闂锛屽洜涓烘墍鏈夌幇鏈?
-    璋冪敤鑰咃紙渚嬪 zswap锛夐兘浼氬皢浠讳綍寮傛琚皟鐢ㄨ€呭寘瑁呭湪鍚屾鍖呰鍣ㄤ腑銆?
+    iaa_crypto 实现的加密异步接口支持提供了一个满足该接口的实现，但采用的是同步方式—
+    它填充并提交 IDXD 描述符，然后循环等待其完成再返回。目前这不是问题，因为所有现
+    调用者（例如 zswap）都会将任何异步被调用者包装在同步包装器中
 
-    iaa_crypto 椹卞姩纭疄涓鸿兘澶熷埄鐢ㄥ畠鐨勮皟鐢ㄨ€呮彁渚涗簡鐪熸鐨勫紓姝ユ敮鎸併€傚湪姝ゆā寮忎笅锛屽畠濉厖骞?
-    鎻愪氦 IDXD 鎻忚堪绗︼紝鐒跺悗绔嬪嵆浠?-EINPROGRESS 杩斿洖銆傝皟鐢ㄨ€呴殢鍚庡彲浠ヨ嚜琛岃疆璇㈠畬鎴愶紙杩欓渶瑕佸湪
-    璋冪敤鑰呬腑鍖呭惈鐗瑰畾浠ｇ爜锛岀洰鍓嶄笂娓稿唴鏍镐腑娌℃湁浠讳綍瀹炵幇锛夛紝鎴栬€呰繘鍏ョ潯鐪犲苟绛夊緟鍙戝嚭瀹屾垚淇″彿鐨?
-    涓柇銆傚悗涓€绉嶆ā寮忓彈鍒板唴鏍镐腑鐜版湁鐢ㄦ埛锛堝閫氳繃鍚屾鍖呰鍣ㄧ殑 zswap锛夌殑鏀寔銆傚敖绠″彈鏀寔锛屼絾
-    姝ゆā寮忔瘮鍓嶈堪鍦?iaa_crypto 椹卞姩涓繘琛岃疆璇㈢殑鍚屾妯″紡鏄庢樉鎱㈠緱澶氥€?
+    iaa_crypto 驱动确实为能够利用它的调用者提供了真正的异步支持。在此模式下，它填充
+    提交 IDXD 描述符，然后立即-EINPROGRESS 返回。调用者随后可以自行轮询完成（这需要在
+    调用者中包含特定代码，目前上游内核中没有任何实现），或者进入睡眠并等待发出完成信号
+    中断。后一种模式受到内核中现有用户（如通过同步包装器的 zswap）的支持。尽管受支持，但
+    此模式比前述iaa_crypto 驱动中进行轮询的同步模式明显慢得多
 
-    鍙互閫氳繃灏?'async_irq' 鍐欏叆 sync_mode iaa_crypto 椹卞姩灞炴€ф潵鍚敤姝ゆā寮忥細
+    可以通过'async_irq' 写入 sync_mode iaa_crypto 驱动属性来启用此模式：
 
       echo async_irq > /sys/bus/dsa/drivers/crypto/sync_mode
 
-    鏃犱腑鏂殑寮傛妯″紡锛堣皟鐢ㄨ€呭繀椤昏疆璇級鍙€氳繃鍚戝叾鍐欏叆 'async' 鏉ュ惎鐢紙璇峰弬闃呮敞鎰忎簨椤癸級锛?
+    无中断的异步模式（调用者必须轮询）可通过向其写入 'async' 来启用（请参阅注意事项）
 
       echo async > /sys/bus/dsa/drivers/crypto/sync_mode
 
-    鍦?iaa_crypto 椹卞姩涓繘琛岃疆璇㈢殑妯″紡鍙€氳繃鍚戝叾鍐欏叆 'sync' 鏉ュ惎鐢細
+    iaa_crypto 驱动中进行轮询的模式可通过向其写入 'sync' 来启用：
 
       echo sync > /sys/bus/dsa/drivers/crypto/sync_mode
 
-    榛樿妯″紡涓?'sync'銆?
+    默认模式'sync'
 
-    娉ㄦ剰浜嬮」锛氱敱浜?iaa_crypto 褰撳墠瀹炵幇鐨勫敮涓€鏃犱腑鏂紓姝ヨ疆璇㈡満鍒舵槸閫氳繃鍓嶈堪鐨?'sync' 妯″紡锛?
-    鍚?'/sys/bus/dsa/drivers/crypto/sync_mode' 鍐欏叆 'async' 浼氬湪鍐呴儴鍚敤 'sync' 妯″紡銆?
-    杩欐槸涓轰簡纭繚 iaa_crypto 鐨勬纭涓猴紝鐩村埌 iaa_crypto 涓惎鐢ㄧ湡姝ｇ殑鏃犱腑鏂紓姝ヨ疆璇负姝€?
+    注意事项：由iaa_crypto 当前实现的唯一无中断异步轮询机制是通过前述'sync' 模式
+    '/sys/bus/dsa/drivers/crypto/sync_mode' 写入 'async' 会在内部启用 'sync' 模式
+    这是为了确保 iaa_crypto 的正确行为，直到 iaa_crypto 中启用真正的无中断异步轮询为止
 
 ```
 
 
-### IAA 榛樿閰嶇疆
+### IAA 默认配置
 
 
-褰撳姞杞?iaa_crypto 椹卞姩鏃讹紝姣忎釜 IAA 璁惧閮芥湁涓€涓崟鐙殑
+当加iaa_crypto 驱动时，每个 IAA 设备都有一个单独的
 ```
           mode              "dedicated"
           threshold         0
@@ -252,21 +252,21 @@ IAA 宸ヤ綔闃熷垪缁戝畾鍒?iaa_crypto 椹卞姩銆?
           driver_name       "crypto"
 
 ```
-杩欎簺璁惧鍙婂伐浣滈槦鍒椾篃宸插惎鐢紝鍥犳璇ラ┍鍔ㄦ棤闇€浠讳綍棰濆閰嶇疆鍗冲彲浣跨敤銆?
+这些设备及工作队列也已启用，因此该驱动无需任何额外配置即可使用
 
 ```
           sync_mode         "sync"
           verify_compress   1
 
 ```
-瑕佹洿鏀硅澶?宸ヤ綔闃熷垪鎴栭┍鍔ㄥ睘鎬э紝蹇呴』鍏堢鐢ㄥ凡鍚敤鐨勮澶囧拰宸ヤ綔闃熷垪銆備负浜嗚鏂伴厤缃簲鐢ㄥ埌
-deflate-iaa 鍔犲瘑绠楁硶锛岄渶瑕侀€氳繃绉婚櫎骞堕噸鏂版彃鍏?iaa_crypto 妯″潡鏉ラ噸鏂版敞鍐屻€備笅闈€庣敤渚嬨€?
-灏忚妭涓殑 iaa_disable_script 鍙敤浜庣鐢ㄩ粯璁ら厤缃€?
+要更改设工作队列或驱动属性，必须先禁用已启用的设备和工作队列。为了让新配置应用到
+deflate-iaa 加密算法，需要通过移除并重新插iaa_crypto 模块来重新注册。下面『用例
+小节中的 iaa_disable_script 可用于禁用默认配置
 
-## 缁熻淇℃伅
+## 统计信息
 
 
-濡傛灉鍚敤浜嗗彲閫夌殑 debugfs 缁熻鏀寔锛孖AA 鍔犲瘑
+如果启用了可选的 debugfs 统计支持，IAA 加密
 ```
   # ls -al /sys/kernel/debug/iaa-crypto/
   total 0
@@ -277,7 +277,7 @@ deflate-iaa 鍔犲瘑绠楁硶锛岄渶瑕侀€氳繃绉婚櫎骞堕噸鏂版�
   -rw-r--r--  1 root root 0 Mar  3 07:55 wq_stats
 
 ```
-global_stats 鏂囦欢鏄剧ず鍦ㄤ互涓嬫椂闂翠互鏉ユ敹闆嗙殑涓€缁勫叏灞€缁熻淇℃伅锛?
+global_stats 文件显示在以下时间以来收集的一组全局统计信息
 ```
   # cat global_stats
   global stats:
@@ -291,7 +291,7 @@ global_stats 鏂囦欢鏄剧ず鍦ㄤ互涓嬫椂闂翠互鏉ユ敹闆嗙殑涓�
     total_completion_comp_buf_overflow_errors: 136
 
 ```
-wq_stats 鏂囦欢鏄剧ず姣忎釜宸ヤ綔闃熷垪鐨勭粺璁′俊鎭紝涓烘瘡涓?iaa 璁惧鍙婂伐浣滈槦鍒楀悇鎻愪緵涓€缁勶細
+wq_stats 文件显示每个工作队列的统计信息，为每iaa 设备及工作队列各提供一组：
 ```
   # cat wq_stats
   iaa device:
@@ -352,7 +352,7 @@ wq_stats 鏂囦欢鏄剧ず姣忎釜宸ヤ綔闃熷垪鐨勭粺璁′俊鎭�
     ...
 
 ```
-鍐欏叆 'stats_reset' 浼氶噸缃墍鏈夌粺璁′俊鎭紝鍖呮嫭
+写入 'stats_reset' 会重置所有统计信息，包括
 ```
   # echo 1 > stats_reset
   # cat wq_stats
@@ -370,32 +370,32 @@ wq_stats 鏂囦欢鏄剧ず姣忎釜宸ヤ綔闃熷垪鐨勭粺璁′俊鎭�
 ```
 
 
-## 鐢ㄤ緥
+## 用例
 
 
-### 绠€鍗曠殑 zswap 娴嬭瘯
+### 简单的 zswap 测试
 
 
-鍦ㄦ湰绀轰緥涓紝鍐呮牳搴旀寜鐓т笂鏂囨墍杩颁笓鐢ㄦā寮忛€夐」杩涜閰嶇疆锛屽苟涓?zswap 搴旈€氳繃浠ヤ笅鏂瑰紡鍚敤锛?
+在本示例中，内核应按照上文所述专用模式选项进行配置，并zswap 应通过以下方式启用
 ```
   CONFIG_ZSWAP=y
 
 ```
-杩欐槸涓€涓畝鍗曠殑娴嬭瘯锛屼娇鐢?iaa_compress 浣滀负浜ゆ崲锛坺swap锛夎澶囩殑鍘嬬缉鍣ㄣ€傚畠璁剧疆 zswap
-璁惧锛岀劧鍚庝娇鐢ㄤ笅闈㈠垪鍑虹殑 memory_memadvise 绋嬪簭寮哄埗鎹㈠嚭鍜屾崲鍏ユ寚瀹氭暟閲忕殑椤碉紝婕旂ず鍘嬬缉
-鍜岃В鍘嬬缉銆?
+这是一个简单的测试，使iaa_compress 作为交换（zswap）设备的压缩器。它设置 zswap
+设备，然后使用下面列出的 memory_memadvise 程序强制换出和换入指定数量的页，演示压缩
+和解压缩
 
-zswap 娴嬭瘯鏈熸湜绯荤粺涓婃瘡涓?IAA 璁惧鐨勫伐浣滈槦鍒楅兘琚纭厤缃负鍐呮牳宸ヤ綔闃熷垪锛屼笖宸ヤ綔闃熷垪
+zswap 测试期望系统上每IAA 设备的工作队列都被正确配置为内核工作队列，且工作队列
 driver_name 涓?"crypto"銆?
 
 ```
   modprobe iaa_crypto
 
 ```
-濡傛灉 IAA 璁惧鍜屽伐浣滈槦鍒椾箣鍓嶆湭琚鐢ㄥ拰閲嶆柊閰嶇疆锛屽垯搴斿綋澶勪簬榛樿閰嶇疆鐘舵€侊紝鏃犻渶杩涗竴姝ョ殑
-IAA 閰嶇疆銆傛湁鍏抽粯璁ら厤缃殑璇︾粏淇℃伅锛岃鍙傝涓嬫枃鐨?iaa_default_config銆?
+如果 IAA 设备和工作队列之前未被禁用和重新配置，则应当处于默认配置状态，无需进一步的
+IAA 配置。有关默认配置的详细信息，请参见下文iaa_default_config
 
-濡傛灉榛樿閰嶇疆宸插氨缁紝浣犲簲褰撶湅鍒?iaa
+如果默认配置已就绪，你应当看iaa
 ```
   # cat /sys/bus/dsa/devices/iax1/state
   enabled
@@ -403,7 +403,7 @@ IAA 閰嶇疆銆傛湁鍏抽粯璁ら厤缃殑璇︾粏淇℃伅锛岃鍙�
   enabled
 
 ```
-涓轰簡婕旂ず鍚庣画姝ラ鎸夐鏈熷伐浣滐紝杩欎簺
+为了演示后续步骤按预期工作，这些
 ```
   # echo -n 'module iaa_crypto +p' > /sys/kernel/debug/dynamic_debug/control
   # echo -n 'module idxd +p' > /sys/kernel/debug/dynamic_debug/control
@@ -419,8 +419,8 @@ IAA 閰嶇疆銆傛湁鍏抽粯璁ら厤缃殑璇︾粏淇℃伅锛岃鍙�
   # echo 1 > /proc/sys/vm/overcommit_memory
 
 ```
-鐜板湪浣犲彲浠ヨ繍琛屾兂瑕佹祴閲忕殑 zswap 宸ヤ綔璐熻浇浜嗐€備緥濡傦紝浣跨敤涓嬮潰鐨?memory_memadvise 浠ｇ爜锛?
-浠ヤ笅鍛戒护
+现在你可以运行想要测量的 zswap 工作负载了。例如，使用下面memory_memadvise 代码
+以下命令
 ```
   ./memory_madvise 100
 
@@ -438,7 +438,7 @@ IAA 閰嶇疆銆傛湁鍏抽粯璁ら厤缃殑璇︾粏淇℃伅锛岃鍙�
   ...
 
 ```
-鏃㈢劧鍩烘湰鍔熻兘宸叉紨绀哄畬姣曪紝鍙互娓呴櫎榛樿鍊煎苟鏇挎崲涓轰笉鍚岀殑閰嶇疆銆備负姝わ紝
+既然基本功能已演示完毕，可以清除默认值并替换为不同的配置。为此，
 ```
   # echo lzo > /sys/module/zswap/parameters/compressor
   # swapoff -a
@@ -448,16 +448,16 @@ IAA 閰嶇疆銆傛湁鍏抽粯璁ら厤缃殑璇︾粏淇℃伅锛岃鍙�
   # echo 0 > /sys/module/zswap/parameters/enabled
 
 ```
-鐒跺悗杩愯涓嬮潰銆庣敤渚嬨€忓皬鑺備腑鐨?iaa_disable_script 鏉ョ鐢ㄩ粯璁ら厤缃€?
+然后运行下面『用例』小节中iaa_disable_script 来禁用默认配置
 
 ```
   # swapon -a
 
 ```
-瀹屾垚浠ヤ笂鎵€鏈夋楠ゅ悗锛屽彲浠ユ牴鎹渶瑕侀噸鏂伴厤缃苟鍚敤 IAA 璁惧浠ヨ繘琛岃繘涓€姝ユ祴璇曘€備笅闈㈡槸涓€涓?
-绀轰緥銆?
+完成以上所有步骤后，可以根据需要重新配置并启用 IAA 设备以进行进一步测试。下面是一
+示例
 
-zswap 娴嬭瘯鏈熸湜绯荤粺涓婃瘡涓?IAA 璁惧鐨勫伐浣滈槦鍒楅兘琚纭厤缃负鍐呮牳宸ヤ綔闃熷垪锛屼笖宸ヤ綔闃熷垪
+zswap 测试期望系统上每IAA 设备的工作队列都被正确配置为内核工作队列，且工作队列
 driver_name 涓?"crypto"銆?
 
 ```
@@ -522,8 +522,8 @@ driver_name 涓?"crypto"銆?
   echo "End Enable IAA"
 
 ```
-褰撳伐浣滈槦鍒楃粦瀹氬埌 iaa_crypto 椹卞姩鏃讹紝濡傛灉浣犲凡鍚敤璋冭瘯杈撳嚭锛坋cho -n 'module iaa_crypto +p' >锛夛紝
-浣犲簲褰撳湪 dmesg 杈撳嚭涓湅鍒扮被浼间互涓嬪唴瀹癸細
+当工作队列绑定到 iaa_crypto 驱动时，如果你已启用调试输出（echo -n 'module iaa_crypto +p' >），
+你应当在 dmesg 输出中看到类似以下内容：
 ```
   [   60.752344] idxd 0000:f6:02.0: add_iaa_wq: added wq 000000004068d14d to iaa 00000000c9585ba2, n_wq 1
   [   60.752346] iaa_crypto: rebalance_wq_table: nr_nodes=2, nr_cpus 160, nr_iaa 8, cpus_per_iaa 20
@@ -545,13 +545,13 @@ driver_name 涓?"crypto"銆?
   .
 
 ```
-涓€鏃﹀伐浣滈槦鍒楀拰璁惧宸插惎鐢紝IAA 鍔犲瘑绠楁硶鍗宠鍚敤骞跺彲鐢ㄣ€傚綋 IAA 鍔犲瘑绠楁硶鎴愬姛鍚敤鍚庯紝
-浣犲簲褰撶湅鍒板涓?dmesg
+一旦工作队列和设备已启用，IAA 加密算法即被启用并可用。当 IAA 加密算法成功启用后，
+你应当看到如dmesg
 ```
   [   64.893759] iaa_crypto: iaa_crypto_enable: iaa_crypto now ENABLED
 
 ```
-鐜板湪杩愯浠ヤ笅 zswap 涓撶敤璁剧疆鍛戒护锛屼娇 zswap 浣跨敤
+现在运行以下 zswap 专用设置命令，使 zswap 使用
 ```
   echo 0 > /sys/module/zswap/parameters/enabled
   echo 50 > /sys/module/zswap/parameters/max_pool_percent
@@ -563,7 +563,7 @@ driver_name 涓?"crypto"銆?
   echo 1 > /proc/sys/vm/overcommit_memory
 
 ```
-鏈€鍚庯紝鐜板湪浣犲彲浠ヨ繍琛屾兂瑕佹祴閲忕殑 zswap 宸ヤ綔璐熻浇浜嗐€備緥濡傦紝浣跨敤涓嬮潰鐨勪唬鐮侊紝浠ヤ笅鍛戒护灏?
+最后，现在你可以运行想要测量的 zswap 工作负载了。例如，使用下面的代码，以下命令
 鎹㈠叆鍜?
 ```
   ./memory_madvise 100
@@ -574,8 +574,8 @@ driver_name 涓?"crypto"銆?
   Swapped out and in 100 pages
 
 ```
-濡傛灉浣犲凡鍚敤璋冭瘯杈撳嚭锛坋cho -n 'module iaa_crypto +p' >锛夛紝浣犲簲褰撳湪 dmesg 杈撳嚭涓湅鍒?
-绫讳技浠ヤ笅鍐呭锛?
+如果你已启用调试输出（echo -n 'module iaa_crypto +p' >），你应当在 dmesg 输出中看
+类似以下内容
 ```
   [  404.202972] idxd 0000:e7:02.0: iaa_comp_acompress: dma_map_sg, src_addr 223925c000, nr_sgs 1, req->src 00000000ee7cb5e6, req->slen 4096, sg_dma_len(sg) 4096
   [  404.202973] idxd 0000:e7:02.0: iaa_comp_acompress: dma_map_sg, dst_addr 21dadf8000, nr_sgs 1, req->dst 000000008d6acea8, req->dlen 4096, sg_dma_len(sg) 8192
@@ -589,10 +589,10 @@ driver_name 涓?"crypto"銆?
   [  409.203257] idxd 0000:e7:02.0: iaa_decompress: desc->src1_addr 21ddd8b100, desc->src1_size 228, desc->dst_addr 21f1551000, desc->max_dst_size 4096, desc->src2_addr 0, desc->src2_size 0
 
 ```
-涓轰簡娉ㄩ攢 IAA 鍔犲瘑绠楁硶骞朵娇鐢ㄤ笉鍚屽弬鏁版敞鍐屾柊绠楁硶锛屽簲褰撳仠姝㈠綋鍓嶇畻娉曠殑浠讳綍浣跨敤鑰咃紝骞剁鐢?
-IAA 宸ヤ綔闃熷垪鍜岃澶囥€?
+为了注销 IAA 加密算法并使用不同参数注册新算法，应当停止当前算法的任何使用者，并禁
+IAA 工作队列和设备
 
-瀵逛簬 zswap锛岄渶瑕佸皢 IAA 鍔犲瘑绠楁硶绉诲嚭鍘嬬缉鍣ㄥ苟鍏抽棴浜ゆ崲锛堜互绉婚櫎瀵?
+对于 zswap，需要将 IAA 加密算法移出压缩器并关闭交换（以移除
 ```
   echo lzo > /sys/module/zswap/parameters/compressor
   swapoff -a
@@ -602,10 +602,10 @@ IAA 宸ヤ綔闃熷垪鍜岃澶囥€?
   echo 0 > /sys/module/zswap/parameters/enabled
 
 ```
-涓€鏃?zswap 琚鐢ㄤ笖涓嶅啀浣跨敤 iaa_crypto锛屽氨鍙互绂佺敤 IAA 宸ヤ綔闃熷垪鍜岃澶囥€?
+一zswap 被禁用且不再使用 iaa_crypto，就可以禁用 IAA 工作队列和设备
 
 
-### IAA 绂佺敤鑴氭湰
+### IAA 禁用脚本
 
 
 ```
@@ -638,7 +638,7 @@ IAA 宸ヤ綔闃熷垪鍜岃澶囥€?
   echo "End Disable IAA"
 
 ```
-鏈€鍚庯紝姝ゆ椂鍙互绉婚櫎 iaa_crypto 妯″潡锛岃繖
+最后，此时可以移除 iaa_crypto 模块，这
 ```
   rmmod iaa_crypto
 
@@ -711,33 +711,33 @@ IAA 宸ヤ綔闃熷垪鍜岃澶囥€?
        printf("Swapped out and in %d pages\n", nr_pages);
 
 ```
-## 闄勫綍
+## 附录
 
 
 
-### IAA sysfs 閰嶇疆鎺ュ彛
+### IAA sysfs 配置接口
 
 
-浠ヤ笅鏄 IAA sysfs 鎺ュ彛鐨勬弿杩帮紝姝ｅ涓绘枃妗ｄ腑鎵€鎻愬強锛屽彧鏈夊湪浣犵‘鍒囩煡閬撹嚜宸卞湪鍋氫粈涔堟椂鎵?
-搴斾娇鐢ㄥ畠銆傚嵆渚垮姝わ紝涔熸病鏈夊厖鍒嗙殑鐞嗙敱鐩存帴浣跨敤瀹冿紝鍥犱负 accel-config 鑳藉瀹屾垚 sysfs 鎺ュ彛
-鍙互鍋氱殑涓€鍒囷紝浜嬪疄涓?accel-config 鍦ㄥ簳灞傛鏄熀浜庡畠瀹炵幇鐨勩€?
+以下是对 IAA sysfs 接口的描述，正如主文档中所提及，只有在你确切知道自己在做什么时
+应使用它。即便如此，也没有充分的理由直接使用它，因为 accel-config 能够完成 sysfs 接口
+可以做的一切，事实accel-config 在底层正是基于它实现的
 
-銆嶪AA 閰嶇疆璺緞銆忎负 /sys/bus/dsa/devices锛屽叾涓寘鍚唬琛ㄦ瘡涓?IAA 璁惧銆佸伐浣滈槦鍒椼€佸紩鎿庡拰
-缁勭殑瀛愮洰褰曘€傛敞鎰忓湪 sysfs 鎺ュ彛涓紝IAA 璁惧瀹為檯涓婁互 iax 鍛藉悕锛屼緥濡?iax1銆乮ax3 绛夈€傦紙娉ㄦ剰
-IAA 璁惧鏄鏁扮紪鍙风殑璁惧锛涘伓鏁扮紪鍙风殑璁惧鏄?DSA 璁惧锛屽浜?IAA 鍙互蹇界暐銆傦級
+『IAA 配置路径』为 /sys/bus/dsa/devices，其中包含代表每IAA 设备、工作队列、引擎和
+组的子目录。注意在 sysfs 接口中，IAA 设备实际上以 iax 命名，例iax1、iax3 等。（注意
+IAA 设备是奇数编号的设备；偶数编号的设备DSA 设备，对IAA 可以忽略。）
 
-銆嶪AA 璁惧缁戝畾璺緞銆忎负 /sys/bus/dsa/drivers/idxd/bind锛屾槸鍐欏叆浠ュ惎鐢?IAA 璁惧鐨勬枃浠躲€?
+『IAA 设备绑定路径』为 /sys/bus/dsa/drivers/idxd/bind，是写入以启IAA 设备的文件
 
-銆嶪AA 宸ヤ綔闃熷垪缁戝畾璺緞銆忎负 /sys/bus/dsa/drivers/crypto/bind锛屾槸鍐欏叆浠ュ惎鐢?IAA 宸ヤ綔闃熷垪
-鐨勬枃浠躲€?
+『IAA 工作队列绑定路径』为 /sys/bus/dsa/drivers/crypto/bind，是写入以启IAA 工作队列
+的文件
 
-绫讳技鍦帮紝/sys/bus/dsa/drivers/idxd/unbind 鍜?/sys/bus/dsa/drivers/crypto/unbind 鐢ㄤ簬
-绂佺敤 IAA 璁惧鍜屽伐浣滈槦鍒椼€?
+类似地，/sys/bus/dsa/drivers/idxd/unbind /sys/bus/dsa/drivers/crypto/unbind 用于
+禁用 IAA 设备和工作队列
 
-璁剧疆 IAA 璁惧鍜屽伐浣滈槦鍒楁墍闇€鐨勫熀鏈懡浠ゅ簭鍒楀涓嬶細
+设置 IAA 设备和工作队列所需的基本命令序列如下：
 
 ```
-鏈€鍚庯紝姝ゆ椂鍙互绉婚櫎 iaa_crypto 妯″潡锛岃繖
+最后，此时可以移除 iaa_crypto 模块，这
 ```
   rmmod iaa_crypto
 
@@ -816,30 +816,30 @@ IAA 璁惧鏄鏁扮紪鍙风殑璁惧锛涘伓鏁扮紪鍙风殑璁�
 ", nr_pages);
 
 ```
-## 闄勫綍
+## 附录
 
 
 
-### IAA sysfs 閰嶇疆鎺ュ彛
+### IAA sysfs 配置接口
 
 
-浠ヤ笅鏄 IAA sysfs 鎺ュ彛鐨勬弿杩帮紝姝ｅ涓绘枃妗ｄ腑鎵€鎻愬強锛屽彧鏈夊湪浣犵‘鍒囩煡閬撹嚜宸卞湪鍋氫粈涔堟椂鎵?
-搴斾娇鐢ㄥ畠銆傚嵆渚垮姝わ紝涔熸病鏈夊厖鍒嗙殑鐞嗙敱鐩存帴浣跨敤瀹冿紝鍥犱负 accel-config 鑳藉瀹屾垚 sysfs 鎺ュ彛
-鍙互鍋氱殑涓€鍒囷紝浜嬪疄涓?accel-config 鍦ㄥ簳灞傛鏄熀浜庡畠瀹炵幇鐨勩€?
+以下是对 IAA sysfs 接口的描述，正如主文档中所提及，只有在你确切知道自己在做什么时
+应使用它。即便如此，也没有充分的理由直接使用它，因为 accel-config 能够完成 sysfs 接口
+可以做的一切，事实accel-config 在底层正是基于它实现的
 
-銆嶪AA 閰嶇疆璺緞銆忎负 /sys/bus/dsa/devices锛屽叾涓寘鍚唬琛ㄦ瘡涓?IAA 璁惧銆佸伐浣滈槦鍒椼€佸紩鎿庡拰
-缁勭殑瀛愮洰褰曘€傛敞鎰忓湪 sysfs 鎺ュ彛涓紝IAA 璁惧瀹為檯涓婁互 iax 鍛藉悕锛屼緥濡?iax1銆乮ax3 绛夈€傦紙娉ㄦ剰
-IAA 璁惧鏄鏁扮紪鍙风殑璁惧锛涘伓鏁扮紪鍙风殑璁惧鏄?DSA 璁惧锛屽浜?IAA 鍙互蹇界暐銆傦級
+『IAA 配置路径』为 /sys/bus/dsa/devices，其中包含代表每IAA 设备、工作队列、引擎和
+组的子目录。注意在 sysfs 接口中，IAA 设备实际上以 iax 命名，例iax1、iax3 等。（注意
+IAA 设备是奇数编号的设备；偶数编号的设备DSA 设备，对IAA 可以忽略。）
 
-銆嶪AA 璁惧缁戝畾璺緞銆忎负 /sys/bus/dsa/drivers/idxd/bind锛屾槸鍐欏叆浠ュ惎鐢?IAA 璁惧鐨勬枃浠躲€?
+『IAA 设备绑定路径』为 /sys/bus/dsa/drivers/idxd/bind，是写入以启IAA 设备的文件
 
-銆嶪AA 宸ヤ綔闃熷垪缁戝畾璺緞銆忎负 /sys/bus/dsa/drivers/crypto/bind锛屾槸鍐欏叆浠ュ惎鐢?IAA 宸ヤ綔闃熷垪
-鐨勬枃浠躲€?
+『IAA 工作队列绑定路径』为 /sys/bus/dsa/drivers/crypto/bind，是写入以启IAA 工作队列
+的文件
 
-绫讳技鍦帮紝/sys/bus/dsa/drivers/idxd/unbind 鍜?/sys/bus/dsa/drivers/crypto/unbind 鐢ㄤ簬
-绂佺敤 IAA 璁惧鍜屽伐浣滈槦鍒椼€?
+类似地，/sys/bus/dsa/drivers/idxd/unbind /sys/bus/dsa/drivers/crypto/unbind 用于
+禁用 IAA 设备和工作队列
 
-璁剧疆 IAA 璁惧鍜屽伐浣滈槦鍒楁墍闇€鐨勫熀鏈懡浠ゅ簭鍒楀涓嬶細
+设置 IAA 设备和工作队列所需的基本命令序列如下：
 
 ```
   1) Disable any workqueues enabled on the device.  For example to

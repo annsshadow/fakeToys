@@ -1,101 +1,101 @@
 ﻿
-## 璐＄尞鑰?
+## 贡献
 
-   鏈枃妗ｅ凡杩囨椂銆傝繕鏈夊嚑浣嶅叾浠?DVB 璐＄尞鑰呮湭鍒楀湪涓嬮潰銆?
-鎰熻阿浠ヤ笅浜哄＋鎻愪緵鐨勮ˉ涓佸拰璐＄尞锛?
+   本文档已过时。还有几位其DVB 贡献者未列在下面
+感谢以下人士提供的补丁和贡献
 - Michael Hunold <m.hunold@gmx.de>
 
-  - 鎻愪緵浜嗘渶鍒濈殑 saa7146 椹卞姩鍙婂叾鏈€杩戠殑閲嶆瀯
+  - 提供了最初的 saa7146 驱动及其最近的重构
 
 - Christian Theiss
 
-  - 瀵规渶鍒濈殑 Linux DVB 椹卞姩鎵€鍋氱殑宸ヤ綔
+  - 对最初的 Linux DVB 驱动所做的工作
 
 - Marcus Metzler <mocm@metzlerbros.de> 鍜?  Ralph Metzler <rjkm@metzlerbros.de>
 
-  - 瀵?DVB 椹卞姩鐨勬寔缁伐浣?
+  - DVB 驱动的持续工
 - Michael Holzt <kju@debian.org>
 
-  - 瀵?dvb-net 椹卞姩鐨勮础鐚?
+  - dvb-net 驱动的贡
 - Diego Picciani <d.picciani@novacomp.it>
 
-  - 鎻愪緵浜嗙敤浜?Linux 鐨?CyberLogin锛屽彲鐢ㄤ簬鐧诲綍 EON锛堝鏋滀綘鍦ㄧ枒鎯?CyberLogin 鍦ㄤ綍澶勶紝EON 鏇存敼浜嗙櫥褰曟祦绋嬶紝CyberLogin 宸蹭笉鍐嶄娇鐢ㄣ€傦級
+  - 提供了用Linux CyberLogin，可用于登录 EON（如果你在疑CyberLogin 在何处，EON 更改了登录流程，CyberLogin 已不再使用。）
 
 - Martin Schaller <martin@smurf.franken.de>
 
-  - 瀵圭數缂嗗崱瑙ｇ爜鍣ㄩ┍鍔ㄧ殑淇ˉ
+  - 对电缆卡解码器驱动的修补
 
 - Klaus Schmidinger <Klaus.Schmidinger@cadsoft.de>
 
-  - 瀵硅皟璋愩€丱SD 鍜?CI 鐩稿叧鍐呭鐨勫悇绉嶄慨澶嶏紝浠ュ強浠栧湪 VDR 涓婄殑宸ヤ綔
+  - 对调谐、OSD CI 相关内容的各种修复，以及他在 VDR 上的工作
 
 - Steve Brown <sbrown@cortland.com>
 
-  - 浠栫殑 AFC 鍐呮牳绾跨▼
+  - 他的 AFC 内核线程
 
 - Christoph Martin <martin@uni-mainz.de>
 
-  - 浠栫殑 LIRC 绾㈠澶勭悊绋嬪簭
+  - 他的 LIRC 红外处理程序
 
 - Andreas Oberritter <obi@linuxtv.org>銆?  Dennis Noermann <dennis.noermann@noernet.de>銆?  Felix Domke <tmbinc@elitedvb.net>銆?  Florian Schirmer <jolt@tuxbox.org>銆?  Ronny Strutz <3des@elitedvb.de>銆?  Wolfram Joost <dbox2@frokaschwei.de>
-  浠ュ強鎵€鏈夊叾浠?dbox2 鎴愬憳
+  以及所有其dbox2 成员
 
-  - 瀵归€氱敤 DVB Core銆佸墠绔┍鍔ㄤ腑鐨勮澶?bug 淇锛屼互鍙婁粬浠湪 DVB 椹卞姩鐨?dbox2 绉绘涓婄殑宸ヤ綔
+  - 对通用 DVB Core、前端驱动中的许bug 修复，以及他们在 DVB 驱动dbox2 移植上的工作
 
 - Oliver Endriss <o.endriss@gmx.de>
 
-  - 璁稿 bug 淇
+  - 许多 bug 修复
 
 - Andrew de Quincey <adq_dvb@lidskialf.net>
 
-  - tda1004x 鍓嶇椹卞姩锛屼互鍙婂悇绫?bug 淇
+  - tda1004x 前端驱动，以及各bug 修复
 
 - Peter Schildmann <peter.schildmann@web.de>
 
-  - Technisat SkyStar2 PCI DVB 鍗＄殑椹卞姩
+  - Technisat SkyStar2 PCI DVB 卡的驱动
 
 - Vadim Catana <skystar@moldova.cc>銆?  Roberto Ragusa <r.ragusa@libero.it> 鍜?  Augusto Cardoso <augusto@carhil.net>
 
-  - 瀵?B2C2 鍏徃鐨?FlexCopII 鑺墖缁勬墍鍋氱殑鍏ㄩ儴宸ヤ綔
+  - B2C2 公司FlexCopII 芯片组所做的全部工作
 
 - Davor Emard <emard@softhome.net>
 
-  - 瀵归绠楅┍鍔ㄣ€佽В澶嶇敤锛坉emux锛変唬鐮併€佹ā鍧楀嵏杞介棶棰樼瓑鐨勫伐浣?
+  - 对预算驱动、解复用（demux）代码、模块卸载问题等的工
 - Hans-Frieder Vogt <hfvogt@arcor.de>
 
-  - 瀵?TechnoTrend/Hauppauge DEC 椹卞姩鍥轰欢鐨?crc 璁＄畻鍜屾鏌ョ殑宸ヤ綔
+  - TechnoTrend/Hauppauge DEC 驱动固件crc 计算和检查的工作
 
 - Michael Dreher <michael@5dot1.de> 鍜?  Andreas 'randy' Weinberger
 
-  - 瀵瑰瘜澹€?瑗块棬瀛?Activy 棰勭畻鍨?DVB-S 鐨勬敮鎸?
+  - 对富士西门Activy 预算DVB-S 的支
 - Kenneth Aafl酶y <ke-aa@frisurf.no>
 
-  - 娣诲姞瀵?Typhoon DVB-S 棰勭畻鍨嬪崱鐨勬敮鎸?
+  - 添加Typhoon DVB-S 预算型卡的支
 - Ernst Peinlich <e.peinlich@inode.at>
 
-  - 瀵?DEC 3000-s 鐨勮皟璋?DiSEqC 鏀寔
+  - DEC 3000-s 的调DiSEqC 支持
 
 - Peter Beutner <p.beutner@gmx.net>
 
-  - ttusb-dec 椹卞姩鐨?IR 浠ｇ爜
+  - ttusb-dec 驱动IR 代码
 
 - Wilson Michaels <wilsonmichaels@earthlink.net>
 
-  - lgdt330x 鍓嶇椹卞姩锛屼互鍙婂悇绫?bug 淇
+  - lgdt330x 前端驱动，以及各bug 修复
 
 - Michael Krufky <mkrufky@linuxtv.org>
 
-  - 缁存姢 v4l/dvb 璺ㄦ爲渚濊禆
+  - 维护 v4l/dvb 跨树依赖
 
 - Taylor Jacob <rtjacob@earthlink.net>
 
-  - nxt2002 鍓嶇椹卞姩
+  - nxt2002 前端驱动
 
 - Jean-Francois Thibert <jeanfrancois@sagetv.com>
 
-  - nxt2004 鍓嶇椹卞姩
+  - nxt2004 前端驱动
 
 - Kirk Lapray <kirk.lapray@gmail.com>
 
-  - or51211 鍜?or51132 鍓嶇椹卞姩锛屼互鍙婂皢 nxt2002 鍜?nxt2004 妯″潡鍚堝苟涓哄崟涓€鐨?nxt200x 鍓嶇椹卞姩銆?
-锛堝鏋滀綘璁や负鑷繁搴旇鍑虹幇鍦ㄨ繖涓垪琛ㄤ腑锛屼絾骞舵病鏈夛紝璇风粰 DVB 閭欢鍒楄〃鍙戜竴灏佷俊锛?
+  - or51211 or51132 前端驱动，以及将 nxt2002 nxt2004 模块合并为单一nxt200x 前端驱动
+（如果你认为自己应该出现在这个列表中，但并没有，请给 DVB 邮件列表发一封信

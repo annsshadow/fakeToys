@@ -16,19 +16,19 @@ CA_GET_DESCR_INFO
 
 
 `fd`
-  鐢卞厛鍓?`open()` 璋冪敤杩斿洖鐨勬枃浠舵弿杩扮銆?
+  由先`open()` 调用返回的文件描述符
 
 `desc`
-  鎸囧悜 struct `ca_descr_info` 鐨勬寚閽堛€?
+  指向 struct `ca_descr_info` 的指针
 
 ### Description
 
 
-杩斿洖鏈夊叧鎵€鏈夎В鎵板櫒鎻掓Ы鐨勪俊鎭€?
+返回有关所有解扰器插槽的信息
 
 ### Return Value
 
 
-鎴愬姛鏃惰繑鍥?0锛屽苟濉厖 `ca_descr_info`銆?
+成功时返0，并填充 `ca_descr_info`
 
-鍑洪敊鏃惰繑鍥?-1锛屽苟鐩稿簲鍦拌缃?`errno` 鍙橀噺銆傞€氱敤閿欒鐮佸湪 Generic Error Codes <gen-errors> 绔犺妭涓弿杩般€?
+出错时返-1，并相应地设`errno` 变量。通用错误码在 Generic Error Codes <gen-errors> 章节中描述

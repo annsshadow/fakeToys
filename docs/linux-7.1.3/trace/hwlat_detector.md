@@ -1,21 +1,21 @@
-﻿## 纭欢寤惰繜妫€娴嬪櫒
+﻿## 硬件延迟检测器
 
 
-### 绠€浠?
+### 简
 
 
-璺熻釜鍣?hwlat_detector 鏄竴涓壒娈婄敤閫旂殑璺熻釜鍣紝鐢ㄤ簬妫€娴嬬敱鏌愪簺搴曞眰纭欢鎴栧浐浠剁殑琛屼负鎵€寮曡捣鐨勩€佷笌 Linux 鏈韩鏃犲叧鐨勫ぇ鍨嬬郴缁熷欢杩熴€傝浠ｇ爜鏈€鍒濆紑鍙戠敤浜庢娴?x86 绯荤粺涓婄殑 SMI锛堢郴缁熺鐞嗕腑鏂紝System Management Interrupts锛夛紝浣嗘琛ヤ竵闆嗗苟娌℃湁浠讳綍 x86 鐗规湁鐨勫唴瀹广€傚畠鏈€鍒濇槸涓衡€淩T鈥濊ˉ涓佺紪鍐欑殑锛屽洜涓哄疄鏃讹紙Real Time锛夊唴鏍稿寤惰繜楂樺害鏁忔劅銆?
+跟踪hwlat_detector 是一个特殊用途的跟踪器，用于检测由某些底层硬件或固件的行为所引起的、与 Linux 本身无关的大型系统延迟。该代码最初开发用于检x86 系统上的 SMI（系统管理中断，System Management Interrupts），但此补丁集并没有任何 x86 特有的内容。它最初是为“RT”补丁编写的，因为实时（Real Time）内核对延迟高度敏感
 
-SMI 涓嶇敱 Linux 鍐呮牳鏈嶅姟锛岃繖鎰忓懗鐫€鍐呮牳鐢氳嚦涓嶇煡閬撳畠浠鍦ㄥ彂鐢熴€係MI 鐢?BIOS 浠ｇ爜璁剧疆锛屽苟鐢?BIOS 浠ｇ爜鏈嶅姟锛岄€氬父鐢ㄤ簬鈥滃叧閿€濅簨浠讹紝渚嬪瀵圭儹浼犳劅鍣ㄥ拰椋庢墖鐨勭鐞嗐€備絾鏈夋椂锛孲MI 琚敤浜庡叾浠栦换鍔★紝鑰岃繖浜涗换鍔″彲鑳藉湪澶勭悊绋嬪簭涓姳璐硅繃澶氱殑鏃堕棿锛堟湁鏃朵互姣璁★級銆傛樉鐒讹紝濡傛灉浣犺瘯鍥惧皢浜嬩欢鏈嶅姟寤惰繜淇濇寔鍦ㄥ井绉掔骇鍒紝杩欏氨鏄竴涓棶棰樸€?
+SMI 不由 Linux 内核服务，这意味着内核甚至不知道它们正在发生。SMI BIOS 代码设置，并BIOS 代码服务，通常用于“关键”事件，例如对热传感器和风扇的管理。但有时，SMI 被用于其他任务，而这些任务可能在处理程序中花费过多的时间（有时以毫秒计）。显然，如果你试图将事件服务延迟保持在微秒级别，这就是一个问题
 
-纭欢寤惰繜妫€娴嬪櫒鐨勫伐浣滃師鐞嗘槸锛氬湪鍙厤缃殑涓€娈垫椂闂村唴鐙崰锛堢鐢ㄤ腑鏂級鍏朵腑涓€涓?CPU锛屽湪涓€娈垫椂闂村唴杞 CPU 鏃堕棿鎴宠鏁板櫒锛圱ime Stamp Counter锛夛紝鐒跺悗鏌ユ壘 TSC 鏁版嵁涓殑闂撮殭銆備换浣曢棿闅欓兘琛ㄦ槑杞琚腑鏂簡锛岃€岀敱浜庝腑鏂凡琚鐢紝鍞竴鑳藉仛鍒拌繖涓€鐐圭殑灏辨槸 SMI 鎴栧叾浠栫‖浠舵晠闅滐紙鎴?NMI锛屼絾 NMI 鍙互琚窡韪級銆?
+硬件延迟检测器的工作原理是：在可配置的一段时间内独占（禁用中断）其中一CPU，在一段时间内轮询 CPU 时间戳计数器（Time Stamp Counter），然后查找 TSC 数据中的间隙。任何间隙都表明轮询被中断了，而由于中断已被禁用，唯一能做到这一点的就是 SMI 或其他硬件故障（NMI，但 NMI 可以被跟踪）
 
-璇锋敞鎰忥紝hwlat 妫€娴嬪櫒**缁濅笉**搴斿湪鐢熶骇鐜涓娇鐢ㄣ€傚畠鏃ㄥ湪鎵嬪姩杩愯锛屼互纭畾纭欢骞冲彴鏄惁瀛樺湪闀跨郴缁熷浐浠舵湇鍔′緥绋嬬殑闂銆?
+请注意，hwlat 检测器**绝不**应在生产环境中使用。它旨在手动运行，以确定硬件平台是否存在长系统固件服务例程的问题
 
-### 鐢ㄦ硶
+### 用法
 
 
-灏?ASCII 鏂囨湰 "hwlat" 鍐欏叆璺熻釜绯荤粺鐨?current_tracer 鏂囦欢锛堟寕杞藉湪 /sys/kernel/tracing 鎴?/sys/kernel/tracing锛夈€傚彲浠ラ噸鏂板畾涔夐槇鍊硷紙浠ュ井绉?us 涓哄崟浣嶏級锛岄珮浜庤闃堝€肩殑寤惰繜宄板€煎皢琚撼鍏ヨ€冭檻銆?
+ASCII 文本 "hwlat" 写入跟踪系统current_tracer 文件（挂载在 /sys/kernel/tracing /sys/kernel/tracing）。可以重新定义阈值（以微us 为单位），高于该阈值的延迟峰值将被纳入考虑
 
 ```
 
@@ -23,31 +23,31 @@ SMI 涓嶇敱 Linux 鍐呮牳鏈嶅姟锛岃繖鎰忓懗鐫€鍐呮牳鐢氳嚦
 	# echo 100 > /sys/kernel/tracing/tracing_thresh
 
 ```
-/sys/kernel/tracing/hwlat_detector 鎺ュ彛鍖呭惈浠ヤ笅鏂囦欢锛?
+/sys/kernel/tracing/hwlat_detector 接口包含以下文件
 
-  - width - 鎸佹湁 CPU 鏃堕噰鏍风殑鏃堕棿鍛ㄦ湡锛坲secs锛?
-            蹇呴』灏忎簬鎬荤殑绐楀彛澶у皬锛堝己鍒讹級
-  - window - 閲囨牱鐨勬€诲懆鏈燂紝width 浣嶄簬鍏朵腑锛坲secs锛?
+  - width - 持有 CPU 时采样的时间周期（usecs
+            必须小于总的窗口大小（强制）
+  - window - 采样的总周期，width 位于其中（usecs
 
-榛樿鎯呭喌涓嬶紝width 璁剧疆涓?500,000锛寃indow 璁剧疆涓?1,000,000锛屾剰鍛崇潃姣?1,000,000 寰锛? 绉掞級hwlat 妫€娴嬪櫒灏嗚嚜鏃?500,000 寰锛?.5 绉掞級銆傚鏋滃湪鍚敤 hwlat 璺熻釜鍣ㄦ椂 tracing_thresh 涓洪浂锛屽畠灏嗘洿鏀逛负榛樿鐨?10 寰銆傚鏋滆瀵熷埌浠讳綍瓒呰繃闃堝€肩殑寤惰繜锛屾暟鎹皢琚啓鍏ヨ窡韪幆褰㈢紦鍐插尯銆?
+默认情况下，width 设置500,000，window 设置1,000,000，意味着1,000,000 微秒 秒）hwlat 检测器将自500,000 微秒.5 秒）。如果在启用 hwlat 跟踪器时 tracing_thresh 为零，它将更改为默认10 微秒。如果观察到任何超过阈值的延迟，数据将被写入跟踪环形缓冲区
 
-鍛ㄦ湡涔嬮棿鐨勬渶灏忕潯鐪犳椂闂翠负 1 姣銆傚嵆浣?width 涓?window 鐩歌窛涓嶅埌 1 姣锛屼篃浼氬姝わ紝浠ヤ娇绯荤粺涓嶈瀹屽叏楗挎銆?
+周期之间的最小睡眠时间为 1 毫秒。即width window 相距不到 1 毫秒，也会如此，以使系统不被完全饿死
 
-濡傛灉 hwlat 妫€娴嬪櫒鍚姩鏃?tracing_thresh 涓洪浂锛屽綋鍔犺浇鍙︿竴涓窡韪櫒鏃讹紝瀹冨皢琚鍥為浂銆傛敞鎰忥紝hwlat 妫€娴嬪櫒鍦?tracing_thresh 涓殑鏈€鍚庝竴涓€间細琚繚瀛橈紝濡傛灉璇ュ€煎湪 hwlat 妫€娴嬪櫒鍐嶆鍚姩鏃朵粛涓洪浂锛屽垯姝ゅ€煎皢琚仮澶嶅埌 tracing_thresh 涓€?
+如果 hwlat 检测器启动tracing_thresh 为零，当加载另一个跟踪器时，它将被设回零。注意，hwlat 检测器tracing_thresh 中的最后一个值会被保存，如果该值在 hwlat 检测器再次启动时仍为零，则此值将被恢复到 tracing_thresh 中
 
-hwlat_detector 浣跨敤浠ヤ笅璺熻釜鐩綍鏂囦欢锛?
+hwlat_detector 使用以下跟踪目录文件
 
-鍦?/sys/kernel/tracing 涓細
+/sys/kernel/tracing 中：
 
- - tracing_threshold	- 琚涓烘渶灏忓欢杩熺殑鍊硷紙usecs锛?
- - tracing_max_latency	- 瀹為檯瑙傛祴鍒扮殑鏈€澶х‖浠跺欢杩燂紙usecs锛?
- - tracing_cpumask	- hwlat 绾跨▼瑕佽縼绉荤粡杩囩殑 CPU
- - hwlat_detector/width	- 鍦ㄧ獥鍙ｅ唴鑷棆鐨勬寚瀹氭椂闂撮噺锛坲secs锛?
- - hwlat_detector/window	- 锛坵idth锛夎繍琛屼箣闂寸殑鏃堕棿闂撮殧锛坲secs锛?
- - hwlat_detector/mode	- 绾跨▼妯″紡
+ - tracing_threshold	- 被视为最小延迟的值（usecs
+ - tracing_max_latency	- 实际观测到的最大硬件延迟（usecs
+ - tracing_cpumask	- hwlat 线程要迁移经过的 CPU
+ - hwlat_detector/width	- 在窗口内自旋的指定时间量（usecs
+ - hwlat_detector/window	- （width）运行之间的时间间隔（usecs
+ - hwlat_detector/mode	- 线程模式
 
-榛樿鎯呭喌涓嬶紝涓€涓?hwlat 妫€娴嬪櫒鐨勫唴鏍哥嚎绋嬩細鍦ㄦ柊绐楀彛寮€濮嬫椂浠ヨ疆璇紙round-robin锛夋柟寮忚縼绉荤粡杩?cpumask 涓寚瀹氱殑姣忎釜 CPU銆傝琛屼负鍙互閫氳繃鏇存敼绾跨▼妯″紡鏉ユ敼鍙橈紝鍙敤閫夐」鏈夛細
+默认情况下，一hwlat 检测器的内核线程会在新窗口开始时以轮询（round-robin）方式迁移经cpumask 中指定的每个 CPU。该行为可以通过更改线程模式来改变，可用选项有：
 
- - none:        涓嶅己鍒惰縼绉?
- - round-robin: 杩佺Щ缁忚繃 cpumask 涓寚瀹氱殑姣忎釜 CPU [榛樿]
- - per-cpu:     涓?tracing_cpumask 涓殑姣忎釜 cpu 鍒涘缓涓€涓嚎绋?
+ - none:        不强制迁
+ - round-robin: 迁移经过 cpumask 中指定的每个 CPU [默认]
+ - per-cpu:     tracing_cpumask 中的每个 cpu 创建一个线

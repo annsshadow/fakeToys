@@ -5,8 +5,8 @@ Maintained by Jaya Kumar <jayakumar.lkml.gmail.com>
 
 Last revised: Mar 10, 2008
 
-Metronomefb 鏄竴涓敤浜?Metronome 鏄剧ず鎺у埗鍣ㄧ殑椹卞姩銆傝鎺у埗鍣ㄦ潵鑷?E-Ink Corporation銆傚畠鏃ㄥ湪鐢ㄤ簬椹卞姩 E-Ink Vizplex 鏄剧ず濯掍綋銆侲-Ink 鍦ㄥ叾缃戠珯涓婃墭绠′簡璇ユ帶鍒跺櫒鍜屾樉绀哄獟浣撶殑涓€浜涚粏鑺傦細http://www.e-ink.com/products/matrix/metronome.html 銆?
-Metronome 閫氳繃 AMLCD 鎺ュ彛涓庝富鏈?CPU 杩炴帴銆備富鏈?CPU 鐢熸垚鎺у埗淇℃伅鍜屽浘鍍忥紝鏀惧湪涓€涓?framebuffer 涓紝闅忓悗閫氳繃鏌愮涓绘満鐗瑰畾鐨勬柟寮忎紶閫佸埌 AMLCD 鎺ュ彛銆傛樉绀虹姸鎬佸拰閿欒鐘舵€佸悇鑷€氳繃鐙珛鐨?GPIO 鎷夊彇銆?
-Metronomefb 鏄笌骞冲彴鏃犲叧鐨勶紝渚濊禆浜庝竴涓澘绾х壒瀹氱殑椹卞姩鏉ュ畬鎴愭墍鏈夌墿鐞?IO 宸ヤ綔銆傜洰鍓嶏紝閽堝 AM-200 EPD 寮€鍙戝浠朵腑浣跨敤鐨?PXA 鏉垮疄鐜颁簡涓€涓ず渚嬨€傝绀轰緥鏄?am200epd.c銆?
-Metronomefb 闇€瑕佹尝褰俊鎭紝璇ヤ俊鎭€氳繃 AMLCD 鎺ュ彛浼犻€佺粰 metronome 鎺у埗鍣ㄣ€傛尝褰俊鎭鏈熼€氳繃鍥轰欢绫伙紙firmware class锛夋帴鍙ｄ粠鐢ㄦ埛绌洪棿浼犻€併€傚彧瑕佷綘鐨?udev 鎴?hotplug 鑴氭湰鐭ラ亾鍦ㄤ紶閫佷箣鍓嶉渶瑕佽В鍘嬬缉锛屾尝褰㈡枃浠跺氨鍙互琚帇缂┿€俶etronomefb 浼氳姹?metronome.wbf锛屽畠閫氬父浼氭牴鎹?udev/hotplug 閰嶇疆鏀惧叆 /lib/firmware/metronome.wbf銆傛垜鍙敤杩囦竴涓渶鍒濇爣璁颁负 23P01201_60_WT0107_MTC 鐨勬尝褰㈡枃浠舵祴璇曡繃銆傛垜涓嶇煡閬撳畠浠ｈ〃浠€涔堝惈涔夈€傛搷浣滄尝褰㈡椂搴旇皑鎱庯紝鍥犱负瀹冨彲鑳藉鏄剧ず濯掍綋浜х敓鏌愪簺姘镐箙鎬х殑褰卞搷銆傛垜鏃㈡棤娉曡闂篃涓嶇‘鍒囩煡閬撹娉㈠舰瀵逛簬鐗╃悊濯掍綋鍏蜂綋璧蜂粈涔堜綔鐢ㄣ€?
-Metronomefb 浣跨敤 deferred IO 鎺ュ彛锛屼互渚挎彁渚涗竴涓彲鍐呭瓨鏄犲皠鐨勫抚缂撳啿銆傚畠宸茬敤 tinyx锛圶fbdev锛夋祴璇曡繃銆傜洰鍓嶅凡鐭ュ畠鍙笌 xeyes銆亁clock銆亁loadimage銆亁pdf 涓€璧峰伐浣溿€?
+Metronomefb 是一个用Metronome 显示控制器的驱动。该控制器来E-Ink Corporation。它旨在用于驱动 E-Ink Vizplex 显示媒体。E-Ink 在其网站上托管了该控制器和显示媒体的一些细节：http://www.e-ink.com/products/matrix/metronome.html 
+Metronome 通过 AMLCD 接口与主CPU 连接。主CPU 生成控制信息和图像，放在一framebuffer 中，随后通过某种主机特定的方式传送到 AMLCD 接口。显示状态和错误状态各自通过独立GPIO 拉取
+Metronomefb 是与平台无关的，依赖于一个板级特定的驱动来完成所有物IO 工作。目前，针对 AM-200 EPD 开发套件中使用PXA 板实现了一个示例。该示例am200epd.c
+Metronomefb 需要波形信息，该信息通过 AMLCD 接口传送给 metronome 控制器。波形信息预期通过固件类（firmware class）接口从用户空间传送。只要你udev hotplug 脚本知道在传送之前需要解压缩，波形文件就可以被压缩。metronomefb 会请metronome.wbf，它通常会根udev/hotplug 配置放入 /lib/firmware/metronome.wbf。我只用过一个最初标记为 23P01201_60_WT0107_MTC 的波形文件测试过。我不知道它代表什么含义。操作波形时应谨慎，因为它可能对显示媒体产生某些永久性的影响。我既无法访问也不确切知道该波形对于物理媒体具体起什么作用
+Metronomefb 使用 deferred IO 接口，以便提供一个可内存映射的帧缓冲。它已用 tinyx（Xfbdev）测试过。目前已知它可与 xeyes、xclock、xloadimage、xpdf 一起工作

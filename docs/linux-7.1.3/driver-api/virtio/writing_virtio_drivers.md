@@ -1,18 +1,18 @@
 ﻿
 
-缂栧啓 Virtio 椹卞姩
+编写 Virtio 驱动
 
 
-绠€浠?
+简
 
 
-鏈枃妗ｄ綔涓洪┍鍔ㄥ紑鍙戜汉鍛橀渶瑕佺紪鍐欐柊鐨?virtio 椹卞姩鎴栫悊瑙ｇ幇鏈夐┍鍔ㄨ鐐规椂鐨勫熀鏈寚鍗椼€傛湁鍏?virtio 鐨勬€讳綋姒傝堪锛岃鍙傞槄 Virtio on Linux <virtio>銆?
+本文档作为驱动开发人员需要编写新virtio 驱动或理解现有驱动要点时的基本指南。有virtio 的总体概述，请参阅 Virtio on Linux <virtio>
 
 
-椹卞姩鏍锋澘浠ｇ爜
+驱动样板代码
 
 
-浣滀负鏈€浣庤姹傦紝virtio 椹卞姩闇€瑕佸湪 virtio 鎬荤嚎涓婃敞鍐岋紝骞舵牴鎹澶囪鑼冧负鍏堕厤缃?virtqueue锛涢┍鍔ㄤ晶鐨?virtqueue 閰嶇疆蹇呴』涓庤澶囦腑鐨?virtqueue 瀹氫箟鐩稿尮閰嶃€備竴涓熀鏈殑椹卞姩妗嗘灦鍙兘濡備笅鎵€绀?
+作为最低要求，virtio 驱动需要在 virtio 总线上注册，并根据设备规范为其配virtqueue；驱动侧virtqueue 配置必须与设备中virtqueue 定义相匹配。一个基本的驱动框架可能如下所
 ```
 
 	#include <linux/virtio.h>
@@ -99,22 +99,22 @@
 	MODULE_LICENSE("GPL");
 
 ```
-姝ゅ鐨勮澶?id `VIRTIO_ID_DUMMY` 鏄竴涓崰浣嶇锛寁irtio 椹卞姩鍙簲涓鸿鑼冧腑瀹氫箟鐨勮澶囨坊鍔狅紝璇峰弬闃?include/uapi/linux/virtio_ids.h銆傚湪灏嗚鏂囦欢娣诲姞璁惧 id 涔嬪墠锛岃嚦灏戦渶瑕佸湪 virtio 瑙勮寖涓鐣欒 id銆?
+此处的设id `VIRTIO_ID_DUMMY` 是一个占位符，virtio 驱动只应为规范中定义的设备添加，请参include/uapi/linux/virtio_ids.h。在将该文件添加设备 id 之前，至少需要在 virtio 规范中预留该 id
 
-濡傛灉鎮ㄧ殑椹卞姩鍦ㄥ叾 `init` 涓?`exit` 鏂规硶涓棤闇€鍋氫换浣曠壒娈婂鐞嗭紝鍙互浣跨敤 module_virtio_driver() 杈呭姪瀹忔潵鍑忓皯鏍锋澘浠ｇ爜鐨勬暟閲忋€?
+如果您的驱动在其 `init` `exit` 方法中无需做任何特殊处理，可以使用 module_virtio_driver() 辅助宏来减少样板代码的数量
 
-`probe` 鏂规硶鍦ㄦ鎯呭喌涓嬪畬鎴愭渶灏戠殑椹卞姩璁剧疆锛堜负璁惧鏁版嵁鍒嗛厤鍐呭瓨锛夊苟鍒濆鍖?virtqueue銆倂irtio_device_ready() 鐢ㄤ簬鍚敤 virtqueue锛屽苟閫氱煡璁惧椹卞姩宸插噯澶囧ソ绠＄悊璇ヨ澶囷紙鈥淒RIVER_OK鈥濓級銆傛棤璁哄浣曪紝virtqueue 閮戒細鍦?`probe` 杩斿洖鍚庣敱鏍稿績鑷姩鍚敤銆?
+`probe` 方法在此情况下完成最少的驱动设置（为设备数据分配内存）并初始virtqueue。virtio_device_ready() 用于启用 virtqueue，并通知设备驱动已准备好管理该设备（“DRIVER_OK”）。无论如何，virtqueue 都会`probe` 返回后由核心自动启用
 
    :identifiers: virtio_device_ready
 
-鏃犺濡備綍锛屽湪鍚戝叾娣诲姞缂撳啿鍖轰箣鍓嶅繀椤诲厛鍚敤 virtqueue銆?
+无论如何，在向其添加缓冲区之前必须先启用 virtqueue
 
-鍙戦€佷笌鎺ユ敹鏁版嵁
+发送与接收数据
 
 
-涓婅堪浠ｇ爜涓殑 virtio_dummy_recv_cb() 鍥炶皟浼氬湪璁惧瀹屾垚澶勭悊鏌愪釜鎻忚堪绗︽垨鎻忚堪绗﹂摼锛堢敤浜庤鍙栨垨鍐欏叆锛夊苟閫氱煡椹卞姩鏃惰瑙﹀彂銆傜劧鑰岋紝杩欏彧鏄?virtio 璁惧-椹卞姩閫氫俊杩囩▼鐨勫悗鍗婇儴鍒嗭紝鍥犱负鏃犺鏁版嵁浼犺緭鏂瑰悜濡備綍锛岄€氫俊鎬绘槸鐢遍┍鍔ㄥ彂璧枫€?
+上述代码中的 virtio_dummy_recv_cb() 回调会在设备完成处理某个描述符或描述符链（用于读取或写入）并通知驱动时被触发。然而，这只virtio 设备-驱动通信过程的后半部分，因为无论数据传输方向如何，通信总是由驱动发起
 
-瑕佸皢缂撳啿鍖轰粠椹卞姩浼犺緭鍒拌澶囷紝棣栧厛蹇呴』鏍规嵁闇€瑕佷娇鐢?virtqueue_add_inbuf()銆乿irtqueue_add_outbuf() 鎴?virtqueue_add_sgs() 涓殑浠绘剰涓€涓紝灏嗙紦鍐插尯鈥斺€旀墦鍖呬负 `scatterlists`鈥斺€旀坊鍔犲埌鐩稿簲鐨?virtqueue锛屽叿浣撳彇鍐充簬鎮ㄩ渶瑕佹坊鍔犱竴涓緭鍏?`scatterlist`锛堜緵璁惧濉叆锛夈€佷竴涓緭鍑?`scatterlist`锛堜緵璁惧娑堣垂锛夎繕鏄涓?`scatterlists`銆傜劧鍚庯紝涓€鏃?virtqueue 璁剧疆瀹屾垚锛岃皟鐢?virtqueue_kick() 浼氬彂閫佷竴涓敱浠ヤ笅浠ｇ爜澶勭悊
+要将缓冲区从驱动传输到设备，首先必须根据需要使virtqueue_add_inbuf()、virtqueue_add_outbuf() virtqueue_add_sgs() 中的任意一个，将缓冲区——打包为 `scatterlists`——添加到相应virtqueue，具体取决于您需要添加一个输`scatterlist`（供设备填入）、一个输`scatterlist`（供设备消费）还是多`scatterlists`。然后，一virtqueue 设置完成，调virtqueue_kick() 会发送一个由以下代码处理
 ```
 
 	struct scatterlist sg[1];
@@ -129,23 +129,23 @@
 
    :identifiers: virtqueue_add_sgs
 
-闅忓悗锛屽湪璁惧璇诲彇鎴栧啓鍏ラ┍鍔ㄥ噯澶囧ソ鐨勭紦鍐插尯骞跺洖閫氱煡鍚庯紝椹卞姩鍙互璋冪敤 virtqueue_get_buf() 鏉ヨ鍙栬澶囦骇鐢熺殑鏁版嵁锛堝鏋?virtqueue 鏄敤杈撳叆缂撳啿鍖鸿缃殑锛夛紝鎴栬€呬粎浠呮槸鍥炴敹杩欎簺宸茶璁惧娑堣垂鐨勭紦鍐插尯锛?
+随后，在设备读取或写入驱动准备好的缓冲区并回通知后，驱动可以调用 virtqueue_get_buf() 来读取设备产生的数据（如virtqueue 是用输入缓冲区设置的），或者仅仅是回收这些已被设备消费的缓冲区
 
    :identifiers: virtqueue_get_buf_ctx
 
-virtqueue 鍥炶皟鍙互浣跨敤 virtqueue_disable_cb() 涓庝竴绯诲垪鐨?virtqueue_enable_cb() 鍑芥暟鍒嗗埆绂佺敤鍜岄噸鏂板惎鐢ㄣ€傛洿澶氱粏鑺傝鍙傞槄 drivers/virtio/virtio_ring.c锛?
+virtqueue 回调可以使用 virtqueue_disable_cb() 与一系列virtqueue_enable_cb() 函数分别禁用和重新启用。更多细节请参阅 drivers/virtio/virtio_ring.c
 
    :identifiers: virtqueue_disable_cb
 
    :identifiers: virtqueue_enable_cb
 
-浣嗚娉ㄦ剰锛屽湪鏌愪簺鍦烘櫙涓嬩粛鍙兘瑙﹀彂涓€浜涜櫄鍋囧洖璋冦€傚彲闈犵鐢ㄥ洖璋冪殑鏂规硶鏄噸缃澶囨垨 virtqueue锛坴irtio_reset_device()锛夈€?
+但请注意，在某些场景下仍可能触发一些虚假回调。可靠禁用回调的方法是重置设备或 virtqueue（virtio_reset_device()）
 
 
-鍙傝€冩枃妗?
+参考文
 
 
-_`[^1^]` Virtio 瑙勮寖 v1.2锛?
+_`[^1^]` Virtio 规范 v1.2
 https://docs.oasis-open.org/virtio/virtio/v1.2/virtio-v1.2.html
 
-鍚屾椂璇锋煡鐪嬭瑙勮寖鐨勬洿楂樼増鏈€?
+同时请查看该规范的更高版本

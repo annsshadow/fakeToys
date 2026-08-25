@@ -3,12 +3,12 @@
 ######## ioctl VIDIOC_G_CROP, VIDIOC_S_CROP
 
 
-## 鍚嶇О
+## 名称
 
 
-VIDIOC_G_CROP - VIDIOC_S_CROP - 鑾峰彇鎴栬缃綋鍓嶇殑瑁佸壀鐭╁舰
+VIDIOC_G_CROP - VIDIOC_S_CROP - 获取或设置当前的裁剪矩形
 
-## 璇硶
+## 语法
 
 
 `int ioctl(int fd, VIDIOC_G_CROP, struct v4l2_crop *argp)`
@@ -16,28 +16,28 @@ VIDIOC_G_CROP - VIDIOC_S_CROP - 鑾峰彇鎴栬缃綋鍓嶇殑瑁佸壀鐭
 
 `int ioctl(int fd, VIDIOC_S_CROP, const struct v4l2_crop *argp)`
 
-## 鍙傛暟
+## 参数
 
 
 `fd`
-    鐢?`open()` 杩斿洖鐨勬枃浠舵弿杩扮銆?
+    `open()` 返回的文件描述符
 `argp`
-    鎸囧悜缁撴瀯浣?`v4l2_crop` 鐨勬寚閽堛€?
-## 鎻忚堪
+    指向结构`v4l2_crop` 的指针
+## 描述
 
 
-涓轰簡鏌ヨ瑁佸壀鐭╁舰鐨勫ぇ灏忓拰浣嶇疆锛屽簲鐢ㄧ▼搴忔妸缁撴瀯浣?`v4l2_crop` 鐨?`type`
-瀛楁璁剧疆涓虹浉搴旂殑缂撳啿鍖猴紙娴侊級绫诲瀷锛屽苟浠ユ寚鍚戣缁撴瀯浣撶殑鎸囬拡璋冪敤 VIDIOC_G_CROP <VIDIOC_G_CROP> ioctl銆?椹卞姩浼氬～鍏呯粨鏋勪綋鐨勫叾浣欓儴鍒嗭紝濡傛灉涓嶆敮鎸佽鍓垯杩斿洖 `EINVAL` 閿欒鐮併€?
-涓轰簡鏀瑰彉瑁佸壀鐭╁舰锛屽簲鐢ㄧ▼搴忓垵濮嬪寲 v4l2_crop 缁撴瀯浣撲腑鐨?`type` 瀛楁
-浠ュ強鍚嶄负 `c` 鐨?`v4l2_rect` 瀛愮粨鏋勪綋锛屽苟浠ユ寚鍚戣缁撴瀯浣撶殑鎸囬拡璋冪敤
-VIDIOC_S_CROP <VIDIOC_G_CROP> ioctl銆?
-椹卞姩棣栧厛鏍规嵁纭欢闄愬埗锛堝嵆鐢辨崟鑾?杈撳嚭绐楀彛缁欏嚭鐨勮竟鐣岋級璋冩暣璇锋眰鐨勫昂瀵革紝
-骞舵妸姘村钩鍜屽瀭鐩村亸绉汇€佸搴﹀拰楂樺害鑸嶅叆鍒版渶鎺ヨ繎鐨勫彲鑳藉€笺€傜壒鍒槸锛岄┍鍔ㄥ繀椤绘妸瑁佸壀
-鐭╁舰鐨勫瀭鐩村亸绉昏垗鍏ヤ负甯ц鏁版ā浜岋紝浠ラ伩鍏嶅瓧娈甸『搴忚娣锋穯銆?
-鍏舵锛岄┍鍔ㄥ湪淇濇寔褰撳墠姘村钩鍜屽瀭鐩寸缉鏀惧洜瀛愮殑鍓嶆彁涓嬶紝鎶婂浘鍍忓ぇ灏忥紙缂╂斁杩囩▼涓?鐩稿鐨勭煩褰紝婧愭垨鐩爣鍙栧喅浜庢暟鎹柟鍚戯級璋冩暣涓烘渶鎺ヨ繎鐨勫彲鑳藉ぇ灏忋€?
-鏈€鍚庯紝椹卞姩鐢ㄥ疄闄呯殑瑁佸壀鍜屽浘鍍忓弬鏁板纭欢杩涜缂栫▼銆俈IDIOC_S_CROP <VIDIOC_G_CROP>
-鏄竴涓彧鍐?ioctl锛屽畠涓嶈繑鍥炲疄闄呭弬鏁般€傝鏌ヨ杩欎簺鍙傛暟锛屽簲鐢ㄧ▼搴忓繀椤昏皟鐢?VIDIOC_G_CROP <VIDIOC_G_CROP> 鍜?VIDIOC_G_FMT銆傚綋鍙傛暟涓嶅悎閫傛椂锛屽簲鐢ㄧ▼搴忓彲浠?淇敼瑁佸壀鎴栧浘鍍忓弬鏁板苟閲嶅璇ュ惊鐜紝鐩村埌鍗忓晢鍑烘弧鎰忕殑鍙傛暟銆?
-褰撲笉鏀寔瑁佸壀鏃讹紝涓嶄細淇敼浠讳綍鍙傛暟锛孷IDIOC_S_CROP <VIDIOC_G_CROP> 杩斿洖 `EINVAL` 閿欒鐮併€?
+为了查询裁剪矩形的大小和位置，应用程序把结构`v4l2_crop` `type`
+字段设置为相应的缓冲区（流）类型，并以指向该结构体的指针调用 VIDIOC_G_CROP <VIDIOC_G_CROP> ioctl驱动会填充结构体的其余部分，如果不支持裁剪则返回 `EINVAL` 错误码
+为了改变裁剪矩形，应用程序初始化 v4l2_crop 结构体中`type` 字段
+以及名为 `c` `v4l2_rect` 子结构体，并以指向该结构体的指针调用
+VIDIOC_S_CROP <VIDIOC_G_CROP> ioctl銆。
+驱动首先根据硬件限制（即由捕输出窗口给出的边界）调整请求的尺寸，
+并把水平和垂直偏移、宽度和高度舍入到最接近的可能值。特别是，驱动必须把裁剪
+矩形的垂直偏移舍入为帧行数模二，以避免字段顺序被混淆
+其次，驱动在保持当前水平和垂直缩放因子的前提下，把图像大小（缩放过程相对的矩形，源或目标取决于数据方向）调整为最接近的可能大小
+最后，驱动用实际的裁剪和图像参数对硬件进行编程。VIDIOC_S_CROP <VIDIOC_G_CROP>
+是一个只ioctl，它不返回实际参数。要查询这些参数，应用程序必须调VIDIOC_G_CROP <VIDIOC_G_CROP> VIDIOC_G_FMT。当参数不合适时，应用程序可修改裁剪或图像参数并重复该循环，直到协商出满意的参数
+当不支持裁剪时，不会修改任何参数，VIDIOC_S_CROP <VIDIOC_G_CROP> 返回 `EINVAL` 错误码
 
 
     :header-rows:  0
@@ -46,16 +46,16 @@ VIDIOC_S_CROP <VIDIOC_G_CROP> ioctl銆?
 
     - - __u32
       - `type`
-      - 鏁版嵁绫诲瀷锛岀敱搴旂敤绋嬪簭璁剧疆銆傛澶勪粎浠ヤ笅绫诲瀷鏈夋晥锛歚V4L2_BUF_TYPE_VIDEO_CAPTURE`銆乣V4L2_BUF_TYPE_VIDEO_CAPTURE_MPLANE`銆?	`V4L2_BUF_TYPE_VIDEO_OUTPUT`銆乣V4L2_BUF_TYPE_VIDEO_OUTPUT_MPLANE` 浠ュ強
-	`V4L2_BUF_TYPE_VIDEO_OVERLAY`銆傚弬瑙?`v4l2_buf_type` 浠ュ強涓嬮潰鐨勮鏄庛€?    - - struct `v4l2_rect`
+      - 数据类型，由应用程序设置。此处仅以下类型有效：`V4L2_BUF_TYPE_VIDEO_CAPTURE`、`V4L2_BUF_TYPE_VIDEO_CAPTURE_MPLANE`	`V4L2_BUF_TYPE_VIDEO_OUTPUT`、`V4L2_BUF_TYPE_VIDEO_OUTPUT_MPLANE` 以及
+	`V4L2_BUF_TYPE_VIDEO_OVERLAY`。参`v4l2_buf_type` 以及下面的说明    - - struct `v4l2_rect`
       - `c`
-      - 瑁佸壀鐭╁舰銆備娇鐢ㄧ殑鍧愭爣绯讳笌缁撴瀯浣?`v4l2_cropcap` 鐨?`bounds` 鐩稿悓銆?
-   閬楁喚鐨勬槸锛屽湪澶氬钩闈㈢紦鍐插尯绫诲瀷锛坄V4L2_BUF_TYPE_VIDEO_CAPTURE_MPLANE` 鍜?`V4L2_BUF_TYPE_VIDEO_OUTPUT_MPLANE`锛?   鐨勬儏鍐典笅锛屽叧浜庡簲濡備綍濉啓 `v4l2_crop` 鐨?`type` 瀛楁锛岃 API 涓€搴︽贩涔便€傛煇浜涢┍鍔?   鍙帴鍙?`_MPLANE` 缂撳啿鍖虹被鍨嬶紝鑰屽叾浠栭┍鍔ㄥ彧鎺ュ彈闈炲骞抽潰缂撳啿鍖虹被鍨嬶紙鍗充笉甯︽湯灏剧殑
-   `_MPLANE`锛夈€?
-   浠庡唴鏍?4.13 璧凤紝涓ょ鍐欐硶閮借鍏佽銆?
-## 杩斿洖鍊?
+      - 裁剪矩形。使用的坐标系与结构`v4l2_cropcap` `bounds` 相同
+   遗憾的是，在多平面缓冲区类型（`V4L2_BUF_TYPE_VIDEO_CAPTURE_MPLANE` `V4L2_BUF_TYPE_VIDEO_OUTPUT_MPLANE`   的情况下，关于应如何填写 `v4l2_crop` `type` 字段，该 API 一度混乱。某些驱   只接`_MPLANE` 缓冲区类型，而其他驱动只接受非多平面缓冲区类型（即不带末尾的
+   `_MPLANE`）
+   从内4.13 起，两种写法都被允许
+## 杩斿洖鍊。
 
-鎴愬姛鏃惰繑鍥?0锛屽嚭閿欐椂杩斿洖 -1 骞剁浉搴斿湴璁剧疆 `errno` 鍙橀噺銆傞€氱敤閿欒鐮佸湪
-閫氱敤閿欒鐮?<gen-errors> 绔犺妭涓弿杩般€?
+成功时返0，出错时返回 -1 并相应地设置 `errno` 变量。通用错误码在
+通用错误<gen-errors> 章节中描述
 ENODATA
-    璇ヨ緭鍏ユ垨杈撳嚭涓嶆敮鎸佽鍓€?
+    该输入或输出不支持裁剪

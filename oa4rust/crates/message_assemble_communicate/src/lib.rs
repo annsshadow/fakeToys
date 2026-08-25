@@ -9,6 +9,8 @@ use shared::{error::AppError, response::ActionResult};
 use uuid::Uuid;
 
 pub mod routes;
+#[cfg(test)]
+mod tests_u2;
 
 pub async fn send_message(
     pool: Extension<Pool>,
@@ -537,12 +539,22 @@ pub async fn im_conversation_id_group_mockdeletetoget(
 
 pub async fn im_conversation_id_group_quit_self(
     pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
+    // Java 仅允许群聊退出；IDOR：person 取自会话，只能退自己所在的群
+    let conv_type = conversation_type(&client, &id).await?;
+    if conv_type.as_deref() != Some("group") {
+        return Ok(Json(ActionResult::error("conversation not found or not a group")));
+    }
+    if !is_conversation_member(&client, &id, &session.person_unique).await? {
+        return Ok(Json(ActionResult::error("not a conversation member")));
+    }
+
     let result = client
-        .execute("DELETE FROM x_message_conversation_member WHERE conversation_id = $1 AND person_id = $2", &[&id, &""])
+        .execute("DELETE FROM x_message_conversation_member WHERE conversation_id = $1 AND person_id = $2", &[&id, &session.person_unique])
         .await
         .map_err(|_| AppError::Internal)?;
 
@@ -578,9 +590,15 @@ pub async fn im_conversation_id_icon(
 
 pub async fn im_conversation_id_read(
     pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
+
+    // Java ActionConversationRead 校验会话成员；IDOR：仅成员可标记已读
+    if !is_conversation_member(&client, &id, &session.person_unique).await? {
+        return Ok(Json(ActionResult::error("not a conversation member")));
+    }
 
     let result = client
         .execute("UPDATE x_message_conversation SET read_status = 'read', read_time = NOW() WHERE id = $1", &[&id])
@@ -635,9 +653,15 @@ pub async fn im_conversation_id_single(
 
 pub async fn im_conversation_id_single_mockdeletetoget(
     pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
+
+    // IDOR：仅会话成员可删除该单聊
+    if !is_conversation_member(&client, &id, &session.person_unique).await? {
+        return Ok(Json(ActionResult::error("not a conversation member")));
+    }
 
     let result = client
         .execute("DELETE FROM x_message_conversation WHERE id = $1 AND type = 'single'", &[&id])
@@ -1456,22 +1480,6 @@ pub async fn mass_id(
     }
 }
 
-pub async fn mass_id_mockdeletetoget(
-    pool: Extension<Pool>,
-    axum::extract::Path(id): axum::extract::Path<String>,
-) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
-
-    let result = client
-        .execute("DELETE FROM x_message_mass WHERE id = $1", &[&id])
-        .await
-        .map_err(|_| AppError::Internal)?;
-
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([("deleted".to_string(), Value::Bool(result > 0))]),
-    ))))
-}
-
 pub async fn message_custom_create(
     pool: Extension<Pool>,
     axum::extract::Json(req): axum::extract::Json<Value>,
@@ -1529,6 +1537,449 @@ pub async fn message_list_paging_page_size_size(
             ("page".to_string(), Value::Number(serde_json::Number::from(page))),
             ("size".to_string(), Value::Number(serde_json::Number::from(size))),
             ("data".to_string(), Value::Array(data)),
+        ]),
+    ))))
+}
+
+// ══════════════════════════════════════════════════════════════════
+// plan002 U2 — Java 对齐缺口端点（connector / ws / mass 家族 + 动词补齐）
+//
+// 表：x_message_ws_session / x_message_conversation_ext（migration 063 幂等
+// 补建），其余沿用既有表。写操作按 IDOR 门禁：
+//   - 管理资源（mass 群发创建/删除）一律 require_admin（Java 要求
+//     Manager/MessageManager 角色），is_admin 对不可用 DB fail-closed；
+//   - 会话内个人操作（退群/已读/单聊删除）person_unique 取自会话，
+//     操作前校验成员身份，禁止代他人操作。
+// ══════════════════════════════════════════════════════════════════
+
+async fn require_admin(
+    pool: &Pool,
+    session: &shared::session::Session,
+) -> Result<(), AppError> {
+    if shared::middleware::is_admin(pool, &session.person_unique).await {
+        Ok(())
+    } else {
+        Err(AppError::Forbidden)
+    }
+}
+
+async fn is_conversation_member(
+    client: &deadpool_postgres::Client,
+    conversation_id: &str,
+    person_unique: &str,
+) -> Result<bool, AppError> {
+    let member = client
+        .query_opt(
+            "SELECT 1 FROM x_message_conversation_member WHERE conversation_id = $1 AND person_id = $2",
+            &[&conversation_id, &person_unique],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+    Ok(member.is_some())
+}
+
+async fn conversation_type(
+    client: &deadpool_postgres::Client,
+    conversation_id: &str,
+) -> Result<Option<String>, AppError> {
+    let row = client
+        .query_opt("SELECT type FROM x_message_conversation WHERE id = $1", &[&conversation_id])
+        .await
+        .map_err(|_| AppError::Internal)?;
+    Ok(row.map(|r| r.get::<_, Option<String>>("type").unwrap_or_default()))
+}
+
+/// POST /connector — Java ActionCreate：先落 Instant(consumed=false)，
+/// 再为每个启用的 consumer 展开一条 Message 落库。
+pub async fn connector_create(
+    pool: Extension<Pool>,
+    axum::extract::Json(req): axum::extract::Json<Value>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+
+    let msg_type = req.get("type").and_then(|v| v.as_str()).unwrap_or_default().to_string();
+    let person = req.get("person").and_then(|v| v.as_str()).unwrap_or_default().to_string();
+    let title = req.get("title").and_then(|v| v.as_str()).unwrap_or_default().to_string();
+    let body = match req.get("body") {
+        Some(v) => v.to_string(),
+        None => String::new(),
+    };
+
+    let instant_id = Uuid::new_v4().to_string();
+    client
+        .execute(
+            "INSERT INTO x_message_instant (id, body, type, person, title, consumed, create_time) VALUES ($1, $2, $3, $4, $5, false, NOW())",
+            &[&instant_id, &body, &msg_type, &person, &title],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    // 启用的 consumer 渠道来自消息配置；无配置时仅保留 Instant 落库。
+    let consumers = client
+        .query(
+            "SELECT DISTINCT consume FROM x_message_config WHERE enabled = true AND consume IS NOT NULL",
+            &[],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    let mut dispatched: u64 = 0;
+    for row in consumers {
+        let consumer: String = row.get::<_, Option<String>>("consume").unwrap_or_default();
+        if consumer.is_empty() {
+            continue;
+        }
+        let message_id = Uuid::new_v4().to_string();
+        dispatched += client
+            .execute(
+                "INSERT INTO x_message (id, content, sender, type, create_time) VALUES ($1, $2, $3, $4, NOW())",
+                &[&message_id, &body, &person, &consumer],
+            )
+            .await
+            .map_err(|_| AppError::Internal)?;
+    }
+
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("value".to_string(), Value::Bool(true)),
+            ("instantId".to_string(), Value::String(instant_id)),
+            ("messages".to_string(), Value::Number(serde_json::Number::from(dispatched))),
+        ]),
+    ))))
+}
+
+/// POST /ws — Java ActionCreate：仅向当前打开的 ws 连接投递；
+/// 有在线连接时落 ws 消费记录，返回 value=true，否则如实返回 false。
+pub async fn ws_create(
+    pool: Extension<Pool>,
+    axum::extract::Json(req): axum::extract::Json<Value>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+
+    let person = req.get("person").and_then(|v| v.as_str()).unwrap_or_default().to_string();
+    let sender = req.get("sender").and_then(|v| v.as_str()).unwrap_or("system").to_string();
+    let body = match req.get("body") {
+        Some(v) => v.to_string(),
+        None => String::new(),
+    };
+
+    let open = client
+        .query_opt(
+            "SELECT 1 FROM x_message_ws_session WHERE person = $1 AND disconnected_at IS NULL LIMIT 1",
+            &[&person],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    let mut delivered = false;
+    if open.is_some() {
+        let id = Uuid::new_v4().to_string();
+        client
+            .execute(
+                "INSERT INTO x_message_consume (id, consume, content, sender, consumed, create_time) VALUES ($1, 'ws', $2, $3, false, NOW())",
+                &[&id, &body, &sender],
+            )
+            .await
+            .map_err(|_| AppError::Internal)?;
+        delivered = true;
+    }
+
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([("value".to_string(), Value::Bool(delivered))]),
+    ))))
+}
+
+/// GET /ws/count/person — 当前在线（未断开）ws 连接的去重人数。
+pub async fn ws_count_person(
+    pool: Extension<Pool>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+
+    let count: i64 = client
+        .query_one(
+            "SELECT COUNT(DISTINCT person) AS cnt FROM x_message_ws_session WHERE disconnected_at IS NULL",
+            &[],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?
+        .get("cnt");
+
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("count".to_string(), Value::Number(serde_json::Number::from(count))),
+        ]),
+    ))))
+}
+
+/// GET /ws/list/person/current/node — 本节点在线人员列表。
+pub async fn ws_list_person_current_node(
+    pool: Extension<Pool>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+
+    let rows = client
+        .query(
+            "SELECT DISTINCT person FROM x_message_ws_session WHERE disconnected_at IS NULL ORDER BY person",
+            &[],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    let data: Vec<Value> = rows
+        .iter()
+        .map(|row| {
+            Value::Object(serde_json::Map::from_iter([
+                ("person".to_string(), Value::String(row.get("person"))),
+            ]))
+        })
+        .collect();
+
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
+            ("data".to_string(), Value::Array(data)),
+        ]),
+    ))))
+}
+
+/// GET /ws/list/person — 按节点分组的在线人员列表。
+pub async fn ws_list_person(
+    pool: Extension<Pool>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+
+    let rows = client
+        .query(
+            "SELECT node, person FROM x_message_ws_session WHERE disconnected_at IS NULL ORDER BY node, person",
+            &[],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    let mut groups: std::collections::BTreeMap<String, Vec<String>> = std::collections::BTreeMap::new();
+    for row in &rows {
+        let node: String = row.get::<_, Option<String>>("node").unwrap_or_else(|| "local".to_string());
+        let person: String = row.get("person");
+        groups.entry(node).or_default().push(person);
+    }
+
+    let data: Vec<Value> = groups
+        .into_iter()
+        .map(|(node, people)| {
+            let list: Vec<Value> = people.into_iter().map(Value::String).collect();
+            Value::Object(serde_json::Map::from_iter([
+                ("node".to_string(), Value::String(node)),
+                ("personList".to_string(), Value::Array(list)),
+            ]))
+        })
+        .collect();
+
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
+            ("data".to_string(), Value::Array(data)),
+        ]),
+    ))))
+}
+
+/// 群发目标人群：personList/identityList/groupList/unitList 合并去重。
+fn mass_target_list(req: &Value) -> Vec<String> {
+    let mut targets: Vec<String> = Vec::new();
+    for key in ["personList", "identityList", "groupList", "unitList"] {
+        if let Some(arr) = req.get(key).and_then(|v| v.as_array()) {
+            for v in arr {
+                if let Some(s) = v.as_str() {
+                    if !s.is_empty() && !targets.iter().any(|t| t == s) {
+                        targets.push(s.to_string());
+                    }
+                }
+            }
+        }
+    }
+    targets
+}
+
+/// POST /mass — Java ActionCreate：需 Manager/MessageManager 角色，
+/// 目标人群与 body 必填，落 Mass 记录（creator_person 取自会话）。
+pub async fn mass_create(
+    pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
+    axum::extract::Json(req): axum::extract::Json<Value>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    // IDOR：权限门禁先于任何资源获取/写操作，fail-closed
+    require_admin(&pool, &session).await?;
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+
+    let targets = mass_target_list(&req);
+    if targets.is_empty() {
+        return Ok(Json(ActionResult::error("empty target")));
+    }
+    let body = req.get("body").and_then(|v| v.as_str()).unwrap_or_default().to_string();
+    if body.is_empty() {
+        return Ok(Json(ActionResult::error("empty body")));
+    }
+
+    let id = Uuid::new_v4().to_string();
+    let msg_type = req.get("type").and_then(|v| v.as_str()).unwrap_or("dingding").to_string();
+    let title = req.get("title").and_then(|v| v.as_str()).unwrap_or_default().to_string();
+    let send_person_list = targets.join(",");
+
+    client
+        .execute(
+            "INSERT INTO x_message_mass (id, title, content, body, type, send_person_list, creator_person, enabled, create_time) \
+             VALUES ($1, $2, $3, $3, $4, $5, $6, true, NOW())",
+            &[&id, &title, &body, &msg_type, &send_person_list, &session.person_unique],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("id".to_string(), Value::String(id)),
+            ("type".to_string(), Value::String(msg_type)),
+            ("targetCount".to_string(), Value::Number(serde_json::Number::from(targets.len() as i64))),
+        ]),
+    ))))
+}
+
+/// GET /mass/enable/type — 已启用群发渠道列表。
+pub async fn mass_enable_type_get(
+    pool: Extension<Pool>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+
+    let rows = client
+        .query(
+            "SELECT DISTINCT type FROM x_message_mass WHERE enabled = true AND type IS NOT NULL ORDER BY type",
+            &[],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    let data: Vec<Value> = rows
+        .iter()
+        .filter_map(|row| row.get::<_, Option<String>>("type").map(Value::String))
+        .collect();
+
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
+            ("data".to_string(), Value::Array(data)),
+        ]),
+    ))))
+}
+
+/// DELETE /mass/{id} 与 GET /mass/{id}/mockdeletetoget 共用：
+/// Java ActionDelete 需 Manager/MessageManager 角色，删除前校验存在性。
+pub async fn mass_id_mockdeletetoget(
+    pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
+    axum::extract::Path(id): axum::extract::Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    // IDOR：权限门禁先于任何资源获取/删除操作，fail-closed
+    require_admin(&pool, &session).await?;
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+
+    let exists = client
+        .query_opt("SELECT id FROM x_message_mass WHERE id = $1", &[&id])
+        .await
+        .map_err(|_| AppError::Internal)?;
+    if exists.is_none() {
+        return Ok(Json(ActionResult::error("mass message not found")));
+    }
+
+    client
+        .execute("DELETE FROM x_message_mass WHERE id = $1", &[&id])
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("id".to_string(), Value::String(id.clone())),
+            ("deleted".to_string(), Value::Bool(true)),
+        ]),
+    ))))
+}
+
+/// DELETE /im/conversation/{id}/single（及 GET mockdeletetoget）—
+/// Java ActionDeleteSingleConversationVirtual：单聊虚拟删除（per-person ext 置位）。
+pub async fn im_conversation_id_single_delete_virtual(
+    pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
+    axum::extract::Path(id): axum::extract::Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+
+    let conv_type = conversation_type(&client, &id).await?;
+    match conv_type.as_deref() {
+        None => return Ok(Json(ActionResult::error("conversation not found"))),
+        Some(t) if t != "single" => {
+            return Ok(Json(ActionResult::error("only single conversation can be deleted")))
+        }
+        _ => {}
+    }
+
+    // IDOR：只能虚拟删除自己所在的会话
+    if !is_conversation_member(&client, &id, &session.person_unique).await? {
+        return Ok(Json(ActionResult::error("not a conversation member")));
+    }
+
+    let ext = client
+        .query_opt(
+            "SELECT id FROM x_message_conversation_ext WHERE conversation_id = $1 AND person = $2",
+            &[&id, &session.person_unique],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    match ext {
+        Some(row) => {
+            let ext_id: String = row.get("id");
+            client
+                .execute(
+                    "UPDATE x_message_conversation_ext SET is_deleted = true, last_delete_time = NOW(), last_read_time = NOW(), update_time = NOW() WHERE id = $1",
+                    &[&ext_id],
+                )
+                .await
+                .map_err(|_| AppError::Internal)?;
+        }
+        None => {
+            let ext_id = Uuid::new_v4().to_string();
+            client
+                .execute(
+                    "INSERT INTO x_message_conversation_ext (id, conversation_id, person, is_deleted, last_delete_time, last_read_time, create_time, update_time) \
+                     VALUES ($1, $2, $3, true, NOW(), NOW(), NOW(), NOW())",
+                    &[&ext_id, &id, &session.person_unique],
+                )
+                .await
+                .map_err(|_| AppError::Internal)?;
+        }
+    }
+
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([("value".to_string(), Value::Bool(true))]),
+    ))))
+}
+
+/// PUT /instant/currentperson/consumed — Java PUT：将当前人员的 instant 标记已消费。
+pub async fn instant_currentperson_consumed_put(
+    pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+
+    let marked = client
+        .execute(
+            "UPDATE x_message_instant SET consumed = true WHERE person = $1 AND consumed = false",
+            &[&session.person_unique],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("value".to_string(), Value::Bool(true)),
+            ("marked".to_string(), Value::Number(serde_json::Number::from(marked as i64))),
         ]),
     ))))
 }

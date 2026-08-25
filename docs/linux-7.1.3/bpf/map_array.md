@@ -2,9 +2,9 @@
 ## BPF_MAP_TYPE_ARRAY and BPF_MAP_TYPE_PERCPU_ARRAY
 
 
-   - `BPF_MAP_TYPE_ARRAY` 鍦?kernel 3.19 鐗堟湰涓紩鍏?   - `BPF_MAP_TYPE_PERCPU_ARRAY` 鍦?4.6 鐗堟湰涓紩鍏?
-`BPF_MAP_TYPE_ARRAY` 鍜?`BPF_MAP_TYPE_PERCPU_ARRAY` 鎻愪緵閫氱敤鐨勬暟缁勫瓨鍌ㄣ€傞敭绫诲瀷鏄棤绗﹀彿 32 浣嶆暣鏁帮紙4 瀛楄妭锛夛紝鏄犲皠鐨勫ぇ灏忔亽瀹氥€俙max_entries` 鍦ㄥ垱寤烘椂瀹氫箟浜嗘暟缁勭殑澶у皬銆傛墍鏈夋暟缁勫厓绱犲湪鍒涘缓鏃堕兘浼氳棰勫垎閰嶅苟闆跺垵濮嬪寲銆俙BPF_MAP_TYPE_PERCPU_ARRAY` 涓烘瘡涓?CPU 浣跨敤涓嶅悓鐨勫唴瀛樺尯鍩燂紝鑰?`BPF_MAP_TYPE_ARRAY` 浣跨敤鐩稿悓鐨勫唴瀛樺尯鍩熴€傚浜?`BPF_MAP_TYPE_ARRAY`锛屾墍瀛樺偍鐨勫€煎彲浠ユ槸浠绘剰澶у皬锛涜€屽浜?`BPF_MAP_TYPE_PERCPU_ARRAY`锛屽叾鍊间笉寰楀ぇ浜?`PCPU_MIN_UNIT_SIZE`锛?2 kB锛夈€傛墍鏈夋暟缁勫厓绱犻兘鎸?8 瀛楄妭瀵归綈銆?
-鑷?kernel 5.5 璧凤紝鍙€氳繃璁剧疆 `BPF_F_MMAPABLE` 鏍囧織涓?`BPF_MAP_TYPE_ARRAY` 鍚敤鍐呭瓨鏄犲皠銆傛槧灏勫畾涔夋寜椤靛榻愶紝骞朵粠绗竴椤靛紑濮嬨€傜郴缁熶細鍒嗛厤瓒冲鏁伴噺鐨勯〉澶у皬銆侀〉瀵归綈鐨勫唴瀛樺潡锛堜粠绗簩椤靛紑濮嬶級鏉ュ瓨鍌ㄦ墍鏈夋暟缁勫€硷紝鍦ㄦ煇浜涙儏鍐典笅杩欎細瀵艰嚧鍐呭瓨鐨勮繃搴﹀垎閰嶃€傝繖鏍峰仛鐨勫ソ澶勬槸鎻愬崌浜嗘€ц兘骞剁畝鍖栦簡浣跨敤锛屽洜涓虹敤鎴风┖闂寸▼搴忔棤闇€浣跨敤杈呭姪鍑芥暟鏉ヨ闂拰淇敼鏁版嵁銆?
+   - `BPF_MAP_TYPE_ARRAY` kernel 3.19 版本中引   - `BPF_MAP_TYPE_PERCPU_ARRAY` 4.6 版本中引
+`BPF_MAP_TYPE_ARRAY` `BPF_MAP_TYPE_PERCPU_ARRAY` 提供通用的数组存储。键类型是无符号 32 位整数（4 字节），映射的大小恒定。`max_entries` 在创建时定义了数组的大小。所有数组元素在创建时都会被预分配并零初始化。`BPF_MAP_TYPE_PERCPU_ARRAY` 为每CPU 使用不同的内存区域，`BPF_MAP_TYPE_ARRAY` 使用相同的内存区域。对`BPF_MAP_TYPE_ARRAY`，所存储的值可以是任意大小；而对`BPF_MAP_TYPE_PERCPU_ARRAY`，其值不得大`PCPU_MIN_UNIT_SIZE`2 kB）。所有数组元素都8 字节对齐
+kernel 5.5 起，可通过设置 `BPF_F_MMAPABLE` 标志`BPF_MAP_TYPE_ARRAY` 启用内存映射。映射定义按页对齐，并从第一页开始。系统会分配足够数量的页大小、页对齐的内存块（从第二页开始）来存储所有数组值，在某些情况下这会导致内存的过度分配。这样做的好处是提升了性能并简化了使用，因为用户空间程序无需使用辅助函数来访问和修改数据
 ## Usage
 
 
@@ -16,42 +16,42 @@
 
    void **bpf_map_lookup_elem(struct bpf_map **map, const void *key)
 
-鏁扮粍鍏冪礌鍙娇鐢?`bpf_map_lookup_elem()` 杈呭姪鍑芥暟妫€绱€傝杈呭姪鍑芥暟杩斿洖鎸囧悜鏁扮粍鍏冪礌鐨勬寚閽堬紝鍥犳涓洪伩鍏嶄笌璇诲彇璇ュ€肩殑鐢ㄦ埛绌洪棿鍙戠敓鏁版嵁绔炰簤锛岀敤鎴峰湪鍘熷湴鏇存柊璇ュ€兼椂搴斾娇鐢?`__sync_fetch_and_add()` 涔嬬被鐨勫師璇€?
+数组元素可使`bpf_map_lookup_elem()` 辅助函数检索。该辅助函数返回指向数组元素的指针，因此为避免与读取该值的用户空间发生数据竞争，用户在原地更新该值时应使`__sync_fetch_and_add()` 之类的原语
 #### bpf_map_update_elem()
 
 
    long bpf_map_update_elem(struct bpf_map **map, const void **key, const void *value, u64 flags)
 
-鏁扮粍鍏冪礌鍙娇鐢?`bpf_map_update_elem()` 杈呭姪鍑芥暟鏇存柊銆?
-`bpf_map_update_elem()` 鎴愬姛鏃惰繑鍥?0锛屽け璐ユ椂杩斿洖璐熺殑閿欒鐮併€?
-鐢变簬鏁扮粍澶у皬鎭掑畾锛屽洜姝や笉鏀寔 `bpf_map_delete_elem()`銆傝娓呯┖鏌愪釜鏁扮粍鍏冪礌锛屽彲浠ヤ娇鐢?`bpf_map_update_elem()` 鍚戣绱㈠紩鎻掑叆涓€涓浂鍊笺€?
+数组元素可使`bpf_map_update_elem()` 辅助函数更新
+`bpf_map_update_elem()` 成功时返0，失败时返回负的错误码
+由于数组大小恒定，因此不支持 `bpf_map_delete_elem()`。要清空某个数组元素，可以使`bpf_map_update_elem()` 向该索引插入一个零值
 ### Per CPU Array
 
 
-`BPF_MAP_TYPE_ARRAY` 涓瓨鍌ㄧ殑鍊煎彲浠ヨ涓嶅悓 CPU 涓婄殑澶氫釜绋嬪簭璁块棶銆傝灏嗗瓨鍌ㄩ檺鍒跺埌鍗曚釜 CPU锛屽彲浠ヤ娇鐢?`BPF_MAP_TYPE_PERCPU_ARRAY`銆?
-浣跨敤 `BPF_MAP_TYPE_PERCPU_ARRAY` 鏃讹紝`bpf_map_update_elem()` 鍜?`bpf_map_lookup_elem()` 杈呭姪鍑芥暟浼氳嚜鍔ㄨ闂綋鍓?CPU 瀵瑰簲鐨勬Ы浣嶃€?
+`BPF_MAP_TYPE_ARRAY` 中存储的值可以被不同 CPU 上的多个程序访问。要将存储限制到单个 CPU，可以使`BPF_MAP_TYPE_PERCPU_ARRAY`
+使用 `BPF_MAP_TYPE_PERCPU_ARRAY` 时，`bpf_map_update_elem()` `bpf_map_lookup_elem()` 辅助函数会自动访问当CPU 对应的槽位
 #### bpf_map_lookup_percpu_elem()
 
 
    void **bpf_map_lookup_percpu_elem(struct bpf_map **map, const void *key, u32 cpu)
 
-`bpf_map_lookup_percpu_elem()` 杈呭姪鍑芥暟鍙敤浜庢煡鎵剧壒瀹?CPU 鐨勬暟缁勫€笺€傛垚鍔熸椂杩斿洖鍊硷紝濡傛灉鏈壘鍒板搴旀潯鐩垨 `cpu` 鏃犳晥鍒欒繑鍥?`NULL`銆?
+`bpf_map_lookup_percpu_elem()` 辅助函数可用于查找特CPU 的数组值。成功时返回值，如果未找到对应条目或 `cpu` 无效则返`NULL`
 ### Concurrency
 
 
-鑷?kernel 5.1 鐗堟湰璧凤紝BPF 鍩虹璁炬柦鎻愪緵 `struct bpf_spin_lock` 鏉ュ悓姝ヨ闂€?
+kernel 5.1 版本起，BPF 基础设施提供 `struct bpf_spin_lock` 来同步访问
 ### Userspace
 
 
-鐢ㄦ埛绌洪棿鐨勮闂娇鐢ㄤ笌涓婅堪鍚屽悕鐨?libbpf API锛屾槧灏勯€氳繃鍏?`fd` 鏍囪瘑銆?
+用户空间的访问使用与上述同名libbpf API，映射通过`fd` 标识
 ## Examples
 
 
-鍔熻兘绀轰緥璇峰弬瑙?`tools/testing/selftests/bpf` 鐩綍銆備笅闈㈢殑浠ｇ爜绀轰緥婕旂ず浜?API 鐨勭敤娉曘€?
+功能示例请参`tools/testing/selftests/bpf` 目录。下面的代码示例演示API 的用法
 ### Kernel BPF
 
 
-姝や唬鐮佺墖娈靛睍绀轰簡濡備綍鍦?BPF 绋嬪簭涓０鏄庝竴涓暟缁勩€?
+此代码片段展示了如何BPF 程序中声明一个数组
 
     struct {
             __uint(type, BPF_MAP_TYPE_ARRAY);
@@ -61,7 +61,7 @@
     } my_map SEC(".maps");
 
 
-姝ょず渚?BPF 绋嬪簭灞曠ず浜嗗浣曡闂暟缁勫厓绱犮€?
+此示BPF 程序展示了如何访问数组元素
 
     int bpf_prog(struct __sk_buff *skb)
     {
@@ -86,7 +86,7 @@
 #### BPF_MAP_TYPE_ARRAY
 
 
-姝や唬鐮佺墖娈靛睍绀轰簡濡備綍浣跨敤 `bpf_map_create_opts` 璁剧疆鏍囧織鏉ュ垱寤轰竴涓暟缁勩€?
+此代码片段展示了如何使用 `bpf_map_create_opts` 设置标志来创建一个数组
 
     #include <bpf/libbpf.h>
     #include <bpf/bpf.h>
@@ -105,7 +105,7 @@
             return fd;
     }
 
-姝や唬鐮佺墖娈靛睍绀轰簡濡備綍鍒濆鍖栨暟缁勭殑鍏冪礌銆?
+此代码片段展示了如何初始化数组的元素
 
     int initialize_array(int fd)
     {
@@ -123,7 +123,7 @@
             return ret;
     }
 
-姝や唬鐮佺墖娈靛睍绀轰簡濡備綍浠庢暟缁勪腑妫€绱㈠厓绱犲€笺€?
+此代码片段展示了如何从数组中检索元素值
 
     int lookup(int fd)
     {
@@ -144,7 +144,7 @@
 #### BPF_MAP_TYPE_PERCPU_ARRAY
 
 
-姝や唬鐮佺墖娈靛睍绀轰簡濡備綍鍒濆鍖栨瘡 CPU 鏁扮粍鐨勫厓绱犮€?
+此代码片段展示了如何初始化每 CPU 数组的元素
 
     int initialize_array(int fd)
     {
@@ -164,7 +164,7 @@
             return ret;
     }
 
-姝や唬鐮佺墖娈靛睍绀轰簡濡備綍璁块棶鏁扮粍鍊肩殑姣?CPU 鍏冪礌銆?
+此代码片段展示了如何访问数组值的CPU 元素
 
     int lookup(int fd)
     {
@@ -188,5 +188,5 @@
 ## Semantics
 
 
-濡備笂渚嬫墍绀猴紝鍦ㄧ敤鎴风┖闂磋闂?`BPF_MAP_TYPE_PERCPU_ARRAY` 鏃讹紝姣忎釜鍊奸兘鏄竴涓寘鍚?`ncpus` 涓厓绱犵殑鏁扮粍銆?
-璋冪敤 `bpf_map_update_elem()` 鏃讹紝瀵逛簬杩欎簺鏄犲皠涓嶈兘浣跨敤 `BPF_NOEXIST` 鏍囧織銆?
+如上例所示，在用户空间访`BPF_MAP_TYPE_PERCPU_ARRAY` 时，每个值都是一个包`ncpus` 个元素的数组
+调用 `bpf_map_update_elem()` 时，对于这些映射不能使用 `BPF_NOEXIST` 标志

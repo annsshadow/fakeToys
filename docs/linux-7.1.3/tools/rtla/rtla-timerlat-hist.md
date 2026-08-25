@@ -1,28 +1,28 @@
 ﻿
 ## rtla-timerlat-hist
 
-### 鎿嶄綔绯荤粺瀹氭椂鍣ㄥ欢杩熺殑鐩存柟鍥?
+### 操作系统定时器延迟的直方
 
 :Manual section: 1
 
-## 姒傝
+## 概要
 
 
 **rtla timerlat hist** [**OPTIONS**] ...
 
-## 鎻忚堪
+## 描述
 
 
-**rtla timerlat hist** 鏄剧ず姣忎釜璺熻釜鍣ㄤ簨浠跺彂鐢熸鏁扮殑鐩存柟鍥俱€傝宸ュ叿浣跨敤鍛ㄦ湡鎬т俊鎭紝
-骞朵笖鍦ㄤ娇鐢?**-T** 閫夐」鏃朵細鍚敤 **osnoise:** 璺熻釜鐐广€?
-## 閫夐」
+**rtla timerlat hist** 显示每个跟踪器事件发生次数的直方图。该工具使用周期性信息，
+并且在使**-T** 选项时会启用 **osnoise:** 跟踪点
+## 选项
 
 
-## 绀轰緥
+## 示例
 
 
-鍦ㄤ笅闈㈢殑绀轰緥涓紝**rtla timerlat hist** 琚缃负杩愯 **10** 鍒嗛挓锛屽湪 cpus **0-4** 涓婏紝
-浠呰烦杩囧€间负闆剁殑琛屻€傛澶栵紝**rtla timerlat hist** 浼氬皢 **timerlat** 绾跨▼鐨勪紭鍏堢骇鏇存敼涓?鍦?**SCHED_DEADLINE** 浼樺厛绾т笅杩愯锛屾瘡涓?**1ms** 鍛ㄦ湡鍏锋湁 **100us** 鐨勮繍琛屾椂銆?**1ms** 鍛ㄦ湡涔熶紶閫掔粰 **timerlat** 璺熻釜鍣ㄣ€傝嚜鍔ㄥ垎鏋愯绂佺敤
+在下面的示例中，**rtla timerlat hist** 被设置为运行 **10** 分钟，在 cpus **0-4** 上，
+仅跳过值为零的行。此外，**rtla timerlat hist** 会将 **timerlat** 线程的优先级更改**SCHED_DEADLINE** 优先级下运行，每**1ms** 周期具有 **100us** 的运行时**1ms** 周期也传递给 **timerlat** 跟踪器。自动分析被禁用
 ```
 
   [root@alien ~]# timerlat hist -d 10m -c 0-4 -P d:100us:1ms -p 1000 --no-aa
@@ -84,13 +84,13 @@
   max:         16        36        15        58        24        44        21        46        13        50
 
 ```
-## 鍙﹁鍙傞槄
+## 另请参阅
 
 
 **rtla-timerlat**\(1), **rtla-timerlat-top**\(1)
 
 `Timerlat tracer <https://docs.kernel.org/trace/timerlat-tracer.html>`__
 
-## 浣滆€?
+## 作
 
 Written by Daniel Bristot de Oliveira <bristot@kernel.org>

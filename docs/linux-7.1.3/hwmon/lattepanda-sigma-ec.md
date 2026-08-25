@@ -1,41 +1,41 @@
 ﻿
-## 鍐呮牳椹卞姩 lattepanda-sigma-ec
+## 内核驱动 lattepanda-sigma-ec
 
 
-鏀寔鐨勭郴缁燂細
+支持的系统：
 
-  - LattePanda Sigma锛圛ntel 绗?13 浠?i5-1340P锛?
-    DMI 鍘傚晢锛歀attePanda
+  - LattePanda Sigma（Intel 13 i5-1340P
+    DMI 厂商：LattePanda
 
-    DMI 浜у搧锛歀attePanda Sigma
+    DMI 产品：LattePanda Sigma
 
-    BIOS 鐗堟湰锛?.27锛堝凡楠岃瘉锛?
-    鏁版嵁鎵嬪唽锛氭棤锛圗C 瀵勫瓨鍣ㄩ€氳繃瀹為獙鍙戠幇锛?
-浣滆€咃細Mariano Abad <weimaraner@gmail.com>
+    BIOS 版本.27（已验证
+    数据手册：无（EC 寄存器通过实验发现
+作者：Mariano Abad <weimaraner@gmail.com>
 
-### 鎻忚堪
+### 描述
 
 
-璇ラ┍鍔ㄤ负 DFRobot 鍒堕€犵殑 LattePanda Sigma 鍗曟澘璁＄畻鏈烘彁渚涚‖浠剁洃鎺с€傝鏉夸娇鐢ㄤ竴棰?ITE IT8613E 宓屽叆寮忔帶鍒跺櫒锛圗C锛夋潵绠＄悊 CPU 鏁ｇ儹椋庢墖鍜岀儹浼犳劅鍣ㄣ€?
-BIOS 灏?ACPI 宓屽叆寮忔帶鍒跺櫒锛坄PNP0C09`锛夊０鏄庝负 `_STA` 杩斿洖 0锛屼粠鑰岄樆姝㈠唴鏍哥殑 ACPI EC
-瀛愮郴缁熻繘琛屽垵濮嬪寲銆傝椹卞姩閫氳繃鏍囧噯鐨?ACPI EC I/O 绔彛锛坄0x62` 鏁版嵁銆乣0x66` 鍛戒护/鐘舵€侊級
-鐩存帴璇诲彇 EC銆?
-### Sysfs 灞炴€?
+该驱动为 DFRobot 制造的 LattePanda Sigma 单板计算机提供硬件监控。该板使用一ITE IT8613E 嵌入式控制器（EC）来管理 CPU 散热风扇和热传感器
+BIOS ACPI 嵌入式控制器（`PNP0C09`）声明为 `_STA` 返回 0，从而阻止内核的 ACPI EC
+子系统进行初始化。该驱动通过标准ACPI EC I/O 端口（`0x62` 数据、`0x66` 命令/状态）
+直接读取 EC
+### Sysfs 属
 
 
 ======================= ===============================================
-`fan1_input`          椋庢墖杞€燂紝鍗曚綅 RPM锛圗C 瀵勫瓨鍣?0x2E:0x2F锛?                        16 浣嶅ぇ绔級
+`fan1_input`          风扇转速，单位 RPM（EC 寄存0x2E:0x2F                        16 位大端）
 `fan1_label`          "CPU Fan"
-`temp1_input`         鏉胯浇/鐜娓╁害锛屽崟浣嶆鎽勬皬搴?                        锛圗C 瀵勫瓨鍣?0x60锛屾棤绗﹀彿锛?`temp1_label`         "Board Temp"
-`temp2_input`         CPU 閭昏繎娓╁害锛屽崟浣嶆鎽勬皬搴?                        锛圗C 瀵勫瓨鍣?0x70锛屾棤绗﹀彿锛?`temp2_label`         "CPU Temp"
+`temp1_input`         板载/环境温度，单位毫摄氏                        （EC 寄存0x60，无符号`temp1_label`         "Board Temp"
+`temp2_input`         CPU 邻近温度，单位毫摄氏                        （EC 寄存0x70，无符号`temp2_label`         "CPU Temp"
 ======================= ===============================================
 
-### 妯″潡鍙傛暟
+### 模块参数
 
 
-`force`锛坆ool锛岄粯璁?false锛?    鍦?BIOS 鐗堟湰闈?5.27 鏃跺己鍒跺姞杞姐€傞┍鍔ㄤ粛瑕佹眰 DMI 鍘傚晢涓庝骇鍝佸悕鍖归厤銆?
-### 宸茬煡闄愬埗
+`force`（bool，默false    BIOS 版本5.27 时强制加载。驱动仍要求 DMI 厂商与产品名匹配
+### 已知限制
 
 
-- 涓嶆敮鎸侀鎵囪浆閫熸帶鍒躲€傞鎵囧缁堝浜?EC 鐨勮嚜鍔ㄦ帶鍒朵箣涓嬨€?- EC 瀵勫瓨鍣ㄦ槧灏勪粎鍦?BIOS 鐗堟湰 5.27 涓婂緱鍒伴獙璇併€傚叾浠栫増鏈彲鑳戒娇鐢ㄤ笉鍚岀殑瀵勫瓨鍣ㄥ亸绉伙紱
-  浣跨敤 `force` 鍙傛暟闇€鑷鎵挎媴椋庨櫓銆?
+- 不支持风扇转速控制。风扇始终处EC 的自动控制之下- EC 寄存器映射仅BIOS 版本 5.27 上得到验证。其他版本可能使用不同的寄存器偏移；
+  使用 `force` 参数需自行承担风险

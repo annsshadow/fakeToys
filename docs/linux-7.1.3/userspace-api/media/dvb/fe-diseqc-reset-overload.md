@@ -1,33 +1,33 @@
 ﻿######## ioctl FE_DISEQC_RESET_OVERLOAD
 
 
-## 鍚嶇О
+## 名称
 
 
-FE_DISEQC_RESET_OVERLOAD - 濡傛灉鎬荤嚎鍥犺繃杞芥柇鐢碉紝鍒欐仮澶嶅ぉ绾垮瓙绯荤粺鐨勪緵鐢点€?
+FE_DISEQC_RESET_OVERLOAD - 如果总线因过载断电，则恢复天线子系统的供电
 
-## 鎽樿
+## 摘要
 
 
 
 `int ioctl(int fd, FE_DISEQC_RESET_OVERLOAD, NULL)`
 
-## 鍙傛暟
+## 参数
 
 
 `fd`
-    鐢?`open()` 杩斿洖鐨勬枃浠舵弿杩扮銆?
+    `open()` 返回的文件描述符
 
-## 璇存槑
-
-
-濡傛灉鎬荤嚎鍥犲姛鐜囪繃杞借鑷姩鏂數锛岃 ioctl 璋冪敤浼氭仮澶嶆€荤嚎鐨勪緵鐢点€傝璋冪敤闇€瑕佸璁惧鐨勮鍐欒闂潈闄愩€傝嫢璁惧琚墜鍔ㄦ柇鐢碉紝鍒欒璋冪敤鏃犳晥銆傚苟闈炴墍鏈夋暟瀛楃數瑙嗭紙Digital TV锛夐€傞厤鍣ㄩ兘鏀寔璇?ioctl銆?
-
-## 杩斿洖鍊?
+## 说明
 
 
-鎴愬姛鏃惰繑鍥?0銆?
+如果总线因功率过载被自动断电，该 ioctl 调用会恢复总线的供电。该调用需要对设备的读写访问权限。若设备被手动断电，则该调用无效。并非所有数字电视（Digital TV）适配器都支持ioctl
 
-鍑洪敊鏃惰繑鍥?-1锛屽苟鐩稿簲鍦拌缃?`errno` 鍙橀噺銆?
+## 杩斿洖鍊。
 
-閫氱敤閿欒鐮佸湪 Generic Error Codes <gen-errors> 绔犺妭涓弿杩般€?
+
+成功时返0
+
+出错时返-1，并相应地设`errno` 变量
+
+通用错误码在 Generic Error Codes <gen-errors> 章节中描述

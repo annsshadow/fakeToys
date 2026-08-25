@@ -1,14 +1,14 @@
 ﻿
 
 
-######## 鍑芥暟鍙傝€冿紙Function Reference锛?
+######## 函数参考（Function Reference
 
-鏈〉鍒楀嚭 Media Controller锛堝獟浣撴帶鍒跺櫒锛夊悇鍑芥暟涓?ioctl 绯荤粺璋冪敤鐨勫弬鑰冩枃妗ｅ叆鍙ｏ紝娑电洊璁惧鎵撳紑/鍏抽棴銆佹嫇鎵戞灇涓俱€侀摼璺厤缃笌璇锋眰绠＄悊绛夋帴鍙ｏ紝渚涘獟浣撶绾垮簲鐢ㄤ笌椹卞姩寮€鍙戣€呮煡闃呫€?
+本页列出 Media Controller（媒体控制器）各函数ioctl 系统调用的参考文档入口，涵盖设备打开/关闭、拓扑枚举、链路配置与请求管理等接口，供媒体管线应用与驱动开发者查阅
 
-鏈〉鍒楀嚭 Media Controller锛堝獟浣撴帶鍒跺櫒锛夊悇鍑芥暟涓?ioctl 绯荤粺璋冪敤鐨勫弬鑰冩枃妗ｃ€?
+本页列出 Media Controller（媒体控制器）各函数ioctl 系统调用的参考文档
 
 
-鏈〉鍒楀嚭 Media Controller 鍚勫嚱鏁颁笌 ioctl 鐨勫弬鑰冩枃妗ｃ€?
+本页列出 Media Controller 各函数与 ioctl 的参考文档
 
 
 

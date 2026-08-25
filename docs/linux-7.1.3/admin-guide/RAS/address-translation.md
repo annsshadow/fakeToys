@@ -1,16 +1,16 @@
-﻿## 鍦板潃杞崲
+﻿## 地址转换
 
 
 ### x86 AMD
 
 
-鍩轰簬 Zen 鐨?AMD 绯荤粺鍖呭惈涓€涓鐞嗙墿鐞嗗唴瀛樺竷灞€鐨勬暟鎹?fabric锛圖ata Fabric锛夈€傝繛鎺ュ埌 fabric 鐨勮澶囷紙濡傚唴瀛樻帶鍒跺櫒銆両/O 绛夛級鍙兘涓嶅叿澶囩郴缁熺墿鐞嗗唴瀛樻槧灏勭殑瀹屾暣瑙嗗浘銆傝繖浜涜澶囧湪鎶ュ憡鍐呭瓨閿欒鏃跺彲鑳芥彁渚涗竴涓€滆鑼冨寲鈥濓紙normalized锛屽嵆璁惧鐗╃悊锛夊湴鍧€銆傝鑼冨寲鍦板潃蹇呴』杞崲涓虹郴缁熺墿鐞嗗湴鍧€锛屽唴鏍告墠鑳藉璇ュ唴瀛橀噰鍙栧姩浣溿€?
+基于 Zen AMD 系统包含一个管理物理内存布局的数fabric（Data Fabric）。连接到 fabric 的设备（如内存控制器、I/O 等）可能不具备系统物理内存映射的完整视图。这些设备在报告内存错误时可能提供一个“规范化”（normalized，即设备物理）地址。规范化地址必须转换为系统物理地址，内核才能对该内存采取动作
 
-AMD 鍦板潃杞崲搴擄紙CONFIG_AMD_ATL锛変负杩欑鎯呭喌鎻愪緵杞崲銆?
+AMD 地址转换库（CONFIG_AMD_ATL）为这种情况提供转换
 
-鍩轰簬 Zen 鐨勭郴缁熷湴鍧€杞崲涓娇鐢ㄧ殑缂╃暐璇〃
+基于 Zen 的系统地址转换中使用的缩略语表
 
-- CCM               = 缂撳瓨涓€鑷存€ц皟鑺傚櫒锛圕ache Coherent Moderator锛?
-- COD               = 鍗曡姱鐗囧唴澶氶泦缇わ紙Cluster-on-Die锛?
-- COH_ST            = 涓€鑷存€х珯鐐癸紙Coherent Station锛?
-- DF                = 鏁版嵁 fabric锛圖ata Fabric锛?
+- CCM               = 缓存一致性调节器（Cache Coherent Moderator
+- COD               = 单芯片内多集群（Cluster-on-Die
+- COH_ST            = 一致性站点（Coherent Station
+- DF                = 数据 fabric（Data Fabric

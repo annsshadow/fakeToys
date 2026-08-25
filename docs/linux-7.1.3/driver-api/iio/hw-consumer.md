@@ -1,15 +1,15 @@
 ﻿## HW consumer
 
 
-IIO 璁惧鍙互鍦ㄧ‖浠朵腑鐩存帴杩炴帴鍒板彟涓€涓澶囥€傚湪杩欑鎯呭喌涓嬶紝IIO 鎻愪緵鑰呬笌 IIO 娑堣垂鑰?涔嬮棿鐨勭紦鍐插尯鐢辩‖浠跺鐞嗐€侷ndustrial I/O 纭欢娑堣垂鑰呮彁渚涗簡涓€绉嶆棤闇€杞欢缂撳啿鍖烘潵
-缁戝畾杩欎簺 IIO 璁惧鐨勬柟寮忋€傚叾瀹炵幇鍙湪 `drivers/iio/buffer/hw-consumer.c` 鎵惧埌銆?
+IIO 设备可以在硬件中直接连接到另一个设备。在这种情况下，IIO 提供者与 IIO 消费之间的缓冲区由硬件处理。Industrial I/O 硬件消费者提供了一种无需软件缓冲区来
+绑定这些 IIO 设备的方式。其实现可在 `drivers/iio/buffer/hw-consumer.c` 找到
 
-- struct iio_hw_consumer 鈥?纭欢娑堣垂鑰呯粨鏋?- `iio_hw_consumer_alloc` 鈥?鍒嗛厤 IIO 纭欢娑堣垂鑰?- `iio_hw_consumer_free` 鈥?閲婃斁 IIO 纭欢娑堣垂鑰?- `iio_hw_consumer_enable` 鈥?鍚敤 IIO 纭欢娑堣垂鑰?- `iio_hw_consumer_disable` 鈥?绂佺敤 IIO 纭欢娑堣垂鑰?
+- struct iio_hw_consumer 硬件消费者结- `iio_hw_consumer_alloc` 分配 IIO 硬件消费- `iio_hw_consumer_free` 释放 IIO 硬件消费- `iio_hw_consumer_enable` 启用 IIO 硬件消费- `iio_hw_consumer_disable` 禁用 IIO 硬件消费
 
-## HW consumer 璁剧疆
+## HW consumer 设置
 
 
-浣滀负鏍囧噯 IIO 璁惧锛岃瀹炵幇鍩轰簬 IIO 鎻愪緵鑰?娑堣垂鑰呮ā鍨嬨€?```
+作为标准 IIO 设备，该实现基于 IIO 提供消费者模型```
 
 	static struct iio_hw_consumer *hwc;
 
@@ -23,7 +23,7 @@ IIO 璁惧鍙互鍦ㄧ‖浠朵腑鐩存帴杩炴帴鍒板彟涓€涓�
 	{
 		ret = iio_hw_consumer_enable(hwc);
 
-		/* 鑾峰彇鏁版嵁 */
+		/* 获取数据 */
 
 		ret = iio_hw_consumer_disable(hwc);
 	}
@@ -34,7 +34,7 @@ IIO 璁惧鍙互鍦ㄧ‖浠朵腑鐩存帴杩炴帴鍒板彟涓€涓�
 	}
 
 ```
-## 鏇村缁嗚妭
+## 更多细节
 
 
    :export:

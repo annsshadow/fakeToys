@@ -1,24 +1,24 @@
 ﻿
 ## rtla-osnoise-hist
 
-### 鏄剧ず osnoise 璺熻釜鍣ㄩ噰鏍风粨鏋滅殑鐩存柟鍥?
+### 显示 osnoise 跟踪器采样结果的直方
 
 :Manual section: 1
 
-## 姒傝锛圫YNOPSIS锛?
+## 概要（SYNOPSIS
 
 **rtla osnoise hist** [**OPTIONS**]
 
-## 鎻忚堪锛圖ESCRIPTION锛?
+## 描述（DESCRIPTION
 
-**rtla osnoise hist** 宸ュ叿灏嗘墍鏈夌殑 **osnoise:sample_threshold** 浜嬩欢鍙戠敓鎯呭喌鏀堕泦
-鍒颁竴寮犵洿鏂瑰浘涓紝骞朵互瀵圭敤鎴峰弸濂界殑鏂瑰紡鏄剧ず缁撴灉銆傝宸ュ叿杩樺厑璁稿 **osnoise** 璺熻釜鍣?杩涜璁稿閰嶇疆骞舵敹闆嗚窡韪櫒杈撳嚭銆?
-## 閫夐」锛圤PTIONS锛?
+**rtla osnoise hist** 工具将所有的 **osnoise:sample_threshold** 事件发生情况收集
+到一张直方图中，并以对用户友好的方式显示结果。该工具还允许对 **osnoise** 跟踪进行许多配置并收集跟踪器输出
+## 选项（OPTIONS
 
-## 绀轰緥锛圗XAMPLE锛?
+## 示例（EXAMPLE
 
-鍦ㄤ笅闈㈢殑绀轰緥涓紝**osnoise** 璺熻釜鍣ㄧ嚎绋嬭璁剧疆涓轰互瀹炴椂浼樺厛绾?**FIFO:1** 鍦?CPUs **0-11** 涓婅繍琛岋紝姣忎釜鍛ㄦ湡杩愯 **900ms**锛堥粯璁?**1s**锛夈€傜缉鐭繍琛屾椂闂寸殑鍘熷洜
-鏄负浜嗛伩鍏嶉タ姝?**rtla** 宸ュ叿銆傝宸ュ叿杩樿璁剧疆涓鸿繍琛?**one minute**銆傝緭鍑哄涓嬶細
+在下面的示例中，**osnoise** 跟踪器线程被设置为以实时优先**FIFO:1** CPUs **0-11** 上运行，每个周期运行 **900ms**（默**1s**）。缩短运行时间的原因
+是为了避免饿**rtla** 工具。该工具还被设置为运**one minute**。输出如下：
 
 ```
 
@@ -40,12 +40,12 @@
   max:         30        30        20        20        30        40        40        40        40        50        50        50
 
 ```
-## 鍙﹁鍙傞槄锛圫EE ALSO锛?
+## 另请参阅（SEE ALSO
 
 **rtla-osnoise**\(1), **rtla-osnoise-top**\(1)
 
 `Osnoise tracer <https://docs.kernel.org/trace/osnoise-tracer.html>`__
 
-## 浣滆€咃紙AUTHOR锛?
+## 作者（AUTHOR
 
 Written by Daniel Bristot de Oliveira <bristot@kernel.org>

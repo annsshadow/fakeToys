@@ -1,48 +1,48 @@
 ﻿
-######## 鎵╁睍鎺у埗 API
+######## 扩展控制 API
 
 
-## 绠€浠?
+## 简
 
-鏈€鍒濊璁＄殑鎺у埗鏈哄埗鏃ㄥ湪鐢ㄤ簬鐢ㄦ埛璁剧疆锛堜寒搴︺€侀ケ鍜屽害绛夛級銆傜劧鑰岋紝瀹炶返璇佹槑瀹?瀵逛簬瀹炵幇鏇村鏉傜殑椹卞姩 API 涔熸槸涓€涓潪甯告湁鐢ㄧ殑妯″瀷锛屽湪杩欑 API 涓瘡涓┍鍔?鍙疄鐜版洿澶х殑 API 鐨勪竴涓瓙闆嗐€?
-MPEG 缂栫爜 API 鏄璁″拰瀹炵幇杩欎竴鎵╁睍鎺у埗鏈哄埗鐨勯┍鍔ㄥ姏锛歁PEG 鏍囧噯鐩稿綋搴炲ぇ锛?鑰屽綋鍓嶅彈鏀寔鐨勭‖浠?MPEG 缂栫爜鍣ㄥ悇鑷彧瀹炵幇浜嗚鏍囧噯鐨勪竴涓瓙闆嗐€傛澶栵紝璁稿
-鍏充簬濡備綍灏嗚棰戠紪鐮佷负 MPEG 娴佺殑鐩稿叧鍙傛暟鐗瑰畾浜?MPEG 缂栫爜鑺墖锛屽洜涓?MPEG
-鏍囧噯鍙畾涔変簡鏈€缁?MPEG 娴佺殑鏍煎紡锛岃€岄潪瑙嗛瀹為檯琚紪鐮佷负璇ユ牸寮忕殑鏂瑰紡銆?
-閬楁喚鐨勬槸锛屽師濮嬬殑鎺у埗 API 缂哄皯杩欎簺鏂扮敤閫旀墍闇€鐨勪竴浜涚壒鎬э紝鍥犳瀹冭鎵╁睍涓?锛堝懡鍚嶅苟涓嶅崄鍒嗘湁鍒涙剰鐨勶級鎵╁睍鎺у埗 API銆?
-灏界 MPEG 缂栫爜 API 鏄娇鐢ㄦ墿灞曟帶鍒?API 鐨勯娆″皾璇曪紝濡備粖涔熷嚭鐜颁簡鍏朵粬绫诲埆
-鐨勬墿灞曟帶鍒讹紝渚嬪 Camera Controls锛堟憚鍍忓ご鎺у埗锛夊拰 FM Transmitter Controls
-锛團M 鍙戝皠鍣ㄦ帶鍒讹級銆傛墿灞曟帶鍒?API 浠ュ強鎵€鏈夋墿灞曟帶鍒剁被鍒湪涓嬫枃涓弿杩般€?
+最初设计的控制机制旨在用于用户设置（亮度、饱和度等）。然而，实践证明对于实现更复杂的驱动 API 也是一个非常有用的模型，在这种 API 中每个驱只实现更大的 API 的一个子集
+MPEG 编码 API 是设计和实现这一扩展控制机制的驱动力：MPEG 标准相当庞大而当前受支持的硬MPEG 编码器各自只实现了该标准的一个子集。此外，许多
+关于如何将视频编码为 MPEG 流的相关参数特定MPEG 编码芯片，因MPEG
+标准只定义了最MPEG 流的格式，而非视频实际被编码为该格式的方式
+遗憾的是，原始的控制 API 缺少这些新用途所需的一些特性，因此它被扩展（命名并不十分有创意的）扩展控制 API
+尽管 MPEG 编码 API 是使用扩展控API 的首次尝试，如今也出现了其他类别
+的扩展控制，例如 Camera Controls（摄像头控制）和 FM Transmitter Controls
+（FM 发射器控制）。扩展控API 以及所有扩展控制类别在下文中描述
 
-## 鎵╁睍鎺у埗 API
-
-
-鏈変笁涓柊鐨?ioctl 鍙敤锛歏IDIOC_G_EXT_CTRLS <VIDIOC_G_EXT_CTRLS>銆?VIDIOC_S_EXT_CTRLS <VIDIOC_G_EXT_CTRLS> 鍜?VIDIOC_TRY_EXT_CTRLS <VIDIOC_G_EXT_CTRLS>銆傝繖浜?ioctl 浣滅敤浜庢帶鍒舵暟缁?锛堢浉瀵逛簬浣滅敤浜庡崟涓帶鍒剁殑 VIDIOC_G_CTRL <VIDIOC_G_CTRL> 鍜?VIDIOC_S_CTRL <VIDIOC_G_CTRL> ioctl锛夈€傝繖鏄繀闇€鐨勶紝鍥犱负甯稿父闇€瑕佸師瀛愬湴
-涓€娆℃€ф洿鏀瑰涓帶鍒躲€?
-姣忎釜鏂扮殑 ioctl 閮芥湡鏈涗竴涓寚鍚?struct `v4l2_ext_controls` 鐨勬寚閽堛€傝缁撴瀯
-鍖呭惈涓€涓寚鍚戞帶鍒舵暟缁勭殑鎸囬拡銆佹暟缁勪腑鎺у埗鏁伴噺鐨勪竴涓鏁帮紝浠ュ強涓€涓帶鍒剁被鍒€?鎺у埗绫诲埆鐢ㄤ簬灏嗙浉浼肩殑鎺у埗褰掍负鍗曚竴绫诲埆銆備緥濡傦紝鎺у埗绫诲埆 `V4L2_CTRL_CLASS_USER`
-鍖呭惈鎵€鏈夌敤鎴锋帶鍒讹紙鍗充篃鑳戒娇鐢ㄦ棫鐨?VIDIOC_S_CTRL <VIDIOC_G_CTRL> ioctl
-璁剧疆鐨勬墍鏈夋帶鍒讹級銆傛帶鍒剁被鍒?`V4L2_CTRL_CLASS_CODEC` 鍖呭惈涓庣紪瑙ｇ爜鍣ㄧ浉鍏崇殑
-鎺у埗銆?
-鎺у埗鏁扮粍涓殑鎵€鏈夋帶鍒堕兘蹇呴』灞炰簬鎸囧畾鐨勬帶鍒剁被鍒€傚惁鍒欎細杩斿洖閿欒銆?
-涔熷彲浠ヤ娇鐢ㄤ竴涓┖鐨勬帶鍒舵暟缁勶紙`count` == 0锛夋潵妫€鏌ユ寚瀹氱殑鎺у埗绫诲埆鏄惁鍙楁敮鎸併€?
-鎺у埗鏁扮粍鏄竴涓?struct `v4l2_ext_control` 鏁扮粍銆俿truct `v4l2_ext_control`
-涓?struct `v4l2_control` 闈炲父鐩镐技锛屽彧鏄畠杩樺厑璁镐紶鍏?64 浣嶅€煎拰鎸囬拡銆?
-鐢变簬 struct `v4l2_ext_control` 鏀寔鎸囬拡锛岀幇鍦ㄤ篃鍙互鎷ユ湁澶嶅悎绫诲瀷锛堝
-N 缁存暟缁勫拰/鎴栫粨鏋勪綋锛夌殑鎺у埗銆傚湪鏋氫妇鎺у埗鏃讹紝浣犻渶瑕佹寚瀹?`V4L2_CTRL_FLAG_NEXT_COMPOUND` 鎵嶈兘瀹為檯鐪嬪埌杩欑被澶嶅悎鎺у埗銆傛崲瑷€涔嬶紝杩欎簺
-澶嶅悎绫诲瀷鐨勬帶鍒跺彧搴斾互缂栫▼鏂瑰紡浣跨敤銆?
-鐢变簬杩欑被澶嶅悎鎺у埗闇€瑕佹毚闇叉瘮 VIDIOC_QUERYCTRL <VIDIOC_QUERYCTRL> 鎵€鑳芥彁渚?鐨勬洿澶氫俊鎭紝鍥犳澧炲姞浜?VIDIOC_QUERY_EXT_CTRL <VIDIOC_QUERYCTRL> ioctl銆?鐗瑰埆鍦帮紝褰撹鎺у埗鐢卞涓厓绱犵粍鎴愭椂锛屾 ioctl 浼氱粰鍑?N 缁存暟缁勭殑缁村害銆?
-
-   #. 閲嶈鐨勬槸瑕佽璇嗗埌锛岀敱浜庢帶鍒剁殑鐏垫椿鎬э紝鏈夊繀瑕佹鏌ヤ綘鎯宠璁剧疆鐨勬帶鍒舵槸鍚?      纭疄鍙楅┍鍔ㄦ敮鎸侊紝浠ュ強鍏舵湁鏁堝€艰寖鍥存槸浠€涔堛€傛墍浠ヨ浣跨敤 VIDIOC_QUERYCTRL
-      鏉ユ鏌ャ€?
-   #. 绫诲瀷涓?`V4L2_CTRL_TYPE_MENU` 鐨勬帶鍒朵腑锛屾煇浜涜彍鍗曠储寮曞彲鑳戒笉鍙楁敮鎸?      锛坄VIDIOC_QUERYMENU` 浼氳繑鍥為敊璇級銆備竴涓緢濂界殑渚嬪瓙鏄彈鏀寔鐨?MPEG
-      闊抽姣旂壒鐜囧垪琛ㄣ€傛湁浜涢┍鍔ㄥ彧鏀寔涓€涓ょ姣旂壒鐜囷紝鍙︿竴浜涘垯鏀寔鏇村鐨勮寖鍥淬€?
-鎵€鏈夋帶鍒堕兘浣跨敤鏈哄櫒瀛楄妭搴忋€?
-
-## 鏋氫妇鎵╁睍鎺у埗
+## 扩展控制 API
 
 
-鎺ㄨ崘鐨勬灇涓炬墿灞曟帶鍒剁殑鏂瑰紡鏄娇鐢?VIDIOC_QUERYCTRL 閰嶅悎
-`V4L2_CTRL_FLAG_NEXT_CTRL` 鏍囧織锛?
+有三个新ioctl 可用：VIDIOC_G_EXT_CTRLS <VIDIOC_G_EXT_CTRLS>VIDIOC_S_EXT_CTRLS <VIDIOC_G_EXT_CTRLS> VIDIOC_TRY_EXT_CTRLS <VIDIOC_G_EXT_CTRLS>。这ioctl 作用于控制数（相对于作用于单个控制的 VIDIOC_G_CTRL <VIDIOC_G_CTRL> VIDIOC_S_CTRL <VIDIOC_G_CTRL> ioctl）。这是必需的，因为常常需要原子地
+一次性更改多个控制
+每个新的 ioctl 都期望一个指struct `v4l2_ext_controls` 的指针。该结构
+包含一个指向控制数组的指针、数组中控制数量的一个计数，以及一个控制类别控制类别用于将相似的控制归为单一类别。例如，控制类别 `V4L2_CTRL_CLASS_USER`
+包含所有用户控制（即也能使用旧VIDIOC_S_CTRL <VIDIOC_G_CTRL> ioctl
+设置的所有控制）。控制类`V4L2_CTRL_CLASS_CODEC` 包含与编解码器相关的
+控制
+控制数组中的所有控制都必须属于指定的控制类别。否则会返回错误
+也可以使用一个空的控制数组（`count` == 0）来检查指定的控制类别是否受支持
+控制数组是一struct `v4l2_ext_control` 数组。struct `v4l2_ext_control`
+struct `v4l2_control` 非常相似，只是它还允许传64 位值和指针
+由于 struct `v4l2_ext_control` 支持指针，现在也可以拥有复合类型（如
+N 维数组和/或结构体）的控制。在枚举控制时，你需要指`V4L2_CTRL_FLAG_NEXT_COMPOUND` 才能实际看到这类复合控制。换言之，这些
+复合类型的控制只应以编程方式使用
+由于这类复合控制需要暴露比 VIDIOC_QUERYCTRL <VIDIOC_QUERYCTRL> 所能提的更多信息，因此增加VIDIOC_QUERY_EXT_CTRL <VIDIOC_QUERYCTRL> ioctl特别地，当该控制由多个元素组成时，此 ioctl 会给N 维数组的维度
+
+   #. 重要的是要认识到，由于控制的灵活性，有必要检查你想要设置的控制是      确实受驱动支持，以及其有效值范围是什么。所以请使用 VIDIOC_QUERYCTRL
+      来检查
+   #. 类型`V4L2_CTRL_TYPE_MENU` 的控制中，某些菜单索引可能不受支      （`VIDIOC_QUERYMENU` 会返回错误）。一个很好的例子是受支持MPEG
+      音频比特率列表。有些驱动只支持一两种比特率，另一些则支持更宽的范围
+所有控制都使用机器字节序
+
+## 枚举扩展控制
+
+
+推荐的枚举扩展控制的方式是使VIDIOC_QUERYCTRL 配合
+`V4L2_CTRL_FLAG_NEXT_CTRL` 标志
 
 
     struct v4l2_queryctrl qctrl;
@@ -53,10 +53,10 @@ N 缁存暟缁勫拰/鎴栫粨鏋勪綋锛夌殑鎺у埗銆傚湪鏋氫妇鎺у�
 	qctrl.id |= V4L2_CTRL_FLAG_NEXT_CTRL;
     }
 
-鍒濆鐨勬帶鍒?ID 琚涓?0 涓?`V4L2_CTRL_FLAG_NEXT_CTRL` 鏍囧織鐩告垨鐨勭粨鏋溿€?`VIDIOC_QUERYCTRL` ioctl 灏嗚繑鍥?ID 姣旀寚瀹氬€兼洿楂樼殑绗竴涓帶鍒躲€傚綋鎵句笉鍒拌繖鏍?鐨勬帶鍒舵椂锛屼細杩斿洖閿欒銆?
-濡傛灉浣犳兂鑾峰彇鐗瑰畾鎺у埗绫诲埆鍐呯殑鎵€鏈夋帶鍒讹紝鍙互灏嗗垵濮嬬殑 `qctrl.id` 鍊艰涓鸿
-鎺у埗绫诲埆锛屽苟澧炲姞涓€涓澶栫殑妫€鏌ワ紝浠ヤ究鍦ㄥ彂鐜板睘浜庡彟涓€鎺у埗绫诲埆鐨勬帶鍒舵椂璺冲嚭
-寰幆锛?
+初始的控ID 被设0 `V4L2_CTRL_FLAG_NEXT_CTRL` 标志相或的结果`VIDIOC_QUERYCTRL` ioctl 将返ID 比指定值更高的第一个控制。当找不到这的控制时，会返回错误
+如果你想获取特定控制类别内的所有控制，可以将初始的 `qctrl.id` 值设为该
+控制类别，并增加一个额外的检查，以便在发现属于另一控制类别的控制时跳出
+循环
 
 
     qctrl.id = V4L2_CTRL_CLASS_CODEC | V4L2_CTRL_FLAG_NEXT_CTRL;
@@ -67,15 +67,15 @@ N 缁存暟缁勫拰/鎴栫粨鏋勪綋锛夌殑鎺у埗銆傚湪鏋氫妇鎺у�
 	qctrl.id |= V4L2_CTRL_FLAG_NEXT_CTRL;
     }
 
-32 浣嶇殑 `qctrl.id` 鍊艰鍒掑垎涓轰笁涓綅娈碉細鏈€楂樼殑 4 浣嶄繚鐣欑粰鏍囧織锛堜緥濡?`V4L2_CTRL_FLAG_NEXT_CTRL`锛夛紝骞朵笉灞炰簬 ID 鏈韩銆傚墿涓嬬殑 28 浣嶆瀯鎴愭帶鍒?ID锛?鍏朵腑鏈€楂?12 浣嶅畾涔夋帶鍒剁被鍒紝鏈€浣?16 浣嶆爣璇嗚鎺у埗绫诲埆鍐呯殑鎺у埗銆傚彲浠ヤ繚璇?杩欎簺鏈€鍚庣殑 16 浣嶅浜庢墍鏈夋帶鍒堕兘闈為浂銆?x1000 鍙婁互涓婄殑鑼冨洿淇濈暀缁欓┍鍔ㄧ鏈?鎺у埗銆傚畯 `V4L2_CTRL_ID2CLASS(id)` 鏍规嵁鎺у埗 ID 杩斿洖鎺у埗绫诲埆 ID銆?
-濡傛灉椹卞姩涓嶆敮鎸佹墿灞曟帶鍒讹紝閭ｄ箞 `VIDIOC_QUERYCTRL` 涓?`V4L2_CTRL_FLAG_NEXT_CTRL`
-閰嶅悎浣跨敤鏃跺皢澶辫触銆傝繖绉嶆儏鍐典笅搴斾娇鐢ㄦ棫鐨勬灇涓炬帶鍒舵柟娉曪紙瑙?enum_all_controls锛夈€?浣嗗鏋滃彈鏀寔锛屽垯淇濊瘉浼氭灇涓炬墍鏈夋帶鍒讹紝鍖呮嫭椹卞姩绉佹湁鎺у埗銆?
+32 位的 `qctrl.id` 值被划分为三个位段：最高的 4 位保留给标志（例`V4L2_CTRL_FLAG_NEXT_CTRL`），并不属于 ID 本身。剩下的 28 位构成控ID其中最12 位定义控制类别，最16 位标识该控制类别内的控制。可以保这些最后的 16 位对于所有控制都非零x1000 及以上的范围保留给驱动私控制。宏 `V4L2_CTRL_ID2CLASS(id)` 根据控制 ID 返回控制类别 ID
+如果驱动不支持扩展控制，那么 `VIDIOC_QUERYCTRL` `V4L2_CTRL_FLAG_NEXT_CTRL`
+配合使用时将失败。这种情况下应使用旧的枚举控制方法（enum_all_controls）但如果受支持，则保证会枚举所有控制，包括驱动私有控制
 
-## 鍒涘缓鎺у埗闈㈡澘
+## 创建控制面板
 
 
-鍙互涓哄浘褰㈢敤鎴风晫闈㈠垱寤烘帶鍒堕潰鏉匡紝璁╃敤鎴峰彲浠ラ€夋嫨鍚勭鎺у埗銆傚熀鏈笂浣犲皢闇€瑕?浣跨敤涓婅堪鏂规硶閬嶅巻鎵€鏈夋帶鍒躲€傛瘡涓帶鍒剁被鍒兘浠ヤ竴涓被鍨嬩负
-`V4L2_CTRL_TYPE_CTRL_CLASS` 鐨勬帶鍒跺紑濮嬨€俙VIDIOC_QUERYCTRL` 灏嗚繑鍥炴鎺у埗
-绫诲埆鐨勫悕绉帮紝鍙敤浣滄帶鍒堕潰鏉夸腑鏍囩椤电殑鏍囬銆?
-struct v4l2_queryctrl <v4l2-queryctrl> 鐨?flags 瀛楁涔熷寘鍚叧浜庢帶鍒惰涓虹殑
-鎻愮ず銆傝瑙?VIDIOC_QUERYCTRL 鏂囨。銆?
+可以为图形用户界面创建控制面板，让用户可以选择各种控制。基本上你将需使用上述方法遍历所有控制。每个控制类别都以一个类型为
+`V4L2_CTRL_TYPE_CTRL_CLASS` 的控制开始。`VIDIOC_QUERYCTRL` 将返回此控制
+类别的名称，可用作控制面板中标签页的标题
+struct v4l2_queryctrl <v4l2-queryctrl> flags 字段也包含关于控制行为的
+提示。详VIDIOC_QUERYCTRL 文档

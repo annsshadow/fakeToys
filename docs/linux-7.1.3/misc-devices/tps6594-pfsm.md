@@ -1,47 +1,47 @@
 ﻿
-## Texas Instruments TPS6594 PFSM 椹卞姩
+## Texas Instruments TPS6594 PFSM 驱动
 
 
 Author: Julien Panis (jpanis@baylibre.com)
 
-## 姒傝堪
+## 概述
 
 
-涓ユ牸鏉ヨ锛孭FSM锛堥閰嶇疆鏈夐檺鐘舵€佹満锛孭re-configurable Finite State Machine锛夊苟闈炵‖浠躲€傚畠鏄竴娈典唬鐮併€?
-TPS6594 PMIC锛堢數婧愮鐞?IC锛孭ower Management IC锛夐泦鎴愪簡涓€涓鐞嗚繍琛屾ā寮忕殑鐘舵€佹満銆傛牴鎹綋鍓嶇殑杩愯妯″紡锛屾煇浜涚數鍘嬪煙淇濇寔涓婄數锛岃€屽叾浠栧煙鍙互鍏抽棴銆?
-PFSM 椹卞姩鍙敤浜庤Е鍙戝凡閰嶇疆鐘舵€佷箣闂寸殑杞崲銆傚畠杩樻彁渚涘璁惧瀵勫瓨鍣ㄧ殑璇?鍐欒闂€?
-### 鏀寔鐨勮澶?
+严格来说，PFSM（预配置有限状态机，Pre-configurable Finite State Machine）并非硬件。它是一段代码
+TPS6594 PMIC（电源管IC，Power Management IC）集成了一个管理运行模式的状态机。根据当前的运行模式，某些电压域保持上电，而其他域可以关闭
+PFSM 驱动可用于触发已配置状态之间的转换。它还提供对设备寄存器的写访问
+### 支持的设
 
 - tps6594-q1
 - tps6593-q1
 - lp8764-q1
 
-## 椹卞姩浣嶇疆
+## 驱动位置
 
 
 drivers/misc/tps6594-pfsm.c
 
-## 椹卞姩绫诲瀷瀹氫箟
+## 驱动类型定义
 
 
 include/uapi/linux/tps6594_pfsm.h
 
-## 椹卞姩 IOCTL
+## 驱动 IOCTL
 
 
 `PMIC_GOTO_STANDBY`
-鎵€鏈夎澶囪祫婧愬潎鏂數銆傚鐞嗗櫒鍏抽棴锛屾病鏈変换浣曠數鍘嬪煙涓婄數銆?
+所有设备资源均断电。处理器关闭，没有任何电压域上电
 `PMIC_GOTO_LP_STANDBY`
-PMIC 涓笉闇€瑕佸父寮€鐨勬暟瀛椾笌妯℃嫙鍔熻兘琚叧闂紙浣庡姛鑰楋級銆?
+PMIC 中不需要常开的数字与模拟功能被关闭（低功耗）
 `PMIC_UPDATE_PGM`
-瑙﹀彂鍥轰欢鏇存柊銆?
+触发固件更新
 `PMIC_SET_ACTIVE_STATE`
-杩愯妯″紡涔嬩竴銆?PMIC 瀹屽叏姝ｅ父宸ヤ綔锛屽苟鍚戞墍鏈?PDN 璐熻浇渚涚數銆?MCU 涓庝富澶勭悊鍣ㄤ袱涓儴鍒嗙殑鐢靛帇鍩熷潎涓婄數銆?
+运行模式之一PMIC 完全正常工作，并向所PDN 负载供电MCU 与主处理器两个部分的电压域均上电
 `PMIC_SET_MCU_ONLY_STATE`
-杩愯妯″紡涔嬩竴銆?浠呮湁鍒嗛厤缁?MCU Safety Island 鐨勭數婧愯祫婧愬紑鍚€?
+运行模式之一仅有分配MCU Safety Island 的电源资源开启
 `PMIC_SET_RETENTION_STATE`
-杩愯妯″紡涔嬩竴銆?鏍规嵁鎵€璁剧疆鐨勮Е鍙戝櫒锛岄儴鍒?DDR/GPIO 鐢靛帇鍩熷彲淇濇寔涓婄數锛岃€屾墍鏈夊叾浠栧煙鍏抽棴锛屼互鏈€灏忓寲绯荤粺鎬诲姛鑰椼€?
-## 椹卞姩浣跨敤
+运行模式之一根据所设置的触发器，部DDR/GPIO 电压域可保持上电，而所有其他域关闭，以最小化系统总功耗
+## 驱动使用
 
 
 ```
@@ -59,7 +59,7 @@ PMIC 涓笉闇€瑕佸父寮€鐨勬暟瀛椾笌妯℃嫙鍔熻兘琚叧
     # cat /proc/interrupts
 
 ```
-### 鐢ㄦ埛绌洪棿浠ｇ爜绀轰緥
+### 用户空间代码示例
 
 
 samples/pfsm/pfsm-wakeup.c

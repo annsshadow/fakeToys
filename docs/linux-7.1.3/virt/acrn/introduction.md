@@ -1,9 +1,9 @@
 ﻿
-## ACRN Hypervisor 绠€浠?
+## ACRN Hypervisor 简
 
-ACRN Hypervisor 鏄竴涓?Type 1 鍨嬶紙瑁搁噾灞烇級hypervisor锛岀洿鎺ヨ繍琛屽湪瑁搁噾灞炵‖浠朵笂銆傚畠鏈変竴涓壒鏉冪鐞?VM锛岀О涓?Service VM锛堟湇鍔¤櫄鎷熸満锛夛紝鐢ㄤ簬绠＄悊 User VM锛堢敤鎴疯櫄鎷熸満锛夊苟杩涜 I/O 浠跨湡銆?
-ACRN 鐢ㄦ埛绌洪棿锛坲serspace锛夋槸涓€涓繍琛屽湪 Service VM 涓殑搴旂敤锛屽畠鍩轰簬鍛戒护琛岄厤缃负鐢ㄦ埛 VM 浠跨湡璁惧銆侫CRN Hypervisor Service Module锛圚SM锛夋槸 Service VM 涓殑涓€涓唴鏍告ā鍧楋紝涓?ACRN 鐢ㄦ埛绌洪棿鎻愪緵 hypervisor 鏈嶅姟銆?
-涓嬪浘灞曠ず浜嗗叾鏋舵瀯銆?
+ACRN Hypervisor 是一Type 1 型（裸金属）hypervisor，直接运行在裸金属硬件上。它有一个特权管VM，称Service VM（服务虚拟机），用于管理 User VM（用户虚拟机）并进行 I/O 仿真
+ACRN 用户空间（userspace）是一个运行在 Service VM 中的应用，它基于命令行配置为用户 VM 仿真设备。ACRN Hypervisor Service Module（HSM）是 Service VM 中的一个内核模块，ACRN 用户空间提供 hypervisor 服务
+下图展示了其架构
 ```
 
                 Service VM                    User VM
@@ -23,5 +23,5 @@ ACRN 鐢ㄦ埛绌洪棿锛坲serspace锛夋槸涓€涓繍琛屽湪 Service V
   +----------------------------------------------------------------------+
 
 ```
-ACRN 鐢ㄦ埛绌洪棿涓虹敤鎴?VM 鍒嗛厤鍐呭瓨銆侀厤缃苟鍒濆鍖栫敤鎴?VM 浣跨敤鐨勮澶囥€佸姞杞借櫄鎷熷紩瀵煎姞杞藉櫒銆佸垵濮嬪寲铏氭嫙 CPU 鐘舵€侊紝骞跺鐞嗘潵鑷敤鎴?VM 鐨?I/O 璇锋眰璁块棶銆傚畠浣跨敤 ioctl 涓?HSM 閫氫俊銆侶SM 閫氳繃涓?ACRN Hypervisor 鐨勪氦浜掞紙閫氳繃 hypercall锛夊疄鐜?hypervisor 鏈嶅姟銆侶SM 鍚戠敤鎴风┖闂村鍑轰竴涓瓧绗﹁澶囨帴鍙ｏ紙/dev/acrn_hsm锛夈€?
-ACRN hypervisor 鍚戜换浣曚汉寮€鏀捐础鐚€傛簮鐮佷粨搴撲綅浜?https://github.com/projectacrn/acrn-hypervisor銆?
+ACRN 用户空间为用VM 分配内存、配置并初始化用VM 使用的设备、加载虚拟引导加载器、初始化虚拟 CPU 状态，并处理来自用VM I/O 请求访问。它使用 ioctl HSM 通信。HSM 通过ACRN Hypervisor 的交互（通过 hypercall）实hypervisor 服务。HSM 向用户空间导出一个字符设备接口（/dev/acrn_hsm）
+ACRN hypervisor 向任何人开放贡献。源码仓库位https://github.com/projectacrn/acrn-hypervisor

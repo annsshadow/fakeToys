@@ -1,88 +1,88 @@
 ﻿
-## 鎿嶄綔鐘舵€?
+## 操作状
 
-## 1. 绠€浠?
+## 1. 简
 
-Linux 鍖哄垎鎺ュ彛鐨勭鐞嗙姸鎬侊紙administrative state锛変笌鎿嶄綔鐘舵€侊紙operational state锛夈€?绠＄悊鐘舵€佹槸鈥渋p link set dev <dev> up 鎴?down鈥濈殑缁撴灉锛屽弽鏄犵鐞嗗憳鏄惁甯屾湜浣跨敤璇?璁惧浼犺緭娴侀噺銆?
-鐒惰€岋紝鎺ュ彛骞堕潪浠呬粎鍥犱负绠＄悊鍛樺惎鐢ㄤ簡瀹冨氨鍙敤鈥斺€斾互澶綉闇€瑕佹彃鍒颁氦鎹㈡満涓婏紝骞朵笖鏍规嵁
-绔欑偣鐨勭綉缁滅瓥鐣ヤ笌閰嶇疆锛屽湪鐢ㄦ埛鏁版嵁浼犺緭涔嬪墠杩橀渶瑕佽繘琛?802.1X 璁よ瘉銆傛搷浣滅姸鎬佸弽鏄?浜嗕竴涓帴鍙ｄ紶杈撹繖浜涚敤鎴锋暟鎹殑鑳藉姏銆?
-寰楃泭浜?802.1X锛屽繀椤诲厑璁哥敤鎴风┖闂村奖鍝嶆搷浣滅姸鎬併€備负姝わ紝鎿嶄綔鐘舵€佽鎷嗗垎涓轰袱閮ㄥ垎锛氫袱涓?鍙兘鐢遍┍鍔ㄨ缃殑鏍囧織锛屼互鍙婁竴涓敱杩欎簺鏍囧織銆佷竴椤圭瓥鐣ヤ互鍙婂湪鏌愪簺瑙勫垯涓嬪彲鐢辩敤鎴风┖闂?鏇存敼鐨勩€佷笌 RFC2863 鍏煎鐨勭姸鎬併€?
+Linux 区分接口的管理状态（administrative state）与操作状态（operational state）管理状态是“ip link set dev <dev> up down”的结果，反映管理员是否希望使用设备传输流量
+然而，接口并非仅仅因为管理员启用了它就可用——以太网需要插到交换机上，并且根据
+站点的网络策略与配置，在用户数据传输之前还需要进802.1X 认证。操作状态反了一个接口传输这些用户数据的能力
+得益802.1X，必须允许用户空间影响操作状态。为此，操作状态被拆分为两部分：两只能由驱动设置的标志，以及一个由这些标志、一项策略以及在某些规则下可由用户空更改的、与 RFC2863 兼容的状态
 
-## 2. 浠庣敤鎴风┖闂存煡璇?
+## 2. 从用户空间查
 
-绠＄悊鐘舵€佷笌鎿嶄綔鐘舵€侀兘鍙互閫氳繃 netlink 鎿嶄綔 RTM_GETLINK 鏌ヨ銆備篃鍙互璁㈤槄
-RTNLGRP_LINK 浠ュ湪鎺ュ彛澶勪簬绠＄悊 up 鏃舵敹鍒版洿鏂伴€氱煡銆傝繖瀵逛簬浠庣敤鎴风┖闂磋繘琛岃缃緢閲嶈銆?
-杩欎簺鍊煎寘鍚帴鍙ｇ姸鎬侊細
+管理状态与操作状态都可以通过 netlink 操作 RTM_GETLINK 查询。也可以订阅
+RTNLGRP_LINK 以在接口处于管理 up 时收到更新通知。这对于从用户空间进行设置很重要
+这些值包含接口状态：
 
 **ifinfomsg**
-: if_flags & IFF_UP锛? 鎺ュ彛澶勪簬绠＄悊 up銆?
+: if_flags & IFF_UP 接口处于管理 up
 **ifinfomsg**
-: if_flags & IFF_RUNNING锛? 鎺ュ彛澶勪簬 RFC2863 鎿嶄綔鐘舵€?UP 鎴?UNKNOWN銆傝繖鏄负浜嗗悜鍚庡吋瀹癸紝璺敱瀹堟姢杩涚▼銆? dhcp 瀹㈡埛绔彲鐢ㄦ鏍囧織鏉ュ垽鏂槸鍚﹀簲璇ヤ娇鐢ㄨ鎺ュ彛銆?
+: if_flags & IFF_RUNNING 接口处于 RFC2863 操作状UP UNKNOWN。这是为了向后兼容，路由守护进程 dhcp 客户端可用此标志来判断是否应该使用该接口
 **ifinfomsg**
-: if_flags & IFF_LOWER_UP锛? 椹卞姩宸插彂鍑?netif_carrier_on() 淇″彿銆?
+: if_flags & IFF_LOWER_UP 驱动已发netif_carrier_on() 信号
 **ifinfomsg**
-: if_flags & IFF_DORMANT锛? 椹卞姩宸插彂鍑?netif_dormant_on() 淇″彿銆?
+: if_flags & IFF_DORMANT 驱动已发netif_dormant_on() 信号
 ### TLV IFLA_OPERSTATE
 
 
-鍖呭惈鎺ュ彛鐨?RFC2863 鐘舵€侊紝浠ユ暟鍊艰〃绀猴細
+包含接口RFC2863 状态，以数值表示：
 
-IF_OPER_UNKNOWN (0)锛? 鎺ュ彛澶勪簬鏈煡鐘舵€侊紝椹卞姩鍜岀敤鎴风┖闂撮兘鏈缃搷浣滅姸鎬併€傜敱浜庡苟闈炴瘡涓┍鍔ㄩ兘瀹炵幇浜? 鎿嶄綔鐘舵€佽缃紝鎺ュ彛鍦ㄨ€冭檻鐢ㄦ埛鏁版嵁鏃跺繀椤昏瑙嗕负鏈煡銆?
-IF_OPER_NOTPRESENT (1)锛? 褰撳墠鍐呮牳涓湭浣跨敤锛坣otpresent 鎺ュ彛閫氬父浼氭秷澶憋級锛屼粎浣滄暟鍊煎崰浣嶃€?
-IF_OPER_DOWN (2)锛? 鎺ュ彛鏃犳硶鍦?L1 涓婁紶杈撴暟鎹紝渚嬪浠ュお缃戞湭鎻掔嚎锛屾垨鎺ュ彛澶勪簬 ADMIN down銆?
-IF_OPER_LOWERLAYERDOWN (3)锛? 鍫嗗彔鍦?IF_OPER_DOWN 鎺ュ彛涔嬩笂鐨勬帴鍙ｆ樉绀烘鐘舵€侊紙渚嬪 VLAN锛夈€?
-IF_OPER_TESTING (4)锛? 鎺ュ彛澶勪簬娴嬭瘯妯″紡锛屼緥濡傛鍦ㄦ墽琛岄┍鍔ㄨ嚜妫€鎴栦粙璐紙绾跨紗锛夋祴璇曘€傚湪娴嬭瘯瀹屾垚涔嬪墠涓嶈兘
- 鐢ㄤ簬姝ｅ父娴侀噺銆?
-IF_OPER_DORMANT (5)锛? 鎺ュ彛 L1 宸?up锛屼絾鍦ㄧ瓑寰呬竴涓閮ㄤ簨浠讹紝渚嬪绛夊緟鏌愪釜鍗忚寤虹珛锛?02.1X锛夈€?
-IF_OPER_UP (6)锛? 鎺ュ彛鎿嶄綔 up锛屽彲浠ヤ娇鐢ㄣ€?
-姝?TLV 涔熷彲閫氳繃 sysfs 鏌ヨ銆?
+IF_OPER_UNKNOWN (0) 接口处于未知状态，驱动和用户空间都未设置操作状态。由于并非每个驱动都实现 操作状态设置，接口在考虑用户数据时必须被视为未知
+IF_OPER_NOTPRESENT (1) 当前内核中未使用（notpresent 接口通常会消失），仅作数值占位
+IF_OPER_DOWN (2) 接口无法L1 上传输数据，例如以太网未插线，或接口处于 ADMIN down
+IF_OPER_LOWERLAYERDOWN (3) 堆叠IF_OPER_DOWN 接口之上的接口显示此状态（例如 VLAN）
+IF_OPER_TESTING (4) 接口处于测试模式，例如正在执行驱动自检或介质（线缆）测试。在测试完成之前不能
+ 用于正常流量
+IF_OPER_DORMANT (5) 接口 L1 up，但在等待一个外部事件，例如等待某个协议建立02.1X）
+IF_OPER_UP (6) 接口操作 up，可以使用
+TLV 也可通过 sysfs 查询
 ### TLV IFLA_LINKMODE
 
 
-鍖呭惈閾捐矾绛栫暐銆備笅闈㈡弿杩扮殑鐢ㄦ埛绌洪棿浜や簰闇€瑕佸畠銆?
-姝?TLV 涔熷彲閫氳繃 sysfs 鏌ヨ銆?
+包含链路策略。下面描述的用户空间交互需要它
+TLV 也可通过 sysfs 查询
 
-## 3. 鍐呮牳椹卞姩 API
+## 3. 内核驱动 API
 
 
-鍐呮牳椹卞姩鍙互璁块棶鏄犲皠鍒?IFF_LOWER_UP 鍜?IFF_DORMANT 鐨勪袱涓爣蹇椼€傝繖浜涙爣蹇楀彲浠ュ湪
-浠讳綍鍦版柟璁剧疆锛岀敋鑷冲彲浠ュ湪涓柇涓缃€傝櫧鐒舵病鏈夊叾瀹冮儴鍒嗘嫢鏈夊啓鏉冮檺锛屼絾濡傛灉椹卞姩鐨勪笉鍚?灞傛搷浣滃悓涓€涓爣蹇楋紝椹卞姩蹇呴』鎻愪緵蹇呰鐨勫悓姝ャ€?
-__LINK_STATE_NOCARRIER锛屾槧灏勫埌 !IFF_LOWER_UP锛?
-椹卞姩浣跨敤 netif_carrier_on() 娓呴櫎璇ユ爣蹇楋紝浣跨敤 netif_carrier_off() 璁剧疆瀹冦€傚湪
-netif_carrier_off() 鏃讹紝璋冨害鍣ㄥ仠姝㈠彂閫佸寘銆傚悕绉扳€渃arrier鈥濆強鍏跺彇鍙嶆槸鍘嗗彶鍘熷洜锛屽彲
-灏嗗叾鐞嗚В涓轰笅灞傦紙lower layer锛夈€?
-娉ㄦ剰锛屽浜庢煇浜涗笉绠＄悊浠讳綍鐪熷疄纭欢鐨勮蒋璁惧锛屽彲浠ヤ粠鐢ㄦ埛绌洪棿璁剧疆姝や綅銆傚簲浣跨敤 TLV
-IFLA_CARRIER 鏉ヨ繖涔堝仛銆?
-netif_carrier_ok() 鍙敤浜庢煡璇㈣浣嶃€?
-__LINK_STATE_DORMANT锛屾槧灏勫埌 IFF_DORMANT锛?
-鐢遍┍鍔ㄨ缃紝琛ㄧず璁惧鐢变簬鏌愪簺椹卞姩鎺у埗鐨勫崗璁缓绔嬪皻鏈畬鎴愯€屾殏鏃舵棤娉曚娇鐢ㄣ€傚搴旂殑鍑芥暟
-鏄?netif_dormant_on() 璁剧疆璇ユ爣蹇楋紝netif_dormant_off() 娓呴櫎瀹冿紝netif_dormant()
-鐢ㄤ簬鏌ヨ銆?
-鍦ㄨ澶囧垎閰嶆椂锛宊_LINK_STATE_NOCARRIER 涓?__LINK_STATE_DORMANT 涓や釜鏍囧織閮借娓呴櫎锛?鍥犳鏈夋晥鐘舵€佺瓑鍚屼簬 netif_carrier_ok() 涓?!netif_dormant()銆?
+内核驱动可以访问映射IFF_LOWER_UP IFF_DORMANT 的两个标志。这些标志可以在
+任何地方设置，甚至可以在中断中设置。虽然没有其它部分拥有写权限，但如果驱动的不层操作同一个标志，驱动必须提供必要的同步
+__LINK_STATE_NOCARRIER，映射到 !IFF_LOWER_UP
+驱动使用 netif_carrier_on() 清除该标志，使用 netif_carrier_off() 设置它。在
+netif_carrier_off() 时，调度器停止发送包。名称“carrier”及其取反是历史原因，可
+将其理解为下层（lower layer）
+注意，对于某些不管理任何真实硬件的软设备，可以从用户空间设置此位。应使用 TLV
+IFLA_CARRIER 来这么做
+netif_carrier_ok() 可用于查询该位
+__LINK_STATE_DORMANT，映射到 IFF_DORMANT
+由驱动设置，表示设备由于某些驱动控制的协议建立尚未完成而暂时无法使用。对应的函数
+netif_dormant_on() 设置该标志，netif_dormant_off() 清除它，netif_dormant()
+用于查询
+在设备分配时，__LINK_STATE_NOCARRIER __LINK_STATE_DORMANT 两个标志都被清除因此有效状态等同于 netif_carrier_ok() !netif_dormant()
 
-姣忓綋椹卞姩鏇存敼杩欎袱涓爣蹇椾箣涓€鏃讹紝浼氳皟搴︿竴涓伐浣滈槦鍒椾簨浠讹紝灏嗘爣蹇楃粍鍚堣浆鎹负
-IFLA_OPERSTATE锛屽涓嬫墍绀猴細
+每当驱动更改这两个标志之一时，会调度一个工作队列事件，将标志组合转换为
+IFLA_OPERSTATE，如下所示：
 
-!netif_carrier_ok()锛? 鑻ユ帴鍙ｆ槸鍫嗗彔鐨勫垯涓?IF_OPER_LOWERLAYERDOWN锛屽惁鍒欎负 IF_OPER_DOWN銆傚唴鏍稿彲浠ヨ瘑鍒? 鍫嗗彔鎺ュ彛锛屽洜涓哄畠浠殑 ifindex != iflink銆?
+!netif_carrier_ok() 若接口是堆叠的则IF_OPER_LOWERLAYERDOWN，否则为 IF_OPER_DOWN。内核可以识 堆叠接口，因为它们的 ifindex != iflink
 netif_carrier_ok() && netif_dormant()锛? IF_OPER_DORMANT
 
-netif_carrier_ok() && !netif_dormant()锛? 鑻ョ敤鎴风┖闂翠氦浜掕绂佺敤鍒欎负 IF_OPER_UP銆傚惁鍒欎负 IF_OPER_DORMANT锛屼箣鍚庣敤鎴风┖闂村彲浠? 鍙戣捣鍚?IF_OPER_UP 鐨勮浆鎹€?
+netif_carrier_ok() && !netif_dormant() 若用户空间交互被禁用则为 IF_OPER_UP。否则为 IF_OPER_DORMANT，之后用户空间可 发起IF_OPER_UP 的转换
 
-## 4. 浠庣敤鎴风┖闂磋缃?
+## 4. 从用户空间设
 
-搴旂敤绋嬪簭蹇呴』浣跨敤 netlink 鎺ュ彛鏉ュ奖鍝嶆帴鍙ｇ殑 RFC2863 鎿嶄綔鐘舵€併€傞€氳繃 RTM_SETLINK 灏?IFLA_LINKMODE 璁句负 1 浼氭寚绀哄唴鏍革細褰撻┍鍔ㄨ缃?netif_carrier_ok() && !netif_dormant() 缁勫悎鏃讹紝鎺ュ彛搴旇繘鍏?IF_OPER_DORMANT 鑰岄潪
-IF_OPER_UP銆備箣鍚庯紝鍙椹卞姩娌℃湁璁剧疆 netif_carrier_off() 鎴?netif_dormant_on()锛?鐢ㄦ埛绌洪棿搴旂敤绋嬪簭灏卞彲浠ュ皢 IFLA_OPERSTATE 璁句负 IF_OPER_DORMANT 鎴?IF_OPER_UP銆傜敤鎴?绌洪棿鎵€鍋氱殑鏇存敼浼氬湪 netlink 缁?RTNLGRP_LINK 涓婂箍鎾€?
-鍥犳锛屼竴涓?802.1X 璇锋眰鏂癸紙supplicant锛変笌鍐呮牳鐨勪氦浜掑ぇ鑷村涓嬶細
+应用程序必须使用 netlink 接口来影响接口的 RFC2863 操作状态。通过 RTM_SETLINK IFLA_LINKMODE 设为 1 会指示内核：当驱动设netif_carrier_ok() && !netif_dormant() 组合时，接口应进IF_OPER_DORMANT 而非
+IF_OPER_UP。之后，只要驱动没有设置 netif_carrier_off() netif_dormant_on()用户空间应用程序就可以将 IFLA_OPERSTATE 设为 IF_OPER_DORMANT IF_OPER_UP。用空间所做的更改会在 netlink RTNLGRP_LINK 上广播
+因此，一802.1X 请求方（supplicant）与内核的交互大致如下：
 
-- 璁㈤槄 RTNLGRP_LINK
-- 閫氳繃 RTM_SETLINK 灏?IFLA_LINKMODE 璁句负 1
-- 鏌ヨ涓€娆?RTM_GETLINK 浠ヨ幏鍙栧垵濮嬬姸鎬?- 濡傛灉鍒濆鏍囧織涓嶆槸 (IFF_LOWER_UP && !IFF_DORMANT)锛屽垯绛夊緟鐩村埌 netlink 澶氭挱鍙戝嚭
-  姝ょ姸鎬佷俊鍙?- 鎵ц 802.1X锛屽鏋滄爣蹇楀啀娆″彉 down 鍒欎腑姝?- 濡傛灉璁よ瘉鎴愬姛锛屽彂閫?RTM_SETLINK 灏?operstate 璁句负 IF_OPER_UP锛屽惁鍒欒涓?  IF_OPER_DORMANT
-- 瑙傚療 operstate 鍜?IFF_RUNNING 濡備綍閫氳繃 netlink 澶氭挱鍥炴樉
-- 濡傛灉 802.1X 閲嶆柊璁よ瘉澶辫触锛屽皢鎺ュ彛璁惧洖 IF_OPER_DORMANT
-- 濡傛灉鍐呮牳鏇存敼浜?IFF_LOWER_UP 鎴?IFF_DORMANT 鏍囧織锛屽垯閲嶆柊寮€濮?
-濡傛灉璇锋眰鏂归€€鍑猴紝灏?IFLA_LINKMODE 鎭㈠涓?0锛屽苟灏?IFLA_OPERSTATE 鎭㈠涓轰竴涓悎鐞嗙殑鍊笺€?
-璺敱瀹堟姢杩涚▼鎴?dhcp 瀹㈡埛绔彧闇€鍏虫敞 IFF_RUNNING锛屾垨鍦ㄨ€冭檻浣跨敤璇ユ帴鍙?/ 鏌ヨ DHCP
-鍦板潃涔嬪墠锛岀瓑寰?operstate 鍙樹负 IF_OPER_UP/IF_OPER_UNKNOWN銆?
+- 订阅 RTNLGRP_LINK
+- 通过 RTM_SETLINK IFLA_LINKMODE 设为 1
+- 查询一RTM_GETLINK 以获取初始状- 如果初始标志不是 (IFF_LOWER_UP && !IFF_DORMANT)，则等待直到 netlink 多播发出
+  此状态信- 执行 802.1X，如果标志再次变 down 则中- 如果认证成功，发RTM_SETLINK operstate 设为 IF_OPER_UP，否则设  IF_OPER_DORMANT
+- 观察 operstate IFF_RUNNING 如何通过 netlink 多播回显
+- 如果 802.1X 重新认证失败，将接口设回 IF_OPER_DORMANT
+- 如果内核更改IFF_LOWER_UP IFF_DORMANT 标志，则重新开
+如果请求方退出，IFLA_LINKMODE 恢复0，并IFLA_OPERSTATE 恢复为一个合理的值
+路由守护进程dhcp 客户端只需关注 IFF_RUNNING，或在考虑使用该接/ 查询 DHCP
+地址之前，等operstate 变为 IF_OPER_UP/IF_OPER_UNKNOWN
 
-鎶€鏈棶棰樺強/鎴栨剰瑙佽鍙戦偖浠剁粰 Stefan Rompf锛坰tefan at loplof.de锛夈€?
+技术问题及/或意见请发邮件给 Stefan Rompf（stefan at loplof.de）

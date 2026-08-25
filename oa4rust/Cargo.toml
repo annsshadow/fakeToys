@@ -238,6 +238,16 @@ tracing.workspace = true
 serde.workspace = true
 mysql_async = "0.37.0"
 mysql_common = "0.37"
+tower.workspace = true
+parity = { path = "crates/parity" }
+mcp_server = { path = "crates/mcp_server" }
+shared = { path = "crates/shared" }
+express = { path = "crates/express" }
+message = { path = "crates/message" }
+portal = { path = "crates/portal" }
+bbs = { path = "crates/bbs" }
+calendar = { path = "crates/calendar" }
+component = { path = "crates/component" }
 
 [workspace.dependencies]
 axum = { version = "0.8", features = ["macros", "json", "ws"] }
@@ -256,6 +266,8 @@ tower-http = { version = "0.5", features = ["cors", "trace"] }
 bcrypt = "0.15"
 base64 = "0.22"
 aes-gcm = "0.10"
+aes = "0.8"
+cbc = { version = "0.1", features = ["alloc"] }
 uuid = { version = "1", features = ["v4"] }
 hmac = "0.12"
   sha2 = { version = "0.10", features = ["oid"] }

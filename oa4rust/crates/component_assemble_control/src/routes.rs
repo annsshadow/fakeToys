@@ -1,6 +1,6 @@
 use axum::{
     extract::Extension,
-    routing::get, routing::post,
+    routing::{delete, get, post, put},
     Router,
 };
 use deadpool_postgres::Pool;
@@ -23,6 +23,11 @@ pub fn router(pool: deadpool_postgres::Pool) -> axum::Router {
         .route("/jaxrs/component_assemble_control/update/control/config", get(update_control_config))
         .route("/jaxrs/component/assemble/control/component/delete/all", post(component_delete_all))
         .route("/jaxrs/component/assemble/control/status/list", get(status_list))
+        // ---- plan002 U2 gaps: verb variants reusing existing handlers ----
+        .route("/jaxrs/component_assemble_control/component", post(create_component))
+        .route("/jaxrs/component/assemble/control/component/delete/all", delete(component_delete_all))
+        .route("/jaxrs/component_assemble_control/component/{id}", delete(delete_component))
+        .route("/jaxrs/component_assemble_control/component/{id}", put(save_component))
         .layer(Extension(pool))
 }
 

@@ -1,20 +1,20 @@
-﻿## ChipIdea 楂橀€熷弻瑙掕壊鎺у埗鍣ㄩ┍鍔?
+﻿## ChipIdea 高速双角色控制器驱
 
-### 1. 濡備綍娴嬭瘯 OTG FSM锛圚NP 涓?SRP锛?
+### 1. 如何测试 OTG FSM（HNP SRP
 
-灞曠ず濡備綍閫氳繃 sys 杈撳叆鏂囦欢锛岀敤 2 鍧?Freescale i.MX6Q sabre SD 鏉挎紨绀?OTG HNP 涓?SRP 鍔熻兘銆?
-### 1.1 濡備綍鍚敤 OTG FSM
+展示如何通过 sys 输入文件，用 2 Freescale i.MX6Q sabre SD 板演OTG HNP SRP 功能
+### 1.1 如何启用 OTG FSM
 
 
-##### 1.1.1 鍦?menuconfig 涓€夋嫨 CONFIG_USB_OTG_FSM锛岄噸鏂版瀯寤哄唴鏍?
+##### 1.1.1 menuconfig 中选择 CONFIG_USB_OTG_FSM，重新构建内
 
-鏄犲儚涓庢ā鍧椼€傚鏋滀綘鎯虫鏌?otg fsm 鐨勪竴浜涘唴閮ㄥ彉閲忥紝鎸傝浇 debugfs锛屾湁浠ヤ笅 2 涓枃浠?```
+映像与模块。如果你想检otg fsm 的一些内部变量，挂载 debugfs，有以下 2 个文```
 
 	cat /sys/kernel/debug/ci_hdrc.0/otg
 	cat /sys/kernel/debug/ci_hdrc.0/registers
 
 ```
-##### 1.1.2 鍦ㄤ綘鐨?dts 鏂囦欢涓负浣犵殑鎺у埗鍣ㄨ妭鐐规坊鍔犱互涓嬫潯鐩?
+##### 1.1.2 在你dts 文件中为你的控制器节点添加以下条
 
 ```
 
@@ -22,68 +22,68 @@
 	adp-disable;
 
 ```
-### 1.2 娴嬭瘯鎿嶄綔
+### 1.2 测试操作
 
 
-1) 鐢ㄥ凡鍔犺浇 gadget 绫婚┍鍔紙渚嬪 g_mass_storage锛夌殑 2 鍧?Freescale i.MX6Q sabre SD 鏉夸笂鐢点€?
-2) 鐢?usb 绾跨紗杩炴帴 2 鍧楁澘锛氫竴绔槸 micro A 鎻掑ご锛屽彟涓€绔槸 micro B 鎻掑ご銆?
-   A 璁惧锛堟彃鍏?micro A 鎻掑ご锛夊簲褰撴灇涓?B 璁惧銆?
-3) 瑙掕壊鍒囨崲
+1) 用已加载 gadget 类驱动（例如 g_mass_storage）的 2 Freescale i.MX6Q sabre SD 板上电
+2) usb 线缆连接 2 块板：一端是 micro A 插头，另一端是 micro B 插头
+   A 设备（插micro A 插头）应当枚B 设备
+3) 角色切换
 
 ```
 
 	echo 1 > /sys/bus/platform/devices/ci_hdrc.0/inputs/b_bus_req
 
-   B 璁惧搴斿綋鎷呭綋涓绘満瑙掕壊骞舵灇涓?A 璁惧銆?
+   B 设备应当担当主机角色并枚A 设备
 ```
-4) A 璁惧鍒囧洖涓绘満銆?
+4) A 设备切回主机
 ```
 
 	echo 0 > /sys/bus/platform/devices/ci_hdrc.0/inputs/b_bus_req
 
-   鎴栬€咃紝閫氳繃寮曞叆 HNP 杞锛孊-Host 鍙互鐭ラ亾 A-peripheral 浣曟椂甯屾湜澶勪簬涓绘満瑙掕壊锛屽洜姝ゆ瑙掕壊鍒囨崲涔熷彲浠?   鍦?A-peripheral 绔€氳繃搴旂瓟鏉ヨ嚜 B-Host 鐨勮疆璇㈡潵瑙﹀彂銆傝繖鍙互鍦?A 璁惧涓婂畬鎴?:
+   或者，通过引入 HNP 轮询，B-Host 可以知道 A-peripheral 何时希望处于主机角色，因此此角色切换也可   A-peripheral 端通过应答来自 B-Host 的轮询来触发。这可以A 设备上完:
 
 	echo 1 > /sys/bus/platform/devices/ci_hdrc.0/inputs/a_bus_req
 
-   A 璁惧搴斿綋鍒囧洖涓绘満骞舵灇涓?B 璁惧銆?
+   A 设备应当切回主机并枚B 设备
 ```
-5) 绉婚櫎 B 璁惧锛堟嫈涓?micro B 鎻掑ご锛夊苟鍦?10 绉掑唴閲嶆柊鎻掑叆锛汚 璁惧搴斿綋鍐嶆鏋氫妇 B 璁惧銆?
-6) 绉婚櫎 B 璁惧锛堟嫈涓?micro B 鎻掑ご锛夊苟鍦?10 绉掑悗閲嶆柊鎻掑叆锛汚 璁惧搴斿綋**涓?*鏋氫妇 B 璁惧銆?
-   濡傛灉 A 璁惧鎯宠浣跨敤鎬荤嚎锛?
+5) 移除 B 设备（拔micro B 插头）并10 秒内重新插入；A 设备应当再次枚举 B 设备
+6) 移除 B 设备（拔micro B 插头）并10 秒后重新插入；A 设备应当***枚举 B 设备
+   如果 A 设备想要使用总线
 ```
 
 	echo 0 > /sys/bus/platform/devices/ci_hdrc.0/inputs/a_bus_drop
 	echo 1 > /sys/bus/platform/devices/ci_hdrc.0/inputs/a_bus_req
 
-   濡傛灉 B 璁惧鎯宠浣跨敤鎬荤嚎锛?
-   鍦?B 璁惧涓?:
+   如果 B 设备想要使用总线
+   B 设备:
 
 	echo 1 > /sys/bus/platform/devices/ci_hdrc.0/inputs/b_bus_req
 
 ```
-7) A 璁惧鏂數鎬荤嚎銆?
+7) A 设备断电总线
 ```
 
 	echo 1 > /sys/bus/platform/devices/ci_hdrc.0/inputs/a_bus_drop
 
-   A 璁惧搴斿綋涓?B 璁惧鏂紑骞舵柇鐢垫€荤嚎銆?
+   A 设备应当B 设备断开并断电总线
 ```
-8) B 璁惧涓?SRP 鍋氭暟鎹剦鍐层€?
+8) B 设备SRP 做数据脉冲
 ```
 
 	echo 1 > /sys/bus/platform/devices/ci_hdrc.0/inputs/b_bus_req
 
-   A 璁惧搴斿綋鎭㈠ usb 鎬荤嚎骞舵灇涓?B 璁惧銆?
+   A 设备应当恢复 usb 总线并枚B 设备
 ```
-### 1.3 鍙傝€冩枃妗?
+### 1.3 参考文
 
 "On-The-Go and Embedded Host Supplement to the USB Revision 2.0 Specification
 July 27, 2012 Revision 2.0 version 1.1a"
 
-### 2. 濡備綍灏?USB 鍚敤涓虹郴缁熷敜閱掓簮
+### 2. 如何USB 启用为系统唤醒源
 
 
-浠ヤ笅鏄浣曞湪 imx6 骞冲彴涓婂皢 USB 鍚敤涓虹郴缁熷敜閱掓簮鐨勭ず渚嬨€?
+以下是如何在 imx6 平台上将 USB 启用为系统唤醒源的示例
 ```
 
 	echo enabled > /sys/bus/platform/devices/ci_hdrc.0/power/wakeup
@@ -109,7 +109,7 @@ July 27, 2012 Revision 2.0 version 1.1a"
 	echo enabled > /sys/bus/usb/devices/1-1/power/wakeup
 
 ```
-濡傛灉绯荤粺鍙湁涓€涓?usb 绔彛锛屽苟涓斾綘鎯冲湪璇ョ鍙ｅ惎鐢?usb 鍞ら啋锛屼綘
+如果系统只有一usb 端口，并且你想在该端口启usb 唤醒，你
 ```
 
 	for i in $(find /sys -name wakeup | grep usb);do echo enabled > $i;done;

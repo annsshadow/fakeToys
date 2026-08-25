@@ -1,36 +1,36 @@
 ﻿
 
 
-######## 璋冭皭鍣ㄤ笌璋冨埗鍣?
+######## 璋冭皭鍣ㄤ笌璋冨埗鍣。
 
 
-## 璋冭皭鍣?
+## 璋冭皭鍣。
 
-瑙嗛杈撳叆璁惧鍙互鎷ユ湁涓€涓垨澶氫釜瑙ｈ皟 RF 淇″彿鐨勮皟璋愬櫒銆傛瘡涓皟璋愬櫒鍏宠仈涓€涓垨澶氫釜
-瑙嗛杈撳叆锛屽叿浣撳彇鍐充簬璋冭皭鍣ㄤ笂 RF 杩炴帴鍣ㄧ殑鏁伴噺銆傜敱 VIDIOC_ENUMINPUT ioctl 杩斿洖鐨?鐩稿簲缁撴瀯浣?`v4l2_input` 鐨?`type` 瀛楁琚涓?`V4L2_INPUT_TYPE_TUNER`锛屽叾
-`tuner` 瀛楁鍖呭惈璇ヨ皟璋愬櫒鐨勭储寮曞彿銆?
-灏勯杈撳叆璁惧鎭板ソ鏈変竴涓储寮曚负 0 鐨勮皟璋愬櫒锛屾病鏈夎棰戣緭鍏ャ€?
-搴旂敤绋嬪簭浣跨敤 VIDIOC_G_TUNER <VIDIOC_G_TUNER> 鍜?VIDIOC_S_TUNER <VIDIOC_G_TUNER> ioctl 鍒嗗埆鏌ヨ鍜屾洿鏀硅皟璋愬櫒灞炴€с€俈IDIOC_G_TUNER <VIDIOC_G_TUNER>
-杩斿洖鐨?`v4l2_tuner` 缁撴瀯浣撹繕鍖呭惈褰撳墠瑙嗛鎴栧皠棰戣緭鍏ユ墍瀵瑰簲鐨勮皟璋愬櫒琚煡璇㈡椂
-閫傜敤鐨勪俊鍙风姸鎬佷俊鎭€?
+视频输入设备可以拥有一个或多个解调 RF 信号的调谐器。每个调谐器关联一个或多个
+视频输入，具体取决于调谐器上 RF 连接器的数量。由 VIDIOC_ENUMINPUT ioctl 返回相应结构`v4l2_input` `type` 字段被设`V4L2_INPUT_TYPE_TUNER`，其
+`tuner` 字段包含该调谐器的索引号
+射频输入设备恰好有一个索引为 0 的调谐器，没有视频输入
+应用程序使用 VIDIOC_G_TUNER <VIDIOC_G_TUNER> VIDIOC_S_TUNER <VIDIOC_G_TUNER> ioctl 分别查询和更改调谐器属性。VIDIOC_G_TUNER <VIDIOC_G_TUNER>
+返回`v4l2_tuner` 结构体还包含当前视频或射频输入所对应的调谐器被查询时
+适用的信号状态信息
 
-   VIDIOC_S_TUNER <VIDIOC_G_TUNER> 鍦ㄦ湁澶氫釜璋冭皭鍣ㄦ椂骞朵笉浼氬垏鎹㈠綋鍓嶈皟璋愬櫒銆傝皟璋愬櫒
-   瀹屽叏鐢卞綋鍓嶈棰戣緭鍏ュ喅瀹氥€傚綋璁惧鎷ユ湁涓€涓垨澶氫釜璋冭皭鍣ㄦ椂锛岄┍鍔ㄥ繀椤诲悓鏃舵敮鎸佽繖涓や釜
-   ioctl锛屽苟鍦?VIDIOC_QUERYCAP ioctl 杩斿洖鐨?`v4l2_capability` 缁撴瀯浣撲腑璁剧疆
-   `V4L2_CAP_TUNER` 鏍囧織銆?
+   VIDIOC_S_TUNER <VIDIOC_G_TUNER> 在有多个调谐器时并不会切换当前调谐器。调谐器
+   完全由当前视频输入决定。当设备拥有一个或多个调谐器时，驱动必须同时支持这两个
+   ioctl，并VIDIOC_QUERYCAP ioctl 返回`v4l2_capability` 结构体中设置
+   `V4L2_CAP_TUNER` 标志
 
-## 璋冨埗鍣?
+## 璋冨埗鍣。
 
-瑙嗛杈撳嚭璁惧鍙互鎷ユ湁涓€涓垨澶氫釜璋冨埗鍣紝鐢ㄤ簬灏嗚棰戜俊鍙疯皟鍒跺悗杈愬皠鍑哄幓锛屾垨杩炴帴鍒?鐢佃鏈烘垨褰曞儚鏈虹殑澶╃嚎杈撳叆绔€傛瘡涓皟鍒跺櫒鍏宠仈涓€涓垨澶氫釜瑙嗛杈撳嚭锛屽叿浣撳彇鍐充簬璋冨埗鍣?涓?RF 杩炴帴鍣ㄧ殑鏁伴噺銆傜敱 VIDIOC_ENUMOUTPUT ioctl 杩斿洖鐨勭浉搴?`v4l2_output` 缁撴瀯浣撶殑 `type` 瀛楁琚涓?`V4L2_OUTPUT_TYPE_MODULATOR`锛屽叾
-`modulator` 瀛楁鍖呭惈璇ヨ皟鍒跺櫒鐨勭储寮曞彿銆?
-灏勯杈撳嚭璁惧鎭板ソ鏈変竴涓储寮曚负 0 鐨勮皟鍒跺櫒锛屾病鏈夎棰戣緭鍑恒€?
-瑙嗛鎴栧皠棰戣澶囦笉鑳藉悓鏃舵敮鎸佽皟璋愬櫒鍜岃皟鍒跺櫒銆傛绫荤‖浠跺繀椤讳娇鐢ㄤ袱涓嫭绔嬬殑璁惧鑺傜偣锛?涓€涓敮鎸佽皟璋愬櫒鍔熻兘锛屼竴涓敮鎸佽皟鍒跺櫒鍔熻兘銆傚師鍥犲湪浜?VIDIOC_S_FREQUENCY <VIDIOC_G_FREQUENCY>
-ioctl 鐨勯檺鍒讹細鏃犳硶鎸囨槑棰戠巼鏄粰璋冭皭鍣ㄨ繕鏄皟鍒跺櫒浣跨敤銆?
-搴旂敤绋嬪簭浣跨敤 VIDIOC_G_MODULATOR <VIDIOC_G_MODULATOR> 鍜?VIDIOC_S_MODULATOR <VIDIOC_G_MODULATOR> ioctl 鏌ヨ鍜屾洿鏀硅皟鍒跺櫒灞炴€с€傛敞鎰忥紝褰撳瓨鍦ㄥ涓?璋冨埗鍣ㄦ椂锛孷IDIOC_S_MODULATOR <VIDIOC_G_MODULATOR> 骞朵笉浼氬垏鎹㈠綋鍓嶈皟鍒跺櫒銆傝皟鍒跺櫒瀹屽叏鐢卞綋鍓嶈棰戣緭鍑哄喅瀹氥€傚綋璁惧鎷ユ湁
-涓€涓垨澶氫釜璋冨埗鍣ㄦ椂锛岄┍鍔ㄥ繀椤诲悓鏃舵敮鎸佽繖涓や釜 ioctl锛屽苟鍦?VIDIOC_QUERYCAP ioctl 杩斿洖鐨?`v4l2_capability` 缁撴瀯浣撲腑璁剧疆
-`V4L2_CAP_MODULATOR` 鏍囧織銆?
+视频输出设备可以拥有一个或多个调制器，用于将视频信号调制后辐射出去，或连接电视机或录像机的天线输入端。每个调制器关联一个或多个视频输出，具体取决于调制RF 连接器的数量。由 VIDIOC_ENUMOUTPUT ioctl 返回的相`v4l2_output` 结构体的 `type` 字段被设`V4L2_OUTPUT_TYPE_MODULATOR`，其
+`modulator` 字段包含该调制器的索引号
+射频输出设备恰好有一个索引为 0 的调制器，没有视频输出
+视频或射频设备不能同时支持调谐器和调制器。此类硬件必须使用两个独立的设备节点一个支持调谐器功能，一个支持调制器功能。原因在VIDIOC_S_FREQUENCY <VIDIOC_G_FREQUENCY>
+ioctl 的限制：无法指明频率是给调谐器还是调制器使用
+应用程序使用 VIDIOC_G_MODULATOR <VIDIOC_G_MODULATOR> VIDIOC_S_MODULATOR <VIDIOC_G_MODULATOR> ioctl 查询和更改调制器属性。注意，当存在多调制器时，VIDIOC_S_MODULATOR <VIDIOC_G_MODULATOR> 并不会切换当前调制器。调制器完全由当前视频输出决定。当设备拥有
+一个或多个调制器时，驱动必须同时支持这两个 ioctl，并VIDIOC_QUERYCAP ioctl 返回`v4l2_capability` 结构体中设置
+`V4L2_CAP_MODULATOR` 标志
 
-## 灏勯
+## 射频
 
 
-搴旂敤绋嬪簭浣跨敤 VIDIOC_G_FREQUENCY <VIDIOC_G_FREQUENCY> 鍜?VIDIOC_S_FREQUENCY <VIDIOC_G_FREQUENCY> ioctl 鏉ヨ幏鍙栧拰璁剧疆璋冭皭鍣ㄦ垨璋冨埗鍣ㄧ殑灏勯棰戠巼锛?杩欎袱涓?ioctl 閮芥帴鍙椾竴涓寚鍚?`v4l2_frequency` 缁撴瀯浣撶殑鎸囬拡銆傝繖浜?ioctl 鍚屾牱閫傜敤浜?鐢佃鍜屽皠棰戣澶囥€傚綋鏀寔璋冭皭鍣ㄦ垨璋冨埗鍣?ioctl锛屾垨璁惧涓哄皠棰戣澶囨椂锛岄┍鍔ㄥ繀椤诲悓鏃?鏀寔杩欎袱涓?ioctl銆?
+应用程序使用 VIDIOC_G_FREQUENCY <VIDIOC_G_FREQUENCY> VIDIOC_S_FREQUENCY <VIDIOC_G_FREQUENCY> ioctl 来获取和设置调谐器或调制器的射频频率这两ioctl 都接受一个指`v4l2_frequency` 结构体的指针。这ioctl 同样适用电视和射频设备。当支持调谐器或调制ioctl，或设备为射频设备时，驱动必须同支持这两ioctl

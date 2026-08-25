@@ -1,188 +1,188 @@
 ﻿
-## 鍚姩鏈熻拷韪紙Boot-time tracing锛?
+## 启动期追踪（Boot-time tracing
 
 
 :Author: Masami Hiramatsu <mhiramat@kernel.org>
 
-## 姒傝堪
+## 概述
 
 
-鍚姩鏈熻拷韪厑璁哥敤鎴峰湪鍚姩闃舵锛堝寘鎷澶囧垵濮嬪寲锛夎繘琛岃拷韪紝骞跺彲浣跨敤 ftrace 鐨勫叏閮ㄥ姛鑳斤紝
-鍖呮嫭鎸変簨浠剁殑杩囨护涓庡姩浣溿€佺洿鏂瑰浘銆乲probe 浜嬩欢锛坘probe-events锛変笌鍚堟垚浜嬩欢
-锛坰ynthetic-events锛夛紝浠ュ強杩借釜瀹炰緥锛坱race instances锛夈€?
-鐢变簬鍐呮牳鍛戒护琛屼笉瓒充互鎺у埗杩欎簺澶嶆潅鐨勫姛鑳斤紝杩欓噷浣跨敤 bootconfig 鏂囦欢鏉ユ弿杩拌拷韪姛鑳界殑
-缂栫▼閰嶇疆銆?
+启动期追踪允许用户在启动阶段（包括设备初始化）进行追踪，并可使用 ftrace 的全部功能，
+包括按事件的过滤与动作、直方图、kprobe 事件（kprobe-events）与合成事件
+（synthetic-events），以及追踪实例（trace instances）
+由于内核命令行不足以控制这些复杂的功能，这里使用 bootconfig 文件来描述追踪功能的
+编程配置
 
-## Boot Config 涓殑閫夐」
-
-
-浠ヤ笅鏄惎鍔ㄦ湡杩借釜鍦?boot config 鏂囦欢 [^1^]_ 涓彲鐢ㄧ殑閫夐」鍒楄〃銆傛墍鏈夐€夐」閮戒綅浜?"ftrace."
-鎴?"kernel." 鍓嶇紑涔嬩笅銆備互 "kernel." 鍓嶇紑寮€澶寸殑閫夐」璇峰弬瑙佸唴鏍稿弬鏁?[^2^]_銆?
-
-### Ftrace 鍏ㄥ眬閫夐」
+## Boot Config 中的选项
 
 
-Ftrace 鍏ㄥ眬閫夐」鍦?boot config 涓娇鐢?"kernel." 鍓嶇紑锛岃繖鎰忓懗鐫€杩欎簺閫夐」鏄綔涓哄唴鏍?
-浼犵粺鍛戒护琛岀殑涓€閮ㄥ垎浼犲叆鐨勩€?
+以下是启动期追踪boot config 文件 [^1^]_ 中可用的选项列表。所有选项都位"ftrace."
+"kernel." 前缀之下。以 "kernel." 前缀开头的选项请参见内核参[^2^]_
+
+### Ftrace 全局选项
+
+
+Ftrace 全局选项boot config 中使"kernel." 前缀，这意味着这些选项是作为内
+传统命令行的一部分传入的
 
 kernel.tp_printk
-   鍚屾椂灏嗚拷韪簨浠舵暟鎹緭鍑哄埌 printk 缂撳啿鍖恒€?
+   同时将追踪事件数据输出到 printk 缓冲区
 
 kernel.dump_on_oops [= MODE]
-   鍦?Oops 鏃惰浆鍌?ftrace銆傚鏋?MODE = 1 鎴栫渷鐣ワ紝鍒欒浆鍌ㄦ墍鏈?CPU 涓婄殑杩借釜缂撳啿鍖恒€?
-   濡傛灉 MODE = 2锛屽垯鍙浆鍌ㄨЕ鍙?Oops 鐨勯偅涓?CPU 涓婄殑缂撳啿鍖恒€?
+   Oops 时转ftrace。如MODE = 1 或省略，则转储所CPU 上的追踪缓冲区
+   如果 MODE = 2，则只转储触Oops 的那CPU 上的缓冲区
 
 kernel.traceoff_on_warning
-   濡傛灉鍙戠敓 WARN_ON()锛屽垯鍋滄杩借釜銆?
+   如果发生 WARN_ON()，则停止追踪
 
 kernel.fgraph_max_depth = MAX_DEPTH
-   灏?fgraph tracer 鐨勬渶澶ф繁搴﹁涓?MAX_DEPTH銆?
+   fgraph tracer 的最大深度设MAX_DEPTH
 
 kernel.fgraph_filters = FILTER[, FILTER2...]
-   娣诲姞 fgraph 杩借釜鐨勫嚱鏁拌繃婊ゅ櫒銆?
+   添加 fgraph 追踪的函数过滤器
 
 kernel.fgraph_notraces = FILTER[, FILTER2...]
-   娣诲姞 fgraph 闈炶拷韪殑鍑芥暟杩囨护鍣ㄣ€?
+   添加 fgraph 非追踪的函数过滤器
 
-### Ftrace 姣忓疄渚嬮€夐」
+### Ftrace 每实例选项
 
 
-杩欎簺閫夐」鍙敤浜庢瘡涓疄渚嬶紝鍖呮嫭鍏ㄥ眬 ftrace 鑺傜偣銆?
+这些选项可用于每个实例，包括全局 ftrace 节点
 
 ftrace.[instance.INSTANCE.]options = OPT1[, OPT2[...]]
-   鍚敤缁欏畾鐨?ftrace 閫夐」銆?
+   启用给定ftrace 选项
 
 ftrace.[instance.INSTANCE.]tracing_on = 0|1
-   鍦ㄥ惎鍔ㄦ湡杩借釜寮€濮嬫椂锛屽惎鐢?绂佺敤璇ュ疄渚嬩笂鐨勮拷韪€?
-   锛堜綘涔熷彲浠ラ€氳繃 "traceon" 浜嬩欢瑙﹀彂鍔ㄤ綔鏉ュ惎鐢ㄥ畠锛?
+   在启动期追踪开始时，启禁用该实例上的追踪
+   （你也可以通过 "traceon" 事件触发动作来启用它
 
 ftrace.[instance.INSTANCE.]trace_clock = CLOCK
-   灏?ftrace 鐨?trace_clock 璁句负缁欏畾鐨?CLOCK銆?
+   ftrace trace_clock 设为给定CLOCK
 
 ftrace.[instance.INSTANCE.]buffer_size = SIZE
-   灏?ftrace 缂撳啿鍖哄ぇ灏忛厤缃负 SIZE銆傝 SIZE 鍙互浣跨敤 "KB" 鎴?"MB"銆?
+   ftrace 缓冲区大小配置为 SIZE。该 SIZE 可以使用 "KB" "MB"
 
 ftrace.[instance.INSTANCE.]alloc_snapshot
-   鍒嗛厤蹇収缂撳啿鍖恒€?
+   分配快照缓冲区
 
 ftrace.[instance.INSTANCE.]cpumask = CPUMASK
-   灏?CPUMASK 璁句负杩借釜鐨?CPU 鎺╃爜銆?
+   CPUMASK 设为追踪CPU 掩码
 
 ftrace.[instance.INSTANCE.]events = EVENT[, EVENT2[...]]
-   鍦ㄥ惎鍔ㄦ椂鍚敤缁欏畾鐨勪簨浠躲€侲VENT 涓彲浠ヤ娇鐢ㄩ€氶厤绗︺€?
+   在启动时启用给定的事件。EVENT 中可以使用通配符
 
 ftrace.[instance.INSTANCE.]tracer = TRACER
-   鍦ㄥ惎鍔ㄦ椂灏嗗綋鍓?tracer 璁句负 TRACER銆傦紙渚嬪 function锛?
+   在启动时将当tracer 设为 TRACER。（例如 function
 
 ftrace.[instance.INSTANCE.]ftrace.filters
-   鎺ュ彈涓€缁勮拷韪嚱鏁拌繃婊よ鍒欍€?
+   接受一组追踪函数过滤规则
 
 ftrace.[instance.INSTANCE.]ftrace.notraces
-   鎺ュ彈涓€缁勯潪杩借釜鍑芥暟杩囨护瑙勫垯銆?
+   接受一组非追踪函数过滤规则
 
-### Ftrace 姣忎簨浠堕€夐」
+### Ftrace 每事件选项
 
 
-杩欎簺閫夐」鐢ㄤ簬璁剧疆姣忎簨浠剁殑閫夐」銆?
+这些选项用于设置每事件的选项
 
 ftrace.[instance.INSTANCE.]event.GROUP.EVENT.enable
-   鍚敤 GROUP:EVENT 鐨勮拷韪€?
+   启用 GROUP:EVENT 的追踪
 
 ftrace.[instance.INSTANCE.]event.GROUP.enable
-   鍚敤 GROUP 鍐呯殑鎵€鏈変簨浠惰拷韪€?
+   启用 GROUP 内的所有事件追踪
 
 ftrace.[instance.INSTANCE.]event.enable
-   鍚敤鎵€鏈変簨浠惰拷韪€?
+   启用所有事件追踪
 
 ftrace.[instance.INSTANCE.]event.GROUP.EVENT.filter = FILTER
-   灏?FILTER 瑙勫垯璁剧疆鍒?GROUP:EVENT銆?
+   FILTER 规则设置GROUP:EVENT
 
 ftrace.[instance.INSTANCE.]event.GROUP.EVENT.actions = ACTION[, ACTION2[...]]
-   灏?ACTION 璁剧疆鍒?GROUP:EVENT銆?
+   ACTION 设置GROUP:EVENT
 
 ftrace.[instance.INSTANCE.]event.kprobes.EVENT.probes = PROBE[, PROBE2[...]]
-   鍩轰簬 PROBEs 瀹氫箟鏂扮殑 kprobe 浜嬩欢銆傚彲浠ュ湪涓€涓簨浠朵笂瀹氫箟澶氫釜鎺㈤拡锛屼絾杩欎簺鎺㈤拡
-   蹇呴』鍏锋湁鐩稿悓绫诲瀷鐨勫弬鏁般€傝閫夐」浠呭缁勫悕涓?"kprobes" 鐨勪簨浠跺彲鐢ㄣ€?
+   基于 PROBEs 定义新的 kprobe 事件。可以在一个事件上定义多个探针，但这些探针
+   必须具有相同类型的参数。该选项仅对组名"kprobes" 的事件可用
 
 ftrace.[instance.INSTANCE.]event.synthetic.EVENT.fields = FIELD[, FIELD2[...]]
-   鐢?FIELDs 瀹氫箟鏂扮殑鍚堟垚浜嬩欢銆傛瘡涓瓧娈靛簲涓?"type varname"銆?
+   FIELDs 定义新的合成事件。每个字段应"type varname"
 
-娉ㄦ剰锛宬probe 涓庡悎鎴愪簨浠剁殑瀹氫箟鍙互鍐欏湪瀹炰緥鑺傜偣涔嬩笅锛屼絾瀹冧滑鍦ㄥ叾浠栧疄渚嬩腑涔熸槸鍙鐨勩€?
-鍥犳璇锋敞鎰忎簨浠跺悕鍐茬獊鐨勯棶棰樸€?
+注意，kprobe 与合成事件的定义可以写在实例节点之下，但它们在其他实例中也是可见的
+因此请注意事件名冲突的问题
 
-### Ftrace 鐩存柟鍥鹃€夐」
+### Ftrace 直方图选项
 
 
-鐢变簬灏嗙洿鏂瑰浘鍔ㄤ綔浣滀负姣忎簨浠?action 閫夐」鐨勫瓧绗︿覆鏉ュ啓浼氳繃闀匡紝杩欓噷鎻愪緵浜嗕綅浜庢瘡浜嬩欢
-'hist' 瀛愰敭涓嬬殑鏍戝舰閫夐」锛岀敤浜庨厤缃洿鏂瑰浘鍔ㄤ綔銆傚叧浜庢瘡涓弬鏁扮殑璇︾粏淇℃伅锛岃闃呰浜嬩欢
-鐩存柟鍥炬枃妗ｏ紙Documentation/trace/histogram.rst锛夈€?
+由于将直方图动作作为每事action 选项的字符串来写会过长，这里提供了位于每事件
+'hist' 子键下的树形选项，用于配置直方图动作。关于每个参数的详细信息，请阅读事件
+直方图文档（Documentation/trace/histogram.rst）
 
 ftrace.[instance.INSTANCE.]event.GROUP.EVENT.hist.[N.]keys = KEY1[, KEY2[...]]
-  璁剧疆鐩存柟鍥鹃敭鍙傛暟銆傦紙蹇呭～锛?
-  'N' 鏄敤浜庡涓洿鏂瑰浘鐨勬暟鍊煎瓧绗︿覆銆傚鏋滆浜嬩欢涓婂彧鏈変竴涓洿鏂瑰浘锛屽彲浠ョ渷鐣ュ畠銆?
+  设置直方图键参数。（必填
+  'N' 是用于多个直方图的数值字符串。如果该事件上只有一个直方图，可以省略它
 
 ftrace.[instance.INSTANCE.]event.GROUP.EVENT.hist.[N.]values = VAL1[, VAL2[...]]
-  璁剧疆鐩存柟鍥惧€煎弬鏁般€?
+  设置直方图值参数
 
 ftrace.[instance.INSTANCE.]event.GROUP.EVENT.hist.[N.]sort = SORT1[, SORT2[...]]
-  璁剧疆鐩存柟鍥炬帓搴忓弬鏁伴€夐」銆?
+  设置直方图排序参数选项
 
 ftrace.[instance.INSTANCE.]event.GROUP.EVENT.hist.[N.]size = NR_ENTRIES
-  璁剧疆鐩存柟鍥惧ぇ灏忥紙鏉＄洰鏁帮級銆?
+  设置直方图大小（条目数）
 
 ftrace.[instance.INSTANCE.]event.GROUP.EVENT.hist.[N.]name = NAME
-  璁剧疆鐩存柟鍥惧悕绉般€?
+  设置直方图名称
 
 ftrace.[instance.INSTANCE.]event.GROUP.EVENT.hist.[N.]var.VARIABLE = EXPR
-  閫氳繃 EXPR 琛ㄨ揪寮忓畾涔変竴涓柊鐨?VARIABLE銆?
+  通过 EXPR 表达式定义一个新VARIABLE
 
 ftrace.[instance.INSTANCE.]event.GROUP.EVENT.hist.[N.]<pause|continue|clear>
-  璁剧疆鐩存柟鍥炬帶鍒跺弬鏁般€傚彲浠ヨ缃叾涓殑涓€涓€?
+  设置直方图控制参数。可以设置其中的一个
 
 ftrace.[instance.INSTANCE.]event.GROUP.EVENT.hist.[N.]onmatch.[M.]event = GROUP.EVENT
-  璁剧疆鐩存柟鍥?'onmatch' 澶勭悊鍣ㄥ尮閰嶇殑浜嬩欢鍙傛暟銆?
-  'M' 鏄敤浜庡涓?'onmatch' 澶勭悊鍣ㄧ殑鏁板€煎瓧绗︿覆銆傚鏋滄鐩存柟鍥句笂鍙湁涓€涓?'onmatch'
-  澶勭悊鍣紝鍙互鐪佺暐瀹冦€?
+  设置直方'onmatch' 处理器匹配的事件参数
+  'M' 是用于多'onmatch' 处理器的数值字符串。如果此直方图上只有一'onmatch'
+  处理器，可以省略它
 
 ftrace.[instance.INSTANCE.]event.GROUP.EVENT.hist.[N.]onmatch.[M.]trace = EVENT[, ARG1[...]]
-  涓?'onmatch' 璁剧疆鐩存柟鍥?'trace' 鍔ㄤ綔銆?
-  EVENT 蹇呴』鏄悎鎴愪簨浠跺悕锛岃€?ARG1... 鏄浜嬩欢鐨勫弬鏁般€傚鏋滆缃簡 'onmatch.event'
-  閫夐」鍒欎负蹇呭～銆?
+  'onmatch' 设置直方'trace' 动作
+  EVENT 必须是合成事件名，ARG1... 是该事件的参数。如果设置了 'onmatch.event'
+  选项则为必填
 
 ftrace.[instance.INSTANCE.]event.GROUP.EVENT.hist.[N.]onmax.[M.]var = VAR
-  璁剧疆鐩存柟鍥?'onmax' 澶勭悊鍣ㄥ彉閲忓弬鏁般€?
+  设置直方'onmax' 处理器变量参数
 
 ftrace.[instance.INSTANCE.]event.GROUP.EVENT.hist.[N.]onchange.[M.]var = VAR
-  璁剧疆鐩存柟鍥?'onchange' 澶勭悊鍣ㄥ彉閲忓弬鏁般€?
+  设置直方'onchange' 处理器变量参数
 
 ftrace.[instance.INSTANCE.]event.GROUP.EVENT.hist.[N.]<onmax|onchange>.[M.]save = ARG1[, ARG2[...]]
-  涓?'onmax' 鎴?'onchange' 澶勭悊鍣ㄨ缃洿鏂瑰浘 'save' 鍔ㄤ綔鍙傛暟銆?
-  濡傛灉璁剧疆浜?'onmax.var' 鎴?'onchange.var' 閫夐」锛屽垯姝ら€夐」鎴栦笅闈㈢殑 'snapshot' 閫夐」涓哄繀濉€?
+  'onmax' 'onchange' 处理器设置直方图 'save' 动作参数
+  如果设置'onmax.var' 'onchange.var' 选项，则此选项或下面的 'snapshot' 选项为必填
 
 ftrace.[instance.INSTANCE.]event.GROUP.EVENT.hist.[N.]<onmax|onchange>.[M.]snapshot
-  涓?'onmax' 鎴?'onchange' 澶勭悊鍣ㄨ缃洿鏂瑰浘 'snapshot' 鍔ㄤ綔銆?
-  濡傛灉璁剧疆浜?'onmax.var' 鎴?'onchange.var' 閫夐」锛屽垯姝ら€夐」鎴栦笂闈㈢殑 'save' 閫夐」涓哄繀濉€?
+  'onmax' 'onchange' 处理器设置直方图 'snapshot' 动作
+  如果设置'onmax.var' 'onchange.var' 选项，则此选项或上面的 'save' 选项为必填
 
 ftrace.[instance.INSTANCE.]event.GROUP.EVENT.hist.filter = FILTER_EXPR
-  璁剧疆鐩存柟鍥捐繃婊よ〃杈惧紡銆傚湪 FILTER_EXPR 涓笉闇€瑕佸啓 'if'銆?
+  设置直方图过滤表达式。在 FILTER_EXPR 中不需要写 'if'
 
-娉ㄦ剰锛屽鏋滄瘡浜嬩欢鐨?'actions' 閫夐」鍖呭惈鐩存柟鍥惧姩浣滐紝鍒欒 'hist' 閫夐」鍙兘涓庡叾鍐茬獊銆?
+注意，如果每事件'actions' 选项包含直方图动作，则该 'hist' 选项可能与其冲突
 
-## 浣曟椂鍚姩
-
-
-鎵€鏈変互 `ftrace` 寮€澶寸殑鍚姩鏈熻拷韪€夐」閮戒細鍦?core_initcall 缁撴潫鏃跺惎鐢ㄣ€傝繖鎰忓懗鐫€浣犲彲浠?
-杩借釜浠?postcore_initcall 寮€濮嬬殑浜嬩欢銆傚ぇ澶氭暟瀛愮郴缁熷拰涓庢灦鏋勭浉鍏崇殑椹卞姩浼氬湪閭ｄ箣鍚庡垵濮嬪寲
-锛坅rch_initcall 鎴?subsys_initcall锛夈€傚洜姝わ紝浣犲彲浠ョ敤鍚姩鏈熻拷韪潵杩借釜瀹冧滑銆?
-濡傛灉浣犲笇鏈涘湪 core_initcall 涔嬪墠杩借釜浜嬩欢锛屽彲浠ヤ娇鐢ㄤ互 `kernel` 寮€澶寸殑閫夐」銆傚叾涓儴鍒?
-閫夐」浼氭瘮 initcall 澶勭悊鏇存棭鍚敤锛堜緥濡?`kernel.ftrace=function` 鍜?`kernel.trace_event`
-浼氬湪 initcall 涔嬪墠鍚姩锛夈€?
-
-## 绀轰緥
+## 何时启动
 
 
-渚嬪锛岃涓烘瘡涓簨浠舵坊鍔犺繃婊ゅ櫒鍜屽姩浣溿€佸畾涔?kprobe 浜嬩欢浠ュ強甯︾洿鏂瑰浘鐨勫悎鎴愪簨浠讹紝鍙互缂栧啓
-濡備笅 boot config
+所有以 `ftrace` 开头的启动期追踪选项都会core_initcall 结束时启用。这意味着你可
+追踪postcore_initcall 开始的事件。大多数子系统和与架构相关的驱动会在那之后初始化
+（arch_initcall subsys_initcall）。因此，你可以用启动期追踪来追踪它们
+如果你希望在 core_initcall 之前追踪事件，可以使用以 `kernel` 开头的选项。其中部
+选项会比 initcall 处理更早启用（例`kernel.ftrace=function` `kernel.trace_event`
+会在 initcall 之前启动）
+
+## 示例
+
+
+例如，要为每个事件添加过滤器和动作、定kprobe 事件以及带直方图的合成事件，可以编写
+如下 boot config
 ```
 
   ftrace.event {
@@ -218,8 +218,8 @@ ftrace.[instance.INSTANCE.]event.GROUP.EVENT.hist.filter = FILTER_EXPR
   }
 
 ```
-姝ゅ锛屽惎鍔ㄦ湡杩借釜鏀寔 "instance" 鑺傜偣锛屽厑璁告垜浠悓鏃朵负涓嶅悓鐩殑杩愯澶氫釜 tracer銆備緥濡傦紝
-涓€涓?tracer 鐢ㄤ簬杩借釜浠?"user\_" 寮€澶寸殑鍑芥暟锛屽彟涓€涓拷韪?
+此外，启动期追踪支持 "instance" 节点，允许我们同时为不同目的运行多个 tracer。例如，
+一tracer 用于追踪"user\_" 开头的函数，另一个追
 ```
   ftrace.instance {
         foo {
@@ -233,10 +233,10 @@ ftrace.[instance.INSTANCE.]event.GROUP.EVENT.hist.filter = FILTER_EXPR
   }
 
 ```
-瀹炰緥鑺傜偣涔熸帴鍙椾簨浠惰妭鐐癸紝鍥犳姣忎釜瀹炰緥鍙互鑷畾涔夊叾浜嬩欢杩借釜銆?
+实例节点也接受事件节点，因此每个实例可以自定义其事件追踪
 
-鍊熷姪瑙﹀彂鍔ㄤ綔涓?kprobe锛屼綘鍙互鍦ㄦ煇涓嚱鏁拌璋冪敤鏃惰拷韪叾鍑芥暟鍥撅紙function-graph锛夈€備緥濡傦紝
-杩欏皢杩借釜濡備笅浠ｇ爜涓殑鍏ㄩ儴鍑芥暟璋冪敤
+借助触发动作kprobe，你可以在某个函数被调用时追踪其函数图（function-graph）。例如，
+这将追踪如下代码中的全部函数调用
 ```
   ftrace {
         tracing_on = 0
@@ -255,7 +255,7 @@ ftrace.[instance.INSTANCE.]event.GROUP.EVENT.hist.filter = FILTER_EXPR
 
 
 ```
-姝ゅ惎鍔ㄦ湡杩借釜涔熼€氳繃 boot config 鏀寔 ftrace 鍐呮牳鍙傛暟銆?
+此启动期追踪也通过 boot config 支持 ftrace 内核参数
 ```
   trace_options=sym-addr trace_event=initcall:* tp_printk trace_buf_size=1M ftrace=function ftrace_filter="vfs*"
 
@@ -271,4 +271,4 @@ ftrace.[instance.INSTANCE.]event.GROUP.EVENT.hist.filter = FILTER_EXPR
   }
 
 ```
-娉ㄦ剰锛屽弬鏁颁互 "kernel" 鍓嶇紑鑰岄潪 "ftrace" 鍓嶇紑寮€澶淬€?
+注意，参数以 "kernel" 前缀而非 "ftrace" 前缀开头

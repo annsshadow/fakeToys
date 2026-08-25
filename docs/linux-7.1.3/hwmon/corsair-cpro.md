@@ -1,44 +1,44 @@
 ﻿
-## 鍐呮牳椹卞姩 corsair-cpro
+## 内核驱动 corsair-cpro
 
 
-鏀寔鐨勮澶囷細
+支持的设备：
 
   - Corsair Commander Pro
   - Corsair Commander Pro (1000D)
 
 Author: Marius Zachmann
 
-### 鎻忚堪
+### 描述
 
 
-璇ラ┍鍔ㄤ负 Corsair Commander Pro 瀹炵幇 sysfs 鎺ュ彛銆侰orsair Commander Pro 鏄竴涓甫鏈?6 涓鎵囨帴鍙ｃ€? 涓俯搴︿紶鎰熷櫒鎺ュ彛鍜?2 涓?Corsair LED 鎺ュ彛鐨?USB 璁惧銆傚畠鍙互璇诲彇 SATA 鐢垫簮鎺ュ彛涓婄殑鐢靛帇鐢靛钩銆?
+该驱动为 Corsair Commander Pro 实现 sysfs 接口。Corsair Commander Pro 是一个带6 个风扇接口 个温度传感器接口2 Corsair LED 接口USB 设备。它可以读取 SATA 电源接口上的电压电平
 
-### 浣跨敤璇存槑
+### 使用说明
 
 
-鐢变簬瀹冩槸 USB 璁惧锛屾敮鎸佺儹鎻掓嫈銆傝澶囦細琚嚜鍔ㄦ娴嬨€?
+由于它是 USB 设备，支持热插拔。设备会被自动检测
 
-### Sysfs 鏉＄洰
+### Sysfs 条目
 
 
 ======================= =====================================================================
-in0_input		 SATA 12v 涓婄殑鐢靛帇
-in1_input		 SATA 5v 涓婄殑鐢靛帇
-in2_input		 SATA 3.3v 涓婄殑鐢靛帇
-temp[1-4]_input		 鎵€杩炴帴娓╁害浼犳劅鍣ㄤ笂鐨勬俯搴?
-fan[1-6]_input		 鎵€杩炴帴椋庢墖鐨勮浆閫燂紙rpm锛夈€?
-fan[1-6]_label		 鏄剧ず璁惧妫€娴嬪埌鐨勯鎵囩被鍨嬨€?
-fan[1-6]_target		 璁剧疆椋庢墖杞€熺洰鏍?rpm銆?
-			 璇诲彇鏃讹紝濡傛灉鍦ㄩ┍鍔ㄨ缃繃璇ュ€煎垯鎶ュ憡涓婃鐨勫€笺€?
-			 鍚﹀垯杩斿洖閿欒銆?
-pwm[1-6]		 璁剧疆椋庢墖杞€熴€傚彇鍊?0-255銆傚彧鏈夊湪鐩存帴璁剧疆杩?pwm 鏃舵墠鑳借鍙栥€?
+in0_input		 SATA 12v 上的电压
+in1_input		 SATA 5v 上的电压
+in2_input		 SATA 3.3v 上的电压
+temp[1-4]_input		 所连接温度传感器上的温
+fan[1-6]_input		 所连接风扇的转速（rpm）
+fan[1-6]_label		 显示设备检测到的风扇类型
+fan[1-6]_target		 设置风扇转速目rpm
+			 读取时，如果在驱动设置过该值则报告上次的值
+			 否则返回错误
+pwm[1-6]		 设置风扇转速。取0-255。只有在直接设置pwm 时才能读取
 ======================= =====================================================================
 
-### Debugfs 鏉＄洰
+### Debugfs 条目
 
 
 ======================= ===================
-firmware_version	 鍥轰欢鐗堟湰
-bootloader_version	 寮曞鍔犺浇绋嬪簭鐗堟湰
+firmware_version	 固件版本
+bootloader_version	 引导加载程序版本
 ======================= ===================

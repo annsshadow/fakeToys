@@ -1,9 +1,9 @@
-﻿## 澶?tile 璁惧
+﻿## tile 设备
 
-鏈〉浠嬬粛 Xe 鏄惧崱椹卞姩涓澶?tile 璁惧锛圡ulti-tile锛夌殑鏀寔锛屽寘鍚 tile 鏋舵瀯璁捐璇存槑浠ュ強鐩稿簲鐨勫唴閮?API銆?
+本页介绍 Xe 显卡驱动中对tile 设备（Multi-tile）的支持，包含多 tile 架构设计说明以及相应的内API
 
    :doc: Multi-tile Design
 
-## 鍐呴儴 API
+## 内部 API
 
    :internal:

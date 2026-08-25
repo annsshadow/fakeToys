@@ -1,20 +1,20 @@
-﻿## am65-cpsw-nuss 鐨?devlink 鏀寔
+﻿## am65-cpsw-nuss devlink 支持
 
 
-鏈枃妗ｆ弿杩颁簡 `am65-cpsw-nuss` 璁惧椹卞姩瀹炵幇鐨?devlink 鐗规€с€?
+本文档描述了 `am65-cpsw-nuss` 设备驱动实现devlink 特性
 
-## 鍙傛暟
+## 参数
 
 
-`am65-cpsw-nuss` 椹卞姩瀹炵幇浜嗕互涓嬮┍鍔ㄧ壒瀹氱殑鍙傛暟銆?
+`am65-cpsw-nuss` 驱动实现了以下驱动特定的参数
 
    :widths: 5 5 5 85
 
-   - - 鍚嶇О
-     - 绫诲瀷
-     - 妯″紡
-     - 鎻忚堪
+   - - 名称
+     - 类型
+     - 模式
+     - 描述
    - - `switch_mode`
      - Boolean
      - runtime
-     - 鍚敤浜ゆ崲妯″紡
+     - 启用交换模式

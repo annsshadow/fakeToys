@@ -1,36 +1,36 @@
 ﻿######## ioctl FE_DISEQC_SEND_MASTER_CMD
 
 
-## 鍚嶇О
+## 名称
 
 
-FE_DISEQC_SEND_MASTER_CMD - 鍙戦€?DiSEqC 鍛戒护
+FE_DISEQC_SEND_MASTER_CMD - 发DiSEqC 命令
 
-## 鎽樿
+## 摘要
 
 
 
 `int ioctl(int fd, FE_DISEQC_SEND_MASTER_CMD, struct dvb_diseqc_master_cmd *argp)`
 
-## 鍙傛暟
+## 参数
 
 
 `fd`
-    鐢?`open()` 杩斿洖鐨勬枃浠舵弿杩扮銆?
+    `open()` 返回的文件描述符
 
 `argp`
-    鎸囧悜缁撴瀯浣?`dvb_diseqc_master_cmd` 鐨勬寚閽?
+    指向结构`dvb_diseqc_master_cmd` 的指
 
-## 璇存槑
-
-
-灏?`dvb_diseqc_master_cmd` 鎸囧悜鐨?DiSEqC 鍛戒护鍙戦€佸埌澶╃嚎瀛愮郴缁熴€?
-
-## 杩斿洖鍊?
+## 说明
 
 
-鎴愬姛鏃惰繑鍥?0銆?
+`dvb_diseqc_master_cmd` 指向DiSEqC 命令发送到天线子系统
 
-鍑洪敊鏃惰繑鍥?-1锛屽苟鐩稿簲鍦拌缃?`errno` 鍙橀噺銆?
+## 杩斿洖鍊。
 
-閫氱敤閿欒鐮佸湪 Generic Error Codes <gen-errors> 绔犺妭涓弿杩般€?
+
+成功时返0
+
+出错时返-1，并相应地设`errno` 变量
+
+通用错误码在 Generic Error Codes <gen-errors> 章节中描述

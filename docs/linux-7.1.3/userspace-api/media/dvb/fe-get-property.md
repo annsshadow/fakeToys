@@ -4,12 +4,12 @@
 ######## ioctl FE_SET_PROPERTY, FE_GET_PROPERTY
 
 
-## 鍚嶇О
+## 名称
 
 
-FE_SET_PROPERTY - FE_GET_PROPERTY - FE_SET_PROPERTY 璁剧疆涓€涓垨澶氫釜鍓嶇灞炴€с€? FE_GET_PROPERTY 杩斿洖涓€涓垨澶氫釜鍓嶇灞炴€с€?
+FE_SET_PROPERTY - FE_GET_PROPERTY - FE_SET_PROPERTY 设置一个或多个前端属性 FE_GET_PROPERTY 返回一个或多个前端属性
 
-## 姒傝
+## 概要
 
 
 
@@ -18,51 +18,51 @@ FE_SET_PROPERTY - FE_GET_PROPERTY - FE_SET_PROPERTY 璁剧疆涓€涓垨澶�
 
 `int ioctl(int fd, FE_SET_PROPERTY, struct dtv_properties *argp)`
 
-## 鍙傛暟
+## 参数
 
 
 `fd`
-    `open()` 杩斿洖鐨勬枃浠舵弿杩扮銆?
+    `open()` 返回的文件描述符
 
 `argp`
-    鎸囧悜缁撴瀯浣?`dtv_properties` 鐨勬寚閽堛€?
+    指向结构`dtv_properties` 的指针
 
-## 鎻忚堪
+## 描述
 
 
-鎵€鏈夋暟瀛楃數瑙嗗墠绔澶囬兘鏀寔 `FE_SET_PROPERTY` 鍜?
-`FE_GET_PROPERTY` ioctls銆傛敮鎸佺殑灞炴€у拰缁熻淇℃伅
-鍙栧喅浜庝紶杈撶郴缁熷拰璁惧锛?
+所有数字电视前端设备都支持 `FE_SET_PROPERTY` 
+`FE_GET_PROPERTY` ioctls。支持的属性和统计信息
+取决于传输系统和设备
 
 - `FE_SET_PROPERTY:`
 
-   - 璇?ioctl 鐢ㄤ簬璁剧疆涓€涓垨澶氬墠绔睘鎬с€?
+   - ioctl 用于设置一个或多前端属性
 
-   - 杩欐槸璇锋眰鍓嶇璋冭皭鍒版煇涓鐜囧苟寮€濮嬭В鐮?
-      鏁板瓧鐢佃淇″彿鐨勫熀鏈懡浠ゃ€?
+   - 这是请求前端调谐到某个频率并开始解
+      数字电视信号的基本命令
 
-   - 璇ヨ皟鐢ㄩ渶瑕佸璁惧鍏锋湁璇诲啓璁块棶鏉冮檺銆?
+   - 该调用需要对设备具有读写访问权限
 
 
-   杩斿洖鏃讹紝鍊间笉浼氭洿鏂颁互鍙嶆槧瀹為檯
-   浣跨敤鐨勫弬鏁般€傚鏋滈渶瑕佸疄闄呭弬鏁帮紝鍒欓渶鏄惧紡
-   璋冪敤 `FE_GET_PROPERTY`銆?
+   返回时，值不会更新以反映实际
+   使用的参数。如果需要实际参数，则需显式
+   调用 `FE_GET_PROPERTY`
 
 - `FE_GET_PROPERTY:`
 
-   - 璇?ioctl 鐢ㄤ簬浠庡墠绔幏鍙栧睘鎬?
-      鍜岀粺璁′俊鎭€?
+   - ioctl 用于从前端获取属
+      和统计信息
 
-   - 涓嶄細鏇存敼浠讳綍灞炴€э紝涔熶笉浼氶噸缃粺璁′俊鎭€?
+   - 不会更改任何属性，也不会重置统计信息
 
-   - 璇ヨ皟鐢ㄤ粎闇€瑕佸璁惧鍏锋湁鍙璁块棶鏉冮檺銆?
+   - 该调用仅需要对设备具有只读访问权限
 
-## 杩斿洖鍊?
+## 杩斿洖鍊。
 
 
-鎴愬姛鏃惰繑鍥?0銆?
+成功时返0
 
-鍑洪敊鏃惰繑鍥?-1锛屽苟鐩稿簲鍦拌缃?`errno` 鍙橀噺銆?
+出错时返-1，并相应地设`errno` 变量
 
-閫氱敤閿欒鐮佸湪
-Generic Error Codes <gen-errors> 绔犺妭涓弿杩般€?
+通用错误码在
+Generic Error Codes <gen-errors> 章节中描述

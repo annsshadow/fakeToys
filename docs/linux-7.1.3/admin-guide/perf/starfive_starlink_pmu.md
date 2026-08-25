@@ -1,20 +1,20 @@
-﻿## StarFive StarLink 鎬ц兘鐩戞帶鍗曞厓锛圥MU锛?
+﻿## StarFive StarLink 性能监控单元（PMU
 
-StarFive StarLink 鎬ц兘鐩戞帶鍗曞厓锛圥MU锛変綅浜?StarLink 涓€鑷存€х墖涓婄綉缁滐紙CNoC锛変腑锛?璇ョ綉缁滃皢澶氫釜 CPU 闆嗙兢涓?L3 鍐呭瓨绯荤粺杩炴帴璧锋潵銆?
-璇?uncore PMU 鏀寔婧㈠嚭涓柇銆佹渶澶?16 涓彲缂栫▼ 64bit 浜嬩欢璁℃暟鍣紝浠ュ強涓€涓?鐙珛鐨?64bit 鍛ㄦ湡璁℃暟鍣ㄣ€侾MU 鍙兘閫氳繃鍐呭瓨鏄犲皠 I/O锛圡MIO锛夎闂紝骞朵笖瀵?杩炴帴鍒板悓涓€ PMU 鐨勬牳蹇冩潵璇存槸鍏变韩鐨勩€?
+StarFive StarLink 性能监控单元（PMU）位StarLink 一致性片上网络（CNoC）中该网络将多个 CPU 集群L3 内存系统连接起来
+uncore PMU 支持溢出中断、最16 个可编程 64bit 事件计数器，以及一独立64bit 周期计数器。PMU 只能通过内存映射 I/O（MMIO）访问，并且连接到同一 PMU 的核心来说是共享的
 ```
 
   /sys/bus/event_source/devices/starfive_starlink_pmu/events/
 
 ```
-椹卞姩鍦?sysfs 鐨勨€渃pumask鈥濈洰褰曚腑鏆撮湶鐢ㄤ簬澶勭悊 PMU 浜嬩欢鐨?cpu
+驱动sysfs 的“cpumask”目录中暴露用于处理 PMU 事件cpu
 
 ```
 
   /sys/bus/event_source/devices/starfive_starlink_pmu/cpumask/
 
 ```
-椹卞姩鍦?sysfs 鐨勨€渇ormat鈥濈洰褰曚腑鎻忚堪 config锛堜簨浠?ID锛夌殑鏍煎紡
+驱动sysfs 的“format”目录中描述 config（事ID）的格式
 
 ```
 
@@ -39,4 +39,4 @@ StarFive StarLink 鎬ц兘鐩戞帶鍗曞厓锛圥MU锛変綅浜?StarLink 涓€
 	$ perf stat -a -e /starfive_starlink_pmu/cycles/ sleep 1
 
 ```
-涓嶆敮鎸侀噰鏍枫€傚洜姝や笉鏀寔鈥減erf record鈥濄€備笉鏀寔闄勫姞鍒颁换鍔★紝浠呮敮鎸佺郴缁熻寖鍥寸殑璁℃暟銆?
+不支持采样。因此不支持“perf record”。不支持附加到任务，仅支持系统范围的计数

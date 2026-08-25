@@ -717,3 +717,63 @@ mod tests {
 
 
 }
+
+#[cfg(test)]
+mod office_preview_tests {
+    fn build_zip(entries: &[(&str, &str)]) -> Vec<u8> {
+        let buf = std::io::Cursor::new(Vec::new());
+        let mut w = zip::ZipWriter::new(buf);
+        let opts = zip::write::SimpleFileOptions::default();
+        for (name, content) in entries {
+            w.start_file(*name, opts).unwrap();
+            std::io::Write::write_all(&mut w, content.as_bytes()).unwrap();
+        }
+        w.finish().unwrap().into_inner()
+    }
+
+    #[test]
+    fn test_xlsx_to_html_renders_shared_and_literal_cells() {
+        let shared = "<?xml version=\"1.0\"?><sst><si><t>名称</t></si><si><t>数量</t></si></sst>";
+        let sheet = "<?xml version=\"1.0\"?><worksheet><row><c r=\"A1\" t=\"s\"><v>0</v></c><c r=\"B1\" t=\"s\"><v>1</v></c></row><row><c r=\"A2\"><v>42</v></c><c r=\"B2\"><v>3.14</v></c></row></worksheet>";
+        let bytes = build_zip(&[
+            ("xl/sharedStrings.xml", shared),
+            ("xl/worksheets/sheet1.xml", sheet),
+        ]);
+        let html = crate::xlsx_to_html(&bytes).expect("should render");
+        assert!(html.starts_with("<table>"));
+        assert!(html.contains("<td>名称</td>"));
+        assert!(html.contains("<td>42</td>"));
+        assert!(html.matches("<tr>").count() == 2);
+    }
+
+    #[test]
+    fn test_xlsx_to_html_empty_sheet_returns_none() {
+        let sheet = "<?xml version=\"1.0\"?><worksheet></worksheet>";
+        let bytes = build_zip(&[
+            ("xl/sharedStrings.xml", "<sst></sst>"),
+            ("xl/worksheets/sheet1.xml", sheet),
+        ]);
+        assert!(crate::xlsx_to_html(&bytes).is_none());
+    }
+
+    #[test]
+    fn test_pptx_to_html_renders_slides_in_order() {
+        let s2 = "<?xml version=\"1.0\"?><p:sp><a:t>第二页</a:t><a:t>要点</a:t></p:sp>";
+        let s1 = "<?xml version=\"1.0\"?><p:sp><a:t>封面标题</a:t></p:sp>";
+        let bytes = build_zip(&[
+            ("ppt/slides/slide2.xml", s2),
+            ("ppt/slides/slide1.xml", s1),
+        ]);
+        let html = crate::pptx_to_html(&bytes).expect("should render");
+        let h2_pos = html.find("<h2>封面标题</h2>").expect("slide1 title");
+        let s2_pos = html.find("<h2>第二页</h2>").expect("slide2 title");
+        assert!(h2_pos < s2_pos, "slides must render in numeric order");
+        assert!(html.contains("<p>要点</p>"));
+    }
+
+    #[test]
+    fn test_parsers_return_none_for_garbage_bytes() {
+        assert!(crate::xlsx_to_html(b"not a zip").is_none());
+        assert!(crate::pptx_to_html(b"not a zip").is_none());
+    }
+}

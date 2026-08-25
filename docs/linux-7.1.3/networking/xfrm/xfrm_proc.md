@@ -1,99 +1,99 @@
 ﻿
-## XFRM proc - /proc/net/xfrm_* 鏂囦欢
+## XFRM proc - /proc/net/xfrm_* 文件
 
 
 Masahide NAKAMURA <nakam@linux-ipv6.org>
 
 
-### 杞崲缁熻
+### 转换统计
 
 
-xfrm_proc 浠ｇ爜鏄竴缁勭粺璁℃暟鎹紝鏄剧ず浜嗚杞崲浠ｇ爜涓㈠純鐨勬暟鎹寘鏁伴噺鍙婂叾鍘熷洜銆?杩欎簺璁℃暟鍣ㄥ畾涔変负 Linux 绉佹湁 MIB 鐨勪竴閮ㄥ垎銆傝繖浜涜鏁板櫒鍙互鍦?/proc/net/xfrm_stat 涓煡鐪嬨€?
+xfrm_proc 代码是一组统计数据，显示了被转换代码丢弃的数据包数量及其原因这些计数器定义为 Linux 私有 MIB 的一部分。这些计数器可以/proc/net/xfrm_stat 中查看
 
-#### 鍏ョ珯閿欒
+#### 入站错误
 
 
 XfrmInError:
-	鎵€鏈変笉鍖归厤鍏跺畠椤圭殑鎵€鏈夐敊璇?
+	所有不匹配其它项的所有错
 XfrmInBufferError:
-	娌℃湁鍓╀綑缂撳啿鍖?
+	没有剩余缓冲
 XfrmInHdrError:
-	澶撮儴閿欒
+	头部错误
 
 XfrmInNoStates:
-	鏈壘鍒扮姸鎬?	鍗冲叆绔欑殑 SPI銆佸湴鍧€鎴?SA 涓婄殑 IPsec 鍗忚鏈夎
+	未找到状	即入站的 SPI、地址SA 上的 IPsec 协议有误
 
 XfrmInStateProtoError:
-	杞崲鍗忚鐩稿叧閿欒
-	渚嬪 SA 瀵嗛挜鏈夎
+	转换协议相关错误
+	例如 SA 密钥有误
 
 XfrmInStateModeError:
-	杞崲妯″紡鐩稿叧閿欒
+	转换模式相关错误
 
 XfrmInStateSeqError:
-	搴忓垪鍙烽敊璇?	鍗冲簭鍒楀彿瓒呭嚭绐楀彛
+	序列号错	即序列号超出窗口
 
 XfrmInStateExpired:
-	鐘舵€佸凡杩囨湡
+	状态已过期
 
 XfrmInStateMismatch:
-	鐘舵€佸瓨鍦ㄤ笉鍖归厤鐨勯€夐」
-	渚嬪 UDP 灏佽绫诲瀷涓嶅尮閰?
+	状态存在不匹配的选项
+	例如 UDP 封装类型不匹
 XfrmInStateInvalid:
-	鐘舵€佹棤鏁?
+	状态无
 XfrmInTmplMismatch:
-	鐘舵€佹病鏈夊尮閰嶇殑妯℃澘
-	渚嬪鍏ョ珯 SA 姝ｇ‘浣?SP 瑙勫垯鏈夎
+	状态没有匹配的模板
+	例如入站 SA 正确SP 规则有误
 
 XfrmInNoPols:
-	鐘舵€佹湭鎵惧埌绛栫暐
-	渚嬪鍏ョ珯 SA 姝ｇ‘浣嗘湭鎵惧埌 SP
+	状态未找到策略
+	例如入站 SA 正确但未找到 SP
 
 XfrmInPolBlock:
-	绛栫暐涓㈠純
+	策略丢弃
 
 XfrmInPolError:
-	绛栫暐閿欒
+	策略错误
 
 XfrmAcquireError:
-	鐘舵€佸湪浣跨敤鍓嶅皻鏈瀹屽叏鑾峰彇
+	状态在使用前尚未被完全获取
 
 XfrmFwdHdrError:
-	涓嶅厑璁稿鏁版嵁鍖呰繘琛岃浆鍙戣矾鐢?
+	不允许对数据包进行转发路
 XfrmInStateDirError:
-        鐘舵€佹柟鍚戜笉鍖归厤锛堝湪鍏ョ珯璺緞涓婃煡鎵惧埌浜嗗嚭绔欑姸鎬侊紝鏈熸湜涓哄叆绔欐垨鏃犳柟鍚戯級
+        状态方向不匹配（在入站路径上查找到了出站状态，期望为入站或无方向）
 
-#### 鍑虹珯閿欒
+#### 出站错误
 
 XfrmOutError:
-	鎵€鏈変笉鍖归厤鍏跺畠椤圭殑鎵€鏈夐敊璇?
+	所有不匹配其它项的所有错
 XfrmOutBundleGenError:
-	鎹嗙粦锛坆undle锛夌敓鎴愰敊璇?
+	捆绑（bundle）生成错
 XfrmOutBundleCheckError:
-	鎹嗙粦妫€鏌ラ敊璇?
+	捆绑检查错
 XfrmOutNoStates:
-	鏈壘鍒扮姸鎬?
+	未找到状
 XfrmOutStateProtoError:
-	杞崲鍗忚鐩稿叧閿欒
+	转换协议相关错误
 
 XfrmOutStateModeError:
-	杞崲妯″紡鐩稿叧閿欒
+	转换模式相关错误
 
 XfrmOutStateSeqError:
-	搴忓垪鍙烽敊璇?	鍗冲簭鍒楀彿婧㈠嚭
+	序列号错	即序列号溢出
 
 XfrmOutStateExpired:
-	鐘舵€佸凡杩囨湡
+	状态已过期
 
 XfrmOutPolBlock:
-	绛栫暐涓㈠純
+	策略丢弃
 
 XfrmOutPolDead:
-	绛栫暐宸插け鏁?
+	策略已失
 XfrmOutPolError:
-	绛栫暐閿欒
+	策略错误
 
 XfrmOutStateInvalid:
-	鐘舵€佹棤鏁堬紝鍙兘宸茶繃鏈?
+	状态无效，可能已过
 XfrmOutStateDirError:
-        鐘舵€佹柟鍚戜笉鍖归厤锛堝湪鍑虹珯璺緞涓婃煡鎵惧埌浜嗗叆绔欑姸鎬侊紝鏈熸湜涓哄嚭绔欐垨鏃犳柟鍚戯級
+        状态方向不匹配（在出站路径上查找到了入站状态，期望为出站或无方向）

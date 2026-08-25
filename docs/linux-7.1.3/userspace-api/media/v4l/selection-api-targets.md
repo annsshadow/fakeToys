@@ -1,14 +1,14 @@
 ﻿
-######## 閫夋嫨鐩爣
+######## 选择目标
 
 
 
     :alt:   selection.svg
     :align: center
 
-    瑁佸壀涓庡悎鎴愮洰鏍?
+    裁剪与合成目
 
-    瑁佸壀銆佸悎鎴愪笌缂╂斁杩囩▼鎵€浣跨敤鐨勭洰鏍?
+    裁剪、合成与缩放过程所使用的目
 
 
-鏇村淇℃伅鍙傝 v4l2-selection-targets銆?
+更多信息参见 v4l2-selection-targets

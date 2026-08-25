@@ -1,107 +1,107 @@
 ﻿
-## PCI 鐩撮€氳澶?
+## PCI 直通设
 
-鍦?Hyper-V 瀹㈡満 VM 涓紝PCI 鐩撮€氳澶囷紙涔熺О涓鸿櫄鎷?PCI 璁惧锛屾垨 vPCI 璁惧锛夋槸琚洿鎺ユ槧灏勫埌 VM
-鐗╃悊鍦板潃绌洪棿涓殑鐗╃悊 PCI 璁惧銆傚鏈鸿澶囬┍鍔ㄥ彲浠ョ洿鎺ヤ笌纭欢浜や簰锛岃€屾棤闇€涓绘満 hypervisor 鐨?涓粙銆備笌鐢?hypervisor 铏氭嫙鍖栫殑璁惧鐩告瘮锛岃繖绉嶆柟娉曚互鏇翠綆鐨勫欢杩熸彁渚涗簡鍒拌澶囩殑鏇撮珮甯﹀璁块棶銆傝
-璁惧鍦ㄥ鏈轰腑鐨勮〃鐜板簲涓庡湪瑁告満涓婅繍琛屾椂瀹屽叏涓€鏍凤紝鍥犳 Linux 璁惧椹卞姩鏃犻渶鍋氫换浣曚慨鏀广€?
-Hyper-V 瀵?vPCI 璁惧鐨勬湳璇槸 "Discrete Device Assignment"锛圖DA锛岀鏁ｈ澶囧垎閰嶏級銆侶yper-V DDA
-鐨勫叕寮€鏂囨。鍙湪姝ゅ鑾峰彇锛歚DDA`_
-
-
-DDA 閫氬父鐢ㄤ簬瀛樺偍鎺у埗鍣紙渚嬪 NVMe锛変互鍙?GPU銆傜敤浜?NIC 鐨勭被浼兼満鍒剁О涓?SR-IOV锛岄€氳繃鍏佽瀹㈡満
-璁惧椹卞姩鐩存帴涓庣‖浠朵氦浜掕€屼骇鐢熺浉鍚岀殑濂藉銆傝鍙傞槄 Hyper-V 鍏紑鏂囨。锛歚SR-IOV`_
+Hyper-V 客机 VM 中，PCI 直通设备（也称为虚PCI 设备，或 vPCI 设备）是被直接映射到 VM
+物理地址空间中的物理 PCI 设备。客机设备驱动可以直接与硬件交互，而无需主机 hypervisor 中介。与hypervisor 虚拟化的设备相比，这种方法以更低的延迟提供了到设备的更高带宽访问。该
+设备在客机中的表现应与在裸机上运行时完全一样，因此 Linux 设备驱动无需做任何修改
+Hyper-V vPCI 设备的术语是 "Discrete Device Assignment"（DDA，离散设备分配）。Hyper-V DDA
+的公开文档可在此处获取：`DDA`_
 
 
-姝ゅ瀵?vPCI 璁惧鐨勮璁哄寘鍚?DDA 涓?SR-IOV 璁惧銆?
-### 璁惧鍛堢幇
+DDA 通常用于存储控制器（例如 NVMe）以GPU。用NIC 的类似机制称SR-IOV，通过允许客机
+设备驱动直接与硬件交互而产生相同的好处。请参阅 Hyper-V 公开文档：`SR-IOV`_
 
 
-褰?vPCI 璁惧杩愯鏃讹紝Hyper-V 涓哄叾鎻愪緵瀹屾暣鐨?PCI 鍔熻兘锛屽洜姝ゅ彧瑕佽璁惧浣跨敤姝ｇ‘鐨?Linux 鍐呮牳 API
-鏉ヨ闂?PCI 閰嶇疆绌洪棿浠ュ強涓?Linux 闆嗘垚锛孡inux 璁惧椹卞姩灏卞彲浠ュ師鏍蜂娇鐢ㄣ€備絾鏄紝瀵?PCI 璁惧鐨勫垵濮?鎺㈡祴鍙婂叾涓?Linux PCI 瀛愮郴缁熺殑闆嗘垚蹇呴』浣跨敤 Hyper-V 鐗瑰畾鐨勬満鍒躲€傚洜姝わ紝Hyper-V 涓婄殑 vPCI 璁惧
-鍏锋湁鍙岄噸韬唤銆傚畠浠渶鍒濋€氳繃鏍囧噯鐨?VMBus "offer" 鏈哄埗浣滀负 VMBus 璁惧鍛堢幇缁?Linux 瀹㈡満锛屽洜姝ゅ畠浠?鍏锋湁 VMBus 韬唤锛屽苟鍑虹幇鍦?/sys/bus/vmbus/devices 涓嬨€侺inux 涓綅浜?drivers/pci/controller/
-pci-hyperv.c 鐨?VMBus vPCI 椹卞姩閫氳繃鏋勯€犱竴涓?PCI 鎬荤嚎鎷撴墤骞跺垱寤鸿嫢 PCI 璁惧鏄湪瑁告満绯荤粺涓婇€氳繃
-ACPI 鍙戠幇鏃舵湰搴斿瓨鍦ㄧ殑鎵€鏈夊父瑙?PCI 璁惧鏁版嵁缁撴瀯锛屾潵澶勭悊涓€涓柊寮曞叆鐨?vPCI 璁惧銆備竴鏃﹁繖浜涙暟鎹粨鏋?寤虹珛瀹屾垚锛岃璁惧鍦?Linux 涓篃鎷ユ湁浜嗘甯哥殑 PCI 韬唤锛岃 vPCI 璁惧鐨勫父瑙?Linux 璁惧椹卞姩灏卞彲浠?鍍忓湪瑁告満涓婄殑 Linux 涓繍琛屼竴鏍峰伐浣溿€傜敱浜?vPCI 璁惧鏄€氳繃 VMBus offer 鏈哄埗鍔ㄦ€佸憟鐜扮殑锛屽畠浠笉浼?鍑虹幇鍦?Linux 瀹㈡満鐨?ACPI 琛ㄤ腑銆倂PCI 璁惧鍙互鍦?VM 鐢熷懡鍛ㄦ湡鍐呯殑浠绘剰鏃跺埢琚坊鍔犲埌 VM 鎴栦粠 VM 涓?绉婚櫎锛岃€屼笉浠呬粎鏄湪鍒濆鍚姩鏃躲€?
-閫氳繃杩欑鏂规硶锛寁PCI 璁惧鍚屾椂鏄?VMBus 璁惧鍜?PCI 璁惧銆備綔涓哄 VMBus offer 娑堟伅鐨勫搷搴旓紝hv_pci_probe()
-鍑芥暟杩愯骞朵笌 Hyper-V 涓绘満涓婄殑 vPCI VSP 寤虹珛 VMBus 杩炴帴銆傝杩炴帴鍏锋湁涓€涓崟涓€鐨?VMBus 閫氶亾銆傝
-閫氶亾鐢ㄤ簬涓?vPCI VSP 浜ゆ崲娑堟伅锛屼互鍦?Linux 涓厤缃?vPCI 璁惧銆備竴鏃﹁璁惧鍦?Linux 涓綔涓?PCI 璁惧
-琚畬鍏ㄩ厤缃ソ锛孷MBus 閫氶亾浠呭湪 Linux 鏇存敼瑕佸湪瀹㈡満涓涓柇鐨?vCPU锛屾垨鍦ㄨ VM 杩愯鏃?vPCI 璁惧琚?浠?VM 涓Щ闄ゆ椂鎵嶈浣跨敤銆傝澶囩殑鎸佺画杩愯鐩存帴鍙戠敓鍦ㄨ璁惧鐨?Linux 璁惧椹卞姩涓庣‖浠朵箣闂达紝VMBus 鍜?VMBus 閫氶亾涓嶈捣浣滅敤銆?
-### PCI 璁惧寤虹珛
+此处vPCI 设备的讨论包DDA SR-IOV 设备
+### 设备呈现
 
 
-PCI 璁惧寤虹珛閬靛惊 Hyper-V 鏈€鍒濅负 Windows 瀹㈡満鍒涘缓鐨勯『搴忥紝鐢变簬 Linux PCI 瀛愮郴缁熸暣浣撶粨鏋勪笌 Windows
-涓嶅悓锛屽畠鍙兘涓嶅お閫傚悎 Linux 瀹㈡満銆傚敖绠″姝わ紝閫氳繃瀵?Linux 鐨?Hyper-V 铏氭嫙 PCI 椹卞姩鍋氫竴鐐逛慨琛ワ紝铏氭嫙
-PCI 璁惧鍦?Linux 涓寤虹珛锛屼粠鑰屼娇閫氱敤鐨?Linux PCI 瀛愮郴缁熶唬鐮佸拰璇ヨ澶囩殑 Linux 椹卞姩鈥滅洿鎺ュ彲鐢ㄢ€濄€?
-姣忎釜 vPCI 璁惧鍦?Linux 涓寤虹珛涓烘嫢鏈夎嚜宸辩殑涓绘満妗ワ紙host bridge锛夌殑 PCI 鍩燂紙domain锛夈€侾CI
-domainID 鐢卞垎閰嶇粰 VMBus vPCI 璁惧鐨勫疄渚?GUID 鐨勭 4 鍜岀 5 瀛楄妭瀵煎嚭銆侶yper-V 涓绘満涓嶄繚璇佽繖浜?瀛楄妭鏄敮涓€鐨勶紝鍥犳 hv_pci_probe() 鏈変竴绉嶇畻娉曟潵瑙ｅ喅鍐茬獊銆傝鍐茬獊瑙ｅ喅鏃ㄥ湪鍚屼竴 VM 鐨勫娆￠噸鍚箣闂?淇濇寔绋冲畾锛屼互渚?PCI domainID 涓嶄細鏀瑰彉锛屽洜涓?domainID 鍑虹幇鍦ㄦ煇浜涜澶囩殑鐢ㄦ埛绌洪棿閰嶇疆涓€?
-hv_pci_probe() 鍒嗛厤涓€涓鏈?MMIO 鑼冨洿锛岀敤浣滆璁惧鐨?PCI 閰嶇疆绌洪棿銆傝繖涓?MMIO 鑼冨洿浣滀负鍛婄煡涓绘満
-璁惧宸插噯澶囧ソ杩涘叆 d0 鐨勪竴閮ㄥ垎锛岄€氳繃 VMBus 閫氶亾浼犺揪缁?Hyper-V銆傚弬瑙?hv_pci_enter_d0()銆傚綋瀹㈡満
-闅忓悗璁块棶杩欎釜 MMIO 鑼冨洿鏃讹紝Hyper-V 涓绘満浼氭嫤鎴繖浜涜闂紝骞跺皢鍏舵槧灏勫埌鐗╃悊璁惧鐨?PCI 閰嶇疆绌洪棿銆?
-hv_pci_probe() 杩樹粠 Hyper-V 涓绘満鑾峰彇璇ヨ澶囩殑 BAR 淇℃伅锛屽苟鍒╃敤杩欎簺淇℃伅涓?BAR 鍒嗛厤 MMIO 绌洪棿銆?閭ｄ釜 MMIO 绌洪棿闅忓悗琚缃负涓庝富鏈烘ˉ鍏宠仈锛屼互渚垮湪 Linux 涓€氱敤 PCI 瀛愮郴缁熶唬鐮佸鐞?BAR 鏃惰兘澶熷伐浣溿€?
-鏈€鍚庯紝hv_pci_probe() 鍒涘缓鏍?PCI 鎬荤嚎銆傚埌姝ゆ椂锛孒yper-V 铏氭嫙 PCI 椹卞姩鐨勪慨琛ュ伐浣滃凡缁忓畬鎴愶紝鎵弿鏍?鎬荤嚎鐨勫父瑙?Linux PCI 鏈哄埗寮€濮嬪伐浣滐紝浠ユ帰娴嬭澶囥€佹墽琛岄┍鍔ㄥ尮閰嶄互鍙婂垵濮嬪寲椹卞姩鍜岃澶囥€?
-### PCI 璁惧绉婚櫎
+vPCI 设备运行时，Hyper-V 为其提供完整PCI 功能，因此只要该设备使用正确Linux 内核 API
+来访PCI 配置空间以及Linux 集成，Linux 设备驱动就可以原样使用。但是，PCI 设备的初探测及其Linux PCI 子系统的集成必须使用 Hyper-V 特定的机制。因此，Hyper-V 上的 vPCI 设备
+具有双重身份。它们最初通过标准VMBus "offer" 机制作为 VMBus 设备呈现Linux 客机，因此它具有 VMBus 身份，并出现/sys/bus/vmbus/devices 下。Linux 中位drivers/pci/controller/
+pci-hyperv.c VMBus vPCI 驱动通过构造一PCI 总线拓扑并创建若 PCI 设备是在裸机系统上通过
+ACPI 发现时本应存在的所有常PCI 设备数据结构，来处理一个新引入vPCI 设备。一旦这些数据结建立完成，该设备Linux 中也拥有了正常的 PCI 身份，该 vPCI 设备的常Linux 设备驱动就可像在裸机上的 Linux 中运行一样工作。由vPCI 设备是通过 VMBus offer 机制动态呈现的，它们不出现Linux 客机ACPI 表中。vPCI 设备可以VM 生命周期内的任意时刻被添加到 VM 或从 VM 移除，而不仅仅是在初始启动时
+通过这种方法，vPCI 设备同时VMBus 设备PCI 设备。作为对 VMBus offer 消息的响应，hv_pci_probe()
+函数运行并与 Hyper-V 主机上的 vPCI VSP 建立 VMBus 连接。该连接具有一个单一VMBus 通道。该
+通道用于vPCI VSP 交换消息，以Linux 中配vPCI 设备。一旦该设备Linux 中作PCI 设备
+被完全配置好，VMBus 通道仅在 Linux 更改要在客机中被中断vCPU，或在该 VM 运行vPCI 设备VM 中移除时才被使用。设备的持续运行直接发生在该设备Linux 设备驱动与硬件之间，VMBus VMBus 通道不起作用
+### PCI 设备建立
 
 
-Hyper-V 涓绘満鍙互鍦?VM 鐢熷懡鍛ㄦ湡鍐呯殑浠绘剰鏃跺埢鍙戣捣浠庡鏈?VM 涓Щ闄?vPCI 璁惧銆傝绉婚櫎鐢卞湪 Hyper-V
-涓绘満涓婃墽琛岀殑绠＄悊鎿嶄綔瑙﹀彂锛屼笉鍙楀鏈?OS 鐨勬帶鍒躲€?
-瀹㈡満 VM 閫氳繃涓绘満缁忎笌璇?vPCI 璁惧鍏宠仈鐨?VMBus 閫氶亾鍙戦€佺粰瀹㈡満鐨勪富鍔ㄦ帹閫佺殑 "Eject"锛堝脊鍑猴級娑堟伅
-鑾风煡绉婚櫎銆傛敹鍒版绫绘秷鎭悗锛孡inux 涓殑 Hyper-V 铏氭嫙 PCI 椹卞姩浼氬紓姝ヨ皟鐢?Linux 鍐呮牳 PCI 瀛愮郴缁?璋冪敤鏉ュ叧闂苟绉婚櫎璇ヨ澶囥€傚綋杩欎簺璋冪敤瀹屾垚鏃讹紝涓€鏉?"Ejection Complete"锛堝脊鍑哄畬鎴愶級娑堟伅缁?VMBus
-閫氶亾鍙戝洖缁?Hyper-V锛屾寚绀鸿澶囧凡琚Щ闄ゃ€傛鏃讹紝Hyper-V 鍚?Linux 瀹㈡満鍙戦€佷竴鏉?VMBus rescind锛堟挙閿€锛?娑堟伅锛孡inux 涓殑 VMBus 椹卞姩閫氳繃绉婚櫎璇ヨ澶囩殑 VMBus 韬唤鏉ュ鐞嗗畠銆備竴鏃﹁澶勭悊瀹屾垚锛岃澶囨浘缁忓瓨鍦?鐨勬墍鏈夌棔杩归兘浠?Linux 鍐呮牳涓秷澶变簡銆俽escind 娑堟伅杩樺悜瀹㈡満琛ㄦ槑 Hyper-V 宸插仠姝㈠湪瀹㈡満涓彁渚涘 vPCI
-璁惧鐨勬敮鎸併€傚鏋滃鏈哄皾璇曡闂璁惧鐨?MMIO 绌洪棿锛岄偅灏嗘槸鏃犳晥寮曠敤銆傚奖鍝嶈璁惧鐨?Hypercall 浼氳繑鍥?閿欒锛屽苟涓斿湪 VMBus 閫氶亾涓彂閫佺殑浠讳綍鍚庣画娑堟伅閮藉皢琚拷鐣ャ€?
-鍦ㄥ彂閫?Eject 娑堟伅涔嬪悗锛孒yper-V 鍏佽瀹㈡満 VM 鏈?60 绉掓椂闂存潵骞插噣鍦板叧闂澶囧苟浠?Ejection Complete
-鍝嶅簲锛岀劧鍚庢墠鍙戦€?VMBus rescind 娑堟伅銆傚鏋滅敱浜庝换浣曞師鍥?Eject 姝ラ鏈兘鍦ㄥ厑璁哥殑 60 绉掑唴瀹屾垚锛?Hyper-V 涓绘満浼氬己鍒舵墽 rescind 姝ラ锛岃繖寰堝彲鑳戒細瀵艰嚧瀹㈡満涓嚭鐜扮骇鑱旈敊璇紝鍥犱负浠庤瀹㈡満瑙掑害鐪嬭澶?鐜板凡涓嶅啀瀛樺湪锛岃闂璁惧 MMIO 绌洪棿灏嗗け璐ャ€?
-鐢变簬寮瑰嚭鏄紓姝ョ殑锛屽苟涓斿彲鑳藉彂鐢熷湪瀹㈡満 VM 鐢熷懡鍛ㄦ湡涓殑浠讳綍鏃跺埢锛孒yper-V 铏氭嫙 PCI 椹卞姩涓殑姝ｇ‘
-鍚屾闈炲父妫樻墜銆傜敋鑷冲湪鏂版彁渚涚殑 vPCI 璁惧灏氭湭瀹屽叏寤虹珛鏃跺氨瑙傚療鍒拌繃寮瑰嚭銆傚骞存潵锛孒yper-V 铏氭嫙 PCI
-椹卞姩宸茶澶氭鏇存柊锛屼互淇鍦ㄥ脊鍑哄彂鐢熷湪涓嶅悎閫傛椂鏈烘椂鍑虹幇鐨勭珵鎬佹潯浠躲€備慨鏀规浠ｇ爜鏃跺繀椤诲皬蹇冿紝浠ラ槻姝?閲嶆柊寮曞叆姝ょ被闂銆傚弬瑙佷唬鐮佷腑鐨勬敞閲娿€?
-### 涓柇鍒嗛厤
+PCI 设备建立遵循 Hyper-V 最初为 Windows 客机创建的顺序，由于 Linux PCI 子系统整体结构与 Windows
+不同，它可能不太适合 Linux 客机。尽管如此，通过Linux Hyper-V 虚拟 PCI 驱动做一点修补，虚拟
+PCI 设备Linux 中被建立，从而使通用Linux PCI 子系统代码和该设备的 Linux 驱动“直接可用”
+每个 vPCI 设备Linux 中被建立为拥有自己的主机桥（host bridge）的 PCI 域（domain）。PCI
+domainID 由分配给 VMBus vPCI 设备的实GUID 的第 4 和第 5 字节导出。Hyper-V 主机不保证这字节是唯一的，因此 hv_pci_probe() 有一种算法来解决冲突。该冲突解决旨在同一 VM 的多次重启之保持稳定，以PCI domainID 不会改变，因domainID 出现在某些设备的用户空间配置中
+hv_pci_probe() 分配一个客MMIO 范围，用作该设备PCI 配置空间。这MMIO 范围作为告知主机
+设备已准备好进入 d0 的一部分，通过 VMBus 通道传达Hyper-V。参hv_pci_enter_d0()。当客机
+随后访问这个 MMIO 范围时，Hyper-V 主机会拦截这些访问，并将其映射到物理设备PCI 配置空间
+hv_pci_probe() 还从 Hyper-V 主机获取该设备的 BAR 信息，并利用这些信息BAR 分配 MMIO 空间那个 MMIO 空间随后被设置为与主机桥关联，以便在 Linux 中通用 PCI 子系统代码处BAR 时能够工作
+最后，hv_pci_probe() 创建PCI 总线。到此时，Hyper-V 虚拟 PCI 驱动的修补工作已经完成，扫描总线的常Linux PCI 机制开始工作，以探测设备、执行驱动匹配以及初始化驱动和设备
+### PCI 设备移除
 
 
-Hyper-V 铏氭嫙 PCI 椹卞姩鏀寔浣跨敤 MSI銆佸 MSI 鎴?MSI-X 鐨?vPCI 璁惧銆備负灏嗘帴鏀剁壒瀹?MSI 鎴?MSI-X 娑堟伅
-涓柇鐨勫鏈?vCPU 杩涜鍒嗛厤鏄鏉傜殑锛屽洜涓鸿繖娑夊強鍒?Linux 瀵?IRQ 鐨勮缃浣曟槧灏勫埌 Hyper-V 鎺ュ彛銆?瀵逛簬鍗?MSI 鍜?MSI-X 鎯呭喌锛孡inux 璋冪敤 hv_compose_msi_msg() 涓ゆ锛岀涓€娆¤皟鐢ㄥ寘鍚吉 vCPU锛岀浜屾
-璋冪敤鍖呭惈鐪熷疄鐨?vCPU銆傛澶栵紝鏈€鍚庤皟鐢?hv_irq_unmask()锛堝湪 x86 涓婏級鎴栬缃?GICD 瀵勫瓨鍣紙鍦?arm64 涓婏級
-浠ュ啀娆℃寚瀹氱湡瀹?vCPU銆傝繖涓夋璋冪敤姣忎竴娆￠兘涓?Hyper-V 浜や簰锛孒yper-V 蹇呴』鍦ㄤ腑鏂杞彂鍒板鏈?VM 涔嬪墠
-鍐冲畾鍝釜鐗╃悊 CPU 搴旀帴鏀惰涓柇銆備笉骞哥殑鏄紝Hyper-V 鐨勫喅绛栬繃绋嬫湁浜涘彈闄愶紝鍙兘瀵艰嚧鐗╃悊涓柇闆嗕腑鍦ㄥ崟涓?CPU 涓婏紝浠庤€岄€犳垚鎬ц兘鐡堕銆傚叧浜庡浣曡В鍐宠繖涓棶棰橈紝璇峰弬瑙?hv_compose_msi_req_get_cpu() 鍑芥暟涓婃柟
-璇﹀敖鐨勬敞閲娿€?
-Hyper-V 铏氭嫙 PCI 椹卞姩灏?irq_chip.irq_compose_msi_msg 鍑芥暟瀹炵幇涓?hv_compose_msi_msg()銆備笉骞哥殑鏄紝
-鍦?Hyper-V 涓婏紝璇ュ疄鐜伴渶瑕佸悜 Hyper-V 涓绘満鍙戦€佷竴鏉?VMBus 娑堟伅锛屽苟绛夊緟涓€鏉℃寚绀烘敹鍒板洖澶嶆秷鎭殑涓柇銆?鐢变簬 irq_chip.irq_compose_msi_msg 鍙互鍦ㄦ寔鏈?IRQ 閿佺殑鎯呭喌涓嬭璋冪敤锛屾墽琛屾甯哥殑鐫＄湢鐩村埌琚腑鏂?鍞ら啋鏄涓嶉€氱殑銆傜浉鍙嶏紝hv_compose_msi_msg() 蹇呴』鍙戦€?VMBus 娑堟伅锛岀劧鍚庤疆璇㈠畬鎴愭秷鎭€傛洿澶嶆潅鐨勬槸锛?vPCI 璁惧鍙兘鍦ㄨ疆璇㈣繘琛屾湡闂磋寮瑰嚭/鎾ら攢锛屽洜姝や篃蹇呴』妫€娴嬭繖绉嶆儏鍐点€傚叧浜庤繖涓€闈炲父妫樻墜鐨勫尯鍩燂紝璇峰弬瑙?浠ｇ爜涓殑娉ㄩ噴銆?
-Hyper-V 铏氭嫙 PCI 椹卞姩锛坧ci-hyperv.c锛変腑鐨勫ぇ閮ㄥ垎浠ｇ爜閫傜敤浜庤繍琛屽湪 x86 鍜?arm64 鏋舵瀯涓婄殑 Hyper-V
-鍜?Linux 瀹㈡満銆備絾鍦ㄤ腑鏂垎閰嶇殑绠＄悊鏂瑰紡涓婂瓨鍦ㄥ樊寮傘€傚湪 x86 涓婏紝瀹㈡満涓殑 Hyper-V 铏氭嫙 PCI 椹卞姩蹇呴』
-鍙戣捣涓€娆?hypercall 鏉ュ憡璇?Hyper-V 鍝釜瀹㈡満 vCPU 搴旇姣忎釜 MSI/MSI-X 涓柇鎵撴柇锛屼互鍙?x86_vector IRQ
-鍩熶负璇ヤ腑鏂寫閫夌殑 x86 涓柇鍚戦噺鍙枫€傝 hypercall 鐢?hv_arch_irq_unmask() 鍙戝嚭銆傚湪 arm64 涓婏紝Hyper-V
-铏氭嫙 PCI 椹卞姩绠＄悊涓烘瘡涓?MSI/MSI-X 涓柇鍒嗛厤涓€涓?SPI銆侶yper-V 铏氭嫙 PCI 椹卞姩灏嗗垎閰嶇殑 SPI 瀛樺偍鍦?鏋舵瀯鐩稿叧鐨?GICD 瀵勫瓨鍣ㄤ腑锛圚yper-V 瀵瑰叾杩涜浜嗘ā鎷燂級锛屽洜姝や笌 x86 涓嶅悓锛屼笉闇€瑕?hypercall銆侶yper-V
-涓嶆敮鎸佸湪 arm64 瀹㈡満 VM 涓皢 LPI 鐢ㄤ簬 vPCI 璁惧锛屽洜涓哄畠涓嶆ā鎷?GICv3 ITS銆?
-Linux 涓殑 Hyper-V 铏氭嫙 PCI 椹卞姩鏀寔閭ｄ簺椹卞姩鍒涘缓鍙楃鐞嗘垨鏈彈绠＄悊 Linux IRQ 鐨?vPCI 璁惧銆傚鏋滃
-涓€涓湭鍙楃鐞?IRQ 鐨?smp_affinity 閫氳繃 /proc/irq 鎺ュ彛琚洿鏂帮紝Hyper-V 铏氭嫙 PCI 椹卞姩浼氳璋冪敤鏉?鍛婅瘔 Hyper-V 涓绘満鏇存敼涓柇鐩爣锛屼竴鍒囬兘鑳芥甯稿伐浣溿€傜劧鑰岋紝鍦?x86 涓婏紝濡傛灉 x86_vector IRQ 鍩熺敱浜?CPU 涓婂悜閲忚€楀敖鑰岄渶瑕侀噸鏂板垎閰嶄竴涓腑鏂悜閲忥紝鍒欐病鏈夎矾寰勯€氱煡 Hyper-V 涓绘満杩欎竴鍙樻洿锛屼簬鏄氨浼氬嚭闂銆?鎵€骞革紝瀹㈡満 VM 杩愯鍦ㄥ彈闄愮殑璁惧鐜涓紝涓嶄細鐢ㄥ敖 CPU 涓婄殑鎵€鏈夊悜閲忋€傜敱浜庤繖绉嶉棶棰樺彧鏄悊璁轰笂鐨勫叧鍒?鑰岄潪瀹為檯鍏冲垏锛屽洜姝や竴鐩存湭琚鐞嗐€?
+Hyper-V 主机可以VM 生命周期内的任意时刻发起从客VM 中移vPCI 设备。该移除由在 Hyper-V
+主机上执行的管理操作触发，不受客OS 的控制
+客机 VM 通过主机经与vPCI 设备关联VMBus 通道发送给客机的主动推送的 "Eject"（弹出）消息
+获知移除。收到此类消息后，Linux 中的 Hyper-V 虚拟 PCI 驱动会异步调Linux 内核 PCI 子系调用来关闭并移除该设备。当这些调用完成时，一"Ejection Complete"（弹出完成）消息VMBus
+通道发回Hyper-V，指示设备已被移除。此时，Hyper-V Linux 客机发送一VMBus rescind（撤销消息，Linux 中的 VMBus 驱动通过移除该设备的 VMBus 身份来处理它。一旦该处理完成，设备曾经存的所有痕迹都Linux 内核中消失了。rescind 消息还向客机表明 Hyper-V 已停止在客机中提供对 vPCI
+设备的支持。如果客机尝试访问该设备MMIO 空间，那将是无效引用。影响该设备Hypercall 会返错误，并且在 VMBus 通道中发送的任何后续消息都将被忽略
+在发Eject 消息之后，Hyper-V 允许客机 VM 60 秒时间来干净地关闭设备并Ejection Complete
+响应，然后才发VMBus rescind 消息。如果由于任何原Eject 步骤未能在允许的 60 秒内完成Hyper-V 主机会强制执 rescind 步骤，这很可能会导致客机中出现级联错误，因为从该客机角度看设现已不再存在，访问该设备 MMIO 空间将失败
+由于弹出是异步的，并且可能发生在客机 VM 生命周期中的任何时刻，Hyper-V 虚拟 PCI 驱动中的正确
+同步非常棘手。甚至在新提供的 vPCI 设备尚未完全建立时就观察到过弹出。多年来，Hyper-V 虚拟 PCI
+驱动已被多次更新，以修复在弹出发生在不合适时机时出现的竞态条件。修改此代码时必须小心，以防重新引入此类问题。参见代码中的注释
+### 中断分配
+
+
+Hyper-V 虚拟 PCI 驱动支持使用 MSI、多 MSI MSI-X vPCI 设备。为将接收特MSI MSI-X 消息
+中断的客vCPU 进行分配是复杂的，因为这涉及Linux IRQ 的设置如何映射到 Hyper-V 接口对于MSI MSI-X 情况，Linux 调用 hv_compose_msi_msg() 两次，第一次调用包含伪 vCPU，第二次
+调用包含真实vCPU。此外，最后调hv_irq_unmask()（在 x86 上）或设GICD 寄存器（arm64 上）
+以再次指定真vCPU。这三次调用每一次都Hyper-V 交互，Hyper-V 必须在中断被转发到客VM 之前
+决定哪个物理 CPU 应接收该中断。不幸的是，Hyper-V 的决策过程有些受限，可能导致物理中断集中在单CPU 上，从而造成性能瓶颈。关于如何解决这个问题，请参hv_compose_msi_req_get_cpu() 函数上方
+详尽的注释
+Hyper-V 虚拟 PCI 驱动irq_chip.irq_compose_msi_msg 函数实现hv_compose_msi_msg()。不幸的是，
+Hyper-V 上，该实现需要向 Hyper-V 主机发送一VMBus 消息，并等待一条指示收到回复消息的中断由于 irq_chip.irq_compose_msi_msg 可以在持IRQ 锁的情况下被调用，执行正常的睡眠直到被中唤醒是行不通的。相反，hv_compose_msi_msg() 必须发VMBus 消息，然后轮询完成消息。更复杂的是vPCI 设备可能在轮询进行期间被弹出/撤销，因此也必须检测这种情况。关于这一非常棘手的区域，请参代码中的注释
+Hyper-V 虚拟 PCI 驱动（pci-hyperv.c）中的大部分代码适用于运行在 x86 arm64 架构上的 Hyper-V
+Linux 客机。但在中断分配的管理方式上存在差异。在 x86 上，客机中的 Hyper-V 虚拟 PCI 驱动必须
+发起一hypercall 来告Hyper-V 哪个客机 vCPU 应被每个 MSI/MSI-X 中断打断，以x86_vector IRQ
+域为该中断挑选的 x86 中断向量号。该 hypercall hv_arch_irq_unmask() 发出。在 arm64 上，Hyper-V
+虚拟 PCI 驱动管理为每MSI/MSI-X 中断分配一SPI。Hyper-V 虚拟 PCI 驱动将分配的 SPI 存储架构相关GICD 寄存器中（Hyper-V 对其进行了模拟），因此与 x86 不同，不需hypercall。Hyper-V
+不支持在 arm64 客机 VM 中将 LPI 用于 vPCI 设备，因为它不模GICv3 ITS
+Linux 中的 Hyper-V 虚拟 PCI 驱动支持那些驱动创建受管理或未受管理 Linux IRQ vPCI 设备。如果对
+一个未受管IRQ smp_affinity 通过 /proc/irq 接口被更新，Hyper-V 虚拟 PCI 驱动会被调用告诉 Hyper-V 主机更改中断目标，一切都能正常工作。然而，x86 上，如果 x86_vector IRQ 域由CPU 上向量耗尽而需要重新分配一个中断向量，则没有路径通知 Hyper-V 主机这一变更，于是就会出问题所幸，客机 VM 运行在受限的设备环境中，不会用尽 CPU 上的所有向量。由于这种问题只是理论上的关而非实际关切，因此一直未被处理
 ### DMA
 
 
-榛樿鎯呭喌涓嬶紝Hyper-V 鍦ㄥ垱寤?VM 鏃跺皢瀹㈡満 VM 鐨勬墍鏈夊唴瀛橀攣瀹氬湪涓绘満涓紝骞跺皢鐗╃悊 IOMMU 缂栫▼涓哄厑璁?VM
-瀵瑰叾鎵€鏈夊唴瀛樻嫢鏈?DMA 璁块棶鏉冮檺銆傚洜姝わ紝灏?PCI 璁惧鍒嗛厤缁?VM 骞跺厑璁稿鏈烘搷浣滅郴缁熷 DMA 浼犺緭杩涜
-缂栫▼鏄畨鍏ㄧ殑銆傜墿鐞?IOMMU 闃叉鎭舵剰鐨勫鏈哄彂璧锋寚鍚戝睘浜庝富鏈烘垨涓绘満涓婂叾浠?VM 鐨勫唴瀛樼殑 DMA銆備粠 Linux
-瀹㈡満鐨勮搴︾湅锛屾绫?DMA 浼犺緭澶勪簬鈥滅洿鎺モ€濇ā寮忥紝鍥犱负 Hyper-V 涓嶅湪瀹㈡満涓彁渚涜櫄鎷?IOMMU銆?
-Hyper-V 鍋囪鐗╃悊 PCI 璁惧鎬绘槸鎵ц缂撳瓨涓€鑷寸殑 DMA銆傚湪 x86 涓婅繍琛屾椂锛岃繖绉嶈涓烘槸鏋舵瀯鎵€瑕佹眰鐨勩€傚湪
-arm64 涓婅繍琛屾椂锛屾灦鏋勫厑璁哥紦瀛樹竴鑷村拰闈炵紦瀛樹竴鑷寸殑璁惧锛屾瘡涓澶囩殑琛屼负鍦?ACPI DSDT 涓寚瀹氥€備絾鏄?褰?PCI 璁惧琚垎閰嶇粰瀹㈡満 VM 鏃讹紝璇ヨ澶囦笉浼氬嚭鐜板湪 DSDT 涓紝鍥犳 Hyper-V VMBus 椹卞姩灏嗙紦瀛樹竴鑷存€?淇℃伅浠?ACPI DSDT 涓殑 VMBus 鑺傜偣浼犳挱鍒版墍鏈?VMBus 璁惧锛屽寘鎷?vPCI 璁惧锛堝洜涓哄畠浠綔涓?VMBus 璁惧
-鍜?PCI 璁惧鍏锋湁鍙岄噸韬唤锛夈€傚弬瑙?vmbus_dma_configure()銆傚綋鍓?Hyper-V 鐗堟湰鎬绘槸琛ㄦ槑 VMBus 鏄紦瀛?涓€鑷寸殑锛屽洜姝?arm64 涓婄殑 vPCI 璁惧鎬绘槸琚爣璁颁负缂撳瓨涓€鑷达紝CPU 鍦ㄦ墽琛?dma_map/unmap_*() 璋冪敤鏃朵笉浼?鎵ц浠讳綍鍚屾鎿嶄綔銆?
-### vPCI 鍗忚鐗堟湰
+默认情况下，Hyper-V 在创VM 时将客机 VM 的所有内存锁定在主机中，并将物理 IOMMU 编程为允VM
+对其所有内存拥DMA 访问权限。因此，PCI 设备分配VM 并允许客机操作系统对 DMA 传输进行
+编程是安全的。物IOMMU 防止恶意的客机发起指向属于主机或主机上其VM 的内存的 DMA。从 Linux
+客机的角度看，此DMA 传输处于“直接”模式，因为 Hyper-V 不在客机中提供虚IOMMU
+Hyper-V 假设物理 PCI 设备总是执行缓存一致的 DMA。在 x86 上运行时，这种行为是架构所要求的。在
+arm64 上运行时，架构允许缓存一致和非缓存一致的设备，每个设备的行为ACPI DSDT 中指定。但PCI 设备被分配给客机 VM 时，该设备不会出现在 DSDT 中，因此 Hyper-V VMBus 驱动将缓存一致信息ACPI DSDT 中的 VMBus 节点传播到所VMBus 设备，包vPCI 设备（因为它们作VMBus 设备
+PCI 设备具有双重身份）。参vmbus_dma_configure()。当Hyper-V 版本总是表明 VMBus 是缓一致的，因arm64 上的 vPCI 设备总是被标记为缓存一致，CPU 在执dma_map/unmap_*() 调用时不执行任何同步操作
+### vPCI 协议版本
 
 
-濡傚墠鎵€杩帮紝鍦?vPCI 璁惧寤虹珛鍜屾媶闄よ繃绋嬩腑锛屾秷鎭粡 VMBus 閫氶亾鍦?Hyper-V 涓绘満涓?Linux 瀹㈡満涓殑
-Hyper-V vPCI 椹卞姩涔嬮棿浼犻€掋€傛煇浜涙秷鎭湪杈冩柊鐗堟湰鐨?Hyper-V 涓凡琚慨璁紝鍥犳瀹㈡満鍜屼富鏈哄繀椤诲氨灏嗚
-浣跨敤鐨?vPCI 鍗忚鐗堟湰杈炬垚涓€鑷淬€傝鐗堟湰鍦ㄩ€氳繃 VMBus 閫氶亾寤虹珛閫氫俊鏃跺崗鍟嗐€傚弬瑙?hv_pci_protocol_negotiation()銆傝緝鏂扮増鏈殑鍗忚鎵╁睍浜嗗瓒呰繃 64 涓?vCPU 鐨?VM 鐨勬敮鎸侊紝骞舵彁渚涘叧浜?vPCI 璁惧鐨勯澶栦俊鎭紝渚嬪瀹冨湪搴曞眰纭欢涓渶绱у瘑鍏宠仈鐨勫鏈鸿櫄鎷?NUMA 鑺傜偣銆?
-### 瀹㈡満 NUMA 鑺傜偣浜插拰鎬?
+如前所述，vPCI 设备建立和拆除过程中，消息经 VMBus 通道Hyper-V 主机Linux 客机中的
+Hyper-V vPCI 驱动之间传递。某些消息在较新版本Hyper-V 中已被修订，因此客机和主机必须就将要
+使用vPCI 协议版本达成一致。该版本在通过 VMBus 通道建立通信时协商。参hv_pci_protocol_negotiation()。较新版本的协议扩展了对超过 64 vCPU VM 的支持，并提供关vPCI 设备的额外信息，例如它在底层硬件中最紧密关联的客机虚NUMA 节点
+### 瀹㈡満 NUMA 鑺傜偣浜插拰鎬。
 
-褰?vPCI 鍗忚鐗堟湰鎻愪緵鏃讹紝vPCI 璁惧鐨勫鏈?NUMA 鑺傜偣浜插拰鎬т細浣滀负 Linux 璁惧淇℃伅鐨勪竴閮ㄥ垎琚瓨鍌紝
-渚涘悗缁敱 Linux 椹卞姩浣跨敤銆傚弬瑙?hv_pci_assign_numa_node()銆傚鏋滃崗鍟嗙殑鍗忚鐗堟湰涓嶆敮鎸佷富鏈烘彁渚?NUMA
-浜插拰鎬т俊鎭紝Linux 瀹㈡満灏嗚璁惧鐨?NUMA 鑺傜偣榛樿涓?0銆備絾鍗充娇鍗忓晢鐨勫崗璁増鏈寘鍚?NUMA 浜插拰鎬т俊鎭紝
-涓绘満鎻愪緵姝ょ被淇℃伅鐨勮兘鍔涗篃鍙栧喅浜庢煇浜涗富鏈洪厤缃€夐」銆傚鏋滃鏈烘敹鍒?NUMA 鑺傜偣鍊?"0"锛屽畠鍙兘琛ㄧず NUMA
-鑺傜偣 0锛屼篃鍙兘琛ㄧず鈥滄棤淇℃伅鍙敤鈥濄€備笉骞哥殑鏄紝浠庡鏈轰晶鏃犳硶鍖哄垎杩欎袱绉嶆儏鍐点€?
-### CoCo VM 涓殑 PCI 閰嶇疆绌洪棿璁块棶
-
-
-Linux PCI 璁惧椹卞姩浣跨敤 Linux PCI 瀛愮郴缁熸彁渚涚殑涓€缁勬爣鍑嗗嚱鏁版潵璁块棶 PCI 閰嶇疆绌洪棿銆傚湪 Hyper-V 瀹㈡満
-涓紝杩欎簺鏍囧噯鍑芥暟鏄犲皠鍒?Hyper-V 铏氭嫙 PCI 椹卞姩涓殑 hv_pcifront_read_config() 鍜?hv_pcifront_write_config() 鍑芥暟銆傚湪鏅€?VM 涓紝杩欎簺 hv_pcifront_*() 鍑芥暟鐩存帴璁块棶 PCI 閰嶇疆绌洪棿锛?杩欎簺璁块棶浼氶櫡鍏ワ紙trap锛夊埌 Hyper-V 杩涜澶勭悊銆備絾鍦?CoCo VM 涓紝鍐呭瓨鍔犲瘑闃绘 Hyper-V 璇诲彇瀹㈡満鎸囦护
-娴佹潵妯℃嫙璇ヨ闂紝鍥犳 hv_pcifront_*() 鍑芥暟蹇呴』鍙戣捣甯︽湁鏄惧紡鍙傛暟鐨?hypercall锛屼互鎻忚堪瑕佽繘琛岀殑璁块棶銆?
-### 閰嶇疆鍧楀悗閫氶亾
+vPCI 协议版本提供时，vPCI 设备的客NUMA 节点亲和性会作为 Linux 设备信息的一部分被存储，
+供后续由 Linux 驱动使用。参hv_pci_assign_numa_node()。如果协商的协议版本不支持主机提NUMA
+亲和性信息，Linux 客机将该设备NUMA 节点默认0。但即使协商的协议版本包NUMA 亲和性信息，
+主机提供此类信息的能力也取决于某些主机配置选项。如果客机收NUMA 节点"0"，它可能表示 NUMA
+节点 0，也可能表示“无信息可用”。不幸的是，从客机侧无法区分这两种情况
+### CoCo VM 中的 PCI 配置空间访问
 
 
-Hyper-V 涓绘満鍜?Linux 涓殑 Hyper-V 铏氭嫙 PCI 椹卞姩鍏卞悓瀹炵幇浜嗕竴鏉′富鏈轰笌瀹㈡満涔嬮棿鐨勯潪鏍囧噯鍚庨€氶亾
-锛坆ack-channel锛夐€氫俊璺緞銆傝鍚庨€氶亾璺緞浣跨敤缁忎笌璇?vPCI 璁惧鍏宠仈鐨?VMBus 閫氶亾鍙戦€佺殑娑堟伅銆傚嚱鏁?hyperv_read_cfg_blk() 鍜?hyperv_write_cfg_blk() 鏄彁渚涚粰 Linux 鍐呮牳鍏朵粬閮ㄥ垎鐨勪富瑕佹帴鍙ｃ€傛埅鑷虫挵鍐?鏈枃鏃讹紝杩欎簺鎺ュ彛浠呰 Mellanox mlx5 椹卞姩鐢ㄤ簬鍦ㄨ繍琛屼簬 Azure 鍏湁浜戠殑 Hyper-V 涓绘満涓婁紶閫掕瘖鏂暟鎹€?鍑芥暟 hyperv_read_cfg_blk() 鍜?hyperv_write_cfg_blk() 鍦ㄤ竴涓嫭绔嬫ā鍧楋紙pci-hyperv-intf.c锛屼綅浜?CONFIG_PCI_HYPERV_INTERFACE 涓嬶級涓疄鐜帮紝鍦ㄩ潪 Hyper-V 鐜涓繍琛屾椂鏈夋晥鍦板皢瀹冧滑缃负绌烘搷浣溿€?
+Linux PCI 设备驱动使用 Linux PCI 子系统提供的一组标准函数来访问 PCI 配置空间。在 Hyper-V 客机
+中，这些标准函数映射Hyper-V 虚拟 PCI 驱动中的 hv_pcifront_read_config() hv_pcifront_write_config() 函数。在普VM 中，这些 hv_pcifront_*() 函数直接访问 PCI 配置空间这些访问会陷入（trap）到 Hyper-V 进行处理。但CoCo VM 中，内存加密阻止 Hyper-V 读取客机指令
+流来模拟该访问，因此 hv_pcifront_*() 函数必须发起带有显式参数hypercall，以描述要进行的访问
+### 配置块后通道
+
+
+Hyper-V 主机Linux 中的 Hyper-V 虚拟 PCI 驱动共同实现了一条主机与客机之间的非标准后通道
+（back-channel）通信路径。该后通道路径使用经与vPCI 设备关联VMBus 通道发送的消息。函hyperv_read_cfg_blk() hyperv_write_cfg_blk() 是提供给 Linux 内核其他部分的主要接口。截至撰本文时，这些接口仅被 Mellanox mlx5 驱动用于在运行于 Azure 公有云的 Hyper-V 主机上传递诊断数据函数 hyperv_read_cfg_blk() hyperv_write_cfg_blk() 在一个独立模块（pci-hyperv-intf.c，位CONFIG_PCI_HYPERV_INTERFACE 下）中实现，在非 Hyper-V 环境中运行时有效地将它们置为空操作

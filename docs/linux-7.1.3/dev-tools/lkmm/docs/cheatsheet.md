@@ -1,11 +1,11 @@
 ﻿
-### 閫熸煡琛?
+### 速查
 
-鏈€熸煡琛ㄥ綊绾?Linux 鍐呮牳鍐呭瓨妯″瀷锛圠KMM锛変腑鍚勭被鍐呭瓨灞忛殰涓庡師璇紙濡?smp_mb銆乄RITE_ONCE/READ_ONCE銆侀攣鎿嶄綔绛夛級鍦ㄥ苟鍙戣鍐欏満鏅笅鐨勬帓搴忎繚璇侊紝渚夸簬鍐呮牳寮€鍙戣€呭揩閫熸煡闃呭唴瀛樺簭璇箟锛涘叾姝ｆ枃閫氳繃 :literal: 鎸囦护鐩存帴寮曠敤 cheatsheet.txt銆?
+本速查表归Linux 内核内存模型（LKMM）中各类内存屏障与原语（smp_mb、WRITE_ONCE/READ_ONCE、锁操作等）在并发读写场景下的排序保证，便于内核开发者快速查阅内存序语义；其正文通过 :literal: 指令直接引用 cheatsheet.txt
 
 
 
-瀛楅潰鍖呭惈 `tools/memory-model/Documentation/cheatsheet.txt`.
+字面包含 `tools/memory-model/Documentation/cheatsheet.txt`.
 
 ------------------------------------------------------------------
 

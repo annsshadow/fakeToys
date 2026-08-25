@@ -1,20 +1,20 @@
-﻿## I915 DG1/LMEM RFC 绔犺妭
+﻿## I915 DG1/LMEM RFC 章节
 
 
-## 涓婃父璁″垝
+## 上游计划
 
-閽堝涓婃父锛屾妸鎵€鏈?DG1 鐩稿叧浠ｇ爜钀藉湴骞舵渶缁堝惎鐢ㄣ€佸悓鏃跺寘鍚叏閮?uAPI 閮ㄥ垎鐨勬€讳綋璁″垝濡備笅锛?
+针对上游，把所DG1 相关代码落地并最终启用、同时包含全uAPI 部分的总体计划如下
 
-- 鍚堝苟 DG1 鐨勫熀纭€纭欢鏀寔锛堜粛涓嶅甫 pciid锛?
-- 鍦ㄧ壒娈婄殑 CONFIG_BROKEN锛堟垨绫讳技锛夋爣蹇椾箣鍚庡悎骞?uAPI 閮ㄥ垎
-        - 姝ゆ椂鎴戜滑浠嶅彲鍋氭敼鍔紝浣嗛噸瑕佺殑鏄繖璁╂垜浠?
-          鑳藉湪 CI 涓繍琛屽彲鍒╃敤鏈湴鍐呭瓨锛坙ocal-memory锛夌殑 IGTs
-- 杩佺Щ鍒?TTM锛岀‘淇濅竴鍒囨寔缁彲鐢ㄣ€傞儴鍒嗗伐浣滃唴瀹癸細
-        - 闈㈠悜鐙珛鏄惧崱鐨?TTM shrinker
-        - 瀹屾暣 dma_resv_lock 鐨?dma_resv_lockitem锛屽嵆涓嶄粎浠呮槸 trylock
-        - 浣跨敤 TTM CPU 缂洪〉澶勭悊绋嬪簭锛坧agefault handler锛?
-        - 灏?shmem 鍚庣璺敱鍒扮嫭绔嬫樉鍗＄殑 TTM SYSTEM
-        - TTM 鍙洖鏀跺璞★紙purgeable object锛夋敮鎸?
-        - 灏?i915 buddy 鍒嗛厤鍣ㄨ縼绉诲埌 TTM
-- 鍙戦€?RFC锛堟妱閫?mesa-dev锛変互鑾峰緱 uAPI 鐨勬渶缁堢缃茬‘璁?
-- 涓?DG1 娣诲姞 pciid 骞剁湡姝ｅ惎鐢?uAPI
+- 合并 DG1 的基础硬件支持（仍不带 pciid
+- 在特殊的 CONFIG_BROKEN（或类似）标志之后合uAPI 部分
+        - 此时我们仍可做改动，但重要的是这让我
+          能在 CI 中运行可利用本地内存（local-memory）的 IGTs
+- 迁移TTM，确保一切持续可用。部分工作内容：
+        - 面向独立显卡TTM shrinker
+        - 完整 dma_resv_lock dma_resv_lockitem，即不仅仅是 trylock
+        - 使用 TTM CPU 缺页处理程序（pagefault handler
+        - shmem 后端路由到独立显卡的 TTM SYSTEM
+        - TTM 可回收对象（purgeable object）支
+        - i915 buddy 分配器迁移到 TTM
+- 发RFC（抄mesa-dev）以获得 uAPI 的最终签署确
+- DG1 添加 pciid 并真正启uAPI

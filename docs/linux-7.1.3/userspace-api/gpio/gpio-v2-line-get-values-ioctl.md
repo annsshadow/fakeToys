@@ -2,44 +2,44 @@
 ######## GPIO_V2_LINE_GET_VALUES_IOCTL
 
 
-## 鍚嶇О
+## 名称
 
 
-GPIO_V2_LINE_GET_VALUES_IOCTL - 鑾峰彇鎵€璇锋眰绾胯矾鐨勫€笺€?
+GPIO_V2_LINE_GET_VALUES_IOCTL - 获取所请求线路的值
 
-## 姒傝
+## 概要
 
 
 `int ioctl(int req_fd, GPIO_V2_LINE_GET_VALUES_IOCTL, struct gpio_v2_line_values *values)`
 
-## 鍙傛暟
+## 参数
 
 
 `req_fd`
-    GPIO 瀛楃璁惧鐨勬枃浠舵弿杩扮锛岀敱 gpio-v2-get-line-ioctl.rst 鍦?
-    `request.fd<gpio_v2_line_request>` 涓繑鍥炪€?
+    GPIO 字符设备的文件描述符，由 gpio-v2-get-line-ioctl.rst 
+    `request.fd<gpio_v2_line_request>` 中返回
 
 `values`
-    瑕佽幏鍙栫殑 `line_values<gpio_v2_line_values>`锛屽叾涓?`mask` 琚?
-    璁剧疆浠ユ寚绀鸿鑾峰彇鐨勬墍璇锋眰绾胯矾鐨勫瓙闆嗐€?
+    要获取的 `line_values<gpio_v2_line_values>`，其`mask` 
+    设置以指示要获取的所请求线路的子集
 
-## 鎻忚堪
-
-
-鑾峰彇鎵€璇锋眰绾胯矾鐨勫€笺€?
-
-杩斿洖鐨勫€兼槸閫昏緫鍊硷紝琛ㄧず绾胯矾鏄縺娲昏繕鏄潪婵€娲汇€俙GPIO_V2_LINE_FLAG_ACTIVE_LOW`
-鏍囧織鎺у埗鐗╃悊鍊硷紙楂?浣庯級涓庨€昏緫鍊硷紙婵€娲?闈炴縺娲伙級涔嬮棿鐨勬槧灏勩€傝嫢鏈缃?
-`GPIO_V2_LINE_FLAG_ACTIVE_LOW`锛屽垯楂樼數骞充负婵€娲汇€佷綆鐢靛钩涓洪潪婵€娲伙紱鑻ヨ缃簡
-`GPIO_V2_LINE_FLAG_ACTIVE_LOW`锛屽垯浣庣數骞充负婵€娲汇€侀珮鐢靛钩涓洪潪婵€娲汇€?
-
-杈撳叆绾胯矾鍜岃緭鍑虹嚎璺殑鍊煎潎鍙鍙栥€?
-
-瀵逛簬杈撳嚭绾胯矾锛岃繑鍥炵殑鍊煎彇鍐充簬椹卞姩鍜岄厤缃紝鍙兘鏄緭鍑虹紦鍐插尯锛堟渶鍚庤缃殑璇锋眰鍊硷級鎴栬緭鍏ョ紦鍐插尯锛堢嚎璺殑瀹為檯鐢靛钩锛夛紝骞朵笖鏍规嵁纭欢鍜岄厤缃殑涓嶅悓锛屼簩鑰呭彲鑳戒笉涓€鑷淬€?
-
-## 杩斿洖鍊?
+## 描述
 
 
-鎴愬姛鏃惰繑鍥?0锛屼笖鐩稿簲鐨?`values.bits<gpio_v2_line_values>` 鍖呭惈璇诲彇鍒扮殑鍊笺€?
+获取所请求线路的值
 
-鍑洪敊鏃惰繑鍥?-1锛屽苟鐩稿簲鍦拌缃?`errno` 鍙橀噺銆傚父瑙侀敊璇爜鍦?error-codes.rst 涓弿杩般€?
+返回的值是逻辑值，表示线路是激活还是非激活。`GPIO_V2_LINE_FLAG_ACTIVE_LOW`
+标志控制物理值（低）与逻辑值（激非激活）之间的映射。若未设
+`GPIO_V2_LINE_FLAG_ACTIVE_LOW`，则高电平为激活、低电平为非激活；若设置了
+`GPIO_V2_LINE_FLAG_ACTIVE_LOW`，则低电平为激活、高电平为非激活
+
+输入线路和输出线路的值均可读取
+
+对于输出线路，返回的值取决于驱动和配置，可能是输出缓冲区（最后设置的请求值）或输入缓冲区（线路的实际电平），并且根据硬件和配置的不同，二者可能不一致
+
+## 杩斿洖鍊。
+
+
+成功时返0，且相应`values.bits<gpio_v2_line_values>` 包含读取到的值
+
+出错时返-1，并相应地设`errno` 变量。常见错误码error-codes.rst 中描述

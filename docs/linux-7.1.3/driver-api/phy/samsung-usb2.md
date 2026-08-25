@@ -1,22 +1,22 @@
-﻿## Samsung USB 2.0 PHY 閫傞厤灞?
+﻿## Samsung USB 2.0 PHY 閫傞厤灞。
 
-### 1. 鎻忚堪
+### 1. 描述
 
 
-鍦ㄨ澶?Samsung SoC 涓紝USB 2.0 PHY 妯″潡鐨勬灦鏋勬槸鐩镐技鐨勩€傚敖绠℃湁杩欎簺鐩镐技涔嬪锛屼絾鍒涘缓涓€涓兘閫傞厤鎵€鏈夎繖浜?PHY 鎺у埗鍣ㄧ殑鍗曚竴椹卞姩琚瘉鏄庢槸鍥伴毦鐨勩€傚樊寮傚線寰€寰堝皬锛屽瓨鍦ㄤ簬 PHY 瀵勫瓨鍣ㄧ殑鐗瑰畾浣嶄腑銆傚湪灏戞暟缃曡鎯呭喌涓嬶紝蹇呴』
-鏀瑰彉瀵勫瓨鍣ㄥ啓鍏ョ殑椤哄簭鎴?PHY 涓婄數杩囩▼銆傛閫傞厤灞傛槸鍦ㄦ嫢鏈夌嫭绔嬮┍鍔ㄥ拰鎷ユ湁涓鸿澶氱壒娈婃儏鍐靛鍔犳敮鎸佺殑鍗曚竴椹卞姩涔嬮棿鐨?涓€绉嶆姌琛枫€?
-### 2. 鏂囦欢鎻忚堪
+在许Samsung SoC 中，USB 2.0 PHY 模块的架构是相似的。尽管有这些相似之处，但创建一个能适配所有这PHY 控制器的单一驱动被证明是困难的。差异往往很小，存在于 PHY 寄存器的特定位中。在少数罕见情况下，必须
+改变寄存器写入的顺序PHY 上电过程。此适配层是在拥有独立驱动和拥有为许多特殊情况增加支持的单一驱动之间一种折衷
+### 2. 文件描述
 
 
 - phy-samsung-usb2.c
-   杩欐槸閫傞厤灞傜殑涓绘枃浠躲€傝鏂囦欢鍖呭惈 probe 鍑芥暟锛屽苟鍚戦€氱敤 PHY 妗嗘灦鎻愪緵涓や釜鍥炶皟銆傝繖涓や釜鍥炶皟鐢ㄤ簬缁?phy 涓婄數
-   鍜屼笅鐢点€傚畠浠墽琛屾墍鏈夌増鏈?PHY 妯″潡閮藉繀椤诲畬鎴愮殑鍏叡宸ヤ綔銆傛牴鎹墍閫夋嫨鐨?SoC锛屽畠浠墽琛?SoC 鐗瑰畾鐨勫洖璋冦€?   鐗瑰畾鐨?SoC 鐗堟湰閫氳繃閫夋嫨閫傚綋鐨?compatible 瀛楃涓叉潵纭畾銆傛澶栵紝璇ユ枃浠跺寘鍚拡瀵圭壒瀹?SoC 鐨?   struct of_device_id 瀹氫箟銆?
+   这是适配层的主文件。该文件包含 probe 函数，并向通用 PHY 框架提供两个回调。这两个回调用于phy 上电
+   和下电。它们执行所有版PHY 模块都必须完成的公共工作。根据所选择SoC，它们执SoC 特定的回调   特定SoC 版本通过选择适当compatible 字符串来确定。此外，该文件包含针对特SoC    struct of_device_id 定义
 - phy-samsung-usb2.h
-   杩欐槸澶存枃浠躲€傚畠澹版槑姝ら┍鍔ㄤ娇鐢ㄧ殑缁撴瀯浣撱€傛澶栵紝瀹冨簲鍖呭惈鎻忚堪鐗瑰畾 SoC 鐨勭粨鏋勪綋鐨?extern 澹版槑銆?
-### 3. 鏀寔鐨?SoC
+   这是头文件。它声明此驱动使用的结构体。此外，它应包含描述特定 SoC 的结构体extern 声明
+### 3. 支持SoC
 
 
-瑕佹敮鎸佷竴涓柊鐨?SoC锛屽簲鍚?drivers/phy 鐩綍娣诲姞涓€涓柊鏂囦欢銆傛瘡涓?SoC 鐨勯厤缃瓨鍌ㄥ湪涓€涓?```
+要支持一个新SoC，应drivers/phy 目录添加一个新文件。每SoC 的配置存储在一```
 
   struct samsung_usb2_phy_config {
 	const struct samsung_usb2_common_phy *phys;
@@ -26,7 +26,7 @@
   };
 
 ```
-num_phys 鏄┍鍔ㄥ鐞嗙殑 phy 鏁伴噺銆俙*phys` 鏄竴涓暟缁勶紝鍖呭惈姣忎釜 phy 鐨勯厤缃€俬as_mode_switch 灞炴€ф槸涓€涓?甯冨皵鏍囧織锛屽喅瀹?SoC 鏄惁鍦ㄤ竴瀵瑰紩鑴氫笂鍚屾椂鍏锋湁 USB 涓绘満鍜岃澶囥€傚鏋滄槸锛屽垯蹇呴』淇敼涓€涓壒娈婂瘎瀛樺櫒鏉ュ湪杩欎簺寮曡剼鐨?鍐呴儴璺敱涔嬮棿鍒囨崲锛屼互杩炲埌 USB 璁惧鎴栦富鏈烘ā鍧椼€?
+num_phys 是驱动处理的 phy 数量。`*phys` 是一个数组，包含每个 phy 的配置。has_mode_switch 属性是一布尔标志，决SoC 是否在一对引脚上同时具有 USB 主机和设备。如果是，则必须修改一个特殊寄存器来在这些引脚内部路由之间切换，以连到 USB 设备或主机模块
 ```
 
   const struct samsung_usb2_phy_config exynos4210_usb2_phy_config = {
@@ -39,7 +39,7 @@ num_phys 鏄┍鍔ㄥ鐞嗙殑 phy 鏁伴噺銆俙*phys` 鏄竴涓�
 ```
 - `int (**rate_to_clk)(unsigned long, u32 **)`
 
-	rate_to_clk 鍥炶皟鐢ㄤ簬灏嗙敤浣?PHY 妯″潡鍙傝€冩椂閽熺殑鏃堕挓閫熺巼杞崲涓哄簲鍐欏叆纭欢瀵勫瓨鍣ㄧ殑鍊笺€?
+	rate_to_clk 回调用于将用PHY 模块参考时钟的时钟速率转换为应写入硬件寄存器的值
 ```
 
   static const struct samsung_usb2_common_phy exynos4210_phys[] = {
@@ -74,8 +74,8 @@ num_phys 鏄┍鍔ㄥ鐞嗙殑 phy 鏁伴噺銆俙*phys` 鏄竴涓�
 - `int (**power_on)(struct samsung_usb2_phy_instance **);`
   `int (**power_off)(struct samsung_usb2_phy_instance **);`
 
-	杩欎袱涓洖璋冪敤浜庨€氳繃淇敼閫傚綋鐨勫瘎瀛樺櫒鏉ョ粰 phy 涓婄數鍜屼笅鐢点€?
-瀵归┍鍔ㄧ殑鏈€鍚庢敼鍔ㄦ槸鍚?phy-samsung-usb2.c 鏂囦欢娣诲姞閫傚綋鐨?compatible 鍊笺€傚浜?Exynos 4210锛屼互涓嬭
+	这两个回调用于通过修改适当的寄存器来给 phy 上电和下电
+对驱动的最后改动是phy-samsung-usb2.c 文件添加适当compatible 值。对Exynos 4210，以下行
 ```
 
   #ifdef CONFIG_PHY_EXYNOS4210_USB2
@@ -86,7 +86,7 @@ num_phys 鏄┍鍔ㄥ鐞嗙殑 phy 鏁伴噺銆俙*phys` 鏄竴涓�
   #endif
 
 ```
-涓轰簡缁欓┍鍔ㄥ鍔犺繘涓€姝ョ殑鐏垫椿鎬э紝Kconfig 鏂囦欢浣胯兘鍦ㄧ紪璇戠殑椹卞姩涓寘鍚鎵€閫?SoC 鐨勬敮鎸併€侹config
+为了给驱动增加进一步的灵活性，Kconfig 文件使能在编译的驱动中包含对所SoC 的支持。Kconfig
 ```
 
   config PHY_EXYNOS4210_USB2
@@ -100,9 +100,9 @@ num_phys 鏄┍鍔ㄥ鐞嗙殑 phy 鏁伴噺銆俙*phys` 鏄竴涓�
 	  phys are available - device, host, HSCI0 and HSCI1.
 
 ```
-鏂板垱寤虹殑鏀寔鏂?SoC 鐨勬枃浠朵篃蹇呴』娣诲姞鍒?```
+新创建的支持SoC 的文件也必须添加```
 
   obj-$(CONFIG_PHY_EXYNOS4210_USB2)       += phy-exynos4210-usb2.o
 
 ```
-瀹屾垚杩欎簺姝ラ鍚庯紝瀵规柊 SoC 鐨勬敮鎸佸氨搴旇灏辩华浜嗐€?
+完成这些步骤后，对新 SoC 的支持就应该就绪了

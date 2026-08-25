@@ -4,42 +4,42 @@
 ######## ioctl VIDIOC_DBG_G_CHIP_INFO
 
 
-## 鍚嶇О
+## 名称
 
 
-VIDIOC_DBG_G_CHIP_INFO - 璇嗗埆鐢佃鍗′笂鐨勮姱鐗?
-## 璇硶
+VIDIOC_DBG_G_CHIP_INFO - 识别电视卡上的芯
+## 语法
 
 
 `int ioctl(int fd, VIDIOC_DBG_G_CHIP_INFO, struct v4l2_dbg_chip_info *argp)`
 
-## 鍙傛暟
+## 参数
 
 
 `fd`
-    鐢?`open()` 杩斿洖鐨勬枃浠舵弿杩扮銆?
+    `open()` 返回的文件描述符
 `argp`
-    鎸囧悜 struct `v4l2_dbg_chip_info` 鐨勬寚閽堛€?
-## 鎻忚堪
+    指向 struct `v4l2_dbg_chip_info` 的指针
+## 描述
 
 
 
-    杩欐槸涓€涓疄楠屾€ф帴鍙ｏ紝灏嗘潵鍙兘浼氬彂鐢熷彉鍖栥€?
-鍑轰簬椹卞姩璋冭瘯鐩殑锛岃 ioctl 鍏佽娴嬭瘯绋嬪簭鍚戦┍鍔ㄦ煡璇㈢數瑙嗗崱涓婂瓨鍦ㄧ殑鑺墖淇℃伅銆傛櫘閫?搴旂敤绋嬪簭涓嶅緱浣跨敤璇ユ帴鍙ｃ€傚鏋滀綘鍙戠幇浜嗚姱鐗囩浉鍏崇殑 bug锛岃鑱旂郴 linux-media 閭欢鍒楄〃
-锛坄https://linuxtv.org/lists.php <https://linuxtv.org/lists.php>`__锛夛紝
-浠ヤ究淇銆?
-姝ゅ锛孡inux 鍐呮牳蹇呴』寮€鍚?`CONFIG_VIDEO_ADV_DEBUG` 閫夐」缂栬瘧锛屾墠鑳藉惎鐢ㄨ ioctl銆?
-瑕佹煡璇㈤┍鍔紝搴旂敤绋嬪簭蹇呴』鍒濆鍖?struct `v4l2_dbg_chip_info` 鐨?`match.type` 涓?`match.addr` 鎴?`match.name` 瀛楁锛屽苟浠ユ寚鍚戣缁撴瀯鐨勬寚閽堣皟鐢?VIDIOC_DBG_G_CHIP_INFO銆傛垚鍔熸椂锛岄┍鍔ㄥ皢鎵€閫夎姱鐗囩殑淇℃伅瀛樺叆 `name` 鍜?`flags` 瀛楁銆?
-褰?`match.type` 涓?`V4L2_CHIP_MATCH_BRIDGE` 鏃讹紝`match.addr` 閫夋嫨鐢佃鍗′笂鐨勭 n
-涓ˉ鎺モ€滆姱鐗団€濄€備綘鍙互浠?0 寮€濮嬶紝姣忔灏?`match.addr` 鍔?1锛岀洿鍒?VIDIOC_DBG_G_CHIP_INFO
-浠?`EINVAL` 閿欒鐮佸け璐ワ紝浠庤€屾灇涓炬墍鏈夎姱鐗囥€傜紪鍙?0 鎬绘槸閫夋嫨妗ユ帴鑺墖鏈韩锛屼緥濡傝繛鎺ュ埌
-PCI 鎴?USB 鎬荤嚎鐨勮姱鐗囥€傞潪闆剁紪鍙锋爣璇嗘ˉ鎺ヨ姱鐗囩殑鐗瑰畾閮ㄥ垎锛屼緥濡備竴涓?AC97 瀵勫瓨鍣ㄥ潡銆?
-褰?`match.type` 涓?`V4L2_CHIP_MATCH_SUBDEV` 鏃讹紝`match.addr` 閫夋嫨绗?n 涓瓙璁惧銆?杩欏厑璁镐綘鏋氫妇鎵€鏈夊瓙璁惧銆?
-鎴愬姛鏃讹紝`name` 瀛楁灏嗗寘鍚竴涓姱鐗囧悕绉帮紝`flags` 瀛楁鍦ㄩ┍鍔ㄦ敮鎸佷粠璁惧璇诲彇瀵勫瓨鍣ㄦ椂
-鍖呭惈 `V4L2_CHIP_FL_READABLE`锛屾垨鍦ㄩ┍鍔ㄦ敮鎸佸悜璁惧鍐欏叆瀵勫瓨鍣ㄦ椂鍖呭惈
-`V4L2_CHIP_FL_WRITABLE`銆?
-鐩告瘮鐩存帴璋冪敤璇?ioctl锛屾垜浠帹鑽愪娇鐢?v4l2-dbg 宸ュ叿銆傚畠鍙粠 LinuxTV v4l-dvb 浠撳簱
-鑾峰彇锛屽弬瑙?`https://linuxtv.org/repo/ <https://linuxtv.org/repo/>`__ 浠ヨ幏鍙?璁块棶璇存槑銆?
+    这是一个实验性接口，将来可能会发生变化
+出于驱动调试目的，该 ioctl 允许测试程序向驱动查询电视卡上存在的芯片信息。普应用程序不得使用该接口。如果你发现了芯片相关的 bug，请联系 linux-media 邮件列表
+（`https://linuxtv.org/lists.php <https://linuxtv.org/lists.php>`__），
+以便修复
+此外，Linux 内核必须开`CONFIG_VIDEO_ADV_DEBUG` 选项编译，才能启用该 ioctl
+要查询驱动，应用程序必须初始struct `v4l2_dbg_chip_info` `match.type` `match.addr` `match.name` 字段，并以指向该结构的指针调VIDIOC_DBG_G_CHIP_INFO。成功时，驱动将所选芯片的信息存入 `name` `flags` 字段
+`match.type` `V4L2_CHIP_MATCH_BRIDGE` 时，`match.addr` 选择电视卡上的第 n
+个桥接“芯片”。你可以0 开始，每次`match.addr` 1，直VIDIOC_DBG_G_CHIP_INFO
+`EINVAL` 错误码失败，从而枚举所有芯片。编0 总是选择桥接芯片本身，例如连接到
+PCI USB 总线的芯片。非零编号标识桥接芯片的特定部分，例如一AC97 寄存器块
+`match.type` `V4L2_CHIP_MATCH_SUBDEV` 时，`match.addr` 选择n 个子设备这允许你枚举所有子设备
+成功时，`name` 字段将包含一个芯片名称，`flags` 字段在驱动支持从设备读取寄存器时
+包含 `V4L2_CHIP_FL_READABLE`，或在驱动支持向设备写入寄存器时包含
+`V4L2_CHIP_FL_WRITABLE`銆。
+相比直接调用ioctl，我们推荐使v4l2-dbg 工具。它可从 LinuxTV v4l-dvb 仓库
+获取，参`https://linuxtv.org/repo/ <https://linuxtv.org/repo/>`__ 以获访问说明
 
 
     :header-rows:  0
@@ -48,13 +48,13 @@ PCI 鎴?USB 鎬荤嚎鐨勮姱鐗囥€傞潪闆剁紪鍙锋爣璇嗘ˉ鎺ヨ姱
 
     - - __u32
       - `type`
-      - 鍙兘鐨勭被鍨嬪垪琛紝鍙傝 name-chip-match-types銆?    - - union {
+      - 可能的类型列表，参见 name-chip-match-types    - - union {
       - (anonymous)
     - - __u32
       - `addr`
-      - 鎸夋缂栧彿鍖归厤鑺墖锛屽叿浣撹В閲婂彇鍐充簬 `type` 瀛楁銆?    - - char
+      - 按此编号匹配芯片，具体解释取决于 `type` 字段    - - char
       - `name[^32^]`
-      - 鎸夋鍚嶇О鍖归厤鑺墖锛屽叿浣撹В閲婂彇鍐充簬 `type` 瀛楁銆傚綋鍓嶆湭浣跨敤銆?    - - }
+      - 按此名称匹配芯片，具体解释取决于 `type` 字段。当前未使用    - - }
       -
 
 
@@ -65,13 +65,13 @@ PCI 鎴?USB 鎬荤嚎鐨勮姱鐗囥€傞潪闆剁紪鍙锋爣璇嗘ˉ鎺ヨ姱
 
     - - struct v4l2_dbg_match
       - `match`
-      - 濡備綍鍖归厤鑺墖锛屽弬瑙?name-v4l2-dbg-match銆?    - - char
+      - 如何匹配芯片，参name-v4l2-dbg-match    - - char
       - `name[^32^]`
-      - 鑺墖鐨勫悕绉般€?    - - __u32
+      - 芯片的名称    - - __u32
       - `flags`
-      - 鐢遍┍鍔ㄨ缃€傝嫢璁剧疆浜?`V4L2_CHIP_FL_READABLE`锛屽垯椹卞姩鏀寔浠庤澶囪鍙栧瘎瀛樺櫒銆?	鑻ヨ缃簡 `V4L2_CHIP_FL_WRITABLE`锛屽垯鏀寔鍐欏叆瀵勫瓨鍣ㄣ€?    - - __u32
+      - 由驱动设置。若设置`V4L2_CHIP_FL_READABLE`，则驱动支持从设备读取寄存器	若设置了 `V4L2_CHIP_FL_WRITABLE`，则支持写入寄存器    - - __u32
       - `reserved[^8^]`
-      - 淇濈暀瀛楁锛屽簲鐢ㄧ▼搴忎笌椹卞姩閮藉繀椤诲皢鍏剁疆涓?0銆?
+      - 保留字段，应用程序与驱动都必须将其置0
 
 
     :header-rows:  0
@@ -80,12 +80,12 @@ PCI 鎴?USB 鎬荤嚎鐨勮姱鐗囥€傞潪闆剁紪鍙锋爣璇嗘ˉ鎺ヨ姱
 
     - - `V4L2_CHIP_MATCH_BRIDGE`
       - 0
-      - 鍖归厤鍗′笂鐨勭 n 涓姱鐗囷紝0 琛ㄧず妗ユ帴鑺墖銆備笉鍖归厤瀛愯澶囥€?    - - `V4L2_CHIP_MATCH_SUBDEV`
+      - 匹配卡上的第 n 个芯片，0 表示桥接芯片。不匹配子设备    - - `V4L2_CHIP_MATCH_SUBDEV`
       - 4
-      - 鍖归厤绗?n 涓瓙璁惧銆?
-## 杩斿洖鍊?
+      - 匹配n 个子设备
+## 杩斿洖鍊。
 
-鎴愬姛鏃惰繑鍥?0锛屽嚭閿欐椂杩斿洖 -1 骞剁浉搴斿湴璁剧疆 `errno` 鍙橀噺銆傞€氱敤閿欒鐮佸湪
-Generic Error Codes <gen-errors> 绔犺妭涓弿杩般€?
+成功时返0，出错时返回 -1 并相应地设置 `errno` 变量。通用错误码在
+Generic Error Codes <gen-errors> 章节中描述
 EINVAL
-    `match_type` 鏃犳晥锛屾垨鏃犳硶鍖归厤鍒颁换浣曡澶囥€?
+    `match_type` 无效，或无法匹配到任何设备

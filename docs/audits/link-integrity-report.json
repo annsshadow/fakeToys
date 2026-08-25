@@ -1,0 +1,759 @@
+{
+  "generated_at": "2026-08-21T13:55:47.669185+00:00",
+  "doc_root": "docs/linux-7.1.3",
+  "summary": {
+    "files_scanned": 3942,
+    "total_links": 3961,
+    "inline_links": 3954,
+    "reference_def_links": 7,
+    "categories": {
+      "internal_broken": 105,
+      "external_http": 18,
+      "internal_file_ok": 3826,
+      "internal_dir_ok": 5,
+      "anchor_only": 7
+    },
+    "internal_links_total": 3936,
+    "broken_links": 105,
+    "broken_rate_percent_of_all_links": 2.651,
+    "broken_rate_percent_of_internal_links": 2.668,
+    "files_with_broken_links": 40
+  },
+  "broken_links": [
+    {
+      "source_file": "docs/linux-7.1.3/_TRANSLATE_PROTOCOL.md",
+      "line": 16,
+      "link_text": "鏂囧瓧",
+      "target": "URL",
+      "reason": "target_not_found"
+    },
+    {
+      "source_file": "docs/linux-7.1.3/_TRANSLATE_PROTOCOL.md",
+      "line": 16,
+      "link_text": "the scheduler",
+      "target": "url",
+      "reason": "target_not_found"
+    },
+    {
+      "source_file": "docs/linux-7.1.3/admin-guide/features.md",
+      "line": 5,
+      "link_text": "arch/",
+      "target": "../../arch",
+      "reason": "escapes_doc_root"
+    },
+    {
+      "source_file": "docs/linux-7.1.3/admin-guide/features.md",
+      "line": 9,
+      "link_text": "kbuild documentation",
+      "target": "../../kbuild",
+      "reason": "escapes_doc_root"
+    },
+    {
+      "source_file": "docs/linux-7.1.3/arch/x86/ifs.md",
+      "line": 6,
+      "link_text": "boot-interrupts",
+      "target": "boot-interrupts",
+      "reason": "target_not_found"
+    },
+    {
+      "source_file": "docs/linux-7.1.3/block/cmdline-partition.md",
+      "line": 9,
+      "link_text": "@<offset>",
+      "target": "part-name",
+      "reason": "target_not_found"
+    },
+    {
+      "source_file": "docs/linux-7.1.3/bpf/index.md",
+      "line": 26,
+      "link_text": "classic_vs_extended.rst",
+      "target": "classic_vs_extended.rst",
+      "reason": "target_not_found"
+    },
+    {
+      "source_file": "docs/linux-7.1.3/bpf/maps.md",
+      "line": 11,
+      "link_text": "map_*",
+      "target": "map_*",
+      "reason": "target_not_found"
+    },
+    {
+      "source_file": "docs/linux-7.1.3/bpf/programs.md",
+      "line": 4,
+      "link_text": "prog_*",
+      "target": "prog_*",
+      "reason": "target_not_found"
+    },
+    {
+      "source_file": "docs/linux-7.1.3/core-api/index.md",
+      "line": 22,
+      "link_text": "housekeeping.rst",
+      "target": "housekeeping.rst",
+      "reason": "target_not_found"
+    },
+    {
+      "source_file": "docs/linux-7.1.3/core-api/index.md",
+      "line": 67,
+      "link_text": "wrappers/memory-barriers.rst",
+      "target": "wrappers/memory-barriers.rst",
+      "reason": "target_not_found"
+    },
+    {
+      "source_file": "docs/linux-7.1.3/core-api/kho/index.md",
+      "line": 26,
+      "link_text": "abi.rst",
+      "target": "abi.rst",
+      "reason": "target_not_found"
+    },
+    {
+      "source_file": "docs/linux-7.1.3/dev-tools/kunit/architecture.md",
+      "line": 72,
+      "link_text": "_MSG",
+      "target": "kunit,",
+      "reason": "target_not_found"
+    },
+    {
+      "source_file": "docs/linux-7.1.3/driver-api/cxl/conventions.md",
+      "line": 7,
+      "link_text": "conventions/cxl-lmh.rst",
+      "target": "conventions/cxl-lmh.rst",
+      "reason": "target_not_found"
+    },
+    {
+      "source_file": "docs/linux-7.1.3/driver-api/cxl/conventions.md",
+      "line": 8,
+      "link_text": "conventions/cxl-atl.rst",
+      "target": "conventions/cxl-atl.rst",
+      "reason": "target_not_found"
+    },
+    {
+      "source_file": "docs/linux-7.1.3/driver-api/cxl/conventions.md",
+      "line": 9,
+      "link_text": "conventions/template.rst",
+      "target": "conventions/template.rst",
+      "reason": "target_not_found"
+    },
+    {
+      "source_file": "docs/linux-7.1.3/driver-api/cxl/index.md",
+      "line": 31,
+      "link_text": "鍒嗛厤/澶ч〉",
+      "target": "allocation/hugepages.rst",
+      "reason": "target_not_found"
+    },
+    {
+      "source_file": "docs/linux-7.1.3/driver-api/cxl/linux/cxl-driver.md",
+      "line": 418,
+      "link_text": "example-configurations/single-device.rst",
+      "target": "example-configurations/single-device.rst",
+      "reason": "target_not_found"
+    },
+    {
+      "source_file": "docs/linux-7.1.3/driver-api/cxl/linux/cxl-driver.md",
+      "line": 419,
+      "link_text": "example-configurations/hb-interleave.rst",
+      "target": "example-configurations/hb-interleave.rst",
+      "reason": "target_not_found"
+    },
+    {
+      "source_file": "docs/linux-7.1.3/driver-api/cxl/linux/cxl-driver.md",
+      "line": 420,
+      "link_text": "example-configurations/intra-hb-interleave.rst",
+      "target": "example-configurations/intra-hb-interleave.rst",
+      "reason": "target_not_found"
+    },
+    {
+      "source_file": "docs/linux-7.1.3/driver-api/cxl/linux/cxl-driver.md",
+      "line": 421,
+      "link_text": "example-configurations/multi-interleave.rst",
+      "target": "example-configurations/multi-interleave.rst",
+      "reason": "target_not_found"
+    },
+    {
+      "source_file": "docs/linux-7.1.3/driver-api/cxl/platform/acpi.md",
+      "line": 6,
+      "link_text": "acpi/cedt.rst",
+      "target": "acpi/cedt.rst",
+      "reason": "target_not_found"
+    },
+    {
+      "source_file": "docs/linux-7.1.3/driver-api/cxl/platform/acpi.md",
+      "line": 7,
+      "link_text": "acpi/srat.rst",
+      "target": "acpi/srat.rst",
+      "reason": "target_not_found"
+    },
+    {
+      "source_file": "docs/linux-7.1.3/driver-api/cxl/platform/acpi.md",
+      "line": 8,
+      "link_text": "acpi/hmat.rst",
+      "target": "acpi/hmat.rst",
+      "reason": "target_not_found"
+    },
+    {
+      "source_file": "docs/linux-7.1.3/driver-api/cxl/platform/acpi.md",
+      "line": 9,
+      "link_text": "acpi/slit.rst",
+      "target": "acpi/slit.rst",
+      "reason": "target_not_found"
+    },
+    {
+      "source_file": "docs/linux-7.1.3/driver-api/cxl/platform/acpi.md",
+      "line": 10,
+      "link_text": "acpi/dsdt.rst",
+      "target": "acpi/dsdt.rst",
+      "reason": "target_not_found"
+    },
+    {
+      "source_file": "docs/linux-7.1.3/driver-api/cxl/platform/example-configs.md",
+      "line": 7,
+      "link_text": "example-configurations/one-dev-per-hb.rst",
+      "target": "example-configurations/one-dev-per-hb.rst",
+      "reason": "target_not_found"
+    },
+    {
+      "source_file": "docs/linux-7.1.3/driver-api/cxl/platform/example-configs.md",
+      "line": 8,
+      "link_text": "example-configurations/multi-dev-per-hb.rst",
+      "target": "example-configurations/multi-dev-per-hb.rst",
+      "reason": "target_not_found"
+    },
+    {
+      "source_file": "docs/linux-7.1.3/driver-api/cxl/platform/example-configs.md",
+      "line": 9,
+      "link_text": "example-configurations/hb-interleave.rst",
+      "target": "example-configurations/hb-interleave.rst",
+      "reason": "target_not_found"
+    },
+    {
+      "source_file": "docs/linux-7.1.3/driver-api/cxl/platform/example-configs.md",
+      "line": 10,
+      "link_text": "example-configurations/flexible.rst",
+      "target": "example-configurations/flexible.rst",
+      "reason": "target_not_found"
+    },
+    {
+      "source_file": "docs/linux-7.1.3/driver-api/index.md",
+      "line": 69,
+      "link_text": "backlight/lp855x-driver.rst",
+      "target": "backlight/lp855x-driver.rst",
+      "reason": "target_not_found"
+    },
+    {
+      "source_file": "docs/linux-7.1.3/driver-api/media/drivers/tuners.md",
+      "line": 36,
+      "link_text": "^89^",
+      "target": "?",
+      "reason": "target_not_found"
+    },
+    {
+      "source_file": "docs/linux-7.1.3/gpu/amdgpu/display/index.md",
+      "line": 35,
+      "link_text": "display-manager.rst",
+      "target": "display-manager.rst",
+      "reason": "target_not_found"
+    },
+    {
+      "source_file": "docs/linux-7.1.3/gpu/amdgpu/display/index.md",
+      "line": 36,
+      "link_text": "dcn-overview.rst",
+      "target": "dcn-overview.rst",
+      "reason": "target_not_found"
+    },
+    {
+      "source_file": "docs/linux-7.1.3/gpu/amdgpu/display/index.md",
+      "line": 37,
+      "link_text": "dcn-blocks.rst",
+      "target": "dcn-blocks.rst",
+      "reason": "target_not_found"
+    },
+    {
+      "source_file": "docs/linux-7.1.3/gpu/amdgpu/display/index.md",
+      "line": 38,
+      "link_text": "programming-model-dcn.rst",
+      "target": "programming-model-dcn.rst",
+      "reason": "target_not_found"
+    },
+    {
+      "source_file": "docs/linux-7.1.3/gpu/amdgpu/display/index.md",
+      "line": 39,
+      "link_text": "mpo-overview.rst",
+      "target": "mpo-overview.rst",
+      "reason": "target_not_found"
+    },
+    {
+      "source_file": "docs/linux-7.1.3/gpu/amdgpu/display/index.md",
+      "line": 40,
+      "link_text": "dc-debug.rst",
+      "target": "dc-debug.rst",
+      "reason": "target_not_found"
+    },
+    {
+      "source_file": "docs/linux-7.1.3/gpu/amdgpu/display/index.md",
+      "line": 41,
+      "link_text": "display-contributing.rst",
+      "target": "display-contributing.rst",
+      "reason": "target_not_found"
+    },
+    {
+      "source_file": "docs/linux-7.1.3/gpu/amdgpu/display/index.md",
+      "line": 42,
+      "link_text": "dc-glossary.rst",
+      "target": "dc-glossary.rst",
+      "reason": "target_not_found"
+    },
+    {
+      "source_file": "docs/linux-7.1.3/gpu/amdgpu/gc/index.md",
+      "line": 21,
+      "link_text": "mes.rst",
+      "target": "mes.rst",
+      "reason": "target_not_found"
+    },
+    {
+      "source_file": "docs/linux-7.1.3/gpu/rfc/index.md",
+      "line": 18,
+      "link_text": "gpusvm.rst",
+      "target": "gpusvm.rst",
+      "reason": "target_not_found"
+    },
+    {
+      "source_file": "docs/linux-7.1.3/gpu/rfc/index.md",
+      "line": 20,
+      "link_text": "i915_gem_lmem.rst",
+      "target": "i915_gem_lmem.rst",
+      "reason": "target_not_found"
+    },
+    {
+      "source_file": "docs/linux-7.1.3/gpu/rfc/index.md",
+      "line": 22,
+      "link_text": "i915_scheduler.rst",
+      "target": "i915_scheduler.rst",
+      "reason": "target_not_found"
+    },
+    {
+      "source_file": "docs/linux-7.1.3/gpu/rfc/index.md",
+      "line": 24,
+      "link_text": "i915_small_bar.rst",
+      "target": "i915_small_bar.rst",
+      "reason": "target_not_found"
+    },
+    {
+      "source_file": "docs/linux-7.1.3/gpu/rfc/index.md",
+      "line": 26,
+      "link_text": "i915_vm_bind.rst",
+      "target": "i915_vm_bind.rst",
+      "reason": "target_not_found"
+    },
+    {
+      "source_file": "docs/linux-7.1.3/gpu/rfc/index.md",
+      "line": 28,
+      "link_text": "color_pipeline.rst",
+      "target": "color_pipeline.rst",
+      "reason": "target_not_found"
+    },
+    {
+      "source_file": "docs/linux-7.1.3/gpu/xe/index.md",
+      "line": 24,
+      "link_text": "xe-drm-usage-stats.rst",
+      "target": "xe-drm-usage-stats.rst",
+      "reason": "target_not_found"
+    },
+    {
+      "source_file": "docs/linux-7.1.3/hwmon/abituguru.md",
+      "line": 92,
+      "link_text": "abituguru-datasheet.rst",
+      "target": "abituguru-datasheet.rst",
+      "reason": "target_not_found"
+    },
+    {
+      "source_file": "docs/linux-7.1.3/index.md",
+      "line": 55,
+      "link_text": "鎶ュ憡闂",
+      "target": "admin-guide/reporting-issues.rst",
+      "reason": "target_not_found"
+    },
+    {
+      "source_file": "docs/linux-7.1.3/input/devices/index.md",
+      "line": 6,
+      "link_text": "*",
+      "target": "*",
+      "reason": "target_not_found"
+    },
+    {
+      "source_file": "docs/linux-7.1.3/netlink/specs/index.md",
+      "line": 6,
+      "link_text": "*",
+      "target": "*",
+      "reason": "target_not_found"
+    },
+    {
+      "source_file": "docs/linux-7.1.3/networking/diagnostic/index.md",
+      "line": 6,
+      "link_text": "twisted_pair_layer1_diagnostics.rst",
+      "target": "twisted_pair_layer1_diagnostics.rst",
+      "reason": "target_not_found"
+    },
+    {
+      "source_file": "docs/linux-7.1.3/plans/2026-07-06-001-feat-markdown-docs-output-plan.md",
+      "line": 117,
+      "link_text": "text",
+      "target": "subdir/page.md#anchor",
+      "reason": "target_not_found"
+    },
+    {
+      "source_file": "docs/linux-7.1.3/plans/2026-07-06-001-feat-markdown-docs-output-plan.md",
+      "line": 165,
+      "link_text": "docs/brainstorms/2026-07-06-markdown-docs-output-requirements.md",
+      "target": "docs/brainstorms/2026-07-06-markdown-docs-output-requirements.md",
+      "reason": "target_not_found"
+    },
+    {
+      "source_file": "docs/linux-7.1.3/plans/2026-07-06-002-feat-project-markdown-plan.md",
+      "line": 203,
+      "link_text": "docs/brainstorms/2026-07-06-project-overview-markdown-requirements.md",
+      "target": "docs/brainstorms/2026-07-06-project-overview-markdown-requirements.md",
+      "reason": "target_not_found"
+    },
+    {
+      "source_file": "docs/linux-7.1.3/plans/2026-07-07-003-feat-kernel-branch-coverage-90-plan.md",
+      "line": 378,
+      "link_text": "docs/brainstorms/kernel-branch-coverage-90-requirements.md",
+      "target": "../brainstorms/kernel-branch-coverage-90-requirements.md",
+      "reason": "target_not_found"
+    },
+    {
+      "source_file": "docs/linux-7.1.3/plans/2026-07-07-003-feat-kernel-branch-coverage-90-plan.md",
+      "line": 379,
+      "link_text": "lib/kunit/",
+      "target": "../../lib/kunit/",
+      "reason": "escapes_doc_root"
+    },
+    {
+      "source_file": "docs/linux-7.1.3/plans/2026-07-07-003-feat-kernel-branch-coverage-90-plan.md",
+      "line": 380,
+      "link_text": "tools/testing/kunit/kunit.py",
+      "target": "../../tools/testing/kunit/kunit.py",
+      "reason": "escapes_doc_root"
+    },
+    {
+      "source_file": "docs/linux-7.1.3/plans/2026-07-07-003-feat-kernel-branch-coverage-90-plan.md",
+      "line": 381,
+      "link_text": "tools/testing/selftests/",
+      "target": "../../tools/testing/selftests/",
+      "reason": "escapes_doc_root"
+    },
+    {
+      "source_file": "docs/linux-7.1.3/plans/2026-07-07-003-feat-kernel-branch-coverage-90-plan.md",
+      "line": 382,
+      "link_text": "kernel/gcov/",
+      "target": "../../kernel/gcov/",
+      "reason": "escapes_doc_root"
+    },
+    {
+      "source_file": "docs/linux-7.1.3/plans/2026-07-07-003-feat-kernel-branch-coverage-90-plan.md",
+      "line": 383,
+      "link_text": "lib/Kconfig.debug",
+      "target": "../../lib/Kconfig.debug",
+      "reason": "escapes_doc_root"
+    },
+    {
+      "source_file": "docs/linux-7.1.3/plans/2026-07-07-003-feat-kernel-branch-coverage-90-plan.md",
+      "line": 384,
+      "link_text": "lib/fault-inject.c",
+      "target": "../../lib/fault-inject.c",
+      "reason": "escapes_doc_root"
+    },
+    {
+      "source_file": "docs/linux-7.1.3/plans/2026-07-07-003-feat-kernel-branch-coverage-90-plan.md",
+      "line": 385,
+      "link_text": "drivers/gpu/drm/ci/",
+      "target": "../../drivers/gpu/drm/ci/",
+      "reason": "escapes_doc_root"
+    },
+    {
+      "source_file": "docs/linux-7.1.3/plans/2026-07-07-003-feat-kernel-branch-coverage-90-plan.md",
+      "line": 386,
+      "link_text": "Documentation/dev-tools/gcov.rst",
+      "target": "../../Documentation/dev-tools/gcov.rst",
+      "reason": "escapes_doc_root"
+    },
+    {
+      "source_file": "docs/linux-7.1.3/plans/2026-07-07-003-feat-kernel-branch-coverage-90-plan.md",
+      "line": 387,
+      "link_text": "Documentation/dev-tools/kcov.rst",
+      "target": "../../Documentation/dev-tools/kcov.rst",
+      "reason": "escapes_doc_root"
+    },
+    {
+      "source_file": "docs/linux-7.1.3/plans/2026-07-08-001-feat-test-coverage-expansion-plan.md",
+      "line": 365,
+      "link_text": "docs/brainstorms/2026-07-08-multi-engine-full-coverage-requirements.md",
+      "target": "docs/brainstorms/2026-07-08-multi-engine-full-coverage-requirements.md",
+      "reason": "target_not_found"
+    },
+    {
+      "source_file": "docs/linux-7.1.3/plans/2026-07-08-001-feat-test-coverage-expansion-plan.md",
+      "line": 366,
+      "link_text": "tools/testing/orchestrator/test_orchestrator.py",
+      "target": "tools/testing/orchestrator/test_orchestrator.py",
+      "reason": "target_not_found"
+    },
+    {
+      "source_file": "docs/linux-7.1.3/plans/2026-07-08-001-feat-test-coverage-expansion-plan.md",
+      "line": 366,
+      "link_text": "tools/testing/orchestrator/syzkaller_runner.py",
+      "target": "tools/testing/orchestrator/syzkaller_runner.py",
+      "reason": "target_not_found"
+    },
+    {
+      "source_file": "docs/linux-7.1.3/plans/2026-07-08-001-feat-test-coverage-expansion-plan.md",
+      "line": 366,
+      "link_text": "tools/testing/orchestrator/faultinj_runner.py",
+      "target": "tools/testing/orchestrator/faultinj_runner.py",
+      "reason": "target_not_found"
+    },
+    {
+      "source_file": "docs/linux-7.1.3/plans/2026-07-08-001-feat-test-coverage-expansion-plan.md",
+      "line": 366,
+      "link_text": "tools/testing/coverage/coverage_harness.py",
+      "target": "tools/testing/coverage/coverage_harness.py",
+      "reason": "target_not_found"
+    },
+    {
+      "source_file": "docs/linux-7.1.3/plans/2026-07-08-001-feat-test-coverage-expansion-plan.md",
+      "line": 366,
+      "link_text": ".gitlab-ci-coverage.yml",
+      "target": ".gitlab-ci-coverage.yml",
+      "reason": "target_not_found"
+    },
+    {
+      "source_file": "docs/linux-7.1.3/plans/2026-07-08-001-feat-test-coverage-expansion-plan.md",
+      "line": 367,
+      "link_text": "Documentation/dev-tools/testing-strategy.rst",
+      "target": "Documentation/dev-tools/testing-strategy.rst",
+      "reason": "target_not_found"
+    },
+    {
+      "source_file": "docs/linux-7.1.3/plans/2026-07-08-001-feat-test-coverage-expansion-plan.md",
+      "line": 367,
+      "link_text": "Documentation/fault-injection/fault-injection.rst",
+      "target": "Documentation/fault-injection/fault-injection.rst",
+      "reason": "target_not_found"
+    },
+    {
+      "source_file": "docs/linux-7.1.3/plans/2026-07-08-001-feat-test-coverage-expansion-plan.md",
+      "line": 368,
+      "link_text": "net/core_kunit_test.c",
+      "target": "net/core_kunit_test.c",
+      "reason": "target_not_found"
+    },
+    {
+      "source_file": "docs/linux-7.1.3/plans/2026-07-08-001-feat-test-coverage-expansion-plan.md",
+      "line": 368,
+      "link_text": "fs/super_kunit_test.c",
+      "target": "fs/super_kunit_test.c",
+      "reason": "target_not_found"
+    },
+    {
+      "source_file": "docs/linux-7.1.3/plans/2026-07-08-001-feat-test-coverage-expansion-plan.md",
+      "line": 368,
+      "link_text": "kernel/sysctl-test.c",
+      "target": "kernel/sysctl-test.c",
+      "reason": "target_not_found"
+    },
+    {
+      "source_file": "docs/linux-7.1.3/plans/2026-07-08-001-feat-test-coverage-expansion-plan.md",
+      "line": 368,
+      "link_text": "mm/page_alloc_kunit_test.c",
+      "target": "mm/page_alloc_kunit_test.c",
+      "reason": "target_not_found"
+    },
+    {
+      "source_file": "docs/linux-7.1.3/rust/coding-guidelines.md",
+      "line": 157,
+      "link_text": "`include/linux/printk.h`",
+      "target": "srctree/include/linux/printk.h",
+      "reason": "target_not_found"
+    },
+    {
+      "source_file": "docs/linux-7.1.3/trace/coresight/index.md",
+      "line": 4,
+      "link_text": "*",
+      "target": "*",
+      "reason": "target_not_found"
+    },
+    {
+      "source_file": "docs/linux-7.1.3/trace/rv/index.md",
+      "line": 10,
+      "link_text": "runtime-verification.rst",
+      "target": "runtime-verification.rst",
+      "reason": "target_not_found"
+    },
+    {
+      "source_file": "docs/linux-7.1.3/trace/rv/index.md",
+      "line": 11,
+      "link_text": "deterministic_automata.rst",
+      "target": "deterministic_automata.rst",
+      "reason": "target_not_found"
+    },
+    {
+      "source_file": "docs/linux-7.1.3/trace/rv/index.md",
+      "line": 12,
+      "link_text": "linear_temporal_logic.rst",
+      "target": "linear_temporal_logic.rst",
+      "reason": "target_not_found"
+    },
+    {
+      "source_file": "docs/linux-7.1.3/trace/rv/index.md",
+      "line": 13,
+      "link_text": "hybrid_automata.rst",
+      "target": "hybrid_automata.rst",
+      "reason": "target_not_found"
+    },
+    {
+      "source_file": "docs/linux-7.1.3/trace/rv/index.md",
+      "line": 14,
+      "link_text": "monitor_synthesis.rst",
+      "target": "monitor_synthesis.rst",
+      "reason": "target_not_found"
+    },
+    {
+      "source_file": "docs/linux-7.1.3/trace/rv/index.md",
+      "line": 15,
+      "link_text": "da_monitor_instrumentation.rst",
+      "target": "da_monitor_instrumentation.rst",
+      "reason": "target_not_found"
+    },
+    {
+      "source_file": "docs/linux-7.1.3/trace/rv/index.md",
+      "line": 16,
+      "link_text": "monitor_wip.rst",
+      "target": "monitor_wip.rst",
+      "reason": "target_not_found"
+    },
+    {
+      "source_file": "docs/linux-7.1.3/trace/rv/index.md",
+      "line": 17,
+      "link_text": "monitor_wwnr.rst",
+      "target": "monitor_wwnr.rst",
+      "reason": "target_not_found"
+    },
+    {
+      "source_file": "docs/linux-7.1.3/trace/rv/index.md",
+      "line": 18,
+      "link_text": "monitor_sched.rst",
+      "target": "monitor_sched.rst",
+      "reason": "target_not_found"
+    },
+    {
+      "source_file": "docs/linux-7.1.3/trace/rv/index.md",
+      "line": 19,
+      "link_text": "monitor_rtapp.rst",
+      "target": "monitor_rtapp.rst",
+      "reason": "target_not_found"
+    },
+    {
+      "source_file": "docs/linux-7.1.3/trace/rv/index.md",
+      "line": 20,
+      "link_text": "monitor_stall.rst",
+      "target": "monitor_stall.rst",
+      "reason": "target_not_found"
+    },
+    {
+      "source_file": "docs/linux-7.1.3/trace/rv/index.md",
+      "line": 21,
+      "link_text": "monitor_deadline.rst",
+      "target": "monitor_deadline.rst",
+      "reason": "target_not_found"
+    },
+    {
+      "source_file": "docs/linux-7.1.3/translations/zh_CN/index.md",
+      "line": 28,
+      "link_text": "how-to.rst",
+      "target": "how-to.rst",
+      "reason": "target_not_found"
+    },
+    {
+      "source_file": "docs/linux-7.1.3/translations/zh_CN/index.md",
+      "line": 77,
+      "link_text": "admin-guide/reporting-issues.rst",
+      "target": "admin-guide/reporting-issues.rst",
+      "reason": "target_not_found"
+    },
+    {
+      "source_file": "docs/linux-7.1.3/translations/zh_CN/rust/coding-guidelines.md",
+      "line": 229,
+      "link_text": "`include/linux/printk.h`",
+      "target": "srctree/include/linux/printk.h",
+      "reason": "target_not_found"
+    },
+    {
+      "source_file": "docs/linux-7.1.3/translations/zh_TW/index.md",
+      "line": 68,
+      "link_text": "admin-guide/reporting-issues.rst",
+      "target": "admin-guide/reporting-issues.rst",
+      "reason": "target_not_found"
+    },
+    {
+      "source_file": "docs/linux-7.1.3/usb/index.md",
+      "line": 23,
+      "link_text": "澶嶅悎璁惧娴嬭瘯",
+      "target": "gadget_testing",
+      "reason": "target_not_found"
+    },
+    {
+      "source_file": "docs/linux-7.1.3/userspace-api/media/v4l/selection-api.md",
+      "line": 9,
+      "link_text": "selection-api-intro.rst",
+      "target": "selection-api-intro.rst",
+      "reason": "target_not_found"
+    },
+    {
+      "source_file": "docs/linux-7.1.3/userspace-api/media/v4l/selection-api.md",
+      "line": 10,
+      "link_text": "selection-api-targets.rst",
+      "target": "selection-api-targets.rst",
+      "reason": "target_not_found"
+    },
+    {
+      "source_file": "docs/linux-7.1.3/userspace-api/media/v4l/selection-api.md",
+      "line": 11,
+      "link_text": "selection-api-configuration.rst",
+      "target": "selection-api-configuration.rst",
+      "reason": "target_not_found"
+    },
+    {
+      "source_file": "docs/linux-7.1.3/userspace-api/media/v4l/selection-api.md",
+      "line": 12,
+      "link_text": "selection-api-vs-crop-api.rst",
+      "target": "selection-api-vs-crop-api.rst",
+      "reason": "target_not_found"
+    },
+    {
+      "source_file": "docs/linux-7.1.3/userspace-api/media/v4l/selection-api.md",
+      "line": 13,
+      "link_text": "selection-api-examples.rst",
+      "target": "selection-api-examples.rst",
+      "reason": "target_not_found"
+    },
+    {
+      "source_file": "docs/linux-7.1.3/w1/index.md",
+      "line": 5,
+      "link_text": "w1 通用文档",
+      "target": "w1-generic.rst",
+      "reason": "target_not_found"
+    },
+    {
+      "source_file": "docs/linux-7.1.3/w1/index.md",
+      "line": 6,
+      "link_text": "w1 Netlink 文档",
+      "target": "w1-netlink.rst",
+      "reason": "target_not_found"
+    },
+    {
+      "source_file": "docs/linux-7.1.3/wmi/devices/index.md",
+      "line": 6,
+      "link_text": "*",
+      "target": "*",
+      "reason": "target_not_found"
+    }
+  ]
+}

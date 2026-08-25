@@ -1,29 +1,29 @@
-﻿## Linux Gadget 涓茶椹卞姩 v2.0
+﻿## Linux Gadget 串行驱动 v2.0
 
 
 11/20/2004
 
-锛?008-05-08 鏇存柊鑷?v2.3锛?
+008-05-08 更新v2.3
 
-### 璁稿彲璇佷笌鍏嶈矗澹版槑
+### 许可证与免责声明
 
-鏈▼搴忔槸鑷敱杞欢锛涗綘鍙互鍦ㄨ嚜鐢辫蒋浠跺熀閲戜細鍙戝竷鐨?GNU 閫氱敤鍏叡璁稿彲璇佹潯娆句笅閲嶆柊鍒嗗彂鍜?鎴栦慨鏀瑰畠锛涘彲浠ユ槸璁稿彲璇佺殑绗?2 鐗堬紝鎴栬€咃紙鐢变綘閫夋嫨锛変换浣曟洿鏅氱殑鐗堟湰銆?
-鏈▼搴忓垎鍙戠殑鐩殑鏄笇鏈涘畠鏈夌敤锛屼絾娌℃湁浠讳綍鎷呬繚锛涚敋鑷虫病鏈夊閫傞攢鎬ф垨鐗瑰畾鐢ㄩ€旈€傜敤鎬х殑榛樼ず鎷呬繚銆傝瑙?GNU 閫氱敤鍏叡璁稿彲璇併€?
-浣犲簲璇ュ凡缁忛殢鏈▼搴忔敹鍒颁簡涓€浠?GNU 閫氱敤鍏叡璁稿彲璇佺殑鍓湰锛涘鏋滄病鏈夛紝璇峰啓淇＄粰鑷敱杞欢鍩洪噾浼氾紝鍦板潃锛?9 Temple Place, Suite 330, Boston, MA 02111-1307 USA銆?
-鏈枃妗ｄ互鍙?gadget 涓茶椹卞姩鏈韩鐗堟潈褰?(C) 2004 Al Borchers (alborchers@steinerpoint.com) 鎵€鏈夈€?
-濡傛灉浣犲鏈┍鍔ㄦ湁鐤戦棶銆侀棶棰樻垨寤鸿锛岃鑱旂郴 Al Borchers锛歛lborchers@steinerpoint.com銆?
+本程序是自由软件；你可以在自由软件基金会发布GNU 通用公共许可证条款下重新分发或修改它；可以是许可证的2 版，或者（由你选择）任何更晚的版本
+本程序分发的目的是希望它有用，但没有任何担保；甚至没有对适销性或特定用途适用性的默示担保。详GNU 通用公共许可证
+你应该已经随本程序收到了一GNU 通用公共许可证的副本；如果没有，请写信给自由软件基金会，地址9 Temple Place, Suite 330, Boston, MA 02111-1307 USA
+本文档以gadget 串行驱动本身版权(C) 2004 Al Borchers (alborchers@steinerpoint.com) 所有
+如果你对本驱动有疑问、问题或建议，请联系 Al Borchers：alborchers@steinerpoint.com
 
-### 鍏堝喅鏉′欢
+### 先决条件
 
-gadget 涓茶椹卞姩鏈夐€傜敤浜?2.4 Linux 鍐呮牳鐨勭増鏈紝浣嗘湰鏂囨。鍋囧畾浣犳鍦?2.6 Linux 鍐呮牳涓娇鐢?2.3 鎴栨洿楂樼増鏈殑 gadget 涓茶椹卞姩銆?
-鏈枃妗ｅ亣瀹氫綘鐔熸倝 Linux 鍜?Windows锛屽苟涓旂煡閬撳浣曢厤缃拰鏋勫缓 Linux 鍐呮牳銆佽繍琛屾爣鍑嗗伐鍏枫€佷娇鐢?minicom 鍜?HyperTerminal锛屼互鍙婁娇鐢?USB 鍜屼覆琛岃澶囥€傚畠杩樺亣瀹氫綘灏?Linux gadget 鍜?usb 椹卞姩閰嶇疆涓烘ā鍧椼€?
-鍦ㄩ┍鍔ㄧ殑 2.3 鐗堟湰涓紝涓昏澶囧彿鍜屾璁惧鍙蜂笉鍐嶉潤鎬佸畾涔夈€備綘鐨?Linux 绯荤粺搴斿綋鎶?sysfs 鎸傝浇鍦?/sys锛屽苟浣跨敤 鈥渕dev鈥濓紙Busybox 涓級鎴?鈥渦dev鈥?鏉ュ垱寤轰笌 sysfs /sys/class/tty 鏂囦欢鍖归厤鐨?/dev 鑺傜偣銆?
+gadget 串行驱动有适用2.4 Linux 内核的版本，但本文档假定你正2.6 Linux 内核中使2.3 或更高版本的 gadget 串行驱动
+本文档假定你熟悉 Linux Windows，并且知道如何配置和构建 Linux 内核、运行标准工具、使minicom HyperTerminal，以及使USB 和串行设备。它还假定你Linux gadget usb 驱动配置为模块
+在驱动的 2.3 版本中，主设备号和次设备号不再静态定义。你Linux 系统应当sysfs 挂载/sys，并使用 “mdev”（Busybox 中）“udev来创建与 sysfs /sys/class/tty 文件匹配/dev 节点
 
 
-### 姒傝堪
+### 概述
 
-gadget 涓茶椹卞姩鏄竴涓?Linux USB gadget 椹卞姩锛屽嵆涓€涓?USB 璁惧渚ч┍鍔ㄣ€傚畠杩愯鍦ㄥ叿澶?USB 璁惧渚х‖浠剁殑 Linux 绯荤粺涓婏紱渚嬪 PDA銆佸祵鍏ュ紡 Linux 绯荤粺锛屾垨甯︽湁 USB 寮€鍙戞澘鐨?PC銆?
-gadget 涓茶椹卞姩閫氳繃 USB 涓庝竴涓?CDC ACM 椹卞姩閫氫俊
+gadget 串行驱动是一Linux USB gadget 驱动，即一USB 设备侧驱动。它运行在具USB 设备侧硬件的 Linux 系统上；例如 PDA、嵌入式 Linux 系统，或带有 USB 开发板PC
+gadget 串行驱动通过 USB 与一CDC ACM 驱动通信
 ```
 
    Host
@@ -47,16 +47,16 @@ gadget 涓茶椹卞姩閫氳繃 USB 涓庝竴涓?CDC ACM 椹卞姩閫氫俊
    --------------------------------------
 
 ```
-鍦ㄨ澶囦晶 Linux 绯荤粺涓婏紝gadget 涓茶椹卞姩鐪嬭捣鏉ュ儚涓€涓覆琛岃澶囥€?
-鍦ㄤ富鏈轰晶绯荤粺涓婏紝gadget 涓茶璁惧鐪嬭捣鏉ュ儚鏄竴涓鍚?CDC ACM 鏍囧噯鐨勭被璁惧锛屾垨鑰呮槸涓€涓甫鏈?bulk in 鍜?bulk out 绔偣鐨勭畝鍗曞巶鍟嗙壒瀹氳澶囷紝骞朵笖瀹冪殑澶勭悊鏂瑰紡涓庡叾浠栦覆琛岃澶囩被浼笺€?
-涓绘満渚ч┍鍔ㄥ彲浠ユ槸浠绘剰绗﹀悎 ACM 鏍囧噯鐨勯┍鍔紝鎴栬€呬换浣曡兘澶熶笌甯︽湁绠€鍗?bulk in/out 鎺ュ彛鐨勮澶囬€氫俊鐨勯┍鍔ㄣ€侴adget 涓茶宸茬粡鐢?Linux ACM 椹卞姩銆乄indows usbser.sys ACM 椹卞姩浠ュ強 Linux USB 閫氱敤涓茶椹卞姩娴嬭瘯杩囥€?
-鍦?gadget 涓茶椹卞姩鍜屼富鏈轰晶 ACM 鎴栭€氱敤涓茶椹卞姩杩愯鐨勬儏鍐典笅锛屼綘搴旇鑳藉鍦ㄤ富鏈哄拰 gadget 渚х郴缁熶箣闂撮€氫俊锛屽氨鍍忓畠浠€氳繃涓茶鐢电紗杩炴帴涓€鏍枫€?
-gadget 涓茶椹卞姩鍙彁渚涚畝鍗曠殑涓嶅彲闈犳暟鎹€氫俊銆傚畠杩樻湭鑳藉鐞嗘祦鎺ф垨鏅€氫覆琛岃澶囩殑璁稿鍏朵粬鐗规€с€?
+在设备侧 Linux 系统上，gadget 串行驱动看起来像一个串行设备
+在主机侧系统上，gadget 串行设备看起来像是一个符CDC ACM 标准的类设备，或者是一个带bulk in bulk out 端点的简单厂商特定设备，并且它的处理方式与其他串行设备类似
+主机侧驱动可以是任意符合 ACM 标准的驱动，或者任何能够与带有简bulk in/out 接口的设备通信的驱动。Gadget 串行已经Linux ACM 驱动、Windows usbser.sys ACM 驱动以及 Linux USB 通用串行驱动测试过
+gadget 串行驱动和主机侧 ACM 或通用串行驱动运行的情况下，你应该能够在主机和 gadget 侧系统之间通信，就像它们通过串行电缆连接一样
+gadget 串行驱动只提供简单的不可靠数据通信。它还未能处理流控或普通串行设备的许多其他特性
 
-### 瀹夎 Gadget 涓茶椹卞姩
+### 安装 Gadget 串行驱动
 
-瑕佷娇鐢?gadget 涓茶椹卞姩锛屼綘蹇呴』灏?Linux gadget 渚у唴鏍搁厤缃负 鈥淪upport for USB Gadgets鈥濄€佷竴涓?鈥淯SB Peripheral Controller鈥濓紙渚嬪 net2280锛夛紝浠ュ強 鈥淪erial Gadget鈥?椹卞姩銆傞厤缃唴鏍告椂杩欎簺閮藉垪鍦?鈥淯SB Gadget Support鈥?涓嬨€傜劧鍚庨噸鏂版瀯寤哄苟瀹夎鍐呮牳鎴栨ā鍧椼€?
-鐒跺悗浣犲繀椤诲姞杞?gadget 涓茶椹卞姩銆傝灏嗗叾浣滀负
+要使gadget 串行驱动，你必须Linux gadget 侧内核配置为 “Support for USB Gadgets”、一“USB Peripheral Controller”（例如 net2280），以及 “Serial Gadget驱动。配置内核时这些都列“USB Gadget Support下。然后重新构建并安装内核或模块
+然后你必须加gadget 串行驱动。要将其作为
 ```
   modprobe g_serial
 
@@ -65,31 +65,31 @@ gadget 涓茶椹卞姩鍙彁渚涚畝鍗曠殑涓嶅彲闈犳暟鎹€�
   modprobe g_serial use_acm=0
 
 ```
-鍔犺浇锛岃繖涔熶細鑷姩鍔犺浇搴曞眰鐨?gadget 澶栬鎺у埗鍣ㄩ┍鍔ㄣ€傛瘡娆￠噸鍚?gadget 渚?Linux 绯荤粺鏃堕兘蹇呴』杩欐牱鍋氥€傚鏋滈渶瑕侊紝浣犲彲浠ユ妸瀹冨姞鍏ュ惎鍔ㄨ剼鏈€?
-浣犵殑绯荤粺搴斿綋浣跨敤 mdev锛堟潵鑷?busybox锛夋垨 udev 鏉ュ垱寤鸿澶囪妭鐐广€傚湪杩欎釜 gadget 椹卞姩璁剧疆濂戒箣鍚庯紝浣犲簲璇ョ湅鍒?```
+加载，这也会自动加载底层gadget 外设控制器驱动。每次重gadget Linux 系统时都必须这样做。如果需要，你可以把它加入启动脚本
+你的系统应当使用 mdev（来busybox）或 udev 来创建设备节点。在这个 gadget 驱动设置好之后，你应该看```
 
   # ls -l /dev/ttyGS0 | cat
   crw-rw----    1 root     root     253,   0 May  8 14:10 /dev/ttyGS0
   #
 
 ```
-娉ㄦ剰锛屼富璁惧鍙凤紙涓婇潰鐨?253锛夋槸绯荤粺鐗瑰畾鐨勩€傚鏋滀綘闇€瑕佹墜鍔ㄥ垱寤?/dev 鑺傜偣锛岃浣跨敤鐨勬纭彿鐮佷細鍦?/sys/class/tty/ttyGS0/dev 鏂囦欢涓€?
-濡傛灉浣犺緝鏃╅摼鎺ヨ繖涓?gadget 椹卞姩锛堢敋鑷冲彲鑳介潤鎬侀摼鎺ワ級锛屼綘鍙兘鎯宠缃竴涓?/etc/inittab 鏉＄洰鏉ュ湪涓婇潰杩愯 鈥済etty鈥濄€?dev/ttyGS0 杩欎竴琛屽簲褰撳儚澶у鏁板叾浠栦覆琛岀鍙ｄ竴鏍峰伐浣溿€?
+注意，主设备号（上面253）是系统特定的。如果你需要手动创/dev 节点，要使用的正确号码会/sys/class/tty/ttyGS0/dev 文件中
+如果你较早链接这gadget 驱动（甚至可能静态链接），你可能想设置一/etc/inittab 条目来在上面运行 “getty”dev/ttyGS0 这一行应当像大多数其他串行端口一样工作
 
-濡傛灉 gadget 涓茶浣滀负 ACM 璁惧鍔犺浇锛屼綘浼氬湪涓绘満渚т娇鐢?Windows 鎴?Linux ACM 椹卞姩銆傚鏋?gadget 涓茶浣滀负 bulk in/out 璁惧鍔犺浇锛屼綘浼氬湪涓绘満渚т娇鐢?Linux 閫氱敤涓茶椹卞姩銆傝鎸夌収涓嬮潰鐩稿簲鐨勮鏄庢潵瀹夎涓绘満渚ч┍鍔ㄣ€?
+如果 gadget 串行作为 ACM 设备加载，你会在主机侧使Windows Linux ACM 驱动。如gadget 串行作为 bulk in/out 设备加载，你会在主机侧使Linux 通用串行驱动。请按照下面相应的说明来安装主机侧驱动
 
-### 瀹夎 Windows 涓绘満 ACM 椹卞姩
+### 安装 Windows 主机 ACM 驱动
 
-瑕佷娇鐢?Windows ACM 椹卞姩锛屼綘蹇呴』鎷ユ湁 鈥渓inux-cdc-acm.inf鈥?鏂囦欢锛堥殢鏈枃妗ｄ竴璧锋彁渚涳級锛屽畠鏀寔鎵€鏈夎繎鏈熺増鏈殑 Windows銆?
-褰?gadget 涓茶椹卞姩宸插姞杞姐€佸苟涓?USB 璁惧閫氳繃 USB 鐢电紗杩炴帴鍒?Windows 涓绘満鏃讹紝Windows 搴斿綋璇嗗埆 gadget 涓茶璁惧骞惰姹傞┍鍔ㄣ€傚憡璇?Windows 鍦ㄥ寘鍚?鈥渓inux-cdc-acm.inf鈥?鏂囦欢鐨勬枃浠跺す涓煡鎵鹃┍鍔ㄣ€?
-渚嬪锛屽湪 Windows XP 涓婏紝褰?gadget 涓茶璁惧棣栨鎻掑叆鏃讹紝鈥淔ound New Hardware Wizard鈥?浼氬惎鍔ㄣ€傞€夋嫨 鈥淚nstall from a list or specific location (Advanced)鈥濓紝鐒跺悗鍦ㄤ笅涓€涓睆骞曚笂閫夋嫨 鈥淚nclude this location in the search鈥?骞惰緭鍏ヨ矾寰勶紝鎴栨祻瑙堝埌鍖呭惈 鈥渓inux-cdc-acm.inf鈥?鏂囦欢鐨勬枃浠跺す銆俉indows 浼氭姳鎬?Gadget Serial 椹卞姩娌℃湁閫氳繃 Windows Logo 娴嬭瘯锛屼絾閫夋嫨 鈥淐ontinue anyway鈥?骞跺畬鎴愰┍鍔ㄥ畨瑁呫€?
-鍦?Windows XP 涓婏紝鍦?鈥淒evice Manager鈥濓紙浣嶄簬 鈥淐ontrol Panel鈥濄€佲€淪ystem鈥濄€佲€淗ardware鈥?涓嬶級涓睍寮€ 鈥淧orts (COM & LPT)鈥?鏉＄洰锛屼綘搴旇浼氱湅鍒?鈥淕adget Serial鈥?琚垪涓哄叾涓竴涓?COM 绔彛鐨勯┍鍔ㄣ€?
-瑕佸嵏杞?Windows XP 涓婄殑 鈥淕adget Serial鈥?椹卞姩锛岃鍦?鈥淒evice Manager鈥?涓彸閿崟鍑?鈥淕adget Serial鈥?鏉＄洰骞堕€夋嫨 鈥淯ninstall鈥濄€?
+要使Windows ACM 驱动，你必须拥有 “linux-cdc-acm.inf文件（随本文档一起提供），它支持所有近期版本的 Windows
+gadget 串行驱动已加载、并USB 设备通过 USB 电缆连接Windows 主机时，Windows 应当识别 gadget 串行设备并请求驱动。告Windows 在包“linux-cdc-acm.inf文件的文件夹中查找驱动
+例如，在 Windows XP 上，gadget 串行设备首次插入时，“Found New Hardware Wizard会启动。选择 “Install from a list or specific location (Advanced)”，然后在下一个屏幕上选择 “Include this location in the search并输入路径，或浏览到包含 “linux-cdc-acm.inf文件的文件夹。Windows 会抱Gadget Serial 驱动没有通过 Windows Logo 测试，但选择 “Continue anyway并完成驱动安装
+Windows XP 上，“Device Manager”（位于 “Control Panel”、“System”、“Hardware下）中展开 “Ports (COM & LPT)条目，你应该会看“Gadget Serial被列为其中一COM 端口的驱动
+要卸Windows XP 上的 “Gadget Serial驱动，请“Device Manager中右键单“Gadget Serial条目并选择 “Uninstall”
 
-### 瀹夎 Linux 涓绘満 ACM 椹卞姩
+### 安装 Linux 主机 ACM 驱动
 
-瑕佷娇鐢?Linux ACM 椹卞姩锛屼綘蹇呴』灏?Linux 涓绘満渚у唴鏍搁厤缃负 鈥淪upport for Host-side USB鈥?鍜?鈥淯SB Modem (CDC ACM) support鈥濄€?
-涓€鏃?gadget 涓茶椹卞姩宸插姞杞姐€佸苟涓?USB 璁惧閫氳繃 USB 鐢电紗杩炴帴鍒?Linux 涓绘満锛屼富鏈虹郴缁熷簲褰撹瘑鍒?```
+要使Linux ACM 驱动，你必须Linux 主机侧内核配置为 “Support for Host-side USB“USB Modem (CDC ACM) support”
+一gadget 串行驱动已加载、并USB 设备通过 USB 电缆连接Linux 主机，主机系统应当识```
 
   cat /sys/kernel/debug/usb/devices
 
@@ -110,12 +110,12 @@ gadget 涓茶椹卞姩鍙彁渚涚畝鍗曠殑涓嶅彲闈犳暟鎹€�
   E:  Ad=02(O) Atr=02(Bulk) MxPS= 512 Ivl=0ms
 
 ```
-濡傛灉涓绘満渚?Linux 绯荤粺閰嶇疆姝ｇ‘锛孉CM 椹卞姩搴斿綋鑷姩鍔犺浇銆傚懡浠?鈥渓smod鈥?搴斿綋鏄剧ず 鈥渁cm鈥?妯″潡宸插姞杞姐€?
+如果主机Linux 系统配置正确，ACM 驱动应当自动加载。命“lsmod应当显示 “acm模块已加载
 
-### 瀹夎 Linux 涓绘満閫氱敤 USB 涓茶椹卞姩
+### 安装 Linux 主机通用 USB 串行驱动
 
-瑕佷娇鐢?Linux 閫氱敤 USB 涓茶椹卞姩锛屼綘蹇呴』灏?Linux 涓绘満渚у唴鏍搁厤缃负 鈥淪upport for Host-side USB鈥濄€佲€淯SB Serial Converter support鈥?浠ュ強 鈥淯SB Generic Serial Driver鈥濄€?
-涓€鏃?gadget 涓茶椹卞姩宸插姞杞姐€佸苟涓?USB 璁惧閫氳繃 USB 鐢电紗杩炴帴鍒?Linux 涓绘満锛屼富鏈虹郴缁熷簲褰撹瘑鍒?```
+要使Linux 通用 USB 串行驱动，你必须Linux 主机侧内核配置为 “Support for Host-side USB”、“USB Serial Converter support以及 “USB Generic Serial Driver”
+一gadget 串行驱动已加载、并USB 设备通过 USB 电缆连接Linux 主机，主机系统应当识```
 
   cat /sys/kernel/debug/usb/devices
 
@@ -134,7 +134,7 @@ gadget 涓茶椹卞姩鍙彁渚涚畝鍗曠殑涓嶅彲闈犳暟鎹€�
   E:  Ad=02(O) Atr=02(Bulk) MxPS= 512 Ivl=0ms
 
 ```
-浣犲繀椤诲姞杞?usbserial 椹卞姩骞舵樉寮忚缃叾鍙傛暟
+你必须加usbserial 驱动并显式设置其参数
 ```
 
   echo 0x0525 0xA4A6 >/sys/bus/usb-serial/drivers/generic/new_id
@@ -145,15 +145,15 @@ gadget 涓茶椹卞姩鍙彁渚涚畝鍗曠殑涓嶅彲闈犳暟鎹€�
   modprobe usbserial vendor=0x0525 product=0xA4A6
 
 ```
-濡傛灉涓€鍒囨甯革紝usbserial 浼氬湪绯荤粺鏃ュ織涓墦鍗颁竴鏉＄被浼?鈥淕adget Serial converter now attached to ttyUSB0鈥?鐨勬秷鎭€?
+如果一切正常，usbserial 会在系统日志中打印一条类“Gadget Serial converter now attached to ttyUSB0的消息
 
-### 浣跨敤 Minicom 鎴?HyperTerminal 娴嬭瘯
+### 使用 Minicom HyperTerminal 测试
 
-涓€鏃?gadget 涓茶椹卞姩鍜屼富鏈洪┍鍔ㄩ兘瀹夎濂斤紝骞朵笖 USB 鐢电紗灏?gadget 璁惧杩炴帴鍒颁富鏈猴紝浣犲氨搴旇鑳藉鍦?gadget 鍜屼富鏈虹郴缁熶箣闂撮€氳繃 USB 閫氫俊銆備綘鍙互浣跨敤 minicom 鎴?HyperTerminal 鏉ュ皾璇曘€?
-鍦?gadget 渚ц繍琛?鈥渕inicom -s鈥?鏉ラ厤缃竴涓柊鐨?minicom 浼氳瘽銆傚湪 鈥淪erial port setup鈥?涓嬪皢 鈥?dev/ttygserial鈥?璁句负 鈥淪erial Device鈥濄€傚皢娉㈢壒鐜囥€佹暟鎹綅銆佹牎楠屼綅鍜屽仠姝綅璁句负 9600銆?銆乶one 鍜?1鈥斺€旇繖浜涜缃熀鏈棤鍏崇揣瑕併€傚湪 鈥淢odem and dialing鈥?涓嬫竻闄ゆ墍鏈夎皟鍒惰В璋冨櫒鍜屾嫧鍙峰瓧绗︿覆銆?
-鍦ㄨ繍琛?ACM 椹卞姩鐨?Linux 涓绘満涓婏紝绫讳技鍦伴厤缃?minicom锛屼絾浣跨敤 鈥?dev/ttyACM0鈥?浣滀负 鈥淪erial Device鈥濄€傦紙濡傛灉浣犺繛鎺ヤ簡鍏朵粬 ACM 璁惧锛岃鐩稿簲鍦版洿鏀硅澶囧悕銆傦級
+一gadget 串行驱动和主机驱动都安装好，并且 USB 电缆gadget 设备连接到主机，你就应该能够gadget 和主机系统之间通过 USB 通信。你可以使用 minicom HyperTerminal 来尝试
+gadget 侧运“minicom -s来配置一个新minicom 会话。在 “Serial port setup下将 dev/ttygserial设为 “Serial Device”。将波特率、数据位、校验位和停止位设为 9600、none 1——这些设置基本无关紧要。在 “Modem and dialing下清除所有调制解调器和拨号字符串
+在运ACM 驱动Linux 主机上，类似地配minicom，但使用 dev/ttyACM0作为 “Serial Device”。（如果你连接了其他 ACM 设备，请相应地更改设备名。）
 
-鍦ㄨ繍琛?USB 閫氱敤涓茶椹卞姩鐨?Linux 涓绘満涓婏紝绫讳技鍦伴厤缃?minicom锛屼絾浣跨敤 鈥?dev/ttyUSB0鈥?浣滀负 鈥淪erial Device鈥濄€傦紙濡傛灉浣犺繛鎺ヤ簡鍏朵粬 USB 涓茶璁惧锛岃鐩稿簲鍦版洿鏀硅澶囧悕銆傦級
+在运USB 通用串行驱动Linux 主机上，类似地配minicom，但使用 dev/ttyUSB0作为 “Serial Device”。（如果你连接了其他 USB 串行设备，请相应地更改设备名。）
 
-鍦?Windows 涓绘満涓婏紝閰嶇疆涓€涓柊鐨?HyperTerminal 浼氳瘽浠ヤ娇鐢ㄥ垎閰嶇粰 Gadget Serial 鐨?COM 绔彛銆傗€淧ort Settings鈥?浼氬湪 HyperTerminal 杩炴帴鍒?gadget 涓茶璁惧鏃惰嚜鍔ㄨ缃紝鍥犳浣犲彲浠ュ皢鍏朵繚鐣欎负榛樿鍊尖€斺€旇繖浜涜缃熀鏈棤鍏崇揣瑕併€?
-鍦?gadget 渚ч厤缃苟杩愯 minicom锛屽苟涓斿湪涓绘満渚ч厤缃苟杩愯 minicom 鎴?HyperTerminal 涔嬪悗锛屼綘搴旇鑳藉鍦?gadget 渚у拰涓绘満渚х郴缁熶箣闂存潵鍥炲彂閫佹暟鎹€備綘鍦?gadget 渚х粓绔獥鍙ｄ腑閿叆鐨勪换浣曞唴瀹归兘搴旇鍑虹幇鍦ㄤ富鏈轰晶鐨勭粓绔獥鍙ｄ腑锛屽弽涔嬩害鐒躲€?
+Windows 主机上，配置一个新HyperTerminal 会话以使用分配给 Gadget Serial COM 端口。“Port Settings会在 HyperTerminal 连接gadget 串行设备时自动设置，因此你可以将其保留为默认值——这些设置基本无关紧要
+gadget 侧配置并运行 minicom，并且在主机侧配置并运行 minicom HyperTerminal 之后，你应该能够gadget 侧和主机侧系统之间来回发送数据。你gadget 侧终端窗口中键入的任何内容都应该出现在主机侧的终端窗口中，反之亦然

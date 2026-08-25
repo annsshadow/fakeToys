@@ -17,6 +17,12 @@
 - com.x.correlation.service.processing.jaxrs.correlation.ActionDeleteTypeCms
 - com.x.correlation.service.processing.jaxrs.correlation.ActionDeleteTypeProcessPlatform
 
+## Key Flows
+
+- 关联 CRUD：`POST .../create` INSERT `x_correlation`（uuid、creator 固定 'system'）；`save/{id}` 更新 target_id/type；`delete/{id}` 物理删除；`list/{personId}` 按 person_id 倒序；`{id}` 单条读
+- link/unlink：`POST .../link` 按 type+person_id+target_id 探测返回 linked；`GET link/{sourceType}/{sourceId}` 读首条；`unlink/{sourceType}/{sourceId}/{targetType}/{targetId}` 同条件 DELETE
+- 类型化关联（cms/document、processplatform/job）：`correlation/list/type/...` 按 type+target_id 倒序；`update/type/...` 更新 person_id/type；`delete/type/...` 按 target_id 删除；`readable/type/cms|processplatform` 以 LIKE 'cms/%'/'processplatform/%' 计数判 readable
+
 ## Dependencies
 
 
@@ -28,6 +34,11 @@
 - x_cms_core_entity
 - x_correlation_core_entity
 - x_correlation_core_express
+
+**Rust（oa4rust/crates/correlation_service_processing）：**
+
+- 内部 path 依赖：shared
+- 关键外部依赖：axum、tokio、deadpool-postgres、serde/serde_json、uuid、tower
 
 ## REST Endpoints
 

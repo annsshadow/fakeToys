@@ -1,40 +1,40 @@
-﻿## DTL锛圖ispatch Trace Log锛岃皟搴﹁窡韪棩蹇楋級
+﻿## DTL（Dispatch Trace Log，调度跟踪日志）
 
 
-Athira Rajeev锛?025 骞?4 鏈?19 鏃?
+Athira Rajeev锛?025 骞?4 鏈?19 鏃。
     :depth: 3
 
 
-## 鍩烘湰姒傝堪锛圔asic overview锛?
+## 基本概述（Basic overview
 
-pseries 鐨勫叡浜鐞嗗櫒閫昏緫鍒嗗尯锛圫PLPAR锛夋満鍣ㄥ彲浠ヤ娇鐢ㄦ潵鑷皟搴﹁窡韪棩蹇楋紙DTL锛夌紦鍐插尯鐨勬暟鎹紝浠?hypervisor 妫€绱㈣皟搴︼紙dispatch锛夊拰鎶㈠崰锛坧reempt锛変簨浠剁殑鏃ュ織銆傚埄鐢ㄨ繖浜涗俊鎭紝鐢ㄦ埛鍙互妫€绱㈡瘡娆¤皟搴﹀拰鎶㈠崰鍙戠敓鐨勬椂闂翠笌鍘熷洜銆?vpa-dtl PMU 閫氳繃 perf 鏆撮湶铏氭嫙澶勭悊鍣ㄥ尯锛圴PA锛夌殑 DTL 璁℃暟鍣ㄣ€?
-## 浣跨敤鐨勫熀纭€璁炬柦锛圛nfrastructure used锛?
+pseries 的共享处理器逻辑分区（SPLPAR）机器可以使用来自调度跟踪日志（DTL）缓冲区的数据，hypervisor 检索调度（dispatch）和抢占（preempt）事件的日志。利用这些信息，用户可以检索每次调度和抢占发生的时间与原因vpa-dtl PMU 通过 perf 暴露虚拟处理器区（VPA）的 DTL 计数器
+## 使用的基础设施（Infrastructure used
 
-VPA DTL PMU 璁℃暟鍣ㄥ湪婧㈠嚭鏃朵笉浼氫腑鏂紝涔熶笉浼氫骇鐢熶换浣?PMI 涓柇銆傚洜姝わ紝浣跨敤 hrtimer 鏉ヨ疆璇?DTL 鏁版嵁銆傝瀹氭椂鍣ㄩ棿闅斿彲鐢辩敤鎴烽€氳繃 sample_period 瀛楁浠ョ撼绉掍负鍗曚綅鎻愪緵銆?vpa dtl pmu 涓烘瘡涓?vpa-dtl pmu 绾跨▼娣诲姞涓€涓?hrtimer銆侱TL锛堣皟搴﹁窡韪棩蹇楋級鍖呭惈鍏充簬璋冨害/鎶㈠崰銆佸叆闃熸椂闂寸瓑淇℃伅銆?鎴戜滑鐩存帴灏?DTL 缂撳啿鍖烘暟鎹綔涓鸿緟鍔╃紦鍐插尯锛坅uxiliary buffer锛夌殑涓€閮ㄥ垎澶嶅埗锛岀◢鍚庡啀澶勭悊銆傝繖灏嗛伩鍏嶅湪鍐呮牳绌洪棿涓垱寤洪噰鏍锋墍鑺辫垂鐨勬椂闂淬€?鏀堕泦璋冨害璺熻釜鏃ュ織锛圖TL锛夋潯鐩殑 PMU 椹卞姩鍒╃敤浜?perf 鍩虹璁炬柦涓殑 AUX 鏀寔銆傚湪宸ュ叿渚э紝杩欎簺鏁版嵁浠?PERF_RECORD_AUXTRACE 璁板綍鐨勫舰寮忔彁渚涖€?
-涓轰簡灏嗘瘡涓?DTL 鏉＄洰涓庤法 CPU 鐨勫叾浠栦簨浠跺叧鑱旇捣鏉ワ紝涓烘瘡涓?CPU 鍒涘缓涓€涓?auxtrace_queue銆傛瘡涓?auxtrace 闃熷垪閮芥湁涓€涓?auxtrace 缂撳啿鍖烘暟缁?鍒楄〃銆?鎵€鏈?auxtrace 闃熷垪閮界淮鎶ゅ湪 auxtrace 鍫嗭紙heap锛変腑銆傞槦鍒楁牴鎹椂闂存埑鎺掑簭銆傚湪澶勭悊涓嶅悓鐨?PERF_RECORD_XX 璁板綍鏃讹紝灏?perf 璁板綍鐨勬椂闂存埑涓?auxtrace 鍫嗕腑鏍堥《鍏冪礌鐨勬椂闂存埑杩涜姣旇緝锛屼粠鑰屽彲浠ュ皢 DTL 浜嬩欢涓庡叾浠栦簨浠跺叧鑱旇捣鏉ャ€?濡傛灉鍫嗕腑鍏冪礌鐨勬椂闂存埑浣庝簬 perf 璁板綍涓潯鐩殑鏃堕棿鎴筹紝鍒欏鐞?auxtrace 闃熷垪锛屼互渚?DTL 浜嬩欢鍙互涓庡叾浠栦簨浠跺叧鑱斻€?鏈夋椂涓€涓紦鍐插尯鍙兘鍙閮ㄥ垎澶勭悊銆傚鏋滃彟涓€涓簨浠跺彂鐢熺殑鏃堕棿鎴冲ぇ浜庨槦鍒椾腑褰撳墠宸插鐞嗙殑鍏冪礌锛屽畠灏嗚浆鍒颁笅涓€涓?perf 璁板綍銆傚洜姝よ璁板綍缂撳啿鍖虹殑浣嶇疆锛屼互渚夸笅娆＄户缁鐞嗐€傜敤 auxtrace 缂撳啿鍖轰腑鏈€鍚庡鐞嗙殑鏉＄洰鐨勬椂闂存埑鏇存柊 auxtrace 鍫嗙殑鏃堕棿鎴炽€?
-璇ュ熀纭€璁炬柦纭繚璋冨害璺熻釜鏃ュ織鏉＄洰鑳藉涓庡叾浠栦簨浠讹紙濡?sched锛夊叧鑱斿苟涓€璧峰憟鐜般€?
-## vpa-dtl PMU 浣跨敤绀轰緥锛坴pa-dtl PMU example usage锛?
+VPA DTL PMU 计数器在溢出时不会中断，也不会产生任PMI 中断。因此，使用 hrtimer 来轮DTL 数据。该定时器间隔可由用户通过 sample_period 字段以纳秒为单位提供vpa dtl pmu 为每vpa-dtl pmu 线程添加一hrtimer。DTL（调度跟踪日志）包含关于调度/抢占、入队时间等信息我们直接DTL 缓冲区数据作为辅助缓冲区（auxiliary buffer）的一部分复制，稍后再处理。这将避免在内核空间中创建采样所花费的时间收集调度跟踪日志（DTL）条目的 PMU 驱动利用perf 基础设施中的 AUX 支持。在工具侧，这些数据PERF_RECORD_AUXTRACE 记录的形式提供
+为了将每DTL 条目与跨 CPU 的其他事件关联起来，为每CPU 创建一auxtrace_queue。每auxtrace 队列都有一auxtrace 缓冲区数列表所auxtrace 队列都维护在 auxtrace 堆（heap）中。队列根据时间戳排序。在处理不同PERF_RECORD_XX 记录时，perf 记录的时间戳auxtrace 堆中栈顶元素的时间戳进行比较，从而可以将 DTL 事件与其他事件关联起来如果堆中元素的时间戳低于 perf 记录中条目的时间戳，则处auxtrace 队列，以DTL 事件可以与其他事件关联有时一个缓冲区可能只被部分处理。如果另一个事件发生的时间戳大于队列中当前已处理的元素，它将转到下一perf 记录。因此要记录缓冲区的位置，以便下次继续处理。用 auxtrace 缓冲区中最后处理的条目的时间戳更新 auxtrace 堆的时间戳
+该基础设施确保调度跟踪日志条目能够与其他事件（sched）关联并一起呈现
+## vpa-dtl PMU 使用示例（vpa-dtl PMU example usage
 
   # ls /sys/devices/vpa_dtl/
   events  format  perf_event_mux_interval_ms  power  subsystem  type  uevent
 
 
-瑕佷娇鐢?perf record 鎹曡幏 DTL 鏁版嵁锛?
+要使perf record 捕获 DTL 数据
   # ./perf record -a -e sched:\*,vpa_dtl/dtl_all/ -c 1000000000 sleep 1
 
-缁撴灉鍙互浣跨敤 perf record 瑙ｉ噴銆備笅闈㈡槸 perf report -D 鐨勭墖娈?
+结果可以使用 perf record 解释。下面是 perf report -D 的片
 
   # ./perf report -D
 
-瀛樺湪涓嶅悓鐨?PERF_RECORD_XX 璁板綍銆傚叾涓笌 auxtrace 缂撳啿鍖哄搴旂殑璁板綍鍖呮嫭锛?
+存在不同PERF_RECORD_XX 记录。其中与 auxtrace 缓冲区对应的记录包括
 1. PERF_RECORD_AUX
-   琛ㄧず AUX 鍖哄煙涓湁鏂版暟鎹彲鐢?
+   表示 AUX 区域中有新数据可
 2. PERF_RECORD_AUXTRACE_INFO
-   鎻忚堪缂撳啿鍖轰腑 auxtrace 鏁版嵁鐨勫亸绉诲拰澶у皬
+   描述缓冲区中 auxtrace 数据的偏移和大小
 
 3. PERF_RECORD_AUXTRACE
-   杩欐槸瀹氫箟 auxtrace 鏁版嵁鐨勮褰曪紝鍦?vpa-dtl pmu 鐨勬儏鍐典笅锛岃繖閲屽氨鏄皟搴﹁窡韪棩蹇楁暟鎹€?
-涓嬮潰鏄敱 perf report -D 鏄剧ず鐨?PERF_RECORD_AUXTRACE dump 鐗囨
+   这是定义 auxtrace 数据的记录，vpa-dtl pmu 的情况下，这里就是调度跟踪日志数据
+下面是由 perf report -D 显示PERF_RECORD_AUXTRACE dump 片段
 
 
 0 0 0x39b10 [0x30]: PERF_RECORD_AUXTRACE size: 0x690  offset: 0  ref: 0  idx: 0  tid: -1  cpu: 0
@@ -50,7 +50,7 @@ VPA DTL PMU 璁℃暟鍣ㄥ湪婧㈠嚭鏃朵笉浼氫腑鏂紝涔熶笉浼�
 .  00000150: dispatch_reason:priv doorbell, preempt_reason:H_CEDE, enqueue_to_dispatch_time:212, ready_to_enqueue_time:0, waiting_to_ready_time:15355126
 .  00000180: dispatch_reason:decrementer interrupt, preempt_reason:H_CEDE, enqueue_to_dispatch_time:6368, ready_to_enqueue_time:164, waiting_to_ready_time:5104665
 
-浠ヤ笂鏄涓嬫牸寮忕殑 dtl 鏉＄洰鐨勮〃绀猴細
+以上是如下格式的 dtl 条目的表示：
 
 struct dtl_entry {
         u8      dispatch_reason;
@@ -66,8 +66,8 @@ struct dtl_entry {
 
 };
 
-鍓嶄袱涓瓧娈佃〃绀鸿皟搴﹀師鍥犲拰鎶㈠崰鍘熷洜銆侾ERF_RECORD_AUXTRACE 璁板綍鐨勫悗鏈熷鐞嗗皢杞崲涓哄鐢ㄦ埛鏈夋剰涔夌殑鏁版嵁銆?
-## 浣跨敤 perf report 鍙鍖栬皟搴﹁窡韪棩蹇楁潯鐩紙Visualize the dispatch trace log entries with perf report锛?
+前两个字段表示调度原因和抢占原因。PERF_RECORD_AUXTRACE 记录的后期处理将转换为对用户有意义的数据
+## 使用 perf report 可视化调度跟踪日志条目（Visualize the dispatch trace log entries with perf report
 
   # ./perf record -a -e sched:\*,vpa_dtl/dtl_all/ -c 1000000000 sleep 1
   [ perf record: Woken up 1 times to write data ]
@@ -82,7 +82,7 @@ struct dtl_entry {
   #
      100.00%   100.00%  swapper  [kernel.kallsyms]  [k] plpar_hcall_norets_notrace
 
-## 浣跨敤 perf script 鍙鍖栬皟搴﹁窡韪棩蹇楁潯鐩紙Visualize the dispatch trace log entries with perf script锛?
+## 使用 perf script 可视化调度跟踪日志条目（Visualize the dispatch trace log entries with perf script
 
    # ./perf script
      migration/9      67 [^009^] 105373.359903:                     sched:sched_waking: comm=perf pid=13418 prio=120 target_cpu=009

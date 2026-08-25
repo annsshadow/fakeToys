@@ -2,67 +2,67 @@
 ## Linux Init (Early Boot)
 
 
-Linux 鐨勯厤缃垎涓轰袱涓富瑕佹楠わ細Early-Boot锛堟棭鏈熷惎鍔級浠ュ強鍏朵綑閮ㄥ垎銆?
-鍦ㄦ棭鏈熷惎鍔ㄦ湡闂达紝Linux 璁剧疆涓嶅彲鍙樿祫婧愶紙渚嬪 numa 鑺傜偣锛夛紝鑰屽悗缁殑鎿嶄綔鍖呮嫭椹卞姩鎺㈡祴鍜屽唴瀛樼儹鎻掓嫈绛夈€傚湪鏁翠釜杩囩▼涓紝Linux 鍙兘浼氳鍙?EFI 鍜?ACPI 淇℃伅锛屼互閰嶇疆璁惧鐨勯€昏緫琛ㄧず銆?
-鍦?Linux 鏃╂湡鍚姩闃舵锛堝唴鏍镐腑甯︽湁 __init 淇グ绗︾殑鍑芥暟锛夛紝绯荤粺浼氳幏鍙栫敱 EFI/BIOS 鍒涘缓鐨勩€佽祫婧愶紙[ACPI tables <../platform/acpi>](ACPI tables <../platform/acpi>)锛夛紝骞跺皢瀹冧滑杞崲涓哄唴鏍稿彲浠ユ秷璐圭殑璧勬簮銆?
+Linux 的配置分为两个主要步骤：Early-Boot（早期启动）以及其余部分
+在早期启动期间，Linux 设置不可变资源（例如 numa 节点），而后续的操作包括驱动探测和内存热插拔等。在整个过程中，Linux 可能会读EFI ACPI 信息，以配置设备的逻辑表示
+Linux 早期启动阶段（内核中带有 __init 修饰符的函数），系统会获取由 EFI/BIOS 创建的、资源（[ACPI tables <../platform/acpi>](ACPI tables <../platform/acpi>)），并将它们转换为内核可以消费的资源
 
 ## BIOS, Build and Boot Options
 
 
-鍦ㄥ唴鏍告瀯寤烘椂鏈?4 涓渶瑕侀鍏堣€冭檻鐨勫惎鍔ㄥ墠閫夐」锛屽畠浠喅瀹氫簡 Linux 鍦ㄦ棭鏈熷惎鍔ㄦ湡闂村浣曠鐞嗗唴瀛樸€?
+在内核构建时4 个需要预先考虑的启动前选项，它们决定了 Linux 在早期启动期间如何管理内存
 - EFI_MEMORY_SP
 
-  - BIOS/EFI 閫夐」锛屽喅瀹氬唴瀛樻槸 SystemRAM 杩樻槸 Specific Purpose銆係pecific Purpose 鍐呭瓨灏嗚鎺ㄨ繜浜ょ粰椹卞姩绠＄悊鈥斺€旇€屼笉浼氱珛鍗充綔涓虹郴缁?RAM 鏆撮湶銆?
+  - BIOS/EFI 选项，决定内存是 SystemRAM 还是 Specific Purpose。Specific Purpose 内存将被推迟交给驱动管理——而不会立即作为系RAM 暴露
 - CONFIG_EFI_SOFT_RESERVE
 
-  - Linux 鏋勫缓閰嶇疆閫夐」锛屽喅瀹氬唴鏍告槸鍚︽敮鎸?Specific Purpose 鍐呭瓨銆?
+  - Linux 构建配置选项，决定内核是否支Specific Purpose 内存
 - CONFIG_MHP_DEFAULT_ONLINE_TYPE
 
-  - Linux 鏋勫缓閰嶇疆锛屽喅瀹氳浆鎹负 dax 璁惧鐨?Specific Purpose 鍐呭瓨鏄惁浠ュ強濡備綍琚鐞嗭紙淇濈暀涓?DAX锛屾垨浣滀负 ZONE_NORMAL 鎴?ZONE_MOVABLE 涓殑 SystemRAM 涓婄嚎锛夈€?
+  - Linux 构建配置，决定转换为 dax 设备Specific Purpose 内存是否以及如何被管理（保留DAX，或作为 ZONE_NORMAL ZONE_MOVABLE 中的 SystemRAM 上线）
 - nosoftreserve
 
-  - Linux 鍐呮牳鍚姩閫夐」锛屽喅瀹氭槸鍚︽敮鎸?Soft Reserve銆備笌 CONFIG_EFI_SOFT_RESERVE 绫讳技銆?
+  - Linux 内核启动选项，决定是否支Soft Reserve。与 CONFIG_EFI_SOFT_RESERVE 类似
 ## Memory Map Creation
 
 
-褰撳唴鏍歌В鏋?EFI 鍐呭瓨鏄犲皠鏃讹紝濡傛灉鏀寔骞舵娴嬪埌浜?`Specific Purpose` 鍐呭瓨锛屽畠浼氬皢璇ュ尯鍩熷崟鐙垝鍑轰负 `SOFT_RESERVED`銆?
-濡傛灉 `EFI_MEMORY_SP=0`銆乣CONFIG_EFI_SOFT_RESERVE=n` 鎴?`nosoftreserve=y`锛孡inux 浼氬皢 CXL 璁惧鍐呭瓨鍖哄煙榛樿浣滀负 SystemRAM銆傝繖浼氭妸璇ュ唴瀛樻毚闇茬粰鍐呮牳椤靛垎閰嶅櫒涓殑 `ZONE_NORMAL`锛屼娇鍏跺彲鐢ㄤ簬澶у鏁板垎閰嶏紙鍖呮嫭 `struct page` 鍜岄〉琛級銆?
-濡傛灉璁剧疆浜?`Specific Purpose` 涓斿彈鏀寔锛宍CONFIG_MHP_DEFAULT_ONLINE_TYPE_*` 鍐冲畾璇ュ唴瀛樻槸鍚﹂粯璁や笂绾匡紙`_OFFLINE` 鎴?`_ONLINE_*`锛夛紝浠ュ強濡傛灉涓婄嚎锛岄粯璁ゅ皢鍏朵笂绾垮埌鍝釜 zone锛坄_NORMAL` 鎴?`_MOVABLE`锛夈€?
-濡傛灉鏀剧疆鍦?`ZONE_MOVABLE`锛岃鍐呭瓨灏嗕笉鍙敤浜庡ぇ澶氭暟鍐呮牳鍒嗛厤锛堜緥濡?`struct page` 鎴栭〉琛級銆傛牴鎹郴缁熺殑鍐呭瓨瀹归噺锛岃繖鍙兘浼氬鎬ц兘浜х敓鏄捐憲褰卞搷銆?
+当内核解EFI 内存映射时，如果支持并检测到`Specific Purpose` 内存，它会将该区域单独划出为 `SOFT_RESERVED`
+如果 `EFI_MEMORY_SP=0`、`CONFIG_EFI_SOFT_RESERVE=n` `nosoftreserve=y`，Linux 会将 CXL 设备内存区域默认作为 SystemRAM。这会把该内存暴露给内核页分配器中的 `ZONE_NORMAL`，使其可用于大多数分配（包括 `struct page` 和页表）
+如果设置`Specific Purpose` 且受支持，`CONFIG_MHP_DEFAULT_ONLINE_TYPE_*` 决定该内存是否默认上线（`_OFFLINE` `_ONLINE_*`），以及如果上线，默认将其上线到哪个 zone（`_NORMAL` `_MOVABLE`）
+如果放置`ZONE_MOVABLE`，该内存将不可用于大多数内核分配（例`struct page` 或页表）。根据系统的内存容量，这可能会对性能产生显著影响
 
 ## NUMA Node Reservation
 
 
-Linux 寮曠敤 :doc:`SRAT <../platform/acpi/srat>` 涓畾涔夌殑 proximity 鍩燂紙`PXM`锛夋潵鍦?`acpi_numa_init` 涓垱寤?NUMA 鑺傜偣銆傞€氬父锛宍PXM` 涓?NUMA 鑺傜偣 ID 涔嬮棿瀛樺湪 1:1 鐨勫叧绯汇€?
-SRAT 鏄畾涔?Proximity 鍩熺殑鍞竴 ACPI 瀹氫箟鏂瑰紡銆侺inux 鏈€澶氶€夋嫨灏嗗畠浠笌 NUMA 鑺傜偣 1:1 鏄犲皠銆俒CEDT <../platform/acpi/cedt>](CEDT <../platform/acpi/cedt>) 澧炲姞浜嗗 SPA 鑼冨洿鐨勬弿杩帮紝Linux 鍙兘浼氬皢鍏舵槧灏勫埌涓€涓垨澶氫釜 NUMA 鑺傜偣銆?
-濡傛灉 CFMWS 涓瓨鍦ㄤ絾 SRAT 涓病鏈夌殑 CXL 鑼冨洿锛屽垯浼氬垱寤轰竴涓吉 `PXM`锛堣嚜 v6.15 璧凤級銆傛湭鏉ワ紝鐢变簬 proximity 鍩熷叧鑱旂殑妯＄硦鎬э紝Linux 鍙兘浼氭嫆缁?SRAT 鏈弿杩扮殑 CFMWS銆?
-闇€瑕佹敞鎰忕殑鏄紝NUMA 鑺傜偣鐨勫垱寤轰笉鑳藉湪杩愯鏃惰繘琛屻€傛墍鏈夊彲鑳界殑 NUMA 鑺傜偣閮藉湪 `__init` 鏃讹紙鏇村叿浣撳湴璇达紝鍦?`mm_init` 鏈熼棿锛夎璇嗗埆銆侰EDT 鍜?SRAT 蹇呴』鍖呭惈瓒冲鐨?`PXM` 鏁版嵁锛屼互渚?Linux 璇嗗埆 NUMA 鑺傜偣鍙婂叾鍏宠仈鐨勫唴瀛樺尯鍩熴€?
-鐩稿叧浠ｇ爜浣嶄簬锛歚linux/drivers/acpi/numa/srat.c`銆?
-鏇村淇℃伅璇峰弬闃?[Example Platform Configurations <../platform/example-configs>](Example Platform Configurations <../platform/example-configs>)銆?
+Linux 引用 :doc:`SRAT <../platform/acpi/srat>` 中定义的 proximity 域（`PXM`）来`acpi_numa_init` 中创NUMA 节点。通常，`PXM` NUMA 节点 ID 之间存在 1:1 的关系
+SRAT 是定Proximity 域的唯一 ACPI 定义方式。Linux 最多选择将它们与 NUMA 节点 1:1 映射。[CEDT <../platform/acpi/cedt>](CEDT <../platform/acpi/cedt>) 增加了对 SPA 范围的描述，Linux 可能会将其映射到一个或多个 NUMA 节点
+如果 CFMWS 中存在但 SRAT 中没有的 CXL 范围，则会创建一个伪 `PXM`（自 v6.15 起）。未来，由于 proximity 域关联的模糊性，Linux 可能会拒SRAT 未描述的 CFMWS
+需要注意的是，NUMA 节点的创建不能在运行时进行。所有可能的 NUMA 节点都在 `__init` 时（更具体地说，`mm_init` 期间）被识别。CEDT SRAT 必须包含足够`PXM` 数据，以Linux 识别 NUMA 节点及其关联的内存区域
+相关代码位于：`linux/drivers/acpi/numa/srat.c`
+更多信息请参[Example Platform Configurations <../platform/example-configs>](Example Platform Configurations <../platform/example-configs>)
 ## Memory Tiers Creation
 
 
-鍐呭瓨鍒嗗眰锛坢emory tier锛夋槸鎸夋€ц兘鐗瑰緛鍒嗙粍鐨?NUMA 鑺傜偣闆嗗悎銆傚湪 `__init` 鏈熼棿锛孡inux 浼氫娇鐢ㄥ寘鍚爣璁颁负 `N_MEMORY` 鐨勬墍鏈夎妭鐐圭殑榛樿鍐呭瓨鍒嗗眰鏉ュ垵濮嬪寲绯荤粺銆?
-榛樿鎯呭喌涓嬶紝`memory_tier_init` 鍦ㄥ惎鍔ㄦ椂瀵规墍鏈夊凡涓婄嚎鍐呭瓨鐨勮妭鐐硅皟鐢ㄣ€俙memory_tier_late_init` 鍦?late-init 鏈熼棿瀵归┍鍔ㄩ厤缃樁娈佃缃殑鑺傜偣璋冪敤銆?
-鑺傜偣鍙湁鍦ㄦ嫢鏈?*鍦ㄧ嚎**鍐呭瓨鏃舵墠浼氳鏍囪涓?`N_MEMORY`銆?
+内存分层（memory tier）是按性能特征分组NUMA 节点集合。在 `__init` 期间，Linux 会使用包含标记为 `N_MEMORY` 的所有节点的默认内存分层来初始化系统
+默认情况下，`memory_tier_init` 在启动时对所有已上线内存的节点调用。`memory_tier_late_init` late-init 期间对驱动配置阶段设置的节点调用
+节点只有在拥*在线**内存时才会被标记`N_MEMORY`
 ```
 
   /sys/devices/virtual/memory_tiering/memory_tierN/nodelist
   0-1
 
 ```
-濡傛灉鍒嗙粍鐨勮妭鐐瑰湪鎬ц兘涓婂瓨鍦ㄦ槑鏄惧樊寮傦紝璇锋鏌?CXL 鑺傜偣鐨?[HMAT <../platform/acpi/hmat>](HMAT <../platform/acpi/hmat>) 鍜?CDAT 淇℃伅銆傞櫎闈為€氳繃 `access_coordinates` 鍚?memory_tier 缁勪欢鎶ュ憡浜?HMAT/CDAT 淇℃伅锛屽惁鍒欐墍鏈夎妭鐐归粯璁ら兘灞炰簬 DRAM 鍒嗗眰銆?
-鏇村鍐呭璇峰弬闃?:doc:`CXL access coordinates 鏂囨。 <../linux/access-coordinates>`銆?
+如果分组的节点在性能上存在明显差异，请检CXL 节点[HMAT <../platform/acpi/hmat>](HMAT <../platform/acpi/hmat>) CDAT 信息。除非通过 `access_coordinates` memory_tier 组件报告HMAT/CDAT 信息，否则所有节点默认都属于 DRAM 分层
+更多内容请参:doc:`CXL access coordinates 文档 <../linux/access-coordinates>`
 ## Contiguous Memory Allocation
 
 
-杩炵画鍐呭瓨鍒嗛厤鍣紙CMA锛夎兘澶熷湪鏃╂湡鍚姩鏈熼棿鍦?NUMA 鑺傜偣涓婇鐣欒繛缁殑鐗╃悊鍐呭瓨鍖哄煙銆傜劧鑰岋紝CMA 鏃犳硶棰勭暀鍐呭瓨锛?
+连续内存分配器（CMA）能够在早期启动期间NUMA 节点上预留连续的物理内存区域。然而，CMA 无法预留内存
 ```
 
   void __init hugetlb_cma_reserve(void) {
     if (!node_online(nid))
-      /* 涓嶅厑璁搁鐣?*/
+      /* 不允许预*/
   }
 
 ```
-杩欐剰鍛崇潃锛屽鏋滅敤鎴锋墦绠楀皢 CXL 鍐呭瓨鐨勭鐞嗘帹杩熷埌椹卞姩锛屽垯 CMA 涓嶈兘鐢ㄤ簬淇濊瘉澶ч〉鍒嗛厤銆傚鏋滃湪鏃╂湡鍚姩鏈熼棿灏?CXL 鍐呭瓨浣滀负 `ZONE_NORMAL` 涓殑 SystemRAM 鍚敤锛屽垯鍙互浣跨敤 `cma_pernuma` 鎴?`numa_cma` 鍐呮牳鍛戒护琛屽弬鏁颁负姣忎釜鑺傜偣杩涜 CMA 棰勭暀銆?
+这意味着，如果用户打算将 CXL 内存的管理推迟到驱动，则 CMA 不能用于保证大页分配。如果在早期启动期间CXL 内存作为 `ZONE_NORMAL` 中的 SystemRAM 启用，则可以使用 `cma_pernuma` `numa_cma` 内核命令行参数为每个节点进行 CMA 预留

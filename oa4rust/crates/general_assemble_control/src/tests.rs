@@ -636,5 +636,53 @@ mod tests {
         assert_ne!(response.status(), StatusCode::NOT_FOUND);
     }
 
+    #[tokio::test]
+    async fn u2_test_post_ecnet_check_route() {
+        let app = general_assemble_control_router(test_pool());
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/general/assemble/control/ecnet/check")
+                    .method(Method::POST)
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_ne!(response.status(), StatusCode::NOT_FOUND);
+    }
 
+    #[tokio::test]
+    async fn u2_test_get_worktime_isholiday_route() {
+        let app = general_assemble_control_router(test_pool());
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/general/assemble/control/worktime/isholiday/2024-01-01")
+                    .method(Method::GET)
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_ne!(response.status(), StatusCode::NOT_FOUND);
+    }
+
+    #[tokio::test]
+    async fn u2_test_post_office_route() {
+        let app = general_assemble_control_router(test_pool());
+        let body = serde_json::to_string(&serde_json::json!({"htmlContent": "<p>x</p>"})).unwrap();
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/general/assemble/control/office")
+                    .method(Method::POST)
+                    .header("content-type", "application/json")
+                    .body(Body::from(body))
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_ne!(response.status(), StatusCode::NOT_FOUND);
+    }
 }

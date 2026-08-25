@@ -1,10 +1,10 @@
-﻿## 鍥轰欢鏌ユ壘椤哄簭
+﻿## 固件查找顺序
 
 
-鍚敤鍥轰欢鏌ユ壘鐨勬柟寮忔湁澶氱銆備互涓嬫槸椹卞姩鍙戝嚭 firmware API 璋冪敤鍚庯紝鍥轰欢灏嗚鏌ユ壘鐨勬椂闂撮『搴忋€?
+启用固件查找的方式有多种。以下是驱动发出 firmware API 调用后，固件将被查找的时间顺序
 
-- 棣栧厛妫€娴?''鍐呭缓鍥轰欢''锛圔uilt-in firmware锛夛紝鑻ュ浐浠跺瓨鍦ㄥ垯绔嬪嵆杩斿洖
-- 鎺ョ潃鏌ョ湅 ''鍥轰欢缂撳瓨''锛團irmware cache锛夛紝鑻ユ壘鍒板垯绔嬪嵆杩斿洖
-- 鐒跺悗鎵ц ''鐩存帴鏂囦欢绯荤粺鏌ユ壘''锛圖irect filesystem lookup锛夛紝鑻ユ壘鍒板垯绔嬪嵆杩斿洖
-- 鍐嶆墽琛?''骞冲彴鍥轰欢鍥為€€''锛圥latform firmware fallback锛夛紝浣嗕粎鍦ㄤ娇鐢?firmware_request_platform() 鏃惰繘琛岋紝鑻ユ壘鍒板垯绔嬪嵆杩斿洖
-- 鑻ヤ粛鏈壘鍒板浐浠朵笖鍥為€€鏈哄埗宸插惎鐢紝鍒欎細鍒涘缓 sysfs 鎺ュ彛銆傛鍚庤涔堝彂鍑轰竴涓?kobject uevent锛岃涔堜緷璧栬嚜瀹氫箟鍥轰欢鍔犺浇鏂瑰紡锛岀洿鑷宠揪鍒拌秴鏃舵椂闂淬€?
+- 首先检''内建固件''（Built-in firmware），若固件存在则立即返回
+- 接着查看 ''固件缓存''（Firmware cache），若找到则立即返回
+- 然后执行 ''直接文件系统查找''（Direct filesystem lookup），若找到则立即返回
+- 再执''平台固件回退''（Platform firmware fallback），但仅在使firmware_request_platform() 时进行，若找到则立即返回
+- 若仍未找到固件且回退机制已启用，则会创建 sysfs 接口。此后要么发出一kobject uevent，要么依赖自定义固件加载方式，直至达到超时时间

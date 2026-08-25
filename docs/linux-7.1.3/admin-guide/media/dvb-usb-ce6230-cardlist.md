@@ -1,18 +1,18 @@
 ﻿
-## dvb-usb-ce6230 缃戝崱鍒楄〃
+## dvb-usb-ce6230 网卡列表
 
-鏈枃浠跺垪鍑?dvb-usb-ce6230 椹卞姩鎵€鏀寔鐨?DVB 缃戝崱鍨嬪彿娓呭崟锛屽寘鍚骇鍝佸悕绉颁笌 USB 璁惧鏍囪瘑锛圲SB ID锛夛紝渚涢┍鍔ㄩ€傞厤涓庣‖浠堕€夊瀷鏃舵寜璁惧鏍囪瘑蹇€熸牳瀵广€?
+本文件列dvb-usb-ce6230 驱动所支持DVB 网卡型号清单，包含产品名称与 USB 设备标识（USB ID），供驱动适配与硬件选型时按设备标识快速核对
 
 
 
-浠ヤ笅涓?dvb-usb-ce6230 椹卞姩鏀寔鐨勭綉鍗″垪琛細
+以下dvb-usb-ce6230 驱动支持的网卡列表：
 
 
    :header-rows: 1
    :widths: 7 13
    :stub-columns: 0
 
-   - - 缃戝崱鍚嶇О
+   - - 网卡名称
      - USB ID
    - - AVerMedia A310 USB 2.0 DVB-T tuner
      - 07ca:a310

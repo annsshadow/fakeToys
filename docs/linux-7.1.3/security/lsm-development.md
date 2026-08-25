@@ -1,6 +1,6 @@
-﻿## Linux 瀹夊叏妯″潡寮€鍙?
+﻿## Linux 安全模块开
 
-鍩轰簬 https://lore.kernel.org/r/20071026073721.618b4778@laptopd505.fenrus.org锛?褰撲竴涓柊鐨?LSM 鐨勬剰鍥撅紙鍗冲畠璇曞浘闃茶寖浠€涔堛€佷互鍙婂湪浠€涔堟儏鍐典笅浜轰滑浼氭湡鏈涗娇鐢ㄥ畠锛夊凡鍦?`Documentation/admin-guide/LSM/` 涓緱鍒版伆褰撴枃妗ｅ寲鏃讹紝璇?LSM 鎵嶄細琚唴鏍告帴鍙椼€?杩欐牱渚夸簬灏?LSM 鐨勪唬鐮佷笌鍏剁洰鏍囪繘琛屾瘮杈冿紝涔熶娇鏈€缁堢敤鎴峰拰鍙戣鐗堣兘澶熷氨鏇磋创鍚堝叾闇€姹傜殑 LSM 鍋氬嚭鏇存槑鏅虹殑鍐崇瓥銆?
-鍏充簬鍙敤 LSM 閽╁瓙鎺ュ彛鐨勮灏芥枃妗ｏ紝璇峰弬瑙?`security/security.c` 鍙婄浉鍏崇殑缁撴瀯浣擄細
+基于 https://lore.kernel.org/r/20071026073721.618b4778@laptopd505.fenrus.org当一个新LSM 的意图（即它试图防范什么、以及在什么情况下人们会期望使用它）已`Documentation/admin-guide/LSM/` 中得到恰当文档化时，LSM 才会被内核接受这样便于LSM 的代码与其目标进行比较，也使最终用户和发行版能够就更贴合其需求的 LSM 做出更明智的决策
+关于可用 LSM 钩子接口的详尽文档，请参`security/security.c` 及相关的结构体：
 
    :export:

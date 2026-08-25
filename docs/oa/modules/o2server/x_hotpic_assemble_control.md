@@ -17,6 +17,12 @@
 - com.x.hotpic.assemble.control.jaxrs.JaxrsManagerUserFilter
 - com.x.hotpic.assemble.control.jaxrs.hotpic.ActionChangeTitle
 
+## Key Flows
+
+- 轮播图 CRUD：`create|save|delete|get|list` 操作 `x_hotpic`（title/image_url，软删 deleted_at）；`user/hotpic/changeTitle` 仅更新 title
+- cipher/user 双通道读取：`cipher/hotpic/{id}`、`cipher/hotpic/bbs|cms/{id}` 与 `user/hotpic/filter/list/page/{page}/count/{count}` 均查 `x_hotpic`（LIMIT/OFFSET 分页）；`exists/check` 按 creator COUNT 判断是否已有图
+- 面板与应用派生：`list/control/panels`、`list/control/applications` 对 `x_hotpic` DISTINCT creator 生成面板/应用列表；`config` 由记录数推导 enabled
+
 ## Dependencies
 
 
@@ -28,6 +34,11 @@
 - x_bbs_core_entity
 - x_cms_core_entity
 - x_general_core_entity
+
+**Rust（oa4rust/crates/hotpic_assemble_control）：**
+
+- 内部 path 依赖：shared
+- 关键外部依赖：axum、tokio、deadpool-postgres、serde/serde_json、uuid、tower
 
 ## REST Endpoints
 

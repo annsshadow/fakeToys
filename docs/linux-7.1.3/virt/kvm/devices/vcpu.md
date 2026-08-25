@@ -1,42 +1,42 @@
 ﻿
-## 閫氱敤 vcpu 鎺ュ彛
+## 通用 vcpu 接口
 
 
-铏氭嫙 CPU 鈥滆澶団€?涔熸帴鍙?ioctl KVM_SET_DEVICE_ATTR銆並VM_GET_DEVICE_ATTR 鍜?KVM_HAS_DEVICE_ATTR銆傝鎺ュ彛浣跨敤涓庡叾浠栬澶囩浉鍚岀殑 struct
-kvm_device_attr锛屼絾鐩爣鏄?VCPU 绾у埆鐨勮缃拰鎺у埗銆?
-姣忎釜铏氭嫙 CPU 鐨勭粍鍜屽睘鎬э紙濡傛灉鏈夌殑璇濓級鏄灦鏋勭浉鍏崇殑銆?
-## 1. 缁勶細KVM_ARM_VCPU_PMU_V3_CTRL
+虚拟 CPU “设备也接ioctl KVM_SET_DEVICE_ATTR、KVM_GET_DEVICE_ATTR KVM_HAS_DEVICE_ATTR。该接口使用与其他设备相同的 struct
+kvm_device_attr，但目标VCPU 级别的设置和控制
+每个虚拟 CPU 的组和属性（如果有的话）是架构相关的
+## 1. 组：KVM_ARM_VCPU_PMU_V3_CTRL
 
 
 :Architectures: ARM64
 
-### 1.1. 灞炴€э細KVM_ARM_VCPU_PMU_V3_IRQ
+### 1.1. 属性：KVM_ARM_VCPU_PMU_V3_IRQ
 
 
 :Parameters: in kvm_device_attr.addr the address for PMU overflow interrupt is a
 	     pointer to an int
 
-杩斿洖锛?
+返回
 	 =======  ========================================================
-	 -EBUSY   PMU 婧㈠嚭涓柇宸茬粡璁剧疆
-	 -EFAULT  璇诲彇涓柇鍙锋椂鍑洪敊
-	 -ENXIO   PMUv3 涓嶆敮鎸侊紝鎴栬€呭皾璇曡幏鍙栨椂婧㈠嚭涓柇鏈缃?	 -ENODEV  VCPU 缂哄皯 KVM_ARM_VCPU_PMU_V3 鐗规€?	 -EINVAL  鎻愪緵浜嗘棤鏁堢殑 PMU 婧㈠嚭涓柇鍙凤紝鎴栬€?		  鍦ㄦ湭浣跨敤鍐呮牳鍐?irqchip 鐨勬儏鍐典笅灏濊瘯璁剧疆 IRQ 鍙枫€?	 =======  ========================================================
+	 -EBUSY   PMU 溢出中断已经设置
+	 -EFAULT  读取中断号时出错
+	 -ENXIO   PMUv3 不支持，或者尝试获取时溢出中断未设	 -ENODEV  VCPU 缺少 KVM_ARM_VCPU_PMU_V3 特	 -EINVAL  提供了无效的 PMU 溢出中断号，或		  在未使用内核irqchip 的情况下尝试设置 IRQ 号	 =======  ========================================================
 
-鎻忚堪姝?vcpu 鐨?PMUv3锛圥erformance Monitor Unit v3锛屾€ц兘鐩戣鍗曞厓 v3锛夋孩鍑轰腑鏂彿鐨勪竴涓€笺€傝涓柇鍙互鏄?PPI 鎴?SPI锛屼絾姣忎釜 vcpu 鐨勪腑鏂被鍨嬪繀椤荤浉鍚屻€備綔涓?PPI 鏃讹紝鎵€鏈?vcpu 鐨勪腑鏂彿鐩稿悓锛涜€屼綔涓?SPI 鏃讹紝姣忎釜 vcpu 蹇呴』鏄崟鐙殑涓柇鍙枫€傚浜庡熀浜?GICv5 鐨勫鎴锋満锛屽繀椤讳娇鐢ㄦ灦鏋勮瀹氱殑 PPI锛?3锛夈€?
-### 1.2 灞炴€э細KVM_ARM_VCPU_PMU_V3_INIT
+描述vcpu PMUv3（Performance Monitor Unit v3，性能监视单元 v3）溢出中断号的一个值。该中断可以PPI SPI，但每个 vcpu 的中断类型必须相同。作PPI 时，所vcpu 的中断号相同；而作SPI 时，每个 vcpu 必须是单独的中断号。对于基GICv5 的客户机，必须使用架构规定的 PPI3）
+### 1.2 属性：KVM_ARM_VCPU_PMU_V3_INIT
 
 
 :Parameters: no additional parameter in kvm_device_attr.addr
 
-杩斿洖锛?
+返回
 	 =======  ======================================================
-	 -EEXIST  涓柇鍙峰凡琚娇鐢?	 -ENODEV  PMUv3 涓嶆敮鎸佹垨 GIC 鏈垵濮嬪寲
-	 -ENXIO   PMUv3 涓嶆敮鎸併€佺己灏?VCPU 鐗规€ф垨涓柇鍙锋湭璁剧疆
-		  锛堜粎闈?GICv5 瀹㈡埛鏈猴級
-	 -EBUSY   PMUv3 宸茬粡鍒濆鍖?	 =======  ======================================================
+	 -EEXIST  中断号已被使	 -ENODEV  PMUv3 不支持或 GIC 未初始化
+	 -ENXIO   PMUv3 不支持、缺VCPU 特性或中断号未设置
+		  （仅GICv5 客户机）
+	 -EBUSY   PMUv3 已经初始	 =======  ======================================================
 
-璇锋眰鍒濆鍖?PMUv3銆傚鏋滈厤鍚堝唴鏍稿唴铏氭嫙 GIC 瀹炵幇浣跨敤 PMUv3锛岃繖蹇呴』鍦ㄥ垵濮嬪寲鍐呮牳鍐?irqchip 涔嬪悗杩涜銆?
-### 1.3 灞炴€э細KVM_ARM_VCPU_PMU_V3_FILTER
+请求初始PMUv3。如果配合内核内虚拟 GIC 实现使用 PMUv3，这必须在初始化内核irqchip 之后进行
+### 1.3 属性：KVM_ARM_VCPU_PMU_V3_FILTER
 
 
 :Parameters: in kvm_device_attr.addr the address for a PMU event filter is a
@@ -45,10 +45,10 @@ kvm_device_attr锛屼絾鐩爣鏄?VCPU 绾у埆鐨勮缃拰鎺у埗銆?
 :Returns:
 
 	 =======  ======================================================
-	 -ENODEV  PMUv3 涓嶆敮鎸佹垨 GIC 鏈垵濮嬪寲
-	 -ENXIO   PMUv3 鏈纭厤缃紝鎴栬€呰皟鐢ㄦ灞炴€у墠鏈寜瑕佹眰
+	 -ENODEV  PMUv3 不支持或 GIC 未初始化
+	 -ENXIO   PMUv3 未正确配置，或者调用此属性前未按要求
 	 	  閰嶇疆鍐呮牳鍐?irqchip
-	 -EBUSY   PMUv3 宸茬粡鍒濆鍖栵紝鎴栬€呮煇涓?VCPU 宸茬粡杩愯杩?	 -EINVAL  鏃犳晥鐨勮繃婊ゅ櫒鑼冨洿
+	 -EBUSY   PMUv3 已经初始化，或者某VCPU 已经运行	 -EINVAL  无效的过滤器范围
 	 =======  ======================================================
 
 ```
@@ -65,10 +65,10 @@ kvm_device_attr锛屼絾鐩爣鏄?VCPU 绾у埆鐨勮缃拰鎺у埗銆?
     };
 
 ```
-涓€涓繃婊ゅ櫒鑼冨洿瀹氫箟涓鸿寖鍥?[@base_event, @base_event + @nevents)锛岃繛鍚?@action锛圞VM_PMU_EVENT_ALLOW 鎴?KVM_PMU_EVENT_DENY锛夈€傜涓€涓敞鍐岀殑鑼冨洿瀹氫箟浜嗗叏灞€绛栫暐锛堝鏋滅涓€涓?@action 鏄?DENY锛屽垯涓哄叏灞€ ALLOW锛涘鏋滅涓€涓?@action 鏄?ALLOW锛屽垯涓哄叏灞€ DENY锛夈€傚彲浠ョ紪绋嬪涓寖鍥达紝骞朵笖蹇呴』閫傞厤 PMU 鏋舵瀯鎵€瀹氫箟鐨勪簨浠剁┖闂达紙ARMv8.0 涓婁负 10 浣嶏紝浠?ARMv8.1 璧蜂负 16 浣嶏級銆?
-娉ㄦ剰锛氶€氳繃涓哄悓涓€鑼冨洿娉ㄥ唽鐩稿弽鐨勫姩浣滄潵 鈥滃彇娑堚€?涓€涓繃婊ゅ櫒骞朵笉浼氭敼鍙橀粯璁ゅ姩浣溿€備緥濡傦紝鍏堝皢浜嬩欢鑼冨洿 [0:10) 鐨?ALLOW 杩囨护鍣ㄤ綔涓虹涓€涓繃婊ゅ櫒瀹夎锛岀劧鍚庡璇ヨ寖鍥村簲鐢?DENY 鍔ㄤ綔锛屽皢浣挎暣涓寖鍥翠繚鎸佺鐢ㄧ姸鎬併€?
-闄愬埗锛氫簨浠?0锛圫W_INCR锛夋案杩滀笉浼氳杩囨护锛屽洜涓哄畠涓嶇粺璁＄‖浠朵簨浠躲€傝繃婊や簨浠?0x1E锛圕HAIN锛変篃娌℃湁鏁堟灉锛屽洜涓哄畠涓ユ牸鏉ヨ涓嶆槸涓€涓簨浠躲€傚彲浠ヤ娇鐢ㄤ簨浠?0x11锛圕PU_CYCLES锛夋潵杩囨护鍛ㄦ湡璁℃暟鍣ㄣ€?
-### 1.4 灞炴€э細KVM_ARM_VCPU_PMU_V3_SET_PMU
+一个过滤器范围定义为范[@base_event, @base_event + @nevents)，连@action（KVM_PMU_EVENT_ALLOW KVM_PMU_EVENT_DENY）。第一个注册的范围定义了全局策略（如果第一@action DENY，则为全局 ALLOW；如果第一@action ALLOW，则为全局 DENY）。可以编程多个范围，并且必须适配 PMU 架构所定义的事件空间（ARMv8.0 上为 10 位，ARMv8.1 起为 16 位）
+注意：通过为同一范围注册相反的动作来 “取消一个过滤器并不会改变默认动作。例如，先将事件范围 [0:10) ALLOW 过滤器作为第一个过滤器安装，然后对该范围应DENY 动作，将使整个范围保持禁用状态
+限制：事0（SW_INCR）永远不会被过滤，因为它不统计硬件事件。过滤事0x1E（CHAIN）也没有效果，因为它严格来说不是一个事件。可以使用事0x11（CPU_CYCLES）来过滤周期计数器
+### 1.4 属性：KVM_ARM_VCPU_PMU_V3_SET_PMU
 
 
 :Parameters: in kvm_device_attr.addr the address to an int representing the PMU
@@ -77,17 +77,17 @@ kvm_device_attr锛屼絾鐩爣鏄?VCPU 绾у埆鐨勮缃拰鎺у埗銆?
 :Returns:
 
 	 =======  ====================================================
-	 -EBUSY   PMUv3 宸茬粡鍒濆鍖栥€佹煇涓?VCPU 宸茬粡杩愯杩囷紝鎴栬€?                  宸茬粡璁剧疆浜嗕竴涓簨浠惰繃婊ゅ櫒
-	 -EFAULT  璁块棶 PMU 鏍囪瘑绗︽椂鍑洪敊
-	 -ENXIO   鏈壘鍒?PMU
-	 -ENODEV  PMUv3 涓嶆敮鎸佹垨 GIC 鏈垵濮嬪寲
-	 -ENOMEM  鏃犳硶鍒嗛厤鍐呭瓨
+	 -EBUSY   PMUv3 已经初始化、某VCPU 已经运行过，或                  已经设置了一个事件过滤器
+	 -EFAULT  访问 PMU 标识符时出错
+	 -ENXIO   未找PMU
+	 -ENODEV  PMUv3 不支持或 GIC 未初始化
+	 -ENOMEM  无法分配内存
 	 =======  ====================================================
 
-璇锋眰 VCPU 鍦ㄥ垱寤哄鎴锋満浜嬩欢鐢ㄤ簬 PMU 浠跨湡鏃朵娇鐢ㄦ寚瀹氱殑纭欢 PMU銆侾MU 鏍囪瘑绗﹀彲浠ヤ粠 /sys/devices 涓嬫墍闇€ PMU 瀹炰緥鐨?鈥渢ype鈥?鏂囦欢锛堟垨绛変环鐨?/sys/bus/even_source锛夎鍙栥€傛灞炴€у湪鑷冲皯鏈変袱涓?CPU PMU 鐨勫紓鏋勭郴缁熶笂鐗瑰埆鏈夌敤銆備负涓€涓?VCPU 璁剧疆鐨?PMU 灏嗚鎵€鏈夊叾浠?VCPU 浣跨敤銆傚鏋滃凡缁忓瓨鍦?PMU 浜嬩欢杩囨护鍣紝鍒欐棤娉曡缃?PMU銆?
-娉ㄦ剰锛孠VM 涓嶄細灏濊瘯灏嗘灞炴€ф寚瀹氱殑銆佷笌 PMU 鐩稿叧鑱旂殑鐗╃悊 CPU 涓婅繍琛?VCPU銆傝繖瀹屽叏鐣欑粰鐢ㄦ埛绌洪棿澶勭悊銆傜劧鑰岋紝灏濊瘯鍦ㄤ笌 PMU 涓嶆敮鎸佺殑鐗╃悊 CPU 涓婅繍琛?VCPU 灏嗕細澶辫触锛孠VM_RUN 灏嗕互
-exit_reason = KVM_EXIT_FAIL_ENTRY 杩斿洖锛屽苟閫氳繃灏?hardare_entry_failure_reason 瀛楁璁句负 KVM_EXIT_FAIL_ENTRY_CPU_UNSUPPORTED銆佸皢 cpu 瀛楁璁句负澶勭悊鍣?id 鏉ュ～鍏?fail_entry 缁撴瀯銆?
-### 1.5 灞炴€э細KVM_ARM_VCPU_PMU_V3_SET_NR_COUNTERS
+请求 VCPU 在创建客户机事件用于 PMU 仿真时使用指定的硬件 PMU。PMU 标识符可以从 /sys/devices 下所需 PMU 实例“type文件（或等价/sys/bus/even_source）读取。此属性在至少有两CPU PMU 的异构系统上特别有用。为一VCPU 设置PMU 将被所有其VCPU 使用。如果已经存PMU 事件过滤器，则无法设PMU
+注意，KVM 不会尝试将此属性指定的、与 PMU 相关联的物理 CPU 上运VCPU。这完全留给用户空间处理。然而，尝试在与 PMU 不支持的物理 CPU 上运VCPU 将会失败，KVM_RUN 将以
+exit_reason = KVM_EXIT_FAIL_ENTRY 返回，并通过hardare_entry_failure_reason 字段设为 KVM_EXIT_FAIL_ENTRY_CPU_UNSUPPORTED、将 cpu 字段设为处理id 来填fail_entry 结构
+### 1.5 属性：KVM_ARM_VCPU_PMU_V3_SET_NR_COUNTERS
 
 
 :Parameters: in kvm_device_attr.addr the address to an unsigned int
@@ -96,81 +96,81 @@ exit_reason = KVM_EXIT_FAIL_ENTRY 杩斿洖锛屽苟閫氳繃灏?hardare_entry_f
 :Returns:
 
 	 =======  ====================================================
-	 -EBUSY   PMUv3 宸茬粡鍒濆鍖栥€佹煇涓?VCPU 宸茬粡杩愯杩囷紝鎴栬€?                  宸茬粡璁剧疆浜嗕簨浠惰繃婊ゅ櫒
-	 -EFAULT  璁块棶 addr 鎵€鎸囧悜鐨勫€兼椂鍑洪敊
-	 -ENODEV  PMUv3 涓嶆敮鎸佹垨 GIC 鏈垵濮嬪寲
-	 -EINVAL  鏈樉寮忛€夋嫨 PMUv3锛屾垨鑰?N 鐨勫€艰秴鍑鸿寖鍥?	 =======  ====================================================
+	 -EBUSY   PMUv3 已经初始化、某VCPU 已经运行过，或                  已经设置了事件过滤器
+	 -EFAULT  访问 addr 所指向的值时出错
+	 -ENODEV  PMUv3 不支持或 GIC 未初始化
+	 -EINVAL  未显式选择 PMUv3，或N 的值超出范	 =======  ====================================================
 
-璁剧疆铏氭嫙 PMU 涓疄鐜扮殑浜嬩欢璁℃暟鍣ㄦ暟閲忋€傝繖瑕佹眰宸查€氳繃 KVM_ARM_VCPU_PMU_V3_SET_PMU 鏄惧紡閫夋嫨浜嗕竴涓?PMU锛屽苟涓斿綋鏈樉寮忛€夋嫨 PMU銆佹垨鑰呰鏁板櫒鏁伴噺瓒呭嚭鎵€閫?PMU 鐨勮寖鍥存椂浼氬け璐ャ€傞€夋嫨鏂扮殑 PMU 浼氬彇娑堣缃灞炴€х殑鏁堟灉銆?
-## 2. 缁勶細KVM_ARM_VCPU_TIMER_CTRL
+设置虚拟 PMU 中实现的事件计数器数量。这要求已通过 KVM_ARM_VCPU_PMU_V3_SET_PMU 显式选择了一PMU，并且当未显式选择 PMU、或者计数器数量超出所PMU 的范围时会失败。选择新的 PMU 会取消设置此属性的效果
+## 2. 组：KVM_ARM_VCPU_TIMER_CTRL
 
 
 :Architectures: ARM64
 
-### 2.1. 灞炴€э細KVM_ARM_VCPU_TIMER_IRQ_{VTIMER,PTIMER,HVTIMER,HPTIMER}
+### 2.1. 属性：KVM_ARM_VCPU_TIMER_IRQ_{VTIMER,PTIMER,HVTIMER,HPTIMER}
 
 
 :Parameters: in kvm_device_attr.addr the address for the timer interrupt is a
 	     pointer to an int
 
-杩斿洖锛?
+返回
 	 =======  =================================
-	 -EINVAL  鏃犳晥鐨勫畾鏃跺櫒涓柇鍙?	 -EBUSY   涓€涓垨澶氫釜 VCPU 宸茬粡杩愯
+	 -EINVAL  无效的定时器中断	 -EBUSY   一个或多个 VCPU 已经运行
 	 =======  =================================
 
-鎻忚堪杩炴帴鍒板唴鏍稿唴铏氭嫙 GIC 鏃剁殑鏋舵瀯瀹氭椂鍣ㄤ腑鏂彿銆傚畠浠繀椤绘槸 PPI锛?6 <= intid < 32锛夈€傝缃灞炴€т細瑕嗙洊榛樿鍊硷紙瑙佷笅鏂囷級銆?
+描述连接到内核内虚拟 GIC 时的架构定时器中断号。它们必须是 PPI6 <= intid < 32）。设置该属性会覆盖默认值（见下文）
 ==============================  ==========================================
-KVM_ARM_VCPU_TIMER_IRQ_VTIMER   EL1 铏氭嫙瀹氭椂鍣?intid锛堥粯璁わ細27锛?KVM_ARM_VCPU_TIMER_IRQ_PTIMER   EL1 鐗╃悊瀹氭椂鍣?intid锛堥粯璁わ細30锛?KVM_ARM_VCPU_TIMER_IRQ_HVTIMER  EL2 铏氭嫙瀹氭椂鍣?intid锛堥粯璁わ細28锛?KVM_ARM_VCPU_TIMER_IRQ_HPTIMER  EL2 鐗╃悊瀹氭椂鍣?intid锛堥粯璁わ細26锛?==============================  ==========================================
+KVM_ARM_VCPU_TIMER_IRQ_VTIMER   EL1 虚拟定时intid（默认：27KVM_ARM_VCPU_TIMER_IRQ_PTIMER   EL1 物理定时intid（默认：30KVM_ARM_VCPU_TIMER_IRQ_HVTIMER  EL2 虚拟定时intid（默认：28KVM_ARM_VCPU_TIMER_IRQ_HPTIMER  EL2 物理定时intid（默认：26==============================  ==========================================
 
-涓轰笉鍚岀殑瀹氭椂鍣ㄨ缃浉鍚岀殑 PPI 浼氶樆姝?VCPU 杩愯銆傚湪鏌愪釜 VCPU 涓婅缃腑鏂彿浼氬皢褰撴椂鍒涘缓鐨勬墍鏈?VCPU 閰嶇疆涓哄缁欏畾瀹氭椂鍣ㄤ娇鐢ㄨ鍙风爜锛岃鐩栧叾浠?VCPU 涓婁箣鍓嶉厤缃殑浠讳綍鍊笺€傜敤鎴风┖闂村簲鍦ㄥ垱寤烘墍鏈?VCPU 涔嬪悗銆佽繍琛屼换浣?VCPU 涔嬪墠锛屽湪鑷冲皯涓€涓?VCPU 涓婇厤缃腑鏂彿銆?
+为不同的定时器设置相同的 PPI 会阻VCPU 运行。在某个 VCPU 上设置中断号会将当时创建的所VCPU 配置为对给定定时器使用该号码，覆盖其VCPU 上之前配置的任何值。用户空间应在创建所VCPU 之后、运行任VCPU 之前，在至少一VCPU 上配置中断号
 
-## 3. 缁勶細KVM_ARM_VCPU_PVTIME_CTRL
+## 3. 组：KVM_ARM_VCPU_PVTIME_CTRL
 
 
 :Architectures: ARM64
 
-### 3.1 灞炴€э細KVM_ARM_VCPU_PVTIME_IPA
+### 3.1 属性：KVM_ARM_VCPU_PVTIME_IPA
 
 
 :Parameters: 64-bit base address
 
-杩斿洖锛?
+返回
 	 =======  ======================================
-	 -ENXIO   鏈疄鐜扮獌鍙栨椂闂?	 -EEXIST  姝?VCPU 鐨勫熀鍦板潃宸茬粡璁剧疆
-	 -EINVAL  鍩哄湴鍧€鏈寜 64 瀛楄妭瀵归綈
+	 -ENXIO   未实现窃取时	 -EEXIST  VCPU 的基地址已经设置
+	 -EINVAL  基地址未按 64 字节对齐
 	 =======  ======================================
 
-鎸囧畾姝?VCPU 鐨勭獌鍙栨椂闂寸粨鏋勭殑鍩哄湴鍧€銆傚熀鍦板潃蹇呴』鎸?64 瀛楄妭瀵归綈锛屽苟涓斾綅浜庢湁鏁堢殑瀹㈡埛鏈哄唴瀛樺尯鍩熷唴銆傛洿澶氫俊鎭紙鍖呮嫭绐冨彇鏃堕棿缁撴瀯鐨勫竷灞€锛夎鍙傝 Documentation/virt/kvm/arm/pvtime.rst銆?
-## 4. 缁勶細KVM_VCPU_TSC_CTRL
+指定VCPU 的窃取时间结构的基地址。基地址必须64 字节对齐，并且位于有效的客户机内存区域内。更多信息（包括窃取时间结构的布局）请参见 Documentation/virt/kvm/arm/pvtime.rst
+## 4. 组：KVM_VCPU_TSC_CTRL
 
 
 :Architectures: x86
 
-4.1 灞炴€э細KVM_VCPU_TSC_OFFSET
+4.1 属性：KVM_VCPU_TSC_OFFSET
 
 :Parameters: 64-bit unsigned TSC offset
 
-杩斿洖锛?
+返回
 	 ======= ======================================
-	 -EFAULT 璇诲彇/鍐欏叆鎵€鎻愪緵鐨勫弬鏁板湴鍧€鏃跺嚭閿欍€?	 -ENXIO  灞炴€т笉鍙楁敮鎸?	 ======= ======================================
+	 -EFAULT 读取/写入所提供的参数地址时出错	 -ENXIO  属性不受支	 ======= ======================================
 
-鎸囧畾瀹㈡埛鏈虹浉瀵逛簬涓绘満鐨?TSC 鍋忕Щ銆傚鎴锋満鐨?TSC 鐒跺悗閫氳繃浠ヤ笅绛夊紡鎺ㄥ锛?
+指定客户机相对于主机TSC 偏移。客户机TSC 然后通过以下等式推导
   guest_tsc = host_tsc + KVM_VCPU_TSC_OFFSET
 
-姝ゅ睘鎬у彲鐢ㄤ簬鍦ㄥ疄鏃惰縼绉绘椂璋冩暣瀹㈡埛鏈虹殑 TSC锛屼娇 TSC 璁″叆 VM 琚殏鍋滄湡闂寸殑鏃堕棿銆備笅闈㈡弿杩颁簡鐢ㄤ簬姝ょ洰鐨勭殑涓€绉嶅彲鑳界畻娉曘€?
-鏉ヨ嚜婧?VMM 杩涚▼锛?
-1. 璋冪敤 KVM_GET_CLOCK ioctl 璁板綍涓绘満 TSC锛坱sc_src锛夈€乲vmclock 绾崇锛坓uest_src锛夊拰涓绘満 CLOCK_REALTIME 绾崇锛坔ost_src锛夈€?
-2. 璇诲彇姣忎釜 vCPU 鐨?KVM_VCPU_TSC_OFFSET 灞炴€т互璁板綍瀹㈡埛鏈?TSC 鍋忕Щ锛坥fs_src[i]锛夈€?
-3. 璋冪敤 KVM_GET_TSC_KHZ ioctl 璁板綍瀹㈡埛鏈?TSC 鐨勯鐜囷紙freq锛夈€?
-鏉ヨ嚜鐩爣 VMM 杩涚▼锛?
-4. 璋冪敤 KVM_SET_CLOCK ioctl锛屽湪鍚勮嚜瀛楁涓彁渚涙潵鑷?kvmclock 鐨勬簮绾崇锛坓uest_src锛夊拰 CLOCK_REALTIME锛坔ost_src锛夈€傜‘淇濆湪鎵€鎻愪緵鐨勭粨鏋勪腑璁剧疆浜?KVM_CLOCK_REALTIME 鏍囧織銆?
-   KVM 灏嗘帹杩?VM 鐨?kvmclock锛屼互璁″叆璁板綍鏃堕挓鍊间互鏉ョ粡杩囩殑鏃堕棿銆傛敞鎰忥紝闄ら潪婧愬拰鐩爣涔嬮棿鐨?CLOCK_REALTIME 鏄悓姝ョ殑锛屽苟涓旀簮鏆傚仠 VM 涓庣洰鏍囨墽琛屾楠?4-7 涔嬮棿缁忚繃鐨勬椂闂磋冻澶熺煭锛屽惁鍒欒繖浼氬湪瀹㈡埛鏈轰腑寮曞彂闂锛堜緥濡傝秴鏃讹級銆?
-5. 璋冪敤 KVM_GET_CLOCK ioctl 璁板綍涓绘満 TSC锛坱sc_dest锛夊拰 kvmclock 绾崇锛坓uest_dest锛夈€?
-6. 璋冩暣姣忎釜 vCPU 鐨勫鎴锋満 TSC 鍋忕Щ锛屼互璁″叆锛?锛夎褰曠姸鎬佷互鏉ョ粡杩囩殑鏃堕棿锛屼互鍙婏紙2锛夋簮鏈哄櫒鍜岀洰鏍囨満鍣ㄤ箣闂?TSC 鐨勫樊寮傦細
+此属性可用于在实时迁移时调整客户机的 TSC，使 TSC 计入 VM 被暂停期间的时间。下面描述了用于此目的的一种可能算法
+来自VMM 进程
+1. 调用 KVM_GET_CLOCK ioctl 记录主机 TSC（tsc_src）、kvmclock 纳秒（guest_src）和主机 CLOCK_REALTIME 纳秒（host_src）
+2. 读取每个 vCPU KVM_VCPU_TSC_OFFSET 属性以记录客户TSC 偏移（ofs_src[i]）
+3. 调用 KVM_GET_TSC_KHZ ioctl 记录客户TSC 的频率（freq）
+来自目标 VMM 进程
+4. 调用 KVM_SET_CLOCK ioctl，在各自字段中提供来kvmclock 的源纳秒（guest_src）和 CLOCK_REALTIME（host_src）。确保在所提供的结构中设置KVM_CLOCK_REALTIME 标志
+   KVM 将推VM kvmclock，以计入记录时钟值以来经过的时间。注意，除非源和目标之间CLOCK_REALTIME 是同步的，并且源暂停 VM 与目标执行步4-7 之间经过的时间足够短，否则这会在客户机中引发问题（例如超时）
+5. 调用 KVM_GET_CLOCK ioctl 记录主机 TSC（tsc_dest）和 kvmclock 纳秒（guest_dest）
+6. 调整每个 vCPU 的客户机 TSC 偏移，以计入）记录状态以来经过的时间，以及（2）源机器和目标机器之TSC 的差异：
 
    ofs_dst[i] = ofs_src[i] -
      (guest_src - guest_dest) * freq +
      (tsc_src - tsc_dest)
 
-   锛堚€渙fs[i] + tsc - guest * freq鈥?鏄搴斾簬 kvmclock 涓椂闂?0 鐨勫鎴锋満 TSC 鍊笺€備笂杩板叕寮忕‘淇濆畠涓庢簮涓婄浉鍚岋紝鍦ㄧ洰鏍囦笂涔熺浉鍚岋級銆?
-7. 鐢ㄥ墠涓€姝ユ帹瀵煎嚭鐨勫悇鑷€煎啓鍑烘瘡涓?vCPU 鐨?KVM_VCPU_TSC_OFFSET 灞炴€с€?
+   （“ofs[i] + tsc - guest * freq是对应于 kvmclock 中时0 的客户机 TSC 值。上述公式确保它与源上相同，在目标上也相同）
+7. 用前一步推导出的各自值写出每vCPU KVM_VCPU_TSC_OFFSET 属性

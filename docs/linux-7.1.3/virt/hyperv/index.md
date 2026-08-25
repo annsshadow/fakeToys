@@ -1,10 +1,10 @@
-﻿## Hyper-V 澧炲己鐗规€?
+﻿## Hyper-V 增强特
 
-鏈〉闈㈡眹鎬?Hyper-V 澧炲己鐗规€х浉鍏虫枃妗ｃ€?
+本页面汇Hyper-V 增强特性相关文档
 
-- [姒傝堪](overview)
-- [VMBus 鎬荤嚎](vmbus)
-- [鏃堕挓](clocks)
-- [铏氭嫙 PCI](vpci)
-- [浼戠湢](hibernation)
-- [鏈哄瘑璁＄畻锛圕oCo锛塢(coco)
+- [概述](overview)
+- [VMBus 总线](vmbus)
+- [时钟](clocks)
+- [虚拟 PCI](vpci)
+- [休眠](hibernation)
+- [机密计算（CoCo）](coco)

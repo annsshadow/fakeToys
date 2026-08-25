@@ -4,31 +4,31 @@
 ######## ioctl NET_ADD_IF
 
 
-## 鍚嶇О
+## 名称
 
 
-NET_ADD_IF - 涓虹粰瀹氱殑鍖?ID 鍒涘缓鏂扮殑缃戠粶鎺ュ彛銆?
-## 姒傝
+NET_ADD_IF - 为给定的ID 创建新的网络接口
+## 概要
 
 
 
 `int ioctl(int fd, NET_ADD_IF, struct dvb_net_if *net_if)`
 
-## 鍙傛暟
+## 参数
 
 
 `fd`
-    鐢?`open()` 杩斿洖鐨勬枃浠舵弿杩扮銆?
+    `open()` 返回的文件描述符
 `net_if`
-    鎸囧悜 struct `dvb_net_if` 鐨勬寚閽?
-## 鎻忚堪
+    指向 struct `dvb_net_if` 的指
+## 描述
 
 
-NET_ADD_IF ioctl 绯荤粺璋冪敤閫夋嫨鍖呭惈 TCP/IP 娴侀噺鐨勫寘 ID (PID)銆佽浣跨敤鐨勫皝瑁?绫诲瀷锛圡PE 鎴?ULE锛変互鍙婅鍒涘缓鐨勬柊鎺ュ彛鐨勬帴鍙ｅ彿銆傚綋绯荤粺璋冪敤鎴愬姛杩斿洖鏃讹紝浼?鍒涘缓涓€涓柊鐨勮櫄鎷熺綉缁滄帴鍙ｃ€?
+NET_ADD_IF ioctl 系统调用选择包含 TCP/IP 流量的包 ID (PID)、要使用的封类型（MPE ULE）以及要创建的新接口的接口号。当系统调用成功返回时，创建一个新的虚拟网络接口
 **struct `dvb_net_if`**
-锛歩fnum 瀛楁灏嗚濉厖涓烘墍鍒涘缓鎺ュ彛鐨勭紪鍙枫€?
-## 杩斿洖鍊?
+：ifnum 字段将被填充为所创建接口的编号
+## 杩斿洖鍊。
 
-鎴愬姛鏃惰繑鍥?0锛屽苟濉厖 `ca_slot_info`銆?
-鍑洪敊鏃惰繑鍥?-1锛屽苟鐩稿簲鍦拌缃?`errno` 鍙橀噺銆?
-閫氱敤閿欒鐮佺殑鎻忚堪瑙侀€氱敤閿欒鐮?<gen-errors> 绔犺妭銆?
+成功时返0，并填充 `ca_slot_info`
+出错时返-1，并相应地设`errno` 变量
+通用错误码的描述见通用错误<gen-errors> 章节
