@@ -1,6 +1,6 @@
 /// 行为对比测试端点列表（自动生成）
 
-/// 生成时间: 2026-08-24 23:20:36
+/// 生成时间: 2026-08-25 14:51:34
 use super::EndpointDef;
 
 pub const ENDPOINTS: &[EndpointDef] = &[
@@ -23399,6 +23399,36 @@ pub const ENDPOINTS: &[EndpointDef] = &[
         crate_name: "processplatform_assemble_bam",
         method: "GET",
         rust_path: "/jaxrs/processplatform/assemble/bam/state/category/trigger",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_assemble_bam",
+        method: "GET",
+        rust_path: "/jaxrs/processplatform/assemble/bam/state/organization",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_assemble_bam",
+        method: "GET",
+        rust_path: "/jaxrs/processplatform/assemble/bam/state/running",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "processplatform_assemble_bam",
+        method: "GET",
+        rust_path: "/jaxrs/processplatform/assemble/bam/state/summary",
         java_war: "",
         java_action: "",
         body: None,
