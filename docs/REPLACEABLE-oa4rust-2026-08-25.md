@@ -57,7 +57,7 @@
 
 - 旧路由提取逻辑对链式写法 `.route("p", get(a).put(b))` 只识别首个 method，导致靠后 PUT/DELETE 误判缺失。已修正 `oa4rust/scripts/extract_routes.py`（对 `.route(` 整段做平衡括号提取，扫出全部 `get/post/put/delete`），PUT/DELETE 类端点由 0 → 662。
 - 基于 `tests/behavior_comparison/endpoints.rs`（行为对比期望端点清单）在链式路由拆分后重扫，**missing = 0**。
-  - 注：该文件当前含 **4513 条 `EndpointDef`**（HEAD `fdf483d9`）。终扫 §六 所记 1491 为复核时点临时差分脚本口径，经 git 回溯无法对应任何已提交版本；差异真因是 `14def34e` 起生成器换代为 `regen_endpoints.py`（链式全 method 展开）叠加 U2 期间反复再生成。2026-08-25 全注册面重验另发现清单存在 **159 条真实缺口**（详见 `final-coverage-sweep.md` §六「计数口径勘误与全量重验」）；missing=0 结论仅对当次比对范围有效。
+  - 注：该文件当前含 **4687 条 `EndpointDef`**（2026-08-25 修复 `regen_endpoints.py` 三类缺陷后重生成；历史口径 4513=HEAD `fdf483d9`，1491 为复核时点临时差分脚本口径且无对应已提交版本）。终扫 §六 所记 159 条真实缺口已全部闭合：重生成纳入 159 缺口 + empower 活路由 16（复核发现其于 `src/main.rs:359` 真实挂载，上轮"死代码"甄别有误）、剔除 parity 占位 1 条（系旧生成器从 parity/src/lib.rs 文档注释伪提取）；复验 REAL-MOUNTED missing=0、extra=0（详见 `final-coverage-sweep.md` §六「生成器缺陷修复与缺口闭合」）。
 - `extract_routes.py` 已自 `.gitignore` 放开纳入版本控制（与 `gen_openapi_paths.py` 一并强制追踪），根因修复可随仓库共享。
 
 ---
@@ -197,6 +197,6 @@
 
 ### 附：事实缺口与需回填项
 
-- **endpoints.rs 计数口径【已解决 2026-08-25】**：终扫 §六 的 1491 为复核时点临时差分脚本口径，无对应已提交版本；该文件现含 4513 条 `EndpointDef`（`14def34e` 换用 `regen_endpoints.py` 链式全 method 展开 + U2 反复再生成所致）。全注册面重验发现 **159 条真实缺口**（生成器扫描面/转义引号路径/全限定方法写法三类根因）与 26 条非缺口项，明细见终扫 §六「计数口径勘误与全量重验」。
+- **endpoints.rs 计数口径【已解决并闭合 2026-08-25】**：终扫 §六 的 1491 为复核时点临时差分脚本口径，无对应已提交版本。全注册面重验发现的 **159 条真实缺口已全部闭合**：`regen_endpoints.py` 三类根因（扫描面/转义引号路径/全限定方法写法）已修复并重生成，清单现为 **4687 条**（含 empower 活路由 16 条经复核纳入、剔除 parity 占位 1 条）；复验 REAL-MOUNTED missing=0、extra=0，剩余 missing=10 均为既定非缺口项（mcp_server 2 / shared testing.rs 4 / tests_u2.rs 伪影 4）。明细见终扫 §六「计数口径勘误与全量重验」及「生成器缺陷修复与缺口闭合」。
 - **R9 语义留档清单**：cms 等模块的深层语义差异尚未形成量化留档表，建议随 R1 影子流量报告一并产出。
 - **R10 模块卡片**：55+86 张模块卡片的 Key Flows/Dependencies 深度填充状态本判定未逐卡核验，列为范围内文档工作，不影响端点级结论。

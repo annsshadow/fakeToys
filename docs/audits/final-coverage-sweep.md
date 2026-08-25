@@ -136,6 +136,12 @@
 - **不计缺口 26 条**：empower 死代码 16（其 router 无任何挂载点，功能已由 personal crate 重实现）、shared/testing.rs 测试辅助 4、mcp_server 独立二进制 2、tests_u2.rs 字符串字面量伪影 4。
 - §一/§二的 Java 对齐覆盖率基于 `java-endpoint-inventory.json` × 全部 `.rs` 注册面（4573 条 `.route(`）计算，不依赖 endpoints.rs，故不受此清单缺口影响；但 behavior_compare 回归保护面存在上述盲区，建议后续将 `regen_endpoints.py` 扫描面扩至全 `src/**` 并修正转义引号与全限定写法两类正则。
 
+#### 生成器缺陷修复与缺口闭合（2026-08-25 收尾）
+
+上款建议已落地：`regen_endpoints.py` 三缺陷全部修复（① 扫描面扩至全 `crates/*/src/**/*.rs`；② 路径提取转义感知并支持原始字符串，写出时重新转义；③ method 识别兼容 `axum::routing::get/post/...` 全限定写法），排除项显式化（parity 测试脚手架、mcp_server 独立二进制、tests*/testing* 测试文件）。两点甄别修正：**empower 16 条经复核为活路由**——`src/main.rs:359` `.merge(empower::router::router(...))` 真实挂载（上轮"死代码"结论系扫描面未覆盖根二进制 `src/main.rs` 所致），经裁决纳入清单；占位条目 `parity/GET/...` 实为旧生成器从 `parity/src/lib.rs` 文档注释示例 `` `.route("...", get(...))` `` 伪提取（非手工混入），整表重建后自然消失。159 条缺口的根因分桶同步修正为：扫描面缺陷 140（u2_router 119 + auth 子模块 20 + shared `/health` 1）、转义引号 5、全限定写法 14（signature 3、preview 2、personal 1 + general 3、query_service 3、personal_extend 2 —— 后三者原归桶一实为全限定所致）。
+
+重生成后清单为 **4687 条**（4513 − 1 占位 + 159 + 16），行为对比测试目标 `behavior_compare` 编译通过。按同 v2 扫描逻辑复验：REAL-MOUNTED missing=0，剩余 missing=10 全部属既定非缺口类别（mcp_server 2 / shared testing.rs 4 / tests_u2.rs 字面量伪影 4），extra=0。
+
 ## 相关文档
 
 - **收官复盘：** `docs/solutions/best-practices/oa4rust-o2server-parity-closure-campaign-2026-08-25.md`
