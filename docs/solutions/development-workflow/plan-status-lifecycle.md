@@ -1,6 +1,7 @@
 ---
 title: "Plan Document Lifecycle Management"
 date: 2026-08-10
+last_refreshed: 2026-08-25
 category: development-workflow
 module: docs/plans
 problem_type: workflow_issue
@@ -24,6 +25,8 @@ applies_when:
 ## Context
 
 The `docs/plans/` directory accumulated 11 plan documents over 10 days of sprint work. By 2026-08-10, 5 plans had stale status markers: 3 still marked `active` despite being fully replaced by later plans, and 2 completed plans not updated. This created confusion about which plan was the source of truth.
+
+> **刷新（2026-08-25）：** 截至本日 `docs/plans/` 已增至 20 份；2026-08-25 审计将最后 5 份历史 `active` 计划翻为 `completed`，仅余 `docs/plans/2026-08-21-002-feat-remaining-work-consolidation-plan.md` 因 U3 外部阻塞保持 `active`。当前权威端点对齐状态见 `docs/audits/final-coverage-sweep.md`（99.77%）。
 
 ## Guidance
 
@@ -102,6 +105,8 @@ date: 2026-08-06
 
 - [Single Source of Truth: Migration Status](best-practices/single-source-of-truth-migration-status.md)
 - [Strangler Fig Migration Pattern](../architecture-patterns/strangler-fig-migration-pattern.md)
+- **Campaign retrospective:** `docs/solutions/best-practices/oa4rust-o2server-parity-closure-campaign-2026-08-25.md`
+- **Active plan:** `docs/plans/2026-08-21-002-feat-remaining-work-consolidation-plan.md`
 - **Audit command:** `grep -r "status: active" docs/plans/`
 - **Fix commit:** `46c4f51e` — refactor(plans): mark completed/superseded plans
 - **Done in:** `docs/plans/2026-08-10-001-prod-readiness-plan.md` (U1)
