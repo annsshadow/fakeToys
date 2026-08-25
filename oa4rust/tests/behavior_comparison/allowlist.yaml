@@ -49,3 +49,84 @@
 - rust_field: dismissTime
   java_field: dismiss_time
   reason: "Rust uses camelCase epoch-ms timestamp; Java uses snake_case ISO-8601"
+
+# ─────────────────────────────────────────────────────────────────────────────
+# U3 / R9 补充：CMS 深层语义一致性差异（cms_assemble_control）
+# 以下为静态审查识别出的"路由已存在但响应语义与 Java 不匹配"项。
+# 多数需 Rust 与 Java 双服务实跑（behavior_compare）才能最终定论，故留档。
+# 注：allowlist 解析器仅消费 rust_field / java_field（其余字段被忽略），
+# 此处用 ENDPOINT: 前缀避免与真实 JSON 字段名冲突，并附 endpoint / difference 说明。
+# ─────────────────────────────────────────────────────────────────────────────
+
+# 1) 列表桩：/jaxrs/{resource}/{id} GET 返回全表列表而非单实体（已修复核心 9 个，
+#    剩余以下端点待 behavior_compare 确认单实体投影后收敛）。
+- rust_field: "ENDPOINT:/jaxrs/data/document/{id}"
+  java_field: "single DataDocument (or its data fields list)"
+  endpoint: "/jaxrs/data/document/{id}"
+  difference: "GET 当前返回 x_cms_data_document 全表列表；Java DataAction 语义为该文档的数据字段列表/单文档，需确认投影"
+  reason: "data/document 命名空间语义特殊（嵌套字段路径），单实体投影需 behavior_compare 定论，故留档不擅自改"
+
+- rust_field: "ENDPOINT:/jaxrs/log/{id}"
+  java_field: "single Log entity"
+  endpoint: "/jaxrs/log/{id}"
+  difference: "GET 返回 x_cms_log 全表列表，忽略路径 id；Java 返回单条日志"
+  reason: "列表桩，单实体投影需 behavior_compare 确认；留档"
+
+- rust_field: "ENDPOINT:/jaxrs/script/{id}"
+  java_field: "single Script entity"
+  endpoint: "/jaxrs/script/{id}"
+  difference: "GET 返回 x_cms_script 全表列表，忽略路径 id；Java 返回单条脚本"
+  reason: "列表桩，单实体投影需 behavior_compare 确认；留档"
+
+- rust_field: "ENDPOINT:/jaxrs/view/{id}"
+  java_field: "single View entity"
+  endpoint: "/jaxrs/view/{id}"
+  difference: "GET 返回 x_cms_view 全表列表，忽略路径 id；Java 返回单视图"
+  reason: "列表桩，单实体投影需 behavior_compare 确认；留档"
+
+- rust_field: "ENDPOINT:/jaxrs/viewcategory/{id}"
+  java_field: "single ViewCategory entity"
+  endpoint: "/jaxrs/viewcategory/{id}"
+  difference: "GET 返回 x_cms_viewcategory 全表列表，忽略路径 id；Java 返回单视图分类"
+  reason: "列表桩，单实体投影需 behavior_compare 确认；留档"
+
+- rust_field: "ENDPOINT:/jaxrs/viewfieldconfig/{id}"
+  java_field: "single ViewFieldConfig entity"
+  endpoint: "/jaxrs/viewfieldconfig/{id}"
+  difference: "GET 返回 x_cms_viewfieldconfig 全表列表，忽略路径 id；Java 返回单字段配置"
+  reason: "列表桩，单实体投影需 behavior_compare 确认；留档"
+
+# 2) {id}/control 端点：Rust 返回实体字段子集，Java 返回 control 权限对象。
+- rust_field: "ENDPOINT:/jaxrs/appinfo/{id}/control"
+  java_field: "control {allowVisit,allowPublish,allowManage}"
+  endpoint: "/jaxrs/appinfo/{id}/control"
+  difference: "Rust 返回 {id,alias,appType,enabled,manager}；Java 返回 {control:{allowVisit,allowPublish,allowManage}}"
+  reason: "Java 的 control 由会话/用户权限服务计算，属设计级差异，需 behavior_compare 定论；留档"
+
+- rust_field: "ENDPOINT:/jaxrs/categoryinfo/{id}/control"
+  java_field: "control {allowVisit,allowPublish,allowManage}"
+  endpoint: "/jaxrs/categoryinfo/{id}/control"
+  difference: "Rust 返回 {id,name,parentId,appId,sortOrder,status}；Java 返回 {control:{allowVisit,allowPublish,allowManage}}"
+  reason: "同上，权限计算逻辑设计级差异；留档"
+
+- rust_field: "ENDPOINT:/jaxrs/document/{id}/control"
+  java_field: "control {allowVisit,allowPublish,allowManage}"
+  endpoint: "/jaxrs/document/{id}/control"
+  difference: "Rust document_control_u3 返回实体/子集；Java 返回 {control:{allowVisit,allowPublish,allowManage}}"
+  reason: "同上；留档"
+
+# 3) 别名/子集 GET 端点返回字段少于 Java 完整实体 Wo（camelCase 命名已对齐，但字段集为子集）。
+- rust_field: "ENDPOINT:appinfo_alias/categoryinfo_alias 等子集投影"
+  java_field: "full AppInfo/CategoryInfo Wo (incl. name, description, config, allPeopleView...)"
+  endpoint: "/jaxrs/appinfo/alias/{alias}, /jaxrs/categoryinfo/alias/{alias}"
+  difference: "Rust 仅返回核心字段子集；Java Wo.copier 返回实体全部字段"
+  reason: "字段集差异属设计级，需 behavior_compare 确认前端是否依赖完整字段；留档"
+
+# 4) 空值处理不一致：部分 handler 用 unwrap_or_default 兜底，部分直接 row.get 裸取
+#    （如历史版 application_id 的 enabled/manager、各 list 桩等），DB 为 NULL 时后者会 500；
+#    而 Java 对可空字段返回 null（HTTP 200）。已在本次修复中为新写单实体 handler 统一加 Option 兜底。
+- rust_field: "NULL_HANDLING_INCONSISTENCY"
+  java_field: "lenient null (HTTP 200)"
+  endpoint: "cms_assemble_control 多 handler"
+  difference: "可空列裸取 vs 兜底：DB NULL 时 Rust 旧路径可能 500，Java 返回 null"
+  reason: "系统性健壮性差异，需逐端点 behavior_compare 核对可空字段；已在新写单实体 handler 统一兜底"
