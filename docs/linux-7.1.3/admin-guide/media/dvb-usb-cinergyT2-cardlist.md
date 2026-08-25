@@ -1,18 +1,18 @@
 ﻿
-## dvb-usb-cinergyT2 缃戝崱鍒楄〃
+## dvb-usb-cinergyT2 网卡列表
 
-鏈枃浠跺垪鍑?dvb-usb-cinergyT2 椹卞姩鏀寔鐨?DVB-T 鎺ユ敹缃戝崱鍨嬪彿娓呭崟锛屽寘鍚骇鍝佸悕绉颁笌瀵瑰簲鐨?USB 璁惧鏍囪瘑锛圲SB ID锛夛紝渚涢┍鍔ㄩ€傞厤銆佽皟璇曚笌纭欢閫夊瀷鏃舵煡闃呭弬鑰冦€?
+本文件列dvb-usb-cinergyT2 驱动支持DVB-T 接收网卡型号清单，包含产品名称与对应USB 设备标识（USB ID），供驱动适配、调试与硬件选型时查阅参考
 
 
 
-浠ヤ笅涓?dvb-usb-cinergyT2 椹卞姩鏀寔鐨勭綉鍗″垪琛細
+以下dvb-usb-cinergyT2 驱动支持的网卡列表：
 
 
    :header-rows: 1
    :widths: 7 13
    :stub-columns: 0
 
-   - - 缃戝崱鍚嶇О
+   - - 网卡名称
      - USB ID
    - - TerraTec/qanu USB2.0 Highspeed DVB-T Receiver
      - 0ccd:0x0038

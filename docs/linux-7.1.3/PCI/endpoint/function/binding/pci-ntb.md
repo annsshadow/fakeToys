@@ -1,22 +1,22 @@
-﻿## PCI NTB 绔偣鍔熻兘
+﻿## PCI NTB 端点功能
 
 
-1) 鍦?configfs 涓紝涓?pci_epf_ntb 鐩綍鍒涘缓涓€涓瓙鐩綍銆?
-鏍囧噯 EPF 鍙厤缃瓧娈碉細
-
-================   ===========================================================
-vendorid	   搴斾负 0x104c
-deviceid	   瀵逛簬 TI 鐨?J721E SoC锛屽簲涓?0xb00d
-revid		   涓嶅叧蹇?progif_code	   涓嶅叧蹇?subclass_code	   搴斾负 0x00
-baseclass_code	   搴斾负 0x5
-cache_line_size	   涓嶅叧蹇?subsys_vendor_id   涓嶅叧蹇?subsys_id	   涓嶅叧蹇?interrupt_pin	   涓嶅叧蹇?msi_interrupts	   涓嶅叧蹇?msix_interrupts	   涓嶅叧蹇?================   ===========================================================
-
-2) 涓?1 涓垱寤虹殑鐩綍鍒涘缓涓€涓瓙鐩綍
-
-NTB EPF 鐗瑰畾鍙厤缃瓧娈碉細
+1) configfs 中，pci_epf_ntb 目录创建一个子目录
+标准 EPF 可配置字段：
 
 ================   ===========================================================
-db_count	   闂ㄩ搩锛坉oorbell锛夋暟閲忥紱榛樿 = 4
-mw1     	   鍐呭瓨绐楀彛 1 鐨勫ぇ灏?mw2     	   鍐呭瓨绐楀彛 2 鐨勫ぇ灏?mw3     	   鍐呭瓨绐楀彛 3 鐨勫ぇ灏?mw4     	   鍐呭瓨绐楀彛 4 鐨勫ぇ灏?num_mws     	   鍐呭瓨绐楀彛鏁伴噺锛涙渶澶у€?= 4
-spad_count     	   鏆傚瓨瀵勫瓨鍣紙scratchpad锛夋暟閲忥紱榛樿 = 64
+vendorid	   应为 0x104c
+deviceid	   对于 TI J721E SoC，应0xb00d
+revid		   不关progif_code	   不关subclass_code	   应为 0x00
+baseclass_code	   应为 0x5
+cache_line_size	   不关subsys_vendor_id   不关subsys_id	   不关interrupt_pin	   不关msi_interrupts	   不关msix_interrupts	   不关================   ===========================================================
+
+2) 1 中创建的目录创建一个子目录
+
+NTB EPF 特定可配置字段：
+
+================   ===========================================================
+db_count	   门铃（doorbell）数量；默认 = 4
+mw1     	   内存窗口 1 的大mw2     	   内存窗口 2 的大mw3     	   内存窗口 3 的大mw4     	   内存窗口 4 的大num_mws     	   内存窗口数量；最大= 4
+spad_count     	   暂存寄存器（scratchpad）数量；默认 = 64
 ================   ===========================================================

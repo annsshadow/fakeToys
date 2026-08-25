@@ -1,23 +1,23 @@
 ﻿## Intel North Mux-Agent
 
 
-## 绠€浠?
+## 简
 
-North Mux-Agent 鏄?Intel PMC 鍥轰欢鐨勪竴椤瑰姛鑳斤紝鍦ㄥぇ澶氭暟甯︽湁 PMC 寰帶鍒跺櫒鐨?Intel 骞冲彴涓婃槸鍙楁敮鎸佺殑銆傚畠鐢ㄤ簬閰嶇疆绯荤粺涓婄殑鍚勭 USB 澶氳矾澶嶇敤鍣?瑙ｅ鐢ㄥ櫒
-锛圡ultiplexer/DeMultiplexer锛夈€傚厑璁镐粠鎿嶄綔绯荤粺閰嶇疆 mux-agent 鐨勫钩鍙版湁涓€涓?ACPI 璁惧瀵硅薄锛堣妭鐐癸級锛屽叾 HID 涓?"INTC105C"锛屼唬琛ㄥ畠銆?
-North Mux-Agent锛堝張绉?Intel PMC Mux Control锛屾垨绠€绉?mux-agent锛夐┍鍔ㄩ€氳繃
-浣跨敤 PMC IPC 鏂规硶锛坉rivers/platform/x86/intel_scu_ipc.c锛変笌 PMC 寰帶鍒跺櫒
-閫氫俊銆傝椹卞姩鍚?USB Type-C Mux Class 娉ㄥ唽锛屼粠鑰屽厑璁?USB Type-C 鎺у埗鍣ㄥ拰
-鎺ュ彛椹卞姩閰嶇疆绾跨紗鎻掑ご鏂瑰悜鍜屾ā寮忥紙鍙婁氦鏇挎ā寮忥紝Alternate Modes锛夈€傝椹卞姩涔?鍚?USB Role Class 娉ㄥ唽锛屼互鏀寔 USB Host 鍜?Device 涓ょ妯″紡銆傝椹卞姩浣嶄簬锛?drivers/usb/typec/mux/intel_pmc_mux.c銆?
-## 绔彛鑺傜偣
-
-
-### 姒傝堪
+North Mux-Agent Intel PMC 固件的一项功能，在大多数带有 PMC 微控制器Intel 平台上是受支持的。它用于配置系统上的各种 USB 多路复用解复用器
+（Multiplexer/DeMultiplexer）。允许从操作系统配置 mux-agent 的平台有一ACPI 设备对象（节点），其 HID "INTC105C"，代表它
+North Mux-Agent（又Intel PMC Mux Control，或简mux-agent）驱动通过
+使用 PMC IPC 方法（drivers/platform/x86/intel_scu_ipc.c）与 PMC 微控制器
+通信。该驱动USB Type-C Mux Class 注册，从而允USB Type-C 控制器和
+接口驱动配置线缆插头方向和模式（及交替模式，Alternate Modes）。该驱动USB Role Class 注册，以支持 USB Host Device 两种模式。该驱动位于drivers/usb/typec/mux/intel_pmc_mux.c
+## 端口节点
 
 
-瀵逛簬绯荤粺涓婂彈 mux-agent 鎺у埗鐨勬瘡涓?USB Type-C 杩炴帴鍣紝鍦?PMC mux-agent
-璁惧鑺傜偣涓嬮兘鏈変竴涓嫭绔嬬殑瀛愯妭鐐广€傝繖浜涜妭鐐逛笉浠ｈ〃瀹為檯鐨勮繛鎺ュ櫒锛岃€屾槸 mux-agent
-涓殑鈥滈€氶亾锛坈hannel锛夆€?```
+### 概述
+
+
+对于系统上受 mux-agent 控制的每USB Type-C 连接器，PMC mux-agent
+设备节点下都有一个独立的子节点。这些节点不代表实际的连接器，而是 mux-agent
+中的“通道（channel）```
 
 	Scope (_SB.PCI0.PMC.MUX)
 	{
@@ -33,8 +33,8 @@ North Mux-Agent锛堝張绉?Intel PMC Mux Control锛屾垨绠€绉?mux-agent锛
 	}
 
 ```
-### _PLD锛堣澶囩殑鐗╃悊浣嶇疆锛孭hysical Location of Device锛?
-鍙€夌殑 _PLD 瀵硅薄鍙互涓庣鍙ｏ紙閫氶亾锛夎妭鐐逛竴璧蜂娇鐢ㄣ€傚鏋?_PLD
+### _PLD（设备的物理位置，Physical Location of Device
+可选的 _PLD 对象可以与端口（通道）节点一起使用。如_PLD
 ```
 
 	Scope (_SB.PCI0.PMC.MUX)
@@ -44,17 +44,17 @@ North Mux-Agent锛堝張绉?Intel PMC Mux Control锛屾垨绠€绉?mux-agent锛
 		Name (_ADR, 0)
 	        Method (_PLD, 0, NotSerialized)
                 {
-		    /* 灏嗘瑙嗕负浼唬鐮併€?*/
+		    /* 将此视为伪代码*/
 		    Return (\_SB.USBC.CON0._PLD())
 		}
 	    }
 	}
 
 ```
-### mux-agent 涓撶敤鐨?_DSD 璁惧灞炴€?
+### mux-agent 专用_DSD 设备属
 
-#### 绔彛鍙?
-涓轰簡閰嶇疆 USB Type-C 杩炴帴鍣ㄨ儗鍚庣殑 mux锛孭MC 鍥轰欢闇€瑕佺煡閬撲笌璇ヨ繛鎺ュ櫒鍏宠仈鐨?USB2 绔彛鍜?USB3 绔彛銆傞┍鍔ㄩ€氳繃璇诲彇鍚嶄负 "usb2-port-number" 鍜?"usb3-port-number" 鐨勭壒瀹?_DSD 璁惧灞炴€ф潵鎻愬彇姝ｇ‘鐨勭鍙ｅ彿銆傝繖浜涘睘鎬у叿鏈?琛ㄧず绔彛绱㈠紩鐨勬暣鏁板€笺€傜鍙ｇ储寮曠紪鍙锋槸鍩轰簬 1 鐨勶紝鍊?0 鏄潪娉曠殑銆傞┍鍔ㄥ湪鍚?mux-agent 鍙戦€佺壒瀹氭秷鎭椂锛屽師鏍蜂娇鐢ㄤ粠杩欎簺璁惧灞炴€т腑鎻愬彇鐨勬暟瀛?```
+#### 端口
+为了配置 USB Type-C 连接器背后的 mux，PMC 固件需要知道与该连接器关联USB2 端口USB3 端口。驱动通过读取名为 "usb2-port-number" "usb3-port-number" 的特_DSD 设备属性来提取正确的端口号。这些属性具表示端口索引的整数值。端口索引编号是基于 1 的，0 是非法的。驱动在mux-agent 发送特定消息时，原样使用从这些设备属性中提取的数```
 
 	Name (_DSD, Package () {
 	    ToUUID("daffd814-6eba-4d8c-8a91-bc9bbf4aa301"),
@@ -65,11 +65,11 @@ North Mux-Agent锛堝張绉?Intel PMC Mux Control锛屾垨绠€绉?mux-agent锛
 	})
 
 ```
-#### 鏂瑰悜
+#### 方向
 
-鏍规嵁骞冲彴鐨勪笉鍚岋紝鏉ヨ嚜杩炴帴鍣ㄧ殑鏁版嵁绾垮拰 SBU 绾夸粠 mux-agent 鐨勮搴︾湅鍙兘鏄?鈥滃浐瀹氱殑锛坒ixed锛夆€濓紝杩欐剰鍛崇潃 mux-agent 椹卞姩涓嶅簲鏍规嵁绾跨紗鎻掑ご鏂瑰悜閰嶇疆瀹冧滑銆?渚嬪锛屽綋骞冲彴涓婄殑閲嶅畾鏃跺櫒锛坮etimer锛夊鐞嗙嚎缂嗘彃澶存柟鍚戞椂锛屽氨浼氬彂鐢熻繖绉嶆儏鍐点€?椹卞姩浣跨敤鐗瑰畾鐨勮澶囧睘鎬?"sbu-orientation"锛圫BU锛夊拰 "hsl-orientation"锛堟暟鎹級
-鏉ヤ簡瑙ｈ繖浜涚嚎鏄惁鈥滃浐瀹氣€濓紝浠ュ強鍥哄畾鍒板摢涓柟鍚戙€傝繖浜涘睘鎬у叿鏈夌殑鍊兼槸瀛楃涓插€硷紝
-瀹冨彲浠ユ槸涓?USB Type-C 杩炴帴鍣ㄦ柟鍚戝畾涔夌殑鍊间箣涓€锛?normal"
+根据平台的不同，来自连接器的数据线和 SBU 线从 mux-agent 的角度看可能“固定的（fixed）”，这意味着 mux-agent 驱动不应根据线缆插头方向配置它们例如，当平台上的重定时器（retimer）处理线缆插头方向时，就会发生这种情况驱动使用特定的设备属"sbu-orientation"（SBU）和 "hsl-orientation"（数据）
+来了解这些线是否“固定”，以及固定到哪个方向。这些属性具有的值是字符串值，
+它可以是USB Type-C 连接器方向定义的值之一normal"
 ```
 
 	Name (_DSD, Package () {
@@ -81,10 +81,10 @@ North Mux-Agent锛堝張绉?Intel PMC Mux Control锛屾垨绠€绉?mux-agent锛
 	})
 
 ```
-## 绀轰緥 ASL
+## 示例 ASL
 
 
-浠ヤ笅 ASL 鏄竴涓ず渚嬶紝灞曠ず浜?mux-agent 鑺傜偣浠ュ強涓や釜
+以下 ASL 是一个示例，展示mux-agent 节点以及两个
 ```
 
 	Scope (_SB.PCI0.PMC)

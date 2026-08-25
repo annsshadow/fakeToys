@@ -1,54 +1,54 @@
 ﻿
-## 鎻愪氦 Devicetree锛圖T锛夌粦瀹氳ˉ涓?
+## 提交 Devicetree（DT）绑定补
 
-## I. 闈㈠悜琛ヤ竵鎻愪氦鑰?
+## I. 面向补丁提交
 
-  0) 鏉ヨ嚜 `Documentation/process/submitting-patches.rst` 鐨勫父瑙勮ˉ涓佹彁浜よ鍒欏悓鏍烽€傜敤銆?
-  1) 琛ヤ竵涓?`Documentation/` 涓?`include/dt-bindings/` 閮ㄥ垎搴?
+  0) 来自 `Documentation/process/submitting-patches.rst` 的常规补丁提交规则同样适用
+  1) 补丁`Documentation/` `include/dt-bindings/` 部分
 ```
 
        "dt-bindings: <binding dir>: ..."
 
-     灏戞暟瀛愮郴缁燂紝濡?ASoC銆乵edia銆乺egulators銆丼CSI銆丼PI 鍜?UFS锛屽熀浜庡瓙绯荤粺鍚嶇О鏈熸湜鍓嶇紑椤哄簭鐩稿弽::
+     少数子系统，ASoC、media、regulators、SCSI、SPI UFS，基于子系统名称期望前缀顺序相反::
 
        "<binding dir>: dt-bindings: ..."
 
-     涓婚鐨?80 涓瓧绗﹀崄鍒嗗疂璐点€傚缓璁笉瑕佷娇鐢?"Documentation"銆?doc" 鎴?"YAML"锛屽洜涓鸿繖浜涢兘鏄殣鍚殑銆傛墍鏈夌粦瀹氶兘鏄枃妗ｏ紝涓旀墍鏈夋柊缁戝畾閮藉簲閲囩敤 Devicetree schema 鏍煎紡銆備篃搴旈伩鍏嶉噸澶?"binding"锛屽洜姝ゅ浜庝竴涓柊璁惧锛岄€氬父绫讳技涓嬮潰杩欐牱鍗冲彲::
+     主题80 个字符十分宝贵。建议不要使"Documentation"doc" "YAML"，因为这些都是隐含的。所有绑定都是文档，且所有新绑定都应采用 Devicetree schema 格式。也应避免重"binding"，因此对于一个新设备，通常类似下面这样即可::
 
        "dt-bindings: iio: adc: Add ROHM BD79100G"
 
-     灏嗗叾浠栨牸寮忚浆鎹负 DT schema::
+     将其他格式转换为 DT schema::
 
        "dt-bindings: iio: adc: adi,ad7476: Convert to DT schema"
 
-  2) DT 缁戝畾鏂囦欢閲囩敤 DT schema 鏍煎紡涔﹀啓锛屼娇鐢?json-schema 璇嶆眹涓?YAML 鏂囦欢鏍煎紡銆侱T 缁戝畾鏂囦欢蹇呴』閫氳繃杩愯浠ヤ笅鍛戒护鐨勬牎楠?:
+  2) DT 绑定文件采用 DT schema 格式书写，使json-schema 词汇YAML 文件格式。DT 绑定文件必须通过运行以下命令的校:
 
        make dt_binding_check
 
-     鍏充簬 schema 涓庡伐鍏烽厤缃殑鏇村缁嗚妭锛岃鍙傝 `Documentation/devicetree/bindings/writing-schema.rst`銆?
-  3) DT 缁戝畾鏂囦欢搴旈噰鐢ㄥ弻閲嶈鍙€傞閫夎鍙爣绛句负 (GPL-2.0-only OR BSD-2-Clause)銆?
-  4) 灏嗘暣涓ˉ涓佺郴鍒楁彁浜ゅ埌 devicetree 閭欢鍒楄〃
+     关于 schema 与工具配置的更多细节，请参见 `Documentation/devicetree/bindings/writing-schema.rst`
+  3) DT 绑定文件应采用双重许可。首选许可标签为 (GPL-2.0-only OR BSD-2-Clause)
+  4) 将整个补丁系列提交到 devicetree 邮件列表
 
        devicetree@vger.kernel.org
 
-     骞舵妱閫侊紙Cc锛塂T 缁存姢鑰呫€備娇鐢?`scripts/get_maintainer.pl` 璇嗗埆鎵€鏈?DT 缁存姢鑰呫€?
-  5) 琛ヤ竵鐨?`Documentation/` 閮ㄥ垎搴斾綅浜庡疄鐜拌缁戝畾鐨勪唬鐮佷箣鍓嶏紝闅忚ˉ涓佺郴鍒椾竴骞舵彁浜ゃ€?
-  6) 鍦ㄨ姱鐗囨垨鏉跨骇 DTS 鏂囦欢涓娇鐢ㄧ殑浠讳綍 compatible 瀛楃涓诧紝蹇呴』鍏堝墠宸插湪瀵瑰簲鐨?DT 缁戝畾鏂囦欢 `Documentation/devicetree/bindings` 涓褰曘€傚嵆浣?Linux 璁惧椹卞姩灏氭湭鍖归厤璇?compatible 瀛楃涓诧紝姝よ鍒欏悓鏍烽€傜敤銆俒 鑻ユ湭閬靛惊姝ゆ楠わ紝checkpatch 灏嗕細鍙戝嚭璀﹀憡锛岃嚜鎻愪氦 bff5da4335256513497cc8c79f9a9d1665e09864锛?checkpatch: add DT compatible string documentation checks"锛夎捣鐢熸晥銆?]
+     并抄送（Cc）DT 维护者。使`scripts/get_maintainer.pl` 识别所DT 维护者
+  5) 补丁`Documentation/` 部分应位于实现该绑定的代码之前，随补丁系列一并提交
+  6) 在芯片或板级 DTS 文件中使用的任何 compatible 字符串，必须先前已在对应DT 绑定文件 `Documentation/devicetree/bindings` 中记录。即Linux 设备驱动尚未匹配compatible 字符串，此规则同样适用。[ 若未遵循此步骤，checkpatch 将会发出警告，自提交 bff5da4335256513497cc8c79f9a9d1665e09864checkpatch: add DT compatible string documentation checks"）起生效]
 
-  7) DTS 鎬讳綋涓婅瑙嗕负涓庨┍鍔ㄦ棤鍏崇殑纭欢鎻忚堪锛屽洜姝や换浣?DTS 琛ヤ竵锛屾棤璁轰娇鐢ㄥ凡鏈夎繕鏄柊鐨勭粦瀹氾紝閮藉簲缃簬琛ヤ竵闆嗘湯灏撅紝浠ヨ〃鏄庨┍鍔ㄥ DTS 娌℃湁渚濊禆銆侱TS 鏃犺濡備綍閮戒細閫氳繃鐙珛鐨勬爲鎴栧垎鏀悎鍏ワ紝鍥犳涓嶅悓鐨勯『搴忎細琛ㄦ槑璇ョ郴鍒椾笉鍙簩鍒嗭紙non-bisectable锛夈€?
-     濡傛灉鏌愪釜椹卞姩瀛愮郴缁熺淮鎶よ€呭€惧悜浜庡悎鍏ユ暣涓泦鍚堣€岄潪鍏朵腑鐩稿叧閮ㄥ垎锛岃灏?DTS 琛ヤ竵鎷嗗垎涓虹嫭绔嬬殑琛ヤ竵闆嗭紝骞跺湪鍙樻洿鏃ュ織鎴栧皝闈俊涓紩鐢ㄩ偖浠跺垪琛ㄤ笂鐨勭粦瀹氭彁浜ゃ€?
-  8) 濡傛灉鏌愪釜宸茶褰曠殑 compatible 瀛楃涓插皻鏈椹卞姩鍖归厤锛屾枃妗ｈ繕搴斿寘鍚椹卞姩鎵€鍖归厤鐨?compatible 瀛楃涓层€?
-  9) 缁戝畾姝ｈ Linux 鍐呮牳涔嬪鐨勫涓」鐩Н鏋佷娇鐢紝鍦ㄤ慨鏀瑰凡鏈夌粦瀹氭椂鍙兘闇€瑕侀澶栫殑璋ㄦ厧涓庤€冮噺銆?
+  7) DTS 总体上被视为与驱动无关的硬件描述，因此任DTS 补丁，无论使用已有还是新的绑定，都应置于补丁集末尾，以表明驱动对 DTS 没有依赖。DTS 无论如何都会通过独立的树或分支合入，因此不同的顺序会表明该系列不可二分（non-bisectable）
+     如果某个驱动子系统维护者倾向于合入整个集合而非其中相关部分，请DTS 补丁拆分为独立的补丁集，并在变更日志或封面信中引用邮件列表上的绑定提交
+  8) 如果某个已记录的 compatible 字符串尚未被驱动匹配，文档还应包含该驱动所匹配compatible 字符串
+  9) 绑定正被 Linux 内核之外的多个项目积极使用，在修改已有绑定时可能需要额外的谨慎与考量
 ```
-## II. 闈㈠悜鍐呮牳缁存姢鑰?
+## II. 闈㈠悜鍐呮牳缁存姢鑰。
 
-  1) 濡傛灉浣犲瀹℃煡鏌愪釜缁戝畾鎰熷埌涓嶇‘瀹氾紝璇峰洖澶嶈缁戝畾骞惰姹?devicetree 缁存姢鑰呯粰浜堟寚瀵笺€傝繖灏嗘湁鍔╀簬浠栦滑纭畾浼樺厛瀹℃煡鍝簺銆佸摢浜涘彲浠ユ斁琛屻€?
-  2) 瀵逛簬椹卞姩锛堥潪瀛愮郴缁燂級缁戝畾锛氬鏋滀綘瀵硅缁戝畾鎰熷埌婊℃剰锛屼笖鍑犲懆鍚庝粛鏈敹鍒?devicetree 缁存姢鑰呯殑 Acked-by锛岃鐩存帴灏嗗叾鍚堝叆銆?
-     瀵逛簬瀛愮郴缁熺粦瀹氾紙褰卞搷澶氫釜璁惧鐨勪换浣曞唴瀹癸級锛屽繀椤昏涓€浣?devicetree 缁存姢鑰呭鍏惰繘琛屽鏌ャ€?
-  3) 瀵逛簬缁忚繃澶氭５鏍戠殑琛ヤ竵绯诲垪锛岀粦瀹氳ˉ涓佸簲涓庝娇鐢ㄨ缁戝畾鐨勯┍鍔ㄦ斁鍦ㄤ竴璧枫€?
-  4) DTS 鏂囦欢缁濅笉搴旈€氳繃椹卞姩瀛愮郴缁熸爲鍚堝叆锛岃€屽簲濮嬬粓閫氳繃骞冲彴 SoC 鏍戝湪涓撶敤鍒嗘敮涓婂悎鍏ワ紙鍙﹁ `Documentation/process/maintainer-soc.rst`锛夈€?
-## III. 娉ㄦ剰浜嬮」
+  1) 如果你对审查某个绑定感到不确定，请回复该绑定并请devicetree 维护者给予指导。这将有助于他们确定优先审查哪些、哪些可以放行
+  2) 对于驱动（非子系统）绑定：如果你对该绑定感到满意，且几周后仍未收devicetree 维护者的 Acked-by，请直接将其合入
+     对于子系统绑定（影响多个设备的任何内容），必须让一devicetree 维护者对其进行审查
+  3) 对于经过多棵树的补丁系列，绑定补丁应与使用该绑定的驱动放在一起
+  4) DTS 文件绝不应通过驱动子系统树合入，而应始终通过平台 SoC 树在专用分支上合入（另见 `Documentation/process/maintainer-soc.rst`）
+## III. 注意事项
 
 
-  0) 鍏充簬 devicetree ABI 鐨勭粏鑺傦紝璇峰弬瑙?`Documentation/devicetree/bindings/ABI.rst`銆?
-  1) 鏈枃妗ｆ棬鍦ㄤ綔涓哄 2013 骞村唴鏍稿嘲浼氭墍纭畾娴佺▼鐨勬€讳綋鐔熸倝鎸囧紩銆傚鏈夌枒闂紝devicetree 缁存姢鑰呭綋鍓嶇殑鎰忚浼樺厛浜庢湰鏂囨。銆傚湪杩欑鎯呭喌涓嬶紝娆㈣繋鎻愪氦鏇存柊鏈枃妗ｇ殑琛ヤ竵銆?
+  0) 关于 devicetree ABI 的细节，请参`Documentation/devicetree/bindings/ABI.rst`
+  1) 本文档旨在作为对 2013 年内核峰会所确定流程的总体熟悉指引。如有疑问，devicetree 维护者当前的意见优先于本文档。在这种情况下，欢迎提交更新本文档的补丁

@@ -1,57 +1,57 @@
-﻿######## 绠€浠?
+﻿######## 简
 
-libv4l 鏄竴缁勫簱锛屽畠鍦?video4linux2 璁惧涔嬩笂鍙犲姞浜嗕竴灞傝交閲忕殑鎶借薄灞傘€傝繖涓€锛堣交閲忥級灞傜殑鐩殑鏄搴旂敤绋嬪簭缂栧啓鑰呰兘澶熻交鏉炬敮鎸佺绫荤箒澶氱殑璁惧锛岃€屾棤闇€涓哄悓涓€绫诲埆涓笉鍚岃澶囩紪鍐欏崟鐙殑浠ｇ爜銆?
-浣跨敤 libv4l 鐨勭ず渚嬬敱 v4l2grab <v4l2grab-example> 鎻愪緵銆?
-libv4l 鐢?3 涓笉鍚岀殑搴撶粍鎴愶細
+libv4l 是一组库，它video4linux2 设备之上叠加了一层轻量的抽象层。这一（轻量）层的目的是让应用程序编写者能够轻松支持种类繁多的设备，而无需为同一类别中不同设备编写单独的代码
+使用 libv4l 的示例由 v4l2grab <v4l2grab-example> 提供
+libv4l 3 个不同的库组成：
 
 ## libv4lconvert
 
 
-libv4lconvert 鏄竴涓簱锛屽畠鎶?V4L2 椹卞姩涓瓨鍦ㄧ殑鑻ュ共绉嶅儚绱犳牸寮忚浆鎹负灏戞暟鍑犵甯歌鐨?RGB 鍜?YUY 鏍煎紡銆?
-瀹冪洰鍓嶆帴鍙椾互涓?V4L2 椹卞姩鏍煎紡锛?V4L2_PIX_FMT_BGR24 <V4L2-PIX-FMT-BGR24>銆?V4L2_PIX_FMT_NV12_16L16 <V4L2-PIX-FMT-NV12-16L16>銆?V4L2_PIX_FMT_JPEG <V4L2-PIX-FMT-JPEG>銆?V4L2_PIX_FMT_MJPEG <V4L2-PIX-FMT-MJPEG>銆?V4L2_PIX_FMT_MR97310A <V4L2-PIX-FMT-MR97310A>銆?V4L2_PIX_FMT_OV511 <V4L2-PIX-FMT-OV511>銆?V4L2_PIX_FMT_OV518 <V4L2-PIX-FMT-OV518>銆?V4L2_PIX_FMT_PAC207 <V4L2-PIX-FMT-PAC207>銆?V4L2_PIX_FMT_PJPG <V4L2-PIX-FMT-PJPG>銆?V4L2_PIX_FMT_RGB24 <V4L2-PIX-FMT-RGB24>銆?V4L2_PIX_FMT_SBGGR8 <V4L2-PIX-FMT-SBGGR8>銆?V4L2_PIX_FMT_SGBRG8 <V4L2-PIX-FMT-SGBRG8>銆?V4L2_PIX_FMT_SGRBG8 <V4L2-PIX-FMT-SGRBG8>銆?V4L2_PIX_FMT_SN9C10X <V4L2-PIX-FMT-SN9C10X>銆?V4L2_PIX_FMT_SN9C20X_I420 <V4L2-PIX-FMT-SN9C20X-I420>銆?V4L2_PIX_FMT_SPCA501 <V4L2-PIX-FMT-SPCA501>銆?V4L2_PIX_FMT_SPCA505 <V4L2-PIX-FMT-SPCA505>銆?V4L2_PIX_FMT_SPCA508 <V4L2-PIX-FMT-SPCA508>銆?V4L2_PIX_FMT_SPCA561 <V4L2-PIX-FMT-SPCA561>銆?V4L2_PIX_FMT_SQ905C <V4L2-PIX-FMT-SQ905C>銆?V4L2_PIX_FMT_SRGGB8 <V4L2-PIX-FMT-SRGGB8>銆?V4L2_PIX_FMT_UYVY <V4L2-PIX-FMT-UYVY>銆?V4L2_PIX_FMT_YUV420 <V4L2-PIX-FMT-YUV420>銆?V4L2_PIX_FMT_YUYV <V4L2-PIX-FMT-YUYV>銆?V4L2_PIX_FMT_YVU420 <V4L2-PIX-FMT-YVU420>锛屼互鍙?V4L2_PIX_FMT_YVYU <V4L2-PIX-FMT-YVYU>銆?
-鍚庢潵 libv4lconvert 鍙堣鎵╁睍涓鸿兘澶熸墽琛屽绉嶈棰戝鐞嗗姛鑳戒互鎻愬崌鎽勫儚澶磋棰戣川閲忋€傝棰戝鐞嗚鎷嗗垎涓?2 涓儴鍒嗭細libv4lconvert/control 鍜?libv4lconvert/processing銆?
-鎺у埗閮ㄥ垎鐢ㄤ簬鎻愪緵瑙嗛鎺у埗椤癸紝杩欎簺鎺у埗椤瑰彲鐢ㄤ簬鎺у埗鐢?libv4lconvert/processing 鎻愪緵鐨勮棰戝鐞嗗姛鑳姐€傝繖浜涙帶鍒堕」鍊熷姪涓€涓寔涔呯殑鍏变韩鍐呭瓨瀵硅薄鍦ㄥ簲鐢ㄧ▼搴忚寖鍥村唴锛堢洿鑷抽噸鍚級淇濆瓨銆?
-libv4lconvert/processing 鎻愪緵瀹為檯鐨勮棰戝鐞嗗姛鑳姐€?
+libv4lconvert 是一个库，它V4L2 驱动中存在的若干种像素格式转换为少数几种常见RGB YUY 格式
+它目前接受以V4L2 驱动格式V4L2_PIX_FMT_BGR24 <V4L2-PIX-FMT-BGR24>V4L2_PIX_FMT_NV12_16L16 <V4L2-PIX-FMT-NV12-16L16>V4L2_PIX_FMT_JPEG <V4L2-PIX-FMT-JPEG>V4L2_PIX_FMT_MJPEG <V4L2-PIX-FMT-MJPEG>V4L2_PIX_FMT_MR97310A <V4L2-PIX-FMT-MR97310A>V4L2_PIX_FMT_OV511 <V4L2-PIX-FMT-OV511>V4L2_PIX_FMT_OV518 <V4L2-PIX-FMT-OV518>V4L2_PIX_FMT_PAC207 <V4L2-PIX-FMT-PAC207>V4L2_PIX_FMT_PJPG <V4L2-PIX-FMT-PJPG>V4L2_PIX_FMT_RGB24 <V4L2-PIX-FMT-RGB24>V4L2_PIX_FMT_SBGGR8 <V4L2-PIX-FMT-SBGGR8>V4L2_PIX_FMT_SGBRG8 <V4L2-PIX-FMT-SGBRG8>V4L2_PIX_FMT_SGRBG8 <V4L2-PIX-FMT-SGRBG8>V4L2_PIX_FMT_SN9C10X <V4L2-PIX-FMT-SN9C10X>V4L2_PIX_FMT_SN9C20X_I420 <V4L2-PIX-FMT-SN9C20X-I420>V4L2_PIX_FMT_SPCA501 <V4L2-PIX-FMT-SPCA501>V4L2_PIX_FMT_SPCA505 <V4L2-PIX-FMT-SPCA505>V4L2_PIX_FMT_SPCA508 <V4L2-PIX-FMT-SPCA508>V4L2_PIX_FMT_SPCA561 <V4L2-PIX-FMT-SPCA561>V4L2_PIX_FMT_SQ905C <V4L2-PIX-FMT-SQ905C>V4L2_PIX_FMT_SRGGB8 <V4L2-PIX-FMT-SRGGB8>V4L2_PIX_FMT_UYVY <V4L2-PIX-FMT-UYVY>V4L2_PIX_FMT_YUV420 <V4L2-PIX-FMT-YUV420>V4L2_PIX_FMT_YUYV <V4L2-PIX-FMT-YUYV>V4L2_PIX_FMT_YVU420 <V4L2-PIX-FMT-YVU420>，以V4L2_PIX_FMT_YVYU <V4L2-PIX-FMT-YVYU>
+后来 libv4lconvert 又被扩展为能够执行多种视频处理功能以提升摄像头视频质量。视频处理被拆分2 个部分：libv4lconvert/control libv4lconvert/processing
+控制部分用于提供视频控制项，这些控制项可用于控制libv4lconvert/processing 提供的视频处理功能。这些控制项借助一个持久的共享内存对象在应用程序范围内（直至重启）保存
+libv4lconvert/processing 提供实际的视频处理功能
 ## libv4l1
 
 
-鏈簱鎻愪緵鐨勫嚱鏁板彲鐢ㄤ簬璁?v4l1 搴旂敤绋嬪簭蹇€熼€傜敤浜?v4l2 璁惧銆傝繖浜涘嚱鏁扮殑琛屼负涓庢櫘閫氱殑 open/close 绛夊畬鍏ㄤ竴鑷达紝鍖哄埆鍦ㄤ簬 libv4l1 鍦?v4l2 椹卞姩涔嬩笂瀵?v4l1 api 鍋氫簡瀹屾暣妯℃嫙锛涜€屽浜?v4l1 椹卞姩锛屽畠鍙槸灏嗚皟鐢ㄧ洿鎺ラ€忎紶銆?
-鐢变簬杩欎簺鍑芥暟鏄鏃?V4L1 API 鐨勬ā鎷燂紝涓嶅簲鍦ㄦ柊搴旂敤绋嬪簭涓娇鐢ㄣ€?
+本库提供的函数可用于v4l1 应用程序快速适用v4l2 设备。这些函数的行为与普通的 open/close 等完全一致，区别在于 libv4l1 v4l2 驱动之上v4l1 api 做了完整模拟；而对v4l1 驱动，它只是将调用直接透传
+由于这些函数是对V4L1 API 的模拟，不应在新应用程序中使用
 ## libv4l2
 
 
-鏈簱搴斿綋鐢ㄤ簬鎵€鏈夌幇浠?V4L2 搴旂敤绋嬪簭銆?
-瀹冩彁渚涘彞鏌勪互璋冪敤 V4L2 鐨?open/ioctl/close/poll 鏂规硶銆傚畠涓嶅彧鏄彁渚涜澶囩殑鍘熷杈撳嚭锛岃€屾槸澧炲己杩欎簺璋冪敤锛氬畠浼氫娇鐢?libv4lconvert 鏉ユ彁渚涙洿澶氳棰戞牸寮忓苟鎻愬崌鍥惧儚璐ㄩ噺銆?
-鍦ㄥぇ澶氭暟鎯呭喌涓嬶紝libv4l2 鍙槸灏嗚皟鐢ㄧ洿鎺ラ€忎紶缁?v4l2 椹卞姩锛屽苟鎷︽埅瀵?VIDIOC_TRY_FMT <VIDIOC_G_FMT>銆乂IDIOC_G_FMT <VIDIOC_G_FMT>銆乂IDIOC_S_FMT <VIDIOC_G_FMT>銆乂IDIOC_ENUM_FRAMESIZES <VIDIOC_ENUM_FRAMESIZES> 鍜?VIDIOC_ENUM_FRAMEINTERVALS <VIDIOC_ENUM_FRAMEINTERVALS> 鐨勮皟鐢紝浠ヤ究鍦ㄩ┍鍔ㄤ笉鏀寔鏃舵ā鎷?V4L2_PIX_FMT_BGR24 <V4L2-PIX-FMT-BGR24>銆乂4L2_PIX_FMT_RGB24 <V4L2-PIX-FMT-RGB24>銆乂4L2_PIX_FMT_YUV420 <V4L2-PIX-FMT-YUV420> 鍜?V4L2_PIX_FMT_YVU420 <V4L2-PIX-FMT-YVU420> 绛夋牸寮忋€俈IDIOC_ENUM_FMT <VIDIOC_ENUM_FMT> 浼氭寔缁灇涓剧‖浠舵敮鎸佺殑鏍煎紡锛屽苟鍦ㄦ渶鍚庨檮涓?libv4l 鎻愪緵鐨勬ā鎷熸牸寮忋€?
+本库应当用于所有现V4L2 应用程序
+它提供句柄以调用 V4L2 open/ioctl/close/poll 方法。它不只是提供设备的原始输出，而是增强这些调用：它会使libv4lconvert 来提供更多视频格式并提升图像质量
+在大多数情况下，libv4l2 只是将调用直接透传v4l2 驱动，并拦截VIDIOC_TRY_FMT <VIDIOC_G_FMT>、VIDIOC_G_FMT <VIDIOC_G_FMT>、VIDIOC_S_FMT <VIDIOC_G_FMT>、VIDIOC_ENUM_FRAMESIZES <VIDIOC_ENUM_FRAMESIZES> VIDIOC_ENUM_FRAMEINTERVALS <VIDIOC_ENUM_FRAMEINTERVALS> 的调用，以便在驱动不支持时模V4L2_PIX_FMT_BGR24 <V4L2-PIX-FMT-BGR24>、V4L2_PIX_FMT_RGB24 <V4L2-PIX-FMT-RGB24>、V4L2_PIX_FMT_YUV420 <V4L2-PIX-FMT-YUV420> V4L2_PIX_FMT_YVU420 <V4L2-PIX-FMT-YVU420> 等格式。VIDIOC_ENUM_FMT <VIDIOC_ENUM_FMT> 会持续枚举硬件支持的格式，并在最后附libv4l 提供的模拟格式
 
-### Libv4l 璁惧鎺у埗鍑芥暟
-
-
-閫氱敤鐨勬枃浠舵搷浣滄柟娉曠敱 libv4l 鎻愪緵銆?
-杩欎簺鍑芥暟鐨勮涓虹被浼间簬 gcc 鐨?`dup()` 鍑芥暟浠ュ強 V4L2 鍑芥暟 `open()`銆乣close()`銆乣ioctl()`銆乣read()`銆乣mmap()` 鍜?`munmap()`锛?
-
-   琛屼负绫讳技浜?`open()` 鍑芥暟銆?
-
-   琛屼负绫讳技浜?`close()` 鍑芥暟銆?
-
-   琛屼负绫讳技浜?libc 鐨?`dup()` 鍑芥暟锛屽鍒朵竴涓枃浠跺彞鏌勩€?
-
-   琛屼负绫讳技浜?`ioctl()` 鍑芥暟銆?
-
-   琛屼负绫讳技浜?`read()` 鍑芥暟銆?
-
-   琛屼负绫讳技浜?`mmap()` 鍑芥暟銆?
-
-   琛屼负绫讳技浜?`munmap()` 鍑芥暟銆?
-杩欎簺鍑芥暟鎻愪緵棰濆鐨勬帶鍒讹細
+### Libv4l 设备控制函数
 
 
-   鎵撳紑涓€涓凡缁忔墦寮€鐨?fd锛屼互渚块€氳繃 v4l2lib 杩涗竴姝ヤ娇鐢紝骞跺彲鑳介€氳繃 `v4l2_flags` 鍙傛暟淇敼 libv4l2 鐨勯粯璁よ涓恒€傜洰鍓?`v4l2_flags` 鍙互涓?`V4L2_DISABLE_CONVERSION`锛岀敤浜庣鐢ㄦ牸寮忚浆鎹€?
+通用的文件操作方法由 libv4l 提供
+这些函数的行为类似于 gcc `dup()` 函数以及 V4L2 函数 `open()`、`close()`、`ioctl()`、`read()`、`mmap()` `munmap()`
 
-   鏈嚱鏁版帴鍙椾竴涓?0鈥?5535 鐨勫€硷紝鐒跺悗灏嗚鑼冨洿缂╂斁鍒扮粰瀹?v4l control id 鐨勫疄闄呰寖鍥达紝濡傛灉璇?cid 瀛樺湪涓旀湭琚攣瀹氾紝鍒欏皢鍏惰缃负缂╂斁鍚庣殑鍊笺€?
+   行为类似`open()` 函数
 
-   鏈嚱鏁拌繑鍥炰竴涓?0鈥?5535 鐨勫€硷紝璇ュ€肩敱缁欏畾 v4l control id 鐨勫疄闄呰寖鍥寸缉鏀捐€屾潵銆傚綋璇?cid 涓嶅瓨鍦ㄣ€佺敱浜庢煇绉嶅師鍥犳棤娉曡闂垨鍙戠敓鏌愮閿欒鏃讹紝杩斿洖 0銆?
-## v4l1compat.so 鍖呰搴?
+   行为类似`close()` 函数
 
-鏈簱鎷︽埅瀵?`open()`銆乣close()`銆乣ioctl()`銆乣mmap()` 鍜?`munmap()` 鎿嶄綔鐨勮皟鐢紝骞堕€氳繃 `LD_PRELOAD=/usr/lib/v4l1compat.so` 灏嗗畠浠噸瀹氬悜鍒?libv4l 鐨勫搴斿疄鐜般€傚畠杩橀€氳繃 V4L2 API 妯℃嫙 V4L1 璋冪敤銆?
-瀹冨厑璁镐粛鍦ㄤ娇鐢ㄣ€佷絾鏈娇鐢?libv4l 鐨勪簩杩涘埗閬楃暀搴旂敤绋嬪簭缁х画杩愯銆?
+   行为类似libc `dup()` 函数，复制一个文件句柄
+
+   行为类似`ioctl()` 函数
+
+   行为类似`read()` 函数
+
+   行为类似`mmap()` 函数
+
+   行为类似`munmap()` 函数
+这些函数提供额外的控制：
+
+
+   打开一个已经打开fd，以便通过 v4l2lib 进一步使用，并可能通过 `v4l2_flags` 参数修改 libv4l2 的默认行为。目`v4l2_flags` 可以`V4L2_DISABLE_CONVERSION`，用于禁用格式转换
+
+   本函数接受一05535 的值，然后将该范围缩放到给v4l control id 的实际范围，如果cid 存在且未被锁定，则将其设置为缩放后的值
+
+   本函数返回一05535 的值，该值由给定 v4l control id 的实际范围缩放而来。当cid 不存在、由于某种原因无法访问或发生某种错误时，返回 0
+## v4l1compat.so 包装
+
+本库拦截`open()`、`close()`、`ioctl()`、`mmap()` `munmap()` 操作的调用，并通过 `LD_PRELOAD=/usr/lib/v4l1compat.so` 将它们重定向libv4l 的对应实现。它还通过 V4L2 API 模拟 V4L1 调用
+它允许仍在使用、但未使libv4l 的二进制遗留应用程序继续运行

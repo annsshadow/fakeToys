@@ -1,8 +1,8 @@
-﻿## WMI 椹卞姩 API
+﻿## WMI 驱动 API
 
 
-WMI 椹卞姩鏍稿績鏀寔涓€绉嶆洿鐜颁唬鐨勫熀浜庢€荤嚎锛坆us锛夌殑鎺ュ彛鏉ヤ笌 WMI 璁惧浜や簰锛屼互鍙婁竴绉嶈緝鏃х殑鍩轰簬 GUID 鐨勬帴鍙ｃ€傚悗鑰呰瑙嗕负宸插純鐢紝鍥犳鏂扮殑 WMI 椹卞姩閫氬父搴旈伩鍏嶄娇鐢ㄥ畠锛屽洜涓哄畠鍦ㄦ煇浜?WMI 璁惧鍏变韩鍚屼竴 GUID 鏃跺瓨鍦ㄤ竴浜涢棶棰樸€?
-鐜颁唬鐨勫熀浜庢€荤嚎鐨勬帴鍙ｅ垯鎶婃瘡涓?WMI 璁惧鏄犲皠鍒颁竴涓?`struct wmi_device <wmi_device>`锛屽洜姝ゅ畠鏀寔鍏变韩鍚屼竴 GUID 鐨?WMI 璁惧銆傞┍鍔ㄩ殢鍚庡彲浠ユ敞鍐屼竴涓?`struct wmi_driver <wmi_driver>`锛岀敱椹卞姩鏍稿績缁戝畾鍒板吋瀹圭殑 WMI 璁惧銆?
+WMI 驱动核心支持一种更现代的基于总线（bus）的接口来与 WMI 设备交互，以及一种较旧的基于 GUID 的接口。后者被视为已弃用，因此新的 WMI 驱动通常应避免使用它，因为它在某WMI 设备共享同一 GUID 时存在一些问题
+现代的基于总线的接口则把每WMI 设备映射到一`struct wmi_device <wmi_device>`，因此它支持共享同一 GUID WMI 设备。驱动随后可以注册一`struct wmi_driver <wmi_driver>`，由驱动核心绑定到兼容的 WMI 设备
 
    :internal:
 

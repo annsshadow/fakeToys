@@ -1,14 +1,14 @@
-﻿## Coresight - ARM 涓婄殑纭欢杈呭姪杩借釜
+﻿## Coresight - ARM 上的硬件辅助追踪
 
 
    :Author:   Mathieu Poirier <mathieu.poirier@linaro.org>
    :Date:     September 11th, 2014
 
-### 绠€浠?
+### 简
 
-Coresight 鏄竴绯诲垪鎶€鏈殑缁熺О锛岀敤浜庤皟璇曞熀浜?ARM 鐨?SoC銆傚畠鍖呮嫭 JTAG 鍜岀‖浠惰緟鍔╄拷韪殑瑙ｅ喅鏂规銆傛湰鏂囨。鍏虫敞鍚庤€呫€?
-鍦ㄥ鐞嗘嫢鏈夎澶?SoC 浠ュ強 GPU銆丏MA 寮曟搸绛夊叾浠栫粍浠剁殑绯荤粺鏃讹紝纭欢杈呭姪杩借釜鍙樺緱瓒婃潵瓒婃湁鐢ㄣ€侫RM 閫氳繃涓嶅悓鐨勭粍浠跺紑鍙戜簡涓€濂楃‖浠惰緟鍔╄拷韪柟妗堬紝姣忎釜缁勪欢鍦ㄧ患鍚堬紙synthesis锛夋椂鍔犲叆璁捐浠ユ弧瓒崇壒瀹氱殑杩借釜闇€姹傘€傜粍浠堕€氬父鍒嗙被涓烘簮锛坰ource锛夈€侀摼璺紙link锛夊拰姹囷紙sink锛夛紝骞讹紙閫氬父锛夐€氳繃 AMBA 鎬荤嚎鍙戠幇銆?
-鈥滄簮鈥濇牴鎹敤鎴烽厤缃殑杩借釜鍦烘櫙锛岀敓鎴愯〃绀哄鐞嗗櫒鎸囦护璺緞鐨勫帇缂╂祦銆傛鍚庤娴侀€氳繃杩炴帴婧愪笌涓€涓垨澶氫釜姹囩殑閾捐矾锛屽湪 coresight 绯荤粺涓紙缁忕敱 ATB 鎬荤嚎锛夋祦鍔ㄣ€傛眹浣滀负 coresight 瀹炵幇鐨勭鐐癸紝瑕佷箞灏嗗帇缂╂祦瀛樺偍鍦ㄥ唴瀛樼紦鍐插尯涓紝瑕佷箞鍒涘缓鍒板閮ㄤ笘鐣岀殑鎺ュ彛锛屼娇鏁版嵁鍙互浼犺緭鍒颁富鏈鸿€屼笉蹇呮媴蹇冩澘杞?coresight 鍐呭瓨缂撳啿鍖鸿濉弧銆?```
+Coresight 是一系列技术的统称，用于调试基ARM SoC。它包括 JTAG 和硬件辅助追踪的解决方案。本文档关注后者
+在处理拥有许SoC 以及 GPU、DMA 引擎等其他组件的系统时，硬件辅助追踪变得越来越有用。ARM 通过不同的组件开发了一套硬件辅助追踪方案，每个组件在综合（synthesis）时加入设计以满足特定的追踪需求。组件通常分类为源（source）、链路（link）和汇（sink），并（通常）通过 AMBA 总线发现
+“源”根据用户配置的追踪场景，生成表示处理器指令路径的压缩流。此后该流通过连接源与一个或多个汇的链路，在 coresight 系统中（经由 ATB 总线）流动。汇作为 coresight 实现的端点，要么将压缩流存储在内存缓冲区中，要么创建到外部世界的接口，使数据可以传输到主机而不必担心板coresight 内存缓冲区被填满```
 
   *****************************************************************
  **************************** AMBA AXI  ****************************===||
@@ -62,45 +62,45 @@ Coresight 鏄竴绯诲垪鎶€鏈殑缁熺О锛岀敤浜庤皟璇曞熀�
                                               SWD = Serial Wire Debug
 
 ```
-铏界劧缁勪欢鍦ㄧ洰鏍囦笂鐨勯厤缃槸閫氳繃 APB 鎬荤嚎瀹屾垚鐨勶紝浣嗘墍鏈夎拷韪暟鎹兘鍦?ATB 鎬荤嚎涓婂甫澶栵紙out-of-band锛変紶杈撱€侰TM 鎻愪緵浜嗕竴绉嶅湪 CoreSight 缁勪欢涔嬮棿鑱氬悎鍜屽垎鍙戜俊鍙风殑鏂瑰紡銆?
-coresight 妗嗘灦鎻愪緵浜嗕竴涓腑蹇冪偣鏉ヨ〃绀恒€侀厤缃拰绠＄悊骞冲彴涓婄殑 coresight 璁惧銆傜涓€涓疄鐜伴泦涓湪鍩烘湰鐨勮拷韪姛鑳戒笂锛屾敮鎸?ETM/PTM銆乫unnel銆乺eplicator銆乀MC銆乀PIU 鍜?ETB 绛夌粍浠躲€傛湭鏉ョ殑宸ヤ綔灏嗘敮鎸佹洿澶嶆潅鐨?IP 鍧楋紝濡?STM 鍜?CTI銆?
+虽然组件在目标上的配置是通过 APB 总线完成的，但所有追踪数据都ATB 总线上带外（out-of-band）传输。CTM 提供了一种在 CoreSight 组件之间聚合和分发信号的方式
+coresight 框架提供了一个中心点来表示、配置和管理平台上的 coresight 设备。第一个实现集中在基本的追踪功能上，支ETM/PTM、funnel、replicator、TMC、TPIU ETB 等组件。未来的工作将支持更复杂IP 块，STM CTI
 
-### 缂╁啓涓庡垎绫?
+### 缩写与分
 
-缂╁啓锛?
+缩写
 PTM:
-    绋嬪簭杩借釜瀹忓崟鍏冿紙Program Trace Macrocell锛?ETM:
-    宓屽叆寮忚拷韪畯鍗曞厓锛圗mbedded Trace Macrocell锛?STM:
-    绯荤粺杩借釜瀹忓崟鍏冿紙System trace Macrocell锛?ETB:
-    宓屽叆寮忚拷韪紦鍐插尯锛圗mbedded Trace Buffer锛?ITM:
-    妫€娴嬭拷韪畯鍗曞厓锛圛nstrumentation Trace Macrocell锛?TPIU:
-     杩借釜绔彛鎺ュ彛鍗曞厓锛圱race Port Interface Unit锛?TMC-ETR:
-        杩借釜鍐呭瓨鎺у埗鍣紝閰嶇疆涓哄祵鍏ュ紡杩借釜璺敱鍣紙Embedded Trace Router锛?TMC-ETF:
-        杩借釜鍐呭瓨鎺у埗鍣紝閰嶇疆涓哄祵鍏ュ紡杩借釜 FIFO锛圗mbedded Trace FIFO锛?CTI:
-    浜ゅ弶瑙﹀彂鎺ュ彛锛圕ross Trigger Interface锛?
-鍒嗙被锛?
-婧愶紙Source锛?
+    程序追踪宏单元（Program Trace MacrocellETM:
+    嵌入式追踪宏单元（Embedded Trace MacrocellSTM:
+    系统追踪宏单元（System trace MacrocellETB:
+    嵌入式追踪缓冲区（Embedded Trace BufferITM:
+    检测追踪宏单元（Instrumentation Trace MacrocellTPIU:
+     追踪端口接口单元（Trace Port Interface UnitTMC-ETR:
+        追踪内存控制器，配置为嵌入式追踪路由器（Embedded Trace RouterTMC-ETF:
+        追踪内存控制器，配置为嵌入式追踪 FIFO（Embedded Trace FIFOCTI:
+    交叉触发接口（Cross Trigger Interface
+分类
+源（Source
    ETMv3.x ETMv4, PTMv1.0, PTMv1.1, STM, STM500, ITM
-閾捐矾锛圠ink锛?
-   Funnel, replicator锛堟櫤鑳芥垨闈炴櫤鑳斤級, TMC-ETR
-姹囷紙Sinks锛?
+链路（Link
+   Funnel, replicator（智能或非智能）, TMC-ETR
+汇（Sinks
    ETBv1.0, ETB1.1, TPIU, TMC-ETF
-鍏朵粬锛圡isc锛?
+其他（Misc
    CTI
 
 
-### 璁惧鏍戠粦瀹?
+### 设备树绑
 
-璇﹁ `Documentation/devicetree/bindings/arm/arm,coresight-*.yaml`銆?
-鎴嚦鎾板啓鏈枃鏃讹紝ITM銆丼TM 鍜?CTI 鐨勯┍鍔ㄥ皻鏈彁渚涳紝浣嗛璁′細闅忕潃鏂规鎴愮啛鑰屽姞鍏ャ€?
+详见 `Documentation/devicetree/bindings/arm/arm,coresight-*.yaml`
+截至撰写本文时，ITM、STM CTI 的驱动尚未提供，但预计会随着方案成熟而加入
 
-### 妗嗘灦涓庡疄鐜?
+### 框架与实
 
-coresight 妗嗘灦鎻愪緵浜嗕竴涓腑蹇冪偣鏉ヨ〃绀恒€侀厤缃拰绠＄悊骞冲彴涓婄殑 coresight 璁惧銆備换浣曠鍚?coresight 瑙勮寖鐨勮澶囷紝鍙浣跨敤姝ｇ‘鐨?API锛屽氨鍙互鍚戞鏋舵敞鍐岋細
+coresight 框架提供了一个中心点来表示、配置和管理平台上的 coresight 设备。任何符coresight 规范的设备，只要使用正确API，就可以向框架注册：
 
 
-娉ㄥ唽鍑芥暟鎺ュ彈涓€涓?`struct coresight_desc *desc` 骞跺皢璁惧娉ㄥ唽鍒版牳蹇冩鏋躲€傛敞閿€鍑芥暟鎺ュ彈娉ㄥ唽鏃惰幏寰楃殑 `struct coresight_device *csdev` 寮曠敤銆?
-濡傛灉娉ㄥ唽杩囩▼涓€鍒囬『鍒╋紝鏂拌澶囧皢
+注册函数接受一`struct coresight_desc *desc` 并将设备注册到核心框架。注销函数接受注册时获得的 `struct coresight_device *csdev` 引用
+如果注册过程一切顺利，新设备将
 ```
 
     root:~# ls /sys/bus/coresight/devices/
@@ -122,9 +122,9 @@ coresight 妗嗘灦鎻愪緵浜嗕竴涓腑蹇冪偣鏉ヨ〃绀恒€侀厤�
 
 
 ```
-鈥渃oresight_dev_type鈥?鏍囪瘑璁惧鏄粈涔堬紙鍗虫簮銆侀摼璺繕鏄眹锛夛紝鑰?鈥渃oresight_dev_subtype鈥?浼氳繘涓€姝ュ埢鐢昏绫诲瀷銆?
-`struct coresight_ops` 鏄繀濉殑锛屽畠鍛婅瘔妗嗘灦濡備綍鎵ц涓庣粍浠剁浉鍏崇殑鍩烘湰鎿嶄綔锛屾瘡涓粍浠堕兘鏈変笉鍚岀殑闇€姹傞泦銆備负姝ゆ彁渚涗簡 `struct coresight_ops_sink`銆乣struct coresight_ops_link` 鍜?`struct coresight_ops_source`銆?
-涓嬩竴涓瓧娈?`struct coresight_platform_data *pdata` 閫氳繃璋冪敤 `of_get_coresight_platform_data()` 鑾峰彇锛屼綔涓洪┍鍔?_probe 渚嬬▼鐨勪竴閮ㄥ垎锛屽苟涓?```
+“coresight_dev_type标识设备是什么（即源、链路还是汇），“coresight_dev_subtype会进一步刻画该类型
+`struct coresight_ops` 是必填的，它告诉框架如何执行与组件相关的基本操作，每个组件都有不同的需求集。为此提供了 `struct coresight_ops_sink`、`struct coresight_ops_link` `struct coresight_ops_source`
+下一个字`struct coresight_platform_data *pdata` 通过调用 `of_get_coresight_platform_data()` 获取，作为驱_probe 例程的一部分，并```
 
     static int etm_probe(struct amba_device *adev, const struct amba_id *id)
     {
@@ -135,11 +135,11 @@ coresight 妗嗘灦鎻愪緵浜嗕竴涓腑蹇冪偣鏉ヨ〃绀恒€侀厤�
     }
 
 ```
-鐗瑰畾绫诲埆鐨勮澶囷紙婧愩€侀摼璺垨姹囷級鍏锋湁鍙鍏舵墽琛岀殑閫氱敤鎿嶄綔锛堣 `struct coresight_ops`锛夈€俙**groups` 鏄笌浠呰缁勪欢鐗规湁鐨勬搷浣滅浉鍏崇殑 sysfs 鏉＄洰鍒楄〃銆傗€滃疄鐜板畾涔夆€濓紙Implementation defined锛夌殑瀹氬埗棰勬湡閫氳繃浣跨敤杩欎簺鏉＄洰鏉ヨ闂拰鎺у埗銆?
-### 璁惧鍛藉悕鏂规
+特定类别的设备（源、链路或汇）具有可对其执行的通用操作（见 `struct coresight_ops`）。`**groups` 是与仅该组件特有的操作相关的 sysfs 条目列表。“实现定义”（Implementation defined）的定制预期通过使用这些条目来访问和控制
+### 设备命名方案
 
 
-鍑虹幇鍦?鈥渃oresight鈥?鎬荤嚎涓婄殑璁惧琚懡鍚嶄负涓庡叾鐖惰澶囷紙鍗冲嚭鐜板湪 AMBA 鎬荤嚎鎴栧钩鍙版€荤嚎涓婄殑鐪熷疄璁惧锛夌浉鍚岀殑鍚嶇О銆傚洜姝ゅ悕绉板熀浜?Linux Open Firmware 灞傜殑鍛藉悕绾﹀畾锛屽嵆鍏堣窡闅忔椂閽熷悗闈㈣窡鐫€璁惧
+出现“coresight总线上的设备被命名为与其父设备（即出现在 AMBA 总线或平台总线上的真实设备）相同的名称。因此名称基Linux Open Firmware 层的命名约定，即先跟随时钟后面跟着设备
 ```
 
     root:~# ls /sys/bus/coresight/devices/
@@ -149,16 +149,16 @@ coresight 妗嗘灦鎻愪緵浜嗕竴涓腑蹇冪偣鏉ヨ〃绀恒€侀厤�
      23040000.etm  23140000.etm         23340000.etm
 
 ```
-鐒惰€岋紝闅忕潃 ACPI 鏀寔鐨勫紩鍏ワ紝鐪熷疄璁惧鐨勫悕绉版湁浜涙櫐娑╀笖涓嶇洿瑙傘€傚洜姝わ紝寮曞叆浜嗕竴绉嶆柊鐨勫懡鍚嶆柟妗堬紝鏍规嵁璁惧绫诲瀷浣跨敤鏇撮€氱敤鐨勫悕绉般€傝
+然而，随着 ACPI 支持的引入，真实设备的名称有些晦涩且不直观。因此，引入了一种新的命名方案，根据设备类型使用更通用的名称。该
 ```
 
-  1) 缁戝畾鍒?CPU 鐨勮澶囷紝鏍规嵁 CPU 鐨勯€昏緫缂栧彿鍛藉悕銆?
+  1) 绑定CPU 的设备，根据 CPU 的逻辑编号命名
      e.g, ETM bound to CPU0 is named "etm0"
 
-  2) 鎵€鏈夊叾浠栬澶囬伒寰竴绉嶆ā寮忥紝"<device_type_prefix>N"锛屽叾涓細
+  2) 所有其他设备遵循一种模式，"<device_type_prefix>N"，其中：
 
-	<device_type_prefix> 	- 鐗瑰畾浜庤澶囩被鍨嬬殑鍓嶇紑
-	N			- 鏍规嵁鎺㈡祴椤哄簭鍒嗛厤鐨勫簭鍙枫€?
+	<device_type_prefix> 	- 特定于设备类型的前缀
+	N			- 根据探测顺序分配的序号
 	e.g, tmc_etf0, tmc_etr0, funnel0, funnel1
 
 ```
@@ -169,12 +169,12 @@ coresight 妗嗘灦鎻愪緵浜嗕竴涓腑蹇冪偣鏉ヨ〃绀恒€侀厤�
      funnel1  funnel2  replicator0  stm0  tmc_etf0  tmc_etr0  tpiu0
 
 ```
-涓嬮潰鐨勪竴浜涚ず渚嬪彲鑳藉紩鐢ㄦ棫鐨勫懡鍚嶆柟妗堬紝涓€浜涘紩鐢ㄦ柊鐨勬柟妗堬紝浠ョ‘璁や綘鍦ㄧ郴缁熶笂鐪嬪埌鐨勫苟闈炲紓甯搞€傚繀椤讳娇鐢ㄧ郴缁熶笂鎸囧畾浣嶇疆鍑虹幇鏃剁殑鈥滃悕绉扳€濄€?
-### 鎷撴墤琛ㄧず
+下面的一些示例可能引用旧的命名方案，一些引用新的方案，以确认你在系统上看到的并非异常。必须使用系统上指定位置出现时的“名称”
+### 拓扑表示
 
 
-姣忎釜 CoreSight 缁勪欢閮芥湁涓€涓?`connections` 鐩綍锛屽叾涓寘鍚寚鍚戝叾浠?CoreSight 缁勪欢鐨勯摼鎺ャ€傝繖鍏佽鐢ㄦ埛鎺㈢储杩借釜鎷撴墤锛屽浜庤緝澶х殑绯荤粺锛屽彲浠ョ‘瀹氱粰瀹氭簮鏈€鍚堥€傜殑姹囥€傝繛鎺ヤ俊鎭繕鍙敤浜庣‘瀹氬摢浜?CTI 璁惧杩炴帴鍒扮粰瀹氱粍浠躲€傝鐩綍鍖呭惈涓€涓?`nr_links` 灞炴€э紝璇︾粏璇存槑鐩綍涓殑閾炬帴鏁伴噺銆?
-瀵逛簬涓€涓?ETM 婧愶紝鏈緥涓负 Juno 骞冲彴涓婄殑 `etm0`锛屼竴涓吀鍨?```
+每个 CoreSight 组件都有一`connections` 目录，其中包含指向其CoreSight 组件的链接。这允许用户探索追踪拓扑，对于较大的系统，可以确定给定源最合适的汇。连接信息还可用于确定哪CTI 设备连接到给定组件。该目录包含一`nr_links` 属性，详细说明目录中的链接数量
+对于一ETM 源，本例中为 Juno 平台上的 `etm0`，一个典```
 
   linaro-developer:~# ls - l /sys/bus/coresight/devices/etm0/connections
   <file details>  cti_cpu0 -> ../../../23020000.cti/cti_cpu0
@@ -202,7 +202,7 @@ coresight 妗嗘灦鎻愪緵浜嗕竴涓腑蹇冪偣鏉ヨ〃绀恒€侀厤�
   <file details> out:0 -> ../../../20010000.etf/tmc_etf0
 
 ```
-鎵惧埌绗竴涓眹 `tmc_etf0`銆傝繖鍙敤浜庢敹闆嗘暟鎹?```
+找到第一个汇 `tmc_etf0`。这可用于收集数```
 
   linaro-developer:~# ls -l /sys/bus/coresight/devices/tmc_etf0/connections
   <file details> cti_sys0 -> ../../../20020000.cti/cti_sys0
@@ -237,8 +237,8 @@ coresight 妗嗘灦鎻愪緵浜嗕竴涓腑蹇冪偣鏉ヨ〃绀恒€侀厤�
   <file details> nr_links
 
 ```
-濡備笅鎵€杩帮紝浣跨敤 sysfs 鏃讹紝鍙渶浣胯兘涓€涓眹鍜屼竴涓簮鍗冲彲鎴愬姛杩借釜銆傛鏋朵細鎸夐渶姝ｇ‘浣胯兘鎵€鏈変腑闂撮摼璺€?
-娉ㄦ剰锛歚cti_sys0` 鍑虹幇鍦ㄤ笂闈袱涓繛鎺ュ垪琛ㄤ腑銆侰TI 鍙互杩炴帴鍒板涓澶囷紝骞堕€氳繃 CTM 浠ユ槦鍨嬫嫇鎵戞帓鍒椼€傝瑙?(Documentation/trace/coresight/coresight-ect.rst) [#fourth]_銆?```
+如下所述，使用 sysfs 时，只需使能一个汇和一个源即可成功追踪。框架会按需正确使能所有中间链路
+注意：`cti_sys0` 出现在上面两个连接列表中。CTI 可以连接到多个设备，并通过 CTM 以星型拓扑排列。详(Documentation/trace/coresight/coresight-ect.rst) [#fourth]_```
 
   linaro-developer:~# ls -l /sys/bus/coresight/devices/cti_sys0/connections
   <file details> nr_links
@@ -249,16 +249,16 @@ coresight 妗嗘灦鎻愪緵浜嗕竴涓腑蹇冪偣鏉ヨ〃绀恒€侀厤�
 
 
 ```
-### 濡備綍浣跨敤杩借釜鍣ㄦā鍧?
+### 如何使用追踪器模
 
-浣跨敤 Coresight 妗嗘灦鏈変袱绉嶆柟寮忥細
+使用 Coresight 框架有两种方式：
 
-1. 浣跨敤 perf 鍛戒护琛屽伐鍏枫€?2. 浣跨敤 sysFS 鎺ュ彛鐩存帴涓?Coresight 璁惧浜や簰銆?
-浼樺厛浣跨敤鍓嶈€咃紝鍥犱负浣跨敤 sysFS 鎺ュ彛闇€瑕佸 Coresight 纭欢鏈夋繁鍏ョ悊瑙ｃ€備互涓嬪悇鑺傛彁渚涗袱绉嶆柟娉曠殑璇︾粏淇℃伅銆?
-#### 浣跨敤 sysFS 鎺ュ彛
+1. 使用 perf 命令行工具2. 使用 sysFS 接口直接Coresight 设备交互
+优先使用前者，因为使用 sysFS 接口需要对 Coresight 硬件有深入理解。以下各节提供两种方法的详细信息
+#### 使用 sysFS 接口
 
 
-鍦ㄥ紑濮嬭拷韪敹闆嗕箣鍓嶏紝闇€瑕佺‘瀹氫竴涓?coresight 姹囥€傚湪浠讳綍缁欏畾鏃跺埢鍙互鍚敤鐨勬眹锛堜互鍙婃簮锛夋暟閲忔病鏈夐檺鍒躲€備綔涓洪€氱敤鎿嶄綔锛屾墍鏈夊睘浜庤姹囩殑璁惧
+在开始追踪收集之前，需要确定一coresight 汇。在任何给定时刻可以启用的汇（以及源）数量没有限制。作为通用操作，所有属于该汇的设备
 ```
 
     root:/sys/bus/coresight/devices# ls
@@ -272,7 +272,7 @@ coresight 妗嗘灦鎻愪緵浜嗕竴涓腑蹇冪偣鏉ヨ〃绀恒€侀厤�
     root:/sys/bus/coresight/devices#
 
 ```
-鍦ㄥ惎鍔ㄦ椂锛屽綋鍓嶇殑 etm3x 椹卞姩浼氬皢绗竴涓湴鍧€姣旇緝鍣ㄩ厤缃负 鈥淿stext鈥?鍜?鈥淿etext鈥濓紝鏈川涓婅拷韪惤鍦ㄨ鑼冨洿鍐呯殑浠讳綍鎸囦护銆傚洜姝も€滀娇鑳解€濅竴涓簮灏嗙珛鍗?```
+在启动时，当前的 etm3x 驱动会将第一个地址比较器配置为 “_stext“_etext”，本质上追踪落在该范围内的任何指令。因此“使能”一个源将立```
 
     root:/sys/bus/coresight/devices# echo 1 > 2201c000.ptm/enable_source
     root:/sys/bus/coresight/devices# cat 2201c000.ptm/enable_source
@@ -305,8 +305,8 @@ coresight 妗嗘灦鎻愪緵浜嗕竴涓腑蹇冪偣鏉ヨ〃绀恒€侀厤�
     root:/sys/bus/coresight/devices#
 
 ```
-鏂囦欢 cstrace.bin 鍙互浣跨敤 鈥減tm2human鈥濄€丏S-5 鎴?Trace32 瑙ｅ帇缂┿€?
-浠ヤ笅鏄竴涓?DS-5 杈撳嚭锛屽睍绀轰簡涓€涓疄楠屾€у惊鐜皢鍙橀噺閫掑鍒版煇涓€肩殑杩囩▼銆傝绀轰緥寰堢畝鍗曪紝鍗磋浜轰竴绐?coresight 鎵€鎻愪緵鐨勪赴瀵屽彲鑳芥€с€?```
+文件 cstrace.bin 可以使用 “ptm2human”、DS-5 Trace32 解压缩
+以下是一DS-5 输出，展示了一个实验性循环将变量递增到某个值的过程。该示例很简单，却让人一coresight 所提供的丰富可能性```
 
     Info                                    Tracing enabled
     Instruction     106378866       0x8026B53C      E52DE004        false   PUSH     {lr}
@@ -359,25 +359,25 @@ coresight 妗嗘灦鎻愪緵浜嗕竴涓腑蹇冪偣鏉ヨ〃绀恒€侀厤�
     Timestamp                                       Timestamp: 17107041535
 
 ```
-#### 浣跨敤 perf 妗嗘灦
+#### 使用 perf 框架
 
 
-Coresight 杩借釜鍣ㄤ娇鐢?Perf 妗嗘灦鐨勬€ц兘鐩戞帶鍗曞厓锛圥MU锛夋娊璞℃潵琛ㄧず銆傚洜姝?perf 妗嗘灦璐熻矗鏍规嵁鎰熷叴瓒ｈ繘绋嬬殑璋冨害鏃舵満鏉ユ帶鍒惰拷韪綍鏃惰鍚敤銆傚綋鍦ㄧ郴缁熶腑閰嶇疆濂芥椂锛孋oresight PMU 浼氬湪 perf 鍛戒护琛屽伐鍏锋煡璇㈡椂鍒楀嚭锛?
+Coresight 追踪器使Perf 框架的性能监控单元（PMU）抽象来表示。因perf 框架负责根据感兴趣进程的调度时机来控制追踪何时被启用。当在系统中配置好时，Coresight PMU 会在 perf 命令行工具查询时列出
 	linaro@linaro-nano:~$ ./perf list pmu
 
 		List of pre-defined events (to be used in -e):
 
 		cs_etm//                                    [Kernel PMU event]
 
-鏃犺绯荤粺涓彲鐢ㄧ殑杩借釜鍣ㄦ暟閲忓灏戯紙閫氬父绛変簬澶勭悊鍣ㄦ牳蹇冩暟閲忥級锛屸€渃s_etm鈥?PMU 鍙細鍒楀嚭涓€娆°€?
-Coresight PMU 鐨勫伐浣滄柟寮忎笌鍏朵粬浠讳綍 PMU 鐩稿悓锛屽嵆 PMU 鐨勫悕绉颁笌閰嶇疆閫夐」涓€璧峰湪鏂滄潬 鈥?鈥?鍐呮彁渚涳紙瑙?`Config option formats`_锛夈€?
-### Perf 妗嗘灦鐨勯珮绾х敤娉?
+无论系统中可用的追踪器数量多少（通常等于处理器核心数量），“cs_etmPMU 只会列出一次
+Coresight PMU 的工作方式与其他任何 PMU 相同，即 PMU 的名称与配置选项一起在斜杠 内提供（`Config option formats`_）
+### Perf 框架的高级用
 
-#### 姹囩殑閫夋嫨
+#### 汇的选择
 
 
-浼氫负涓?Perf 閰嶅悎浣跨敤鑷姩閫夋嫨涓€涓悎閫傜殑姹囷紝浣嗙敱浜庨€氬父浼氭湁澶氫釜姹囷紝瑕佷娇鐢ㄧ殑姹囩殑鍚嶇О鍙互浣滀负涓€涓互 鈥楡鈥?涓哄墠缂€鐨勭壒娈婇厤缃€夐」鏉ユ寚瀹氥€?
-鍙敤鐨勬眹鍦?sysFS 涓嬪垪鍑猴紝浣嶄簬
+会为Perf 配合使用自动选择一个合适的汇，但由于通常会有多个汇，要使用的汇的名称可以作为一个以 ‘@为前缀的特殊配置选项来指定
+可用的汇sysFS 下列出，位于
 ```
 
 	root@localhost:/sys/bus/event_source/devices/cs_etm/sinks# ls
@@ -386,40 +386,40 @@ Coresight PMU 鐨勫伐浣滄柟寮忎笌鍏朵粬浠讳綍 PMU 鐩稿悓锛屽�
 	root@linaro-nano:~# perf record -e cs_etm/@tmc_etr0/u --per-thread program
 
 ```
-鍏充簬涓婅堪鍙婂叾浠栧浣曚娇鐢?Coresight 涓?perf 宸ュ叿鐨勭ず渚嬶紝鏇村淇℃伅鍙湪 openCSD gitHub 浠撳簱鐨?鈥淗OWTO.md鈥?鏂囦欢涓壘鍒?[#third]_銆?
-#### 浣跨敤 perf 宸ュ叿杩涜 AutoFDO 鍒嗘瀽
+关于上述及其他如何使Coresight perf 工具的示例，更多信息可在 openCSD gitHub 仓库“HOWTO.md文件中找[#third]_
+#### 使用 perf 工具进行 AutoFDO 分析
 
 
-perf 鍙敤浜庤褰曞拰鍒嗘瀽绋嬪簭鐨勮拷韪€?
-鍙互浣跨敤甯?cs_etm 浜嬩欢鐨?鈥榩erf record鈥?璁板綍鎵ц锛?```
+perf 可用于记录和分析程序的追踪
+可以使用cs_etm 事件‘perf record记录执行```
 
     perf record -e cs_etm//u --per-thread
 
 ```
-鈥榩erf report鈥?鍜?鈥榩erf script鈥?鍛戒护鍙敤浜庡垎鏋愭墽琛岋紝浠庢寚浠よ拷韪腑鍚堟垚鎸囦护鍜屽垎鏀簨浠躲€傗€榩erf inject鈥?鍙敤浜庣敤鍚堟垚鐨勪簨浠舵浛鎹㈣拷韪暟鎹€?-itrace 閫夐」鎺у埗鍚堟垚浜嬩欢鐨勭被鍨嬪拰棰戠巼锛堣 perf 鏂囨。锛夈€?
-娉ㄦ剰鐩墠浠呮敮鎸?64 浣嶇▼搴?鈥斺€?闇€瑕佹洿澶氬伐浣滄潵鏀寔 32 浣?Arm 绋嬪簭鐨勬寚浠よВ鐮併€?
-#### 杩借釜 PID
+‘perf report‘perf script命令可用于分析执行，从指令追踪中合成指令和分支事件。‘perf inject可用于用合成的事件替换追踪数据-itrace 选项控制合成事件的类型和频率（见 perf 文档）
+注意目前仅支64 位程—需要更多工作来支持 32 Arm 程序的指令解码
+#### 追踪 PID
 
 
-鍐呮牳鍙互鏋勫缓涓哄皢 PID 鍊煎啓鍏?PE 鐨?ContextID 瀵勫瓨鍣ㄣ€傚浜庤繍琛屽湪 EL1 鐨勫唴鏍革紝PID 瀛樺偍鍦?CONTEXTIDR_EL1 涓€侾E 鍙互瀹炵幇 Arm 铏氭嫙鍖栦富鏈烘墿灞曪紙VHE锛夛紝鍐呮牳鍙繍琛屽湪 EL2 浣滀负铏氭嫙鍖栦富鏈猴紱姝ゆ椂锛孭ID 鍊煎瓨鍌ㄥ湪 CONTEXTIDR_EL2 涓€?
-perf 鎻愪緵 PMU 鏍煎紡鏉ョ紪绋?ETM锛屽皢杩欎簺鍊兼彃鍏ヨ拷韪暟鎹紱PMU 鏍煎紡瀹氫箟濡備笅锛?
-  鈥渃ontextid1鈥濓細鍦?EL1 鍐呮牳鍜?EL2 鍐呮牳涓婇兘鍙敤銆傚綋鍐呮牳杩愯鍦?EL1 鏃讹紝鈥渃ontextid1鈥?鍚敤 PID 杩借釜锛涘綋鍐呮牳杩愯鍦?EL2 鏃讹紝杩欏惎鐢ㄥ瀹㈡埛鏈哄簲鐢ㄧ▼搴?PID 鐨勮拷韪€?
-  鈥渃ontextid2鈥濓細浠呭湪鍐呮牳杩愯浜?EL2 鏃跺彲鐢ㄣ€傞€変腑鏃讹紝鍚敤 EL2 鍐呮牳涓婄殑 PID 杩借釜銆?
-  鈥渃ontextid鈥濓細灏嗕綔涓哄惎鐢?PID 杩借釜閫夐」鐨勫埆鍚嶃€傚嵆锛屽湪 EL1 鍐呮牳涓?contextid == contextid1锛屽湪 EL2 鍐呮牳涓?contextid == contextid2銆?
-perf 鎬绘槸鍦ㄧ浉鍏崇殑 EL 涓婂惎鐢?PID 杩借釜锛岃繖鏄€氳繃鑷姩鍚敤 鈥渃ontextid鈥?閰嶇疆瀹炵幇鐨?鈥斺€?浣嗗浜?EL2锛屽彲浠ヤ娇鐢?鈥渃ontextid1鈥?鍜?鈥渃ontextid2鈥?閰嶇疆杩涜鐗瑰畾璋冩暣锛屼緥濡傦紝濡傛灉鐢ㄦ埛鎯冲悓鏃惰拷韪富鏈哄拰瀹㈡埛鏈虹殑 PID锛屽彲浠ュ悓鏃惰缃?鈥渃ontextid1鈥?鍜?鈥渃ontextid2鈥?杩欎袱涓厤缃細
+内核可以构建为将 PID 值写PE ContextID 寄存器。对于运行在 EL1 的内核，PID 存储CONTEXTIDR_EL1 中。PE 可以实现 Arm 虚拟化主机扩展（VHE），内核可运行在 EL2 作为虚拟化主机；此时，PID 值存储在 CONTEXTIDR_EL2 中
+perf 提供 PMU 格式来编ETM，将这些值插入追踪数据；PMU 格式定义如下
+  “contextid1”：EL1 内核EL2 内核上都可用。当内核运行EL1 时，“contextid1启用 PID 追踪；当内核运行EL2 时，这启用对客户机应用程PID 的追踪
+  “contextid2”：仅在内核运行EL2 时可用。选中时，启用 EL2 内核上的 PID 追踪
+  “contextid”：将作为启PID 追踪选项的别名。即，在 EL1 内核contextid == contextid1，在 EL2 内核contextid == contextid2
+perf 总是在相关的 EL 上启PID 追踪，这是通过自动启用 “contextid配置实现—但对EL2，可以使“contextid1“contextid2配置进行特定调整，例如，如果用户想同时追踪主机和客户机的 PID，可以同时设“contextid1“contextid2这两个配置：
 
   perf record -e cs_etm/contextid1,contextid2/u -- vm
 
 
-#### 涓哄弽棣堝鍚戜紭鍖栵紙Feedback Directed Optimization锛夌敓鎴愯鐩栫巼鏂囦欢锛欰utoFDO
+#### 为反馈导向优化（Feedback Directed Optimization）生成覆盖率文件：AutoFDO
 
 
-鈥榩erf inject鈥?鎺ュ彈 --itrace 閫夐」锛屾鏃惰拷韪暟鎹绉婚櫎骞舵浛鎹负鍚堟垚鐨勪簨浠躲€備緥濡?```
+‘perf inject接受 --itrace 选项，此时追踪数据被移除并替换为合成的事件。例```
 
 	perf inject --itrace --strip -i perf.data -o perf.data.new
 
 ```
-浠ヤ笅鏄娇鐢?ARM ETM 杩涜 autoFDO 鐨勭ず渚嬨€傚畠闇€瑕?autofdo (https://github.com/google/autofdo) 鍜?gcc 5 鐗堟湰銆俠ubble sort 绀轰緥鏉ヨ嚜 AutoFDO 鏁欑▼ (https://gcc.gnu.org/wiki/AutoFDO/Tutorial)銆?```
+以下是使ARM ETM 进行 autoFDO 的示例。它需autofdo (https://github.com/google/autofdo) gcc 5 版本。bubble sort 示例来自 AutoFDO 教程 (https://gcc.gnu.org/wiki/AutoFDO/Tutorial)```
 
 	$ gcc-5 -O3 sort.c -o sort
 	$ taskset -c 2 ./sort
@@ -440,14 +440,14 @@ perf 鎬绘槸鍦ㄧ浉鍏崇殑 EL 涓婂惎鐢?PID 杩借釜锛岃繖鏄€
 	5806 ms
 
 ```
-#### 閰嶇疆閫夐」鏍煎紡
+#### 配置选项格式
 
 
-浠ヤ笅瀛楃涓插彲浠ュ湪 perf 鍛戒护琛屼笂鎻愪緵浜?// 涔嬮棿锛屼互鍚敤鍚勭閫夐」銆傚畠浠篃鍒楀湪鏂囦欢澶?/sys/bus/event_source/devices/cs_etm/format/ 涓?
+以下字符串可以在 perf 命令行上提供// 之间，以启用各种选项。它们也列在文件/sys/bus/event_source/devices/cs_etm/format/ 
    :header-rows: 1
 
-   - - 閫夐」锛圤ption锛?     - 鎻忚堪锛圖escription锛?   - - branch_broadcast
-     - 绯荤粺绾ц缃殑浼氳瘽鏈湴鐗堟湰锛欵TM_MODE_BB <coresight-branch-broadcast>
+   - - 选项（Option     - 描述（Description   - - branch_broadcast
+     - 系统级设置的会话本地版本：ETM_MODE_BB <coresight-branch-broadcast>
    - - contextid
      - 瑙?`Tracing PID`_
    - - contextid1
@@ -455,30 +455,30 @@ perf 鎬绘槸鍦ㄧ浉鍏崇殑 EL 涓婂惎鐢?PID 杩借釜锛岃繖鏄€
    - - contextid2
      - 瑙?`Tracing PID`_
    - - configid
-     - 鐢ㄤ簬鑷畾涔夐厤缃殑閫夋嫨銆傝繖鏄竴涓疄鐜扮粏鑺傦紝涓嶇洿鎺ヤ娇鐢紝瑙?trace/coresight/coresight-config:Using Configurations in perf
+     - 用于自定义配置的选择。这是一个实现细节，不直接使用，trace/coresight/coresight-config:Using Configurations in perf
    - - preset
-     - 鑷畾涔夐厤缃腑鍙傛暟鐨勮鐩栵紝瑙?trace/coresight/coresight-config:Using Configurations in perf
+     - 自定义配置中参数的覆盖，trace/coresight/coresight-config:Using Configurations in perf
    - - sinkid
-     - 鐢ㄤ簬閫夋嫨姹囩殑瀛楃涓茬殑鍝堝笇鐗堟湰锛屼娇鐢?@ 琛ㄧず娉曟椂鑷姩璁剧疆銆傝繖鏄唴閮ㄥ疄鐜扮粏鑺傦紝涓嶇洿鎺ヤ娇鐢紝瑙?`Using perf
+     - 用于选择汇的字符串的哈希版本，使@ 表示法时自动设置。这是内部实现细节，不直接使用，`Using perf
        framework`_銆?   - - cycacc
-     - 绯荤粺绾ц缃殑浼氳瘽鏈湴鐗堟湰锛?ref:`ETMv4_MODE_CYCACC
+     - 系统级设置的会话本地版本ref:`ETMv4_MODE_CYCACC
        <coresight-cycle-accurate>`
    - - retstack
-     - 绯荤粺绾ц缃殑浼氳瘽鏈湴鐗堟湰锛?ref:`ETM_MODE_RETURNSTACK
+     - 系统级设置的会话本地版本ref:`ETM_MODE_RETURNSTACK
        <coresight-return-stack>`
    - - timestamp
-     - 鎺у埗鏃堕棿鎴崇殑鐢熸垚鍜岄棿闅斻€?
-       0 = 鍏抽棴锛? = 鏈€灏忛棿闅?.. 15 = 鏈€澶ч棿闅斻€?
-       鍊?1 - 14 浣跨敤涓€涓瘡鍛ㄦ湡閫掑噺鐨勮鏁板櫒锛屽湪閫掑噺鍒伴浂鏃剁敓鎴愭椂闂存埑銆傝鏁板櫒鐨勯噸杞藉€间负 2 ^ (interval
-       - 1)銆傚鏋滃€间负 1锛屽垯閲嶈浇鍊间负 1锛涘鏋滃€间负 11锛屽垯閲嶈浇鍊间负 1024锛屼緷姝ょ被鎺ㄣ€?
-       璁剧疆鏈€澶ч棿闅旓紙15锛夊皢绂佺敤璁℃暟鍣ㄧ敓鎴愮殑鏃堕棿鎴筹紝閲婃斁璁℃暟鍣ㄨ祫婧愶紝鍙繚鐣欑敓鎴?SYNC 鍖呮椂鍙戝嚭鐨勬椂闂存埑銆傚悓姝ラ棿闅旂敱 TRCSYNCPR.PERIOD 鎺у埗锛岄粯璁ゆ瘡 4096 瀛楄妭鐨勮拷韪敓鎴愪竴涓€?
+     - 控制时间戳的生成和间隔
+       0 = 关闭 = 最小间.. 15 = 最大间隔
+       1 - 14 使用一个每周期递减的计数器，在递减到零时生成时间戳。计数器的重载值为 2 ^ (interval
+       - 1)。如果值为 1，则重载值为 1；如果值为 11，则重载值为 1024，依此类推
+       设置最大间隔（15）将禁用计数器生成的时间戳，释放计数器资源，只保留生SYNC 包时发出的时间戳。同步间隔由 TRCSYNCPR.PERIOD 控制，默认每 4096 字节的追踪生成一个
    - - cc_threshold
-     - 鍛ㄦ湡璁℃暟闃堝€笺€傚鏋滆繖閲屾湭鎻愪緵鍊兼垨鎻愪緵鐨勫€间负 0锛屽垯浣跨敤榛樿鍊硷紙鍗?0x100锛夈€傚鏋滄彁渚涚殑鍊煎皬浜庢渶灏忓懆鏈熼槇鍊硷紙鐢?TRCIDR3.CCITMIN 鎸囩ず锛夛紝鍒欐敼鐢ㄦ渶灏忓€笺€?
-### 濡備綍浣跨敤 STM 妯″潡
+     - 周期计数阈值。如果这里未提供值或提供的值为 0，则使用默认值（0x100）。如果提供的值小于最小周期阈值（TRCIDR3.CCITMIN 指示），则改用最小值
+### 如何使用 STM 模块
 
 
-浣跨敤 System Trace Macrocell 妯″潡涓庝娇鐢ㄨ拷韪櫒鐩稿悓 鈥斺€?鍞竴鐨勫尯鍒槸瀹㈡埛绔┍鍔ㄨ拷韪崟鑾凤紝鑰屼笉鏄唬鐮佷腑鐨勭▼搴忔祦銆?
-涓庝换浣曞叾浠?CoreSight 缁勪欢涓€鏍凤紝鍏充簬 STM 杩借釜鍣ㄧ殑鍏蜂綋淇℃伅鍙互
+使用 System Trace Macrocell 模块与使用追踪器相同 —唯一的区别是客户端驱动追踪捕获，而不是代码中的程序流
+与任何其CoreSight 组件一样，关于 STM 追踪器的具体信息可以
 ```
 
     root@genericarmv8:~# ls /sys/bus/coresight/devices/stm0
@@ -487,13 +487,13 @@ perf 鎬绘槸鍦ㄧ浉鍏崇殑 EL 涓婂惎鐢?PID 杩借釜锛岃繖鏄€
     root@genericarmv8:~#
 
 ```
-涓庝换浣曞叾浠栨簮涓€鏍凤紝闇€瑕佸厛纭畾姹囧苟浣胯兘 STM锛岀劧鍚?```
+与任何其他源一样，需要先确定汇并使能 STM，然```
 
     root@genericarmv8:~# echo 1 > /sys/bus/coresight/devices/tmc_etf0/enable_sink
     root@genericarmv8:~# echo 1 > /sys/bus/coresight/devices/stm0/enable_source
 
 ```
-姝ゅ悗鐢ㄦ埛绌洪棿搴旂敤绋嬪簭鍙互閫氳繃 devfs 璇锋眰骞朵娇鐢ㄩ€氶亾
+此后用户空间应用程序可以通过 devfs 请求并使用通道
 ```
 
     root@genericarmv8:~# ls -l /dev/stm0
@@ -501,16 +501,16 @@ perf 鎬绘槸鍦ㄧ浉鍏崇殑 EL 涓婂惎鐢?PID 杩借釜锛岃繖鏄€
     root@genericarmv8:~#
 
 ```
-鍏充簬濡備綍浣跨敤閫氱敤 STM API 鐨勮缁嗕俊鎭彲鍦ㄦ澶勬壘鍒帮細
+关于如何使用通用 STM API 的详细信息可在此处找到：
 - Documentation/trace/stm.rst [#second]_銆?
-### CTI 涓?CTM 妯″潡
+### CTI CTM 模块
 
 
-CTI锛圕ross Trigger Interface锛屼氦鍙夎Е鍙戞帴鍙ｏ級鍦ㄥ崟涓?CTI 涓庣粍浠朵箣闂存彁渚涗竴缁勮Е鍙戜俊鍙凤紝骞跺彲浠ラ€氳繃 CTM锛圕ross Trigger Matrix锛屼氦鍙夎Е鍙戠煩闃碉級涓婄殑閫氶亾鍦ㄦ墍鏈?CTI 涔嬮棿浼犳挱杩欎簺淇″彿銆?
-鎻愪緵浜嗕竴浠藉崟鐙殑鏂囨。鏂囦欢鏉ヨВ閲婅繖浜涜澶囩殑浣跨敤銆?(Documentation/trace/coresight/coresight-ect.rst) [#fourth]_銆?
-### CoreSight 绯荤粺閰嶇疆
+CTI（Cross Trigger Interface，交叉触发接口）在单CTI 与组件之间提供一组触发信号，并可以通过 CTM（Cross Trigger Matrix，交叉触发矩阵）上的通道在所CTI 之间传播这些信号
+提供了一份单独的文档文件来解释这些设备的使用(Documentation/trace/coresight/coresight-ect.rst) [#fourth]_
+### CoreSight 系统配置
 
 
-CoreSight 缁勪欢鍙互鏄叿鏈夎澶氱紪绋嬮€夐」鐨勫鏉傝澶囥€傛澶栵紝缁勪欢鍙互琚紪绋嬩负鍦ㄦ暣涓郴缁熶腑鐩镐簰浜や簰銆?
-鎻愪緵浜?CoreSight 绯荤粺閰嶇疆绠＄悊鍣紝浠ヤ究鑳戒粠 perf 鍜?sysfs 涓交鏉鹃€夋嫨鍜屼娇鐢ㄨ繖浜涘鏉傜殑缂栫▼閰嶇疆銆?
-鏇村淇℃伅璇峰弬闃呭崟鐙殑鏂囨。銆?(Documentation/trace/coresight/coresight-config.rst) [#fifth]_銆?
+CoreSight 组件可以是具有许多编程选项的复杂设备。此外，组件可以被编程为在整个系统中相互交互
+提供CoreSight 系统配置管理器，以便能从 perf sysfs 中轻松选择和使用这些复杂的编程配置
+更多信息请参阅单独的文档(Documentation/trace/coresight/coresight-config.rst) [#fifth]_

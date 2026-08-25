@@ -1,40 +1,40 @@
 ﻿
-## Lenovo WMI 鎺ュ彛 Gamezone 椹卞姩锛坙enovo-wmi-gamezone锛?
+## Lenovo WMI 接口 Gamezone 驱动（lenovo-wmi-gamezone
 
-## 绠€浠?
+## 简
 
-Lenovo WMI gamezone 鎺ュ彛琚媶鍒嗕负澶氫釜 GUID銆備富瑕佺殑鈥淕amezone鈥滸UID 鎻愪緵璇稿椋庢墖閰嶇疆
-妗ｅ拰瓒呴绛夐珮绾х壒鎬с€傚畠涓庡涓簨浠?GUID 鍜屾暟鎹潡 GUID 閰嶅锛屼负鍚勭鏂规硶鎻愪緵涓婁笅鏂囥€?
-### Gamezone 鏁版嵁
+Lenovo WMI gamezone 接口被拆分为多个 GUID。主要的“Gamezone”GUID 提供诸如风扇配置
+档和超频等高级特性。它与多个事GUID 和数据块 GUID 配对，为各种方法提供上下文
+### Gamezone 数据
 
 
 WMI GUID `887B54E3-DDDC-4B2C-8B88-68A26A8835D0`
 
-Gamezone Data锛圙amezone 鏁版嵁锛塛MI 鎺ュ彛涓哄睘浜?Lenovo鈥滄父鎴忕郴鍒椻€濈殑璁惧鎻愪緵 platform-profile锛堝钩鍙伴厤缃。锛夊拰椋庢墖鏇茬嚎璁剧疆銆傚畠浣跨敤涓€涓€氱煡閾撅紙notifier chain锛夋潵鍦?褰撳墠骞冲彴閰嶇疆妗ｅ彂鐢熷彉鍖栨椂锛屽皢璇ュ彉鍖栧憡鐭ュ叾浠?Lenovo WMI 鎺ュ彛椹卞姩銆傜敤鎴峰彲浠ラ€氳繃纭欢涓?鐢垫簮鎴栭厤缃。 LED 鐨勯鑹诧紙鍙栧喅浜庢満鍨嬶級鏉ョ‘瀹氬綋鍓嶈缃殑閰嶇疆妗ｃ€?
-鏀寔浠ヤ笅骞冲彴閰嶇疆妗ｏ細
- - low-power锛堜綆鍔熻€楋級锛岃摑鑹?LED
- - balanced锛堝潎琛★級锛岀櫧鑹?LED
- - performance锛堟€ц兘锛夛紝绾㈣壊 LED
- - max-power锛堟渶澶у姛鑰楋級锛岀传鑹?LED
- - custom锛堣嚜瀹氫箟锛夛紝绱壊 LED
+Gamezone Data（Gamezone 数据）WMI 接口为属Lenovo“游戏系列”的设备提供 platform-profile（平台配置档）和风扇曲线设置。它使用一个通知链（notifier chain）来当前平台配置档发生变化时，将该变化告知其Lenovo WMI 接口驱动。用户可以通过硬件电源或配置档 LED 的颜色（取决于机型）来确定当前设置的配置档
+支持以下平台配置档：
+ - low-power（低功耗），蓝LED
+ - balanced（均衡），白LED
+ - performance（性能），红色 LED
+ - max-power（最大功耗），紫LED
+ - custom（自定义），紫色 LED
 
-#### 鏋侀檺妯″紡锛圗xtreme Mode锛?
+#### 极限模式（Extreme Mode
 
-涓€浜涜緝鏂扮殑 Lenovo鈥滄父鎴忕郴鍒椻€濈瑪璁版湰鐢佃剳鍦ㄥ叾 BIOS 涓惎鐢ㄤ簡鈥淓xtreme Mode锛堟瀬闄愭ā寮忥級鈥濋厤缃。銆傚綋鍙敤鏃讹紝璇ユā寮忓皢鐢?max-power锛堟渶澶у姛鑰楋級骞冲彴閰嶇疆妗ｈ〃绀恒€?
-瀵逛簬杩欎簺璁惧鐨勪竴涓瓙闆嗭紝BIOS 涓殑鈥淓xtreme Mode鈥濋厤缃。涓嶅畬鏁达紝璁剧疆瀹冧細瀵艰嚧鏈畾涔夎涓恒€傛彁渚涗簡涓€涓?BIOS bug 鎬櫀锛坬uirk锛夎〃锛屼互纭繚杩欎簺璁惧鏃犳硶浠庨┍鍔ㄤ腑璁剧疆鈥淓xtreme Mode鈥濄€?
-#### 鑷畾涔夐厤缃。锛圕ustom Profile锛?
+一些较新的 Lenovo“游戏系列”笔记本电脑在其 BIOS 中启用了“Extreme Mode（极限模式）”配置档。当可用时，该模式将max-power（最大功耗）平台配置档表示
+对于这些设备的一个子集，BIOS 中的“Extreme Mode”配置档不完整，设置它会导致未定义行为。提供了一BIOS bug 怪癖（quirk）表，以确保这些设备无法从驱动中设置“Extreme Mode”
+#### 自定义配置档（Custom Profile
 
-鑷畾涔夐厤缃。浠ｈ〃 Lenovo 璁惧涓婄殑涓€绉嶇‖浠舵ā寮忥紝瀹冨厑璁哥敤鎴蜂慨鏀?Package Power Tracking锛圥PT锛屽皝瑁呭姛鑰楄拷韪級鍜岄鎵囨洸绾胯缃€傚綋瑕佷慨鏀圭敱 Other Mode WMI 鎺ュ彛鏆撮湶鐨勬煇涓睘鎬ф椂锛屽繀椤诲厛灏?Gamezone 椹卞姩鎵嬪姩鍒囨崲鍒扳€渃ustom锛堣嚜瀹氫箟锛夆€濋厤缃。锛屽惁鍒欒缃皢涓嶇敓鏁堛€傚鏋滀粠鍙楁敮鎸侀厤缃。鍒楄〃涓缃簡鍙︿竴涓厤缃。锛孊IOS 鍦ㄥ垏鎹㈠埌璇ラ厤缃。鏃朵細瑕嗙洊浠讳綍鐢ㄦ埛 PPT 璁剧疆銆?
-### Gamezone 鏁ｇ儹妯″紡浜嬩欢锛圙amezone Thermal Mode Event锛?
+自定义配置档代表 Lenovo 设备上的一种硬件模式，它允许用户修Package Power Tracking（PPT，封装功耗追踪）和风扇曲线设置。当要修改由 Other Mode WMI 接口暴露的某个属性时，必须先Gamezone 驱动手动切换到“custom（自定义）”配置档，否则设置将不生效。如果从受支持配置档列表中设置了另一个配置档，BIOS 在切换到该配置档时会覆盖任何用户 PPT 设置
+### Gamezone 散热模式事件（Gamezone Thermal Mode Event
 
 WMI GUID `D320289E-8FEA-41E0-86F9-911D83151B5F`
 
-Gamezone Thermal Mode Event锛圙amezone 鏁ｇ儹妯″紡浜嬩欢锛夋帴鍙ｄ細鍦ㄥ钩鍙伴厤缃。鍙戠敓鍙樺寲鏃堕€氱煡绯荤粺锛岃繖绉嶅彉鍖栧彲鑳芥槸鐢辩‖浠朵簨浠讹紙绗旇鏈數鑴戠殑 Fn+Q锛屾垨 Go 绯诲垪鐨?Legion + Y锛夎Е鍙戯紝涔熷彲鑳芥槸鐢?Gamezone WMI 鎺ュ彛瑙﹀彂銆傝浜嬩欢鍦?Lenovo WMI Events 椹卞姩锛坙enovo-wmi-events锛変腑瀹炵幇銆?
+Gamezone Thermal Mode Event（Gamezone 散热模式事件）接口会在平台配置档发生变化时通知系统，这种变化可能是由硬件事件（笔记本电脑的 Fn+Q，或 Go 系列Legion + Y）触发，也可能是Gamezone WMI 接口触发。该事件Lenovo WMI Events 驱动（lenovo-wmi-events）中实现
 
-## WMI 鎺ュ彛鎻忚堪
+## WMI 接口描述
 
 
-WMI 鎺ュ彛鎻忚堪鍙互浣跨敤 `bmfdec <https://github.com/pali/bmfdec>`_ 宸ュ叿浠庡唴宓岀殑浜岃繘鍒?MOF锛坆mof锛夋暟鎹腑瑙ｇ爜鍑烘潵锛?
+WMI 接口描述可以使用 `bmfdec <https://github.com/pali/bmfdec>`_ 工具从内嵌的二进MOF（bmof）数据中解码出来
 ```
 
   [WMI, Dynamic, Provider("WmiProv"), Locale("MS\\0x409"), Description("LENOVO_GAMEZONE_DATA class"), guid("{887B54E3-DDDC-4B2C-8B88-68A26A8835D0}")]

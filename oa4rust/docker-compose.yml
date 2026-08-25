@@ -44,7 +44,36 @@ services:
       timeout: 5s
       retries: 10
 
+  o2server:
+    image: o2oa/o2server:latest
+    container_name: oa4rust-o2server
+    environment:
+      MYSQL_ROOT_PASSWORD: o2oa@2022
+    ports:
+      - "18080:80"
+    volumes:
+      - o2server_config:/opt/o2server/config
+      - o2server_custom:/opt/o2server/custom
+      - o2server_dynamic:/opt/o2server/dynamic
+      - o2server_local:/opt/o2server/local
+      - o2server_logs:/opt/o2server/logs
+      - o2server_webroot:/opt/o2server/webroot
+      - o2server_mysql:/var/lib/mysql
+    healthcheck:
+      test: ["CMD-SHELL", "bash -c '</dev/tcp/127.0.0.1/80'"]
+      interval: 15s
+      timeout: 5s
+      retries: 40
+      start_period: 300s
+
 volumes:
   pgdata:
   mysqldata:
   redisdata:
+  o2server_config:
+  o2server_custom:
+  o2server_dynamic:
+  o2server_local:
+  o2server_logs:
+  o2server_webroot:
+  o2server_mysql:

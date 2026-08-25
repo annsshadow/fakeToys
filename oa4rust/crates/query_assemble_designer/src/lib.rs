@@ -1,13 +1,19 @@
 use axum::{
     extract::{Extension, Path},
-    Json, Router, routing::get, routing::post,
+    Json, Router, routing::get, routing::post, routing::put, routing::delete,
 };
 use deadpool_postgres::Pool;
 use serde::Deserialize;
 use serde_json::Value;
-use shared::{error::AppError, response::ActionResult};
+use shared::{error::AppError, response::ActionResult, response::row_to_json};
+use sqlparser::ast::Statement;
+use sqlparser::dialect::PostgreSqlDialect;
+use sqlparser::parser::Parser;
 
 pub mod routes;
+pub mod u2_closures;
+
+use u2_closures::{ensure_limit, validate_single_select};
 
 #[derive(Debug, Deserialize)]
 pub struct CreateDesignerRequest {
@@ -174,12 +180,158 @@ pub async fn delete_designer(
 }
 
 pub fn query_assemble_designer_router(pool: Option<Pool>) -> Router {
+    use u2_closures as u2;
     let router = Router::new()
         .route("/jaxrs/query/assemble/designer/get/{id}", get(get_designer))
         .route("/jaxrs/query/assemble/designer/create", post(create_designer))
         .route("/jaxrs/query/assemble/designer/list/{category}", get(list_designers))
         .route("/jaxrs/query/assemble/designer/save/{id}", post(save_designer))
-        .route("/jaxrs/query/assemble/designer/delete/{id}", post(delete_designer));
+        .route("/jaxrs/query/assemble/designer/delete/{id}", post(delete_designer))
+        .route("/jaxrs/query/assemble/designer/{id}/{count}", get(crate::id_count))
+        .route("/jaxrs/query/assemble/designer/importmodel/{id}", post(crate::importmodel_id))
+        .route("/jaxrs/query/assemble/designer/importmodel/permission/{id}", post(crate::importmodel_id_permission))
+        .route("/jaxrs/query/assemble/designer/importmodel/list/{query}/{flag}", post(crate::importmodel_list_query_flag))
+        .route("/jaxrs/query/assemble/designer/neural/generate/model/{modelFlag}", get(crate::neural_generate_model_modelFlag))
+        .route("/jaxrs/query/assemble/designer/neural/learn/model/{modelFlag}", get(crate::neural_learn_model_modelFlag))
+        .route("/jaxrs/query/assemble/designer/neural/model/{modelFlag}", get(crate::neural_model_modelFlag))
+        .route("/jaxrs/query/assemble/designer/neural/model/reset/{modelFlag}/{status}", post(crate::neural_model_modelFlag_reset_status))
+        .route("/jaxrs/query/assemble/designer/neural/stop/generating/model/{modelFlag}", get(crate::neural_stop_generating_model_modelFlag))
+        .route("/jaxrs/query/assemble/designer/neural/stop/learn/model/{modelFlag}", get(crate::neural_stop_learn_model_modelFlag))
+        .route("/jaxrs/query/assemble/designer/output/select/file/{flag}", get(crate::output_flag_select_file))
+        .route("/jaxrs/query/assemble/designer/output/select/{queryFlag}", get(crate::output_queryFlag_select))
+        .route("/jaxrs/query/assemble/designer/entity/entity/properties/{query}/{category}/{entityCategory}", get(crate::query_entity_entity_category_entityCategory_properties))
+        .route("/jaxrs/query/assemble/designer/icon/{query}/{flag}", get(crate::query_flag_icon))
+        .route("/jaxrs/query/assemble/designer/permission/{query}/{id}", get(crate::query_id_permission))
+        .route("/jaxrs/query/assemble/designer/list/querycategory/{query}/{queryCategory}", get(crate::query_list_querycategory_queryCategory))
+        .route("/jaxrs/query/assemble/designer/list/summary/querycategory/{query}/{queryCategory}", get(crate::query_list_summary_querycategory_queryCategory))
+        .route("/jaxrs/query/assemble/designer/stat/{id}", get(crate::stat_id))
+        .route("/jaxrs/query/assemble/designer/stat/permission/{id}", get(crate::stat_id_permission))
+        .route("/jaxrs/query/assemble/designer/stat/simulate/{id}", get(crate::stat_id_simulate))
+        .route("/jaxrs/query/assemble/designer/stat/list/{id}/{next}/{count}", get(crate::stat_list_id_next_count))
+        .route("/jaxrs/query/assemble/designer/stat/list/{query}/{flag}", get(crate::stat_list_query_flag))
+        .route("/jaxrs/query/assemble/designer/table/export/{tableFlag}/{count}/{count}", get(crate::table_export_tableFlag_count_count))
+        .route("/jaxrs/query/assemble/designer/table/{flag}", get(crate::table_flag))
+        .route("/jaxrs/query/assemble/designer/table/execute/{flag}", post(crate::table_flag_execute))
+        .route("/jaxrs/query/assemble/designer/table/build/{flag}/{status}", get(crate::table_flag_status_build))
+        .route("/jaxrs/query/assemble/designer/table/draft/{flag}/{status}", get(crate::table_flag_status_draft))
+        .route("/jaxrs/query/assemble/designer/table/permission/{id}", get(crate::table_id_permission))
+        .route("/jaxrs/query/assemble/designer/table/list/{query}/{flag}", get(crate::table_list_query_flag))
+        .route("/jaxrs/query/assemble/designer/table/list/row/{tableFlag}/{id}/{next}/{count}", get(crate::table_list_tableFlag_row_id_next_count))
+        .route("/jaxrs/query/assemble/designer/table/list/row/select/where/where/{tableFlag}", get(crate::table_list_tableFlag_row_select_where_where))
+        .route("/jaxrs/query/assemble/designer/table/build/dispatch/{query}", get(crate::table_query_build_dispatch))
+        .route("/jaxrs/query/assemble/designer/table/row/{tableFlag}", get(crate::table_tableFlag_row))
+        .route("/jaxrs/query/assemble/designer/table/row/where/where/{tableFlag}/{count}", get(crate::table_tableFlag_row_count_where_where))
+        .route("/jaxrs/query/assemble/designer/table/row/delete/all/{tableFlag}", post(crate::table_tableFlag_row_delete_all))
+        .route("/jaxrs/query/assemble/designer/table/row/{tableFlag}/{id}", get(crate::table_tableFlag_row_id))
+        .route("/jaxrs/query/assemble/designer/table/row/save/{tableFlag}", post(crate::table_tableFlag_row_save))
+        .route("/jaxrs/query/assemble/designer/bundle/{view}/{id}", get(crate::view_id_bundle))
+        .route("/jaxrs/query/assemble/designer/simulate/{view}/{id}", get(crate::view_id_simulate))
+        .route("/jaxrs/query/assemble/designer/list/{view}/{id}/{next}/{count}", get(crate::view_list_id_next_count))
+        .route("/jaxrs/query/assemble/designer/list/{view}/{query}/{flag}", get(crate::view_list_query_flag))
+        .route("/jaxrs/query/assemble/designer/delete/{id}", delete(delete_designer))
+        .route("/jaxrs/query/assemble/designer/save/{id}", put(save_designer))
+        .route("/jaxrs/query/assemble/designer/table/row/delete/all/{tableFlag}", delete(table_tableFlag_row_delete_all))
+        .route("/jaxrs/query/assemble/designer/table/row/save/{tableFlag}", put(table_tableFlag_row_save))
+        // ── plan002 U2：已实现未注册 handler 补挂 ──
+        .route("/jaxrs/query/assemble/designer/search", post(designer_search))
+        .route("/jaxrs/query/assemble/designer/input/compare", put(input_compare))
+        .route("/jaxrs/query/assemble/designer/input/cover", put(input_cover))
+        .route("/jaxrs/query/assemble/designer/input/create", put(input_create))
+        .route("/jaxrs/query/assemble/designer/input/prepare/cover", put(input_prepare_cover))
+        .route("/jaxrs/query/assemble/designer/input/prepare/create", put(input_prepare_create))
+        .route("/jaxrs/query/assemble/designer/neural/list/model", get(neural_list_model))
+        .route("/jaxrs/query/assemble/designer/neural/model", post(neural_model))
+        .route("/jaxrs/query/assemble/designer/output/list", get(output_list))
+        .route("/jaxrs/query/assemble/designer/query/{flag}", get(query_flag))
+        .route("/jaxrs/query/assemble/designer/list/all", get(query_list_all))
+        .route("/jaxrs/query/assemble/designer/list/summary", get(query_list_summary))
+        .route("/jaxrs/query/assemble/designer/querycategory/list", get(query_querycategory_list))
+        .route("/jaxrs/query/assemble/designer/stat/list/{id}/prev/{count}", get(stat_list_id_prev_count))
+        .route("/jaxrs/query/assemble/designer/table/list/manage", get(table_list_manage))
+        .route("/jaxrs/query/assemble/designer/table/reload/dynamic", get(table_reload_dynamic))
+        .route("/jaxrs/query/assemble/designer/table/list/row/{tableFlag}/{id}/prev/{count}", get(table_list_tableFlag_row_id_prev_count))
+        .route("/jaxrs/query/assemble/designer/view/{id}", get(view_id))
+        .route("/jaxrs/query/assemble/designer/view/permission/{id}", get(view_id_permission))
+        .route("/jaxrs/query/assemble/designer/view/list/{id}/prev/{count}", get(view_list_id_prev_count))
+        // ── plan002 U2：statement 全族（CRUD + 执行）──
+        .route("/jaxrs/query/assemble/designer/statement", post(u2::statement_create))
+        .route("/jaxrs/query/assemble/designer/statement/{flag}", get(u2::statement_get_flag).put(u2::statement_edit).delete(u2::statement_delete))
+        .route("/jaxrs/query/assemble/designer/statement/list/manage", get(u2::statement_manage_list))
+        .route("/jaxrs/query/assemble/designer/statement/list/query/{queryFlag}", post(u2::statement_list_with_query))
+        .route("/jaxrs/query/assemble/designer/statement/permission/{id}", post(u2::statement_permission))
+        .route("/jaxrs/query/assemble/designer/statement/execute/{flag}/page/{page}/size/{size}", post(u2::statement_execute_v2))
+        .route("/jaxrs/query/assemble/designer/statement/execute/{flag}/mode/{mode}/page/{page}/size/{size}", post(u2::statement_execute_mode_v2))
+        // ── plan002 U2：importmodel / neural / stat / table / view CRUD 缺口 ──
+        .route("/jaxrs/query/assemble/designer/importmodel", post(u2::importmodel_create))
+        .route("/jaxrs/query/assemble/designer/importmodel/edit/{id}", put(u2::importmodel_edit))
+        .route("/jaxrs/query/assemble/designer/importmodel/delete/{id}", delete(u2::importmodel_delete))
+        .route("/jaxrs/query/assemble/designer/neural/delete/model/{modelFlag}", delete(u2::neural_delete_model_modelFlag))
+        .route("/jaxrs/query/assemble/designer/neural/update/model/{modelFlag}", put(u2::neural_update_model_modelFlag))
+        .route("/jaxrs/query/assemble/designer/stat", post(u2::stat_create))
+        .route("/jaxrs/query/assemble/designer/stat/edit/{id}", put(u2::stat_edit))
+        .route("/jaxrs/query/assemble/designer/stat/delete/{id}", delete(u2::stat_delete))
+        .route("/jaxrs/query/assemble/designer/table", post(u2::table_create))
+        .route("/jaxrs/query/assemble/designer/table/edit/{flag}", put(u2::table_edit))
+        .route("/jaxrs/query/assemble/designer/table/delete/{flag}", delete(u2::table_delete))
+        .route("/jaxrs/query/assemble/designer/table/row/insert/{tableFlag}", post(u2::table_tableFlag_row_insert))
+        .route("/jaxrs/query/assemble/designer/table/row/update/{tableFlag}/{id}", put(u2::table_tableFlag_row_update))
+        .route("/jaxrs/query/assemble/designer/table/row/delete/{tableFlag}/{id}", delete(u2::table_tableFlag_row_delete))
+        .route("/jaxrs/query/assemble/designer/table/build/query/{query}", get(table_query_query_build))
+        .route("/jaxrs/query/assemble/designer/view", post(u2::view_create))
+        .route("/jaxrs/query/assemble/designer/view/edit/{id}", put(u2::view_edit))
+        .route("/jaxrs/query/assemble/designer/view/delete/{id}", delete(u2::view_delete))
+        .route("/jaxrs/query/assemble/designer/icon/set/{flag}", put(u2::query_set_icon))
+        // ── plan002 U2 v9：Java 精确路径/动词闭合（权威清单 docs/audits/java-endpoint-inventory.json）──
+        .route("/jaxrs/query/assemble/designer/designer/search", post(u2::designer_search_v2))
+        .route("/jaxrs/query/assemble/designer/id/{count}", get(u2::id_generate))
+        .route("/jaxrs/query/assemble/designer/importmodel/list/query/{flag}", get(crate::importmodel_list_query_flag))
+        .route("/jaxrs/query/assemble/designer/importmodel/{id}", get(u2::importmodel_get_flag).put(u2::importmodel_edit_flag).delete(u2::importmodel_delete_flag))
+        .route("/jaxrs/query/assemble/designer/importmodel/{id}/permission", post(u2::importmodel_permission_set))
+        .route("/jaxrs/query/assemble/designer/neural/model/{modelFlag}", put(u2::neural_update_model_modelFlag).delete(u2::neural_delete_model_modelFlag))
+        .route("/jaxrs/query/assemble/designer/neural/model/{modelFlag}/reset/status", get(crate::neural_model_modelFlag_reset_status))
+        .route("/jaxrs/query/assemble/designer/output/{flag}/select", put(u2::output_select_put))
+        .route("/jaxrs/query/assemble/designer/output/{flag}/select/file", get(crate::output_flag_select_file))
+        .route("/jaxrs/query/assemble/designer/query", post(u2::query_create_v2))
+        .route("/jaxrs/query/assemble/designer/query/entity/{entity}/category/{entityCategory}/properties", get(crate::query_entity_entity_category_entityCategory_properties))
+        .route("/jaxrs/query/assemble/designer/query/list/all", get(crate::query_list_all))
+        .route("/jaxrs/query/assemble/designer/query/list/querycategory/{queryCategory}", get(crate::query_list_querycategory_queryCategory))
+        .route("/jaxrs/query/assemble/designer/query/list/summary", get(crate::query_list_summary))
+        .route("/jaxrs/query/assemble/designer/query/list/summary/querycategory/{queryCategory}", get(crate::query_list_summary_querycategory_queryCategory))
+        .route("/jaxrs/query/assemble/designer/query/querycategory/list", get(crate::query_querycategory_list))
+        .route("/jaxrs/query/assemble/designer/query/{flag}", put(u2::query_edit_flag).delete(u2::query_delete_flag))
+        .route("/jaxrs/query/assemble/designer/query/{flag}/icon", put(u2::query_icon_set))
+        .route("/jaxrs/query/assemble/designer/query/{flag}/permission", post(u2::query_permission_set))
+        .route("/jaxrs/query/assemble/designer/stat/list/query/{queryFlag}", get(crate::stat_list_query_flag))
+        .route("/jaxrs/query/assemble/designer/stat/list/{id}/next/{count}", get(crate::stat_list_id_next_count))
+        .route("/jaxrs/query/assemble/designer/stat/{id}", put(u2::stat_edit).delete(u2::stat_delete))
+        .route("/jaxrs/query/assemble/designer/stat/{id}/permission", post(u2::stat_permission_set))
+        .route("/jaxrs/query/assemble/designer/stat/{id}/simulate", put(u2::stat_simulate_put))
+        .route("/jaxrs/query/assemble/designer/statement/{flag}/execute/mode/{mode}/page/{page}/size/{size}", post(u2::statement_execute_mode_v2))
+        .route("/jaxrs/query/assemble/designer/statement/{flag}/execute/page/{page}/size/{size}", post(u2::statement_execute_v2))
+        .route("/jaxrs/query/assemble/designer/statement/{flag}/permission", post(u2::statement_permission))
+        .route("/jaxrs/query/assemble/designer/table/export/{tableFlag}/count/{count}", get(crate::table_export_tableFlag_count_count))
+        .route("/jaxrs/query/assemble/designer/table/list/query/{flag}", get(crate::table_list_query_flag))
+        .route("/jaxrs/query/assemble/designer/table/list/{flag}/row/select/where/{where}", get(crate::table_list_tableFlag_row_select_where_where))
+        .route("/jaxrs/query/assemble/designer/table/list/{flag}/row/{id}/next/{count}", get(crate::table_list_tableFlag_row_id_next_count))
+        .route("/jaxrs/query/assemble/designer/table/list/{flag}/row/{id}/prev/{count}", get(crate::table_list_tableFlag_row_id_prev_count))
+        .route("/jaxrs/query/assemble/designer/table/query/{query}/build", get(crate::table_query_build_dispatch))
+        .route("/jaxrs/query/assemble/designer/table/{flag}", put(u2::table_edit).delete(u2::table_delete))
+        .route("/jaxrs/query/assemble/designer/table/{flag}/build/dispatch", get(u2::table_build_dispatch_flag))
+        .route("/jaxrs/query/assemble/designer/table/{flag}/execute", post(crate::table_flag_execute))
+        .route("/jaxrs/query/assemble/designer/table/{flag}/permission", post(u2::table_permission_set))
+        .route("/jaxrs/query/assemble/designer/table/{flag}/row", post(u2::table_tableFlag_row_insert))
+        .route("/jaxrs/query/assemble/designer/table/{flag}/row/count/where/{where}", get(crate::table_tableFlag_row_count_where_where))
+        .route("/jaxrs/query/assemble/designer/table/{flag}/row/delete/all", delete(crate::table_tableFlag_row_delete_all))
+        .route("/jaxrs/query/assemble/designer/table/{flag}/row/save", post(crate::table_tableFlag_row_save))
+        .route("/jaxrs/query/assemble/designer/table/{flag}/row/{id}", get(crate::table_tableFlag_row_id).put(u2::table_tableFlag_row_update).delete(u2::table_tableFlag_row_delete))
+        .route("/jaxrs/query/assemble/designer/table/{flag}/status/build", get(crate::table_flag_status_build))
+        .route("/jaxrs/query/assemble/designer/table/{flag}/status/draft", get(crate::table_flag_status_draft))
+        .route("/jaxrs/query/assemble/designer/view/list/query/{queryFlag}", get(crate::view_list_query_flag))
+        .route("/jaxrs/query/assemble/designer/view/list/{id}/next/{count}", get(crate::view_list_id_next_count))
+        .route("/jaxrs/query/assemble/designer/view/{id}", put(u2::view_edit).delete(u2::view_delete))
+        .route("/jaxrs/query/assemble/designer/view/{id}/bundle", put(u2::view_bundle_put))
+        .route("/jaxrs/query/assemble/designer/view/{id}/permission", post(u2::view_permission_set))
+        .route("/jaxrs/query/assemble/designer/view/{id}/simulate", put(u2::view_simulate_put));
 
     if let Some(pool) = pool {
         router.layer(Extension(pool))
@@ -642,7 +794,7 @@ pub async fn neural_model_modelFlag_reset_status(
 
     let result = client
         .execute(
-            "UPDATE x_query_neural_model SET status = 'idle', update_time = NOW() WHERE flag = $1",
+            "UPDATE x_query_neural_model SET status = 'idle', update_time = to_char(NOW(),'YYYY-MM-DD HH24:MI:SS') WHERE flag = $1",
             &[&model_flag],
         )
         .await
@@ -1463,26 +1615,20 @@ pub async fn table_query_query_build(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
-    let rows = client
-        .query(&query, &[])
+    let result = client
+        .execute(
+            "UPDATE x_query_table SET status = 'build', update_time = to_char(NOW(),'YYYY-MM-DD HH24:MI:SS') WHERE query_flag = $1 AND deleted_at IS NULL",
+            &[&query],
+        )
         .await
         .map_err(|_| AppError::Internal)?;
 
-    let data: Vec<Value> = rows
-        .iter()
-        .map(|row| {
-            Value::Object(serde_json::Map::from_iter(
-                row.columns().iter().enumerate().map(|(i, col)| {
-                    (col.name().to_string(), Value::String(row.get(i)))
-                }).collect::<Vec<_>>()
-            ))
-        })
-        .collect();
-
-    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
-        ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
-        ("data".to_string(), Value::Array(data)),
-    ])))))
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("queryFlag".to_string(), Value::String(query)),
+            ("built".to_string(), Value::Number(serde_json::Number::from(result as i64))),
+        ]),
+    ))))
 }
 
 pub async fn table_reload_dynamic(
@@ -1543,36 +1689,20 @@ pub async fn table_flag_execute(
 
     let sql = body.get("sql").and_then(|v| v.as_str()).unwrap_or_default();
 
-    if sql.trim().to_uppercase().starts_with("SELECT") {
-        let rows = client
-            .query(sql, &[])
-            .await
-            .map_err(|_| AppError::Internal)?;
+    validate_single_select(sql).map_err(AppError::BadRequest)?;
 
-        let data: Vec<Value> = rows.iter().map(|row| {
-            Value::Object(serde_json::Map::from_iter(
-                row.columns().iter().enumerate().map(|(i, col)| {
-                    (col.name().to_string(), Value::String(row.get(i)))
-                }).collect::<Vec<_>>()
-            ))
-        }).collect();
+    let limited_sql = ensure_limit(sql, 500);
+    let rows = client
+        .query(&limited_sql, &[])
+        .await
+        .map_err(|_| AppError::Internal)?;
 
-        Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
-            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
-            ("data".to_string(), Value::Array(data)),
-        ])))))
-    } else {
-        let result = client
-            .execute(sql, &[])
-            .await
-            .map_err(|_| AppError::Internal)?;
+    let data: Vec<Value> = rows.iter().map(row_to_json).collect();
 
-        Ok(Json(ActionResult::success(Value::Object(
-            serde_json::Map::from_iter([
-                ("affected".to_string(), Value::Number(serde_json::Number::from(result as i64))),
-            ]),
-        ))))
-    }
+    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
+        ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
+        ("data".to_string(), Value::Array(data)),
+    ])))))
 }
 
 pub async fn table_flag_status_build(
@@ -1583,7 +1713,7 @@ pub async fn table_flag_status_build(
 
     let result = client
         .execute(
-            "UPDATE x_query_table SET status = 'build', update_time = NOW() WHERE table_flag = $1",
+            "UPDATE x_query_table SET status = 'build', update_time = to_char(NOW(),'YYYY-MM-DD HH24:MI:SS') WHERE table_flag = $1",
             &[&flag],
         )
         .await
@@ -1609,7 +1739,7 @@ pub async fn table_flag_status_draft(
 
     let result = client
         .execute(
-            "UPDATE x_query_table SET status = 'draft', update_time = NOW() WHERE table_flag = $1",
+            "UPDATE x_query_table SET status = 'draft', update_time = to_char(NOW(),'YYYY-MM-DD HH24:MI:SS') WHERE table_flag = $1",
             &[&flag],
         )
         .await
@@ -1661,13 +1791,17 @@ pub async fn table_query_build_dispatch(
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let result = client
-        .execute(&query, &[])
+        .execute(
+            "UPDATE x_query_table SET status = 'build', update_time = to_char(NOW(),'YYYY-MM-DD HH24:MI:SS') WHERE query_flag = $1 AND deleted_at IS NULL",
+            &[&query],
+        )
         .await
         .map_err(|_| AppError::Internal)?;
 
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
-            ("affected".to_string(), Value::Number(serde_json::Number::from(result as i64))),
+            ("queryFlag".to_string(), Value::String(query)),
+            ("built".to_string(), Value::Number(serde_json::Number::from(result as i64))),
         ]),
     ))))
 }
@@ -1763,7 +1897,7 @@ pub async fn table_tableFlag_row_save(
 
     let result = client
         .execute(
-            "INSERT INTO x_query_table_data (id, table_flag, data, create_time) VALUES ($1, $2, $3, NOW())",
+            "INSERT INTO x_query_table_data (id, table_flag, data, create_time) VALUES ($1, $2, $3, to_char(NOW(),'YYYY-MM-DD HH24:MI:SS'))",
             &[&id, &table_flag, &data_str],
         )
         .await
@@ -1814,7 +1948,7 @@ pub async fn view_list_query_flag(
 
     let rows = client
         .query(
-            "SELECT id, name, view_flag, query_flag, creator, create_time FROM x_query_view WHERE query_flag = $1 ORDER BY create_time DESC",
+            "SELECT id, name, view_flag, query_flag, creator, to_char(create_time,'YYYY-MM-DD HH24:MI:SS') AS create_time FROM x_query_view WHERE query_flag = $1 ORDER BY create_time DESC",
             &[&query_flag],
         )
         .await
@@ -1849,7 +1983,7 @@ pub async fn view_list_id_next_count(
 
     let rows = client
         .query(
-            "SELECT id, name, view_flag, creator, create_time FROM x_query_view WHERE id > $1 ORDER BY id ASC LIMIT $2::bigint",
+            "SELECT id, name, view_flag, creator, to_char(create_time,'YYYY-MM-DD HH24:MI:SS') AS create_time FROM x_query_view WHERE id > $1 ORDER BY id ASC LIMIT $2::bigint",
             &[&id, &count],
         )
         .await
@@ -1883,7 +2017,7 @@ pub async fn view_list_id_prev_count(
 
     let rows = client
         .query(
-            "SELECT id, name, view_flag, creator, create_time FROM x_query_view WHERE id < $1 ORDER BY id DESC LIMIT $2::bigint",
+            "SELECT id, name, view_flag, creator, to_char(create_time,'YYYY-MM-DD HH24:MI:SS') AS create_time FROM x_query_view WHERE id < $1 ORDER BY id DESC LIMIT $2::bigint",
             &[&id, &count],
         )
         .await

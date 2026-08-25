@@ -1,12 +1,12 @@
 ﻿
-## 瀹夊叏鍔犲瘑铏氭嫙鍖栵紙SEV锛?
+## 安全加密虚拟化（SEV
 
-## 姒傝堪
+## 概述
 
 
-瀹夊叏鍔犲瘑铏氭嫙鍖栵紙SEV锛夋槸 AMD 澶勭悊鍣ㄤ笂鎻愪緵鐨勪竴椤圭壒鎬с€?
-SEV 鏄?AMD-V 鏋舵瀯鐨勬墿灞曪紝鏀寔鍦ㄨ櫄鎷熸満鐩戞帶鍣紙hypervisor锛夋帶鍒朵笅杩愯铏氭嫙鏈猴紙VM锛夈€傚惎鐢ㄥ悗锛岃櫄鎷熸満鐨勫瓨鍌ㄥ櫒鍐呭灏嗕娇鐢ㄤ笓灞炰簬璇ヨ櫄鎷熸満鐨勫瘑閽ヨ繘琛岄€忔槑鍔犲瘑銆?
-铏氭嫙鏈虹洃鎺у櫒鍙互閫氳繃 CPUID 鎸囦护纭畾鏄惁鏀寔 SEV銆侰PUID 鍔熻兘 0x8000001f 鎶ュ憡鐩稿叧淇℃伅
+安全加密虚拟化（SEV）是 AMD 处理器上提供的一项特性
+SEV AMD-V 架构的扩展，支持在虚拟机监控器（hypervisor）控制下运行虚拟机（VM）。启用后，虚拟机的存储器内容将使用专属于该虚拟机的密钥进行透明加密
+虚拟机监控器可以通过 CPUID 指令确定是否支持 SEV。CPUID 功能 0x8000001f 报告相关信息
 
 ```
 
@@ -17,7 +17,7 @@ SEV 鏄?AMD-V 鏋舵瀯鐨勬墿灞曪紝鏀寔鍦ㄨ櫄鎷熸満鐩戞帶鍣
 			Bits[31:0]  Number of encrypted guests supported simultaneously
 
 ```
-濡傛灉瀛樺湪 SEV 鏀寔锛屽垯 MSR 0xc001_0010锛圡SR_AMD64_SYSCFG锛夊拰 MSR 0xc001_0015
+如果存在 SEV 支持，则 MSR 0xc001_0010（MSR_AMD64_SYSCFG）和 MSR 0xc001_0015
 
 ```
 
@@ -30,7 +30,7 @@ SEV 鏄?AMD-V 鏋舵瀯鐨勬墿灞曪紝鏀寔鍦ㄨ櫄鎷熸満鐩戞帶鍣
 			   0 = memory encryption can not be enabled
 
 ```
-褰?SEV 鏀寔鍙敤鏃讹紝鍙互閫氳繃濡備笅鏂瑰紡鍦ㄧ壒瀹氱殑铏氭嫙鏈轰腑鍚敤瀹?
+SEV 支持可用时，可以通过如下方式在特定的虚拟机中启用
 ```
 
 	VMCB[0x90]:
@@ -38,11 +38,11 @@ SEV 鏄?AMD-V 鏋舵瀯鐨勬墿灞曪紝鏀寔鍦ㄨ櫄鎷熸満鐩戞帶鍣
 			    0 = SEV is disabled
 
 ```
-SEV 纭欢浣跨敤 ASID 灏嗗唴瀛樺姞瀵嗗瘑閽ヤ笌铏氭嫙鏈哄叧鑱斻€傚洜姝わ紝鍚敤 SEV 鐨勫鎴锋満鐨?ASID 蹇呴』浠嬩簬 1 涓?CPUID 0x8000001f[ecx] 瀛楁瀹氫箟鐨勬渶澶у€间箣闂淬€?
+SEV 硬件使用 ASID 将内存加密密钥与虚拟机关联。因此，启用 SEV 的客户机ASID 必须介于 1 CPUID 0x8000001f[ecx] 字段定义的最大值之间
 ## KVM_MEMORY_ENCRYPT_OP ioctl
 
 
-璁块棶 SEV 鐨勪富瑕?ioctl 鏄?KVM_MEMORY_ENCRYPT_OP锛屽畠浣滅敤浜?VM 鏂囦欢鎻忚堪绗︺€傚鏋?KVM_MEMORY_ENCRYPT_OP 鐨勫弬鏁颁负 NULL锛屽垯褰?SEV 鍚敤鏃惰 ioctl 杩斿洖 0锛岀鐢ㄦ椂杩斿洖 `ENOTTY`锛堝湪鏌愪簺杈冩棫鐨?Linux 鐗堟湰涓婏紝鍗充娇鍙傛暟涓?NULL锛岃 ioctl 涔熶細灏濊瘯姝ｅ父杩愯锛屽洜姝ゅ綋 SEV 鍚敤鏃跺緢鍙兘杩斿洖 `EFAULT` 鑰岄潪闆讹級銆傚鏋滈潪 NULL锛屽垯鍙傛暟鎸囧悜
+访问 SEV 的主ioctl KVM_MEMORY_ENCRYPT_OP，它作用VM 文件描述符。如KVM_MEMORY_ENCRYPT_OP 的参数为 NULL，则SEV 启用时该 ioctl 返回 0，禁用时返回 `ENOTTY`（在某些较旧Linux 版本上，即使参数NULL，该 ioctl 也会尝试正常运行，因此当 SEV 启用时很可能返回 `EFAULT` 而非零）。如果非 NULL，则参数指向
 
 ```
 
@@ -55,17 +55,17 @@ SEV 纭欢浣跨敤 ASID 灏嗗唴瀛樺姞瀵嗗瘑閽ヤ笌铏氭嫙鏈哄�
 
 
 ```
-`id` 瀛楁鍖呭惈瀛愬懡浠わ紝`data` 瀛楁鎸囧悜鍙︿竴涓寘鍚鍛戒护鐗瑰畾鍙傛暟鐨勭粨鏋勪綋銆俙sev_fd` 搴旀寚鍚戝湪 `/dev/sev` 璁惧涓婃墦寮€鐨勬枃浠舵弿杩扮锛堝鏋滈渶瑕佺殑璇濓紝瑙佸悇鍛戒护璇存槑锛夈€?
-杈撳嚭鏃讹紝`error` 鍦ㄦ垚鍔熸椂涓洪浂锛屽惁鍒欎负閿欒鐮併€傞敊璇爜瀹氫箟浜?`<linux/psp-dev.h>`銆?
-KVM 瀹炵幇浜嗕互涓嬪懡浠わ紝浠ユ敮鎸?SEV 瀹㈡埛鏈虹殑甯歌鐢熷懡鍛ㄦ湡浜嬩欢锛屼緥濡傚惎鍔ㄣ€佽繍琛屻€佸揩鐓с€佽縼绉诲拰閿€姣併€?
+`id` 字段包含子命令，`data` 字段指向另一个包含该命令特定参数的结构体。`sev_fd` 应指向在 `/dev/sev` 设备上打开的文件描述符（如果需要的话，见各命令说明）
+输出时，`error` 在成功时为零，否则为错误码。错误码定义`<linux/psp-dev.h>`
+KVM 实现了以下命令，以支SEV 客户机的常见生命周期事件，例如启动、运行、快照、迁移和销毁
 ### 1. KVM_SEV_INIT2
 
 
-KVM_SEV_INIT2 鍛戒护鐢辫櫄鎷熸満鐩戞帶鍣ㄧ敤浜庡垵濮嬪寲 SEV 骞冲彴涓婁笅鏂囥€傚湪鍏稿瀷鐨勫伐浣滄祦涓紝姝ゅ懡浠ゅ簲鏄彂鍑虹殑绗竴涓懡浠ゃ€?
-瑕佽鎺ュ彈姝ゅ懡浠わ紝蹇呴』宸插皢 KVM_X86_SEV_VM 鎴?KVM_X86_SEV_ES_VM 浼犵粰 KVM_CREATE_VM ioctl銆備娇鐢ㄨ繖浜涙満鍣ㄧ被鍨嬪垱寤虹殑铏氭嫙鏈猴紝鍦ㄨ皟鐢?KVM_SEV_INIT2 涔嬪墠鏃犳硶杩愯銆?
-鍙傛暟锛歴truct kvm_sev_init锛堣緭鍏ワ級
+KVM_SEV_INIT2 命令由虚拟机监控器用于初始化 SEV 平台上下文。在典型的工作流中，此命令应是发出的第一个命令
+要被接受此命令，必须已将 KVM_X86_SEV_VM KVM_X86_SEV_ES_VM 传给 KVM_CREATE_VM ioctl。使用这些机器类型创建的虚拟机，在调KVM_SEV_INIT2 之前无法运行
+参数：struct kvm_sev_init（输入）
 
-杩斿洖鍊硷細鎴愬姛鏃?0锛屽嚭閿欐椂 -璐熸暟
+返回值：成功0，出错时 -负数
 
 ```
 
@@ -78,21 +78,21 @@ KVM_SEV_INIT2 鍛戒护鐢辫櫄鎷熸満鐩戞帶鍣ㄧ敤浜庡垵濮嬪寲 SE
         };
 
 ```
-濡傛灉铏氭嫙鏈虹洃鎺у櫒涓嶆敮鎸?`flags` 鎴?`vmsa_features` 涓缃殑浠讳綍浣嶏紝鍒欎负閿欒銆傚浜?SEV 铏氭嫙鏈猴紝`vmsa_features` 蹇呴』涓洪浂锛屽洜涓哄畠浠病鏈?VMSA銆?
-瀵逛簬 SEV 铏氭嫙鏈猴紝`ghcb_version` 蹇呴』涓洪浂锛屽洜涓哄畠浠笉鍙戝嚭 GHCB 璇锋眰銆傚鏋滃叾浠栦换浣曞鎴锋満绫诲瀷鐨?`ghcb_version` 涓洪浂锛屽垯鍏佽鐨勬渶澶у鎴锋満 GHCB 鍗忚灏嗛粯璁や娇鐢ㄧ増鏈?2銆?
-姝ゅ懡浠ゅ彇浠ｄ簡宸插簾寮冪殑 KVM_SEV_INIT 鍜?KVM_SEV_ES_INIT 鍛戒护銆傝繖浜涘懡浠ゆ病鏈変换浣曞弬鏁帮紙``data`` 瀛楁鏈娇鐢級锛屽苟涓斾粎閫傜敤浜?KVM_X86_DEFAULT_VM 鏈哄櫒绫诲瀷锛?锛夈€?
-瀹冧滑鐨勮涓哄鍚岋細
+如果虚拟机监控器不支`flags` `vmsa_features` 中设置的任何位，则为错误。对SEV 虚拟机，`vmsa_features` 必须为零，因为它们没VMSA
+对于 SEV 虚拟机，`ghcb_version` 必须为零，因为它们不发出 GHCB 请求。如果其他任何客户机类型`ghcb_version` 为零，则允许的最大客户机 GHCB 协议将默认使用版2
+此命令取代了已废弃的 KVM_SEV_INIT KVM_SEV_ES_INIT 命令。这些命令没有任何参数（``data`` 字段未使用），并且仅适用KVM_X86_DEFAULT_VM 机器类型）
+它们的行为如同：
 
-- KVM_SEV_INIT 鐨?VM 绫诲瀷涓?KVM_X86_SEV_VM锛孠VM_SEV_ES_INIT 涓?KVM_X86_SEV_ES_VM
+- KVM_SEV_INIT VM 类型KVM_X86_SEV_VM，KVM_SEV_ES_INIT KVM_X86_SEV_ES_VM
 
-- `struct kvm_sev_init` 鐨?`flags` 鍜?`vmsa_features` 瀛楁琚涓洪浂锛屼笖 KVM_SEV_INIT 鐨?`ghcb_version` 璁句负 0锛孠VM_SEV_ES_INIT 璁句负 1銆?
-濡傛灉 `KVM_X86_SEV_VMSA_FEATURES` 灞炴€т笉瀛樺湪锛屽垯铏氭嫙鏈虹洃鎺у櫒浠呮敮鎸?KVM_SEV_INIT 鍜?KVM_SEV_ES_INIT銆傚湪姝ゆ儏鍐典笅锛岃娉ㄦ剰 KVM_SEV_ES_INIT 鍙兘浼氭牴鎹?`kvm-amd.ko` 鐨?`debug_swap` 鍙傛暟鐨勫€艰缃?debug swap VMSA 鐗规€э紙浣?5锛夈€?
+- `struct kvm_sev_init` `flags` `vmsa_features` 字段被设为零，且 KVM_SEV_INIT `ghcb_version` 设为 0，KVM_SEV_ES_INIT 设为 1
+如果 `KVM_X86_SEV_VMSA_FEATURES` 属性不存在，则虚拟机监控器仅支KVM_SEV_INIT KVM_SEV_ES_INIT。在此情况下，请注意 KVM_SEV_ES_INIT 可能会根`kvm-amd.ko` `debug_swap` 参数的值设debug swap VMSA 特性（5）
 ### 2. KVM_SEV_LAUNCH_START
 
 
-KVM_SEV_LAUNCH_START 鍛戒护鐢ㄤ簬鍒涘缓鍐呭瓨鍔犲瘑涓婁笅鏂囥€傝鍒涘缓鍔犲瘑涓婁笅鏂囷紝鐢ㄦ埛蹇呴』鎻愪緵瀹㈡埛鏈虹瓥鐣ャ€佹墍鏈夎€呯殑鍏挜 Diffie-Hellman锛圥DH锛夊瘑閽ュ拰浼氳瘽淇℃伅銆?
-鍙傛暟锛歴truct kvm_sev_launch_start锛堣緭鍏?杈撳嚭锛?
-杩斿洖鍊硷細鎴愬姛鏃?0锛屽嚭閿欐椂 -璐熸暟
+KVM_SEV_LAUNCH_START 命令用于创建内存加密上下文。要创建加密上下文，用户必须提供客户机策略、所有者的公钥 Diffie-Hellman（PDH）密钥和会话信息
+参数：struct kvm_sev_launch_start（输输出
+返回值：成功0，出错时 -负数
 
 ```
 
@@ -108,16 +108,16 @@ KVM_SEV_LAUNCH_START 鍛戒护鐢ㄤ簬鍒涘缓鍐呭瓨鍔犲瘑涓婁笅鏂�
         };
 
 ```
-鎴愬姛鏃讹紝'handle' 瀛楁鍖呭惈涓€涓柊鍙ユ焺锛涘嚭閿欐椂涓鸿礋鏁般€?
-KVM_SEV_LAUNCH_START 瑕佹眰 `sev_fd` 瀛楁鏈夋晥銆?
-鏇村缁嗚妭锛岃鍙傝 SEV 瑙勮寖绗?6.2 鑺傘€?
+成功时，'handle' 字段包含一个新句柄；出错时为负数
+KVM_SEV_LAUNCH_START 要求 `sev_fd` 字段有效
+更多细节，请参见 SEV 规范6.2 节
 ### 3. KVM_SEV_LAUNCH_UPDATE_DATA
 
 
-KVM_SEV_LAUNCH_UPDATE_DATA 鐢ㄤ簬鍔犲瘑涓€涓唴瀛樺尯鍩熴€傚畠杩樹細璁＄畻鍐呭瓨鍐呭鐨勫害閲忓€硷紙measurement锛夈€傝搴﹂噺鏄唴瀛樺唴瀹圭殑绛惧悕锛屽彲浠ュ彂閫佺粰瀹㈡埛鏈烘墍鏈夎€咃紝浣滀负鍐呭瓨宸茶鍥轰欢姝ｇ‘鍔犲瘑鐨勮瘉鏄庯紙attestation锛夈€?
-鍙傛暟锛堣緭鍏ワ級锛歴truct kvm_sev_launch_update_data
+KVM_SEV_LAUNCH_UPDATE_DATA 用于加密一个内存区域。它还会计算内存内容的度量值（measurement）。该度量是内存内容的签名，可以发送给客户机所有者，作为内存已被固件正确加密的证明（attestation）
+参数（输入）：struct kvm_sev_launch_update_data
 
-杩斿洖鍊硷細鎴愬姛鏃?0锛屽嚭閿欐椂 -璐熸暟
+返回值：成功0，出错时 -负数
 
 ```
 
@@ -127,15 +127,15 @@ KVM_SEV_LAUNCH_UPDATE_DATA 鐢ㄤ簬鍔犲瘑涓€涓唴瀛樺尯鍩熴€�
         };
 
 ```
-鏇村缁嗚妭锛岃鍙傝 SEV 瑙勮寖绗?6.3 鑺傘€?
+更多细节，请参见 SEV 规范6.3 节
 ### 4. KVM_SEV_LAUNCH_MEASURE
 
 
-KVM_SEV_LAUNCH_MEASURE 鍛戒护鐢ㄤ簬鑾峰彇鐢?KVM_SEV_LAUNCH_UPDATE_DATA 鍛戒护鍔犲瘑鐨勬暟鎹殑搴﹂噺鍊笺€傚鎴锋満鎵€鏈夎€呭彲鑳戒細绛夊埌鑳藉楠岃瘉搴﹂噺鍊煎悗锛屾墠鍚戝鎴锋満鎻愪緵鏈哄瘑淇℃伅銆傜敱浜庡鎴锋満鎵€鏈夎€呭湪鍚姩鏃剁煡閬撳鎴锋満鐨勫垵濮嬪唴瀹癸紝鍥犳鍙互閫氳繃灏嗗害閲忓€间笌鍏舵湡鏈涚殑鍊艰繘琛屾瘮杈冩潵楠岃瘉銆?
-濡傛灉杈撳叆鏃?len 涓洪浂锛屽垯浼氬皢搴﹂噺鍊?blob 鐨勯暱搴﹀啓鍏?len锛寀addr 涓嶈浣跨敤銆?
-鍙傛暟锛堣緭鍏ワ級锛歴truct kvm_sev_launch_measure
+KVM_SEV_LAUNCH_MEASURE 命令用于获取KVM_SEV_LAUNCH_UPDATE_DATA 命令加密的数据的度量值。客户机所有者可能会等到能够验证度量值后，才向客户机提供机密信息。由于客户机所有者在启动时知道客户机的初始内容，因此可以通过将度量值与其期望的值进行比较来验证
+如果输入len 为零，则会将度量blob 的长度写len，uaddr 不被使用
+参数（输入）：struct kvm_sev_launch_measure
 
-杩斿洖鍊硷細鎴愬姛鏃?0锛屽嚭閿欐椂 -璐熸暟
+返回值：成功0，出错时 -负数
 
 ```
 
@@ -145,20 +145,20 @@ KVM_SEV_LAUNCH_MEASURE 鍛戒护鐢ㄤ簬鑾峰彇鐢?KVM_SEV_LAUNCH_UPDATE_DATA
         };
 
 ```
-鍏充簬搴﹂噺鍊奸獙璇佹祦绋嬬殑鏇村缁嗚妭锛岃鍙傝 SEV 瑙勮寖绗?6.4 鑺傘€?
+关于度量值验证流程的更多细节，请参见 SEV 规范6.4 节
 ### 5. KVM_SEV_LAUNCH_FINISH
 
 
-鍚姩娴佺▼瀹屾垚鍚庯紝鍙互鍙戝嚭 KVM_SEV_LAUNCH_FINISH 鍛戒护锛屼娇瀹㈡埛鏈哄噯澶囧ソ鎵ц銆?
-杩斿洖鍊硷細鎴愬姛鏃?0锛屽嚭閿欐椂 -璐熸暟
+启动流程完成后，可以发出 KVM_SEV_LAUNCH_FINISH 命令，使客户机准备好执行
+返回值：成功0，出错时 -负数
 
 ### 6. KVM_SEV_GUEST_STATUS
 
 
-KVM_SEV_GUEST_STATUS 鍛戒护鐢ㄤ簬鑾峰彇宸插惎鐢?SEV 鐨勫鎴锋満鐨勭姸鎬佷俊鎭€?
-鍙傛暟锛堣緭鍑猴級锛歴truct kvm_sev_guest_status
+KVM_SEV_GUEST_STATUS 命令用于获取已启SEV 的客户机的状态信息
+参数（输出）：struct kvm_sev_guest_status
 
-杩斿洖鍊硷細鎴愬姛鏃?0锛屽嚭閿欐椂 -璐熸暟
+返回值：成功0，出错时 -负数
 
 ```
 
@@ -169,7 +169,7 @@ KVM_SEV_GUEST_STATUS 鍛戒护鐢ㄤ簬鑾峰彇宸插惎鐢?SEV 鐨勫鎴锋
         };
 
 ```
-SEV 瀹㈡埛鏈虹姸鎬侊細
+SEV 客户机状态：
 
 ```
 
@@ -186,10 +186,10 @@ SEV 瀹㈡埛鏈虹姸鎬侊細
 ### 7. KVM_SEV_DBG_DECRYPT
 
 
-铏氭嫙鏈虹洃鎺у櫒鍙互浣跨敤 KVM_SEV_DEBUG_DECRYPT 鍛戒护璇锋眰鍥轰欢瑙ｅ瘑缁欏畾鍐呭瓨鍖哄煙鐨勬暟鎹€?
-鍙傛暟锛堣緭鍏ワ級锛歴truct kvm_sev_dbg
+虚拟机监控器可以使用 KVM_SEV_DEBUG_DECRYPT 命令请求固件解密给定内存区域的数据
+参数（输入）：struct kvm_sev_dbg
 
-杩斿洖鍊硷細鎴愬姛鏃?0锛屽嚭閿欐椂 -璐熸暟
+返回值：成功0，出错时 -负数
 
 ```
 
@@ -200,14 +200,14 @@ SEV 瀹㈡埛鏈虹姸鎬侊細
         };
 
 ```
-濡傛灉瀹㈡埛鏈虹瓥鐣ヤ笉鍏佽璋冭瘯锛岃鍛戒护浼氳繑鍥為敊璇€?
+如果客户机策略不允许调试，该命令会返回错误
 ### 8. KVM_SEV_DBG_ENCRYPT
 
 
-铏氭嫙鏈虹洃鎺у櫒鍙互浣跨敤 KVM_SEV_DEBUG_ENCRYPT 鍛戒护璇锋眰鍥轰欢鍔犲瘑缁欏畾鍐呭瓨鍖哄煙鐨勬暟鎹€?
-鍙傛暟锛堣緭鍏ワ級锛歴truct kvm_sev_dbg
+虚拟机监控器可以使用 KVM_SEV_DEBUG_ENCRYPT 命令请求固件加密给定内存区域的数据
+参数（输入）：struct kvm_sev_dbg
 
-杩斿洖鍊硷細鎴愬姛鏃?0锛屽嚭閿欐椂 -璐熸暟
+返回值：成功0，出错时 -负数
 
 ```
 
@@ -218,14 +218,14 @@ SEV 瀹㈡埛鏈虹姸鎬侊細
         };
 
 ```
-濡傛灉瀹㈡埛鏈虹瓥鐣ヤ笉鍏佽璋冭瘯锛岃鍛戒护浼氳繑鍥為敊璇€?
+如果客户机策略不允许调试，该命令会返回错误
 ### 9. KVM_SEV_LAUNCH_SECRET
 
 
-铏氭嫙鏈虹洃鎺у櫒鍙互浣跨敤 KVM_SEV_LAUNCH_SECRET 鍛戒护鍦ㄥ害閲忓€煎凡琚鎴锋満鎵€鏈夎€呴獙璇佸悗娉ㄥ叆鏈哄瘑鏁版嵁銆?
-鍙傛暟锛堣緭鍏ワ級锛歴truct kvm_sev_launch_secret
+虚拟机监控器可以使用 KVM_SEV_LAUNCH_SECRET 命令在度量值已被客户机所有者验证后注入机密数据
+参数（输入）：struct kvm_sev_launch_secret
 
-杩斿洖鍊硷細鎴愬姛鏃?0锛屽嚭閿欐椂 -璐熸暟
+返回值：成功0，出错时 -负数
 
 ```
 
@@ -244,11 +244,11 @@ SEV 瀹㈡埛鏈虹姸鎬侊細
 ### 10. KVM_SEV_GET_ATTESTATION_REPORT
 
 
-铏氭嫙鏈虹洃鎺у櫒鍙互浣跨敤 KVM_SEV_GET_ATTESTATION_REPORT 鍛戒护鏌ヨ璇佹槑锛坅ttestation锛夋姤鍛婏紝璇ユ姤鍛婂寘鍚€氳繃 KVM_SEV_LAUNCH 鍛戒护浼犲叆鐨勫鎴锋満鍐呭瓨鍜?VMSA 鐨?SHA-256 鎽樿锛屽苟鐢?PEK 绛惧悕銆傝鍛戒护杩斿洖鐨勬憳瑕佸簲涓庡鎴锋満鎵€鏈夎€呴€氳繃 KVM_SEV_LAUNCH_MEASURE 浣跨敤鐨勬憳瑕佺浉鍖归厤銆?
-濡傛灉杈撳叆鏃?len 涓洪浂锛屽垯浼氬皢搴﹂噺鍊?blob 鐨勯暱搴﹀啓鍏?len锛寀addr 涓嶈浣跨敤銆?
-鍙傛暟锛堣緭鍏ワ級锛歴truct kvm_sev_attestation
+虚拟机监控器可以使用 KVM_SEV_GET_ATTESTATION_REPORT 命令查询证明（attestation）报告，该报告包含通过 KVM_SEV_LAUNCH 命令传入的客户机内存VMSA SHA-256 摘要，并PEK 签名。该命令返回的摘要应与客户机所有者通过 KVM_SEV_LAUNCH_MEASURE 使用的摘要相匹配
+如果输入len 为零，则会将度量blob 的长度写len，uaddr 不被使用
+参数（输入）：struct kvm_sev_attestation
 
-杩斿洖鍊硷細鎴愬姛鏃?0锛屽嚭閿欐椂 -璐熸暟
+返回值：成功0，出错时 -负数
 
 ```
 
@@ -263,11 +263,11 @@ SEV 瀹㈡埛鏈虹姸鎬侊細
 ### 11. KVM_SEV_SEND_START
 
 
-铏氭嫙鏈虹洃鎺у櫒鍙互浣跨敤 KVM_SEV_SEND_START 鍛戒护鍒涘缓澶栧嚭鐨勫鎴锋満鍔犲瘑涓婁笅鏂囥€?
-濡傛灉杈撳叆鏃?session_len 涓洪浂锛屽垯浼氬皢瀹㈡埛鏈轰細璇濅俊鎭殑闀垮害鍐欏叆 session_len锛屽叾浠栨墍鏈夊瓧娈典笉琚娇鐢ㄣ€?
-鍙傛暟锛堣緭鍏ワ級锛歴truct kvm_sev_send_start
+虚拟机监控器可以使用 KVM_SEV_SEND_START 命令创建外出的客户机加密上下文
+如果输入session_len 为零，则会将客户机会话信息的长度写入 session_len，其他所有字段不被使用
+参数（输入）：struct kvm_sev_send_start
 
-杩斿洖鍊硷細鎴愬姛鏃?0锛屽嚭閿欐椂 -璐熸暟
+返回值：成功0，出错时 -负数
 
 ```
 
@@ -291,11 +291,11 @@ SEV 瀹㈡埛鏈虹姸鎬侊細
 ### 12. KVM_SEV_SEND_UPDATE_DATA
 
 
-铏氭嫙鏈虹洃鎺у櫒鍙互浣跨敤 KVM_SEV_SEND_UPDATE_DATA 鍛戒护锛屼娇鐢?KVM_SEV_SEND_START 鍒涘缓鐨勫姞瀵嗕笂涓嬫枃鏉ュ姞瀵嗗鍑虹殑瀹㈡埛鏈哄唴瀛樺尯鍩熴€?
-濡傛灉杈撳叆鏃?hdr_len 鎴?trans_len 涓洪浂锛屽垯浼氬皢鍖呭ご鍜屼紶杈撳尯鍩熺殑闀垮害鍒嗗埆鍐欏叆 hdr_len 鍜?trans_len锛屽叾浠栨墍鏈夊瓧娈典笉琚娇鐢ㄣ€?
-鍙傛暟锛堣緭鍏ワ級锛歴truct kvm_sev_send_update_data
+虚拟机监控器可以使用 KVM_SEV_SEND_UPDATE_DATA 命令，使KVM_SEV_SEND_START 创建的加密上下文来加密外出的客户机内存区域
+如果输入hdr_len trans_len 为零，则会将包头和传输区域的长度分别写入 hdr_len trans_len，其他所有字段不被使用
+参数（输入）：struct kvm_sev_send_update_data
 
-杩斿洖鍊硷細鎴愬姛鏃?0锛屽嚭閿欐椂 -璐熸暟
+返回值：成功0，出错时 -负数
 
 ```
 
@@ -314,21 +314,21 @@ SEV 瀹㈡埛鏈虹姸鎬侊細
 ### 13. KVM_SEV_SEND_FINISH
 
 
-杩佺Щ娴佺▼瀹屾垚鍚庯紝铏氭嫙鏈虹洃鎺у櫒鍙互鍙戝嚭 KVM_SEV_SEND_FINISH 鍛戒护鏉ュ垹闄ゅ姞瀵嗕笂涓嬫枃銆?
-杩斿洖鍊硷細鎴愬姛鏃?0锛屽嚭閿欐椂 -璐熸暟
+迁移流程完成后，虚拟机监控器可以发出 KVM_SEV_SEND_FINISH 命令来删除加密上下文
+返回值：成功0，出错时 -负数
 
 ### 14. KVM_SEV_SEND_CANCEL
 
 
-鍦ㄥ畬鎴?SEND_START 涔嬪悗銆丼END_FINISH 涔嬪墠锛屾簮 VMM 鍙互鍙戝嚭 SEND_CANCEL 鍛戒护鏉ュ仠姝㈣縼绉汇€傝繖鏄繀瑕佺殑锛屼互渚胯鍙栨秷鐨勮縼绉荤◢鍚庡彲浠ヤ娇鐢ㄦ柊鐨勭洰鏍囬噸鏂板惎鍔ㄣ€?
-杩斿洖鍊硷細鎴愬姛鏃?0锛屽嚭閿欐椂 -璐熸暟
+在完SEND_START 之后、SEND_FINISH 之前，源 VMM 可以发出 SEND_CANCEL 命令来停止迁移。这是必要的，以便被取消的迁移稍后可以使用新的目标重新启动
+返回值：成功0，出错时 -负数
 
 ### 15. KVM_SEV_RECEIVE_START
 
 
-KVM_SEV_RECEIVE_START 鍛戒护鐢ㄤ簬涓鸿繘鍏ョ殑 SEV 瀹㈡埛鏈哄垱寤哄唴瀛樺姞瀵嗕笂涓嬫枃銆傝鍒涘缓鍔犲瘑涓婁笅鏂囷紝鐢ㄦ埛蹇呴』鎻愪緵瀹㈡埛鏈虹瓥鐣ャ€佸钩鍙板叕閽?Diffie-Hellman锛圥DH锛夊瘑閽ュ拰浼氳瘽淇℃伅銆?
-鍙傛暟锛歴truct kvm_sev_receive_start锛堣緭鍏?杈撳嚭锛?
-杩斿洖鍊硷細鎴愬姛鏃?0锛屽嚭閿欐椂 -璐熸暟
+KVM_SEV_RECEIVE_START 命令用于为进入的 SEV 客户机创建内存加密上下文。要创建加密上下文，用户必须提供客户机策略、平台公Diffie-Hellman（PDH）密钥和会话信息
+参数：struct kvm_sev_receive_start（输输出
+返回值：成功0，出错时 -负数
 
 ```
 
@@ -344,15 +344,15 @@ KVM_SEV_RECEIVE_START 鍛戒护鐢ㄤ簬涓鸿繘鍏ョ殑 SEV 瀹㈡埛鏈哄�
         };
 
 ```
-鎴愬姛鏃讹紝'handle' 瀛楁鍖呭惈涓€涓柊鍙ユ焺锛涘嚭閿欐椂涓鸿礋鏁般€?
-鏇村缁嗚妭锛岃鍙傝 SEV 瑙勮寖绗?6.12 鑺傘€?
+成功时，'handle' 字段包含一个新句柄；出错时为负数
+更多细节，请参见 SEV 规范6.12 节
 ### 16. KVM_SEV_RECEIVE_UPDATE_DATA
 
 
-铏氭嫙鏈虹洃鎺у櫒鍙互浣跨敤 KVM_SEV_RECEIVE_UPDATE_DATA 鍛戒护锛屽皢杩涘叆鐨勭紦鍐插尯澶嶅埗鍒板湪 KVM_SEV_RECEIVE_START 鏈熼棿鍒涘缓浜嗗姞瀵嗕笂涓嬫枃鐨勫鎴锋満鍐呭瓨鍖哄煙銆?
-鍙傛暟锛堣緭鍏ワ級锛歴truct kvm_sev_receive_update_data
+虚拟机监控器可以使用 KVM_SEV_RECEIVE_UPDATE_DATA 命令，将进入的缓冲区复制到在 KVM_SEV_RECEIVE_START 期间创建了加密上下文的客户机内存区域
+参数（输入）：struct kvm_sev_receive_update_data
 
-杩斿洖鍊硷細鎴愬姛鏃?0锛屽嚭閿欐椂 -璐熸暟
+返回值：成功0，出错时 -负数
 
 ```
 
@@ -371,17 +371,17 @@ KVM_SEV_RECEIVE_START 鍛戒护鐢ㄤ簬涓鸿繘鍏ョ殑 SEV 瀹㈡埛鏈哄�
 ### 17. KVM_SEV_RECEIVE_FINISH
 
 
-杩佺Щ娴佺▼瀹屾垚鍚庯紝铏氭嫙鏈虹洃鎺у櫒鍙互鍙戝嚭 KVM_SEV_RECEIVE_FINISH 鍛戒护浣垮鎴锋満鍑嗗濂芥墽琛屻€?
-杩斿洖鍊硷細鎴愬姛鏃?0锛屽嚭閿欐椂 -璐熸暟
+迁移流程完成后，虚拟机监控器可以发出 KVM_SEV_RECEIVE_FINISH 命令使客户机准备好执行
+返回值：成功0，出错时 -负数
 
 ### 18. KVM_SEV_SNP_LAUNCH_START
 
 
-KVM_SNP_LAUNCH_START 鍛戒护鐢ㄤ簬涓?SEV-SNP 瀹㈡埛鏈哄垱寤哄唴瀛樺姞瀵嗕笂涓嬫枃銆傚繀椤诲湪鍙戝嚭 KVM_SEV_SNP_LAUNCH_UPDATE 鎴?KVM_SEV_SNP_LAUNCH_FINISH 涔嬪墠璋冪敤瀹冿紱
+KVM_SNP_LAUNCH_START 命令用于SEV-SNP 客户机创建内存加密上下文。必须在发出 KVM_SEV_SNP_LAUNCH_UPDATE KVM_SEV_SNP_LAUNCH_FINISH 之前调用它；
 
-鍙傛暟锛堣緭鍏ワ級锛歴truct kvm_sev_snp_launch_start
+参数（输入）：struct kvm_sev_snp_launch_start
 
-杩斿洖鍊硷細鎴愬姛鏃?0锛屽嚭閿欐椂 -璐熸暟
+返回值：成功0，出错时 -负数
 
 ```
 
@@ -394,16 +394,16 @@ KVM_SNP_LAUNCH_START 鍛戒护鐢ㄤ簬涓?SEV-SNP 瀹㈡埛鏈哄垱寤哄唴�
         };
 
 ```
-鍏充簬 `struct kvm_sev_snp_launch_start` 涓緭鍏ュ弬鏁扮殑鏇村缁嗚妭锛岃鍙傝 SEV-SNP 瑙勮寖 [snp-fw-abi]_ 涓殑 SNP_LAUNCH_START銆?
+关于 `struct kvm_sev_snp_launch_start` 中输入参数的更多细节，请参见 SEV-SNP 规范 [snp-fw-abi]_ 中的 SNP_LAUNCH_START
 ### 19. KVM_SEV_SNP_LAUNCH_UPDATE
 
 
-KVM_SEV_SNP_LAUNCH_UPDATE 鍛戒护鐢ㄤ簬灏嗙敤鎴风┖闂存彁渚涚殑鏁版嵁鍔犺浇鍒板鎴锋満 GPA 鑼冨洿涓紝灏嗗唴瀹瑰害閲忓埌鐢?KVM_SEV_SNP_LAUNCH_START 鍒涘缓鐨?SNP 瀹㈡埛鏈轰笂涓嬫枃涓紝鐒跺悗瀵硅 GPA 鑼冨洿杩涜鍔犲瘑/楠岃瘉锛屼娇鍏跺湪鍚姩鍚庡嵆鍙娇鐢ㄤ笌璇ュ鎴锋満涓婁笅鏂囧叧鑱旂殑鍔犲瘑瀵嗛挜鐩存帴璇诲彇锛涙鍚庯紝瀹冨彲浠ュ湪瑙ｉ攣浠讳綍鏈哄瘑涔嬪墠锛屽鍏朵笂涓嬫枃鍏宠仈鐨勫害閲忓€艰繘琛岃瘉鏄庯紙attest锛夈€?
-姝ゅ懡浠ゅ垵濮嬪寲鐨?GPA 鑼冨洿蹇呴』浜嬪厛璁剧疆 KVM_MEMORY_ATTRIBUTE_PRIVATE 灞炴€с€傚叧浜庤繖鏂归潰鐨勬洿澶氱粏鑺傦紝璇峰弬瑙?KVM_SET_MEMORY_ATTRIBUTES 鐨勬枃妗ｃ€?
-鎴愬姛鏃讹紝涓嶈兘淇濊瘉姝ゅ懡浠ゅ凡澶勭悊鎵€璇锋眰鐨勬暣涓寖鍥淬€傜浉鍙嶏紝`struct kvm_sev_snp_launch_update` 鐨?`gfn_start`銆乣uaddr` 鍜?`len` 瀛楁浼氳鏇存柊涓哄搴斾簬灏氭湭澶勭悊鐨勫墿浣欒寖鍥淬€傝皟鐢ㄨ€呭簲缁х画璋冪敤姝ゅ懡浠わ紝鐩村埌杩欎簺瀛楁琛ㄦ槑鏁翠釜鑼冨洿宸插鐞嗗畬姣曪紝渚嬪 `len` 涓?0锛宍gfn_start` 绛変簬鑼冨洿涓渶鍚庝竴涓?GFN 鍔?1锛屼笖 `uaddr` 涓虹敤鎴风┖闂存彁渚涚殑婧愮紦鍐插尯鍦板潃鐨勬渶鍚庝竴涓瓧鑺傚姞 1銆傚湪 `type` 涓?KVM_SEV_SNP_PAGE_TYPE_ZERO 鐨勬儏鍐典笅锛宍uaddr` 灏嗚瀹屽叏蹇界暐銆?
-鍙傛暟锛堣緭鍏ワ級锛歴truct kvm_sev_snp_launch_update
+KVM_SEV_SNP_LAUNCH_UPDATE 命令用于将用户空间提供的数据加载到客户机 GPA 范围中，将内容度量到KVM_SEV_SNP_LAUNCH_START 创建SNP 客户机上下文中，然后对该 GPA 范围进行加密/验证，使其在启动后即可使用与该客户机上下文关联的加密密钥直接读取；此后，它可以在解锁任何机密之前，对其上下文关联的度量值进行证明（attest）
+此命令初始化GPA 范围必须事先设置 KVM_MEMORY_ATTRIBUTE_PRIVATE 属性。关于这方面的更多细节，请参KVM_SET_MEMORY_ATTRIBUTES 的文档
+成功时，不能保证此命令已处理所请求的整个范围。相反，`struct kvm_sev_snp_launch_update` `gfn_start`、`uaddr` `len` 字段会被更新为对应于尚未处理的剩余范围。调用者应继续调用此命令，直到这些字段表明整个范围已处理完毕，例如 `len` 0，`gfn_start` 等于范围中最后一GFN 1，且 `uaddr` 为用户空间提供的源缓冲区地址的最后一个字节加 1。在 `type` KVM_SEV_SNP_PAGE_TYPE_ZERO 的情况下，`uaddr` 将被完全忽略
+参数（输入）：struct kvm_sev_snp_launch_update
 
-杩斿洖鍊硷細鎴愬姛鏃?0锛屽嚭閿欐椂 < 0锛岄渶瑕佽皟鐢ㄨ€呴噸璇曟椂 -EAGAIN
+返回值：成功0，出错时 < 0，需要调用者重试时 -EAGAIN
 
 ```
 
@@ -430,14 +430,14 @@ KVM_SEV_SNP_LAUNCH_UPDATE 鍛戒护鐢ㄤ簬灏嗙敤鎴风┖闂存彁渚涚殑
         KVM_SEV_SNP_PAGE_TYPE_CPUID
 
 ```
-鍏充簬姣忕椤甸潰绫诲瀷濡備綍琚娇鐢?搴﹂噺锛岃鍙傝 SEV-SNP 瑙勮寖 [snp-fw-abi]_銆?
+关于每种页面类型如何被使度量，请参见 SEV-SNP 规范 [snp-fw-abi]_
 ### 20. KVM_SEV_SNP_LAUNCH_FINISH
 
 
-SNP 瀹㈡埛鏈哄惎鍔ㄦ祦绋嬪畬鎴愬悗锛屽彲浠ュ彂鍑?KVM_SEV_SNP_LAUNCH_FINISH 鍛戒护浣垮鎴锋満鍑嗗濂芥墽琛屻€?
-鍙傛暟锛堣緭鍏ワ級锛歴truct kvm_sev_snp_launch_finish
+SNP 客户机启动流程完成后，可以发KVM_SEV_SNP_LAUNCH_FINISH 命令使客户机准备好执行
+参数（输入）：struct kvm_sev_snp_launch_finish
 
-杩斿洖鍊硷細鎴愬姛鏃?0锛屽嚭閿欐椂 -璐熸暟
+返回值：成功0，出错时 -负数
 
 ```
 
@@ -455,31 +455,31 @@ SNP 瀹㈡埛鏈哄惎鍔ㄦ祦绋嬪畬鎴愬悗锛屽彲浠ュ彂鍑?KVM_SEV_S
 
 
 ```
-鍏充簬 `struct kvm_sev_snp_launch_finish` 涓緭鍏ュ弬鏁扮殑鏇村缁嗚妭锛岃鍙傝 SEV-SNP 瑙勮寖 [snp-fw-abi]_ 涓殑 SNP_LAUNCH_FINISH銆?
+关于 `struct kvm_sev_snp_launch_finish` 中输入参数的更多细节，请参见 SEV-SNP 规范 [snp-fw-abi]_ 中的 SNP_LAUNCH_FINISH
 ### 21. KVM_SEV_SNP_ENABLE_REQ_CERTS
 
 
-KVM_SEV_SNP_ENABLE_REQ_CERTS 鍛戒护浼氬皢 KVM 閰嶇疆涓哄湪澶勭悊瀹㈡埛鏈鸿瘉鏄庢姤鍛婃椂锛屼互 `KVM_EXIT_SNP_REQ_CERTS` 閫€鍑虹被鍨嬮€€鍑哄埌鐢ㄦ埛绌洪棿锛屼粠鑰屽厑璁哥敤鎴风┖闂存彁渚涗笌鍥轰欢鐢ㄤ簬绛剧讲璇ヨ瘉鏄庢姤鍛婄殑鑳屼功瀵嗛挜锛坋ndorsement key锛夌浉瀵瑰簲鐨勮瘉涔︺€?
-杩斿洖鍊硷細鎴愬姛鏃?0锛屽嚭閿欐椂 -璐熸暟
+KVM_SEV_SNP_ENABLE_REQ_CERTS 命令会将 KVM 配置为在处理客户机证明报告时，以 `KVM_EXIT_SNP_REQ_CERTS` 退出类型退出到用户空间，从而允许用户空间提供与固件用于签署该证明报告的背书密钥（endorsement key）相对应的证书
+返回值：成功0，出错时 -负数
 
-娉ㄦ剰锛氬浐浠朵娇鐢ㄧ殑鑳屼功瀵嗛挜鍙兘浼氬洜涓烘洿鏂?SEV-SNP 鍥轰欢鎴栧姞杞芥柊鐨勮儗涔﹀瘑閽ョ瓑绠＄悊娲诲姩鑰屾敼鍙橈紝鍥犳闇€瑕佸皬蹇冪‘淇濊繑鍥炵殑璇佷功鏁版嵁涓庡彂閫佽瘉鏄庤姹傛椂鍥轰欢瀹為檯浣跨敤鐨勮儗涔﹀瘑閽ヤ繚鎸佸悓姝ャ€傚缓璁殑鏂规鏄娇鐢ㄦ枃浠堕攣锛堜緥濡傞€氳繃 fcntl() 鐨?F_OFD_SETLK锛夛紝鏂瑰紡濡備笅锛?
-  - 鍦ㄤ綔涓哄鐞?`KVM_EXIT_SNP_REQ_CERTS` 閫€鍑虹被鍨嬬殑涓€閮ㄥ垎鑰岃幏鍙?鎻愪緵璇佷功鏁版嵁涔嬪墠锛孷MM 搴斿湪璇诲彇璇佷功 blob 鏂囦欢骞跺皢鍏惰繑鍥炵粰 KVM 涔嬪墠锛岃幏鍙栬鏂囦欢涓婄殑鍏变韩/璇婚攣鎴栫嫭鍗?鍐欓攣锛屽苟缁х画鎸佹湁璇ラ攣锛岀洿鍒拌瘉鏄庤姹傚疄闄呭彂閫佸埌鍥轰欢銆備负鏂逛究璧疯锛孷MM 鍙互鍦ㄦ彁渚涜瘉涔︽暟鎹箣鍚庛€佹仮澶?vCPU 涔嬪墠锛岃缃?kvm_run 鐨?`immediate_exit` 鏍囧織銆傝繖灏嗙‘淇?vCPU 鍦ㄤ粠鍥轰欢鍙栧洖璇佹槑璇锋眰鍚庝細浠?`-EINTR` 鍐嶆閫€鍑哄埌鐢ㄦ埛绌洪棿锛屾鏃?VMM 鍙互瀹夊叏鍦伴噴鏀炬枃浠堕攣銆?
-  - 瀵?SNP 鍥轰欢 TCB 鍊兼垨鑳屼功瀵嗛挜鎵ц鏇存柊锛堜緥濡傞€氳繃 `/dev/sev` 鎺ュ彛濡?`SNP_COMMIT`銆乣SNP_SET_CONFIG` 鎴?`SNP_VLEK_LOAD`锛屾洿澶氱粏鑺傝鍙傝 Documentation/virt/coco/sev-guest.rst锛変笖闇€瑕佹洿鏂拌瘉涔?blob 鐨勫伐鍏?搴擄紝鍚屾牱搴斿湪浠讳綍瀵硅儗涔﹀瘑閽ユ垨璇佷功 blob 鍐呭鐨勬洿鏂版湡闂村璇佷功 blob 鎸佹湁鐙崰閿侊紝浠ョ‘淇濅娇鐢ㄤ笂杩版柟妗堢殑 VMM 涓嶄細杩斿洖涓庤瘉鏄庤姹傚疄闄呭彂鍑烘椂鍥轰欢浣跨敤鐨勮儗涔﹀瘑閽ヤ笉鍚屾鐨勮瘉涔?blob 鏁版嵁銆?
-鎺ㄨ崘姝ゆ柟妗堬紝浠ヤ究宸ュ叿鍙互浣跨敤鐩稿綋閫氱敤/鑷劧鐨勬柟娉曢€氳繃鏂囦欢閿佹潵鍚屾鍥轰欢/璇佷功鏇存柊锛屼粠鑰屾洿瀹规槗鍦ㄥ伐鍏?VMM/渚涘簲鍟嗕箣闂翠繚鎸佷簰鎿嶄綔鎬с€?
-## 璁惧灞炴€?API
-
-
-SEV 瀹炵幇鐨勫睘鎬у彲浠ラ€氳繃 `/dev/kvm` 璁惧鑺傜偣涓婄殑 `KVM_HAS_DEVICE_ATTR` 鍜?`KVM_GET_DEVICE_ATTR` ioctl锛屼娇鐢ㄧ粍 `KVM_X86_GRP_SEV` 鏉ヨ幏鍙栥€?
-褰撳墠瀹炵幇浜嗕互涓嬪睘鎬э細
-
-- `KVM_X86_SEV_VMSA_FEATURES`锛氳繑鍥?`KVM_SEV_INIT2` 鐨?`vmsa_features` 涓鎺ュ彈鐨勬墍鏈変綅鐨勯泦鍚堛€?
-- `KVM_X86_SEV_SNP_REQ_CERTS`锛氬鏋滃唴鏍告敮鎸?`KVM_EXIT_SNP_REQ_CERTS` 閫€鍑猴紝鍒欒繑鍥?1锛涜閫€鍑哄厑璁镐负姣忎釜 SNP 璇佹槑璇锋眰浠庣敤鎴风┖闂磋幏鍙栬儗涔﹀瘑閽ヨ瘉涔︺€?
-## 鍥轰欢绠＄悊
+注意：固件使用的背书密钥可能会因为更SEV-SNP 固件或加载新的背书密钥等管理活动而改变，因此需要小心确保返回的证书数据与发送证明请求时固件实际使用的背书密钥保持同步。建议的方案是使用文件锁（例如通过 fcntl() F_OFD_SETLK），方式如下
+  - 在作为处`KVM_EXIT_SNP_REQ_CERTS` 退出类型的一部分而获提供证书数据之前，VMM 应在读取证书 blob 文件并将其返回给 KVM 之前，获取该文件上的共享/读锁或独写锁，并继续持有该锁，直到证明请求实际发送到固件。为方便起见，VMM 可以在提供证书数据之后、恢vCPU 之前，设kvm_run `immediate_exit` 标志。这将确vCPU 在从固件取回证明请求后会`-EINTR` 再次退出到用户空间，此VMM 可以安全地释放文件锁
+  - SNP 固件 TCB 值或背书密钥执行更新（例如通过 `/dev/sev` 接口`SNP_COMMIT`、`SNP_SET_CONFIG` `SNP_VLEK_LOAD`，更多细节请参见 Documentation/virt/coco/sev-guest.rst）且需要更新证blob 的工库，同样应在任何对背书密钥或证书 blob 内容的更新期间对证书 blob 持有独占锁，以确保使用上述方案的 VMM 不会返回与证明请求实际发出时固件使用的背书密钥不同步的证blob 数据
+推荐此方案，以便工具可以使用相当通用/自然的方法通过文件锁来同步固件/证书更新，从而更容易在工VMM/供应商之间保持互操作性
+## 设备属API
 
 
-SEV 瀹㈡埛鏈哄瘑閽ョ鐞嗙敱涓€涓О涓?AMD 瀹夊叏澶勭悊鍣紙AMD-SP锛夌殑鐙珛澶勭悊鍣ㄥ鐞嗐€傝繍琛屽湪 AMD-SP 鍐呴儴鐨勫浐浠舵彁渚涗簡涓€涓畨鍏ㄧ殑瀵嗛挜绠＄悊鎺ュ彛锛岀敤浜庢墽琛屽父瑙佺殑铏氭嫙鏈虹洃鎺у櫒娲诲姩锛屼緥濡傚姞瀵嗗紩瀵间唬鐮併€佸揩鐓с€佽縼绉诲拰璋冭瘯瀹㈡埛鏈恒€傛洿澶氫俊鎭鍙傝 SEV 瀵嗛挜绠＄悊瑙勮寖 [api-spec]_
+SEV 实现的属性可以通过 `/dev/kvm` 设备节点上的 `KVM_HAS_DEVICE_ATTR` `KVM_GET_DEVICE_ATTR` ioctl，使用组 `KVM_X86_GRP_SEV` 来获取
+当前实现了以下属性：
 
-AMD-SP 鍥轰欢鍙互閫氳繃鍏惰嚜韬殑闈炴槗澶辨€у瓨鍌ㄥ垵濮嬪寲锛屾垨鑰呮搷浣滅郴缁熷彲浠ヤ娇鐢?`ccp` 妯″潡鐨?`init_ex_path` 鍙傛暟鏉ョ鐞嗗浐浠剁殑 NV 瀛樺偍銆傚鏋?`init_ex_path` 鎸囧畾鐨勬枃浠朵笉瀛樺湪鎴栨棤鏁堬紝鎿嶄綔绯荤粺灏嗙敤 PSP 闈炴槗澶辨€у瓨鍌ㄥ垱寤烘垨瑕嗙洊璇ユ枃浠躲€?
-## 鍙傝€?
+- `KVM_X86_SEV_VMSA_FEATURES`：返`KVM_SEV_INIT2` `vmsa_features` 中被接受的所有位的集合
+- `KVM_X86_SEV_SNP_REQ_CERTS`：如果内核支`KVM_EXIT_SNP_REQ_CERTS` 退出，则返1；该退出允许为每个 SNP 证明请求从用户空间获取背书密钥证书
+## 固件管理
 
-鏇村淇℃伅璇峰弬瑙?[white-paper]_銆乕api-spec]_銆乕amd-apm]_銆乕kvm-forum]_ 鍜?[snp-fw-abi]_銆?
+
+SEV 客户机密钥管理由一个称AMD 安全处理器（AMD-SP）的独立处理器处理。运行在 AMD-SP 内部的固件提供了一个安全的密钥管理接口，用于执行常见的虚拟机监控器活动，例如加密引导代码、快照、迁移和调试客户机。更多信息请参见 SEV 密钥管理规范 [api-spec]_
+
+AMD-SP 固件可以通过其自身的非易失性存储初始化，或者操作系统可以使`ccp` 模块`init_ex_path` 参数来管理固件的 NV 存储。如`init_ex_path` 指定的文件不存在或无效，操作系统将用 PSP 非易失性存储创建或覆盖该文件
+## 参
+
+更多信息请参[white-paper]_、[api-spec]_、[amd-apm]_、[kvm-forum]_ [snp-fw-abi]_

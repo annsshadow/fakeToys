@@ -1,23 +1,23 @@
 ﻿
-## I/O 璇锋眰澶勭悊
+## I/O 请求处理
 
 
-鐢?hypervisor 鏋勯€犵殑 User VM 鐨?I/O 璇锋眰锛屼細鐢?ACRN Hypervisor Service Module
-鍒嗗彂缁欎笌璇?I/O 璇锋眰鍦板潃鑼冨洿鐩稿搴旂殑 I/O client銆侷/O 璇锋眰澶勭悊鐨勭粏鑺傚湪浠ヤ笅鍚勮妭涓?鎻忚堪銆?
-### 1. I/O 璇锋眰
+hypervisor 构造的 User VM I/O 请求，会ACRN Hypervisor Service Module
+分发给与I/O 请求地址范围相对应的 I/O client。I/O 请求处理的细节在以下各节描述
+### 1. I/O 请求
 
 
-瀵逛簬姣忎釜 User VM锛屽瓨鍦ㄤ竴涓叡浜殑 4-KByte 鍐呭瓨鍖哄煙锛岀敤浜?hypervisor 涓?Service VM
-涔嬮棿鐨?I/O 璇锋眰閫氫俊銆備竴涓?I/O 璇锋眰鏄竴涓?256 瀛楄妭鐨勭粨鏋勪綋缂撳啿鍖猴紝鍗崇敱 hypervisor
-鐨?I/O handler 鍦?User VM 涓彂鐢熻鎹曡幏鐨?I/O 璁块棶鏃跺～鍏呯殑 'struct acrn_io_request'銆?Service VM 涓殑 ACRN 鐢ㄦ埛鎬佺▼搴忛鍏堝垎閰嶄竴涓?4-KByte 椤碉紝骞跺皢璇ョ紦鍐插尯鐨?GPA锛圙uest
-Physical Address锛屽鎴锋満鐗╃悊鍦板潃锛変紶閫掔粰 hypervisor銆傝缂撳啿鍖鸿鐢ㄤ綔鍖呭惈 16 涓?I/O 璇锋眰妲界殑鏁扮粍锛屾瘡涓?I/O 璇锋眰妲戒负 256 瀛楄妭銆傝鏁扮粍浠?vCPU ID 浣滀负绱㈠紩銆?
+对于每个 User VM，存在一个共享的 4-KByte 内存区域，用hypervisor Service VM
+之间I/O 请求通信。一I/O 请求是一256 字节的结构体缓冲区，即由 hypervisor
+I/O handler User VM 中发生被捕获I/O 访问时填充的 'struct acrn_io_request'Service VM 中的 ACRN 用户态程序首先分配一4-KByte 页，并将该缓冲区GPA（Guest
+Physical Address，客户机物理地址）传递给 hypervisor。该缓冲区被用作包含 16 I/O 请求槽的数组，每I/O 请求槽为 256 字节。该数组vCPU ID 作为索引
 ### 2. I/O clients
 
 
-涓€涓?I/O client 璐熻矗澶勭悊琚闂?GPA 钀藉湪鐗瑰畾鑼冨洿鍐呯殑 User VM I/O 璇锋眰銆傛瘡涓?User VM
-鍙叧鑱斿涓?I/O client銆傛瘡涓?User VM 杩樺叧鑱斾竴涓壒娈婄殑 client锛岀О涓?default client锛?瀹冨鐞嗘墍鏈変笉灞炰簬浠讳綍鍏朵粬 client 鑼冨洿鍐呯殑 I/O 璇锋眰銆侫CRN 鐢ㄦ埛鎬佺▼搴忓厖褰撴瘡涓?User VM
-鐨?default client銆?
-涓嬪浘灞曠ず浜?I/O 璇锋眰鍏变韩缂撳啿鍖恒€両/O 璇锋眰浠ュ強 I/O client 涔嬮棿鐨勫叧绯汇€?
+一I/O client 负责处理被访GPA 落在特定范围内的 User VM I/O 请求。每User VM
+可关联多I/O client。每User VM 还关联一个特殊的 client，称default client它处理所有不属于任何其他 client 范围内的 I/O 请求。ACRN 用户态程序充当每User VM
+鐨?default client銆。
+下图展示I/O 请求共享缓冲区、I/O 请求以及 I/O client 之间的关系
 ```
 
      +------------------------------------------------------+
@@ -50,19 +50,19 @@ Physical Address锛屽鎴锋満鐗╃悊鍦板潃锛変紶閫掔粰 hyperviso
      +------------------------------------------------------+
 
 ```
-### 3. I/O 璇锋眰鐘舵€佽浆鎹?
+### 3. I/O 请求状态转
 
-涓€涓?ACRN I/O 璇锋眰鐨勭姸鎬佽浆鎹㈠涓嬨€?
+一ACRN I/O 请求的状态转换如下
 ```
 
    FREE -> PENDING -> PROCESSING -> COMPLETE -> FREE -> ...
 
 ```
-- FREE锛氳 I/O 璇锋眰妲戒负绌?- PENDING锛氳妲戒腑鏈変竴涓湁鏁堢殑 I/O 璇锋眰姝ｅ湪绛夊緟澶勭悊
-- PROCESSING锛氳 I/O 璇锋眰姝ｅ湪琚鐞?- COMPLETE锛氳 I/O 璇锋眰宸茶澶勭悊
+- FREE：该 I/O 请求槽为- PENDING：该槽中有一个有效的 I/O 请求正在等待处理
+- PROCESSING：该 I/O 请求正在被处- COMPLETE：该 I/O 请求已被处理
 
-澶勪簬 COMPLETE 鎴?FREE 鐘舵€佺殑 I/O 璇锋眰鐢?hypervisor 鎷ユ湁銆侶SM 涓?ACRN 鐢ㄦ埛鎬佺▼搴?璐熻矗澶勭悊鍏朵綑鐘舵€佺殑璇锋眰銆?
-### 4. I/O 璇锋眰鐨勫鐞嗘祦绋?
+处于 COMPLETE FREE 状态的 I/O 请求hypervisor 拥有。HSM ACRN 用户态程负责处理其余状态的请求
+### 4. I/O 请求的处理流
 
-a. 褰?User VM 涓彂鐢熻鎹曡幏鐨?I/O 璁块棶鏃讹紝hypervisor 鐨?I/O handler 浼氬皢涓€涓?I/O
-   璇锋眰濉厖涓?PENDING 鐘舵€併€?b. hypervisor 鍚?Service VM 鍙戣捣涓€涓?upcall锛堝嵆閫氱煡涓柇锛夈€?c. upcall handler 璋冨害涓€涓?worker 鏉ュ垎鍙?I/O 璇锋眰銆?d. worker 鏌ユ壘澶勪簬 PENDING 鐘舵€佺殑 I/O 璇锋眰锛屾牴鎹?I/O 璁块棶鐨勫湴鍧€灏嗗畠浠垎閰嶇粰涓嶅悓鐨?   宸叉敞鍐?client锛屽皢鍏剁姸鎬佹洿鏂颁负 PROCESSING锛屽苟閫氱煡鐩稿簲鐨?client 杩涜澶勭悊銆?e. 琚€氱煡鐨?client 澶勭悊鎵€鍒嗛厤鐨?I/O 璇锋眰銆?f. HSM 灏?I/O 璇锋眰鐘舵€佹洿鏂颁负 COMPLETE锛屽苟閫氳繃 hypercall 閫氱煡 hypervisor 澶勭悊瀹屾垚銆?
+a. User VM 中发生被捕获I/O 访问时，hypervisor I/O handler 会将一I/O
+   请求填充PENDING 状态b. hypervisor Service VM 发起一upcall（即通知中断）c. upcall handler 调度一worker 来分I/O 请求d. worker 查找处于 PENDING 状态的 I/O 请求，根I/O 访问的地址将它们分配给不同   已注client，将其状态更新为 PROCESSING，并通知相应client 进行处理e. 被通知client 处理所分配I/O 请求f. HSM I/O 请求状态更新为 COMPLETE，并通过 hypercall 通知 hypervisor 处理完成

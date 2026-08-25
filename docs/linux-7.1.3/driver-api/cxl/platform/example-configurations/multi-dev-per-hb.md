@@ -1,9 +1,9 @@
-﻿## 姣忎釜涓绘満妗ユ帴澶氫釜璁惧
+﻿## 每个主机桥接多个设备
 
 
-鍦ㄦ绀轰緥绯荤粺涓紝鎴戜滑鏈変竴涓崟鎻掓Ы鍜屼竴涓?CXL 涓绘満妗ユ帴銆備富鏈烘ˉ鎺ヤ笂杩炴帴浜嗕袱涓甫鏈?4GB 鐨?CXL 鍐呭瓨鎵╁睍鍣ㄣ€?
-娉ㄦ剰浜嬮」锛?
-- 妗ユ帴鍐呬氦閿欙紙Intra-Bridge interleave锛夋澶勪笉浣滄弿杩般€?- 杩欎袱涓墿灞曞櫒鐢卞崟涓?CEDT/CFMWS 鎻忚堪銆?- 璇?CEDT/SRAT 涓轰袱涓澶囨弿杩颁簡涓€涓妭鐐广€?- 涓や釜璁惧鐨?HMAT 鍙湁涓€涓?proximity domain銆?
+在此示例系统中，我们有一个单插槽和一CXL 主机桥接。主机桥接上连接了两个带4GB CXL 内存扩展器
+注意事项
+- 桥接内交错（Intra-Bridge interleave）此处不作描述- 这两个扩展器由单CEDT/CFMWS 描述- CEDT/SRAT 为两个设备描述了一个节点- 两个设备HMAT 只有一proximity domain
 ```
 
             Subtable Type : 00 [CXL Host Bridge Structure]

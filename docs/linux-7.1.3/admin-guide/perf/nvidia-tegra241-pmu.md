@@ -1,23 +1,23 @@
-﻿## NVIDIA Tegra241 SoC 闈炴牳锛圲ncore锛夋€ц兘鐩戞帶鍗曞厓锛圥MU锛?
+﻿## NVIDIA Tegra241 SoC 非核（Uncore）性能监控单元（PMU
 
-NVIDIA Tegra241 SoC 鍖呭惈澶氱绯荤粺绾?PMU锛岀敤浜庢祴閲忚濡傚唴瀛樺甫瀹姐€佸欢杩熷拰鍒╃敤鐜囩瓑鍏抽敭鎬ц兘鎸囨爣锛?
+NVIDIA Tegra241 SoC 包含多种系统PMU，用于测量诸如内存带宽、延迟和利用率等关键性能指标
 - Scalable Coherency Fabric (SCF)
 - NVLink-C2C0
 - NVLink-C2C1
 - CNVLink
 - PCIE
 
-### PMU 椹卞姩
+### PMU 驱动
 
 
-鏈枃妗ｄ腑鐨?PMU 鍩轰簬 ARM CoreSight PMU 鏋舵瀯锛屽鏂囨。 ARM IHI 0091 鎵€杩般€傜敱浜庤繖鏄竴绉嶆爣鍑嗘灦鏋勶紝杩欎簺 PMU 鐢变竴涓€氱敤椹卞姩 "arm-cs-arch-pmu" 绠＄悊銆傝椹卞姩鍦?sysfs 涓弿杩版瘡涓?PMU 鍙敤鐨勪簨浠跺拰閰嶇疆銆傝鍙傝涓嬮潰鍚勮妭浠ヨ幏鍙栨瘡涓?PMU 鐨?sysfs 璺緞銆備笌鍏朵粬 uncore PMU 椹卞姩涓€鏍凤紝璇ラ┍鍔ㄦ彁渚?"cpumask" sysfs 灞炴€ф潵鏄剧ず鐢ㄤ簬澶勭悊 PMU 浜嬩欢鐨?CPU id銆傛澶栬繕鏈変竴涓?"associated_cpus" sysfs 灞炴€э紝鍏朵腑鍖呭惈涓庤 PMU 瀹炰緥鍏宠仈鐨?CPU 鍒楄〃銆?
+本文档中PMU 基于 ARM CoreSight PMU 架构，如文档 ARM IHI 0091 所述。由于这是一种标准架构，这些 PMU 由一个通用驱动 "arm-cs-arch-pmu" 管理。该驱动sysfs 中描述每PMU 可用的事件和配置。请参见下面各节以获取每PMU sysfs 路径。与其他 uncore PMU 驱动一样，该驱动提"cpumask" sysfs 属性来显示用于处理 PMU 事件CPU id。此外还有一"associated_cpus" sysfs 属性，其中包含与该 PMU 实例关联CPU 列表
 
 ### SCF PMU
 
 
-SCF PMU 鐩戣绯荤粺绾х紦瀛樹簨浠躲€丆PU 娴侀噺锛屼互鍙婂彂寰€鏈湴/杩滅▼鍐呭瓨鐨勫己搴忥紙SO锛塒CIE 鍐欐祦閲忋€傛湁鍏?PMU 娴侀噺瑕嗙洊鐨勬洿澶氫俊鎭紝璇峰弬瑙?NVIDIA_Uncore_PMU_Traffic_Coverage_Section銆?
-璇?PMU 璁惧鐨勪簨浠跺拰閰嶇疆閫夐」鍦?sysfs 涓弿杩帮紝瑙?/sys/bus/event_source/devices/nvidia_scf_pmu_<socket-id>銆?
-浣跨敤绀轰緥锛?
+SCF PMU 监视系统级缓存事件、CPU 流量，以及发往本地/远程内存的强序（SO）PCIE 写流量。有PMU 流量覆盖的更多信息，请参NVIDIA_Uncore_PMU_Traffic_Coverage_Section
+PMU 设备的事件和配置选项sysfs 中描述，/sys/bus/event_source/devices/nvidia_scf_pmu_<socket-id>
+使用示例
 ```
 
    perf stat -a -e nvidia_scf_pmu_0/event=0x0/
@@ -31,14 +31,14 @@ SCF PMU 鐩戣绯荤粺绾х紦瀛樹簨浠躲€丆PU 娴侀噺锛屼互鍙�
 ### NVLink-C2C0 PMU
 
 
-NVLink-C2C0 PMU 鐩戣鏉ヨ嚜閫氳繃 NVLink-C2C锛圕hip-2-Chip锛変簰杩炶繛鎺ョ殑 GPU/CPU 鐨勪紶鍏ユ祦閲忋€傝 PMU 鎹曡幏鐨勬祦閲忕被鍨嬪彇鍐充簬鑺墖閰嶇疆锛?
-- NVIDIA Grace Hopper Superchip锛欻opper GPU 涓?Grace SoC 鐩歌繛銆?
-  鍦ㄦ閰嶇疆涓嬶紝PMU 鎹曡幏鏉ヨ嚜 GPU 鐨?GPU ATS 杞崲鎴?EGM 娴侀噺銆?
-- NVIDIA Grace CPU Superchip锛氫袱涓?Grace CPU SoC 鐩歌繛銆?
-  鍦ㄦ閰嶇疆涓嬶紝PMU 鎹曡幏鏉ヨ嚜杩滅 SoC 鐨?PCIE 璁惧鐨勮鍜屾澗寮涘簭锛圧O锛夊啓銆?
-鏈夊叧 PMU 娴侀噺瑕嗙洊鐨勬洿澶氫俊鎭紝璇峰弬瑙?NVIDIA_Uncore_PMU_Traffic_Coverage_Section銆?
-璇?PMU 璁惧鐨勪簨浠跺拰閰嶇疆閫夐」鍦?sysfs 涓弿杩帮紝瑙?/sys/bus/event_source/devices/nvidia_nvlink_c2c0_pmu_<socket-id>銆?
-浣跨敤绀轰緥锛?
+NVLink-C2C0 PMU 监视来自通过 NVLink-C2C（Chip-2-Chip）互连连接的 GPU/CPU 的传入流量。该 PMU 捕获的流量类型取决于芯片配置
+- NVIDIA Grace Hopper Superchip：Hopper GPU Grace SoC 相连
+  在此配置下，PMU 捕获来自 GPU GPU ATS 转换EGM 流量
+- NVIDIA Grace CPU Superchip：两Grace CPU SoC 相连
+  在此配置下，PMU 捕获来自远端 SoC PCIE 设备的读和松弛序（RO）写
+有关 PMU 流量覆盖的更多信息，请参NVIDIA_Uncore_PMU_Traffic_Coverage_Section
+PMU 设备的事件和配置选项sysfs 中描述，/sys/bus/event_source/devices/nvidia_nvlink_c2c0_pmu_<socket-id>
+使用示例
 ```
 
    perf stat -a -e nvidia_nvlink_c2c0_pmu_0/event=0x0/
@@ -59,8 +59,8 @@ NVLink-C2C0 PMU 鐩戣鏉ヨ嚜閫氳繃 NVLink-C2C锛圕hip-2-Chip锛変簰�
    perf stat -a -e nvidia_nvlink_c2c0_pmu_3/event=0x0/
 
 ```
-NVLink-C2C 鏈変袱涓鍙ｏ紝鍙互杩炴帴鍒颁竴涓?GPU锛堝崰鐢ㄤ袱涓鍙ｏ級鎴栦袱涓?GPU锛堟瘡涓鍙ｄ竴涓?GPU锛夈€傜敤鎴峰彲浠ヤ娇鐢?"port" 浣嶅浘鍙傛暟鏉ラ€夋嫨瑕佺洃瑙嗙殑绔彛銆傛瘡涓€浣嶄唬琛ㄧ鍙ｅ彿锛屼緥濡?"port=0x1" 瀵瑰簲绔彛 0锛?port=0x3" 瀵瑰簲绔彛 0 鍜?1銆傚鏋滄湭鎸囧畾锛孭MU 榛樿鐩戣涓や釜绔彛銆?
-绔彛杩囨护绀轰緥锛?
+NVLink-C2C 有两个端口，可以连接到一GPU（占用两个端口）或两GPU（每个端口一GPU）。用户可以使"port" 位图参数来选择要监视的端口。每一位代表端口号，例"port=0x1" 对应端口 0port=0x3" 对应端口 0 1。如果未指定，PMU 默认监视两个端口
+端口过滤示例
 ```
 
    perf stat -a -e nvidia_nvlink_c2c0_pmu_0/event=0x0,port=0x1/
@@ -74,9 +74,9 @@ NVLink-C2C 鏈変袱涓鍙ｏ紝鍙互杩炴帴鍒颁竴涓?GPU锛堝�
 ### NVLink-C2C1 PMU
 
 
-NVLink-C2C1 PMU 鐩戣鏉ヨ嚜閫氳繃 NVLink-C2C锛圕hip-2-Chip锛変簰杩炶繛鎺ョ殑 GPU 鐨勪紶鍏ユ祦閲忋€傝 PMU 鎹曡幏鏈浆鎹㈢殑 GPU 娴侀噺锛岃繖涓庢崟鑾?ATS 杞崲娴侀噺鐨?NVLink-C2C0 PMU 涓嶅悓銆傛湁鍏?PMU 娴侀噺瑕嗙洊鐨勬洿澶氫俊鎭紝璇峰弬瑙?NVIDIA_Uncore_PMU_Traffic_Coverage_Section銆?
-璇?PMU 璁惧鐨勪簨浠跺拰閰嶇疆閫夐」鍦?sysfs 涓弿杩帮紝瑙?/sys/bus/event_source/devices/nvidia_nvlink_c2c1_pmu_<socket-id>銆?
-浣跨敤绀轰緥锛?
+NVLink-C2C1 PMU 监视来自通过 NVLink-C2C（Chip-2-Chip）互连连接的 GPU 的传入流量。该 PMU 捕获未转换的 GPU 流量，这与捕ATS 转换流量NVLink-C2C0 PMU 不同。有PMU 流量覆盖的更多信息，请参NVIDIA_Uncore_PMU_Traffic_Coverage_Section
+PMU 设备的事件和配置选项sysfs 中描述，/sys/bus/event_source/devices/nvidia_nvlink_c2c1_pmu_<socket-id>
+使用示例
 ```
 
    perf stat -a -e nvidia_nvlink_c2c1_pmu_0/event=0x0/
@@ -97,8 +97,8 @@ NVLink-C2C1 PMU 鐩戣鏉ヨ嚜閫氳繃 NVLink-C2C锛圕hip-2-Chip锛変簰�
    perf stat -a -e nvidia_nvlink_c2c1_pmu_3/event=0x0/
 
 ```
-NVLink-C2C 鏈変袱涓鍙ｏ紝鍙互杩炴帴鍒颁竴涓?GPU锛堝崰鐢ㄤ袱涓鍙ｏ級鎴栦袱涓?GPU锛堟瘡涓鍙ｄ竴涓?GPU锛夈€傜敤鎴峰彲浠ヤ娇鐢?"port" 浣嶅浘鍙傛暟鏉ラ€夋嫨瑕佺洃瑙嗙殑绔彛銆傛瘡涓€浣嶄唬琛ㄧ鍙ｅ彿锛屼緥濡?"port=0x1" 瀵瑰簲绔彛 0锛?port=0x3" 瀵瑰簲绔彛 0 鍜?1銆傚鏋滄湭鎸囧畾锛孭MU 榛樿鐩戣涓や釜绔彛銆?
-绔彛杩囨护绀轰緥锛?
+NVLink-C2C 有两个端口，可以连接到一GPU（占用两个端口）或两GPU（每个端口一GPU）。用户可以使"port" 位图参数来选择要监视的端口。每一位代表端口号，例"port=0x1" 对应端口 0port=0x3" 对应端口 0 1。如果未指定，PMU 默认监视两个端口
+端口过滤示例
 ```
 
    perf stat -a -e nvidia_nvlink_c2c1_pmu_0/event=0x0,port=0x1/
@@ -112,11 +112,11 @@ NVLink-C2C 鏈変袱涓鍙ｏ紝鍙互杩炴帴鍒颁竴涓?GPU锛堝�
 ### CNVLink PMU
 
 
-CNVLink PMU 鐩戣鏉ヨ嚜杩滅鎻掓Ы涓?GPU 鍜?PCIE 璁惧鍙戝線鏈湴鍐呭瓨鐨勬祦閲忋€傚浜?PCIE 娴侀噺锛岃 PMU 鎹曡幏璇诲拰鏉惧紱搴忥紙RO锛夊啓娴侀噺銆傛湁鍏?PMU 娴侀噺瑕嗙洊鐨勬洿澶氫俊鎭紝璇峰弬瑙?NVIDIA_Uncore_PMU_Traffic_Coverage_Section銆?
-璇?PMU 璁惧鐨勪簨浠跺拰閰嶇疆閫夐」鍦?sysfs 涓弿杩帮紝瑙?/sys/bus/event_source/devices/nvidia_cnvlink_pmu_<socket-id>銆?
-姣忎釜 SoC 鎻掓Ы鍙互閫氳繃 CNVLink 杩炴帴鍒颁竴涓垨澶氫釜鎻掓Ы銆傜敤鎴峰彲浠ヤ娇鐢?"rem_socket" 浣嶅浘鍙傛暟鏉ラ€夋嫨瑕佺洃瑙嗙殑杩滅鎻掓Ы銆傛瘡涓€浣嶄唬琛ㄦ彃妲藉彿锛屼緥濡?"rem_socket=0xE" 瀵瑰簲鎻掓Ы 1 鍒?3銆傚鏋滄湭鎸囧畾锛孭MU 榛樿鐩戣鎵€鏈夎繙绔彃妲姐€?/sys/bus/event_source/devices/nvidia_cnvlink_pmu_<socket-id>/format/rem_socket 鏄剧ず鍙互鍦?"rem_socket" 鍙傛暟涓缃殑鏈夋晥浣嶃€?
-璇?PMU 鏃犳硶鍖哄垎杩滅娴侀噺鐨勫彂璧疯€咃紝鍥犳涓嶆彁渚涚敤浜庨€夋嫨瑕佺洃瑙嗘祦閲忔簮鐨勮繃婊ゅ櫒銆傚畠鎶ュ憡鏉ヨ嚜杩滅 GPU 鍜?PCIE 璁惧鐨勫悎骞舵祦閲忋€?
-浣跨敤绀轰緥锛?
+CNVLink PMU 监视来自远端插槽GPU PCIE 设备发往本地内存的流量。对PCIE 流量，该 PMU 捕获读和松弛序（RO）写流量。有PMU 流量覆盖的更多信息，请参NVIDIA_Uncore_PMU_Traffic_Coverage_Section
+PMU 设备的事件和配置选项sysfs 中描述，/sys/bus/event_source/devices/nvidia_cnvlink_pmu_<socket-id>
+每个 SoC 插槽可以通过 CNVLink 连接到一个或多个插槽。用户可以使"rem_socket" 位图参数来选择要监视的远端插槽。每一位代表插槽号，例"rem_socket=0xE" 对应插槽 1 3。如果未指定，PMU 默认监视所有远端插槽/sys/bus/event_source/devices/nvidia_cnvlink_pmu_<socket-id>/format/rem_socket 显示可以"rem_socket" 参数中设置的有效位
+PMU 无法区分远端流量的发起者，因此不提供用于选择要监视流量源的过滤器。它报告来自远端 GPU PCIE 设备的合并流量
+使用示例
 ```
 
    perf stat -a -e nvidia_cnvlink_pmu_0/event=0x0,rem_socket=0xE/
@@ -141,10 +141,10 @@ CNVLink PMU 鐩戣鏉ヨ嚜杩滅鎻掓Ы涓?GPU 鍜?PCIE 璁惧鍙戝�
 ### PCIE PMU
 
 
-PCIE PMU 鐩戣浠?PCIE 鏍圭鍙ｅ彂寰€鏈湴/杩滅▼鍐呭瓨鐨勬墍鏈夎/鍐欐祦閲忋€傛湁鍏?PMU 娴侀噺瑕嗙洊鐨勬洿澶氫俊鎭紝璇峰弬瑙?NVIDIA_Uncore_PMU_Traffic_Coverage_Section銆?
-璇?PMU 璁惧鐨勪簨浠跺拰閰嶇疆閫夐」鍦?sysfs 涓弿杩帮紝瑙?/sys/bus/event_source/devices/nvidia_pcie_pmu_<socket-id>銆?
-姣忎釜 SoC 鎻掓Ы鍙互鏀寔澶氫釜鏍圭鍙ｃ€傜敤鎴峰彲浠ヤ娇鐢?"root_port" 浣嶅浘鍙傛暟鏉ラ€夋嫨瑕佺洃瑙嗙殑绔彛锛屽嵆 "root_port=0xF" 瀵瑰簲鏍圭鍙?0 鍒?3銆傚鏋滄湭鎸囧畾锛孭MU 榛樿鐩戣鎵€鏈夋牴绔彛銆?/sys/bus/event_source/devices/nvidia_pcie_pmu_<socket-id>/format/root_port 鏄剧ず鍙互鍦?"root_port" 鍙傛暟涓缃殑鏈夋晥浣嶃€?
-浣跨敤绀轰緥锛?
+PCIE PMU 监视PCIE 根端口发往本地/远程内存的所有读/写流量。有PMU 流量覆盖的更多信息，请参NVIDIA_Uncore_PMU_Traffic_Coverage_Section
+PMU 设备的事件和配置选项sysfs 中描述，/sys/bus/event_source/devices/nvidia_pcie_pmu_<socket-id>
+每个 SoC 插槽可以支持多个根端口。用户可以使"root_port" 位图参数来选择要监视的端口，即 "root_port=0xF" 对应根端0 3。如果未指定，PMU 默认监视所有根端口/sys/bus/event_source/devices/nvidia_pcie_pmu_<socket-id>/format/root_port 显示可以"root_port" 参数中设置的有效位
+使用示例
 ```
 
    perf stat -a -e nvidia_pcie_pmu_0/event=0x0,root_port=0x3/
@@ -156,11 +156,11 @@ PCIE PMU 鐩戣浠?PCIE 鏍圭鍙ｅ彂寰€鏈湴/杩滅▼鍐呭瓨�
 
 ```
 
-### 娴侀噺瑕嗙洊
+### 流量覆盖
 
 
-PMU 鐨勬祦閲忚鐩栧彲鑳藉洜鑺墖閰嶇疆鑰屽紓锛?
-- **NVIDIA Grace Hopper Superchip**锛欻opper GPU 涓?Grace SoC 鐩歌繛銆?
+PMU 的流量覆盖可能因芯片配置而异
+- **NVIDIA Grace Hopper Superchip**：Hopper GPU Grace SoC 相连
 ```
 
    *********************************          *********************************
@@ -217,7 +217,7 @@ PMU 鐨勬祦閲忚鐩栧彲鑳藉洜鑺墖閰嶇疆鑰屽紓锛?
    PCIE2 traffic represents reads and relaxed ordered (RO) writes.
 
 ```
-- **NVIDIA Grace CPU Superchip**锛氫袱涓?Grace CPU SoC 鐩歌繛銆?
+- **NVIDIA Grace CPU Superchip**：两Grace CPU SoC 相连
 ```
 
    *******************             *******************

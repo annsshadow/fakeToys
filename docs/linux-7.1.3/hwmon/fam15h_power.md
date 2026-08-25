@@ -1,86 +1,86 @@
-﻿## 鍐呮牳椹卞姩 fam15h_power
+﻿## 内核驱动 fam15h_power
 
 
-鏀寔鐨勮姱鐗囷細
+支持的芯片：
 
-- AMD Family 15h 澶勭悊鍣?
-- AMD Family 16h 澶勭悊鍣?
-  鍓嶇紑: 'fam15h_power'
+- AMD Family 15h 澶勭悊鍣。
+- AMD Family 16h 澶勭悊鍣。
+  前缀: 'fam15h_power'
 
-  鎵弿鐨勫湴鍧€: PCI 绌洪棿
+  扫描的地址: PCI 空间
 
-  鏁版嵁鎵嬪唽:
+  数据手册:
 
-  - AMD Family 15h 澶勭悊鍣ㄧ殑 BIOS 鍜屽唴鏍稿紑鍙戣€呮寚鍗楋紙BKDG锛?  - AMD Family 16h 澶勭悊鍣ㄧ殑 BIOS 鍜屽唴鏍稿紑鍙戣€呮寚鍗楋紙BKDG锛?  - AMD64 鏋舵瀯绋嬪簭鍛樻墜鍐?绗?2 鍗凤細绯荤粺缂栫▼
+  - AMD Family 15h 处理器的 BIOS 和内核开发者指南（BKDG  - AMD Family 16h 处理器的 BIOS 和内核开发者指南（BKDG  - AMD64 架构程序员手2 卷：系统编程
 
 Author: Andreas Herrmann <herrmann.der.user@googlemail.com>
 
-### 鎻忚堪
+### 描述
 
 
-1) 澶勭悊鍣?TDP锛堢儹璁捐鍔熻€楋紝Thermal design power锛?
-鍦ㄧ粰瀹氱殑鍥哄畾棰戠巼鍜岀數鍘嬩笅锛屽鐞嗗櫒鐨勫姛鑰楁牴鎹墍鎵ц鐨勫伐浣滆礋杞借€屽彉鍖栥€傞檷棰濆姛鑰楋紙derated power锛?鏄繍琛岀壒瀹氬簲鐢ㄧ▼搴忔椂娑堣€楃殑鍔熺巼銆傜儹璁捐鍔熻€楋紙TDP锛夊氨鏄檷棰濆姛鑰楃殑涓€涓緥瀛愩€?
-璇ラ┍鍔ㄥ厑璁搁€氳繃 TDP 绠楁硶璇诲彇鎻愪緵 AMD Family 15h 鍜?16h 澶勭悊鍣ㄥ姛鑰椾俊鎭殑瀵勫瓨鍣ㄣ€?
-瀵逛簬 AMD Family 15h 鍜?16h 澶勭悊鍣紝鍙互浣跨敤涓嶅悓鐨勫鐞嗗櫒鍖楁ˉ鍔熻兘瀵勫瓨鍣ㄨ绠椾互涓嬪姛鐜囧€硷細
+1) 处理TDP（热设计功耗，Thermal design power
+在给定的固定频率和电压下，处理器的功耗根据所执行的工作负载而变化。降额功耗（derated power是运行特定应用程序时消耗的功率。热设计功耗（TDP）就是降额功耗的一个例子
+该驱动允许通过 TDP 算法读取提供 AMD Family 15h 16h 处理器功耗信息的寄存器
+对于 AMD Family 15h 16h 处理器，可以使用不同的处理器北桥功能寄存器计算以下功率值：
 
 - BasePwrWatts:
-    浠ョ摝鐗规寚瀹氬鐞嗗櫒涓?NB 鍜屾牳蹇冨閮ㄩ€昏緫娑堣€楃殑鏈€澶у姛鐜囥€?
+    以瓦特指定处理器NB 和核心外部逻辑消耗的最大功率
 - ProcessorPwrWatts:
-    浠ョ摝鐗规寚瀹氬鐞嗗櫒鍙互鏀寔鐨勬渶澶у姛鐜囥€?- CurrPwrWatts:
-    浠ョ摝鐗规寚瀹氬鐞嗗櫒褰撳墠姝ｅ湪娑堣€楃殑鍔熺巼銆?
-璇ラ┍鍔ㄦ彁渚?ProcessorPwrWatts 鍜?CurrPwrWatts锛?
+    以瓦特指定处理器可以支持的最大功率- CurrPwrWatts:
+    以瓦特指定处理器当前正在消耗的功率
+该驱动提ProcessorPwrWatts CurrPwrWatts
 - power1_crit (ProcessorPwrWatts)
 - power1_input (CurrPwrWatts)
 
-鍦ㄥ鑺傜偣澶勭悊鍣ㄤ笂锛岃绠楀€兼槸閽堝鏁翠釜灏佽锛坧ackage锛夌殑锛岃€屼笉鏄拡瀵瑰崟涓妭鐐广€傚洜姝よ椹卞姩浠呬负
-澶氳妭鐐瑰鐞嗗櫒鐨勫唴閮?node0 鍒涘缓 sysfs 灞炴€с€?
-2) 绱Н鍔熺巼鏈哄埗
+在多节点处理器上，计算值是针对整个封装（package）的，而不是针对单个节点。因此该驱动仅为
+多节点处理器的内node0 创建 sysfs 属性
+2) 累积功率机制
 
-璇ラ┍鍔ㄨ繕寮曞叆浜嗕竴绉嶇畻娉曪紝鐢ㄤ簬璁＄畻澶勭悊鍣ㄥ湪娴嬮噺闂撮殧 Tm 鍐呮秷鑰楃殑骞冲潎鍔熺巼銆傜疮绉姛鐜囨満鍒剁殑鐗规€х敱
-CPUID Fn8000_0007_EDX[^12^] 鎸囩ず銆?
+该驱动还引入了一种算法，用于计算处理器在测量间隔 Tm 内消耗的平均功率。累积功率机制的特性由
+CPUID Fn8000_0007_EDX[^12^] 指示
 - Tsample:
-	璁＄畻鍗曞厓鍔熺巼绱姞鍣ㄩ噰鏍峰懆鏈?
+	计算单元功率累加器采样周
 - Tref:
-	PTSC 璁℃暟鍣ㄥ懆鏈?
+	PTSC 计数器周
 - PTSC:
-	鎬ц兘鏃堕棿鎴宠鏁板櫒
+	性能时间戳计数器
 
 - N:
-	璁＄畻鍗曞厓鍔熺巼绱姞鍣ㄩ噰鏍峰懆鏈熶笌 PTSC 鍛ㄦ湡鐨勬瘮鐜?
+	计算单元功率累加器采样周期与 PTSC 周期的比
 - Jmax:
-	鏈€澶ц绠楀崟鍏冪疮绉姛鐜囷紝鐢?MaxCpuSwPwrAcc MSR C001007b 鎸囩ず
+	最大计算单元累积功率，MaxCpuSwPwrAcc MSR C001007b 指示
 
 - Jx/Jy:
-	璁＄畻鍗曞厓绱Н鍔熺巼锛岀敱 CpuSwPwrAcc MSR C001007a 鎸囩ず
+	计算单元累积功率，由 CpuSwPwrAcc MSR C001007a 指示
 - Tx/Ty:
-	鎬ц兘鏃堕棿鎴宠鏁板櫒鐨勫€硷紝鐢?CU_PTSC MSR C0010280 鎸囩ず
+	性能时间戳计数器的值，CU_PTSC MSR C0010280 指示
 
 - PwrCPUave:
-	CPU 骞冲潎鍔熺巼
+	CPU 平均功率
 
-i. 鎵ц CPUID Fn8000_0007 浠ョ‘瀹?Tsample 涓?Tref 鐨勬瘮鐜囥€?
-	N = CPUID Fn8000_0007_ECX[CpuPwrSampleTimeRatio[15:0]] 鐨勫€笺€?
-ii. 浠庢柊鐨?MSR MaxCpuSwPwrAcc 璇诲彇绱Н鑳介噺鍊肩殑瀹屾暣鑼冨洿銆?
-	Jmax = 杩斿洖鐨勫€笺€?
-iii. 鍦ㄦ椂鍒?x锛孲W 璇诲彇 CpuSwPwrAcc MSR 骞堕噰鏍?PTSC銆?
-	Jx = 浠?CpuSwPwrAcc 璇诲彇鐨勫€硷紝Tx = 浠?PTSC 璇诲彇鐨勫€笺€?
-iv. 鍦ㄦ椂鍒?y锛孲W 璇诲彇 CpuSwPwrAcc MSR 骞堕噰鏍?PTSC銆?
-	Jy = 浠?CpuSwPwrAcc 璇诲彇鐨勫€硷紝Ty = 浠?PTSC 璇诲彇鐨勫€笺€?
-v. 璁＄畻涓€涓绠楀崟鍏冨湪涓€娈垫椂闂村唴鐨勫钩鍧囧姛鑰?```
+i. 执行 CPUID Fn8000_0007 以确Tsample Tref 的比率
+	N = CPUID Fn8000_0007_ECX[CpuPwrSampleTimeRatio[15:0]] 的值
+ii. 从新MSR MaxCpuSwPwrAcc 读取累积能量值的完整范围
+	Jmax = 返回的值
+iii. 在时x，SW 读取 CpuSwPwrAcc MSR 并采PTSC
+	Jx = CpuSwPwrAcc 读取的值，Tx = PTSC 读取的值
+iv. 在时y，SW 读取 CpuSwPwrAcc MSR 并采PTSC
+	Jy = CpuSwPwrAcc 读取的值，Ty = PTSC 读取的值
+v. 计算一个计算单元在一段时间内的平均功```
 
-	if (Jy < Jx) // 鍙戠敓浜嗗洖缁?		Jdelta = (Jy + Jmax) - Jx
+	if (Jy < Jx) // 发生了回		Jdelta = (Jy + Jmax) - Jx
 	else
 		Jdelta = Jy - Jx
 	PwrCPUave = N * Jdelta * 1000 / (Ty - Tx)
 
 ```
-璇ラ┍鍔ㄦ彁渚?PwrCPUave 鍜岄棿闅旓紙榛樿涓?10 姣锛屾渶澶т负 1 绉掞級锛?
+该驱动提PwrCPUave 和间隔（默认10 毫秒，最大为 1 秒）
 - power1_average (PwrCPUave)
 - power1_average_interval (Interval)
 
-power1_average_interval 鍙互鍦?/etc/sensors3.conf 鏂囦欢涓洿鏂帮紝濡備笅鎵€绀猴細
+power1_average_interval 可以/etc/sensors3.conf 文件中更新，如下所示：
 
 chip `fam15h_power-*`
 	set power1_average_interval 0.01
 
-鐒跺悗浣跨敤 鈥渟ensors -s鈥?淇濆瓨瀹冦€?
+然后使用 “sensors -s保存它

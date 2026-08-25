@@ -1,10 +1,10 @@
 ﻿
-## Texas Instruments K3 AM65 CPSW NUSS 鍩轰簬 switchdev 鐨勪互澶綉椹卞姩
+## Texas Instruments K3 AM65 CPSW NUSS 基于 switchdev 的以太网驱动
 
 
 :Version:1.0
 
-## 绔彛閲嶅懡鍚?
+## 端口重命
 
 ```
 
@@ -18,16 +18,16 @@
 ## 澶?MAC 妯″紡
 
 
-- 椹卞姩榛樿浠ュ MAC 妯″紡杩愯锛屽洜姝よ〃鐜颁负 N 涓嫭绔嬬殑缃戠粶鎺ュ彛銆?
-## Devlink 閰嶇疆鍙傛暟
+- 驱动默认以多 MAC 模式运行，因此表现为 N 个独立的网络接口
+## Devlink 配置参数
 
 
-鍙傝 Documentation/networking/devlink/am65-nuss-cpsw-switch.rst
+参见 Documentation/networking/devlink/am65-nuss-cpsw-switch.rst
 
-## 鍚敤 "switch" 妯″紡
+## 启用 "switch" 模式
 
 
-Switch 妯″紡鍙€氳繃閰嶇疆 devlink 椹卞姩鍙傛暟鏉ュ惎鐢細
+Switch 模式可通过配置 devlink 驱动参数来启用：
 
 ```
 
@@ -36,9 +36,9 @@ Switch 妯″紡鍙€氳繃閰嶇疆 devlink 椹卞姩鍙傛暟鏉ュ惎鐢�
 
 ```
 
-鏃犺绔彛鐨勭綉缁滄帴鍙ｅ浜?UP 杩樻槸 DOWN 鐘舵€佸潎鍙繘琛岋紱褰撶鍙ｇ殑缃戠粶鎺ュ彛澶勪簬 UP
-鐘舵€佸苟鍔犲叆缃戞ˉ鏃讹紝CPSW switch 椹卞姩浼氬畬鍏ㄩ噸鏂板姞杞藉叾閰嶇疆锛屼互閬垮厤瑕嗙洊缃戞ˉ閰嶇疆銆?璇ラ厤缃€氳繃 switchdev API 瀹炵幇銆?
-## 缃戞ˉ閰嶇疆
+无论端口的网络接口处UP 还是 DOWN 状态均可进行；当端口的网络接口处于 UP
+状态并加入网桥时，CPSW switch 驱动会完全重新加载其配置，以避免覆盖网桥配置该配置通过 switchdev API 实现
+## 网桥配置
 
 
 ```
@@ -61,7 +61,7 @@ Switch 妯″紡鍙€氳繃閰嶇疆 devlink 椹卞姩鍙傛暟鏉ュ惎鐢�
 
 ```
 
-## STP 寮€鍚?鍏抽棴
+## STP 开关闭
 
 
 ```
@@ -70,7 +70,7 @@ Switch 妯″紡鍙€氳繃閰嶇疆 devlink 椹卞姩鍙傛暟鏉ュ惎鐢�
 
 ```
 
-## VLAN 閰嶇疆
+## VLAN 配置
 
 
 ```
@@ -79,8 +79,8 @@ Switch 妯″紡鍙€氳繃閰嶇疆 devlink 椹卞姩鍙傛暟鏉ュ惎鐢�
 
 ```
 
-璇存槑锛氳姝ラ瀵逛簬缃戞ˉ/榛樿 PVID锛坉efault_pvid锛変负蹇呴渶銆?
-## 娣诲姞棰濆鐨?VLAN
+说明：该步骤对于网桥/默认 PVID（default_pvid）为必需
+## 添加额外VLAN
 
 
 ```
@@ -100,7 +100,7 @@ Switch 妯″紡鍙€氳繃閰嶇疆 devlink 椹卞姩鍙傛暟鏉ュ惎鐢�
 ### FDBs
 
 
-FDB 浼氭牴鎹浉搴旂殑浜ゆ崲鏈虹鍙ｆ娴嬬粨鏋滆嚜鍔ㄦ坊鍔犮€?
+FDB 会根据相应的交换机端口检测结果自动添加
 ```
 
     bridge fdb add aa:bb:cc:dd:ee:ff dev sw0p1 master vlan 100
@@ -111,7 +111,7 @@ FDB 浼氭牴鎹浉搴旂殑浜ゆ崲鏈虹鍙ｆ娴嬬粨鏋滆嚜鍔�
 ### MDBs
 
 
-MDB 浼氭牴鎹浉搴旂殑浜ゆ崲鏈虹鍙ｆ娴嬬粨鏋滆嚜鍔ㄦ坊鍔犮€?
+MDB 会根据相应的交换机端口检测结果自动添加
 ```
 
   bridge mdb add dev br0 port sw0p1 grp 239.1.1.1 permanent vid 100
@@ -119,13 +119,13 @@ MDB 浼氭牴鎹浉搴旂殑浜ゆ崲鏈虹鍙ｆ娴嬬粨鏋滆嚜鍔�
 
 ```
 
-## 缁勬挱娉涙椽
+## 组播泛洪
 
 
-CPU 绔彛鐨?mcast_flooding 濮嬬粓寮€鍚€?
-鍦ㄤ氦鎹㈡満绔彛涓婂紑鍚?鍏抽棴娉涙椽锛?bridge link set dev sw0p1 mcast_flood on/off
+CPU 端口mcast_flooding 始终开启
+在交换机端口上开关闭泛洪bridge link set dev sw0p1 mcast_flood on/off
 
-## 璁块棶 Trunk 绔彛
+## 访问 Trunk 端口
 
 
 ```
@@ -139,4 +139,4 @@ CPU 绔彛鐨?mcast_flooding 濮嬬粓寮€鍚€?
 
 ```
 
-璇存槑锛氬湪缃戞ˉ璁惧鑷韩涓婅缃?PVID 閫傜敤浜庨粯璁?VLAN锛坉efault_pvid锛夈€?
+说明：在网桥设备自身上设PVID 适用于默VLAN（default_pvid）

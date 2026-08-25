@@ -1,17 +1,17 @@
 ﻿
 
 
-######## 鍦ㄥ湴闈紶杈撶郴缁熶笂浣跨敤鐨勫睘鎬?
+######## 在地面传输系统上使用的属
 
-鏈〉鎻忚堪鏁板瓧鐢佃锛圖VB锛夊湴闈紶杈撶郴缁燂紙DVB-T锛夌浉鍏崇殑鍓嶇璋冭皭灞炴€э紝鍒楀嚭鍦ㄩ厤缃湴闈㈡帴鏀惰澶囨椂鍙緵璁剧疆鐨勫弬鏁帮紙濡傞鐜囥€佽皟鍒舵柟寮忋€佸甫瀹姐€佺籂閿欑爜鐜囩瓑锛夛紝渚涚敤鎴风┖闂村簲鐢ㄩ€氳繃 DVB 鍓嶇鎺ュ彛杩涜璋冭皭銆?
-
-
+本页描述数字电视（DVB）地面传输系统（DVB-T）相关的前端调谐属性，列出在配置地面接收设备时可供设置的参数（如频率、调制方式、带宽、纠错码率等），供用户空间应用通过 DVB 前端接口进行调谐
 
 
-## DVB-T 浼犺緭绯荤粺
 
 
-浠ヤ笅鍙傛暟瀵?DVB-T 鏈夋晥锛?
+## DVB-T 传输系统
+
+
+以下参数DVB-T 有效
 
 - DTV_API_VERSION <DTV-API-VERSION>
 
@@ -41,16 +41,16 @@
 
 - DTV_LNA <DTV-LNA>
 
-姝ゅ锛孌TV QoS 缁熻 <frontend-stat-properties> 鍚屾牱鏈夋晥銆?
+此外，DTV QoS 统计 <frontend-stat-properties> 同样有效
 
 
 
-## DVB-T2 浼犺緭绯荤粺
+## DVB-T2 传输系统
 
 
-DVB-T2 鐨勬敮鎸佺洰鍓嶄粛澶勪簬寮€鍙戠殑鏃╂湡闃舵锛屽洜姝ゆ湰鑺傚彲鑳戒細闅忔椂闂村闀垮苟鍙樺緱鏇村姞璇︾粏銆?
+DVB-T2 的支持目前仍处于开发的早期阶段，因此本节可能会随时间增长并变得更加详细
 
-浠ヤ笅鍙傛暟瀵?DVB-T2 鏈夋晥锛?
+以下参数DVB-T2 有效
 
 - DTV_API_VERSION <DTV-API-VERSION>
 
@@ -82,31 +82,31 @@ DVB-T2 鐨勬敮鎸佺洰鍓嶄粛澶勪簬寮€鍙戠殑鏃╂湡闃舵锛�
 
 - DTV_LNA <DTV-LNA>
 
-姝ゅ锛孌TV QoS 缁熻 <frontend-stat-properties> 鍚屾牱鏈夋晥銆?
+此外，DTV QoS 统计 <frontend-stat-properties> 同样有效
 
 
 
-## ISDB-T 浼犺緭绯荤粺
+## ISDB-T 传输系统
 
 
-姝?ISDB-T/ISDB-Tsb API 鎵╁睍搴斿綋鍙嶆槧璋冭皭浠讳綍 ISDB-T/ISDB-Tsb 纭欢鎵€闇€鐨勬墍鏈変俊鎭€傚綋鐒讹紝
-鏌愪簺闈炲父澶嶆潅鐨勮澶囧彲鑳戒笉闇€瑕佹煇浜涘弬鏁版潵璋冭皭銆?
+ISDB-T/ISDB-Tsb API 扩展应当反映调谐任何 ISDB-T/ISDB-Tsb 硬件所需的所有信息。当然，
+某些非常复杂的设备可能不需要某些参数来调谐
 
-杩欓噷缁欏嚭鐨勪俊鎭簲褰撳府鍔╁簲鐢ㄧ▼搴忕紪鍐欒€呬簡瑙ｅ浣曚娇鐢?Linux 鏁板瓧鐢佃 API 鏉ュ鐞?ISDB-T
-鍜?ISDB-Tsb 纭欢銆?
+这里给出的信息应当帮助应用程序编写者了解如何使Linux 数字电视 API 来处ISDB-T
+ISDB-Tsb 硬件
 
-杩欓噷缁欏嚭鐨勫叧浜?ISDB-T 鍜?ISDB-Tsb 鐨勭粏鑺傦紝鍒氬ソ瓒冲鍩烘湰鍦板睍绀烘墍闇€鍙傛暟鍊间箣闂寸殑渚濊禆鍏崇郴锛?
-浣嗚偗瀹氱渷鐣ヤ簡涓€浜涗俊鎭€傛洿璇︾粏鐨勪俊鎭鍙傞槄浠ヤ笅鏂囨。锛?
+这里给出的关ISDB-T ISDB-Tsb 的细节，刚好足够基本地展示所需参数值之间的依赖关系
+但肯定省略了一些信息。更详细的信息请参阅以下文档
 
-ARIB STD-B31 - 鈥淭ransmission System for Digital Terrestrial Television Broadcasting鈥濓紙鏁板瓧鍦伴潰鐢佃骞挎挱浼犺緭绯荤粺锛変互鍙?
+ARIB STD-B31 - “Transmission System for Digital Terrestrial Television Broadcasting”（数字地面电视广播传输系统）以
 
-ARIB TR-B14 - 鈥淥perational Guidelines for Digital Terrestrial Television Broadcasting鈥濓紙鏁板瓧鍦伴潰鐢佃骞挎挱杩愮淮鎸囧崡锛夈€?
+ARIB TR-B14 - “Operational Guidelines for Digital Terrestrial Television Broadcasting”（数字地面电视广播运维指南）
 
-涓轰簡鐞嗚В ISDB 鐗瑰畾鐨勫弬鏁帮紝蹇呴』浜嗚В ISDB-T 鍜?ISDB-Tsb 涓殑淇￠亾缁撴瀯銆傚嵆璇昏€呴渶瑕佺煡鏅?
-涓€涓?ISDB-T 淇￠亾鐢?13 涓锛坰egment锛夌粍鎴愶紝瀹冨彲浠ユ湁澶氳揪 3 涓眰锛坙ayer锛夊叡浜繖浜涙锛屼互鍙?
-绫讳技鐨勭煡璇嗐€?
+为了理解 ISDB 特定的参数，必须了解 ISDB-T ISDB-Tsb 中的信道结构。即读者需要知
+一ISDB-T 信道13 个段（segment）组成，它可以有多达 3 个层（layer）共享这些段，以
+类似的知识
 
-浠ヤ笅鍙傛暟瀵?ISDB-T 鏈夋晥锛?
+以下参数ISDB-T 有效
 
 - DTV_API_VERSION <DTV-API-VERSION>
 
@@ -162,14 +162,14 @@ ARIB TR-B14 - 鈥淥perational Guidelines for Digital Terrestrial Television Bro
 
 - DTV_ISDBT_LAYERC_TIME_INTERLEAVING <DTV-ISDBT-LAYER-TIME-INTERLEAVING>
 
-姝ゅ锛孌TV QoS 缁熻 <frontend-stat-properties> 鍚屾牱鏈夋晥銆?
+此外，DTV QoS 统计 <frontend-stat-properties> 同样有效
 
 
 
-## ATSC 浼犺緭绯荤粺
+## ATSC 传输系统
 
 
-浠ヤ笅鍙傛暟瀵?ATSC 鏈夋晥锛?
+以下参数ATSC 有效
 
 - DTV_API_VERSION <DTV-API-VERSION>
 
@@ -185,14 +185,14 @@ ARIB TR-B14 - 鈥淥perational Guidelines for Digital Terrestrial Television Bro
 
 - DTV_BANDWIDTH_HZ <DTV-BANDWIDTH-HZ>
 
-姝ゅ锛孌TV QoS 缁熻 <frontend-stat-properties> 鍚屾牱鏈夋晥銆?
+此外，DTV QoS 统计 <frontend-stat-properties> 同样有效
 
 
 
-## ATSC-MH 浼犺緭绯荤粺
+## ATSC-MH 传输系统
 
 
-浠ヤ笅鍙傛暟瀵?ATSC-MH 鏈夋晥锛?
+以下参数ATSC-MH 有效
 
 - DTV_API_VERSION <DTV-API-VERSION>
 
@@ -236,14 +236,14 @@ ARIB TR-B14 - 鈥淥perational Guidelines for Digital Terrestrial Television Bro
 
 - DTV_ATSCMH_SCCC_CODE_MODE_D <DTV-ATSCMH-SCCC-CODE-MODE-D>
 
-姝ゅ锛孌TV QoS 缁熻 <frontend-stat-properties> 鍚屾牱鏈夋晥銆?
+此外，DTV QoS 统计 <frontend-stat-properties> 同样有效
 
 
 
-## DTMB 浼犺緭绯荤粺
+## DTMB 传输系统
 
 
-浠ヤ笅鍙傛暟瀵?DTMB 鏈夋晥锛?
+以下参数DTMB 有效
 
 - DTV_API_VERSION <DTV-API-VERSION>
 
@@ -271,4 +271,4 @@ ARIB TR-B14 - 鈥淥perational Guidelines for Digital Terrestrial Television Bro
 
 - DTV_LNA <DTV-LNA>
 
-姝ゅ锛孌TV QoS 缁熻 <frontend-stat-properties> 鍚屾牱鏈夋晥銆?
+此外，DTV QoS 统计 <frontend-stat-properties> 同样有效

@@ -1,31 +1,31 @@
 ﻿
-## Bare UDP 闅ч亾妯″潡鏂囨。
+## Bare UDP 隧道模块文档
 
 
-褰撳墠鏈夊绉嶅熀浜?UDP 鐨?L3 灏佽鏍囧噯姝ｅ湪琚璁猴紝浠ュ埄鐢ㄤ笉鍚岀綉缁滃熀浜?UDP 鐨勮礋杞藉潎琛¤兘鍔涖€侻PLSoUDP (https://tools.ietf.org/html/rfc7510) 灏辨槸鍏朵腑涔嬩竴銆?
-Bareudp 闅ч亾妯″潡涓哄湪 UDP 闅ч亾鍐呭皝瑁?MPLS銆両P銆丯SH 绛変笉鍚?L3 鍗忚鎻愪緵浜嗛€氱敤鐨?L3 灏佽鏀寔銆?
-### 鐗规畩澶勭悊
+当前有多种基UDP L3 封装标准正在被讨论，以利用不同网络基UDP 的负载均衡能力。MPLSoUDP (https://tools.ietf.org/html/rfc7510) 就是其中之一
+Bareudp 隧道模块为在 UDP 隧道内封MPLS、IP、NSH 等不L3 协议提供了通用L3 封装支持
+### 特殊处理
 
 
-bareudp 璁惧瀵?MPLS 涓?IP 鎻愪緵鐗规畩澶勭悊锛屽洜涓哄畠浠彲浠ユ嫢鏈夊绉?ethertype锛堜互澶被鍨嬶級銆侻PLS 鍗忚鍙互鎷ユ湁 ethertype ETH_P_MPLS_UC锛堝崟鎾級涓?ETH_P_MPLS_MC锛堢粍鎾級銆侷P 鍗忚鍙互鎷ユ湁 ethertype ETH_P_IP锛坴4锛変笌 ETH_P_IPV6锛坴6锛夈€傝繖绉嶇壒娈婂鐞嗗彧鑳介拡瀵?ethertype ETH_P_IP 涓?ETH_P_MPLS_UC 鍚敤锛岄€氳繃涓€涓О涓?multiproto 妯″紡鐨勬爣蹇楁潵瀹炵幇銆?
-### 鐢ㄦ硶
+bareudp 设备MPLS IP 提供特殊处理，因为它们可以拥有多ethertype（以太类型）。MPLS 协议可以拥有 ethertype ETH_P_MPLS_UC（单播）ETH_P_MPLS_MC（组播）。IP 协议可以拥有 ethertype ETH_P_IP（v4）与 ETH_P_IPV6（v6）。这种特殊处理只能针ethertype ETH_P_IP ETH_P_MPLS_UC 启用，通过一个称multiproto 模式的标志来实现
+### 用法
 
 
-1) 璁惧鍒涘缓涓庡垹闄?
+1) 设备创建与删
     a) ip link add dev bareudp0 type bareudp dstport 6635 ethertype mpls_uc
 
-       杩欏皢鍒涘缓涓€涓?bareudp 闅ч亾璁惧锛岀敤浜庡皝瑁?ethertype 涓?0x8847锛圡PLS 娴侀噺锛夌殑 L3 娴侀噺銆俇DP 澶寸殑鐩殑绔彛灏嗚璁剧疆涓?6635銆傝璁惧灏嗗湪 UDP 绔彛 6635 涓婄洃鍚互鎺ユ敹娴侀噺銆?
+       这将创建一bareudp 隧道设备，用于封ethertype 0x8847（MPLS 流量）的 L3 流量。UDP 头的目的端口将被设置6635。该设备将在 UDP 端口 6635 上监听以接收流量
     b) ip link delete bareudp0
 
-2) 鍚敤 multiproto 妯″紡鍒涘缓璁惧
+2) 启用 multiproto 模式创建设备
 
-multiproto 妯″紡鍏佽 bareudp 闅ч亾澶勭悊鍚屼竴鏃忕殑澶氱鍗忚銆傜洰鍓嶄粎鍙敤浜?IP 涓?MPLS銆傝妯″紡蹇呴』閫氳繃鈥渕ultiproto鈥濇爣蹇楁樉寮忓惎鐢ㄣ€?
+multiproto 模式允许 bareudp 隧道处理同一族的多种协议。目前仅可用IP MPLS。该模式必须通过“multiproto”标志显式启用
     a) ip link add dev bareudp0 type bareudp dstport 6635 ethertype ipv4 multiproto
 
-       瀵逛簬 IPv4 闅ч亾锛宮ultiproto 妯″紡鍏佽璇ラ毀閬撳悓鏃跺鐞?IPv6銆?
+       对于 IPv4 隧道，multiproto 模式允许该隧道同时处IPv6
     b) ip link add dev bareudp0 type bareudp dstport 6635 ethertype mpls_uc multiproto
 
-       瀵逛簬 MPLS锛宮ultiproto 妯″紡鍏佽璇ラ毀閬撳悓鏃跺鐞嗗崟鎾笌缁勬挱 MPLS 鎶ユ枃銆?
-3) 璁惧浣跨敤
+       对于 MPLS，multiproto 模式允许该隧道同时处理单播与组播 MPLS 报文
+3) 设备使用
 
-bareudp 璁惧鍙笌 OVS 鎴?TC 涓殑 flower 杩囨护鍣ㄤ竴璧蜂娇鐢ㄣ€侽VS 鎴?TC flower 灞傚繀椤诲湪灏嗘姤鏂囩紦鍐插尯鍙戦€佺粰 bareudp 璁惧杩涜鍙戦€佷箣鍓嶏紝鍦?SKB 鐨?dst 瀛楁涓缃毀閬撲俊鎭€傚湪鎺ユ敹鏃讹紝bareUDP 璁惧鎻愬彇闅ч亾淇℃伅骞跺瓨鍌ㄥ湪 SKB 鐨?dst 瀛楁涓紝鍐嶅皢鎶ユ枃缂撳啿鍖轰紶閫掔粰缃戠粶鍗忚鏍堛€?
+bareudp 设备可与 OVS TC 中的 flower 过滤器一起使用。OVS TC flower 层必须在将报文缓冲区发送给 bareudp 设备进行发送之前，SKB dst 字段中设置隧道信息。在接收时，bareUDP 设备提取隧道信息并存储在 SKB dst 字段中，再将报文缓冲区传递给网络协议栈

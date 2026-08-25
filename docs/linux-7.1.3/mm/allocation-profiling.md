@@ -1,25 +1,25 @@
 ﻿
-## 鍐呭瓨鍒嗛厤鎬ц兘鍒嗘瀽锛圡EMORY ALLOCATION PROFILING锛?
+## 内存分配性能分析（MEMORY ALLOCATION PROFILING
 
-瀵规墍鏈夊唴瀛樺垎閰嶈繘琛屼綆寮€閿€锛堥€傜敤浜庣敓浜х幆澧冿級鐨勮璐︼紝鎸夋枃浠朵笌琛屽彿璺熻釜銆?
-鐢ㄦ硶锛?kconfig 閫夐」锛?- CONFIG_MEM_ALLOC_PROFILING
+对所有内存分配进行低开销（适用于生产环境）的记账，按文件与行号跟踪
+用法kconfig 选项- CONFIG_MEM_ALLOC_PROFILING
 
 - CONFIG_MEM_ALLOC_PROFILING_ENABLED_BY_DEFAULT
 
 - CONFIG_MEM_ALLOC_PROFILING_DEBUG
-  涓洪偅浜涘洜缂哄皯娉ㄨВ鑰屾湭琚璐︾殑鍒嗛厤澧炲姞璀﹀憡
+  为那些因缺少注解而未被记账的分配增加警告
 
-鍚姩鍙傛暟锛?  sysctl.vm.mem_profiling={0|1|never}[,compressed]
+启动参数  sysctl.vm.mem_profiling={0|1|never}[,compressed]
 
-  褰撹缃负 "never" 鏃讹紝鍐呭瓨鍒嗛厤鎬ц兘鍒嗘瀽鐨勫紑閿€琚渶灏忓寲锛屽苟涓旀棤娉曞湪杩愯鏃跺惎鐢紙sysctl 鍙樹负鍙锛夈€?  褰?CONFIG_MEM_ALLOC_PROFILING_ENABLED_BY_DEFAULT=y 鏃讹紝榛樿鍊间负 "1"銆?  褰?CONFIG_MEM_ALLOC_PROFILING_ENABLED_BY_DEFAULT=n 鏃讹紝榛樿鍊间负 "never"銆?  "compressed" 鍙€夊弬鏁颁細灏濊瘯浠ョ揣鍑戞牸寮忓瓨鍌ㄩ〉鏍囪寮曠敤锛岄伩鍏嶄娇鐢ㄩ〉鎵╁睍銆傝繖浼氭敼鍠勬€ц兘涓庡唴瀛樺崰鐢紝
-  浣嗗彲鑳戒細鍥犵郴缁熼厤缃€屽け璐ャ€傚鏋滃帇缂╁け璐ワ紝浼氬彂鍑鸿鍛婂苟绂佺敤鍐呭瓨鍒嗛厤鎬ц兘鍒嗘瀽銆?
+  当设置为 "never" 时，内存分配性能分析的开销被最小化，并且无法在运行时启用（sysctl 变为只读）  CONFIG_MEM_ALLOC_PROFILING_ENABLED_BY_DEFAULT=y 时，默认值为 "1"  CONFIG_MEM_ALLOC_PROFILING_ENABLED_BY_DEFAULT=n 时，默认值为 "never"  "compressed" 可选参数会尝试以紧凑格式存储页标记引用，避免使用页扩展。这会改善性能与内存占用，
+  但可能会因系统配置而失败。如果压缩失败，会发出警告并禁用内存分配性能分析
 sysctl锛?  /proc/sys/vm/mem_profiling
 
-  1锛氬惎鐢ㄥ唴瀛樻€ц兘鍒嗘瀽銆?
-  0锛氱鐢ㄥ唴瀛樻€ц兘鍒嗘瀽銆?
-  榛樿鍊煎彇鍐充簬 CONFIG_MEM_ALLOC_PROFILING_ENABLED_BY_DEFAULT銆?
-  褰?CONFIG_MEM_ALLOC_PROFILING_DEBUG=y 鏃讹紝姝ゆ帶浠朵负鍙锛屼互閬垮厤鍦ㄦ€ц兘鍒嗘瀽琚鐢ㄦ椂杩涜鐨勫垎閰嶃€?  浠ュ強鍦ㄥ畠琚惎鐢ㄦ椂閲婃斁鎵€浜х敓鐨勮鍛娿€?
-杩愯鏃朵俊鎭細
+  1：启用内存性能分析
+  0：禁用内存性能分析
+  默认值取决于 CONFIG_MEM_ALLOC_PROFILING_ENABLED_BY_DEFAULT
+  CONFIG_MEM_ALLOC_PROFILING_DEBUG=y 时，此控件为只读，以避免在性能分析被禁用时进行的分配  以及在它被启用时释放所产生的警告
+运行时信息：
   /proc/allocinfo
 
 ```
@@ -38,26 +38,26 @@ sysctl锛?  /proc/sys/vm/mem_profiling
         122M    31168 mm/page_ext.c:270 func:alloc_page_ext
 
 ```
-## 宸ヤ綔鍘熺悊
+## 工作原理
 
 
-鍐呭瓨鍒嗛厤鎬ц兘鍒嗘瀽寤虹珛鍦ㄤ唬鐮佹爣璁帮紙code tagging锛変箣涓婏紝浠ｇ爜鏍囪鏄竴涓敤浜庡０鏄庨潤鎬佺粨鏋勪綋锛堥€氬父浠ユ煇绉嶆柟寮?鎻忚堪鏂囦欢涓庤鍙凤紝鍥犳绉颁负浠ｇ爜鏍囪锛夈€佸苟鍦ㄨ繍琛屾椂鏌ユ壘骞舵搷浣滃畠浠殑搴撯€斺€斾緥濡傞亶鍘嗗畠浠互鍦?debugfs/procfs 涓墦鍗般€?
-瑕佷负涓€娆″垎閰嶈皟鐢ㄥ鍔犺璐︼紝鎴戜滑灏嗗叾鏇挎崲涓轰竴涓畯璋冪敤 alloc_hooks()锛岃瀹忥細
-- 澹版槑涓€涓唬鐮佹爣璁?- 鍦ㄥ叾 task_struct 涓殏瀛樹竴涓寚鍚戝畠鐨勬寚閽?- 璋冪敤鐪熸鐨勫垎閰嶅嚱鏁?- 鏈€鍚庯紝灏?task_struct 鐨勫垎閰嶆爣璁版寚閽堟仮澶嶄负鍏跺厛鍓嶇殑鍊笺€?
-杩欎娇寰?alloc_hooks() 璋冪敤鍙互宓屽锛屼互鏈€杩戠殑涓€娆＄敓鏁堛€傝繖瀵逛簬 mm/ 浠ｇ爜鍐呴儴銆佷笉灞炰簬澶栧眰鍒嗛厤涓婁笅鏂囥€佸簲褰?鍗曠嫭璁℃暟鐨勫垎閰嶅緢閲嶈锛氫緥濡傦紝slab 瀵硅薄鎵╁睍鍚戦噺锛屾垨鑰呭綋 slab 浠庨〉鍒嗛厤鍣ㄥ垎閰嶉〉鏃躲€?
-鍥犳锛屾纭殑鐢ㄦ硶闇€瑕佺‘瀹氬垎閰嶈皟鐢ㄦ爤涓殑鍝釜鍑芥暟搴斿綋琚墦鏍囪銆傛湁璁稿杈呭姪鍑芥暟鏈川涓婂彧鏄皝瑁呬簡渚嬪 kmalloc()
-骞跺鍋氫簡涓€鐐瑰伐浣滐紝鐒跺悗鍦ㄥ澶勮璋冪敤锛涙垜浠€氬父甯屾湜璁拌处鍙戠敓鍦ㄨ繖浜涜緟鍔╁嚱鏁扮殑璋冪敤鑰呬腑锛岃€屼笉鏄湪杈呭姪鍑芥暟鑷韩涓€?
-瑕佷慨澶嶆煇涓粰瀹氱殑杈呭姪鍑芥暟锛屼緥濡?foo()锛岃鎵ц浠ヤ笅鎿嶄綔锛?- 灏嗗叾鍒嗛厤璋冪敤鍒囨崲涓?_noprof() 鐗堟湰锛屼緥濡?kmalloc_noprof()
+内存分配性能分析建立在代码标记（code tagging）之上，代码标记是一个用于声明静态结构体（通常以某种方描述文件与行号，因此称为代码标记）、并在运行时查找并操作它们的库——例如遍历它们以debugfs/procfs 中打印
+要为一次分配调用增加记账，我们将其替换为一个宏调用 alloc_hooks()，该宏：
+- 声明一个代码标- 在其 task_struct 中暂存一个指向它的指- 调用真正的分配函- 最后，task_struct 的分配标记指针恢复为其先前的值
+这使alloc_hooks() 调用可以嵌套，以最近的一次生效。这对于 mm/ 代码内部、不属于外层分配上下文、应单独计数的分配很重要：例如，slab 对象扩展向量，或者当 slab 从页分配器分配页时
+因此，正确的用法需要确定分配调用栈中的哪个函数应当被打标记。有许多辅助函数本质上只是封装了例如 kmalloc()
+并多做了一点工作，然后在多处被调用；我们通常希望记账发生在这些辅助函数的调用者中，而不是在辅助函数自身中
+要修复某个给定的辅助函数，例foo()，请执行以下操作- 将其分配调用切换_noprof() 版本，例kmalloc_noprof()
 
-- 灏嗗叾閲嶅懡鍚嶄负 foo_noprof()
+- 将其重命名为 foo_noprof()
 
-- 瀹氫箟涓€涓?foo() 鐨勫畯鐗堟湰锛屽涓嬫墍绀猴細
+- 定义一foo() 的宏版本，如下所示：
 
   #define foo(...) alloc_hooks(foo_noprof(__VA_ARGS__))
 
-涔熷彲浠ュ湪浣犺嚜宸辩殑鏁版嵁缁撴瀯涓殏瀛樹竴涓寚鍚戝垎閰嶆爣璁扮殑鎸囬拡銆?
-褰撲綘姝ｅ湪瀹炵幇涓€涓€滀唬琛ㄢ€濆叾浠栨煇浜涗唬鐮佽繘琛屽垎閰嶇殑閫氱敤鏁版嵁缁撴瀯鏃垛€斺€斾緥濡?rhashtable 浠ｇ爜鈥斺€斿氨杩欐牱鍋氥€傝繖鏍凤紝
-鎴戜滑灏变笉蹇呭湪 /proc/allocinfo 涓湅鍒?rhashtable.c 鐨勪竴澶ц锛岃€屾槸鍙互鎸?rhashtable 绫诲瀷鎷嗗垎瀹冦€?
-涓烘锛?- 鍍忓叾浠栦换浣曞垎閰嶅嚱鏁颁竴鏍凤紝鎸傛帴浣犵殑鏁版嵁缁撴瀯鐨?init 鍑芥暟銆?
-- 鍦ㄤ綘鐨?init 鍑芥暟鍐呴儴锛屼娇鐢ㄤ究鎹峰畯 alloc_tag_record() 鍦ㄤ綘鐨勬暟鎹粨鏋勪腑璁板綍鍒嗛厤鏍囪銆?
-- 鐒跺悗锛屽浣犵殑鍒嗛厤浣跨敤浠ヤ笅褰㈠紡锛?  alloc_hooks_tag(ht->your_saved_tag, kmalloc_noprof(...))
+也可以在你自己的数据结构中暂存一个指向分配标记的指针
+当你正在实现一个“代表”其他某些代码进行分配的通用数据结构时——例rhashtable 代码——就这样做。这样，
+我们就不必在 /proc/allocinfo 中看rhashtable.c 的一大行，而是可以rhashtable 类型拆分它
+为此- 像其他任何分配函数一样，挂接你的数据结构init 函数
+- 在你init 函数内部，使用便捷宏 alloc_tag_record() 在你的数据结构中记录分配标记
+- 然后，对你的分配使用以下形式  alloc_hooks_tag(ht->your_saved_tag, kmalloc_noprof(...))

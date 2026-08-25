@@ -1,20 +1,20 @@
-﻿## Linux 鐩叉枃鎺у埗鍙?
+﻿## Linux 鐩叉枃鎺у埗鍙。
 
-瑕佸湪鐩叉枃璁惧涓婅幏鍙栨棭鏈熷惎鍔ㄦ秷鎭紙鍦ㄧ敤鎴风┖闂村睆骞曢槄璇诲櫒鍚姩涔嬪墠锛夛紝浣犻鍏堥渶瑕?缂栬瘧瀵瑰父瑙勪覆琛屾帶鍒跺彴鐨勬敮鎸侊紙瑙?Documentation/admin-guide/serial-console.rst
-<serial_console>锛夛紝浠ュ強瀵圭洸鏂囪澶囩殑鏀寔锛堝湪 `Device Drivers --> Accessibility
-support --> Console on braille device` 涓級銆?
-鐒跺悗浣犻渶瑕佹寚瀹氫竴涓?`console=brl` 閫夐」鍦ㄥ唴鏍稿懡浠よ涓婏紝
+要在盲文设备上获取早期启动消息（在用户空间屏幕阅读器启动之前），你首先需编译对常规串行控制台的支持（Documentation/admin-guide/serial-console.rst
+<serial_console>），以及对盲文设备的支持（在 `Device Drivers --> Accessibility
+support --> Console on braille device` 中）
+然后你需要指定一`console=brl` 选项在内核命令行上，
 
 ```
 	console=brl,serial_options...
 ```
-鍏朵腑 `serial_options...` 涓?Documentation/admin-guide/serial-console.rst
-<serial_console> 涓弿杩扮殑鐩稿悓銆?
-渚嬪锛屽鏋滅洸鏂囪澶囪繛鎺ュ埌绗竴涓覆鍙ｏ紝浣犲彲浠ヤ娇鐢?`console=brl,ttyS0`锛涗娇鐢?`console=brl,ttyS0,115200` 鍙皢娉㈢壒鐜囪鐩栦负 115200锛岀瓑绛夈€?
-榛樿鎯呭喌涓嬶紝鐩叉枃璁惧浠呮樉绀烘渶鍚庝竴鏉″唴鏍告秷鎭紙鎺у埗鍙版ā寮忥級銆傝鏌ョ湅鍏堝墠鐨勬秷鎭紝
-鎸?Insert 閿垏鎹㈠埌 VT 瀹℃煡妯″紡銆傚湪瀹℃煡妯″紡涓嬶紝鏂瑰悜閿厑璁告祻瑙?VT 鍐呭锛?`PAGE-UP`/`PAGE-DOWN` 閿烦鍒板睆骞曢《閮?搴曢儴锛宍HOME` 閿洖鍒板厜鏍囧锛屼粠鑰屾彁渚?闈炲父鍩烘湰鐨勫睆骞曞鏌ュ姛鑳姐€?
-鍙互閫氳繃娣诲姞 `braille_console.sound=1` 鍐呮牳鍙傛暟鏉ヨ幏寰楀０闊冲弽棣堛€?
-涓虹畝鍗曡捣瑙侊紝鍙兘鍚敤涓€涓洸鏂囨帶鍒跺彴锛屽叾浠?`console=brl,...` 鐨勪娇鐢ㄥ皢琚涪寮冦€?杩樿娉ㄦ剰锛屽畠涓嶄細骞叉壈 Documentation/admin-guide/serial-console.rst
-<serial_console> 涓弿杩扮殑鎺у埗鍙伴€夋嫨鏈哄埗銆?
-鐩墠浠呮敮鎸?VisioBraille 璁惧銆?
+其中 `serial_options...` Documentation/admin-guide/serial-console.rst
+<serial_console> 中描述的相同
+例如，如果盲文设备连接到第一个串口，你可以使`console=brl,ttyS0`；使`console=brl,ttyS0,115200` 可将波特率覆盖为 115200，等等
+默认情况下，盲文设备仅显示最后一条内核消息（控制台模式）。要查看先前的消息，
+Insert 键切换到 VT 审查模式。在审查模式下，方向键允许浏VT 内容`PAGE-UP`/`PAGE-DOWN` 键跳到屏幕顶底部，`HOME` 键回到光标处，从而提非常基本的屏幕审查功能
+可以通过添加 `braille_console.sound=1` 内核参数来获得声音反馈
+为简单起见，只能启用一个盲文控制台，其`console=brl,...` 的使用将被丢弃还要注意，它不会干扰 Documentation/admin-guide/serial-console.rst
+<serial_console> 中描述的控制台选择机制
+目前仅支VisioBraille 设备
 Samuel Thibault <samuel.thibault@ens-lyon.org>

@@ -1,31 +1,31 @@
 ﻿
-## CXL 蹇€熼摼鎺?
+## CXL 快速链
 
 
-CXL 璁惧閰嶇疆鍦ㄥ钩鍙帮紙纭欢銆?
-BIOS銆丒FI锛夈€佹搷浣滅郴缁燂紙鏃╂湡鍚姩銆佹牳蹇冨唴鏍搞€侀┍鍔ㄧ▼搴忥級鍜岀敤鎴风瓥鐣ュ喅绛?
-鏄簰鐩稿奖鍝嶇殑銆? 姝ゅ鐨勬枃妗ｅ垎瑙ｄ簡閰嶇疆姝ラ銆?
+CXL 设备配置在平台（硬件
+BIOS、EFI）、操作系统（早期启动、核心内核、驱动程序）和用户策略决
+是互相影响的 此处的文档分解了配置步骤
 
-- [鎿嶄綔鐞嗚](theory-of-operation)
-- [鎴愮啛搴﹀湴鍥綸(maturity-map)
-- [绾﹀畾](conventions)
+- [操作理论](theory-of-operation)
+- [成熟度地图](maturity-map)
+- [约定](conventions)
 
-- [璁惧/璁惧绫诲瀷](devices/device-types)
+- [设备/设备类型](devices/device-types)
 
-- [骞冲彴/BIOS 涓?EFI](platform/bios-and-efi)
-- [骞冲彴/ACPI](platform/acpi)
-- [骞冲彴/CDAT](platform/cdat)
-- [骞冲彴/绀轰緥閰嶇疆](platform/example-configs)
-- [骞冲彴/璁惧鐑彃鎷擼(platform/device-hotplug)
+- [平台/BIOS EFI](platform/bios-and-efi)
+- [平台/ACPI](platform/acpi)
+- [平台/CDAT](platform/cdat)
+- [平台/示例配置](platform/example-configs)
+- [平台/设备热插拔](platform/device-hotplug)
 
-- [Linux/姒傝堪](linux/overview)
-- [Linux/鏃╂湡鍚姩](linux/early-boot)
-- [Linux/CXL 椹卞姩](linux/cxl-driver)
-- [Linux/DAX 椹卞姩](linux/dax-driver)
-- [Linux/鍐呭瓨鐑彃鎷擼(linux/memory-hotplug)
-- [Linux/璁块棶鍧愭爣](linux/access-coordinates)
+- [Linux/概述](linux/overview)
+- [Linux/早期启动](linux/early-boot)
+- [Linux/CXL 驱动](linux/cxl-driver)
+- [Linux/DAX 驱动](linux/dax-driver)
+- [Linux/内存热插拔](linux/memory-hotplug)
+- [Linux/访问坐标](linux/access-coordinates)
 
-- [鍒嗛厤/DAX](allocation/dax)
-- [鍒嗛厤/椤靛垎閰嶅櫒](allocation/page-allocator)
-- [鍒嗛厤/鍥炴敹](allocation/reclaim)
-- [鍒嗛厤/澶ч〉](allocation/hugepages.rst)
+- [分配/DAX](allocation/dax)
+- [分配/页分配器](allocation/page-allocator)
+- [分配/回收](allocation/reclaim)
+- [分配/大页](allocation/hugepages.rst)

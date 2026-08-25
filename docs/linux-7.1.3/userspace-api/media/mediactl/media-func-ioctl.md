@@ -2,44 +2,44 @@
 ######## media ioctl()
 
 
-## 鍚嶇О
+## 名称
 
 
-media-ioctl - 鎺у埗濯掍綋璁惧
+media-ioctl - 控制媒体设备
 
-## 姒傝
+## 概要
 
 
     #include <sys/ioctl.h>
 
 `int ioctl(int fd, int request, void *argp)`
 
-## 鍙傛暟
+## 参数
 
 
 `fd`
-    鐢?`open()` 杩斿洖鐨勬枃浠舵弿杩扮銆?
+    `open()` 返回的文件描述符
 
 `request`
-    濯掍綋 ioctl 璇锋眰浠ｇ爜锛屽畾涔夊湪 media.h 澶存枃浠朵腑锛屼緥濡?MEDIA_IOC_SETUP_LINK銆?
+    媒体 ioctl 请求代码，定义在 media.h 头文件中，例MEDIA_IOC_SETUP_LINK
 
 `argp`
-    鎸囧悜璇锋眰鐗瑰畾缁撴瀯鐨勬寚閽堛€?
+    指向请求特定结构的指针
 
-## 鎻忚堪
-
-
-ioctl() <media-func-ioctl> 鍑芥暟鎿嶇旱濯掍綋璁惧鍙傛暟銆傚弬鏁?`fd` 蹇呴』鏄凡鎵撳紑鐨勬枃浠舵弿杩扮銆?
-
-ioctl `request` 浠ｇ爜鎸囧畾瑕佽皟鐢ㄧ殑濯掍綋鍑芥暟銆傚畠缂栫爜浜嗗弬鏁版槸杈撳叆銆佽緭鍑鸿繕鏄/鍐欏弬鏁帮紝浠ュ強鍙傛暟 `argp` 鐨勫ぇ灏忥紙浠ュ瓧鑺備负鍗曚綅锛夈€?
-
-鎸囧畾濯掍綋 ioctl 璇锋眰鍙婂叾鍙傛暟鐨勫畯鍜岀粨鏋勫畾涔変綅浜?media.h 澶存枃浠朵腑銆傛墍鏈夊獟浣?ioctl 璇锋眰銆佸悇鑷殑鍑芥暟鍜屽弬鏁伴兘鍦?media-user-func 涓寚瀹氥€?
-
-## 杩斿洖鍊?
+## 描述
 
 
-鎴愬姛鏃惰繑鍥?0锛屽嚭閿欐椂杩斿洖 -1 骞剁浉搴斿湴璁剧疆 `errno` 鍙橀噺銆傞€氱敤閿欒鐮佸湪 Generic Error Codes <gen-errors> 绔犺妭涓弿杩般€?
+ioctl() <media-func-ioctl> 函数操纵媒体设备参数。参`fd` 必须是已打开的文件描述符
 
-鐗瑰畾浜庤姹傜殑閿欒鐮佸垪鍦ㄥ悇涓姹傜殑鎻忚堪涓€?
+ioctl `request` 代码指定要调用的媒体函数。它编码了参数是输入、输出还是读/写参数，以及参数 `argp` 的大小（以字节为单位）
 
-褰撳甫鏈夎緭鍑烘垨璇?鍐欏弬鏁扮殑 ioctl 澶辫触鏃讹紝璇ュ弬鏁颁繚鎸佷笉鍙樸€?
+指定媒体 ioctl 请求及其参数的宏和结构定义位media.h 头文件中。所有媒ioctl 请求、各自的函数和参数都media-user-func 中指定
+
+## 杩斿洖鍊。
+
+
+成功时返0，出错时返回 -1 并相应地设置 `errno` 变量。通用错误码在 Generic Error Codes <gen-errors> 章节中描述
+
+特定于请求的错误码列在各个请求的描述中
+
+当带有输出或写参数的 ioctl 失败时，该参数保持不变

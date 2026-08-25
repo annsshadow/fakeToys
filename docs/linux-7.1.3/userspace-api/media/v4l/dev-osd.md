@@ -1,30 +1,30 @@
 ﻿
 
 
-######## 瑙嗛杈撳嚭鍙犲姞鎺ュ彛锛圴ideo Output Overlay Interface锛?
+######## 视频输出叠加接口（Video Output Overlay Interface
 
-**涔熺О涓哄睆涓婃樉绀猴紙On-Screen Display锛孫SD锛?*
+**也称为屏上显示（On-Screen Display，OSD*
 
-鏌愪簺瑙嗛杈撳嚭璁惧鍙互灏嗗抚缂撳啿锛坒ramebuffer锛夊浘鍍忓彔鍔犲埌
-浼犲嚭鐨勮棰戜俊鍙蜂笂銆傚簲鐢ㄧ▼搴忓彲浠ヤ娇鐢ㄦ鎺ュ彛璁剧疆杩欐牱鐨勫彔鍔狅紝
-璇ユ帴鍙ｅ€熺敤浜嗚棰戝彔鍔?<overlay> 鎺ュ彛鐨勭粨鏋勪笌 ioctl銆?
-OSD 鍔熻兘閫氳繃璁块棶瑙嗛杈撳嚭 <capture> 鍔熻兘鐨勫悓涓€涓瓧绗﹁澶?鐗规畩鏂囦欢鏉ヨ闂€?
-   杩欐牱鐨?`/dev/video` 璁惧鐨勯粯璁ゅ姛鑳芥槸瑙嗛鎹曡幏鎴?   杈撳嚭銆侽SD 鍔熻兘鍙湁鍦ㄤ娇鐢?VIDIOC_S_FMT <VIDIOC_G_FMT>
-   ioctl 璋冪敤涔嬪悗鎵嶅彲鐢ㄣ€?
-## 鏌ヨ鑳藉姏
+某些视频输出设备可以将帧缓冲（framebuffer）图像叠加到
+传出的视频信号上。应用程序可以使用此接口设置这样的叠加，
+该接口借用了视频叠<overlay> 接口的结构与 ioctl
+OSD 功能通过访问视频输出 <capture> 功能的同一个字符设特殊文件来访问
+   这样`/dev/video` 设备的默认功能是视频捕获   输出。OSD 功能只有在使VIDIOC_S_FMT <VIDIOC_G_FMT>
+   ioctl 调用之后才可用
+## 查询能力
 
 
-鏀寔**瑙嗛杈撳嚭鍙犲姞**鎺ュ彛鐨勮澶囦細鍦?VIDIOC_QUERYCAP ioctl 杩斿洖鐨?struct `v4l2_capability` 鐨?`capabilities` 瀛楁涓缃?`V4L2_CAP_VIDEO_OUTPUT_OVERLAY` 鏍囧織銆?
-## 甯х紦鍐?
+支持**视频输出叠加**接口的设备会VIDIOC_QUERYCAP ioctl 返回struct `v4l2_capability` `capabilities` 字段中设`V4L2_CAP_VIDEO_OUTPUT_OVERLAY` 标志
+## 甯х紦鍐。
 
-涓?*瑙嗛鍙犲姞**鎺ュ彛鐩稿弽锛屽抚缂撳啿閫氬父瀹炵幇鍦ㄧ數瑙嗗崱涓婅€岄潪
-鏄惧崱涓娿€傚湪 Linux 涓婏紝瀹冧綔涓哄抚缂撳啿璁惧锛坄/dev/fbN`锛夊彲璁块棶銆?缁欏畾涓€涓?V4L2 璁惧锛屽簲鐢ㄧ▼搴忓彲浠ラ€氳繃璋冪敤
-VIDIOC_G_FBUF <VIDIOC_G_FBUF> ioctl 鎵惧埌瀵瑰簲鐨勫抚缂撳啿璁惧銆?闄ゅ叾浠栦俊鎭锛屽畠杩斿洖甯х紦鍐插湪 struct `v4l2_framebuffer`
-鐨?`base` 瀛楁涓殑鐗╃悊鍦板潃銆?甯х紦鍐茶澶?ioctl `FBIOGET_FSCREENINFO` 鍦?struct
-`fb_fix_screeninfo` 鐨?`smem_start` 瀛楁涓繑鍥炵浉鍚岀殑鍦板潃銆?`FBIOGET_FSCREENINFO` ioctl 涓?struct `fb_fix_screeninfo`
-瀹氫箟鍦?`linux/fb.h` 澶存枃浠朵腑銆?
-甯х紦鍐茬殑瀹藉害涓庨珮搴﹀彇鍐充簬褰撳墠鐨勮棰戞爣鍑嗐€俈4L2 椹卞姩鍙兘浼氭嫆缁?鏇存敼瑙嗛鏍囧噯锛堟垨浠讳綍鍏朵粬鎰忓懗鐫€甯х紦鍐插ぇ灏忓彉鍖栫殑 ioctl锛夌殑灏濊瘯锛?杩斿洖 `EBUSY` 閿欒鐮侊紝鐩村埌鎵€鏈夊簲鐢ㄧ▼搴忛兘鍏抽棴浜嗗抚缂撳啿璁惧銆?
-### 绀轰緥锛氫负 OSD 瀵绘壘甯х紦鍐茶澶?
+*视频叠加**接口相反，帧缓冲通常实现在电视卡上而非
+显卡上。在 Linux 上，它作为帧缓冲设备（`/dev/fbN`）可访问给定一V4L2 设备，应用程序可以通过调用
+VIDIOC_G_FBUF <VIDIOC_G_FBUF> ioctl 找到对应的帧缓冲设备除其他信息外，它返回帧缓冲在 struct `v4l2_framebuffer`
+`base` 字段中的物理地址帧缓冲设ioctl `FBIOGET_FSCREENINFO` struct
+`fb_fix_screeninfo` `smem_start` 字段中返回相同的地址`FBIOGET_FSCREENINFO` ioctl struct `fb_fix_screeninfo`
+定义`linux/fb.h` 头文件中
+帧缓冲的宽度与高度取决于当前的视频标准。V4L2 驱动可能会拒更改视频标准（或任何其他意味着帧缓冲大小变化的 ioctl）的尝试返回 `EBUSY` 错误码，直到所有应用程序都关闭了帧缓冲设备
+### 示例：为 OSD 寻找帧缓冲设
 
 
     #include <linux/fb.h>
@@ -47,7 +47,7 @@ VIDIOC_G_FBUF <VIDIOC_G_FBUF> ioctl 鎵惧埌瀵瑰簲鐨勫抚缂撳啿璁惧�
 	fb_fd = open(dev_name, O_RDWR);
 	if (-1 == fb_fd) {
 	    switch (errno) {
-	    case ENOENT: /** 鏃犳鏂囦欢 **/
+	    case ENOENT: /** 无此文件 **/
 	    case ENXIO:  /** 鏃犻┍鍔?**/
 		continue;
 
@@ -61,35 +61,35 @@ VIDIOC_G_FBUF <VIDIOC_G_FBUF> ioctl 鎵惧埌瀵瑰簲鐨勫抚缂撳啿璁惧�
 	    if (si.smem_start == (unsigned long)fbuf.base)
 		break;
 	} else {
-	    /** 鏄剧劧涓嶆槸涓€涓抚缂撳啿璁惧銆?**/
+	    /** 显然不是一个帧缓冲设备**/
 	}
 
 	close(fb_fd);
 	fb_fd = -1;
     }
 
-    /* fb_fd 鏄棰戣緭鍑哄彔鍔犵殑甯х紦鍐茶澶囩殑鏂囦欢鎻忚堪绗︼紝
-       濡傛灉鏈壘鍒拌澶囧垯涓?-1銆?*/
+    /* fb_fd 是视频输出叠加的帧缓冲设备的文件描述符，
+       如果未找到设备则-1*/
 
 
-## 鍙犲姞绐楀彛涓庣缉鏀?
+## 叠加窗口与缩
 
-鍙犲姞鐢辨簮鐭╁舰涓庣洰鏍囩煩褰㈡帶鍒躲€傛簮鐭╁舰閫夋嫨瑕佸彔鍔犵殑甯х紦鍐插浘鍍忕殑
-涓€涓瓙鍖哄煙锛岀洰鏍囩煩褰㈤€夋嫨鍥惧儚灏嗗嚭鐜扮殑浼犲嚭瑙嗛淇″彿涓殑涓€涓尯鍩熴€?椹卞姩鍙兘鏀寔涔熷彲鑳戒笉鏀寔缂╂斁锛屼互鍙婅繖浜涚煩褰㈢殑浠绘剰澶у皬鍜屼綅缃€?姝ゅ锛岄┍鍔ㄥ彲鑳芥敮鎸侊紙涔熷彲鑳戒笉鏀寔锛変负瑙嗛鍙犲姞 <overlay> 鎺ュ彛瀹氫箟鐨?浠讳綍锛堟垨娌℃湁锛夎鍓?娣峰悎鏂规硶銆?
-struct `v4l2_window` 瀹氫箟婧愮煩褰㈢殑澶у皬銆佸畠鍦ㄥ抚缂撳啿涓殑浣嶇疆锛?浠ュ強鐢ㄤ簬鍙犲姞鐨勮鍓?娣峰悎鏂规硶銆傝鑾峰彇褰撳墠鍙傛暟锛屽簲鐢ㄧ▼搴忓皢
-struct `v4l2_format` 鐨?`type` 瀛楁璁剧疆涓?`V4L2_BUF_TYPE_VIDEO_OUTPUT_OVERLAY` 骞惰皟鐢?VIDIOC_G_FMT <VIDIOC_G_FMT> ioctl銆傞┍鍔ㄥ～鍏呭悕涓?`win` 鐨?struct `v4l2_window` 瀛愮粨鏋勩€傛棤娉曞彇鍥炲厛鍓嶇紪绋嬬殑瑁佸壀鍒楄〃鎴栦綅鍥俱€?
-瑕佺紪绋嬫簮鐭╁舰锛屽簲鐢ㄧ▼搴忓皢 struct `v4l2_format` 鐨?`type` 瀛楁
-璁剧疆涓?`V4L2_BUF_TYPE_VIDEO_OUTPUT_OVERLAY`锛屽垵濮嬪寲 `win`
-瀛愮粨鏋勫苟璋冪敤 VIDIOC_S_FMT <VIDIOC_G_FMT> ioctl銆?椹卞姩鏍规嵁纭欢闄愬埗璋冩暣鍙傛暟锛屽苟鍍?VIDIOC_G_FMT <VIDIOC_G_FMT> 閭ｆ牱
-杩斿洖瀹為檯鍙傛暟銆備笌 VIDIOC_S_FMT <VIDIOC_G_FMT> 绫讳技锛?VIDIOC_TRY_FMT <VIDIOC_G_FMT> ioctl 鍙敤浜庡湪涓嶅疄闄呮敼鍙橀┍鍔ㄧ姸鎬佺殑
-鎯呭喌涓嬩簡瑙ｉ┍鍔ㄨ兘鍔涖€備笌 VIDIOC_S_FMT <VIDIOC_G_FMT> 涓嶅悓锛岃繖涔熷彲浠ュ湪
-鍙犲姞鍚敤涔嬪悗宸ヤ綔銆?
-struct `v4l2_crop` 瀹氫箟鐩爣鐭╁舰鐨勫ぇ灏忎笌浣嶇疆銆傚彔鍔犵殑缂╂斁鍥犲瓙
-鐢?struct `v4l2_window` 涓?struct `v4l2_crop` 涓粰瀹氱殑瀹藉害鍜岄珮搴?闅愬惈銆傝鍓?API 瀵?*瑙嗛杈撳嚭**涓?*瑙嗛杈撳嚭鍙犲姞**璁惧鐨勫簲鐢ㄦ柟寮忥紝
-涓庡**瑙嗛鎹曡幏**涓?*瑙嗛鍙犲姞**璁惧鐩稿悓锛屽彧鏄弽杞簡
-鏁版嵁娴佺殑鏂瑰悜銆傛洿澶氫俊鎭鍙傝 crop銆?
-## 鍚敤鍙犲姞
+叠加由源矩形与目标矩形控制。源矩形选择要叠加的帧缓冲图像的
+一个子区域，目标矩形选择图像将出现的传出视频信号中的一个区域驱动可能支持也可能不支持缩放，以及这些矩形的任意大小和位置此外，驱动可能支持（也可能不支持）为视频叠加 <overlay> 接口定义任何（或没有）裁混合方法
+struct `v4l2_window` 定义源矩形的大小、它在帧缓冲中的位置以及用于叠加的裁混合方法。要获取当前参数，应用程序将
+struct `v4l2_format` `type` 字段设置`V4L2_BUF_TYPE_VIDEO_OUTPUT_OVERLAY` 并调VIDIOC_G_FMT <VIDIOC_G_FMT> ioctl。驱动填充名`win` struct `v4l2_window` 子结构。无法取回先前编程的裁剪列表或位图
+要编程源矩形，应用程序将 struct `v4l2_format` `type` 字段
+设置`V4L2_BUF_TYPE_VIDEO_OUTPUT_OVERLAY`，初始化 `win`
+子结构并调用 VIDIOC_S_FMT <VIDIOC_G_FMT> ioctl驱动根据硬件限制调整参数，并VIDIOC_G_FMT <VIDIOC_G_FMT> 那样
+返回实际参数。与 VIDIOC_S_FMT <VIDIOC_G_FMT> 类似VIDIOC_TRY_FMT <VIDIOC_G_FMT> ioctl 可用于在不实际改变驱动状态的
+情况下了解驱动能力。与 VIDIOC_S_FMT <VIDIOC_G_FMT> 不同，这也可以在
+叠加启用之后工作
+struct `v4l2_crop` 定义目标矩形的大小与位置。叠加的缩放因子
+struct `v4l2_window` struct `v4l2_crop` 中给定的宽度和高隐含。裁API *视频输出***视频输出叠加**设备的应用方式，
+与对**视频捕获***视频叠加**设备相同，只是反转了
+数据流的方向。更多信息请参见 crop
+## 启用叠加
 
 
-娌℃湁鐢ㄤ簬鍚敤鎴栫鐢ㄥ彔鍔犵殑 V4L2 ioctl锛屼絾椹卞姩鐨勫抚缂撳啿鎺ュ彛
-鍙兘鏀寔 `FBIOBLANK` ioctl銆?
+没有用于启用或禁用叠加的 V4L2 ioctl，但驱动的帧缓冲接口
+可能支持 `FBIOBLANK` ioctl

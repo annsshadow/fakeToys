@@ -11,9 +11,13 @@ deadpool-postgres.workspace = true
 uuid = { workspace = true, features = ["v4"] }
 reqwest.workspace = true
 shared = { path = "../shared" }
+auth = { path = "../auth" }
+captcha_store = { path = "../captcha_store" }
 serde.workspace = true
 chrono = { version = "0.4", features = ["serde"] }
 tracing.workspace = true
+sha1.workspace = true
+hex.workspace = true
 
 [dev-dependencies]
 tower.workspace = true

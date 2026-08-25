@@ -1,16 +1,16 @@
 ﻿
-## Linux 鐨?AACRAID 椹卞姩锛堢浜岀増锛?
+## Linux AACRAID 驱动（第二版
 
-鏈枃浠嬬粛 Linux 涓?Adaptec AACRAID 绯诲垪 RAID 鎺у埗鍣ㄩ┍鍔紝璇存槑鍏舵敮鎸佺殑鏉垮崱涓庤姱鐗囩粍锛堝惈 PCI ID銆丱EM 涓庝骇鍝佸悕锛夛紝涓昏闈㈠悜闇€瑕佷娇鐢ㄣ€佽皟璇曟垨绉绘璇?SCSI RAID 椹卞姩鐨勫紑鍙戣€呬笌绯荤粺绠＄悊鍛樸€?
+本文介绍 Linux Adaptec AACRAID 系列 RAID 控制器驱动，说明其支持的板卡与芯片组（含 PCI ID、OEM 与产品名），主要面向需要使用、调试或移植SCSI RAID 驱动的开发者与系统管理员
 
 
-## 绠€浠?
+## 简
 
-aacraid 椹卞姩涓?Adaptec (http://www.adaptec.com) RAID 鎺у埗鍣ㄥ鍔犱簡鏀寔銆傝繖鏄?
-鐩稿浜?Adaptec 鎻愪緵鐨勫師濮嬮┍鍔ㄧ殑涓€娆￠噸澶ч噸鍐欍€傚畠鏄捐憲娓呯悊浜嗕唬鐮佷笌杩愯鏃朵簩杩涘埗
-浣撶Н锛堣妯″潡浣撶Н涓嶅埌鍘熷椹卞姩鐨勪竴鍗婏級銆?
+aacraid 驱动Adaptec (http://www.adaptec.com) RAID 控制器增加了支持。这
+相对Adaptec 提供的原始驱动的一次重大重写。它显著清理了代码与运行时二进制
+体积（该模块体积不到原始驱动的一半）
 
-## 鏀寔鐨勬澘鍗?鑺墖缁?
+## 支持的板芯片
 
 
 	===================	=======	=======================================
@@ -124,47 +124,47 @@ aacraid 椹卞姩涓?Adaptec (http://www.adaptec.com) RAID 鎺у埗鍣ㄥ鍔�
 	9005:0285:108e:7aae	SUN	STK RAID EM (Narvi)
 	===================	=======	=======================================
 
-## 璐＄尞鑰?
+## 贡献
 
 
 Alan Cox <alan@lxorguk.ukuu.org.uk>
 
 Christoph Hellwig <hch@infradead.org>
 
-- 閽堝鏂板瀷 PCI 鎺㈡祴涓?SCSI 涓绘満娉ㄥ唽鐨勬洿鏂帮紝灏忓箙娓呯悊/淇
+- 针对新型 PCI 探测SCSI 主机注册的更新，小幅清理/修复
 
 Matt Domsch <matt_domsch@dell.com>
 
-- revision ioctl銆侀€傞厤鍣ㄦ秷鎭?
+- revision ioctl、适配器消
 
 Deanna Bonds
 
-- 闈?DASD 鏀寔銆丳AE fib 涓?64 浣嶏紝鏂板 Adaptec 鎺у埗鍣紝鏂板 ioctl锛?
-  鏇存敼 SCSI 鎺ュ彛浠ヤ娇鐢ㄦ柊鐨勯敊璇鐞嗙▼搴忥紝澧炲姞浜?fib 涓庡鍣ㄥ唴鏈畬鎴愬懡浠ょ殑鏁伴噺
-- 淇 64 浣嶄笌 64G 鍐呭瓨妯″瀷锛屾洿鏀规槗娣锋穯鐨勫懡鍚嶇害瀹氾細鍙戝線纭欢鐨?fib 涓€寰嬬О涓?
-  hw_fibs锛岃€屼笉鍐嶅儚椹卞姩璺熻釜缁撴瀯浣撶殑鍚嶇О閭ｆ牱浠呯О涓?fibs
+- DASD 支持、PAE fib 64 位，新增 Adaptec 控制器，新增 ioctl
+  更改 SCSI 接口以使用新的错误处理程序，增加fib 与容器内未完成命令的数量
+- 修复 64 位与 64G 内存模型，更改易混淆的命名约定：发往硬件fib 一律称
+  hw_fibs，而不再像驱动跟踪结构体的名称那样仅称fibs
 
 Mark Salyzyn <Mark_Salyzyn@adaptec.com>
 
-- 淇浜?panic 闂锛屽苟涓哄嵆灏嗘帹鍑虹殑 HBA 鏂板浜嗕竴浜涗骇鍝?ID銆?
-- 鎬ц兘璋冧紭銆佸崱鏁呴殰鍒囨崲涓庣己闄风紦瑙ｃ€?
+- 修复panic 问题，并为即将推出的 HBA 新增了一些产ID
+- 性能调优、卡故障切换与缺陷缓解
 
 Achim Leubner <Achim_Leubner@adaptec.com>
 
-- 鍘熷椹卞姩
+- 原始驱动
 
 -------------------------
 
 Adaptec Unix OEM Product Group
 
-## 閭欢鍒楄〃
+## 邮件列表
 
 
-linux-scsi@vger.kernel.org锛堟劅鍏磋叮鐨勭浉鍏虫柟鍦ㄦ鍑烘病锛?
-鍙﹁娉ㄦ剰锛岃繖涓?Brian 鐨勫師濮嬮┍鍔ㄥ樊寮傚緢澶э紝鍥犳涓嶈鎸囨湜浠栨彁渚涙敮鎸併€?
+linux-scsi@vger.kernel.org（感兴趣的相关方在此出没
+另请注意，这Brian 的原始驱动差异很大，因此不要指望他提供支持
 
-Adaptec 纭疄鏀寔姝ら┍鍔ㄣ€傝鑱旂郴 Adaptec 鎶€鏈敮鎸佹垨 aacraid@adaptec.com
+Adaptec 确实支持此驱动。请联系 Adaptec 技术支持或 aacraid@adaptec.com
 
-鍘熶綔鑰?Brian Boerner锛?001 骞?2 鏈?
+原作Brian Boerner001 2 
 
-鐢?Alan Cox 閲嶅啓锛?001 骞?11 鏈?
+Alan Cox 重写001 11 

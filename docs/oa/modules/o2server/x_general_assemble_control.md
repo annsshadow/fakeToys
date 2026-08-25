@@ -17,6 +17,12 @@
 - com.x.general.assemble.control.jaxrs.FileJaxrsFilter
 - com.x.general.assemble.control.jaxrs.InvoiceJaxrsFilter
 
+## Key Flows
+
+- 工作日历计算：`worktime/*` 系列端点对 `x_general_assemble_worktime` 做聚合查询——节假日 COUNT、工作分钟 SUM(is_worktime)、按日期区间/顺推天数列出记录
+- 区域与参会范围：`area/*` 对 `x_general_assemble_area` 做省→市→区三级 CRUD；`attendscope/*` 维护 `x_general_attend_scope`
+- 综合业务配置：`invoice/*` 上传/分页/状态更新 `x_general_assemble_invoice`；excel/generalfile/office 分别落 `x_general_assemble_excel*`、`x_general_assemble_general_file`、`x_general_assemble_office`；`status/update` 与 `permissions/{module}` 读写 `x_general_assemble_control_config`/`x_general_assemble_control_permission`；qrcode 生成存 `x_general_assemble_qrcode`
+
 ## Dependencies
 
 
@@ -26,6 +32,11 @@
 - x_organization_core_express
 - x_general_core_entity
 - x_processplatform_core_entity
+
+**Rust（oa4rust/crates/general_assemble_control）：**
+
+- 内部 path 依赖：shared
+- 关键外部依赖：axum、tokio、deadpool-postgres、serde/serde_json、uuid、tower
 
 ## REST Endpoints
 

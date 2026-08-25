@@ -1,23 +1,23 @@
-﻿## IRQ 鏍囧織鐘舵€佽拷韪?
+﻿## IRQ 标志状态追
 
-:Author: 鐢?Ingo Molnar <mingo@redhat.com> 鍙戣捣
+:Author: Ingo Molnar <mingo@redhat.com> 发起
 
-鈥渋rq 鏍囧織杩借釜鈥濓紙irq-flags tracing锛夌壒鎬т細鈥滆拷韪€濈‖涓柇锛坔ardirq锛変笌
-杞腑鏂紙softirq锛夌姸鎬侊紝鍗冲畠缁欐劅鍏磋叮鐨勫瓙绯荤粺涓€涓満浼氾紝浠ヨ幏鐭ュ唴鏍镐腑
-鍙戠敓鐨勬瘡涓€娆?hardirqs-off/hardirqs-on銆乻oftirqs-off/softirqs-on 浜嬩欢銆?
-閫氱敤閿佽皟璇曚唬鐮侀渶瑕?CONFIG_TRACE_IRQFLAGS_SUPPORT锛屾墠鑳芥彁渚?CONFIG_PROVE_SPIN_LOCKING 涓?CONFIG_PROVE_RW_LOCKING銆傚惁鍒欏湪鏌愪釜
-鏋舵瀯涓婂彧浼氭彁渚?CONFIG_PROVE_MUTEX_LOCKING 涓?CONFIG_PROVE_RWSEM_LOCKING 鈥?杩欎簺鏄笉浼氬湪 IRQ 涓婁笅鏂囦腑浣跨敤鐨勫姞閿?API銆傦紙rwsem 鐨勫敮涓€渚嬪宸茶瑙勯伩锛?
-鏋舵瀯瀵规鐨勬敮鎸佸綋鐒朵笉灞炰簬鈥滃钩鍑♀€濅竴绫伙紝鍥犱负澶ч噺搴曞眰姹囩紪浠ｇ爜浼氬鐞?irq 鏍囧織鐘舵€佺殑鏀瑰彉銆備絾涓€涓灦鏋勫彲浠ラ€氳繃涓€绉嶇浉褰撶洿鎺ヤ笖鏃犻闄╃殑鏂瑰紡
-鍚敤 irq 鏍囧織杩借釜銆?
-鎯宠鏀寔姝ょ壒鎬х殑鏋舵瀯闇€瑕佸厛鍋氫竴浜涗唬鐮佺粍缁囦笂鐨勬敼鍔細
+“irq 标志追踪”（irq-flags tracing）特性会“追踪”硬中断（hardirq）与
+软中断（softirq）状态，即它给感兴趣的子系统一个机会，以获知内核中
+发生的每一hardirqs-off/hardirqs-on、softirqs-off/softirqs-on 事件
+通用锁调试代码需CONFIG_TRACE_IRQFLAGS_SUPPORT，才能提CONFIG_PROVE_SPIN_LOCKING CONFIG_PROVE_RW_LOCKING。否则在某个
+架构上只会提CONFIG_PROVE_MUTEX_LOCKING CONFIG_PROVE_RWSEM_LOCKING 这些是不会在 IRQ 上下文中使用的加API。（rwsem 的唯一例外已被规避
+架构对此的支持当然不属于“平凡”一类，因为大量底层汇编代码会处irq 标志状态的改变。但一个架构可以通过一种相当直接且无风险的方式
+启用 irq 标志追踪
+想要支持此特性的架构需要先做一些代码组织上的改动：
 
-- 鍦ㄥ叾鏋舵瀯绾?Kconfig 鏂囦欢涓坊鍔犲苟鍚敤 TRACE_IRQFLAGS_SUPPORT
+- 在其架构Kconfig 文件中添加并启用 TRACE_IRQFLAGS_SUPPORT
 
-鐒跺悗杩橀渶瑕佸仛鍑犲鍔熻兘鎬ф敼鍔ㄤ互瀹炵幇 irq 鏍囧織杩借釜鏀寔锛?
-- 鍦ㄥ簳灞傚叆鍙ｄ唬鐮佷腑娣诲姞锛堟瀯寤烘潯浠跺寲鐨勶級瀵?trace_hardirqs_off()/
-  trace_hardirqs_on() 鍑芥暟鐨勮皟鐢ㄣ€傞攣楠岃瘉鍣ㄤ細涓ュ瘑瀹堟姢鈥滅湡瀹炩€?irq 鏍囧織
-  鏄惁涓庘€滆櫄鎷熲€?irq 鏍囧織鐘舵€佺浉鍖归厤锛岃嫢涓よ€呬笉鍖归厤鍒欎細澶у０鎶辨€紙骞跺叧闂?  鑷韩锛夈€傛灦鏋勬敮鎸?irq 鏍囧織杩借釜鎵€鑺辩殑鏃堕棿閫氬父澶ч儴鍒嗛兘澶勪簬杩欑鐘舵€侊細
-  鏌ョ湅 lockdep 鐨勬姳鎬紝灏濊瘯鎵惧嚭鎴戜滑灏氭湭瑕嗙洊鐨勬眹缂栦唬鐮侊紝淇骞堕噸澶嶃€?  涓€鏃︾郴缁熷惎鍔ㄥ苟鑳藉湪 irq 鏍囧織杩借釜鍑芥暟涓棤 lockdep 鎶辨€ㄥ湴宸ヤ綔锛屾灦鏋?  鏀寔鍗冲憡瀹屾垚銆?- 濡傛灉鏋舵瀯鎷ユ湁涓嶅彲灞忚斀涓柇锛圢MI锛夛紝閭ｄ箞闇€瑕侀€氳繃 lockdep_off()/
-  lockdep_on() 灏嗗畠浠帓闄ゅ湪 irq 杩借釜 [浠ュ強閿侀獙璇乚 鏈哄埗涔嬪銆?
-涓€鑸€岃█锛屾灦鏋勪笂鎷ユ湁涓嶅畬鏁寸殑 irq 鏍囧織杩借釜瀹炵幇骞舵病鏈夐闄╋細lockdep 浼?妫€娴嬪埌杩欎竴鐐瑰苟鑷鍏抽棴銆備篃灏辨槸璇达紝閿侀獙璇佸櫒渚濈劧鏄彲闈犵殑銆備笉搴斿嚭鐜板洜
-irq 杩借釜缂洪櫡瀵艰嚧鐨勫穿婧冦€傦紙闄ら潪姹囩紪鏀瑰姩閫氳繃淇敼鏈笉搴斾慨鏀圭殑鏉′欢鎴?瀵勫瓨鍣ㄨ€岀牬鍧忎簡鍏跺畠浠ｇ爜锛?
+然后还需要做几处功能性改动以实现 irq 标志追踪支持
+- 在底层入口代码中添加（构建条件化的）trace_hardirqs_off()/
+  trace_hardirqs_on() 函数的调用。锁验证器会严密守护“真实irq 标志
+  是否与“虚拟irq 标志状态相匹配，若两者不匹配则会大声抱怨（并关  自身）。架构支irq 标志追踪所花的时间通常大部分都处于这种状态：
+  查看 lockdep 的抱怨，尝试找出我们尚未覆盖的汇编代码，修复并重复  一旦系统启动并能在 irq 标志追踪函数中无 lockdep 抱怨地工作，架  支持即告完成- 如果架构拥有不可屏蔽中断（NMI），那么需要通过 lockdep_off()/
+  lockdep_on() 将它们排除在 irq 追踪 [以及锁验证] 机制之外
+一般而言，架构上拥有不完整的 irq 标志追踪实现并没有风险：lockdep 检测到这一点并自行关闭。也就是说，锁验证器依然是可靠的。不应出现因
+irq 追踪缺陷导致的崩溃。（除非汇编改动通过修改本不应修改的条件寄存器而破坏了其它代码

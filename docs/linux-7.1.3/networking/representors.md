@@ -1,41 +1,41 @@
 ﻿
-## 缃戠粶鍔熻兘浠ｈ〃璁惧锛圢etwork Function Representors锛?
-鏈枃妗ｆ弿杩颁簡浠ｈ〃璁惧锛坮epresentor netdevice锛夌殑璇箟涓庣敤娉曪紝瀹冧滑鐢ㄤ簬鎺у埗 SmartNIC 涓婄殑鍐呴儴浜ゆ崲銆傚浜庣墿鐞嗭紙澶氱鍙ｏ級浜ゆ崲鏈轰笂瀵嗗垏鐩稿叧鐨勭鍙ｄ唬琛ㄨ澶囷紝璇峰弬瑙?Documentation/networking/switchdev.rst <switchdev>銆?
-### Motivation锛堝姩鏈猴級
+## 网络功能代表设备（Network Function Representors
+本文档描述了代表设备（representor netdevice）的语义与用法，它们用于控制 SmartNIC 上的内部交换。对于物理（多端口）交换机上密切相关的端口代表设备，请参Documentation/networking/switchdev.rst <switchdev>
+### Motivation（动机）
 
-鑷?2010 骞翠唬涓湡浠ユ潵锛岀綉鍗″紑濮嬫彁渚涙瘮浼犵粺 SR-IOV 鏂规硶锛堝強鍏剁畝鍗曠殑鍩轰簬 MAC/VLAN 鐨勪氦鎹㈡ā鍨嬶級鎵€鑳芥敮鎸佺殑銆佹洿涓哄鏉傜殑铏氭嫙鍖栬兘鍔涖€傝繖鍌敓浜嗗皢杞欢瀹氫箟缃戠粶锛堝 OpenVSwitch锛夊嵏杞藉埌杩欎簺 NIC 涓娿€佷互鎸囧畾姣忎釜鍑芥暟鐨勭綉缁滆繛鎺ョ殑闇€姹傘€傜敱姝や骇鐢熺殑璁捐琚?variously 绉颁负 SmartNIC 鎴?DPU銆?
-缃戠粶鍔熻兘浠ｈ〃璁惧灏嗘爣鍑?Linux 缃戠粶鏍堝紩鍏ヨ櫄鎷熶氦鎹㈡満鍜?IOV 璁惧銆傛濡?Linux 鎺у埗鐨勪氦鎹㈡満姣忎釜鐗╃悊绔彛閮芥湁涓€涓嫭绔嬬殑 netdev锛岃櫄鎷熶氦鎹㈡満鐨勬瘡涓櫄鎷熺鍙ｄ篃鏄姝ゃ€傚綋绯荤粺鍚姩銆佷笖灏氭湭閰嶇疆浠讳綍鍗歌浇鏃讹紝鏉ヨ嚜铏氭嫙鍑芥暟鐨勬墍鏈夋暟鎹寘閮戒細缁忕敱浠ｈ〃璁惧鍑虹幇鍦?PF 鐨勭綉缁滄爤涓€傚洜姝?PF 濮嬬粓鍙互涓庤櫄鎷熷嚱鏁拌嚜鐢遍€氫俊銆侾F 鍙互閰嶇疆浠ｈ〃璁惧涔嬮棿銆佷笂琛岄摼璺紙uplink锛夋垨浠讳綍鍏朵粬 netdev锛堣矾鐢便€佹ˉ鎺ャ€乀C 鍒嗙被鍣級涔嬮棿鐨勬爣鍑?Linux 杞彂銆?
-鍥犳锛屼竴涓唬琛ㄨ澶囨棦鏄竴涓帶鍒跺钩闈㈠璞★紙鍦ㄧ鐞嗗懡浠や腑浠ｈ〃璇ュ嚱鏁帮級锛屼篃鏄竴涓暟鎹钩闈㈠璞★紙涓€鏍硅櫄鎷熺閬撶殑涓€绔級銆備綔涓轰竴涓櫄鎷熼摼璺鐐癸紝浠ｈ〃璁惧鍙互鍍忎换浣曞叾浠?netdevice 涓€鏍疯閰嶇疆锛涘湪鏌愪簺鎯呭喌涓嬶紙渚嬪閾捐矾鐘舵€侊級锛岃浠ｈ〃瀵硅薄锛坮epresentee锛変細閬靛惊浠ｈ〃璁惧鐨勯厤缃紝鑰屽湪鍙︿竴浜涙儏鍐典笅鍒欐湁鍗曠嫭鐨?API 鏉ラ厤缃浠ｈ〃瀵硅薄銆?
-### Definitions锛堝畾涔夛級
+2010 年代中期以来，网卡开始提供比传统 SR-IOV 方法（及其简单的基于 MAC/VLAN 的交换模型）所能支持的、更为复杂的虚拟化能力。这催生了将软件定义网络（如 OpenVSwitch）卸载到这些 NIC 上、以指定每个函数的网络连接的需求。由此产生的设计variously 称为 SmartNIC DPU
+网络功能代表设备将标Linux 网络栈引入虚拟交换机IOV 设备。正Linux 控制的交换机每个物理端口都有一个独立的 netdev，虚拟交换机的每个虚拟端口也是如此。当系统启动、且尚未配置任何卸载时，来自虚拟函数的所有数据包都会经由代表设备出现PF 的网络栈中。因PF 始终可以与虚拟函数自由通信。PF 可以配置代表设备之间、上行链路（uplink）或任何其他 netdev（路由、桥接、TC 分类器）之间的标Linux 转发
+因此，一个代表设备既是一个控制平面对象（在管理命令中代表该函数），也是一个数据平面对象（一根虚拟管道的一端）。作为一个虚拟链路端点，代表设备可以像任何其netdevice 一样被配置；在某些情况下（例如链路状态），被代表对象（representee）会遵循代表设备的配置，而在另一些情况下则有单独API 来配置被代表对象
+### Definitions（定义）
 
-鏈枃妗ｄ娇鐢ㄦ湳璇?鈥渟witchdev function鈥?鏉ユ寚浠ｅ璁惧涓婄殑铏氭嫙浜ゆ崲鏈烘嫢鏈夌鐞嗘帶鍒舵潈鐨?PCIe 鍑芥暟銆傞€氬父杩欎細鏄竴涓?PF锛屼絾鐞嗚涓婁篃鍙互灏?NIC 閰嶇疆涓烘妸杩欎簺绠＄悊鐗规潈鎺堜簣鏌愪釜 VF 鎴?SF锛堝瓙鍑芥暟锛宻ubfunction锛夈€傚彇鍐充簬 NIC 鐨勮璁★紝涓€涓绔彛 NIC 鍙兘瀵规暣涓澶囧彧鏈変竴涓?switchdev function锛屼篃鍙兘瀵规瘡涓墿鐞嗙綉缁滅鍙ｉ兘鏈夌嫭绔嬬殑铏氭嫙浜ゆ崲鏈恒€佷粠鑰屾湁鐙珛鐨?switchdev function銆傚鏋?NIC 鏀寔宓屽浜ゆ崲锛屾瘡涓祵濂椾氦鎹㈡満鍙兘閮芥湁鐙珛鐨?switchdev function锛岃繖绉嶆儏鍐典笅姣忎釜 switchdev function 鍙簲涓哄叾鐩存帴绠＄悊鐨勶紙瀛愶級浜ゆ崲鏈轰笂鐨勭鍙ｅ垱寤轰唬琛ㄨ澶囥€?
-鈥渞epresentee鈥?鏄唬琛ㄨ澶囨墍浠ｈ〃鐨勫璞°€備緥濡傚湪 VF 浠ｈ〃璁惧鐨勬儏鍐典笅锛宺epresentee 灏辨槸瀵瑰簲鐨?VF銆?
-### What does a representor do?锛堜唬琛ㄨ澶囧仛浠€涔堬紵锛?
-涓€涓唬琛ㄨ澶囨湁涓変釜涓昏瑙掕壊銆?
-1. 瀹冪敤浜庨厤缃浠ｈ〃瀵硅薄鎵€鐪嬪埌鐨勭綉缁滆繛鎺ワ紝渚嬪閾捐矾 up/down銆丮TU 绛夈€備緥濡傦紝灏嗕唬琛ㄨ澶囩鐞嗘€у湴缃负 UP 搴斿綋瀵艰嚧琚唬琛ㄥ璞＄湅鍒?link up / carrier on 浜嬩欢銆?2. 瀹冧负閭ｄ簺娌℃湁鍛戒腑铏氭嫙浜ゆ崲鏈轰腑浠讳綍宸插嵏杞藉揩閫熻矾寰勮鍒欑殑鏁版嵁娴佹彁渚涗簡鎱㈤€熻矾寰勩€傚湪浠ｈ〃璁惧 netdevice 涓婂彂閫佺殑鏁版嵁鍖呭簲褰撹鎶曢€掔粰琚唬琛ㄥ璞★紱鐢辫浠ｈ〃瀵硅薄鍙戦€併€佷笖鏈兘鍖归厤浠讳綍浜ゆ崲瑙勫垯鐨勬暟鎹寘锛屽簲褰撳湪浠ｈ〃璁惧 netdevice 涓婅鎺ユ敹銆傦紙涔熷氨鏄锛屽瓨鍦ㄤ竴鏍硅繛鎺ヤ唬琛ㄨ澶囦笌琚唬琛ㄥ璞＄殑铏氭嫙绠￠亾锛屾蹇典笂绫讳技浜庝竴涓?veth 瀵广€傦級
-   杩欎娇寰楄蒋浠朵氦鎹㈡満瀹炵幇锛堝 OpenVSwitch 鎴?Linux 缃戞ˉ锛夎兘澶熷湪琚唬琛ㄥ璞′笌缃戠粶鍏朵綑閮ㄥ垎涔嬮棿杞彂鏁版嵁鍖呫€?3. 瀹冨厖褰撲簡涓€涓彞鏌勶紝浜ゆ崲瑙勫垯锛堝 TC 杩囨护鍣級鍙互閫氳繃瀹冩潵寮曠敤琚唬琛ㄥ璞★紝浠庤€屽厑璁歌繖浜涜鍒欒鍗歌浇銆?
-2) 鍜?3) 鐨勭粨鍚堟剰鍛崇潃锛屾棤璁?TC 杩囨护鍣ㄦ槸鍚﹁鍗歌浇锛屽叾琛屼负锛堟€ц兘闄ゅ锛夊簲褰撲竴鑷淬€備緥濡傦紝VF 浠ｈ〃璁惧涓婄殑涓€涓?TC 瑙勫垯鍦ㄨ蒋浠朵腑搴旂敤浜庡湪璇ヤ唬琛ㄨ澶?netdevice 涓婃帴鏀剁殑鏁版嵁鍖咃紝鑰屽湪纭欢鍗歌浇涓畠浼氬簲鐢ㄤ簬鐢辫浠ｈ〃 VF 鍙戦€佺殑鏁版嵁鍖呫€傚弽杩囨潵锛屼竴涓?mirred egress 閲嶅畾鍚戝埌 VF 浠ｈ〃璁惧锛屽湪纭欢涓搴斾簬鐩存帴鎶曢€掑埌琚唬琛?VF銆?
-### What functions should have a representor?锛堝摢浜涘嚱鏁板簲褰撴嫢鏈変唬琛ㄨ澶囷紵锛?
-鏈川涓婏紝瀵逛簬璁惧鍐呴儴浜ゆ崲鏈轰笂鐨勬瘡涓櫄鎷熺鍙ｏ紝閮藉簲褰撴湁涓€涓唬琛ㄨ澶囥€備竴浜涘巶鍟嗛€夋嫨鐪佺暐涓婅閾捐矾鍜岀墿鐞嗙綉缁滅鍙ｇ殑浠ｈ〃璁惧锛岃繖鍙互绠€鍖栦娇鐢紙涓婅閾捐矾 netdev 瀹為檯涓婃垚涓虹墿鐞嗙鍙ｇ殑浠ｈ〃璁惧锛夛紝浣嗘棤娉曟帹骞垮埌鍏锋湁澶氫釜绔彛鎴栦笂琛岄摼璺殑璁惧銆?
-鍥犳锛屼互涓嬪悇椤归兘搴斿綋鎷ユ湁浠ｈ〃璁惧锛?
- - 灞炰簬 switchdev function 鐨?VF銆? - 鏈湴 PCIe 鎺у埗鍣ㄤ笂鐨勫叾浠?PF锛屼互鍙婂睘浜庡畠浠殑浠讳綍 VF銆? - 璁惧涓婂閮?PCIe 鎺у埗鍣ㄤ笂鐨?PF 鍜?VF锛堜緥濡?SmartNIC 鍐呬换浣曞祵鍏ュ紡鐗囦笂绯荤粺锛夈€? - 鍏锋湁鍏朵粬 鈥滆韩浠解€濓紙personality锛夈€佸寘鎷綉缁滃潡璁惧锛堝鐢辫繙绋?鍒嗗竷寮忓瓨鍌ㄦ敮鎸佺殑 vDPA virtio-blk PF锛夌殑 PF 鍜?VF锛屽綋涓斾粎褰撳畠浠殑缃戠粶璁块棶鏄€氳繃涓€涓櫄鎷熶氦鎹㈡満绔彛瀹炵幇鏃躲€俒#]_
-   娉ㄦ剰锛屽嵆渚胯浠ｈ〃瀵硅薄娌℃湁 netdev锛岃繖绫诲嚱鏁颁篃鍙兘闇€瑕佷竴涓唬琛ㄨ澶囥€? - 灞炰簬涓婅堪浠讳綍 PF 鎴?VF 鐨勫瓙鍑芥暟锛圫F锛夛紝鍓嶆彁鏄畠浠湪浜ゆ崲鏈轰笂鏈夎嚜宸辩殑绔彛锛堣€屼笉鏄娇鐢ㄥ叾鐖?PF 鐨勭鍙ｏ級銆? - 璁惧涓婁换浣曢€氳繃铏氭嫙浜ゆ崲鏈虹鍙ｆ帴鍏ョ綉缁滅殑鍔犻€熷櫒鎴栨彃浠讹紝鍗充究瀹冧滑娌℃湁瀵瑰簲鐨?PCIe PF 鎴?VF銆?
-杩欎娇寰?NIC 鐨勫叏閮ㄤ氦鎹㈣涓洪兘鑳介€氳繃浠ｈ〃璁惧鐨?TC 瑙勫垯鏉ユ帶鍒躲€?
-灏嗚櫄鎷熺鍙ｄ笌 PCIe 铏氭嫙鍑芥暟鎴栧叾 netdev 娣蜂负涓€璋堟槸涓€涓父瑙佺殑璇В銆傝櫧鐒跺湪绠€鍗曟儏鍐典笅 VF netdevice 涓?VF 浠ｈ〃璁惧涔嬮棿浼氭湁涓€涓€瀵瑰簲鍏崇郴锛屼絾鏇村厛杩涚殑璁惧閰嶇疆鍙兘骞堕潪濡傛銆備竴涓笉閫氳繃鍐呴儴浜ゆ崲鏈鸿幏寰楃綉缁滆闂紙鍝€曟槸闂存帴鍦伴€氳繃鍏跺嚱鏁版墍鎻愪緵鐨勪换浣曟湇鍔＄殑纭欢瀹炵幇锛夌殑 PCIe 鍑芥暟锛屽簲褰?**涓?* 鎷ユ湁浠ｈ〃璁惧锛堝嵆渚垮畠鏈変竴涓?netdev锛夈€傝繖鏍风殑鍑芥暟娌℃湁鍙緵浠ｈ〃璁惧閰嶇疆銆佹垨浣滀负铏氭嫙绠￠亾鍙︿竴绔殑浜ゆ崲鏈鸿櫄鎷熺鍙ｃ€備唬琛ㄨ澶囦唬琛ㄧ殑鏄櫄鎷熺鍙ｏ紝鑰屼笉鏄?PCIe 鍑芥暟锛屼篃涓嶆槸 鈥滅粓绔敤鎴封€?netdevice銆?
-   鍦ㄥ潡 DMA 璇锋眰涓庣綉缁滄暟鎹寘涔嬮棿鐨勭炕璇戯紝浣垮緱鍙湁缃戠粶鏁版嵁鍖呴€氳繃铏氭嫙绔彛鎶佃揪浜ゆ崲鏈恒€侷P 鏍?鈥滅湅鍒扳€?鐨勭綉缁滆闂殢鍚庡氨鍙€氳繃 tc 瑙勫垯鏉ラ厤缃紱渚嬪瀹冪殑娴侀噺鍙兘鍏ㄩ儴琚皝瑁呰繘鏌愪釜鐗瑰畾鐨?VLAN 鎴?VxLAN銆傜劧鑰岋紝浣滀负鍧楄澶囷紙鑰岄潪缃戠粶瀹炰綋锛夋墍闇€鐨勪换浣曢厤缃紝閮戒笉閫傚悎浠ｈ〃璁惧锛屽洜姝や細浣跨敤鍏朵粬閫氶亾锛堝 devlink锛夈€?   涓庝箣瀵规瘮鐨勬槸杩欐牱涓€绉?virtio-blk 瀹炵幇锛氬畠灏?DMA 璇锋眰鍘熸牱杞彂缁欏彟涓€涓?PF锛屽悗鑰呯殑椹卞姩闅忓悗鍦ㄨ蒋浠朵腑鍙戣捣骞剁粓缁?IP 娴侀噺锛涘湪杩欑鎯呭喌涓嬶紝DMA 娴侀噺 **涓嶄細** 缁忚繃铏氭嫙浜ゆ崲鏈猴紝鍥犳璇?virtio-blk PF 搴斿綋 **涓?* 鎷ユ湁浠ｈ〃璁惧銆?
-### How are representors created?锛堜唬琛ㄨ澶囧浣曞垱寤猴紵锛?
-闄勫姞鍒?switchdev function 鐨勯┍鍔ㄥ疄渚嬶紝搴斿綋涓轰氦鎹㈡満涓婄殑姣忎釜铏氭嫙绔彛鍒涘缓涓€涓函杞欢鐨?netdevice锛岃 netdevice 浠ユ煇绉嶅舰寮忓湪鍐呮牳涓紩鐢?switchdev function 鑷韩鐨?netdevice 鎴栭┍鍔ㄧ鏈夋暟鎹紙`netdev_priv()`锛夈€傝繖鍙互閫氳繃鍦ㄦ帰娴嬶紙probe锛夋椂鏋氫妇绔彛銆佸湪杩愯鏃跺姩鎬佸搷搴旂鍙ｇ殑鍒涘缓涓庨攢姣侊紝鎴栦袱鑰呯粨鍚堟潵瀹炵幇銆?
-浠ｈ〃璁惧 netdevice 鐨勬搷浣滈€氬父浼氭秹鍙婇€氳繃 switchdev function 鏉ユ墽琛屻€備緥濡傦紝`ndo_start_xmit()` 鍙兘浼氶€氳繃闄勫姞鍒?switchdev function 鐨勭‖浠?TX 闃熷垪鏉ュ彂閫佹暟鎹寘锛屽苟閫氳繃鏁版嵁鍖呭厓鏁版嵁鎴栭槦鍒楅厤缃皢鍏舵爣璁颁负鎶曢€掔粰琚唬琛ㄥ璞°€?
-### How are representors identified?锛堜唬琛ㄨ澶囧浣曡璇嗗埆锛燂級
+本文档使用术“switchdev function来指代对设备上的虚拟交换机拥有管理控制权PCIe 函数。通常这会是一PF，但理论上也可以NIC 配置为把这些管理特权授予某个 VF SF（子函数，subfunction）。取决于 NIC 的设计，一个多端口 NIC 可能对整个设备只有一switchdev function，也可能对每个物理网络端口都有独立的虚拟交换机、从而有独立switchdev function。如NIC 支持嵌套交换，每个嵌套交换机可能都有独立switchdev function，这种情况下每个 switchdev function 只应为其直接管理的（子）交换机上的端口创建代表设备
+“representee是代表设备所代表的对象。例如在 VF 代表设备的情况下，representee 就是对应VF
+### What does a representor do（代表设备做什么？
+一个代表设备有三个主要角色
+1. 它用于配置被代表对象所看到的网络连接，例如链路 up/down、MTU 等。例如，将代表设备管理性地置为 UP 应当导致被代表对象看link up / carrier on 事件2. 它为那些没有命中虚拟交换机中任何已卸载快速路径规则的数据流提供了慢速路径。在代表设备 netdevice 上发送的数据包应当被投递给被代表对象；由被代表对象发送、且未能匹配任何交换规则的数据包，应当在代表设备 netdevice 上被接收。（也就是说，存在一根连接代表设备与被代表对象的虚拟管道，概念上类似于一veth 对。）
+   这使得软件交换机实现（如 OpenVSwitch Linux 网桥）能够在被代表对象与网络其余部分之间转发数据包3. 它充当了一个句柄，交换规则（如 TC 过滤器）可以通过它来引用被代表对象，从而允许这些规则被卸载
+2) 3) 的结合意味着，无TC 过滤器是否被卸载，其行为（性能除外）应当一致。例如，VF 代表设备上的一TC 规则在软件中应用于在该代表设netdevice 上接收的数据包，而在硬件卸载中它会应用于由被代表 VF 发送的数据包。反过来，一mirred egress 重定向到 VF 代表设备，在硬件中对应于直接投递到被代VF
+### What functions should have a representor（哪些函数应当拥有代表设备？
+本质上，对于设备内部交换机上的每个虚拟端口，都应当有一个代表设备。一些厂商选择省略上行链路和物理网络端口的代表设备，这可以简化使用（上行链路 netdev 实际上成为物理端口的代表设备），但无法推广到具有多个端口或上行链路的设备
+因此，以下各项都应当拥有代表设备
+ - 属于 switchdev function VF - 本地 PCIe 控制器上的其PF，以及属于它们的任何 VF - 设备上外PCIe 控制器上PF VF（例SmartNIC 内任何嵌入式片上系统） - 具有其他 “身份”（personality）、包括网络块设备（如由远分布式存储支持的 vDPA virtio-blk PF）的 PF VF，当且仅当它们的网络访问是通过一个虚拟交换机端口实现时。[#]_
+   注意，即便被代表对象没有 netdev，这类函数也可能需要一个代表设备 - 属于上述任何 PF VF 的子函数（SF），前提是它们在交换机上有自己的端口（而不是使用其PF 的端口） - 设备上任何通过虚拟交换机端口接入网络的加速器或插件，即便它们没有对应PCIe PF VF
+这使NIC 的全部交换行为都能通过代表设备TC 规则来控制
+将虚拟端口与 PCIe 虚拟函数或其 netdev 混为一谈是一个常见的误解。虽然在简单情况下 VF netdevice VF 代表设备之间会有一一对应关系，但更先进的设备配置可能并非如此。一个不通过内部交换机获得网络访问（哪怕是间接地通过其函数所提供的任何服务的硬件实现）的 PCIe 函数，应*** 拥有代表设备（即便它有一netdev）。这样的函数没有可供代表设备配置、或作为虚拟管道另一端的交换机虚拟端口。代表设备代表的是虚拟端口，而不PCIe 函数，也不是 “终端用户netdevice
+   在块 DMA 请求与网络数据包之间的翻译，使得只有网络数据包通过虚拟端口抵达交换机。IP “看到的网络访问随后就可通过 tc 规则来配置；例如它的流量可能全部被封装进某个特定VLAN VxLAN。然而，作为块设备（而非网络实体）所需的任何配置，都不适合代表设备，因此会使用其他通道（如 devlink）   与之对比的是这样一virtio-blk 实现：它DMA 请求原样转发给另一PF，后者的驱动随后在软件中发起并终IP 流量；在这种情况下，DMA 流量 **不会** 经过虚拟交换机，因此virtio-blk PF 应当 *** 拥有代表设备
+### How are representors created（代表设备如何创建？
+附加switchdev function 的驱动实例，应当为交换机上的每个虚拟端口创建一个纯软件netdevice，该 netdevice 以某种形式在内核中引switchdev function 自身netdevice 或驱动私有数据（`netdev_priv()`）。这可以通过在探测（probe）时枚举端口、在运行时动态响应端口的创建与销毁，或两者结合来实现
+代表设备 netdevice 的操作通常会涉及通过 switchdev function 来执行。例如，`ndo_start_xmit()` 可能会通过附加switchdev function 的硬TX 队列来发送数据包，并通过数据包元数据或队列配置将其标记为投递给被代表对象
+### How are representors identified?（代表设备如何被识别？）
 
-浠ｈ〃璁惧 netdevice 搴斿綋 **涓?* 鐩存帴寮曠敤鏌愪釜 PCIe 璁惧锛堜緥濡傞€氳繃 `net_dev->dev.parent` / `SET_NETDEV_DEV()`锛夛紝鏃犺鏄浠ｈ〃瀵硅薄鐨勮繕鏄?switchdev function 鐨勩€傜浉鍙嶏紝椹卞姩搴斿綋鍦ㄦ敞鍐?netdevice 涔嬪墠浣跨敤 `SET_NETDEV_DEVLINK_PORT` 瀹忎负璇?netdevice 鎸囨淳涓€涓?devlink 绔彛瀹炰緥锛涘唴鏍镐娇鐢ㄨ devlink 绔彛鏉ユ彁渚?`phys_switch_id` 鍜?`phys_port_name` sysfs 鑺傜偣銆傦紙涓€浜涢仐鐣欓┍鍔ㄧ洿鎺ュ疄鐜?`ndo_get_port_parent_id()` 鍜?`ndo_get_phys_port_name()`锛屼絾杩欑鏂瑰紡宸茶寮冪敤銆傦級鍏充簬璇?API 鐨勭粏鑺傦紝璇峰弬瑙?Documentation/networking/devlink/devlink-port.rst <devlink_port>銆?
-鐢ㄦ埛鎬佸簲褰撲細鍒╃敤杩欎簺淇℃伅锛堜緥濡傞€氳繃 udev 瑙勫垯锛変负 netdevice 鏋勯€犱竴涓伆褰撲笖鍏蜂俊鎭€х殑鍚嶇О鎴栧埆鍚嶃€備緥濡傦紝濡傛灉 switchdev function 鏄?`eth4`锛岄偅涔堜竴涓?`phys_port_name` 涓?`p0pf1vf2` 鐨勪唬琛ㄨ澶囧彲鑳戒細琚噸鍛藉悕涓?`eth4pf1vf2rep`銆?
-瀵逛簬涓嶅搴?PCIe 鍑芥暟鐨勪唬琛ㄨ澶囷紙渚嬪鍔犻€熷櫒鍜屾彃浠讹級锛岀洰鍓嶅皻鏃犳棦瀹氱殑鍛藉悕绾﹀畾銆?
-### How do representors interact with TC rules?锛堜唬琛ㄨ澶囧浣曚笌 TC 瑙勫垯浜や簰锛燂級
+代表设备 netdevice 应当 *** 直接引用某个 PCIe 设备（例如通过 `net_dev->dev.parent` / `SET_NETDEV_DEV()`），无论是被代表对象的还switchdev function 的。相反，驱动应当在注netdevice 之前使用 `SET_NETDEV_DEVLINK_PORT` 宏为netdevice 指派一devlink 端口实例；内核使用该 devlink 端口来提`phys_switch_id` `phys_port_name` sysfs 节点。（一些遗留驱动直接实`ndo_get_port_parent_id()` `ndo_get_phys_port_name()`，但这种方式已被弃用。）关于API 的细节，请参Documentation/networking/devlink/devlink-port.rst <devlink_port>
+用户态应当会利用这些信息（例如通过 udev 规则）为 netdevice 构造一个恰当且具信息性的名称或别名。例如，如果 switchdev function `eth4`，那么一`phys_port_name` `p0pf1vf2` 的代表设备可能会被重命名`eth4pf1vf2rep`
+对于不对PCIe 函数的代表设备（例如加速器和插件），目前尚无既定的命名约定
+### How do representors interact with TC rules?（代表设备如何与 TC 规则交互？）
 
-浠ｈ〃璁惧涓婄殑浠讳綍 TC 瑙勫垯锛堝湪杞欢 TC 涓級閮藉簲鐢ㄤ簬璇ヤ唬琛ㄨ澶?netdevice 鎵€鎺ユ敹鐨勬暟鎹寘銆傚洜姝わ紝濡傛灉瑙勫垯鐨勬姇閫掗儴鍒嗗搴斾簬铏氭嫙浜ゆ崲鏈轰笂鐨勫彟涓€涓鍙ｏ紝椹卞姩鍙互閫夋嫨灏嗗叾鍗歌浇鍒扮‖浠讹紝灏嗗叾搴旂敤浜庣敱琚唬琛ㄥ璞″彂閫佺殑鏁版嵁鍖呫€?
-绫讳技鍦帮紝鐢变簬涓€涓互浠ｈ〃璁惧涓虹洰鏍囩殑 TC mirred egress 鍔ㄤ綔锛堝湪杞欢涓級浼氱粡鐢变唬琛ㄨ澶囧彂閫佹暟鎹寘锛堜粠鑰岄棿鎺ュ湴鎶曢€掔粰琚唬琛ㄥ璞★級锛岀‖浠跺嵏杞藉簲褰撳皢鍏惰В璇讳负鎶曢€掔粰琚唬琛ㄥ璞°€?
-浣滀负涓€涓畝鍗曠ず渚嬶紝濡傛灉 `PORT_DEV` 鏄墿鐞嗙鍙ｄ唬琛ㄨ澶囷紝鑰?```
+代表设备上的任何 TC 规则（在软件 TC 中）都应用于该代表设netdevice 所接收的数据包。因此，如果规则的投递部分对应于虚拟交换机上的另一个端口，驱动可以选择将其卸载到硬件，将其应用于由被代表对象发送的数据包
+类似地，由于一个以代表设备为目标的 TC mirred egress 动作（在软件中）会经由代表设备发送数据包（从而间接地投递给被代表对象），硬件卸载应当将其解读为投递给被代表对象
+作为一个简单示例，如果 `PORT_DEV` 是物理端口代表设备，```
 
     tc filter add dev $REP_DEV parent ffff: protocol ipv4 flower \
         action mirred egress redirect dev $PORT_DEV
@@ -43,11 +43,11 @@
         action mirred egress mirror dev $REP_DEV
 
 ```
-鎰忓懗鐫€鏉ヨ嚜 VF 鐨勬墍鏈?IPv4 鏁版嵁鍖呴兘琚粠鐗╃悊绔彛鍙戝嚭锛岃€屽湪鐗╃悊绔彛涓婃帴鏀跺埌鐨勬墍鏈?IPv4 鏁版嵁鍖呴兘琚姇閫掔粰 VF锛堟澶栬繕鏈?`PORT_DEV`锛夈€傦紙娉ㄦ剰锛岃嫢绗簩鏉¤鍒欐病鏈?`skip_sw`锛孷F 浼氭敹鍒颁袱浠芥嫹璐濓紝鍥犱负 `PORT_DEV` 涓婄殑鏁版嵁鍖呮帴鏀朵細鍐嶆瑙﹀彂璇?TC 瑙勫垯锛屽苟灏嗘暟鎹寘闀滃儚鍒?`REP_DEV`銆傦級
+意味着来自 VF 的所IPv4 数据包都被从物理端口发出，而在物理端口上接收到的所IPv4 数据包都被投递给 VF（此外还`PORT_DEV`）。（注意，若第二条规则没`skip_sw`，VF 会收到两份拷贝，因为 `PORT_DEV` 上的数据包接收会再次触发TC 规则，并将数据包镜像`REP_DEV`。）
 
-鍦ㄦ病鏈夌嫭绔嬬鍙ｅ拰涓婅閾捐矾浠ｈ〃璁惧鐨勮澶囦笂锛宍PORT_DEV` 浼氭槸 switchdev function 鑷韩鐨勪笂琛岄摼璺?netdevice銆?
-褰撶劧锛岃鍒欏彲浠ワ紙濡傛灉 NIC 鏀寔锛夊寘鍚慨鏀规暟鎹寘鐨勫姩浣滐紙渚嬪 VLAN push/pop锛夛紝杩欎簺搴旂敱铏氭嫙浜ゆ崲鏈烘墽琛屻€?
-闅ч亾灏佽涓庤В灏佽瑕佸鏉傚緱澶氾紝鍥犱负瀹冧滑娑夊強绗笁涓?netdevice锛堜竴涓互 metadata 妯″紡杩愯鐨勯毀閬?netdev锛屼緥濡傜敤 `ip link add vxlan0 type vxlan external` 鍒涘缓鐨?VxLAN 璁惧锛夛紝骞朵笖瑕佹眰灏嗕竴涓?IP 鍦板潃缁戝畾鍒板簳灞傦紙underlay锛夎澶囷紙渚嬪 switchdev
+在没有独立端口和上行链路代表设备的设备上，`PORT_DEV` 会是 switchdev function 自身的上行链netdevice
+当然，规则可以（如果 NIC 支持）包含修改数据包的动作（例如 VLAN push/pop），这些应由虚拟交换机执行
+隧道封装与解封装要复杂得多，因为它们涉及第三netdevice（一个以 metadata 模式运行的隧netdev，例如用 `ip link add vxlan0 type vxlan external` 创建VxLAN 设备），并且要求将一IP 地址绑定到底层（underlay）设备（例如 switchdev
 ```
 
     tc filter add dev $REP_DEV parent ffff: flower \
@@ -59,11 +59,11 @@
         action tunnel_key unset action mirred egress redirect dev $REP_DEV
 
 ```
-鍏朵腑 `LOCAL_IP` 鏄粦瀹氬埌 `PORT_DEV` 鐨勪竴涓?IP 鍦板潃锛宍REMOTE_IP` 鏄悓涓€瀛愮綉涓婄殑鍙︿竴涓?IP 鍦板潃锛涜繖鎰忓懗鐫€鐢?VF 鍙戦€佺殑鏁版嵁鍖呭簲褰撹 VxLAN 灏佽骞朵粠鐗╃悊绔彛鍙戝嚭锛堥┍鍔ㄥ繀椤婚€氳繃 `LOCAL_IP` 鍒?`PORT_DEV` 鐨勮矾鐢辨煡鎵炬潵鎺ㄦ柇杩欎竴鐐癸紝骞朵笖杩樿鎵ц ARP/閭诲眳琛ㄦ煡鎵句互鎵惧埌澶栧眰浠ュお缃戝抚瑕佷娇鐢ㄧ殑 MAC 鍦板潃锛夛紝鑰屽湪鐗╃悊绔彛涓婃帴鏀跺埌鐨勩€乁DP 绔彛涓?4789 鐨?UDP 鏁版嵁鍖呭簲褰撹瑙ｆ瀽涓?VxLAN锛屽苟涓斿鏋滃叾 VSID 鍖归厤 `$VNI`锛屽垯琚В灏佽骞惰浆鍙戠粰 VF銆?
-濡傛灉杩欎竴鍒囩湅璧锋潵寰堝鏉傦紝鍙渶璁颁綇 TC 鍗歌浇鐨?鈥滈粍閲戞硶鍒欌€濓細纭欢搴斿綋纭繚涓庢暟鎹寘缁忕敱鎱㈤€熻矾寰勩€侀亶鍘嗚蒋浠?TC锛堥櫎浜嗗拷鐣ヤ换浣?`skip_hw` 瑙勫垯銆佸苟搴旂敤浠讳綍 `skip_sw` 瑙勫垯锛夊苟閫氳繃浠ｈ〃璁惧 netdevice 鍙戦€佹垨鎺ユ敹鏃舵墍寰楀埌鐨勭浉鍚屾渶缁堢粨鏋溿€?
-### Configuring the representee's MAC锛堥厤缃浠ｈ〃瀵硅薄鐨?MAC锛?
-琚唬琛ㄥ璞＄殑閾捐矾鐘舵€侀€氳繃浠ｈ〃璁惧鏉ユ帶鍒躲€傚皢浠ｈ〃璁惧绠＄悊鎬у湴缃负 UP 鎴?DOWN 搴斿綋瀵艰嚧琚唬琛ㄥ璞＄殑 carrier ON 鎴?OFF銆?
-鍦ㄤ唬琛ㄨ澶囦笂璁剧疆 MTU 搴斿綋瀵艰嚧鍚戣浠ｈ〃瀵硅薄鎶ュ憡鐩稿悓鐨?MTU銆傦紙鍦ㄥ厑璁搁厤缃嫭绔嬩笖涓嶅悓鐨?MTU 涓?MRU 鍊肩殑纭欢涓婏紝浠ｈ〃璁惧鐨?MTU 搴斿搴斾簬琚唬琛ㄥ璞＄殑 MRU锛屽弽涔嬩害鐒躲€傦級
+其中 `LOCAL_IP` 是绑定到 `PORT_DEV` 的一IP 地址，`REMOTE_IP` 是同一子网上的另一IP 地址；这意味着VF 发送的数据包应当被 VxLAN 封装并从物理端口发出（驱动必须通过 `LOCAL_IP` `PORT_DEV` 的路由查找来推断这一点，并且还要执行 ARP/邻居表查找以找到外层以太网帧要使用的 MAC 地址），而在物理端口上接收到的、UDP 端口4789 UDP 数据包应当被解析VxLAN，并且如果其 VSID 匹配 `$VNI`，则被解封装并转发给 VF
+如果这一切看起来很复杂，只需记住 TC 卸载“黄金法则”：硬件应当确保与数据包经由慢速路径、遍历软TC（除了忽略任`skip_hw` 规则、并应用任何 `skip_sw` 规则）并通过代表设备 netdevice 发送或接收时所得到的相同最终结果
+### Configuring the representee's MAC（配置被代表对象MAC
+被代表对象的链路状态通过代表设备来控制。将代表设备管理性地置为 UP DOWN 应当导致被代表对象的 carrier ON OFF
+在代表设备上设置 MTU 应当导致向被代表对象报告相同MTU。（在允许配置独立且不同MTU MRU 值的硬件上，代表设备MTU 应对应于被代表对象的 MRU，反之亦然。）
 
-鐩墠杩樻病鏈夊姙娉曚娇鐢ㄤ唬琛ㄨ澶囨潵璁剧疆琚唬琛ㄥ璞＄殑绔欑偣姘镐箙锛坰tation permanent锛塎AC 鍦板潃锛涘彲鐢ㄤ簬鍋氬埌杩欎竴鐐圭殑鍏朵粬鏂规硶鍖呮嫭锛?
- - 浼犵粺 SR-IOV锛坄ip link set DEVICE vf NUM mac LLADDR`锛? - devlink 绔彛鍑芥暟锛堝弬瑙?**devlink-port(8)** 浠ュ強 Documentation/networking/devlink/devlink-port.rst <devlink_port>锛?
+目前还没有办法使用代表设备来设置被代表对象的站点永久（station permanent）MAC 地址；可用于做到这一点的其他方法包括
+ - 传统 SR-IOV（`ip link set DEVICE vf NUM mac LLADDR` - devlink 端口函数（参**devlink-port(8)** 以及 Documentation/networking/devlink/devlink-port.rst <devlink_port>

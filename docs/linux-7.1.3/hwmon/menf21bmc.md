@@ -1,37 +1,37 @@
-﻿## 鍐呮牳椹卞姩 menf21bmc_hwmon
+﻿## 内核驱动 menf21bmc_hwmon
 
 
-鏀寔鐨勮姱鐗囷細
+支持的芯片：
 
  - MEN 14F021P00
 
-	 鍓嶇紑锛?menf21bmc_hwmon'
+	 前缀menf21bmc_hwmon'
 
-	 鎵弿鐨勫湴鍧€锛?
+	 扫描的地址
 
-浣滆€咃細Andreas Werner <andreas.werner@men.de>
+作者：Andreas Werner <andreas.werner@men.de>
 
-### 鎻忚堪
-
-
-menf21bmc 鏄竴涓澘绠＄悊鎺у埗鍣紙BMC锛夛紝瀹冩彁渚?I2C 鎺ュ彛渚涗富鏈鸿闂?BMC 涓?瀹炵幇鐨勫姛鑳姐€?
-璇ラ┍鍔ㄦ彁渚涘鏉夸富鐢靛帇鐩戞帶鍔熻兘鐨勮闂€?鐢靛帇浼犳劅鍣ㄨ繛鎺ュ埌 BMC 鐨?ADC 杈撳叆锛孊MC 鏄竴涓?PIC16F917 寰帶鍒跺櫒銆?
-### 浣跨敤璇存槑
+### 描述
 
 
-璇ラ┍鍔ㄦ槸鍚嶄负 "menf21bmc" 鐨?MFD 椹卞姩鐨勪竴閮ㄥ垎锛屼笉浼氳嚜鍔ㄦ帰娴嬭澶囥€?浣犲繀椤绘樉寮忓湴瀹炰緥鍖?MFD 椹卞姩銆?璇﹁ Documentation/i2c/instantiating-devices.rst銆?
-### Sysfs 鏉＄洰
+menf21bmc 是一个板管理控制器（BMC），它提I2C 接口供主机访BMC 实现的功能
+该驱动提供对板主电压监控功能的访问电压传感器连接到 BMC ADC 输入，BMC 是一PIC16F917 微控制器
+### 使用说明
 
 
-鏀寔浠ヤ笅灞炴€с€傛墍鏈夊睘鎬у潎涓哄彧璇汇€?闄愬€肩敱椹卞姩涓€娆℃€ц鍙栥€?
+该驱动是名为 "menf21bmc" MFD 驱动的一部分，不会自动探测设备你必须显式地实例MFD 驱动详见 Documentation/i2c/instantiating-devices.rst
+### Sysfs 条目
+
+
+支持以下属性。所有属性均为只读限值由驱动一次性读取
 =============== ==========================
-in0_input	+3.3V 杈撳叆鐢靛帇
-in1_input	+5.0V 杈撳叆鐢靛帇
-in2_input	+12.0V 杈撳叆鐢靛帇
-in3_input	+5V 寰呮満杈撳叆鐢靛帇
-in4_input	VBAT锛堟澘杞界數姹狅級
+in0_input	+3.3V 输入电压
+in1_input	+5.0V 输入电压
+in2_input	+12.0V 输入电压
+in3_input	+5V 待机输入电压
+in4_input	VBAT（板载电池）
 
-in[0-4]_min	鏈€灏忕數鍘嬮檺鍊?in[0-4]_max	鏈€澶х數鍘嬮檺鍊?
+in[0-4]_min	最小电压限in[0-4]_max	最大电压限
 in0_label	"MON_3_3V"
 in1_label	"MON_5V"
 in2_label	"MON_12V"

@@ -1,58 +1,58 @@
 ﻿
-## Universal TUN/TAP device driver锛堥€氱敤 TUN/TAP 璁惧椹卞姩锛?
+## Universal TUN/TAP device driver（通用 TUN/TAP 设备驱动
 
 Copyright |copy| 1999-2000 Maxim Krasnyansky <max_mk@yahoo.com>
 
-  Linux銆丼olaris 椹卞姩绋嬪簭
+  Linux、Solaris 驱动程序
   Copyright |copy| 1999-2000 Maxim Krasnyansky <max_mk@yahoo.com>
 
-  FreeBSD TAP 椹卞姩绋嬪簭
+  FreeBSD TAP 驱动程序
   Copyright |copy| 1999-2000 Maksim Yevmenkin <m_evmenkin@yahoo.com>
 
-  鏈枃妗ｄ簬 2002 骞寸敱 Florian Thiel <florian.thiel@gmx.net> 淇
+  本文档于 2002 年由 Florian Thiel <florian.thiel@gmx.net> 修订
 
-## 1. 璇存槑锛圖escription锛?
+## 1. 说明（Description
 
-  TUN/TAP 涓虹敤鎴风┖闂寸▼搴忔彁渚涙暟鎹寘鐨勬帴鏀朵笌鍙戦€佽兘鍔涖€?  瀹冨彲浠ヨ鐪嬩綔涓€涓畝鍗曠殑鐐瑰鐐癸紙Point-to-Point锛夎澶囨垨浠ュお缃戯紙Ethernet锛夎澶囷紝
-  涓嶅悓涔嬪鍦ㄤ簬锛氬畠涓嶆槸浠庣墿鐞嗕粙璐ㄦ帴鏀舵暟鎹寘锛岃€屾槸浠庣敤鎴风┖闂寸▼搴忔帴鏀讹紱
-  鍙戦€佹暟鎹寘鏃朵篃涓嶆槸缁忕敱鐗╃悊浠嬭川锛岃€屾槸鍐欏叆鐢ㄦ埛绌洪棿绋嬪簭銆?
-  瑕佷娇鐢ㄦ椹卞姩锛岀▼搴忓繀椤绘墦寮€ /dev/net/tun 骞跺彂鍑虹浉搴旂殑 ioctl() 璋冪敤锛?  鍚戝唴鏍告敞鍐屼竴涓綉缁滆澶囥€傛牴鎹墍閫夋嫨鐨勯€夐」锛岃缃戠粶璁惧浼氬憟鐜颁负 tunXX 鎴?tapXX銆?  褰撶▼搴忓叧闂鏂囦欢鎻忚堪绗︽椂锛岃缃戠粶璁惧鍙婂叾鎵€鏈夌浉鍏宠矾鐢遍兘浼氭秷澶便€?
-  鏍规嵁鎵€閫夎澶囩殑绫诲瀷锛岀敤鎴风┖闂寸▼搴忓繀椤昏鍙?鍐欏叆 IP 鏁版嵁鍖咃紙tun 璁惧锛?  鎴栦互澶綉甯э紙tap 璁惧锛夈€傚叿浣撲娇鐢ㄥ摢涓€涓紝鍙栧喅浜?ioctl() 璋冪敤鏃舵墍浼犲叆鐨勬爣蹇椼€?
-  http://vtun.sourceforge.net/tun 涓婄殑杞欢鍖呭寘鍚簡涓や釜鍏充簬濡備綍浣跨敤 tun 鍜?tap
-  璁惧鐨勭畝鍗曠ず渚嬨€傝繖涓や釜绋嬪簭閮藉儚鏄粙浜庝袱涓綉缁滄帴鍙ｄ箣闂寸殑妗ャ€?  br_select.c - 鍩轰簬 select 绯荤粺璋冪敤鐨勬ˉ銆?  br_sigio.c  - 鍩轰簬寮傛 IO 涓?SIGIO 淇″彿鐨勬ˉ銆?  涓嶈繃锛屾渶濂界殑绀轰緥杩樻槸 VTun http://vtun.sourceforge.net :))
+  TUN/TAP 为用户空间程序提供数据包的接收与发送能力  它可以被看作一个简单的点对点（Point-to-Point）设备或以太网（Ethernet）设备，
+  不同之处在于：它不是从物理介质接收数据包，而是从用户空间程序接收；
+  发送数据包时也不是经由物理介质，而是写入用户空间程序
+  要使用此驱动，程序必须打开 /dev/net/tun 并发出相应的 ioctl() 调用  向内核注册一个网络设备。根据所选择的选项，该网络设备会呈现为 tunXX tapXX  当程序关闭该文件描述符时，该网络设备及其所有相关路由都会消失
+  根据所选设备的类型，用户空间程序必须读写入 IP 数据包（tun 设备  或以太网帧（tap 设备）。具体使用哪一个，取决ioctl() 调用时所传入的标志
+  http://vtun.sourceforge.net/tun 上的软件包包含了两个关于如何使用 tun tap
+  设备的简单示例。这两个程序都像是介于两个网络接口之间的桥  br_select.c - 基于 select 系统调用的桥  br_sigio.c  - 基于异步 IO SIGIO 信号的桥  不过，最好的示例还是 VTun http://vtun.sourceforge.net :))
 
-## 2. 閰嶇疆锛圕onfiguration锛?
+## 2. 配置（Configuration
 
 ```
 
-     mkdir /dev/net锛堝鏋滃皻涓嶅瓨鍦級
+     mkdir /dev/net（如果尚不存在）
      mknod /dev/net/tun c 10 200
 
-  璁剧疆鏉冮檺::
+  设置权限::
 
      e.g. chmod 0666 /dev/net/tun
 
-  鍏佽闈?root 鐢ㄦ埛璁块棶璇ヨ澶囧苟鏃犲嵄瀹筹紝鍥犱负鍒涘缓缃戠粶璁惧鎴栬€呰繛鎺ュ埌
-  涓嶅睘浜庤鐢ㄦ埛鐨勭綉缁滆澶囬兘闇€瑕?CAP_NET_ADMIN 鑳藉姏銆傚鏋滀綘甯屾湜鍒涘缓
-  鎸佷箙鍖栬澶囧苟灏嗗叾鎵€鏈夋潈浜ょ粰闈炵壒鏉冪敤鎴凤紝閭ｄ箞灏遍渶瑕佽杩欎簺鐢ㄦ埛鑳藉
-  浣跨敤 /dev/net/tun 璁惧銆?
-  椹卞姩妯″潡鑷姩鍔犺浇
+  允许root 用户访问该设备并无危害，因为创建网络设备或者连接到
+  不属于该用户的网络设备都需CAP_NET_ADMIN 能力。如果你希望创建
+  持久化设备并将其所有权交给非特权用户，那么就需要让这些用户能够
+  使用 /dev/net/tun 设备
+  驱动模块自动加载
 
-     璇风‘淇濅綘鐨勫唴鏍镐腑鍚敤浜嗏€淜ernel module loader鈥濃€斺€旀ā鍧楄嚜鍔ㄥ姞杞芥敮鎸併€?     鍐呮牳搴斿綋鍦ㄩ娆¤闂椂鑷姩鍔犺浇瀹冦€?
-  鎵嬪姩鍔犺浇
+     请确保你的内核中启用了“Kernel module loader”——模块自动加载支持     内核应当在首次访问时自动加载它
+  手动加载
 
-     鎵嬪姩鎻掑叆妯″潡::
+     手动插入模块::
 
 	modprobe tun
 
-  濡傛灉浣犻噰鐢ㄥ悗涓€绉嶆柟寮忥紝閭ｄ箞姣忔闇€瑕佹椂灏卞緱鎵嬪姩鍔犺浇妯″潡锛涘鏋滈噰鐢ㄥ墠涓€绉嶆柟寮忥紝
-  閭ｄ箞鍦ㄦ墦寮€ /dev/net/tun 鏃朵細鑷姩鍔犺浇銆?
+  如果你采用后一种方式，那么每次需要时就得手动加载模块；如果采用前一种方式，
+  那么在打开 /dev/net/tun 时会自动加载
 ```
-## 3. 绋嬪簭鎺ュ彛锛圥rogram interface锛?
+## 3. 程序接口（Program interface
 
-### 3.1 缃戠粶璁惧鍒嗛厤锛圢etwork device allocation锛?
+### 3.1 网络设备分配（Network device allocation
 
-`char *dev` 搴斾负甯︽牸寮忓瓧绗︿覆鐨勮澶囧悕锛堜緥濡?"tun%d"锛夛紝涓嶈繃锛堟嵁鎴戞墍鐭ワ級瀹冧篃鍙互鏄换鎰忓悎娉曠殑缃戠粶璁惧鍚嶃€?娉ㄦ剰锛岃瀛楃鎸囬拡浼氳鐪熷疄鐨勮澶囧悕瑕嗙洊銆?```
+`char *dev` 应为带格式字符串的设备名（例"tun%d"），不过（据我所知）它也可以是任意合法的网络设备名注意，该字符指针会被真实的设备名覆盖```
 
   #include <linux/if.h>
   #include <linux/if_tun.h>
@@ -85,7 +85,7 @@ Copyright |copy| 1999-2000 Maxim Krasnyansky <max_mk@yahoo.com>
   }
 
 ```
-### 3.2 甯ф牸寮忥紙Frame format锛?
+### 3.2 帧格式（Frame format
 
 ```
 
@@ -94,10 +94,10 @@ Copyright |copy| 1999-2000 Maxim Krasnyansky <max_mk@yahoo.com>
      Raw protocol(IP, IPv6, etc) frame.
 
 ```
-### 3.3 澶氶槦鍒?tuntap 鎺ュ彛锛圡ultiqueue tuntap interface锛?
+### 3.3 多队tuntap 接口（Multiqueue tuntap interface
 
-浠?3.8 鐗堟湰寮€濮嬶紝Linux 鏀寔澶氶槦鍒?tuntap锛屽畠鍙互浣跨敤澶氫釜鏂囦欢鎻忚堪绗?锛堥槦鍒楋級鏉ュ苟琛屽湴鍙戦€佹垨鎺ユ敹鏁版嵁鍖呫€傝澶囧垎閰嶆柟寮忎笌姝ゅ墠鐩稿悓锛涘鏋滅敤鎴峰笇鏈?鍒涘缓澶氫釜闃熷垪锛屽垯蹇呴』浣跨敤鐩稿悓鐨勮澶囧悕澶氭璋冪敤甯︽湁 IFF_MULTI_QUEUE 鏍囧織鐨?TUNSETIFF銆?
-`char *dev` 搴斾负璁惧鍚嶏紝queues 鏄鍒涘缓鐨勯槦鍒楁暟閲忥紝fds 鐢ㄤ簬瀛樺偍骞跺悜璋冪敤鑰?杩斿洖鎵€鍒涘缓鐨勬枃浠舵弿杩扮锛堥槦鍒楋級銆傛瘡涓枃浠舵弿杩扮閮戒綔涓虹敤鎴风┖闂村彲璁块棶鐨?涓€涓槦鍒楃殑鎺ュ彛銆?
+3.8 版本开始，Linux 支持多队tuntap，它可以使用多个文件描述（队列）来并行地发送或接收数据包。设备分配方式与此前相同；如果用户希创建多个队列，则必须使用相同的设备名多次调用带有 IFF_MULTI_QUEUE 标志TUNSETIFF
+`char *dev` 应为设备名，queues 是要创建的队列数量，fds 用于存储并向调用返回所创建的文件描述符（队列）。每个文件描述符都作为用户空间可访问一个队列的接口
 ```
 
   #include <linux/if.h>
@@ -140,9 +140,9 @@ Copyright |copy| 1999-2000 Maxim Krasnyansky <max_mk@yahoo.com>
   }
 
 ```
-寮曞叆浜嗕竴涓柊鐨?ioctl(TUNSETQUEUE) 鐢ㄤ簬鍚敤鎴栫鐢ㄦ煇涓槦鍒椼€傚綋浠?IFF_DETACH_QUEUE 鏍囧織璋冪敤瀹冩椂锛岃闃熷垪琚鐢紱褰撲互 IFF_ATTACH_QUEUE 鏍囧織
-璋冪敤鏃讹紝璇ラ槦鍒楄鍚敤銆傞€氳繃 TUNSETIFF 鍒涘缓鍚庯紝璇ラ槦鍒楅粯璁ゅ浜庡惎鐢ㄧ姸鎬併€?
-fd 涓烘垜浠兂瑕佸惎鐢ㄦ垨绂佺敤鐨勬枃浠舵弿杩扮锛堥槦鍒楋級锛屽綋
+引入了一个新ioctl(TUNSETQUEUE) 用于启用或禁用某个队列。当IFF_DETACH_QUEUE 标志调用它时，该队列被禁用；当以 IFF_ATTACH_QUEUE 标志
+调用时，该队列被启用。通过 TUNSETIFF 创建后，该队列默认处于启用状态
+fd 为我们想要启用或禁用的文件描述符（队列），当
 ```
 
   #include <linux/if.h>
@@ -163,33 +163,33 @@ fd 涓烘垜浠兂瑕佸惎鐢ㄦ垨绂佺敤鐨勬枃浠舵弿杩扮锛�
   }
 
 ```
-## Universal TUN/TAP device driver 甯歌闂锛團requently Asked Question锛?
+## Universal TUN/TAP device driver 常见问题（Frequently Asked Question
 
-1. TUN/TAP 椹卞姩鏀寔鍝簺骞冲彴锛?
-鐩墠璇ラ┍鍔ㄥ凡閽堝 3 绉?Unix 绯荤粺缂栧啓锛?
+1. TUN/TAP 驱动支持哪些平台
+目前该驱动已针对 3 Unix 系统编写
   - Linux kernels 2.2.x, 2.4.x
   - FreeBSD 3.x, 4.x, 5.x
   - Solaris 2.6, 7.0, 8.0
 
-2. TUN/TAP 椹卞姩鐨勭敤閫旀槸浠€涔堬紵
+2. TUN/TAP 驱动的用途是什么？
 
-濡備笂鎵€杩帮紝TUN/TAP 椹卞姩鐨勪富瑕佺敤閫旀槸闅ч亾锛坱unneling锛夈€?瀹冭 VTun锛坔ttp://vtun.sourceforge.net锛夋墍浣跨敤銆?
-鍙︿竴涓娇鐢?TUN/TAP 鐨勬湁瓒ｅ簲鐢ㄦ槸 pipsecd
-锛坔ttp://perso.enst.fr/~beyssac/pipsec/锛夛紝杩欐槸涓€涓敤鎴风┖闂?IPSec
-瀹炵幇锛屽彲浠ヤ娇鐢ㄥ畬鏁寸殑鍐呮牳璺敱锛堜笉鍚屼簬 FreeS/WAN锛夈€?
-3. 铏氭嫙缃戠粶璁惧瀹為檯鏄浣曞伐浣滅殑锛?
-铏氭嫙缃戠粶璁惧鍙互鐪嬩綔涓€涓畝鍗曠殑鐐瑰鐐规垨浠ュお缃戣澶囷紝瀹冧笌鏅€氳澶囩殑
-涓嶅悓涔嬪鍦ㄤ簬锛氫笉鏄粠鐗╃悊浠嬭川鎺ユ敹鏁版嵁鍖咃紝鑰屾槸浠庣敤鎴风┖闂寸▼搴忔帴鏀讹紱
-鍙戦€佹暟鎹寘鏃朵篃涓嶆槸缁忕敱鐗╃悊浠嬭川锛岃€屾槸鍙戦€佺粰鐢ㄦ埛绌洪棿绋嬪簭銆?
-鍋囪浣犲湪 tap0 涓婇厤缃簡 IPv6锛岄偅涔堟瘡褰撳唴鏍稿悜 tap0 鍙戦€佷竴涓?IPv6 鏁版嵁鍖呮椂锛?瀹冨氨浼氳浼犻€掔粰搴旂敤绋嬪簭锛堜緥濡?VTun锛夈€傚簲鐢ㄧ▼搴忓璇ュ寘杩涜鍔犲瘑銆佸帇缂╋紝骞堕€氳繃
-TCP 鎴?UDP 鍙戦€佸埌瀵圭銆傚绔殑搴旂敤绋嬪簭瀵规敹鍒扮殑鏁版嵁杩涜瑙ｅ帇缂╁拰瑙ｅ瘑锛岀劧鍚?灏嗘暟鎹寘鍐欏叆 TAP 璁惧锛屽唴鏍镐細鍍忓鐞嗘潵鑷湡瀹炵墿鐞嗚澶囩殑鏁版嵁鍖呬竴鏍峰鐞嗗畠銆?
-4. TUN 椹卞姩鍜?TAP 椹卞姩鏈変粈涔堝尯鍒紵
+如上所述，TUN/TAP 驱动的主要用途是隧道（tunneling）它被 VTun（http://vtun.sourceforge.net）所使用
+另一个使TUN/TAP 的有趣应用是 pipsecd
+（http://perso.enst.fr/~beyssac/pipsec/），这是一个用户空IPSec
+实现，可以使用完整的内核路由（不同于 FreeS/WAN）
+3. 虚拟网络设备实际是如何工作的
+虚拟网络设备可以看作一个简单的点对点或以太网设备，它与普通设备的
+不同之处在于：不是从物理介质接收数据包，而是从用户空间程序接收；
+发送数据包时也不是经由物理介质，而是发送给用户空间程序
+假设你在 tap0 上配置了 IPv6，那么每当内核向 tap0 发送一IPv6 数据包时它就会被传递给应用程序（例VTun）。应用程序对该包进行加密、压缩，并通过
+TCP UDP 发送到对端。对端的应用程序对收到的数据进行解压缩和解密，然将数据包写入 TAP 设备，内核会像处理来自真实物理设备的数据包一样处理它
+4. TUN 驱动TAP 驱动有什么区别？
 
-TUN 澶勭悊 IP 甯с€俆AP 澶勭悊浠ュお缃戝抚銆?
-杩欐剰鍛崇潃浣跨敤 tun 鏃跺繀椤昏鍙?鍐欏叆 IP 鏁版嵁鍖咃紝鑰屼娇鐢?tap 鏃跺垯璇诲彇/鍐欏叆
-浠ュお缃戝抚銆?
-5. BPF 涓?TUN/TAP 椹卞姩鏈変粈涔堝尯鍒紵
+TUN 处理 IP 帧。TAP 处理以太网帧
+这意味着使用 tun 时必须读写入 IP 数据包，而使tap 时则读取/写入
+以太网帧
+5. BPF TUN/TAP 驱动有什么区别？
 
-BPF 鏄竴绉嶉珮绾ф暟鎹寘杩囨护鍣ㄣ€傚畠鍙互闄勫姞鍒板凡鏈夌殑缃戠粶鎺ュ彛涓婏紝浣?骞朵笉鎻愪緵铏氭嫙缃戠粶鎺ュ彛銆俆UN/TAP 椹卞姩纭疄鎻愪緵铏氭嫙缃戠粶鎺ュ彛锛屽苟涓斿彲浠?灏?BPF 闄勫姞鍒拌鎺ュ彛涓娿€?
-6. TAP 椹卞姩鏀寔鍐呮牳浠ュお缃戞ˉ鎺ュ悧锛?
-鏀寔銆侺inux 鍜?FreeBSD 椹卞姩閮芥敮鎸佷互澶綉妗ユ帴銆?
+BPF 是一种高级数据包过滤器。它可以附加到已有的网络接口上，并不提供虚拟网络接口。TUN/TAP 驱动确实提供虚拟网络接口，并且可BPF 附加到该接口上
+6. TAP 驱动支持内核以太网桥接吗
+支持。Linux FreeBSD 驱动都支持以太网桥接

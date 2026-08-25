@@ -2,17 +2,17 @@
 ######## V4L2_META_FMT_D4XX ('D4XX')
 
 
-Intel D4xx UVC 鎽勫儚澶村厓鏁版嵁
+Intel D4xx UVC 摄像头元数据
 
 
-## 鎻忚堪
+## 描述
 
 
-Intel D4xx锛圖435銆丏455 鍙婂叾浠栵級鎽勫儚澶村湪鍏?UVC 鏈夋晥璐熻浇澶撮儴涓寘鍚瘡甯у厓鏁版嵁锛?閬靛惊 Microsoft(R) UVC 鎵╁睍鎻愭 [1_]銆傝繖鎰忓懗鐫€锛岄伒寰爣鍑?UVC 澶撮儴鐨勭鏈?D4XX
-鍏冩暟鎹寜鍧楃粍缁囥€侱4xx 鎽勫儚澶村疄鐜颁簡 Microsoft 鎻愬嚭鐨勮嫢骞叉爣鍑嗗潡绫诲瀷锛屼互鍙婅嫢骞?涓撴湁鍧楃被鍨嬨€傛敮鎸佺殑鏍囧噯鍏冩暟鎹被鍨嬩负 MetadataId_CaptureStats锛圛D 3锛夈€?MetadataId_CameraExtrinsics锛圛D 4锛夊拰 MetadataId_CameraIntrinsics锛圛D 5锛夈€?鍏惰鏄庤 [1_]銆傛湰鏂囨。鎻忚堪 D4xx 鎽勫儚澶翠娇鐢ㄧ殑涓撴湁鍏冩暟鎹被鍨嬨€?
-V4L2_META_FMT_D4XX 缂撳啿鍖洪伒寰?V4L2_META_FMT_UVC 鐨勫厓鏁版嵁缂撳啿鍖哄竷灞€锛屽敮涓€鐨?鍖哄埆鍦ㄤ簬瀹冭繕鍖呭惈涓撴湁鏈夋晥璐熻浇澶撮儴鏁版嵁銆侱4xx 鎽勫儚澶翠娇鐢ㄦ壒閲忎紶杈擄紝姣忓抚浠呭彂閫?涓€涓湁鏁堣礋杞斤紝鍥犳鍏跺ご閮ㄤ笉鑳借秴杩?255 瀛楄妭銆?
-鏈枃妗ｅ疄鐜?Intel 閰嶇疆鐗堟湰 3 [9_]銆?
-浠ヤ笅鏄?D4xx 鎽勫儚澶翠娇鐢ㄧ殑涓撴湁 Microsoft 椋庢牸鍏冩暟鎹被鍨嬶紝鎵€鏈夊瓧娈靛潎閲囩敤灏忕搴忥細
+Intel D4xx（D435、D455 及其他）摄像头在UVC 有效负载头部中包含每帧元数据遵循 Microsoft(R) UVC 扩展提案 [1_]。这意味着，遵循标UVC 头部的私D4XX
+元数据按块组织。D4xx 摄像头实现了 Microsoft 提出的若干标准块类型，以及若专有块类型。支持的标准元数据类型为 MetadataId_CaptureStats（ID 3）MetadataId_CameraExtrinsics（ID 4）和 MetadataId_CameraIntrinsics（ID 5）其说明见 [1_]。本文档描述 D4xx 摄像头使用的专有元数据类型
+V4L2_META_FMT_D4XX 缓冲区遵V4L2_META_FMT_UVC 的元数据缓冲区布局，唯一区别在于它还包含专有有效负载头部数据。D4xx 摄像头使用批量传输，每帧仅发一个有效负载，因此其头部不能超255 字节
+本文档实Intel 配置版本 3 [9_]
+以下D4xx 摄像头使用的专有 Microsoft 风格元数据类型，所有字段均采用小端序：
 
 
 
@@ -20,85 +20,85 @@ V4L2_META_FMT_D4XX 缂撳啿鍖洪伒寰?V4L2_META_FMT_UVC 鐨勫厓鏁版嵁缂
     :header-rows:  1
     :stub-columns: 0
 
-    - - **瀛楁**
-      - **鎻忚堪**
-    - - `1` **娣卞害鎺у埗**
+    - - **字段**
+      - **描述**
+    - - `1` **深度控制**
     - - __u32 ID
       - 0x80000000
     - - __u32 Size
-      - 瀛楄妭鏁帮紝鍖呭惈 ID锛堟墍鏈夊崗璁増鏈細60锛?    - - __u32 Version
-      - 鏈粨鏋勪綋鐨勭増鏈€傛湰鏂囨。娑电洊鐗堟湰 1銆? 鍜?3銆傛柊澧炲瓧娈垫椂鐗堟湰鍙蜂細閫掑銆?    - - __u32 Flags
-      - 鏍囧織浣嶆帺鐮侊細瑙佷笅鏂?[2_]
+      - 字节数，包含 ID（所有协议版本：60    - - __u32 Version
+      - 本结构体的版本。本文档涵盖版本 1 3。新增字段时版本号会递增    - - __u32 Flags
+      - 标志位掩码：见下[2_]
     - - __u32 Gain
-      - 浠ュ唴閮ㄥ崟浣嶈〃绀虹殑澧炵泭鍊硷紝涓庣敤浜庨噰闆嗚甯х殑 V4L2_CID_GAIN 鎺т欢鐩稿悓
+      - 以内部单位表示的增益值，与用于采集该帧的 V4L2_CID_GAIN 控件相同
     - - __u32 Exposure
-      - 閲囬泦璇ュ抚鎵€鐢ㄧ殑鏇濆厜鏃堕棿锛堝井绉掞級
+      - 采集该帧所用的曝光时间（微秒）
     - - __u32 Laser power
-      - 婵€鍏?LED 鐨勫姛鐜?0-360锛岀敤浜庢繁搴︽祴閲?    - - __u32 AE mode
-      - 0锛氭墜鍔紱1锛氳嚜鍔ㄦ洕鍏?    - - __u32 Exposure priority
-      - 鏇濆厜浼樺厛绾у€硷細0 - 鎭掑畾甯х巼
+      - 激LED 的功0-360，用于深度测    - - __u32 AE mode
+      - 0：手动；1：自动曝    - - __u32 Exposure priority
+      - 曝光优先级值：0 - 恒定帧率
     - - __u32 AE ROI left
-      - AE 鎰熷叴瓒ｅ尯鍩燂紙ROI锛夌殑宸﹁竟鐣岋紙鎵€鏈?ROI 鍊煎潎浠ュ儚绱犱负鍗曚綅锛屼笖鍒嗗埆浠嬩簬 0 涓庢渶澶у搴︽垨鏈€澶ч珮搴︿箣闂达級
+      - AE 感兴趣区域（ROI）的左边界（所ROI 值均以像素为单位，且分别介于 0 与最大宽度或最大高度之间）
     - - __u32 AE ROI right
-      - AE ROI 鐨勫彸杈圭晫
+      - AE ROI 的右边界
     - - __u32 AE ROI top
-      - AE ROI 鐨勪笂杈圭晫
+      - AE ROI 的上边界
     - - __u32 AE ROI bottom
-      - AE ROI 鐨勪笅杈圭晫
+      - AE ROI 的下边界
     - - __u32 Preset
-      - 棰勮閫夋嫨鍣ㄥ€硷紝榛樿鍊硷細0锛岄櫎闈炵敤鎴蜂慨鏀?    - - __u8 Emitter mode (v3 only) (__u32 Laser mode for v1) [8_]
-      - 0锛氬叧闂紝1锛氬紑鍚紝涓?v1 鐨?__u32 Laser mode 鐩稿悓
+      - 预设选择器值，默认值：0，除非用户修    - - __u8 Emitter mode (v3 only) (__u32 Laser mode for v1) [8_]
+      - 0：关闭，1：开启，v1 __u32 Laser mode 相同
     - - __u8 RFU byte (v3 only)
-      - 棰勭暀瀛楄妭锛屼緵灏嗘潵浣跨敤
+      - 预留字节，供将来使用
     - - __u16 LED Power (v3 only)
-      - LED 鍔熺巼鍊?0-360锛團416 SKU锛?
-    - - `1` **閲囬泦鏃跺簭**
+      - LED 功率0-360（F416 SKU
+    - - `1` **采集时序**
     - - __u32 ID
       - 0x80000001
     - - __u32 Size
-      - 瀛楄妭鏁帮紝鍖呭惈 ID锛堟墍鏈夊崗璁増鏈細40锛?    - - __u32 Version
-      - 鏈粨鏋勪綋鐨勭増鏈€傛湰鏂囨。瀵瑰簲鐗堟湰 xxx銆傛柊澧炲瓧娈垫椂鐗堟湰鍙蜂細閫掑銆?    - - __u32 Flags
-      - 鏍囧織浣嶆帺鐮侊細瑙佷笅鏂?[3_]
+      - 字节数，包含 ID（所有协议版本：40    - - __u32 Version
+      - 本结构体的版本。本文档对应版本 xxx。新增字段时版本号会递增    - - __u32 Flags
+      - 标志位掩码：见下[3_]
     - - __u32 Frame counter
-      - 鍗曡皟閫掑璁℃暟鍣?    - - __u32 Optical time
-      - 浠庡抚寮€濮嬪埌甯т腑闂寸殑鏃堕棿锛堝井绉掞級
+      - 单调递增计数    - - __u32 Optical time
+      - 从帧开始到帧中间的时间（微秒）
     - - __u32 Readout time
-      - 璇诲嚭涓€甯ф墍鐢ㄧ殑鏃堕棿锛堝井绉掞級
+      - 读出一帧所用的时间（微秒）
     - - __u32 Exposure time
-      - 甯ф洕鍏夋椂闂达紙寰锛?    - - __u32 Frame interval
-      - 鍗曚綅寰 = 1000000 / 甯х巼
+      - 帧曝光时间（微秒    - - __u32 Frame interval
+      - 单位微秒 = 1000000 / 帧率
     - - __u32 Pipe latency
-      - 浠庡抚寮€濮嬪埌鏁版嵁杩涘叆 USB 缂撳啿鍖虹殑鏃堕棿锛堝井绉掞級
+      - 从帧开始到数据进入 USB 缓冲区的时间（微秒）
 
-    - - `1` **閰嶇疆**
+    - - `1` **配置**
     - - __u32 ID
       - 0x80000002
     - - __u32 Size
-      - 瀛楄妭鏁帮紝鍖呭惈 ID锛坴1:36锛寁3:40锛?    - - __u32 Version
-      - 鏈粨鏋勪綋鐨勭増鏈€傛湰鏂囨。瀵瑰簲鐗堟湰 xxx銆傛柊澧炲瓧娈垫椂鐗堟湰鍙蜂細閫掑銆?    - - __u32 Flags
-      - 鏍囧織浣嶆帺鐮侊細瑙佷笅鏂?[4_]
+      - 字节数，包含 ID（v1:36，v3:40    - - __u32 Version
+      - 本结构体的版本。本文档对应版本 xxx。新增字段时版本号会递增    - - __u32 Flags
+      - 标志位掩码：见下[4_]
     - - __u8 Hardware type
-      - 鎽勫儚澶寸‖浠剁増鏈?[5_]
+      - 摄像头硬件版[5_]
     - - __u8 SKU ID
-      - 鎽勫儚澶寸‖浠堕厤缃?[6_]
+      - 摄像头硬件配[6_]
     - - __u32 Cookie
-      - 鍐呴儴鍚屾
+      - 内部同步
     - - __u16 Format
-      - 鍥惧儚鏍煎紡浠ｇ爜 [7_]
+      - 图像格式代码 [7_]
     - - __u16 Width
-      - 瀹藉害锛堝儚绱狅級
+      - 宽度（像素）
     - - __u16 Height
-      - 楂樺害锛堝儚绱狅級
+      - 高度（像素）
     - - __u16 Framerate
-      - 璇锋眰鐨勬瘡绉掑抚鐜?    - - __u16 Trigger
-      - 瀛楄妭 0锛歜it 0锛氭繁搴︿笌 RGB 宸插悓姝ワ紝bit 1锛氬閮ㄨЕ鍙?    - - __u16 Calibration count (v3 only)
-      - 鏍″噯璁℃暟鍣紝瑙佷笅鏂?[4_]
+      - 请求的每秒帧    - - __u16 Trigger
+      - 字节 0：bit 0：深度与 RGB 已同步，bit 1：外部触    - - __u16 Calibration count (v3 only)
+      - 校准计数器，见下[4_]
     - - __u8 GPIO input data (v3 only)
-      - GPIO 璇诲嚭锛岃涓嬫柟 [4_]锛堣嚜鍥轰欢 5.12.7.0 璧锋敮鎸侊級
+      - GPIO 读出，见下方 [4_]（自固件 5.12.7.0 起支持）
     - - __u32 Sub-preset info (v3 only)
-      - 瀛愰璁鹃€夋嫨淇℃伅锛岃涓嬫柟 [4_]
+      - 子预设选择信息，见下方 [4_]
     - - __u8 reserved (v3 only)
-      - RFU 瀛楄妭銆?
+      - RFU 字节
 
 [^1^] https://docs.microsoft.com/en-us/windows-hardware/drivers/stream/uvc-extensions-1-5
 
@@ -159,7 +159,7 @@ V4L2_META_FMT_D4XX 缂撳啿鍖洪伒寰?V4L2_META_FMT_UVC 鐨勫厓鏁版嵁缂
   [7]   reserved
 ```
 
-[^7^] 鍚勮棰戞祦鎺ュ彛鐨勫浘鍍忔牸寮忎唬鐮侊細
+[^7^] 各视频流接口的图像格式代码：
 
 ```
 1 Z16
@@ -178,14 +178,14 @@ V4L2_META_FMT_D4XX 缂撳啿鍖洪伒寰?V4L2_META_FMT_UVC 鐨勫厓鏁版嵁缂
 1 RAW8
 ```
 
-[^8^] "Laser mode" 鍦ㄧ増鏈?3 涓凡琚笁涓笉鍚岀殑瀛楁鍙栦唬銆?鐢变簬鎽勫儚澶存姇褰变华鏈夊绉嶆妧鏈紝"Laser" 宸查噸鍛藉悕涓?"Emitter"銆傜敱浜庡彟鏈?"Laser Power" 瀛楁锛屾垜浠负棰濆鐨勫彂灏勫櫒寮曞叆浜?"LED Power"銆?
+[^8^] "Laser mode" 在版3 中已被三个不同的字段取代由于摄像头投影仪有多种技术，"Laser" 已重命名"Emitter"。由于另"Laser Power" 字段，我们为额外的发射器引入"LED Power"
 ```
    1 __u8 Emitter mode
    2 __u8 RFU byte
    3 __u16 LED Power
 ```
-杩欐槸鐗堟湰 1 涓?3 涔嬮棿鐨勫彉鏇淬€傜増鏈?1銆?銆? 鍧囦笌鐩稿悓鐨勬暟鎹牸寮忓悜鍚庡吋瀹癸紝
-涓斿潎鍙楁敮鎸併€傚摢浜涘睘鎬ф湁鏁堣瑙?[2_]銆?
+这是版本 1 3 之间的变更。版1 均与相同的数据格式向后兼容，
+且均受支持。哪些属性有效请[2_]
 
-[^9^] LibRealSense SDK 鍏冩暟鎹潵婧愶細
+[^9^] LibRealSense SDK 元数据来源：
 https://github.com/IntelRealSense/librealsense/blob/master/src/metadata.h

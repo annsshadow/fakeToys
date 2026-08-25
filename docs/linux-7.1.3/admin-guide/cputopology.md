@@ -1,9 +1,9 @@
-﻿## CPU 鎷撴墤淇℃伅濡備綍閫氳繃 sysfs 瀵煎嚭
+﻿## CPU 拓扑信息如何通过 sysfs 导出
 
 
-CPU 鎷撴墤淇℃伅閫氳繃 sysfs 瀵煎嚭銆傛潯鐩紙灞炴€э級绫讳技浜庢煇浜涙灦鏋勭殑 /proc/cpuinfo 杈撳嚭銆傚畠浠?浣嶄簬 /sys/devices/system/cpu/cpuX/topology/銆傝鍙傝€?ABI 鏂囦欢锛?Documentation/ABI/stable/sysfs-devices-system-cpu銆?
-涓庢灦鏋勬棤鍏崇殑浠ｇ爜 drivers/base/topology.c 瀵煎嚭杩欎簺灞炴€с€備絾鏄紝涓?die銆乧luster銆乥ook 鍜?drawer 灞傜骇鐩稿叧鐨?sysfs 鏂囦欢锛屽彧鏈夊湪鏋舵瀯鎸夊涓嬫墍杩版彁渚涗簡鐩稿叧瀹忔椂鎵嶄細琚垱寤恒€?
-瑕佹敮鎸佽鐗规€э紝鏋舵瀯蹇呴』瀹氫箟浠ヤ笅閮ㄥ垎瀹忥細
+CPU 拓扑信息通过 sysfs 导出。条目（属性）类似于某些架构的 /proc/cpuinfo 输出。它位于 /sys/devices/system/cpu/cpuX/topology/。请参ABI 文件Documentation/ABI/stable/sysfs-devices-system-cpu
+与架构无关的代码 drivers/base/topology.c 导出这些属性。但是，die、cluster、book drawer 层级相关sysfs 文件，只有在架构按如下所述提供了相关宏时才会被创建
+要支持该特性，架构必须定义以下部分宏：
 ```
 
 	#define topology_physical_package_id(cpu)
@@ -20,40 +20,40 @@ CPU 鎷撴墤淇℃伅閫氳繃 sysfs 瀵煎嚭銆傛潯鐩紙灞炴€э級�
 	#define topology_drawer_cpumask(cpu)
 
 ```
-`**_id` 瀹忕殑绫诲瀷涓?int銆?`**_cpumask` 瀹忕殑绫诲瀷涓?`(const) struct cpumask *`銆傚悗鑰呭搴旂浉搴旂殑 `**_siblings` sysfs
-灞炴€э紙topology_sibling_cpumask() 闄ゅ锛屽畠瀵瑰簲 thread_siblings锛夈€?
-涓哄湪鎵€鏈夋灦鏋勪笂淇濇寔涓€鑷达紝include/linux/topology.h 涓轰笂杩颁换浣曟湭琚?include/asm-XXX/topology.h 瀹氫箟鐨勫畯鎻愪緵榛樿瀹氫箟锛?
+`**_id` 宏的类型int`**_cpumask` 宏的类型`(const) struct cpumask *`。后者对应相应的 `**_siblings` sysfs
+属性（topology_sibling_cpumask() 除外，它对应 thread_siblings）
+为在所有架构上保持一致，include/linux/topology.h 为上述任何未include/asm-XXX/topology.h 定义的宏提供默认定义
 1) topology_physical_package_id: -1
 2) topology_die_id: -1
 3) topology_cluster_id: -1
 4) topology_core_id: 0
 5) topology_book_id: -1
 6) topology_drawer_id: -1
-7) topology_sibling_cpumask: 浠呯粰瀹氱殑 CPU
-8) topology_core_cpumask: 浠呯粰瀹氱殑 CPU
-9) topology_cluster_cpumask: 浠呯粰瀹氱殑 CPU
-10) topology_die_cpumask: 浠呯粰瀹氱殑 CPU
-11) topology_book_cpumask:  浠呯粰瀹氱殑 CPU
-12) topology_drawer_cpumask: 浠呯粰瀹氱殑 CPU
+7) topology_sibling_cpumask: 仅给定的 CPU
+8) topology_core_cpumask: 仅给定的 CPU
+9) topology_cluster_cpumask: 仅给定的 CPU
+10) topology_die_cpumask: 仅给定的 CPU
+11) topology_book_cpumask:  仅给定的 CPU
+12) topology_drawer_cpumask: 仅给定的 CPU
 
-姝ゅ锛孋PU 鎷撴墤淇℃伅鍦?/sys/devices/system/cpu 涓嬫彁渚涳紝骞跺寘鍚互涓嬫枃浠躲€傝緭鍑虹殑鍐呴儴鏉ユ簮
-鍦ㄦ嫭鍙凤紙鈥淸]鈥濓級涓€?
+此外，CPU 拓扑信息/sys/devices/system/cpu 下提供，并包含以下文件。输出的内部来源
+在括号（“[]”）中
     =========== ==========================================================
-    kernel_max: 鍐呮牳閰嶇疆鍏佽鐨勬渶澶?CPU 绱㈠紩銆?		[NR_CPUS-1]
+    kernel_max: 内核配置允许的最CPU 索引		[NR_CPUS-1]
 
-    offline:	鍥犲凡琚儹鎻掓嫈锛圚OTPLUGGED锛夊叧闂垨瓒呭嚭鍐呮牳閰嶇疆
-		锛堜笂闈㈢殑 kernel_max锛夊厑璁哥殑 CPU 鏁伴噺闄愬埗鑰屼笉鍦ㄧ嚎鐨?CPU銆?		[~cpu_online_mask + cpus >= NR_CPUS]
+    offline:	因已被热插拔（HOTPLUGGED）关闭或超出内核配置
+		（上面的 kernel_max）允许的 CPU 数量限制而不在线CPU		[~cpu_online_mask + cpus >= NR_CPUS]
 
-    online:	鍦ㄧ嚎涓旀鍦ㄨ璋冨害鐨?CPU [cpu_online_mask]
+    online:	在线且正在被调度CPU [cpu_online_mask]
 
-    possible:	宸插垎閰嶈祫婧愩€佽嫢瀛樺湪鍒欏彲琚甫鍏ュ湪绾跨殑 CPU銆俒cpu_possible_mask]
+    possible:	已分配资源、若存在则可被带入在线的 CPU。[cpu_possible_mask]
 
-    present:	宸茶璇嗗埆涓虹郴缁熶腑瀛樺湪鐨?CPU銆俒cpu_present_mask]
+    present:	已被识别为系统中存在CPU。[cpu_present_mask]
     =========== ==========================================================
 
-涓婅堪杈撳嚭鐨勬牸寮忓吋瀹?cpulist_parse() [鍙傝 <linux/cpumask.h>]銆備笅闈㈢粰鍑轰竴浜涚ず渚嬨€?
-鍦ㄦ绀轰緥涓紝绯荤粺涓湁 64 涓?CPU锛屼絾 cpu 32-63 瓒呭嚭浜嗗唴鏍告渶澶у€硷紝璇ユ渶澶у€肩敱 NR_CPUS
-閰嶇疆閫夐」锛堜负 32锛夐檺鍒朵负 0..31銆傚彟璇锋敞鎰忥紝CPU 2 涓?4-31 涓嶅湪绾匡紝浣嗗彲浠ヨ
+上述输出的格式兼cpulist_parse() [参见 <linux/cpumask.h>]。下面给出一些示例
+在此示例中，系统中有 64 CPU，但 cpu 32-63 超出了内核最大值，该最大值由 NR_CPUS
+配置选项（为 32）限制为 0..31。另请注意，CPU 2 4-31 不在线，但可以被
 ```
 
      kernel_max: 31
@@ -63,7 +63,7 @@ CPU 鎷撴墤淇℃伅閫氳繃 sysfs 瀵煎嚭銆傛潯鐩紙灞炴€э級�
         present: 0-31
 
 ```
-鍦ㄦ绀轰緥涓紝NR_CPUS 閰嶇疆閫夐」涓?128锛屼絾鍐呮牳浠?possible_cpus=144 鍚姩銆傜郴缁熶腑鏈?4 涓?CPU锛宑pu2 琚墜鍔ㄧ绾匡紙涓旀槸鍞竴鍙互琚甫鍏ュ湪绾跨殑 CPU锛?```
+在此示例中，NR_CPUS 配置选项128，但内核possible_cpus=144 启动。系统中4 CPU，cpu2 被手动离线（且是唯一可以被带入在线的 CPU```
 
      kernel_max: 127
         offline: 2,4-127,128-143
@@ -72,5 +72,5 @@ CPU 鎷撴墤淇℃伅閫氳繃 sysfs 瀵煎嚭銆傛潯鐩紙灞炴€э級�
         present: 0-3
 
 ```
-鍙傝 Documentation/core-api/cpu_hotplug.rst 浜嗚В possible_cpus=NUM 鍐呮牳鍚姩鍙傛暟浠ュ強
-鍏充簬鍚勭 cpumask 鐨勬洿澶氫俊鎭€?
+参见 Documentation/core-api/cpu_hotplug.rst 了解 possible_cpus=NUM 内核启动参数以及
+关于各种 cpumask 的更多信息

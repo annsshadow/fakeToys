@@ -3,20 +3,20 @@
 
 23-Aug-2002
 
-"ohci-hcd" 椹卞姩鏄竴涓?USB 涓绘満鎺у埗鍣ㄩ┍鍔紙HCD锛夛紝娲剧敓鑷?2.4 鍐呮牳绯诲垪鐨?"usb-ohci" 椹卞姩銆?usb-ohci" 浠ｇ爜涓昏鐢?Roman Weissgaerber <weissg@vienna.at> 缂栧啓锛屼絾涔熸湁璁稿鍏朵粬浜虹殑璐＄尞锛堣闃呰鍏剁増鏉?璁稿彲澶撮儴锛夈€?
+"ohci-hcd" 驱动是一USB 主机控制器驱动（HCD），派生2.4 内核系列"usb-ohci" 驱动usb-ohci" 代码主要Roman Weissgaerber <weissg@vienna.at> 编写，但也有许多其他人的贡献（请阅读其版许可头部）
 
-瀹冩敮鎸?"Open Host Controller Interface"锛圤HCI锛夛紝璇ユ帴鍙ｆ爣鍑嗗寲浜嗙敤浜庝笌 USB 1.1 涓绘満鎺у埗鍣ㄩ€氫俊鐨勭‖浠跺瘎瀛樺櫒鍗忚銆備笌 Intel 杈冩棭鐨?"Universal Host Controller Interface"锛圲HCI锛夌浉姣旓紝瀹冨皢鏇村鏅鸿兘鎺ㄥ叆纭欢銆傞櫎 Intel 鍜?VIA 涔嬪鐨勫巶鍟嗙殑 USB 1.1 鎺у埗鍣ㄩ€氬父浣跨敤 OHCI銆?
+它支"Open Host Controller Interface"（OHCI），该接口标准化了用于与 USB 1.1 主机控制器通信的硬件寄存器协议。与 Intel 较早"Universal Host Controller Interface"（UHCI）相比，它将更多智能推入硬件。除 Intel VIA 之外的厂商的 USB 1.1 控制器通常使用 OHCI
 
-鑷?2.4 鍐呮牳浠ユ潵鐨勫彉鍖栧寘鎷?
+2.4 内核以来的变化包
 
- - 鏀硅繘鐨勫仴澹€э紱bug 淇锛涗互鍙婃洿灏戠殑寮€閿€
- - 鏀寔鏇存柊涓旂畝鍖栫殑 usbcore API
- - 涓柇浼犺緭鍙互鏇村ぇ锛屽苟涓斿彲浠ユ帓闃?
- - 閫氳繃浣跨敤涓婂眰鐨?"hcd" 妗嗘灦鍑忓皯浜嗕唬鐮侀噺
- - 鏀寔 OHCI 鐨勪竴浜涢潪 PCI 瀹炵幇
- - 鈥︹€︽洿澶?
+ - 改进的健壮性；bug 修复；以及更少的开销
+ - 支持更新且简化的 usbcore API
+ - 中断传输可以更大，并且可以排
+ - 通过使用上层"hcd" 框架减少了代码量
+ - 支持 OHCI 的一些非 PCI 实现
+ - ……更
 
-"ohci-hcd" 椹卞姩澶勭悊鎵€鏈?USB 1.1 浼犺緭绫诲瀷銆傛墍鏈夌被鍨嬬殑浼犺緭閮藉彲浠ユ帓闃熴€傚湪 "usb-ohci" 涓篃鏄姝わ紝涓柇浼犺緭闄ゅ銆備互鍓嶏紝浣跨敤涓€涓抚鐨勫懆鏈熶細鍥?IRQ 澶勭悊涓殑寮€閿€鑰屽甫鏉ユ暟鎹涪澶辩殑椋庨櫓銆傚綋涓柇浼犺緭琚帓闃熸椂锛岄€氳繃纭繚纭欢鍦ㄦ搷浣滅郴缁熷鐞嗙浉鍏?IRQ 鏈熼棿濮嬬粓鏈変紶杈撲换鍔″彲鎵ц锛屽彲浠ュ皢杩欎簺椋庨櫓闄嶈嚦鏈€浣庛€?
+"ohci-hcd" 驱动处理所USB 1.1 传输类型。所有类型的传输都可以排队。在 "usb-ohci" 中也是如此，中断传输除外。以前，使用一个帧的周期会IRQ 处理中的开销而带来数据丢失的风险。当中断传输被排队时，通过确保硬件在操作系统处理相IRQ 期间始终有传输任务可执行，可以将这些风险降至最低
 
 - David Brownell
   <dbrownell@users.sourceforge.net>

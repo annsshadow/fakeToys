@@ -1,31 +1,31 @@
-﻿## Kexec 浜ゆ帴锛圞exec Handover锛堿BI
+﻿## Kexec 交接（Kexec Handover）ABI
 
-鏈枃浠舵弿杩?Kexec 浜ゆ帴锛圞HO锛夋満鍒剁浉鍏崇殑 ABI锛屾眹鎬讳簡鏍稿績浜ゆ帴銆乿malloc/memblock 淇濈暀浠ュ強鎸佷箙鍐呭瓨璺熻釜鍣ㄧ瓑鍚勫瓙妯″潡鐨勬帴鍙ｈ鏄庡叆鍙ｏ紝渚涢渶瑕佸湪鍐呮牳閲嶅惎闂翠繚鎸佺姸鎬佺殑鍐呮牳寮€鍙戣€呭弬鑰冦€?
+本文件描Kexec 交接（KHO）机制相关的 ABI，汇总了核心交接、vmalloc/memblock 保留以及持久内存跟踪器等各子模块的接口说明入口，供需要在内核重启间保持状态的内核开发者参考
 
 
-鏈枃浠舵弿杩?Kexec 浜ゆ帴锛圞HO锛夌浉鍏崇殑 ABI銆?
+本文件描Kexec 交接（KHO）相关的 ABI
 
-## 鏍稿績 Kexec 浜ゆ帴 ABI
+## 核心 Kexec 交接 ABI
 
 
    :doc: Kexec Handover ABI
 
-## vmalloc 淇濈暀 ABI
+## vmalloc 保留 ABI
 
 
    :doc: Kexec Handover ABI for vmalloc Preservation
 
-## memblock 淇濈暀 ABI
+## memblock 保留 ABI
 
 
    :doc: memblock kexec handover ABI
 
-## KHO 鎸佷箙鍐呭瓨璺熻釜鍣?ABI
+## KHO 持久内存跟踪ABI
 
 
   :doc: KHO persistent memory tracker
 
-## 鍙﹁鍙傞槄
+## 另请参阅
 
 
 - [/admin-guide/mm/kho](/admin-guide/mm/kho)

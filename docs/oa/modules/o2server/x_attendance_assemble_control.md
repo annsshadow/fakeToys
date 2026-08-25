@@ -17,6 +17,12 @@
 - com.x.attendance.assemble.control.ExceptionPersonHasNoIdentity
 - com.x.attendance.assemble.control.ExceptionQywxFindNoArgumentError
 
+## Key Flows
+
+- 明细分析归档：`POST .../attendancedetail/analyse`（含 `/id/{id}`、`/{startDate}/{endDate}`、`/redo` 变体）→ UPDATE `x_attendance_detail` SET analysed/archived/checked → 返回影响行数
+- 申诉处理：`POST .../attendanceappealInfo/appeal/{id}`、`audit`、`workflow/appeal/{id}`、`workflow/sync` → UPDATE `x_attendance_appeal_info`（appeal_status/audit_status/workflow_status/workflow_synced），分页查询按 id 游标 next/prev 遍历
+- 配置与打卡接收：`GET /rule/list` 查 `x_attendance_assemble_control_rule`，`POST /rule/{id}/toggle` 切换 enabled；`attendanceconfig/save` 对 `x_attendance_config` 按 id upsert；`attendancedetail/recive|reciveSingle|mobile/recive` 置 received = true
+
 ## Dependencies
 
 
@@ -26,6 +32,11 @@
 - x_organization_core_express
 - x_processplatform_core_entity
 - x_general_core_entity
+
+**Rust（oa4rust/crates/attendance_assemble_control）：**
+
+- 内部 path 依赖：shared
+- 关键外部依赖：axum、tokio、deadpool-postgres、serde/serde_json、uuid、tower
 
 ## REST Endpoints
 

@@ -1,19 +1,19 @@
 ﻿
-## arm64 涓婄殑 vCPU 鐗规€ч€夋嫨
+## arm64 上的 vCPU 特性选择
 
 
-KVM/arm64 鎻愪緵涓ょ鏈哄埗锛屽厑璁哥敤鎴风┖闂撮厤缃憟鐜扮粰瀹㈡埛鏈虹殑 CPU 鐗规€с€?
+KVM/arm64 提供两种机制，允许用户空间配置呈现给客户机的 CPU 特性
 ## KVM_ARM_VCPU_INIT
 
 
-`KVM_ARM_VCPU_INIT` ioctl 鎺ュ彈涓€涓壒鎬ф爣蹇椾綅鍥?**锛坄`struct kvm_vcpu_init**
-: features``锛夈€傞€氳繃璇ユ帴鍙ｅ惎鐢ㄧ殑鐗规€ф槸
-**opt-in**锛堥€夋嫨鎬у姞鍏ワ級鐨勶紝骞跺彲鑳芥敼鍙?鎵╁睍 UAPI銆傛湁鍏宠 ioctl 鎵€鎺у埗鐨勭壒鎬х殑瀹屾暣
-鏂囨。锛岃鍙傝 KVM_ARM_VCPU_INIT銆?
-闄ゆ涔嬪锛孠VM 鏀寔鐨勬墍鏈?CPU 鐗规€ч兘鐢辨灦鏋勫寲鐨?ID 瀵勫瓨鍣ㄦ弿杩般€?
-## ID 瀵勫瓨鍣?
+`KVM_ARM_VCPU_INIT` ioctl 接受一个特性标志位**（``struct kvm_vcpu_init**
+: features``）。通过该接口启用的特性是
+**opt-in**（选择性加入）的，并可能改扩展 UAPI。有关该 ioctl 所控制的特性的完整
+文档，请参见 KVM_ARM_VCPU_INIT
+除此之外，KVM 支持的所CPU 特性都由架构化ID 寄存器描述
+## ID 瀵勫瓨鍣。
 
-Arm 鏋舵瀯瑙勫畾浜嗕竴绯诲垪 **ID 瀵勫瓨鍣?*锛岀敤浜庢弿杩?CPU 瀹炵幇鎵€鏀寔鐨勬灦鏋勭壒鎬ч泦鍚堛€侹VM 灏嗗鎴锋満鐨?ID 瀵勫瓨鍣ㄥ垵濮嬪寲涓虹郴缁熸墍鏀寔鐨勬渶澶?CPU 鐗规€ч泦鍚堛€侷D 瀵勫瓨鍣ㄧ殑鍊煎湪 KVM 涓彲浠ユ槸 VM 浣滅敤鍩燂紙VM-scoped锛夌殑锛岃繖鎰忓懗鐫€杩欎簺鍊煎彲浠ュ湪涓€涓?VM 鐨勬墍鏈?vCPU 涔嬮棿鍏变韩銆?
-KVM 鍏佽鐢ㄦ埛绌洪棿閫氳繃 `KVM_SET_ONE_REG` ioctl 鍚?ID 瀵勫瓨鍣ㄥ啓鍏ュ€硷紝浠庤€?**opt-out**锛堥€夋嫨閫€鍑猴級鏌愪簺鐢?ID 瀵勫瓨鍣ㄦ弿杩扮殑 CPU 鐗规€с€侷D 瀵勫瓨鍣ㄥ湪 VM 鍚姩涔嬪墠鏄彲鍙樼殑锛屽嵆鐢ㄦ埛绌洪棿宸插璇?VM 涓嚦灏戜竴涓?vCPU 璋冪敤浜?`KVM_RUN`銆傜敤鎴风┖闂村彲浠ヤ娇鐢?`KVM_ARM_GET_REG_WRITABLE_MASKS` 鏉ュ彂鐜?ID 瀵勫瓨鍣ㄤ腑鍝簺瀛楁鏄彲鍙樼殑銆傛洿澶氱粏鑺傝鍙傝 ioctl 鏂囨。 <KVM_ARM_GET_REG_WRITABLE_MASKS>銆?
-鐢ㄦ埛绌洪棿琚厑璁告牴鎹灦鏋勫湪 DDI0487J.a D19.1.3 "ID 瀵勫瓨鍣ㄤ腑瀛楁鐨?ID 鏂规鍘熷垯锛圥rinciples of the ID scheme for fields in ID register锛?涓瀹氱殑瑙勫垯鏉?**闄愬埗** 鎴?**灞忚斀** CPU 鐗规€с€侹VM 涓嶅厑璁歌秴鍑虹郴缁熻兘鍔涚殑 ID 瀵勫瓨鍣ㄥ€笺€?
-   寮虹儓寤鸿鐢ㄦ埛绌洪棿鍦ㄨ闂?vCPU 鍏朵綑 CPU 瀵勫瓨鍣ㄧ姸鎬佷箣鍓嶄慨鏀?ID 瀵勫瓨鍣ㄧ殑鍊笺€侹VM 鍙兘浼氬埄鐢?ID 瀵勫瓨鍣ㄧ殑鍊兼潵鎺у埗鐗规€фā鎷熴€傚皢 ID 瀵勫瓨鍣ㄤ慨鏀逛笌鍏朵粬绯荤粺瀵勫瓨鍣ㄨ闂氦閿欒繘琛屽彲鑳藉鑷翠笉鍙娴嬬殑琛屼负銆?
+Arm 架构规定了一系列 **ID 寄存*，用于描CPU 实现所支持的架构特性集合。KVM 将客户机ID 寄存器初始化为系统所支持的最CPU 特性集合。ID 寄存器的值在 KVM 中可以是 VM 作用域（VM-scoped）的，这意味着这些值可以在一VM 的所vCPU 之间共享
+KVM 允许用户空间通过 `KVM_SET_ONE_REG` ioctl ID 寄存器写入值，从**opt-out**（选择退出）某些ID 寄存器描述的 CPU 特性。ID 寄存器在 VM 启动之前是可变的，即用户空间已对VM 中至少一vCPU 调用`KVM_RUN`。用户空间可以使`KVM_ARM_GET_REG_WRITABLE_MASKS` 来发ID 寄存器中哪些字段是可变的。更多细节请参见 ioctl 文档 <KVM_ARM_GET_REG_WRITABLE_MASKS>
+用户空间被允许根据架构在 DDI0487J.a D19.1.3 "ID 寄存器中字段ID 方案原则（Principles of the ID scheme for fields in ID register中规定的规则**限制** **屏蔽** CPU 特性。KVM 不允许超出系统能力的 ID 寄存器值
+   强烈建议用户空间在访vCPU 其余 CPU 寄存器状态之前修ID 寄存器的值。KVM 可能会利ID 寄存器的值来控制特性模拟。将 ID 寄存器修改与其他系统寄存器访问交错进行可能导致不可预测的行为

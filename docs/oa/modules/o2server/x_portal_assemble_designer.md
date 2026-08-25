@@ -17,6 +17,12 @@
 - com.x.portal.assemble.designer.factory.PageFactory
 - com.x.portal.assemble.designer.factory.PortalFactory
 
+## Key Flows
+
+- 门户设计创建与保存：`POST /jaxrs/portal/design/save`（及 `/jaxrs/portal/assemble/designer/create`）→ `create_design`（uuid v4，creator="system"）→ INSERT INTO `x_portal_design`；`POST .../designer/save/{id}` → `save_design` UPDATE `x_portal_design` SET content/update_time
+- 页面 CRUD：`POST .../designer/page/create` → `create_page` INSERT INTO `x_portal_page`（name/category/content JSON 序列化存储）；`POST .../page/save/{id}` → UPDATE content；`GET .../page/{id}` → `get_page` 按 id 查询并反序列化 content
+- 设计列表：`GET /jaxrs/portal/design/list` → `list_designs` 查询 `x_portal_design` WHERE deleted_at IS NULL ORDER BY update_time DESC；页面按分类浏览走 `GET .../page/list/{category}` → 查询 `x_portal_page WHERE category=$1`
+
 ## Dependencies
 
 
@@ -25,6 +31,11 @@
 - x_portal_core_entity
 - x_organization_core_express
 - x_general_core_entity
+
+**Rust（oa4rust/crates/portal_assemble_designer）：**
+
+- 内部 path 依赖：shared
+- 关键外部依赖：axum、tokio、deadpool-postgres、serde/serde_json、uuid、tower、bcrypt、base64、anyhow、chrono、md5、urlencoding
 
 ## REST Endpoints
 

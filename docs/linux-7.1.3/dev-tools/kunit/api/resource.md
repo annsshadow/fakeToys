@@ -1,17 +1,17 @@
-﻿## 璧勬簮 API
+﻿## 资源 API
 
 
-鏈枃浠惰褰?KUnit 璧勬簮 API銆?
+本文件记KUnit 资源 API
 
-澶у鏁扮敤鎴锋棤闇€鐩存帴浣跨敤姝?API锛涢珮绾х敤鎴峰彲鐢ㄥ叾鍦ㄦ瘡娆℃祴璇曠殑鍩虹涓婂瓨鍌ㄧ姸鎬併€佹敞鍐?
-鑷畾涔夋竻鐞嗗姩浣滅瓑銆?
+大多数用户无需直接使用API；高级用户可用其在每次测试的基础上存储状态、注
+自定义清理动作等
 
    :internal:
 
-### 鍙楃璁惧
+### 受管设备
 
 
-鐢ㄤ簬浣跨敤 KUnit 鎵樼鐨?struct device 涓?struct device_driver 鐨勫嚱鏁般€備娇鐢ㄨ繖浜涢渶鍖呭惈
-`kunit/device.h`銆?
+用于使用 KUnit 托管struct device struct device_driver 的函数。使用这些需包含
+`kunit/device.h`銆。
 
    :internal:

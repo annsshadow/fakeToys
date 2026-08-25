@@ -1,6 +1,6 @@
 ﻿
-## Linux 鏁版嵁鍖呯敓鎴愬櫒锛坧acket generator锛変娇鐢ㄦ寚鍗?
-鍚敤 CONFIG_NET_PKTGEN 浠ョ紪璇戝苟鏋勫缓 pktgen锛屽彲浠ュ唴缃埌鍐呮牳鎴栦綔涓烘ā鍧椼€傛帹鑽愪娇鐢ㄦā鍧楋紱濡傛灉闇€瑕佸垯 modprobe pktgen銆備竴鏃﹁繍琛岋紝pktgen 浼氫负姣忎釜 CPU 鍒涘缓涓€涓嚎绋嬶紝骞跺皢浜插拰鎬х粦瀹氬埌璇?CPU銆傜洃鎺у拰鎺у埗閫氳繃 /proc 瀹屾垚銆傛渶绠€鍗曠殑鏂规硶鏄€夋嫨涓€涓悎閫傜殑绀轰緥鑴氭湰骞堕厤缃畠銆?
+## Linux 数据包生成器（packet generator）使用指
+启用 CONFIG_NET_PKTGEN 以编译并构建 pktgen，可以内置到内核或作为模块。推荐使用模块；如果需要则 modprobe pktgen。一旦运行，pktgen 会为每个 CPU 创建一个线程，并将亲和性绑定到CPU。监控和控制通过 /proc 完成。最简单的方法是选择一个合适的示例脚本并配置它
 ```
     ps aux | grep pkt
     root       129  0.3  0.0     0    0 ?        SW    2003 523:20 [kpktgend_0]
@@ -13,41 +13,41 @@
 	/proc/net/pktgen/ethX
 
 ```
-## 涓烘渶澶ф€ц兘璋冧紭 NIC
+## 为最大性能调优 NIC
 
-榛樿鐨?NIC 璁剧疆锛堝彲鑳斤級骞舵湭閽堝 pktgen 杩欑浜轰负杩囪浇绫诲瀷鐨勫熀鍑嗘祴璇曡繘琛岃皟浼橈紝鍥犱负杩欎細鎹熷姝ｅ父浣跨敤鍦烘櫙銆?
+默认NIC 设置（可能）并未针对 pktgen 这种人为过载类型的基准测试进行调优，因为这会损害正常使用场景
 ```
  # ethtool -G ethX tx 1024
 
 ```
-鏇村ぇ鐨?TX 鐜彲浠ユ彁楂?pktgen 鐨勬€ц兘锛屼絾鍦ㄤ竴鑸儏鍐典笅瀹冧細鏈夊锛?锛夊洜涓?TX 鐜紦鍐插尯鍙兘鍙樺緱姣?CPU 鐨?L1/L2 缂撳瓨鏇村ぇ锛?锛夊洜涓哄畠鍏佽鍦?NIC 纭欢灞傛湁鏇村鐨勬帓闃燂紙杩欏缂撳啿鍖鸿啫鑳€ bufferbloat 涓嶅埄锛夈€?
-浜轰滑涓嶅簲鍖嗗繖寰楀嚭 HW TX 鐜腑鐨勬暟鎹寘/鎻忚堪绗︿細閫犳垚寤惰繜鐨勭粨璁恒€傞┍鍔ㄩ€氬父鍑轰簬鍚勭鎬ц兘鍘熷洜鑰屽欢杩熸竻鐞嗙幆缂撳啿鍖猴紝鍋滄粸鍦?TX 鐜腑鐨勬暟鎹寘鍙兘鍙槸鍦ㄧ瓑寰呮竻鐞嗐€?
-杩欎釜娓呯悊闂鐗瑰埆閫傜敤浜庨┍鍔?ixgbe锛圛ntel 82599 鑺墖锛夈€傝椹卞姩锛坕xgbe锛夊皢 TX+RX 鐜竻鐞嗗悎骞讹紝鑰屾竻鐞嗛棿闅斿彈 ethtool --coalesce 璁剧疆涓殑鍙傛暟 "rx-usecs" 褰卞搷銆?
+更大TX 环可以提pktgen 的性能，但在一般情况下它会有害）因TX 环缓冲区可能变得CPU L1/L2 缓存更大）因为它允许NIC 硬件层有更多的排队（这对缓冲区膨胀 bufferbloat 不利）
+人们不应匆忙得出 HW TX 环中的数据包/描述符会造成延迟的结论。驱动通常出于各种性能原因而延迟清理环缓冲区，停滞TX 环中的数据包可能只是在等待清理
+这个清理问题特别适用于驱ixgbe（Intel 82599 芯片）。该驱动（ixgbe）将 TX+RX 环清理合并，而清理间隔受 ethtool --coalesce 设置中的参数 "rx-usecs" 影响
 ```
  # ethtool -C ethX rx-usecs 30
 
 ```
-## 鍐呮牳绾跨▼
+## 内核线程
 
-Pktgen 涓烘瘡涓?CPU 鍒涘缓涓€涓嚎绋嬶紝骞跺皢浜插拰鎬х粦瀹氬埌璇?CPU銆傝繖鍙互閫氳繃 proc 鏂囦欢 /proc/net/pktgen/kpktgend_X 鎺у埗銆?
+Pktgen 为每CPU 创建一个线程，并将亲和性绑定到CPU。这可以通过 proc 文件 /proc/net/pktgen/kpktgend_X 控制
 ```
  Running:
  Stopped: eth4@0
  Result: OK: add_device=eth4@0
 
 ```
-鏈€閲嶈鐨勬槸鍒嗛厤缁欑嚎绋嬬殑璁惧銆?
-涓や釜鍩烘湰鐨勭嚎绋嬪懡浠ゆ槸锛?
- - add_device DEVICE@NAME -- 娣诲姞涓€涓崟涓€璁惧
- - rem_device_all         -- 绉婚櫎鎵€鏈夊叧鑱旂殑璁惧
+最重要的是分配给线程的设备
+两个基本的线程命令是
+ - add_device DEVICE@NAME -- 添加一个单一设备
+ - rem_device_all         -- 移除所有关联的设备
 
-褰撳悜绾跨▼娣诲姞璁惧鏃讹紝浼氬垱寤轰竴涓浉搴旂殑 proc 鏂囦欢锛岀敤浜庨厤缃璁惧銆傚洜姝わ紝璁惧鍚嶇О闇€瑕佸敮涓€銆?
-涓轰簡鏀寔灏嗗悓涓€璁惧娣诲姞鍒板涓嚎绋嬶紙杩欏澶氶槦鍒?NIC 寰堟湁鐢級锛岃澶囧懡鍚嶆柟妗堢敤 "@" 杩涜浜嗘墿灞曪細device@something
+当向线程添加设备时，会创建一个相应的 proc 文件，用于配置该设备。因此，设备名称需要唯一
+为了支持将同一设备添加到多个线程（这对多队NIC 很有用），设备命名方案用 "@" 进行了扩展：device@something
 
-"@" 涔嬪悗鐨勯儴鍒嗗彲浠ユ槸浠绘剰鍐呭锛屼絾閫氬父涔犳儻浣跨敤绾跨▼鍙枫€?
-## 鏌ョ湅璁惧
+"@" 之后的部分可以是任意内容，但通常习惯使用线程号
+## 查看设备
 
-Params 閮ㄥ垎淇濆瓨閰嶇疆淇℃伅銆侰urrent 閮ㄥ垎淇濆瓨杩愯缁熻淇℃伅銆俁esult 鍦ㄤ竴娆¤繍琛屽悗鎴栧湪涔嬪悗鎵撳嵃銆?
+Params 部分保存配置信息。Current 部分保存运行统计信息。Result 在一次运行后或在之后打印
 ```
     /proc/net/pktgen/eth4@0
 
@@ -73,9 +73,9 @@ Params 閮ㄥ垎淇濆瓨閰嶇疆淇℃伅銆侰urrent 閮ㄥ垎淇濆瓨杩愯
     6480562pps 3110Mb/sec (3110669760bps) errors: 0
 
 ```
-## 閰嶇疆璁惧
+## 配置设备
 
-杩欐槸閫氳繃 /proc 鎺ュ彛瀹屾垚鐨勶紝骞朵笖鏈€瀹规槗閫氳繃绀轰緥鑴氭湰涓畾涔夌殑 pgset 鏉ュ畬鎴愩€備綘闇€瑕佹寚瀹?PGDEV 鐜鍙橀噺鏉ヤ娇鐢ㄧず渚嬭剼鏈腑鐨勫嚱鏁般€?
+这是通过 /proc 接口完成的，并且最容易通过示例脚本中定义的 pgset 来完成。你需要指PGDEV 环境变量来使用示例脚本中的函数
 ```
     export PGDEV=/proc/net/pktgen/eth4@0
     source samples/pktgen/functions.sh
@@ -189,9 +189,9 @@ Params 閮ㄥ垎淇濆瓨閰嶇疆淇℃伅銆侰urrent 閮ㄥ垎淇濆瓨杩愯
 				  Default xmit_mode is "start_xmit".
 
 ```
-## 绀轰緥鑴氭湰
+## 示例脚本
 
-samples/pktgen 鐩綍涓寘鍚竴缁?pktgen 鐨勬暀绋嬭剼鏈拰杈呭姪宸ュ叿銆傝緟鍔╂枃浠?parameters.sh 鏀寔鍦ㄥ悇绀轰緥鑴氭湰涔嬮棿杩涜绠€鍗曚笖涓€鑷寸殑鍙傛暟瑙ｆ瀽銆?
+samples/pktgen 目录中包含一pktgen 的教程脚本和辅助工具。辅助文parameters.sh 支持在各示例脚本之间进行简单且一致的参数解析
 ```
  ./pktgen_sample01_simple.sh -i eth4 -m 00:1B:21:3C:9D:F8 -d 192.168.8.2
 
@@ -216,29 +216,29 @@ samples/pktgen 鐩綍涓寘鍚竴缁?pktgen 鐨勬暀绋嬭剼鏈拰
   -a : ($APPEND)    Script will not reset generator's state, but will append its config
 
 ```
-鎵€鍒楀嚭鐨勫叏灞€鍙橀噺涔熷湪鍏朵腑銆備緥濡傦紝蹇呴渶鐨勬帴鍙?璁惧鍙傛暟 "-i" 璁剧疆浜嗗彉閲?$DEV銆傚鍒?pktgen_sampleXX 鑴氭湰骞朵慨鏀瑰畠浠互閫傚簲浣犺嚜宸辩殑闇€瑕併€?
+所列出的全局变量也在其中。例如，必需的接设备参数 "-i" 设置了变$DEV。复pktgen_sampleXX 脚本并修改它们以适应你自己的需要
 
-## 涓柇浜插拰鎬?
-娉ㄦ剰锛屽綋鍚戠壒瀹?CPU 娣诲姞璁惧鏃讹紝鍚屾椂鍒嗛厤 /proc/irq/XX/smp_affinity 浠ュ皢 TX 涓柇缁戝畾鍒板悓涓€ CPU 鏄釜濂戒富鎰忋€傝繖鍑忓皯浜嗛噴鏀?skb 鏃剁殑缂撳瓨鎶栧姩锛坈ache bouncing锛夈€?
-姝ゅ浣跨敤璁惧鏍囧織 QUEUE_MAP_CPU锛屽畠灏?SKB 鐨?TX 闃熷垪鏄犲皠鍒拌繍琛岀嚎绋嬬殑 CPU锛堢洿鎺ユ潵鑷?smp_processor_id()锛夈€?
-## 鍚敤 IPsec
+## 中断亲和
+注意，当向特CPU 添加设备时，同时分配 /proc/irq/XX/smp_affinity 以将 TX 中断绑定到同一 CPU 是个好主意。这减少了释skb 时的缓存抖动（cache bouncing）
+此外使用设备标志 QUEUE_MAP_CPU，它SKB TX 队列映射到运行线程的 CPU（直接来smp_processor_id()）
+## 启用 IPsec
 
-榛樿鐨?IPsec 杞崲浣跨敤 ESP 灏佽鍔犱紶杈撴ā寮?
+默认IPsec 转换使用 ESP 封装加传输模
 ```
     pgset "flag IPSEC"
     pgset "flows 1"
 
 ```
-涓轰簡閬垮厤鐮村潖鐜版湁鐨勭敤浜?AH 绫诲瀷鍜岄毀閬撴ā寮忕殑娴嬭瘯搴婅剼鏈紝浣犲彲浠ヤ娇鐢?"pgset spi SPI_VALUE" 鏉ユ寚瀹氳閲囩敤鐨勮浆鎹㈡ā寮忋€?
-## 绂佺敤鍏变韩 SKB
+为了避免破坏现有的用AH 类型和隧道模式的测试床脚本，你可以使"pgset spi SPI_VALUE" 来指定要采用的转换模式
+## 禁用共享 SKB
 
-榛樿鎯呭喌涓嬶紝pktgen 鍙戦€佺殑 SKB 鏄叡浜殑锛堢敤鎴疯鏁?> 1锛夈€?
+默认情况下，pktgen 发送的 SKB 是共享的（用户计> 1）
 ```
 	pg_set "flag !SHARED"
 
 ```
-鐒惰€岋紝濡傛灉閰嶇疆浜?"clone_skb" 鎴?"burst" 鍙傛暟锛宻kb 浠嶉渶瑕佽 pktgen 鎸佹湁浠ヤ究杩涗竴姝ヨ闂€傚洜姝よ skb 蹇呴』鏄叡浜殑銆?
-## 褰撳墠鍛戒护涓庨厤缃€夐」
+然而，如果配置"clone_skb" "burst" 参数，skb 仍需要被 pktgen 持有以便进一步访问。因此该 skb 必须是共享的
+## 当前命令与配置选项
 
 ```
     start
@@ -340,14 +340,14 @@ samples/pktgen 鐩綍涓寘鍚竴缁?pktgen 鐨勬暀绋嬭剼鏈拰
     svlan_p
 
 ```
-鍙傝€冩枃鐚細
+参考文献：
 
 - ftp://robur.slu.se/pub/Linux/net-development/pktgen-testing/
 - ftp://robur.slu.se/pub/Linux/net-development/pktgen-testing/examples/
 
-Linux-Kongress in Erlangen 2004 鐨勮鏂囥€?- ftp://robur.slu.se/pub/Linux/net-development/pktgen-testing/pktgen_paper.pdf
+Linux-Kongress in Erlangen 2004 的论文- ftp://robur.slu.se/pub/Linux/net-development/pktgen-testing/pktgen_paper.pdf
 
-鎰熻阿锛?
-Grant Grundler 鍦?IA-64 鍜?parisc 涓婄殑娴嬭瘯锛孒arald Welte銆丩ennert Buytenhek銆丼tephen Hemminger銆丄ndi Kleen銆丏ave Miller 浠ュ強璁稿鍏朵粬浜恒€?
+感谢
+Grant Grundler IA-64 parisc 上的测试，Harald Welte、Lennert Buytenhek、Stephen Hemminger、Andi Kleen、Dave Miller 以及许多其他人
 
-绁?Linux 缃戠粶寮€鍙戦『鍒┿€?
+Linux 网络开发顺利

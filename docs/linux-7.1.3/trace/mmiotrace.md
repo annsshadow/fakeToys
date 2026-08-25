@@ -1,33 +1,33 @@
-﻿## 鍐呮牳鎬佸唴瀛樻槧灏?I/O 璺熻釜
+﻿## 内核态内存映I/O 跟踪
 
 
-涓婚〉鍙婂彲閫夌敤鎴风┖闂村伐鍏风殑閾炬帴锛?
+主页及可选用户空间工具的链接
 
 	https://nouveau.freedesktop.org/wiki/MmioTrace
 
-MMIO 璺熻釜鏈€鍒濈敱 Intel 鍦?2003 骞村乏鍙充负鍏舵晠闅滄敞鍏ユ祴璇曟鏋讹紙Fault Injection
-Test Harness锛夊紑鍙戙€傚湪 2006 骞?12 鏈堣嚦 2007 骞?1 鏈堟湡闂达紝Jeff Muizelaar 鍒╃敤
-Intel 鐨勪唬鐮侊紝鍒涘缓浜嗕竴涓敤浜庤窡韪?MMIO 璁块棶鐨勫伐鍏凤紝鍏跺垵琛锋槸涓?Nouveau 椤圭洰
-鏈嶅姟銆傛鍚庢湁璁稿浜轰綔鍑轰簡璐＄尞銆?
+MMIO 跟踪最初由 Intel 2003 年左右为其故障注入测试框架（Fault Injection
+Test Harness）开发。在 2006 12 月至 2007 1 月期间，Jeff Muizelaar 利用
+Intel 的代码，创建了一个用于跟MMIO 访问的工具，其初衷是Nouveau 项目
+服务。此后有许多人作出了贡献
 
-Mmiotrace 鏄负瀵逛换浣曞唴瀛樻槧灏?IO 璁惧杩涜閫嗗悜宸ョ▼鑰屾瀯寤虹殑锛孨ouveau 椤圭洰鏄叾
-绗竴涓湡瀹炵敤鎴枫€備粎鏀寔 x86 鍜?x86_64 鏋舵瀯銆?
+Mmiotrace 是为对任何内存映IO 设备进行逆向工程而构建的，Nouveau 项目是其
+第一个真实用户。仅支持 x86 x86_64 架构
 
-鏍戝锛坥ut-of-tree锛夌殑 mmiotrace 鏈€鍒濈敱 Pekka Paalanen <pq@iki.fi> 淇敼涓哄彲
-鍚堝叆涓荤嚎锛屽苟閫傞厤 ftrace 妗嗘灦銆?
-
-
-### 鍑嗗
+树外（out-of-tree）的 mmiotrace 最初由 Pekka Paalanen <pq@iki.fi> 修改为可
+合入主线，并适配 ftrace 框架
 
 
-Mmiotrace 鍔熻兘閫氳繃 CONFIG_MMIOTRACE 閫夐」缂栬瘧杩涘唴鏍搞€傝窡韪粯璁ゆ槸鍏抽棴鐨勶紝鍥犳
-灏嗗叾璁句负 yes 鏄畨鍏ㄧ殑銆係MP 绯荤粺鍙楁敮鎸侊紝浣嗗鏋滃浜庝竴涓?CPU 澶勪簬鍦ㄧ嚎鐘舵€侊紝
-璺熻釜灏嗕笉鍙潬骞跺彲鑳戒涪澶变簨浠讹紝鍥犳 mmiotrace 鍦ㄨ繍琛屾椂婵€娲绘湡闂翠細浣块櫎涓€涓?CPU
-涔嬪鐨勬墍鏈?CPU 绂荤嚎銆備綘鍙互鎵嬪姩閲嶆柊鍚敤 CPU锛屼絾宸茬粡璀﹀憡杩囦綘锛氱敱浜?CPU 绔炰簤锛?
-鏃犳硶鑷姩妫€娴嬫槸鍚︽鍦ㄤ涪澶变簨浠躲€?
+### 准备
 
 
-### 鐢ㄦ硶蹇€熷弬鑰?
+Mmiotrace 功能通过 CONFIG_MMIOTRACE 选项编译进内核。跟踪默认是关闭的，因此
+将其设为 yes 是安全的。SMP 系统受支持，但如果多于一CPU 处于在线状态，
+跟踪将不可靠并可能丢失事件，因此 mmiotrace 在运行时激活期间会使除一CPU
+之外的所CPU 离线。你可以手动重新启用 CPU，但已经警告过你：由CPU 竞争
+无法自动检测是否正在丢失事件
+
+
+### 用法快速参
 
 ```
 
@@ -41,16 +41,16 @@ Mmiotrace 鍔熻兘閫氳繃 CONFIG_MMIOTRACE 閫夐」缂栬瘧杩涘唴鏍搞�
 
 
 ```
-### 鐢ㄦ硶
+### 用法
 
 
-纭繚 debugfs 宸叉寕杞藉埌 /sys/kernel/debug銆?
+确保 debugfs 已挂载到 /sys/kernel/debug
 ```
 
 	$ mount -t debugfs debugfs /sys/kernel/debug
 
 ```
-纭浣犲嵆灏嗚窡韪殑椹卞姩灏氭湭鍔犺浇銆?
+确认你即将跟踪的驱动尚未加载
 
 ```
 
@@ -62,22 +62,22 @@ Mmiotrace 鍔熻兘閫氳繃 CONFIG_MMIOTRACE 閫夐」缂栬瘧杩涘唴鏍搞�
 	$ cat /sys/kernel/tracing/trace_pipe > mydump.txt &
 
 ```
-'cat' 杩涚▼搴斿綋淇濇寔锛堢潯鐪狅級鍦ㄥ悗鍙拌繍琛屻€?
+'cat' 进程应当保持（睡眠）在后台运行
 
-鍔犺浇浣犳兂瑕佽窡韪殑椹卞姩骞朵娇鐢ㄥ畠銆侻miotrace 鍙細鎹曡幏鍦?mmiotrace 澶勪簬娲诲姩鐘舵€?
-鏈熼棿琚?ioremap 鐨勫尯鍩熺殑 MMIO 璁块棶銆?
+加载你想要跟踪的驱动并使用它。Mmiotrace 只会捕获mmiotrace 处于活动状
+期间ioremap 的区域的 MMIO 访问
 
-鍦ㄨ窡韪湡闂达紝浣犲彲浠ラ€氳繃
+在跟踪期间，你可以通过
 $ echo "X is up" > /sys/kernel/tracing/trace_marker
-灏嗘敞閲婏紙鏍囪锛夋斁鍏ヨ窡韪褰曚腑銆傝繖鏍锋洿瀹规槗鐪嬫竻锛堝簽澶х殑锛夎窡韪褰曠殑鍝竴閮ㄥ垎
-瀵瑰簲鍝釜鎿嶄綔銆傚缓璁斁缃叧浜庝綘鎵€鍋氭搷浣滅殑鎻忚堪鎬ф爣璁般€?
+将注释（标记）放入跟踪记录中。这样更容易看清（庞大的）跟踪记录的哪一部分
+对应哪个操作。建议放置关于你所做操作的描述性标记
 
 ```
 
 	$ echo nop > /sys/kernel/tracing/current_tracer
 
 ```
-'cat' 杩涚▼閫€鍑恒€傚鏋滃畠娌℃湁閫€鍑猴紝閫氳繃鎵ц 'fg' 鍛戒护骞舵寜涓?ctrl+c 鏉ョ粓姝㈠畠銆?
+'cat' 进程退出。如果它没有退出，通过执行 'fg' 命令并按ctrl+c 来终止它
 
 ```
 
@@ -89,23 +89,23 @@ $ echo "X is up" > /sys/kernel/tracing/trace_marker
 	$ dmesg
 
 ```
-浠ユ煡鐪嬪唴鏍告棩蹇楀苟鏌ユ壘 "mmiotrace has lost events" 璀﹀憡銆傚鏋滀簨浠朵涪澶变簡锛?
-璺熻釜璁板綍灏变笉瀹屾暣銆備綘搴旇鎵╁ぇ缂撳啿鍖哄苟閲嶈瘯銆傜紦鍐插尯鍙€氳繃鍏堟煡鐪嬪綋鍓嶇紦鍐插尯
-鏈夊澶ф潵鎵╁ぇ
+以查看内核日志并查找 "mmiotrace has lost events" 警告。如果事件丢失了
+跟踪记录就不完整。你应该扩大缓冲区并重试。缓冲区可通过先查看当前缓冲区
+有多大来扩大
 ```
 
 	$ cat /sys/kernel/tracing/buffer_size_kb
 
 ```
-浼氱粰鍑轰竴涓暟瀛椼€傚皢璇ユ暟瀛楀ぇ绾︾炕鍊嶅苟鍐欏洖锛屼緥濡?
+会给出一个数字。将该数字大约翻倍并写回，例
 ```
 
 	$ echo 128000 > /sys/kernel/tracing/buffer_size_kb
 
 ```
-鐒跺悗浠庡ご閲嶆柊寮€濮嬨€?
+然后从头重新开始
 
-濡傛灉浣犳鍦ㄤ负鏌愪釜椹卞姩椤圭洰锛堜緥濡?Nouveau锛夊仛璺熻釜锛屼綘杩樺簲褰?
+如果你正在为某个驱动项目（例Nouveau）做跟踪，你还应
 ```
 
 	$ lspci -vvv > lspci.txt
@@ -113,57 +113,57 @@ $ echo "X is up" > /sys/kernel/tracing/trace_marker
 	$ tar zcf pciid-nick-mmiotrace.tar.gz mydump.txt lspci.txt dmesg.txt
 
 ```
-鐒跺悗鍙戦€佽 .tar.gz 鏂囦欢銆傝窡韪褰曞帇缂╂晥鏋滄樉钁椼€傚皢 "pciid" 鍜?"nick" 鏇挎崲
-涓烘鍦ㄨ皟鏌ョ‖浠剁殑 PCI ID 鎴栧瀷鍙峰悕绉颁互鍙婁綘鐨勬樀绉般€?
+然后发送该 .tar.gz 文件。跟踪记录压缩效果显著。将 "pciid" "nick" 替换
+为正在调查硬件的 PCI ID 或型号名称以及你的昵称
 
 
-### Mmiotrace 鐨勫伐浣滃師鐞?
+### Mmiotrace 的工作原
 
 
-瀵圭‖浠?IO 鍐呭瓨鐨勮闂槸閫氳繃璋冪敤鏌愪釜 ioremap_*() 鍑芥暟锛屽皢浠?PCI 鎬荤嚎鏄犲皠鍦板潃
-鏉ヨ幏寰椼€侻miotrace 鎸傝浇鍒?__ioremap() 鍑芥暟锛屽苟鍦ㄦ瘡娆″垱寤烘槧灏勬椂琚皟鐢ㄣ€傛槧灏勬槸
-涓€涓璁板綍鍒拌窡韪棩蹇椾腑鐨勪簨浠躲€傛敞鎰?ISA 鑼冨洿鐨勬槧灏勪笉浼氳鎹曡幏锛屽洜涓鸿鏄犲皠濮嬬粓
-瀛樺湪骞朵細琚洿鎺ヨ繑鍥炪€?
+对硬IO 内存的访问是通过调用某个 ioremap_*() 函数，将PCI 总线映射地址
+来获得。Mmiotrace 挂载__ioremap() 函数，并在每次创建映射时被调用。映射是
+一个被记录到跟踪日志中的事件。注ISA 范围的映射不会被捕获，因为该映射始终
+存在并会被直接返回
 
-MMIO 璁块棶閫氳繃椤甸敊璇潵璁板綍銆傚氨鍦?__ioremap() 杩斿洖涔嬪墠锛岃鏄犲皠鐨勯〉琚爣璁颁负
-涓嶅瓨鍦ㄣ€傚璇ラ〉鐨勪换浣曡闂兘浼氬紩鍙戦敊璇€傞〉閿欒澶勭悊绋嬪簭璋冪敤 mmiotrace 鏉ュ鐞?
-璇ラ敊璇€侻miotrace 灏嗚椤垫爣璁颁负瀛樺湪锛岃缃?TF 鏍囧織浠ュ疄鐜板崟姝ユ墽琛岋紝骞堕€€鍑洪敊璇?
-澶勭悊绋嬪簭銆傚紩鍙戦敊璇殑鎸囦护琚墽琛屽苟杩涘叆璋冭瘯闄烽槺銆傚湪杩欓噷 mmiotrace 鍐嶆灏嗚椤?
-鏍囪涓轰笉瀛樺湪銆傝鎸囦护琚В鐮佷互鑾峰彇鎿嶄綔绫诲瀷锛堣/鍐欙級銆佹暟鎹搴︿互鍙婅鍐欑殑鏁板€笺€?
-杩欎簺淇℃伅琚瓨鍌ㄥ埌璺熻釜鏃ュ織涓€?
+MMIO 访问通过页错误来记录。就__ioremap() 返回之前，被映射的页被标记为
+不存在。对该页的任何访问都会引发错误。页错误处理程序调用 mmiotrace 来处
+该错误。Mmiotrace 将该页标记为存在，设TF 标志以实现单步执行，并退出错
+处理程序。引发错误的指令被执行并进入调试陷阱。在这里 mmiotrace 再次将该
+标记为不存在。该指令被解码以获取操作类型（读/写）、数据宽度以及读写的数值
+这些信息被存储到跟踪日志中
 
-鍦ㄩ〉閿欒澶勭悊绋嬪簭涓皢椤垫爣璁颁负瀛樺湪鍦?SMP 鏈哄櫒涓婂瓨鍦ㄧ珵浜夋潯浠躲€傚湪鍗曟鎵ц鏈熼棿锛?
-鍏朵粬 CPU 鍙兘鍦ㄨ椤典笂鑷敱杩愯锛屼簨浠跺彲鑳藉湪鏃犳彁绀虹殑鎯呭喌涓嬩涪澶便€備笉榧撳姳鍦ㄨ窡韪?
-鏈熼棿閲嶆柊鍚敤鍏朵粬 CPU銆?
-
-
-### 璺熻釜鏃ュ織鏍煎紡
+在页错误处理程序中将页标记为存在SMP 机器上存在竞争条件。在单步执行期间
+其他 CPU 可能在该页上自由运行，事件可能在无提示的情况下丢失。不鼓励在跟
+期间重新启用其他 CPU
 
 
-鍘熷鏃ュ織鏄枃鏈紝鍙互寰堝鏄撳湴鐢?grep銆乤wk 绛夊伐鍏疯繘琛岃繃婊ゃ€備竴鏉¤褰曟槸鏃ュ織涓殑
-涓€琛屻€傝褰曚互涓€涓叧閿瓧寮€澶达紝鍚庤窡璇ュ叧閿瓧鎵€渚濊禆鐨勫弬鏁般€傚弬鏁颁箣闂寸敤绌烘牸鍒嗛殧锛?
-鎴栧欢缁埌琛屽熬銆傜増鏈?20070824 鐨勬牸寮忓涓嬶細
-
-### 璇存槑	鍏抽敭瀛?浠ョ┖鏍煎垎闅旂殑鍙傛暟
+### 跟踪日志格式
 
 
-璇讳簨浠?R	width, timestamp, map id, physical, value, PC, PID
-鍐欎簨浠?W	width, timestamp, map id, physical, value, PC, PID
-ioremap 浜嬩欢	MAP	timestamp, map id, physical, virtual, length, PC, PID
-iounmap 浜嬩欢	UNMAP	timestamp, map id, PC, PID
-鏍囪		MARK	timestamp, text
-鐗堟湰		VERSION	the string "20070824"
-渚涜鍙栬€呭弬鑰冪殑淇℃伅	LSPCI	one line from lspci -v
-PCI 鍦板潃鏄犲皠	PCIDEV	space-separated /proc/bus/pci/devices data
-鏈煡鎿嶄綔鐮?UNKNOWN	timestamp, map id, physical, data, PC, PID
+原始日志是文本，可以很容易地grep、awk 等工具进行过滤。一条记录是日志中的
+一行。记录以一个关键字开头，后跟该关键字所依赖的参数。参数之间用空格分隔
+或延续到行尾。版20070824 的格式如下：
 
-鏃堕棿鎴充互绉掍负鍗曚綅锛屽甫鏈夊皬鏁伴儴鍒嗐€侾hysical 鏄?PCI 鎬荤嚎鍦板潃锛寁irtual 鏄唴鏍歌櫄鎷?
-鍦板潃銆俉idth 鏄暟鎹殑瀛楄妭瀹藉害锛寁alue 鏄暟鎹€笺€侻ap id 鏄竴涓换鎰忕殑鏍囪瘑鍙凤紝鐢ㄤ簬
-鏍囪瘑鍦ㄦ煇涓搷浣滀腑浣跨敤鐨勬槧灏勩€侾C 鏄▼搴忚鏁板櫒锛孭ID 鏄繘绋?id銆傚鏋滄湭琚褰曪紝
-PC 涓洪浂銆侾ID 濮嬬粓涓洪浂锛屽洜涓哄皻涓嶆敮鎸佽窡韪簮鑷敤鎴风┖闂村唴瀛樼殑 MMIO 璁块棶銆?
+### 说明	关键以空格分隔的参数
 
-渚嬪锛屼笅闈㈢殑 awk 杩囨护鍣ㄤ細鏀捐鎵€鏈夐拡瀵圭墿鐞嗗湴鍧€鑼冨洿
-[0xfb73ce40, 0xfb800000] 鐨?32 浣嶅啓鎿嶄綔
+
+读事R	width, timestamp, map id, physical, value, PC, PID
+写事W	width, timestamp, map id, physical, value, PC, PID
+ioremap 事件	MAP	timestamp, map id, physical, virtual, length, PC, PID
+iounmap 事件	UNMAP	timestamp, map id, PC, PID
+标记		MARK	timestamp, text
+版本		VERSION	the string "20070824"
+供读取者参考的信息	LSPCI	one line from lspci -v
+PCI 地址映射	PCIDEV	space-separated /proc/bus/pci/devices data
+未知操作UNKNOWN	timestamp, map id, physical, data, PC, PID
+
+时间戳以秒为单位，带有小数部分。Physical PCI 总线地址，virtual 是内核虚
+地址。Width 是数据的字节宽度，value 是数据值。Map id 是一个任意的标识号，用于
+标识在某个操作中使用的映射。PC 是程序计数器，PID 是进id。如果未被记录，
+PC 为零。PID 始终为零，因为尚不支持跟踪源自用户空间内存的 MMIO 访问
+
+例如，下面的 awk 过滤器会放行所有针对物理地址范围
+[0xfb73ce40, 0xfb800000] 32 位写操作
 ```
 
 	$ awk '/W 4 / { adr=strtonum($5); if (adr >= 0xfb73ce40 &&
@@ -171,10 +171,10 @@ PC 涓洪浂銆侾ID 濮嬬粓涓洪浂锛屽洜涓哄皻涓嶆敮鎸佽窡韪�
 
 
 ```
-### 闈㈠悜寮€鍙戣€呯殑宸ュ叿
+### 面向开发者的工具
 
 
-鐢ㄦ埛绌洪棿宸ュ叿鍖呭惈浠ヤ笅瀹炵敤绋嬪簭锛?
-  - 鐢ㄧ‖浠跺瘎瀛樺櫒鍚嶆浛鎹㈡暟瀛楀湴鍧€鍜屾暟鍊?
-  - 鍥炴斁 MMIO 鏃ュ織锛屽嵆閲嶆柊鎵ц琚褰曠殑鍐欐搷浣?
+用户空间工具包含以下实用程序
+  - 用硬件寄存器名替换数字地址和数
+  - 回放 MMIO 日志，即重新执行被记录的写操
 

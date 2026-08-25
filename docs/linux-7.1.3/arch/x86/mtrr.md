@@ -1,22 +1,22 @@
 ﻿
-## MTRR锛圡emory Type Range Register锛屽唴瀛樼被鍨嬭寖鍥村瘎瀛樺櫒锛夋帶鍒?
-:Authors: - Richard Gooch <rgooch@atnf.csiro.au> - 1999 骞?6 鏈?3 鏃?          - Luis R. Rodriguez <mcgrof@do-not-panic.com> - 2015 骞?4 鏈?9 鏃?
-## 閫愭娣樻卑 MTRR 鐨勪娇鐢?
-鍦ㄧ幇浠?x86 纭欢涓婏紝MTRR 鐨勪娇鐢ㄥ凡琚?PAT 鍙栦唬銆侺inux 涓┍鍔ㄧ洿鎺ュ MTRR 鐨勪娇鐢ㄧ幇宸插畬鍏ㄦ窐姹帮紝璁惧椹卞姩搴斿綋浣跨敤 `arch_phys_wc_add()` 閰嶅悎 `ioremap_wc()`锛屼互鍦ㄩ潪 PAT 绯荤粺涓婁娇 MTRR 鐢熸晥锛岃€屽湪 PAT 鍚敤绯荤粺涓婂垯涓轰竴涓┖鎿嶄綔浣嗗悓鏍风敓鏁堛€?
-鍗充娇 Linux 涓嶇洿鎺ヤ娇鐢?MTRR锛屼竴浜?x86 骞冲彴鍥轰欢浠嶅彲鑳藉湪鍚姩鎿嶄綔绯荤粺涔嬪墠灏芥棭璁剧疆濂?MTRR銆傚畠浠繖鏍峰仛鏄洜涓洪儴鍒嗗钩鍙板浐浠跺彲鑳戒粛鐒跺疄鐜颁簡瀵?MTRR 鐨勮闂紝鑰岃繖浜涘皢鐢卞钩鍙板浐浠剁洿鎺ユ帶鍒跺拰澶勭悊銆傚钩鍙颁娇鐢?MTRR 鐨勪竴涓緥瀛愭槸閫氳繃 SMI 澶勭悊绋嬪簭锛屼竴绉嶆儏鍐靛彲鑳芥槸鐢ㄤ簬椋庢墖鎺у埗锛屽钩鍙颁唬鐮侀渶瑕佸鍏堕儴鍒嗛鎵囨帶鍒跺瘎瀛樺櫒杩涜涓嶅彲缂撳瓨锛坲ncachable锛夎闂€傛绫诲钩鍙拌闂櫎浜?`mtrr_type_lookup()` 涔嬪锛屼笉闇€瑕佷换浣曟搷浣滅郴缁?MTRR 浠ｇ爜瀛樺湪锛屼互纭繚浠讳綍 OS 鐗瑰畾鐨勬槧灏勮姹備笌骞冲彴 MTRR 璁剧疆涓€鑷淬€備笉杩囷紝濡傛灉 MTRR 浠呯敱骞冲彴鍥轰欢浠ｇ爜璁剧疆锛岃€屾搷浣滅郴缁熶笉鍋氫换浣曠壒瀹氱殑 MTRR 鏄犲皠璇锋眰锛屽垯 `mtrr_type_lookup()` 搴斿缁堣繑鍥?`MTRR_TYPE_INVALID`銆?
-璇︽儏璇峰弬闃?Documentation/arch/x86/pat.rst銆?
-  鍦?Intel P6 绯诲垪澶勭悊鍣紙Pentium Pro銆丳entium II 鍙婁互鍚庣殑鍨嬪彿锛変笂锛?  Memory Type Range Registers锛圡TRRs锛屽唴瀛樼被鍨嬭寖鍥村瘎瀛樺櫒锛夊彲鐢ㄤ簬鎺у埗
-  澶勭悊鍣ㄥ鍐呭瓨鑼冨洿鐨勮闂€傚綋浣犲湪 PCI 鎴?AGP 鎬荤嚎涓婃湁涓€鍧楄棰戯紙VGA锛夊崱鏃讹紝
-  杩欐渶涓烘湁鐢ㄣ€傚惎鐢ㄥ啓鍚堝苟锛坵rite-combining锛夊彲浠ュ湪閫氳繃 PCI/AGP 鎬荤嚎
-  绐佸彂浼犺緭涔嬪墠锛屽皢鎬荤嚎鍐欏叆浼犺緭鍚堝苟涓烘洿澶х殑浼犺緭銆傝繖鍙互灏嗗浘鍍忓啓鍏?  鎿嶄綔鐨勬€ц兘鎻愬崌 2.5 鍊嶆垨鏇村銆?
-  Cyrix 6x86銆?x86MX 鍜?M II 澶勭悊鍣ㄥ叿鏈?Address Range Registers锛圓RRs锛?  鍦板潃鑼冨洿瀵勫瓨鍣級锛屾彁渚涗笌 MTRR 绫讳技鐨勫姛鑳姐€傚浜庤繖浜涘鐞嗗櫒锛屼娇鐢?ARR 鏉?  妯℃嫙 MTRR銆?
-  AMD K6-2锛坰tepping 8 鍙婁互涓婏級鍜?K6-3 澶勭悊鍣ㄦ湁涓や釜 MTRR銆傚畠浠彈鏀寔銆?  AMD Athlon 绯诲垪鎻愪緵 8 涓?Intel 椋庢牸鐨?MTRR銆?
-  Centaur C6锛圵inChip锛夋湁 8 涓?MCR锛屽厑璁稿啓鍚堝苟銆傚畠浠彈鏀寔銆?
-  VIA Cyrix III 鍜?VIA C3 CPU 鎻愪緵 8 涓?Intel 椋庢牸鐨?MTRR銆?
-  CONFIG_MTRR 閫夐」浼氬垱寤轰竴涓?/proc/mtrr 鏂囦欢锛屽彲鐢ㄤ簬鎿嶄綔浣犵殑 MTRR銆?  閫氬父 X 鏈嶅姟鍣ㄥ簲褰撲娇鐢ㄥ畠銆傚畠搴斿叿鏈変竴涓浉褰撻€氱敤鐨勬帴鍙ｏ紝浠ヤ究鍏朵粬澶勭悊鍣ㄤ笂
-  绫讳技鐨?control registers 涔熻兘琚交鏉炬敮鎸併€?
-`/proc/mtrr` 鏈変袱绉嶆帴鍙ｏ細涓€绉嶆槸 ASCII 鎺ュ彛锛屽厑璁镐綘璇诲彇鍜屽啓鍏ワ紱鍙︿竴绉嶆槸 `ioctl()` 鎺ュ彛銆侫SCII 鎺ュ彛鐢ㄤ簬绠＄悊锛岃€?`ioctl()` 鎺ュ彛闈㈠悜 C 绋嬪簭锛堝嵆 X 鏈嶅姟鍣級銆備笅闈互绀轰緥鍛戒护鍜?C 浠ｇ爜鎻忚堪杩欎簺鎺ュ彛銆?
-## 浠?shell 璇诲彇 MTRR
+## MTRR（Memory Type Range Register，内存类型范围寄存器）控
+:Authors: - Richard Gooch <rgooch@atnf.csiro.au> - 1999 骞?6 鏈?3 鏃?          - Luis R. Rodriguez <mcgrof@do-not-panic.com> - 2015 骞?4 鏈?9 鏃。
+## 逐步淘汰 MTRR 的使
+在现x86 硬件上，MTRR 的使用已PAT 取代。Linux 中驱动直接对 MTRR 的使用现已完全淘汰，设备驱动应当使用 `arch_phys_wc_add()` 配合 `ioremap_wc()`，以在非 PAT 系统上使 MTRR 生效，而在 PAT 启用系统上则为一个空操作但同样生效
+即使 Linux 不直接使MTRR，一x86 平台固件仍可能在启动操作系统之前尽早设置MTRR。它们这样做是因为部分平台固件可能仍然实现了MTRR 的访问，而这些将由平台固件直接控制和处理。平台使MTRR 的一个例子是通过 SMI 处理程序，一种情况可能是用于风扇控制，平台代码需要对其部分风扇控制寄存器进行不可缓存（uncachable）访问。此类平台访问除`mtrr_type_lookup()` 之外，不需要任何操作系MTRR 代码存在，以确保任何 OS 特定的映射请求与平台 MTRR 设置一致。不过，如果 MTRR 仅由平台固件代码设置，而操作系统不做任何特定的 MTRR 映射请求，则 `mtrr_type_lookup()` 应始终返`MTRR_TYPE_INVALID`
+详情请参Documentation/arch/x86/pat.rst
+  Intel P6 系列处理器（Pentium Pro、Pentium II 及以后的型号）上  Memory Type Range Registers（MTRRs，内存类型范围寄存器）可用于控制
+  处理器对内存范围的访问。当你在 PCI AGP 总线上有一块视频（VGA）卡时，
+  这最为有用。启用写合并（write-combining）可以在通过 PCI/AGP 总线
+  突发传输之前，将总线写入传输合并为更大的传输。这可以将图像写  操作的性能提升 2.5 倍或更多
+  Cyrix 6x86x86MX M II 处理器具Address Range Registers（ARRs  地址范围寄存器），提供与 MTRR 类似的功能。对于这些处理器，使ARR   模拟 MTRR
+  AMD K6-2（stepping 8 及以上）K6-3 处理器有两个 MTRR。它们受支持  AMD Athlon 系列提供 8 Intel 风格MTRR
+  Centaur C6（WinChip）有 8 MCR，允许写合并。它们受支持
+  VIA Cyrix III VIA C3 CPU 提供 8 Intel 风格MTRR
+  CONFIG_MTRR 选项会创建一/proc/mtrr 文件，可用于操作你的 MTRR  通常 X 服务器应当使用它。它应具有一个相当通用的接口，以便其他处理器上
+  类似control registers 也能被轻松支持
+`/proc/mtrr` 有两种接口：一种是 ASCII 接口，允许你读取和写入；另一种是 `ioctl()` 接口。ASCII 接口用于管理，`ioctl()` 接口面向 C 程序（即 X 服务器）。下面以示例命令C 代码描述这些接口
+## shell 读取 MTRR
 
 ```
 
@@ -43,19 +43,19 @@
   reg02: base=0xf8000000 (3968MB), size=   4MB: write-combining, count=1
 
 ```
-杩欏搴斾簬鍩哄湴鍧€ 0xf8000000銆佸ぇ灏?4 鍏嗗瓧鑺傜殑瑙嗛 RAM銆傝鎵惧嚭浣犵殑鍩哄湴鍧€锛屼綘闇€瑕佹煡鐪?X 鏈嶅姟鍣ㄧ殑杈撳嚭锛屽畠浼氬憡璇変綘绾挎€у抚缂撳啿鍖虹殑鍦板潃鍦ㄥ摢閲屻€?```
+这对应于基地址 0xf8000000、大4 兆字节的视频 RAM。要找出你的基地址，你需要查X 服务器的输出，它会告诉你线性帧缓冲区的地址在哪里```
 
   (--) S3: PCI: 968 rev 0, Linear FB @ 0xf8000000
 
 ```
-娉ㄦ剰浣犲簲褰撳彧浣跨敤鏉ヨ嚜 X 鏈嶅姟鍣ㄧ殑鍊硷紝鍥犱负瀹冨彲鑳戒細绉诲姩甯х紦鍐插尯鍩哄湴鍧€锛屾墍浠ヤ綘鍞竴鍙互淇′换鐨勫€煎氨鏄?X 鏈嶅姟鍣ㄦ姤鍛婄殑閭ｄ釜銆?
-瑕佹壘鍑轰綘鐨勫抚缂撳啿鍖哄ぇ灏忥紙鎬庝箞锛屼綘绔熺劧涓?```
+注意你应当只使用来自 X 服务器的值，因为它可能会移动帧缓冲区基地址，所以你唯一可以信任的值就X 服务器报告的那个
+要找出你的帧缓冲区大小（怎么，你竟然```
 
   (--) S3: videoram:  4096k
 
 ```
-閭ｅ氨鏄?4 鍏嗗瓧鑺傦紝鍗?0x400000 瀛楄妭锛堝崄鍏繘鍒讹級銆?XFree86 姝ｅ湪缂栧啓涓€涓ˉ涓佷互浣胯繖涓€鍒囪嚜鍔ㄥ寲锛氭崲鍙ヨ瘽璇达紝X 鏈嶅姟鍣ㄥ皢浣跨敤 `ioctl()` 鎺ュ彛鎿嶄綔 /proc/mtrr锛岃繖鏍风敤鎴峰氨鏃犻渶鍋氫换浣曚簨銆傚鏋滀綘浣跨敤鍟嗕笟 X 鏈嶅姟鍣紝璇锋父璇翠綘鐨勪緵搴斿晢娣诲姞瀵?MTRR 鐨勬敮鎸併€?
-## 鍒涘缓閲嶅彔鐨?MTRR
+那就4 兆字节，0x400000 字节（十六进制）XFree86 正在编写一个补丁以使这一切自动化：换句话说，X 服务器将使用 `ioctl()` 接口操作 /proc/mtrr，这样用户就无需做任何事。如果你使用商业 X 服务器，请游说你的供应商添加MTRR 的支持
+## 创建重叠MTRR
 
 ```
 
@@ -71,9 +71,9 @@
   reg02: base=0xfb000000 (4016MB), size=   4kB: uncachable, count=1
 
 ```
-鏌愪簺鏄惧崱锛堝挨鍏舵槸 Voodoo Graphics 鏉垮崱锛夐渶瑕佷粠杩欎釜鍖哄煙鐨勮捣濮嬪鎺掗櫎杩?4 kB 鍖哄煙锛屽洜涓哄畠琚敤浣滃瘎瀛樺櫒銆?
-娉ㄦ剰锛氬彧鏈夊綋绗竴涓綘鍒涘缓鐨勫尯鍩熺殑绫诲瀷鏄?write-combining 鏃讹紝浣犳墠鑳藉垱寤?type=uncachable 鐨勫尯鍩熴€?
-## 浠?C shell 绉婚櫎 MTRR
+某些显卡（尤其是 Voodoo Graphics 板卡）需要从这个区域的起始处排除4 kB 区域，因为它被用作寄存器
+注意：只有当第一个你创建的区域的类型write-combining 时，你才能创type=uncachable 的区域
+## C shell 移除 MTRR
 
 ```
 
@@ -86,7 +86,7 @@
 
 
 ```
-## 浠?C 绋嬪簭浣跨敤 ioctl() 璇诲彇 MTRR
+## C 程序使用 ioctl() 读取 MTRR
 
 ```
 
@@ -186,7 +186,7 @@
 
 
 ```
-## 浠?C 绋嬪簭浣跨敤 ioctl() 鍒涘缓 MTRR
+## C 程序使用 ioctl() 创建 MTRR
 
 ```
 

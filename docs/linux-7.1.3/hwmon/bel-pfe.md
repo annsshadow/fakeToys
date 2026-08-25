@@ -1,7 +1,7 @@
-﻿## 鍐呮牳椹卞姩 bel-pfe
+﻿## 内核驱动 bel-pfe
 
 
-鏀寔鐨勮姱鐗囷細
+支持的芯片：
 
   - BEL PFE1100
 
@@ -19,31 +19,31 @@
 
     Datasheet: https://www.belfuse.com/resources/datasheets/powersolutions/ds-bps-pfe3000-series.pdf
 
-浣滆€咃細Tao Ren <rentao.bupt@gmail.com>
+作者：Tao Ren <rentao.bupt@gmail.com>
 
 
-### 鎻忚堪
+### 描述
 
 
-璇ラ┍鍔ㄦ敮鎸佷互涓嬫敮鎸?PMBus 鍗忚鐨勭數婧愯澶囩殑纭欢鐩戞帶锛?
+该驱动支持以下支PMBus 协议的电源设备的硬件监控
 
   - BEL PFE1100
 
-    1100 鐡?AC 杞?DC 鍔熺巼鍥犳暟鏍℃锛圥FC锛夌數婧愩€侾MBus 閫氫俊鎵嬪唽鏈叕寮€鎻愪緵銆?
+    1100 AC DC 功率因数校正（PFC）电源。PMBus 通信手册未公开提供
 
   - BEL PFE3000
 
-    3000 鐡?AC/DC 鍔熺巼鍥犳暟鏍℃锛圥FC锛変笌 DC-DC 鐢垫簮銆侾MBus 閫氫俊鎵嬪唽鏈叕寮€鎻愪緵銆?
+    3000 AC/DC 功率因数校正（PFC）与 DC-DC 电源。PMBus 通信手册未公开提供
 
-璇ラ┍鍔ㄦ槸鏍稿績 PMBus 椹卞姩鐨勫鎴风椹卞姩銆傛湁鍏?PMBus 瀹㈡埛绔┍鍔ㄧ殑璇︽儏锛岃鍙傞槄 Documentation/hwmon/pmbus.rst銆?
-
-
-### 浣跨敤璇存槑
+该驱动是核心 PMBus 驱动的客户端驱动。有PMBus 客户端驱动的详情，请参阅 Documentation/hwmon/pmbus.rst
 
 
-璇ラ┍鍔ㄤ笉浼氳嚜鍔ㄦ娴嬭澶囥€備綘闇€瑕佹樉寮忓疄渚嬪寲璁惧銆傝鎯呰鍙傞槄 Documentation/i2c/instantiating-devices.rst銆?
+### 使用说明
 
-绀轰緥锛氫互涓嬪懡浠ゅ皢涓哄湴鍧€ 0x20 澶勭殑 PFE3000 鍔犺浇椹卞姩
+
+该驱动不会自动检测设备。你需要显式实例化设备。详情请参阅 Documentation/i2c/instantiating-devices.rst
+
+示例：以下命令将为地址 0x20 处的 PFE3000 加载驱动
 ```
 
 	$ modprobe bel-pfe
@@ -52,55 +52,55 @@
 
 ```
 
-### 骞冲彴鏁版嵁鏀寔
+### 平台数据支持
 
 
-璇ラ┍鍔ㄦ敮鎸佹爣鍑嗙殑 PMBus 椹卞姩骞冲彴鏁版嵁銆?
+该驱动支持标准的 PMBus 驱动平台数据
 
 
-### Sysfs 鏉＄洰
+### Sysfs 条目
 
 
 ======================= =======================================================
 curr1_label		"iin"
-curr1_input		娴嬮噺鐨勮緭鍏ョ數娴?
-curr1_max               杈撳叆鐢垫祦鏈€澶у€?
-curr1_max_alarm         杈撳叆鐢垫祦鏈€澶ф姤璀?
+curr1_input		测量的输入电
+curr1_max               输入电流最大
+curr1_max_alarm         输入电流最大报
 
 curr[2-3]_label		"iout[1-2]"
-curr[2-3]_input		娴嬮噺鐨勮緭鍑虹數娴?
-curr[2-3]_max           杈撳嚭鐢垫祦鏈€澶у€?
-curr[2-3]_max_alarm     杈撳嚭鐢垫祦鏈€澶ф姤璀?
+curr[2-3]_input		测量的输出电
+curr[2-3]_max           输出电流最大
+curr[2-3]_max_alarm     输出电流最大报
 
-fan[1-2]_input          椋庢墖 1 涓?2 鐨勮浆閫燂紙RPM锛?
-fan1_target             涓轰袱涓鎵囪缃浆閫熷弬鑰?
+fan[1-2]_input          风扇 1 2 的转速（RPM
+fan1_target             为两个风扇设置转速参
 
 in1_label		"vin"
-in1_input		娴嬮噺鐨勮緭鍏ョ數鍘?
-in1_crit		杈撳叆鐢靛帇涓寸晫鏈€澶у€?
-in1_crit_alarm		杈撳叆鐢靛帇涓寸晫鏈€澶ф姤璀?
-in1_lcrit               杈撳叆鐢靛帇涓寸晫鏈€灏忓€?
-in1_lcrit_alarm         杈撳叆鐢靛帇涓寸晫鏈€灏忔姤璀?
-in1_max                 杈撳叆鐢靛帇鏈€澶у€?
-in1_max_alarm           杈撳叆鐢靛帇鏈€澶ф姤璀?
+in1_input		测量的输入电
+in1_crit		输入电压临界最大
+in1_crit_alarm		输入电压临界最大报
+in1_lcrit               输入电压临界最小
+in1_lcrit_alarm         输入电压临界最小报
+in1_max                 输入电压最大
+in1_max_alarm           输入电压最大报
 
 in2_label               "vcap"
-in2_input               淇濇寔鐢靛鐢靛帇
+in2_input               保持电容电压
 
 in[3-8]_label		"vout[1-3,5-7]"
-in[3-8]_input		娴嬮噺鐨勮緭鍑虹數鍘?
-in[3-4]_alarm           vout[1-2] 杈撳嚭鐢靛帇鎶ヨ
+in[3-8]_input		测量的输出电
+in[3-4]_alarm           vout[1-2] 输出电压报警
 
 power[1-2]_label	"pin[1-2]"
-power[1-2]_input        娴嬮噺鐨勮緭鍏ュ姛鐜?
-power[1-2]_alarm	杈撳叆鍔熺巼杩囬珮鎶ヨ
+power[1-2]_input        测量的输入功
+power[1-2]_alarm	输入功率过高报警
 
 power[3-4]_label	"pout[1-2]"
-power[3-4]_input	娴嬮噺鐨勮緭鍑哄姛鐜?
+power[3-4]_input	测量的输出功
 
-temp[1-3]_input		娴嬮噺鐨勬俯搴?
-temp[1-3]_alarm         娓╁害鎶ヨ
+temp[1-3]_input		测量的温
+temp[1-3]_alarm         温度报警
 ======================= =======================================================
 
 
-    - curr3銆乫an2銆乿out[2-7]銆乿cap銆乸in2銆乸out2 涓?temp3 灞炴€т粎瀛樺湪浜?PFE3000銆?
+    - curr3、fan2、vout[2-7]、vcap、pin2、pout2 temp3 属性仅存在PFE3000

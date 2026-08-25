@@ -1,58 +1,58 @@
-﻿## 浣跨敤 Coresight 搴斿鍐呮牳 panic 涓庣湅闂ㄧ嫍澶嶄綅
+﻿## 使用 Coresight 应对内核 panic 与看门狗复位
 
 
-### 绠€浠?
-鏈枃妗ｄ粙缁嶅浣曚娇鐢?Linux coresight 璺熻釜鏀寔鏉ヨ皟璇曞唴鏍?panic 涓庣湅闂ㄧ嫍澶嶄綅鍦烘櫙銆?
-### 鍐呮牳 panic 鏈熼棿鐨?Coresight 璺熻釜
+### 简
+本文档介绍如何使Linux coresight 跟踪支持来调试内panic 与看门狗复位场景
+### 内核 panic 期间Coresight 跟踪
 
-浠?coresight 椹卞姩鐨勮搴︽潵鐪嬶紝澶勭悊鍐呮牳 panic 鎯呭舰鏈夊洓涓富瑕侀渶姹傘€?
-a. 鏀寔浠庝繚鐣欏唴瀛樺尯鍩熷垎閰嶈窡韪紦鍐插尯椤点€傚钩鍙板彲閫氳繃鍦ㄧ浉鍏?coresight 鑺傜偣涓婃柊澧炵殑 device tree 灞炴€ф潵澹版槑杩欎竴鐐广€?
-b. 鏀寔鍦ㄥ唴鏍?panic 鏃跺仠姝?coresight 妯″潡
+coresight 驱动的角度来看，处理内核 panic 情形有四个主要需求
+a. 支持从保留内存区域分配跟踪缓冲区页。平台可通过在相coresight 节点上新增的 device tree 属性来声明这一点
+b. 支持在内panic 时停coresight 模块
 
-c. 浠ユ寚瀹氭牸寮忎繚瀛樻墍闇€鐨勫厓鏁版嵁
+c. 以指定格式保存所需的元数据
 
-d. 鏀寔璇诲彇鍐呮牳 panic 鏃舵崟鑾风殑璺熻釜鏁版嵁
+d. 支持读取内核 panic 时捕获的跟踪数据
 
-#### 浠庝繚鐣?RAM 鍒嗛厤璺熻釜缂撳啿鍖洪〉
+#### 从保RAM 分配跟踪缓冲区页
 
-涓€涓柊鐨勫彲閫?device tree 灞炴€?"memory-region" 琚姞鍏ュ埌 Coresight TMC 璁惧鑺傜偣涓紝鐢ㄤ簬缁欏嚭璺熻釜缂撳啿鍖虹殑鍩哄湴鍧€涓庡ぇ灏忋€?
-璺熻釜缂撳啿鍖虹殑闈欐€佸垎閰嶅彲纭繚 IOMMU 鍚敤涓庣鐢ㄤ袱绉嶆儏鍐甸兘琚鐞嗐€傛澶栵紝鏀寔鎸佷箙 RAM 鐨勫钩鍙板厑璁哥敤鎴峰湪鍚庣画鍚姩涓鍙栬窡韪暟鎹紝鑰屾棤闇€鍚姩 crashdump 鍐呮牳銆?
-娉ㄦ剰锛?瀵逛簬 ETR sink 璁惧锛岃淇濈暀鍖哄煙灏嗗悓鏃剁敤浜庤窡韪崟鑾蜂笌璺熻釜鏁版嵁璇诲彇銆?瀵逛簬 ETF sink 璁惧锛屽皢浣跨敤鍐呴儴 SRAM 杩涜璺熻釜鎹曡幏锛屽苟鍚屾鍒颁繚鐣欏尯鍩熶互渚涜鍙栥€?
+一个新的可device tree 属"memory-region" 被加入到 Coresight TMC 设备节点中，用于给出跟踪缓冲区的基地址与大小
+跟踪缓冲区的静态分配可确保 IOMMU 启用与禁用两种情况都被处理。此外，支持持久 RAM 的平台允许用户在后续启动中读取跟踪数据，而无需启动 crashdump 内核
+注意对于 ETR sink 设备，该保留区域将同时用于跟踪捕获与跟踪数据读取对于 ETF sink 设备，将使用内部 SRAM 进行跟踪捕获，并同步到保留区域以供读取
 
-#### 鍦ㄥ唴鏍?panic 鏃剁鐢?coresight 妯″潡
+#### 在内panic 时禁coresight 模块
 
-涓轰簡閬垮厤鍐呮牳 panic 鍚庝涪澶辩浉鍏宠窡韪暟鎹紝鏈€濂藉湪鍐呮牳 panic 鏃跺仠姝?coresight 妯″潡銆?
-杩欏彲浠ラ€氳繃閰嶇疆 comparator銆丆TI 涓?sink 鏉ュ疄鐜帮細
+为了避免内核 panic 后丢失相关跟踪数据，最好在内核 panic 时停coresight 模块
+这可以通过配置 comparator、CTI sink 来实现：
 
 ```
            Trigger on panic
     Comparator --->External out --->CTI -->External In---->ETR/ETF stop
 
 ```
-#### 鍦ㄥ唴鏍?panic 鏃朵繚瀛樺厓鏁版嵁
+#### 在内panic 时保存元数据
 
-Coresight 鍏冩暟鎹寘鍚櫎璺熻釜鏁版嵁澶栵紝鎴愬姛杩涜璺熻釜瑙ｇ爜鎵€闇€鐨勬墍鏈夐檮鍔犳暟鎹€傝繖鍖呮嫭 ETR/ETF/ETB 瀵勫瓨鍣ㄥ揩鐓х瓑銆?
-涓烘锛屼竴涓柊鐨勫彲閫夎澶囧睘鎬?"memory-region" 琚姞鍏ュ埌 ETR/ETF/ETB 璁惧鑺傜偣涓€?
-#### 璇诲彇鍐呮牳 panic 鏃舵崟鑾风殑璺熻釜鏁版嵁
+Coresight 元数据包含除跟踪数据外，成功进行跟踪解码所需的所有附加数据。这包括 ETR/ETF/ETB 寄存器快照等
+为此，一个新的可选设备属"memory-region" 被加入到 ETR/ETF/ETB 设备节点中
+#### 读取内核 panic 时捕获的跟踪数据
 
-鍐呮牳 panic 鏃舵崟鑾风殑璺熻釜鏁版嵁锛屽彲閫氳繃鐗规畩鐨勮澶囨枃浠?/dev/crash_tmc_xxx 浠庨噸鍚悗鐨勫唴鏍告垨 crashdump 鍐呮牳涓鍙栥€傝璁惧鏂囦欢浠呭湪瀛樺湪鏈夋晥 crashdata 鏃舵墠浼氳鍒涘缓銆?
-#### 鍐呮牳 panic 鎯呭喌涓嬬殑璺熻釜鎹曡幏涓庤В鐮佷竴鑸祦绋?
-1. 閫氳繃 sysfs 鎺ュ彛鍦ㄦ墍鏈夋牳涓婁娇鑳芥簮涓?sink銆侲TR sink 搴旈€氳繃浠?sysfs 閫夋嫨 "resrv" 缂撳啿鍖烘ā寮忥紝浠庝繚鐣欏唴瀛樺垎閰嶈窡韪紦鍐插尯銆?
-2. 杩愯鐩稿叧娴嬭瘯銆?
-3. 鍙戠敓鍐呮牳 panic 鏃讹紝鎵€鏈?coresight 妯″潡琚鐢紝蹇呰鐨勫厓鏁版嵁鐢卞唴鏍?panic 澶勭悊鍑芥暟鍚屾銆?
-   绯荤粺鏈€缁堝皢閲嶅惎鎴栧惎鍔?crashdump 鍐呮牳銆?
-4. 瀵逛簬鏀寔 crashdump 鍐呮牳鐨勫钩鍙帮紝鍙娇鐢?coresight sysfs 鎺ュ彛鐩存帴浠?crashdump 鍐呮牳杞偍鍘熷璺熻釜鏁版嵁銆傛绉嶆儏鍐典笅鏃犻渶鎸佷箙 RAM銆?
-5. 瀵逛簬鏀寔鎸佷箙 RAM 鐨勫钩鍙帮紝鍙湪闅忓悗鐨?Linux 鍚姩涓€氳繃 coresight sysfs 鎺ュ彛杞偍璺熻釜鏁版嵁銆傛绉嶆儏鍐典笅鏃犻渶 crashdump 鍐呮牳銆傛寔涔?RAM 鍙‘淇濊窡韪暟鎹湪閲嶅惎鍚庝繚鎸佸畬鏁淬€?
-### 鐪嬮棬鐙楀浣嶆湡闂寸殑 Coresight 璺熻釜
+内核 panic 时捕获的跟踪数据，可通过特殊的设备文/dev/crash_tmc_xxx 从重启后的内核或 crashdump 内核中读取。该设备文件仅在存在有效 crashdata 时才会被创建
+#### 内核 panic 情况下的跟踪捕获与解码一般流
+1. 通过 sysfs 接口在所有核上使能源sink。ETR sink 应通过sysfs 选择 "resrv" 缓冲区模式，从保留内存分配跟踪缓冲区
+2. 运行相关测试
+3. 发生内核 panic 时，所coresight 模块被禁用，必要的元数据由内panic 处理函数同步
+   系统最终将重启或启crashdump 内核
+4. 对于支持 crashdump 内核的平台，可使coresight sysfs 接口直接crashdump 内核转储原始跟踪数据。此种情况下无需持久 RAM
+5. 对于支持持久 RAM 的平台，可在随后Linux 启动中通过 coresight sysfs 接口转储跟踪数据。此种情况下无需 crashdump 内核。持RAM 可确保跟踪数据在重启后保持完整
+### 看门狗复位期间的 Coresight 跟踪
 
-澶勭悊鐪嬮棬鐙楀浣嶄笌鍐呮牳 panic 鎯呭喌鐨勪富瑕佸尯鍒涓嬶細
+处理看门狗复位与内核 panic 情况的主要区别如下：
 
-a. 淇濆瓨 coresight 鍏冩暟鎹渶鐢?SCP锛堢郴缁熸帶鍒跺鐞嗗櫒锛夊浐浠舵寜鎸囧畾鏍煎紡璐熻矗锛岃€岄潪鍐呮牳銆?
-b. 鍥轰欢涓鸿窡韪紦鍐插尯涓庡厓鏁版嵁鎻愪緵鐨勪繚鐣欏唴瀛樺尯鍩熷繀椤讳綅浜庢寔涔?RAM 涓€?   娉ㄦ剰锛氳繖鏄湅闂ㄧ嫍澶嶄綅鎯呭喌涓嬬殑瑕佹眰锛屼絾鍦ㄥ唴鏍?panic 鎯呭喌涓嬩负鍙€夐」銆?
-鐪嬮棬鐙楀浣嶄粎鑳藉湪婊¤冻涓婅堪涓ら」瑕佹眰鐨勫钩鍙颁笂寰楀埌鏀寔銆?
-### 浣跨敤 ETR sink 娴嬭瘯鍐呮牳 panic 鎯呭喌鐨勭ず渚嬪懡浠?
+a. 保存 coresight 元数据需SCP（系统控制处理器）固件按指定格式负责，而非内核
+b. 固件为跟踪缓冲区与元数据提供的保留内存区域必须位于持RAM 中   注意：这是看门狗复位情况下的要求，但在内panic 情况下为可选项
+看门狗复位仅能在满足上述两项要求的平台上得到支持
+### 使用 ETR sink 测试内核 panic 情况的示例命
 
-1. 鍦ㄥ唴鏍?bootargs 涓姞鍏?"crash_kexec_post_notifiers" 鍚姩 Linux 鍐呮牳銆傝嫢鐢ㄦ埛甯屾湜浠?crashdump 鍐呮牳璇诲彇璺熻釜鏁版嵁锛岃繖鏄繀闇€鐨勩€?
+1. 在内bootargs 中加"crash_kexec_post_notifiers" 启动 Linux 内核。若用户希望crashdump 内核读取跟踪数据，这是必需的
 ```
 
     #echo 1 > /sys/kernel/config/cs-syscfg/configurations/panicstop/enable
@@ -115,7 +115,7 @@ b. 鍥轰欢涓鸿窡韪紦鍐插尯涓庡厓鏁版嵁鎻愪緵鐨勪繚鐣�
     done
 
 ```
-娉細CTI 杩炴帴鏄?SoC 鐩稿叧鐨勶紝鍥犳涓婇潰鐨勮剼鏈粎渚涘弬鑰冦€?
+注：CTI 连接SoC 相关的，因此上面的脚本仅供参考
 ```
 
     #echo "resrv" > /sys/bus/coresight/devices/tmc_etr0/buf_mode_preferred
@@ -126,7 +126,7 @@ b. 鍥轰欢涓鸿窡韪紦鍐插尯涓庡厓鏁版嵁鎻愪緵鐨勪繚鐣�
     #echo 1 > /sys/bus/coresight/devices/tmc_etr0/stop_on_flush
 
 ```
-6. 浣跨敤 sysfs 鎺ュ彛鍦ㄦ牳 1 涓庢牳 2 涓婂惎鍔?Coresight 璺熻釜
+6. 使用 sysfs 接口在核 1 与核 2 上启Coresight 跟踪
 
 ```
 
@@ -144,8 +144,8 @@ b. 鍥轰欢涓鸿窡韪紦鍐插尯涓庡厓鏁版嵁鎻愪緵鐨勪繚鐣�
     #dd if=/dev/crash_tmc_etr0 of=/trace/cstrace.bin
 
 ```
-10. 杩愯 opencsd 瑙ｇ爜鍣ㄥ伐鍏?鑴氭湰鏉ョ敓鎴愭寚浠よ窡韪€?
-#### 鎸囦护璺熻釜杞偍绀轰緥
+10. 运行 opencsd 解码器工脚本来生成指令跟踪
+#### 指令跟踪转储示例
 
 
 ```
@@ -289,9 +289,9 @@ b. 鍥轰欢涓鸿窡韪紦鍐插尯涓庡厓鏁版嵁鎻愪緵鐨勪繚鐣�
     A                                           panic: ffff800008096358
 
 ```
-### 鍩轰簬 Perf 鐨勬祴璇?
+### 基于 Perf 的测
 
-#### 鍚姩 perf 浼氳瘽
+#### 启动 perf 会话
 
 ```
 
@@ -304,5 +304,5 @@ b. 鍥轰欢涓鸿窡韪紦鍐插尯涓庡厓鏁版嵁鎻愪緵鐨勪繚鐣�
     perf record -e cs_etm/panicstop,@tmc_etr0/ -C 1,2
 
 ```
-#### panic 鍚庤鍙栬窡韪暟鎹?
-涓婃枃浠嬬粛鐨勭浉鍚岀殑鍩轰簬 sysfs 鐨勬柟娉曪紝鍙敤浜庡湪鍐呮牳 panic 閲嶅惎鍚庤幏鍙栧苟瑙ｇ爜璺熻釜鏁版嵁銆?
+#### panic 后读取跟踪数
+上文介绍的相同的基于 sysfs 的方法，可用于在内核 panic 重启后获取并解码跟踪数据

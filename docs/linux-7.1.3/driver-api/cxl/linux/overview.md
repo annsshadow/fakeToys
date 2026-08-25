@@ -1,80 +1,80 @@
 ﻿
-## 姒傝堪
+## 概述
 
 
-鏈妭浠嬬粛 CXL Type-3 鍐呭瓨璁惧鐨勯厤缃繃绋嬶紝浠ュ強瀹冩渶缁堝浣曚綔涓?`DAX` 璁惧鎴栫粡鐢卞唴鏍?椤靛垎閰嶅櫒鐨勬櫘閫氬唴瀛橀〉鏆撮湶缁欑敤鎴枫€?
-浠ラ」鐩鍙锋爣璁扮殑閮ㄥ垎鏄敓鎴愮壒瀹氬唴鏍稿璞＄殑鏃堕棿鐐广€?
-1) 鏃╂湡鍚姩
+本节介绍 CXL Type-3 内存设备的配置过程，以及它最终如何作`DAX` 设备或经由内页分配器的普通内存页暴露给用户
+以项目符号标记的部分是生成特定内核对象的时间点
+1) 早期启动
 
-  a) BIOS銆佹瀯寤轰笌鍚姩鍙傛暟
+  a) BIOS、构建与启动参数
 
     i) EFI_MEMORY_SP
     ii) CONFIG_EFI_SOFT_RESERVE
     iii) CONFIG_MHP_DEFAULT_ONLINE_TYPE
     iv) nosoftreserve
 
-  b) 鍐呭瓨鏄犲皠鍒涘缓
+  b) 内存映射创建
 
-    i) 閽堝 Soft-Reserved 鏌ラ槄 EFI 鍐呭瓨鏄犲皠 / E820
+    i) 针对 Soft-Reserved 查阅 EFI 内存映射 / E820
 
-      - CXL 鍐呭瓨琚鐣欏嚭鏉ョ敱 CXL 椹卞姩澶勭悊
+      - CXL 内存被预留出来由 CXL 驱动处理
 
-      - 涓?CFMWS 鏉＄洰鍒涘缓 Soft-Reserved IO 璧勬簮
+      - CFMWS 条目创建 Soft-Reserved IO 资源
 
-  c) NUMA 鑺傜偣鍒涘缓
+  c) NUMA 节点创建
 
-    - 浠?ACPI CEDT CFMWS 涓?SRAT 閭昏繎鍩燂紙PXM锛夊垱寤鸿妭鐐?
-  d) 鍐呭瓨鍒嗗眰锛圡emory Tier锛夊垱寤?
-    - 浣跨敤鎵€鏈夎妭鐐瑰垱寤轰竴涓粯璁ょ殑 memory_tier
+    - ACPI CEDT CFMWS SRAT 邻近域（PXM）创建节
+  d) 内存分层（Memory Tier）创
+    - 使用所有节点创建一个默认的 memory_tier
 
-  e) 杩炵画鍐呭瓨鍒嗛厤
+  e) 连续内存分配
 
-    - 浠讳綍璇锋眰鐨?CMA 閮戒粠鍦ㄧ嚎鑺傜偣鍒嗛厤
+    - 任何请求CMA 都从在线节点分配
 
-  f) 鍒濆鍖栫粨鏉燂紝椹卞姩寮€濮嬫帰娴?
-2) ACPI 涓?PCI 椹卞姩
+  f) 初始化结束，驱动开始探
+2) ACPI PCI 驱动
 
-  a) 妫€娴嬪埌 PCI 璁惧鏄?CXL锛屽皢鍏舵爣璁颁负浜ょ敱 CXL 椹卞姩鎺㈡祴
+  a) 检测到 PCI 设备CXL，将其标记为交由 CXL 驱动探测
 
-3) CXL 椹卞姩鎿嶄綔
+3) CXL 驱动操作
 
-  a) 鍩虹璁惧鍒涘缓
+  a) 基础设备创建
 
-    - 鍒涘缓 root銆乸ort 涓?memdev 璁惧
-    - 鍒涘缓 CEDT CFMWS IO 璧勬簮
+    - 创建 root、port memdev 设备
+    - 创建 CEDT CFMWS IO 资源
 
-  b) 瑙ｇ爜鍣紙Decoder锛夊垱寤?
-    - 鍒涘缓 root銆乻witch 涓?endpoint 瑙ｇ爜鍣?
-  c) 閫昏緫璁惧鍒涘缓
+  b) 解码器（Decoder）创
+    - 创建 root、switch endpoint 解码
+  c) 逻辑设备创建
 
-    - 鍒涘缓 memory_region 涓?endpoint 璁惧
+    - 创建 memory_region endpoint 设备
 
-  d) 璁惧鐩镐簰鍏宠仈
+  d) 设备相互关联
 
-    - 濡傛灉鏄?auto-decoder锛圔IOS 缂栫▼鐨勮В鐮佸櫒锛夛紝椹卞姩鍦ㄦ帰娴嬫椂楠岃瘉閰嶇疆銆佸缓绔嬪叧鑱斿苟
-      閿佸畾閰嶇疆銆?
-    - 濡傛灉鏄敤鎴烽厤缃殑锛岄獙璇佷笌鍏宠仈鍦?decoder-commit 鏃跺缓绔嬨€?
-  e) 鍖哄煙浣滀负 DAX 鍖哄煙鍛堢幇
+    - 如果auto-decoder（BIOS 编程的解码器），驱动在探测时验证配置、建立关联并
+      锁定配置
+    - 如果是用户配置的，验证与关联decoder-commit 时建立
+  e) 区域作为 DAX 区域呈现
 
-    - 鍒涘缓 dax_region
+    - 创建 dax_region
 
-    - 閫氳繃 DAX 椹卞姩鍒涘缓 DAX 璁惧
+    - 通过 DAX 驱动创建 DAX 设备
 
-4) DAX 椹卞姩鎿嶄綔
+4) DAX 驱动操作
 
-  a) DAX 椹卞姩灏?DAX 鍖哄煙浠ヤ袱绉?dax 璁惧妯″紡涔嬩竴鍛堢幇
+  a) DAX 驱动DAX 区域以两dax 设备模式之一呈现
 
-    - kmem - dax 璁惧琚浆鎹负鐑彃鎷斿唴瀛樺潡
+    - kmem - dax 设备被转换为热插拔内存块
 
-      - 鍒涘缓 DAX kmem IO 璧勬簮
+      - 创建 DAX kmem IO 资源
 
-    - hmem - dax 璁惧淇濈暀涓?daxdev锛屼綔涓烘枃浠惰闂€?
-      - 濡傛灉鏄?hmem锛屾祦绋嬪湪姝ょ粨鏉熴€?
-  b) DAX kmem 灏嗗唴瀛樺尯鍩熷憟鐜扮粰 Memory Hotplug锛屼互浣滀负鈥滈┍鍔ㄧ鐞嗗唴瀛樷€濆姞鍏ラ〉鍒嗛厤鍣?
-5) 鍐呭瓨鐑彃鎷旓紙Memory Hotplug锛?
-  a) mhp 缁勪欢灏嗕竴涓?dax 璁惧鍐呭瓨鍖哄煙浣滀负澶氫釜鍐呭瓨鍧楀憟鐜扮粰椤靛垎閰嶅櫒
+    - hmem - dax 设备保留daxdev，作为文件访问
+      - 如果hmem，流程在此结束
+  b) DAX kmem 将内存区域呈现给 Memory Hotplug，以作为“驱动管理内存”加入页分配
+5) 内存热插拔（Memory Hotplug
+  a) mhp 组件将一dax 设备内存区域作为多个内存块呈现给页分配器
 
-    - 杩欎簺鍧楀嚭鐜板湪 `/sys/bus/memory/devices` 涓紝骞堕摼鎺ュ埌涓€涓?NUMA 鑺傜偣
+    - 这些块出现在 `/sys/bus/memory/devices` 中，并链接到一NUMA 节点
 
-  b) 杩欎簺鍧楄涓婄嚎鍒版墍璇锋眰鐨勫尯锛圢ORMAL 鎴?MOVABLE锛?
-    - 鍐呭瓨琚爣璁颁负鈥淒river Managed鈥濓紝浠ラ伩鍏?kexec 灏嗗叾鐢ㄤ綔鍐呮牳鏇存柊鐨勫尯鍩?
+  b) 这些块被上线到所请求的区（NORMAL MOVABLE
+    - 内存被标记为“Driver Managed”，以避kexec 将其用作内核更新的区

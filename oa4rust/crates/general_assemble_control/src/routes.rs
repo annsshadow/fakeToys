@@ -1,5 +1,5 @@
 use axum::{
-    routing::{get, post},
+    routing::{delete, get, post, put},
     Router,
 };
 use deadpool_postgres::Pool;
@@ -67,5 +67,40 @@ pub fn general_assemble_control_routes(pool: Pool) -> Router {
         .route("/jaxrs/general/assemble/control/worktime/is/workday/{date}", get(crate::worktime_isworkday_date))
         .route("/jaxrs/general/assemble/control/worktime/is/worktime/{date}", get(crate::worktime_isworktime_date))
         .route("/jaxrs/general/assemble/control/worktime/minutes/of/workday", get(crate::worktime_minutesofworkday))
+        .route("/jaxrs/general/assemble/control/excel/{excelName}/{excelName}", get(crate::excel_excelName_excelName))
+        .route("/jaxrs/general/assemble/control/excel/{excelName}/{excelName}/{sheetList}", get(crate::excel_excelName_excelName_sheetList))
+        .route("/jaxrs/general/assemble/control/area/delete/{id}", delete(crate::area_delete))
+        .route("/jaxrs/general/assemble/control/area/update/{id}", put(crate::area_update))
+        .route("/jaxrs/general/assemble/control/attendscope/delete/{id}", delete(crate::attendscope_delete))
+        .route("/jaxrs/general/assemble/control/attendscope/save/{id}", put(crate::attendscope_save))
+        .route("/jaxrs/general/assemble/control/invoice/delete/{id}", delete(crate::invoice_delete_id))
+        .route("/jaxrs/general/assemble/control/invoice/update/apply/status/{id}", put(crate::invoice_update_apply_status_id))
+        .route("/jaxrs/general/assemble/control/invoice/update/{id}", put(crate::invoice_update_id))
+        .route("/jaxrs/general/assemble/control/qrcode/delete/{id}", delete(crate::qrcode_delete))
+        .route("/jaxrs/general/assemble/control/securityclearance/delete/{id}", delete(crate::securityclearance_delete))
+        .route("/jaxrs/general/assemble/control/securityclearance/update/{id}", put(crate::securityclearance_update))
+        .route("/jaxrs/general/assemble/control/status/update", put(crate::update_general_control_status))
+        // ---- plan002 U2 gaps: verb variants + missing ----
+        .route("/jaxrs/general/assemble/control/ecnet/check", post(crate::ecnet_check))
+        .route("/jaxrs/general/assemble/control/invoice/delete/{id}", get(crate::invoice_delete_id))
+        .route("/jaxrs/general/assemble/control/invoice/list/paging/{page}/size/{size}", post(crate::invoice_list_paging_page_size_size))
+        .route("/jaxrs/general/assemble/control/qrcode/width/{width}/height/{height}/text/{text}", get(crate::qrcode_width_width_height_height_text_text))
+        .route("/jaxrs/general/assemble/control/excel/excelName/{excelName}", post(crate::excel_excelName_excelName))
+        .route("/jaxrs/general/assemble/control/excel/excelName/{excelName}/sheetList", post(crate::excel_excelName_excelName_sheetList))
+        .route("/jaxrs/general/assemble/control/generalfile", post(crate::generalfile_create))
+        .route("/jaxrs/general/assemble/control/office", post(crate::office_html_to_word))
+        .route("/jaxrs/general/assemble/control/office/html/to/word/result/{flag}", get(crate::office_html_to_word_result_flag))
+        .route("/jaxrs/general/assemble/control/qrcode", post(crate::qrcode_create))
+        .route("/jaxrs/general/assemble/control/securityclearance", get(crate::securityclearance_create))
+        .route("/jaxrs/general/assemble/control/worktime/betweenholidaycount/start/{startDate}/end/{endDate}", get(crate::worktime_betweenholidaycount_start_startDate_end_endDate))
+        .route("/jaxrs/general/assemble/control/worktime/betweenminutes/start/{start}/end/{end}", get(crate::worktime_betweenminutes_start_start_end_end))
+        .route("/jaxrs/general/assemble/control/worktime/forwarddays/start/{start}/days/{days}", get(crate::worktime_forwarddays_start_start_days_days))
+        .route("/jaxrs/general/assemble/control/worktime/forwardminutes/start/{start}/minutes/{minutes}", get(crate::worktime_forwardminutes_start_start_minutes_minutes))
+        .route("/jaxrs/general/assemble/control/worktime/indefinedholiday/{date}", get(crate::worktime_indefinedholiday_date))
+        .route("/jaxrs/general/assemble/control/worktime/indefinedworkday/{date}", get(crate::worktime_indefinedworkday_date))
+        .route("/jaxrs/general/assemble/control/worktime/isholiday/{date}", get(crate::worktime_isholiday_date))
+        .route("/jaxrs/general/assemble/control/worktime/isworkday/{date}", get(crate::worktime_isworkday_date))
+        .route("/jaxrs/general/assemble/control/worktime/isworktime/{date}", get(crate::worktime_isworktime_date))
+        .route("/jaxrs/general/assemble/control/worktime/minutesofworkday", get(crate::worktime_minutesofworkday))
         .layer(axum::Extension(pool))
 }

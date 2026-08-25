@@ -203,14 +203,66 @@ async fn test_design_save_returns_error_without_db() {
     let response = app
         .oneshot(
             Request::builder()
-                .uri("/jaxrs/portal/design/save")
-                .method(Method::POST)
-                .header("content-type", "application/json")
-                .body(Body::from(req))
-                .unwrap(),
+        .uri("/jaxrs/portal/design/save")
+        .method(Method::POST)
+        .header("content-type", "application/json")
+        .body(Body::from(req))
+        .unwrap(),
         )
         .await
         .unwrap();
 
     assert_eq!(response.status(), axum::http::StatusCode::INTERNAL_SERVER_ERROR);
+}
+
+#[tokio::test]
+async fn test_u2_designer_gap_routes_exist() {
+    let app = portal_assemble_designer_router();
+    use axum::body::Body;
+    use axum::http::{Request, Method, StatusCode};
+
+    let cases: Vec<(&str, &str)> = vec![
+        ("POST", "/jaxrs/portal/assemble/designer/page"),
+        ("GET", "/jaxrs/portal/assemble/designer/page/list/portal/p1"),
+        ("DELETE", "/jaxrs/portal/assemble/designer/page/id1"),
+        ("PUT", "/jaxrs/portal/assemble/designer/page/id1"),
+        ("GET", "/jaxrs/portal/assemble/designer/pageversion/list/page/pid1"),
+        ("POST", "/jaxrs/portal/assemble/designer/portal"),
+        ("GET", "/jaxrs/portal/assemble/designer/portal/list/summary"),
+        ("POST", "/jaxrs/portal/assemble/designer/portal/list/summary/v2"),
+        ("DELETE", "/jaxrs/portal/assemble/designer/portal/id1"),
+        ("PUT", "/jaxrs/portal/assemble/designer/portal/id1"),
+        ("PUT", "/jaxrs/portal/assemble/designer/portal/id1/icon"),
+        ("POST", "/jaxrs/portal/assemble/designer/portal/id1/permission"),
+        ("POST", "/jaxrs/portal/assemble/designer/templatepage"),
+        ("GET", "/jaxrs/portal/assemble/designer/templatepage/list"),
+        ("GET", "/jaxrs/portal/assemble/designer/templatepage/list/category"),
+        ("PUT", "/jaxrs/portal/assemble/designer/templatepage/list/category"),
+        ("DELETE", "/jaxrs/portal/assemble/designer/templatepage/id1"),
+        ("POST", "/jaxrs/portal/assemble/designer/widget"),
+        ("DELETE", "/jaxrs/portal/assemble/designer/widget/id1"),
+        ("PUT", "/jaxrs/portal/assemble/designer/widget/id1"),
+    ];
+
+    for (m, uri) in cases {
+        let method = Method::from_bytes(m.as_bytes()).unwrap();
+        let body = if m == "GET" || m == "DELETE" {
+            Body::empty()
+        } else {
+            Body::from("{}")
+        };
+        let req = Request::builder()
+            .method(method)
+            .uri(uri)
+            .body(body)
+            .unwrap();
+        let resp = app.clone().oneshot(req).await.unwrap();
+        assert_ne!(
+            resp.status(),
+            StatusCode::NOT_FOUND,
+            "route missing: {} {}",
+            m,
+            uri
+        );
+    }
 }

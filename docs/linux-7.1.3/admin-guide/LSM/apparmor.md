@@ -1,41 +1,41 @@
 ﻿## AppArmor
 
 
-## 浠€涔堟槸 AppArmor锛?
+## 什么是 AppArmor
 
 
-AppArmor 鏄?Linux 鍐呮牳鐨?MAC锛堝己鍒惰闂帶鍒讹級椋庢牸瀹夊叏鎵╁睍銆傚畠瀹炵幇浜嗕竴涓互浠诲姟涓轰腑蹇冪殑绛栫暐锛屼换鍔＄殑鈥滈厤缃枃浠垛€濅粠鐢ㄦ埛绌洪棿鍒涘缓骞跺姞杞姐€傜郴缁熶笂娌℃湁涓哄叾瀹氫箟閰嶇疆鏂囦欢鐨勪换鍔′互鏃犵害鏉燂紙unconfined锛夌姸鎬佽繍琛岋紝杩欑瓑鍚屼簬鏍囧噯 Linux DAC 鏉冮檺銆?
+AppArmor Linux 内核MAC（强制访问控制）风格安全扩展。它实现了一个以任务为中心的策略，任务的“配置文件”从用户空间创建并加载。系统上没有为其定义配置文件的任务以无约束（unconfined）状态运行，这等同于标准 Linux DAC 权限
 
-## 濡備綍鍚敤/绂佺敤
+## 如何启用/禁用
 
 
-璁剧疆 `CONFIG_SECURITY_APPARMOR=y`
+设置 `CONFIG_SECURITY_APPARMOR=y`
 
 ```
    CONFIG_DEFAULT_SECURITY_APPARMOR=y
 ```
-CONFIG_LSM 鍙傛暟绠＄悊 LSM 鐨勯『搴忓拰閫夋嫨銆傚湪鍒楄〃涓皢 apparmor 鎸囧畾涓虹涓€涓€滀富瑕佲€濇ā鍧楋紙渚嬪 AppArmor銆丼ELinux銆丼mack锛夈€?
+CONFIG_LSM 参数管理 LSM 的顺序和选择。在列表中将 apparmor 指定为第一个“主要”模块（例如 AppArmor、SELinux、Smack）
 
-鏋勫缓鍐呮牳
+构建内核
 
-濡傛灉 AppArmor 涓嶆槸榛樿瀹夊叏妯″潡锛屽彲浠ラ€氳繃鍦ㄥ唴鏍稿懡浠よ涓婁紶閫?`security=apparmor` 鏉ュ惎鐢ㄣ€?
+如果 AppArmor 不是默认安全模块，可以通过在内核命令行上传`security=apparmor` 来启用
 
-濡傛灉 AppArmor 鏄粯璁ゅ畨鍏ㄦā鍧楋紝鍙互閫氳繃鍦ㄥ唴鏍稿懡浠よ涓婁紶閫?`apparmor=0, security=XXXX`锛堝叾涓?`XXXX` 鏄湁鏁堢殑瀹夊叏妯″潡锛夋潵绂佺敤銆?
+如果 AppArmor 是默认安全模块，可以通过在内核命令行上传`apparmor=0, security=XXXX`（其`XXXX` 是有效的安全模块）来禁用
 
-涓轰簡璁?AppArmor 寮哄埗鎵ц瓒呭嚭鏍囧噯 Linux DAC 鏉冮檺涔嬪鐨勪换浣曢檺鍒讹紝蹇呴』灏嗙瓥鐣ヤ粠鐢ㄦ埛绌洪棿鍔犺浇鍒板唴鏍镐腑锛堣鍙傞槄涓嬫柟鐨勬枃妗ｅ拰宸ュ叿閾炬帴锛夈€?
+为了AppArmor 强制执行超出标准 Linux DAC 权限之外的任何限制，必须将策略从用户空间加载到内核中（请参阅下方的文档和工具链接）
 
-## 鏂囨。
-
-
-鏂囨。鍙互鍦ㄤ笅鏂归摼鎺ョ殑 wiki 涓壘鍒般€?
-
-## 閾炬帴
+## 文档
 
 
-閭欢鍒楄〃 - apparmor@lists.ubuntu.com
+文档可以在下方链接的 wiki 中找到
+
+## 链接
+
+
+邮件列表 - apparmor@lists.ubuntu.com
 
 Wiki - http://wiki.apparmor.net
 
-鐢ㄦ埛绌洪棿宸ュ叿 - https://gitlab.com/apparmor
+用户空间工具 - https://gitlab.com/apparmor
 
-鍐呮牳妯″潡 - git://git.kernel.org/pub/scm/linux/kernel/git/jj/linux-apparmor
+内核模块 - git://git.kernel.org/pub/scm/linux/kernel/git/jj/linux-apparmor

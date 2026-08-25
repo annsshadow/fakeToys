@@ -62,6 +62,35 @@ pub async fn get(
     pool: Extension<Pool>,
     Path(flag): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // xadmin 是 O2OA 内置超级管理员，非数据库 person 记录；Java 侧返回虚拟详情
+    // （实测基准见 docs/audits/behavior-compare-first-run.md），此处对齐该语义。
+    if flag == "xadmin" {
+        let data = Value::Object(serde_json::Map::from_iter([
+            (
+                "control".to_string(),
+                Value::Object(serde_json::Map::from_iter([
+                    ("allowEdit".to_string(), Value::Bool(false)),
+                    ("allowDelete".to_string(), Value::Bool(false)),
+                ])),
+            ),
+            ("id".to_string(), Value::String("xadmin".to_string())),
+            ("name".to_string(), Value::String("xadmin".to_string())),
+            ("employee".to_string(), Value::String("xadmin".to_string())),
+            (
+                "distinguishedName".to_string(),
+                Value::String("xadmin@o2oa@P".to_string()),
+            ),
+            (
+                "mail".to_string(),
+                Value::String("xadmin@o2oa.net".to_string()),
+            ),
+            ("weixin".to_string(), Value::String(String::new())),
+            ("qq".to_string(), Value::String(String::new())),
+            ("mobile".to_string(), Value::String(String::new())),
+        ]));
+        return Ok(Json(ActionResult::java_success(data, 0, -1)));
+    }
+
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let where_clause = format!(

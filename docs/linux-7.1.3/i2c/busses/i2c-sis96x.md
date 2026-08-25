@@ -1,25 +1,25 @@
-﻿## 鍐呮牳椹卞姩 i2c-sis96x
+﻿## 内核驱动 i2c-sis96x
 
 
-鍙栦唬 2.4.x 鐨?i2c-sis645
+取代 2.4.x i2c-sis645
 
-鏀寔鐨勯€傞厤鍣細
+支持的适配器：
 
   - Silicon Integrated Systems Corp (SiS)
 
-    杩欎簺涓绘ˉ鐨勪换鎰忕粍鍚堬細
+    这些主桥的任意组合：
 	645, 645DX (aka 646), 648, 650, 651, 655, 735, 745, 746
 
-    浠ュ強杩欎簺鍗楁ˉ锛?	961, 962, 963(L)
+    以及这些南桥	961, 962, 963(L)
 
 Author: Mark M. Hoffman <mhoffman@lightlink.com>
 
-### 鎻忚堪
+### 描述
 
 
-杩欎釜浠?SMBus 鐨勯┍鍔ㄥ凡鐭ュ彲鍦ㄥ甫鏈変笂杩拌姱鐗囩粍缁勫悎鐨勭殑涓绘澘涓婂伐浣溿€傝椹卞姩鏄湪娌℃湁 SiS
-姝ｈ鏁版嵁鎵嬪唽鐨勬儏鍐典笅寮€鍙戠殑銆係MBus 瀵勫瓨鍣ㄨ鍋囧畾涓?SiS630 鐨勫吋瀹癸紝灏界瀹冧滑浣嶄簬瀹屽叏
-涓嶅悓鐨勪綅缃€傛劅璋?Alexander Malysh <amalysh@web.de> 鎻愪緵浜?SiS630 鏁版嵁鎵嬪唽锛堝強椹卞姩锛夈€?
+这个SMBus 的驱动已知可在带有上述芯片组组合的的主板上工作。该驱动是在没有 SiS
+正规数据手册的情况下开发的。SMBus 寄存器被假定SiS630 的兼容，尽管它们位于完全
+不同的位置。感Alexander Malysh <amalysh@web.de> 提供SiS630 数据手册（及驱动）
 ```
 
   00:00.0 Host bridge: Silicon Integrated Systems [SiS]: Unknown device 0645
@@ -34,31 +34,31 @@ Author: Mark M. Hoffman <mhoffman@lightlink.com>
   00:02.1 SMBus: Silicon Integrated Systems [SiS]: Unknown device 0016
 
 ```
-锛?.4.18 涔嬪悗鐗堟湰鐨勫唴鏍稿彲鑳戒細濉笂閭ｄ簺鈥淯nknown鈥濓級
+.4.18 之后版本的内核可能会填上那些“Unknown”）
 
-濡傛灉浣犵湅涓嶅埌瀹冿紝璇锋煡鐪?quirk_sis_96x_smbus锛坉rivers/pci/quirks.c锛夛紙鍗楁ˉ妫€娴嬪け璐?鏃朵篃閫傜敤锛?
-鎴戞€€鐤戣繖涓┍鍔ㄤ篃鍙互琚敼閫犱负鏀寔浠ヤ笅 SiS 鑺墖缁勶細635 涓?635T銆傚鏋滄湁浜烘嫢鏈夊甫杩欎簺
-鑺墖鐨勪富鏉匡紝骞朵笖鎰挎剰涓轰簡杩涙鑰屽啋闄╄涓€涓師鏈涓鸿壇濂界殑鍐呮牳宕╂簝鈥︹€﹁閫氳繃
-<mhoffman@lightlink.com> 鎴栭€氳繃 linux-i2c 閭欢鍒楄〃锛?linux-i2c@vger.kernel.org>
-鑱旂郴鎴戙€備篃璇峰彂閫?bug 鎶ュ憡涓?鎴栨垚鍔熸渚嬨€?
+如果你看不到它，请查quirk_sis_96x_smbus（drivers/pci/quirks.c）（南桥检测失时也适用
+我怀疑这个驱动也可以被改造为支持以下 SiS 芯片组：635 635T。如果有人拥有带这些
+芯片的主板，并且愿意为了进步而冒险让一个原本行为良好的内核崩溃……请通过
+<mhoffman@lightlink.com> 或通过 linux-i2c 邮件列表linux-i2c@vger.kernel.org>
+联系我。也请发bug 报告或成功案例
 
-### 寰呭姙锛圱O DOs锛?
+### 待办（TO DOs
 
-- 璇ラ┍鍔ㄤ笉鏀寔 SMBus 鍧楄/鍐欙紱濡傛灉鍙戠幇闇€瑕佸畠浠殑鍦烘櫙锛屾垜鍙兘浼氭坊鍔犮€?
+- 该驱动不支持 SMBus 块读/写；如果发现需要它们的场景，我可能会添加
 
-### 鑷磋阿锛圱hank You锛?
+### 致谢（Thank You
 
 Mark D. Studebaker <mdsxyz123@yahoo.com>
- - 璁捐鎻愮ず涓?bug 淇
+ - 设计提示bug 修复
 
 Alexander Maylsh <amalysh@web.de>
- - 鍚屼笂锛屽鍔犱竴浠介噸瑕佺殑鏁版嵁鎵嬪唽鈥︹€﹀嚑涔庡氨鏄垜鐪熸鎯宠鐨勯偅浠?
+ - 同上，外加一份重要的数据手册……几乎就是我真正想要的那
 Hans-G眉nter L眉tke Uphues <hg_lu@t-online.de>
- - SiS735 鐨勮ˉ涓?
+ - SiS735 的补
 Robert Zwerus <arzie@dds.nl>
- - SiS645DX 鐨勬祴璇?
+ - SiS645DX 的测
 Kianusch Sayah Karadji <kianusch@sk-tech.net>
- - SiS645DX/962 鐨勮ˉ涓?
+ - SiS645DX/962 的补
 Ken Healy
- - SiS655 鐨勮ˉ涓?
-涔熸劅璋㈠叾瀹冧换浣曟彁渚涘弽棣堟潵鍑界殑浜猴紒
+ - SiS655 的补
+也感谢其它任何提供反馈来函的人！

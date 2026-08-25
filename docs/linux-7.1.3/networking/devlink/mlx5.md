@@ -1,187 +1,187 @@
 ﻿
-## mlx5 devlink 鏀寔
+## mlx5 devlink 支持
 
 
-鏈枃妗ｆ弿杩颁簡 `mlx5` 璁惧椹卞姩瀹炵幇鐨?devlink 鐗规€с€?
-## 鍙傛暟
+本文档描述了 `mlx5` 设备驱动实现devlink 特性
+## 参数
 
 
-   - - 鍚嶇О
-     - 妯″紡
-     - 鏍￠獙
-     - 璇存槑
+   - - 名称
+     - 模式
+     - 校验
+     - 说明
    - - `enable_roce`
      - driverinit
-     - 甯冨皵鍊?     - 鑻ヨ澶囨敮鎸佺鐢?RoCE锛屽垯 RoCE 鍚敤鐘舵€佹帶鍒惰澶囧 RoCE 鑳藉姏鐨勬敮鎸併€?       鍚﹀垯锛屾帶鍒跺彂鐢熷湪椹卞姩鏍堜腑銆傚綋鍦ㄩ┍鍔ㄥ眰闈㈢鐢?RoCE 鏃讹紝浠呮敮鎸佸師濮?       ethernet QP銆?   - - `io_eq_size`
+     - 布尔     - 若设备支持禁RoCE，则 RoCE 启用状态控制设备对 RoCE 能力的支持       否则，控制发生在驱动栈中。当在驱动层面禁RoCE 时，仅支持原       ethernet QP   - - `io_eq_size`
      - driverinit
-     - 鍙栧€艰寖鍥村湪 64 鍒?4096 涔嬮棿銆?     -
+     - 取值范围在 64 4096 之间     -
    - - `event_eq_size`
      - driverinit
-     - 鍙栧€艰寖鍥村湪 64 鍒?4096 涔嬮棿銆?     -
+     - 取值范围在 64 4096 之间     -
    - - `max_macs`
      - driverinit
-     - 鍙栧€艰寖鍥村湪 1 鍒?2^31 涔嬮棿銆備粎鏀寔 2 鐨勫箓鐨勫€笺€?     -
+     - 取值范围在 1 2^31 之间。仅支持 2 的幂的值     -
    - - `enable_sriov`
      - permanent
-     - 甯冨皵鍊?     - 鑻ヨ澶囨敮鎸侊紝鍒欏垎鍒嫭绔嬪湴搴旂敤浜庢瘡涓墿鐞嗗姛鑳斤紙PF锛夈€傚惁鍒欙紝瀵圭О鍦?       搴旂敤浜庢墍鏈?PF銆?   - - `total_vfs`
+     - 布尔     - 若设备支持，则分别独立地应用于每个物理功能（PF）。否则，对称       应用于所PF   - - `total_vfs`
      - permanent
-     - 鍙栧€艰寖鍥村湪 1 鍒拌澶囩浉鍏崇殑鏈€澶у€间箣闂淬€?     - 鑻ヨ澶囨敮鎸侊紝鍒欏垎鍒嫭绔嬪湴搴旂敤浜庢瘡涓墿鐞嗗姛鑳斤紙PF锛夈€傚惁鍒欙紝瀵圭О鍦?       搴旂敤浜庢墍鏈?PF銆?
-娉ㄦ剰锛氳濡?`enable_sriov` 鍜?`total_vfs` 杩欑被 permanent 鍙傛暟闇€瑕?FW reset 鎵嶈兘鐢熸晥
+     - 取值范围在 1 到设备相关的最大值之间     - 若设备支持，则分别独立地应用于每个物理功能（PF）。否则，对称       应用于所PF
+注意：诸`enable_sriov` `total_vfs` 这类 permanent 参数需FW reset 才能生效
 
 
-   # 璁剧疆鍙傛暟
+   # 设置参数
    devlink dev param set pci/0000:01:00.0 name enable_sriov value true cmode permanent
    devlink dev param set pci/0000:01:00.0 name total_vfs value 8 cmode permanent
 
    # Fw reset
    devlink dev reload pci/0000:01:00.0 action fw_activate
 
-   # 瀵逛簬 PCI 鐩稿叧閰嶇疆锛屼緥濡?sriov 闇€瑕?PCI reset/rescan锛?   echo 1 >/sys/bus/pci/devices/0000:01:00.0/remove
+   # 对于 PCI 相关配置，例sriov 需PCI reset/rescan   echo 1 >/sys/bus/pci/devices/0000:01:00.0/remove
    echo 1 >/sys/bus/pci/rescan
    grep ^ /sys/bus/pci/devices/0000:01:00.0/sriov_*
 
    - - `num_doorbells`
      - driverinit
-     - 璇ュ弬鏁版帶鍒?netdev 浣跨敤鐨勯€氶亾 doorbell 鏁伴噺銆傚湪鎵€鏈夋儏鍐典笅锛岄兘浼氶澶?       鍒嗛厤骞朵娇鐢ㄤ竴涓?doorbell 鐢ㄤ簬闈為€氶亾閫氫俊锛堜緥濡傜敤浜?PTP銆丠WS 绛夛級銆傛敮鎸佺殑
-       鍙栧€间负锛?
-       - 0锛氫笉浣跨敤閫氶亾鐗瑰畾鐨?doorbell锛屾墍鏈変簨鎯呴兘浣跨敤鍏ㄥ眬 doorbell銆?       - [1, max_num_channels]锛氬皢杩欎簺 netdev 閫氶亾鍧囨憡鍒拌繖浜?doorbell 涓娿€?
-`mlx5` 椹卞姩杩樺疄鐜颁簡浠ヤ笅椹卞姩鐗瑰畾鐨勫弬鏁般€?
+     - 该参数控netdev 使用的通道 doorbell 数量。在所有情况下，都会额       分配并使用一doorbell 用于非通道通信（例如用PTP、HWS 等）。支持的
+       取值为
+       - 0：不使用通道特定doorbell，所有事情都使用全局 doorbell       - [1, max_num_channels]：将这些 netdev 通道均摊到这doorbell 上
+`mlx5` 驱动还实现了以下驱动特定的参数
    :widths: 5 5 5 85
 
-   - - 鍚嶇О
-     - 绫诲瀷
-     - 妯″紡
-     - 鎻忚堪
+   - - 名称
+     - 类型
+     - 模式
+     - 描述
    - - `flow_steering_mode`
      - string
      - runtime
-     - 鎺у埗椹卞姩鐨勬祦瀵煎悜锛坒low steering锛夋ā寮?
-       - `dmfs` 璁惧绠＄悊鐨勬祦瀵煎悜銆傚湪 DMFS 妯″紡涓嬶紝HW steering 瀹炰綋閫氳繃鍥轰欢
-         鍒涘缓鍜岀鐞嗐€?       - `smfs` 杞欢绠＄悊鐨勬祦瀵煎悜銆傚湪 SMFS 妯″紡涓嬶紝HW steering 瀹炰綋鐢遍┍鍔ㄥ垱寤?         鍜岀鐞嗭紝鏃犻渶鍥轰欢浠嬪叆銆?       - `hmfs` 纭欢绠＄悊鐨勬祦瀵煎悜銆傚湪 HMFS 妯″紡涓嬶紝椹卞姩浣跨敤甯︽湁涓€绉嶇壒娈婄殑鏂板瀷
-         WQE锛圵ork Queue Element锛夌殑 Work Queue 鐩存帴灏?steering 瑙勫垯閰嶇疆鍒?HW銆?
-       涓庨粯璁ょ殑 DMFS 妯″紡鐩告瘮锛孲MFS 妯″紡鏇村揩锛屽苟鎻愪緵鏇村ソ鐨勮鍒欐彃鍏ラ€熺巼銆?   - - `fdb_large_groups`
+     - 控制驱动的流导向（flow steering）模
+       - `dmfs` 设备管理的流导向。在 DMFS 模式下，HW steering 实体通过固件
+         创建和管理       - `smfs` 软件管理的流导向。在 SMFS 模式下，HW steering 实体由驱动创         和管理，无需固件介入       - `hmfs` 硬件管理的流导向。在 HMFS 模式下，驱动使用带有一种特殊的新型
+         WQE（Work Queue Element）的 Work Queue 直接steering 规则配置HW
+       与默认的 DMFS 模式相比，SMFS 模式更快，并提供更好的规则插入速率   - - `fdb_large_groups`
      - u32
      - driverinit
-     - 鎺у埗 FDB 琛ㄤ腑澶х粍锛堝ぇ灏?> 1锛夌殑鏁伴噺銆?
-       - 榛樿鍊间负 15锛屽彇鍊艰寖鍥村湪 1 鍒?1024 涔嬮棿銆?   - - `esw_multiport`
+     - 控制 FDB 表中大组（大> 1）的数量
+       - 默认值为 15，取值范围在 1 1024 之间   - - `esw_multiport`
      - 甯冨皵鍊?     - runtime
-     - 鎺у埗 MultiPort E-Switch 鍏变韩 fdb 妯″紡銆?
-       涓€绉嶅疄楠屾€фā寮忥紝浣跨敤鍗曚釜 E-Switch锛孨IC 涓婄殑鎵€鏈?vport 鍜岀墿鐞嗙鍙ｉ兘
-       杩炴帴鍒板畠銆?
-       渚嬪锛屽皢鍒涘缓鍦?PF0 涓婄殑 VF 鐨勬祦閲忓彂閫佸埌鍘熸湰涓?PF1 鐨?uplink 鍏宠仈鐨?       uplink銆?
-       娉ㄦ剰锛氭湭鏉ョ殑璁惧锛孋onnectX-8 鍙婁箣鍚庯紝鏈€缁堜細灏嗗叾浣滀负榛樿鍊硷紝浠ュ厑璁稿湪
-       鍗曚釜 E-switch 鐜涓墍鏈?NIC 绔彛涔嬮棿杞彂锛岃€屽弻 E-switch 妯″紡寰堝彲鑳戒細琚?       寮冪敤銆?
-       榛樿鍊硷細绂佺敤
+     - 控制 MultiPort E-Switch 共享 fdb 模式
+       一种实验性模式，使用单个 E-Switch，NIC 上的所vport 和物理端口都
+       连接到它
+       例如，将创建PF0 上的 VF 的流量发送到原本PF1 uplink 关联       uplink
+       注意：未来的设备，ConnectX-8 及之后，最终会将其作为默认值，以允许在
+       单个 E-switch 环境中所NIC 端口之间转发，而双 E-switch 模式很可能会       弃用
+       默认值：禁用
    - - `esw_port_metadata`
      - 甯冨皵鍊?     - runtime
-     - 鍦ㄩ€傜敤鐨勬儏鍐典笅锛岀鐢?eswitch 鍏冩暟鎹彲鏍规嵁鐢ㄤ緥鍜屽寘澶у皬灏嗗寘閫熺巼鎻愬崌楂樿揪
-       20%銆?
-       Eswitch 绔彛鍏冩暟鎹姸鎬佹帶鍒舵槸鍚︾敤鍏冩暟鎹湪鍐呴儴鏍囪鍖呫€傚绔彛 RoCE銆?       representor 涔嬮棿鐨勬晠闅滆浆绉讳互鍙婂爢鍙犺澶囧繀椤诲惎鐢ㄥ厓鏁版嵁鏍囪銆傞粯璁ゆ儏鍐典笅锛?       鍦ㄥ彈鏀寔鐨?E-switch 璁惧涓婂厓鏁版嵁鏄惎鐢ㄧ殑銆傚厓鏁版嵁浠呴€傜敤浜?switchdev 妯″紡鐨?       E-switch锛屽綋鐢ㄦ埛涓嶄細浣跨敤浠ヤ笅浠讳綍鐢ㄤ緥鏃讹紝鍙互绂佺敤瀹冿細
-       1. HCA 澶勪簬鍙?澶氱鍙?RoCE 妯″紡銆?       2. VF/SF representor bonding锛堥€氬父鐢ㄤ簬瀹炴椂杩佺Щ锛夈€?       3. 鍫嗗彔璁惧銆?
-       褰撳厓鏁版嵁琚鐢ㄦ椂锛屽鏋滅敤鎴峰皾璇曞惎鐢ㄤ笂杩扮敤渚嬶紝瀹冧滑灏嗘棤娉曞垵濮嬪寲銆?
-       娉ㄦ剰锛氳缃鍙傛暟涓嶄細绔嬪嵆鐢熸晥銆傝缃繀椤诲湪 legacy 妯″紡涓嬭繘琛岋紝eswitch 绔彛
-       鍏冩暟鎹湪鍚敤 switchdev 妯″紡鍚庣敓鏁堛€?   - - `hairpin_num_queues`
+     - 在适用的情况下，禁eswitch 元数据可根据用例和包大小将包速率提升高达
+       20%銆。
+       Eswitch 端口元数据状态控制是否用元数据在内部标记包。多端口 RoCE       representor 之间的故障转移以及堆叠设备必须启用元数据标记。默认情况下       在受支持E-switch 设备上元数据是启用的。元数据仅适用switchdev 模式       E-switch，当用户不会使用以下任何用例时，可以禁用它：
+       1. HCA 处于多端RoCE 模式       2. VF/SF representor bonding（通常用于实时迁移）       3. 堆叠设备
+       当元数据被禁用时，如果用户尝试启用上述用例，它们将无法初始化
+       注意：设置此参数不会立即生效。设置必须在 legacy 模式下进行，eswitch 端口
+       元数据在启用 switchdev 模式后生效   - - `hairpin_num_queues`
      - u32
      - driverinit
-     - 鎴戜滑绉版秹鍙婅浆鍙戠殑 TC NIC 瑙勫垯涓衡€渉airpin鈥濄€侶airpin 闃熷垪鏄?mlx5 閽堝姝ょ被
-       鍖呯殑纭欢杞彂鐨勭壒瀹氱‖浠跺疄鐜般€?
-       鎺у埗 hairpin 闃熷垪鐨勬暟閲忋€?   - - `hairpin_queue_size`
+     - 我们称涉及转发的 TC NIC 规则为“hairpin”。Hairpin 队列mlx5 针对此类
+       包的硬件转发的特定硬件实现
+       控制 hairpin 队列的数量   - - `hairpin_queue_size`
      - u32
      - driverinit
-     - 鎺у埗 hairpin 闃熷垪鐨勫ぇ灏忥紙浠ュ寘涓哄崟浣嶏級銆?   - - `pcie_cong_inbound_high`
+     - 控制 hairpin 队列的大小（以包为单位）   - - `pcie_cong_inbound_high`
      - u16
      - driverinit
-     - PCIe 鎷ュ浜嬩欢鐨勯珮闃堝€奸厤缃€傚綋璁惧渚у叆绔?PCIe 娴侀噺鍦ㄨ冻澶熼暱鐨勬椂闂村唴锛堣嚦灏?       200ms锛夎秴杩囬厤缃殑楂橀槇鍊兼椂锛屽浐浠跺皢鍙戦€佷竴涓簨浠躲€?
-       鍙傝 pci_bw_inbound_high ethtool 缁熻銆?
-       鍗曚綅涓?0.01 %銆傚彲鎺ュ彈鐨勫彇鍊艰寖鍥村湪 [0, 10000]銆?       pcie_cong_inbound_low < pcie_cong_inbound_high銆?       榛樿鍊硷細9000锛堝搴?90%锛夈€?   - - `pcie_cong_inbound_low`
+     - PCIe 拥塞事件的高阈值配置。当设备侧入PCIe 流量在足够长的时间内（至       200ms）超过配置的高阈值时，固件将发送一个事件
+       参见 pci_bw_inbound_high ethtool 统计
+       单位0.01 %。可接受的取值范围在 [0, 10000]       pcie_cong_inbound_low < pcie_cong_inbound_high       默认值：9000（对90%）   - - `pcie_cong_inbound_low`
      - u16
      - driverinit
-     - PCIe 鎷ュ浜嬩欢鐨勪綆闃堝€奸厤缃€傚綋璁惧渚у叆绔?PCIe 娴侀噺鍦ㄥ厛鍓嶅凡澶勪簬鎷ュ鐘舵€佸悗
-       闄嶅埌閰嶇疆鐨勪綆闃堝€间互涓嬫椂锛屽浐浠跺皢鍙戦€佷竴涓簨浠躲€?
-       鍙傝 pci_bw_inbound_low ethtool 缁熻銆?
-       鍗曚綅涓?0.01 %銆傚彲鎺ュ彈鐨勫彇鍊艰寖鍥村湪 [0, 10000]銆?       pcie_cong_inbound_low < pcie_cong_inbound_high銆?       榛樿鍊硷細7500銆?   - - `pcie_cong_outbound_high`
+     - PCIe 拥塞事件的低阈值配置。当设备侧入PCIe 流量在先前已处于拥塞状态后
+       降到配置的低阈值以下时，固件将发送一个事件
+       参见 pci_bw_inbound_low ethtool 统计
+       单位0.01 %。可接受的取值范围在 [0, 10000]       pcie_cong_inbound_low < pcie_cong_inbound_high       默认值：7500   - - `pcie_cong_outbound_high`
      - u16
      - driverinit
-     - PCIe 鎷ュ浜嬩欢鐨勯珮闃堝€奸厤缃€傚綋璁惧渚у嚭绔?PCIe 娴侀噺鍦ㄨ冻澶熼暱鐨勬椂闂村唴锛堣嚦灏?       200ms锛夎秴杩囬厤缃殑楂橀槇鍊兼椂锛屽浐浠跺皢鍙戦€佷竴涓簨浠躲€?
-       鍙傝 pci_bw_outbound_high ethtool 缁熻銆?
-       鍗曚綅涓?0.01 %銆傚彲鎺ュ彈鐨勫彇鍊艰寖鍥村湪 [0, 10000]銆?       pcie_cong_outbound_low < pcie_cong_outbound_high銆?       榛樿鍊硷細9000锛堝搴?90%锛夈€?   - - `pcie_cong_outbound_low`
+     - PCIe 拥塞事件的高阈值配置。当设备侧出PCIe 流量在足够长的时间内（至       200ms）超过配置的高阈值时，固件将发送一个事件
+       参见 pci_bw_outbound_high ethtool 统计
+       单位0.01 %。可接受的取值范围在 [0, 10000]       pcie_cong_outbound_low < pcie_cong_outbound_high       默认值：9000（对90%）   - - `pcie_cong_outbound_low`
      - u16
      - driverinit
-     - PCIe 鎷ュ浜嬩欢鐨勪綆闃堝€奸厤缃€傚綋璁惧渚у嚭绔?PCIe 娴侀噺鍦ㄥ厛鍓嶅凡澶勪簬鎷ュ鐘舵€佸悗
-       闄嶅埌閰嶇疆鐨勪綆闃堝€间互涓嬫椂锛屽浐浠跺皢鍙戦€佷竴涓簨浠躲€?
-       鍙傝 pci_bw_outbound_low ethtool 缁熻銆?
-       鍗曚綅涓?0.01 %銆傚彲鎺ュ彈鐨勫彇鍊艰寖鍥村湪 [0, 10000]銆?       pcie_cong_outbound_low < pcie_cong_outbound_high銆?       榛樿鍊硷細7500銆?
+     - PCIe 拥塞事件的低阈值配置。当设备侧出PCIe 流量在先前已处于拥塞状态后
+       降到配置的低阈值以下时，固件将发送一个事件
+       参见 pci_bw_outbound_low ethtool 统计
+       单位0.01 %。可接受的取值范围在 [0, 10000]       pcie_cong_outbound_low < pcie_cong_outbound_high       默认值：7500
    - - `cqe_compress_type`
      - string
      - permanent
-     - 閰嶇疆 NIC 搴斾娇鐢ㄥ摢绉嶆満鍒?绠楁硶锛岃绠楁硶浼氭牴鎹?PCIe 鎬荤嚎鐘跺喌鍜屽叾浠栧唴閮?NIC
-       鍥犵礌锛屽奖鍝嶅帇缂?CQE 鐨勯€熺巼锛堟縺杩涚▼搴︼級銆傛妯″紡褰卞搷鎵€鏈夊惎鐢ㄥ帇缂╃殑闃熷垪銆?       - `balanced`锛氬悎骞惰緝灏戠殑 CQE锛屽緱鍒颁腑绛夌殑鍘嬬缉姣旓紝浣嗗湪甯﹀鑺傜渷鍜屾€ц兘涔嬮棿
-         淇濇寔骞宠　銆?       - `aggressive`锛氬皢鏇村 CQE 鍚堝苟涓哄崟涓潯鐩紝瀹炵幇鏇撮珮鐨勫帇缂╃巼骞舵渶澶у寲鎬ц兘锛?         灏ゅ叾鏄湪楂樻祦閲忚礋杞戒笅銆?
+     - 配置 NIC 应使用哪种机算法，该算法会根PCIe 总线状况和其他内NIC
+       因素，影响压CQE 的速率（激进程度）。此模式影响所有启用压缩的队列       - `balanced`：合并较少的 CQE，得到中等的压缩比，但在带宽节省和性能之间
+         保持平衡       - `aggressive`：将更多 CQE 合并为单个条目，实现更高的压缩率并最大化性能         尤其是在高流量负载下
    - - `swp_l4_csum_mode`
      - string
      - permanent
-     - 閰嶇疆璁惧鍦ㄤ娇鐢ㄨ蒋浠惰В鏋愬櫒锛圫WP锛夋彁绀烘潵瀹氫綅澶撮儴鏃跺浣曡绠?L4 鏍￠獙鍜屻€?
-       - `default`锛氫娇鐢ㄨ澶囩殑榛樿鏍￠獙鍜岃绠楁ā寮忋€傞┍鍔ㄥ湪鍒濆鍖栨湡闂翠細鍙戠幇
-         浣跨敤鐨勬槸 full_csum 杩樻槸 l4_only銆備笉鍏佽浠庣敤鎴风┖闂存樉寮忚缃鍊硷紝浣嗘煇浜?         鍥轰欢鐗堟湰鍦ㄨ鍙栧弬鏁版椂鍙兘杩斿洖姝ゅ€笺€?       - `full_csum`锛氳绠楀寘鍚吉澶寸殑瀹屾暣鏍￠獙鍜屻€?       - `l4_only`锛氫粎璁＄畻 L4 鏍￠獙鍜岋紝鎺掗櫎浼ご銆?
-`mlx5` 椹卞姩鏀寔閫氳繃 `DEVLINK_CMD_RELOAD` 閲嶆柊鍔犺浇
+     - 配置设备在使用软件解析器（SWP）提示来定位头部时如何计L4 校验和
+       - `default`：使用设备的默认校验和计算模式。驱动在初始化期间会发现
+         使用的是 full_csum 还是 l4_only。不允许从用户空间显式设置此值，但某         固件版本在读取参数时可能返回此值       - `full_csum`：计算包含伪头的完整校验和       - `l4_only`：仅计算 L4 校验和，排除伪头
+`mlx5` 驱动支持通过 `DEVLINK_CMD_RELOAD` 重新加载
 
-## 淇℃伅鐗堟湰
+## 信息版本
 
 
-`mlx5` 椹卞姩鎶ュ憡浠ヤ笅鐗堟湰
+`mlx5` 驱动报告以下版本
 
    :widths: 5 5 90
 
-   - - 鍚嶇О
-     - 绫诲瀷
-     - 鎻忚堪
+   - - 名称
+     - 类型
+     - 描述
    - - `fw.psid`
      - fixed
-     - 鐢ㄤ簬琛ㄧず璁惧鐨勬澘鍗?id銆?   - - `fw.version`
+     - 用于表示设备的板id   - - `fw.version`
      - stored, running
-     - 涓変綅鏁板瓧 major.minor.subminor 鍥轰欢鐗堟湰鍙枫€?
-## 鍋ュ悍鎶ュ憡鍣?
+     - 三位数字 major.minor.subminor 固件版本号
+## 健康报告
 
-### tx 鎶ュ憡鍣?
-tx 鎶ュ憡鍣ㄨ礋璐ｆ姤鍛婂拰鎭㈠浠ヤ笅涓夌閿欒鍦烘櫙锛?
-- tx 瓒呮椂
-    鍦ㄥ唴鏍告娴嬪埌 tx 瓒呮椂鏃舵姤鍛娿€?    閫氳繃鎼滅储涓㈠け鐨勪腑鏂潵鎭㈠銆?- tx 閿欒瀹屾垚
-    鍦?tx 瀹屾垚鍑洪敊鏃舵姤鍛娿€?    閫氳繃鍒锋柊 tx 闃熷垪骞跺浣嶅畠鏉ユ仮澶嶃€?- tx PTP 绔彛鏃堕棿鎴?CQ 寮傚父
-    鎶ュ憡绔彛 ts CQ 涓婁粠鏈姇閫掔殑 CQE 杩囧銆?    閫氳繃鍒锋柊骞堕噸寤烘墍鏈?PTP 閫氶亾鏉ユ仮澶嶃€?
-tx 鎶ュ憡鍣ㄨ繕鏀寔鎸夐渶璇婃柇鍥炶皟锛岄€氳繃瀹冩彁渚涘叾鍙戦€侀槦鍒楃姸鎬佺殑瀹炴椂淇℃伅銆?
-鐢ㄦ埛鍛戒护绀轰緥锛?
+### tx 报告
+tx 报告器负责报告和恢复以下三种错误场景
+- tx 超时
+    在内核检测到 tx 超时时报告    通过搜索丢失的中断来恢复- tx 错误完成
+    tx 完成出错时报告    通过刷新 tx 队列并复位它来恢复- tx PTP 端口时间CQ 异常
+    报告端口 ts CQ 上从未投递的 CQE 过多    通过刷新并重建所PTP 通道来恢复
+tx 报告器还支持按需诊断回调，通过它提供其发送队列状态的实时信息
+用户命令示例
 ```
 
     $ devlink health diagnose pci/0000:82:00.0 reporter tx
 
 ```
-   姝ゅ懡浠や粎鍦ㄦ帴鍙ｅ浜?up 鐘舵€佹椂鎵嶆湁鏈夋晥杈撳嚭锛屽惁鍒欏懡浠よ緭鍑轰负绌恒€?
-- 鏄剧ず鎸囩ず鐨?tx 閿欒鏁伴噺銆佹垚鍔熺粨鏉熺殑鎭㈠娴佺▼鏁伴噺锛?```
+   此命令仅在接口处up 状态时才有有效输出，否则命令输出为空
+- 显示指示tx 错误数量、成功结束的恢复流程数量```
 
     $ devlink health show pci/0000:82:00.0 reporter tx
 
 ```
-### rx 鎶ュ憡鍣?
-rx 鎶ュ憡鍣ㄨ礋璐ｆ姤鍛婂拰鎭㈠浠ヤ笅涓ょ閿欒鍦烘櫙锛?
-- rx 闃熷垪鍒濆鍖栵紙濉厖锛夎秴鏃?    鐜舰缂撳啿鍖哄垵濮嬪寲鏃跺 rx 闃熷垪鎻忚堪绗︾殑濉厖鏄€氳繃瑙﹀彂涓€涓?irq 鍦?napi 涓婁笅鏂囦腑
-    瀹屾垚鐨勩€傚鏋滄湭鑳借幏寰楁渶灏戞暟閲忕殑鎻忚堪绗︼紝灏变細鍙戠敓瓒呮椂锛屽苟涓斿彲浠ラ€氳繃杞 EQ
-    锛圗vent Queue锛夋潵鎭㈠鎻忚堪绗︺€?- rx 甯﹂敊璇殑瀹屾垚锛堝湪涓柇涓婁笅鏂囩敱 HW 鎶ュ憡锛?    鍦?rx 瀹屾垚鍑洪敊鏃舵姤鍛娿€?    閫氳繃鍒锋柊鐩稿叧闃熷垪骞跺浣嶅畠鏉ユ仮澶嶏紙濡傛灉闇€瑕侊級銆?
-rx 鎶ュ憡鍣ㄨ繕鏀寔鎸夐渶璇婃柇鍥炶皟锛岄€氳繃瀹冩彁渚涘叾鎺ユ敹闃熷垪鐘舵€佺殑瀹炴椂淇℃伅銆?
+### rx 报告
+rx 报告器负责报告和恢复以下两种错误场景
+- rx 队列初始化（填充）超    环形缓冲区初始化时对 rx 队列描述符的填充是通过触发一irq napi 上下文中
+    完成的。如果未能获得最少数量的描述符，就会发生超时，并且可以通过轮询 EQ
+    （Event Queue）来恢复描述符- rx 带错误的完成（在中断上下文由 HW 报告    rx 完成出错时报告    通过刷新相关队列并复位它来恢复（如果需要）
+rx 报告器还支持按需诊断回调，通过它提供其接收队列状态的实时信息
 ```
 
     $ devlink health diagnose pci/0000:82:00.0 reporter rx
 
 ```
-   姝ゅ懡浠や粎鍦ㄦ帴鍙ｅ浜?up 鐘舵€佹椂鎵嶆湁鏈夋晥杈撳嚭銆傚惁鍒欙紝鍛戒护杈撳嚭涓虹┖銆?
-- 鏄剧ず鎸囩ず鐨?rx 閿欒鏁伴噺銆佹垚鍔熺粨鏉熺殑鎭㈠娴佺▼鏁伴噺锛?```
+   此命令仅在接口处up 状态时才有有效输出。否则，命令输出为空
+- 显示指示rx 错误数量、成功结束的恢复流程数量```
 
     $ devlink health show pci/0000:82:00.0 reporter rx
 
 ```
-### fw 鎶ュ憡鍣?
-fw 鎶ュ憡鍣ㄥ疄鐜颁簡 `diagnose` 鍜?`dump` 鍥炶皟銆傚畠閫氳繃瑙﹀彂 fw core dump 骞跺皢鍏跺瓨鍏?dump 缂撳啿鍖猴紝鏉ヨ窡韪?fw 閿欒锛堜緥濡?fw syndrome锛夌殑鐥囩姸銆傜敤鎴峰彲浠ラ殢鏃惰Е鍙?fw 鎶ュ憡鍣ㄧ殑
-璇婃柇鍛戒护锛屼互妫€鏌ュ綋鍓?fw 鐘舵€併€?
-鐢ㄦ埛鍛戒护绀轰緥锛?
+### fw 报告
+fw 报告器实现了 `diagnose` `dump` 回调。它通过触发 fw core dump 并将其存dump 缓冲区，来跟fw 错误（例fw syndrome）的症状。用户可以随时触fw 报告器的
+诊断命令，以检查当fw 状态
+用户命令示例
 ```
 
     $ devlink health diagnose pci/0000:82:00.0 reporter fw
@@ -192,12 +192,12 @@ fw 鎶ュ憡鍣ㄥ疄鐜颁簡 `diagnose` 鍜?`dump` 鍥炶皟銆傚畠閫氳繃
     $ devlink health dump show pci/0000:82:00.0 reporter fw
 
 ```
-   姝ゅ懡浠ゅ彧鑳借繍琛屽湪鎷ユ湁 fw tracer 鎵€鏈夋潈鐨?PF 涓婏紝鍦ㄥ叾浠?PF 鎴栦换浣?VF 涓婅繍琛岄兘浼?   杩斿洖鈥淥peration not permitted鈥濄€?
-### fw fatal 鎶ュ憡鍣?
-fw fatal 鎶ュ憡鍣ㄥ疄鐜颁簡 `dump` 鍜?`recover` 鍥炶皟銆傚畠閫氳繃 CR-space dump 鍜屾仮澶嶆祦绋?鏉ヨ窡韪嚧鍛介敊璇寚绀恒€侰R-space dump 浣跨敤 vsc 鎺ュ彛锛屽嵆浣垮湪 FW 鍛戒护鎺ュ彛涓嶅彲鐢ㄧ殑鎯呭喌涓?锛堝ぇ澶氭暟 FW 鑷村懡閿欒閮芥槸杩欑鎯呭喌锛変篃鏈夋晥銆俽ecover 鍑芥暟杩愯鎭㈠娴佺▼锛屽湪闇€瑕佹椂閲嶆柊鍔犺浇
-椹卞姩骞惰Е鍙?fw reset銆傚湪鍥轰欢閿欒鏃讹紝鍋ュ悍缂撳啿鍖轰細琚?dump 鍒?dmesg銆傛棩蹇楃骇鍒簮鑷敊璇殑
-涓ラ噸绋嬪害锛堝湪鍋ュ悍缂撳啿鍖轰腑缁欏嚭锛夈€?
-鐢ㄦ埛鍛戒护绀轰緥锛?
+   此命令只能运行在拥有 fw tracer 所有权PF 上，在其PF 或任VF 上运行都   返回“Operation not permitted”
+### fw fatal 报告
+fw fatal 报告器实现了 `dump` `recover` 回调。它通过 CR-space dump 和恢复流来跟踪致命错误指示。CR-space dump 使用 vsc 接口，即使在 FW 命令接口不可用的情况（大多数 FW 致命错误都是这种情况）也有效。recover 函数运行恢复流程，在需要时重新加载
+驱动并触fw reset。在固件错误时，健康缓冲区会dump dmesg。日志级别源自错误的
+严重程度（在健康缓冲区中给出）
+用户命令示例
 ```
 
     $ devlink health recover pci/0000:82:00.0 reporter fw_fatal
@@ -208,37 +208,37 @@ fw fatal 鎶ュ憡鍣ㄥ疄鐜颁簡 `dump` 鍜?`recover` 鍥炶皟銆傚畠閫�
     $ devlink health dump show pci/0000:82:00.1 reporter fw_fatal
 
 ```
-   姝ゅ懡浠ゅ彧鑳借繍琛屽湪 PF 涓娿€?
-### vnic 鎶ュ憡鍣?
-vnic 鎶ュ憡鍣ㄤ粎瀹炵幇浜?`diagnose` 鍥炶皟銆傚畠璐熻矗浠?fw 鏌ヨ vnic 璇婃柇璁℃暟鍣ㄥ苟瀹炴椂鏄剧ず
-瀹冧滑銆?
-vnic 璁℃暟鍣ㄧ殑鎻忚堪锛?
+   此命令只能运行在 PF 上
+### vnic 报告
+vnic 报告器仅实现`diagnose` 回调。它负责fw 查询 vnic 诊断计数器并实时显示
+它们
+vnic 计数器的描述
 - total_error_queues
-        鐢变簬寮傛閿欒鎴栧嚭閿欏懡浠よ€屽浜庨敊璇姸鎬佺殑闃熷垪鏁伴噺銆?- send_queue_priority_update_flow
-        QP/SQ 浼樺厛绾?SL 鏇存柊浜嬩欢鐨勬暟閲忋€?- cq_overrun
-        CQ 鐢变簬婧㈠嚭鑰岃繘鍏ラ敊璇姸鎬佺殑娆℃暟銆?- async_eq_overrun
-        鏄犲皠鍒板紓姝ヤ簨浠剁殑 EQ 琚孩鍑虹殑娆℃暟銆?- comp_eq_overrun
-        鏄犲皠鍒板畬鎴愪簨浠剁殑 EQ 琚孩鍑虹殑娆℃暟銆?- quota_exceeded_command
-        鐢变簬瓒呰繃閰嶉鑰屽彂鍑哄苟澶辫触鐨勫懡浠ゆ暟閲忋€?- invalid_command
-        鐢变簬閰嶉涔嬪鐨勪换浣曞叾浠栧師鍥犺€屽彂鍑哄苟澶辫触鐨勫懡浠ゆ暟閲忋€?- nic_receive_steering_discard
-        瀹屾垚 RX 娴?steering 浣嗙敱浜庢祦琛ㄤ笉鍖归厤鑰岃涓㈠純鐨勫寘鏁伴噺銆?- generated_pkt_steering_fail
-	鐢?VNIC 鐢熸垚骞剁粡鍘嗘剰澶?steering 澶辫触鐨勫寘鏁伴噺锛堝湪 steering 娴佺殑浠绘剰浣嶇疆锛夈€?- handled_pkt_steering_fail
-	鐢?VNIC 澶勭悊骞剁粡鍘嗘剰澶?steering 澶辫触鐨勫寘鏁伴噺锛堝湪 VNIC 鎷ユ湁鐨?steering 娴佺殑
-	浠绘剰浣嶇疆锛屽寘鎷?eswitch 鎵€鏈夎€呯殑 FDB锛夈€?- icm_consumption
-        vnic 娑堣€楃殑浜掕繛涓绘満鍐呭瓨锛圛CM锛夐噺锛岀矑搴︿负 4KB銆侷CM 鏄?SW 鍦?HCA 璇锋眰鏃?        鍒嗛厤鐨勪富鏈哄唴瀛橈紝鐢ㄤ簬瀛樺偍鎺у埗 HCA 鎿嶄綔鐨勬暟鎹粨鏋勩€?- bar_uar_access
-        瀵?PCIe BAR 涓?UAR 鐨?WRITE 鎴?READ 璁块棶鎿嶄綔娆℃暟銆?- odp_local_triggered_page_fault
-        鐢?ODP 灞€閮ㄨЕ鍙戠殑缂洪〉鏁伴噺銆?- odp_remote_triggered_page_fault
-        鐢?ODP 杩滅▼瑙﹀彂鐨勭己椤垫暟閲忋€?
-鐢ㄦ埛鍛戒护绀轰緥锛?
+        由于异步错误或出错命令而处于错误状态的队列数量- send_queue_priority_update_flow
+        QP/SQ 优先SL 更新事件的数量- cq_overrun
+        CQ 由于溢出而进入错误状态的次数- async_eq_overrun
+        映射到异步事件的 EQ 被溢出的次数- comp_eq_overrun
+        映射到完成事件的 EQ 被溢出的次数- quota_exceeded_command
+        由于超过配额而发出并失败的命令数量- invalid_command
+        由于配额之外的任何其他原因而发出并失败的命令数量- nic_receive_steering_discard
+        完成 RX steering 但由于流表不匹配而被丢弃的包数量- generated_pkt_steering_fail
+	VNIC 生成并经历意steering 失败的包数量（在 steering 流的任意位置）- handled_pkt_steering_fail
+	VNIC 处理并经历意steering 失败的包数量（在 VNIC 拥有steering 流的
+	任意位置，包eswitch 所有者的 FDB）- icm_consumption
+        vnic 消耗的互连主机内存（ICM）量，粒度为 4KB。ICM SW HCA 请求        分配的主机内存，用于存储控制 HCA 操作的数据结构- bar_uar_access
+        PCIe BAR UAR WRITE READ 访问操作次数- odp_local_triggered_page_fault
+        ODP 局部触发的缺页数量- odp_remote_triggered_page_fault
+        ODP 远程触发的缺页数量
+用户命令示例
 ```
 
         $ devlink health diagnose pci/0000:82:00.1 reporter vnic
 
 ```
-- 璇婃柇 representor vnic 璁℃暟鍣紙閫氳繃鎻愪緵 devlink 绔彛鏉ユ墽
+- 诊断 representor vnic 计数器（通过提供 devlink 端口来执
 ```
 
         $ devlink health diagnose pci/0000:82:00.1/65537 reporter vnic
 
 ```
-   姝ゅ懡浠ゅ彲浠ヨ繍琛屽湪鎵€鏈夋帴鍙ｄ笂锛屼緥濡?PF/VF 鍜?representor 绔彛銆?
+   此命令可以运行在所有接口上，例PF/VF representor 端口

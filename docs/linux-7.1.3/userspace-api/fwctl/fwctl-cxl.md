@@ -7,26 +7,26 @@
 ## Overview
 
 
-CXL 瑙勮寖瀹氫箟浜嗕竴缁勫彲浠ュ彂閫佸埌 CXL 璁惧鎴栦氦鎹㈡満閭鐨勫懡浠ゃ€傚畠涔熶负鍙戦€佸埌閭鐨勫巶鍟嗙壒瀹氬懡浠ょ暀鍑轰簡绌洪棿銆俧wctl 鎻愪緵浜嗕竴鏉¤矾寰勶紝鍏佽鐢ㄦ埛绌洪棿鍙戦€佷竴缁勮鍏佽鐨勪俊绠卞懡浠ゅ埌璁惧锛岃繖浜涘懡浠ょ敱鍐呮牳椹卞姩杩涜璋冭妭銆?
-灏嗕娇鐢ㄤ互涓?3 鏉″懡浠ゆ潵鏀寔 CXL 鐗规€э細
+CXL 规范定义了一组可以发送到 CXL 设备或交换机邮箱的命令。它也为发送到邮箱的厂商特定命令留出了空间。fwctl 提供了一条路径，允许用户空间发送一组被允许的信箱命令到设备，这些命令由内核驱动进行调节
+将使用以3 条命令来支持 CXL 特性：
 CXL spec r3.1 8.2.9.6.1 Get Supported Features (Opcode 0500h)
 CXL spec r3.1 8.2.9.6.2 Get Feature (Opcode 0501h)
 CXL spec r3.1 8.2.9.6.3 Set Feature (Opcode 0502h)
 
-"Get Supported Features" 鐨勮繑鍥炴暟鎹彲鑳戒細琚唴鏍搁┍鍔ㄨ繃婊わ紝浠ヤ涪寮冧换浣曡鍐呮牳绂佹鎴栨琚唴鏍哥嫭鍗犱娇鐢ㄧ殑鐗规€с€傞┍鍔ㄤ細灏?"Get Supported Features Supported Feature Entry" 鐨?"Set Feature Size" 璁句负 0锛屼互琛ㄧず璇ョ壒鎬т笉鍙淇敼銆?Get Supported Features" 鍛戒护鍜?"Get Features" 灞炰簬 FWCTL_RPC_CONFIGURATION 鐨?fwctl 绛栫暐鑼冪暣銆?
-瀵逛簬 "Set Feature" 鍛戒护锛岃闂瓥鐣ョ洰鍓嶆牴鎹澶囨姤鍛婄殑 Set Feature 褰卞搷锛坋ffects锛夊垎涓轰袱绫汇€傚鏋?Set Feature 浼氬鑷磋澶囩珛鍗冲彂鐢熷彉鏇达紝鍒?fwctl 璁块棶绛栫暐蹇呴』鏄?FWCTL_RPC_DEBUG_WRITE_FULL銆傝绾у埆鐨勫奖鍝嶆帺鐮侊紙set effects mask锛変负 "immediate config change"銆?immediate data change"銆?immediate policy change" 鎴?"immediate log change"銆傚鏋滃奖鍝嶆槸 "config change with cold reset" 鎴?"config change with conventional reset"锛屽垯 fwctl 璁块棶绛栫暐蹇呴』鏄?FWCTL_RPC_DEBUG_WRITE 鎴栨洿楂樸€?
+"Get Supported Features" 的返回数据可能会被内核驱动过滤，以丢弃任何被内核禁止或正被内核独占使用的特性。驱动会"Get Supported Features Supported Feature Entry" "Set Feature Size" 设为 0，以表示该特性不可被修改Get Supported Features" 命令"Get Features" 属于 FWCTL_RPC_CONFIGURATION fwctl 策略范畴
+对于 "Set Feature" 命令，访问策略目前根据设备报告的 Set Feature 影响（effects）分为两类。如Set Feature 会导致设备立即发生变更，fwctl 访问策略必须FWCTL_RPC_DEBUG_WRITE_FULL。该级别的影响掩码（set effects mask）为 "immediate config change"immediate data change"immediate policy change" "immediate log change"。如果影响是 "config change with cold reset" "config change with conventional reset"，则 fwctl 访问策略必须FWCTL_RPC_DEBUG_WRITE 或更高
 ## fwctl cxl User API
 
 
 ### 1. Driver info query
 
 
-搴旂敤绋嬪簭鐨勭涓€姝ユ槸鍙戝嚭 ioctl(FWCTL_CMD_INFO)銆傛垚鍔熻皟鐢ㄨ ioctl 鎰忓懗鐫€ Features 鑳藉姏鍙敤锛屽苟杩斿洖涓€涓叏涓?0 鐨?32 浣嶈礋杞姐€傞渶瑕佺敤 `FWCTL_DEVICE_TYPE_CXL` 濉厖 `fwctl_info.out_device_type` 鏉ュ～鍐?`struct fwctl_info`銆傝繑鍥炵殑鏁版嵁搴斾负 `struct fwctl_info_cxl`锛屽叾涓寘鍚竴涓簲鍏ㄤ负 0 鐨勪繚鐣?32 浣嶅瓧娈点€?
+应用程序的第一步是发出 ioctl(FWCTL_CMD_INFO)。成功调用该 ioctl 意味着 Features 能力可用，并返回一个全0 32 位负载。需要用 `FWCTL_DEVICE_TYPE_CXL` 填充 `fwctl_info.out_device_type` 来填`struct fwctl_info`。返回的数据应为 `struct fwctl_info_cxl`，其中包含一个应全为 0 的保32 位字段
 ### 2. Send hardware commands
 
 
-涓嬩竴姝ユ槸浠庣敤鎴风┖闂撮€氳繃 ioctl(FWCTL_RPC) 鍚戦┍鍔ㄥ彂閫?'Get Supported Features' 鍛戒护銆傜敱 `fwctl_rpc.in` 鎸囧悜涓€涓?`struct fwctl_rpc_cxl`銆俙struct fwctl_rpc_cxl.in_payload` 鎸囧悜鐢?CXL 瑙勮寖瀹氫箟鐨勭‖浠惰緭鍏ョ粨鏋勩€俙fwctl_rpc.out` 鎸囧悜鍖呭惈 `struct fwctl_rpc_cxl_out` 鐨勭紦鍐插尯锛屽悗鑰呭皢纭欢杈撳嚭鏁版嵁鍐呰仈涓?`fwctl_rpc_cxl_out.payload`銆傝鍛戒护浼氳璋冪敤涓ゆ銆傜涓€娆＄敤浜庤幏鍙栨墍鏀寔鐗规€х殑鏁伴噺銆傜浜屾鐢ㄤ簬鑾峰彇鍏蜂綋鐨勭壒鎬ц鎯呬綔涓鸿緭鍑烘暟鎹€?
-鍦ㄨ幏寰楀叿浣撶殑鐗规€ц鎯呭悗锛屽氨鍙互閫傚綋鍦扮紪鍐欏苟鍙戦€?Get/Set Feature 鍛戒护銆傚浜?"Set Feature" 鍛戒护锛屾墍妫€绱㈠埌鐨勭壒鎬т俊鎭寘鍚竴涓?effects 瀛楁锛岃缁嗚鏄庡皢瑕佽Е鍙戠殑 "Set Feature" 鍛戒护鐨勭粨鏋溿€傝繖浼氬憡鐭ョ敤鎴风郴缁熸槸鍚﹁閰嶇疆涓哄厑璁歌 "Set Feature" 鍛戒护銆?
+下一步是从用户空间通过 ioctl(FWCTL_RPC) 向驱动发'Get Supported Features' 命令。由 `fwctl_rpc.in` 指向一`struct fwctl_rpc_cxl`。`struct fwctl_rpc_cxl.in_payload` 指向CXL 规范定义的硬件输入结构。`fwctl_rpc.out` 指向包含 `struct fwctl_rpc_cxl_out` 的缓冲区，后者将硬件输出数据内联`fwctl_rpc_cxl_out.payload`。该命令会被调用两次。第一次用于获取所支持特性的数量。第二次用于获取具体的特性详情作为输出数据
+在获得具体的特性详情后，就可以适当地编写并发Get/Set Feature 命令。对"Set Feature" 命令，所检索到的特性信息包含一effects 字段，详细说明将要触发的 "Set Feature" 命令的结果。这会告知用户系统是否被配置为允许该 "Set Feature" 命令
 #### Code example of a Get Feature
 
 
@@ -87,8 +87,8 @@ CXL spec r3.1 8.2.9.6.3 Set Feature (Opcode 0502h)
                 return rc;
         }
 
-鏈夊叧濡備綍杩愮敤姝よ矾寰勭殑璇︾粏鐢ㄦ埛浠ｇ爜绀轰緥锛岃鍙傞槄 CXL CLI 娴嬭瘯鐩綍
-<https://github.com/pmem/ndctl/tree/main/test/fwctl.c>銆?
+有关如何运用此路径的详细用户代码示例，请参阅 CXL CLI 测试目录
+<https://github.com/pmem/ndctl/tree/main/test/fwctl.c>銆。
 
 ## fwctl cxl Kernel API
 

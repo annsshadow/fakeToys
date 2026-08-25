@@ -17,6 +17,12 @@
 - com.x.message.assemble.communicate.ExceptionAndFxMessage
 - com.x.message.assemble.communicate.ExceptionDingdingMessage
 
+## Key Flows
+
+- 发送消息：`POST /jaxrs/message/assemble/communicate/send` → `send_message`（uuid v4 生成 id，type 缺省 "text"）→ INSERT INTO `x_message`（conversation_id/content/sender/type）并 UPDATE `x_message_conversation` SET last_message_time=NOW() → 返回 sent 状态
+- 消息接收与已读：`GET .../receive/{consume}` → `receive_list` 查询 `x_message_consume` WHERE consumed=false ORDER BY create_time ASC；`POST .../mark_read/{id}` → UPDATE `x_message_consume` SET consumed=true；另有按 consume/count/type 维度的 `consume/list/*` 分页查询族
+- IM 会话管理：`POST .../im/conversation` → `im_conversation` INSERT INTO `x_message_conversation`（type 缺省 "single"）；`GET .../im/conversation/business/{businessId}` 按 business_id 定位会话，`GET .../im/conversation/list/my` ORDER BY update_time DESC 返回会话列表
+
 ## Dependencies
 
 
@@ -27,6 +33,11 @@
 - x_message_core_entity
 - kafka-clients
 - activemq-client
+
+**Rust（oa4rust/crates/message_assemble_communicate）：**
+
+- 内部 path 依赖：shared
+- 关键外部依赖：axum、tokio、deadpool-postgres、serde/serde_json、uuid、tower、bcrypt、base64、anyhow、chrono、md5、urlencoding
 
 ## REST Endpoints
 

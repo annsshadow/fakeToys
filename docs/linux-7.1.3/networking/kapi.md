@@ -1,81 +1,81 @@
-﻿## Linux 缃戠粶涓庣綉缁滆澶?API
+﻿## Linux 网络与网络设API
 
 
-## Linux 缃戠粶
+## Linux 网络
 
 
-### 缃戠粶鍩虹绫诲瀷锛圢etworking Base Types锛?
-
-   :internal:
-
-### 濂楁帴瀛楃紦鍐插尯锛圫ocket Buffer锛夊嚱鏁?
+### 网络基础类型（Networking Base Types
 
    :internal:
 
-   :internal:
-
-   :export:
-
-   :export:
-
-   :export:
-
-   :export:
-
-   :export:
-
-### 濂楁帴瀛楄繃婊ゅ櫒锛圫ocket Filter锛?
-
-   :export:
-
-### 閫氱敤缃戠粶缁熻锛圙eneric Network Statistics锛?
-
-   :internal:
-
-   :export:
-
-   :export:
-
-### SUN RPC 瀛愮郴缁?
-
-   :export:
-
-   :export:
-
-   :export:
-
-   :export:
-
-   :export:
-
-   :export:
-
-   :export:
-
-   :export:
-
-   :export:
-
-   :export:
-
-## 缃戠粶璁惧鏀寔
-
-
-### 椹卞姩鏀寔锛圖river Support锛?
-
-   :export:
-
-   :export:
-
-   :export:
+### 套接字缓冲区（Socket Buffer）函
 
    :internal:
 
    :internal:
 
+   :export:
+
+   :export:
+
+   :export:
+
+   :export:
+
+   :export:
+
+### 套接字过滤器（Socket Filter
+
+   :export:
+
+### 通用网络统计（Generic Network Statistics
+
    :internal:
 
-### PHY 鏀寔
+   :export:
+
+   :export:
+
+### SUN RPC 瀛愮郴缁。
+
+   :export:
+
+   :export:
+
+   :export:
+
+   :export:
+
+   :export:
+
+   :export:
+
+   :export:
+
+   :export:
+
+   :export:
+
+   :export:
+
+## 网络设备支持
+
+
+### 驱动支持（Driver Support
+
+   :export:
+
+   :export:
+
+   :export:
+
+   :internal:
+
+   :internal:
+
+   :internal:
+
+### PHY 支持
 
 
    :export:
@@ -99,11 +99,11 @@
 ### PHYLINK
 
 
-  PHYLINK 灏嗕紶缁熺殑缃戠粶椹卞姩涓?PHYLIB銆佸浐瀹氶摼璺紙fixed-links锛変互鍙婂彲鑳藉寘鍚?PHY 鐨?SFF 妯″潡锛堜緥濡傚彲鐑彃鎷旂殑 SFP锛夎繛鎺ヨ捣鏉ャ€侾HYLINK 鎻愪緵瀵归摼璺姸鎬佸拰閾捐矾妯″紡鐨勭鐞嗐€?
+  PHYLINK 将传统的网络驱动PHYLIB、固定链路（fixed-links）以及可能包PHY SFF 模块（例如可热插拔的 SFP）连接起来。PHYLINK 提供对链路状态和链路模式的管理
    :internal:
 
 
-### SFP 鏀寔
+### SFP 支持
 
 
    :internal:

@@ -11,6 +11,7 @@ use shared::{error::AppError, response::ActionResult};
 /// 查询服务处理模块
 /// 提供查询服务的业务逻辑处理
 pub mod routes;
+pub mod u2;
 
 #[derive(Debug, Deserialize)]
 pub struct QueryRequest {
@@ -231,11 +232,69 @@ pub async fn reset_service(
 /// 查询服务处理路由
 /// 路由前缀: /jaxrs/query/service/processing/*
 pub fn query_service_processing_router(pool: Pool) -> Router {
+    use u2 as u2h;
+    let p = "/jaxrs/query/service/processing";
     Router::new()
         .route("/jaxrs/query/service/processing/process", post(process_query))
         .route("/jaxrs/query/service/processing/batch", post(batch_process))
         .route("/jaxrs/query/service/processing/status", get(get_service_status))
         .route("/jaxrs/query/service/processing/reset", post(reset_service))
+        // ── Java x_query_service_processing 契约（u2）───────────────────────
+        .route(format!("{p}/design/search").as_str(), post(u2h::design_search))
+        .route(
+            format!("{p}/index/directory/document/count").as_str(),
+            post(u2h::index_directory_document_count),
+        )
+        .route(
+            format!("{p}/index/update/extra/document").as_str(),
+            post(u2h::index_update_extra_document),
+        )
+        .route(
+            format!("{p}/table/reload/dynamic").as_str(),
+            get(u2h::table_reload_dynamic),
+        )
+        .route(
+            format!("{p}/table/{{flag}}/insert").as_str(),
+            post(u2h::table_insert),
+        )
+        .route(
+            format!("{p}/table/{{flag}}/update/{{bundle}}").as_str(),
+            post(u2h::table_update_with_bundle),
+        )
+        .route(
+            format!("{p}/neural/generate/model/{{modelFlag}}").as_str(),
+            get(u2h::neural_generate),
+        )
+        .route(
+            format!("{p}/neural/stop/generating/model/{{modelFlag}}").as_str(),
+            get(u2h::neural_stop_generating),
+        )
+        .route(
+            format!("{p}/neural/learn/model/{{modelFlag}}").as_str(),
+            get(u2h::neural_learn),
+        )
+        .route(
+            format!("{p}/neural/stop/learning/model/{{modelFlag}}").as_str(),
+            get(u2h::neural_stop_learning),
+        )
+        .route(
+            format!("{p}/neural/list/calculate/model/{{modelFlag}}/work/{{workId}}").as_str(),
+            get(u2h::neural_list_calculate_with_work),
+        )
+        // touch：work / workcompleted / document × high/low × touch/reset + optimize
+        .route(format!("{p}/touch/high/freq/work/node/{{node}}/touch").as_str(), get(u2h::high_freq_work_touch))
+        .route(format!("{p}/touch/high/freq/work/node/{{node}}/reset").as_str(), get(u2h::high_freq_work_reset))
+        .route(format!("{p}/touch/low/freq/work/node/{{node}}/touch").as_str(), get(u2h::low_freq_work_touch))
+        .route(format!("{p}/touch/low/freq/work/node/{{node}}/reset").as_str(), get(u2h::low_freq_work_reset))
+        .route(format!("{p}/touch/high/freq/workcompleted/node/{{node}}/touch").as_str(), get(u2h::high_freq_workcompleted_touch))
+        .route(format!("{p}/touch/high/freq/workcompleted/node/{{node}}/reset").as_str(), get(u2h::high_freq_workcompleted_reset))
+        .route(format!("{p}/touch/low/freq/workcompleted/node/{{node}}/touch").as_str(), get(u2h::low_freq_workcompleted_touch))
+        .route(format!("{p}/touch/low/freq/workcompleted/node/{{node}}/reset").as_str(), get(u2h::low_freq_workcompleted_reset))
+        .route(format!("{p}/touch/high/freq/document/node/{{node}}/touch").as_str(), get(u2h::high_freq_document_touch))
+        .route(format!("{p}/touch/high/freq/document/node/{{node}}/reset").as_str(), get(u2h::high_freq_document_reset))
+        .route(format!("{p}/touch/low/freq/document/node/{{node}}/touch").as_str(), get(u2h::low_freq_document_touch))
+        .route(format!("{p}/touch/low/freq/document/node/{{node}}/reset").as_str(), get(u2h::low_freq_document_reset))
+        .route(format!("{p}/touch/optimize/index/{{node}}/touch").as_str(), get(u2h::optimize_index_touch))
         .layer(Extension(pool))
 }
 

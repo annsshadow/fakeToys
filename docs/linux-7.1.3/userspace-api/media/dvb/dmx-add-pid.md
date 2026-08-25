@@ -16,21 +16,21 @@ DMX_ADD_PID
 
 
 `fd`
-    鐢?`open()` 杩斿洖鐨勬枃浠舵弿杩扮銆?
+    `open()` 返回的文件描述符
 
 `pid`
-   瑕佽繃婊ょ殑 PID 缂栧彿銆?
+   要过滤的 PID 编号
 
 ### Description
 
 
-璇?ioctl 璋冪敤鍙皢澶氫釜 PID 娣诲姞鍒板厛鍓嶉€氳繃 DMX_SET_PES_FILTER 璁剧疆銆佷笖杈撳嚭绛変簬 `DMX_OUT_TSDEMUX_TAP <dmx_output>` 鐨勪紶杈撴祦杩囨护鍣ㄤ腑銆?
+ioctl 调用可将多个 PID 添加到先前通过 DMX_SET_PES_FILTER 设置、且输出等于 `DMX_OUT_TSDEMUX_TAP <dmx_output>` 的传输流过滤器中
 
 ### Return Value
 
 
-鎴愬姛鏃惰繑鍥?0銆?
+成功时返0
 
-鍑洪敊鏃惰繑鍥?-1锛屽苟鐩稿簲鍦拌缃?`errno` 鍙橀噺銆?
+出错时返-1，并相应地设`errno` 变量
 
-閫氱敤閿欒鐮佸湪 Generic Error Codes <gen-errors> 绔犺妭涓弿杩般€?
+通用错误码在 Generic Error Codes <gen-errors> 章节中描述

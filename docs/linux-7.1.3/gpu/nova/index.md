@@ -1,16 +1,16 @@
-﻿## nova NVIDIA GPU 椹卞姩
+﻿## nova NVIDIA GPU 驱动
 
 
-nova 椹卞姩椤圭洰鐢变袱涓嫭绔嬬殑椹卞姩 nova-core 鍜?nova-drm 缁勬垚锛屾棬鍦ㄥ彇浠ｅ熀浜?GPU 绯荤粺澶勭悊鍣紙GSP锛夌殑 NVIDIA GPU 鐨?nouveau 椹卞姩銆?
+nova 驱动项目由两个独立的驱动 nova-core nova-drm 组成，旨在取代基GPU 系统处理器（GSP）的 NVIDIA GPU nouveau 驱动
 
-浠ヤ笅鏂囨。鍚屾椂閫傜敤浜?nova-core 鍜?nova-drm銆?
+以下文档同时适用nova-core nova-drm
 
 - [guidelines](guidelines)
 
 ## nova-core
 
 
-nova-core 椹卞姩鏄熀浜?GSP 鐨?NVIDIA GPU 鐨勬牳蹇冮┍鍔ㄣ€俷ova-core 浣滀负绗竴绾ч┍鍔紝鍥寸粫 GPU 鐨勭‖浠朵笌鍥轰欢鎺ュ彛鎻愪緵鎶借薄锛屼负绗簩绾ч┍鍔紙濡?vGPU 绠＄悊鍣?VFIO 椹卞姩鍜?nova-drm 椹卞姩锛夋彁渚涢€氱敤鍩虹銆?
+nova-core 驱动是基GSP NVIDIA GPU 的核心驱动。nova-core 作为第一级驱动，围绕 GPU 的硬件与固件接口提供抽象，为第二级驱动（vGPU 管理VFIO 驱动nova-drm 驱动）提供通用基础
 
 - [core/guidelines](core/guidelines)
 - [core/todo](core/todo)

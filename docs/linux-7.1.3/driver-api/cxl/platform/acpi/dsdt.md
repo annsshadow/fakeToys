@@ -1,9 +1,9 @@
-﻿## DSDT - 宸紓鍖栫郴缁熸弿杩拌〃锛圖ifferentiated System Description Table锛?
+﻿## DSDT - 差异化系统描述表（Differentiated System Description Table
 
 
-璇ヨ〃鎻忚堪涓€鍙版満鍣ㄦ嫢鏈夊摢浜涘璁俱€?
+该表描述一台机器拥有哪些外设
 
-璇ヨ〃涓?CXL 璁惧锛堢壒鍒槸涓绘満妗ワ級鐨?UID 蹇呴』涓?CEDT 鐨勫唴瀹逛繚鎸佷竴鑷达紝鍚﹀垯 CXL 椹卞姩灏嗘棤娉曟纭帰娴嬨€?
+该表CXL 设备（特别是主机桥）UID 必须CEDT 的内容保持一致，否则 CXL 驱动将无法正确探测
 
 ```
 

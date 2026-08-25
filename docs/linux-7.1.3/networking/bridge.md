@@ -1,113 +1,113 @@
 ﻿
-## 浠ュお缃戞ˉ鎺?
-## 绠€浠?
-IEEE 802.1Q-2022锛圔ridges and Bridged Networks锛屾ˉ鎺ヤ笌妗ユ帴缃戠粶锛夋爣鍑嗗畾涔変簡妗ユ帴鍦ㄨ绠楁満缃戠粶涓殑杩愪綔鏂瑰紡銆傚湪璇ユ爣鍑嗙殑璇涓嬶紝妗ワ紙bridge锛夋槸涓€绉嶈繛鎺ヤ袱涓垨澶氫釜缃戞銆佸苟杩愯鍦?OSI锛圤pen Systems Interconnection锛屽紑鏀剧郴缁熶簰杩烇級妯″瀷鐨勬暟鎹摼璺眰锛圠ayer 2锛岀浜屽眰锛夌殑璁惧銆傛ˉ鐨勪綔鐢ㄦ槸渚濇嵁鐩殑 MAC锛圡edia Access Control锛屼粙璐ㄨ闂帶鍒讹級鍦板潃鍦ㄤ笉鍚岀綉娈典箣闂磋繃婊ゅ苟杞彂甯с€?
-## 妗ユ帴 kAPI
+## 以太网桥
+## 简
+IEEE 802.1Q-2022（Bridges and Bridged Networks，桥接与桥接网络）标准定义了桥接在计算机网络中的运作方式。在该标准的语境下，桥（bridge）是一种连接两个或多个网段、并运行OSI（Open Systems Interconnection，开放系统互连）模型的数据链路层（Layer 2，第二层）的设备。桥的作用是依据目的 MAC（Media Access Control，介质访问控制）地址在不同网段之间过滤并转发帧
+## 桥接 kAPI
 
-涓嬮潰鏄ˉ鎺ヤ唬鐮佺殑涓€浜涙牳蹇冪粨鏋勪綋銆傝娉ㄦ剰锛宬API 鏄?*涓嶇ǔ瀹?*鐨勶紝闅忔椂鍙兘琚慨鏀广€?
+下面是桥接代码的一些核心结构体。请注意，kAPI *不稳*的，随时可能被修改
    :identifiers: net_bridge_vlan
 
-## 妗ユ帴 uAPI
+## 桥接 uAPI
 
-鐜颁唬 Linux 妗ユ帴 uAPI 閫氳繃 Netlink 鎺ュ彛璁块棶銆備綘鍙互鍦ㄤ笅闈㈢殑鏂囦欢涓壘鍒版ˉ鎺ヤ互鍙婃ˉ鎺ョ鍙ｇ殑 netlink 灞炴€у畾涔夈€?
-### 妗ユ帴 netlink 灞炴€?
+现代 Linux 桥接 uAPI 通过 Netlink 接口访问。你可以在下面的文件中找到桥接以及桥接端口的 netlink 属性定义
+### 桥接 netlink 属
    :doc: Bridge enum definition
 
-### 妗ユ帴绔彛 netlink 灞炴€?
+### 桥接端口 netlink 属
    :doc: Bridge port enum definition
 
-### 妗ユ帴 sysfs
+### 桥接 sysfs
 
-sysfs 鎺ュ彛宸茶寮冪敤锛岃嫢鏂板閫夐」鍒欎笉搴斿啀鎵╁睍瀹冦€?
-## STP锛堢敓鎴愭爲鍗忚锛?
-Linux 妗ユ帴椹卞姩涓殑 STP锛圫panning Tree Protocol锛岀敓鎴愭爲鍗忚锛夊疄鐜版槸涓€涓叧閿壒鎬э紝瀹冮€氳繃璇嗗埆骞剁鐢ㄥ啑浣欓摼璺紝甯姪闃叉浠ュお缃戠綉缁滀腑鐨勭幆璺笌骞挎挱椋庢毚銆傚湪 Linux 妗ユ帴鐨勮澧冧笅锛孲TP 瀵圭綉缁滅殑绋冲畾鎬т笌鍙敤鎬ц嚦鍏抽噸瑕併€?
-STP 鏄竴涓繍琛屽湪 OSI 妯″瀷鏁版嵁閾捐矾灞傜殑 Layer 2 鍗忚銆傚畠鏈€鍒濅綔涓?IEEE 802.1D 寮€鍙戯紝姝ゅ悗婕旇繘鍑轰簡澶氫釜鐗堟湰锛屽寘鎷?Rapid Spanning Tree Protocol锛圧STP锛屽揩閫熺敓鎴愭爲鍗忚锛変互鍙?`Multiple Spanning Tree Protocol (MSTP)
-<https://lore.kernel.org/netdev/20220316150857.2442916-1-tobias@waldekranz.com/>`_銆?
-802.1D-2004 绉婚櫎浜嗘渶鍒濈殑 Spanning Tree Protocol锛岃浆鑰岀撼鍏ヤ簡 Rapid Spanning Tree Protocol锛圧STP锛夈€傚埌 2014 骞达紝IEEE 802.1D 瀹氫箟鐨勫叏閮ㄥ姛鑳介兘宸茶鍚堝苟鍒?IEEE 802.1Q锛圔ridges and Bridged Networks锛屾ˉ鎺ヤ笌妗ユ帴缃戠粶锛夋垨 IEEE 802.1AC锛圡AC Service Definition锛孧AC 鏈嶅姟瀹氫箟锛変箣涓€?02.1D 宸蹭簬 2022 骞存寮忔挙閿€銆?
-### 妗ユ帴绔彛涓?STP 鐘舵€?
-鍦?STP 鐨勮澧冧笅锛屾ˉ鎺ョ鍙ｅ彲澶勪簬浠ヤ笅鐘舵€佷箣涓€锛?  - Blocking锛堥樆濉烇級锛氱鍙ｈ绂佹鏁版嵁娴侀噺锛屽彧渚﹀惉鏉ヨ嚜鍏朵粬璁惧鐨?BPDU锛圔ridge Protocol Data Units锛屾ˉ鍗忚鏁版嵁鍗曞厓锛夛紝浠ョ‘瀹氱綉缁滄嫇鎵戙€?  - Listening锛堜睛鍚級锛氱鍙ｅ紑濮嬪弬涓?STP 杩囩▼骞朵睛鍚?BPDU銆?  - Learning锛堝涔狅級锛氱鍙ｇ户缁睛鍚?BPDU锛屽苟寮€濮嬩粠 incoming 甯т腑瀛︿範 MAC 鍦板潃锛屼絾涓嶈浆鍙戞暟鎹抚銆?  - Forwarding锛堣浆鍙戯級锛氱鍙ｅ畬鍏ㄥ彲鐢紝鍚屾椂杞彂 BPDU 涓庢暟鎹抚銆?  - Disabled锛堢鐢級锛氱鍙ｈ绠＄悊鎬х鐢紝涓嶅弬涓?STP 杩囩▼锛屾暟鎹抚杞彂涔熻绂佺敤銆?
-### 鏍规ˉ涓庢敹鏁?
-鍦?Linux 缃戠粶涓庝互澶綉妗ユ帴鐨勮澧冧笅锛屾牴妗ワ紙root bridge锛夋槸妗ユ帴缃戠粶涓竴涓鎸囧畾鐨勪氦鎹㈡満锛屽畠浣滀负鐢熸垚鏍戠畻娉曠殑鍙傝€冪偣锛岀敤浜庡垱寤烘棤鐜嫇鎵戙€?
-浠ヤ笅鏄?STP 鐨勫伐浣滃師鐞嗕互鍙婃牴妗ョ殑閫変妇鏂瑰紡锛?  1. Bridge Priority锛堟ˉ浼樺厛绾э級锛氭瘡涓繍琛岀敓鎴愭爲鍗忚鐨勬ˉ閮芥湁涓€涓彲閰嶇疆鐨?Bridge Priority 鍊笺€傚€艰秺灏忥紝浼樺厛绾ц秺楂樸€傞粯璁ゆ儏鍐典笅锛孊ridge Priority 琚缃负涓€涓爣鍑嗗€硷紙渚嬪 32768锛夈€?  2. Bridge ID锛堟ˉ ID锛夛細Bridge ID 鐢变袱閮ㄥ垎缁勬垚锛欱ridge Priority 涓庢ˉ鐨?MAC 鍦板潃銆傚畠鍦ㄧ綉缁滀腑鍞竴鏍囪瘑姣忎釜妗ャ€侭ridge ID 鐢ㄤ簬姣旇緝涓嶅悓妗ョ殑浼樺厛绾с€?  3. Bridge Election锛堟ˉ閫変妇锛夛細缃戠粶鍚姩鏃讹紝鎵€鏈夋ˉ鏈€鍒濋兘鍋囧畾鑷繁鏄牴妗ャ€傚畠浠紑濮嬪悜閭诲眳閫氬憡 Bridge Protocol Data Units锛圔PDU锛屾ˉ鍗忚鏁版嵁鍗曞厓锛夛紝鍏朵腑鍖呭惈鑷韩鐨?Bridge ID 鍙婂叾浠栦俊鎭€?  4. BPDU Comparison锛圔PDU 姣旇緝锛夛細妗ヤ箣闂寸浉浜掍氦鎹?BPDU 浠ョ‘瀹氭牴妗ャ€傛瘡涓ˉ妫€鏌ユ敹鍒扮殑 BPDU锛堝寘鎷?Bridge Priority 涓?Bridge ID锛夛紝鏉ュ垽鏂槸鍚﹀簲璋冩暣鑷韩鐨勪紭鍏堢骇銆侭ridge ID 鏈€灏忕殑妗ュ皢鎴愪负鏍规ˉ銆?  5. Root Bridge Announcement锛堟牴妗ラ€氬憡锛夛細涓€鏃︾‘瀹氫簡鏍规ˉ锛屽畠灏变細鍚戠綉缁滀腑鎵€鏈夊叾浠栨ˉ鍙戦€佸寘鍚牴妗ヤ俊鎭殑 BPDU銆傚叾浠栨ˉ鍒╃敤杩欎簺淇℃伅璁＄畻鍑哄埌鏍规ˉ鐨勬渶鐭矾寰勶紝浠庤€屽垱寤烘棤鐜嫇鎵戙€?  6. Forwarding Ports锛堣浆鍙戠鍙ｏ級锛氭牴妗ラ€夊畾銆佺敓鎴愭爲鎷撴墤寤虹珛涔嬪悗锛屾瘡涓ˉ閮戒細纭畾鍏跺摢浜涚鍙ｅ簲澶勪簬杞彂鐘舵€侊紙鐢ㄤ簬鏁版嵁娴侀噺锛夈€佸摢浜涘簲澶勪簬闃诲鐘舵€侊紙鐢ㄤ簬闃叉鐜矾锛夈€傛牴妗ョ殑鎵€鏈夌鍙ｉ兘澶勪簬杞彂鐘舵€侊紝鑰屽叾浠栨ˉ鍒欐湁涓€浜涚鍙ｅ浜庨樆濉炵姸鎬佷互閬垮厤鐜矾銆?  7. Root Ports锛堟牴绔彛锛夛細鏍规ˉ閫夊畾銆佺敓鎴愭爲鎷撴墤寤虹珛涔嬪悗锛屾瘡涓潪鏍规ˉ澶勭悊鏀跺埌鐨?BPDU锛屽苟鏍规嵁鍏朵腑淇℃伅纭畾鍝釜绔彛鎻愪緵浜嗗埌鏍规ˉ鐨勬渶鐭矾寰勩€傝绔彛琚寚瀹氫负鏍圭鍙ｏ紝涓斿浜?Forwarding锛堣浆鍙戯級鐘舵€侊紝鍙富鍔ㄨ浆鍙戠綉缁滄祦閲忋€?  8. Designated ports锛堟寚瀹氱鍙ｏ級锛氭寚瀹氱鍙ｆ槸闈炴牴妗ョ敤鏉ュ悜鎸囧畾缃戞杞彂娴侀噺鐨勭鍙ｃ€傛寚瀹氱鍙ｈ缃簬 Forwarding锛堣浆鍙戯級鐘舵€併€傞潪鏍规ˉ涓婃墍鏈夋湭琚寚瀹氱粰鐗瑰畾缃戞鐨勭鍙ｉ兘琚疆浜?Blocking锛堥樆濉烇級鐘舵€侊紝浠ラ槻姝㈢綉缁滅幆璺€?
-STP 閫氳繃璁＄畻鏈€鐭矾寰勫苟绂佺敤鍐椾綑閾捐矾鏉ヤ繚闅滅綉缁滄敹鏁涖€傚綋缃戠粶鎷撴墤鍙戠敓鍙樺寲锛堜緥濡傞摼璺晠闅滐級鏃讹紝STP 浼氶噸鏂拌绠楃綉缁滄嫇鎵戯紝鍦ㄩ伩鍏嶇幆璺殑鍚屾椂鎭㈠杩為€氭€с€?
-瀵?STP 鍙傛暟锛堜緥濡?bridge priority锛屾ˉ浼樺厛绾э級鐨勬纭厤缃紝浼氬奖鍝嶇綉缁滄€ц兘銆佽矾寰勯€夋嫨浠ュ強鍝釜妗ユ垚涓烘牴妗ワ紙Root Bridge锛夈€?
-### 鐢ㄦ埛绌洪棿 STP 杈呭姪绋嬪簭
+sysfs 接口已被弃用，若新增选项则不应再扩展它
+## STP（生成树协议
+Linux 桥接驱动中的 STP（Spanning Tree Protocol，生成树协议）实现是一个关键特性，它通过识别并禁用冗余链路，帮助防止以太网网络中的环路与广播风暴。在 Linux 桥接的语境下，STP 对网络的稳定性与可用性至关重要
+STP 是一个运行在 OSI 模型数据链路层的 Layer 2 协议。它最初作IEEE 802.1D 开发，此后演进出了多个版本，包Rapid Spanning Tree Protocol（RSTP，快速生成树协议）以`Multiple Spanning Tree Protocol (MSTP)
+<https://lore.kernel.org/netdev/20220316150857.2442916-1-tobias@waldekranz.com/>`_銆。
+802.1D-2004 移除了最初的 Spanning Tree Protocol，转而纳入了 Rapid Spanning Tree Protocol（RSTP）。到 2014 年，IEEE 802.1D 定义的全部功能都已被合并IEEE 802.1Q（Bridges and Bridged Networks，桥接与桥接网络）或 IEEE 802.1AC（MAC Service Definition，MAC 服务定义）之中02.1D 已于 2022 年正式撤销
+### 桥接端口STP 状
+STP 的语境下，桥接端口可处于以下状态之一  - Blocking（阻塞）：端口被禁止数据流量，只侦听来自其他设备BPDU（Bridge Protocol Data Units，桥协议数据单元），以确定网络拓扑  - Listening（侦听）：端口开始参STP 过程并侦BPDU  - Learning（学习）：端口继续侦BPDU，并开始从 incoming 帧中学习 MAC 地址，但不转发数据帧  - Forwarding（转发）：端口完全可用，同时转发 BPDU 与数据帧  - Disabled（禁用）：端口被管理性禁用，不参STP 过程，数据帧转发也被禁用
+### 根桥与收
+Linux 网络与以太网桥接的语境下，根桥（root bridge）是桥接网络中一个被指定的交换机，它作为生成树算法的参考点，用于创建无环拓扑
+以下STP 的工作原理以及根桥的选举方式  1. Bridge Priority（桥优先级）：每个运行生成树协议的桥都有一个可配置Bridge Priority 值。值越小，优先级越高。默认情况下，Bridge Priority 被设置为一个标准值（例如 32768）  2. Bridge ID（桥 ID）：Bridge ID 由两部分组成：Bridge Priority 与桥MAC 地址。它在网络中唯一标识每个桥。Bridge ID 用于比较不同桥的优先级  3. Bridge Election（桥选举）：网络启动时，所有桥最初都假定自己是根桥。它们开始向邻居通告 Bridge Protocol Data Units（BPDU，桥协议数据单元），其中包含自身Bridge ID 及其他信息  4. BPDU Comparison（BPDU 比较）：桥之间相互交BPDU 以确定根桥。每个桥检查收到的 BPDU（包Bridge Priority Bridge ID），来判断是否应调整自身的优先级。Bridge ID 最小的桥将成为根桥  5. Root Bridge Announcement（根桥通告）：一旦确定了根桥，它就会向网络中所有其他桥发送包含根桥信息的 BPDU。其他桥利用这些信息计算出到根桥的最短路径，从而创建无环拓扑  6. Forwarding Ports（转发端口）：根桥选定、生成树拓扑建立之后，每个桥都会确定其哪些端口应处于转发状态（用于数据流量）、哪些应处于阻塞状态（用于防止环路）。根桥的所有端口都处于转发状态，而其他桥则有一些端口处于阻塞状态以避免环路  7. Root Ports（根端口）：根桥选定、生成树拓扑建立之后，每个非根桥处理收到BPDU，并根据其中信息确定哪个端口提供了到根桥的最短路径。该端口被指定为根端口，且处Forwarding（转发）状态，可主动转发网络流量  8. Designated ports（指定端口）：指定端口是非根桥用来向指定网段转发流量的端口。指定端口被置于 Forwarding（转发）状态。非根桥上所有未被指定给特定网段的端口都被置Blocking（阻塞）状态，以防止网络环路
+STP 通过计算最短路径并禁用冗余链路来保障网络收敛。当网络拓扑发生变化（例如链路故障）时，STP 会重新计算网络拓扑，在避免环路的同时恢复连通性
+STP 参数（例bridge priority，桥优先级）的正确配置，会影响网络性能、路径选择以及哪个桥成为根桥（Root Bridge）
+### 用户空间 STP 辅助程序
 
-鐢ㄦ埛绌洪棿鐨?STP 杈呭姪绋嬪簭 **bridge-stp** 鏄竴涓敤浜庢帶鍒舵槸鍚︿娇鐢ㄧ敤鎴锋ā寮忕敓鎴愭爲锛坰panning tree锛夌殑绋嬪簭銆傚綋妗ヤ笂鍚敤/绂佺敤 STP 鏃讹紙閫氳繃 `brctl stp <bridge> <on|off>` 鎴?``ip link set <bridge> type bridge
-stp_state <0|1>``锛夛紝鍐呮牳浼氳皟鐢?`/sbin/bridge-stp <bridge> <start|stop>`銆傝嫢璇ュ懡浠よ繑鍥?0锛屽唴鏍稿惎鐢?user_stp 妯″紡锛涜嫢杩斿洖鍏朵粬鍊硷紝鍒欏惎鐢?kernel_stp 妯″紡銆?
-### STP 妯″紡閫夋嫨
+用户空间STP 辅助程序 **bridge-stp** 是一个用于控制是否使用用户模式生成树（spanning tree）的程序。当桥上启用/禁用 STP 时（通过 `brctl stp <bridge> <on|off>` ``ip link set <bridge> type bridge
+stp_state <0|1>``），内核会调`/sbin/bridge-stp <bridge> <start|stop>`。若该命令返0，内核启user_stp 模式；若返回其他值，则启kernel_stp 模式
+### STP 模式选择
 
-`IFLA_BR_STP_MODE` 妗ユ帴灞炴€у厑璁稿湪 STP 鍚敤鏃舵樉寮忔帶鍒跺叾杩愪綔鏂瑰紡锛屽浜?`user` 涓?`kernel` 妯″紡鍙畬鍏ㄧ粫杩?`/sbin/bridge-stp` 杈呭姪绋嬪簭銆?
+`IFLA_BR_STP_MODE` 桥接属性允许在 STP 启用时显式控制其运作方式，对`user` `kernel` 模式可完全绕`/sbin/bridge-stp` 辅助程序
    :doc: Bridge STP mode values
 
-榛樿妯″紡涓?`BR_STP_MODE_AUTO`锛屼繚鐣欎簡璋冪敤 `/sbin/bridge-stp` 杈呭姪绋嬪簭鐨勪紶缁熻涓恒€俙user` 涓?`kernel` 妯″紡鍦?helper 鏈哄埗涓嶅彲鐢ㄧ殑缃戠粶鍛藉悕绌洪棿鐜涓挨鍏舵湁鐢紝鍥犱负 `call_usermodehelper()` 琚檺鍒跺湪鍒濆缃戠粶鍛藉悕绌洪棿涓€?
+默认模式`BR_STP_MODE_AUTO`，保留了调用 `/sbin/bridge-stp` 辅助程序的传统行为。`user` `kernel` 模式helper 机制不可用的网络命名空间环境中尤其有用，因为 `call_usermodehelper()` 被限制在初始网络命名空间中
 ```
 
   ip link set dev br0 type bridge stp_mode user stp_state 1
 
 ```
 
-璇ユā寮忓彧鑳藉湪 STP 琚鐢ㄦ椂淇敼銆?
-## VLAN锛堣櫄鎷熷眬鍩熺綉锛?
-LAN锛圠ocal Area Network锛屽眬鍩熺綉锛夋槸瑕嗙洊杈冨皬鍦扮悊鍖哄煙鐨勭綉缁滐紝閫氬父浣嶄簬涓€鏍嬪缓绛戞垨涓€涓洯鍖哄唴銆侺AN 鐢ㄤ簬杩炴帴 localized 鍖哄煙鍐呯殑璁＄畻鏈恒€佹湇鍔″櫒銆佹墦鍗版満鍙婂叾浠栬仈缃戣澶囥€侺AN 鍙互鏄湁绾跨殑锛堜娇鐢ㄤ互澶綉鐢电紗锛夋垨鏃犵嚎鐨勶紙浣跨敤 Wi-Fi锛夈€?
-VLAN锛圴irtual Local Area Network锛岃櫄鎷熷眬鍩熺綉锛夋槸瀵圭墿鐞嗙綉缁滅殑閫昏緫鍒嗗壊锛屽舰鎴愬涓浉浜掗殧绂荤殑骞挎挱鍩熴€俈LAN 鐢ㄤ簬灏嗕竴涓墿鐞?LAN 鍒掑垎涓哄涓櫄鎷?LAN锛屼娇涓嶅悓缁勭殑璁惧鍙互鍍忚韩澶勭嫭绔嬬殑鐗╃悊缃戠粶涓€鏍风浉浜掗€氫俊銆?
-閫氬父鏈変袱绉?VLAN 瀹炵幇锛欼EEE 802.1Q 涓?IEEE 802.1ad锛堜篃绉?QinQ锛夈€侷EEE 802.1Q 鏄互澶綉涓?VLAN 鏍囪锛坱agging锛夌殑鏍囧噯銆傚畠鍏佽缃戠粶绠＄悊鍛樺湪鐗╃悊缃戠粶涓婂垱寤洪€昏緫 VLAN锛屽苟鐢ㄤ互 VLAN 淇℃伅鏍囪浠ュお缃戝抚锛岃繖琚О涓?*VLAN 鏍囪甯э紙VLAN-tagged frames锛?*銆侷EEE 802.1ad 閫氬父绉颁负 QinQ 鎴?Double VLAN锛屾槸 IEEE 802.1Q 鏍囧噯鐨勬墿灞曘€俀inQ 鍏佽鍦ㄥ崟涓互澶綉甯у唴鍫嗗彔澶氫釜 VLAN 鏍囪銆侺inux 妗ュ悓鏃舵敮鎸?IEEE 802.1Q 浠ュ強 `802.1AD
+该模式只能在 STP 被禁用时修改
+## VLAN（虚拟局域网
+LAN（Local Area Network，局域网）是覆盖较小地理区域的网络，通常位于一栋建筑或一个园区内。LAN 用于连接 localized 区域内的计算机、服务器、打印机及其他联网设备。LAN 可以是有线的（使用以太网电缆）或无线的（使用 Wi-Fi）
+VLAN（Virtual Local Area Network，虚拟局域网）是对物理网络的逻辑分割，形成多个相互隔离的广播域。VLAN 用于将一个物LAN 划分为多个虚LAN，使不同组的设备可以像身处独立的物理网络一样相互通信
+通常有两VLAN 实现：IEEE 802.1Q IEEE 802.1ad（也QinQ）。IEEE 802.1Q 是以太网VLAN 标记（tagging）的标准。它允许网络管理员在物理网络上创建逻辑 VLAN，并用以 VLAN 信息标记以太网帧，这被称*VLAN 标记帧（VLAN-tagged frames*。IEEE 802.1ad 通常称为 QinQ Double VLAN，是 IEEE 802.1Q 标准的扩展。QinQ 允许在单个以太网帧内堆叠多个 VLAN 标记。Linux 桥同时支IEEE 802.1Q 以及 `802.1AD
 <https://lore.kernel.org/netdev/1402401565-15423-1-git-send-email-makita.toshiaki@lab.ntt.co.jp/>`_
-杩欎袱绉嶇敤浜?VLAN 鏍囪鐨勫崗璁€?
+这两种用VLAN 标记的协议
 `VLAN filtering <https://lore.kernel.org/netdev/1360792820-14116-1-git-send-email-vyasevic@redhat.com/>`_
-鍦ㄦˉ涓婇粯璁ゆ槸绂佺敤鐨勩€傚湪妗ヤ笂鍚敤 VLAN filtering 鍚庯紝瀹冨皢渚濇嵁鐩殑 MAC 鍦板潃涓?VLAN 鏍囪锛堜袱鑰呴兘蹇呴』鍖归厤锛夋妸甯ц浆鍙戝埌鍚堥€傜殑鐩爣銆?
-## 缁勬挱锛圡ulticast锛?
-Linux 妗ユ帴椹卞姩鏀寔缁勬挱锛屼娇鍏惰兘澶熷鐞?Internet Group Management Protocol锛圛GMP锛屽洜鐗圭綉缁勭鐞嗗崗璁級鎴?Multicast Listener Discovery锛圡LD锛岀粍鎾睛鍚€呭彂鐜帮級娑堟伅锛屽苟楂樻晥鍦拌浆鍙戠粍鎾暟鎹寘銆傝妗ユ帴椹卞姩鏀寔 IGMPv2/IGMPv3 涓?MLDv1/MLDv2銆?
-### 缁勬挱渚﹀惉锛圡ulticast snooping锛?
-Multicast snooping 鏄竴椤圭綉缁滄妧鏈紝瀹冧娇缃戠粶浜ゆ崲鏈鸿兘澶熷湪灞€鍩熺綉锛圠AN锛夊唴鏅鸿兘鍦扮鐞嗙粍鎾祦閲忋€?
-浜ゆ崲鏈轰細缁存姢涓€寮犵粍鎾粍琛紝璁板綍缁勬挱缁勫湴鍧€涓庝富鏈哄凡鍔犲叆杩欎簺缁勭殑绔彛涔嬮棿鐨勫叧鑱斻€傝缁勮〃鏍规嵁鏀跺埌鐨?IGMP/MLD 娑堟伅鍔ㄦ€佹洿鏂般€傚€熷姪閫氳繃 snooping 鏀堕泦鐨勭粍鎾粍淇℃伅锛屼氦鎹㈡満浼樺寲缁勬挱娴侀噺鐨勮浆鍙戙€傚畠涓嶄細鐩茬洰鍦板皢缁勬挱娴侀噺骞挎挱鍒版墍鏈夌鍙ｏ紝鑰屾槸浠呮牴鎹洰鐨?MAC 鍦板潃灏嗙粍鎾祦閲忓彂閫佸埌宸茶闃呯浉搴旂洰鐨勭粍鎾粍鐨勭鍙ｃ€?
-Linux 妗ユ帴璁惧鍦ㄥ垱寤烘椂榛樿鍚敤 multicast snooping銆傚畠浼氱淮鎶や竴涓?Multicast forwarding database锛圡DB锛岀粍鎾浆鍙戣〃锛夛紝鐢ㄤ簬璁板綍绔彛涓庣粍涔嬮棿鐨勫叧绯汇€?
-### IGMPv3/MLDv2 EHT 鏀寔
+在桥上默认是禁用的。在桥上启用 VLAN filtering 后，它将依据目的 MAC 地址VLAN 标记（两者都必须匹配）把帧转发到合适的目标
+## 组播（Multicast
+Linux 桥接驱动支持组播，使其能够处Internet Group Management Protocol（IGMP，因特网组管理协议）Multicast Listener Discovery（MLD，组播侦听者发现）消息，并高效地转发组播数据包。该桥接驱动支持 IGMPv2/IGMPv3 MLDv1/MLDv2
+### 组播侦听（Multicast snooping
+Multicast snooping 是一项网络技术，它使网络交换机能够在局域网（LAN）内智能地管理组播流量
+交换机会维护一张组播组表，记录组播组地址与主机已加入这些组的端口之间的关联。该组表根据收到IGMP/MLD 消息动态更新。借助通过 snooping 收集的组播组信息，交换机优化组播流量的转发。它不会盲目地将组播流量广播到所有端口，而是仅根据目MAC 地址将组播流量发送到已订阅相应目的组播组的端口
+Linux 桥接设备在创建时默认启用 multicast snooping。它会维护一Multicast forwarding database（MDB，组播转发表），用于记录端口与组之间的关系
+### IGMPv3/MLDv2 EHT 支持
 
-Linux 妗ユ敮鎸?IGMPv3/MLDv2 EHT锛圗xplicit Host Tracking锛屾樉寮忎富鏈鸿窡韪級锛屽畠鐢?`474ddb37fa3a ("net: bridge: multicast: add EHT allow/block handling")
+Linux 桥支IGMPv3/MLDv2 EHT（Explicit Host Tracking，显式主机跟踪），它`474ddb37fa3a ("net: bridge: multicast: add EHT allow/block handling")
 <https://lore.kernel.org/netdev/20210120145203.1109140-1-razor@blackwall.org/>`_
-鍔犲叆銆?
-鏄惧紡涓绘満璺熻釜浣胯澶囪兘澶熻褰曞姞鍏ユ煇涓壒瀹氱粍鎴栭€氶亾鐨勬瘡涓€鍙扮嫭绔嬩富鏈恒€侷GMP 涓樉寮忎富鏈鸿窡韪殑涓昏濂藉锛屾槸鑳藉鍦ㄤ富鏈虹寮€鏌愪釜缁勬挱缁勬垨閫氶亾鏃跺疄鐜版渶灏忕殑绂诲紑寤惰繜锛坙eave latency锛夈€?
-浠庝富鏈烘兂瑕佺寮€鍒拌澶囧仠姝㈣浆鍙戞祦閲忎箣闂寸殑鏃堕棿闂撮殧绉颁负 IGMP leave latency锛堢寮€寤惰繜锛夈€傞厤缃簡 IGMPv3 鎴?MLDv2 骞跺紑鍚樉寮忚窡韪殑璁惧锛屽湪鏈€鍚庤姹傛帴鏀惰璁惧娴侀噺鐨勪富鏈鸿〃绀轰笉鍐嶅笇鏈涙帴鏀舵祦閲忔椂锛屽彲绔嬪嵆鍋滄杞彂娴侀噺銆傚洜姝わ紝绂诲紑寤惰繜浠呭彈澶氳矾璁块棶缃戠粶涓殑鏁版嵁鍖呬紶杈撳欢杩熶互鍙婅澶囧鐞嗘椂闂寸殑闄愬埗銆?
-### 鍏朵粬缁勬挱鐗规€?
-Linux 妗ヨ繕鏀寔 `per-VLAN multicast snooping
+加入
+显式主机跟踪使设备能够记录加入某个特定组或通道的每一台独立主机。IGMP 中显式主机跟踪的主要好处，是能够在主机离开某个组播组或通道时实现最小的离开延迟（leave latency）
+从主机想要离开到设备停止转发流量之间的时间间隔称为 IGMP leave latency（离开延迟）。配置了 IGMPv3 MLDv2 并开启显式跟踪的设备，在最后请求接收该设备流量的主机表示不再希望接收流量时，可立即停止转发流量。因此，离开延迟仅受多路访问网络中的数据包传输延迟以及设备处理时间的限制
+### 其他组播特
+Linux 桥还支持 `per-VLAN multicast snooping
 <https://lore.kernel.org/netdev/20210719170637.435541-1-razor@blackwall.org/>`_
-锛堥粯璁ょ鐢ㄤ絾鍙惎鐢級锛屼互鍙?`Multicast Router Discovery
+（默认禁用但可启用），以`Multicast Router Discovery
 <https://lore.kernel.org/netdev/20190121062628.2710-1-linus.luessing@c0d3.blue/>`_
-锛堢粍鎾矾鐢卞櫒鍙戠幇锛夛紝鍚庤€呯敤浜庡府鍔╄瘑鍒粍鎾矾鐢卞櫒鐨勪綅缃€?
+（组播路由器发现），后者用于帮助识别组播路由器的位置
 ## Switchdev
 
-Linux Bridge Switchdev 鏄?Linux 鍐呮牳涓殑涓€椤圭壒鎬э紝瀹冩墿灞曚簡浼犵粺 Linux 妗ョ殑鑳藉姏锛屼娇鍏惰兘涓庢敮鎸?switchdev 鐨勭‖浠朵氦鎹㈡満鏇撮珮鏁堝湴鍗忓悓宸ヤ綔銆傚€熷姪 Linux Bridge Switchdev锛岃浆鍙戙€佽繃婊ゃ€佸涔犱互澶綉甯х瓑鏌愪簺缃戠粶鍔熻兘鍙鍗歌浇锛坥ffload锛夊埌纭欢浜ゆ崲鏈轰笂銆傝繖绉嶅嵏杞藉噺杞讳簡 Linux 鍐呮牳涓?CPU 鐨勮礋鎷咃紝浠庤€屾彁鍗囩綉缁滄€ц兘骞堕檷浣庡欢杩熴€?
-瑕佷娇鐢?Linux Bridge Switchdev锛屼綘闇€瑕佹敮鎸?switchdev 鎺ュ彛鐨勭‖浠朵氦鎹㈡満銆傝繖鎰忓懗鐫€浜ゆ崲鏈虹‖浠跺繀椤诲叿澶囧繀瑕佺殑椹卞姩涓庡姛鑳斤紝鎵嶈兘涓?Linux 鍐呮牳鍗忓悓宸ヤ綔銆?
-鏇村缁嗚妭璇峰弬闃?switchdev 鏂囨。銆?
+Linux Bridge Switchdev Linux 内核中的一项特性，它扩展了传统 Linux 桥的能力，使其能与支switchdev 的硬件交换机更高效地协同工作。借助 Linux Bridge Switchdev，转发、过滤、学习以太网帧等某些网络功能可被卸载（offload）到硬件交换机上。这种卸载减轻了 Linux 内核CPU 的负担，从而提升网络性能并降低延迟
+要使Linux Bridge Switchdev，你需要支switchdev 接口的硬件交换机。这意味着交换机硬件必须具备必要的驱动与功能，才能Linux 内核协同工作
+更多细节请参switchdev 文档
 ## Netfilter
 
-bridge netfilter 妯″潡鏄竴椤归仐鐣欑壒鎬э紝瀹冨厑璁镐娇鐢?iptables 涓?ip6tables 杩囨护琚ˉ鎺ョ殑鏁版嵁鍖呫€備笉鎺ㄨ崘浣跨敤瀹冿紝鐢ㄦ埛搴旇€冭檻浣跨敤 nftables 杩涜鍖呰繃婊ゃ€?
-杈冭€佺殑 ebtables 宸ュ叿鐩告瘮 nftables 鍔熻兘鏇翠负鏈夐檺锛屼絾鍜?nftables 涓€鏍凤紝瀹冧篃涓嶉渶瑕佹妯″潡鍗冲彲宸ヤ綔銆?
-br_netfilter 妯″潡浼氭嫤鎴繘鍏ユˉ鐨勬暟鎹寘锛屽 ipv4 涓?ipv6 鏁版嵁鍖呮墽琛屾渶鍩烘湰鐨勫仴鍏ㄦ€ф鏌ワ紝鐒跺悗鍋囪杩欎簺鏁版嵁鍖呮鍦ㄨ璺敱鑰岄潪妗ユ帴銆傞殢鍚?br_netfilter 浠庢ˉ鎺ュ眰璋冪敤 ip 涓?ipv6 鐨?netfilter 閽╁瓙锛屼篃灏辨槸璇?ip(6)tables 瑙勫垯闆嗕篃浼氱湅鍒拌繖浜涙暟鎹寘銆?
-br_netfilter 涔熸槸 iptables **physdev** 鍖归厤瀛樺湪鐨勫師鍥狅細鍦?iptables 瑙勫垯闆嗕腑锛屾鍖归厤鏄彲闈犲尯鍒嗚矾鐢卞寘涓庢ˉ鎺ュ寘鐨勫敮涓€鏂瑰紡銆?
-娉ㄦ剰锛宔btables 涓?nftables 鍦ㄦ病鏈?br_netfilter 妯″潡鏃朵篃鑳芥甯稿伐浣溿€俰ptables/ip6tables/arptables 瀵规ˉ鎺ユ祦閲忎笉璧蜂綔鐢紝鍥犱负瀹冧滑鎻掑叆浜嗚矾鐢辨爤銆俰p/ip6/inet/arp 鏃忕殑 nftables 瑙勫垯鍚屾牱鐪嬩笉鍒扮敱妗ヨ浆鍙戠殑鏁版嵁鍖咃紝浣嗚繖鏈潵灏辨槸搴旀湁鐨勮涓恒€?
-鍘嗗彶涓?ebtables 鐨勫姛鑳介泦闈炲父鏈夐檺锛堣嚦浠婁粛鏄姝わ級锛屽姞鍏ユ妯″潡鏄负浜嗗亣瑁呮暟鎹寘琚矾鐢憋紝骞朵粠妗ユ帴灞傝皟鐢?ipv4/ipv6 鐨?netfilter 閽╁瓙锛屼娇鐢ㄦ埛寰椾互浣跨敤鍔熻兘鏇翠赴瀵岀殑 iptables 鍖归厤鑳藉姏锛堝寘鎷?conntrack锛夈€俷ftables 娌℃湁杩欑闄愬埗锛屽嚑涔庡叏閮ㄧ壒鎬ч兘涓嶅彈鍗忚鏃忓奖鍝嶈€屾甯稿伐浣溿€?
-鍥犳锛屽彧鏈夊湪鐢ㄦ埛鍑轰簬鏌愪簺鍘熷洜闇€瑕佷娇鐢?ip(6)tables 鏉ヨ繃婊ょ敱妗ヨ浆鍙戠殑鏁版嵁鍖咃紝鎴栧妗ユ帴娴侀噺鍋?NAT 鏃讹紝鎵嶉渶瑕?br_netfilter銆傚浜庣函閾捐矾灞傝繃婊わ紝鍒欎笉闇€瑕佹妯″潡銆?
-## 鍏朵粬鐗规€?
-Linux 妗ヨ繕鏀寔 `IEEE 802.11 Proxy ARP
+bridge netfilter 模块是一项遗留特性，它允许使iptables ip6tables 过滤被桥接的数据包。不推荐使用它，用户应考虑使用 nftables 进行包过滤
+较老的 ebtables 工具相比 nftables 功能更为有限，但nftables 一样，它也不需要此模块即可工作
+br_netfilter 模块会拦截进入桥的数据包，对 ipv4 ipv6 数据包执行最基本的健全性检查，然后假装这些数据包正在被路由而非桥接。随br_netfilter 从桥接层调用 ip ipv6 netfilter 钩子，也就是ip(6)tables 规则集也会看到这些数据包
+br_netfilter 也是 iptables **physdev** 匹配存在的原因：iptables 规则集中，此匹配是可靠区分路由包与桥接包的唯一方式
+注意，ebtables nftables 在没br_netfilter 模块时也能正常工作。iptables/ip6tables/arptables 对桥接流量不起作用，因为它们插入了路由栈。ip/ip6/inet/arp 族的 nftables 规则同样看不到由桥转发的数据包，但这本来就是应有的行为
+历史ebtables 的功能集非常有限（至今仍是如此），加入此模块是为了假装数据包被路由，并从桥接层调ipv4/ipv6 netfilter 钩子，使用户得以使用功能更丰富的 iptables 匹配能力（包conntrack）。nftables 没有这种限制，几乎全部特性都不受协议族影响而正常工作
+因此，只有在用户出于某些原因需要使ip(6)tables 来过滤由桥转发的数据包，或对桥接流量NAT 时，才需br_netfilter。对于纯链路层过滤，则不需要此模块
+## 其他特
+Linux 桥还支持 `IEEE 802.11 Proxy ARP
 <https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/commit/?id=958501163ddd6ea22a98f94fa0e7ce6d4734e5c4>`_銆?`Media Redundancy Protocol (MRP)
 <https://lore.kernel.org/netdev/20200426132208.3232-1-horatiu.vultur@microchip.com/>`_銆?`Media Redundancy Protocol (MRP) LC mode
 <https://lore.kernel.org/r/20201124082525.273820-1-horatiu.vultur@microchip.com>`_銆?`IEEE 802.1X port authentication
-<https://lore.kernel.org/netdev/20220218155148.2329797-1-schultz.hans+netdev@gmail.com/>`_锛?浠ュ強 `MAC Authentication Bypass (MAB)
-<https://lore.kernel.org/netdev/20221101193922.2125323-2-idosch@nvidia.com/>`_銆?
-## 甯歌闂锛團AQ锛?
-### 妗ョ殑浣滅敤鏄粈涔堬紵
+<https://lore.kernel.org/netdev/20220218155148.2329797-1-schultz.hans+netdev@gmail.com/>`_以及 `MAC Authentication Bypass (MAB)
+<https://lore.kernel.org/netdev/20221101193922.2125323-2-idosch@nvidia.com/>`_銆。
+## 常见问题（FAQ
+### 桥的作用是什么？
 
-妗ュ湪澶氫釜缃戠粶鎺ュ彛涔嬮棿閫忔槑鍦拌浆鍙戞祦閲忋€傞€氫織鍦拌锛岃繖鎰忓懗鐫€妗ュ皢涓や釜鎴栧涓墿鐞嗕互澶綉缃戠粶杩炴帴鍦ㄤ竴璧凤紝褰㈡垚涓€涓洿澶х殑锛堥€昏緫涓婄殑锛変互澶綉缃戠粶銆?
-### 瀹冩槸鍚︿笌 L3 鍗忚鏃犲叧锛?
-鏄殑銆傛ˉ浼氱湅鍒版墍鏈夊抚锛屼絾瀹?*浠呬娇鐢?* L2 澶撮儴/淇℃伅銆傚洜姝わ紝妗ユ帴鍔熻兘涓庡崗璁棤鍏筹紝杞彂 IPX銆丯etBEUI銆両P銆両Pv6 绛夐兘涓嶄細鏈夐棶棰樸€?
-## 鑱旂郴淇℃伅
+桥在多个网络接口之间透明地转发流量。通俗地说，这意味着桥将两个或多个物理以太网网络连接在一起，形成一个更大的（逻辑上的）以太网网络
+### 它是否与 L3 协议无关
+是的。桥会看到所有帧，但*仅使* L2 头部/信息。因此，桥接功能与协议无关，转发 IPX、NetBEUI、IP、IPv6 等都不会有问题
+## 联系信息
 
-璇ヤ唬鐮佺洰鍓嶇敱 Roopa Prabhu <roopa@nvidia.com> 涓?Nikolay Aleksandrov <razor@blackwall.org> 缁存姢銆傛ˉ鐨勭己闄蜂笌澧炲己鍦?linux-netdev 閭欢鍒楄〃 netdev@vger.kernel.org 浠ュ強 bridge@lists.linux.dev 涓婅璁恒€?
-璇ュ垪琛ㄥ浠讳綍鎰熷叴瓒ｇ殑浜哄紑鏀撅細http://vger.kernel.org/vger-lists.html#netdev
+该代码目前由 Roopa Prabhu <roopa@nvidia.com> Nikolay Aleksandrov <razor@blackwall.org> 维护。桥的缺陷与增强linux-netdev 邮件列表 netdev@vger.kernel.org 以及 bridge@lists.linux.dev 上讨论
+该列表对任何感兴趣的人开放：http://vger.kernel.org/vger-lists.html#netdev
 
-## 澶栭儴閾炬帴
+## 外部链接
 
-Linux 妗ユ帴鐨勬棫鐗堟枃妗ｄ綅浜庯細
+Linux 桥接的旧版文档位于：
 https://wiki.linuxfoundation.org/networking/bridge

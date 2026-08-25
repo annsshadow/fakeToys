@@ -1,60 +1,60 @@
 ﻿
-## ACPI _OSI 涓?_REV 鏂规硶
+## ACPI _OSI _REV 方法
 
 
-ACPI BIOS 鍙互浣跨敤"鎿嶄綔绯荤粺鎺ュ彛"锛圤perating System Interfaces锛夋柟娉曪紙_OSI锛夋潵鏌ユ槑鎿嶄綔绯荤粺鏀寔鍝簺鍔熻兘銆備緥濡傦紝濡傛灉 BIOS 鐨?AML 浠ｇ爜鍖呭惈 _OSI("XYZ")锛屽唴鏍哥殑 AML 瑙ｉ噴鍣ㄥ氨鍙互姹傚€艰鏂规硶锛屾煡鐪嬪畠鏄惁鏀寔 'XYZ'锛屽苟鍚?BIOS 鍥炵瓟 YES 鎴?NO銆?
-ACPI _REV 鏂规硶杩斿洖"OSPM 鎵€鏀寔鐨?ACPI 瑙勮寖鐗堟湰"锛圧evision of the ACPI specification that OSPM supports锛夈€?
-鏈枃妗ｈ鏄庝簡 BIOS 涓?Linux 搴斿綋濡備綍浣跨敤杩欎簺鏂规硶锛屼互鍙婁负浣曞姝や娇鐢ㄣ€傚悓鏃跺畠涔熻В閲婁簡杩欎簺鏂规硶涓轰綍琚櫘閬嶈鐢ㄣ€?
-## 濡備綍浣跨敤 _OSI
+ACPI BIOS 可以使用"操作系统接口"（Operating System Interfaces）方法（_OSI）来查明操作系统支持哪些功能。例如，如果 BIOS AML 代码包含 _OSI("XYZ")，内核的 AML 解释器就可以求值该方法，查看它是否支持 'XYZ'，并BIOS 回答 YES NO
+ACPI _REV 方法返回"OSPM 所支持ACPI 规范版本"（Revision of the ACPI specification that OSPM supports）
+本文档说明了 BIOS Linux 应当如何使用这些方法，以及为何如此使用。同时它也解释了这些方法为何被普遍误用
+## 如何使用 _OSI
 
 
-Linux 杩愯浜庝袱绫绘満鍣ㄤ箣涓娾€斺€斾竴绫绘槸 OEM 娴嬭瘯杩囦笌 Linux 鍏煎鐨勬満鍣紝鍙︿竴绫讳粠鏈敤 Linux 娴嬭瘯杩囷紝鍙槸瀹夎浜?Linux 鏉ュ彇浠ｅ師鏈夌殑鎿嶄綔绯荤粺锛圵indows 鎴?OSX锛夈€?
-鏁伴噺鏇村ぇ鐨勪竴缁勬槸浠呮祴璇曡繃杩愯 Windows 鐨勭郴缁熴€備笉浠呭姝わ紝鍏朵腑璁稿鍙祴璇曡繃杩愯鏌愪竴涓壒瀹氱増鏈殑 Windows銆傚洜姝わ紝鍗充究 BIOS 鍙兘浣跨敤 _OSI 鏉ユ煡璇㈡鍦ㄨ繍琛岀殑鏄摢涓増鏈殑 Windows锛屽疄闄呬笂 BIOS 涓彧鏈変竴鏉¤矾寰勮鐪熸娴嬭瘯杩囥€傜粡楠岃〃鏄庯紝璧?BIOS 涓湭缁忔祴璇曠殑璺緞浼氳 Linux 鏆撮湶鍦ㄤ竴鏁寸被 BIOS bug 涔嬩腑銆傚嚭浜庤繖涓師鍥狅紝Linux 鐨?_OSI 榛樿鍊煎繀椤荤户缁０绉颁笌鎵€鏈夌増鏈殑 Windows 鍏煎銆?
-浣?Linux 瀹為檯涓婂苟涓嶄笌 Windows 鍏煎锛岃€屼笖褰?Linux 鎶婃渶鏂扮増鏈殑 Windows 鍔犲叆鍏?_OSI 瀛楃涓插垪琛ㄦ椂锛孡inux 绀惧尯涔熸浘鍥犱负鍥炲綊闂鑰屽彈鍒版崯瀹炽€傚洜姝わ紝鏈潵鍦ㄥ悎鍏ヤ笂娓镐箣鍓嶏紝棰濆鐨勫瓧绗︿覆鍙兘浼氳鏇村交搴曞湴瀹℃煡銆備絾瀹冧滑寰堝彲鑳芥渶缁堥兘浼氳鍔犲叆銆?
-濡傛灉涓€涓?OEM 鎯崇敤鍚屼竴涓?BIOS 闀滃儚鍚屾椂鏀寔 Linux 鍜?Windows锛屽簲璇ユ€庝箞鍋氾紵閫氬父浠栦滑闇€瑕佷负 Linux 鍋氫笉鍚岀殑澶勭悊锛屼互搴斿 Linux 涓?Windows 鐨勫樊寮傘€?
-鍦ㄨ繖绉嶆儏鍐典笅锛孫EM 搴斿綋鍒涘缓鐢?Linux 鍐呮牳鎵ц鐨勮嚜瀹氫箟 ASL锛屽苟淇敼 Linux 鍐呮牳椹卞姩鏉ユ墽琛岃鑷畾涔?ASL銆傚疄鐜拌繖涓€鐐规渶绠€鍗曠殑鏂瑰紡鏄紩鍏ヤ竴涓敱 Linux 鍐呮牳璋冪敤鐨勮澶囦笓鐢ㄦ柟娉曪紙_DSM锛夈€?
-杩囧幓鍐呮牳鏇剧粡鏀寔绫讳技杩欐牱鐨勫啓娉曪細_OSI("Linux-OEM-my_interface_name")锛屽叾涓嫢杩欐槸涓€涓?OEM 涓撶敤閽╁瓙锛屽垯闇€瑕?'OEM'锛岃€?'my_interface_name' 鎻忚堪璇ラ挬瀛愶紝瀹冨彲鑳芥槸鏌愪釜鎬櫀锛坬uirk锛夈€乥ug 鎴?bug 淇銆?
-鐒惰€岋紝浜轰滑鍙戠幇瀹冭鍏朵粬 BIOS 鍘傚晢婊ョ敤锛岀敤鏉ュ湪瀹屽叏涓嶇浉骞茬殑绯荤粺涓慨鏀瑰畬鍏ㄦ棤鍏崇殑浠ｇ爜銆傝繖淇冧娇绀惧尯瀵瑰叾鎵€鏈夌敤閫旇繘琛屼簡璇勪及銆傝瘎浼板彂鐜帮紝鍘熷厛浣跨敤杩欎簺瀛楃涓茬殑鐞嗙敱閮藉凡涓嶅啀闇€瑕併€傚洜姝わ紝鍐呮牳榛樿涓嶅啀瀵逛换浣曡嚜瀹氫箟鐨?Linux-* 瀛楃涓蹭綔鍑哄搷搴斻€?
-杩欏緢绠€鍗曘€傜户缁涓嬪幓锛岀湅鐪嬪浣曟妸瀹冪敤閿欍€?
-## 鍦?_OSI 涔嬪墠锛屾浘鏈?_OS
+Linux 运行于两类机器之上——一类是 OEM 测试过与 Linux 兼容的机器，另一类从未用 Linux 测试过，只是安装Linux 来取代原有的操作系统（Windows OSX）
+数量更大的一组是仅测试过运行 Windows 的系统。不仅如此，其中许多只测试过运行某一个特定版本的 Windows。因此，即便 BIOS 可能使用 _OSI 来查询正在运行的是哪个版本的 Windows，实际上 BIOS 中只有一条路径被真正测试过。经验表明，BIOS 中未经测试的路径会让 Linux 暴露在一整类 BIOS bug 之中。出于这个原因，Linux _OSI 默认值必须继续声称与所有版本的 Windows 兼容
+Linux 实际上并不与 Windows 兼容，而且Linux 把最新版本的 Windows 加入_OSI 字符串列表时，Linux 社区也曾因为回归问题而受到损害。因此，未来在合入上游之前，额外的字符串可能会被更彻底地审查。但它们很可能最终都会被加入
+如果一OEM 想用同一BIOS 镜像同时支持 Linux Windows，应该怎么做？通常他们需要为 Linux 做不同的处理，以应对 Linux Windows 的差异
+在这种情况下，OEM 应当创建Linux 内核执行的自定义 ASL，并修改 Linux 内核驱动来执行该自定ASL。实现这一点最简单的方式是引入一个由 Linux 内核调用的设备专用方法（_DSM）
+过去内核曾经支持类似这样的写法：_OSI("Linux-OEM-my_interface_name")，其中若这是一OEM 专用钩子，则需'OEM'，'my_interface_name' 描述该钩子，它可能是某个怪癖（quirk）、bug bug 修复
+然而，人们发现它被其他 BIOS 厂商滥用，用来在完全不相干的系统中修改完全无关的代码。这促使社区对其所有用途进行了评估。评估发现，原先使用这些字符串的理由都已不再需要。因此，内核默认不再对任何自定义Linux-* 字符串作出响应
+这很简单。继续读下去，看看如何把它用错
+## _OSI 之前，曾_OS
 
 
-ACPI 1.0 灏?"_OS" 瑙勫畾涓?姹傚€间负涓€涓敤浜庢爣璇嗘搷浣滅郴缁熺殑瀛楃涓茬殑瀵硅薄"锛坥bject that evaluates to a string that identifies the operating system锛夈€?
-ACPI BIOS 鐨勬祦绋嬩細鍖呭惈瀵?_OS 鐨勬眰鍊硷紝鍐呮牳涓殑 AML 瑙ｉ噴鍣ㄤ細鍚戝畠杩斿洖涓€涓爣璇嗚鎿嶄綔绯荤粺鐨勫瓧绗︿覆锛?
+ACPI 1.0 "_OS" 规定求值为一个用于标识操作系统的字符串的对象"（object that evaluates to a string that identifies the operating system）
+ACPI BIOS 的流程会包含_OS 的求值，内核中的 AML 解释器会向它返回一个标识该操作系统的字符串
 Windows 98, SE: "Microsoft Windows"
 Windows ME: "Microsoft WindowsME:Millennium Edition"
 Windows NT: "Microsoft Windows NT"
 
-鍏惰璁＄悊蹇垫槸锛氬湪涓€涓渶瑕佽繍琛屽涓搷浣滅郴缁熺殑骞冲彴涓婏紝BIOS 鍙互浣跨敤 _OS 鏉ュ惎鐢ㄦ煇涓搷浣滅郴缁熷彲鑳芥敮鎸佺殑 devices锛屾垨鑰呭惎鐢ㄤ娇骞冲彴涓庢棦鏈夋搷浣滅郴缁熷吋瀹规墍闇€鐨勬€櫀鎴?bug 鍙橀€氭柟妗堛€?
-浣?_OS 瀛樺湪鏍规湰鎬ч棶棰樸€傞鍏堬紝BIOS 闇€瑕佺煡閬撴墍鏈夊彲鑳借繍琛屽湪瀹冧箣涓婄殑鎿嶄綔绯荤粺鐗堟湰鐨勫悕绉帮紝杩樿鐭ラ亾杩欎簺鎿嶄綔绯荤粺鐨勬墍鏈夋€櫀銆傛樉鐒讹紝璁?BIOS 鍚戞搷浣滅郴缁熻闂?*鍏蜂綋**鐨勪簨鎯咃紙渚嬪"浣犳敮鎸佹煇涓壒瀹氭帴鍙ｅ悧"锛夋洿鏈夋剰涔夛紝浜庢槸 ACPI 3.0 涓癁鐢熶簡 _OSI 鏉ュ彇浠?_OS銆?
-_OS 宸茶搴熷純锛屼笉杩囧嵆渚垮埌浠婂ぉ锛岃澶?BIOS 浠嶅湪鏌ユ壘 _OS "Microsoft Windows NT"锛屽敖绠′换浣曚汉鐢ㄨ繖浜涙棫鎿嶄綔绯荤粺瑕嗙洊鏈哄櫒鑷甫绯荤粺浼间箮涓嶅お鐜板疄銆?
-Linux 鍥炵瓟 "Microsoft Windows NT" 浠ヨ繋鍚堥偅绉?BIOS 涔犳儻鐢ㄦ硶銆傝繖鏄?*鍞竴**鍙鐨勭瓥鐣ワ紝鍥犱负鐜颁唬 Windows 姝ｆ槸杩欐牱鍋氱殑锛屽惁鍒欏彲鑳芥妸 BIOS 寮曞悜鏈粡娴嬭瘯鐨勮矾寰勩€?
-## _OSI 璇炵敓锛岄殢鍗宠璇敤
+其设计理念是：在一个需要运行多个操作系统的平台上，BIOS 可以使用 _OS 来启用某个操作系统可能支持的 devices，或者启用使平台与既有操作系统兼容所需的怪癖bug 变通方案
+_OS 存在根本性问题。首先，BIOS 需要知道所有可能运行在它之上的操作系统版本的名称，还要知道这些操作系统的所有怪癖。显然，BIOS 向操作系统询*具体**的事情（例如"你支持某个特定接口吗"）更有意义，于是 ACPI 3.0 中诞生了 _OSI 来取_OS
+_OS 已被废弃，不过即便到今天，许BIOS 仍在查找 _OS "Microsoft Windows NT"，尽管任何人用这些旧操作系统覆盖机器自带系统似乎不太现实
+Linux 回答 "Microsoft Windows NT" 以迎合那BIOS 习惯用法。这*唯一**可行的策略，因为现代 Windows 正是这样做的，否则可能把 BIOS 引向未经测试的路径
+## _OSI 诞生，随即被误用
 
 
-閫氳繃 _OSI锛?*BIOS** 鎻愪緵鎻忚堪鏌愪釜鎺ュ彛鐨勫瓧绗︿覆锛屽苟璇㈤棶鎿嶄綔绯荤粺锛?YES/NO锛屼綘鏄惁涓庤鎺ュ彛鍏煎锛?
+通过 _OSI*BIOS** 提供描述某个接口的字符串，并询问操作系统YES/NO，你是否与该接口兼容
 
-渚嬪锛屽鏋滄搷浣滅郴缁熺煡閬撳浣曞鐞?ACPI 3.0 瑙勮寖涓柊澧炵殑鐑浉鍏虫墿灞曪紝_OSI("3.0 Thermal Model") 灏变細杩斿洖 TRUE銆備笉鐭ラ亾杩欎簺鎵╁睍鐨勬棫鎿嶄綔绯荤粺浼氬洖绛?FALSE锛岃€屾柊鎿嶄綔绯荤粺鍒欏彲鑳借繑鍥?TRUE銆?
-瀵逛簬鐗瑰畾浜庢煇涓搷浣滅郴缁熺殑鎺ュ彛锛孉CPI 瑙勮寖瑙勫畾 BIOS 涓庢搷浣滅郴缁熷簲绾﹀畾涓€涓舰濡?"Windows-interface_name" 鐨勫瓧绗︿覆銆?
-浣嗕袱浠朵簨鍑轰簡宸敊銆傞鍏堬紝Windows 鐢熸€佸苟娌℃湁鎸夎璁′娇鐢?_OSI锛岃€屾槸鎶婂畠鐩存帴褰撲綔 _OS 鐨勬浛浠ｅ搧鈥斺€旂敤鏉ユ爣璇嗘搷浣滅郴缁熺増鏈紝鑰岄潪鎿嶄綔绯荤粺鎵€鏀寔鐨勬帴鍙ｃ€備簨瀹炰笂锛屼粠涓€寮€濮嬶紝ACPI 3.0 瑙勮寖鏈韩灏卞湪绀轰緥浠ｇ爜涓娇鐢?_OSI("Windows 2001") 鎶婅繖绉嶈鐢ㄦ硶鍥哄寲浜嗕笅鏉ャ€?
-杩欑璇敤娉曡娌跨敤鑷充粖銆?
-Linux 鍒棤閫夋嫨锛屽彧鑳藉悓鏍峰 _OSI("Windows 2001") 鍙婂叾鍚庣户鐗堟湰杩斿洖 TRUE銆傚惁鍒欏嚑涔庡繀鐒朵細瀵艰嚧涓€涓粎鍦ㄨ _OSI 杩斿洖 TRUE 鏃惰娴嬭瘯杩囩殑 BIOS 鍑虹幇鏁呴殰銆?
-杩欎竴绛栫暐鏄湁闂鐨勶紝鍥犱负 Linux 浠庢湭涓庢渶鏂扮増鏈殑 Windows 瀹屽叏鍏煎锛屾湁鏃堕渶瑕佷竴骞翠互涓婄殑鏃堕棿鎵嶈兘娑堥櫎涓嶅吋瀹归棶棰樸€?
-涓轰簡涓嶈惤浜哄悗锛孡inux 绀惧尯閫氳繃鍚?_OSI("Linux") 杩斿洖 TRUE 鎶婁簨鎯呮悶寰楁洿绯熴€傝繖鏍峰仛姣?Windows 瀵?_OSI 鐨勮鐢ㄨ繕瑕佺碂绯曪紝鍥犱负 "Linux" 鐢氳嚦涓嶅寘鍚换浣曠増鏈俊鎭€俖OSI("Linux") 瀵艰嚧涓€浜?BIOS 鍑虹幇鏁呴殰锛屽洜涓?BIOS 缂栧啓鑰呭湪鏈粡娴嬭瘯鐨?BIOS 娴佺▼涓娇鐢ㄤ簡瀹冦€備絾涔熸湁涓€浜?OEM 鍦ㄥ凡娴嬭瘯鐨勬祦绋嬩腑浣跨敤 _OSI("Linux") 鏉ユ敮鎸佺湡姝ｇ殑 Linux 鐗规€с€?009 骞达紝Linux 绉婚櫎浜?_OSI("Linux")锛屽苟鏂板浜嗕竴涓懡浠よ鍙傛暟锛屼互渚涗粛闇€瑕佸畠鐨勯仐鐣欑郴缁熸仮澶嶈琛屼负銆傛澶栵紝瀵逛簬鎵€鏈夎皟鐢ㄥ畠鐨?BIOS 閮戒細鎵撳嵃 BIOS_BUG 璀﹀憡銆?
-浠讳綍 BIOS 閮戒笉搴斾娇鐢?_OSI("Linux")銆?
-鐢辨褰㈡垚浜嗕竴濂楄 Linux 鏈€澶у寲涓庨偅浜涘湪 Windows 鏈哄櫒涓婃祴璇曡繃鐨?ACPI BIOS 鍏煎鎬х殑绛栫暐銆傝繖閲岀‘瀹炲瓨鍦ㄩ珮浼板吋瀹规€х殑鐪熷疄椋庨櫓锛涗絾鍙︿竴绉嶉€夋嫨寰€寰€鏄伨闅炬€х殑澶辫触鈥斺€斿洜涓?BIOS 璧颁簡**浠讳綍**鎿嶄綔绯荤粺閮戒粠鏈獙璇佽繃鐨勮矾寰勩€?
-## 涓嶈浣跨敤 _REV
+例如，如果操作系统知道如何处ACPI 3.0 规范中新增的热相关扩展，_OSI("3.0 Thermal Model") 就会返回 TRUE。不知道这些扩展的旧操作系统会回FALSE，而新操作系统则可能返TRUE
+对于特定于某个操作系统的接口，ACPI 规范规定 BIOS 与操作系统应约定一个形"Windows-interface_name" 的字符串
+但两件事出了差错。首先，Windows 生态并没有按设计使_OSI，而是把它直接当作 _OS 的替代品——用来标识操作系统版本，而非操作系统所支持的接口。事实上，从一开始，ACPI 3.0 规范本身就在示例代码中使_OSI("Windows 2001") 把这种误用法固化了下来
+这种误用法被沿用至今
+Linux 别无选择，只能同样对 _OSI("Windows 2001") 及其后继版本返回 TRUE。否则几乎必然会导致一个仅在该 _OSI 返回 TRUE 时被测试过的 BIOS 出现故障
+这一策略是有问题的，因为 Linux 从未与最新版本的 Windows 完全兼容，有时需要一年以上的时间才能消除不兼容问题
+为了不落人后，Linux 社区通过_OSI("Linux") 返回 TRUE 把事情搞得更糟。这样做Windows _OSI 的误用还要糟糕，因为 "Linux" 甚至不包含任何版本信息。_OSI("Linux") 导致一BIOS 出现故障，因BIOS 编写者在未经测试BIOS 流程中使用了它。但也有一OEM 在已测试的流程中使用 _OSI("Linux") 来支持真正的 Linux 特性009 年，Linux 移除_OSI("Linux")，并新增了一个命令行参数，以供仍需要它的遗留系统恢复该行为。此外，对于所有调用它BIOS 都会打印 BIOS_BUG 警告
+任何 BIOS 都不应使_OSI("Linux")
+由此形成了一套让 Linux 最大化与那些在 Windows 机器上测试过ACPI BIOS 兼容性的策略。这里确实存在高估兼容性的真实风险；但另一种选择往往是灾难性的失败——因BIOS 走了**任何**操作系统都从未验证过的路径
+## 不要使用 _REV
 
 
-鑷粠 _OSI("Linux") 琚Щ闄ゅ悗锛屼竴浜?BIOS 缂栧啓鑰呮敼鐢?_REV 鏉ュ湪鍚屼竴涓?BIOS 涓尯鍒?Linux 涓?Windows 鐨勫樊寮傘€?
-_REV 鍦?ACPI 1.0 涓畾涔夛紝鐢ㄤ簬杩斿洖鎿嶄綔绯荤粺鍙婂叾 AML 瑙ｉ噴鍣ㄦ墍鏀寔鐨?ACPI 鐗堟湰銆?
-鐜颁唬 Windows 杩斿洖 _REV = 2銆侺inux 鏇剧粡浣跨敤 ACPI_CA_SUPPORT_LEVEL锛屽畠浼氶殢鐫€鎵€鏀寔瑙勮寖鐗堟湰鐨勬彁鍗囪€岄€掑銆?
-涓嶅垢鐨勬槸锛宊REV 涔熻璇敤浜嗐€備緥濡傦紝鏌愪簺 BIOS 浼氭鏌?_REV = 3 骞朵负 Linux 鍋氫簺澶勭悊锛屼絾褰?Linux 杩斿洖 _REV = 4 鏃讹紝閭ｇ鏀寔灏卞け鏁堜簡銆?
-涓哄簲瀵硅繖涓€闂锛屼粠 2015 骞翠腑寮€濮嬶紝Linux 濮嬬粓杩斿洖 _REV = 2銆侫CPI 瑙勮寖涔熷皢鏇存柊锛屼互鍙嶆槧 _REV 宸茶寮冪敤骞跺缁堣繑鍥?2銆?
+自从 _OSI("Linux") 被移除后，一BIOS 编写者改_REV 来在同一BIOS 中区Linux Windows 的差异
+_REV ACPI 1.0 中定义，用于返回操作系统及其 AML 解释器所支持ACPI 版本
+现代 Windows 返回 _REV = 2。Linux 曾经使用 ACPI_CA_SUPPORT_LEVEL，它会随着所支持规范版本的提升而递增
+不幸的是，_REV 也被误用了。例如，某些 BIOS 会检_REV = 3 并为 Linux 做些处理，但Linux 返回 _REV = 4 时，那种支持就失效了
+为应对这一问题，从 2015 年中开始，Linux 始终返回 _REV = 2。ACPI 规范也将更新，以反映 _REV 已被弃用并始终返2
 ## Apple Mac 涓?_OSI("Darwin")
 
 
-鍦?Apple 鐨?Mac 骞冲彴涓婏紝ACPI BIOS 璋冪敤 _OSI("Darwin") 鏉ュ垽鏂満鍣ㄦ槸鍚﹁繍琛?Apple OSX銆?
-涓?Linux 鐨?_OSI("**Windows**") 绛栫暐绫讳技锛孡inux 榛樿瀵?_OSI("Darwin") 鍥炵瓟 YES锛屼互鍚敤瀵圭‖浠剁殑瀹屽叏璁块棶浠ュ強 OSX 鎵€鑳界湅鍒扮殑銆佺粡杩囬獙璇佺殑 BIOS 璺緞銆傛濡傚湪缁?Windows 娴嬭瘯鐨勫钩鍙颁笂涓€鏍凤紝杩欎竴绛栫暐涔熷瓨鍦ㄩ闄┿€?
-浠?Linux-3.18 寮€濮嬶紝鍐呮牳瀵?_OSI("Darwin") 鍥炵瓟 YES锛岀洰鐨勬槸鍚敤 Mac 鐨?Thunderbolt 鏀寔銆傛澶栵紝濡傛灉鍐呮牳娉ㄦ剰鍒?_OSI("Darwin") 琚皟鐢紝瀹冧細棰濆绂佺敤鎵€鏈?_OSI("**Windows**")锛屼互鍏嶇紪鍐欐嫏鍔ｇ殑 Mac BIOS 璧板叆鏈粡娴嬭瘯鐨勮矾寰勭粍鍚堛€?
-Linux-3.18 瀵归粯璁ゅ€肩殑鏀瑰姩鍦?Mac 绗旇鏈笂寮曞彂浜嗗姛鑰楀洖褰掞紝鑰屼笖 3.18 鐨勫疄鐜颁笉鍏佽閫氳繃鍛戒护琛?"acpi_osi=!Darwin" 淇敼榛樿鍊笺€侺inux-4.7 淇浜嗗彲浠ヤ娇鐢?acpi_osi=!Darwin 浣滀负鍙橀€氭柟妗堢殑闂锛屾垜浠笇鏈涘湪 Linux-4.11 涓湅鍒?Mac Thunderbolt 鐢垫簮绠＄悊鏀寔銆?
+Apple Mac 平台上，ACPI BIOS 调用 _OSI("Darwin") 来判断机器是否运Apple OSX
+Linux _OSI("**Windows**") 策略类似，Linux 默认_OSI("Darwin") 回答 YES，以启用对硬件的完全访问以及 OSX 所能看到的、经过验证的 BIOS 路径。正如在Windows 测试的平台上一样，这一策略也存在风险
+Linux-3.18 开始，内核_OSI("Darwin") 回答 YES，目的是启用 Mac Thunderbolt 支持。此外，如果内核注意_OSI("Darwin") 被调用，它会额外禁用所_OSI("**Windows**")，以免编写拙劣的 Mac BIOS 走入未经测试的路径组合
+Linux-3.18 对默认值的改动Mac 笔记本上引发了功耗回归，而且 3.18 的实现不允许通过命令"acpi_osi=!Darwin" 修改默认值。Linux-4.7 修复了可以使acpi_osi=!Darwin 作为变通方案的问题，我们希望在 Linux-4.11 中看Mac Thunderbolt 电源管理支持
