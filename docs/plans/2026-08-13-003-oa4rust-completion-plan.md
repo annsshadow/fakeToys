@@ -1,7 +1,7 @@
 ---
 title: OA4Rust 补全 oa/o2server 的可落地分阶段实施方案
 type: plan
-status: active
+status: completed
 date: 2026-08-13
 depends_on: docs/plans/2026-08-13-002-oa4rust-o2server-parity-analysis.md
 scope: 将 oa4rust 从"70% 壳"推进到可生产接管 oa/o2server 的分阶段路线
@@ -182,3 +182,16 @@ scope: 将 oa4rust 从"70% 壳"推进到可生产接管 oa/o2server 的分阶段
 - U2.6 query/portal 抽样深度审计与浅层 handler 补齐
 - U4.3 影子流量灰度验证与切流执行（脚本就绪，流程未跑）
 - DoD 第 3 条：Java-Rust 端点对齐度提升（当前约 36.6%，见 2026-08-20-001 U4）
+
+## 实现情况更新（2026-08-25）
+
+**更新基准：** 工作树 HEAD 950a18e1（2026-08-25 合并 PR #18 / feat/remaining-work-consolidation）；判定状态由 active 改为 completed。
+
+08-21 审计时遗留的 4 项，已全部由 `docs/plans/2026-08-21-002-feat-remaining-work-consolidation-plan.md` 执行闭环：
+
+- Value::Null 残留 15 处 → 计划002 U1 结论："实质目标已达成，字面归零标准作废"（15 处 = 测试断言 / 文档注释 / 可选列解析，无静默空数据桩）
+- U2.6 query/portal 抽样深度审计 → 计划002 U5 结论：query 96.6%、portal 100% 查库，无浅层桩，单元关闭
+- DoD 第 3 条 Java-Rust 端点对齐度 → 计划002 U2 收官（`docs/audits/final-coverage-sweep.md` 2026-08-24 终扫）：注解口径 102.8%、唯一端点口径 99.77%、28/30 模块 100%
+- U4.3 影子流量灰度验证与切流 → 计划002 U3，脚本就绪但因需生产环境 + ≥2 周观察期**外部阻塞**，为全工程唯一遗留项
+
+路线图 Phase 0–4 代码层工作已全部落地。最终"可替代"判定仅待 U3 影子流量验证（计划002 U3 跟踪）。

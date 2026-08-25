@@ -1,7 +1,7 @@
 ---
 title: feat: oa4rust remaining gap closure
 type: feat
-status: active
+status: completed
 date: 2026-08-20
 origin: docs/brainstorms/2026-08-20-oa4rust-remaining-gap-closure-requirements.md
 ---
@@ -334,3 +334,9 @@ oa4rust 已完成 95 个 crate 的真实化和 7624+ 条路由注册，`cargo te
 - Deferred「handler 级测试覆盖率提升至 99%」
 - Deferred「文档模块卡片 Key Flows、Dependencies 深度填充」与「docs/oa/modules/o2web/ 组件卡片填充」
 - Deferred「SQLx 完全移除」
+
+## 实现情况更新（2026-08-25）
+
+**更新基准：** 工作树 HEAD 950a18e1（2026-08-25）；判定状态由 active 改为 completed。
+
+08-21 审计时唯一未竟单元 U4（Java-Rust 端点对齐度 ≥70%，实测 36.6%）由 `2026-08-21-002` U2 收官（`docs/audits/final-coverage-sweep.md` 2026-08-24 终扫）：注解口径 102.8%、唯一端点口径 99.77%、28/30 模块 100%。U1/U2/U3/U5 均已在档完成。本计划全部单元关闭。

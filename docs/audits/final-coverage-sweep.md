@@ -106,3 +106,12 @@
 4. **cms「深层语义不匹配」留档**：路由层面 cms 已 437/437 全覆盖，该留档属 handler 行为层（响应语义/深层业务一致性），不在端点注册扫描范围，故本轮无需排除项。
 5. **BAM（x_processplatform_assemble_bam）**：台账已注明的 P3 真实大缺口，实测缺 0 条监控类低频端点，维持挂起建议。
 6. **动词差批量项**：全仓共 0 条仅需补方法变体（路径已存在），是性价比最高的收敛手段。
+
+---
+
+## 相关文档
+
+- **收官复盘：** `docs/solutions/best-practices/oa4rust-o2server-parity-closure-campaign-2026-08-25.md`
+- **残差需求（仍不能完全替代之处）：** `docs/brainstorms/2026-08-25-oa4rust-o2server-residual-gaps-requirements.md`
+- **执行计划（U2 收官、仍为 active）：** `docs/plans/2026-08-21-002-feat-remaining-work-consolidation-plan.md`
+- **迁移状态单一真源方法：** `docs/solutions/best-practices/single-source-of-truth-migration-status.md`
