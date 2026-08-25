@@ -33,12 +33,14 @@ COMPARISON_LOG="$PROJECT_DIR/shadow-comparison.log"
 BACKUP_DIR="$SCRIPT_DIR/.backups"
 
 # 测试用的模块和端点
-TEST_MODULES=(attendance control express meeting)
+TEST_MODULES=(attendance control express meeting processplatform bam)
 TEST_ENDPOINTS=(
     "attendance/admin/list/all"
     "control/group/list"
     "express/delivery/list"
     "meeting/room/list"
+    "processplatform/assemble/surface/list"
+    "bam/assemble/list"
 )
 
 cmd="${1:-help}"

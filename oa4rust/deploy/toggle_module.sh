@@ -33,7 +33,7 @@ NGINX_CONF="${NGINX_CONF:-/etc/nginx/nginx.conf}"
 NGINX_INCLUDE_LINE="        # include /etc/nginx/conf.d/gray-routes.conf;"
 
 # 默认灰度模块
-DEFAULT_GRAY_MODULES=(attendance control express meeting)
+DEFAULT_GRAY_MODULES=(attendance control express meeting processplatform bam)
 
 cmd="${1:-status}"
 
