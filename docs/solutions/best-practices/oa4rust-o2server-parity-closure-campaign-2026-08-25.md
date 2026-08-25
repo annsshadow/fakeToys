@@ -36,7 +36,7 @@ oa4rust（Rust 重写）长期以"crate 个数 / handler 数 / 测试通过率"�
 ## Guidance
 
 **1. 端点对齐度量方法论（endpoint-alignment measurement）**
-- 用 Java `@Path` 注解与 `@GET/@POST/@PUT/@DELETE` 方法静态提取 Java 端点，与 Rust 侧 `tests/behavior_comparison/endpoints.rs`（初版 1012 个端点由 `scripts/extract_endpoints.py` 生成；`gen_openapi_paths.py` 实际产出的是 openapi crate 的 lib.rs；`14def34e` 起改由 `scripts/regen_endpoints.py` 直写该清单）及 `crates/*/src/**/*.rs` 的 `.route(` 注册做交叉比对（证据：`docs/plans/2026-08-20-001-feat-oa4rust-remaining-gap-closure-plan.md` U4；`docs/audits/final-coverage-sweep.md` 第 4 行）。
+- 用 Java `@Path` 注解与 `@GET/@POST/@PUT/@DELETE` 方法静态提取 Java 端点，与 Rust 侧 `tests/behavior_comparison/endpoints.rs`（初版 1012 个端点由 `scripts/extract_endpoints.py` 生成；`gen_openapi_paths.py` 实际产出的是 openapi crate 的 lib.rs；`14def34e` 起改由 `scripts/regen_endpoints.py` 直写该清单；2026-08-25 修复其三类缺陷（扫描面扩至全 `crates/*/src/**/*.rs`、转义引号路径、`axum::routing::` 全限定写法）后重生成，清单 4687 条、全注册面复验 REAL-MOUNTED missing=0 / extra=0）及 `crates/*/src/**/*.rs` 的 `.route(` 注册做交叉比对（证据：`docs/plans/2026-08-20-001-feat-oa4rust-remaining-gap-closure-plan.md` U4；`docs/audits/final-coverage-sweep.md` 第 4 行）。
 - **路径参数归一化为 `{}`**，匹配口径为 `method + 全路径 exact（允许 Rust 侧更长前缀） ∪ casefold` 计入覆盖（证据：`docs/audits/final-coverage-sweep.md` 第 5 行）。
 - **两类诊断项只诊断、不计入覆盖率**：`verb_mismatch`（路径存在但缺某 HTTP 方法变体）与 `literal_shift`（同段数形变候选，影子副本会真实 404）。原因：它们会产生"虚假未覆盖"噪声，不应拉低真实覆盖数字（证据：`docs/audits/final-coverage-sweep.md` 第 5 行、§五.1、§五.6）。
 - **双分母报告，不混用**：注解口径（含变体与自有端点，约 4510/4386 ≈ 102.8%，见 `docs/plans/2026-08-21-002-feat-remaining-work-consolidation-plan.md` U2 行）与唯一端点口径（模块内去重，3085/3092 ≈ 99.77%，见 `docs/audits/final-coverage-sweep.md` §一）。两口径不可直接相比，终扫用唯一端点口径作为权威。
