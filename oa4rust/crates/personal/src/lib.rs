@@ -1,7 +1,7 @@
 use axum::{
     extract::Extension,
     http::HeaderMap,
-    routing::{get, post, put},
+    routing::{delete, get, post, put},
     Json, Router,
 };
 use deadpool_postgres::Pool;
@@ -234,30 +234,22 @@ pub fn router(pool: Pool, session_manager: SessionManager) -> Router {
             get(u2::signature_list_person),
         )
         // CustomAction
-        .route(
-            "/jaxrs/person/custom/{name}",
-            get(u2::custom_get)
-                .put(u2::custom_edit)
-                .post(u2::custom_edit)
-                .delete(u2::custom_delete),
-        )
+        .route("/jaxrs/person/custom/{name}", get(u2::custom_get))
+        .route("/jaxrs/person/custom/{name}", put(u2::custom_edit))
+        .route("/jaxrs/person/custom/{name}", post(u2::custom_edit))
+        .route("/jaxrs/person/custom/{name}", delete(u2::custom_delete))
         .route("/jaxrs/person/custom/{name}/mockdeletetoget", get(u2::custom_delete))
-        .route(
-            "/jaxrs/person/custom/manager/person/{person}/name/{name}",
-            get(u2::custom_manager_get).put(u2::custom_manager_edit),
-        )
+        .route("/jaxrs/person/custom/manager/person/{person}/name/{name}", get(u2::custom_manager_get))
+        .route("/jaxrs/person/custom/manager/person/{person}/name/{name}", put(u2::custom_manager_edit))
         .route(
             "/jaxrs/person/custom/manager/person/{person}/name/{name}/mockputtopost",
             post(u2::custom_manager_edit),
         )
         // DefinitionAction
-        .route(
-            "/jaxrs/person/definition/{name}",
-            get(u2::definition_get)
-                .put(u2::definition_edit)
-                .post(u2::definition_edit)
-                .delete(u2::definition_delete),
-        )
+        .route("/jaxrs/person/definition/{name}", get(u2::definition_get))
+        .route("/jaxrs/person/definition/{name}", put(u2::definition_edit))
+        .route("/jaxrs/person/definition/{name}", post(u2::definition_edit))
+        .route("/jaxrs/person/definition/{name}", delete(u2::definition_delete))
         .route("/jaxrs/person/definition/{name}/mockdeletetoget", get(u2::definition_delete))
         .route("/jaxrs/person/definition/{name}/mockputtopost", post(u2::definition_edit))
         // EmpowerAction 残余
@@ -329,10 +321,8 @@ pub fn router(pool: Pool, session_manager: SessionManager) -> Router {
             get(u2::exmail_list_title_passive),
         )
         .route("/jaxrs/person/exmail/sso", get(u2::exmail_sso))
-        .route(
-            "/jaxrs/person/exmail",
-            get(u2::exmail_callback_get).post(u2::exmail_callback_post),
-        )
+        .route("/jaxrs/person/exmail", get(u2::exmail_callback_get))
+        .route("/jaxrs/person/exmail", post(u2::exmail_callback_post))
         .layer(Extension(pool))
         .layer(Extension(session_manager))
         .layer(Extension(reset_store))
