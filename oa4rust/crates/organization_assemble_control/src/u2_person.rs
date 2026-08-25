@@ -320,14 +320,14 @@ pub async fn person_list_pinyininitial(
     if initials.is_empty() {
         let sql = format!("SELECT {PERSON_COLS} FROM {PERSON_TABLE} WHERE deleted_at IS NULL");
         let rows = client.query(&sql, &[]).await.map_err(|_| AppError::Internal)?;
-        return list_ok(rows.iter().map(person_row_json).collect());
+        return list_ok_java(rows.iter().map(person_row_json).collect());
     }
     let sql = format!(
         "SELECT {PERSON_COLS} FROM {PERSON_TABLE}
           WHERE deleted_at IS NULL AND (LEFT(LOWER(pinyin_initial), 1) = ANY($1) OR LEFT(LOWER(name), 1) = ANY($1))"
     );
     let rows = client.query(&sql, &[&initials]).await.map_err(|_| AppError::Internal)?;
-    list_ok(rows.iter().map(person_row_json).collect())
+    list_ok_java(rows.iter().map(person_row_json).collect())
 }
 
 pub async fn person_list_like(
@@ -339,14 +339,14 @@ pub async fn person_list_like(
     if key.is_empty() {
         let sql = format!("SELECT {PERSON_COLS} FROM {PERSON_TABLE} WHERE deleted_at IS NULL");
         let rows = client.query(&sql, &[]).await.map_err(|_| AppError::Internal)?;
-        return list_ok(rows.iter().map(person_row_json).collect());
+        return list_ok_java(rows.iter().map(person_row_json).collect());
     }
     let pattern = format!("%{key}%");
     let sql = format!(
         "SELECT {PERSON_COLS} FROM {PERSON_TABLE} WHERE deleted_at IS NULL AND name ILIKE $1"
     );
     let rows = client.query(&sql, &[&pattern]).await.map_err(|_| AppError::Internal)?;
-    list_ok(rows.iter().map(person_row_json).collect())
+    list_ok_java(rows.iter().map(person_row_json).collect())
 }
 
 pub async fn person_list_like_pinyin(
@@ -358,7 +358,7 @@ pub async fn person_list_like_pinyin(
     if key.is_empty() {
         let sql = format!("SELECT {PERSON_COLS} FROM {PERSON_TABLE} WHERE deleted_at IS NULL");
         let rows = client.query(&sql, &[]).await.map_err(|_| AppError::Internal)?;
-        return list_ok(rows.iter().map(person_row_json).collect());
+        return list_ok_java(rows.iter().map(person_row_json).collect());
     }
     let pattern = format!("{}%", key.to_lowercase());
     let sql = format!(
@@ -366,7 +366,7 @@ pub async fn person_list_like_pinyin(
           WHERE deleted_at IS NULL AND (LOWER(pinyin_initial) LIKE $1 OR LOWER(name) LIKE $1)"
     );
     let rows = client.query(&sql, &[&pattern]).await.map_err(|_| AppError::Internal)?;
-    list_ok(rows.iter().map(person_row_json).collect())
+    list_ok_java(rows.iter().map(person_row_json).collect())
 }
 
 pub async fn person_set_password(

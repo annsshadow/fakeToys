@@ -774,12 +774,7 @@ pub async fn file_list_with_ids(
         .collect();
 
     if ids.is_empty() {
-        return Ok(Json(ActionResult::success(Value::Object(
-            serde_json::Map::from_iter([
-                ("count".to_string(), Value::Number(serde_json::Number::from(0i64))),
-                ("data".to_string(), Value::Array(Vec::new())),
-            ]),
-        ))));
+        return Ok(Json(ActionResult::java_success(Value::Array(Vec::new()), 0, 0)));
     }
 
     let rows = client
@@ -806,12 +801,8 @@ pub async fn file_list_with_ids(
         })
         .collect();
 
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
-            ("data".to_string(), Value::Array(data)),
-        ]),
-    ))))
+    let count = data.len() as i64;
+    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
 }
 
 #[axum::debug_handler]

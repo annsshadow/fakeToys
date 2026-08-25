@@ -60,6 +60,18 @@ pub(crate) fn count_data(count: usize, data: Vec<Value>) -> Value {
     ]))
 }
 
+/// Java 裸数组契约（行为对齐）：data 为数组、count 入信封、size 恒 0。
+pub(crate) fn ok_java_list(
+    count: usize,
+    data: Vec<Value>,
+) -> Result<AxumJson<ActionResult<Value>>, AppError> {
+    Ok(AxumJson(ActionResult::java_success(
+        Value::Array(data),
+        count as i64,
+        0,
+    )))
+}
+
 pub(crate) fn named_list(key: &str, items: &[String]) -> Value {
     Value::Object(serde_json::Map::from_iter([(
         key.to_string(),
@@ -371,7 +383,7 @@ pub async fn person_list_all_object(
         .await
         .map_err(|_| AppError::Internal)?;
     let data: Vec<Value> = rows.iter().map(row_to_map).collect();
-    ok_json(count_data(data.len(), data))
+    ok_java_list(data.len(), data)
 }
 
 /// POST /jaxrs/person/has/role: does a person hold any of the given roles
@@ -525,11 +537,16 @@ pub async fn person_list_filter_page_size(
 async fn identity_batch(
     pool: Extension<Pool>,
     body: Value,
+    java_bare: bool,
 ) -> Result<AxumJson<ActionResult<Value>>, AppError> {
     let flags = string_list(&body, "identityList");
     capped(&flags)?;
     if flags.is_empty() {
-        return ok_json(count_data(0, vec![]));
+        return if java_bare {
+            ok_java_list(0, vec![])
+        } else {
+            ok_json(count_data(0, vec![]))
+        };
     }
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let rows = client
@@ -544,7 +561,11 @@ async fn identity_batch(
         .await
         .map_err(|_| AppError::Internal)?;
     let data: Vec<Value> = rows.iter().map(row_to_map).collect();
-    ok_json(count_data(data.len(), data))
+    if java_bare {
+        ok_java_list(data.len(), data)
+    } else {
+        ok_json(count_data(data.len(), data))
+    }
 }
 
 /// POST /jaxrs/identity/list: batch identity lookup (Java IdentityAction#list).
@@ -552,7 +573,7 @@ pub async fn identity_list(
     pool: Extension<Pool>,
     Json(body): Json<Value>,
 ) -> Result<AxumJson<ActionResult<Value>>, AppError> {
-    identity_batch(pool, body).await
+    identity_batch(pool, body, false).await
 }
 
 /// POST /jaxrs/identity/list/object: batch identity objects.
@@ -560,7 +581,7 @@ pub async fn identity_list_object(
     pool: Extension<Pool>,
     Json(body): Json<Value>,
 ) -> Result<AxumJson<ActionResult<Value>>, AppError> {
-    identity_batch(pool, body).await
+    identity_batch(pool, body, true).await
 }
 
 /// POST /jaxrs/identity/list/person: identities of persons -> {identityList}.

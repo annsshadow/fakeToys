@@ -536,10 +536,8 @@ async fn list_impl(
     .map_err(|_| AppError::Internal)?;
 
     let data: Vec<Value> = rows.iter().map(row_to_item).collect();
-    Ok(Json(ActionResult::success(json!({
-        "count": data.len() as i64,
-        "data": data,
-    }))))
+    let count = data.len() as i64;
+    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
 }
 
 /// GET correlation/list/type/processplatform/job/{job}
