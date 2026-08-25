@@ -326,8 +326,10 @@ pub async fn attendanceappealInfo_archive_id(
 /// POST /jaxrs/attendance/assemble/control/attendanceappealInfo/audit
 pub async fn attendanceappealInfo_audit(
     pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
     Json(payload): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    require_admin(&pool, &session).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let id = payload.get("id").and_then(|v| v.as_str()).unwrap_or("").to_string();
@@ -356,8 +358,10 @@ pub async fn attendanceappealInfo_audit(
 /// POST /jaxrs/attendance/assemble/control/attendanceappealInfo/check 
 pub async fn attendanceappealInfo_check(
     pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
     Json(payload): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    require_admin(&pool, &session).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let id = payload.get("id").and_then(|v| v.as_str()).unwrap_or("").to_string();
@@ -519,8 +523,10 @@ pub async fn attendanceappealInfo_workflow_appeal_id(
 /// POST /jaxrs/attendance/assemble/control/attendanceappealInfo/workflow/sync
 pub async fn attendanceappealInfo_workflow_sync(
     pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
     Json(payload): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    require_admin(&pool, &session).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let appeal_id = payload.get("appealId").and_then(|v| v.as_str()).unwrap_or("").to_string();
@@ -625,8 +631,10 @@ pub async fn attendancedetail_analyse_id_id(
 /// POST /jaxrs/attendance/assemble/control/attendancedetail/analyse/redo
 pub async fn attendancedetail_analyse_redo(
     pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
     Json(payload): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    require_admin(&pool, &session).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let person_id = payload.get("personId").and_then(|v| v.as_str()).unwrap_or("").to_string();
@@ -2020,8 +2028,10 @@ pub async fn selfholidaysimple_docId_docId(
 /// POST /jaxrs/attendance/assemble/control/statistic/do
 pub async fn statistic_do(
     pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
     body: Option<Json<Value>>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    require_admin(&pool, &session).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     // Java 端该端点为 GET 无 body；字段均可选，缺省空串
     let payload = body.map(|Json(v)| v).unwrap_or(Value::Null);
