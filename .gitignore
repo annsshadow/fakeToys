@@ -44,6 +44,7 @@ oa4rust/__pycache__/
 oa4rust/scripts/**
 !oa4rust/scripts/
 !oa4rust/scripts/gen_openapi_paths.py
+!oa4rust/scripts/extract_routes.py
 
 # log
 *.log
