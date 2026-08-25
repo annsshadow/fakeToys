@@ -1,7 +1,7 @@
 ---
 title: "feat: OA4Rust residual-gap closure (R1-R10; R6 declaration-only)"
 type: feat
-status: active
+status: completed
 date: 2026-08-25
 origin: docs/brainstorms/2026-08-25-oa4rust-o2server-residual-gaps-requirements.md
 ---
@@ -16,6 +16,22 @@ origin: docs/brainstorms/2026-08-25-oa4rust-o2server-residual-gaps-requirements.
 > - **BAM 已实装**：`crates/processplatform_assemble_bam/` 当前已有 80+ 路由（`routes.rs` 已镜像 Java `jaxrs/period/*`、`jaxrs/state/*` 等面），故 R4 由"从零建设"改为"对齐核验 + 残差闭合"，不再按"5 路由"口径新建。
 > - **attachment 端点本可实现**：现有 `u2_att_ext_download_handler!` 宏已是"整段 `Path<String>` 捕获含点文件名 → 名取元数据"，无需在路由层按 `.` 拆分。R5 直接套用既有模式。
 > - **生成器已纳管**：根 `.gitignore` 已用 `!oa4rust/scripts/gen_openapi_paths.py` 强制追踪该生成器，R8 基本已满足，转为"核验 + 扩展 + CI 守卫"。
+
+## 执行结果（2026-08-25 收官）
+
+| 单元 | 结论 | 证据 |
+|------|------|------|
+| U1 (R3,R5) | ✅ 完成 | 发票 2 端点真实现 + 迁移 087（62fdf48d）；bbs acceptreply 与 attachment 4 条经核实早已注册 |
+| U2 (R4) | ✅ 完成 | BAM 补注册 3 个 state 统计路由；全部写端点加 `require_owner`；delete 拒绝物理删除（fdf483d9） |
+| U3 (R9) | ✅ 静态收敛完成 / ⛔ 运行时验证受阻 | cms 单实体语义修正 + `app_type` 列名修复 + 11 条差异留档 allowlist（d59a95aa）；behavior_compare 需 Java 参考服务在线，本环境无法运行 |
+| U4 (R8) | ✅ 完成 | 6 个生成器纳管 + CI `openapi-guard` 守卫（24f8a2b2） |
+| U5 (R10) | ✅ 完成 | o2web 86 张卡片 Key Flows/Dependencies 全部填充（b8749ee2）；o2server 55 张此前已含 |
+| U6 (R1) | ✅ 预备完成 / ⛔ 生产切流外部阻塞 | 影子流量/灰度脚本登记 processplatform、bam 并接线死变量（daf9f647、6ffb82e2）；实际切流需运维排期 + ≥2 周观察 |
+| U7 (R2) | ✅ 完成 | `docs/REPLACEABLE-oa4rust-2026-08-25.md` 正式判定声明（b96c84e5） |
+| U8 | ✅ 完成 | 平台限制口径刷新为已闭环 + BAM 挂起撤销（3e8148ca） |
+| U9 (R7) | ✅ 完成（前提勘误） | 全量核查证明 264 处 `?` 均为合法字符且与 kernel.org 上游逐字一致，**不存在 mojibake 损坏**，无需修改 |
+
+**收官附加发现与闭合**：复核期间查明原"1491 条预期端点"口径不可溯源（临时差分脚本产物）；修复 `regen_endpoints.py` 三类缺陷（扫描面漏独立 router 文件/转义引号截断/全限定 method 不识别）后重生成清单 **4513 → 4687 条**，全量复验真实挂载 missing=0、extra=0（f008694f）。
 
 ---
 
@@ -372,7 +388,7 @@ origin: docs/brainstorms/2026-08-25-oa4rust-o2server-residual-gaps-requirements.
 
 ## Documentation / Operational Notes
 
-- 状态汇报统一以 `docs/audits/final-coverage-sweep.md`（99.77%）为权威，勿引用 81-crate-100% 历史快照。
+- 状态汇报统一以 `docs/audits/final-coverage-sweep.md` 为权威；本计划收官后其口径为：行为对比清单 4687 条、真实挂载 missing=0、可实施端点覆盖率 100%。
 - U8 完成后建议运行 `/ce-compound` 将"整段 `Path<String>` 捕获推翻 attachment 平台限制"作为新学习回填 `docs/solutions/`。
 - 本计划为 `docs/plans/` 在归档 `2026-08-21-002` 后的新活跃计划；需求文档 Related 中"Active plan"链接指向已归档的旧计划，U8 或后续可一并修正。
 
