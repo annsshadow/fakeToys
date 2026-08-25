@@ -65,25 +65,25 @@
 
 | 方法 | 归一化路径 | 判定 | 说明 |
 |------|-----------|------|------|
-| GET | `/attachment/download/invoice/{}/jobOrWorkOrWorkCompleted/{}` | 🔴 缺失 |  |
+| GET | `/attachment/download/invoice/{}/jobOrWorkOrWorkCompleted/{}` | ✅ 已闭合(2026-08-25) | U1 实现真实 handler（commit 62fdf48d）+ 迁移 087 补齐 StorageObject 列 |
 | GET | `/attachment/download/{}/work/{}/stream/{}.{}` | 🟠 平台限制 | axum 不支持单段多参数（如 `{}.{}` 段），留档不实现 |
 | GET | `/attachment/download/{}/work/{}/{}.{}` | 🟠 平台限制 | axum 不支持单段多参数（如 `{}.{}` 段），留档不实现 |
 | GET | `/attachment/download/{}/workcompleted/{}/stream/{}.{}` | 🟠 平台限制 | axum 不支持单段多参数（如 `{}.{}` 段），留档不实现 |
 | GET | `/attachment/download/{}/workcompleted/{}/{}.{}` | 🟠 平台限制 | axum 不支持单段多参数（如 `{}.{}` 段），留档不实现 |
-| GET | `/attachment/invoice/{}/jobOrWorkOrWorkCompleted/{}` | 🔴 缺失 |  |
+| GET | `/attachment/invoice/{}/jobOrWorkOrWorkCompleted/{}` | ✅ 已闭合(2026-08-25) | U1 实现真实 handler（commit 62fdf48d）+ 迁移 087 补齐 StorageObject 列 |
 
 ### x_bbs_assemble_control（缺 1 / 106）
 
 | 方法 | 归一化路径 | 判定 | 说明 |
 |------|-----------|------|------|
-| GET | `/user/subject/acceptreply/{}/{}` | 🔴 缺失 |  |
+| GET | `/user/subject/acceptreply/{}/{}` | ✅ 已闭合(2026-08-25) | 经核实早已注册于 bbs routes.rs，原扫描为假阴性 |
 
 ## 四、排除留档后剩余缺口 Top 清单（本轮只列清单不实现）
 
 | # | 模块 | 缺口数 | 构成（缺失/动词差/形变） | 代表端点 | 相关 crate | 难度 | 建议 |
 |---|------|-------:|------------------|----------|-----------|------|------|
-| 1 | `x_processplatform_assemble_surface` | 2 | 2/0/0 | GET `/attachment/download/invoice/{}/jobOrWorkOrWorkCompleted/{}`<br>GET `/attachment/invoice/{}/jobOrWorkOrWorkCompleted/{}` | `processplatform_assemble_surface` | 中低（零星端点，逐条补齐） | 零星补齐：逐条仿既有 handler + 注册 |
-| 2 | `x_bbs_assemble_control` | 1 | 1/0/0 | GET `/user/subject/acceptreply/{}/{}` | `bbs_assemble_control` | 中低（零星端点，逐条补齐） | 零星补齐：逐条仿既有 handler + 注册 |
+| 1 | `x_processplatform_assemble_surface` | 2 | 2/0/0 | GET `/attachment/download/invoice/{}/jobOrWorkOrWorkCompleted/{}`<br>GET `/attachment/invoice/{}/jobOrWorkOrWorkCompleted/{}` | `processplatform_assemble_surface` | 中低 | ✅ 已闭合(2026-08-25)：见 U1 提交 62fdf48d |
+| 2 | `x_bbs_assemble_control` | 1 | 1/0/0 | GET `/user/subject/acceptreply/{}/{}` | `bbs_assemble_control` | 中低 | ✅ 已闭合(2026-08-25)：路由早已注册，原扫描假阴性 |
 
 ### 附：axum 平台限制留档明细
 
@@ -108,6 +108,23 @@
 6. **动词差批量项**：全仓共 0 条仅需补方法变体（路径已存在），是性价比最高的收敛手段。
 
 ---
+
+## 六、2026-08-25 复核与根因修复
+
+对第一节结论的 3 个残留缺口逐条复核，结果**全部闭合**；可实施端点覆盖率回到 **100%**（4 条 `{}.{}` 单段多参数仍按原规则排除，不计入回归）：
+
+- **processplatform 2 发票端点**（`/attachment/invoice/{}/jobOrWorkOrWorkCompleted/{}` 与 `/attachment/download/invoice/{}/jobOrWorkOrWorkCompleted/{}`）：原以 `u2_capability_unavailable` 桩注册，已于提交 `62fdf48d` 替换为真实 handler，并由迁移 `087_add_invoice_storage_columns.sql` 补齐 `x_general_invoice` 的 StorageObject 列（xname/xstorage/xextension/xperson 等）。
+- **bbs `user/subject/acceptreply`**：经 `grep` 核实早已注册于 `bbs_assemble_control/src/routes.rs`，此前扫描为假阴性。
+
+### 根因：链式路由注册的扫描缺陷
+
+路由以链式写法 `.route("p", get(a).put(b))` 注册时，旧路由提取逻辑（含生成本审计的脚本与临时差分脚本）只识别**首个** method，导致靠后的 PUT/DELETE 被误判为"缺失"。本次处理：
+
+1. 修正 `oa4rust/scripts/extract_routes.py`：改为对 `.route(` 整段做平衡括号提取，再扫出其中全部 `get/post/put/delete` 调用（并兜底构建式 `.get("p", h)`）。修正后 PUT/DELETE 类端点由 0 → 662；全部相关 crate 链式路由拆分后复扫 `missing=0`（基于 `tests/behavior_comparison/endpoints.rs` 共 1491 条期望端点）。
+2. 将 6 个相关 crate（organization / program_center / bbs / message / attendance / personal）的链式 `.route("p", a().b())` 拆分为逐方法独立注册，风格统一且运行时行为不变；并补注册此前唯一真正漏注册的 `GET attendanceadmin/list/all`（handler 早已存在）。
+3. `extract_routes.py` 此前被 `.gitignore`（`oa4rust/scripts/**`）忽略，本次放开纳入版本控制，使根因修复可随仓库共享。
+
+> 注：4 条 `attachment/download/{}/work.../{}.{}` 仍属 axum 单段多参数平台限制，按原规则排除不实现，不属于回归。
 
 ## 相关文档
 
