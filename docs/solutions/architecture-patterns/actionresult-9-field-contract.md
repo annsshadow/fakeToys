@@ -1,6 +1,7 @@
 ---
 title: "ActionResult<T> 9-Field Contract Preservation"
 date: 2026-08-10
+last_refreshed: 2026-08-25
 category: architecture-patterns
 module: oa4rust/crates/shared/src/response.rs
 problem_type: architecture_pattern
@@ -113,7 +114,7 @@ return Err(AppError::BadRequest("name is required".to_string()));
 
 - Every new handler must follow this pattern
 - During ORM migration, verify that the new SeaORM-based handler returns the same JSON shape as the old SQLx handler
-- The behavior comparison test framework (7,624 endpoints) serves as an automated safety net for contract drift
+- The behavior comparison test framework serves as an automated safety net for contract drift — currently `oa4rust/tests/behavior_compare.rs` plus a `behavior-compare` CI job (`oa4rust/.github/workflows/ci.yml`); current route inventory is 4,573 `.route(` registrations / 4,155 unique normalized paths (see `docs/audits/final-coverage-sweep.md`, 99.77% coverage as of 2026-08-23)
 
 ## Prevention
 
@@ -127,4 +128,4 @@ return Err(AppError::BadRequest("name is required".to_string()));
 - [Input Validation Pattern](best-practices/input-validation-pattern.md)
 - **Source:** `oa/o2web/source/x_init/src/common/action.js` (frontend consumer)
 - **Struct:** `oa4rust/crates/shared/src/response.rs`
-- **Behavior compare:** `oa4rust/tests/behavior_compare.rs` (7,624 endpoints)
+- **Behavior compare:** `oa4rust/tests/behavior_compare.rs` (+ `behavior-compare` job in `oa4rust/.github/workflows/ci.yml`); route inventory 4,573 registrations / 4,155 unique paths per `docs/audits/final-coverage-sweep.md`
