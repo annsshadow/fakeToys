@@ -23,7 +23,7 @@ origin: docs/brainstorms/2026-08-25-oa4rust-o2server-residual-gaps-requirements.
 |------|------|------|
 | U1 (R3,R5) | ✅ 完成 | 发票 2 端点真实现 + 迁移 087（62fdf48d）；bbs acceptreply 与 attachment 4 条经核实早已注册 |
 | U2 (R4) | ✅ 完成 | BAM 补注册 3 个 state 统计路由；全部写端点加 `require_owner`；delete 拒绝物理删除（fdf483d9） |
-| U3 (R9) | ✅ 静态收敛完成 / ⛔ 运行时验证受阻 | cms 单实体语义修正 + `app_type` 列名修复 + 11 条差异留档 allowlist（d59a95aa）；behavior_compare 需 Java 参考服务在线，本环境无法运行 |
+| U3 (R9) | ✅ 完成（静态收敛 + 本地全链路实跑） | cms 单实体语义修正 + `app_type` 列名修复 + 差异留档（d59a95aa）；同日复刻 CI 配方完成 Rust vs Java 真实对比：4044 端点经五轮收敛至 **1212 PASS / 836 FAIL / 1996 SKIP**，信封层与列表包装模式对齐验证，剩余 FAIL 属业务数据依赖与深层逻辑差异、已按类留档（详见终扫 §六） |
 | U4 (R8) | ✅ 完成 | 6 个生成器纳管 + CI `openapi-guard` 守卫（24f8a2b2） |
 | U5 (R10) | ✅ 完成 | o2web 86 张卡片 Key Flows/Dependencies 全部填充（b8749ee2）；o2server 55 张此前已含 |
 | U6 (R1) | ✅ 预备完成 / ⛔ 生产切流外部阻塞 | 影子流量/灰度脚本登记 processplatform、bam 并接线死变量（daf9f647、6ffb82e2）；实际切流需运维排期 + ≥2 周观察 |

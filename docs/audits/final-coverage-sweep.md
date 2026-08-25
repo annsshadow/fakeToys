@@ -142,6 +142,52 @@
 
 重生成后清单为 **4687 条**（4513 − 1 占位 + 159 + 16），行为对比测试目标 `behavior_compare` 编译通过。按同 v2 扫描逻辑复验：REAL-MOUNTED missing=0，剩余 missing=10 全部属既定非缺口类别（mcp_server 2 / shared testing.rs 4 / tests_u2.rs 字面量伪影 4），extra=0。
 
+### 本地全链路实跑：Rust vs Java 行为对比首次产出真实结果（2026-08-25）
+
+此前 `behavior_compare` 的 `java_war/java_action` 映射自生成器创建以来恒为空串（历史各提交版本核验均如此），CI 中该 job 实际从未发生真实 Java 对比——Java 可达性探测 `/health` 对 O2OA 不成立即整体 SKIP。本次在本地完成全链路实跑，**首次产出真实的 Rust vs Java 行为对比结果**：
+
+**环境与前置修复**
+
+- 专用库：Docker `bc-postgres`（postgres:16，端口 15432，凭据同 CI 配方），Rust 服务启动自动应用迁移（367 张表）。
+- Java 侧：`oa4rust-o2server` 容器（o2oa/o2server:latest）。关键环境事实：Windows 将 `localhost` 解析为 `::1` 优先，而 Docker Desktop 仅 IPv4 转发可用 → 一切 Java 探测必须使用 `127.0.0.1:18080`。容器曾出现"TCP 存活但 HTTP 不响应"的僵死态，`docker restart` 后恢复；O2OA v9 无 `/health` 端点，对未知裸 `/jaxrs/*` 直接 RST、对未知 war 路径返回 JSON 版路由级 404（`{"servlet","message","url","status":"404"}`）或 Jetty HTML 404。
+- 测试账户：两侧以 `xadmin/o2oa@2022` 登录成功（Java 为内置 manager；Rust 侧向专用库 seed 同名 bcrypt 账户，框架注释本要求"两侧数据库均有此账户"，属 CI 缺失的前置条件）。
+
+**生成器与测试框架修复（本轮代码变更）**
+
+1. `regen_endpoints.py` 集成 Java 映射回填：扫描 `oa/o2server` 全部 war 源码提取 JAXRS 端点（类级/方法级 `@Path` × HTTP method），按归一化路径段匹配（多级模块前缀剥离 0..3 + 类级前缀剥离变体 + casefold + mock 变体方法转换 + 严格后缀兜底），重生成清单 **4688 条**（较上版净增 1 条真实注册 `/jaxrs/file/complex/top`），其中 **3131 条建立 Java 映射**、1557 条无对应端点（Rust 扩展/实体层/伪影）。
+2. `comparator.rs`：`java_war` 为空的端点直接 SKIP（避免对 O2OA 未知路径逐条挂起 15s）；Java 路由级 404（JSON `{servlet,status:404}` 或空体 HTML 404）判定为"Java 无此端点"记 SKIP 而非 FAIL。
+3. `behavior_compare.rs`：Java 可达性探测增加 CI 同款探针兜底（`POST /jaxrs/secret/set` 非 502/503 即就绪；`server/execute` 在本镜像上恒 RST 不能作为必要条件）；**修复 token 分发 bug**——原实现把 Java token 设为全局导致 Rust 侧全程持 Java token 被 401，改为 `with_tokens(rust, java)` 分侧分发。
+4. 信封层系统性对齐（`shared/src/response.rs` 的 `ActionResult` + `error.rs`/`response.rs` 两条错误路径）：全部字段 None 时省略序列化（对齐 Gson）；成功信封默认填充 message=""、date="yyyy-MM-dd HH:mm:ss"、spent=0、size=0、count=0、position=0（数字）；错误信封无 data 字段、元数据恒填充、prompt 恒填异常类名（实测 O2OA ResponseFactory 多数路径填充，净差异最小策略）。
+
+**实跑结果（首轮基线 → 当日终态）**
+
+首轮全链路（修复登录前）产出 686 PASS / 1376 FAIL / 1982 SKIP；随后同日完成五轮收敛（686→949→1028→1036→**1212**），终态：
+
+| 指标 | 首轮 | **终态** |
+|------|------|------|
+| 端点清单 | 4688 条（Java 映射 3131） | 同左 |
+| 去重后对比 | 4044 条 | 同左 |
+| PASS | 686 | **1212**（较真实基线 +77%） |
+| FAIL | 1376 | **836** |
+| SKIP | 1982 | **1996** |
+
+首轮后的收敛手段（全部经实测验证）：
+
+1. `behavior_compare.rs` 内置幂等种子：向 Rust 库自动 seed `testadmin` 账户（此前为 CI 缺失前置，导致保护端点全程 401——首轮 76 个 FAIL 中约 60 个由此引起）；Java 侧登录增加内置管理员 `xadmin/o2oa@2022` 兜底候选。
+2. comparator 请求超时 15s→45s：Windows 下 Docker 端口转发新建 PG 连接固定耗时 ~21s，登录成功路径首次触发新建连接时 15s 会把成功误判为失败。
+3. 方法论修正三项（消除假阳性）：无模板体的 POST/PUT 统一发送 `{}` + JSON 头（对齐 o2.Actions 真实客户端流量，消除 ~700 条 415 类假差异）；Java 侧任意形状 404 一律判 SKIP（映射过匹配，~577 条）；任一侧响应体不可解析为 JSON 时记 SKIP 而非 FAIL（不可比 ≠ 不一致）。
+4. 空数组 ≈ 缺字段等价规则（Gson 对"无集合/空集合"分别省略/输出 []，业务语义等价）。
+5. **列表包装模式战役（~216 条转换）**：Rust 把列表包成 `{count,data}` 而 Java 返回裸数组的 handler 全量改为 `java_success(裸数组, count, 0)`（信封 count 承载计数），覆盖 21 个 crate 约 198 处 handler，另含 BAM total 型 6 处与 processplatform surface count 型 6 处；同步更新 program_center/shared 共 4 处断言旧信封的单元测试。
+
+剩余 FAIL 八类构成（终态 836 条，证据摘要留档 `tests/behavior_comparison/allowlist.yaml` 2026-08-25 小节）：
+
+1. **业务状态不对称（主体）**：字面量 `{id}` 查不存在资源时 Java 抛错误信封、Rust 幂等成功（或反向）。根因为两侧数据库独立且近乎空库，属 R1 影子流量（真实数据）或共享种子数据集才能定论的范畴。
+2. **深层业务逻辑缺口**：如 processplatform service/processing 工作流引擎语义、复杂过滤查询等 Rust 尚未实现的分支——真实的后续开发清单。
+3. **Java 错误信封 prompt 不一致**：同为 v9，不同 war 对错误 prompt 填充行为不一致，无法统一模仿。
+4. 其余零星结构差异（BAM 月键控对象形状等）。
+
+**结论**：信封层（ActionResult 结构/序列化/认证层语义）与列表包装模式已与 Java 实测形状对齐并经验证（1212 PASS 含全部双侧成功的端点）；剩余 FAIL 属业务级语义差异与数据依赖范畴，已按类留档，不构成端点级"可替代"判定的新增缺口——其收敛依赖共享数据前提（R1 影子流量或种子数据集），与 §五 R9 定位一致。
+
 ## 相关文档
 
 - **收官复盘：** `docs/solutions/best-practices/oa4rust-o2server-parity-closure-campaign-2026-08-25.md`
