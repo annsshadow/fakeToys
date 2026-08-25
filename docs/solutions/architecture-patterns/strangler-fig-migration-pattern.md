@@ -125,3 +125,6 @@ nginx -s reload
 - **Origin:** `docs/brainstorms/2026-08-05-oa4rust-comprehensive-advancement-requirements.md`
 - **Plan:** `docs/plans/2026-08-07-001-feat-oa4rust-4wave-realization-plan.md`
 - **Rollback plan:** `docs/plans/2026-08-10-001-prod-readiness-plan.md` (deferred: rollback playbook)
+- **Campaign retrospective:** `docs/solutions/best-practices/oa4rust-o2server-parity-closure-campaign-2026-08-25.md`
+- **Residual gaps:** `docs/brainstorms/2026-08-25-oa4rust-o2server-residual-gaps-requirements.md`
+- **Current parity state:** `docs/audits/final-coverage-sweep.md` (99.77% as of 2026-08-23)

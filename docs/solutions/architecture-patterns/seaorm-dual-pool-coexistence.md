@@ -1,6 +1,7 @@
 ---
 title: "SeaORM Dual-Pool Coexistence Pattern"
 date: 2026-08-10
+last_refreshed: 2026-08-25
 category: architecture-patterns
 module: oa4rust/crates/shared
 problem_type: architecture_pattern
@@ -14,7 +15,7 @@ root_cause: config_error
 resolution_type: code_fix
 tags: [seaorm, sqlx, dual-pool, migration, deadpool]
 related_components:
-  - oa4rust/crates/shared/src/db.rs
+  - oa4rust/crates/shared/src/db/mod.rs
   - oa4rust/crates/orm
   - oa4rust/src/main.rs
 applies_when:
@@ -34,7 +35,7 @@ The oa4rust project migrated 81 crates from raw SQLx queries to SeaORM 2.0. SeaO
 ### 1. Create a separate SeaORM connection
 
 ```rust
-// shared/src/db.rs
+// shared/src/db/mod.rs
 pub async fn create_sea_orm_pool() -> Result<DatabaseConnection, DbError> {
     dotenv().ok();
     let database_url = env::var("DATABASE_URL")
@@ -97,9 +98,9 @@ pub fn router(pool: deadpool_postgres::Pool) -> axum::Router {
 }
 ```
 
-### 5. Set an exit deadline
+### 5. Sustained dual-pool state (no exit planned)
 
-The dual-pool state is a transition pattern, not a permanent architecture. The plan defines a 30-day post-migration audit: after Wave 3 completion, audit all retained SQLx queries and evaluate whether each can be replaced with SeaORM.
+The dual-pool state was originally framed as a transition with a 30-day post-migration audit to remove retained SQLx. That audit (`docs/plans/2026-08-21-002` U8) concluded SQLx **cannot** be fully removed: SeaORM 2.x depends transitively on sqlx, so `cargo tree` still shows sqlx nodes and removing it would mean rewriting the ORM. The target was therefore downgraded to "workspace direct sqlx dependency cleared" (achieved), and dual-pool is the **sustained** architecture. Retained raw SQLx (e.g., `person_flag_clause` dynamic SQL) is intentional — see `architecture-patterns/dynamic-sql-retains-sqlx.md`.
 
 ## Why This Matters
 
@@ -147,4 +148,4 @@ pub async fn person_by_flag(pool: Extension<Pool>, flag: String) -> Result<Json<
 - [Dynamic SQL Retains SQLx](architecture-patterns/dynamic-sql-retains-sqlx.md)
 - **Origin:** `docs/brainstorms/2026-08-09-oa4rust-orm-migration-and-write-ops-requirements.md`
 - **Plan:** `docs/plans/2026-08-09-001-refact-oa4rust-orm-migration-plan.md` (U1-U3)
-- **Status:** `docs/brainstorms/oa4rust-migration-status-2026-08-08.md` (81 crates, all SeaORM)
+- **Status (2026-08-25):** dual-pool is sustained; SQLx removal vetoed (sea-orm depends on sqlx). Current endpoint-parity state: `docs/audits/final-coverage-sweep.md` (99.77% as of 2026-08-23). The 2026-08-08 migration-status brainstorm is a historical snapshot.

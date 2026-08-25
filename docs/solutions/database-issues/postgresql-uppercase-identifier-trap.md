@@ -1,6 +1,7 @@
 ---
 title: "PostgreSQL Uppercase Identifier Trap in SeaORM"
 date: 2026-08-10
+last_refreshed: 2026-08-25
 category: database-issues
 module: oa4rust/crates/orm
 problem_type: database_issue
