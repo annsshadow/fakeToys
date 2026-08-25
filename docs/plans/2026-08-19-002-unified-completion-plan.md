@@ -1,7 +1,7 @@
 ---
 title: OA4Rust 全面收尾与生产就绪计划
 type: plan
-status: active
+status: completed
 date: 2026-08-19
 origin: docs/plans/2026-08-13-003-oa4rust-completion-plan.md
 ---
@@ -293,3 +293,9 @@ origin: docs/plans/2026-08-13-003-oa4rust-completion-plan.md
 - 双库集成测试：已达成（PG + MySQL 提交在档）
 - 生产基础设施：Redis ✓ / Tantivy ✗ / 性能基线文档 ✓
 - IM + PDF 签章：已达成
+
+## 实现情况更新（2026-08-25）
+
+**更新基准：** 工作树 HEAD 950a18e1（2026-08-25）；判定状态由 active 改为 completed。
+
+08-21 审计时 U-A1/U-A3（Value::Null 15、CMS `Value::Bool(true)` 17）与 U-B1（Tantivy）未完全达成。三项均由 `2026-08-21-002` 收口：U-A1/U-A3 → U1（实质达成，指标作废）；U-B1 → U4（Tantivy 本地索引已在 `crates/search/src/index.rs` 落地，PG `to_tsvector` 为 fallback）。U-A2/U-B2/U-B3/U-C1/U-C2/U-C3 均已在档完成。DoD 五项中仅"可替代"生产声明待计划002 U3 影子流量验证。
