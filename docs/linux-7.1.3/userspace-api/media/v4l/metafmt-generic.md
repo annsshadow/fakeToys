@@ -2,30 +2,30 @@
 ######## V4L2_META_FMT_GENERIC_8 ('MET8'), V4L2_META_FMT_GENERIC_CSI2_10 ('MC10'), V4L2_META_FMT_GENERIC_CSI2_12 ('MC1C'), V4L2_META_FMT_GENERIC_CSI2_14 ('MC1E'), V4L2_META_FMT_GENERIC_CSI2_16 ('MC1G'), V4L2_META_FMT_GENERIC_CSI2_20 ('MC1K'), V4L2_META_FMT_GENERIC_CSI2_24 ('MC1O')
 
 
-閫氱敤鍩轰簬琛岀殑鍏冩暟鎹牸寮忥紙Generic line-based metadata formats锛?
+通用基于行的元数据格式（Generic line-based metadata formats
 
-## 鎻忚堪
+## 描述
 
-杩欎簺閫氱敤鐨勫熀浜庤鐨勫厓鏁版嵁鏍煎紡浠呭畾涔夋暟鎹殑鍐呭瓨甯冨眬锛岃€屼笉瀹氫箟鍏冩暟鎹湰韬殑鏍煎紡鎴栧惈涔夈€?
+这些通用的基于行的元数据格式仅定义数据的内存布局，而不定义元数据本身的格式或含义
 
 ### V4L2_META_FMT_GENERIC_8
 
 
-V4L2_META_FMT_GENERIC_8 鏍煎紡鏄竴绉嶆櫘閫氱殑 8 浣嶅厓鏁版嵁鏍煎紡銆傝鏍煎紡鐢ㄤ簬 CSI-2 涓?姣?*鏁版嵁鍗曞厓**锛圖ata Unit锛? 浣嶇殑鎯呭喌銆傛澶栵紝褰撲袱涓瓧鑺傜殑鍏冩暟鎹鎵撳寘杩涗竴涓?16 浣嶆暟鎹崟鍏冩椂锛屽畠涔熺敤浜庢瘡鏁版嵁鍗曞厓 16 浣嶇殑鎯呭喌銆傚惁鍒欙紝姣忓儚绱?16 浣嶇殑鏁版嵁鏍煎紡
-搴斾负 V4L2_META_FMT_GENERIC_CSI2_16 <v4l2-meta-fmt-generic-csi2-16>銆?
-**V4L2_META_FMT_GENERIC_8 鐨勫瓧鑺傚簭銆?*
-姣忎釜鍗曞厓鏍间负涓€涓瓧鑺傘€?M" 琛ㄧず涓€涓瓧鑺傜殑鍏冩暟鎹€?
+V4L2_META_FMT_GENERIC_8 格式是一种普通的 8 位元数据格式。该格式用于 CSI-2 *数据单元**（Data Unit 位的情况。此外，当两个字节的元数据被打包进一16 位数据单元时，它也用于每数据单元 16 位的情况。否则，每像16 位的数据格式
+应为 V4L2_META_FMT_GENERIC_CSI2_16 <v4l2-meta-fmt-generic-csi2-16>
+**V4L2_META_FMT_GENERIC_8 的字节序*
+每个单元格为一个字节M" 表示一个字节的元数据
 
     :header-rows:  0
     :stub-columns: 0
     :widths: 12 8 8 8 8
 
-    - - 鍋忕Щ + 0:
+    - - 偏移 + 0:
       - M\ `00`
       - M\ `10`
       - M\ `20`
       - M\ `30`
-    - - 鍋忕Щ + 4:
+    - - 偏移 + 4:
       - M\ `01`
       - M\ `11`
       - M\ `21`
@@ -35,26 +35,26 @@ V4L2_META_FMT_GENERIC_8 鏍煎紡鏄竴绉嶆櫘閫氱殑 8 浣嶅厓鏁版�
 ### V4L2_META_FMT_GENERIC_CSI2_10
 
 
-V4L2_META_FMT_GENERIC_CSI2_10 鍖呭惈鎵撳寘鍦?10 浣嶆暟鎹崟鍏冧腑鐨?8 浣嶉€氱敤鍏冩暟鎹紝
-姣忓洓涓瓧鑺傜殑鍏冩暟鎹箣鍚庤窡涓€涓～鍏呭瓧鑺傘€傝鏍煎紡閫氬父鐢?CSI-2 鎺ユ敹绔娇鐢紝鍏舵暟鎹簮
-浼氬彂閫?MEDIA_BUS_FMT_META_10锛岃€?CSI-2 鎺ユ敹绔皢鎺ユ敹鍒扮殑鏁版嵁鎸夊師鏍峰啓鍏ュ唴瀛樸€?鏁版嵁鐨勬墦鍖呮柟寮忛伒寰?MIPI CSI-2 瑙勮寖锛屽～鍏呮柟寮忓畾涔変簬 MIPI CCS 瑙勮寖銆?
-璇ユ牸寮忎篃鐢ㄤ簬姣忔暟鎹崟鍏?20 浣嶇殑鏍煎紡锛屽悗鑰呭皢涓や釜瀛楄妭鐨勫厓鏁版嵁鎵撳寘杩涗竴涓暟鎹崟鍏冦€?鍚﹀垯锛屾瘡鍍忕礌 20 浣嶇殑鏁版嵁鏍煎紡涓?:ref:`V4L2_META_FMT_GENERIC_CSI2_20
-<v4l2-meta-fmt-generic-csi2-20>`銆?
-璇ユ牸寮忎负灏忕搴忥紙little endian锛夈€?
-**V4L2_META_FMT_GENERIC_CSI2_10 鐨勫瓧鑺傚簭銆?*
-姣忎釜鍗曞厓鏍间负涓€涓瓧鑺傘€?M" 琛ㄧず涓€涓瓧鑺傜殑鍏冩暟鎹紝"x" 琛ㄧず涓€涓瓧鑺傜殑濉厖銆?
+V4L2_META_FMT_GENERIC_CSI2_10 包含打包10 位数据单元中8 位通用元数据，
+每四个字节的元数据之后跟一个填充字节。该格式通常CSI-2 接收端使用，其数据源
+会发MEDIA_BUS_FMT_META_10，CSI-2 接收端将接收到的数据按原样写入内存数据的打包方式遵MIPI CSI-2 规范，填充方式定义于 MIPI CCS 规范
+该格式也用于每数据单20 位的格式，后者将两个字节的元数据打包进一个数据单元否则，每像素 20 位的数据格式:ref:`V4L2_META_FMT_GENERIC_CSI2_20
+<v4l2-meta-fmt-generic-csi2-20>`銆。
+该格式为小端序（little endian）
+**V4L2_META_FMT_GENERIC_CSI2_10 的字节序*
+每个单元格为一个字节M" 表示一个字节的元数据，"x" 表示一个字节的填充
 
     :header-rows:  0
     :stub-columns: 0
     :widths: 12 8 8 8 8 8
 
-    - - 鍋忕Щ + 0:
+    - - 偏移 + 0:
       - M\ `00`
       - M\ `10`
       - M\ `20`
       - M\ `30`
       - x
-    - - 鍋忕Щ + 5:
+    - - 偏移 + 5:
       - M\ `01`
       - M\ `11`
       - M\ `21`
@@ -65,27 +65,27 @@ V4L2_META_FMT_GENERIC_CSI2_10 鍖呭惈鎵撳寘鍦?10 浣嶆暟鎹崟鍏冧�
 ### V4L2_META_FMT_GENERIC_CSI2_12
 
 
-V4L2_META_FMT_GENERIC_CSI2_12 鍖呭惈鎵撳寘鍦?12 浣嶆暟鎹崟鍏冧腑鐨?8 浣嶉€氱敤鍏冩暟鎹紝
-姣忎袱涓瓧鑺傜殑鍏冩暟鎹箣鍚庤窡涓€涓～鍏呭瓧鑺傘€傝鏍煎紡閫氬父鐢?CSI-2 鎺ユ敹绔娇鐢紝鍏舵暟鎹簮
-浼氬彂閫?MEDIA_BUS_FMT_META_12锛岃€?CSI-2 鎺ユ敹绔皢鎺ユ敹鍒扮殑鏁版嵁鎸夊師鏍峰啓鍏ュ唴瀛樸€?鏁版嵁鐨勬墦鍖呮柟寮忛伒寰?MIPI CSI-2 瑙勮寖锛屽～鍏呮柟寮忓畾涔変簬 MIPI CCS 瑙勮寖銆?
-璇ユ牸寮忎篃鐢ㄤ簬姣忔暟鎹崟鍏?24 浣嶇殑鏍煎紡锛屽悗鑰呭皢涓や釜瀛楄妭鐨勫厓鏁版嵁鎵撳寘杩涗竴涓暟鎹崟鍏冦€?鍚﹀垯锛屾瘡鍍忕礌 24 浣嶇殑鏁版嵁鏍煎紡涓?:ref:`V4L2_META_FMT_GENERIC_CSI2_24
-<v4l2-meta-fmt-generic-csi2-24>`銆?
-璇ユ牸寮忎负灏忕搴忥紙little endian锛夈€?
-**V4L2_META_FMT_GENERIC_CSI2_12 鐨勫瓧鑺傚簭銆?*
-姣忎釜鍗曞厓鏍间负涓€涓瓧鑺傘€?M" 琛ㄧず涓€涓瓧鑺傜殑鍏冩暟鎹紝"x" 琛ㄧず涓€涓瓧鑺傜殑濉厖銆?
+V4L2_META_FMT_GENERIC_CSI2_12 包含打包12 位数据单元中8 位通用元数据，
+每两个字节的元数据之后跟一个填充字节。该格式通常CSI-2 接收端使用，其数据源
+会发MEDIA_BUS_FMT_META_12，CSI-2 接收端将接收到的数据按原样写入内存数据的打包方式遵MIPI CSI-2 规范，填充方式定义于 MIPI CCS 规范
+该格式也用于每数据单24 位的格式，后者将两个字节的元数据打包进一个数据单元否则，每像素 24 位的数据格式:ref:`V4L2_META_FMT_GENERIC_CSI2_24
+<v4l2-meta-fmt-generic-csi2-24>`銆。
+该格式为小端序（little endian）
+**V4L2_META_FMT_GENERIC_CSI2_12 的字节序*
+每个单元格为一个字节M" 表示一个字节的元数据，"x" 表示一个字节的填充
 
     :header-rows:  0
     :stub-columns: 0
     :widths: 12 8 8 8 8 8 8
 
-    - - 鍋忕Щ + 0:
+    - - 偏移 + 0:
       - M\ `00`
       - M\ `10`
       - x
       - M\ `20`
       - M\ `30`
       - x
-    - - 鍋忕Щ + 6:
+    - - 偏移 + 6:
       - M\ `01`
       - M\ `11`
       - x
@@ -97,18 +97,18 @@ V4L2_META_FMT_GENERIC_CSI2_12 鍖呭惈鎵撳寘鍦?12 浣嶆暟鎹崟鍏冧�
 ### V4L2_META_FMT_GENERIC_CSI2_14
 
 
-V4L2_META_FMT_GENERIC_CSI2_14 鍖呭惈鎵撳寘鍦?14 浣嶆暟鎹崟鍏冧腑鐨?8 浣嶉€氱敤鍏冩暟鎹紝
-姣忓洓涓瓧鑺傜殑鍏冩暟鎹箣鍚庤窡涓変釜濉厖瀛楄妭銆傝鏍煎紡閫氬父鐢?CSI-2 鎺ユ敹绔娇鐢紝鍏舵暟鎹簮
-浼氬彂閫?MEDIA_BUS_FMT_META_14锛岃€?CSI-2 鎺ユ敹绔皢鎺ユ敹鍒扮殑鏁版嵁鎸夊師鏍峰啓鍏ュ唴瀛樸€?鏁版嵁鐨勬墦鍖呮柟寮忛伒寰?MIPI CSI-2 瑙勮寖锛屽～鍏呮柟寮忓畾涔変簬 MIPI CCS 瑙勮寖銆?
-璇ユ牸寮忎负灏忕搴忥紙little endian锛夈€?
-**V4L2_META_FMT_GENERIC_CSI2_14 鐨勫瓧鑺傚簭銆?*
-姣忎釜鍗曞厓鏍间负涓€涓瓧鑺傘€?M" 琛ㄧず涓€涓瓧鑺傜殑鍏冩暟鎹紝"x" 琛ㄧず涓€涓瓧鑺傜殑濉厖銆?
+V4L2_META_FMT_GENERIC_CSI2_14 包含打包14 位数据单元中8 位通用元数据，
+每四个字节的元数据之后跟三个填充字节。该格式通常CSI-2 接收端使用，其数据源
+会发MEDIA_BUS_FMT_META_14，CSI-2 接收端将接收到的数据按原样写入内存数据的打包方式遵MIPI CSI-2 规范，填充方式定义于 MIPI CCS 规范
+该格式为小端序（little endian）
+**V4L2_META_FMT_GENERIC_CSI2_14 的字节序*
+每个单元格为一个字节M" 表示一个字节的元数据，"x" 表示一个字节的填充
 
     :header-rows:  0
     :stub-columns: 0
     :widths: 12 8 8 8 8 8 8 8
 
-    - - 鍋忕Щ + 0:
+    - - 偏移 + 0:
       - M\ `00`
       - M\ `10`
       - M\ `20`
@@ -116,7 +116,7 @@ V4L2_META_FMT_GENERIC_CSI2_14 鍖呭惈鎵撳寘鍦?14 浣嶆暟鎹崟鍏冧�
       - x
       - x
       - x
-    - - 鍋忕Щ + 7:
+    - - 偏移 + 7:
       - M\ `01`
       - M\ `11`
       - M\ `21`
@@ -129,20 +129,20 @@ V4L2_META_FMT_GENERIC_CSI2_14 鍖呭惈鎵撳寘鍦?14 浣嶆暟鎹崟鍏冧�
 ### V4L2_META_FMT_GENERIC_CSI2_16
 
 
-V4L2_META_FMT_GENERIC_CSI2_16 鍖呭惈鎵撳寘鍦?16 浣嶆暟鎹崟鍏冧腑鐨?8 浣嶉€氱敤鍏冩暟鎹紝
-姣忓瓧鑺傚厓鏁版嵁涔嬪悗璺熶竴涓～鍏呭瓧鑺傘€傝鏍煎紡閫氬父鐢?CSI-2 鎺ユ敹绔娇鐢紝鍏舵暟鎹簮浼氬彂閫?MEDIA_BUS_FMT_META_16锛岃€?CSI-2 鎺ユ敹绔皢鎺ユ敹鍒扮殑鏁版嵁鎸夊師鏍峰啓鍏ュ唴瀛樸€傛暟鎹殑
-鎵撳寘鏂瑰紡閬靛惊 MIPI CSI-2 瑙勮寖锛屽～鍏呮柟寮忓畾涔変簬 MIPI CCS 瑙勮寖銆?
-閮ㄥ垎璁惧鍦ㄤ笌 16 浣嶅浘鍍忔暟鎹厤鍚堟椂鏀寔鏇撮珮鏁堢殑鍏冩暟鎹墦鍖呮柟寮忋€傚湪杩欑鎯呭喌涓嬶紝
-搴斾娇鐢ㄧ殑鏁版嵁鏍煎紡涓?V4L2_META_FMT_GENERIC_8 <v4l2-meta-fmt-generic-8>銆?
-璇ユ牸寮忎负灏忕搴忥紙little endian锛夈€?
-**V4L2_META_FMT_GENERIC_CSI2_16 鐨勫瓧鑺傚簭銆?*
-姣忎釜鍗曞厓鏍间负涓€涓瓧鑺傘€?M" 琛ㄧず涓€涓瓧鑺傜殑鍏冩暟鎹紝"x" 琛ㄧず涓€涓瓧鑺傜殑濉厖銆?
+V4L2_META_FMT_GENERIC_CSI2_16 包含打包16 位数据单元中8 位通用元数据，
+每字节元数据之后跟一个填充字节。该格式通常CSI-2 接收端使用，其数据源会发MEDIA_BUS_FMT_META_16，CSI-2 接收端将接收到的数据按原样写入内存。数据的
+打包方式遵循 MIPI CSI-2 规范，填充方式定义于 MIPI CCS 规范
+部分设备在与 16 位图像数据配合时支持更高效的元数据打包方式。在这种情况下，
+应使用的数据格式V4L2_META_FMT_GENERIC_8 <v4l2-meta-fmt-generic-8>
+该格式为小端序（little endian）
+**V4L2_META_FMT_GENERIC_CSI2_16 的字节序*
+每个单元格为一个字节M" 表示一个字节的元数据，"x" 表示一个字节的填充
 
     :header-rows:  0
     :stub-columns: 0
     :widths: 12 8 8 8 8 8 8 8 8
 
-    - - 鍋忕Щ + 0:
+    - - 偏移 + 0:
       - M\ `00`
       - x
       - M\ `10`
@@ -151,7 +151,7 @@ V4L2_META_FMT_GENERIC_CSI2_16 鍖呭惈鎵撳寘鍦?16 浣嶆暟鎹崟鍏冧�
       - x
       - M\ `30`
       - x
-    - - 鍋忕Щ + 8:
+    - - 偏移 + 8:
       - M\ `01`
       - x
       - M\ `11`
@@ -165,19 +165,19 @@ V4L2_META_FMT_GENERIC_CSI2_16 鍖呭惈鎵撳寘鍦?16 浣嶆暟鎹崟鍏冧�
 ### V4L2_META_FMT_GENERIC_CSI2_20
 
 
-V4L2_META_FMT_GENERIC_CSI2_20 鍖呭惈鎵撳寘鍦?20 浣嶆暟鎹崟鍏冧腑鐨?8 浣嶉€氱敤鍏冩暟鎹紝
-姣忓瓧鑺傚厓鏁版嵁涔嬪悗浜ゆ浛璺熶竴涓垨涓や釜濉厖瀛楄妭銆傝鏍煎紡閫氬父鐢?CSI-2 鎺ユ敹绔娇鐢紝鍏?鏁版嵁婧愪細鍙戦€?MEDIA_BUS_FMT_META_20锛岃€?CSI-2 鎺ユ敹绔皢鎺ユ敹鍒扮殑鏁版嵁鎸夊師鏍峰啓鍏?鍐呭瓨銆傛暟鎹殑鎵撳寘鏂瑰紡閬靛惊 MIPI CSI-2 瑙勮寖锛屽～鍏呮柟寮忓畾涔変簬 MIPI CCS 瑙勮寖銆?
-閮ㄥ垎璁惧鍦ㄤ笌 16 浣嶅浘鍍忔暟鎹厤鍚堟椂鏀寔鏇撮珮鏁堢殑鍏冩暟鎹墦鍖呮柟寮忋€傚湪杩欑鎯呭喌涓嬶紝
-搴斾娇鐢ㄧ殑鏁版嵁鏍煎紡涓?V4L2_META_FMT_GENERIC_CSI2_10 <v4l2-meta-fmt-generic-csi2-10>銆?
-璇ユ牸寮忎负灏忕搴忥紙little endian锛夈€?
-**V4L2_META_FMT_GENERIC_CSI2_20 鐨勫瓧鑺傚簭銆?*
-姣忎釜鍗曞厓鏍间负涓€涓瓧鑺傘€?M" 琛ㄧず涓€涓瓧鑺傜殑鍏冩暟鎹紝"x" 琛ㄧず涓€涓瓧鑺傜殑濉厖銆?
+V4L2_META_FMT_GENERIC_CSI2_20 包含打包20 位数据单元中8 位通用元数据，
+每字节元数据之后交替跟一个或两个填充字节。该格式通常CSI-2 接收端使用，数据源会发MEDIA_BUS_FMT_META_20，CSI-2 接收端将接收到的数据按原样写内存。数据的打包方式遵循 MIPI CSI-2 规范，填充方式定义于 MIPI CCS 规范
+部分设备在与 16 位图像数据配合时支持更高效的元数据打包方式。在这种情况下，
+应使用的数据格式V4L2_META_FMT_GENERIC_CSI2_10 <v4l2-meta-fmt-generic-csi2-10>
+该格式为小端序（little endian）
+**V4L2_META_FMT_GENERIC_CSI2_20 的字节序*
+每个单元格为一个字节M" 表示一个字节的元数据，"x" 表示一个字节的填充
 
     :header-rows:  0
     :stub-columns: 0
     :widths: 12 8 8 8 8 8 8 8 8 8 8
 
-    - - 鍋忕Щ + 0:
+    - - 偏移 + 0:
       - M\ `00`
       - x
       - M\ `10`
@@ -188,7 +188,7 @@ V4L2_META_FMT_GENERIC_CSI2_20 鍖呭惈鎵撳寘鍦?20 浣嶆暟鎹崟鍏冧�
       - M\ `30`
       - x
       - x
-    - - 鍋忕Щ + 10:
+    - - 偏移 + 10:
       - M\ `01`
       - x
       - M\ `11`
@@ -204,20 +204,20 @@ V4L2_META_FMT_GENERIC_CSI2_20 鍖呭惈鎵撳寘鍦?20 浣嶆暟鎹崟鍏冧�
 ### V4L2_META_FMT_GENERIC_CSI2_24
 
 
-V4L2_META_FMT_GENERIC_CSI2_24 鍖呭惈鎵撳寘鍦?24 浣嶆暟鎹崟鍏冧腑鐨?8 浣嶉€氱敤鍏冩暟鎹紝
-姣忓瓧鑺傚厓鏁版嵁涔嬪悗璺熶袱涓～鍏呭瓧鑺傘€傝鏍煎紡閫氬父鐢?CSI-2 鎺ユ敹绔娇鐢紝鍏舵暟鎹簮浼氬彂閫?MEDIA_BUS_FMT_META_24锛岃€?CSI-2 鎺ユ敹绔皢鎺ユ敹鍒扮殑鏁版嵁鎸夊師鏍峰啓鍏ュ唴瀛樸€傛暟鎹殑
-鎵撳寘鏂瑰紡閬靛惊 MIPI CSI-2 瑙勮寖锛屽～鍏呮柟寮忓畾涔変簬 MIPI CCS 瑙勮寖銆?
-閮ㄥ垎璁惧鍦ㄤ笌 16 浣嶅浘鍍忔暟鎹厤鍚堟椂鏀寔鏇撮珮鏁堢殑鍏冩暟鎹墦鍖呮柟寮忋€傚湪杩欑鎯呭喌涓嬶紝
-搴斾娇鐢ㄧ殑鏁版嵁鏍煎紡涓?V4L2_META_FMT_GENERIC_CSI2_12 <v4l2-meta-fmt-generic-csi2-12>銆?
-璇ユ牸寮忎负灏忕搴忥紙little endian锛夈€?
-**V4L2_META_FMT_GENERIC_CSI2_24 鐨勫瓧鑺傚簭銆?*
-姣忎釜鍗曞厓鏍间负涓€涓瓧鑺傘€?M" 琛ㄧず涓€涓瓧鑺傜殑鍏冩暟鎹紝"x" 琛ㄧず涓€涓瓧鑺傜殑濉厖銆?
+V4L2_META_FMT_GENERIC_CSI2_24 包含打包24 位数据单元中8 位通用元数据，
+每字节元数据之后跟两个填充字节。该格式通常CSI-2 接收端使用，其数据源会发MEDIA_BUS_FMT_META_24，CSI-2 接收端将接收到的数据按原样写入内存。数据的
+打包方式遵循 MIPI CSI-2 规范，填充方式定义于 MIPI CCS 规范
+部分设备在与 16 位图像数据配合时支持更高效的元数据打包方式。在这种情况下，
+应使用的数据格式V4L2_META_FMT_GENERIC_CSI2_12 <v4l2-meta-fmt-generic-csi2-12>
+该格式为小端序（little endian）
+**V4L2_META_FMT_GENERIC_CSI2_24 的字节序*
+每个单元格为一个字节M" 表示一个字节的元数据，"x" 表示一个字节的填充
 
     :header-rows:  0
     :stub-columns: 0
     :widths: 12 8 8 8 8 8 8 8 8 8 8 8 8
 
-    - - 鍋忕Щ + 0:
+    - - 偏移 + 0:
       - M\ `00`
       - x
       - x
@@ -230,7 +230,7 @@ V4L2_META_FMT_GENERIC_CSI2_24 鍖呭惈鎵撳寘鍦?24 浣嶆暟鎹崟鍏冧�
       - M\ `30`
       - x
       - x
-    - - 鍋忕Щ + 12:
+    - - 偏移 + 12:
       - M\ `01`
       - x
       - x

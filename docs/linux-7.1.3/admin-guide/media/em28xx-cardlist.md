@@ -1,27 +1,27 @@
-﻿## EM28xx 鏉垮崱鍒楄〃
+﻿## EM28xx 板卡列表
 
-鏈枃浠跺垪鍑?EM28xx 绯诲垪 USB 瑙嗛閲囬泦璁惧锛堥噰闆嗗崱銆佺數瑙嗘銆佺數瑙嗙洅绛夛級鎵€鏀寔鐨勭‖浠跺瀷鍙锋竻鍗曪紝鍖呭惈鏉垮崱缂栧彿銆佹澘鍗″悕绉般€丒mpia 鑺墖鍨嬪彿涓?USB 璁惧 ID锛屼緵椹卞姩閫傞厤銆佺‖浠堕€夊瀷浠ュ強閫氳繃 card 妯″潡鍙傛暟鎸囧畾鍏蜂綋璁惧鏃舵煡闃呫€?
-
-
-鏈〃鍒楀嚭浜?EM28xx 绯诲垪 USB 瑙嗛閲囬泦璁惧锛堣棰戦噰闆嗗崱銆佺數瑙嗘銆佺數瑙嗙洅绛夛級鐨勬澘鍗＄紪鍙枫€佹澘鍗″悕绉般€佹墍浣跨敤鐨?Empia 鑺墖鍨嬪彿浠ュ強瀵瑰簲鐨?USB 璁惧 ID銆傚叾涓€滄澘鍗＄紪鍙封€濆彲鐢ㄤ簬鍐呮牳妯″潡鍙傛暟 card 鏉ユ寚瀹氬叿浣撹澶囷紱鈥淓mpia 鑺墖鈥濅负璁惧鎵€鐢ㄧ殑 EM28xx 绯诲垪涓昏姱鐗囷紱鈥淯SB ID鈥濈殑鏍煎紡涓?鍘傚晢ID:璁惧ID銆?
+本文件列EM28xx 系列 USB 视频采集设备（采集卡、电视棒、电视盒等）所支持的硬件型号清单，包含板卡编号、板卡名称、Empia 芯片型号USB 设备 ID，供驱动适配、硬件选型以及通过 card 模块参数指定具体设备时查阅
 
 
+本表列出EM28xx 系列 USB 视频采集设备（视频采集卡、电视棒、电视盒等）的板卡编号、板卡名称、所使用Empia 芯片型号以及对应USB 设备 ID。其中“板卡编号”可用于内核模块参数 card 来指定具体设备；“Empia 芯片”为设备所用的 EM28xx 系列主芯片；“USB ID”的格式厂商ID:设备ID
 
-   鏈垪琛ㄧ敱鍐呮牳椹卞姩 em28xx 缁存姢锛屾柊澧炶澶囨椂鍙弬鑰冨叾涓凡鍒楀嚭鐨勮姱鐗囦笌 USB ID 瀵瑰簲鍏崇郴銆?
+
+
+   本列表由内核驱动 em28xx 维护，新增设备时可参考其中已列出的芯片与 USB ID 对应关系
 :header-rows: 1
    :widths: 2 12 3 16
    :stub-columns: 0
 
-   - - 鏉垮崱缂栧彿
-     - 鏉垮崱鍚嶇О
-     - Empia 鑺墖
+   - - 板卡编号
+     - 板卡名称
+     - Empia 芯片
      - USB ID
    - - 0
-     - 鏈煡鐨?EM2800 瑙嗛閲囬泦鍗?
+     - 未知EM2800 视频采集
      - em2800
      - eb1a:2800
    - - 1
-     - 鏈煡鐨?EM2750/28xx 瑙嗛閲囬泦鍗?
+     - 未知EM2750/28xx 视频采集
      - em2820 or em2840
      - eb1a:2710, eb1a:2820, eb1a:2821, eb1a:2860, eb1a:2861, eb1a:2862, eb1a:2863, eb1a:2870, eb1a:2881, eb1a:2883, eb1a:2868, eb1a:2875
    - - 2
@@ -53,7 +53,7 @@
      - em2800
      -
    - - 9
-     - Pinnacle Dazzle DVC 90/100/101/107 / Kaiser Baas 瑙嗛 to DVD maker / Kworld DVD 鍒朵綔鍣?2 / Plextor ConvertX PX-AV100U
+     - Pinnacle Dazzle DVC 90/100/101/107 / Kaiser Baas 视频 to DVD maker / Kworld DVD 制作2 / Plextor ConvertX PX-AV100U
      - em2820 or em2840
      - 1b80:e302, 1b80:e304, 2304:0207, 2304:021a, 093b:a003
    - - 10
@@ -61,7 +61,7 @@
      - em2880
      - 2040:6500
    - - 11
-     - Terratec 娣峰悎 XS
+     - Terratec 混合 XS
      - em2880
      -
    - - 12
@@ -85,7 +85,7 @@
      - em2883
      - 2040:6513, 2040:6517, 2040:651b
    - - 17
-     - Pinnacle PCTV HD 涓撲笟鐗?妫?
+     - Pinnacle PCTV HD 专业
      - em2880
      - 2304:0227
    - - 18
@@ -93,7 +93,7 @@
      - em2880
      - 2040:6502
    - - 19
-     - EM2860/SAA711X 鍙傝€冭璁?
+     - EM2860/SAA711X 参考设
      - em2860
      -
    - - 20
@@ -101,11 +101,11 @@
      - em2880
      - 0438:b002
    - - 21
-     - eMPIA Technology, Inc. GrabBeeX+ 瑙嗛缂栫爜鍣?
+     - eMPIA Technology, Inc. GrabBeeX+ 视频编码
      - em2800
      - eb1a:2801
    - - 22
-     - EM2710/EM2750/EM2751 缃戠粶鎽勫儚澶撮噰闆嗗崱
+     - EM2710/EM2750/EM2751 网络摄像头采集卡
      - em2750
      - eb1a:2750, eb1a:2751
    - - 23
@@ -113,7 +113,7 @@
      - em2750
      -
    - - 24
-     - D-Link DUB-T210 鐢佃璋冭皭鍣?
+     - D-Link DUB-T210 电视调谐
      - em2820 or em2840
      - 2001:f112
    - - 25
@@ -133,7 +133,7 @@
      - em2820 or em2840
      -
    - - 29
-     - EM2860/TVP5150 鍙傝€冭璁?
+     - EM2860/TVP5150 参考设
      - em2860
      - eb1a:5051
    - - 30
@@ -145,23 +145,23 @@
      - em2821
      -
    - - 32
-     - Supercomp USB 2.0 鐢佃
+     - Supercomp USB 2.0 电视
      - em2821
      -
    - - 33
-     - Elgato 瑙嗛閲囬泦
+     - Elgato 视频采集
      - em2860
      - 0fd9:0033
    - - 34
-     - Terratec Cinergy A 娣峰悎 XS
+     - Terratec Cinergy A 混合 XS
      - em2860
      - 0ccd:004f
    - - 35
-     - Typhoon DVD 鍒朵綔鍣?
+     - Typhoon DVD 制作
      - em2860
      -
    - - 36
-     - NetGMBH 鎽勫儚澶?
+     - NetGMBH 鎽勫儚澶。
      - em2860
      -
    - - 37
@@ -221,15 +221,15 @@
      - em2880
      - eb1a:e320
    - - 51
-     - Terratec 娣峰悎 XS Secam
+     - Terratec 混合 XS Secam
      - em2880
      - 0ccd:004c
    - - 52
-     - DNT DA2 娣峰悎
+     - DNT DA2 混合
      - em2881
      -
    - - 53
-     - Pinnacle 娣峰悎 涓撲笟鐗?
+     - Pinnacle 混合 专业
      - em2881
      -
    - - 54
@@ -237,15 +237,15 @@
      - em2882
      - eb1a:e323
    - - 55
-     - Terratec Cinergy 娣峰悎 T USB XS (em2882)
+     - Terratec Cinergy 混合 T USB XS (em2882)
      - em2882
      - 0ccd:005e, 0ccd:0042
    - - 56
-     - Pinnacle 娣峰悎 涓撲笟鐗?(330e)
+     - Pinnacle 混合 专业(330e)
      - em2882
      - 2304:0226
    - - 57
-     - Kworld PlusTV HD 娣峰悎 330
+     - Kworld PlusTV HD 混合 330
      - em2883
      - eb1a:a316
    - - 58
@@ -253,7 +253,7 @@
      - em2820 or em2840
      - 185b:2041
    - - 59
-     - Pinnacle PCTV HD 杩蜂綘
+     - Pinnacle PCTV HD 迷你
      - em2874
      - 2304:023f
    - - 60
@@ -273,7 +273,7 @@
      - em2860
      - eb1a:e303
    - - 64
-     - Easy Cap 閲囬泦 DC-60
+     - Easy Cap 采集 DC-60
      - em2860
      - 1b80:e309
    - - 65
@@ -293,7 +293,7 @@
      - em2860
      - 0ccd:0084
    - - 69
-     - KWorld ATSC 315U HDTV 鐢佃鐩?
+     - KWorld ATSC 315U HDTV 电视
      - em2882
      - eb1a:a313
    - - 70
@@ -309,7 +309,7 @@
      - em2861
      -
    - - 73
-     - Reddo DVB-C USB 鐢佃鐩?
+     - Reddo DVB-C USB 电视
      - em2870
      -
    - - 74
@@ -345,7 +345,7 @@
      - em2884
      - 2040:1605
    - - 82
-     - Terratec Cinergy HTC 妫?
+     - Terratec Cinergy HTC 妫。
      - em2884
      - 0ccd:00b2
    - - 83
@@ -377,11 +377,11 @@
      - em2874
      - 1b80:e1cc
    - - 90
-     - KWorld USB ATSC 鐢佃妫?UB435-Q V2
+     - KWorld USB ATSC 电视UB435-Q V2
      - em2874
      - 1b80:e346
    - - 91
-     - SpeedLink Vicious And Devine Laplace 缃戠粶鎽勫儚澶?
+     - SpeedLink Vicious And Devine Laplace 缃戠粶鎽勫儚澶。
      - em2765
      - 1ae7:9003, 1ae7:9004
    - - 92
@@ -389,7 +389,7 @@
      - em28178
      - 2013:0258
    - - 93
-     - KWorld USB ATSC 鐢佃妫?UB435-Q V3
+     - KWorld USB ATSC 电视UB435-Q V3
      - em2874
      - 1b80:e34c
    - - 94
@@ -405,7 +405,7 @@
      - em28178
      - eb1a:8179
    - - 97
-     - Elgato EyeTV 娣峰悎 2008 INT
+     - Elgato EyeTV 混合 2008 INT
      - em2884
      - 0fd9:0018
    - - 98
@@ -445,6 +445,6 @@
      - em28274
      - 2040:846d
    - - 107
-     - MyGica UTV3 妯℃嫙 USB2.0 鐢佃鐩?
+     - MyGica UTV3 模拟 USB2.0 电视
      - em2860
      - eb1a:2860

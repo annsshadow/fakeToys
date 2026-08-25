@@ -1,24 +1,24 @@
 ﻿
-## EROFS - 澧炲己鍨嬪彧璇绘枃浠剁郴缁燂紙Enhanced Read-Only File System锛?
+## EROFS - 增强型只读文件系统（Enhanced Read-Only File System
 
-## 姒傝堪
+## 概述
 
 
-EROFS 鏂囦欢绯荤粺浠ｈ〃 Enhanced Read-Only File System锛堝寮哄瀷鍙鏂囦欢绯荤粺锛夈€傚畠鐨勭洰鏍囨槸褰㈡垚涓€绉嶉€氱敤鐨勫彧璇绘枃浠剁郴缁熸柟妗堬紝閫傜敤浜庡悇绉嶅彧璇讳娇鐢ㄥ満鏅紝鑰屼笉鏄粎浠呭叧娉ㄨ妭鐪佸瓨鍌ㄧ┖闂磋€屽拷鐣ヨ繍琛屾椂鎬ц兘鐨勪换浣曞壇浣滅敤銆?
-瀹冭璁捐涓烘弧瓒崇伒娲绘€с€佺壒鎬у彲鎵╁睍鎬т互鍙婂鐢ㄦ埛璐熻浇鍙嬪ソ绛夐渶姹傘€傞櫎姝や箣澶栵紝涓庣被浼兼柟妗堢浉姣旓紝瀹冧粛鐒朵繚鎸佷负涓€涓畝鍗曠殑銆侀€傚悎闅忔満璁块棶鐨勯珮鎬ц兘鏂囦欢绯荤粺锛屼互娑堥櫎涓嶅繀瑕佺殑 I/O 鏀惧ぇ鍜屽父椹诲唴瀛樺紑閿€銆?
-瀹冭瀹炵幇涓轰互涓嬪満鏅殑鏇村ソ閫夋嫨锛?
- - 鍙瀛樺偍浠嬭川锛涙垨
+EROFS 文件系统代表 Enhanced Read-Only File System（增强型只读文件系统）。它的目标是形成一种通用的只读文件系统方案，适用于各种只读使用场景，而不是仅仅关注节省存储空间而忽略运行时性能的任何副作用
+它被设计为满足灵活性、特性可扩展性以及对用户负载友好等需求。除此之外，与类似方案相比，它仍然保持为一个简单的、适合随机访问的高性能文件系统，以消除不必要的 I/O 放大和常驻内存开销
+它被实现为以下场景的更好选择
+ - 只读存储介质；或
 
- - 瀹屽叏鍙俊鐨勫彧璇绘柟妗堢殑涓€閮ㄥ垎锛岃繖鎰忓懗鐫€鍑轰簬瀹夊叏鎴栧叾浠栬€冭檻锛屽畠闇€瑕佹槸涓嶅彲鍙樼殑锛屽苟涓斾笌鍏跺彂甯冪殑瀹樻柟榛勯噾闀滃儚閫愪綅锛坆it-for-bit锛変竴鑷达紱浠ュ強
+ - 完全可信的只读方案的一部分，这意味着出于安全或其他考虑，它需要是不可变的，并且与其发布的官方黄金镜像逐位（bit-for-bit）一致；以及
 
- - 甯屾湜閫氳繃浣跨敤绱у噾甯冨眬銆侀€忔槑鏂囦欢鍘嬬缉涓庣洿鎺ヨ闂紝鍦ㄤ繚璇佺鍒扮鎬ц兘鐨勫墠鎻愪笅鏈€灏忓寲棰濆瀛樺偍绌洪棿锛岀壒鍒槸閽堝鍐呭瓨鏈夐檺鐨勫祵鍏ュ紡璁惧浠ュ強鎷ユ湁澶ч噺瀹瑰櫒鐨勯珮瀵嗗害涓绘満銆?
-浠ヤ笅鏄?EROFS 鐨勪富瑕佺壒鎬э細
+ - 希望通过使用紧凑布局、透明文件压缩与直接访问，在保证端到端性能的前提下最小化额外存储空间，特别是针对内存有限的嵌入式设备以及拥有大量容器的高密度主机
+以下EROFS 的主要特性：
 
- - 灏忕锛坙ittle endian锛夌殑纾佺洏璁捐锛?
- - 鏀寔鍩轰簬鍧楃殑鍒嗗竷浠ュ強鍩轰簬 fscache 鐨勬枃浠剁骇鍒嗗竷锛?
- - 鏀寔澶氫釜璁惧寮曠敤澶栭儴 blob锛屽彲鐢ㄤ簬瀹瑰櫒闀滃儚锛?
- - 姣忎釜璁惧 32 浣嶅潡鍦板潃锛屽洜姝ゅ湪 4KiB 鍧楀ぇ灏忎笅鐩墠鏈€澶?16TiB 鍦板潃绌洪棿锛?
- - 閽堝涓嶅悓闇€姹傛彁渚涗袱绉?inode 甯冨眬锛?
+ - 小端（little endian）的磁盘设计
+ - 支持基于块的分布以及基于 fscache 的文件级分布
+ - 支持多个设备引用外部 blob，可用于容器镜像
+ - 每个设备 32 位块地址，因此在 4KiB 块大小下目前最16TiB 地址空间
+ - 针对不同需求提供两inode 布局
    =====================  ============  ======================================
                           compact (v1)  extended (v2)
    =====================  ============  ======================================
@@ -30,54 +30,54 @@ EROFS 鏂囦欢绯荤粺浠ｈ〃 Enhanced Read-Only File System锛堝寮哄�
    Metadata reserved      8 bytes       18 bytes
    =====================  ============  ======================================
 
- - 鍙€夊湴鏀寔鎵╁睍灞炴€э紙extended attributes锛夛紱
+ - 可选地支持扩展属性（extended attributes）；
 
- - 鏀寔鍔犻€熷惁瀹氭墿灞曞睘鎬ф煡鎵剧殑甯冮殕杩囨护鍣紙bloom filter锛夛紱
+ - 支持加速否定扩展属性查找的布隆过滤器（bloom filter）；
 
- - 閫氳繃浣跨敤鎵╁睍灞炴€ф敮鎸?POSIX.1e ACL锛?
- - 鍙€夊湴鏀寔閫忔槑鏁版嵁鍘嬬缉锛?   LZ4銆丮icroLZMA銆丏EFLATE 鍜?Zstandard 绠楁硶鍙寜鏂囦欢绮掑害浣跨敤锛涙澶栵紝杩樻敮鎸佸師鍦帮紙inplace锛夎В鍘嬬缉锛屼互閬垮厤鍘嬬缉缂撳啿鍖虹殑寮硅烦锛坆ounce锛変互鍙婁笉蹇呰鐨勯〉缂撳瓨棰犵案锛坱hrashing锛夈€?
- - 鏀寔鍩轰簬鍧楃殑鏁版嵁鍘婚噸浠ュ強婊氬姩鍝堝笇锛坮olling-hash锛夊帇缂╂暟鎹幓閲嶏紱
+ - 通过使用扩展属性支POSIX.1e ACL
+ - 可选地支持透明数据压缩   LZ4、MicroLZMA、DEFLATE Zstandard 算法可按文件粒度使用；此外，还支持原地（inplace）解压缩，以避免压缩缓冲区的弹跳（bounce）以及不必要的页缓存颠簸（thrashing）
+ - 支持基于块的数据去重以及滚动哈希（rolling-hash）压缩数据去重；
 
- - 鏀寔涓庢寜瀛楄妭瀵诲潃鐨勯潪瀵归綈鍏冩暟鎹垨鏇村皬鍧楀ぇ灏忔柟妗堢浉姣旂殑 tailpacking 鍐呰仈锛?
- - 鏀寔灏嗗熬閮ㄦ暟鎹悎骞朵负鐗规畩 inode 浣滀负鐗囨锛坒ragments锛夈€?
- - 鏀寔澶ч〉锛坙arge folios锛変互鍒╃敤 THP锛圱ransparent Hugepages锛岄€忔槑澶ч〉锛夛紱
+ - 支持与按字节寻址的非对齐元数据或更小块大小方案相比的 tailpacking 内联
+ - 支持将尾部数据合并为特殊 inode 作为片段（fragments）
+ - 支持大页（large folios）以利用 THP（Transparent Hugepages，透明大页）；
 
- - 鏀寔鏈帇缂╂枃浠朵笂鐨勭洿鎺?I/O锛屼互閬垮厤 loop 璁惧鐨勫弻閲嶇紦瀛橈紱
+ - 支持未压缩文件上的直I/O，以避免 loop 设备的双重缓存；
 
- - 鏀寔鏈帇缂╅暅鍍忎笂鐨?FSDAX锛岀敤浜庡畨鍏ㄥ鍣ㄤ笌 ramdisk锛屼互娑堥櫎涓嶅繀瑕佺殑椤电紦瀛樸€?
- - 鏀寔鍩轰簬 Fscache 鍩虹璁炬柦鐨勬枃浠剁骇鎸夐渶鍔犺浇銆?
-浠ヤ笅 git 鏍戞彁渚涗簡浠嶅湪寮€鍙戜腑鐨勬枃浠剁郴缁熺敤鎴风┖闂村伐鍏凤紝渚嬪鏍煎紡鍖栧伐鍏凤紙mkfs.erofs锛夈€佺鐩樹竴鑷存€т笌鍏煎鎬ф鏌ュ伐鍏凤紙fsck.erofs锛変互鍙婅皟璇曞伐鍏凤紙dump.erofs锛夛細
+ - 支持未压缩镜像上FSDAX，用于安全容器与 ramdisk，以消除不必要的页缓存
+ - 支持基于 Fscache 基础设施的文件级按需加载
+以下 git 树提供了仍在开发中的文件系统用户空间工具，例如格式化工具（mkfs.erofs）、磁盘一致性与兼容性检查工具（fsck.erofs）以及调试工具（dump.erofs）：
 
 - git://git.kernel.org/pub/scm/linux/kernel/git/xiang/erofs-utils.git
 
-鏇村淇℃伅璇峰弬鑰冩枃妗ｇ珯鐐癸細
+更多信息请参考文档站点：
 
 - https://erofs.docs.kernel.org
 
-娆㈣繋鎶ュ憡缂洪櫡涓庢彁浜よˉ涓侊紝璇峰府鍔╂垜浠苟灏嗗叾鍙戦€佸埌浠ヤ笅 linux-erofs 閭欢鍒楄〃锛?
+欢迎报告缺陷与提交补丁，请帮助我们并将其发送到以下 linux-erofs 邮件列表
 - linux-erofs mailing list   <linux-erofs@lists.ozlabs.org>
 
-## 鎸傝浇閫夐」
+## 挂载选项
 
 
 ===================    =========================================================
-(no)user_xattr         璁剧疆鎵╁睍鐢ㄦ埛灞炴€с€傛敞鎰忥細鑻ラ€変腑 CONFIG_EROFS_FS_XATTR锛岄粯璁ゅ惎鐢?xattr銆?(no)acl                璁剧疆 POSIX 璁块棶鎺у埗鍒楄〃銆傛敞鎰忥細鑻ラ€変腑 CONFIG_EROFS_FS_POSIX_ACL锛岄粯璁ゅ惎鐢?acl銆?cache_strategy=%s      浠庢鍒昏捣閫夋嫨缂撳瓨瑙ｅ帇缂╃殑绛栫暐锛?
+(no)user_xattr         设置扩展用户属性。注意：若选中 CONFIG_EROFS_FS_XATTR，默认启xattr(no)acl                设置 POSIX 访问控制列表。注意：若选中 CONFIG_EROFS_FS_POSIX_ACL，默认启aclcache_strategy=%s      从此刻起选择缓存解压缩的策略
 		       ==========  =============================================
-                         disabled  浠呰繘琛屽師鍦?I/O 瑙ｅ帇缂╋紱
-                        readahead  缂撳瓨鏈€鍚庝竴涓笉瀹屾暣鐨勫帇缂╃墿鐞嗙皣浠ヤ緵鍚庣画璇诲彇銆傚叾浣欏帇缂╃墿鐞嗙皣浠嶈繘琛屽師鍦?I/O 瑙ｅ帇缂╋紱
-                       readaround  缂撳瓨涓嶅畬鏁村帇缂╃墿鐞嗙皣鐨勪袱绔互渚涘悗缁鍙栥€傚叾浣欏帇缂╃墿鐞嗙皣浠嶈繘琛屽師鍦?I/O 瑙ｅ帇缂┿€?		       ==========  =============================================
-dax={always,never}     浣跨敤鐩存帴璁块棶锛堟棤椤电紦瀛橈級銆傚弬瑙?                       Documentation/filesystems/dax.rst銆?dax                    涓€涓仐鐣欓€夐」锛屾槸 `dax=always` 鐨勫埆鍚嶃€?device=%s              鎸囧畾涓€涓涓€璧蜂娇鐢ㄧ殑棰濆璁惧璺緞銆?directio               锛堝浜庢枃浠舵敮鎸佺殑鎸傝浇锛変娇鐢ㄧ洿鎺?I/O 璁块棶鍚庣鏂囦欢锛岃嫢鏀寔鍒欏惎鐢ㄥ紓姝?I/O銆?fsid=%s                涓?Fscache 鍚庣鎸囧畾涓€涓枃浠剁郴缁熼暅鍍?ID銆?domain_id=%s           涓?fscache 妯″紡鎸囧畾涓€涓彲淇″煙 ID锛屼互渚跨敱 blob ID 鏍囪瘑銆佹嫢鏈夌浉鍚?blob 鐨勪笉鍚岄暅鍍忓彲浠ュ湪鍚屼竴鍙俊鍩熷唴鍏变韩瀛樺偍銆備篃鐢ㄤ簬鍚敤 inode 椤靛叡浜殑涓嶅悓鏂囦欢绯荤粺鍦ㄥ悓涓€鍙俊鍩熷唴鍏变韩椤电紦瀛樸€?fsoffset=%llu          涓轰富璁惧鎸囧畾鍧楀榻愮殑鏂囦欢绯荤粺鍋忕Щ銆?inode_share            涓烘湰鏂囦欢绯荤粺鍚敤 inode 椤靛叡浜€傚湪鍚屼竴鍩?ID 鍐呭唴瀹圭浉鍚岀殑 inode 鍙互鍏变韩椤电紦瀛樸€?===================    =========================================================
+                         disabled  仅进行原I/O 解压缩；
+                        readahead  缓存最后一个不完整的压缩物理簇以供后续读取。其余压缩物理簇仍进行原I/O 解压缩；
+                       readaround  缓存不完整压缩物理簇的两端以供后续读取。其余压缩物理簇仍进行原I/O 解压缩		       ==========  =============================================
+dax={always,never}     使用直接访问（无页缓存）。参                       Documentation/filesystems/dax.rstdax                    一个遗留选项，是 `dax=always` 的别名device=%s              指定一个要一起使用的额外设备路径directio               （对于文件支持的挂载）使用直I/O 访问后端文件，若支持则启用异I/Ofsid=%s                Fscache 后端指定一个文件系统镜IDdomain_id=%s           fscache 模式指定一个可信域 ID，以便由 blob ID 标识、拥有相blob 的不同镜像可以在同一可信域内共享存储。也用于启用 inode 页共享的不同文件系统在同一可信域内共享页缓存fsoffset=%llu          为主设备指定块对齐的文件系统偏移inode_share            为本文件系统启用 inode 页共享。在同一ID 内内容相同的 inode 可以共享页缓存===================    =========================================================
 
-## Sysfs 鏉＄洰
-
-
-鍏充簬宸叉寕杞?erofs 鏂囦欢绯荤粺鐨勪俊鎭彲鍦?/sys/fs/erofs 涓壘鍒般€傛瘡涓凡鎸傝浇鐨勬枃浠剁郴缁熼兘浼氬湪 /sys/fs/erofs 涓嬫嫢鏈変竴涓熀浜庡叾璁惧鍚嶏紙鍗?/sys/fs/erofs/sda锛夌殑鐩綍銆?锛堝彟瑙?Documentation/ABI/testing/sysfs-fs-erofs锛?
-## 纾佺洏缁嗚妭
+## Sysfs 条目
 
 
-### 姒傝
+关于已挂erofs 文件系统的信息可/sys/fs/erofs 中找到。每个已挂载的文件系统都会在 /sys/fs/erofs 下拥有一个基于其设备名（/sys/fs/erofs/sda）的目录（另Documentation/ABI/testing/sysfs-fs-erofs
+## 磁盘细节
 
-涓嶅悓浜庡叾瀹冨彧璇绘枃浠剁郴缁燂紝EROFS 鍗疯璁捐涓?
+
+### 概要
+
+不同于其它只读文件系统，EROFS 卷被设计
 ```
                                 |-> aligned with the block size
    ____________________________________________________________
@@ -86,10 +86,10 @@ dax={always,never}     浣跨敤鐩存帴璁块棶锛堟棤椤电紦瀛橈級銆
   0 +1K
 ```
 
-鎵€鏈夋暟鎹尯鍩熼兘搴斿榻愬埌鍧楀ぇ灏忥紝浣嗗厓鏁版嵁鍖哄煙涓嶄竴瀹氥€傜幇鍦ㄦ墍鏈夊厓鏁版嵁鍙互鍦ㄤ袱涓笉鍚岀殑绌洪棿锛堣鍥撅級涓瀵熷埌锛?
- 1. Inode 鍏冩暟鎹┖闂?
-    姣忎釜鏈夋晥 inode 搴斿榻愬埌涓€涓?inode 妲斤紙slot锛夛紝杩欐槸涓€涓浐瀹氬€硷紙32 瀛楄妭锛夛紝璁捐涓婁繚鎸佷笌绱у噾 inode 澶у皬涓€鑷淬€?
-    姣忎釜 inode 閮藉彲浠ラ€氳繃濡備笅鍏紡鐩存帴鎵惧埌锛?         inode offset = meta_blkaddr ** block_size + 32 ** nid
+所有数据区域都应对齐到块大小，但元数据区域不一定。现在所有元数据可以在两个不同的空间（视图）中观察到
+ 1. Inode 元数据空
+    每个有效 inode 应对齐到一inode 槽（slot），这是一个固定值（32 字节），设计上保持与紧凑 inode 大小一致
+    每个 inode 都可以通过如下公式直接找到         inode offset = meta_blkaddr ** block_size + 32 ** nid
 
 ```
                                  |-> aligned with 8B
@@ -119,7 +119,7 @@ dax={always,never}     浣跨敤鐩存帴璁块棶锛堟棤椤电紦瀛橈級銆
                                                         |-> aligned with 4B
 ```
 
-    Inode 鍙互鏄?32 鎴?64 瀛楄妭锛屽彲浠ラ€氳繃鎵€鏈?inode 鐗堟湰閮芥嫢鏈夌殑鍏叡瀛楁 i_format 鏉ュ尯鍒嗭細
+    Inode 可以32 64 字节，可以通过所inode 版本都拥有的公共字段 i_format 来区分：
 
 ```
         __________________               __________________
@@ -132,18 +132,18 @@ dax={always,never}     浣跨敤鐩存帴璁块棶锛堟棤椤电紦瀛橈級銆
                                         |__________________| 64 bytes
 ```
 
-    Xattrs銆乪xtents銆乨ata inline 鍦ㄧ浉搴?inode 涔嬪悗浠ラ€傚綋瀵归綈鏀剧疆锛屽苟涓斿浜庝笉鍚岀殑鏁版嵁鏄犲皠瀹冧滑鍙兘鏄彲閫夌殑銆傜洰鍓嶆€诲叡鏀寔 5 绉嶆暟鎹竷灞€锛?
+    Xattrs、extents、data inline 在相inode 之后以适当对齐放置，并且对于不同的数据映射它们可能是可选的。目前总共支持 5 种数据布局
     ==  ====================================================================
-     0  涓嶅惈 data inline 鐨勬墎骞虫枃浠舵暟鎹紙鏃?extent锛夛紱
-     1  鍥哄畾澶у皬杈撳嚭鏁版嵁鍘嬬缉锛堜娇鐢ㄩ潪绱у噾绱㈠紩锛夛紱
-     2  鍚?tail packing data inline 鐨勬墎骞虫枃浠舵暟鎹紙鏃?extent锛夛紱
-     3  鍥哄畾澶у皬杈撳嚭鏁版嵁鍘嬬缉锛堜娇鐢ㄧ揣鍑戠储寮曪紝v5.3+锛夛紱
-     4  鍩轰簬鍧楃殑鏂囦欢锛坴5.15+锛夈€?    ==  ====================================================================
+     0  不含 data inline 的扁平文件数据（extent）；
+     1  固定大小输出数据压缩（使用非紧凑索引）；
+     2  tail packing data inline 的扁平文件数据（extent）；
+     3  固定大小输出数据压缩（使用紧凑索引，v5.3+）；
+     4  基于块的文件（v5.15+）    ==  ====================================================================
 
-    鍙€?xattrs 鐨勫ぇ灏忕敱 inode 澶翠腑鐨?i_xattr_count 鎸囩ず銆傚ぇ xattrs 鎴栬璁稿涓嶅悓鏂囦欢鍏变韩鐨?xattrs 鍙互瀛樺偍鍦ㄥ叡浜?xattrs 鍏冩暟鎹腑锛岃€屼笉鏄揣璺?inode 涔嬪悗鍐呰仈銆?
- 2. 鍏变韩 xattrs 鍏冩暟鎹┖闂?
-    鍏变韩 xattrs 绌洪棿涓庝笂闈㈢殑 inode 绌洪棿绫讳技锛屼互涓€涓敱 xattr_blkaddr 鎸囩ず鐨勭壒瀹氬潡寮€濮嬶紝浠ラ€傚綋瀵归綈閫愪釜缁勭粐銆?
-    姣忎釜鍏变韩 xattr 涔熷彲浠ラ€氳繃濡備笅鍏紡鐩存帴鎵惧埌锛?         xattr offset = xattr_blkaddr * block_size + 4 * xattr_id
+    可xattrs 的大小由 inode 头中i_xattr_count 指示。大 xattrs 或被许多不同文件共享xattrs 可以存储在共xattrs 元数据中，而不是紧inode 之后内联
+ 2. 共享 xattrs 元数据空
+    共享 xattrs 空间与上面的 inode 空间类似，以一个由 xattr_blkaddr 指示的特定块开始，以适当对齐逐个组织
+    每个共享 xattr 也可以通过如下公式直接找到         xattr offset = xattr_blkaddr * block_size + 4 * xattr_id
 
 ```
                            |-> aligned by  4 bytes
@@ -153,9 +153,9 @@ dax={always,never}     浣跨敤鐩存帴璁块棶锛堟棤椤电紦瀛橈級銆
     |________|_____________|_____________|_____|______________|_______________
 ```
 
-### 鐩綍
+### 目录
 
-鎵€鏈夌洰褰曠幇鍦ㄩ兘浠ョ揣鍑戠殑纾佺洏鏍煎紡缁勭粐銆傛敞鎰忔瘡涓洰褰曞潡琚垝鍒嗕负绱㈠紩鍖哄拰鍚嶇О鍖猴紝浠ユ敮鎸侀殢鏈烘枃浠舵煡鎵撅紱骞朵笖鎵€鏈夌洰褰曢」閮絖涓ユ牸_鎸夊瓧姣嶉『搴忚褰曪紝浠ユ敮鎸佹敼杩涚殑鍓嶇紑浜屽垎鏌ユ壘绠楁硶锛堝彲鍙傝€冪浉鍏虫簮浠ｇ爜锛夈€?
+所有目录现在都以紧凑的磁盘格式组织。注意每个目录块被划分为索引区和名称区，以支持随机文件查找；并且所有目录项都_严格_按字母顺序记录，以支持改进的前缀二分查找算法（可参考相关源代码）
 ```
                   ___________________________
                  /                           |
@@ -171,22 +171,22 @@ dax={always,never}     浣跨敤鐩存帴璁块棶锛堟棤椤电紦瀛橈級銆
                              Directory block
 ```
 
-娉ㄦ剰锛岄櫎浜嗙涓€涓枃浠跺悕鐨勫亸绉诲锛宯ameoff0 杩樻寚绀轰簡璇ュ潡涓洰褰曢」鐨勬€绘暟锛屽洜涓烘牴鏈笉闇€瑕佸紩鍏ュ彟涓€涓鐩樺瓧娈点€?
-### 鍩轰簬鍧楃殑鏂囦欢
+注意，除了第一个文件名的偏移外，nameoff0 还指示了该块中目录项的总数，因为根本不需要引入另一个磁盘字段
+### 基于块的文件
 
-涓轰簡鏀寔鍩轰簬鍧楃殑鏁版嵁鍘婚噸锛岃嚜 Linux v5.15 璧锋敮鎸佷簡涓€绉嶆柊鐨?inode 鏁版嵁甯冨眬锛氭枃浠惰鎷嗗垎涓虹瓑澶у皬鐨勬暟鎹潡锛坈hunk锛夛紝inode 鍏冩暟鎹殑 `extents` 鍖哄煙鎸囩ず濡備綍鑾峰彇鍧楁暟鎹細杩欎簺鍙互绠€鍗曞湴鏄?4 瀛楄妭鍧楀湴鍧€鏁扮粍锛屾垨鏄?8 瀛楄妭鍧楃储寮曞舰寮忥紙璇﹁ erofs_fs.h 涓殑 struct erofs_inode_chunk_index锛夈€?
-椤哄甫涓€鎻愶紝鐩墠鎵€鏈夊熀浜庡潡鐨勬枃浠堕兘鏄湭鍘嬬缉鐨勩€?
-### 闀挎墿灞曞睘鎬у悕鍓嶇紑
+为了支持基于块的数据去重，自 Linux v5.15 起支持了一种新inode 数据布局：文件被拆分为等大小的数据块（chunk），inode 元数据的 `extents` 区域指示如何获取块数据：这些可以简单地4 字节块地址数组，或8 字节块索引形式（详见 erofs_fs.h 中的 struct erofs_inode_chunk_index）
+顺带一提，目前所有基于块的文件都是未压缩的
+### 长扩展属性名前缀
 
-瀛樺湪杩欐牱鐨勪娇鐢ㄥ満鏅細鍏锋湁涓嶅悓鍊肩殑鎵╁睍灞炴€у彲鑳藉彧鏈夊皯鏁板嚑涓叡鍚屽墠缂€锛堜緥濡?overlayfs 鐨?xattrs锛夈€傞瀹氫箟鍓嶇紑鍦ㄨ繖绉嶆儏鍐典笅瀵归暅鍍忓ぇ灏忓拰杩愯鏃舵€ц兘閮芥晥鐜囦綆涓嬨€?
-寮曞叆闀?xattr 鍚嶅墠缂€鐗规€ф潵瑙ｅ喅姝ら棶棰樸€傛€讳綋鎬濊矾鏄紝闄や簡鐜版湁鐨勯瀹氫箟鍓嶇紑澶栵紝xattr 椤硅繕鍙互寮曠敤鐢ㄦ埛鎸囧畾鐨勯暱 xattr 鍚嶅墠缂€锛屼緥濡?"trusted.overlay."銆?
-褰撳紩鐢ㄤ竴涓暱 xattr 鍚嶅墠缂€鏃讹紝erofs_xattr_entry.e_name_index 鐨勬渶楂樹綅锛坆it 7锛夎缃綅锛岃€屼綆鍑犱綅锛坆it 0-6锛夋暣浣撹〃绀烘墍寮曠敤闀垮悕鍓嶇紑鍦ㄦ墍鏈夐暱鍚嶅墠缂€涓殑绱㈠紩銆傚洜姝わ紝鍙湁闀?xattr 鍚嶅墠缂€涔嬪鍚嶇О鐨勫熬閮ㄩ儴鍒嗚瀛樺偍鍦?erofs_xattr_entry.e_name 涓紱濡傛灉瀹屾暣 xattr 鍚嶄笌闀?xattr 鍚嶅墠缂€瀹屽叏鍖归厤锛屽垯璇ュ熬閮ㄩ儴鍒嗗彲浠ヤ负绌恒€?
-鎵€鏈夐暱 xattr 鍓嶇紑鍙鎵撳寘锛坧acked锛塱node 鏈夋晥锛屽氨閫愪釜瀛樺偍鍦ㄦ墦鍖?inode 涓紝鍚﹀垯瀛樺偍鍦ㄥ厓锛坢eta锛塱node 涓€傜鐩樿秴绾у潡涓殑 xattr_prefix_count 鎸囩ず闀?xattr 鍚嶅墠缂€鐨勬€绘暟锛岃€?(xattr_prefix_start * 4) 鎸囩ず闀垮悕鍓嶇紑鍦ㄦ墦鍖?meta inode 涓殑璧峰鍋忕Щ銆傛敞鎰忥紝濡傛灉 xattr_prefix_count 涓?0锛屽垯闀挎墿灞曞睘鎬у悕鍓嶇紑琚鐢ㄣ€?
-姣忎釜闀垮悕鍓嶇紑浠ュ涓嬫牸寮忓瓨鍌細ALIGN({__le16 len, data}, 4)锛屽叾涓?len 琛ㄧず data 閮ㄥ垎鐨勬€诲ぇ灏忋€俤ata 閮ㄥ垎瀹為檯涓婄敱 'struct erofs_xattr_long_prefix' 琛ㄧず锛屽叾涓?base_index 琛ㄧず棰勫畾涔?xattr 鍚嶅墠缂€鐨勭储寮曪紙渚嬪 "trusted.overlay." 闀垮悕鍓嶇紑瀵瑰簲 EROFS_XATTR_INDEX_TRUSTED锛夛紝鑰?infix 瀛楃涓蹭繚鐣欏幓鎺夌煭鍓嶇紑鍚庣殑瀛楃涓诧紙渚嬪涓婁緥涓负 "overlay."锛夈€?
-### 鏁版嵁鍘嬬缉
+存在这样的使用场景：具有不同值的扩展属性可能只有少数几个共同前缀（例overlayfs xattrs）。预定义前缀在这种情况下对镜像大小和运行时性能都效率低下
+引入xattr 名前缀特性来解决此问题。总体思路是，除了现有的预定义前缀外，xattr 项还可以引用用户指定的长 xattr 名前缀，例"trusted.overlay."
+当引用一个长 xattr 名前缀时，erofs_xattr_entry.e_name_index 的最高位（bit 7）被置位，而低几位（bit 0-6）整体表示所引用长名前缀在所有长名前缀中的索引。因此，只有xattr 名前缀之外名称的尾部部分被存储erofs_xattr_entry.e_name 中；如果完整 xattr 名与xattr 名前缀完全匹配，则该尾部部分可以为空
+所有长 xattr 前缀只要打包（packed）inode 有效，就逐个存储在打inode 中，否则存储在元（meta）inode 中。磁盘超级块中的 xattr_prefix_count 指示xattr 名前缀的总数，(xattr_prefix_start * 4) 指示长名前缀在打meta inode 中的起始偏移。注意，如果 xattr_prefix_count 0，则长扩展属性名前缀被禁用
+每个长名前缀以如下格式存储：ALIGN({__le16 len, data}, 4)，其len 表示 data 部分的总大小。data 部分实际上由 'struct erofs_xattr_long_prefix' 表示，其base_index 表示预定xattr 名前缀的索引（例如 "trusted.overlay." 长名前缀对应 EROFS_XATTR_INDEX_TRUSTED），infix 字符串保留去掉短前缀后的字符串（例如上例中为 "overlay."）
+### 数据压缩
 
-EROFS 瀹炵幇浜嗗浐瀹氬ぇ灏忚緭鍑哄帇缂╋紝瀹冧粠鍙彉澶у皬杈撳叆鐢熸垚鍥哄畾澶у皬鐨勫帇缂╂暟鎹潡锛岃繖涓庡叾瀹冪幇鏈夌殑鍥哄畾澶у皬杈撳叆鏂规鐩稿弽銆備娇鐢ㄥ浐瀹氬ぇ灏忚緭鍑哄帇缂╁彲浠ヨ幏寰楃浉瀵规洿楂樼殑鍘嬬缉姣旓紝鍥犱负濡備粖娴佽鐨勬暟鎹帇缂╃畻娉曞ぇ澶氬熀浜?LZ77锛岃€岃繖绉嶅浐瀹氬ぇ灏忚緭鍑烘柟寮忓彲浠ヤ粠鍘嗗彶瀛楀吀锛堝嵆婊戝姩绐楀彛锛変腑鑾风泭銆?
-鍏蜂綋鏉ヨ锛屽師濮嬶紙鏈帇缂╋級鏁版嵁琚浆鎹负鑻ュ共鍙彉澶у皬鐨?extent锛屽悓鏃惰鍘嬬缉杩涚墿鐞嗙皣锛坧cluster锛夈€備负浜嗚褰曟瘡涓彲鍙樺ぇ灏忕殑 extent锛屽紩鍏ヤ簡閫昏緫绨囷紙lcluster锛変綔涓哄帇缂╃储寮曠殑鍩烘湰鍗曞厓锛岀敤浜庢寚绀哄湪璇ヨ寖鍥村唴鏄惁鐢熸垚浜嗘柊鐨?extent锛圚EAD锛夋垨娌℃湁锛圢ONHEAD锛夈€侺cluster 鐜板湪
+EROFS 实现了固定大小输出压缩，它从可变大小输入生成固定大小的压缩数据块，这与其它现有的固定大小输入方案相反。使用固定大小输出压缩可以获得相对更高的压缩比，因为如今流行的数据压缩算法大多基LZ77，而这种固定大小输出方式可以从历史字典（即滑动窗口）中获益
+具体来说，原始（未压缩）数据被转换为若干可变大小extent，同时被压缩进物理簇（pcluster）。为了记录每个可变大小的 extent，引入了逻辑簇（lcluster）作为压缩索引的基本单元，用于指示在该范围内是否生成了新extent（HEAD）或没有（NONHEAD）。Lcluster 现在
 
 ```
           |<-    variable-sized extent    ->|<-       VLE         ->|
@@ -206,9 +206,9 @@ EROFS 瀹炵幇浜嗗浐瀹氬ぇ灏忚緭鍑哄帇缂╋紝瀹冧粠鍙彉�
               |->      big pcluster       <-|-> pcluster <-|
 ```
 
-鐗╃悊绨囧彲浠ョ湅浣滃寘鍚帇缂╂暟鎹殑鐗╃悊鍘嬬缉鍧楀鍣ㄣ€傛鍓嶏紝浠呮敮鎸?lcluster 澶у皬锛?KB锛夌殑 pcluster銆傚湪寮曞叆 big pcluster 鐗规€э紙鑷?Linux v5.13 璧峰彲鐢級鍚庯紝pcluster 鍙互鏄?lcluster 澶у皬鐨勫€嶆暟銆?
-瀵逛簬姣忎釜 HEAD lcluster锛岃褰?clusterofs 浠ユ寚绀烘柊 extent 浠庝綍澶勫紑濮嬶紝骞朵娇鐢?blkaddr 鏉ュ畾浣嶅帇缂╂暟鎹€傚浜庢瘡涓?NONHEAD lcluster锛屽彲浠ヤ娇鐢?delta0 鍜?delta1 鑰岄潪 blkaddr锛屼互鎸囩ず鍒板叾 HEAD lcluster 鍜屼笅涓€涓?HEAD lcluster 鐨勮窛绂汇€侾LAIN lcluster 涔熸槸涓€涓?HEAD lcluster锛屽彧鏄叾鏁版嵁鏈帇缂┿€傛洿澶氱粏鑺傚弬瑙?erofs_fs.h 涓?"struct z_erofs_vle_decompressed_index" 鍛ㄥ洿鐨勬敞閲娿€?
-濡傛灉鍚敤浜?big pcluster锛屼篃闇€瑕佽褰曚互 lcluster 璁＄殑 pcluster 澶у皬銆傝绗竴涓?NONHEAD lcluster 鐨?delta0 浠ョ壒娈婃爣蹇楀瓨鍌ㄥ帇缂╁潡璁℃暟锛屼綔涓轰竴涓柊绉颁负 CBLKCNT 鐨?NONHEAD lcluster銆傝繖寰堝鏄?
+物理簇可以看作包含压缩数据的物理压缩块容器。此前，仅支lcluster 大小KB）的 pcluster。在引入 big pcluster 特性（Linux v5.13 起可用）后，pcluster 可以lcluster 大小的倍数
+对于每个 HEAD lcluster，记clusterofs 以指示新 extent 从何处开始，并使blkaddr 来定位压缩数据。对于每NONHEAD lcluster，可以使delta0 delta1 而非 blkaddr，以指示到其 HEAD lcluster 和下一HEAD lcluster 的距离。PLAIN lcluster 也是一HEAD lcluster，只是其数据未压缩。更多细节参erofs_fs.h "struct z_erofs_vle_decompressed_index" 周围的注释
+如果启用big pcluster，也需要记录以 lcluster 计的 pcluster 大小。让第一NONHEAD lcluster delta0 以特殊标志存储压缩块计数，作为一个新称为 CBLKCNT NONHEAD lcluster。这很容
 ```
    __________________________________________________________
   | HEAD |  NONHEAD  | NONHEAD | ... | NONHEAD | HEAD | HEAD |
@@ -217,5 +217,5 @@ EROFS 瀹炵幇浜嗗浐瀹氬ぇ灏忚緭鍑哄帇缂╋紝瀹冧粠鍙彉�
            a lcluster-sized pcluster (without CBLKCNT) ^
 ```
 
-濡傛灉鍙︿竴涓?HEAD 璺熼殢鍦ㄦ煇涓?HEAD lcluster 涔嬪悗锛屽氨娌℃湁绌洪棿璁板綍 CBLKCNT锛屼絾寰堝鏄撶煡閬撹繖绉?pcluster 鐨勫ぇ灏忓悓鏍锋槸 1 涓?lcluster銆?
-鑷?Linux v6.1 璧凤紝姣忎釜 pcluster 鍙敤浜庡涓彲鍙樺ぇ灏忕殑 extent锛屽洜姝ゅ畠鍙互鐢ㄤ簬鍘嬬缉鏁版嵁鍘婚噸銆?
+如果另一HEAD 跟随在某HEAD lcluster 之后，就没有空间记录 CBLKCNT，但很容易知道这pcluster 的大小同样是 1 lcluster
+Linux v6.1 起，每个 pcluster 可用于多个可变大小的 extent，因此它可以用于压缩数据去重

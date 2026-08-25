@@ -1,42 +1,42 @@
-﻿## lp855x 鍐呮牳椹卞姩
+﻿## lp855x 内核驱动
 
 
-LP855x IC 鐨勮儗鍏夐┍鍔?
-鏀寔鐨勮姱鐗囷細
+LP855x IC 的背光驱
+支持的芯片：
 
-	Texas Instruments LP8550, LP8551, LP8552, LP8553, LP8555, LP8556 浠ュ強
+	Texas Instruments LP8550, LP8551, LP8552, LP8553, LP8555, LP8556 以及
 	LP8557
 
 Author: Milo(Woogyom) Kim <milo.kim@ti.com>
 
-### 鎻忚堪
+### 描述
 
 
-- 浜害鎺у埗
+- 亮度控制
 
-  浜害鍙互閫氳繃 pwm 杈撳叆鎴?i2c 鍛戒护鎺у埗銆俵p855x 椹卞姩鏀寔杩欎袱绉嶆儏鍐点€?
-- 璁惧灞炴€?
+  亮度可以通过 pwm 输入i2c 命令控制。lp855x 驱动支持这两种情况
+- 设备属
   1) bl_ctl_mode
 
-  鑳屽厜鎺у埗妯″紡銆?
-  鍙栧€硷細鍩轰簬 pwm 鎴栧熀浜庡瘎瀛樺櫒
+  背光控制模式
+  取值：基于 pwm 或基于寄存器
 
   2) chip_id
 
-  lp855x 鑺墖 id銆?
-  鍙栧€硷細lp8550/lp8551/lp8552/lp8553/lp8555/lp8556/lp8557
+  lp855x 芯片 id
+  取值：lp8550/lp8551/lp8552/lp8553/lp8555/lp8556/lp8557
 
-### lp855x 鐨勫钩鍙版暟鎹?
+### lp855x 的平台数
 
-涓烘敮鎸佸钩鍙扮浉鍏虫暟鎹紝鍙互浣跨敤 lp855x 骞冲彴鏁版嵁銆?
+为支持平台相关数据，可以使用 lp855x 平台数据
 - name:
-	鑳屽厜椹卞姩鍚嶇О銆傝嫢鏈畾涔夛紝鍒欒缃粯璁ゅ悕绉般€?- device_control:
-	DEVICE CONTROL 瀵勫瓨鍣ㄧ殑鍊笺€?- initial_brightness:
-	鑳屽厜浜害鍒濆鍊笺€?- period_ns:
-	骞冲彴鐩稿叧鐨?PWM 鍛ㄦ湡鍊笺€傚崟浣嶄负绾崇銆?	浠呭湪浜害涓?pwm 杈撳叆妯″紡鏃舵湁鏁堛€?- size_program:
-	lp855x_rom_data 鐨勬€诲ぇ灏忋€?- rom_data:
-	鏂扮殑 eeprom/eprom 瀵勫瓨鍣ㄥ垪琛ㄣ€?
-## 绀轰緥
+	背光驱动名称。若未定义，则设置默认名称- device_control:
+	DEVICE CONTROL 寄存器的值- initial_brightness:
+	背光亮度初始值- period_ns:
+	平台相关PWM 周期值。单位为纳秒	仅在亮度pwm 输入模式时有效- size_program:
+	lp855x_rom_data 的总大小- rom_data:
+	新的 eeprom/eprom 寄存器列表
+## 示例
 
 
 ```

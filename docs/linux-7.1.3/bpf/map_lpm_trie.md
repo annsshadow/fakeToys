@@ -2,14 +2,14 @@
 ## BPF_MAP_TYPE_LPM_TRIE
 
 
-   - `BPF_MAP_TYPE_LPM_TRIE` 鍦?kernel 4.11 鐗堟湰涓紩鍏?
-`BPF_MAP_TYPE_LPM_TRIE` 鎻愪緵浜嗕竴绉嶆渶闀垮墠缂€鍖归厤锛坙ongest prefix match锛夌畻娉曪紝鍙敤浜庡皢 IP 鍦板潃涓庝竴缁勫凡瀛樺偍鐨勫墠缂€杩涜鍖归厤銆?鍦ㄥ唴閮紝鏁版嵁瀛樺偍鍦ㄧ敱浣跨敤 `prefixlen,data` 瀵逛綔涓洪敭鐨勮妭鐐圭粍鎴愮殑涓嶅钩琛?trie 涓€俙data` 浠ュぇ绔紙缃戠粶瀛楄妭搴忥級瑙ｉ噴锛屽洜姝?`data[^0^]` 瀛樺偍鏈€楂樻湁鏁堝瓧鑺傘€?
-LPM trie 鍙互鍦ㄥ垱寤烘椂鎸囧畾鏈€澶у墠缂€闀垮害锛岃闀垮害蹇呴』鏄?8 鐨勫€嶆暟锛岃寖鍥翠粠 8 鍒?2048銆傜敤浜庢煡鎵惧拰鏇存柊鎿嶄綔鐨勯敭鏄竴涓?`struct bpf_lpm_trie_key_u8`锛岀敱 `max_prefixlen/8` 瀛楄妭鎵╁睍銆?
-- 瀵逛簬 IPv4 鍦板潃锛宒ata 闀垮害涓?4 瀛楄妭
-- 瀵逛簬 IPv6 鍦板潃锛宒ata 闀垮害涓?16 瀛楄妭
+   - `BPF_MAP_TYPE_LPM_TRIE` kernel 4.11 版本中引
+`BPF_MAP_TYPE_LPM_TRIE` 提供了一种最长前缀匹配（longest prefix match）算法，可用于将 IP 地址与一组已存储的前缀进行匹配在内部，数据存储在由使用 `prefixlen,data` 对作为键的节点组成的不平trie 中。`data` 以大端（网络字节序）解释，因`data[^0^]` 存储最高有效字节
+LPM trie 可以在创建时指定最大前缀长度，该长度必须8 的倍数，范围从 8 2048。用于查找和更新操作的键是一`struct bpf_lpm_trie_key_u8`，由 `max_prefixlen/8` 字节扩展
+- 对于 IPv4 地址，data 长度4 字节
+- 对于 IPv6 地址，data 长度16 字节
 
-瀛樺偍鍦?LPM trie 涓殑鍊肩被鍨嬪彲浠ユ槸浠绘剰鐢ㄦ埛瀹氫箟鐨勭被鍨嬨€?
-   鍒涘缓绫诲瀷涓?`BPF_MAP_TYPE_LPM_TRIE` 鐨勬槧灏勬椂锛屽繀椤昏缃?`BPF_F_NO_PREALLOC` 鏍囧織銆?
+存储LPM trie 中的值类型可以是任意用户定义的类型
+   创建类型`BPF_MAP_TYPE_LPM_TRIE` 的映射时，必须设`BPF_F_NO_PREALLOC` 标志
 ## Usage
 
 
@@ -21,43 +21,43 @@ LPM trie 鍙互鍦ㄥ垱寤烘椂鎸囧畾鏈€澶у墠缂€闀垮害锛岃
 
    void **bpf_map_lookup_elem(struct bpf_map **map, const void *key)
 
-瀵逛簬缁欏畾鐨?data 鍊硷紝鍙互浣跨敤 `bpf_map_lookup_elem()` 杈呭姪鍑芥暟鎵惧埌鏈€闀垮墠缂€鏉＄洰銆傝杈呭姪鍑芥暟杩斿洖涓€涓寚鍚戜笌鏈€闀垮尮閰?`key` 鍏宠仈鐨勫€肩殑鎸囬拡锛屽鏋滄湭鎵惧埌浠讳綍鏉＄洰鍒欒繑鍥?`NULL`銆?
-鎵ц鏈€闀垮墠缂€鏌ユ壘鏃讹紝`key` 鐨?`prefixlen` 搴旇缃负 `max_prefixlen`銆備緥濡傦紝褰撴悳绱㈡煇涓?IPv4 鍦板潃鐨勬渶闀垮墠缂€鍖归厤鏃讹紝`prefixlen` 搴旇缃负 `32`銆?
+对于给定data 值，可以使用 `bpf_map_lookup_elem()` 辅助函数找到最长前缀条目。该辅助函数返回一个指向与最长匹`key` 关联的值的指针，如果未找到任何条目则返`NULL`
+执行最长前缀查找时，`key` `prefixlen` 应设置为 `max_prefixlen`。例如，当搜索某IPv4 地址的最长前缀匹配时，`prefixlen` 应设置为 `32`
 #### bpf_map_update_elem()
 
 
    long bpf_map_update_elem(struct bpf_map **map, const void **key, const void *value, u64 flags)
 
-鍙互浣跨敤 `bpf_map_update_elem()` 杈呭姪鍑芥暟娣诲姞鎴栨洿鏂板墠缂€鏉＄洰銆傝杈呭姪鍑芥暟浠ュ師瀛愭柟寮忔浛鎹㈠凡鏈夌殑鍏冪礌銆?
-`bpf_map_update_elem()` 鎴愬姛鏃惰繑鍥?`0`锛屽け璐ユ椂杩斿洖璐熺殑閿欒鐮併€?
+可以使用 `bpf_map_update_elem()` 辅助函数添加或更新前缀条目。该辅助函数以原子方式替换已有的元素
+`bpf_map_update_elem()` 成功时返`0`，失败时返回负的错误码
 ```
-    flags 鍙傛暟蹇呴』鏄?BPF_ANY銆丅PF_NOEXIST 鎴?BPF_EXIST 涔嬩竴锛屼絾璇ュ€间細琚拷鐣ワ紝浠庤€岀粰鍑?BPF_ANY 鐨勮涔夈€?
+    flags 参数必须BPF_ANY、BPF_NOEXIST BPF_EXIST 之一，但该值会被忽略，从而给BPF_ANY 的语义
 ```
 #### bpf_map_delete_elem()
 
 
    long bpf_map_delete_elem(struct bpf_map **map, const void **key)
 
-鍙互浣跨敤 `bpf_map_delete_elem()` 杈呭姪鍑芥暟鍒犻櫎鍓嶇紑鏉＄洰銆傝杈呭姪鍑芥暟鎴愬姛鏃惰繑鍥?0锛屽け璐ユ椂杩斿洖璐熺殑閿欒鐮併€?
+可以使用 `bpf_map_delete_elem()` 辅助函数删除前缀条目。该辅助函数成功时返0，失败时返回负的错误码
 ### Userspace
 
 
-鏉ヨ嚜鐢ㄦ埛绌洪棿鐨勮闂娇鐢ㄤ笌涓婅堪鍚屽悕銆佷互 `fd` 鏍囪瘑鏄犲皠鐨?libbpf API銆?
+来自用户空间的访问使用与上述同名、以 `fd` 标识映射libbpf API
 #### bpf_map_get_next_key()
 
 
    int bpf_map_get_next_key (int fd, const void **cur_key, void **next_key)
 
-鐢ㄦ埛绌洪棿绋嬪簭鍙互浣跨敤 libbpf 鐨?`bpf_map_get_next_key()` 鍑芥暟閬嶅巻 LPM trie 涓殑鏉＄洰銆傚彲浠ラ€氳繃灏?`cur_key` 璁剧疆涓?`NULL` 鏉ヨ皟鐢?`bpf_map_get_next_key()` 鑾峰彇绗竴涓敭銆傚悗缁皟鐢ㄥ皢鑾峰彇褰撳墠閿箣鍚庣殑涓嬩竴涓敭銆俙bpf_map_get_next_key()` 鎴愬姛鏃惰繑鍥?`0`锛涘鏋?`cur_key` 鏄?trie 涓殑鏈€鍚庝竴涓敭鍒欒繑鍥?`-ENOENT`锛涘け璐ユ椂杩斿洖璐熺殑閿欒鐮併€?
-`bpf_map_get_next_key()` 灏嗕粠鏈€宸︿晶鐨勫彾瀛愬紑濮嬮亶鍘?LPM trie 鍏冪礌銆傝繖鎰忓懗鐫€杩唬浼氬厛杩斿洖鏇村叿浣撶殑閿紝鐒跺悗鎵嶆槸鏇翠笉鍏蜂綋鐨勯敭銆?
+用户空间程序可以使用 libbpf `bpf_map_get_next_key()` 函数遍历 LPM trie 中的条目。可以通过`cur_key` 设置`NULL` 来调`bpf_map_get_next_key()` 获取第一个键。后续调用将获取当前键之后的下一个键。`bpf_map_get_next_key()` 成功时返`0`；如`cur_key` trie 中的最后一个键则返`-ENOENT`；失败时返回负的错误码
+`bpf_map_get_next_key()` 将从最左侧的叶子开始遍LPM trie 元素。这意味着迭代会先返回更具体的键，然后才是更不具体的键
 ## Examples
 
 
-LPM trie 鍦ㄧ敤鎴风┖闂寸殑浣跨敤绀轰緥锛岃鍙傞槄 `tools/testing/selftests/bpf/test_lpm_map.c`銆備笅闈㈢殑浠ｇ爜鐗囨婕旂ず浜?API 鐢ㄦ硶銆?
+LPM trie 在用户空间的使用示例，请参阅 `tools/testing/selftests/bpf/test_lpm_map.c`。下面的代码片段演示API 用法
 ### Kernel BPF
 
 
-浠ヤ笅 BPF 浠ｇ爜鐗囨灞曠ず浜嗗浣曚负 IPv4 鍦板潃鍓嶇紑澹版槑涓€涓柊鐨?LPM trie锛?
+以下 BPF 代码片段展示了如何为 IPv4 地址前缀声明一个新LPM trie
 
     #include <linux/bpf.h>
     #include <bpf/bpf_helpers.h>
@@ -75,7 +75,7 @@ LPM trie 鍦ㄧ敤鎴风┖闂寸殑浣跨敤绀轰緥锛岃鍙傞槄 `tools/
             __uint(max_entries, 255);
     } ipv4_lpm_map SEC(".maps");
 
-浠ヤ笅 BPF 浠ｇ爜鐗囨灞曠ず浜嗗浣曟寜 IPv4 鍦板潃鏌ユ壘锛?
+以下 BPF 代码片段展示了如何按 IPv4 地址查找
 
     void *lookup(__u32 ipaddr)
     {
@@ -90,7 +90,7 @@ LPM trie 鍦ㄧ敤鎴风┖闂寸殑浣跨敤绀轰緥锛岃鍙傞槄 `tools/
 ### Userspace
 
 
-浠ヤ笅浠ｇ爜鐗囨灞曠ず浜嗗浣曞悜 LPM trie 鎻掑叆涓€涓?IPv4 鍓嶇紑鏉＄洰锛?
+以下代码片段展示了如何向 LPM trie 插入一IPv4 前缀条目
 
     int add_prefix_entry(int lpm_fd, __u32 addr, __u32 prefixlen, struct value *value)
     {
@@ -101,7 +101,7 @@ LPM trie 鍦ㄧ敤鎴风┖闂寸殑浣跨敤绀轰緥锛岃鍙傞槄 `tools/
             return bpf_map_update_elem(lpm_fd, &ipv4_key, value, BPF_ANY);
     }
 
-浠ヤ笅浠ｇ爜鐗囨灞曠ず浜嗕竴涓亶鍘?LPM trie 鏉＄洰鐨勭敤鎴风┖闂寸▼搴忥細
+以下代码片段展示了一个遍LPM trie 条目的用户空间程序：
 
 
 
@@ -122,7 +122,7 @@ LPM trie 鍦ㄧ敤鎴风┖闂寸殑浣跨敤绀轰緥锛岃鍙傞槄 `tools/
 
                     bpf_map_lookup_elem(map_fd, &next_key, &value);
 
-                    /** 鍦ㄦ澶勪娇鐢?key 鍜?value **/
+                    /** 在此处使key value **/
 
                     cur_key = &next_key;
             }

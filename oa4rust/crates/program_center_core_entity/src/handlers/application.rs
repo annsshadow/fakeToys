@@ -157,12 +157,9 @@ pub async fn application_delete(
 }
 
 pub fn _router(_pool: Pool, db: Option<DatabaseConnection>) -> Router {
-    let router = Router::new()
-        .route("/jaxrs/program_center/application/list", get(application_list))
-        .route("/jaxrs/program_center/application", post(application_create))
-        .route("/jaxrs/program_center/application/{id}", put(application_update).delete(application_delete));
-    match db {
-        Some(conn) => router.layer(Extension(conn)),
-        None => router,
-    }
+    // All /jaxrs/program_center/* routes are owned by the program_center
+    // crate (raw-SQL implementations). Registering them here too would
+    // panic axum at merge time ("Overlapping method route").
+    Router::new()
 }
+

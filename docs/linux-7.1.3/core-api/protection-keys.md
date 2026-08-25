@@ -1,38 +1,38 @@
 ﻿
-## 鍐呭瓨淇濇姢閿紙Memory Protection Keys锛?
+## 内存保护键（Memory Protection Keys
 
 
-鍐呭瓨淇濇姢閿彁渚涗簡涓€绉嶅己鍒跺熀浜庨〉鐨勪繚鎶ゆ満鍒讹紝浣嗕笉闇€瑕佸湪搴旂敤绋嬪簭鏇存敼淇濇姢鍩熸椂淇敼椤佃〃銆?
+内存保护键提供了一种强制基于页的保护机制，但不需要在应用程序更改保护域时修改页表
 
-Pkeys Userspace锛圥KU锛夋槸涓€椤瑰彲浠ュ湪浠ヤ笅骞冲彴鎵惧埌鐨勭壒鎬э細
-        - Intel 鏈嶅姟鍣?CPU锛孲kylake 鍙婃洿鏅?
-        - Intel 瀹㈡埛绔?CPU锛孴iger Lake锛堢 11 浠ｉ叿鐫匡級鍙婃洿鏅?
-        - 鏈潵鐨?AMD CPU
-        - 瀹炵幇 Permission Overlay Extension锛團EAT_S1POE锛夌殑 arm64 CPU
+Pkeys Userspace（PKU）是一项可以在以下平台找到的特性：
+        - Intel 服务CPU，Skylake 及更
+        - Intel 客户CPU，Tiger Lake（第 11 代酷睿）及更
+        - 未来AMD CPU
+        - 实现 Permission Overlay Extension（FEAT_S1POE）的 arm64 CPU
 
 ## x86_64
 
 
-淇濇姢閿殑宸ヤ綔鍘熺悊鏄皢姣忎釜椤佃〃椤逛腑鍏堝墠淇濈暀鐨?4 涓瘮鐗逛笓鐢ㄤ簬涓€涓€滀繚鎶ら敭锛坧rotection key锛夆€濓紝浠庤€屽緱鍒?16 涓彲鑳界殑閿€?
+保护键的工作原理是将每个页表项中先前保留4 个比特专用于一个“保护键（protection key）”，从而得16 个可能的键
 
-姣忎釜閿殑淇濇姢鐢辨瘡 CPU 鐢ㄦ埛鍙闂瘎瀛樺櫒锛圥KRU锛夊畾涔夈€傛瘡涓?PKRU 鏄竴涓?32 浣嶅瘎瀛樺櫒锛屼负 16 涓敭鍚勫瓨鍌ㄤ袱浣嶏紙璁块棶绂佹 Access Disable 鍜屽啓鍏ョ姝?Write Disable锛夈€?
+每个键的保护由每 CPU 用户可访问寄存器（PKRU）定义。每PKRU 是一32 位寄存器，为 16 个键各存储两位（访问禁止 Access Disable 和写入禁Write Disable）
 
-浣滀负 CPU 瀵勫瓨鍣紝PKRU 澶╃敓鏄嚎绋嬪眬閮ㄧ殑锛屽彲鑳戒娇姣忎釜绾跨▼鎷ユ湁涓庡叾浠栫嚎绋嬩笉鍚岀殑淇濇姢闆嗗悎銆?
+作为 CPU 寄存器，PKRU 天生是线程局部的，可能使每个线程拥有与其他线程不同的保护集合
 
-鏈変袱鏉℃寚浠わ紙RDPKRU/WRPKRU锛夌敤浜庤鍐欒瀵勫瓨鍣ㄣ€傚嵆浣?PAE PTE 涓悊璁轰笂瀛樺湪绌洪棿锛岃鐗规€т篃浠呭湪 64 浣嶆ā寮忎笅鍙敤銆傝繖浜涙潈闄愪粎瀵规暟鎹闂己鍒舵墽琛岋紝瀵规寚浠よ鍙栨病鏈夊奖鍝嶃€?
+有两条指令（RDPKRU/WRPKRU）用于读写该寄存器。即PAE PTE 中理论上存在空间，该特性也仅在 64 位模式下可用。这些权限仅对数据访问强制执行，对指令读取没有影响
 
 ## arm64
 
 
-淇濇姢閿湪姣忎釜椤佃〃椤逛腑浣跨敤 3 涓瘮鐗规潵缂栫爜涓€涓€滀繚鎶ら敭绱㈠紩锛坧rotection key index锛夆€濓紝浠庤€屽緱鍒?8 涓彲鑳界殑閿€?
+保护键在每个页表项中使用 3 个比特来编码一个“保护键索引（protection key index）”，从而得8 个可能的键
 
-姣忎釜閿殑淇濇姢鐢辨瘡 CPU 鐢ㄦ埛鍙啓绯荤粺瀵勫瓨鍣紙POR_EL0锛夊畾涔夈€傝繖鏄竴涓?64 浣嶅瘎瀛樺櫒锛屼负姣忎釜淇濇姢閿储寮曠紪鐮佽銆佸啓鍜屾墽琛岃鐩栨潈闄愩€?
+每个键的保护由每 CPU 用户可写系统寄存器（POR_EL0）定义。这是一64 位寄存器，为每个保护键索引编码读、写和执行覆盖权限
 
-浣滀负 CPU 瀵勫瓨鍣紝POR_EL0 澶╃敓鏄嚎绋嬪眬閮ㄧ殑锛屽彲鑳戒娇姣忎釜绾跨▼鎷ユ湁涓庡叾浠栫嚎绋嬩笉鍚岀殑淇濇姢闆嗗悎銆?
+作为 CPU 寄存器，POR_EL0 天生是线程局部的，可能使每个线程拥有与其他线程不同的保护集合
 
-涓?x86_64 涓嶅悓锛屼繚鎶ら敭鏉冮檺涔熼€傜敤浜庢寚浠よ鍙栥€?
+x86_64 不同，保护键权限也适用于指令读取
 
-## 绯荤粺璋冪敤
+## 系统调用
 
 
 ```
@@ -43,55 +43,55 @@ Pkeys Userspace锛圥KU锛夋槸涓€椤瑰彲浠ュ湪浠ヤ笅骞冲彴鎵惧
 			  unsigned long prot, int pkey);
 
 ```
-鍦ㄤ娇鐢?pkey 涔嬪墠锛屽繀椤诲厛鐢?pkey_alloc() 鍒嗛厤瀹冦€傚簲鐢ㄧ▼搴忕洿鎺ュ啓鍏ユ灦鏋勭浉鍏崇殑 CPU 瀵勫瓨鍣紝浠ユ洿鏀圭敱璇ラ敭瑕嗙洊鐨勫唴瀛樿闂潈闄愩€傚湪鏈緥涓紝杩欎竴鎿嶄綔琚竴涓悕涓?pkey_set() 鐨?C 鍑芥暟灏佽銆?
+在使pkey 之前，必须先pkey_alloc() 分配它。应用程序直接写入架构相关的 CPU 寄存器，以更改由该键覆盖的内存访问权限。在本例中，这一操作被一个名pkey_set() C 函数封装
 ```
 
 	int real_prot = PROT_READ|PROT_WRITE;
 	pkey = pkey_alloc(0, PKEY_DISABLE_WRITE);
 	ptr = mmap(NULL, PAGE_SIZE, PROT_NONE, MAP_ANONYMOUS|MAP_PRIVATE, -1, 0);
 	ret = pkey_mprotect(ptr, PAGE_SIZE, real_prot, pkey);
-	... 搴旂敤绋嬪簭鍦ㄦ杩愯
+	... 应用程序在此运行
 
 ```
-鐜板湪锛屽鏋滃簲鐢ㄧ▼搴忛渶瑕佹洿鏂?'ptr' 澶勭殑鏁版嵁锛屽畠鍙互
+现在，如果应用程序需要更'ptr' 处的数据，它可以
 ```
 
-	pkey_set(pkey, 0); // 娓呴櫎 PKEY_DISABLE_WRITE
-	*ptr = foo; // 璧嬪€?
-	pkey_set(pkey, PKEY_DISABLE_WRITE); // 閲嶆柊璁剧疆 PKEY_DISABLE_WRITE
+	pkey_set(pkey, 0); // 清除 PKEY_DISABLE_WRITE
+	*ptr = foo; // 赋
+	pkey_set(pkey, PKEY_DISABLE_WRITE); // 重新设置 PKEY_DISABLE_WRITE
 
 ```
-褰撻噴鏀惧唴瀛樻椂锛岀敱浜?
+当释放内存时，由
 ```
 
 	munmap(ptr, PAGE_SIZE);
 	pkey_free(pkey);
 
 ```
-瀹冧篃浼氶噴鏀捐 pkey銆傜ず渚嬪疄鐜板彲鍦?tools/testing/selftests/mm/pkey-{arm64,powerpc,x86}.h 涓壘鍒般€?
+它也会释放该 pkey。示例实现可tools/testing/selftests/mm/pkey-{arm64,powerpc,x86}.h 中找到
 
-## 琛屼负
+## 行为
 
 
-鍐呮牳璇曞浘浣夸繚鎶ら敭涓?
+内核试图使保护键
 ```
 
 	mprotect(ptr, size, PROT_NONE);
 	something(ptr);
 
 ```
-淇濇寔涓€鑷淬€傛棤璁?something() 鏄 'ptr' 鐨勭洿鎺ヨ闂?
+保持一致。无something() 是对 'ptr' 的直接访
 ```
 
 	*ptr = foo;
 
 ```
-杩樻槸鍐呮牳浠ｈ〃搴旂敤绋嬪簭杩涜璁块棶
+还是内核代表应用程序进行访问
 ```
 
 	read(fd, ptr, 1);
 
 ```
-鍦ㄨ繖涓ょ鎯呭喌涓嬪唴鏍搁兘浼氬彂閫?SIGSEGV锛屼絾褰撹繚鍙嶄繚鎶ら敭鏃?si_code 浼氳璁句负 SEGV_PKERR锛岃€屽綋杩濆弽鏅€?mprotect() 鏉冮檺鏃跺垯涓?SEGV_ACCERR銆?
+在这两种情况下内核都会发SIGSEGV，但当违反保护键si_code 会被设为 SEGV_PKERR，而当违反普mprotect() 权限时则SEGV_ACCERR
 
-娉ㄦ剰锛屾潵鑷?kthread锛堝 io_uring锛夌殑鍐呮牳璁块棶灏嗕娇鐢ㄤ繚鎶ら敭瀵勫瓨鍣ㄧ殑榛樿鍊硷紝鍥犳涓庣敤鎴风┖闂寸殑瀵勫瓨鍣ㄥ€兼垨 mprotect() 涓嶄竴鑷淬€?
+注意，来kthread（如 io_uring）的内核访问将使用保护键寄存器的默认值，因此与用户空间的寄存器值或 mprotect() 不一致

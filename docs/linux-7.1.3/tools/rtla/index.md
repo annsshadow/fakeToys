@@ -1,10 +1,10 @@
-﻿## 瀹炴椂 Linux 鍒嗘瀽宸ュ叿
+﻿## 实时 Linux 分析工具
 
-鏈〉鏄?RTLA锛圧eal-Time Linux Analysis锛夊伐鍏风殑绱㈠紩锛屾眹鎬?rtla 鍙婂叾 osnoise銆乼imerlat銆乭wnoise 绛夊瓙鍛戒护鐨勬枃妗ｅ叆鍙ｏ紝鐢ㄤ簬鍒嗘瀽鍐呮牳鍦ㄧ壒瀹氱‖浠朵笂鐨勫疄鏃跺欢杩熶笌鍣０琛屼负銆?
+本页RTLA（Real-Time Linux Analysis）工具的索引，汇rtla 及其 osnoise、timerlat、hwnoise 等子命令的文档入口，用于分析内核在特定硬件上的实时延迟与噪声行为
 
 
 
-RTLA 鎻愪緵涓€缁勫伐鍏凤紝鐢ㄤ簬鍒嗘瀽鍐呮牳鍦ㄧ壒瀹氱‖浠朵笂鐨勫疄鏃惰涓恒€?
+RTLA 提供一组工具，用于分析内核在特定硬件上的实时行为
 
 - [rtla](rtla)
 - [rtla-osnoise](rtla-osnoise)

@@ -1,38 +1,38 @@
 ﻿
 ## rv-mon
-### 鍒楀嚭鍙敤鐩戣鍣?
+### 列出可用监视
 
 :Manual section: 1
 
-## 姒傝
+## 概要
 
 
 **rv mon** [**-h**] **monitor_name** [**-h**] [**MONITOR OPTIONS**]
 
-## 鎻忚堪
+## 描述
 
 
-**rv mon** 鍛戒护杩愯鍚嶄负 **monitor_name** 鐨勭洃瑙嗗櫒銆傛瘡涓洃瑙嗗櫒閮芥湁鑷繁鐨勪竴缁?閫夐」銆?*rv list** 鍛戒护鏄剧ず鎵€鏈夊彲鐢ㄧ殑鐩戣鍣ㄣ€?
-## 閫夐」
+**rv mon** 命令运行名为 **monitor_name** 的监视器。每个监视器都有自己的一选项*rv list** 命令显示所有可用的监视器
+## 选项
 
 
 **-h**, **--help**
 
-        鎵撳嵃甯姪鑿滃崟銆?
-## 鍙敤鐩戣鍣?
+        打印帮助菜单
+## 可用监视
 
-**rv** 宸ュ叿鎻愪緵浜嗕竴缁勭洃瑙嗗櫒鐨勬帴鍙ｃ€備娇鐢?**rv list** 鍛戒护鍒楀嚭鎵€鏈夊彲鐢ㄧ殑
-鐩戣鍣ㄣ€?
-姣忎釜鐩戣鍣ㄩ兘鏈夎嚜宸辩殑涓€缁勯€夐」銆傛湁鍏虫瘡涓壒瀹氱洃瑙嗗櫒鐨勮缁嗕俊鎭紝璇峰弬闃?man
-**rv-mon**-**monitor_name**銆傛澶栵紝杩愯 **rv mon** **monitor_name** **-h**
-浼氭樉绀哄甫鏈夊彲鐢ㄩ€夐」鐨勫府鍔╄彍鍗曘€?
-## 鍙﹁鍙傞槄
+**rv** 工具提供了一组监视器的接口。使**rv list** 命令列出所有可用的
+监视器
+每个监视器都有自己的一组选项。有关每个特定监视器的详细信息，请参man
+**rv-mon**-**monitor_name**。此外，运行 **rv mon** **monitor_name** **-h**
+会显示带有可用选项的帮助菜单
+## 另请参阅
 
 
 **rv**\(1), **rv-mon**\(1)
 
-Linux 鍐呮牳 **RV** 鏂囨。锛?<https://www.kernel.org/doc/html/latest/trace/rv/index.html>
+Linux 内核 **RV** 文档<https://www.kernel.org/doc/html/latest/trace/rv/index.html>
 
-## 浣滆€?
+## 作
 
-鐢?Daniel Bristot de Oliveira <bristot@kernel.org> 缂栧啓
+Daniel Bristot de Oliveira <bristot@kernel.org> 编写

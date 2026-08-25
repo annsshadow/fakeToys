@@ -1,14 +1,14 @@
-﻿## Leds BlinkM 椹卞姩
+﻿## Leds BlinkM 驱动
 
 
-leds-blinkm 椹卞姩鏀寔 BlinkM 绯诲垪鐨勮澶囥€?
-瀹冧滑鏄?RGB-LED 妯″潡锛岀敱 (AT)tiny 寰帶鍒跺櫒椹卞姩锛屽苟閫氳繃 I2C 閫氫俊銆傝繖浜涙ā鍧楃殑榛樿
-鍦板潃鏄?0x09锛屼絾鍙互閫氳繃鍛戒护鏇存敼銆傝繖鏍蜂綘鍙互鍦ㄤ竴鏉?I2C 鎬荤嚎涓婁互鑿婅姳閾炬柟寮忚繛鎺ユ渶澶?127 涓?BlinkM銆?
-璇ヨ澶囬€氳繃鐙珛鐨勫懡浠ゆ帴鍙?RGB 涓?HSB 棰滆壊鍊笺€備綘涔熷彲浠ュ湪鎺у埗鍣ㄤ腑鎶婇棯鐑佸簭鍒楀瓨鍌ㄤ负
-鈥滆剼鏈€濓紙scripts锛夊苟杩愯瀹冧滑銆傛笎鍙橈紙fading锛変篃鏄竴涓彲閫夐」銆?
-鏈┍鍔ㄦ彁渚涚殑鎺ュ彛鏈変笁灞傦細
+leds-blinkm 驱动支持 BlinkM 系列的设备
+它们RGB-LED 模块，由 (AT)tiny 微控制器驱动，并通过 I2C 通信。这些模块的默认
+地址0x09，但可以通过命令更改。这样你可以在一I2C 总线上以菊花链方式连接最127 BlinkM
+该设备通过独立的命令接RGB HSB 颜色值。你也可以在控制器中把闪烁序列存储为
+“脚本”（scripts）并运行它们。渐变（fading）也是一个可选项
+本驱动提供的接口有三层：
 
-# a) 鐢ㄤ簬閰嶅悎瑙﹀彂鍣ㄤ娇鐢ㄧ殑 LED 澶氳壊绫绘帴鍙?
+# a) 用于配合触发器使用的 LED 多色类接
 
 ```
 
@@ -18,17 +18,17 @@ leds-blinkm 椹卞姩鏀寔 BlinkM 绯诲垪鐨勮澶囥€?
   brightness  device  max_brightness  multi_index  multi_intensity  power  subsystem  trigger  uevent
 
 ```
-鑹茬浉锛圚ue锛夌敱 multi_intensity 鏂囦欢鎺у埗锛屼寒搴︼紙lightness锛夌敱 brightness 鏂囦欢鎺у埗銆?
-鍐欏叆寮哄害鍊肩殑椤哄簭鍙互鍦?multi_index 涓壘鍒般€傚繀椤诲悜 multi_intensity 鍐欏叆姝ｅソ涓変釜
-浠嬩簬 0 鍒?255 涔嬮棿鐨勫€硷紝浠ワ細
+色相（Hue）由 multi_intensity 文件控制，亮度（lightness）由 brightness 文件控制
+写入强度值的顺序可以multi_index 中找到。必须向 multi_intensity 写入正好三个
+介于 0 255 之间的值，以：
 
 ```
 
   $ echo 255 100 50 > multi_intensity
 
 ```
-閫氳繃鍚?brightness 鏂囦欢鍐欏叆涓€涓粙浜?0 鍒?255 涔嬮棿鐨勫€硷紝鍙互鏀瑰彉鏁翠綋浜害銆?
-# b) 鐢ㄤ簬閰嶅悎瑙﹀彂鍣ㄤ娇鐢ㄧ殑 LED 绫绘帴鍙?
+通过brightness 文件写入一个介0 255 之间的值，可以改变整体亮度
+# b) 用于配合触发器使用的 LED 类接
 
 ```
 
@@ -45,9 +45,9 @@ leds-blinkm 椹卞姩鏀寔 BlinkM 绯诲垪鐨勮澶囥€?
   brightness  device  max_brightness  power  subsystem  trigger  uevent
 
 ```
-锛?sys/bus/i2c/devices/6-0009/leds 涓浉鍚岋級
+sys/bus/i2c/devices/6-0009/leds 中相同）
 
-鎴戜滑鍙互灏嗛鑹叉媶鍒嗕负绾€佺豢銆佽摑鍒嗗埆鎺у埗锛屽苟涓烘瘡绉嶉鑹插垎閰嶈Е鍙戝櫒銆?
+我们可以将颜色拆分为红、绿、蓝分别控制，并为每种颜色分配触发器
 ```
 
   $ cat blinkm-6-9-blue/brightness
@@ -62,14 +62,14 @@ leds-blinkm 椹卞姩鏀寔 BlinkM 绯诲垪鐨勮澶囥€?
 
 
 ```
-# b) 鐢ㄤ簬鎺у埗 rgb銆乫ade銆乭sb銆乻cripts 鐨?Sysfs 缁?...
+# b) 用于控制 rgb、fade、hsb、scripts Sysfs ...
 
 
-姝ゆ墿灞曟帴鍙ｄ綔涓?blinkm 鏂囦欢澶癸紝浣嶄簬 I2C 璁惧鐨?sysfs 鏂囦欢澶逛腑銆備緥濡備綅浜?/sys/bus/i2c/devices/6-0009/blinkm 涓?
+此扩展接口作blinkm 文件夹，位于 I2C 设备sysfs 文件夹中。例如位/sys/bus/i2c/devices/6-0009/blinkm 
   $ ls -h /sys/bus/i2c/devices/6-0009/blinkm/
   blue  green  red  test
 
-鐩墠浠呮敮鎸佽缃孩銆佺豢銆佽摑浠ュ強涓€涓祴璇曞簭鍒椼€?
+目前仅支持设置红、绿、蓝以及一个测试序列
 ```
 
   $ cat *
@@ -87,6 +87,6 @@ leds-blinkm 椹卞姩鏀寔 BlinkM 绯诲垪鐨勮澶囥€?
 
 
 ```
-鎴嚦 2024 骞?07 鏈?
+截至 2024 07 
 dl9pf <at> gmx <dot> de
 jstrauss <at> mailbox <dot> org

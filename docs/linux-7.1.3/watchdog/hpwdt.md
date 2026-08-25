@@ -1,31 +1,31 @@
-﻿## HPE iLO NMI 鐪嬮棬鐙楅┍鍔?
+﻿## HPE iLO NMI 鐪嬮棬鐙楅┍鍔。
 
-## 鐢ㄤ簬鍩轰簬 iLO 鐨?ProLiant 鏈嶅姟鍣?
+## 用于基于 iLO ProLiant 服务
 
-鏈€鍚庡闃咃細2018/08/20
+最后审阅：2018/08/20
 
- HPE iLO NMI 鐪嬮棬鐙楅┍鍔ㄦ槸涓€涓唴鏍告ā鍧楋紝鎻愪緵鍩烘湰鐨勭湅闂ㄧ嫍鍔熻兘锛屼互鍙婇拡瀵?iLO鈥滃悜绯荤粺浜х敓 NMI鈥?铏氭嫙鎸夐挳鐨勫鐞嗙▼搴忋€?
- 鏈枃妗ｄ腑鎵€鏈夊 iLO 鐨勫紩鐢ㄩ兘鎰忓懗鐫€瀹冨悓鏍烽€傜敤浜?iLO2 鍙婃墍鏈夊悗缁唬闄呫€?
- 鐪嬮棬鐙楀姛鑳界殑鍚敤鏂瑰紡涓庡叾浠栦换浣曞父瑙佺殑鐪嬮棬鐙楅┍鍔ㄧ浉鍚屻€備篃灏辨槸璇达紝闇€瑕佸惎鍔ㄤ竴涓簲鐢ㄧ▼搴忔潵
- 鍛ㄦ湡鎬у湴鈥滆涪鈥濈湅闂ㄧ嫍瀹氭椂鍣ㄣ€傚湪 tools/testing/selftests/watchdog/ 涓湁涓€涓悕涓?watchdog-test.c
- 鐨勫熀纭€搴旂敤绋嬪簭銆傚彧闇€缂栬瘧璇?C 鏂囦欢骞惰繍琛屽畠銆傚鏋滅郴缁熻繘鍏ヤ笉鑹姸鎬佸苟鎸傝捣锛孒PE ProLiant iLO
- 瀹氭椂鍣ㄥ瘎瀛樺櫒灏变笉浼氳鍙婃椂鏇存柊锛屽苟浼氬彂鐢熶竴娆＄‖浠剁郴缁熷浣嶏紙涔熺О涓鸿嚜鍔ㄦ湇鍔″櫒鎭㈠锛圓SR锛夛級浜嬩欢銆?
- hpwdt 椹卞姩杩樻湁浠ヤ笅妯″潡鍙傛暟锛?
+ HPE iLO NMI 看门狗驱动是一个内核模块，提供基本的看门狗功能，以及针iLO“向系统产生 NMI虚拟按钮的处理程序
+ 本文档中所有对 iLO 的引用都意味着它同样适用iLO2 及所有后续代际
+ 看门狗功能的启用方式与其他任何常见的看门狗驱动相同。也就是说，需要启动一个应用程序来
+ 周期性地“踢”看门狗定时器。在 tools/testing/selftests/watchdog/ 中有一个名watchdog-test.c
+ 的基础应用程序。只需编译C 文件并运行它。如果系统进入不良状态并挂起，HPE ProLiant iLO
+ 定时器寄存器就不会被及时更新，并会发生一次硬件系统复位（也称为自动服务器恢复（ASR））事件
+ hpwdt 驱动还有以下模块参数
  ============  ================================================================
- soft_margin   鍏佽鐢ㄦ埛璁剧疆鐪嬮棬鐙楀畾鏃跺櫒鍊笺€傞粯璁ゅ€间负 30 绉掋€? timeout       soft_margin 鐨勫埆鍚嶃€? pretimeout    鍏佽鐢ㄦ埛璁剧疆鐪嬮棬鐙楅瓒呮椂鍊笺€傝繖鏄秴鏃朵箣鍓嶃€佸悜绯荤粺鎶曢€?NMI
-               鐨勭鏁般€傚皢璇ュ€艰涓洪浂浼氱鐢ㄩ瓒呮椂 NMI銆傞粯璁ゅ€间负 9 绉掋€? nowayout      鍩虹鐪嬮棬鐙楀弬鏁帮紝涓嶅厑璁稿畾鏃跺櫒琚噸鍚垨閫冮伩鍗冲皢鍙戠敓鐨?ASR銆?               榛樿鍊煎湪缂栬瘧鍐呮牳鏃惰瀹氥€傚鏋滆璁句负鈥淵鈥濓紝閭ｄ箞涓€鏃︾湅闂ㄧ嫍琚惎鍔紝
-               灏辨棤娉曠鐢ㄥ畠銆? kdumptimeout  鏀跺埌 NMI 鍚庛€佽皟鐢?panic 涔嬪墠搴旂敤鐨勬渶灏忚秴鏃剁鏁般€傦紙-1锛夌鐢ㄧ湅闂ㄧ嫍銆?               褰撳€?> 0 鏃讹紝瀹氭椂鍣ㄤ細琚噸鏂扮紪绋嬩负 value 鎴栧綋鍓嶈秴鏃跺€间腑鐨勮緝澶ц€呫€? ============  ================================================================
+ soft_margin   允许用户设置看门狗定时器值。默认值为 30 秒 timeout       soft_margin 的别名 pretimeout    允许用户设置看门狗预超时值。这是超时之前、向系统投NMI
+               的秒数。将该值设为零会禁用预超时 NMI。默认值为 9 秒 nowayout      基础看门狗参数，不允许定时器被重启或逃避即将发生ASR               默认值在编译内核时设定。如果被设为“Y”，那么一旦看门狗被启动，
+               就无法禁用它 kdumptimeout  收到 NMI 后、调panic 之前应用的最小超时秒数。（-1）禁用看门狗               当> 0 时，定时器会被重新编程为 value 或当前超时值中的较大者 ============  ================================================================
 
- 娉ㄦ剰锛?       鍏充簬鐪嬮棬鐙楅┍鍔ㄧ殑涓€鑸€ф洿澶氫俊鎭紝鍖呮嫭瀵?/dev/watchdog 鐨?ioctl 鎺ュ彛锛屽彲浠ュ湪
-       Documentation/watchdog/watchdog-api.rst 涓?Documentation/driver-api/ipmi.rst 涓壘鍒般€?
- 鐢变簬 iLO 纭欢鐨勯檺鍒讹紝濡傛灉鍚敤浜?NMI 棰勮秴鏃讹紝瀹冨彧鑳借璁句负 9 绉掋€傚皾璇曞皢 pretimeout 璁句负鍏朵粬
- 闈為浂鍊间細琚彇鏁达紝鍙兘鍙栨暣涓洪浂銆傜敤鎴峰湪灏濊瘯璁剧疆 pretimeout 鎴?timeout 涔嬪悗搴旀牳瀹?pretimeout 鐨勫€笺€?
- 鏀跺埌鏉ヨ嚜 iLO 鐨?NMI 鍚庯紝hpwdt 椹卞姩浼氳Е鍙戜竴娆?panic銆傝繖鏄负浜嗚兘澶熸敹闆嗗穿婧冭浆鍌ㄣ€傜敤鎴锋湁涔夊姟
- 姝ｇ‘鍦颁负 kdump 閰嶇疆绯荤粺銆?
- 鍙戠敓 panic 鏃?Linux 鍐呮牳鐨勯粯璁よ涓烘槸鎵撳嵃鍐呮牳 tombstone 骞舵案杩滃惊鐜€傝繖閫氬父涓嶆槸鐪嬮棬鐙楃敤鎴锋墍鏈熸湜鐨勩€?
- 甯屾湜浜嗚В鏇村鑰呰鍙傝锛? - Documentation/admin-guide/kdump/kdump.rst
- - Documentation/admin-guide/kernel-parameters.txt锛坧anic=锛? - 浣犳墍浣跨敤鐨?Linux 鍙戣鐗堜笓鏈夋枃妗ｃ€?
- 濡傛灉 hpwdt 娌℃湁鏀跺埌涓庡埌鏈熷畾鏃跺櫒鍏宠仈鐨?NMI锛宨LO 浼氬湪瓒呮椂鏃剁户缁浣嶇郴缁燂紙濡傛灉瀹氭椂鍣ㄥ皻鏈鏇存柊锛夈€?
+ 注意       关于看门狗驱动的一般性更多信息，包括/dev/watchdog ioctl 接口，可以在
+       Documentation/watchdog/watchdog-api.rst Documentation/driver-api/ipmi.rst 中找到
+ 由于 iLO 硬件的限制，如果启用NMI 预超时，它只能被设为 9 秒。尝试将 pretimeout 设为其他
+ 非零值会被取整，可能取整为零。用户在尝试设置 pretimeout timeout 之后应核pretimeout 的值
+ 收到来自 iLO NMI 后，hpwdt 驱动会触发一panic。这是为了能够收集崩溃转储。用户有义务
+ 正确地为 kdump 配置系统
+ 发生 panic Linux 内核的默认行为是打印内核 tombstone 并永远循环。这通常不是看门狗用户所期望的
+ 希望了解更多者请参见 - Documentation/admin-guide/kdump/kdump.rst
+ - Documentation/admin-guide/kernel-parameters.txt（panic= - 你所使用Linux 发行版专有文档
+ 如果 hpwdt 没有收到与到期定时器关联NMI，iLO 会在超时时继续复位系统（如果定时器尚未被更新）
 --
 
- HPE iLO NMI 鐪嬮棬鐙楅┍鍔ㄤ笌鏂囨。鏈€鍒濈敱 Tom Mingarelli 寮€鍙戙€?
+ HPE iLO NMI 看门狗驱动与文档最初由 Tom Mingarelli 开发

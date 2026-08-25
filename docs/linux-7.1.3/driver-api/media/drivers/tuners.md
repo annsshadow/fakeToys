@@ -1,15 +1,15 @@
-﻿锘?
-## 璋冭皭鍣紙Tuner锛夐┍鍔?
+﻿锘。
+## 调谐器（Tuner）驱
 
-鏈枃浠嬬粛 V4L2 濯掍綋瀛愮郴缁熶笅璋冭皭鍣紙Tuner锛夐┍鍔ㄧ殑缂栫▼鎺ュ彛锛岃鏄庝笉鍚岄鏍硷紙LG銆丳hilips銆乀emic銆丄LPS 绛夛級璋冭皭鍣ㄧ殑棰戞鍒囨崲瀛楄妭宸紓锛屼互鍙婁富瑕佽皟璋愬櫒鍒堕€犲晢鐨勫瀷鍙锋爣璇嗚鍒欙紝渚涢┍鍔ㄥ紑鍙戣€呭弬鑰冦€?
-
-
-
-### 绠€鍗曠殑璋冭皭鍣ㄧ紪绋?
+本文介绍 V4L2 媒体子系统下调谐器（Tuner）驱动的编程接口，说明不同风格（LG、Philips、Temic、ALPS 等）调谐器的频段切换字节差异，以及主要调谐器制造商的型号标识规则，供驱动开发者参考
 
 
-鏈夊嚑绉嶄笉鍚岄鏍肩殑璋冭皭鍣ㄧ紪绋?API銆?
-瀹冧滑鐨勪富瑕佸尯鍒湪浜庨娈靛垏鎹㈠瓧鑺傘€?
+
+### 简单的调谐器编
+
+
+有几种不同风格的调谐器编API
+它们的主要区别在于频段切换字节
 
 - L= LG_API       (VHF_LO=0x01, VHF_HI=0x02, UHF=0x08, radio=0x04)
 - P= PHILIPS_API  (VHF_LO=0xA0, VHF_HI=0x90, UHF=0x30, radio=0x04)
@@ -17,10 +17,10 @@
 - A= ALPS_API     (VHF_LO=0x14, VHF_HI=0x12, UHF=0x11)
 - M= PHILIPS_MK3  (VHF_LO=0x01, VHF_HI=0x02, UHF=0x04, radio=0x19)
 
-### 璋冭皭鍣ㄥ埗閫犲晢
+### 调谐器制造商
 
 
-- Samsung 璋冭皭鍣ㄦ爣璇嗭細锛堜緥濡?TCPM9091PD27锛?
+- Samsung 调谐器标识：（例TCPM9091PD27
 
 
  TCP [ABCJLMNQ] 90[^89^][^125^] [DP] [ACD] 27 [ABCD]
@@ -41,24 +41,24 @@
    D= NTSC
    P= PAL
  [ACD]:
-   A= F 杩炴帴鍣?
-   C= Phono 杩炴帴鍣?
-   D= Din 鎻掑骇
+   A= F 杩炴帴鍣。
+   C= Phono 杩炴帴鍣。
+   D= Din 插座
  [ABCD]:
-   3 绾?I2C 璋冭皭锛? 棰戞/3 棰戞
+   3 I2C 调谐 频段/3 频段
 
-杩欎簺璋冭皭鍣ㄤ笌 PHILIPS_API 鍏煎銆?
+这些调谐器与 PHILIPS_API 兼容
 
-Philips 璋冭皭鍣ㄦ爣璇嗭細锛堜緥濡?FM1216MF锛?
+Philips 调谐器标识：（例FM1216MF
 
 
   F[IRMQ]12[^1345^]6{MF|ME|MP}
   F[IRMQ]:
-   FI12x6: 璋冭皭鍣ㄧ郴鍒?
+   FI12x6: 调谐器系
    FR12x6: 璋冭皭鍣?+ 鏀堕煶鏈?IF
    FM12x6: 璋冭皭鍣?+ FM
-   FQ12x6: 鐗规畩
-   FMR12x6: 鐗规畩
+   FQ12x6: 特殊
+   FMR12x6: 特殊
    TD15xx: 鏁板瓧璋冭皭鍣?ATSC
   12[^1345^]6:
    1216: PAL BG
@@ -66,19 +66,19 @@ Philips 璋冭皭鍣ㄦ爣璇嗭細锛堜緥濡?FM1216MF锛?
    1246: PAL I
    1256: Pal DK
   {MF|ME|MP}
-   MF: BG LL 甯?Secam锛圡ulti France锛?
+   MF: BG LL Secam（Multi France
    ME: BG DK I LL   (Multi Europe)
    MP: BG DK I      (Multi PAL)
-   MR: BG DK M 锛?
-   MG: BG DKI M 锛?
-  MK2 绯诲垪 PHILIPS_API锛屽ぇ澶氭暟璋冭皭鍣ㄤ笌姝ゅ吋瀹癸紒
-  MK3 绯诲垪浜?2002 骞村紩鍏ワ紝浣跨敤 PHILIPS_MK3_API
+   MR: BG DK M 锛。
+   MG: BG DKI M 锛。
+  MK2 系列 PHILIPS_API，大多数调谐器与此兼容！
+  MK3 系列2002 年引入，使用 PHILIPS_MK3_API
 
-Temic 璋冭皭鍣ㄦ爣璇嗭細锛堜緥濡?4006FH5锛?
+Temic 调谐器标识：（例4006FH5
 
 
    4[^01^][^0136^][^269^]F[HYNR]5
-    40x2: 璋冭皭鍣?(5V/33V)锛孴EMIC_API銆?
+    40x2: 调谐(5V/33V)，TEMIC_API
     40x6: 璋冭皭鍣?5V
     41xx: 璋冭皭鍣?compact
     40x9: 璋冭皭鍣?FM compact
@@ -89,13 +89,13 @@ Temic 璋冭皭鍣ㄦ爣璇嗭細锛堜緥濡?4006FH5锛?
     xx6x: PAL I
    F[HYNR]5
     FH5: Pal BG
-    FY5: 鍏朵粬
-    FN5: 澶氭爣鍑?
-    FR5: 甯?FM 鏀堕煶鏈?
-   3X xxxx: 甯︽湁鐗瑰畾杩炴帴鍣ㄧ殑璁㈠崟鍙?
-  娉ㄦ剰锛氬彧鏈?40x2 绯诲垪浣跨敤 TEMIC_API锛屾墍鏈夋洿鏂扮殑璋冭皭鍣ㄩ兘浣跨敤 PHILIPS_API銆?
+    FY5: 其他
+    FN5: 澶氭爣鍑。
+    FR5: 甯?FM 鏀堕煶鏈。
+   3X xxxx: 带有特定连接器的订单
+  注意：只40x2 系列使用 TEMIC_API，所有更新的调谐器都使用 PHILIPS_API
 
-LG Innotek 璋冭皭鍣細
+LG Innotek 调谐器：
 
 - TPI8NSR11 : NTSC J/M    (TPI8NSR01 w/FM)  (P,210/497)
 - TPI8PSB11 : PAL B/G     (TPI8PSB01 w/FM)  (P,170/450)
@@ -109,23 +109,23 @@ LG Innotek 璋冭皭鍣細
 - TAPC-G702P: PAL D/K+B/G (L,170/450)
 
 - TADC-H002F: NTSC (L,175/410?; 2-B, C-W+11, W+12-69)
-- TADC-M201D: PAL D/K+B/G+I (L,143/425)  (澹伴煶鎺у埗鍦?I2C 鍦板潃 0xc8)
-- TADC-T003F: NTSC 鍙版咕  (L,175/410?; 2-B, C-W+11, W+12-69)
+- TADC-M201D: PAL D/K+B/G+I (L,143/425)  (声音控制I2C 地址 0xc8)
+- TADC-T003F: NTSC 台湾  (L,175/410?; 2-B, C-W+11, W+12-69)
 
-鍚庣紑锛?
-  - P= 鏍囧噯 phono 姣嶅骇
-  - D= IEC 姣嶅骇
-  - F= F 杩炴帴鍣?
+后缀
+  - P= 标准 phono 母座
+  - D= IEC 母座
+  - F= F 杩炴帴鍣。
 
-鍏朵粬璋冭皭鍣細
+其他调谐器：
 
 - TCL2002MB-1 : PAL BG + DK       =TUNER_LG_PAL_NEW_TAPC
 - TCL2002MB-1F: PAL BG + DK w/FM  =PHILIPS_PAL
 - TCL2002MI-2 : PAL I		= ??
 
-ALPS 璋冭皭鍣細
+ALPS 调谐器：
 
-- 澶у鏁颁笌 LG_API 鍏煎
-- TSCH6 浣跨敤 ALPS_API锛圱SCH5 ?锛?
-- TSBE1 鏈夐澶栫殑 API 05,02,08 鎺у埗瀛楄妭=0xCB 鏉ユ簮:[#f1]_
+- 大多数与 LG_API 兼容
+- TSCH6 使用 ALPS_API（TSCH5 
+- TSBE1 有额外的 API 05,02,08 控制字节=0xCB 来源:[#f1]_
 

@@ -1,7 +1,7 @@
-﻿## 杩愯鏃堕獙璇侊紙rv锛夊伐鍏?
+﻿## 运行时验证（rv）工
 
 
-**rv** 宸ュ叿涓轰竴缁勮繍琛屾椂楠岃瘉锛坮untime verification锛宺v锛夌洃瑙嗗櫒鎻愪緵鎺ュ彛銆?
+**rv** 工具为一组运行时验证（runtime verification，rv）监视器提供接口
 
 - [rv](rv)
 - [rv-list](rv-list)

@@ -1,42 +1,42 @@
-﻿## Coresight CPU 璋冭瘯妯″潡
+﻿## Coresight CPU 调试模块
 
 
    :Author:   Leo Yan <leo.yan@linaro.org>
    :Date:     April 5th, 2017
 
-### 绠€浠?
+### 简
 
-Coresight CPU 璋冭瘯妯″潡瀹氫箟浜?ARMv8-a 鏋舵瀯鍙傝€冩墜鍐岋紙ARM DDI 0487A.k锛夌殑
-鈥淧art H: External debug鈥?绔犺妭锛孋PU 鍙泦鎴愯皟璇曟ā鍧楋紝涓昏鐢ㄤ簬涓ょ妯″紡锛?self-hosted debug锛堣嚜鎵樼璋冭瘯锛夊拰 external debug锛堝閮ㄨ皟璇曪級銆傞€氬父 external
-debug 妯″紡骞夸负浜虹煡锛屽嵆澶栭儴璋冭瘯鍣ㄩ€氳繃 JTAG 绔彛杩炴帴鍒?SoC锛涘彟涓€鏂归潰锛岀▼搴?涔熷彲渚濊禆 self-hosted debug 妯″紡鏉ユ帰绱㈣皟璇曟柟娉曪紝鏈枃妗ｉ噸鐐瑰叧娉ㄨ繖涓€閮ㄥ垎銆?
-璇ヨ皟璇曟ā鍧楁彁渚涘熀浜庨噰鏍风殑鎬ц兘鍓栨瀽锛坧rofiling锛夋墿灞曪紝鍙敤浜庡 CPU 绋嬪簭璁℃暟鍣ㄣ€?瀹夊叏鐘舵€佸拰寮傚父绾у埆绛夎繘琛岄噰鏍凤紱閫氬父姣忎釜 CPU 閮芥湁涓€涓笓鐢ㄧ殑璋冭瘯妯″潡涓庝箣杩炴帴銆?鍩轰簬 self-hosted debug 鏈哄埗锛孡inux 鍐呮牳鍙湪鍐呮牳鍙戠敓 panic 鏃朵粠 mmio 鍖哄煙
-璁块棶杩欎簺鐩稿叧瀵勫瓨鍣ㄣ€傚唴鏍?panic 鐨勫洖璋冮€氱煡鍣紙callback notifier锛変細涓烘瘡涓?CPU
-杞偍鐩稿叧瀵勫瓨鍣紱杩欐渶缁堟湁鍔╀簬瀵?panic 杩涜杈呭姪鍒嗘瀽銆?
+Coresight CPU 调试模块定义ARMv8-a 架构参考手册（ARM DDI 0487A.k）的
+“Part H: External debug章节，CPU 可集成调试模块，主要用于两种模式self-hosted debug（自托管调试）和 external debug（外部调试）。通常 external
+debug 模式广为人知，即外部调试器通过 JTAG 端口连接SoC；另一方面，程也可依赖 self-hosted debug 模式来探索调试方法，本文档重点关注这一部分
+该调试模块提供基于采样的性能剖析（profiling）扩展，可用于对 CPU 程序计数器安全状态和异常级别等进行采样；通常每个 CPU 都有一个专用的调试模块与之连接基于 self-hosted debug 机制，Linux 内核可在内核发生 panic 时从 mmio 区域
+访问这些相关寄存器。内panic 的回调通知器（callback notifier）会为每CPU
+转储相关寄存器；这最终有助于panic 进行辅助分析
 
-### 瀹炵幇
+### 实现
 
 
-- 鍦ㄩ┍鍔ㄦ敞鍐屾湡闂达紝瀹冧娇鐢?EDDEVID 鍜?EDDEVID1 杩欎袱涓澶?ID 瀵勫瓨鍣ㄦ潵鍒ゆ柇鏄惁
-  瀹炵幇浜嗗熀浜庨噰鏍风殑鎬ц兘鍓栨瀽銆傚湪鏌愪簺骞冲彴涓婏紝璇ョ‖浠剁壒鎬ц瀹屽叏鎴栭儴鍒嗗疄鐜帮紱鑻ヤ笉
-  鏀寔璇ョ壒鎬э紝鍒欐敞鍐屽皢澶辫触銆?
-- 鍦ㄧ紪鍐欐湰鏂囨。鏃讹紝璋冭瘯椹卞姩涓昏渚濊禆鍐呮牳 panic 鍥炶皟閫氱煡鍣ㄤ粠涓変釜閲囨牱瀵勫瓨鍣ㄦ敹闆?  鐨勪俊鎭細EDPCSR銆丒DVIDSR 鍜?EDCIDSR锛氫粠 EDPCSR 鍙幏鍙栫▼搴忚鏁板櫒锛汦DVIDSR
-  鍖呭惈瀹夊叏鐘舵€併€佸紓甯哥骇鍒€佷綅瀹界瓑淇℃伅锛汦DCIDSR 鏄笂涓嬫枃 ID 鍊硷紝鍖呭惈
-  CONTEXTIDR_EL1 鐨勯噰鏍峰€笺€?
-- 璇ラ┍鍔ㄦ敮鎸佽繍琛屼簬 AArch64 鎴?AArch32 妯″紡鐨?CPU銆備袱鑰呭瘎瀛樺櫒鍛藉悕绾﹀畾鐣ユ湁涓嶅悓锛?  AArch64 浣跨敤 'ED' 浣滀负瀵勫瓨鍣ㄥ墠缂€锛圓RM DDI 0487A.k锛孒9.1 绔狅級锛孉Arch32 浣跨敤
-  'DBG' 浣滀负鍓嶇紑锛圓RM DDI 0487A.k锛孏5.1 绔狅級銆傞┍鍔ㄧ粺涓€閲囩敤 AArch64 鍛藉悕绾﹀畾銆?
-- ARMv8-a锛圓RM DDI 0487A.k锛夊拰 ARMv7-a锛圓RM DDI 0406C.b锛夌殑瀵勫瓨鍣ㄤ綅瀹氫箟涓嶅悓銆?  鍥犳椹卞姩鏁村悎浜嗕袱鑰呯殑宸紓锛?
-  鑻?PCSROffset=0b0000锛屽湪 ARMv8-a 涓?EDPCSR 鐗规€ф湭瀹炵幇锛涗絾 ARMv7-a 瀹氫箟涓?  鈥淧CSR 閲囨牱鍊间細鏍规嵁鎸囦护闆嗙姸鎬佸亸绉讳竴涓€尖€濄€傚浜?ARMv7-a锛岄┍鍔ㄨ繘涓€姝ユ鏌?CPU
-  杩愯浜?ARM 杩樻槸 thumb 鎸囦护闆嗭紝骞跺 PCSR 鍊艰繘琛屾牎鍑嗭紝鍏充簬鍋忕Щ鐨勮缁嗚鏄庤
-  ARMv7-a ARM锛圓RM DDI 0406C.b锛塁11.11.34 绔?鈥淒BGPCSR, Program Counter
+- 在驱动注册期间，它使EDDEVID EDDEVID1 这两个设ID 寄存器来判断是否
+  实现了基于采样的性能剖析。在某些平台上，该硬件特性被完全或部分实现；若不
+  支持该特性，则注册将失败
+- 在编写本文档时，调试驱动主要依赖内核 panic 回调通知器从三个采样寄存器收  的信息：EDPCSR、EDVIDSR EDCIDSR：从 EDPCSR 可获取程序计数器；EDVIDSR
+  包含安全状态、异常级别、位宽等信息；EDCIDSR 是上下文 ID 值，包含
+  CONTEXTIDR_EL1 的采样值
+- 该驱动支持运行于 AArch64 AArch32 模式CPU。两者寄存器命名约定略有不同  AArch64 使用 'ED' 作为寄存器前缀（ARM DDI 0487A.k，H9.1 章），AArch32 使用
+  'DBG' 作为前缀（ARM DDI 0487A.k，G5.1 章）。驱动统一采用 AArch64 命名约定
+- ARMv8-a（ARM DDI 0487A.k）和 ARMv7-a（ARM DDI 0406C.b）的寄存器位定义不同  因此驱动整合了两者的差异
+  PCSROffset=0b0000，在 ARMv8-a EDPCSR 特性未实现；但 ARMv7-a 定义  “PCSR 采样值会根据指令集状态偏移一个值”。对ARMv7-a，驱动进一步检CPU
+  运行ARM 还是 thumb 指令集，并对 PCSR 值进行校准，关于偏移的详细说明见
+  ARMv7-a ARM（ARM DDI 0406C.b）C11.11.34 “DBGPCSR, Program Counter
   Sampling Register鈥濄€?
-  鑻?PCSROffset=0b0010锛孉RMv8-a 瀹氫箟涓衡€滃凡瀹炵幇鐨?EDPCSR锛岄噰鏍蜂笉搴旂敤鍋忕Щ锛屼笖涓?  鍦?AArch32 鐘舵€佷笅閲囨牱鎸囦护闆嗙姸鎬佲€濄€傚洜姝ゅ湪 ARMv8 涓婏紝鑻?EDDEVID1.PCSROffset
-  涓?0b0010 涓?CPU 杩愯浜?AArch32 鐘舵€侊紝鍒欎笉瀵?EDPCSR 閲囨牱锛涘綋 CPU 杩愯浜?  AArch64 鐘舵€佹椂锛孍DPCSR 琚噰鏍蜂笖涓嶅簲鐢ㄥ亸绉汇€?
+  PCSROffset=0b0010，ARMv8-a 定义为“已实现EDPCSR，采样不应用偏移，且  AArch32 状态下采样指令集状态”。因此在 ARMv8 上，EDDEVID1.PCSROffset
+  0b0010 CPU 运行AArch32 状态，则不EDPCSR 采样；当 CPU 运行  AArch64 状态时，EDPCSR 被采样且不应用偏移
 
-### 鏃堕挓涓庣數婧愬煙
+### 时钟与电源域
 
 
-鍦ㄨ闂皟璇曞瘎瀛樺櫒涔嬪墠锛屽簲纭繚鏃堕挓鍜岀數婧愬煙宸叉纭娇鑳姐€傚湪 ARMv8-a ARM
-锛圓RM DDI 0487A.k锛夌殑 'H9.1 Debug registers' 绔犺妭涓紝璋冭瘯瀵勫瓨鍣ㄥ垎甯冨湪涓や釜鍩熶腑锛?debug 鍩熷拰 CPU 鍩熴€?
+在访问调试寄存器之前，应确保时钟和电源域已正确使能。在 ARMv8-a ARM
+（ARM DDI 0487A.k）的 'H9.1 Debug registers' 章节中，调试寄存器分布在两个域中debug 域和 CPU 域
 ```
 
                                 +---------------+
@@ -52,34 +52,34 @@ debug 妯″紡骞夸负浜虹煡锛屽嵆澶栭儴璋冭瘯鍣ㄩ€氳繃 JTAG
                                 +---------------+
 
 ```
-瀵逛簬 debug 鍩燂紝鐢ㄦ埛浣跨敤 DT binding锛堣澶囨爲缁戝畾锛夆€渃locks鈥?鍜?鈥減ower-domains鈥?鏉ヤ负璋冭瘯閫昏緫鎸囧畾鐩稿簲鐨勬椂閽熸簮鍜岀數婧愩€傞┍鍔ㄦ寜闇€璋冪敤 pm_runtime_{put|get} 鎿嶄綔鏉?澶勭悊璋冭瘯鐢垫簮鍩熴€?
-瀵逛簬 CPU 鍩燂紝涓嶅悓鐨?SoC 璁捐鏈変笉鍚岀殑鐢垫簮绠＄悊鏂规锛屾渶缁堜細涓ラ噸褰卞搷 external
-debug 妯″潡銆傚洜姝ゅ彲鍒嗕负浠ヤ笅鍑犵鎯呭喌锛?
-- 鍦ㄥ叿鏈夊悎鐞嗙數婧愭帶鍒跺櫒銆佽兘姝ｇ‘澶勭悊 CPU 鐢垫簮鍩熺殑绯荤粺涓紝CPU 鐢垫簮鍩熷彲鐢遍┍鍔ㄤ腑鐨?  EDPRCR 瀵勫瓨鍣ㄦ帶鍒躲€傞┍鍔ㄩ鍏堝啓 EDPRCR.COREPURQ 浣嶄负 CPU 涓婄數锛岀劧鍚庡啓
-  EDPRCR.CORENPDRQ 浣嶄互妯℃嫙 CPU 鎺夌數銆傝繖鏍峰彲浠ョ‘淇?CPU 鐢垫簮鍩熷湪璁块棶璋冭瘯鐩稿叧
-  瀵勫瓨鍣ㄦ湡闂磋姝ｇ‘涓婄數锛?
-- 鏌愪簺璁捐鍦ㄩ泦缇や腑鎵€鏈?CPU 鎺夌數鏃朵細鍏抽棴鏁翠釜闆嗙兢鈥斺€斿寘鎷湰搴斿湪 debug 鐢垫簮鍩熶腑
-  淇濇寔渚涚數鐨勮皟璇曞瘎瀛樺櫒閮ㄥ垎銆傝繖浜涙儏鍐典笉浼氶伒寰?EDPRCR 涓殑浣嶏紝鍥犳杩欎簺璁捐鏃犳硶
-  浠?CoreSight / Debug 璁捐鑰呴鏈熺殑鏂瑰紡鏀寔鎺夌數璋冭瘯銆傝繖鎰忓懗鐫€鍗充娇妫€鏌?EDPRSR锛?  鑻ョ洰鏍囧瘎瀛樺櫒鏈笂鐢碉紝涔熷彲鑳藉鑷存€荤嚎鎸傝捣锛坆us hang锛夈€?
-  鍦ㄨ繖绉嶆儏鍐典笅锛屽湪璋冭瘯瀵勫瓨鍣ㄦ湭涓婄數鏃惰闂畠浠棤寮備簬鐏鹃毦锛涘洜姝ゆ垜浠渶瑕佸湪鍚姩鏃跺氨
-  闃绘 CPU 浣庡姛鑰楃姸鎬侊紝鎴栧湪鐢ㄦ埛杩愯鏃跺惎鐢ㄦā鍧楁椂闃绘銆傝缁嗙敤娉曡鍙傝
-  鈥淗ow to use the module鈥?绔犺妭銆?
+对于 debug 域，用户使用 DT binding（设备树绑定）“clocks“power-domains来为调试逻辑指定相应的时钟源和电源。驱动按需调用 pm_runtime_{put|get} 操作处理调试电源域
+对于 CPU 域，不同SoC 设计有不同的电源管理方案，最终会严重影响 external
+debug 模块。因此可分为以下几种情况
+- 在具有合理电源控制器、能正确处理 CPU 电源域的系统中，CPU 电源域可由驱动中  EDPRCR 寄存器控制。驱动首先写 EDPRCR.COREPURQ 位为 CPU 上电，然后写
+  EDPRCR.CORENPDRQ 位以模拟 CPU 掉电。这样可以确CPU 电源域在访问调试相关
+  寄存器期间被正确上电
+- 某些设计在集群中所CPU 掉电时会关闭整个集群——包括本应在 debug 电源域中
+  保持供电的调试寄存器部分。这些情况不会遵EDPRCR 中的位，因此这些设计无法
+  CoreSight / Debug 设计者预期的方式支持掉电调试。这意味着即使检EDPRSR  若目标寄存器未上电，也可能导致总线挂起（bus hang）
+  在这种情况下，在调试寄存器未上电时访问它们无异于灾难；因此我们需要在启动时就
+  阻止 CPU 低功耗状态，或在用户运行时启用模块时阻止。详细用法请参见
+  “How to use the module章节
 
-### 璁惧鏍戠粦瀹?
+### 设备树绑
 
-鏈夊叧璇︾粏淇℃伅锛岃鍙傞槄 Documentation/devicetree/bindings/arm/arm,coresight-cpu-debug.yaml銆?
+有关详细信息，请参阅 Documentation/devicetree/bindings/arm/arm,coresight-cpu-debug.yaml
 
-### 濡備綍浣跨敤璇ユā鍧?
+### 如何使用该模
 
-鑻ヨ鍦ㄥ惎鍔ㄦ椂灏卞惎鐢ㄨ皟璇曞姛鑳斤紝鍙湪鍐呮牳鍛戒护琛屽弬鏁颁腑娣诲姞 鈥渃oresight_cpu_debug.enable=1鈥濄€?
-璇ラ┍鍔ㄤ篃鍙綔涓烘ā鍧楀伐浣滐紝鍥犳鍙湪 insmod 鏃跺惎鐢ㄨ皟璇?
+若要在启动时就启用调试功能，可在内核命令行参数中添加 “coresight_cpu_debug.enable=1”
+该驱动也可作为模块工作，因此可在 insmod 时启用调
 ```
 
   # insmod coresight_cpu_debug.ko debug=1
 
 ```
-鑻ュ湪鍚姩鎴?insmod 妯″潡鏃舵湭鍚敤璋冭瘯锛岄┍鍔ㄤ細浣跨敤 debugfs 鏂囦欢绯荤粺鎻愪緵涓€涓棆閽紝
-鐢ㄤ簬鍔ㄦ€佸惎鐢ㄦ垨绂佺敤璋冭瘯锛?
+若在启动insmod 模块时未启用调试，驱动会使用 debugfs 文件系统提供一个旋钮，
+用于动态启用或禁用调试
 ```
 
   # echo 1 > /sys/kernel/debug/coresight_cpu_debug/enable
@@ -91,13 +91,13 @@ debug 妯″潡銆傚洜姝ゅ彲鍒嗕负浠ヤ笅鍑犵鎯呭喌锛?
   # echo 0 > /sys/kernel/debug/coresight_cpu_debug/enable
 
 ```
-濡?鈥淐lock and power domain鈥?绔犺妭鎵€杩帮紝鑻ヤ綘浣跨敤鐨勫钩鍙板叿鏈変細鍏抽棴璋冭瘯閫昏緫鐨勭┖闂?鐘舵€侊紝涓旂數婧愭帶鍒跺櫒鏃犳硶寰堝ソ鍦板搷搴旀潵鑷?EDPRCR 鐨勮姹傦紝鍒欏簲鍦ㄥ惎鐢?CPU 璋冭瘯鍔熻兘
-涔嬪墠鍏堥檺鍒?CPU 绌洪棽鐘舵€侊紱杩欐牱鎵嶈兘纭繚瀵硅皟璇曢€昏緫鐨勮闂€?
-鑻ヨ鍦ㄥ惎鍔ㄦ椂灏遍檺鍒剁┖闂茬姸鎬侊紝鍙湪鍐呮牳鍛戒护琛屼腑浣跨敤 鈥渘ohlt鈥?鎴?鈥渃puidle.off=1鈥濄€?
-鍦ㄨ繍琛屾椂锛屽彲閫氳繃浠ヤ笅鏂规硶绂佺敤绌洪棽鐘舵€侊細
+“Clock and power domain章节所述，若你使用的平台具有会关闭调试逻辑的空状态，且电源控制器无法很好地响应来EDPRCR 的请求，则应在启CPU 调试功能
+之前先限CPU 空闲状态；这样才能确保对调试逻辑的访问
+若要在启动时就限制空闲状态，可在内核命令行中使用 “nohlt“cpuidle.off=1”
+在运行时，可通过以下方法禁用空闲状态：
 
-鍙互閫氳繃 PM QoS 瀛愮郴缁熺鐢?CPU 绌洪棽鐘舵€侊紝鏇村叿浣撳湴璇存槸浣跨敤 鈥?dev/cpu_dma_latency鈥?鎺ュ彛锛堣瑙?Documentation/power/pm_qos_interface.rst锛夈€傚 PM QoS 鏂囨。鎵€杩帮紝鎵€
-璇锋眰鐨勫弬鏁板皢涓€鐩寸敓鏁堬紝鐩村埌鏂囦欢鎻忚堪绗﹁閲婃斁銆?
+可以通过 PM QoS 子系统禁CPU 空闲状态，更具体地说是使用 dev/cpu_dma_latency接口（详Documentation/power/pm_qos_interface.rst）。如 PM QoS 文档所述，所
+请求的参数将一直生效，直到文件描述符被释放
 ```
 
   # exec 3<> /dev/cpu_dma_latency; echo 0 >&3
@@ -107,8 +107,8 @@ debug 妯″潡銆傚洜姝ゅ彲鍒嗕负浠ヤ笅鍑犵鎯呭喌锛?
   # exec 3<>-
 
 ```
-鍚屾牱鐨勬搷浣滀篃鍙粠搴旂敤绋嬪簭涓畬鎴愩€?
-閫氳繃 cpuidle sysfs 绂佺敤鐗瑰畾 CPU 鐨勭壒瀹氱┖闂茬姸鎬侊紙鍙傝
+同样的操作也可从应用程序中完成
+通过 cpuidle sysfs 禁用特定 CPU 的特定空闲状态（参见
 
 ```
 
@@ -116,7 +116,7 @@ debug 妯″潡銆傚洜姝ゅ彲鍒嗕负浠ヤ笅鍑犵鎯呭喌锛?
 
 ```
 
-### 杈撳嚭鏍煎紡
+### 输出格式
 
 
 ```

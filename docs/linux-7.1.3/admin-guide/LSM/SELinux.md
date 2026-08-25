@@ -1,27 +1,27 @@
 ﻿## SELinux
 
 
-鏈夊叧 SELinux 鍐呮牳瀛愮郴缁熺殑淇℃伅鍙湪浠ヤ笅閾炬帴鎵惧埌锛?
+有关 SELinux 内核子系统的信息可在以下链接找到
 
 	https://git.kernel.org/pub/scm/linux/kernel/git/pcmoore/selinux.git/tree/README.md
 
 	https://github.com/selinuxproject/selinux-kernel/wiki
 
-鏈夊叧 SELinux 鐢ㄦ埛绌洪棿鐨勪俊鎭彲鍦ㄤ互涓嬩綅缃壘鍒帮細
+有关 SELinux 用户空间的信息可在以下位置找到：
 
 	https://github.com/SELinuxProject/selinux/wiki
 
-濡傛灉浣犳兂瑕佷娇鐢?SELinux锛屼綘寰堝彲鑳戒細鎯充娇鐢ㄥ彂琛岀増鎻愪緵鐨勭瓥鐣ワ紝鎴栦粠浠ヤ笅浣嶇疆瀹夎鏈€鏂扮殑鍙傝€冪瓥鐣ョ増鏈?
+如果你想要使SELinux，你很可能会想使用发行版提供的策略，或从以下位置安装最新的参考策略版
 
 	https://github.com/SELinuxProject/refpolicy
 
-浣嗘槸锛屽鏋滀綘鎯冲畨瑁呬竴涓敤浜庢祴璇曠殑铏氭嫙锛坉ummy锛夌瓥鐣ワ紝鍙互浣跨敤 scripts/selinux 涓嬫彁渚涚殑 `mdp` 鏉ュ畬鎴愩€傛敞鎰忚繖闇€瑕佸畨瑁?selinux 鐢ㄦ埛绌洪棿鈥斺€旂壒鍒槸浣犻渶瑕?checkpolicy 鏉ョ紪璇戝唴鏍革紝浠ュ強 setfiles 鍜?fixfiles 鏉ユ爣璁版枃浠剁郴缁熴€?
+但是，如果你想安装一个用于测试的虚拟（dummy）策略，可以使用 scripts/selinux 下提供的 `mdp` 来完成。注意这需要安selinux 用户空间——特别是你需checkpolicy 来编译内核，以及 setfiles fixfiles 来标记文件系统
 
- 1. 缂栬瘧鍚敤 selinux 鐨勫唴鏍搞€?
- 2. 杈撳叆 `make` 缂栬瘧 `mdp`銆?
- 3. 纭繚浣犳病鏈夊湪鍚敤 SELinux 涓斾娇鐢ㄧ湡瀹炵瓥鐣ョ殑鎯呭喌涓嬭繍琛屻€傚鏋滄槸锛岃鍦ㄧ户缁箣鍓嶄互绂佺敤 selinux 鐨勬柟寮忛噸鍚€?
+ 1. 编译启用 selinux 的内核
+ 2. 输入 `make` 编译 `mdp`
+ 3. 确保你没有在启用 SELinux 且使用真实策略的情况下运行。如果是，请在继续之前以禁用 selinux 的方式重启
 ```
 		cd scripts/selinux
 		sh install_policy.sh
 ```
-绗?4 姝ュ皢鍒涘缓涓€涓浣犵殑鍐呮牳鏈夋晥鐨勬柊铏氭嫙绛栫暐锛屽叾涓彧鏈変竴涓?selinux 鐢ㄦ埛銆佽鑹插拰绫诲瀷銆傚畠灏嗙紪璇戣绛栫暐锛屽皢浣犵殑 `SELINUXTYPE` 鍦?`/etc/selinux/config` 涓涓?`dummy`锛屽畨瑁呯紪璇戝悗鐨勭瓥鐣ヤ綔涓?`dummy`锛屽苟閲嶆柊鏍囪浣犵殑鏂囦欢绯荤粺銆?
+4 步将创建一个对你的内核有效的新虚拟策略，其中只有一selinux 用户、角色和类型。它将编译该策略，将你的 `SELINUXTYPE` `/etc/selinux/config` 中设`dummy`，安装编译后的策略作`dummy`，并重新标记你的文件系统

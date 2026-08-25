@@ -1,8 +1,8 @@
 ﻿
-## 鍐呮牳椹卞姩 asus_wmi_sensors
+## 内核驱动 asus_wmi_sensors
 
 
-鏀寔鐨勬澘鍗★細
+支持的板卡：
  - PRIME X399-A,
  - PRIME X470-PRO,
  - ROG CROSSHAIR VI EXTREME,
@@ -22,41 +22,41 @@
 Authors:
     - Ed Brindley <kernel@maidavale.org>
 
-### 鎻忚堪锛?
-鍗庣锛圓SUS锛変富鏉块€氳繃 WMI 鎺ュ彛鍙戝竷纭欢鐩戣淇℃伅銆?
-ASUS WMI 鎺ュ彛鎻愪緵涓€绉嶈幏鍙栦紶鎰熷櫒鍒楄〃鍙婂叾鍊肩殑鏂规硶锛屾湰椹卞姩鍒╃敤瀹冨皢杩欎簺浼犳劅鍣ㄨ鏁板彂甯冨埌 HWMON 绯荤粺銆?
-璇ラ┍鍔ㄨ兘澶熻瘑鍒苟璇诲彇浠ヤ笅浼犳劅鍣細
- - CPU 鏍稿績鐢靛帇锛圕PU Core Voltage锛?
- - CPU SOC 鐢靛帇锛圕PU SOC Voltage锛?
- - DRAM 鐢靛帇锛圖RAM Voltage锛?
- - VDDP 鐢靛帇锛圴DDP Voltage锛?
- - 1.8V PLL 鐢靛帇锛?.8V PLL Voltage锛?
- - +12V 鐢靛帇锛?12V Voltage锛?
- - +5V 鐢靛帇锛?5V Voltage锛?
- - 3VSB 鐢靛帇锛?VSB Voltage锛?
- - VBAT 鐢靛帇锛圴BAT Voltage锛?
- - AVCC3 鐢靛帇锛圓VCC3 Voltage锛?
- - SB 1.05V 鐢靛帇锛圫B 1.05V Voltage锛?
- - CPU 鏍稿績鐢靛帇锛圕PU Core Voltage锛?
- - CPU SOC 鐢靛帇锛圕PU SOC Voltage锛?
- - DRAM 鐢靛帇锛圖RAM Voltage锛?
- - CPU 椋庢墖杞€燂紙CPU Fan RPM锛?
- - 鏈虹椋庢墖 1 杞€燂紙Chassis Fan 1 RPM锛?
- - 鏈虹椋庢墖 2 杞€燂紙Chassis Fan 2 RPM锛?
- - 鏈虹椋庢墖 3 杞€燂紙Chassis Fan 3 RPM锛?
- - HAMP 椋庢墖杞€燂紙HAMP Fan RPM锛?
- - 姘存车杞€燂紙Water Pump RPM锛?
- - CPU OPT 杞€燂紙CPU OPT RPM锛?
- - 姘存祦閲忚浆閫燂紙Water Flow RPM锛?
- - AIO 姘存车杞€燂紙AIO Pump RPM锛?
- - CPU 娓╁害锛圕PU Temperature锛?
- - CPU 鎻掓Ы娓╁害锛圕PU Socket Temperature锛?
- - 涓绘澘娓╁害锛圡otherboard Temperature锛?
- - 鑺墖缁勬俯搴︼紙Chipset Temperature锛?
- - Tsensor 1 娓╁害锛圱sensor 1 Temperature锛?
- - CPU VRM 娓╁害锛圕PU VRM Temperature锛?
- - 杩涙按娓╁害锛圵ater In锛?
- - 鍑烘按娓╁害锛圵ater Out锛?
- - CPU VRM 杈撳嚭鐢垫祦锛圕PU VRM Output Current锛?
+### 描述
+华硕（ASUS）主板通过 WMI 接口发布硬件监视信息
+ASUS WMI 接口提供一种获取传感器列表及其值的方法，本驱动利用它将这些传感器读数发布到 HWMON 系统
+该驱动能够识别并读取以下传感器：
+ - CPU 核心电压（CPU Core Voltage
+ - CPU SOC 电压（CPU SOC Voltage
+ - DRAM 电压（DRAM Voltage
+ - VDDP 电压（VDDP Voltage
+ - 1.8V PLL 电压.8V PLL Voltage
+ - +12V 电压12V Voltage
+ - +5V 电压5V Voltage
+ - 3VSB 电压VSB Voltage
+ - VBAT 电压（VBAT Voltage
+ - AVCC3 电压（AVCC3 Voltage
+ - SB 1.05V 电压（SB 1.05V Voltage
+ - CPU 核心电压（CPU Core Voltage
+ - CPU SOC 电压（CPU SOC Voltage
+ - DRAM 电压（DRAM Voltage
+ - CPU 风扇转速（CPU Fan RPM
+ - 机箱风扇 1 转速（Chassis Fan 1 RPM
+ - 机箱风扇 2 转速（Chassis Fan 2 RPM
+ - 机箱风扇 3 转速（Chassis Fan 3 RPM
+ - HAMP 风扇转速（HAMP Fan RPM
+ - 水泵转速（Water Pump RPM
+ - CPU OPT 转速（CPU OPT RPM
+ - 水流量转速（Water Flow RPM
+ - AIO 水泵转速（AIO Pump RPM
+ - CPU 温度（CPU Temperature
+ - CPU 插槽温度（CPU Socket Temperature
+ - 主板温度（Motherboard Temperature
+ - 芯片组温度（Chipset Temperature
+ - Tsensor 1 温度（Tsensor 1 Temperature
+ - CPU VRM 温度（CPU VRM Temperature
+ - 进水温度（Water In
+ - 出水温度（Water Out
+ - CPU VRM 输出电流（CPU VRM Output Current
 
-宸茬煡闂锛? - 鍗庣閮ㄥ垎 BIOS 涓殑 WMI 瀹炵幇瀛樺湪 bug銆傝繖鍙兘瀵艰嚧椋庢墖鍋滄銆侀鎵囧崱鍦ㄦ渶楂樿浆閫燂紝鎴栨俯搴﹁鏁板崱浣忋€傝繖涓嶆槸椹卞姩鐨勯棶棰橈紝鑰屾槸 BIOS 鐨勯棶棰樸€侾rime X470 Pro 鍦ㄨ繖鏂归潰浼间箮灏ゅ叾绯熺硶銆俉MI 鎺ュ彛琚疆璇㈠緱瓒婇绻侊紝鍙戠敓杩欑鎯呭喌鐨勫彲鑳芥€у氨瓒婂ぇ銆傚湪浣犲璁＄畻鏈鸿繘琛岄暱鏃堕棿鍘嬪姏娴嬭瘯骞堕绻佽疆璇紶鎰熷櫒涔嬪墠锛屼笉瑕佽浣犵殑璁＄畻鏈烘棤浜虹湅绠°€傚崌绾у埌鏂规硶鐗堟湰澶т簬绛変簬 2 鐨勬柊 BIOS 鐗堟湰搴斿綋鑳界籂姝ｈ闂銆? - 灏戞暟涓绘澘鎶ュ憡鐨?12v 鐢靛帇绾︿负 10v銆?
+已知问题 - 华硕部分 BIOS 中的 WMI 实现存在 bug。这可能导致风扇停止、风扇卡在最高转速，或温度读数卡住。这不是驱动的问题，而是 BIOS 的问题。Prime X470 Pro 在这方面似乎尤其糟糕。WMI 接口被轮询得越频繁，发生这种情况的可能性就越大。在你对计算机进行长时间压力测试并频繁轮询传感器之前，不要让你的计算机无人看管。升级到方法版本大于等于 2 的新 BIOS 版本应当能纠正该问题 - 少数主板报告12v 电压约为 10v

@@ -568,3 +568,21 @@ pub async fn user_hotpic_id(
     }
 }
 
+
+pub async fn user_hotpic_delete_by_ids(
+    pool: Extension<Pool>,
+    Path((id, id2)): Path<(String, String)>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let ids = vec![id.clone(), id2.clone()];
+    let n = client
+        .execute(
+            "UPDATE x_hotpic SET deleted_at = NOW() WHERE id = ANY($1) AND deleted_at IS NULL",
+            &[&ids],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+    Ok(Json(ActionResult::success(serde_json::json!({
+        "id": id, "id2": id2, "deleted": n
+    }))))
+}

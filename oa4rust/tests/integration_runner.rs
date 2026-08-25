@@ -30,10 +30,23 @@ use integration_tests::db::init_test_database_async;
 async fn integration_scenarios() {
     let _ctx = init_test_database_async();
 
-    integration_tests::scenarios::org_person_meeting::org_person_meeting_flow();
-    integration_tests::scenarios::bbs_correlation::bbs_correlation_flow();
-    integration_tests::scenarios::file_upload::file_upload_flow();
-    integration_tests::scenarios::program_center_core_entity::program_center_core_entity_application_flow();
+    integration_tests::scenarios::org_person_meeting::org_person_meeting_flow().await;
+    integration_tests::scenarios::bbs_correlation::bbs_correlation_flow().await;
+    integration_tests::scenarios::file_upload::file_upload_flow().await;
+    integration_tests::scenarios::program_center_core_entity::program_center_core_entity_application_flow().await;
+}
+
+/// 数据完整性场景入口 (U9: 并发/数据完整性)。
+///
+/// 独立于主流程，便于通过 `cargo test --test integration_runner data_integrity`
+/// 单独过滤执行；无数据库环境时随 `#[ignore]` 跳过。
+#[ignore = "requires a running database server"]
+#[tokio::test]
+async fn data_integrity_scenarios() {
+    let _ctx = init_test_database_async();
+
+    integration_tests::scenarios::data_integrity::concurrent_document_updates().await;
+    integration_tests::scenarios::data_integrity::soft_delete_isolation().await;
 }
 
 #[cfg(test)]

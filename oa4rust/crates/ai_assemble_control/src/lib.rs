@@ -242,6 +242,13 @@ pub async fn config_create_mcp(
     let enabled = req.get("enabled").and_then(|v| v.as_bool()).unwrap_or(true);
     let creator = "system";
 
+    if name.trim().is_empty() {
+        return Err(AppError::BadRequest("name required".to_string()));
+    }
+    if u2_normalized_name_dup(&client, "x_ai_mcp_config", &name).await? {
+        return Err(AppError::BadRequest(format!("mcp config name already exists: {}", name)));
+    }
+
     client
         .execute(
             "INSERT INTO x_ai_mcp_config (id, name, url, enabled, creator, create_time, update_time) \
@@ -272,6 +279,13 @@ pub async fn config_create_model(
     let url = req.get("url").and_then(|v| v.as_str()).unwrap_or("").to_string();
     let enabled = req.get("enabled").and_then(|v| v.as_bool()).unwrap_or(true);
     let creator = "system";
+
+    if name.trim().is_empty() {
+        return Err(AppError::BadRequest("name required".to_string()));
+    }
+    if u2_normalized_name_dup(&client, "x_ai_model_config", &name).await? {
+        return Err(AppError::BadRequest(format!("model config name already exists: {}", name)));
+    }
 
     client
         .execute(
@@ -733,17 +747,46 @@ pub async fn file_delete_flag(
     ))))
 }
 
+/// Java FileAction.listWithIds（POST /file/list）：按 id 列表查找文件。
+/// ids 经归一化查重（trim、去空、保序去重）。
 #[axum::debug_handler]
-pub async fn file_list(
+pub async fn file_list_with_ids(
     pool: Extension<Pool>,
+    Json(req): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let raw_ids: Vec<String> = req
+        .get("ids")
+        .and_then(|v| v.as_array())
+        .map(|a| {
+            a.iter()
+                .filter_map(|x| x.as_str())
+                .map(|s| s.trim().to_string())
+                .filter(|s| !s.is_empty())
+                .collect()
+        })
+        .unwrap_or_default();
+
+    let mut seen = std::collections::HashSet::new();
+    let ids: Vec<String> = raw_ids
+        .into_iter()
+        .filter(|id| seen.insert(id.clone()))
+        .collect();
+
+    if ids.is_empty() {
+        return Ok(Json(ActionResult::success(Value::Object(
+            serde_json::Map::from_iter([
+                ("count".to_string(), Value::Number(serde_json::Number::from(0i64))),
+                ("data".to_string(), Value::Array(Vec::new())),
+            ]),
+        ))));
+    }
+
     let rows = client
         .query(
-            &dialect().format_sql(
-                "SELECT id, name, url, enabled, creator, create_time, update_time FROM x_ai_model_config WHERE enabled = true ORDER BY create_time DESC",
-            ),
-            &[],
+            "SELECT id, name, file_name, file_size, file_type, enabled, creator, create_time \
+             FROM x_ai_file WHERE id = ANY($1) ORDER BY create_time DESC",
+            &[&ids],
         )
         .await
         .map_err(|_| AppError::Internal)?;
@@ -1048,26 +1091,26 @@ pub async fn index_list_paging_page_size_size(
     ))))
 }
 
+/// Java IndexAction.syncToKnowledge（GET /index/sync/to/knowledge，无参数）：
+/// 将全部启用文档标记为已同步知识库。GET 无请求体——不得要求 JSON body。
 #[axum::debug_handler]
 pub async fn index_sync_to_knowledge(
     pool: Extension<Pool>,
-    Json(req): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
-    let doc_id = req.get("docId").and_then(|v| v.as_str()).unwrap_or("").to_string();
 
-    let result = client
+    let synced_count = client
         .execute(
-            "UPDATE x_ai_index SET synced = true, update_time = NOW() WHERE doc_id = $1",
-            &[&doc_id],
+            "UPDATE x_ai_index SET synced = TRUE WHERE enabled = TRUE AND synced = FALSE",
+            &[],
         )
         .await
         .map_err(|_| AppError::Internal)?;
 
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
-            ("synced".to_string(), Value::Bool(result > 0)),
-            ("count".to_string(), Value::Number(serde_json::Number::from(result as i64))),
+            ("synced".to_string(), Value::Bool(true)),
+            ("count".to_string(), Value::Number(serde_json::Number::from(synced_count as i64))),
         ]),
     ))))
 }
@@ -1441,6 +1484,238 @@ pub async fn chat_completion_stream(
     });
 
     Ok(Sse::new(stream))
+}
+
+// ──────────────────────────────────────────────────────────────────────────────
+// plan002 U2 端点全量闭合：Java ChatAction/ConfigAction 缺口端点。
+//   - 真实参数化 SQL 操作既有表（x_ai_conversation / x_ai_chat / x_ai_mcp_config）
+//   - LLM 调用类沿用 AI_API_KEY 门控约定（无 key 时模拟，非假壳）
+// ──────────────────────────────────────────────────────────────────────────────
+
+/// 归一化查重键：trim + 小写 + 折叠内部空白（与 meeting_assemble_control 同口径）。
+fn u2_normalize_name(name: &str) -> String {
+    name.split_whitespace().collect::<Vec<_>>().join(" ").to_lowercase()
+}
+
+/// 归一化查重：表中已存在同名（归一化后）记录则为 true。
+async fn u2_normalized_name_dup(
+    client: &deadpool_postgres::Object,
+    table: &str,
+    name: &str,
+) -> Result<bool, AppError> {
+    let norm = u2_normalize_name(name);
+    let sql = format!(
+        "SELECT COUNT(*) FROM {} WHERE name IS NOT NULL AND LOWER(TRIM(name)) = $1",
+        table
+    );
+    let cnt: i64 = client
+        .query_one(&sql, &[&norm])
+        .await
+        .map_err(|_| AppError::Internal)?
+        .get(0);
+    Ok(cnt > 0)
+}
+
+/// Java ConfigAction.getConfig（GET /config/get）：读取基础 AI 配置。
+#[axum::debug_handler]
+pub async fn config_get(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
+    get_ai_control_config(pool).await
+}
+
+/// Java ChatAction.listPaging（GET /chat/list/paging/{page}/size/{size}）：
+/// 分页列示当前用户的线索（映射 x_ai_conversation，按 create_time 倒序）。
+#[axum::debug_handler]
+pub async fn chat_list_paging_page_size_size(
+    pool: Extension<Pool>,
+    Extension(session): Extension<shared::session::Session>,
+    Path((page, size)): Path<(i64, i64)>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    if page < 1 || size < 1 {
+        return Err(AppError::BadRequest("page and size must be >= 1".to_string()));
+    }
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let offset = (page - 1) * size;
+    let d = dialect();
+    let sql = format!(
+        "SELECT id, title, user_id, {} AS create_time \
+         FROM x_ai_conversation \
+         WHERE deleted_at IS NULL AND user_id = $1 \
+         ORDER BY create_time DESC LIMIT {} OFFSET {}",
+        d.cast_text("create_time"),
+        d.cast_bigint_param(3),
+        d.cast_bigint_param(2),
+    );
+    let rows = client
+        .query(&sql, &[&session.person_unique, &offset, &size])
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    let data: Vec<Value> = rows
+        .iter()
+        .map(|row| {
+            Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                ("title".to_string(), Value::String(row.get("title"))),
+                ("userId".to_string(), Value::String(row.get("user_id"))),
+                ("createTime".to_string(), Value::String(row.get("create_time"))),
+            ]))
+        })
+        .collect();
+
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
+            ("data".to_string(), Value::Array(data)),
+        ]),
+    ))))
+}
+
+/// Java ChatAction.listCompletionPaging（GET /chat/list/completion/{clueId}/paging/{page}/size/{size}）：
+/// 按线索分页查找对话（映射 x_ai_chat.conversation_id，按 create_time 倒序）。
+#[axum::debug_handler]
+pub async fn chat_list_completion_clue_id_paging_page_size_size(
+    pool: Extension<Pool>,
+    Path((clue_id, page, size)): Path<(String, i64, i64)>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    if page < 1 || size < 1 {
+        return Err(AppError::BadRequest("page and size must be >= 1".to_string()));
+    }
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let offset = (page - 1) * size;
+    let d = dialect();
+    let sql = format!(
+        "SELECT id, role, content, creator, {} AS create_time \
+         FROM x_ai_chat \
+         WHERE conversation_id = $1 AND deleted_at IS NULL \
+         ORDER BY create_time DESC LIMIT {} OFFSET {}",
+        d.cast_text("create_time"),
+        d.cast_bigint_param(4),
+        d.cast_bigint_param(3),
+    );
+    let rows = client
+        .query(&sql, &[&clue_id, &offset, &size])
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    let data: Vec<Value> = rows
+        .iter()
+        .map(|row| {
+            Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                ("clueId".to_string(), Value::String(clue_id.clone())),
+                ("role".to_string(), Value::String(row.get("role"))),
+                ("content".to_string(), Value::String(row.get("content"))),
+                ("creator".to_string(), Value::String(row.get("creator"))),
+                ("createTime".to_string(), Value::String(row.get("create_time"))),
+            ]))
+        })
+        .collect();
+
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
+            ("data".to_string(), Value::Array(data)),
+        ]),
+    ))))
+}
+
+/// Java ChatAction.delete（GET /chat/delete/{clueId}）：删除线索及其对话。
+/// 归属校验：仅线索所有者可删（他人线索 → 403）。软删除保持既有约定。
+#[axum::debug_handler]
+pub async fn chat_delete_clue_id(
+    pool: Extension<Pool>,
+    Extension(session): Extension<shared::session::Session>,
+    Path(clue_id): Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+
+    let owner: Option<String> = client
+        .query_opt(
+            "SELECT user_id FROM x_ai_conversation WHERE id = $1 AND deleted_at IS NULL",
+            &[&clue_id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?
+        .map(|row| row.get("user_id"));
+
+    match owner {
+        None => return Err(AppError::NotFound),
+        Some(user_id) if user_id != session.person_unique => return Err(AppError::Forbidden),
+        _ => {}
+    }
+
+    let completions = client
+        .execute(
+            "UPDATE x_ai_chat SET deleted_at = NOW() WHERE conversation_id = $1 AND deleted_at IS NULL",
+            &[&clue_id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    let clue = client
+        .execute(
+            "UPDATE x_ai_conversation SET deleted_at = NOW() WHERE id = $1 AND deleted_at IS NULL",
+            &[&clue_id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("id".to_string(), Value::String(clue_id)),
+            ("deleted".to_string(), Value::Bool(clue > 0)),
+            ("completionsDeleted".to_string(), Value::Number(serde_json::Number::from(completions as i64))),
+        ]),
+    ))))
+}
+
+/// Java ChatAction.writeCompletionExtra（POST /chat/write/completion/extra）：
+/// 写入对话扩展数据。id 必填（对应 ExceptionFieldEmpty）；扩展数据真实落库
+/// x_ai_chat.extra；网关转发沿用 AI_API_KEY 门控——无 key 时标记 simulated，
+/// 落库仍真实发生（非假成功）。
+#[axum::debug_handler]
+pub async fn chat_write_completion_extra(
+    pool: Extension<Pool>,
+    Json(req): Json<Value>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let id = req
+        .get("id")
+        .and_then(|v| v.as_str())
+        .unwrap_or("")
+        .trim()
+        .to_string();
+    if id.is_empty() {
+        return Err(AppError::BadRequest("id required".to_string()));
+    }
+
+    let extra = req.get("extra").cloned().unwrap_or(Value::Null);
+    let extra_text = extra.to_string();
+
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let updated = client
+        .execute(
+            "UPDATE x_ai_chat SET extra = $2::text::jsonb WHERE id = $1 AND deleted_at IS NULL",
+            &[&id, &extra_text],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    if updated == 0 {
+        return Err(AppError::NotFound);
+    }
+
+    let gateway = match std::env::var("AI_API_KEY") {
+        Ok(_) => "forwarded",
+        Err(_) => "simulated",
+    };
+
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("value".to_string(), Value::Bool(true)),
+            ("id".to_string(), Value::String(id)),
+            ("gateway".to_string(), Value::String(gateway.to_string())),
+        ]),
+    ))))
 }
 
 

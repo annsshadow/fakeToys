@@ -183,4 +183,45 @@ mod tests {
         assert_eq!(result.r#type, Some("success".to_string()));
         assert_eq!(result.data, Some(42));
     }
+
+    #[tokio::test]
+    async fn test_u2_post_user_hotpic_route() {
+        let pool = build_test_pool();
+        let app = crate::router(pool);
+        let body = serde_json::to_string(&serde_json::json!({"title": "x", "imageUrl": "y"})).unwrap();
+        let response = app.oneshot(
+            Request::builder()
+                .uri("/jaxrs/hotpic/assemble/control/user/hotpic")
+                .method(Method::POST)
+                .header("content-type", "application/json")
+                .body(Body::from(body)).unwrap(),
+        ).await.unwrap();
+        assert_ne!(response.status(), StatusCode::NOT_FOUND);
+    }
+
+    #[tokio::test]
+    async fn test_u2_delete_user_hotpic_id_route() {
+        let pool = build_test_pool();
+        let app = crate::router(pool);
+        let response = app.oneshot(
+            Request::builder()
+                .uri("/jaxrs/hotpic/assemble/control/user/hotpic/test-id")
+                .method(Method::DELETE)
+                .body(Body::empty()).unwrap(),
+        ).await.unwrap();
+        assert_ne!(response.status(), StatusCode::NOT_FOUND);
+    }
+
+    #[tokio::test]
+    async fn test_u2_delete_cipher_hotpic_bbs_route() {
+        let pool = build_test_pool();
+        let app = crate::router(pool);
+        let response = app.oneshot(
+            Request::builder()
+                .uri("/jaxrs/hotpic/assemble/control/cipher/hotpic/bbs/test-id")
+                .method(Method::DELETE)
+                .body(Body::empty()).unwrap(),
+        ).await.unwrap();
+        assert_ne!(response.status(), StatusCode::NOT_FOUND);
+    }
 }

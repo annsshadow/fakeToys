@@ -4,11 +4,11 @@
 ######## ioctl VIDIOC_G_PRIORITY, VIDIOC_S_PRIORITY
 
 
-## 鍚嶇О
+## 名称
 
 
-VIDIOC_G_PRIORITY - VIDIOC_S_PRIORITY - 鏌ヨ鎴栬姹備笌鏂囦欢鎻忚堪绗﹀叧鑱旂殑璁块棶浼樺厛绾?
-## 姒傝
+VIDIOC_G_PRIORITY - VIDIOC_S_PRIORITY - 查询或请求与文件描述符关联的访问优先
+## 概要
 
 
 
@@ -17,18 +17,18 @@ VIDIOC_G_PRIORITY - VIDIOC_S_PRIORITY - 鏌ヨ鎴栬姹備笌鏂囦欢鎻�
 
 `int ioctl(int fd, VIDIOC_S_PRIORITY, const enum v4l2_priority *argp)`
 
-## 鍙傛暟
+## 参数
 
 
 `fd`
-    鐢?`open()` 杩斿洖鐨勬枃浠舵弿杩扮銆?
+    `open()` 返回的文件描述符
 `argp`
-    鎸囧悜 enum `v4l2_priority` 绫诲瀷鐨勬寚閽堛€?
-## 鎻忚堪
+    指向 enum `v4l2_priority` 类型的指针
+## 描述
 
 
-瑕佹煡璇㈠綋鍓嶇殑璁块棶浼樺厛绾э紝搴旂敤绋嬪簭璋冪敤 VIDIOC_G_PRIORITY <VIDIOC_G_PRIORITY> ioctl锛屽苟浼犲叆涓€涓寚鍚?enum v4l2_priority 鍙橀噺鐨勬寚閽堬紝椹卞姩灏嗘妸褰撳墠浼樺厛绾у瓨鍏ュ叾涓€?
-瑕佽姹傛煇涓闂紭鍏堢骇锛屽簲鐢ㄧ▼搴忓皢鏈熸湜鐨勪紭鍏堢骇瀛樺叆涓€涓?enum v4l2_priority 鍙橀噺锛屽苟璋冪敤 VIDIOC_S_PRIORITY <VIDIOC_G_PRIORITY> ioctl锛屼紶鍏ユ寚鍚戣鍙橀噺鐨勬寚閽堛€?
+要查询当前的访问优先级，应用程序调用 VIDIOC_G_PRIORITY <VIDIOC_G_PRIORITY> ioctl，并传入一个指enum v4l2_priority 变量的指针，驱动将把当前优先级存入其中
+要请求某个访问优先级，应用程序将期望的优先级存入一enum v4l2_priority 变量，并调用 VIDIOC_S_PRIORITY <VIDIOC_G_PRIORITY> ioctl，传入指向该变量的指针
 
 
     :header-rows:  0
@@ -40,18 +40,18 @@ VIDIOC_G_PRIORITY - VIDIOC_S_PRIORITY - 鏌ヨ鎴栬姹備笌鏂囦欢鎻�
       -
     - - `V4L2_PRIORITY_BACKGROUND`
       - 1
-      - 鏈€浣庝紭鍏堢骇锛岄€氬父鏄悗鍙拌繍琛岀殑搴旂敤绋嬪簭锛屼緥濡傜洃瑙?VBI 浼犺緭銆傚鏋滃涓簲鐢ㄧ▼搴忔兂浠?	姝や紭鍏堢骇浠庤澶囪鍙栵紝鍒欓渶瑕佷竴涓繍琛屽湪鐢ㄦ埛绌洪棿鐨勪唬鐞嗗簲鐢ㄧ▼搴忋€?    - - `V4L2_PRIORITY_INTERACTIVE`
+      - 最低优先级，通常是后台运行的应用程序，例如监VBI 传输。如果多个应用程序想	此优先级从设备读取，则需要一个运行在用户空间的代理应用程序    - - `V4L2_PRIORITY_INTERACTIVE`
       - 2
       -
     - - `V4L2_PRIORITY_DEFAULT`
       - 2
-      - 涓瓑浼樺厛绾э紝閫氬父鏄敤鎴峰惎鍔ㄥ苟浜や簰鎺у埗鐨勫簲鐢ㄧ▼搴忋€備緥濡傜數瑙嗘煡鐪嬪櫒銆佸浘鏂囩數瑙嗭紙Teletext锛?	娴忚鍣紝鎴栦粎鐢ㄤ簬鏀瑰彉棰戦亾鎴栬棰戞帶鍒剁殑鈥滈潰鏉库€濆簲鐢ㄧ▼搴忋€傞櫎闈炴煇搴旂敤绋嬪簭璇锋眰浜嗗叾浠栦紭鍏堢骇锛?	鍚﹀垯杩欐槸榛樿浼樺厛绾с€?    - - `V4L2_PRIORITY_RECORD`
+      - 中等优先级，通常是用户启动并交互控制的应用程序。例如电视查看器、图文电视（Teletext	浏览器，或仅用于改变频道或视频控制的“面板”应用程序。除非某应用程序请求了其他优先级	否则这是默认优先级    - - `V4L2_PRIORITY_RECORD`
       - 3
-      - 鏈€楂樹紭鍏堢骇銆傚彧鏈変竴涓枃浠舵弿杩扮鍙互鍏锋湁姝や紭鍏堢骇锛屽畠浼氶樆姝换浣曞叾浠?fd 鏀瑰彉璁惧灞炴€с€?	閫氬父鏄儚瑙嗛褰曞埗杩欐牱涓嶈兘琚腑鏂殑搴旂敤绋嬪簭銆?
-## 杩斿洖鍊?
+      - 最高优先级。只有一个文件描述符可以具有此优先级，它会阻止任何其fd 改变设备属性	通常是像视频录制这样不能被中断的应用程序
+## 杩斿洖鍊。
 
-鎴愬姛鏃惰繑鍥?0锛屽嚭閿欐椂杩斿洖 -1 骞剁浉搴斿湴璁剧疆 `errno` 鍙橀噺銆傞€氱敤閿欒鐮佸湪 Generic Error Codes <gen-errors> 绔犺妭涓弿杩般€?
+成功时返0，出错时返回 -1 并相应地设置 `errno` 变量。通用错误码在 Generic Error Codes <gen-errors> 章节中描述
 EINVAL
-    璇锋眰鐨勪紭鍏堢骇鍊兼棤鏁堛€?
+    请求的优先级值无效
 EBUSY
-    鍙︿竴涓簲鐢ㄧ▼搴忓凡缁忚姹備簡鏇撮珮鐨勪紭鍏堢骇銆?
+    另一个应用程序已经请求了更高的优先级

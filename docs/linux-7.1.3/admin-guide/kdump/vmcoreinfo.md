@@ -1,212 +1,212 @@
 ﻿## VMCOREINFO
 
 
-## 瀹冩槸浠€涔堬紵
+## 它是什么？
 
-VMCOREINFO 鏄竴涓壒娈婄殑 ELF note 娈点€傚畠鍖呭惈鏉ヨ嚜鍐呮牳鐨勫绉嶄俊鎭紝渚嬪缁撴瀯澶у皬銆侀〉澶у皬銆?绗﹀彿鍊笺€佸瓧娈靛亸绉荤瓑銆傝繖浜涙暟鎹鎵撳寘杩涗竴涓?ELF note 娈碉紝骞惰 crash銆乵akedumpfile 绛?鐢ㄦ埛绌洪棿宸ュ叿鐢ㄤ簬鍒嗘瀽鍐呮牳鐨勫唴瀛樺竷灞€銆?
-## 閫氱敤鍙橀噺
+VMCOREINFO 是一个特殊的 ELF note 段。它包含来自内核的多种信息，例如结构大小、页大小符号值、字段偏移等。这些数据被打包进一ELF note 段，并被 crash、makedumpfile 用户空间工具用于分析内核的内存布局
+## 通用变量
 
 
 ### init_uts_ns.name.release
 
 
-Linux 鍐呮牳鐨勭増鏈彿銆傜敤浜庢壘鍒版瀯寤鸿鍐呮牳鎵€瀵瑰簲鐨勬簮浠ｇ爜銆備緥濡傦紝crash 鐢ㄥ畠鏉ユ煡鎵惧搴旂殑
-vmlinux锛屼互渚垮鐞?vmcore銆?
+Linux 内核的版本号。用于找到构建该内核所对应的源代码。例如，crash 用它来查找对应的
+vmlinux，以便处vmcore
 ### PAGE_SIZE
 
 
-椤电殑澶у皬銆傚畠鏄唴瀛樼鐞嗚鏂芥墍浣跨敤鐨勬渶灏忔暟鎹崟浣嶃€傚叾澶у皬閫氬父涓?4096 瀛楄妭锛屼笖椤垫寜 4096
-瀛楄妭瀵归綈銆傜敤浜庤绠楅〉鍦板潃銆?
+页的大小。它是内存管理设施所使用的最小数据单位。其大小通常4096 字节，且页按 4096
+字节对齐。用于计算页地址
 ### init_uts_ns
 
 
-UTS 鍛藉悕绌洪棿锛岀敤浜庨殧绂荤郴缁熶腑涓?uname(2) 绯荤粺璋冪敤鐩稿叧鐨勪袱涓壒瀹氬厓绱犮€傚畠浠ョ敤浜庡瓨鍌?uname(2) 绯荤粺璋冪敤鎵€杩斿洖淇℃伅鐨勬暟鎹粨鏋勫懡鍚嶃€?
-鐢ㄦ埛绌洪棿宸ュ叿鍙互浠庝腑鑾峰彇鍐呮牳鍚嶇О銆佷富鏈哄悕銆佸唴鏍稿彂甯冨彿銆佸唴鏍哥増鏈€佹灦鏋勫悕鍜?OS 绫诲瀷銆?
+UTS 命名空间，用于隔离系统中uname(2) 系统调用相关的两个特定元素。它以用于存uname(2) 系统调用所返回信息的数据结构命名
+用户空间工具可以从中获取内核名称、主机名、内核发布号、内核版本、架构名OS 类型
 ### (uts_namespace, name)
 
 
-name 鎴愬憳鐨勫亸绉婚噺銆侰rash Utility 涓?Makedumpfile 鎹鑾峰彇 init_uts_ns.name 鐨勮捣濮嬪湴鍧€銆?
+name 成员的偏移量。Crash Utility Makedumpfile 据此获取 init_uts_ns.name 的起始地址
 ### node_online_map
 
 
-鏁扮粍 node_states[N_ONLINE]锛岃〃绀虹郴缁熶腑鍦ㄧ嚎鑺傜偣鐨勯泦鍚堬紝姣忎釜鑺傜偣鍙峰搴斾竴涓瘮鐗逛綅銆?鐢ㄤ簬璺熻釜鍝簺鑺傜偣鍦ㄧ郴缁熶腑涓斿浜庡湪绾跨姸鎬併€?
+数组 node_states[N_ONLINE]，表示系统中在线节点的集合，每个节点号对应一个比特位用于跟踪哪些节点在系统中且处于在线状态
 ### swapper_pg_dir
 
 
-鍐呮牳鐨勫叏灞€椤电洰褰曟寚閽堛€傜敤浜庡皢铏氭嫙鍦板潃杞崲涓虹墿鐞嗗湴鍧€銆?
+内核的全局页目录指针。用于将虚拟地址转换为物理地址
 ### _stext
 
 
-瀹氫箟 text 娈电殑璧峰浣嶇疆銆傞€氬父锛宊stext 琛ㄧず鍐呮牳鐨勮捣濮嬪湴鍧€銆傜敤浜庡皢鏉ヨ嚜鍐呮牳鐩存帴鏄犲皠鐨?铏氭嫙鍦板潃杞崲涓虹墿鐞嗗湴鍧€銆?
+定义 text 段的起始位置。通常，_stext 表示内核的起始地址。用于将来自内核直接映射虚拟地址转换为物理地址
 ### VMALLOC_START
 
 
-瀛樺偍 vmalloc 鍖哄煙鐨勫熀鍦板潃銆俶akedumpfile 闇€瑕佽幏鍙栬鍊硷紝鍥犱负瀹冨 vmalloc 杞崲鏄繀瑕佺殑銆?
+存储 vmalloc 区域的基地址。makedumpfile 需要获取该值，因为它对 vmalloc 转换是必要的
 ### mem_map
 
 
-鐗╃悊鍦板潃閫氳繃灏嗗叾浣滀负 mem_map 鏁扮粍鐨勭储寮曟潵杞崲涓?struct page銆傚皢鐗╃悊鍦板潃鍙崇Щ
-PAGE_SHIFT 浣嶅嵆鍙皢鍏惰浆鎹负椤靛抚鍙凤紝涔熷氨鏄 mem_map 鏁扮粍鐨勭储寮曘€?
-鐢ㄤ簬灏嗗湴鍧€鏄犲皠鍒板搴旂殑 struct page銆?
+物理地址通过将其作为 mem_map 数组的索引来转换struct page。将物理地址右移
+PAGE_SHIFT 位即可将其转换为页帧号，也就是该 mem_map 数组的索引
+用于将地址映射到对应的 struct page
 ### contig_page_data
 
 
-Makedumpfile 浠庤绗﹀彿鑾峰彇 pglist_data 缁撴瀯锛岃缁撴瀯鐢ㄤ簬鎻忚堪鍐呭瓨甯冨眬銆?
-鐢ㄦ埛绌洪棿宸ュ叿鍒╃敤瀹冩潵鍦ㄨ浆鍌ㄥ唴瀛樻椂鎺掗櫎绌洪棽椤点€?
+Makedumpfile 从该符号获取 pglist_data 结构，该结构用于描述内存布局
+用户空间工具利用它来在转储内存时排除空闲页
 ### mem_section|(mem_section, NR_SECTION_ROOTS)|(mem_section, section_mem_map)
 
 
-mem_section 鏁扮粍鐨勫湴鍧€銆佸叾闀垮害銆佺粨鏋勫ぇ灏忥紝浠ュ強 section_mem_map 鐨勫亸绉婚噺銆?
-瀹冨瓨鍦ㄤ簬绋€鐤忓唴瀛樻槧灏勬ā鍨嬩腑锛屽苟涓斾笌 mem_map 鍙橀噺鏈変簺绫讳技锛屼簩鑰呴兘鐢ㄤ簬杞崲鍦板潃銆?
+mem_section 数组的地址、其长度、结构大小，以及 section_mem_map 的偏移量
+它存在于稀疏内存映射模型中，并且与 mem_map 变量有些类似，二者都用于转换地址
 ### MAX_PHYSMEM_BITS
 
 
-瀹氫箟鎵€鏀寔鐨勬渶澶х墿鐞嗗湴鍧€绌洪棿鍐呭瓨銆?
+定义所支持的最大物理地址空间内存
 ### page
 
 
-page 缁撴瀯鐨勫ぇ灏忋€俿truct page 鏄竴涓噸瑕佺殑鏁版嵁缁撴瀯锛岃骞挎硾鐢ㄤ簬璁＄畻杩炵画鍐呭瓨銆?
+page 结构的大小。struct page 是一个重要的数据结构，被广泛用于计算连续内存
 ### pglist_data
 
 
-pglist_data 缁撴瀯鐨勫ぇ灏忋€傝鍊肩敤浜庢鏌?pglist_data 缁撴瀯鏄惁鏈夋晥銆傚畠涔熺敤浜庢鏌ュ唴瀛樼被鍨嬨€?
+pglist_data 结构的大小。该值用于检pglist_data 结构是否有效。它也用于检查内存类型
 ### zone
 
 
-zone 缁撴瀯鐨勫ぇ灏忋€傝鍊肩敤浜庢鏌ユ槸鍚﹀凡鎵惧埌 zone 缁撴瀯銆傚畠涔熺敤浜庢帓闄ょ┖闂查〉銆?
+zone 结构的大小。该值用于检查是否已找到 zone 结构。它也用于排除空闲页
 ### free_area
 
 
-free_area 缁撴瀯鐨勫ぇ灏忋€傚畠鎸囩ず free_area 缁撴瀯鏄惁鏈夋晥銆傚湪鎺掗櫎绌洪棽椤垫椂寰堟湁鐢ㄣ€?
+free_area 结构的大小。它指示 free_area 结构是否有效。在排除空闲页时很有用
 ### list_head
 
 
-list_head 缁撴瀯鐨勫ぇ灏忋€傜敤浜庡湪鍚庨獙鍒嗘瀽浼氳瘽涓亶鍘嗛摼琛ㄣ€?
+list_head 结构的大小。用于在后验分析会话中遍历链表
 ### nodemask_t
 
 
-nodemask_t 绫诲瀷鐨勫ぇ灏忋€傜敤浜庤绠楀湪绾胯妭鐐圭殑鏁伴噺銆?
+nodemask_t 类型的大小。用于计算在线节点的数量
 ### (page, flags|_refcount|mapping|lru|_mapcount|private|compound_order|compound_info)
 
 
-鐢ㄦ埛绌洪棿宸ュ叿鍩轰簬杩欎簺鍙橀噺鐨勫亸绉婚噺鏉ヨ绠楀畠浠殑鍊笺€傝繖浜涘彉閲忓湪鎺掗櫎涓嶅繀瑕佺殑椤垫椂浣跨敤銆?
+用户空间工具基于这些变量的偏移量来计算它们的值。这些变量在排除不必要的页时使用
 ### (pglist_data, node_zones|nr_zones|node_mem_map|node_start_pfn|node_spanned_pages|node_id)
 
 
-鍦?NUMA 鏈哄櫒涓婏紝姣忎釜 NUMA 鑺傜偣閮芥湁涓€涓?pg_data_t 鏉ユ弿杩板叾鍐呭瓨甯冨眬銆傚湪 UMA 鏈哄櫒涓婏紝
-鍙湁涓€涓?pglist_data 鐢ㄤ簬鎻忚堪鏁翠釜鍐呭瓨銆?
-杩欎簺鍊肩敤浜庢鏌ュ唴瀛樼被鍨嬶紝骞惰绠楀唴瀛樻槧灏勭殑铏氭嫙鍦板潃銆?
+NUMA 机器上，每个 NUMA 节点都有一pg_data_t 来描述其内存布局。在 UMA 机器上，
+只有一pglist_data 用于描述整个内存
+这些值用于检查内存类型，并计算内存映射的虚拟地址
 ### (zone, free_area|vm_stat|spanned_pages)
 
 
-姣忎釜鑺傜偣琚垝鍒嗕负鑻ュ共涓О涓?zone 鐨勫潡锛屽畠浠〃绀哄唴瀛樹腑鐨勮寖鍥淬€備竴涓?zone 鐢?zone 缁撴瀯鏉ユ弿杩般€?
-鐢ㄦ埛绌洪棿宸ュ叿鍩轰簬杩欎簺鍙橀噺鐨勫亸绉婚噺鏉ヨ绠楁墍闇€鐨勫€笺€?
+每个节点被划分为若干个称zone 的块，它们表示内存中的范围。一zone zone 结构来描述
+用户空间工具基于这些变量的偏移量来计算所需的值
 ### (free_area, free_list)
 
 
-free_list 鎴愬憳鐨勫亸绉婚噺銆傝鍊肩敤浜庤绠楃┖闂查〉鐨勬暟閲忋€?
-姣忎釜 zone 閮芥湁涓€涓悕涓?free_area[NR_PAGE_ORDERS] 鐨?free_area 缁撴瀯鏁扮粍銆?free_list 琛ㄧず绌洪棽椤靛潡鐨勯摼琛ㄣ€?
+free_list 成员的偏移量。该值用于计算空闲页的数量
+每个 zone 都有一个名free_area[NR_PAGE_ORDERS] free_area 结构数组free_list 表示空闲页块的链表
 ### (list_head, next|prev)
 
 
-list_head 鍚勬垚鍛樼殑鍋忕Щ閲忋€俵ist_head 鐢ㄤ簬瀹氫箟寰幆閾捐〃銆傜敤鎴风┖闂村伐鍏烽渶瑕佸畠浠互渚块亶鍘嗛摼琛ㄣ€?
+list_head 各成员的偏移量。list_head 用于定义循环链表。用户空间工具需要它们以便遍历链表
 ### (vmap_area, va_start|list)
 
 
-vmap_area 鍚勬垚鍛樼殑鍋忕Щ閲忋€傚畠浠惡甯?vmalloc 鐗规湁鐨勪俊鎭€侻akedumpfile 鎹鑾峰彇 vmalloc
-鍖哄煙鐨勮捣濮嬪湴鍧€銆?
+vmap_area 各成员的偏移量。它们携vmalloc 特有的信息。Makedumpfile 据此获取 vmalloc
+区域的起始地址
 ### (zone.free_area, NR_PAGE_ORDERS)
 
 
-绌洪棽鍖哄煙鎻忚堪绗︺€傜敤鎴风┖闂村伐鍏蜂娇鐢ㄨ鍊兼潵閬嶅巻 free_area 鑼冨洿銆侼R_PAGE_ORDERS 鐢?zone
-浼欎即鍒嗛厤鍣ㄤ娇鐢ㄣ€?
+空闲区域描述符。用户空间工具使用该值来遍历 free_area 范围。NR_PAGE_ORDERS zone
+伙伴分配器使用
 ### prb
 
 
-鎸囧悜 printk 鐜舰缂撳啿鍖猴紙struct printk_ringbuffer锛夌殑鎸囬拡銆傛牴鎹牳蹇冭浆鍌ㄥ彂鐢熺殑鏃舵満锛?瀹冨彲鑳藉凡缁忔寚鍚戦潤鎬佸惎鍔ㄧ幆褰㈢紦鍐插尯锛屼篃鍙兘鎸囧悜鍔ㄦ€佸垎閰嶇殑鐜舰缂撳啿鍖恒€?鐢辩敤鎴风┖闂村伐鍏风敤浜庤鍙栧綋鍓嶆椿璺冪殑鍐呮牳鏃ュ織缂撳啿鍖恒€?
+指向 printk 环形缓冲区（struct printk_ringbuffer）的指针。根据核心转储发生的时机它可能已经指向静态启动环形缓冲区，也可能指向动态分配的环形缓冲区由用户空间工具用于读取当前活跃的内核日志缓冲区
 ### printk_rb_static
 
 
-鎸囧悜闈欐€佸惎鍔?printk 鐜舰缂撳啿鍖虹殑鎸囬拡銆傚鏋?@prb 鐨勫€间笉鍚岋紝杩欏浜庢煡鐪嬪垵濮嬪惎鍔ㄦ秷鎭緢鏈夌敤锛?閭ｄ簺娑堟伅鍙兘宸插湪鍔ㄦ€佸垎閰嶇殑鐜舰缂撳啿鍖轰腑琚鐩栥€?
+指向静态启printk 环形缓冲区的指针。如@prb 的值不同，这对于查看初始启动消息很有用那些消息可能已在动态分配的环形缓冲区中被覆盖
 ### clear_seq
 
 
-涓婁竴娆?clear 鍛戒护涔嬪悗鐨?printk() 璁板綍搴忓彿銆傚畠琛ㄧず涓婁竴娆?SYSLOG_ACTION_CLEAR
-锛堜緥濡傜敱 'dmesg -c' 鍙戝嚭鐨勶級涔嬪悗鐨勭涓€鏉¤褰曘€傜敱鐢ㄦ埛绌洪棿宸ュ叿鐢ㄤ簬杞偍 dmesg 鏃ュ織鐨勪竴涓瓙闆嗐€?
+上一clear 命令之后printk() 记录序号。它表示上一SYSLOG_ACTION_CLEAR
+（例如由 'dmesg -c' 发出的）之后的第一条记录。由用户空间工具用于转储 dmesg 日志的一个子集
 ### printk_ringbuffer
 
 
-printk_ringbuffer 缁撴瀯鐨勫ぇ灏忋€傝缁撴瀯鍖呭惈璁块棶鍐呮牳鏃ュ織缂撳啿鍖哄悇涓粍鎴愰儴鍒嗘墍闇€鐨勫叏閮ㄤ俊鎭€?
+printk_ringbuffer 结构的大小。该结构包含访问内核日志缓冲区各个组成部分所需的全部信息
 ### (printk_ringbuffer, desc_ring|text_data_ring|dict_data_ring|fail)
 
 
-printk 鐜舰缂撳啿鍖哄悇缁勬垚閮ㄥ垎鐨勫亸绉婚噺銆傜敱鐢ㄦ埛绌洪棿宸ュ叿鐢ㄤ簬鍦ㄤ笉瑕佹眰澹版槑璇ョ粨鏋勭殑鎯呭喌涓嬫煡鐪?鍐呮牳鏃ュ織缂撳啿鍖恒€?
+printk 环形缓冲区各组成部分的偏移量。由用户空间工具用于在不要求声明该结构的情况下查内核日志缓冲区
 ### prb_desc_ring
 
 
-prb_desc_ring 缁撴瀯鐨勫ぇ灏忋€傝缁撴瀯鍖呭惈鍏充簬涓€缁勮褰曟弿杩扮鐨勪俊鎭€?
+prb_desc_ring 结构的大小。该结构包含关于一组记录描述符的信息
 ### (prb_desc_ring, count_bits|descs|head_id|tail_id)
 
 
-鎻忚堪涓€缁勮褰曟弿杩扮鐨勫悇涓瓧娈电殑鍋忕Щ閲忋€傜敱鐢ㄦ埛绌洪棿宸ュ叿鐢ㄤ簬鍦ㄤ笉瑕佹眰澹版槑璇ョ粨鏋勭殑鎯呭喌涓?閬嶅巻杩欎簺鎻忚堪绗︺€?
+描述一组记录描述符的各个字段的偏移量。由用户空间工具用于在不要求声明该结构的情况遍历这些描述符
 ### prb_desc
 
 
-prb_desc 缁撴瀯鐨勫ぇ灏忋€傝缁撴瀯鍖呭惈鍏充簬鍗曚釜璁板綍鎻忚堪绗︾殑淇℃伅銆?
+prb_desc 结构的大小。该结构包含关于单个记录描述符的信息
 ### (prb_desc, info|state_var|text_blk_lpos|dict_blk_lpos)
 
 
-鎻忚堪涓€涓褰曟弿杩扮鐨勫悇涓瓧娈电殑鍋忕Щ閲忋€傜敱鐢ㄦ埛绌洪棿宸ュ叿鐢ㄤ簬鍦ㄤ笉瑕佹眰澹版槑璇ョ粨鏋勭殑鎯呭喌涓?璇诲彇杩欎簺鎻忚堪绗︺€?
+描述一个记录描述符的各个字段的偏移量。由用户空间工具用于在不要求声明该结构的情况读取这些描述符
 ### prb_data_blk_lpos
 
 
-prb_data_blk_lpos 缁撴瀯鐨勫ぇ灏忋€傝缁撴瀯鍖呭惈鍏充簬鏂囨湰鎴栧瓧鍏告暟鎹紙鏁版嵁鍧楋級鍦ㄧ浉搴旀暟鎹幆褰?缂撳啿鍖轰腑浣嶇疆鐨勪俊鎭€?
+prb_data_blk_lpos 结构的大小。该结构包含关于文本或字典数据（数据块）在相应数据环缓冲区中位置的信息
 ### (prb_data_blk_lpos, begin|next)
 
 
-鎻忚堪涓€涓暟鎹潡浣嶇疆鐨勫悇涓瓧娈电殑鍋忕Щ閲忋€傜敱鐢ㄦ埛绌洪棿宸ュ叿鐢ㄤ簬鍦ㄤ笉瑕佹眰澹版槑璇ョ粨鏋勭殑鎯呭喌涓?瀹氫綅鏁版嵁鍧椼€?
+描述一个数据块位置的各个字段的偏移量。由用户空间工具用于在不要求声明该结构的情况定位数据块
 ### printk_info
 
 
-printk_info 缁撴瀯鐨勫ぇ灏忋€傝缁撴瀯鍖呭惈涓€鏉¤褰曠殑鍏ㄩ儴鍏冩暟鎹€?
+printk_info 结构的大小。该结构包含一条记录的全部元数据
 ### (printk_info, seq|ts_nsec|text_len|dict_len|caller_id)
 
 
-鎻愪緵涓€鏉¤褰曞厓鏁版嵁鐨勫悇涓瓧娈电殑鍋忕Щ閲忋€傜敱鐢ㄦ埛绌洪棿宸ュ叿鐢ㄤ簬鍦ㄤ笉瑕佹眰澹版槑璇ョ粨鏋勭殑鎯呭喌涓?璇诲彇璇ヤ俊鎭€?
+提供一条记录元数据的各个字段的偏移量。由用户空间工具用于在不要求声明该结构的情况读取该信息
 ### prb_data_ring
 
 
-prb_data_ring 缁撴瀯鐨勫ぇ灏忋€傝缁撴瀯鍖呭惈鍏充簬涓€缁勬暟鎹潡鐨勪俊鎭€?
+prb_data_ring 结构的大小。该结构包含关于一组数据块的信息
 ### (prb_data_ring, size_bits|data|head_lpos|tail_lpos)
 
 
-鎻忚堪涓€缁勬暟鎹潡鐨勫悇涓瓧娈电殑鍋忕Щ閲忋€傜敱鐢ㄦ埛绌洪棿宸ュ叿鐢ㄤ簬鍦ㄤ笉瑕佹眰澹版槑璇ョ粨鏋勭殑鎯呭喌涓?璁块棶杩欎簺鏁版嵁鍧椼€?
+描述一组数据块的各个字段的偏移量。由用户空间工具用于在不要求声明该结构的情况访问这些数据块
 ### atomic_long_t
 
 
-atomic_long_t 缁撴瀯鐨勫ぇ灏忋€傜敱鐢ㄦ埛绌洪棿宸ュ叿鐢ㄤ簬鑳藉澶嶅埗鏁翠釜缁撴瀯锛岃€屼笉璁哄叾鏋舵瀯鐩稿叧鐨勫疄鐜般€?
+atomic_long_t 结构的大小。由用户空间工具用于能够复制整个结构，而不论其架构相关的实现
 ### (atomic_long_t, counter)
 
 
-atomic_long_t 鍙橀噺鐨勯暱鏁村瀷鍊肩殑鍋忕Щ閲忋€傜敱鐢ㄦ埛绌洪棿宸ュ叿鐢ㄤ簬鍦ㄤ笉瑕佹眰鏋舵瀯鐩稿叧澹版槑鐨勬儏鍐典笅
-璁块棶璇ラ暱鏁村瀷鍊笺€?
+atomic_long_t 变量的长整型值的偏移量。由用户空间工具用于在不要求架构相关声明的情况下
+访问该长整型值
 ### (free_area.free_list, MIGRATE_TYPES)
 
 
-椤电殑杩佺Щ绫诲瀷鏁伴噺銆俧ree_list 鐢辫鏁扮粍鎻忚堪銆傜敱宸ュ叿鐢ㄤ簬璁＄畻绌洪棽椤电殑鏁伴噺銆?
+页的迁移类型数量。free_list 由该数组描述。由工具用于计算空闲页的数量
 ### NR_FREE_PAGES
 
 
-鍦?linux-2.6.21 鎴栨洿楂樼増鏈腑锛岀┖闂查〉鏁伴噺浣嶄簬 vm_stat[NR_FREE_PAGES]銆傜敤浜庤幏鍙栫┖闂查〉
-鏁伴噺銆?
+linux-2.6.21 或更高版本中，空闲页数量位于 vm_stat[NR_FREE_PAGES]。用于获取空闲页
+数量
 ### PG_lru|PG_private|PG_swapcache|PG_swapbacked|PG_hwpoison|PG_head_mask
 
 
-椤靛睘鎬с€傝繖浜涙爣蹇楃敤浜庤繃婊ゅ悇绉嶈浆鍌ㄦ椂涓嶉渶瑕佺殑椤点€?
+页属性。这些标志用于过滤各种转储时不需要的页
 ### PAGE_SLAB_MAPCOUNT_VALUE|PAGE_BUDDY_MAPCOUNT_VALUE|PAGE_OFFLINE_MAPCOUNT_VALUE|PAGE_HUGETLB_MAPCOUNT_VALUE|PAGE_UNACCEPTED_MAPCOUNT_VALUE
 
 
-鏇村椤靛睘鎬с€傝繖浜涙爣蹇楃敤浜庤繃婊ゅ悇绉嶈浆鍌ㄦ椂涓嶉渶瑕佺殑椤点€?
+更多页属性。这些标志用于过滤各种转储时不需要的页
 
 ## x86_64
 
@@ -214,37 +214,37 @@ atomic_long_t 鍙橀噺鐨勯暱鏁村瀷鍊肩殑鍋忕Щ閲忋€傜敱鐢ㄦ�
 ### phys_base
 
 
-鐢ㄤ簬灏嗗鍑虹殑鍐呮牳绗﹀彿鐨勮櫄鎷熷湴鍧€杞崲涓哄叾瀵瑰簲鐨勭墿鐞嗗湴鍧€銆?
+用于将导出的内核符号的虚拟地址转换为其对应的物理地址
 ### init_top_pgt
 
 
-鐢ㄤ簬閬嶅巻鏁翠釜椤佃〃骞跺皢铏氭嫙鍦板潃杞崲涓虹墿鐞嗗湴鍧€銆俰nit_top_pgt 涓?swapper_pg_dir 鏈変簺绫讳技锛?浣嗕粎鍦?x86_64 涓娇鐢ㄣ€?
+用于遍历整个页表并将虚拟地址转换为物理地址。init_top_pgt swapper_pg_dir 有些类似但仅x86_64 中使用
 ### pgtable_l5_enabled
 
 
-鐢ㄦ埛绌洪棿宸ュ叿闇€瑕佷簡瑙ｅ穿婧冨唴鏍告槸鍚﹀浜?5 绾у垎椤垫ā寮忋€?
+用户空间工具需要了解崩溃内核是否处5 级分页模式
 ### node_data
 
 
-杩欐槸涓€涓?struct pglist_data 鏁扮粍锛屽瓨鍌ㄦ墍鏈?NUMA 鑺傜偣鐨勪俊鎭€侻akedumpfile 浠庝腑鑾峰彇
-pglist_data 缁撴瀯銆?
+这是一struct pglist_data 数组，存储所NUMA 节点的信息。Makedumpfile 从中获取
+pglist_data 结构
 ### (node_data, MAX_NUMNODES)
 
 
-绯荤粺涓妭鐐圭殑鏈€澶ф暟閲忋€?
+系统中节点的最大数量
 ### KERNELOFFSET
 
 
-鍐呮牳闅忔満鍖栧亸绉婚噺銆傜敤浜庤绠楅〉鍋忕Щ銆傚鏋?KASLR 琚鐢紝鍒欒鍊间负闆躲€?
+内核随机化偏移量。用于计算页偏移。如KASLR 被禁用，则该值为零
 ### KERNEL_IMAGE_SIZE
 
 
-鐩墠鏈 Makedumpfile 浣跨敤銆傜敤浜庣敱 Crash 璁＄畻妯″潡铏氭嫙鍦板潃銆?
+目前未被 Makedumpfile 使用。用于由 Crash 计算模块虚拟地址
 ### sme_mask
 
 
-AMD 鐗规湁锛屾敮鎸?SME锛氬畠琛ㄧず瀹夊叏鍐呭瓨鍔犲瘑鎺╃爜銆侻akedumpfile 宸ュ叿闇€瑕佷簡瑙ｅ穿婧冨唴鏍告槸鍚?琚姞瀵嗐€傚鏋滅涓€涓唴鏍稿惎鐢ㄤ簡 SME锛屽穿婧冨唴鏍哥殑椤佃〃椤癸紙pgd/pud/pmd/pte锛変腑鍖呭惈璇ュ唴瀛?鍔犲瘑鎺╃爜銆傝繖鐢ㄤ簬鍘婚櫎 SME 鎺╃爜骞惰幏鍙栫湡瀹炵殑鐗╃悊鍦板潃銆?
-鐩墠锛宻me_mask 瀛樺偍 C 浣嶇殑浣嶇疆銆傚鏋滈渶瑕侊紝鍙互灏嗛澶栫殑 SME 鐩稿叧淇℃伅鏀惧叆璇ュ彉閲忎腑銆?
+AMD 特有，支SME：它表示安全内存加密掩码。Makedumpfile 工具需要了解崩溃内核是被加密。如果第一个内核启用了 SME，崩溃内核的页表项（pgd/pud/pmd/pte）中包含该内加密掩码。这用于去除 SME 掩码并获取真实的物理地址
+目前，sme_mask 存储 C 位的位置。如果需要，可以将额外的 SME 相关信息放入该变量中
 ```
 
   [ misc	        ][ enc bit  ][ other misc SME info       ]
@@ -258,63 +258,63 @@ AMD 鐗规湁锛屾敮鎸?SME锛氬畠琛ㄧず瀹夊叏鍐呭瓨鍔犲瘑鎺╃
 ### X86_PAE
 
 
-琛ㄧず鏄惁鍚敤浜嗙墿鐞嗗湴鍧€鎵╁睍銆傚畠浼氬甫鏉ユ洿楂樼殑椤佃〃鏌ユ壘寮€閿€锛屽苟涓旀瘡涓繘绋嬩篃娑堣€楁洿澶氱殑椤佃〃
-绌洪棿銆傜敤浜庡湪灏嗚櫄鎷熷湴鍧€杞崲涓虹墿鐞嗗湴鍧€鏃舵鏌ュ穿婧冨唴鏍告槸鍚﹀惎鐢ㄤ簡 PAE銆?
+表示是否启用了物理地址扩展。它会带来更高的页表查找开销，并且每个进程也消耗更多的页表
+空间。用于在将虚拟地址转换为物理地址时检查崩溃内核是否启用了 PAE
 ## ARM64
 
 
 ### VA_BITS
 
 
-铏氭嫙鍦板潃鐨勬渶澶т綅鏁般€傜敤浜庤绠楄櫄鎷熷唴瀛樿寖鍥淬€?
+虚拟地址的最大位数。用于计算虚拟内存范围
 ### kimage_voffset
 
 
-鍐呮牳铏氭嫙鏄犲皠涓庣墿鐞嗘槧灏勪箣闂寸殑鍋忕Щ閲忋€傜敤浜庡皢铏氭嫙鍦板潃杞崲涓虹墿鐞嗗湴鍧€銆?
+内核虚拟映射与物理映射之间的偏移量。用于将虚拟地址转换为物理地址
 ### PHYS_OFFSET
 
 
-琛ㄧず鍐呭瓨璧峰浣嶇疆鐨勭墿鐞嗗湴鍧€銆備笌 kimage_voffset 绫讳技锛屽悗鑰呯敤浜庡皢铏氭嫙鍦板潃杞崲涓虹墿鐞嗗湴鍧€銆?
+表示内存起始位置的物理地址。与 kimage_voffset 类似，后者用于将虚拟地址转换为物理地址
 ### KERNELOFFSET
 
 
-鍐呮牳闅忔満鍖栧亸绉婚噺銆傜敤浜庤绠楅〉鍋忕Щ銆傚鏋?KASLR 琚鐢紝鍒欒鍊间负闆躲€?
+内核随机化偏移量。用于计算页偏移。如KASLR 被禁用，则该值为零
 ### KERNELPACMASK
 
 
-鐢ㄤ簬浠庡唴鏍歌櫄鎷熷湴鍧€涓彁鍙栨寚閽堣璇佺爜锛圥ointer Authentication Code锛夌殑鎺╃爜銆?
+用于从内核虚拟地址中提取指针认证码（Pointer Authentication Code）的掩码
 ### TCR_EL1.T1SZ
 
 
-琛ㄧず TTBR1_EL1 鎵€瀵诲潃鐨勫唴瀛樺尯鍩熺殑澶у皬鍋忕Щ銆傝鍖哄煙澶у皬涓?2^(64-T1SZ) 瀛楄妭銆?
-TTBR1_EL1 鏄敱 ARMv8-A 鏋舵瀯瑙勫畾鐨勮〃鍩哄湴鍧€瀵勫瓨鍣紝鐢ㄤ簬鏌ユ壘杈冮珮 VA 鑼冨洿涓櫄鎷熷湴鍧€鐨?椤佃〃锛堟洿澶氱粏鑺傝鍙傞槄 ARMv8 ARM 鏂囨。锛夈€?
+表示 TTBR1_EL1 所寻址的内存区域的大小偏移。该区域大小2^(64-T1SZ) 字节
+TTBR1_EL1 是由 ARMv8-A 架构规定的表基地址寄存器，用于查找较高 VA 范围中虚拟地址页表（更多细节请参阅 ARMv8 ARM 文档）
 ### MODULES_VADDR|MODULES_END|VMALLOC_START|VMALLOC_END|VMEMMAP_START|VMEMMAP_END
 
 
-鐢ㄤ簬鑾峰彇姝ｇ‘鐨勮寖鍥达細
-	MODULES_VADDR ~ MODULES_END-1 : 鍐呮牳妯″潡绌洪棿銆?	VMALLOC_START ~ VMALLOC_END-1 : vmalloc() / ioremap() 绌洪棿銆?	VMEMMAP_START ~ VMEMMAP_END-1 : vmemmap 鍖哄煙锛岀敤浜?struct page 鏁扮粍銆?
+用于获取正确的范围：
+	MODULES_VADDR ~ MODULES_END-1 : 内核模块空间	VMALLOC_START ~ VMALLOC_END-1 : vmalloc() / ioremap() 空间	VMEMMAP_START ~ VMEMMAP_END-1 : vmemmap 区域，用struct page 数组
 ## arm
 
 
 ### ARM_LPAE
 
 
-瀹冭〃绀哄穿婧冨唴鏍告槸鍚︽敮鎸佸ぇ鐗╃悊鍦板潃鎵╁睍銆傜敤浜庡皢铏氭嫙鍦板潃杞崲涓虹墿鐞嗗湴鍧€銆?
+它表示崩溃内核是否支持大物理地址扩展。用于将虚拟地址转换为物理地址
 ## s390
 
 
 ### lowcore_ptr
 
 
-涓€涓寚鍚戞瘡涓?CPU 鐨?lowcore 鐨勬寚閽堟暟缁勩€傜敤浜庢墦鍗?psw 浠ュ強鎵€鏈夊瘎瀛樺櫒鐨勪俊鎭€?
+一个指向每CPU lowcore 的指针数组。用于打psw 以及所有寄存器的信息
 ### high_memory
 
 
-鐢ㄤ簬浠?high_memory 绗﹀彿鑾峰彇 vmalloc_start 鍦板潃銆?
+用于high_memory 符号获取 vmalloc_start 地址
 ### (lowcore_ptr, NR_CPUS)
 
 
-CPU 鐨勬渶澶ф暟閲忋€?
+CPU 的最大数量
 ## powerpc
 
 
@@ -322,69 +322,69 @@ CPU 鐨勬渶澶ф暟閲忋€?
 ### node_data|(node_data, MAX_NUMNODES)
 
 
-鍙傝涓婃枃銆?
+参见上文
 ### contig_page_data
 
 
-鍙傝涓婃枃銆?
+参见上文
 ### vmemmap_list
 
 
-vmemmap_list 缁存姢鏁翠釜 vmemmap 鐗╃悊鏄犲皠銆傜敤浜庤幏鍙?vmemmap 鍒楄〃璁℃暟浠ュ強宸插～鍏呯殑 vmemmap
-鍖哄煙淇℃伅銆傚鏋?vmemmap 鍦板潃杞崲淇℃伅瀛樺偍鍦ㄥ穿婧冨唴鏍镐腑锛屽垯鐢ㄤ簬杞崲 vmemmap 鍐呮牳铏氭嫙鍦板潃銆?
+vmemmap_list 维护整个 vmemmap 物理映射。用于获vmemmap 列表计数以及已填充的 vmemmap
+区域信息。如vmemmap 地址转换信息存储在崩溃内核中，则用于转换 vmemmap 内核虚拟地址
 ### mmu_vmemmap_psize
 
 
-椤电殑澶у皬銆傜敤浜庡皢铏氭嫙鍦板潃杞崲涓虹墿鐞嗗湴鍧€銆?
+页的大小。用于将虚拟地址转换为物理地址
 ### mmu_psize_defs
 
 
-椤靛ぇ灏忓畾涔夛紝鍗?4k銆?4k 鎴?16M銆?
-鐢ㄤ簬杩涜 vtop 杞崲銆?
+页大小定义，4k4k 16M
+用于进行 vtop 转换
 ### vmemmap_backing|(vmemmap_backing, list)|(vmemmap_backing, phys)|(vmemmap_backing, virt_addr)
 
 
-vmemmap 铏氭嫙鍦板潃绌洪棿绠＄悊娌℃湁浼犵粺鐨勯〉琛ㄦ潵璺熻釜鍝簺铏氭嫙 struct page 鐢辩墿鐞嗘槧灏勬敮鎾戙€?铏氭嫙鍒扮墿鐞嗙殑鏄犲皠浠ヤ竴绉嶇畝鍗曠殑閾捐〃鏍煎紡杩涜璺熻釜銆?
-鐢ㄦ埛绌洪棿宸ュ叿鍦ㄨ绠?vmemmap 鍖哄煙璁℃暟鏃堕渶瑕佷簡瑙?list銆乸hys 鍜?virt_addr 鐨勫亸绉婚噺銆?
+vmemmap 虚拟地址空间管理没有传统的页表来跟踪哪些虚拟 struct page 由物理映射支撑虚拟到物理的映射以一种简单的链表格式进行跟踪
+用户空间工具在计vmemmap 区域计数时需要了list、phys virt_addr 的偏移量
 ### mmu_psize_def|(mmu_psize_def, shift)
 
 
-struct mmu_psize_def 鐨勫ぇ灏忎互鍙?mmu_psize_def 鎴愬憳鐨勫亸绉婚噺銆?
-鐢ㄤ簬 vtop 杞崲銆?
+struct mmu_psize_def 的大小以mmu_psize_def 成员的偏移量
+用于 vtop 转换
 ## sh
 
 
 ### node_data|(node_data, MAX_NUMNODES)
 
 
-鍙傝涓婃枃銆?
+参见上文
 ### X2TLB
 
 
-琛ㄧず宕╂簝鍐呮牳鏄惁鍚敤浜?SH 鎵╁睍妯″紡銆?
+表示崩溃内核是否启用SH 扩展模式
 ## RISCV64
 
 
 ### VA_BITS
 
 
-铏氭嫙鍦板潃鐨勬渶澶т綅鏁般€傜敤浜庤绠楄櫄鎷熷唴瀛樿寖鍥淬€?
+虚拟地址的最大位数。用于计算虚拟内存范围
 ### PAGE_OFFSET
 
 
-琛ㄧず鐩存帴鏄犲皠 RAM 鍖哄煙鐨勮櫄鎷熷唴鏍歌捣濮嬪湴鍧€銆?
+表示直接映射 RAM 区域的虚拟内核起始地址
 ### phys_ram_base
 
 
-琛ㄧず鐗╃悊 RAM 鐨勮捣濮嬪湴鍧€銆?
+表示物理 RAM 的起始地址
 ### MODULES_VADDR|MODULES_END|VMALLOC_START|VMALLOC_END|VMEMMAP_START|VMEMMAP_END|KERNEL_LINK_ADDR
 
 
-鐢ㄤ簬鑾峰彇姝ｇ‘鐨勮寖鍥达細
+用于获取正确的范围：
 
-  - MODULES_VADDR ~ MODULES_END : 鍐呮牳妯″潡绌洪棿銆?  - VMALLOC_START ~ VMALLOC_END : vmalloc() / ioremap() 绌洪棿銆?  - VMEMMAP_START ~ VMEMMAP_END : vmemmap 绌洪棿锛岀敤浜?struct page 鏁扮粍銆?  - KERNEL_LINK_ADDR : 鍐呮牳閾炬帴涓?BPF 鐨勮捣濮嬪湴鍧€
+  - MODULES_VADDR ~ MODULES_END : 内核模块空间  - VMALLOC_START ~ VMALLOC_END : vmalloc() / ioremap() 空间  - VMEMMAP_START ~ VMEMMAP_END : vmemmap 空间，用struct page 数组  - KERNEL_LINK_ADDR : 内核链接BPF 的起始地址
 
 ### va_kernel_pa_offset
 
 
-琛ㄧず鍐呮牳铏氭嫙鏄犲皠涓庣墿鐞嗘槧灏勪箣闂寸殑鍋忕Щ閲忋€傜敤浜庡皢铏氭嫙鍦板潃杞崲涓虹墿鐞嗗湴鍧€銆?
+表示内核虚拟映射与物理映射之间的偏移量。用于将虚拟地址转换为物理地址

@@ -4,80 +4,80 @@
 ######## FM Transmitter Control Reference
 
 
-FM 鍙戝皠鍣紙FM_TX锛夌被鍖呭惈鍏峰 FM 鍙戝皠鑳藉姏璁惧鐨勫父瑙佸姛鑳芥帶浠躲€傜洰鍓嶈绫诲寘鍚煶棰?鍘嬬缉銆佸棰戦煶鐢熸垚銆侀煶棰戦鍋忛檺鍒跺櫒銆丷DS 鍙戝皠涓庤皟璋愬姛鐜囩瓑鍔熻兘鐨勫弬鏁般€?
+FM 发射器（FM_TX）类包含具备 FM 发射能力设备的常见功能控件。目前该类包含音压缩、导频音生成、音频频偏限制器、RDS 发射与调谐功率等功能的参数
 
-## FM_TX 鎺у埗 ID
+## FM_TX 控制 ID
 
 
 `V4L2_CID_FM_TX_CLASS (class)`
-    FM_TX 绫绘弿杩扮銆傚璇ユ帶浠惰皟鐢?VIDIOC_QUERYCTRL 灏嗚繑鍥炴鎺т欢绫荤殑鎻忚堪銆?
+    FM_TX 类描述符。对该控件调VIDIOC_QUERYCTRL 将返回此控件类的描述
 `V4L2_CID_RDS_TX_DEVIATION (integer)`
-    浠?Hz 涓哄崟浣嶉厤缃?RDS 淇″彿棰戝亸鐢靛钩銆傝寖鍥翠笌姝ヨ繘鐢遍┍鍔ㄥ喅瀹氥€?
+    Hz 为单位配RDS 信号频偏电平。范围与步进由驱动决定
 `V4L2_CID_RDS_TX_PI (integer)`
-    璁剧疆鐢ㄤ簬鍙戝皠鐨?RDS 鑺傜洰璇嗗埆锛圥rogramme Identification锛夊瓧娈点€?
+    设置用于发射RDS 节目识别（Programme Identification）字段
 `V4L2_CID_RDS_TX_PTY (integer)`
-    璁剧疆鐢ㄤ簬鍙戝皠鐨?RDS 鑺傜洰绫诲瀷锛圥rogramme Type锛夊瓧娈点€傚叾缂栫爜鏈€澶?31 绉?    棰勫畾涔夎妭鐩被鍨嬨€?
+    设置用于发射RDS 节目类型（Programme Type）字段。其编码最31     预定义节目类型
 `V4L2_CID_RDS_TX_PS_NAME (string)`
-    璁剧疆鐢ㄤ簬鍙戝皠鐨勮妭鐩湇鍔″悕绉帮紙PS_NAME锛夈€傚畠鐢ㄤ簬鎺ユ敹鏈轰笂鐨勯潤鎬佹樉绀猴紝鏄?    鍚紬璇嗗埆鍜岄€夋嫨鑺傜洰鏈嶅姟鐨勪富瑕佽緟鍔┿€傚湪 RDS 瑙勮寖 iec62106 鐨勯檮褰?E 涓紝瀵?    鑺傜洰鏈嶅姟鍚嶇О瀛楃涓茬殑姝ｇ‘瀛楃缂栫爜鏈夊畬鏁磋鏄庛€傚悓鏍锋牴鎹?RDS 瑙勮寖锛孭S 閫氬父
-    鏄竴娈?8 涓瓧绗︾殑鏂囨湰銆備絾涔熷彲鑳芥壘鍒拌兘澶熸粴鍔ㄦ樉绀?8脳N 涓瓧绗﹀瓧绗︿覆鐨勬帴鏀舵満銆?    鍥犳锛屾鎺т欢蹇呴』浠?8 涓瓧绗︿负姝ヨ繘閰嶇疆锛岀粨鏋滃畠蹇呴』濮嬬粓鍖呭惈涓€涓ぇ灏忎负 8 鐨?    鏁存暟鍊嶇殑瀛楃涓层€?
+    设置用于发射的节目服务名称（PS_NAME）。它用于接收机上的静态显示，    听众识别和选择节目服务的主要辅助。在 RDS 规范 iec62106 的附E 中，    节目服务名称字符串的正确字符编码有完整说明。同样根RDS 规范，PS 通常
+    是一8 个字符的文本。但也可能找到能够滚动显8×N 个字符字符串的接收机    因此，此控件必须8 个字符为步进配置，结果它必须始终包含一个大小为 8     整数倍的字符串
 `V4L2_CID_RDS_TX_RADIO_TEXT (string)`
-    璁剧疆鐢ㄤ簬鍙戝皠鐨?Radio Text 淇℃伅銆傚畠鏄姝ｅ湪骞挎挱鍐呭鐨勬枃瀛楁弿杩般€傚綋骞挎挱鑰?    甯屾湜浼犺緭鏇撮暱鐨?PS 鍚嶇О銆佷笌鑺傜洰鐩稿叧鐨勪俊鎭垨浠讳綍鍏朵粬鏂囨湰鏃讹紝鍙互浣跨敤 RDS
-    Radio Text銆傚湪杩欎簺鎯呭喌涓嬶紝RadioText 搴斾笌 `V4L2_CID_RDS_TX_PS_NAME` 閰嶅悎
-    浣跨敤銆俁adio Text 瀛楃涓茬殑缂栫爜鍚屾牱鍦?iec62106 鐨勯檮褰?E 涓湁瀹屾暣璇存槑銆俁adio
-    Text 瀛楃涓茬殑闀垮害鍙栧喅浜庣敤浜庝紶杈撳畠鐨?RDS 鍧楋紝鍗?32锛?A 鍧楋級鎴?64锛?B 鍧楋級銆?    浣嗕篃鍙兘鎵惧埌鑳藉婊氬姩鏄剧ず 32脳N 鎴?64脳N 涓瓧绗﹀瓧绗︿覆鐨勬帴鏀舵満銆傚洜姝わ紝姝ゆ帶浠?    蹇呴』浠?32 鎴?64 涓瓧绗︿负姝ヨ繘閰嶇疆锛岀粨鏋滃畠蹇呴』濮嬬粓鍖呭惈涓€涓ぇ灏忎负 32 鎴?64 鐨?    鏁存暟鍊嶇殑瀛楃涓层€?
+    设置用于发射Radio Text 信息。它是对正在广播内容的文字描述。当广播    希望传输更长PS 名称、与节目相关的信息或任何其他文本时，可以使用 RDS
+    Radio Text。在这些情况下，RadioText 应与 `V4L2_CID_RDS_TX_PS_NAME` 配合
+    使用。Radio Text 字符串的编码同样iec62106 的附E 中有完整说明。Radio
+    Text 字符串的长度取决于用于传输它RDS 块，32A 块）64B 块）    但也可能找到能够滚动显示 32×N 64×N 个字符字符串的接收机。因此，此控    必须32 64 个字符为步进配置，结果它必须始终包含一个大小为 32 64     整数倍的字符串
 `V4L2_CID_RDS_TX_MONO_STEREO (boolean)`
-    璁剧疆瑙ｇ爜鍣ㄨ瘑鍒爜锛圖ecoder Identification code锛夌殑 Mono/Stereo 浣嶃€傝嫢璁剧疆锛?    鍒欒〃绀洪煶棰戜互绔嬩綋澹板綍鍒躲€?
+    设置解码器识别码（Decoder Identification code）的 Mono/Stereo 位。若设置    则表示音频以立体声录制
 `V4L2_CID_RDS_TX_ARTIFICIAL_HEAD (boolean)`
-    璁剧疆瑙ｇ爜鍣ㄨ瘑鍒爜鐨?`Artificial Head <http://en.wikipedia.org/wiki/Artificial_head>`__
-    浣嶃€傝嫢璁剧疆锛屽垯琛ㄧず闊抽浣跨敤浜哄伐澶达紙artificial head锛夊綍鍒躲€?
+    设置解码器识别码`Artificial Head <http://en.wikipedia.org/wiki/Artificial_head>`__
+    位。若设置，则表示音频使用人工头（artificial head）录制
 `V4L2_CID_RDS_TX_COMPRESSED (boolean)`
-    璁剧疆瑙ｇ爜鍣ㄨ瘑鍒爜鐨?Compressed 浣嶃€傝嫢璁剧疆锛屽垯琛ㄧず闊抽缁忚繃鍘嬬缉銆?
+    设置解码器识别码Compressed 位。若设置，则表示音频经过压缩
 `V4L2_CID_RDS_TX_DYNAMIC_PTY (boolean)`
-    璁剧疆瑙ｇ爜鍣ㄨ瘑鍒爜鐨?Dynamic PTY 浣嶃€傝嫢璁剧疆锛屽垯琛ㄧず PTY 鐮佽鍔ㄦ€佸垏鎹€?
+    设置解码器识别码Dynamic PTY 位。若设置，则表示 PTY 码被动态切换
 `V4L2_CID_RDS_TX_TRAFFIC_ANNOUNCEMENT (boolean)`
-    鑻ヨ缃紝鍒欒〃绀烘鍦ㄨ繘琛屼氦閫氬叕鍛娿€?
+    若设置，则表示正在进行交通公告
 `V4L2_CID_RDS_TX_TRAFFIC_PROGRAM (boolean)`
-    鑻ヨ缃紝鍒欒〃绀哄綋鍓嶈皟璋愮殑鑺傜洰鎼哄甫浜ら€氬叕鍛娿€?
+    若设置，则表示当前调谐的节目携带交通公告
 `V4L2_CID_RDS_TX_MUSIC_SPEECH (boolean)`
-    鑻ヨ缃紝鍒欒〃绀鸿棰戦亾骞挎挱闊充箰锛涜嫢娓呴櫎锛屽垯琛ㄧず骞挎挱璇煶銆傚鏋滃彂灏勫櫒涓嶅仛姝?    鍖哄垎锛屽垯搴旇璁剧疆瀹冦€?
+    若设置，则表示该频道广播音乐；若清除，则表示广播语音。如果发射器不做    区分，则应该设置它
 `V4L2_CID_RDS_TX_ALT_FREQS_ENABLE (boolean)`
-    鑻ヨ缃紝鍒欒〃绀哄彂灏勫鐢ㄩ鐜囥€?
+    若设置，则表示发射备用频率
 `V4L2_CID_RDS_TX_ALT_FREQS (__u32 array)`
-    浠?kHz 涓哄崟浣嶇殑澶囩敤棰戠巼銆俁DS 鏍囧噯鍏佽瀹氫箟鏈€澶?25 涓鐜囥€傞┍鍔ㄥ彲鑳芥敮鎸?    鏇村皯棰戠巼锛屽洜姝よ妫€鏌ユ暟缁勫ぇ灏忋€?
+    kHz 为单位的备用频率。RDS 标准允许定义最25 个频率。驱动可能支    更少频率，因此请检查数组大小
 `V4L2_CID_AUDIO_LIMITER_ENABLED (boolean)`
-    鍚敤鎴栫鐢ㄩ煶棰戦鍋忛檺鍒跺櫒鍔熻兘銆傚綋璇曞浘鏈€澶у寲闊抽闊抽噺銆佹渶灏忓寲鎺ユ敹鏈轰骇鐢熺殑
-    澶辩湡骞堕槻姝㈣繃璋冨埗鏃讹紝闄愬埗鍣ㄥ緢鏈夌敤銆?
+    启用或禁用音频频偏限制器功能。当试图最大化音频音量、最小化接收机产生的
+    失真并防止过调制时，限制器很有用
 `V4L2_CID_AUDIO_LIMITER_RELEASE_TIME (integer)`
-    璁剧疆闊抽棰戝亸闄愬埗鍣ㄥ姛鑳界殑閲婃斁鏃堕棿銆傚崟浣嶄负寰銆傛杩涗笌鑼冨洿鐢遍┍鍔ㄥ喅瀹氥€?
+    设置音频频偏限制器功能的释放时间。单位为微秒。步进与范围由驱动决定
 `V4L2_CID_AUDIO_LIMITER_DEVIATION (integer)`
-    浠?Hz 涓哄崟浣嶉厤缃煶棰戦鍋忕數骞炽€傝寖鍥翠笌姝ヨ繘鐢遍┍鍔ㄥ喅瀹氥€?
+    Hz 为单位配置音频频偏电平。范围与步进由驱动决定
 `V4L2_CID_AUDIO_COMPRESSION_ENABLED (boolean)`
-    鍚敤鎴栫鐢ㄩ煶棰戝帇缂╁姛鑳姐€傝鍔熻兘浠ュ浐瀹氬鐩婃斁澶т綆浜庨槇鍊肩殑淇″彿锛屽苟鎸?    Threshold/(Gain + Threshold) 鐨勬瘮鐜囧帇缂╅珮浜庨槇鍊肩殑闊抽淇″彿銆?
+    启用或禁用音频压缩功能。该功能以固定增益放大低于阈值的信号，并    Threshold/(Gain + Threshold) 的比率压缩高于阈值的音频信号
 `V4L2_CID_AUDIO_COMPRESSION_GAIN (integer)`
-    璁剧疆闊抽鍘嬬缉鍔熻兘鐨勫鐩娿€備负 dB 鍊笺€傝寖鍥翠笌姝ヨ繘鐢遍┍鍔ㄥ喅瀹氥€?
+    设置音频压缩功能的增益。为 dB 值。范围与步进由驱动决定
 `V4L2_CID_AUDIO_COMPRESSION_THRESHOLD (integer)`
-    璁剧疆闊抽鍘嬬缉鍔熻兘鐨勯槇鍊肩數骞炽€備负 dB 鍊笺€傝寖鍥翠笌姝ヨ繘鐢遍┍鍔ㄥ喅瀹氥€?
+    设置音频压缩功能的阈值电平。为 dB 值。范围与步进由驱动决定
 `V4L2_CID_AUDIO_COMPRESSION_ATTACK_TIME (integer)`
-    璁剧疆闊抽鍘嬬缉鍔熻兘鐨勫惎鍔ㄦ椂闂淬€備负寰鍊笺€傝寖鍥翠笌姝ヨ繘鐢遍┍鍔ㄥ喅瀹氥€?
+    设置音频压缩功能的启动时间。为微秒值。范围与步进由驱动决定
 `V4L2_CID_AUDIO_COMPRESSION_RELEASE_TIME (integer)`
-    璁剧疆闊抽鍘嬬缉鍔熻兘鐨勯噴鏀炬椂闂淬€備负寰鍊笺€傝寖鍥翠笌姝ヨ繘鐢遍┍鍔ㄥ喅瀹氥€?
+    设置音频压缩功能的释放时间。为微秒值。范围与步进由驱动决定
 `V4L2_CID_PILOT_TONE_ENABLED (boolean)`
-    鍚敤鎴栫鐢ㄥ棰戦煶鐢熸垚鍔熻兘銆?
+    启用或禁用导频音生成功能
 `V4L2_CID_PILOT_TONE_DEVIATION (integer)`
-    閰嶇疆瀵奸闊抽鍋忕數骞炽€傚崟浣嶄负 Hz銆傝寖鍥翠笌姝ヨ繘鐢遍┍鍔ㄥ喅瀹氥€?
+    配置导频音频偏电平。单位为 Hz。范围与步进由驱动决定
 `V4L2_CID_PILOT_TONE_FREQUENCY (integer)`
-    閰嶇疆瀵奸闊抽鐜囧€笺€傚崟浣嶄负 Hz銆傝寖鍥翠笌姝ヨ繘鐢遍┍鍔ㄥ喅瀹氥€?
+    配置导频音频率值。单位为 Hz。范围与步进由驱动决定
 `V4L2_CID_TUNE_PREEMPHASIS (enum)`
-    閰嶇疆鐢ㄤ簬骞挎挱鐨勯鍔犻噸鍊笺€傚骞挎挱搴旂敤棰勫姞閲嶆护娉㈠櫒浠ョ獊鍑洪珮棰戦煶棰戙€傛牴鎹湴鍖?    涓嶅悓锛屼娇鐢?50 鎴?75 寰鐨勬椂闂村父鏁般€傛灇涓?v4l2_preemphasis 瀹氫箟浜嗛鍔犻噸鐨?    鍙兘鍙栧€硷紝濡備笅锛?
+    配置用于广播的预加重值。对广播应用预加重滤波器以突出高频音频。根据地    不同，使50 75 微秒的时间常数。枚v4l2_preemphasis 定义了预加重    可能取值，如下
     :header-rows:  0
     :stub-columns: 0
 
     - - `V4L2_PREEMPHASIS_DISABLED`
-      - 涓嶅簲鐢ㄩ鍔犻噸銆?    - - `V4L2_PREEMPHASIS_50_uS`
-      - 浣跨敤 50 寰鐨勯鍔犻噸銆?    - - `V4L2_PREEMPHASIS_75_uS`
-      - 浣跨敤 75 寰鐨勯鍔犻噸銆?
+      - 不应用预加重    - - `V4L2_PREEMPHASIS_50_uS`
+      - 使用 50 微秒的预加重    - - `V4L2_PREEMPHASIS_75_uS`
+      - 使用 75 微秒的预加重
 `V4L2_CID_TUNE_POWER_LEVEL (integer)`
-    璁剧疆淇″彿鍙戝皠鐨勮緭鍑哄姛鐜囩數骞炽€傚崟浣嶄负 dBuV銆傝寖鍥翠笌姝ヨ繘鐢遍┍鍔ㄥ喅瀹氥€?
+    设置信号发射的输出功率电平。单位为 dBuV。范围与步进由驱动决定
 `V4L2_CID_TUNE_ANTENNA_CAPACITOR (integer)`
-    鎵嬪姩鎴栵紙鑻ヨ涓?0锛夎嚜鍔ㄩ€夋嫨澶╃嚎璋冭皭鐢靛鐨勫€笺€傚崟浣嶃€佽寖鍥翠笌姝ヨ繘鐢遍┍鍔ㄥ喅瀹氥€?
-鏈夊叧 RDS 瑙勮寖鐨勬洿澶氱粏鑺傦紝璇峰弬闃?CENELEC 鐨?iec62106 鏂囨。銆?
+    手动或（若设0）自动选择天线调谐电容的值。单位、范围与步进由驱动决定
+有关 RDS 规范的更多细节，请参CENELEC iec62106 文档

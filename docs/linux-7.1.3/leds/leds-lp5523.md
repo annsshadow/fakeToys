@@ -1,36 +1,36 @@
-﻿## 闈㈠悜 lp5523 鐨勫唴鏍搁┍鍔?
+﻿## 面向 lp5523 的内核驱
 
-- National Semiconductor LP5523 LED 椹卞姩鑺墖
+- National Semiconductor LP5523 LED 驱动芯片
 - Datasheet: http://www.national.com/pf/LP/LP5523.html
 
 Authors: Mathias Nyman, Yuri Zaporozhets, Samu Onkalo
 Contact: Samu Onkalo (samu.p.onkalo-at-nokia.com)
 
-### 鎻忚堪
+### 描述
 
 
-LP5523 鍙┍鍔ㄥ杈?9 涓€氶亾銆侺ED 鍙€氳繃 LED 绫绘帶鍒舵帴鍙ｇ洿鎺ユ帶鍒躲€傛瘡涓€氶亾鐨勫悕绉?鍙湪骞冲彴鏁版嵁涓厤缃€斺€攏ame 涓?label銆傛湁涓夌鏂瑰紡鏉ョ敓鎴愰€氶亾鍚嶇О銆?
-a) 鍦ㄥ钩鍙版暟鎹腑瀹氫箟 鈥榥ame鈥?
+LP5523 可驱动多9 个通道。LED 可通过 LED 类控制接口直接控制。每个通道的名可在平台数据中配置——name label。有三种方式来生成通道名称
+a) 在平台数据中定义 ‘name
 
-瑕佺敓鎴愮壒瀹氱殑閫氶亾鍚嶇О锛屽彲浣跨敤 鈥榥ame鈥?骞冲彴鏁版嵁銆?
+要生成特定的通道名称，可使用 ‘name平台数据
 - /sys/class/leds/R1               (name: 'R1')
 - /sys/class/leds/B1               (name: 'B1')
 
-b) 浣跨敤 鈥榣abel鈥?涓斾笉甯?鈥榥ame鈥?瀛楁
+b) 使用 ‘label且不‘name字段
 
 
-瀵逛簬涓€涓甫閫氶亾缂栧彿鐨勮澶囧悕锛屽彲浣跨敤 鈥榣abel鈥欍€?- /sys/class/leds/RGB:channelN     (label: 'RGB', N: 0 ~ 8)
+对于一个带通道编号的设备名，可使用 ‘label’- /sys/class/leds/RGB:channelN     (label: 'RGB', N: 0 ~ 8)
 
-c) 榛樿
-
-
-鑻ヤ袱涓瓧娈靛潎涓?NULL锛屽垯榛樿浣跨敤 鈥榣p5523鈥欍€?- /sys/class/leds/lp5523:channelN  (N: 0 ~ 8)
-
-LP5523 鍏锋湁鐢ㄤ簬杩愯鍚勭 LED 鍥炬鐨勫唴閮ㄧ▼搴忓瓨鍌ㄥ櫒銆傛湁涓ょ鏂瑰紡杩愯 LED 鍥炬銆?
-1) sysfs 鎺ュ彛 - enginex_mode銆乪nginex_load 鍜?enginex_leds
+c) 默认
 
 
-  寮曟搸鐨勬帶鍒舵帴鍙ｏ細
+若两个字段均NULL，则默认使用 ‘lp5523’- /sys/class/leds/lp5523:channelN  (N: 0 ~ 8)
+
+LP5523 具有用于运行各种 LED 图案的内部程序存储器。有两种方式运行 LED 图案
+1) sysfs 接口 - enginex_mode、enginex_load enginex_leds
+
+
+  引擎的控制接口：
 
   x 涓?1 .. 3
 
@@ -48,25 +48,25 @@ echo "9d80400004ff05ff437f0000" > engine3_load
 echo "111111111" > engine3_leds
 echo "run" > engine3_mode
 
-  瑕佸仠姝㈠紩鎿庯細
+  要停止引擎：
 
 echo "disabled" > engine3_mode
 
 ```
-2) 鍥轰欢鎺ュ彛 - LP55xx 閫氱敤鎺ュ彛
+2) 固件接口 - LP55xx 通用接口
 
 
-鏈夊叧缁嗚妭锛岃鍙傝€?leds-lp55xx.txt 涓殑 鈥榝irmware鈥?涓€鑺傘€?
-LP5523 鏈変笁涓富璋冨厜鍣紙master fader锛夈€傝嫢涓€涓€氶亾琚槧灏勫埌鍏朵腑涓€涓富璋冨厜鍣紝
-鍏惰緭鍑哄皢鍩轰簬涓昏皟鍏夊櫒鐨勫€煎彉鏆椼€?
+有关细节，请参leds-lp55xx.txt 中的 ‘firmware一节
+LP5523 有三个主调光器（master fader）。若一个通道被映射到其中一个主调光器，
+其输出将基于主调光器的值变暗
 ```
 echo "123000123" > master_fader_leds
 
 ```
 ```
-  channel 0,6 鏄犲皠鍒?master_fader1
-  channel 1,7 鏄犲皠鍒?master_fader2
-  channel 2,8 鏄犲皠鍒?master_fader3
+  channel 0,6 映射master_fader1
+  channel 1,7 映射master_fader2
+  channel 2,8 映射master_fader3
 
 ```
 ```
@@ -85,11 +85,11 @@ echo 255 > master_fader3
 echo "000000000" > master_fader_leds
 
 ```
-鑷濮嬬粓浣跨敤骞冲彴鏁版嵁涓殑鐢垫祦銆?
-姣忎釜閫氶亾閮藉寘鍚?LED 鐢垫祦璁剧疆銆?- /sys/class/leds/lp5523:channel2/led_current - RW
+自检始终使用平台数据中的电流
+每个通道都包LED 电流设置- /sys/class/leds/lp5523:channel2/led_current - RW
 - /sys/class/leds/lp5523:channel2/max_current - RO
 
-鏍煎紡锛?0x mA锛屽嵆 10 琛ㄧず 1.0 mA
+格式0x mA，即 10 表示 1.0 mA
 
 ```
 static struct lp55xx_led_config lp5523_led_config[] = {
@@ -109,17 +109,17 @@ static struct lp55xx_led_config lp5523_led_config[] = {
 
 static int lp5523_setup(void)
 {
-	/* 璁剧疆纭欢璧勬簮 */
+	/* 设置硬件资源 */
 }
 
 static void lp5523_release(void)
 {
-	/* 閲婃斁纭欢璧勬簮 */
+	/* 释放硬件资源 */
 }
 
 static void lp5523_enable(bool state)
 {
-	/* 鎺у埗鑺墖浣胯兘淇″彿 */
+	/* 控制芯片使能信号 */
 }
 
 static struct lp55xx_platform_data lp5523_platform_data = {
@@ -132,5 +132,5 @@ static struct lp55xx_platform_data lp5523_platform_data = {
 };
 
 ```
-娉ㄦ剰
-  chan_nr 鐨勫彇鍊煎彲鍦?0 鍒?8 涔嬮棿銆?
+注意
+  chan_nr 的取值可0 8 之间

@@ -1,27 +1,27 @@
-﻿## Percpu rw 淇″彿閲?
+﻿## Percpu rw 淇″彿閲。
 
 
-Percpu rw semaphores 鏄竴绉嶆柊鐨勮鍐欎俊鍙烽噺璁捐锛?
-閽堝璇诲彇閿佸畾杩涜浜嗕紭鍖栥€?
+Percpu rw semaphores 是一种新的读写信号量设计
+针对读取锁定进行了优化
 
-浼犵粺璇诲啓淇″彿閲忕殑闂鍦ㄤ簬锛屽綋澶氫釜
-鏍稿績鑾峰彇璇诲彇閿侊紝鍖呭惈淇″彿閲忕殑缂撳瓨琛?
-鍦ㄥ唴鏍哥殑 L1 缂撳瓨涔嬮棿璺宠穬锛屽鑷存€ц兘涓嬮檷
-闄嶈В銆?
+传统读写信号量的问题在于，当多个
+核心获取读取锁，包含信号量的缓存
+在内核的 L1 缓存之间跳跃，导致性能下降
+降解
 
-璇诲彇閿佸畾闈炲父蹇紝瀹冧娇鐢?RCU 骞朵笖閬垮厤浠讳綍鍘熷瓙鎿嶄綔
-閿佸畾鍜岃В閿佽矾寰勪腑鐨勬寚浠ゃ€傚彟涓€鏂归潰锛岄攣瀹?
-鍐欏叆鏄潪甯告槀璐电殑锛屽畠璋冪敤synchronize_rcu()锛屽彲浠ラ噰鍙?
-鏁扮櫨姣銆?
+读取锁定非常快，它使RCU 并且避免任何原子操作
+锁定和解锁路径中的指令。另一方面，锁
+写入是非常昂贵的，它调用synchronize_rcu()，可以采
+数百毫秒
 
-璇ラ攣浠モ€渟truct percpu_rw_semaphore鈥濈被鍨嬪０鏄庛€?
-閿侀€氳繃 percpu_init_rwsem 鍒濆鍖栵紝鎴愬姛鏃惰繑鍥?0
-鍜?-ENOMEM 鍒嗛厤澶辫触銆?
-蹇呴』浣跨敤 percpu_free_rwsem 閲婃斁閿佷互閬垮厤鍐呭瓨娉勬紡銆?
+该锁以“struct percpu_rw_semaphore”类型声明
+锁通过 percpu_init_rwsem 初始化，成功时返0
+-ENOMEM 分配失败
+必须使用 percpu_free_rwsem 释放锁以避免内存泄漏
 
-璇ラ攣閫氳繃 percpu_down_read銆乸ercpu_up_read 鍜?percpu_down_read 閿佸畾浠ヨ繘琛岃鍙?
-鐢ㄤ簬浣跨敤 percpu_down_write銆乸ercpu_up_write 杩涜鍐欏叆銆?
+该锁通过 percpu_down_read、percpu_up_read percpu_down_read 锁定以进行读
+用于使用 percpu_down_write、percpu_up_write 进行写入
 
-浣跨敤 RCU 鏉ヤ紭鍖?rw-lock 鐨勬兂娉曟槸鐢?
-鍩冮噷鍏嬄锋潨椹鐗?eric.dumazet@gmail.com>銆?
-浠ｇ爜鐢?Mikulas Patocka <mpatocka@redhat.com> 缂栧啓
+使用 RCU 来优rw-lock 的想法是
+埃里克·杜马塞eric.dumazet@gmail.com>
+代码Mikulas Patocka <mpatocka@redhat.com> 编写

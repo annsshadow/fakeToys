@@ -1,20 +1,20 @@
-﻿## BPF drgn 宸ュ叿
+﻿## BPF drgn 工具
 
 
-drgn 鑴氭湰鏄竴绉嶆柟渚挎槗鐢ㄧ殑鏈哄埗锛岀敤浜庢绱换鎰忓唴鏍告暟鎹粨鏋勩€俤rgn 骞朵笉渚濊禆鍐呮牳 UAPI 鏉ヨ鍙栨暟鎹€?鐩稿弽锛屽畠鐩存帴浠?`/proc/kcore` 鎴?vmcore 璇诲彇鏁版嵁锛屽苟鍩轰簬 vmlinux 涓殑 DWARF 璋冭瘯淇℃伅婕備寒鍦版墦鍗版暟鎹€?
-鏈枃妗ｆ弿杩颁笌 BPF 鐩稿叧鐨?drgn 宸ュ叿銆?
-鏈夊叧褰撳墠鎵€鏈夊彲鐢ㄥ伐鍏凤紝鍙傝 `drgn/tools`_锛涙湁鍏?drgn 鏈韩鐨勬洿澶氱粏鑺傦紝鍙傝 `drgn/doc`_銆?
+drgn 脚本是一种方便易用的机制，用于检索任意内核数据结构。drgn 并不依赖内核 UAPI 来读取数据相反，它直接`/proc/kcore` vmcore 读取数据，并基于 vmlinux 中的 DWARF 调试信息漂亮地打印数据
+本文档描述与 BPF 相关drgn 工具
+有关当前所有可用工具，参见 `drgn/tools`_；有drgn 本身的更多细节，参见 `drgn/doc`_
 ### bpf_inspect.py
 
 
-## 鎻忚堪
+## 描述
 
 
-`bpf_inspect.py`_ 鏄竴涓敤浜庢鏌?BPF 绋嬪簭涓庢槧灏勶紙map锛夌殑宸ュ叿銆傚畠鍙互閬嶅巻绯荤粺涓墍鏈夌殑绋嬪簭鍜屾槧灏勶紝
-骞舵墦鍗拌繖浜涘璞＄殑鍩烘湰淇℃伅锛屽寘鎷?id銆乼ype 鍜?name銆?
-`bpf_inspect.py`_ 瑕嗙洊鐨勪富瑕佺敤渚嬫槸鏄剧ず绫诲瀷涓?`BPF_PROG_TYPE_EXT` 涓?`BPF_PROG_TYPE_TRACING`銆侀€氳繃 `freplace`/`fentry`/`fexit`/`fsession`
-鏈哄埗闄勫姞鍒板叾浠?BPF 绋嬪簭涓婄殑 BPF 绋嬪簭锛屽洜涓虹洰鍓嶆病鏈夌敤鎴风┖闂?API 鑳借幏鍙栨淇℃伅銆?
-## 鍏ラ棬
+`bpf_inspect.py`_ 是一个用于检BPF 程序与映射（map）的工具。它可以遍历系统中所有的程序和映射，
+并打印这些对象的基本信息，包id、type name
+`bpf_inspect.py`_ 覆盖的主要用例是显示类型`BPF_PROG_TYPE_EXT` `BPF_PROG_TYPE_TRACING`、通过 `freplace`/`fentry`/`fexit`/`fsession`
+机制附加到其BPF 程序上的 BPF 程序，因为目前没有用户空API 能获取此信息
+## 入门
 
 
 ```
@@ -40,18 +40,18 @@ drgn 鑴氭湰鏄竴绉嶆柟渚挎槗鐢ㄧ殑鏈哄埗锛岀敤浜庢绱
          659: BPF_PROG_TYPE_EXT                new_get_skb_ifindex              linked:[650->23: BPF_TRAMP_REPLACE test_pkt_access->get_skb_ifindex()]
          660: BPF_PROG_TYPE_EXT                new_get_constant                 linked:[650->19: BPF_TRAMP_REPLACE test_pkt_access->get_constant()]
 ```
-鍙互鐪嬪埌锛屽瓨鍦ㄤ竴涓▼搴?`test_pkt_access`锛宨d 涓?650锛屽苟涓旀湁澶氫釜鍏朵粬鐨?tracing 涓?ext 绋嬪簭闄勫姞鍒?`test_pkt_access` 涓殑鍑芥暟涓娿€?
+可以看到，存在一个程`test_pkt_access`，id 650，并且有多个其他tracing ext 程序附加`test_pkt_access` 中的函数上
 ```
          658: BPF_PROG_TYPE_EXT                new_get_skb_len                  linked:[650->16: BPF_TRAMP_REPLACE test_pkt_access->get_skb_len()]
 ```
-琛ㄧず BPF 绋嬪簭 id 涓?658锛岀被鍨嬩负 `BPF_PROG_TYPE_EXT`锛屽悕绉颁负
-`new_get_skb_len`锛屾浛鎹紙`BPF_TRAMP_REPLACE`锛変簡鍦?BPF 绋嬪簭 id 650锛堝悕绉?`test_pkt_access`锛変腑銆?BTF id 涓?16 鐨勫嚱鏁?`get_skb_len()`銆?
-鑾峰彇甯姪锛?
+表示 BPF 程序 id 658，类型为 `BPF_PROG_TYPE_EXT`，名称为
+`new_get_skb_len`，替换（`BPF_TRAMP_REPLACE`）了BPF 程序 id 650（名`test_pkt_access`）中BTF id 16 的函`get_skb_len()`
+获取帮助
 
     % sudo bpf_inspect.py
     usage: bpf_inspect.py [-h] {prog,p,map,m} ...
 
-    drgn 鑴氭湰锛岀敤浜庡垪鍑?BPF 绋嬪簭鎴栨槧灏勫強鍏跺睘鎬?    锛堝唴鏍?API 鏃犳硶鑾峰彇鐨勯偅浜涳級銆?
+    drgn 脚本，用于列BPF 程序或映射及其属    （内API 无法获取的那些）
     See https://github.com/osandov/drgn/ for more details on drgn.
 
     optional arguments:
@@ -62,10 +62,10 @@ drgn 鑴氭湰鏄竴绉嶆柟渚挎槗鐢ㄧ殑鏈哄埗锛岀敤浜庢绱
         prog (p)      list BPF programs
         map (m)       list BPF maps
 
-## 鑷畾涔?
+## 自定
 
-璇ヨ剼鏈棬鍦ㄤ緵寮€鍙戣€呰嚜瀹氫箟锛屼互鎵撳嵃鍏充簬 BPF 绋嬪簭銆佹槧灏勫強鍏朵粬瀵硅薄鐨勭浉鍏充俊鎭€?
-渚嬪锛岃鎵撳嵃 BPF 绋嬪簭 id 53077 鐨?`struct bpf_prog_aux`锛?
+该脚本旨在供开发者自定义，以打印关于 BPF 程序、映射及其他对象的相关信息
+例如，要打印 BPF 程序 id 53077 `struct bpf_prog_aux`
 
     % git diff
     diff --git a/tools/bpf_inspect.py b/tools/bpf_inspect.py

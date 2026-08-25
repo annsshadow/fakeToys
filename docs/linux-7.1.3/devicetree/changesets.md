@@ -1,25 +1,25 @@
-﻿## Devicetree 鍙樻洿闆?
+﻿## Devicetree 鍙樻洿闆。
 
 
-Deticetree 鍙樻洿闆嗭紙changeset锛夋槸涓€绉嶅厑璁稿娲诲姩璁惧鏍戝簲鐢ㄤ慨鏀圭殑鏂规硶锛?
-鍏朵繚璇佽涔堝畬鏁村簲鐢ㄥ叏閮ㄤ慨鏀癸紝瑕佷箞瀹屽叏涓嶅簲鐢ㄣ€傝嫢鍦ㄥ簲鐢ㄥ彉鏇撮泦鐨勮繃绋嬩腑
-鍙戠敓閿欒锛岃澶囨爲灏嗗洖婊氬埌鍏堝墠鐨勭姸鎬併€傚凡搴旂敤鐨勫彉鏇撮泦涔熷彲浠ヨ绉婚櫎銆?
+Deticetree 变更集（changeset）是一种允许对活动设备树应用修改的方法
+其保证要么完整应用全部修改，要么完全不应用。若在应用变更集的过程中
+发生错误，设备树将回滚到先前的状态。已应用的变更集也可以被移除
 
-褰撳簲鐢ㄤ竴涓彉鏇撮泦鏃讹紝鎵€鏈変慨鏀逛細鍦ㄥ彂鍑?OF_RECONFIG 閫氱煡涔嬪墠涓€娆℃€у簲鐢ㄥ埌
-璁惧鏍戜笂銆傝繖鏍凤紝鎺ユ敹鏂瑰湪鏀跺埌閫氱煡鏃剁湅鍒扮殑鏄澶囨爲瀹屾暣涓斾竴鑷寸殑鐘舵€併€?
+当应用一个变更集时，所有修改会在发OF_RECONFIG 通知之前一次性应用到
+设备树上。这样，接收方在收到通知时看到的是设备树完整且一致的状态
 
-涓€涓彉鏇撮泦鐨勬墽琛岄『搴忓涓嬶細
+一个变更集的执行顺序如下：
 
-1. of_changeset_init() 鈥斺€?鍒濆鍖栦竴涓彉鏇撮泦
+1. of_changeset_init() —初始化一个变更集
 
-2. 澶氭璋冪敤 DT 璁惧鏍戜慨鏀瑰嚱鏁帮紝鍖呮嫭 of_changeset_attach_node()銆?
-   of_changeset_detach_node()銆乷f_changeset_add_property()銆?
-   of_changeset_remove_property銆乷f_changeset_update_property() 鏉?
-   鍑嗗涓€缁勪慨鏀广€傛闃舵涓嶄細瀵规椿鍔ㄨ澶囨爲鍋氫换浣曚慨鏀广€傛墍鏈変慨鏀规搷浣滈兘
-   璁板綍鍦?of_changeset 鐨?'entries' 鍒楄〃涓€?
+2. 多次调用 DT 设备树修改函数，包括 of_changeset_attach_node()
+   of_changeset_detach_node()、of_changeset_add_property()
+   of_changeset_remove_property、of_changeset_update_property() 
+   准备一组修改。此阶段不会对活动设备树做任何修改。所有修改操作都
+   记录of_changeset 'entries' 列表中
 
-3. of_changeset_apply() 鈥斺€?灏嗕慨鏀瑰簲鐢ㄥ埌璁惧鏍戙€傝涔堟暣涓彉鏇撮泦琚簲鐢紝
-   瑕佷箞鍦ㄥ嚭鐜伴敊璇椂璁惧鏍戞仮澶嶅埌鍏堝墠鐨勭姸鎬併€傛牳蹇冮€氳繃鍔犻攣鏉ヤ繚璇佹纭殑
-   涓茶鍖栥€傚闇€锛屽彲浣跨敤涓嶅姞閿佺殑鐗堟湰 __of_changeset_apply銆?
+3. of_changeset_apply() —将修改应用到设备树。要么整个变更集被应用，
+   要么在出现错误时设备树恢复到先前的状态。核心通过加锁来保证正确的
+   串行化。如需，可使用不加锁的版本 __of_changeset_apply
 
-濡傛灉宸叉垚鍔熷簲鐢ㄧ殑鍙樻洿闆嗛渶瑕佽绉婚櫎锛屽彲浣跨敤 of_changeset_revert() 瀹屾垚銆?
+如果已成功应用的变更集需要被移除，可使用 of_changeset_revert() 完成

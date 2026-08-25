@@ -1,21 +1,21 @@
 ﻿
-## 椤靛垎閰嶅櫒锛圱he Page Allocator锛?
+## 页分配器（The Page Allocator
 
-鍐呮牳椤靛垎閰嶅櫒澶勭悊鎵€鏈夐€氱敤鐨勯〉鍒嗛厤璇锋眰锛屼緥濡?`kmalloc`銆侰XL 閰嶇疆姝ラ浼氭牴鎹墍閫夌殑 `Memory Zone`锛堝唴瀛樺尯锛変笌瀹归噺鎵€鍦ㄧ殑 `NUMA node`锛圢UMA 鑺傜偣锛夊奖鍝嶉〉鍒嗛厤鍣ㄧ殑琛屼负銆?
-鏈妭涓昏鍏虫敞杩欎簺閰嶇疆锛堟埅鑷?Linux v6.15锛夊浣曞奖鍝嶉〉鍒嗛厤鍣紝鑰岄潪椤靛垎閰嶅櫒鐨勬暣浣撹涓恒€?
-## NUMA 鑺傜偣涓?mempolicy
+内核页分配器处理所有通用的页分配请求，例`kmalloc`。CXL 配置步骤会根据所选的 `Memory Zone`（内存区）与容量所在的 `NUMA node`（NUMA 节点）影响页分配器的行为
+本节主要关注这些配置（截Linux v6.15）如何影响页分配器，而非页分配器的整体行为
+## NUMA 节点mempolicy
 
 
-闄ら潪浠诲姟鏄惧紡娉ㄥ唽浜?mempolicy锛屽惁鍒?Linux 鍐呮牳鐨勯粯璁ゅ唴瀛樼瓥鐣ユ槸浼樺厛浠?`local NUMA node`锛堟湰鍦?NUMA 鑺傜偣锛夊垎閰嶅唴瀛橈紝浠呭綋鏈湴鑺傜偣鍙楀帇鏃舵墠鍥為€€鍒板叾浠栬妭鐐广€?
-閫氬父锛屾垜浠湡鏈涘湪鐙珛鐨?NUMA 鑺傜偣涓婄湅鍒版湰鍦?DRAM 涓?CXL 鍐呭瓨锛屽叾涓?CXL 鍐呭瓨鏄潪鏈湴鐨勩€備笉杩囦粠鎶€鏈笂璁诧紝璁＄畻鑺傜偣鏈夊彲鑳芥病鏈夋湰鍦?DRAM锛岃€?CXL 鍐呭瓨鎴愪负璇ヨ绠楄妭鐐圭殑 `local`锛堟湰鍦帮級瀹归噺銆?
-## 鍐呭瓨鍖猴紙Memory Zones锛?
+除非任务显式注册mempolicy，否Linux 内核的默认内存策略是优先`local NUMA node`（本NUMA 节点）分配内存，仅当本地节点受压时才回退到其他节点
+通常，我们期望在独立NUMA 节点上看到本DRAM CXL 内存，其CXL 内存是非本地的。不过从技术上讲，计算节点有可能没有本DRAM，CXL 内存成为该计算节点的 `local`（本地）容量
+## 内存区（Memory Zones
 
-CXL 瀹归噺鍙互鍦?`ZONE_NORMAL` 鎴?`ZONE_MOVABLE` 涓笂绾匡紙online锛夈€?
-鎴嚦 v6.15锛岄〉鍒嗛厤鍣ㄤ紭鍏堝皾璇曚粠鏈湴鑺傜偣涓婃渶楂樺彲鐢ㄤ笖鍏煎鐨?ZONE 杩涜鍒嗛厤銆?
-`zone 涓嶅吋瀹筦锛坺one incompatibility锛夌殑涓€涓緥瀛愭槸灏濊瘯浠?`ZONE_MOVABLE` 鏈嶅姟浜庢爣璁颁负 `GFP_KERNEL` 鐨勫垎閰嶃€傚唴鏍稿垎閰嶉€氬父鏄笉鍙縼绉荤殑锛屽洜姝ゅ彧鑳戒粠 `ZONE_NORMAL` 鎴栨洿浣庣殑鍖哄煙鏈嶅姟銆?
-涓虹畝鍖栬繖涓€鐐癸紝榛樿鎯呭喌涓嬮〉鍒嗛厤鍣ㄤ細浼樺厛閫夋嫨 `ZONE_MOVABLE` 鑰岄潪 `ZONE_NORMAL`锛屼絾濡傛灉 `ZONE_MOVABLE` 鑰楀敖锛屽畠浼氬洖閫€鍒颁粠 `ZONE_NORMAL` 鍒嗛厤銆?
+CXL 容量可以`ZONE_NORMAL` `ZONE_MOVABLE` 中上线（online）
+截至 v6.15，页分配器优先尝试从本地节点上最高可用且兼容ZONE 进行分配
+`zone 不兼容`（zone incompatibility）的一个例子是尝试`ZONE_MOVABLE` 服务于标记为 `GFP_KERNEL` 的分配。内核分配通常是不可迁移的，因此只能从 `ZONE_NORMAL` 或更低的区域服务
+为简化这一点，默认情况下页分配器会优先选择 `ZONE_MOVABLE` 而非 `ZONE_NORMAL`，但如果 `ZONE_MOVABLE` 耗尽，它会回退到从 `ZONE_NORMAL` 分配
 ## CGroups 涓?CPUSets
 
 
-鏈€鍚庯紝鍋囪 CXL 鍐呭瓨鍙€氳繃椤靛垎閰嶅埌杈撅紙鍗冲凡鍦?`ZONE_NORMAL` 涓笂绾匡級锛屽垯 `cpusets.mems_allowed` 鍙瀹瑰櫒鐢ㄦ潵闄愬埗璇ュ鍣ㄤ腑浠诲姟瀵规煇浜?NUMA 鑺傜偣鐨勫彲璁块棶鎬с€傜敤鎴峰彲鑳藉笇鏈涘湪澶氱鎴风郴缁熶腑鍒╃敤杩欎竴鐐癸紝鍏朵腑鏌愪簺浠诲姟涓嶅笇鏈涗娇鐢ㄨ緝鎱㈢殑鍐呭瓨銆?
-鍦ㄥ洖鏀讹紙reclaim锛変竴鑺備腑锛屾垜浠皢璁ㄨ姝ゆ帴鍙ｇ殑涓€浜涢檺鍒讹紝浠ラ槻姝㈠叡浜暟鎹闄嶇骇锛坉emotion锛夊埌 CXL 鍐呭瓨锛堝鏋滃惎鐢ㄤ簡闄嶇骇锛夈€?
+最后，假设 CXL 内存可通过页分配到达（即已`ZONE_NORMAL` 中上线），则 `cpusets.mems_allowed` 可被容器用来限制该容器中任务对某NUMA 节点的可访问性。用户可能希望在多租户系统中利用这一点，其中某些任务不希望使用较慢的内存
+在回收（reclaim）一节中，我们将讨论此接口的一些限制，以防止共享数据被降级（demotion）到 CXL 内存（如果启用了降级）

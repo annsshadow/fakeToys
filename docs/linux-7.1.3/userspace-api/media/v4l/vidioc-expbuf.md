@@ -4,34 +4,34 @@
 ######## ioctl VIDIOC_EXPBUF
 
 
-## 鍚嶇О
+## 名称
 
 
-VIDIOC_EXPBUF - 灏嗕竴涓紦鍐插尯瀵煎嚭涓?DMABUF 鏂囦欢鎻忚堪绗︺€?
-## 姒傝
+VIDIOC_EXPBUF - 将一个缓冲区导出DMABUF 文件描述符
+## 概要
 
 
 `int ioctl(int fd, VIDIOC_EXPBUF, struct v4l2_exportbuffer *argp)`
 
-## 鍙傛暟
+## 参数
 
 
 `fd`
-    鐢?`open()` 杩斿洖鐨勬枃浠舵弿杩扮銆?
+    `open()` 返回的文件描述符
 `argp`
-    鎸囧悜 struct `v4l2_exportbuffer` 鐨勬寚閽堛€?
-## 鎻忚堪
+    指向 struct `v4l2_exportbuffer` 的指针
+## 描述
 
 
-璇?ioctl 鏄唴瀛樻槧灏?<mmap> I/O 鏂规硶鐨勬墿灞曪紝鍥犳浠呭 `V4L2_MEMORY_MMAP`
-缂撳啿鍖哄彲鐢ㄣ€傚畠鍙互鍦ㄤ娇鐢?VIDIOC_REQBUFS ioctl 鍒嗛厤瀹岀紦鍐插尯涔嬪悗鐨勪换浣曟椂鍒伙紝
-灏嗙紦鍐插尯瀵煎嚭涓轰竴涓?DMABUF 鏂囦欢銆?
-瑕佸鍑虹紦鍐插尯锛屽簲鐢ㄧ▼搴忛渶瑕佸～鍐?struct `v4l2_exportbuffer`銆俙type` 瀛楁搴旇涓?涓庝箣鍓嶄娇鐢?struct `v4l2_requestbuffers` 鐨?`type` 鐩稿悓鐨勭紦鍐插尯绫诲瀷銆傚簲鐢ㄧ▼搴?杩樺繀椤昏缃?`index` 瀛楁銆傛湁鏁堢殑绱㈠紩鍙疯寖鍥翠粠闆跺埌鐢?VIDIOC_REQBUFS锛坰truct
-`v4l2_requestbuffers` 鐨?`count`锛夊垎閰嶇殑缂撳啿鍖烘暟閲忓噺涓€銆傚浜庡骞抽潰锛坢ulti-planar锛?API锛屽簲鐢ㄧ▼搴忓皢 `plane` 瀛楁璁句负瑕佸鍑虹殑骞抽潰绱㈠紩銆傛湁鏁堝钩闈㈣寖鍥翠粠闆跺埌褰撳墠娲诲姩
-鏍煎紡鏀寔鐨勬渶澶ф湁鏁堝钩闈㈡暟銆傚浜庡崟骞抽潰锛坰ingle-planar锛堿PI锛屽簲鐢ㄧ▼搴忓繀椤诲皢
-`plane` 璁句负闆躲€傚彲浠ュ湪 `flags` 瀛楁涓缃澶栫殑鏍囧織锛屽叿浣撶粏鑺傚弬瑙?open() 鐨?鎵嬪唽銆傜洰鍓嶄粎鏀寔 O_CLOEXEC銆丱_RDONLY銆丱_WRONLY 鍜?O_RDWR銆傛墍鏈夊叾瀹冨瓧娈靛繀椤?璁句负闆躲€傚浜庡骞抽潰 API锛屾瘡涓钩闈㈤兘浣跨敤澶氭 VIDIOC_EXPBUF 璋冪敤鏉ュ垎鍒鍑恒€?
-璋冪敤 VIDIOC_EXPBUF 鍚庯紝`fd` 瀛楁浼氳椹卞姩璁剧疆銆傝繖鏄竴涓?DMABUF 鏂囦欢鎻忚堪绗︺€?搴旂敤绋嬪簭鍙皢鍏朵紶閫掔粰鍏跺畠鏀寔 DMABUF 鐨勮澶囥€傚叧浜庡皢 DMABUF 鏂囦欢瀵煎叆 V4L2 鑺傜偣鐨?缁嗚妭锛岃鍙傝€?DMABUF importing <dmabuf>銆傚缓璁湪涓嶅啀浣跨敤鏌愪釜 DMABUF 鏂囦欢鏃跺叧闂畠锛?浠ヤ究鍥炴敹鐩稿叧鐨勫唴瀛樸€?
-## 绀轰緥
+ioctl 是内存映<mmap> I/O 方法的扩展，因此仅对 `V4L2_MEMORY_MMAP`
+缓冲区可用。它可以在使VIDIOC_REQBUFS ioctl 分配完缓冲区之后的任何时刻，
+将缓冲区导出为一DMABUF 文件
+要导出缓冲区，应用程序需要填struct `v4l2_exportbuffer`。`type` 字段应设与之前使struct `v4l2_requestbuffers` `type` 相同的缓冲区类型。应用程还必须设`index` 字段。有效的索引号范围从零到VIDIOC_REQBUFS（struct
+`v4l2_requestbuffers` `count`）分配的缓冲区数量减一。对于多平面（multi-planarAPI，应用程序将 `plane` 字段设为要导出的平面索引。有效平面范围从零到当前活动
+格式支持的最大有效平面数。对于单平面（single-planar）API，应用程序必须将
+`plane` 设为零。可以在 `flags` 字段中设置额外的标志，具体细节参open() 手册。目前仅支持 O_CLOEXEC、O_RDONLY、O_WRONLY O_RDWR。所有其它字段必设为零。对于多平面 API，每个平面都使用多次 VIDIOC_EXPBUF 调用来分别导出
+调用 VIDIOC_EXPBUF 后，`fd` 字段会被驱动设置。这是一DMABUF 文件描述符应用程序可将其传递给其它支持 DMABUF 的设备。关于将 DMABUF 文件导入 V4L2 节点细节，请参DMABUF importing <dmabuf>。建议在不再使用某个 DMABUF 文件时关闭它以便回收相关的内存
+## 示例
 
 
 
@@ -85,23 +85,23 @@ VIDIOC_EXPBUF - 灏嗕竴涓紦鍐插尯瀵煎嚭涓?DMABUF 鏂囦欢鎻忚�
 
     - - __u32
       - `type`
-      - 缂撳啿鍖虹殑绫诲瀷锛屼笌 struct `v4l2_format` 鐨?`type` 鎴?struct
-	`v4l2_requestbuffers` 鐨?`type` 鐩稿悓锛岀敱搴旂敤绋嬪簭璁剧疆銆傚弬瑙?`v4l2_buf_type`
+      - 缓冲区的类型，与 struct `v4l2_format` `type` struct
+	`v4l2_requestbuffers` `type` 相同，由应用程序设置。参`v4l2_buf_type`
     - - __u32
       - `index`
-      - 缂撳啿鍖虹殑缂栧彿锛岀敱搴旂敤绋嬪簭璁剧疆銆傝瀛楁浠呯敤浜庡唴瀛樻槧灏?<mmap> I/O锛?	鑼冨洿鍙粠闆跺埌鐢?VIDIOC_REQBUFS 鍜?鎴?VIDIOC_CREATE_BUFS ioctl 鍒嗛厤鐨?	缂撳啿鍖烘暟閲忋€?    - - __u32
+      - 缓冲区的编号，由应用程序设置。该字段仅用于内存映<mmap> I/O	范围可从零到VIDIOC_REQBUFS VIDIOC_CREATE_BUFS ioctl 分配	缓冲区数量    - - __u32
       - `plane`
-      - 浣跨敤澶氬钩闈?API 鏃惰瀵煎嚭鐨勫钩闈㈢储寮曘€傚惁鍒欒鍊煎繀椤昏涓洪浂銆?    - - __u32
+      - 使用多平API 时要导出的平面索引。否则该值必须设为零    - - __u32
       - `flags`
-      - 鏂板垱寤烘枃浠剁殑鏍囧織锛岀洰鍓嶄粎鏀寔 `O_CLOEXEC`銆乣O_RDONLY`銆乣O_WRONLY`
-	鍜?`O_RDWR`锛屾洿澶氱粏鑺傝鍙傝€?open() 鐨勬墜鍐屻€?    - - __s32
+      - 新创建文件的标志，目前仅支持 `O_CLOEXEC`、`O_RDONLY`、`O_WRONLY`
+	`O_RDWR`，更多细节请参open() 的手册    - - __s32
       - `fd`
-      - 涓庣紦鍐插尯鍏宠仈鐨?DMABUF 鏂囦欢鎻忚堪绗︺€傜敱椹卞姩璁剧疆銆?    - - __u32
+      - 与缓冲区关联DMABUF 文件描述符。由驱动设置    - - __u32
       - `reserved[^11^]`
-      - 淇濈暀瀛楁锛屼緵灏嗘潵浣跨敤銆傞┍鍔ㄥ拰搴旂敤绋嬪簭蹇呴』灏嗚鏁扮粍璁句负闆躲€?
-## 杩斿洖鍊?
+      - 保留字段，供将来使用。驱动和应用程序必须将该数组设为零
+## 杩斿洖鍊。
 
-鎴愬姛鏃惰繑鍥?0锛屽嚭閿欐椂杩斿洖 -1 骞剁浉搴斿湴璁剧疆 `errno` 鍙橀噺銆傞€氱敤閿欒鐮佸湪
-Generic Error Codes <gen-errors> 绔犺妭涓弿杩般€?
+成功时返0，出错时返回 -1 并相应地设置 `errno` 变量。通用错误码在
+Generic Error Codes <gen-errors> 章节中描述
 EINVAL
-    闃熷垪涓嶅浜?MMAP 妯″紡锛屾垨鏄笉鏀寔 DMABUF 瀵煎嚭锛屾垨鑰?`flags`銆乣type`銆?    `index` 鎴?`plane` 瀛楁鏃犳晥銆?
+    队列不处MMAP 模式，或是不支持 DMABUF 导出，或`flags`、`type`    `index` `plane` 字段无效

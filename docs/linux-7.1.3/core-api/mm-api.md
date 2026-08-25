@@ -1,7 +1,7 @@
-﻿## 鍐呭瓨绠＄悊 API
+﻿## 内存管理 API
 
 
-## 鐢ㄦ埛绌洪棿鍐呭瓨璁块棶
+## 用户空间内存访问
 
 
    :internal:
@@ -11,18 +11,18 @@
    :functions: get_user_pages_fast
 
 
-## 鍐呭瓨鍒嗛厤鎺у埗
+## 内存分配控制
 
 
-   :doc: 椤佃縼绉讳笌鏀剧疆鎻愮ず
+   :doc: 页迁移与放置提示
 
-   :doc: 姘翠綅绾夸慨鏀瑰櫒
+   :doc: 水位线修改器
 
-   :doc: 鍥炴敹淇敼鍣?
+   :doc: 回收修改
 
-   :doc: 鏈夌敤鐨?GFP 鏍囧織缁勫悎
+   :doc: 有用GFP 标志组合
 
-## Slab 缂撳瓨
+## Slab 缓存
 
 
    :internal:
@@ -33,44 +33,44 @@
 
    :functions: kfree_const kvmalloc_node kvfree
 
-## 铏氭嫙杩炵画鏄犲皠
+## 虚拟连续映射
 
 
    :export:
 
-## 鏂囦欢鏄犲皠涓庨〉缂撳瓨
+## 文件映射与页缓存
 
 
-### 鏂囦欢鏄犲皠锛團ilemap锛?
-
-
-   :export:
-
-### 棰勮锛圧eadahead锛?
-
-
-   :doc: 棰勮姒傝堪
-
-   :export:
-
-### 鍥炲啓锛圵riteback锛?
+### 文件映射（Filemap
 
 
    :export:
 
-### 鎴柇锛圱runcate锛?
+### 预读（Readahead
+
+
+   :doc: 预读概述
+
+   :export:
+
+### 回写（Writeback
+
+
+   :export:
+
+### 截断（Truncate
 
 
    :export:
 
    :internal:
 
-## 鍐呭瓨姹狅紙Memory pools锛?
+## 内存池（Memory pools
 
 
    :export:
 
-## 鏇村鍐呭瓨绠＄悊鍑芥暟
+## 更多内存管理函数
 
 
    :export:

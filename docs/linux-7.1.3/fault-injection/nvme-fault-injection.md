@@ -1,16 +1,16 @@
-﻿## NVMe 鏁呴殰娉ㄥ叆
+﻿## NVMe 故障注入
 
-Linux 鐨勬晠闅滄敞鍏ユ鏋舵彁渚涗簡涓€绉嶇郴缁熷寲鐨勬柟寮忥紝閫氳繃 /sys/kernel/debug 鐩綍涓嬬殑
-debugfs 鏉ユ敮鎸侀敊璇敞鍏ャ€傚惎鐢ㄥ悗锛岄粯璁ょ殑 NVME_SC_INVALID_OPCODE锛堜笉閲嶈瘯锛変細琚?
-娉ㄥ叆鍒?nvme_try_complete_req 涓€傜敤鎴峰彲浠ラ€氳繃 debugfs 淇敼榛樿鐨勭姸鎬佺爜鍜屼笉閲嶈瘯
-鏍囧織銆傞€氱敤鍛戒护鐘舵€佺殑鍒楄〃鍙互鍦?include/linux/nvme.h 涓壘鍒般€?
+Linux 的故障注入框架提供了一种系统化的方式，通过 /sys/kernel/debug 目录下的
+debugfs 来支持错误注入。启用后，默认的 NVME_SC_INVALID_OPCODE（不重试）会
+注入nvme_try_complete_req 中。用户可以通过 debugfs 修改默认的状态码和不重试
+标志。通用命令状态的列表可以include/linux/nvme.h 中找到
 
-涓嬮潰鐨勪緥瀛愬睍绀轰簡濡備綍鍚?nvme 涓敞鍏ラ敊璇€?
+下面的例子展示了如何nvme 中注入错误
 
-棣栧厛锛屽惎鐢?CONFIG_FAULT_INJECTION_DEBUG_FS 鍐呮牳閰嶇疆锛岄噸鏂扮紪璇戝唴鏍搞€傚惎鍔ㄨ
-鍐呮牳鍚庯紝鎵ц浠ヤ笅鎿嶄綔銆?
+首先，启CONFIG_FAULT_INJECTION_DEBUG_FS 内核配置，重新编译内核。启动该
+内核后，执行以下操作
 
-### 渚?1锛氭敞鍏ラ粯璁ょ姸鎬佺爜涓斾笉閲嶈瘯
+### 1：注入默认状态码且不重试
 
 
 ```
@@ -68,7 +68,7 @@ debugfs 鏉ユ敮鎸侀敊璇敞鍏ャ€傚惎鐢ㄥ悗锛岄粯璁ょ殑 NV
   inode #2: comm cp: reading directory lblock 0
 
 ```
-### 渚?2锛氭敞鍏ラ粯璁ょ姸鎬佺爜骞跺厑璁搁噸璇?
+### 2：注入默认状态码并允许重
 
 
 ```
@@ -122,7 +122,7 @@ debugfs 鏉ユ敮鎸侀敊璇敞鍏ャ€傚惎鐢ㄥ悗锛岄粯璁ょ殑 NV
     secondary_startup_64+0xa5/0xb0
 
 ```
-### 渚?3锛氬悜绗?10 涓鐞嗗懡浠ゆ敞鍏ラ敊璇?
+### 3：向10 个管理命令注入错
 
 
 ```

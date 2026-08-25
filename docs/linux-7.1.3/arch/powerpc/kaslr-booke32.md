@@ -1,12 +1,12 @@
 ﻿## Freescale BookE32 鐨?KASLR
 
 
-KASLR 涓€璇嶄唬琛ㄥ唴鏍稿湴鍧€绌洪棿甯冨眬闅忔満鍖栵紙Kernel Address Space Layout
-Randomization锛夈€?
-鏈枃妗ｈ瘯鍥捐В閲?Freescale BookE32 鐨?KASLR 瀹炵幇銆侹ASLR 鏄竴椤瑰畨鍏ㄧ壒鎬э紝鍙樆姝?渚濊禆鍐呮牳鍐呴儴浣嶇疆鐭ヨ瘑鐨勬紡娲炲埄鐢ㄥ皾璇曘€?
-鐢变簬 CONFIG_RELOCATABLE 宸茬粡鏀寔锛屾垜浠渶瑕佸仛鐨勬槸灏嗗唴鏍告槧灏勬垨澶嶅埗鍒伴€傚綋浣嶇疆骞?閲嶅畾浣嶃€侳reescale Book-E 閮ㄤ欢鏈熸湜 lowmem 鐢卞浐瀹氱殑 TLB 椤癸紙TLB1锛夋槧灏勩€俆LB1 椤?涓嶉€傚悎鍦ㄩ殢鏈哄寲鍖哄煙涓洿鎺ユ槧灏勫唴鏍革紝鍥犳鎴戜滑閫夋嫨灏嗗唴鏍稿鍒跺埌閫傚綋浣嶇疆骞堕噸鏂板惎鍔?浠ラ噸瀹氫綅銆?
-鐔垫潵鑷?banner 鍜屽畾鏃跺櫒鍩哄潃锛屽畠浠瘡娆℃瀯寤哄拰鍚姩閮戒細鏀瑰彉銆傝繖涓嶅お瀹夊叏锛屽洜姝?寮曞鍔犺浇绋嬪簭杩樺彲浠ラ€氳繃璁惧鏍戜腑鐨?/chosen/kaslr-seed 鑺傜偣浼犻€掔喌銆?
-鎴戜滑灏嗕娇鐢ㄤ綆鍐呭瓨鐨勫墠 512M 鏉ラ殢鏈哄寲鍐呮牳鏄犲儚銆傚唴瀛樺皢琚垝鍒嗕负 64M 鐨勫尯鍩熴€傛垜浠?灏嗕娇鐢ㄧ喌鐨勪綆 8 浣嶆潵鍐冲畾 64M 鍖哄煙鐨勭储寮曘€傜劧鍚庢垜浠€夋嫨
+KASLR 一词代表内核地址空间布局随机化（Kernel Address Space Layout
+Randomization）
+本文档试图解Freescale BookE32 KASLR 实现。KASLR 是一项安全特性，可阻依赖内核内部位置知识的漏洞利用尝试
+由于 CONFIG_RELOCATABLE 已经支持，我们需要做的是将内核映射或复制到适当位置重定位。Freescale Book-E 部件期望 lowmem 由固定的 TLB 项（TLB1）映射。TLB1 不适合在随机化区域中直接映射内核，因此我们选择将内核复制到适当位置并重新启以重定位
+熵来banner 和定时器基址，它们每次构建和启动都会改变。这不太安全，因引导加载程序还可以通过设备树中/chosen/kaslr-seed 节点传递熵
+我们将使用低内存的前 512M 来随机化内核映像。内存将被划分为 64M 的区域。我将使用熵的低 8 位来决定 64M 区域的索引。然后我们选择
 
 ```
 
@@ -23,5 +23,5 @@ Randomization锛夈€?
                               kernstart_virt_addr
 
 ```
-瑕佸惎鐢?KASLR锛岃缃?CONFIG_RANDOMIZE_BASE = y銆傚鏋滃惎鐢ㄤ簡 KASLR 骞朵笖浣犳兂鍦ㄨ繍琛屾椂
-绂佺敤瀹冿紝璇峰湪鍐呮牳鍛戒护琛屼腑娣诲姞鈥渘okaslr鈥濄€?
+要启KASLR，设CONFIG_RANDOMIZE_BASE = y。如果启用了 KASLR 并且你想在运行时
+禁用它，请在内核命令行中添加“nokaslr”

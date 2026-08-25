@@ -1,24 +1,24 @@
 ﻿
 
-## 涓庡唴鏍稿紑鍙戠ぞ鍖哄崗浣?
+## 与内核开发社区协
 
 
-鎵€浠ユ偍鎯虫垚涓轰竴鍚?Linux 鍐呮牳寮€鍙戜汉鍛橈紵娆㈣繋锛佽櫧鐒朵粠鎶€鏈搴﹂渶瑕佸涔犲ぇ閲忓叧浜庡唴鏍哥殑鐭ヨ瘑锛屼絾浜嗚В鎴戜滑绀惧尯濡備綍杩愪綔鍚屾牱閲嶈銆傞槄璇昏繖浜涙枃妗ｅ皢璁╂偍浠ユ渶灏忕殑楹荤儲鎶婁慨鏀瑰悎骞惰繘鍘诲彉寰楀鏄撳緱澶氥€?
+所以您想成为一Linux 内核开发人员？欢迎！虽然从技术角度需要学习大量关于内核的知识，但了解我们社区如何运作同样重要。阅读这些文档将让您以最小的麻烦把修改合并进去变得容易得多
 
-### 鍐呮牳寮€鍙戣繍浣滄柟寮忕畝浠?
+### 内核开发运作方式简
 
 
-璇峰厛闃呰杩欎簺鏂囨。锛氱悊瑙ｄ簡杩欓噷鐨勫唴瀹瑰皢璁╂偍鐨勮繘鍏ュ唴鏍哥ぞ鍖轰箣璺洿鍔犻『鐣呫€?
+请先阅读这些文档：理解了这里的内容将让您的进入内核社区之路更加顺畅
 
 - [howto](howto)
 - [development-process](development-process)
 - [submitting-patches](submitting-patches)
 - [submit-checklist](submit-checklist)
 
-### 闈㈠悜鍐呮牳寮€鍙戜汉鍛樼殑宸ュ叿涓庢妧鏈寚鍗?
+### 面向内核开发人员的工具与技术指
 
 
-杩欐槸涓€浠藉唴鏍稿紑鍙戜汉鍛樺簲褰撶啛鎮夌殑鏉愭枡鍚堥泦銆?
+这是一份内核开发人员应当熟悉的材料合集
 
 - [changes](changes)
 - [programming-language](programming-language)
@@ -31,10 +31,10 @@
 - [volatile-considered-harmful](volatile-considered-harmful)
 - [botching-up-ioctls](botching-up-ioctls)
 
-### 鏀跨瓥鎸囧崡涓庡紑鍙戣€呭０鏄?
+### 政策指南与开发者声
 
 
-杩欎簺鏄垜浠姫鍔涘湪鍐呮牳绀惧尯锛堜箖鑷崇ぞ鍖轰箣澶栵級閬靛畧鐨勮鍒欍€?
+这些是我们努力在内核社区（乃至社区之外）遵守的规则
 
 - [license-rules](license-rules)
 - [code-of-conduct](code-of-conduct)
@@ -50,10 +50,10 @@
 - [coding-assistants](coding-assistants)
 - [conclave](conclave)
 
-### 澶勭悊缂洪櫡
+### 处理缺陷
 
 
-缂洪櫡鏄敓娲讳腑涓嶅彲閬垮厤鐨勪簨瀹烇紱濡ュ杽鍦板鐞嗗畠浠緢閲嶈銆備笅闈㈢殑鏂囨。鎻愪緵浜嗗叧浜庤皟璇曠殑涓€鑸€у缓璁紝骞舵弿杩版垜浠洿缁曞嚑绫荤壒娈婄己闄封€斺€斿洖褰掞紙regression锛変笌瀹夊叏闂鈥斺€旂殑澶勭悊绛栫暐銆?
+缺陷是生活中不可避免的事实；妥善地处理它们很重要。下面的文档提供了关于调试的一般性建议，并描述我们围绕几类特殊缺陷——回归（regression）与安全问题——的处理策略
 
 - [debugging/index](debugging/index)
 - [handling-regressions](handling-regressions)
@@ -62,18 +62,18 @@
 - [cve](cve)
 - [embargoed-hardware-issues](embargoed-hardware-issues)
 
-### 缁存姢鑰呬俊鎭?
+### 缁存姢鑰呬俊鎭。
 
 
-濡備綍鎵惧埌浼氭帴鏀舵偍琛ヤ竵鐨勪汉銆?
+如何找到会接收您补丁的人
 
 - [maintainer-handbooks](maintainer-handbooks)
 - [maintainers](maintainers)
 
-### 鍏朵粬鏉愭枡
+### 其他材料
 
 
-杩欓噷杩樻湁涓€浜涘叾浠栫ぞ鍖烘寚鍗楋紝瀵瑰ぇ澶氭暟寮€鍙戜汉鍛橀兘寰堟湁鍙傝€冧环鍊硷細
+这里还有一些其他社区指南，对大多数开发人员都很有参考价值：
 
 - [kernel-docs](kernel-docs)
 - [deprecated](deprecated)

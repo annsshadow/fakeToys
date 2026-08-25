@@ -1,7 +1,7 @@
-﻿## NMI 璺熻釜浜嬩欢
+﻿## NMI 跟踪事件
 
 
-杩欎簺浜嬩欢閫氬父鍑虹幇鍦ㄨ繖閲岋細
+这些事件通常出现在这里：
 
 	/sys/kernel/tracing/events/nmi
 
@@ -9,18 +9,18 @@
 ### nmi_handler
 
 
-濡傛灉浣犳€€鐤戜綘鐨?NMI 澶勭悊绋嬪簭鍗犵敤浜嗗ぇ閲?CPU 鏃堕棿锛屼綘鍙兘鎯充娇鐢ㄨ繖涓窡韪偣銆傚唴鏍?
+如果你怀疑你NMI 处理程序占用了大CPU 时间，你可能想使用这个跟踪点。内
 ```
 	INFO: NMI handler took too long to run: 9.207 msecs
 ```
-鑰岃繖涓窡韪偣灏嗗厑璁镐綘娣卞叆鏌ョ湅骞惰幏鍙栨洿澶氱粏鑺傘€?
+而这个跟踪点将允许你深入查看并获取更多细节
 
-鍋囪浣犳€€鐤?perf_event_nmi_handler() 缁欎綘甯︽潵浜嗕竴浜涢棶棰橈紝鑰屼綘鍙兂璺熻釜閭ｄ釜澶勭悊绋嬪簭
+假设你怀perf_event_nmi_handler() 给你带来了一些问题，而你只想跟踪那个处理程序
 ```
 	$ grep perf_event_nmi_handler /proc/kallsyms
 	ffffffff81625600 t perf_event_nmi_handler
 ```
-鍐嶅亣璁句綘鍙閭ｄ釜鍑芥暟鐪熸鍗犵敤澶ч噺 CPU 鏃堕棿锛堜緥濡備竴娆′竴姣锛夋劅鍏磋叮銆傛敞鎰忓唴鏍哥殑杈撳嚭浠ユ绉掍负鍗曚綅锛屼絾杈撳叆
+再假设你只对那个函数真正占用大量 CPU 时间（例如一次一毫秒）感兴趣。注意内核的输出以毫秒为单位，但输入
 ```
 	cd /sys/kernel/tracing/events/nmi/nmi_handler
 	echo 'handler==0xffffffff81625600 && delta_ns>1000000' > filter

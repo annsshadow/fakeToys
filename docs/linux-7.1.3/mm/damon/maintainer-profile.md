@@ -1,41 +1,41 @@
 ﻿
-## DAMON 缁存姢鑰呮潯鐩。妗?
-DAMON 瀛愮郴缁熻鐩?`MAINTAINERS` 鏂囦欢涓?`DAMON` 绔犺妭鎵€鍒楃殑鏂囦欢銆?
-璇ュ瓙绯荤粺鐨勯偖浠跺垪琛ㄤ负 damon@lists.linux.dev 涓?linux-mm@kvack.org銆傝ˉ涓佸簲灏藉彲鑳藉熀浜?`mm-new tree
-<https://git.kernel.org/akpm/mm/h/mm-new>`_ 鍒朵綔锛屽苟鍙戝竷鍒伴偖浠跺垪琛ㄣ€?
-### SCM 鏍?
-DAMON 寮€鍙戞湁澶氫釜 Linux 鏍戙€傚浜庡紑鍙戞垨娴嬭瘯涓殑琛ヤ竵鐢?DAMON 缁存姢鑰呮帓鍏?`damon/next
-<https://git.kernel.org/sj/h/damon/next>`_銆傜粡杩囧厖鍒嗚瘎瀹＄殑琛ヤ竵鐢卞唴瀛樼鐞嗗瓙绯荤粺缁存姢鑰呮帓鍏?`mm-new
-<https://git.kernel.org/akpm/mm/h/mm-new>`_銆傞殢鐫€娴嬭瘯鏇村姞鍏呭垎锛岃ˉ涓佷細绉诲姩鍒?`mm-unstable <https://git.kernel.org/akpm/mm/h/mm-unstable>`_锛屽啀绉诲姩鍒?`mm-stable <https://git.kernel.org/akpm/mm/h/mm-stable>`_銆傛渶缁堣繖浜涜ˉ涓佷細鐢卞唴瀛樼鐞嗗瓙绯荤粺缁存姢鑰呬互鎷夊彇璇锋眰鐨勫舰寮忔彁浜ゅ埌涓荤嚎銆?
-鍐嶆鎻愰啋锛岄拡瀵?`mm-new tree
-<https://git.kernel.org/akpm/mm/h/mm-new>`_ 鐨勮ˉ涓佺敱鍐呭瓨绠＄悊瀛愮郴缁熺淮鎶よ€呮帓闃熴€傚鏋滆ˉ涓侀渶瑕?`damon/next tree
-<https://git.kernel.org/sj/h/damon/next>`_ 涓皻鏈悎骞惰繘 mm-new 鐨勬煇浜涜ˉ涓侊紝璇峰姟蹇呮竻妤氳鏄庤渚濊禆鍏崇郴銆?
-### 鎻愪氦妫€鏌ユ竻鍗曡ˉ鍏?
-杩涜 DAMON 鏀瑰姩鏃讹紝搴斿仛鍒颁互涓嬪嚑鐐广€?
-- 鏋勫缓鍙樻洿鐩稿叧鐨勪骇鐗╋紝鍖呮嫭鍐呮牳涓庢枃妗ｃ€?- 纭繚鏋勫缓涓嶅紩鍏ユ柊鐨勯敊璇垨璀﹀憡銆?- 杩愯 DAMON `selftests
+## DAMON 维护者条目档
+DAMON 子系统覆`MAINTAINERS` 文件`DAMON` 章节所列的文件
+该子系统的邮件列表为 damon@lists.linux.dev linux-mm@kvack.org。补丁应尽可能基`mm-new tree
+<https://git.kernel.org/akpm/mm/h/mm-new>`_ 制作，并发布到邮件列表
+### SCM 鏍。
+DAMON 开发有多个 Linux 树。处于开发或测试中的补丁DAMON 维护者排`damon/next
+<https://git.kernel.org/sj/h/damon/next>`_。经过充分评审的补丁由内存管理子系统维护者排`mm-new
+<https://git.kernel.org/akpm/mm/h/mm-new>`_。随着测试更加充分，补丁会移动`mm-unstable <https://git.kernel.org/akpm/mm/h/mm-unstable>`_，再移动`mm-stable <https://git.kernel.org/akpm/mm/h/mm-stable>`_。最终这些补丁会由内存管理子系统维护者以拉取请求的形式提交到主线
+再次提醒，针`mm-new tree
+<https://git.kernel.org/akpm/mm/h/mm-new>`_ 的补丁由内存管理子系统维护者排队。如果补丁需`damon/next tree
+<https://git.kernel.org/sj/h/damon/next>`_ 中尚未合并进 mm-new 的某些补丁，请务必清楚说明该依赖关系
+### 提交检查清单补
+进行 DAMON 改动时，应做到以下几点
+- 构建变更相关的产物，包括内核与文档- 确保构建不引入新的错误或警告- 运行 DAMON `selftests
   <https://github.com/damonitor/damon-tests/blob/master/corr/run.sh#L49>`_ 涓?`kunittests
-  <https://github.com/damonitor/damon-tests/blob/master/corr/tests/kunit.sh>`_ 骞剁‘淇濇棤鏂板け璐ャ€?
-杩涗竴姝ュ仛鍒颁互涓嬪嚑鐐瑰苟鎶婄粨鏋滈檮涓婁細寰堟湁甯姪銆?
-- 閽堝鏅€氭敼鍔ㄨ繍琛?`damon-tests/corr
-  <https://github.com/damonitor/damon-tests/tree/master/corr>`_銆?- 閽堝鎬ц兘鏀瑰姩锛屾祴閲忓鍩哄噯娴嬭瘯鎴栫湡瀹炰笘鐣屽伐浣滆礋杞界殑褰卞搷銆?
-### 鍏抽敭鍛ㄦ湡鏃ユ湡
+  <https://github.com/damonitor/damon-tests/blob/master/corr/tests/kunit.sh>`_ 并确保无新失败
+进一步做到以下几点并把结果附上会很有帮助
+- 针对普通改动运`damon-tests/corr
+  <https://github.com/damonitor/damon-tests/tree/master/corr>`_- 针对性能改动，测量对基准测试或真实世界工作负载的影响
+### 关键周期日期
 
-琛ヤ竵鍙殢鏃跺彂閫併€俙mm-new
-<https://git.kernel.org/akpm/mm/h/mm-new>`_銆乣mm-unstable
+补丁可随时发送。`mm-new
+<https://git.kernel.org/akpm/mm/h/mm-new>`_、`mm-unstable
 <https://git.kernel.org/akpm/mm/h/mm-unstable>`_ 涓?`mm-stable
-<https://git.kernel.org/akpm/mm/h/mm-stable>`_ 鏍戠殑鍏抽敭鍛ㄦ湡鏃ユ湡鍙栧喅浜庡唴瀛樼鐞嗗瓙绯荤粺缁存姢鑰呫€?
-### 璇勫鑺傚
+<https://git.kernel.org/akpm/mm/h/mm-stable>`_ 树的关键周期日期取决于内存管理子系统维护者
+### 评审节奏
 
-DAMON 缁存姢鑰呴€氬父宸ヤ綔鏂瑰紡鐏垫椿锛屼絾澶钩娲嬫椂闂达紙PT锛夋竻鏅ㄩ櫎澶栥€傚琛ヤ竵鐨勫洖澶嶅伓灏斾細杈冩參銆傚鏋滃湪鍙戦€佽ˉ涓佸悗涓€鍛ㄥ唴娌℃湁鏀跺埌鍥炲锛岃鍕跨姽璞紝鍙戞秷鎭彁閱掍竴涓嬨€?
-### 閭欢宸ュ叿
+DAMON 维护者通常工作方式灵活，但太平洋时间（PT）清晨除外。对补丁的回复偶尔会较慢。如果在发送补丁后一周内没有收到回复，请勿犹豫，发消息提醒一下
+### 邮件工具
 
-涓庤澶氬叾浠?Linux 鍐呮牳瀛愮郴缁熶竴鏍凤紝DAMON 浣跨敤閭欢鍒楄〃锛坉amon@lists.linux.dev 涓?linux-mm@kvack.org锛変綔涓轰富瑕佹矡閫氭笭閬撱€傛湁涓€涓悕涓?`HacKerMaiL
-<https://github.com/damonitor/hackermail>`_锛坄hkml`锛夌殑绠€鍗曞伐鍏凤紝闈㈠悜涓嶅お鐔熸倝鍩轰簬閭欢鍒楄〃娌熼€氱殑浜恒€傝宸ュ叿瀵?DAMON 绀惧尯鎴愬憳灏ゅ叾鏈夌敤锛屽洜涓哄畠鐢?DAMON 缁存姢鑰呭紑鍙戝苟缁存姢銆傝宸ュ叿涔熷凡姝ｅ紡瀹ｅ竷鏀寔 DAMON 鍙婇€氱敤鐨?Linux 鍐呮牳寮€鍙戞祦绋嬨€?
-鎹㈣█涔嬶紝`hkml <https://github.com/damonitor/hackermail>`_ 鏄潰鍚?DAMON 绀惧尯鐨勯偖浠跺伐鍏凤紝DAMON 缁存姢鑰呮壙璇轰簣浠ユ敮鎸併€傝闅忔剰璇曠敤锛屽苟鍚戠淮鎶よ€呮姤鍛婇棶棰樻垨鍔熻兘璇锋眰銆?
-### 绀惧尯鑱氫細
+与许多其Linux 内核子系统一样，DAMON 使用邮件列表（damon@lists.linux.dev linux-mm@kvack.org）作为主要沟通渠道。有一个名`HacKerMaiL
+<https://github.com/damonitor/hackermail>`_（`hkml`）的简单工具，面向不太熟悉基于邮件列表沟通的人。该工具DAMON 社区成员尤其有用，因为它DAMON 维护者开发并维护。该工具也已正式宣布支持 DAMON 及通用Linux 内核开发流程
+换言之，`hkml <https://github.com/damonitor/hackermail>`_ 是面DAMON 社区的邮件工具，DAMON 维护者承诺予以支持。请随意试用，并向维护者报告问题或功能请求
+### 社区聚会
 
-DAMON 绀惧尯涓烘洿鍠滄鍚屾瀵硅瘽鑰岄潪閭欢寰€鏉ョ殑鎴愬憳涓惧姙鍙屽懆鑱氫細绯诲垪銆傚畠鐢ㄤ簬鍖呮嫭缁存姢鑰呭湪鍐呯殑涓€缇ゆ垚鍛樹箣闂村氨鐗瑰畾涓婚灞曞紑璁ㄨ銆傜淮鎶よ€呬細鍒嗕韩鍙敤鐨勬椂娈碉紝鍙備細鑰呭簲鍦ㄦ椂娈靛紑濮嬪墠鑷冲皯 24 灏忔椂閫氳繃鑱旂郴缁存姢鑰呮潵棰勭害鍏朵腑涓€涓椂娈点€?
-鏃ョ▼涓庨绾︾姸鎬佸彲鍦?Google `doc
-<https://docs.google.com/document/d/1v43Kcj3ly4CYqmAkMaZzLiM2GEnWfgdGbZAH3mi2vpM/edit?usp=sharing>`_ 鏌ョ湅銆傝繕鏈変竴涓叕寮€鐨?Google `calendar
+DAMON 社区为更喜欢同步对话而非邮件往来的成员举办双周聚会系列。它用于包括维护者在内的一群成员之间就特定主题展开讨论。维护者会分享可用的时段，参会者应在时段开始前至少 24 小时通过联系维护者来预约其中一个时段
+日程与预约状态可Google `doc
+<https://docs.google.com/document/d/1v43Kcj3ly4CYqmAkMaZzLiM2GEnWfgdGbZAH3mi2vpM/editusp=sharing>`_ 查看。还有一个公开Google `calendar
 <https://calendar.google.com/calendar/u/0?cid=ZDIwOTA4YTMxNjc2MDQ3NTIyMmUzYTM5ZmQyM2U4NDA0ZGIwZjBiYmJlZGQxNDM0MmY4ZTRjOTE0NjdhZDRiY0Bncm91cC5jYWxlbmRhci5nb29nbGUuY29t>`_
-鍖呭惈鐩稿叧浜嬩欢銆備换浣曚汉閮藉彲浠ヨ闃呫€侱AMON 缁存姢鑰呬篃浼氬畾鏈熷悜閭欢鍒楄〃锛坉amon@lists.linux.dev锛夊彂閫佹彁閱掋€?
+包含相关事件。任何人都可以订阅。DAMON 维护者也会定期向邮件列表（damon@lists.linux.dev）发送提醒

@@ -1,11 +1,11 @@
 ﻿
-## CEDT - CXL 鏃╂湡鍙戠幇琛紙CXL Early Discovery Table锛?
+## CEDT - CXL 早期发现表（CXL Early Discovery Table
 
-CXL 鏃╂湡鍙戠幇琛紙CXL Early Discovery Table锛夌敱 BIOS 鐢熸垚锛岀敤浜庢弿杩?BIOS 鍦ㄥ惎鍔ㄦ椂閰嶇疆鐨?CXL 鍐呭瓨鍖哄煙銆?
+CXL 早期发现表（CXL Early Discovery Table）由 BIOS 生成，用于描BIOS 在启动时配置CXL 内存区域
 ## CHBS
 
 
-CXL 涓绘満妗ョ粨鏋勶紙CXL Host Bridge Structure锛夋弿杩?CXL 涓绘満妗ャ€傞櫎浜嗘弿杩拌澶囧瘎瀛樺櫒淇℃伅澶栵紝瀹冭繕鎶ュ憡姝や富鏈烘ˉ鐗瑰畾鐨勪富鏈烘ˉ UID銆傝繖浜涗富鏈烘ˉ ID 灏嗗湪鍏朵粬琛ㄤ腑琚紩鐢ㄣ€?
+CXL 主机桥结构（CXL Host Bridge Structure）描CXL 主机桥。除了描述设备寄存器信息外，它还报告此主机桥特定的主机桥 UID。这些主机桥 ID 将在其他表中被引用
 ```
 
           Subtable Type : 00 [CXL Host Bridge Structure]
@@ -21,7 +21,7 @@ CXL 涓绘満妗ョ粨鏋勶紙CXL Host Bridge Structure锛夋弿杩?CXL 涓绘�
 ## CFMWS
 
 
-CXL 鍥哄畾鍐呭瓨绐楀彛缁撴瀯锛圕XL Fixed Memory Window structure锛夋弿杩颁笌涓€涓垨澶氫釜 CXL 涓绘満妗ワ紙濡?CHBS 鎵€杩帮級鍏宠仈鐨勫唴瀛樺尯鍩熴€傛澶栵紝瀹冭繕鎻忚堪浠讳綍鍙兘鐢?BIOS 缂栫▼鐨勪富鏈烘ˉ闂翠氦閿欙紙interleave锛夐厤缃€?
+CXL 固定内存窗口结构（CXL Fixed Memory Window structure）描述与一个或多个 CXL 主机桥（CHBS 所述）关联的内存区域。此外，它还描述任何可能BIOS 编程的主机桥间交错（interleave）配置
 ```
 
             Subtable Type : 01 [CXL Fixed Memory Window Structure]
@@ -40,7 +40,7 @@ CXL 鍥哄畾鍐呭瓨绐楀彛缁撴瀯锛圕XL Fixed Memory Window structure�
               Next Target : 00000006           <- Host Bridge _UID
 
 ```
-restriction 瀛楁瑙勫畾姝?SPA 鑼冨洿鍙敤浜庝粈涔堬紙鍐呭瓨绫诲瀷锛夛紝
+restriction 字段规定SPA 范围可用于什么（内存类型），
 ```
 
   Bit[0]: CXL Type 2 Memory
@@ -50,4 +50,4 @@ restriction 瀛楁瑙勫畾姝?SPA 鑼冨洿鍙敤浜庝粈涔堬紙鍐呭
   Bit[4]: Fixed Config (HPA cannot be reused)
 
 ```
-涓绘満妗ュ唴锛坕ntra-host-bridge锛変氦閿欙紙涓€涓富鏈烘ˉ涓婄殑澶氫釜璁惧锛変笉鍦ㄦ缁撴瀯涓姤鍛婏紝鑰屾槸瀹屽叏閫氳繃 CXL 璁惧瑙ｇ爜鍣ㄧ紪绋嬶紙涓绘満妗ヤ笌绔偣瑙ｇ爜鍣級瀹氫箟銆?
+主机桥内（intra-host-bridge）交错（一个主机桥上的多个设备）不在此结构中报告，而是完全通过 CXL 设备解码器编程（主机桥与端点解码器）定义

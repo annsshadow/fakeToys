@@ -1,14 +1,14 @@
-﻿## 闈炲绉扮鍚嶏紙Asymmetric Signature锛?
+﻿## 非对称签名（Asymmetric Signature
 
 
-浠ヤ笅涓哄唴鏍搁潪瀵圭О绛惧悕锛坰ig锛夊瓙绯荤粺瀵瑰鎻愪緵鐨?API 鏂囨。銆?
+以下为内核非对称签名（sig）子系统对外提供API 文档
 
-### 闈炲绉扮鍚嶇畻娉曞畾涔?
+### 非对称签名算法定
 
 
    :functions: sig_alg
 
-### 闈炲绉扮鍚?API
+### 非对称签API
 
 
    :doc: Generic Public Key Signature API

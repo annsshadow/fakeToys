@@ -1,10 +1,10 @@
 ﻿
-## STM32 DMA-MDMA 閾惧紡浼犺緭锛圫TM32 DMA-MDMA chaining锛?
+## STM32 DMA-MDMA 链式传输（STM32 DMA-MDMA chaining
 
-鏈枃妗ｈ鏄?STM32 寰鐞嗗櫒涓?STM32 DMA 涓?STM32 MDMA 鎺у埗鍣ㄩ€氳繃 DMAMUX 瀹炵幇鐨勯摼寮忎紶杈撴満鍒讹紝浠嬬粛鐩稿叧澶栬鍙婂叾鍗忓悓宸ヤ綔鏂瑰紡锛岄€傜敤浜庨渶瑕佸湪涓嶅崰鐢?CPU 鐨勫墠鎻愪笅鍦ㄥ唴瀛樹笌澶栬闂存惉杩愭暟鎹殑寮€鍙戣€呫€?
+本文档说STM32 微处理器STM32 DMA STM32 MDMA 控制器通过 DMAMUX 实现的链式传输机制，介绍相关外设及其协同工作方式，适用于需要在不占CPU 的前提下在内存与外设间搬运数据的开发者
 
 
-### 绠€浠嬶紙Introduction锛?
+### 简介（Introduction
 
 
   This document describes the STM32 DMA-MDMA chaining feature. But before going
@@ -39,16 +39,16 @@
   of the AXI/AHB bus.
 
 
-### 鍘熺悊锛圥rinciples锛?
+### 原理（Principles
 
 
-  STM32 DMA-MDMA 閾惧紡浼犺緭鐗规€т緷璧栦簬 STM32 DMA 鍜?STM32 MDMA 鎺у埗鍣ㄧ殑浼樺娍銆?
+  STM32 DMA-MDMA 链式传输特性依赖于 STM32 DMA STM32 MDMA 控制器的优势
 
-  STM32 DMA 鍏锋湁寰幆鍙岀紦鍐叉ā寮忥紙DBM锛夈€傚湪姣忔浜嬪姟缁撴潫鏃讹紙褰?DMA 鏁版嵁璁℃暟鍣?- DMA_SxNDTR - 杈惧埌 0锛夛紝鍐呭瓨鎸囬拡锛堥€氳繃 DMA_SxSM0AR 鍜?DMA_SxM1AR 閰嶇疆锛夎浜ゆ崲锛孌MA 鏁版嵁璁℃暟鍣ㄨ鑷姩閲嶈浇銆傝繖浣垮緱杞欢鎴?STM32 MDMA 鍙互鍦ㄧ浜屼釜鍐呭瓨鍖哄煙姝ｈ STM32 DMA 浼犺緭濉厖/浣跨敤鏃讹紝澶勭悊鍏朵腑涓€涓唴瀛樺尯鍩熴€?
+  STM32 DMA 具有循环双缓冲模式（DBM）。在每次事务结束时（DMA 数据计数- DMA_SxNDTR - 达到 0），内存指针（通过 DMA_SxSM0AR DMA_SxM1AR 配置）被交换，DMA 数据计数器被自动重载。这使得软件STM32 MDMA 可以在第二个内存区域正被 STM32 DMA 传输填充/使用时，处理其中一个内存区域
 
-  鍦?STM32 MDMA 閾捐〃妯″紡涓嬶紝鍗曚釜璇锋眰鍚姩瑕佷紶杈撶殑鏁版嵁鏁扮粍锛堣妭鐐圭殑闆嗗悎锛夛紝鐩村埌璇ラ€氶亾鐨勯摼琛ㄦ寚閽堜负绌恒€傛渶鍚庝竴涓妭鐐圭殑閫氶亾浼犺緭瀹屾垚鍗充负浼犺緭缁撴潫锛岄櫎闈炵涓€涓拰鏈€鍚庝竴涓妭鐐圭浉浜掗摼鎺ワ紝姝ゆ椂閾捐〃寰幆浠ュ垱寤哄惊鐜殑 MDMA 浼犺緭銆?
+  STM32 MDMA 链表模式下，单个请求启动要传输的数据数组（节点的集合），直到该通道的链表指针为空。最后一个节点的通道传输完成即为传输结束，除非第一个和最后一个节点相互链接，此时链表循环以创建循环的 MDMA 传输
 
-  STM32 MDMA 涓?STM32 DMA 鏈夌洿鎺ヨ繛鎺ャ€傝繖浣垮緱澶栬涔嬮棿鑳藉瀹炵幇鑷富閫氫俊涓庡悓姝ワ紝浠庤€岃妭鐪?CPU 璧勬簮鍜屾€荤嚎鎷ュ銆係TM32 DMA 閫氶亾鐨勪紶杈撳畬鎴愪俊鍙峰彲浠ヨЕ鍙?STM32 MDMA 浼犺緭銆係TM32 MDMA 鍙互閫氳繃鍐欏叆鍏朵腑鏂竻闄ゅ瘎瀛樺櫒锛堝湴鍧€淇濆瓨鍦?MDMA_CxMAR 涓紝浣嶆帺鐮佸湪 MDMA_CxMDR 涓級鏉ユ竻闄?STM32 DMA 浜х敓鐨勮姹傘€?
+  STM32 MDMA STM32 DMA 有直接连接。这使得外设之间能够实现自主通信与同步，从而节CPU 资源和总线拥塞。STM32 DMA 通道的传输完成信号可以触STM32 MDMA 传输。STM32 MDMA 可以通过写入其中断清除寄存器（地址保存MDMA_CxMAR 中，位掩码在 MDMA_CxMDR 中）来清STM32 DMA 产生的请求
 
   .. table:: STM32 MDMA interconnect table with STM32 DMA
 
@@ -91,7 +91,7 @@
     | Channel **15** | DMA2 channel 7 | dma2_tcf7 | **0x0F**     |
     +--------------+----------------+-----------+------------+
 
-  STM32 DMA-MDMA 閾惧紡浼犺緭鐗规€ч殢鍚庝娇鐢ㄤ竴涓?SRAM 缂撳啿鍖恒€係TM32MP1 SoC 鍐呭祵涓変釜涓嶅悓澶у皬鐨勫揩閫熻闂潤鎬佸唴閮?RAM锛岀敤浜庢暟鎹瓨鍌ㄣ€傜敱浜?STM32 DMA 鐨勯仐鐣欒璁★紙鍦ㄥ井鎺у埗鍣ㄤ腑锛夛紝STM32 DMA 鍦?DDR 涓婄殑鎬ц兘杈冨樊锛岃€屽湪 SRAM 涓婃€ц兘鏈€浣炽€傚洜姝や娇鐢?STM32 DMA 涓?STM32 MDMA 涔嬮棿鐨?SRAM 缂撳啿鍖恒€傝缂撳啿鍖鸿鍒嗘垚鐩哥瓑鐨勪袱涓懆鏈燂紝STM32 DMA 浣跨敤鍏朵腑涓€涓懆鏈燂紝鑰?STM32 MDMA 鍚屾椂浣跨敤鍙︿竴涓懆鏈熴€?
+  STM32 DMA-MDMA 链式传输特性随后使用一SRAM 缓冲区。STM32MP1 SoC 内嵌三个不同大小的快速访问静态内RAM，用于数据存储。由STM32 DMA 的遗留设计（在微控制器中），STM32 DMA DDR 上的性能较差，而在 SRAM 上性能最佳。因此使STM32 DMA STM32 MDMA 之间SRAM 缓冲区。该缓冲区被分成相等的两个周期，STM32 DMA 使用其中一个周期，STM32 MDMA 同时使用另一个周期
 ```
 
                     dma[1:2]-tcf[0:7]
@@ -113,10 +113,10 @@
   * the mask of the Transfer Complete interrupt flag of the STM32 DMA channel.
 
 ```
-### 鐢ㄤ簬 STM32 DMA-MDMA 閾惧紡浼犺緭鏀寔鐨勮澶囨爲鏇存柊锛圖evice Tree updates锛?
+### 用于 STM32 DMA-MDMA 链式传输支持的设备树更新（Device Tree updates
 
 
-  **1. 鍒嗛厤涓€涓?SRAM 缂撳啿鍖猴紙Allocate a SRAM buffer锛?*
+  **1. 分配一SRAM 缓冲区（Allocate a SRAM buffer*
 
     SRAM device tree node is defined in SoC device tree. You can refer to it in
     your board device tree to define your SRAM pool.
@@ -187,14 +187,14 @@
     (struct dma_slave_config).peripheral_config
 
 ```
-### 鍦?foo 椹卞姩涓敤浜?STM32 DMA-MDMA 閾惧紡浼犺緭鏀寔鐨勯┍鍔ㄦ洿鏂帮紙Driver updates锛?
+### foo 驱动中用STM32 DMA-MDMA 链式传输支持的驱动更新（Driver updates
 
 
-  **0.锛堝彲閫夛級濡傛灉浣跨敤 dmaengine_prep_slave_sg()锛岄噸鏋勫師濮嬬殑 sg_table**
+  **0.（可选）如果使用 dmaengine_prep_slave_sg()，重构原始的 sg_table**
 
-    鍦ㄤ娇鐢?dmaengine_prep_slave_sg() 鐨勬儏鍐典笅锛屽師濮嬬殑 sg_table 涓嶈兘鍘熸牱浣跨敤銆傚繀椤讳粠鍘熷琛ㄥ垱寤轰袱涓柊鐨?sg_table銆備竴涓敤浜?STM32 DMA 浼犺緭锛堝叾涓唴瀛樺湴鍧€鐜板湪鎸囧悜 SRAM 缂撳啿鍖鸿€岄潪 DDR 缂撳啿鍖猴級锛屽彟涓€涓敤浜?STM32 MDMA 浼犺緭锛堝叾涓唴瀛樺湴鍧€鎸囧悜 DDR 缂撳啿鍖猴級銆?
+    在使dmaengine_prep_slave_sg() 的情况下，原始的 sg_table 不能原样使用。必须从原始表创建两个新sg_table。一个用STM32 DMA 传输（其中内存地址现在指向 SRAM 缓冲区而非 DDR 缓冲区），另一个用STM32 MDMA 传输（其中内存地址指向 DDR 缓冲区）
 
-    鏂扮殑 sg_list 椤瑰繀椤婚€傞厤 SRAM 鍛ㄦ湡闀垮害銆備互涓嬫槸 DMA_DEV_TO_MEM 鐨勭ず渚嬶細
+    新的 sg_list 项必须适配 SRAM 周期长度。以下是 DMA_DEV_TO_MEM 的示例：
 ```
 
       /*
@@ -372,7 +372,7 @@
   you're not afraid.
 
 ```
-### 璧勬簮锛圧esources锛?
+### 资源（Resources
 
 
   Application note, datasheet and reference manual are available on ST website

@@ -1,44 +1,44 @@
 ﻿
-##  USB4 and Thunderbolt锛圲SB4 涓?Thunderbolt锛?
+##  USB4 and Thunderbolt（USB4 Thunderbolt
 
-USB4 鏄熀浜?Thunderbolt 3 鍗忚鐨勫叕寮€瑙勮寖锛屼絾鍦ㄥ瘎瀛樺櫒绾у埆绛夋柟闈㈠瓨鍦ㄤ竴浜涘樊寮傘€?杩炴帴绠＄悊鍣紙connection manager锛夋槸涓€涓繍琛屽湪涓绘満璺敱鍣紙涓绘満鎺у埗鍣級涓婄殑瀹炰綋锛?璐熻矗鏋氫妇璺敱鍣ㄥ苟寤虹珛闅ч亾锛坱unnel锛夈€傝繛鎺ョ鐞嗗櫒鏃㈠彲浠ョ敤鍥轰欢瀹炵幇锛屼篃鍙互鐢ㄨ蒋浠?瀹炵幇銆傞€氬父锛孭C 閰嶆湁鐢ㄤ簬 Thunderbolt 3 涓庢棭鏈?USB4 绯荤粺鐨勫浐浠惰繛鎺ョ鐞嗗櫒銆傝€?Apple 绯荤粺鍒欎娇鐢ㄨ蒋浠惰繛鎺ョ鐞嗗櫒锛屽悗鏉ョ殑 USB4 鍚堣璁惧涔熸部鐢ㄦ鏂瑰紡銆?
-Linux 鐨?Thunderbolt 椹卞姩鍚屾椂鏀寔涓よ€咃紝骞惰兘鍦ㄨ繍琛屾椂妫€娴嬪簲褰撲娇鐢ㄥ摢绉嶈繛鎺ョ鐞嗗櫒
-瀹炵幇銆備负浜嗗畨鍏ㄨ捣瑙侊紝Linux 涓殑杞欢杩炴帴绠＄悊鍣ㄨ繕浼氶€氬憡瀹夊叏绾у埆 `user`锛岃繖鎰忓懗鐫€
-榛樿绂佺敤 PCIe 闅ч亾銆備笅闈㈢殑鏂囨。閫傜敤浜庤繖涓ょ瀹炵幇锛屽敮涓€鐨勪緥澶栨槸杞欢杩炴帴绠＄悊鍣ㄥ彧
-鏀寔 `user` 瀹夊叏绾у埆锛屽苟涓斿簲褰撻厤鍚堝熀浜?IOMMU 鐨?DMA 淇濇姢涓€璧蜂娇鐢ㄣ€?
-### Security levels and how to use them锛堝畨鍏ㄧ骇鍒強鍏朵娇鐢ㄦ柟娉曪級
+USB4 是基Thunderbolt 3 协议的公开规范，但在寄存器级别等方面存在一些差异连接管理器（connection manager）是一个运行在主机路由器（主机控制器）上的实体负责枚举路由器并建立隧道（tunnel）。连接管理器既可以用固件实现，也可以用软实现。通常，PC 配有用于 Thunderbolt 3 与早USB4 系统的固件连接管理器。Apple 系统则使用软件连接管理器，后来的 USB4 合规设备也沿用此方式
+Linux Thunderbolt 驱动同时支持两者，并能在运行时检测应当使用哪种连接管理器
+实现。为了安全起见，Linux 中的软件连接管理器还会通告安全级别 `user`，这意味着
+默认禁用 PCIe 隧道。下面的文档适用于这两种实现，唯一的例外是软件连接管理器只
+支持 `user` 安全级别，并且应当配合基IOMMU DMA 保护一起使用
+### Security levels and how to use them（安全级别及其使用方法）
 
 
-姝ゅ鍛堢幇鐨勬帴鍙ｅ苟闈為潰鍚戞渶缁堢敤鎴枫€傜浉鍙嶏紝搴斿綋鏈変竴涓敤鎴风┖闂村伐鍏锋潵澶勭悊鎵€鏈夊簳灞?缁嗚妭銆佺淮鎶ゅ凡鎺堟潈璁惧鐨勬暟鎹簱锛屽苟鍦ㄦ湁鏂拌繛鎺ユ椂鎻愮ず鐢ㄦ埛銆?
-鍏充簬 Thunderbolt 璁惧 sysfs 鎺ュ彛鐨勬洿澶氱粏鑺傦紝鍙互鍦?Documentation/ABI/testing/sysfs-bus-thunderbolt 涓壘鍒般€?
-閭ｄ簺鍙兂杩炴帴浠讳綍璁惧鑰屾棤闇€浠讳綍鎵嬪姩鎿嶄綔鐨勭敤鎴凤紝鍙互灏嗕笅闈㈣繖涓€琛屾坊鍔犲埌
+此处呈现的接口并非面向最终用户。相反，应当有一个用户空间工具来处理所有底细节、维护已授权设备的数据库，并在有新连接时提示用户
+关于 Thunderbolt 设备 sysfs 接口的更多细节，可以Documentation/ABI/testing/sysfs-bus-thunderbolt 中找到
+那些只想连接任何设备而无需任何手动操作的用户，可以将下面这一行添加到
 ```
-锛坲dev 瑙勫垯涓級锛?
+（udev 规则中）
   ACTION=="add", SUBSYSTEM=="thunderbolt", ATTR{authorized}=="0", ATTR{authorized}="1"
 
 ```
-杩欎細鍦ㄨ澶囧嚭鐜版椂鑷姩鎺堟潈鎵€鏈夎澶囥€傜劧鑰岋紝璇疯浣忚繖鏍峰仛浼氱粫杩囧畨鍏ㄧ骇鍒紝骞朵娇绯荤粺
-瀹规槗鍙楀埌 DMA 鏀诲嚮銆?
-鑷?Intel Falcon Ridge Thunderbolt 鎺у埗鍣ㄨ捣锛屾湁 4 涓彲鐢ㄧ殑瀹夊叏绾у埆銆侷ntel Titan
-Ridge 鍙堝鍔犱簡涓€涓畨鍏ㄧ骇鍒紙usbonly锛夈€備箣鎵€浠ラ渶瑕佽繖浜涳紝鏄洜涓烘墍杩炴帴鐨勮澶囧彲浠?鎴愪负 DMA 涓昏澶囷紝浠庤€屽湪娌℃湁 CPU 鍜屾搷浣滅郴缁熺煡鏅撶殑鎯呭喌涓嬭鍙栦富鏈哄唴瀛樼殑鍐呭銆傝櫧鐒?鍙互閫氳繃璁剧疆 IOMMU 鏉ラ槻姝㈣繖绉嶆儏鍐碉紝浣嗙敱浜庡悇绉嶅師鍥犲畠骞朵笉鎬绘槸鍙敤銆?
-涓€浜?USB4 绯荤粺鏈変竴涓敤浜庣鐢?PCIe 闅ч亾鐨?BIOS 璁剧疆銆傝繖琚涓哄彟涓€涓畨鍏ㄧ骇鍒?锛坣opcie锛夈€?
-瀹夊叏绾у埆濡備笅锛?
-  none锛堟棤锛?    鎵€鏈夎澶囩敱鍥轰欢鑷姩杩炴帴銆傛棤闇€鐢ㄦ埛鎵瑰噯銆傚湪 BIOS 璁剧疆涓繖閫氬父绉颁负
-    **Legacy mode锛堜紶缁熸ā寮忥級**銆?
-  user锛堢敤鎴凤級
-    浼氳闂敤鎴锋槸鍚﹀厑璁歌繛鎺ヨ璁惧銆傚熀浜庨€氳繃 `/sys/bus/thunderbolt/devices`
-    鍙敤鐨勮澶囨爣璇嗕俊鎭紝鐢ㄦ埛闅忓悗鍙互鍋氬嚭鍐冲畾銆傚湪 BIOS 璁剧疆涓繖閫氬父绉颁负
-    **Unique ID锛堝敮涓€ ID锛?*銆?
-  secure锛堝畨鍏級
-    浼氳闂敤鎴锋槸鍚﹀厑璁歌繛鎺ヨ璁惧銆傞櫎浜?UUID 涔嬪锛岃澶囷紙濡傛灉鏀寔瀹夊叏杩炴帴锛夎繕浼?    鏀跺埌涓€涓寫鎴樺€硷紝璇ュ€煎簲涓庡熀浜庡啓鍏?`key` sysfs 灞炴€х殑闅忔満瀵嗛挜鎵€鏈熸湜鐨勫€煎尮閰嶃€?    鍦?BIOS 璁剧疆涓繖閫氬父绉颁负 **One time saved key锛堜竴娆℃€т繚瀛樺瘑閽ワ級**銆?
-  dponly锛堜粎鏄剧ず绔彛锛?    鍥轰欢鑷姩涓?Display Port 涓?USB 鍒涘缓闅ч亾銆備笉杩涜 PCIe 闅ч亾銆傚湪 BIOS 璁剧疆涓?    杩欓€氬父绉颁负 **Display Port Only锛堜粎鏄剧ず绔彛锛?*銆?
-  usbonly锛堜粎 USB锛?    鍥轰欢鑷姩涓烘墿灞曞潪涓殑 USB 鎺у埗鍣ㄤ笌 Display Port 鍒涘缓闅ч亾銆傛墿灞曞潪涓嬫父鐨勬墍鏈?    PCIe 閾捐矾琚Щ闄ゃ€?
-  nopcie锛堟棤 PCIe锛?    PCIe 闅ч亾琚?BIOS 绂佺敤/绂佹銆傚湪涓€浜?USB4 绯荤粺涓彲鐢ㄣ€?
-褰撳墠鐨勫畨鍏ㄧ骇鍒彲浠ヤ粠 `/sys/bus/thunderbolt/devices/domainX/security` 璇诲彇锛屽叾涓?`domainX` 鏄富鏈烘帶鍒跺櫒绠＄悊鐨?Thunderbolt 鍩熴€傞€氬父姣忎釜 Thunderbolt 涓绘満鎺у埗鍣?瀵瑰簲涓€涓煙銆?
-濡傛灉瀹夊叏绾у埆涓?`user` 鎴?`secure`锛屽垯鍦ㄥ垱寤?PCIe 闅ч亾锛堜緥濡?PCIe 璁惧鍑虹幇锛?涔嬪墠锛屽繀椤荤敱鐢ㄦ埛鎺堟潈鎵€杩炴帴鐨勮澶囥€?
-姣忎釜鎻掑叆鐨?Thunderbolt 璁惧閮戒細鍑虹幇鍦?sysfs 鐨?`/sys/bus/thunderbolt/devices`
-涓嬨€傝璁惧鐩綍鎼哄甫鍙敤浜庤瘑鍒壒瀹氳澶囩殑淇℃伅锛屽寘鎷叾鍚嶇О涓?UUID銆?
-### Authorizing devices when security level is ``user`` or ``secure``锛堝湪瀹夊叏绾у埆涓?``user`` 鎴?``secure`` 鏃舵巿鏉冭澶囷級
+这会在设备出现时自动授权所有设备。然而，请记住这样做会绕过安全级别，并使系统
+容易受到 DMA 攻击
+Intel Falcon Ridge Thunderbolt 控制器起，有 4 个可用的安全级别。Intel Titan
+Ridge 又增加了一个安全级别（usbonly）。之所以需要这些，是因为所连接的设备可成为 DMA 主设备，从而在没有 CPU 和操作系统知晓的情况下读取主机内存的内容。虽可以通过设置 IOMMU 来防止这种情况，但由于各种原因它并不总是可用
+一USB4 系统有一个用于禁PCIe 隧道BIOS 设置。这被视为另一个安全级（nopcie）
+安全级别如下
+  none（无    所有设备由固件自动连接。无需用户批准。在 BIOS 设置中这通常称为
+    **Legacy mode（传统模式）**
+  user（用户）
+    会询问用户是否允许连接该设备。基于通过 `/sys/bus/thunderbolt/devices`
+    可用的设备标识信息，用户随后可以做出决定。在 BIOS 设置中这通常称为
+    **Unique ID（唯一 ID*
+  secure（安全）
+    会询问用户是否允许连接该设备。除UUID 之外，设备（如果支持安全连接）还    收到一个挑战值，该值应与基于写`key` sysfs 属性的随机密钥所期望的值匹配    BIOS 设置中这通常称为 **One time saved key（一次性保存密钥）**
+  dponly（仅显示端口    固件自动Display Port USB 创建隧道。不进行 PCIe 隧道。在 BIOS 设置    这通常称为 **Display Port Only（仅显示端口*
+  usbonly（仅 USB    固件自动为扩展坞中的 USB 控制器与 Display Port 创建隧道。扩展坞下游的所    PCIe 链路被移除
+  nopcie（无 PCIe    PCIe 隧道BIOS 禁用/禁止。在一USB4 系统中可用
+当前的安全级别可以从 `/sys/bus/thunderbolt/devices/domainX/security` 读取，其`domainX` 是主机控制器管理Thunderbolt 域。通常每个 Thunderbolt 主机控制对应一个域
+如果安全级别`user` `secure`，则在创PCIe 隧道（例PCIe 设备出现之前，必须由用户授权所连接的设备
+每个插入Thunderbolt 设备都会出现sysfs `/sys/bus/thunderbolt/devices`
+下。该设备目录携带可用于识别特定设备的信息，包括其名称UUID
+### Authorizing devices when security level is ``user`` or ``secure``（在安全级别``user`` ``secure`` 时授权设备）
 
 
 ```
@@ -50,16 +50,16 @@ Ridge 鍙堝鍔犱簡涓€涓畨鍏ㄧ骇鍒紙usbonly锛夈€備箣�
   /sys/bus/thunderbolt/devices/0-1/unique_id	- e0376f00-0300-0100-ffff-ffffffffffff
 
 ```
-`authorized` 灞炴€ц鍙栦负 0锛屾剰鍛崇潃灏氭湭鍒涘缓 PCIe 闅ч亾銆傛巿鏉冭璁惧锛?```
-锛堝悜 authorized 鍐欏叆 1锛氾級
+`authorized` 属性读取为 0，意味着尚未创建 PCIe 隧道。授权该设备```
+（向 authorized 写入 1：）
 
   # echo 1 > /sys/bus/thunderbolt/devices/0-1/authorized
 
 ```
-杩欏皢鍒涘缓 PCIe 闅ч亾锛岃澶囩幇宸茶繛鎺ャ€?
-濡傛灉璁惧鏀寔瀹夊叏杩炴帴锛屼笖鍩熷畨鍏ㄧ骇鍒涓?`secure`锛屽畠浼氭湁涓€涓澶栫殑 `key` 灞炴€э紝
-鍙繚瀛樹竴涓殢鏈虹殑 32 瀛楄妭鍊硷紝鐢ㄤ簬鎺堟潈涓庢寫鎴樿璁惧锛?```
-锛堜緥濡傦細锛?
+这将创建 PCIe 隧道，设备现已连接
+如果设备支持安全连接，且域安全级别设`secure`，它会有一个额外的 `key` 属性，
+可保存一个随机的 32 字节值，用于授权与挑战该设备```
+（例如：
   /sys/bus/thunderbolt/devices/0-3/authorized	- 0
   /sys/bus/thunderbolt/devices/0-3/device	- 0x305
   /sys/bus/thunderbolt/devices/0-3/device_name	- AKiTiO Thunder3 PCIe Box
@@ -69,86 +69,86 @@ Ridge 鍙堝鍔犱簡涓€涓畨鍏ㄧ骇鍒紙usbonly锛夈€備箣�
   /sys/bus/thunderbolt/devices/0-3/unique_id	- dc010000-0000-8508-a22d-32ca6421cb16
 
 ```
-娉ㄦ剰锛岄粯璁ゆ儏鍐典笅 key 涓虹┖銆?
-濡傛灉鐢ㄦ埛涓嶆兂浣跨敤瀹夊叏杩炴帴锛屼粬浠彧闇€ `echo 1` 鍒?`authorized` 灞炴€э紝PCIe 闅ч亾灏变細
-浠ヤ笌 `user` 瀹夊叏绾у埆鐩稿悓鐨勬柟寮忚鍒涘缓銆?
-濡傛灉鐢ㄦ埛鎯充娇鐢ㄥ畨鍏ㄨ繛鎺ワ紝鍦ㄨ澶囬娆℃彃鍏ユ椂锛?```
-锛堢敓鎴愬苟鍐欏叆瀵嗛挜锛岀劧鍚庢巿鏉冿細锛?
+注意，默认情况下 key 为空
+如果用户不想使用安全连接，他们只需 `echo 1` `authorized` 属性，PCIe 隧道就会
+以与 `user` 安全级别相同的方式被创建
+如果用户想使用安全连接，在设备首次插入时```
+（生成并写入密钥，然后授权：
   # key=$(openssl rand -hex 32)
   # echo $key > /sys/bus/thunderbolt/devices/0-3/key
   # echo 1 > /sys/bus/thunderbolt/devices/0-3/authorized
 
 ```
-鐜板湪璁惧宸茶繛鎺ワ紙PCIe 闅ч亾琚垱寤猴級锛屽苟涓斿瘑閽ヨ瀛樺偍鍦ㄨ澶囩殑 NVM 涓娿€?
-涓嬩竴娆℃彃鍏ヨ澶囨椂锛岀敤鎴峰彲浠ュ璁惧杩涜楠岃瘉锛堟寫鎴橈級锛?```
-锛堝啓鍏ュ瘑閽ュ苟浠ユ寫鎴樻ā寮忔巿鏉冿細锛?
+现在设备已连接（PCIe 隧道被创建），并且密钥被存储在设备的 NVM 上
+下一次插入设备时，用户可以对设备进行验证（挑战）```
+（写入密钥并以挑战模式授权：
   # echo $key > /sys/bus/thunderbolt/devices/0-3/key
   # echo 2 > /sys/bus/thunderbolt/devices/0-3/authorized
 
 ```
-濡傛灉璁惧杩斿洖鐨勬寫鎴樺€间笌鍩轰簬瀵嗛挜鎵€鏈熸湜鐨勫€煎尮閰嶏紝璁惧灏辫杩炴帴骞朵笖 PCIe 闅ч亾琚垱寤恒€?鐒惰€岋紝濡傛灉鎸戞垬澶辫触锛屽垯涓嶄細鍒涘缓浠讳綍闅ч亾锛屽苟鍚戠敤鎴疯繑鍥為敊璇€?
-濡傛灉鐢ㄦ埛浠嶆兂杩炴帴璇ヨ澶囷紝浠栦滑鍙互涓嶇敤瀵嗛挜鐩存帴鎵瑰噯璇ヨ澶囷紝鎴栬€呭啓鍏ヤ竴涓柊瀵嗛挜骞跺悜
-`authorized` 鏂囦欢鍐欏叆 1锛屼粠鑰屽皢鏂板瘑閽ュ瓨鍌ㄥ湪璁惧鐨?NVM 涓娿€?
-### De-authorizing devices锛堝彇娑堟巿鏉冭澶囷級
+如果设备返回的挑战值与基于密钥所期望的值匹配，设备就被连接并且 PCIe 隧道被创建然而，如果挑战失败，则不会创建任何隧道，并向用户返回错误
+如果用户仍想连接该设备，他们可以不用密钥直接批准该设备，或者写入一个新密钥并向
+`authorized` 文件写入 1，从而将新密钥存储在设备NVM 上
+### De-authorizing devices（取消授权设备）
 
 
-鍙互閫氳繃灏?`0` 鍐欏叆鍏?`authorized` 灞炴€ф潵鍙栨秷瀵硅澶囩殑鎺堟潈銆傝繖闇€瑕佽繛鎺ョ鐞嗗櫒
-瀹炵幇鐨勬敮鎸侊紝鍙互閫氳繃璇诲彇鍩熺殑 `deauthorization` 灞炴€ф潵妫€鏌ャ€傚鏋滃畠璇讳负 `1`锛屽垯
-璇ュ姛鑳藉彈鏀寔銆?
-褰撲竴涓澶囪鍙栨秷鎺堟潈鏃讹紝浠庣埗璁惧鐨?PCIe 涓嬫父锛堟垨鏍癸級绔彛鍒拌澶?PCIe 涓婃父绔彛鐨?PCIe 闅ч亾浼氳鎷嗛櫎銆傝繖鏈川涓婁笌 PCIe 鐑Щ闄ょ浉鍚岋紝鎵€娑夊強鐨?PCIe 鎷撴墤灏嗕笉鍐嶅彲璁块棶锛?鐩村埌璁惧琚啀娆℃巿鏉冦€傚鏋滄秹鍙?NVMe 鎴栫被浼肩殑瀛樺偍璁惧锛岃嫢鍏朵笂鐨勬枃浠剁郴缁熸湭姝ｇ‘
-鍏抽棴锛屽氨鏈夋暟鎹涪澶辩殑椋庨櫓銆傜壒姝よ鍛婏紒
+可以通过`0` 写入`authorized` 属性来取消对设备的授权。这需要连接管理器
+实现的支持，可以通过读取域的 `deauthorization` 属性来检查。如果它读为 `1`，则
+该功能受支持
+当一个设备被取消授权时，从父设备PCIe 下游（或根）端口到设PCIe 上游端口PCIe 隧道会被拆除。这本质上与 PCIe 热移除相同，所涉及PCIe 拓扑将不再可访问直到设备被再次授权。如果涉NVMe 或类似的存储设备，若其上的文件系统未正确
+关闭，就有数据丢失的风险。特此警告！
 
-### DMA protection utilizing IOMMU锛堝埄鐢?IOMMU 鐨?DMA 淇濇姢锛?
+### DMA protection utilizing IOMMU（利IOMMU DMA 保护
 
-2018 骞村強涔嬪悗甯︽湁 Thunderbolt 绔彛鐨勬柊绯荤粺鍙兘鍘熺敓鏀寔 IOMMU銆傝繖鎰忓懗鐫€ Thunderbolt
-瀹夊叏鎬х敱 IOMMU 澶勭悊锛屽洜姝ゆ墍杩炴帴鐨勮澶囨棤娉曡闂┍鍔ㄤ负鍏跺垎閰嶄箣澶栫殑鍐呭瓨鍖哄煙銆傚綋 Linux
-杩愯鍦ㄨ繖鏍风殑绯荤粺涓婃椂锛屽鏋滅敤鎴峰皻鏈惎鐢紝瀹冧細鑷姩鍚敤 IOMMU銆傝繖浜涚郴缁熷彲浠ラ€氳繃浠?`/sys/bus/thunderbolt/devices/domainX/iommu_dma_protection` 灞炴€ц鍙?`1` 鏉ヨ瘑鍒€?
-鍦ㄨ繖绉嶆儏鍐典笅锛岄┍鍔ㄥ苟鏈仛浠讳綍鐗规畩鎿嶄綔锛屼絾鐢变簬 DMA 淇濇姢鐢?IOMMU 澶勭悊锛屽畨鍏ㄧ骇鍒?锛堝鏋滆缃簡锛夊氨鍙樺緱澶氫綑銆傚嚭浜庤繖涓師鍥狅紝涓€浜涚郴缁熷嚭鍘傛椂灏嗗畨鍏ㄧ骇鍒涓?`none`銆?鍏朵粬绯荤粺灏嗗畨鍏ㄧ骇鍒涓?`user` 浠ユ敮鎸侀檷绾у埌杈冩棫鐨勬搷浣滅郴缁燂紝鍥犳甯屾湜鍦?IOMMU DMA
-淇濇姢鍚敤鏃惰嚜鍔ㄦ巿鏉冭澶囩殑鐢ㄦ埛鍙互浣跨敤锛?```
-锛堜互涓?udev 瑙勫垯锛氾級
+2018 年及之后带有 Thunderbolt 端口的新系统可能原生支持 IOMMU。这意味着 Thunderbolt
+安全性由 IOMMU 处理，因此所连接的设备无法访问驱动为其分配之外的内存区域。当 Linux
+运行在这样的系统上时，如果用户尚未启用，它会自动启用 IOMMU。这些系统可以通过`/sys/bus/thunderbolt/devices/domainX/iommu_dma_protection` 属性读`1` 来识别
+在这种情况下，驱动并未做任何特殊操作，但由于 DMA 保护IOMMU 处理，安全级（如果设置了）就变得多余。出于这个原因，一些系统出厂时将安全级别设`none`其他系统将安全级别设`user` 以支持降级到较旧的操作系统，因此希望IOMMU DMA
+保护启用时自动授权设备的用户可以使用```
+（以udev 规则：）
 
   ACTION=="add", SUBSYSTEM=="thunderbolt", ATTRS{iommu_dma_protection}=="1", ATTR{authorized}=="0", ATTR{authorized}="1"
 
 ```
-### Upgrading NVM on Thunderbolt device, host or retimer锛堝崌绾?Thunderbolt 璁惧銆佷富鏈烘垨閲嶅畾鏃跺櫒鐨?NVM锛?
+### Upgrading NVM on Thunderbolt device, host or retimer（升Thunderbolt 设备、主机或重定时器NVM
 
-鐢变簬澶ч儴鍒嗗姛鑳界敱杩愯鍦ㄤ富鏈烘帶鍒跺櫒鎴栬澶囦笂鐨勫浐浠跺鐞嗭紝鍥犳鍥轰欢鑳藉琚崌绾у埌鏈€鏂?鐗堟湰锛堝叾涓彲鑳界殑缂洪櫡宸茶淇锛夋槸寰堥噸瑕佺殑銆傞€氬父 OEM 浼氫粠鍏舵敮鎸佺珯鐐规彁渚涜鍥轰欢銆?
-鐩墠锛屾帹鑽愰€氳繃 鈥渇wupd鈥?宸ュ叿鏇存柊鍥轰欢銆傞粯璁ゆ儏鍐典笅瀹冧娇鐢?LVFS锛圠inux Vendor Firmware
-Service锛孡inux 渚涘簲鍟嗗浐浠舵湇鍔★級闂ㄦ埛浠庣‖浠朵緵搴斿晢鑾峰彇鏈€鏂板浐浠讹紝骞跺湪鍙戠幇鍏煎鏃舵洿鏂?鎵€杩炴帴鐨勮澶囥€傝鎯呭弬瑙侊細https://github.com/fwupd/fwupd銆?
-鍦ㄤ负璁惧銆佷富鏈烘垨閲嶅畾鏃跺櫒鍗囩骇鍥轰欢涔嬪墠锛岃纭繚杩欐槸涓€娆″悎閫傜殑鍗囩骇銆傚鏋滄湭鑳藉仛鍒帮紝
-鍙兘浼氫娇璁惧杩涘叆涓€绉嶆病鏈夌壒娈婂伐鍏峰氨鏃犳硶姝ｅ父浣跨敤鐨勭姸鎬侊紒
+由于大部分功能由运行在主机控制器或设备上的固件处理，因此固件能够被升级到最版本（其中可能的缺陷已被修复）是很重要的。通常 OEM 会从其支持站点提供该固件
+目前，推荐通过 “fwupd工具更新固件。默认情况下它使LVFS（Linux Vendor Firmware
+Service，Linux 供应商固件服务）门户从硬件供应商获取最新固件，并在发现兼容时更所连接的设备。详情参见：https://github.com/fwupd/fwupd
+在为设备、主机或重定时器升级固件之前，请确保这是一次合适的升级。如果未能做到，
+可能会使设备进入一种没有特殊工具就无法正常使用的状态！
 
-Apple Mac 涓婄殑涓绘満 NVM 鍗囩骇涓嶅彈鏀寔銆?
-fwupd 榛樿宸插畨瑁呫€傚鏋滀綘鐨勭郴缁熶笂娌℃湁瀹冿紝鍙渶浣跨敤浣犵殑鍙戣鐗堝寘绠＄悊鍣ㄦ潵鑾峰彇瀹冦€?
-瑕侀€氳繃 fwupd 鏌ョ湅鍙兘鐨勬洿鏂帮紝浣犻渶瑕佹彃鍏ヤ竴涓?Thunderbolt 璁惧锛屼互渚夸富鏈烘帶鍒跺櫒鍑虹幇銆?杩炴帴鍝釜璁惧骞朵笉閲嶈锛堥櫎闈炰綘鏄湪鍗囩骇鏌愪釜璁惧鐨?NVM鈥斺€旀鏃朵綘闇€瑕佽繛鎺ラ偅涓壒瀹氱殑
-璁惧锛夈€?
-娉ㄦ剰锛屼綘鐨勭郴缁熷彲鑳芥彁渚?OEM 鐗瑰畾鐨勬柟娉曟潵涓轰笂鐢垫帶鍒跺櫒锛堚€滃己鍒朵笂鐢碘€濓紝force power锛夛紝
-鍦ㄨ繖绉嶆儏鍐典笅灏辨棤闇€鎻掑叆 Thunderbolt 璁惧銆?
-浣跨敤 fwupd 鏇存柊鍥轰欢寰堢畝鍗曗€斺€旇鍙傞槄 fwupd github 涓婄殑瀹樻柟 readme銆?
-濡傛灉鍥轰欢鏄犲儚鍐欏叆鎴愬姛锛岃澶囦細鐭殏娑堝け銆備竴鏃﹀畠閲嶆柊鍑虹幇锛岄┍鍔ㄤ細娉ㄦ剰鍒板畠骞跺彂璧蜂竴娆?瀹屾暣鐨勫姞鐢靛惊鐜€傝繃浜嗕竴浼氬効璁惧浼氬啀娆″嚭鐜帮紝姝ゆ椂瀹冨簲褰撳畬鍏ㄥ彲鐢ㄣ€?
-鐩爣璁惧搴斿湪 fwupd 鐣岄潰涓樉绀?鈥淐urrent version锛堝綋鍓嶇増鏈級鈥?涓嬬殑鏂扮増鏈紝浠ュ強
-鈥淯pdate State: Success锛堟洿鏂扮姸鎬侊細鎴愬姛锛夆€濄€?
-### Upgrading firmware manually锛堟墜鍔ㄥ崌绾у浐浠讹級
+Apple Mac 上的主机 NVM 升级不受支持
+fwupd 默认已安装。如果你的系统上没有它，只需使用你的发行版包管理器来获取它
+要通过 fwupd 查看可能的更新，你需要插入一Thunderbolt 设备，以便主机控制器出现连接哪个设备并不重要（除非你是在升级某个设备NVM——此时你需要连接那个特定的
+设备）
+注意，你的系统可能提OEM 特定的方法来为上电控制器（“强制上电”，force power），
+在这种情况下就无需插入 Thunderbolt 设备
+使用 fwupd 更新固件很简单——请参阅 fwupd github 上的官方 readme
+如果固件映像写入成功，设备会短暂消失。一旦它重新出现，驱动会注意到它并发起一完整的加电循环。过了一会儿设备会再次出现，此时它应当完全可用
+目标设备应在 fwupd 界面中显“Current version（当前版本）下的新版本，以及
+“Update State: Success（更新状态：成功）”
+### Upgrading firmware manually（手动升级固件）
 
 
-濡傛灉鍙兘锛岃浣跨敤 fwupd 鏉ユ洿鏂板浐浠躲€備絾鏄紝濡傛灉浣犵殑璁惧 OEM 灏氭湭灏嗗浐浠朵笂浼犲埌 LVFS锛?鑰屽畠鍙粠浠栦滑涓€渚т笅杞斤紝浣犲彲浠ヤ娇鐢ㄤ笅闈㈢殑鏂规硶鐩存帴鍗囩骇鍥轰欢銆?
-鎵嬪姩鍥轰欢鏇存柊鍙互浣跨敤 'dd' 宸ュ叿瀹屾垚銆傝浣跨敤璇ユ柟娉曟洿鏂板浐浠讹紝浣犻渶瑕佸皢鍏跺啓鍏ヤ富鏈烘垨
-璁惧 NVM 鐨勯潪娲昏穬閮ㄥ垎銆備互涓嬫槸鍦?Intel NUC6i7KYK 涓婃洿鏂扮殑绀轰緥锛?```
-锛堝皢鍥轰欢鏄犲儚鍐欏叆闈炴椿璺?NVM锛氾級
+如果可能，请使用 fwupd 来更新固件。但是，如果你的设备 OEM 尚未将固件上传到 LVFS而它可从他们一侧下载，你可以使用下面的方法直接升级固件
+手动固件更新可以使用 'dd' 工具完成。要使用该方法更新固件，你需要将其写入主机或
+设备 NVM 的非活跃部分。以下是Intel NUC6i7KYK 上更新的示例```
+（将固件映像写入非活NVM：）
 
   # dd if=KYK_TBT_FW_0018.bin of=/sys/bus/thunderbolt/devices/0-0/nvm_non_active0/nvmem
 
 ```
-涓€鏃︽搷浣滃畬鎴愶紝鎴戜滑鍙互瑙﹀彂 NVM 璁よ瘉锛?```
-锛堝啓鍏?1 瑙﹀彂璁よ瘉锛氾級
+一旦操作完成，我们可以触发 NVM 认证```
+（写1 触发认证：）
 
   # echo 1 > /sys/bus/thunderbolt/devices/0-0/nvm_authenticate
 
 ```
-濡傛灉娌℃湁杩斿洖閿欒锛岃澶囩殑琛屼负搴斾笌涓婁竴鑺傛墍杩颁竴鑷淬€?
-鎴戜滑鍙互閫氳繃杩愯浠ヤ笅鍛戒护鏉ラ獙璇佹柊鐨?NVM 鍥轰欢宸叉縺娲伙細
+如果没有返回错误，设备的行为应与上一节所述一致
+我们可以通过运行以下命令来验证新NVM 固件已激活：
 ```
-锛堟鏌ヨ璇佺姸鎬佷笌鐗堟湰锛氾級
+（检查认证状态与版本：）
 
   # cat /sys/bus/thunderbolt/devices/0-0/nvm_authenticate
   0x0
@@ -156,82 +156,82 @@ fwupd 榛樿宸插畨瑁呫€傚鏋滀綘鐨勭郴缁熶笂娌℃湁瀹�
   18.0
 
 ```
-濡傛灉 `nvm_authenticate` 鍖呭惈闄?0x0 涔嬪鐨勪换浣曞€硷紝瀹冨氨鏄笂涓€娆¤璇佸懆鏈熺殑閿欒鐮侊紝
-杩欐剰鍛崇潃 NVM 鏄犲儚鐨勮璇佸け璐ャ€?
-娉ㄦ剰锛孨VMem 璁惧鐨勫悕绉?`nvm_activeN` 涓?`nvm_non_activeN` 鍙栧喅浜庡畠浠湪 NVMem
-瀛愮郴缁熶腑娉ㄥ唽鐨勯『搴忋€傚悕绉颁腑鐨?N 鏄?NVMem 瀛愮郴缁熸坊鍔犵殑鏍囪瘑绗︺€?
-### Upgrading on-board retimer NVM when there is no cable connected锛堝湪娌℃湁绾跨紗杩炴帴鏃跺崌绾ф澘杞介噸瀹氭椂鍣ㄧ殑 NVM锛?
+如果 `nvm_authenticate` 包含0x0 之外的任何值，它就是上一次认证周期的错误码，
+这意味着 NVM 映像的认证失败
+注意，NVMem 设备的名`nvm_activeN` `nvm_non_activeN` 取决于它们在 NVMem
+子系统中注册的顺序。名称中N NVMem 子系统添加的标识符
+### Upgrading on-board retimer NVM when there is no cable connected（在没有线缆连接时升级板载重定时器的 NVM
 
-濡傛灉骞冲彴鏀寔锛屽嵆浣?USB4 绔彛涓婃病鏈夎繛鎺ヤ换浣曚笢瑗匡紝涔熷彲鑳藉崌绾ч噸瀹氭椂鍣?NVM 鍥轰欢銆?鍦ㄨ繖绉嶆儏鍐典笅锛宍usb4_portX` 璁惧鏈変袱涓壒娈婂睘鎬э細`offline`锛堢绾匡級涓?`rescan`
-锛堥噸鏂版壂鎻忥級銆傚崌绾у浐浠剁殑鏂瑰紡鏄細
+如果平台支持，即USB4 端口上没有连接任何东西，也可能升级重定时NVM 固件在这种情况下，`usb4_portX` 设备有两个特殊属性：`offline`（离线）`rescan`
+（重新扫描）。升级固件的方式是：
 ```
-锛堝厛灏嗙鍙ｇ疆涓虹绾匡細锛?
+（先将端口置为离线：
   # echo 1 > /sys/bus/thunderbolt/devices/0-0/usb4_port1/offline
 
 ```
-杩欎竴姝ョ‘淇濈鍙ｄ笉鍝嶅簲浠讳綍鐑彃鎷斾簨浠讹紝鍚屾椂涔熺‘淇濋噸瀹氭椂鍣ㄨ涓婄數銆備笅涓€姝ユ槸鎵弿锛?```
-锛堣Е鍙戦噸鏂版壂鎻忎互鏋氫妇鏉胯浇閲嶅畾鏃跺櫒锛氾級
+这一步确保端口不响应任何热插拔事件，同时也确保重定时器被上电。下一步是扫描```
+（触发重新扫描以枚举板载重定时器：）
 
   # echo 1 > /sys/bus/thunderbolt/devices/0-0/usb4_port1/rescan
 
 ```
-杩欎細鏋氫妇骞舵坊鍔犳澘杞介噸瀹氭椂鍣ㄣ€傜幇鍦ㄥ彲浠ュ儚鏈夌嚎缂嗚繛鎺ユ椂涓€鏍峰崌绾ч噸瀹氭椂鍣?NVM锛堝弬瑙?涓婁竴鑺傦級銆傜劧鑰岋紝鐢变簬澶勪簬绂荤嚎妯″紡锛岄噸瀹氭椂鍣ㄥ苟鏈柇寮€杩炴帴锛屽洜姝ゅ湪鍚?`nvm_authenticate`
-鍐欏叆 `1` 涔嬪悗锛屽簲褰撶瓑寰咃細
+这会枚举并添加板载重定时器。现在可以像有线缆连接时一样升级重定时NVM（参上一节）。然而，由于处于离线模式，重定时器并未断开连接，因此在`nvm_authenticate`
+写入 `1` 之后，应当等待：
 ```
-锛堝啀娆℃壂鎻忎娇閲嶅畾鏃跺櫒閲嶆柊灏辩华锛氾級
+（再次扫描使重定时器重新就绪：）
 
   # echo 1 > /sys/bus/thunderbolt/devices/0-0/usb4_port1/rescan
 
 ```
-濡傛灉涓€鍒囬『鍒╋紝姝ゆ椂鍙互灏嗙鍙ｆ仮澶嶄负锛?```
-锛堥€€鍑虹绾挎ā寮忥細锛?
+如果一切顺利，此时可以将端口恢复为```
+（退出离线模式：
   # echo 0 > /sys/bus/thunderbolt/devices/0-0/usb4_port1/offline
 
 ```
-### Upgrading NVM when host controller is in safe mode锛堝湪涓绘満鎺у埗鍣ㄥ浜庡畨鍏ㄦā寮忔椂鍗囩骇 NVM锛?
+### Upgrading NVM when host controller is in safe mode（在主机控制器处于安全模式时升级 NVM
 
-濡傛灉鐜版湁 NVM 鏈姝ｇ‘璁よ瘉锛堟垨缂哄け锛夛紝涓绘満鎺у埗鍣ㄤ細杩涘叆瀹夊叏妯″紡锛岃繖鎰忓懗鐫€鍞竴
-鍙敤鐨勫姛鑳芥槸鍒峰啓涓€涓柊鐨?NVM 鏄犲儚銆傚湪姝ゆā寮忎笅锛岃鍙?`nvm_version` 浼氬洜
-`ENODATA` 鑰屽け璐ワ紝骞朵笖璁惧鏍囪瘑淇℃伅缂哄け銆?
-瑕佷粠璇ユā寮忔仮澶嶏紝闇€瑕佷互涓庝笂涓€绔犵浉鍚岀殑鏂瑰紡鍚戜富鏈烘帶鍒跺櫒鍒峰啓涓€涓湁鏁堢殑 NVM 鏄犲儚銆?
-### Tunneling events锛堥毀閬撲簨浠讹級
+如果现有 NVM 未被正确认证（或缺失），主机控制器会进入安全模式，这意味着唯一
+可用的功能是刷写一个新NVM 映像。在此模式下，读`nvm_version` 会因
+`ENODATA` 而失败，并且设备标识信息缺失
+要从该模式恢复，需要以与上一章相同的方式向主机控制器刷写一个有效的 NVM 映像
+### Tunneling events（隧道事件）
 
 
-褰?`thunderbolt_domain` 涓彂鐢熼毀閬撳彉鍖栨椂锛岄┍鍔ㄤ細鍚戠敤鎴风┖闂村彂閫?`KOBJ_CHANGE`
-浜嬩欢銆傝閫氱煡鎼哄甫锛?```
-锛堜互涓嬬幆澧冨彉閲忥細锛?
+`thunderbolt_domain` 中发生隧道变化时，驱动会向用户空间发`KOBJ_CHANGE`
+事件。该通知携带```
+（以下环境变量：
   TUNNEL_EVENT=<EVENT>
   TUNNEL_DETAILS=0:12 <-> 1:20 (USB3)
 
 ```
-`<EVENT>` 鐨勫彲鑳藉彇鍊间负锛?
-  activated锛堝凡婵€娲伙級
-    闅ч亾琚縺娲伙紙鍒涘缓锛夈€?
-  changed锛堝凡鏀瑰彉锛?    姝ら毀閬撳彂鐢熶簡鍙樺寲銆備緥濡傚甫瀹藉垎閰嶈鏀瑰彉銆?
-  deactivated锛堝凡鍋滅敤锛?    闅ч亾琚媶闄ゃ€?
-  low bandwidth锛堜綆甯﹀锛?    闅ч亾鏈幏寰楁渶浣冲甫瀹姐€?
-  insufficient bandwidth锛堝甫瀹戒笉瓒筹級
-    褰撳墠闅ч亾闇€姹傛病鏈夎冻澶熺殑甯﹀銆?
-`TUNNEL_DETAILS` 浠呭湪闅ч亾宸茬煡鏃舵墠鎻愪緵銆備緥濡傦紝鍦ㄥ浐浠惰繛鎺ョ鐞嗗櫒鐨勬儏鍐典笅锛岃繖浼?缂哄け鎴栦笉鎻愪緵瀹屾暣鐨勯毀閬撲俊鎭€傚湪杞欢杩炴帴绠＄悊鍣ㄧ殑鎯呭喌涓嬶紝杩欎細鍖呭惈瀹屾暣鐨勯毀閬撹鎯呫€?鐩墠鐨勬牸寮忎笌椹卞姩璁板綍鏃ュ織鏃朵娇鐢ㄧ殑鏍煎紡涓€鑷淬€傝繖鍙兘浼氶殢鏃堕棿鏀瑰彉銆?
-### Networking over Thunderbolt cable锛堥€氳繃 Thunderbolt 绾跨紗鑱旂綉锛?
+`<EVENT>` 的可能取值为
+  activated（已激活）
+    隧道被激活（创建）
+  changed（已改变    此隧道发生了变化。例如带宽分配被改变
+  deactivated（已停用    隧道被拆除
+  low bandwidth（低带宽    隧道未获得最佳带宽
+  insufficient bandwidth（带宽不足）
+    当前隧道需求没有足够的带宽
+`TUNNEL_DETAILS` 仅在隧道已知时才提供。例如，在固件连接管理器的情况下，这缺失或不提供完整的隧道信息。在软件连接管理器的情况下，这会包含完整的隧道详情目前的格式与驱动记录日志时使用的格式一致。这可能会随时间改变
+### Networking over Thunderbolt cable（通过 Thunderbolt 线缆联网
 
-Thunderbolt 鎶€鏈厑璁搁€氳繃 Thunderbolt 绾跨紗杩炴帴鐨勪袱鍙颁富鏈轰箣闂磋繘琛岃蒋浠堕€氫俊銆?
-鍙互鍦?Thunderbolt 閾捐矾涓婇毀閬撲紶杈撲换浣曠被鍨嬬殑娴侀噺锛屼絾鐩墠鎴戜滑鍙敮鎸?Apple
-ThunderboltIP 鍗忚銆?
-濡傛灉鍙︿竴鍙颁富鏈鸿繍琛岀殑鏄?Windows 鎴?macOS锛屼綘鍞竴闇€瑕佸仛鐨勬槸鍦ㄤ袱鍙颁富鏈轰箣闂磋繛鎺?涓€鏍?Thunderbolt 绾跨紗锛沗thunderbolt-net` 椹卞姩浼氳嚜鍔ㄥ姞杞姐€傚鏋滃彟涓€鍙颁富鏈轰篃鏄?Linux锛屼綘搴斿綋鍦ㄤ竴鍙颁富鏈轰笂鎵嬪姩鍔犺浇 `thunderbolt-net`锛堝畠
+Thunderbolt 技术允许通过 Thunderbolt 线缆连接的两台主机之间进行软件通信
+可以Thunderbolt 链路上隧道传输任何类型的流量，但目前我们只支Apple
+ThunderboltIP 协议
+如果另一台主机运行的Windows macOS，你唯一需要做的是在两台主机之间连一Thunderbolt 线缆；`thunderbolt-net` 驱动会自动加载。如果另一台主机也Linux，你应当在一台主机上手动加载 `thunderbolt-net`（它
 ```
-浼氳嚜鍔ㄨЕ鍙戝彟涓€鍙颁富鏈轰笂鐨勬ā鍧楀姞杞斤細锛?
+会自动触发另一台主机上的模块加载：
   # modprobe thunderbolt-net
 
 ```
-濡傛灉椹卞姩鍐呭缓鍒板唴鏍告槧鍍忎腑锛屽垯鏃犻渶鍋氫换浣曚簨鎯呫€?
-椹卞姩浼氫负姣忎釜 Thunderbolt 绔彛鍒涘缓涓€涓櫄鎷熶互澶綉鎺ュ彛锛屽叾鍚嶇О绫讳技 `thunderbolt0`
-绛夌瓑銆備粠杩欎竴鐐硅捣锛屼綘鍙互浣跨敤 `ip` 绛夋爣鍑嗙敤鎴风┖闂村伐鍏锋潵閰嶇疆鎺ュ彛锛屾垨璁╀綘鐨?GUI
-鑷姩澶勭悊瀹冦€?
-### Forcing power锛堝己鍒朵笂鐢碉級
+如果驱动内建到内核映像中，则无需做任何事情
+驱动会为每个 Thunderbolt 端口创建一个虚拟以太网接口，其名称类似 `thunderbolt0`
+等等。从这一点起，你可以使用 `ip` 等标准用户空间工具来配置接口，或让你GUI
+自动处理它
+### Forcing power（强制上电）
 
 
-璁稿 OEM 鍖呭惈涓€涓柟娉曪紝鍙敤浜庡皢 Thunderbolt 鎺у埗鍣ㄧ殑鐢垫簮寮哄埗缃簬鈥滃紑鈥濈姸鎬侊紝鍗充娇
-娌℃湁杩炴帴浠讳綍涓滆タ銆傚鏋滀綘鐨勬満鍣ㄦ敮鎸侊紝杩欎細鐢?WMI 鎬荤嚎閫氳繃涓€涓悕涓?鈥渇orce_power鈥?鐨?sysfs 灞炴€ф毚闇插嚭鏉ワ紝璇﹁
-Documentation/ABI/testing/sysfs-platform-intel-wmi-thunderbolt銆?
-娉ㄦ剰锛氱洰鍓嶆棤娉曟煡璇㈠钩鍙扮殑寮哄埗涓婄數鐘舵€併€?
+许多 OEM 包含一个方法，可用于将 Thunderbolt 控制器的电源强制置于“开”状态，即使
+没有连接任何东西。如果你的机器支持，这会WMI 总线通过一个名“force_powersysfs 属性暴露出来，详见
+Documentation/ABI/testing/sysfs-platform-intel-wmi-thunderbolt銆。
+注意：目前无法查询平台的强制上电状态
