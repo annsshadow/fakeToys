@@ -53,13 +53,11 @@ fn test_list_bams_action_result_format() {
 
 #[test]
 fn test_delete_bam_action_result_format() {
-    let result: ActionResult<serde_json::Value> = ActionResult::success(json!({
-        "id": "bam-1",
-        "deleted": true
-    }));
+    // x_bam_config 无 deleted_at 列：delete 拒绝物理删除，返回 error 契约
+    let result: ActionResult<serde_json::Value> =
+        ActionResult::error("physical delete not supported for this entity");
     let json = serde_json::to_value(&result).unwrap();
-    assert_eq!(json["type"], "success");
-    assert_eq!(json["data"]["deleted"], true);
+    assert_eq!(json["type"], "error");
 }
 
 #[test]

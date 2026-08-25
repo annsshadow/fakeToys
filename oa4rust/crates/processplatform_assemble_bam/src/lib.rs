@@ -5,6 +5,8 @@ use axum::{
 use deadpool_postgres::Pool;
 use serde::Deserialize;
 use serde_json::Value;
+use shared::middleware::require_owner;
+use shared::session::Session;
 use shared::{error::AppError, response::ActionResult};
 use uuid::Uuid;
 
@@ -52,8 +54,11 @@ pub async fn get_bam_config(
 /// 根据请求创建新的BAM监控实例
 pub async fn create_bam(
     pool: Extension<Pool>,
+    session: Extension<Session>,
     axum::extract::Json(req): Json<CreateBamRequest>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // x_bam_config 无 owner/creator 列，按系统配置处理：仅 admin 可写
+    require_owner(&pool, &session, "").await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let id = Uuid::new_v4().to_string();
     let name = req.name.unwrap_or_default();
@@ -115,20 +120,16 @@ pub async fn list_bams(
 /// 根据ID删除指定的BAM监控实例
 pub async fn delete_bam(
     pool: Extension<Pool>,
+    session: Extension<Session>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
-    let result = client
-        .execute("DELETE FROM x_bam_config WHERE xid = $1", &[&id])
-        .await
-        .map_err(|_| AppError::Internal)?;
-
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("id".to_string(), Value::String(id)),
-            ("deleted".to_string(), Value::Bool(result > 0)),
-        ]),
-    ))))
+    // x_bam_config 无 owner/creator 列，按系统配置处理：仅 admin 可写
+    require_owner(&pool, &session, "").await?;
+    // x_bam_config 无 deleted_at 列，禁止物理删除以防数据丢失
+    let _ = &id;
+    Ok(Json(ActionResult::error(
+        "physical delete not supported for this entity",
+    )))
 }
 
 /// 获取BAM状态
@@ -256,6 +257,9 @@ pub fn processplatform_assemble_bam_router() -> Router {
         .route("/jaxrs/processplatform/assemble/bam/state/applicationtstubs/trigger", get(state_applicationtstubs_trigger))
         .route("/jaxrs/processplatform/assemble/bam/state/category", get(state_category))
         .route("/jaxrs/processplatform/assemble/bam/state/category/trigger", get(state_category_trigger_all))
+        .route("/jaxrs/processplatform/assemble/bam/state/summary", get(state_summary))
+        .route("/jaxrs/processplatform/assemble/bam/state/running", get(state_running))
+        .route("/jaxrs/processplatform/assemble/bam/state/organization", get(state_organization))
         .route("/jaxrs/processplatform/assemble/bam/delete/{id}", delete(delete_bam))
 }
 
@@ -1539,8 +1543,11 @@ pub async fn state_category(
 
 pub async fn state_category_trigger(
     pool: Extension<Pool>,
+    session: Extension<Session>,
     axum::extract::Path(category): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // 触发统计为系统级操作，按 ownerless 资源处理：仅 admin 可写
+    require_owner(&pool, &session, "").await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let rows = client
