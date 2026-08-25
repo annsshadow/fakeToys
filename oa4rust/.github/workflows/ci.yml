@@ -180,3 +180,20 @@ jobs:
         run: |
           if [ -f rust_server.pid ]; then kill "$(cat rust_server.pid)" || true; fi
           docker rm -f o2server || true
+
+  # ── plan002 U9 / R8: OpenAPI 安全方案守卫 ────────────────────────────────────
+  # scripts/gen_openapi_paths.py 重新生成 OpenAPI lib.rs 时，会把 Bearer 安全方案
+  # 注入到 securitySchemes。若注入静默丢失，API 文档将缺少鉴权信息且难以察觉。
+  # 本 job 校验已纳入版本控制的生成产物（crates/openapi/src/lib.rs）确实含有
+  # 安全方案注入。若后续 CI 加入“重新生成 OpenAPI”步骤，应在该步骤之后再加一次
+  # 本断言（即先 regenerate 再 check）。
+  openapi-guard:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.x"
+      - name: Verify OpenAPI security scheme is present
+        run: python oa4rust/scripts/check_openapi_security.py
