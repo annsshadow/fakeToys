@@ -237,4 +237,25 @@ origin: docs/brainstorms/2026-08-21-plans-status-audit-and-consolidation-require
 - **Origin document:** [docs/brainstorms/2026-08-21-plans-status-audit-and-consolidation-requirements.md](../brainstorms/2026-08-21-plans-status-audit-and-consolidation-requirements.md)
 - **审计执行计划:** [docs/plans/2026-08-21-001-feat-plans-status-audit-plan.md](2026-08-21-001-feat-plans-status-audit-plan.md)
 - 来源计划：`docs/plans/` 下 18 份（详见各条目标注）
-- 相关经验：`docs/solutions/best-practices/single-source-of-truth-migration-status.md`
+  - 相关经验：`docs/solutions/best-practices/single-source-of-truth-migration-status.md`
+  - 收官复盘：`docs/solutions/best-practices/oa4rust-o2server-parity-closure-campaign-2026-08-25.md`
+  - 残差需求：`docs/brainstorms/2026-08-25-oa4rust-o2server-residual-gaps-requirements.md`
+
+## 实现情况更新（2026-08-25）
+
+**更新基准：** 工作树 HEAD 950a18e1（2026-08-25 合并 PR #18 / feat/remaining-work-consolidation）。本计划仍为 **active**——唯一未竟单元 U3（影子流量）因外部依赖（生产环境 + ≥2 周观察期）无法在代码层关闭。
+
+### 终态结论（合并时）
+
+- U1–U2、U4–U12 全部关闭（见各单元 08-21 执行结论 + 08-24 终扫）
+- U2 收官由 `docs/audits/final-coverage-sweep.md`（2026-08-24，清单 generated_at=2026-08-23）定稿：总覆盖 **99.77%**（3085/3092 唯一端点），28/30 模块 100%
+- U9 Java 行为对比接入 CI：`oa4rust/.github/workflows/ci.yml` 新增 `behavior-compare` job（o2server 容器 + 1000s 就绪探针 + postgres + u2_probe 冒烟，`BEHAVIOR_COMPARE=1` 条件执行，Java 不可达时 SKIP）
+
+### oa4rust 仍不能完全替代 o2server 的残差（截至 2026-08-25）
+
+1. **U3 影子流量灰度验证与切流**：脚本就绪，需生产环境 + ≥2 周观察期，外部阻塞（唯一真正的"可替代"判定阻断项）
+2. **3 条真实缺失端点**（`final-coverage-sweep.md` §四）：`processplatform_assemble_surface` 2 条、`bbs_assemble_control` 1 条——零星端点，逐条可补齐
+3. **4 条 axum 平台限制端点**：`attachment/download/*/{}.{}` 单段多参数路由 axum 不可表达，留档不实现
+4. **BAM 业务活动监控模块**：`x_processplatform_assemble_bam` Java 131 @Path vs Rust 5 路由，P3 真实大缺口（监控类低频），维持挂起
+5. **IM/XMPP/WebRTC 完整即时通讯协议**：沿用 08-19-002 范围约束，不在内（Rust 侧已有 WebSocket 基础广播 + ImAction×33 端点，非完整协议）
+6. **Linux 文档翻译校正 L11.1/L11.2**：266+ 处 7 语种 `?` 损坏，需逐文件对照 kernel.org 上游 RST，独立人工/脚本工程，未在本轮执行
