@@ -167,7 +167,7 @@ pub async fn attendanceadmin_id(
             ]));
             Ok(Json(ActionResult::success(result)))
         }
-        None => Ok(Json(ActionResult::error("attendance admin not found"))),
+        None => Ok(Json(ActionResult::success(Value::Null))),
     }
 }
 
@@ -581,7 +581,7 @@ pub async fn attendanceappealInfo_id(
             ]));
             Ok(Json(ActionResult::success(result)))
         }
-        None => Ok(Json(ActionResult::error("attendance appeal not found"))),
+        None => Ok(Json(ActionResult::success(Value::Null))),
     }
 }
 
@@ -1067,7 +1067,7 @@ pub async fn attendancedetail_mobile_mobilepreview(
             ]));
             Ok(Json(ActionResult::success(result)))
         }
-        None => Ok(Json(ActionResult::error("attendance detail not found"))),
+        None => Ok(Json(ActionResult::success(Value::Null))),
     }
 }
 
@@ -2695,7 +2695,7 @@ pub async fn statisticshow_unit_sum_name_year_month(
             ]));
             Ok(Json(ActionResult::success(result)))
         }
-        None => Ok(Json(ActionResult::error("statisticshow not found"))),
+        None => Ok(Json(ActionResult::success(Value::Null))),
     }
 }
 
@@ -4190,23 +4190,14 @@ pub async fn v2_config_get(
         .await
         .map_err(|_| AppError::Internal)?;
 
-    let data: Vec<Value> = rows
-        .iter()
-        .map(|row| {
-            Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("name".to_string(), Value::String(row.get("name"))),
-                ("value".to_string(), Value::String(row.get::<_, Option<String>>("value").unwrap_or_default())),
-            ]))
-        })
-        .collect();
+    let mut result = serde_json::Map::new();
+    for row in &rows {
+        let name: String = row.get("name");
+        let value: Option<String> = row.get("value");
+        result.insert(name, Value::String(value.unwrap_or_default()));
+    }
 
-    let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
-        Value::Array(data),
-        count,
-        0,
-    )))
+    Ok(Json(ActionResult::success(Value::Object(result))))
 }
 
 /// POST /jaxrs/attendance/assemble/control/v2/config
@@ -4283,23 +4274,14 @@ pub async fn v2_config_person_get(
         .await
         .map_err(|_| AppError::Internal)?;
 
-    let data: Vec<Value> = rows
-        .iter()
-        .map(|row| {
-            Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("name".to_string(), Value::String(row.get("name"))),
-                ("value".to_string(), Value::String(row.get::<_, Option<String>>("value").unwrap_or_default())),
-            ]))
-        })
-        .collect();
+    let mut result = serde_json::Map::new();
+    for row in &rows {
+        let name: String = row.get("name");
+        let value: Option<String> = row.get("value");
+        result.insert(name, Value::String(value.unwrap_or_default()));
+    }
 
-    let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
-        Value::Array(data),
-        count,
-        0,
-    )))
+    Ok(Json(ActionResult::success(Value::Object(result))))
 }
 
 /// POST /jaxrs/attendance/assemble/control/v2/config/person
