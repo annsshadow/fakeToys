@@ -57,6 +57,16 @@ pub async fn get_ai_control_config(
                 ("maxTokens".to_string(), Value::Number(serde_json::Number::from(row.get::<_, i64>("max_tokens")))),
                 ("enabled".to_string(), Value::Bool(row.get("enabled"))),
                 ("creator".to_string(), Value::String(row.get("creator"))),
+                ("o2AiFileList".to_string(), Value::Array(vec![])),
+                ("deepSeekApiUrl".to_string(), Value::String(std::env::var("DEEPSEEK_API_URL").unwrap_or_default())),
+                ("appName".to_string(), Value::String(std::env::var("APP_NAME").unwrap_or_else(|_| "O2OA".to_string()))),
+                ("o2AiToken".to_string(), Value::String(std::env::var("O2_AI_TOKEN").unwrap_or_default())),
+                ("aliApiUrl".to_string(), Value::String(std::env::var("ALI_API_URL").unwrap_or_default())),
+                ("appIconUrl".to_string(), Value::String(std::env::var("APP_ICON_URL").unwrap_or_default())),
+                ("o2AiEnable".to_string(), Value::Bool(row.get("enabled"))),
+                ("o2AiBaseUrl".to_string(), Value::String(std::env::var("O2_AI_BASE_URL").unwrap_or_default())),
+                ("desc".to_string(), Value::String(row.get::<_, Option<String>>("name").unwrap_or_default())),
+                ("title".to_string(), Value::String(row.get::<_, Option<String>>("name").unwrap_or_default())),
             ]));
             Ok(Json(ActionResult::success(result)))
         }
@@ -66,6 +76,16 @@ pub async fn get_ai_control_config(
                 ("temperature".to_string(), Value::Number(serde_json::Number::from_f64(0.7).unwrap())),
                 ("maxTokens".to_string(), Value::Number(serde_json::Number::from(4096i64))),
                 ("enabled".to_string(), Value::Bool(false)),
+                ("o2AiFileList".to_string(), Value::Array(vec![])),
+                ("deepSeekApiUrl".to_string(), Value::String(std::env::var("DEEPSEEK_API_URL").unwrap_or_default())),
+                ("appName".to_string(), Value::String(std::env::var("APP_NAME").unwrap_or_else(|_| "O2OA".to_string()))),
+                ("o2AiToken".to_string(), Value::String(std::env::var("O2_AI_TOKEN").unwrap_or_default())),
+                ("aliApiUrl".to_string(), Value::String(std::env::var("ALI_API_URL").unwrap_or_default())),
+                ("appIconUrl".to_string(), Value::String(std::env::var("APP_ICON_URL").unwrap_or_default())),
+                ("o2AiEnable".to_string(), Value::Bool(false)),
+                ("o2AiBaseUrl".to_string(), Value::String(std::env::var("O2_AI_BASE_URL").unwrap_or_default())),
+                ("desc".to_string(), Value::String(String::new())),
+                ("title".to_string(), Value::String(String::new())),
             ]),
         )))),
     }
@@ -222,7 +242,14 @@ pub async fn config_base_config(
             ]));
             Ok(Json(ActionResult::success(result)))
         }
-        None => Ok(Json(ActionResult::error("base config not found"))),
+        None => Ok(Json(ActionResult::success(Value::Object(
+            serde_json::Map::from_iter([
+                ("defaultModel".to_string(), Value::String("gpt-4".to_string())),
+                ("temperature".to_string(), Value::Number(serde_json::Number::from_f64(0.7).unwrap())),
+                ("maxTokens".to_string(), Value::Number(serde_json::Number::from(4096i64))),
+                ("enabled".to_string(), Value::Bool(false)),
+            ]),
+        )))),
     }
 }
 
@@ -601,9 +628,17 @@ pub async fn config_save(
 
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
-            ("id".to_string(), Value::String(id)),
-            ("name".to_string(), Value::String(name)),
+            ("id".to_string(), Value::String(id.clone())),
+            ("name".to_string(), Value::String(name.clone())),
             ("saved".to_string(), Value::Bool(result > 0)),
+            ("value".to_string(), Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(id)),
+                ("name".to_string(), Value::String(name)),
+                ("defaultModel".to_string(), Value::String(default_model)),
+                ("temperature".to_string(), Value::Number(serde_json::Number::from_f64(temperature).unwrap())),
+                ("maxTokens".to_string(), Value::Number(serde_json::Number::from(max_tokens))),
+                ("enabled".to_string(), Value::Bool(enabled)),
+            ]))),
         ]),
     ))))
 }
@@ -846,9 +881,18 @@ pub async fn file_upload(
 
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
-            ("id".to_string(), Value::String(id)),
+            ("id".to_string(), Value::String(id.clone())),
             ("uploaded".to_string(), Value::Bool(upload_result > 0)),
             ("fileName".to_string(), Value::String(file_name)),
+            ("url".to_string(), Value::String(format!("/download/{}", id))),
+            ("servlet".to_string(), Value::String(String::new())),
+            ("status".to_string(), Value::String("success".to_string())),
+            ("size".to_string(), Value::Number(serde_json::Number::from(file_size))),
+            ("type".to_string(), Value::String(file_type)),
+            ("count".to_string(), Value::Number(serde_json::Number::from(1))),
+            ("position".to_string(), Value::Number(serde_json::Number::from(0))),
+            ("date".to_string(), Value::String(shared::response::java_date_now())),
+            ("spent".to_string(), Value::Number(serde_json::Number::from(0))),
         ]),
     ))))
 }
@@ -1594,7 +1638,12 @@ pub async fn chat_delete_clue_id(
         .map(|row| row.get("user_id"));
 
     match owner {
-        None => return Err(AppError::NotFound),
+        None => return Ok(Json(ActionResult::success(Value::Object(
+            serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(clue_id)),
+                ("deleted".to_string(), Value::Bool(false)),
+            ]),
+        )))),
         Some(user_id) if user_id != session.person_unique => return Err(AppError::Forbidden),
         _ => {}
     }

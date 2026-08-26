@@ -103,7 +103,11 @@ pub async fn chat_delete(
         .map_err(|_| AppError::Internal)?;
 
     let Some(row) = row else {
-        return Ok(Json(ActionResult::error("clue not found")));
+        return Ok(Json(ActionResult::success(Value::Object(
+            serde_json::Map::from_iter([
+                ("deleted".to_string(), Value::Bool(false)),
+            ]),
+        ))));
     };
 
     let clue_person: String = row.get("person");
