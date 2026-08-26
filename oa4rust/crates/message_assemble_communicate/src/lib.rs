@@ -1,4 +1,4 @@
-use axum::{
+﻿use axum::{
     extract::Extension,
     Json, Router,
     routing::get, routing::post, routing::delete,
@@ -67,12 +67,7 @@ pub async fn receive_list(
         ]))
     }).collect();
 
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
-            ("data".to_string(), Value::Array(data)),
-        ]),
-    ))))
+    let count = data.len() as i64; Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
 }
 
 pub async fn mark_read(
@@ -125,12 +120,7 @@ pub async fn consume_list_consume_count_count(
         ]))
     }).collect();
 
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
-            ("data".to_string(), Value::Array(data)),
-        ]),
-    ))))
+    let count = data.len() as i64; Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
 }
 
 pub async fn consume_list_consume_currentperson_count_count(
@@ -156,12 +146,7 @@ pub async fn consume_list_consume_currentperson_count_count(
         ]))
     }).collect();
 
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
-            ("data".to_string(), Value::Array(data)),
-        ]),
-    ))))
+    let count = data.len() as i64; Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
 }
 
 pub async fn consume_list_consume_person_person_count_count(
@@ -186,12 +171,7 @@ pub async fn consume_list_consume_person_person_count_count(
         ]))
     }).collect();
 
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
-            ("data".to_string(), Value::Array(data)),
-        ]),
-    ))))
+    let count = data.len() as i64; Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
 }
 
 pub async fn consume_type_type(
@@ -216,12 +196,7 @@ pub async fn consume_type_type(
         ]))
     }).collect();
 
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
-            ("data".to_string(), Value::Array(data)),
-        ]),
-    ))))
+    let count = data.len() as i64; Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
 }
 
 pub async fn consume_type_type_mockputtopost(
@@ -332,12 +307,7 @@ pub async fn im_conversation_list_my(
         ]))
     }).collect();
 
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
-            ("data".to_string(), Value::Array(data)),
-        ]),
-    ))))
+    let count = data.len() as i64; Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
 }
 
 pub async fn im_conversation_list_with_person(
@@ -359,12 +329,7 @@ pub async fn im_conversation_list_with_person(
         ]))
     }).collect();
 
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
-            ("data".to_string(), Value::Array(data)),
-        ]),
-    ))))
+    let count = data.len() as i64; Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
 }
 
 pub async fn im_conversation_mockputtopost(
@@ -434,12 +399,7 @@ pub async fn im_conversation_id_group(
         ]))
     }).collect();
 
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
-            ("data".to_string(), Value::Array(data)),
-        ]),
-    ))))
+    let count = data.len() as i64; Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
 }
 
 pub async fn im_manager_config_post(
@@ -844,12 +804,7 @@ pub async fn im_msg_collection_list_page_size_size(
         ]))
     }).collect();
 
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
-            ("data".to_string(), Value::Array(data)),
-        ]),
-    ))))
+    let count = data.len() as i64; Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
 }
 
 pub async fn im_msg_collection_remove(
@@ -945,12 +900,7 @@ pub async fn im_msg_list_object(
         ]))
     }).collect();
 
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
-            ("data".to_string(), Value::Array(data)),
-        ]),
-    ))))
+    let count = data.len() as i64; Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
 }
 
 pub async fn im_msg_list_page_size_size(
@@ -977,14 +927,8 @@ pub async fn im_msg_list_page_size_size(
         ]))
     }).collect();
 
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
-            ("page".to_string(), Value::Number(serde_json::Number::from(page))),
-            ("size".to_string(), Value::Number(serde_json::Number::from(size))),
-            ("data".to_string(), Value::Array(data)),
-        ]),
-    ))))
+    let count = data.len() as i64;
+    Ok(Json(ActionResult::java_success(Value::Array(data), count, size)))
 }
 
 pub async fn im_msg_revoke_id(
@@ -1052,12 +996,7 @@ pub async fn instant_currentperson_consumed(
         ]))
     }).collect();
 
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
-            ("data".to_string(), Value::Array(data)),
-        ]),
-    ))))
+    let count = data.len() as i64; Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
 }
 
 pub async fn instant_currentperson_consumed_all(
@@ -1080,12 +1019,7 @@ pub async fn instant_currentperson_consumed_all(
         ]))
     }).collect();
 
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
-            ("data".to_string(), Value::Array(data)),
-        ]),
-    ))))
+    let count = data.len() as i64; Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
 }
 
 pub async fn instant_currentperson_consumed_mockputtopost(
@@ -1134,12 +1068,7 @@ pub async fn instant_list_currentperson_consumed_count_count_asc(
         ]))
     }).collect();
 
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
-            ("data".to_string(), Value::Array(data)),
-        ]),
-    ))))
+    let count = data.len() as i64; Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
 }
 
 pub async fn instant_list_currentperson_consumed_count_count_desc(
@@ -1163,12 +1092,7 @@ pub async fn instant_list_currentperson_consumed_count_count_desc(
         ]))
     }).collect();
 
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
-            ("data".to_string(), Value::Array(data)),
-        ]),
-    ))))
+    let count = data.len() as i64; Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
 }
 
 pub async fn instant_list_currentperson_count_count_asc(
@@ -1192,12 +1116,7 @@ pub async fn instant_list_currentperson_count_count_asc(
         ]))
     }).collect();
 
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
-            ("data".to_string(), Value::Array(data)),
-        ]),
-    ))))
+    let count = data.len() as i64; Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
 }
 
 pub async fn instant_list_currentperson_count_count_desc(
@@ -1221,12 +1140,7 @@ pub async fn instant_list_currentperson_count_count_desc(
         ]))
     }).collect();
 
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
-            ("data".to_string(), Value::Array(data)),
-        ]),
-    ))))
+    let count = data.len() as i64; Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
 }
 
 pub async fn instant_list_currentperson_noim_count_count_desc(
@@ -1250,12 +1164,7 @@ pub async fn instant_list_currentperson_noim_count_count_desc(
         ]))
     }).collect();
 
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
-            ("data".to_string(), Value::Array(data)),
-        ]),
-    ))))
+    let count = data.len() as i64; Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
 }
 
 pub async fn instant_list_currentperson_not_consumed_count_count_asc(
@@ -1279,12 +1188,7 @@ pub async fn instant_list_currentperson_not_consumed_count_count_asc(
         ]))
     }).collect();
 
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
-            ("data".to_string(), Value::Array(data)),
-        ]),
-    ))))
+    let count = data.len() as i64; Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
 }
 
 pub async fn instant_list_currentperson_not_consumed_count_count_desc(
@@ -1308,12 +1212,7 @@ pub async fn instant_list_currentperson_not_consumed_count_count_desc(
         ]))
     }).collect();
 
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
-            ("data".to_string(), Value::Array(data)),
-        ]),
-    ))))
+    let count = data.len() as i64; Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
 }
 
 pub async fn instant_list_id_next_count(
@@ -1337,12 +1236,7 @@ pub async fn instant_list_id_next_count(
         ]))
     }).collect();
 
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
-            ("data".to_string(), Value::Array(data)),
-        ]),
-    ))))
+    let count = data.len() as i64; Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
 }
 
 pub async fn instant_list_id_prev_count(
@@ -1366,12 +1260,7 @@ pub async fn instant_list_id_prev_count(
         ]))
     }).collect();
 
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
-            ("data".to_string(), Value::Array(data)),
-        ]),
-    ))))
+    let count = data.len() as i64; Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
 }
 
 pub async fn mass_enable_type(
@@ -1417,12 +1306,7 @@ pub async fn mass_list_id_next_count(
         ]))
     }).collect();
 
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
-            ("data".to_string(), Value::Array(data)),
-        ]),
-    ))))
+    let count = data.len() as i64; Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
 }
 
 pub async fn mass_list_id_prev_count(
@@ -1446,12 +1330,7 @@ pub async fn mass_list_id_prev_count(
         ]))
     }).collect();
 
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
-            ("data".to_string(), Value::Array(data)),
-        ]),
-    ))))
+    let count = data.len() as i64; Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
 }
 
 pub async fn mass_id(
@@ -1531,14 +1410,8 @@ pub async fn message_list_paging_page_size_size(
         ]))
     }).collect();
 
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
-            ("page".to_string(), Value::Number(serde_json::Number::from(page))),
-            ("size".to_string(), Value::Number(serde_json::Number::from(size))),
-            ("data".to_string(), Value::Array(data)),
-        ]),
-    ))))
+    let count = data.len() as i64;
+    Ok(Json(ActionResult::java_success(Value::Array(data), count, size)))
 }
 
 // ══════════════════════════════════════════════════════════════════
@@ -1861,12 +1734,7 @@ pub async fn mass_enable_type_get(
         .filter_map(|row| row.get::<_, Option<String>>("type").map(Value::String))
         .collect();
 
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
-            ("data".to_string(), Value::Array(data)),
-        ]),
-    ))))
+    let count = data.len() as i64; Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
 }
 
 /// DELETE /mass/{id} 与 GET /mass/{id}/mockdeletetoget 共用：
