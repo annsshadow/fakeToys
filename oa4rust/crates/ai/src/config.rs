@@ -24,6 +24,16 @@ pub async fn config_get(
             ("config".to_string(), Value::String("base".to_string())),
             ("version".to_string(), Value::String("1.0.0".to_string())),
             ("enabled".to_string(), Value::Bool(false)),
+            ("appIconUrl".to_string(), Value::String(std::env::var("APP_ICON_URL").unwrap_or_default())),
+            ("o2AiToken".to_string(), Value::String(std::env::var("O2_AI_TOKEN").unwrap_or_default())),
+            ("aliApiUrl".to_string(), Value::String(std::env::var("ALI_API_URL").unwrap_or_default())),
+            ("deepSeekApiUrl".to_string(), Value::String(std::env::var("DEEPSEEK_API_URL").unwrap_or_default())),
+            ("o2AiFileList".to_string(), Value::Array(vec![])),
+            ("o2AiBaseUrl".to_string(), Value::String(std::env::var("O2_AI_BASE_URL").unwrap_or_default())),
+            ("appName".to_string(), Value::String(std::env::var("APP_NAME").unwrap_or_else(|_| "O2OA".to_string()))),
+            ("o2AiEnable".to_string(), Value::Bool(false)),
+            ("title".to_string(), Value::String(String::new())),
+            ("desc".to_string(), Value::String(String::new())),
         ]))
     } else {
         let row = &rows[0];
@@ -31,6 +41,16 @@ pub async fn config_get(
             ("config".to_string(), Value::String(row.get("xname"))),
             ("version".to_string(), Value::String("1.0.0".to_string())),
             ("enabled".to_string(), Value::Bool(row.get("xenable"))),
+            ("appIconUrl".to_string(), Value::String(std::env::var("APP_ICON_URL").unwrap_or_default())),
+            ("o2AiToken".to_string(), Value::String(std::env::var("O2_AI_TOKEN").unwrap_or_default())),
+            ("aliApiUrl".to_string(), Value::String(std::env::var("ALI_API_URL").unwrap_or_default())),
+            ("deepSeekApiUrl".to_string(), Value::String(std::env::var("DEEPSEEK_API_URL").unwrap_or_default())),
+            ("o2AiFileList".to_string(), Value::Array(vec![])),
+            ("o2AiBaseUrl".to_string(), Value::String(std::env::var("O2_AI_BASE_URL").unwrap_or_default())),
+            ("appName".to_string(), Value::String(std::env::var("APP_NAME").unwrap_or_else(|_| "O2OA".to_string()))),
+            ("o2AiEnable".to_string(), Value::Bool(row.get("xenable"))),
+            ("title".to_string(), Value::String(row.get::<_, Option<String>>("xname").unwrap_or_default())),
+            ("desc".to_string(), Value::String(String::new())),
         ]))
     };
 

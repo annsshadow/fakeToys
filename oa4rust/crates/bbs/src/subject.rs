@@ -189,7 +189,7 @@ pub async fn view(
             ]));
             Ok(Json(ActionResult::success(data)))
         }
-        None => Ok(Json(ActionResult::error("subject not found"))),
+        None => Ok(Json(ActionResult::success(Value::Null))),
     }
 }
 

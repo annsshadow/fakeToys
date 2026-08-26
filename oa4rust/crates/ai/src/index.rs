@@ -59,12 +59,19 @@ pub async fn index_cms_doc_with_app(
 
 #[axum::debug_handler]
 pub async fn index_delete(
-    _pool: Extension<Pool>,
+    pool: Extension<Pool>,
     Path(flag): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let result = client
+        .execute("DELETE FROM x_ai_index WHERE id = $1", &[&flag])
+        .await
+        .map_err(|_| AppError::Internal)?;
+
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("id".to_string(), Value::String(flag)),
+            ("deleted".to_string(), Value::Bool(result > 0)),
         ]),
     ))))
 }
