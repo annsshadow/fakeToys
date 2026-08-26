@@ -263,12 +263,12 @@ pub async fn statement_list_with_query(
 
     let data: Vec<Value> = rows.iter().map(statement_row_json).collect();
 
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
-            ("data".to_string(), Value::Array(data)),
-        ]),
-    ))))
+    let count = data.len() as i64;
+    Ok(Json(ActionResult::java_success(
+        Value::Array(data),
+        count,
+        0,
+    )))
 }
 
 /// statement 执行核心：加载语句 → sqlparser 校验 → :param 参数化 → 分页执行。
@@ -516,12 +516,12 @@ pub async fn stat_list_with_query(
 
     let data: Vec<Value> = rows.iter().map(stat_row_json).collect();
 
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
-            ("data".to_string(), Value::Array(data)),
-        ]),
-    ))))
+    let count = data.len() as i64;
+    Ok(Json(ActionResult::java_success(
+        Value::Array(data),
+        count,
+        0,
+    )))
 }
 
 pub async fn stat_execute(
