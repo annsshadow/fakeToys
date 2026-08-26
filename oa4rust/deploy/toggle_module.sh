@@ -36,6 +36,7 @@ NGINX_INCLUDE_LINE="        # include /etc/nginx/conf.d/gray-routes.conf;"
 DEFAULT_GRAY_MODULES=(attendance control express meeting processplatform bam)
 
 cmd="${1:-status}"
+if [[ $# -gt 0 ]]; then shift; fi
 
 # ──────────────────────────────────────────────────────────────────────────────
 # 工具函数
@@ -120,8 +121,8 @@ case "$cmd" in
         ;;
 
     set)
-        direction="${2:?需要 rust 或 java}"
-        shift 2
+        direction="${1:?需要 rust 或 java}"
+        shift
         modules=("$@")
         [[ ${#modules[@]} -eq 0 ]] && { echo "请指定至少一个模块"; exit 1; }
 
