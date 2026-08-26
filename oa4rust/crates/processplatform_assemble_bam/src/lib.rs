@@ -108,12 +108,8 @@ pub async fn list_bams(
         })
         .collect();
 
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
-            ("data".to_string(), Value::Array(data)),
-        ]),
-    ))))
+    let count = data.len() as i64;
+    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
 }
 
 /// 鍒犻櫎BAM瀹炰緥
@@ -305,12 +301,8 @@ pub async fn period_list_completed_task_application(
         ]))
     }).collect();
 
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
-            ("data".to_string(), Value::Array(data)),
-        ]),
-    ))))
+    let count = data.len() as i64;
+    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
 }
 
 pub async fn period_list_completed_task_unit(
@@ -340,12 +332,8 @@ pub async fn period_list_completed_task_unit(
         ]))
     }).collect();
 
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
-            ("data".to_string(), Value::Array(data)),
-        ]),
-    ))))
+    let count = data.len() as i64;
+    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
 }
 
 pub async fn period_list_completed_work_application(
@@ -373,12 +361,8 @@ pub async fn period_list_completed_work_application(
         ]))
     }).collect();
 
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
-            ("data".to_string(), Value::Array(data)),
-        ]),
-    ))))
+    let count = data.len() as i64;
+    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
 }
 
 pub async fn period_list_completed_work_unit(
@@ -407,12 +391,8 @@ pub async fn period_list_completed_work_unit(
         ]))
     }).collect();
 
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
-            ("data".to_string(), Value::Array(data)),
-        ]),
-    ))))
+    let count = data.len() as i64;
+    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
 }
 
 // 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
@@ -440,12 +420,8 @@ pub async fn period_list_count_completed_task_application_applicationId_process_
         ]))
     }).collect();
 
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
-            ("data".to_string(), Value::Array(data)),
-        ]),
-    ))))
+    let count = data.len() as i64;
+    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
 }
 
 pub async fn period_list_count_completed_task_application_applicationId_process_processId_activity_activityId_unit_unit_person_person(
@@ -464,12 +440,7 @@ pub async fn period_list_count_completed_task_application_applicationId_process_
 
     let cnt: i64 = if !rows.is_empty() { rows[0].get("cnt") } else { 0 };
 
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("count".to_string(), Value::Number(serde_json::Number::from(cnt))),
-            ("data".to_string(), Value::Array(vec![])),
-        ]),
-    ))))
+    Ok(Json(ActionResult::java_success(Value::Array(vec![]), cnt, 0)))
 }
 
 pub async fn period_list_count_completed_task_application_applicationId_process_processId_unit_unit_person_person_by_activity(
@@ -494,12 +465,8 @@ pub async fn period_list_count_completed_task_application_applicationId_process_
         ]))
     }).collect();
 
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
-            ("data".to_string(), Value::Array(data)),
-        ]),
-    ))))
+    let count = data.len() as i64;
+    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
 }
 
 pub async fn period_list_count_completed_task_application_applicationId_unit_unit_person_person_by_process(
@@ -524,12 +491,8 @@ pub async fn period_list_count_completed_task_application_applicationId_unit_uni
         ]))
     }).collect();
 
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
-            ("data".to_string(), Value::Array(data)),
-        ]),
-    ))))
+    let count = data.len() as i64;
+    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
 }
 
 pub async fn period_list_count_completed_task_unit_unit_person_person_by_application(
@@ -554,12 +517,8 @@ pub async fn period_list_count_completed_task_unit_unit_person_person_by_applica
         ]))
     }).collect();
 
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
-            ("data".to_string(), Value::Array(data)),
-        ]),
-    ))))
+    let count = data.len() as i64;
+    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
 }
 
 // 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
@@ -581,12 +540,7 @@ pub async fn period_list_count_completed_work_application_applicationId_process_
 
     let cnt: i64 = if !rows.is_empty() { rows[0].get("cnt") } else { 0 };
 
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("count".to_string(), Value::Number(serde_json::Number::from(cnt))),
-            ("data".to_string(), Value::Array(vec![])),
-        ]),
-    ))))
+    Ok(Json(ActionResult::java_success(Value::Array(vec![]), cnt, 0)))
 }
 
 pub async fn period_list_count_completed_work_application_applicationId_process_processId_unit_unit_person_person(
@@ -604,12 +558,7 @@ pub async fn period_list_count_completed_work_application_applicationId_process_
 
     let cnt: i64 = if !rows.is_empty() { rows[0].get("cnt") } else { 0 };
 
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("count".to_string(), Value::Number(serde_json::Number::from(cnt))),
-            ("data".to_string(), Value::Array(vec![])),
-        ]),
-    ))))
+    Ok(Json(ActionResult::java_success(Value::Array(vec![]), cnt, 0)))
 }
 
 pub async fn period_list_count_completed_work_application_applicationId_unit_unit_person_person_by_process(
@@ -632,12 +581,8 @@ pub async fn period_list_count_completed_work_application_applicationId_unit_uni
         ]))
     }).collect();
 
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
-            ("data".to_string(), Value::Array(data)),
-        ]),
-    ))))
+    let count = data.len() as i64;
+    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
 }
 
 pub async fn period_list_count_completed_work_unit_unit_person_person_by_application(
@@ -660,12 +605,8 @@ pub async fn period_list_count_completed_work_unit_unit_person_person_by_applica
         ]))
     }).collect();
 
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
-            ("data".to_string(), Value::Array(data)),
-        ]),
-    ))))
+    let count = data.len() as i64;
+    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
 }
 
 // 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
@@ -694,12 +635,8 @@ pub async fn period_list_count_expired_task_application_applicationId_process_pr
         ]))
     }).collect();
 
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
-            ("data".to_string(), Value::Array(data)),
-        ]),
-    ))))
+    let count = data.len() as i64;
+    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
 }
 
 pub async fn period_list_count_expired_task_application_applicationId_process_processId_activity_activityId_unit_unit_person_person(
@@ -718,12 +655,7 @@ pub async fn period_list_count_expired_task_application_applicationId_process_pr
 
     let cnt: i64 = if !rows.is_empty() { rows[0].get("cnt") } else { 0 };
 
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("count".to_string(), Value::Number(serde_json::Number::from(cnt))),
-            ("data".to_string(), Value::Array(vec![])),
-        ]),
-    ))))
+    Ok(Json(ActionResult::java_success(Value::Array(vec![]), cnt, 0)))
 }
 
 pub async fn period_list_count_expired_task_application_applicationId_process_processId_unit_unit_person_person_by_activity(
@@ -748,12 +680,8 @@ pub async fn period_list_count_expired_task_application_applicationId_process_pr
         ]))
     }).collect();
 
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
-            ("data".to_string(), Value::Array(data)),
-        ]),
-    ))))
+    let count = data.len() as i64;
+    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
 }
 
 pub async fn period_list_count_expired_task_application_applicationId_unit_unit_person_person_by_process(
@@ -778,12 +706,8 @@ pub async fn period_list_count_expired_task_application_applicationId_unit_unit_
         ]))
     }).collect();
 
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
-            ("data".to_string(), Value::Array(data)),
-        ]),
-    ))))
+    let count = data.len() as i64;
+    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
 }
 
 pub async fn period_list_count_expired_task_unit_unit_person_person_by_application(
@@ -808,12 +732,8 @@ pub async fn period_list_count_expired_task_unit_unit_person_person_by_applicati
         ]))
     }).collect();
 
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
-            ("data".to_string(), Value::Array(data)),
-        ]),
-    ))))
+    let count = data.len() as i64;
+    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
 }
 
 // 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
@@ -835,12 +755,7 @@ pub async fn period_list_count_expired_work_application_applicationId_process_pr
 
     let cnt: i64 = if !rows.is_empty() { rows[0].get("cnt") } else { 0 };
 
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("count".to_string(), Value::Number(serde_json::Number::from(cnt))),
-            ("data".to_string(), Value::Array(vec![])),
-        ]),
-    ))))
+    Ok(Json(ActionResult::java_success(Value::Array(vec![]), cnt, 0)))
 }
 
 pub async fn period_list_count_expired_work_application_applicationId_process_processId_unit_unit_person_person(
@@ -858,12 +773,7 @@ pub async fn period_list_count_expired_work_application_applicationId_process_pr
 
     let cnt: i64 = if !rows.is_empty() { rows[0].get("cnt") } else { 0 };
 
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("count".to_string(), Value::Number(serde_json::Number::from(cnt))),
-            ("data".to_string(), Value::Array(vec![])),
-        ]),
-    ))))
+    Ok(Json(ActionResult::java_success(Value::Array(vec![]), cnt, 0)))
 }
 
 pub async fn period_list_count_expired_work_application_applicationId_unit_unit_person_person_by_process(
@@ -886,12 +796,8 @@ pub async fn period_list_count_expired_work_application_applicationId_unit_unit_
         ]))
     }).collect();
 
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
-            ("data".to_string(), Value::Array(data)),
-        ]),
-    ))))
+    let count = data.len() as i64;
+    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
 }
 
 pub async fn period_list_count_expired_work_unit_unit_person_person_by_application(
@@ -914,12 +820,8 @@ pub async fn period_list_count_expired_work_unit_unit_person_person_by_applicati
         ]))
     }).collect();
 
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
-            ("data".to_string(), Value::Array(data)),
-        ]),
-    ))))
+    let count = data.len() as i64;
+    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
 }
 
 // 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
@@ -948,12 +850,8 @@ pub async fn period_list_count_start_task_application_applicationId_process_proc
         ]))
     }).collect();
 
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
-            ("data".to_string(), Value::Array(data)),
-        ]),
-    ))))
+    let count = data.len() as i64;
+    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
 }
 
 pub async fn period_list_count_start_task_application_applicationId_process_processId_activity_activityId_unit_unit_person_person(
@@ -972,12 +870,7 @@ pub async fn period_list_count_start_task_application_applicationId_process_proc
 
     let cnt: i64 = if !rows.is_empty() { rows[0].get("cnt") } else { 0 };
 
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("count".to_string(), Value::Number(serde_json::Number::from(cnt))),
-            ("data".to_string(), Value::Array(vec![])),
-        ]),
-    ))))
+    Ok(Json(ActionResult::java_success(Value::Array(vec![]), cnt, 0)))
 }
 
 pub async fn period_list_count_start_task_application_applicationId_process_processId_unit_unit_person_person_by_activity(
@@ -1002,12 +895,8 @@ pub async fn period_list_count_start_task_application_applicationId_process_proc
         ]))
     }).collect();
 
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
-            ("data".to_string(), Value::Array(data)),
-        ]),
-    ))))
+    let count = data.len() as i64;
+    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
 }
 
 pub async fn period_list_count_start_task_application_applicationId_unit_unit_person_person_by_process(
@@ -1032,12 +921,8 @@ pub async fn period_list_count_start_task_application_applicationId_unit_unit_pe
         ]))
     }).collect();
 
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
-            ("data".to_string(), Value::Array(data)),
-        ]),
-    ))))
+    let count = data.len() as i64;
+    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
 }
 
 pub async fn period_list_count_start_task_unit_unit_person_person_by_application(
@@ -1062,12 +947,8 @@ pub async fn period_list_count_start_task_unit_unit_person_person_by_application
         ]))
     }).collect();
 
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
-            ("data".to_string(), Value::Array(data)),
-        ]),
-    ))))
+    let count = data.len() as i64;
+    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
 }
 
 // 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
@@ -1089,12 +970,7 @@ pub async fn period_list_count_start_work_application_applicationId_process_proc
 
     let cnt: i64 = if !rows.is_empty() { rows[0].get("cnt") } else { 0 };
 
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("count".to_string(), Value::Number(serde_json::Number::from(cnt))),
-            ("data".to_string(), Value::Array(vec![])),
-        ]),
-    ))))
+    Ok(Json(ActionResult::java_success(Value::Array(vec![]), cnt, 0)))
 }
 
 pub async fn period_list_count_start_work_application_applicationId_process_processId_unit_unit_person_person(
@@ -1112,12 +988,7 @@ pub async fn period_list_count_start_work_application_applicationId_process_proc
 
     let cnt: i64 = if !rows.is_empty() { rows[0].get("cnt") } else { 0 };
 
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("count".to_string(), Value::Number(serde_json::Number::from(cnt))),
-            ("data".to_string(), Value::Array(vec![])),
-        ]),
-    ))))
+    Ok(Json(ActionResult::java_success(Value::Array(vec![]), cnt, 0)))
 }
 
 pub async fn period_list_count_start_work_application_applicationId_unit_unit_person_person_by_process(
@@ -1140,12 +1011,8 @@ pub async fn period_list_count_start_work_application_applicationId_unit_unit_pe
         ]))
     }).collect();
 
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
-            ("data".to_string(), Value::Array(data)),
-        ]),
-    ))))
+    let count = data.len() as i64;
+    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
 }
 
 pub async fn period_list_count_start_work_unit_unit_person_person_by_application(
@@ -1168,12 +1035,8 @@ pub async fn period_list_count_start_work_unit_unit_person_person_by_application
         ]))
     }).collect();
 
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
-            ("data".to_string(), Value::Array(data)),
-        ]),
-    ))))
+    let count = data.len() as i64;
+    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
 }
 
 // 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
@@ -1207,12 +1070,8 @@ pub async fn period_list_expired_task_application(
         ]))
     }).collect();
 
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
-            ("data".to_string(), Value::Array(data)),
-        ]),
-    ))))
+    let count = data.len() as i64;
+    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
 }
 
 pub async fn period_list_expired_task_unit(
@@ -1242,12 +1101,8 @@ pub async fn period_list_expired_task_unit(
         ]))
     }).collect();
 
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
-            ("data".to_string(), Value::Array(data)),
-        ]),
-    ))))
+    let count = data.len() as i64;
+    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
 }
 
 pub async fn period_list_expired_work_application(
@@ -1275,12 +1130,8 @@ pub async fn period_list_expired_work_application(
         ]))
     }).collect();
 
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
-            ("data".to_string(), Value::Array(data)),
-        ]),
-    ))))
+    let count = data.len() as i64;
+    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
 }
 
 pub async fn period_list_expired_work_unit(
@@ -1309,12 +1160,8 @@ pub async fn period_list_expired_work_unit(
         ]))
     }).collect();
 
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
-            ("data".to_string(), Value::Array(data)),
-        ]),
-    ))))
+    let count = data.len() as i64;
+    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
 }
 
 // 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
@@ -1348,12 +1195,8 @@ pub async fn period_list_start_task_application(
         ]))
     }).collect();
 
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
-            ("data".to_string(), Value::Array(data)),
-        ]),
-    ))))
+    let count = data.len() as i64;
+    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
 }
 
 pub async fn period_list_start_task_unit(
@@ -1383,12 +1226,8 @@ pub async fn period_list_start_task_unit(
         ]))
     }).collect();
 
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
-            ("data".to_string(), Value::Array(data)),
-        ]),
-    ))))
+    let count = data.len() as i64;
+    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
 }
 
 pub async fn period_list_start_work_application(
@@ -1416,12 +1255,8 @@ pub async fn period_list_start_work_application(
         ]))
     }).collect();
 
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
-            ("data".to_string(), Value::Array(data)),
-        ]),
-    ))))
+    let count = data.len() as i64;
+    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
 }
 
 pub async fn period_list_start_work_unit(
@@ -1450,12 +1285,8 @@ pub async fn period_list_start_work_unit(
         ]))
     }).collect();
 
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
-            ("data".to_string(), Value::Array(data)),
-        ]),
-    ))))
+    let count = data.len() as i64;
+    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
 }
 
 // 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
@@ -1492,12 +1323,8 @@ pub async fn state_applicationtstubs_trigger(
         ]))
     }).collect();
 
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
-            ("data".to_string(), Value::Array(data)),
-        ]),
-    ))))
+    let count = data.len() as i64;
+    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
 }
 
 pub async fn state_category(
@@ -1533,12 +1360,8 @@ pub async fn state_category(
         ]))
     }).collect();
 
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
-            ("data".to_string(), Value::Array(data)),
-        ]),
-    ))))
+    let count = data.len() as i64;
+    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
 }
 
 pub async fn state_category_trigger(
@@ -1869,12 +1692,8 @@ async fn period_count_query_shaped(
             if java_shape {
                 return Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)));
             }
-            Ok(Json(ActionResult::success(Value::Object(
-                serde_json::Map::from_iter([
-                    ("count".to_string(), Value::Number(serde_json::Number::from(count))),
-                    ("data".to_string(), Value::Array(data)),
-                ]),
-            ))))
+            let count2 = count;
+            Ok(Json(ActionResult::java_success(Value::Array(data), count2, 0)))
         }
         None => {
             let total: i64 = rows.first().map(|r| r.get("cnt")).unwrap_or(0);
