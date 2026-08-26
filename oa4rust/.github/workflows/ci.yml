@@ -169,11 +169,41 @@ jobs:
             echo "::warning::o2server not ready within timeout; behavior comparison will SKIP Java side"
           fi
 
+      # ── U1: 应用 Rust 侧共享种子 ───────────────────────────────────────────
+      # 种子覆盖组织域（unit/person/group/role/identity）与内容域（CMS/BBS/Meeting），
+      # 使字面模板 URL 在 Rust 侧命中已建资源。fail-fast：种子失败即终止 job。
+      # 注意：CI 不执行 Java 侧 REST 种子（编排成本高且不稳定），
+      # FAIL 基线预计高于本地双栈全播种环境，属预期偏差。
+      - name: Apply behavior-compare seed fixtures
+        run: |
+          psql "postgres://o2server:password@localhost:5432/oa4rust" \
+            -f oa4rust/tests/behavior_comparison/seeds/seed_fixtures.sql
+          echo "Seed fixtures applied successfully"
+
       - name: Run behavior comparison (Rust vs Java)
         run: cargo test --test behavior_compare -- --nocapture
         env:
           BEHAVIOR_COMPARE: "1"
           JAVA_SERVICE_URL: http://localhost:18080
+
+      # ── U1: 报告产物上传 ─────────────────────────────────────────────────
+      # behavior-report.md 在测试步骤中自动生成（target/debug/），
+      # 上传为 GitHub Actions artifact，FAIL 数变化可在 PR 上直接观察。
+      - name: Upload behavior-compare report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: behavior-report-${{ github.run_id }}
+          path: target/debug/behavior-report.md
+          retention-days: 30
+
+      # ── U1: 基线注记 ─────────────────────────────────────────────────────
+      # CI 仅执行 Rust 侧种子，本地双栈全播种环境更完整，
+      # FAIL 数差异属预期，在 PR 描述中预防性说明。
+      - name: Print baseline note
+        if: always()
+        run: |
+          echo "::notice::CI baseline: Rust-side seeds applied only. Full local run includes Java-side REST seeds (xadmin login + category/forum creation). FAIL count in CI will be higher than local full-seed baseline (1212 PASS / 836 FAIL / 1996 SKIP)."
 
       - name: Teardown
         if: always()
