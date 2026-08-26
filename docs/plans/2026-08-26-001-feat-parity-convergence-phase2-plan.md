@@ -1,7 +1,7 @@
 ---
 title: "feat: Parity 收敛第二阶段——CI 真实化与字段映射层"
 type: feat
-status: active
+status: completed
 date: 2026-08-26
 ---
 
