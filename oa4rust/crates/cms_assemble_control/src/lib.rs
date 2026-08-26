@@ -5219,12 +5219,8 @@ pub async fn document_search(
         })
         .collect();
 
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
-            ("data".to_string(), Value::Array(data)),
-        ]),
-    ))))
+    let count = data.len() as i64;
+    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
 }
 
 
@@ -7393,12 +7389,8 @@ pub async fn review_v2_search_u3(
         .await
         .map_err(|_| AppError::Internal)?;
     let data: Vec<Value> = rows.iter().map(row_to_json).collect();
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
-            ("data".to_string(), Value::Array(data)),
-        ]),
-    ))))
+    let count = data.len() as i64;
+    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
 }
 
 // ── document 管理面 ─────────────────────────────────────────────────────────

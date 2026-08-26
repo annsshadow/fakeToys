@@ -14321,12 +14321,8 @@ pub async fn snap_u2_list_next_count(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let rows = u2_snap_page(&pool, &id, count, false).await?;
     let data: Vec<Value> = rows.iter().map(u2_snap_json).collect();
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
-            ("data".to_string(), Value::Array(data)),
-        ]),
-    ))))
+    let count = data.len() as i64;
+    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
 }
 
 pub async fn snap_u2_list_prev_count(
@@ -14336,12 +14332,8 @@ pub async fn snap_u2_list_prev_count(
     let mut rows = u2_snap_page(&pool, &id, count, true).await?;
     rows.reverse();
     let data: Vec<Value> = rows.iter().map(u2_snap_json).collect();
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
-            ("data".to_string(), Value::Array(data)),
-        ]),
-    ))))
+    let count = data.len() as i64;
+    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
 }
 
 pub async fn snap_u2_list_next_count_manage(
@@ -14352,12 +14344,8 @@ pub async fn snap_u2_list_next_count_manage(
     u2_require_admin(&pool, &session).await?;
     let rows = u2_snap_page_all(&pool, &id, count, false).await?;
     let data: Vec<Value> = rows.iter().map(u2_snap_json_full).collect();
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
-            ("data".to_string(), Value::Array(data)),
-        ]),
-    ))))
+    let count = data.len() as i64;
+    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
 }
 
 pub async fn snap_u2_list_prev_count_manage(
@@ -14369,12 +14357,8 @@ pub async fn snap_u2_list_prev_count_manage(
     let mut rows = u2_snap_page_all(&pool, &id, count, true).await?;
     rows.reverse();
     let data: Vec<Value> = rows.iter().map(u2_snap_json_full).collect();
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
-            ("data".to_string(), Value::Array(data)),
-        ]),
-    ))))
+    let count = data.len() as i64;
+    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
 }
 
 fn u2_snap_json_full(row: &deadpool_postgres::tokio_postgres::Row) -> Value {
@@ -14401,12 +14385,8 @@ async fn u2_snap_by_type(
         .await
         .map_err(|_| AppError::Internal)?;
     let data: Vec<Value> = rows.iter().map(u2_snap_json).collect();
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
-            ("data".to_string(), Value::Array(data)),
-        ]),
-    ))))
+    let count = data.len() as i64;
+    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
 }
 
 pub async fn snap_u2_work_type_snap(
@@ -14501,12 +14481,8 @@ async fn u2_att_list_shaped(
         let count = data.len() as i64;
         return Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)));
     }
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
-            ("data".to_string(), Value::Array(data)),
-        ]),
-    ))))
+    let count = data.len() as i64;
+    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
 }
 
 pub async fn attachment_u2_list_job_job(
@@ -16067,12 +16043,8 @@ async fn u2_snap_manage_cursor(
         .await
         .map_err(|_| AppError::Internal)?;
     let data: Vec<Value> = rows.iter().map(u2_snap_json).collect();
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
-            ("data".to_string(), Value::Array(data)),
-        ]),
-    ))))
+    let count = data.len() as i64;
+    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
 }
 
 pub async fn snap_u2_manage_next_filter(
