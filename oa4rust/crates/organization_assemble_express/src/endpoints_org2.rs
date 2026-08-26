@@ -11,7 +11,7 @@ use deadpool_postgres::Pool;
 use serde_json::Value;
 use shared::{error::AppError, response::ActionResult};
 
-use crate::endpoints::{capped, count_data, normalize_flags, ok_java_list, ok_json, row_to_map, string_list};
+use crate::endpoints::{capped, normalize_flags, ok_java_list, row_to_map, string_list};
 
 const IDENTITY_COLS: &str = "id, name, unit_id, person_id";
 
@@ -24,9 +24,11 @@ fn finish_identity_rows(
         ok_java_list(data.len(), data)
     } else {
         let list: Vec<String> = rows.iter().map(|r| r.get(0)).collect();
-        Ok(AxumJson(ActionResult::success(named_list_response_key(
-            &list,
-        ))))
+        Ok(AxumJson(ActionResult::java_success(
+            named_list_response_key(&list),
+            list.len() as i64,
+            0,
+        )))
     }
 }
 
@@ -45,11 +47,7 @@ async fn identities_of_persons_full(
     let flags = normalize_flags(string_list(&body, "personList"));
     capped(&flags)?;
     if flags.is_empty() {
-        return if objects {
-            ok_java_list(0, vec![])
-        } else {
-            ok_json(count_data(0, vec![]))
-        };
+        return ok_java_list(0, vec![]);
     }
     let sql = format!(
         "SELECT DISTINCT i.id, i.name, i.unit_id, i.person_id FROM x_org_identity i \
@@ -100,11 +98,7 @@ async fn unit_person_identities(
     capped(&persons)?;
     capped(&units)?;
     if persons.is_empty() || units.is_empty() {
-        return if objects {
-            ok_java_list(0, vec![])
-        } else {
-            ok_json(count_data(0, vec![]))
-        };
+        return ok_java_list(0, vec![]);
     }
     let sql = if objects {
         "SELECT DISTINCT i.id, i.name, i.unit_id, i.person_id FROM x_org_identity i \
@@ -152,11 +146,7 @@ async fn identities_in_groups(
     let flags = normalize_flags(string_list(&body, "groupList"));
     capped(&flags)?;
     if flags.is_empty() {
-        return if objects {
-            ok_java_list(0, vec![])
-        } else {
-            ok_json(count_data(0, vec![]))
-        };
+        return ok_java_list(0, vec![]);
     }
     let sql = if objects { SQL_OBJ } else { SQL_IDS };
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
@@ -188,11 +178,7 @@ async fn major_identities_of_persons(
     let flags = normalize_flags(string_list(&body, "personList"));
     capped(&flags)?;
     if flags.is_empty() {
-        return if objects {
-            ok_java_list(0, vec![])
-        } else {
-            ok_json(count_data(0, vec![]))
-        };
+        return ok_java_list(0, vec![]);
     }
     let sql = if objects {
         format!(

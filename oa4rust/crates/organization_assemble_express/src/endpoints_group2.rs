@@ -11,7 +11,7 @@ use deadpool_postgres::Pool;
 use serde_json::Value;
 use shared::{error::AppError, response::ActionResult};
 
-use crate::endpoints::{capped, count_data, normalize_flags, ok_json, row_to_map, string_field, string_list, wrap_bool, PICK_ANY};
+use crate::endpoints::{capped, normalize_flags, ok_java_list, row_to_map, string_field, string_list, wrap_bool, PICK_ANY};
 
 const GROUP_COLS: &str = "g.id, g.name, g.parent_id, \"type\", g.unit_id";
 
@@ -21,15 +21,18 @@ fn finish_group_rows(
 ) -> Result<AxumJson<ActionResult<Value>>, AppError> {
     if objects {
         let data: Vec<Value> = rows.iter().map(row_to_map).collect();
-        ok_json(count_data(data.len(), data))
+        ok_java_list(data.len(), data)
     } else {
         let list: Vec<String> = rows.iter().map(|r| r.get(0)).collect();
-        Ok(AxumJson(ActionResult::success(Value::Object(
-            serde_json::Map::from_iter([(
+        let count = list.len() as i64;
+        Ok(AxumJson(ActionResult::java_success(
+            Value::Object(serde_json::Map::from_iter([(
                 "groupList".to_string(),
                 Value::Array(list.into_iter().map(Value::String).collect()),
-            )]),
-        ))))
+            )])),
+            count,
+            0,
+        )))
     }
 }
 
@@ -70,7 +73,7 @@ async fn group_tree_scope(
     let flags = normalize_flags(string_list(&body, "groupList"));
     capped(&flags)?;
     if flags.is_empty() {
-        return ok_json(count_data(0, vec![]));
+        return ok_java_list(0, vec![]);
     }
     let scope_sql = match (direction, nested) {
         ("sub", false) => {
@@ -151,7 +154,7 @@ pub async fn group_list_person_object(
     let flags = normalize_flags(string_list(&body, "groupList"));
     capped(&flags)?;
     if flags.is_empty() {
-        return ok_json(count_data(0, vec![]));
+        return ok_java_list(0, vec![]);
     }
     const SQL: &str = "SELECT DISTINCT p.id, p.name, p.unit_id FROM x_org_person p \
          JOIN x_org_group_member m ON m.person_id = p.id \
@@ -160,7 +163,7 @@ pub async fn group_list_person_object(
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let rows = client.query(SQL, &[&flags]).await.map_err(|_| AppError::Internal)?;
     let data: Vec<Value> = rows.iter().map(row_to_map).collect();
-    ok_json(count_data(data.len(), data))
+    ok_java_list(data.len(), data)
 }
 
 /// POST /jaxrs/group/list/identity (Java ActionListWithIdentity)：成员(person)→身份解析。
@@ -191,12 +194,12 @@ pub async fn group_list_identity_object(
     let flags = normalize_flags(string_list(&body, "groupList"));
     capped(&flags)?;
     if flags.is_empty() {
-        return ok_json(count_data(0, vec![]));
+        return ok_java_list(0, vec![]);
     }
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let rows = client.query(SQL, &[&flags]).await.map_err(|_| AppError::Internal)?;
     let data: Vec<Value> = rows.iter().map(row_to_map).collect();
-    ok_json(count_data(data.len(), data))
+    ok_java_list(data.len(), data)
 }
 
 async fn named_list_response_group(
@@ -206,19 +209,24 @@ async fn named_list_response_group(
     flags: Vec<String>,
 ) -> Result<AxumJson<ActionResult<Value>>, AppError> {
     if flags.is_empty() {
-        return Ok(AxumJson(ActionResult::success(Value::Object(
-            serde_json::Map::from_iter([(key.to_string(), Value::Array(vec![]))]),
-        ))));
+        return Ok(AxumJson(ActionResult::java_success(
+            Value::Object(serde_json::Map::from_iter([(key.to_string(), Value::Array(vec![]))])),
+            0,
+            0,
+        )));
     }
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let rows = client.query(sql, &[&flags]).await.map_err(|_| AppError::Internal)?;
     let list: Vec<String> = rows.iter().map(|r| r.get(0)).collect();
-    Ok(AxumJson(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([(
+    let count = list.len() as i64;
+    Ok(AxumJson(ActionResult::java_success(
+        Value::Object(serde_json::Map::from_iter([(
             key.to_string(),
             Value::Array(list.into_iter().map(Value::String).collect()),
-        )]),
-    ))))
+        )])),
+        count,
+        0,
+    )))
 }
 
 /// POST /jaxrs/group/list/group/tree (Java ActionListWithGroupTree，Wi{groupList})：
@@ -247,7 +255,7 @@ pub async fn group_list_group_tree(
     let flags = normalize_flags(string_list(&body, "groupList"));
     capped(&flags)?;
     if flags.is_empty() {
-        return ok_json(count_data(0, vec![]));
+        return ok_java_list(0, vec![]);
     }
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let rows = client.query(SQL, &[&flags]).await.map_err(|_| AppError::Internal)?;
@@ -344,5 +352,5 @@ pub async fn group_list_group_tree(
             roots.push(assemble(id, &base, &children_map, &mut seen));
         }
     }
-    ok_json(count_data(roots.len(), roots))
+    ok_java_list(roots.len(), roots)
 }

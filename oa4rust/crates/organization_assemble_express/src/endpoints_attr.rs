@@ -13,7 +13,7 @@ use deadpool_postgres::Pool;
 use serde_json::Value;
 use shared::{error::AppError, response::ActionResult};
 
-use crate::endpoints::{capped, normalize_flags, ok_java_list, ok_json, string_field, string_list};
+use crate::endpoints::{capped, normalize_flags, ok_java_list, string_field, string_list};
 
 // ── personattribute ───────────────────────────────────────────────────────────
 
@@ -39,9 +39,14 @@ pub async fn personattr_list_attribute_person_name(
     let (Some(person), Some(name)) =
         (string_field(&body, "person"), string_field(&body, "name"))
     else {
-        return Ok(AxumJson(ActionResult::success(Value::Object(
-            serde_json::Map::from_iter([("attributeList".to_string(), Value::Array(vec![]))]),
-        ))));
+        return Ok(AxumJson(ActionResult::java_success(
+            Value::Object(serde_json::Map::from_iter([(
+                "attributeList".to_string(),
+                Value::Array(vec![]),
+            )])),
+            0,
+            0,
+        )));
     };
     const SQL: &str = "SELECT a.attribute_value FROM x_org_person_attribute a \
          JOIN x_org_person p ON p.id = a.person_id AND p.deleted_at IS NULL \
@@ -53,12 +58,15 @@ pub async fn personattr_list_attribute_person_name(
         .await
         .map_err(|_| AppError::Internal)?;
     let values: Vec<String> = rows.iter().map(|r| r.get::<_, Option<String>>(0).unwrap_or_default()).collect();
-    Ok(AxumJson(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([(
+    let count = values.len() as i64;
+    Ok(AxumJson(ActionResult::java_success(
+        Value::Object(serde_json::Map::from_iter([(
             "attributeList".to_string(),
             Value::Array(values.into_iter().map(Value::String).collect()),
-        )]),
-    ))))
+        )])),
+        count,
+        0,
+    )))
 }
 
 /// POST /jaxrs/personattribute/list/person/object (Java ActionListWithPersonObject)：
@@ -203,19 +211,24 @@ async fn named_keys(
     let flags = normalize_flags(string_list(&body, list_field));
     capped(&flags)?;
     if flags.is_empty() {
-        return Ok(AxumJson(ActionResult::success(Value::Object(
-            serde_json::Map::from_iter([(key.to_string(), Value::Array(vec![]))]),
-        ))));
+        return Ok(AxumJson(ActionResult::java_success(
+            Value::Object(serde_json::Map::from_iter([(key.to_string(), Value::Array(vec![]))])),
+            0,
+            0,
+        )));
     }
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let rows = client.query(sql, &[&flags]).await.map_err(|_| AppError::Internal)?;
     let list: Vec<String> = rows.iter().map(|r| r.get(0)).collect();
-    Ok(AxumJson(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([(
+    let count = list.len() as i64;
+    Ok(AxumJson(ActionResult::java_success(
+        Value::Object(serde_json::Map::from_iter([(
             key.to_string(),
             Value::Array(list.into_iter().map(Value::String).collect()),
-        )]),
-    ))))
+        )])),
+        count,
+        0,
+    )))
 }
 
 // ── unitattribute（镜像 personattribute，owner 为 unit） ──────────────────────
@@ -239,9 +252,14 @@ pub async fn unitattr_list_attribute_unit_name(
 ) -> Result<AxumJson<ActionResult<Value>>, AppError> {
     let (Some(unit), Some(name)) = (string_field(&body, "unit"), string_field(&body, "name"))
     else {
-        return Ok(AxumJson(ActionResult::success(Value::Object(
-            serde_json::Map::from_iter([("attributeList".to_string(), Value::Array(vec![]))]),
-        ))));
+        return Ok(AxumJson(ActionResult::java_success(
+            Value::Object(serde_json::Map::from_iter([(
+                "attributeList".to_string(),
+                Value::Array(vec![]),
+            )])),
+            0,
+            0,
+        )));
     };
     const SQL: &str = "SELECT a.attribute_value FROM x_org_unit_attribute a \
          JOIN x_org_unit u ON u.id = a.unit_id AND u.deleted_at IS NULL \
@@ -254,12 +272,15 @@ pub async fn unitattr_list_attribute_unit_name(
         .map_err(|_| AppError::Internal)?;
     let values: Vec<String> =
         rows.iter().map(|r| r.get::<_, Option<String>>(0).unwrap_or_default()).collect();
-    Ok(AxumJson(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([(
+    let count = values.len() as i64;
+    Ok(AxumJson(ActionResult::java_success(
+        Value::Object(serde_json::Map::from_iter([(
             "attributeList".to_string(),
             Value::Array(values.into_iter().map(Value::String).collect()),
-        )]),
-    ))))
+        )])),
+        count,
+        0,
+    )))
 }
 
 /// POST /jaxrs/unitattribute/list/unit/object (Java ActionListWithUnitObject)。
@@ -402,12 +423,14 @@ pub async fn distinguishedname_list(
     let flags = normalize_flags(string_list(&body, "distinguishedNameList"));
     capped(&flags)?;
     if flags.is_empty() {
-        return Ok(AxumJson(ActionResult::success(Value::Object(
-            serde_json::Map::from_iter([(
+        return Ok(AxumJson(ActionResult::java_success(
+            Value::Object(serde_json::Map::from_iter([(
                 "distinguishedNameList".to_string(),
                 Value::Array(vec![]),
-            )]),
-        ))));
+            )])),
+            0,
+            0,
+        )));
     }
     // 占位符均为静态结构，无用户输入拼接；$1 为归一化后的 flag 数组
     let pick = "(id = ANY($1) OR name = ANY($1))";
@@ -424,10 +447,13 @@ pub async fn distinguishedname_list(
     use std::collections::HashSet;
     let found: HashSet<String> = rows.iter().map(|r| r.get::<_, String>(0)).collect();
     let valid: Vec<String> = flags.into_iter().filter(|f| found.contains(f)).collect();
-    Ok(AxumJson(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([(
+    let count = valid.len() as i64;
+    Ok(AxumJson(ActionResult::java_success(
+        Value::Object(serde_json::Map::from_iter([(
             "distinguishedNameList".to_string(),
             Value::Array(valid.into_iter().map(Value::String).collect()),
-        )]),
-    ))))
+        )])),
+        count,
+        0,
+    )))
 }

@@ -10,25 +10,7 @@ use deadpool_postgres::Pool;
 use serde_json::Value;
 use shared::{error::AppError, response::ActionResult};
 
-use crate::endpoints::{capped, count_data, normalize_flags, ok_java_list, ok_json, row_to_map, string_field, string_list, PICK_ANY};
-
-fn finish_rows(
-    rows: Vec<deadpool_postgres::tokio_postgres::Row>,
-    objects: bool,
-) -> Result<AxumJson<ActionResult<Value>>, AppError> {
-    if objects {
-        let data: Vec<Value> = rows.iter().map(row_to_map).collect();
-        ok_json(count_data(data.len(), data))
-    } else {
-        let list: Vec<String> = rows.iter().map(|r| r.get(0)).collect();
-        Ok(AxumJson(ActionResult::success(Value::Object(
-            serde_json::Map::from_iter([(
-                "roleList".to_string(),
-                Value::Array(list.into_iter().map(Value::String).collect()),
-            )]),
-        ))))
-    }
-}
+use crate::endpoints::{capped, named_list, normalize_flags, ok_java_list, ok_json, row_to_map, string_field, string_list, PICK_ANY};
 
 /// POST /jaxrs/role/list/object (Java ActionListObject)：批量角色对象。
 pub async fn role_list_object(
@@ -38,14 +20,14 @@ pub async fn role_list_object(
     let flags = normalize_flags(string_list(&body, "roleList"));
     capped(&flags)?;
     if flags.is_empty() {
-        return ok_json(count_data(0, vec![]));
+        return ok_java_list(0, vec![]);
     }
     const SQL: &str = "SELECT id, name, description FROM x_org_role \
          WHERE deleted_at IS NULL AND (id = ANY($1) OR name = ANY($1)) ORDER BY id";
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let rows = client.query(SQL, &[&flags]).await.map_err(|_| AppError::Internal)?;
     let data: Vec<Value> = rows.iter().map(row_to_map).collect();
-    ok_json(count_data(data.len(), data))
+    ok_java_list(data.len(), data)
 }
 
 /// POST /jaxrs/role/list/person/object (Java ActionListWithPersonObject)。
@@ -56,7 +38,7 @@ pub async fn role_list_person_object(
     let flags = normalize_flags(string_list(&body, "personList"));
     capped(&flags)?;
     if flags.is_empty() {
-        return ok_json(count_data(0, vec![]));
+        return ok_java_list(0, vec![]);
     }
     const SQL: &str = "SELECT DISTINCT p.id, p.name, p.unit_id FROM x_org_person p \
          JOIN x_org_group_member m ON m.person_id = p.id \
@@ -66,7 +48,7 @@ pub async fn role_list_person_object(
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let rows = client.query(SQL, &[&flags]).await.map_err(|_| AppError::Internal)?;
     let data: Vec<Value> = rows.iter().map(row_to_map).collect();
-    ok_json(count_data(data.len(), data))
+    ok_java_list(data.len(), data)
 }
 
 // ── unitduty ──────────────────────────────────────────────────────────────────
@@ -80,12 +62,11 @@ fn finish_duty_rows(
         ok_java_list(data.len(), data)
     } else {
         let list: Vec<String> = rows.iter().map(|r| r.get(0)).collect();
-        Ok(AxumJson(ActionResult::success(Value::Object(
-            serde_json::Map::from_iter([(
-                "identityList".to_string(),
-                Value::Array(list.into_iter().map(Value::String).collect()),
-            )]),
-        ))))
+        Ok(AxumJson(ActionResult::java_success(
+            named_list("identityList", &list),
+            list.len() as i64,
+            0,
+        )))
     }
 }
 
@@ -108,11 +89,7 @@ async fn duty_identities_by_unit_name(
     capped(&names)?;
     capped(&units)?;
     if names.is_empty() || units.is_empty() {
-        return if objects {
-            ok_java_list(0, vec![])
-        } else {
-            ok_json(count_data(0, vec![]))
-        };
+        return ok_java_list(0, vec![]);
     }
     let recursive = body
         .get("recursiveUnit")
@@ -190,19 +167,20 @@ async fn named_list_duty(
     flags: Vec<String>,
 ) -> Result<AxumJson<ActionResult<Value>>, AppError> {
     if flags.is_empty() {
-        return Ok(AxumJson(ActionResult::success(Value::Object(
-            serde_json::Map::from_iter([("nameList".to_string(), Value::Array(vec![]))]),
-        ))));
+        return Ok(AxumJson(ActionResult::java_success(
+            named_list("nameList", &[]),
+            0,
+            0,
+        )));
     }
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let rows = client.query(sql, &[&flags]).await.map_err(|_| AppError::Internal)?;
     let list: Vec<String> = rows.iter().map(|r| r.get(0)).collect();
-    Ok(AxumJson(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([(
-            "nameList".to_string(),
-            Value::Array(list.into_iter().map(Value::String).collect()),
-        )]),
-    ))))
+    Ok(AxumJson(ActionResult::java_success(
+        named_list("nameList", &list),
+        list.len() as i64,
+        0,
+    )))
 }
 
 /// POST /jaxrs/unitduty/list/unit/object (Java ActionListWithUnitObject，

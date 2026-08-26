@@ -12,7 +12,7 @@ use serde_json::Value;
 use shared::{error::AppError, response::ActionResult};
 
 use crate::endpoints::{
-    bool_field, capped, count_data, int_list, named_list, normalize_flags, ok_java_list, ok_json,
+    bool_field, capped, int_list, named_list, normalize_flags, ok_java_list, ok_json,
     row_to_map, string_field, string_list, wrap_bool,
 };
 
@@ -25,13 +25,14 @@ fn finish_rows(
 ) -> Result<AxumJson<ActionResult<Value>>, AppError> {
     if objects {
         let data: Vec<Value> = rows.iter().map(row_to_map).collect();
-        ok_json(count_data(data.len(), data))
+        ok_java_list(data.len(), data)
     } else {
         let list: Vec<String> = rows.iter().map(|r| r.get(0)).collect();
-        Ok(AxumJson(ActionResult::success(named_list(
-            "unitList",
-            &list,
-        ))))
+        Ok(AxumJson(ActionResult::java_success(
+            named_list("unitList", &list),
+            list.len() as i64,
+            0,
+        )))
     }
 }
 
@@ -157,7 +158,7 @@ async fn units_of_identities(
     let flags = normalize_flags(string_list(&body, "identityList"));
     capped(&flags)?;
     if flags.is_empty() {
-        return ok_json(count_data(0, vec![]));
+        return ok_java_list(0, vec![]);
     }
     let sql = if objects {
         UNITS_OF_IDENTITIES_OBJ.to_string()
@@ -199,7 +200,7 @@ async fn sup_nested_of_units(
     let flags = normalize_flags(string_list(&body, flags_key));
     capped(&flags)?;
     if flags.is_empty() {
-        return ok_json(count_data(0, vec![]));
+        return ok_java_list(0, vec![]);
     }
     let sql = format!(
         "WITH RECURSIVE seeds AS ({seeds}), \
@@ -248,7 +249,7 @@ async fn level_query(
 ) -> Result<AxumJson<ActionResult<Value>>, AppError> {
     let levels = int_list(&body, "levelList")?;
     if levels.is_empty() {
-        return ok_json(count_data(0, vec![]));
+        return ok_java_list(0, vec![]);
     }
     let sql = format!(
         "SELECT {} FROM x_org_unit WHERE deleted_at IS NULL AND level = ANY($1) ORDER BY level, id",
@@ -299,7 +300,7 @@ pub async fn unit_list_level_name_object(
     let flags = normalize_flags(string_list(&body, "unitList"));
     capped(&flags)?;
     if flags.is_empty() {
-        return ok_json(count_data(0, vec![]));
+        return ok_java_list(0, vec![]);
     }
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let rows = client.query(SQL, &[&flags]).await.map_err(|_| AppError::Internal)?;
@@ -321,7 +322,7 @@ pub async fn unit_list_level_name_object(
         }
         data.push(obj);
     }
-    ok_json(count_data(data.len(), data))
+    ok_java_list(data.len(), data)
 }
 
 // ── unit/list/person(+object)、person/sup/nested(+object) ─────────────────────
@@ -338,7 +339,7 @@ async fn units_of_persons(
     let flags = normalize_flags(string_list(&body, "personList"));
     capped(&flags)?;
     if flags.is_empty() {
-        return ok_json(count_data(0, vec![]));
+        return ok_java_list(0, vec![]);
     }
     let sql = if objects {
         UNITS_OF_PERSONS_OBJ.to_string()
@@ -398,7 +399,11 @@ async fn attr_units(
     objects: bool,
 ) -> Result<AxumJson<ActionResult<Value>>, AppError> {
     let Some(name) = string_field(&body, "name") else {
-        return ok_json(named_list("unitList", &[]));
+        return Ok(AxumJson(ActionResult::java_success(
+            named_list("unitList", &[]),
+            0,
+            0,
+        )));
     };
     let attribute = string_field(&body, "attribute");
     let sql = format!(
@@ -438,7 +443,11 @@ async fn duty_units(
     objects: bool,
 ) -> Result<AxumJson<ActionResult<Value>>, AppError> {
     let Some(name) = string_field(&body, "name") else {
-        return ok_json(named_list("unitList", &[]));
+        return Ok(AxumJson(ActionResult::java_success(
+            named_list("unitList", &[]),
+            0,
+            0,
+        )));
     };
     let identity = string_field(&body, "identity");
     let sql = format!(
@@ -542,16 +551,11 @@ pub async fn unit_check_unit_has_unit(
 async fn types_query(
     types: Vec<String>,
     objects: bool,
-    java_bare: bool,
     pool: Extension<Pool>,
 ) -> Result<AxumJson<ActionResult<Value>>, AppError> {
     capped(&types)?;
     if types.is_empty() {
-        return if java_bare {
-            ok_java_list(0, vec![])
-        } else {
-            ok_json(count_data(0, vec![]))
-        };
+        return ok_java_list(0, vec![]);
     }
     let sql = format!(
         "SELECT {} FROM x_org_unit WHERE deleted_at IS NULL AND \"type\" = ANY($1) ORDER BY level, id",
@@ -560,11 +564,7 @@ async fn types_query(
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let rows = client.query(&sql, &[&types]).await.map_err(|_| AppError::Internal)?;
     let data: Vec<Value> = rows.iter().map(row_to_map).collect();
-    if java_bare {
-        ok_java_list(data.len(), data)
-    } else {
-        finish_rows(rows, objects)
-    }
+    ok_java_list(data.len(), data)
 }
 
 /// POST /jaxrs/unit/list/types (Java ActionListWithTypes，Wi{typeList})。
@@ -572,7 +572,7 @@ pub async fn unit_list_types(
     pool: Extension<Pool>,
     Json(body): Json<Value>,
 ) -> Result<AxumJson<ActionResult<Value>>, AppError> {
-    types_query(normalize_flags(string_list(&body, "typeList")), false, false, pool).await
+    types_query(normalize_flags(string_list(&body, "typeList")), false, pool).await
 }
 
 /// POST /jaxrs/unit/list/types/object。
@@ -580,7 +580,7 @@ pub async fn unit_list_types_object(
     pool: Extension<Pool>,
     Json(body): Json<Value>,
 ) -> Result<AxumJson<ActionResult<Value>>, AppError> {
-    types_query(normalize_flags(string_list(&body, "typeList")), true, false, pool).await
+    types_query(normalize_flags(string_list(&body, "typeList")), true, pool).await
 }
 
 /// GET /jaxrs/unit/list/type/{type}/object (Java ActionListWithTypeObject)。
@@ -588,7 +588,7 @@ pub async fn unit_list_type_type_object(
     pool: Extension<Pool>,
     Path(unit_type): Path<String>,
 ) -> Result<AxumJson<ActionResult<Value>>, AppError> {
-    types_query(vec![unit_type], true, true, pool).await
+    types_query(vec![unit_type], true, pool).await
 }
 
 /// POST /jaxrs/unit/list/unit/tree (Java ActionListWithUnitTree，Wi{unitList})：
@@ -609,7 +609,7 @@ pub async fn unit_list_unit_tree(
     let flags = normalize_flags(string_list(&body, "unitList"));
     capped(&flags)?;
     if flags.is_empty() {
-        return ok_json(count_data(0, vec![]));
+        return ok_java_list(0, vec![]);
     }
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let rows = client.query(SQL, &[&flags]).await.map_err(|_| AppError::Internal)?;
@@ -666,5 +666,5 @@ pub async fn unit_list_unit_tree(
             roots.push(assemble(id, &base, &children_map, &mut seen));
         }
     }
-    ok_json(count_data(roots.len(), roots))
+    ok_java_list(roots.len(), roots)
 }

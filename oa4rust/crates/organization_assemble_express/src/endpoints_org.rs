@@ -9,7 +9,7 @@ use deadpool_postgres::Pool;
 use serde_json::Value;
 use shared::{error::AppError, response::ActionResult};
 
-use crate::endpoints::{capped, count_data, named_list_response, ok_json, string_list, PICK_ANY};
+use crate::endpoints::{capped, named_list_response, ok_java_list, string_list, PICK_ANY};
 
 /// POST /jaxrs/unit/list: batch unit lookup (Java UnitAction#list; GET variant is control's).
 pub async fn unit_list(
@@ -34,7 +34,7 @@ async fn unit_batch(
     let flags = string_list(&body, "unitList");
     capped(&flags)?;
     if flags.is_empty() {
-        return ok_json(count_data(0, vec![]));
+        return ok_java_list(0, vec![]);
     }
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let rows = client
@@ -49,7 +49,7 @@ async fn unit_batch(
         .await
         .map_err(|_| AppError::Internal)?;
     let data: Vec<Value> = rows.iter().map(crate::endpoints::row_to_map).collect();
-    ok_json(count_data(data.len(), data))
+    ok_java_list(data.len(), data)
 }
 
 /// GET /jaxrs/unit/list/all: all unit ids.
@@ -68,7 +68,7 @@ pub async fn unit_list_all(
         .iter()
         .map(|r| Value::String(r.get::<_, String>("id")))
         .collect();
-    ok_json(count_data(list.len(), list))
+    ok_java_list(list.len(), list)
 }
 
 /// GET /jaxrs/unit/list/all/object: all unit objects.
@@ -140,7 +140,7 @@ async fn unit_tree_scope(
     let flags = string_list(&body, "unitList");
     capped(&flags)?;
     if flags.is_empty() {
-        return ok_json(count_data(0, vec![]));
+        return ok_java_list(0, vec![]);
     }
     let sql = match (direction, nested, objects) {
         ("sub", false, false) => SUB_DIRECT_SQL,
@@ -159,13 +159,13 @@ async fn unit_tree_scope(
         .map_err(|_| AppError::Internal)?;
     if objects {
         let data: Vec<Value> = rows.iter().map(crate::endpoints::row_to_map).collect();
-        ok_json(count_data(data.len(), data))
+        ok_java_list(data.len(), data)
     } else {
         let list: Vec<Value> = rows
             .iter()
             .map(|r| Value::String(r.get::<_, String>("id")))
             .collect();
-        ok_json(count_data(list.len(), list))
+        ok_java_list(list.len(), list)
     }
 }
 
@@ -273,7 +273,7 @@ pub async fn group_list(
     let flags = string_list(&body, "groupList");
     capped(&flags)?;
     if flags.is_empty() {
-        return ok_json(count_data(0, vec![]));
+        return ok_java_list(0, vec![]);
     }
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let rows = client
@@ -287,7 +287,7 @@ pub async fn group_list(
         .await
         .map_err(|_| AppError::Internal)?;
     let data: Vec<Value> = rows.iter().map(crate::endpoints::row_to_map).collect();
-    ok_json(count_data(data.len(), data))
+    ok_java_list(data.len(), data)
 }
 
 /// POST /jaxrs/group/list/object: batch group objects with member lists.
@@ -298,7 +298,7 @@ pub async fn group_list_object(
     let flags = string_list(&body, "groupList");
     capped(&flags)?;
     if flags.is_empty() {
-        return ok_json(count_data(0, vec![]));
+        return ok_java_list(0, vec![]);
     }
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let rows = client
@@ -333,7 +333,7 @@ pub async fn group_list_object(
         }
         data.push(obj);
     }
-    ok_json(count_data(data.len(), data))
+    ok_java_list(data.len(), data)
 }
 
 /// POST /jaxrs/group/list/person: persons contained in the given groups.
@@ -344,7 +344,7 @@ pub async fn group_list_person(
     let flags = string_list(&body, "groupList");
     capped(&flags)?;
     if flags.is_empty() {
-        return ok_json(count_data(0, vec![]));
+        return ok_java_list(0, vec![]);
     }
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let rows = client
@@ -358,7 +358,7 @@ pub async fn group_list_person(
         .await
         .map_err(|_| AppError::Internal)?;
     let data: Vec<Value> = rows.iter().map(crate::endpoints::row_to_map).collect();
-    ok_json(count_data(data.len(), data))
+    ok_java_list(data.len(), data)
 }
 
 // ── Role ──────────────────────────────────────────────────────────────────────
@@ -371,7 +371,7 @@ pub async fn role_list(
     let flags = string_list(&body, "roleList");
     capped(&flags)?;
     if flags.is_empty() {
-        return ok_json(count_data(0, vec![]));
+        return ok_java_list(0, vec![]);
     }
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let rows = client
@@ -385,7 +385,7 @@ pub async fn role_list(
         .await
         .map_err(|_| AppError::Internal)?;
     let data: Vec<Value> = rows.iter().map(crate::endpoints::row_to_map).collect();
-    ok_json(count_data(data.len(), data))
+    ok_java_list(data.len(), data)
 }
 
 /// POST /jaxrs/role/list/person: persons holding any of the given roles.
@@ -396,7 +396,7 @@ pub async fn role_list_person(
     let flags = string_list(&body, "roleList");
     capped(&flags)?;
     if flags.is_empty() {
-        return ok_json(count_data(0, vec![]));
+        return ok_java_list(0, vec![]);
     }
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let rows = client
@@ -411,7 +411,7 @@ pub async fn role_list_person(
         .await
         .map_err(|_| AppError::Internal)?;
     let data: Vec<Value> = rows.iter().map(crate::endpoints::row_to_map).collect();
-    ok_json(count_data(data.len(), data))
+    ok_java_list(data.len(), data)
 }
 
 // ── UnitDuty ──────────────────────────────────────────────────────────────────
@@ -424,7 +424,7 @@ pub async fn unitduty_list_name(
     let flags = string_list(&body, "nameList");
     capped(&flags)?;
     if flags.is_empty() {
-        return ok_json(count_data(0, vec![]));
+        return ok_java_list(0, vec![]);
     }
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let rows = client
@@ -439,7 +439,7 @@ pub async fn unitduty_list_name(
         .await
         .map_err(|_| AppError::Internal)?;
     let data: Vec<Value> = rows.iter().map(crate::endpoints::row_to_map).collect();
-    ok_json(count_data(data.len(), data))
+    ok_java_list(data.len(), data)
 }
 
 /// POST /jaxrs/unitduty/list/name/unit: distinct duty names held in units.

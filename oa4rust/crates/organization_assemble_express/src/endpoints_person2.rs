@@ -20,7 +20,7 @@ use serde_json::Value;
 use shared::{error::AppError, response::ActionResult};
 
 use crate::endpoints::{
-    bool_field, capped, count_data, named_list, normalize_flags, ok_json, resolve_person_ids,
+    bool_field, capped, named_list, normalize_flags, ok_java_list, ok_json, resolve_person_ids,
     row_to_map, string_field, string_list, PICK_ANY,
 };
 
@@ -40,7 +40,11 @@ async fn login_after(
 ) -> Result<AxumJson<ActionResult<Value>>, AppError> {
     let Some(date) = string_field(&body, "date") else {
         // Java：date 为 null 时返回空 Wo.personList
-        return ok_json(named_list("personList", &[]));
+        return Ok(AxumJson(ActionResult::java_success(
+            named_list("personList", &[]),
+            0,
+            0,
+        )));
     };
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let sql = if objects { LOGIN_AFTER_OBJ_SQL } else { LOGIN_AFTER_IDS_SQL };
@@ -54,13 +58,14 @@ async fn login_after(
     };
     if objects {
         let data: Vec<Value> = rows.iter().map(row_to_map).collect();
-        ok_json(count_data(data.len(), data))
+        ok_java_list(data.len(), data)
     } else {
         let list: Vec<String> = rows.iter().map(|r| r.get(0)).collect();
-        Ok(AxumJson(ActionResult::success(named_list(
-            "personList",
-            &list,
-        ))))
+        Ok(AxumJson(ActionResult::java_success(
+            named_list("personList", &list),
+            list.len() as i64,
+            0,
+        )))
     }
 }
 
@@ -111,13 +116,14 @@ async fn login_recent(
     };
     if objects {
         let data: Vec<Value> = rows.iter().map(row_to_map).collect();
-        ok_json(count_data(data.len(), data))
+        ok_java_list(data.len(), data)
     } else {
         let list: Vec<String> = rows.iter().map(|r| r.get(0)).collect();
-        Ok(AxumJson(ActionResult::success(named_list(
-            "personList",
-            &list,
-        ))))
+        Ok(AxumJson(ActionResult::java_success(
+            named_list("personList", &list),
+            list.len() as i64,
+            0,
+        )))
     }
 }
 
@@ -148,12 +154,14 @@ pub async fn person_list_pair_identity(
     let flags = normalize_flags(string_list(&body, "identityList"));
     capped(&flags)?;
     if flags.is_empty() {
-        return Ok(AxumJson(ActionResult::success(Value::Object(
-            serde_json::Map::from_iter([(
+        return Ok(AxumJson(ActionResult::java_success(
+            Value::Object(serde_json::Map::from_iter([(
                 "identityPersonPairList".to_string(),
                 Value::Array(vec![]),
-            )]),
-        ))));
+            )])),
+            0,
+            0,
+        )));
     }
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let rows = client
@@ -183,12 +191,15 @@ pub async fn person_list_pair_identity(
             Value::Object(m)
         })
         .collect();
-    Ok(AxumJson(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([(
+    let count = pairs.len() as i64;
+    Ok(AxumJson(ActionResult::java_success(
+        Value::Object(serde_json::Map::from_iter([(
             "identityPersonPairList".to_string(),
             Value::Array(pairs),
-        )]),
-    ))))
+        )])),
+        count,
+        0,
+    )))
 }
 
 /// POST /jaxrs/person/detail/{flag} (Java ActionDetail)：人员 + 身份/组织(含递归上级)/
@@ -403,7 +414,7 @@ async fn person_flag_objects(
     let flags = normalize_flags(string_list(&body, key));
     capped(&flags)?;
     if flags.is_empty() {
-        return ok_json(count_data(0, vec![]));
+        return ok_java_list(0, vec![]);
     }
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let rows = client
@@ -411,7 +422,7 @@ async fn person_flag_objects(
         .await
         .map_err(|_| AppError::Internal)?;
     let data: Vec<Value> = rows.iter().map(row_to_map).collect();
-    ok_json(count_data(data.len(), data))
+    ok_java_list(data.len(), data)
 }
 
 // ── personattribute 关联查询 ──────────────────────────────────────────────────
@@ -445,7 +456,11 @@ async fn attr_persons(
 ) -> Result<AxumJson<ActionResult<Value>>, AppError> {
     let Some(name) = string_field(&body, "name") else {
         // Java：name 为空直接返回空结果
-        return ok_json(named_list("personList", &[]));
+        return Ok(AxumJson(ActionResult::java_success(
+            named_list("personList", &[]),
+            0,
+            0,
+        )));
     };
     let attribute = string_field(&body, "attribute");
     let select = if objects {
@@ -461,13 +476,14 @@ async fn attr_persons(
         .map_err(|_| AppError::Internal)?;
     if objects {
         let data: Vec<Value> = rows.iter().map(row_to_map).collect();
-        ok_json(count_data(data.len(), data))
+        ok_java_list(data.len(), data)
     } else {
         let list: Vec<String> = rows.iter().map(|r| r.get(0)).collect();
-        Ok(AxumJson(ActionResult::success(named_list(
-            "personList",
-            &list,
-        ))))
+        Ok(AxumJson(ActionResult::java_success(
+            named_list("personList", &list),
+            list.len() as i64,
+            0,
+        )))
     }
 }
 
@@ -526,7 +542,7 @@ async fn person_tree_scope(
     let flags = normalize_flags(string_list(&body, "personList"));
     capped(&flags)?;
     if flags.is_empty() {
-        return ok_json(count_data(0, vec![]));
+        return ok_java_list(0, vec![]);
     }
     let sql = template.replace("{SEED}", SEED_UNITS_OF_PERSONS);
     let select_sql = if objects {
@@ -545,13 +561,14 @@ async fn person_tree_scope(
         .map_err(|_| AppError::Internal)?;
     if objects {
         let data: Vec<Value> = rows.iter().map(row_to_map).collect();
-        ok_json(count_data(data.len(), data))
+        ok_java_list(data.len(), data)
     } else {
         let list: Vec<String> = rows.iter().map(|r| r.get(0)).collect();
-        Ok(AxumJson(ActionResult::success(named_list(
-            "personList",
-            &list,
-        ))))
+        Ok(AxumJson(ActionResult::java_success(
+            named_list("personList", &list),
+            list.len() as i64,
+            0,
+        )))
     }
 }
 
@@ -604,7 +621,7 @@ async fn person_of_units(
     let flags = normalize_flags(string_list(&body, "unitList"));
     capped(&flags)?;
     if flags.is_empty() {
-        return ok_json(count_data(0, vec![]));
+        return ok_java_list(0, vec![]);
     }
     let key = if like { string_field(&body, "key") } else { None };
     let filter = if like {
@@ -639,13 +656,14 @@ async fn person_of_units(
     };
     if objects {
         let data: Vec<Value> = rows.iter().map(row_to_map).collect();
-        ok_json(count_data(data.len(), data))
+        ok_java_list(data.len(), data)
     } else {
         let list: Vec<String> = rows.iter().map(|r| r.get(0)).collect();
-        Ok(AxumJson(ActionResult::success(named_list(
-            "personList",
-            &list,
-        ))))
+        Ok(AxumJson(ActionResult::java_success(
+            named_list("personList", &list),
+            list.len() as i64,
+            0,
+        )))
     }
 }
 
