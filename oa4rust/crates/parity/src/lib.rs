@@ -57,6 +57,10 @@
 #[macro_export]
 macro_rules! parity_test {
     // ── Form 1: with behavior contract + custom body ──────────────────────
+    //
+    // `content_type` is optional; set it (e.g. "application/json") for routes
+    // whose handler extracts an `axum::extract::Json` body — without the
+    // header the extractor rejects the request before the handler runs.
     (
         crate: $crate_name:ident,
         router_fn: $router_fn:ident,
@@ -65,6 +69,7 @@ macro_rules! parity_test {
         handler: $handler:ident,
         test_name: $test_name:ident,
         behavior: $behavior:expr,
+        $(content_type: $content_type:expr,)?
         router_args: $router_args:tt,
         body: $body:expr,
     ) => {
@@ -77,6 +82,7 @@ macro_rules! parity_test {
                     axum::http::Request::builder()
                         .uri($route)
                         .method(axum::http::Method::$method)
+                        $(.header(axum::http::header::CONTENT_TYPE, $content_type))?
                         .body(axum::body::Body::from($body))
                         .expect("build parity request"),
                 )

@@ -219,10 +219,18 @@ def generate_crate_block(
         test_code = generate_route_test_single(
             rust_crate, test_name, method, path, router_fn, router_params, is_async_router
         )
-        lines.append(test_code)
+        if test_code is not None:
+            lines.append(test_code)
 
     lines.append("")
     return "\n".join(lines), len(routes)
+
+
+# Characters that are invalid in an HTTP request-target and would make
+# http::Request::builder().uri(...) fail with InvalidUriChar. Route templates
+# may legitimately contain `{param}` placeholders, so the check runs on the
+# concrete request path (placeholders already substituted).
+INVALID_URI_CHARS_RE = re.compile(r'[\s"<>\\^`|\x00-\x1f]')
 
 
 def generate_route_test_single(
@@ -233,11 +241,21 @@ def generate_route_test_single(
     router_fn: Optional[str],
     router_params: str,
     is_async_router: bool,
-) -> str:
-    """Generate one #[tokio::test] fn (test_name is pre-computed, guaranteed unique)."""
+) -> Optional[str]:
+    """Generate one #[tokio::test] fn (test_name is pre-computed, guaranteed unique).
+
+    Returns None when the route cannot be exercised over oneshot (e.g. the
+    concrete request path contains characters that are invalid in a URI).
+    """
     rust_path = path.replace('\\', '\\\\').replace('"', '\\"')
     rust_path_fmt = rust_path.replace('{', '{{').replace('}', '}}')
     request_path = re.sub(r'\{[^}]+\}', 'test-id', path)
+
+    if INVALID_URI_CHARS_RE.search(request_path):
+        return (
+            f"    // skipped: request path not representable as a URI "
+            f"(Java-parity quirk): {rust_path_fmt} ({method.upper()})\n"
+        )
 
     if router_fn:
         router_expr = f"oa4rust::{rust_crate}::{router_fn}({build_args(router_params)})"
@@ -245,6 +263,19 @@ def generate_route_test_single(
         router_expr = f"oa4rust::{rust_crate}::router({build_args(router_params)})"
 
     method_upper = method.upper()
+
+    # Existence contract: a truly unwired route yields axum's fallback 404 with
+    # an EMPTY body. A wired handler may legitimately answer 404 for an unknown
+    # resource (AppError::NotFound renders the O2OA error envelope), so a 404
+    # with a non-empty body counts as "route exists".
+    existence_check = """let (parts, body) = response.into_parts();
+        let bytes = axum::body::to_bytes(body, usize::MAX)
+            .await
+            .expect("read parity body");
+        assert!(
+            parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
+            \"parity: route missing on {rust_crate}: {rust_path_fmt} ({method_upper})\"
+        );"""
 
     if is_async_router:
         return f"""    #[tokio::test]
@@ -260,11 +291,7 @@ def generate_route_test_single(
             )
             .await
             .expect(\"oneshot dispatch\");
-        assert_ne!(
-            response.status(),
-            axum::http::StatusCode::NOT_FOUND,
-            \"parity: route missing on {rust_crate}: {rust_path_fmt} ({method_upper})\"
-        );
+        {existence_check}
     }}"""
     else:
         return f"""    #[tokio::test]
@@ -280,11 +307,7 @@ def generate_route_test_single(
             )
             .await
             .expect(\"oneshot dispatch\");
-        assert_ne!(
-            response.status(),
-            axum::http::StatusCode::NOT_FOUND,
-            \"parity: route missing on {rust_crate}: {rust_path_fmt} ({method_upper})\"
-        );
+        {existence_check}
     }}"""
 
 
