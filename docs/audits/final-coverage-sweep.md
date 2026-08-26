@@ -198,6 +198,28 @@
 
 种子资产使后续任意一轮对比都可重放同一数据前提——这正是 R1 影子流量报告所需的对照基线设施。
 
+### 字段映射层收敛分析（U3 · 2026-08-26）
+
+使用 U2 聚类脚本 `cluster_behavior_diffs.py` 对 844 条 FAIL 进行自动聚类，产出 401 个候选改名对 + 29 个单侧 missing-Java 字段 + 3 个单侧 missing-Rust 字段 + 4 个 type-differs。
+
+**聚类结果评审结论：无可用改名对入库。**
+
+全部401个候选对均为**结构性差异**（不同响应信封形状），而非同义异名字段：
+
+| 类别 | 频次 | 本质 | 处置 |
+|------|------|------|------|
+| `data` / `prompt` | 215+132 | Rust 返回 `data` 包装，Java 返回 `prompt` 包装——信封层差异 | 不入库（需 handler 层统一信封形状） |
+| `count`/`date`/`size`/... vs `servlet`/`status`/`url` | 45×18 | processplatform 附件端点：Java 返回元数据字段集，Rust 返回不同字段集——完全不同的响应结构 | 不入库（需 handler 重构） |
+| `data.count` / `data.value` | 9 | Rust 用 `count` 字段承载计数，Java 用 `value` 字段承载数据载荷——包装层级差异 | 不入库（信封 shape 差异） |
+| `data.message` / `data.id` | 7 | Java 返回操作消息，Rust 返回资源 ID——不同的响应语义 | 不入库 |
+
+**推论**：剩余836条 FAIL 的字段形状差异主要由三层结构性差异构成：
+1. 信封层（`data` vs `prompt` 包装）
+2. 包装模式（列表/计数/分页的字段命名差异）
+3. 附件端点的完全不同的响应结构
+
+这些差异无法通过 allowlist 改名对解决，需要 handler 层的投影修正或信封统一。allowlist 当前条目数维持不变（26+65条）。
+
 ## 相关文档
 
 - **收官复盘：** `docs/solutions/best-practices/oa4rust-o2server-parity-closure-campaign-2026-08-25.md`
