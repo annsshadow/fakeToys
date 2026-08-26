@@ -100,14 +100,12 @@ pub fn err(msg: &str) -> HandlerResult {
 }
 
 pub fn list_ok(rows: Vec<Value>) -> HandlerResult {
-    ok(Value::Object(
-        vec![
-            ("count".to_string(), Value::Number((rows.len() as i64).into())),
-            ("data".to_string(), Value::Array(rows)),
-        ]
-        .into_iter()
-        .collect(),
-    ))
+    let count = rows.len() as i64;
+    Ok(Json(ActionResult::java_success(
+        Value::Array(rows),
+        count,
+        0,
+    )))
 }
 
 /// Java 裸数组契约（行为对齐）：data 为数组、count 入信封、size 恒 0。
