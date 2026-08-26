@@ -1509,14 +1509,8 @@ pub async fn personcard_listpaging_page_page_size_size_mockputtopost(
         ]))
     }).collect();
 
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
-            ("page".to_string(), Value::Number(serde_json::Number::from(page))),
-            ("size".to_string(), Value::Number(serde_json::Number::from(size))),
-            ("data".to_string(), Value::Array(data)),
-        ]),
-    ))))
+    let count = data.len() as i64;
+    Ok(Json(ActionResult::java_success(Value::Array(data), count, size)))
 }
 
 
@@ -1546,14 +1540,8 @@ pub async fn personcard_listpagingwithgroup_page_page_size_size_mockputtopost(
         ]))
     }).collect();
 
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
-            ("page".to_string(), Value::Number(serde_json::Number::from(page))),
-            ("size".to_string(), Value::Number(serde_json::Number::from(size))),
-            ("data".to_string(), Value::Array(data)),
-        ]),
-    ))))
+    let count = data.len() as i64;
+    Ok(Json(ActionResult::java_success(Value::Array(data), count, size)))
 }
 
 pub async fn personcard_mylist(
@@ -2576,14 +2564,8 @@ pub async fn personcard_listpagingwithgroup_page_page_size_size(
         ]))
     }).collect();
 
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
-            ("page".to_string(), Value::Number(serde_json::Number::from(page))),
-            ("size".to_string(), Value::Number(serde_json::Number::from(size))),
-            ("data".to_string(), Value::Array(data)),
-        ]),
-    ))))
+    let count = data.len() as i64;
+    Ok(Json(ActionResult::java_success(Value::Array(data), count, size)))
 }
 
 
@@ -2613,14 +2595,8 @@ pub async fn personcard_listpaging_page_page_size_size(
         ]))
     }).collect();
 
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
-            ("page".to_string(), Value::Number(serde_json::Number::from(page))),
-            ("size".to_string(), Value::Number(serde_json::Number::from(size))),
-            ("data".to_string(), Value::Array(data)),
-        ]),
-    ))))
+    let count = data.len() as i64;
+    Ok(Json(ActionResult::java_success(Value::Array(data), count, size)))
 }
 
 
