@@ -115,3 +115,28 @@ DELETE /x_organization_assemble_control/jaxrs/group/{groupId}    ← 共 2 个
 DELETE /x_organization_assemble_control/jaxrs/person/{personId}  ← 共 2 个
 DELETE /x_organization_assemble_control/jaxrs/unit/{unitId}      ← 共 2 个
 ```
+
+## U4 探测记录（2026-08-26）
+
+### 已验证可用的端点
+
+| 端点 | 状态 | 说明 |
+|------|------|------|
+| `POST /x_organization_assemble_authentication/jaxrs/authentication` | ✓ 200 | 认证正常 |
+| `GET /x_cms_assemble_control/jaxrs/appinfo/list/all` | ✓ 200 | CMS appinfo 正常（46条） |
+
+### 不可用端点（返回404）
+
+以下端点在探测时返回404，可能原因：o2server 容器需要重新初始化，或 v9 路由规则变更。
+
+- `/x_organization_assemble_control/jaxrs/unit/list/all` 及所有 org control 端点
+- `/x_cms_assemble_control/jaxrs/categoryinfo/list/app/{id}`
+- `/x_bbs_assemble_control/jaxrs/forum/list/all`
+- `/x_meeting_assemble_control/jaxrs/building/list/all`
+- `/x_processplatform_assemble_surface/jaxrs/application/list/summary`（返回405，方法不支持GET）
+
+### 待办
+
+- 重新初始化 o2server 容器后重跑探测矩阵
+- 补充 category/forum 的 Java 侧创建路径验证
+- 验证 meeting 的 flag 解析链（仅认 UUID 主键的实体标记为"不可种"）
