@@ -214,9 +214,8 @@ mod tests {
         let action: ActionResult<serde_json::Value> = result.0;
         assert_eq!(action.r#type, Some("success".to_string()));
         assert!(action.data.is_some());
-        let data = action.data.unwrap();
-        assert!(data.get("count").is_some());
-        assert!(data.get("data").is_some());
+        assert!(action.data.unwrap().is_array());
+        assert!(action.count.is_some());
     }
 
     #[tokio::test]
