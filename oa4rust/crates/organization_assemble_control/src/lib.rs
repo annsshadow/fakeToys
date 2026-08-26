@@ -61,12 +61,12 @@ pub async fn organization_assemble_control_role_list_flag_next_count(
         })
         .collect();
 
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
-            ("data".to_string(), Value::Array(data)),
-        ]),
-    ))))
+    let count = data.len() as i64;
+    Ok(Json(ActionResult::java_success(
+        Value::Array(data),
+        count,
+        0,
+    )))
 }
 
 pub async fn organization_assemble_control_role_flag(
@@ -142,12 +142,12 @@ pub async fn organization_assemble_control_unit_list_flag_next_count(
         })
         .collect();
 
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
-            ("data".to_string(), Value::Array(data)),
-        ]),
-    ))))
+    let count = data.len() as i64;
+    Ok(Json(ActionResult::java_success(
+        Value::Array(data),
+        count,
+        0,
+    )))
 }
 
 pub async fn organization_assemble_control_unit_flag(
@@ -224,12 +224,12 @@ pub async fn organization_assemble_control_unit_list_flag_sub_nested(
         ))
     }).collect();
 
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
-            ("data".to_string(), Value::Array(data)),
-        ]),
-    ))))
+    let count = data.len() as i64;
+    Ok(Json(ActionResult::java_success(
+        Value::Array(data),
+        count,
+        0,
+    )))
 }
 
 pub async fn organization_assemble_control_unit_list_flag_sup_nested(
@@ -271,12 +271,12 @@ pub async fn organization_assemble_control_unit_list_flag_sup_nested(
         ))
     }).collect();
 
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
-            ("data".to_string(), Value::Array(data)),
-        ]),
-    ))))
+    let count = data.len() as i64;
+    Ok(Json(ActionResult::java_success(
+        Value::Array(data),
+        count,
+        0,
+    )))
 }
 
 pub async fn organization_assemble_control_unit_list_flag_sup_nested_type_type(
@@ -319,12 +319,12 @@ pub async fn organization_assemble_control_person_list_like(
         })
         .collect();
 
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
-            ("data".to_string(), Value::Array(data)),
-        ]),
-    ))))
+    let count = data.len() as i64;
+    Ok(Json(ActionResult::java_success(
+        Value::Array(data),
+        count,
+        0,
+    )))
 }
 
 pub async fn export_export_all(
@@ -436,12 +436,12 @@ pub async fn group_list_like_mockputtopost(
         ]))
     }).collect();
 
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
-            ("data".to_string(), Value::Array(data)),
-        ]),
-    ))))
+    let count = data.len() as i64;
+    Ok(Json(ActionResult::java_success(
+        Value::Array(data),
+        count,
+        0,
+    )))
 }
 pub async fn group_list_like_pinyin(
     pool: Extension<Pool>,
@@ -464,12 +464,12 @@ pub async fn group_list_like_pinyin(
         ]))
     }).collect();
 
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
-            ("data".to_string(), Value::Array(data)),
-        ]),
-    ))))
+    let count = data.len() as i64;
+    Ok(Json(ActionResult::java_success(
+        Value::Array(data),
+        count,
+        0,
+    )))
 }
 pub async fn group_list_like_pinyin_mockputtopost(
     pool: Extension<Pool>,
@@ -492,12 +492,12 @@ pub async fn group_list_like_pinyin_mockputtopost(
         ]))
     }).collect();
 
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
-            ("data".to_string(), Value::Array(data)),
-        ]),
-    ))))
+    let count = data.len() as i64;
+    Ok(Json(ActionResult::java_success(
+        Value::Array(data),
+        count,
+        0,
+    )))
 }
 
 
@@ -524,12 +524,12 @@ pub async fn group_list_pinyininitial(
         ]))
     }).collect();
 
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
-            ("data".to_string(), Value::Array(data)),
-        ]),
-    ))))
+    let count = data.len() as i64;
+    Ok(Json(ActionResult::java_success(
+        Value::Array(data),
+        count,
+        0,
+    )))
 }
 pub async fn group_list_pinyininitial_mockputtopost(
     pool: Extension<Pool>,
@@ -552,12 +552,12 @@ pub async fn group_list_pinyininitial_mockputtopost(
         ]))
     }).collect();
 
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
-            ("data".to_string(), Value::Array(data)),
-        ]),
-    ))))
+    let count = data.len() as i64;
+    Ok(Json(ActionResult::java_success(
+        Value::Array(data),
+        count,
+        0,
+    )))
 }
 
 
@@ -573,8 +573,8 @@ pub async fn group_list_flag_sub_direct(
 
     let rows = client
         .query(
-            "WITH RECURSIVE sub AS (SELECT id FROM x_org_unit WHERE id = $1 UNION ALL SELECT u.id FROM x_org_unit u JOIN sub s ON u.parent_id = s.id) SELECT g.id, g.name, g.unit_id, g.type, g.creator, g.create_time::text FROM x_org_group g JOIN sub s ON g.unit_id = s.id WHERE g.id != $1 ORDER BY g.create_time::text DESC",
-            &[&flag, &flag],
+            "SELECT g.id, g.name, g.unit_id, g.type, g.creator, g.create_time::text FROM x_org_group g WHERE g.unit_id = $1 AND g.id != $1 AND g.deleted_at IS NULL ORDER BY g.create_time::text DESC",
+            &[&flag],
         )
         .await
         .map_err(|e| { eprintln!("DIAG org_sub_direct query err: {:?}", e); AppError::Internal })?;
@@ -590,12 +590,12 @@ pub async fn group_list_flag_sub_direct(
         ]))
     }).collect();
 
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
-            ("data".to_string(), Value::Array(data)),
-        ]),
-    ))))
+    let count = data.len() as i64;
+    Ok(Json(ActionResult::java_success(
+        Value::Array(data),
+        count,
+        0,
+    )))
 }
 
 pub async fn group_list_flag_sub_nested(
@@ -606,7 +606,7 @@ pub async fn group_list_flag_sub_nested(
 
     let rows = client
         .query(
-            "WITH RECURSIVE sub AS (SELECT id FROM x_org_unit WHERE id = $1 UNION ALL SELECT u.id FROM x_org_unit u JOIN sub s ON u.parent_id = s.id) SELECT g.id, g.name, g.unit_id, g.type, g.creator, g.create_time::text FROM x_org_group g JOIN sub s ON g.unit_id = s.id WHERE g.id != $2 ORDER BY g.create_time::text DESC",
+            "WITH RECURSIVE sub AS (SELECT id FROM x_org_unit WHERE id = $1 AND deleted_at IS NULL UNION ALL SELECT u.id FROM x_org_unit u JOIN sub s ON u.parent_id = s.id WHERE u.deleted_at IS NULL) SELECT g.id, g.name, g.unit_id, g.type, g.creator, g.create_time::text FROM x_org_group g JOIN sub s ON g.unit_id = s.id WHERE g.id != $2 AND g.deleted_at IS NULL ORDER BY g.create_time::text DESC",
             &[&flag, &flag],
         )
         .await
@@ -623,12 +623,12 @@ pub async fn group_list_flag_sub_nested(
         ]))
     }).collect();
 
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
-            ("data".to_string(), Value::Array(data)),
-        ]),
-    ))))
+    let count = data.len() as i64;
+    Ok(Json(ActionResult::java_success(
+        Value::Array(data),
+        count,
+        0,
+    )))
 }
 
 pub async fn group_list_flag_sup_direct(
@@ -644,7 +644,7 @@ pub async fn group_list_flag_sup_direct(
              JOIN x_org_unit u1 ON g1.unit_id = u1.id AND u1.deleted_at IS NULL \
              JOIN x_org_unit pu ON pu.id = u1.parent_id AND pu.deleted_at IS NULL \
              JOIN x_org_group g2 ON g2.unit_id = pu.id AND g2.deleted_at IS NULL \
-             WHERE g1.id = $1 AND g2.id != $1 \
+             WHERE g1.id = $1 AND g1.deleted_at IS NULL AND g2.id != $1 \
              ORDER BY g2.create_time DESC",
             &[&flag],
         )
@@ -662,12 +662,12 @@ pub async fn group_list_flag_sup_direct(
         ]))
     }).collect();
 
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
-            ("data".to_string(), Value::Array(data)),
-        ]),
-    ))))
+    let count = data.len() as i64;
+    Ok(Json(ActionResult::java_success(
+        Value::Array(data),
+        count,
+        0,
+    )))
 }
 
 pub async fn group_list_flag_sup_nested(
@@ -685,7 +685,7 @@ pub async fn group_list_flag_sup_nested(
              ) \
              SELECT g.id, g.name, g.unit_id, g.type, g.creator, g.create_time::text \
              FROM x_org_group g JOIN sup s ON g.unit_id = s.id \
-             WHERE g.id != $1 \
+             WHERE g.id != $1 AND g.deleted_at IS NULL \
              ORDER BY g.create_time DESC",
             &[&flag],
         )
@@ -703,12 +703,12 @@ pub async fn group_list_flag_sup_nested(
         ]))
     }).collect();
 
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
-            ("data".to_string(), Value::Array(data)),
-        ]),
-    ))))
+    let count = data.len() as i64;
+    Ok(Json(ActionResult::java_success(
+        Value::Array(data),
+        count,
+        0,
+    )))
 }
 
 pub async fn group_flag(
@@ -942,12 +942,12 @@ pub async fn identity_list_like_mockputtopost(
         ]))
     }).collect();
 
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
-            ("data".to_string(), Value::Array(data)),
-        ]),
-    ))))
+    let count = data.len() as i64;
+    Ok(Json(ActionResult::java_success(
+        Value::Array(data),
+        count,
+        0,
+    )))
 }
 pub async fn identity_list_like_pinyin(
     pool: Extension<Pool>,
@@ -970,12 +970,12 @@ pub async fn identity_list_like_pinyin(
         ]))
     }).collect();
 
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
-            ("data".to_string(), Value::Array(data)),
-        ]),
-    ))))
+    let count = data.len() as i64;
+    Ok(Json(ActionResult::java_success(
+        Value::Array(data),
+        count,
+        0,
+    )))
 }
 pub async fn identity_list_like_pinyin_mockputtopost(
     pool: Extension<Pool>,
@@ -998,12 +998,12 @@ pub async fn identity_list_like_pinyin_mockputtopost(
         ]))
     }).collect();
 
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
-            ("data".to_string(), Value::Array(data)),
-        ]),
-    ))))
+    let count = data.len() as i64;
+    Ok(Json(ActionResult::java_success(
+        Value::Array(data),
+        count,
+        0,
+    )))
 }
 
 
@@ -1028,12 +1028,12 @@ pub async fn identity_list_pinyininitial(
         ]))
     }).collect();
 
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
-            ("data".to_string(), Value::Array(data)),
-        ]),
-    ))))
+    let count = data.len() as i64;
+    Ok(Json(ActionResult::java_success(
+        Value::Array(data),
+        count,
+        0,
+    )))
 }
 pub async fn identity_list_pinyininitial_mockputtopost(
     pool: Extension<Pool>,
@@ -1056,12 +1056,12 @@ pub async fn identity_list_pinyininitial_mockputtopost(
         ]))
     }).collect();
 
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
-            ("data".to_string(), Value::Array(data)),
-        ]),
-    ))))
+    let count = data.len() as i64;
+    Ok(Json(ActionResult::java_success(
+        Value::Array(data),
+        count,
+        0,
+    )))
 }
 
 
@@ -1191,12 +1191,12 @@ pub async fn inputperson_template(
         ]))
     }).collect();
 
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
-            ("data".to_string(), Value::Array(data)),
-        ]),
-    ))))
+    let count = data.len() as i64;
+    Ok(Json(ActionResult::java_success(
+        Value::Array(data),
+        count,
+        0,
+    )))
 }
 pub async fn inputperson_wipe(
     pool: Extension<Pool>,
@@ -1218,12 +1218,12 @@ pub async fn inputperson_wipe(
         ]))
     }).collect();
 
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
-            ("data".to_string(), Value::Array(data)),
-        ]),
-    ))))
+    let count = data.len() as i64;
+    Ok(Json(ActionResult::java_success(
+        Value::Array(data),
+        count,
+        0,
+    )))
 }
 
 
@@ -1676,12 +1676,12 @@ pub async fn role_list_like_mockputtopost(
         ]))
     }).collect();
 
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
-            ("data".to_string(), Value::Array(data)),
-        ]),
-    ))))
+    let count = data.len() as i64;
+    Ok(Json(ActionResult::java_success(
+        Value::Array(data),
+        count,
+        0,
+    )))
 }
 pub async fn role_list_like_pinyin(
     pool: Extension<Pool>,
@@ -1703,12 +1703,12 @@ pub async fn role_list_like_pinyin(
         ]))
     }).collect();
 
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
-            ("data".to_string(), Value::Array(data)),
-        ]),
-    ))))
+    let count = data.len() as i64;
+    Ok(Json(ActionResult::java_success(
+        Value::Array(data),
+        count,
+        0,
+    )))
 }
 pub async fn role_list_like_pinyin_mockputtopost(
     pool: Extension<Pool>,
@@ -1730,12 +1730,12 @@ pub async fn role_list_like_pinyin_mockputtopost(
         ]))
     }).collect();
 
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
-            ("data".to_string(), Value::Array(data)),
-        ]),
-    ))))
+    let count = data.len() as i64;
+    Ok(Json(ActionResult::java_success(
+        Value::Array(data),
+        count,
+        0,
+    )))
 }
 
 
@@ -1759,12 +1759,12 @@ pub async fn role_list_pinyininitial(
         ]))
     }).collect();
 
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
-            ("data".to_string(), Value::Array(data)),
-        ]),
-    ))))
+    let count = data.len() as i64;
+    Ok(Json(ActionResult::java_success(
+        Value::Array(data),
+        count,
+        0,
+    )))
 }
 pub async fn role_list_pinyininitial_mockputtopost(
     pool: Extension<Pool>,
@@ -1786,12 +1786,12 @@ pub async fn role_list_pinyininitial_mockputtopost(
         ]))
     }).collect();
 
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
-            ("data".to_string(), Value::Array(data)),
-        ]),
-    ))))
+    let count = data.len() as i64;
+    Ok(Json(ActionResult::java_success(
+        Value::Array(data),
+        count,
+        0,
+    )))
 }
 
 
@@ -1971,12 +1971,12 @@ pub async fn unitduty_distinct_name(
         Value::Object(serde_json::Map::from_iter([("name".to_string(), Value::String(row.get("name")))]))
     }).collect();
 
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
-            ("data".to_string(), Value::Array(data)),
-        ]),
-    ))))
+    let count = data.len() as i64;
+    Ok(Json(ActionResult::java_success(
+        Value::Array(data),
+        count,
+        0,
+    )))
 }
 
 
@@ -2072,12 +2072,12 @@ pub async fn unitduty_update_member(
         ]))
     }).collect();
 
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
-            ("data".to_string(), Value::Array(data)),
-        ]),
-    ))))
+    let count = data.len() as i64;
+    Ok(Json(ActionResult::java_success(
+        Value::Array(data),
+        count,
+        0,
+    )))
 }
 
 pub async fn unitduty_list_flag_prev_count(
@@ -2110,12 +2110,12 @@ pub async fn unitduty_list_flag_prev_count(
         ]))
     }).collect();
 
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
-            ("data".to_string(), Value::Array(data)),
-        ]),
-    ))))
+    let count = data.len() as i64;
+    Ok(Json(ActionResult::java_success(
+        Value::Array(data),
+        count,
+        0,
+    )))
 }
 
 pub async fn unitduty_list_flag_next_count(
@@ -2148,12 +2148,12 @@ pub async fn unitduty_list_flag_next_count(
         ]))
     }).collect();
 
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
-            ("data".to_string(), Value::Array(data)),
-        ]),
-    ))))
+    let count = data.len() as i64;
+    Ok(Json(ActionResult::java_success(
+        Value::Array(data),
+        count,
+        0,
+    )))
 }
 
 pub async fn unitduty_list_unit_unitFlag(
@@ -2178,12 +2178,12 @@ pub async fn unitduty_list_unit_unitFlag(
         ]))
     }).collect();
 
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
-            ("data".to_string(), Value::Array(data)),
-        ]),
-    ))))
+    let count = data.len() as i64;
+    Ok(Json(ActionResult::java_success(
+        Value::Array(data),
+        count,
+        0,
+    )))
 }
 
 pub async fn unitduty_list_name_name(
@@ -2241,12 +2241,12 @@ pub async fn unitduty_list_like(
         ]))
     }).collect();
 
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
-            ("data".to_string(), Value::Array(data)),
-        ]),
-    ))))
+    let count = data.len() as i64;
+    Ok(Json(ActionResult::java_success(
+        Value::Array(data),
+        count,
+        0,
+    )))
 }
 
 pub async fn unitduty_list_identity_identityFlag(
@@ -2271,12 +2271,12 @@ pub async fn unitduty_list_identity_identityFlag(
         ]))
     }).collect();
 
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
-            ("data".to_string(), Value::Array(data)),
-        ]),
-    ))))
+    let count = data.len() as i64;
+    Ok(Json(ActionResult::java_success(
+        Value::Array(data),
+        count,
+        0,
+    )))
 }
 
 pub async fn unitduty_distinct_name_like_key(
@@ -2295,12 +2295,12 @@ pub async fn unitduty_distinct_name_like_key(
         Value::Object(serde_json::Map::from_iter([("name".to_string(), Value::String(row.get("name")))]))
     }).collect();
 
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
-            ("data".to_string(), Value::Array(data)),
-        ]),
-    ))))
+    let count = data.len() as i64;
+    Ok(Json(ActionResult::java_success(
+        Value::Array(data),
+        count,
+        0,
+    )))
 }
 
 
@@ -2337,12 +2337,12 @@ pub async fn unitattribute_list_flag_prev_count(
         ]))
     }).collect();
 
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
-            ("data".to_string(), Value::Array(data)),
-        ]),
-    ))))
+    let count = data.len() as i64;
+    Ok(Json(ActionResult::java_success(
+        Value::Array(data),
+        count,
+        0,
+    )))
 }
 
 pub async fn unitattribute_list_flag_next_count(
@@ -2375,12 +2375,12 @@ pub async fn unitattribute_list_flag_next_count(
         ]))
     }).collect();
 
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
-            ("data".to_string(), Value::Array(data)),
-        ]),
-    ))))
+    let count = data.len() as i64;
+    Ok(Json(ActionResult::java_success(
+        Value::Array(data),
+        count,
+        0,
+    )))
 }
 
 pub async fn unitattribute_list_unit_flag(
@@ -2405,12 +2405,12 @@ pub async fn unitattribute_list_unit_flag(
         ]))
     }).collect();
 
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
-            ("data".to_string(), Value::Array(data)),
-        ]),
-    ))))
+    let count = data.len() as i64;
+    Ok(Json(ActionResult::java_success(
+        Value::Array(data),
+        count,
+        0,
+    )))
 }
 
 
@@ -2444,12 +2444,12 @@ pub async fn role_list_flag_prev_count(
         ]))
     }).collect();
 
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
-            ("data".to_string(), Value::Array(data)),
-        ]),
-    ))))
+    let count = data.len() as i64;
+    Ok(Json(ActionResult::java_success(
+        Value::Array(data),
+        count,
+        0,
+    )))
 }
 
 
@@ -2475,12 +2475,12 @@ pub async fn role_list_person_personFlag(
         ]))
     }).collect();
 
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
-            ("data".to_string(), Value::Array(data)),
-        ]),
-    ))))
+    let count = data.len() as i64;
+    Ok(Json(ActionResult::java_success(
+        Value::Array(data),
+        count,
+        0,
+    )))
 }
 
 
@@ -2509,12 +2509,12 @@ pub async fn role_list_like(
         ]))
     }).collect();
 
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
-            ("data".to_string(), Value::Array(data)),
-        ]),
-    ))))
+    let count = data.len() as i64;
+    Ok(Json(ActionResult::java_success(
+        Value::Array(data),
+        count,
+        0,
+    )))
 }
 
 pub async fn role_list_group_groupFlag(
@@ -2524,7 +2524,7 @@ pub async fn role_list_group_groupFlag(
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let rows = client
-        .query("SELECT id, name, description, creator, create_time::text FROM x_org_role WHERE id IN (SELECT role_id FROM x_org_group WHERE id = $1) ORDER BY create_time::text DESC", &[&group_flag])
+        .query("SELECT r.id, r.name, r.description, r.creator, r.create_time::text FROM x_org_role r JOIN x_org_group_role gr ON gr.role_id = r.id WHERE gr.group_id = $1 AND r.deleted_at IS NULL ORDER BY r.create_time::text DESC", &[&group_flag])
         .await
         .map_err(|_| AppError::Internal)?;
 
@@ -2538,12 +2538,12 @@ pub async fn role_list_group_groupFlag(
         ]))
     }).collect();
 
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
-            ("data".to_string(), Value::Array(data)),
-        ]),
-    ))))
+    let count = data.len() as i64;
+    Ok(Json(ActionResult::java_success(
+        Value::Array(data),
+        count,
+        0,
+    )))
 }
 
 
@@ -2632,7 +2632,7 @@ pub async fn personcard_listVCf_idList(
 
     let ids: Vec<&str> = id_list.split(',').collect();
     let rows = client
-        .query("SELECT id, name, mobile, email, unit_id FROM x_org_person WHERE id = ANY($1)", &[&ids])
+        .query("SELECT id, name, mobile, email, unit_id FROM x_org_person WHERE id = ANY($1) AND deleted_at IS NULL", &[&ids])
         .await
         .map_err(|_| AppError::Internal)?;
 
@@ -2646,12 +2646,12 @@ pub async fn personcard_listVCf_idList(
         ]))
     }).collect();
 
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
-            ("data".to_string(), Value::Array(data)),
-        ]),
-    ))))
+    let count = data.len() as i64;
+    Ok(Json(ActionResult::java_success(
+        Value::Array(data),
+        count,
+        0,
+    )))
 }
 
 pub async fn personcard_listPersonalVCf_idList(
@@ -2662,7 +2662,7 @@ pub async fn personcard_listPersonalVCf_idList(
 
     let ids: Vec<&str> = id_list.split(',').collect();
     let rows = client
-        .query("SELECT id, name, mobile, email, unit_id FROM x_org_person WHERE id = ANY($1)", &[&ids])
+        .query("SELECT id, name, mobile, email, unit_id FROM x_org_person WHERE id = ANY($1) AND deleted_at IS NULL", &[&ids])
         .await
         .map_err(|_| AppError::Internal)?;
 
@@ -2676,12 +2676,12 @@ pub async fn personcard_listPersonalVCf_idList(
         ]))
     }).collect();
 
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
-            ("data".to_string(), Value::Array(data)),
-        ]),
-    ))))
+    let count = data.len() as i64;
+    Ok(Json(ActionResult::java_success(
+        Value::Array(data),
+        count,
+        0,
+    )))
 }
 
 pub async fn personcard_createQR_cardId(
@@ -2791,12 +2791,12 @@ pub async fn personattribute_list_flag_prev_count(
         ]))
     }).collect();
 
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
-            ("data".to_string(), Value::Array(data)),
-        ]),
-    ))))
+    let count = data.len() as i64;
+    Ok(Json(ActionResult::java_success(
+        Value::Array(data),
+        count,
+        0,
+    )))
 }
 
 pub async fn personattribute_list_flag_next_count(
@@ -2829,12 +2829,12 @@ pub async fn personattribute_list_flag_next_count(
         ]))
     }).collect();
 
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
-            ("data".to_string(), Value::Array(data)),
-        ]),
-    ))))
+    let count = data.len() as i64;
+    Ok(Json(ActionResult::java_success(
+        Value::Array(data),
+        count,
+        0,
+    )))
 }
 
 pub async fn personattribute_list_person_personFlag(
@@ -2844,7 +2844,7 @@ pub async fn personattribute_list_person_personFlag(
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let rows = client
-        .query("SELECT id, person_id, attribute_key, attribute_value, creator, create_time::text FROM x_org_person_attribute WHERE person_id = $1 ORDER BY create_time::text DESC", &[&person_flag])
+        .query("SELECT id, person_id, attribute_key, attribute_value, creator, create_time::text FROM x_org_person_attribute WHERE person_id = $1 AND deleted_at IS NULL ORDER BY create_time::text DESC", &[&person_flag])
         .await
         .map_err(|_| AppError::Internal)?;
 
@@ -2859,12 +2859,12 @@ pub async fn personattribute_list_person_personFlag(
         ]))
     }).collect();
 
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
-            ("data".to_string(), Value::Array(data)),
-        ]),
-    ))))
+    let count = data.len() as i64;
+    Ok(Json(ActionResult::java_success(
+        Value::Array(data),
+        count,
+        0,
+    )))
 }
 
 
@@ -2892,12 +2892,12 @@ pub async fn loginrecord_stream(
         ]))
     }).collect();
 
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
-            ("data".to_string(), Value::Array(data)),
-        ]),
-    ))))
+    let count = data.len() as i64;
+    Ok(Json(ActionResult::java_success(
+        Value::Array(data),
+        count,
+        0,
+    )))
 }
 
 
@@ -2923,12 +2923,12 @@ pub async fn inputperson_result_flag_flag(
         ]))
     }).collect();
 
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
-            ("data".to_string(), Value::Array(data)),
-        ]),
-    ))))
+    let count = data.len() as i64;
+    Ok(Json(ActionResult::java_success(
+        Value::Array(data),
+        count,
+        0,
+    )))
 }
 
 pub async fn identity_flag_order_before_followFlag(
@@ -3059,12 +3059,12 @@ pub async fn identity_list_flag_prev_count(
         ]))
     }).collect();
 
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
-            ("data".to_string(), Value::Array(data)),
-        ]),
-    ))))
+    let count = data.len() as i64;
+    Ok(Json(ActionResult::java_success(
+        Value::Array(data),
+        count,
+        0,
+    )))
 }
 
 pub async fn identity_list_flag_next_count(
@@ -3097,12 +3097,12 @@ pub async fn identity_list_flag_next_count(
         ]))
     }).collect();
 
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
-            ("data".to_string(), Value::Array(data)),
-        ]),
-    ))))
+    let count = data.len() as i64;
+    Ok(Json(ActionResult::java_success(
+        Value::Array(data),
+        count,
+        0,
+    )))
 }
 
 pub async fn identity_list_unitduty_name_unitDutyName(
@@ -3142,7 +3142,7 @@ pub async fn identity_list_unit_unitFlag(
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let rows = client
-        .query("SELECT id, name, unit_id, identity_id, creator, create_time::text FROM x_org_identity WHERE unit_id = $1 ORDER BY create_time::text DESC", &[&unit_flag])
+        .query("SELECT id, name, unit_id, identity_id, creator, create_time::text FROM x_org_identity WHERE unit_id = $1 AND deleted_at IS NULL ORDER BY create_time::text DESC", &[&unit_flag])
         .await
         .map_err(|_| AppError::Internal)?;
 
@@ -3157,12 +3157,12 @@ pub async fn identity_list_unit_unitFlag(
         ]))
     }).collect();
 
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
-            ("data".to_string(), Value::Array(data)),
-        ]),
-    ))))
+    let count = data.len() as i64;
+    Ok(Json(ActionResult::java_success(
+        Value::Array(data),
+        count,
+        0,
+    )))
 }
 
 
@@ -3174,7 +3174,7 @@ pub async fn identity_list_person_personFlag(
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let rows = client
-        .query("SELECT id, name, unit_id, identity_id, creator, create_time::text FROM x_org_identity WHERE creator = $1 ORDER BY create_time::text DESC", &[&person_flag])
+        .query("SELECT id, name, unit_id, identity_id, creator, create_time::text FROM x_org_identity WHERE person_id = $1 AND deleted_at IS NULL ORDER BY create_time::text DESC", &[&person_flag])
         .await
         .map_err(|_| AppError::Internal)?;
 
@@ -3189,12 +3189,12 @@ pub async fn identity_list_person_personFlag(
         ]))
     }).collect();
 
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
-            ("data".to_string(), Value::Array(data)),
-        ]),
-    ))))
+    let count = data.len() as i64;
+    Ok(Json(ActionResult::java_success(
+        Value::Array(data),
+        count,
+        0,
+    )))
 }
 
 
@@ -3224,12 +3224,12 @@ pub async fn identity_list_like(
         ]))
     }).collect();
 
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
-            ("data".to_string(), Value::Array(data)),
-        ]),
-    ))))
+    let count = data.len() as i64;
+    Ok(Json(ActionResult::java_success(
+        Value::Array(data),
+        count,
+        0,
+    )))
 }
 
 
@@ -3273,12 +3273,12 @@ pub async fn group_list_flag_prev_count(
         ]))
     }).collect();
 
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
-            ("data".to_string(), Value::Array(data)),
-        ]),
-    ))))
+    let count = data.len() as i64;
+    Ok(Json(ActionResult::java_success(
+        Value::Array(data),
+        count,
+        0,
+    )))
 }
 
 pub async fn group_list_flag_next_count(
@@ -3311,12 +3311,12 @@ pub async fn group_list_flag_next_count(
         ]))
     }).collect();
 
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
-            ("data".to_string(), Value::Array(data)),
-        ]),
-    ))))
+    let count = data.len() as i64;
+    Ok(Json(ActionResult::java_success(
+        Value::Array(data),
+        count,
+        0,
+    )))
 }
 
 pub async fn group_list_role_roleFlag(
@@ -3326,7 +3326,7 @@ pub async fn group_list_role_roleFlag(
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let rows = client
-        .query("SELECT id, name, unit_id, type, creator, create_time::text FROM x_org_group WHERE id IN (SELECT group_id FROM x_org_group_role WHERE role_id = $1) ORDER BY create_time::text DESC", &[&role_flag])
+        .query("SELECT id, name, unit_id, type, creator, create_time::text FROM x_org_group WHERE id IN (SELECT group_id FROM x_org_group_role WHERE role_id = $1) AND deleted_at IS NULL ORDER BY create_time::text DESC", &[&role_flag])
         .await
         .map_err(|_| AppError::Internal)?;
 
@@ -3341,12 +3341,12 @@ pub async fn group_list_role_roleFlag(
         ]))
     }).collect();
 
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
-            ("data".to_string(), Value::Array(data)),
-        ]),
-    ))))
+    let count = data.len() as i64;
+    Ok(Json(ActionResult::java_success(
+        Value::Array(data),
+        count,
+        0,
+    )))
 }
 
 
@@ -3358,7 +3358,7 @@ pub async fn group_list_person_personFlag_sup_nested(
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let rows = client
-        .query("WITH RECURSIVE sup AS (SELECT id, name, unit_id, parent_id FROM x_org_unit WHERE id IN (SELECT unit_id FROM x_org_group WHERE id IN (SELECT group_id FROM x_org_group_member WHERE person_id = $1)) UNION ALL SELECT u.id, u.name, u.unit_id, u.parent_id FROM x_org_unit u JOIN sup s ON u.id = s.parent_id) SELECT DISTINCT g.id, g.name, g.unit_id, g.type, g.creator, g.create_time::text FROM x_org_group g JOIN sup s ON g.unit_id = s.id ORDER BY g.create_time::text DESC", &[&person_flag])
+        .query("WITH RECURSIVE sup AS (SELECT id, name, unit_id, parent_id FROM x_org_unit WHERE id IN (SELECT unit_id FROM x_org_group WHERE id IN (SELECT group_id FROM x_org_group_member WHERE person_id = $1) AND deleted_at IS NULL) AND deleted_at IS NULL UNION ALL SELECT u.id, u.name, u.unit_id, u.parent_id FROM x_org_unit u JOIN sup s ON u.id = s.parent_id WHERE u.deleted_at IS NULL) SELECT DISTINCT g.id, g.name, g.unit_id, g.type, g.creator, g.create_time::text FROM x_org_group g JOIN sup s ON g.unit_id = s.id WHERE g.deleted_at IS NULL ORDER BY g.create_time::text DESC", &[&person_flag])
         .await
         .map_err(|_| AppError::Internal)?;
 
@@ -3373,12 +3373,12 @@ pub async fn group_list_person_personFlag_sup_nested(
         ]))
     }).collect();
 
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
-            ("data".to_string(), Value::Array(data)),
-        ]),
-    ))))
+    let count = data.len() as i64;
+    Ok(Json(ActionResult::java_success(
+        Value::Array(data),
+        count,
+        0,
+    )))
 }
 
 pub async fn group_list_person_personFlag_sup_direct(
@@ -3388,7 +3388,7 @@ pub async fn group_list_person_personFlag_sup_direct(
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let rows = client
-        .query("SELECT id, name, unit_id, type, creator, create_time::text FROM x_org_group WHERE unit_id IN (SELECT unit_id FROM x_org_group WHERE id IN (SELECT group_id FROM x_org_group_member WHERE person_id = $1)) ORDER BY create_time::text DESC", &[&person_flag])
+        .query("SELECT id, name, unit_id, type, creator, create_time::text FROM x_org_group WHERE unit_id IN (SELECT unit_id FROM x_org_group WHERE id IN (SELECT group_id FROM x_org_group_member WHERE person_id = $1) AND deleted_at IS NULL) AND deleted_at IS NULL ORDER BY create_time::text DESC", &[&person_flag])
         .await
         .map_err(|_| AppError::Internal)?;
 
@@ -3403,12 +3403,12 @@ pub async fn group_list_person_personFlag_sup_direct(
         ]))
     }).collect();
 
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
-            ("data".to_string(), Value::Array(data)),
-        ]),
-    ))))
+    let count = data.len() as i64;
+    Ok(Json(ActionResult::java_success(
+        Value::Array(data),
+        count,
+        0,
+    )))
 }
 
 
@@ -3438,12 +3438,12 @@ pub async fn group_list_like(
         ]))
     }).collect();
 
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
-            ("data".to_string(), Value::Array(data)),
-        ]),
-    ))))
+    let count = data.len() as i64;
+    Ok(Json(ActionResult::java_success(
+        Value::Array(data),
+        count,
+        0,
+    )))
 }
 
 pub fn router(pool: deadpool_postgres::Pool) -> Router {
