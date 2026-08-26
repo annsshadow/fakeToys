@@ -308,7 +308,7 @@ def generate_test_fn(handler_name: str, routes: Dict[str, Tuple[str, str]],
 
         # Replace all /{param} segments with /test-id to avoid string escaping issues
         test_path = re.sub(r'/\{[^}]+\}', '/test-id', test_path)
-        
+
         test_code = f'''    #[tokio::test]
     async fn test_{handler_name}() {{
         let pool = shared::testing::test_pool();
@@ -323,8 +323,14 @@ def generate_test_fn(handler_name: str, routes: Dict[str, Tuple[str, str]],
             )
             .await
             .unwrap();
-        assert_ne!(response.status(), StatusCode::NOT_FOUND,
-            "{handler_name} route should be registered");
+        if response.status() == StatusCode::NOT_FOUND {{
+            // Route-presence probe: an unregistered path hits the axum fallback
+            // (empty 404 body); a matched handler may legitimately answer 404
+            // (e.g. NotFound for missing row) but always with a JSON envelope.
+            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX).await.unwrap_or_default();
+            assert!(!bytes.is_empty(),
+                "{handler_name} route should be registered");
+        }}
     }}
 '''
         return (test_code, False)

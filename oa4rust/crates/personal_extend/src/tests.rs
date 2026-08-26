@@ -38,7 +38,8 @@ fn test_action_result_serialization() {
     let result: ActionResult<String> = ActionResult::success("test data".to_string());
     assert_eq!(result.r#type, Some("success".to_string()));
     assert_eq!(result.data, Some("test data".to_string()));
-    assert_eq!(result.message, None);
+    // Java 成功信封 message 恒为空串（2026-08-25 行为对比结论）
+    assert_eq!(result.message, Some(String::new()));
 
     let json = serde_json::to_value(&result).unwrap();
     assert_eq!(json["type"], "success");

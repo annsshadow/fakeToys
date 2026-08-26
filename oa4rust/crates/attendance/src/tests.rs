@@ -10,7 +10,8 @@ mod tests {
         let result: ActionResult<String> = ActionResult::success("test".to_string());
         assert_eq!(result.r#type, Some("success".to_string()));
         assert_eq!(result.data, Some("test".to_string()));
-        assert_eq!(result.message, None);
+        // Java 成功信封 message 恒为空串（2026-08-25 行为对比结论）
+        assert_eq!(result.message, Some(String::new()));
     }
 
     #[test]

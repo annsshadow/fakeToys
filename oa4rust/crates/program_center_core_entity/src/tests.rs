@@ -14,10 +14,16 @@ mod tests {
         Pool::builder(mgr).build().unwrap()
     }
 
-    // ── Route existence tests (without DB) ───────────────────────────────────
+    // ── Route ownership tests ───────────────────────────────────────────────
+    // 留档：35dc00c2 解决跨 crate 路由冲突后，/jaxrs/program_center/* 路由统一由
+    // crates/program_center 注册；本 crate 各 handlers::_router 返回空 Router，
+    // 重复注册会在 create_app 合并时 panic。以下断言固化该让渡决策：
+    // 本 crate 的路由器不得再提供这些路径（404 = 未在本 crate 注册）。
+    // application/agent/structure 的 list 端点当前全工作区无实现（openapi 清单
+    // 有路径、无 handler）；script/invoke 由 crates/program_center 提供并有独立测试。
 
     #[tokio::test]
-    async fn test_application_list_returns_error_without_db() {
+    async fn test_application_list_route_not_registered_here() {
         let pool = build_test_pool();
         let app = crate::program_center_core_entity_router(pool).await;
 
@@ -33,11 +39,11 @@ mod tests {
             .await
             .unwrap();
 
-        assert_eq!(response.status(), StatusCode::OK);
+        assert_eq!(response.status(), StatusCode::NOT_FOUND);
     }
 
     #[tokio::test]
-    async fn test_script_list_returns_error_without_db() {
+    async fn test_script_list_route_not_registered_here() {
         let pool = build_test_pool();
         let app = crate::program_center_core_entity_router(pool).await;
 
@@ -53,11 +59,11 @@ mod tests {
             .await
             .unwrap();
 
-        assert_eq!(response.status(), StatusCode::OK);
+        assert_eq!(response.status(), StatusCode::NOT_FOUND);
     }
 
     #[tokio::test]
-    async fn test_invoke_list_returns_error_without_db() {
+    async fn test_invoke_list_route_not_registered_here() {
         let pool = build_test_pool();
         let app = crate::program_center_core_entity_router(pool).await;
 
@@ -73,11 +79,11 @@ mod tests {
             .await
             .unwrap();
 
-        assert_eq!(response.status(), StatusCode::OK);
+        assert_eq!(response.status(), StatusCode::NOT_FOUND);
     }
 
     #[tokio::test]
-    async fn test_agent_list_returns_error_without_db() {
+    async fn test_agent_list_route_not_registered_here() {
         let pool = build_test_pool();
         let app = crate::program_center_core_entity_router(pool).await;
 
@@ -93,11 +99,11 @@ mod tests {
             .await
             .unwrap();
 
-        assert_eq!(response.status(), StatusCode::OK);
+        assert_eq!(response.status(), StatusCode::NOT_FOUND);
     }
 
     #[tokio::test]
-    async fn test_structure_list_returns_error_without_db() {
+    async fn test_structure_list_route_not_registered_here() {
         let pool = build_test_pool();
         let app = crate::program_center_core_entity_router(pool).await;
 
@@ -113,11 +119,11 @@ mod tests {
             .await
             .unwrap();
 
-        assert_eq!(response.status(), StatusCode::OK);
+        assert_eq!(response.status(), StatusCode::NOT_FOUND);
     }
 
     #[tokio::test]
-    async fn test_application_create_returns_error_without_db() {
+    async fn test_application_create_route_not_registered_here() {
         let pool = build_test_pool();
         let app = crate::program_center_core_entity_router(pool).await;
 
@@ -139,11 +145,11 @@ mod tests {
             .await
             .unwrap();
 
-        assert_eq!(response.status(), StatusCode::INTERNAL_SERVER_ERROR);
+        assert_eq!(response.status(), StatusCode::NOT_FOUND);
     }
 
     #[tokio::test]
-    async fn test_application_update_returns_error_without_db() {
+    async fn test_application_update_route_not_registered_here() {
         let pool = build_test_pool();
         let app = crate::program_center_core_entity_router(pool).await;
 
@@ -164,11 +170,11 @@ mod tests {
             .await
             .unwrap();
 
-        assert_eq!(response.status(), StatusCode::INTERNAL_SERVER_ERROR);
+        assert_eq!(response.status(), StatusCode::NOT_FOUND);
     }
 
     #[tokio::test]
-    async fn test_application_delete_returns_error_without_db() {
+    async fn test_application_delete_route_not_registered_here() {
         let pool = build_test_pool();
         let app = crate::program_center_core_entity_router(pool).await;
 
@@ -184,11 +190,11 @@ mod tests {
             .await
             .unwrap();
 
-        assert_eq!(response.status(), StatusCode::INTERNAL_SERVER_ERROR);
+        assert_eq!(response.status(), StatusCode::NOT_FOUND);
     }
 
     #[tokio::test]
-    async fn test_invoke_create_returns_error_without_db() {
+    async fn test_invoke_create_route_not_registered_here() {
         let pool = build_test_pool();
         let app = crate::program_center_core_entity_router(pool).await;
 
@@ -209,11 +215,11 @@ mod tests {
             .await
             .unwrap();
 
-        assert_eq!(response.status(), StatusCode::INTERNAL_SERVER_ERROR);
+        assert_eq!(response.status(), StatusCode::NOT_FOUND);
     }
 
     #[tokio::test]
-    async fn test_agent_create_returns_error_without_db() {
+    async fn test_agent_create_route_not_registered_here() {
         let pool = build_test_pool();
         let app = crate::program_center_core_entity_router(pool).await;
 
@@ -234,11 +240,11 @@ mod tests {
             .await
             .unwrap();
 
-        assert_eq!(response.status(), StatusCode::INTERNAL_SERVER_ERROR);
+        assert_eq!(response.status(), StatusCode::NOT_FOUND);
     }
 
     #[tokio::test]
-    async fn test_structure_create_returns_error_without_db() {
+    async fn test_structure_create_route_not_registered_here() {
         let pool = build_test_pool();
         let app = crate::program_center_core_entity_router(pool).await;
 
@@ -260,7 +266,7 @@ mod tests {
             .await
             .unwrap();
 
-        assert_eq!(response.status(), StatusCode::INTERNAL_SERVER_ERROR);
+        assert_eq!(response.status(), StatusCode::NOT_FOUND);
     }
 
     #[tokio::test]

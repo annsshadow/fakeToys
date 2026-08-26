@@ -49,7 +49,8 @@ mod tests {
         let result: ActionResult<String> = ActionResult::success("test".to_string());
         assert_eq!(result.r#type, Some("success".to_string()));
         assert_eq!(result.data, Some("test".to_string()));
-        assert_eq!(result.message, None);
+        // Java 成功信封 message 恒为空串（2026-08-25 行为对比结论）
+        assert_eq!(result.message, Some(String::new()));
     }
 
     #[test]
@@ -64,12 +65,13 @@ mod tests {
         let result: ActionResult<serde_json::Value> = ActionResult::success(serde_json::json!({"key": "value"}));
         assert_eq!(result.r#type, Some("success".to_string()));
         assert!(result.data.is_some());
-        assert_eq!(result.message, None);
-        assert_eq!(result.date, None);
-        assert_eq!(result.spent, None);
-        assert_eq!(result.size, None);
-        assert_eq!(result.count, None);
-        assert_eq!(result.position, None);
+        // Java 成功信封元数据字段恒填充（2026-08-25 行为对比结论）
+        assert_eq!(result.message, Some(String::new()));
+        assert!(result.date.is_some());
+        assert_eq!(result.spent, Some(0));
+        assert_eq!(result.size, Some(0));
+        assert_eq!(result.count, Some(0));
+        assert_eq!(result.position, Some(serde_json::json!(0)));
         assert_eq!(result.prompt, None);
     }
 
