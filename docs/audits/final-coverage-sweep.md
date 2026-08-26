@@ -188,6 +188,16 @@
 
 **结论**：信封层（ActionResult 结构/序列化/认证层语义）与列表包装模式已与 Java 实测形状对齐并经验证（1212 PASS 含全部双侧成功的端点）；剩余 FAIL 属业务级语义差异与数据依赖范畴，已按类留档，不构成端点级"可替代"判定的新增缺口——其收敛依赖共享数据前提（R1 影子流量或种子数据集），与 §五 R9 定位一致。
 
+### 种子轮：共享种子数据集首次落地与边界实测（2026-08-26）
+
+按上述结论建设了两侧共享种子资产（`tests/behavior_comparison/seeds/`，标识符=comparator 传输的路径模板字面值），组织人员域经 Java 管理 REST 播种 22 端点、内容域 Rust 侧 10 实体落库 + Java appinfo 字面旗标验证可解析。第 9 轮全量对比结果 **1199 PASS / 844 FAIL / 2001 SKIP**，与种子前基本持平。该持平本身即有价值的边界发现：
+
+1. **字段形状层暴露**：两侧命中同一资源后，对比进入下一层——Rust SQL 投影字段名/结构与 Java Wo 输出不一致（camelCase vs snake_case、字段集差异）。空库时代的 error-vs-success 掩盖了这一层；现有 allowlist 改名对（updatedAt↔update_time 等 26 条）只覆盖已知子集。
+2. **Java 侧旗标解析差异**：appinfo 按 name 命中成功；unit/identity 的 flag 解析链（id→unique→name?）与管理 REST 创建的属性映射存在偏差（`组织:{unitFlag} 不存在`），需逐 war 核实其 flag 语义后补种。
+3. **下一前沿**：字段映射层（扩 allowlist 改名对 + handler 投影对齐）与 Java flag 语义核查，是继信封层/包装层之后的第三层收敛面。
+
+种子资产使后续任意一轮对比都可重放同一数据前提——这正是 R1 影子流量报告所需的对照基线设施。
+
 ## 相关文档
 
 - **收官复盘：** `docs/solutions/best-practices/oa4rust-o2server-parity-closure-campaign-2026-08-25.md`
