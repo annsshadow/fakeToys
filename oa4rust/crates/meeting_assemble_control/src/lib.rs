@@ -56,11 +56,8 @@ pub async fn list_meeting_controls(
         })
         .collect();
 
-    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
-        ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
-        ("\"meetingId\"".to_string(), Value::String(meeting_id)),
-        ("data".to_string(), Value::Array(data)),
-    ])))))
+    let count = data.len() as i64;
+    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
 }
 
 pub async fn create_meeting_control(
@@ -284,10 +281,8 @@ pub async fn building_list_start_start_completed_completed(
         })
         .collect();
 
-    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
-        ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
-        ("data".to_string(), Value::Array(data)),
-    ])))))
+    let count = data.len() as i64;
+    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
 }
 
 pub async fn building_list_start_start_completed_completed_allmeeting(
@@ -319,10 +314,8 @@ pub async fn building_list_start_start_completed_completed_allmeeting(
         })
         .collect();
 
-    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
-        ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
-        ("data".to_string(), Value::Array(data)),
-    ])))))
+    let count = data.len() as i64;
+    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
 }
 
 pub async fn building_list_start_start_completed_completed_room_room_meeting_meeting(
@@ -354,10 +347,8 @@ pub async fn building_list_start_start_completed_completed_room_room_meeting_mee
         })
         .collect();
 
-    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
-        ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
-        ("data".to_string(), Value::Array(data)),
-    ])))))
+    let count = data.len() as i64;
+    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
 }
 
 pub async fn building_id(
@@ -417,10 +408,8 @@ pub async fn config_system_config(
         })
         .collect();
 
-    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
-        ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
-        ("data".to_string(), Value::Array(data)),
-    ])))))
+    let count = data.len() as i64;
+    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
 }
 
 pub async fn config_system_config_manage(
@@ -582,12 +571,8 @@ pub async fn meeting_list_apply_page_size_size(
         })
         .collect();
 
-    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
-        ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
-        ("page".to_string(), Value::Number(serde_json::Number::from(page))),
-        ("size".to_string(), Value::Number(serde_json::Number::from(size))),
-        ("data".to_string(), Value::Array(data)),
-    ])))))
+    let count = data.len() as i64;
+    Ok(Json(ActionResult::java_success(Value::Array(data), count, size)))
 }
 
 pub async fn meeting_list_coming_day_count(
@@ -619,10 +604,8 @@ pub async fn meeting_list_coming_day_count(
         })
         .collect();
 
-    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
-        ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
-        ("data".to_string(), Value::Array(data)),
-    ])))))
+    let count = data.len() as i64;
+    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
 }
 
 pub async fn meeting_list_coming_month_count(
@@ -654,10 +637,8 @@ pub async fn meeting_list_coming_month_count(
         })
         .collect();
 
-    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
-        ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
-        ("data".to_string(), Value::Array(data)),
-    ])))))
+    let count = data.len() as i64;
+    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
 }
 
 pub async fn meeting_list_forward_monthcount_monthCount(
@@ -689,10 +670,8 @@ pub async fn meeting_list_forward_monthcount_monthCount(
         })
         .collect();
 
-    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
-        ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
-        ("data".to_string(), Value::Array(data)),
-    ])))))
+    let count = data.len() as i64;
+    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
 }
 
 pub async fn meeting_list_forward_monthcount_monthCount_all(
@@ -724,10 +703,8 @@ pub async fn meeting_list_forward_monthcount_monthCount_all(
         })
         .collect();
 
-    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
-        ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
-        ("data".to_string(), Value::Array(data)),
-    ])))))
+    let count = data.len() as i64;
+    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
 }
 
 pub async fn meeting_list_invite_page_size_size(
@@ -762,12 +739,8 @@ pub async fn meeting_list_invite_page_size_size(
         })
         .collect();
 
-    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
-        ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
-        ("page".to_string(), Value::Number(serde_json::Number::from(page))),
-        ("size".to_string(), Value::Number(serde_json::Number::from(size))),
-        ("data".to_string(), Value::Array(data)),
-    ])))))
+    let count = data.len() as i64;
+    Ok(Json(ActionResult::java_success(Value::Array(data), count, size)))
 }
 
 pub async fn meeting_list_invited_completed(
@@ -998,10 +971,8 @@ pub async fn meeting_list_year_year_month_month(
         })
         .collect();
 
-    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
-        ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
-        ("data".to_string(), Value::Array(data)),
-    ])))))
+    let count = data.len() as i64;
+    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
 }
 
 pub async fn meeting_list_year_year_month_month_all(
@@ -1040,10 +1011,8 @@ pub async fn meeting_list_year_year_month_month_all(
         })
         .collect();
 
-    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
-        ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
-        ("data".to_string(), Value::Array(data)),
-    ])))))
+    let count = data.len() as i64;
+    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
 }
 
 pub async fn meeting_list_year_year_month_month_day_day(
@@ -1078,10 +1047,8 @@ pub async fn meeting_list_year_year_month_month_day_day(
         })
         .collect();
 
-    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
-        ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
-        ("data".to_string(), Value::Array(data)),
-    ])))))
+    let count = data.len() as i64;
+    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
 }
 
 pub async fn meeting_list_year_year_month_month_day_day_all(
@@ -1116,10 +1083,8 @@ pub async fn meeting_list_year_year_month_month_day_day_all(
         })
         .collect();
 
-    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
-        ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
-        ("data".to_string(), Value::Array(data)),
-    ])))))
+    let count = data.len() as i64;
+    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
 }
 
 pub async fn meeting_list_year_year_month_month_day_day_roomId(
@@ -1154,10 +1119,8 @@ pub async fn meeting_list_year_year_month_month_day_day_roomId(
         })
         .collect();
 
-    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
-        ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
-        ("data".to_string(), Value::Array(data)),
-    ])))))
+    let count = data.len() as i64;
+    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
 }
 
 pub async fn meeting_list_id_next_count(
@@ -1201,10 +1164,8 @@ pub async fn meeting_list_id_next_count(
         })
         .collect();
 
-    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
-        ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
-        ("data".to_string(), Value::Array(data)),
-    ])))))
+    let count = data.len() as i64;
+    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
 }
 
 pub async fn meeting_list_id_prev_count(
@@ -1238,10 +1199,8 @@ pub async fn meeting_list_id_prev_count(
         })
         .collect();
 
-    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
-        ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
-        ("data".to_string(), Value::Array(data)),
-    ])))))
+    let count = data.len() as i64;
+    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
 }
 
 pub async fn meeting_list_page_size_size(
@@ -1276,12 +1235,8 @@ pub async fn meeting_list_page_size_size(
         })
         .collect();
 
-    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
-        ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
-        ("page".to_string(), Value::Number(serde_json::Number::from(page))),
-        ("size".to_string(), Value::Number(serde_json::Number::from(size))),
-        ("data".to_string(), Value::Array(data)),
-    ])))))
+    let count = data.len() as i64;
+    Ok(Json(ActionResult::java_success(Value::Array(data), count, size)))
 }
 
 pub async fn meeting_list_page_size_size_manage(
@@ -1316,12 +1271,8 @@ pub async fn meeting_list_page_size_size_manage(
         })
         .collect();
 
-    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
-        ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
-        ("page".to_string(), Value::Number(serde_json::Number::from(page))),
-        ("size".to_string(), Value::Number(serde_json::Number::from(size))),
-        ("data".to_string(), Value::Array(data)),
-    ])))))
+    let count = data.len() as i64;
+    Ok(Json(ActionResult::java_success(Value::Array(data), count, size)))
 }
 
 pub async fn meeting_id(
@@ -2142,10 +2093,7 @@ pub async fn u2_attachment_list_with_meeting(
         .map_err(|_| AppError::Internal)?;
     let data: Vec<Value> = rows.iter().map(u2_attachment_json).collect();
     let count = data.len() as i64;
-    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
-        ("count".to_string(), Value::Number(serde_json::Number::from(count))),
-        ("data".to_string(), Value::Array(data)),
-    ])))))
+    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
 }
 
 pub async fn u2_attachment_get(
@@ -2351,11 +2299,8 @@ async fn u2_attachment_paged(
     if backward {
         data.reverse();
     }
-    let total = data.len() as i64;
-    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
-        ("count".to_string(), Value::Number(serde_json::Number::from(total))),
-        ("data".to_string(), Value::Array(data)),
-    ])))))
+    let count = data.len() as i64;
+    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
 }
 
 pub async fn u2_attachment_list_next(
@@ -2640,10 +2585,7 @@ pub async fn u2_config_manage_get(
         })
         .collect();
     let count = data.len() as i64;
-    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
-        ("count".to_string(), Value::Number(serde_json::Number::from(count))),
-        ("data".to_string(), Value::Array(data)),
-    ])))))
+    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
 }
 
 // ── Meeting 族补齐（IDOR 删除 / modify / PUT save / GET checkin）────────────
