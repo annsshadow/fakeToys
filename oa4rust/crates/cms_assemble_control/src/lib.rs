@@ -103,7 +103,7 @@ pub async fn list_control_sections(
         })
         .collect();
 
-    Ok(Json(ActionResult::success(Value::Array(sections))))
+    let count = sections.len() as i64; Ok(Json(ActionResult::java_success(Value::Array(sections), count, 0)))
 }
 
 #[axum::debug_handler]
@@ -373,32 +373,28 @@ async fn upsert_by_id(pool: &Pool, table: &str, body: &Value) -> Result<Value, A
 pub async fn anonymous_document_filter_list_id_next_count(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let data = list_from_table_filtered(&pool, "x_cms_data_document", "deleted_at IS NULL", &[]).await?;
-    Ok(Json(ActionResult::success(data)))
+    list_from_table_filtered_java(&pool, "x_cms_data_document", "deleted_at IS NULL", &[]).await
 }
 
 #[axum::debug_handler]
 pub async fn anonymous_document_filter_list_id_next_count_mockputtopost(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let data = list_from_table_filtered(&pool, "x_cms_data_document", "deleted_at IS NULL", &[]).await?;
-    Ok(Json(ActionResult::success(data)))
+    list_from_table_filtered_java(&pool, "x_cms_data_document", "deleted_at IS NULL", &[]).await
 }
 
 #[axum::debug_handler]
 pub async fn anonymous_document_filter_list_page_size_size(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let data = list_from_table_filtered(&pool, "x_cms_data_document", "deleted_at IS NULL", &[]).await?;
-    Ok(Json(ActionResult::success(data)))
+    list_from_table_filtered_java(&pool, "x_cms_data_document", "deleted_at IS NULL", &[]).await
 }
 
 #[axum::debug_handler]
 pub async fn anonymous_document_filter_list_page_size_size_mockputtopost(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let data = list_from_table_filtered(&pool, "x_cms_data_document", "deleted_at IS NULL", &[]).await?;
-    Ok(Json(ActionResult::success(data)))
+    list_from_table_filtered_java(&pool, "x_cms_data_document", "deleted_at IS NULL", &[]).await
 }
 
 #[axum::debug_handler]
@@ -494,32 +490,28 @@ pub async fn appinfo_erase_app_id_mockdeletetoget(
 pub async fn appinfo_filter_list_id_next_count(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let data = list_from_table_filtered(&pool, "x_cms_appinfo", "deleted_at IS NULL", &[]).await?;
-    Ok(Json(ActionResult::success(data)))
+    list_from_table_filtered_java(&pool, "x_cms_appinfo", "deleted_at IS NULL", &[]).await
 }
 
 #[axum::debug_handler]
 pub async fn appinfo_filter_list_id_next_count_mockputtopost(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let data = list_from_table_filtered(&pool, "x_cms_appinfo", "deleted_at IS NULL", &[]).await?;
-    Ok(Json(ActionResult::success(data)))
+    list_from_table_filtered_java(&pool, "x_cms_appinfo", "deleted_at IS NULL", &[]).await
 }
 
 #[axum::debug_handler]
 pub async fn appinfo_filter_list_id_prev_count(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let data = list_from_table_filtered(&pool, "x_cms_appinfo", "deleted_at IS NULL", &[]).await?;
-    Ok(Json(ActionResult::success(data)))
+    list_from_table_filtered_java(&pool, "x_cms_appinfo", "deleted_at IS NULL", &[]).await
 }
 
 #[axum::debug_handler]
 pub async fn appinfo_filter_list_id_prev_count_mockputtopost(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let data = list_from_table_filtered(&pool, "x_cms_appinfo", "deleted_at IS NULL", &[]).await?;
-    Ok(Json(ActionResult::success(data)))
+    list_from_table_filtered_java(&pool, "x_cms_appinfo", "deleted_at IS NULL", &[]).await
 }
 
 #[axum::debug_handler]
@@ -604,24 +596,21 @@ pub async fn appinfo_list_manage(
 pub async fn appinfo_list_manage_type_appType(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let data = list_from_table_filtered(&pool, "x_cms_appinfo", "deleted_at IS NULL", &[]).await?;
-    Ok(Json(ActionResult::success(data)))
+    list_from_table_filtered_java(&pool, "x_cms_appinfo", "deleted_at IS NULL", &[]).await
 }
 
 #[axum::debug_handler]
 pub async fn appinfo_list_user_publish(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let data = list_from_table_filtered(&pool, "x_cms_appinfo", "deleted_at IS NULL", &[]).await?;
-    Ok(Json(ActionResult::success(data)))
+    list_from_table_filtered_java(&pool, "x_cms_appinfo", "deleted_at IS NULL", &[]).await
 }
 
 #[axum::debug_handler]
 pub async fn appinfo_list_user_publish_type_appType(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let data = list_from_table_filtered(&pool, "x_cms_appinfo", "deleted_at IS NULL", &[]).await?;
-    Ok(Json(ActionResult::success(data)))
+    list_from_table_filtered_java(&pool, "x_cms_appinfo", "deleted_at IS NULL", &[]).await
 }
 
 #[axum::debug_handler]
@@ -656,24 +645,21 @@ pub async fn appinfo_list_user_view_all_type_appType(
 pub async fn appinfo_list_user_view_article_type_appType(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let data = list_from_table_filtered(&pool, "x_cms_appinfo", "deleted_at IS NULL", &[]).await?;
-    Ok(Json(ActionResult::success(data)))
+    list_from_table_filtered_java(&pool, "x_cms_appinfo", "deleted_at IS NULL", &[]).await
 }
 
 #[axum::debug_handler]
 pub async fn appinfo_list_user_view_data(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let data = list_from_table_filtered(&pool, "x_cms_appinfo", "deleted_at IS NULL", &[]).await?;
-    Ok(Json(ActionResult::success(data)))
+    list_from_table_filtered_java(&pool, "x_cms_appinfo", "deleted_at IS NULL", &[]).await
 }
 
 #[axum::debug_handler]
 pub async fn appinfo_list_user_view_data_type_appType(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let data = list_from_table_filtered(&pool, "x_cms_appinfo", "deleted_at IS NULL", &[]).await?;
-    Ok(Json(ActionResult::success(data)))
+    list_from_table_filtered_java(&pool, "x_cms_appinfo", "deleted_at IS NULL", &[]).await
 }
 
 #[axum::debug_handler]
@@ -709,8 +695,7 @@ pub async fn appinfo_appId_icon_size_size(
 pub async fn appinfo_flag(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let data = list_from_table_filtered(&pool, "x_cms_appinfo", "deleted_at IS NULL", &[]).await?;
-    Ok(Json(ActionResult::success(data)))
+    list_from_table_filtered_java(&pool, "x_cms_appinfo", "deleted_at IS NULL", &[]).await
 }
 
 #[axum::debug_handler]
@@ -804,7 +789,7 @@ pub async fn appinfo_id_permission(
             ("permissionLevel".to_string(), Value::String(row.get::<_, Option<String>>("permission_level").unwrap_or_default())),
         ]))
     }).collect();
-    Ok(Json(ActionResult::success(Value::Array(data))))
+    let count = data.len() as i64; Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
 }
 
 // ─── categoryinfo_* stubs ───────────────────────────────────────────────────
@@ -958,112 +943,98 @@ pub async fn categoryinfo_extContent(
 pub async fn categoryinfo_filter_list_id_next_count_app_appId(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let data = list_from_table_filtered(&pool, "x_cms_categoryinfo", "deleted_at IS NULL", &[]).await?;
-    Ok(Json(ActionResult::success(data)))
+    list_from_table_filtered_java(&pool, "x_cms_categoryinfo", "deleted_at IS NULL", &[]).await
 }
 
 #[axum::debug_handler]
 pub async fn categoryinfo_filter_list_id_next_count_app_appId_mockputtopost(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let data = list_from_table_filtered(&pool, "x_cms_categoryinfo", "deleted_at IS NULL", &[]).await?;
-    Ok(Json(ActionResult::success(data)))
+    list_from_table_filtered_java(&pool, "x_cms_categoryinfo", "deleted_at IS NULL", &[]).await
 }
 
 #[axum::debug_handler]
 pub async fn categoryinfo_filter_list_id_prev_count_app_appId(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let data = list_from_table_filtered(&pool, "x_cms_categoryinfo", "deleted_at IS NULL", &[]).await?;
-    Ok(Json(ActionResult::success(data)))
+    list_from_table_filtered_java(&pool, "x_cms_categoryinfo", "deleted_at IS NULL", &[]).await
 }
 
 #[axum::debug_handler]
 pub async fn categoryinfo_filter_list_id_prev_count_app_appId_mockputtopost(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let data = list_from_table_filtered(&pool, "x_cms_categoryinfo", "deleted_at IS NULL", &[]).await?;
-    Ok(Json(ActionResult::success(data)))
+    list_from_table_filtered_java(&pool, "x_cms_categoryinfo", "deleted_at IS NULL", &[]).await
 }
 
 #[axum::debug_handler]
 pub async fn categoryinfo_filter_list_page_size_size(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let data = list_from_table_filtered(&pool, "x_cms_categoryinfo", "deleted_at IS NULL", &[]).await?;
-    Ok(Json(ActionResult::success(data)))
+    list_from_table_filtered_java(&pool, "x_cms_categoryinfo", "deleted_at IS NULL", &[]).await
 }
 
 #[axum::debug_handler]
 pub async fn categoryinfo_filter_list_page_size_size_mockputtopost(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let data = list_from_table_filtered(&pool, "x_cms_categoryinfo", "deleted_at IS NULL", &[]).await?;
-    Ok(Json(ActionResult::success(data)))
+    list_from_table_filtered_java(&pool, "x_cms_categoryinfo", "deleted_at IS NULL", &[]).await
 }
 
 #[axum::debug_handler]
 pub async fn categoryinfo_list_all(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let data = list_from_table_filtered(&pool, "x_cms_categoryinfo", "deleted_at IS NULL", &[]).await?;
-    Ok(Json(ActionResult::success(data)))
+    list_from_table_filtered_java(&pool, "x_cms_categoryinfo", "deleted_at IS NULL", &[]).await
 }
 
 #[axum::debug_handler]
 pub async fn categoryinfo_list_manage_app_appId(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let data = list_from_table_filtered(&pool, "x_cms_categoryinfo", "deleted_at IS NULL", &[]).await?;
-    Ok(Json(ActionResult::success(data)))
+    list_from_table_filtered_java(&pool, "x_cms_categoryinfo", "deleted_at IS NULL", &[]).await
 }
 
 #[axum::debug_handler]
 pub async fn categoryinfo_list_objects(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let data = list_from_table_filtered(&pool, "x_cms_categoryinfo", "deleted_at IS NULL", &[]).await?;
-    Ok(Json(ActionResult::success(data)))
+    list_from_table_filtered_java(&pool, "x_cms_categoryinfo", "deleted_at IS NULL", &[]).await
 }
 
 #[axum::debug_handler]
 pub async fn categoryinfo_list_publish_app_appId(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let data = list_from_table_filtered(&pool, "x_cms_categoryinfo", "deleted_at IS NULL", &[]).await?;
-    Ok(Json(ActionResult::success(data)))
+    list_from_table_filtered_java(&pool, "x_cms_categoryinfo", "deleted_at IS NULL", &[]).await
 }
 
 #[axum::debug_handler]
 pub async fn categoryinfo_list_view_app_appId(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let data = list_from_table_filtered(&pool, "x_cms_categoryinfo", "deleted_at IS NULL", &[]).await?;
-    Ok(Json(ActionResult::success(data)))
+    list_from_table_filtered_java(&pool, "x_cms_categoryinfo", "deleted_at IS NULL", &[]).await
 }
 
 #[axum::debug_handler]
 pub async fn categoryinfo_list_view_app_appId_all(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let data = list_from_table_filtered(&pool, "x_cms_categoryinfo", "deleted_at IS NULL", &[]).await?;
-    Ok(Json(ActionResult::success(data)))
+    list_from_table_filtered_java(&pool, "x_cms_categoryinfo", "deleted_at IS NULL", &[]).await
 }
 
 #[axum::debug_handler]
 pub async fn categoryinfo_list_view_app_appId_data(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let data = list_from_table_filtered(&pool, "x_cms_categoryinfo", "deleted_at IS NULL", &[]).await?;
-    Ok(Json(ActionResult::success(data)))
+    list_from_table_filtered_java(&pool, "x_cms_categoryinfo", "deleted_at IS NULL", &[]).await
 }
 
 #[axum::debug_handler]
 pub async fn categoryinfo_flag(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let data = list_from_table_filtered(&pool, "x_cms_categoryinfo", "deleted_at IS NULL", &[]).await?;
-    Ok(Json(ActionResult::success(data)))
+    list_from_table_filtered_java(&pool, "x_cms_categoryinfo", "deleted_at IS NULL", &[]).await
 }
 
 #[axum::debug_handler]
@@ -1186,7 +1157,7 @@ pub async fn categoryinfo_id_permission(
             ("permissionLevel".to_string(), Value::String(row.get::<_, Option<String>>("permission_level").unwrap_or_default())),
         ]))
     }).collect();
-    Ok(Json(ActionResult::success(Value::Array(data))))
+    let count = data.len() as i64; Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
 }
 
 // ─── comment_* / commend_* stubs ────────────────────────────────────────────
@@ -1195,8 +1166,7 @@ pub async fn categoryinfo_id_permission(
 pub async fn commend_list_paging_page_size_size(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let data = list_from_table_filtered(&pool, "x_cms_commend", "deleted_at IS NULL", &[]).await?;
-    Ok(Json(ActionResult::success(data)))
+    list_from_table_filtered_java(&pool, "x_cms_commend", "deleted_at IS NULL", &[]).await
 }
 
 #[axum::debug_handler]
@@ -1230,48 +1200,42 @@ pub async fn commend_id(
 pub async fn comment_list_id_next_count(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let data = list_from_table_filtered(&pool, "x_cms_comment", "deleted_at IS NULL", &[]).await?;
-    Ok(Json(ActionResult::success(data)))
+    list_from_table_filtered_java(&pool, "x_cms_comment", "deleted_at IS NULL", &[]).await
 }
 
 #[axum::debug_handler]
 pub async fn comment_list_id_next_count_mockputtopost(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let data = list_from_table_filtered(&pool, "x_cms_comment", "deleted_at IS NULL", &[]).await?;
-    Ok(Json(ActionResult::success(data)))
+    list_from_table_filtered_java(&pool, "x_cms_comment", "deleted_at IS NULL", &[]).await
 }
 
 #[axum::debug_handler]
 pub async fn comment_list_id_prev_count(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let data = list_from_table_filtered(&pool, "x_cms_comment", "deleted_at IS NULL", &[]).await?;
-    Ok(Json(ActionResult::success(data)))
+    list_from_table_filtered_java(&pool, "x_cms_comment", "deleted_at IS NULL", &[]).await
 }
 
 #[axum::debug_handler]
 pub async fn comment_list_id_prev_count_mockputtopost(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let data = list_from_table_filtered(&pool, "x_cms_comment", "deleted_at IS NULL", &[]).await?;
-    Ok(Json(ActionResult::success(data)))
+    list_from_table_filtered_java(&pool, "x_cms_comment", "deleted_at IS NULL", &[]).await
 }
 
 #[axum::debug_handler]
 pub async fn comment_list_page_size_size(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let data = list_from_table_filtered(&pool, "x_cms_comment", "deleted_at IS NULL", &[]).await?;
-    Ok(Json(ActionResult::success(data)))
+    list_from_table_filtered_java(&pool, "x_cms_comment", "deleted_at IS NULL", &[]).await
 }
 
 #[axum::debug_handler]
 pub async fn comment_list_page_size_size_mockputtopost(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let data = list_from_table_filtered(&pool, "x_cms_comment", "deleted_at IS NULL", &[]).await?;
-    Ok(Json(ActionResult::success(data)))
+    list_from_table_filtered_java(&pool, "x_cms_comment", "deleted_at IS NULL", &[]).await
 }
 
 #[axum::debug_handler]
@@ -1373,8 +1337,7 @@ pub async fn comment_id_uncommend(
 pub async fn correlation_doc_docId(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let data = list_from_table_filtered(&pool, "x_cms_correlation", "deleted_at IS NULL", &[]).await?;
-    Ok(Json(ActionResult::success(data)))
+    list_from_table_filtered_java(&pool, "x_cms_correlation", "deleted_at IS NULL", &[]).await
 }
 
 #[axum::debug_handler]
@@ -1416,16 +1379,14 @@ pub async fn correlation_doc_docId_delete(
 pub async fn correlation_list_doc_docId(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let data = list_from_table_filtered(&pool, "x_cms_correlation", "deleted_at IS NULL", &[]).await?;
-    Ok(Json(ActionResult::success(data)))
+    list_from_table_filtered_java(&pool, "x_cms_correlation", "deleted_at IS NULL", &[]).await
 }
 
 #[axum::debug_handler]
 pub async fn correlation_list_doc_docId_site_site(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let data = list_from_table_filtered(&pool, "x_cms_correlation", "deleted_at IS NULL", &[]).await?;
-    Ok(Json(ActionResult::success(data)))
+    list_from_table_filtered_java(&pool, "x_cms_correlation", "deleted_at IS NULL", &[]).await
 }
 
 #[axum::debug_handler]
@@ -1471,8 +1432,7 @@ pub async fn correlation_update_doc_docId(
 pub async fn data_document_id(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let data = list_from_table_filtered(&pool, "x_cms_data_document", "deleted_at IS NULL", &[]).await?;
-    Ok(Json(ActionResult::success(data)))
+    list_from_table_filtered_java(&pool, "x_cms_data_document", "deleted_at IS NULL", &[]).await
 }
 
 // ─── data/document 通配族共享 helpers（Java DataAction 对齐） ────────────────
@@ -1727,7 +1687,7 @@ macro_rules! data_path_read_handler {
             let (doc_id, rest) = paths.split_first().expect("non-empty path tuple");
             let field_name = compose_field_path(rest);
             let data = query_doc_fields_by_name(&pool, doc_id, &field_name).await?;
-            Ok(Json(ActionResult::success(Value::Array(data))))
+            let count = data.len() as i64; Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
         }
     };
 }
@@ -1964,9 +1924,9 @@ pub async fn data_document_id_array_data(
                 ("creator".to_string(), Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default())),
                 ("createTime".to_string(), Value::String(row.get::<_, Option<String>>("create_time").unwrap_or_default())),
             ]))];
-            Ok(Json(ActionResult::success(Value::Array(data))))
+            let count = data.len() as i64; Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
         }
-        None => Ok(Json(ActionResult::success(Value::Array(vec![])))),
+        None => Ok(Json(ActionResult::java_success(Value::Array(vec![]), 0, 0))),
     }
 }
 
@@ -2016,7 +1976,7 @@ pub async fn data_document_id_path0(
             ("createTime".to_string(), Value::String(row.get::<_, Option<String>>("create_time").unwrap_or_default())),
         ]))
     }).collect();
-    Ok(Json(ActionResult::success(Value::Array(data))))
+    let count = data.len() as i64; Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
 }
 
 // ─── design_* / document_cipher_* stubs ─────────────────────────────────────
@@ -2025,16 +1985,14 @@ pub async fn data_document_id_path0(
 pub async fn design_appdict_list_appInfo_appId(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let data = list_from_table_filtered(&pool, "x_cms_surface_appdict", "deleted_at IS NULL", &[]).await?;
-    Ok(Json(ActionResult::success(data)))
+    list_from_table_filtered_java(&pool, "x_cms_surface_appdict", "deleted_at IS NULL", &[]).await
 }
 
 #[axum::debug_handler]
 pub async fn design_appdict_list_paging_page_size_size(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let data = list_from_table_filtered(&pool, "x_cms_surface_appdict", "deleted_at IS NULL", &[]).await?;
-    Ok(Json(ActionResult::success(data)))
+    list_from_table_filtered_java(&pool, "x_cms_surface_appdict", "deleted_at IS NULL", &[]).await
 }
 
 #[axum::debug_handler]
@@ -2168,23 +2126,21 @@ pub async fn designer_search(
             ("createTime".to_string(), Value::String(row.get::<_, Option<String>>("create_time").unwrap_or_default())),
         ]))
     }).collect();
-    Ok(Json(ActionResult::success(Value::Array(data))))
+    let count = data.len() as i64; Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
 }
 
 #[axum::debug_handler]
 pub async fn document_cipher_filter_list_page_size_size(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let data = list_from_table_filtered(&pool, "x_cms_document_cipher", "deleted_at IS NULL", &[]).await?;
-    Ok(Json(ActionResult::success(data)))
+    list_from_table_filtered_java(&pool, "x_cms_document_cipher", "deleted_at IS NULL", &[]).await
 }
 
 #[axum::debug_handler]
 pub async fn document_cipher_filter_list_page_size_size_mockputtopost(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let data = list_from_table_filtered(&pool, "x_cms_document_cipher", "deleted_at IS NULL", &[]).await?;
-    Ok(Json(ActionResult::success(data)))
+    list_from_table_filtered_java(&pool, "x_cms_document_cipher", "deleted_at IS NULL", &[]).await
 }
 
 #[axum::debug_handler]
@@ -2333,40 +2289,35 @@ pub async fn document_cipher_id_persist_view_record(
 pub async fn file_list_appInfo_appInfoFlag(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let data = list_from_table_filtered(&pool, "x_cms_file", "deleted_at IS NULL", &[]).await?;
-    Ok(Json(ActionResult::success(data)))
+    list_from_table_filtered_java(&pool, "x_cms_file", "deleted_at IS NULL", &[]).await
 }
 
 #[axum::debug_handler]
 pub async fn file_list_id_next_count(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let data = list_from_table_filtered(&pool, "x_cms_file", "deleted_at IS NULL", &[]).await?;
-    Ok(Json(ActionResult::success(data)))
+    list_from_table_filtered_java(&pool, "x_cms_file", "deleted_at IS NULL", &[]).await
 }
 
 #[axum::debug_handler]
 pub async fn file_list_id_prev_count(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let data = list_from_table_filtered(&pool, "x_cms_file", "deleted_at IS NULL", &[]).await?;
-    Ok(Json(ActionResult::success(data)))
+    list_from_table_filtered_java(&pool, "x_cms_file", "deleted_at IS NULL", &[]).await
 }
 
 #[axum::debug_handler]
 pub async fn file_flag(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let data = list_from_table_filtered(&pool, "x_cms_file", "deleted_at IS NULL", &[]).await?;
-    Ok(Json(ActionResult::success(data)))
+    list_from_table_filtered_java(&pool, "x_cms_file", "deleted_at IS NULL", &[]).await
 }
 
 #[axum::debug_handler]
 pub async fn file_flag_appInfo_appInfoFlag(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let data = list_from_table_filtered(&pool, "x_cms_file", "deleted_at IS NULL", &[]).await?;
-    Ok(Json(ActionResult::success(data)))
+    list_from_table_filtered_java(&pool, "x_cms_file", "deleted_at IS NULL", &[]).await
 }
 
 #[axum::debug_handler]
@@ -2619,7 +2570,7 @@ pub async fn anonymous_fileinfo_download_document_id(
             ("createTime".to_string(), Value::String(row.get::<_, Option<String>>("create_time").unwrap_or_default())),
         ]))
     }).collect();
-    Ok(Json(ActionResult::success(Value::Array(data))))
+    let count = data.len() as i64; Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
 }
 
 #[axum::debug_handler]
@@ -2647,7 +2598,7 @@ pub async fn anonymous_fileinfo_download_document_id_stream(
             ("createTime".to_string(), Value::String(row.get::<_, Option<String>>("create_time").unwrap_or_default())),
         ]))
     }).collect();
-    Ok(Json(ActionResult::success(Value::Array(data))))
+    let count = data.len() as i64; Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
 }
 
 #[axum::debug_handler]
@@ -2673,7 +2624,7 @@ pub async fn fileinfo_batch_download_doc_docId_site_site(
             ("contentType".to_string(), Value::String(row.get::<_, Option<String>>("content_type").unwrap_or_default())),
         ]))
     }).collect();
-    Ok(Json(ActionResult::success(Value::Array(data))))
+    let count = data.len() as i64; Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
 }
 
 #[axum::debug_handler]
@@ -2721,7 +2672,7 @@ pub async fn fileinfo_download_document_id(
             ("createTime".to_string(), Value::String(row.get::<_, Option<String>>("create_time").unwrap_or_default())),
         ]))
     }).collect();
-    Ok(Json(ActionResult::success(Value::Array(data))))
+    let count = data.len() as i64; Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
 }
 
 #[axum::debug_handler]
@@ -2747,7 +2698,7 @@ pub async fn fileinfo_download_document_id_stream(
             ("contentType".to_string(), Value::String(row.get::<_, Option<String>>("content_type").unwrap_or_default())),
         ]))
     }).collect();
-    Ok(Json(ActionResult::success(Value::Array(data))))
+    let count = data.len() as i64; Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
 }
 
 #[axum::debug_handler]
@@ -2773,7 +2724,7 @@ pub async fn fileinfo_download_transfer_flag_flag(
             ("contentType".to_string(), Value::String(row.get::<_, Option<String>>("content_type").unwrap_or_default())),
         ]))
     }).collect();
-    Ok(Json(ActionResult::success(Value::Array(data))))
+    let count = data.len() as i64; Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
 }
 
 #[axum::debug_handler]
@@ -2840,8 +2791,7 @@ pub async fn fileinfo_list_document_documentId(
 pub async fn fileinfo_list_filter(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let data = list_from_table_filtered(&pool, "x_cms_fileinfo", "deleted_at IS NULL", &[]).await?;
-    Ok(Json(ActionResult::success(data)))
+    list_from_table_filtered_java(&pool, "x_cms_fileinfo", "deleted_at IS NULL", &[]).await
 }
 
 #[axum::debug_handler]
@@ -3208,32 +3158,28 @@ pub async fn fileinfo_id_preview_pdf(
 pub async fn form_filter_list_id_next_count_app_appId(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let data = list_from_table_filtered(&pool, "x_cms_form", "deleted_at IS NULL", &[]).await?;
-    Ok(Json(ActionResult::success(data)))
+    list_from_table_filtered_java(&pool, "x_cms_form", "deleted_at IS NULL", &[]).await
 }
 
 #[axum::debug_handler]
 pub async fn form_filter_list_id_next_count_app_appId_mockputtopost(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let data = list_from_table_filtered(&pool, "x_cms_form", "deleted_at IS NULL", &[]).await?;
-    Ok(Json(ActionResult::success(data)))
+    list_from_table_filtered_java(&pool, "x_cms_form", "deleted_at IS NULL", &[]).await
 }
 
 #[axum::debug_handler]
 pub async fn form_filter_list_id_prev_count_app_appId(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let data = list_from_table_filtered(&pool, "x_cms_form", "deleted_at IS NULL", &[]).await?;
-    Ok(Json(ActionResult::success(data)))
+    list_from_table_filtered_java(&pool, "x_cms_form", "deleted_at IS NULL", &[]).await
 }
 
 #[axum::debug_handler]
 pub async fn form_filter_list_id_prev_count_app_appId_mockputtopost(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let data = list_from_table_filtered(&pool, "x_cms_form", "deleted_at IS NULL", &[]).await?;
-    Ok(Json(ActionResult::success(data)))
+    list_from_table_filtered_java(&pool, "x_cms_form", "deleted_at IS NULL", &[]).await
 }
 
 #[axum::debug_handler]
@@ -3254,16 +3200,14 @@ pub async fn form_list_app_appId(
 pub async fn form_list_formfield_appInfo_appId(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let data = list_from_table_filtered(&pool, "x_cms_form_field", "deleted_at IS NULL", &[]).await?;
-    Ok(Json(ActionResult::success(data)))
+    list_from_table_filtered_java(&pool, "x_cms_form_field", "deleted_at IS NULL", &[]).await
 }
 
 #[axum::debug_handler]
 pub async fn form_list_id_formfield(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let data = list_from_table_filtered(&pool, "x_cms_form_field", "deleted_at IS NULL", &[]).await?;
-    Ok(Json(ActionResult::success(data)))
+    list_from_table_filtered_java(&pool, "x_cms_form_field", "deleted_at IS NULL", &[]).await
 }
 
 #[axum::debug_handler]
@@ -3430,7 +3374,7 @@ pub async fn form_formFlag_appinfo_appFlag(
             ("createTime".to_string(), Value::String(row.get::<_, Option<String>>("create_time").unwrap_or_default())),
         ]))
     }).collect();
-    Ok(Json(ActionResult::success(Value::Array(data))))
+    let count = data.len() as i64; Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
 }
 
 #[axum::debug_handler]
@@ -3562,8 +3506,7 @@ pub async fn form_v2_lookup_document_docId_mobile(
 pub async fn form_v2_id(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let data = list_from_table_filtered(&pool, "x_cms_form_v2", "deleted_at IS NULL", &[]).await?;
-    Ok(Json(ActionResult::success(data)))
+    list_from_table_filtered_java(&pool, "x_cms_form_v2", "deleted_at IS NULL", &[]).await
 }
 
 #[axum::debug_handler]
@@ -3636,64 +3579,56 @@ pub async fn formversion_id(
 pub async fn log_filter_list_id_next_count(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let data = list_from_table_filtered(&pool, "x_cms_log", "", &[]).await?;
-    Ok(Json(ActionResult::success(data)))
+    list_from_table_filtered_java(&pool, "x_cms_log", "", &[]).await
 }
 
 #[axum::debug_handler]
 pub async fn log_filter_list_id_prev_count(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let data = list_from_table_filtered(&pool, "x_cms_log", "", &[]).await?;
-    Ok(Json(ActionResult::success(data)))
+    list_from_table_filtered_java(&pool, "x_cms_log", "", &[]).await
 }
 
 #[axum::debug_handler]
 pub async fn log_list_app_appId(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let data = list_from_table_filtered(&pool, "x_cms_log", "", &[]).await?;
-    Ok(Json(ActionResult::success(data)))
+    list_from_table_filtered_java(&pool, "x_cms_log", "", &[]).await
 }
 
 #[axum::debug_handler]
 pub async fn log_list_category_categoryId(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let data = list_from_table_filtered(&pool, "x_cms_log", "", &[]).await?;
-    Ok(Json(ActionResult::success(data)))
+    list_from_table_filtered_java(&pool, "x_cms_log", "", &[]).await
 }
 
 #[axum::debug_handler]
 pub async fn log_list_document_documentId(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let data = list_from_table_filtered(&pool, "x_cms_log", "", &[]).await?;
-    Ok(Json(ActionResult::success(data)))
+    list_from_table_filtered_java(&pool, "x_cms_log", "", &[]).await
 }
 
 #[axum::debug_handler]
 pub async fn log_list_filter_page_size_size(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let data = list_from_table_filtered(&pool, "x_cms_log", "", &[]).await?;
-    Ok(Json(ActionResult::success(data)))
+    list_from_table_filtered_java(&pool, "x_cms_log", "", &[]).await
 }
 
 #[axum::debug_handler]
 pub async fn log_list_level_operationLevel(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let data = list_from_table_filtered(&pool, "x_cms_log", "", &[]).await?;
-    Ok(Json(ActionResult::success(data)))
+    list_from_table_filtered_java(&pool, "x_cms_log", "", &[]).await
 }
 
 #[axum::debug_handler]
 pub async fn log_id(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let data = list_from_table_filtered(&pool, "x_cms_log", "", &[]).await?;
-    Ok(Json(ActionResult::success(data)))
+    list_from_table_filtered_java(&pool, "x_cms_log", "", &[]).await
 }
 
 // ─── output_* stubs ─────────────────────────────────────────────────────────
@@ -3728,7 +3663,7 @@ pub async fn output_appInfoFlag_select(
             ("createTime".to_string(), Value::String(row.get::<_, Option<String>>("create_time").unwrap_or_default())),
         ]))
     }).collect();
-    Ok(Json(ActionResult::success(Value::Array(data))))
+    let count = data.len() as i64; Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
 }
 
 #[axum::debug_handler]
@@ -3756,64 +3691,56 @@ pub async fn output_appInfoFlag_select_mockputtopost(
 pub async fn permission_appInfo_id_manageable(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let data = list_from_table_filtered(&pool, "x_cms_permission", "deleted_at IS NULL AND role_type = 'manage'", &[]).await?;
-    Ok(Json(ActionResult::success(data)))
+    list_from_table_filtered_java(&pool, "x_cms_permission", "deleted_at IS NULL AND role_type = 'manage'", &[]).await
 }
 
 #[axum::debug_handler]
 pub async fn permission_appInfo_id_managers(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let data = list_from_table_filtered(&pool, "x_cms_permission", "deleted_at IS NULL AND role_type = 'manager'", &[]).await?;
-    Ok(Json(ActionResult::success(data)))
+    list_from_table_filtered_java(&pool, "x_cms_permission", "deleted_at IS NULL AND role_type = 'manager'", &[]).await
 }
 
 #[axum::debug_handler]
 pub async fn permission_appInfo_id_publishers(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let data = list_from_table_filtered(&pool, "x_cms_permission", "deleted_at IS NULL AND role_type = 'publisher'", &[]).await?;
-    Ok(Json(ActionResult::success(data)))
+    list_from_table_filtered_java(&pool, "x_cms_permission", "deleted_at IS NULL AND role_type = 'publisher'", &[]).await
 }
 
 #[axum::debug_handler]
 pub async fn permission_appInfo_id_viewers(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let data = list_from_table_filtered(&pool, "x_cms_permission", "deleted_at IS NULL AND role_type = 'viewer'", &[]).await?;
-    Ok(Json(ActionResult::success(data)))
+    list_from_table_filtered_java(&pool, "x_cms_permission", "deleted_at IS NULL AND role_type = 'viewer'", &[]).await
 }
 
 #[axum::debug_handler]
 pub async fn permission_category_id_managers(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let data = list_from_table_filtered(&pool, "x_cms_permission", "deleted_at IS NULL AND role_type = 'manager'", &[]).await?;
-    Ok(Json(ActionResult::success(data)))
+    list_from_table_filtered_java(&pool, "x_cms_permission", "deleted_at IS NULL AND role_type = 'manager'", &[]).await
 }
 
 #[axum::debug_handler]
 pub async fn permission_category_id_publishers(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let data = list_from_table_filtered(&pool, "x_cms_permission", "deleted_at IS NULL AND role_type = 'publisher'", &[]).await?;
-    Ok(Json(ActionResult::success(data)))
+    list_from_table_filtered_java(&pool, "x_cms_permission", "deleted_at IS NULL AND role_type = 'publisher'", &[]).await
 }
 
 #[axum::debug_handler]
 pub async fn permission_category_id_viewers(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let data = list_from_table_filtered(&pool, "x_cms_permission", "deleted_at IS NULL AND role_type = 'viewer'", &[]).await?;
-    Ok(Json(ActionResult::success(data)))
+    list_from_table_filtered_java(&pool, "x_cms_permission", "deleted_at IS NULL AND role_type = 'viewer'", &[]).await
 }
 
 #[axum::debug_handler]
 pub async fn permission_categoryInfo_id_manageable(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let data = list_from_table_filtered(&pool, "x_cms_permission", "deleted_at IS NULL AND role_type = 'manage'", &[]).await?;
-    Ok(Json(ActionResult::success(data)))
+    list_from_table_filtered_java(&pool, "x_cms_permission", "deleted_at IS NULL AND role_type = 'manage'", &[]).await
 }
 
 #[axum::debug_handler]
@@ -3849,48 +3776,42 @@ pub async fn permission_management_refresh_category_categoryId(
 pub async fn permission_manager_appInfo_id(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let data = list_from_table_filtered(&pool, "x_cms_permission", "deleted_at IS NULL AND role_type = 'manager'", &[]).await?;
-    Ok(Json(ActionResult::success(data)))
+    list_from_table_filtered_java(&pool, "x_cms_permission", "deleted_at IS NULL AND role_type = 'manager'", &[]).await
 }
 
 #[axum::debug_handler]
 pub async fn permission_manager_categoryInfo_id(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let data = list_from_table_filtered(&pool, "x_cms_permission", "deleted_at IS NULL AND role_type = 'manager'", &[]).await?;
-    Ok(Json(ActionResult::success(data)))
+    list_from_table_filtered_java(&pool, "x_cms_permission", "deleted_at IS NULL AND role_type = 'manager'", &[]).await
 }
 
 #[axum::debug_handler]
 pub async fn permission_publisher_appInfo_id(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let data = list_from_table_filtered(&pool, "x_cms_permission", "deleted_at IS NULL AND role_type = 'publisher'", &[]).await?;
-    Ok(Json(ActionResult::success(data)))
+    list_from_table_filtered_java(&pool, "x_cms_permission", "deleted_at IS NULL AND role_type = 'publisher'", &[]).await
 }
 
 #[axum::debug_handler]
 pub async fn permission_publisher_categoryInfo_id(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let data = list_from_table_filtered(&pool, "x_cms_permission", "deleted_at IS NULL AND role_type = 'publisher'", &[]).await?;
-    Ok(Json(ActionResult::success(data)))
+    list_from_table_filtered_java(&pool, "x_cms_permission", "deleted_at IS NULL AND role_type = 'publisher'", &[]).await
 }
 
 #[axum::debug_handler]
 pub async fn permission_viewer_appInfo_id(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let data = list_from_table_filtered(&pool, "x_cms_permission", "deleted_at IS NULL AND role_type = 'viewer'", &[]).await?;
-    Ok(Json(ActionResult::success(data)))
+    list_from_table_filtered_java(&pool, "x_cms_permission", "deleted_at IS NULL AND role_type = 'viewer'", &[]).await
 }
 
 #[axum::debug_handler]
 pub async fn permission_viewer_categoryInfo_id(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let data = list_from_table_filtered(&pool, "x_cms_permission", "deleted_at IS NULL AND role_type = 'viewer'", &[]).await?;
-    Ok(Json(ActionResult::success(data)))
+    list_from_table_filtered_java(&pool, "x_cms_permission", "deleted_at IS NULL AND role_type = 'viewer'", &[]).await
 }
 
 // ─── review_* / script_* stubs ──────────────────────────────────────────────
@@ -3917,71 +3838,63 @@ pub async fn review_v2_search(
             ("createTime".to_string(), Value::String(row.get::<_, Option<String>>("create_time").unwrap_or_default())),
         ]))
     }).collect();
-    Ok(Json(ActionResult::success(Value::Array(data))))
+    let count = data.len() as i64; Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
 }
 
 #[axum::debug_handler]
 pub async fn script_list_app_appId_name_name(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let data = list_from_table_filtered(&pool, "x_cms_script", "deleted_at IS NULL", &[]).await?;
-    Ok(Json(ActionResult::success(data)))
+    list_from_table_filtered_java(&pool, "x_cms_script", "deleted_at IS NULL", &[]).await
 }
 
 #[axum::debug_handler]
 pub async fn script_list_app_flag(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let data = list_from_table_filtered(&pool, "x_cms_script", "deleted_at IS NULL", &[]).await?;
-    Ok(Json(ActionResult::success(data)))
+    list_from_table_filtered_java(&pool, "x_cms_script", "deleted_at IS NULL", &[]).await
 }
 
 #[axum::debug_handler]
 pub async fn script_list_manager(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let data = list_from_table_filtered(&pool, "x_cms_script", "deleted_at IS NULL", &[]).await?;
-    Ok(Json(ActionResult::success(data)))
+    list_from_table_filtered_java(&pool, "x_cms_script", "deleted_at IS NULL", &[]).await
 }
 
 #[axum::debug_handler]
 pub async fn script_list_paging_page_size_size(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let data = list_from_table_filtered(&pool, "x_cms_script", "deleted_at IS NULL", &[]).await?;
-    Ok(Json(ActionResult::success(data)))
+    list_from_table_filtered_java(&pool, "x_cms_script", "deleted_at IS NULL", &[]).await
 }
 
 #[axum::debug_handler]
 pub async fn script_list_id_next_count(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let data = list_from_table_filtered(&pool, "x_cms_script", "deleted_at IS NULL", &[]).await?;
-    Ok(Json(ActionResult::success(data)))
+    list_from_table_filtered_java(&pool, "x_cms_script", "deleted_at IS NULL", &[]).await
 }
 
 #[axum::debug_handler]
 pub async fn script_list_id_prev_count(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let data = list_from_table_filtered(&pool, "x_cms_script", "deleted_at IS NULL", &[]).await?;
-    Ok(Json(ActionResult::success(data)))
+    list_from_table_filtered_java(&pool, "x_cms_script", "deleted_at IS NULL", &[]).await
 }
 
 #[axum::debug_handler]
 pub async fn script_flag_appInfo_appInfoFlag(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let data = list_from_table_filtered(&pool, "x_cms_script", "deleted_at IS NULL", &[]).await?;
-    Ok(Json(ActionResult::success(data)))
+    list_from_table_filtered_java(&pool, "x_cms_script", "deleted_at IS NULL", &[]).await
 }
 
 #[axum::debug_handler]
 pub async fn script_id(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let data = list_from_table_filtered(&pool, "x_cms_script", "deleted_at IS NULL", &[]).await?;
-    Ok(Json(ActionResult::success(data)))
+    list_from_table_filtered_java(&pool, "x_cms_script", "deleted_at IS NULL", &[]).await
 }
 
 #[axum::debug_handler]
@@ -4133,24 +4046,21 @@ pub async fn scriptversion_id(
 pub async fn searchfilter_list_archive_filter_category_categoryId(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let data = list_from_table_filtered(&pool, "x_cms_searchfilter", "deleted_at IS NULL AND filter_type = 'archive'", &[]).await?;
-    Ok(Json(ActionResult::success(data)))
+    list_from_table_filtered_java(&pool, "x_cms_searchfilter", "deleted_at IS NULL AND filter_type = 'archive'", &[]).await
 }
 
 #[axum::debug_handler]
 pub async fn searchfilter_list_draft_filter_category_categoryId(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let data = list_from_table_filtered(&pool, "x_cms_searchfilter", "deleted_at IS NULL AND filter_type = 'draft'", &[]).await?;
-    Ok(Json(ActionResult::success(data)))
+    list_from_table_filtered_java(&pool, "x_cms_searchfilter", "deleted_at IS NULL AND filter_type = 'draft'", &[]).await
 }
 
 #[axum::debug_handler]
 pub async fn searchfilter_list_publish_filter_category_categoryId(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let data = list_from_table_filtered(&pool, "x_cms_searchfilter", "deleted_at IS NULL AND filter_type = 'publish'", &[]).await?;
-    Ok(Json(ActionResult::success(data)))
+    list_from_table_filtered_java(&pool, "x_cms_searchfilter", "deleted_at IS NULL AND filter_type = 'publish'", &[]).await
 }
 
 // ─── surface_appdict 家族（Java AppDictAction / AppDictAnonymousAction 对齐）──
@@ -4228,7 +4138,7 @@ async fn appdict_data_get(
         .await
         .map_err(|_| AppError::Internal)?;
     let data: Vec<Value> = rows.iter().map(appdict_row_to_value).collect();
-    Ok(Json(ActionResult::success(Value::Array(data))))
+    let count = data.len() as i64; Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
 }
 
 /// 写门禁：目标字典已有行时要求会话用户为其 creator 或管理员；
@@ -4480,7 +4390,7 @@ pub async fn anonymous_surface_appdict_appDictFlag_appInfo_appInfoFlag(
         .await
         .map_err(|_| AppError::Internal)?;
     let data: Vec<Value> = rows.iter().map(appdict_row_to_value).collect();
-    Ok(Json(ActionResult::success(Value::Array(data))))
+    let count = data.len() as i64; Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
 }
 
 /// GET surface/appdict/{appDictFlag}/appInfo/{appInfoFlag}
@@ -4553,7 +4463,7 @@ pub async fn anonymous_surface_appdict_list_appInfo_appInfoFlag(
         .await
         .map_err(|_| AppError::Internal)?;
     let data: Vec<Value> = rows.iter().map(appdict_row_to_value).collect();
-    Ok(Json(ActionResult::success(Value::Array(data))))
+    let count = data.len() as i64; Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
 }
 
 /// GET surface/appdict/list/appInfo/{appInfoFlag}
@@ -4631,8 +4541,7 @@ appdict_depth_family!(10;
 pub async fn templateform_list(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let data = list_from_table_filtered(&pool, "x_cms_form_v2", "deleted_at IS NULL", &[]).await?;
-    Ok(Json(ActionResult::success(data)))
+    list_from_table_filtered_java(&pool, "x_cms_form_v2", "deleted_at IS NULL", &[]).await
 }
 
 #[axum::debug_handler]
@@ -4707,48 +4616,42 @@ pub async fn uuid_random(
 pub async fn view_list_all(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let data = list_from_table_filtered(&pool, "x_cms_view", "deleted_at IS NULL", &[]).await?;
-    Ok(Json(ActionResult::success(data)))
+    list_from_table_filtered_java(&pool, "x_cms_view", "deleted_at IS NULL", &[]).await
 }
 
 #[axum::debug_handler]
 pub async fn view_list_app_appId(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let data = list_from_table_filtered(&pool, "x_cms_view", "deleted_at IS NULL", &[]).await?;
-    Ok(Json(ActionResult::success(data)))
+    list_from_table_filtered_java(&pool, "x_cms_view", "deleted_at IS NULL", &[]).await
 }
 
 #[axum::debug_handler]
 pub async fn view_list_category_categoryId(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let data = list_from_table_filtered(&pool, "x_cms_view", "deleted_at IS NULL", &[]).await?;
-    Ok(Json(ActionResult::success(data)))
+    list_from_table_filtered_java(&pool, "x_cms_view", "deleted_at IS NULL", &[]).await
 }
 
 #[axum::debug_handler]
 pub async fn view_list_form_formId(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let data = list_from_table_filtered(&pool, "x_cms_view", "deleted_at IS NULL", &[]).await?;
-    Ok(Json(ActionResult::success(data)))
+    list_from_table_filtered_java(&pool, "x_cms_view", "deleted_at IS NULL", &[]).await
 }
 
 #[axum::debug_handler]
 pub async fn view_viewdata_list_id_next_count(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let data = list_from_table_filtered(&pool, "x_cms_viewrecord", "deleted_at IS NULL", &[]).await?;
-    Ok(Json(ActionResult::success(data)))
+    list_from_table_filtered_java(&pool, "x_cms_viewrecord", "deleted_at IS NULL", &[]).await
 }
 
 #[axum::debug_handler]
 pub async fn view_id(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let data = list_from_table_filtered(&pool, "x_cms_view", "deleted_at IS NULL", &[]).await?;
-    Ok(Json(ActionResult::success(data)))
+    list_from_table_filtered_java(&pool, "x_cms_view", "deleted_at IS NULL", &[]).await
 }
 
 #[axum::debug_handler]
@@ -4825,8 +4728,7 @@ pub async fn viewcategory_list_view_viewId(
 pub async fn viewcategory_id(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let data = list_from_table_filtered(&pool, "x_cms_viewcategory", "deleted_at IS NULL", &[]).await?;
-    Ok(Json(ActionResult::success(data)))
+    list_from_table_filtered_java(&pool, "x_cms_viewcategory", "deleted_at IS NULL", &[]).await
 }
 
 #[axum::debug_handler]
@@ -4858,8 +4760,7 @@ pub async fn viewfieldconfig_list_view_viewId(
 pub async fn viewfieldconfig_id(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let data = list_from_table_filtered(&pool, "x_cms_viewfieldconfig", "deleted_at IS NULL", &[]).await?;
-    Ok(Json(ActionResult::success(data)))
+    list_from_table_filtered_java(&pool, "x_cms_viewfieldconfig", "deleted_at IS NULL", &[]).await
 }
 
 #[axum::debug_handler]
@@ -4915,8 +4816,7 @@ pub async fn viewfieldconfig_id_mockputtopost(
 pub async fn viewrecord_document_docId_filter_list_id_next_count(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let data = list_from_table_filtered(&pool, "x_cms_viewrecord", "deleted_at IS NULL", &[]).await?;
-    Ok(Json(ActionResult::success(data)))
+    list_from_table_filtered_java(&pool, "x_cms_viewrecord", "deleted_at IS NULL", &[]).await
 }
 
 #[axum::debug_handler]
@@ -4942,8 +4842,7 @@ pub async fn viewrecord_document_docId_has_view(
 pub async fn viewrecord_list_install_log_paging_page_size_size(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let data = list_from_table_filtered(&pool, "x_cms_viewrecord", "deleted_at IS NULL", &[]).await?;
-    Ok(Json(ActionResult::success(data)))
+    list_from_table_filtered_java(&pool, "x_cms_viewrecord", "deleted_at IS NULL", &[]).await
 }
 
 // ─── image / input helpers (STUB: no corresponding DB table, business logic unclear) ──
@@ -5011,8 +4910,7 @@ pub async fn image_resize_id_id_width_width_height_height(
 pub async fn export_app_info_app_info_flag(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let data = list_from_table_filtered(&pool, "x_cms_appinfo", "deleted_at IS NULL", &[]).await?;
-    Ok(Json(ActionResult::success(data)))
+    list_from_table_filtered_java(&pool, "x_cms_appinfo", "deleted_at IS NULL", &[]).await
 }
 
 // STUB: import_app_info_app_info_flag - U2 收尾对齐：Java GET /import/appInfo/{appInfoFlag}
@@ -5020,8 +4918,7 @@ pub async fn export_app_info_app_info_flag(
 pub async fn import_app_info_app_info_flag(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let data = list_from_table_filtered(&pool, "x_cms_appinfo", "deleted_at IS NULL", &[]).await?;
-    Ok(Json(ActionResult::success(data)))
+    list_from_table_filtered_java(&pool, "x_cms_appinfo", "deleted_at IS NULL", &[]).await
 }
 
 // STUB: input_compare - input processing utility, no DB table mapping
@@ -5804,14 +5701,13 @@ pub async fn document_u2_list_document(
     if ids.is_empty() {
         return Err(AppError::BadRequest("ids required".to_string()));
     }
-    let data = list_from_table_filtered(
+    list_from_table_filtered_java(
         &pool,
         "x_cms_data_document",
         "deleted_at IS NULL AND id = ANY($1)",
         &[&ids],
     )
-    .await?;
-    Ok(Json(ActionResult::success(data)))
+    .await
 }
 
 #[axum::debug_handler]
@@ -6406,8 +6302,7 @@ pub async fn script_u2_list_manager(
     session: Extension<shared::session::Session>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     u2_require_admin(&pool, &session).await?;
-    let data = list_from_table_filtered(&pool, "x_cms_script", "deleted_at IS NULL", &[]).await?;
-    Ok(Json(ActionResult::success(data)))
+    list_from_table_filtered_java(&pool, "x_cms_script", "deleted_at IS NULL", &[]).await
 }
 
 // ─── templateform / view / viewcategory / viewfieldconfig 域 ────────────
@@ -7203,17 +7098,14 @@ pub async fn categoryinfo_list_objects_u3(
     if ids.is_empty() {
         return Err(AppError::BadRequest("ids required".to_string()));
     }
-    let data = list_from_table_filtered(
+    list_from_table_filtered_java(
         &pool,
         "x_cms_categoryinfo",
         "deleted_at IS NULL AND id = ANY($1)",
         &[&ids],
     )
-    .await?;
-    Ok(Json(ActionResult::success(data)))
+    .await
 }
-
-// ── comment commend / uncommend（canonical，取会话人）───────────────────────
 
 #[axum::debug_handler]
 pub async fn comment_commend_u3(
@@ -7808,56 +7700,52 @@ pub async fn document_cipher_permission_read_u3(
 pub async fn document_draft_next_u3(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let data = list_from_table_filtered(
+    list_from_table_filtered_java(
         &pool,
         "x_cms_data_document",
         "deleted_at IS NULL AND status = 'draft'",
         &[],
     )
-    .await?;
-    Ok(Json(ActionResult::success(data)))
+    .await
 }
 
 #[axum::debug_handler]
 pub async fn document_filter_next_u3(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let data = list_from_table_filtered(
+    list_from_table_filtered_java(
         &pool,
         "x_cms_data_document",
         "deleted_at IS NULL ORDER BY id DESC LIMIT 200",
         &[],
     )
-    .await?;
-    Ok(Json(ActionResult::success(data)))
+    .await
 }
 
 #[axum::debug_handler]
 pub async fn document_filter_prev_u3(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let data = list_from_table_filtered(
+    list_from_table_filtered_java(
         &pool,
         "x_cms_data_document",
         "deleted_at IS NULL ORDER BY id ASC LIMIT 200",
         &[],
     )
-    .await?;
-    Ok(Json(ActionResult::success(data)))
+    .await
 }
 
 #[axum::debug_handler]
 pub async fn document_filter_paging_u3(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let data = list_from_table_filtered(
+    list_from_table_filtered_java(
         &pool,
         "x_cms_data_document",
         "deleted_at IS NULL ORDER BY create_time DESC LIMIT 200",
         &[],
     )
-    .await?;
-    Ok(Json(ActionResult::success(data)))
+    .await
 }
 
 #[axum::debug_handler]
@@ -7866,14 +7754,13 @@ pub async fn document_filter_paging_manager_u3(
     session: Extension<shared::session::Session>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     u2_require_admin(&pool, &session).await?;
-    let data = list_from_table_filtered(
+    list_from_table_filtered_java(
         &pool,
         "x_cms_data_document",
         "ORDER BY create_time DESC LIMIT 200",
         &[],
     )
-    .await?;
-    Ok(Json(ActionResult::success(data)))
+    .await
 }
 
 #[axum::debug_handler]
@@ -8430,14 +8317,13 @@ pub async fn viewrecord_by_person_u3(
     pool: Extension<Pool>,
     axum::extract::Path(person): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let data = list_from_table_filtered(
+    list_from_table_filtered_java(
         &pool,
         "x_cms_viewrecord",
         "deleted_at IS NULL AND person_id = $1",
         &[&person],
     )
-    .await?;
-    Ok(Json(ActionResult::success(data)))
+    .await
 }
 
 #[axum::debug_handler]
