@@ -121,6 +121,8 @@ pub async fn bind() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(json!({
         "meta": meta,
         "status": "pending",
+        "image": format!("https://api.qrserver.com/v1/create-qr-code/?size=200x200&data={}", meta),
+        "id": meta,
     }))))
 }
 
@@ -157,7 +159,9 @@ pub async fn bind_poll(
             Ok(Json(ActionResult::success(json!({
                 "status": "confirmed",
                 "token": session.token,
-                "person": { "unique": person_unique },
+                "name": person_unique,
+                "id": session.token,
+                "tokenType": "Bearer",
             }))))
         }
         None => Ok(Json(ActionResult::success(json!({ "status": "pending" })))),
