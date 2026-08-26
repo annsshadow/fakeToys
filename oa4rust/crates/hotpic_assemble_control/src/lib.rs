@@ -523,8 +523,24 @@ pub async fn user_hotpic_application_infoId(
 pub async fn user_hotpic_id(
     pool: Extension<Pool>,
     Path(id): Path<String>,
+    method: axum::http::Method,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
+
+    if method == axum::http::Method::DELETE {
+        let result = client
+            .execute(
+                "UPDATE x_hotpic SET deleted_at = NOW() WHERE id = $1 AND deleted_at IS NULL",
+                &[&id],
+            )
+            .await
+            .map_err(|_| AppError::Internal)?;
+        return Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
+            ("id".to_string(), Value::String(id)),
+            ("deleted".to_string(), Value::Bool(result > 0)),
+        ])))));
+    }
+
     let row = client
         .query_opt(
             "SELECT id, title, image_url, creator, create_time FROM x_hotpic WHERE id = $1 AND deleted_at IS NULL",
@@ -562,7 +578,9 @@ pub async fn user_hotpic_delete_by_ids(
         )
         .await
         .map_err(|_| AppError::Internal)?;
-    Ok(Json(ActionResult::success(serde_json::json!({
-        "id": id, "id2": id2, "deleted": n
-    }))))
+    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
+        ("id".to_string(), Value::String(id)),
+        ("id2".to_string(), Value::String(id2)),
+        ("deleted".to_string(), Value::Number(serde_json::Number::from(n))),
+    ])))))
 }
