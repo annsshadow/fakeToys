@@ -100,11 +100,8 @@ pub async fn get_module_permissions(
         })
         .collect();
 
-    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
-        ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
-        ("module".to_string(), Value::String(module)),
-        ("data".to_string(), Value::Array(data)),
-    ])))))
+    let count = data.len() as i64;
+    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
 }
 
 pub fn general_assemble_control_router(pool: Pool) -> Router {
@@ -150,10 +147,8 @@ pub async fn attendscope_list(
         })
         .collect();
 
-    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
-        ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
-        ("data".to_string(), Value::Array(data)),
-    ])))))
+    let count = data.len() as i64;
+    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
 }
 
 pub async fn attendscope_get(
@@ -338,10 +333,8 @@ pub async fn area_list_province_province(
         })
         .collect();
 
-    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
-        ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
-        ("data".to_string(), Value::Array(data)),
-    ])))))
+    let count = data.len() as i64;
+    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
 }
 
 pub async fn area_list_province_province_city_city(
@@ -376,10 +369,8 @@ pub async fn area_list_province_province_city_city(
         })
         .collect();
 
-    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
-        ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
-        ("data".to_string(), Value::Array(data)),
-    ])))))
+    let count = data.len() as i64;
+    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
 }
 
 pub async fn area_list_province_province_city_city_district_district(
@@ -415,10 +406,8 @@ pub async fn area_list_province_province_city_city_district_district(
         })
         .collect();
 
-    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
-        ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
-        ("data".to_string(), Value::Array(data)),
-    ])))))
+    let count = data.len() as i64;
+    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
 }
 
 // ---- area CRUD ----
@@ -570,10 +559,8 @@ pub async fn ecnet_check(
         })
         .collect();
 
-    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
-        ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
-        ("data".to_string(), Value::Array(data)),
-    ])))))
+    let count = data.len() as i64;
+    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
 }
 
 pub async fn excel_excelName_excelName(
@@ -632,10 +619,8 @@ pub async fn excel_excelName_excelName_sheetList(
         })
         .collect();
 
-    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
-        ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
-        ("data".to_string(), Value::Array(data)),
-    ])))))
+    let count = data.len() as i64;
+    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
 }
 
 pub async fn excel_result_flag(
@@ -962,12 +947,7 @@ pub async fn invoice_list_paging_page_size_size(
         })
         .collect();
 
-    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
-        ("count".to_string(), Value::Number(serde_json::Number::from(total))),
-        ("page".to_string(), Value::Number(serde_json::Number::from(page as i64))),
-        ("size".to_string(), Value::Number(serde_json::Number::from(size as i64))),
-        ("data".to_string(), Value::Array(data)),
-    ])))))
+    Ok(Json(ActionResult::java_success(Value::Array(data), total, size as i64)))
 }
 
 pub async fn invoice_update_apply_status_id(
@@ -1220,10 +1200,8 @@ pub async fn qrcode_list(
         })
         .collect();
 
-    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
-        ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
-        ("data".to_string(), Value::Array(data)),
-    ])))))
+    let count = data.len() as i64;
+    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
 }
 
 pub async fn qrcode_get(
@@ -1357,10 +1335,8 @@ pub async fn securityclearance_object(
         })
         .collect();
 
-    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
-        ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
-        ("data".to_string(), Value::Array(data)),
-    ])))))
+    let count = data.len() as i64;
+    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
 }
 
 pub async fn securityclearance_subject(
@@ -1391,10 +1367,8 @@ pub async fn securityclearance_subject(
         })
         .collect();
 
-    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
-        ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
-        ("data".to_string(), Value::Array(data)),
-    ])))))
+    let count = data.len() as i64;
+    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
 }
 
 pub async fn securityclearance_system(
@@ -1424,10 +1398,8 @@ pub async fn securityclearance_system(
         })
         .collect();
 
-    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
-        ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
-        ("data".to_string(), Value::Array(data)),
-    ])))))
+    let count = data.len() as i64;
+    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
 }
 
 // ---- securityclearance CRUD ----
@@ -1574,10 +1546,8 @@ pub async fn upgrade_2021090901(
         })
         .collect();
 
-    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
-        ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
-        ("data".to_string(), Value::Array(data)),
-    ])))))
+    let count = data.len() as i64;
+    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
 }
 
 pub async fn upgrade_2021090902(
@@ -1607,10 +1577,8 @@ pub async fn upgrade_2021090902(
         })
         .collect();
 
-    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
-        ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
-        ("data".to_string(), Value::Array(data)),
-    ])))))
+    let count = data.len() as i64;
+    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
 }
 
 pub async fn worktime_betweenholidaycount_start_startDate_end_endDate(
@@ -1692,12 +1660,8 @@ pub async fn worktime_forwarddays_start_start_days_days(
         })
         .collect();
 
-    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
-        ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
-        ("start".to_string(), Value::String(start)),
-        ("days".to_string(), Value::Number(serde_json::Number::from(days as i64))),
-        ("data".to_string(), Value::Array(data)),
-    ])))))
+    let count = data.len() as i64;
+    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
 }
 
 pub async fn worktime_forwardminutes_start_start_minutes_minutes(
@@ -1734,19 +1698,8 @@ pub async fn worktime_forwardminutes_start_start_minutes_minutes(
         }
     }
 
-    let end_date = worktime_records.last()
-        .and_then(|v| v.get("date"))
-        .and_then(|v| v.as_str())
-        .unwrap_or(&start)
-        .to_string();
-
-    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
-        ("count".to_string(), Value::Number(serde_json::Number::from(worktime_records.len() as i64))),
-        ("start".to_string(), Value::String(start)),
-        ("targetMinutes".to_string(), Value::Number(serde_json::Number::from(minutes))),
-        ("endDate".to_string(), Value::String(end_date)),
-        ("data".to_string(), Value::Array(worktime_records)),
-    ])))))
+    let count = worktime_records.len() as i64;
+    Ok(Json(ActionResult::java_success(Value::Array(worktime_records), count, 0)))
 }
 
 pub async fn worktime_indefinedholiday_date(
