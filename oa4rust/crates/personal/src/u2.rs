@@ -575,7 +575,8 @@ pub async fn empower_list_next(
         .iter()
         .map(|r| serde_json::to_value(r).unwrap_or(Value::Null))
         .collect();
-    Ok(Json(ActionResult::success(json!({ "count": items.len() as i64, "data": items }))))
+    let count = items.len() as i64;
+    Ok(Json(ActionResult::java_success(Value::Array(items), count, 0)))
 }
 
 /// GET /jaxrs/person/empower/list/{id}/prev/{count} —— 管理员上一页
@@ -599,7 +600,8 @@ pub async fn empower_list_prev(
         .iter()
         .map(|r| serde_json::to_value(r).unwrap_or(Value::Null))
         .collect();
-    Ok(Json(ActionResult::success(json!({ "count": items.len() as i64, "data": items }))))
+    let count = items.len() as i64;
+    Ok(Json(ActionResult::java_success(Value::Array(items), count, 0)))
 }
 
 /// GET /jaxrs/person/empower/list/person/{flag} —— 查询指定人员的授权
@@ -634,7 +636,8 @@ pub async fn empower_list_with_person(
             })
         })
         .collect();
-    Ok(Json(ActionResult::success(json!({ "count": items.len() as i64, "data": items }))))
+    let count = items.len() as i64;
+    Ok(Json(ActionResult::java_success(Value::Array(items), count, 0)))
 }
 
 // ═════════════════════════════════════════════════════════════════════════════
@@ -690,7 +693,8 @@ pub async fn log_list_next(
     .map_err(|_| AppError::Internal)?;
 
     let items: Vec<Value> = rows.iter().map(log_row_json).collect();
-    Ok(Json(ActionResult::success(json!({ "count": items.len() as i64, "data": items }))))
+    let count = items.len() as i64;
+    Ok(Json(ActionResult::java_success(Value::Array(items), count, 0)))
 }
 
 pub async fn log_list_prev(
@@ -725,7 +729,8 @@ pub async fn log_list_prev(
 
     let mut items: Vec<Value> = rows.iter().map(log_row_json).collect();
     items.reverse();
-    Ok(Json(ActionResult::success(json!({ "count": items.len() as i64, "data": items }))))
+    let count = items.len() as i64;
+    Ok(Json(ActionResult::java_success(Value::Array(items), count, 0)))
 }
 
 #[derive(Debug, Deserialize)]
@@ -812,10 +817,7 @@ async fn log_paging(
         .map_err(|_| AppError::Internal)?;
 
     let items: Vec<Value> = rows.iter().map(log_row_json).collect();
-    Ok(Json(ActionResult::success(json!({
-        "count": total,
-        "data": items,
-    }))))
+    Ok(Json(ActionResult::java_success(Value::Array(items), total, limit)))
 }
 
 /// LIKE 关键字转义（% _ \），对齐 Java StringTools.escapeSqlLikeKey
@@ -976,7 +978,8 @@ pub async fn exmail_list_title_passive(
             }
         }
     }
-    Ok(Json(ActionResult::success(Value::Array(titles))))
+    let count = titles.len() as i64;
+    Ok(Json(ActionResult::java_success(Value::Array(titles), count, 0)))
 }
 
 /// GET /jaxrs/person/exmail/sso —— 单点登录地址（模板注入 userid）
