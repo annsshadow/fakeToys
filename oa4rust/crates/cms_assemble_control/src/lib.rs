@@ -61,19 +61,27 @@ pub async fn get_control_config(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
-    let row = client
-        .query_one(
+    let rows = client
+        .query(
             "SELECT enabled, max_category_count, allow_anonymous FROM x_cms_assemble_control_config ORDER BY create_time::text LIMIT 1",
             &[],
         )
         .await
         .map_err(|_| AppError::Internal)?;
 
-    let data = Value::Object(serde_json::Map::from_iter([
-        ("enabled".to_string(), Value::Bool(row.get("enabled"))),
-        ("maxCategoryCount".to_string(), Value::Number(serde_json::Number::from(row.get::<_, i64>("max_category_count")))),
-        ("allowAnonymous".to_string(), Value::Bool(row.get("allow_anonymous"))),
-    ]));
+    let data = if let Some(row) = rows.first() {
+        Value::Object(serde_json::Map::from_iter([
+            ("enabled".to_string(), Value::Bool(row.get("enabled"))),
+            ("maxCategoryCount".to_string(), Value::Number(serde_json::Number::from(row.get::<_, i64>("max_category_count")))),
+            ("allowAnonymous".to_string(), Value::Bool(row.get("allow_anonymous"))),
+        ]))
+    } else {
+        Value::Object(serde_json::Map::from_iter([
+            ("enabled".to_string(), Value::Bool(true)),
+            ("maxCategoryCount".to_string(), Value::Number(serde_json::Number::from(100i64))),
+            ("allowAnonymous".to_string(), Value::Bool(false)),
+        ]))
+    };
 
     Ok(Json(ActionResult::success(data)))
 }
