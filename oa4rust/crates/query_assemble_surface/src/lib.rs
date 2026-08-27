@@ -1097,6 +1097,7 @@ pub async fn table_reload_dynamic(
         serde_json::Map::from_iter([
             ("reloaded".to_string(), Value::Number(serde_json::Number::from(result as i64))),
             ("success".to_string(), Value::Number(serde_json::Number::from(result as i64))),
+            ("value".to_string(), Value::Number(serde_json::Number::from(result as i64))),
         ]),
     ))))
 }

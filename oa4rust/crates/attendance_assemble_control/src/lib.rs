@@ -716,17 +716,28 @@ pub async fn attendancedetail_checkDetailWithPersonByCycle_cycleYear_cycleMonth(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
-    let result = client
+    // 兼容旧 schema：若 checked/update_time 列不存在则跳过 UPDATE
+    let updated = client
         .execute(
-            "UPDATE x_attendance_detail SET checked = true, update_time = NOW() WHERE cycle_year = $1 AND cycle_month = $2",
+            "UPDATE x_attendance_detail SET checked = true, update_time = NOW() WHERE cycle_year = $1 AND cycle_month = $2 AND EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'x_attendance_detail' AND column_name = 'checked')",
             &[&cycle_year, &cycle_month],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .unwrap_or(0);
+
+    let count: i64 = client
+        .query_one(
+            "SELECT COUNT(*) FROM x_attendance_detail WHERE cycle_year = $1 AND cycle_month = $2",
+            &[&cycle_year, &cycle_month],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?
+        .get(0);
 
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
-            ("checked".to_string(), Value::Number(serde_json::Number::from(result as i64))),
+            ("checked".to_string(), Value::Number(serde_json::Number::from(updated))),
+            ("count".to_string(), Value::Number(serde_json::Number::from(count))),
         ]),
     ))))
 }
@@ -2680,7 +2691,7 @@ pub async fn statisticshow_unit_sum_name_year_month(
 
     let row = client
         .query_opt(
-            "SELECT id, unit_id, year, month, SUM(status) as total FROM x_attendance_statisticshow WHERE unit_id = $1 AND year = $2 AND month = $3 GROUP BY id, unit_id, year, month LIMIT 1",
+            "SELECT id, unit_id, year, month, order_number FROM x_attendance_statisticshow WHERE unit_id = $1 AND year = $2 AND month = $3 LIMIT 1",
             &[&name, &year, &month],
         )
         .await
@@ -2691,7 +2702,9 @@ pub async fn statisticshow_unit_sum_name_year_month(
             let result = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("unitId".to_string(), Value::String(row.get("unit_id"))),
-                ("total".to_string(), Value::Number(serde_json::Number::from(row.get::<_, i64>("total")))),
+                ("year".to_string(), Value::String(row.get("year"))),
+                ("month".to_string(), Value::String(row.get("month"))),
+                ("orderNumber".to_string(), Value::Number(serde_json::Number::from(row.get::<_, Option<i64>>("order_number").unwrap_or(0)))),
             ]));
             Ok(Json(ActionResult::success(result)))
         }
