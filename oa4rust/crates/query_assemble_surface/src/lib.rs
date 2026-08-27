@@ -1585,15 +1585,14 @@ pub async fn view_flag_flag_query_queryFlag_excel_mockputtopost(
 
 pub async fn view_flag_flag_query_queryFlag_execute(
     pool: Extension<Pool>,
-    Path(flag): Path<String>,
-    Path(query_flag): Path<String>,
+    Path((view, app)): Path<(String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let row = client
         .query_opt(
             "SELECT id, content FROM x_query_view WHERE view_flag = $1 AND query_flag = $2 LIMIT 1",
-            &[&flag, &query_flag],
+            &[&view, &app],
         )
         .await
         .map_err(|_| AppError::Internal)?;
@@ -1603,7 +1602,7 @@ pub async fn view_flag_flag_query_queryFlag_execute(
             Ok(Json(ActionResult::success(Value::Object(
                 serde_json::Map::from_iter([
                     ("id".to_string(), Value::String(row.get("id"))),
-                    ("viewFlag".to_string(), Value::String(flag)),
+                    ("viewFlag".to_string(), Value::String(view)),
                 ]),
             ))))
         }
@@ -1644,17 +1643,15 @@ pub async fn view_flag_flag_query_queryFlag_execute_mockputtopost(
 
 pub async fn view_flag_flag_query_queryFlag_execute_v2_page_page_size_size(
     pool: Extension<Pool>,
-    Path(flag): Path<String>,
-    Path(query_flag): Path<String>,
-    Path(page): Path<i64>,
-    Path(size): Path<i64>,
+    Path((view, app)): Path<(String, String)>,
+    Path((page, size)): Path<(i64, i64)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let rows = client
         .query(
             "SELECT id, view_flag, query_flag, content, creator, create_time FROM x_query_view WHERE view_flag = $1 AND query_flag = $2 ORDER BY create_time DESC LIMIT $4::bigint OFFSET ($3 - 1) * $4",
-            &[&flag, &query_flag, &page, &size],
+            &[&view, &app, &page, &size],
         )
         .await
         .map_err(|_| AppError::Internal)?;
