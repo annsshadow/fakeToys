@@ -5792,7 +5792,13 @@ pub async fn authentication_who(
             ("person".to_string(), Value::String(session.person_unique.clone())),
             ("token".to_string(), Value::String(session.token.clone())),
         ]))))),
-        None => Ok(Json(ActionResult::error("anonymous"))),
+        None => {
+            let mut map = serde_json::Map::new();
+            map.insert("tokenType".to_string(), Value::String("anonymous".to_string()));
+            map.insert("token".to_string(), Value::String(String::new()));
+            map.insert("person".to_string(), Value::String(String::new()));
+            Ok(Json(ActionResult::java_success(Value::Object(map), 0, -1)))
+        }
     }
 }
 

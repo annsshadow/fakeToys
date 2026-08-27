@@ -54,9 +54,7 @@ pub fn router(pool: deadpool_postgres::Pool) -> axum::Router {
         .route("/jaxrs/jpush/assemble/control/device/unbind/deviceName/deviceType", post(device_unbind_deviceName_deviceType))
         .route("/jaxrs/jpush/assemble/control/message/test/send", get(message_test_send))
         // ---- plan002 U2 gaps: verb variants + missing ----
-        .route("/jaxrs/jpush_assemble_control/device/admin/unbind/all/person", post(device_admin_unbind_all_person))
         .route("/jaxrs/jpush_assemble_control/device/check/{deviceName}/{deviceType}/{pushType}", get(device_check_deviceName_deviceType_pushType))
-        .route("/jaxrs/jpush_assemble_control/device/list/{pushType}", get(device_list_pushType))
         .route("/jaxrs/jpush_assemble_control/device/unbind/new/{deviceName}/{deviceType}/{pushType}", get(device_unbind_new_deviceName_deviceType_pushType))
         .route("/jaxrs/jpush_assemble_control/device/unbind/{deviceName}/{deviceType}", delete(device_unbind_deviceName_deviceType))
         .route("/jaxrs/jpush_assemble_control/message/send", post(message_send))
