@@ -1643,8 +1643,7 @@ pub async fn view_flag_flag_query_queryFlag_execute_mockputtopost(
 
 pub async fn view_flag_flag_query_queryFlag_execute_v2_page_page_size_size(
     pool: Extension<Pool>,
-    Path((view, app)): Path<(String, String)>,
-    Path((page, size)): Path<(i64, i64)>,
+    Path((view, app, page, size)): Path<(String, String, i64, i64)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
