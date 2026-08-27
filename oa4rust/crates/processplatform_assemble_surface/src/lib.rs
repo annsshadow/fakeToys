@@ -11549,7 +11549,7 @@ pub async fn touch_expire(
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let count = client
         .execute(
-            "UPDATE PP_C_TOUCH_EXPIRE SET \"xupdateTime\" = NOW()",
+            "UPDATE pp_c_touch_expire SET xupdatetime = NOW()",
             &[],
         )
         .await
@@ -11568,7 +11568,7 @@ pub async fn touch_passexpired(
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let count = client
         .execute(
-            "UPDATE PP_C_TOUCH_PASSEXPIRED SET \"xupdateTime\" = NOW()",
+            "UPDATE pp_c_touch_passexpired SET xupdatetime = NOW()",
             &[],
         )
         .await
@@ -11587,7 +11587,7 @@ pub async fn touch_touchdetained(
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let count = client
         .execute(
-            "UPDATE PP_C_TOUCH_DETAINED SET \"xupdateTime\" = NOW()",
+            "UPDATE pp_c_touch_detained SET xupdatetime = NOW()",
             &[],
         )
         .await
