@@ -9598,7 +9598,7 @@ pub const ENDPOINTS: &[EndpointDef] = &[
     EndpointDef {
         crate_name: "component_assemble_control",
         method: "GET",
-        rust_path: "/jaxrs/component_assemble_control/get/component",
+        rust_path: "/jaxrs/component_assemble_control/get/component/{id}",
         java_war: "",
         java_action: "",
         body: None,
@@ -14038,7 +14038,7 @@ pub const ENDPOINTS: &[EndpointDef] = &[
     EndpointDef {
         crate_name: "hotpic_assemble_control",
         method: "GET",
-        rust_path: "/jaxrs/hotpic_assemble_control/get/hotpic",
+        rust_path: "/jaxrs/hotpic_assemble_control/get/hotpic/{id}",
         java_war: "",
         java_action: "",
         body: None,
@@ -14568,7 +14568,7 @@ pub const ENDPOINTS: &[EndpointDef] = &[
     EndpointDef {
         crate_name: "jpush_assemble_control",
         method: "GET",
-        rust_path: "/jaxrs/jpush_assemble_control/get/jpush",
+        rust_path: "/jaxrs/jpush_assemble_control/get/jpush/{id}",
         java_war: "",
         java_action: "",
         body: None,
@@ -45488,9 +45488,9 @@ pub const ENDPOINTS: &[EndpointDef] = &[
     EndpointDef {
         crate_name: "query_assemble_surface",
         method: "GET",
-        rust_path: "/jaxrs/queryview/flag/{view}/application/flag/{app}/execute",
-        java_war: "",
-        java_action: "",
+        rust_path: "/jaxrs/queryview/{view}/application/{app}/execute",
+        java_war: "x_query_assemble_surface",
+        java_action: "/queryview/{}/application/{}/execute",
         body: None,
         requires_auth: false,
     },
@@ -45498,9 +45498,9 @@ pub const ENDPOINTS: &[EndpointDef] = &[
     EndpointDef {
         crate_name: "query_assemble_surface",
         method: "GET",
-        rust_path: "/jaxrs/queryview/flag/{view}/application/flag/{app}/execute/page/{page}/size/{size}",
-        java_war: "",
-        java_action: "",
+        rust_path: "/jaxrs/queryview/{view}/application/{app}/execute/page/{page}/size/{size}",
+        java_war: "x_query_assemble_surface",
+        java_action: "/queryview/{}/application/{}/execute/page/{}/size/{}",
         body: None,
         requires_auth: false,
     },

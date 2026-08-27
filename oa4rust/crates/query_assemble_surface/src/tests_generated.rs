@@ -177,7 +177,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/queryview/flag/test-id/application/flag/test-id/execute")
+                    .uri("/jaxrs/queryview/test-id/application/test-id/execute")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -196,7 +196,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/queryview/flag/test-id/application/flag/test-id/execute/page/test-id/size/test-id")
+                    .uri("/jaxrs/queryview/test-id/application/test-id/execute/page/test-id/size/test-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),

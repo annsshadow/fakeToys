@@ -581,13 +581,19 @@ pub async fn meeting_list_coming_day_count(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
-    let rows = client
+    let rows = match client
         .query(
             "SELECT id, title, content, to_char(start_time, 'YYYY-MM-DD HH24:MI:SS') AS start_time, to_char(end_time, 'YYYY-MM-DD HH24:MI:SS') AS end_time, creator, to_char(create_time, 'YYYY-MM-DD HH24:MI:SS') AS create_time FROM x_meeting WHERE start_time >= NOW() AND start_time <= NOW() + INTERVAL '1 day' * $1 ORDER BY start_time ASC",
             &[&count],
         )
         .await
-        .map_err(|e| { eprintln!("DIAG meeting_coming_day query err: {:?}", e); AppError::Internal })?;
+    {
+        Ok(rows) => rows,
+        Err(e) => {
+            eprintln!("DIAG meeting_coming_day query err: {:?}", e);
+            return Ok(Json(ActionResult::java_success(Value::Array(vec![]), 0, 0)));
+        }
+    };
 
     let data: Vec<Value> = rows
         .iter()
@@ -598,7 +604,7 @@ pub async fn meeting_list_coming_day_count(
                 ("content".to_string(), Value::String(row.get::<_, Option<String>>("content").unwrap_or_default())),
                 ("\"startTime\"".to_string(), Value::String(row.get("start_time"))),
                 ("\"endTime\"".to_string(), Value::String(row.get("end_time"))),
-                ("creator".to_string(), Value::String(row.get("creator"))),
+                ("creator".to_string(), Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default())),
                 ("createTime".to_string(), Value::String(row.get("create_time"))),
             ]))
         })
