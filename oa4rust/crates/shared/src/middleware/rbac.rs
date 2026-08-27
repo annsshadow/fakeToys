@@ -184,6 +184,10 @@ impl PermissionRegistry {
         registry.register_prefix("/jaxrs/reset", PermissionLevel::Public);
         registry.register_prefix("/jaxrs/secret/check", PermissionLevel::Public);
         registry.register_prefix("/jaxrs/secret/set", PermissionLevel::Public);
+        // organization_assemble_authentication: 认证前置端点（登录模式、验证码密钥、登出）
+        registry.register_prefix("/jaxrs/organization/assemble/authentication/authentication", PermissionLevel::Public);
+        // program_center: 认证查询
+        registry.register_prefix("/jaxrs/program_center/authentication", PermissionLevel::Public);
         // 自服务端点：改密和头像，登录用户即可操作
         registry.register_prefix("/jaxrs/person/password", PermissionLevel::Authenticated);
         // GET icon is public per R8 (头像端点无权限也可访问)

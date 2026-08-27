@@ -13,6 +13,14 @@ pub const AUTH_EXEMPT_PATHS: &[&str] = &[
     "/jaxrs/authentication/login",
     "/jaxrs/authentication/logout",
     "/jaxrs/authentication/who",
+    // organization_assemble_authentication 认证别名（Java 行为对齐）
+    "/jaxrs/organization/assemble/authentication/authentication",
+    "/jaxrs/organization/assemble/authentication/authentication/mode",
+    "/jaxrs/organization/assemble/authentication/authentication/captchaRSAPublicKey",
+    "/jaxrs/organization/assemble/authentication/authentication/mockdeletetoget",
+    "/jaxrs/organization/assemble/authentication/authentication/safe/logout",
+    // program_center 认证别名
+    "/jaxrs/program_center/authentication",
     // 验证码
     "/jaxrs/authentication/captcha",
     "/jaxrs/authentication/captcha/width/{width}/height/{height}",

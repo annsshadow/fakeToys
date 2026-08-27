@@ -279,16 +279,81 @@ pub async fn logout(
 /// 查询当前认证用户信息（契约路径 GET /jaxrs/authentication，兼容自造路径）
 ///
 /// 从会话解析当前用户身份，按 unique_id 查询数据库（不再取首条记录）。
+/// 未认证时返回匿名 token 信息（对齐 Java 行为）。
 pub async fn whoami(
     pool: Extension<Pool>,
     session_manager: Extension<SessionManager>,
     headers: HeaderMap,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let token = extract_token_from_headers(&headers).ok_or(AppError::Unauthorized)?;
-    let session = session_manager
-        .validate_session(&token)
-        .await
-        .ok_or(AppError::Unauthorized)?;
+    // 尝试提取 token；未提供时返回匿名信息（Java 返回 anonymous token）
+    let token = match extract_token_from_headers(&headers) {
+        Some(t) => t,
+        None => {
+            let mut map = serde_json::Map::new();
+            map.insert("tokenType".to_string(), Value::String("anonymous".to_string()));
+            map.insert("token".to_string(), Value::String(String::new()));
+            map.insert("roleList".to_string(), Value::Array(vec![]));
+            map.insert("passwordExpired".to_string(), Value::Bool(false));
+            map.insert("identityList".to_string(), Value::Array(vec![]));
+            map.insert("id".to_string(), Value::String(String::new()));
+            map.insert("name".to_string(), Value::String(String::new()));
+            map.insert("employee".to_string(), Value::String(String::new()));
+            map.insert("unique".to_string(), Value::String(String::new()));
+            map.insert("distinguishedName".to_string(), Value::String(String::new()));
+            map.insert("orderNumber".to_string(), Value::Number(serde_json::Number::from(0)));
+            map.insert("controllerList".to_string(), Value::Array(vec![]));
+            map.insert("changePasswordTime".to_string(), Value::String(String::new()));
+            map.insert("lastLoginTime".to_string(), Value::String(String::new()));
+            map.insert("lastLoginAddress".to_string(), Value::String(String::new()));
+            map.insert("lastLoginClient".to_string(), Value::String(String::new()));
+            map.insert("mail".to_string(), Value::String(String::new()));
+            map.insert("mobile".to_string(), Value::String(String::new()));
+            map.insert("failureTime".to_string(), Value::String(String::new()));
+            map.insert("failureCount".to_string(), Value::Number(serde_json::Number::from(0)));
+            map.insert("topUnitList".to_string(), Value::Array(vec![]));
+            map.insert("status".to_string(), Value::String("0".to_string()));
+            map.insert("statusDes".to_string(), Value::String(String::new()));
+            map.insert("createTime".to_string(), Value::String(String::new()));
+            map.insert("updateTime".to_string(), Value::String(String::new()));
+            map.insert("sequence".to_string(), Value::String(String::new()));
+            return Ok(Json(ActionResult::java_success(Value::Object(map), 0, -1)));
+        }
+    };
+
+    let session = match session_manager.validate_session(&token).await {
+        Some(s) => s,
+        None => {
+            // token 无效也返回匿名信息（Java 行为）
+            let mut map = serde_json::Map::new();
+            map.insert("tokenType".to_string(), Value::String("anonymous".to_string()));
+            map.insert("token".to_string(), Value::String(String::new()));
+            map.insert("roleList".to_string(), Value::Array(vec![]));
+            map.insert("passwordExpired".to_string(), Value::Bool(false));
+            map.insert("identityList".to_string(), Value::Array(vec![]));
+            map.insert("id".to_string(), Value::String(String::new()));
+            map.insert("name".to_string(), Value::String(String::new()));
+            map.insert("employee".to_string(), Value::String(String::new()));
+            map.insert("unique".to_string(), Value::String(String::new()));
+            map.insert("distinguishedName".to_string(), Value::String(String::new()));
+            map.insert("orderNumber".to_string(), Value::Number(serde_json::Number::from(0)));
+            map.insert("controllerList".to_string(), Value::Array(vec![]));
+            map.insert("changePasswordTime".to_string(), Value::String(String::new()));
+            map.insert("lastLoginTime".to_string(), Value::String(String::new()));
+            map.insert("lastLoginAddress".to_string(), Value::String(String::new()));
+            map.insert("lastLoginClient".to_string(), Value::String(String::new()));
+            map.insert("mail".to_string(), Value::String(String::new()));
+            map.insert("mobile".to_string(), Value::String(String::new()));
+            map.insert("failureTime".to_string(), Value::String(String::new()));
+            map.insert("failureCount".to_string(), Value::Number(serde_json::Number::from(0)));
+            map.insert("topUnitList".to_string(), Value::Array(vec![]));
+            map.insert("status".to_string(), Value::String("0".to_string()));
+            map.insert("statusDes".to_string(), Value::String(String::new()));
+            map.insert("createTime".to_string(), Value::String(String::new()));
+            map.insert("updateTime".to_string(), Value::String(String::new()));
+            map.insert("sequence".to_string(), Value::String(String::new()));
+            return Ok(Json(ActionResult::java_success(Value::Object(map), 0, -1)));
+        }
+    };
 
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let row = client
