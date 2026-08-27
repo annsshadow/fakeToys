@@ -417,8 +417,8 @@ mod tests {
         assert_eq!(result.data, Some("test".to_string()));
         // Java 成功信封实测恒填空串 message（Gson 对齐）
         assert_eq!(result.message, Some(String::new()));
-        // Java 成功信封恒填 prompt（空串），避免与 Java 字段缺失差异
-        assert_eq!(result.prompt, Some(String::new()));
+        // Java 成功信封无 prompt 字段（仅错误信封携带异常类名）
+        assert_eq!(result.prompt, None);
     }
 
     #[test]
@@ -437,8 +437,8 @@ mod tests {
         assert_eq!(json["data"], 42);
         // Java 成功信封实测 message 为空串而非 null
         assert_eq!(json["message"], serde_json::Value::String(String::new()));
-        // Java 成功信封恒填 prompt 字段（空串），避免与 Java 字段缺失差异
-        assert_eq!(json["prompt"], serde_json::Value::String(String::new()));
+        // Java 成功信封无 prompt 字段（skip_serializing_if = "Option::is_none"）
+        assert!(json.get("prompt").is_none());
     }
 
     #[test]
