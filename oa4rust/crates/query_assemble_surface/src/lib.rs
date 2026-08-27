@@ -1649,7 +1649,7 @@ pub async fn view_flag_flag_query_queryFlag_execute_v2_page_page_size_size(
 
     let rows = client
         .query(
-            "SELECT id, view_flag, query_flag, content, creator, create_time FROM x_query_view WHERE view_flag = $1 AND query_flag = $2 ORDER BY create_time DESC LIMIT $4 OFFSET ($3 - 1) * $4",
+            "SELECT id, view_flag, query_flag, content, creator, create_time FROM x_query_view WHERE view_flag = $1 AND query_flag = $2 ORDER BY create_time DESC LIMIT $4::int OFFSET ($3 - 1) * $4",
             &[&view, &app, &page, &size],
         )
         .await
