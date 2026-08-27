@@ -173,16 +173,32 @@ pub async fn captcha_login(
 /// GET safe/logout —— 安全注销：当前人全部会话过期 + 注销本次令牌
 ///
 /// Java ActionSafeLogout 通过 TokenThreshold 广播实现；此处等价地按人撤销全部会话。
+/// 未认证时返回成功（对齐 Java 行为）。
 pub async fn safe_logout_get(
     pool: Extension<Pool>,
     session_manager: Extension<SessionManager>,
     headers: HeaderMap,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let token = shared::middleware::extract_token_from_headers(&headers).ok_or(AppError::Unauthorized)?;
-    let session = session_manager
-        .validate_session(&token)
-        .await
-        .ok_or(AppError::Unauthorized)?;
+    let token = match shared::middleware::extract_token_from_headers(&headers) {
+        Some(t) => t,
+        None => {
+            return Ok(Json(ActionResult::success(json!({
+                "tokenType": "anonymous",
+                "name": "anonymous",
+            }))));
+        }
+    };
+
+    let session = match session_manager.validate_session(&token).await {
+        Some(s) => s,
+        None => {
+            return Ok(Json(ActionResult::success(json!({
+                "tokenType": "anonymous",
+                "name": "anonymous",
+            }))));
+        }
+    };
+
     let person = session.person_unique.clone();
 
     // 使本人所有会话失效（含当前），再显式移除当前令牌兜底
