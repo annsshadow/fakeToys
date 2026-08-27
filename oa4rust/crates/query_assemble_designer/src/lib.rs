@@ -1687,6 +1687,7 @@ pub async fn table_reload_dynamic(
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("reloaded".to_string(), Value::Number(serde_json::Number::from(result as i64))),
+            ("value".to_string(), Value::Number(serde_json::Number::from(result as i64))),
         ]),
     ))))
 }

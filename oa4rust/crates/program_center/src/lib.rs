@@ -5666,10 +5666,11 @@ async fn warnlog_list(
     where_clause: &str,
     params: &[&(dyn deadpool_postgres::tokio_postgres::types::ToSql + Sync)],
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // where_clause may contain $1..$N placeholders for filter params.
+    // We always append LIMIT 100 to ensure we never exceed it.
     let sql = format!(
-        "SELECT id, level, tag, logger_name, message, detail, host, port, create_time FROM x_program_warn_log {} ORDER BY id DESC LIMIT ${}",
+        "SELECT id, level, tag, logger_name, message, detail, host, port, create_time FROM x_program_warn_log {} ORDER BY id DESC LIMIT 100",
         where_clause,
-        params.len()
     );
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let rows = client.query(&sql, params).await.map_err(|_| AppError::Internal)?;
