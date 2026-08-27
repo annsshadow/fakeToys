@@ -161,7 +161,7 @@ pub fn error_response(status: axum::http::StatusCode, message: impl Into<String>
 //   size      — 分页页大小（Java 默认 -1 表示未分页 / 0）
 //   count     — 记录总数（用于分页）
 //   position  — O2OA v9 信封中为数字（实测恒为 0），用 Value 承载
-//   prompt    — 仅错误信封携带的 Java 异常类名；成功信封省略
+//   prompt    — 仅错误信封携带的 Java 异常类名；成功信封无此字段
 // ──────────────────────────────────────────────────────────────────────────────
 #[derive(Serialize)]
 pub struct ActionResult<T> {
@@ -175,8 +175,9 @@ pub struct ActionResult<T> {
     pub count: Option<i64>,
     /// O2OA v9 Java 信封中 position 为数字（实测恒为 0），因此用 Value 承载。
     pub position: Option<Value>,
-    /// Java 成功与错误信封均恒填充 prompt（错误为异常类名，成功为空串），
-    /// 故 success()/java_success() 恒填 Some("") 以避免字段缺失。
+    /// Java 仅在错误信封携带 prompt（异常类名）；成功信封无此字段，
+    /// 故 None 时跳过序列化（plan002 U2 行为对齐）。
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub prompt: Option<String>,
 }
 
@@ -194,7 +195,7 @@ impl<T> ActionResult<T> {
             size: Some(0),
             count: Some(0),
             position: Some(Value::Number(serde_json::Number::from(0))),
-            prompt: Some(String::new()),
+            prompt: None,
         }
     }
 
@@ -233,7 +234,7 @@ impl<T> ActionResult<T> {
             size: Some(size),
             count: Some(count),
             position: Some(Value::Number(serde_json::Number::from(0))),
-            prompt: Some(String::new()),
+            prompt: None,
         }
     }
 }
