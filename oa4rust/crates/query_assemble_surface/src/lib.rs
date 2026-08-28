@@ -1591,7 +1591,7 @@ pub async fn view_flag_flag_query_queryFlag_execute(
 
     let row = client
         .query_opt(
-            "SELECT id, content FROM x_query_view WHERE view_flag = $1 AND query_flag = $2 LIMIT 1",
+            "SELECT id, name, view_flag, query_flag, content, creator, create_time, update_time FROM x_query_view WHERE view_flag = $1 AND query_flag = $2 LIMIT 1",
             &[&view, &app],
         )
         .await
@@ -1599,10 +1599,20 @@ pub async fn view_flag_flag_query_queryFlag_execute(
 
     match row {
         Some(row) => {
+            let content_str: Option<String> = row.get("content");
+            let content = content_str
+                .and_then(|s| serde_json::from_str(&s).ok())
+                .unwrap_or(serde_json::Value::Null);
             Ok(Json(ActionResult::success(Value::Object(
                 serde_json::Map::from_iter([
                     ("id".to_string(), Value::String(row.get("id"))),
+                    ("name".to_string(), Value::String(row.get::<_, Option<String>>("name").unwrap_or_default())),
                     ("viewFlag".to_string(), Value::String(view)),
+                    ("queryFlag".to_string(), Value::String(app)),
+                    ("content".to_string(), content),
+                    ("creator".to_string(), Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default())),
+                    ("createTime".to_string(), Value::String(row.get::<_, Option<String>>("create_time").unwrap_or_default())),
+                    ("updateTime".to_string(), Value::String(row.get::<_, Option<String>>("update_time").unwrap_or_default())),
                 ]),
             ))))
         }
@@ -1894,17 +1904,28 @@ pub async fn view_id_execute(
 
     let row = client
         .query_opt(
-            "SELECT id, content FROM x_query_view WHERE id = $1",
+            "SELECT id, name, view_flag, query_flag, content, creator, create_time, update_time FROM x_query_view WHERE id = $1",
             &[&id],
         )
         .await
         .map_err(|_| AppError::Internal)?;
 
     match row {
-        Some(_) => {
+        Some(row) => {
+            let content_str: Option<String> = row.get("content");
+            let content = content_str
+                .and_then(|s| serde_json::from_str(&s).ok())
+                .unwrap_or(serde_json::Value::Null);
             Ok(Json(ActionResult::success(Value::Object(
                 serde_json::Map::from_iter([
-                    ("id".to_string(), Value::String(id)),
+                    ("id".to_string(), Value::String(row.get("id"))),
+                    ("name".to_string(), Value::String(row.get::<_, Option<String>>("name").unwrap_or_default())),
+                    ("viewFlag".to_string(), Value::String(row.get::<_, Option<String>>("view_flag").unwrap_or_default())),
+                    ("queryFlag".to_string(), Value::String(row.get::<_, Option<String>>("query_flag").unwrap_or_default())),
+                    ("content".to_string(), content),
+                    ("creator".to_string(), Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default())),
+                    ("createTime".to_string(), Value::String(row.get::<_, Option<String>>("create_time").unwrap_or_default())),
+                    ("updateTime".to_string(), Value::String(row.get::<_, Option<String>>("update_time").unwrap_or_default())),
                 ]),
             ))))
         }
