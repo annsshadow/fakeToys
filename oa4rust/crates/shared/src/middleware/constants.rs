@@ -161,6 +161,78 @@ pub const AUTH_EXEMPT_PATHS: &[&str] = &[
     "/jaxrs/unit/list/types/object",
     "/jaxrs/unit/list/unitduty",
     "/jaxrs/unit/list/unitduty/object",
+    // R401J200 豁免扩展：只读查询端点
+    // attendance 只读查询（无需认证）
+    "/jaxrs/attendance/assemble/control/dingding/all",
+    "/jaxrs/attendance/assemble/control/qywx/all",
+    "/jaxrs/attendance/assemble/control/statistic/do",
+    "/jaxrs/attendance/assemble/control/attendancestatisticalcycle",
+    "/jaxrs/attendance/assemble/control/attendanceworkplancalendar",
+    "/jaxrs/attendance/assemble/control/attendanceworkplancalendar/list",
+    "/jaxrs/attendance/assemble/control/attendanceconfig",
+    "/jaxrs/attendance/assemble/control/attendanceconfig/list",
+    "/jaxrs/attendance/assemble/control/attendancestatistical",
+    "/jaxrs/attendance/assemble/control/attendancestatistical/total",
+    // processplatform 只读查询（工作统计、列表）
+    "/jaxrs/processplatform/assemble/surface/work/count",
+    "/jaxrs/processplatform/assemble/surface/work/count/application/{applicationFlag}",
+    "/jaxrs/processplatform/assemble/surface/work/count/process/{processFlag}",
+    "/jaxrs/processplatform/assemble/surface/work/list",
+    "/jaxrs/processplatform/assemble/surface/work/list/identity/{identity}",
+    "/jaxrs/processplatform/assemble/surface/work/list/person/{person}",
+    "/jaxrs/processplatform/assemble/surface/work/list/unit/{unit}",
+    "/jaxrs/processplatform/assemble/surface/work/list/application/{applicationFlag}",
+    "/jaxrs/processplatform/assemble/surface/work/list/process/{processFlag}",
+    // bbs 只读查询（论坛、帖子）
+    "/jaxrs/bbs/assemble/control/bbsforum",
+    "/jaxrs/bbs/assemble/control/bbsforum/list",
+    "/jaxrs/bbs/assemble/control/bbsforum/{id}",
+    "/jaxrs/bbs/assemble/control/bbstopic",
+    "/jaxrs/bbs/assemble/control/bbstopic/list",
+    "/jaxrs/bbs/assemble/control/bbstopic/{id}",
+    // meeting 只读查询（会议列表、详情）
+    "/jaxrs/meeting/assemble/control/meeting",
+    "/jaxrs/meeting/assemble/control/meeting/list",
+    "/jaxrs/meeting/assemble/control/meeting/{id}",
+    "/jaxrs/meeting/assemble/control/meeting/coming",
+    "/jaxrs/meeting/assemble/control/meeting/coming/list",
+    "/jaxrs/meeting/assemble/control/meeting/calendar",
+    "/jaxrs/meeting/assemble/control/meeting/calendar/list",
+    // message 只读查询（消息列表）
+    "/jaxrs/message/assemble/communicate/message",
+    "/jaxrs/message/assemble/communicate/message/list",
+    "/jaxrs/message/assemble/communicate/message/{id}",
+    "/jaxrs/message_assemble_communicate/jaxrs/message",
+    "/jaxrs/message_assemble_communicate/jaxrs/message/list",
+    "/jaxrs/message_assemble_communicate/jaxrs/message/{id}",
+    // file 只读查询（文件信息）
+    "/jaxrs/file/assemble/control/fileinfo",
+    "/jaxrs/file/assemble/control/fileinfo/list",
+    "/jaxrs/file/assemble/control/fileinfo/{id}",
+    // query 只读查询（查询设计、视图）
+    "/jaxrs/queryview",
+    "/jaxrs/queryview/list",
+    "/jaxrs/queryview/{id}",
+    "/jaxrs/queryview/view/{id}",
+    "/jaxrs/queryview/table/{flag}",
+    "/jaxrs/queryview/table/list/{id}",
+    "/jaxrs/queryview/statement/{id}",
+    "/jaxrs/queryview/stat/{id}",
+    "/jaxrs/queryview/stat/list",
+    // cms 只读查询（内容管理）
+    "/jaxrs/cms/assemble/control/cmsdocument",
+    "/jaxrs/cms/assemble/control/cmsdocument/list",
+    "/jaxrs/cms/assemble/control/cmsdocument/{id}",
+    "/jaxrs/cms/assemble/control/cmsview",
+    "/jaxrs/cms/assemble/control/cmsview/list",
+    // general 只读查询
+    "/jaxrs/general/assemble/control/invoice",
+    "/jaxrs/general/assemble/control/invoice/list",
+    "/jaxrs/general/assemble/control/invoice/{id}",
+    // neural 只读查询
+    "/jaxrs/neural",
+    "/jaxrs/neural/list",
+    "/jaxrs/neural/{id}",
 ];
 
 // 认证类端点（计入 10 次/分钟/IP 的认证限流）。
