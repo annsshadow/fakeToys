@@ -303,13 +303,17 @@ pub async fn mpweixin_bind_openid(
     }
 
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
-    client
+    let affected = client
         .execute(
             "UPDATE auth_person SET mpwxopenId = $1 WHERE unique_id = $2 AND deleted_at IS NULL",
             &[&openid, &session.person_unique],
         )
         .await
         .map_err(|_| AppError::Internal)?;
+
+    if affected == 0 {
+        return Ok(Json(ActionResult::error("user not found")));
+    }
 
     Ok(Json(ActionResult::success(serde_json::json!({ "value": true }))))
 }

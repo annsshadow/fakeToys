@@ -28,13 +28,15 @@ fn test_create_surface_action_result_format() {
 
 #[test]
 fn test_list_surfaces_action_result_format() {
-    let result: ActionResult<serde_json::Value> = ActionResult::success(json!({
-        "count": 1,
-        "data": [{"id": "surface-1", "category": "default"}]
-    }));
+    let result: ActionResult<serde_json::Value> = ActionResult::java_success(
+        json!([{"id": "surface-1", "category": "default"}]),
+        1,
+        0,
+    );
     let json = serde_json::to_value(&result).unwrap();
     assert_eq!(json["type"], "success");
-    assert_eq!(json["data"]["count"], 1);
+    assert_eq!(json["count"], 1);
+    assert_eq!(json["data"].as_array().unwrap().len(), 1);
 }
 
 #[test]

@@ -82,7 +82,8 @@ pub async fn list_storage_pools(
         Err(_) => vec![],
     };
 
-    Ok(Json(ActionResult::success(Value::Array(data))))
+    let count = data.len() as i64;
+    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
 }
 
 #[axum::debug_handler]
@@ -155,12 +156,8 @@ pub async fn list_control_categories(
         Err(_) => vec![],
     };
 
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("count".to_string(), Value::Number(serde_json::Number::from(categories.len() as i64))),
-            ("data".to_string(), Value::Array(categories)),
-        ]),
-    ))))
+    let count = categories.len() as i64;
+    Ok(Json(ActionResult::java_success(Value::Array(categories), count, 0)))
 }
 
 pub fn router(pool: deadpool_postgres::Pool) -> axum::Router {
@@ -199,12 +196,8 @@ pub async fn list_files(
         })
         .collect();
 
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
-            ("data".to_string(), Value::Array(data)),
-        ]),
-    ))))
+    let count = data.len() as i64;
+    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
 }
 
 #[axum::debug_handler]
@@ -598,12 +591,8 @@ pub async fn attachment_list_editor_owner(
             ("createTime".to_string(), Value::String(row.get("create_time"))),
         ]))
     }).collect();
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
-            ("data".to_string(), Value::Array(data)),
-        ]),
-    ))))
+    let count = data.len() as i64;
+    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
 }
 
 #[axum::debug_handler]
@@ -632,12 +621,8 @@ pub async fn attachment_list_folder_folderId(
             ("createTime".to_string(), Value::String(row.get("create_time"))),
         ]))
     }).collect();
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
-            ("data".to_string(), Value::Array(data)),
-        ]),
-    ))))
+    let count = data.len() as i64;
+    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
 }
 
 #[axum::debug_handler]
@@ -666,12 +651,8 @@ pub async fn attachment_list_share_owner(
             ("createTime".to_string(), Value::String(row.get("create_time"))),
         ]))
     }).collect();
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
-            ("data".to_string(), Value::Array(data)),
-        ]),
-    ))))
+    let count = data.len() as i64;
+    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
 }
 
 #[axum::debug_handler]
@@ -699,12 +680,8 @@ pub async fn attachment_list_top(
             ("createTime".to_string(), Value::String(row.get("create_time"))),
         ]))
     }).collect();
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
-            ("data".to_string(), Value::Array(data)),
-        ]),
-    ))))
+    let count = data.len() as i64;
+    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
 }
 
 #[axum::debug_handler]
@@ -951,12 +928,8 @@ pub async fn attachment2_list_editor_owner(
             ("createTime".to_string(), Value::String(row.get("create_time"))),
         ]))
     }).collect();
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
-            ("data".to_string(), Value::Array(data)),
-        ]),
-    ))))
+    let count = data.len() as i64;
+    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
 }
 
 #[axum::debug_handler]
@@ -984,12 +957,8 @@ pub async fn attachment2_list_filter_name(
             ("createTime".to_string(), Value::String(row.get("create_time"))),
         ]))
     }).collect();
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
-            ("data".to_string(), Value::Array(data)),
-        ]),
-    ))))
+    let count = data.len() as i64;
+    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
 }
 
 #[axum::debug_handler]
@@ -1017,12 +986,8 @@ pub async fn attachment2_list_folder_folderId(
             ("createTime".to_string(), Value::String(row.get("create_time"))),
         ]))
     }).collect();
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
-            ("data".to_string(), Value::Array(data)),
-        ]),
-    ))))
+    let count = data.len() as i64;
+    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
 }
 
 #[axum::debug_handler]
@@ -1050,12 +1015,8 @@ pub async fn attachment2_list_share_owner(
             ("createTime".to_string(), Value::String(row.get("create_time"))),
         ]))
     }).collect();
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
-            ("data".to_string(), Value::Array(data)),
-        ]),
-    ))))
+    let count = data.len() as i64;
+    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
 }
 
 #[axum::debug_handler]
@@ -1082,12 +1043,8 @@ pub async fn attachment2_list_top(
             ("createTime".to_string(), Value::String(row.get("create_time"))),
         ]))
     }).collect();
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
-            ("data".to_string(), Value::Array(data)),
-        ]),
-    ))))
+    let count = data.len() as i64;
+    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
 }
 
 #[axum::debug_handler]
@@ -1117,12 +1074,8 @@ pub async fn attachment2_list_type_page_size_size(
             ("createTime".to_string(), Value::String(row.get("create_time"))),
         ]))
     }).collect();
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
-            ("data".to_string(), Value::Array(data)),
-        ]),
-    ))))
+    let count = data.len() as i64;
+    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
 }
 
 #[axum::debug_handler]
@@ -1701,12 +1654,8 @@ pub async fn editor_list(
             ("person".to_string(), Value::String(row.get("person"))),
         ]))
     }).collect();
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
-            ("data".to_string(), Value::Array(data)),
-        ]),
-    ))))
+    let count = data.len() as i64;
+    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
 }
 
 #[axum::debug_handler]
@@ -1780,12 +1729,8 @@ pub async fn file_list_referencetype(
             ("createTime".to_string(), Value::String(row.get("create_time"))),
         ]))
     }).collect();
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
-            ("data".to_string(), Value::Array(data)),
-        ]),
-    ))))
+    let count = data.len() as i64;
+    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
 }
 
 #[axum::debug_handler]
@@ -1813,12 +1758,8 @@ pub async fn file_list_referencetype_referenceType_reference_reference(
             ("createTime".to_string(), Value::String(row.get("create_time"))),
         ]))
     }).collect();
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
-            ("data".to_string(), Value::Array(data)),
-        ]),
-    ))))
+    let count = data.len() as i64;
+    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
 }
 
 #[axum::debug_handler]
@@ -1839,12 +1780,8 @@ pub async fn file_list_unused_referencetype_cmsdocument_manage(
             ("length".to_string(), Value::Number(serde_json::Number::from(row.get::<_, i64>("length")))),
         ]))
     }).collect();
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
-            ("data".to_string(), Value::Array(data)),
-        ]),
-    ))))
+    let count = data.len() as i64;
+    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
 }
 
 #[axum::debug_handler]
@@ -1866,12 +1803,8 @@ pub async fn file_list_id_next_count(
             ("length".to_string(), Value::Number(serde_json::Number::from(row.get::<_, i64>("length")))),
         ]))
     }).collect();
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
-            ("data".to_string(), Value::Array(data)),
-        ]),
-    ))))
+    let count = data.len() as i64;
+    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
 }
 
 #[axum::debug_handler]
@@ -1901,12 +1834,8 @@ pub async fn file_list_id_next_count_referencetype_referenceType(
             ("length".to_string(), Value::Number(serde_json::Number::from(row.get::<_, i64>("length")))),
         ]))
     }).collect();
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
-            ("data".to_string(), Value::Array(data)),
-        ]),
-    ))))
+    let count = data.len() as i64;
+    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
 }
 
 #[axum::debug_handler]
@@ -1928,12 +1857,8 @@ pub async fn file_list_id_prev_count(
             ("length".to_string(), Value::Number(serde_json::Number::from(row.get::<_, i64>("length")))),
         ]))
     }).collect();
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
-            ("data".to_string(), Value::Array(data)),
-        ]),
-    ))))
+    let count = data.len() as i64;
+    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
 }
 
 #[axum::debug_handler]
@@ -1963,12 +1888,8 @@ pub async fn file_list_id_prev_count_referencetype_referenceType(
             ("length".to_string(), Value::Number(serde_json::Number::from(row.get::<_, i64>("length")))),
         ]))
     }).collect();
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
-            ("data".to_string(), Value::Array(data)),
-        ]),
-    ))))
+    let count = data.len() as i64;
+    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
 }
 
 #[axum::debug_handler]
@@ -2187,12 +2108,8 @@ pub async fn folder_list_top(
             map
         })
     }).collect();
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
-            ("data".to_string(), Value::Array(data)),
-        ]),
-    ))))
+    let count = data.len() as i64;
+    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
 }
 
 #[axum::debug_handler]
@@ -2217,12 +2134,8 @@ pub async fn folder_list_id(
             map
         })
     }).collect();
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
-            ("data".to_string(), Value::Array(data)),
-        ]),
-    ))))
+    let count = data.len() as i64;
+    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
 }
 
 #[axum::debug_handler]
@@ -2282,12 +2195,8 @@ pub async fn folder2_list_top(
             map
         })
     }).collect();
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
-            ("data".to_string(), Value::Array(data)),
-        ]),
-    ))))
+    let count = data.len() as i64;
+    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
 }
 
 #[axum::debug_handler]
@@ -2358,12 +2267,8 @@ pub async fn recycle_list(
             ("deletedAt".to_string(), Value::String(row.get("deleted_at"))),
         ]))
     }).collect();
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
-            ("data".to_string(), Value::Array(data)),
-        ]),
-    ))))
+    let count = data.len() as i64;
+    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
 }
 
 #[axum::debug_handler]
@@ -2493,12 +2398,8 @@ pub async fn share_list(
             ("createTime".to_string(), Value::String(row.get("create_time"))),
         ]))
     }).collect();
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
-            ("data".to_string(), Value::Array(data)),
-        ]),
-    ))))
+    let count = data.len() as i64;
+    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
 }
 
 #[axum::debug_handler]
@@ -2524,12 +2425,8 @@ pub async fn share_list_att_share_shareId_folder_folderId(
             ("length".to_string(), Value::Number(serde_json::Number::from(row.get::<_, i64>("length")))),
         ]))
     }).collect();
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
-            ("data".to_string(), Value::Array(data)),
-        ]),
-    ))))
+    let count = data.len() as i64;
+    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
 }
 
 #[axum::debug_handler]
@@ -2564,12 +2461,8 @@ pub async fn share_list_my(
             ("createTime".to_string(), Value::String(row.get("create_time"))),
         ]))
     }).collect();
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
-            ("data".to_string(), Value::Array(data)),
-        ]),
-    ))))
+    let count = data.len() as i64;
+    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
 }
 
 #[axum::debug_handler]
@@ -2595,12 +2488,8 @@ pub async fn share_list_my2_shareType_fileType(
             ("length".to_string(), Value::Number(serde_json::Number::from(row.get::<_, i64>("length")))),
         ]))
     }).collect();
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
-            ("data".to_string(), Value::Array(data)),
-        ]),
-    ))))
+    let count = data.len() as i64;
+    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
 }
 
 #[axum::debug_handler]
@@ -2609,12 +2498,7 @@ pub async fn share_list_to_me(
     Extension(session): Extension<shared::session::Session>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let _ = (pool, session);
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("count".to_string(), Value::Number(serde_json::Number::from(0i64))),
-            ("data".to_string(), Value::Array(vec![])),
-        ]),
-    ))))
+    Ok(Json(ActionResult::java_success(Value::Array(vec![]), 0, 0)))
 }
 
 #[axum::debug_handler]
@@ -2624,30 +2508,25 @@ pub async fn share_list_to_me2_fileType(
     axum::extract::Path(file_type): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let _ = (pool, session, file_type);
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("count".to_string(), Value::Number(serde_json::Number::from(0i64))),
-            ("data".to_string(), Value::Array(vec![])),
-        ]),
-    ))))
+    Ok(Json(ActionResult::java_success(Value::Array(vec![]), 0, 0)))
 }
 
 #[axum::debug_handler]
 pub async fn share_share_shareId_file_fileId_folder_folderId(
     pool: Extension<Pool>,
+    Extension(session): Extension<shared::session::Session>,
     axum::extract::Path((share_id, file_id, folder_id)): axum::extract::Path<(String, String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let _ = (pool, share_id, file_id, folder_id);
-    Err(AppError::NotImplemented)
+    u2_share_save_to_folder(pool, Extension(session), axum::extract::Path((share_id, file_id, folder_id))).await
 }
 
 #[axum::debug_handler]
 pub async fn share_shield_id(
     pool: Extension<Pool>,
+    Extension(session): Extension<shared::session::Session>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let _ = (pool, id);
-    Err(AppError::NotImplemented)
+    u2_share_shield(pool, Extension(session), axum::extract::Path(id)).await
 }
 
 #[axum::debug_handler]
@@ -2655,17 +2534,15 @@ pub async fn share_id(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let _ = (pool, id);
-    Err(AppError::NotImplemented)
+    u2_share_get(pool, axum::extract::Path(id)).await
 }
 
 #[axum::debug_handler]
 pub async fn share_id_password_password(
     pool: Extension<Pool>,
-    axum::extract::Path((id, _password)): axum::extract::Path<(String, String)>,
+    axum::extract::Path((id, password)): axum::extract::Path<(String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let _ = (pool, id, _password);
-    Err(AppError::NotImplemented)
+    u2_share_get_with_password(pool, axum::extract::Path((id, password))).await
 }
 
 // ════════════ plan002 U2：file 模块端点全量闭合（Java jaxrs 105 端点对齐） ════════════
@@ -3067,7 +2944,8 @@ pub async fn u2_file_list_reference_types(
             ]))
         })
         .collect();
-    Ok(Json(ActionResult::success(Value::Array(data))))
+    let count = data.len() as i64;
+    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
 }
 
 // ── 文件夹族（FILE_FOLDER 真实 CRUD + IDOR 门禁；folder2 复用同一实现） ─────

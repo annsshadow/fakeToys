@@ -1080,10 +1080,8 @@ pub async fn u2_section_get(pool: Extension<Pool>, Path(id): Path<String>) -> Ap
 pub async fn u2_section_viewsub(pool: Extension<Pool>, Path(id): Path<String>) -> ApiResult {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let data = query_sections(&client, "parent_id = $1", &id).await?;
-    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
-        ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
-        ("data".to_string(), Value::Array(data)),
-    ])))))
+    let count = data.len() as i64;
+    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
 }
 
 /// GET user/section/forum/{forumId} — 论坛下的版块。

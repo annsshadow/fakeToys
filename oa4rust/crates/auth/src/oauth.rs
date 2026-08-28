@@ -437,7 +437,7 @@ pub async fn oauth_list() -> Result<Json<ActionResult<Value>>, AppError> {
             "configured": dingding_config().is_some(),
         }),
     ];
-    Ok(Json(ActionResult::success(json!({ "data": providers }))))
+    Ok(Json(ActionResult::success(Value::Array(providers))))
 }
 
 fn provider_config(name: &str) -> Result<OAuthConfig, AppError> {
@@ -458,21 +458,21 @@ fn provider_authorize_url(name: &str, config: &OAuthConfig) -> String {
 
 /// GET /jaxrs/authentication/oauth/qywx/config
 pub async fn oauth_qywx_config() -> Result<Json<ActionResult<Value>>, AppError> {
-    let config = qywx_config().ok_or(AppError::Internal)?;
+    let config = qywx_config();
     Ok(Json(ActionResult::success(json!({
         "name": QYWX_NAME,
-        "appId": config.app_id,
-        "url": qywx_authorize_url(&config),
+        "appId": config.as_ref().map(|c| &c.app_id).unwrap_or(&String::new()).clone(),
+        "url": config.as_ref().map(|c| qywx_authorize_url(c)).unwrap_or_default(),
     }))))
 }
 
 /// GET /jaxrs/authentication/oauth/dingding/config
 pub async fn oauth_dingding_config() -> Result<Json<ActionResult<Value>>, AppError> {
-    let config = dingding_config().ok_or(AppError::Internal)?;
+    let config = dingding_config();
     Ok(Json(ActionResult::success(json!({
         "name": DINGDING_NAME,
-        "appId": config.app_id,
-        "url": dingding_authorize_url(&config),
+        "appId": config.as_ref().map(|c| &c.app_id).unwrap_or(&String::new()).clone(),
+        "url": config.as_ref().map(|c| dingding_authorize_url(c)).unwrap_or_default(),
     }))))
 }
 

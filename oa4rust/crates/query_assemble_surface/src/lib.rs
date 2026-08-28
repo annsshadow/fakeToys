@@ -111,10 +111,12 @@ pub async fn list_surfaces(
         })
         .collect();
 
-    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
-        ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
-        ("data".to_string(), Value::Array(data)),
-    ])))))
+    let count = data.len() as i64;
+    Ok(Json(ActionResult::java_success(
+        Value::Array(data),
+        count,
+        0,
+    )))
 }
 
 pub async fn save_surface(
@@ -196,8 +198,8 @@ pub fn query_assemble_surface_router() -> Router {
         .route("/jaxrs/query/assemble/surface/save/{id}", post(save_surface))
         .route("/jaxrs/query/assemble/surface/delete/{id}", post(delete_surface))
         .route("/jaxrs/query/assemble/surface/preview/{id}", get(preview_surface))
-        .route("/jaxrs/queryview/flag/{view}/application/flag/{app}/execute", get(view_flag_flag_query_queryFlag_execute))
-        .route("/jaxrs/queryview/flag/{view}/application/flag/{app}/execute/page/{page}/size/{size}", get(view_flag_flag_query_queryFlag_execute_v2_page_page_size_size))
+        .route("/jaxrs/queryview/{view}/application/{app}/execute", get(view_flag_flag_query_queryFlag_execute))
+        .route("/jaxrs/queryview/{view}/application/{app}/execute/page/{page}/size/{size}", get(view_flag_flag_query_queryFlag_execute_v2_page_page_size_size))
         .route("/jaxrs/importmodel/id/{id}/execute", post(importmodel_id_execute))
         .route("/jaxrs/queryview/importmodel/execute/record/{recordId}", post(crate::importmodel_execute_record_recordId))
         .route("/jaxrs/queryview/importmodel/{flag}/{flag}/{query}/{queryFlag}", post(crate::importmodel_flag_flag_query_queryFlag))
@@ -241,7 +243,7 @@ pub fn query_assemble_surface_router() -> Router {
         .route("/jaxrs/queryview/excel/mockputtopost/{view}/{id}", post(crate::view_id_excel_mockputtopost))
         .route("/jaxrs/queryview/execute/{view}/{id}", get(crate::view_id_execute))
         .route("/jaxrs/queryview/execute/mockputtopost/{view}/{id}", post(crate::view_id_execute_mockputtopost))
-        .route("/jaxrs/queryview/execute/v2/{view}/{id}/{page}/{page}/{size}/{size}", get(crate::view_id_execute_v2_page_page_size_size))
+        .route("/jaxrs/queryview/execute/v2/{view}/{id}/{page}/{size}", get(crate::view_id_execute_v2_page_page_size_size))
         // ── plan002 U2：已实现未注册 handler 补挂 ──
         .route("/jaxrs/queryview/importmodel/uuid", get(importmodel_uuid))
         .route("/jaxrs/queryview/importmodel/record/delete/{recordId}", delete(u2::importmodel_record_delete))
@@ -422,10 +424,12 @@ pub async fn importmodel_list_query_queryFlag(
         })
         .collect();
 
-    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
-        ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
-        ("data".to_string(), Value::Array(data)),
-    ])))))
+    let count = data.len() as i64;
+    Ok(Json(ActionResult::java_success(
+        Value::Array(data),
+        count,
+        0,
+    )))
 }
 
 pub async fn importmodel_list_record_item_paging_page_size_size(
@@ -456,10 +460,12 @@ pub async fn importmodel_list_record_item_paging_page_size_size(
         })
         .collect();
 
-    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
-        ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
-        ("data".to_string(), Value::Array(data)),
-    ])))))
+    let count = data.len() as i64;
+    Ok(Json(ActionResult::java_success(
+        Value::Array(data),
+        count,
+        0,
+    )))
 }
 
 pub async fn importmodel_list_record_paging_page_size_size(
@@ -490,10 +496,12 @@ pub async fn importmodel_list_record_paging_page_size_size(
         })
         .collect();
 
-    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
-        ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
-        ("data".to_string(), Value::Array(data)),
-    ])))))
+    let count = data.len() as i64;
+    Ok(Json(ActionResult::java_success(
+        Value::Array(data),
+        count,
+        0,
+    )))
 }
 
 pub async fn importmodel_record_recordId(
@@ -689,10 +697,12 @@ pub async fn neural_list_calculate_model_modelFlag_work_workId(
         })
         .collect();
 
-    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
-        ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
-        ("data".to_string(), Value::Array(data)),
-    ])))))
+    let count = data.len() as i64;
+    Ok(Json(ActionResult::java_success(
+        Value::Array(data),
+        count,
+        0,
+    )))
 }
 
 pub async fn query_list(
@@ -721,10 +731,12 @@ pub async fn query_list(
         })
         .collect();
 
-    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
-        ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
-        ("data".to_string(), Value::Array(data)),
-    ])))))
+    let count = data.len() as i64;
+    Ok(Json(ActionResult::java_success(
+        Value::Array(data),
+        count,
+        0,
+    )))
 }
 
 pub async fn query_list_key_key(
@@ -754,10 +766,12 @@ pub async fn query_list_key_key(
         })
         .collect();
 
-    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
-        ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
-        ("data".to_string(), Value::Array(data)),
-    ])))))
+    let count = data.len() as i64;
+    Ok(Json(ActionResult::java_success(
+        Value::Array(data),
+        count,
+        0,
+    )))
 }
 
 pub async fn query_flag(
@@ -818,10 +832,12 @@ pub async fn table_list_paging_page_size_size(
         })
         .collect();
 
-    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
-        ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
-        ("data".to_string(), Value::Array(data)),
-    ])))))
+    let count = data.len() as i64;
+    Ok(Json(ActionResult::java_success(
+        Value::Array(data),
+        count,
+        0,
+    )))
 }
 
 pub async fn table_list_table_tableFlag_row_paging_page_size_size(
@@ -851,10 +867,12 @@ pub async fn table_list_table_tableFlag_row_paging_page_size_size(
         })
         .collect();
 
-    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
-        ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
-        ("data".to_string(), Value::Array(data)),
-    ])))))
+    let count = data.len() as i64;
+    Ok(Json(ActionResult::java_success(
+        Value::Array(data),
+        count,
+        0,
+    )))
 }
 
 pub async fn table_list_id_next_count(
@@ -883,10 +901,12 @@ pub async fn table_list_id_next_count(
         })
         .collect();
 
-    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
-        ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
-        ("data".to_string(), Value::Array(data)),
-    ])))))
+    let count = data.len() as i64;
+    Ok(Json(ActionResult::java_success(
+        Value::Array(data),
+        count,
+        0,
+    )))
 }
 
 pub async fn table_list_id_prev_count(
@@ -915,10 +935,12 @@ pub async fn table_list_id_prev_count(
         })
         .collect();
 
-    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
-        ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
-        ("data".to_string(), Value::Array(data)),
-    ])))))
+    let count = data.len() as i64;
+    Ok(Json(ActionResult::java_success(
+        Value::Array(data),
+        count,
+        0,
+    )))
 }
 
 pub async fn table_list_tableFlag_row_select(
@@ -946,10 +968,12 @@ pub async fn table_list_tableFlag_row_select(
         })
         .collect();
 
-    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
-        ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
-        ("data".to_string(), Value::Array(data)),
-    ])))))
+    let count = data.len() as i64;
+    Ok(Json(ActionResult::java_success(
+        Value::Array(data),
+        count,
+        0,
+    )))
 }
 
 pub async fn table_list_tableFlag_row_select_where_where(
@@ -978,10 +1002,12 @@ pub async fn table_list_tableFlag_row_select_where_where(
         })
         .collect();
 
-    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
-        ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
-        ("data".to_string(), Value::Array(data)),
-    ])))))
+    let count = data.len() as i64;
+    Ok(Json(ActionResult::java_success(
+        Value::Array(data),
+        count,
+        0,
+    )))
 }
 
 pub async fn table_list_tableFlag_row_id_next_count(
@@ -1011,10 +1037,12 @@ pub async fn table_list_tableFlag_row_id_next_count(
         })
         .collect();
 
-    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
-        ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
-        ("data".to_string(), Value::Array(data)),
-    ])))))
+    let count = data.len() as i64;
+    Ok(Json(ActionResult::java_success(
+        Value::Array(data),
+        count,
+        0,
+    )))
 }
 
 pub async fn table_list_tableFlag_row_id_prev_count(
@@ -1044,10 +1072,12 @@ pub async fn table_list_tableFlag_row_id_prev_count(
         })
         .collect();
 
-    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
-        ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
-        ("data".to_string(), Value::Array(data)),
-    ])))))
+    let count = data.len() as i64;
+    Ok(Json(ActionResult::java_success(
+        Value::Array(data),
+        count,
+        0,
+    )))
 }
 
 pub async fn table_reload_dynamic(
@@ -1067,6 +1097,7 @@ pub async fn table_reload_dynamic(
         serde_json::Map::from_iter([
             ("reloaded".to_string(), Value::Number(serde_json::Number::from(result as i64))),
             ("success".to_string(), Value::Number(serde_json::Number::from(result as i64))),
+            ("value".to_string(), Value::Number(serde_json::Number::from(result as i64))),
         ]),
     ))))
 }
@@ -1125,10 +1156,12 @@ pub async fn table_tableFlag_row(
         })
         .collect();
 
-    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
-        ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
-        ("data".to_string(), Value::Array(data)),
-    ])))))
+    let count = data.len() as i64;
+    Ok(Json(ActionResult::java_success(
+        Value::Array(data),
+        count,
+        0,
+    )))
 }
 
 pub async fn table_tableFlag_row_count_where_where(
@@ -1204,10 +1237,12 @@ pub async fn table_tableFlag_row_delete_all_mockdeletetoget(
         })
         .collect();
 
-    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
-        ("tableFlag".to_string(), Value::String(table_flag)),
-        ("data".to_string(), Value::Array(data)),
-    ])))))
+    let count = data.len() as i64;
+    Ok(Json(ActionResult::java_success(
+        Value::Array(data),
+        count,
+        0,
+    )))
 }
 
 pub async fn table_tableFlag_row_one(
@@ -1388,10 +1423,12 @@ pub async fn view_excel_result_flag(
         })
         .collect();
 
-    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
-        ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
-        ("data".to_string(), Value::Array(data)),
-    ])))))
+    let count = data.len() as i64;
+    Ok(Json(ActionResult::java_success(
+        Value::Array(data),
+        count,
+        0,
+    )))
 }
 
 pub async fn view_flag_flag_query_queryFlag(
@@ -1548,25 +1585,34 @@ pub async fn view_flag_flag_query_queryFlag_excel_mockputtopost(
 
 pub async fn view_flag_flag_query_queryFlag_execute(
     pool: Extension<Pool>,
-    Path(flag): Path<String>,
-    Path(query_flag): Path<String>,
+    Path((view, app)): Path<(String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let row = client
         .query_opt(
-            "SELECT id, content FROM x_query_view WHERE view_flag = $1 AND query_flag = $2 LIMIT 1",
-            &[&flag, &query_flag],
+            "SELECT id, name, view_flag, query_flag, content, creator, create_time, update_time FROM x_query_view WHERE view_flag = $1 AND query_flag = $2 LIMIT 1",
+            &[&view, &app],
         )
         .await
         .map_err(|_| AppError::Internal)?;
 
     match row {
         Some(row) => {
+            let content_str: Option<String> = row.get("content");
+            let content = content_str
+                .and_then(|s| serde_json::from_str(&s).ok())
+                .unwrap_or(serde_json::Value::Null);
             Ok(Json(ActionResult::success(Value::Object(
                 serde_json::Map::from_iter([
                     ("id".to_string(), Value::String(row.get("id"))),
-                    ("viewFlag".to_string(), Value::String(flag)),
+                    ("name".to_string(), Value::String(row.get::<_, Option<String>>("name").unwrap_or_default())),
+                    ("viewFlag".to_string(), Value::String(view)),
+                    ("queryFlag".to_string(), Value::String(app)),
+                    ("content".to_string(), content),
+                    ("creator".to_string(), Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default())),
+                    ("createTime".to_string(), Value::String(row.get::<_, Option<String>>("create_time").unwrap_or_default())),
+                    ("updateTime".to_string(), Value::String(row.get::<_, Option<String>>("update_time").unwrap_or_default())),
                 ]),
             ))))
         }
@@ -1607,17 +1653,14 @@ pub async fn view_flag_flag_query_queryFlag_execute_mockputtopost(
 
 pub async fn view_flag_flag_query_queryFlag_execute_v2_page_page_size_size(
     pool: Extension<Pool>,
-    Path(flag): Path<String>,
-    Path(query_flag): Path<String>,
-    Path(page): Path<i64>,
-    Path(size): Path<i64>,
+    Path((view, app, page, size)): Path<(String, String, i64, i64)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let rows = client
         .query(
-            "SELECT id, view_flag, query_flag, content, creator, create_time FROM x_query_view WHERE view_flag = $1 AND query_flag = $2 ORDER BY create_time DESC LIMIT $4::bigint OFFSET ($3 - 1) * $4",
-            &[&flag, &query_flag, &page, &size],
+            "SELECT id, view_flag, query_flag, content, creator, create_time FROM x_query_view WHERE view_flag = $1 AND query_flag = $2 ORDER BY create_time DESC LIMIT $4::int OFFSET ($3 - 1) * $4",
+            &[&view, &app, &page, &size],
         )
         .await
         .map_err(|_| AppError::Internal)?;
@@ -1636,10 +1679,12 @@ pub async fn view_flag_flag_query_queryFlag_execute_v2_page_page_size_size(
         })
         .collect();
 
-    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
-        ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
-        ("data".to_string(), Value::Array(data)),
-    ])))))
+    let count = data.len() as i64;
+    Ok(Json(ActionResult::java_success(
+        Value::Array(data),
+        count,
+        0,
+    )))
 }
 
 pub async fn view_list_query_queryFlag(
@@ -1670,10 +1715,12 @@ pub async fn view_list_query_queryFlag(
         })
         .collect();
 
-    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
-        ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
-        ("data".to_string(), Value::Array(data)),
-    ])))))
+    let count = data.len() as i64;
+    Ok(Json(ActionResult::java_success(
+        Value::Array(data),
+        count,
+        0,
+    )))
 }
 
 pub async fn view_id(
@@ -1857,17 +1904,28 @@ pub async fn view_id_execute(
 
     let row = client
         .query_opt(
-            "SELECT id, content FROM x_query_view WHERE id = $1",
+            "SELECT id, name, view_flag, query_flag, content, creator, create_time, update_time FROM x_query_view WHERE id = $1",
             &[&id],
         )
         .await
         .map_err(|_| AppError::Internal)?;
 
     match row {
-        Some(_) => {
+        Some(row) => {
+            let content_str: Option<String> = row.get("content");
+            let content = content_str
+                .and_then(|s| serde_json::from_str(&s).ok())
+                .unwrap_or(serde_json::Value::Null);
             Ok(Json(ActionResult::success(Value::Object(
                 serde_json::Map::from_iter([
-                    ("id".to_string(), Value::String(id)),
+                    ("id".to_string(), Value::String(row.get("id"))),
+                    ("name".to_string(), Value::String(row.get::<_, Option<String>>("name").unwrap_or_default())),
+                    ("viewFlag".to_string(), Value::String(row.get::<_, Option<String>>("view_flag").unwrap_or_default())),
+                    ("queryFlag".to_string(), Value::String(row.get::<_, Option<String>>("query_flag").unwrap_or_default())),
+                    ("content".to_string(), content),
+                    ("creator".to_string(), Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default())),
+                    ("createTime".to_string(), Value::String(row.get::<_, Option<String>>("create_time").unwrap_or_default())),
+                    ("updateTime".to_string(), Value::String(row.get::<_, Option<String>>("update_time").unwrap_or_default())),
                 ]),
             ))))
         }
@@ -1914,7 +1972,7 @@ pub async fn view_id_execute_v2_page_page_size_size(
 
     let rows = client
         .query(
-            "SELECT id, content, creator, create_time FROM x_query_view WHERE id = $1 ORDER BY create_time DESC LIMIT $3::bigint OFFSET ($2 - 1) * $3",
+            "SELECT id, content, creator, create_time FROM x_query_view WHERE id = $1 ORDER BY create_time DESC LIMIT $3 OFFSET ($2 - 1) * $3",
             &[&id, &page, &size],
         )
         .await
@@ -1932,8 +1990,10 @@ pub async fn view_id_execute_v2_page_page_size_size(
         })
         .collect();
 
-    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
-        ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
-        ("data".to_string(), Value::Array(data)),
-    ])))))
+    let count = data.len() as i64;
+    Ok(Json(ActionResult::java_success(
+        Value::Array(data),
+        count,
+        0,
+    )))
 }
