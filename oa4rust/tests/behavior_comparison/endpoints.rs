@@ -45507,7 +45507,7 @@ pub const ENDPOINTS: &[EndpointDef] = &[
 
     EndpointDef {
         crate_name: "query_assemble_surface",
-        method: "GET",
+        method: "POST",
         rust_path: "/jaxrs/queryview/importmodel/execute/record/{recordId}",
         java_war: "x_query_assemble_surface",
         java_action: "/importmodel/execute/record/{}",
