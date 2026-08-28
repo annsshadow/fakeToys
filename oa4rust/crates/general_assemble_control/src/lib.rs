@@ -100,11 +100,8 @@ pub async fn get_module_permissions(
         })
         .collect();
 
-    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
-        ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
-        ("module".to_string(), Value::String(module)),
-        ("data".to_string(), Value::Array(data)),
-    ])))))
+    let count = data.len() as i64;
+    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
 }
 
 pub fn general_assemble_control_router(pool: Pool) -> Router {
@@ -150,10 +147,8 @@ pub async fn attendscope_list(
         })
         .collect();
 
-    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
-        ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
-        ("data".to_string(), Value::Array(data)),
-    ])))))
+    let count = data.len() as i64;
+    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
 }
 
 pub async fn attendscope_get(
@@ -303,10 +298,8 @@ pub async fn area_list(
         })
         .collect();
 
-    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
-        ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
-        ("data".to_string(), Value::Array(data)),
-    ])))))
+    let count = data.len() as i64;
+    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
 }
 
 pub async fn area_list_province_province(
@@ -340,10 +333,8 @@ pub async fn area_list_province_province(
         })
         .collect();
 
-    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
-        ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
-        ("data".to_string(), Value::Array(data)),
-    ])))))
+    let count = data.len() as i64;
+    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
 }
 
 pub async fn area_list_province_province_city_city(
@@ -378,10 +369,8 @@ pub async fn area_list_province_province_city_city(
         })
         .collect();
 
-    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
-        ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
-        ("data".to_string(), Value::Array(data)),
-    ])))))
+    let count = data.len() as i64;
+    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
 }
 
 pub async fn area_list_province_province_city_city_district_district(
@@ -417,10 +406,8 @@ pub async fn area_list_province_province_city_city_district_district(
         })
         .collect();
 
-    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
-        ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
-        ("data".to_string(), Value::Array(data)),
-    ])))))
+    let count = data.len() as i64;
+    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
 }
 
 // ---- area CRUD ----
@@ -572,10 +559,8 @@ pub async fn ecnet_check(
         })
         .collect();
 
-    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
-        ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
-        ("data".to_string(), Value::Array(data)),
-    ])))))
+    let count = data.len() as i64;
+    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
 }
 
 pub async fn excel_excelName_excelName(
@@ -634,10 +619,8 @@ pub async fn excel_excelName_excelName_sheetList(
         })
         .collect();
 
-    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
-        ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
-        ("data".to_string(), Value::Array(data)),
-    ])))))
+    let count = data.len() as i64;
+    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
 }
 
 pub async fn excel_result_flag(
@@ -964,12 +947,7 @@ pub async fn invoice_list_paging_page_size_size(
         })
         .collect();
 
-    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
-        ("count".to_string(), Value::Number(serde_json::Number::from(total))),
-        ("page".to_string(), Value::Number(serde_json::Number::from(page as i64))),
-        ("size".to_string(), Value::Number(serde_json::Number::from(size as i64))),
-        ("data".to_string(), Value::Array(data)),
-    ])))))
+    Ok(Json(ActionResult::java_success(Value::Array(data), total, size as i64)))
 }
 
 pub async fn invoice_update_apply_status_id(
@@ -1222,10 +1200,8 @@ pub async fn qrcode_list(
         })
         .collect();
 
-    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
-        ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
-        ("data".to_string(), Value::Array(data)),
-    ])))))
+    let count = data.len() as i64;
+    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
 }
 
 pub async fn qrcode_get(
@@ -1344,25 +1320,14 @@ pub async fn securityclearance_object(
         .await
         .map_err(|_| AppError::Internal)?;
 
-    let data: Vec<Value> = rows
-        .iter()
-        .map(|row| {
-            Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("name".to_string(), Value::String(row.get("name"))),
-                ("type".to_string(), Value::String(row.get("type"))),
-                ("enabled".to_string(), Value::Bool(row.get("enabled"))),
-                ("subject".to_string(), Value::String(row.get("subject"))),
-                ("creator".to_string(), Value::String(row.get("creator"))),
-                ("createTime".to_string(), Value::String(row.get("create_time"))),
-            ]))
-        })
-        .collect();
+    let mut map = serde_json::Map::new();
+    for row in &rows {
+        let name: String = row.get("name");
+        let id: String = row.get("id");
+        map.insert(name, Value::String(id));
+    }
 
-    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
-        ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
-        ("data".to_string(), Value::Array(data)),
-    ])))))
+    Ok(Json(ActionResult::success(Value::Object(map))))
 }
 
 pub async fn securityclearance_subject(
@@ -1378,25 +1343,14 @@ pub async fn securityclearance_subject(
         .await
         .map_err(|_| AppError::Internal)?;
 
-    let data: Vec<Value> = rows
-        .iter()
-        .map(|row| {
-            Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("name".to_string(), Value::String(row.get("name"))),
-                ("type".to_string(), Value::String(row.get("type"))),
-                ("enabled".to_string(), Value::Bool(row.get("enabled"))),
-                ("object".to_string(), Value::String(row.get("object"))),
-                ("creator".to_string(), Value::String(row.get("creator"))),
-                ("createTime".to_string(), Value::String(row.get("create_time"))),
-            ]))
-        })
-        .collect();
+    let mut map = serde_json::Map::new();
+    for row in &rows {
+        let name: String = row.get("name");
+        let id: String = row.get("id");
+        map.insert(name, Value::String(id));
+    }
 
-    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
-        ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
-        ("data".to_string(), Value::Array(data)),
-    ])))))
+    Ok(Json(ActionResult::success(Value::Object(map))))
 }
 
 pub async fn securityclearance_system(
@@ -1412,24 +1366,14 @@ pub async fn securityclearance_system(
         .await
         .map_err(|_| AppError::Internal)?;
 
-    let data: Vec<Value> = rows
-        .iter()
-        .map(|row| {
-            Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("name".to_string(), Value::String(row.get("name"))),
-                ("type".to_string(), Value::String(row.get("type"))),
-                ("enabled".to_string(), Value::Bool(row.get("enabled"))),
-                ("creator".to_string(), Value::String(row.get("creator"))),
-                ("createTime".to_string(), Value::String(row.get("create_time"))),
-            ]))
-        })
-        .collect();
+    let mut map = serde_json::Map::new();
+    for row in &rows {
+        let name: String = row.get("name");
+        let id: String = row.get("id");
+        map.insert(name, Value::String(id));
+    }
 
-    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
-        ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
-        ("data".to_string(), Value::Array(data)),
-    ])))))
+    Ok(Json(ActionResult::success(Value::Object(map))))
 }
 
 // ---- securityclearance CRUD ----
@@ -1554,31 +1498,17 @@ pub async fn upgrade_2021090901(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
-    let rows = client
-        .query(
-            "SELECT id, version, description, file_url, creator, create_time FROM x_general_assemble_upgrade WHERE version = '2021090901' ORDER BY create_time DESC",
+    let row = client
+        .query_opt(
+            "SELECT id FROM x_general_assemble_upgrade WHERE version = '2021090901' LIMIT 1",
             &[],
         )
         .await
         .map_err(|_| AppError::Internal)?;
 
-    let data: Vec<Value> = rows
-        .iter()
-        .map(|row| {
-            Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("version".to_string(), Value::String(row.get("version"))),
-                ("description".to_string(), Value::String(row.get("description"))),
-                ("\"fileUrl\"".to_string(), Value::String(row.get("file_url"))),
-                ("creator".to_string(), Value::String(row.get("creator"))),
-                ("createTime".to_string(), Value::String(row.get("create_time"))),
-            ]))
-        })
-        .collect();
-
+    let has_record = row.is_some();
     Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
-        ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
-        ("data".to_string(), Value::Array(data)),
+        ("value".to_string(), Value::Bool(has_record)),
     ])))))
 }
 
@@ -1587,31 +1517,17 @@ pub async fn upgrade_2021090902(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
-    let rows = client
-        .query(
-            "SELECT id, version, description, file_url, creator, create_time FROM x_general_assemble_upgrade WHERE version = '2021090902' ORDER BY create_time DESC",
+    let row = client
+        .query_opt(
+            "SELECT id FROM x_general_assemble_upgrade WHERE version = '2021090902' LIMIT 1",
             &[],
         )
         .await
         .map_err(|_| AppError::Internal)?;
 
-    let data: Vec<Value> = rows
-        .iter()
-        .map(|row| {
-            Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("version".to_string(), Value::String(row.get("version"))),
-                ("description".to_string(), Value::String(row.get("description"))),
-                ("\"fileUrl\"".to_string(), Value::String(row.get("file_url"))),
-                ("creator".to_string(), Value::String(row.get("creator"))),
-                ("createTime".to_string(), Value::String(row.get("create_time"))),
-            ]))
-        })
-        .collect();
-
+    let has_record = row.is_some();
     Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
-        ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
-        ("data".to_string(), Value::Array(data)),
+        ("value".to_string(), Value::Bool(has_record)),
     ])))))
 }
 
@@ -1694,12 +1610,8 @@ pub async fn worktime_forwarddays_start_start_days_days(
         })
         .collect();
 
-    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
-        ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
-        ("start".to_string(), Value::String(start)),
-        ("days".to_string(), Value::Number(serde_json::Number::from(days as i64))),
-        ("data".to_string(), Value::Array(data)),
-    ])))))
+    let count = data.len() as i64;
+    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
 }
 
 pub async fn worktime_forwardminutes_start_start_minutes_minutes(
@@ -1736,25 +1648,14 @@ pub async fn worktime_forwardminutes_start_start_minutes_minutes(
         }
     }
 
-    let end_date = worktime_records.last()
-        .and_then(|v| v.get("date"))
-        .and_then(|v| v.as_str())
-        .unwrap_or(&start)
-        .to_string();
-
-    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
-        ("count".to_string(), Value::Number(serde_json::Number::from(worktime_records.len() as i64))),
-        ("start".to_string(), Value::String(start)),
-        ("targetMinutes".to_string(), Value::Number(serde_json::Number::from(minutes))),
-        ("endDate".to_string(), Value::String(end_date)),
-        ("data".to_string(), Value::Array(worktime_records)),
-    ])))))
+    let count = worktime_records.len() as i64;
+    Ok(Json(ActionResult::java_success(Value::Array(worktime_records), count, 0)))
 }
 
 pub async fn worktime_indefinedholiday_date(
     pool: Extension<Pool>,
     axum::extract::Path(date): axum::extract::Path<String>,
-) -> Result<Json<ActionResult<Value>>, AppError> {
+) -> Result<Json<Value>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let row = client
@@ -1768,11 +1669,11 @@ pub async fn worktime_indefinedholiday_date(
     match row {
         Some(row) => {
             let is_holiday: bool = row.get("is_holiday");
-            Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
+            Ok(Json(Value::Object(serde_json::Map::from_iter([
                 ("date".to_string(), Value::String(row.get("date"))),
                 ("isHoliday".to_string(), Value::Bool(is_holiday)),
                 ("indefined".to_string(), Value::Bool(false)),
-            ])))))
+            ]))))
         }
         None => {
             let weekday = if date.len() == 10 && date.chars().nth(4) == Some('-') && date.chars().nth(7) == Some('-') {
@@ -1787,11 +1688,11 @@ pub async fn worktime_indefinedholiday_date(
             let is_weekend = weekday.map(|w| w >= 5).unwrap_or(false);
             let is_holiday = is_weekend;
             let indefined = weekday.is_none();
-            Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
+            Ok(Json(Value::Object(serde_json::Map::from_iter([
                 ("date".to_string(), Value::String(date)),
                 ("isHoliday".to_string(), Value::Bool(is_holiday)),
                 ("indefined".to_string(), Value::Bool(indefined)),
-            ])))))
+            ]))))
         }
     }
 }
@@ -1799,7 +1700,7 @@ pub async fn worktime_indefinedholiday_date(
 pub async fn worktime_indefinedworkday_date(
     pool: Extension<Pool>,
     axum::extract::Path(date): axum::extract::Path<String>,
-) -> Result<Json<ActionResult<Value>>, AppError> {
+) -> Result<Json<Value>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let row = client
@@ -1813,11 +1714,11 @@ pub async fn worktime_indefinedworkday_date(
     match row {
         Some(row) => {
             let is_workday: bool = row.get("is_workday");
-            Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
+            Ok(Json(Value::Object(serde_json::Map::from_iter([
                 ("date".to_string(), Value::String(row.get("date"))),
                 ("isWorkday".to_string(), Value::Bool(is_workday)),
                 ("indefined".to_string(), Value::Bool(false)),
-            ])))))
+            ]))))
         }
         None => {
             let weekday = if date.len() == 10 && date.chars().nth(4) == Some('-') && date.chars().nth(7) == Some('-') {
@@ -1832,11 +1733,11 @@ pub async fn worktime_indefinedworkday_date(
             let is_weekend = weekday.map(|w| w >= 5).unwrap_or(false);
             let is_workday = !is_weekend;
             let indefined = weekday.is_none();
-            Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
+            Ok(Json(Value::Object(serde_json::Map::from_iter([
                 ("date".to_string(), Value::String(date)),
                 ("isWorkday".to_string(), Value::Bool(is_workday)),
                 ("indefined".to_string(), Value::Bool(indefined)),
-            ])))))
+            ]))))
         }
     }
 }
@@ -1844,7 +1745,7 @@ pub async fn worktime_indefinedworkday_date(
 pub async fn worktime_isholiday_date(
     pool: Extension<Pool>,
     axum::extract::Path(date): axum::extract::Path<String>,
-) -> Result<Json<ActionResult<Value>>, AppError> {
+) -> Result<Json<Value>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let row = client
@@ -1858,11 +1759,11 @@ pub async fn worktime_isholiday_date(
     match row {
         Some(row) => {
             let is_holiday: bool = row.get("is_holiday");
-            Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
+            Ok(Json(Value::Object(serde_json::Map::from_iter([
                 ("date".to_string(), Value::String(row.get("date"))),
                 ("isHoliday".to_string(), Value::Bool(is_holiday)),
                 ("indefined".to_string(), Value::Bool(false)),
-            ])))))
+            ]))))
         }
         None => {
             let weekday = if date.len() == 10 && date.chars().nth(4) == Some('-') && date.chars().nth(7) == Some('-') {
@@ -1876,11 +1777,11 @@ pub async fn worktime_isholiday_date(
             };
             let is_weekend = weekday.map(|w| w >= 5).unwrap_or(false);
             let indefined = weekday.is_none();
-            Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
+            Ok(Json(Value::Object(serde_json::Map::from_iter([
                 ("date".to_string(), Value::String(date)),
                 ("isHoliday".to_string(), Value::Bool(is_weekend)),
                 ("indefined".to_string(), Value::Bool(indefined)),
-            ])))))
+            ]))))
         }
     }
 }
@@ -1888,7 +1789,7 @@ pub async fn worktime_isholiday_date(
 pub async fn worktime_isworkday_date(
     pool: Extension<Pool>,
     axum::extract::Path(date): axum::extract::Path<String>,
-) -> Result<Json<ActionResult<Value>>, AppError> {
+) -> Result<Json<Value>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let row = client
@@ -1902,11 +1803,11 @@ pub async fn worktime_isworkday_date(
     match row {
         Some(row) => {
             let is_workday: bool = row.get("is_workday");
-            Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
+            Ok(Json(Value::Object(serde_json::Map::from_iter([
                 ("date".to_string(), Value::String(row.get("date"))),
                 ("isWorkday".to_string(), Value::Bool(is_workday)),
                 ("indefined".to_string(), Value::Bool(false)),
-            ])))))
+            ]))))
         }
         None => {
             let weekday = if date.len() == 10 && date.chars().nth(4) == Some('-') && date.chars().nth(7) == Some('-') {
@@ -1920,11 +1821,11 @@ pub async fn worktime_isworkday_date(
             };
             let is_weekend = weekday.map(|w| w >= 5).unwrap_or(false);
             let indefined = weekday.is_none();
-            Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
+            Ok(Json(Value::Object(serde_json::Map::from_iter([
                 ("date".to_string(), Value::String(date)),
                 ("isWorkday".to_string(), Value::Bool(!is_weekend)),
                 ("indefined".to_string(), Value::Bool(indefined)),
-            ])))))
+            ]))))
         }
     }
 }

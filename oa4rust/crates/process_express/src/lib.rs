@@ -98,12 +98,7 @@ pub async fn application_list(
     let client = match pool.get().await {
         Ok(client) => client,
         Err(_) => {
-            return Json(ActionResult::success(Value::Object(
-                serde_json::Map::from_iter([
-                    ("count".to_string(), Value::Number(serde_json::Number::from(0))),
-                    ("data".to_string(), Value::Array(vec![])),
-                ]),
-            )));
+            return Json(ActionResult::java_success(Value::Array(vec![]), 0, 0));
         }
     };
 
@@ -113,12 +108,7 @@ pub async fn application_list(
     {
         Ok(rows) => rows,
         Err(_) => {
-            return Json(ActionResult::success(Value::Object(
-                serde_json::Map::from_iter([
-                    ("count".to_string(), Value::Number(serde_json::Number::from(0))),
-                    ("data".to_string(), Value::Array(vec![])),
-                ]),
-            )));
+            return Json(ActionResult::java_success(Value::Array(vec![]), 0, 0));
         }
     };
 
@@ -132,12 +122,8 @@ pub async fn application_list(
         })
         .collect();
 
-    Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
-            ("data".to_string(), Value::Array(data)),
-        ]),
-    )))
+    let count = data.len() as i64;
+    Json(ActionResult::java_success(Value::Array(data), count, 0))
 }
 
 #[cfg(test)]

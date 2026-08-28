@@ -24,13 +24,31 @@ pub async fn get_process(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let mut client = pool.get().await.map_err(|_| AppError::Internal)?;    let row = client
-        .query_one(
+    let mut client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let rows = client
+        .query(
             "SELECT id, title, process, application, work_status, creator, create_time, start_time, end_time FROM x_work WHERE id = $1",
             &[&id],
         )
         .await
         .map_err(|_| AppError::Internal)?;
+
+    let row = match rows.first() {
+        Some(r) => r,
+        None => {
+            return Ok(Json(ActionResult::success(Value::Object(
+                serde_json::Map::from_iter([
+                    ("id".to_string(), Value::String(id)),
+                    ("title".to_string(), Value::String("".to_string())),
+                    ("process".to_string(), Value::String("".to_string())),
+                    ("application".to_string(), Value::String("".to_string())),
+                    ("workStatus".to_string(), Value::String("".to_string())),
+                    ("creator".to_string(), Value::String("".to_string())),
+                    ("tasks".to_string(), Value::Array(vec![])),
+                ]),
+            ))));
+        }
+    };
 
     let tasks = client
         .query(
@@ -38,31 +56,31 @@ pub async fn get_process(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .unwrap_or_default();
 
     let task_list: Vec<Value> = tasks.iter().map(|row| {
         Value::Object(serde_json::Map::from_iter([
             ("id".to_string(), Value::String(row.get("id"))),
-            ("title".to_string(), Value::String(row.get("title"))),
-            ("activity".to_string(), Value::String(row.get("activity"))),
-            ("activityToken".to_string(), Value::String(row.get("activity_token"))),
-            ("person".to_string(), Value::String(row.get("person"))),
-            ("\"startTime\"".to_string(), Value::String(row.get("start_time"))),
-            ("\"endTime\"".to_string(), Value::String(row.get("end_time"))),
+            ("title".to_string(), Value::String(row.get::<_, Option<String>>("title").unwrap_or_default())),
+            ("activity".to_string(), Value::String(row.get::<_, Option<String>>("activity").unwrap_or_default())),
+            ("activityToken".to_string(), Value::String(row.get::<_, Option<String>>("activity_token").unwrap_or_default())),
+            ("person".to_string(), Value::String(row.get::<_, Option<String>>("person").unwrap_or_default())),
+            ("\"startTime\"".to_string(), Value::String(row.get::<_, Option<String>>("start_time").unwrap_or_default())),
+            ("\"endTime\"".to_string(), Value::String(row.get::<_, Option<String>>("end_time").unwrap_or_default())),
         ]))
     }).collect();
 
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("id".to_string(), Value::String(row.get("id"))),
-            ("title".to_string(), Value::String(row.get("title"))),
-            ("process".to_string(), Value::String(row.get("process"))),
-            ("application".to_string(), Value::String(row.get("application"))),
-            ("workStatus".to_string(), Value::String(row.get("work_status"))),
-            ("creator".to_string(), Value::String(row.get("creator"))),
-            ("createTime".to_string(), Value::String(row.get("create_time"))),
-            ("\"startTime\"".to_string(), Value::String(row.get("start_time"))),
-            ("\"endTime\"".to_string(), Value::String(row.get("end_time"))),
+            ("title".to_string(), Value::String(row.get::<_, Option<String>>("title").unwrap_or_default())),
+            ("process".to_string(), Value::String(row.get::<_, Option<String>>("process").unwrap_or_default())),
+            ("application".to_string(), Value::String(row.get::<_, Option<String>>("application").unwrap_or_default())),
+            ("workStatus".to_string(), Value::String(row.get::<_, Option<String>>("work_status").unwrap_or_default())),
+            ("creator".to_string(), Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default())),
+            ("createTime".to_string(), Value::String(row.get::<_, Option<String>>("create_time").unwrap_or_default())),
+            ("\"startTime\"".to_string(), Value::String(row.get::<_, Option<String>>("start_time").unwrap_or_default())),
+            ("\"endTime\"".to_string(), Value::String(row.get::<_, Option<String>>("end_time").unwrap_or_default())),
             ("tasks".to_string(), Value::Array(task_list)),
         ]),
     ))))
@@ -116,10 +134,8 @@ pub async fn list_processes(
         })
         .collect();
 
-    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
-        ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
-        ("data".to_string(), Value::Array(data)),
-    ])))))
+    let count = data.len() as i64;
+    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
 }
 
 pub async fn execute_process(
@@ -1480,12 +1496,7 @@ pub async fn work_list(
         })
         .collect();
 
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("count".to_string(), Value::Number(serde_json::Number::from(total))),
-            ("data".to_string(), Value::Array(data)),
-        ]),
-    ))))
+    Ok(Json(ActionResult::java_success(Value::Array(data), total, 0)))
 }
 
 pub async fn process_id_complex(

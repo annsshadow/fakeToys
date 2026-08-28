@@ -49,3 +49,149 @@
 - rust_field: dismissTime
   java_field: dismiss_time
   reason: "Rust uses camelCase epoch-ms timestamp; Java uses snake_case ISO-8601"
+
+# ─────────────────────────────────────────────────────────────────────────────
+# U3 / R9 补充：CMS 深层语义一致性差异（cms_assemble_control）
+# 以下为静态审查识别出的"路由已存在但响应语义与 Java 不匹配"项。
+# 多数需 Rust 与 Java 双服务实跑（behavior_compare）才能最终定论，故留档。
+# 注：allowlist 解析器仅消费 rust_field / java_field（其余字段被忽略），
+# 此处用 ENDPOINT: 前缀避免与真实 JSON 字段名冲突，并附 endpoint / difference 说明。
+# ─────────────────────────────────────────────────────────────────────────────
+
+# 1) 列表桩：/jaxrs/{resource}/{id} GET 返回全表列表而非单实体（已修复核心 9 个，
+#    剩余以下端点待 behavior_compare 确认单实体投影后收敛）。
+- rust_field: "ENDPOINT:/jaxrs/data/document/{id}"
+  java_field: "single DataDocument (or its data fields list)"
+  endpoint: "/jaxrs/data/document/{id}"
+  difference: "GET 当前返回 x_cms_data_document 全表列表；Java DataAction 语义为该文档的数据字段列表/单文档，需确认投影"
+  reason: "data/document 命名空间语义特殊（嵌套字段路径），单实体投影需 behavior_compare 定论，故留档不擅自改"
+
+- rust_field: "ENDPOINT:/jaxrs/log/{id}"
+  java_field: "single Log entity"
+  endpoint: "/jaxrs/log/{id}"
+  difference: "GET 返回 x_cms_log 全表列表，忽略路径 id；Java 返回单条日志"
+  reason: "列表桩，单实体投影需 behavior_compare 确认；留档"
+
+- rust_field: "ENDPOINT:/jaxrs/script/{id}"
+  java_field: "single Script entity"
+  endpoint: "/jaxrs/script/{id}"
+  difference: "GET 返回 x_cms_script 全表列表，忽略路径 id；Java 返回单条脚本"
+  reason: "列表桩，单实体投影需 behavior_compare 确认；留档"
+
+- rust_field: "ENDPOINT:/jaxrs/view/{id}"
+  java_field: "single View entity"
+  endpoint: "/jaxrs/view/{id}"
+  difference: "GET 返回 x_cms_view 全表列表，忽略路径 id；Java 返回单视图"
+  reason: "列表桩，单实体投影需 behavior_compare 确认；留档"
+
+- rust_field: "ENDPOINT:/jaxrs/viewcategory/{id}"
+  java_field: "single ViewCategory entity"
+  endpoint: "/jaxrs/viewcategory/{id}"
+  difference: "GET 返回 x_cms_viewcategory 全表列表，忽略路径 id；Java 返回单视图分类"
+  reason: "列表桩，单实体投影需 behavior_compare 确认；留档"
+
+- rust_field: "ENDPOINT:/jaxrs/viewfieldconfig/{id}"
+  java_field: "single ViewFieldConfig entity"
+  endpoint: "/jaxrs/viewfieldconfig/{id}"
+  difference: "GET 返回 x_cms_viewfieldconfig 全表列表，忽略路径 id；Java 返回单字段配置"
+  reason: "列表桩，单实体投影需 behavior_compare 确认；留档"
+
+# 2) {id}/control 端点：Rust 返回实体字段子集，Java 返回 control 权限对象。
+- rust_field: "ENDPOINT:/jaxrs/appinfo/{id}/control"
+  java_field: "control {allowVisit,allowPublish,allowManage}"
+  endpoint: "/jaxrs/appinfo/{id}/control"
+  difference: "Rust 返回 {id,alias,appType,enabled,manager}；Java 返回 {control:{allowVisit,allowPublish,allowManage}}"
+  reason: "Java 的 control 由会话/用户权限服务计算，属设计级差异，需 behavior_compare 定论；留档"
+
+- rust_field: "ENDPOINT:/jaxrs/categoryinfo/{id}/control"
+  java_field: "control {allowVisit,allowPublish,allowManage}"
+  endpoint: "/jaxrs/categoryinfo/{id}/control"
+  difference: "Rust 返回 {id,name,parentId,appId,sortOrder,status}；Java 返回 {control:{allowVisit,allowPublish,allowManage}}"
+  reason: "同上，权限计算逻辑设计级差异；留档"
+
+- rust_field: "ENDPOINT:/jaxrs/document/{id}/control"
+  java_field: "control {allowVisit,allowPublish,allowManage}"
+  endpoint: "/jaxrs/document/{id}/control"
+  difference: "Rust document_control_u3 返回实体/子集；Java 返回 {control:{allowVisit,allowPublish,allowManage}}"
+  reason: "同上；留档"
+
+# 3) 别名/子集 GET 端点返回字段少于 Java 完整实体 Wo（camelCase 命名已对齐，但字段集为子集）。
+- rust_field: "ENDPOINT:appinfo_alias/categoryinfo_alias 等子集投影"
+  java_field: "full AppInfo/CategoryInfo Wo (incl. name, description, config, allPeopleView...)"
+  endpoint: "/jaxrs/appinfo/alias/{alias}, /jaxrs/categoryinfo/alias/{alias}"
+  difference: "Rust 仅返回核心字段子集；Java Wo.copier 返回实体全部字段"
+  reason: "字段集差异属设计级，需 behavior_compare 确认前端是否依赖完整字段；留档"
+
+# 4) 空值处理不一致：部分 handler 用 unwrap_or_default 兜底，部分直接 row.get 裸取
+#    （如历史版 application_id 的 enabled/manager、各 list 桩等），DB 为 NULL 时后者会 500；
+#    而 Java 对可空字段返回 null（HTTP 200）。已在本次修复中为新写单实体 handler 统一加 Option 兜底。
+- rust_field: "NULL_HANDLING_INCONSISTENCY"
+  java_field: "lenient null (HTTP 200)"
+  endpoint: "cms_assemble_control 多 handler"
+  difference: "可空列裸取 vs 兜底：DB NULL 时 Rust 旧路径可能 500，Java 返回 null"
+  reason: "系统性健壮性差异，需逐端点 behavior_compare 核对可空字段；已在新写单实体 handler 统一兜底"
+
+# ─────────────────────────────────────────────────────────────────────────────
+# 2026-08-25 本地全链路实跑（Java o2server v9 容器 vs Rust 本地服务）残余差异留档。
+# 实跑口径：4688 条端点清单（java_war 映射 3131 条）、按 rust_path 去重后对比 4044 条；
+# 结果基线 686 PASS / 1376 FAIL / 1982 SKIP。以下五类为剩余 FAIL 的完整构成，
+# 均属 R9 语义持续收敛范畴（业务级差异，非信封结构缺陷），附两侧实测证据。
+# 注：解析器仅消费 rust_field/java_field 字段对，ENDPOINT: 前缀条目为留档性质，
+# 不参与对比豁免 —— 见本文件头部说明。
+# ─────────────────────────────────────────────────────────────────────────────
+
+# 5) 业务状态不对称（约 1100 项，剩余 FAIL 主体）：
+#    同一请求 Java 报错而 Rust 成功（或反之）。根因 = 两侧数据库独立且均近乎空库、
+#    测试以字面量 "{id}" 作参数值查询不存在资源时，Java 抛 ExceptionEntityNotExist
+#    （HTTP 500 + 错误信封），Rust 多数删除/更新 handler 幂等返回成功信封。
+#    证据样例（DELETE x_processplatform_service_processing
+#    /jaxrs/applicationdict/{id}/{p0}/data）：
+#      Java: {"type":"error","message":"com.x.base.core.project.exception.
+#             ExceptionEntityNotExist: 标识:{id} 的 ApplicationDict 对象不存在",
+#             "date":"...","spent":10,"size":-1,"count":0,"position":0}
+#      Rust: {"data":{...},"type":"success","message":"","date":"...","spent":0,
+#             "size":0,"count":0,"position":0}
+#    处置：需产品裁决"资源不存在的写操作应报错还是幂等成功"，或引入两侧共享种子
+#    数据集后再对比；属 R1 影子流量（真实生产数据）才能定论的范畴。
+- rust_field: "BUSINESS_STATE_ASYMMETRY (Rust idempotent success)"
+  java_field: "ExceptionEntityNotExist error envelope"
+  endpoint: "processplatform/cms/bbs/meeting 等 写操作与 {flag} 查询端点（约 1100 项）"
+  difference: "对不存在资源：Java 抛业务异常（错误信封），Rust 幂等成功（成功信封）"
+
+# 6) 一侧响应体非 JSON（约 450 项）：
+#    a) Java 路由未命中且 Accept 非 JSON 时返回 Jetty HTML 404（空 body 经 reqwest
+#       json() 解析为 None）；多为生成器 suffix 匹配的误配残留或 Java 侧真无此路由。
+#    b) 文件下载/stream 类端点 Java 返回二进制体，JSON 解析失败。
+#    c) Rust u2_capability_unavailable 能力桩返回 HTTP 501（如 attachment batch/download），
+#       Java 返回 200+二进制。状态码样例：Rust=501 Java=200；Rust=500 Java=405
+#       (keylock/lock/mockputtopost —— Java 对 GET 到 PUT-only 路由返回 405)。
+- rust_field: "NON_JSON_BODY_OR_CAPABILITY_STUB (Rust=501/500)"
+  java_field: "binary/html body or 405"
+  endpoint: "attachment download/stream、batch upload、keylock、mock 变体等（约 450 项）"
+
+# 7) 列表 data 嵌套包装（206 项）：
+#    query_assemble_surface 泛型查询 handler 统一把结果包装为 {"count":N,"data":[...]}
+#    再放入信封 data 字段；Java 直接返回数组。样例：
+#      GET application/list → Rust data={"count":0,"data":[]} vs Java data=[]
+#    处置：涉及 query_assemble_surface lib.rs/u2_closures.rs 数十处 handler 及其
+#    tests.rs 断言（json["data"]["count"]），需整体重构该 crate 响应构造模式。
+- rust_field: "NESTED {count,data} WRAPPER in data"
+  java_field: "plain array in data"
+  endpoint: "query_assemble_surface 泛型列表端点（206 项）"
+
+# 8) Java 错误信封 prompt 字段不一致（约 150 项）：
+#    同为 O2OA v9，不同 war 的 ResponseFactory 对错误信封 prompt（异常类名）
+#    填充行为不一致：x_processplatform_assemble_surface 填充
+#    （prompt="com.x....ExceptionEntityNotExist"），x_processplatform_service_processing
+#    同类异常省略 prompt。Rust 统一恒填（净差异最小策略），与省略方产生
+#    "prompt: missing/type-differs" 差异。
+- rust_field: "prompt always present on error"
+  java_field: "prompt varies by war (sometimes omitted)"
+  endpoint: "跨 war 业务错误端点（约 150 项）"
+
+# 9) BAM 周期统计 data 结构差异（21 项）：
+#    bam/period/list/count/completed/task/... Java data 为按月键控对象
+#    （{"2025-08":..., ..., "count":..,"data":..}），Rust 结构不同。
+- rust_field: "BAM period object shape differs"
+  java_field: "month-keyed map {2025-08..2026-07, count, data}"
+  endpoint: "/jaxrs/processplatform/assemble/bam/period/list/count/completed/task/...（21 项）"

@@ -30951,7 +30951,7 @@ async fn query_assemble_surface_a082b5_get() {}
 )]
 async fn query_assemble_surface_queryview_execute_view_id_view_id_execute_get() {}
 #[utoipa::path(get,
-    path = "/jaxrs/queryview/flag/{view}/application/flag/{app}/execute",
+    path = "/jaxrs/queryview/{view}/application/{app}/execute",
     tag = "query",
     params(
         ("view" = String, Path, description = "view parameter"),
@@ -30966,7 +30966,7 @@ async fn query_assemble_surface_queryview_execute_view_id_view_id_execute_get() 
 )]
 async fn query_assemble_surface_4641f6_get() {}
 #[utoipa::path(get,
-    path = "/jaxrs/queryview/flag/{view}/application/flag/{app}/execute/page/{page}/size/{size}",
+    path = "/jaxrs/queryview/{view}/application/{app}/execute/page/{page}/size/{size}",
     tag = "query",
     params(
         ("view" = String, Path, description = "view parameter"),

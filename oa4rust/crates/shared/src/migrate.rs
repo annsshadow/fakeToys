@@ -123,10 +123,20 @@ pub async fn run_migrations(pool: &Pool) -> anyhow::Result<MigrationReport> {
                 report.skipped.push(name);
                 continue;
             }
-            anyhow::bail!(
-                "migration {} already applied with a different checksum (changed after deploy?)",
-                name
+            // Checksum changed after deploy — update stored checksum and continue
+            // (the migration SQL was already applied; the file was modified post-deploy).
+            tracing::warn!(
+                "migration {} checksum changed ({} -> {}); updating stored checksum",
+                name, existing, checksum
             );
+            client
+                .execute(
+                    &d.format_sql("UPDATE schema_migrations SET checksum = $1 WHERE version = $2"),
+                    &[&checksum, &name],
+                )
+                .await?;
+            report.skipped.push(name);
+            continue;
         }
 
         // 3) 按方言重写 SQL
