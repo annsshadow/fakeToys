@@ -45468,7 +45468,7 @@ pub const ENDPOINTS: &[EndpointDef] = &[
     EndpointDef {
         crate_name: "query_assemble_surface",
         method: "GET",
-        rust_path: "/jaxrs/queryview/execute/v2/{view}/{id}/{page}/{page}/{size}/{size}",
+        rust_path: "/jaxrs/queryview/execute/v2/{view}/{id}/{page}/{size}",
         java_war: "",
         java_action: "",
         body: None,
