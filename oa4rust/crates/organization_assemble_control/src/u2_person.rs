@@ -227,13 +227,13 @@ async fn cursor_page(pool: &Pool, flag: &str, count: i64, next: bool) -> Handler
     let limit = count.clamp(1, MAX_BATCH_IDS as i64).to_string();
     let rows = if flag == "0" || flag == "(0)" {
         let sql = format!(
-            "SELECT {PERSON_COLS} FROM {PERSON_TABLE} WHERE deleted_at IS NULL ORDER BY create_time::text DESC LIMIT $1::bigint"
+            "SELECT {PERSON_COLS} FROM {PERSON_TABLE} WHERE deleted_at IS NULL ORDER BY create_time::text DESC LIMIT $1::int"
         );
         client.query(&sql, &[&limit]).await.map_err(|_| AppError::Internal)?
     } else {
         let op = if next { ">" } else { "<" };
         let sql = format!(
-            "SELECT {PERSON_COLS} FROM {PERSON_TABLE} WHERE deleted_at IS NULL AND id {op} $1 ORDER BY create_time::text DESC LIMIT $2::bigint"
+            "SELECT {PERSON_COLS} FROM {PERSON_TABLE} WHERE deleted_at IS NULL AND id {op} $1 ORDER BY create_time::text DESC LIMIT $2::int"
         );
         client
             .query(&sql, &[&flag.to_string(), &limit])
@@ -620,7 +620,7 @@ pub async fn person_list_filter_paging(
     let total: i64 = total_row.get("cnt");
 
     let data_sql = format!(
-        "SELECT {PERSON_COLS} FROM x_org_person WHERE {cond} ORDER BY create_time::text DESC LIMIT $6::bigint OFFSET $7::bigint"
+        "SELECT {PERSON_COLS} FROM x_org_person WHERE {cond} ORDER BY create_time::text DESC LIMIT $6::int OFFSET $7::int"
     );
     let rows = client
         .query(&data_sql, &[&name, &mobile, &email, &status, &unit_flag, &size_str, &offset])
@@ -650,7 +650,7 @@ pub async fn person_list_delete_paging(
     let offset = ((page - 1) * size).to_string();
     let size_str = size.to_string();
     let sql = format!(
-        "SELECT {PERSON_COLS} FROM {PERSON_TABLE} WHERE deleted_at IS NOT NULL ORDER BY create_time::text DESC LIMIT $1::bigint OFFSET $2::bigint"
+        "SELECT {PERSON_COLS} FROM {PERSON_TABLE} WHERE deleted_at IS NOT NULL ORDER BY create_time::text DESC LIMIT $1::int OFFSET $2::int"
     );
     let rows = client
         .query(&sql, &[&size_str, &offset])

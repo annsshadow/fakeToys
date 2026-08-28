@@ -62,7 +62,8 @@ pub async fn list_control_sections(
         })
         .collect();
 
-    Ok(Json(ActionResult::success(Value::Array(sections))))
+    let total_sections = sections.len();
+    Ok(Json(ActionResult::java_success(Value::Array(sections), total_sections as i64, 0)))
 }
 
 pub fn cms_control_router(pool: Pool) -> Router {

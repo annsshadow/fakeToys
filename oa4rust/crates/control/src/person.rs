@@ -138,7 +138,7 @@ async fn query_page(
             .query(
                 "SELECT id, unique_id, name, mobile, email, locked FROM auth_person \
                  WHERE deleted_at IS NULL AND (unique_id > $1 OR $1 = '' OR $1 = '-') \
-                 ORDER BY unique_id ASC LIMIT $2::bigint",
+                 ORDER BY unique_id ASC LIMIT $2::int",
                 &[&flag, &limit],
             )
             .await
@@ -150,7 +150,7 @@ async fn query_page(
             .query(
                 "SELECT id, unique_id, name, mobile, email, locked FROM auth_person \
                  WHERE deleted_at IS NULL AND (unique_id < $1 OR $1 = '' OR $1 = '-') \
-                 ORDER BY unique_id DESC LIMIT $2::bigint",
+                 ORDER BY unique_id DESC LIMIT $2::int",
                 &[&flag, &limit],
             )
             .await

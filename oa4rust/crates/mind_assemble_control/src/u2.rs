@@ -113,7 +113,8 @@ pub async fn mind_filter_list(
         .await
         .map_err(|_| AppError::Internal)?;
     let items: Vec<Value> = rows.iter().map(mind_row_to_value).collect();
-    Ok(Json(ActionResult::success(Value::Array(items))))
+    let total_items = items.len();
+    Ok(Json(ActionResult::java_success(Value::Array(items), total_items as i64, 0)))
 }
 
 /// PUT /jaxrs/mind/assemble/control/mind/filter/recived/{id}/next/{page} —— 收到(共享给我)的过滤分页
@@ -138,7 +139,8 @@ pub async fn mind_filter_received(
         .await
         .map_err(|_| AppError::Internal)?;
     let items: Vec<Value> = rows.iter().map(mind_row_to_value).collect();
-    Ok(Json(ActionResult::success(Value::Array(items))))
+    let total_items = items.len();
+    Ok(Json(ActionResult::java_success(Value::Array(items), total_items as i64, 0)))
 }
 
 /// PUT /jaxrs/mind/assemble/control/mind/filter/recycle/{id}/next/{page} —— 回收站过滤分页
@@ -161,7 +163,8 @@ pub async fn mind_filter_recycle(
         .await
         .map_err(|_| AppError::Internal)?;
     let items: Vec<Value> = rows.iter().map(mind_row_to_value).collect();
-    Ok(Json(ActionResult::success(Value::Array(items))))
+    let total_items = items.len();
+    Ok(Json(ActionResult::java_success(Value::Array(items), total_items as i64, 0)))
 }
 
 /// PUT /jaxrs/mind/assemble/control/mind/filter/shared/{id}/next/{page} —— 我共享出的过滤分页
@@ -185,7 +188,8 @@ pub async fn mind_filter_shared(
         .await
         .map_err(|_| AppError::Internal)?;
     let items: Vec<Value> = rows.iter().map(mind_row_to_value).collect();
-    Ok(Json(ActionResult::success(Value::Array(items))))
+    let total_items = items.len();
+    Ok(Json(ActionResult::java_success(Value::Array(items), total_items as i64, 0)))
 }
 
 /// GET /jaxrs/mind/assemble/control/mind/list/{id}/shareRecords —— 共享记录
@@ -210,7 +214,8 @@ pub async fn mind_share_records(pool: Extension<Pool>, Path(id): Path<String>) -
             })
         })
         .collect();
-    Ok(Json(ActionResult::success(Value::Array(items))))
+    let total_items = items.len();
+    Ok(Json(ActionResult::java_success(Value::Array(items), total_items as i64, 0)))
 }
 
 /// GET /jaxrs/mind/assemble/control/mind/list/{id}/version —— 版本列表
@@ -237,7 +242,8 @@ pub async fn mind_version_list(pool: Extension<Pool>, Path(id): Path<String>) ->
             })
         })
         .collect();
-    Ok(Json(ActionResult::success(Value::Array(items))))
+    let total_items = items.len();
+    Ok(Json(ActionResult::java_success(Value::Array(items), total_items as i64, 0)))
 }
 
 /// DELETE /jaxrs/mind/assemble/control/mind/recycle/{id} —— 移入回收站（软删除）

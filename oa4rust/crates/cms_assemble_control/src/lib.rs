@@ -5170,7 +5170,7 @@ pub async fn commend_list_paging(
 
     let rows = client
         .query(
-            "SELECT id, doc_id, person_id, create_time::text FROM x_cms_commend WHERE doc_id = $1 AND deleted_at::text IS NULL ORDER BY create_time::text DESC LIMIT $2::bigint OFFSET $3::bigint",
+            "SELECT id, doc_id, person_id, create_time::text FROM x_cms_commend WHERE doc_id = $1 AND deleted_at::text IS NULL ORDER BY create_time::text DESC LIMIT $2::int OFFSET $3::int",
             &[&doc_id, &size, &((page - 1) * size)],
         )
         .await
@@ -5188,12 +5188,7 @@ pub async fn commend_list_paging(
         })
         .collect();
 
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("count".to_string(), Value::Number(serde_json::Number::from(count))),
-            ("data".to_string(), Value::Array(data)),
-        ]),
-    ))))
+    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
 }
 
 // ─── document_search ─────────────────────────────────────────────────────────
