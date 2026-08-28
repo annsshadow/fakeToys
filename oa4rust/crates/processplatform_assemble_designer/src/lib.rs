@@ -131,7 +131,7 @@ pub async fn list_flows(
         client
             .query(
                 "SELECT id, name, category, version, creator, create_time FROM x_process_definition \
-                 WHERE 1=1 ORDER BY create_time DESC LIMIT $1::bigint OFFSET $2::bigint",
+                 WHERE 1=1 ORDER BY create_time DESC LIMIT $1::int OFFSET $2::int",
                 &[&size, &offset],
             )
             .await
@@ -140,7 +140,7 @@ pub async fn list_flows(
         client
             .query(
                 "SELECT id, name, category, version, creator, create_time FROM x_process_definition \
-                 WHERE category = $1 ORDER BY create_time DESC LIMIT $2::bigint OFFSET $3::bigint",
+                 WHERE category = $1 ORDER BY create_time DESC LIMIT $2::int OFFSET $3::int",
                 &[&category, &size, &offset],
             )
             .await
@@ -540,7 +540,7 @@ pub async fn applicationdict_list_paging_page_size_size(
     let offset = (page - 1).max(0) * size;
     let rows = client
         .query(
-            "SELECT xid, xname, xapplication, \"xapplicationName\", \"xcreatorPerson\", \"xcreateTime\", \"xupdateTime\" FROM PP_E_APPLICATIONDICT WHERE 1=1 ORDER BY \"xcreateTime\" DESC LIMIT $1::bigint OFFSET $2::bigint",
+            "SELECT xid, xname, xapplication, \"xapplicationName\", \"xcreatorPerson\", \"xcreateTime\", \"xupdateTime\" FROM PP_E_APPLICATIONDICT WHERE 1=1 ORDER BY \"xcreateTime\" DESC LIMIT $1::int OFFSET $2::int",
             &[&size, &offset],
         )
         .await
@@ -1473,7 +1473,7 @@ pub async fn mergeitemplan_list_application_applicationId_paging_page_size_size(
     let offset = (page - 1).max(0) * size;
     let rows = client
         .query(
-            "SELECT xid, xname, xapplication, \"xapplicationName\", \"xcreateTime\", \"xupdateTime\" FROM PP_E_MERGEITEMPLAN WHERE xapplication = $1 ORDER BY \"xcreateTime\" DESC LIMIT $2::bigint OFFSET $3::bigint",
+            "SELECT xid, xname, xapplication, \"xapplicationName\", \"xcreateTime\", \"xupdateTime\" FROM PP_E_MERGEITEMPLAN WHERE xapplication = $1 ORDER BY \"xcreateTime\" DESC LIMIT $2::int OFFSET $3::int",
             &[&applicationId, &size, &offset],
         )
         .await
@@ -1503,7 +1503,7 @@ pub async fn mergeitemplan_list_paging_page_size_size(
     let offset = (page - 1).max(0) * size;
     let rows = client
         .query(
-            "SELECT xid, xname, xapplication, \"xapplicationName\", \"xcreateTime\", \"xupdateTime\" FROM PP_E_MERGEITEMPLAN WHERE 1=1 ORDER BY \"xcreateTime\" DESC LIMIT $1::bigint OFFSET $2::bigint",
+            "SELECT xid, xname, xapplication, \"xapplicationName\", \"xcreateTime\", \"xupdateTime\" FROM PP_E_MERGEITEMPLAN WHERE 1=1 ORDER BY \"xcreateTime\" DESC LIMIT $1::int OFFSET $2::int",
             &[&size, &offset],
         )
         .await
@@ -2209,7 +2209,7 @@ pub async fn script_list_paging_page_size_size(
     let offset = (page - 1).max(0) * size;
     let rows = client
         .query(
-            "SELECT xid, xname, xapplication, \"xapplicationName\", \"xcreatorPerson\", \"xcreateTime\", \"xupdateTime\" FROM PP_E_SCRIPT WHERE 1=1 ORDER BY \"xcreateTime\" DESC LIMIT $1::bigint OFFSET $2::bigint",
+            "SELECT xid, xname, xapplication, \"xapplicationName\", \"xcreatorPerson\", \"xcreateTime\", \"xupdateTime\" FROM PP_E_SCRIPT WHERE 1=1 ORDER BY \"xcreateTime\" DESC LIMIT $1::int OFFSET $2::int",
             &[&size, &offset],
         )
         .await

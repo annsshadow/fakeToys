@@ -186,6 +186,33 @@ jobs:
           BEHAVIOR_COMPARE: "1"
           JAVA_SERVICE_URL: http://localhost:18080
 
+      # ── U1: 差异聚类 ──────────────────────────────────────────────────────
+      # 全量 compare 后自动跑聚类脚本，产出机读 TSV + 人审 Markdown。
+      # 仅当 behavior-report.md 存在时执行（Java 不可达时报告为空，跳过聚类）。
+      - name: Cluster behavior diffs
+        if: always()
+        run: |
+          if [ -f target/debug/behavior-report.md ] && [ -s target/debug/behavior-report.md ]; then
+            python oa4rust/scripts/cluster_behavior_diffs.py \
+              --report target/debug/behavior-report.md \
+              --out-dir target/ \
+              --format tsv,md
+            echo "Clustering artifacts generated"
+          else
+            echo "::notice::No behavior-report.md found — skipping diff clustering"
+          fi
+
+      # ── U1: 聚类产物上传 ─────────────────────────────────────────────────
+      - name: Upload diff clustering artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: diff-clustering-${{ github.run_id }}
+          path: |
+            target/diff_candidates.tsv
+            target/diff_candidates.md
+          retention-days: 30
+
       # ── U1: 报告产物上传 ─────────────────────────────────────────────────
       # behavior-report.md 在测试步骤中自动生成（target/debug/），
       # 上传为 GitHub Actions artifact，FAIL 数变化可在 PR 上直接观察。

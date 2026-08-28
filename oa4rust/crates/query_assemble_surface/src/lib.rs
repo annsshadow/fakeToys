@@ -441,7 +441,7 @@ pub async fn importmodel_list_record_item_paging_page_size_size(
 
     let rows = client
         .query(
-            "SELECT id, model_flag, data, creator, create_time FROM x_query_import_model_record ORDER BY create_time DESC LIMIT $2::bigint OFFSET ($1 - 1) * $2",
+            "SELECT id, model_flag, data, creator, create_time FROM x_query_import_model_record ORDER BY create_time DESC LIMIT $2::int OFFSET ($1 - 1) * $2",
             &[&page, &size],
         )
         .await
@@ -477,7 +477,7 @@ pub async fn importmodel_list_record_paging_page_size_size(
 
     let rows = client
         .query(
-            "SELECT id, model_flag, data, creator, create_time FROM x_query_import_model_record ORDER BY create_time DESC LIMIT $2::bigint OFFSET ($1 - 1) * $2",
+            "SELECT id, model_flag, data, creator, create_time FROM x_query_import_model_record ORDER BY create_time DESC LIMIT $2::int OFFSET ($1 - 1) * $2",
             &[&page, &size],
         )
         .await
@@ -813,7 +813,7 @@ pub async fn table_list_paging_page_size_size(
 
     let rows = client
         .query(
-            "SELECT id, name, table_flag, creator, create_time FROM x_query_table WHERE deleted_at IS NULL ORDER BY create_time DESC LIMIT $2::bigint OFFSET ($1 - 1) * $2",
+            "SELECT id, name, table_flag, creator, create_time FROM x_query_table WHERE deleted_at IS NULL ORDER BY create_time DESC LIMIT $2::int OFFSET ($1 - 1) * $2",
             &[&page, &size],
         )
         .await
@@ -850,7 +850,7 @@ pub async fn table_list_table_tableFlag_row_paging_page_size_size(
 
     let rows = client
         .query(
-            "SELECT id, table_flag, data FROM x_query_table_data WHERE table_flag = $1 ORDER BY id DESC LIMIT $3::bigint OFFSET ($2 - 1) * $3",
+            "SELECT id, table_flag, data FROM x_query_table_data WHERE table_flag = $1 ORDER BY id DESC LIMIT $3::int OFFSET ($2 - 1) * $3",
             &[&table_flag, &page, &size],
         )
         .await
@@ -884,7 +884,7 @@ pub async fn table_list_id_next_count(
 
     let rows = client
         .query(
-            "SELECT id, table_flag, data FROM x_query_table_data WHERE id > $1 ORDER BY id ASC LIMIT $2::bigint",
+            "SELECT id, table_flag, data FROM x_query_table_data WHERE id > $1 ORDER BY id ASC LIMIT $2::int",
             &[&id, &count],
         )
         .await
@@ -918,7 +918,7 @@ pub async fn table_list_id_prev_count(
 
     let rows = client
         .query(
-            "SELECT id, table_flag, data FROM x_query_table_data WHERE id < $1 ORDER BY id DESC LIMIT $2::bigint",
+            "SELECT id, table_flag, data FROM x_query_table_data WHERE id < $1 ORDER BY id DESC LIMIT $2::int",
             &[&id, &count],
         )
         .await
@@ -1020,7 +1020,7 @@ pub async fn table_list_tableFlag_row_id_next_count(
 
     let rows = client
         .query(
-            "SELECT id, table_flag, data FROM x_query_table_data WHERE table_flag = $1 AND id > $2 ORDER BY id ASC LIMIT $3::bigint",
+            "SELECT id, table_flag, data FROM x_query_table_data WHERE table_flag = $1 AND id > $2 ORDER BY id ASC LIMIT $3::int",
             &[&table_flag, &id, &count],
         )
         .await
@@ -1055,7 +1055,7 @@ pub async fn table_list_tableFlag_row_id_prev_count(
 
     let rows = client
         .query(
-            "SELECT id, table_flag, data FROM x_query_table_data WHERE table_flag = $1 AND id < $2 ORDER BY id DESC LIMIT $3::bigint",
+            "SELECT id, table_flag, data FROM x_query_table_data WHERE table_flag = $1 AND id < $2 ORDER BY id DESC LIMIT $3::int",
             &[&table_flag, &id, &count],
         )
         .await

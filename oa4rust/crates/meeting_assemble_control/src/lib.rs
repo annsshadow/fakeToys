@@ -550,7 +550,7 @@ pub async fn meeting_list_apply_page_size_size(
 
     let rows = client
         .query(
-            "SELECT id, title, content, to_char(start_time, 'YYYY-MM-DD HH24:MI:SS') AS start_time, to_char(end_time, 'YYYY-MM-DD HH24:MI:SS') AS end_time, creator, to_char(create_time, 'YYYY-MM-DD HH24:MI:SS') AS create_time FROM x_meeting WHERE applied = true ORDER BY create_time DESC LIMIT $1::bigint OFFSET $2::bigint",
+            "SELECT id, title, content, to_char(start_time, 'YYYY-MM-DD HH24:MI:SS') AS start_time, to_char(end_time, 'YYYY-MM-DD HH24:MI:SS') AS end_time, creator, to_char(create_time, 'YYYY-MM-DD HH24:MI:SS') AS create_time FROM x_meeting WHERE applied = true ORDER BY create_time DESC LIMIT $1::int OFFSET $2::int",
             &[&limit, &offset],
         )
         .await
@@ -724,7 +724,7 @@ pub async fn meeting_list_invite_page_size_size(
 
     let rows = client
         .query(
-            "SELECT id, title, content, to_char(start_time, 'YYYY-MM-DD HH24:MI:SS') AS start_time, to_char(end_time, 'YYYY-MM-DD HH24:MI:SS') AS end_time, creator, to_char(create_time, 'YYYY-MM-DD HH24:MI:SS') AS create_time FROM x_meeting WHERE invited = true ORDER BY create_time DESC LIMIT $1::bigint OFFSET $2::bigint",
+            "SELECT id, title, content, to_char(start_time, 'YYYY-MM-DD HH24:MI:SS') AS start_time, to_char(end_time, 'YYYY-MM-DD HH24:MI:SS') AS end_time, creator, to_char(create_time, 'YYYY-MM-DD HH24:MI:SS') AS create_time FROM x_meeting WHERE invited = true ORDER BY create_time DESC LIMIT $1::int OFFSET $2::int",
             &[&limit, &offset],
         )
         .await
@@ -1140,7 +1140,7 @@ pub async fn meeting_list_id_next_count(
     let rows = if flag.is_empty() {
         client
             .query(
-                "SELECT id, title, content, to_char(start_time, 'YYYY-MM-DD HH24:MI:SS') AS start_time, to_char(end_time, 'YYYY-MM-DD HH24:MI:SS') AS end_time, creator, to_char(create_time, 'YYYY-MM-DD HH24:MI:SS') AS create_time FROM x_meeting ORDER BY create_time DESC LIMIT $1::bigint",
+                "SELECT id, title, content, to_char(start_time, 'YYYY-MM-DD HH24:MI:SS') AS start_time, to_char(end_time, 'YYYY-MM-DD HH24:MI:SS') AS end_time, creator, to_char(create_time, 'YYYY-MM-DD HH24:MI:SS') AS create_time FROM x_meeting ORDER BY create_time DESC LIMIT $1::int",
                 &[&count],
             )
             .await
@@ -1148,7 +1148,7 @@ pub async fn meeting_list_id_next_count(
     } else {
         client
             .query(
-                "SELECT id, title, content, to_char(start_time, 'YYYY-MM-DD HH24:MI:SS') AS start_time, to_char(end_time, 'YYYY-MM-DD HH24:MI:SS') AS end_time, creator, to_char(create_time, 'YYYY-MM-DD HH24:MI:SS') AS create_time FROM x_meeting WHERE id > $1 ORDER BY create_time DESC LIMIT $2::bigint",
+                "SELECT id, title, content, to_char(start_time, 'YYYY-MM-DD HH24:MI:SS') AS start_time, to_char(end_time, 'YYYY-MM-DD HH24:MI:SS') AS end_time, creator, to_char(create_time, 'YYYY-MM-DD HH24:MI:SS') AS create_time FROM x_meeting WHERE id > $1 ORDER BY create_time DESC LIMIT $2::int",
                 &[&flag, &count],
             )
             .await
@@ -1184,7 +1184,7 @@ pub async fn meeting_list_id_prev_count(
 
     let rows = client
         .query(
-            "SELECT id, title, content, to_char(start_time, 'YYYY-MM-DD HH24:MI:SS') AS start_time, to_char(end_time, 'YYYY-MM-DD HH24:MI:SS') AS end_time, creator, to_char(create_time, 'YYYY-MM-DD HH24:MI:SS') AS create_time FROM x_meeting WHERE id < $1 ORDER BY create_time DESC LIMIT $2::bigint",
+            "SELECT id, title, content, to_char(start_time, 'YYYY-MM-DD HH24:MI:SS') AS start_time, to_char(end_time, 'YYYY-MM-DD HH24:MI:SS') AS end_time, creator, to_char(create_time, 'YYYY-MM-DD HH24:MI:SS') AS create_time FROM x_meeting WHERE id < $1 ORDER BY create_time DESC LIMIT $2::int",
             &[&id, &count],
         )
         .await
@@ -1220,7 +1220,7 @@ pub async fn meeting_list_page_size_size(
 
     let rows = client
         .query(
-            "SELECT id, title, content, to_char(start_time, 'YYYY-MM-DD HH24:MI:SS') AS start_time, to_char(end_time, 'YYYY-MM-DD HH24:MI:SS') AS end_time, creator, to_char(create_time, 'YYYY-MM-DD HH24:MI:SS') AS create_time FROM x_meeting ORDER BY create_time DESC LIMIT $1::bigint OFFSET $2::bigint",
+            "SELECT id, title, content, to_char(start_time, 'YYYY-MM-DD HH24:MI:SS') AS start_time, to_char(end_time, 'YYYY-MM-DD HH24:MI:SS') AS end_time, creator, to_char(create_time, 'YYYY-MM-DD HH24:MI:SS') AS create_time FROM x_meeting ORDER BY create_time DESC LIMIT $1::int OFFSET $2::int",
             &[&limit, &offset],
         )
         .await
@@ -1256,7 +1256,7 @@ pub async fn meeting_list_page_size_size_manage(
 
     let rows = client
         .query(
-            "SELECT id, title, content, to_char(start_time, 'YYYY-MM-DD HH24:MI:SS') AS start_time, to_char(end_time, 'YYYY-MM-DD HH24:MI:SS') AS end_time, creator, to_char(create_time, 'YYYY-MM-DD HH24:MI:SS') AS create_time FROM x_meeting ORDER BY create_time DESC LIMIT $1::bigint OFFSET $2::bigint",
+            "SELECT id, title, content, to_char(start_time, 'YYYY-MM-DD HH24:MI:SS') AS start_time, to_char(end_time, 'YYYY-MM-DD HH24:MI:SS') AS end_time, creator, to_char(create_time, 'YYYY-MM-DD HH24:MI:SS') AS create_time FROM x_meeting ORDER BY create_time DESC LIMIT $1::int OFFSET $2::int",
             &[&limit, &offset],
         )
         .await

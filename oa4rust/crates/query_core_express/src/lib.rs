@@ -180,7 +180,7 @@ pub async fn get_query_history(
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let rows = client
         .query(
-            "SELECT id, name, create_time FROM x_query_import_record ORDER BY create_time DESC LIMIT $1::bigint",
+            "SELECT id, name, create_time FROM x_query_import_record ORDER BY create_time DESC LIMIT $1::int",
             &[&limit],
         )
         .await

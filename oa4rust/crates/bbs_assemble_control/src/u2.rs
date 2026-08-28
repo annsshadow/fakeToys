@@ -1088,7 +1088,8 @@ pub async fn u2_section_viewsub(pool: Extension<Pool>, Path(id): Path<String>) -
 pub async fn u2_user_section_forum(pool: Extension<Pool>, Path(forum_id): Path<String>) -> ApiResult {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let data = query_sections(&client, "forum_id = $1", &forum_id).await?;
-    Ok(Json(ActionResult::success(Value::Array(data))))
+    let total_data = data.len();
+    Ok(Json(ActionResult::java_success(Value::Array(data), total_data as i64, 0)))
 }
 
 /// GET user/section/sub/{sectionId} — 子版块全量（管理视图）。
@@ -1216,9 +1217,9 @@ pub async fn u2_role_all(pool: Extension<Pool>) -> ApiResult {
         )
         .await
         .map_err(|_| AppError::Internal)?;
-    Ok(Json(ActionResult::success(Value::Array(
-        rows.iter().map(role_row_to_value).collect(),
-    ))))
+    let data: Vec<Value> = rows.iter().map(role_row_to_value).collect();
+    let total_data = data.len();
+    Ok(Json(ActionResult::java_success(Value::Array(data), total_data as i64, 0)))
 }
 
 /// POST user/role — 创建角色（admin）。
@@ -1287,9 +1288,9 @@ async fn list_roles_by_column(pool: Extension<Pool>, column: &str, value: &str) 
     );
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let rows = client.query(sql.as_str(), &[&value]).await.map_err(|_| AppError::Internal)?;
-    Ok(Json(ActionResult::success(Value::Array(
-        rows.iter().map(role_row_to_value).collect(),
-    ))))
+    let data: Vec<Value> = rows.iter().map(role_row_to_value).collect();
+    let total_data = data.len();
+    Ok(Json(ActionResult::java_success(Value::Array(data), total_data as i64, 0)))
 }
 
 /// PUT user/role/forum/{forumId} — 按论坛列角色。
@@ -1484,7 +1485,8 @@ pub async fn u2_role_by_unit(pool: Extension<Pool>, body: axum::extract::Json<Va
     };
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let data = roles_bound_to(&client, "unit", &unit).await?;
-    Ok(Json(ActionResult::success(Value::Array(data))))
+    let total_data = data.len();
+    Ok(Json(ActionResult::java_success(Value::Array(data), total_data as i64, 0)))
 }
 
 /// PUT user/role/user/selected — 按人列出已绑角色。
@@ -1495,7 +1497,8 @@ pub async fn u2_role_by_user(pool: Extension<Pool>, body: axum::extract::Json<Va
     };
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let data = roles_bound_to(&client, "person", &person).await?;
-    Ok(Json(ActionResult::success(Value::Array(data))))
+    let total_data = data.len();
+    Ok(Json(ActionResult::java_success(Value::Array(data), total_data as i64, 0)))
 }
 
 // ══════════════════════════════════════════════════════════════════
@@ -1544,9 +1547,9 @@ async fn permissions_by_column(pool: Extension<Pool>, column: &str, value: &str)
     );
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let rows = client.query(sql.as_str(), &[&value]).await.map_err(|_| AppError::Internal)?;
-    Ok(Json(ActionResult::success(Value::Array(
-        rows.iter().map(permission_row_to_value).collect(),
-    ))))
+    let data: Vec<Value> = rows.iter().map(permission_row_to_value).collect();
+    let total_data = data.len();
+    Ok(Json(ActionResult::java_success(Value::Array(data), total_data as i64, 0)))
 }
 
 pub async fn u2_permission_admin_forum(pool: Extension<Pool>, Path(id): Path<String>) -> ApiResult {
@@ -1628,7 +1631,8 @@ pub async fn u2_setting_get(pool: Extension<Pool>, Path(id): Path<String>) -> Ap
 pub async fn u2_setting_all(pool: Extension<Pool>) -> ApiResult {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let data = query_settings(&client, None).await?;
-    Ok(Json(ActionResult::success(Value::Array(data))))
+    let total_data = data.len();
+    Ok(Json(ActionResult::java_success(Value::Array(data), total_data as i64, 0)))
 }
 
 /// PUT user/setting — 更新/新增配置（admin；按 id 更新，未命中则插入）。
@@ -1682,7 +1686,8 @@ pub async fn u2_setting_get_by_code(pool: Extension<Pool>, body: axum::extract::
     };
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let data = query_settings(&client, Some(("code", &code))).await?;
-    Ok(Json(ActionResult::success(Value::Array(data))))
+    let total_data = data.len();
+    Ok(Json(ActionResult::java_success(Value::Array(data), total_data as i64, 0)))
 }
 
 // ══════════════════════════════════════════════════════════════════
@@ -1796,7 +1801,8 @@ pub async fn u2_userinfo_filter(pool: Extension<Pool>, body: axum::extract::Json
             ]))
         })
         .collect();
-    Ok(Json(ActionResult::success(Value::Array(data))))
+    let total_data = data.len();
+    Ok(Json(ActionResult::java_success(Value::Array(data), total_data as i64, 0)))
 }
 
 // ══════════════════════════════════════════════════════════════════
@@ -1854,9 +1860,9 @@ pub async fn u2_attachment_list_by_subject(
         )
         .await
         .map_err(|_| AppError::Internal)?;
-    Ok(Json(ActionResult::success(Value::Array(
-        rows.iter().map(attachment_row_to_value).collect(),
-    ))))
+    let data: Vec<Value> = rows.iter().map(attachment_row_to_value).collect();
+    let total_data = data.len();
+    Ok(Json(ActionResult::java_success(Value::Array(data), total_data as i64, 0)))
 }
 
 /// DELETE attachment/{id} — 软删附件（owner 门禁）。
@@ -1913,9 +1919,9 @@ pub async fn u2_subjectattach_list(pool: Extension<Pool>, Path(subject_id): Path
         )
         .await
         .map_err(|_| AppError::Internal)?;
-    Ok(Json(ActionResult::success(Value::Array(
-        rows.iter().map(attachment_row_to_value).collect(),
-    ))))
+    let data: Vec<Value> = rows.iter().map(attachment_row_to_value).collect();
+    let total_data = data.len();
+    Ok(Json(ActionResult::java_success(Value::Array(data), total_data as i64, 0)))
 }
 
 /// GET subjectattach/{id}/binary/base64/{size} — 存量字节转 base64。
@@ -2004,7 +2010,8 @@ pub async fn u2_shutup_get_mine(pool: Extension<Pool>, session: Extension<shared
             ]))
         })
         .collect();
-    Ok(Json(ActionResult::success(Value::Array(data))))
+    let total_data = data.len();
+    Ok(Json(ActionResult::java_success(Value::Array(data), total_data as i64, 0)))
 }
 
 /// DELETE shutup/{id} — 解除禁言（admin 门禁；对齐 ShutupAction.delete 管理语义）。

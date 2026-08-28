@@ -86,7 +86,7 @@ async fn query_page(
             .query(
                 "SELECT id, name, description, disable FROM auth_role \
                  WHERE deleted_at IS NULL AND (name > $1 OR $1 = '' OR $1 = '-') \
-                 ORDER BY name ASC LIMIT $2::bigint",
+                 ORDER BY name ASC LIMIT $2::int",
                 &[&flag, &count],
             )
             .await
@@ -96,7 +96,7 @@ async fn query_page(
             .query(
                 "SELECT id, name, description, disable FROM auth_role \
                  WHERE deleted_at IS NULL AND (name < $1 OR $1 = '' OR $1 = '-') \
-                 ORDER BY name DESC LIMIT $2::bigint",
+                 ORDER BY name DESC LIMIT $2::int",
                 &[&flag, &count],
             )
             .await

@@ -402,7 +402,7 @@ async fn card_page(pool: &Pool, page: i64, size: i64, body: &Value, with_group: 
         .get("cnt");
     let data_sql = format!(
         "SELECT id, name, group_type, distinguished_name, mobile, office_phone, address, description, creator, create_time::text
-           FROM x_org_personcard WHERE {cond} ORDER BY create_time::text DESC LIMIT $3::bigint OFFSET $4::bigint"
+           FROM x_org_personcard WHERE {cond} ORDER BY create_time::text DESC LIMIT $3::int OFFSET $4::int"
     );
     let rows = client
         .query(&data_sql, &[&key, &group_type, &size_str, &offset])

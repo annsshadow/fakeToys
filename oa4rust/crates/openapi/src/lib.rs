@@ -4,6 +4,9 @@
 
 #![allow(dead_code)]
 
+#[cfg(test)]
+mod tests;
+
 use utoipa::OpenApi;
 
 #[utoipa::path(get, path = "/health", tag = "base",

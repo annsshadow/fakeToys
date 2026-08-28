@@ -424,7 +424,8 @@ pub async fn external_datasources_validate(
             })),
         }
     }
-    Ok(Json(ActionResult::success(Value::Array(results))))
+    let total_results = results.len();
+    Ok(Json(ActionResult::java_success(Value::Array(results), total_results as i64, 0)))
 }
 
 // --- h2 域 ---

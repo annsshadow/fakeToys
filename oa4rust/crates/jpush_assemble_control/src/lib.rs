@@ -70,7 +70,8 @@ pub async fn list_control_apps(
         })
         .collect();
 
-    Ok(Json(ActionResult::success(Value::Array(data))))
+    let total_data = data.len();
+    Ok(Json(ActionResult::java_success(Value::Array(data), total_data as i64, 0)))
 }
 
 #[axum::debug_handler]

@@ -33,7 +33,7 @@ pub async fn organization_assemble_control_role_list_flag_next_count(
     let rows = if flag == "0" {
         client
             .query(
-                "SELECT id, name, description, creator, create_time::text FROM x_org_role ORDER BY create_time::text DESC LIMIT $1::bigint",
+                "SELECT id, name, description, creator, create_time::text FROM x_org_role ORDER BY create_time::text DESC LIMIT $1::int",
                 &[&count],
             )
             .await
@@ -41,7 +41,7 @@ pub async fn organization_assemble_control_role_list_flag_next_count(
     } else {
         client
             .query(
-                "SELECT id, name, description, creator, create_time::text FROM x_org_role WHERE id > $1 ORDER BY create_time::text DESC LIMIT $2::bigint",
+                "SELECT id, name, description, creator, create_time::text FROM x_org_role WHERE id > $1 ORDER BY create_time::text DESC LIMIT $2::int",
                 &[&flag, &count],
             )
             .await
@@ -108,7 +108,7 @@ pub async fn organization_assemble_control_unit_list_flag_next_count(
     let rows = if flag == "0" {
         client
             .query(
-                "SELECT id, name, parent_id, level, sort, creator, create_time::text FROM x_org_unit WHERE parent_id IS NULL ORDER BY sort ASC, create_time::text DESC LIMIT $1::bigint",
+                "SELECT id, name, parent_id, level, sort, creator, create_time::text FROM x_org_unit WHERE parent_id IS NULL ORDER BY sort ASC, create_time::text DESC LIMIT $1::int",
                 &[&count],
             )
             .await
@@ -116,7 +116,7 @@ pub async fn organization_assemble_control_unit_list_flag_next_count(
     } else {
         client
             .query(
-                "SELECT id, name, parent_id, level, sort, creator, create_time::text FROM x_org_unit WHERE parent_id = $1 ORDER BY sort ASC, create_time::text DESC LIMIT $2::bigint",
+                "SELECT id, name, parent_id, level, sort, creator, create_time::text FROM x_org_unit WHERE parent_id = $1 ORDER BY sort ASC, create_time::text DESC LIMIT $2::int",
                 &[&flag, &count],
             )
             .await
@@ -1493,7 +1493,7 @@ pub async fn personcard_listpaging_page_page_size_size_mockputtopost(
     let limit = size.max(1);
 
     let rows = client
-        .query("SELECT id, name, mobile, email, unit_id, creator, create_time::text FROM x_org_person WHERE deleted_at IS NULL ORDER BY create_time::text DESC LIMIT $1::bigint OFFSET $2::bigint", &[&limit, &offset])
+        .query("SELECT id, name, mobile, email, unit_id, creator, create_time::text FROM x_org_person WHERE deleted_at IS NULL ORDER BY create_time::text DESC LIMIT $1::int OFFSET $2::int", &[&limit, &offset])
         .await
         .map_err(|_| AppError::Internal)?;
 
@@ -1524,7 +1524,7 @@ pub async fn personcard_listpagingwithgroup_page_page_size_size_mockputtopost(
     let limit = size.max(1);
 
     let rows = client
-        .query("SELECT id, name, mobile, email, unit_id, creator, create_time::text FROM x_org_person WHERE deleted_at IS NULL ORDER BY create_time::text DESC LIMIT $1::bigint OFFSET $2::bigint", &[&limit, &offset])
+        .query("SELECT id, name, mobile, email, unit_id, creator, create_time::text FROM x_org_person WHERE deleted_at IS NULL ORDER BY create_time::text DESC LIMIT $1::int OFFSET $2::int", &[&limit, &offset])
         .await
         .map_err(|_| AppError::Internal)?;
 
@@ -2077,12 +2077,12 @@ pub async fn unitduty_list_flag_prev_count(
     let count: i64 = count_str.parse().unwrap_or(10);
     let rows = if flag == "0" {
         client.query(
-            "SELECT id, name, unit_id, identity_id, creator, create_time::text FROM x_org_duty ORDER BY create_time::text DESC LIMIT $1::bigint",
+            "SELECT id, name, unit_id, identity_id, creator, create_time::text FROM x_org_duty ORDER BY create_time::text DESC LIMIT $1::int",
             &[&count],
         ).await.map_err(|_| AppError::Internal)?
     } else {
         client.query(
-            "SELECT id, name, unit_id, identity_id, creator, create_time::text FROM x_org_duty WHERE id < $1 ORDER BY create_time::text DESC LIMIT $2::bigint",
+            "SELECT id, name, unit_id, identity_id, creator, create_time::text FROM x_org_duty WHERE id < $1 ORDER BY create_time::text DESC LIMIT $2::int",
             &[&flag, &count],
         ).await.map_err(|_| AppError::Internal)?
     };
@@ -2115,12 +2115,12 @@ pub async fn unitduty_list_flag_next_count(
     let count: i64 = count_str.parse().unwrap_or(10);
     let rows = if flag == "0" {
         client.query(
-            "SELECT id, name, unit_id, identity_id, creator, create_time::text FROM x_org_duty ORDER BY create_time::text DESC LIMIT $1::bigint",
+            "SELECT id, name, unit_id, identity_id, creator, create_time::text FROM x_org_duty ORDER BY create_time::text DESC LIMIT $1::int",
             &[&count],
         ).await.map_err(|_| AppError::Internal)?
     } else {
         client.query(
-            "SELECT id, name, unit_id, identity_id, creator, create_time::text FROM x_org_duty WHERE id > $1 ORDER BY create_time::text DESC LIMIT $2::bigint",
+            "SELECT id, name, unit_id, identity_id, creator, create_time::text FROM x_org_duty WHERE id > $1 ORDER BY create_time::text DESC LIMIT $2::int",
             &[&flag, &count],
         ).await.map_err(|_| AppError::Internal)?
     };
@@ -2304,12 +2304,12 @@ pub async fn unitattribute_list_flag_prev_count(
     let count: i64 = count_str.parse().unwrap_or(10);
     let rows = if flag == "0" {
         client.query(
-            "SELECT id, unit_id, attribute_key, attribute_value, creator, create_time::text FROM x_org_unit_attribute ORDER BY create_time::text DESC LIMIT $1::bigint",
+            "SELECT id, unit_id, attribute_key, attribute_value, creator, create_time::text FROM x_org_unit_attribute ORDER BY create_time::text DESC LIMIT $1::int",
             &[&count],
         ).await.map_err(|_| AppError::Internal)?
     } else {
         client.query(
-            "SELECT id, unit_id, attribute_key, attribute_value, creator, create_time::text FROM x_org_unit_attribute WHERE id < $1 ORDER BY create_time::text DESC LIMIT $2::bigint",
+            "SELECT id, unit_id, attribute_key, attribute_value, creator, create_time::text FROM x_org_unit_attribute WHERE id < $1 ORDER BY create_time::text DESC LIMIT $2::int",
             &[&flag, &count],
         ).await.map_err(|_| AppError::Internal)?
     };
@@ -2342,12 +2342,12 @@ pub async fn unitattribute_list_flag_next_count(
     let count: i64 = count_str.parse().unwrap_or(10);
     let rows = if flag == "0" {
         client.query(
-            "SELECT id, unit_id, attribute_key, attribute_value, creator, create_time::text FROM x_org_unit_attribute ORDER BY create_time::text DESC LIMIT $1::bigint",
+            "SELECT id, unit_id, attribute_key, attribute_value, creator, create_time::text FROM x_org_unit_attribute ORDER BY create_time::text DESC LIMIT $1::int",
             &[&count],
         ).await.map_err(|_| AppError::Internal)?
     } else {
         client.query(
-            "SELECT id, unit_id, attribute_key, attribute_value, creator, create_time::text FROM x_org_unit_attribute WHERE id > $1 ORDER BY create_time::text DESC LIMIT $2::bigint",
+            "SELECT id, unit_id, attribute_key, attribute_value, creator, create_time::text FROM x_org_unit_attribute WHERE id > $1 ORDER BY create_time::text DESC LIMIT $2::int",
             &[&flag, &count],
         ).await.map_err(|_| AppError::Internal)?
     };
@@ -2412,12 +2412,12 @@ pub async fn role_list_flag_prev_count(
     let count: i64 = count_str.parse().unwrap_or(10);
     let rows = if flag == "0" {
         client.query(
-            "SELECT id, name, description, creator, create_time::text FROM x_org_role ORDER BY create_time::text DESC LIMIT $1::bigint",
+            "SELECT id, name, description, creator, create_time::text FROM x_org_role ORDER BY create_time::text DESC LIMIT $1::int",
             &[&count],
         ).await.map_err(|_| AppError::Internal)?
     } else {
         client.query(
-            "SELECT id, name, description, creator, create_time::text FROM x_org_role WHERE id < $1 ORDER BY create_time::text DESC LIMIT $2::bigint",
+            "SELECT id, name, description, creator, create_time::text FROM x_org_role WHERE id < $1 ORDER BY create_time::text DESC LIMIT $2::int",
             &[&flag, &count],
         ).await.map_err(|_| AppError::Internal)?
     };
@@ -2548,7 +2548,7 @@ pub async fn personcard_listpagingwithgroup_page_page_size_size(
     let limit = size.max(1);
 
     let rows = client
-        .query("SELECT id, name, mobile, email, unit_id, creator, create_time::text FROM x_org_person ORDER BY create_time::text DESC LIMIT $1::bigint OFFSET $2::bigint", &[&limit, &offset])
+        .query("SELECT id, name, mobile, email, unit_id, creator, create_time::text FROM x_org_person ORDER BY create_time::text DESC LIMIT $1::int OFFSET $2::int", &[&limit, &offset])
         .await
         .map_err(|_| AppError::Internal)?;
 
@@ -2579,7 +2579,7 @@ pub async fn personcard_listpaging_page_page_size_size(
     let limit = size.max(1);
 
     let rows = client
-        .query("SELECT id, name, mobile, email, unit_id, creator, create_time::text FROM x_org_person ORDER BY create_time::text DESC LIMIT $1::bigint OFFSET $2::bigint", &[&limit, &offset])
+        .query("SELECT id, name, mobile, email, unit_id, creator, create_time::text FROM x_org_person ORDER BY create_time::text DESC LIMIT $1::int OFFSET $2::int", &[&limit, &offset])
         .await
         .map_err(|_| AppError::Internal)?;
 
@@ -2746,12 +2746,12 @@ pub async fn personattribute_list_flag_prev_count(
     let count: i64 = count_str.parse().unwrap_or(10);
     let rows = if flag == "0" {
         client.query(
-            "SELECT id, person_id, attribute_key, attribute_value, creator, create_time::text FROM x_org_person_attribute ORDER BY create_time::text DESC LIMIT $1::bigint",
+            "SELECT id, person_id, attribute_key, attribute_value, creator, create_time::text FROM x_org_person_attribute ORDER BY create_time::text DESC LIMIT $1::int",
             &[&count],
         ).await.map_err(|_| AppError::Internal)?
     } else {
         client.query(
-            "SELECT id, person_id, attribute_key, attribute_value, creator, create_time::text FROM x_org_person_attribute WHERE id < $1 ORDER BY create_time::text DESC LIMIT $2::bigint",
+            "SELECT id, person_id, attribute_key, attribute_value, creator, create_time::text FROM x_org_person_attribute WHERE id < $1 ORDER BY create_time::text DESC LIMIT $2::int",
             &[&flag, &count],
         ).await.map_err(|_| AppError::Internal)?
     };
@@ -2784,12 +2784,12 @@ pub async fn personattribute_list_flag_next_count(
     let count: i64 = count_str.parse().unwrap_or(10);
     let rows = if flag == "0" {
         client.query(
-            "SELECT id, person_id, attribute_key, attribute_value, creator, create_time::text FROM x_org_person_attribute ORDER BY create_time::text DESC LIMIT $1::bigint",
+            "SELECT id, person_id, attribute_key, attribute_value, creator, create_time::text FROM x_org_person_attribute ORDER BY create_time::text DESC LIMIT $1::int",
             &[&count],
         ).await.map_err(|_| AppError::Internal)?
     } else {
         client.query(
-            "SELECT id, person_id, attribute_key, attribute_value, creator, create_time::text FROM x_org_person_attribute WHERE id > $1 ORDER BY create_time::text DESC LIMIT $2::bigint",
+            "SELECT id, person_id, attribute_key, attribute_value, creator, create_time::text FROM x_org_person_attribute WHERE id > $1 ORDER BY create_time::text DESC LIMIT $2::int",
             &[&flag, &count],
         ).await.map_err(|_| AppError::Internal)?
     };
@@ -3014,12 +3014,12 @@ pub async fn identity_list_flag_prev_count(
     let count: i64 = count_str.parse().unwrap_or(10);
     let rows = if flag == "0" {
         client.query(
-            "SELECT id, name, unit_id, identity_id, creator, create_time::text FROM x_org_identity ORDER BY create_time::text DESC LIMIT $1::bigint",
+            "SELECT id, name, unit_id, identity_id, creator, create_time::text FROM x_org_identity ORDER BY create_time::text DESC LIMIT $1::int",
             &[&count],
         ).await.map_err(|_| AppError::Internal)?
     } else {
         client.query(
-            "SELECT id, name, unit_id, identity_id, creator, create_time::text FROM x_org_identity WHERE id < $1 ORDER BY create_time::text DESC LIMIT $2::bigint",
+            "SELECT id, name, unit_id, identity_id, creator, create_time::text FROM x_org_identity WHERE id < $1 ORDER BY create_time::text DESC LIMIT $2::int",
             &[&flag, &count],
         ).await.map_err(|_| AppError::Internal)?
     };
@@ -3052,12 +3052,12 @@ pub async fn identity_list_flag_next_count(
     let count: i64 = count_str.parse().unwrap_or(10);
     let rows = if flag == "0" {
         client.query(
-            "SELECT id, name, unit_id, identity_id, creator, create_time::text FROM x_org_identity ORDER BY create_time::text DESC LIMIT $1::bigint",
+            "SELECT id, name, unit_id, identity_id, creator, create_time::text FROM x_org_identity ORDER BY create_time::text DESC LIMIT $1::int",
             &[&count],
         ).await.map_err(|_| AppError::Internal)?
     } else {
         client.query(
-            "SELECT id, name, unit_id, identity_id, creator, create_time::text FROM x_org_identity WHERE id > $1 ORDER BY create_time::text DESC LIMIT $2::bigint",
+            "SELECT id, name, unit_id, identity_id, creator, create_time::text FROM x_org_identity WHERE id > $1 ORDER BY create_time::text DESC LIMIT $2::int",
             &[&flag, &count],
         ).await.map_err(|_| AppError::Internal)?
     };
@@ -3228,12 +3228,12 @@ pub async fn group_list_flag_prev_count(
     let count: i64 = count_str.parse().unwrap_or(10);
     let rows = if flag == "0" {
         client.query(
-            "SELECT id, name, unit_id, type, creator, create_time::text FROM x_org_group ORDER BY create_time::text DESC LIMIT $1::bigint",
+            "SELECT id, name, unit_id, type, creator, create_time::text FROM x_org_group ORDER BY create_time::text DESC LIMIT $1::int",
             &[&count],
         ).await.map_err(|_| AppError::Internal)?
     } else {
         client.query(
-            "SELECT id, name, unit_id, type, creator, create_time::text FROM x_org_group WHERE id < $1 ORDER BY create_time::text DESC LIMIT $2::bigint",
+            "SELECT id, name, unit_id, type, creator, create_time::text FROM x_org_group WHERE id < $1 ORDER BY create_time::text DESC LIMIT $2::int",
             &[&flag, &count],
         ).await.map_err(|_| AppError::Internal)?
     };
@@ -3266,12 +3266,12 @@ pub async fn group_list_flag_next_count(
     let count: i64 = count_str.parse().unwrap_or(10);
     let rows = if flag == "0" {
         client.query(
-            "SELECT id, name, unit_id, type, creator, create_time::text FROM x_org_group ORDER BY create_time::text DESC LIMIT $1::bigint",
+            "SELECT id, name, unit_id, type, creator, create_time::text FROM x_org_group ORDER BY create_time::text DESC LIMIT $1::int",
             &[&count],
         ).await.map_err(|_| AppError::Internal)?
     } else {
         client.query(
-            "SELECT id, name, unit_id, type, creator, create_time::text FROM x_org_group WHERE id > $1 ORDER BY create_time::text DESC LIMIT $2::bigint",
+            "SELECT id, name, unit_id, type, creator, create_time::text FROM x_org_group WHERE id > $1 ORDER BY create_time::text DESC LIMIT $2::int",
             &[&flag, &count],
         ).await.map_err(|_| AppError::Internal)?
     };

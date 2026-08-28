@@ -1058,7 +1058,7 @@ pub async fn attachment2_list_type_page_size_size(
     let rows = client
         .query(
             "SELECT id, name, person, reference_type, extension, length, mime_type, create_time \
-             FROM FILE_FILE WHERE deleted_at IS NULL ORDER BY create_time DESC LIMIT $1::bigint OFFSET $2::bigint",
+             FROM FILE_FILE WHERE deleted_at IS NULL ORDER BY create_time DESC LIMIT $1::int OFFSET $2::int",
             &[&page_size, &offset],
         )
         .await.map_err(|_| AppError::Internal)?;

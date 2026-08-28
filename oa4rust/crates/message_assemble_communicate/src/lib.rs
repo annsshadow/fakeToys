@@ -106,7 +106,7 @@ pub async fn consume_list_consume_count_count(
 
     let limit = count.max(1) as i64;
     let rows = client
-        .query("SELECT id, consume, content, sender, create_time FROM x_message_consume WHERE consume = $1 ORDER BY create_time DESC LIMIT $2::bigint", &[&consume, &limit])
+        .query("SELECT id, consume, content, sender, create_time FROM x_message_consume WHERE consume = $1 ORDER BY create_time DESC LIMIT $2::int", &[&consume, &limit])
         .await
         .map_err(|_| AppError::Internal)?;
 
@@ -131,7 +131,7 @@ pub async fn consume_list_consume_currentperson_count_count(
 
     let limit = count.max(1) as i64;
     let rows = client
-        .query("SELECT id, consume, content, sender, read_status, create_time FROM x_message_consume WHERE consume = $1 AND sender = consume ORDER BY create_time DESC LIMIT $2::bigint", &[&consume, &limit])
+        .query("SELECT id, consume, content, sender, read_status, create_time FROM x_message_consume WHERE consume = $1 AND sender = consume ORDER BY create_time DESC LIMIT $2::int", &[&consume, &limit])
         .await
         .map_err(|_| AppError::Internal)?;
 
@@ -157,7 +157,7 @@ pub async fn consume_list_consume_person_person_count_count(
 
     let limit = count.max(1) as i64;
     let rows = client
-        .query("SELECT id, consume, content, sender, create_time FROM x_message_consume WHERE consume = $1 AND sender = $2 ORDER BY create_time DESC LIMIT $3::bigint", &[&consume, &person, &limit])
+        .query("SELECT id, consume, content, sender, create_time FROM x_message_consume WHERE consume = $1 AND sender = $2 ORDER BY create_time DESC LIMIT $3::int", &[&consume, &person, &limit])
         .await
         .map_err(|_| AppError::Internal)?;
 
@@ -792,7 +792,7 @@ pub async fn im_msg_collection_list_page_size_size(
     let offset = ((page.max(1) - 1) * size).max(0);
     let limit = size.max(1);
     let rows = client
-        .query("SELECT id, message_id, create_time FROM x_message_collection ORDER BY create_time DESC LIMIT $1::bigint OFFSET $2::bigint", &[&limit, &offset])
+        .query("SELECT id, message_id, create_time FROM x_message_collection ORDER BY create_time DESC LIMIT $1::int OFFSET $2::int", &[&limit, &offset])
         .await
         .map_err(|_| AppError::Internal)?;
 
@@ -912,7 +912,7 @@ pub async fn im_msg_list_page_size_size(
     let offset = ((page.max(1) - 1) * size).max(0);
     let limit = size.max(1);
     let rows = client
-        .query("SELECT id, conversation_id, content, sender, type, create_time FROM x_message ORDER BY create_time DESC LIMIT $1::bigint OFFSET $2::bigint", &[&limit, &offset])
+        .query("SELECT id, conversation_id, content, sender, type, create_time FROM x_message ORDER BY create_time DESC LIMIT $1::int OFFSET $2::int", &[&limit, &offset])
         .await
         .map_err(|_| AppError::Internal)?;
 
@@ -1054,7 +1054,7 @@ pub async fn instant_list_currentperson_consumed_count_count_asc(
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let rows = client
-        .query("SELECT id, consume, content, sender, consume_time FROM x_message_consume WHERE consumed = true ORDER BY consume_time ASC LIMIT $1::bigint", &[&count])
+        .query("SELECT id, consume, content, sender, consume_time FROM x_message_consume WHERE consumed = true ORDER BY consume_time ASC LIMIT $1::int", &[&count])
         .await
         .map_err(|_| AppError::Internal)?;
 
@@ -1078,7 +1078,7 @@ pub async fn instant_list_currentperson_consumed_count_count_desc(
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let rows = client
-        .query("SELECT id, consume, content, sender, consume_time FROM x_message_consume WHERE consumed = true ORDER BY consume_time DESC LIMIT $1::bigint", &[&count])
+        .query("SELECT id, consume, content, sender, consume_time FROM x_message_consume WHERE consumed = true ORDER BY consume_time DESC LIMIT $1::int", &[&count])
         .await
         .map_err(|_| AppError::Internal)?;
 
@@ -1102,7 +1102,7 @@ pub async fn instant_list_currentperson_count_count_asc(
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let rows = client
-        .query("SELECT id, consume, content, sender, create_time FROM x_message_consume ORDER BY create_time ASC LIMIT $1::bigint", &[&count])
+        .query("SELECT id, consume, content, sender, create_time FROM x_message_consume ORDER BY create_time ASC LIMIT $1::int", &[&count])
         .await
         .map_err(|_| AppError::Internal)?;
 
@@ -1126,7 +1126,7 @@ pub async fn instant_list_currentperson_count_count_desc(
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let rows = client
-        .query("SELECT id, consume, content, sender, create_time FROM x_message_consume ORDER BY create_time DESC LIMIT $1::bigint", &[&count])
+        .query("SELECT id, consume, content, sender, create_time FROM x_message_consume ORDER BY create_time DESC LIMIT $1::int", &[&count])
         .await
         .map_err(|_| AppError::Internal)?;
 
@@ -1150,7 +1150,7 @@ pub async fn instant_list_currentperson_noim_count_count_desc(
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let rows = client
-        .query("SELECT id, consume, content, sender, create_time FROM x_message_consume WHERE type != 'im' ORDER BY create_time DESC LIMIT $1::bigint", &[&count])
+        .query("SELECT id, consume, content, sender, create_time FROM x_message_consume WHERE type != 'im' ORDER BY create_time DESC LIMIT $1::int", &[&count])
         .await
         .map_err(|_| AppError::Internal)?;
 
@@ -1174,7 +1174,7 @@ pub async fn instant_list_currentperson_not_consumed_count_count_asc(
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let rows = client
-        .query("SELECT id, consume, content, sender, create_time FROM x_message_consume WHERE consumed = false ORDER BY create_time ASC LIMIT $1::bigint", &[&count])
+        .query("SELECT id, consume, content, sender, create_time FROM x_message_consume WHERE consumed = false ORDER BY create_time ASC LIMIT $1::int", &[&count])
         .await
         .map_err(|_| AppError::Internal)?;
 
@@ -1198,7 +1198,7 @@ pub async fn instant_list_currentperson_not_consumed_count_count_desc(
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let rows = client
-        .query("SELECT id, consume, content, sender, create_time FROM x_message_consume WHERE consumed = false ORDER BY create_time DESC LIMIT $1::bigint", &[&count])
+        .query("SELECT id, consume, content, sender, create_time FROM x_message_consume WHERE consumed = false ORDER BY create_time DESC LIMIT $1::int", &[&count])
         .await
         .map_err(|_| AppError::Internal)?;
 
@@ -1222,7 +1222,7 @@ pub async fn instant_list_id_next_count(
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let rows = client
-        .query("SELECT id, consume, content, sender, create_time FROM x_message_consume WHERE id > $1 ORDER BY create_time ASC LIMIT $2::bigint", &[&id, &count])
+        .query("SELECT id, consume, content, sender, create_time FROM x_message_consume WHERE id > $1 ORDER BY create_time ASC LIMIT $2::int", &[&id, &count])
         .await
         .map_err(|_| AppError::Internal)?;
 
@@ -1246,7 +1246,7 @@ pub async fn instant_list_id_prev_count(
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let rows = client
-        .query("SELECT id, consume, content, sender, create_time FROM x_message_consume WHERE id < $1 ORDER BY create_time DESC LIMIT $2::bigint", &[&id, &count])
+        .query("SELECT id, consume, content, sender, create_time FROM x_message_consume WHERE id < $1 ORDER BY create_time DESC LIMIT $2::int", &[&id, &count])
         .await
         .map_err(|_| AppError::Internal)?;
 
@@ -1292,7 +1292,7 @@ pub async fn mass_list_id_next_count(
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let rows = client
-        .query("SELECT id, mass_id, content, sender, create_time FROM x_message WHERE mass_id = $1 AND id > $2 ORDER BY create_time ASC LIMIT $3::bigint", &[&id, &id, &count])
+        .query("SELECT id, mass_id, content, sender, create_time FROM x_message WHERE mass_id = $1 AND id > $2 ORDER BY create_time ASC LIMIT $3::int", &[&id, &id, &count])
         .await
         .map_err(|_| AppError::Internal)?;
 
@@ -1316,7 +1316,7 @@ pub async fn mass_list_id_prev_count(
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let rows = client
-        .query("SELECT id, mass_id, content, sender, create_time FROM x_message WHERE mass_id = $1 AND id < $2 ORDER BY create_time DESC LIMIT $3::bigint", &[&id, &id, &count])
+        .query("SELECT id, mass_id, content, sender, create_time FROM x_message WHERE mass_id = $1 AND id < $2 ORDER BY create_time DESC LIMIT $3::int", &[&id, &id, &count])
         .await
         .map_err(|_| AppError::Internal)?;
 
@@ -1395,7 +1395,7 @@ pub async fn message_list_paging_page_size_size(
     let offset = ((page.max(1) - 1) * size).max(0);
     let limit = size.max(1);
     let rows = client
-        .query("SELECT id, conversation_id, content, sender, type, create_time FROM x_message ORDER BY create_time DESC LIMIT $1::bigint OFFSET $2::bigint", &[&limit, &offset])
+        .query("SELECT id, conversation_id, content, sender, type, create_time FROM x_message ORDER BY create_time DESC LIMIT $1::int OFFSET $2::int", &[&limit, &offset])
         .await
         .map_err(|_| AppError::Internal)?;
 

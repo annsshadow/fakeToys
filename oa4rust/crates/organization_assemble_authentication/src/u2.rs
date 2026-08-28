@@ -265,7 +265,8 @@ pub async fn bind_list(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>
             })
         })
         .collect();
-    Ok(Json(ActionResult::success(Value::Array(items))))
+    let total_items = items.len();
+    Ok(Json(ActionResult::java_success(Value::Array(items), total_items as i64, 0)))
 }
 
 // ── dingding/info ───────────────────────────────────────────────────────────

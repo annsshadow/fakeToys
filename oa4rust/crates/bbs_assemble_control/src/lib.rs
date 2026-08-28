@@ -172,7 +172,8 @@ pub async fn list_control_sections(
         })
         .collect();
 
-    Ok(Json(ActionResult::success(Value::Array(sections))))
+    let total_sections = sections.len();
+    Ok(Json(ActionResult::java_success(Value::Array(sections), total_sections as i64, 0)))
 }
 
 #[axum::debug_handler]
@@ -221,7 +222,8 @@ pub async fn list_forums(
         .map(|f| serde_json::to_value(f).unwrap())
         .collect();
 
-    Ok(Json(ActionResult::success(Value::Array(data))))
+    let total_data = data.len();
+    Ok(Json(ActionResult::java_success(Value::Array(data), total_data as i64, 0)))
 }
 
 /// GET /jaxrs/bbs/assemble/control/forum/{id}
@@ -293,7 +295,8 @@ pub async fn list_topics_by_forum(
         .map(|t| serde_json::to_value(t).unwrap())
         .collect();
 
-    Ok(Json(ActionResult::success(Value::Array(data))))
+    let total_data = data.len();
+    Ok(Json(ActionResult::java_success(Value::Array(data), total_data as i64, 0)))
 }
 
 /// POST /jaxrs/bbs/assemble/control/reply/create
@@ -443,7 +446,7 @@ pub async fn reply_filter_list_page_page_count_count(
 
     let rows = client
         .query(
-            "SELECT id, topic_id, content, creator, create_time FROM x_bbs_reply ORDER BY create_time DESC LIMIT $2::bigint OFFSET $1::bigint",
+            "SELECT id, topic_id, content, creator, create_time FROM x_bbs_reply ORDER BY create_time DESC LIMIT $2::int OFFSET $1::int",
             &[&offset, &count],
         )
         .await
@@ -655,7 +658,7 @@ pub async fn list_reply_filter(
     let rows = client
         .query(
             "SELECT id, topic_id, content, creator, create_time FROM x_bbs_reply \
-             WHERE deleted_at IS NULL ORDER BY create_time DESC LIMIT $1::bigint OFFSET $2::bigint",
+             WHERE deleted_at IS NULL ORDER BY create_time DESC LIMIT $1::int OFFSET $2::int",
             &[&count, &offset],
         )
         .await
@@ -686,7 +689,7 @@ pub async fn list_topics_creamed(
         .query(
             "SELECT id, forum_id, title, content, creator, create_time FROM x_bbs_topic \
              WHERE deleted_at IS NULL AND is_cream = true ORDER BY create_time DESC \
-             LIMIT $1::bigint OFFSET $2::bigint",
+             LIMIT $1::int OFFSET $2::int",
             &[&count, &offset],
         )
         .await
@@ -717,7 +720,7 @@ pub async fn list_topics_recommended(
         .query(
             "SELECT id, forum_id, title, content, creator, create_time FROM x_bbs_topic \
              WHERE deleted_at IS NULL AND is_recommend = true ORDER BY create_time DESC \
-             LIMIT $1::bigint OFFSET $2::bigint",
+             LIMIT $1::int OFFSET $2::int",
             &[&count, &offset],
         )
         .await
@@ -747,7 +750,7 @@ pub async fn list_subjects_filtered(
     let rows = client
         .query(
             "SELECT id, forum_id, title, content, creator, create_time FROM x_bbs_topic \
-             WHERE deleted_at IS NULL ORDER BY create_time DESC LIMIT $1::bigint OFFSET $2::bigint",
+             WHERE deleted_at IS NULL ORDER BY create_time DESC LIMIT $1::int OFFSET $2::int",
             &[&count, &offset],
         )
         .await
@@ -778,7 +781,7 @@ pub async fn list_subjects_index(
         .query(
             "SELECT id, forum_id, title, content, creator, create_time FROM x_bbs_topic \
              WHERE deleted_at IS NULL AND is_top = true ORDER BY create_time DESC \
-             LIMIT $1::bigint OFFSET $2::bigint",
+             LIMIT $1::int OFFSET $2::int",
             &[&count, &offset],
         )
         .await
@@ -809,7 +812,7 @@ pub async fn list_subjects_recommended_index(
         .query(
             "SELECT id, forum_id, title, content, creator, create_time FROM x_bbs_topic \
              WHERE deleted_at IS NULL AND is_recommend = true ORDER BY create_time DESC \
-             LIMIT $1::bigint OFFSET $2::bigint",
+             LIMIT $1::int OFFSET $2::int",
             &[&count, &offset],
         )
         .await
@@ -925,7 +928,8 @@ pub async fn picture_list(
         }
         None => Vec::new(),
     };
-    Ok(Json(ActionResult::success(Value::Array(urls))))
+    let total_urls = urls.len();
+    Ok(Json(ActionResult::java_success(Value::Array(urls), total_urls as i64, 0)))
 }
 
 pub async fn shutup_create(
@@ -975,7 +979,7 @@ pub async fn shutup_list(
     let rows = client
         .query(
             "SELECT id, person, reason, create_time FROM x_bbs_shutup \
-             ORDER BY create_time DESC LIMIT $1::bigint OFFSET $2::bigint",
+             ORDER BY create_time DESC LIMIT $1::int OFFSET $2::int",
             &[&count, &offset],
         )
         .await
@@ -1028,9 +1032,9 @@ pub async fn subject_filter_listsubjectinfo(
     let limit_val = body.get("count").and_then(|v| v.as_i64()).unwrap_or(20);
     let offset = (offset_val.saturating_sub(1)).saturating_mul(limit_val);
     let sql = if forum_id.is_empty() {
-        "SELECT id, forum_id, title, content, creator, create_time FROM x_bbs_topic WHERE deleted_at IS NULL ORDER BY create_time DESC LIMIT $1::bigint OFFSET $2::bigint"
+        "SELECT id, forum_id, title, content, creator, create_time FROM x_bbs_topic WHERE deleted_at IS NULL ORDER BY create_time DESC LIMIT $1::int OFFSET $2::int"
     } else {
-        "SELECT id, forum_id, title, content, creator, create_time FROM x_bbs_topic WHERE deleted_at IS NULL AND forum_id = $3 ORDER BY create_time DESC LIMIT $1::bigint OFFSET $2::bigint"
+        "SELECT id, forum_id, title, content, creator, create_time FROM x_bbs_topic WHERE deleted_at IS NULL AND forum_id = $3 ORDER BY create_time DESC LIMIT $1::int OFFSET $2::int"
     };
     let rows = if forum_id.is_empty() {
         client.query(sql, &[&limit_val, &offset]).await.map_err(|_| AppError::Internal)?
@@ -1073,7 +1077,7 @@ pub async fn subject_search(
         .query(
             "SELECT id, forum_id, title, content, creator, create_time FROM x_bbs_topic \
              WHERE deleted_at IS NULL AND (title ILIKE $1 OR content ILIKE $1) \
-             ORDER BY create_time DESC LIMIT $2::bigint OFFSET $3::bigint",
+             ORDER BY create_time DESC LIMIT $2::int OFFSET $3::int",
             &[&"%".to_string(), &count, &offset],
         )
         .await
@@ -1159,7 +1163,7 @@ pub async fn topic_recommended_index(
     let rows = client
         .query(
             "SELECT id, forum_id, title, content, creator, create_time FROM x_bbs_topic \
-             WHERE deleted_at IS NULL AND is_recommend = true ORDER BY create_time DESC LIMIT $1::bigint",
+             WHERE deleted_at IS NULL AND is_recommend = true ORDER BY create_time DESC LIMIT $1::int",
             &[&count],
         )
         .await
@@ -1169,7 +1173,8 @@ pub async fn topic_recommended_index(
         .map(row_to_topic)
         .map(|t| serde_json::to_value(t).unwrap())
         .collect();
-    Ok(Json(ActionResult::success(Value::Array(data))))
+    let total_data = data.len();
+    Ok(Json(ActionResult::java_success(Value::Array(data), total_data as i64, 0)))
 }
 
 pub async fn topic_recommended_list(
@@ -1189,7 +1194,7 @@ pub async fn topic_search(
         .query(
             "SELECT id, forum_id, title, content, creator, create_time FROM x_bbs_topic \
              WHERE deleted_at IS NULL AND (title ILIKE $1 OR content ILIKE $1) \
-             ORDER BY create_time DESC LIMIT $2::bigint OFFSET $3::bigint",
+             ORDER BY create_time DESC LIMIT $2::int OFFSET $3::int",
             &[&"%".to_string(), &count, &offset],
         )
         .await
@@ -1236,7 +1241,8 @@ pub async fn user_forum_list(
             ("createTime".to_string(), Value::String(row.get("create_time"))),
         ])))
         .collect();
-    Ok(Json(ActionResult::success(Value::Array(data))))
+    let total_data = data.len();
+    Ok(Json(ActionResult::java_success(Value::Array(data), total_data as i64, 0)))
 }
 
 pub async fn user_info(
@@ -1306,7 +1312,8 @@ pub async fn user_reply_list(
         .map(row_to_reply)
         .map(|r| serde_json::to_value(r).unwrap())
         .collect();
-    Ok(Json(ActionResult::success(Value::Array(data))))
+    let total_data = data.len();
+    Ok(Json(ActionResult::java_success(Value::Array(data), total_data as i64, 0)))
 }
 
 pub async fn user_role_list(
@@ -1332,7 +1339,8 @@ pub async fn user_role_list(
             Value::Object(map)
         })
         .collect();
-    Ok(Json(ActionResult::success(Value::Array(data))))
+    let total_data = data.len();
+    Ok(Json(ActionResult::java_success(Value::Array(data), total_data as i64, 0)))
 }
 
 pub async fn user_section_list(
@@ -1361,7 +1369,8 @@ pub async fn user_section_list(
             Value::Object(map)
         })
         .collect();
-    Ok(Json(ActionResult::success(Value::Array(data))))
+    let total_data = data.len();
+    Ok(Json(ActionResult::java_success(Value::Array(data), total_data as i64, 0)))
 }
 
 pub async fn user_setting(
@@ -1399,7 +1408,8 @@ pub async fn user_subject_list(
         .map(row_to_topic)
         .map(|t| serde_json::to_value(t).unwrap())
         .collect();
-    Ok(Json(ActionResult::success(Value::Array(data))))
+    let total_data = data.len();
+    Ok(Json(ActionResult::java_success(Value::Array(data), total_data as i64, 0)))
 }
 
 pub async fn uuid_generate() -> Result<Json<ActionResult<Value>>, AppError> {
@@ -1434,6 +1444,7 @@ pub async fn subjectattach_list(
             Value::Object(map)
         })
         .collect();
-    Ok(Json(ActionResult::success(Value::Array(data))))
+    let total_data = data.len();
+    Ok(Json(ActionResult::java_success(Value::Array(data), total_data as i64, 0)))
 }
 
