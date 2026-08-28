@@ -70,12 +70,8 @@ pub async fn list_control_panels(
         })
         .collect();
 
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
-            ("data".to_string(), Value::Array(data)),
-        ]),
-    ))))
+    let count = data.len() as i64;
+    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
 }
 
 #[axum::debug_handler]
@@ -132,12 +128,8 @@ pub async fn list_control_applications(
         })
         .collect();
 
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
-            ("data".to_string(), Value::Array(data)),
-        ]),
-    ))))
+    let count = data.len() as i64;
+    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
 }
 
 pub fn router(pool: deadpool_postgres::Pool) -> axum::Router {
@@ -177,12 +169,8 @@ pub async fn list_hotpics(
         })
         .collect();
 
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
-            ("data".to_string(), Value::Array(data)),
-        ]),
-    ))))
+    let count = data.len() as i64;
+    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
 }
 
 #[axum::debug_handler]
@@ -383,12 +371,8 @@ pub async fn cipher_hotpic_filter_list_page_page_count_count(
         })
         .collect();
 
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
-            ("data".to_string(), Value::Array(data)),
-        ]),
-    ))))
+    let count = data.len() as i64;
+    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
 }
 
 pub async fn cipher_hotpic_id(
@@ -503,12 +487,8 @@ pub async fn user_hotpic_filter_list_page_page_count_count(
         })
         .collect();
 
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
-            ("data".to_string(), Value::Array(data)),
-        ]),
-    ))))
+    let count = data.len() as i64;
+    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
 }
 
 pub async fn user_hotpic_application_infoId(
@@ -543,8 +523,24 @@ pub async fn user_hotpic_application_infoId(
 pub async fn user_hotpic_id(
     pool: Extension<Pool>,
     Path(id): Path<String>,
+    method: axum::http::Method,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
+
+    if method == axum::http::Method::DELETE {
+        let result = client
+            .execute(
+                "UPDATE x_hotpic SET deleted_at = NOW() WHERE id = $1 AND deleted_at IS NULL",
+                &[&id],
+            )
+            .await
+            .map_err(|_| AppError::Internal)?;
+        return Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
+            ("id".to_string(), Value::String(id)),
+            ("deleted".to_string(), Value::Bool(result > 0)),
+        ])))));
+    }
+
     let row = client
         .query_opt(
             "SELECT id, title, image_url, creator, create_time FROM x_hotpic WHERE id = $1 AND deleted_at IS NULL",
@@ -582,7 +578,9 @@ pub async fn user_hotpic_delete_by_ids(
         )
         .await
         .map_err(|_| AppError::Internal)?;
-    Ok(Json(ActionResult::success(serde_json::json!({
-        "id": id, "id2": id2, "deleted": n
-    }))))
+    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
+        ("id".to_string(), Value::String(id)),
+        ("id2".to_string(), Value::String(id2)),
+        ("deleted".to_string(), Value::Number(serde_json::Number::from(n))),
+    ])))))
 }

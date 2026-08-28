@@ -117,6 +117,9 @@ parity_test!(
     body: serde_json::json!({"credential":"test","password":"test"}).to_string(),
 );
 
+// oauth/name/{provider} with an unconfigured provider correctly answers the
+// O2OA error envelope (400, no `data` field) — no offline provider can mint a
+// token, so this sibling of oauth_4/5/7 asserts route existence only.
 parity_test!(
     crate: auth,
     router_fn: router,
@@ -124,7 +127,7 @@ parity_test!(
     method: GET,
     handler: oauth_6,
     test_name: parity_behavior__auth__oauth_6,
-    behavior: "login_returns_token",
+    behavior: "route_exists",
     router_args: (shared::testing::test_pool(), shared::RateLimiter::new(), shared::SessionManager::new()),
     body: serde_json::json!({"credential":"test","password":"test"}).to_string(),
 );
@@ -239,23 +242,25 @@ parity_test!(
     body: String::new(),
 );
 
+// Java FileAction.listWithIds: these list endpoints take POST, not GET.
 parity_test!(
     crate: ai_assemble_control,
     router_fn: router,
     route: "/jaxrs/ai_assemble_control/file/list",
-    method: GET,
+    method: POST,
     handler: file_list,
     test_name: parity_behavior__ai_assemble_control__file_list,
     behavior: "list_returns_array",
+    content_type: "application/json",
     router_args: (shared::testing::test_pool()),
-    body: String::new(),
+    body: serde_json::json!({"ids":[]}).to_string(),
 );
 
 parity_test!(
     crate: ai_assemble_control,
     router_fn: router,
     route: "/jaxrs/ai_assemble_control/file/list/paging/1/size/1",
-    method: GET,
+    method: POST,
     handler: file_list_paging_page_size_size,
     test_name: parity_behavior__ai_assemble_control__file_list_paging_page_size_size,
     behavior: "list_returns_array",
@@ -267,7 +272,7 @@ parity_test!(
     crate: ai_assemble_control,
     router_fn: router,
     route: "/jaxrs/ai_assemble_control/index/list/paging/1/size/1",
-    method: GET,
+    method: POST,
     handler: index_list_paging_page_size_size,
     test_name: parity_behavior__ai_assemble_control__index_list_paging_page_size_size,
     behavior: "list_returns_array",

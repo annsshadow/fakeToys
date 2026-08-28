@@ -144,12 +144,8 @@ pub async fn list_jpushs(
         })
         .collect();
 
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
-            ("data".to_string(), Value::Array(data)),
-        ]),
-    ))))
+    let count = data.len() as i64;
+    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
 }
 
 #[axum::debug_handler]
@@ -320,15 +316,7 @@ pub async fn device_bind(
         .await
         .map_err(|_| AppError::Internal)?;
 
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("id".to_string(), Value::String(id)),
-            ("deviceName".to_string(), Value::String(device_name)),
-            ("deviceType".to_string(), Value::String(device_type)),
-            ("pushType".to_string(), Value::String(push_type)),
-            ("bound".to_string(), Value::Bool(result > 0)),
-        ]),
-    ))))
+    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::new()))))
 }
 
 pub async fn device_check_deviceName_deviceType_pushType(
@@ -347,10 +335,7 @@ pub async fn device_check_deviceName_deviceType_pushType(
     let exists = row.is_some();
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
-            ("exists".to_string(), Value::Bool(exists)),
-            ("deviceName".to_string(), Value::String(device_name)),
-            ("deviceType".to_string(), Value::String(device_type)),
-            ("pushType".to_string(), Value::String(push_type)),
+            ("value".to_string(), Value::Bool(exists)),
         ]),
     ))))
 }
@@ -404,12 +389,8 @@ pub async fn device_list_pushType(
         })
         .collect();
 
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
-            ("data".to_string(), Value::Array(data)),
-        ]),
-    ))))
+    let count = data.len() as i64;
+    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
 }
 
 pub async fn device_unbind_new_deviceName_deviceType_pushType(
@@ -733,7 +714,5 @@ pub async fn message_send(
         )
         .await
         .map_err(|_| AppError::Internal)?;
-    Ok(Json(ActionResult::success(serde_json::json!({
-        "id": id, "title": title, "target": target
-    }))))
+    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::new()))))
 }

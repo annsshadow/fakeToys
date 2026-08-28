@@ -29,13 +29,15 @@ fn test_get_design_action_result_format() {
 
 #[test]
 fn test_list_designs_action_result_format() {
-    let result: ActionResult<serde_json::Value> = ActionResult::success(json!({
-        "count": 1,
-        "data": [{"id": "design-1", "name": "Design 1"}]
-    }));
+    let result: ActionResult<serde_json::Value> = ActionResult::java_success(
+        json!([{"id": "design-1", "name": "Design 1"}]),
+        1,
+        0,
+    );
     let json = serde_json::to_value(&result).unwrap();
     assert_eq!(json["type"], "success");
-    assert_eq!(json["data"]["count"], 1);
+    assert_eq!(json["count"], 1);
+    assert_eq!(json["data"].as_array().unwrap().len(), 1);
 }
 
 #[test]

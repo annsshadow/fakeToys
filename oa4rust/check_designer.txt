@@ -1,0 +1,265 @@
+warning: unused config key `net.timeout` in `C:\Users\Administrator\.cargo\config.toml`
+warning: unused import: `std::time::Duration`
+  --> crates\shared\src\db\mod.rs:13:5
+   |
+13 | use std::time::Duration;
+   |     ^^^^^^^^^^^^^^^^^^^
+   |
+   = note: `#[warn(unused_imports)]` (part of `#[warn(unused)]`) on by default
+
+warning: unused import: `State`
+ --> crates\shared\src\middleware\security.rs:2:34
+  |
+2 | use axum::extract::{ConnectInfo, State};
+  |                                  ^^^^^
+
+warning: unused import: `crate::response::error_response`
+  --> crates\shared\src\middleware\security.rs:16:5
+   |
+16 | use crate::response::error_response;
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: unused import: `Session`
+  --> crates\shared\src\middleware\security.rs:17:22
+   |
+17 | use crate::session::{Session, SessionManager};
+   |                      ^^^^^^^
+
+warning: unused import: `StatusCode`
+ --> crates\shared\src\middleware\token.rs:3:46
+  |
+3 | use axum::http::{header, HeaderMap, Request, StatusCode};
+  |                                              ^^^^^^^^^^
+
+warning: unused import: `is_auth_rate_limited`
+ --> crates\shared\src\middleware\token.rs:9:39
+  |
+9 | use super::security::{is_auth_exempt, is_auth_rate_limited, path_matches, SecurityState};
+  |                                       ^^^^^^^^^^^^^^^^^^^^
+
+warning: unused import: `crate::session::Session`
+  --> crates\shared\src\middleware\token.rs:11:5
+   |
+11 | use crate::session::Session;
+   |     ^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: unused imports: `error_handler` and `path_starts_with_segment`
+  --> crates\shared\src\middleware\rbac.rs:12:16
+   |
+12 |     client_ip, error_handler, is_auth_exempt, is_auth_rate_limited, path_starts_with_segment,
+   |                ^^^^^^^^^^^^^                                        ^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: unused import: `super::token::system_uninitialized`
+  --> crates\shared\src\middleware\rbac.rs:15:5
+   |
+15 | use super::token::system_uninitialized;
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: unused import: `crate::rate_limit::RateLimiter`
+  --> crates\shared\src\middleware\rbac.rs:17:5
+   |
+17 | use crate::rate_limit::RateLimiter;
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: variable does not need to be mutable
+   --> crates\shared\src\rate_limit.rs:112:13
+    |
+112 |         let mut guard = self.redis_pool.lock().unwrap();
+    |             ----^^^^^
+    |             |
+    |             help: remove this `mut`
+    |
+    = note: `#[warn(unused_mut)]` (part of `#[warn(unused)]`) on by default
+
+warning: variable does not need to be mutable
+   --> crates\shared\src\session.rs:147:13
+    |
+147 |         let mut guard = self.redis_pool.lock().unwrap();
+    |             ----^^^^^
+    |             |
+    |             help: remove this `mut`
+
+warning: `shared` (lib) generated 12 warnings (run `cargo fix --lib -p shared` to apply 12 suggestions)
+    Checking query_assemble_designer v0.1.0 (D:\WORKSPACE\fakeToys\oa4rust\crates\query_assemble_designer)
+warning: unused import: `sqlparser::ast::Statement`
+ --> crates\query_assemble_designer\src\lib.rs:9:5
+  |
+9 | use sqlparser::ast::Statement;
+  |     ^^^^^^^^^^^^^^^^^^^^^^^^^
+  |
+  = note: `#[warn(unused_imports)]` (part of `#[warn(unused)]`) on by default
+
+warning: unused import: `sqlparser::dialect::PostgreSqlDialect`
+  --> crates\query_assemble_designer\src\lib.rs:10:5
+   |
+10 | use sqlparser::dialect::PostgreSqlDialect;
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: unused import: `sqlparser::parser::Parser`
+  --> crates\query_assemble_designer\src\lib.rs:11:5
+   |
+11 | use sqlparser::parser::Parser;
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: unused import: `axum::Router`
+ --> crates\query_assemble_designer\src\routes.rs:1:5
+  |
+1 | use axum::Router;
+  |     ^^^^^^^^^^^^
+
+warning: unused variable: `flag`
+    --> crates\query_assemble_designer\src\lib.rs:1726:10
+     |
+1726 |     Path(flag): Path<String>,
+     |          ^^^^ help: if this is intentional, prefix it with an underscore: `_flag`
+     |
+     = note: `#[warn(unused_variables)]` (part of `#[warn(unused)]`) on by default
+
+warning: function `neural_generate_model_modelFlag` should have a snake case name
+   --> crates\query_assemble_designer\src\lib.rs:651:14
+    |
+651 | pub async fn neural_generate_model_modelFlag(
+    |              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ help: convert the identifier to snake case: `neural_generate_model_model_flag`
+    |
+    = note: `#[warn(non_snake_case)]` (part of `#[warn(nonstandard_style)]`) on by default
+
+warning: function `neural_learn_model_modelFlag` should have a snake case name
+   --> crates\query_assemble_designer\src\lib.rs:677:14
+    |
+677 | pub async fn neural_learn_model_modelFlag(
+    |              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^ help: convert the identifier to snake case: `neural_learn_model_model_flag`
+
+warning: function `neural_model_modelFlag` should have a snake case name
+   --> crates\query_assemble_designer\src\lib.rs:767:14
+    |
+767 | pub async fn neural_model_modelFlag(
+    |              ^^^^^^^^^^^^^^^^^^^^^^ help: convert the identifier to snake case: `neural_model_model_flag`
+
+warning: function `neural_model_modelFlag_reset_status` should have a snake case name
+   --> crates\query_assemble_designer\src\lib.rs:797:14
+    |
+797 | pub async fn neural_model_modelFlag_reset_status(
+    |              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ help: convert the identifier to snake case: `neural_model_model_flag_reset_status`
+
+warning: function `neural_stop_generating_model_modelFlag` should have a snake case name
+   --> crates\query_assemble_designer\src\lib.rs:823:14
+    |
+823 | pub async fn neural_stop_generating_model_modelFlag(
+    |              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ help: convert the identifier to snake case: `neural_stop_generating_model_model_flag`
+
+warning: function `neural_stop_learn_model_modelFlag` should have a snake case name
+   --> crates\query_assemble_designer\src\lib.rs:849:14
+    |
+849 | pub async fn neural_stop_learn_model_modelFlag(
+    |              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ help: convert the identifier to snake case: `neural_stop_learn_model_model_flag`
+
+warning: function `output_queryFlag_select` should have a snake case name
+   --> crates\query_assemble_designer\src\lib.rs:938:14
+    |
+938 | pub async fn output_queryFlag_select(
+    |              ^^^^^^^^^^^^^^^^^^^^^^^ help: convert the identifier to snake case: `output_query_flag_select`
+
+warning: function `query_entity_entity_category_entityCategory_properties` should have a snake case name
+   --> crates\query_assemble_designer\src\lib.rs:974:14
+    |
+974 | pub async fn query_entity_entity_category_entityCategory_properties(
+    |              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ help: convert the identifier to snake case: `query_entity_entity_category_entity_category_properties`
+
+warning: function `query_list_querycategory_queryCategory` should have a snake case name
+    --> crates\query_assemble_designer\src\lib.rs:1039:14
+     |
+1039 | pub async fn query_list_querycategory_queryCategory(
+     |              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ help: convert the identifier to snake case: `query_list_querycategory_query_category`
+
+warning: function `query_list_summary_querycategory_queryCategory` should have a snake case name
+    --> crates\query_assemble_designer\src\lib.rs:1106:14
+     |
+1106 | pub async fn query_list_summary_querycategory_queryCategory(
+     |              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ help: convert the identifier to snake case: `query_list_summary_querycategory_query_category`
+
+warning: function `table_export_tableFlag_count_count` should have a snake case name
+    --> crates\query_assemble_designer\src\lib.rs:1444:14
+     |
+1444 | pub async fn table_export_tableFlag_count_count(
+     |              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ help: convert the identifier to snake case: `table_export_table_flag_count_count`
+
+warning: function `table_list_tableFlag_row_select_where_where` should have a snake case name
+    --> crates\query_assemble_designer\src\lib.rs:1548:14
+     |
+1548 | pub async fn table_list_tableFlag_row_select_where_where(
+     |              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ help: convert the identifier to snake case: `table_list_table_flag_row_select_where_where`
+
+warning: function `table_list_tableFlag_row_id_next_count` should have a snake case name
+    --> crates\query_assemble_designer\src\lib.rs:1582:14
+     |
+1582 | pub async fn table_list_tableFlag_row_id_next_count(
+     |              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ help: convert the identifier to snake case: `table_list_table_flag_row_id_next_count`
+
+warning: function `table_list_tableFlag_row_id_prev_count` should have a snake case name
+    --> crates\query_assemble_designer\src\lib.rs:1617:14
+     |
+1617 | pub async fn table_list_tableFlag_row_id_prev_count(
+     |              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ help: convert the identifier to snake case: `table_list_table_flag_row_id_prev_count`
+
+warning: function `table_tableFlag_row` should have a snake case name
+    --> crates\query_assemble_designer\src\lib.rs:1852:14
+     |
+1852 | pub async fn table_tableFlag_row(
+     |              ^^^^^^^^^^^^^^^^^^^ help: convert the identifier to snake case: `table_table_flag_row`
+
+warning: function `table_tableFlag_row_count_where_where` should have a snake case name
+    --> crates\query_assemble_designer\src\lib.rs:1885:14
+     |
+1885 | pub async fn table_tableFlag_row_count_where_where(
+     |              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ help: convert the identifier to snake case: `table_table_flag_row_count_where_where`
+
+warning: function `table_tableFlag_row_delete_all` should have a snake case name
+    --> crates\query_assemble_designer\src\lib.rs:1910:14
+     |
+1910 | pub async fn table_tableFlag_row_delete_all(
+     |              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ help: convert the identifier to snake case: `table_table_flag_row_delete_all`
+
+warning: function `table_tableFlag_row_save` should have a snake case name
+    --> crates\query_assemble_designer\src\lib.rs:1933:14
+     |
+1933 | pub async fn table_tableFlag_row_save(
+     |              ^^^^^^^^^^^^^^^^^^^^^^^^ help: convert the identifier to snake case: `table_table_flag_row_save`
+
+warning: function `table_tableFlag_row_id` should have a snake case name
+    --> crates\query_assemble_designer\src\lib.rs:1960:14
+     |
+1960 | pub async fn table_tableFlag_row_id(
+     |              ^^^^^^^^^^^^^^^^^^^^^^ help: convert the identifier to snake case: `table_table_flag_row_id`
+
+warning: function `neural_delete_model_modelFlag` should have a snake case name
+   --> crates\query_assemble_designer\src\u2_closures.rs:630:14
+    |
+630 | pub async fn neural_delete_model_modelFlag(
+    |              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ help: convert the identifier to snake case: `neural_delete_model_model_flag`
+
+warning: function `neural_update_model_modelFlag` should have a snake case name
+   --> crates\query_assemble_designer\src\u2_closures.rs:653:14
+    |
+653 | pub async fn neural_update_model_modelFlag(
+    |              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ help: convert the identifier to snake case: `neural_update_model_model_flag`
+
+warning: function `table_tableFlag_row_insert` should have a snake case name
+   --> crates\query_assemble_designer\src\u2_closures.rs:884:14
+    |
+884 | pub async fn table_tableFlag_row_insert(
+    |              ^^^^^^^^^^^^^^^^^^^^^^^^^^ help: convert the identifier to snake case: `table_table_flag_row_insert`
+
+warning: function `table_tableFlag_row_update` should have a snake case name
+   --> crates\query_assemble_designer\src\u2_closures.rs:910:14
+    |
+910 | pub async fn table_tableFlag_row_update(
+    |              ^^^^^^^^^^^^^^^^^^^^^^^^^^ help: convert the identifier to snake case: `table_table_flag_row_update`
+
+warning: function `table_tableFlag_row_delete` should have a snake case name
+   --> crates\query_assemble_designer\src\u2_closures.rs:939:14
+    |
+939 | pub async fn table_tableFlag_row_delete(
+    |              ^^^^^^^^^^^^^^^^^^^^^^^^^^ help: convert the identifier to snake case: `table_table_flag_row_delete`
+
+warning: `query_assemble_designer` (lib) generated 29 warnings (run `cargo fix --lib -p query_assemble_designer` to apply 5 suggestions)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 3.17s

@@ -23,7 +23,7 @@ use crate::{
 pub fn router(pool: deadpool_postgres::Pool) -> axum::Router {
     Router::new()
         .route("/jaxrs/hotpic_assemble_control/list/hotpics", get(list_hotpics))
-        .route("/jaxrs/hotpic_assemble_control/get/hotpic", get(get_hotpic))
+        .route("/jaxrs/hotpic_assemble_control/get/hotpic/{id}", get(get_hotpic))
         .route("/jaxrs/hotpic_assemble_control/create/hotpic", get(create_hotpic))
         .route("/jaxrs/hotpic_assemble_control/save/hotpic", get(save_hotpic))
         .route("/jaxrs/hotpic_assemble_control/delete/hotpic", get(delete_hotpic))

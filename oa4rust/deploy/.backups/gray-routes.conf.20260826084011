@@ -1,0 +1,24 @@
+# 自动生成的灰度比例配置（由 toggle_module.sh 管理）
+# 生成时间：2026-08-26T08:39:55Z
+# 生效方式：在 nginx.conf 中取消注释 include 此文件，然后 nginx -s reload
+
+upstream oa4rust_gray {
+    # 模块 attendance: 10% Rust / 90% Java
+    server 127.0.0.1:3000 weight=10;
+    server 127.0.0.1:8080 weight=90;
+}
+
+# 模块 attendance（灰度比例：10% Rust）
+location ^~ /jaxrs/attendance/ {
+    limit_req zone=api burst=20 nodelay;
+    proxy_pass http://oa4rust_gray;
+    proxy_set_header Host $host;
+    proxy_set_header X-Real-IP $remote_addr;
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    proxy_set_header X-Forwarded-Proto $scheme;
+    proxy_next_upstream error timeout http_500 http_502 http_503;
+    proxy_connect_timeout 5s;
+    proxy_send_timeout 10s;
+    proxy_read_timeout 10s;
+}
+

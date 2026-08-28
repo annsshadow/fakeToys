@@ -834,9 +834,10 @@ mod u2_contract {
             .await
             .unwrap();
         let v = body_bytes(response).await;
-        assert_eq!(v["data"]["count"], 1);
-        assert_eq!(v["data"]["data"][0]["id"], "l1");
-        assert_eq!(v["data"]["data"][0]["site"], "s1");
+        // java_success 裸数组信封：count 在顶层，data 为数组（9d81b8ca 列表包装模式战役）
+        assert_eq!(v["count"], 1);
+        assert_eq!(v["data"][0]["id"], "l1");
+        assert_eq!(v["data"][0]["site"], "s1");
     }
 
     /// update 按 site 替换：旧 site 行被清除，仅保留新集合

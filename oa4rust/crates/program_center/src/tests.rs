@@ -15,8 +15,9 @@ mod tests {
             ActionResult::success(serde_json::json!({"key": "value"}));
         assert_eq!(result.r#type, Some("success".to_string()));
         assert!(result.data.is_some());
-        assert_eq!(result.message, None);
-        assert_eq!(result.count, None);
+        // Java 成功信封实测恒填空串 message（Gson 对齐，见 shared::response）
+        assert_eq!(result.message, Some(String::new()));
+        assert_eq!(result.count, Some(0));
     }
 
     #[test]
@@ -69,7 +70,8 @@ mod tests {
         let json = serde_json::to_value(&result).unwrap();
         assert_eq!(json["type"], "success");
         assert_eq!(json["data"], 42);
-        assert_eq!(json["message"], Value::Null);
+        // Java 成功信封实测 message 为空串而非缺省
+        assert_eq!(json["message"], Value::String(String::new()));
     }
 
     async fn build_dummy_pool() -> deadpool_postgres::Pool {

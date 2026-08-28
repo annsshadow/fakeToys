@@ -13,7 +13,7 @@ use crate::{
 
 pub fn router(pool: deadpool_postgres::Pool) -> axum::Router {
     Router::new()
-        .route("/jaxrs/component_assemble_control/get/component", get(get_component))
+        .route("/jaxrs/component_assemble_control/get/component/{id}", get(get_component))
         .route("/jaxrs/component_assemble_control/create/component", get(create_component))
         .route("/jaxrs/component_assemble_control/list/components", get(list_components))
         .route("/jaxrs/component_assemble_control/save/component", get(save_component))

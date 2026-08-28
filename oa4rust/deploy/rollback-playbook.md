@@ -167,3 +167,46 @@ echo "[U9-ROLLBACK] Completed at $(date -u +%Y-%m-%dT%H:%M:%SZ)" | tee -a /var/l
 1. **时间线**：告警时间 → 确认时间 → 回滚开始 → 回滚完成 → 业务恢复
 2. **根因**：代码缺陷 / 配置错误 / 容量不足 / 依赖故障
 3. **改进项**：对应到具体 Action Item，进入 sprint backlog
+
+---
+
+## 7. 本地演练记录（U5 · 2026-08-26）
+
+### 演练环境
+
+- 宿主机 Windows，Docker 容器 `bash-runner`（bash:latest，Alpine）
+- 目标脚本：`toggle_module.sh`、`shadow-traffic.sh`
+- 无 nginx（本地演练跳过 nginx 重载步骤）
+
+### 演练步骤与结果
+
+| 步骤 | 命令 | 结果 | 备注 |
+|------|------|------|------|
+| 1. 初始状态 | `toggle_module.sh status` | ✓ 全部默认 Rust | 无 .module_routing.env |
+| 2. 灰度10% | `toggle_module.sh gray attendance 10` | ✓ 生成 gray-routes.conf | attendance: 10% Rust / 90% Java |
+| 3. 验证状态 | `toggle_module.sh status` | ✓ MODULE_ROUTING=attendance:rust | 状态文件记录正确 |
+| 4. 回滚 | `toggle_module.sh rollback` | ✓ 恢复全部 Rust | .module_routing.env 清空 |
+| 5. 重置 | `toggle_module.sh reset` | ✓ 清理所有产物 | .module_routing.env + gray-routes.conf 已删除 |
+| 6. 影子流量 | `shadow-traffic.sh status` | ✓ 显示已禁用 | 日志文件不存在（无 nginx，符合预期） |
+
+### 发现的缺陷与修复
+
+**缺陷 #1：toggle_module.sh 参数解析偏移**
+- **现象**：`gray attendance 10` 报错 "比例 'attendance' 必须是1-100 的整数"
+- **根因**：`cmd="${1:-status}"` 取走命令后未 shift，while 循环的 `$1` 仍指向命令名而非模块名
+- **修复**：在 `cmd=...` 后添加 `if [[ $# -gt 0 ]]; then shift; fi`；同步修正 `set` 分支的参数引用（`$2`→`$1`）
+- **影响**：所有带参数的子命令（set/gray）均受影响
+- **状态**：已修复并验证
+
+### 已知限制
+
+- nginx mirror 配置未在本地验证（容器内无 nginx）
+- shadow-traffic.sh 的 compare/report 功能依赖 nginx access log，本地无法演练
+- 演练仅验证脚本逻辑正确性，未涉及实际流量切换
+
+### 运交注意事项
+
+1. 生产环境执行灰度前，确保 nginx.conf 中已取消注释 `include /etc/nginx/conf.d/gray-routes.conf;`
+2. rollback 后必须执行 `nginx -s reload` 使配置生效
+3. 建议在非高峰时段执行灰度操作
+4. 演练期间发现的 shift bug 已修复，部署前请确认脚本版本

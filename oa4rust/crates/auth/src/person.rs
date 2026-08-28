@@ -91,11 +91,5 @@ pub async fn list(
         })
         .collect();
 
-    let result = ActionResult::success(Value::Object(serde_json::Map::from_iter([
-        ("count".to_string(), Value::Number(serde_json::Number::from(total))),
-        ("size".to_string(), Value::Number(serde_json::Number::from(size))),
-        ("page".to_string(), Value::Number(serde_json::Number::from(page))),
-        ("data".to_string(), Value::Array(data)),
-    ])));
-    Json(result)
+    Json(ActionResult::java_success(Value::Array(data), total, size))
 }

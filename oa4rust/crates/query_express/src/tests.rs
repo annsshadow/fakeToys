@@ -77,7 +77,8 @@ fn test_action_result_error_serialization() {
 fn test_action_result_success_with_null_message() {
     let result: ActionResult<i32> = ActionResult::success(0);
     assert_eq!(result.r#type, Some("success".to_string()));
-    assert!(result.message.is_none());
+    // Java 成功信封 message 恒为空串（2026-08-25 行为对比结论）
+    assert_eq!(result.message, Some(String::new()));
     assert_eq!(result.data, Some(0));
 }
 

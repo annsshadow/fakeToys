@@ -39,18 +39,27 @@ pub async fn file_get(
 
 #[axum::debug_handler]
 pub async fn file_download(
-    _pool: Extension<Pool>,
+    pool: Extension<Pool>,
     Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("id".to_string(), Value::String(id.clone())),
-            ("name".to_string(), Value::String(format!("{}.bin", id))),
-            ("contentType".to_string(), Value::String("application/octet-stream".to_string())),
-            ("contentDisposition".to_string(), Value::String(format!("attachment; filename=\"{}.bin\"", id))),
-            ("fastETag".to_string(), Value::String(format!("{}-0", id))),
-        ]),
-    ))))
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let row = client
+        .query_opt("SELECT xid, xname FROM x_ai_file WHERE xid = $1 OR xname = $1", &[&id])
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    match row {
+        Some(_) => Ok(Json(ActionResult::success(Value::Object(
+            serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(id.clone())),
+                ("name".to_string(), Value::String(format!("{}.bin", id))),
+                ("contentType".to_string(), Value::String("application/octet-stream".to_string())),
+                ("contentDisposition".to_string(), Value::String(format!("attachment; filename=\"{}.bin\"", id))),
+                ("fastETag".to_string(), Value::String(format!("{}-0", id))),
+            ]),
+        )))),
+        None => Ok(Json(ActionResult::error("file not found"))),
+    }
 }
 
 #[axum::debug_handler]

@@ -9,7 +9,7 @@
 #   ./toggle_module.sh status                            # 查看当前路由分配
 #   ./toggle_module.sh set rust attendance control        # 模块全量切到 Rust
 #   ./toggle_module.sh set java  message calendar         # 模块全量切到 Java
-#   ./toggle_module.sh gray attendance 10 control 50      # 按比例灰度
+#   ./toggle_module.sh gray attendance 10 control 50      # 按比例灰度（模块取值见 DEFAULT_GRAY_MODULES）
 #   ./toggle_module.sh rollback                           # 回滚到上一状态
 #   ./toggle_module.sh reset                              # 清空（全部默认 Rust）
 #
@@ -33,9 +33,10 @@ NGINX_CONF="${NGINX_CONF:-/etc/nginx/nginx.conf}"
 NGINX_INCLUDE_LINE="        # include /etc/nginx/conf.d/gray-routes.conf;"
 
 # 默认灰度模块
-DEFAULT_GRAY_MODULES=(attendance control express meeting)
+DEFAULT_GRAY_MODULES=(attendance control express meeting processplatform bam)
 
 cmd="${1:-status}"
+if [[ $# -gt 0 ]]; then shift; fi
 
 # ──────────────────────────────────────────────────────────────────────────────
 # 工具函数
@@ -120,8 +121,8 @@ case "$cmd" in
         ;;
 
     set)
-        direction="${2:?需要 rust 或 java}"
-        shift 2
+        direction="${1:?需要 rust 或 java}"
+        shift
         modules=("$@")
         [[ ${#modules[@]} -eq 0 ]] && { echo "请指定至少一个模块"; exit 1; }
 
@@ -163,6 +164,7 @@ case "$cmd" in
         # 按比例灰度
         # 用法: ./toggle_module.sh gray <module> <ratio> [module2 ratio2 ...]
         # 例: ./toggle_module.sh gray attendance 10 control 50
+        # 模块取值参考 DEFAULT_GRAY_MODULES（缺参时会在报错中列出）
 
         # 解析参数（模块和比例交替）
         declare -A ratios
@@ -182,7 +184,7 @@ case "$cmd" in
             gray_modules+=("$module")
             shift 2
         done
-        [[ ${#gray_modules[@]} -eq 0 ]] && { echo "请指定至少一个模块和比例"; exit 1; }
+        [[ ${#gray_modules[@]} -eq 0 ]] && { echo "请指定至少一个模块和比例（可用模块: ${DEFAULT_GRAY_MODULES[*]}）"; exit 1; }
 
         ensure_backup_dir
 
@@ -329,7 +331,7 @@ case "$cmd" in
         echo "可用命令:"
         echo "  status                   查看当前路由分配"
         echo "  set <rust|java> <模块...> 设置模块路由方向"
-        echo "  gray <模块> <比例> [...]  按比例灰度（比例: 1-100）"
+        echo "  gray <模块> <比例> [...]  按比例灰度（比例: 1-100，可用模块见 DEFAULT_GRAY_MODULES）"
         echo "  rollback                 回滚到上一状态"
         echo "  reset                    重置为默认状态"
         exit 1 ;;

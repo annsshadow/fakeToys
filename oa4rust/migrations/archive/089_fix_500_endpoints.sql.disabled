@@ -1,0 +1,58 @@
+-- Fix uppercase table name references in Rust handlers.
+-- PostgreSQL is case-sensitive for quoted identifiers, so "PP_E_APPLICATION" != "pp_e_application".
+-- Create views to map uppercase names to lowercase tables, with column aliases where needed.
+
+-- Application table: pp_e_application has no xkey column; add one via view
+CREATE OR REPLACE VIEW "PP_E_APPLICATION" AS
+    SELECT xid, xname, xalias, xdescription, "xapplicationCategory", xicon, "xiconHue", "xcreatorPerson", "xlastUpdateTime", "xlastUpdatePerson", xproperties, "xcreateTime", "xupdateTime", xid AS xkey, xid AS xterminal FROM "pp_e_application";
+
+CREATE OR REPLACE VIEW "PP_C_JOB" AS SELECT * FROM "pp_c_job";
+CREATE OR REPLACE VIEW "PP_C_KEYLOCK" AS SELECT * FROM "pp_c_keylock";
+CREATE OR REPLACE VIEW "PP_C_DATA_RECORD" AS SELECT * FROM "pp_c_data_record";
+CREATE OR REPLACE VIEW "PP_C_DOC_SIGN" AS SELECT * FROM "pp_c_doc_sign";
+CREATE OR REPLACE VIEW "PP_C_RECORD" AS SELECT * FROM "pp_c_record";
+CREATE OR REPLACE VIEW "PP_E_APPLICATIONDICT" AS SELECT * FROM "pp_e_applicationdict";
+
+-- pp_c_work has no xperson column; map xcreatorPerson -> xperson
+CREATE OR REPLACE VIEW "PP_C_WORK" AS
+    SELECT xid, xjob, xtitle, "xstartTime", "xcreatorPerson", "xcreatorIdentity", "xcreatorUnit", xapplication, "xapplicationName", "xapplicationAlias", xprocess, "xprocessName", xactivity, "xactivityType", "xactivityName", "xactivityAlias", "xactivityDescription", "xactivityToken", "xactivityUnique", "xactivityArrivedTime", xserial, "xcreateTime", "xupdateTime", "xcreatorPerson" AS xperson FROM "pp_c_work";
+
+-- Touch tables: create if not exist with minimal schema matching handler expectations
+CREATE TABLE IF NOT EXISTS "pp_c_touch_expire" (
+    "id" TEXT PRIMARY KEY,
+    "xupdateTime" TIMESTAMP DEFAULT NOW()
+);
+CREATE TABLE IF NOT EXISTS "pp_c_touch_passexpired" (
+    "id" TEXT PRIMARY KEY,
+    "xupdateTime" TIMESTAMP DEFAULT NOW()
+);
+CREATE TABLE IF NOT EXISTS "pp_c_touch_detained" (
+    "id" TEXT PRIMARY KEY,
+    "xupdateTime" TIMESTAMP DEFAULT NOW()
+);
+
+-- Map uppercase view names to touch tables
+CREATE OR REPLACE VIEW "PP_C_TOUCH_EXPIRE" AS SELECT * FROM "pp_c_touch_expire";
+CREATE OR REPLACE VIEW "PP_C_TOUCH_PASSEXPIRED" AS SELECT * FROM "pp_c_touch_passexpired";
+CREATE OR REPLACE VIEW "PP_C_TOUCH_DETAINED" AS SELECT * FROM "pp_c_touch_detained";
+
+-- Add missing columns to support failing endpoints
+ALTER TABLE "x_cms_data_document" ADD COLUMN IF NOT EXISTS "form_id" TEXT;
+ALTER TABLE "FILE_FILE" ADD COLUMN IF NOT EXISTS "md5" VARCHAR(255);
+ALTER TABLE "x_general_assemble_office" ADD COLUMN IF NOT EXISTS "html_content" TEXT;
+ALTER TABLE "x_general_assemble_office" ADD COLUMN IF NOT EXISTS "word_flag" TEXT;
+ALTER TABLE "x_attendance_detail" ADD COLUMN IF NOT EXISTS "checked" BOOLEAN;
+ALTER TABLE "x_attendance_detail" ADD COLUMN IF NOT EXISTS "update_time" TIMESTAMP;
+ALTER TABLE "x_attendance_detail" ADD COLUMN IF NOT EXISTS "cycle_year" TEXT;
+ALTER TABLE "x_attendance_detail" ADD COLUMN IF NOT EXISTS "cycle_month" TEXT;
+
+-- Message conversation table missing columns
+ALTER TABLE "x_message_conversation" ADD COLUMN IF NOT EXISTS "business_id" TEXT;
+ALTER TABLE "x_message_conversation" ADD COLUMN IF NOT EXISTS "title" TEXT;
+ALTER TABLE "x_message_conversation" ADD COLUMN IF NOT EXISTS "note" TEXT;
+ALTER TABLE "x_message_conversation" ADD COLUMN IF NOT EXISTS "read_status" TEXT;
+ALTER TABLE "x_message_conversation" ADD COLUMN IF NOT EXISTS "read_time" TIMESTAMP;
+ALTER TABLE "x_message_conversation" ADD COLUMN IF NOT EXISTS "top" BOOLEAN DEFAULT false;
+ALTER TABLE "x_message_conversation" ADD COLUMN IF NOT EXISTS "top_time" TIMESTAMP;
+ALTER TABLE "x_message_conversation" ADD COLUMN IF NOT EXISTS "last_message_time" TIMESTAMP;
+

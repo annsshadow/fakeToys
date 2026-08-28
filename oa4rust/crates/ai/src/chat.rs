@@ -43,14 +43,7 @@ pub async fn chat_list_paging(
         })
         .collect();
 
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("count".to_string(), Value::Number(serde_json::Number::from(total))),
-            ("page".to_string(), Value::Number(serde_json::Number::from(page as i64))),
-            ("size".to_string(), Value::Number(serde_json::Number::from(size))),
-            ("data".to_string(), Value::Array(data)),
-        ]),
-    ))))
+    Ok(Json(ActionResult::java_success(Value::Array(data), total, size)))
 }
 
 #[axum::debug_handler]
@@ -93,14 +86,7 @@ pub async fn chat_list_completion_paging(
         })
         .collect();
 
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("count".to_string(), Value::Number(serde_json::Number::from(total))),
-            ("page".to_string(), Value::Number(serde_json::Number::from(page as i64))),
-            ("size".to_string(), Value::Number(serde_json::Number::from(size))),
-            ("data".to_string(), Value::Array(data)),
-        ]),
-    ))))
+    Ok(Json(ActionResult::java_success(Value::Array(data), total, size)))
 }
 
 #[axum::debug_handler]
@@ -117,7 +103,11 @@ pub async fn chat_delete(
         .map_err(|_| AppError::Internal)?;
 
     let Some(row) = row else {
-        return Ok(Json(ActionResult::error("clue not found")));
+        return Ok(Json(ActionResult::success(Value::Object(
+            serde_json::Map::from_iter([
+                ("deleted".to_string(), Value::Bool(false)),
+            ]),
+        ))));
     };
 
     let clue_person: String = row.get("person");

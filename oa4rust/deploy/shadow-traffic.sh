@@ -16,7 +16,7 @@
 # 用法:
 #   ./shadow-traffic.sh enable                        # 启用影子流量
 #   ./shadow-traffic.sh disable                       # 禁用影子流量
-#   ./shadow-traffic.sh run                           # 发送测试请求
+#   ./shadow-traffic.sh run [模块...]                 # 发送测试请求（可选按模块过滤）
 #   ./shadow-traffic.sh compare                       # 对比响应一致性
 #   ./shadow-traffic.sh report                        # 生成一致性报告
 #   ./shadow-traffic.sh status                        # 查看当前状态
@@ -33,12 +33,14 @@ COMPARISON_LOG="$PROJECT_DIR/shadow-comparison.log"
 BACKUP_DIR="$SCRIPT_DIR/.backups"
 
 # 测试用的模块和端点
-TEST_MODULES=(attendance control express meeting)
+TEST_MODULES=(attendance control express meeting processplatform bam)
 TEST_ENDPOINTS=(
     "attendance/admin/list/all"
     "control/group/list"
     "express/delivery/list"
     "meeting/room/list"
+    "processplatform/assemble/surface/list"
+    "bam/assemble/list"
 )
 
 cmd="${1:-help}"
@@ -175,7 +177,39 @@ case "$cmd" in
             echo "警告：未设置 OA4RUST_TOKEN 环境变量，测试可能返回 401"
         fi
 
-        for endpoint in "${TEST_ENDPOINTS[@]}"; do
+        # 可选参数：模块名（须属于 TEST_MODULES），仅发送对应端点的请求；
+        # 不带参数时发送全部端点（TEST_ENDPOINTS）
+        endpoints=("${TEST_ENDPOINTS[@]}")
+        if [[ $# -gt 0 ]]; then
+            for m in "$@"; do
+                valid=0
+                for tm in "${TEST_MODULES[@]}"; do
+                    if [[ "$m" == "$tm" ]]; then
+                        valid=1
+                        break
+                    fi
+                done
+                if [[ $valid -eq 0 ]]; then
+                    echo "错误：未知模块 '$m'（可用模块: ${TEST_MODULES[*]}）"
+                    exit 1
+                fi
+            done
+            endpoints=()
+            for e in "${TEST_ENDPOINTS[@]}"; do
+                for m in "$@"; do
+                    if [[ "${e%%/*}" == "$m" ]]; then
+                        endpoints+=("$e")
+                        break
+                    fi
+                done
+            done
+            if [[ ${#endpoints[@]} -eq 0 ]]; then
+                echo "错误：指定模块均未匹配到测试端点"
+                exit 1
+            fi
+        fi
+
+        for endpoint in "${endpoints[@]}"; do
             echo ""
             echo "--- 测试: $endpoint ---"
             curl -s -w "\nHTTP %{http_code}\n" \
@@ -309,7 +343,7 @@ case "$cmd" in
         echo ""
 
         # 运行对比并保存结果
-        compare_output=$(./shadow-traffic.sh compare 2>&1) || true
+        compare_output=$("$SCRIPT_DIR/shadow-traffic.sh" compare 2>&1) || true
 
         {
             echo "# OA4Rust U9 影子流量一致性报告"
@@ -367,7 +401,7 @@ case "$cmd" in
         echo "用法:"
         echo "  ./shadow-traffic.sh enable         启用影子流量"
         echo "  ./shadow-traffic.sh disable        禁用影子流量"
-        echo "  ./shadow-traffic.sh run            发送测试请求"
+        echo "  ./shadow-traffic.sh run [模块...]  发送测试请求（可选按模块过滤）"
         echo "  ./shadow-traffic.sh compare        对比响应一致性"
         echo "  ./shadow-traffic.sh report         生成一致性报告"
         echo "  ./shadow-traffic.sh status         查看当前状态"

@@ -159,7 +159,7 @@ pub async fn check_credential(
         .map_err(|_| AppError::Internal)?;
 
     let registered: bool = row.get("exists");
-    Ok(Json(ActionResult::success(json!({ "registered": registered }))))
+    Ok(Json(ActionResult::success(json!({ "value": registered }))))
 }
 
 /// GET /jaxrs/reset/check/password/{password}
@@ -173,7 +173,7 @@ pub async fn check_password(
     Path(password): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let passed = is_password_acceptable(&password);
-    Ok(Json(ActionResult::success(json!({ "passed": passed }))))
+    Ok(Json(ActionResult::success(json!({ "value": passed }))))
 }
 
 /// 新密码规则：长度 6 至 64，且至少包含一个字母和一个数字

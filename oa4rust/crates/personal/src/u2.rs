@@ -122,12 +122,12 @@ async fn write_icon(
 // ═════════════════════════════════════════════════════════════════════════════
 
 /// GET /jaxrs/person/regist/mode —— 注册开关（对齐 Config.person().getRegister()）
-pub async fn regist_mode() -> Result<Json<ActionResult<String>>, AppError> {
+pub async fn regist_mode() -> Result<Json<ActionResult<Value>>, AppError> {
     let enabled = std::env::var("PERSON_REGISTER")
         .map(|v| matches!(v.to_ascii_lowercase().as_str(), "1" | "true" | "yes" | "on"))
         .unwrap_or(false);
     // Java Wo 为 WrapString："true"/"false"
-    Ok(Json(ActionResult::success(enabled.to_string())))
+    Ok(Json(ActionResult::success(json!({ "value": if enabled { "enable" } else { "disable" } }))))
 }
 
 /// GET /jaxrs/person/regist/code/mobile/{mobile} —— 发送注册验证码（短信渠道）
@@ -148,12 +148,12 @@ pub async fn regist_code_mobile(
 /// 对齐 Java：不满足密码策略时返回策略提示文案；满足时无 data。
 pub async fn regist_check_password(
     Path(password): Path<String>,
-) -> Result<Json<ActionResult<String>>, AppError> {
+) -> Result<Json<ActionResult<Value>>, AppError> {
     if is_password_acceptable(&password) {
-        return Ok(Json(ActionResult::success(String::new())));
+        return Ok(Json(ActionResult::success(json!({ "value": String::new() }))));
     }
     Ok(Json(ActionResult::success(
-        "密码需 6-64 位且至少包含一个字母和一个数字".to_string(),
+        json!({ "value": "8位以上,包含数字、字母和特殊字符." }),
     )))
 }
 
@@ -575,7 +575,8 @@ pub async fn empower_list_next(
         .iter()
         .map(|r| serde_json::to_value(r).unwrap_or(Value::Null))
         .collect();
-    Ok(Json(ActionResult::success(json!({ "count": items.len() as i64, "data": items }))))
+    let count = items.len() as i64;
+    Ok(Json(ActionResult::java_success(Value::Array(items), count, 0)))
 }
 
 /// GET /jaxrs/person/empower/list/{id}/prev/{count} —— 管理员上一页
@@ -599,7 +600,8 @@ pub async fn empower_list_prev(
         .iter()
         .map(|r| serde_json::to_value(r).unwrap_or(Value::Null))
         .collect();
-    Ok(Json(ActionResult::success(json!({ "count": items.len() as i64, "data": items }))))
+    let count = items.len() as i64;
+    Ok(Json(ActionResult::java_success(Value::Array(items), count, 0)))
 }
 
 /// GET /jaxrs/person/empower/list/person/{flag} —— 查询指定人员的授权
@@ -634,7 +636,8 @@ pub async fn empower_list_with_person(
             })
         })
         .collect();
-    Ok(Json(ActionResult::success(json!({ "count": items.len() as i64, "data": items }))))
+    let count = items.len() as i64;
+    Ok(Json(ActionResult::java_success(Value::Array(items), count, 0)))
 }
 
 // ═════════════════════════════════════════════════════════════════════════════
@@ -690,7 +693,8 @@ pub async fn log_list_next(
     .map_err(|_| AppError::Internal)?;
 
     let items: Vec<Value> = rows.iter().map(log_row_json).collect();
-    Ok(Json(ActionResult::success(json!({ "count": items.len() as i64, "data": items }))))
+    let count = items.len() as i64;
+    Ok(Json(ActionResult::java_success(Value::Array(items), count, 0)))
 }
 
 pub async fn log_list_prev(
@@ -725,7 +729,8 @@ pub async fn log_list_prev(
 
     let mut items: Vec<Value> = rows.iter().map(log_row_json).collect();
     items.reverse();
-    Ok(Json(ActionResult::success(json!({ "count": items.len() as i64, "data": items }))))
+    let count = items.len() as i64;
+    Ok(Json(ActionResult::java_success(Value::Array(items), count, 0)))
 }
 
 #[derive(Debug, Deserialize)]
@@ -812,10 +817,7 @@ async fn log_paging(
         .map_err(|_| AppError::Internal)?;
 
     let items: Vec<Value> = rows.iter().map(log_row_json).collect();
-    Ok(Json(ActionResult::success(json!({
-        "count": total,
-        "data": items,
-    }))))
+    Ok(Json(ActionResult::java_success(Value::Array(items), total, limit)))
 }
 
 /// LIKE 关键字转义（% _ \），对齐 Java StringTools.escapeSqlLikeKey
@@ -976,7 +978,8 @@ pub async fn exmail_list_title_passive(
             }
         }
     }
-    Ok(Json(ActionResult::success(Value::Array(titles))))
+    let count = titles.len() as i64;
+    Ok(Json(ActionResult::java_success(Value::Array(titles), count, 0)))
 }
 
 /// GET /jaxrs/person/exmail/sso —— 单点登录地址（模板注入 userid）

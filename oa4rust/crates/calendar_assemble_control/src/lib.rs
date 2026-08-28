@@ -77,7 +77,8 @@ pub async fn list_control_calendars(
         ])));
     }
 
-    Ok(Json(ActionResult::success(Value::Array(calendars))))
+    let count = calendars.len() as i64;
+    Ok(Json(ActionResult::java_success(Value::Array(calendars), count, 0)))
 }
 
 #[axum::debug_handler]

@@ -356,12 +356,12 @@ pub async fn statement_manage_list(
 
     let data: Vec<Value> = rows.iter().map(statement_row_json).collect();
 
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
-            ("data".to_string(), Value::Array(data)),
-        ]),
-    ))))
+    let count = data.len() as i64;
+    Ok(Json(ActionResult::java_success(
+        Value::Array(data),
+        count,
+        0,
+    )))
 }
 
 pub async fn statement_list_with_query(
@@ -380,12 +380,12 @@ pub async fn statement_list_with_query(
 
     let data: Vec<Value> = rows.iter().map(statement_row_json).collect();
 
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
-            ("data".to_string(), Value::Array(data)),
-        ]),
-    ))))
+    let count = data.len() as i64;
+    Ok(Json(ActionResult::java_success(
+        Value::Array(data),
+        count,
+        0,
+    )))
 }
 
 pub async fn statement_permission(
@@ -1187,12 +1187,8 @@ pub async fn designer_search_v2(
         })
         .collect();
 
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
-            ("data".to_string(), Value::Array(data)),
-        ]),
-    ))))
+    let count = data.len() as i64;
+    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
 }
 
 /// GET /id/{count} —— 生成唯一标识列表（0 < count < 200，对齐 Java ActionGet）。
@@ -1203,12 +1199,8 @@ pub async fn id_generate(
     let ids: Vec<Value> = (0..n)
         .map(|_| Value::String(uuid::Uuid::new_v4().to_string()))
         .collect();
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("count".to_string(), Value::Number(serde_json::Number::from(ids.len() as i64))),
-            ("data".to_string(), Value::Array(ids)),
-        ]),
-    ))))
+    let count = ids.len() as i64;
+    Ok(Json(ActionResult::java_success(Value::Array(ids), count, 0)))
 }
 
 /// GET /importmodel/{flag} —— 按 id 或 model_flag 获取导入模型。
