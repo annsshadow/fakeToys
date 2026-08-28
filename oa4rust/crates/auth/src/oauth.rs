@@ -437,7 +437,8 @@ pub async fn oauth_list() -> Result<Json<ActionResult<Value>>, AppError> {
             "configured": dingding_config().is_some(),
         }),
     ];
-    Ok(Json(ActionResult::success(Value::Array(providers))))
+    let total_providers = providers.len();
+    Ok(Json(ActionResult::java_success(Value::Array(providers), total_providers as i64, 0)))
 }
 
 fn provider_config(name: &str) -> Result<OAuthConfig, AppError> {

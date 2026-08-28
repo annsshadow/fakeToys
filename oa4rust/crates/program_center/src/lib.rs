@@ -2362,7 +2362,7 @@ pub async fn deploy_list_paging_page_size_size(
 
     let rows = client
         .query(
-            "SELECT id, name, version, creator, create_time FROM x_program_deploy ORDER BY create_time DESC LIMIT $2::bigint OFFSET ($1 - 1) * $2",
+            "SELECT id, name, version, creator, create_time FROM x_program_deploy ORDER BY create_time DESC LIMIT $2::int OFFSET ($1 - 1) * $2",
             &[&page, &size],
         )
         .await
@@ -2570,7 +2570,7 @@ pub async fn dict_list_paging_page_size_size(
 
     let rows = client
         .query(
-            "SELECT id, name, key_name, app_name, creator, create_time FROM x_program_dict WHERE deleted_at IS NULL ORDER BY create_time DESC LIMIT $2::bigint OFFSET ($1 - 1) * $2",
+            "SELECT id, name, key_name, app_name, creator, create_time FROM x_program_dict WHERE deleted_at IS NULL ORDER BY create_time DESC LIMIT $2::int OFFSET ($1 - 1) * $2",
             &[&page, &size],
         )
         .await
@@ -4363,7 +4363,7 @@ pub async fn prompterrorlog_list_id_next_count(
 
     let rows = client
         .query(
-            "SELECT id, exception_class, logger_name, message, create_time FROM x_program_prompt_error_log WHERE id > $1 ORDER BY id ASC LIMIT $2::bigint",
+            "SELECT id, exception_class, logger_name, message, create_time FROM x_program_prompt_error_log WHERE id > $1 ORDER BY id ASC LIMIT $2::int",
             &[&id, &count],
         )
         .await
@@ -4396,7 +4396,7 @@ pub async fn prompterrorlog_list_id_next_count_date_date(
 
     let rows = client
         .query(
-            "SELECT id, exception_class, logger_name, message, create_time FROM x_program_prompt_error_log WHERE id > $1 AND DATE(create_time) = $2::date ORDER BY id ASC LIMIT $3::bigint",
+            "SELECT id, exception_class, logger_name, message, create_time FROM x_program_prompt_error_log WHERE id > $1 AND DATE(create_time) = $2::date ORDER BY id ASC LIMIT $3::int",
             &[&id, &date, &count],
         )
         .await
@@ -4429,7 +4429,7 @@ pub async fn prompterrorlog_list_id_next_count_exceptionclass_exceptionClass(
 
     let rows = client
         .query(
-            "SELECT id, exception_class, logger_name, message, create_time FROM x_program_prompt_error_log WHERE id > $1 AND exception_class = $2 ORDER BY id ASC LIMIT $3::bigint",
+            "SELECT id, exception_class, logger_name, message, create_time FROM x_program_prompt_error_log WHERE id > $1 AND exception_class = $2 ORDER BY id ASC LIMIT $3::int",
             &[&id, &exception_class, &count],
         )
         .await
@@ -4462,7 +4462,7 @@ pub async fn prompterrorlog_list_id_next_count_loggername_loggerName(
 
     let rows = client
         .query(
-            "SELECT id, exception_class, logger_name, message, create_time FROM x_program_prompt_error_log WHERE id > $1 AND logger_name = $2 ORDER BY id ASC LIMIT $3::bigint",
+            "SELECT id, exception_class, logger_name, message, create_time FROM x_program_prompt_error_log WHERE id > $1 AND logger_name = $2 ORDER BY id ASC LIMIT $3::int",
             &[&id, &logger_name, &count],
         )
         .await
@@ -4494,7 +4494,7 @@ pub async fn prompterrorlog_list_id_prev_count(
 
     let rows = client
         .query(
-            "SELECT id, exception_class, logger_name, message, create_time FROM x_program_prompt_error_log WHERE id < $1 ORDER BY id DESC LIMIT $2::bigint",
+            "SELECT id, exception_class, logger_name, message, create_time FROM x_program_prompt_error_log WHERE id < $1 ORDER BY id DESC LIMIT $2::int",
             &[&id, &count],
         )
         .await
@@ -4527,7 +4527,7 @@ pub async fn prompterrorlog_list_id_prev_count_date_date(
 
     let rows = client
         .query(
-            "SELECT id, exception_class, logger_name, message, create_time FROM x_program_prompt_error_log WHERE id < $1 AND DATE(create_time) = $2::date ORDER BY id DESC LIMIT $3::bigint",
+            "SELECT id, exception_class, logger_name, message, create_time FROM x_program_prompt_error_log WHERE id < $1 AND DATE(create_time) = $2::date ORDER BY id DESC LIMIT $3::int",
             &[&id, &date, &count],
         )
         .await
@@ -4560,7 +4560,7 @@ pub async fn prompterrorlog_list_id_prev_count_exceptionclass_exceptionClass(
 
     let rows = client
         .query(
-            "SELECT id, exception_class, logger_name, message, create_time FROM x_program_prompt_error_log WHERE id < $1 AND exception_class = $2 ORDER BY id DESC LIMIT $3::bigint",
+            "SELECT id, exception_class, logger_name, message, create_time FROM x_program_prompt_error_log WHERE id < $1 AND exception_class = $2 ORDER BY id DESC LIMIT $3::int",
             &[&id, &exception_class, &count],
         )
         .await
@@ -4593,7 +4593,7 @@ pub async fn prompterrorlog_list_id_prev_count_loggername_loggerName(
 
     let rows = client
         .query(
-            "SELECT id, exception_class, logger_name, message, create_time FROM x_program_prompt_error_log WHERE id < $1 AND logger_name = $2 ORDER BY id DESC LIMIT $3::bigint",
+            "SELECT id, exception_class, logger_name, message, create_time FROM x_program_prompt_error_log WHERE id < $1 AND logger_name = $2 ORDER BY id DESC LIMIT $3::int",
             &[&id, &logger_name, &count],
         )
         .await
@@ -5083,7 +5083,7 @@ pub async fn script_list_paging_page_size_size(
 
     let rows = client
         .query(
-            "SELECT id, name, flag, category, creator, create_time FROM x_program_script WHERE deleted_at IS NULL ORDER BY create_time DESC LIMIT $2::bigint OFFSET ($1 - 1) * $2",
+            "SELECT id, name, flag, category, creator, create_time FROM x_program_script WHERE deleted_at IS NULL ORDER BY create_time DESC LIMIT $2::int OFFSET ($1 - 1) * $2",
             &[&page, &size],
         )
         .await
@@ -5290,7 +5290,7 @@ pub async fn unexpectederrorlog_list_id_next_count(
 
     let rows = client
         .query(
-            "SELECT id, error_type, message, stack_trace, create_time FROM x_program_unexpected_error_log WHERE id > $1 ORDER BY id ASC LIMIT $2::bigint",
+            "SELECT id, error_type, message, stack_trace, create_time FROM x_program_unexpected_error_log WHERE id > $1 ORDER BY id ASC LIMIT $2::int",
             &[&id, &count],
         )
         .await
@@ -5323,7 +5323,7 @@ pub async fn unexpectederrorlog_list_id_next_count_date_date(
 
     let rows = client
         .query(
-            "SELECT id, error_type, message, stack_trace, create_time FROM x_program_unexpected_error_log WHERE id > $1 AND DATE(create_time) = $2::date ORDER BY id ASC LIMIT $3::bigint",
+            "SELECT id, error_type, message, stack_trace, create_time FROM x_program_unexpected_error_log WHERE id > $1 AND DATE(create_time) = $2::date ORDER BY id ASC LIMIT $3::int",
             &[&id, &date, &count],
         )
         .await
@@ -5355,7 +5355,7 @@ pub async fn unexpectederrorlog_list_id_prev_count(
 
     let rows = client
         .query(
-            "SELECT id, error_type, message, stack_trace, create_time FROM x_program_unexpected_error_log WHERE id < $1 ORDER BY id DESC LIMIT $2::bigint",
+            "SELECT id, error_type, message, stack_trace, create_time FROM x_program_unexpected_error_log WHERE id < $1 ORDER BY id DESC LIMIT $2::int",
             &[&id, &count],
         )
         .await
@@ -5388,7 +5388,7 @@ pub async fn unexpectederrorlog_list_id_prev_count_date_date(
 
     let rows = client
         .query(
-            "SELECT id, error_type, message, stack_trace, create_time FROM x_program_unexpected_error_log WHERE id < $1 AND DATE(create_time) = $2::date ORDER BY id DESC LIMIT $3::bigint",
+            "SELECT id, error_type, message, stack_trace, create_time FROM x_program_unexpected_error_log WHERE id < $1 AND DATE(create_time) = $2::date ORDER BY id DESC LIMIT $3::int",
             &[&id, &date, &count],
         )
         .await

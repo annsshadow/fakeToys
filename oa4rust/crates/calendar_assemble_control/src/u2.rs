@@ -169,7 +169,8 @@ pub async fn calendar_list_public(pool: Extension<Pool>) -> ApiResult {
         .await
         .map_err(|_| AppError::Internal)?;
     let items: Vec<Value> = rows.iter().map(calendar_row_to_value).collect();
-    Ok(Json(ActionResult::success(Value::Array(items))))
+    let total_items = items.len();
+    Ok(Json(ActionResult::java_success(Value::Array(items), total_items as i64, 0)))
 }
 
 /// GET /jaxrs/calendar_assemble_control/calendar/{id} —— 按 ID 获取日历信息
@@ -242,7 +243,8 @@ pub async fn setting_list_all(pool: Extension<Pool>) -> ApiResult {
             })
         })
         .collect();
-    Ok(Json(ActionResult::success(Value::Array(items))))
+    let total_items = items.len();
+    Ok(Json(ActionResult::java_success(Value::Array(items), total_items as i64, 0)))
 }
 
 /// GET /jaxrs/calendar_assemble_control/setting/ismanager —— 当前用户是否设置管理员
@@ -366,7 +368,8 @@ pub async fn calendar_list_filter(
         .await
         .map_err(|_| AppError::Internal)?;
     let items: Vec<Value> = rows.iter().map(calendar_row_to_value).collect();
-    Ok(Json(ActionResult::success(Value::Array(items))))
+    let total_items = items.len();
+    Ok(Json(ActionResult::java_success(Value::Array(items), total_items as i64, 0)))
 }
 
 /// GET /jaxrs/calendar_assemble_control/calendar/manager/list/with/person/{id} —— 含某人的日历管理员列表
@@ -391,7 +394,8 @@ pub async fn calendar_manager_list_with_person(
         })],
         None => vec![],
     };
-    Ok(Json(ActionResult::success(Value::Array(managers))))
+    let total_managers = managers.len();
+    Ok(Json(ActionResult::java_success(Value::Array(managers), total_managers as i64, 0)))
 }
 
 /// DELETE /jaxrs/calendar_assemble_control/calendar/{id} —— 删除日历（IDOR 门禁）
@@ -541,7 +545,8 @@ pub async fn event_list_filter(pool: Extension<Pool>, Json(body): Json<Value>) -
         .await
         .map_err(|_| AppError::Internal)?;
     let items: Vec<Value> = rows.iter().map(event_row_to_value).collect();
-    Ok(Json(ActionResult::success(Value::Array(items))))
+    let total_items = items.len();
+    Ok(Json(ActionResult::java_success(Value::Array(items), total_items as i64, 0)))
 }
 
 /// PUT /jaxrs/calendar_assemble_control/event/list/filter/sample —— 事件过滤样例（限量）
@@ -569,7 +574,8 @@ pub async fn event_list_filter_sample(pool: Extension<Pool>, Json(body): Json<Va
             })
         })
         .collect();
-    Ok(Json(ActionResult::success(Value::Array(items))))
+    let total_items = items.len();
+    Ok(Json(ActionResult::java_success(Value::Array(items), total_items as i64, 0)))
 }
 
 /// POST /jaxrs/calendar_assemble_control/event/list/filter/sample/manager —— 管理视角的事件样例
@@ -605,7 +611,8 @@ pub async fn event_list_filter_sample_manager(
             })
         })
         .collect();
-    Ok(Json(ActionResult::success(Value::Array(items))))
+    let total_items = items.len();
+    Ok(Json(ActionResult::java_success(Value::Array(items), total_items as i64, 0)))
 }
 
 /// POST /jaxrs/calendar_assemble_control/event/manage —— 事件管理（更新状态/可见性）

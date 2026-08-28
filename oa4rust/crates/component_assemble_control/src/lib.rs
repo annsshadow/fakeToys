@@ -79,7 +79,8 @@ pub async fn list_control_categories(
         ])));
     }
 
-    Ok(Json(ActionResult::success(Value::Array(categories))))
+    let total_categories = categories.len();
+    Ok(Json(ActionResult::java_success(Value::Array(categories), total_categories as i64, 0)))
 }
 
 #[axum::debug_handler]
