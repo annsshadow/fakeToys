@@ -243,7 +243,7 @@ pub fn query_assemble_surface_router() -> Router {
         .route("/jaxrs/queryview/excel/mockputtopost/{view}/{id}", post(crate::view_id_excel_mockputtopost))
         .route("/jaxrs/queryview/execute/{view}/{id}", get(crate::view_id_execute))
         .route("/jaxrs/queryview/execute/mockputtopost/{view}/{id}", post(crate::view_id_execute_mockputtopost))
-        .route("/jaxrs/queryview/execute/v2/{view}/{id}/{page}/{page}/{size}/{size}", get(crate::view_id_execute_v2_page_page_size_size))
+        .route("/jaxrs/queryview/execute/v2/{view}/{id}/{page}/{size}", get(crate::view_id_execute_v2_page_page_size_size))
         // ── plan002 U2：已实现未注册 handler 补挂 ──
         .route("/jaxrs/queryview/importmodel/uuid", get(importmodel_uuid))
         .route("/jaxrs/queryview/importmodel/record/delete/{recordId}", delete(u2::importmodel_record_delete))
@@ -1951,7 +1951,7 @@ pub async fn view_id_execute_v2_page_page_size_size(
 
     let rows = client
         .query(
-            "SELECT id, content, creator, create_time FROM x_query_view WHERE id = $1 ORDER BY create_time DESC LIMIT $3::bigint OFFSET ($2 - 1) * $3",
+            "SELECT id, content, creator, create_time FROM x_query_view WHERE id = $1 ORDER BY create_time DESC LIMIT $3 OFFSET ($2 - 1) * $3",
             &[&id, &page, &size],
         )
         .await
