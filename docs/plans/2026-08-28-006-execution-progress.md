@@ -80,9 +80,19 @@
 | query_assemble_surface | ✅ 0 errors | 47 passed |
 | meeting_assemble_control | ✅ 0 errors | 58 passed |
 | cms_assemble_control | ✅ 0 errors | 379 passed |
-| auth | ⚠️ 3 DB failures (pre-existing) | 75 passed |
-| personal | ⚠️ 8 DB failures (pre-existing) | 23 passed |
-| processplatform_service_processing | ⚠️ 16 DB failures (pre-existing) | 36 passed |
+| organization_assemble_control | ✅ 0 errors | 146 passed |
+| program_center | ✅ 0 errors | 255 passed |
+| personal | ✅ 0 errors | 31 passed |
+| meeting | ✅ 0 errors | 15 passed |
+| processplatform_assemble_surface | ✅ 0 errors | 512 passed |
+| auth | ✅ 0 errors | 78 passed |
+| ldap | ✅ 0 errors | 8 passed |
+| organization_assemble_authentication | ✅ 0 errors | 16 passed |
+| organization_assemble_personal | ✅ 0 errors | 8 passed |
+| ai | ✅ 0 errors | 51 passed |
+| file_assemble_control | ✅ 0 errors | 89 passed |
+| portal | ✅ 0 errors | 12 passed |
+| processplatform_assemble_bam | ✅ 0 errors | 285 passed |
 
 ## 关键指标
 
