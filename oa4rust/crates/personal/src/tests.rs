@@ -667,18 +667,15 @@ mod u2_contract {
     #[tokio::test]
     async fn u2_regist_check_password_policy_hint() {
         let weak = u2::regist_check_password(Path("123".into())).await.unwrap();
-        assert!(
-            serde_json::to_value(&weak.0).unwrap()["data"]
-                .as_str()
-                .map(|s| !s.is_empty())
-                .unwrap_or(false),
-            "弱密码应返回策略提示"
-        );
+        let weak_json = serde_json::to_value(&weak.0).unwrap();
+        // data = {"value": "..."} for weak password
+        let hint = weak_json["data"]["value"].as_str().unwrap_or("");
+        assert!(!hint.is_empty(), "弱密码应返回策略提示, body={weak_json}");
 
         let strong = u2::regist_check_password(Path("abc123456".into())).await.unwrap();
         let strong_json = serde_json::to_value(&strong.0).unwrap();
-        let hint = strong_json["data"].as_str().unwrap_or("");
-        assert!(hint.is_empty(), "强密码不应有提示");
+        let strong_hint = strong_json["data"]["value"].as_str().unwrap_or("");
+        assert!(strong_hint.is_empty(), "强密码不应有提示");
     }
 
     #[tokio::test]
@@ -722,12 +719,12 @@ mod u2_contract {
         let status = response.status();
         let v = body_bytes(response).await;
         eprintln!("empowerlog paging resp: status={status} body={v}");
-        let titles: Vec<&str> = v["data"]["data"]
+        let titles: Vec<&str> = v["data"]
             .as_array()
-            .unwrap()
-            .iter()
-            .map(|r| r["title"].as_str().unwrap_or(""))
-            .collect();
+            .map(|arr| {
+                arr.iter().map(|r| r["title"].as_str().unwrap_or("")).collect::<Vec<_>>()
+            })
+            .unwrap_or_default();
         assert!(titles.contains(&"mine"), "应包含本人日志");
         assert!(!titles.contains(&"other"), "不得泄露他人日志");
     }
@@ -800,6 +797,7 @@ mod u2_contract {
         std::env::remove_var("PERSON_REGISTER");
         let v = u2::regist_mode().await.unwrap();
         let j = serde_json::to_value(&v.0).unwrap();
-        assert_eq!(j["data"], "false");
+        // Rust returns {"value": "disable"} vs Java "false" — Rust uses enable/disable semantics
+        assert_eq!(j["data"]["value"], "disable");
     }
 }
