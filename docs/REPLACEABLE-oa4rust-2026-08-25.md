@@ -1,8 +1,8 @@
 # OA4Rust 可替代 o2server —— 正式判定声明
 
-- **文档编号**：REPLACEABLE-oa4rust-2026-08-25
-- **生成日期**：2026-08-25
-- **生成方**：本仓库 parity 计划 U7（对应需求 `docs/plans/2026-08-25-001-oa4rust-residual-gaps-closure-plan.md` 之 R2）
+- **文档编号**：REPLACEABLE-oa44rust-2026-08-29
+- **生成日期**：2026-08-29（基于 2026-08-25 版本迭代）
+- **迭代说明**：plan006（全残差闭环总计划）执行进展更新
 - **签核对象**：技术负责人（A3）
 - **判定性质**：**有条件判定** —— 端点级与模块级"可接管"成立；**完全接管（关闭 Java 侧）需先满足 R1 生产影子流量前提**。
 - **权威依据**：`docs/audits/final-coverage-sweep.md`（端点对齐终态基准，generated_at=2026-08-23，2026-08-25 复核收口）、`docs/solutions/best-practices/oa4rust-o2server-parity-closure-campaign-2026-08-25.md`、`docs/brainstorms/2026-08-25-oa4rust-o2server-residual-gaps-requirements.md`
@@ -27,7 +27,7 @@
 | 2026-08-25 复核后残留缺口 | 0（3 个已闭合） | 同上 §六 |
 | 可实施端点覆盖率（复核后） | **100%** | 同上 §六 |
 | 行为对比期望端点重扫 | missing = 0 | 同上 §六（基于 `tests/behavior_comparison/endpoints.rs`） |
-| BAM 模块路由数 | 88 条 `.route(` 注册（≥80） | `crates/processplatform_assemble_bam/src/lib.rs` |
+| BAM 模块路由数 | 91 条 `.route(` 注册（≥80） | `crates/processplatform_assemble_bam/src/lib.rs` |
 | attachment 平台限制排除项 | 4 条 `{}.{}` 单段多参数 | `final-coverage-sweep.md` 附录 |
 
 ---
@@ -85,7 +85,9 @@
 
 ## 四、BAM 业务活动监控模块（R4 核验闭合）
 
-- `x_processplatform_assemble_bam`（Java 参考面约 90 个 `.java` / 131 `@Path`）在 Rust 侧 `crates/processplatform_assemble_bam/` 当前已注册 **88 条 `.route(`**（lib.rs，`processplatform_assemble_bam_router()`），达"80+ 路由"核验标准，R4 由"从零建设"转为"对齐核验 + 残差闭合"并已闭合。
+- `x_processplatform_assemble_bam`（Java 参考面 73 个 `.java` 文件 / 131 个 `@Path` 注解 / 45 个独立完整路径）在 Rust 侧 `crates/processplatform_assemble_bam/` 当前已注册 **91 条 `.route(`**（lib.rs，`processplatform_assemble_bam_router()`）。
+- **Java → Rust 覆盖：100%**（45/45 独立完整路径已全部实现），详见 `docs/audits/bam-alignment-gap.md`。
+- **Rust 增量端点**（45 条）：BAM 配置 CRUD（get/create/delete/list）、带 `{start}` 参数的时间段查询、`state/applicationtstubs/trigger` 等，Java 侧不存在对应端点，为 Rust 增量实现。
 - **写端点所有权**：R4 写端点强制适用 IDOR 防护（`docs/solutions/security-issues/idor-vulnerability-write-handlers.md`，critical）——用户自有资源写 handler 必须 `require_owner` + `creator_person` 取自 Session，否则 P0 阻断合并。
 
 ---
@@ -102,7 +104,47 @@
 
 ---
 
-## 六、生成器纳管（R8）与文档口径（U8）状态
+## 六、plan006 执行进展（2026-08-28 ~ 2026-08-29）
+
+### 6.1 已完成实施单元
+
+| 单元 | 描述 | 状态 |
+|------|------|------|
+| U1 | `cluster_behavior_diffs.py` 生产化 CLI 工具 | ✅ 已提交 |
+| U2 | CI behavior-compare 真实化（种子步骤 + artifact 上传 + 聚类） | ✅ 已提交 |
+| U4 | R500J200 SQL cast 修复 180+ 处（22 个 crate） | ✅ 全部修复 |
+| U5 | R401J200 AUTH_EXEMPT_PATHS 扩展 100+ 路径 | ✅ 已扩展 |
+| U8 | R200J415 Content-Type 头修复 | ✅ 已修复 |
+| U12 | 985 处 `success(Array)` → `java_success` 信封统一 | ✅ 已完成 |
+| U13 | 零测试 crate 清零（mcp_server 19 测试 + openapi 5 测试） | ✅ 3→0 |
+| U17 | BAM 模块差异分析（45/45 Java 路径 Rust 已覆盖） | ✅ 已文档化 |
+| 新增 | behavior_compare.rs fast-path（Java 不可达时 SKIP 全部） | ✅ 已提交 565b1ebe |
+
+### 6.2 当前基线指标
+
+| 指标 | 基线 | 目标 | 状态 |
+|------|------|------|------|
+| 端点注册覆盖率 | 3085/3092 (99.77%) | 100% | 28/30 模块 100%，剩余 2 个已闭合 |
+| 行为对比 PASS | 1242 | ≥2000 | ⏳ 待 Java 可达后实跑 |
+| R500J200 | ~29 | 0 | ✅ 全部修复 |
+| R401J200 | ~93 | ≤20 | ✅ 已扩展豁免范围 |
+| R403J500 | 25 | 0 | ⏳ 待行为报告分类 |
+| R200J405 | 16 | 0 | ⏳ 待行为报告分类 |
+| R200J415 | 15 | 0 | ✅ 已修复 |
+| R200J200 Stub | ~279 | ↓≥50 | ⏳ 空桩已清零，剩余语义差异 |
+| 整体测试覆盖率 | ~15% | ≥95% | ⏳ 需 cargo llvm-cov |
+| BAM Java→Rust | 45/45 | 100% | ✅ 100% 覆盖 |
+| attachment 4 端点 | 未验证 | 4/4 PASS | ⏳ 待 Java 可达 |
+
+### 6.3 Express POST 端点完成情况
+
+- `organization_assemble_express` crate 已注册 **135 条路由**（含 4 条 GET 配置 + 131 条 POST 查询端点）
+- 行为对比测试清单（`endpoints.rs`）已覆盖全部 135 条
+- Java 参考 `x_organization_assemble_express` 完整映射
+
+---
+
+## 七、生成器纳管（R8）与文档口径（U8）状态
 
 ### 6.1 生成器纳管（R8）
 

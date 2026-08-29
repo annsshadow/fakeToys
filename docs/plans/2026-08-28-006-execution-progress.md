@@ -103,6 +103,17 @@
 | U6/U7/U9 | 需 behavior-report.md 分类端点 | 启动 PostgreSQL + 跑 behavior_compare |
 | U10/U11 | 需 Java 源码确认 body/逻辑格式 | 分析 oa/o2server/ Java 源码 |
 | U14-U16 | 需 PostgreSQL + cargo llvm-cov | 启动 PostgreSQL 容器 |
-| U17 | 需 Java x_processplatform_assemble_bam 源码 | 分析 Java 源码 |
-| U18 | 需 behavior_compare 运行 | 同 U6 |
+| U17 | 需 Java x_processplatform_assemble_bam 源码 | ✅ Java 源码已分析，45/45 Java 路径 Rust 已覆盖 |
+| U18 | 需 behavior_compare 运行 | ⏳ 待 Java 可达后验证 |
 | U19-U23 | 需运维排期 | 运维确认 |
+| 新增 | behavior_compare.rs fast-path | ✅ 已提交 565b1ebe |
+| 新增 | BAM 差异分析 | ✅ docs/audits/bam-alignment-gap.md |
+
+## 当前可推进工作（不依赖 Java/PostgreSQL）
+
+| 单元 | 工作内容 | 状态 |
+|------|---------|------|
+| U3 | Allowlist 评审 | 已有 26+ 条规范化条目，待行为报告更新后追加 |
+| U10 | Express POST 端点 | ✅ 135 路由全部注册，对比测试全部覆盖 |
+| U11 | 深层逻辑缺口 | 空桩 handler 已清零，剩余为语义差异级 |
+| U20-U22 | 文档类工作 | 可按当前状态推进 |
