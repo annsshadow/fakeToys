@@ -1463,13 +1463,17 @@ pub async fn personcard_listgrouptypes(
         .map_err(|_| AppError::Internal)?;
 
     let data: Vec<Value> = rows.iter().map(|row| {
+        let mobile: Option<String> = row.get("mobile");
+        let email: Option<String> = row.get("email");
+        let unit_id: Option<String> = row.get("unit_id");
+        let creator: Option<String> = row.get("creator");
         Value::Object(serde_json::Map::from_iter([
             ("id".to_string(), Value::String(row.get("id"))),
                 ("name".to_string(), Value::String(row.get("name"))),
-                ("mobile".to_string(), Value::String(row.get("mobile"))),
-                ("email".to_string(), Value::String(row.get("email"))),
-                ("unitId".to_string(), Value::String(row.get("unit_id"))),
-                ("creator".to_string(), Value::String(row.get("creator"))),
+                ("mobile".to_string(), mobile.unwrap_or_default().into()),
+                ("email".to_string(), email.unwrap_or_default().into()),
+                ("unitId".to_string(), unit_id.unwrap_or_default().into()),
+                ("creator".to_string(), creator.unwrap_or_default().into()),
                 ("createTime".to_string(), Value::String(row.get("create_time"))),
         ]))
     }).collect();
@@ -1555,13 +1559,17 @@ pub async fn personcard_mylist(
         .map_err(|_| AppError::Internal)?;
 
     let data: Vec<Value> = rows.iter().map(|row| {
+        let mobile: Option<String> = row.get("mobile");
+        let email: Option<String> = row.get("email");
+        let unit_id: Option<String> = row.get("unit_id");
+        let creator: Option<String> = row.get("creator");
         Value::Object(serde_json::Map::from_iter([
             ("id".to_string(), Value::String(row.get("id"))),
                 ("name".to_string(), Value::String(row.get("name"))),
-                ("mobile".to_string(), Value::String(row.get("mobile"))),
-                ("email".to_string(), Value::String(row.get("email"))),
-                ("unitId".to_string(), Value::String(row.get("unit_id"))),
-                ("creator".to_string(), Value::String(row.get("creator"))),
+                ("mobile".to_string(), mobile.unwrap_or_default().into()),
+                ("email".to_string(), email.unwrap_or_default().into()),
+                ("unitId".to_string(), unit_id.unwrap_or_default().into()),
+                ("creator".to_string(), creator.unwrap_or_default().into()),
                 ("createTime".to_string(), Value::String(row.get("create_time"))),
         ]))
     }).collect();

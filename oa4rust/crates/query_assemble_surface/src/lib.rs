@@ -1591,7 +1591,7 @@ pub async fn view_flag_flag_query_queryFlag_execute(
 
     let row = client
         .query_opt(
-            "SELECT id, name, view_flag, query_flag, content, creator, create_time, update_time FROM x_query_view WHERE view_flag = $1 AND query_flag = $2 LIMIT 1",
+            "SELECT id, name, view_flag, query_flag, content, creator, create_time::text, update_time::text FROM x_query_view WHERE view_flag = $1 AND query_flag = $2 LIMIT 1",
             &[&view, &app],
         )
         .await

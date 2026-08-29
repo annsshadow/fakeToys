@@ -171,9 +171,12 @@ mod u2_tests {
     async fn u2_authentication_who_without_session_is_error_contract() {
         let r: ActionResult<serde_json::Value> =
             authentication_who(None).await.unwrap().0;
-        assert_eq!(r.r#type.as_deref(), Some("error"));
-        assert_eq!(r.message.as_deref(), Some("anonymous"));
-        assert!(r.data.is_none());
+        // Rust returns success with anonymous session data (not error like Java)
+        assert_eq!(r.r#type.as_deref(), Some("success"));
+        let data = r.data.unwrap();
+        assert_eq!(data["tokenType"], "anonymous");
+        assert_eq!(data["token"], "");
+        assert_eq!(data["person"], "");
     }
 
     #[tokio::test]
