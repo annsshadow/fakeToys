@@ -2430,13 +2430,14 @@ pub async fn deploy_server_resource(
     let data: Vec<Value> = rows
         .iter()
         .map(|row| {
+            let path: Option<String> = row.get("path");
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("resourceName".to_string(), Value::String(row.get("resource_name"))),
-                ("resourceType".to_string(), Value::String(row.get("resource_type"))),
-                ("path".to_string(), Value::String(row.get("path"))),
-                ("creator".to_string(), Value::String(row.get("creator"))),
-                ("createTime".to_string(), Value::String(row.get("create_time"))),
+                ("id".to_string(), Value::String(row.get::<_, Option<String>>("id").unwrap_or_default())),
+                ("resourceName".to_string(), Value::String(row.get::<_, Option<String>>("resource_name").unwrap_or_default())),
+                ("resourceType".to_string(), Value::String(row.get::<_, Option<String>>("resource_type").unwrap_or_default())),
+                ("path".to_string(), path.unwrap_or_default().into()),
+                ("creator".to_string(), Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default())),
+                ("createTime".to_string(), Value::String(row.get::<_, Option<String>>("create_time").unwrap_or_default())),
             ]))
         })
         .collect();
