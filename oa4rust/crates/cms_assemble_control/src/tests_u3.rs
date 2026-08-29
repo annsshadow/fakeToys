@@ -579,7 +579,8 @@ mod u3_tests {
         let (status, body) =
             call("POST", "/jaxrs/review/v2/search", Some(json!({"keyword": "needle"})), None).await;
         assert_eq!(status, StatusCode::OK, "{body}");
-        let ids: Vec<&str> = body["data"]["data"]
+        // java_success format: {"count":N,"data":[...]}
+        let ids: Vec<&str> = body["data"]
             .as_array()
             .map(|a| a.iter().filter_map(|d| d["id"].as_str()).collect())
             .unwrap_or_default();
