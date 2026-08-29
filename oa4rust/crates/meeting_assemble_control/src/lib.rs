@@ -48,8 +48,8 @@ pub async fn list_meeting_controls(
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
-                ("\"meetingId\"".to_string(), Value::String(row.get("meeting_id"))),
-                ("\"controlType\"".to_string(), Value::String(row.get("control_type"))),
+                ("meetingId".to_string(), Value::String(row.get("meeting_id"))),
+                ("controlType".to_string(), Value::String(row.get("control_type"))),
                 ("enabled".to_string(), Value::Bool(row.get("enabled"))),
                 ("config".to_string(), Value::String(row.get::<_, Option<String>>("config").unwrap_or_default())),
             ]))
@@ -66,8 +66,8 @@ pub async fn create_meeting_control(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
-    let meeting_id = payload.get("\"meetingId\"").and_then(|v| v.as_str()).ok_or(AppError::BadRequest("\"meetingId\" is required".to_string()))?;
-    let control_type = payload.get("\"controlType\"").and_then(|v| v.as_str()).ok_or(AppError::BadRequest("\"controlType\" is required".to_string()))?;
+    let meeting_id = payload.get("meetingId").and_then(|v| v.as_str()).ok_or(AppError::BadRequest("meetingId is required".to_string()))?;
+    let control_type = payload.get("controlType").and_then(|v| v.as_str()).ok_or(AppError::BadRequest("controlType is required".to_string()))?;
     let enabled: bool = payload.get("enabled").and_then(|v| v.as_bool()).unwrap_or(true);
     let config = payload.get("config").and_then(|v| v.as_str()).map(|s| s.to_string());
 
@@ -83,8 +83,8 @@ pub async fn create_meeting_control(
 
     Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
         ("id".to_string(), Value::String(id)),
-        ("\"meetingId\"".to_string(), Value::String(meeting_id.to_string())),
-        ("\"controlType\"".to_string(), Value::String(control_type.to_string())),
+        ("meetingId".to_string(), Value::String(meeting_id.to_string())),
+        ("controlType".to_string(), Value::String(control_type.to_string())),
         ("enabled".to_string(), Value::Bool(enabled)),
     ])))))
 }
@@ -400,8 +400,8 @@ pub async fn config_system_config(
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
-                ("\"configKey\"".to_string(), Value::String(row.get("config_key"))),
-                ("\"configValue\"".to_string(), Value::String(row.get("config_value"))),
+                ("configKey".to_string(), Value::String(row.get("config_key"))),
+                ("configValue".to_string(), Value::String(row.get("config_value"))),
                 ("description".to_string(), Value::String(row.get::<_, Option<String>>("description").unwrap_or_default())),
                 ("createTime".to_string(), Value::String(row.get("create_time"))),
             ]))
@@ -418,8 +418,8 @@ pub async fn config_system_config_manage(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
-    let config_key = payload.get("\"configKey\"").and_then(|v| v.as_str()).ok_or(AppError::BadRequest("\"configKey\" is required".to_string()))?;
-    let config_value = payload.get("\"configValue\"").and_then(|v| v.as_str()).ok_or(AppError::BadRequest("\"configValue\" is required".to_string()))?;
+    let config_key = payload.get("configKey").and_then(|v| v.as_str()).ok_or(AppError::BadRequest("configKey is required".to_string()))?;
+    let config_value = payload.get("configValue").and_then(|v| v.as_str()).ok_or(AppError::BadRequest("configValue is required".to_string()))?;
     let description = payload.get("description").and_then(|v| v.as_str()).map(|s| s.to_string());
 
     let result = client
@@ -436,8 +436,8 @@ pub async fn config_system_config_manage(
 
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
-            ("\"configKey\"".to_string(), Value::String(config_key.to_string())),
-            ("\"configValue\"".to_string(), Value::String(config_value.to_string())),
+            ("configKey".to_string(), Value::String(config_key.to_string())),
+            ("configValue".to_string(), Value::String(config_value.to_string())),
             ("updated".to_string(), Value::Bool(result > 0)),
         ]),
     ))))
@@ -463,8 +463,8 @@ pub async fn meeting_list_applied_completed(
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("title".to_string(), Value::String(row.get("title"))),
                 ("content".to_string(), Value::String(row.get::<_, Option<String>>("content").unwrap_or_default())),
-                ("\"startTime\"".to_string(), Value::String(row.get("start_time"))),
-                ("\"endTime\"".to_string(), Value::String(row.get("end_time"))),
+                ("startTime".to_string(), Value::String(row.get("start_time"))),
+                ("endTime".to_string(), Value::String(row.get("end_time"))),
                 ("creator".to_string(), Value::String(row.get("creator"))),
                 ("createTime".to_string(), Value::String(row.get("create_time"))),
             ]))
@@ -495,8 +495,8 @@ pub async fn meeting_list_applied_processing(
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("title".to_string(), Value::String(row.get("title"))),
                 ("content".to_string(), Value::String(row.get::<_, Option<String>>("content").unwrap_or_default())),
-                ("\"startTime\"".to_string(), Value::String(row.get("start_time"))),
-                ("\"endTime\"".to_string(), Value::String(row.get("end_time"))),
+                ("startTime".to_string(), Value::String(row.get("start_time"))),
+                ("endTime".to_string(), Value::String(row.get("end_time"))),
                 ("creator".to_string(), Value::String(row.get("creator"))),
                 ("createTime".to_string(), Value::String(row.get("create_time"))),
             ]))
@@ -527,8 +527,8 @@ pub async fn meeting_list_applied_wait(
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("title".to_string(), Value::String(row.get("title"))),
                 ("content".to_string(), Value::String(row.get::<_, Option<String>>("content").unwrap_or_default())),
-                ("\"startTime\"".to_string(), Value::String(row.get("start_time"))),
-                ("\"endTime\"".to_string(), Value::String(row.get("end_time"))),
+                ("startTime".to_string(), Value::String(row.get("start_time"))),
+                ("endTime".to_string(), Value::String(row.get("end_time"))),
                 ("creator".to_string(), Value::String(row.get("creator"))),
                 ("createTime".to_string(), Value::String(row.get("create_time"))),
             ]))
@@ -563,8 +563,8 @@ pub async fn meeting_list_apply_page_size_size(
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("title".to_string(), Value::String(row.get("title"))),
                 ("content".to_string(), Value::String(row.get::<_, Option<String>>("content").unwrap_or_default())),
-                ("\"startTime\"".to_string(), Value::String(row.get("start_time"))),
-                ("\"endTime\"".to_string(), Value::String(row.get("end_time"))),
+                ("startTime".to_string(), Value::String(row.get("start_time"))),
+                ("endTime".to_string(), Value::String(row.get("end_time"))),
                 ("creator".to_string(), Value::String(row.get("creator"))),
                 ("createTime".to_string(), Value::String(row.get("create_time"))),
             ]))
@@ -602,8 +602,8 @@ pub async fn meeting_list_coming_day_count(
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("title".to_string(), Value::String(row.get("title"))),
                 ("content".to_string(), Value::String(row.get::<_, Option<String>>("content").unwrap_or_default())),
-                ("\"startTime\"".to_string(), Value::String(row.get("start_time"))),
-                ("\"endTime\"".to_string(), Value::String(row.get("end_time"))),
+                ("startTime".to_string(), Value::String(row.get("start_time"))),
+                ("endTime".to_string(), Value::String(row.get("end_time"))),
                 ("creator".to_string(), Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default())),
                 ("createTime".to_string(), Value::String(row.get("create_time"))),
             ]))
@@ -635,8 +635,8 @@ pub async fn meeting_list_coming_month_count(
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("title".to_string(), Value::String(row.get("title"))),
                 ("content".to_string(), Value::String(row.get::<_, Option<String>>("content").unwrap_or_default())),
-                ("\"startTime\"".to_string(), Value::String(row.get("start_time"))),
-                ("\"endTime\"".to_string(), Value::String(row.get("end_time"))),
+                ("startTime".to_string(), Value::String(row.get("start_time"))),
+                ("endTime".to_string(), Value::String(row.get("end_time"))),
                 ("creator".to_string(), Value::String(row.get("creator"))),
                 ("createTime".to_string(), Value::String(row.get("create_time"))),
             ]))
@@ -668,8 +668,8 @@ pub async fn meeting_list_forward_monthcount_monthCount(
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("title".to_string(), Value::String(row.get("title"))),
                 ("content".to_string(), Value::String(row.get::<_, Option<String>>("content").unwrap_or_default())),
-                ("\"startTime\"".to_string(), Value::String(row.get("start_time"))),
-                ("\"endTime\"".to_string(), Value::String(row.get("end_time"))),
+                ("startTime".to_string(), Value::String(row.get("start_time"))),
+                ("endTime".to_string(), Value::String(row.get("end_time"))),
                 ("creator".to_string(), Value::String(row.get("creator"))),
                 ("createTime".to_string(), Value::String(row.get("create_time"))),
             ]))
@@ -701,8 +701,8 @@ pub async fn meeting_list_forward_monthcount_monthCount_all(
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("title".to_string(), Value::String(row.get("title"))),
                 ("content".to_string(), Value::String(row.get::<_, Option<String>>("content").unwrap_or_default())),
-                ("\"startTime\"".to_string(), Value::String(row.get("start_time"))),
-                ("\"endTime\"".to_string(), Value::String(row.get("end_time"))),
+                ("startTime".to_string(), Value::String(row.get("start_time"))),
+                ("endTime".to_string(), Value::String(row.get("end_time"))),
                 ("creator".to_string(), Value::String(row.get("creator"))),
                 ("createTime".to_string(), Value::String(row.get("create_time"))),
             ]))
@@ -737,8 +737,8 @@ pub async fn meeting_list_invite_page_size_size(
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("title".to_string(), Value::String(row.get("title"))),
                 ("content".to_string(), Value::String(row.get::<_, Option<String>>("content").unwrap_or_default())),
-                ("\"startTime\"".to_string(), Value::String(row.get("start_time"))),
-                ("\"endTime\"".to_string(), Value::String(row.get("end_time"))),
+                ("startTime".to_string(), Value::String(row.get("start_time"))),
+                ("endTime".to_string(), Value::String(row.get("end_time"))),
                 ("creator".to_string(), Value::String(row.get("creator"))),
                 ("createTime".to_string(), Value::String(row.get("create_time"))),
             ]))
@@ -769,8 +769,8 @@ pub async fn meeting_list_invited_completed(
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("title".to_string(), Value::String(row.get("title"))),
                 ("content".to_string(), Value::String(row.get::<_, Option<String>>("content").unwrap_or_default())),
-                ("\"startTime\"".to_string(), Value::String(row.get("start_time"))),
-                ("\"endTime\"".to_string(), Value::String(row.get("end_time"))),
+                ("startTime".to_string(), Value::String(row.get("start_time"))),
+                ("endTime".to_string(), Value::String(row.get("end_time"))),
                 ("creator".to_string(), Value::String(row.get("creator"))),
                 ("createTime".to_string(), Value::String(row.get("create_time"))),
             ]))
@@ -801,8 +801,8 @@ pub async fn meeting_list_invited_processing(
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("title".to_string(), Value::String(row.get("title"))),
                 ("content".to_string(), Value::String(row.get::<_, Option<String>>("content").unwrap_or_default())),
-                ("\"startTime\"".to_string(), Value::String(row.get("start_time"))),
-                ("\"endTime\"".to_string(), Value::String(row.get("end_time"))),
+                ("startTime".to_string(), Value::String(row.get("start_time"))),
+                ("endTime".to_string(), Value::String(row.get("end_time"))),
                 ("creator".to_string(), Value::String(row.get("creator"))),
                 ("createTime".to_string(), Value::String(row.get("create_time"))),
             ]))
@@ -833,8 +833,8 @@ pub async fn meeting_list_invited_rejected(
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("title".to_string(), Value::String(row.get("title"))),
                 ("content".to_string(), Value::String(row.get::<_, Option<String>>("content").unwrap_or_default())),
-                ("\"startTime\"".to_string(), Value::String(row.get("start_time"))),
-                ("\"endTime\"".to_string(), Value::String(row.get("end_time"))),
+                ("startTime".to_string(), Value::String(row.get("start_time"))),
+                ("endTime".to_string(), Value::String(row.get("end_time"))),
                 ("creator".to_string(), Value::String(row.get("creator"))),
                 ("createTime".to_string(), Value::String(row.get("create_time"))),
             ]))
@@ -865,8 +865,8 @@ pub async fn meeting_list_invited_wait(
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("title".to_string(), Value::String(row.get("title"))),
                 ("content".to_string(), Value::String(row.get::<_, Option<String>>("content").unwrap_or_default())),
-                ("\"startTime\"".to_string(), Value::String(row.get("start_time"))),
-                ("\"endTime\"".to_string(), Value::String(row.get("end_time"))),
+                ("startTime".to_string(), Value::String(row.get("start_time"))),
+                ("endTime".to_string(), Value::String(row.get("end_time"))),
                 ("creator".to_string(), Value::String(row.get("creator"))),
                 ("createTime".to_string(), Value::String(row.get("create_time"))),
             ]))
@@ -897,8 +897,8 @@ pub async fn meeting_list_wait_accept(
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("title".to_string(), Value::String(row.get("title"))),
                 ("content".to_string(), Value::String(row.get::<_, Option<String>>("content").unwrap_or_default())),
-                ("\"startTime\"".to_string(), Value::String(row.get("start_time"))),
-                ("\"endTime\"".to_string(), Value::String(row.get("end_time"))),
+                ("startTime".to_string(), Value::String(row.get("start_time"))),
+                ("endTime".to_string(), Value::String(row.get("end_time"))),
                 ("creator".to_string(), Value::String(row.get("creator"))),
                 ("createTime".to_string(), Value::String(row.get("create_time"))),
             ]))
@@ -929,8 +929,8 @@ pub async fn meeting_list_wait_confirm(
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("title".to_string(), Value::String(row.get("title"))),
                 ("content".to_string(), Value::String(row.get::<_, Option<String>>("content").unwrap_or_default())),
-                ("\"startTime\"".to_string(), Value::String(row.get("start_time"))),
-                ("\"endTime\"".to_string(), Value::String(row.get("end_time"))),
+                ("startTime".to_string(), Value::String(row.get("start_time"))),
+                ("endTime".to_string(), Value::String(row.get("end_time"))),
                 ("creator".to_string(), Value::String(row.get("creator"))),
                 ("createTime".to_string(), Value::String(row.get("create_time"))),
             ]))
@@ -969,8 +969,8 @@ pub async fn meeting_list_year_year_month_month(
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("title".to_string(), Value::String(row.get("title"))),
                 ("content".to_string(), Value::String(row.get::<_, Option<String>>("content").unwrap_or_default())),
-                ("\"startTime\"".to_string(), Value::String(row.get("start_time"))),
-                ("\"endTime\"".to_string(), Value::String(row.get("end_time"))),
+                ("startTime".to_string(), Value::String(row.get("start_time"))),
+                ("endTime".to_string(), Value::String(row.get("end_time"))),
                 ("creator".to_string(), Value::String(row.get("creator"))),
                 ("createTime".to_string(), Value::String(row.get("create_time"))),
             ]))
@@ -1009,8 +1009,8 @@ pub async fn meeting_list_year_year_month_month_all(
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("title".to_string(), Value::String(row.get("title"))),
                 ("content".to_string(), Value::String(row.get::<_, Option<String>>("content").unwrap_or_default())),
-                ("\"startTime\"".to_string(), Value::String(row.get("start_time"))),
-                ("\"endTime\"".to_string(), Value::String(row.get("end_time"))),
+                ("startTime".to_string(), Value::String(row.get("start_time"))),
+                ("endTime".to_string(), Value::String(row.get("end_time"))),
                 ("creator".to_string(), Value::String(row.get("creator"))),
                 ("createTime".to_string(), Value::String(row.get("create_time"))),
             ]))
@@ -1045,8 +1045,8 @@ pub async fn meeting_list_year_year_month_month_day_day(
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("title".to_string(), Value::String(row.get("title"))),
                 ("content".to_string(), Value::String(row.get::<_, Option<String>>("content").unwrap_or_default())),
-                ("\"startTime\"".to_string(), Value::String(row.get("start_time"))),
-                ("\"endTime\"".to_string(), Value::String(row.get("end_time"))),
+                ("startTime".to_string(), Value::String(row.get("start_time"))),
+                ("endTime".to_string(), Value::String(row.get("end_time"))),
                 ("creator".to_string(), Value::String(row.get("creator"))),
                 ("createTime".to_string(), Value::String(row.get("create_time"))),
             ]))
@@ -1081,8 +1081,8 @@ pub async fn meeting_list_year_year_month_month_day_day_all(
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("title".to_string(), Value::String(row.get("title"))),
                 ("content".to_string(), Value::String(row.get::<_, Option<String>>("content").unwrap_or_default())),
-                ("\"startTime\"".to_string(), Value::String(row.get("start_time"))),
-                ("\"endTime\"".to_string(), Value::String(row.get("end_time"))),
+                ("startTime".to_string(), Value::String(row.get("start_time"))),
+                ("endTime".to_string(), Value::String(row.get("end_time"))),
                 ("creator".to_string(), Value::String(row.get("creator"))),
                 ("createTime".to_string(), Value::String(row.get("create_time"))),
             ]))
@@ -1117,8 +1117,8 @@ pub async fn meeting_list_year_year_month_month_day_day_roomId(
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("title".to_string(), Value::String(row.get("title"))),
                 ("content".to_string(), Value::String(row.get::<_, Option<String>>("content").unwrap_or_default())),
-                ("\"startTime\"".to_string(), Value::String(row.get("start_time"))),
-                ("\"endTime\"".to_string(), Value::String(row.get("end_time"))),
+                ("startTime".to_string(), Value::String(row.get("start_time"))),
+                ("endTime".to_string(), Value::String(row.get("end_time"))),
                 ("creator".to_string(), Value::String(row.get("creator"))),
                 ("createTime".to_string(), Value::String(row.get("create_time"))),
             ]))
@@ -1162,8 +1162,8 @@ pub async fn meeting_list_id_next_count(
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("title".to_string(), Value::String(row.get("title"))),
                 ("content".to_string(), Value::String(row.get::<_, Option<String>>("content").unwrap_or_default())),
-                ("\"startTime\"".to_string(), Value::String(row.get("start_time"))),
-                ("\"endTime\"".to_string(), Value::String(row.get("end_time"))),
+                ("startTime".to_string(), Value::String(row.get("start_time"))),
+                ("endTime".to_string(), Value::String(row.get("end_time"))),
                 ("creator".to_string(), Value::String(row.get("creator"))),
                 ("createTime".to_string(), Value::String(row.get("create_time"))),
             ]))
@@ -1197,8 +1197,8 @@ pub async fn meeting_list_id_prev_count(
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("title".to_string(), Value::String(row.get("title"))),
                 ("content".to_string(), Value::String(row.get::<_, Option<String>>("content").unwrap_or_default())),
-                ("\"startTime\"".to_string(), Value::String(row.get("start_time"))),
-                ("\"endTime\"".to_string(), Value::String(row.get("end_time"))),
+                ("startTime".to_string(), Value::String(row.get("start_time"))),
+                ("endTime".to_string(), Value::String(row.get("end_time"))),
                 ("creator".to_string(), Value::String(row.get("creator"))),
                 ("createTime".to_string(), Value::String(row.get("create_time"))),
             ]))
@@ -1233,8 +1233,8 @@ pub async fn meeting_list_page_size_size(
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("title".to_string(), Value::String(row.get("title"))),
                 ("content".to_string(), Value::String(row.get::<_, Option<String>>("content").unwrap_or_default())),
-                ("\"startTime\"".to_string(), Value::String(row.get("start_time"))),
-                ("\"endTime\"".to_string(), Value::String(row.get("end_time"))),
+                ("startTime".to_string(), Value::String(row.get("start_time"))),
+                ("endTime".to_string(), Value::String(row.get("end_time"))),
                 ("creator".to_string(), Value::String(row.get("creator"))),
                 ("createTime".to_string(), Value::String(row.get("create_time"))),
             ]))
@@ -1269,8 +1269,8 @@ pub async fn meeting_list_page_size_size_manage(
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("title".to_string(), Value::String(row.get("title"))),
                 ("content".to_string(), Value::String(row.get::<_, Option<String>>("content").unwrap_or_default())),
-                ("\"startTime\"".to_string(), Value::String(row.get("start_time"))),
-                ("\"endTime\"".to_string(), Value::String(row.get("end_time"))),
+                ("startTime".to_string(), Value::String(row.get("start_time"))),
+                ("endTime".to_string(), Value::String(row.get("end_time"))),
                 ("creator".to_string(), Value::String(row.get("creator"))),
                 ("createTime".to_string(), Value::String(row.get("create_time"))),
             ]))
@@ -1301,8 +1301,8 @@ pub async fn meeting_id(
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("title".to_string(), Value::String(row.get("title"))),
                 ("content".to_string(), Value::String(row.get::<_, Option<String>>("content").unwrap_or_default())),
-                ("\"startTime\"".to_string(), Value::String(row.get("start_time"))),
-                ("\"endTime\"".to_string(), Value::String(row.get("end_time"))),
+                ("startTime".to_string(), Value::String(row.get("start_time"))),
+                ("endTime".to_string(), Value::String(row.get("end_time"))),
                 ("creator".to_string(), Value::String(row.get("creator"))),
                 ("createTime".to_string(), Value::String(row.get("create_time"))),
             ]));
@@ -1320,8 +1320,8 @@ pub async fn create_meeting(
 
     let title = payload.get("title").and_then(|v| v.as_str()).ok_or(AppError::BadRequest("title is required".to_string()))?;
     let content = payload.get("content").and_then(|v| v.as_str()).map(|s| s.to_string());
-    let start_time = payload.get("\"startTime\"").and_then(|v| v.as_str()).ok_or(AppError::BadRequest("\"startTime\" is required".to_string()))?;
-    let end_time = payload.get("\"endTime\"").and_then(|v| v.as_str()).ok_or(AppError::BadRequest("\"endTime\" is required".to_string()))?;
+    let start_time = payload.get("startTime").and_then(|v| v.as_str()).ok_or(AppError::BadRequest("startTime is required".to_string()))?;
+    let end_time = payload.get("endTime").and_then(|v| v.as_str()).ok_or(AppError::BadRequest("endTime is required".to_string()))?;
     let creator = payload.get("creator").and_then(|v| v.as_str()).unwrap_or("system");
 
     let id = uuid::Uuid::new_v4().to_string();
@@ -1338,8 +1338,8 @@ pub async fn create_meeting(
         ("id".to_string(), Value::String(id)),
         ("title".to_string(), Value::String(title.to_string())),
         ("creator".to_string(), Value::String(creator.to_string())),
-        ("\"startTime\"".to_string(), Value::String(start_time.to_string())),
-        ("\"endTime\"".to_string(), Value::String(end_time.to_string())),
+        ("startTime".to_string(), Value::String(start_time.to_string())),
+        ("endTime".to_string(), Value::String(end_time.to_string())),
     ])))))
 }
 
@@ -1352,8 +1352,8 @@ pub async fn save_meeting(
 
     let title = payload.get("title").and_then(|v| v.as_str()).unwrap_or_default();
     let content = payload.get("content").and_then(|v| v.as_str()).map(|s| s.to_string());
-    let start_time = payload.get("\"startTime\"").and_then(|v| v.as_str()).unwrap_or_default();
-    let end_time = payload.get("\"endTime\"").and_then(|v| v.as_str()).unwrap_or_default();
+    let start_time = payload.get("startTime").and_then(|v| v.as_str()).unwrap_or_default();
+    let end_time = payload.get("endTime").and_then(|v| v.as_str()).unwrap_or_default();
 
     let result = client
         .execute(
@@ -1445,7 +1445,7 @@ pub async fn meeting_id_add_invite(
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("id".to_string(), Value::String(invite_id)),
-            ("\"meetingId\"".to_string(), Value::String(id)),
+            ("meetingId".to_string(), Value::String(id)),
             ("invitee".to_string(), Value::String(invitee.to_string())),
             ("added".to_string(), Value::Bool(result > 0)),
         ]),
@@ -1473,7 +1473,7 @@ pub async fn meeting_id_checkin(
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("id".to_string(), Value::String(checkin_id)),
-            ("\"meetingId\"".to_string(), Value::String(id)),
+            ("meetingId".to_string(), Value::String(id)),
             ("person".to_string(), Value::String(person.to_string())),
             ("checkedIn".to_string(), Value::Bool(result > 0)),
         ]),
@@ -1497,7 +1497,7 @@ pub async fn meeting_id_checkin_code(
     match row {
         Some(row) => {
             let result = Value::Object(serde_json::Map::from_iter([
-                ("\"meetingId\"".to_string(), Value::String(id)),
+                ("meetingId".to_string(), Value::String(id)),
                 ("checkinCode".to_string(), Value::String(row.get("checkin_code"))),
                 ("expireTime".to_string(), Value::String(row.get("expire_time"))),
             ]));
@@ -1606,7 +1606,7 @@ pub async fn meeting_id_modify_completedtime(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
-    let completed_time = payload.get("\"completedTime\"").and_then(|v| v.as_str()).ok_or(AppError::BadRequest("\"completedTime\" is required".to_string()))?;
+    let completed_time = payload.get("completedTime").and_then(|v| v.as_str()).ok_or(AppError::BadRequest("completedTime is required".to_string()))?;
 
     let result = client
         .execute(
@@ -1619,7 +1619,7 @@ pub async fn meeting_id_modify_completedtime(
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("id".to_string(), Value::String(id)),
-            ("\"completedTime\"".to_string(), Value::String(completed_time.to_string())),
+            ("completedTime".to_string(), Value::String(completed_time.to_string())),
             ("modified".to_string(), Value::Bool(result > 0)),
         ]),
     ))))
@@ -1632,8 +1632,8 @@ pub async fn meeting_id_modify_starttime(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
-    let start_time = payload.get("\"startTime\"").and_then(|v| v.as_str()).ok_or(AppError::BadRequest("\"startTime\" is required".to_string()))?;
-    let end_time = payload.get("\"endTime\"").and_then(|v| v.as_str());
+    let start_time = payload.get("startTime").and_then(|v| v.as_str()).ok_or(AppError::BadRequest("startTime is required".to_string()))?;
+    let end_time = payload.get("endTime").and_then(|v| v.as_str());
 
     let result = if let Some(end_time) = end_time {
         client
@@ -1656,7 +1656,7 @@ pub async fn meeting_id_modify_starttime(
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("id".to_string(), Value::String(id)),
-            ("\"startTime\"".to_string(), Value::String(start_time.to_string())),
+            ("startTime".to_string(), Value::String(start_time.to_string())),
             ("modified".to_string(), Value::Bool(result > 0)),
         ]),
     ))))
@@ -2006,7 +2006,7 @@ const U2_ATTACHMENT_COLS: &str =
 fn u2_attachment_json(row: &deadpool_postgres::tokio_postgres::Row) -> Value {
     Value::Object(serde_json::Map::from_iter([
         ("id".to_string(), Value::String(row.get("id"))),
-        ("\"meetingId\"".to_string(), Value::String(row.get("meeting_id"))),
+        ("meetingId".to_string(), Value::String(row.get("meeting_id"))),
         ("person".to_string(), Value::String(row.get::<_, Option<String>>("person").unwrap_or_default())),
         ("fileName".to_string(), Value::String(row.get::<_, Option<String>>("file_name").unwrap_or_default())),
         ("extension".to_string(), Value::String(row.get::<_, Option<String>>("extension").unwrap_or_default())),
@@ -2060,7 +2060,7 @@ async fn u2_attachment_store_new(
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("id".to_string(), Value::String(id)),
-            ("\"meetingId\"".to_string(), Value::String(meeting_id.to_string())),
+            ("meetingId".to_string(), Value::String(meeting_id.to_string())),
             ("fileName".to_string(), Value::String(filename.to_string())),
             ("extension".to_string(), Value::String(ext)),
             ("length".to_string(), Value::Number(serde_json::Number::from(length))),
@@ -2228,18 +2228,18 @@ pub async fn u2_attachment_create_from_processplatform(
     axum::extract::Json(payload): axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let meeting_id = payload
-        .get("\"meetingId\"")
+        .get("meetingId")
         .or_else(|| payload.get("meetingId"))
         .and_then(|v| v.as_str())
         .ok_or_else(|| AppError::BadRequest("meetingId is required".to_string()))?;
     let site = payload
         .get("site")
-        .or_else(|| payload.get("\"site\""))
+        .or_else(|| payload.get("site"))
         .and_then(|v| v.as_str())
         .unwrap_or_default();
     let title = payload
         .get("title")
-        .or_else(|| payload.get("\"title\""))
+        .or_else(|| payload.get("title"))
         .and_then(|v| v.as_str())
         .unwrap_or("processplatform attachment");
 
@@ -2264,7 +2264,7 @@ pub async fn u2_attachment_create_from_processplatform(
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("id".to_string(), Value::String(id)),
-            ("\"meetingId\"".to_string(), Value::String(meeting_id.to_string())),
+            ("meetingId".to_string(), Value::String(meeting_id.to_string())),
             ("site".to_string(), Value::String(site.to_string())),
             ("title".to_string(), Value::String(title.to_string())),
         ]),
@@ -2524,14 +2524,14 @@ pub async fn u2_config_save(
 
     let config_key = payload
         .get("configKey")
-        .or_else(|| payload.get("\"configKey\""))
+        .or_else(|| payload.get("configKey"))
         .or_else(|| payload.get("key"))
         .and_then(|v| v.as_str())
         .ok_or_else(|| AppError::BadRequest("configKey is required".to_string()))?
         .to_string();
     let config_value = payload
         .get("configValue")
-        .or_else(|| payload.get("\"configValue\""))
+        .or_else(|| payload.get("configValue"))
         .or_else(|| payload.get("value"))
         .map(|v| match v {
             Value::String(s) => s.clone(),
@@ -2635,7 +2635,7 @@ pub async fn u2_meeting_modify(
 
     let title = payload.get("title").and_then(|v| v.as_str()).map(str::trim).filter(|s| !s.is_empty());
     let content = payload.get("content").and_then(|v| v.as_str());
-    let room_id = payload.get("roomId").or_else(|| payload.get("\"roomId\"")).and_then(|v| v.as_str());
+    let room_id = payload.get("roomId").or_else(|| payload.get("roomId")).and_then(|v| v.as_str());
 
     let count = client
         .execute(
@@ -2667,8 +2667,8 @@ pub async fn u2_meeting_put_save(
 
     let title = payload.get("title").and_then(|v| v.as_str()).unwrap_or_default();
     let content = payload.get("content").and_then(|v| v.as_str());
-    let start_time = payload.get("\"startTime\"").and_then(|v| v.as_str()).unwrap_or_default();
-    let end_time = payload.get("\"endTime\"").and_then(|v| v.as_str()).unwrap_or_default();
+    let start_time = payload.get("startTime").and_then(|v| v.as_str()).unwrap_or_default();
+    let end_time = payload.get("endTime").and_then(|v| v.as_str()).unwrap_or_default();
 
     let count = client
         .execute(
@@ -2710,7 +2710,7 @@ pub async fn u2_meeting_checkin_get(
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("id".to_string(), Value::String(checkin_id)),
-            ("\"meetingId\"".to_string(), Value::String(id)),
+            ("meetingId".to_string(), Value::String(id)),
             ("person".to_string(), Value::String(person)),
             ("checkedIn".to_string(), Value::Bool(true)),
         ]),
@@ -2779,7 +2779,7 @@ pub async fn u2_room_create(
         return Err(AppError::BadRequest(format!("room already exists: {}", name)));
     }
 
-    let building_id = payload.get("buildingId").or_else(|| payload.get("\"buildingId\"")).and_then(|v| v.as_str());
+    let building_id = payload.get("buildingId").or_else(|| payload.get("buildingId")).and_then(|v| v.as_str());
     let floor = payload.get("floor").and_then(|v| v.as_str());
     let capacity = payload.get("capacity").and_then(|v| v.as_i64()).map(|v| v as i32).unwrap_or(0);
     let equipment = payload

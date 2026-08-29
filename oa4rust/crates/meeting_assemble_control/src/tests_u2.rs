@@ -495,7 +495,8 @@ mod u2_tests {
 
         let (st, json) = respond_db("GET", &format!("{b}/list/meeting/{mid}"), &[], Body::empty(), NON_ADMIN).await;
         assert_eq!(st, StatusCode::OK);
-        assert!(json["data"]["data"].as_array().map(|a| !a.is_empty()).unwrap_or(false), "listed attachments must be non-empty: {json}");
+        // java_success format: data is directly an array
+        assert!(json["data"].as_array().map(|a| !a.is_empty()).unwrap_or(false), "listed attachments must be non-empty: {json}");
 
         client.execute("DELETE FROM x_meeting_attachment WHERE meeting_id = $1", &[&mid]).await.unwrap();
         client.execute("DELETE FROM x_meeting WHERE id = $1", &[&mid]).await.unwrap();
