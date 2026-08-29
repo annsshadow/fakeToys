@@ -14,7 +14,7 @@ mod behavior_comparison;
 
 use std::collections::HashMap;
 
-use behavior_comparison::{ComparisonStatus, EndpointComparator, EndpointDef};
+use behavior_comparison::{ComparisonResult, ComparisonStatus, EndpointComparator, EndpointDef};
 
 /// Rust 服务地址（CI 中通过 cargo test 启动，监听 3000 端口）。
 const RUST_BASE_URL: &str = "http://localhost:3000";
@@ -221,7 +221,29 @@ async fn behavior_compare_rust_vs_java() {
 
     // ── 执行对比 ──────────────────────────────────────────────────────────
     eprintln!("[behavior_compare] Comparing {} endpoints...", all_endpoints().len());
-    let results = comparator.compare_all(&all_endpoints()).await;
+
+    // Fast path: when Java is unreachable, skip all Rust calls and emit SKIP report.
+    // Without this, 4687 sequential requests with 45s timeout would take hours.
+    let results = if !java_reachable {
+        eprintln!("[behavior_compare] Java unreachable — skipping all endpoint comparisons (SKIP all)");
+        all_endpoints()
+            .iter()
+            .map(|def| ComparisonResult {
+                endpoint: def.rust_path.to_string(),
+                method: def.method.to_string(),
+                crate_name: def.crate_name.to_string(),
+                rust_status: None,
+                java_status: None,
+                rust_response: None,
+                java_response: None,
+                is_equivalent: true,
+                differences: vec![],
+                status: ComparisonStatus::Skip,
+            })
+            .collect()
+    } else {
+        comparator.compare_all(&all_endpoints()).await
+    };
 
     let passed = results.iter().filter(|r| r.status == ComparisonStatus::Pass).count();
     let failed = results.iter().filter(|r| r.status == ComparisonStatus::Fail).count();
