@@ -138,7 +138,7 @@ pub async fn building_list(
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let rows = client
         .query(
-            "SELECT id, name, address, description, order_number, create_time FROM x_meeting_building ORDER BY name LIMIT 50",
+            "SELECT id, name, address, description, order_number, create_time::text FROM x_meeting_building ORDER BY name LIMIT 50",
             &[],
         )
         .await
@@ -312,7 +312,7 @@ pub async fn list_meetings(
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let rows = client
         .query(
-            "SELECT id, title, content, room_id, start_time, end_time, creator, create_time FROM x_meeting ORDER BY start_time DESC LIMIT 50",
+            "SELECT id, title, content, room_id, start_time::text, end_time::text, creator, create_time::text FROM x_meeting ORDER BY start_time DESC LIMIT 50",
             &[],
         )
         .await
@@ -325,10 +325,10 @@ pub async fn list_meetings(
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("title".to_string(), Value::String(row.get("title"))),
                 ("content".to_string(), Value::String(row.get::<_, Option<String>>("content").unwrap_or_default())),
-                ("roomId".to_string(), Value::String(row.get("room_id"))),
-                ("\"startTime\"".to_string(), Value::String(row.get("start_time"))),
-                ("\"endTime\"".to_string(), Value::String(row.get("end_time"))),
-                ("creator".to_string(), Value::String(row.get("creator"))),
+                ("roomId".to_string(), row.get::<_, Option<String>>("room_id").unwrap_or_default().into()),
+                ("startTime".to_string(), Value::String(row.get("start_time"))),
+                ("endTime".to_string(), Value::String(row.get("end_time"))),
+                ("creator".to_string(), row.get::<_, Option<String>>("creator").unwrap_or_default().into()),
                 ("createTime".to_string(), Value::String(row.get("create_time"))),
             ]))
         })
