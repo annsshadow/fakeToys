@@ -182,8 +182,7 @@ pub async fn attendscope_get(
 
 pub async fn attendscope_create(
     pool: Extension<Pool>,
-    axum::extract::req): Json<AttendScopeCreateRequest>,,
-    let var = body.map(|b| b.0).unwrap_or_default();
+    axum::extract::Json(req): Json<AttendScopeCreateRequest>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
@@ -213,8 +212,7 @@ pub async fn attendscope_create(
 pub async fn attendscope_save(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
-    axum::extract::req): Json<AttendScopeCreateRequest>,,
-    let var = body.map(|b| b.0).unwrap_or_default();
+    axum::extract::Json(req): Json<AttendScopeCreateRequest>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
