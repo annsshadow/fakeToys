@@ -11943,7 +11943,8 @@ pub async fn work_list_id_next_count_application_applicationFlag_filter(pool: Ex
 }
 
 pub async fn work_list_id_next_count_application_applicationFlag_filter_manage(pool: Extension<Pool>,
-    axum::extract::Path((id, _count, _applicationFlag)): axum::extract::Path<(String, i64, String)>,) -> Result<Json<ActionResult<Value>>, AppError> {
+    axum::extract::Path((id, _count, _applicationFlag)): axum::extract::Path<(String, i64, String)>,
+    ) -> Result<Json<ActionResult<Value>>, AppError> { -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let row = client
         .query_opt(
@@ -11967,7 +11968,8 @@ pub async fn work_list_id_next_count_application_applicationFlag_filter_manage(p
 }
 
 pub async fn work_list_id_next_count_application_applicationFlag_manage(pool: Extension<Pool>,
-    axum::extract::Path((id, _count, _applicationFlag)): axum::extract::Path<(String, i64, String)>,) -> Result<Json<ActionResult<Value>>, AppError> {
+    axum::extract::Path((id, _count, _applicationFlag)): axum::extract::Path<(String, i64, String)>,
+    ) -> Result<Json<ActionResult<Value>>, AppError> { -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let row = client
         .query_opt(
@@ -12116,7 +12118,8 @@ pub async fn work_list_id_prev_count_application_applicationFlag_filter(pool: Ex
 }
 
 pub async fn work_list_id_prev_count_application_applicationFlag_filter_manage(pool: Extension<Pool>,
-    axum::extract::Path((id, _count, _applicationFlag)): axum::extract::Path<(String, i64, String)>,) -> Result<Json<ActionResult<Value>>, AppError> {
+    axum::extract::Path((id, _count, _applicationFlag)): axum::extract::Path<(String, i64, String)>,
+    ) -> Result<Json<ActionResult<Value>>, AppError> { -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let row = client
         .query_opt(
@@ -12140,7 +12143,8 @@ pub async fn work_list_id_prev_count_application_applicationFlag_filter_manage(p
 }
 
 pub async fn work_list_id_prev_count_application_applicationFlag_manage(pool: Extension<Pool>,
-    axum::extract::Path((id, _count, _applicationFlag)): axum::extract::Path<(String, i64, String)>,) -> Result<Json<ActionResult<Value>>, AppError> {
+    axum::extract::Path((id, _count, _applicationFlag)): axum::extract::Path<(String, i64, String)>,
+    ) -> Result<Json<ActionResult<Value>>, AppError> { -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let row = client
         .query_opt(
@@ -13561,7 +13565,8 @@ pub async fn workcompleted_list_id_next_count_application_applicationFlag_filter
 }
 
 pub async fn workcompleted_list_id_next_count_application_applicationFlag_filter_manage(pool: Extension<Pool>,
-    axum::extract::Path((id, _count, _applicationFlag)): axum::extract::Path<(String, i64, String)>,) -> Result<Json<ActionResult<Value>>, AppError> {
+    axum::extract::Path((id, _count, _applicationFlag)): axum::extract::Path<(String, i64, String)>,
+    ) -> Result<Json<ActionResult<Value>>, AppError> { -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let row = client
         .query_opt(
@@ -13585,7 +13590,8 @@ pub async fn workcompleted_list_id_next_count_application_applicationFlag_filter
 }
 
 pub async fn workcompleted_list_id_next_count_application_applicationFlag_manage(pool: Extension<Pool>,
-    axum::extract::Path((id, _count, _applicationFlag)): axum::extract::Path<(String, i64, String)>,) -> Result<Json<ActionResult<Value>>, AppError> {
+    axum::extract::Path((id, _count, _applicationFlag)): axum::extract::Path<(String, i64, String)>,
+    ) -> Result<Json<ActionResult<Value>>, AppError> { -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let row = client
         .query_opt(
@@ -13659,7 +13665,8 @@ pub async fn workcompleted_list_id_prev_count_application_applicationFlag_filter
 }
 
 pub async fn workcompleted_list_id_prev_count_application_applicationFlag_manage(pool: Extension<Pool>,
-    axum::extract::Path((id, _count, _applicationFlag)): axum::extract::Path<(String, i64, String)>,) -> Result<Json<ActionResult<Value>>, AppError> {
+    axum::extract::Path((id, _count, _applicationFlag)): axum::extract::Path<(String, i64, String)>,
+    ) -> Result<Json<ActionResult<Value>>, AppError> { -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let row = client
         .query_opt(
