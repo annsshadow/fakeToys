@@ -211,7 +211,7 @@ pub async fn person_auth_info_flag(
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let persons = resolve_person_ids(&client, std::slice::from_ref(&flag)).await?;
     let Some(pid) = persons.first() else {
-        return ok_json(Value::Null);
+        return ok_json(Value::Object(serde_json::Map::new()));
     };
 
     let identity_rows = client
@@ -250,7 +250,7 @@ pub async fn person_auth_info_flag(
         .await
         .map_err(|_| AppError::Internal)?;
     if person_rows.is_empty() {
-        return ok_json(Value::Null);
+        return ok_json(Value::Object(serde_json::Map::new()));
     }
 
     let identity_list: Vec<String> = identity_rows.iter().map(|r| r.get("id")).collect();
@@ -286,7 +286,7 @@ pub async fn person_nick_name_flag(
         .await
         .map_err(|_| AppError::Internal)?;
     match rows.first() {
-        None => ok_json(Value::Null),
+        None => ok_json(Value::Object(serde_json::Map::new())),
         Some(row) => ok_json(row_to_map(row)),
     }
 }
@@ -305,7 +305,7 @@ pub async fn person_mobile_flag(
         .await
         .map_err(|_| AppError::Internal)?;
     match rows.first() {
-        None => ok_json(Value::Null),
+        None => ok_json(Value::Object(serde_json::Map::new())),
         Some(row) => ok_json(row_to_map(row)),
     }
 }

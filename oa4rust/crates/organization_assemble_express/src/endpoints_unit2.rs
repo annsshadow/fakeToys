@@ -56,7 +56,7 @@ async fn unit_pick_on_identity_chain(
     objects: bool,
 ) -> Result<AxumJson<ActionResult<Value>>, AppError> {
     let Some(identity) = string_field(&body, "identity") else {
-        return ok_json(Value::Null);
+        return ok_json(Value::Object(serde_json::Map::new()));
     };
     let second: Option<(String, bool)> = if by_level {
         body.get("level")
@@ -67,7 +67,7 @@ async fn unit_pick_on_identity_chain(
         string_field(&body, "type").map(|t| (t, true))
     };
     let Some((second, is_text)) = second else {
-        return ok_json(Value::Null);
+        return ok_json(Value::Object(serde_json::Map::new()));
     };
     // level 为整数比较、type 为文本比较；用两个占位类型分支构造 SQL
     let predicate = if is_text {
@@ -94,11 +94,11 @@ async fn unit_pick_on_identity_chain(
                 .query(&sql, &[&identity, &lvl])
                 .await
                 .map_err(|_| AppError::Internal)?,
-            None => return ok_json(Value::Null),
+            None => return ok_json(Value::Object(serde_json::Map::new())),
         }
     };
     match rows.first() {
-        None => ok_json(Value::Null),
+        None => ok_json(Value::Object(serde_json::Map::new())),
         Some(row) => {
             if objects {
                 ok_json(row_to_map(row))
