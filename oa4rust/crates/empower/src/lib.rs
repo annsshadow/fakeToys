@@ -451,7 +451,7 @@ pub async fn manager_list_paging(
     session_manager: Extension<SessionManager>,
     headers: HeaderMap,
     Path((page, size)): Path<(i64, i64)>,
-) -> Result<Json<ActionResult<EmpowerListResult>>, AppError> {
+) -> Result<Json<ActionResult<Vec<EmpowerInfo>>>, AppError> {
     let current_person = resolve_current_person_unique(&session_manager, &headers).await?;
 
     if !shared::middleware::is_admin(&pool, &current_person).await {
@@ -492,8 +492,9 @@ pub async fn manager_list_paging(
             updated_at: row.get("updated_at"),
         })
         .collect();
+    let data_len = data.len() as i64;
 
-    Ok(Json(ActionResult::success(EmpowerListResult { count: total, data })))
+    Ok(Json(ActionResult::java_success(data, total, data_len)))
 }
 
 /// GET /jaxrs/person/empower/list/currentperson — 我的授权列表
@@ -501,7 +502,7 @@ pub async fn list_current_person(
     pool: Extension<Pool>,
     session_manager: Extension<SessionManager>,
     headers: HeaderMap,
-) -> Result<Json<ActionResult<EmpowerListResult>>, AppError> {
+) -> Result<Json<ActionResult<Vec<EmpowerInfo>>>, AppError> {
     let current_person = resolve_current_person_unique(&session_manager, &headers).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
@@ -537,7 +538,8 @@ pub async fn list_current_person(
         })
         .collect();
 
-    Ok(Json(ActionResult::success(EmpowerListResult { count: total, data })))
+    let data_len = data.len() as i64;
+    Ok(Json(ActionResult::java_success(data, total, data_len)))
 }
 
 /// GET /jaxrs/person/empower/list/currentperson/enable — 我的生效授权列表
@@ -545,7 +547,7 @@ pub async fn list_current_person_enable(
     pool: Extension<Pool>,
     session_manager: Extension<SessionManager>,
     headers: HeaderMap,
-) -> Result<Json<ActionResult<EmpowerListResult>>, AppError> {
+) -> Result<Json<ActionResult<Vec<EmpowerInfo>>>, AppError> {
     let current_person = resolve_current_person_unique(&session_manager, &headers).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
@@ -581,7 +583,8 @@ pub async fn list_current_person_enable(
         })
         .collect();
 
-    Ok(Json(ActionResult::success(EmpowerListResult { count: total, data })))
+    let data_len = data.len() as i64;
+    Ok(Json(ActionResult::java_success(data, total, data_len)))
 }
 
 /// GET /jaxrs/person/empower/list/to — 我拥有的被授权列表（我授权给他人的）
@@ -589,7 +592,7 @@ pub async fn list_to(
     pool: Extension<Pool>,
     session_manager: Extension<SessionManager>,
     headers: HeaderMap,
-) -> Result<Json<ActionResult<EmpowerListResult>>, AppError> {
+) -> Result<Json<ActionResult<Vec<EmpowerInfo>>>, AppError> {
     let current_person = resolve_current_person_unique(&session_manager, &headers).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
@@ -625,7 +628,8 @@ pub async fn list_to(
         })
         .collect();
 
-    Ok(Json(ActionResult::success(EmpowerListResult { count: total, data })))
+    let data_len = data.len() as i64;
+    Ok(Json(ActionResult::java_success(data, total, data_len)))
 }
 
 /// GET /jaxrs/person/empower/list/to/enable — 我生效的被授权列表
@@ -633,7 +637,7 @@ pub async fn list_to_enable(
     pool: Extension<Pool>,
     session_manager: Extension<SessionManager>,
     headers: HeaderMap,
-) -> Result<Json<ActionResult<EmpowerListResult>>, AppError> {
+) -> Result<Json<ActionResult<Vec<EmpowerInfo>>>, AppError> {
     let current_person = resolve_current_person_unique(&session_manager, &headers).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
@@ -669,7 +673,8 @@ pub async fn list_to_enable(
         })
         .collect();
 
-    Ok(Json(ActionResult::success(EmpowerListResult { count: total, data })))
+    let data_len = data.len() as i64;
+    Ok(Json(ActionResult::java_success(data, total, data_len)))
 }
 
 #[cfg(test)]
