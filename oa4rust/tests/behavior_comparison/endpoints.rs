@@ -45517,7 +45517,7 @@ pub const ENDPOINTS: &[EndpointDef] = &[
 
     EndpointDef {
         crate_name: "query_assemble_surface",
-        method: "GET",
+        method: "POST",
         rust_path: "/jaxrs/queryview/importmodel/flag/{flag}/query/{queryFlag}",
         java_war: "x_query_assemble_surface",
         java_action: "/importmodel/flag/{}/query/{}",
@@ -45957,7 +45957,7 @@ pub const ENDPOINTS: &[EndpointDef] = &[
 
     EndpointDef {
         crate_name: "query_assemble_surface",
-        method: "GET",
+        method: "POST",
         rust_path: "/jaxrs/queryview/view/{id}",
         java_war: "x_query_assemble_surface",
         java_action: "/view/{}",
@@ -45967,7 +45967,7 @@ pub const ENDPOINTS: &[EndpointDef] = &[
 
     EndpointDef {
         crate_name: "query_assemble_surface",
-        method: "GET",
+        method: "POST",
         rust_path: "/jaxrs/queryview/{query}/{flag}",
         java_war: "x_query_assemble_surface",
         java_action: "/{}",
@@ -45977,7 +45977,7 @@ pub const ENDPOINTS: &[EndpointDef] = &[
 
     EndpointDef {
         crate_name: "query_assemble_surface",
-        method: "GET",
+        method: "POST",
         rust_path: "/jaxrs/queryview/{view}/{flag}/{flag}/{query}/{queryFlag}",
         java_war: "",
         java_action: "",
@@ -46637,7 +46637,7 @@ pub const ENDPOINTS: &[EndpointDef] = &[
 
     EndpointDef {
         crate_name: "query_core_entity",
-        method: "GET",
+        method: "POST",
         rust_path: "/jaxrs/query/import/list",
         java_war: "",
         java_action: "",
@@ -46647,7 +46647,7 @@ pub const ENDPOINTS: &[EndpointDef] = &[
 
     EndpointDef {
         crate_name: "query_core_entity",
-        method: "GET",
+        method: "POST",
         rust_path: "/jaxrs/query/item/list",
         java_war: "",
         java_action: "",
@@ -46657,7 +46657,7 @@ pub const ENDPOINTS: &[EndpointDef] = &[
 
     EndpointDef {
         crate_name: "query_core_entity",
-        method: "GET",
+        method: "POST",
         rust_path: "/jaxrs/query/view/list",
         java_war: "",
         java_action: "",
@@ -46667,7 +46667,7 @@ pub const ENDPOINTS: &[EndpointDef] = &[
 
     EndpointDef {
         crate_name: "query_core_entity",
-        method: "GET",
+        method: "POST",
         rust_path: "/jaxrs/query/view/{id}",
         java_war: "",
         java_action: "",
@@ -46687,7 +46687,7 @@ pub const ENDPOINTS: &[EndpointDef] = &[
 
     EndpointDef {
         crate_name: "query_core_express",
-        method: "GET",
+        method: "POST",
         rust_path: "/jaxrs/query/core/express/cache/status/{queryId}",
         java_war: "",
         java_action: "",
@@ -46697,7 +46697,7 @@ pub const ENDPOINTS: &[EndpointDef] = &[
 
     EndpointDef {
         crate_name: "query_core_express",
-        method: "GET",
+        method: "POST",
         rust_path: "/jaxrs/query/core/express/history/{limit}",
         java_war: "",
         java_action: "",
@@ -46727,7 +46727,7 @@ pub const ENDPOINTS: &[EndpointDef] = &[
 
     EndpointDef {
         crate_name: "query_express",
-        method: "GET",
+        method: "POST",
         rust_path: "/jaxrs/query/list",
         java_war: "",
         java_action: "",
@@ -46747,7 +46747,7 @@ pub const ENDPOINTS: &[EndpointDef] = &[
 
     EndpointDef {
         crate_name: "query_service",
-        method: "GET",
+        method: "POST",
         rust_path: "/jaxrs/query/service/neural/list",
         java_war: "",
         java_action: "",
@@ -46777,7 +46777,7 @@ pub const ENDPOINTS: &[EndpointDef] = &[
 
     EndpointDef {
         crate_name: "query_service_processing",
-        method: "GET",
+        method: "POST",
         rust_path: "/jaxrs/query/service/processing/status",
         java_war: "",
         java_action: "",
@@ -46817,7 +46817,7 @@ pub const ENDPOINTS: &[EndpointDef] = &[
 
     EndpointDef {
         crate_name: "realtime",
-        method: "GET",
+        method: "POST",
         rust_path: "/ws/realtime",
         java_war: "",
         java_action: "",
@@ -46827,7 +46827,7 @@ pub const ENDPOINTS: &[EndpointDef] = &[
 
     EndpointDef {
         crate_name: "realtime",
-        method: "GET",
+        method: "POST",
         rust_path: "/ws/realtime/room/{room_id}",
         java_war: "",
         java_action: "",
@@ -46837,7 +46837,7 @@ pub const ENDPOINTS: &[EndpointDef] = &[
 
     EndpointDef {
         crate_name: "realtime",
-        method: "GET",
+        method: "POST",
         rust_path: "/ws/realtime/room/{room_id}/stats",
         java_war: "",
         java_action: "",
@@ -46847,7 +46847,7 @@ pub const ENDPOINTS: &[EndpointDef] = &[
 
     EndpointDef {
         crate_name: "shared",
-        method: "GET",
+        method: "POST",
         rust_path: "/health",
         java_war: "",
         java_action: "",
