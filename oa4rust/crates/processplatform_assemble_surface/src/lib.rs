@@ -15987,7 +15987,7 @@ pub async fn snap_u2_manage_filter_paging(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
     axum::extract::Path((page, size)): axum::extract::Path<(i64, i64)>,
-    wi): Json<U2FilterWi>,
+    wi: Json<U2FilterWi>,
     ) -> Result<Json<ActionResult<Value>>, AppError> {
     u2_require_admin(&pool, &session).await?;
     let fs = wi.to_snap_filter_sql(None);
@@ -15998,7 +15998,7 @@ pub async fn snap_u2_manage_app_paging_filter(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
     axum::extract::Path((page, size, application_flag)): axum::extract::Path<(i64, i64, String)>,
-    wi): Json<U2FilterWi>,
+    wi: Json<U2FilterWi>,
     ) -> Result<Json<ActionResult<Value>>, AppError> {
     u2_require_admin(&pool, &session).await?;
     let fs = wi.to_snap_filter_sql(Some(&application_flag));
@@ -16051,7 +16051,7 @@ pub async fn snap_u2_manage_next_filter(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
     axum::extract::Path((id, count)): axum::extract::Path<(String, i64)>,
-    wi): Json<U2FilterWi>,
+    wi: Json<U2FilterWi>,
     ) -> Result<Json<ActionResult<Value>>, AppError> {
     u2_require_admin(&pool, &session).await?;
     let fs = wi.to_snap_filter_sql(None);
@@ -16062,7 +16062,7 @@ pub async fn snap_u2_manage_prev_filter(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
     axum::extract::Path((id, count)): axum::extract::Path<(String, i64)>,
-    wi): Json<U2FilterWi>,
+    wi: Json<U2FilterWi>,
     ) -> Result<Json<ActionResult<Value>>, AppError> {
     u2_require_admin(&pool, &session).await?;
     let fs = wi.to_snap_filter_sql(None);
