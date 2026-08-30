@@ -50,9 +50,8 @@ pub async fn get_surface(
 
 pub async fn create_surface(
     pool: Extension<Pool>,
-    axum::extract::req): Json<CreateSurfaceRequest>,,
-    let var = body.map(|b| b.0).unwrap_or_default();
-) -> Result<Json<ActionResult<Value>>, AppError> {
+    req: axum::extract::Json<CreateSurfaceRequest>,
+    ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let name = req.name.unwrap_or_default();
     if name.trim().is_empty() {
@@ -15162,9 +15161,8 @@ pub async fn attachment_u2b_v2_upload_base64(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
     axum::extract::Path(flag): axum::extract::Path<String>,
-    body): Json<U2B64UploadBody>,,
-    let var = body.map(|b| b.0).unwrap_or_default();
-) -> Result<Json<ActionResult<Value>>, AppError> {
+    body): Json<U2B64UploadBody>,
+    ) -> Result<Json<ActionResult<Value>>, AppError> {
     use base64::Engine as _;
     let b64 = body.file_base64.as_deref().unwrap_or_default();
     let bytes = base64::engine::general_purpose::STANDARD
@@ -15415,9 +15413,8 @@ pub async fn attachment_u2b_update_by_work(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
     axum::extract::Path((id, work)): axum::extract::Path<(String, String)>,
-    body>: Option<axum::extract::Json<Value>>,,
-    let var = body.map(|b| b.0).unwrap_or_default();
-) -> Result<Json<ActionResult<Value>>, AppError> {
+    body>: Option<axum::extract::Json<Value>>,
+    ) -> Result<Json<ActionResult<Value>>, AppError> {
     let name = u2_body_str(&body, &["fileName", "name"]);
     u2_att_update_meta(&pool, &session.person_unique, &id, &work, name.as_deref()).await
 }
@@ -15426,9 +15423,8 @@ pub async fn attachment_u2b_update_post(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
     path: axum::extract::Path<(String, String)>,
-    body>: Option<axum::extract::Json<Value>>,,
-    let var = body.map(|b| b.0).unwrap_or_default();
-) -> Result<Json<ActionResult<Value>>, AppError> {
+    body>: Option<axum::extract::Json<Value>>,
+    ) -> Result<Json<ActionResult<Value>>, AppError> {
     attachment_u2b_update_by_work(pool, session, path, Json(body)).await
 }
 
@@ -15436,9 +15432,8 @@ pub async fn attachment_u2b_update_callback(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
     axum::extract::Path((id, work, _cb)): axum::extract::Path<(String, String, String)>,
-    body>: Option<axum::extract::Json<Value>>,,
-    let var = body.map(|b| b.0).unwrap_or_default();
-) -> Result<Json<ActionResult<Value>>, AppError> {
+    body>: Option<axum::extract::Json<Value>>,
+    ) -> Result<Json<ActionResult<Value>>, AppError> {
     let name = u2_body_str(&body, &["fileName", "name"]);
     u2_att_update_meta(&pool, &session.person_unique, &id, &work, name.as_deref()).await
 }
@@ -15447,9 +15442,8 @@ pub async fn attachment_u2b_update_mockputtopost(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
     path: axum::extract::Path<(String, String)>,
-    body>: Option<axum::extract::Json<Value>>,,
-    let var = body.map(|b| b.0).unwrap_or_default();
-) -> Result<Json<ActionResult<Value>>, AppError> {
+    body>: Option<axum::extract::Json<Value>>,
+    ) -> Result<Json<ActionResult<Value>>, AppError> {
     attachment_u2b_update_by_work(pool, session, path, Json(body)).await
 }
 
@@ -15457,9 +15451,8 @@ pub async fn attachment_u2b_update_content(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
     axum::extract::Path((id, work)): axum::extract::Path<(String, String)>,
-    body>: Option<axum::extract::Json<Value>>,,
-    let var = body.map(|b| b.0).unwrap_or_default();
-) -> Result<Json<ActionResult<Value>>, AppError> {
+    body>: Option<axum::extract::Json<Value>>,
+    ) -> Result<Json<ActionResult<Value>>, AppError> {
     let text = u2_body_str(&body, &["content", "text", "fileContent"]);
     u2_att_update_text(&pool, &session.person_unique, &id, &work, text.as_deref()).await
 }
@@ -15468,9 +15461,8 @@ pub async fn attachment_u2b_update_content_mockputtopost(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
     path: axum::extract::Path<(String, String)>,
-    body>: Option<axum::extract::Json<Value>>,,
-    let var = body.map(|b| b.0).unwrap_or_default();
-) -> Result<Json<ActionResult<Value>>, AppError> {
+    body>: Option<axum::extract::Json<Value>>,
+    ) -> Result<Json<ActionResult<Value>>, AppError> {
     attachment_u2b_update_content(pool, session, path, Json(body)).await
 }
 
@@ -15478,9 +15470,8 @@ pub async fn attachment_u2b_edit_by_work(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
     path: axum::extract::Path<(String, String)>,
-    body>: Option<axum::extract::Json<Value>>,,
-    let var = body.map(|b| b.0).unwrap_or_default();
-) -> Result<Json<ActionResult<Value>>, AppError> {
+    body>: Option<axum::extract::Json<Value>>,
+    ) -> Result<Json<ActionResult<Value>>, AppError> {
     attachment_u2b_update_by_work(pool, session, path, Json(body)).await
 }
 
@@ -15488,9 +15479,8 @@ pub async fn attachment_u2b_edit_mockputtopost(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
     path: axum::extract::Path<(String, String)>,
-    body>: Option<axum::extract::Json<Value>>,,
-    let var = body.map(|b| b.0).unwrap_or_default();
-) -> Result<Json<ActionResult<Value>>, AppError> {
+    body>: Option<axum::extract::Json<Value>>,
+    ) -> Result<Json<ActionResult<Value>>, AppError> {
     attachment_u2b_update_by_work(pool, session, path, Json(body)).await
 }
 
@@ -15498,9 +15488,8 @@ pub async fn attachment_u2b_edit_text(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
     path: axum::extract::Path<(String, String)>,
-    body>: Option<axum::extract::Json<Value>>,,
-    let var = body.map(|b| b.0).unwrap_or_default();
-) -> Result<Json<ActionResult<Value>>, AppError> {
+    body>: Option<axum::extract::Json<Value>>,
+    ) -> Result<Json<ActionResult<Value>>, AppError> {
     attachment_u2b_update_content(pool, session, path, Json(body)).await
 }
 
@@ -15508,9 +15497,8 @@ pub async fn attachment_u2b_edit_text_mockputtopost(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
     path: axum::extract::Path<(String, String)>,
-    body>: Option<axum::extract::Json<Value>>,,
-    let var = body.map(|b| b.0).unwrap_or_default();
-) -> Result<Json<ActionResult<Value>>, AppError> {
+    body>: Option<axum::extract::Json<Value>>,
+    ) -> Result<Json<ActionResult<Value>>, AppError> {
     attachment_u2b_update_content(pool, session, path, Json(body)).await
 }
 
@@ -15575,9 +15563,8 @@ pub async fn attachment_u2b_copy_to_work(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
     axum::extract::Path(work): axum::extract::Path<String>,
-    body>: Option<axum::extract::Json<Value>>,,
-    let var = body.map(|b| b.0).unwrap_or_default();
-) -> Result<Json<ActionResult<Value>>, AppError> {
+    body>: Option<axum::extract::Json<Value>>,
+    ) -> Result<Json<ActionResult<Value>>, AppError> {
     u2_att_copy(&pool, &session.person_unique, &body, "\"xwork\"", &work, false).await
 }
 
@@ -15585,9 +15572,8 @@ pub async fn attachment_u2b_copy_to_work_soft(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
     axum::extract::Path(work): axum::extract::Path<String>,
-    body>: Option<axum::extract::Json<Value>>,,
-    let var = body.map(|b| b.0).unwrap_or_default();
-) -> Result<Json<ActionResult<Value>>, AppError> {
+    body>: Option<axum::extract::Json<Value>>,
+    ) -> Result<Json<ActionResult<Value>>, AppError> {
     u2_att_copy(&pool, &session.person_unique, &body, "\"xwork\"", &work, true).await
 }
 
@@ -15595,9 +15581,8 @@ pub async fn attachment_u2b_copy_to_workcompleted(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
     axum::extract::Path(wc): axum::extract::Path<String>,
-    body>: Option<axum::extract::Json<Value>>,,
-    let var = body.map(|b| b.0).unwrap_or_default();
-) -> Result<Json<ActionResult<Value>>, AppError> {
+    body>: Option<axum::extract::Json<Value>>,
+    ) -> Result<Json<ActionResult<Value>>, AppError> {
     u2_att_copy(&pool, &session.person_unique, &body, "\"xworkCompleted\"", &wc, false).await
 }
 
@@ -15605,18 +15590,16 @@ pub async fn attachment_u2b_copy_to_workcompleted_soft(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
     axum::extract::Path(wc): axum::extract::Path<String>,
-    body>: Option<axum::extract::Json<Value>>,,
-    let var = body.map(|b| b.0).unwrap_or_default();
-) -> Result<Json<ActionResult<Value>>, AppError> {
+    body>: Option<axum::extract::Json<Value>>,
+    ) -> Result<Json<ActionResult<Value>>, AppError> {
     u2_att_copy(&pool, &session.person_unique, &body, "\"xworkCompleted\"", &wc, true).await
 }
 
 pub async fn attachment_u2b_batch_delete_manage(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
-    body>: Option<axum::extract::Json<Value>>,,
-    let var = body.map(|b| b.0).unwrap_or_default();
-) -> Result<Json<ActionResult<Value>>, AppError> {
+    body>: Option<axum::extract::Json<Value>>,
+    ) -> Result<Json<ActionResult<Value>>, AppError> {
     u2_require_admin(&pool, &session).await?;
     let ids: Vec<String> = body
         .get("ids")
@@ -15640,9 +15623,8 @@ pub async fn attachment_u2b_batch_delete_manage(
 pub async fn attachment_u2b_batch_update_manage(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
-    body>: Option<axum::extract::Json<Value>>,,
-    let var = body.map(|b| b.0).unwrap_or_default();
-) -> Result<Json<ActionResult<Value>>, AppError> {
+    body>: Option<axum::extract::Json<Value>>,
+    ) -> Result<Json<ActionResult<Value>>, AppError> {
     u2_require_admin(&pool, &session).await?;
     let ids: Vec<String> = body
         .get("ids")
@@ -16005,9 +15987,8 @@ pub async fn snap_u2_manage_filter_paging(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
     axum::extract::Path((page, size)): axum::extract::Path<(i64, i64)>,
-    wi): Json<U2FilterWi>,,
-    let var = body.map(|b| b.0).unwrap_or_default();
-) -> Result<Json<ActionResult<Value>>, AppError> {
+    wi): Json<U2FilterWi>,
+    ) -> Result<Json<ActionResult<Value>>, AppError> {
     u2_require_admin(&pool, &session).await?;
     let fs = wi.to_snap_filter_sql(None);
     u2_snap_manage_paging(&pool, page, size, fs).await
@@ -16017,9 +15998,8 @@ pub async fn snap_u2_manage_app_paging_filter(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
     axum::extract::Path((page, size, application_flag)): axum::extract::Path<(i64, i64, String)>,
-    wi): Json<U2FilterWi>,,
-    let var = body.map(|b| b.0).unwrap_or_default();
-) -> Result<Json<ActionResult<Value>>, AppError> {
+    wi): Json<U2FilterWi>,
+    ) -> Result<Json<ActionResult<Value>>, AppError> {
     u2_require_admin(&pool, &session).await?;
     let fs = wi.to_snap_filter_sql(Some(&application_flag));
     u2_snap_manage_paging(&pool, page, size, fs).await
@@ -16071,9 +16051,8 @@ pub async fn snap_u2_manage_next_filter(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
     axum::extract::Path((id, count)): axum::extract::Path<(String, i64)>,
-    wi): Json<U2FilterWi>,,
-    let var = body.map(|b| b.0).unwrap_or_default();
-) -> Result<Json<ActionResult<Value>>, AppError> {
+    wi): Json<U2FilterWi>,
+    ) -> Result<Json<ActionResult<Value>>, AppError> {
     u2_require_admin(&pool, &session).await?;
     let fs = wi.to_snap_filter_sql(None);
     u2_snap_manage_cursor(&pool, &id, count, false, fs).await
@@ -16083,9 +16062,8 @@ pub async fn snap_u2_manage_prev_filter(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
     axum::extract::Path((id, count)): axum::extract::Path<(String, i64)>,
-    wi): Json<U2FilterWi>,,
-    let var = body.map(|b| b.0).unwrap_or_default();
-) -> Result<Json<ActionResult<Value>>, AppError> {
+    wi): Json<U2FilterWi>,
+    ) -> Result<Json<ActionResult<Value>>, AppError> {
     u2_require_admin(&pool, &session).await?;
     let fs = wi.to_snap_filter_sql(None);
     let mut result = u2_snap_manage_cursor(&pool, &id, count, true, fs).await?;
@@ -16255,9 +16233,8 @@ const U2_REVIEW_SEARCH_COLS: &str = "xid, xjob, xtitle, xserial, xperson, xappli
 pub async fn review_u2_v2_search(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
-    wi): Json<U2ReviewSearchWi>,,
-    let var = body.map(|b| b.0).unwrap_or_default();
-) -> Result<Json<ActionResult<Value>>, AppError> {
+    wi): Json<U2ReviewSearchWi>,
+    ) -> Result<Json<ActionResult<Value>>, AppError> {
     // Java V2Search：query 为空直接抛 ExceptionEmptyQuery
     let query = wi.query.unwrap_or_default();
     if query.trim().is_empty() {
@@ -16397,18 +16374,16 @@ async fn u2_draft_save(
 pub async fn draft_u2_save(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
-    wi): Json<U2DraftSaveWi>,,
-    let var = body.map(|b| b.0).unwrap_or_default();
-) -> Result<Json<ActionResult<Value>>, AppError> {
+    wi): Json<U2DraftSaveWi>,
+    ) -> Result<Json<ActionResult<Value>>, AppError> {
     u2_draft_save(&pool, &session, wi).await
 }
 
 pub async fn draft_u2_save_mockputtopost(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
-    wi): Json<U2DraftSaveWi>,,
-    let var = body.map(|b| b.0).unwrap_or_default();
-) -> Result<Json<ActionResult<Value>>, AppError> {
+    wi): Json<U2DraftSaveWi>,
+    ) -> Result<Json<ActionResult<Value>>, AppError> {
     u2_draft_save(&pool, &session, wi).await
 }
 
@@ -16468,18 +16443,16 @@ async fn u2_keylock_lock(
 pub async fn keylock_u2_lock(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
-    wi): Json<U2KeylockLockWi>,,
-    let var = body.map(|b| b.0).unwrap_or_default();
-) -> Result<Json<ActionResult<Value>>, AppError> {
+    wi): Json<U2KeylockLockWi>,
+    ) -> Result<Json<ActionResult<Value>>, AppError> {
     u2_keylock_lock(&pool, &session, wi).await
 }
 
 pub async fn keylock_u2_lock_mockputtopost(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
-    wi): Json<U2KeylockLockWi>,,
-    let var = body.map(|b| b.0).unwrap_or_default();
-) -> Result<Json<ActionResult<Value>>, AppError> {
+    wi): Json<U2KeylockLockWi>,
+    ) -> Result<Json<ActionResult<Value>>, AppError> {
     u2_keylock_lock(&pool, &session, wi).await
 }
 
@@ -16501,9 +16474,8 @@ pub struct U2SerialNumberCreateWi {
 pub async fn serialnumber_u2_create(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
-    wi): Json<U2SerialNumberCreateWi>,,
-    let var = body.map(|b| b.0).unwrap_or_default();
-) -> Result<Json<ActionResult<Value>>, AppError> {
+    wi): Json<U2SerialNumberCreateWi>,
+    ) -> Result<Json<ActionResult<Value>>, AppError> {
     u2_require_admin(&pool, &session).await?;
     let process = wi.process.clone().unwrap_or_default();
     let serial = wi.serial;
@@ -16581,9 +16553,8 @@ pub struct U2HandoverCreateWi {
 pub async fn handover_u2_create(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
-    wi): Json<U2HandoverCreateWi>,,
-    let var = body.map(|b| b.0).unwrap_or_default();
-) -> Result<Json<ActionResult<Value>>, AppError> {
+    wi): Json<U2HandoverCreateWi>,
+    ) -> Result<Json<ActionResult<Value>>, AppError> {
     u2_require_admin(&pool, &session).await?;
     // Java ExceptionFieldEmpty：type/scheme/person/targetIdentity 必填
     let missing: Vec<&str> = [
@@ -16696,9 +16667,8 @@ pub struct U2V3RetractWi {
 pub async fn work_u2_v3_retract(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
-    wi): Json<U2V3RetractWi>,,
-    let var = body.map(|b| b.0).unwrap_or_default();
-) -> Result<Json<ActionResult<Value>>, AppError> {
+    wi): Json<U2V3RetractWi>,
+    ) -> Result<Json<ActionResult<Value>>, AppError> {
     if wi.retractTaskList.is_empty() {
         return Ok(Json(ActionResult::error("retractTaskList is required")));
     }
@@ -16775,9 +16745,8 @@ pub struct U2ShiftTimeWi {
 pub async fn workcompleted_u2_shift_time(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
-    wi): Json<U2ShiftTimeWi>,,
-    let var = body.map(|b| b.0).unwrap_or_default();
-) -> Result<Json<ActionResult<Value>>, AppError> {
+    wi): Json<U2ShiftTimeWi>,
+    ) -> Result<Json<ActionResult<Value>>, AppError> {
     let id = wi.id.unwrap_or_default();
     let adjust = wi.adjustMinutes;
     if id.trim().is_empty() || adjust.is_none() {
@@ -16856,9 +16825,8 @@ pub struct U2SnapUploadWi {
 pub async fn snap_u2_upload(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
-    wi): Json<U2SnapUploadWi>,,
-    let var = body.map(|b| b.0).unwrap_or_default();
-) -> Result<Json<ActionResult<Value>>, AppError> {
+    wi): Json<U2SnapUploadWi>,
+    ) -> Result<Json<ActionResult<Value>>, AppError> {
     u2_require_admin(&pool, &session).await?;
     // Java check()：job 非空且（work 或 workCompleted 至少其一）——否则内容混淆异常
     let job = wi.job.clone().unwrap_or_default();
@@ -17081,9 +17049,8 @@ pub struct U2RouteListWi {
 
 pub async fn route_u2_list_by_ids(
     pool: Extension<Pool>,
-    wi): Json<U2RouteListWi>,,
-    let var = body.map(|b| b.0).unwrap_or_default();
-) -> Result<Json<ActionResult<Value>>, AppError> {
+    wi): Json<U2RouteListWi>,
+    ) -> Result<Json<ActionResult<Value>>, AppError> {
     if wi.valueList.is_empty() {
         return Ok(Json(ActionResult::java_success(Value::Array(Vec::new()), 0, 0)));    }
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
