@@ -18237,7 +18237,7 @@ pub const ENDPOINTS: &[EndpointDef] = &[
 
     EndpointDef {
         crate_name: "organization_assemble_control",
-        method: "GET",
+        method: "POST",
         rust_path: "/jaxrs/organization/assemble/control/group/list/like/mockputtopost",
         java_war: "x_organization_assemble_control",
         java_action: "/group/list/like/mockputtopost",
@@ -18257,7 +18257,7 @@ pub const ENDPOINTS: &[EndpointDef] = &[
 
     EndpointDef {
         crate_name: "organization_assemble_control",
-        method: "GET",
+        method: "POST",
         rust_path: "/jaxrs/organization/assemble/control/group/list/like/pinyin/mockputtopost",
         java_war: "x_organization_assemble_control",
         java_action: "/group/list/like/pinyin/mockputtopost",
@@ -18297,7 +18297,7 @@ pub const ENDPOINTS: &[EndpointDef] = &[
 
     EndpointDef {
         crate_name: "organization_assemble_control",
-        method: "GET",
+        method: "POST",
         rust_path: "/jaxrs/organization/assemble/control/group/list/pinyininitial/mockputtopost",
         java_war: "x_organization_assemble_control",
         java_action: "/group/list/pinyininitial/mockputtopost",
