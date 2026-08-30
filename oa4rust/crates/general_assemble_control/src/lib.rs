@@ -183,12 +183,13 @@ pub async fn attendscope_get(
 pub async fn attendscope_create(
     pool: Extension<Pool>,
     axum::extract::req): Json<AttendScopeCreateRequest>,,
+    let var = body.map(|b| b.0).unwrap_or_default();
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let id = uuid::Uuid::new_v4().to_string();
-    let name = req.name.clone().unwrap_or_default();;
-    let unit_id = req.unit_id.clone().unwrap_or_default();;
+    let name = req.name.unwrap_or_default();
+    let unit_id = req.unit_id.unwrap_or_default();
     let creator = "system";
 
     client
@@ -213,11 +214,12 @@ pub async fn attendscope_save(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
     axum::extract::req): Json<AttendScopeCreateRequest>,,
+    let var = body.map(|b| b.0).unwrap_or_default();
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
-    let name = req.name.clone().unwrap_or_default();;
-    let unit_id = req.unit_id.clone().unwrap_or_default();;
+    let name = req.name.unwrap_or_default();
+    let unit_id = req.unit_id.unwrap_or_default();
 
     let result = client
         .execute(
