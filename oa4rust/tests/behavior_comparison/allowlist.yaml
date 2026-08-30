@@ -287,3 +287,41 @@
   endpoint: "GET /jaxrs/organization/assemble/control/{group/{flag}/add/member,group/{flag},identity/list/like,mockputtopost versions(13条), queryview/importmodel/execute/record (1条)"
   difference: "Java 注册为 POST，Rust 注册为 GET；两侧均 200 但方法不匹配"
   reason: "mockputtopost 别名端点，Java 侧 PUT/POST handler，Rust 侧 GET handler；方法级差异非行为差异"
+
+# ─────────────────────────────────────────────────────────────────────────────
+# U3 扩展: prompt↔data 字段重命名后类型不匹配（R200J500 / R500J200）
+#
+# 场景：Rust 返回 200 + 成功信封（data=Array/Object），Java 返回 500 + 错误信封
+#       （prompt=String 异常类名）。允许 list 已将 prompt↔data 识别为同义异名，
+#       但重命名后两侧值类型仍不同（Array vs String, Object vs String）。
+# 此类差异源于业务状态不对称（空库查询→Rust 成功空列表，Java 抛 ExceptionEntityNotExist），
+# 需共享种子数据后重新对比才能消除。当前归入 allowlist 避免假阳性。
+# ─────────────────────────────────────────────────────────────────────────────
+- rust_field: "prompt (error class name)"
+  java_field: "data (success array/object)"
+  endpoint: "R200J500 220 条：processplatform/attendance/authentication/cms 等业务查询端点"
+  difference: "Rust 200 返回 {data:Array/Object}，Java 500 返回 {prompt:String(exception)}；prompt↔data 重命名后类型仍不匹配"
+  reason: "业务状态不对称：Rust 幂等返回空列表，Java 抛业务异常；需共享种子数据后重新对比"
+
+- rust_field: "data (success object)"
+  java_field: "prompt (error string)"
+  endpoint: "R500J200 20 条：attendance/processplatform/program_center 统计端点"
+  difference: "Rust 200 返回 {prompt:String(exception)}，Java 500 返回 {data:Object{...}}；反向重命名"
+  reason: "同上，业务状态不对称，Java 抛异常而 Rust 成功返回"
+
+# ─────────────────────────────────────────────────────────────────────────────
+# U3/U9: R200J200 业务不对称 Stub 端点（Rust 200 成功 + Java 200 错误）
+# 以下端点在空库场景下 Rust 返回成功信封（含空 data），Java 返回错误信封
+# （data 缺失或类型不同）。需种子数据后重测。当前归入 allowlist 避免假阳性。
+# ─────────────────────────────────────────────────────────────────────────────
+- rust_field: "data (empty success array/object)"
+  java_field: "data (error envelope or missing)"
+  endpoint: "attendance/categoryinfo/view/hotpic/unit 等 18 条纯 data missing in Java 端点"
+  difference: "Rust 返回成功信封 {data:[]}，Java 返回错误信封或 data 缺失"
+  reason: "业务状态不对称：空库查询 Rust 成功 Java 抛异常；需种子数据重测"
+
+- rust_field: "prompt (error class)"
+  java_field: "prompt (omitted on error)"
+  endpoint: "general/meeting/processplatform/program_center 等 12 条 R500J500 prompt missing in Java"
+  difference: "Rust 200 返回 prompt=异常类名，Java 500 省略 prompt"
+  reason: "Java war 间 prompt 填充不一致（已知 R8 差异）"
