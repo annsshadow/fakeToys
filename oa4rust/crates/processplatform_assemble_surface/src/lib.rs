@@ -16233,7 +16233,7 @@ const U2_REVIEW_SEARCH_COLS: &str = "xid, xjob, xtitle, xserial, xperson, xappli
 pub async fn review_u2_v2_search(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
-    wi): Json<U2ReviewSearchWi>,
+    wi: Json<U2ReviewSearchWi>,
     ) -> Result<Json<ActionResult<Value>>, AppError> {
     // Java V2Search：query 为空直接抛 ExceptionEmptyQuery
     let query = wi.query.unwrap_or_default();
