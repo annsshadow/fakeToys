@@ -257,6 +257,9 @@ impl PermissionRegistry {
         registry.register_prefix("/jaxrs/program_center/jest/clear/cache", PermissionLevel::Public);
         registry.register_prefix("/jaxrs/program_center/market/cloud/unit/is/vip", PermissionLevel::Public);
         registry.register_prefix("/jaxrs/program_center/market/installed/version", PermissionLevel::Public);
+        // 剩余 program_center 查询/管理端点
+        registry.register_prefix("/jaxrs/program_center/appstyle", PermissionLevel::Public);
+        registry.register_prefix("/jaxrs/program_center/cachedispatch", PermissionLevel::Public);
         // attendance statistic 端点
         registry.register_prefix("/jaxrs/attendance/assemble/control/dingdingstatistic", PermissionLevel::Public);
         registry.register_prefix("/jaxrs/attendance/assemble/control/qywxstatistic", PermissionLevel::Public);

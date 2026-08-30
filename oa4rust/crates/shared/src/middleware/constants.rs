@@ -426,3 +426,28 @@ pub const ADMIN_WRITE_PREFIXES: &[&str] = &[
     "/jaxrs/organization/person",
     "/jaxrs/organization/group",
 ];
+
+// plan006 U5 前缀豁免：覆盖带动态路径段的只读查询端点
+// 与 PERMISSION_REGISTRY Public 前缀对齐，确保 auth_middleware 豁免生效
+pub const AUTH_EXEMPT_PREFIXES: &[&str] = &[
+    "/jaxrs/processplatform/assemble/surface/application/list",
+    "/jaxrs/processplatform/assemble/surface/control/workorworkcompleted",
+    "/jaxrs/processplatform/assemble/surface/readrecord/list",
+    "/jaxrs/processplatform/assemble/surface/record/list",
+    "/jaxrs/processplatform/assemble/surface/sign/list",
+    "/jaxrs/processplatform/assemble/surface/touch/expire",
+    "/jaxrs/processplatform/assemble/surface/touch/passexpired",
+    "/jaxrs/processplatform/assemble/surface/touch/touchdetained",
+    "/jaxrs/processplatform/assemble/surface/work/count",
+    "/jaxrs/processplatform/service/processing/touch/mergeitem",
+    "/jaxrs/program_center/datastructure",
+    "/jaxrs/program_center/dingding/get/callback",
+    "/jaxrs/program_center/jest/clear/cache",
+    "/jaxrs/program_center/market/cloud/unit/is/vip",
+    "/jaxrs/program_center/market/installed/version",
+    "/jaxrs/program_center/appstyle",
+    "/jaxrs/program_center/cachedispatch",
+    "/jaxrs/attendance/assemble/control/dingdingstatistic",
+    "/jaxrs/attendance/assemble/control/qywxstatistic",
+    "/jaxrs/meeting/assemble/control/config/system",
+];
