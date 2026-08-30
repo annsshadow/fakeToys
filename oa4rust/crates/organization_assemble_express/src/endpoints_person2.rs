@@ -224,7 +224,7 @@ pub async fn person_detail_flag(
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let persons = resolve_person_ids(&client, std::slice::from_ref(&flag)).await?;
     let Some(pid) = persons.first().cloned() else {
-        return ok_json(Value::Null);
+        return ok_json(Value::Object(serde_json::Map::new()));
     };
 
     let empty: Vec<String> = vec![];
@@ -344,7 +344,7 @@ pub async fn person_detail_flag(
         .await
         .map_err(|_| AppError::Internal)?;
     if person_rows.is_empty() {
-        return ok_json(Value::Null);
+        return ok_json(Value::Object(serde_json::Map::new()));
     }
     let mut data = row_to_map(&person_rows[0]);
     let arr = |mut v: Vec<String>| {
