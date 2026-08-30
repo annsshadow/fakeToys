@@ -592,11 +592,8 @@ pub async fn importmodel_uuid(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let id = uuid::Uuid::new_v4().to_string();
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("uuid".to_string(), Value::String(id)),
-        ]),
-    ))))
+    // Java returns String(uuid), not Object {uuid: String}
+    Ok(Json(ActionResult::success(Value::String(id))))
 }
 
 pub async fn importmodel_id(

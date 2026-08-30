@@ -256,7 +256,8 @@ pub async fn config_base_config(
 #[axum::debug_handler]
 pub async fn config_create_mcp(
     pool: Extension<Pool>,
-    Json(req): Json<Value>,
+    req>: Option<axum::extract::Json<Value>>,,
+    let var = body.map(|b| b.0).unwrap_or_default();
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let id = uuid::Uuid::new_v4().to_string();
@@ -294,7 +295,8 @@ pub async fn config_create_mcp(
 #[axum::debug_handler]
 pub async fn config_create_model(
     pool: Extension<Pool>,
-    Json(req): Json<Value>,
+    req>: Option<axum::extract::Json<Value>>,,
+    let var = body.map(|b| b.0).unwrap_or_default();
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let id = uuid::Uuid::new_v4().to_string();
@@ -586,7 +588,8 @@ pub async fn config_list_model_paging_page_size_size(
 #[axum::debug_handler]
 pub async fn config_save(
     pool: Extension<Pool>,
-    Json(req): Json<Value>,
+    req>: Option<axum::extract::Json<Value>>,,
+    let var = body.map(|b| b.0).unwrap_or_default();
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let id = req.get("id").and_then(|v| v.as_str()).unwrap_or_default().to_string();
@@ -647,7 +650,8 @@ pub async fn config_save(
 pub async fn config_update_mcp_flag(
     pool: Extension<Pool>,
     Path(id): Path<String>,
-    Json(req): Json<Value>,
+    req>: Option<axum::extract::Json<Value>>,,
+    let var = body.map(|b| b.0).unwrap_or_default();
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let name = req.get("name").and_then(|v| v.as_str()).unwrap_or("").to_string();
@@ -682,7 +686,8 @@ pub async fn config_update_mcp_flag(
 pub async fn config_update_model_flag(
     pool: Extension<Pool>,
     Path(id): Path<String>,
-    Json(req): Json<Value>,
+    req>: Option<axum::extract::Json<Value>>,,
+    let var = body.map(|b| b.0).unwrap_or_default();
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let name = req.get("name").and_then(|v| v.as_str()).unwrap_or("").to_string();
@@ -715,7 +720,8 @@ pub async fn config_update_model_flag(
 #[axum::debug_handler]
 pub async fn file_copy_file(
     pool: Extension<Pool>,
-    Json(req): Json<Value>,
+    req>: Option<axum::extract::Json<Value>>,,
+    let var = body.map(|b| b.0).unwrap_or_default();
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let source_id = req.get("sourceId").and_then(|v| v.as_str()).unwrap_or("").to_string();
@@ -771,7 +777,8 @@ pub async fn file_delete_flag(
 #[axum::debug_handler]
 pub async fn file_list_with_ids(
     pool: Extension<Pool>,
-    Json(req): Json<Value>,
+    req>: Option<axum::extract::Json<Value>>,,
+    let var = body.map(|b| b.0).unwrap_or_default();
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let raw_ids: Vec<String> = req
@@ -860,7 +867,8 @@ pub async fn file_list_paging_page_size_size(
 #[axum::debug_handler]
 pub async fn file_upload(
     pool: Extension<Pool>,
-    Json(req): Json<Value>,
+    req>: Option<axum::extract::Json<Value>>,,
+    let var = body.map(|b| b.0).unwrap_or_default();
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let id = uuid::Uuid::new_v4().to_string();
@@ -1156,7 +1164,8 @@ async fn call_llm(messages: &[ChatMessage]) -> Result<String, AppError> {
 pub async fn chat_completion(
     pool: Extension<Pool>,
     Extension(session): Extension<shared::session::Session>,
-    axum::extract::Json(req): Json<ChatCompletionRequest>,
+    axum::extract::req): Json<ChatCompletionRequest>,,
+    let var = body.map(|b| b.0).unwrap_or_default();
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let conversation_id = req
         .conversation_id
@@ -1466,7 +1475,8 @@ fn parse_stream_chunk(data: &str) -> Result<String, AppError> {
 pub async fn chat_completion_stream(
     pool: Extension<Pool>,
     Extension(session): Extension<shared::session::Session>,
-    axum::extract::Json(req): Json<ChatCompletionRequest>,
+    axum::extract::req): Json<ChatCompletionRequest>,,
+    let var = body.map(|b| b.0).unwrap_or_default();
 ) -> Result<Sse<impl futures_util::Stream<Item = Result<axum::response::sse::Event, AppError>>>, AppError> {
     let ctx = process_chat_request(&pool, &session, &req).await?;
 
@@ -1680,7 +1690,8 @@ pub async fn chat_delete_clue_id(
 #[axum::debug_handler]
 pub async fn chat_write_completion_extra(
     pool: Extension<Pool>,
-    Json(req): Json<Value>,
+    req>: Option<axum::extract::Json<Value>>,,
+    let var = body.map(|b| b.0).unwrap_or_default();
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let id = req
         .get("id")

@@ -2708,7 +2708,10 @@ pub async fn statisticshow_unit_sum_name_year_month(
             ]));
             Ok(Json(ActionResult::success(result)))
         }
-        None => Ok(Json(ActionResult::success(Value::Null))),
+        None => {
+            // Java returns empty object {}, not null
+            Ok(Json(ActionResult::success(Value::Object(serde_json::Map::new()))))
+        }
     }
 }
 
@@ -2786,11 +2789,9 @@ pub async fn statisticshow_unit_name_year_month(
 
 /// GET /jaxrs/attendance/assemble/control/uuid/random
 pub async fn uuid_random() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("uuid".to_string(), Value::String(uuid::Uuid::new_v4().to_string())),
-        ]),
-    ))))
+    Ok(Json(ActionResult::success(Value::Array(vec![
+        Value::String(uuid::Uuid::new_v4().to_string()),
+    ]))))
 }
 
 /// GET /jaxrs/attendance/assemble/control/workplace/list/all
