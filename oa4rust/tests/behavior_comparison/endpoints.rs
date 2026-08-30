@@ -18397,7 +18397,7 @@ pub const ENDPOINTS: &[EndpointDef] = &[
 
     EndpointDef {
         crate_name: "organization_assemble_control",
-        method: "GET",
+        method: "POST",
         rust_path: "/jaxrs/organization/assemble/control/group/{flag}/add/member/mockputtopost",
         java_war: "x_organization_assemble_control",
         java_action: "/group/{}/add/member/mockputtopost",
@@ -18437,7 +18437,7 @@ pub const ENDPOINTS: &[EndpointDef] = &[
 
     EndpointDef {
         crate_name: "organization_assemble_control",
-        method: "GET",
+        method: "POST",
         rust_path: "/jaxrs/organization/assemble/control/group/{flag}/mockputtopost",
         java_war: "x_organization_assemble_control",
         java_action: "/group/{}/mockputtopost",
@@ -18457,7 +18457,7 @@ pub const ENDPOINTS: &[EndpointDef] = &[
 
     EndpointDef {
         crate_name: "organization_assemble_control",
-        method: "GET",
+        method: "POST",
         rust_path: "/jaxrs/organization/assemble/control/identity/list/like/mockputtopost",
         java_war: "x_organization_assemble_control",
         java_action: "/identity/list/like/mockputtopost",
@@ -18477,7 +18477,7 @@ pub const ENDPOINTS: &[EndpointDef] = &[
 
     EndpointDef {
         crate_name: "organization_assemble_control",
-        method: "GET",
+        method: "POST",
         rust_path: "/jaxrs/organization/assemble/control/identity/list/like/pinyin/mockputtopost",
         java_war: "x_organization_assemble_control",
         java_action: "/identity/list/like/pinyin/mockputtopost",
@@ -18507,7 +18507,7 @@ pub const ENDPOINTS: &[EndpointDef] = &[
 
     EndpointDef {
         crate_name: "organization_assemble_control",
-        method: "GET",
+        method: "POST",
         rust_path: "/jaxrs/organization/assemble/control/identity/list/pinyininitial/mockputtopost",
         java_war: "x_organization_assemble_control",
         java_action: "/identity/list/pinyininitial/mockputtopost",
@@ -18587,7 +18587,7 @@ pub const ENDPOINTS: &[EndpointDef] = &[
 
     EndpointDef {
         crate_name: "organization_assemble_control",
-        method: "GET",
+        method: "POST",
         rust_path: "/jaxrs/organization/assemble/control/identity/{flag}/mockputtopost",
         java_war: "x_organization_assemble_control",
         java_action: "/identity/{}/mockputtopost",
@@ -18677,7 +18677,7 @@ pub const ENDPOINTS: &[EndpointDef] = &[
 
     EndpointDef {
         crate_name: "organization_assemble_control",
-        method: "GET",
+        method: "POST",
         rust_path: "/jaxrs/organization/assemble/control/permissionsetting/{flag}/mockputtopost",
         java_war: "x_organization_assemble_control",
         java_action: "/permissionsetting/{}/mockputtopost",
@@ -18867,7 +18867,7 @@ pub const ENDPOINTS: &[EndpointDef] = &[
 
     EndpointDef {
         crate_name: "organization_assemble_control",
-        method: "GET",
+        method: "POST",
         rust_path: "/jaxrs/organization/assemble/control/personattribute/{flag}/mockputtopost",
         java_war: "x_organization_assemble_control",
         java_action: "/personattribute/{}/mockputtopost",
@@ -19017,7 +19017,7 @@ pub const ENDPOINTS: &[EndpointDef] = &[
 
     EndpointDef {
         crate_name: "organization_assemble_control",
-        method: "GET",
+        method: "POST",
         rust_path: "/jaxrs/organization/assemble/control/role/list/like/mockputtopost",
         java_war: "x_organization_assemble_control",
         java_action: "/role/list/like/mockputtopost",
@@ -19037,7 +19037,7 @@ pub const ENDPOINTS: &[EndpointDef] = &[
 
     EndpointDef {
         crate_name: "organization_assemble_control",
-        method: "GET",
+        method: "POST",
         rust_path: "/jaxrs/organization/assemble/control/role/list/like/pinyin/mockputtopost",
         java_war: "x_organization_assemble_control",
         java_action: "/role/list/like/pinyin/mockputtopost",
@@ -19067,7 +19067,7 @@ pub const ENDPOINTS: &[EndpointDef] = &[
 
     EndpointDef {
         crate_name: "organization_assemble_control",
-        method: "GET",
+        method: "POST",
         rust_path: "/jaxrs/organization/assemble/control/role/list/pinyininitial/mockputtopost",
         java_war: "x_organization_assemble_control",
         java_action: "/role/list/pinyininitial/mockputtopost",
@@ -19117,7 +19117,7 @@ pub const ENDPOINTS: &[EndpointDef] = &[
 
     EndpointDef {
         crate_name: "organization_assemble_control",
-        method: "GET",
+        method: "POST",
         rust_path: "/jaxrs/organization/assemble/control/role/{flag}/mockputtopost",
         java_war: "x_organization_assemble_control",
         java_action: "/role/{}/mockputtopost",
@@ -19347,7 +19347,7 @@ pub const ENDPOINTS: &[EndpointDef] = &[
 
     EndpointDef {
         crate_name: "organization_assemble_control",
-        method: "GET",
+        method: "POST",
         rust_path: "/jaxrs/organization/assemble/control/unitattribute/{flag}/mockputtopost",
         java_war: "x_organization_assemble_control",
         java_action: "/unitattribute/{}/mockputtopost",
@@ -19515,35 +19515,11 @@ pub const ENDPOINTS: &[EndpointDef] = &[
         requires_auth: false,
     },
 
-    EndpointDef {
-        crate_name: "organization_assemble_control",
-        method: "POST",
-        rust_path: "/jaxrs/organization/assemble/control/group/{flag}/add/member/mockputtopost",
-        java_war: "x_organization_assemble_control",
-        java_action: "/group/{}/add/member/mockputtopost",
-        body: None,
-        requires_auth: false,
-    },
+    
 
-    EndpointDef {
-        crate_name: "organization_assemble_control",
-        method: "POST",
-        rust_path: "/jaxrs/organization/assemble/control/group/{flag}/delete/member/mockputtopost",
-        java_war: "x_organization_assemble_control",
-        java_action: "/group/{}/delete/member/mockputtopost",
-        body: None,
-        requires_auth: false,
-    },
+    
 
-    EndpointDef {
-        crate_name: "organization_assemble_control",
-        method: "POST",
-        rust_path: "/jaxrs/organization/assemble/control/group/{flag}/mockputtopost",
-        java_war: "x_organization_assemble_control",
-        java_action: "/group/{}/mockputtopost",
-        body: None,
-        requires_auth: false,
-    },
+    
 
     EndpointDef {
         crate_name: "organization_assemble_control",
@@ -19555,45 +19531,13 @@ pub const ENDPOINTS: &[EndpointDef] = &[
         requires_auth: false,
     },
 
-    EndpointDef {
-        crate_name: "organization_assemble_control",
-        method: "POST",
-        rust_path: "/jaxrs/organization/assemble/control/identity/list/like/mockputtopost",
-        java_war: "x_organization_assemble_control",
-        java_action: "/identity/list/like/mockputtopost",
-        body: None,
-        requires_auth: false,
-    },
+    
 
-    EndpointDef {
-        crate_name: "organization_assemble_control",
-        method: "POST",
-        rust_path: "/jaxrs/organization/assemble/control/identity/list/like/pinyin/mockputtopost",
-        java_war: "x_organization_assemble_control",
-        java_action: "/identity/list/like/pinyin/mockputtopost",
-        body: None,
-        requires_auth: false,
-    },
+    
 
-    EndpointDef {
-        crate_name: "organization_assemble_control",
-        method: "POST",
-        rust_path: "/jaxrs/organization/assemble/control/identity/list/pinyininitial/mockputtopost",
-        java_war: "x_organization_assemble_control",
-        java_action: "/identity/list/pinyininitial/mockputtopost",
-        body: None,
-        requires_auth: false,
-    },
+    
 
-    EndpointDef {
-        crate_name: "organization_assemble_control",
-        method: "POST",
-        rust_path: "/jaxrs/organization/assemble/control/identity/{flag}/mockputtopost",
-        java_war: "x_organization_assemble_control",
-        java_action: "/identity/{}/mockputtopost",
-        body: None,
-        requires_auth: false,
-    },
+    
 
     EndpointDef {
         crate_name: "organization_assemble_control",
@@ -19615,15 +19559,7 @@ pub const ENDPOINTS: &[EndpointDef] = &[
         requires_auth: false,
     },
 
-    EndpointDef {
-        crate_name: "organization_assemble_control",
-        method: "POST",
-        rust_path: "/jaxrs/organization/assemble/control/permissionsetting/{flag}/mockputtopost",
-        java_war: "x_organization_assemble_control",
-        java_action: "/permissionsetting/{}/mockputtopost",
-        body: None,
-        requires_auth: false,
-    },
+    
 
     EndpointDef {
         crate_name: "organization_assemble_control",
@@ -19765,15 +19701,7 @@ pub const ENDPOINTS: &[EndpointDef] = &[
         requires_auth: false,
     },
 
-    EndpointDef {
-        crate_name: "organization_assemble_control",
-        method: "POST",
-        rust_path: "/jaxrs/organization/assemble/control/personattribute/{flag}/mockputtopost",
-        java_war: "x_organization_assemble_control",
-        java_action: "/personattribute/{}/mockputtopost",
-        body: None,
-        requires_auth: false,
-    },
+    
 
     EndpointDef {
         crate_name: "organization_assemble_control",
@@ -19785,25 +19713,9 @@ pub const ENDPOINTS: &[EndpointDef] = &[
         requires_auth: false,
     },
 
-    EndpointDef {
-        crate_name: "organization_assemble_control",
-        method: "POST",
-        rust_path: "/jaxrs/organization/assemble/control/personcard/listpaging/page/{page}/size/{size}/mockputtopost",
-        java_war: "x_organization_assemble_control",
-        java_action: "/personcard/listpaging/page/{}/size/{}/mockputtopost",
-        body: None,
-        requires_auth: false,
-    },
+    
 
-    EndpointDef {
-        crate_name: "organization_assemble_control",
-        method: "POST",
-        rust_path: "/jaxrs/organization/assemble/control/personcard/listpagingwithgroup/page/{page}/size/{size}/mockputtopost",
-        java_war: "x_organization_assemble_control",
-        java_action: "/personcard/listpagingwithgroup/page/{}/size/{}/mockputtopost",
-        body: None,
-        requires_auth: false,
-    },
+    
 
     EndpointDef {
         crate_name: "organization_assemble_control",
@@ -19815,45 +19727,13 @@ pub const ENDPOINTS: &[EndpointDef] = &[
         requires_auth: false,
     },
 
-    EndpointDef {
-        crate_name: "organization_assemble_control",
-        method: "POST",
-        rust_path: "/jaxrs/organization/assemble/control/role/list/like/mockputtopost",
-        java_war: "x_organization_assemble_control",
-        java_action: "/role/list/like/mockputtopost",
-        body: None,
-        requires_auth: false,
-    },
+    
 
-    EndpointDef {
-        crate_name: "organization_assemble_control",
-        method: "POST",
-        rust_path: "/jaxrs/organization/assemble/control/role/list/like/pinyin/mockputtopost",
-        java_war: "x_organization_assemble_control",
-        java_action: "/role/list/like/pinyin/mockputtopost",
-        body: None,
-        requires_auth: false,
-    },
+    
 
-    EndpointDef {
-        crate_name: "organization_assemble_control",
-        method: "POST",
-        rust_path: "/jaxrs/organization/assemble/control/role/list/pinyininitial/mockputtopost",
-        java_war: "x_organization_assemble_control",
-        java_action: "/role/list/pinyininitial/mockputtopost",
-        body: None,
-        requires_auth: false,
-    },
+    
 
-    EndpointDef {
-        crate_name: "organization_assemble_control",
-        method: "POST",
-        rust_path: "/jaxrs/organization/assemble/control/role/{flag}/mockputtopost",
-        java_war: "x_organization_assemble_control",
-        java_action: "/role/{}/mockputtopost",
-        body: None,
-        requires_auth: false,
-    },
+    
 
     EndpointDef {
         crate_name: "organization_assemble_control",
@@ -19945,15 +19825,7 @@ pub const ENDPOINTS: &[EndpointDef] = &[
         requires_auth: false,
     },
 
-    EndpointDef {
-        crate_name: "organization_assemble_control",
-        method: "POST",
-        rust_path: "/jaxrs/organization/assemble/control/unitattribute/{flag}/mockputtopost",
-        java_war: "x_organization_assemble_control",
-        java_action: "/unitattribute/{}/mockputtopost",
-        body: None,
-        requires_auth: false,
-    },
+    
 
     EndpointDef {
         crate_name: "organization_assemble_control",
@@ -19975,15 +19847,7 @@ pub const ENDPOINTS: &[EndpointDef] = &[
         requires_auth: false,
     },
 
-    EndpointDef {
-        crate_name: "organization_assemble_control",
-        method: "POST",
-        rust_path: "/jaxrs/organization/assemble/control/unitduty/{flag}/mockputtopost",
-        java_war: "x_organization_assemble_control",
-        java_action: "/unitduty/{}/mockputtopost",
-        body: None,
-        requires_auth: false,
-    },
+    
 
     EndpointDef {
         crate_name: "organization_assemble_control",
@@ -34315,15 +34179,7 @@ pub const ENDPOINTS: &[EndpointDef] = &[
         requires_auth: false,
     },
 
-    EndpointDef {
-        crate_name: "processplatform_assemble_surface",
-        method: "POST",
-        rust_path: "/jaxrs/processplatform/assemble/surface/draft/mockputtopost",
-        java_war: "x_processplatform_assemble_surface",
-        java_action: "/draft/mockputtopost",
-        body: None,
-        requires_auth: false,
-    },
+    
 
     EndpointDef {
         crate_name: "processplatform_assemble_surface",
@@ -34385,15 +34241,7 @@ pub const ENDPOINTS: &[EndpointDef] = &[
         requires_auth: false,
     },
 
-    EndpointDef {
-        crate_name: "processplatform_assemble_surface",
-        method: "POST",
-        rust_path: "/jaxrs/processplatform/assemble/surface/keylock/lock/mockputtopost",
-        java_war: "x_processplatform_assemble_surface",
-        java_action: "/keylock/lock/mockputtopost",
-        body: None,
-        requires_auth: false,
-    },
+    
 
     EndpointDef {
         crate_name: "processplatform_assemble_surface",
@@ -35225,15 +35073,7 @@ pub const ENDPOINTS: &[EndpointDef] = &[
         requires_auth: false,
     },
 
-    EndpointDef {
-        crate_name: "processplatform_assemble_surface",
-        method: "POST",
-        rust_path: "/jaxrs/processplatform/assemble/surface/route/list/mockputtopost",
-        java_war: "x_processplatform_assemble_surface",
-        java_action: "/route/list/mockputtopost",
-        body: None,
-        requires_auth: false,
-    },
+    
 
     EndpointDef {
         crate_name: "processplatform_assemble_surface",
@@ -46089,16 +45929,6 @@ pub const ENDPOINTS: &[EndpointDef] = &[
         crate_name: "query_assemble_surface",
         method: "POST",
         rust_path: "/jaxrs/queryview/execute/mockputtopost/{view}/{id}",
-        java_war: "",
-        java_action: "",
-        body: None,
-        requires_auth: false,
-    },
-
-    EndpointDef {
-        crate_name: "query_assemble_surface",
-        method: "POST",
-        rust_path: "/jaxrs/queryview/importmodel/execute/record/{recordId}",
         java_war: "",
         java_action: "",
         body: None,
