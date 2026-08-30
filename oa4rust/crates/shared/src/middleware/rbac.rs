@@ -260,6 +260,11 @@ impl PermissionRegistry {
         // 剩余 program_center 查询/管理端点
         registry.register_prefix("/jaxrs/program_center/appstyle", PermissionLevel::Public);
         registry.register_prefix("/jaxrs/program_center/cachedispatch", PermissionLevel::Public);
+        registry.register_prefix("/jaxrs/ai/chat/delete", PermissionLevel::Public);
+        registry.register_prefix("/jaxrs/calendar/assemble/control/calendar/follow", PermissionLevel::Public);
+        registry.register_prefix("/jaxrs/person/nick/name", PermissionLevel::Public);
+        registry.register_prefix("/jaxrs/unit/list/all", PermissionLevel::Public);
+        registry.register_prefix("/jaxrs/person/list/all", PermissionLevel::Public);
         // attendance statistic 端点
         registry.register_prefix("/jaxrs/attendance/assemble/control/dingdingstatistic", PermissionLevel::Public);
         registry.register_prefix("/jaxrs/attendance/assemble/control/qywxstatistic", PermissionLevel::Public);
