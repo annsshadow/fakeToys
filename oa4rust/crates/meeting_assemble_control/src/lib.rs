@@ -389,27 +389,38 @@ pub async fn config_system_config(
 
     let rows = client
         .query(
-            "SELECT id, config_key, config_value, description, create_time FROM x_meeting_config ORDER BY create_time",
+            "SELECT config_key, config_value FROM x_meeting_config WHERE deleted_at IS NULL",
             &[],
         )
         .await
         .map_err(|_| AppError::Internal)?;
 
-    let data: Vec<Value> = rows
-        .iter()
-        .map(|row| {
-            Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("configKey".to_string(), Value::String(row.get("config_key"))),
-                ("configValue".to_string(), Value::String(row.get("config_value"))),
-                ("description".to_string(), Value::String(row.get::<_, Option<String>>("description").unwrap_or_default())),
-                ("createTime".to_string(), Value::String(row.get("create_time"))),
-            ]))
-        })
-        .collect();
+    // Build config object: Java returns single MeetingConfigProperties object
+    // (not an array of rows). Map key-value rows to object fields.
+    let mut config_map: serde_json::Map<String, Value> = serde_json::Map::new();
+    for row in &rows {
+        let key: String = row.get("config_key");
+        let value: String = row.get("config_value");
+        config_map.insert(key, Value::String(value));
+    }
 
-    let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
+    // Ensure required fields exist with defaults (matching Java MeetingConfigProperties)
+    config_map.entry("weekBegin".to_string()).or_insert(Value::String("1".to_string()));
+    config_map.entry("mobileCreateEnable".to_string()).or_insert(Value::Bool(true));
+    config_map.entry("enableOnline".to_string()).or_insert(Value::Bool(false));
+    config_map.entry("onlineProduct".to_string()).or_insert(Value::String("其他".to_string()));
+    config_map.entry("toDayViewName".to_string()).or_insert(Value::String("".to_string()));
+    config_map.entry("toListViewName".to_string()).or_insert(Value::String("".to_string()));
+    config_map.entry("toMonthViewName".to_string()).or_insert(Value::String("".to_string()));
+    config_map.entry("toMyMeetingViewName".to_string()).or_insert(Value::String("".to_string()));
+    config_map.entry("toRoomViewName".to_string()).or_insert(Value::String("".to_string()));
+    config_map.entry("toWeekViewName".to_string()).or_insert(Value::String("".to_string()));
+    config_map.entry("meetingViewer".to_string()).or_insert(Value::Array(vec![]));
+    config_map.entry("typeList".to_string()).or_insert(Value::Array(vec![]));
+    config_map.entry("disableViewList".to_string()).or_insert(Value::Array(vec![]));
+
+    let data = Value::Object(config_map);
+    Ok(Json(ActionResult::java_success(data, 1, 1)))
 }
 
 pub async fn config_system_config_manage(

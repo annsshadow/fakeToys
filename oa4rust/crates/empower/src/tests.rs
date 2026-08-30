@@ -122,13 +122,11 @@ mod tests {
 
     #[test]
     fn test_list_result_serialization() {
-        let list = EmpowerListResult {
-            count: 2,
-            data: vec![],
-        };
-        let result: ActionResult<EmpowerListResult> = ActionResult::success(list);
+        let items = vec![];
+        let result: ActionResult<Vec<EmpowerInfo>> = ActionResult::java_success(items, 2, 0);
         assert_eq!(result.r#type, Some("success".to_string()));
         assert!(result.data.is_some());
-        assert_eq!(result.data.as_ref().unwrap().count, 2);
+        assert_eq!(result.count, Some(2));
+        assert_eq!(result.size, Some(0));
     }
 }

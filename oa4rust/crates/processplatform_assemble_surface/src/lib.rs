@@ -17086,7 +17086,7 @@ mod tests_u2;
 pub async fn task_list_date_hour_exclude_draft_manage(
     pool: Extension<Pool>,
     axum::extract::Path((date, hour, is_exclude_draft)): axum::extract::Path<(String, String, String)>,
-) -> Result<Json<ActionResult<Value>>, AppError> {
+) -> Result<Json<ActionResult<Vec<Value>>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let _ = (hour, is_exclude_draft);
     let rows = client
@@ -17107,13 +17107,14 @@ pub async fn task_list_date_hour_exclude_draft_manage(
             ]))
         })
         .collect();
-    Ok(Json(ActionResult::success(serde_json::Value::Array(data))))
+    let data_len = data.len() as i64;
+    Ok(Json(ActionResult::java_success(data, data_len, 0)))
 }
 
 pub async fn task_list_person_exclude_draft_manage(
     pool: Extension<Pool>,
     axum::extract::Path((person, is_exclude_draft)): axum::extract::Path<(String, String)>,
-) -> Result<Json<ActionResult<Value>>, AppError> {
+) -> Result<Json<ActionResult<Vec<Value>>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let _ = is_exclude_draft;
     let rows = client
@@ -17134,6 +17135,7 @@ pub async fn task_list_person_exclude_draft_manage(
             ]))
         })
         .collect();
-    Ok(Json(ActionResult::success(serde_json::Value::Array(data))))
+    let data_len = data.len() as i64;
+    Ok(Json(ActionResult::java_success(data, data_len, 0)))
 }
 

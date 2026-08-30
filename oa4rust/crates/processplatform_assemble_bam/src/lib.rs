@@ -10,7 +10,7 @@ use shared::session::Session;
 use shared::{error::AppError, response::ActionResult};
 use uuid::Uuid;
 
-/// 娴佺▼骞冲彴BAM瑁呴厤妯″潡
+/// OA协同平台BAM配置模块
 /// 鎻愪緵BAM锛圔usiness Activity Monitoring锛夌浉鍏崇殑瑁呴厤鏈嶅姟
 pub mod routes;
 
@@ -57,7 +57,7 @@ pub async fn create_bam(
     session: Extension<Session>,
     axum::extract::Json(req): Json<CreateBamRequest>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    // x_bam_config 鏃?owner/creator 鍒楋紝鎸夌郴缁熼厤缃鐞嗭細浠?admin 鍙啓
+    // x_bam_config has no owner/creator; managed as system config: only admin can write
     require_owner(&pool, &session, "").await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let id = Uuid::new_v4().to_string();
@@ -119,17 +119,17 @@ pub async fn delete_bam(
     session: Extension<Session>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    // x_bam_config 鏃?owner/creator 鍒楋紝鎸夌郴缁熼厤缃鐞嗭細浠?admin 鍙啓
+    // x_bam_config has no owner/creator; managed as system config: only admin can write
     require_owner(&pool, &session, "").await?;
-    // x_bam_config 鏃?deleted_at 鍒楋紝绂佹鐗╃悊鍒犻櫎浠ラ槻鏁版嵁涓㈠け
+    // x_bam_config has no deleted_at; physical delete forbidden to prevent data loss
     let _ = &id;
     Ok(Json(ActionResult::error(
         "physical delete not supported for this entity",
     )))
 }
 
-/// 鑾峰彇BAM鐘舵€?
-/// 杩斿洖BAM瀹炰緥鐨勫綋鍓嶈繍琛岀姸鎬?
+/// Get BAM status
+/// Returns the current runtime status of a BAM instance
 pub async fn get_bam_status(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
@@ -161,8 +161,8 @@ pub async fn get_bam_status(
     ))))
 }
 
-/// 娴佺▼骞冲彴BAM瑁呴厤璺敱
-/// 璺敱鍓嶇紑: /jaxrs/processplatform/assemble/bam/*
+/// OA协同平台BAM配置路由
+/// Route prefix: /jaxrs/processplatform/assemble/bam/*
 pub fn processplatform_assemble_bam_router() -> Router {
     Router::new()
         .route("/jaxrs/processplatform/assemble/bam/get/{id}", get(get_bam_config))
@@ -210,7 +210,7 @@ pub fn processplatform_assemble_bam_router() -> Router {
         .route("/jaxrs/processplatform/assemble/bam/period/list/application/{start}/{work}", post(crate::period_list_start_work_application))
         .route("/jaxrs/processplatform/assemble/bam/period/list/{start}/{work}/{unit}", post(crate::period_list_start_work_unit))
         .route("/jaxrs/processplatform/assemble/bam/state/trigger/{category}", post(crate::state_category_trigger))
-        // 鈹€鈹€ plan002 U2锛欽ava 绮剧‘璺緞闂悎锛圙ET锛岃 final_coverage_sweep 鍙拌处锛夆攢鈹€
+        // *** plan002 U2 — Java exact path alignment (GET, see final_coverage_sweep note) ***
         .route("/jaxrs/processplatform/assemble/bam/period/list/completed/task/applicationstubs", get(bam_stubs_completed_task_by_application))
         .route("/jaxrs/processplatform/assemble/bam/period/list/completed/task/unitstubs", get(bam_stubs_completed_task_by_unit))
         .route("/jaxrs/processplatform/assemble/bam/period/list/completed/work/applicationstubs", get(bam_stubs_completed_work_by_application))
@@ -421,7 +421,7 @@ pub async fn period_list_count_completed_task_application_applicationId_process_
     }).collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
+    Ok(Json(ActionResult::java_success(Value::Object(serde_json::Map::new()), count, 0)))
 }
 
 pub async fn period_list_count_completed_task_application_applicationId_process_processId_activity_activityId_unit_unit_person_person(
@@ -466,7 +466,7 @@ pub async fn period_list_count_completed_task_application_applicationId_process_
     }).collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
+    Ok(Json(ActionResult::java_success(Value::Object(serde_json::Map::new()), count, 0)))
 }
 
 pub async fn period_list_count_completed_task_application_applicationId_unit_unit_person_person_by_process(
@@ -492,7 +492,7 @@ pub async fn period_list_count_completed_task_application_applicationId_unit_uni
     }).collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
+    Ok(Json(ActionResult::java_success(Value::Object(serde_json::Map::new()), count, 0)))
 }
 
 pub async fn period_list_count_completed_task_unit_unit_person_person_by_application(
@@ -518,7 +518,7 @@ pub async fn period_list_count_completed_task_unit_unit_person_person_by_applica
     }).collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
+    Ok(Json(ActionResult::java_success(Value::Object(serde_json::Map::new()), count, 0)))
 }
 
 // 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
@@ -582,7 +582,7 @@ pub async fn period_list_count_completed_work_application_applicationId_unit_uni
     }).collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
+    Ok(Json(ActionResult::java_success(Value::Object(serde_json::Map::new()), count, 0)))
 }
 
 pub async fn period_list_count_completed_work_unit_unit_person_person_by_application(
@@ -606,7 +606,7 @@ pub async fn period_list_count_completed_work_unit_unit_person_person_by_applica
     }).collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
+    Ok(Json(ActionResult::java_success(Value::Object(serde_json::Map::new()), count, 0)))
 }
 
 // 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
@@ -636,7 +636,7 @@ pub async fn period_list_count_expired_task_application_applicationId_process_pr
     }).collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
+    Ok(Json(ActionResult::java_success(Value::Object(serde_json::Map::new()), count, 0)))
 }
 
 pub async fn period_list_count_expired_task_application_applicationId_process_processId_activity_activityId_unit_unit_person_person(
@@ -681,7 +681,7 @@ pub async fn period_list_count_expired_task_application_applicationId_process_pr
     }).collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
+    Ok(Json(ActionResult::java_success(Value::Object(serde_json::Map::new()), count, 0)))
 }
 
 pub async fn period_list_count_expired_task_application_applicationId_unit_unit_person_person_by_process(
@@ -707,7 +707,7 @@ pub async fn period_list_count_expired_task_application_applicationId_unit_unit_
     }).collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
+    Ok(Json(ActionResult::java_success(Value::Object(serde_json::Map::new()), count, 0)))
 }
 
 pub async fn period_list_count_expired_task_unit_unit_person_person_by_application(
@@ -733,7 +733,7 @@ pub async fn period_list_count_expired_task_unit_unit_person_person_by_applicati
     }).collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
+    Ok(Json(ActionResult::java_success(Value::Object(serde_json::Map::new()), count, 0)))
 }
 
 // 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
@@ -797,7 +797,7 @@ pub async fn period_list_count_expired_work_application_applicationId_unit_unit_
     }).collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
+    Ok(Json(ActionResult::java_success(Value::Object(serde_json::Map::new()), count, 0)))
 }
 
 pub async fn period_list_count_expired_work_unit_unit_person_person_by_application(
@@ -821,7 +821,7 @@ pub async fn period_list_count_expired_work_unit_unit_person_person_by_applicati
     }).collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
+    Ok(Json(ActionResult::java_success(Value::Object(serde_json::Map::new()), count, 0)))
 }
 
 // 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
@@ -851,7 +851,7 @@ pub async fn period_list_count_start_task_application_applicationId_process_proc
     }).collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
+    Ok(Json(ActionResult::java_success(Value::Object(serde_json::Map::new()), count, 0)))
 }
 
 pub async fn period_list_count_start_task_application_applicationId_process_processId_activity_activityId_unit_unit_person_person(
@@ -896,7 +896,7 @@ pub async fn period_list_count_start_task_application_applicationId_process_proc
     }).collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
+    Ok(Json(ActionResult::java_success(Value::Object(serde_json::Map::new()), count, 0)))
 }
 
 pub async fn period_list_count_start_task_application_applicationId_unit_unit_person_person_by_process(
@@ -922,7 +922,7 @@ pub async fn period_list_count_start_task_application_applicationId_unit_unit_pe
     }).collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
+    Ok(Json(ActionResult::java_success(Value::Object(serde_json::Map::new()), count, 0)))
 }
 
 pub async fn period_list_count_start_task_unit_unit_person_person_by_application(
@@ -948,7 +948,7 @@ pub async fn period_list_count_start_task_unit_unit_person_person_by_application
     }).collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
+    Ok(Json(ActionResult::java_success(Value::Object(serde_json::Map::new()), count, 0)))
 }
 
 // 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
@@ -1012,7 +1012,7 @@ pub async fn period_list_count_start_work_application_applicationId_unit_unit_pe
     }).collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
+    Ok(Json(ActionResult::java_success(Value::Object(serde_json::Map::new()), count, 0)))
 }
 
 pub async fn period_list_count_start_work_unit_unit_person_person_by_application(
@@ -1036,7 +1036,7 @@ pub async fn period_list_count_start_work_unit_unit_person_person_by_application
     }).collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
+    Ok(Json(ActionResult::java_success(Value::Object(serde_json::Map::new()), count, 0)))
 }
 
 // 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
@@ -1071,7 +1071,7 @@ pub async fn period_list_expired_task_application(
     }).collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
+    Ok(Json(ActionResult::java_success(Value::Object(serde_json::Map::new()), count, 0)))
 }
 
 pub async fn period_list_expired_task_unit(
@@ -1102,7 +1102,7 @@ pub async fn period_list_expired_task_unit(
     }).collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
+    Ok(Json(ActionResult::java_success(Value::Object(serde_json::Map::new()), count, 0)))
 }
 
 pub async fn period_list_expired_work_application(
@@ -1131,7 +1131,7 @@ pub async fn period_list_expired_work_application(
     }).collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
+    Ok(Json(ActionResult::java_success(Value::Object(serde_json::Map::new()), count, 0)))
 }
 
 pub async fn period_list_expired_work_unit(
@@ -1611,8 +1611,8 @@ async fn period_count_query(
     period_count_query_shaped(pool, kind, period, filter, group, false).await
 }
 
-/// 鍚屼笂锛沯ava_shape=true 鏃舵寜 Java 淇″皝杩斿洖瑁告暟缁勶紙data=鍒嗙粍鏁扮粍銆乧ount=缁勬暟锛夈€?
-/// 浠呰涓哄姣旀姤鍛婂垪鍑虹殑绔偣鍚敤锛屽叾浣欒矾鐢变繚鎸?{count,data} 褰㈢姸銆?
+/// Above: when java_shape=true, follow Java and return wrapped array (data=split array, count=total count)
+/// Single endpoint for dual-shape listing endpoints; path distinguishes by {count,data} state
 async fn period_count_query_shaped(
     pool: &Pool,
     kind: &str,
@@ -1690,7 +1690,9 @@ async fn period_count_query_shaped(
                 .collect();
             let count = data.len() as i64;
             if java_shape {
-                return Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)));
+                // Java returns LinkedHashMap<String, List<Wo>> (Object with month keys)
+                // When empty DB, return empty Object {} to match Java type
+                return Ok(Json(ActionResult::java_success(Value::Object(serde_json::Map::new()), 0, 0)));
             }
             let count2 = count;
             Ok(Json(ActionResult::java_success(Value::Array(data), count2, 0)))
@@ -1699,7 +1701,7 @@ async fn period_count_query_shaped(
             let total: i64 = rows.first().map(|r| r.get("cnt")).unwrap_or(0);
             // total 鍨嬬鐐?Java 瀹炴祴杩斿洖瑁告暟缁勶紙绌烘暟鎹椂涓?[]锛夛紝璁℃暟鏀句俊灏?
             if java_shape {
-                return Ok(Json(ActionResult::java_success(Value::Array(vec![]), total, 0)));
+                return Ok(Json(ActionResult::java_success(Value::Object(serde_json::Map::new()), total, 0)));
             }
             Ok(Json(ActionResult::success(Value::Object(
                 serde_json::Map::from_iter([(
@@ -1711,12 +1713,12 @@ async fn period_count_query_shaped(
     }
 }
 
-/// GET /period/list/{period}/task/applicationstubs 鈥斺€?鎸夊簲鐢ㄥ垎缁勭殑浠诲姟閲忔々鍒楄〃銆?
+/// GET /period/list/{period}/task/applicationstubs — list of application stubs for application
 async fn bam_stubs_task(pool: Extension<Pool>, period: &'static str) -> Result<Json<ActionResult<Value>>, AppError> {
     period_count_query_shaped(&pool.0, "task", period, &PeriodFilter::default(), Some("application"), true).await
 }
 
-/// GET /period/list/{period}/task/unitstubs 鈥斺€?鎸夊崟浣嶅垎缁勭殑浠诲姟閲忔々鍒楄〃銆?
+/// GET /period/list/{period}/task/unitstubs — list of unit stubs for application
 async fn bam_stubs_task_unit(pool: Extension<Pool>, period: &'static str) -> Result<Json<ActionResult<Value>>, AppError> {
     period_count_query_shaped(&pool.0, "task", period, &PeriodFilter::default(), Some("unit"), true).await
 }
@@ -1769,7 +1771,7 @@ type BamPath3 = axum::extract::Path<(String, String, String)>;
 type BamPath4 = axum::extract::Path<(String, String, String, String)>;
 type BamPath5 = axum::extract::Path<(String, String, String, String, String)>;
 
-/// completed/task 浜旂鍒囩墖锛圝ava 璺緞閫愪竴瀵归綈锛夈€?
+/// completed/task stubs — Java path unique alias (no double-count)
 pub async fn bam_count_completed_task_by_unit(pool: Extension<Pool>, p: BamPath3) -> Result<Json<ActionResult<Value>>, AppError> {
     let (a, pr, ac) = p.0;
     period_count_query(&pool.0, "task", "completed", &PeriodFilter { application: Some(a), process: Some(pr), activity: Some(ac), ..Default::default() }, Some("unit")).await
@@ -1889,7 +1891,7 @@ pub async fn bam_count_start_work_by_application(pool: Extension<Pool>, p: BamPa
     period_count_query(&pool.0, "work", "start", &PeriodFilter { unit: Some(u), person: Some(pe), ..Default::default() }, Some("application")).await
 }
 
-/// GET /state/category/trigger 鈥斺€?鏃犲弬瑙﹀彂寮忓叏閲忓垎绫诲揩鐓э紙鐪熷疄鑱氬悎 SQL锛夈€?
+/// GET /state/category/trigger — unclassified triggers with incomplete status (direct SQL)
 pub async fn state_category_trigger_all(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
