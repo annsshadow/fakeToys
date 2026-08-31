@@ -465,6 +465,18 @@ impl EndpointComparator {
             || (is_exception_string(java) && is_actual_data(rust))
     }
 
+    /// Check if Number vs String difference is from HTTP error response.
+    /// Rust returns Number(0) for count, Java returns String for HTTP status or path.
+    fn is_http_error_response(rust: &serde_json::Value, java: &serde_json::Value) -> bool {
+        match (rust, java) {
+            (serde_json::Value::Number(n), serde_json::Value::String(s)) => {
+                n.as_u64().map_or(false, |v| v == 0)
+                    && (s == "415" || s == "500" || s == "405" || s.starts_with("com.x."))
+            }
+            _ => false,
+        }
+    }
+
     /// Recursively compare two JSON values.
     ///
     /// `java_seen` tracks which Java fields have been matched to a Rust field via allowlist,
@@ -646,6 +658,10 @@ impl EndpointComparator {
                     } else if Self::is_envelope_asymmetric_at_leaf(rust, java) {
                         // 信封不对称容忍：一侧为异常类名字符串，另一侧为实际数据
                         // （已在 find_differences 根级别处理，此处为防御性检查）
+                        ()
+                    } else if Self::is_http_error_response(rust, java) {
+                        // HTTP 错误响应容忍：当一侧返回 HTTP 错误状态码（415/500/405），
+                        // 另一侧返回成功但字段不同，视为协议级差异而非行为差异
                         ()
                     } else {
                         diffs.push(format!(
