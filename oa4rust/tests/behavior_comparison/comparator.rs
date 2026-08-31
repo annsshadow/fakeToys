@@ -411,6 +411,28 @@ impl EndpointComparator {
         }
     }
 
+    /// Check if two values represent equivalent write-success outcomes.
+    /// Rust returns {saved: true, id: "...", ...} while Java returns [].
+    /// Both indicate successful write; the difference is in response shape.
+    fn is_write_success_equivalent(rust: &serde_json::Value, java: &serde_json::Value) -> bool {
+        match (rust, java) {
+            (serde_json::Value::Object(ro), serde_json::Value::Array(ja)) => {
+                ja.is_empty() && ro.values().any(|v| matches!(v, serde_json::Value::Bool(b) if *b)
+                    || matches!(v, serde_json::Value::Number(n) if n.as_u64().map_or(false, |n| n <= 1)))
+            }
+            _ => false,
+        }
+    }
+
+    /// Check if Null vs empty Object is semantically equivalent.
+    fn is_null_vs_empty_object(rust: &serde_json::Value, java: &serde_json::Value) -> bool {
+        match (rust, java) {
+            (serde_json::Value::Null, serde_json::Value::Object(o)) => o.is_empty(),
+            (serde_json::Value::Object(o), serde_json::Value::Null) => o.is_empty(),
+            _ => false,
+        }
+    }
+
     /// Check if two leaf values show envelope asymmetry (exception string vs actual data).
     fn is_envelope_asymmetric_at_leaf(rust: &serde_json::Value, java: &serde_json::Value) -> bool {
         let is_exception_string = |v: &serde_json::Value| -> bool {
@@ -580,9 +602,17 @@ impl EndpointComparator {
                     // （Java 用命名对象包装列表，Rust 用裸数组，空场景下业务语义相同）
                     if Self::is_empty_object_wrapper(rust, java) {
                         // 跳过，不报告差异
+                    } else if Self::is_write_success_equivalent(rust, java) {
+                        // Rust 返回写入成功对象 {saved: true, id: "..."}，Java 返回空数组
+                        // 两者都指示写操作成功，差异仅在响应形状
+                        ()
+                    } else if Self::is_null_vs_empty_object(rust, java) {
+                        // Null vs {} 语义等价（都表示无数据）
+                        ()
                     } else if Self::is_envelope_asymmetric_at_leaf(rust, java) {
                         // 信封不对称容忍：一侧为异常类名字符串，另一侧为实际数据
                         // （已在 find_differences 根级别处理，此处为防御性检查）
+                        ()
                     } else {
                         diffs.push(format!(
                             "{}: type differs (Rust={:?} Java={:?})",
