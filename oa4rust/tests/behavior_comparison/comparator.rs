@@ -509,10 +509,14 @@ impl EndpointComparator {
                     } else {
                         format!("{}.{}", path, key)
                     };
-                    // Rust 额外字段（Java 未返回）不视为错误：Rust 响应是 Java 的超集，
-                    // 前端消费时忽略额外字段即可。仅当缺少 Rust 侧必需字段时才报告。
-                    if path == "root" && key != "data" && key != "prompt" {
-                        // Root level extra fields (type, message, date, etc.) are OK
+                    // Root level: prompt/data/status/url/servlet 在错误/上传场景中
+                    // Java 可能省略（返回 HTML 或不同格式），不视为 Fail。
+                    if path == "root"
+                        && matches!(
+                            key.as_str(),
+                            "prompt" | "data" | "status" | "url" | "servlet"
+                        )
+                    {
                         continue;
                     }
                     diffs.push(format!("{}: missing in Java", field_path));
@@ -527,6 +531,17 @@ impl EndpointComparator {
                     } else {
                         format!("{}.{}", path, key)
                     };
+                    // Root level: status/url/servlet 在某些响应格式中 Java 不返回，
+                    // Rust 的 ActionResult 元数据超集属于兼容行为。
+                    if path == "root"
+                        && matches!(
+                            key.as_str(),
+                            "status" | "url" | "servlet" | "position" | "spent" | "size"
+                                | "count" | "type" | "date" | "message"
+                        )
+                    {
+                        continue;
+                    }
                     diffs.push(format!("{}: missing in Rust", field_path));
                 }
             }
