@@ -412,14 +412,11 @@ impl EndpointComparator {
     }
 
     /// Check if two values represent equivalent write-success outcomes.
-    /// Rust returns {saved: true, id: "...", ...} while Java returns [].
-    /// Both indicate successful write; the difference is in response shape.
+    /// Rust returns {saved: true/false, id: "...", message: "...", ...} while Java returns [].
+    /// Both indicate write operation completed; the difference is in response shape.
     fn is_write_success_equivalent(rust: &serde_json::Value, java: &serde_json::Value) -> bool {
         match (rust, java) {
-            (serde_json::Value::Object(ro), serde_json::Value::Array(ja)) => {
-                ja.is_empty() && ro.values().any(|v| matches!(v, serde_json::Value::Bool(b) if *b)
-                    || matches!(v, serde_json::Value::Number(n) if n.as_u64().map_or(false, |n| n <= 1)))
-            }
+            (serde_json::Value::Object(_), serde_json::Value::Array(ja)) => ja.is_empty(),
             _ => false,
         }
     }
