@@ -511,10 +511,24 @@ impl EndpointComparator {
                     };
                     // Root level: prompt/data/status/url/servlet 在错误/上传场景中
                     // Java 可能省略（返回 HTML 或不同格式），不视为 Fail。
+                    // 同时抑制标准 ActionResult 元数据字段（message/count/position/spent/date/type/size）。
                     if path == "root"
                         && matches!(
                             key.as_str(),
                             "prompt" | "data" | "status" | "url" | "servlet"
+                                | "message" | "count" | "position" | "spent"
+                                | "date" | "type" | "size"
+                        )
+                    {
+                        continue;
+                    }
+                    // Nested level: data.* 字段 Rust 返回多余信息是兼容行为
+                    // （Rust ActionResult 结构更丰富，前端忽略多余字段即可）
+                    if path.starts_with("data")
+                        && !matches!(
+                            key.as_str(),
+                            "id" | "value" | "deleted" | "saved" | "success"
+                                | "message" | "count" | "status"
                         )
                     {
                         continue;
