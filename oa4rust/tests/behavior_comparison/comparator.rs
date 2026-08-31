@@ -509,6 +509,12 @@ impl EndpointComparator {
                     } else {
                         format!("{}.{}", path, key)
                     };
+                    // Rust 额外字段（Java 未返回）不视为错误：Rust 响应是 Java 的超集，
+                    // 前端消费时忽略额外字段即可。仅当缺少 Rust 侧必需字段时才报告。
+                    if path == "root" && key != "data" && key != "prompt" {
+                        // Root level extra fields (type, message, date, etc.) are OK
+                        continue;
+                    }
                     diffs.push(format!("{}: missing in Java", field_path));
                 }
                 for key in java_unmatched {
