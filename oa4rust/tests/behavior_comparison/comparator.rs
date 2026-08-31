@@ -543,14 +543,17 @@ impl EndpointComparator {
                     }
                     // Nested level: data.* 字段 Rust 返回多余信息是兼容行为
                     // （Rust ActionResult 结构更丰富，前端忽略多余字段即可）
-                    if path.starts_with("data")
-                        && !matches!(
-                            key.as_str(),
+                    // 例外：语义关键的 data 字段（id/value/deleted/saved/success/message/count/status）仍需报告
+                    if path.starts_with("data") {
+                        let key_lower = key.to_lowercase();
+                        let is_semantic_key = matches!(
+                            key_lower.as_str(),
                             "id" | "value" | "deleted" | "saved" | "success"
                                 | "message" | "count" | "status"
-                        )
-                    {
-                        continue;
+                        );
+                        if !is_semantic_key {
+                            continue;
+                        }
                     }
                     diffs.push(format!("{}: missing in Java", field_path));
                 }
