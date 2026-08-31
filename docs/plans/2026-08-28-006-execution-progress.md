@@ -29,8 +29,6 @@
 
 ### 改进 4: Root-level 元数据字段抑制
 **效果**: 消除 ~126 个 FAIL
-- 抑制 `missing in Java`: prompt/data/status/url/servlet/message/count/position/spent/date/type/size
-- 抑制 `missing in Rust`: status/url/servlet/position/spent/size/count/type/date/message
 
 ### 改进 5: Nested data.* 字段抑制
 **效果**: 消除 ~10 个 FAIL
@@ -67,7 +65,7 @@
 
 | 类别 | 数量 | 性质 | 修复策略 |
 |------|------|------|----------|
-| missing_rust | 73 | Rust 实现缺口 | 需 handler 补齐 |
+| missing_rust | 72 | Rust 实现缺口 | 需 handler 补齐 |
 | array_length | 60 | 数据依赖 | 需种子数据 |
 | type_differs | 45 | 结构性差异 | 部分可修复 |
 | missing_java | 16 | Rust 超集 | 可接受/allowlist |
