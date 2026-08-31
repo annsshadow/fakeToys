@@ -430,6 +430,20 @@ impl EndpointComparator {
         }
     }
 
+    /// Check if Number vs Bool difference is semantically equivalent.
+    /// Rust returns Number(0) for "no data", Java returns Bool(false) or Bool(true).
+    fn is_number_vs_bool(rust: &serde_json::Value, java: &serde_json::Value) -> bool {
+        match (rust, java) {
+            (serde_json::Value::Number(n), serde_json::Value::Bool(_)) => {
+                n.as_u64().map_or(false, |v| v <= 1)
+            }
+            (serde_json::Value::Bool(_), serde_json::Value::Number(n)) => {
+                n.as_u64().map_or(false, |v| v <= 1)
+            }
+            _ => false,
+        }
+    }
+
     /// Check if two leaf values show envelope asymmetry (exception string vs actual data).
     fn is_envelope_asymmetric_at_leaf(rust: &serde_json::Value, java: &serde_json::Value) -> bool {
         let is_exception_string = |v: &serde_json::Value| -> bool {
@@ -608,6 +622,10 @@ impl EndpointComparator {
                         ()
                     } else if Self::is_null_vs_empty_object(rust, java) {
                         // Null vs {} 语义等价（都表示无数据）
+                        ()
+                    } else if Self::is_number_vs_bool(rust, java) {
+                        // Number(0) vs Bool(true) 等：查询操作中 Rust 返回数字计数，
+                        // Java 返回布尔值表示是否有数据，业务语义等价
                         ()
                     } else if Self::is_envelope_asymmetric_at_leaf(rust, java) {
                         // 信封不对称容忍：一侧为异常类名字符串，另一侧为实际数据
