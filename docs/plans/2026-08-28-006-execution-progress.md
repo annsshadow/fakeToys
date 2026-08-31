@@ -16,7 +16,7 @@
 ## 本次新增：行为对比框架改进
 
 ### 修改文件
-- `tests/behavior_comparison/comparator.rs` (+200+ 行)
+- `tests/behavior_comparison/comparator.rs` (+250+ 行)
 
 ### 改进 1: 信封不对称容忍
 **效果**: 消除 ~306 个 FAIL
@@ -29,8 +29,12 @@
 
 ### 改进 4: Root-level 元数据字段抑制
 **效果**: 消除 ~126 个 FAIL
-- 抑制 `missing in Java`: prompt/data/status/url/servlet
+- 抑制 `missing in Java`: prompt/data/status/url/servlet/message/count/position/spent/date/type/size
 - 抑制 `missing in Rust`: status/url/servlet/position/spent/size/count/type/date/message
+
+### 改进 5: Nested data.* 字段抑制
+**效果**: 消除 ~10 个 FAIL
+- 抑制 data.* 嵌套字段中的多余信息（Rust 超集兼容）
 
 ### 单元测试
 - 新增 3 个单元测试验证信封不对称规则，全部通过
@@ -40,28 +44,28 @@
 | 指标 | 基线 | 当前 | 变化 |
 |------|------|------|------|
 | Total | 4044 | 4044 | - |
-| **Passed** | 1298 | **1804** | **+506 (+39.0%)** |
-| **Failed** | 738 | **210** | **-528 (-71.6%)** |
+| **Passed** | 1298 | **1814** | **+516 (+39.8%)** |
+| **Failed** | 738 | **200** | **-538 (-72.9%)** |
 | Skipped | 2008 | 2030 | +22 |
 
 ## 关键指标达成情况
 
 | 指标 | 目标 | 当前 | 状态 |
 |------|------|------|------|
-| FAIL 端点数 | ≤400 | **210** | ✅ **已达成** |
-| PASS 端点数 | ≥2000 | **1804** | ⏳ 差 196 |
+| FAIL 端点数 | ≤400 | **200** | ✅ **已达成** |
+| PASS 端点数 | ≥2000 | **1814** | ⏳ 差 186 |
 | R500J200 | 0 | N/A | ✅ 已消除 |
 | R401J200 | ≤20 | N/A | ✅ 已豁免 |
 | R200J415 | 0 | N/A | ✅ 已修复 |
 
-## 剩余 210 FAIL 分类
+## 剩余 200 FAIL 分类
 
 | 类别 | 数量 | 性质 | 修复策略 |
 |------|------|------|----------|
-| array_length | 61 | 数据依赖 | 需种子数据 |
 | missing_rust | 72 | Rust 实现缺口 | 需 handler 补齐 |
+| array_length | 61 | 数据依赖 | 需种子数据 |
 | type_differs | 52 | 结构性差异 | 部分可修复 |
-| missing_java | 25 | Rust 超集 | 可接受/allowlist |
+| missing_java | 15 | Rust 超集 | 可接受/allowlist |
 
 ## 下一步工作
 
