@@ -1,4 +1,4 @@
-﻿[package]
+[package]
 name = "personal"
 version.workspace = true
 edition.workspace = true
@@ -27,6 +27,7 @@ reqwest.workspace = true
 shared = { path = "../shared" }
 auth = { path = "../auth" }
 empower = { path = "../empower" }
+sms = { path = "../sms" }
 
 [dev-dependencies]
 tower.workspace = true
