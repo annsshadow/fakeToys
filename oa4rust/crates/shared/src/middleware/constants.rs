@@ -459,5 +459,6 @@ pub const AUTH_EXEMPT_PREFIXES: &[&str] = &[
     "/jaxrs/ai/chat/delete",
     "/jaxrs/attendance/assemble/control/dingdingstatistic",
     "/jaxrs/attendance/assemble/control/qywxstatistic",
-    "/jaxrs/meeting/assemble/control/config/system",
+    "/jaxrs/meeting/assemble/control/config/system",
+    "/jaxrs/person/icon",
 ];
