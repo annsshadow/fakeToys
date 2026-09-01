@@ -4100,6 +4100,7 @@ dependencies = [
  "serde_json",
  "sha1",
  "shared",
+ "sms",
  "thiserror 1.0.69",
  "tokio",
  "tower",

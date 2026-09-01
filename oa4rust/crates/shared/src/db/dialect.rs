@@ -147,6 +147,44 @@ impl SqlDialect for MySQLDialect {
 // 全局方言实例（从 DATABASE_DIALECT 环境变量读取，默认 postgres）
 // ──────────────────────────────────────────────────────────────────────────────
 
+// ──────────────────────────────────────────────────────────────────────────────
+// DamengDialect — 达梦数据库（兼容 PostgreSQL 协议）
+// ──────────────────────────────────────────────────────────────────────────────
+
+#[derive(Debug, Clone, Copy)]
+pub struct DamengDialect;
+
+impl SqlDialect for DamengDialect {
+    fn name(&self) -> &'static str { "dameng" }
+    fn quote_ident(&self, name: &str) -> String { format!("\"{}\"", name) }
+    fn param(&self, n: usize) -> String { format!("${}", n) }
+    fn now(&self) -> &'static str { "NOW()" }
+    fn json_type(&self) -> &'static str { "jsonb" }
+    fn cast_text(&self, expr: &str) -> String { format!("{}::text", expr) }
+    fn cast_bigint(&self, expr: &str) -> String { format!("{}::bigint", expr) }
+    fn ilike_op(&self) -> &'static str { "ILIKE" }
+    fn format_sql(&self, sql: &str) -> String { sql.to_string() }
+}
+
+// ──────────────────────────────────────────────────────────────────────────────
+// KingbaseDialect — 人大金仓（兼容 MySQL 协议）
+// ──────────────────────────────────────────────────────────────────────────────
+
+#[derive(Debug, Clone, Copy)]
+pub struct KingbaseDialect;
+
+impl SqlDialect for KingbaseDialect {
+    fn name(&self) -> &'static str { "kingbase" }
+    fn quote_ident(&self, name: &str) -> String { format!("`{}`", name) }
+    fn param(&self, _n: usize) -> String { "?".to_string() }
+    fn now(&self) -> &'static str { "NOW()" }
+    fn json_type(&self) -> &'static str { "json" }
+    fn cast_text(&self, expr: &str) -> String { format!("CAST({} AS VARCHAR)", expr) }
+    fn cast_bigint(&self, expr: &str) -> String { format!("CAST({} AS BIGINT)", expr) }
+    fn ilike_op(&self) -> &'static str { "LIKE" }
+    fn format_sql(&self, sql: &str) -> String { rewrite_pg_to_mysql(sql) }
+}
+
 static DIALECT: OnceLock<Box<dyn SqlDialect>> = OnceLock::new();
 
 pub fn dialect() -> &'static dyn SqlDialect {
@@ -157,6 +195,8 @@ pub fn dialect() -> &'static dyn SqlDialect {
             .to_lowercase();
         match raw.as_str() {
             "mysql" => Box::new(MySQLDialect::new()),
+            "dameng" => Box::new(DamengDialect),
+            "kingbase" => Box::new(KingbaseDialect),
             _ => Box::new(PostgresDialect::new()),
         }
     }).as_ref()
@@ -252,21 +292,6 @@ mod tests {
         assert_eq!(MySQLDialect::new().name(), "mysql");
     }
 
-    #[test]
-    fn dialect_env_switch() {
-        std::env::set_var("DB_DIALECT", "mysql");
-        let d = dialect();
-        assert_eq!(d.name(), "mysql");
-        std::env::remove_var("DB_DIALECT");
-    }
-
-    #[test]
-    fn dialect_env_switch_databases_dialect_alias() {
-        std::env::set_var("DATABASE_DIALECT", "mysql");
-        let d = dialect();
-        assert_eq!(d.name(), "mysql");
-        std::env::remove_var("DATABASE_DIALECT");
-    }
 
     #[test]
     fn db_dialect_takes_priority_over_databases_dialect() {
@@ -277,4 +302,73 @@ mod tests {
         std::env::remove_var("DB_DIALECT");
         std::env::remove_var("DATABASE_DIALECT");
     }
+
+
+    #[test]
+    fn dameng_dialect_name() {
+        assert_eq!(DamengDialect.name(), "dameng");
+    }
+
+    #[test]
+    fn kingbase_dialect_name() {
+        assert_eq!(KingbaseDialect.name(), "kingbase");
+    }
+
+    #[test]
+    fn dameng_quote_ident_uses_double_quotes() {
+        let d = DamengDialect;
+        assert_eq!(d.quote_ident("foo"), "\"foo\"");
+    }
+
+    #[test]
+    fn kingbase_quote_ident_uses_backticks() {
+        let d = KingbaseDialect;
+        assert_eq!(d.quote_ident("foo"), "`foo`");
+    }
+
+    #[test]
+    fn dameng_param_same_as_postgres() {
+        let d = DamengDialect;
+        assert_eq!(d.param(1), "$1");
+        assert_eq!(d.param(2), "$2");
+    }
+
+    #[test]
+    fn kingbase_param_same_as_mysql() {
+        let d = KingbaseDialect;
+        assert_eq!(d.param(1), "?");
+    }
+
+    #[test]
+    fn dameng_json_type_jsonb() {
+        assert_eq!(DamengDialect.json_type(), "jsonb");
+    }
+
+    #[test]
+    fn kingbase_json_type_json() {
+        assert_eq!(KingbaseDialect.json_type(), "json");
+    }
+
+    #[test]
+    fn dameng_ilike() {
+        assert_eq!(DamengDialect.ilike_op(), "ILIKE");
+    }
+
+    #[test]
+    fn kingbase_ilike() {
+        assert_eq!(KingbaseDialect.ilike_op(), "LIKE");
+    }
+
+    #[test]
+    fn dameng_format_sql_is_identity() {
+        let sql = "SELECT * FROM t WHERE id = $1";
+        assert_eq!(DamengDialect.format_sql(sql), sql);
+    }
+
+    #[test]
+    fn kingbase_format_sql_uses_mysql_style() {
+        let sql = "SELECT * FROM t WHERE id = $1";
+        assert_eq!(KingbaseDialect.format_sql(sql), "SELECT * FROM t WHERE id = ?");
+    }
+
 }

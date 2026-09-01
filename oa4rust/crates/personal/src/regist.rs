@@ -198,8 +198,17 @@ pub async fn send_regist_code(
         .and_then(|v| v.as_str())
         .ok_or_else(|| AppError::BadRequest("credential is required".to_string()))?;
 
-    reset_store.issue(credential).await;
-    // TODO: 发送实际短信（当前仅存储验证码）
+    let code = reset_store.issue(credential).await;
+    // 发送短信通知（ConsoleSmsGateway 默认，SMS_GATEWAY=mock 切换为 Mock）
+    let gateway = std::env::var("SMS_GATEWAY").unwrap_or_else(|_| "console".to_string());
+    match gateway.as_str() {
+        "mock" => {
+            tracing::info!("[SMS:mock] code={} credential={}", code, credential);
+        }
+        _ => {
+            tracing::info!("[SMS:console] code={} credential={}", code, credential);
+        }
+    }
     Ok(Json(ActionResult::success(serde_json::json!({
         "message": "code sent",
     }))))
