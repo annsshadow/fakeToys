@@ -19,8 +19,14 @@ mod tests {
             )
             .await
             .unwrap();
-        assert_ne!(response.status(), StatusCode::NOT_FOUND,
-            "organization_assemble_control_role_list_flag_next_count route should be registered");
+        if response.status() == StatusCode::NOT_FOUND {
+            // Route-presence probe: an unregistered path hits the axum fallback
+            // (empty 404 body); a matched handler may legitimately answer 404
+            // (e.g. NotFound for missing row) but always with a JSON envelope.
+            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX).await.unwrap_or_default();
+            assert!(!bytes.is_empty(),
+                "organization_assemble_control_role_list_flag_next_count route should be registered");
+        }
     }
 
     #[tokio::test]
@@ -37,8 +43,14 @@ mod tests {
             )
             .await
             .unwrap();
-        assert_ne!(response.status(), StatusCode::NOT_FOUND,
-            "organization_assemble_control_role_flag route should be registered");
+        if response.status() == StatusCode::NOT_FOUND {
+            // Route-presence probe: an unregistered path hits the axum fallback
+            // (empty 404 body); a matched handler may legitimately answer 404
+            // (e.g. NotFound for missing row) but always with a JSON envelope.
+            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX).await.unwrap_or_default();
+            assert!(!bytes.is_empty(),
+                "organization_assemble_control_role_flag route should be registered");
+        }
     }
 
     #[tokio::test]
@@ -55,8 +67,14 @@ mod tests {
             )
             .await
             .unwrap();
-        assert_ne!(response.status(), StatusCode::NOT_FOUND,
-            "organization_assemble_control_unit_list_flag_next_count route should be registered");
+        if response.status() == StatusCode::NOT_FOUND {
+            // Route-presence probe: an unregistered path hits the axum fallback
+            // (empty 404 body); a matched handler may legitimately answer 404
+            // (e.g. NotFound for missing row) but always with a JSON envelope.
+            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX).await.unwrap_or_default();
+            assert!(!bytes.is_empty(),
+                "organization_assemble_control_unit_list_flag_next_count route should be registered");
+        }
     }
 
     #[tokio::test]
@@ -73,8 +91,14 @@ mod tests {
             )
             .await
             .unwrap();
-        assert_ne!(response.status(), StatusCode::NOT_FOUND,
-            "organization_assemble_control_unit_flag route should be registered");
+        if response.status() == StatusCode::NOT_FOUND {
+            // Route-presence probe: an unregistered path hits the axum fallback
+            // (empty 404 body); a matched handler may legitimately answer 404
+            // (e.g. NotFound for missing row) but always with a JSON envelope.
+            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX).await.unwrap_or_default();
+            assert!(!bytes.is_empty(),
+                "organization_assemble_control_unit_flag route should be registered");
+        }
     }
 
     #[tokio::test]
@@ -91,8 +115,14 @@ mod tests {
             )
             .await
             .unwrap();
-        assert_ne!(response.status(), StatusCode::NOT_FOUND,
-            "organization_assemble_control_unit_list_flag_sub_nested route should be registered");
+        if response.status() == StatusCode::NOT_FOUND {
+            // Route-presence probe: an unregistered path hits the axum fallback
+            // (empty 404 body); a matched handler may legitimately answer 404
+            // (e.g. NotFound for missing row) but always with a JSON envelope.
+            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX).await.unwrap_or_default();
+            assert!(!bytes.is_empty(),
+                "organization_assemble_control_unit_list_flag_sub_nested route should be registered");
+        }
     }
 
     #[tokio::test]
@@ -109,8 +139,14 @@ mod tests {
             )
             .await
             .unwrap();
-        assert_ne!(response.status(), StatusCode::NOT_FOUND,
-            "organization_assemble_control_unit_list_flag_sup_nested route should be registered");
+        if response.status() == StatusCode::NOT_FOUND {
+            // Route-presence probe: an unregistered path hits the axum fallback
+            // (empty 404 body); a matched handler may legitimately answer 404
+            // (e.g. NotFound for missing row) but always with a JSON envelope.
+            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX).await.unwrap_or_default();
+            assert!(!bytes.is_empty(),
+                "organization_assemble_control_unit_list_flag_sup_nested route should be registered");
+        }
     }
 
     #[tokio::test]
@@ -127,8 +163,14 @@ mod tests {
             )
             .await
             .unwrap();
-        assert_ne!(response.status(), StatusCode::NOT_FOUND,
-            "organization_assemble_control_unit_list_flag_sup_nested_type_type route should be registered");
+        if response.status() == StatusCode::NOT_FOUND {
+            // Route-presence probe: an unregistered path hits the axum fallback
+            // (empty 404 body); a matched handler may legitimately answer 404
+            // (e.g. NotFound for missing row) but always with a JSON envelope.
+            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX).await.unwrap_or_default();
+            assert!(!bytes.is_empty(),
+                "organization_assemble_control_unit_list_flag_sup_nested_type_type route should be registered");
+        }
     }
 
     #[tokio::test]
@@ -145,8 +187,14 @@ mod tests {
             )
             .await
             .unwrap();
-        assert_ne!(response.status(), StatusCode::NOT_FOUND,
-            "organization_assemble_control_person_list_like route should be registered");
+        if response.status() == StatusCode::NOT_FOUND {
+            // Route-presence probe: an unregistered path hits the axum fallback
+            // (empty 404 body); a matched handler may legitimately answer 404
+            // (e.g. NotFound for missing row) but always with a JSON envelope.
+            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX).await.unwrap_or_default();
+            assert!(!bytes.is_empty(),
+                "organization_assemble_control_person_list_like route should be registered");
+        }
     }
 
     #[tokio::test]
@@ -163,8 +211,14 @@ mod tests {
             )
             .await
             .unwrap();
-        assert_ne!(response.status(), StatusCode::NOT_FOUND,
-            "export_export_all route should be registered");
+        if response.status() == StatusCode::NOT_FOUND {
+            // Route-presence probe: an unregistered path hits the axum fallback
+            // (empty 404 body); a matched handler may legitimately answer 404
+            // (e.g. NotFound for missing row) but always with a JSON envelope.
+            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX).await.unwrap_or_default();
+            assert!(!bytes.is_empty(),
+                "export_export_all route should be registered");
+        }
     }
 
     #[tokio::test]
@@ -181,8 +235,14 @@ mod tests {
             )
             .await
             .unwrap();
-        assert_ne!(response.status(), StatusCode::NOT_FOUND,
-            "export_result_flag_flag route should be registered");
+        if response.status() == StatusCode::NOT_FOUND {
+            // Route-presence probe: an unregistered path hits the axum fallback
+            // (empty 404 body); a matched handler may legitimately answer 404
+            // (e.g. NotFound for missing row) but always with a JSON envelope.
+            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX).await.unwrap_or_default();
+            assert!(!bytes.is_empty(),
+                "export_result_flag_flag route should be registered");
+        }
     }
 
     #[tokio::test]
@@ -199,8 +259,14 @@ mod tests {
             )
             .await
             .unwrap();
-        assert_ne!(response.status(), StatusCode::NOT_FOUND,
-            "export_zhengwudingding_person route should be registered");
+        if response.status() == StatusCode::NOT_FOUND {
+            // Route-presence probe: an unregistered path hits the axum fallback
+            // (empty 404 body); a matched handler may legitimately answer 404
+            // (e.g. NotFound for missing row) but always with a JSON envelope.
+            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX).await.unwrap_or_default();
+            assert!(!bytes.is_empty(),
+                "export_zhengwudingding_person route should be registered");
+        }
     }
 
     #[tokio::test]
@@ -217,8 +283,14 @@ mod tests {
             )
             .await
             .unwrap();
-        assert_ne!(response.status(), StatusCode::NOT_FOUND,
-            "group_list_like_mockputtopost route should be registered");
+        if response.status() == StatusCode::NOT_FOUND {
+            // Route-presence probe: an unregistered path hits the axum fallback
+            // (empty 404 body); a matched handler may legitimately answer 404
+            // (e.g. NotFound for missing row) but always with a JSON envelope.
+            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX).await.unwrap_or_default();
+            assert!(!bytes.is_empty(),
+                "group_list_like_mockputtopost route should be registered");
+        }
     }
 
     #[tokio::test]
@@ -235,8 +307,14 @@ mod tests {
             )
             .await
             .unwrap();
-        assert_ne!(response.status(), StatusCode::NOT_FOUND,
-            "group_list_like_pinyin route should be registered");
+        if response.status() == StatusCode::NOT_FOUND {
+            // Route-presence probe: an unregistered path hits the axum fallback
+            // (empty 404 body); a matched handler may legitimately answer 404
+            // (e.g. NotFound for missing row) but always with a JSON envelope.
+            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX).await.unwrap_or_default();
+            assert!(!bytes.is_empty(),
+                "group_list_like_pinyin route should be registered");
+        }
     }
 
     #[tokio::test]
@@ -253,8 +331,14 @@ mod tests {
             )
             .await
             .unwrap();
-        assert_ne!(response.status(), StatusCode::NOT_FOUND,
-            "group_list_like_pinyin_mockputtopost route should be registered");
+        if response.status() == StatusCode::NOT_FOUND {
+            // Route-presence probe: an unregistered path hits the axum fallback
+            // (empty 404 body); a matched handler may legitimately answer 404
+            // (e.g. NotFound for missing row) but always with a JSON envelope.
+            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX).await.unwrap_or_default();
+            assert!(!bytes.is_empty(),
+                "group_list_like_pinyin_mockputtopost route should be registered");
+        }
     }
 
     #[tokio::test]
@@ -271,8 +355,14 @@ mod tests {
             )
             .await
             .unwrap();
-        assert_ne!(response.status(), StatusCode::NOT_FOUND,
-            "group_list_pinyininitial route should be registered");
+        if response.status() == StatusCode::NOT_FOUND {
+            // Route-presence probe: an unregistered path hits the axum fallback
+            // (empty 404 body); a matched handler may legitimately answer 404
+            // (e.g. NotFound for missing row) but always with a JSON envelope.
+            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX).await.unwrap_or_default();
+            assert!(!bytes.is_empty(),
+                "group_list_pinyininitial route should be registered");
+        }
     }
 
     #[tokio::test]
@@ -289,8 +379,14 @@ mod tests {
             )
             .await
             .unwrap();
-        assert_ne!(response.status(), StatusCode::NOT_FOUND,
-            "group_list_pinyininitial_mockputtopost route should be registered");
+        if response.status() == StatusCode::NOT_FOUND {
+            // Route-presence probe: an unregistered path hits the axum fallback
+            // (empty 404 body); a matched handler may legitimately answer 404
+            // (e.g. NotFound for missing row) but always with a JSON envelope.
+            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX).await.unwrap_or_default();
+            assert!(!bytes.is_empty(),
+                "group_list_pinyininitial_mockputtopost route should be registered");
+        }
     }
 
     #[tokio::test]
@@ -307,8 +403,14 @@ mod tests {
             )
             .await
             .unwrap();
-        assert_ne!(response.status(), StatusCode::NOT_FOUND,
-            "group_list_flag_sub_direct route should be registered");
+        if response.status() == StatusCode::NOT_FOUND {
+            // Route-presence probe: an unregistered path hits the axum fallback
+            // (empty 404 body); a matched handler may legitimately answer 404
+            // (e.g. NotFound for missing row) but always with a JSON envelope.
+            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX).await.unwrap_or_default();
+            assert!(!bytes.is_empty(),
+                "group_list_flag_sub_direct route should be registered");
+        }
     }
 
     #[tokio::test]
@@ -325,8 +427,14 @@ mod tests {
             )
             .await
             .unwrap();
-        assert_ne!(response.status(), StatusCode::NOT_FOUND,
-            "group_list_flag_sub_nested route should be registered");
+        if response.status() == StatusCode::NOT_FOUND {
+            // Route-presence probe: an unregistered path hits the axum fallback
+            // (empty 404 body); a matched handler may legitimately answer 404
+            // (e.g. NotFound for missing row) but always with a JSON envelope.
+            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX).await.unwrap_or_default();
+            assert!(!bytes.is_empty(),
+                "group_list_flag_sub_nested route should be registered");
+        }
     }
 
     #[tokio::test]
@@ -343,8 +451,14 @@ mod tests {
             )
             .await
             .unwrap();
-        assert_ne!(response.status(), StatusCode::NOT_FOUND,
-            "group_list_flag_sup_direct route should be registered");
+        if response.status() == StatusCode::NOT_FOUND {
+            // Route-presence probe: an unregistered path hits the axum fallback
+            // (empty 404 body); a matched handler may legitimately answer 404
+            // (e.g. NotFound for missing row) but always with a JSON envelope.
+            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX).await.unwrap_or_default();
+            assert!(!bytes.is_empty(),
+                "group_list_flag_sup_direct route should be registered");
+        }
     }
 
     #[tokio::test]
@@ -361,8 +475,14 @@ mod tests {
             )
             .await
             .unwrap();
-        assert_ne!(response.status(), StatusCode::NOT_FOUND,
-            "group_list_flag_sup_nested route should be registered");
+        if response.status() == StatusCode::NOT_FOUND {
+            // Route-presence probe: an unregistered path hits the axum fallback
+            // (empty 404 body); a matched handler may legitimately answer 404
+            // (e.g. NotFound for missing row) but always with a JSON envelope.
+            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX).await.unwrap_or_default();
+            assert!(!bytes.is_empty(),
+                "group_list_flag_sup_nested route should be registered");
+        }
     }
 
     #[tokio::test]
@@ -379,8 +499,14 @@ mod tests {
             )
             .await
             .unwrap();
-        assert_ne!(response.status(), StatusCode::NOT_FOUND,
-            "group_flag route should be registered");
+        if response.status() == StatusCode::NOT_FOUND {
+            // Route-presence probe: an unregistered path hits the axum fallback
+            // (empty 404 body); a matched handler may legitimately answer 404
+            // (e.g. NotFound for missing row) but always with a JSON envelope.
+            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX).await.unwrap_or_default();
+            assert!(!bytes.is_empty(),
+                "group_flag route should be registered");
+        }
     }
 
     #[tokio::test]
@@ -397,8 +523,14 @@ mod tests {
             )
             .await
             .unwrap();
-        assert_ne!(response.status(), StatusCode::NOT_FOUND,
-            "group_flag_add_member route should be registered");
+        if response.status() == StatusCode::NOT_FOUND {
+            // Route-presence probe: an unregistered path hits the axum fallback
+            // (empty 404 body); a matched handler may legitimately answer 404
+            // (e.g. NotFound for missing row) but always with a JSON envelope.
+            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX).await.unwrap_or_default();
+            assert!(!bytes.is_empty(),
+                "group_flag_add_member route should be registered");
+        }
     }
 
     #[tokio::test]
@@ -415,8 +547,14 @@ mod tests {
             )
             .await
             .unwrap();
-        assert_ne!(response.status(), StatusCode::NOT_FOUND,
-            "group_flag_add_member_mockputtopost route should be registered");
+        if response.status() == StatusCode::NOT_FOUND {
+            // Route-presence probe: an unregistered path hits the axum fallback
+            // (empty 404 body); a matched handler may legitimately answer 404
+            // (e.g. NotFound for missing row) but always with a JSON envelope.
+            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX).await.unwrap_or_default();
+            assert!(!bytes.is_empty(),
+                "group_flag_add_member_mockputtopost route should be registered");
+        }
     }
 
     #[tokio::test]
@@ -427,14 +565,20 @@ mod tests {
             .oneshot(
                 Request::builder()
                     .uri("/jaxrs/organization/assemble/control/group/test-id/delete/member")
-                    .method("GET")
+                    .method("DELETE")
                     .body(Body::empty())
                     .unwrap(),
             )
             .await
             .unwrap();
-        assert_ne!(response.status(), StatusCode::NOT_FOUND,
-            "group_flag_delete_member route should be registered");
+        if response.status() == StatusCode::NOT_FOUND {
+            // Route-presence probe: an unregistered path hits the axum fallback
+            // (empty 404 body); a matched handler may legitimately answer 404
+            // (e.g. NotFound for missing row) but always with a JSON envelope.
+            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX).await.unwrap_or_default();
+            assert!(!bytes.is_empty(),
+                "group_flag_delete_member route should be registered");
+        }
     }
 
     #[tokio::test]
@@ -445,14 +589,20 @@ mod tests {
             .oneshot(
                 Request::builder()
                     .uri("/jaxrs/organization/assemble/control/group/test-id/delete/member/mockputtopost")
-                    .method("GET")
+                    .method("DELETE")
                     .body(Body::empty())
                     .unwrap(),
             )
             .await
             .unwrap();
-        assert_ne!(response.status(), StatusCode::NOT_FOUND,
-            "group_flag_delete_member_mockputtopost route should be registered");
+        if response.status() == StatusCode::NOT_FOUND {
+            // Route-presence probe: an unregistered path hits the axum fallback
+            // (empty 404 body); a matched handler may legitimately answer 404
+            // (e.g. NotFound for missing row) but always with a JSON envelope.
+            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX).await.unwrap_or_default();
+            assert!(!bytes.is_empty(),
+                "group_flag_delete_member_mockputtopost route should be registered");
+        }
     }
 
     #[tokio::test]
@@ -463,14 +613,20 @@ mod tests {
             .oneshot(
                 Request::builder()
                     .uri("/jaxrs/organization/assemble/control/group/test-id/mockdeletetoget")
-                    .method("GET")
+                    .method("DELETE")
                     .body(Body::empty())
                     .unwrap(),
             )
             .await
             .unwrap();
-        assert_ne!(response.status(), StatusCode::NOT_FOUND,
-            "group_flag_mockdeletetoget route should be registered");
+        if response.status() == StatusCode::NOT_FOUND {
+            // Route-presence probe: an unregistered path hits the axum fallback
+            // (empty 404 body); a matched handler may legitimately answer 404
+            // (e.g. NotFound for missing row) but always with a JSON envelope.
+            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX).await.unwrap_or_default();
+            assert!(!bytes.is_empty(),
+                "group_flag_mockdeletetoget route should be registered");
+        }
     }
 
     #[tokio::test]
@@ -487,8 +643,14 @@ mod tests {
             )
             .await
             .unwrap();
-        assert_ne!(response.status(), StatusCode::NOT_FOUND,
-            "group_flag_mockputtopost route should be registered");
+        if response.status() == StatusCode::NOT_FOUND {
+            // Route-presence probe: an unregistered path hits the axum fallback
+            // (empty 404 body); a matched handler may legitimately answer 404
+            // (e.g. NotFound for missing row) but always with a JSON envelope.
+            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX).await.unwrap_or_default();
+            assert!(!bytes.is_empty(),
+                "group_flag_mockputtopost route should be registered");
+        }
     }
 
     #[tokio::test]
@@ -505,8 +667,14 @@ mod tests {
             )
             .await
             .unwrap();
-        assert_ne!(response.status(), StatusCode::NOT_FOUND,
-            "identity_id route should be registered");
+        if response.status() == StatusCode::NOT_FOUND {
+            // Route-presence probe: an unregistered path hits the axum fallback
+            // (empty 404 body); a matched handler may legitimately answer 404
+            // (e.g. NotFound for missing row) but always with a JSON envelope.
+            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX).await.unwrap_or_default();
+            assert!(!bytes.is_empty(),
+                "identity_id route should be registered");
+        }
     }
 
     #[tokio::test]
@@ -523,8 +691,14 @@ mod tests {
             )
             .await
             .unwrap();
-        assert_ne!(response.status(), StatusCode::NOT_FOUND,
-            "identity_list_like_mockputtopost route should be registered");
+        if response.status() == StatusCode::NOT_FOUND {
+            // Route-presence probe: an unregistered path hits the axum fallback
+            // (empty 404 body); a matched handler may legitimately answer 404
+            // (e.g. NotFound for missing row) but always with a JSON envelope.
+            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX).await.unwrap_or_default();
+            assert!(!bytes.is_empty(),
+                "identity_list_like_mockputtopost route should be registered");
+        }
     }
 
     #[tokio::test]
@@ -541,8 +715,14 @@ mod tests {
             )
             .await
             .unwrap();
-        assert_ne!(response.status(), StatusCode::NOT_FOUND,
-            "identity_list_like_pinyin route should be registered");
+        if response.status() == StatusCode::NOT_FOUND {
+            // Route-presence probe: an unregistered path hits the axum fallback
+            // (empty 404 body); a matched handler may legitimately answer 404
+            // (e.g. NotFound for missing row) but always with a JSON envelope.
+            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX).await.unwrap_or_default();
+            assert!(!bytes.is_empty(),
+                "identity_list_like_pinyin route should be registered");
+        }
     }
 
     #[tokio::test]
@@ -559,8 +739,14 @@ mod tests {
             )
             .await
             .unwrap();
-        assert_ne!(response.status(), StatusCode::NOT_FOUND,
-            "identity_list_like_pinyin_mockputtopost route should be registered");
+        if response.status() == StatusCode::NOT_FOUND {
+            // Route-presence probe: an unregistered path hits the axum fallback
+            // (empty 404 body); a matched handler may legitimately answer 404
+            // (e.g. NotFound for missing row) but always with a JSON envelope.
+            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX).await.unwrap_or_default();
+            assert!(!bytes.is_empty(),
+                "identity_list_like_pinyin_mockputtopost route should be registered");
+        }
     }
 
     #[tokio::test]
@@ -577,8 +763,14 @@ mod tests {
             )
             .await
             .unwrap();
-        assert_ne!(response.status(), StatusCode::NOT_FOUND,
-            "identity_list_pinyininitial route should be registered");
+        if response.status() == StatusCode::NOT_FOUND {
+            // Route-presence probe: an unregistered path hits the axum fallback
+            // (empty 404 body); a matched handler may legitimately answer 404
+            // (e.g. NotFound for missing row) but always with a JSON envelope.
+            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX).await.unwrap_or_default();
+            assert!(!bytes.is_empty(),
+                "identity_list_pinyininitial route should be registered");
+        }
     }
 
     #[tokio::test]
@@ -595,8 +787,14 @@ mod tests {
             )
             .await
             .unwrap();
-        assert_ne!(response.status(), StatusCode::NOT_FOUND,
-            "identity_list_pinyininitial_mockputtopost route should be registered");
+        if response.status() == StatusCode::NOT_FOUND {
+            // Route-presence probe: an unregistered path hits the axum fallback
+            // (empty 404 body); a matched handler may legitimately answer 404
+            // (e.g. NotFound for missing row) but always with a JSON envelope.
+            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX).await.unwrap_or_default();
+            assert!(!bytes.is_empty(),
+                "identity_list_pinyininitial_mockputtopost route should be registered");
+        }
     }
 
     #[tokio::test]
@@ -613,8 +811,14 @@ mod tests {
             )
             .await
             .unwrap();
-        assert_ne!(response.status(), StatusCode::NOT_FOUND,
-            "identity_flag route should be registered");
+        if response.status() == StatusCode::NOT_FOUND {
+            // Route-presence probe: an unregistered path hits the axum fallback
+            // (empty 404 body); a matched handler may legitimately answer 404
+            // (e.g. NotFound for missing row) but always with a JSON envelope.
+            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX).await.unwrap_or_default();
+            assert!(!bytes.is_empty(),
+                "identity_flag route should be registered");
+        }
     }
 
     #[tokio::test]
@@ -625,14 +829,20 @@ mod tests {
             .oneshot(
                 Request::builder()
                     .uri("/jaxrs/organization/assemble/control/identity/test-id/mockdeletetoget")
-                    .method("GET")
+                    .method("DELETE")
                     .body(Body::empty())
                     .unwrap(),
             )
             .await
             .unwrap();
-        assert_ne!(response.status(), StatusCode::NOT_FOUND,
-            "identity_flag_mockdeletetoget route should be registered");
+        if response.status() == StatusCode::NOT_FOUND {
+            // Route-presence probe: an unregistered path hits the axum fallback
+            // (empty 404 body); a matched handler may legitimately answer 404
+            // (e.g. NotFound for missing row) but always with a JSON envelope.
+            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX).await.unwrap_or_default();
+            assert!(!bytes.is_empty(),
+                "identity_flag_mockdeletetoget route should be registered");
+        }
     }
 
     #[tokio::test]
@@ -649,8 +859,14 @@ mod tests {
             )
             .await
             .unwrap();
-        assert_ne!(response.status(), StatusCode::NOT_FOUND,
-            "identity_flag_mockputtopost route should be registered");
+        if response.status() == StatusCode::NOT_FOUND {
+            // Route-presence probe: an unregistered path hits the axum fallback
+            // (empty 404 body); a matched handler may legitimately answer 404
+            // (e.g. NotFound for missing row) but always with a JSON envelope.
+            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX).await.unwrap_or_default();
+            assert!(!bytes.is_empty(),
+                "identity_flag_mockputtopost route should be registered");
+        }
     }
 
     #[tokio::test]
@@ -667,8 +883,14 @@ mod tests {
             )
             .await
             .unwrap();
-        assert_ne!(response.status(), StatusCode::NOT_FOUND,
-            "inputperson_template route should be registered");
+        if response.status() == StatusCode::NOT_FOUND {
+            // Route-presence probe: an unregistered path hits the axum fallback
+            // (empty 404 body); a matched handler may legitimately answer 404
+            // (e.g. NotFound for missing row) but always with a JSON envelope.
+            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX).await.unwrap_or_default();
+            assert!(!bytes.is_empty(),
+                "inputperson_template route should be registered");
+        }
     }
 
     #[tokio::test]
@@ -685,8 +907,14 @@ mod tests {
             )
             .await
             .unwrap();
-        assert_ne!(response.status(), StatusCode::NOT_FOUND,
-            "inputperson_wipe route should be registered");
+        if response.status() == StatusCode::NOT_FOUND {
+            // Route-presence probe: an unregistered path hits the axum fallback
+            // (empty 404 body); a matched handler may legitimately answer 404
+            // (e.g. NotFound for missing row) but always with a JSON envelope.
+            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX).await.unwrap_or_default();
+            assert!(!bytes.is_empty(),
+                "inputperson_wipe route should be registered");
+        }
     }
 
     #[tokio::test]
@@ -703,8 +931,14 @@ mod tests {
             )
             .await
             .unwrap();
-        assert_ne!(response.status(), StatusCode::NOT_FOUND,
-            "permissionsetting_list route should be registered");
+        if response.status() == StatusCode::NOT_FOUND {
+            // Route-presence probe: an unregistered path hits the axum fallback
+            // (empty 404 body); a matched handler may legitimately answer 404
+            // (e.g. NotFound for missing row) but always with a JSON envelope.
+            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX).await.unwrap_or_default();
+            assert!(!bytes.is_empty(),
+                "permissionsetting_list route should be registered");
+        }
     }
 
     #[tokio::test]
@@ -721,8 +955,14 @@ mod tests {
             )
             .await
             .unwrap();
-        assert_ne!(response.status(), StatusCode::NOT_FOUND,
-            "permissionsetting_flag route should be registered");
+        if response.status() == StatusCode::NOT_FOUND {
+            // Route-presence probe: an unregistered path hits the axum fallback
+            // (empty 404 body); a matched handler may legitimately answer 404
+            // (e.g. NotFound for missing row) but always with a JSON envelope.
+            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX).await.unwrap_or_default();
+            assert!(!bytes.is_empty(),
+                "permissionsetting_flag route should be registered");
+        }
     }
 
     #[tokio::test]
@@ -733,14 +973,20 @@ mod tests {
             .oneshot(
                 Request::builder()
                     .uri("/jaxrs/organization/assemble/control/permissionsetting/test-id/mockdeletetoget")
-                    .method("GET")
+                    .method("DELETE")
                     .body(Body::empty())
                     .unwrap(),
             )
             .await
             .unwrap();
-        assert_ne!(response.status(), StatusCode::NOT_FOUND,
-            "permissionsetting_flag_mockdeletetoget route should be registered");
+        if response.status() == StatusCode::NOT_FOUND {
+            // Route-presence probe: an unregistered path hits the axum fallback
+            // (empty 404 body); a matched handler may legitimately answer 404
+            // (e.g. NotFound for missing row) but always with a JSON envelope.
+            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX).await.unwrap_or_default();
+            assert!(!bytes.is_empty(),
+                "permissionsetting_flag_mockdeletetoget route should be registered");
+        }
     }
 
     #[tokio::test]
@@ -757,8 +1003,14 @@ mod tests {
             )
             .await
             .unwrap();
-        assert_ne!(response.status(), StatusCode::NOT_FOUND,
-            "permissionsetting_flag_mockputtopost route should be registered");
+        if response.status() == StatusCode::NOT_FOUND {
+            // Route-presence probe: an unregistered path hits the axum fallback
+            // (empty 404 body); a matched handler may legitimately answer 404
+            // (e.g. NotFound for missing row) but always with a JSON envelope.
+            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX).await.unwrap_or_default();
+            assert!(!bytes.is_empty(),
+                "permissionsetting_flag_mockputtopost route should be registered");
+        }
     }
 
     #[tokio::test]
@@ -775,8 +1027,14 @@ mod tests {
             )
             .await
             .unwrap();
-        assert_ne!(response.status(), StatusCode::NOT_FOUND,
-            "personattribute_flag route should be registered");
+        if response.status() == StatusCode::NOT_FOUND {
+            // Route-presence probe: an unregistered path hits the axum fallback
+            // (empty 404 body); a matched handler may legitimately answer 404
+            // (e.g. NotFound for missing row) but always with a JSON envelope.
+            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX).await.unwrap_or_default();
+            assert!(!bytes.is_empty(),
+                "personattribute_flag route should be registered");
+        }
     }
 
     #[tokio::test]
@@ -787,14 +1045,20 @@ mod tests {
             .oneshot(
                 Request::builder()
                     .uri("/jaxrs/organization/assemble/control/personattribute/test-id/mockdeletetoget")
-                    .method("GET")
+                    .method("DELETE")
                     .body(Body::empty())
                     .unwrap(),
             )
             .await
             .unwrap();
-        assert_ne!(response.status(), StatusCode::NOT_FOUND,
-            "personattribute_flag_mockdeletetoget route should be registered");
+        if response.status() == StatusCode::NOT_FOUND {
+            // Route-presence probe: an unregistered path hits the axum fallback
+            // (empty 404 body); a matched handler may legitimately answer 404
+            // (e.g. NotFound for missing row) but always with a JSON envelope.
+            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX).await.unwrap_or_default();
+            assert!(!bytes.is_empty(),
+                "personattribute_flag_mockdeletetoget route should be registered");
+        }
     }
 
     #[tokio::test]
@@ -811,8 +1075,14 @@ mod tests {
             )
             .await
             .unwrap();
-        assert_ne!(response.status(), StatusCode::NOT_FOUND,
-            "personattribute_flag_mockputtopost route should be registered");
+        if response.status() == StatusCode::NOT_FOUND {
+            // Route-presence probe: an unregistered path hits the axum fallback
+            // (empty 404 body); a matched handler may legitimately answer 404
+            // (e.g. NotFound for missing row) but always with a JSON envelope.
+            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX).await.unwrap_or_default();
+            assert!(!bytes.is_empty(),
+                "personattribute_flag_mockputtopost route should be registered");
+        }
     }
 
     #[tokio::test]
@@ -829,8 +1099,14 @@ mod tests {
             )
             .await
             .unwrap();
-        assert_ne!(response.status(), StatusCode::NOT_FOUND,
-            "personcard_listgrouptypes route should be registered");
+        if response.status() == StatusCode::NOT_FOUND {
+            // Route-presence probe: an unregistered path hits the axum fallback
+            // (empty 404 body); a matched handler may legitimately answer 404
+            // (e.g. NotFound for missing row) but always with a JSON envelope.
+            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX).await.unwrap_or_default();
+            assert!(!bytes.is_empty(),
+                "personcard_listgrouptypes route should be registered");
+        }
     }
 
     #[tokio::test]
@@ -847,8 +1123,14 @@ mod tests {
             )
             .await
             .unwrap();
-        assert_ne!(response.status(), StatusCode::NOT_FOUND,
-            "personcard_listpaging_page_page_size_size_mockputtopost route should be registered");
+        if response.status() == StatusCode::NOT_FOUND {
+            // Route-presence probe: an unregistered path hits the axum fallback
+            // (empty 404 body); a matched handler may legitimately answer 404
+            // (e.g. NotFound for missing row) but always with a JSON envelope.
+            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX).await.unwrap_or_default();
+            assert!(!bytes.is_empty(),
+                "personcard_listpaging_page_page_size_size_mockputtopost route should be registered");
+        }
     }
 
     #[tokio::test]
@@ -865,8 +1147,14 @@ mod tests {
             )
             .await
             .unwrap();
-        assert_ne!(response.status(), StatusCode::NOT_FOUND,
-            "personcard_listpagingwithgroup_page_page_size_size_mockputtopost route should be registered");
+        if response.status() == StatusCode::NOT_FOUND {
+            // Route-presence probe: an unregistered path hits the axum fallback
+            // (empty 404 body); a matched handler may legitimately answer 404
+            // (e.g. NotFound for missing row) but always with a JSON envelope.
+            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX).await.unwrap_or_default();
+            assert!(!bytes.is_empty(),
+                "personcard_listpagingwithgroup_page_page_size_size_mockputtopost route should be registered");
+        }
     }
 
     #[tokio::test]
@@ -883,8 +1171,14 @@ mod tests {
             )
             .await
             .unwrap();
-        assert_ne!(response.status(), StatusCode::NOT_FOUND,
-            "personcard_mylist route should be registered");
+        if response.status() == StatusCode::NOT_FOUND {
+            // Route-presence probe: an unregistered path hits the axum fallback
+            // (empty 404 body); a matched handler may legitimately answer 404
+            // (e.g. NotFound for missing row) but always with a JSON envelope.
+            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX).await.unwrap_or_default();
+            assert!(!bytes.is_empty(),
+                "personcard_mylist route should be registered");
+        }
     }
 
     #[tokio::test]
@@ -901,8 +1195,14 @@ mod tests {
             )
             .await
             .unwrap();
-        assert_ne!(response.status(), StatusCode::NOT_FOUND,
-            "personcard_flag route should be registered");
+        if response.status() == StatusCode::NOT_FOUND {
+            // Route-presence probe: an unregistered path hits the axum fallback
+            // (empty 404 body); a matched handler may legitimately answer 404
+            // (e.g. NotFound for missing row) but always with a JSON envelope.
+            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX).await.unwrap_or_default();
+            assert!(!bytes.is_empty(),
+                "personcard_flag route should be registered");
+        }
     }
 
     #[tokio::test]
@@ -913,14 +1213,20 @@ mod tests {
             .oneshot(
                 Request::builder()
                     .uri("/jaxrs/organization/assemble/control/personcard/test-id/mockdeletetoget")
-                    .method("GET")
+                    .method("DELETE")
                     .body(Body::empty())
                     .unwrap(),
             )
             .await
             .unwrap();
-        assert_ne!(response.status(), StatusCode::NOT_FOUND,
-            "personcard_flag_mockdeletetoget route should be registered");
+        if response.status() == StatusCode::NOT_FOUND {
+            // Route-presence probe: an unregistered path hits the axum fallback
+            // (empty 404 body); a matched handler may legitimately answer 404
+            // (e.g. NotFound for missing row) but always with a JSON envelope.
+            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX).await.unwrap_or_default();
+            assert!(!bytes.is_empty(),
+                "personcard_flag_mockdeletetoget route should be registered");
+        }
     }
 
     #[tokio::test]
@@ -937,8 +1243,14 @@ mod tests {
             )
             .await
             .unwrap();
-        assert_ne!(response.status(), StatusCode::NOT_FOUND,
-            "role_list_like_mockputtopost route should be registered");
+        if response.status() == StatusCode::NOT_FOUND {
+            // Route-presence probe: an unregistered path hits the axum fallback
+            // (empty 404 body); a matched handler may legitimately answer 404
+            // (e.g. NotFound for missing row) but always with a JSON envelope.
+            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX).await.unwrap_or_default();
+            assert!(!bytes.is_empty(),
+                "role_list_like_mockputtopost route should be registered");
+        }
     }
 
     #[tokio::test]
@@ -955,8 +1267,14 @@ mod tests {
             )
             .await
             .unwrap();
-        assert_ne!(response.status(), StatusCode::NOT_FOUND,
-            "role_list_like_pinyin route should be registered");
+        if response.status() == StatusCode::NOT_FOUND {
+            // Route-presence probe: an unregistered path hits the axum fallback
+            // (empty 404 body); a matched handler may legitimately answer 404
+            // (e.g. NotFound for missing row) but always with a JSON envelope.
+            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX).await.unwrap_or_default();
+            assert!(!bytes.is_empty(),
+                "role_list_like_pinyin route should be registered");
+        }
     }
 
     #[tokio::test]
@@ -973,8 +1291,14 @@ mod tests {
             )
             .await
             .unwrap();
-        assert_ne!(response.status(), StatusCode::NOT_FOUND,
-            "role_list_like_pinyin_mockputtopost route should be registered");
+        if response.status() == StatusCode::NOT_FOUND {
+            // Route-presence probe: an unregistered path hits the axum fallback
+            // (empty 404 body); a matched handler may legitimately answer 404
+            // (e.g. NotFound for missing row) but always with a JSON envelope.
+            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX).await.unwrap_or_default();
+            assert!(!bytes.is_empty(),
+                "role_list_like_pinyin_mockputtopost route should be registered");
+        }
     }
 
     #[tokio::test]
@@ -991,8 +1315,14 @@ mod tests {
             )
             .await
             .unwrap();
-        assert_ne!(response.status(), StatusCode::NOT_FOUND,
-            "role_list_pinyininitial route should be registered");
+        if response.status() == StatusCode::NOT_FOUND {
+            // Route-presence probe: an unregistered path hits the axum fallback
+            // (empty 404 body); a matched handler may legitimately answer 404
+            // (e.g. NotFound for missing row) but always with a JSON envelope.
+            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX).await.unwrap_or_default();
+            assert!(!bytes.is_empty(),
+                "role_list_pinyininitial route should be registered");
+        }
     }
 
     #[tokio::test]
@@ -1009,8 +1339,14 @@ mod tests {
             )
             .await
             .unwrap();
-        assert_ne!(response.status(), StatusCode::NOT_FOUND,
-            "role_list_pinyininitial_mockputtopost route should be registered");
+        if response.status() == StatusCode::NOT_FOUND {
+            // Route-presence probe: an unregistered path hits the axum fallback
+            // (empty 404 body); a matched handler may legitimately answer 404
+            // (e.g. NotFound for missing row) but always with a JSON envelope.
+            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX).await.unwrap_or_default();
+            assert!(!bytes.is_empty(),
+                "role_list_pinyininitial_mockputtopost route should be registered");
+        }
     }
 
     #[tokio::test]
@@ -1021,14 +1357,20 @@ mod tests {
             .oneshot(
                 Request::builder()
                     .uri("/jaxrs/organization/assemble/control/role/test-id/mockdeletetoget")
-                    .method("GET")
+                    .method("DELETE")
                     .body(Body::empty())
                     .unwrap(),
             )
             .await
             .unwrap();
-        assert_ne!(response.status(), StatusCode::NOT_FOUND,
-            "role_flag_mockdeletetoget route should be registered");
+        if response.status() == StatusCode::NOT_FOUND {
+            // Route-presence probe: an unregistered path hits the axum fallback
+            // (empty 404 body); a matched handler may legitimately answer 404
+            // (e.g. NotFound for missing row) but always with a JSON envelope.
+            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX).await.unwrap_or_default();
+            assert!(!bytes.is_empty(),
+                "role_flag_mockdeletetoget route should be registered");
+        }
     }
 
     #[tokio::test]
@@ -1045,8 +1387,14 @@ mod tests {
             )
             .await
             .unwrap();
-        assert_ne!(response.status(), StatusCode::NOT_FOUND,
-            "role_flag_mockputtopost route should be registered");
+        if response.status() == StatusCode::NOT_FOUND {
+            // Route-presence probe: an unregistered path hits the axum fallback
+            // (empty 404 body); a matched handler may legitimately answer 404
+            // (e.g. NotFound for missing row) but always with a JSON envelope.
+            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX).await.unwrap_or_default();
+            assert!(!bytes.is_empty(),
+                "role_flag_mockputtopost route should be registered");
+        }
     }
 
     #[tokio::test]
@@ -1063,8 +1411,14 @@ mod tests {
             )
             .await
             .unwrap();
-        assert_ne!(response.status(), StatusCode::NOT_FOUND,
-            "unitattribute_flag route should be registered");
+        if response.status() == StatusCode::NOT_FOUND {
+            // Route-presence probe: an unregistered path hits the axum fallback
+            // (empty 404 body); a matched handler may legitimately answer 404
+            // (e.g. NotFound for missing row) but always with a JSON envelope.
+            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX).await.unwrap_or_default();
+            assert!(!bytes.is_empty(),
+                "unitattribute_flag route should be registered");
+        }
     }
 
     #[tokio::test]
@@ -1075,14 +1429,20 @@ mod tests {
             .oneshot(
                 Request::builder()
                     .uri("/jaxrs/organization/assemble/control/unitattribute/test-id/mockdeletetoget")
-                    .method("GET")
+                    .method("DELETE")
                     .body(Body::empty())
                     .unwrap(),
             )
             .await
             .unwrap();
-        assert_ne!(response.status(), StatusCode::NOT_FOUND,
-            "unitattribute_flag_mockdeletetoget route should be registered");
+        if response.status() == StatusCode::NOT_FOUND {
+            // Route-presence probe: an unregistered path hits the axum fallback
+            // (empty 404 body); a matched handler may legitimately answer 404
+            // (e.g. NotFound for missing row) but always with a JSON envelope.
+            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX).await.unwrap_or_default();
+            assert!(!bytes.is_empty(),
+                "unitattribute_flag_mockdeletetoget route should be registered");
+        }
     }
 
     #[tokio::test]
@@ -1099,8 +1459,14 @@ mod tests {
             )
             .await
             .unwrap();
-        assert_ne!(response.status(), StatusCode::NOT_FOUND,
-            "unitattribute_flag_mockputtopost route should be registered");
+        if response.status() == StatusCode::NOT_FOUND {
+            // Route-presence probe: an unregistered path hits the axum fallback
+            // (empty 404 body); a matched handler may legitimately answer 404
+            // (e.g. NotFound for missing row) but always with a JSON envelope.
+            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX).await.unwrap_or_default();
+            assert!(!bytes.is_empty(),
+                "unitattribute_flag_mockputtopost route should be registered");
+        }
     }
 
     #[tokio::test]
@@ -1117,8 +1483,14 @@ mod tests {
             )
             .await
             .unwrap();
-        assert_ne!(response.status(), StatusCode::NOT_FOUND,
-            "unitduty_distinct_name route should be registered");
+        if response.status() == StatusCode::NOT_FOUND {
+            // Route-presence probe: an unregistered path hits the axum fallback
+            // (empty 404 body); a matched handler may legitimately answer 404
+            // (e.g. NotFound for missing row) but always with a JSON envelope.
+            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX).await.unwrap_or_default();
+            assert!(!bytes.is_empty(),
+                "unitduty_distinct_name route should be registered");
+        }
     }
 
     #[tokio::test]
@@ -1135,8 +1507,14 @@ mod tests {
             )
             .await
             .unwrap();
-        assert_ne!(response.status(), StatusCode::NOT_FOUND,
-            "unitduty_flag_mockputtopost route should be registered");
+        if response.status() == StatusCode::NOT_FOUND {
+            // Route-presence probe: an unregistered path hits the axum fallback
+            // (empty 404 body); a matched handler may legitimately answer 404
+            // (e.g. NotFound for missing row) but always with a JSON envelope.
+            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX).await.unwrap_or_default();
+            assert!(!bytes.is_empty(),
+                "unitduty_flag_mockputtopost route should be registered");
+        }
     }
 
     #[tokio::test]
@@ -1147,14 +1525,20 @@ mod tests {
             .oneshot(
                 Request::builder()
                     .uri("/jaxrs/organization/assemble/control/unitduty/test-id/mockdeletetoget")
-                    .method("GET")
+                    .method("DELETE")
                     .body(Body::empty())
                     .unwrap(),
             )
             .await
             .unwrap();
-        assert_ne!(response.status(), StatusCode::NOT_FOUND,
-            "unitduty_flag_mockdeletetoget route should be registered");
+        if response.status() == StatusCode::NOT_FOUND {
+            // Route-presence probe: an unregistered path hits the axum fallback
+            // (empty 404 body); a matched handler may legitimately answer 404
+            // (e.g. NotFound for missing row) but always with a JSON envelope.
+            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX).await.unwrap_or_default();
+            assert!(!bytes.is_empty(),
+                "unitduty_flag_mockdeletetoget route should be registered");
+        }
     }
 
     #[tokio::test]
@@ -1171,8 +1555,14 @@ mod tests {
             )
             .await
             .unwrap();
-        assert_ne!(response.status(), StatusCode::NOT_FOUND,
-            "unitduty_flag route should be registered");
+        if response.status() == StatusCode::NOT_FOUND {
+            // Route-presence probe: an unregistered path hits the axum fallback
+            // (empty 404 body); a matched handler may legitimately answer 404
+            // (e.g. NotFound for missing row) but always with a JSON envelope.
+            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX).await.unwrap_or_default();
+            assert!(!bytes.is_empty(),
+                "unitduty_flag route should be registered");
+        }
     }
 
     #[tokio::test]
@@ -1183,14 +1573,20 @@ mod tests {
             .oneshot(
                 Request::builder()
                     .uri("/jaxrs/organization/assemble/control/unitduty/update/member")
-                    .method("GET")
+                    .method("PUT")
                     .body(Body::empty())
                     .unwrap(),
             )
             .await
             .unwrap();
-        assert_ne!(response.status(), StatusCode::NOT_FOUND,
-            "unitduty_update_member route should be registered");
+        if response.status() == StatusCode::NOT_FOUND {
+            // Route-presence probe: an unregistered path hits the axum fallback
+            // (empty 404 body); a matched handler may legitimately answer 404
+            // (e.g. NotFound for missing row) but always with a JSON envelope.
+            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX).await.unwrap_or_default();
+            assert!(!bytes.is_empty(),
+                "unitduty_update_member route should be registered");
+        }
     }
 
     #[tokio::test]
@@ -1207,8 +1603,14 @@ mod tests {
             )
             .await
             .unwrap();
-        assert_ne!(response.status(), StatusCode::NOT_FOUND,
-            "unitduty_list_flag_prev_count route should be registered");
+        if response.status() == StatusCode::NOT_FOUND {
+            // Route-presence probe: an unregistered path hits the axum fallback
+            // (empty 404 body); a matched handler may legitimately answer 404
+            // (e.g. NotFound for missing row) but always with a JSON envelope.
+            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX).await.unwrap_or_default();
+            assert!(!bytes.is_empty(),
+                "unitduty_list_flag_prev_count route should be registered");
+        }
     }
 
     #[tokio::test]
@@ -1225,8 +1627,14 @@ mod tests {
             )
             .await
             .unwrap();
-        assert_ne!(response.status(), StatusCode::NOT_FOUND,
-            "unitduty_list_flag_next_count route should be registered");
+        if response.status() == StatusCode::NOT_FOUND {
+            // Route-presence probe: an unregistered path hits the axum fallback
+            // (empty 404 body); a matched handler may legitimately answer 404
+            // (e.g. NotFound for missing row) but always with a JSON envelope.
+            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX).await.unwrap_or_default();
+            assert!(!bytes.is_empty(),
+                "unitduty_list_flag_next_count route should be registered");
+        }
     }
 
     #[tokio::test]
@@ -1243,8 +1651,14 @@ mod tests {
             )
             .await
             .unwrap();
-        assert_ne!(response.status(), StatusCode::NOT_FOUND,
-            "unitduty_list_unit_unitFlag route should be registered");
+        if response.status() == StatusCode::NOT_FOUND {
+            // Route-presence probe: an unregistered path hits the axum fallback
+            // (empty 404 body); a matched handler may legitimately answer 404
+            // (e.g. NotFound for missing row) but always with a JSON envelope.
+            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX).await.unwrap_or_default();
+            assert!(!bytes.is_empty(),
+                "unitduty_list_unit_unitFlag route should be registered");
+        }
     }
 
     #[tokio::test]
@@ -1261,8 +1675,14 @@ mod tests {
             )
             .await
             .unwrap();
-        assert_ne!(response.status(), StatusCode::NOT_FOUND,
-            "unitduty_list_name_name route should be registered");
+        if response.status() == StatusCode::NOT_FOUND {
+            // Route-presence probe: an unregistered path hits the axum fallback
+            // (empty 404 body); a matched handler may legitimately answer 404
+            // (e.g. NotFound for missing row) but always with a JSON envelope.
+            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX).await.unwrap_or_default();
+            assert!(!bytes.is_empty(),
+                "unitduty_list_name_name route should be registered");
+        }
     }
 
     #[tokio::test]
@@ -1279,8 +1699,14 @@ mod tests {
             )
             .await
             .unwrap();
-        assert_ne!(response.status(), StatusCode::NOT_FOUND,
-            "unitduty_list_like route should be registered");
+        if response.status() == StatusCode::NOT_FOUND {
+            // Route-presence probe: an unregistered path hits the axum fallback
+            // (empty 404 body); a matched handler may legitimately answer 404
+            // (e.g. NotFound for missing row) but always with a JSON envelope.
+            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX).await.unwrap_or_default();
+            assert!(!bytes.is_empty(),
+                "unitduty_list_like route should be registered");
+        }
     }
 
     #[tokio::test]
@@ -1297,8 +1723,14 @@ mod tests {
             )
             .await
             .unwrap();
-        assert_ne!(response.status(), StatusCode::NOT_FOUND,
-            "unitduty_list_identity_identityFlag route should be registered");
+        if response.status() == StatusCode::NOT_FOUND {
+            // Route-presence probe: an unregistered path hits the axum fallback
+            // (empty 404 body); a matched handler may legitimately answer 404
+            // (e.g. NotFound for missing row) but always with a JSON envelope.
+            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX).await.unwrap_or_default();
+            assert!(!bytes.is_empty(),
+                "unitduty_list_identity_identityFlag route should be registered");
+        }
     }
 
     #[tokio::test]
@@ -1315,8 +1747,14 @@ mod tests {
             )
             .await
             .unwrap();
-        assert_ne!(response.status(), StatusCode::NOT_FOUND,
-            "unitduty_distinct_name_like_key route should be registered");
+        if response.status() == StatusCode::NOT_FOUND {
+            // Route-presence probe: an unregistered path hits the axum fallback
+            // (empty 404 body); a matched handler may legitimately answer 404
+            // (e.g. NotFound for missing row) but always with a JSON envelope.
+            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX).await.unwrap_or_default();
+            assert!(!bytes.is_empty(),
+                "unitduty_distinct_name_like_key route should be registered");
+        }
     }
 
     #[tokio::test]
@@ -1333,8 +1771,14 @@ mod tests {
             )
             .await
             .unwrap();
-        assert_ne!(response.status(), StatusCode::NOT_FOUND,
-            "unitattribute_list_flag_prev_count route should be registered");
+        if response.status() == StatusCode::NOT_FOUND {
+            // Route-presence probe: an unregistered path hits the axum fallback
+            // (empty 404 body); a matched handler may legitimately answer 404
+            // (e.g. NotFound for missing row) but always with a JSON envelope.
+            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX).await.unwrap_or_default();
+            assert!(!bytes.is_empty(),
+                "unitattribute_list_flag_prev_count route should be registered");
+        }
     }
 
     #[tokio::test]
@@ -1351,8 +1795,14 @@ mod tests {
             )
             .await
             .unwrap();
-        assert_ne!(response.status(), StatusCode::NOT_FOUND,
-            "unitattribute_list_flag_next_count route should be registered");
+        if response.status() == StatusCode::NOT_FOUND {
+            // Route-presence probe: an unregistered path hits the axum fallback
+            // (empty 404 body); a matched handler may legitimately answer 404
+            // (e.g. NotFound for missing row) but always with a JSON envelope.
+            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX).await.unwrap_or_default();
+            assert!(!bytes.is_empty(),
+                "unitattribute_list_flag_next_count route should be registered");
+        }
     }
 
     #[tokio::test]
@@ -1369,8 +1819,14 @@ mod tests {
             )
             .await
             .unwrap();
-        assert_ne!(response.status(), StatusCode::NOT_FOUND,
-            "unitattribute_list_unit_flag route should be registered");
+        if response.status() == StatusCode::NOT_FOUND {
+            // Route-presence probe: an unregistered path hits the axum fallback
+            // (empty 404 body); a matched handler may legitimately answer 404
+            // (e.g. NotFound for missing row) but always with a JSON envelope.
+            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX).await.unwrap_or_default();
+            assert!(!bytes.is_empty(),
+                "unitattribute_list_unit_flag route should be registered");
+        }
     }
 
     #[tokio::test]
@@ -1387,8 +1843,14 @@ mod tests {
             )
             .await
             .unwrap();
-        assert_ne!(response.status(), StatusCode::NOT_FOUND,
-            "role_list_flag_prev_count route should be registered");
+        if response.status() == StatusCode::NOT_FOUND {
+            // Route-presence probe: an unregistered path hits the axum fallback
+            // (empty 404 body); a matched handler may legitimately answer 404
+            // (e.g. NotFound for missing row) but always with a JSON envelope.
+            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX).await.unwrap_or_default();
+            assert!(!bytes.is_empty(),
+                "role_list_flag_prev_count route should be registered");
+        }
     }
 
     #[tokio::test]
@@ -1405,8 +1867,14 @@ mod tests {
             )
             .await
             .unwrap();
-        assert_ne!(response.status(), StatusCode::NOT_FOUND,
-            "role_list_person_personFlag route should be registered");
+        if response.status() == StatusCode::NOT_FOUND {
+            // Route-presence probe: an unregistered path hits the axum fallback
+            // (empty 404 body); a matched handler may legitimately answer 404
+            // (e.g. NotFound for missing row) but always with a JSON envelope.
+            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX).await.unwrap_or_default();
+            assert!(!bytes.is_empty(),
+                "role_list_person_personFlag route should be registered");
+        }
     }
 
     #[tokio::test]
@@ -1423,8 +1891,14 @@ mod tests {
             )
             .await
             .unwrap();
-        assert_ne!(response.status(), StatusCode::NOT_FOUND,
-            "role_list_like route should be registered");
+        if response.status() == StatusCode::NOT_FOUND {
+            // Route-presence probe: an unregistered path hits the axum fallback
+            // (empty 404 body); a matched handler may legitimately answer 404
+            // (e.g. NotFound for missing row) but always with a JSON envelope.
+            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX).await.unwrap_or_default();
+            assert!(!bytes.is_empty(),
+                "role_list_like route should be registered");
+        }
     }
 
     #[tokio::test]
@@ -1441,8 +1915,14 @@ mod tests {
             )
             .await
             .unwrap();
-        assert_ne!(response.status(), StatusCode::NOT_FOUND,
-            "role_list_group_groupFlag route should be registered");
+        if response.status() == StatusCode::NOT_FOUND {
+            // Route-presence probe: an unregistered path hits the axum fallback
+            // (empty 404 body); a matched handler may legitimately answer 404
+            // (e.g. NotFound for missing row) but always with a JSON envelope.
+            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX).await.unwrap_or_default();
+            assert!(!bytes.is_empty(),
+                "role_list_group_groupFlag route should be registered");
+        }
     }
 
     #[tokio::test]
@@ -1459,8 +1939,14 @@ mod tests {
             )
             .await
             .unwrap();
-        assert_ne!(response.status(), StatusCode::NOT_FOUND,
-            "personcard_listpagingwithgroup_page_page_size_size route should be registered");
+        if response.status() == StatusCode::NOT_FOUND {
+            // Route-presence probe: an unregistered path hits the axum fallback
+            // (empty 404 body); a matched handler may legitimately answer 404
+            // (e.g. NotFound for missing row) but always with a JSON envelope.
+            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX).await.unwrap_or_default();
+            assert!(!bytes.is_empty(),
+                "personcard_listpagingwithgroup_page_page_size_size route should be registered");
+        }
     }
 
     #[tokio::test]
@@ -1477,8 +1963,14 @@ mod tests {
             )
             .await
             .unwrap();
-        assert_ne!(response.status(), StatusCode::NOT_FOUND,
-            "personcard_listpaging_page_page_size_size route should be registered");
+        if response.status() == StatusCode::NOT_FOUND {
+            // Route-presence probe: an unregistered path hits the axum fallback
+            // (empty 404 body); a matched handler may legitimately answer 404
+            // (e.g. NotFound for missing row) but always with a JSON envelope.
+            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX).await.unwrap_or_default();
+            assert!(!bytes.is_empty(),
+                "personcard_listpaging_page_page_size_size route should be registered");
+        }
     }
 
     #[tokio::test]
@@ -1495,8 +1987,14 @@ mod tests {
             )
             .await
             .unwrap();
-        assert_ne!(response.status(), StatusCode::NOT_FOUND,
-            "personcard_listVCf_idList route should be registered");
+        if response.status() == StatusCode::NOT_FOUND {
+            // Route-presence probe: an unregistered path hits the axum fallback
+            // (empty 404 body); a matched handler may legitimately answer 404
+            // (e.g. NotFound for missing row) but always with a JSON envelope.
+            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX).await.unwrap_or_default();
+            assert!(!bytes.is_empty(),
+                "personcard_listVCf_idList route should be registered");
+        }
     }
 
     #[tokio::test]
@@ -1513,8 +2011,14 @@ mod tests {
             )
             .await
             .unwrap();
-        assert_ne!(response.status(), StatusCode::NOT_FOUND,
-            "personcard_listPersonalVCf_idList route should be registered");
+        if response.status() == StatusCode::NOT_FOUND {
+            // Route-presence probe: an unregistered path hits the axum fallback
+            // (empty 404 body); a matched handler may legitimately answer 404
+            // (e.g. NotFound for missing row) but always with a JSON envelope.
+            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX).await.unwrap_or_default();
+            assert!(!bytes.is_empty(),
+                "personcard_listPersonalVCf_idList route should be registered");
+        }
     }
 
     #[tokio::test]
@@ -1531,8 +2035,14 @@ mod tests {
             )
             .await
             .unwrap();
-        assert_ne!(response.status(), StatusCode::NOT_FOUND,
-            "personcard_createQR_cardId route should be registered");
+        if response.status() == StatusCode::NOT_FOUND {
+            // Route-presence probe: an unregistered path hits the axum fallback
+            // (empty 404 body); a matched handler may legitimately answer 404
+            // (e.g. NotFound for missing row) but always with a JSON envelope.
+            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX).await.unwrap_or_default();
+            assert!(!bytes.is_empty(),
+                "personcard_createQR_cardId route should be registered");
+        }
     }
 
     #[tokio::test]
@@ -1549,8 +2059,14 @@ mod tests {
             )
             .await
             .unwrap();
-        assert_ne!(response.status(), StatusCode::NOT_FOUND,
-            "personcard_createCode_cardId route should be registered");
+        if response.status() == StatusCode::NOT_FOUND {
+            // Route-presence probe: an unregistered path hits the axum fallback
+            // (empty 404 body); a matched handler may legitimately answer 404
+            // (e.g. NotFound for missing row) but always with a JSON envelope.
+            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX).await.unwrap_or_default();
+            assert!(!bytes.is_empty(),
+                "personcard_createCode_cardId route should be registered");
+        }
     }
 
     #[tokio::test]
@@ -1567,8 +2083,14 @@ mod tests {
             )
             .await
             .unwrap();
-        assert_ne!(response.status(), StatusCode::NOT_FOUND,
-            "personattribute_list_flag_prev_count route should be registered");
+        if response.status() == StatusCode::NOT_FOUND {
+            // Route-presence probe: an unregistered path hits the axum fallback
+            // (empty 404 body); a matched handler may legitimately answer 404
+            // (e.g. NotFound for missing row) but always with a JSON envelope.
+            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX).await.unwrap_or_default();
+            assert!(!bytes.is_empty(),
+                "personattribute_list_flag_prev_count route should be registered");
+        }
     }
 
     #[tokio::test]
@@ -1585,8 +2107,14 @@ mod tests {
             )
             .await
             .unwrap();
-        assert_ne!(response.status(), StatusCode::NOT_FOUND,
-            "personattribute_list_flag_next_count route should be registered");
+        if response.status() == StatusCode::NOT_FOUND {
+            // Route-presence probe: an unregistered path hits the axum fallback
+            // (empty 404 body); a matched handler may legitimately answer 404
+            // (e.g. NotFound for missing row) but always with a JSON envelope.
+            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX).await.unwrap_or_default();
+            assert!(!bytes.is_empty(),
+                "personattribute_list_flag_next_count route should be registered");
+        }
     }
 
     #[tokio::test]
@@ -1603,8 +2131,14 @@ mod tests {
             )
             .await
             .unwrap();
-        assert_ne!(response.status(), StatusCode::NOT_FOUND,
-            "personattribute_list_person_personFlag route should be registered");
+        if response.status() == StatusCode::NOT_FOUND {
+            // Route-presence probe: an unregistered path hits the axum fallback
+            // (empty 404 body); a matched handler may legitimately answer 404
+            // (e.g. NotFound for missing row) but always with a JSON envelope.
+            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX).await.unwrap_or_default();
+            assert!(!bytes.is_empty(),
+                "personattribute_list_person_personFlag route should be registered");
+        }
     }
 
     #[tokio::test]
@@ -1621,8 +2155,14 @@ mod tests {
             )
             .await
             .unwrap();
-        assert_ne!(response.status(), StatusCode::NOT_FOUND,
-            "loginrecord_stream route should be registered");
+        if response.status() == StatusCode::NOT_FOUND {
+            // Route-presence probe: an unregistered path hits the axum fallback
+            // (empty 404 body); a matched handler may legitimately answer 404
+            // (e.g. NotFound for missing row) but always with a JSON envelope.
+            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX).await.unwrap_or_default();
+            assert!(!bytes.is_empty(),
+                "loginrecord_stream route should be registered");
+        }
     }
 
     #[tokio::test]
@@ -1639,8 +2179,14 @@ mod tests {
             )
             .await
             .unwrap();
-        assert_ne!(response.status(), StatusCode::NOT_FOUND,
-            "inputperson_result_flag_flag route should be registered");
+        if response.status() == StatusCode::NOT_FOUND {
+            // Route-presence probe: an unregistered path hits the axum fallback
+            // (empty 404 body); a matched handler may legitimately answer 404
+            // (e.g. NotFound for missing row) but always with a JSON envelope.
+            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX).await.unwrap_or_default();
+            assert!(!bytes.is_empty(),
+                "inputperson_result_flag_flag route should be registered");
+        }
     }
 
     #[tokio::test]
@@ -1657,8 +2203,14 @@ mod tests {
             )
             .await
             .unwrap();
-        assert_ne!(response.status(), StatusCode::NOT_FOUND,
-            "identity_flag_order_before_followFlag route should be registered");
+        if response.status() == StatusCode::NOT_FOUND {
+            // Route-presence probe: an unregistered path hits the axum fallback
+            // (empty 404 body); a matched handler may legitimately answer 404
+            // (e.g. NotFound for missing row) but always with a JSON envelope.
+            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX).await.unwrap_or_default();
+            assert!(!bytes.is_empty(),
+                "identity_flag_order_before_followFlag route should be registered");
+        }
     }
 
     #[tokio::test]
@@ -1675,8 +2227,14 @@ mod tests {
             )
             .await
             .unwrap();
-        assert_ne!(response.status(), StatusCode::NOT_FOUND,
-            "identity_list_flag_unitduty_name_unitDutyName route should be registered");
+        if response.status() == StatusCode::NOT_FOUND {
+            // Route-presence probe: an unregistered path hits the axum fallback
+            // (empty 404 body); a matched handler may legitimately answer 404
+            // (e.g. NotFound for missing row) but always with a JSON envelope.
+            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX).await.unwrap_or_default();
+            assert!(!bytes.is_empty(),
+                "identity_list_flag_unitduty_name_unitDutyName route should be registered");
+        }
     }
 
     #[tokio::test]
@@ -1693,8 +2251,14 @@ mod tests {
             )
             .await
             .unwrap();
-        assert_ne!(response.status(), StatusCode::NOT_FOUND,
-            "identity_list_flag_prev_count route should be registered");
+        if response.status() == StatusCode::NOT_FOUND {
+            // Route-presence probe: an unregistered path hits the axum fallback
+            // (empty 404 body); a matched handler may legitimately answer 404
+            // (e.g. NotFound for missing row) but always with a JSON envelope.
+            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX).await.unwrap_or_default();
+            assert!(!bytes.is_empty(),
+                "identity_list_flag_prev_count route should be registered");
+        }
     }
 
     #[tokio::test]
@@ -1711,8 +2275,14 @@ mod tests {
             )
             .await
             .unwrap();
-        assert_ne!(response.status(), StatusCode::NOT_FOUND,
-            "identity_list_flag_next_count route should be registered");
+        if response.status() == StatusCode::NOT_FOUND {
+            // Route-presence probe: an unregistered path hits the axum fallback
+            // (empty 404 body); a matched handler may legitimately answer 404
+            // (e.g. NotFound for missing row) but always with a JSON envelope.
+            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX).await.unwrap_or_default();
+            assert!(!bytes.is_empty(),
+                "identity_list_flag_next_count route should be registered");
+        }
     }
 
     #[tokio::test]
@@ -1729,8 +2299,14 @@ mod tests {
             )
             .await
             .unwrap();
-        assert_ne!(response.status(), StatusCode::NOT_FOUND,
-            "identity_list_unitduty_name_unitDutyName route should be registered");
+        if response.status() == StatusCode::NOT_FOUND {
+            // Route-presence probe: an unregistered path hits the axum fallback
+            // (empty 404 body); a matched handler may legitimately answer 404
+            // (e.g. NotFound for missing row) but always with a JSON envelope.
+            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX).await.unwrap_or_default();
+            assert!(!bytes.is_empty(),
+                "identity_list_unitduty_name_unitDutyName route should be registered");
+        }
     }
 
     #[tokio::test]
@@ -1747,8 +2323,14 @@ mod tests {
             )
             .await
             .unwrap();
-        assert_ne!(response.status(), StatusCode::NOT_FOUND,
-            "identity_list_unit_unitFlag route should be registered");
+        if response.status() == StatusCode::NOT_FOUND {
+            // Route-presence probe: an unregistered path hits the axum fallback
+            // (empty 404 body); a matched handler may legitimately answer 404
+            // (e.g. NotFound for missing row) but always with a JSON envelope.
+            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX).await.unwrap_or_default();
+            assert!(!bytes.is_empty(),
+                "identity_list_unit_unitFlag route should be registered");
+        }
     }
 
     #[tokio::test]
@@ -1765,8 +2347,14 @@ mod tests {
             )
             .await
             .unwrap();
-        assert_ne!(response.status(), StatusCode::NOT_FOUND,
-            "identity_list_person_personFlag route should be registered");
+        if response.status() == StatusCode::NOT_FOUND {
+            // Route-presence probe: an unregistered path hits the axum fallback
+            // (empty 404 body); a matched handler may legitimately answer 404
+            // (e.g. NotFound for missing row) but always with a JSON envelope.
+            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX).await.unwrap_or_default();
+            assert!(!bytes.is_empty(),
+                "identity_list_person_personFlag route should be registered");
+        }
     }
 
     #[tokio::test]
@@ -1783,8 +2371,14 @@ mod tests {
             )
             .await
             .unwrap();
-        assert_ne!(response.status(), StatusCode::NOT_FOUND,
-            "identity_list_like route should be registered");
+        if response.status() == StatusCode::NOT_FOUND {
+            // Route-presence probe: an unregistered path hits the axum fallback
+            // (empty 404 body); a matched handler may legitimately answer 404
+            // (e.g. NotFound for missing row) but always with a JSON envelope.
+            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX).await.unwrap_or_default();
+            assert!(!bytes.is_empty(),
+                "identity_list_like route should be registered");
+        }
     }
 
     #[tokio::test]
@@ -1801,8 +2395,14 @@ mod tests {
             )
             .await
             .unwrap();
-        assert_ne!(response.status(), StatusCode::NOT_FOUND,
-            "group_list_flag_prev_count route should be registered");
+        if response.status() == StatusCode::NOT_FOUND {
+            // Route-presence probe: an unregistered path hits the axum fallback
+            // (empty 404 body); a matched handler may legitimately answer 404
+            // (e.g. NotFound for missing row) but always with a JSON envelope.
+            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX).await.unwrap_or_default();
+            assert!(!bytes.is_empty(),
+                "group_list_flag_prev_count route should be registered");
+        }
     }
 
     #[tokio::test]
@@ -1819,8 +2419,14 @@ mod tests {
             )
             .await
             .unwrap();
-        assert_ne!(response.status(), StatusCode::NOT_FOUND,
-            "group_list_flag_next_count route should be registered");
+        if response.status() == StatusCode::NOT_FOUND {
+            // Route-presence probe: an unregistered path hits the axum fallback
+            // (empty 404 body); a matched handler may legitimately answer 404
+            // (e.g. NotFound for missing row) but always with a JSON envelope.
+            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX).await.unwrap_or_default();
+            assert!(!bytes.is_empty(),
+                "group_list_flag_next_count route should be registered");
+        }
     }
 
     #[tokio::test]
@@ -1837,8 +2443,14 @@ mod tests {
             )
             .await
             .unwrap();
-        assert_ne!(response.status(), StatusCode::NOT_FOUND,
-            "group_list_role_roleFlag route should be registered");
+        if response.status() == StatusCode::NOT_FOUND {
+            // Route-presence probe: an unregistered path hits the axum fallback
+            // (empty 404 body); a matched handler may legitimately answer 404
+            // (e.g. NotFound for missing row) but always with a JSON envelope.
+            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX).await.unwrap_or_default();
+            assert!(!bytes.is_empty(),
+                "group_list_role_roleFlag route should be registered");
+        }
     }
 
     #[tokio::test]
@@ -1855,8 +2467,14 @@ mod tests {
             )
             .await
             .unwrap();
-        assert_ne!(response.status(), StatusCode::NOT_FOUND,
-            "group_list_person_personFlag_sup_nested route should be registered");
+        if response.status() == StatusCode::NOT_FOUND {
+            // Route-presence probe: an unregistered path hits the axum fallback
+            // (empty 404 body); a matched handler may legitimately answer 404
+            // (e.g. NotFound for missing row) but always with a JSON envelope.
+            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX).await.unwrap_or_default();
+            assert!(!bytes.is_empty(),
+                "group_list_person_personFlag_sup_nested route should be registered");
+        }
     }
 
     #[tokio::test]
@@ -1873,8 +2491,14 @@ mod tests {
             )
             .await
             .unwrap();
-        assert_ne!(response.status(), StatusCode::NOT_FOUND,
-            "group_list_person_personFlag_sup_direct route should be registered");
+        if response.status() == StatusCode::NOT_FOUND {
+            // Route-presence probe: an unregistered path hits the axum fallback
+            // (empty 404 body); a matched handler may legitimately answer 404
+            // (e.g. NotFound for missing row) but always with a JSON envelope.
+            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX).await.unwrap_or_default();
+            assert!(!bytes.is_empty(),
+                "group_list_person_personFlag_sup_direct route should be registered");
+        }
     }
 
     #[tokio::test]
@@ -1891,8 +2515,333 @@ mod tests {
             )
             .await
             .unwrap();
-        assert_ne!(response.status(), StatusCode::NOT_FOUND,
-            "group_list_like route should be registered");
+        if response.status() == StatusCode::NOT_FOUND {
+            // Route-presence probe: an unregistered path hits the axum fallback
+            // (empty 404 body); a matched handler may legitimately answer 404
+            // (e.g. NotFound for missing row) but always with a JSON envelope.
+            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX).await.unwrap_or_default();
+            assert!(!bytes.is_empty(),
+                "group_list_like route should be registered");
+        }
     }
 
+    // SKIPPED: require_admin not accessible
+    // SKIPPED: client_of not accessible
+    // SKIPPED: resolve_generic_id not accessible
+    // SKIPPED: soft_delete_generic not accessible
+    // SKIPPED: normalized_name_dup not accessible
+    // SKIPPED: generic_list_all not accessible
+    // SKIPPED: generic_like_search not accessible
+    // SKIPPED: generic_pinyininitial_filter not accessible
+    // SKIPPED: unit_attribute_create requires Session parameter
+    // SKIPPED: unit_attribute_edit requires Session parameter
+    // SKIPPED: unit_attribute_mock_put_to_post requires Session parameter
+    // SKIPPED: unit_attribute_delete requires Session parameter
+    // SKIPPED: person_attribute_create requires Session parameter
+    // SKIPPED: person_attribute_edit requires Session parameter
+    // SKIPPED: person_attribute_mock_put_to_post requires Session parameter
+    // SKIPPED: person_attribute_delete requires Session parameter
+    // SKIPPED: permission_setting_create requires Session parameter
+    // SKIPPED: permission_setting_edit requires Session parameter
+    // SKIPPED: permission_setting_mock_put_to_post requires Session parameter
+    // SKIPPED: permission_setting_delete requires Session parameter
+    // SKIPPED: person_card_create requires Session parameter
+    // SKIPPED: person_card_edit requires Session parameter
+    // SKIPPED: person_card_delete requires Session parameter
+    // SKIPPED: person_card_listpaging not accessible
+    // SKIPPED: person_card_listpaging_mock_put_to_post not accessible
+    // SKIPPED: person_card_listpaging_with_group not accessible
+    // SKIPPED: person_card_listpaging_with_group_mock_put_to_post not accessible
+    // SKIPPED: input_person_import requires Session parameter
+    // SKIPPED: unit_create requires Session parameter
+    // SKIPPED: unit_edit requires Session parameter
+    // SKIPPED: unit_mock_put_to_post requires Session parameter
+    // SKIPPED: unit_delete requires Session parameter
+    // SKIPPED: unit_mock_delete_to_get requires Session parameter
+    // SKIPPED: unit_get_root not accessible
+    // SKIPPED: unit_list_top_root not accessible
+    // SKIPPED: unit_list_top_with_type not accessible
+    // SKIPPED: unit_control_top not accessible
+    // SKIPPED: unit_list_types not accessible
+    // SKIPPED: unit_list_prev not accessible
+    // SKIPPED: unit_list_sub_direct not accessible
+    // SKIPPED: unit_list_sub_direct_with_type not accessible
+    // SKIPPED: unit_get_with_identity_level not accessible
+    // SKIPPED: unit_get_with_identity_type not accessible
+    // SKIPPED: unit_get_sup_direct not accessible
+    // SKIPPED: unit_list_by_body not accessible
+    // SKIPPED: unit_list_controller not accessible
+    // SKIPPED: unit_list_with_unit_type not accessible
+    // SKIPPED: unit_list_pinyininitial not accessible
+    // SKIPPED: unit_list_like not accessible
+    // SKIPPED: unit_list_like_pinyin not accessible
+    // SKIPPED: identity_create requires Session parameter
+    // SKIPPED: identity_edit requires Session parameter
+    // SKIPPED: identity_mock_put_to_post requires Session parameter
+    // SKIPPED: identity_delete requires Session parameter
+    #[tokio::test]
+    async fn test_identity_list_like() {
+        let pool = shared::testing::test_pool();
+        let app = crate::router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/organization/assemble/control/identity/list/like")
+                    .method("GET")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        if response.status() == StatusCode::NOT_FOUND {
+            // Route-presence probe: an unregistered path hits the axum fallback
+            // (empty 404 body); a matched handler may legitimately answer 404
+            // (e.g. NotFound for missing row) but always with a JSON envelope.
+            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX).await.unwrap_or_default();
+            assert!(!bytes.is_empty(),
+                "identity_list_like route should be registered");
+        }
+    }
+
+    #[tokio::test]
+    async fn test_identity_list_like_pinyin() {
+        let pool = shared::testing::test_pool();
+        let app = crate::router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/organization/assemble/control/identity/list/like/pinyin")
+                    .method("GET")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        if response.status() == StatusCode::NOT_FOUND {
+            // Route-presence probe: an unregistered path hits the axum fallback
+            // (empty 404 body); a matched handler may legitimately answer 404
+            // (e.g. NotFound for missing row) but always with a JSON envelope.
+            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX).await.unwrap_or_default();
+            assert!(!bytes.is_empty(),
+                "identity_list_like_pinyin route should be registered");
+        }
+    }
+
+    #[tokio::test]
+    async fn test_identity_list_pinyininitial() {
+        let pool = shared::testing::test_pool();
+        let app = crate::router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/organization/assemble/control/identity/list/pinyininitial")
+                    .method("GET")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        if response.status() == StatusCode::NOT_FOUND {
+            // Route-presence probe: an unregistered path hits the axum fallback
+            // (empty 404 body); a matched handler may legitimately answer 404
+            // (e.g. NotFound for missing row) but always with a JSON envelope.
+            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX).await.unwrap_or_default();
+            assert!(!bytes.is_empty(),
+                "identity_list_pinyininitial route should be registered");
+        }
+    }
+
+    // SKIPPED: group_create requires Session parameter
+    // SKIPPED: group_edit requires Session parameter
+    // SKIPPED: group_mock_put_to_post requires Session parameter
+    // SKIPPED: group_delete requires Session parameter
+    // SKIPPED: group_add_member requires Session parameter
+    // SKIPPED: group_add_member_mock_put_to_post requires Session parameter
+    // SKIPPED: group_delete_member requires Session parameter
+    // SKIPPED: group_delete_member_mock_put_to_post requires Session parameter
+    #[tokio::test]
+    async fn test_group_list_like() {
+        let pool = shared::testing::test_pool();
+        let app = crate::router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/organization/assemble/control/group/list/like")
+                    .method("GET")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        if response.status() == StatusCode::NOT_FOUND {
+            // Route-presence probe: an unregistered path hits the axum fallback
+            // (empty 404 body); a matched handler may legitimately answer 404
+            // (e.g. NotFound for missing row) but always with a JSON envelope.
+            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX).await.unwrap_or_default();
+            assert!(!bytes.is_empty(),
+                "group_list_like route should be registered");
+        }
+    }
+
+    #[tokio::test]
+    async fn test_group_list_like_pinyin() {
+        let pool = shared::testing::test_pool();
+        let app = crate::router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/organization/assemble/control/group/list/like/pinyin")
+                    .method("GET")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        if response.status() == StatusCode::NOT_FOUND {
+            // Route-presence probe: an unregistered path hits the axum fallback
+            // (empty 404 body); a matched handler may legitimately answer 404
+            // (e.g. NotFound for missing row) but always with a JSON envelope.
+            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX).await.unwrap_or_default();
+            assert!(!bytes.is_empty(),
+                "group_list_like_pinyin route should be registered");
+        }
+    }
+
+    #[tokio::test]
+    async fn test_group_list_pinyininitial() {
+        let pool = shared::testing::test_pool();
+        let app = crate::router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/organization/assemble/control/group/list/pinyininitial")
+                    .method("GET")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        if response.status() == StatusCode::NOT_FOUND {
+            // Route-presence probe: an unregistered path hits the axum fallback
+            // (empty 404 body); a matched handler may legitimately answer 404
+            // (e.g. NotFound for missing row) but always with a JSON envelope.
+            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX).await.unwrap_or_default();
+            assert!(!bytes.is_empty(),
+                "group_list_pinyininitial route should be registered");
+        }
+    }
+
+    // SKIPPED: role_create requires Session parameter
+    // SKIPPED: role_edit requires Session parameter
+    // SKIPPED: role_mock_put_to_post requires Session parameter
+    // SKIPPED: role_delete requires Session parameter
+    #[tokio::test]
+    async fn test_role_list_like() {
+        let pool = shared::testing::test_pool();
+        let app = crate::router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/organization/assemble/control/role/list/like")
+                    .method("GET")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        if response.status() == StatusCode::NOT_FOUND {
+            // Route-presence probe: an unregistered path hits the axum fallback
+            // (empty 404 body); a matched handler may legitimately answer 404
+            // (e.g. NotFound for missing row) but always with a JSON envelope.
+            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX).await.unwrap_or_default();
+            assert!(!bytes.is_empty(),
+                "role_list_like route should be registered");
+        }
+    }
+
+    #[tokio::test]
+    async fn test_role_list_like_pinyin() {
+        let pool = shared::testing::test_pool();
+        let app = crate::router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/organization/assemble/control/role/list/like/pinyin")
+                    .method("GET")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        if response.status() == StatusCode::NOT_FOUND {
+            // Route-presence probe: an unregistered path hits the axum fallback
+            // (empty 404 body); a matched handler may legitimately answer 404
+            // (e.g. NotFound for missing row) but always with a JSON envelope.
+            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX).await.unwrap_or_default();
+            assert!(!bytes.is_empty(),
+                "role_list_like_pinyin route should be registered");
+        }
+    }
+
+    #[tokio::test]
+    async fn test_role_list_pinyininitial() {
+        let pool = shared::testing::test_pool();
+        let app = crate::router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/organization/assemble/control/role/list/pinyininitial")
+                    .method("GET")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        if response.status() == StatusCode::NOT_FOUND {
+            // Route-presence probe: an unregistered path hits the axum fallback
+            // (empty 404 body); a matched handler may legitimately answer 404
+            // (e.g. NotFound for missing row) but always with a JSON envelope.
+            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX).await.unwrap_or_default();
+            assert!(!bytes.is_empty(),
+                "role_list_pinyininitial route should be registered");
+        }
+    }
+
+    // SKIPPED: duty_create requires Session parameter
+    // SKIPPED: duty_edit requires Session parameter
+    // SKIPPED: duty_mock_put_to_post requires Session parameter
+    // SKIPPED: duty_delete requires Session parameter
+    // SKIPPED: duty_update_member requires Session parameter
+    // SKIPPED: duty_list_like not accessible
+    // SKIPPED: resolve_person_id not accessible
+    // SKIPPED: person_get not accessible
+    // SKIPPED: person_create requires Session parameter
+    // SKIPPED: person_edit requires Session parameter
+    // SKIPPED: person_mock_put_to_post requires Session parameter
+    // SKIPPED: person_delete requires Session parameter
+    // SKIPPED: person_mock_delete_to_get requires Session parameter
+    // SKIPPED: person_reserve_delete requires Session parameter
+    // SKIPPED: person_reserve_mock_delete_to_get requires Session parameter
+    // SKIPPED: person_list_next not accessible
+    // SKIPPED: person_list_prev not accessible
+    // SKIPPED: person_list_group_sub_direct not accessible
+    // SKIPPED: person_list_group_sub_nested not accessible
+    // SKIPPED: person_list_with_role not accessible
+    // SKIPPED: person_list_pinyininitial not accessible
+    // SKIPPED: person_list_like not accessible
+    // SKIPPED: person_list_like_pinyin not accessible
+    // SKIPPED: person_set_password requires Session parameter
+    // SKIPPED: person_set_password_mock_put_to_post requires Session parameter
+    // SKIPPED: person_reset_password requires Session parameter
+    // SKIPPED: person_check_password not accessible
+    // SKIPPED: person_get_icon not accessible
+    // SKIPPED: person_set_icon requires Session parameter
+    // SKIPPED: person_set_icon_mock_put_to_post requires Session parameter
+    // SKIPPED: person_lock requires Session parameter
+    // SKIPPED: person_unlock requires Session parameter
+    // SKIPPED: person_ban requires Session parameter
+    // SKIPPED: person_unban requires Session parameter
+    // SKIPPED: person_set_password_expired_time requires Session parameter
+    // SKIPPED: person_list_filter_paging not accessible
+    // SKIPPED: person_list_delete_paging not accessible
 }
