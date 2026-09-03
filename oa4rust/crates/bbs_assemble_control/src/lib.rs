@@ -12,6 +12,7 @@ use std::collections::HashMap;
 use std::sync::Mutex;
 use uuid::Uuid;
 
+pub const JAVA_BASE: &str = "/jaxrs/bbs_assemble_control";
 pub mod routes;
 
 /// plan002 U2 — Java 端点全量闭合（106 条对齐）新增实现。
