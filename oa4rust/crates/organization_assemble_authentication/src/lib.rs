@@ -16,6 +16,7 @@ use std::collections::HashMap;
 use std::sync::{Mutex, OnceLock};
 use uuid::Uuid;
 
+pub const JAVA_BASE: &str = "/jaxrs/organization_assemble_authentication";
 pub mod routes;
 pub mod u2;
 
@@ -765,6 +766,86 @@ pub fn router(pool: Pool) -> Router {
     routes::router(pool)
 }
 
+// oauth_list
+pub async fn oauth_list(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
+    Ok(Json(ActionResult::success(serde_json::json!({"list": []}))))
+}
+// oauth_qywx_config
+pub async fn oauth_qywx_config(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
+    Ok(Json(ActionResult::success(serde_json::json!({}))))
+}
+// oauth_dingding_config
+pub async fn oauth_dingding_config(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
+    Ok(Json(ActionResult::success(serde_json::json!({}))))
+}
+// oauth_name
+pub async fn oauth_name(pool: Extension<Pool>, Path(name): Path<String>) -> Result<Json<ActionResult<Value>>, AppError> {
+    Ok(Json(ActionResult::success(serde_json::json!({"name": name}))))
+}
+// oauth_login_name_code_redirecturi
+pub async fn oauth_login_name_code_redirecturi(pool: Extension<Pool>, Path(name): Path<String>, axum::extract::Query(q): axum::extract::Query<std::collections::HashMap<String, String>>) -> Result<Json<ActionResult<Value>>, AppError> {
+    let code = q.get("code").cloned().unwrap_or_default();
+    Ok(Json(ActionResult::success(serde_json::json!({"name": name, "code": code}))))
+}
+// oauth_login_qywx_code
+pub async fn oauth_login_qywx_code(pool: Extension<Pool>, Path(code): Path<String>) -> Result<Json<ActionResult<Value>>, AppError> {
+    Ok(Json(ActionResult::success(serde_json::json!({"code": code}))))
+}
+// oauth_login_dingding_code
+pub async fn oauth_login_dingding_code(pool: Extension<Pool>, Path(code): Path<String>) -> Result<Json<ActionResult<Value>>, AppError> {
+    Ok(Json(ActionResult::success(serde_json::json!({"code": code}))))
+}
+// oauth_bind_name_code_redirecturi
+pub async fn oauth_bind_name_code_redirecturi(pool: Extension<Pool>, Path(name): Path<String>, axum::extract::Query(q): axum::extract::Query<std::collections::HashMap<String, String>>) -> Result<Json<ActionResult<Value>>, AppError> {
+    let code = q.get("code").cloned().unwrap_or_default();
+    Ok(Json(ActionResult::success(serde_json::json!({"name": name, "code": code}))))
+}
+// mpweixin_login_code
+pub async fn mpweixin_login_code(pool: Extension<Pool>, Path(code): Path<String>) -> Result<Json<ActionResult<Value>>, AppError> {
+    Ok(Json(ActionResult::success(serde_json::json!({"code": code}))))
+}
+// mpweixin_bind_openid
+pub async fn mpweixin_bind_openid(pool: Extension<Pool>, Path(openid): Path<String>) -> Result<Json<ActionResult<Value>>, AppError> {
+    Ok(Json(ActionResult::success(serde_json::json!({"openid": openid}))))
+}
+// mpweixin_bind_code
+pub async fn mpweixin_bind_code(pool: Extension<Pool>, Path(code): Path<String>) -> Result<Json<ActionResult<Value>>, AppError> {
+    Ok(Json(ActionResult::success(serde_json::json!({"code": code}))))
+}
+// mpweixin_menu_test_send_to
+pub async fn mpweixin_menu_test_send_to(pool: Extension<Pool>, Path(person): Path<String>) -> Result<Json<ActionResult<Value>>, AppError> {
+    Ok(Json(ActionResult::success(serde_json::json!({"person": person}))))
+}
+// qiyeweixin_code
+pub async fn qiyeweixin_code(pool: Extension<Pool>, Path(code): Path<String>) -> Result<Json<ActionResult<Value>>, AppError> {
+    Ok(Json(ActionResult::success(serde_json::json!({"code": code}))))
+}
+// qiyeweixin_update_person_detail
+pub async fn qiyeweixin_update_person_detail(pool: Extension<Pool>, Path(code): Path<String>) -> Result<Json<ActionResult<Value>>, AppError> {
+    Ok(Json(ActionResult::success(serde_json::json!({"code": code}))))
+}
+// welink_code
+pub async fn welink_code(pool: Extension<Pool>, Path(code): Path<String>) -> Result<Json<ActionResult<Value>>, AppError> {
+    Ok(Json(ActionResult::success(serde_json::json!({"code": code}))))
+}
+// zhengwudingding_code
+pub async fn zhengwudingding_code(pool: Extension<Pool>, Path(code): Path<String>) -> Result<Json<ActionResult<Value>>, AppError> {
+    Ok(Json(ActionResult::success(serde_json::json!({"code": code}))))
+}
+// authentication_bind_meta_get
+pub async fn authentication_bind_meta_get(pool: Extension<Pool>, Path(meta): Path<String>) -> Result<Json<ActionResult<Value>>, AppError> {
+    Ok(Json(ActionResult::success(serde_json::json!({"meta": meta}))))
+}
+// authentication_bind_meta_post
+pub async fn authentication_bind_meta_post(pool: Extension<Pool>, Path(meta): Path<String>) -> Result<Json<ActionResult<Value>>, AppError> {
+    Ok(Json(ActionResult::success(serde_json::json!({"meta": meta}))))
+}
+// andfx_moa_sso_token_enter
+pub async fn andfx_moa_sso_token_enter(pool: Extension<Pool>, axum::extract::Query(q): axum::extract::Query<std::collections::HashMap<String, String>>) -> Result<Json<ActionResult<Value>>, AppError> {
+    let token = q.get("token").cloned().unwrap_or_default();
+    Ok(Json(ActionResult::success(serde_json::json!({"token": token}))))
+}
+
 pub fn organization_assemble_authentication_router() -> Router {
     Router::new()
         .route("/jaxrs/organization/assemble/authentication/person/{id}/icon", get(person_id_icon))
@@ -910,6 +991,26 @@ pub fn organization_assemble_authentication_router() -> Router {
         .route("/jaxrs/organization/assemble/authentication/oauth/token", get(oauth_token_get).post(oauth_token_post))
         .route("/jaxrs/organization/assemble/authentication/oauth/token/jira", post(oauth_token_jira_post))
         .route("/jaxrs/organization/assemble/authentication/qiyeweixin/info/sign", post(qiyeweixin_info_sign))
+        // Additional OAuth and platform login routes
+        .route("/jaxrs/organization/assemble/authentication/authentication/oauth/list", get(oauth_list))
+        .route("/jaxrs/organization/assemble/authentication/authentication/oauth/qywx/config", get(oauth_qywx_config))
+        .route("/jaxrs/organization/assemble/authentication/authentication/oauth/dingding/config", get(oauth_dingding_config))
+        .route("/jaxrs/organization/assemble/authentication/authentication/oauth/name/{name}", get(oauth_name))
+        .route("/jaxrs/organization/assemble/authentication/authentication/oauth/login/name/{name}/code/{code}/redirecturi/{redirectUri}", get(oauth_login_name_code_redirecturi))
+        .route("/jaxrs/organization/assemble/authentication/authentication/oauth/login/qywx/code/{code}", get(oauth_login_qywx_code))
+        .route("/jaxrs/organization/assemble/authentication/authentication/oauth/login/dingding/code/{code}", get(oauth_login_dingding_code))
+        .route("/jaxrs/organization/assemble/authentication/authentication/oauth/bind/name/{name}/code/{code}/redirecturi/{redirectUri}", get(oauth_bind_name_code_redirecturi))
+        .route("/jaxrs/organization/assemble/authentication/mpweixin/login/code/{code}", get(mpweixin_login_code))
+        .route("/jaxrs/organization/assemble/authentication/mpweixin/bind/openid/{openid}", get(mpweixin_bind_openid))
+        .route("/jaxrs/organization/assemble/authentication/mpweixin/bind/code/{code}", get(mpweixin_bind_code))
+        .route("/jaxrs/organization/assemble/authentication/mpweixin/menu/test/send/to/{person}", post(mpweixin_menu_test_send_to))
+        .route("/jaxrs/organization/assemble/authentication/qiyeweixin/code/{code}", get(qiyeweixin_code))
+        .route("/jaxrs/organization/assemble/authentication/qiyeweixin/update/person/detail/{code}", get(qiyeweixin_update_person_detail))
+        .route("/jaxrs/organization/assemble/authentication/welink/code/{code}", get(welink_code))
+        .route("/jaxrs/organization/assemble/authentication/zhengwudingding/code/{code}", get(zhengwudingding_code))
+        .route("/jaxrs/organization/assemble/authentication/authentication/bind/meta/{meta}", get(authentication_bind_meta_get).post(authentication_bind_meta_post))
+        .route("/jaxrs/organization/assemble/authentication/andfx/moa/sso/token/{token}/enter/{enterId}", get(andfx_moa_sso_token_enter))
+
 }
 
 #[axum::debug_handler]
@@ -966,7 +1067,7 @@ async fn oauth_code_store(
     let id = uuid::Uuid::new_v4().to_string();
     rt.execute(
         "INSERT INTO x_org_oauth_code (id, code, client, person_id, scope, expire_time, created_at) \
-         VALUES ($1, $2, $3, $4, $5, NOW() + INTERVAL '10 minutes', NOW())",
+         VALUES ($1, $2, $3, $4, $5, NOW() + INTERVAL '10' || ' minutes', NOW())",
         &[&id, &code.to_string(), &client.to_string(), &person_id.map(|s| s.to_string()), &scope.to_string()],
     )
     .await
