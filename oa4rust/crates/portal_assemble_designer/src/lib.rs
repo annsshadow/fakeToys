@@ -412,6 +412,19 @@ pub fn portal_assemble_designer_router() -> Router {
         .route("/jaxrs/portal/assemble/designer/widget", post(crate::create_widget))
         .route("/jaxrs/portal/assemble/designer/widget/{id}", delete(crate::delete_widget))
         .route("/jaxrs/portal/assemble/designer/widget/{id}", put(crate::update_widget))
+          .route("/jaxrs/portal/assemble/designer/designer/search", post(crate::designer_search))
+          .route("/jaxrs/portal/assemble/designer/file/list/{id}/prev/{count}", get(crate::file_list_id_prev_count))
+          
+          .route("/jaxrs/portal/assemble/designer/input/compare", put(crate::input_compare))
+          .route("/jaxrs/portal/assemble/designer/input/cover", put(crate::input_cover))
+          .route("/jaxrs/portal/assemble/designer/input/create", put(crate::input_create))
+          .route("/jaxrs/portal/assemble/designer/input/prepare/cover", put(crate::input_prepare_cover))
+          .route("/jaxrs/portal/assemble/designer/input/prepare/create", put(crate::input_prepare_create))
+          .route("/jaxrs/portal/assemble/designer/output/list", get(crate::output_list))
+
+          .route("/jaxrs/portal/assemble/designer/portal/list", get(crate::portal_list))
+          .route("/jaxrs/portal/assemble/designer/portalcategory/list", get(crate::portalcategory_list))
+          .route("/jaxrs/portal/assemble/designer/script/list/manager", post(crate::script_list_manager))
 }
 
 #[cfg(test)]
