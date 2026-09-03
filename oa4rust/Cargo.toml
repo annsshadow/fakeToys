@@ -24,6 +24,7 @@ utoipa = { version = "4", features = ["axum_extras"] }
 utoipa-swagger-ui = { version = "6", features = ["axum"] }
 
 shared = { path = "crates/shared" }
+base_core_project = { path = "crates/base_core_project" }
 mcp_server = { path = "crates/mcp_server" }
 serde_json = "1"
  auth = { path = "crates/auth" }
@@ -119,6 +120,7 @@ query_core_express = { path = "crates/query_core_express" }
 [workspace]
 members = [
     "crates/shared",
+    "crates/base_core_project",
     "crates/orm",
     "crates/auth",
     "crates/ldap",
