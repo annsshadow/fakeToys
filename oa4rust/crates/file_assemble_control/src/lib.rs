@@ -10,6 +10,7 @@ use std::sync::Arc;
 
 pub use shared::{ControlClient, ControlPool, DynControlPool, RowGet};
 
+pub const JAVA_BASE: &str = "/jaxrs/file_assemble_control";
 pub mod routes;
 
 #[cfg(test)]
