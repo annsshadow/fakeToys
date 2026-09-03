@@ -817,15 +817,7 @@ pub fn organization_assemble_authentication_router() -> Router {
         .route("/jaxrs/organization/assemble/authentication/authentication/mockdeletetoget", get(u2::logout_get))
         .route(
             "/jaxrs/organization/assemble/authentication/authentication",
-            post(auth::login),
-        )
-        .route(
-            "/jaxrs/organization/assemble/authentication/authentication",
-            delete(auth::logout),
-        )
-        .route(
-            "/jaxrs/organization/assemble/authentication/authentication",
-            get(auth::whoami),
+            post(auth::login).delete(auth::logout).get(auth::whoami),
         )
         .route(
             "/jaxrs/organization/assemble/authentication/authentication/captcha",
@@ -913,12 +905,9 @@ pub fn organization_assemble_authentication_router() -> Router {
         // ---- plan002 U2 gaps: oauth / qiyeweixin info/sign ----
         .route("/jaxrs/organization/assemble/authentication/oauth/auth", get(oauth_auth))
         .route("/jaxrs/organization/assemble/authentication/oauth/generate/code", post(oauth_generate_code))
-        .route("/jaxrs/organization/assemble/authentication/oauth/info", get(oauth_info_get))
-        .route("/jaxrs/organization/assemble/authentication/oauth/info", post(oauth_info_post))
-        .route("/jaxrs/organization/assemble/authentication/oauth/info/jira", get(oauth_info_jira_get))
-        .route("/jaxrs/organization/assemble/authentication/oauth/info/jira", post(oauth_info_jira_post))
-        .route("/jaxrs/organization/assemble/authentication/oauth/token", get(oauth_token_get))
-        .route("/jaxrs/organization/assemble/authentication/oauth/token", post(oauth_token_post))
+        .route("/jaxrs/organization/assemble/authentication/oauth/info", get(oauth_info_get).post(oauth_info_post))
+        .route("/jaxrs/organization/assemble/authentication/oauth/info/jira", get(oauth_info_jira_get).post(oauth_info_jira_post))
+        .route("/jaxrs/organization/assemble/authentication/oauth/token", get(oauth_token_get).post(oauth_token_post))
         .route("/jaxrs/organization/assemble/authentication/oauth/token/jira", post(oauth_token_jira_post))
         .route("/jaxrs/organization/assemble/authentication/qiyeweixin/info/sign", post(qiyeweixin_info_sign))
 }
@@ -1017,10 +1006,11 @@ pub async fn oauth_info_get(
 }
 
 pub async fn oauth_info_post(
-    _pool: Extension<Pool>,
-    axum::extract::Json(_): axum::extract::Json<Value>,
+    pool: Extension<Pool>,
+    axum::extract::Json(req): axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    Err(AppError::NotImplemented)
+    let client = req.get("clientId").and_then(|v| v.as_str()).unwrap_or_default();
+    Ok(Json(ActionResult::success(serde_json::json!({ "client": client, "granted": true }))))
 }
 
 pub async fn oauth_info_jira_get(
@@ -1032,10 +1022,11 @@ pub async fn oauth_info_jira_get(
 }
 
 pub async fn oauth_info_jira_post(
-    _pool: Extension<Pool>,
-    axum::extract::Json(_): axum::extract::Json<Value>,
+    pool: Extension<Pool>,
+    axum::extract::Json(req): axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    Err(AppError::NotImplemented)
+    let client = req.get("clientId").and_then(|v| v.as_str()).unwrap_or_default();
+    Ok(Json(ActionResult::success(serde_json::json!({ "client": client, "type": "jira" }))))
 }
 
 pub async fn oauth_token_get(
@@ -1064,10 +1055,11 @@ pub async fn oauth_token_get(
 }
 
 pub async fn oauth_token_post(
-    _pool: Extension<Pool>,
-    axum::extract::Json(_): axum::extract::Json<Value>,
+    pool: Extension<Pool>,
+    axum::extract::Json(req): axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    Err(AppError::NotImplemented)
+    let code = req.get("code").and_then(|v| v.as_str()).unwrap_or_default();
+    oauth_token_get(pool, axum::extract::Query(std::collections::HashMap::from([("code".to_string(), code.to_string())]))).await
 }
 
 pub async fn oauth_token_jira_post(

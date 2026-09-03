@@ -13,6 +13,7 @@ use base64::Engine;
 use uuid::Uuid;
 use thiserror::Error;
 
+pub const JAVA_BASE: &str = "/jaxrs/jpush_assemble_control";
 pub mod routes;
 
 #[cfg(test)]

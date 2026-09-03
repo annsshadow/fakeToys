@@ -8,6 +8,7 @@ use serde_json::Value;
 use shared::error::AppError;
 use shared::response::ActionResult;
 
+pub const JAVA_BASE: &str = "/jaxrs/general_assemble_control";
 pub mod routes;
 
 #[cfg(test)]

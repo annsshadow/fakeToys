@@ -131,7 +131,7 @@ pub async fn list_flows(
         client
             .query(
                 "SELECT id, name, category, version, creator, create_time FROM x_process_definition \
-                 WHERE 1=1 ORDER BY create_time DESC LIMIT $1::int OFFSET $2::int",
+                 WHERE 1=1 ORDER BY create_time DESC LIMIT $1::bigint OFFSET $2::bigint",
                 &[&size, &offset],
             )
             .await
@@ -140,7 +140,7 @@ pub async fn list_flows(
         client
             .query(
                 "SELECT id, name, category, version, creator, create_time FROM x_process_definition \
-                 WHERE category = $1 ORDER BY create_time DESC LIMIT $2::int OFFSET $3::int",
+                 WHERE category = $1 ORDER BY create_time DESC LIMIT $2::bigint OFFSET $3::bigint",
                 &[&category, &size, &offset],
             )
             .await
@@ -161,12 +161,12 @@ pub async fn list_flows(
         })
         .collect();
 
-    Ok(Json(ActionResult::java_success(Value::Object(serde_json::Map::from_iter([
+    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
         ("count".to_string(), Value::Number(serde_json::Number::from(total))),
         ("size".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
         ("page".to_string(), Value::Number(serde_json::Number::from(page))),
         ("data".to_string(), Value::Array(data)),
-    ])), total, 0)))
+    ])))))
 }
 
 /// 保存流程定义
@@ -344,8 +344,10 @@ pub async fn application_list(
         .map(|row| row_to_app_data(row))
         .collect();
 
-    let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
+    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
+        ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
+        ("data".to_string(), Value::Array(data)),
+    ])))))
 }
 
 pub async fn application_list_applicationcategory_applicationCategory(
@@ -366,21 +368,33 @@ pub async fn application_list_applicationcategory_applicationCategory(
         .map(|row| row_to_app_data(row))
         .collect();
 
-    let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
+    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
+        ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
+        ("data".to_string(), Value::Array(data)),
+    ])))))
 }
 
 pub async fn application_list_summary(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::java_success(Value::Array(vec![]), 0, 0)))
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("count".to_string(), Value::Number(0.into())),
+            ("data".to_string(), Value::Array(vec![])),
+        ]),
+    ))))
 }
 
 pub async fn application_list_summary_applicationcategory_applicationCategory(
     pool: Extension<Pool>,
     axum::extract::Path(applicationCategory): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::java_success(Value::Array(vec![]), 0, 0)))
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("count".to_string(), Value::Number(0.into())),
+            ("data".to_string(), Value::Array(vec![])),
+        ]),
+    ))))
 }
 
 pub async fn application_id(
@@ -500,8 +514,10 @@ pub async fn applicationcategory_list(
         .map(|row| row_to_basic_data(row))
         .collect();
 
-    let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
+    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
+        ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
+        ("data".to_string(), Value::Array(data)),
+    ])))))
 }
 
 // ──────────────────────────────────────────────────────────────────────────────
@@ -526,8 +542,10 @@ pub async fn applicationdict_list_application_applicationId(
         .map(|row| row_to_app_data(row))
         .collect();
 
-    let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
+    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
+        ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
+        ("data".to_string(), Value::Array(data)),
+    ])))))
 }
 
 pub async fn applicationdict_list_paging_page_size_size(
@@ -540,7 +558,7 @@ pub async fn applicationdict_list_paging_page_size_size(
     let offset = (page - 1).max(0) * size;
     let rows = client
         .query(
-            "SELECT xid, xname, xapplication, \"xapplicationName\", \"xcreatorPerson\", \"xcreateTime\", \"xupdateTime\" FROM PP_E_APPLICATIONDICT WHERE 1=1 ORDER BY \"xcreateTime\" DESC LIMIT $1::int OFFSET $2::int",
+            "SELECT xid, xname, xapplication, \"xapplicationName\", \"xcreatorPerson\", \"xcreateTime\", \"xupdateTime\" FROM PP_E_APPLICATIONDICT WHERE 1=1 ORDER BY \"xcreateTime\" DESC LIMIT $1::bigint OFFSET $2::bigint",
             &[&size, &offset],
         )
         .await
@@ -551,13 +569,12 @@ pub async fn applicationdict_list_paging_page_size_size(
         .map(|row| row_to_app_data(row))
         .collect();
 
-    let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(Value::Object(serde_json::Map::from_iter([
-        ("count".to_string(), Value::Number(serde_json::Number::from(count))),
+    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
+        ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
         ("data".to_string(), Value::Array(data)),
         ("page".to_string(), Value::Number(serde_json::Number::from(page))),
         ("size".to_string(), Value::Number(serde_json::Number::from(size))),
-    ])), count, 0)))
+    ])))))
 }
 
 pub async fn applicationdict_id(
@@ -600,8 +617,10 @@ pub async fn elementtool_applicationdict_orphan(
         .map(|row| row_to_app_data(row))
         .collect();
 
-    let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
+    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
+        ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
+        ("data".to_string(), Value::Array(data)),
+    ])))))
 }
 
 pub async fn elementtool_form_orphan(
@@ -621,8 +640,10 @@ pub async fn elementtool_form_orphan(
         .map(|row| row_to_form_data(row))
         .collect();
 
-    let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
+    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
+        ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
+        ("data".to_string(), Value::Array(data)),
+    ])))))
 }
 
 pub async fn elementtool_process_orphan(
@@ -642,8 +663,10 @@ pub async fn elementtool_process_orphan(
         .map(|row| row_to_process_data(row))
         .collect();
 
-    let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
+    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
+        ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
+        ("data".to_string(), Value::Array(data)),
+    ])))))
 }
 
 pub async fn elementtool_script_orphan(
@@ -663,8 +686,10 @@ pub async fn elementtool_script_orphan(
         .map(|row| row_to_app_data(row))
         .collect();
 
-    let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
+    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
+        ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
+        ("data".to_string(), Value::Array(data)),
+    ])))))
 }
 
 // ──────────────────────────────────────────────────────────────────────────────
@@ -693,8 +718,10 @@ pub async fn file_list_application_applicationFlag(
         ])))
         .collect();
 
-    let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
+    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
+        ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
+        ("data".to_string(), Value::Array(data)),
+    ])))))
 }
 
 pub async fn file_list_id_next_count(
@@ -919,8 +946,10 @@ pub async fn form_list_application_applicationId(
         .map(|row| row_to_form_data(row))
         .collect();
 
-    let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
+    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
+        ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
+        ("data".to_string(), Value::Array(data)),
+    ])))))
 }
 
 pub async fn form_list_formfield_application_applicationId(
@@ -941,8 +970,10 @@ pub async fn form_list_formfield_application_applicationId(
         .map(|row| row_to_form_data(row))
         .collect();
 
-    let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
+    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
+        ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
+        ("data".to_string(), Value::Array(data)),
+    ])))))
 }
 
 pub async fn form_list_id_formfield(
@@ -1050,8 +1081,10 @@ pub async fn formversion_list_form_formId(
         ])))
         .collect();
 
-    let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
+    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
+        ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
+        ("data".to_string(), Value::Array(data)),
+    ])))))
 }
 
 pub async fn formversion_id(
@@ -1138,28 +1171,48 @@ pub async fn input_cover(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let _client = pool.get().await.map_err(|_| AppError::Internal)?;
-    Ok(Json(ActionResult::java_success(Value::Array(vec![]), 0, 0)))
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("count".to_string(), Value::Number(0.into())),
+            ("data".to_string(), Value::Array(vec![])),
+        ]),
+    ))))
 }
 
 pub async fn input_create(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let _client = pool.get().await.map_err(|_| AppError::Internal)?;
-    Ok(Json(ActionResult::java_success(Value::Array(vec![]), 0, 0)))
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("count".to_string(), Value::Number(0.into())),
+            ("data".to_string(), Value::Array(vec![])),
+        ]),
+    ))))
 }
 
 pub async fn input_prepare_cover(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let _client = pool.get().await.map_err(|_| AppError::Internal)?;
-    Ok(Json(ActionResult::java_success(Value::Array(vec![]), 0, 0)))
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("count".to_string(), Value::Number(0.into())),
+            ("data".to_string(), Value::Array(vec![])),
+        ]),
+    ))))
 }
 
 pub async fn input_prepare_create(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let _client = pool.get().await.map_err(|_| AppError::Internal)?;
-    Ok(Json(ActionResult::java_success(Value::Array(vec![]), 0, 0)))
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("count".to_string(), Value::Number(0.into())),
+            ("data".to_string(), Value::Array(vec![])),
+        ]),
+    ))))
 }
 
 // ──────────────────────────────────────────────────────────────────────────────
@@ -1213,8 +1266,10 @@ pub async fn item_access_path_path(
         ])))
         .collect();
 
-    let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
+    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
+        ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
+        ("data".to_string(), Value::Array(data)),
+    ])))))
 }
 
 pub async fn item_access_process_processId(
@@ -1242,8 +1297,10 @@ pub async fn item_access_process_processId(
         ])))
         .collect();
 
-    let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
+    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
+        ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
+        ("data".to_string(), Value::Array(data)),
+    ])))))
 }
 
 pub async fn item_access_process_processId_path_path(
@@ -1272,8 +1329,10 @@ pub async fn item_access_process_processId_path_path(
         ])))
         .collect();
 
-    let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
+    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
+        ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
+        ("data".to_string(), Value::Array(data)),
+    ])))))
 }
 
 pub async fn item_access_id(
@@ -1332,8 +1391,10 @@ pub async fn mapping_list_application_applicationFlag(
         ])))
         .collect();
 
-    let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
+    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
+        ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
+        ("data".to_string(), Value::Array(data)),
+    ])))))
 }
 
 pub async fn mapping_list_id_next_count(
@@ -1473,7 +1534,7 @@ pub async fn mergeitemplan_list_application_applicationId_paging_page_size_size(
     let offset = (page - 1).max(0) * size;
     let rows = client
         .query(
-            "SELECT xid, xname, xapplication, \"xapplicationName\", \"xcreateTime\", \"xupdateTime\" FROM PP_E_MERGEITEMPLAN WHERE xapplication = $1 ORDER BY \"xcreateTime\" DESC LIMIT $2::int OFFSET $3::int",
+            "SELECT xid, xname, xapplication, \"xapplicationName\", \"xcreateTime\", \"xupdateTime\" FROM PP_E_MERGEITEMPLAN WHERE xapplication = $1 ORDER BY \"xcreateTime\" DESC LIMIT $2::bigint OFFSET $3::bigint",
             &[&applicationId, &size, &offset],
         )
         .await
@@ -1484,13 +1545,12 @@ pub async fn mergeitemplan_list_application_applicationId_paging_page_size_size(
         .map(|row| row_to_app_data(row))
         .collect();
 
-    let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(Value::Object(serde_json::Map::from_iter([
-        ("count".to_string(), Value::Number(serde_json::Number::from(count))),
+    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
+        ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
         ("data".to_string(), Value::Array(data)),
         ("page".to_string(), Value::Number(serde_json::Number::from(page))),
         ("size".to_string(), Value::Number(serde_json::Number::from(size))),
-    ])), count, 0)))
+    ])))))
 }
 
 pub async fn mergeitemplan_list_paging_page_size_size(
@@ -1503,7 +1563,7 @@ pub async fn mergeitemplan_list_paging_page_size_size(
     let offset = (page - 1).max(0) * size;
     let rows = client
         .query(
-            "SELECT xid, xname, xapplication, \"xapplicationName\", \"xcreateTime\", \"xupdateTime\" FROM PP_E_MERGEITEMPLAN WHERE 1=1 ORDER BY \"xcreateTime\" DESC LIMIT $1::int OFFSET $2::int",
+            "SELECT xid, xname, xapplication, \"xapplicationName\", \"xcreateTime\", \"xupdateTime\" FROM PP_E_MERGEITEMPLAN WHERE 1=1 ORDER BY \"xcreateTime\" DESC LIMIT $1::bigint OFFSET $2::bigint",
             &[&size, &offset],
         )
         .await
@@ -1514,13 +1574,12 @@ pub async fn mergeitemplan_list_paging_page_size_size(
         .map(|row| row_to_app_data(row))
         .collect();
 
-    let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(Value::Object(serde_json::Map::from_iter([
-        ("count".to_string(), Value::Number(serde_json::Number::from(count))),
+    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
+        ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
         ("data".to_string(), Value::Array(data)),
         ("page".to_string(), Value::Number(serde_json::Number::from(page))),
         ("size".to_string(), Value::Number(serde_json::Number::from(size))),
-    ])), count, 0)))
+    ])))))
 }
 
 pub async fn mergeitemplan_id(
@@ -1570,8 +1629,10 @@ pub async fn output_list(
         ])))
         .collect();
 
-    let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
+    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
+        ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
+        ("data".to_string(), Value::Array(data)),
+    ])))))
 }
 
 pub async fn output_applicationFlag_select(
@@ -1597,8 +1658,10 @@ pub async fn output_applicationFlag_select(
         ])))
         .collect();
 
-    let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
+    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
+        ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
+        ("data".to_string(), Value::Array(data)),
+    ])))))
 }
 
 // ──────────────────────────────────────────────────────────────────────────────
@@ -1629,8 +1692,10 @@ pub async fn process_activity_flag_activityType_activityType(
         ])))
         .collect();
 
-    let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
+    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
+        ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
+        ("data".to_string(), Value::Array(data)),
+    ])))))
 }
 
 // ──────────────────────────────────────────────────────────────────────────────
@@ -1655,8 +1720,10 @@ pub async fn process_application_applicationId(
         .map(|row| row_to_process_data(row))
         .collect();
 
-    let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
+    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
+        ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
+        ("data".to_string(), Value::Array(data)),
+    ])))))
 }
 
 pub async fn process_application_applicationId_disable_edition(
@@ -1683,8 +1750,10 @@ pub async fn process_application_applicationId_disable_edition(
         ])))
         .collect();
 
-    let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
+    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
+        ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
+        ("data".to_string(), Value::Array(data)),
+    ])))))
 }
 
 pub async fn process_application_applicationId_edition_edition(
@@ -1712,8 +1781,10 @@ pub async fn process_application_applicationId_edition_edition(
         ])))
         .collect();
 
-    let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
+    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
+        ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
+        ("data".to_string(), Value::Array(data)),
+    ])))))
 }
 
 pub async fn process_form_formId(
@@ -1938,8 +2009,10 @@ pub async fn process_id_list_element(
         ])))
         .collect();
 
-    let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
+    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
+        ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
+        ("data".to_string(), Value::Array(data)),
+    ])))))
 }
 
 pub async fn process_id_permission(
@@ -2092,8 +2165,10 @@ pub async fn processversion_list_process_processId(
         ])))
         .collect();
 
-    let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
+    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
+        ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
+        ("data".to_string(), Value::Array(data)),
+    ])))))
 }
 
 pub async fn processversion_id(
@@ -2151,8 +2226,10 @@ pub async fn script_application_applicationId(
         .map(|row| row_to_app_data(row))
         .collect();
 
-    let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
+    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
+        ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
+        ("data".to_string(), Value::Array(data)),
+    ])))))
 }
 
 pub async fn script_application_applicationId_name_name(
@@ -2174,8 +2251,10 @@ pub async fn script_application_applicationId_name_name(
         .map(|row| row_to_app_data(row))
         .collect();
 
-    let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
+    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
+        ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
+        ("data".to_string(), Value::Array(data)),
+    ])))))
 }
 
 pub async fn script_list_manager(
@@ -2195,8 +2274,10 @@ pub async fn script_list_manager(
         .map(|row| row_to_app_data(row))
         .collect();
 
-    let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
+    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
+        ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
+        ("data".to_string(), Value::Array(data)),
+    ])))))
 }
 
 pub async fn script_list_paging_page_size_size(
@@ -2209,7 +2290,7 @@ pub async fn script_list_paging_page_size_size(
     let offset = (page - 1).max(0) * size;
     let rows = client
         .query(
-            "SELECT xid, xname, xapplication, \"xapplicationName\", \"xcreatorPerson\", \"xcreateTime\", \"xupdateTime\" FROM PP_E_SCRIPT WHERE 1=1 ORDER BY \"xcreateTime\" DESC LIMIT $1::int OFFSET $2::int",
+            "SELECT xid, xname, xapplication, \"xapplicationName\", \"xcreatorPerson\", \"xcreateTime\", \"xupdateTime\" FROM PP_E_SCRIPT WHERE 1=1 ORDER BY \"xcreateTime\" DESC LIMIT $1::bigint OFFSET $2::bigint",
             &[&size, &offset],
         )
         .await
@@ -2220,13 +2301,12 @@ pub async fn script_list_paging_page_size_size(
         .map(|row| row_to_app_data(row))
         .collect();
 
-    let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(Value::Object(serde_json::Map::from_iter([
-        ("count".to_string(), Value::Number(serde_json::Number::from(count))),
+    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
+        ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
         ("data".to_string(), Value::Array(data)),
         ("page".to_string(), Value::Number(serde_json::Number::from(page))),
         ("size".to_string(), Value::Number(serde_json::Number::from(size))),
-    ])), count, 0)))
+    ])))))
 }
 
 pub async fn script_list_id_next_count(
@@ -2315,8 +2395,10 @@ pub async fn scriptversion_list_script_scriptId(
         ])))
         .collect();
 
-    let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
+    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
+        ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
+        ("data".to_string(), Value::Array(data)),
+    ])))))
 }
 
 pub async fn scriptversion_id(
@@ -2378,8 +2460,10 @@ pub async fn templateform_list(
         ])))
         .collect();
 
-    let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
+    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
+        ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
+        ("data".to_string(), Value::Array(data)),
+    ])))))
 }
 
 pub async fn templateform_list_category(
@@ -2406,8 +2490,10 @@ pub async fn templateform_list_category(
         ])))
         .collect();
 
-    let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
+    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
+        ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
+        ("data".to_string(), Value::Array(data)),
+    ])))))
 }
 
 pub async fn templateform_id(
@@ -2470,8 +2556,10 @@ pub async fn workcompleted_application_applicationFlag_merge_data(
         ])))
         .collect();
 
-    let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
+    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
+        ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
+        ("data".to_string(), Value::Array(data)),
+    ])))))
 }
 
 pub async fn workcompleted_process_processFlag_merge_data(
@@ -2498,8 +2586,10 @@ pub async fn workcompleted_process_processFlag_merge_data(
         ])))
         .collect();
 
-    let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
+    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
+        ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
+        ("data".to_string(), Value::Array(data)),
+    ])))))
 }
 
 #[cfg(test)]
@@ -2855,8 +2945,12 @@ pub async fn form_list_next_exact(
         .await
         .map_err(|_| AppError::Internal)?;
     let data: Vec<Value> = rows.iter().map(row_to_form_data).collect();
-    let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
+            ("data".to_string(), Value::Array(data)),
+        ]),
+    ))))
 }
 
 /// GET /form/list/{id}/prev/{count} —— 按 id 降序向前取 count 条真实记录。
@@ -2874,8 +2968,12 @@ pub async fn form_list_prev_exact(
         .await
         .map_err(|_| AppError::Internal)?;
     let data: Vec<Value> = rows.iter().map(row_to_form_data).collect();
-    let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
+            ("data".to_string(), Value::Array(data)),
+        ]),
+    ))))
 }
 
 // ── item-access 族 ───────────────────────────────────────────────────────────
@@ -3011,8 +3109,12 @@ pub async fn item_access_path_list(
         .await
         .map_err(|_| AppError::Internal)?;
     let data: Vec<Value> = rows.iter().map(row_to_item_access_data).collect();
-    let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
+            ("data".to_string(), Value::Array(data)),
+        ]),
+    ))))
 }
 
 /// GET /item-access/process/{processId}/path/{path} —— 双条件精确查询。
@@ -3030,8 +3132,12 @@ pub async fn item_access_process_path_list(
         .await
         .map_err(|_| AppError::Internal)?;
     let data: Vec<Value> = rows.iter().map(row_to_item_access_data).collect();
-    let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
+            ("data".to_string(), Value::Array(data)),
+        ]),
+    ))))
 }
 
 fn row_to_item_access_data(row: &Row) -> Value {
@@ -3104,8 +3210,12 @@ pub async fn mapping_list_next_exact(
         .await
         .map_err(|_| AppError::Internal)?;
     let data: Vec<Value> = rows.iter().map(row_to_app_data).collect();
-    let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
+            ("data".to_string(), Value::Array(data)),
+        ]),
+    ))))
 }
 
 /// GET /mapping/list/{id}/prev/{count} —— 向前导航真实记录。
@@ -3122,8 +3232,12 @@ pub async fn mapping_list_prev_exact(
         .await
         .map_err(|_| AppError::Internal)?;
     let data: Vec<Value> = rows.iter().map(row_to_app_data).collect();
-    let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
+            ("data".to_string(), Value::Array(data)),
+        ]),
+    ))))
 }
 
 /// PUT /mapping/{flag} —— 更新映射（IDOR 门禁 + 归一化查重排除自身）。
@@ -3407,8 +3521,12 @@ pub async fn process_disable_edition_list(
             ("status".to_string(), Value::String("disabled".to_string())),
         ]))
     }).collect();
-    let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
+            ("data".to_string(), Value::Array(data)),
+        ]),
+    ))))
 }
 
 /// GET /process/application/{applicationId}/edition/{edition} —— 按版本名列流程。
@@ -3556,6 +3674,10 @@ pub async fn script_by_name_exact(
         .await
         .map_err(|_| AppError::Internal)?;
     let data: Vec<Value> = rows.iter().map(row_to_app_data).collect();
-    let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
+            ("data".to_string(), Value::Array(data)),
+        ]),
+    ))))
 }

@@ -108,8 +108,10 @@ pub async fn list_designs(
         })
         .collect();
 
-    let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
+    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
+        ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
+        ("data".to_string(), Value::Array(data)),
+    ])))))
 }
 
 pub async fn save_design(
@@ -174,8 +176,10 @@ pub async fn list_pages_by_category(
         })
         .collect();
 
-    let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
+    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
+        ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
+        ("data".to_string(), Value::Array(data)),
+    ])))))
 }
 
 pub async fn get_page(
@@ -448,8 +452,10 @@ pub async fn designer_search(
         })
         .collect();
 
-    let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
+    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
+        ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
+        ("data".to_string(), Value::Array(data)),
+    ])))))
 }
 
 pub async fn dict_list_paging_page_size_size(
@@ -461,7 +467,7 @@ pub async fn dict_list_paging_page_size_size(
 
     let rows = client
         .query(
-            "SELECT id, name, app_name, create_time FROM x_portal_dict WHERE deleted_at IS NULL ORDER BY create_time DESC LIMIT $2::int OFFSET ($1 - 1) * $2",
+            "SELECT id, name, app_name, create_time FROM x_portal_dict WHERE deleted_at IS NULL ORDER BY create_time DESC LIMIT $2::bigint OFFSET ($1 - 1) * $2",
             &[&_page, &_size],
         )
         .await
@@ -479,8 +485,10 @@ pub async fn dict_list_paging_page_size_size(
         })
         .collect();
 
-    let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
+    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
+        ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
+        ("data".to_string(), Value::Array(data)),
+    ])))))
 }
 
 pub async fn dict_list_portal_portalId(
@@ -509,8 +517,10 @@ pub async fn dict_list_portal_portalId(
         })
         .collect();
 
-    let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
+    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
+        ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
+        ("data".to_string(), Value::Array(data)),
+    ])))))
 }
 
 pub async fn dict_id(
@@ -571,8 +581,10 @@ pub async fn file_list_application_applicationFlag(
         })
         .collect();
 
-    let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
+    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
+        ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
+        ("data".to_string(), Value::Array(data)),
+    ])))))
 }
 
 pub async fn file_list_id_next_count(
@@ -584,7 +596,7 @@ pub async fn file_list_id_next_count(
 
     let rows = client
         .query(
-            "SELECT id, name, flag, file_type, creator, create_time FROM x_portal_file WHERE id > $1 ORDER BY id ASC LIMIT $2::int",
+            "SELECT id, name, flag, file_type, creator, create_time FROM x_portal_file WHERE id > $1 ORDER BY id ASC LIMIT $2::bigint",
             &[&id, &count],
         )
         .await
@@ -604,8 +616,10 @@ pub async fn file_list_id_next_count(
         })
         .collect();
 
-    let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
+    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
+        ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
+        ("data".to_string(), Value::Array(data)),
+    ])))))
 }
 
 pub async fn file_list_id_prev_count(
@@ -617,7 +631,7 @@ pub async fn file_list_id_prev_count(
 
     let rows = client
         .query(
-            "SELECT id, name, flag, file_type, creator, create_time FROM x_portal_file WHERE id < $1 ORDER BY id DESC LIMIT $2::int",
+            "SELECT id, name, flag, file_type, creator, create_time FROM x_portal_file WHERE id < $1 ORDER BY id DESC LIMIT $2::bigint",
             &[&id, &count],
         )
         .await
@@ -637,8 +651,10 @@ pub async fn file_list_id_prev_count(
         })
         .collect();
 
-    let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
+    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
+        ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
+        ("data".to_string(), Value::Array(data)),
+    ])))))
 }
 
 pub async fn file_flag(
@@ -954,8 +970,10 @@ pub async fn output_list(
         })
         .collect();
 
-    let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
+    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
+        ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
+        ("data".to_string(), Value::Array(data)),
+    ])))))
 }
 
 pub async fn output_flag_select_file(
@@ -1014,8 +1032,10 @@ pub async fn output_portalFlag_select(
         })
         .collect();
 
-    let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
+    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
+        ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
+        ("data".to_string(), Value::Array(data)),
+    ])))))
 }
 
 pub async fn page_list_portal_portalId(
@@ -1046,8 +1066,10 @@ pub async fn page_list_portal_portalId(
         })
         .collect();
 
-    let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
+    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
+        ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
+        ("data".to_string(), Value::Array(data)),
+    ])))))
 }
 
 pub async fn page_id(
@@ -1111,12 +1133,10 @@ pub async fn pageversion_list_page_pageId(
         })
         .collect();
 
-    let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
-        Value::Array(data),
-        count,
-        0,
-    )))
+    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
+        ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
+        ("data".to_string(), Value::Array(data)),
+    ])))))
 }
 
 pub async fn pageversion_id(
@@ -1176,8 +1196,10 @@ pub async fn portal_list(
         })
         .collect();
 
-    let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
+    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
+        ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
+        ("data".to_string(), Value::Array(data)),
+    ])))))
 }
 
 pub async fn portal_list_portalcategory_portalCategory(
@@ -1208,12 +1230,10 @@ pub async fn portal_list_portalcategory_portalCategory(
         })
         .collect();
 
-    let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
-        Value::Array(data),
-        count,
-        0,
-    )))
+    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
+        ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
+        ("data".to_string(), Value::Array(data)),
+    ])))))
 }
 
 pub async fn portal_list_summary(
@@ -1241,12 +1261,10 @@ pub async fn portal_list_summary(
         })
         .collect();
 
-    let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
-        Value::Array(data),
-        count,
-        0,
-    )))
+    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
+        ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
+        ("data".to_string(), Value::Array(data)),
+    ])))))
 }
 
 pub async fn portal_list_summary_portalcategory_portalCategory(
@@ -1275,12 +1293,10 @@ pub async fn portal_list_summary_portalcategory_portalCategory(
         })
         .collect();
 
-    let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
-        Value::Array(data),
-        count,
-        0,
-    )))
+    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
+        ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
+        ("data".to_string(), Value::Array(data)),
+    ])))))
 }
 
 pub async fn portal_list_summary_v2(
@@ -1311,12 +1327,10 @@ pub async fn portal_list_summary_v2(
         })
         .collect();
 
-    let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
-        Value::Array(data),
-        count,
-        0,
-    )))
+    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
+        ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
+        ("data".to_string(), Value::Array(data)),
+    ])))))
 }
 
 pub async fn portal_id(
@@ -1425,8 +1439,10 @@ pub async fn portalcategory_list(
         })
         .collect();
 
-    let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
+    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
+        ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
+        ("data".to_string(), Value::Array(data)),
+    ])))))
 }
 
 pub async fn script_list_manager(
@@ -1456,8 +1472,10 @@ pub async fn script_list_manager(
         })
         .collect();
 
-    let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
+    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
+        ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
+        ("data".to_string(), Value::Array(data)),
+    ])))))
 }
 
 pub async fn script_list_paging_page_size_size(
@@ -1469,7 +1487,7 @@ pub async fn script_list_paging_page_size_size(
 
     let rows = client
         .query(
-            "SELECT id, name, flag, category, creator, create_time FROM x_portal_script WHERE deleted_at IS NULL ORDER BY create_time DESC LIMIT $2::int OFFSET ($1 - 1) * $2",
+            "SELECT id, name, flag, category, creator, create_time FROM x_portal_script WHERE deleted_at IS NULL ORDER BY create_time DESC LIMIT $2::bigint OFFSET ($1 - 1) * $2",
             &[&page, &size],
         )
         .await
@@ -1489,8 +1507,10 @@ pub async fn script_list_paging_page_size_size(
         })
         .collect();
 
-    let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
+    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
+        ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
+        ("data".to_string(), Value::Array(data)),
+    ])))))
 }
 
 pub async fn script_list_portal_portalId(
@@ -1521,8 +1541,10 @@ pub async fn script_list_portal_portalId(
         })
         .collect();
 
-    let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
+    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
+        ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
+        ("data".to_string(), Value::Array(data)),
+    ])))))
 }
 
 pub async fn script_id(
@@ -1583,12 +1605,10 @@ pub async fn scriptversion_list_script_scriptId(
         })
         .collect();
 
-    let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
-        Value::Array(data),
-        count,
-        0,
-    )))
+    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
+        ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
+        ("data".to_string(), Value::Array(data)),
+    ])))))
 }
 
 pub async fn scriptversion_id(
@@ -1648,8 +1668,10 @@ pub async fn templatepage_list(
         })
         .collect();
 
-    let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
+    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
+        ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
+        ("data".to_string(), Value::Array(data)),
+    ])))))
 }
 
 pub async fn templatepage_list_category(
@@ -1674,12 +1696,10 @@ pub async fn templatepage_list_category(
         })
         .collect();
 
-    let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
-        Value::Array(data),
-        count,
-        0,
-    )))
+    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
+        ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
+        ("data".to_string(), Value::Array(data)),
+    ])))))
 }
 
 pub async fn templatepage_id(
@@ -1744,8 +1764,10 @@ pub async fn widget_list_portal_portalId(
         })
         .collect();
 
-    let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
+    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
+        ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
+        ("data".to_string(), Value::Array(data)),
+    ])))))
 }
 
 pub async fn widget_id(
@@ -1992,8 +2014,13 @@ pub async fn update_templatepage_category(
             ]))
         })
         .collect();
-    let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("category".to_string(), Value::String(category)),
+            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
+            ("data".to_string(), Value::Array(data)),
+        ]),
+    ))))
 }
 
 pub async fn delete_templatepage(
