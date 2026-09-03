@@ -1,0 +1,57 @@
+x_processplatform_service_processing: Rust=186 Java=127 Miss=126 Cov=32.3%
+  MISS:DELETE /applicationdict/data
+  MISS:DELETE /attachment
+  MISS:DELETE /attachment/work
+  MISS:DELETE /attachment/workcompleted
+  MISS:DELETE /job
+  ...and 121 more
+x_organization_assemble_personal: Rust=3 Java=76 Miss=76 Cov=-2433.3%
+  MISS:DELETE /custom
+  MISS:DELETE /definition
+  MISS:DELETE /empower
+  MISS:DELETE /empower/manager
+  MISS:DELETE /empowerlog
+  ...and 71 more
+x_processplatform_assemble_designer: Rust=112 Java=118 Miss=118 Cov=-5.4%
+  MISS:DELETE /application
+  MISS:DELETE /applicationdict
+  MISS:DELETE /file
+  MISS:DELETE /form
+  MISS:DELETE /item-access/delete/process/path
+  ...and 113 more
+x_portal_assemble_designer: Rust=63 Java=64 Miss=64 Cov=-1.6%
+  MISS:DELETE /dict
+  MISS:DELETE /file
+  MISS:DELETE /page
+  MISS:DELETE /portal
+  MISS:DELETE /script
+  ...and 59 more
+x_organization_assemble_authentication: Rust=47 Java=53 Miss=53 Cov=-12.8%
+  MISS:DELETE /authentication
+  MISS:GET /andfx/moa/sso/token/enter
+  MISS:GET /authentication
+  MISS:GET /authentication/bind
+  MISS:GET /authentication/bind/meta
+  ...and 48 more
+x_file_assemble_control: Rust=176 Java=105 Miss=18 Cov=89.8%
+  MISS:DELETE /file
+  MISS:DELETE /file/clean/unused/referencetype/cmsdocument/manage
+  MISS:DELETE /file/referencetype/reference
+  MISS:GET /file
+  MISS:GET /file/binary/base64
+  ...and 13 more
+x_query_service_processing: Rust=18 Java=24 Miss=24 Cov=-33.3%
+  MISS:GET /neural/generate/model
+  MISS:GET /neural/learn/model
+  MISS:GET /neural/list/calculate/model/work
+  MISS:GET /neural/stop/generating/model
+  MISS:GET /neural/stop/learning/model
+  ...and 19 more
+x_jpush_assemble_control: Rust=37 Java=9 Miss=0 Cov=100.0%
+x_component_assemble_control: Rust=14 Java=7 Miss=4 Cov=71.4%
+  MISS:DELETE /component/delete/all
+  MISS:GET /component
+  MISS:GET /component/list/all
+  MISS:GET /status/list
+x_calendar_assemble_control: Rust=36 Java=31 Miss=0 Cov=100.0%
+TOTAL: Rust=692 Java=614 Match=301 Miss=483 Cover=30.2%
