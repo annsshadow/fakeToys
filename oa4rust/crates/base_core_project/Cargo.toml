@@ -1,0 +1,10 @@
+[package]
+name = \"base_core_project\"
+version = \"0.1.0\"
+edition = \"2021\"
+
+[dependencies]
+axum = { workspace = true }
+deadpool-postgres = { workspace = true }
+serde_json = { workspace = true }
+shared = { path = \"../shared\" }
