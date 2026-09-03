@@ -24,7 +24,7 @@ pub fn router(pool: deadpool_postgres::Pool) -> axum::Router {
         .route("/jaxrs/calendar_assemble_control/calendar/manager/list/with/person/{id}", get(crate::u2::calendar_manager_list_with_person))
         .route("/jaxrs/calendar_assemble_control/calendar/{id}", delete(crate::u2::calendar_delete))
         .route("/jaxrs/calendar_assemble_control/calendar/{id}", get(crate::u2::calendar_get))
-        .route("/jaxrs/calendar_assemble_control/event", post(crate::u2::event_create))
+        .route("/jaxrs/calendar_assemble_control/event", post(crate::u2::event_create).put(crate::u2::event_update_all))
         .route("/jaxrs/calendar_assemble_control/event/after/{id}", delete(crate::u2::event_delete_after))
         .route("/jaxrs/calendar_assemble_control/event/all/{id}", delete(crate::u2::event_delete_all))
         .route("/jaxrs/calendar_assemble_control/event/list/filter", put(crate::u2::event_list_filter))

@@ -28,6 +28,8 @@ pub fn router(pool: deadpool_postgres::Pool) -> axum::Router {
         .route("/jaxrs/component/assemble/control/component/delete/all", delete(component_delete_all))
         .route("/jaxrs/component_assemble_control/component/{id}", delete(delete_component))
         .route("/jaxrs/component_assemble_control/component/{id}", put(save_component))
-        .layer(Extension(pool))
+        
+        .route("/jaxrs/component/list/all", get(list_components))
+        .route("/jaxrs/component/{flag}", get(get_component)).layer(Extension(pool))
 }
 
