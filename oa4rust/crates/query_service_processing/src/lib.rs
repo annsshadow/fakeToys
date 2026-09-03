@@ -10,6 +10,7 @@ use shared::{error::AppError, response::ActionResult};
 
 /// 查询服务处理模块
 /// 提供查询服务的业务逻辑处理
+pub const JAVA_BASE: &str = "/jaxrs/query_service_processing";
 pub mod routes;
 pub mod u2;
 

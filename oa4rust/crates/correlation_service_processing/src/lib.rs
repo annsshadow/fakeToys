@@ -7,6 +7,7 @@ use serde::Deserialize;
 use serde_json::Value;
 use shared::{error::AppError, response::ActionResult};
 
+pub const JAVA_BASE: &str = "/jaxrs/correlation_service_processing";
 pub mod routes;
 pub mod u2;
 
