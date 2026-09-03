@@ -3,6 +3,7 @@ use deadpool_postgres::Pool;
 use serde_json::Value;
 use shared::{error::AppError, response::ActionResult};
 
+pub const JAVA_BASE: &str = "/jaxrs/organization_assemble_personal";
 pub mod routes;
 
 #[cfg(test)]

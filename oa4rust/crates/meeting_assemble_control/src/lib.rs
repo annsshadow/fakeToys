@@ -8,6 +8,7 @@ use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use shared::{error::AppError, response::ActionResult};
 
+pub const JAVA_BASE: &str = "/jaxrs/meeting_assemble_control";
 pub mod routes;
 
 #[cfg(test)]

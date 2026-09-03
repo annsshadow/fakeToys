@@ -14,6 +14,7 @@ pub mod endpoints_org;
 pub mod endpoints_org2;
 pub mod endpoints_person2;
 pub mod endpoints_unit2;
+pub const JAVA_BASE: &str = "/jaxrs/organization_assemble_express";
 pub mod routes;
 
 #[cfg(test)]
