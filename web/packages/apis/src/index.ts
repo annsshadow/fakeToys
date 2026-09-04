@@ -91,7 +91,7 @@ export const processApi = {
   workStart: (data: unknown) => api.post('/jaxrs/processplatform/assemble/surface/work/start', data),
   taskList: (page: number, size: number) =>
     api.post<PagedResponse<unknown>>(`/jaxrs/processplatform/assemble/surface/task/list/paging/${page}/${size}`),
-  taskHandle: (taskId: string, action: string, data?: unknown) =>
+  taskHandle: (taskId: string, action: string, data?: Record<string, unknown>) =>
     api.post(`/jaxrs/processplatform/assemble/surface/task/${taskId}/handle`, { action, ...data }),
   dataList: (page: number, size: number, processId?: string) =>
     api.post<PagedResponse<unknown>>(`/jaxrs/processplatform/assemble/surface/data/list/paging/${page}/${size}`, { processId }),
@@ -341,3 +341,451 @@ const additionalApis = {
 
 // Merge into apis export
 Object.assign(apis, additionalApis);
+
+// ─────────────────────────────────────────────────────────────
+// 工作流深化 (processplatform service/processing)
+// ─────────────────────────────────────────────────────────────
+export const processServiceApi = {
+  taskList: (page: number, size: number) =>
+    api.post(`/jaxrs/processplatform/service/processing/task/list/paging/${page}/${size}`, {}),
+  workList: (page: number, size: number) =>
+    api.post(`/jaxrs/processplatform/service/processing/work/list/paging/${page}/${size}`, {}),
+  applicationDict: (flag: string) =>
+    api.get(`/jaxrs/processplatform/service/processing/applicationdict/${flag}`),
+};
+
+// ─────────────────────────────────────────────────────────────
+// 查询视图 (queryview — 119 routes)
+// ─────────────────────────────────────────────────────────────
+export const queryViewApi = {
+  list: (queryFlag: string) => api.get(`/jaxrs/queryview/list/${queryFlag}`),
+  listAll: () => api.get('/jaxrs/queryview/list'),
+  execute: (view: string, params?: Record<string, string>) =>
+    api.post(`/jaxrs/queryview/execute/${view}`, params ?? {}),
+  executeV2: (view: string, params?: unknown) =>
+    api.post(`/jaxrs/queryview/execute/v2/${view}`, params),
+  bundle: (view: string) => api.get(`/jaxrs/queryview/bundle/${view}`),
+  bundleV2: (view: string) => api.post(`/jaxrs/queryview/bundle/v2/${view}`, {}),
+  excel: (view: string) => api.get(`/jaxrs/queryview/excel/${view}`),
+  flag: (viewFlag: string) => api.get(`/jaxrs/queryview/flag/${viewFlag}`),
+  importModelList: (query: string, flag: string) =>
+    api.get(`/jaxrs/queryview/importmodel/list/${query}/${flag}`),
+  importModelExecute: (data: unknown) =>
+    api.post('/jaxrs/queryview/importmodel/execute', data),
+  moreLikeThis: (params: unknown) =>
+    api.post('/jaxrs/queryview/morelikethis', params),
+  neural: (params: unknown) =>
+    api.post('/jaxrs/queryview/neural', params),
+  search: (keyword: string) =>
+    api.get('/jaxrs/queryview/search', { params: { keyword } }),
+  stat: (params: unknown) =>
+    api.post('/jaxrs/queryview/stat', params),
+  statement: (params: unknown) =>
+    api.post('/jaxrs/queryview/statement', params),
+  tableList: (page: number, size: number) =>
+    api.post(`/jaxrs/queryview/table/list/paging/${page}/${size}`, {}),
+  tableRow: (flag: string, rowId: string) =>
+    api.get(`/jaxrs/queryview/table/row/${flag}/${rowId}`),
+  viewDetail: (id: string) => api.get(`/jaxrs/queryview/view/${id}`),
+  viewList: (page: number, size: number) =>
+    api.post(`/jaxrs/queryview/view/list/paging/${page}/${size}`, {}),
+};
+
+// ─────────────────────────────────────────────────────────────
+// 程序中心 (program_center — 319 routes)
+// ─────────────────────────────────────────────────────────────
+export const programCenterApi = {
+  // Agent 管理
+  agentList: () => api.get('/jaxrs/program_center/agent/list'),
+  agentCreate: (data: unknown) => api.post('/jaxrs/program_center/agent/create', data),
+  agentGet: (flag: string) => api.get(`/jaxrs/program_center/agent/${flag}`),
+  agentSave: (id: string, data: unknown) => api.put(`/jaxrs/program_center/agent/save/${id}`, data),
+  agentEnable: (flag: string) => api.post(`/jaxrs/program_center/agent/${flag}/enable`, null),
+  agentDisable: (flag: string) => api.post(`/jaxrs/program_center/agent/${flag}/disable`, null),
+  // Application 管理
+  appList: () => api.get('/jaxrs/program_center/application/list'),
+  appCreate: (data: unknown) => api.post('/jaxrs/program_center/application/create', data),
+  appSave: (id: string, data: unknown) => api.put(`/jaxrs/program_center/application/save/${id}`, data),
+  // AppStyle 样式
+  appStyleCurrent: () => api.get('/jaxrs/program_center/appstyle/current'),
+  appStyleUpdate: (data: unknown) => api.put('/jaxrs/program_center/appstyle/current/update', data),
+  appStyleImage: (appId: string) => api.get(`/jaxrs/program_center/appstyle/image/application/top/${appId}`),
+  // Script 脚本
+  scriptList: () => api.get('/jaxrs/program_center/script/list'),
+  scriptGet: (flag: string) => api.get(`/jaxrs/program_center/script/${flag}`),
+  // Dict 字典
+  dictList: () => api.get('/jaxrs/program_center/dict/list'),
+  dictCreate: (data: unknown) => api.post('/jaxrs/program_center/dict/create', data),
+  // Config 配置
+  configList: () => api.get('/jaxrs/program_center/config/list'),
+  configGet: (key: string) => api.get(`/jaxrs/program_center/config/${key}`),
+  // Market 市场
+  marketList: (page: number, size: number) =>
+    api.post(`/jaxrs/program_center/market/list/paging/${page}/${size}`, {}),
+  marketGet: (flag: string) => api.get(`/jaxrs/program_center/market/${flag}`),
+  // Module 模块
+  moduleList: () => api.get('/jaxrs/program_center/module/list'),
+  moduleInvoke: (flag: string, data: unknown) =>
+    api.post(`/jaxrs/program_center/invoke/${flag}`, data),
+  // Schedule 计划任务
+  scheduleList: () => api.get('/jaxrs/program_center/schedule/list'),
+  scheduleCreate: (data: unknown) => api.post('/jaxrs/program_center/schedule/create', data),
+  // Deploy 部署
+  deploy: (data: unknown) => api.post('/jaxrs/program_center/deploy', data),
+  // Code 代码
+  codeList: () => api.get('/jaxrs/program_center/code/list'),
+  // Error Logs
+  promptErrorLogList: (page: number, size: number) =>
+    api.post(`/jaxrs/program_center/prompterrorlog/list/paging/${page}/${size}`, {}),
+  unexpectedErrorLogList: (page: number, size: number) =>
+    api.post(`/jaxrs/program_center/unexpectederrorlog/list/paging/${page}/${size}`, {}),
+  warnLogList: (page: number, size: number) =>
+    api.post(`/jaxrs/program_center/warnlog/list/paging/${page}/${size}`, {}),
+  // Captcha
+  captchaList: () => api.get('/jaxrs/program_center/captcha/list'),
+  captchaCreate: (data: unknown) => api.post('/jaxrs/program_center/captcha/create', data),
+  captchaGet: (id: string) => api.get(`/jaxrs/program_center/captcha/${id}`),
+  // Data Structure
+  dataStructureList: () => api.get('/jaxrs/program_center/datastructure/list'),
+  // SSO callbacks
+  andfxPull: (data: unknown) => api.post('/jaxrs/program_center/andfx/pull', data),
+  dingdingCode: (code: string) => api.get(`/jaxrs/program_center/dingding/code/${code}`),
+  mpweixinMenu: () => api.get('/jaxrs/program_center/mpweixin/menu'),
+  qywxCode: (code: string) => api.get(`/jaxrs/program_center/qiyeweixin/code/${code}`),
+  welinkCode: (code: string) => api.get(`/jaxrs/program_center/welink/code/${code}`),
+  zwdCode: (code: string) => api.get(`/jaxrs/program_center/zhengwudingding/code/${code}`),
+};
+
+// ─────────────────────────────────────────────────────────────
+// 思维导图 (mind — 40 routes)
+// ─────────────────────────────────────────────────────────────
+export const mindApi = {
+  folderTree: () => api.get('/jaxrs/mind/folder/tree/my'),
+  folderList: () => api.get('/jaxrs/mind/folder/list'),
+  folderDetail: (id: string) => api.get(`/jaxrs/mind/folder/${id}`),
+  folderSave: (data: unknown) => api.post('/jaxrs/mind/assemble/control/folder/save', data),
+  folderMove: (folderId: string, data: unknown) =>
+    api.post(`/jaxrs/mind/assemble/control/folder/move/${folderId}`, data),
+  mindList: (id: string, page: number) =>
+    api.get(`/jaxrs/mind/mind/list/${id}/${page}`),
+  mindDetail: (id: string) => api.get(`/jaxrs/mind/mind/${id}`),
+  mindSave: (data: unknown) => api.post('/jaxrs/mind/assemble/control/mind/save', data),
+  mindVersionList: (id: string) =>
+    api.get(`/jaxrs/mind/mind/list/${id}/version`),
+  mindVersion: (id: string, version: string) =>
+    api.get(`/jaxrs/mind/mind/version/${id}/${version}`),
+  mindFilterList: (id: string, page: number) =>
+    api.get(`/jaxrs/mind/assemble/control/mind/filter/list/${id}/next/${page}`),
+  mindRecycled: (id: string, page: number) =>
+    api.get(`/jaxrs/mind/assemble/control/mind/filter/recycle/${id}/next/${page}`),
+  mindRestore: (id: string) =>
+    api.post(`/jaxrs/mind/assemble/control/mind/restore/${id}`, null),
+  mindDelete: (id: string) =>
+    api.delete(`/jaxrs/mind/assemble/control/mind/${id}/destorymind`),
+  mindIcon: (id: string, size: number) =>
+    api.get(`/jaxrs/mind/assemble/control/mind/${id}/icon/size/${size}`),
+  mindShare: (id: string) =>
+    api.post(`/jaxrs/mind/assemble/control/mind/share/${id}`, null),
+  mindUnshare: (id: string) =>
+    api.post(`/jaxrs/mind/assemble/control/mind/share/${id}/cancel`, null),
+  mindView: (id: string) => api.get(`/jaxrs/mind/assemble/control/mind/view/${id}`),
+  config: () => api.get('/jaxrs/mind/assemble/control/config'),
+  configUpdate: (data: unknown) => api.put('/jaxrs/mind/assemble/control/config/update', data),
+};
+
+// ─────────────────────────────────────────────────────────────
+// 文档管理 (document)
+// ─────────────────────────────────────────────────────────────
+export const documentApi = {
+  list: (params?: Record<string, string>) => api.get('/jaxrs/document/list', { params }),
+  detail: (id: string) => api.get(`/jaxrs/document/${id}`),
+  create: (data: unknown) => api.post('/jaxrs/document/document', data),
+  update: (id: string, data: unknown) => api.put(`/jaxrs/document/document/${id}`, data),
+  delete: (id: string) => api.delete(`/jaxrs/document/${id}`),
+  draftList: (page: number, size: number) =>
+    api.post(`/jaxrs/document/draft/list/paging/${page}/${size}`, {}),
+  filterList: (params: unknown) => api.post('/jaxrs/document/filter/list', params),
+  batch: (data: unknown) => api.post('/jaxrs/document/batch', data),
+  categoryList: () => api.get('/jaxrs/document/category/list'),
+  cipherList: (id: string) => api.get(`/jaxrs/document/cipher/list/${id}`),
+  publish: (id: string) => api.post(`/jaxrs/document/publish/${id}`, null),
+  achive: (id: string) => api.post(`/jaxrs/document/achive/${id}`, null),
+};
+
+// ─────────────────────────────────────────────────────────────
+// 日历深化 (calendar_assemble_control)
+// ─────────────────────────────────────────────────────────────
+export const calendarDeepApi = {
+  calendarList: (params?: Record<string, string>) =>
+    api.get('/jaxrs/calendar_assemble_control/calendar/list', { params }),
+  calendarDetail: (id: string) => api.get(`/jaxrs/calendar_assemble_control/calendar/${id}`),
+  calendarCreate: (data: unknown) => api.post('/jaxrs/calendar_assemble_control/calendar', data),
+  calendarUpdate: (id: string, data: unknown) => api.put(`/jaxrs/calendar_assemble_control/calendar/${id}`, data),
+  calendarDelete: (id: string) => api.delete(`/jaxrs/calendar_assemble_control/calendar/${id}`),
+  eventList: (id: string, page: number, size: number) =>
+    api.post(`/jaxrs/calendar_assemble_control/event/list/${id}/paging/${page}/${size}`, {}),
+  eventCreate: (data: unknown) => api.post('/jaxrs/calendar_assemble_control/event', data),
+  eventUpdate: (id: string, data: unknown) => api.put(`/jaxrs/calendar_assemble_control/event/${id}`, data),
+  eventDelete: (id: string) => api.delete(`/jaxrs/calendar_assemble_control/event/${id}`),
+  eventSingle: (id: string) => api.get(`/jaxrs/calendar_assemble_control/event/single/${id}`),
+  eventAfter: (id: string) => api.get(`/jaxrs/calendar_assemble_control/event/after/${id}`),
+  eventAll: (id: string) => api.get(`/jaxrs/calendar_assemble_control/event/all/${id}`),
+  follow: (id: string) => api.post(`/jaxrs/calendar_assemble_control/calendar/follow/${id}`, null),
+  followCancel: (id: string) => api.post(`/jaxrs/calendar_assemble_control/calendar/follow/${id}/cancel`, null),
+  isManager: (id: string) => api.get(`/jaxrs/calendar_assemble_control/calendar/ismanager/${id}`),
+  rfc: (id: string) => api.get(`/jaxrs/calendar_assemble_control/event/rfc/${id}`),
+  setting: () => api.get('/jaxrs/calendar_assemble_control/setting'),
+  settingUpdate: (data: unknown) => api.put('/jaxrs/calendar_assemble_control/setting', data),
+  messageList: () => api.get('/jaxrs/calendar_assemble_control/message/list'),
+};
+
+// ─────────────────────────────────────────────────────────────
+// 考勤深化
+// ─────────────────────────────────────────────────────────────
+export const attendanceDeepApi = {
+  adminList: () => api.get('/jaxrs/attendance/assemble/control/attendanceadmin/list/all'),
+  adminGet: (id: string) => api.get(`/jaxrs/attendance/assemble/control/attendanceadmin/${id}`),
+  adminUpdate: (id: string, data: unknown) => api.put(`/jaxrs/attendance/assemble/control/attendanceadmin/${id}`, data),
+  appealList: () => api.get('/jaxrs/attendance/appeal/list'),
+  appealSubmit: (data: unknown) => api.post('/jaxrs/attendance/appeal/submit', data),
+  appealArchive: (id: string) => api.post(`/jaxrs/attendance/appeal/archive/${id}`, null),
+  appealAudit: (id: string, data: unknown) => api.put(`/jaxrs/attendance/appeal/audit/${id}`, data),
+  detailAnalyse: (startDate: string, endDate: string) =>
+    api.get(`/jaxrs/attendance/assemble/control/attendancedetail/analyse/${startDate}/${endDate}`),
+  detailArchive: (id: string) => api.post(`/jaxrs/attendance/assemble/control/attendancedetail/archive/${id}`, null),
+  detailCheck: (cycleYear: number, cycleMonth: number) =>
+    api.get(`/jaxrs/attendance/assemble/control/attendancedetail/checkDetailWithPersonByCycle/${cycleYear}/${cycleMonth}`),
+  statisticalList: (params: unknown) => api.post('/jaxrs/attendance/statistical/list', params),
+  ruleList: () => api.get('/jaxrs/attendance/rule/list'),
+  employeeList: (params: unknown) => api.post('/jaxrs/attendance/employee/list', params),
+};
+
+// ─────────────────────────────────────────────────────────────
+// 查询设计器深化
+// ─────────────────────────────────────────────────────────────
+export const queryDesignerApi = {
+  create: (data: unknown) => api.post('/jaxrs/query/assemble/designer/create', data),
+  get: (id: string) => api.get(`/jaxrs/query/assemble/designer/get/${id}`),
+  delete: (id: string) => api.delete(`/jaxrs/query/assemble/designer/delete/${id}`),
+  search: (keyword: string) => api.get('/jaxrs/query/assemble/designer/designer/search', { params: { keyword } }),
+  entityProperties: (query: string, category: string, entityCategory: string) =>
+    api.get(`/jaxrs/query/assemble/designer/entity/entity/properties/${query}/${category}/${entityCategory}`),
+  iconGet: (query: string, flag: string) =>
+    api.get(`/jaxrs/query/assemble/designer/icon/${query}/${flag}`),
+  iconSet: (query: string, flag: string, data: unknown) =>
+    api.put(`/jaxrs/query/assemble/designer/icon/set/${query}/${flag}`, data),
+  idCount: (count: number) => api.get(`/jaxrs/query/assemble/designer/id/${count}`),
+  importModel: (data: unknown) => api.post('/jaxrs/query/assemble/designer/importmodel', data),
+  importModelList: (query: string, flag: string) =>
+    api.get(`/jaxrs/query/assemble/designer/importmodel/list/${query}/${flag}`),
+  importModelEdit: (id: string, data: unknown) => api.put(`/jaxrs/query/assemble/designer/importmodel/edit/${id}`, data),
+  importModelDelete: (id: string) => api.delete(`/jaxrs/query/assemble/designer/importmodel/delete/${id}`),
+  bundle: (view: string, id: string) => api.get(`/jaxrs/query/assemble/designer/bundle/${view}/${id}`),
+  surfaceList: () => api.get('/jaxrs/query/assemble/surface/list'),
+};
+
+// ─────────────────────────────────────────────────────────────
+// 附件深化
+// ─────────────────────────────────────────────────────────────
+export const attachmentDeepApi = {
+  list: (id: string) => api.get(`/jaxrs/attachment/list/${id}`),
+  download: (id: string) => api.get(`/jaxrs/attachment/download/${id}`),
+  upload: (formData: FormData) => api.upload('/jaxrs/attachment/upload', formData),
+  update: (id: string, data: unknown) => api.put(`/jaxrs/attachment/update/${id}`, data),
+  exist: (id: string) => api.get(`/jaxrs/attachment2/exist/${id}`),
+  upload2: (formData: FormData) => api.upload('/jaxrs/attachment2/upload', formData),
+  userFiles: () => api.get('/jaxrs/attachment2/user'),
+};
+
+// ─────────────────────────────────────────────────────────────
+// 回收站
+// ─────────────────────────────────────────────────────────────
+export const recycleApi = {
+  list: () => api.get('/jaxrs/recycle/list'),
+  delete: (id: string) => api.delete(`/jaxrs/recycle/${id}`),
+  empty: () => api.post('/jaxrs/recycle/empty', null),
+  resume: (id: string) => api.post(`/jaxrs/recycle/resume/${id}`, null),
+};
+
+// ─────────────────────────────────────────────────────────────
+// 服务器管理
+// ─────────────────────────────────────────────────────────────
+export const serverApi = {
+  execute: (command: string) => api.post('/jaxrs/server/execute', { command }),
+  license: () => api.get('/jaxrs/server/license'),
+  stop: () => api.post('/jaxrs/server/stop', null),
+};
+
+// ─────────────────────────────────────────────────────────────
+// 单元管理
+// ─────────────────────────────────────────────────────────────
+export const unitApi = {
+  list: () => api.get('/jaxrs/unit/list'),
+  check: (flag: string) => api.get(`/jaxrs/unit/check/${flag}`),
+  identity: (flag: string) => api.get(`/jaxrs/unit/identity/${flag}`),
+};
+
+// ─────────────────────────────────────────────────────────────
+// 表单管理
+// ─────────────────────────────────────────────────────────────
+export const formApi = {
+  list: (params?: Record<string, string>) => api.get('/jaxrs/form/list', { params }),
+  filter: (params: unknown) => api.post('/jaxrs/form/filter', params),
+  detail: (id: string) => api.get(`/jaxrs/form/${id}`),
+  v2List: () => api.get('/jaxrs/form/v2/list'),
+};
+
+// ─────────────────────────────────────────────────────────────
+// 视图管理
+// ─────────────────────────────────────────────────────────────
+export const viewApi = {
+  list: () => api.get('/jaxrs/view/list'),
+  detail: (id: string) => api.get(`/jaxrs/view/${id}`),
+  viewData: (id: string, params?: unknown) =>
+    api.post(`/jaxrs/view/viewdata/${id}`, params ?? {}),
+};
+
+// ─────────────────────────────────────────────────────────────
+// 文件信息
+// ─────────────────────────────────────────────────────────────
+export const fileInfoApi = {
+  list: () => api.get('/jaxrs/fileinfo/list/all'),
+  listByDoc: (docId: string) => api.get(`/jaxrs/fileinfo/list/document/${docId}`),
+  listFilter: (params: unknown) => api.post('/jaxrs/fileinfo/list/filter', params),
+  detail: (id: string) => api.get(`/jaxrs/fileinfo/${id}`),
+  download: (id: string) => api.get(`/jaxrs/fileinfo/download/document/${id}`),
+  edit: (id: string, docId: string, data: unknown) =>
+    api.put(`/jaxrs/fileinfo/edit/${id}/doc/${docId}`, data),
+  copy: (docId: string) => api.post(`/jaxrs/fileinfo/copy/to/doc/${docId}`, null),
+  replace: (docId: string) => api.post(`/jaxrs/fileinfo/replace/to/doc/${docId}`, null),
+  upload: (formData: FormData, docId: string) =>
+    api.upload(`/jaxrs/fileinfo/upload/document/${docId}`, formData),
+  updateContent: (id: string, data: unknown) =>
+    api.put(`/jaxrs/fileinfo/update/${id}/content`, data),
+  batchDownload: (docId: string, site: string) =>
+    api.get(`/jaxrs/fileinfo/batch/download/doc/${docId}/site/${site}`),
+};
+
+// ─────────────────────────────────────────────────────────────
+// 授权日志 / 推荐 / 评论
+// ─────────────────────────────────────────────────────────────
+export const empowerLogApi = {
+  list: (p?: Record<string, string>) => api.get('/jaxrs/empowerlog/list', { params: p }),
+};
+export const commendApi = {
+  list: () => api.get('/jaxrs/commend/list'),
+  detail: (id: string) => api.get(`/jaxrs/commend/${id}`),
+};
+export const commentApi = {
+  list: () => api.get('/jaxrs/comment/list'),
+  detail: (id: string) => api.get(`/jaxrs/comment/${id}`),
+};
+export const complexApi = {
+  folderList: () => api.get('/jaxrs/complex/folder/list'),
+  topFiles: () => api.get('/jaxrs/complex/top'),
+};
+export const componentApi = {
+  list: () => api.get('/jaxrs/component_assemble_control/component/list'),
+  create: (data: unknown) => api.post('/jaxrs/component_assemble_control/component/create', data),
+  get: (id: string) => api.get(`/jaxrs/component_assemble_control/component/${id}`),
+  save: (id: string, data: unknown) => api.put(`/jaxrs/component_assemble_control/component/save/${id}`, data),
+  delete: (id: string) => api.delete(`/jaxrs/component_assemble_control/component/delete/${id}`),
+};
+export const configApi = {
+  isSet: (k: string) => api.get(`/jaxrs/config/is/${k}`),
+  systemConfig: () => api.get('/jaxrs/config/system'),
+};
+export const editorApi = { list: () => api.get('/jaxrs/editor/list') };
+export const externalDataSourceApi = {
+  list: () => api.get('/jaxrs/externaldatasources/list'),
+  check: (d: unknown) => api.post('/jaxrs/externaldatasources/check', d),
+  validate: (d: unknown) => api.post('/jaxrs/externaldatasources/validate', d),
+  set: (d: unknown) => api.post('/jaxrs/externaldatasources/set', d),
+  cancel: () => api.post('/jaxrs/externaldatasources/set/cancel', null),
+};
+export const groupApi = {
+  list: (f?: string) => api.get(f ? `/jaxrs/group/${f}` : '/jaxrs/group/list'),
+  has: (f: string) => api.get(`/jaxrs/group/has/${f}`),
+};
+export const identityApi = {
+  list: () => api.get('/jaxrs/identity/list'),
+  detail: (id: string) => api.get(`/jaxrs/identity/${id}`),
+};
+export const imageApi = {
+  encode: (d: unknown) => api.post('/jaxrs/image/encode', d),
+  resize: (d: unknown) => api.post('/jaxrs/image/resize', d),
+};
+export const uuidApi = { random: () => api.get('/jaxrs/uuid/random') };
+export const personAttributeApi = {
+  list: () => api.get('/jaxrs/personattribute/list'),
+  append: (d: unknown) => api.post('/jaxrs/personattribute/append', d),
+  set: (d: unknown) => api.put('/jaxrs/personattribute/set', d),
+};
+export const unitAttributeApi = {
+  list: () => api.get('/jaxrs/unitattribute/list'),
+  append: (d: unknown) => api.post('/jaxrs/unitattribute/append', d),
+  set: (d: unknown) => api.put('/jaxrs/unitattribute/set', d),
+};
+export const unitDutyApi = {
+  find: (n: string) => api.get(`/jaxrs/unitduty/find/${n}`),
+  list: () => api.get('/jaxrs/unitduty/list'),
+};
+export const viewCategoryApi = {
+  list: () => api.get('/jaxrs/viewcategory/list'),
+  detail: (id: string) => api.get(`/jaxrs/viewcategory/${id}`),
+};
+export const viewFieldConfigApi = {
+  list: () => api.get('/jaxrs/viewfieldconfig/list'),
+  detail: (id: string) => api.get(`/jaxrs/viewfieldconfig/${id}`),
+};
+export const templateFormApi = {
+  list: () => api.get('/jaxrs/templateform/list'),
+  detail: (id: string) => api.get(`/jaxrs/templateform/${id}`),
+};
+export const exportDetailApi = { appInfo: () => api.get('/jaxrs/export/appInfo') };
+export const importDetailApi = { appInfo: () => api.get('/jaxrs/import/appInfo') };
+export const categoryDetailApi = {
+  alias: (a: string) => api.get(`/jaxrs/categoryinfo/alias/${a}`),
+  bind: (categoryId: string, view: string) => api.post(`/jaxrs/categoryinfo/bind/${categoryId}/view/${view}`, null),
+  erase: (id: string) => api.delete(`/jaxrs/categoryinfo/erase/category/${id}`),
+  extContent: () => api.get('/jaxrs/categoryinfo/extContent'),
+  filterList: (id: string, count: number, appId: string) =>
+    api.get(`/jaxrs/categoryinfo/filter/list/${id}/next/${count}/app/${appId}`),
+  flag: () => api.get('/jaxrs/categoryinfo/flag'),
+  list: () => api.get('/jaxrs/categoryinfo/list'),
+  detail: (id: string) => api.get(`/jaxrs/categoryinfo/${id}`),
+};
+export const appConfigApi = { get: (appId: string) => api.get(`/jaxrs/appconfig/${appId}`) };
+export const appDictApi = {
+  list: (flag: string) => api.get(`/jaxrs/surface/appdict/${flag}`),
+  appInfo: (flag: string, appId: string) => api.get(`/jaxrs/surface/appdict/${flag}/appInfo/${appId}`),
+};
+
+// ─────────────────────────────────────────────────────────────
+// 统一导出包（供视图使用）
+// ─────────────────────────────────────────────────────────────
+export const oa4rustApis = {
+  // 原有
+  auth: authApi, org: orgApi, process: processApi, portal: portalApi,
+  message: messageApi, im: imApi, file: fileApi, general: generalApi,
+  appInfo: appInfoApi, category: categoryApi, hotpic: hotpicApi,
+  jpush: jpushApi, correlation: correlationApi, share: shareApi,
+  cache: cacheApi, sysResource: sysResourceApi, log: logApi,
+  console: consoleApi, exportApi, importApi, attachment: attachmentApi,
+  anonymous: anonymousApi, data: dataApi,
+  // 新增
+  processService: processServiceApi, queryView: queryViewApi,
+  programCenter: programCenterApi, mind: mindApi, document: documentApi,
+  calendarDeep: calendarDeepApi, attendanceDeep: attendanceDeepApi,
+  queryDesigner: queryDesignerApi, attachmentDeep: attachmentDeepApi,
+  recycle: recycleApi, server: serverApi, unit: unitApi,
+  form: formApi, view: viewApi, fileInfo: fileInfoApi,
+  empowerLog: empowerLogApi, commend: commendApi, comment: commentApi, complex: complexApi, component: componentApi,
+  config: configApi, editor: editorApi, externalDataSource: externalDataSourceApi,
+  group: groupApi, identity: identityApi, image: imageApi, uuid: uuidApi,
+  categoryDetail: categoryDetailApi, appConfig: appConfigApi, appDict: appDictApi,
+  personAttribute: personAttributeApi, unitAttribute: unitAttributeApi,
+  unitDuty: unitDutyApi, viewCategory: viewCategoryApi,
+  viewFieldConfig: viewFieldConfigApi, templateForm: templateFormApi,
+  exportDetail: exportDetailApi, importDetail: importDetailApi,
+};
