@@ -2,7 +2,7 @@
   <div class="mod-view">
     <div class="view-header glass-card">
       <h1>应用管理</h1>
-      <p class="subtitle">接入 /jaxrs/appinfo/*</p>
+      <p class="subtitle">/jaxrs/appinfo/*</p>
     </div>
     <div class="content-panel glass-card">
       <div class="stats-row">
@@ -11,34 +11,75 @@
           <div class="stat-label">{{s.label}}</div>
         </div>
       </div>
+      <div class="list-toolbar">
+        <input v-model="keyword" placeholder="搜索应用..." class="search-input" @keyup.enter="doSearch" />
+        <button class="btn-primary" @click="doSearch">搜索</button>
+      </div>
       <div class="list-panel">
-        <div v-if="loading" class="loading"><div class="sk" v-for="i in 6" :key="i"></div></div>
-        <div v-else-if="items.length===0" class="empty"><div class="ei"></div><p>暂无应用管理数据</p></div>
+        <div v-if="loading" class="loading-row"><div class="sk" v-for="i in 5" :key="i"></div></div>
+        <div v-else-if="items.length===0" class="empty"><div class="ei">📱</div><p>暂无应用数据</p></div>
         <div v-else class="item-grid">
-          <div v-for="item in items" :key="item.id" class="item-card">
-            <div class="ic"></div>
+          <div v-for="item in items" :key="item.id" class="item-card glass-card" @click="viewDetail(item)">
+            <div class="ic">{{ item.icon || '📱' }}</div>
             <div class="ib">
-              <div class="it">{{item.name||item.title||'未命名'}}</div>
-              <div class="im">{{item.desc||item.content||''}}</div>
+              <div class="it">{{ item.name || item.title || '未命名' }}</div>
+              <div class="im">{{ item.desc || item.content || item.description || '' }}</div>
+              <div class="meta">ID: {{ item.id }}</div>
             </div>
           </div>
         </div>
       </div>
     </div>
+    <!-- Detail dialog -->
+    <div v-if="detailItem" class="modal-overlay" @click.self="detailItem=null">
+      <div class="modal glass-card">
+        <h3>{{ detailItem.name || detailItem.title }}</h3>
+        <pre class="detail-pre">{{ JSON.stringify(detailItem, null, 2) }}</pre>
+        <button class="btn-close" @click="detailItem=null">关闭</button>
+      </div>
+    </div>
   </div>
 </template>
+
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
+import { api } from '@oa4rust/sdk'
+
+const keyword = ref('')
 const loading = ref(false)
-const items = ref([])
-const stats = ref([
-  {label:'总计',value:0,color:'var(--color-primary)'},
-  {label:'启用',value:0,color:'var(--color-success)'},
-  {label:'禁用',value:0,color:'var(--color-error)'},
-  {label:'今日新增',value:0,color:'var(--color-accent)'},
+const items = ref<any[]>([])
+const detailItem = ref<any | null>(null)
+
+const stats = computed(() => [
+  { label: '总计', value: items.value.length, color: 'var(--color-primary)' },
+  { label: '已启用', value: items.value.filter(i => i.status !== 'disabled').length, color: 'var(--color-success)' },
+  { label: '已禁用', value: items.value.filter(i => i.status === 'disabled').length, color: 'var(--color-error)' },
+  { label: '加载中', value: loading.value ? 1 : 0, color: 'var(--color-warning)' },
 ])
-const icon = ''
+
+async function doSearch() {
+  loading.value = true
+  try {
+    if (keyword.value.trim()) {
+      const r = await api.get('/jaxrs/appinfo/filter', { params: { keyword: keyword.value } })
+      items.value = r.data ?? []
+    } else {
+      const r = await api.get('/jaxrs/appinfo/list')
+      items.value = r.data ?? []
+    }
+  } catch { items.value = [] } finally { loading.value = false }
+}
+
+async function viewDetail(item: any) {
+  try {
+    const r = await api.get(`/jaxrs/appinfo/${item.id}`)
+    detailItem.value = r.data ?? item
+  } catch { detailItem.value = item }
+}
+
+doSearch()
 </script>
+
 <style scoped>
 .mod-view{display:flex;flex-direction:column;gap:16px;height:100%}
 .view-header{padding:16px 24px}
@@ -49,16 +90,28 @@ const icon = ''
 .stat-card{padding:16px;text-align:center}
 .stat-num{font-family:'Orbitron',sans-serif;font-size:28px;font-weight:700}
 .stat-label{font-size:12px;color:var(--text-muted);margin-top:4px}
+.list-toolbar{display:flex;gap:8px}
+.search-input{flex:1;background:var(--bg-elevated);border:1px solid var(--border-subtle);border-radius:var(--radius-md);color:var(--text-primary);padding:8px 12px;font-size:14px}
+.search-input:focus{outline:none;border-color:var(--color-primary)}
+.btn-primary{padding:8px 20px;background:var(--color-primary);color:#000;border:none;border-radius:var(--radius-md);font-size:13px;cursor:pointer;font-weight:600}
+.btn-primary:hover{opacity:0.85}
 .list-panel{flex:1}
-.item-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px}
-.item-card{display:flex;align-items:center;gap:12px;padding:12px 16px;background:var(--bg-elevated);border:1px solid var(--border-subtle);border-radius:var(--radius-md);transition:all var(--transition-fast)}
-.item-card:hover{border-color:var(--border-active);transform:translateX(4px)}
-.ic{font-size:28px}
+.item-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px}
+.item-card{display:flex;align-items:flex-start;gap:12px;padding:14px;cursor:pointer;transition:all var(--transition-fast)}
+.item-card:hover{border-color:var(--color-primary);transform:translateX(4px);box-shadow:var(--shadow-glow)}
+.ic{font-size:28px;flex-shrink:0}
 .ib{flex:1;min-width:0}
-.it{font-size:14px;font-weight:500;color:var(--text-primary)}
+.it{font-size:14px;font-weight:600;color:var(--text-primary)}
 .im{font-size:12px;color:var(--text-muted);margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.empty,.loading{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:40px;color:var(--text-muted);gap:12px}
+.meta{font-size:10px;color:var(--color-primary-deep);margin-top:4px;font-family:'JetBrains Mono',monospace}
+.empty,.loading-row{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:40px;color:var(--text-muted);gap:12px}
 .ei{font-size:48px;opacity:0.4}
-.sk{height:40px;border-radius:var(--radius-md);margin-bottom:6px;background:var(--bg-elevated)}
+.sk{height:40px;border-radius:var(--radius-md);background:var(--bg-elevated);animation:pulse 1.2s ease-in-out infinite}
+@keyframes pulse{0%,100%{opacity:.4}50%{opacity:.8}}
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.7);display:flex;align-items:center;justify-content:center;z-index:100}
+.modal{background:var(--bg-surface);border:1px solid var(--border-subtle);border-radius:var(--radius-lg);padding:24px;max-width:520px;width:90%;max-height:80vh;overflow:auto}
+.modal h3{font-family:'Orbitron',sans-serif;color:var(--color-primary);margin:0 0 12px}
+.detail-pre{background:var(--bg-base);border:1px solid var(--border-subtle);border-radius:var(--radius-md);padding:12px;font-size:12px;color:var(--text-secondary);font-family:'JetBrains Mono',monospace;white-space:pre-wrap;word-break:break-all}
+.btn-close{margin-top:16px;padding:8px 20px;background:transparent;border:1px solid var(--color-primary);color:var(--color-primary);border-radius:var(--radius-md);cursor:pointer}
 @media(max-width:768px){.stats-row{grid-template-columns:repeat(2,1fr)}}
 </style>

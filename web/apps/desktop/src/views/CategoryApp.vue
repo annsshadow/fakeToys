@@ -2,7 +2,7 @@
   <div class="mod-view">
     <div class="view-header glass-card">
       <h1>分类管理</h1>
-      <p class="subtitle">接入 /jaxrs/category/*</p>
+      <p class="subtitle">/jaxrs/categoryinfo/*</p>
     </div>
     <div class="content-panel glass-card">
       <div class="stats-row">
@@ -12,14 +12,15 @@
         </div>
       </div>
       <div class="list-panel">
-        <div v-if="loading" class="loading"><div class="sk" v-for="i in 6" :key="i"></div></div>
-        <div v-else-if="items.length===0" class="empty"><div class="ei"></div><p>暂无分类管理数据</p></div>
+        <div v-if="loading" class="loading-row"><div class="sk" v-for="i in 6" :key="i"></div></div>
+        <div v-else-if="items.length===0" class="empty"><div class="ei">📂</div><p>暂无分类数据</p></div>
         <div v-else class="item-grid">
-          <div v-for="item in items" :key="item.id" class="item-card">
-            <div class="ic"></div>
+          <div v-for="item in items" :key="item.id" class="item-card glass-card">
+            <div class="ic">📁</div>
             <div class="ib">
-              <div class="it">{{item.name||item.title||'未命名'}}</div>
-              <div class="im">{{item.desc||item.content||''}}</div>
+              <div class="it">{{ item.name || item.title || item.categoryName || '未命名' }}</div>
+              <div class="im">{{ item.desc || item.description || item.alias || '' }}</div>
+              <div class="meta">flag: {{ item.flag || item.id }}</div>
             </div>
           </div>
         </div>
@@ -27,18 +28,32 @@
     </div>
   </div>
 </template>
+
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
+import { api } from '@oa4rust/sdk'
+
 const loading = ref(false)
-const items = ref([])
-const stats = ref([
-  {label:'总计',value:0,color:'var(--color-primary)'},
-  {label:'启用',value:0,color:'var(--color-success)'},
-  {label:'禁用',value:0,color:'var(--color-error)'},
-  {label:'今日新增',value:0,color:'var(--color-accent)'},
+const items = ref<any[]>([])
+
+const stats = computed(() => [
+  { label: '总计', value: items.value.length, color: 'var(--color-primary)' },
+  { label: '有效', value: items.value.length, color: 'var(--color-success)' },
+  { label: '禁用', value: 0, color: 'var(--color-error)' },
+  { label: '加载中', value: loading.value ? 1 : 0, color: 'var(--color-warning)' },
 ])
-const icon = ''
+
+async function load() {
+  loading.value = true
+  try {
+    const r = await api.get('/jaxrs/categoryinfo/list')
+    items.value = r.data ?? []
+  } catch { items.value = [] } finally { loading.value = false }
+}
+
+load()
 </script>
+
 <style scoped>
 .mod-view{display:flex;flex-direction:column;gap:16px;height:100%}
 .view-header{padding:16px 24px}
@@ -50,15 +65,17 @@ const icon = ''
 .stat-num{font-family:'Orbitron',sans-serif;font-size:28px;font-weight:700}
 .stat-label{font-size:12px;color:var(--text-muted);margin-top:4px}
 .list-panel{flex:1}
-.item-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px}
-.item-card{display:flex;align-items:center;gap:12px;padding:12px 16px;background:var(--bg-elevated);border:1px solid var(--border-subtle);border-radius:var(--radius-md);transition:all var(--transition-fast)}
-.item-card:hover{border-color:var(--border-active);transform:translateX(4px)}
+.item-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px}
+.item-card{display:flex;align-items:center;gap:12px;padding:14px;transition:all var(--transition-fast);border:1px solid var(--border-subtle);border-radius:var(--radius-md);background:var(--bg-elevated)}
+.item-card:hover{border-color:var(--color-primary);transform:translateX(4px);box-shadow:var(--shadow-glow)}
 .ic{font-size:28px}
 .ib{flex:1;min-width:0}
-.it{font-size:14px;font-weight:500;color:var(--text-primary)}
+.it{font-size:14px;font-weight:600;color:var(--text-primary)}
 .im{font-size:12px;color:var(--text-muted);margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.empty,.loading{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:40px;color:var(--text-muted);gap:12px}
+.meta{font-size:10px;color:var(--color-primary-deep);margin-top:4px;font-family:'JetBrains Mono',monospace}
+.empty,.loading-row{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:40px;color:var(--text-muted);gap:12px}
 .ei{font-size:48px;opacity:0.4}
-.sk{height:40px;border-radius:var(--radius-md);margin-bottom:6px;background:var(--bg-elevated)}
+.sk{height:40px;border-radius:var(--radius-md);background:var(--bg-elevated);animation:pulse 1.2s ease-in-out infinite}
+@keyframes pulse{0%,100%{opacity:.4}50%{opacity:.8}}
 @media(max-width:768px){.stats-row{grid-template-columns:repeat(2,1fr)}}
 </style>
