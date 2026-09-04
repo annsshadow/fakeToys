@@ -5084,7 +5084,256 @@ function lerp(a: number, b: number, t: number): number { return a + (b - a) * t 
 function easeInOutCubic(t: number): number { return t < 0.5 ? 4*t*t*t : 1 - Math.pow(-2*t+2, 3)/2 }
 function generateNodeId(prefix: string = 'node'): string { return prefix + '_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2, 6) }
 function deepClone<T>(obj: T): T { return JSON.parse(JSON.stringify(obj)) }
-// ── Script Editor Functions ─────────────────────────────────────────
+// ── Script Code Completion ───────────────────────────────────────────
+const scriptKeywords = ['const','let','var','function','return','if','else','for','while','do','switch','case','break','continue','try','catch','finally','throw','new','this','class','extends','import','export','from','default','async','await','yield','typeof','instanceof','in','of','delete','void','null','undefined','true','false']
+const scriptBuiltins = ['console','Math','JSON','Array','Object','String','Number','Boolean','Date','RegExp','Map','Set','Promise','Error','parseInt','parseFloat','setTimeout','setInterval','clearTimeout','clearInterval','fetch','document','window','navigator','localStorage','sessionStorage']
+const scriptFlowVars = ['processId','userId','startTime','endTime','status','result','output','input','context','formData']
+const scriptAutocomplete = ref<Array<{label:string;insertText:string;type:'keyword'|'builtin'|'var'|'method';detail?:string}>>([])
+const showAutocomplete = ref(false)
+const autocompleteIdx = ref(0)
+const currentCompletionWord = ref('')
+function triggerAutocomplete(text: string, pos: number): void {
+  const before = text.substring(0, pos)
+  const wordMatch = before.match(/[\w.]*$/)
+  if (!wordMatch || wordMatch[0].length < 1) { showAutocomplete.value = false; return }
+  currentCompletionWord.value = wordMatch[0]
+  const suggestions: typeof scriptAutocomplete.value = []
+  const word = wordMatch[0].toLowerCase()
+  scriptKeywords.forEach(k => { if (k.startsWith(word) && k !== word) suggestions.push({label:k, insertText:k, type:'keyword', detail:'关键字'}) })
+  scriptBuiltins.forEach(b => { if (b.startsWith(word) && !suggestions.find(s=>s.label===b)) suggestions.push({label:b, insertText:b, type:'builtin', detail:'内置对象'}) })
+  scriptFlowVars.forEach(v => { if (v.startsWith(word) && !suggestions.find(s=>s.label===v)) suggestions.push({label:v, insertText:v, type:'var', detail:'流程变量'}) })
+  if (word.includes('console.')) suggestions.push({label:'log',insertText:'log(',type:'method',detail:'console.log()'});
+  if (word.includes('Math.')) suggestions.push({label:'floor',insertText:'floor(',type:'method',detail:'Math.floor()'});
+  if (word.includes('JSON.')) suggestions.push({label:'parse',insertText:'parse(',type:'method',detail:'JSON.parse()'});
+  if (word.includes('Array.')) suggestions.push({label:'from',insertText:'from(',type:'method',detail:'Array.from()'});
+  if (word.includes('Promise.')) suggestions.push({label:'resolve',insertText:'resolve(',type:'method',detail:'Promise.resolve()'});
+  if (word.includes('Map.')) suggestions.push({label:'get',insertText:'get(',type:'method',detail:'Map.get()'});
+  if (word.includes('Set.')) suggestions.push({label:'has',insertText:'has(',type:'method',detail:'Set.has()'});
+  scriptAutocomplete.value = suggestions.slice(0, 20)
+  autocompleteIdx.value = 0
+  showAutocomplete.value = suggestions.length > 0
+}
+function selectCompletion(idx: number): void {
+  if (idx < 0 || idx >= scriptAutocomplete.value.length) return
+  const item = scriptAutocomplete.value[idx]
+  const textarea = document.querySelector('.se-code-editor') as HTMLTextAreaElement
+  if (!textarea) return
+  const val = textarea.value
+  const pos = textarea.selectionStart
+  const before = val.substring(0, pos)
+  const wordMatch = before.match(/[\w.]*$/)
+  const start = pos - (wordMatch?.length || 0)
+  const newText = val.substring(0, start) + item.insertText + val.substring(pos)
+  scriptCode.value = newText
+  showAutocomplete.value = false
+  setTimeout(() => {
+    textarea.selectionStart = textarea.selectionEnd = start + item.insertText.length
+    textarea.focus()
+  }, 10)
+}
+function closeAutocomplete() { showAutocomplete.value = false }
+function getCompletionKey(e: KeyboardEvent): void {
+  if (!showAutocomplete.value) return
+  if (e.key === 'ArrowDown') { e.preventDefault(); autocompleteIdx.value = Math.min(autocompleteIdx.value + 1, scriptAutocomplete.value.length - 1) }
+  else if (e.key === 'ArrowUp') { e.preventDefault(); autocompleteIdx.value = Math.max(autocompleteIdx.value - 1, 0) }
+  else if (e.key === 'Enter' || e.key === 'Tab') {
+    if (autocompleteIdx.value >= 0 && autocompleteIdx.value < scriptAutocomplete.value.length) { e.preventDefault(); selectCompletion(autocompleteIdx.value) }
+  }
+  else if (e.key === 'Escape') { e.preventDefault(); closeAutocomplete() }
+}
+// ── Syntax Highlighting ──────────────────────────────────────────────
+interface HighlightToken { type: 'keyword'|'string'|'number'|'comment'|'operator'|'builtin'|'variable'|'punctuator'|'plain'; value: string }
+function tokenizeScript(code: string): HighlightToken[] {
+  const tokens: HighlightToken[] = []
+  let i = 0
+  while (i < code.length) {
+    if (code[i] === '/' && code[i+1] === '/') { let j = i; while (j < code.length && code[j] !== '\n') j++; tokens.push({type:'comment',value:code.substring(i,j)}); i=j; continue }
+    if (code[i] === '/' && code[i+1] === '*') { let j = i+2; while (j < code.length && !(code[j]==='*'&&code[j+1]==='/')) j++; j+=2; tokens.push({type:'comment',value:code.substring(i,j)}); i=j; continue }
+    if (code[i]==='"'||code[i]==="'"||code[i]==='`') {
+      const q = code[i]; let j = i+1
+      while (j < code.length && code[j] !== q) { if (code[j]==='\\') j++; j++ }
+      j++; tokens.push({type:'string',value:code.substring(i,j)}); i=j; continue
+    }
+    if (/\d/.test(code[i]) && (i===0||!/\w/.test(code[i-1]))) {
+      let j = i; while (j < code.length && /[\d.xXa-fA-FeE+\-]/.test(code[j])) j++
+      tokens.push({type:'number',value:code.substring(i,j)}); i=j; continue
+    }
+    if (/[a-zA-Z_$]/.test(code[i])) {
+      let j = i; while (j < code.length && /[\w$]/.test(code[j])) j++
+      const word = code.substring(i,j)
+      if (scriptKeywords.includes(word)) tokens.push({type:'keyword',value:word})
+      else if (scriptBuiltins.includes(word)) tokens.push({type:'builtin',value:word})
+      else tokens.push({type:'variable',value:word})
+      i=j; continue
+    }
+    if ('+-*/%=<>!&|^~?:'.includes(code[i])) {
+      let j = i; while (j < code.length && '+-*/%=<>!&|^~?:'.includes(code[j])) j++
+      tokens.push({type:'operator',value:code.substring(i,j)}); i=j; continue
+    }
+    if ('(){}[].,;'.includes(code[i])) { tokens.push({type:'punctuator',value:code[i]}); i++ }
+    else { tokens.push({type:'plain',value:code[i]}); i++ }
+  }
+  return tokens
+}
+function highlightScript(code: string): string {
+  const tokens = tokenizeScript(code)
+  const colorMap: Record<string, string> = {
+    keyword: '#c678dd', string: '#98c379', number: '#d19a66',
+    comment: '#5c6370', operator: '#56b6c2', builtin: '#e5c07b',
+    variable: '#abb2bf', punctuator: '#abb2bf', plain: '#abb2bf'
+  }
+  return tokens.map(t => `<span style="color:${colorMap[t.type]}">${t.value.replace(/</g,'&lt;').replace(/>/g,'&gt;')}</span>`).join('')
+}
+function getHighlightHTML(): string { return highlightScript(scriptCode.value) }
+// ── Parallel Branch SVG Renderer ─────────────────────────────────────
+interface ParticlePoint { x: number; y: number; t: number; speed: number }
+interface BranchParticle { branchId: string; point: ParticlePoint; color: string; size: number }
+const branchParticles = ref<Map<string, BranchParticle[]>>(new Map())
+const showBranchParticles = ref(true)
+const branchParticleSpeed = ref(2)
+function initBranchParticles(): void {
+  branchParticles.value = new Map()
+  const branches = parallelBranches.value
+  branches.forEach(br => {
+    const particles: BranchParticle[] = []
+    for (let i = 0; i < 6; i++) {
+      particles.push({ branchId: br.id, point: { x: 0, y: 0, t: i / 6, speed: 0.004 * branchParticleSpeed.value }, color: br.color, size: 4 + Math.random() * 3 })
+    }
+    branchParticles.value.set(br.id, particles)
+  })
+}
+function updateBranchParticles(): void {
+  branchParticles.value.forEach((particles, branchId) => {
+    const branch = parallelBranches.value.find(b => b.id === branchId)
+    if (!branch || branch.nodes.length < 2) return
+    const nodes = branch.nodes.map(id => processDef.value?.nodes.find(n => n.id === id)).filter(Boolean) as PDNode[]
+    if (nodes.length < 2) return
+    particles.forEach(p => {
+      p.point.t += p.point.speed
+      if (p.point.t > 1) p.point.t -= 1
+      const t = p.point.t
+      const segCount = nodes.length - 1
+      const seg = Math.min(Math.floor(t * segCount), segCount - 1)
+      const segT = (t * segCount) - seg
+      const from = nodes[seg], to = nodes[seg + 1]
+      if (from && to) {
+        const fx = from.x + (from.w||120)/2, fy = from.y + (from.h||50)/2
+        const tx = to.x + (to.w||120)/2, ty = to.y + (to.h||50)/2
+        p.point.x = fx + (tx - fx) * segT
+        p.point.y = fy + (ty - fy) * segT
+      }
+    })
+  })
+}
+// ── Edge Particle System ─────────────────────────────────────────────
+interface EdgeParticle { edgeIdx: number; t: number; speed: number; color: string; size: number }
+const edgeParticles = ref<EdgeParticle[]>([])
+const showEdgeParticles = ref(true)
+const edgeParticleCount = ref(30)
+function initEdgeParticles(): void {
+  edgeParticles.value = []
+  const edges = processDef.value?.edges || []
+  for (let i = 0; i < Math.min(edges.length * 3, edgeParticleCount.value); i++) {
+    edgeParticles.value.push({ edgeIdx: Math.floor(Math.random() * Math.max(edges.length,1)), t: Math.random(), speed: 0.002 + Math.random() * 0.003, color: 'var(--color-primary)', size: 2 + Math.random() * 2 })
+  }
+}
+function updateEdgeParticles(): void {
+  edgeParticles.value.forEach(p => {
+    p.t += p.speed
+    const edges = processDef.value?.edges
+    if (p.t > 1 && edges) { p.t -= 1; p.edgeIdx = Math.floor(Math.random() * edges.length) }
+  })
+}
+function getEdgeParticlePos(p: EdgeParticle): {x:number;y:number}|null {
+  const edges = processDef.value?.edges, nodes = processDef.value?.nodes
+  if (!edges || !nodes || p.edgeIdx >= edges.length) return null
+  const edge = edges[p.edgeIdx]
+  const from = nodes.find(n => n.id === edge.from), to = nodes.find(n => n.id === edge.to)
+  if (!from || !to) return null
+  const fp = { x: from.x + (from.w||120), y: from.y + (from.h||50)/2 }
+  const tp = { x: to.x, y: to.y + (to.h||50)/2 }
+  const dx = tp.x - fp.x, dy = tp.y - fp.y
+  const cx1 = fp.x + dx * 0.5, cy1 = fp.y
+  const cx2 = tp.x - dx * 0.5, cy2 = tp.y
+  const t = p.t, mt = 1-t
+  return { x: mt*mt*mt*fp.x + 3*mt*mt*t*cx1 + 3*mt*t*t*cx2 + t*t*t*tp.x, y: mt*mt*mt*fp.y + 3*mt*mt*t*cy1 + 3*mt*t*t*cy2 + t*t*t*tp.y }
+}
+// ── Cycle Detection Visualization ────────────────────────────────────
+const cycleHighlights = ref<Map<string, string[]>>(new Map())
+const showCycleVisualization = ref(false)
+function visualizeCycles(): void {
+  if (!flowAnalysisResult.value) return
+  const result = flowAnalysisResult.value
+  cycleHighlights.value = new Map()
+  result.cycles.forEach((cycle, ci) => {
+    const color = ['#ef4444','#f59e0b','#ec4899','#a855f7'][ci % 4]
+    cycle.nodes.forEach(nodeId => {
+      const existing = cycleHighlights.value.get(nodeId) || []
+      if (!existing.includes(color)) existing.push(color)
+      cycleHighlights.value.set(nodeId, existing)
+    })
+  })
+  showCycleVisualization.value = true
+}
+function clearCycleHighlights(): void { cycleHighlights.value = new Map(); showCycleVisualization.value = false }
+// ── Archive Diff View ────────────────────────────────────────────────
+interface DiffEntry { type: 'added'|'removed'|'modified'; nodeId: string; label: string; prev?: string; next?: string }
+const diffEntries = ref<DiffEntry[]>([])
+const diffLoading = ref(false)
+function openDiffView(idx1: number, idx2: number): void {
+  if (idx1 >= processArchive.value.length || idx2 >= processArchive.value.length) return
+  diffLoading.value = true
+  diffEntries.value = computeDiff(processArchive.value[idx1], processArchive.value[idx2])
+  diffLeftIdx.value = idx1; diffRightIdx.value = idx2
+  showDiffView.value = true
+  diffLoading.value = false
+}
+// ── Grid Theme System ────────────────────────────────────────────────
+interface GridTheme { name: string; pattern: 'dot'|'line'|'cross'|'diamond'|'hex'; color: string; intensity: number; spacing: number; animated: boolean; speed: number }
+const gridThemes = ref<GridTheme[]>([
+  { name: '标准网格', pattern: 'line', color: 'rgba(0,212,255,0.15)', intensity: 0.5, spacing: 20, animated: false, speed: 1 },
+  { name: '点阵', pattern: 'dot', color: 'rgba(0,212,255,0.1)', intensity: 0.3, spacing: 30, animated: false, speed: 1 },
+  { name: '十字', pattern: 'cross', color: 'rgba(168,85,247,0.15)', intensity: 0.4, spacing: 25, animated: false, speed: 1 },
+  { name: '菱形', pattern: 'diamond', color: 'rgba(34,197,94,0.15)', intensity: 0.35, spacing: 28, animated: false, speed: 1 },
+  { name: '六边', pattern: 'hex', color: 'rgba(245,158,11,0.12)', intensity: 0.3, spacing: 35, animated: false, speed: 1 },
+  { name: '流动网格', pattern: 'line', color: 'rgba(0,255,200,0.2)', intensity: 0.6, spacing: 20, animated: true, speed: 2 },
+  { name: '脉冲点阵', pattern: 'dot', color: 'rgba(236,72,153,0.2)', intensity: 0.5, spacing: 25, animated: true, speed: 1.5 },
+  { name: '暗纹', pattern: 'cross', color: 'rgba(100,116,139,0.08)', intensity: 0.2, spacing: 40, animated: false, speed: 1 },
+])
+const activeGridTheme = ref(0)
+const gridOffset = ref({ x: 0, y: 0 })
+function applyGridTheme(idx: number): void {
+  activeGridTheme.value = idx
+  const theme = gridThemes.value[idx]
+  gridPattern.value = theme.pattern
+  gridIntensity.value = theme.intensity
+  showGridFlow.value = theme.animated
+  gridFlowSpeed.value = theme.speed
+}
+function getGridPatternColor(): string { return gridThemes.value[activeGridTheme.value].color }
+function getGridSpacing(): number { return gridThemes.value[activeGridTheme.value].spacing }
+function getGridIntensity(): number { return gridIntensity.value }
+// ── Animation Frame Loop ─────────────────────────────────────────────
+let animFrameId: number | null = null
+function startAnimationLoop(): void {
+  if (animFrameId) return
+  function loop(): void {
+    if (showGridFlow.value) {
+      const theme = gridThemes.value[activeGridTheme.value]
+      gridOffset.value = { x: (gridOffset.value.x + theme.speed * 0.5) % (theme.spacing || 20), y: (gridOffset.value.y + theme.speed * 0.3) % (theme.spacing || 20) }
+    }
+    if (showBranchParticles.value && parallelBranches.value.length > 0) updateBranchParticles()
+    if (showEdgeParticles.value && processDef.value?.edges) updateEdgeParticles()
+    animFrameId = requestAnimationFrame(loop)
+  }
+  animFrameId = requestAnimationFrame(loop)
+}
+function stopAnimationLoop(): void {
+  if (animFrameId) { cancelAnimationFrame(animFrameId); animFrameId = null }
+}
+onMounted(() => { startAnimationLoop(); initEdgeParticles(); initBranchParticles() })
+onUnmounted(() => { stopAnimationLoop() })
+// ── Script Editor Functions ──────────────────────────────────────────
 </script>
 <style scoped>
 .pd{display:flex;flex-direction:column;height:100%}
