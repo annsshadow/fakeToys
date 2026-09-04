@@ -202,3 +202,12 @@ export const apis = {
 };
 
 export default apis;
+
+// IM API
+export const imApi = {
+  conversationList: () => api.get('/jaxrs/message/assemble/communicate/im/conversation/list/my'),
+  messageList: (p: number, s: number, cid?: string) => api.post(`/jaxrs/message/assemble/communicate/im/msg/list/${p}/${s}`, { conversationId: cid }),
+  messageSend: (d: unknown) => api.post('/jaxrs/message/assemble/communicate/im/msg', d),
+  markRead: (id: string) => api.post(`/jaxrs/message/assemble/communicate/mark_read/${id}`, null),
+  unreadCount: (c?: string) => api.get(`/jaxrs/message/unread/count/${c || 'im'}`),
+};
