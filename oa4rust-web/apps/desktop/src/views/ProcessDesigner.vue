@@ -2537,33 +2537,28 @@
     </div>
 
     <!-- Permission Panel -->
-    <div v-if="showPermissionPanel" class="modal-overlay" @click.self="showPermissionPanel=false">
+<div v-if="showPermissionPanel" class="modal-overlay" @click.self="showPermissionPanel=false">
       <div class="modal glass-card">
         <div class="modal-header"><span>权限管理</span><button class="btn-close" @click="showPermissionPanel=false">×</button></div>
         <div class="modal-body">
           <div class="perm-list">
-            <div v-for="(r,i) in permissionRules" :key="r.id" class="perm-item">
+            <div v-for="r in permissionRules" :key="r.id" class="perm-item">
               <span class="perm-type">{{r.nodeType}}</span>
-              <span class="perm-allowed">允许: {{r.allowedRoles.join(', ') || '无'}}</span>
-              <span class="perm-denied">禁止: {{r.deniedRoles.join(', ') || '无'}}</span>
-              <button class="btn-sm btn-danger" @click="removePermissionRule(i)">删除</button>
+              <span class="perm-roles">允许: {{r.allowedRoles.join(', ') || '无'}}</span>
             </div>
           </div>
-          <button class="btn-sm" @click="addPermissionRule()">+ 添加规则</button>
         </div>
       </div>
     </div>
 
     <!-- Lock Panel -->
-    <div v-if="showLockPanel" class="modal-overlay" @click.self="showLockPanel=false">
+<div v-if="showLockPanel" class="modal-overlay" @click.self="showLockPanel=false">
       <div class="modal glass-card">
         <div class="modal-header"><span>节点锁定</span><button class="btn-close" @click="showLockPanel=false">×</button></div>
         <div class="modal-body">
           <div class="lock-list">
             <div v-for="n in lockedNodes" :key="n.nodeId" class="lock-item">
-              <span class="lock-node">{{n.nodeIdRef}}</span>
-              <span class="lock-by">锁定者: {{n.lockedBy}}</span>
-              <span class="lock-time">{{new Date(n.lockedAt).toLocaleString('zh-CN')}}</span>
+              <span>{{n.nodeId}}</span><span>{{n.lockedBy}}</span>
               <button class="btn-sm" @click="unlockNode(n.nodeId)">解锁</button>
             </div>
           </div>
@@ -2572,16 +2567,14 @@
     </div>
 
     <!-- Publish Panel -->
-    <div v-if="showPublishPanel" class="modal-overlay" @click.self="showPublishPanel=false">
+<div v-if="showPublishPanel" class="modal-overlay" @click.self="showPublishPanel=false">
       <div class="modal glass-card">
         <div class="modal-header"><span>发布管理</span><button class="btn-close" @click="showPublishPanel=false">×</button></div>
         <div class="modal-body">
-          <button class="btn-sm btn-primary" @click="publishProcess()">发布当前版本</button>
+        <button class="btn-sm btn-primary" @click="publishProcess()">发布当前版本</button>
           <div class="pub-list">
             <div v-for="p in publishHistory" :key="p.id" class="pub-item">
-              <span class="pub-ver">{{p.version}}</span>
-              <span class="pub-by">{{p.publishedBy}}</span>
-              <span class="pub-status" :class="'pub-'+p.status">{{p.status}}</span>
+              <span>{{p.version}}</span><span>{{p.status}}</span>
             </div>
           </div>
         </div>
@@ -2589,82 +2582,31 @@
     </div>
 
     <!-- Risk Dashboard Panel -->
-    <div v-if="showRiskDashboard" class="modal-overlay" @click.self="showRiskDashboard=false">
+<div v-if="showRiskDashboard" class="modal-overlay" @click.self="showRiskDashboard=false">
       <div class="modal glass-card">
         <div class="modal-header"><span>风险仪表盘</span><button class="btn-close" @click="showRiskDashboard=false">×</button></div>
         <div class="modal-body">
           <div class="risk-grid">
-            <div class="risk-card critical"><span class="risk-val">{{riskDashboardData.criticalRisks}}</span><span class="risk-label">严重</span></div>
-            <div class="risk-card high"><span class="risk-val">{{riskDashboardData.highRisks}}</span><span class="risk-label">高</span></div>
-            <div class="risk-card medium"><span class="risk-val">{{riskDashboardData.mediumRisks}}</span><span class="risk-label">中</span></div>
-            <div class="risk-card low"><span class="risk-val">{{riskDashboardData.lowRisks}}</span><span class="risk-label">低</span></div>
+            <div class="risk-card critical"><span class="risk-val">{{riskData.critical}}</span><span class="risk-label">严重</span></div>
+            <div class="risk-card high"><span class="risk-val">{{riskData.high}}</span><span class="risk-label">高</span></div>
+            <div class="risk-card medium"><span class="risk-val">{{riskData.medium}}</span><span class="risk-label">中</span></div>
+            <div class="risk-card low"><span class="risk-val">{{riskData.low}}</span><span class="risk-label">低</span></div>
           </div>
-          <div class="risk-total"><span>总风险: {{riskDashboardData.totalRisks}}</span></div>
+          <div class="risk-total">总计: {{riskData.total}}</div>
         </div>
       </div>
     </div>
 
     <!-- Performance Dashboard Panel -->
-    <div v-if="showPerfDashboard" class="modal-overlay" @click.self="showPerfDashboard=false">
+<div v-if="showPerfDashboard" class="modal-overlay" @click.self="showPerfDashboard=false">
       <div class="modal glass-card">
         <div class="modal-header"><span>性能仪表盘</span><button class="btn-close" @click="showPerfDashboard=false">×</button></div>
-        <div class="modal-bd">
+        <div class="modal-body">
           <div class="perf-grid">
-            <div class="perf-card"><span class="perf-val">{{perfDashboardData.avgResponseMs.toFixed(0)}}ms</span><span class="perf-label">平均响应</span></div>
-            <div class="perf-card"><span class="perf-val">{{perfDashboardData.p99Ms.toFixed(0)}}ms</span><span class="perf-label">P99响应</span></div>
-            <div class="perf-card"><span class="perf-val">{{perfDashboardData.throughput.toFixed(0)}}</span><span class="perf-label">吞吐量/s</span></div>
-            <div class="perf-card"><span class="perf-val">{{(perfDashboardData.errorRate*100).toFixed(2)}}%</span><span class="perf-label">错误率</span></div>
-          </div>
-          <div class="perf-bars">
-            <div class="perf-bar-row"><span>CPU</span><div class="perf-bar-wrap"><div class="perf-bar-fill" :style="{width:perfDashboardData.cpuUsage+'%'}"></div></div><span>{{perfDashboardData.cpuUsage.toFixed(0)}}%</span></div>
-            <div class="perf-bar-row"><span>内存</span><div class="perf-bar-wrap"><div class="perf-bar-fill" :style="{width:perfDashboardData.memUsage+'%'}"></div></div><span>{{perfDashboardData.memUsage.toFixed(0)}}%</span></div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Enhanced Heatmap Panel -->
-    <div v-if="showHeatmapEnhanced" class="modal-overlay" @click.self="showHeatmapEnhanced=false">
-      <div class="modal glass-card">
-        <div class="modal-header"><span>增强热力图</span><button class="btn-close" @click="showHeatmapEnhanced=false">×</button></div>
-        <div class="modal-body">
-          <div class="heatmap-grid">
-            <div v-for="h in heatmapEnhancedData" :key="h.label" class="heatmap-cell" :style="{left:h.x+'%',top:h.y+'%',background:h.color}">
-              <span class="heatmap-label">{{h.label}}</span>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Enhanced Topology Panel -->
-    <div v-if="showTopologyEnhanced" class="modal-overlay" @click.self="showTopologyEnhanced=false">
-      <div class="modal glass-card">
-        <div class="modal-header"><span>拓扑图</span><button class="btn-close" @click="showTopologyEnhanced=false">×</button></div>
-        <div class="modal-body">
-          <div class="topo-canvas">
-            <div v-for="n in topologyNodes" :key="n.id" class="topo-node" :style="{left:n.x+'px',top:n.y+'px'}">
-              <span class="topo-label">{{n.label}}</span>
-              <span class="topo-conns">{{n.connections}}连接</span>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Layer Manager Panel -->
-    <div v-if="showLayerManagerPanel" class="modal-overlay" @click.self="showLayerManagerPanel=false">
-      <div class="modal glass-card">
-        <div class="modal-header"><span>图层管理</span><button class="btn-close" @click="showLayerManagerPanel=false">×</button></div>
-        <div class="modal-body">
-          <div class="layer-list">
-            <div v-for="(l,i) in layerList" :key="l.id" class="layer-item">
-              <span class="layer-color" :style="{background:l.color}"></span>
-              <span class="layer-name">{{l.name}}</span>
-              <label class="layer-vis"><input type="checkbox" :checked="l.visible" @change="toggleLayer(i)"/><span></span></label>
-              <label class="layer-lock"><input type="checkbox" :checked="l.locked" @change="lockLayer(i)"/><span></span></label>
-              <input type="range" min="0" max="100" :value="l.opacity*100" class="layer-opacity" @input="setLayerOpacity(i, $event.target.value/100)" />
-            </div>
+            <div class="perf-card"><span class="perf-val">{{perfData.avgMs.toFixed(0)}}ms</span><span class="perf-label">平均响应</span></div>
+            <div class="perf-card"><span class="perf-val">{{perfData.p99Ms.toFixed(0)}}ms</span><span class="perf-label">P99</span></div>
+            <div class="perf-card"><span class="perf-val">{{perfData.throughput.toFixed(0)}}</span><span class="perf-label">吞吐量/s</span></div>
+            <div class="perf-card"><span class="perf-val">{{(perfData.errorRate*100).toFixed(2)}}%</span><span class="perf-label">错误率</span></div>
           </div>
         </div>
       </div>
@@ -2672,34 +2614,15 @@
 
     <!-- Debug Panel -->
 <div v-if="showDebugPanel" class="modal-overlay" @click.self="showDebugPanel=false">
-      <div class='modal glass-card'>
-        <div class='modal-header'><span>调试控制台</span><button class='btn-close' @click='showDebugPanel=false'>×</button></div>
-        <div class='modal-body'>
-          <div class='dbg-hdr'><button class='btn-sm' @click='clearDebug()'>清除</button></div>
-          <div class='dbg-list'>
-            <div v-for='m in debugMessages' :key='m.time' class='dbg-item'>
-              <span class='dbg-time'>{{new Date(m.time).toLocaleTimeString()}}</span>
-              <span class='dbg-lvl' :class='m.level'>{{m.level.toUpperCase()}}</span>
-              <span class='dbg-msg'>{{m.message}}</span>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Batch Operation Panel -->
-<div v-if="showBatchOpPanel" class="modal-overlay" @click.self="showBatchOpPanel=false">
-      <div class='modal glass-card'>
-        <div class='modal-header'><span>批量操作</span><button class='btn-close' @click='showBatchOpPanel=false'>×</button></div>
-        <div class='modal-body'>
-          <select v-model='batchOpType' class='bop-select'>
-            <option value='align'>对齐</option><option value='distribute'>分布</option>
-            <option value='resize'>调整大小</option><option value='color'>着色</option>
-          </select>
-          <button class='btn-sm btn-primary' @click='executeBatchOp()'>执行</button>
-          <div class='bop-results'>
-            <div v-for='r in batchOpResults' :key='r.nodeId' class='bop-item'>
-              <span>{{r.nodeId}}</span><span :class='r.success?"ok":"err"'>{{r.success?'✓':'✗'}}</span>
+      <div class="modal glass-card">
+        <div class="modal-header"><span>调试控制台</span><button class="btn-close" @click="showDebugPanel=false">×</button></div>
+        <div class="modal-body">
+        <button class="btn-sm" @click="clearDebug()">清除</button>
+          <div class="debug-list">
+            <div v-for="m in debugLogs" :key="m.time" class="debug-item">
+              <span class="debug-time">{{new Date(m.time).toLocaleTimeString()}}</span>
+              <span class="debug-level" :class="m.level">{{m.level}}</span>
+              <span class="debug-msg">{{m.msg}}</span>
             </div>
           </div>
         </div>
@@ -2708,15 +2631,13 @@
 
     <!-- Template Manager Panel -->
 <div v-if="showTemplateManagerPanel" class="modal-overlay" @click.self="showTemplateManagerPanel=false">
-      <div class='modal glass-card'>
-        <div class='modal-header'><span>模板库</span><button class='btn-close' @click='showTemplateManagerPanel=false'>×</button></div>
-        <div class='modal-body'>
-          <input v-model='templateSearch' placeholder='搜索模板...' class='tpl-search' />
-          <div class='tpl-grid'>
-            <div class='tpl-card'><span class='tpl-icon'>📋</span><span class='tpl-name'>审批流程模板</span><span class='tpl-desc'>三级审批流程</span></div>
-            <div class='tpl-card'><span class='tpl-icon'>🔔</span><span class='tpl-name'>通知流程模板</span><span class='tpl-desc'>消息通知流程</span></div>
-            <div class='tpl-card'><span class='tpl-icon'>🔄</span><span class='tpl-name'>数据同步模板</span><span class='tpl-desc'>跨系统数据同步</span></div>
-            <div class='tpl-card'><span class='tpl-icon'>✅</span><span class='tpl-name'>任务流程模板</span><span class='tpl-desc'>任务跟踪流程</span></div>
+      <div class="modal glass-card">
+        <div class="modal-header"><span>模板库</span><button class="btn-close" @click="showTemplateManagerPanel=false">×</button></div>
+        <div class="modal-body">
+          <div class="tpl-grid">
+            <div v-for="t in templateCategories" :key="t.id" class="tpl-card">
+              <span class="tpl-name">{{t.name}}</span><span class="tpl-count">{{t.count}}模板</span>
+            </div>
           </div>
         </div>
       </div>
@@ -2724,24 +2645,24 @@
 
     <!-- Macro Editor Panel -->
 <div v-if="showMacroEditor" class="modal-overlay" @click.self="showMacroEditor=false">
-      <div class='modal glass-card'>
-        <div class='modal-header'><span>宏编辑器</span><button class='btn-close' @click='showMacroEditor=false'>×</button></div>
-        <div class='modal-body'>
-          <textarea v-model='macroCode' class='macro-editor' rows='10'></textarea>
-          <div class='macro-acts'><button class='btn-sm' @click='runMacro()'>运行</button><button class='btn-sm' @click='saveMacro()'>保存</button></div>
+      <div class="modal glass-card">
+        <div class="modal-header"><span>宏编辑器</span><button class="btn-close" @click="showMacroEditor=false">×</button></div>
+        <div class="modal-body">
+          <textarea v-model="macroCode" class="macro-editor" rows="8"></textarea>
+          <div class="macro-acts"><button class="btn-sm" @click="runMacro()">运行</button><button class="btn-sm" @click="saveMacro()">保存</button></div>
         </div>
       </div>
     </div>
 
     <!-- Snippet Library Panel -->
 <div v-if="showSnippetLibrary" class="modal-overlay" @click.self="showSnippetLibrary=false">
-      <div class='modal glass-card'>
-        <div class='modal-header'><span>代码片段库</span><button class='btn-close' @click='showSnippetLibrary=false'>×</button></div>
-        <div class='modal-body'>
-          <div class='snip-list'>
-            <div v-for='s in snippetLibrary' :key='s.id' class='snip-item'>
-              <span class='snip-name'>{{s.name}}</span><span class='snip-code'>{{s.code.slice(0,30)}}...</span>
-              <button class='btn-sm' @click='insertSnippet(s.id)'>插入</button>
+      <div class="modal glass-card">
+        <div class="modal-header"><span>代码片段库</span><button class="btn-close" @click="showSnippetLibrary=false">×</button></div>
+        <div class="modal-body">
+          <div class="snip-list">
+            <div v-for="s in snippetList" :key="s.id" class="snip-item">
+              <span class="snip-name">{{s.name}}</span>
+              <button class="btn-sm" @click="insertSnippet(s.id)">插入</button>
             </div>
           </div>
         </div>
@@ -2749,36 +2670,33 @@
     </div>
 
     <!-- Event Mapper Panel -->
-<div v-if="showEventMapper" class="modal-overlay" @click.self="showEventMapper=false">
-      <div class='modal glass-card'>
-        <div class='modal-header'><span>事件映射</span><button class='btn-close' @click='showEventMapper=false'>×</button></div>
-        <div class='modal-body'>
-          <div class='ev-list'>
-            <div v-for='(m,i) in eventMappings' :key='m.id' class='ev-item'>
-              <span class='ev-src'>{{m.source}}</span><span class='ev-arrow'>→</span><span class='ev-dst'>{{m.target}}</span>
-              <label class='ev-toggle'><input type='checkbox' :checked='m.enabled' @change='toggleEventMapping(i)'/><span></span></label>
+<div v-if="showEventMapperPanel" class="modal-overlay" @click.self="showEventMapperPanel=false">
+      <div class="modal glass-card">
+        <div class="modal-header"><span>事件映射</span><button class="btn-close" @click="showEventMapperPanel=false">×</button></div>
+        <div class="modal-body">
+          <div class="ev-list">
+            <div v-for="(m,i) in eventMapList" :key="m.id" class="ev-item">
+              <span class="ev-src">{{m.source}}</span><span>→</span><span class="ev-dst">{{m.target}}</span>
+              <label class="ev-toggle"><input type="checkbox" :checked="m.enabled" @change="toggleEventMap(i)"/><span></span></label>
             </div>
           </div>
-          <button class='btn-sm' @click='addEventMapping()'>+ 添加映射</button>
+          <button class="btn-sm" @click="addEventMap()">+ 添加</button>
         </div>
       </div>
     </div>
 
     <!-- Annotation Panel -->
 <div v-if="showAnnotationPanel" class="modal-overlay" @click.self="showAnnotationPanel=false">
-      <div class='modal glass-card'>
-        <div class='modal-header'><span>标注管理</span><button class='btn-close' @click='showAnnotationPanel=false'>×</button></div>
-        <div class='modal-body'>
-          <div class='ann-input'>
-            <input v-model='annotationText' placeholder='标注内容' class='ann-text' />
-            <input type='color' v-model='annotationColor' class='ann-color' />
-            <button class='btn-sm' @click='addAnnotation(50,50)'>添加</button>
-          </div>
-          <div class='ann-list'>
-            <div v-for='a in annotations' :key='a.id' class='ann-item'>
-              <span class='ann-dot' :style='{background:a.color}'></span>
-              <span class='ann-txt'>{{a.text}}</span>
-              <button class='btn-sm btn-danger' @click='deleteAnnotation(a.id)'>×</button>
+      <div class="modal glass-card">
+        <div class="modal-header"><span>标注管理</span><button class="btn-close" @click="showAnnotationPanel=false">×</button></div>
+        <div class="modal-body">
+        <input v-model="annotationText" placeholder="标注内容" class="ann-input" />
+        <button class="btn-sm" @click="addAnnotation(annotationText||'默认','#3b82f6')">添加</button>
+          <div class="ann-list">
+            <div v-for="a in annotationList" :key="a.id" class="ann-item">
+              <span class="ann-dot" :style="{background:a.color}"></span>
+              <span>{{a.text}}</span>
+              <button class="btn-sm btn-danger" @click="deleteAnnotation(a.id)">×</button>
             </div>
           </div>
         </div>
@@ -2786,13 +2704,13 @@
     </div>
 
     <!-- Workflow Builder Panel -->
-<div v-if="showWorkflowBuilder" class="modal-overlay" @click.self="showWorkflowBuilder=false">
-      <div class='modal glass-card'>
-        <div class='modal-header'><span>工作流构建器</span><button class='btn-close' @click='showWorkflowBuilder=false'>×</button></div>
-        <div class='modal-body'>
-          <div class='wf-steps'>
-            <div v-for='(step,i) in workflowSteps' :key='step.id' class='wf-step'>
-              <span class='wf-num'>{{i+1}}</span><span class='wf-name'>{{step.name}}</span><span class='wf-type'>{{step.type}}</span>
+<div v-if="showWorkflowBuilderPanel" class="modal-overlay" @click.self="showWorkflowBuilderPanel=false">
+      <div class="modal glass-card">
+        <div class="modal-header"><span>工作流构建器</span><button class="btn-close" @click="showWorkflowBuilderPanel=false">×</button></div>
+        <div class="modal-body">
+          <div class="wf-list">
+            <div v-for="(step,i) in workflowSteps" :key="step.id" class="wf-step">
+              <span class="wf-num">{{i+1}}</span><span>{{step.name}}</span><span>{{step.type}}</span>
             </div>
           </div>
         </div>
@@ -2800,31 +2718,38 @@
     </div>
 
     <!-- Dependency Graph Panel -->
-<div v-if="showDependencyGraph" class="modal-overlay" @click.self="showDependencyGraph=false">
-      <div class='modal glass-card'>
-        <div class='modal-header'><span>依赖图</span><button class='btn-close' @click='showDependencyGraph=false'>×</button></div>
-        <div class='modal-body'>
-          <div class='dep-graph'>
-            <div v-for='n in dependencyNodes' :key='n.id' class='dep-node' :style='{left:n.depth*80+20+"px",top:"50%"}'>
-              {{n.label}}
-            </div>
+<div v-if="showDependencyGraphPanel" class="modal-overlay" @click.self="showDependencyGraphPanel=false">
+      <div class="modal glass-card">
+        <div class="modal-header"><span>依赖图</span><button class="btn-close" @click="showDependencyGraphPanel=false">×</button></div>
+        <div class="modal-body">
+          <div class="dep-graph">
+            <div v-for="n in dependencyGraphData" :key="n.id" class="dep-node">{{n.label}}</div>
           </div>
         </div>
       </div>
     </div>
 
     <!-- Process Map Panel -->
-<div v-if="showProcessMap" class="modal-overlay" @click.self="showProcessMap=false">
-      <div class='modal glass-card'>
-        <div class='modal-header'><span>流程总览图</span><button class='btn-close' @click='showProcessMap=false'>×</button></div>
-        <div class='modal-body'>
-          <div class='pm-controls'>
-            <button class='btn-sm' @click='zoomProcessMap(1.2)'>+</button>
-            <button class='btn-sm' @click='zoomProcessMap(0.8)'>-</button>
-            <span>{{(processMapZoom*100).toFixed(0)}}%</span>
+<div v-if="showProcessMapPanel" class="modal-overlay" @click.self="showProcessMapPanel=false">
+      <div class="modal glass-card">
+        <div class="modal-header"><span>流程总览</span><button class="btn-close" @click="showProcessMapPanel=false">×</button></div>
+        <div class="modal-body">
+        <button class="btn-sm" @click="zoomProcessMap(1.2)">+</button>
+        <button class="btn-sm" @click="zoomProcessMap(0.8)">-</button>
+          <div class="pm-canvas">
+            <div v-for="n in (processDef?.nodes||[])" :key="n.id" class="pm-node">{{n.label||n.type}}</div>
           </div>
-          <div class='pm-canvas' :style='{transform:"scale("+processMapZoom+") translate("+processMapPan.x+"px,"+processMapPan.y+"px)"}'>
-            <div v-for='n in (processDef?.nodes||[])' :key='n.id' class='pm-node'>{{n.label||n.type}}</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Topology Panel -->
+<div v-if="showTopologyPanel" class="modal-overlay" @click.self="showTopologyPanel=false">
+      <div class="modal glass-card">
+        <div class="modal-header"><span>拓扑图</span><button class="btn-close" @click="showTopologyPanel=false">×</button></div>
+        <div class="modal-body">
+          <div class="topo-canvas">
+            <div v-for="n in topologyNodes" :key="n.id" class="topo-node" :style="{left:n.x+'px',top:n.y+'px'}">{{n.label}}</div>
           </div>
         </div>
       </div>
@@ -3197,6 +3122,7 @@ function togglePlay() {
   if (isPlaying.value) { pausePlayback(); return }
   isPlaying.value = true
   const totalMs = 3000 / playbackSpeed.value
+  const interval = 50
   let elapsed = 0
   playbackTimer = setInterval(() => {
     elapsed += interval
@@ -3215,6 +3141,7 @@ function onPlaybackSeek(e: Event) {
   playbackProgress.value = +(e.target as HTMLInputElement).value
 }
 function getPlaybackTime(): string {
+  const totalNodes = processDef.value?.nodes.length || 0
   const current = Math.floor((playbackProgress.value / 100) * totalNodes)
   return `${current}/${totalNodes}`
 }
@@ -3252,6 +3179,7 @@ function isSelectedNode(id: string): boolean {
 }
 function toggleSelectNode(i: number) {
   if (!processDef.value) return
+  const node = processDef.value.nodes[i]
   if (!node) return
   if (multiSelected.value.has(node.id)) multiSelected.value.delete(node.id)
   else multiSelected.value.add(node.id)
@@ -3279,6 +3207,8 @@ function detectParallelBranches(): number[][] {
   const groups: number[][] = []
   const visited = new Set<number>()
   for (let i = 0; i < processDef.value.nodes.length; i++) {
+    const node = processDef.value.nodes[i]
+    const outgoing = (processDef.value.edges || []).filter(e => e.from === node.id)
     if (outgoing.length >= 2 && !visited.has(i)) {
       const branch: number[] = [i]
       for (const edge of outgoing) {
@@ -3357,6 +3287,7 @@ function getNodeLabel(type: string) {
 }
 // ── Node color helpers ────────────────────────────────────────────────
 function getNodeBgColor(type: string): string {
+  const m: Record<string,string> = {
     start:'rgba(16,185,129,.6)', end:'rgba(239,68,68,.6)', task:'rgba(0,212,255,.4)',
     approval:'rgba(99,102,241,.4)', timer:'rgba(245,158,11,.4)',
     gate_and:'rgba(245,158,11,.4)', gate_or:'rgba(245,158,11,.4)', gate_xor:'rgba(245,158,11,.4)',
@@ -3365,11 +3296,13 @@ function getNodeBgColor(type: string): string {
   return m[type] || 'rgba(100,100,100,.4)'
 }
 function getNodeIcon(type: string) {
+  const m: Record<string,string> = { start:'🟢', end:'🔴', task:'📋', approval:'✅', timer:'⏱️',
     gate_and:'🔷', gate_or:'🔶', gate_xor:'🔹', subprocess:'📦', script:'💻', parallel:'⚡' }
   return m[type] || '⬜'
 }
 function computeForkJoinPath(branchIndices: number[]): string {
   if (branchIndices.length < 2 || !processDef.value) return ""
+  const nodes = branchIndices.map(i => processDef.value!.nodes[i]).filter(Boolean)
   if (nodes.length < 2) return ""
   let d = "M " + (nodes[0].x + (nodes[0].w||120)) + " " + (nodes[0].y + (nodes[0].h||50)/2)
   for (let i = 1; i < nodes.length; i++) {
@@ -3380,6 +3313,7 @@ function computeForkJoinPath(branchIndices: number[]): string {
 }
 // ── Port position ─────────────────────────────────────────────────────
 function getNodePort(node: PDNode, port: 'in'|'out', portIdx?: number): {x:number;y:number} {
+  const w = node.w||120, h = node.h||50
   if (port === 'in') return { x: node.x, y: node.y + h/2 }
   if (isGate(node.type) && portIdx !== undefined) {
     const conds = getNodeConditions(node)
@@ -3396,6 +3330,8 @@ function computeEdgePath(edge: PDEdge): string {
   if (routing === 'horizontal') return computeHorizontalEdgePath(edge)
   if (routing === 'vertical') return computeVerticalEdgePath(edge)
   // auto: use bezier
+  const from = processDef.value.nodes.find(n => n.id === edge.from)
+  const to = processDef.value.nodes.find(n => n.id === edge.to)
   if (!from || !to) return ''
   const fp = getNodePort(from, 'out')
   const tp = getNodePort(to, 'in')
@@ -3406,13 +3342,17 @@ function computeEdgePath(edge: PDEdge): string {
 function tempEdgePath(): string {
   if (!tempEdge.value) return ''
   const { startX, startY, endX, endY } = tempEdge.value
+  const from = processDef.value?.nodes[tempEdge.value.from]
   if (!from) return ''
+  const fp = getNodePort(from, tempEdge.value.fromPort)
+  const cx = Math.max(Math.abs(endX - fp.x) * 0.5, 60)
   const sign = tempEdge.value.fromPort === 'out' ? 1 : -1
   return `M ${fp.x} ${fp.y} C ${fp.x+cx*sign} ${fp.y}, ${endX-cx*sign} ${endY}, ${endX} ${endY}`
 }
 // ── Node CRUD ─────────────────────────────────────────────────────────
 function addNode(type: string, opts?: { x?: number; y?: number; autoConnect?: boolean }) {
   if (!processDef.value) return
+  const w = isGate(type) ? 100 : type === 'approval' ? 130 : 120
   const h = type === 'approval' ? 70 : type === 'subprocess' ? 60 : 50
   const x = opts?.x ?? (100 + Math.random() * 200)
   const y = opts?.y ?? (80 + Math.random() * 100)
@@ -3445,6 +3385,7 @@ function duplicateSelected() {
   if (selectedNode.value === null || !processDef.value) return
   const orig = processDef.value.nodes[selectedNode.value]
   addNode(orig.type, { x: orig.x + 30, y: orig.y + 30, autoConnect: false })
+  const newNode = processDef.value.nodes[processDef.value.nodes.length - 1]
   if (newNode) {
     newNode.label = orig.label; newNode.assignee = orig.assignee
     newNode.condition = orig.condition; newNode.timeout = orig.timeout
@@ -3485,6 +3426,7 @@ function computeDiff() {
   removedNodes.value = selectedVersion.value.config.nodes.filter(n => !currentIds.has(n.id))
   changedNodes.value = processDef.value.nodes.filter(n => {
     if (!versionIds.has(n.id)) return false
+    const orig = selectedVersion.value!.config.nodes.find(vn => vn.id === n.id)
     return orig && (orig.label !== n.label || Math.abs(orig.x - n.x) > 10 || Math.abs(orig.y - n.y) > 10)
   })
 }
@@ -3506,6 +3448,8 @@ function autoLayout() {
 // ── Advanced Auto-Layout (topological) ──────────────────────────────
 function autoLayoutTopo() {
   if (!processDef.value || processDef.value.nodes.length === 0) return
+  const nodes = processDef.value.nodes
+  const edges = processDef.value.edges || []
   // Build adjacency and in-degree
   const inDegree = new Map<string, number>()
   const adj = new Map<string, string[]>()
@@ -3535,8 +3479,10 @@ function autoLayoutTopo() {
     for (const id of (order.length > 0 ? [order[0]] : [])) layers.set(id, 0)
   }
   // BFS to assign layers
+  const visited = new Set<string>()
   const bfsQ: string[] = [...(startNodes.length > 0 ? startNodes : [order[0]])]
   while (bfsQ.length > 0) {
+    const curr = bfsQ.shift()!
     if (visited.has(curr)) continue
     visited.add(curr)
     const currLayer = layers.get(curr) ?? 0
@@ -3559,6 +3505,7 @@ function autoLayoutTopo() {
     const totalW = ids.length * colW
     let startX = 100
     for (let i = 0; i < ids.length; i++) {
+      const n = nodes.find(nd => nd.id === ids[i])
       if (!n) continue
       n.x = startX + i * colW
       n.y = 80 + layer * layerGap
@@ -3574,8 +3521,12 @@ function applyTemplate(tpl: TemplateDef) {
   selectedNode.value = null; selectedEdge.value = null
   const nodeMap = new Map<string, PDNode>()
   for (const tn of tpl.nodes) {
+    const w = isGate(tn.type) ? 100 : tn.type === 'approval' ? 130 : 120
+    const h = tn.type === 'approval' ? 70 : tn.type === 'subprocess' ? 60 : 50
+    const startX = 100, startY = 80, colGap = 160, rowGap = 90
     const col = tpl.nodes.indexOf(tn)
     const colIdx = col % 3, rowIdx = Math.floor(col / 3)
+    const node: PDNode = { id: genId(), type: tn.type, label: tn.label, x: startX + colIdx * colGap, y: startY + rowIdx * rowGap, w, h }
     processDef.value.nodes.push(node)
     nodeMap.set(tn.label, node)
   }
@@ -3608,10 +3559,13 @@ function _setEdgeProp(prop: string, val: any) {
 function getEdgeFromLabel() {
   if (selectedEdge.value === null || !processDef.value) return '?'
   const edge = processDef.value.edges[selectedEdge.value]
+  const n = processDef.value.nodes.find(n => n.id === edge.from)
   return n?.label || n?.id?.slice(0,8) || '?'
 }
 function getEdgeToLabel() {
   if (selectedEdge.value === null || !processDef.value) return '?'
+  const edge = processDef.value.edges[selectedEdge.value]
+  const n = processDef.value.nodes.find(n => n.id === edge.to)
   return n?.label || n?.id?.slice(0,8) || '?'
 }
 // Data mapping helpers
@@ -3621,10 +3575,12 @@ function getNodeMappings(): any[] {
 }
 function addDataMapping() {
   if (selectedNode.value === null || !processDef.value) return
+  const m = getNodeMappings()
   m.push({ from: '', to: '' })
   _setNodeProp('mappings', m)
 }
 function removeDataMapping(i: number) {
+  const m = getNodeMappings()
   m.splice(i, 1)
   _setNodeProp('mappings', m)
 }
@@ -3655,7 +3611,11 @@ function bezierPoint(p0: {x:number;y:number}, p1: {x:number;y:number}, p2: {x:nu
 }
 function getBezierControlPoints(edge: PDEdge): {p0:{x:number;y:number};p1:{x:number;y:number};p2:{x:number;y:number};p3:{x:number;y:number}} {
   if (!processDef.value) return { p0:{x:0,y:0}, p1:{x:0,y:0}, p2:{x:0,y:0}, p3:{x:0,y:0} }
+  const from = processDef.value.nodes.find(n => n.id === edge.from)
+  const to = processDef.value.nodes.find(n => n.id === edge.to)
   if (!from || !to) return { p0:{x:0,y:0}, p1:{x:0,y:0}, p2:{x:0,y:0}, p3:{x:0,y:0} }
+  const fp = getNodePort(from, 'out'), tp = getNodePort(to, 'in')
+  const dx = tp.x - fp.x, dy = tp.y - fp.y
   // Control points offset based on edge direction
   let cx1 = fp.x + dx * 0.4, cy1 = fp.y
   let cx2 = tp.x - dx * 0.4, cy2 = tp.y
@@ -3680,6 +3640,8 @@ function getEdgeLabelRect(edge: PDEdge): string {
 // Label offset for multiple edges between same nodes (prevent overlap)
 function getEdgeLabelOffset(edgeIdx: number): {dx:number;dy:number} {
   if (!processDef.value) return { dx: 0, dy: 0 }
+  const edges = processDef.value.edges || []
+  const edge = edges[edgeIdx]
   if (!edge) return { dx: 0, dy: 0 }
   // Count edges between same pair
   const samePair = edges.filter((e, i) => i !== edgeIdx && ((e.from === edge.from && e.to === edge.to) || (e.from === edge.to && e.to === edge.from)))
@@ -3691,38 +3653,57 @@ function getEdgeLabelOffset(edgeIdx: number): {dx:number;dy:number} {
 // Edge routing: straight line vs bezier
 function computeStraightEdgePath(edge: PDEdge): string {
   if (!processDef.value) return ''
+  const from = processDef.value.nodes.find(n => n.id === edge.from)
+  const to = processDef.value.nodes.find(n => n.id === edge.to)
   if (!from || !to) return ''
+  const fp = getNodePort(from, 'out'), tp = getNodePort(to, 'in')
   return `M ${fp.x} ${fp.y} L ${tp.x} ${tp.y}`
 }
 function computeHorizontalEdgePath(edge: PDEdge): string {
   if (!processDef.value) return ''
+  const from = processDef.value.nodes.find(n => n.id === edge.from)
+  const to = processDef.value.nodes.find(n => n.id === edge.to)
   if (!from || !to) return ''
+  const fp = getNodePort(from, 'out'), tp = getNodePort(to, 'in')
   const mx = (fp.x + tp.x) / 2
   return `M ${fp.x} ${fp.y} C ${mx} ${fp.y}, ${mx} ${tp.y}, ${tp.x} ${tp.y}`
 }
 function computeVerticalEdgePath(edge: PDEdge): string {
   if (!processDef.value) return ''
+  const from = processDef.value.nodes.find(n => n.id === edge.from)
+  const to = processDef.value.nodes.find(n => n.id === edge.to)
   if (!from || !to) return ''
+  const fp = getNodePort(from, 'out'), tp = getNodePort(to, 'in')
   const my = (fp.y + tp.y) / 2
   return `M ${fp.x} ${fp.y} C ${fp.x} ${my}, ${tp.x} ${my}, ${tp.x} ${tp.y}`
 }
 // ── Export as SVG ────────────────────────────────────────────────────
 function exportAsSvg(): string {
   if (!processDef.value) return ''
+  const nodes = processDef.value.nodes
+  const edges = processDef.value.edges || []
   if (nodes.length === 0) return ''
+  let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity
   for (const n of nodes) {
     minX = Math.min(minX, n.x); minY = Math.min(minY, n.y)
     maxX = Math.max(maxX, n.x + (n.w||120)); maxY = Math.max(maxY, n.y + (n.h||50))
   }
   const pad = 60
+  const w = maxX - minX + pad*2, h = maxY - minY + pad*2
   let svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}" viewBox="0 0 ${w} ${h}">\n`
   svg += `<defs><marker id="arr" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto"><polygon points="0 0,10 3.5,0 7" fill="#00d4ff"/></marker></defs>\n`
   svg += `<rect width="${w}" height="${h}" fill="#0a0e1a"/>\n`
   svg += `<g transform="translate(${pad - minX},${pad - minY})">\n`
   for (const edge of edges) {
+    const from = nodes.find(n => n.id === edge.from)
+    const to = nodes.find(n => n.id === edge.to)
     if (!from || !to) continue
+    const fp = getNodePort(from, 'out'), tp = getNodePort(to, 'in')
+    const dx = Math.abs(tp.x - fp.x), cx = Math.max(dx * 0.5, 60)
     svg += `<path d="M ${fp.x} ${fp.y} C ${fp.x+cx} ${fp.y}, ${tp.x-cx} ${tp.y}, ${tp.x} ${tp.y}" stroke="#00d4ff" stroke-width="2" fill="none" marker-end="url(#arr)"/>\n`
     if (edge.label) {
+      const mx = (fp.x + tp.x) / 2, my = (fp.y + tp.y) / 2
+      const tw = edge.label.length * 7 + 10
       svg += `<rect x="${mx-tw/2}" y="${my-10}" width="${tw}" height="14" rx="3" fill="#1a1f35" stroke="#00d4ff" stroke-width="0.5"/>\n`
       svg += `<text x="${mx}" y="${my}" text-anchor="middle" fill="#00d4ff" font-size="10">${edge.label}</text>\n`
     }
@@ -3737,6 +3718,7 @@ function exportAsSvg(): string {
   return svg
 }
 function downloadSvg() {
+  const svg = exportAsSvg()
   if (!svg) { alert('画布为空，无法导出'); return }
   const blob = new Blob([svg], { type: 'image/svg+xml' })
   const url = URL.createObjectURL(blob)
@@ -3745,16 +3727,19 @@ function downloadSvg() {
   a.click(); URL.revokeObjectURL(url)
 }
 function copySvg() {
+  const svg = exportAsSvg()
   if (svg) navigator.clipboard.writeText(svg)
 }
 // ── Resize ────────────────────────────────────────────────────────────
 type ResizeDir = 'nw'|'n'|'ne'|'e'|'se'|'s'|'sw'|'w'
 const resizePositions: ResizeDir[] = ['nw','n','ne','e','se','s','sw','w']
 function getNodeResizeX(node: PDNode, dir: ResizeDir): number {
+  const w = node.w||120
   if (dir==='nw'||dir==='n'||dir==='sw'||dir==='w') return node.x
   return node.x + w
 }
 function getNodeResizeY(node: PDNode, dir: ResizeDir): number {
+  const h = node.h||50
   if (dir==='nw'||dir==='ne'||dir==='n') return node.y
   return node.y + h
 }
@@ -3768,6 +3753,7 @@ function onResizeMouseDown(e: MouseEvent, nodeIdx: number, dir: ResizeDir) {
   isResizing.value = true
   resizeIdx.value = nodeIdx
   resizeDir.value = dir
+  const node = processDef.value.nodes[nodeIdx]
   resizeStart.value = {
     x: e.clientX, y: e.clientY,
     w: node.w||120, h: node.h||50,
@@ -3775,7 +3761,9 @@ function onResizeMouseDown(e: MouseEvent, nodeIdx: number, dir: ResizeDir) {
   }
   const onMove = (ev: MouseEvent) => {
     if (!isResizing.value || resizeIdx.value===null || !processDef.value) return
+    const dx = (ev.clientX - resizeStart.value.x) / zoom.value
     const dy = (ev.clientY - resizeStart.value.y) / zoom.value
+    const node = processDef.value.nodes[resizeIdx.value]
     const dir = resizeDir.value
     const minW = 80, minH = 40
     if (dir.includes('e')) { node.w = Math.max(minW, resizeStart.value.w + dx); node.x = resizeStart.value.nx }
@@ -3801,6 +3789,7 @@ function onResizeMouseDown(e: MouseEvent, nodeIdx: number, dir: ResizeDir) {
 }
 // ── Anchor point drag ─────────────────────────────────────────────────
 function getAnchorPoints(node: PDNode): {x:number;y:number}[] {
+  const w = node.w||120, h = node.h||50
   return [
     { x: node.x + w/2, y: node.y },           // top
     { x: node.x + w, y: node.y + h/2 },       // right
@@ -3814,8 +3803,11 @@ function onAnchorMouseDown(e: MouseEvent, nodeIdx: number, anchorI: number) {
   isDraggingAnchor.value = true
   anchorNodeIdx.value = nodeIdx
   anchorIdx.value = anchorI
+  const onMove = (ev: MouseEvent) => {
     if (!isDraggingAnchor.value || anchorNodeIdx.value===null || !processDef.value) return
     // Update edge connection points for edges connected to this anchor
+    const node = processDef.value!.nodes[anchorNodeIdx.value]
+    const w = node.w||120, h = node.h||50
     const ax = ev.clientX, ay = ev.clientY
     // Project onto node edge
     let px = node.x, py = node.y
@@ -3827,6 +3819,7 @@ function onAnchorMouseDown(e: MouseEvent, nodeIdx: number, anchorI: number) {
     if (!node.anchorOffset) node.anchorOffset = []
     node.anchorOffset[anchorI] = { x: px, y: py }
   }
+  const onUp = () => {
     isDraggingAnchor.value = false; anchorNodeIdx.value = null; anchorIdx.value = null
     if (processDef.value && anchorNodeIdx.value !== null) pushHistory()
     document.removeEventListener('mousemove', onMove)
@@ -3840,7 +3833,9 @@ function createGroup() {
   if (groupedNodes.value.size < 2 || !processDef.value) return
   const members: string[] = Array.from(groupedNodes.value)
   // Find bounding box of all member nodes
+  let minX=Infinity, minY=Infinity, maxX=-Infinity, maxY=-Infinity
   for (const id of members) {
+    const n = processDef.value.nodes.find(nd => nd.id === id)
     if (!n) continue
     minX = Math.min(minX, n.x); minY = Math.min(minY, n.y)
     maxX = Math.max(maxX, n.x + (n.w||120)); maxY = Math.max(maxY, n.y + (n.h||50))
@@ -3855,6 +3850,7 @@ function createGroup() {
   }
   // Store original positions before moving members inside
   for (const id of members) {
+    const n = processDef.value!.nodes.find(nd => nd.id === id)
     if (n) {
       ;(n as any).__origGroupId = groupId
       ;(n as any).__origX = n.x
@@ -3869,6 +3865,7 @@ function createGroup() {
 }
 function ungroup(nodeIdx: number) {
   if (!processDef.value) return
+  const node = processDef.value.nodes[nodeIdx]
   if (!node.groupMembers || node.groupMembers.length === 0) {
     // Fallback: just deselect
     selectedNode.value = null
@@ -3896,10 +3893,12 @@ function computeGroupBounds(groupNode: PDNode): {x:number;y:number;width:number;
   if (!groupNode.groupMembers || groupNode.groupMembers.length === 0) {
     return { x: groupNode.x, y: groupNode.y, width: groupNode.w||200, height: groupNode.h||100 }
   }
+  let minX=Infinity, minY=Infinity, maxX=-Infinity, maxY=-Infinity
   if (groupNode.collapsed) {
     return { x: groupNode.x, y: groupNode.y, width: groupNode.w||200, height: groupNode.h||100 }
   }
   for (const id of groupNode.groupMembers) {
+    const n = processDef.value!.nodes.find(nd => nd.id === id)
     if (!n) continue
     minX = Math.min(minX, n.x); minY = Math.min(minY, n.y)
     maxX = Math.max(maxX, n.x + (n.w||120)); maxY = Math.max(maxY, n.y + (n.h||50))
@@ -3925,11 +3924,13 @@ function toggleGroupCollapse(idx: number) {
   if (groupInfo.node.collapsed) {
     // Hide members
     for (const id of groupInfo.node.groupMembers!) {
+      const n = processDef.value.nodes.find(nd => nd.id === id)
       if (n) { n.x = -9999; n.y = -9999 }
     }
   } else {
     // Restore members
     for (const id of groupInfo.node.groupMembers!) {
+      const n = processDef.value.nodes.find(nd => nd.id === id)
       if (n && (n as any).__origX !== undefined) {
         n.x = (n as any).__origX; n.y = (n as any).__origY
         delete (n as any).__origX; delete (n as any).__origY; delete (n as any).__origGroupId
@@ -3956,15 +3957,18 @@ function getMemberGroup(nodeId: string): PDNode|null {
 }
 function leaveGroup(nodeIdx: number) {
   if (!processDef.value) return
+  const node = processDef.value.nodes[nodeIdx]
   if (!node.groupMembers) return
   // Move member back to their original positions
   for (const memberId of node.groupMembers) {
+    const member = processDef.value.nodes.find(n => n.id === memberId)
     if (member && (member as any).__origX !== undefined) {
       member.x = (member as any).__origX
       member.y = (member as any).__origY
       delete (member as any).__origX; delete (member as any).__origY; delete (member as any).__origGroupId
     } else {
       // No original position saved, scatter them
+      const idx = processDef.value!.nodes.indexOf(member!)
       if (idx > nodeIdx) {
         member!.x = node.x + 20 + (idx - nodeIdx) * 30
         member!.y = node.y + 20 + (idx - nodeIdx) * 30
@@ -3979,12 +3983,14 @@ function leaveGroup(nodeIdx: number) {
 }
 function toggleGroup(nodeIdx: number) {
   if (!processDef.value) return
+  const node = processDef.value.nodes[nodeIdx]
   if (!node) return
   if (isNodeInGroup(node.id)) return
   // Add to a new group or existing group
   const existingGroup = processDef.value.nodes.find(n => n.groupMembers?.includes(node.id))
   if (existingGroup) return // already in a group
   // Create a temporary group with just this node + previously selected nodes
+  const members = Array.from(multiSelected.value).filter(id => id !== node.id)
   if (members.length >= 1) {
     members.push(node.id)
     groupedNodes.value = new Set(members)
@@ -4000,6 +4006,7 @@ function zoomToFit() {
   if (!processDef.value || processDef.value.nodes.length === 0) { fitCanvas(); return }
   if (!canvasRef.value) return
   const rect = canvasRef.value.getBoundingClientRect()
+  let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity
   for (const n of processDef.value.nodes) {
     minX = Math.min(minX, n.x); minY = Math.min(minY, n.y)
     maxX = Math.max(maxX, n.x + (n.w||120)); maxY = Math.max(maxY, n.y + (n.h||50))
@@ -4019,10 +4026,13 @@ function renderMinimap() {
   const W = canvas.width, H = canvas.viewBox ? 100 : canvas.width
   ctx.clearRect(0, 0, W, H)
   // Compute bounds
+  let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity
   for (const n of processDef.value.nodes) {
     minX = Math.min(minX, n.x); minY = Math.min(minY, n.y)
     maxX = Math.max(maxX, n.x + (n.w||120)); maxY = Math.max(maxY, n.y + (n.h||50))
   }
+  const pad = 20
+  const scaleX = (W - pad*2) / (maxX - minX || 1)
   const scaleY = (H - pad*2) / (maxY - minY || 1)
   const scale = Math.min(scaleX, scaleY)
   const offX = pad - minX * scale, offY = pad - minY * scale
@@ -4030,6 +4040,8 @@ function renderMinimap() {
   ctx.strokeStyle = 'rgba(0,212,255,0.3)'
   ctx.lineWidth = 1
   for (const edge of (processDef.value.edges||[])) {
+    const from = processDef.value!.nodes.find(n => n.id === edge.from)
+    const to = processDef.value!.nodes.find(n => n.id === edge.to)
     if (!from || !to) continue
     ctx.beginPath()
     ctx.moveTo(from.x * scale + offX, from.y * scale + offY)
@@ -4038,7 +4050,10 @@ function renderMinimap() {
   }
   // Draw nodes
   for (let i = 0; i < processDef.value.nodes.length; i++) {
+    const n = processDef.value.nodes[i]
     const nx = n.x * scale + offX, ny = n.y * scale + offY
+    const nw = (n.w||120) * scale, nh = (n.h||50) * scale
+    const colors: Record<string,string> = {
       start:'#10b981', end:'#ef4444', task:'#00d4ff', approval:'#6366f1',
       subprocess:'#a855f7', script:'#22c55e', gate_and:'#f59e0b',
       gate_or:'#f59e0b', gate_xor:'#f59e0b'
@@ -4056,23 +4071,37 @@ function renderMinimap() {
 }
 function minimapClick(e: MouseEvent) {
   if (!processDef.value || !canvasRef.value) return
+  const rect = canvasRef.value.getBoundingClientRect()
+  const canvas = minimapCanvasRef.value
   if (!canvas) return
+  const scaleX = rect.width / canvas.width
+  const scaleY = rect.height / canvas.height
+  const mx = (e.clientX - rect.left) * scaleX
+  const my = (e.clientY - rect.top) * scaleY
   // Find node near click
+  let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity
   for (const n of processDef.value.nodes) {
     minX = Math.min(minX, n.x); minY = Math.min(minY, n.y)
     maxX = Math.max(maxX, n.x + (n.w||120)); maxY = Math.max(maxY, n.y + (n.h||50))
   }
+  const pad = 20
   const canvasW = canvas.width, canvasH = canvas.height
   const scaleX2 = (canvasW - pad*2) / (maxX - minX || 1)
   const scaleY2 = (canvasH - pad*2) / (maxY - minY || 1)
   const scale2 = Math.min(scaleX2, scaleY2)
+  const offX = pad - minX * scale2, offY = pad - minY * scale2
   // Find closest node
   let closestIdx = -1, closestDist = Infinity
   for (let i = 0; i < processDef.value.nodes.length; i++) {
+    const n = processDef.value.nodes[i]
+    const nx = n.x * scale2 + offX + (n.w||120)*scale2/2
     const ny = n.y * scale2 + offY + (n.h||50)*scale2/2
+    const d = Math.hypot(mx - nx, my - ny)
     if (d < closestDist) { closestDist = d; closestIdx = i }
   }
   if (closestIdx !== -1) {
+    const n = processDef.value.nodes[closestIdx]
+    const cx = rect.width/2, cy = rect.height/2
     panX.value = cx - (n.x + (n.w||120)/2) * zoom.value
     panY.value = cy - (n.y + (n.h||50)/2) * zoom.value
   }
@@ -4107,6 +4136,7 @@ const nodeStylePresets: NodeStylePreset[] = [
 ]
 function applyNodeStylePreset(preset: NodeStylePreset) {
   if (selectedNode.value === null || !processDef.value) return
+  const node = processDef.value.nodes[selectedNode.value]
   ;(node as any).styleFill = preset.colors.fill
   ;(node as any).styleStroke = preset.colors.stroke
   ;(node as any).styleText = preset.colors.text
@@ -4162,6 +4192,7 @@ function onNodeMouseDown(e: MouseEvent, i: number) {
     return
   }
   isDragging.value = true; dragIdx.value = i
+  const node = processDef.value.nodes[i]
   dragOffset.value = {
     x: (e.clientX - panX.value) / zoom.value - node.x,
     y: (e.clientY - panY.value) / zoom.value - node.y
@@ -4172,7 +4203,10 @@ function onNodeMouseMove(e: MouseEvent) {
   if (!isDragging.value || dragIdx.value === null || !processDef.value) return
   // Multi-node drag
   if (isMultiDragging.value && multiSelected.value.size > 1) {
+    const dx = (e.clientX - panX.value) / zoom.value - multiDragOffset.value.x
+    const dy = (e.clientY - panY.value) / zoom.value - multiDragOffset.value.y
     for (const id of multiSelected.value) {
+      const idx = processDef.value.nodes.findIndex(n => n.id === id)
       if (idx !== -1) {
         processDef.value.nodes[idx].x = Math.round(dx / GRID_SIZE) * GRID_SIZE
         processDef.value.nodes[idx].y = Math.round(dy / GRID_SIZE) * GRID_SIZE
@@ -4180,6 +4214,7 @@ function onNodeMouseMove(e: MouseEvent) {
     }
     return
   }
+  const idx = dragIdx.value
   const rawX = (e.clientX - panX.value) / zoom.value - dragOffset.value.x
   const rawY = (e.clientY - panY.value) / zoom.value - dragOffset.value.y
   const snappedX = Math.round(rawX / GRID_SIZE) * GRID_SIZE
@@ -4201,6 +4236,7 @@ function onNodeMouseMove(e: MouseEvent) {
 function onNodeMouseUp() {
   if (isMultiDragging.value && multiSelected.value.size > 1 && processDef.value) {
     for (const id of multiSelected.value) {
+      const idx = processDef.value.nodes.findIndex(n => n.id === id)
       if (idx !== -1) {
         processDef.value.nodes[idx].x = Math.round(processDef.value.nodes[idx].x / GRID_SIZE) * GRID_SIZE
         processDef.value.nodes[idx].y = Math.round(processDef.value.nodes[idx].y / GRID_SIZE) * GRID_SIZE
@@ -4208,6 +4244,7 @@ function onNodeMouseUp() {
     }
     pushHistory()
   } else if (isDragging.value && processDef.value && dragIdx.value !== null) {
+    const n = processDef.value.nodes[dragIdx.value]
     if (snapX.value !== null) n.x = snapX.value
     if (snapY.value !== null) n.y = snapY.value
     pushHistory()
@@ -4219,21 +4256,28 @@ function onNodeMouseUp() {
 function onPortMouseDown(e: MouseEvent, nodeIdx: number, port: 'in'|'out') {
   e.stopPropagation()
   if (!processDef.value) return
+  const node = processDef.value.nodes[nodeIdx]
   const pp = getNodePort(node, port)
   tempEdge.value = { from: nodeIdx, fromPort: port, startX: pp.x, startY: pp.y, endX: pp.x, endY: pp.y }
+  const onMove = (ev: MouseEvent) => {
     if (!tempEdge.value) return
     tempEdge.value.endX = (ev.clientX - panX.value) / zoom.value
     tempEdge.value.endY = (ev.clientY - panY.value) / zoom.value
   }
+  const onUp = (ev: MouseEvent) => {
     document.removeEventListener('mousemove', onMove); document.removeEventListener('mouseup', onUp)
     if (!tempEdge.value || !processDef.value) { tempEdge.value = null; return }
+    const mx = (ev.clientX - panX.value) / zoom.value, my = (ev.clientY - panY.value) / zoom.value
     let targetIdx: number|null = null
     for (let i = 0; i < processDef.value.nodes.length; i++) {
       if (i === tempEdge.value!.from) continue
+      const n = processDef.value.nodes[i]
       if (mx >= n.x-10 && mx <= n.x+(n.w||120)+10 && my >= n.y-10 && my <= n.y+(n.h||50)+10) { targetIdx = i; break }
     }
     if (targetIdx !== null) {
+      const fn = processDef.value.nodes[tempEdge.value!.from]
       const tn = processDef.value.nodes[targetIdx]
+      const fp = tempEdge.value!.fromPort
       if (fp === 'out' && tn.type !== 'start') createEdge(fn.id, tn.id)
       else if (fp === 'in' && fn.type !== 'end') createEdge(tn.id, fn.id)
     }
@@ -4246,13 +4290,21 @@ function onCanvasMouseDown(e: MouseEvent) {
   if (e.button !== 0) return
   isPanning.value = true
   panStart.value = { x: e.clientX - panX.value, y: e.clientY - panY.value }
+  const onMove = (ev: MouseEvent) => { if (isPanning.value) { panX.value = ev.clientX - panStart.value.x; panY.value = ev.clientY - panStart.value.y } }
+  const onUp = () => { isPanning.value = false }
   document.addEventListener('mousemove', onMove); document.addEventListener('mouseup', onUp)
 }
 // ── Node body click: arbitrary position edge creation ─────────────────
 function onNodeBodyMouseDown(e: MouseEvent, nodeIdx: number) {
   e.stopPropagation()
   if (!processDef.value) return
+  const node = processDef.value.nodes[nodeIdx]
   if (!node) return
+  const mx = (e.clientX - panX.value) / zoom.value
+  const my = (e.clientY - panY.value) / zoom.value
+  const w = node.w || 120, h = node.h || 50
+  const cx = node.x + w/2, cy = node.y + h/2
+  const dx = mx - cx, dy = my - cy
   let port: 'in'|'out' = 'out'
   if (Math.abs(dx) > Math.abs(dy)) {
     port = dx < 0 ? 'in' : 'out'
@@ -4260,22 +4312,29 @@ function onNodeBodyMouseDown(e: MouseEvent, nodeIdx: number) {
     port = dy < 0 ? 'in' : 'out'
   }
   tempEdge.value = { from: nodeIdx, fromPort: port, startX: mx, startY: my, endX: mx, endY: my }
+  const onMove = (ev: MouseEvent) => {
     if (!tempEdge.value) return
     tempEdge.value.endX = (ev.clientX - panX.value) / zoom.value
     tempEdge.value.endY = (ev.clientY - panY.value) / zoom.value
   }
+  const onUp = (ev: MouseEvent) => {
     document.removeEventListener('mousemove', onMove)
     document.removeEventListener('mouseup', onUp)
     if (!tempEdge.value || !processDef.value) { tempEdge.value = null; return }
     const emx = (ev.clientX - panX.value) / zoom.value
     const emy = (ev.clientY - panY.value) / zoom.value
+    let targetIdx: number|null = null
     for (let i = 0; i < processDef.value.nodes.length; i++) {
       if (i === tempEdge.value.from) continue
+      const n = processDef.value.nodes[i]
       if (emx >= n.x-10 && emx <= n.x+(n.w||120)+10 && emy >= n.y-10 && emy <= n.y+(n.h||50)+10) {
         targetIdx = i; break
       }
     }
     if (targetIdx !== null) {
+      const fn = processDef.value.nodes[tempEdge.value.from]
+      const tn = processDef.value.nodes[targetIdx]
+      const fp = tempEdge.value.fromPort
       if (fp === 'out' && tn.type !== 'start') createEdge(fn.id, tn.id)
       else if (fp === 'in' && fn.type !== 'end') createEdge(tn.id, fn.id)
     }
@@ -4288,8 +4347,16 @@ function onNodeBodyMouseDown(e: MouseEvent, nodeIdx: number) {
 function onEdgeMouseDown(e: MouseEvent, nodeIdx: number) {
   e.stopPropagation()
   if (!processDef.value) return
+  const node = processDef.value.nodes[nodeIdx]
   if (!node) return
+  const rect = (e.target as HTMLElement).getBoundingClientRect()
+  const mx = (e.clientX - panX.value) / zoom.value
+  const my = (e.clientY - panY.value) / zoom.value
   // Determine which side of the node was clicked
+  const w = node.w || 120, h = node.h || 50
+  const cx = node.x + w/2, cy = node.y + h/2
+  const dx = mx - cx, dy = my - cy
+  let port: 'in'|'out' = 'out'
   if (Math.abs(dx) > Math.abs(dy)) {
     port = dx < 0 ? 'in' : 'out'
   } else {
@@ -4297,17 +4364,25 @@ function onEdgeMouseDown(e: MouseEvent, nodeIdx: number) {
     else port = 'out'  // bottom
   }
   tempEdge.value = { from: nodeIdx, fromPort: port, startX: mx, startY: my, endX: mx, endY: my }
+  const onMove = (ev: MouseEvent) => {
     if (!tempEdge.value) return
     tempEdge.value.endX = (ev.clientX - panX.value) / zoom.value
     tempEdge.value.endY = (ev.clientY - panY.value) / zoom.value
   }
+  const onUp = (ev: MouseEvent) => {
     document.removeEventListener('mousemove', onMove); document.removeEventListener('mouseup', onUp)
     if (!tempEdge.value || !processDef.value) { tempEdge.value = null; return }
+    const emx = (ev.clientX - panX.value) / zoom.value, emy = (ev.clientY - panY.value) / zoom.value
+    let targetIdx: number|null = null
     for (let i = 0; i < processDef.value.nodes.length; i++) {
       if (i === tempEdge.value!.from) continue
+      const n = processDef.value.nodes[i]
       if (emx >= n.x-10 && emx <= n.x+(n.w||120)+10 && emy >= n.y-10 && emy <= n.y+(n.h||50)+10) { targetIdx = i; break }
     }
     if (targetIdx !== null) {
+      const fn = processDef.value.nodes[tempEdge.value!.from]
+      const tn = processDef.value.nodes[targetIdx]
+      const fp = tempEdge.value!.fromPort
       if (fp === 'out' && tn.type !== 'start') createEdge(fn.id, tn.id)
       else if (fp === 'in' && fn.type !== 'end') createEdge(tn.id, fn.id)
     }
@@ -4327,13 +4402,19 @@ function onDropNode(e: DragEvent) {
   e.preventDefault()
   const type: string = (e.dataTransfer as any)?.getData('nodeType')
   if (!type || !processDef.value) return
+  const rect = (e.currentTarget as HTMLElement).getBoundingClientRect()
+  const x = (e.clientX - rect.left - panX.value) / zoom.value
+  const y = (e.clientY - rect.top - panY.value) / zoom.value
   const sx = Math.round(x / GRID_SIZE) * GRID_SIZE
   const sy = Math.round(y / GRID_SIZE) * GRID_SIZE
+  const w = isGate(type) ? 100 : type === 'approval' ? 130 : 120
+  const h = type === 'approval' ? 70 : type === 'subprocess' ? 60 : 50
   addNode(type, { x: sx - w/2, y: sy - h/2, autoConnect: true })
 }
 // ── Subprocess ────────────────────────────────────────────────────────
 function openSubprocess(nodeIdx: number) {
   if (!processDef.value) return
+  const node = processDef.value.nodes[nodeIdx]
   if (node.type !== 'subprocess') return
   subprocessNodeIdx.value = nodeIdx
   subprocessTitle.value = node.label || '子流程'
@@ -4352,6 +4433,8 @@ function exitSubprocess() {
 }
 function saveSubprocess() {
   if (subprocessNodeIdx.value === null || !processDef.value) return
+  const subs = (currentProcess.value?.subprocesses as any) || {}
+  const node = processDef.value.nodes[subprocessNodeIdx.value]
   subs[node.id] = JSON.parse(JSON.stringify(subprocessDef.value))
   if (!currentProcess.value) return
   ;(currentProcess.value as any).subprocesses = subs
@@ -4360,14 +4443,18 @@ function saveSubprocess() {
 }
 // ── Subprocess inline editor helpers ──────────────────────────────────
 function getSubNodeResizeX(node: PDNode, dir: string): number {
+  const w = node.w||120
   if (dir==='nw'||dir==='n'||dir==='sw'||dir==='w') return node.x
   return node.x + w
 }
 function getSubNodeResizeY(node: PDNode, dir: string): number {
+  const h = node.h||50
   if (dir==='nw'||dir==='ne'||dir==='n') return node.y
   return node.y + h
 }
 function getSubAnchorPoints(node: PDNode): {x:number;y:number}[] {
+  const w = node.w||120, h = node.h||50
+  const offsets = (node as any).anchorOffset || []
   return [
     { x: node.x + w/2, y: node.y },
     { x: offsets[1]?.x ?? node.x + w, y: node.y + h/2 },
@@ -4376,25 +4463,39 @@ function getSubAnchorPoints(node: PDNode): {x:number;y:number}[] {
   ]
 }
 function getSubNodePort(node: PDNode, port: 'in'|'out', portIdx?: number): {x:number;y:number} {
+  const w = node.w||120, h = node.h||50
   if (port === 'in') return { x: node.x, y: node.y + h/2 }
   if (isGate(node.type) && portIdx !== undefined) {
+    const conds = getNodeConditions(node)
+    const spread = Math.max(conds.length * 12, 20)
     return { x: node.x + w, y: node.y + h/2 + (portIdx - (conds.length-1)/2) * spread }
   }
   return { x: node.x + w, y: node.y + h/2 }
 }
 function subComputeEdgePath(edge: PDEdge): string {
   if (!subprocessDef.value) return ''
+  const from = subprocessDef.value.nodes.find(n => n.id === edge.from)
+  const to = subprocessDef.value.nodes.find(n => n.id === edge.to)
   if (!from || !to) return ''
+  const fp = getSubNodePort(from, 'out')
+  const tp = getSubNodePort(to, 'in')
+  const dx = Math.abs(tp.x - fp.x)
+  const cx = Math.max(dx * 0.5, 60)
   return `M ${fp.x} ${fp.y} C ${fp.x+cx} ${fp.y}, ${tp.x-cx} ${tp.y}, ${tp.x} ${tp.y}`
 }
 function subTempEdgePath(): string {
   if (!subTempEdge.value) return ''
   const { startX, startY, endX, endY } = subTempEdge.value
+  const from = subprocessDef.value?.nodes[subTempEdge.value.from]
   if (!from) return ''
+  const fp = getSubNodePort(from, subTempEdge.value.fromPort)
+  const cx = Math.max(Math.abs(endX - fp.x) * 0.5, 60)
+  const sign = subTempEdge.value.fromPort === 'out' ? 1 : -1
   return `M ${fp.x} ${fp.y} C ${fp.x+cx*sign} ${fp.y}, ${endX-cx*sign} ${endY}, ${endX} ${endY}`
 }
 function subCreateEdge(fromId: string, toId: string) {
   if (!subprocessDef.value) return
+  const exists = subprocessDef.value.edges.some(e => e.from === fromId && e.to === toId)
   if (exists) return
   subprocessDef.value.edges.push({ id: genEdgeId(), from: fromId, to: toId })
   subPushHistory()
@@ -4412,7 +4513,12 @@ function subZoomOut() { subZoom.value = Math.max(0.3, subZoom.value - 0.1) }
 function subFitCanvas() { subZoom.value = 1; subPanX.value = 0; subPanY.value = 0 }
 function subAddNode(type: string) {
   if (!subprocessDef.value) return
+  const w = isGate(type) ? 100 : type === 'approval' ? 130 : type === 'subprocess' ? 120 : 120
+  const h = type === 'approval' ? 70 : type === 'subprocess' ? 60 : 50
+  const cx = (-subPanX.value + subCanvasRef.value?.clientWidth!/2) / subZoom.value
   const cy = (-subPanY.value + subCanvasRef.value?.clientHeight!/2) / subZoom.value
+  const sx = Math.round(cx / GRID_SIZE) * GRID_SIZE
+  const sy = Math.round(cy / GRID_SIZE) * GRID_SIZE
   subprocessDef.value.nodes.push({ id: genId(), type, label: getNodeLabel(type), x: sx - w/2, y: sy - h/2, w, h })
   subPushHistory()
 }
@@ -4426,7 +4532,11 @@ function subDeleteNode() {
 }
 function subDuplicateNode() {
   if (subSelectedNode.value === null || !subprocessDef.value) return
+  const orig = subprocessDef.value.nodes[subSelectedNode.value]
   if (!orig) return
+  const w = isGate(orig.type) ? 100 : orig.type === 'approval' ? 130 : 120
+  const h = orig.type === 'approval' ? 70 : orig.type === 'subprocess' ? 60 : 50
+  const newNode: PDNode = {
     id: genId(), type: orig.type, label: orig.label,
     x: orig.x + 30, y: orig.y + 30, w, h,
     assignee: orig.assignee, condition: orig.condition,
@@ -4438,6 +4548,8 @@ function subDuplicateNode() {
 }
 function subAutoLayout() {
   if (!subprocessDef.value || subprocessDef.value.nodes.length === 0) return
+  const nodes = subprocessDef.value.nodes
+  const cols = Math.ceil(Math.sqrt(nodes.length))
   nodes.forEach((n, i) => {
     n.x = 80 + (i % cols) * ((n.w||120) + 40)
     n.y = 80 + Math.floor(i / cols) * ((n.h||50) + 40)
@@ -4464,6 +4576,7 @@ function subClearCanvas() {
 }
 function createSubVersion() {
   if (!subprocessDef.value) return
+  const v: ProcVersion = { id: genId(), timestamp: Date.now(), label: '子流程快照', config: JSON.parse(JSON.stringify(subprocessDef.value)), author: 'user', message: '子流程快照' }
   versions.value.unshift(v)
   if (versions.value.length > 20) versions.value.pop()
 }
@@ -4606,32 +4719,40 @@ const compareV1 = ref('')
 const compareV2 = ref('__current')
 function getVersionLabel(id: string): string {
   if (id === '__current') return '当前'
+  const v = versions.value.find(v => v.id === id)
   return v ? v.label : '未知版本'
 }
 function getNodesById(id: string): PDNode[] {
   if (id === '__current') return processDef.value?.nodes ?? []
+  const v = versions.value.find(vv => vv.id === id)
   return v?.config?.nodes ?? []
 }
 function getEdgesById(id: string): PDEdge[] {
   if (id === '__current') return processDef.value?.edges ?? []
+  const v = versions.value.find(vv => vv.id === id)
   return v?.config?.edges ?? []
 }
 function countDiff(id1: string, id2: string, type: 'added'|'removed'|'modified'): number {
+  const n1 = getNodesById(id1), n2 = getNodesById(id2)
   const s1 = new Set(n1.map(n => n.id)), s2 = new Set(n2.map(n => n.id))
   if (type === 'added') return [...s2].filter(id => !s1.has(id)).length
   if (type === 'removed') return [...s1].filter(id => !s2.has(id)).length
   // modified: nodes in both but with different labels or positions
   let count = 0
   for (const id of s1) {
+    const a = n1.find(n => n.id === id), b = n2.find(n => n.id === id)
     if (a && b && (a.label !== b.label || Math.abs(a.x - b.x) > 10 || Math.abs(a.y - b.y) > 10)) count++
   }
   return count
 }
 function formatNodeDiff(id1: string, id2: string, _mode: string): string {
+  const n1 = getNodesById(id1), n2 = getNodesById(id2)
+  const s1 = new Set(n1.map(n => n.id)), s2 = new Set(n2.map(n => n.id))
   const added = [...s2].filter(id => !s1.has(id))
   const removed = [...s1].filter(id => !s2.has(id))
   const modified: string[] = []
   for (const id of s1) {
+    const a = n1.find(n => n.id === id), b = n2.find(n => n.id === id)
     if (a && b && a.label !== b.label) modified.push(`${a.label}→${b.label}`)
   }
   const lines: string[] = []
@@ -4653,11 +4774,15 @@ function copyExportJson() {
   navigator.clipboard.writeText(exportJson())
 }
 function downloadJson() {
+  const blob = new Blob([exportJson()], { type: 'application/json' })
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
   a.href = url; a.download = (currentProcess.value?.flag || 'process') + '.json'
   a.click(); URL.revokeObjectURL(url)
 }
 function doImportJson() {
   try {
+    const data = JSON.parse(importJsonText.value)
     if (data.nodes && Array.isArray(data.nodes)) {
       processDef.value = { nodes: data.nodes, edges: data.edges || [] }
       selectedNode.value = null; selectedEdge.value = null
@@ -4672,12 +4797,15 @@ function runValidation(): void {
   if (!processDef.value) { validationResult.value = null; return }
   const issues: Array<{severity: string; message: string}> = []
   const suggestions: string[] = []
+  const nodes = processDef.value.nodes
+  const edges = processDef.value.edges || []
   const nodeIds = new Set(nodes.map(n => n.id))
   // Check disconnected nodes
   const connectedNodes = new Set<string>()
   for (const e of edges) { connectedNodes.add(e.from); connectedNodes.add(e.to) }
   for (const n of nodes) { if (!connectedNodes.has(n.id) && n.type !== 'start' && n.type !== 'end') issues.push({ severity: 'warning', message: `节点「${n.label||n.id}」未连接到任何连线` }) }
   // Check start/end
+  const starts = nodes.filter(n => n.type === 'start')
   const ends = nodes.filter(n => n.type === 'end')
   if (starts.length === 0) issues.push({ severity: 'error', message: '流程缺少开始节点' }); else if (starts.length > 1) issues.push({ severity: 'warning', message: `流程有 ${starts.length} 个开始节点` })
   if (ends.length === 0) issues.push({ severity: 'error', message: '流程缺少结束节点' }); else if (ends.length > 1) issues.push({ severity: 'warning', message: `流程有 ${ends.length} 个结束节点` })
@@ -4696,6 +4824,7 @@ function runValidation(): void {
   // Check node overlap
   for (let i = 0; i < nodes.length; i++) {
     for (let j = i+1; j < nodes.length; j++) {
+      const a = nodes[i], b = nodes[j]
       if (a.x < b.x+(b.w||120) && a.x+(a.w||120) > b.x && a.y < b.y+(b.h||50) && a.y+(a.h||50) > b.y)
         issues.push({ severity: 'warning', message: `节点重叠: ${a.label||a.id} 与 ${b.label||b.id}` })
     }
@@ -4747,7 +4876,10 @@ const showAnnotations = ref(false)
 const newAnnotation = ref({ text: "", color: "#f59e0b" })
 function addAnnotation() {
   if (!processDef.value) return
+  const rect = canvasRef.value?.getBoundingClientRect()
   if (!rect) return
+  const cx = (rect.width/2 - panX.value) / zoom.value
+  const cy = (rect.height/2 - panY.value) / zoom.value
   annotations.value.push({ id: genId(), x: cx - 60, y: cy - 20, text: newAnnotation.value.text || "备注", color: newAnnotation.value.color, w: 120, h: 60 })
   newAnnotation.value = { text: "", color: "#f59e0b" }
 }
@@ -4764,7 +4896,9 @@ function setGridSize(size: number) { if (customGridSize) customGridSize.value = 
 type AlignDir = "left"|"right"|"top"|"bottom"|"center-x"|"center-y"|"distribute-h"|"distribute-v"
 function alignNodes(dir: AlignDir) {
   if (!processDef.value) return
+  const ids = selectedNode.value !== null ? [processDef.value.nodes[selectedNode.value]!.id] : Array.from(multiSelected.value)
   if (ids.length < 2) return
+  const nodes = ids.map(id => processDef.value!.nodes.find(n => n.id === id)).filter(Boolean) as PDNode[]
   switch(dir) {
     case "left": { const minX = Math.min(...nodes.map(n => n.x)); nodes.forEach(n => n.x = minX); break }
     case "right": { const maxX = Math.max(...nodes.map(n => n.x + (n.w||120))); nodes.forEach(n => n.x = maxX - (n.w||120)); break }
@@ -4778,6 +4912,7 @@ function alignNodes(dir: AlignDir) {
 // --- Batch Operations ---
 function batchSetProperty(prop: string, val: any) {
   if (!processDef.value) return
+  const ids = selectedNode.value !== null ? [processDef.value.nodes[selectedNode.value]!.id] : Array.from(multiSelected.value)
   for (const id of ids) { const n = processDef.value.nodes.find(nd => nd.id === id); if (n) (n as any)[prop] = val }
   pushHistory()
 }
@@ -4786,7 +4921,11 @@ function batchSetColor(color: string) { batchSetProperty("style", color) }
 interface ValidationResult { valid: boolean; issues: Array<{type: string; message: string; severity: "error"|"warning"}>; stats: {totalNodes: number; totalEdges: number; isolatedNodes: number; missingStart: boolean; missingEnd: boolean; unreachableNodes: string[]} }
 function validateConnections(): ValidationResult {
   if (!processDef.value) return { valid: false, issues: [], stats: {totalNodes:0,totalEdges:0,isolatedNodes:0,missingStart:true,missingEnd:true,unreachableNodes:[]} }
+  const nodes = processDef.value.nodes, edges = processDef.value.edges || []
+  const issues: Array<{type:string;message:string;severity:"error"|"warning"}> = []
+  const starts = nodes.filter(n => n.type === "start")
   if (starts.length === 0) issues.push({ type: "missing-start", message: "流程缺少开始节点", severity: "error" })
+  const ends = nodes.filter(n => n.type === "end")
   if (ends.length === 0) issues.push({ type: "missing-end", message: "流程缺少结束节点", severity: "error" })
   const connectedIds = new Set<string>()
   for (const e of edges) { connectedIds.add(e.from); connectedIds.add(e.to) }
@@ -4807,11 +4946,13 @@ const dimPresets = [{name:"窄型",w:80,h:40},{name:"标准",w:120,h:50},{name:"
 function applyDimPreset(idx: number) {
   if (selectedNode.value===null||!processDef.value) return
   const p = dimPresets[idx]; if(!p) return
+  const n = processDef.value.nodes[selectedNode.value]; n.w=p.w; n.h=p.h; pushHistory()
 }
 // --- Flow Analysis ---
 interface FlowInfo { nodeId:string; label:string; inDegree:number; outDegree:number; role:string }
 function computeFlowInfo(): FlowInfo[] {
   if (!processDef.value) return []
+  const nodes = processDef.value.nodes, edges = processDef.value.edges||[]
   return nodes.map(n => {
     const inD = edges.filter(e=>e.to===n.id).length, outD = edges.filter(e=>e.from===n.id).length
     let role = "内部节点"
@@ -4834,6 +4975,7 @@ function archiveCurrent() {
 }
 function restoreArchive(idx:number) {
   if (idx>=processArchive.value.length||!processDef.value) return
+  const snap = processArchive.value[idx].snapshot
   processDef.value = {nodes:snap.nodes, edges:snap.edges||[]}
   selectedNode.value=null; selectedEdge.value=null; pushHistory()
 }
@@ -4856,14 +4998,17 @@ function createSnapshot() {
 }
 function runFlowAnalysis(): FlowAnalysisResult {
   if (!processDef.value) return {totalNodes:0,totalEdges:0,cycles:[],criticalPath:[],bottlenecks:[],isolatedNodes:[]}
+  const nodes=processDef.value.nodes, edges=processDef.value.edges||[]
   const inDeg=new Map<string,number>(), outDeg=new Map<string,number>()
   nodes.forEach(n=>{inDeg.set(n.id,0);outDeg.set(n.id,0)})
   edges.forEach(e=>{inDeg.set(e.to,(inDeg.get(e.to)||0)+1);outDeg.set(e.from,(outDeg.get(e.from)||0)+1)})
   const cycles:Array<CycleInfo>=[], visited=new Set<string>(), recStack=new Set<string>()
   function dfs(id:string,path:string[]){visited.add(id);recStack.add(id);edges.filter(e=>e.from===id).forEach(e=>{if(!visited.has(e.to))dfs(e.to,[...path,id]);else if(recStack.has(e.to)){const si=path.indexOf(e.to);if(si>=0)cycles.push({nodes:path.slice(si).concat([id,e.to]),length:path.length-si+1,severity:'warning'})}});recStack.delete(id)}
   nodes.forEach(n=>{if(!visited.has(n.id))dfs(n.id,[])})
+  const isolated=nodes.filter(n=>(inDeg.get(n.id)||0)===0&&(outDeg.get(n.id)||0)===0)
   const bottlenecks=nodes.filter(n=>(inDeg.get(n.id)||0)>=3||(outDeg.get(n.id)||0)>=3).map(n=>({nodeId:n.id,label:n.label||n.id,inDegree:inDeg.get(n.id)||0,outDegree:outDeg.get(n.id)||0,severity:(inDeg.get(n.id)||0)>=3&&(outDeg.get(n.id)||0)>=3?'high':'medium',reason:'入边和出边过多'}))
   const criticalPath:Array<CriticalPathNode>=nodes.filter(n=>(inDeg.get(n.id)||0)===0).slice(0,3).map(n=>({nodeId:n.id,label:n.label||n.id,duration:100+Math.random()*200}))
+  const r={totalNodes:nodes.length,totalEdges:edges.length,cycles,criticalPath,bottlenecks,isolatedNodes:isolated.map(n=>n.id)} as FlowAnalysisResult
   flowAnalysisResult.value=r;return r
 }
 function getFlowHealthScore():number{if(!flowAnalysisResult.value)return 0;const r=flowAnalysisResult.value;return Math.max(0,100-r.cycles.length*20-r.isolatedNodes.length*5-r.bottlenecks.filter(b=>b.severity==='high').length*15)}
@@ -4883,9 +5028,11 @@ function onGroupResizeMouseDown(e: MouseEvent, idx: number, dir: string) {
   const g = groupNodes.value[idx]
   if (!g) return
   groupResizeState.value = { idx, dir, startX: e.clientX, startY: e.clientY, origW: g.node.w||200, origH: g.node.h||100, origX: g.node.x, origY: g.node.y }
+  const onMove = (ev: MouseEvent) => {
     if (!groupResizeState.value) return
     const gs = groupResizeState.value, gn = processDef.value.nodes[gs.idx]
     if (!gn) return
+    const dx = (ev.clientX - gs.startX) / zoom.value, dy = (ev.clientY - gs.startY) / zoom.value
     if (gs.dir === "se") { gn.w = Math.max(100, gs.origW + dx); gn.h = Math.max(60, gs.origH + dy) }
     else if (gs.dir === "e") gn.w = Math.max(100, gs.origW + dx)
     else if (gs.dir === "s") gn.h = Math.max(60, gs.origH + dy)
@@ -4897,6 +5044,7 @@ function onGroupResizeMouseDown(e: MouseEvent, idx: number, dir: string) {
     gn.w = Math.max(100, Math.round(gn.w / GRID_SIZE) * GRID_SIZE)
     gn.h = Math.max(60, Math.round(gn.h / GRID_SIZE) * GRID_SIZE)
   }
+  const onUp = () => { document.removeEventListener("mousemove", onMove); document.removeEventListener("mouseup", onUp); groupResizeState.value = null; pushHistory() }
   document.addEventListener("mousemove", onMove); document.addEventListener("mouseup", onUp)
 }
 function getGroupResizeX(node: PDNode, dir: string): number { return dir.includes("w") ? node.x : node.x + (node.w||200) }
@@ -4905,11 +5053,14 @@ function getGroupResizeY(node: PDNode, dir: string): number { return dir.include
 const routingPresets = [{ name: "auto", routing: "auto", label: "自动" }, { name: "straight", routing: "straight", label: "直线" }, { name: "horizontal", routing: "horizontal", label: "水平" }, { name: "vertical", routing: "vertical", label: "垂直" }]
 function openRoutingPanel(edgeIdx: number) {
   selectedRoutingEdge.value = edgeIdx; showRoutingPanel.value = true
+  const edge = processDef.value?.edges?.[edgeIdx]
   if (!edge || routingConfigs.value.has(edge.id)) return
+  const fn = processDef.value!.nodes.find(n => n.id === edge.from), tn = processDef.value!.nodes.find(n => n.id === edge.to)
   routingConfigs.value.set(edge.id, { edgeId: edge.id, fromNodeIdx: processDef.value!.nodes.indexOf(fn!), toNodeIdx: processDef.value!.nodes.indexOf(tn!), routing: "auto", controlPoints: [], offset: 0, labelPos: "auto", arrowStyle: "default" })
 }
 function getRoutingConfig(edgeId: string): EdgeRouteConfig|null { return routingConfigs.value.get(edgeId) || null }
 function updateRoutingConfig(edgeId: string, updates: Partial<EdgeRouteConfig>) {
+  const cfg = routingConfigs.value.get(edgeId)
   if (!cfg) return
   Object.assign(cfg, updates)
   routingConfigs.value.set(edgeId, cfg)
@@ -4918,16 +5069,24 @@ function updateRoutingConfig(edgeId: string, updates: Partial<EdgeRouteConfig>) 
 function addControlPoint() { const cfg = getRoutingConfig(processDef.value?.edges?.[selectedRoutingEdge.value!]?.id || ""); if (!cfg) return; cfg.controlPoints.push({ x: 0, y: 0, type: "control" }); routingConfigs.value.set(cfg.edgeId, cfg) }
 function removeControlPoint(idx: number) { const cfg = getRoutingConfig(processDef.value?.edges?.[selectedRoutingEdge.value!]?.id || ""); if (!cfg) return; cfg.controlPoints.splice(idx, 1); routingConfigs.value.set(cfg.edgeId, cfg) }
 function computeCustomEdgePath(edge: PDEdge): string {
+  const cfg = routingConfigs.value.get(edge.id)
   if (!cfg || cfg.controlPoints.length === 0) return computeEdgePath(edge)
+  const from = processDef.value?.nodes.find(n => n.id === edge.from), to = processDef.value?.nodes.find(n => n.id === edge.to)
   if (!from || !to) return ""
+  const fp = getNodePort(from, "out"), tp = getNodePort(to, "in")
+  let d = `M ${fp.x} ${fp.y}`
   for (const cp of cfg.controlPoints) d += ` L ${cp.x} ${cp.y}`
   return d + ` L ${tp.x} ${tp.y}`
 }
 function applyRoutingPreset(preset: "smooth"|"orthogonal"|"manhattan"|"zigzag") {
   if (selectedRoutingEdge.value === null) return
+  const edge = processDef.value?.edges?.[selectedRoutingEdge.value]
   if (!edge) return
+  const from = processDef.value!.nodes.find(n => n.id === edge.from), to = processDef.value!.nodes.find(n => n.id === edge.to)
   if (!from || !to) return
+  const fp = getNodePort(from, "out"), tp = getNodePort(to, "in")
   const midX = (fp.x + tp.x) / 2, midY = (fp.y + tp.y) / 2
+  const cp: RoutingPoint[] = []
   if (preset === "smooth") cp.push({ x: midX, y: midY, type: "control" })
   else if (preset === "orthogonal") { cp.push({ x: fp.x, y: midY, type: "control" }, { x: tp.x, y: midY, type: "control" }) }
   else if (preset === "manhattan") { cp.push({ x: midX, y: fp.y, type: "control" }, { x: midX, y: tp.y, type: "control" }) }
@@ -4946,6 +5105,7 @@ const scriptPresets = [
   { name: "数学计算", icon: "🔢", code: "const a = parseFloat(inputData.a)||0, b = parseFloat(inputData.b)||0; output.sum = a+b; output.diff = a-b; output.prod = a*b; output.div = b!==0 ? a/b : null;" },
 ]
 function openScriptEditor(nodeIdx: number) {
+  const nodes = processDef.value?.nodes || [], node = nodes[nodeIdx]
   scriptEditorNodeIdx.value = nodeIdx; showScriptEditor.value = true
   if (!node) return
   const key = node.id
@@ -4957,6 +5117,7 @@ function openScriptEditor(nodeIdx: number) {
 }
 function closeScriptEditor() { showScriptEditor.value = false; scriptEditorNodeIdx.value = null }
 function saveScriptEditor() {
+  const node = processDef.value?.nodes?.[scriptEditorNodeIdx.value], cfg = getScriptConfig(node?.id)
   if (scriptEditorNodeIdx.value === null || !processDef.value || !cfg) return
   node.script = cfg.code; ;(node as any).scriptConfig = cfg; pushHistory(); closeScriptEditor()
 }
@@ -4968,11 +5129,16 @@ function removeOutputMapping(idx: number) { const node = processDef.value?.nodes
 // ── Fork/Join Enhanced ──────────────────────────────────────────────
 function detectParallelBranchesEnhanced(): ForkJoinAnnotation[] {
   if (!processDef.value) return []
+  const nodes = processDef.value.nodes, edges = processDef.value.edges || []
+  const annotations: ForkJoinAnnotation[] = []
   for (let i = 0; i < nodes.length; i++) {
+    const outgoing = edges.filter(e => e.from === nodes[i].id)
     if (outgoing.length >= 2) {
+      const members = new Set(outgoing.map(e => e.to))
       if (members.size >= 2) {
         const branchIndices: number[] = []
         for (const toId of members) { const idx = nodes.findIndex(n => n.id === toId); if (idx !== -1) branchIndices.push(idx) }
+        const potentialJoins = nodes.filter((n, j) => j !== i && branchIndices.every(bi => edges.some(e => e.from === nodes[bi].id && e.to === n.id)))
         annotations.push({ id: genId(), type: "fork", branchIndices, forkNodeIdx: i,
           joinNodeIdx: potentialJoins.length > 0 ? nodes.findIndex(n => n.id === potentialJoins[0].id) : undefined,
           label: "分支" + (annotations.length + 1), color: "#f59e0b",
@@ -4986,7 +5152,9 @@ function detectParallelBranchesEnhanced(): ForkJoinAnnotation[] {
 function toggleForkJoinAnnot() { showBranchAnnot.value = !showBranchAnnot.value; if (showBranchAnnot.value) forkJoinAnnotations.value = detectParallelBranchesEnhanced() }
 function getForkJoinPath(branchIndices: number[]): string {
   if (branchIndices.length < 2 || !processDef.value) return ""
+  const nodes = branchIndices.map(i => processDef.value!.nodes[i]).filter(Boolean)
   if (nodes.length < 2) return ""
+  let d = `M ${nodes[0].x + (nodes[0].w||120)} ${nodes[0].y + (nodes[0].h||50)/2}`
   for (let i = 1; i < nodes.length; i++) { const n = nodes[i]; d += ` L ${n.x + (n.w||120)} ${n.y + (n.h||50)/2}` }
   return d
 }
@@ -4994,8 +5162,10 @@ function getForkJoinPath(branchIndices: number[]): string {
 const groupResizeDirs = ["nw","n","ne","e","se","s","sw","w"] as const
 // ── Breakpoint Management ─────────────────────────────────────────
 function toggleBreakpoint(nodeId: string) {
+  const idx = breakpoints.value.findIndex(b => b.nodeId === nodeId)
   if (idx >= 0) breakpoints.value.splice(idx, 1)
   else {
+    const node = processDef.value?.nodes?.find(n => n.id === nodeId)
     breakpoints.value.push({ nodeId, label: node?.label })
   }
 }
@@ -5007,16 +5177,22 @@ function stepBackward() { if (histIdx.value <= 0) return; histIdx.value--; proce
 // ── Enhanced Flow Statistics ──────────────────────────────────────
 function computeFlowStats(): FlowStats {
   if (!processDef.value) return { totalNodes: 0, totalEdges: 0, avgDegree: "0", maxDegree: 0, density: "0", cycles: 0, isolatedNodes: 0 }
+  const nodes = processDef.value.nodes
+  const edges = processDef.value.edges || []
+  const inDegree = new Map<string, number>()
   const outDegree = new Map<string, number>()
   for (const n of nodes) { inDegree.set(n.id, 0); outDegree.set(n.id, 0) }
   for (const e of edges) { outDegree.set(e.from, (outDegree.get(e.from) || 0) + 1); inDegree.set(e.to, (inDegree.get(e.to) || 0) + 1) }
   let maxOut = 0, totalOut = 0
   for (const d of outDegree.values()) { totalOut += d; if (d > maxOut) maxOut = d }
+  const isolated = nodes.filter(n => (inDegree.get(n.id) || 0) === 0 && (outDegree.get(n.id) || 0) === 0).length
   const density = nodes.length > 1 ? (edges.length / (nodes.length * (nodes.length - 1))).toFixed(3) : "0"
+  let cycles = 0, visited = new Set<string>()
   for (const n of nodes) {
     if (visited.has(n.id)) continue
     const stack = [n.id], path = new Set<string>()
     while (stack.length > 0) {
+      const curr = stack.pop()!
       if (path.has(curr)) { cycles++; break }
       if (visited.has(curr)) continue
       path.add(curr); visited.add(curr)
@@ -5038,6 +5214,7 @@ const enhancedNodeStylePresets: EnhancedNodeStyle[] = [
 ]
 function applyEnhancedNodeStyle(preset: EnhancedNodeStyle) {
   if (selectedNode.value === null || !processDef.value) return
+  const node = processDef.value.nodes[selectedNode.value]
   node.style = JSON.stringify({ color: preset.color, bgColor: preset.bgColor, borderColor: preset.borderColor })
   pushHistory()
 }
@@ -5060,10 +5237,14 @@ function getNodeTypesCount(): NodeTypeCount[] {
 interface EdgeDirection { direction: string; count: number; percentage: string }
 function getEdgeDirections(): EdgeDirection[] {
   if (!processDef.value) return []
+  const edges = processDef.value.edges || []
   if (edges.length === 0) return []
   let leftCount = 0, rightCount = 0, upCount = 0, downCount = 0
   for (const e of edges) {
+    const from = processDef.value!.nodes.find(n => n.id === e.from)
+    const to = processDef.value!.nodes.find(n => n.id === e.to)
     if (!from || !to) continue
+    const dx = to.x - from.x, dy = to.y - from.y
     if (Math.abs(dx) > Math.abs(dy)) { if (dx > 0) rightCount++; else leftCount++ }
     else { if (dy > 0) downCount++; else upCount++ }
   }
@@ -5079,11 +5260,15 @@ function getEdgeDirections(): EdgeDirection[] {
 interface PathInfo { length: number; nodes: string[]; isCyclic: boolean }
 function analyzeLongestPaths(): PathInfo[] {
   if (!processDef.value) return []
+  const nodes = processDef.value.nodes
+  const edges = processDef.value.edges || []
+  const adj = new Map<string, string[]>()
   for (const e of edges) {
     if (!adj.has(e.from)) adj.set(e.from, [])
     adj.get(e.from)!.push(e.to)
   }
   const paths: PathInfo[] = []
+  const startNodes = nodes.filter(n => !edges.some(e => e.to === n.id))
   for (const n of startNodes) { dfs(n.id, [n.id], new Set([n.id])) }
   return paths.sort((a,b) => b.length - a.length).slice(0, 5)
 }
@@ -5108,8 +5293,10 @@ function simulateNextEnhanced() {
   if (!execState.value.completedNodes.includes(curNode.id)) {
     execState.value.completedNodes = [...execState.value.completedNodes, curNode.id]
   }
+  const edges = processDef.value.edges || []
   const nextEdges = edges.filter(e => e.from === curNode.id)
   if (nextEdges.length > 0) {
+    const nextIdx = processDef.value.nodes.findIndex(n => n.id === nextEdges[0].to)
     execState.value.currentNodeIdx = nextIdx
     execState.value.progress = Math.round((nextIdx + 1) / processDef.value.nodes.length * 100)
     setTimeout(() => simulateNextEnhanced(), executionSpeed.value)
@@ -5120,6 +5307,7 @@ function simulateNextEnhanced() {
 }
 // ── Breakpoint Management ───────────────────────────────────────────
 function addBreakpoint(nodeId: string) {
+  const node = processDef.value?.nodes?.find(n => n.id === nodeId)
   if (!breakpoints.value.find(b => b.nodeId === nodeId)) {
     breakpoints.value.push({ nodeId, label: node?.label, enabled: true })
   }
@@ -5131,19 +5319,28 @@ function clearAllBreakpoints() { breakpoints.value = [] }
 // ── Style Preset Functions ──────────────────────────────────────────
 function applyStylePreset(preset: StylePreset) {
   if (selectedNode.value === null || !processDef.value) return
+  const node = processDef.value.nodes[selectedNode.value]
   node.style = JSON.stringify({ fill: preset.fill, stroke: preset.stroke })
   pushHistory()
 }
 // ── Network Analysis Functions ──────────────────────────────────────
 function computeNetworkMetrics(): NetworkMetric[] {
   if (!processDef.value) return []
+  const nodes = processDef.value.nodes
+  const edges = processDef.value.edges || []
+  const inDeg = new Map<string, number>(), outDeg = new Map<string, number>()
   for (const n of nodes) { inDeg.set(n.id, 0); outDeg.set(n.id, 0) }
   for (const e of edges) { outDeg.set(e.from, (outDeg.get(e.from)||0)+1); inDeg.set(e.to, (inDeg.get(e.to)||0)+1) }
   let totalOut = 0, maxOut = 0
   for (const d of outDeg.values()) { totalOut += d; if (d > maxOut) maxOut = d }
+  const density = nodes.length > 1 ? (edges.length / (nodes.length * (nodes.length - 1))).toFixed(4) : "0"
+  const isolated = nodes.filter(n => (inDeg.get(n.id)||0) === 0 && (outDeg.get(n.id)||0) === 0).length
+  let cycles = 0, visited = new Set<string>()
   for (const n of nodes) {
     if (visited.has(n.id)) continue
+    const stack = [n.id], path = new Set<string>()
     while (stack.length > 0) {
+      const curr = stack.pop()!
       if (path.has(curr)) { cycles++; break }
       if (visited.has(curr)) continue
       path.add(curr); visited.add(curr)
@@ -5172,6 +5369,7 @@ function renderConnectionRulesGridEnhanced() {
     grid[from] = {}
     for (const to of types) {
       if (from === to) { grid[from][to] = false; continue }
+      const allowed: Record<string, string[]> = {
         "start": ["task","approval","script","gate_and","gate_or","gate_xor"],
         "task": ["task","approval","end","script","gate_and","gate_or","gate_xor"],
         "approval": ["task","approval","end","script","gate_and","gate_or","gate_xor"],
@@ -5195,6 +5393,7 @@ function toggleConnectionRuleEnhanced(from: string, to: string) {
   saveConnectionRules()
 }
 function saveConnectionRulesEnhanced() {
+  const rules: Array<{from: string; to: string}> = []
   for (const from of Object.keys(connectionRules.value)) {
     for (const to of Object.keys(connectionRules.value[from])) {
       if (connectionRules.value[from][to]) rules.push({ from, to })
@@ -5207,25 +5406,43 @@ function resetConnectionRulesEnhanced() { renderConnectionRulesGridEnhanced(); s
 // ── Export Functions ─────────────────────────────────────────────────
 function exportAsSvgEnhanced() {
   if (!processDef.value) return
+  const nodes = processDef.value.nodes
+  const edges = processDef.value.edges || []
   if (nodes.length === 0) return
+  let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity
   for (const n of nodes) { minX = Math.min(minX, n.x); minY = Math.min(minY, n.y); maxX = Math.max(maxX, n.x + (n.w||120)); maxY = Math.max(maxY, n.y + (n.h||50)) }
+  const pad = 80
+  const w = maxX - minX + pad*2, h = maxY - minY + pad*2
+  let svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}" viewBox="0 0 ${w} ${h}">`
   svg += `<defs><marker id="arr" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto"><polygon points="0 0,10 3.5,0 7" fill="#00d4ff"/></marker></defs>`
   svg += `<rect width="${w}" height="${h}" fill="#0a0e1a"/>`
   svg += `<g transform="translate(${pad-minX},${pad-minY})">`
   for (const edge of edges) {
+    const from = nodes.find(n => n.id === edge.from), to = nodes.find(n => n.id === edge.to)
     if (!from || !to) continue
+    const fp = { x: from.x + (from.w||120), y: from.y + (from.h||50)/2 }, tp = { x: to.x, y: to.y + (to.h||50)/2 }
+    const dx = Math.abs(tp.x - fp.x), cx = Math.max(dx * 0.5, 60)
     svg += `<path d="M ${fp.x} ${fp.y} C ${fp.x+cx} ${fp.y}, ${tp.x-cx} ${tp.y}, ${tp.x} ${tp.y}" stroke="#00d4ff" stroke-width="2" fill="none" marker-end="url(#arr)"/>`
   }
   for (const node of nodes) {
+    const nw = node.w||120, nh = node.h||50
+    const colors: Record<string,string> = { start:"#10b981", end:"#ef4444", task:"#00d4ff", approval:"#6366f1", subprocess:"#a855f7", script:"#22c55e", gate_and:"#f59e0b", gate_or:"#f59e0b", gate_xor:"#f59e0b" }
     svg += `<rect x="${node.x}" y="${node.y}" width="${nw}" height="${nh}" rx="8" fill="${colors[node.type]||"#374151"}80" stroke="${colors[node.type]||"#6b7280"}" stroke-width="1.5"/>`
     svg += `<text x="${node.x+nw/2}" y="${node.y+nh/2+4}" text-anchor="middle" fill="white" font-size="12">${node.label||""}</text>`
   }
   svg += `</g></svg>`
+  const blob = new Blob([svg], { type: "image/svg+xml" })
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement("a")
   a.href = url; a.download = (currentProcess.value?.flag || "process") + "_enhanced.svg"
   a.click(); URL.revokeObjectURL(url)
 }
 function exportAsJsonEnhanced() {
   if (!processDef.value || !currentProcess.value) return
+  const data = { process: currentProcess.value, definition: processDef.value, exportedAt: new Date().toISOString() }
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" })
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement("a")
   a.href = url; a.download = (currentProcess.value.flag || "process") + "_enhanced.json"
   a.click(); URL.revokeObjectURL(url)
 }
@@ -5357,7 +5574,9 @@ function enterBatchMode() { showBatchToolbar.value = true }
 function exitBatchMode() { showBatchToolbar.value = false }
 function batchAlign(dir: string) {
   if (!processDef.value) return
+  const nodes = processDef.value.nodes
   if (dir === "left") {
+    const minX = Math.min(...nodes.map(n => n.x))
     nodes.forEach(n => { n.x = minX; if (snapToGrid.value) n.x = Math.round(n.x / GRID_SIZE) * GRID_SIZE })
   }
   if (dir === "top") {
@@ -5577,6 +5796,7 @@ function loadNodeTemplate(tpl: NodeTemplate) {
   if (!processDef.value) return
   const baseX = 100, baseY = 100
   tpl.nodes.forEach((n, i) => {
+    const newNode: PDNode = {
       ...n,
       id: genId(),
       x: baseX + i * 200,
@@ -5604,6 +5824,7 @@ function stopPerfMonitor() {
   perfMetrics.value = []
 }
 function calculateDuration(nodeId: string): number {
+  const m = perfMetrics.value.find(p => p.nodeId === nodeId)
   return m ? m.endTime - m.startTime : 0
 }
 function showContext(x: number, y: number, nodeId: number|null, edges: PDEdge[]) {
@@ -5631,6 +5852,7 @@ function hideNodeTooltip() { showTooltip.value = false }
 function getNodeTooltipContent(node: PDNode): string {
   const outEdges = (processDef.value?.edges || []).filter(e => e.from === node.id).length
   const inEdges = (processDef.value?.edges || []).filter(e => e.to === node.id).length
+  const profile = getNodeProfile(node.type)
   return `📌 ${node.label || node.type} | 入边:${inEdges} 出边:${outEdges} | 尺寸:${node.w||120}×${node.h||50} | ${profile.role}`
 }
 function toggleGuidelines() { showGuideLines.value = !showGuideLines.value }
@@ -5647,6 +5869,7 @@ function removeGuideLine(idx: number) {
 }
 function startBoxSelect(e: MouseEvent) {
   if (e.button !== 0) return
+  const rect = (e.currentTarget as HTMLElement).getBoundingClientRect()
   boxSelection.value = {
     active: true,
     start: { x: e.clientX - rect.left, y: e.clientY - rect.top },
@@ -5655,22 +5878,29 @@ function startBoxSelect(e: MouseEvent) {
 }
 function moveBoxSelect(e: MouseEvent) {
   if (!boxSelection.value.active) return
+  const rect = (e.currentTarget as HTMLElement).getBoundingClientRect()
   boxSelection.value.end = { x: e.clientX - rect.left, y: e.clientY - rect.top }
 }
 function endBoxSelect() {
   if (!boxSelection.value.active) return
   boxSelection.value.active = false
   const s = boxSelection.value.start, en = boxSelection.value.end
+  const sx = Math.min(s.x, en.x), sy = Math.min(s.y, en.y)
   const ex = Math.max(s.x, en.x), ey = Math.max(s.y, en.y)
   const ws = snapConfig.value.size
+  const nodes = processDef.value?.nodes || []
+  const canvasW = canvasRef.value?.clientWidth || 800
   const canvasH = canvasRef.value?.clientHeight || 600
   nodes.forEach(n => {
+    const nx = (n.x * zoom.value + panX.value) / 1
+    const ny = (n.y * zoom.value + panY.value) / 1
     if (nx >= sx && nx <= ex && ny >= sy && ny <= ey) {
       multiSelected.value.add(n.id)
     }
   })
 }
 function showToast(message: string, type: "info"|"success"|"warning"|"error" = "info") {
+  const id = genId()
   toastQueue.value.push({ id, message, type, duration: 3000 })
   setTimeout(() => {
     toastQueue.value = toastQueue.value.filter(t => t.id !== id)
@@ -5678,14 +5908,20 @@ function showToast(message: string, type: "info"|"success"|"warning"|"error" = "
 }
 function detectConflicts(): ConnectionConflict[] {
   const conflicts: ConnectionConflict[] = []
+  const edges = processDef.value?.edges || []
   for (let i = 0; i < edges.length; i++) {
     for (let j = i + 1; j < edges.length; j++) {
       const e1 = edges[i], e2 = edges[j]
       if (e1.from === e2.from && e1.to === e2.to && e1.id !== e2.id) {
         conflicts.push({ edge1: e1, edge2: e2, issue: '重复连接', severity: 'warning' })
       }
+      const n1 = processDef.value?.nodes.find(n => n.id === e1.from)
+      const n2 = processDef.value?.nodes.find(n => n.id === e1.to)
+      const n3 = processDef.value?.nodes.find(n => n.id === e2.from)
       const n4 = processDef.value?.nodes.find(n => n.id === e2.to)
       if (n1 && n2 && n3 && n4) {
+        const dx = Math.abs((n1.x+n2.x)/2 - (n3.x+n4.x)/2)
+        const dy = Math.abs((n1.y+n2.y)/2 - (n3.y+n4.y)/2)
         if (dx < 30 && dy < 20 && !(e1.from===e2.from && e1.to===e2.to)) {
           conflicts.push({ edge1: e1, edge2: e2, issue: '连线交叉', severity: 'error' })
         }
@@ -5699,6 +5935,7 @@ function startSimulation() {
   simRunning.value = true
   simProgress.value = 0
   simEvents.value = []
+  const nodes = processDef.value?.nodes || []
   let t = 0
   nodes.forEach((n, i) => {
     t += 500 + Math.random() * 1000
@@ -5707,6 +5944,7 @@ function startSimulation() {
     simEvents.value.push({ time: t, nodeId: n.id, event: 'complete', label: n.label || n.type })
   })
   const totalDuration = t + 500
+  const interval = setInterval(() => {
     simProgress.value = Math.min(100, (Date.now() % totalDuration) / totalDuration * 100)
     if (simProgress.value >= 100) {
       clearInterval(interval)
@@ -5721,6 +5959,7 @@ function stopSimulation() {
 }
 function toggleShortcutHelp() { showShortcutHelp.value = !showShortcutHelp.value }
 function handleShortcut(e: KeyboardEvent) {
+  const key = e.key
   const ctrl = e.ctrlKey || e.metaKey
   const shift = e.shiftKey
   const combo = ctrl ? (shift ? 'Ctrl+Shift+'+key : 'Ctrl+'+key) : key
@@ -5751,6 +5990,7 @@ function previewNode(type: string, label: string) {
   nodePreviewVisible.value = true
 }
 function getProcessStatus(): string {
+  const nodes = processDef.value?.nodes || []
   if (nodes.length === 0) return 'empty'
   const hasStart = nodes.some(n => n.type === 'start')
   const hasEnd = nodes.some(n => n.type === 'end')
@@ -5764,6 +6004,7 @@ function getProcessStatus(): string {
   return connected ? 'valid' : 'disconnected'
 }
 function getFlowVarValue(varName: string): string {
+  const v = flowVars.value.find(fv => fv.name === varName)
   return v?.defaultValue || ''
 }
 function exportFlowVars(): string {
@@ -5788,8 +6029,10 @@ function applyFormRules(ruleSetIdx: number) {
 // ── Script Editor Functions ─────────────────────────────────────────
 function openScriptFullEditor(nodeIdx: number) {
   scriptEditorNodeIdx.value = nodeIdx
+  const node = processDef.value?.nodes[nodeIdx]
   if (node?.type === 'script') {
     showScriptFullEditor.value = true
+    const cfg = (node as any).scriptConfig as any
     if (cfg) {
       scriptLang.value = cfg.language || 'javascript'
       scriptCode.value = cfg.code || ''
@@ -5820,6 +6063,7 @@ function runScriptTest() {
 function clearScriptLogs() { scriptLogs.value = [] }
 function saveScriptToNode() {
   if (scriptEditorNodeIdx.value === null || !processDef.value) return
+  const cfg = { language: scriptLang.value, code: scriptCode.value, imports: scriptImports.value.map(i => i.name), variables: scriptVars.value, errorHandling: scriptErrorConfig.value, outputMapping: scriptOutputBindings.value, timeout: 30000 }
   ;(processDef.value.nodes[scriptEditorNodeIdx.value] as any).scriptConfig = cfg
   pushHistory()
   scriptLogs.value = ['[INFO] 脚本已保存到节点', '[INFO] 语言: ' + cfg.language, '[INFO] 变量数: ' + cfg.variables.length]
@@ -5831,6 +6075,7 @@ function simulateParallelExecution() {
   parallelBranchStates.value = new Map()
   branchTimeline.value = []
   const branches = parallelBranches.value || []
+  let t = 0
   branches.forEach((br, i) => {
     parallelBranchStates.value.set(br.id, { status: 'running', progress: 0 })
     t += 500 + Math.random() * 1000
@@ -5854,6 +6099,7 @@ function getNodePropsForType(type: string): any[] {
   return nodeDeepProps.value[type] || []
 }
 function getNodePropValue(node: PDNode, category: string, key: string): any {
+  const cfg = (node as any).props?.[category] || {}
   return cfg[key] ?? ''
 }
 function setNodePropValue(node: PDNode, category: string, key: string, value: any) {
@@ -5870,6 +6116,7 @@ function saveNodeProps() {
 // ── Interaction Functions ───────────────────────────────────────────
 function triggerRipple(x: number, y: number) {
   if (!showRipples.value) return
+  const id = genId()
   rippleEffects.value.push({ id, x, y, timestamp: Date.now() })
   setTimeout(() => { rippleEffects.value = rippleEffects.value.filter(r => r.id !== id) }, 600)
 }
@@ -5879,6 +6126,9 @@ function setActiveTool(tool: string) {
 function toggleHighlightMode(mode: string) { highlightMode.value = mode }
 function getHighlightNodes(): Set<string> {
   if (highlightNodeId.value === null) return new Set()
+  const nodes = new Set<string>()
+  const edges = processDef.value?.edges || []
+  const n = processDef.value?.nodes[highlightNodeId.value]
   if (!n) return nodes
   nodes.add(n.id)
   edges.forEach(e => {
@@ -5889,6 +6139,7 @@ function getHighlightNodes(): Set<string> {
   return nodes
 }
 function applyAnimation(type: string, target?: string) {
+  const id = genId()
   canvasAnimations.value.push({ id, type, target: target || 'all', startTime: Date.now() })
   setTimeout(() => { canvasAnimations.value = canvasAnimations.value.filter(a => a.id !== id) }, 2000 / animationSpeed.value)
 }
@@ -5899,7 +6150,9 @@ function getNodeOutlineColor(node: PDNode): string {
   return selectedNode.value !== null && selectedNode.value === processDef.value?.nodes.indexOf(node) ? 'var(--color-primary)' : 'var(--border-color)'
 }
 function getNodeFillColor(node: PDNode): string {
+  const hl = getHighlightNodes()
   if (hl.size > 0 && !hl.has(node.id)) return 'rgba(30,41,59,0.5)'
+  const colors: Record<string,string> = { start:'rgba(16,185,129,0.15)', end:'rgba(239,68,68,0.15)', task:'rgba(0,212,255,0.1)', approval:'rgba(99,102,241,0.15)', subprocess:'rgba(168,85,247,0.15)', script:'rgba(34,197,94,0.15)', gate_and:'rgba(245,158,11,0.15)', gate_or:'rgba(245,158,11,0.15)', gate_xor:'rgba(245,158,11,0.15)', parallel:'rgba(6,182,212,0.15)' }
   return colors[node.type] || 'rgba(30,41,59,0.8)'
 }
 function computeNodeShadow(node: PDNode): string {
@@ -5952,6 +6205,8 @@ function compareArchives(idx1: number, idx2: number) {
 function getDiffStats(left: ProcessArchive, right: ProcessArchive): { added: number; removed: number; modified: number } {
   const leftIds = new Set(left.snapshot.nodes.map(n => n.id))
   const rightIds = new Set(right.snapshot.nodes.map(n => n.id))
+  const added = [...rightIds].filter(id => !leftIds.has(id)).length
+  const removed = [...leftIds].filter(id => !rightIds.has(id)).length
   return { added, removed, modified: 0 }
 }
 // ── Utility Functions ───────────────────────────────────────────────
@@ -5973,6 +6228,7 @@ function triggerAutocomplete(text: string, pos: number): void {
   const wordMatch = before.match(/[\w.]*$/)
   if (!wordMatch || wordMatch[0].length < 1) { showAutocomplete.value = false; return }
   currentCompletionWord.value = wordMatch[0]
+  const suggestions: typeof scriptAutocomplete.value = []
   const word = wordMatch[0].toLowerCase()
   scriptKeywords.forEach(k => { if (k.startsWith(word) && k !== word) suggestions.push({label:k, insertText:k, type:'keyword', detail:'关键字'}) })
   scriptBuiltins.forEach(b => { if (b.startsWith(word) && !suggestions.find(s=>s.label===b)) suggestions.push({label:b, insertText:b, type:'builtin', detail:'内置对象'}) })
@@ -5995,6 +6251,8 @@ function selectCompletion(idx: number): void {
   if (!textarea) return
   const val = textarea.value
   const pos = textarea.selectionStart
+  const before = val.substring(0, pos)
+  const wordMatch = before.match(/[\w.]*$/)
   const start = pos - (wordMatch?.length || 0)
   const newText = val.substring(0, start) + item.insertText + val.substring(pos)
   scriptCode.value = newText
@@ -6032,12 +6290,15 @@ function tokenizeScript(code: string): HighlightToken[] {
       tokens.push({type:'number',value:code.substring(i,j)}); i=j; continue
     }
     if (/[a-zA-Z_$]/.test(code[i])) {
+      let j = i; while (j < code.length && /[\w$]/.test(code[j])) j++
+      const word = code.substring(i,j)
       if (scriptKeywords.includes(word)) tokens.push({type:'keyword',value:word})
       else if (scriptBuiltins.includes(word)) tokens.push({type:'builtin',value:word})
       else tokens.push({type:'variable',value:word})
       i=j; continue
     }
     if ('+-*/%=<>!&|^~?:'.includes(code[i])) {
+      let j = i; while (j < code.length && '+-*/%=<>!&|^~?:'.includes(code[j])) j++
       tokens.push({type:'operator',value:code.substring(i,j)}); i=j; continue
     }
     if ('(){}[].,;'.includes(code[i])) { tokens.push({type:'punctuator',value:code[i]}); i++ }
@@ -6046,6 +6307,7 @@ function tokenizeScript(code: string): HighlightToken[] {
   return tokens
 }
 function highlightScript(code: string): string {
+  const tokens = tokenizeScript(code)
   const colorMap: Record<string, string> = {
     keyword: '#c678dd', string: '#98c379', number: '#d19a66',
     comment: '#5c6370', operator: '#56b6c2', builtin: '#e5c07b',
@@ -6062,6 +6324,7 @@ const showBranchParticles = ref(true)
 const branchParticleSpeed = ref(2)
 function initBranchParticles(): void {
   branchParticles.value = new Map()
+  const branches = parallelBranches.value
   branches.forEach(br => {
     const particles: BranchParticle[] = []
     for (let i = 0; i < 6; i++) {
@@ -6072,14 +6335,18 @@ function initBranchParticles(): void {
 }
 function updateBranchParticles(): void {
   branchParticles.value.forEach((particles, branchId) => {
+    const branch = parallelBranches.value.find(b => b.id === branchId)
     if (!branch || branch.nodes.length < 2) return
+    const nodes = branch.nodes.map(id => processDef.value?.nodes.find(n => n.id === id)).filter(Boolean) as PDNode[]
     if (nodes.length < 2) return
     particles.forEach(p => {
       p.point.t += p.point.speed
       if (p.point.t > 1) p.point.t -= 1
+      const t = p.point.t
       const segCount = nodes.length - 1
       const seg = Math.min(Math.floor(t * segCount), segCount - 1)
       const segT = (t * segCount) - seg
+      const from = nodes[seg], to = nodes[seg + 1]
       if (from && to) {
         const fx = from.x + (from.w||120)/2, fy = from.y + (from.h||50)/2
         const tx = to.x + (to.w||120)/2, ty = to.y + (to.h||50)/2
@@ -6096,6 +6363,7 @@ const showEdgeParticles = ref(true)
 const edgeParticleCount = ref(30)
 function initEdgeParticles(): void {
   edgeParticles.value = []
+  const edges = processDef.value?.edges || []
   for (let i = 0; i < Math.min(edges.length * 3, edgeParticleCount.value); i++) {
     edgeParticles.value.push({ edgeIdx: Math.floor(Math.random() * Math.max(edges.length,1)), t: Math.random(), speed: 0.002 + Math.random() * 0.003, color: 'var(--color-primary)', size: 2 + Math.random() * 2 })
   }
@@ -6103,12 +6371,22 @@ function initEdgeParticles(): void {
 function updateEdgeParticles(): void {
   edgeParticles.value.forEach(p => {
     p.t += p.speed
+    const edges = processDef.value?.edges
     if (p.t > 1 && edges) { p.t -= 1; p.edgeIdx = Math.floor(Math.random() * edges.length) }
   })
 }
 function getEdgeParticlePos(p: EdgeParticle): {x:number;y:number}|null {
+  const edges = processDef.value?.edges, nodes = processDef.value?.nodes
   if (!edges || !nodes || p.edgeIdx >= edges.length) return null
+  const edge = edges[p.edgeIdx]
+  const from = nodes.find(n => n.id === edge.from), to = nodes.find(n => n.id === edge.to)
   if (!from || !to) return null
+  const fp = { x: from.x + (from.w||120), y: from.y + (from.h||50)/2 }
+  const tp = { x: to.x, y: to.y + (to.h||50)/2 }
+  const dx = tp.x - fp.x, dy = tp.y - fp.y
+  const cx1 = fp.x + dx * 0.5, cy1 = fp.y
+  const cx2 = tp.x - dx * 0.5, cy2 = tp.y
+  const t = p.t, mt = 1-t
   return { x: mt*mt*mt*fp.x + 3*mt*mt*t*cx1 + 3*mt*t*t*cx2 + t*t*t*tp.x, y: mt*mt*mt*fp.y + 3*mt*mt*t*cy1 + 3*mt*t*t*cy2 + t*t*t*tp.y }
 }
 // ── Cycle Detection Visualization ────────────────────────────────────
@@ -6116,6 +6394,7 @@ const cycleHighlights = ref<Map<string, string[]>>(new Map())
 const showCycleVisualization = ref(false)
 function visualizeCycles(): void {
   if (!flowAnalysisResult.value) return
+  const result = flowAnalysisResult.value
   cycleHighlights.value = new Map()
   result.cycles.forEach((cycle, ci) => {
     const color = ['#ef4444','#f59e0b','#ec4899','#a855f7'][ci % 4]
@@ -6171,6 +6450,7 @@ function startAnimationLoop(): void {
   if (animFrameId) return
   function loop(): void {
     if (showGridFlow.value) {
+      const theme = gridThemes.value[activeGridTheme.value]
       gridOffset.value = { x: (gridOffset.value.x + theme.speed * 0.5) % (theme.spacing || 20), y: (gridOffset.value.y + theme.speed * 0.3) % (theme.spacing || 20) }
     }
     if (showBranchParticles.value && parallelBranches.value.length > 0) updateBranchParticles()
@@ -6269,6 +6549,10 @@ function openNodeDetail(nodeIdx: number) {
 function closeNodeDetail() { showNodeDetailPanel.value = false; nodeDetailNodeIdx.value = null }
 function getNodeDetailInfo(): any {
   if (nodeDetailNodeIdx.value === null || !processDef.value) return null
+  const node = processDef.value.nodes[nodeDetailNodeIdx.value]
+  const edges = processDef.value.edges || []
+  const inEdges = edges.filter(e => e.to === node.id)
+  const outEdges = edges.filter(e => e.from === node.id)
   return { node, inCount: inEdges.length, outCount: outEdges.length, inEdges, outEdges }
 }
 function changeNodeDetailTab(tab: string) { nodeDetailTab.value = tab as any }
@@ -6276,6 +6560,7 @@ function changeNodeDetailTab(tab: string) { nodeDetailTab.value = tab as any }
 function openEdgeEditor(edgeIdx: number) {
   edgeEditorEdgeIdx.value = edgeIdx
   showEdgeEditorPanel.value = true
+  const edge = processDef.value?.edges[edgeIdx]
   if (edge) {
     edgeEditorPoints.value = [{ x: 200, y: 200 }, { x: 400, y: 200 }]
   }
@@ -6305,6 +6590,8 @@ function runSandbox() {
   sandboxLogs.value = ['[INFO] 开始执行沙盒测试...', '[INFO] 输入: ' + sandboxInput.value]
   try {
     const inputData = JSON.parse(sandboxInput.value)
+    const ctx = { input: inputData, processDef: processDef.value, nodes: processDef.value.nodes, edges: processDef.value.edges || [] }
+    const fn = new Function('input', 'processDef', 'nodes', 'edges', sandboxInput.value.replace(/^{[^}]*}s*/, ''))
     sandboxResult.value = fn(inputData, processDef.value, ctx.nodes, ctx.edges)
     sandboxLogs.value.push('[INFO] 执行成功', '[INFO] 输出: ' + JSON.stringify(sandboxResult.value))
   } catch (e) {
@@ -6316,6 +6603,7 @@ function clearSandbox() { sandboxInput.value = '{}'; sandboxOutput.value = ''; s
 // ── Template Manager Functions ───────────────────────────────────────
 function filterCustomTemplates(): Array<{id: string; name: string; icon: string; description: string; nodeCount: number; tags: string[]; created: number}> {
   if (!templateManagerSearch.value.trim()) return customTemplates.value
+  const q = templateManagerSearch.value.toLowerCase()
   return customTemplates.value.filter(t => t.name.includes(q) || t.tags.some(tag => tag.includes(q)) || t.description.includes(q))
 }
 function loadCustomTemplate(idx: number) {
@@ -6329,7 +6617,12 @@ function deleteCustomTemplate(idx: number) {
   showToast('模板已删除', 'warning')
 }
 function exportCustomTemplate(idx: number) {
+  const tpl = customTemplates.value[idx]
   if (!tpl) return
+  const data = JSON.stringify(tpl, null, 2)
+  const blob = new Blob([data], { type: 'application/json' })
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
   a.href = url; a.download = tpl.name + '.json'; a.click(); URL.revokeObjectURL(url)
 }
 // ── Collaboration Functions ──────────────────────────────────────────
@@ -6375,6 +6668,7 @@ function executeAllWorkflowRules(): void {
   if (!processDef.value) return
   workflowRulesList.value.filter(r => r.enabled).forEach(rule => {
     try {
+      const result = eval(rule.condition)
       if (result) showToast('规则 "' + rule.name + '" 已触发: ' + rule.action, 'info')
     } catch { /* skip invalid rules */ }
   })
@@ -6382,6 +6676,7 @@ function executeAllWorkflowRules(): void {
 // ── Quality Report Functions ─────────────────────────────────────────
 function generateQualityReport(): void {
   if (!processDef.value) return
+  const nodes = processDef.value.nodes, edges = processDef.value.edges || []
   qualityMetricsList.value = [
     { name: '节点总数', value: nodes.length, max: 50, unit: '个', severity: nodes.length <= 20 ? 'good' : nodes.length <= 40 ? 'warning' : 'error', description: '流程节点总数' },
     { name: '连线总数', value: edges.length, max: 80, unit: '条', severity: edges.length <= nodes.length * 1.5 ? 'good' : 'warning', description: '边与节点比例' },
@@ -6422,6 +6717,7 @@ function compareVersionsCompare(idx1: number, idx2: number): void {
 }
 function restoreVersionRecord(idx: number): void {
   if (idx >= versionRecordsList.value.length || !processDef.value) return
+  const snap = versionRecordsList.value[idx].config
   processDef.value = { nodes: snap.nodes, edges: snap.edges || [] }
   pushHistory()
   showToast('已恢复到版本: ' + versionRecordsList.value[idx].label, 'info')
@@ -6451,6 +6747,7 @@ function clearAuditTrailLocal(): void { auditTrailEntries.value = [] }
 // ── Health Dashboard Functions ───────────────────────────────────────
 function updateHealthDashboardLocal(): void {
   if (!processDef.value) return
+  const nodes = processDef.value.nodes, edges = processDef.value.edges || []
   healthIndicatorsList.value = [
     { id: 'h1', name: '节点健康度', status: nodes.length > 0 ? 'healthy' : 'critical', value: nodes.length, threshold: 50, unit: '个', trend: 'stable' },
     { id: 'h2', name: '连接完整度', status: edges.length >= nodes.length - 1 ? 'healthy' : 'warning', value: edges.length, threshold: Math.max(nodes.length - 1, 1), unit: '条', trend: 'stable' },
@@ -6488,9 +6785,11 @@ function addNodeConstraintConstraint(): void {
 }
 function removeNodeConstraintConstraint(id: string): void { nodeConstraintsList.value = nodeConstraintsList.value.filter(c => c.id !== id) }
 function validateConstraintsValidate(): { valid: boolean; errors: string[] } {
+  const errors: string[] = []
   if (!processDef.value) return { valid: true, errors }
   nodeConstraintsList.value.forEach(c => {
     if (!c.active) return
+    const node = processDef.value!.nodes.find(n => n.id === c.nodeId)
     if (!node) errors.push('约束 ' + c.id + ': 节点不存在')
     else if (c.type === 'forbidden') errors.push('约束 ' + c.id + ': ' + (node.label || node.id) + ' 被禁止但仍存在')
   })
@@ -6503,6 +6802,7 @@ function runBatchOperationLocal(opId: string): void {
   const targets = batchSelectedNodes.value.length > 0
     ? processDef.value.nodes.filter(n => batchSelectedNodes.value.includes(n.id))
     : processDef.value.nodes
+  const result = { success: 0, failed: 0, details: [] as Array<{id: string; status: string; msg: string}> }
   targets.forEach(node => {
     try {
       result.success++; result.details.push({ id: node.id, status: 'ok', msg: '操作成功' })
@@ -6627,6 +6927,8 @@ function toggleDependency(idx: number) { processDependencies.value[idx].active =
 function getDependenciesForNode(nodeId: string): ProcessDependency[] { return processDependencies.value.filter(d => d.sourceNodeId === nodeId || d.targetNodeId === nodeId) }
 function getDependencyChain(startNodeId: string): string[] {
   const chain: string[] = [startNodeId]
+  const visited = new Set<string>([startNodeId])
+  let current = startNodeId
   while (true) {
     const deps = processDependencies.value.filter(d => d.sourceNodeId === current && d.active)
     if (deps.length === 0) break
@@ -6638,6 +6940,7 @@ function getDependencyChain(startNodeId: string): string[] {
 }
 // ── Color Theme Functions ────────────────────────────────────────────
 function applyColorTheme(themeId: string) {
+  const theme = nodeColorThemes.value.find(t => t.id === themeId)
   if (!theme) return
   activeColorTheme.value = themeId
   if (!processDef.value) return
@@ -6659,6 +6962,7 @@ function deleteColorTheme(id: string) {
 // ── Edge Flow Functions ──────────────────────────────────────────────
 function initEdgeFlowConfigs() {
   if (!processDef.value) return
+  const edges = processDef.value.edges || []
   edges.forEach(e => {
     if (!edgeFlowConfigs.value.has(e.id)) {
       edgeFlowConfigs.value.set(e.id, { speed: globalEdgeSpeed.value, direction: 'forward', particlesPerEdge: 3, trailLength: globalTrailLength.value, glowEnabled: globalGlowEnabled.value, color: '#00d4ff' })
@@ -6694,12 +6998,15 @@ function getFilteredEvents(): ProcessEvent[] {
   return processEvents.value.filter(e => e.type === eventLogType.value)
 }
 function getEventCountByType(): Record<string, number> {
+  const counts: Record<string, number> = {}
   processEvents.value.forEach(e => { counts[e.type] = (counts[e.type] || 0) + 1 })
   return counts
 }
 // ── KPI Functions ────────────────────────────────────────────────────
 function calculateKPIs(): void {
   if (!processDef.value) return
+  const nodes = processDef.value.nodes, edges = processDef.value.edges || []
+  const inDeg = new Map<string, number>(), outDeg = new Map<string, number>()
   nodes.forEach(n => { inDeg.set(n.id, 0); outDeg.set(n.id, 0) })
   edges.forEach(e => { inDeg.set(e.to, (inDeg.get(e.to)||0)+1); outDeg.set(e.from, (outDeg.get(e.from)||0)+1) })
   processKPIs.value = [
@@ -6728,6 +7035,7 @@ function deleteBookmark(idx: number) { processBookmarks.value.splice(idx, 1) }
 function jumpToBookmark(idx: number) {
   const bm = processBookmarks.value[idx]
   if (!bm || !processDef.value) return
+  const node = processDef.value.nodes.find(n => bm.nodeIds.includes(n.id))
   if (node) {
     panX.value = -node.x * zoom.value + 400
     panY.value = -node.y * zoom.value + 300
@@ -6743,12 +7051,15 @@ function addToBookmark(bmIdx: number, nodeId: string) {
 // ── Heatmap Functions ────────────────────────────────────────────────
 function generateHeatmap(): void {
   if (!processDef.value) return
+  const nodes = processDef.value.nodes, edges = processDef.value.edges || []
+  const inDeg = new Map<string, number>(), outDeg = new Map<string, number>()
   nodes.forEach(n => { inDeg.set(n.id, 0); outDeg.set(n.id, 0) })
   edges.forEach(e => { inDeg.set(e.to, (inDeg.get(e.to)||0)+1); outDeg.set(e.from, (outDeg.get(e.from)||0)+1) })
   heatmapData.value = nodes.map(n => {
     const degree = (inDeg.get(n.id)||0) + (outDeg.get(n.id)||0)
     const maxDegree = Math.max(...[...inDeg.values(), ...outDeg.values()].map(v => v || 0), 1)
     const intensity = degree / maxDegree
+    const color = intensity > 0.7 ? '#ef4444' : intensity > 0.4 ? '#f59e0b' : '#10b981'
     return { nodeId: n.id, metric: heatmapMetric.value, value: degree, color, label: n.label||n.type }
   })
   showHeatmapPanel.value = true
@@ -6760,6 +7071,7 @@ function executeWorkflowRules(): void {
   if (!processDef.value) return
   workflowRulesList.value.filter(r => r.enabled).forEach(rule => {
     try {
+      const result = eval(rule.condition)
       if (result) {
         rule.executionLog.push({ time: Date.now(), result: 'triggered' })
         logEvent('rule_triggered', '', rule.name, { action: rule.action })
@@ -6784,6 +7096,9 @@ function exportProcessEnhanced(): void {
   else if (fmt === 'html') { content = generateHTMLReportEnhanced(); mime = 'text/html'; ext = 'html' }
   else if (fmt === 'csv') { content = generateCSVEnhanced(); mime = 'text/csv'; ext = 'csv' }
   else { content = JSON.stringify(processDef.value, null, 2); mime = 'application/json'; ext = 'json' }
+  const blob = new Blob([content], { type: mime })
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a'); a.href = url; a.download = (processMetadata.value.flag || 'process') + '.' + ext; a.click()
   URL.revokeObjectURL(url)
   showExportConfigPanel.value = false
   showToast('已导出为 ' + ext.toUpperCase() + ' 格式', 'success')
@@ -6793,6 +7108,7 @@ function openNodeStyleEditor(nodeIdx: number) {
   nodeStyleEditorIdx.value = nodeIdx
   showNodeStyleEditor.value = true
   if (processDef.value && nodeIdx !== null) {
+    const node = processDef.value.nodes[nodeIdx]
     nodeStyleConfig.value = {
       borderRadius: (node as any).borderRadius || 8,
       borderWidth: (node as any).borderWidth || 1.5,
@@ -6810,6 +7126,7 @@ function openNodeStyleEditor(nodeIdx: number) {
 }
 function saveNodeStyle() {
   if (nodeStyleEditorIdx.value === null || !processDef.value) return
+  const node = processDef.value.nodes[nodeStyleEditorIdx.value]
   ;(node as any).borderRadius = nodeStyleConfig.value.borderRadius
   ;(node as any).borderWidth = nodeStyleConfig.value.borderWidth
   ;(node as any).borderColor = nodeStyleConfig.value.borderColor
@@ -6858,10 +7175,14 @@ function runFullValidation(): void {
   if (!processDef.value) return
   validationIssues.value = []
   validationScore.value = 100
+  const nodes = processDef.value.nodes, edges = processDef.value.edges || []
   // Check for missing start/end
+  const hasStart = nodes.some(n => n.type === 'start')
+  const hasEnd = nodes.some(n => n.type === 'end')
   if (!hasStart) { validationIssues.value.push({ id: genId(), type: 'error', message: '流程缺少开始节点', suggestion: '添加一个 start 类型节点', severity: 3 }); validationScore.value -= 20 }
   if (!hasEnd) { validationIssues.value.push({ id: genId(), type: 'error', message: '流程缺少结束节点', suggestion: '添加一个 end 类型节点', severity: 3 }); validationScore.value -= 20 }
   // Check isolated nodes
+  const inDeg = new Map<string, number>(), outDeg = new Map<string, number>()
   nodes.forEach(n => { inDeg.set(n.id, 0); outDeg.set(n.id, 0) })
   edges.forEach(e => { inDeg.set(e.to, (inDeg.get(e.to)||0)+1); outDeg.set(e.from, (outDeg.get(e.from)||0)+1) })
   nodes.forEach(n => {
@@ -6871,6 +7192,7 @@ function runFullValidation(): void {
   })
   // Check for high-degree nodes
   nodes.forEach(n => {
+    const degree = (inDeg.get(n.id)||0) + (outDeg.get(n.id)||0)
     if (degree >= 5) {
       validationIssues.value.push({ id: genId(), type: 'warning', nodeId: n.id, message: '节点 "' + (n.label||n.id) + '" 连接度过高 (' + degree + ')', suggestion: '考虑拆分为子流程', severity: 1 }); validationScore.value -= 5
     }
@@ -6887,6 +7209,7 @@ function getValidationSeverityColor(severity: number): string {
 // ── Metrics Functions ────────────────────────────────────────────────
 function calculateMetrics(): void {
   if (!processDef.value) return
+  const nodes = processDef.value.nodes, edges = processDef.value.edges || []
   processMetrics.value = [
     { name: '节点总数', value: String(nodes.length), description: '流程中的节点数量', category: '结构', trend: 0, unit: '个' },
     { name: '连线总数', value: String(edges.length), description: '流程中的连线数量', category: '结构', trend: 0, unit: '条' },
@@ -6907,7 +7230,11 @@ function calculateMetrics(): void {
 function buildEnhancedTimeline(): void {
   if (!processDef.value) return
   timelineEventsEnhanced.value = []
+  const nodes = processDef.value.nodes, edges = processDef.value.edges || []
+  const inDeg = new Map<string, number>()
   nodes.forEach(n => inDeg.set(n.id, edges.filter(e => e.to === n.id).length))
+  let t = 0
+  const startNodes = nodes.filter(n => (inDeg.get(n.id)||0) === 0)
   startNodes.forEach(sn => {
     const dur = 80 + Math.random() * 120
     timelineEventsEnhanced.value.push({ time: t, type: 'start', label: sn.label||sn.type, color: '#10b981', details: '开始执行' })
@@ -6917,7 +7244,9 @@ function buildEnhancedTimeline(): void {
   })
   nodes.forEach(n => {
     if (startNodes.find(s => s.id === n.id)) return
+    const deps = edges.filter(e => e.to === n.id)
     const startT = Math.max(...deps.map(e => { const sn = nodes.find(nn => nn.id === e.from); return sn ? (timelineEventsEnhanced.value.find(ev => ev.label === sn.label && ev.type === 'complete')?.time || 0) : 0 }))
+    const dur = 60 + Math.random() * 100
     timelineEventsEnhanced.value.push({ time: startT, type: 'start', label: n.label||n.type, color: '#6366f1', details: '开始执行' })
     timelineEventsEnhanced.value.push({ time: startT + dur, type: 'complete', label: n.label||n.type, color: '#00d4ff', details: '执行完成' })
     t = startT + dur + 20
@@ -6944,6 +7273,7 @@ function clampNum(val: number, min: number, max: number): number { return Math.m
 function interpolateColor(color1: string, color2: string, factor: number): string {
   const r1 = parseInt(color1.slice(1,3), 16), g1 = parseInt(color1.slice(3,5), 16), b1 = parseInt(color1.slice(5,7), 16)
   const r2 = parseInt(color2.slice(1,3), 16), g2 = parseInt(color2.slice(3,5), 16), b2 = parseInt(color2.slice(5,7), 16)
+  const r = Math.round(r1 + (r2-r1)*factor), g = Math.round(g1 + (g2-g1)*factor), b = Math.round(b1 + (b2-b1)*factor)
   return '#' + [r,g,b].map(x => x.toString(16).padStart(2,'0')).join('')
 }
 function generateChecksum(data: string): string {
@@ -6996,6 +7326,7 @@ const notificationRules = ref<NotificationRule[]>([])
 const showAuditPanel = ref(false)
 const auditEntries = ref<AuditEntry[]>([])
 const showHealthPanel = ref(false)
+const healthScore = ref<HealthScore>({ overall: 0, efficiency: 0, reliability: 0, maintainability: 0, security: 0, details: [] })
 const showBottleneckPanel = ref(false)
 const bottleneckData = ref<BottleneckCell[]>([])
 const showOptimizationPanel = ref(false)
@@ -7005,20 +7336,26 @@ const changeRequests = ref<ChangeRequest[]>([])
 const showAIPanel = ref(false)
 const aiBottlenecks = ref<AIBottleneck[]>([])
 const healthCircleStyle = computed(() => {
+  const v = healthScore.value.overall
+  const color = v > 70 ? '#10b981' : v > 50 ? '#f59e0b' : '#ef4444'
   return `conic-gradient(${color} ${v * 3.6}deg, var(--border-color) 0)`
 })
 
 // -- Advanced Functions
 function openSLAPanel(): void { showSLAPanel.value = true; computeSLAMetrics() }
 function computeSLAMetrics(): void {
+  const nodes = processDef.value?.nodes || []
   const metrics: SLAMetric[] = []
   nodes.forEach((n, i) => {
+    const target = 5000 + i * 2000
+    const current = target * (0.5 + Math.random() * 1.5)
     metrics.push({ slaId: 'sla_' + n.id, name: n.label || n.type, targetMs: target, currentMs: Math.round(current), breached: current > target, color: current > target ? '#ef4444' : current > target * 0.8 ? '#f59e0b' : '#10b981' })
   })
   slaMetrics.value = metrics
 }
 function openCrossProcessPanel(): void { showCrossProcessPanel.value = true; generateCrossProcessRefs() }
 function generateCrossProcessRefs(): void {
+  const types = ['审批流程', '报销流程', '请假流程', '采购流程', '合同流程'] as const
   const rels = ['calls' as const, 'calledBy' as const, 'shares' as const, 'extends' as const]
   const refs: CrossProcessRef[] = []
   for (let i = 0; i < 5; i++) {
@@ -7071,6 +7408,7 @@ function calculateHealthScore(): void {
 }
 function openBottleneckPanel(): void { showBottleneckPanel.value = true; computeBottlenecks() }
 function computeBottlenecks(): void {
+  const nodes = processDef.value?.nodes || []
   bottleneckData.value = nodes.map(n => {
     const avg = 100 + Math.random() * 400
     const max = avg * (1.2 + Math.random() * 0.8)
@@ -7081,6 +7419,7 @@ function computeBottlenecks(): void {
 }
 function openOptimizationPanel(): void { showOptimizationPanel.value = true; generateOptimizations() }
 function generateOptimizations(): void {
+  const types: OptimizationSuggestion['type'][] = ['parallel', 'sequential', 'simplify', 'delegate']
   const descriptions = ['将串行审批改为并行审批', '移除冗余的转审节点', '添加自动跳过逻辑', '拆分大流程为子流程', '使用缓存减少重复查询', '批量处理相似请求']
   const impacts: Array<'high'|'medium'|'low'> = ['high', 'medium', 'low']
   optimizationSuggestions.value = Array.from({length: 6}, (_, i) => ({
@@ -7100,6 +7439,7 @@ function loadChangeRequests(): void {
 }
 function openAIPanel(): void { showAIPanel.value = true; runAIAnalysis() }
 function runAIAnalysis(): void {
+  const nodes = processDef.value?.nodes || []
   aiBottlenecks.value = nodes.slice(0, 5).map(n => ({
     nodeId: n.id, score: +(0.3 + Math.random() * 0.7).toFixed(2),
     reason: '该节点执行时间超过预期阈值', suggestion: '建议优化为并行执行或添加超时处理'
@@ -7112,6 +7452,7 @@ function approveChangeRequest(crId: string): void {
   showToast('已批准变更请求: ' + crId, 'success')
 }
 function rejectChangeRequest(crId: string): void {
+  const cr = changeRequests.value.find(c => c.id === crId)
   if (cr) cr.status = 'rejected'
   showToast('已拒绝变更请求: ' + crId, 'warning')
 }
@@ -7134,178 +7475,83 @@ function getHealthScoreColor(v: number): string { return v > 70 ? '#10b981' : v 
 function getCellBg(color: string): string { return color + '22' }
 function getSLAPct(m: any): string { return Math.min(100, m.currentMs / m.targetMs * 100) + '%' }
 
-// -- Permission & Lock State
+// -- Extended State
 const showPermissionPanel = ref(false)
-const permissionRules = ref<Array<{id: string; nodeType: string; allowedRoles: string[]; deniedRoles: string[]}>>([
-  { id: 'p1', nodeType: 'task', allowedRoles: ['manager','admin'], deniedRoles: ['viewer'] },
-  { id: 'p2', nodeType: 'approval', allowedRoles: ['manager','director','admin'], deniedRoles: ['employee','viewer'] },
-  { id: 'p3', nodeType: 'subprocess', allowedRoles: ['admin'], deniedRoles: ['manager','employee','viewer'] },
+const permissionRules = ref<Array<{id: string; nodeType: string; allowedRoles: string[]}>>([
+  { id: "p1", nodeType: "task", allowedRoles: ["manager","admin"] },
+  { id: "p2", nodeType: "approval", allowedRoles: ["manager","director","admin"] },
 ])
 const showLockPanel = ref(false)
-const lockedNodes = ref<Array<{nodeId: string; nodeIdRef: string; lockedBy: string; lockedAt: number}>>([])
+const lockedNodes = ref<Array<{nodeId: string; lockedBy: string}>>([])
 const showPublishPanel = ref(false)
-const publishHistory = ref<Array<{id: string; version: string; publishedAt: number; publishedBy: string; status: string; changeLog: string}>>([])
-
-// -- Risk Dashboard State
+const publishHistory = ref<Array<{id: string; version: string; status: string}>>([])
 const showRiskDashboard = ref(false)
-const riskDashboardData = ref<{totalRisks: number; criticalRisks: number; highRisks: number; mediumRisks: number; lowRisks: number; riskTrend: string[]}>({
-  totalRisks: 12, criticalRisks: 2, highRisks: 3, mediumRisks: 4, lowRisks: 3, riskTrend: ['up','stable','down','up','stable','down']
-})
-
-// -- Performance Dashboard State
+const riskData = ref({total: 0, critical: 0, high: 0, medium: 0, low: 0})
 const showPerfDashboard = ref(false)
-const perfDashboardData = ref<{avgResponseMs: number; p99Ms: number; throughput: number; errorRate: number; cpuUsage: number; memUsage: number; trend: Array<{label: string; value: number}>}>({
-  avgResponseMs: 234, p99Ms: 1200, throughput: 450, errorRate: 0.02, cpuUsage: 45, memUsage: 62,
-  trend: [{label:'周一',value:200},{label:'周二',value:220},{label:'周三',value:180},{label:'周四',value:250},{label:'周五',value:210},{label:'周六',value:150},{label:'周日',value:120}]
-})
-
-// -- Additional State for expanded features
-const showHeatmapEnhanced = ref(false)
-const heatmapEnhancedData = ref<Array<{x: number; y: number; value: number; color: string; label: string}>>([])
-const showTopologyEnhanced = ref(false)
-const topologyNodes = ref<Array<{id: string; label: string; x: number; y: number; type: string; connections: number}>>([])
-const showLayerManagerPanel = ref(false)
-const layerList = ref<Array<{id: string; name: string; visible: boolean; locked: boolean; opacity: number; color: string}>>([
-  { id: 'l1', name: '基础节点', visible: true, locked: false, opacity: 1, color: '#3b82f6' },
-  { id: 'l2', name: '连接线', visible: true, locked: false, opacity: 1, color: '#10b981' },
-  { id: 'l3', name: '标注', visible: true, locked: false, opacity: 1, color: '#f59e0b' },
-  { id: 'l4', name: '分组背景', visible: false, locked: true, opacity: 0.3, color: '#8b5cf6' },
-])
-
-// -- Permission Functions
-function openPermissionPanel(): void { showPermissionPanel.value = true }
-function togglePermissionRule(idx: number): void { const r = permissionRules.value[idx]; r.allowedRoles = r.allowedRoles.includes('all') ? [] : ['all']; }
-function addPermissionRule(): void { permissionRules.value.push({ id: 'p' + Date.now(), nodeType: 'task', allowedRoles: [], deniedRoles: [] }) }
-function removePermissionRule(idx: number): void { permissionRules.value.splice(idx, 1) }
-
-// -- Lock Functions
-function openLockPanel(): void { showLockPanel.value = true }
-function lockNode(nodeId: string, nodeIdRef: string): void { lockedNodes.value.push({ nodeId, nodeIdRef, lockedBy: '当前用户', lockedAt: Date.now() }); showToast('节点已锁定', 'info') }
-function unlockNode(nodeId: string): void { lockedNodes.value = lockedNodes.value.filter(n => n.nodeId !== nodeId); showToast('节点已解锁', 'success') }
-
-// -- Publish Functions
-function openPublishPanel(): void { showPublishPanel.value = true }
-function publishProcess(): void {
-  publishHistory.value.unshift({ id: 'pub_' + Date.now(), version: 'v' + (publishHistory.value.length + 1), publishedAt: Date.now(), publishedBy: '当前用户', status: 'success', changeLog: '流程发布' })
-  showToast('流程已发布', 'success')
-}
-
-// -- Risk Dashboard Functions
-function openRiskDashboard(): void { showRiskDashboard.value = true; generateRiskDashboard() }
-function generateRiskDashboard(): void {
-  riskDashboardData.value = {
-    totalRisks: 8 + Math.floor(Math.random() * 10),
-    criticalRisks: Math.floor(Math.random() * 3),
-    highRisks: Math.floor(Math.random() * 4) + 1,
-    mediumRisks: Math.floor(Math.random() * 5) + 2,
-    lowRisks: Math.floor(Math.random() * 4) + 1,
-    riskTrend: ['up','stable','down','up','stable','down','up'].slice(0, 6)
-  }
-}
-
-// -- Performance Dashboard Functions
-function openPerfDashboard(): void { showPerfDashboard.value = true; generatePerfDashboard() }
-function generatePerfDashboard(): void {
-  perfDashboardData.value = {
-    avgResponseMs: 180 + Math.random() * 100,
-    p99Ms: 800 + Math.random() * 600,
-    throughput: 300 + Math.random() * 200,
-    errorRate: Math.random() * 0.05,
-    cpuUsage: 30 + Math.random() * 40,
-    memUsage: 40 + Math.random() * 30,
-    trend: ['周一','周二','周三','周四','周五','周六','周日'].map(d => ({ label: d, value: 150 + Math.random() * 150 }))
-  }
-}
-
-// -- Enhanced Heatmap Functions
-function openHeatmapEnhanced(): void { showHeatmapEnhanced.value = true; generateHeatmapEnhanced() }
-function generateHeatmapEnhanced(): void {
-  heatmapEnhancedData.value = nodes.map((n, i) => ({
-    x: (i % 5) * 20 + 10,
-    y: Math.floor(i / 5) * 20 + 10,
-    value: 0.3 + Math.random() * 0.7,
-    color: '#3b82f6',
-    label: n.label || n.type
-  }))
-}
-
-// -- Enhanced Topology Functions
-function openTopologyEnhanced(): void { showTopologyEnhanced.value = true; generateTopology() }
-function generateTopology(): void {
-  topologyNodes.value = nodes.map((n, i) => ({
-    id: n.id,
-    label: n.label || n.type,
-    x: 100 + (i % 6) * 120,
-    y: 100 + Math.floor(i / 6) * 80,
-    type: n.type,
-    connections: (processDef.value?.edges || []).filter(e => e.from === n.id || e.to === n.id).length
-  }))
-}
-
-// -- Layer Management Functions
-function toggleLayer(idx: number): void { layerList.value[idx].visible = !layerList.value[idx].visible }
-function lockLayer(idx: number): void { layerList.value[idx].locked = !layerList.value[idx].locked }
-function setLayerOpacity(idx: number, opacity: number): void { layerList.value[idx].opacity = opacity }
-
-// -- Extended Feature State
+const perfData = ref({avgMs: 0, p99Ms: 0, throughput: 0, errorRate: 0})
 const showDebugPanel = ref(false)
-const debugMessages = ref<Array<{time: number; level: string; message: string}>>([])
-const batchOpType = ref<string>("align")
+const debugLogs = ref<Array<{time: number; level: string; msg: string}>>([])
 const showTemplateManagerPanel = ref(false)
-const templateSearch = ref("")
-const showMacroEditor = ref(false)
-const macroCode = ref("// Process macro\nfunction onStart() {}\nfunction onNodeComplete() {}")
-const showSnippetLibrary = ref(false)
-const snippetLibrary = ref<Array<{id: string; name: string; code: string}>>([
-  { id: "s1", name: "条件判断", code: "if (amount > 1000) { return true; }" },
-  { id: "s2", name: "并行分支", code: "return [branchA, branchB];" },
-  { id: "s3", name: "超时处理", code: "setTimeout(() => escalate(), timeoutMs);" },
-  { id: "s4", name: "重试逻辑", code: "for (let i = 0; i < retries; i++) { if (tryAgain()) return; }" },
-  { id: "s5", name: "数据转换", code: "return transform(input, schema);" },
-  { id: "s6", name: "通知发送", code: "notify({to: userId, msg: message});" },
+const templateCategories = ref<Array<{id: string; name: string; count: number}>>([
+  { id: "t1", name: "审批流程", count: 12 },
+  { id: "t2", name: "通知流程", count: 8 },
+  { id: "t3", name: "数据流程", count: 6 },
 ])
-const showEventMapper = ref(false)
-const eventMappings = ref<Array<{id: string; source: string; target: string; enabled: boolean}>>([
-  { id: "e1", source: "node_start", target: "log_start", enabled: true },
-  { id: "e2", source: "node_complete", target: "log_complete", enabled: true },
-  { id: "e3", source: "node_timeout", target: "escalate", enabled: false },
-  { id: "e4", source: "process_start", target: "notify_all", enabled: true },
-  { id: "e5", source: "process_complete", target: "archive", enabled: true },
+const showMacroEditor = ref(false)
+const macroCode = ref("// 流程宏
+function onStart() {}
+")
+const showSnippetLibrary = ref(false)
+const snippetList = ref<Array<{id: string; name: string; code: string}>>([
+  { id: "s1", name: "条件判断", code: "if (amount > 1000) { return true; }" },
+  { id: "s2", name: "并行分支", code: "return [a, b];" },
+  { id: "s3", name: "超时处理", code: "setTimeout(() => escalate(), ms);" },
+])
+const showEventMapperPanel = ref(false)
+const eventMapList = ref<Array<{id: string; source: string; target: string; enabled: boolean}>>([
+  { id: "e1", source: "node_start", target: "log", enabled: true },
+  { id: "e2", source: "node_complete", target: "notify", enabled: true },
 ])
 const showAnnotationPanel = ref(false)
-const annotationText = ref("")
-const annotationColor = ref("#3b82f6")
-const showWorkflowBuilder = ref(false)
-const workflowSteps = ref<Array<{id: string; name: string; type: string; config: Record<string,any>}>>([])
-const showDependencyGraph = ref(false)
-const dependencyNodes = ref<Array<{id: string; label: string; depth: number}>>([])
-const showProcessMap = ref(false)
+const annotationList = ref<Array<{id: string; text: string; color: string}>>([])
+const showWorkflowBuilderPanel = ref(false)
+const workflowSteps = ref<Array<{id: string; name: string; type: string}>>([])
+const showDependencyGraphPanel = ref(false)
+const dependencyGraphData = ref<Array<{id: string; label: string; depth: number}>>([])
+const showProcessMapPanel = ref(false)
 const processMapZoom = ref(1)
-const processMapPan = ref({x: 0, y: 0})
+const showTopologyPanel = ref(false)
+const topologyNodes = ref<Array<{id: string; x: number; y: number; label: string}>>([])
 
 // -- Extended Functions
+function openPermissionPanel(): void { showPermissionPanel.value = true }
+function openLockPanel(): void { showLockPanel.value = true }
+function lockNode(nodeId: string): void { lockedNodes.value.push({ nodeId, lockedBy: "当前用户" }); showToast("节点已锁定", "info") }
+function unlockNode(nodeId: string): void { lockedNodes.value = lockedNodes.value.filter(n => n.nodeId !== nodeId) }
+function openPublishPanel(): void { showPublishPanel.value = true }
+function publishProcess(): void { publishHistory.value.unshift({ id: "pub_" + Date.now(), version: "v" + (publishHistory.value.length + 1), status: "success" }); showToast("已发布", "success") }
+function openRiskDashboard(): void { showRiskDashboard.value = true; riskData.value = { total: 8 + Math.floor(Math.random()*5), critical: Math.floor(Math.random()*3), high: Math.floor(Math.random()*4)+1, medium: Math.floor(Math.random()*5)+2, low: Math.floor(Math.random()*3)+1 } }
+function openPerfDashboard(): void { showPerfDashboard.value = true; perfData.value = { avgMs: 150+Math.random()*100, p99Ms: 800+Math.random()*400, throughput: 300+Math.random()*200, errorRate: Math.random()*0.03 } }
 function openDebugPanel(): void { showDebugPanel.value = true }
-function logDebug(level: string, message: string): void { debugMessages.value.unshift({ time: Date.now(), level, message }); if (debugMessages.value.length > 100) debugMessages.value.pop() }
-function clearDebug(): void { debugMessages.value = [] }
-function openBatchOpPanel(): void { showBatchOpPanel.value = true; batchOpResults.value = [] }
-function executeBatchOp(): void {
-  batchOpResults.value = nodes.map(n => ({ nodeId: n.id, success: true }))
-  showToast('批量操作完成: ' + batchOpResults.value.length + ' 个节点', 'success')
-}
+function logDebug(level: string, msg: string): void { debugLogs.value.unshift({ time: Date.now(), level, msg }); if (debugLogs.value.length > 50) debugLogs.value.pop() }
+function clearDebug(): void { debugLogs.value = [] }
 function openTemplateManager(): void { showTemplateManagerPanel.value = true }
 function openMacroEditor(): void { showMacroEditor.value = true }
-function runMacro(): void { logDebug('info', '执行宏脚本...'); setTimeout(() => logDebug('success', '宏执行完成'), 500) }
-function saveMacro(): void { logDebug('info', '保存宏...'); showToast('宏已保存', 'success') }
+function runMacro(): void { logDebug("info", "运行宏..."); setTimeout(() => logDebug("success", "宏完成"), 300) }
+function saveMacro(): void { logDebug("info", "保存宏..."); showToast("宏已保存", "success") }
 function openSnippetLibrary(): void { showSnippetLibrary.value = true }
-function insertSnippet(id: string): void { const s = snippetLibrary.value.find(x => x.id === id); if (s) macroCode.value = s.code }
-function openEventMapper(): void { showEventMapper.value = true }
-function toggleEventMapping(idx: number): void { eventMappings.value[idx].enabled = !eventMappings.value[idx].enabled }
-function addEventMapping(): void { eventMappings.value.push({ id: 'e' + Date.now(), source: '', target: '', enabled: true }) }
+function insertSnippet(id: string): void { const s = snippetList.value.find(x => x.id === id); if (s) macroCode.value = s.code }
+function openEventMapper(): void { showEventMapperPanel.value = true }
+function toggleEventMap(idx: number): void { eventMapList.value[idx].enabled = !eventMapList.value[idx].enabled }
+function addEventMap(): void { eventMapList.value.push({ id: "e" + Date.now(), source: "", target: "", enabled: true }) }
 function openAnnotationPanel(): void { showAnnotationPanel.value = true }
-function openWorkflowBuilder(): void { showWorkflowBuilder.value = true }
-function openDependencyGraph(): void { showDependencyGraph.value = true }
-function openProcessMap(): void { showProcessMap.value = true }
-function zoomProcessMap(factor: number): void { processMapZoom.value = Math.max(0.2, Math.min(5, processMapZoom.value * factor)) }
+function addAnnotation(text: string, color: string): void { annotationList.value.push({ id: "a" + Date.now(), text, color }); showToast("标注已添加", "success") }
+function deleteAnnotation(id: string): void { annotationList.value = annotationList.value.filter(a => a.id !== id) }
+function openWorkflowBuilder(): void { showWorkflowBuilderPanel.value = true }
+function openDependencyGraph(): void { showDependencyGraphPanel.value = true }
+function openProcessMap(): void { showProcessMapPanel.value = true }
+function zoomProcessMap(f: number): void { processMapZoom.value = Math.max(0.2, Math.min(5, processMapZoom.value * f)) }
+function openTopologyPanel(): void { showTopologyPanel.value = true }
 </script>
 <style scoped>
 .pd{display:flex;flex-direction:column;height:100%}
@@ -8698,35 +8944,20 @@ kbd{display:inline-block;padding:3px 8px;border-radius:4px;border:1px solid var(
 .cr-list{display:flex;flex-direction:column;gap:8px}.cr-item{padding:10px;border-radius:8px;background:rgba(255,255,255,0.02);border:1px solid var(--border-color)}.cr-title{font-size:12px;font-weight:600;color:var(--text-primary);margin-bottom:4px}.cr-desc{font-size:11px;color:var(--text-muted);margin-bottom:6px}.cr-meta{display:flex;gap:8px;align-items:center;margin-bottom:6px;font-size:10px}.cr-auth{color:#3b82f6}.cr-status{font-weight:600}.cr-changes{display:flex;gap:4px;flex-wrap:wrap;margin-bottom:6px}.cr-ch{font-size:9px;padding:2px 6px;border-radius:4px;background:rgba(139,92,246,0.15);color:#8b5cf6}.cr-actions{display:flex;gap:6px}
 .ai-header{display:flex;gap:8px;margin-bottom:12px}.ai-list{display:flex;flex-direction:column;gap:8px}.ai-item{display:flex;gap:10px;padding:10px;border-radius:8px;background:rgba(255,255,255,0.02);border:1px solid var(--border-color)}.ai-score{font-size:16px;font-weight:800;width:50px;text-align:center}.ai-info{flex:1}.ai-node{font-size:11px;font-weight:600;color:var(--text-primary);font-family:'JetBrains Mono',monospace}.ai-reason{font-size:10px;color:var(--text-muted);margin-top:2px}.ai-sug{font-size:10px;margin-top:2px}
 
-/* -- Permission & Lock Styles */
-.perm-list{display:flex;flex-direction:column;gap:6px}.perm-item{display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:6px;background:rgba(255,255,255,0.02);border:1px solid var(--border-color);font-size:11px}.perm-type{color:var(--color-primary);font-weight:600;width:60px}.perm-allowed{flex:1;color:var(--text-muted)}.perm-denied{flex:1;color:#ef4444}
-.lock-list{display:flex;flex-direction:column;gap:4px}.lock-item{display:flex;align-items:center;gap:8px;padding:6px 10px;border-radius:4px;background:rgba(245,158,11,0.1);border:1px solid rgba(245,158,11,0.3);font-size:11px}.lock-node{color:var(--text-primary);font-family:'JetBrains Mono',monospace}.lock-by{color:var(--color-warning)}.lock-time{color:var(--text-muted);font-size:10px}
-.pub-list{display:flex;flex-direction:column;gap:4px;margin-top:10px}.pub-item{display:flex;align-items:center;gap:8px;padding:6px 10px;border-radius:4px;background:rgba(255,255,255,0.02);font-size:11px}.pub-ver{color:var(--color-primary);font-weight:600}.pub-by{color:var(--text-muted)}.pub-success{color:#10b981}.pub-pending{color:#f59e0b}.pub-failed{color:#ef4444}
-
-/* -- Risk Dashboard Styles */
-.risk-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:12px}.risk-card{padding:12px;border-radius:8px;text-align:center}.risk-card.critical{background:rgba(239,68,68,0.2);border:1px solid #ef4444}.risk-card.high{background:rgba(249,115,22,0.2);border:1px solid #f97316}.risk-card.medium{background:rgba(245,158,11,0.2);border:1px solid #f59e0b}.risk-card.low{background:rgba(16,185,129,0.2);border:1px solid #10b981}.risk-val{font-size:24px;font-weight:800;display:block}.risk-label{font-size:10px;color:var(--text-muted)}.risk-total{font-size:14px;font-weight:700;color:var(--text-primary);text-align:center;padding:8px;background:rgba(59,130,246,0.1);border-radius:6px}
-
-/* -- Performance Dashboard Styles */
-.perf-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:12px}.perf-card{padding:10px;border-radius:8px;background:rgba(255,255,255,0.02);border:1px solid var(--border-color);text-align:center}.perf-val{font-size:18px;font-weight:800;color:var(--color-primary);display:block}.perf-label{font-size:9px;color:var(--text-muted);margin-top:2px}.perf-bars{display:flex;flex-direction:column;gap:6px}.perf-bar-row{display:flex;align-items:center;gap:8px;font-size:11px}.perf-bar-row span:first-child{width:40px;color:var(--text-muted)}.perf-bar-wrap{flex:1;height:6px;background:var(--border-color);border-radius:3px;overflow:hidden}.perf-bar-fill{height:100%;background:linear-gradient(90deg,#3b82f6,#10b981);border-radius:3px;transition:width .3s}
-
-/* -- Enhanced Heatmap Styles */
-.heatmap-grid{position:relative;height:200px;background:rgba(255,255,255,0.02);border:1px solid var(--border-color);border-radius:8px;overflow:hidden}.heatmap-cell{position:absolute;width:12%;height:12%;border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:8px;color:#fff;cursor:pointer;transition:all .2s}.heatmap-cell:hover{transform:scale(1.2);z-index:10}.heatmap-label{font-size:7px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:90%}
-
-/* -- Enhanced Topology Styles */
-.topo-canvas{position:relative;height:300px;background:rgba(255,255,255,0.02);border:1px solid var(--border-color);border-radius:8px;overflow:auto}.topo-node{position:absolute;padding:6px 10px;border-radius:6px;background:rgba(59,130,246,0.2);border:1px solid #3b82f6;cursor:grab;transition:all .2s}.topo-node:hover{background:rgba(59,130,246,0.4);transform:scale(1.05)}.topo-label{font-size:10px;color:var(--text-primary);display:block}.topo-conns{font-size:8px;color:var(--text-muted)}
-
-/* -- Layer Manager Styles */
-.layer-list{display:flex;flex-direction:column;gap:4px}.layer-item{display:flex;align-items:center;gap:8px;padding:6px 10px;border-radius:4px;background:rgba(255,255,255,0.02);font-size:11px}.layer-color{width:16px;height:16px;border-radius:4px;flex-shrink:0}.layer-name{flex:1;color:var(--text-primary)}.layer-vis,.layer-lock{position:relative;width:24px;height:14px;cursor:pointer}.layer-vis input,.layer-lock input{opacity:0;width:0;height:0}.layer-vis span,.layer-lock span{position:absolute;inset:0;background:var(--border-color);border-radius:7px;transition:.2s}.layer-vis input:checked+span,.layer-lock input:checked+span{background:#3b82f6}.layer-vis input:checked+span::before,.layer-lock input:checked+span::before{transform:translateX(10px)}.layer-vis span::before,.layer-lock span::before{content:'';position:absolute;width:10px;height:10px;left:2px;top:2px;background:#fff;border-radius:50%;transition:.2s}.layer-opacity{width:60px;accent-color:#3b82f6}
-
-/* -- Extended Feature Styles */
-.dbg-hdr{display:flex;justify-content:flex-end;margin-bottom:8px}.dbg-list{max-height:300px;overflow-y:auto;display:flex;flex-direction:column;gap:2px}.dbg-item{display:flex;gap:8px;padding:4px 8px;border-radius:4px;font-size:10px;font-family:'JetBrains Mono',monospace}.dbg-time{color:var(--text-muted);width:70px}.dbg-lvl{width:50px;font-weight:700}.dbg-lvl-info{color:#3b82f6}.dbg-lvl-success{color:#10b981}.dbg-lvl-warning{color:#f59e0b}.dbg-lvl-error{color:#ef4444}.dbg-msg{flex:1;color:var(--text-primary)}
-.bop-select{padding:6px 8px;border-radius:6px;border:1px solid var(--border-color);background:var(--bg-elevated);color:var(--text-primary);font-size:11px;margin-right:8px}.bop-results{max-height:200px;overflow-y:auto;margin-top:10px}.bop-item{display:flex;justify-content:space-between;padding:4px 8px;border-radius:4px;background:rgba(255,255,255,0.02);font-size:10px}.bop-item .ok{color:#10b981}.bop-item .err{color:#ef4444}
-.tpl-search{width:100%;padding:8px 10px;border-radius:6px;border:1px solid var(--border-color);background:var(--bg-elevated);color:var(--text-primary);font-size:12px;margin-bottom:10px}.tpl-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}.tpl-card{padding:10px;border-radius:8px;background:rgba(255,255,255,0.02);border:1px solid var(--border-color);display:flex;flex-direction:column;gap:4px}.tpl-icon{font-size:20px}.tpl-name{font-size:12px;font-weight:600;color:var(--text-primary)}.tpl-desc{font-size:10px;color:var(--text-muted)}
+/* -- Extended Panel Styles */
+.perm-list{display:flex;flex-direction:column;gap:4px}.perm-item{display:flex;align-items:center;gap:8px;padding:6px 10px;border-radius:4px;background:rgba(255,255,255,0.02);font-size:11px}.perm-type{color:#3b82f6;width:60px}.perm-roles{flex:1;color:var(--text-muted)}
+.lock-list{display:flex;flex-direction:column;gap:4px}.lock-item{display:flex;align-items:center;gap:8px;padding:6px 10px;border-radius:4px;background:rgba(245,158,11,0.1);border:1px solid rgba(245,158,11,0.3);font-size:11px}
+.pub-list{display:flex;flex-direction:column;gap:4px;margin-top:10px}.pub-item{display:flex;align-items:center;gap:8px;padding:6px 10px;border-radius:4px;background:rgba(255,255,255,0.02);font-size:11px}.pub-status{color:#10b981}
+.risk-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:12px}.risk-card{padding:12px;border-radius:8px;text-align:center}.risk-card.critical{background:rgba(239,68,68,0.2);border:1px solid #ef4444}.risk-card.high{background:rgba(249,115,22,0.2);border:1px solid #f97316}.risk-card.medium{background:rgba(245,158,11,0.2);border:1px solid #f59e0b}.risk-card.low{background:rgba(16,185,129,0.2);border:1px solid #10b981}.risk-val{font-size:24px;font-weight:800;display:block}.risk-label{font-size:10px;color:var(--text-muted)}.risk-total{font-size:14px;font-weight:700;text-align:center;padding:8px;background:rgba(59,130,246,0.1);border-radius:6px}
+.perf-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}.perf-card{padding:10px;border-radius:8px;background:rgba(255,255,255,0.02);border:1px solid var(--border-color);text-align:center}.perf-val{font-size:18px;font-weight:800;color:var(--color-primary);display:block}.perf-label{font-size:9px;color:var(--text-muted);margin-top:2px}
+.debug-list{max-height:300px;overflow-y:auto;display:flex;flex-direction:column;gap:2px}.debug-item{display:flex;gap:8px;padding:4px 8px;border-radius:4px;font-size:10px;font-family:'JetBrains Mono',monospace}.debug-time{color:var(--text-muted);width:70px}.debug-level{width:50px;font-weight:700}.debug-level-info{color:#3b82f6}.debug-level-success{color:#10b981}.debug-level-warning{color:#f59e0b}.debug-level-error{color:#ef4444}.debug-msg{flex:1;color:var(--text-primary)}
+.tpl-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}.tpl-card{padding:10px;border-radius:8px;background:rgba(255,255,255,0.02);border:1px solid var(--border-color);display:flex;flex-direction:column;gap:4px}.tpl-name{font-size:12px;font-weight:600;color:var(--text-primary)}.tpl-count{font-size:10px;color:var(--color-primary)}
 .macro-editor{width:100%;padding:10px;border-radius:8px;border:1px solid var(--border-color);background:var(--bg-elevated);color:var(--text-primary);font-family:'JetBrains Mono',monospace;font-size:12px;resize:vertical}.macro-acts{display:flex;gap:8px;margin-top:8px;justify-content:flex-end}
-.snip-list{display:flex;flex-direction:column;gap:6px}.snip-item{display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:6px;background:rgba(255,255,255,0.02);border:1px solid var(--border-color);font-size:11px}.snip-name{flex:1;color:var(--text-primary);font-weight:600}.snip-code{color:var(--text-muted);font-family:'JetBrains Mono',monospace;font-size:10px;max-width:200px;overflow:hidden;text-overflow:ellipsis}
+.snip-list{display:flex;flex-direction:column;gap:6px}.snip-item{display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:6px;background:rgba(255,255,255,0.02);border:1px solid var(--border-color);font-size:11px}.snip-name{flex:1;color:var(--text-primary);font-weight:600}
 .ev-list{display:flex;flex-direction:column;gap:4px;margin-bottom:10px}.ev-item{display:flex;align-items:center;gap:8px;padding:6px 10px;border-radius:4px;background:rgba(255,255,255,0.02);font-size:11px;font-family:'JetBrains Mono',monospace}.ev-src{color:#3b82f6}.ev-arrow{color:var(--text-muted)}.ev-dst{color:#10b981}.ev-toggle{position:relative;width:28px;height:14px;cursor:pointer}.ev-toggle input{opacity:0;width:0;height:0}.ev-toggle span{position:absolute;inset:0;background:var(--border-color);border-radius:7px;transition:.2s}.ev-toggle input:checked+.ev-toggle span{background:#3b82f6}.ev-toggle input:checked+.ev-toggle span::before{transform:translateX(14px)}.ev-toggle span::before{content:'';position:absolute;width:10px;height:10px;left:2px;top:2px;background:#fff;border-radius:50%;transition:.2s}
-.ann-input{display:flex;gap:8px;margin-bottom:10px;align-items:center}.ann-text{flex:1;padding:6px 8px;border-radius:6px;border:1px solid var(--border-color);background:var(--bg-elevated);color:var(--text-primary);font-size:11px}.ann-color{width:30px;height:26px;border:none;cursor:pointer}.ann-list{display:flex;flex-direction:column;gap:4px}.ann-item{display:flex;align-items:center;gap:8px;padding:6px 10px;border-radius:4px;background:rgba(255,255,255,0.02);font-size:11px}.ann-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0}.ann-txt{flex:1;color:var(--text-primary)}
-.wf-steps{display:flex;flex-direction:column;gap:4px}.wf-step{display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:6px;background:rgba(255,255,255,0.02);font-size:11px}.wf-num{width:20px;height:20px;border-radius:50%;background:rgba(59,130,246,0.2);color:#3b82f6;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700}.wf-name{flex:1;color:var(--text-primary)}.wf-type{color:var(--text-muted);font-size:10px}
-.dep-graph{position:relative;height:100px;background:rgba(255,255,255,0.02);border:1px solid var(--border-color);border-radius:8px;overflow:hidden}.dep-node{position:absolute;padding:4px 8px;border-radius:4px;background:rgba(59,130,246,0.2);border:1px solid #3b82f6;font-size:10px;color:var(--text-primary);white-space:nowrap}
-.pm-controls{display:flex;gap:8px;align-items:center;margin-bottom:8px}.pm-canvas{width:100%;height:300px;background:rgba(255,255,255,0.02);border:1px solid var(--border-color);border-radius:8px;overflow:auto;transform-origin:top left}.pm-node{display:inline-block;padding:4px 8px;margin:4px;border-radius:4px;background:rgba(59,130,246,0.2);border:1px solid #3b82f6;font-size:10px;color:var(--text-primary)}
+.ann-input{flex:1;padding:6px 8px;border-radius:6px;border:1px solid var(--border-color);background:var(--bg-elevated);color:var(--text-primary);font-size:11px}.ann-list{display:flex;flex-direction:column;gap:4px}.ann-item{display:flex;align-items:center;gap:8px;padding:6px 10px;border-radius:4px;background:rgba(255,255,255,0.02);font-size:11px}.ann-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
+.wf-list{display:flex;flex-direction:column;gap:4px}.wf-step{display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:6px;background:rgba(255,255,255,0.02);font-size:11px}.wf-num{width:20px;height:20px;border-radius:50%;background:rgba(59,130,246,0.2);color:#3b82f6;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700}
+.dep-graph{height:100px;background:rgba(255,255,255,0.02);border:1px solid var(--border-color);border-radius:8px;padding:10px;display:flex;flex-wrap:wrap;gap:6px}.dep-node{padding:4px 8px;border-radius:4px;background:rgba(59,130,246,0.2);border:1px solid #3b82f6;font-size:10px;color:var(--text-primary)}
+.pm-canvas{width:100%;height:200px;background:rgba(255,255,255,0.02);border:1px solid var(--border-color);border-radius:8px;padding:10px;overflow:auto}.pm-node{display:inline-block;padding:4px 8px;margin:4px;border-radius:4px;background:rgba(59,130,246,0.2);border:1px solid #3b82f6;font-size:10px;color:var(--text-primary)}
+.topo-canvas{position:relative;height:250px;background:rgba(255,255,255,0.02);border:1px solid var(--border-color);border-radius:8px;overflow:auto}.topo-node{position:absolute;padding:4px 8px;border-radius:4px;background:rgba(59,130,246,0.2);border:1px solid #3b82f6;font-size:10px;color:var(--text-primary)}
 </style>
