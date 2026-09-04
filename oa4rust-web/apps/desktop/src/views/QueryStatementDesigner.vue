@@ -811,7 +811,7 @@ async function analyzePlan() {
   const hasJoin = /JOIN\s+/gi.test(sql.value)
   const hasWhere = /WHERE\s+/gi.test(sql.value)
   const hasGroup = /GROUP\s+BY/i.test(sql.value)
-  const hasSub = /(\s*SELECT/i.test(sql.value)
+  const hasSub = /\s*SELECT/i.test(sql.value)
   const hasLike = /LIKE\s/i.test(sql.value)
   const steps = []
   steps.push({ type: "扫描", cost: hasSub ? "高" : hasJoin ? "中" : "低", estimated: resultData.value.length || 1000, detail: hasSub ? "含子查询，使用嵌套循环" : hasJoin ? "多表JOIN，建议使用索引" : "单表全扫描", color: "#3b82f6" })
