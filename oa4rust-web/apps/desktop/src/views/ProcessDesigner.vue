@@ -1385,6 +1385,244 @@
         </div>
       </div>
     </div>
+    <!-- Script Full Editor Modal -->
+    <div v-if="showScriptFullEditor" class="modal-overlay script-editor-overlay" @click.self="closeScriptEditor()">
+      <div class="modal script-editor-modal modal-xl">
+        <div class="modal-header"><span>💻 脚本编辑器</span><button class="btn-sm" @click="closeScriptEditor()">✕</button></div>
+        <div class="modal-body script-editor-body">
+          <div class="se-toolbar">
+            <select v-model="scriptLang" class="se-lang-select"><option value="javascript">JavaScript</option><option value="typescript">TypeScript</option><option value="python">Python</option></select>
+            <button class="btn-sm" @click="runScriptTest()">▶ 运行测试</button>
+            <button class="btn-sm" @click="validateScriptCode()">✓ 验证</button>
+            <button class="btn-sm" @click="clearScriptLogs()">清除日志</button>
+          </div>
+          <div class="se-editor-wrap">
+            <textarea v-model="scriptCode" class="se-code-editor" spellcheck="false" placeholder="输入脚本代码..."></textarea>
+            <div class="se-line-numbers"><div v-for="i in Math.max(scriptCode.split('\n').length, 20)" :key="i" class="se-line-num">{{ i }}</div></div>
+          </div>
+          <div class="se-sidebar">
+            <div class="se-section"><div class="se-section-title">📦 导入</div>
+              <div v-for="(imp,ii) in scriptImports" :key="ii" class="se-import-row">
+                <input v-model="imp.name" placeholder="模块名" class="se-import-input" />
+                <input v-model="imp.source" placeholder="来源" class="se-import-input" />
+                <button class="btn-xs btn-danger" @click="removeScriptImport(ii)">✕</button>
+              </div>
+              <button class="btn-sm" @click="addScriptImport()">+ 添加导入</button>
+            </div>
+            <div class="se-section"><div class="se-section-title">🔄 变量</div>
+              <div v-for="(v,vi) in scriptVars" :key="vi" class="se-var-row">
+                <input v-model="v.name" placeholder="变量名" class="se-var-input" />
+                <select v-model="v.type" class="se-var-select"><option>string</option><option>number</option><option>boolean</option><option>object</option></select>
+                <button class="btn-xs btn-danger" @click="removeScriptVar(vi)">✕</button>
+              </div>
+              <button class="btn-sm" @click="addScriptVar()">+ 添加变量</button>
+            </div>
+            <div class="se-section"><div class="se-section-title">⚠️ 错误处理</div>
+              <select v-model="scriptErrorConfig.onFail" class="se-select">
+                <option value="abort">终止流程</option><option value="skip">跳过节点</option><option value="retry">重试</option>
+              </select>
+              <div v-if="scriptErrorConfig.onFail==='retry'" class="se-retry-config">
+                <label>重试次数</label><input v-model.number="scriptErrorConfig.retryCount" type="number" class="se-num-input" />
+                <label>延迟(ms)</label><input v-model.number="scriptErrorConfig.retryDelay" type="number" class="se-num-input" />
+              </div>
+            </div>
+            <div class="se-section"><div class="se-section-title">📤 输出映射</div>
+              <div v-for="(bind,bi) in scriptOutputBindings" :key="bi" class="se-bind-row">
+                <input v-model="bind.sourceField" placeholder="源字段" class="se-bind-input" />
+                <select v-model="bind.transform" class="se-bind-select"><option value="identity">恒等</option><option value="upper">大写</option><option value="lower">小写</option><option value="trim">去空格</option></select>
+                <input v-model="bind.targetField" placeholder="目标字段" class="se-bind-input" />
+                <button class="btn-xs btn-danger" @click="removeScriptOutputBinding(bi)">✕</button>
+              </div>
+              <button class="btn-sm" @click="addScriptOutputBinding()">+ 添加映射</button>
+            </div>
+          </div>
+          <div v-if="scriptValidation" class="se-validation">
+            <div v-for="e in scriptValidation.errors" :key="e" class="se-error">❌ {{ e }}</div>
+            <div v-for="w in scriptValidation.warnings" :key="w" class="se-warning">⚠️ {{ w }}</div>
+            <div v-for="s in scriptValidation.suggestions" :key="s" class="se-suggestion">💡 {{ s }}</div>
+          </div>
+          <div v-if="showScriptLogPanel" class="se-log-panel">
+            <div class="se-log-header">📋 执行日志</div>
+            <div class="se-log-body"><div v-for="(log,li) in scriptLogs" :key="li" class="se-log-entry">{{ log }}</div></div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn" @click="saveScriptToNode()">💾 保存到节点</button>
+          <button class="btn btn-ghost" @click="closeScriptEditor()">取消</button>
+        </div>
+      </div>
+    </div>
+    <!-- Node Properties Editor -->
+    <div v-if="showNodePropsEditor" class="modal-overlay" @click.self="showNodePropsEditor=false">
+      <div class="modal node-props-modal modal-md">
+        <div class="modal-header"><span>⚙️ 节点属性编辑器</span><button class="btn-sm" @click="showNodePropsEditor=false">✕</button></div>
+        <div class="modal-body">
+          <div v-if="nodePropEditorNodeIdx!==null && processDef" class="np-editor">
+            <div class="np-node-info">
+              <span class="np-node-icon">{{ getNodeIcon(processDef.nodes[nodePropEditorNodeIdx].type) }}</span>
+              <span class="np-node-label">{{ processDef.nodes[nodePropEditorNodeIdx].label||processDef.nodes[nodePropEditorNodeIdx].type }}</span>
+            </div>
+            <div v-for="cat in getNodePropsForType(processDef.nodes[nodePropEditorNodeIdx].type)" :key="cat.category" class="np-category">
+              <div class="np-cat-title">{{ cat.icon }} {{ cat.label }}</div>
+              <div v-for="prop in cat.props" :key="prop.key" class="np-prop-row">
+                <label class="np-prop-label">{{ prop.label }}</label>
+                <input :value="getNodePropValue(processDef.nodes[nodePropEditorNodeIdx], cat.category, prop.key)" @input="setNodePropValue(processDef.nodes[nodePropEditorNodeIdx], cat.category, prop.key, $event.target.value)" class="np-input" :placeholder="String(prop.defaultVal)" />
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer"><button class="btn" @click="saveNodeProps()">💾 保存</button><button class="btn btn-ghost" @click="showNodePropsEditor=false">取消</button></div>
+      </div>
+    </div>
+    <!-- Parallel Branch Config -->
+    <div v-if="showParallelConfig" class="modal-overlay" @click.self="showParallelConfig=false">
+      <div class="modal parallel-config-modal">
+        <div class="modal-header"><span>⚡ 并行分支配置</span><button class="btn-sm" @click="showParallelConfig=false">✕</button></div>
+        <div class="modal-body">
+          <div class="pc-strategy">
+            <div class="pc-row"><span>分叉策略</span><select v-model="forkJoinConfig.strategy" class="pc-select"><option value="and">AND</option><option value="or">OR</option><option value="xor">XOR</option></select></div>
+            <div class="pc-row"><span>汇合策略</span><select v-model="forkJoinConfig.joinStrategy" class="pc-select"><option value="all">全部完成</option><option value="first">首个完成</option><option value="any">任一完成</option></select></div>
+            <div class="pc-row"><span>超时(ms)</span><input v-model.number="forkJoinConfig.timeout" type="number" class="pc-num" /></div>
+          </div>
+          <div class="pc-branches">
+            <div class="pc-branches-title">分支列表</div>
+            <div v-for="(br,bi) in parallelBranches" :key="br.id" class="pc-branch">
+              <span class="pc-branch-color" :style="{background:br.color}"></span>
+              <input v-model="br.label" class="pc-branch-name" />
+              <span class="pc-branch-nodes">{{ br.nodes.length }}节点</span>
+              <button class="btn-xs btn-danger" @click="removeParallelBranch(bi)">✕</button>
+            </div>
+            <button class="btn-sm" @click="addParallelBranch('新分支')">+ 添加分支</button>
+          </div>
+          <div class="pc-actions">
+            <button class="btn" @click="detectParallelBranchesEnhanced()">🔍 自动检测</button>
+            <button class="btn" @click="simulateParallelExecution()">▶ 模拟执行</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <!-- Branch Timeline -->
+    <div v-if="showBranchTimeline" class="branch-timeline-panel">
+      <div class="bt-header"><span>📊 分支执行时间线</span><button class="btn-sm" @click="showBranchTimeline=false">✕</button></div>
+      <div class="bt-body">
+        <div class="bt-status-grid">
+          <div v-for="bs in branchStates" :key="bs[0]" class="bt-status-item">
+            <span class="bt-bc" :style="{background:parallelBranches.find(b=>b.id===bs[0])?.color||'#666'}"></span>
+            <span class="bt-bname">{{ parallelBranches.find(b=>b.id===bs[0])?.label||bs[0] }}</span>
+            <span :class="['bt-bstatus','bst-'+bs[1].status]">{{ bs[1].status }}</span>
+          </div>
+        </div>
+        <div class="bt-timeline">
+          <div v-for="ev in branchTimeline" :key="ev.time+'-'+ev.branchId" class="bt-event">
+            <span class="bt-dot" :style="{background:getBranchStatusColor(ev.event==='start'?'running':ev.event==='complete'?'completed':'failed')}"></span>
+            <span class="bt-label">{{ ev.branchId }}: {{ ev.details }}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+    <!-- Flow Analysis Panel -->
+    <div v-if="showFlowAnalysis" class="flow-analysis-panel">
+      <div class="fa-header"><span>🔬 流程分析</span><button class="btn-sm" @click="showFlowAnalysis=false">✕</button></div>
+      <div class="fa-body">
+        <button class="btn" @click="runFlowAnalysis()">🔍 开始分析</button>
+        <div v-if="flowAnalysisResult" class="fa-stats">
+          <div class="fa-health">
+            <div class="fa-health-score" :style="{color:getFlowHealthScore()>=80?'var(--color-success)':getFlowHealthScore()>=60?'var(--color-warning)':'var(--color-danger)'}">{{ getFlowHealthScore() }}</div>
+            <div class="fa-health-label">{{ getFlowHealthLabel(getFlowHealthScore()) }}</div>
+          </div>
+          <div class="fa-grid">
+            <div class="fa-stat"><span class="fa-val">{{ flowAnalysisResult.totalNodes }}</span><span class="fa-lbl">节点</span></div>
+            <div class="fa-stat"><span class="fa-val">{{ flowAnalysisResult.totalEdges }}</span><span class="fa-lbl">连线</span></div>
+            <div class="fa-stat"><span class="fa-val" style="color:var(--color-danger)">{{ flowAnalysisResult.cycles.length }}</span><span class="fa-lbl">循环</span></div>
+            <div class="fa-stat"><span class="fa-val" style="color:var(--color-warning)">{{ flowAnalysisResult.isolatedNodes.length }}</span><span class="fa-lbl">孤立</span></div>
+            <div class="fa-stat"><span class="fa-val" style="color:var(--color-primary)">{{ flowAnalysisResult.bottlenecks.length }}</span><span class="fa-lbl">瓶颈</span></div>
+          </div>
+        </div>
+        <div v-if="flowAnalysisResult&&flowAnalysisResult.cycles.length>0" class="fa-cycles">
+          <div class="fa-title">⚠️ 检测到循环</div>
+          <div v-for="(cy,ci) in flowAnalysisResult.cycles" :key="ci" class="fa-cycle">{{ cy.nodes.join(' → ') }}</div>
+        </div>
+        <div v-if="flowAnalysisResult&&flowAnalysisResult.bottlenecks.length>0" class="fa-bottlenecks">
+          <div class="fa-title">🔶 瓶颈节点</div>
+          <div v-for="(bn,bi) in flowAnalysisResult.bottlenecks" :key="bi" class="fa-bn">
+            <span>{{ bn.label }}</span><span :class="['fa-bn-sev','sev-'+bn.severity]">{{ bn.severity }}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+    <!-- Archive Manager -->
+    <div v-if="showArchiveManager" class="archive-manager">
+      <div class="am-header"><span>🗄 流程归档</span><button class="btn-sm" @click="showArchiveManager=false">✕</button></div>
+      <div class="am-body">
+        <div class="am-add">
+          <input v-model="newArchiveLabel" placeholder="存档名称" class="am-input" />
+          <input v-model="newArchiveDesc" placeholder="描述" class="am-input am-desc" />
+          <button class="btn-sm" @click="createArchive()">💾 存档</button>
+        </div>
+        <div class="am-list">
+          <div v-for="(entry,ei) in processArchive" :key="entry.id" class="am-entry">
+            <div class="am-entry-info"><span class="am-entry-label">{{ entry.label }}</span><span class="am-entry-meta">{{ entry.nodeCount }}节点/{{ entry.edgeCount }}边 · {{ formatTimestamp(entry.timestamp) }}</span></div>
+            <div class="am-entry-actions"><button class="btn-xs" @click="restoreArchive(ei)">恢复</button><button class="btn-xs btn-danger" @click="deleteArchive(ei)">删除</button></div>
+          </div>
+        </div>
+        <div v-if="processArchive.length===0" class="am-empty">暂无存档</div>
+      </div>
+    </div>
+    <!-- Snapshot Manager -->
+    <div v-if="showSnapshotManager" class="snapshot-manager">
+      <div class="sm-header"><span>📸 流程快照</span><button class="btn-sm" @click="showSnapshotManager=false">✕</button></div>
+      <div class="sm-body">
+        <button class="btn" @click="createSnapshot()">📸 创建快照</button>
+        <div class="sm-list">
+          <div v-for="(snap,si) in processSnapshots" :key="snap.id" class="sm-snap">
+            <span class="sm-snap-name">{{ snap.name }}</span><span class="sm-snap-meta">{{ formatTimestamp(snap.createdAt) }}</span>
+            <span :class="['sm-snap-status','sm-snap-'+snap.status]">{{ snap.status }}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+    <!-- Tool Palette -->
+    <div v-if="showToolPalette" class="tool-palette">
+      <div class="tp-header">🛠 工具面板</div>
+      <div class="tp-tools">
+        <button v-for="tool in ['select','pan','edge','annotate']" :key="tool" :class="['tp-tool-btn',{active:activeTool===tool}]" @click="setActiveTool(tool)">
+          {{ tool==='select'?'🖱':tool==='pan'?'✋':tool==='edge'?'🔗':'📝' }}<span>{{ tool }}</span>
+        </button>
+      </div>
+      <div class="tp-sep"></div>
+      <div class="tp-highlights">
+        <div class="tp-label">高亮模式</div>
+        <button :class="['tp-hl-btn',{active:highlightMode==='none'}]" @click="toggleHighlightMode('none')">无</button>
+        <button :class="['tp-hl-btn',{active:highlightMode==='incoming'}]" @click="toggleHighlightMode('incoming')">入边</button>
+        <button :class="['tp-hl-btn',{active:highlightMode==='outgoing'}]" @click="toggleHighlightMode('outgoing')">出边</button>
+        <button :class="['tp-hl-btn',{active:highlightMode==='all'}]" @click="toggleHighlightMode('all')">全部</button>
+      </div>
+      <div class="tp-sep"></div>
+      <div class="tp-animations">
+        <div class="tp-label">动画</div>
+        <button class="tp-anim-btn" @click="applyAnimation('pulse')">脉冲</button>
+        <button class="tp-anim-btn" @click="applyAnimation('wave')">波浪</button>
+        <button class="tp-anim-btn" @click="applyAnimation('flow')">流动</button>
+        <button class="tp-anim-btn" @click="resetAnimations()">重置</button>
+      </div>
+      <div class="tp-sep"></div>
+      <div class="tp-settings">
+        <label><input v-model="showRipples" type="checkbox" /> 涟漪效果</label>
+        <label><input v-model="gridSnapping" type="checkbox" /> 网格吸附</label>
+        <label>速度 <input v-model.number="animationSpeed" type="range" min="0.5" max="3" step="0.5" /></label>
+      </div>
+    </div>
+    <!-- Subprocess Breadcrumb -->
+    <div v-if="subprocessEditing && subprocessContextStack.length>0" class="subprocess-breadcrumb">
+      <div class="sb-nav">
+        <button class="sb-home" @click="exitSubprocess()">🏠</button>
+        <span v-for="(cr,ci) in subprocessContextStack" :key="ci" class="sb-crumb">
+          <span :class="['sb-crumb-text',{active:ci===subprocessContextStack.length-1}]">{{ cr.title }}</span>
+          <span v-if="ci<subprocessContextStack.length-1" class="sb-arrow">›</span>
+        </span>
+        <span class="sb-depth-badge">深度 {{ subprocessDepth }}</span>
+      </div>
+    </div>
 </template>
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted } from 'vue'
@@ -1421,15 +1659,6 @@ interface ScriptActionConfig { language: "javascript"|"python"|"typescript"; cod
 interface ForkJoinAnnotation { id: string; type: "fork"|"join"; branchIndices: number[]; forkNodeIdx: number; joinNodeIdx?: number; label: string; color: string; annotations: Array<{type:"label"|"flow"|"count"; text: string}> }
 // ── Group Drag/Resize ──────────────────────────────────────────────
 // ── Edge Routing ────────────────────────────────────────────────────
-interface RoutingPoint { x: number; y: number; type: "anchor"|"control" }
-interface EdgeRouteConfig { edgeId: string; fromNodeIdx: number; toNodeIdx: number; routing: "auto"|"straight"|"horizontal"|"vertical"|"custom"; controlPoints: RoutingPoint[]; offset: number; labelPos: "auto"|"start"|"mid"|"end"; arrowStyle: "default"|"none"|"both" }
-// ── Script Action Editor ────────────────────────────────────────────
-interface ScriptVar { name: string; type: string; defaultValue: string; description: string }
-interface ScriptErrorHandling { onFail: "abort"|"skip"|"retry"; retryCount?: number; retryDelay?: number }
-interface ScriptOutputMapping { from: string; to: string; transform?: string }
-interface ScriptActionConfig { language: "javascript"|"python"|"typescript"; code: string; imports: string[]; variables: ScriptVar[]; errorHandling: ScriptErrorHandling; outputMapping: ScriptOutputMapping[]; timeout: number; description: string }
-// ── Fork/Join Enhanced ──────────────────────────────────────────────
-interface ForkJoinAnnotation { id: string; type: "fork"|"join"; branchIndices: number[]; forkNodeIdx: number; joinNodeIdx?: number; label: string; color: string; annotations: Array<{type:"label"|"flow"|"count"; text: string}> }
 // ── Constants ─────────────────────────────────────────────────────────
 const GRID_SIZE = 20
 const SNAP_THRESHOLD = 15
@@ -4101,6 +4330,31 @@ interface StylePreset { name: string; fill: string; stroke: string; icon: string
 interface NetworkMetric { metric: string; value: number; description: string }
 interface ShortcutDef { key: string; ctrl?: boolean; action: string }
 interface Breakpoint { nodeId: string; label?: string; enabled: boolean }
+// ── Script Editor Enhanced ──────────────────────────────────────────
+interface ScriptImport { name: string; source: string; alias?: string }
+interface ScriptVariable { name: string; type: string; scope: "global"|"local"|"context"; defaultValue: string; description: string; required?: boolean }
+interface ScriptOutputBinding { sourceField: string; targetField: string; transform: string; condition?: string }
+interface ScriptErrorConfig { onFail: "abort"|"skip"|"retry"; retryCount?: number; retryDelay?: number }
+interface ScriptValidationResult { valid: boolean; errors: string[]; warnings: string[]; suggestions: string[] }
+// ── Parallel Branch Enhanced ────────────────────────────────────────
+interface ParallelBranch { id: string; label: string; color: string; nodes: string[]; conditions?: string[] }
+interface ForkJoinConfig { strategy: "and"|"or"|"xor"; joinStrategy: "first"|"last"|"all"; timeout?: number }
+interface BranchFlowState { branchId: string; status: string; progress: number }
+// ── Node Deep Properties ────────────────────────────────────────────
+interface NodeDeepProp { key: string; label: string; type: string; options?: string[]; defaultVal: string; category: string }
+interface NodeCategoryProps { category: string; label: string; icon: string; props: NodeDeepProp[] }
+// ── Flow Analysis ────────────────────────────────────────────────────
+interface CycleInfo { nodes: string[]; length: number; severity: string }
+interface CriticalPathNode { nodeId: string; label: string; duration: number }
+interface BottleneckInfo { nodeId: string; label: string; inDegree: number; outDegree: number; severity: string }
+interface FlowAnalysisResult { totalNodes: number; totalEdges: number; cycles: CycleInfo[]; criticalPath: CriticalPathNode[]; bottlenecks: BottleneckInfo[]; isolatedNodes: string[] }
+// ── Process Archive ──────────────────────────────────────────────────
+interface ArchiveEntry { id: string; timestamp: number; label: string; nodeCount: number; edgeCount: number; config: any }
+interface ProcessSnapshot { id: string; name: string; createdAt: number; tags: string[]; status: string; nodeCount: number }
+// ── Interaction Enhancements ─────────────────────────────────────────
+interface RippleEffect { id: string; x: number; y: number; timestamp: number }
+interface CanvasAnimation { id: string; type: string; target: string; startTime: number }
+interface ToolState { id: string; active: boolean; params: any }
 // ── Condition Builder Functions ─────────────────────────────────────
 function initCondBuilder() {
   condTree.value = { id: genId(), type: "group", logic: "AND", conditions: [], children: [] }
@@ -4221,7 +4475,8 @@ const animSettings = ref<AnimSetting[]>([
   { key: "gridAnim", label: "网格动画", enabled: false, icon: "📐" },
 ])
 const showAnimPanel = ref(false)
-// ── Advanced Interfaces ────────────────────────────────────────────
+// ── Script Editor State ─────────────────────────────────────────────
+const showScriptFullEditor = ref(false)
 interface CondNode { id: string; type: "group"|"condition"; logic: "AND"|"OR"; conditions?: Array<{field: string; operator: string; value: string}>; children?: CondNode[] }
 interface VarBinding { sourceNode: string; sourceField: string; targetNode: string; targetField: string }
 interface FormRule { id: string; sourceField: string; operator: string; value: string; action: "show"|"hide"|"enable"|"disable"; targetFields: string[] }
@@ -4573,6 +4828,7 @@ function applyFormRules(ruleSetIdx: number) {
   console.log('Applied rules from set', ruleSetIdx)
   showToast('规则已应用', 'success')
 }
+// ── Script Editor Functions ─────────────────────────────────────────
 </script>
 <style scoped>
 .pd{display:flex;flex-direction:column;height:100%}
@@ -5392,4 +5648,134 @@ kbd{display:inline-block;padding:3px 8px;border-radius:4px;border:1px solid var(
 /* Scrollbar styling for panels */
 .fv-body::-webkit-scrollbar,.form-rules-panel::-webkit-scrollbar,.st-events::-webkit-scrollbar,.perf-body::-webkit-scrollbar{width:4px}
 .fv-body::-webkit-scrollbar-thumb,.form-rules-panel::-webkit-scrollbar-thumb,.st-events::-webkit-scrollbar-thumb,.perf-body::-webkit-scrollbar-thumb{background:var(--border-color);border-radius:2px}
+/* ── Deepened Styles v2 ───────────────────────────────────────────── */
+/* Script Editor */
+.script-editor-overlay{z-index:400}.script-editor-modal{width:90vw;max-width:1200px;height:85vh;display:flex;flex-direction:column}
+.script-editor-body{display:flex;flex-direction:column;flex:1;overflow:hidden;padding:0}
+.se-toolbar{display:flex;gap:6px;padding:8px 12px;border-bottom:1px solid var(--border-color);align-items:center}
+.se-lang-select{padding:4px 8px;border-radius:var(--radius-sm);border:1px solid var(--border-color);background:var(--bg-elevated);color:var(--text-primary);font-size:12px}
+.se-editor-wrap{flex:1;display:flex;position:relative;overflow:hidden;min-height:200px}
+.se-code-editor{flex:1;padding:12px;border:none;background:var(--bg-surface);color:var(--color-success);font-family:'JetBrains Mono',monospace;font-size:13px;resize:none;outline:none;line-height:1.6}
+.se-line-numbers{position:absolute;left:0;top:0;width:36px;padding:12px 4px;text-align:right;font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--text-muted);background:var(--bg-elevated);border-right:1px solid var(--border-color);line-height:1.6;pointer-events:none}
+.se-sidebar{width:260px;border-left:1px solid var(--border-color);overflow-y:auto;padding:8px;display:flex;flex-direction:column;gap:12px}
+.se-section{display:flex;flex-direction:column;gap:6px}
+.se-section-title{font-size:11px;font-weight:700;color:var(--color-primary);text-transform:uppercase;letter-spacing:0.5px;padding-bottom:4px;border-bottom:1px solid var(--border-color)}
+.se-import-row,.se-var-row,.se-bind-row{display:flex;gap:4px;align-items:center}
+.se-import-input,.se-var-input,.se-bind-input{flex:1;padding:3px 6px;border-radius:var(--radius-sm);border:1px solid var(--border-color);background:var(--bg-elevated);color:var(--text-primary);font-size:11px}
+.se-var-select,.se-bind-select{padding:3px 4px;border-radius:var(--radius-sm);border:1px solid var(--border-color);background:var(--bg-elevated);color:var(--text-primary);font-size:10px}
+.se-select{padding:4px 8px;border-radius:var(--radius-sm);border:1px solid var(--border-color);background:var(--bg-elevated);color:var(--text-primary);font-size:12px;width:100%}
+.se-retry-config{display:flex;flex-direction:column;gap:4px}
+.se-num-input{width:60px;padding:3px 6px;border-radius:var(--radius-sm);border:1px solid var(--border-color);background:var(--bg-elevated);color:var(--text-primary);font-size:11px}
+.se-validation{padding:8px 12px;border-top:1px solid var(--border-color);display:flex;flex-direction:column;gap:4px}
+.se-error{color:var(--color-danger);font-size:11px}.se-warning{color:var(--color-warning);font-size:11px}.se-suggestion{color:var(--color-info);font-size:11px}
+.se-log-panel{border-top:1px solid var(--border-color);max-height:150px;overflow-y:auto}
+.se-log-header{padding:6px 12px;font-size:12px;font-weight:600;color:var(--color-primary);background:var(--bg-secondary)}
+.se-log-body{padding:4px 12px;font-family:'JetBrains Mono',monospace;font-size:11px}
+.se-log-entry{padding:2px 0}
+/* Node Props Editor */
+.node-props-modal{width:480px;max-width:90vw}
+.np-editor{display:flex;flex-direction:column;gap:12px}
+.np-node-info{display:flex;align-items:center;gap:8px;padding:8px 12px;background:var(--bg-secondary);border-radius:var(--radius-md)}
+.np-node-icon{font-size:20px}.np-node-label{font-size:14px;font-weight:600;color:var(--text-primary)}
+.np-category{padding:8px;background:var(--bg-secondary);border-radius:var(--radius-md)}
+.np-cat-title{font-size:11px;font-weight:700;color:var(--color-primary);text-transform:uppercase;margin-bottom:8px;letter-spacing:0.5px}
+.np-prop-row{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:4px 0}
+.np-prop-label{font-size:12px;color:var(--text-muted);min-width:80px}
+.np-input{padding:4px 8px;border-radius:var(--radius-sm);border:1px solid var(--border-color);background:var(--bg-elevated);color:var(--text-primary);font-size:12px;flex:1}
+/* Parallel Config */
+.parallel-config-modal{width:560px;max-width:90vw}
+.pc-strategy{display:flex;flex-direction:column;gap:10px;padding:8px 0}
+.pc-row{display:flex;align-items:center;gap:10px}
+.pc-row span{font-size:12px;color:var(--text-muted);min-width:70px}
+.pc-select{flex:1;padding:4px 8px;border-radius:var(--radius-sm);border:1px solid var(--border-color);background:var(--bg-elevated);color:var(--text-primary);font-size:12px}
+.pc-num{width:70px;padding:4px 8px;border-radius:var(--radius-sm);border:1px solid var(--border-color);background:var(--bg-elevated);color:var(--text-primary);font-size:12px}
+.pc-branches{margin-top:12px;padding-top:12px;border-top:1px solid var(--border-color)}
+.pc-branches-title{font-size:12px;font-weight:600;color:var(--color-primary);margin-bottom:8px}
+.pc-branch{display:flex;align-items:center;gap:8px;padding:6px 8px;background:var(--bg-secondary);border-radius:var(--radius-sm);margin-bottom:4px}
+.pc-branch-color{width:12px;height:12px;border-radius:50%;flex-shrink:0}
+.pc-branch-name{flex:1;padding:2px 6px;border-radius:var(--radius-sm);border:1px solid var(--border-color);background:var(--bg-elevated);color:var(--text-primary);font-size:12px}
+.pc-branch-nodes{font-size:10px;color:var(--text-muted)}
+.pc-actions{display:flex;gap:8px;margin-top:12px}
+/* Branch Timeline */
+.branch-timeline-panel{position:fixed;bottom:20px;left:20px;width:420px;max-width:90vw;background:var(--bg-elevated);border:1px solid var(--border-color);border-radius:var(--radius-lg);z-index:200;box-shadow:0 8px 32px rgba(0,0,0,0.4)}
+.bt-header{display:flex;align-items:center;justify-content:space-between;padding:10px 14px;border-bottom:1px solid var(--border-color);font-size:13px;font-weight:600;color:var(--color-warning)}
+.bt-body{padding:12px}
+.bt-status-grid{display:flex;flex-direction:column;gap:4px}
+.bt-status-item{display:flex;align-items:center;gap:8px;padding:4px 8px;background:var(--bg-secondary);border-radius:var(--radius-sm);font-size:11px}
+.bt-bc{width:10px;height:10px;border-radius:50%;flex-shrink:0}
+.bt-bname{flex:1;color:var(--text-primary)}.bt-bstatus{padding:2px 6px;border-radius:var(--radius-sm);font-size:10px;font-weight:600}
+.bst-running{background:rgba(0,212,255,0.2);color:var(--color-primary)}.bst-completed{background:rgba(16,185,129,0.2);color:var(--color-success)}.bst-failed{background:rgba(239,68,68,0.2);color:var(--color-danger)}.bst-pending{background:rgba(100,116,139,0.2);color:var(--text-muted)}
+.bt-timeline{margin-top:8px;max-height:120px;overflow-y:auto;display:flex;flex-direction:column;gap:2px}
+.bt-event{display:flex;align-items:center;gap:6px;padding:3px 6px;background:var(--bg-secondary);border-radius:var(--radius-sm);font-size:10px}
+.bt-dot{width:6px;height:6px;border-radius:50%;flex-shrink:0}
+.bt-label{color:var(--text-muted)}
+/* Flow Analysis */
+.flow-analysis-panel{position:fixed;top:60px;right:20px;width:340px;max-height:80vh;background:var(--bg-elevated);border:1px solid var(--border-color);border-radius:var(--radius-lg);z-index:200;box-shadow:0 8px 32px rgba(0,0,0,0.4);display:flex;flex-direction:column}
+.fa-header{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-bottom:1px solid var(--border-color);font-size:13px;font-weight:600;color:var(--color-primary);flex-shrink:0}
+.fa-body{padding:12px;overflow-y:auto;flex:1}
+.fa-stats{display:flex;flex-direction:column;gap:12px;margin-top:8px}
+.fa-health{display:flex;align-items:center;gap:12px;padding:12px;background:var(--bg-secondary);border-radius:var(--radius-md)}
+.fa-health-score{font-size:36px;font-weight:800;font-family:'JetBrains Mono',monospace}
+.fa-health-label{font-size:12px;color:var(--text-muted)}
+.fa-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+.fa-stat{padding:8px;background:var(--bg-secondary);border-radius:var(--radius-sm);text-align:center}
+.fa-val{font-size:18px;font-weight:700;color:var(--color-primary);font-family:'JetBrains Mono',monospace;display:block}
+.fa-lbl{font-size:9px;color:var(--text-muted)}
+.fa-cycles,.fa-bottlenecks{margin-top:8px;padding:8px;background:var(--bg-secondary);border-radius:var(--radius-md)}
+.fa-title{font-size:11px;font-weight:700;color:var(--color-warning);margin-bottom:4px;text-transform:uppercase}
+.fa-cycle{font-size:10px;color:var(--color-danger);padding:2px 0;font-family:'JetBrains Mono',monospace}
+.fa-bn{display:flex;align-items:center;gap:6px;font-size:11px;padding:2px 0}
+.fa-bn-sev{padding:1px 4px;border-radius:var(--radius-sm);font-size:9px;font-weight:700}
+.sev-high{background:rgba(239,68,68,0.2);color:var(--color-danger)}.sev-medium{background:rgba(245,158,11,0.2);color:var(--color-warning)}
+/* Archive Manager */
+.archive-manager,.snapshot-manager{position:fixed;top:60px;left:20px;width:380px;background:var(--bg-elevated);border:1px solid var(--border-color);border-radius:var(--radius-lg);z-index:200;box-shadow:0 8px 32px rgba(0,0,0,0.4)}
+.am-header,.sm-header{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-bottom:1px solid var(--border-color);font-size:13px;font-weight:600;color:var(--color-primary)}
+.am-body,.sm-body{padding:12px;display:flex;flex-direction:column;gap:8px}
+.am-add{display:flex;gap:6px}
+.am-input{flex:1;padding:6px 10px;border-radius:var(--radius-sm);border:1px solid var(--border-color);background:var(--bg-secondary);color:var(--text-primary);font-size:12px}
+.am-desc{flex:2}
+.am-list{display:flex;flex-direction:column;gap:6px;max-height:300px;overflow-y:auto}
+.am-entry{display:flex;align-items:center;justify-content:space-between;padding:8px 10px;background:var(--bg-secondary);border-radius:var(--radius-md);border:1px solid var(--border-color)}
+.am-entry-info{display:flex;flex-direction:column;gap:2px;min-width:0}
+.am-entry-label{font-size:13px;font-weight:600;color:var(--text-primary)}.am-entry-meta{font-size:10px;color:var(--text-muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.am-entry-actions{display:flex;gap:4px;flex-shrink:0}
+.am-empty{text-align:center;padding:20px;color:var(--text-muted);font-size:12px}
+.sm-list{display:flex;flex-direction:column;gap:6px;margin-top:8px}
+.sm-snap{display:flex;align-items:center;gap:8px;padding:8px 10px;background:var(--bg-secondary);border-radius:var(--radius-md);font-size:12px}
+.sm-snap-name{flex:1;font-weight:600;color:var(--text-primary)}.sm-snap-meta{font-size:10px;color:var(--text-muted)}
+.sm-snap-status{padding:2px 6px;border-radius:var(--radius-sm);font-size:10px;font-weight:600}
+.sm-snap-draft{background:rgba(0,212,255,0.2);color:var(--color-primary)}.sm-snap-published{background:rgba(16,185,129,0.2);color:var(--color-success)}.sm-snap-archived{background:rgba(100,116,139,0.2);color:var(--text-muted)}
+/* Tool Palette */
+.tool-palette{position:fixed;top:60px;left:20px;width:170px;background:var(--bg-elevated);border:1px solid var(--border-color);border-radius:var(--radius-lg);z-index:200;box-shadow:0 8px 32px rgba(0,0,0,0.4);padding:12px}
+.tp-header{font-size:13px;font-weight:700;color:var(--color-primary);margin-bottom:8px}
+.tp-tools{display:flex;flex-direction:column;gap:4px;margin-bottom:8px}
+.tp-tool-btn{display:flex;align-items:center;gap:8px;padding:6px 10px;border-radius:var(--radius-sm);border:1px solid var(--border-color);background:transparent;color:var(--text-muted);cursor:pointer;font-size:12px;transition:all .15s}
+.tp-tool-btn:hover,.tp-tool-btn.active{border-color:var(--color-primary);color:var(--color-primary);background:var(--color-primary-soft)}
+.tp-sep{height:1px;background:var(--border-color);margin:8px 0}
+.tp-highlights,.tp-animations,.tp-settings{display:flex;flex-direction:column;gap:6px}
+.tp-label{font-size:10px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px}
+.tp-hl-btn,.tp-anim-btn{padding:3px 8px;border-radius:var(--radius-sm);border:1px solid var(--border-color);background:transparent;color:var(--text-muted);cursor:pointer;font-size:11px}
+.tp-hl-btn:hover,.tp-hl-btn.active,.tp-anim-btn:hover{border-color:var(--color-primary);color:var(--color-primary)}
+.tp-settings label{display:flex;align-items:center;gap:6px;font-size:11px;color:var(--text-muted);cursor:pointer}
+.tp-settings input[type="checkbox"]{accent-color:var(--color-primary)}
+.tp-settings input[type="range"]{flex:1;accent-color:var(--color-primary)}
+/* Subprocess Breadcrumb */
+.subprocess-breadcrumb{display:flex;align-items:center;gap:12px;padding:6px 12px;background:var(--bg-elevated);border-bottom:1px solid var(--border-color);flex-shrink:0}
+.sb-nav{display:flex;align-items:center;gap:4px;flex:1}
+.sb-home{background:transparent;border:none;color:var(--color-primary);cursor:pointer;font-size:16px;padding:2px 6px;border-radius:var(--radius-sm)}
+.sb-crumb{display:flex;align-items:center;gap:2px}
+.sb-crumb-text{font-size:11px;color:var(--text-muted);cursor:pointer;padding:2px 6px;border-radius:var(--radius-sm)}
+.sb-crumb-text:hover,.sb-crumb-text.active{background:var(--color-primary-soft);color:var(--color-primary)}
+.sb-arrow{color:var(--text-muted);font-size:12px}.sb-depth-badge{font-size:10px;padding:2px 8px;background:rgba(168,85,247,0.2);color:var(--color-primary);border-radius:var(--radius-full);font-weight:700}
+/* Ripple effect */
+.ripple{position:absolute;border-radius:50%;background:rgba(0,212,255,0.3);pointer-events:none;animation:rippleAnim .6s ease-out forwards}
+@keyframes rippleAnim{from{width:0;height:0;opacity:1}to{width:80px;height:80px;opacity:0;margin-left:-40px;margin-top:-40px}}
+/* Highlighted node styles */
+.node-highlight-incoming{stroke:var(--color-primary)!important;stroke-width:3!important}
+.node-highlight-outgoing{stroke:var(--color-success)!important;stroke-width:3!important}
+.node-highlight-all{stroke:var(--color-warning)!important;stroke-width:3!important}
+.node-dimmed{opacity:0.3!important}
+/* Scrollbar for panels */
+.se-sidebar::-webkit-scrollbar,.fa-body::-webkit-scrollbar,.am-list::-webkit-scrollbar{width:4px}
+.se-sidebar::-webkit-scrollbar-thumb,.fa-body::-webkit-scrollbar-thumb,.am-list::-webkit-scrollbar-thumb{background:var(--border-color);border-radius:2px}
 </style>
