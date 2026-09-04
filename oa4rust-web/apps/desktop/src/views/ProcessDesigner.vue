@@ -862,6 +862,12 @@
       </div>
     </div>
   </div>
+
+    <!-- Fork/Join Enhanced SVG Layer -->
+    <g v-if="showBranchAnnot && processDef" class="fork-join-layer">
+      <path v-for="ann in forkJoinAnnotations" :key="ann.id" :d="getForkJoinPath(ann.branchIndices)" class="fork-flow" stroke-width="2" fill="none" :stroke="ann.color" stroke-dasharray="6,3" />
+      <text v-for="ann in forkJoinAnnotations" :key="ann.id+'l'" :x="processDef.nodes[ann.branchIndices[0]]?.x + (processDef.nodes[ann.branchIndices[0]]?.w||120) + 8" :y="processDef.nodes[ann.branchIndices[0]]?.y + 14" fill="var(--color-warning)" font-size="10" font-weight="600">{{ ann.label }}</text>
+    </g>
 </template>
 
 <script setup lang="ts">
@@ -879,6 +885,20 @@ interface PDNode {
 }
 interface PDEdge { id: string; from: string; to: string; label?: string; condition?: string; flowLabel?: string; strokeWidth?: number; routing?: 'auto'|'straight'|'horizontal'|'vertical' }
 interface ProcDef { id?: string; name: string; flag: string; desc?: string; status?: string; config?: { nodes: PDNode[]; edges: PDEdge[] }; subprocesses?: Record<string, { nodes: PDNode[]; edges: PDEdge[] }> }
+
+// ── Group Drag/Resize ──────────────────────────────────────────────
+interface GroupDragState { idx: number; startX: number; startY: number; origX: number; origY: number }
+interface GroupResizeState { idx: number; dir: string; startX: number; startY: number; origW: number; origH: number; origX: number; origY: number }
+// ── Edge Routing ────────────────────────────────────────────────────
+interface RoutingPoint { x: number; y: number; type: "anchor"|"control" }
+interface EdgeRouteConfig { edgeId: string; fromNodeIdx: number; toNodeIdx: number; routing: "auto"|"straight"|"horizontal"|"vertical"|"custom"; controlPoints: RoutingPoint[]; offset: number; labelPos: "auto"|"start"|"mid"|"end"; arrowStyle: "default"|"none"|"both" }
+// ── Script Action Editor ────────────────────────────────────────────
+interface ScriptVar { name: string; type: string; defaultValue: string; description: string }
+interface ScriptErrorHandling { onFail: "abort"|"skip"|"retry"; retryCount?: number; retryDelay?: number }
+interface ScriptOutputMapping { from: string; to: string; transform?: string }
+interface ScriptActionConfig { language: "javascript"|"python"|"typescript"; code: string; imports: string[]; variables: ScriptVar[]; errorHandling: ScriptErrorHandling; outputMapping: ScriptOutputMapping[]; timeout: number; description: string }
+// ── Fork/Join Enhanced ──────────────────────────────────────────────
+interface ForkJoinAnnotation { id: string; type: "fork"|"join"; branchIndices: number[]; forkNodeIdx: number; joinNodeIdx?: number; label: string; color: string; annotations: Array<{type:"label"|"flow"|"count"; text: string}> }
 
 // ── Constants ─────────────────────────────────────────────────────────
 const GRID_SIZE = 20
@@ -1263,6 +1283,16 @@ function getPlaybackTime(): string {
 
 // Help modal
 const showHelpModal = ref(false)
+
+const groupDragState = ref<GroupDragState|null>(null)
+const groupResizeState = ref<GroupResizeState|null>(null)
+const showRoutingPanel = ref(false)
+const selectedRoutingEdge = ref<number|null>(null)
+const routingConfigs = ref<Map<string, EdgeRouteConfig>>(new Map())
+const scriptEditors = ref<Map<string, ScriptActionConfig>>(new Map())
+const scriptEditorNodeIdx = ref<number|null>(null)
+const showBranchAnnot = ref(false)
+const forkJoinAnnotations = ref<ForkJoinAnnotation[]>([])
 
 // ── Computed ──────────────────────────────────────────────────────────
 const filteredProc = computed(() =>
@@ -3151,6 +3181,169 @@ function deleteArchive(idx:number) { processArchive.value.splice(idx,1) }onUnmou
   document.removeEventListener('mousemove', () => {})
   document.removeEventListener('mouseup', () => {})
 })
+
+// ── Group Drag ──────────────────────────────────────────────────────
+function onGroupMouseDown(e: MouseEvent, idx: number) {
+  e.stopPropagation()
+  if (!processDef.value) return
+  const g = groupNodes.value[idx]
+  if (!g) return
+  groupDragState.value = { idx, startX: e.clientX, startY: e.clientY, origX: g.node.x, origY: g.node.y }
+  const onMove = (ev: MouseEvent) => {
+    if (!groupDragState.value || !g) return
+    const dx = (ev.clientX - groupDragState.value.startX) / zoom.value
+    const dy = (ev.clientY - groupDragState.value.startY) / zoom.value
+    g.node.x = groupDragState.value.origX + dx
+    g.node.y = groupDragState.value.origY + dy
+    if (snapToGrid.value) { g.node.x = Math.round(g.node.x / customGridSize.value) * customGridSize.value; g.node.y = Math.round(g.node.y / customGridSize.value) * customGridSize.value }
+    for (const id of g.node.groupMembers!) {
+      const n = processDef.value!.nodes.find(nd => nd.id === id)
+      if (n && (n as any).__origX !== undefined) {
+        const ox = (n as any).__origX, oy = (n as any).__origY
+        n.x = ox + (g.node.x - groupDragState.value.origX); n.y = oy + (g.node.y - groupDragState.value.origY)
+        if (snapToGrid.value) { n.x = Math.round(n.x / customGridSize.value) * customGridSize.value; n.y = Math.round(n.y / customGridSize.value) * customGridSize.value }
+      }
+    }
+  }
+  const onUp = () => { document.removeEventListener("mousemove", onMove); document.removeEventListener("mouseup", onUp); groupDragState.value = null; pushHistory() }
+  document.addEventListener("mousemove", onMove); document.addEventListener("mouseup", onUp)
+}
+function onGroupResizeMouseDown(e: MouseEvent, idx: number, dir: string) {
+  e.stopPropagation()
+  if (!processDef.value) return
+  const g = groupNodes.value[idx]
+  if (!g) return
+  groupResizeState.value = { idx, dir, startX: e.clientX, startY: e.clientY, origW: g.node.w||200, origH: g.node.h||100, origX: g.node.x, origY: g.node.y }
+  const onMove = (ev: MouseEvent) => {
+    if (!groupResizeState.value) return
+    const gs = groupResizeState.value, gn = processDef.value.nodes[gs.idx]
+    if (!gn) return
+    const dx = (ev.clientX - gs.startX) / zoom.value, dy = (ev.clientY - gs.startY) / zoom.value
+    if (gs.dir === "se") { gn.w = Math.max(100, gs.origW + dx); gn.h = Math.max(60, gs.origH + dy) }
+    else if (gs.dir === "e") gn.w = Math.max(100, gs.origW + dx)
+    else if (gs.dir === "s") gn.h = Math.max(60, gs.origH + dy)
+    else if (gs.dir === "nw") { gn.x = gs.origX + dx; gn.y = gs.origY + dy; gn.w = Math.max(100, gs.origW - dx); gn.h = Math.max(60, gs.origH - dy) }
+    else if (gs.dir === "sw") { gn.y = gs.origY + dy; gn.h = Math.max(60, gs.origH + dy) }
+    else if (gs.dir === "ne") { gn.x = gs.origX + dx; gn.h = Math.max(60, gs.origH + dy) }
+    else if (gs.dir === "n") gn.h = Math.max(60, gs.origH - dy)
+    else if (gs.dir === "w") { gn.x = gs.origX + dx; gn.w = Math.max(100, gs.origW - dx) }
+    gn.w = Math.max(100, Math.round(gn.w / GRID_SIZE) * GRID_SIZE)
+    gn.h = Math.max(60, Math.round(gn.h / GRID_SIZE) * GRID_SIZE)
+  }
+  const onUp = () => { document.removeEventListener("mousemove", onMove); document.removeEventListener("mouseup", onUp); groupResizeState.value = null; pushHistory() }
+  document.addEventListener("mousemove", onMove); document.addEventListener("mouseup", onUp)
+}
+function getGroupResizeX(node: PDNode, dir: string): number { return dir.includes("w") ? node.x : node.x + (node.w||200) }
+function getGroupResizeY(node: PDNode, dir: string): number { return dir.includes("n") ? node.y : node.y + (node.h||100) }
+// ── Edge Routing ────────────────────────────────────────────────────
+const routingPresets = [{ name: "auto", routing: "auto", label: "自动" }, { name: "straight", routing: "straight", label: "直线" }, { name: "horizontal", routing: "horizontal", label: "水平" }, { name: "vertical", routing: "vertical", label: "垂直" }]
+function openRoutingPanel(edgeIdx: number) {
+  selectedRoutingEdge.value = edgeIdx; showRoutingPanel.value = true
+  const edge = processDef.value?.edges?.[edgeIdx]
+  if (!edge || routingConfigs.value.has(edge.id)) return
+  const fn = processDef.value!.nodes.find(n => n.id === edge.from), tn = processDef.value!.nodes.find(n => n.id === edge.to)
+  routingConfigs.value.set(edge.id, { edgeId: edge.id, fromNodeIdx: processDef.value!.nodes.indexOf(fn!), toNodeIdx: processDef.value!.nodes.indexOf(tn!), routing: "auto", controlPoints: [], offset: 0, labelPos: "auto", arrowStyle: "default" })
+}
+function getRoutingConfig(edgeId: string): EdgeRouteConfig|null { return routingConfigs.value.get(edgeId) || null }
+function updateRoutingConfig(edgeId: string, updates: Partial<EdgeRouteConfig>) {
+  const cfg = routingConfigs.value.get(edgeId)
+  if (!cfg) return
+  Object.assign(cfg, updates)
+  routingConfigs.value.set(edgeId, cfg)
+  if (processDef.value) { const e = processDef.value.edges?.find(x => x.id === edgeId); if (e) e.routing = updates.routing || "auto" }
+}
+function addControlPoint() { const cfg = getRoutingConfig(processDef.value?.edges?.[selectedRoutingEdge.value!]?.id || ""); if (!cfg) return; cfg.controlPoints.push({ x: 0, y: 0, type: "control" }); routingConfigs.value.set(cfg.edgeId, cfg) }
+function removeControlPoint(idx: number) { const cfg = getRoutingConfig(processDef.value?.edges?.[selectedRoutingEdge.value!]?.id || ""); if (!cfg) return; cfg.controlPoints.splice(idx, 1); routingConfigs.value.set(cfg.edgeId, cfg) }
+function computeCustomEdgePath(edge: PDEdge): string {
+  const cfg = routingConfigs.value.get(edge.id)
+  if (!cfg || cfg.controlPoints.length === 0) return computeEdgePath(edge)
+  const from = processDef.value?.nodes.find(n => n.id === edge.from), to = processDef.value?.nodes.find(n => n.id === edge.to)
+  if (!from || !to) return ""
+  const fp = getNodePort(from, "out"), tp = getNodePort(to, "in")
+  let d = `M ${fp.x} ${fp.y}`
+  for (const cp of cfg.controlPoints) d += ` L ${cp.x} ${cp.y}`
+  return d + ` L ${tp.x} ${tp.y}`
+}
+function applyRoutingPreset(preset: "smooth"|"orthogonal"|"manhattan"|"zigzag") {
+  if (selectedRoutingEdge.value === null) return
+  const edge = processDef.value?.edges?.[selectedRoutingEdge.value]
+  if (!edge) return
+  const from = processDef.value!.nodes.find(n => n.id === edge.from), to = processDef.value!.nodes.find(n => n.id === edge.to)
+  if (!from || !to) return
+  const fp = getNodePort(from, "out"), tp = getNodePort(to, "in")
+  const midX = (fp.x + tp.x) / 2, midY = (fp.y + tp.y) / 2
+  const cp: RoutingPoint[] = []
+  if (preset === "smooth") cp.push({ x: midX, y: midY, type: "control" })
+  else if (preset === "orthogonal") { cp.push({ x: fp.x, y: midY, type: "control" }, { x: tp.x, y: midY, type: "control" }) }
+  else if (preset === "manhattan") { cp.push({ x: midX, y: fp.y, type: "control" }, { x: midX, y: tp.y, type: "control" }) }
+  else if (preset === "zigzag") cp.push({ x: midX - 30, y: midY, type: "control" }, { x: midX + 30, y: midY, type: "control" })
+  updateRoutingConfig(edge.id, { routing: "custom", controlPoints: cp })
+}
+// ── Script Action Editor ────────────────────────────────────────────
+const scriptPresets = [
+  { name: "数据转换", icon: "🔄", code: "output.result = { processed: true, timestamp: Date.now(), data: inputData };" },
+  { name: "条件判断", icon: "🔀", code: "const v = inputData.value; output.result = v > 100 ? 'high' : 'low'; output.level = v > 100 ? 'A' : 'C';" },
+  { name: "数据聚合", icon: "📊", code: "const items = inputData.items || []; output.total = items.length; output.sum = items.reduce((s,i) => s + (i.value||0), 0); output.avg = items.length > 0 ? output.sum / items.length : 0;" },
+  { name: "通知发送", icon: "📧", code: "output.sent = true; output.timestamp = new Date().toISOString(); output.recipient = inputData.recipient;" },
+  { name: "数据验证", icon: "✅", code: "const errors: string[] = []; if(!inputData.name) errors.push('名称不能为空'); output.valid = errors.length === 0; output.errors = errors;" },
+  { name: "日期处理", icon: "📅", code: "const d = new Date(inputData.date); output.formatted = d.toLocaleDateString('zh-CN'); output.month = d.getMonth()+1; output.year = d.getFullYear();" },
+  { name: "字符串处理", icon: "📝", code: "const t = inputData.text || ' '; output.upper = t.toUpperCase(); output.lower = t.toLowerCase(); output.words = t.split(/\s+/).filter(Boolean);" },
+  { name: "数学计算", icon: "🔢", code: "const a = parseFloat(inputData.a)||0, b = parseFloat(inputData.b)||0; output.sum = a+b; output.diff = a-b; output.prod = a*b; output.div = b!==0 ? a/b : null;" },
+]
+function openScriptEditor(nodeIdx: number) {
+  const nodes = processDef.value?.nodes || [], node = nodes[nodeIdx]
+  scriptEditorNodeIdx.value = nodeIdx; showScriptEditor.value = true
+  if (!node) return
+  const key = node.id
+  if (!scriptEditors.value.has(key)) {
+    scriptEditors.value.set(key, { language: "javascript", code: node.script || "output.result = inputData.value;", imports: [],
+      variables: [{ name:"inputData", type:"object", defaultValue:"{}", description:"输入数据" }, { name:"context", type:"object", defaultValue:"{}", description:"流程上下文" }, { name:"output", type:"any", defaultValue:"null", description:"输出结果" }],
+      errorHandling: { onFail:"skip", retryCount:3, retryDelay:1000 }, outputMapping: [], timeout:30000, description:"" })
+  }
+}
+function closeScriptEditor() { showScriptEditor.value = false; scriptEditorNodeIdx.value = null }
+function saveScriptEditor() {
+  const node = processDef.value?.nodes?.[scriptEditorNodeIdx.value], cfg = getScriptConfig(node?.id)
+  if (scriptEditorNodeIdx.value === null || !processDef.value || !cfg) return
+  node.script = cfg.code; ;(node as any).scriptConfig = cfg; pushHistory(); closeScriptEditor()
+}
+function getScriptConfig(nodeId: string): ScriptActionConfig|null { return scriptEditors.value.get(nodeId) || null }
+function addScriptEditorVar() { const node = processDef.value?.nodes?.[scriptEditorNodeIdx.value], key = node?.id, cfg = getScriptConfig(key); if (!key || !cfg) return; cfg.variables.push({ name:"newVar", type:"string", defaultValue:"", description:"" }); scriptEditors.value.set(key, cfg) }
+function removeScriptEditorVar(idx: number) { const node = processDef.value?.nodes?.[scriptEditorNodeIdx.value], key = node?.id, cfg = getScriptConfig(key); if (!key || !cfg) return; cfg.variables.splice(idx, 1); scriptEditors.value.set(key, cfg) }
+function addOutputMapping() { const node = processDef.value?.nodes?.[scriptEditorNodeIdx.value], key = node?.id, cfg = getScriptConfig(key); if (!key || !cfg) return; cfg.outputMapping.push({ from:"", to:"", transform:"" }); scriptEditors.value.set(key, cfg) }
+function removeOutputMapping(idx: number) { const node = processDef.value?.nodes?.[scriptEditorNodeIdx.value], key = node?.id, cfg = getScriptConfig(key); if (!key || !cfg) return; cfg.outputMapping.splice(idx, 1); scriptEditors.value.set(key, cfg) }
+// ── Fork/Join Enhanced ──────────────────────────────────────────────
+function detectParallelBranchesEnhanced(): ForkJoinAnnotation[] {
+  if (!processDef.value) return []
+  const nodes = processDef.value.nodes, edges = processDef.value.edges || []
+  const annotations: ForkJoinAnnotation[] = []
+  for (let i = 0; i < nodes.length; i++) {
+    const outgoing = edges.filter(e => e.from === nodes[i].id)
+    if (outgoing.length >= 2) {
+      const members = new Set(outgoing.map(e => e.to))
+      if (members.size >= 2) {
+        const branchIndices: number[] = []
+        for (const toId of members) { const idx = nodes.findIndex(n => n.id === toId); if (idx !== -1) branchIndices.push(idx) }
+        const potentialJoins = nodes.filter((n, j) => j !== i && branchIndices.every(bi => edges.some(e => e.from === nodes[bi].id && e.to === n.id)))
+        annotations.push({ id: genId(), type: "fork", branchIndices, forkNodeIdx: i,
+          joinNodeIdx: potentialJoins.length > 0 ? nodes.findIndex(n => n.id === potentialJoins[0].id) : undefined,
+          label: "分支" + (annotations.length + 1), color: "#f59e0b",
+          annotations: [{ type:"label", text:"FORK #" + (annotations.length + 1) }, { type:"flow", text:outgoing.length + " 路并行" }, { type:"count", text:members.size + " 分支" }]
+        })
+      }
+    }
+  }
+  return annotations
+}
+function toggleForkJoinAnnot() { showBranchAnnot.value = !showBranchAnnot.value; if (showBranchAnnot.value) forkJoinAnnotations.value = detectParallelBranchesEnhanced() }
+function getForkJoinPath(branchIndices: number[]): string {
+  if (branchIndices.length < 2 || !processDef.value) return ""
+  const nodes = branchIndices.map(i => processDef.value!.nodes[i]).filter(Boolean)
+  if (nodes.length < 2) return ""
+  let d = `M ${nodes[0].x + (nodes[0].w||120)} ${nodes[0].y + (nodes[0].h||50)/2}`
+  for (let i = 1; i < nodes.length; i++) { const n = nodes[i]; d += ` L ${n.x + (n.w||120)} ${n.y + (n.h||50)/2}` }
+  return d
+}
 </script>
 
 <style scoped>
@@ -3708,4 +3901,16 @@ kbd{display:inline-block;padding:3px 8px;border-radius:4px;border:1px solid var(
 .edge-predicted{animation:predictedPulse 1s ease-in-out infinite}
 /* Node type badge colors */
 .node-type-badge{display:inline-flex;align-items:center;gap:3px;padding:1px 6px;border-radius:var(--radius-sm);font-size:9px;font-weight:600}
+
+/* Group drag & resize */
+.group-resize-handle{position:absolute;width:12px;height:12px;background:var(--color-primary);border:2px solid #fff;border-radius:50%;cursor:pointer;z-index:10;transition:transform .15s}
+.group-resize-handle:hover{transform:scale(1.3)}
+.group-resize-handle.nw{top:-6px;left:-6px}.group-resize-handle.n{top:-6px;left:50%;transform:translateX(-50%)}.group-resize-handle.ne{top:-6px;right:-6px}
+.group-resize-handle.e{top:50%;right:-6px;transform:translateY(-50%)}.group-resize-handle.se{bottom:-6px;right:-6px}.group-resize-handle.s{bottom:-6px;left:50%;transform:translateX(-50%)}
+.group-resize-handle.sw{bottom:-6px;left:-6px}.group-resize-handle.w{top:50%;left:-6px;transform:translateY(-50%)}
+/* Fork/Join */
+.routing-cp-row{display:flex;align-items:center;gap:4px;margin-bottom:4px}
+.fork-flow{stroke-opacity:0.6;animation:forkPulse 2s ease-in-out infinite}
+@keyframes forkPulse{0%,100%{stroke-opacity:0.4}50%{stroke-opacity:0.9}}
+.fork-join-layer{pointer-events:none}
 </style>
