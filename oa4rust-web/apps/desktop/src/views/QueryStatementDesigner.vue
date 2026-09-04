@@ -800,6 +800,83 @@ const resultStats = computed(() => {
   return stats
 })
 
+
+// --- Visual Editor State ---
+const showVisualEditor = ref(false)
+const veSelectFields = ref<string[]>(["id", "name"])
+const veFromTable = ref(""), veOrderBy = ref(""), veOrderDir = ref("DESC")
+const veWhereConditions = ref<Array<{field:string;op:string;value:string}>>([])
+const veLimit = ref(100)
+
+// --- Rule Chain State ---
+const showRuleChain = ref(false)
+const ruleChain = ref<Array<{type:string;field:string;op:string;value:string;enabled:boolean}>>([])
+
+// --- Field Drag State ---
+const showFieldDrag = ref(false)
+const allSchemaFields = ref<string[]>([])
+const fdSelectFields = ref<string[]>([])
+const fdWhereFields = ref<string[]>([])
+
+// --- Chart Linkage State ---
+const showChartLinkage = ref(false)
+const clMode = ref("filter"), clXAxis = ref(""), clYAxis = ref(""), clFilterField = ref("")
+const clPreviewData = ref<string[]>([])
+
+// --- Advanced Templates State ---
+const showAdvancedTemplates = ref(false)
+
+// Computed
+const generatedVisualSql = computed(() => {
+  let s = "SELECT " + (veSelectFields.value.length ? veSelectFields.value.join(", ") : "*")
+  if (veFromTable.value) s += " FROM " + veFromTable.value
+  if (veWhereConditions.value.length) {
+    const wh = veWhereConditions.value.filter(c => c.field && c.value).map(c => c.field + " " + c.op + " '" + c.value + "'").join(" AND ")
+    if (wh) s += "
+WHERE " + wh
+  }
+  if (veOrderBy.value) s += "
+ORDER BY " + veOrderBy.value + " " + veOrderDir.value
+  if (veLimit.value) s += "
+LIMIT " + veLimit.value
+  return s
+})
+const generatedFieldDragSql = computed(() => {
+  let s = "SELECT " + (fdSelectFields.value.length ? fdSelectFields.value.join(", ") : "*")
+  if (allSchemaFields.value[0]) s += " FROM " + allSchemaFields.value[0].split(".")[0]
+  if (fdWhereFields.value.length) s += "
+WHERE " + fdWhereFields.value.map(f => f + " IS NOT NULL").join(" AND ")
+  return s
+})
+
+// Functions
+function addVeSelectField() { veSelectFields.value.push("") }
+function addVeWhereCondition() { veWhereConditions.value.push({ field: "", op: "eq", value: "" }) }
+function applyVisualEditor() { sql.value = generatedVisualSql.value; showVisualEditor.value = false }
+function clearVisualEditor() { veSelectFields.value = []; veFromTable.value = ""; veWhereConditions.value = []; veOrderBy.value = ""; veLimit.value = 100 }
+function addRuleToChain() { ruleChain.value.push({ type: "过滤", field: "", op: "eq", value: "", enabled: true }) }
+function toggleRule(idx: number) { ruleChain.value[idx].enabled = !ruleChain.value[idx].enabled }
+function applyRuleChain() {
+  const r = ruleChain.value.filter(x => x.enabled && x.field && x.value)
+  if (!r.length) return
+  const w = r.map(x => x.field + " " + x.op + " '" + x.value + "'").join(" AND ")
+  if (/WHERE/i.test(sql.value)) sql.value = sql.value.replace(/WHEREs+[^;]+/i, w)
+  else sql.value += "
+WHERE " + w
+  showRuleChain.value = false
+}
+function fdApply() { sql.value = generatedFieldDragSql.value; showFieldDrag.value = false }
+function fdAutoFill() { fdSelectFields.value = resultHeaders.value.slice(0,5); fdWhereFields.value = resultHeaders.value.filter(h=>h.includes("status")||h.includes("flag")).slice(0,2) }
+function fdReset() { fdSelectFields.value = []; fdWhereFields.value = [] }
+function applyChartLinkage() { showChartLinkage.value = false }
+function testChartLinkage() {
+  if (clXAxis.value && clFilterField.value) clPreviewData.value = resultData.value.slice(0,3).map(r => r[clXAxis.value] + " | " + r[clFilterField.value]).filter(Boolean)
+  else clPreviewData.value = ["请先选择X轴和过滤字段"]
+}
+function showAdvancedTemplatesFn() { showAdvancedTemplates.value = true }
+function applyAdvancedTemplate(t: any) { sql.value = t.code + "
+"; showAdvancedTemplates.value = false }
+function saveAdvancedTemplate(t: any) { templates.value.push({id:"t"+Date.now(),name:t.name,category:t.category,code:t.code,icon:t.icon}); showAdvancedTemplates.value = false }
 </script>
 
 <style scoped>
