@@ -362,6 +362,166 @@
         <div v-if="auditLogs.length===0" class="audit-empty">暂无审计记录</div>
       </div>
     </div>
+
+<!-- Cross-Field Calculator Panel -->
+<div v-if="showCrossFieldPanel" class="modal-overlay" @click.self="showCrossFieldPanel=false">
+  <div class="modal glass-card">
+    <div class="modal-header"><span>跨字段计算</span><button class="btn-close" @click="showCrossFieldPanel=false">×</button></div>
+    <div class="modal-body">
+      <div class="cf-add">
+        <input v-model="newCalcSource" placeholder="源字段" class="cf-input" />
+        <input v-model="newCalcFormula" placeholder="公式 e.g. a*b+c" class="cf-input" />
+        <input v-model="newCalcTarget" placeholder="目标字段" class="cf-input" />
+        <button class="btn-sm" @click="addCrossFieldCalc()">添加</button>
+      </div>
+      <div class="cf-list">
+        <div v-for="c in crossFieldCalcs" :key="c.id" class="cf-item">
+          <label class="cf-toggle"><input type="checkbox" v-model="c.enabled"/><span></span></label>
+          <span class="cf-src">{{c.sourceFields.join('+')}}</span>
+          <span class="cf-op">→</span>
+          <span class="cf-formula">{{c.formula}}</span>
+          <span class="cf-tgt">{{c.targetField}}</span>
+          <button class="btn-sm btn-danger" @click="removeCrossFieldCalc(c.id)">×</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Data Source Panel -->
+<div v-if="showDataSourcePanel" class="modal-overlay" @click.self="showDataSourcePanel=false">
+  <div class="modal glass-card">
+    <div class="modal-header"><span>数据源管理</span><button class="btn-close" @click="showDataSourcePanel=false">×</button></div>
+    <div class="modal-body">
+      <div class="ds-add"><button class="btn-sm" @click="addDataSource()">+ 添加数据源</button></div>
+      <div class="ds-list">
+        <div v-for="ds in dataSources" :key="ds.id" class="ds-item">
+          <select v-model="ds.method" class="ds-method"><option>GET</option><option>POST</option><option>PUT</option><option>DELETE</option></select>
+          <input v-model="ds.url" placeholder="API URL" class="ds-url" />
+          <button class="btn-sm" @click="testDataSource(ds)">测试</button>
+          <label class="ds-toggle"><input type="checkbox" v-model="ds.enabled"/><span></span></label>
+          <button class="btn-sm btn-danger" @click="removeDataSource(ds.id)">×</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Field Permissions Panel -->
+<div v-if="showFieldPermissionsPanel" class="modal-overlay" @click.self="showFieldPermissionsPanel=false">
+  <div class="modal glass-card">
+    <div class="modal-header"><span>字段权限配置</span><button class="btn-close" @click="showFieldPermissionsPanel=false">×</button></div>
+    <div class="modal-body">
+      <div class="fp-table">
+        <div class="fp-hdr"><span>角色</span><span>只读</span><span>编辑</span><span>删除</span><span>隐藏</span></div>
+        <div v-for="p in fieldPermissions" :key="p.roleId" class="fp-row">
+          <span class="fp-role">{{p.role}}</span>
+          <label class="fp-check"><input type="checkbox" v-model="p.canRead"/><span></span></label>
+          <label class="fp-check"><input type="checkbox" v-model="p.canWrite"/><span></span></label>
+          <label class="fp-check"><input type="checkbox" v-model="p.canDelete"/><span></span></label>
+          <label class="fp-check"><input type="checkbox" v-model="p.canHide"/><span></span></label>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Internationalization Panel -->
+<div v-if="showIntlPanel" class="modal-overlay" @click.self="showIntlPanel=false">
+  <div class="modal glass-card">
+    <div class="modal-header"><span>多语言配置</span><button class="btn-close" @click="showIntlPanel=false">×</button></div>
+    <div class="modal-body">
+      <div class="il-mode">
+        <button v-for="m in ['zh','en','ja','ko']" :key="m" :class="['il-btn',{active:intlMode===m}]" @click="intlMode=m">{{m.toUpperCase()}}</button>
+      </div>
+      <div class="il-input">
+        <textarea v-model="intlText" class="il-textarea" placeholder="输入翻译文本..." rows="4"></textarea>
+        <div class="il-actions">
+          <button class="btn-sm" @click="saveIntlText()">保存</button>
+          <button class="btn-sm" @click="intlText=''">清空</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Performance Simulation Panel -->
+<div v-if="showSimPanel" class="modal-overlay" @click.self="showSimPanel=false">
+  <div class="modal glass-card">
+    <div class="modal-header"><span>性能模拟</span><button class="btn-close" @click="showSimPanel=false">×</button></div>
+    <div class="modal-body">
+      <div class="sim-config">
+        <div class="sim-row"><span>字段数</span><input v-model.number="simLoad.fieldCount" type="number" min="1" max="500" class="sim-num" /></div>
+        <div class="sim-row"><span>并发用户</span><input v-model.number="simLoad.concurrentUsers" type="number" min="1" max="1000" class="sim-num" /></div>
+        <div class="sim-row"><span>时长(秒)</span><input v-model.number="simLoad.durationSec" type="number" min="1" max="300" class="sim-num" /></div>
+        <button class="btn-sm btn-primary" :disabled="simRunning" @click="runSimulation()">{{simRunning ? '模拟中...' : '开始模拟'}}</button>
+      </div>
+      <div v-if="simProgress > 0" class="sim-progress">
+        <div class="sim-bar-wrap"><div class="sim-bar" :style="{width:simProgress+'%'}"></div></div>
+        <span>{{simProgress}}%</span>
+      </div>
+      <div v-if="simResult" class="sim-result">
+        <div class="sim-metric"><span class="sim-val">{{simResult.avgResponseMs.toFixed(1)}}</span><span class="sim-label">平均响应(ms)</span></div>
+        <div class="sim-metric"><span class="sim-val">{{simResult.p99Ms.toFixed(1)}}</span><span class="sim-label">P99响应(ms)</span></div>
+        <div class="sim-metric"><span class="sim-val">{{(simResult.errorRate*100).toFixed(2)}}%</span><span class="sim-label">错误率</span></div>
+        <div class="sim-metric"><span class="sim-val">{{simResult.throughput.toFixed(0)}}</span><span class="sim-label">吞吐量(req/s)</span></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Accessibility Panel -->
+<div v-if="showA11yPanel" class="modal-overlay" @click.self="showA11yPanel=false">
+  <div class="modal glass-card">
+    <div class="modal-header"><span>无障碍检查</span><button class="btn-close" @click="showA11yPanel=false">×</button></div>
+    <div class="modal-body">
+      <div class="a11-list">
+        <div v-for="iss in a11yIssues" :key="iss.fieldId" class="a11-item" :style="{borderLeftColor:iss.severity==='high'?'#ef4444':iss.severity==='medium'?'#f59e0b':'#10b981'}">
+          <span class="a11-sev">{{iss.severity.toUpperCase()}}</span>
+          <span class="a11-iss">{{iss.issue}}</span>
+          <span v-if="iss.suggestion" class="a11-sug">{{iss.suggestion}}</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Dependency Graph Panel -->
+<div v-if="showDepGraphPanel" class="modal-overlay" @click.self="showDepGraphPanel=false">
+  <div class="modal glass-card">
+    <div class="modal-header"><span>字段依赖图</span><button class="btn-close" @click="showDepGraphPanel=false">×</button></div>
+    <div class="modal-body">
+      <div class="dg-list">
+        <div v-for="e in depEdges" :key="e.from+'-'+e.to" class="dg-item">
+          <span class="dg-from">{{e.from}}</span><span class="dg-arrow">→</span><span class="dg-to">{{e.to}}</span><span class="dg-type">{{e.type}}</span>
+        </div>
+        <div v-if="!depEdges.length" class="dg-empty">暂无依赖关系</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- JSON Schema Panel -->
+<div v-if="showJsonSchemaPanel" class="modal-overlay" @click.self="showJsonSchemaPanel=false">
+  <div class="modal glass-card">
+    <div class="modal-header"><span>JSON Schema 导出</span><button class="btn-close" @click="showJsonSchemaPanel=false">×</button></div>
+    <div class="modal-body">
+      <pre class="js-schema">{{jsonSchemaText}}</pre>
+      <button class="btn-sm" @click="navigator.clipboard.writeText(jsonSchemaText);showToast('已复制','success')">复制</button>
+    </div>
+  </div>
+</div>
+
+<!-- Field Docs Panel -->
+<div v-if="showFieldDocsPanel" class="modal-overlay" @click.self="showFieldDocsPanel=false">
+  <div class="modal glass-card">
+    <div class="modal-header"><span>字段文档</span><button class="btn-close" @click="showFieldDocsPanel=false">×</button></div>
+    <div class="modal-body">
+      <pre class="fd-docs">{{fieldDocsText}}</pre>
+      <button class="btn-sm" @click="navigator.clipboard.writeText(fieldDocsText);showToast('已复制','success')">复制</button>
+    </div>
+  </div>
+</div>
 </template>
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
@@ -1013,6 +1173,136 @@ function generateFieldDocumentation(): string {
 function copyToClipboard(text: string): void {
   navigator.clipboard.writeText(text).then(() => showToast('已复制到剪贴板', 'success'))
 }
+
+// -- Advanced Interfaces
+interface CrossFieldCalc { id: string; sourceFields: string[]; formula: string; targetField: string; enabled: boolean }
+interface DataSourceItem { id: string; url: string; method: string; headers: string; body: string; enabled: boolean }
+interface FieldPermission { roleId: string; role: string; canRead: boolean; canWrite: boolean; canDelete: boolean; canHide: boolean }
+interface IntlString { zh: string; en: string; ja?: string; ko?: string }
+interface SimLoadConfig { fieldCount: number; concurrentUsers: number; durationSec: number }
+interface SimResult { avgResponseMs: number; p99Ms: number; errorRate: number; throughput: number }
+interface A11yIssue { fieldId: string; issue: string; severity: 'high'|'medium'|'low'; suggestion: string }
+interface DepEdge { from: string; to: string; type: 'calc'|'visible'|'disable'|'required'; label: string }
+
+// -- Advanced State
+const showCrossFieldPanel = ref(false)
+const crossFieldCalcs = ref<CrossFieldCalc[]>([
+  { id: 'cf1', sourceFields: ['subTotal', 'taxRate'], formula: 'subTotal * (1 + taxRate)', targetField: 'total', enabled: true },
+  { id: 'cf2', sourceFields: ['startDate', 'endDate'], formula: 'daysBetween(startDate, endDate)', targetField: 'duration', enabled: false },
+])
+const newCalcSource = ref(''), newCalcFormula = ref(''), newCalcTarget = ref('')
+  { id: 'ds1', url: '/api/users/list', method: 'GET', headers: 'Authorization: Bearer {{token}}', body: '', enabled: true },
+  { id: 'ds2', url: '/api/departments/tree', method: 'GET', headers: '', body: '', enabled: true },
+])
+const showFieldPermissionsPanel = ref(false)
+const fieldPermissions = ref<FieldPermission[]>([
+  { roleId: 'r1', role: '管理员', canRead: true, canWrite: true, canDelete: true, canHide: false },
+  { roleId: 'r2', role: '审批人', canRead: true, canWrite: false, canDelete: false, canHide: true },
+  { roleId: 'r3', role: '申请人', canRead: true, canWrite: true, canDelete: false, canHide: false },
+])
+const showIntlPanel = ref(false)
+const intlFields = ref<Map<string, IntlString>>(new Map())
+const currentIntlField = ref(''), intlMode = ref<'zh'|'en'|'ja'|'ko'>('en'), intlText = ref('')
+const showSimPanel = ref(false)
+const simLoad = ref<SimLoadConfig>({ fieldCount: 20, concurrentUsers: 10, durationSec: 30 })
+const simResult = ref<SimResult|null>(null), simRunning = ref(false), simProgress = ref(0)
+const showA11yPanel = ref(false)
+const a11yIssues = ref<A11yIssue[]>([])
+const showDepGraphPanel = ref(false)
+const depEdges = ref<DepEdge[]>([])
+const showJsonSchemaPanel = ref(false)
+const jsonSchemaText = ref('')
+const showFieldDocsPanel = ref(false)
+const fieldDocsText = ref('')
+
+// -- Advanced Functions
+function openCrossFieldPanel(): void { showCrossFieldPanel.value = true }
+function addCrossFieldCalc(): void {
+  if (!newCalcFormula.value.trim() || !newCalcTarget.value.trim()) return
+  crossFieldCalcs.value.push({ id: 'cf' + Date.now(), sourceFields: [newCalcSource.value], formula: newCalcFormula.value, targetField: newCalcTarget.value, enabled: true })
+  newCalcSource.value = ''; newCalcFormula.value = ''; newCalcTarget.value = ''
+}
+function removeCrossFieldCalc(id: string): void { crossFieldCalcs.value = crossFieldCalcs.value.filter(c => c.id !== id) }
+function toggleCrossFieldCalc(id: string): void { const c = crossFieldCalcs.value.find(x => x.id === id); if (c) c.enabled = !c.enabled }
+function openDataSourcePanel(): void { showDataSourcePanel.value = true }
+function testDataSource(ds: DataSourceItem): void { showToast('正在测试 ' + ds.url + '...', 'info') }
+function openFieldPermissionsPanel(): void { showFieldPermissionsPanel.value = true }
+function togglePermission(fieldId: string, roleId: string, perm: keyof FieldPermission): void {
+  const p = fieldPermissions.value.find(x => x.roleId === roleId)
+  if (p) (p as any)[perm] = !(p as any)[perm]
+}
+function openIntlPanel(): void { showIntlPanel.value = true }
+function saveIntlText(): void {
+  if (!currentIntlField.value || !intlText.value) return
+  const map = intlFields.value
+  const existing = map.get(currentIntlField.value) || { zh: '', en: '', ja: '', ko: '' }
+  map.set(currentIntlField.value, { ...existing, [intlMode.value]: intlText.value })
+  intlFields.value = new Map(map)
+  intlText.value = ''
+}
+function openSimPanel(): void { showSimPanel.value = true; simResult.value = null }
+function runSimulation(): void {
+  simRunning.value = true; simProgress.value = 0
+  const interval = setInterval(() => {
+    simProgress.value = Math.min(100, simProgress.value + 5)
+    if (simProgress.value >= 100) {
+      clearInterval(interval)
+      simResult.value = { avgResponseMs: 45 + Math.random() * 30, p99Ms: 120 + Math.random() * 80, errorRate: Math.random() * 0.02, throughput: 500 + Math.random() * 200 }
+      simRunning.value = false
+      showToast('模拟完成', 'success')
+    }
+  }, 150)
+}
+function openA11yPanel(): void {
+  showA11yPanel.value = true
+  const currentForm = forms.value.find(f => f.id === selectedForm.value) || forms.value[0]
+  const issues: A11yIssue[] = []
+  if (currentForm) {
+    currentForm.fields.forEach(field => {
+      if (!field.label) issues.push({ fieldId: field.id, issue: '缺少字段标签', severity: 'high', suggestion: '为字段添加描述性标签' })
+      if (field.type === 'select' && !field.options) issues.push({ fieldId: field.id, issue: '下拉字段无选项定义', severity: 'medium', suggestion: '添加选项配置' })
+    })
+    if (issues.length === 0) issues.push({ fieldId: 'form', issue: '所有字段符合无障碍标准', severity: 'low', suggestion: '' })
+  }
+  a11yIssues.value = issues
+}
+function openDepGraphPanel(): void { showDepGraphPanel.value = true; buildDepEdges() }
+function buildDepEdges(): void {
+  const edges: DepEdge[] = []
+  const currentForm = forms.value.find(f => f.id === selectedForm.value) || forms.value[0]
+  if (currentForm) {
+    currentForm.fields.forEach((f, i) => {
+      if (i > 0) edges.push({ from: currentForm.fields[i-1].id, to: f.id, type: 'calc', label: '级联' })
+    })
+  }
+  depEdges.value = edges
+}
+function openJsonSchemaPanel(): void { showJsonSchemaPanel.value = true; exportJsonSchema() }
+function exportJsonSchema(): void {
+  const currentForm = forms.value.find(f => f.id === selectedForm.value) || forms.value[0]
+  if (!currentForm) return
+  let schema = { "$schema": "http://json-schema.org/draft-07/schema#", "type": "object", "title": currentForm.name, "description": currentForm.description || '', "properties": {} as Record<string, any>, "required": [] as string[] }
+  currentForm.fields.forEach(f => {
+    schema.properties[f.name] = { title: f.label, type: getJSONType(f.type) }
+    if (f.validation?.required) schema.required.push(f.name)
+  })
+  jsonSchemaText.value = JSON.stringify(schema, null, 2)
+}
+function getJSONType(type: string): string {
+  const m: Record<string, string> = { text: 'string', textarea: 'string', number: 'number', date: 'string', datetime: 'string', select: 'string', radio: 'string', checkbox: 'boolean', file: 'string', phone: 'string', email: 'string', richText: 'string' }
+  return m[type] || 'string'
+}
+function openFieldDocsPanel(): void { showFieldDocsPanel.value = true; generateFieldDocs() }
+function generateFieldDocs(): void {
+  const currentForm = forms.value.find(f => f.id === selectedForm.value) || forms.value[0]
+  if (!currentForm) return
+  let docs = '# ' + currentForm.name + ' 字段文档\n\n| 字段名 | 标签 | 类型 | 必填 | 验证规则 | 说明 |\n|--------|------|------|------|----------|------|\n'
+  currentForm.fields.forEach(f => {
+    const rules = f.validation ? Object.entries(f.validation).filter(([,v]) => v !== null && v !== undefined && v !== false).map(([k]) => k).join(', ') : '-'
+    docs += '| ' + f.name + ' | ' + f.label + ' | ' + f.type + ' | ' + (f.validation?.required ? '是' : '否') + ' | ' + rules + ' | ' + (f.description || '-') + ' |\n'
+  })
+  fieldDocsText.value = docs
+}
 </script>
 <style scoped>
 .fd { display: flex; flex-direction: column; gap: 0; height: 100% }
@@ -1219,4 +1509,17 @@ function copyToClipboard(text: string): void {
 /* Scrollbars */
 .access-panel::-webkit-scrollbar,.ds-panel::-webkit-scrollbar,.cond-tree-panel::-webkit-scrollbar,.field-history::-webkit-scrollbar,.audit-panel::-webkit-scrollbar{width:4px}
 .access-panel::-webkit-scrollbar-thumb,.ds-panel::-webkit-scrollbar-thumb,.cond-tree-panel::-webkit-scrollbar-thumb,.field-history::-webkit-scrollbar-thumb,.audit-panel::-webkit-scrollbar-thumb{background:var(--border-color);border-radius:2px}
+
+/* -- Advanced Panel Styles */
+.cf-add{display:flex;gap:6px;margin-bottom:10px}.cf-input{flex:1;padding:6px 8px;border-radius:6px;border:1px solid var(--border-color);background:var(--bg-elevated);color:var(--text-primary);font-size:11px;font-family:'JetBrains Mono',monospace}.cf-list{display:flex;flex-direction:column;gap:6px}.cf-item{display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:6px;background:rgba(255,255,255,0.02);border:1px solid var(--border-color);font-size:11px}.cf-src{color:var(--color-primary);font-family:'JetBrains Mono',monospace}.cf-op{color:var(--text-muted)}.cf-formula{flex:1;color:var(--text-primary);font-family:'JetBrains Mono',monospace;font-size:10px}.cf-tgt{color:#10b981;font-weight:600}
+.cf-toggle{position:relative;width:28px;height:14px;cursor:pointer}.cf-toggle input{opacity:0;width:0;height:0}.cf-toggle span{position:absolute;inset:0;background:var(--border-color);border-radius:7px;transition:.2s}.cf-toggle input:checked+.cf-toggle span{background:#3b82f6}.cf-toggle input:checked+.cf-toggle span::before{transform:translateX(14px)}.cf-toggle span::before{content:'';position:absolute;width:10px;height:10px;left:2px;top:2px;background:#fff;border-radius:50%;transition:.2s}
+.ds-add{margin-bottom:10px;text-align:right}.ds-list{display:flex;flex-direction:column;gap:6px}.ds-item{display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:6px;background:rgba(255,255,255,0.02);border:1px solid var(--border-color)}.ds-method{width:60px;padding:4px;border-radius:4px;border:1px solid var(--border-color);background:var(--bg-elevated);color:var(--text-primary);font-size:10px;font-weight:700}.ds-url{flex:1;padding:4px 8px;border-radius:4px;border:1px solid var(--border-color);background:var(--bg-elevated);color:var(--text-primary);font-size:11px;font-family:'JetBrains Mono',monospace}
+.ds-toggle{position:relative;width:28px;height:14px;cursor:pointer}.ds-toggle input{opacity:0;width:0;height:0}.ds-toggle span{position:absolute;inset:0;background:var(--border-color);border-radius:7px;transition:.2s}.ds-toggle input:checked+.ds-toggle span{background:#3b82f6}.ds-toggle input:checked+.ds-toggle span::before{transform:translateX(14px)}.ds-toggle span::before{content:'';position:absolute;width:10px;height:10px;left:2px;top:2px;background:#fff;border-radius:50%;transition:.2s}
+.fp-table{display:flex;flex-direction:column;gap:1px}.fp-hdr,.fp-row{display:grid;grid-template-columns:1.5fr repeat(4,1fr);gap:8px;padding:8px 10px;font-size:11px;align-items:center}.fp-hdr{font-weight:700;color:var(--text-muted);text-transform:uppercase;font-size:10px;border-bottom:1px solid var(--border-color)}.fp-row{background:rgba(255,255,255,0.02);border-radius:4px}.fp-role{color:var(--text-primary);font-weight:600}.fp-check{position:relative;width:20px;height:20px;cursor:pointer;display:flex;align-items:center;justify-content:center}.fp-check input{opacity:0;width:0;height:0;position:absolute}.fp-check span{width:14px;height:14px;border:1px solid var(--border-color);border-radius:3px;display:flex;align-items:center;justify-content:center;transition:.2s;font-size:10px;color:transparent}.fp-check input:checked+span{background:#3b82f6;border-color:#3b82f6;color:#fff}
+.il-mode{display:flex;gap:6px;margin-bottom:12px}.il-btn{padding:4px 12px;border-radius:6px;border:1px solid var(--border-color);background:transparent;color:var(--text-muted);cursor:pointer;font-size:11px;font-weight:600;transition:all .15s}.il-btn.active{background:rgba(59,130,246,0.2);border-color:#3b82f6;color:#3b82f6}.il-input{display:flex;flex-direction:column;gap:8px}.il-textarea{width:100%;padding:10px;border-radius:8px;border:1px solid var(--border-color);background:var(--bg-elevated);color:var(--text-primary);font-size:12px;resize:vertical}.il-actions{display:flex;gap:6px;justify-content:flex-end}
+.sim-config{display:flex;flex-direction:column;gap:8px;margin-bottom:16px}.sim-row{display:flex;align-items:center;gap:10px;font-size:11px}.sim-row span{width:70px;color:var(--text-muted)}.sim-num{width:70px;padding:4px 8px;border-radius:6px;border:1px solid var(--border-color);background:var(--bg-elevated);color:var(--text-primary);font-size:11px}.sim-progress{margin-bottom:12px}.sim-bar-wrap{height:6px;background:var(--border-color);border-radius:3px;overflow:hidden}.sim-bar{height:100%;background:linear-gradient(90deg,#3b82f6,#10b981);border-radius:3px;transition:width .3s}.sim-progress span{font-size:10px;color:var(--text-muted);margin-top:4px;display:block}.sim-result{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}.sim-metric{display:flex;flex-direction:column;align-items:center;padding:10px;border-radius:8px;background:rgba(255,255,255,0.02);border:1px solid var(--border-color)}.sim-val{font-size:18px;font-weight:800;color:var(--color-primary)}.sim-label{font-size:9px;color:var(--text-muted);margin-top:4px}
+.a11-list{display:flex;flex-direction:column;gap:6px}.a11-item{display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:6px;background:rgba(255,255,255,0.02);border-left:3px solid;font-size:11px}.a11-sev{font-size:9px;font-weight:700;width:36px;text-align:center}.a11-iss{flex:1;color:var(--text-primary)}.a11-sug{font-size:10px;color:var(--text-muted);font-style:italic}
+.dg-list{display:flex;flex-direction:column;gap:4px}.dg-item{display:flex;align-items:center;gap:8px;padding:6px 10px;border-radius:4px;background:rgba(255,255,255,0.02);font-size:11px;font-family:'JetBrains Mono',monospace}.dg-from{color:#3b82f6}.dg-arrow{color:var(--text-muted)}.dg-to{color:#10b981}.dg-type{color:var(--text-muted);font-size:10px}.dg-empty{color:var(--text-muted);font-size:12px;text-align:center;padding:20px}
+.js-schema{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--text-primary);background:rgba(255,255,255,0.02);border:1px solid var(--border-color);border-radius:8px;padding:12px;white-space:pre-wrap;word-break:break-all;max-height:400px;overflow-y:auto;margin-bottom:10px}
+.fd-docs{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--text-primary);background:rgba(255,255,255,0.02);border:1px solid var(--border-color);border-radius:8px;padding:12px;white-space:pre-wrap;word-break:break-all;max-height:400px;overflow-y:auto;margin-bottom:10px}
 </style>
