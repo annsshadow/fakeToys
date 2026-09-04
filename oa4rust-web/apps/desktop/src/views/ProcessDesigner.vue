@@ -11,6 +11,7 @@
         <button class="btn" @click="redo" :disabled="!canRedo" title="重做">↪</button>
         <button class="btn" @click="autoLayout" title="网格排列">⊞ 排列</button>
         <button class="btn" @click="autoLayoutTopo" title="拓扑排列">⊞ 拓扑</button>
+        <button class="btn" :class="{active: showEdgeAnim}" @click="showEdgeAnim=!showEdgeAnim; showEdgeAnim?startEdgeAnimation():stopEdgeAnimation()" title="连线动画">✨ 动画</button>
         <button class="btn" @click="zoomIn" title="放大">🔍+</button>
         <button class="btn" @click="zoomOut" title="缩小">🔍-</button>
         <button class="btn" @click="zoomToFit" title="适配内容">⊞ 适配</button>
@@ -21,6 +22,7 @@
         <button class="btn btn-outline" @click="showRulesModal=true" title="连接规则">🔗 规则</button>
         <button class="btn btn-outline" @click="showTemplatesModal=true" title="流程模板">📐 模板</button>
         <button class="btn btn-outline" @click="showIoModal=true" title="导入导出">📦 导入导出</button>
+        <button class="btn btn-outline" @click="startExecution" title="执行模拟">▶ 模拟</button>
         <button class="btn btn-outline" @click="showHelpModal=true" title="快捷键">⌨️ 帮助</button>
         <button class="btn btn-outline" @click="loadProcesses">🔄 刷新</button>
         <button class="btn btn-primary" @click="saveProcess" :disabled="!currentProcess">💾 保存</button>
@@ -71,10 +73,20 @@
           <div class="pal-item" @click="addNode('parallel')"><span class="ni">⚡</span><span class="nl">并行</span></div>
         </div>
         <div class="pal-sep"></div>
-        <div class="pal-title">操作</div>
+        <div class="pal-title">样式预设</div>
         <div class="pal-grid">
-          <div class="pal-item" @click="autoLayout"><span class="ni">⊞</span><span class="nl">自动排列</span></div>
-          <div class="pal-item" @click="clearCanvas"><span class="ni">🗑</span><span class="nl">清空</span></div>
+          <div v-for="p in nodeStylePresets" :key="p.name" class="pal-item pal-preset"
+            @click="applyNodeStylePreset(p)" :title="p.name">
+            <span class="ni">{{ p.icon }}</span><span class="nl">{{ p.name }}</span>
+          </div>
+        </div>
+        <div class="pal-sep"></div>
+        <div class="pal-title">画布主题</div>
+        <div class="pal-grid">
+          <div v-for="t in Object.entries(canvasThemes)" :key="t[0]" class="pal-item pal-theme"
+            :class="{active: canvasTheme===t[0]}" @click="setCanvasTheme(t[0])" :title="t[1].name">
+            <span class="ni" :style="{color:t[1].grid.replace('rgba','rgb').replace('0.03','1')}">◉</span><span class="nl">{{ t[1].name }}</span>
+          </div>
         </div>
       </aside>
 
@@ -134,6 +146,36 @@
               <path v-if="fl.branch.length >= 2" :d="computeForkJoinPath(fl.branch)" class="fork-flow" />
               <text v-if="fl.joinNode" :x="fl.joinNode.x + (fl.joinNode.w||120)/2" :y="fl.joinNode.y + (fl.joinNode.h||50) + 16"
                 class="join-label">⚡ JOIN #{{ fli+1 }}</text>
+            </g>
+          </g>
+
+          <!-- Group backgrounds -->
+          <g v-if="!subprocessEditing" class="group-backgrounds" :transform="edgeTransform">
+            <g v-for="(g, gi) in groupNodes" :key="g.node.id" @contextmenu.prevent="showGroupMenu($event, gi)">
+              <rect
+                :x="g.bounds.x" :y="g.bounds.y"
+                :width="g.bounds.width" :height="g.bounds.height"
+                fill="rgba(0,212,255,0.04)" stroke="var(--color-primary)" stroke-width="1.5"
+                stroke-dasharray="8,4" rx="12" class="group-bg" />
+              <!-- Group label bar -->
+              <rect :x="g.bounds.x" :y="g.bounds.y" :width="g.bounds.width" height="22"
+                rx="12" ry="12" fill="rgba(0,212,255,0.15)" />
+              <rect :x="g.bounds.x" :y="g.bounds.y+11" :width="g.bounds.width" height="11"
+                fill="rgba(0,212,255,0.15)" />
+              <text :x="g.bounds.x + 10" :y="g.bounds.y + 15"
+                class="group-label-text">{{ g.node.label || '分组' }} ({{ g.members.length }})</text>
+              <!-- Collapse/expand button -->
+              <g :transform="`translate(${g.bounds.x + g.bounds.width - 28}, ${g.bounds.y + 5})`"
+                class="group-btn" @click.stop="toggleGroupCollapse(gi)" style="cursor:pointer">
+                <rect width="22" height="14" rx="7" :fill="g.node.collapsed ? 'rgba(16,185,129,.3)' : 'rgba(239,68,68,.3)'" stroke="var(--border-color)" stroke-width="1" />
+                <text x="11" y="10" text-anchor="middle" font-size="9" fill="var(--text-primary)">
+                  {{ g.node.collapsed ? '▶' : '▼' }}
+                </text>
+              </g>
+              <!-- Expand icon (shown when collapsed) -->
+              <text v-if="g.node.collapsed"
+                :x="g.bounds.x + g.bounds.width/2" :y="g.bounds.y + g.bounds.height/2 + 4"
+                text-anchor="middle" font-size="10" fill="var(--text-muted)">点击展开</text>
             </g>
           </g>
 
@@ -251,7 +293,47 @@
           <div class="stat-row"><span class="stat-label">任务节点</span><span class="stat-val">{{ processStats.taskNodes }}</span></div>
           <div class="stat-row"><span class="stat-label">网关节点</span><span class="stat-val">{{ processStats.gateNodes }}</span></div>
           <div class="stat-row"><span class="stat-label">平均出度</span><span class="stat-val">{{ processStats.avgOutDegree }}</span></div>
+          <div class="stat-row"><span class="stat-label">分组数</span><span class="stat-val">{{ groupNodes.value.length }}</span></div>
           <div v-if="processStats.hasLoops" class="stat-warning">⚠ 检测到循环</div>
+        </div>
+        <!-- Mini-map -->
+        <div v-if="minimapVisible && processDef && processDef.nodes.length > 0" class="minimap-container">
+          <div class="minimap-header">🗺 迷你地图</div>
+          <canvas ref="minimapCanvasRef" class="minimap-canvas" :width="minimapWidth" :height="minimapHeight" @click="minimapClick"></canvas>
+          <div class="minimap-controls">
+            <button class="tb-btn" @click="minimapVisible=false">收起</button>
+            <button class="tb-btn" @click="zoomToFit">适配</button>
+          </div>
+        </div>
+      </aside>
+
+      <!-- Execution Simulation Panel -->
+      <aside v-if="showExecPanel && processDef" class="pd-exec-panel glass-card">
+        <div class="exec-header">
+          <span>▶ 流程执行模拟</span>
+          <button class="btn-sm" @click="showExecPanel=false">✕</button>
+        </div>
+        <div class="exec-body">
+          <div class="exec-status">
+            <span :class="['exec-badge', execState.status]">
+              {{ execState.status==='idle'?'待机':execState.status==='running'?'运行中':execState.status==='paused'?'暂停':execState.status==='finished'?'完成':'?' }}
+            </span>
+            <span class="exec-progress">{{ execState.progress }}%</span>
+          </div>
+          <div class="exec-bar"><div class="exec-bar-fill" :style="{ width: execState.progress+'%' }"></div></div>
+          <div class="exec-nodes">
+            <div v-for="(n, i) in processDef.nodes" :key="n.id"
+              :class="['exec-node', { active: execState.currentNodeIdx===i, completed: execState.completedNodes.includes(n.id), pending: !execState.completedNodes.includes(n.id) && execState.currentNodeIdx!==i }]">
+              <span class="exec-node-icon">{{ getNodeIcon(n.type) }}</span>
+              <span class="exec-node-label">{{ n.label||n.type }}</span>
+            </div>
+          </div>
+          <div class="exec-actions">
+            <button class="btn-sm" :disabled="execState.status==='running'" @click="startExecution">▶ 开始</button>
+            <button class="btn-sm" :disabled="execState.status!=='running'" @click="pauseExecution">⏸ 暂停</button>
+            <button class="btn-sm" :disabled="execState.status!=='paused'" @click="resumeExecution">▶ 继续</button>
+            <button class="btn-sm" @click="resetExecution">↺ 重置</button>
+          </div>
         </div>
       </aside>
 
@@ -323,6 +405,13 @@
             <div class="pg"><label>宽</label><input :value="getNodeProp('w')" type="number" @input="_setNodeProp('w',+$event.target.value)" class="pi" min="80" max="300" /></div>
             <div class="pg"><label>高</label><input :value="getNodeProp('h')" type="number" @input="_setNodeProp('h',+$event.target.value)" class="pi" min="40" max="120" /></div>
             <button class="btn-del-sm" @click="deleteNode(selectedNode)">🗑 删除节点</button>
+            <!-- Group controls -->
+            <div v-if="getNodeProp('type')!=='start' && getNodeProp('type')!=='end'" class="group-controls">
+              <button class="btn-sm" @click="toggleGroup(selectedNode!)" :class="{active: isNodeInGroup(selectedNode!)}">
+                {{ isNodeInGroup(selectedNode!) ? '✓ 已分组' : '+ 加入分组' }}
+              </button>
+              <button class="btn-sm" v-if="isNodeInGroup(selectedNode!)" @click="leaveGroup(selectedNode!)">离开分组</button>
+            </div>
           </div>
         </div>
         <div v-else-if="selectedEdge!==null" class="props-section">
@@ -332,7 +421,20 @@
             <div class="pg"><label>流向</label><span class="pv">{{ getEdgeFromLabel() }} → {{ getEdgeToLabel() }}</span></div>
             <div class="pg"><label>条件</label><input :value="getEdgeProp('condition')" @input="_setEdgeProp('condition',$event.target.value)" class="pi" placeholder="如: amount > 1000" /></div>
             <div class="pg"><label>流向标签</label><input :value="getEdgeProp('flowLabel')" @input="_setEdgeProp('flowLabel',$event.target.value)" class="pi" placeholder="如: 通过/拒绝" /></div>
+            <div class="pg"><label>连线样式</label>
+              <select :value="getEdgeProp('routing')" @change="_setEdgeProp('routing',$event.target.value)" class="pi">
+                <option value="auto">自动曲线</option><option value="straight">直线</option>
+                <option value="horizontal">水平曲线</option><option value="vertical">垂直曲线</option>
+              </select>
+            </div>
             <div class="pg"><label>连线粗细</label><input :value="getEdgeProp('strokeWidth')" type="number" @input="_setEdgeProp('strokeWidth',+$event.target.value)" class="pi" min="1" max="5" /></div>
+            <div class="pg"><label>颜色</label>
+              <select :value="getEdgeProp('color')" @change="_setEdgeProp('color',$event.target.value)" class="pi">
+                <option value="">默认</option><option value="var(--color-success)">绿色</option>
+                <option value="var(--color-warning)">橙色</option><option value="var(--color-danger)">红色</option>
+                <option value="var(--color-info)">蓝色</option>
+              </select>
+            </div>
             <button class="btn-del-sm" @click="deleteEdge(selectedEdge)">🗑 删除连线</button>
           </div>
         </div>
@@ -585,22 +687,32 @@
           <button class="tb-btn" @click="subUndo" :disabled="subHistIdx<=0" title="撤销">↩</button>
           <button class="tb-btn" @click="subRedo" :disabled="subHistIdx>=subHistory.length-1" title="重做">↪</button>
           <button class="tb-btn" @click="subZoomIn">🔍+</button>
-          <button class="tb-btn" @click="subZoomOut">🔍-</button>
-          <button class="tb-btn" @click="subFitCanvas">⊞</button>
-          <span class="tb-sep"></span>
-          <button class="tb-btn" @click="subAddNode('start')">+开始</button>
-          <button class="tb-btn" @click="subAddNode('task')">+任务</button>
-          <button class="tb-btn" @click="subAddNode('approval')">+审批</button>
-          <button class="tb-btn" @click="subAddNode('end')">+结束</button>
-          <button class="tb-btn" @click="subClearCanvas">🗑清空</button>
-        </div>
+           <button class="tb-btn" @click="subZoomOut">🔍-</button>
+           <button class="tb-btn" @click="subFitCanvas">⊞</button>
+           <span class="tb-sep"></span>
+           <button class="tb-btn" @click="subAddNode('start')">+开始</button>
+           <button class="tb-btn" @click="subAddNode('task')">+任务</button>
+           <button class="tb-btn" @click="subAddNode('approval')">+审批</button>
+           <button class="tb-btn" @click="subAddNode('end')">+结束</button>
+           <button class="tb-btn" @click="subAddNode('timer')">+定时</button>
+           <button class="tb-btn" @click="subAddNode('gate_and')">+且网关</button>
+           <button class="tb-btn" @click="subAddNode('gate_or')">+或网关</button>
+           <button class="tb-btn" @click="subAddNode('subprocess')">+子流程</button>
+           <button class="tb-btn" @click="subAddNode('script')">+脚本</button>
+           <span class="tb-sep"></span>
+           <button class="tb-btn" :disabled="subSelectedNode===null" @click="subDeleteNode()" title="删除选中节点">🗑 删除</button>
+           <button class="tb-btn" :disabled="subSelectedNode===null" @click="subDuplicateNode()" title="复制选中节点">📋 复制</button>
+           <button class="tb-btn" @click="subAutoLayout" title="自动排列">⊞ 排列</button>
+           <span class="tb-sep"></span>
+           <span class="sp-node-count">{{ subprocessDef?.nodes?.length || 0 }} 节点</span>
+         </div>
         <span class="sp-title">📦 {{ subprocessTitle }}</span>
         <div class="sp-actions">
           <button class="tb-btn" @click="createSubVersion">📌快照</button>
           <button class="btn btn-primary" @click="saveSubprocess">💾保存</button>
         </div>
       </div>
-      <div class="subprocess-canvas pd-canvas glass-card" ref="subprocessCanvasRef">
+      <div class="subprocess-canvas pd-canvas glass-card" ref="subprocessCanvasRef" @wheel.prevent="subOnWheel">
         <div class="canvas-bg" :style="{ backgroundSize: gridScale+'px '+gridScale+'px', backgroundPosition: subPanX+'px '+subPanY+'px' }"></div>
         <svg class="canvas-svg" :style="subSvgTransform">
           <defs>
@@ -676,6 +788,18 @@
     </div>
 
     <!-- Subprocess Editor (fallback modal when not in editing mode) -->
+
+    <!-- Group Context Menu -->
+    <div v-if="groupContextMenu.groupIdx !== null" class="context-menu"
+      :style="{ left: groupContextMenu.x+'px', top: groupContextMenu.y+'px' }"
+      @click.self="hideGroupMenu">
+      <div class="ctx-item" @click="toggleGroupCollapse(groupContextMenu.groupIdx); hideGroupMenu()">
+        {{ groupNodes[groupContextMenu.groupIdx]?.node.collapsed ? '▶ 展开' : '▼ 折叠' }}
+      </div>
+      <div class="ctx-item ctx-danger" @click="expandGroup(groupContextMenu.groupIdx); hideGroupMenu()">
+        ↩ 解散分组
+      </div>
+    </div>
   </div>
 </template>
 
@@ -689,8 +813,10 @@ interface PDNode {
   id: string; type: string; label?: string; x: number; y: number
   w?: number; h?: number; assignee?: string; condition?: string
   timeout?: number; priority?: string; script?: string
+  style?: string; note?: string; retryCount?: number
+  groupMembers?: string[]; collapsed?: boolean; groupId?: string
 }
-interface PDEdge { id: string; from: string; to: string; label?: string; condition?: string }
+interface PDEdge { id: string; from: string; to: string; label?: string; condition?: string; flowLabel?: string; strokeWidth?: number; routing?: 'auto'|'straight'|'horizontal'|'vertical' }
 interface ProcDef { id?: string; name: string; flag: string; desc?: string; status?: string; config?: { nodes: PDNode[]; edges: PDEdge[] }; subprocesses?: Record<string, { nodes: PDNode[]; edges: PDEdge[] }> }
 
 // ── Constants ─────────────────────────────────────────────────────────
@@ -773,6 +899,105 @@ const multiDragOffset = ref({ x: 0, y: 0 })
 // Minimap state
 const minimapVisible = ref(true)
 const minimapScale = 0.15
+const minimapCanvasRef = ref<HTMLCanvasElement|null>(null)
+
+// ── Execution Simulation ────────────────────────────────────────────
+interface ExecState { currentNodeIdx: number|null; progress: number; status: 'idle'|'running'|'paused'|'finished'; completedNodes: string[] }
+const execState = ref<ExecState>({ currentNodeIdx: null, progress: 0, status: 'idle', completedNodes: [] })
+const showExecPanel = ref(false)
+function startExecution() {
+  if (!processDef.value || processDef.value.nodes.length === 0) return
+  const starts = processDef.value.nodes.findIndex(n => n.type === 'start')
+  if (starts === -1) return
+  execState.value = { currentNodeIdx: starts, progress: 0, status: 'running', completedNodes: [processDef.value.nodes[starts].id] }
+  showExecPanel.value = true
+  simulateNext()
+}
+function simulateNext() {
+  if (execState.value.status !== 'running' || !processDef.value || execState.value.currentNodeIdx === null) return
+  const curId = processDef.value.nodes[execState.value.currentNodeIdx].id
+  const outgoing = (processDef.value.edges||[]).filter(e => e.from === curId)
+  if (outgoing.length === 0) {
+    execState.value.status = 'finished'
+    return
+  }
+  // Pick first outgoing edge
+  const nextId = outgoing[0].to
+  const nextIdx = processDef.value.nodes.findIndex(n => n.id === nextId)
+  if (nextIdx === -1) { execState.value.status = 'finished'; return }
+  // Animate progress
+  const totalNodes = processDef.value.nodes.length
+  let progress = 0
+  const interval = setInterval(() => {
+    progress += 5
+    if (progress >= 100) {
+      clearInterval(interval)
+      execState.value.currentNodeIdx = nextIdx
+      execState.value.completedNodes.push(nextId)
+      execState.value.progress = Math.round((execState.value.completedNodes.length / totalNodes) * 100)
+      if (processDef.value!.nodes[nextIdx].type === 'end') {
+        execState.value.status = 'finished'
+      } else {
+        setTimeout(() => simulateNext(), 300)
+      }
+    } else {
+      execState.value.progress = progress
+    }
+  }, 50)
+}
+function pauseExecution() {
+  execState.value.status = 'paused'
+}
+function resumeExecution() {
+  if (execState.value.status === 'paused') {
+    execState.value.status = 'running'
+    simulateNext()
+  }
+}
+function resetExecution() {
+  execState.value = { currentNodeIdx: null, progress: 0, status: 'idle', completedNodes: [] }
+  showExecPanel.value = false
+}
+
+// ── Node Type Config Profiles ────────────────────────────────────────
+interface NodeProfile {
+  type: string; label: string; icon: string
+  defaultW: number; defaultH: number
+  canHaveConditions: boolean
+  canHaveScript: boolean
+  canHaveAssignee: boolean
+  canTimeout: boolean
+  canRetry: boolean
+  canGroup: boolean
+}
+const nodeProfiles: NodeProfile[] = [
+  { type: 'start', label: '开始', icon: '🟢', defaultW: 100, defaultH: 50, canHaveConditions: false, canHaveScript: false, canHaveAssignee: false, canTimeout: false, canRetry: false, canGroup: true },
+  { type: 'end', label: '结束', icon: '🔴', defaultW: 100, defaultH: 50, canHaveConditions: false, canHaveScript: false, canHaveAssignee: false, canTimeout: false, canRetry: false, canGroup: true },
+  { type: 'task', label: '任务', icon: '📋', defaultW: 120, defaultH: 50, canHaveConditions: true, canHaveScript: true, canHaveAssignee: true, canTimeout: true, canRetry: true, canGroup: true },
+  { type: 'approval', label: '审批', icon: '✅', defaultW: 130, defaultH: 70, canHaveConditions: true, canHaveScript: false, canHaveAssignee: true, canTimeout: true, canRetry: true, canGroup: true },
+  { type: 'timer', label: '定时', icon: '⏱️', defaultW: 110, defaultH: 50, canHaveConditions: false, canHaveScript: true, canHaveAssignee: false, canTimeout: true, canRetry: false, canGroup: true },
+  { type: 'gate_and', label: '且网关', icon: '🔷', defaultW: 100, defaultH: 50, canHaveConditions: true, canHaveScript: false, canHaveAssignee: false, canTimeout: false, canRetry: false, canGroup: true },
+  { type: 'gate_or', label: '或网关', icon: '🔶', defaultW: 100, defaultH: 50, canHaveConditions: true, canHaveScript: false, canHaveAssignee: false, canTimeout: false, canRetry: false, canGroup: true },
+  { type: 'gate_xor', label: '异或网关', icon: '🔹', defaultW: 100, defaultH: 50, canHaveConditions: true, canHaveScript: false, canHaveAssignee: false, canTimeout: false, canRetry: false, canGroup: true },
+  { type: 'subprocess', label: '子流程', icon: '📦', defaultW: 120, defaultH: 60, canHaveConditions: false, canHaveScript: false, canHaveAssignee: true, canTimeout: true, canRetry: true, canGroup: true },
+  { type: 'script', label: '脚本', icon: '💻', defaultW: 120, defaultH: 50, canHaveConditions: false, canHaveScript: true, canHaveAssignee: false, canTimeout: true, canRetry: true, canGroup: true },
+  { type: 'parallel', label: '并行', icon: '⚡', defaultW: 120, defaultH: 50, canHaveConditions: false, canHaveScript: false, canHaveAssignee: false, canTimeout: false, canRetry: false, canGroup: true },
+]
+function getNodeProfile(type: string): NodeProfile {
+  return nodeProfiles.find(p => p.type === type) || nodeProfiles[1]
+}
+function isProfileEditable(node: PDNode, prop: string): boolean {
+  const profile = getNodeProfile(node.type)
+  switch(prop) {
+    case 'condition': return profile.canHaveConditions
+    case 'script': return profile.canHaveScript
+    case 'assignee': return profile.canHaveAssignee
+    case 'timeout': return profile.canTimeout
+    case 'retryCount': return profile.canRetry
+    case 'groupMembers': return profile.canGroup
+    default: return true
+  }
+}
 
 // Subprocess state
 const showSubprocess = ref(false)
@@ -1008,6 +1233,11 @@ function getNodePort(node: PDNode, port: 'in'|'out', portIdx?: number): {x:numbe
 // ── Edge path ─────────────────────────────────────────────────────────
 function computeEdgePath(edge: PDEdge): string {
   if (!processDef.value) return ''
+  const routing = edge.routing || 'auto'
+  if (routing === 'straight') return computeStraightEdgePath(edge)
+  if (routing === 'horizontal') return computeHorizontalEdgePath(edge)
+  if (routing === 'vertical') return computeVerticalEdgePath(edge)
+  // auto: use bezier
   const from = processDef.value.nodes.find(n => n.id === edge.from)
   const to = processDef.value.nodes.find(n => n.id === edge.to)
   if (!from || !to) return ''
@@ -1296,23 +1526,81 @@ function deleteEdge(i: number) {
 function selectEdge(i: number) { selectedEdge.value = i; selectedNode.value = null }
 
 // ── Edge Label Helpers ───────────────────────────────────────────────
-function getEdgeMidpoint(edge: PDEdge): {x:number;y:number} {
-  if (!processDef.value) return { x: 0, y: 0 }
+// Cubic Bezier: B(t) = (1-t)³P₀ + 3(1-t)²tP₁ + 3(1-t)t²P₂ + t³P₃
+function bezierPoint(p0: {x:number;y:number}, p1: {x:number;y:number}, p2: {x:number;y:number}, p3: {x:number;y:number}, t: number): {x:number;y:number} {
+  const mt = 1 - t
+  return {
+    x: mt*mt*mt*p0.x + 3*mt*mt*t*p1.x + 3*mt*t*t*p2.x + t*t*t*p3.x,
+    y: mt*mt*mt*p0.y + 3*mt*mt*t*p1.y + 3*mt*t*t*p2.y + t*t*t*p3.y
+  }
+}
+function getBezierControlPoints(edge: PDEdge): {p0:{x:number;y:number};p1:{x:number;y:number};p2:{x:number;y:number};p3:{x:number;y:number}} {
+  if (!processDef.value) return { p0:{x:0,y:0}, p1:{x:0,y:0}, p2:{x:0,y:0}, p3:{x:0,y:0} }
   const from = processDef.value.nodes.find(n => n.id === edge.from)
   const to = processDef.value.nodes.find(n => n.id === edge.to)
-  if (!from || !to) return { x: 0, y: 0 }
-  // Bezier control points: fp + dx*0.5, tp - dx*0.5
-  const fp = getNodePort(from, 'out')
-  const tp = getNodePort(to, 'in')
-  const mx = (fp.x + tp.x) / 2, my = (fp.y + tp.y) / 2
-  return { x: mx, y: my }
+  if (!from || !to) return { p0:{x:0,y:0}, p1:{x:0,y:0}, p2:{x:0,y:0}, p3:{x:0,y:0} }
+  const fp = getNodePort(from, 'out'), tp = getNodePort(to, 'in')
+  const dx = tp.x - fp.x, dy = tp.y - fp.y
+  // Control points offset based on edge direction
+  let cx1 = fp.x + dx * 0.4, cy1 = fp.y
+  let cx2 = tp.x - dx * 0.4, cy2 = tp.y
+  // For vertical edges, offset control points vertically
+  if (Math.abs(dx) < 30) {
+    cx1 = fp.x; cy1 = fp.y + dy * 0.4
+    cx2 = tp.x; cy2 = tp.y - dy * 0.4
+  }
+  return { p0: fp, p1: {x:cx1,y:cy1}, p2: {x:cx2,y:cy2}, p3: tp }
 }
-function getEdgeLabelX(edge: PDEdge): number { return getEdgeMidpoint(edge).x }
-function getEdgeLabelY(edge: PDEdge): number { return getEdgeMidpoint(edge).y - 8 }
+function getEdgePointOnCurve(edge: PDEdge, t: number): {x:number;y:number} {
+  const cp = getBezierControlPoints(edge)
+  return bezierPoint(cp.p0, cp.p1, cp.p2, cp.p3, t)
+}
+function getEdgeLabelX(edge: PDEdge): number { return getEdgePointOnCurve(edge, 0.5).x }
+function getEdgeLabelY(edge: PDEdge): number { return getEdgePointOnCurve(edge, 0.5).y - 8 }
 function getEdgeLabelRect(edge: PDEdge): string {
-  const { x, y } = getEdgeMidpoint(edge)
+  const { x, y } = getEdgePointOnCurve(edge, 0.5)
   const tw = (edge.label?.length || 1) * 7 + 10
   return `M ${x-tw/2} ${y-10} h ${tw} v 14 h ${-tw} Z`
+}
+// Label offset for multiple edges between same nodes (prevent overlap)
+function getEdgeLabelOffset(edgeIdx: number): {dx:number;dy:number} {
+  if (!processDef.value) return { dx: 0, dy: 0 }
+  const edges = processDef.value.edges || []
+  const edge = edges[edgeIdx]
+  if (!edge) return { dx: 0, dy: 0 }
+  // Count edges between same pair
+  const samePair = edges.filter((e, i) => i !== edgeIdx && ((e.from === edge.from && e.to === edge.to) || (e.from === edge.to && e.to === edge.from)))
+  if (samePair.length === 0) return { dx: 0, dy: 0 }
+  const idx = samePair.indexOf(edge)
+  const offset = (idx - samePair.length / 2) * 16
+  return { dx: 0, dy: offset }
+}
+// Edge routing: straight line vs bezier
+function computeStraightEdgePath(edge: PDEdge): string {
+  if (!processDef.value) return ''
+  const from = processDef.value.nodes.find(n => n.id === edge.from)
+  const to = processDef.value.nodes.find(n => n.id === edge.to)
+  if (!from || !to) return ''
+  const fp = getNodePort(from, 'out'), tp = getNodePort(to, 'in')
+  return `M ${fp.x} ${fp.y} L ${tp.x} ${tp.y}`
+}
+function computeHorizontalEdgePath(edge: PDEdge): string {
+  if (!processDef.value) return ''
+  const from = processDef.value.nodes.find(n => n.id === edge.from)
+  const to = processDef.value.nodes.find(n => n.id === edge.to)
+  if (!from || !to) return ''
+  const fp = getNodePort(from, 'out'), tp = getNodePort(to, 'in')
+  const mx = (fp.x + tp.x) / 2
+  return `M ${fp.x} ${fp.y} C ${mx} ${fp.y}, ${mx} ${tp.y}, ${tp.x} ${tp.y}`
+}
+function computeVerticalEdgePath(edge: PDEdge): string {
+  if (!processDef.value) return ''
+  const from = processDef.value.nodes.find(n => n.id === edge.from)
+  const to = processDef.value.nodes.find(n => n.id === edge.to)
+  if (!from || !to) return ''
+  const fp = getNodePort(from, 'out'), tp = getNodePort(to, 'in')
+  const my = (fp.y + tp.y) / 2
+  return `M ${fp.x} ${fp.y} C ${fp.x} ${my}, ${tp.x} ${my}, ${tp.x} ${tp.y}`
 }
 
 // ── Export as SVG ────────────────────────────────────────────────────
@@ -1473,45 +1761,182 @@ function onAnchorMouseDown(e: MouseEvent, nodeIdx: number, anchorI: number) {
 }
 
 // ── Group management ──────────────────────────────────────────────────
-function toggleGroup(nodeIdx: number) {
-  if (!processDef.value) return
-  const node = processDef.value.nodes[nodeIdx]
-  if (!groupedNodes.value.has(node.id)) {
-    groupedNodes.value.add(node.id)
-  } else {
-    groupedNodes.value.delete(node.id)
-  }
-}
 
 function createGroup() {
   if (groupedNodes.value.size < 2 || !processDef.value) return
-  // Find bounding box
+  const members: string[] = Array.from(groupedNodes.value)
+  // Find bounding box of all member nodes
   let minX=Infinity, minY=Infinity, maxX=-Infinity, maxY=-Infinity
-  for (const id of groupedNodes.value) {
+  for (const id of members) {
     const n = processDef.value.nodes.find(nd => nd.id === id)
     if (!n) continue
     minX = Math.min(minX, n.x); minY = Math.min(minY, n.y)
     maxX = Math.max(maxX, n.x + (n.w||120)); maxY = Math.max(maxY, n.y + (n.h||50))
   }
   // Create group node
+  const groupId = genId()
   const groupNode: PDNode = {
-    id: genId(), type: 'subprocess', label: '分组',
-    x: minX - 10, y: minY - 10,
-    w: maxX - minX + 20, h: maxY - minY + 20
+    id: groupId, type: 'subprocess', label: '分组',
+    x: minX - 15, y: minY - 15,
+    w: maxX - minX + 30, h: maxY - minY + 30,
+    groupMembers: members, collapsed: false
+  }
+  // Store original positions before moving members inside
+  for (const id of members) {
+    const n = processDef.value!.nodes.find(nd => nd.id === id)
+    if (n) {
+      ;(n as any).__origGroupId = groupId
+      ;(n as any).__origX = n.x
+      ;(n as any).__origY = n.y
+    }
   }
   processDef.value.nodes.push(groupNode)
   groupedNodes.value.clear()
   selectedNode.value = processDef.value.nodes.length - 1
+  selectedEdge.value = null
   pushHistory()
 }
 
 function ungroup(nodeIdx: number) {
   if (!processDef.value) return
   const node = processDef.value.nodes[nodeIdx]
-  if (node.type !== 'subprocess') return
-  // Could expand group back to individual nodes
-  // For now just deselect
+  if (!node.groupMembers || node.groupMembers.length === 0) {
+    // Fallback: just deselect
+    selectedNode.value = null
+    return
+  }
+  // Remove group node
+  processDef.value.nodes.splice(nodeIdx, 1)
+  // Restore member nodes to their original positions
+  for (const memberId of node.groupMembers) {
+    const member = processDef.value.nodes.find(n => n.id === memberId)
+    if (member && (member as any).__origX !== undefined) {
+      member.x = (member as any).__origX
+      member.y = (member as any).__origY
+      delete (member as any).__origX
+      delete (member as any).__origY
+      delete (member as any).__origGroupId
+    }
+  }
   selectedNode.value = null
+  pushHistory()
+}
+
+// ── Group Visualization ─────────────────────────────────────────────
+interface GroupInfo { node: PDNode; members: PDNode[]; bounds: {x:number;y:number;width:number;height:number} }
+function computeGroupBounds(groupNode: PDNode): {x:number;y:number;width:number;height:number} {
+  if (!groupNode.groupMembers || groupNode.groupMembers.length === 0) {
+    return { x: groupNode.x, y: groupNode.y, width: groupNode.w||200, height: groupNode.h||100 }
+  }
+  let minX=Infinity, minY=Infinity, maxX=-Infinity, maxY=-Infinity
+  if (groupNode.collapsed) {
+    return { x: groupNode.x, y: groupNode.y, width: groupNode.w||200, height: groupNode.h||100 }
+  }
+  for (const id of groupNode.groupMembers) {
+    const n = processDef.value!.nodes.find(nd => nd.id === id)
+    if (!n) continue
+    minX = Math.min(minX, n.x); minY = Math.min(minY, n.y)
+    maxX = Math.max(maxX, n.x + (n.w||120)); maxY = Math.max(maxY, n.y + (n.h||50))
+  }
+  return { x: minX - 12, y: minY - 12, width: maxX - minX + 24, height: maxY - minY + 24 }
+}
+function getGroupNodes(): GroupInfo[] {
+  if (!processDef.value) return []
+  return processDef.value.nodes
+    .filter(n => n.groupMembers && n.groupMembers.length >= 2)
+    .map(node => ({
+      node,
+      members: node.groupMembers!.map(id => processDef.value!.nodes.find(n => n.id === id)).filter(Boolean) as PDNode[],
+      bounds: computeGroupBounds(node)
+    }))
+}
+const groupNodes = computed(() => getGroupNodes())
+function toggleGroupCollapse(idx: number) {
+  if (!processDef.value) return
+  const groupInfo = groupNodes.value[idx]
+  if (!groupInfo) return
+  groupInfo.node.collapsed = !groupInfo.node.collapsed
+  if (groupInfo.node.collapsed) {
+    // Hide members
+    for (const id of groupInfo.node.groupMembers!) {
+      const n = processDef.value.nodes.find(nd => nd.id === id)
+      if (n) { n.x = -9999; n.y = -9999 }
+    }
+  } else {
+    // Restore members
+    for (const id of groupInfo.node.groupMembers!) {
+      const n = processDef.value.nodes.find(nd => nd.id === id)
+      if (n && (n as any).__origX !== undefined) {
+        n.x = (n as any).__origX; n.y = (n as any).__origY
+        delete (n as any).__origX; delete (n as any).__origY; delete (n as any).__origGroupId
+      }
+    }
+  }
+  pushHistory()
+}
+function expandGroup(idx: number) { ungroup(groupNodes.value[idx]?.node ? processDef.value!.nodes.findIndex(n => n.id === groupNodes.value[idx].node.id) : -1) }
+
+// Group context menu state
+const groupContextMenu = ref<{x:number;y:number;groupIdx:number|null}>({x:0,y:0,groupIdx:null})
+function showGroupMenu(e: MouseEvent, idx: number) {
+  e.preventDefault(); e.stopPropagation()
+  groupContextMenu.value = { x: e.clientX, y: e.clientY, groupIdx: idx }
+}
+function hideGroupMenu() { groupContextMenu.value = { x: 0, y: 0, groupIdx: null } }
+function isNodeInGroup(nodeId: string): boolean {
+  if (!processDef.value) return false
+  return processDef.value.nodes.some(n => n.groupMembers?.includes(nodeId))
+}
+function getMemberGroup(nodeId: string): PDNode|null {
+  if (!processDef.value) return null
+  return processDef.value.nodes.find(n => n.groupMembers?.includes(nodeId)) || null
+}
+function leaveGroup(nodeIdx: number) {
+  if (!processDef.value) return
+  const node = processDef.value.nodes[nodeIdx]
+  if (!node.groupMembers) return
+  // Move member back to their original positions
+  for (const memberId of node.groupMembers) {
+    const member = processDef.value.nodes.find(n => n.id === memberId)
+    if (member && (member as any).__origX !== undefined) {
+      member.x = (member as any).__origX
+      member.y = (member as any).__origY
+      delete (member as any).__origX; delete (member as any).__origY; delete (member as any).__origGroupId
+    } else {
+      // No original position saved, scatter them
+      const idx = processDef.value!.nodes.indexOf(member!)
+      if (idx > nodeIdx) {
+        member!.x = node.x + 20 + (idx - nodeIdx) * 30
+        member!.y = node.y + 20 + (idx - nodeIdx) * 30
+      }
+    }
+  }
+  // Remove group node
+  const groupIdx = processDef.value.nodes.findIndex(n => n.id === node.id)
+  if (groupIdx !== -1) processDef.value.nodes.splice(groupIdx, 1)
+  selectedNode.value = null
+  pushHistory()
+}
+function toggleGroup(nodeIdx: number) {
+  if (!processDef.value) return
+  const node = processDef.value.nodes[nodeIdx]
+  if (!node) return
+  if (isNodeInGroup(node.id)) return
+  // Add to a new group or existing group
+  const existingGroup = processDef.value.nodes.find(n => n.groupMembers?.includes(node.id))
+  if (existingGroup) return // already in a group
+  // Create a temporary group with just this node + previously selected nodes
+  const members = Array.from(multiSelected.value).filter(id => id !== node.id)
+  if (members.length >= 1) {
+    members.push(node.id)
+    groupedNodes.value = new Set(members)
+    createGroup()
+  } else {
+    // Just select for grouping
+    multiSelected.value.clear()
+    multiSelected.value.add(node.id)
+    selectedNode.value = nodeIdx
+  }
 }
 function zoomToFit() {
   if (!processDef.value || processDef.value.nodes.length === 0) { fitCanvas(); return }
@@ -1527,6 +1952,163 @@ function zoomToFit() {
   zoom.value = Math.min(scaleX, scaleY, 1.5) * 0.9
   panX.value = (rect.width - contentW * zoom.value) / 2 - minX * zoom.value
   panY.value = (rect.height - contentH * zoom.value) / 2 - minY * zoom.value
+}
+
+// ── Minimap ──────────────────────────────────────────────────────────
+function renderMinimap() {
+  const canvas = minimapCanvasRef.value
+  if (!canvas || !processDef.value || processDef.value.nodes.length === 0) return
+  const ctx = canvas.getContext('2d')
+  if (!ctx) return
+  const W = canvas.width, H = canvas.viewBox ? 100 : canvas.width
+  ctx.clearRect(0, 0, W, H)
+  // Compute bounds
+  let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity
+  for (const n of processDef.value.nodes) {
+    minX = Math.min(minX, n.x); minY = Math.min(minY, n.y)
+    maxX = Math.max(maxX, n.x + (n.w||120)); maxY = Math.max(maxY, n.y + (n.h||50))
+  }
+  const pad = 20
+  const scaleX = (W - pad*2) / (maxX - minX || 1)
+  const scaleY = (H - pad*2) / (maxY - minY || 1)
+  const scale = Math.min(scaleX, scaleY)
+  const offX = pad - minX * scale, offY = pad - minY * scale
+  // Draw edges
+  ctx.strokeStyle = 'rgba(0,212,255,0.3)'
+  ctx.lineWidth = 1
+  for (const edge of (processDef.value.edges||[])) {
+    const from = processDef.value!.nodes.find(n => n.id === edge.from)
+    const to = processDef.value!.nodes.find(n => n.id === edge.to)
+    if (!from || !to) continue
+    ctx.beginPath()
+    ctx.moveTo(from.x * scale + offX, from.y * scale + offY)
+    ctx.lineTo(to.x * scale + offX, to.y * scale + offY)
+    ctx.stroke()
+  }
+  // Draw nodes
+  for (let i = 0; i < processDef.value.nodes.length; i++) {
+    const n = processDef.value.nodes[i]
+    const nx = n.x * scale + offX, ny = n.y * scale + offY
+    const nw = (n.w||120) * scale, nh = (n.h||50) * scale
+    const colors: Record<string,string> = {
+      start:'#10b981', end:'#ef4444', task:'#00d4ff', approval:'#6366f1',
+      subprocess:'#a855f7', script:'#22c55e', gate_and:'#f59e0b',
+      gate_or:'#f59e0b', gate_xor:'#f59e0b'
+    }
+    ctx.fillStyle = colors[n.type] || '#6b7280'
+    ctx.globalAlpha = execState.value.completedNodes.includes(n.id) ? 1 : execState.value.currentNodeIdx === i ? 0.5 : 0.7
+    ctx.fillRect(nx, ny, nw, nh)
+    ctx.globalAlpha = 1
+    if (execState.value.currentNodeIdx === i) {
+      ctx.strokeStyle = '#f59e0b'
+      ctx.lineWidth = 2
+      ctx.strokeRect(nx-1, ny-1, nw+2, nh+2)
+    }
+  }
+}
+function minimapClick(e: MouseEvent) {
+  if (!processDef.value || !canvasRef.value) return
+  const rect = canvasRef.value.getBoundingClientRect()
+  const canvas = minimapCanvasRef.value
+  if (!canvas) return
+  const scaleX = rect.width / canvas.width
+  const scaleY = rect.height / canvas.height
+  const mx = (e.clientX - rect.left) * scaleX
+  const my = (e.clientY - rect.top) * scaleY
+  // Find node near click
+  let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity
+  for (const n of processDef.value.nodes) {
+    minX = Math.min(minX, n.x); minY = Math.min(minY, n.y)
+    maxX = Math.max(maxX, n.x + (n.w||120)); maxY = Math.max(maxY, n.y + (n.h||50))
+  }
+  const pad = 20
+  const canvasW = canvas.width, canvasH = canvas.height
+  const scaleX2 = (canvasW - pad*2) / (maxX - minX || 1)
+  const scaleY2 = (canvasH - pad*2) / (maxY - minY || 1)
+  const scale2 = Math.min(scaleX2, scaleY2)
+  const offX = pad - minX * scale2, offY = pad - minY * scale2
+  // Find closest node
+  let closestIdx = -1, closestDist = Infinity
+  for (let i = 0; i < processDef.value.nodes.length; i++) {
+    const n = processDef.value.nodes[i]
+    const nx = n.x * scale2 + offX + (n.w||120)*scale2/2
+    const ny = n.y * scale2 + offY + (n.h||50)*scale2/2
+    const d = Math.hypot(mx - nx, my - ny)
+    if (d < closestDist) { closestDist = d; closestIdx = i }
+  }
+  if (closestIdx !== -1) {
+    const n = processDef.value.nodes[closestIdx]
+    const cx = rect.width/2, cy = rect.height/2
+    panX.value = cx - (n.x + (n.w||120)/2) * zoom.value
+    panY.value = cy - (n.y + (n.h||50)/2) * zoom.value
+  }
+}
+
+// ── Canvas Themes ────────────────────────────────────────────────────
+type CanvasTheme = 'dark'|'midnight'|'ocean'|'forest'
+const canvasThemes: Record<CanvasTheme, {bg:string;grid:string;name:string}> = {
+  dark: { bg: '#0a0e1a', grid: 'rgba(255,255,255,0.03)', name: '暗夜' },
+  midnight: { bg: '#0d1b2a', grid: 'rgba(100,200,255,0.03)', name: '午夜' },
+  ocean: { bg: '#0a1628', grid: 'rgba(0,150,255,0.04)', name: '深海' },
+  forest: { bg: '#0a1a0a', grid: 'rgba(0,255,100,0.03)', name: '森林' },
+}
+const canvasTheme = ref<CanvasTheme>('dark')
+function setCanvasTheme(theme: CanvasTheme) {
+  canvasTheme.value = theme
+}
+
+// ── Node Style Presets ───────────────────────────────────────────────
+interface NodeStylePreset { name: string; icon: string; colors: { fill: string; stroke: string; text: string } }
+const nodeStylePresets: NodeStylePreset[] = [
+  { name: '霓虹蓝', icon: '💎', colors: { fill: 'rgba(0,212,255,.3)', stroke: '#00d4ff', text: '#00d4ff' } },
+  { name: '极光绿', icon: '🌿', colors: { fill: 'rgba(34,197,94,.3)', stroke: '#22c55e', text: '#22c55e' } },
+  { name: '烈焰红', icon: '🔥', colors: { fill: 'rgba(239,68,68,.3)', stroke: '#ef4444', text: '#ef4444' } },
+  { name: '紫电', icon: '⚡', colors: { fill: 'rgba(168,85,247,.3)', stroke: '#a855f7', text: '#a855f7' } },
+  { name: '金辉', icon: '✨', colors: { fill: 'rgba(245,158,11,.3)', stroke: '#f59e0b', text: '#f59e0b' } },
+  { name: '冰霜', icon: '❄️', colors: { fill: 'rgba(59,130,246,.3)', stroke: '#3b82f6', text: '#3b82f6' } },
+]
+function applyNodeStylePreset(preset: NodeStylePreset) {
+  if (selectedNode.value === null || !processDef.value) return
+  const node = processDef.value.nodes[selectedNode.value]
+  ;(node as any).styleFill = preset.colors.fill
+  ;(node as any).styleStroke = preset.colors.stroke
+  ;(node as any).styleText = preset.colors.text
+  pushHistory()
+}
+
+// ── Edge Flow Animation ──────────────────────────────────────────────
+const edgeAnimOffset = ref(0)
+let edgeAnimFrame: number|null = null
+function startEdgeAnimation() {
+  if (edgeAnimFrame) cancelAnimationFrame(edgeAnimFrame)
+  function animate() {
+    edgeAnimOffset.value = (edgeAnimOffset.value + 0.5) % 20
+    edgeAnimFrame = requestAnimationFrame(animate)
+  }
+  animate()
+}
+function stopEdgeAnimation() {
+  if (edgeAnimFrame) { cancelAnimationFrame(edgeAnimFrame); edgeAnimFrame = null }
+}
+let showEdgeAnim = ref(false)
+
+// ── Process Metadata Editor ──────────────────────────────────────────
+const showMetaEditor = ref(false)
+const metaForm = ref({ description: '', owner: '', tags: '', version: '1.0.0' })
+function openMetaEditor() {
+  if (!currentProcess.value) return
+  metaForm.value = {
+    description: currentProcess.value.desc || '',
+    owner: currentProcess.value.flag || '',
+    tags: '',
+    version: '1.0.0'
+  }
+  showMetaEditor.value = true
+}
+function saveMeta() {
+  if (!currentProcess.value) return
+  currentProcess.value.desc = metaForm.value.description
+  showMetaEditor.value = false
 }
 
 function onNodeMouseDown(e: MouseEvent, i: number) {
@@ -1878,10 +2460,60 @@ function subZoomOut() { subZoom.value = Math.max(0.3, subZoom.value - 0.1) }
 function subFitCanvas() { subZoom.value = 1; subPanX.value = 0; subPanY.value = 0 }
 function subAddNode(type: string) {
   if (!subprocessDef.value) return
-  const w = type === 'approval' ? 130 : 120
-  const h = type === 'approval' ? 70 : 50
-  subprocessDef.value.nodes.push({ id: genId(), type, label: getNodeLabel(type), x: 100 + Math.random() * 200, y: 80 + Math.random() * 100, w, h })
+  const w = isGate(type) ? 100 : type === 'approval' ? 130 : type === 'subprocess' ? 120 : 120
+  const h = type === 'approval' ? 70 : type === 'subprocess' ? 60 : 50
+  const cx = (-subPanX.value + subCanvasRef.value?.clientWidth!/2) / subZoom.value
+  const cy = (-subPanY.value + subCanvasRef.value?.clientHeight!/2) / subZoom.value
+  const sx = Math.round(cx / GRID_SIZE) * GRID_SIZE
+  const sy = Math.round(cy / GRID_SIZE) * GRID_SIZE
+  subprocessDef.value.nodes.push({ id: genId(), type, label: getNodeLabel(type), x: sx - w/2, y: sy - h/2, w, h })
   subPushHistory()
+}
+function subDeleteNode() {
+  if (subSelectedNode.value === null || !subprocessDef.value) return
+  subprocessDef.value.nodes.splice(subSelectedNode.value, 1)
+  // Remove edges connected to deleted node
+  subprocessDef.value.edges = subprocessDef.value.edges.filter(e => e.from !== subSelectedNode.value && e.to !== subSelectedNode.value)
+  subSelectedNode.value = null; subSelectedEdge.value = null
+  subPushHistory()
+}
+function subDuplicateNode() {
+  if (subSelectedNode.value === null || !subprocessDef.value) return
+  const orig = subprocessDef.value.nodes[subSelectedNode.value]
+  if (!orig) return
+  const w = isGate(orig.type) ? 100 : orig.type === 'approval' ? 130 : 120
+  const h = orig.type === 'approval' ? 70 : orig.type === 'subprocess' ? 60 : 50
+  const newNode: PDNode = {
+    id: genId(), type: orig.type, label: orig.label,
+    x: orig.x + 30, y: orig.y + 30, w, h,
+    assignee: orig.assignee, condition: orig.condition,
+    timeout: orig.timeout, priority: orig.priority, script: orig.script
+  }
+  subprocessDef.value.nodes.push(newNode)
+  subSelectedNode.value = subprocessDef.value.nodes.length - 1
+  subPushHistory()
+}
+function subAutoLayout() {
+  if (!subprocessDef.value || subprocessDef.value.nodes.length === 0) return
+  const nodes = subprocessDef.value.nodes
+  const cols = Math.ceil(Math.sqrt(nodes.length))
+  nodes.forEach((n, i) => {
+    n.x = 80 + (i % cols) * ((n.w||120) + 40)
+    n.y = 80 + Math.floor(i / cols) * ((n.h||50) + 40)
+  })
+  subPushHistory()
+}
+function subOnWheel(e: WheelEvent) {
+  e.preventDefault()
+  if (e.ctrlKey || e.metaKey) {
+    // Zoom
+    const delta = e.deltaY > 0 ? -0.05 : 0.05
+    subZoom.value = Math.max(0.3, Math.min(3, subZoom.value + delta))
+  } else {
+    // Pan
+    subPanX.value += e.deltaX
+    subPanY.value += e.deltaY
+  }
 }
 function subClearCanvas() {
   if (!confirm('清空子流程画布？')) return
@@ -2192,7 +2824,125 @@ document.addEventListener('keydown', (e) => {
   })
   loadProcesses()
 })
-onUnmounted(() => {
+
+// --- Canvas Annotations ---
+interface Annotation { id: string; x: number; y: number; text: string; color: string; w: number; h: number }
+const annotations = ref<Annotation[]>([])
+const showAnnotations = ref(false)
+const newAnnotation = ref({ text: "", color: "#f59e0b" })
+function addAnnotation() {
+  if (!processDef.value) return
+  const rect = canvasRef.value?.getBoundingClientRect()
+  if (!rect) return
+  const cx = (rect.width/2 - panX.value) / zoom.value
+  const cy = (rect.height/2 - panY.value) / zoom.value
+  annotations.value.push({ id: genId(), x: cx - 60, y: cy - 20, text: newAnnotation.value.text || "备注", color: newAnnotation.value.color, w: 120, h: 60 })
+  newAnnotation.value = { text: "", color: "#f59e0b" }
+}
+function deleteAnnotation(idx: number) { annotations.value.splice(idx, 1) }
+function updateAnnotation(idx: number, prop: keyof Annotation, val: any) { if (annotations.value[idx]) annotations.value[idx][prop] = val }
+
+// --- Snap to Grid ---
+const snapToGrid = ref(true)
+const gridSnapThreshold = ref(15)
+const showGrid = ref(true)
+const customGridSize = ref(GRID_SIZE)
+function toggleSnap() { snapToGrid.value = !snapToGrid.value }
+function setGridSize(size: number) { if (customGridSize) customGridSize.value = Math.max(10, Math.min(50, size)) }
+
+// --- Node Alignment ---
+type AlignDir = "left"|"right"|"top"|"bottom"|"center-x"|"center-y"|"distribute-h"|"distribute-v"
+function alignNodes(dir: AlignDir) {
+  if (!processDef.value) return
+  const ids = selectedNode.value !== null ? [processDef.value.nodes[selectedNode.value]!.id] : Array.from(multiSelected.value)
+  if (ids.length < 2) return
+  const nodes = ids.map(id => processDef.value!.nodes.find(n => n.id === id)).filter(Boolean) as PDNode[]
+  switch(dir) {
+    case "left": { const minX = Math.min(...nodes.map(n => n.x)); nodes.forEach(n => n.x = minX); break }
+    case "right": { const maxX = Math.max(...nodes.map(n => n.x + (n.w||120))); nodes.forEach(n => n.x = maxX - (n.w||120)); break }
+    case "top": { const minY = Math.min(...nodes.map(n => n.y)); nodes.forEach(n => n.y = minY); break }
+    case "bottom": { const maxY = Math.max(...nodes.map(n => n.y + (n.h||50))); nodes.forEach(n => n.y = maxY - (n.h||50)); break }
+    case "center-x": { const cx = nodes.reduce((s,n) => s + n.x + (n.w||120)/2, 0) / nodes.length; nodes.forEach(n => n.x = cx - (n.w||120)/2); break }
+    case "center-y": { const cy = nodes.reduce((s,n) => s + n.y + (n.h||50)/2, 0) / nodes.length; nodes.forEach(n => n.y = cy - (n.h||50)/2); break }
+  }
+  pushHistory()
+}
+
+// --- Batch Operations ---
+function batchSetProperty(prop: string, val: any) {
+  if (!processDef.value) return
+  const ids = selectedNode.value !== null ? [processDef.value.nodes[selectedNode.value]!.id] : Array.from(multiSelected.value)
+  for (const id of ids) { const n = processDef.value.nodes.find(nd => nd.id === id); if (n) (n as any)[prop] = val }
+  pushHistory()
+}
+function batchSetColor(color: string) { batchSetProperty("style", color) }
+
+// --- Connection Validation ---
+interface ValidationResult { valid: boolean; issues: Array<{type: string; message: string; severity: "error"|"warning"}>; stats: {totalNodes: number; totalEdges: number; isolatedNodes: number; missingStart: boolean; missingEnd: boolean; unreachableNodes: string[]} }
+function validateConnections(): ValidationResult {
+  if (!processDef.value) return { valid: false, issues: [], stats: {totalNodes:0,totalEdges:0,isolatedNodes:0,missingStart:true,missingEnd:true,unreachableNodes:[]} }
+  const nodes = processDef.value.nodes, edges = processDef.value.edges || []
+  const issues: Array<{type:string;message:string;severity:"error"|"warning"}> = []
+  const starts = nodes.filter(n => n.type === "start")
+  if (starts.length === 0) issues.push({ type: "missing-start", message: "流程缺少开始节点", severity: "error" })
+  const ends = nodes.filter(n => n.type === "end")
+  if (ends.length === 0) issues.push({ type: "missing-end", message: "流程缺少结束节点", severity: "error" })
+  const connectedIds = new Set<string>()
+  for (const e of edges) { connectedIds.add(e.from); connectedIds.add(e.to) }
+  const isolated = nodes.filter(n => !connectedIds.has(n.id) && n.type !== "start" && n.type !== "end")
+  for (const n of isolated) issues.push({ type: "isolated", message: "未连接: " + (n.label||n.id), severity: "warning" })
+  const reachable = new Set<string>()
+  if (starts.length > 0) { const q = [starts[0].id]; while(q.length){ const c=q.shift()!; if(reachable.has(c))continue; reachable.add(c); for(const e of edges){ if(e.from===c&&!reachable.has(e.to))q.push(e.to) } } }
+  const unreachable = nodes.filter(n => !reachable.has(n.id) && n.type!=="start").map(n=>n.label||n.id)
+  for (const id of unreachable) issues.push({ type: "unreachable", message: "无法到达: " + id, severity: "warning" })
+  const es = new Set<string>()
+  for (const e of edges) { const k=e.from+"-"+e.to; if(es.has(k)) issues.push({type:"dup",message:"重复连线",severity:"warning"}); else es.add(k) }
+  for (const e of edges) { if(e.from===e.to) issues.push({type:"loop",message:"自环",severity:"warning"}) }
+  const valid = issues.filter(i=>i.severity==="error").length===0
+  return { valid, issues, stats: {totalNodes:nodes.length,totalEdges:edges.length,isolatedNodes:isolated.length,missingStart:starts.length===0,missingEnd:ends.length===0,unreachableNodes:unreachable} }
+}
+
+// --- Dimension Presets ---
+const dimPresets = [{name:"窄型",w:80,h:40},{name:"标准",w:120,h:50},{name:"宽型",w:160,h:50},{name:"高型",w:120,h:80},{name:"大方块",w:140,h:140},{name:"标签",w:100,h:30}]
+function applyDimPreset(idx: number) {
+  if (selectedNode.value===null||!processDef.value) return
+  const p = dimPresets[idx]; if(!p) return
+  const n = processDef.value.nodes[selectedNode.value]; n.w=p.w; n.h=p.h; pushHistory()
+}
+
+// --- Flow Analysis ---
+interface FlowInfo { nodeId:string; label:string; inDegree:number; outDegree:number; role:string }
+function computeFlowInfo(): FlowInfo[] {
+  if (!processDef.value) return []
+  const nodes = processDef.value.nodes, edges = processDef.value.edges||[]
+  return nodes.map(n => {
+    const inD = edges.filter(e=>e.to===n.id).length, outD = edges.filter(e=>e.from===n.id).length
+    let role = "内部节点"
+    if (n.type==="start") role="入口"
+    else if (n.type==="end") role="出口"
+    else if (inD===0&&outD>0) role="起始"
+    else if (inD>0&&outD===0) role="终止"
+    else if (inD===0&&outD===0) role="孤立"
+    return {nodeId:n.id, label:n.label||n.id, inDegree:inD, outDegree:outD, role}
+  }).sort((a,b)=>b.outDegree-a.outDegree||a.inDegree-b.inDegree)
+}
+const flowInfo = computed(() => computeFlowInfo())
+
+// --- Process Archive ---
+interface ProcessArchive { id:string; timestamp:number; name:string; nodeCount:number; edgeCount:number; snapshot:{nodes:PDNode[];edges:PDEdge[]} }
+const processArchive = ref<ProcessArchive[]>([])
+function archiveCurrent() {
+  if (!processDef.value||!currentProcess.value) return
+  processArchive.value.unshift({id:genId(),timestamp:Date.now(),name:currentProcess.value.name||"未命名",nodeCount:processDef.value.nodes.length,edgeCount:(processDef.value.edges||[]).length,snapshot:JSON.parse(JSON.stringify(processDef.value))})
+  if (processArchive.value.length>50) processArchive.value.pop()
+}
+function restoreArchive(idx:number) {
+  if (idx>=processArchive.value.length||!processDef.value) return
+  const snap = processArchive.value[idx].snapshot
+  processDef.value = {nodes:snap.nodes, edges:snap.edges||[]}
+  selectedNode.value=null; selectedEdge.value=null; pushHistory()
+}
+function deleteArchive(idx:number) { processArchive.value.splice(idx,1) }onUnmounted(() => {
   document.removeEventListener('mousemove', () => {})
   document.removeEventListener('mouseup', () => {})
 })
@@ -2600,4 +3350,80 @@ kbd{display:inline-block;padding:3px 8px;border-radius:4px;border:1px solid var(
 .pal-item{display:flex;flex-direction:column;align-items:center;gap:4px;padding:8px 4px;border-radius:var(--radius-sm);border:1px solid var(--border-color);cursor:pointer;transition:all .15s}
 .pal-item:hover{border-color:var(--color-primary);background:var(--color-primary-soft);transform:translateY(-1px)}
 .ni{font-size:18px}.nl{font-size:10px;color:var(--text-muted);text-align:center}
+/* Group backgrounds */
+.group-backgrounds{pointer-events:none}
+.group-bg{pointer-events:all;cursor:default;transition:stroke-opacity .15s}
+.group-bg:hover{stroke-opacity:0.8}
+.group-label-text{fill:var(--color-primary);font-size:11px;font-weight:600;letter-spacing:0.5px}
+.group-btn{pointer-events:all}
+/* Context menu */
+.context-menu{position:fixed;z-index:200;background:var(--bg-elevated);border:1px solid var(--border-color);border-radius:var(--radius-md);padding:4px;min-width:140px;box-shadow:0 8px 32px rgba(0,0,0,.4)}
+.ctx-item{padding:6px 12px;border-radius:var(--radius-sm);cursor:pointer;font-size:12px;color:var(--text-primary);display:flex;align-items:center;gap:6px}
+.ctx-item:hover{background:var(--color-primary-soft);color:var(--color-primary)}
+.ctx-item.ctx-danger:hover{background:rgba(239,68,68,.15);color:var(--color-danger)}
+/* Subprocess node count */
+.sp-node-count{font-size:11px;color:var(--text-muted);font-family:'JetBrains Mono',monospace;min-width:60px;text-align:center}
+/* Edge routing styles */
+.edge-path.straight{stroke-dasharray:none}
+.edge-path.horizontal{stroke-dasharray:none}
+.edge-path.vertical{stroke-dasharray:none}
+/* Execution panel */
+.pd-exec-panel{width:220px;flex-shrink:0;display:flex;flex-direction:column;border-left:1px solid var(--border-color)}
+.exec-header{display:flex;align-items:center;justify-content:space-between;padding:8px 10px;border-bottom:1px solid var(--border-color);font-size:13px;font-weight:600;color:var(--color-primary)}
+.exec-body{padding:8px;display:flex;flex-direction:column;gap:6px;flex:1;overflow-y:auto}
+.exec-status{display:flex;align-items:center;justify-content:space-between}
+.exec-badge{padding:2px 8px;border-radius:var(--radius-sm);font-size:10px;font-weight:700}
+.exec-badge.idle{background:rgba(100,100,100,.2);color:var(--text-muted)}
+.exec-badge.running{background:rgba(16,185,129,.2);color:var(--color-success);animation:pulse 1s infinite}
+.exec-badge.paused{background:rgba(245,158,11,.2);color:var(--color-warning)}
+.exec-badge.finished{background:rgba(0,212,255,.2);color:var(--color-primary)}
+.exec-progress{font-size:11px;color:var(--color-primary);font-family:'JetBrains Mono',monospace}
+.exec-bar{height:4px;background:var(--border-color);border-radius:2px;overflow:hidden}
+.exec-bar-fill{height:100%;background:linear-gradient(90deg,var(--color-primary),var(--color-success));transition:width .3s}
+.exec-nodes{display:flex;flex-direction:column;gap:3px;max-height:200px;overflow-y:auto}
+.exec-node{display:flex;align-items:center;gap:6px;padding:4px 8px;border-radius:var(--radius-sm);font-size:11px}
+.exec-node.active{background:rgba(245,158,11,.2);border:1px solid var(--color-warning)}
+.exec-node.completed{background:rgba(16,185,129,.15);color:var(--color-success)}
+.exec-node.pending{background:rgba(100,100,100,.1);color:var(--text-muted)}
+.exec-node-icon{font-size:12px}.exec-node-label{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.exec-actions{display:flex;gap:4px;flex-wrap:wrap}
+.exec-actions .btn-sm{flex:1}
+/* Minimap */
+.minimap-container{margin-top:8px;border-top:1px solid var(--border-color);padding-top:8px}
+.minimap-header{font-size:11px;color:var(--text-muted);margin-bottom:4px}
+.minimap-canvas{width:100%;height:auto;border:1px solid var(--border-color);border-radius:var(--radius-sm);cursor:crosshair;display:block}
+.minimap-controls{display:flex;gap:4px;margin-top:4px}
+/* Palette extras */
+.pal-preset{flex-direction:row;gap:4px;padding:6px}
+.pal-preset:hover{transform:translateY(0)}
+.pal-theme{flex-direction:row;gap:4px;padding:6px}
+.pal-theme.active{border-color:var(--color-primary);background:var(--color-primary-soft)}
+/* Edge animation */
+.edge-path.animated{stroke-dasharray:8,4;animation:edgeFlow 1s linear infinite}
+@keyframes edgeFlow{from{stroke-dashoffset:0}to{stroke-dashoffset:-24}}
+/* Node style presets in props */
+.style-presets{display:flex;gap:4px;flex-wrap:wrap;margin-top:4px}
+.style-preset-btn{width:24px;height:24px;border-radius:50%;border:2px solid var(--border-color);cursor:pointer;transition:all .15s}
+.style-preset-btn:hover,.style-preset-btn.active{border-color:var(--color-primary);transform:scale(1.1)}
+/* Group controls in props */
+.group-controls{display:flex;gap:4px;margin-top:8px;padding-top:8px;border-top:1px solid var(--border-color)}
+/* Canvas theme background */
+.canvas-bg.theme-dark{background-image:radial-gradient(circle,rgba(255,255,255,0.03) 1px,transparent 1px)}
+.canvas-bg.theme-midnight{background-image:radial-gradient(circle,rgba(100,200,255,0.03) 1px,transparent 1px)}
+.canvas-bg.theme-ocean{background-image:radial-gradient(circle,rgba(0,150,255,0.04) 1px,transparent 1px)}
+.canvas-bg.theme-forest{background-image:radial-gradient(circle,rgba(0,255,100,0.03) 1px,transparent 1px)}
+/* Profile indicator */
+.profile-indicator{display:inline-flex;align-items:center;gap:4px;padding:2px 6px;border-radius:var(--radius-sm);font-size:10px;background:var(--bg-elevated);color:var(--text-muted)}
+/* Flow direction badge */
+.flow-badge{display:inline-block;padding:1px 6px;border-radius:var(--radius-sm);font-size:9px;font-weight:700;margin-left:4px}
+.flow-badge.condition{background:rgba(245,158,11,.2);color:var(--color-warning)}
+.flow-badge.default{background:rgba(16,185,129,.2);color:var(--color-success)}
+/* Meta editor modal */
+.meta-editor{display:flex;flex-direction:column;gap:8px}
+.meta-field{display:flex;flex-direction:column;gap:3px}
+.meta-field label{font-size:11px;color:var(--text-muted)}
+.meta-field input,.meta-field textarea{padding:6px 10px;border-radius:var(--radius-sm);border:1px solid var(--border-color);background:var(--bg-elevated);color:var(--text-primary);font-size:12px;outline:none;width:100%;box-sizing:border-box}
+.meta-field textarea{resize:vertical}
+.meta-tags{display:flex;flex-wrap:wrap;gap:4px;margin-top:4px}
+.meta-tag{padding:2px 8px;border-radius:var(--radius-sm);background:var(--color-primary-soft);color:var(--color-primary);font-size:10px}
 </style>
