@@ -179,6 +179,11 @@ mod u2_contract {
 
     #[tokio::test]
     async fn u2_captcha_login_requires_valid_captcha_first() {
+        use shared::testing::is_db_available;
+        if !is_db_available().await {
+            eprintln!("skipping u2_captcha_login_requires_valid_captcha_first: DATABASE_URL not reachable");
+            return;
+        }
         let (uid, password) = seed_person().await;
         let body = serde_json::json!({
             "credential": uid,
@@ -204,6 +209,11 @@ mod u2_contract {
 
     #[tokio::test]
     async fn u2_captcha_login_full_flow_issues_session() {
+        use shared::testing::is_db_available;
+        if !is_db_available().await {
+            eprintln!("skipping u2_captcha_login_full_flow_issues_session: DATABASE_URL not reachable");
+            return;
+        }
         let (uid, password) = seed_person().await;
         // 注入已知答案的验证码
         let captcha_id = captcha_store::captcha_store().insert("7272".to_string());
@@ -329,6 +339,11 @@ mod u2_contract {
 
     #[tokio::test]
     async fn u2_bind_list_returns_seeded_rows() {
+        use shared::testing::is_db_available;
+        if !is_db_available().await {
+            eprintln!("skipping u2_bind_list_returns_seeded_rows: DATABASE_URL not reachable");
+            return;
+        }
         ensure_bind_table().await;
         {
             let pool = test_pool();
