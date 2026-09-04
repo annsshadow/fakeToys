@@ -1190,10 +1190,11 @@ const crossFieldCalcs = ref<CrossFieldCalc[]>([
   { id: 'cf1', sourceFields: ['subTotal', 'taxRate'], formula: 'subTotal * (1 + taxRate)', targetField: 'total', enabled: true },
   { id: 'cf2', sourceFields: ['startDate', 'endDate'], formula: 'daysBetween(startDate, endDate)', targetField: 'duration', enabled: false },
 ])
-const newCalcSource = ref(''), newCalcFormula = ref(''), newCalcTarget = ref('')
+const dataSources = ref<DataSourceItem[]>([
   { id: 'ds1', url: '/api/users/list', method: 'GET', headers: 'Authorization: Bearer {{token}}', body: '', enabled: true },
   { id: 'ds2', url: '/api/departments/tree', method: 'GET', headers: '', body: '', enabled: true },
 ])
+const newCalcSource = ref(''), newCalcFormula = ref(''), newCalcTarget = ref('')
 const showFieldPermissionsPanel = ref(false)
 const fieldPermissions = ref<FieldPermission[]>([
   { roleId: 'r1', role: '管理员', canRead: true, canWrite: true, canDelete: true, canHide: false },
