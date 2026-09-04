@@ -15,6 +15,10 @@ import IMChat from './views/IMChat.vue';
 import Personal from './views/Personal.vue';
 import Settings from './views/Settings.vue';
 import SSO from './views/SSO.vue';
+import MeetingApp from './views/MeetingApp.vue';
+import AttendanceApp from './views/AttendanceApp.vue';
+import AIAssistant from './views/AIAssistant.vue';
+import QueryManager from './views/QueryManager.vue';
 import CalendarApp from './views/CalendarApp.vue';
 import FileManager from './views/FileManager.vue';
 import BBSForum from './views/BBSForum.vue';
@@ -36,6 +40,10 @@ const router = createRouter({
         { path: 'calendar', name: 'CalendarApp', component: CalendarApp, meta: { title: '日历' } },
         { path: 'file', name: 'FileManager', component: FileManager, meta: { title: '文件管理' } },
         { path: 'bbs', name: 'BBSForum', component: BBSForum, meta: { title: '论坛' } },
+        { path: 'meeting', name: 'MeetingApp', component: MeetingApp, meta: { title: '会议管理' } },
+        { path: 'attendance', name: 'AttendanceApp', component: AttendanceApp, meta: { title: '考勤管理' } },
+        { path: 'ai', name: 'AIAssistant', component: AIAssistant, meta: { title: 'AI助手' } },
+        { path: 'query', name: 'QueryManager', component: QueryManager, meta: { title: '查询管理' } },
       ],
     },
     { path: '/oauth/callback/:platform', name: 'OAuthCallback', component: OAuthCallback, meta: { requiresAuth: false } },
