@@ -35,4 +35,7 @@ export default defineConfig({
       },
     },
   },
+  optimizeDeps: {
+    include: ['vue', 'vue-router', 'pinia', '@tanstack/vue-query', 'naive-ui'],
+  },
 });
