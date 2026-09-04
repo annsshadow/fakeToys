@@ -9,12 +9,19 @@
       <div class="pd-actions">
         <button class="btn" @click="undo" :disabled="!canUndo" title="撤销">↩</button>
         <button class="btn" @click="redo" :disabled="!canRedo" title="重做">↪</button>
+        <button class="btn" @click="autoLayout" title="网格排列">⊞ 排列</button>
+        <button class="btn" @click="autoLayoutTopo" title="拓扑排列">⊞ 拓扑</button>
         <button class="btn" @click="zoomIn" title="放大">🔍+</button>
         <button class="btn" @click="zoomOut" title="缩小">🔍-</button>
         <button class="btn" @click="zoomToFit" title="适配内容">⊞ 适配</button>
         <button class="btn" @click="clearCanvas" title="清空">🗑</button>
         <button class="btn" @click="createVersion()" title="创建版本快照">📌 快照</button>
-        <button class="btn btn-outline" :class="{active: showVersionPanel}" @click="showVersionPanel=!showVersionPanel">📜 版本</button>
+        <button class="btn btn-outline" @click="showVersionPanel=!showVersionPanel">📜 版本</button>
+        <button class="btn btn-outline" @click="showCompareModal=true" title="版本对比">🔀 对比</button>
+        <button class="btn btn-outline" @click="showRulesModal=true" title="连接规则">🔗 规则</button>
+        <button class="btn btn-outline" @click="showTemplatesModal=true" title="流程模板">📐 模板</button>
+        <button class="btn btn-outline" @click="showIoModal=true" title="导入导出">📦 导入导出</button>
+        <button class="btn btn-outline" @click="showHelpModal=true" title="快捷键">⌨️ 帮助</button>
         <button class="btn btn-outline" @click="loadProcesses">🔄 刷新</button>
         <button class="btn btn-primary" @click="saveProcess" :disabled="!currentProcess">💾 保存</button>
       </div>
@@ -99,6 +106,12 @@
               :class="['edge-path', { selected: selectedEdge===i }]"
               :marker-end="selectedEdge===i ? 'url(#arrowhead-sel)' : 'url(#arrowhead)'"
               @click.stop="selectEdge(i)" />
+            <!-- Edge labels -->
+            <g v-for="(edge, i) in processDef?.edges||[]" :key="'label-'+edge.id" v-if="edge.label">
+              <rect :d="getEdgeLabelRect(edge)" class="edge-label-bg" />
+              <text :x="getEdgeLabelX(edge)" :y="getEdgeLabelY(edge)"
+                text-anchor="middle" class="edge-label-text">{{ edge.label }}</text>
+            </g>
           </g>
 
           <!-- Temp edge -->
@@ -152,6 +165,8 @@
                   @mousedown.stop="onAnchorMouseDown($event, i, ahi)" />
               </template>
 
+              <!-- Node body click zone for arbitrary edge creation -->
+              <rect :x="0" :y="0" :width="node.w||120" :height="node.h||50" fill="transparent" class="node-click-zone" @mousedown.stop="onNodeBodyMouseDown($event, i)" />
               <!-- Edge click zone (invisible rectangle around node for arbitrary edge creation) -->
               <rect :x="-8" :y="-8" :width="(node.w||120)+16" :height="(node.h||50)+16"
                 fill="transparent" class="edge-create-zone"
@@ -211,6 +226,20 @@
           <span v-else>拖拽右侧节点到画布 | 从端口拖出创建连线 | 点击节点边缘拖出连线 | Shift+点击多选 | Ctrl+A全选 | G键分组 | Del删除 | Ctrl+D复制</span>
         </div>
       </main>
+
+      <!-- Animation Playback Controls -->
+      <div v-if="processDef && processDef.nodes.length > 0" class="playback-controls glass-card">
+        <button class="play-btn" :class="{playing: isPlaying}" @click="togglePlay" title="播放/暂停">
+          {{ isPlaying ? '⏸' : '▶' }}
+        </button>
+        <input type="range" class="play-slider" :value="playbackProgress" min="0" max="100" @input="onPlaybackSeek" />
+        <span class="play-label">{{ getPlaybackTime() }}</span>
+        <span class="play-label">{{ processDef.nodes.length }} 节点</span>
+        <button class="tb-btn" @click="playbackSpeed=Math.max(0.5, playbackSpeed-0.5)">慢</button>
+        <button class="tb-btn" @click="playbackSpeed=1">1x</button>
+        <button class="tb-btn" @click="playbackSpeed=Math.min(3, playbackSpeed+0.5)">快</button>
+        <button class="tb-btn" @click="resetPlayback">重置</button>
+      </div>
 
       <!-- Process Stats Panel -->
       <aside v-if="processStats" class="pd-stats-panel glass-card">
@@ -365,6 +394,185 @@
         <div class="ma">
           <button class="bc" @click="showNewModal=false">取消</button>
           <button class="bs" :disabled="!newForm.name" @click="createProcess">创建</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Import/Export Modal -->
+    <div v-if="showIoModal" class="modal-overlay" @click.self="showIoModal=false">
+      <div class="modal modal-lg glass-card">
+        <div class="im-header"><h3>📦 导入/导出流程定义</h3><button class="btn-close" @click="showIoModal=false">✕</button></div>
+        <div class="im-body">
+          <div class="im-tabs">
+            <button :class="{active: ioMode==='export'}" @click="ioMode='export'">导出 JSON</button>
+            <button :class="{active: ioMode==='import'}" @click="ioMode='import'">导入 JSON</button>
+            <button :class="{active: ioMode==='validate'}" @click="runValidation()">🔍 流程验证</button>
+          </div>
+          <div v-if="ioMode==='export'" class="im-content">
+            <div class="im-info">导出当前流程的完整定义（节点、连线、子流程配置），可用于备份或迁移。</div>
+            <textarea class="json-editor" readonly :value="exportJson()"></textarea>
+            <div class="im-actions">
+              <button class="bs" @click="copyExportJson()">📋 复制</button>
+              <button class="bc" @click="downloadJson()">💾 下载文件</button>
+            </div>
+          </div>
+          <div v-if="ioMode==='import'" class="im-content">
+            <div class="im-info">粘贴JSON格式的流程图定义（与导出格式相同）来导入流程。</div>
+            <textarea class="json-editor" v-model="importJsonText" placeholder="// 粘贴JSON定义..."></textarea>
+            <div class="im-actions">
+              <button class="bc" @click="importJsonText=''">清空</button>
+              <button class="bs" :disabled="!importJsonText.trim()" @click="doImportJson()">📥 导入</button>
+            </div>
+          </div>
+          <div v-if="ioMode==='validate'" class="im-content">
+            <div class="im-info">对当前流程进行完整性检查：连接性、循环检测、配置验证。</div>
+            <div v-if="validationResult" class="validation-report">
+              <div class="vr-title">📋 验证报告 — {{ validationResult.totalNodes }} 节点 | {{ validationResult.totalEdges }} 连线</div>
+              <div v-for="(issue, ii) in validationResult.issues" :key="ii" :class="['vr-item', 'vr-'+issue.severity]">
+                <span class="vr-icon">{{ issue.severity==='error'?'🔴':issue.severity==='warning'?'🟡':'🟢' }}</span>
+                <span class="vr-text">{{ issue.message }}</span>
+              </div>
+              <div v-if="validationResult.suggestions.length>0" class="vr-suggestions">
+                <div class="vr-sug-title">💡 建议修复</div>
+                <div v-for="(s,si) in validationResult.suggestions" :key="si" class="vr-item vr-warning">{{ s }}</div>
+              </div>
+              <div v-if="validationResult.healthScore !== null" class="vr-score">健康度: {{ validationResult.healthScore }}%</div>
+            </div>
+            <div v-else class="im-info">点击上方「🔍 流程验证」按钮开始检查</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Version Comparison Modal -->
+    <div v-if="showCompareModal" class="modal-overlay" @click.self="showCompareModal=false">
+      <div class="modal modal-xl glass-card">
+        <div class="cmp-header">
+          <h3>🔀 版本对比</h3>
+          <div class="cmp-controls">
+            <select v-model="compareV1" class="fi cmp-select">
+              <option v-for="v in versions.slice(0,10)" :key="v.id" :value="v.id">{{ v.label }} {{ new Date(v.timestamp).toLocaleString('zh-CN',{month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'}) }}</option>
+            </select>
+            <span class="cmp-arrow">→</span>
+            <select v-model="compareV2" class="fi cmp-select">
+              <option value="__current">当前版本</option>
+              <option v-for="v in versions.slice(0,10)" :key="v.id+'c'" :value="v.id">{{ v.label }} {{ new Date(v.timestamp).toLocaleString('zh-CN',{month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'}) }}</option>
+            </select>
+          </div>
+          <button class="btn-close" @click="showCompareModal=false">✕</button>
+        </div>
+        <div class="cmp-body">
+          <div class="cmp-panel cmp-left">
+            <div class="cmp-panel-title">{{ getVersionLabel(compareV1) }} (旧)</div>
+            <div class="cmp-node-list">{{ formatNodeDiff(compareV1, compareV2, 'all') }}</div>
+          </div>
+          <div class="cmp-divider"><span>差异</span></div>
+          <div class="cmp-panel cmp-right">
+            <div class="cmp-panel-title">{{ getVersionLabel(compareV2) }} (新)</div>
+            <div class="cmp-node-list">{{ formatNodeDiff(compareV2, compareV1, 'all') }}</div>
+          </div>
+        </div>
+        <div class="cmp-footer">
+          <div class="cmp-stats">
+            <span class="cmp-stat cmp-added">+{{ countDiff(compareV1, compareV2, 'added') }} 新增</span>
+            <span class="cmp-stat cmp-removed">-{{ countDiff(compareV1, compareV2, 'removed') }} 删除</span>
+            <span class="cmp-stat cmp-modified">~{{ countDiff(compareV1, compareV2, 'modified') }} 修改</span>
+          </div>
+          <button class="bc" @click="showCompareModal=false">关闭</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Connection Rules Modal -->
+    <div v-if="showRulesModal" class="modal-overlay" @click.self="showRulesModal=false">
+      <div class="modal modal-lg glass-card">
+        <div class="rr-header">
+          <h3>🔗 连接规则配置</h3>
+          <button class="btn-close" @click="showRulesModal=false">✕</button>
+        </div>
+        <div class="rr-body">
+          <div class="rr-info">定义哪些节点类型可以连接到哪些节点类型。点击规则行可切换允许/禁止。</div>
+          <div class="rr-grid">
+            <div class="rr-row rr-header-row">
+              <span class="rr-cell rr-from">FROM \ TO</span>
+              <span v-for="nt in allNodeTypes" :key="nt" class="rr-cell rr-to">{{ getNodeIcon(nt) }} {{ nt }}</span>
+            </div>
+            <div v-for="fromType in allNodeTypes" :key="fromType" class="rr-row">
+              <span class="rr-cell rr-from">{{ getNodeIcon(fromType) }} {{ fromType }}</span>
+              <span v-for="toType in allNodeTypes" :key="toType+'-'+fromType"
+                :class="['rr-cell', 'rr-to', {disallowed: !isAllowed(fromType, toType)}]"
+                @click="toggleRule(fromType, toType)"
+                :title="isAllowed(fromType, toType)?'允许':'禁止 (点击切换)'">
+                {{ isAllowed(fromType, toType)?'✓':'✗' }}
+              </span>
+            </div>
+          </div>
+          <div class="rr-legend">
+            <span class="rr-ok">✓ = 允许</span>
+            <span class="rr-bad">✗ = 禁止</span>
+            <span class="rr-hint">点击切换规则状态</span>
+          </div>
+          <div class="rr-actions">
+            <button class="bc" @click="resetRules()">重置默认</button>
+            <button class="bs" @click="saveRules()">💾 保存规则</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Node Templates Modal -->
+    <div v-if="showTemplatesModal" class="modal-overlay" @click.self="showTemplatesModal=false">
+      <div class="modal modal-lg glass-card">
+        <div class="tm-header">
+          <h3>📐 流程模板</h3>
+          <button class="btn-close" @click="showTemplatesModal=false">✕</button>
+        </div>
+        <div class="tm-body">
+          <div class="tm-info">选择一个模板快速创建常用流程结构</div>
+          <div class="tm-grid">
+            <div v-for="tpl in nodeTemplates" :key="tpl.name" class="tm-card" @click="applyTemplate(tpl)">
+              <div class="tm-icon">{{ tpl.icon }}</div>
+              <div class="tm-name">{{ tpl.name }}</div>
+              <div class="tm-desc">{{ tpl.desc }}</div>
+              <div class="tm-nodes">{{ tpl.nodes.map(n=>n.icon+' '+n.label).join(' → ') }}</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Keyboard Shortcuts Help -->
+    <div v-if="showHelpModal" class="modal-overlay" @click.self="showHelpModal=false">
+      <div class="modal modal-md glass-card">
+        <div class="hm-header">
+          <h3>⌨️ 快捷键</h3>
+          <button class="btn-close" @click="showHelpModal=false">✕</button>
+        </div>
+        <div class="hm-body">
+          <div class="hm-section">
+            <div class="hm-title">编辑操作</div>
+            <div class="hm-row"><kbd>Ctrl+Z</kbd><span>撤销</span></div>
+            <div class="hm-row"><kbd>Ctrl+Y</kbd><span>重做</span></div>
+            <div class="hm-row"><kbd>Ctrl+A</kbd><span>全选节点</span></div>
+            <div class="hm-row"><kbd>Shift+点击</kbd><span>多选节点</span></div>
+            <div class="hm-row"><kbd>G</kbd><span>将选中节点分组</span></div>
+            <div class="hm-row"><kbd>Delete</kbd><span>删除选中节点/连线</span></div>
+            <div class="hm-row"><kbd>Ctrl+D</kbd><span>复制选中节点</span></div>
+          </div>
+          <div class="hm-section">
+            <div class="hm-title">画布操作</div>
+            <div class="hm-row"><kbd>Space+拖拽</kbd><span>平移画布</span></div>
+            <div class="hm-row"><kbd>滚轮</kbd><span>缩放</span></div>
+            <div class="hm-row"><kbd>Ctrl++</kbd><span>放大</span></div>
+            <div class="hm-row"><kbd>Ctrl+-</kbd><span>缩小</span></div>
+            <div class="hm-row"><kbd>Ctrl+0</kbd><span>适配内容</span></div>
+          </div>
+          <div class="hm-section">
+            <div class="hm-title">节点操作</div>
+            <div class="hm-row"><kbd>点击节点</kbd><span>选中节点</span></div>
+            <div class="hm-row"><kbd>双击子流程</kbd><span>进入子流程编辑</span></div>
+            <div class="hm-row"><kbd>ESC</kbd><span>取消选择</span></div>
+          </div>
         </div>
       </div>
     </div>
@@ -584,6 +792,42 @@ const subTempEdge = ref<{ from: number; fromPort: 'out'|'in'; startX: number; st
 const subIsDraggingAnchor = ref(false)
 const subHistory = ref<{nodes: PDNode[]; edges: PDEdge[]}[]>([])
 const subHistIdx = ref(-1)
+
+// Animation playback state
+const isPlaying = ref(false)
+const playbackProgress = ref(0)
+const playbackSpeed = ref(1)
+let playbackTimer: ReturnType<typeof setInterval>|null = null
+function togglePlay() {
+  if (isPlaying.value) { pausePlayback(); return }
+  isPlaying.value = true
+  const totalMs = 3000 / playbackSpeed.value
+  const interval = 50
+  let elapsed = 0
+  playbackTimer = setInterval(() => {
+    elapsed += interval
+    playbackProgress.value = Math.min(100, (elapsed / totalMs) * 100)
+    if (elapsed >= totalMs) { pausePlayback(); playbackProgress.value = 100 }
+  }, interval)
+}
+function pausePlayback() {
+  isPlaying.value = false
+  if (playbackTimer) { clearInterval(playbackTimer); playbackTimer = null }
+}
+function resetPlayback() {
+  pausePlayback(); playbackProgress.value = 0
+}
+function onPlaybackSeek(e: Event) {
+  playbackProgress.value = +(e.target as HTMLInputElement).value
+}
+function getPlaybackTime(): string {
+  const totalNodes = processDef.value?.nodes.length || 0
+  const current = Math.floor((playbackProgress.value / 100) * totalNodes)
+  return `${current}/${totalNodes}`
+}
+
+// Help modal
+const showHelpModal = ref(false)
 
 // ── Computed ──────────────────────────────────────────────────────────
 const filteredProc = computed(() =>
@@ -891,6 +1135,102 @@ function autoLayout() {
   pushHistory()
 }
 
+// ── Advanced Auto-Layout (topological) ──────────────────────────────
+function autoLayoutTopo() {
+  if (!processDef.value || processDef.value.nodes.length === 0) return
+  const nodes = processDef.value.nodes
+  const edges = processDef.value.edges || []
+  // Build adjacency and in-degree
+  const inDegree = new Map<string, number>()
+  const adj = new Map<string, string[]>()
+  for (const n of nodes) { inDegree.set(n.id, 0); adj.set(n.id, []) }
+  for (const e of edges) {
+    if (inDegree.has(e.to)) inDegree.set(e.to, (inDegree.get(e.to)||0) + 1)
+    if (adj.has(e.from)) adj.get(e.from)!.push(e.to)
+  }
+  // Kahn's algorithm for topological sort
+  const queue: string[] = []
+  for (const [id, deg] of inDegree) if (deg === 0) queue.push(id)
+  const order: string[] = []
+  while (queue.length > 0) {
+    const curr = queue.shift()!
+    order.push(curr)
+    for (const next of (adj.get(curr)||[])) {
+      inDegree.set(next, (inDegree.get(next)||0) - 1)
+      if ((inDegree.get(next)||0) === 0) queue.push(next)
+    }
+  }
+  // Assign positions by layer (BFS levels)
+  const layers = new Map<string, number>()
+  const startNodes = nodes.filter(n => n.type === 'start').map(n => n.id)
+  if (startNodes.length > 0) {
+    for (const id of startNodes) layers.set(id, 0)
+  } else {
+    for (const id of (order.length > 0 ? [order[0]] : [])) layers.set(id, 0)
+  }
+  // BFS to assign layers
+  const visited = new Set<string>()
+  const bfsQ: string[] = [...(startNodes.length > 0 ? startNodes : [order[0]])]
+  while (bfsQ.length > 0) {
+    const curr = bfsQ.shift()!
+    if (visited.has(curr)) continue
+    visited.add(curr)
+    const currLayer = layers.get(curr) ?? 0
+    for (const next of (adj.get(curr)||[])) {
+      const nextLayer = (layers.get(next) ?? 0)
+      if (currLayer + 1 > nextLayer) layers.set(next, currLayer + 1)
+      bfsQ.push(next)
+    }
+  }
+  // Group by layer
+  const layerGroups = new Map<number, string[]>()
+  for (const id of order) {
+    const layer = layers.get(id) ?? 0
+    if (!layerGroups.has(layer)) layerGroups.set(layer, [])
+    layerGroups.get(layer)!.push(id)
+  }
+  // Position nodes
+  const rowH = 80, colW = 140, layerGap = 220
+  for (const [layer, ids] of layerGroups) {
+    const totalW = ids.length * colW
+    let startX = 100
+    for (let i = 0; i < ids.length; i++) {
+      const n = nodes.find(nd => nd.id === ids[i])
+      if (!n) continue
+      n.x = startX + i * colW
+      n.y = 80 + layer * layerGap
+    }
+  }
+  pushHistory()
+}
+
+// Apply template to canvas
+function applyTemplate(tpl: TemplateDef) {
+  if (!processDef.value) return
+  processDef.value.nodes = []
+  processDef.value.edges = []
+  selectedNode.value = null; selectedEdge.value = null
+  const nodeMap = new Map<string, PDNode>()
+  for (const tn of tpl.nodes) {
+    const w = isGate(tn.type) ? 100 : tn.type === 'approval' ? 130 : 120
+    const h = tn.type === 'approval' ? 70 : tn.type === 'subprocess' ? 60 : 50
+    const startX = 100, startY = 80, colGap = 160, rowGap = 90
+    const col = tpl.nodes.indexOf(tn)
+    const colIdx = col % 3, rowIdx = Math.floor(col / 3)
+    const node: PDNode = { id: genId(), type: tn.type, label: tn.label, x: startX + colIdx * colGap, y: startY + rowIdx * rowGap, w, h }
+    processDef.value.nodes.push(node)
+    nodeMap.set(tn.label, node)
+  }
+  for (const e of tpl.edges) {
+    const fromNode = tpl.nodes[e.from], toNode = tpl.nodes[e.to]
+    if (fromNode && toNode) {
+      const fn = nodeMap.get(fromNode.label), tn = nodeMap.get(toNode.label)
+      if (fn && tn) createEdge(fn.id, tn.id)
+    }
+  }
+  showTemplatesModal.value = false
+}
+
 // ── Property access ───────────────────────────────────────────────────
 function getNodeProp(prop: string): any {
   if (selectedNode.value === null || !processDef.value?.nodes[selectedNode.value]) return ''
@@ -954,6 +1294,80 @@ function deleteEdge(i: number) {
   pushHistory()
 }
 function selectEdge(i: number) { selectedEdge.value = i; selectedNode.value = null }
+
+// ── Edge Label Helpers ───────────────────────────────────────────────
+function getEdgeMidpoint(edge: PDEdge): {x:number;y:number} {
+  if (!processDef.value) return { x: 0, y: 0 }
+  const from = processDef.value.nodes.find(n => n.id === edge.from)
+  const to = processDef.value.nodes.find(n => n.id === edge.to)
+  if (!from || !to) return { x: 0, y: 0 }
+  // Bezier control points: fp + dx*0.5, tp - dx*0.5
+  const fp = getNodePort(from, 'out')
+  const tp = getNodePort(to, 'in')
+  const mx = (fp.x + tp.x) / 2, my = (fp.y + tp.y) / 2
+  return { x: mx, y: my }
+}
+function getEdgeLabelX(edge: PDEdge): number { return getEdgeMidpoint(edge).x }
+function getEdgeLabelY(edge: PDEdge): number { return getEdgeMidpoint(edge).y - 8 }
+function getEdgeLabelRect(edge: PDEdge): string {
+  const { x, y } = getEdgeMidpoint(edge)
+  const tw = (edge.label?.length || 1) * 7 + 10
+  return `M ${x-tw/2} ${y-10} h ${tw} v 14 h ${-tw} Z`
+}
+
+// ── Export as SVG ────────────────────────────────────────────────────
+function exportAsSvg(): string {
+  if (!processDef.value) return ''
+  const nodes = processDef.value.nodes
+  const edges = processDef.value.edges || []
+  if (nodes.length === 0) return ''
+  let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity
+  for (const n of nodes) {
+    minX = Math.min(minX, n.x); minY = Math.min(minY, n.y)
+    maxX = Math.max(maxX, n.x + (n.w||120)); maxY = Math.max(maxY, n.y + (n.h||50))
+  }
+  const pad = 60
+  const w = maxX - minX + pad*2, h = maxY - minY + pad*2
+  let svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}" viewBox="0 0 ${w} ${h}">\n`
+  svg += `<defs><marker id="arr" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto"><polygon points="0 0,10 3.5,0 7" fill="#00d4ff"/></marker></defs>\n`
+  svg += `<rect width="${w}" height="${h}" fill="#0a0e1a"/>\n`
+  svg += `<g transform="translate(${pad - minX},${pad - minY})">\n`
+  for (const edge of edges) {
+    const from = nodes.find(n => n.id === edge.from)
+    const to = nodes.find(n => n.id === edge.to)
+    if (!from || !to) continue
+    const fp = getNodePort(from, 'out'), tp = getNodePort(to, 'in')
+    const dx = Math.abs(tp.x - fp.x), cx = Math.max(dx * 0.5, 60)
+    svg += `<path d="M ${fp.x} ${fp.y} C ${fp.x+cx} ${fp.y}, ${tp.x-cx} ${tp.y}, ${tp.x} ${tp.y}" stroke="#00d4ff" stroke-width="2" fill="none" marker-end="url(#arr)"/>\n`
+    if (edge.label) {
+      const mx = (fp.x + tp.x) / 2, my = (fp.y + tp.y) / 2
+      const tw = edge.label.length * 7 + 10
+      svg += `<rect x="${mx-tw/2}" y="${my-10}" width="${tw}" height="14" rx="3" fill="#1a1f35" stroke="#00d4ff" stroke-width="0.5"/>\n`
+      svg += `<text x="${mx}" y="${my}" text-anchor="middle" fill="#00d4ff" font-size="10">${edge.label}</text>\n`
+    }
+  }
+  for (const node of nodes) {
+    const nw = node.w||120, nh = node.h||50
+    const colors: Record<string,string> = { start:'#10b981', end:'#ef4444', task:'#00d4ff', approval:'#6366f1', subprocess:'#a855f7', script:'#22c55e', gate_and:'#f59e0b', gate_or:'#f59e0b', gate_xor:'#f59e0b' }
+    svg += `<rect x="${node.x}" y="${node.y}" width="${nw}" height="${nh}" rx="8" fill="${colors[node.type]||'#374151'}80" stroke="${colors[node.type]||'#6b7280'}" stroke-width="1.5"/>\n`
+    svg += `<text x="${node.x+nw/2}" y="${node.y+nh/2+4}" text-anchor="middle" fill="white" font-size="12">${node.label||''}</text>\n`
+  }
+  svg += `</g></svg>`
+  return svg
+}
+function downloadSvg() {
+  const svg = exportAsSvg()
+  if (!svg) { alert('画布为空，无法导出'); return }
+  const blob = new Blob([svg], { type: 'image/svg+xml' })
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url; a.download = (currentProcess.value?.flag || 'process') + '.svg'
+  a.click(); URL.revokeObjectURL(url)
+}
+function copySvg() {
+  const svg = exportAsSvg()
+  if (svg) navigator.clipboard.writeText(svg)
+}
 
 // ── Resize ────────────────────────────────────────────────────────────
 type ResizeDir = 'nw'|'n'|'ne'|'e'|'se'|'s'|'sw'|'w'
@@ -1237,6 +1651,56 @@ function onCanvasMouseDown(e: MouseEvent) {
   document.addEventListener('mousemove', onMove); document.addEventListener('mouseup', onUp)
 }
 
+// ── Node body click: arbitrary position edge creation ─────────────────
+function onNodeBodyMouseDown(e: MouseEvent, nodeIdx: number) {
+  e.stopPropagation()
+  if (!processDef.value) return
+  const node = processDef.value.nodes[nodeIdx]
+  if (!node) return
+  const mx = (e.clientX - panX.value) / zoom.value
+  const my = (e.clientY - panY.value) / zoom.value
+  const w = node.w || 120, h = node.h || 50
+  const cx = node.x + w/2, cy = node.y + h/2
+  const dx = mx - cx, dy = my - cy
+  let port: 'in'|'out' = 'out'
+  if (Math.abs(dx) > Math.abs(dy)) {
+    port = dx < 0 ? 'in' : 'out'
+  } else {
+    port = dy < 0 ? 'in' : 'out'
+  }
+  tempEdge.value = { from: nodeIdx, fromPort: port, startX: mx, startY: my, endX: mx, endY: my }
+  const onMove = (ev: MouseEvent) => {
+    if (!tempEdge.value) return
+    tempEdge.value.endX = (ev.clientX - panX.value) / zoom.value
+    tempEdge.value.endY = (ev.clientY - panY.value) / zoom.value
+  }
+  const onUp = (ev: MouseEvent) => {
+    document.removeEventListener('mousemove', onMove)
+    document.removeEventListener('mouseup', onUp)
+    if (!tempEdge.value || !processDef.value) { tempEdge.value = null; return }
+    const emx = (ev.clientX - panX.value) / zoom.value
+    const emy = (ev.clientY - panY.value) / zoom.value
+    let targetIdx: number|null = null
+    for (let i = 0; i < processDef.value.nodes.length; i++) {
+      if (i === tempEdge.value.from) continue
+      const n = processDef.value.nodes[i]
+      if (emx >= n.x-10 && emx <= n.x+(n.w||120)+10 && emy >= n.y-10 && emy <= n.y+(n.h||50)+10) {
+        targetIdx = i; break
+      }
+    }
+    if (targetIdx !== null) {
+      const fn = processDef.value.nodes[tempEdge.value.from]
+      const tn = processDef.value.nodes[targetIdx]
+      const fp = tempEdge.value.fromPort
+      if (fp === 'out' && tn.type !== 'start') createEdge(fn.id, tn.id)
+      else if (fp === 'in' && fn.type !== 'end') createEdge(tn.id, fn.id)
+    }
+    tempEdge.value = null
+  }
+  document.addEventListener('mousemove', onMove)
+  document.addEventListener('mouseup', onUp)
+}
+
 // ── Edge creation from any position on node ──────────────────────────
 function onEdgeMouseDown(e: MouseEvent, nodeIdx: number) {
   e.stopPropagation()
@@ -1491,6 +1955,213 @@ async function loadProcesses() {
   catch { procList.value = [] }
 }
 
+// Connection rules state
+const showRulesModal = ref(false)
+const connectionRules = ref<Record<string, Record<string, boolean>>>({})
+function resetConnectionRules() {
+  const rules: Record<string, Record<string, boolean>> = {}
+  for (const ft of allNodeTypes) {
+    rules[ft] = {}
+    for (const tt of allNodeTypes) {
+      if (ft === tt) { rules[ft][tt] = false; continue }
+      // Default rules: start can only go to task/approval/gate; end can only receive from task/approval/gate; etc.
+      const allowed: Record<string, boolean> = {
+        'start': ['task','approval','script','gate_and','gate_or','gate_xor'],
+        'task': ['task','approval','end','script','gate_and','gate_or','gate_xor'],
+        'approval': ['task','approval','end','script','gate_and','gate_or','gate_xor'],
+        'script': ['task','approval','end','script','gate_and','gate_or','gate_xor'],
+        'timer': ['task','approval','end','script'],
+        'end': [],
+        'gate_and': ['task','approval','end','script'],
+        'gate_or': ['task','approval','end','script'],
+        'gate_xor': ['task','approval','end','script'],
+        'subprocess': ['task','approval','end','script'],
+        'parallel': ['task','approval','end','script'],
+      }
+      rules[ft][tt] = (allowed[ft]||[]).includes(tt)
+    }
+  }
+  connectionRules.value = rules
+}
+resetConnectionRules()
+function isAllowed(from: string, to: string): boolean {
+  return connectionRules.value[from]?.[to] ?? true
+}
+function toggleRule(from: string, to: string) {
+  if (!connectionRules.value[from]) connectionRules.value[from] = {}
+  connectionRules.value[from][to] = !connectionRules.value[from][to]
+}
+function saveRules() {
+  pushHistory()
+  showRulesModal.value = false
+}
+
+// Node templates
+const showTemplatesModal = ref(false)
+interface TemplateNodeDef { type: string; label: string; icon: string }
+interface TemplateDef { name: string; icon: string; desc: string; nodes: TemplateNodeDef[]; edges: {from: number; to: number}[] }
+const nodeTemplates: TemplateDef[] = [
+  {
+    name: '简单审批', icon: '📝', desc: '开始 → 任务 → 审批 → 结束',
+    nodes: [{type:'start',label:'开始',icon:'🟢'},{type:'task',label:'提交申请',icon:'📋'},{type:'approval',label:'主管审批',icon:'✅'},{type:'end',label:'完成',icon:'🔴'}],
+    edges: [{from:0,to:1},{from:1,to:2},{from:2,to:3}]
+  },
+  {
+    name: '多级审批', icon: '📑', desc: '开始 → 任务 → 一级审批 → 二级审批 → 结束',
+    nodes: [{type:'start',label:'开始',icon:'🟢'},{type:'task',label:'提交申请',icon:'📋'},{type:'approval',label:'主管审批',icon:'✅'},{type:'approval',label:'经理审批',icon:'✅'},{type:'end',label:'完成',icon:'🔴'}],
+    edges: [{from:0,to:1},{from:1,to:2},{from:2,to:3},{from:3,to:4}]
+  },
+  {
+    name: '条件分支', icon: '🔀', desc: '开始 → 任务 → 条件网关 → 审批A/审批B → 合并 → 结束',
+    nodes: [{type:'start',label:'开始',icon:'🟢'},{type:'task',label:'提交申请',icon:'📋'},{type:'gate_or',label:'金额判断',icon:'🔶'},{type:'approval',label:'小额审批',icon:'✅'},{type:'approval',label:'大额审批',icon:'✅'},{type:'gate_and',label:'合并',icon:'🔷'},{type:'end',label:'完成',icon:'🔴'}],
+    edges: [{from:0,to:1},{from:1,to:2},{from:2,to:3},{from:2,to:4},{from:3,to:5},{from:4,to:5},{from:5,to:6}]
+  },
+  {
+    name: '并行分支', icon: '⚡', desc: '开始 → Fork → 并行任务A/B/C → Join → 结束',
+    nodes: [{type:'start',label:'开始',icon:'🟢'},{type:'gate_and',label:'Fork',icon:'🔷'},{type:'task',label:'任务A',icon:'📋'},{type:'task',label:'任务B',icon:'📋'},{type:'task',label:'任务C',icon:'📋'},{type:'gate_and',label:'Join',icon:'🔷'},{type:'end',label:'完成',icon:'🔴'}],
+    edges: [{from:0,to:1},{from:1,to:2},{from:1,to:3},{from:1,to:4},{from:2,to:5},{from:3,to:5},{from:4,to:5},{from:5,to:6}]
+  },
+  {
+    name: '脚本处理', icon: '⚙️', desc: '开始 → 脚本节点 → 任务 → 结束',
+    nodes: [{type:'start',label:'开始',icon:'🟢'},{type:'script',label:'数据预处理',icon:'⚡'},{type:'task',label:'人工处理',icon:'📋'},{type:'end',label:'结束',icon:'🔴'}],
+    edges: [{from:0,to:1},{from:1,to:2},{from:2,to:3}]
+  },
+  {
+    name: '循环重试', icon: '🔄', desc: '开始 → 任务 → 条件网关(失败) → 重试 → 结束',
+    nodes: [{type:'start',label:'开始',icon:'🟢'},{type:'task',label:'执行任务',icon:'📋'},{type:'gate_or',label:'是否成功?',icon:'🔶'},{type:'task',label:'重试处理',icon:'📋'},{type:'end',label:'完成',icon:'🔴'}],
+    edges: [{from:0,to:1},{from:1,to:2},{from:2,to:3},{from:2,to:4},{from:3,to:1}]
+  },
+]
+
+// Version comparison state
+const showCompareModal = ref(false)
+const compareV1 = ref('')
+const compareV2 = ref('__current')
+function getVersionLabel(id: string): string {
+  if (id === '__current') return '当前'
+  const v = versions.value.find(v => v.id === id)
+  return v ? v.label : '未知版本'
+}
+function getNodesById(id: string): PDNode[] {
+  if (id === '__current') return processDef.value?.nodes ?? []
+  const v = versions.value.find(vv => vv.id === id)
+  return v?.config?.nodes ?? []
+}
+function getEdgesById(id: string): PDEdge[] {
+  if (id === '__current') return processDef.value?.edges ?? []
+  const v = versions.value.find(vv => vv.id === id)
+  return v?.config?.edges ?? []
+}
+function countDiff(id1: string, id2: string, type: 'added'|'removed'|'modified'): number {
+  const n1 = getNodesById(id1), n2 = getNodesById(id2)
+  const s1 = new Set(n1.map(n => n.id)), s2 = new Set(n2.map(n => n.id))
+  if (type === 'added') return [...s2].filter(id => !s1.has(id)).length
+  if (type === 'removed') return [...s1].filter(id => !s2.has(id)).length
+  // modified: nodes in both but with different labels or positions
+  let count = 0
+  for (const id of s1) {
+    const a = n1.find(n => n.id === id), b = n2.find(n => n.id === id)
+    if (a && b && (a.label !== b.label || Math.abs(a.x - b.x) > 10 || Math.abs(a.y - b.y) > 10)) count++
+  }
+  return count
+}
+function formatNodeDiff(id1: string, id2: string, _mode: string): string {
+  const n1 = getNodesById(id1), n2 = getNodesById(id2)
+  const s1 = new Set(n1.map(n => n.id)), s2 = new Set(n2.map(n => n.id))
+  const added = [...s2].filter(id => !s1.has(id))
+  const removed = [...s1].filter(id => !s2.has(id))
+  const modified: string[] = []
+  for (const id of s1) {
+    const a = n1.find(n => n.id === id), b = n2.find(n => n.id === id)
+    if (a && b && a.label !== b.label) modified.push(`${a.label}→${b.label}`)
+  }
+  const lines: string[] = []
+  if (removed.length) lines.push(`删除: ${removed.length} 节点`)
+  if (added.length) lines.push(`新增: ${added.length} 节点`)
+  if (modified.length) lines.push(`修改: ${modified.length} 节点`)
+  return lines.join(' | ') || '无差异'
+}
+
+// Import/Export state
+const showIoModal = ref(false)
+const ioMode = ref<'export'|'import'|'validate'>('export')
+const importJsonText = ref('')
+const validationResult = ref<{totalNodes:number; totalEdges:number; issues: Array<{severity: string; message: string}>; suggestions: string[]; healthScore: number|null} | null>(null)
+function exportJson(): string {
+  if (!processDef.value) return '{}'
+  return JSON.stringify({ nodes: processDef.value.nodes, edges: processDef.value.edges }, null, 2)
+}
+function copyExportJson() {
+  navigator.clipboard.writeText(exportJson())
+}
+function downloadJson() {
+  const blob = new Blob([exportJson()], { type: 'application/json' })
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url; a.download = (currentProcess.value?.flag || 'process') + '.json'
+  a.click(); URL.revokeObjectURL(url)
+}
+function doImportJson() {
+  try {
+    const data = JSON.parse(importJsonText.value)
+    if (data.nodes && Array.isArray(data.nodes)) {
+      processDef.value = { nodes: data.nodes, edges: data.edges || [] }
+      selectedNode.value = null; selectedEdge.value = null
+      pushHistory()
+      showIoModal.value = false
+      importJsonText.value = ''
+    }
+  } catch { alert('JSON格式错误，请检查导入内容') }
+}
+
+// Validation
+function runValidation(): void {
+  if (!processDef.value) { validationResult.value = null; return }
+  const issues: Array<{severity: string; message: string}> = []
+  const suggestions: string[] = []
+  const nodes = processDef.value.nodes
+  const edges = processDef.value.edges || []
+  const nodeIds = new Set(nodes.map(n => n.id))
+  // Check disconnected nodes
+  const connectedNodes = new Set<string>()
+  for (const e of edges) { connectedNodes.add(e.from); connectedNodes.add(e.to) }
+  for (const n of nodes) { if (!connectedNodes.has(n.id) && n.type !== 'start' && n.type !== 'end') issues.push({ severity: 'warning', message: `节点「${n.label||n.id}」未连接到任何连线` }) }
+  // Check start/end
+  const starts = nodes.filter(n => n.type === 'start')
+  const ends = nodes.filter(n => n.type === 'end')
+  if (starts.length === 0) issues.push({ severity: 'error', message: '流程缺少开始节点' }); else if (starts.length > 1) issues.push({ severity: 'warning', message: `流程有 ${starts.length} 个开始节点` })
+  if (ends.length === 0) issues.push({ severity: 'error', message: '流程缺少结束节点' }); else if (ends.length > 1) issues.push({ severity: 'warning', message: `流程有 ${ends.length} 个结束节点` })
+  // Check orphan edges
+  for (const e of edges) {
+    if (!nodeIds.has(e.from)) issues.push({ severity: 'error', message: `连线指向不存在的节点: ${e.from}` })
+    if (!nodeIds.has(e.to)) issues.push({ severity: 'error', message: `连线来自不存在的节点: ${e.to}` })
+  }
+  // Check duplicate edges
+  const edgeSet = new Set<string>()
+  for (const e of edges) { const k = `${e.from}-${e.to}`; if (edgeSet.has(k)) issues.push({ severity: 'warning', message: `重复连线: ${e.from} → ${e.to}` }); else edgeSet.add(k) }
+  // Check self-loops
+  for (const e of edges) { if (e.from === e.to) issues.push({ severity: 'warning', message: `自环: 节点 ${e.from}` }) }
+  // Check missing labels
+  for (const n of nodes) { if (!n.label) issues.push({ severity: 'info', message: `节点 ${n.id} 缺少标签` }) }
+  // Check node overlap
+  for (let i = 0; i < nodes.length; i++) {
+    for (let j = i+1; j < nodes.length; j++) {
+      const a = nodes[i], b = nodes[j]
+      if (a.x < b.x+(b.w||120) && a.x+(a.w||120) > b.x && a.y < b.y+(b.h||50) && a.y+(a.h||50) > b.y)
+        issues.push({ severity: 'warning', message: `节点重叠: ${a.label||a.id} 与 ${b.label||b.id}` })
+    }
+  }
+  // Suggestions
+  if (starts.length === 0) suggestions.push('添加一个「开始」节点作为流程入口')
+  if (ends.length === 0) suggestions.push('添加一个「结束」节点作为流程出口')
+  for (const n of nodes) {
+    if (n.type === 'start' && edges.filter(e => e.from === n.id).length === 0)
+      suggestions.push(`开始节点「${n.label||n.id}」没有 outgoing 连线`)
+  }
+  const healthScore = nodes.length > 0 ? Math.max(0, 100 - issues.filter(i => i.severity === 'error').length * 20 - issues.filter(i => i.severity === 'warning').length * 5) : null
+  validationResult.value = { totalNodes: nodes.length, totalEdges: edges.length, issues, suggestions, healthScore }
+}
+
 // ── Lifecycle ─────────────────────────────────────────────────────────
 onMounted(() => {
   document.addEventListener('mousemove', (e) => { onNodeMouseMove(e) })
@@ -1501,10 +2172,23 @@ document.addEventListener('keydown', (e) => {
       multiSelected.value.clear()
       if (processDef.value) processDef.value.nodes.forEach((n,i) => { multiSelected.value.add(n.id); selectedNode.value = i })
     }
+    if (e.ctrlKey && e.key === 'z' && !e.shiftKey) { e.preventDefault(); undo() }
+    if (e.ctrlKey && (e.key === 'y' || (e.key === 'z' && e.shiftKey))) { e.preventDefault(); redo() }
+    if (e.ctrlKey && e.key === 'd') { e.preventDefault(); duplicateSelected() }
+    if (e.key === 'Delete' || e.key === 'Backspace') {
+      if (document.activeElement?.tagName !== 'INPUT' && document.activeElement?.tagName !== 'TEXTAREA') {
+        e.preventDefault(); deleteSelected()
+      }
+    }
+    if (e.key === 'Escape') { selectedNode.value = null; selectedEdge.value = null; tempEdge.value = null }
+    if (e.key === 'h' && !e.ctrlKey) { e.preventDefault(); showHelpModal.value = !showHelpModal.value }
     if (e.key === 'g' && !e.ctrlKey && multiSelected.value.size >= 2) {
       e.preventDefault()
       createGroup()
     }
+    if (e.ctrlKey && e.key === '=') { e.preventDefault(); zoomIn() }
+    if (e.ctrlKey && e.key === '-') { e.preventDefault(); zoomOut() }
+    if (e.ctrlKey && e.key === '0') { e.preventDefault(); zoomToFit() }
   })
   loadProcesses()
 })
@@ -1692,6 +2376,7 @@ onUnmounted(() => {
 .fork-flow{fill:none;stroke:var(--color-warning);stroke-width:1.5;stroke-dasharray:4,2;opacity:0.4}
 .join-label{fill:var(--color-success);font-size:10px;font-weight:700;text-anchor:middle;letter-spacing:1px}
 .edge-create-zone{fill:transparent;cursor:crosshair}
+.node-click-zone{fill:transparent;cursor:crosshair;stroke:none}
 /* Subprocess toolbar */
 .subprocess-editor{display:flex;flex-direction:column;height:100%;position:absolute;inset:0;z-index:50;background:var(--bg-surface)}
 .sp-toolbar{display:flex;align-items:center;gap:6px;padding:6px 10px;border-bottom:1px solid var(--border-color);flex-shrink:0;background:var(--bg-elevated)}
@@ -1702,4 +2387,217 @@ onUnmounted(() => {
 .tb-btn:hover{border-color:var(--color-primary);color:var(--color-primary)}
 .tb-btn:disabled{opacity:0.3;cursor:not-allowed}
 .tb-sep{width:1px;height:18px;background:var(--border-color);margin:0 2px}
+/* Import/Export Modal */
+.modal-lg{max-width:720px}
+.modal-xl{max-width:1100px}
+.modal-md{max-width:480px}
+.im-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}
+.im-body{display:flex;flex-direction:column;gap:12px}
+.im-tabs{display:flex;gap:4px;border-bottom:1px solid var(--border-color);padding-bottom:8px}
+.im-tabs button{padding:6px 14px;border-radius:var(--radius-sm);border:1px solid var(--border-color);background:transparent;color:var(--text-muted);cursor:pointer;font-size:12px}
+.im-tabs button.active{background:var(--color-primary);color:#000;border-color:var(--color-primary)}
+.im-content{display:flex;flex-direction:column;gap:8px}
+.im-info{font-size:12px;color:var(--text-muted);padding:8px;background:var(--bg-elevated);border-radius:var(--radius-sm)}
+.json-editor{width:100%;height:280px;padding:10px;border-radius:var(--radius-md);border:1px solid var(--border-color);background:var(--bg-elevated);color:var(--text-primary);font-family:'JetBrains Mono',monospace;font-size:12px;resize:vertical;box-sizing:border-box}
+.im-actions{display:flex;gap:8px;justify-content:flex-end}
+/* Validation Report */
+.validation-report{display:flex;flex-direction:column;gap:6px;padding:12px;background:var(--bg-elevated);border-radius:var(--radius-md)}
+.vr-title{font-size:13px;font-weight:600;color:var(--color-primary);margin-bottom:4px}
+.vr-item{display:flex;align-items:flex-start;gap:8px;padding:6px 10px;border-radius:var(--radius-sm);font-size:12px}
+.vr-item.vr-error{background:rgba(239,68,68,.15);color:var(--color-danger)}
+.vr-item.vr-warning{background:rgba(245,158,11,.1);color:var(--color-warning)}
+.vr-item.vr-info{background:rgba(59,130,246,.1);color:var(--color-info)}
+.vr-icon{flex-shrink:0}
+.vr-text{flex:1}
+.vr-suggestions{margin-top:8px;padding-top:8px;border-top:1px solid var(--border-color)}
+.vr-sug-title{font-size:11px;color:var(--text-muted);margin-bottom:4px}
+.vr-score{margin-top:8px;font-size:14px;font-weight:700;color:var(--color-success);text-align:center}
+/* Version Comparison */
+.cmp-header{display:flex;align-items:center;gap:12px;margin-bottom:16px}
+.cmp-controls{display:flex;align-items:center;gap:8px;flex:1}
+.cmp-select{width:200px}
+.cmp-arrow{color:var(--color-primary);font-size:18px;font-weight:700}
+.cmp-body{display:flex;gap:12px;min-height:200px}
+.cmp-panel{flex:1;display:flex;flex-direction:column;gap:8px;padding:12px;background:var(--bg-elevated);border-radius:var(--radius-md)}
+.cmp-panel-title{font-size:13px;font-weight:600;color:var(--color-primary);padding-bottom:8px;border-bottom:1px solid var(--border-color)}
+.cmp-divider{display:flex;align-items:center;justify-content:center;width:40px;flex-shrink:0}
+.cmp-divider span{font-size:18px;color:var(--color-primary)}
+.cmp-node-list{font-size:12px;color:var(--text-muted);line-height:1.8}
+.cmp-footer{display:flex;align-items:center;justify-content:space-between;margin-top:12px;padding-top:12px;border-top:1px solid var(--border-color)}
+.cmp-stats{display:flex;gap:16px}
+.cmp-stat{font-size:12px;font-weight:600;padding:4px 10px;border-radius:var(--radius-sm)}
+.cmp-added{background:rgba(16,185,129,.2);color:var(--color-success)}
+.cmp-removed{background:rgba(239,68,68,.2);color:var(--color-danger)}
+.cmp-modified{background:rgba(245,158,11,.2);color:var(--color-warning)}
+/* Connection Rules */
+.rr-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}
+.rr-body{display:flex;flex-direction:column;gap:12px}
+.rr-info{font-size:12px;color:var(--text-muted)}
+.rr-grid{display:flex;flex-direction:column;gap:2px;max-height:400px;overflow-y:auto;padding:8px;background:var(--bg-elevated);border-radius:var(--radius-md)}
+.rr-row{display:flex;gap:2px}
+.rr-header-row .rr-cell{font-weight:700;font-size:10px;color:var(--color-primary)}
+.rr-cell{flex:1;padding:6px;text-align:center;font-size:11px;border-radius:var(--radius-sm);cursor:pointer;transition:all .15s}
+.rr-cell:hover{background:var(--bg-hover)}
+.rr-cell.rr-from{font-weight:600;text-align:left;color:var(--text-primary);cursor:default;flex:0 0 80px}
+.rr-cell.rr-to{font-size:10px}
+.rr-cell.disallowed{background:rgba(239,68,68,.15);color:var(--color-danger)}
+.rr-cell.disallowed:hover{background:rgba(239,68,68,.25)}
+.rr-legend{display:flex;gap:16px;font-size:11px;color:var(--text-muted)}
+.rr-ok{color:var(--color-success)}
+.rr-bad{color:var(--color-danger)}
+.rr-hint{color:var(--text-muted)}
+.rr-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:8px}
+/* Node Templates */
+.tm-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}
+.tm-body{display:flex;flex-direction:column;gap:12px}
+.tm-info{font-size:12px;color:var(--text-muted)}
+.tm-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:10px}
+.tm-card{padding:14px;border-radius:var(--radius-md);border:1px solid var(--border-color);cursor:pointer;transition:all .15s;display:flex;flex-direction:column;gap:6px}
+.tm-card:hover{border-color:var(--color-primary);background:var(--color-primary-soft);transform:translateY(-2px)}
+.tm-icon{font-size:28px}
+.tm-name{font-size:14px;font-weight:600;color:var(--color-primary)}
+.tm-desc{font-size:11px;color:var(--text-muted)}
+.tm-nodes{font-size:10px;color:var(--text-muted);font-family:'JetBrains Mono',monospace;line-height:1.5}
+/* Help Modal */
+.hm-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}
+.hm-body{display:flex;flex-direction:column;gap:16px}
+.hm-section{display:flex;flex-direction:column;gap:6px}
+.hm-title{font-size:12px;font-weight:700;color:var(--color-primary);text-transform:uppercase;letter-spacing:1px;padding-bottom:4px;border-bottom:1px solid var(--border-color)}
+.hm-row{display:flex;align-items:center;gap:12px;font-size:13px}
+kbd{display:inline-block;padding:3px 8px;border-radius:4px;border:1px solid var(--border-color);background:var(--bg-elevated);font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--color-primary);min-width:60px;text-align:center}
+/* Animation playback */
+.playback-controls{display:flex;align-items:center;gap:8px;padding:8px 12px;background:var(--bg-elevated);border-radius:var(--radius-md);margin-top:12px}
+.play-btn{width:32px;height:32px;border-radius:50%;border:1px solid var(--color-primary);background:transparent;color:var(--color-primary);cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center}
+.play-btn:hover{background:var(--color-primary);color:#000}
+.play-slider{flex:1;height:4px;-webkit-appearance:none;background:var(--border-color);border-radius:2px;outline:none}
+.play-slider::-webkit-slider-thumb{-webkit-appearance:none;width:14px;height:14px;border-radius:50%;background:var(--color-primary);cursor:pointer}
+.play-label{font-size:11px;color:var(--text-muted);min-width:60px;font-family:'JetBrains Mono',monospace}
+.playing .play-btn{animation:pulse 1s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.5}}
+/* Edge labels */
+.edge-label-bg{fill:rgba(10,14,26,.85);stroke:var(--color-primary);stroke-width:0.5;rx:3}
+.edge-label-text{fill:var(--color-primary);font-size:10px;font-weight:600}
+/* Modal extras */
+.modal{background:var(--bg-surface);border:1px solid var(--border-color);border-radius:var(--radius-lg);padding:20px;max-height:85vh;overflow-y:auto}
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.6);display:flex;align-items:center;justify-content:center;z-index:100}
+.modal-lg{width:720px}.modal-xl{width:1100px}.modal-md{width:480px}
+.fg{display:flex;flex-direction:column;gap:4px;margin-bottom:12px}
+.fg label{font-size:12px;color:var(--text-muted)}
+.fi{padding:8px 12px;border-radius:var(--radius-md);border:1px solid var(--border-color);background:var(--bg-elevated);color:var(--text-primary);outline:none;font-size:13px;box-sizing:border-box}
+.fta{resize:vertical;font-family:inherit}
+.pi{padding:5px 8px;border-radius:var(--radius-sm);border:1px solid var(--border-color);background:var(--bg-elevated);color:var(--text-primary);font-size:12px;outline:none;width:100%}
+/* Property panel */
+.props-section{margin-bottom:12px}
+.props-title{display:flex;align-items:center;justify-content:space-between;padding:8px 12px;border-bottom:1px solid var(--border-color)}
+.props-title span:first-child{font-size:13px;font-weight:600;color:var(--color-primary)}
+.props-badge{font-size:10px;padding:2px 8px;border-radius:var(--radius-sm);background:var(--color-primary-soft);color:var(--color-primary)}
+.props-body{padding:10px 12px;display:flex;flex-direction:column;gap:8px}
+.pg{display:flex;flex-direction:column;gap:3px}
+.pg label{font-size:11px;color:var(--text-muted)}
+.pi{padding:5px 8px;border-radius:var(--radius-sm);border:1px solid var(--border-color);background:var(--bg-elevated);color:var(--text-primary);font-size:12px;outline:none;width:100%;box-sizing:border-box}
+.pi select{cursor:pointer}
+.pv{font-size:12px;color:var(--text-primary)}
+.props-empty{padding:20px;text-align:center;color:var(--text-muted);font-size:12px}
+.props-empty .hint{font-size:11px;margin-top:8px;color:var(--text-muted)}
+.btn-del-sm{padding:5px 10px;border-radius:var(--radius-sm);border:1px solid var(--color-danger);background:transparent;color:var(--color-danger);cursor:pointer;font-size:11px;margin-top:4px;width:100%}
+.btn-del-sm:hover{background:rgba(239,68,68,.1)}
+/* Data mapping */
+.data-mapping{display:flex;flex-direction:column;gap:4px}
+.dm-row{display:flex;align-items:center;gap:4px}
+.dm-select,.dm-input{padding:3px 6px;border-radius:var(--radius-sm);border:1px solid var(--border-color);background:var(--bg-elevated);color:var(--text-primary);font-size:11px;outline:none}
+.dm-select{flex:1;cursor:pointer}.dm-input{flex:2}
+.dm-arrow{color:var(--color-primary);font-size:12px}
+.dm-add{padding:3px 8px;border-radius:var(--radius-sm);border:1px dashed var(--border-color);background:transparent;color:var(--text-muted);cursor:pointer;font-size:11px}
+.dm-add:hover{border-color:var(--color-primary);color:var(--color-primary)}
+.dm-del{width:20px;height:20px;border-radius:50%;border:none;background:transparent;color:var(--color-danger);cursor:pointer;font-size:14px}
+/* Script panel */
+.script-panel{display:flex;flex-direction:column;gap:8px}
+.script-tabs{display:flex;gap:4px}
+.script-tabs button{padding:4px 10px;border-radius:var(--radius-sm);border:1px solid var(--border-color);background:transparent;color:var(--text-muted);cursor:pointer;font-size:11px}
+.script-tabs button.active{background:var(--color-primary);color:#000;border-color:var(--color-primary)}
+.script-code-area{display:flex;flex-direction:column;gap:4px}
+.code-editor{width:100%;padding:8px;border-radius:var(--radius-sm);border:1px solid var(--border-color);background:var(--bg-elevated);color:var(--text-primary);font-family:'JetBrains Mono',monospace;font-size:11px;resize:vertical;box-sizing:border-box}
+.script-hint{font-size:10px;color:var(--text-muted)}
+.script-vars{display:flex;flex-direction:column;gap:6px}
+.var-row{display:flex;align-items:center;gap:8px}
+.var-label{font-size:11px;color:var(--text-muted);min-width:60px}
+.var-input{padding:4px 8px;border-radius:var(--radius-sm);border:1px solid var(--border-color);background:var(--bg-elevated);color:var(--text-primary);font-size:11px;outline:none;flex:1}
+.script-error{display:flex;flex-direction:column;gap:6px}
+/* Version panel */
+.pd-version-panel{width:280px;flex-shrink:0;display:flex;flex-direction:column;border-left:1px solid var(--border-color)}
+.vp-header{display:flex;align-items:center;justify-content:space-between;padding:8px 10px;border-bottom:1px solid var(--border-color);font-size:13px;font-weight:600;color:var(--color-primary)}
+.vp-list{flex:1;overflow-y:auto;padding:4px}
+.vp-empty{padding:16px;text-align:center;color:var(--text-muted);font-size:12px}
+.vp-item{display:flex;align-items:center;gap:8px;padding:8px;border-radius:var(--radius-sm);cursor:pointer;margin-bottom:2px}
+.vp-item:hover{background:var(--bg-hover)}
+.vp-item.active{background:var(--color-primary-soft);border-left:3px solid var(--color-primary)}
+.vp-info{flex:1;min-width:0}
+.vp-label{font-size:12px;color:var(--text-primary);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.vp-meta{font-size:10px;color:var(--text-muted)}
+.vp-actions{display:flex;gap:4px}
+.vp-btn{padding:2px 6px;border-radius:var(--radius-sm);border:1px solid var(--border-color);background:transparent;color:var(--text-muted);cursor:pointer;font-size:10px}
+.vp-btn:hover{border-color:var(--color-primary);color:var(--color-primary)}
+.vp-del:hover{border-color:var(--color-danger);color:var(--color-danger)}
+.vp-diff{padding:8px 10px;border-top:1px solid var(--border-color)}
+.vp-diff-title{font-size:12px;font-weight:600;color:var(--color-primary);margin-bottom:4px}
+.vp-diff-info{display:flex;gap:12px;font-size:10px;color:var(--text-muted);margin-bottom:8px}
+.vp-diff-view{display:flex;flex-direction:column;gap:6px;margin-bottom:8px}
+.diff-header{display:flex;align-items:center;justify-content:space-between;font-size:11px;font-weight:600;color:var(--color-primary)}
+.diff-body{display:flex;flex-direction:column;gap:6px}
+.diff-section{display:flex;flex-direction:column;gap:2px}
+.diff-title{font-size:10px;color:var(--text-muted);margin-bottom:2px}
+.diff-item{font-size:11px;padding:2px 6px;border-radius:var(--radius-sm)}
+.diff-add{background:rgba(16,185,129,.15);color:var(--color-success)}
+.diff-del{background:rgba(239,68,68,.15);color:var(--color-danger)}
+.diff-mod{background:rgba(245,158,11,.15);color:var(--color-warning)}
+.diff-empty{font-size:11px;color:var(--text-muted);padding:2px 6px}
+.vp-diff-actions{display:flex;gap:4px}
+/* Stats panel */
+.pd-stats-panel{width:200px;flex-shrink:0;display:flex;flex-direction:column;border-left:1px solid var(--border-color)}
+.stats-header{display:flex;align-items:center;justify-content:space-between;padding:8px 10px;border-bottom:1px solid var(--border-color);font-size:13px;font-weight:600;color:var(--color-primary)}
+.stats-body{padding:8px;display:flex;flex-direction:column;gap:6px}
+.stat-row{display:flex;justify-content:space-between;align-items:center;font-size:12px}
+.stat-label{color:var(--text-muted)}
+.stat-val{color:var(--color-primary);font-weight:600;font-family:'JetBrains Mono',monospace}
+.stat-warning{font-size:11px;color:var(--color-warning);padding:4px 8px;background:rgba(245,158,11,.1);border-radius:var(--radius-sm)}
+/* Canvas */
+.pd-canvas{flex:1;position:relative;overflow:hidden;cursor:grab}
+.pd-canvas:active{cursor:grabbing}
+.canvas-bg{position:absolute;inset:0;background-image:radial-gradient(circle,var(--border-color) 1px,transparent 1px);pointer-events:none}
+.canvas-svg{position:absolute;inset:0;width:100%;height:100%}
+.canvas-hint{position:absolute;bottom:8px;left:50%;transform:translateX(-50%);font-size:11px;color:var(--text-muted);background:rgba(10,14,26,.8);padding:4px 12px;border-radius:var(--radius-sm);white-space:nowrap;pointer-events:none}
+/* SVG elements */
+.node-group{cursor:move}
+.node-body{stroke-width:1.5}
+.node-body.start{fill:rgba(16,185,129,.6);stroke:#10b981}
+.node-body.end{fill:rgba(239,68,68,.6);stroke:#ef4444}
+.node-body.task{fill:rgba(0,212,255,.4);stroke:#00d4ff}
+.node-body.approval{fill:rgba(99,102,241,.4);stroke:#6366f1}
+.node-body.timer{fill:rgba(245,158,11,.4);stroke:#f59e0b}
+.node-body.gate_and,.node-body.gate_or,.node-body.gate_xor{fill:rgba(245,158,11,.4);stroke:#f59e0b;rx:"12"}
+.node-body.subprocess{fill:rgba(168,85,247,.4);stroke:#a855f7}
+.node-body.script{fill:rgba(34,197,94,.4);stroke:#22c55e}
+.node-body.parallel{fill:rgba(236,72,153,.4);stroke:#ec4899}
+.node-icon-text{font-size:14px;fill:var(--text-primary)}
+.node-label{fill:var(--text-primary);font-size:12px;font-weight:500}
+.node-sublabel{fill:var(--text-muted);font-size:9px}
+.port{stroke:var(--text-muted);stroke-width:1.5;fill:var(--bg-surface);cursor:crosshair}
+.port-in{fill:rgba(16,185,129,.6)}
+.port-out{fill:rgba(239,68,68,.6)}
+.port-gate{fill:rgba(245,158,11,.6)}
+.port:hover{stroke:var(--color-primary);r:8}
+.edge-path{fill:none;stroke:var(--color-primary);stroke-width:1.5;cursor:pointer}
+.edge-path:hover{stroke:var(--color-warning);stroke-width:2}
+.edge-path.selected{stroke:var(--color-warning);stroke-width:2.5}
+.edge-temp{fill:none;stroke:var(--color-secondary);stroke-width:1.5;stroke-dasharray:6,3}
+.resize-handle{fill:var(--color-primary);stroke:white;stroke-width:1;cursor:nwse-resize}
+.anchor-handle{cursor:grab}
+/* Palette */
+.pd-palette{width:140px;flex-shrink:0;padding:12px;border-right:1px solid var(--border-color)}
+.pal-title{font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:1px;margin:8px 0 6px;font-weight:600}
+.pal-sep{height:1px;background:var(--border-color);margin:8px 0}
+.pal-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.pal-item{display:flex;flex-direction:column;align-items:center;gap:4px;padding:8px 4px;border-radius:var(--radius-sm);border:1px solid var(--border-color);cursor:pointer;transition:all .15s}
+.pal-item:hover{border-color:var(--color-primary);background:var(--color-primary-soft);transform:translateY(-1px)}
+.ni{font-size:18px}.nl{font-size:10px;color:var(--text-muted);text-align:center}
 </style>
