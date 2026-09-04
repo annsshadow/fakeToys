@@ -39,6 +39,10 @@ import ViewApp from './views/ViewApp.vue';
 import FileInfoApp from './views/FileInfoApp.vue';
 import AIChatApp from './views/AIChatApp.vue';
 import RoleManager from './views/RoleManager.vue';
+import ProcessDesigner from './views/ProcessDesigner.vue';
+import FormDesigner from './views/FormDesigner.vue';
+import QueryDesigner from './views/QueryDesigner.vue';
+import PortalDesigner from './views/PortalDesigner.vue';
 
 const router = createRouter({
   history: createWebHistory(),
@@ -77,6 +81,10 @@ const router = createRouter({
         { path: 'fileinfo', name: 'FileInfoApp', component: FileInfoApp, meta: { title: '文件信息' } },
         { path: 'ai-chat', name: 'AIChatApp', component: AIChatApp, meta: { title: 'AI助手' } },
         { path: 'role', name: 'RoleManager', component: RoleManager, meta: { title: '角色管理' } },
+        { path: 'process-designer', name: 'ProcessDesigner', component: ProcessDesigner, meta: { title: '流程设计器' } },
+        { path: 'form-designer', name: 'FormDesigner', component: FormDesigner, meta: { title: '表单设计器' } },
+        { path: 'query-designer', name: 'QueryDesigner', component: QueryDesigner, meta: { title: '查询设计器' } },
+        { path: 'portal-designer', name: 'PortalDesigner', component: PortalDesigner, meta: { title: '门户设计器' } },
       ],
     },
     { path: '/oauth/callback/:platform', name: 'OAuthCallback', component: OAuthCallback, meta: { requiresAuth: false } },
