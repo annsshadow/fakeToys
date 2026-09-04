@@ -11,7 +11,7 @@
         <button class="btn" @click="redo" :disabled="!canRedo" title="重做">↪</button>
         <button class="btn" @click="zoomIn" title="放大">🔍+</button>
         <button class="btn" @click="zoomOut" title="缩小">🔍-</button>
-        <button class="btn" @click="fitCanvas" title="适配画布">⊞</button>
+        <button class="btn" @click="fitCanvas" title="适配">⊞</button>
         <button class="btn btn-outline" @click="loadProcesses">🔄 刷新</button>
         <button class="btn btn-primary" @click="saveProcess" :disabled="!currentProcess">💾 保存</button>
       </div>
@@ -26,8 +26,7 @@
           <div v-if="plLoading" class="sb-loading">加载中...</div>
           <div v-else-if="procList.length===0" class="sb-empty">暂无流程</div>
           <div v-for="p in filteredProc" :key="p.id" class="sb-item"
-            :class="{active: currentProcess?.id===p.id}"
-            @click="loadProcess(p)">
+            :class="{active: currentProcess?.id===p.id}" @click="loadProcess(p)">
             <div class="si-icon">{{ p.status==='disabled'?'⏸':'▶' }}</div>
             <div class="si-info">
               <div class="si-name">{{ p.name||p.processName||'未命名' }}</div>
@@ -41,10 +40,8 @@
       <aside class="pd-palette glass-card" v-if="currentProcess">
         <div class="pal-title">基础节点</div>
         <div class="pal-grid">
-          <div v-for="nt in nodeTypes" :key="nt.type"
-            class="pal-item" draggable="true"
-            @dragstart="onDragNode($event, nt)"
-            @click="addNode(nt.type)">
+          <div v-for="nt in nodeTypes" :key="nt.type" class="pal-item" draggable="true"
+            @dragstart="onDragNode($event, nt)" @click="addNode(nt.type)">
             <span class="ni">{{ nt.icon }}</span><span class="nl">{{ nt.label }}</span>
           </div>
         </div>
@@ -54,31 +51,41 @@
           <div class="pal-item" @click="addNode('gate_and')"><span class="ni">🔷</span><span class="nl">且网关</span></div>
           <div class="pal-item" @click="addNode('gate_or')"><span class="ni">🔶</span><span class="nl">或网关</span></div>
           <div class="pal-item" @click="addNode('gate_xor')"><span class="ni">🔹</span><span class="nl">异或网关</span></div>
+        </div>
+        <div class="pal-sep"></div>
+        <div class="pal-title">特殊节点</div>
+        <div class="pal-grid">
           <div class="pal-item" @click="addNode('subprocess')"><span class="ni">📦</span><span class="nl">子流程</span></div>
+          <div class="pal-item" @click="addNode('timer')"><span class="ni">⏱️</span><span class="nl">定时</span></div>
+          <div class="pal-item" @click="addNode('script')"><span class="ni">💻</span><span class="nl">脚本</span></div>
+          <div class="pal-item" @click="addNode('parallel')"><span class="ni">⚡</span><span class="nl">并行</span></div>
         </div>
         <div class="pal-sep"></div>
         <div class="pal-title">操作</div>
         <div class="pal-grid">
-          <div class="pal-item" @click="clearCanvas"><span class="ni">🗑</span><span class="nl">清空</span></div>
           <div class="pal-item" @click="autoLayout"><span class="ni">⊞</span><span class="nl">自动排列</span></div>
+          <div class="pal-item" @click="clearCanvas"><span class="ni">🗑</span><span class="nl">清空</span></div>
         </div>
       </aside>
 
       <!-- Center: Canvas -->
       <main class="pd-canvas glass-card" ref="canvasRef"
         @drop="onDropNode" @dragover.prevent
-        @click.self="selectedNode=null; selectedEdge=null; tempEdge=null">
-        <!-- Grid background -->
+        @click.self="selectedNode=null; selectedEdge=null; tempEdge=null"
+        @keydown.delete="deleteSelected" @keydown.ctrl.d.prevent="duplicateSelected">
+
         <div class="canvas-bg" :style="{ backgroundSize: gridScale+'px '+gridScale+'px', backgroundPosition: panX+'px '+panY+'px' }"></div>
 
-        <svg class="canvas-svg" :style="svgTransform" @mousedown="onCanvasMouseDown">
-          <!-- Defs for arrow markers -->
+        <svg class="canvas-svg" :style="svgTransform">
           <defs>
             <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
               <polygon points="0 0, 10 3.5, 0 7" fill="var(--color-primary)" />
             </marker>
-            <marker id="arrowhead-selected" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+            <marker id="arrowhead-sel" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
               <polygon points="0 0, 10 3.5, 0 7" fill="var(--color-warning)" />
+            </marker>
+            <marker id="arrowhead-temp" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+              <polygon points="0 0, 10 3.5, 0 7" fill="var(--color-secondary)" />
             </marker>
           </defs>
 
@@ -87,56 +94,76 @@
             <path v-for="(edge, i) in processDef?.edges||[]" :key="edge.id"
               :d="computeEdgePath(edge)"
               :class="['edge-path', { selected: selectedEdge===i }]"
-              :marker-end="selectedEdge===i ? 'url(#arrowhead-selected)' : 'url(#arrowhead)'"
+              :marker-end="selectedEdge===i ? 'url(#arrowhead-sel)' : 'url(#arrowhead)'"
               @click.stop="selectEdge(i)" />
           </g>
 
-          <!-- Temp edge (while creating) -->
-          <path v-if="tempEdge" :d="tempEdgePath()" class="edge-temp" marker-end="url(#arrowhead)" />
+          <!-- Temp edge -->
+          <path v-if="tempEdge" :d="tempEdgePath()" class="edge-temp" marker-end="url(#arrowhead-temp)" />
 
           <!-- Nodes -->
           <g class="nodes" :transform="nodeTransform">
             <g v-for="(node, i) in processDef?.nodes||[]" :key="node.id"
               :transform="`translate(${node.x},${node.y})`"
-              :class="['node-group', { selected: selectedNode===i, dragging: isDraggingNode&&dragNodeIdx===i }]">
+              :class="['node-group', { selected: selectedNode===i, dragging: isDragging&&dragIdx===i }]">
 
-              <!-- Snapping guides (shown when near other nodes) -->
-              <line v-if="snapX !== null" x1="0" y1="-20" x2="0" y2="(node.h||50)+20" stroke="var(--color-success)" stroke-width="1" stroke-dasharray="4,4" opacity="0.6" />
-              <line v-if="snapY !== null" x1="-20" y1="0" x2="(node.w||120)+20" y2="0" stroke="var(--color-success)" stroke-width="1" stroke-dasharray="4,4" opacity="0.6" />
+              <!-- Selection box (shows when selected) -->
+              <rect v-if="selectedNode===i" x="-6" y="-6" :width="(node.w||120)+12" :height="(node.h||50)+12"
+                rx="10" fill="none" stroke="var(--color-primary)" stroke-width="2" stroke-dasharray="4,2" pointer-events="none" />
 
               <!-- Node body -->
               <rect :class="['node-body', node.type]"
                 :width="node.w||120" :height="node.h||50" rx="8" />
 
-              <!-- Node icon + label -->
-              <text :x="(node.w||120)/2" :y="(node.h||50)/2-4"
+              <!-- Node icon -->
+              <text :x="16" :y="(node.h||50)/2+5" class="node-icon-text">{{ getNodeIcon(node.type) }}</text>
+
+              <!-- Node label -->
+              <text :x="(node.w||120)/2+8" :y="(node.h||50)/2-4"
                 text-anchor="middle" class="node-label">{{ node.label || getNodeLabel(node.type) }}</text>
-              <text :x="(node.w||120)/2" :y="(node.h||50)/2+12"
-                text-anchor="middle" class="node-sublabel" font-size="10">{{ node.assignee || '' }}</text>
+              <text :x="(node.w||120)/2+8" :y="(node.h||50)/2+10"
+                text-anchor="middle" class="node-sublabel" font-size="9">{{ node.assignee || '' }}</text>
 
-              <!-- In port (left) -->
-              <circle v-if="node.type!=='start'" cx="0" :cy="(node.h||50)/2" r="6"
-                class="port port-in" @mousedown.stop="onPortMouseDown($event, i, 'in')" />
-              <!-- Out port (right) -->
-              <circle v-if="node.type!=='end'" cx="(node.w||120)" :cy="(node.h||50)/2" r="6"
-                class="port port-out" @mousedown.stop="onPortMouseDown($event, i, 'out')" />
+              <!-- In port -->
+              <circle v-if="node.type!=='start'" cx="0" :cy="(node.h||50)/2" r="6" class="port port-in"
+                @mousedown.stop="onPortMouseDown($event, i, 'in')" />
 
-              <!-- Conditional badge -->
-              <rect v-if="node.condition" x="4" y="4" width="8" height="8" rx="2" fill="var(--color-warning)" />
-              <text v-if="node.condition" x="8" y="11" font-size="6" fill="#000" text-anchor="middle">?</text>
+              <!-- Gate output ports (multiple) -->
+              <template v-if="isGate(node.type)">
+                <circle v-for="(cond, ci) in getNodeConditions(node)" :key="ci"
+                  :cx="node.w||120" :cy="(node.h||50)/2 + (ci - (getNodeConditions(node).length-1)/2) * 20"
+                  r="6" class="port port-out port-gate"
+                  @mousedown.stop="onPortMouseDown($event, i, 'out')" />
+                <text v-if="getNodeConditions(node).length > 0"
+                  :x="(node.w||120)+12" :y="(node.h||50)/2 - getNodeConditions(node).length*6"
+                  font-size="9" fill="var(--text-muted)">条件出口</text>
+              </template>
+
+              <!-- Regular out port -->
+              <circle v-if="node.type!=='end' && !isGate(node.type)"
+                cx="(node.w||120)" :cy="(node.h||50)/2" r="6" class="port port-out"
+                @mousedown.stop="onPortMouseDown($event, i, 'out')" />
+
+              <!-- Condition badge -->
+              <rect v-if="node.condition" x="4" y="4" width="10" height="10" rx="3" fill="var(--color-warning)" />
+              <text v-if="node.condition" :x="(node.w||120)/2+8" :y="14"
+                font-size="9" fill="var(--color-warning)" text-anchor="middle">?</text>
+
+              <!-- Subprocess indicator -->
+              <rect v-if="node.type==='subprocess'" x="4" y="4" width="10" height="10" rx="3" fill="rgb(168,85,247)" />
+              <text v-if="node.type==='subprocess'" :x="(node.w||120)/2+8" :y="14"
+                font-size="9" fill="rgb(168,85,247)" text-anchor="middle">⟐</text>
             </g>
           </g>
         </svg>
 
-        <!-- Canvas hint -->
         <div class="canvas-hint">
-          <span>拖拽右侧节点到画布 | 从端口拖出创建连线 | Ctrl+滚轮缩放</span>
+          <span>拖拽右侧节点到画布 | 从端口拖出创建连线 | 双击子流程节点进入嵌套 | Del删除 | Ctrl+D复制</span>
         </div>
       </main>
 
       <!-- Right: Properties -->
       <aside class="pd-props glass-card" v-if="currentProcess">
-        <!-- Node properties -->
         <div v-if="selectedNode!==null" class="props-section">
           <div class="props-title">
             <span>节点属性</span>
@@ -152,6 +179,9 @@
                 <option value="">默认</option><option value="high">高</option><option value="medium">中</option><option value="low">低</option>
               </select>
             </div>
+            <div class="pg"><label>脚本内容</label>
+              <textarea v-if="getNodeProp('type')==='script'" :value="getNodeProp('script')" @input="_setNodeProp('script',$event.target.value)" class="pi code-textarea" rows="3" placeholder="// JavaScript代码"></textarea>
+            </div>
             <div class="pg"><label>X</label><input :value="getNodeProp('x')" type="number" @input="_setNodeProp('x',+$event.target.value)" class="pi" /></div>
             <div class="pg"><label>Y</label><input :value="getNodeProp('y')" type="number" @input="_setNodeProp('y',+$event.target.value)" class="pi" /></div>
             <div class="pg"><label>宽</label><input :value="getNodeProp('w')" type="number" @input="_setNodeProp('w',+$event.target.value)" class="pi" min="80" max="300" /></div>
@@ -159,19 +189,18 @@
             <button class="btn-del-sm" @click="deleteNode(selectedNode)">🗑 删除节点</button>
           </div>
         </div>
-
-        <!-- Edge properties -->
-        <div v-if="selectedEdge!==null" class="props-section">
+        <div v-else-if="selectedEdge!==null" class="props-section">
           <div class="props-title"><span>连线属性</span></div>
           <div class="props-body">
             <div class="pg"><label>标签</label><input :value="getEdgeProp('label')" @input="_setEdgeProp('label',$event.target.value)" class="pi" /></div>
             <div class="pg"><label>流向</label><span class="pv">{{ getEdgeFromLabel() }} → {{ getEdgeToLabel() }}</span></div>
+            <div class="pg"><label>条件</label><input :value="getEdgeProp('condition')" @input="_setEdgeProp('condition',$event.target.value)" class="pi" placeholder="如: amount > 1000" /></div>
             <button class="btn-del-sm" @click="deleteEdge(selectedEdge)">🗑 删除连线</button>
           </div>
         </div>
-
-        <div v-if="selectedNode===null && selectedEdge===null" class="props-empty">
+        <div v-else class="props-empty">
           <p>选择节点或连线编辑属性</p>
+          <p v-if="currentProcess" class="hint">双击子流程节点进入嵌套编辑</p>
         </div>
       </aside>
     </div>
@@ -189,6 +218,34 @@
         </div>
       </div>
     </div>
+
+    <!-- Subprocess Editor Modal -->
+    <div v-if="showSubprocess" class="modal-overlay" @click.self="showSubprocess=false">
+      <div class="modal modal-lg glass-card">
+        <div class="sp-header">
+          <h3>📦 子流程编辑器 — {{ subprocessTitle }}</h3>
+          <button class="btn-close" @click="showSubprocess=false">✕</button>
+        </div>
+        <div class="sp-body">
+          <p class="sp-hint">在此编辑子流程的节点和连线，保存后返回主流程</p>
+          <div v-if="subprocessDef.nodes.length===0" class="sp-empty">
+            <div class="ce-icon">📦</div>
+            <p>子流程为空，请添加节点开始设计</p>
+            <button class="btn btn-primary" @click="addNode('start'); addNode('task')">+ 添加开始+任务</button>
+          </div>
+          <div v-else class="sp-nodes-preview">
+            <div v-for="(n,i) in subprocessDef.nodes" :key="n.id" class="sp-node-tag"
+              :class="n.type" @dblclick="openSubprocessNode(i)">
+              {{ n.label || getNodeLabel(n.type) }}
+            </div>
+          </div>
+        </div>
+        <div class="sp-footer">
+          <button class="bc" @click="showSubprocess=false">关闭</button>
+          <button class="bs" @click="saveSubprocess">保存子流程</button>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -201,10 +258,10 @@ import { api } from '@oa4rust/sdk'
 interface PDNode {
   id: string; type: string; label?: string; x: number; y: number
   w?: number; h?: number; assignee?: string; condition?: string
-  timeout?: number; priority?: string
+  timeout?: number; priority?: string; script?: string
 }
 interface PDEdge { id: string; from: string; to: string; label?: string; condition?: string }
-interface ProcDef { id?: string; name: string; flag: string; desc?: string; status?: string; config?: { nodes: PDNode[]; edges: PDEdge[] } }
+interface ProcDef { id?: string; name: string; flag: string; desc?: string; status?: string; config?: { nodes: PDNode[]; edges: PDEdge[] }; subprocesses?: Record<string, { nodes: PDNode[]; edges: PDEdge[] }> }
 
 // ── Constants ─────────────────────────────────────────────────────────
 const GRID_SIZE = 20
@@ -214,9 +271,10 @@ const nodeTypes = [
   { type: 'start',    label: '开始', icon: '🟢' },
   { type: 'task',     label: '任务', icon: '📋' },
   { type: 'approval', label: '审批', icon: '✅' },
-  { type: 'timer',    label: '定时', icon: '⏱️' },
   { type: 'end',      label: '结束', icon: '🔴' },
 ]
+
+const allNodeTypes = ['start','task','approval','timer','end','gate_and','gate_or','gate_xor','subprocess','script','parallel']
 
 // ── State ─────────────────────────────────────────────────────────────
 const plLoading = ref(false), sbFilter = ref('')
@@ -227,22 +285,21 @@ const selectedEdge = ref<number|null>(null)
 const showNewModal = ref(false), newForm = ref({ name: '', flag: '', desc: '' })
 const canvasRef = ref<HTMLElement|null>(null)
 const panX = ref(0), panY = ref(0), zoom = ref(1)
-
-// Undo/Redo
 const history = ref<{nodes: PDNode[]; edges: PDEdge[]}[]>([])
 const histIdx = ref(-1)
 const canUndo = computed(() => histIdx.value > 0)
 const canRedo = computed(() => histIdx.value < history.value.length - 1)
-
-// Drag state
-const isDraggingNode = ref(false)
-const dragNodeIdx = ref<number|null>(null)
+const isDragging = ref(false), dragIdx = ref<number|null>(null)
 const dragOffset = ref({ x: 0, y: 0 })
-const snapX = ref<number|null>(null)
-const snapY = ref<number|null>(null)
-
-// Temp edge (being created)
+const snapX = ref<number|null>(null), snapY = ref<number|null>(null)
 const tempEdge = ref<{ from: number; fromPort: 'out'|'in'; startX: number; startY: number; endX: number; endY: number }|null>(null)
+const isPanning = ref(false), panStart = ref({ x: 0, y: 0 })
+
+// Subprocess state
+const showSubprocess = ref(false)
+const subprocessTitle = ref('')
+const subprocessNodeIdx = ref<number|null>(null)
+const subprocessDef = ref<{nodes: PDNode[]; edges: PDEdge[]}>({ nodes: [], edges: [] })
 
 // ── Computed ──────────────────────────────────────────────────────────
 const filteredProc = computed(() =>
@@ -250,7 +307,6 @@ const filteredProc = computed(() =>
     ? procList.value.filter(p => (p.name||'').toLowerCase().includes(sbFilter.value.toLowerCase()) || (p.flag||'').toLowerCase().includes(sbFilter.value.toLowerCase()))
     : procList.value
 )
-
 const svgTransform = computed(() => ({ transform: `translate(${panX.value}px,${panY.value}px) scale(${zoom.value})`, transformOrigin: '0 0' }))
 const edgeTransform = computed(() => ({ transform: `translate(${-panX.value}px,${-panY.value}px) scale(${1/zoom.value})` }))
 const nodeTransform = computed(() => ({ transform: `translate(${-panX.value}px,${-panY.value}px) scale(${1/zoom.value})` }))
@@ -272,39 +328,82 @@ function pushHistory() {
   history.value.push(snap)
   histIdx.value = history.value.length - 1
 }
+function undo() { if (histIdx.value <= 0) return; histIdx.value--; processDef.value = JSON.parse(JSON.stringify(history.value[histIdx.value])); selectedNode.value = null }
+function redo() { if (histIdx.value >= history.value.length - 1) return; histIdx.value++; processDef.value = JSON.parse(JSON.stringify(history.value[histIdx.value])); selectedNode.value = null }
 
-function undo() {
-  if (histIdx.value <= 0) return
-  histIdx.value--
-  processDef.value = JSON.parse(JSON.stringify(history.value[histIdx.value]))
-  selectedNode.value = null
+// ── Helpers ───────────────────────────────────────────────────────────
+function genId() { return 'n_' + Date.now() + '_' + Math.random().toString(36).slice(2,6) }
+function genEdgeId() { return 'e_' + Date.now() + '_' + Math.random().toString(36).slice(2,6) }
+function getNodeLabel(type: string) {
+  const m: Record<string,string> = { start:'开始', end:'结束', task:'任务', approval:'审批', timer:'定时',
+    gate_and:'且网关', gate_or:'或网关', gate_xor:'异或网关', subprocess:'子流程', script:'脚本', parallel:'并行' }
+  return m[type] || type
+}
+function getNodeIcon(type: string) {
+  const m: Record<string,string> = { start:'🟢', end:'🔴', task:'📋', approval:'✅', timer:'⏱️',
+    gate_and:'🔷', gate_or:'🔶', gate_xor:'🔹', subprocess:'📦', script:'💻', parallel:'⚡' }
+  return m[type] || '⬜'
+}
+function isGate(type: string) { return type.startsWith('gate_') }
+function getNodeConditions(node: PDNode): string[] {
+  if (!node.condition) return []
+  return node.condition.split(',').map(s => s.trim()).filter(Boolean)
 }
 
-function redo() {
-  if (histIdx.value >= history.value.length - 1) return
-  histIdx.value++
-  processDef.value = JSON.parse(JSON.stringify(history.value[histIdx.value]))
-  selectedNode.value = null
+// ── Port position ─────────────────────────────────────────────────────
+function getNodePort(node: PDNode, port: 'in'|'out', portIdx?: number): {x:number;y:number} {
+  const w = node.w||120, h = node.h||50
+  if (port === 'in') return { x: node.x, y: node.y + h/2 }
+  if (isGate(node.type) && portIdx !== undefined) {
+    const conds = getNodeConditions(node)
+    const spread = Math.max(conds.length * 12, 20)
+    return { x: node.x + w, y: node.y + h/2 + (portIdx - (conds.length-1)/2) * spread }
+  }
+  return { x: node.x + w, y: node.y + h/2 }
+}
+
+// ── Edge path ─────────────────────────────────────────────────────────
+function computeEdgePath(edge: PDEdge): string {
+  if (!processDef.value) return ''
+  const from = processDef.value.nodes.find(n => n.id === edge.from)
+  const to = processDef.value.nodes.find(n => n.id === edge.to)
+  if (!from || !to) return ''
+  const fp = getNodePort(from, 'out')
+  const tp = getNodePort(to, 'in')
+  const dx = Math.abs(tp.x - fp.x)
+  const cx = Math.max(dx * 0.5, 60)
+  return `M ${fp.x} ${fp.y} C ${fp.x+cx} ${fp.y}, ${tp.x-cx} ${tp.y}, ${tp.x} ${tp.y}`
+}
+function tempEdgePath(): string {
+  if (!tempEdge.value) return ''
+  const { startX, startY, endX, endY } = tempEdge.value
+  const from = processDef.value?.nodes[tempEdge.value.from]
+  if (!from) return ''
+  const fp = getNodePort(from, tempEdge.value.fromPort)
+  const cx = Math.max(Math.abs(endX - fp.x) * 0.5, 60)
+  const sign = tempEdge.value.fromPort === 'out' ? 1 : -1
+  return `M ${fp.x} ${fp.y} C ${fp.x+cx*sign} ${fp.y}, ${endX-cx*sign} ${endY}, ${endX} ${endY}`
 }
 
 // ── Node CRUD ─────────────────────────────────────────────────────────
-function genId() { return 'n_' + Date.now() + '_' + Math.random().toString(36).slice(2,6) }
-function genEdgeId() { return 'e_' + Date.now() + '_' + Math.random().toString(36).slice(2,6) }
-
-function getNodeLabel(type: string) {
-  const labels: Record<string, string> = { start:'开始', end:'结束', task:'任务', approval:'审批', timer:'定时', gate_and:'且网关', gate_or:'或网关', gate_xor:'异或网关', subprocess:'子流程' }
-  return labels[type] || type
-}
-
-function addNode(type: string) {
+function addNode(type: string, opts?: { x?: number; y?: number; autoConnect?: boolean }) {
   if (!processDef.value) return
-  const w = type.includes('gate') ? 100 : 120
-  const h = type === 'approval' ? 70 : 50
-  processDef.value.nodes.push({
-    id: genId(), type, label: getNodeLabel(type),
-    x: 100 + Math.random() * 200, y: 80 + Math.random() * 100,
-    w, h
-  })
+  const w = isGate(type) ? 100 : type === 'approval' ? 130 : 120
+  const h = type === 'approval' ? 70 : type === 'subprocess' ? 60 : 50
+  const x = opts?.x ?? (100 + Math.random() * 200)
+  const y = opts?.y ?? (80 + Math.random() * 100)
+  const newNode: PDNode = { id: genId(), type, label: getNodeLabel(type), x, y, w, h }
+  processDef.value.nodes.push(newNode)
+
+  // Auto-connect to previously selected node
+  if (opts?.autoConnect !== false && selectedNode.value !== null && selectedNode.value < processDef.value.nodes.length - 1) {
+    const src = processDef.value.nodes[selectedNode.value]
+    if (src.type !== 'end' && newNode.type !== 'start') {
+      createEdge(src.id, newNode.id)
+    }
+  }
+
+  selectedNode.value = processDef.value.nodes.length - 1
   pushHistory()
 }
 
@@ -318,8 +417,25 @@ function deleteNode(i: number) {
   pushHistory()
 }
 
+function deleteSelected() {
+  if (selectedNode.value !== null) deleteNode(selectedNode.value)
+  else if (selectedEdge.value !== null) deleteEdge(selectedEdge.value)
+}
+
+function duplicateSelected() {
+  if (selectedNode.value === null || !processDef.value) return
+  const orig = processDef.value.nodes[selectedNode.value]
+  addNode(orig.type, { x: orig.x + 30, y: orig.y + 30, autoConnect: false })
+  const newNode = processDef.value.nodes[processDef.value.nodes.length - 1]
+  if (newNode) {
+    newNode.label = orig.label; newNode.assignee = orig.assignee
+    newNode.condition = orig.condition; newNode.timeout = orig.timeout
+    newNode.priority = orig.priority; newNode.script = orig.script
+  }
+}
+
 function clearCanvas() {
-  if (!processDef.value || !confirm('清空画布，所有节点和连线将删除？')) return
+  if (!processDef.value || !confirm('清空画布？所有节点和连线将删除。')) return
   processDef.value = { nodes: [], edges: [] }
   selectedNode.value = null; selectedEdge.value = null
   pushHistory()
@@ -329,17 +445,16 @@ function autoLayout() {
   if (!processDef.value || processDef.value.nodes.length === 0) return
   const cols = Math.ceil(Math.sqrt(processDef.value.nodes.length))
   processDef.value.nodes.forEach((n, i) => {
-    n.x = 80 + (i % cols) * (n.w || 120) * 1.3
-    n.y = 80 + Math.floor(i / cols) * ((n.h || 50) * 1.4)
+    n.x = 80 + (i % cols) * ((n.w||120) + 40)
+    n.y = 80 + Math.floor(i / cols) * ((n.h||50) + 40)
   })
-  // Re-layout edges to follow topological order
   pushHistory()
 }
 
-// ── Property access (for template - non-v-model) ─────────────────────
+// ── Property access ───────────────────────────────────────────────────
 function getNodeProp(prop: string): any {
   if (selectedNode.value === null || !processDef.value?.nodes[selectedNode.value]) return ''
-  return processDef.value.nodes[selectedNode.value][prop as keyof PDNode] ?? ''
+  return (processDef.value.nodes[selectedNode.value] as any)[prop] ?? ''
 }
 function _setNodeProp(prop: string, val: any) {
   if (selectedNode.value === null || !processDef.value) return
@@ -347,209 +462,126 @@ function _setNodeProp(prop: string, val: any) {
 }
 function getEdgeProp(prop: string): any {
   if (selectedEdge.value === null || !processDef.value?.edges[selectedEdge.value]) return ''
-  return processDef.value.edges[selectedEdge.value][prop as keyof PDEdge] ?? ''
+  return (processDef.value.edges[selectedEdge.value] as any)[prop] ?? ''
 }
 function _setEdgeProp(prop: string, val: any) {
   if (selectedEdge.value === null || !processDef.value) return
   ;(processDef.value.edges[selectedEdge.value] as any)[prop] = val
 }
 function getEdgeFromLabel() {
-  if (selectedEdge.value === null || !processDef.value) return ''
+  if (selectedEdge.value === null || !processDef.value) return '?'
   const edge = processDef.value.edges[selectedEdge.value]
-  const node = processDef.value.nodes.find(n => n.id === edge.from)
-  return node?.label || node?.id?.slice(0,8) || '?'
+  const n = processDef.value.nodes.find(n => n.id === edge.from)
+  return n?.label || n?.id?.slice(0,8) || '?'
 }
 function getEdgeToLabel() {
-  if (selectedEdge.value === null || !processDef.value) return ''
+  if (selectedEdge.value === null || !processDef.value) return '?'
   const edge = processDef.value.edges[selectedEdge.value]
-  const node = processDef.value.nodes.find(n => n.id === edge.to)
-  return node?.label || node?.id?.slice(0,8) || '?'
+  const n = processDef.value.nodes.find(n => n.id === edge.to)
+  return n?.label || n?.id?.slice(0,8) || '?'
 }
 
 // ── Edge CRUD ─────────────────────────────────────────────────────────
 function createEdge(fromId: string, toId: string) {
   if (!processDef.value) return
-  // Check duplicate
   const exists = processDef.value.edges.some(e => e.from === fromId && e.to === toId)
   if (exists) return
   processDef.value.edges.push({ id: genEdgeId(), from: fromId, to: toId })
   pushHistory()
 }
-
 function deleteEdge(i: number) {
   if (!processDef.value) return
   processDef.value.edges.splice(i, 1)
-  selectedEdge.value = null
+  if (selectedEdge.value === i) selectedEdge.value = null
+  else if (selectedEdge.value !== null && selectedEdge.value > i) selectedEdge.value--
   pushHistory()
 }
-
 function selectEdge(i: number) { selectedEdge.value = i; selectedNode.value = null }
-
-// ── Edge path computation ─────────────────────────────────────────────
-function getNodeCenter(node: PDNode) {
-  return { x: node.x + (node.w || 120) / 2, y: node.y + (node.h || 50) / 2 }
-}
-function getNodePort(node: PDNode, port: 'in'|'out') {
-  const w = node.w || 120, h = node.h || 50
-  if (port === 'in') return { x: node.x, y: node.y + h / 2 }
-  return { x: node.x + w, y: node.y + h / 2 }
-}
-
-function computeEdgePath(edge: PDEdge): string {
-  if (!processDef.value) return ''
-  const from = processDef.value.nodes.find(n => n.id === edge.from)
-  const to = processDef.value.nodes.find(n => n.id === edge.to)
-  if (!from || !to) return ''
-  const fromPort = getNodePort(from, 'out')
-  const toPort = getNodePort(to, 'in')
-  const dx = Math.abs(toPort.x - fromPort.x)
-  const cx = Math.max(dx * 0.5, 60)
-  return `M ${fromPort.x} ${fromPort.y} C ${fromPort.x + cx} ${fromPort.y}, ${toPort.x - cx} ${toPort.y}, ${toPort.x} ${toPort.y}`
-}
-
-function tempEdgePath(): string {
-  if (!tempEdge.value) return ''
-  const { startX, startY, endX, endY } = tempEdge.value
-  const from = processDef.value?.nodes[tempEdge.value.from]
-  const toNode = processDef.value?.nodes[tempEdge.value.from] // same as from for temp
-  if (!from) return ''
-  const fromPort = getNodePort(from, tempEdge.value.fromPort === 'out' ? 'out' : 'in')
-  const cx = Math.max(Math.abs(endX - fromPort.x) * 0.5, 60)
-  const cp1x = fromPort.x + (tempEdge.value.fromPort === 'out' ? cx : -cx)
-  const cp2x = endX - (tempEdge.value.fromPort === 'out' ? cx : -cx)
-  return `M ${fromPort.x} ${fromPort.y} C ${cp1x} ${fromPort.y}, ${cp2x} ${endY}, ${endX} ${endY}`
-}
 
 // ── Drag: Node ────────────────────────────────────────────────────────
 function onNodeMouseDown(e: MouseEvent, i: number) {
   if (!processDef.value) return
-  isDraggingNode.value = true
-  dragNodeIdx.value = i
+  isDragging.value = true; dragIdx.value = i
   const node = processDef.value.nodes[i]
   dragOffset.value = {
     x: (e.clientX - panX.value) / zoom.value - node.x,
     y: (e.clientY - panY.value) / zoom.value - node.y
   }
-  selectedNode.value = i
-  selectedEdge.value = null
+  selectedNode.value = i; selectedEdge.value = null
 }
-
 function onNodeMouseMove(e: MouseEvent) {
-  if (!isDraggingNode.value || dragNodeIdx.value === null || !processDef.value) return
-  const idx = dragNodeIdx.value
+  if (!isDragging.value || dragIdx.value === null || !processDef.value) return
+  const idx = dragIdx.value
   const rawX = (e.clientX - panX.value) / zoom.value - dragOffset.value.x
   const rawY = (e.clientY - panY.value) / zoom.value - dragOffset.value.y
-  // Snap to grid
   const snappedX = Math.round(rawX / GRID_SIZE) * GRID_SIZE
   const snappedY = Math.round(rawY / GRID_SIZE) * GRID_SIZE
   processDef.value.nodes[idx].x = snappedX
   processDef.value.nodes[idx].y = snappedY
-
-  // Compute snap to other nodes
-  let nearSnapX: number|null = null, nearSnapY: number|null = null
+  // Snap to others
+  let nearX: number|null = null, nearY: number|null = null
   for (let j = 0; j < processDef.value.nodes.length; j++) {
     if (j === idx) continue
-    const other = processDef.value.nodes[j]
-    const ow = other.w || 120, oh = other.h || 50
-    // Horizontal snap
-    if (Math.abs(snappedX - other.x) < SNAP_THRESHOLD) nearSnapX = other.x
-    if (Math.abs(snappedX - (other.x + ow)) < SNAP_THRESHOLD) nearSnapX = other.x + ow
-    if (Math.abs(snappedX - (other.x + ow/2)) < SNAP_THRESHOLD) nearSnapX = other.x + ow/2
-    // Vertical snap
-    if (Math.abs(snappedY - other.y) < SNAP_THRESHOLD) nearSnapY = other.y
-    if (Math.abs(snappedY - (other.y + oh)) < SNAP_THRESHOLD) nearSnapY = other.y + oh
-    if (Math.abs(snappedY - (other.y + oh/2)) < SNAP_THRESHOLD) nearSnapY = other.y + oh/2
+    const o = processDef.value.nodes[j], ow = o.w||120, oh = o.h||50
+    if (Math.abs(snappedX - o.x) < SNAP_THRESHOLD) nearX = o.x
+    if (Math.abs(snappedX - (o.x+ow)) < SNAP_THRESHOLD) nearX = o.x+ow
+    if (Math.abs(snappedY - o.y) < SNAP_THRESHOLD) nearY = o.y
+    if (Math.abs(snappedY - (o.y+oh)) < SNAP_THRESHOLD) nearY = o.y+oh
   }
-  snapX.value = nearSnapX
-  snapY.value = nearSnapY
+  snapX.value = nearX; snapY.value = nearY
 }
-
 function onNodeMouseUp() {
-  if (isDraggingNode.value && processDef.value && dragNodeIdx.value !== null) {
-    // Apply final snap
-    const node = processDef.value.nodes[dragNodeIdx.value]
-    if (snapX.value !== null) node.x = snapX.value
-    if (snapY.value !== null) node.y = snapY.value
+  if (isDragging.value && processDef.value && dragIdx.value !== null) {
+    const n = processDef.value.nodes[dragIdx.value]
+    if (snapX.value !== null) n.x = snapX.value
+    if (snapY.value !== null) n.y = snapY.value
     pushHistory()
   }
-  isDraggingNode.value = false
-  dragNodeIdx.value = null
-  snapX.value = null
-  snapY.value = null
+  isDragging.value = false; dragIdx.value = null; snapX.value = null; snapY.value = null
 }
 
-// ── Drag: Edge creation from port ─────────────────────────────────────
+// ── Drag: Edge from port ──────────────────────────────────────────────
 function onPortMouseDown(e: MouseEvent, nodeIdx: number, port: 'in'|'out') {
   e.stopPropagation()
   if (!processDef.value) return
   const node = processDef.value.nodes[nodeIdx]
-  const portPos = getNodePort(node, port)
-  tempEdge.value = {
-    from: nodeIdx, fromPort: port,
-    startX: portPos.x, startY: portPos.y,
-    endX: portPos.x, endY: portPos.y
-  }
-
+  const pp = getNodePort(node, port)
+  tempEdge.value = { from: nodeIdx, fromPort: port, startX: pp.x, startY: pp.y, endX: pp.x, endY: pp.y }
   const onMove = (ev: MouseEvent) => {
     if (!tempEdge.value) return
     tempEdge.value.endX = (ev.clientX - panX.value) / zoom.value
     tempEdge.value.endY = (ev.clientY - panY.value) / zoom.value
   }
   const onUp = (ev: MouseEvent) => {
-    document.removeEventListener('mousemove', onMove)
-    document.removeEventListener('mouseup', onUp)
+    document.removeEventListener('mousemove', onMove); document.removeEventListener('mouseup', onUp)
     if (!tempEdge.value || !processDef.value) { tempEdge.value = null; return }
-
-    // Find target node near mouse
+    const mx = (ev.clientX - panX.value) / zoom.value, my = (ev.clientY - panY.value) / zoom.value
     let targetIdx: number|null = null
-    const mx = (ev.clientX - panX.value) / zoom.value
-    const my = (ev.clientY - panY.value) / zoom.value
     for (let i = 0; i < processDef.value.nodes.length; i++) {
-      const n = processDef.value.nodes[i]
       if (i === tempEdge.value!.from) continue
-      if (mx >= n.x && mx <= n.x + (n.w||120) && my >= n.y && my <= n.y + (n.h||50)) {
-        targetIdx = i; break
-      }
+      const n = processDef.value.nodes[i]
+      if (mx >= n.x-10 && mx <= n.x+(n.w||120)+10 && my >= n.y-10 && my <= n.y+(n.h||50)+10) { targetIdx = i; break }
     }
-
     if (targetIdx !== null) {
-      const fromPort = tempEdge.value!.fromPort === 'out' ? 'out' : 'in'
-      const toPort = fromPort === 'out' ? 'in' : 'out'
-      const fromNode = processDef.value.nodes[tempEdge.value!.from]
-      const toNode = processDef.value.nodes[targetIdx]
-      // Only connect out→in
-      if (fromPort === 'out' && toPort === 'in') {
-        createEdge(fromNode.id, toNode.id)
-      } else if (fromPort === 'in' && toPort === 'out') {
-        createEdge(toNode.id, fromNode.id)
-      }
+      const fn = processDef.value.nodes[tempEdge.value!.from]
+      const tn = processDef.value.nodes[targetIdx]
+      const fp = tempEdge.value!.fromPort
+      if (fp === 'out' && tn.type !== 'start') createEdge(fn.id, tn.id)
+      else if (fp === 'in' && fn.type !== 'end') createEdge(tn.id, fn.id)
     }
     tempEdge.value = null
   }
-  document.addEventListener('mousemove', onMove)
-  document.addEventListener('mouseup', onUp)
+  document.addEventListener('mousemove', onMove); document.addEventListener('mouseup', onUp)
 }
 
-// ── Drag: Node (from rect, not port) ─────────────────────────────────
-function onNodeRectMouseDown(e: MouseEvent, i: number) {
-  e.stopPropagation()
-  onNodeMouseDown(e, i)
-}
-
-// ── Canvas drag (pan) ─────────────────────────────────────────────────
-let isPanning = false, panStart = { x: 0, y: 0 }
+// ── Canvas pan ────────────────────────────────────────────────────────
 function onCanvasMouseDown(e: MouseEvent) {
   if (e.button !== 0) return
-  isPanning = true
-  panStart = { x: e.clientX - panX.value, y: e.clientY - panY.value }
-  const onMove = (ev: MouseEvent) => {
-    if (!isPanning) return
-    panX.value = ev.clientX - panStart.x
-    panY.value = ev.clientY - panStart.y
-  }
-  const onUp = () => { isPanning = false }
-  document.addEventListener('mousemove', onMove)
-  document.addEventListener('mouseup', onUp)
+  isPanning.value = true
+  panStart.value = { x: e.clientX - panX.value, y: e.clientY - panY.value }
+  const onMove = (ev: MouseEvent) => { if (isPanning.value) { panX.value = ev.clientX - panStart.value.x; panY.value = ev.clientY - panStart.value.y } }
+  const onUp = () => { isPanning.value = false }
+  document.addEventListener('mousemove', onMove); document.addEventListener('mouseup', onUp)
 }
 
 // ── Zoom ──────────────────────────────────────────────────────────────
@@ -568,11 +600,36 @@ function onDropNode(e: DragEvent) {
   const rect = (e.currentTarget as HTMLElement).getBoundingClientRect()
   const x = (e.clientX - rect.left - panX.value) / zoom.value
   const y = (e.clientY - rect.top - panY.value) / zoom.value
-  const snappedX = Math.round(x / GRID_SIZE) * GRID_SIZE
-  const snappedY = Math.round(y / GRID_SIZE) * GRID_SIZE
-  const w = type.includes('gate') ? 100 : 120
-  const h = type === 'approval' ? 70 : 50
-  processDef.value.nodes.push({ id: genId(), type, label: getNodeLabel(type), x: snappedX - w/2, y: snappedY - h/2, w, h })
+  const sx = Math.round(x / GRID_SIZE) * GRID_SIZE
+  const sy = Math.round(y / GRID_SIZE) * GRID_SIZE
+  const w = isGate(type) ? 100 : type === 'approval' ? 130 : 120
+  const h = type === 'approval' ? 70 : type === 'subprocess' ? 60 : 50
+  addNode(type, { x: sx - w/2, y: sy - h/2, autoConnect: true })
+}
+
+// ── Subprocess ────────────────────────────────────────────────────────
+function openSubprocess(nodeIdx: number) {
+  if (!processDef.value) return
+  const node = processDef.value.nodes[nodeIdx]
+  if (node.type !== 'subprocess') return
+  subprocessNodeIdx.value = nodeIdx
+  subprocessTitle.value = node.label || '子流程'
+  // Load subprocess definition from process config or default
+  const subs = (currentProcess.value?.subprocesses as any) || {}
+  const subKey = node.id
+  const subData = subs[subKey] || { nodes: [], edges: [] }
+  subprocessDef.value = JSON.parse(JSON.stringify(subData))
+  showSubprocess.value = true
+}
+
+function saveSubprocess() {
+  if (subprocessNodeIdx.value === null || !processDef.value) return
+  const subs = (currentProcess.value?.subprocesses as any) || {}
+  const node = processDef.value.nodes[subprocessNodeIdx.value]
+  subs[node.id] = JSON.parse(JSON.stringify(subprocessDef.value))
+  if (!currentProcess.value) return
+  ;(currentProcess.value as any).subprocesses = subs
+  showSubprocess.value = false
   pushHistory()
 }
 
@@ -583,18 +640,13 @@ async function loadProcess(p: ProcDef) {
     const data = r?.data ?? p
     currentProcess.value = data
     processDef.value = data.config ?? { nodes: [], edges: [] }
-    // Ensure at least start/end nodes
     if (!processDef.value.nodes.length) {
+      const n1 = { id: genId(), type: 'start', label: '开始', x: 80, y: 120, w: 100, h: 50 }
+      const n2 = { id: genId(), type: 'task', label: '审批任务', x: 300, y: 100, w: 120, h: 50 }
+      const n3 = { id: genId(), type: 'end', label: '结束', x: 520, y: 120, w: 100, h: 50 }
       processDef.value = {
-        nodes: [
-          { id: genId(), type: 'start', label: '开始', x: 80, y: 120, w: 100, h: 50 },
-          { id: genId(), type: 'task', label: '审批任务', x: 300, y: 100, w: 120, h: 50, assignee: '' },
-          { id: genId(), type: 'end', label: '结束', x: 520, y: 120, w: 100, h: 50 },
-        ],
-        edges: [
-          { id: genEdgeId(), from: processDef.value.nodes[0].id, to: processDef.value.nodes[1].id },
-          { id: genEdgeId(), from: processDef.value.nodes[1].id, to: processDef.value.nodes[2].id },
-        ]
+        nodes: [n1, n2, n3],
+        edges: [{ id: genEdgeId(), from: n1.id, to: n2.id }, { id: genEdgeId(), from: n2.id, to: n3.id }]
       }
     }
     selectedNode.value = null; selectedEdge.value = null
@@ -621,7 +673,8 @@ async function saveProcess() {
   try {
     await api.put(`/jaxrs/processplatform/assemble/designer/process/${currentProcess.value.id}`, {
       name: currentProcess.value.name, flag: currentProcess.value.flag,
-      description: currentProcess.value.desc, config: processDef.value
+      description: currentProcess.value.desc, config: processDef.value,
+      ...(currentProcess.value.subprocesses ? { subprocesses: (currentProcess.value as any).subprocesses } : {})
     })
     alert('保存成功')
   } catch (e: any) { alert('保存失败: ' + (e?.message ?? '')) }
@@ -633,8 +686,8 @@ async function loadProcesses() {
 
 // ── Lifecycle ─────────────────────────────────────────────────────────
 onMounted(() => {
-  document.addEventListener('mousemove', (e) => { onNodeMouseMove(e); if(isPanning) onCanvasMouseDown(e) })
-  document.addEventListener('mouseup', () => { onNodeMouseUp(); isPanning = false })
+  document.addEventListener('mousemove', (e) => { onNodeMouseMove(e) })
+  document.addEventListener('mouseup', () => { onNodeMouseUp() })
   loadProcesses()
 })
 onUnmounted(() => {
@@ -681,11 +734,8 @@ onUnmounted(() => {
 .nl{font-size:10px;color:var(--text-muted);margin-top:4px;text-align:center}
 /* Canvas */
 .pd-canvas{flex:1;position:relative;overflow:hidden;min-width:0;background:var(--bg-surface)}
-.canvas-bg{position:absolute;inset:0;pointer-events:none;
-  background-image:radial-gradient(circle,var(--border-color) 1px,transparent 1px);
-  background-repeat:repeat}
+.canvas-bg{position:absolute;inset:0;pointer-events:none;background-image:radial-gradient(circle,var(--border-color) 1px,transparent 1px);background-repeat:repeat}
 .canvas-svg{position:absolute;inset:0;width:100%;height:100%;cursor:default}
-.canvas-svg.panning{cursor:move}
 .canvas-hint{position:absolute;bottom:8px;left:50%;transform:translateX(-50%);font-size:11px;color:var(--text-muted);pointer-events:none;white-space:nowrap}
 /* Edges */
 .edge-path{fill:none;stroke:var(--color-primary);stroke-width:2;cursor:pointer;opacity:0.7;transition:all 0.15s}
@@ -704,12 +754,16 @@ onUnmounted(() => {
 .node-body.end{fill:rgba(239,68,68,.2);stroke:var(--color-danger)}
 .node-body.gate_and,.node-body.gate_or,.node-body.gate_xor{fill:rgba(245,158,11,.15);stroke:var(--color-warning)}
 .node-body.subprocess{fill:rgba(168,85,247,.15);stroke:rgb(168,85,247)}
+.node-body.script{fill:rgba(34,197,94,.15);stroke:rgb(34,197,94)}
+.node-body.parallel{fill:rgba(236,72,153,.15);stroke:rgb(236,72,153)}
+.node-icon-text{font-size:14px;pointer-events:none}
 .node-label{fill:var(--text-primary);font-size:12px;font-weight:600;pointer-events:none}
 .node-sublabel{fill:var(--text-muted);font-size:9px;pointer-events:none}
 .port{fill:var(--color-primary);stroke:var(--bg-surface);stroke-width:2;cursor:crosshair;transition:all 0.15s}
 .port:hover{r:8;fill:var(--color-warning)}
+.port-gate{fill:var(--color-warning)}
 /* Props */
-.pd-props{width:240px;flex-shrink:0;padding:12px;border-left:1px solid var(--border-color);overflow-y:auto}
+.pd-props{width:260px;flex-shrink:0;padding:12px;border-left:1px solid var(--border-color);overflow-y:auto}
 .props-section{margin-bottom:16px}
 .props-title{display:flex;align-items:center;gap:6px;padding-bottom:8px;border-bottom:1px solid var(--border-color);margin-bottom:10px}
 .props-title span:first-child{font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:1px;font-weight:600}
@@ -717,14 +771,17 @@ onUnmounted(() => {
 .props-body{display:flex;flex-direction:column;gap:8px}
 .pg{display:flex;flex-direction:column;gap:3px}
 .pg label{font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px}
-.pi{padding:6px 8px;border-radius:var(--radius-sm);border:1px solid var(--border-color);background:var(--bg-elevated);color:var(--text-primary);font-size:12px;outline:none}
+.pi{padding:6px 8px;border-radius:var(--radius-sm);border:1px solid var(--border-color);background:var(--bg-elevated);color:var(--text-primary);font-size:12px;outline:none;width:100%;box-sizing:border-box}
 .pi:focus{border-color:var(--color-primary)}
+.code-textarea{font-family:'JetBrains Mono',monospace;font-size:11px;resize:vertical}
 .pv{font-size:12px;color:var(--color-primary);font-family:'JetBrains Mono',monospace}
 .btn-del-sm{padding:6px 10px;border-radius:var(--radius-sm);border:1px solid var(--color-danger);background:transparent;color:var(--color-danger);cursor:pointer;font-size:12px;width:100%;margin-top:8px}
 .props-empty{padding:20px;text-align:center;color:var(--text-muted);font-size:12px}
+.props-empty .hint{font-size:11px;color:var(--text-muted);margin-top:8px;opacity:0.7}
 /* Modal */
 .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.6);display:flex;align-items:center;justify-content:center;z-index:200}
 .modal{padding:24px;width:480px;max-width:90vw;display:flex;flex-direction:column;gap:12px}
+.modal-lg{width:700px;max-width:95vw}
 .modal h3{font-size:16px;color:var(--color-primary);margin:0}
 .fg{display:flex;flex-direction:column;gap:4px}
 .fg label{font-size:12px;color:var(--text-muted)}
@@ -734,4 +791,17 @@ onUnmounted(() => {
 .bc{padding:8px 16px;border-radius:var(--radius-md);border:1px solid var(--border-color);background:transparent;color:var(--text-primary);cursor:pointer}
 .bs{padding:8px 16px;border-radius:var(--radius-md);border:none;background:var(--color-primary);color:#000;cursor:pointer;font-weight:600}
 .bs:disabled{opacity:0.4;cursor:not-allowed}
+.btn-close{padding:4px 10px;border-radius:var(--radius-sm);border:1px solid var(--border-color);background:transparent;color:var(--text-muted);cursor:pointer}
+/* Subprocess editor */
+.sp-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+.sp-hint{font-size:12px;color:var(--text-muted);margin-bottom:12px}
+.sp-empty{display:flex;flex-direction:column;align-items:center;gap:12px;padding:30px;color:var(--text-muted)}
+.ce-icon{font-size:48px;opacity:0.3}
+.sp-nodes-preview{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:16px}
+.sp-node-tag{padding:4px 10px;border-radius:var(--radius-sm);font-size:11px;cursor:pointer;border:1px solid var(--border-color)}
+.sp-node-tag.start{background:rgba(16,185,129,.2);color:var(--color-success)}
+.sp-node-tag.task{background:rgba(0,212,255,.15);color:var(--color-primary)}
+.sp-node-tag.end{background:rgba(239,68,68,.2);color:var(--color-danger)}
+.sp-node-tag.subprocess{background:rgba(168,85,247,.15);color:rgb(168,85,247)}
+.sp-footer{display:flex;justify-content:flex-end;gap:8px;margin-top:12px}
 </style>
