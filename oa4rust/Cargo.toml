@@ -8,6 +8,7 @@ rust-version.workspace = true
 name = "oa4rust"
 path = "src/lib.rs"
 
+build = "scripts/pre_build.rs"
 [[bin]]
 name = "oa4rust"
 path = "src/main.rs"
@@ -22,6 +23,7 @@ tracing-subscriber.workspace = true
 
 utoipa = { version = "4", features = ["axum_extras"] }
 utoipa-swagger-ui = { version = "6", features = ["axum"] }
+tower-http = { workspace = true }
 
 shared = { path = "crates/shared" }
 base_core_project = { path = "crates/base_core_project" }
@@ -241,6 +243,7 @@ serde.workspace = true
 mysql_async = "0.37.0"
 mysql_common = "0.37"
 tower.workspace = true
+tower-http = { workspace = true }
 parity = { path = "crates/parity" }
 mcp_server = { path = "crates/mcp_server" }
 shared = { path = "crates/shared" }
@@ -264,7 +267,7 @@ thiserror = "1"
 tracing = "0.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 tower = "0.5"
-tower-http = { version = "0.5", features = ["cors", "trace"] }
+tower-http = { version = "0.5", features = ["cors", "trace", "fs"] }
 bcrypt = "0.15"
 base64 = "0.22"
 aes-gcm = "0.10"
