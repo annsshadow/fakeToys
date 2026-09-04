@@ -1,0 +1,18 @@
+const manifest = {
+  name: 'OA4Rust',
+  short_name: 'OA4Rust',
+  description: '下一代智能办公平台',
+  start_url: '/',
+  display: 'standalone',
+  background_color: '#060913',
+  theme_color: '#060913',
+  icons: [
+    {
+      src: '/favicon.svg',
+      sizes: 'any',
+      type: 'image/svg+xml',
+    },
+  ],
+};
+
+console.log('[PWA] manifest loaded');

@@ -1,0 +1,7 @@
+packages:
+  - 'packages/*'
+  - 'apps/*'
+  - '!**/test/**'
+allowBuilds:
+  esbuild: true
+  vue-demi: true

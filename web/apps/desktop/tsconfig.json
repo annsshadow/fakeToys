@@ -1,0 +1,15 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "baseUrl": ".",
+    "paths": {
+      "@oa4rust/sdk": ["../../packages/sdk/src/index.ts"],
+      "@oa4rust/ui": ["../../packages/ui/src/index.ts"],
+      "@oa4rust/ui/*": ["../../packages/ui/src/*"],
+      "@oa4rust/locales": ["../../packages/locales/src/index.ts"]
+    },
+    "types": ["vite/client"]
+  },
+  "include": ["src", "vite.config.ts", "../../packages/ui/src/**/*.vue"],
+  "exclude": ["node_modules", "dist"]
+}

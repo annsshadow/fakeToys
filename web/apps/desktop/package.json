@@ -1,0 +1,29 @@
+{
+  "name": "@oa4rust/desktop",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@oa4rust/sdk": "workspace:*",
+    "@oa4rust/ui": "workspace:*",
+    "@tanstack/vue-query": "^5.80.0",
+    "pinia": "^2.3.1",
+    "vue": "^3.5.13",
+    "vue-i18n": "^11.1.2",
+    "vue-router": "^4.5.0",
+    "naive-ui": "^2.40.3"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-vue": "^5.2.0",
+    "typescript": "^5.8.0",
+    "unocss": "^66.0.0",
+    "vite": "^6.0.0",
+    "@vue/tsconfig": "^0.7.0"
+  }
+}
