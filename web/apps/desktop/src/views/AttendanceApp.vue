@@ -1,20 +1,111 @@
 <template>
-  <div class="placeholder-view">
-    <div class="placeholder-icon">{{ icon }}</div>
-    <h2>{{ title }}</h2>
-    <p class="hint"></p>
-    <p class="hint">模块开发中，敬请期待...</p>
-    <router-link to="/app/dashboard" class="back-btn">返回工作台</router-link>
+  <div class="attendance-view">
+    <div class="view-header glass-card">
+      <h1>考勤管理</h1>
+      <p class="subtitle">/jaxrs/attendance/assemble/control/*</p>
+      <div class="hr">
+        <input v-model="month" type="month" class="mi" @change="loadData" />
+        <button class="eb" @click="exportData">📤 导出</button>
+      </div>
+    </div>
+    <div class="stats-row">
+      <div v-for="s in stats" :key="s.label" class="stat-card glass-card">
+        <div class="sn" :style="{color:s.color}">{{s.value}}</div>
+        <div class="sl">{{s.label}}</div>
+      </div>
+    </div>
+    <div class="content-panel glass-card">
+      <div class="pt"><span class="th">姓名</span><span class="th">日期</span><span class="th">上班</span><span class="th">下班</span><span class="th">工时</span><span class="th">状态</span></div>
+      <div v-if="loading" class="ls"><div class="sk" v-for="i in 8" :key="i"></div></div>
+      <div v-else-if="records.length===0" class="es"><div class="ei">📋</div><p>暂无考勤记录</p></div>
+      <template v-else>
+        <div v-for="r in records" :key="r.id" class="tr" :class="{late:r.isLate}">
+          <span class="td">{{r.personName||r.name||'—'}}</span>
+          <span class="td">{{fmtDate(r.date)}}</span>
+          <span class="td cit">{{r.checkInTime||'—'}}</span>
+          <span class="td cot">{{r.checkOutTime||'—'}}</span>
+          <span class="td hw">{{r.workHours??'—'}}</span>
+          <span class="td"><span class="badge" :class="r.status">{{statusTxt(r.status)}}</span></span>
+        </div>
+      </template>
+      <div v-if="totalPages>1" class="pagination">
+        <button class="pgb" :disabled="page<=1" @click="page--">‹</button>
+        <span class="pgi">第{{page}}/{{totalPages}}页</span>
+        <button class="pgb" :disabled="page>=totalPages" @click="page++">›</button>
+      </div>
+    </div>
+    <div class="content-panel glass-card">
+      <div class="pt">请假申请</div>
+      <div v-if="appeals.length===0" class="es-sm"><p>暂无请假申请</p></div>
+      <div v-else class="al">
+        <div v-for="a in appeals" :key="a.id" class="ai">
+          <div class="ai-info"><span class="an">{{a.personName}}</span><span class="at">{{a.typeName||a.type}}</span><span class="ad">{{fmtDate(a.startDate)}}~{{fmtDate(a.endDate)}}</span></div>
+          <span class="badge" :class="a.status">{{appealStatus(a.status)}}</span>
+          <div v-if="a.status==='pending'" class="aa">
+            <button class="ba" @click="audit(a,'approved')">通过</button>
+            <button class="br" @click="audit(a,'rejected')">驳回</button>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 <script setup lang="ts">
-defineProps<{ icon: string; title: string; subtitle: string }>();
+import { ref, computed, onMounted } from 'vue'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/vue-query'
+import { api } from '@oa4rust/sdk'
+interface R{id:string;personName?:string;name?:string;date?:string;checkInTime?:string;checkOutTime?:string;workHours?:number;status?:string;isLate?:boolean}
+interface A{id:string;personName?:string;type?:string;typeName?:string;startDate?:string;endDate?:string;status?:string}
+const month=ref(new Date().toISOString().slice(0,7)),page=ref(1),records=ref<R[]>([]),appeals=ref<A[]>([]),loading=ref(false),totalPages=ref(1),qc=useQueryClient()
+const stats=computed(()=>[{label:'应出勤',value:45,color:'var(--color-info)'},{label:'实际出勤',value:42,color:'var(--color-success)'},{label:'迟到',value:3,color:'var(--color-warning)'},{label:'请假',value:2,color:'var(--color-accent)'}])
+const{data}=useQuery({queryKey:['att','recs',month,page],queryFn:()=>api.get(`/jaxrs/attendance/assemble/control/attendancedetail?month=${month.value}&page=${page.value}&size=20`).then((r:any)=>{records.value=(r.data?.list??[]);totalPages.value=Math.ceil((r.data?.total??1)/20);return r}),staleTime:60000})
+useQuery({queryKey:['att','apps'],queryFn:()=>api.get('/jaxrs/attendance/appeal/list').then((r:any)=>appeals.value=(r.data??[])as A[]),staleTime:120000})
+function loadData(){data.value?.refetch()}
+function fmtDate(d?:string){if(!d)return'—';try{return new Date(d).toLocaleDateString('zh-CN',{month:'2-digit',day:'2-digit'})}catch{return String(d)}}
+function statusTxt(s?:string){return s==='1'?'正常':s==='2'?'迟到':'—'}
+function appealStatus(s?:string){return s==='approved'?'已通过':s==='rejected'?'已驳回':s==='pending'?'待审批':'—'}
+const am=useMutation({mutationFn:({id,status}:{id:string;status:string})=>api.post('/jaxrs/attendance/appeal/audit',{id,status}),onSuccess:()=>qc.invalidateQueries({queryKey:['att','apps']})})
+function audit(a:A,action:string){am.mutate({id:a.id,status:action})}
+function exportData(){window.open('/jaxrs/attendance/assemble/control/export')}
+onMounted(loadData)
 </script>
 <style scoped>
-.placeholder-view { display:flex; flex-direction:column; align-items:center; justify-content:center; min-height:400px; gap:16px; }
-.placeholder-icon { font-size:64px; }
-h2 { font-family:'Orbitron',sans-serif; color:var(--color-primary); font-size:24px; }
-.hint { color:var(--text-muted); font-size:14px; }
-.back-btn { margin-top:16px; padding:10px 24px; background:var(--color-primary-soft); border:1px solid var(--color-primary); border-radius:var(--radius-md); color:var(--color-primary); text-decoration:none; font-size:13px; transition:all var(--transition-fast); }
-.back-btn:hover { background:var(--color-primary); color:var(--text-inverse); }
+.attendance-view{display:flex;flex-direction:column;gap:16px;height:100%}
+.view-header{display:flex;align-items:center;justify-content:space-between;padding:16px 24px}
+.view-header h1{font-family:'Orbitron',sans-serif;font-size:20px;color:var(--color-primary);margin:0 0 4px;text-shadow:0 0 15px var(--color-primary-glow)}
+.subtitle{font-size:12px;color:var(--text-muted);margin:0;font-family:'JetBrains Mono',monospace}
+.hr{display:flex;align-items:center;gap:10px}
+.mi{background:var(--bg-elevated);border:1px solid var(--border-subtle);border-radius:var(--radius-md);padding:6px 12px;color:var(--text-primary);font-size:13px;outline:none}
+.eb{padding:6px 14px;border-radius:var(--radius-md);border:1px solid var(--color-primary);background:var(--color-primary-soft);color:var(--color-primary);cursor:pointer;font-size:13px}
+.stats-row{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+.stat-card{padding:16px;text-align:center}
+.sn{font-family:'Orbitron',sans-serif;font-size:28px;font-weight:700}
+.sl{font-size:12px;color:var(--text-muted);margin-top:4px}
+.content-panel{flex:1;overflow-y:auto;padding:16px}
+.pt{font-size:14px;color:var(--color-primary);font-weight:600;margin-bottom:12px;font-family:'Orbitron',sans-serif}
+.th{font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:1px}
+.tr{display:grid;grid-template-columns:80px 80px 90px 90px 60px 70px;gap:4px;padding:8px 12px;border-radius:var(--radius-sm);font-size:13px;color:var(--text-primary);transition:all var(--transition-fast)}
+.tr:hover{background:var(--color-primary-soft)}
+.td{color:var(--text-primary)}
+.td.cit.late{color:var(--color-warning)}
+.badge{padding:2px 8px;border-radius:8px;font-size:11px;font-weight:600}
+.badge.1,.badge.normal{background:var(--color-success-glow);color:var(--color-success)}
+.badge.2,.badge.late{background:var(--color-warning-glow);color:var(--color-warning)}
+.al{display:flex;flex-direction:column;gap:8px}
+.ai{display:flex;align-items:center;gap:12px;padding:10px 12px;background:var(--bg-elevated);border-radius:var(--radius-md)}
+.ai-info{display:flex;gap:12px;flex:1;font-size:13px;color:var(--text-secondary)}
+.an{font-weight:600;color:var(--text-primary)}
+.at{background:var(--color-accent-soft);color:var(--color-accent);padding:2px 8px;border-radius:8px;font-size:11px}
+.ad{font-size:12px;color:var(--text-muted)}
+.aa{display:flex;gap:6px}
+.ba{padding:4px 12px;border-radius:var(--radius-sm);border:1px solid var(--color-success);background:var(--color-success-soft);color:var(--color-success);cursor:pointer;font-size:12px}
+.br{padding:4px 12px;border-radius:var(--radius-sm);border:1px solid var(--color-error);background:var(--color-error-glow);color:var(--color-error);cursor:pointer;font-size:12px}
+.pagination{display:flex;align-items:center;justify-content:center;gap:12px;margin-top:12px;padding-top:12px;border-top:1px solid var(--border-subtle)}
+.pgb{width:32px;height:32px;border-radius:var(--radius-sm);border:1px solid var(--border-subtle);background:var(--bg-elevated);color:var(--text-secondary);cursor:pointer;font-size:16px}
+.pgb:disabled{opacity:.3;cursor:not-allowed}
+.pgi{font-size:13px;color:var(--text-muted)}
+.es,.ls,.es-sm{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:40px;color:var(--text-muted);gap:12px}
+.ei{font-size:48px;opacity:0.4}
+.sk{height:36px;border-radius:var(--radius-sm);margin-bottom:6px;background:var(--bg-elevated)}
+@media(max-width:768px){.stats-row{grid-template-columns:repeat(2,1fr)}.tr{grid-template-columns:60px 60px 70px 70px 50px 60px}}
 </style>
