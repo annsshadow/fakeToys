@@ -1841,6 +1841,291 @@
         <button class="btn" @click="executeAllWorkflowRules()">▶ 执行所有规则</button>
       </div>
     </div>
+
+
+    <!-- Animation Config Panel -->
+    <div v-if="showAnimationConfig && animationPreviewNodeIdx!==null" class="anim-config-panel">
+      <div class="acp-header"><span>✨ 节点动画配置</span><button class="btn-sm" @click="closeAnimationConfig()">✕</button></div>
+      <div class="acp-body">
+        <div class="acp-presets">
+          <div class="acp-title">预设</div>
+          <div class="acp-presets-grid">
+            <button class="acp-preset-btn" @click="applyAnimationPreset('fade')">🌫 淡入淡出</button>
+            <button class="acp-preset-btn" @click="applyAnimationPreset('slide')">↗ 滑入</button>
+            <button class="acp-preset-btn" @click="applyAnimationPreset('bounce')">⬆ 弹跳</button>
+            <button class="acp-preset-btn" @click="applyAnimationPreset('pulse')">💫 脉冲</button>
+            <button class="acp-preset-btn" @click="applyAnimationPreset('none')">🚫 无</button>
+          </div>
+        </div>
+        <div class="acp-controls">
+          <label><input v-model="globalAutoPlay" type="checkbox" /> 自动播放</label>
+          <label><input v-model="globalLoop" type="checkbox" /> 循环</label>
+          <label>速度 <input v-model.number="globalAnimationSpeed" type="range" min="0.5" max="3" step="0.5" /></label>
+        </div>
+      </div>
+    </div>
+
+    <!-- Canvas Settings Panel -->
+    <div v-if="showCanvasSettings" class="canvas-settings-panel">
+      <div class="csp-header"><span>⚙ 画布设置</span><button class="btn-sm" @click="showCanvasSettings=false">✕</button></div>
+      <div class="csp-body">
+        <div class="csp-section"><div class="csp-title">网格</div>
+          <label><input v-model="canvasViewSettings.showGrid" type="checkbox" /> 显示网格</label>
+          <label>大小 <input v-model.number="canvasViewSettings.gridSize" type="range" min="10" max="50" /></label>
+          <select v-model="canvasViewSettings.gridPattern" class="csp-select"><option value="line">线条</option><option value="dot">点阵</option><option value="cross">十字</option><option value="diamond">菱形</option><option value="hex">六边</option></select>
+        </div>
+        <div class="csp-section"><div class="csp-title">显示</div>
+          <label><input v-model="canvasViewSettings.showLabels" type="checkbox" /> 显示标签</label>
+          <label><input v-model="canvasViewSettings.showAnchors" type="checkbox" /> 显示锚点</label>
+          <label><input v-model="canvasViewSettings.showGuides" type="checkbox" /> 显示辅助线</label>
+        </div>
+        <div class="csp-section"><div class="csp-title">吸附</div>
+          <label><input v-model="canvasViewSettings.snapToGrid" type="checkbox" /> 吸附到网格</label>
+        </div>
+        <div class="csp-actions"><button class="btn" @click="applyCanvasSettings()">✓ 应用</button><button class="btn btn-ghost" @click="resetCanvasSettings()">重置</button></div>
+      </div>
+    </div>
+
+    <!-- Metadata Panel -->
+    <div v-if="showMetadataPanel" class="meta-panel">
+      <div class="mp-header"><span>📋 流程元数据</span><button class="btn-sm" @click="showMetadataPanel=false">✕</button></div>
+      <div class="mp-body">
+        <div class="mp-field"><label>名称</label><input v-model="processMetadata.name" class="mp-input" /></div>
+        <div class="mp-field"><label>标识</label><input v-model="processMetadata.flag" class="mp-input" /></div>
+        <div class="mp-field"><label>版本</label><input v-model="processMetadata.version" class="mp-input" /></div>
+        <div class="mp-field"><label>作者</label><input v-model="processMetadata.author" class="mp-input" /></div>
+        <div class="mp-field"><label>描述</label><textarea v-model="processMetadata.description" class="mp-textarea" rows="3"></textarea></div>
+        <div class="mp-field"><label>标签</label><input v-model="processMetadata.tags" class="mp-input" placeholder="逗号分隔" /></div>
+        <div class="mp-field"><label>分类</label><input v-model="processMetadata.category" class="mp-input" /></div>
+        <div class="mp-field"><label>状态</label>
+          <select v-model="processMetadata.status" class="mp-select"><option value="draft">草稿</option><option value="active">激活</option><option value="archived">归档</option><option value="deprecated">已废弃</option></select>
+        </div>
+        <div class="mp-actions"><button class="btn" @click="saveMetadata()">💾 保存</button><button class="btn btn-ghost" @click="showMetadataPanel=false">取消</button></div>
+      </div>
+    </div>
+
+    <!-- Performance Profile Panel -->
+    <div v-if="showPerfProfilePanel && perfProfileNodeIdx!==null" class="perf-profile-panel">
+      <div class="ppp-header"><span>📊 性能分析 - {{ processDef?.nodes[perfProfileNodeIdx]?.label || '节点' }}</span><button class="btn-sm" @click="showPerfProfilePanel=false">✕</button></div>
+      <div class="ppp-body">
+        <div v-if="perfProfiles.has(String(perfProfileNodeIdx))" class="ppp-stats">
+          <div class="ppp-stat"><span class="ppp-val">{{ perfProfiles.get(String(perfProfileNodeIdx))?.callCount || 0 }}</span><span class="ppp-lbl">调用次数</span></div>
+          <div class="ppp-stat"><span class="ppp-val">{{ (perfProfiles.get(String(perfProfileNodeIdx))?.avgDuration||0).toFixed(0) }}ms</span><span class="ppp-lbl">平均耗时</span></div>
+          <div class="ppp-stat"><span class="ppp-val">{{ perfProfiles.get(String(perfProfileNodeIdx))?.successRate?.toFixed(1) || 0 }}%</span><span class="ppp-lbl">成功率</span></div>
+          <div class="ppp-stat"><span class="ppp-val">{{ perfProfiles.get(String(perfProfileNodeIdx))?.maxDuration?.toFixed(0) || 0 }}ms</span><span class="ppp-lbl">最大耗时</span></div>
+        </div>
+        <div class="ppp-chart"><div class="ppp-bar"><div class="ppp-fill" :style="{width:'70%', background:getPerfStatusColor(70)}"></div></div></div>
+      </div>
+    </div>
+
+    <!-- Simulation Panel -->
+    <div v-if="simState.running || simState.events.length > 0" class="sim-panel">
+      <div class="sim-header"><span>▶ 流程模拟</span>
+        <div class="sim-controls"><button class="btn-sm" @click="runFullSimulation()" :disabled="simState.running">▶ 运行</button><button class="btn-sm" @click="advanceSimulationStep()" :disabled="!simState.running">⏭ 下一步</button><button class="btn-sm" @click="simState.running=false">⏹ 停止</button></div>
+        <button class="btn-sm" @click="simState.running=false;simState.events=[]">✕</button>
+      </div>
+      <div class="sim-body">
+        <div class="sim-progress"><div class="sim-bar" :style="{width:getSimulationProgress+'%'}"></div><span class="sim-pct">{{ getSimulationProgress().toFixed(0) }}%</span></div>
+        <div class="sim-events">
+          <div v-for="(ev, ei) in simState.events" :key="ei" :class="['sim-event', ev.event]">
+            <span class="sim-time">{{ ev.time }}ms</span>
+            <span class="sim-node">{{ ev.label }}</span>
+            <span class="sim-action">{{ ev.event }}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Gantt Chart Panel -->
+    <div v-if="showGanttChart" class="gantt-panel">
+      <div class="gantt-header"><span>📅 甘特图</span><button class="btn-sm" @click="showGanttChart=false">✕</button></div>
+      <div class="gantt-body">
+        <div class="gantt-timeline"><div class="gantt-scale"><span v-for="t in 10" :key="t" class="gantt-tick">{{ t*100 }}ms</span></div></div>
+        <div class="gantt-rows">
+          <div v-for="row in ganttRows" :key="row.nodeId" class="gantt-row">
+            <div class="gantt-label">{{ row.label }}</div>
+            <div class="gantt-track">
+              <div class="gantt-bar" :style="{left:row.start+'px', width:(row.end-row.start)+'px', background:row.color}" :title="row.label + ': ' + (row.end-row.start) + 'ms'"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Layer Panel -->
+    <div v-if="showLayerPanel" class="layer-panel">
+      <div class="lp-header"><span>📑 图层管理</span><button class="btn-sm" @click="showLayerPanel=false">✕</button></div>
+      <div class="lp-body">
+        <button class="btn-sm" @click="addLayer()">+ 添加图层</button>
+        <div class="lp-list">
+          <div v-for="(l, li) in canvasLayers" :key="l.id" class="lp-layer">
+            <span class="lp-name">{{ l.name }}</span>
+            <input type="range" :value="l.opacity" @input="updateLayerOpacity(l.id, +$event.target.value)" min="0" max="1" step="0.1" class="lp-opacity" />
+            <span class="lp-op">{{ Math.round(l.opacity*100) }}%</span>
+            <button :class="['lp-btn',{active:l.visible}]" @click="toggleLayer(l.id)">👁</button>
+            <button class="lp-btn" @click="moveLayerUp(l.id)">↑</button>
+            <button class="lp-btn" @click="moveLayerDown(l.id)">↓</button>
+            <button class="lp-btn btn-danger" @click="removeLayer(l.id)">✕</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Bookmark Panel -->
+    <div v-if="showBookmarkPanel" class="bookmark-panel">
+      <div class="bm-header"><span>🔖 视图书签</span><button class="btn-sm" @click="showBookmarkPanel=false">✕</button></div>
+      <div class="bm-body">
+        <div class="bm-add"><input v-model="newBookmarkName" placeholder="书签名称" class="bm-input" /><input v-model="newBookmarkNote" placeholder="备注" class="bm-input bm-note" /><button class="btn-sm" @click="addBookmark()">+</button></div>
+        <div class="bm-list">
+          <div v-for="(bm, bi) in bookmarks" :key="bm.id" class="bm-item">
+            <span class="bm-name">{{ bm.name }}</span>
+            <span class="bm-zoom">Z{{ bm.zoom.toFixed(1) }}</span>
+            <button class="btn-xs" @click="jumpToBookmark(bi)">跳转</button>
+            <button class="btn-xs btn-danger" @click="deleteBookmark(bi)">✕</button>
+          </div>
+        </div>
+        <div v-if="bookmarks.length===0" class="bm-empty">暂无书签</div>
+      </div>
+    </div>
+
+    <!-- Workflow Templates Panel -->
+    <div v-if="showWorkflowTemplates" class="wf-tpl-panel">
+      <div class="wtp-header"><span>📦 工作流模板库</span><button class="btn-sm" @click="showWorkflowTemplates=false">✕</button></div>
+      <div class="wtp-body">
+        <div class="wtp-filter"><input v-model="workflowTemplateFilter" placeholder="搜索模板..." class="wtp-search" /><select v-model="workflowTemplateCategory" class="wtp-cat-select"><option value="全部">全部</option><option value="人事">人事</option><option value="财务">财务</option><option value="项目管理">项目管理</option><option value="法务">法务</option><option value="IT">IT</option><option value="运营">运营</option></select></div>
+        <div class="wtp-grid">
+          <div v-for="(tpl, ti) in filterWorkflowTemplates()" :key="tpl.id" class="wtp-card">
+            <div class="wtp-icon">{{ tpl.icon }}</div>
+            <div class="wtp-name">{{ tpl.name }}</div>
+            <div class="wtp-desc">{{ tpl.description }}</div>
+            <div class="wtp-meta"><span class="wtp-cat">{{ tpl.category }}</span><span class="wtp-comp">{{ tpl.complexity }}</span><span class="wtp-nodes">{{ tpl.estimatedNodes }}节点</span></div>
+            <div class="wtp-tags"><span v-for="tag in tpl.tags" :key="tag" class="wtp-tag">{{ tag }}</span></div>
+            <div class="wtp-actions"><button class="btn-sm" @click="loadWorkflowTemplate(ti)">加载</button><button class="btn-sm" @click="exportWorkflowTemplate(ti)">导出</button><button class="btn-sm btn-danger" @click="deleteWorkflowTemplate(ti)">删除</button></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Topology Panel -->
+    <div v-if="showTopologyPanel" class="topology-panel">
+      <div class="tp-header"><span>🕸 网络拓扑</span><button class="btn-sm" @click="showTopologyPanel=false">✕</button></div>
+      <div class="tp-body">
+        <div class="tp-info"><span>节点: {{ topologyNodes.value.length }}</span><span>边: {{ topologyEdges.value.length }}</span></div>
+        <div class="tp-graph">
+          <div v-for="n in topologyNodes.value" :key="n.id" class="tp-node" :style="{left:n.x+'px', top:n.y+'px', background:n.type==='start'?'rgba(16,185,129,0.3)':n.type==='end'?'rgba(239,68,68,0.3)':'rgba(0,212,255,0.2)', borderColor:getTopoNodeColor(n.type)}">
+            <span class="tp-node-label">{{ n.label }}</span>
+            <span class="tp-node-degree">{{ n.degree }}</span>
+          </div>
+          <svg class="tp-svg" viewBox="0 0 800 500" preserveAspectRatio="xMidYMid meet">
+            <line v-for="e in topologyEdges.value" :key="e.from+e.to" :x1="topologyNodes.find(n=>n.id===e.from)?.x+30" :y1="topologyNodes.find(n=>n.id===e.from)?.y+15" :x2="topologyNodes.find(n=>n.id===e.to)?.x+30" :y2="topologyNodes.find(n=>n.id===e.to)?.y+15" stroke="rgba(0,212,255,0.4)" stroke-width="1.5" marker-end="url(#arrow)" />
+          </svg>
+        </div>
+      </div>
+    </div>
+
+    <!-- Risk Analysis Panel -->
+    <div v-if="showRiskPanel" class="risk-panel">
+      <div class="rp-header"><span>⚠ 风险分析</span><button class="btn-sm" @click="showRiskPanel=false">✕</button></div>
+      <div class="rp-body">
+        <button class="btn" @click="analyzeRisks()">🔍 分析风险</button>
+        <div class="rp-stats">
+          <div class="rp-stat rp-high"><span>{{ riskItems.value.filter(r=>r.severity==='high').length }}</span><span>高风险</span></div>
+          <div class="rp-stat rp-medium"><span>{{ riskItems.value.filter(r=>r.severity==='medium').length }}</span><span>中风险</span></div>
+          <div class="rp-stat rp-low"><span>{{ riskItems.value.filter(r=>r.severity==='low').length }}</span><span>低风险</span></div>
+        </div>
+        <div class="rp-list">
+          <div v-for="r in riskItems.value" :key="r.id" :class="['rp-item','rp-'+r.severity]">
+            <span class="rp-sev" :style="{color:getRiskSeverityColor(r.severity)}">{{ r.severity.toUpperCase() }}</span>
+            <span class="rp-type">{{ r.type }}</span>
+            <span class="rp-desc">{{ r.description }}</span>
+            <span class="rp-mit">{{ r.mitigation }}</span>
+            <div class="rp-actions"><button v-if="r.status==='open'" class="btn-xs" @click="resolveRisk(r.id)">✓</button><button class="btn-xs btn-danger" @click="deleteRisk(r.id)">✕</button></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Documentation Panel -->
+    <div v-if="showDocPanel" class="doc-panel">
+      <div class="dp-header"><span>📄 流程文档</span>
+        <div class="dp-actions"><button class="btn-sm" @click="exportDocumentation()">💾 导出</button><button class="btn-sm" @click="showDocPanel=false">✕</button></div>
+      </div>
+      <div class="dp-body">
+        <textarea class="dp-editor" v-model="docContent" readonly></textarea>
+      </div>
+    </div>
+
+    <!-- Node Shape Editor -->
+    <div v-if="showShapeEditorDeep && shapePreviewNodeIdx!==null" class="shape-editor-panel">
+      <div class="sep-header"><span>🔷 节点形状编辑器</span><button class="btn-sm" @click="showShapeEditorDeep=false">✕</button></div>
+      <div class="sep-body">
+        <div class="sep-preview">
+          <svg width="120" height="50" viewBox="0 0 120 50">
+            <path d="M 0 25 L 120 25" stroke="rgba(0,212,255,0.3)" stroke-width="1" stroke-dasharray="4,2" />
+            <path :d="getNodeShapePathDeep('rect', {id:'preview', type:'task', label:'预览', x:10, y:10, w:100, h:30})" fill="rgba(0,212,255,0.2)" stroke="#00d4ff" stroke-width="1.5" />
+            <text x="60" y="29" text-anchor="middle" fill="#00d4ff" font-size="10">rect</text>
+          </svg>
+        </div>
+        <div class="sep-shapes">
+          <button v-for="s in ['rect','round','diamond','hex','circle','pill','chevron','inbox']" :key="s" :class="['sep-shape-btn',{active:true}]" @click="applyShapeDeep(shapePreviewNodeIdx, s)">{{ s }}</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Export Modal -->
+    <div v-if="showExportManager" class="modal-overlay" @click.self="showExportManager=false">
+      <div class="modal export-modal">
+        <div class="modal-header"><span>📤 导出流程</span><button class="btn-sm" @click="showExportManager=false">✕</button></div>
+        <div class="modal-body">
+          <div class="exp-formats">
+            <div v-for="fmt in exportFormats" :key="fmt.id" class="exp-format" @click="exportAs(fmt.id)">
+              <span class="exp-icon">{{ fmt.icon }}</span>
+              <div class="exp-info"><div class="exp-name">{{ fmt.name }}</div><div class="exp-desc">{{ fmt.description }}</div></div>
+            </div>
+          </div>
+          <div class="exp-options">
+            <label><input v-model="exportOptions.includeAnnotations" type="checkbox" /> 包含标注</label>
+            <label><input v-model="exportOptions.includeMetadata" type="checkbox" /> 包含元数据</label>
+            <label><input v-model="exportOptions.highQuality" type="checkbox" /> 高质量</label>
+          </div>
+          <div class="exp-progress" v-if="exportProgress > 0">
+            <div class="exp-bar" :style="{width:exportProgress+'%'}"></div>
+            <span class="exp-status">{{ exportStatus }}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Batch Ops Panel -->
+    <div v-if="showBatchOps" class="batch-ops-panel">
+      <div class="bp-header"><span>🔧 批量操作</span><button class="btn-sm" @click="showBatchOps=false">✕</button></div>
+      <div class="bp-body">
+        <div class="bp-target"><label>目标:</label><select v-model="batchOpsTarget" class="bp-select"><option value="selected">已选中节点</option><option value="all">所有节点</option><option value="type">指定类型</option></select><select v-if="batchOpsTarget==='type'" v-model="batchOpsType" class="bp-select"><option v-for="t in allNodeTypes" :value="t">{{ t }}</option></select></div>
+        <div class="bp-props"><label>颜色:</label><input v-model="batchOpsColor" type="color" class="bp-color" /></div>
+        <div class="bp-props"><label>宽度:</label><input v-model.number="batchOpsWidth" type="number" class="bp-num" min="80" max="300" /></div>
+        <button class="btn" @click="runBatchOpsDeep()">▶ 执行批量操作</button>
+        <div v-if="batchOpsResult.success > 0" class="bp-result">成功: {{ batchOpsResult.success }} | 失败: {{ batchOpsResult.failed }}</div>
+      </div>
+    </div>
+
+    <!-- Trace Panel -->
+    <div v-if="showTracePanel" class="trace-panel">
+      <div class="tr-header"><span>🔍 执行追踪</span><button class="btn-sm" @click="showTracePanel=false">✕</button></div>
+      <div class="tr-body">
+        <button class="btn" @click="startTrace()" :disabled="traceRunning">▶ 开始追踪</button>
+        <button class="btn" @click="advanceTraceStep()" :disabled="!traceRunning">⏭ 下一步</button>
+        <button class="btn btn-ghost" @click="resetTrace()">↺ 重置</button>
+        <div class="tr-progress"><div class="tr-bar" :style="{width:(traceCurrentStep/traceSteps.length*100)+'%'}"></div><span>{{ traceCurrentStep }}/{{ traceSteps.length }}</span></div>
+        <div class="tr-steps">
+          <div v-for="(ts, ti) in traceSteps" :key="ti" :class="['tr-step',{active:ti===traceCurrentStep}]">
+            <span class="tr-step-num">{{ ti+1 }}</span>
+            <span class="tr-step-node">{{ processDef?.nodes.find(n=>n.id===ts.nodeId)?.label||ts.nodeId }}</span>
+            <span class="tr-step-action">{{ ts.action }}</span>
+            <span class="tr-step-time">{{ ts.time }}ms</span>
+          </div>
+        </div>
+      </div>
+    </div>
 </template>
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted } from 'vue'
@@ -7037,4 +7322,196 @@ kbd{display:inline-block;padding:3px 8px;border-radius:4px;border:1px solid var(
 .rw-item{display:flex;align-items:center;gap:8px;padding:8px 10px;background:var(--bg-secondary);border-radius:var(--radius-sm)}
 .rw-item.disabled{opacity:0.5}
 .rw-name{flex:1;font-size:12px;font-weight:600;color:var(--text-primary)}.rw-cond{font-size:10px;color:var(--text-muted);flex:2}
+
+/* ── Deepened Styles v4 ───────────────────────────────────────────── */
+/* Animation Config */
+.anim-config-panel{position:fixed;top:60px;left:20px;width:300px;background:var(--bg-elevated);border:1px solid var(--border-color);border-radius:var(--radius-lg);z-index:200;box-shadow:0 8px 32px rgba(0,0,0,0.4)}
+.acp-header{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-bottom:1px solid var(--border-color);font-size:13px;font-weight:600;color:var(--color-primary)}
+.acp-body{padding:12px}
+.acp-presets{margin-bottom:12px}.acp-title{font-size:11px;font-weight:700;color:var(--text-muted);text-transform:uppercase;margin-bottom:8px;letter-spacing:0.5px}
+.acp-presets-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+.acp-preset-btn{padding:6px 8px;border-radius:var(--radius-sm);border:1px solid var(--border-color);background:transparent;color:var(--text-muted);cursor:pointer;font-size:11px;transition:all .15s}
+.acp-preset-btn:hover{border-color:var(--color-primary);color:var(--color-primary)}
+.acp-controls{display:flex;flex-direction:column;gap:6px;font-size:12px}
+
+/* Canvas Settings */
+.canvas-settings-panel{position:fixed;top:60px;left:20px;width:280px;background:var(--bg-elevated);border:1px solid var(--border-color);border-radius:var(--radius-lg);z-index:200;box-shadow:0 8px 32px rgba(0,0,0,0.4)}
+.csp-header{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-bottom:1px solid var(--border-color);font-size:13px;font-weight:600;color:var(--color-primary)}
+.csp-body{padding:12px;display:flex;flex-direction:column;gap:12px}
+.csp-section{display:flex;flex-direction:column;gap:6px}
+.csp-title{font-size:11px;font-weight:700;color:var(--color-primary);text-transform:uppercase;letter-spacing:0.5px}
+.csp-select{padding:4px 8px;border-radius:var(--radius-sm);border:1px solid var(--border-color);background:var(--bg-secondary);color:var(--text-primary);font-size:12px}
+.csp-actions{display:flex;gap:8px;margin-top:8px}
+
+/* Metadata Panel */
+.meta-panel{position:fixed;top:60px;right:20px;width:360px;background:var(--bg-elevated);border:1px solid var(--border-color);border-radius:var(--radius-lg);z-index:200;box-shadow:0 8px 32px rgba(0,0,0,0.4)}
+.mp-header{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-bottom:1px solid var(--border-color);font-size:13px;font-weight:600;color:var(--color-primary)}
+.mp-body{padding:12px;display:flex;flex-direction:column;gap:10px}
+.mp-field{display:flex;flex-direction:column;gap:4px}
+.mp-field label{font-size:11px;color:var(--text-muted)}
+.mp-input,.mp-textarea,.mp-select{padding:6px 10px;border-radius:var(--radius-sm);border:1px solid var(--border-color);background:var(--bg-secondary);color:var(--text-primary);font-size:12px}
+.mp-textarea{resize:vertical;min-height:60px}
+.mp-actions{display:flex;gap:8px;margin-top:8px}
+
+/* Performance Profile */
+.perf-profile-panel{position:fixed;top:60px;right:20px;width:300px;background:var(--bg-elevated);border:1px solid var(--border-color);border-radius:var(--radius-lg);z-index:200;box-shadow:0 8px 32px rgba(0,0,0,0.4)}
+.ppp-header{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-bottom:1px solid var(--border-color);font-size:13px;font-weight:600;color:var(--color-primary)}
+.ppp-body{padding:12px}
+.ppp-stats{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-bottom:12px}
+.ppp-stat{padding:10px;background:var(--bg-secondary);border-radius:var(--radius-md);text-align:center}
+.ppp-val{font-size:20px;font-weight:700;color:var(--color-primary);font-family:'JetBrains Mono',monospace;display:block}
+.ppp-lbl{font-size:10px;color:var(--text-muted)}
+.ppp-chart{padding:8px;background:var(--bg-secondary);border-radius:var(--radius-md)}
+.ppp-bar{height:8px;background:var(--border-color);border-radius:4px;overflow:hidden}
+.ppp-fill{height:100%;border-radius:4px;transition:width .3s}
+
+/* Simulation Panel */
+.sim-panel{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);width:600px;max-width:90vw;background:var(--bg-elevated);border:1px solid var(--border-color);border-radius:var(--radius-lg);z-index:200;box-shadow:0 8px 32px rgba(0,0,0,0.4)}
+.sim-header{display:flex;align-items:center;gap:8px;padding:10px 16px;border-bottom:1px solid var(--border-color);font-size:13px;font-weight:600;color:var(--color-warning)}
+.sim-controls{display:flex;gap:4px}
+.sim-body{padding:12px}
+.sim-progress{height:6px;background:var(--bg-secondary);border-radius:3px;overflow:hidden;position:relative;margin-bottom:8px}
+.sim-bar{height:100%;background:linear-gradient(90deg,var(--color-primary),var(--color-success));transition:width .3s}
+.sim-pct{position:absolute;right:8px;top:-16px;font-size:10px;color:var(--text-muted)}
+.sim-events{max-height:150px;overflow-y:auto;display:flex;flex-direction:column;gap:2px}
+.sim-event{display:flex;align-items:center;gap:8px;padding:4px 8px;font-size:11px;border-radius:var(--radius-sm)}
+.sim-event.start{background:rgba(0,212,255,0.1);color:var(--color-primary)}
+.sim-event.complete{background:rgba(16,185,129,0.1);color:var(--color-success)}
+.sim-event.isolated{background:rgba(100,116,139,0.1);color:var(--text-muted)}
+.sim-time{font-family:'JetBrains Mono',monospace;width:50px;color:var(--text-muted)}
+.sim-node{flex:1}.sim-action{padding:1px 4px;border-radius:var(--radius-sm);font-size:10px}
+
+/* Gantt Chart */
+.gantt-panel{position:fixed;top:60px;left:20px;width:500px;max-height:70vh;background:var(--bg-elevated);border:1px solid var(--border-color);border-radius:var(--radius-lg);z-index:200;box-shadow:0 8px 32px rgba(0,0,0,0.4);display:flex;flex-direction:column}
+.gantt-header{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-bottom:1px solid var(--border-color);font-size:13px;font-weight:600;color:var(--color-primary)}
+.gantt-body{padding:12px;overflow:auto;flex:1}
+.gantt-timeline{margin-bottom:8px}
+.gantt-scale{display:flex;justify-content:space-between;font-size:9px;color:var(--text-muted);padding:0 60px}
+.gantt-tick{font-family:'JetBrains Mono',monospace}
+.gantt-rows{display:flex;flex-direction:column;gap:4px}
+.gantt-row{display:flex;align-items:center;gap:8px}
+.gantt-label{width:60px;font-size:11px;color:var(--text-muted);text-align:right;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.gantt-track{flex:1;height:20px;background:var(--bg-secondary);border-radius:3px;position:relative}
+.gantt-bar{position:absolute;height:100%;border-radius:3px;cursor:pointer;transition:opacity .15s}
+.gantt-bar:hover{opacity:0.8}
+
+/* Layer Panel */
+.layer-panel{position:fixed;top:60px;left:20px;width:260px;background:var(--bg-elevated);border:1px solid var(--border-color);border-radius:var(--radius-lg);z-index:200;box-shadow:0 8px 32px rgba(0,0,0,0.4)}
+.lp-header{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-bottom:1px solid var(--border-color);font-size:13px;font-weight:600;color:var(--color-primary)}
+.lp-body{padding:12px;display:flex;flex-direction:column;gap:8px}
+.lp-list{display:flex;flex-direction:column;gap:4px}
+.lp-layer{display:flex;align-items:center;gap:6px;padding:6px 8px;background:var(--bg-secondary);border-radius:var(--radius-sm)}
+.lp-name{flex:1;font-size:12px;color:var(--text-primary)}
+.lp-opacity{flex:1;accent-color:var(--color-primary)}
+.lp-op{font-size:10px;color:var(--text-muted);width:30px;text-align:right}
+.lp-btn{padding:2px 6px;border-radius:var(--radius-sm);border:1px solid var(--border-color);background:transparent;color:var(--text-muted);cursor:pointer;font-size:10px}
+.lp-btn:hover{border-color:var(--color-primary);color:var(--color-primary)}
+.lp-btn.active{background:var(--color-primary-soft);color:var(--color-primary)}
+
+/* Bookmark Panel */
+.bookmark-panel{position:fixed;top:60px;left:20px;width:240px;background:var(--bg-elevated);border:1px solid var(--border-color);border-radius:var(--radius-lg);z-index:200;box-shadow:0 8px 32px rgba(0,0,0,0.4)}
+.bm-header{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-bottom:1px solid var(--border-color);font-size:13px;font-weight:600;color:var(--color-primary)}
+.bm-body{padding:12px}
+.bm-add{display:flex;gap:4px;margin-bottom:8px}
+.bm-input{flex:1;padding:4px 8px;border-radius:var(--radius-sm);border:1px solid var(--border-color);background:var(--bg-secondary);color:var(--text-primary);font-size:11px}
+.bm-note{flex:2}
+.bm-list{display:flex;flex-direction:column;gap:4px;max-height:200px;overflow-y:auto}
+.bm-item{display:flex;align-items:center;gap:6px;padding:6px 8px;background:var(--bg-secondary);border-radius:var(--radius-sm);font-size:11px}
+.bm-name{flex:1;color:var(--text-primary)}.bm-zoom{color:var(--color-primary);font-family:'JetBrains Mono',monospace;font-size:10px}
+.bm-empty{text-align:center;padding:16px;color:var(--text-muted);font-size:11px}
+
+/* Workflow Templates */
+.wf-tpl-panel{position:fixed;top:60px;left:20px;width:480px;max-height:75vh;background:var(--bg-elevated);border:1px solid var(--border-color);border-radius:var(--radius-lg);z-index:200;box-shadow:0 8px 32px rgba(0,0,0,0.4);display:flex;flex-direction:column}
+.wtp-header{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-bottom:1px solid var(--border-color);font-size:13px;font-weight:600;color:var(--color-primary);flex-shrink:0}
+.wtp-body{padding:12px;overflow-y:auto;flex:1}
+.wtp-filter{display:flex;gap:8px;margin-bottom:12px}
+.wtp-search{flex:1;padding:6px 10px;border-radius:var(--radius-sm);border:1px solid var(--border-color);background:var(--bg-secondary);color:var(--text-primary);font-size:12px}
+.wtp-cat-select{padding:6px 10px;border-radius:var(--radius-sm);border:1px solid var(--border-color);background:var(--bg-secondary);color:var(--text-primary);font-size:12px}
+.wtp-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px}
+.wtp-card{padding:12px;background:var(--bg-secondary);border-radius:var(--radius-md);border:1px solid var(--border-color);display:flex;flex-direction:column;gap:6px;transition:all .15s}
+.wtp-card:hover{border-color:var(--color-primary);transform:translateY(-2px)}
+.wtp-icon{font-size:22px;text-align:center}.wtp-name{font-size:12px;font-weight:600;color:var(--color-primary);text-align:center}
+.wtp-desc{font-size:10px;color:var(--text-muted);min-height:28px;flex:1}
+.wtp-meta{display:flex;gap:4px;flex-wrap:wrap}
+.wtp-cat,.wtp-comp,.wtp-nodes{font-size:9px;padding:1px 4px;border-radius:var(--radius-sm)}
+.wtp-cat{background:rgba(0,212,255,0.15);color:var(--color-primary)}.wtp-comp{background:rgba(245,158,11,0.15);color:var(--color-warning)}.wtp-nodes{background:rgba(16,185,129,0.15);color:var(--color-success)}
+.wtp-tags{display:flex;flex-wrap:wrap;gap:2px}
+.wtp-tag{font-size:9px;padding:1px 4px;border-radius:var(--radius-sm);background:rgba(168,85,247,0.15);color:var(--color-primary)}
+.wtp-actions{display:flex;gap:4px}
+
+/* Topology */
+.topology-panel{position:fixed;top:60px;left:20px;width:500px;max-height:75vh;background:var(--bg-elevated);border:1px solid var(--border-color);border-radius:var(--radius-lg);z-index:200;box-shadow:0 8px 32px rgba(0,0,0,0.4);display:flex;flex-direction:column}
+.tp-header{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-bottom:1px solid var(--border-color);font-size:13px;font-weight:600;color:var(--color-primary)}
+.tp-body{padding:12px;display:flex;flex-direction:column;gap:8px}
+.tp-info{display:flex;gap:16px;font-size:12px;color:var(--text-muted)}
+.tp-graph{position:relative;height:300px;background:var(--bg-secondary);border-radius:var(--radius-md);overflow:hidden}
+.tp-node{position:absolute;width:60px;height:30px;border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:10px;color:var(--text-primary);border:1px solid;flex-direction:column;gap:1px}
+.tp-node-label{font-size:9px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;width:50px;text-align:center}
+.tp-node-degree{font-size:8px;color:var(--text-muted)}
+.tp-svg{position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none}
+
+/* Risk Analysis */
+.risk-panel{position:fixed;top:60px;right:20px;width:400px;max-height:75vh;background:var(--bg-elevated);border:1px solid var(--border-color);border-radius:var(--radius-lg);z-index:200;box-shadow:0 8px 32px rgba(0,0,0,0.4);display:flex;flex-direction:column}
+.rp-header{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-bottom:1px solid var(--border-color);font-size:13px;font-weight:600;color:var(--color-warning)}
+.rp-body{padding:12px;display:flex;flex-direction:column;gap:10px;overflow-y:auto;flex:1}
+.rp-stats{display:flex;gap:8px}
+.rp-stat{flex:1;padding:8px;background:var(--bg-secondary);border-radius:var(--radius-md);text-align:center;display:flex;flex-direction:column;gap:2px}
+.rp-stat span:first-child{font-size:20px;font-weight:700;font-family:'JetBrains Mono',monospace}
+.rp-stat rp-high span:first-child{color:var(--color-danger)}.rp-stat rp-medium span:first-child{color:var(--color-warning)}.rp-stat rp-low span:first-child{color:var(--color-success)}
+.rp-stat span:last-child{font-size:10px;color:var(--text-muted)}
+.rp-list{display:flex;flex-direction:column;gap:6px}
+.rp-item{display:flex;align-items:center;gap:8px;padding:8px 10px;background:var(--bg-secondary);border-radius:var(--radius-sm);font-size:11px}
+.rp-item.rp-high{border-left:3px solid var(--color-danger)}.rp-item.rp-medium{border-left:3px solid var(--color-warning)}.rp-item.rp-low{border-left:3px solid var(--color-success)}
+.rp-sev{font-size:9px;font-weight:700;padding:1px 4px;border-radius:var(--radius-sm);min-width:30px;text-align:center}
+.rp-type{color:var(--color-primary);font-size:10px;width:80px}.rp-desc{flex:1;color:var(--text-primary)}.rp-mit{color:var(--text-muted);font-size:10px;width:100px}
+.rp-actions{display:flex;gap:4px}
+
+/* Documentation */
+.doc-panel{position:fixed;top:60px;left:50%;transform:translateX(-50%);width:600px;max-width:90vw;max-height:80vh;background:var(--bg-elevated);border:1px solid var(--border-color);border-radius:var(--radius-lg);z-index:200;box-shadow:0 8px 32px rgba(0,0,0,0.4);display:flex;flex-direction:column}
+.dp-header{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-bottom:1px solid var(--border-color);font-size:13px;font-weight:600;color:var(--color-primary)}
+.dp-actions{display:flex;gap:4px}
+.dp-body{padding:12px;flex:1;overflow:auto}
+.dp-editor{width:100%;height:400px;padding:12px;border-radius:var(--radius-md);border:1px solid var(--border-color);background:var(--bg-secondary);color:var(--text-primary);font-family:'JetBrains Mono',monospace;font-size:12px;resize:none;box-sizing:border-box}
+
+/* Shape Editor */
+.shape-editor-panel{position:fixed;top:60px;left:20px;width:200px;background:var(--bg-elevated);border:1px solid var(--border-color);border-radius:var(--radius-lg);z-index:200;box-shadow:0 8px 32px rgba(0,0,0,0.4)}
+.sep-header{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-bottom:1px solid var(--border-color);font-size:13px;font-weight:600;color:var(--color-primary)}
+.sep-body{padding:12px}
+.sep-preview{margin-bottom:12px;text-align:center}
+.sep-shapes{display:grid;grid-template-columns:repeat(4,1fr);gap:4px}
+.sep-shape-btn{padding:6px;border-radius:var(--radius-sm);border:1px solid var(--border-color);background:transparent;color:var(--text-muted);cursor:pointer;font-size:10px;font-family:'JetBrains Mono',monospace}
+.sep-shape-btn:hover,.sep-shape-btn.active{border-color:var(--color-primary);color:var(--color-primary)}
+
+/* Export Modal */
+.export-modal{width:480px;max-width:90vw}
+.exp-formats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:16px}
+.exp-format{display:flex;align-items:center;gap:8px;padding:10px;background:var(--bg-secondary);border-radius:var(--radius-md);border:1px solid var(--border-color);cursor:pointer;transition:all .15s}
+.exp-format:hover{border-color:var(--color-primary);transform:translateY(-1px)}
+.exp-icon{font-size:20px}.exp-name{font-size:12px;font-weight:600;color:var(--text-primary)}.exp-desc{font-size:10px;color:var(--text-muted)}
+.exp-options{display:flex;gap:12px;padding:12px;background:var(--bg-secondary);border-radius:var(--radius-md);margin-bottom:12px;font-size:12px}
+.exp-progress{margin-top:12px}
+.exp-bar{height:4px;background:var(--color-primary);border-radius:2px;transition:width .3s}
+.exp-status{font-size:11px;color:var(--text-muted);margin-top:4px}
+
+/* Batch Ops */
+.batch-ops-panel{position:fixed;bottom:80px;left:50%;transform:translateX(-50%);width:400px;background:var(--bg-elevated);border:1px solid var(--border-color);border-radius:var(--radius-lg);z-index:200;box-shadow:0 8px 32px rgba(0,0,0,0.4)}
+.bp-header{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-bottom:1px solid var(--border-color);font-size:13px;font-weight:600;color:var(--color-warning)}
+.bp-body{padding:12px;display:flex;flex-direction:column;gap:10px}
+.bp-target,.bp-props{display:flex;align-items:center;gap:8px}
+.bp-target label,.bp-props label{font-size:12px;color:var(--text-muted);min-width:40px}
+.bp-select{padding:4px 8px;border-radius:var(--radius-sm);border:1px solid var(--border-color);background:var(--bg-secondary);color:var(--text-primary);font-size:12px}
+.bp-color{width:40px;height:28px;border-radius:var(--radius-sm);border:1px solid var(--border-color);cursor:pointer}
+.bp-num{width:60px;padding:4px 8px;border-radius:var(--radius-sm);border:1px solid var(--border-color);background:var(--bg-secondary);color:var(--text-primary);font-size:12px}
+.bp-result{padding:8px;background:var(--bg-secondary);border-radius:var(--radius-sm);font-size:12px;color:var(--color-success)}
+
+/* Trace Panel */
+.trace-panel{position:fixed;bottom:20px;left:20px;width:360px;max-height:60vh;background:var(--bg-elevated);border:1px solid var(--border-color);border-radius:var(--radius-lg);z-index:200;box-shadow:0 8px 32px rgba(0,0,0,0.4);display:flex;flex-direction:column}
+.tr-header{display:flex;align-items:center;justify-content:space-between;padding:10px 14px;border-bottom:1px solid var(--border-color);font-size:13px;font-weight:600;color:var(--color-primary)}
+.tr-body{padding:12px;display:flex;flex-direction:column;gap:8px}
+.tr-progress{height:4px;background:var(--bg-secondary);border-radius:2px;overflow:hidden;display:flex;align-items:center;gap:8px}
+.tr-bar{height:100%;background:var(--color-primary);transition:width .3s}
+.tr-steps{max-height:200px;overflow-y:auto;display:flex;flex-direction:column;gap:2px}
+.tr-step{display:flex;align-items:center;gap:8px;padding:4px 8px;font-size:11px;border-radius:var(--radius-sm);background:var(--bg-secondary)}
+.tr-step.active{background:rgba(0,212,255,0.15);border:1px solid var(--color-primary)}
+.tr-step-num{width:20px;color:var(--color-primary);font-weight:700}.tr-step-node{flex:1;color:var(--text-primary)}.tr-step-action{color:var(--text-muted)}.tr-step-time{font-family:'JetBrains Mono',monospace;color:var(--text-muted);font-size:10px}
 </style>
