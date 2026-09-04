@@ -2308,6 +2308,233 @@
         </div>
       </div>
     </div>
+
+    <!-- SLA Monitor Panel -->
+    <div v-if="showSLAPanel" class="modal-overlay" @click.self="showSLAPanel=false">
+      <div class="modal glass-card">
+        <div class="modal-header"><span>SLA 监控面板</span><button class="btn-close" @click="showSLAPanel=false">×</button></div>
+        <div class="modal-body">
+          <div class="slk-grid">
+            <div v-for="m in slaMetrics" :key="m.slaId" class="slk-card">
+              <div class="slk-name">{{m.name}}</div>
+              <div class="slk-bar-wrap"><div class="slk-bar" :style="{width: getSLAPct(m)}" :class="m.breached ? 'slk-bar-breach' : 'slk-bar-ok'"></div></div>
+              <div class="slk-stats">
+                <span>目标:{{m.targetMs}}ms</span>
+                <span :style="{color:m.color}">实际:{{m.currentMs}}ms</span>
+                <span v-if="m.breached" class="slk-breach">⚠ 超时</span>
+                <span v-else class="slk-ok">✓ 正常</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Cross-Process Reference Panel -->
+    <div v-if="showCrossProcessPanel" class="modal-overlay" @click.self="showCrossProcessPanel=false">
+      <div class="modal glass-card">
+        <div class="modal-header"><span>跨流程引用</span><button class="btn-close" @click="showCrossProcessPanel=false">×</button></div>
+        <div class="modal-body">
+          <div class="xp-list">
+            <div v-for="r in crossProcessRefs" :key="r.targetProcId" class="xp-item">
+              <div class="xp-icon" :style="{borderColor:getRelationColor(r.relationType)}">{{getRelationIcon(r.relationType)}}</div>
+              <div class="xp-info"><div class="xp-label">{{r.label}}</div><div class="xp-meta">{{r.targetProcId}} · {{r.targetType}}</div></div>
+              <div class="xp-rel" :style="{color:getRelationColor(r.relationType)}">{{getRelationLabel(r.relationType)}}</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Quality Gates Panel -->
+    <div v-if="showQualityGatesPanel" class="modal-overlay" @click.self="showQualityGatesPanel=false">
+      <div class="modal glass-card">
+        <div class="modal-header"><span>质量门禁</span><button class="btn-close" @click="showQualityGatesPanel=false">×</button></div>
+        <div class="modal-body">
+          <div class="qg-header"><button class="btn-sm" @click="runQualityCheck()">重新检测</button></div>
+          <div class="qg-list">
+            <div v-for="g in qualityGates" :key="g.gateId" class="qg-item">
+              <span class="qg-icon">{{g.status==='pass'?'✓':g.status==='fail'?'✗':'◌'}}</span>
+              <span class="qg-name">{{g.name}}</span>
+              <span class="qg-type">{{g.checkType}}</span>
+              <span class="qg-threshold">{{g.threshold}}</span>
+              <span class="qg-status" :class="'qg-'+g.status">{{g.status==='pass'?'通过':g.status==='fail'?'失败':'待检'}}</span>
+              <span v-if="g.passedAt" class="qg-time">{{g.passedAt}}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Cost Estimator Panel -->
+    <div v-if="showCostPanel" class="modal-overlay" @click.self="showCostPanel=false">
+      <div class="modal glass-card">
+        <div class="modal-header"><span>成本估算</span><button class="btn-close" @click="showCostPanel=false">×</button></div>
+        <div class="modal-body">
+          <div class="ct-table">
+            <div class="ct-hdr"><span>资源</span><span>时间(ms)</span><span>内存(MB)</span><span>费用(元)</span><span>单位</span></div>
+            <div v-for="c in costEstimates" :key="c.resourceId" class="ct-row">
+              <span class="ct-name">{{c.resourceName}}</span>
+              <span>{{c.timeCost}}</span><span>{{c.memoryCost}}</span>
+              <span class="ct-cost">{{c.moneyCost}}</span><span class="ct-unit">{{c.unit}}</span>
+            </div>
+            <div class="ct-total">
+              <span>总计</span>
+              <span>{{costEstimates.reduce((a,b)=>a+b.timeCost,0).toFixed(1)}}</span>
+              <span>{{costEstimates.reduce((a,b)=>a+b.memoryCost,0).toFixed(0)}}</span>
+              <span class="ct-total-cost">{{costEstimates.reduce((a,b)=>a+b.moneyCost,0).toFixed(2)}}</span>
+              <span>-</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Notification Config Panel -->
+    <div v-if="showNotificationPanel" class="modal-overlay" @click.self="showNotificationPanel=false">
+      <div class="modal glass-card">
+        <div class="modal-header"><span>通知配置</span><button class="btn-close" @click="showNotificationPanel=false">×</button></div>
+        <div class="modal-body">
+          <div class="nf-add"><button class="btn-sm" @click="addNotificationRule()">+ 添加规则</button></div>
+          <div class="nf-list">
+            <div v-for="r in notificationRules" :key="r.id" class="nf-item">
+              <span class="nf-event">{{r.event}}</span>
+              <span class="nf-ch" :style="{background:getChannelBg(r.channel)}">{{r.channel}}</span>
+              <span class="nf-cond">{{r.condition}}</span>
+              <label class="nf-toggle"><input type="checkbox" v-model="r.enabled"/><span class="nf-slider"></span></label>
+              <button class="btn-sm btn-danger" @click="removeNotificationRule(r.id)">×</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Audit Log Panel -->
+    <div v-if="showAuditPanel" class="modal-overlay" @click.self="showAuditPanel=false">
+      <div class="modal glass-card">
+        <div class="modal-header"><span>审计日志</span><button class="btn-close" @click="showAuditPanel=false">×</button></div>
+        <div class="modal-body">
+          <div class="ad-list">
+            <div v-for="e in auditEntries" :key="e.id" class="ad-item">
+              <span class="ad-ts">{{new Date(e.timestamp).toLocaleString('zh-CN')}}</span>
+              <span class="ad-user">{{e.user}}</span>
+              <span class="ad-action">{{e.action}}</span>
+              <span class="ad-target">{{e.target}}</span>
+              <span class="ad-old">←{{e.oldVal}}</span>
+              <span class="ad-new">→{{e.newVal}}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Health Score Panel -->
+    <div v-if="showHealthPanel" class="modal-overlay" @click.self="showHealthPanel=false">
+      <div class="modal glass-card">
+        <div class="modal-header"><span>流程健康评分</span><button class="btn-close" @click="showHealthPanel=false">×</button></div>
+        <div class="modal-body">
+          <div class="hl-overall">
+            <div class="hl-circle" :style="{background:healthCircleStyle}"><span class="hl-score">{{healthScore.overall.toFixed(1)}}</span></div>
+            <div class="hl-labels">
+              <span :style="{color:getHealthScoreColor(healthScore.efficiency)}">效率 {{healthScore.efficiency}}</span>
+              <span :style="{color:getHealthScoreColor(healthScore.reliability)}">可靠 {{healthScore.reliability}}</span>
+              <span :style="{color:getHealthScoreColor(healthScore.maintainability)}">维护 {{healthScore.maintainability}}</span>
+              <span :style="{color:getHealthScoreColor(healthScore.security)}">安全 {{healthScore.security}}</span>
+            </div>
+          </div>
+          <div class="hl-details">
+            <div v-for="d in healthScore.details" :key="d.label" class="hl-det">
+              <span>{{d.label}}</span>
+              <div class="hl-det-bar"><div class="hl-det-fill" :style="{width:d.value+'%',background:d.color}"></div></div>
+              <span>{{d.value}}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Bottleneck Heatmap Panel -->
+    <div v-if="showBottleneckPanel" class="modal-overlay" @click.self="showBottleneckPanel=false">
+      <div class="modal glass-card">
+        <div class="modal-header"><span>瓶颈热力图</span><button class="btn-close" @click="showBottleneckPanel=false">×</button></div>
+        <div class="modal-body">
+          <div class="bn-grid">
+            <div v-for="c in bottleneckData" :key="c.nodeId" class="bn-cell" :style="{background:getCellBg(c.color),borderLeft:'3px solid '+c.color}">
+              {{c.label}}<span class="bn-avg">{{c.avgTime}}ms</span><span class="bn-var">±{{c.variance}}ms</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Optimization Suggestions Panel -->
+    <div v-if="showOptimizationPanel" class="modal-overlay" @click.self="showOptimizationPanel=false">
+      <div class="modal glass-card">
+        <div class="modal-header"><span>优化建议</span><button class="btn-close" @click="showOptimizationPanel=false">×</button></div>
+        <div class="modal-body">
+          <div class="op-list">
+            <div v-for="s in optimizationSuggestions" :key="s.id" class="op-item">
+              <div class="op-type" :style="{color:getOptTypeColor(s.type)}">{{getOptTypeLabel(s.type)}}</div>
+              <div class="op-desc">{{s.description}}</div>
+              <div class="op-meta">
+                <span class="op-imp" :style="{color:getOptImpColor(s.impact)}">{{s.impact}}</span>
+                <span>省{{s.estimatedSaving}}</span>
+                <button class="btn-sm" @click="applyOptimization(s.id)">应用</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Change Requests Panel -->
+    <div v-if="showChangePanel" class="modal-overlay" @click.self="showChangePanel=false">
+      <div class="modal glass-card">
+        <div class="modal-header"><span>变更请求</span><button class="btn-close" @click="showChangePanel=false">×</button></div>
+        <div class="modal-body">
+          <div class="cr-list">
+            <div v-for="cr in changeRequests" :key="cr.id" class="cr-item">
+              <div class="cr-title">{{cr.title}}</div>
+              <div class="cr-desc">{{cr.description}}</div>
+              <div class="cr-meta">
+                <span class="cr-auth">{{cr.author}}</span>
+                <span class="cr-status" :style="{color:getCrStatusColor(cr.status)}">{{getCrStatusLabel(cr.status)}}</span>
+              </div>
+              <div class="cr-changes" v-if="cr.changes?.length">
+                <span v-for="ch in cr.changes" :key="ch" class="cr-ch">{{ch}}</span>
+              </div>
+              <div v-if="cr.status==='draft'||cr.status==='review'" class="cr-actions">
+                <button class="btn-sm btn-success" @click="approveChangeRequest(cr.id)">批准</button>
+                <button class="btn-sm btn-danger" @click="rejectChangeRequest(cr.id)">拒绝</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- AI Analysis Panel -->
+    <div v-if="showAIPanel" class="modal-overlay" @click.self="showAIPanel=false">
+      <div class="modal glass-card">
+        <div class="modal-header"><span>AI 智能分析</span><button class="btn-close" @click="showAIPanel=false">×</button></div>
+        <div class="modal-body">
+          <div class="ai-header">
+            <button class="btn-sm" @click="runAIAnalysis()">重新分析</button>
+            <button class="btn-sm" @click="simulatePerformance()">性能模拟</button>
+          </div>
+          <div class="ai-list">
+            <div v-for="b in aiBottlenecks" :key="b.nodeId" class="ai-item">
+              <div class="ai-score" :style="{color:getScoreColor(b.score)}">{{(b.score*100).toFixed(0)}}分</div>
+              <div class="ai-info">
+                <div class="ai-node">{{b.nodeId}}</div>
+                <div class="ai-reason">{{b.reason}}</div>
+                <div class="ai-sug" style="color:var(--color-primary)">{{b.suggestion}}</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
 </template>
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted } from 'vue'
@@ -7025,6 +7252,9 @@ function getOptTypeLabel(t: string): string { return {parallel:'并行化',seque
 function getOptImpColor(i: string): string { return {high:'#ef4444',medium:'#f59e0b',low:'#10b981'}[i]||'#666' }
 function getCrStatusColor(s: string): string { return {draft:'#666',review:'#3b82f6',approved:'#10b981',rejected:'#ef4444',implemented:'#8b5cf6'}[s]||'#666' }
 function getCrStatusLabel(s: string): string { return {draft:'草稿',review:'审核中',approved:'已批准',rejected:'已拒绝',implemented:'已实施'}[s]||s }
+function getHealthScoreColor(v: number): string { return v > 70 ? '#10b981' : v > 50 ? '#f59e0b' : '#ef4444' }
+function getCellBg(color: string): string { return color + '22' }
+function getSLAPct(m: any): string { return Math.min(100, m.currentMs / m.targetMs * 100) + '%' }
 </script>
 <style scoped>
 .pd{display:flex;flex-direction:column;height:100%}
