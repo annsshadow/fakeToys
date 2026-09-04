@@ -832,13 +832,10 @@ const generatedVisualSql = computed(() => {
   if (veFromTable.value) s += " FROM " + veFromTable.value
   if (veWhereConditions.value.length) {
     const wh = veWhereConditions.value.filter(c => c.field && c.value).map(c => c.field + " " + c.op + " " + String.fromCharCode(39) + c.value + String.fromCharCode(39)).join(" AND ")
-    if (wh) s += "
-WHERE " + wh
+    if (wh) s += "\nWHERE " + wh
   }
-  if (veOrderBy.value) s += "
-ORDER BY " + veOrderBy.value + " " + veOrderDir.value
-  if (veLimit.value) s += "
-LIMIT " + veLimit.value
+  if (veOrderBy.value) s += "\nORDER BY " + veOrderBy.value + " " + veOrderDir.value
+  if (veLimit.value) s += "\nLIMIT " + veLimit.value
   return s
 })
 const generatedFieldDragSql = computed(() => {
