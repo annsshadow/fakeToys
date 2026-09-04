@@ -352,6 +352,30 @@
         </div>
       </aside>
 
+
+      <!-- Breakpoint & Speed Controls -->
+      <div v-if="showExecPanel && processDef" class="exec-controls">
+        <div class="speed-control">
+          <span class="speed-label">⚡ 速度:</span>
+          <input type="range" class="speed-slider" min="100" max="5000" step="100" :value="executionSpeed" @input="setExecutionSpeed(parseInt($event.target.value))" />
+          <span class="speed-val">{{ executionSpeed }}ms</span>
+        </div>
+        <div class="exec-step-controls">
+          <button class="btn-sm" :disabled="execState.status!=='running'" @click="stepForward">⏭ 单步前进</button>
+          <button class="btn-sm" :disabled="histIdx.value<=0" @click="stepBackward">⏮ 单步后退</button>
+        </div>
+        <div v-if="breakpoints.length > 0" class="breakpoint-list">
+          <div class="bp-title">📍 断点 ({{ breakpoints.length }})</div>
+          <div v-for="bp in breakpoints" :key="bp.nodeId" class="bp-item">
+            <span class="bp-node">{{ bp.label || bp.nodeId.slice(0,8) }}</span>
+            <button class="bp-remove" @click="toggleBreakpoint(bp.nodeId)">✕</button>
+          </div>
+          <button class="btn-sm" @click="clearBreakpoints">清空断点</button>
+        </div>
+        <div class="bp-toggle">
+          <button class="btn-sm" :class="{active: showBreakpoints}" @click="showBreakpoints=!showBreakpoints">📍 显示断点</button>
+        </div>
+      </div>
       <!-- Right: Properties -->
       <aside class="pd-props glass-card" v-if="currentProcess">
         <div v-if="selectedNode!==null" class="props-section">
@@ -903,6 +927,66 @@
         <div class="stat-item"><div class="stat-value">{{ flowStats.density }}</div><div class="stat-label">网络密度</div></div>
         <div class="stat-item"><div class="stat-value">{{ flowStats.cycles }}</div><div class="stat-label">环数量</div></div>
         <div class="stat-item"><div class="stat-value">{{ flowStats.isolatedNodes }}</div><div class="stat-label">孤立节点</div></div>
+      </div>
+    </div>
+
+    <!-- Flow Statistics Detail Modal -->
+    <div v-if="showFlowStatsModal" class="modal-overlay" @click.self="showFlowStatsModal=false">
+      <div class="modal modal-lg glass-card">
+        <div class="modal-header"><h3>📊 流程统计详情</h3><button class="btn-close" @click="showFlowStatsModal=false">✕</button></div>
+        <div class="modal-body">
+          <div class="stats-detail-grid">
+            <div class="sd-card">
+              <div class="sd-value">{{ flowStats.totalNodes }}</div>
+              <div class="sd-label">总节点数</div>
+              <div class="sd-desc">图中所有节点数量</div>
+            </div>
+            <div class="sd-card">
+              <div class="sd-value">{{ flowStats.totalEdges }}</div>
+              <div class="sd-label">总连边数</div>
+              <div class="sd-desc">图中所有连线数量</div>
+            </div>
+            <div class="sd-card">
+              <div class="sd-value">{{ flowStats.avgDegree }}</div>
+              <div class="sd-label">平均出度</div>
+              <div class="sd-desc">每个节点平均发出的连边数</div>
+            </div>
+            <div class="sd-card">
+              <div class="sd-value">{{ flowStats.maxDegree }}</div>
+              <div class="sd-label">最大出度</div>
+              <div class="sd-desc">单个节点最大发出的连边数</div>
+            </div>
+            <div class="sd-card">
+              <div class="sd-value">{{ flowStats.density }}</div>
+              <div class="sd-label">网络密度</div>
+              <div class="sd-desc">实际连边数 / 最大可能连边数</div>
+            </div>
+            <div class="sd-card">
+              <div class="sd-value">{{ flowStats.cycles }}</div>
+              <div class="sd-label">环数量</div>
+              <div class="sd-desc">图中检测到的循环路径数</div>
+            </div>
+            <div class="sd-card">
+              <div class="sd-value">{{ flowStats.isolatedNodes }}</div>
+              <div class="sd-label">孤立节点</div>
+              <div class="sd-desc">无入边也无出边的节点</div>
+            </div>
+            <div class="sd-card info-card">
+              <div class="sd-value">{{ flowStats.totalNodes > 0 ? (flowStats.totalEdges / flowStats.totalNodes).toFixed(2) : 0 }}</div>
+              <div class="sd-label">平均连接数</div>
+              <div class="sd-desc">每节点平均连接的边数</div>
+            </div>
+          </div>
+          <div class="stats-warning" v-if="flowStats.cycles > 0">
+            ⚠️ 检测到 {{ flowStats.cycles }} 个环，可能导致流程死循环
+          </div>
+          <div class="stats-warning" v-if="flowStats.isolatedNodes > 0">
+            ⚠️ 存在 {{ flowStats.isolatedNodes }} 个孤立节点，请检查连接性
+          </div>
+          <div class="stats-good" v-if="flowStats.cycles === 0 && flowStats.isolatedNodes === 0">
+            ✅ 流程结构健康，无环且无孤立节点
+          </div>
+        </div>
       </div>
     </div>
 </template>
@@ -3444,6 +3528,67 @@ function applyEnhancedNodeStyle(preset: EnhancedNodeStyle) {
   node.style = JSON.stringify({ color: preset.color, bgColor: preset.bgColor, borderColor: preset.borderColor })
   pushHistory()
 }
+
+// ── Flow Stats Modal ───────────────────────────────────────────────
+const showFlowStatsModal = ref(false)
+function openFlowStatsModal() { showFlowStatsModal.value = true }
+// ── Enhanced Execution Controls ────────────────────────────────────
+// ── Node Type Analysis ─────────────────────────────────────────────
+interface NodeTypeCount { type: string; count: number; icon: string }
+function getNodeTypesCount(): NodeTypeCount[] {
+  if (!processDef.value) return []
+  const counts = new Map<string, number>()
+  for (const n of processDef.value.nodes) {
+    counts.set(n.type, (counts.get(n.type) || 0) + 1)
+  }
+  const iconMap: Record<string, string> = { start:"🟢", end:"🔴", task:"📋", approval:"✅", timer:"⏱️", gate_and:"🔷", gate_or:"🔶", gate_xor:"🔹", subprocess:"📦", script:"💻", parallel:"⚡" }
+  return Array.from(counts.entries()).map(([type, count]) => ({ type, count, icon: iconMap[type] || "⬜" })).sort((a,b) => b.count - a.count)
+}
+// ── Edge Direction Analysis ────────────────────────────────────────
+interface EdgeDirection { direction: string; count: number; percentage: string }
+function getEdgeDirections(): EdgeDirection[] {
+  if (!processDef.value) return []
+  const edges = processDef.value.edges || []
+  if (edges.length === 0) return []
+  let leftCount = 0, rightCount = 0, upCount = 0, downCount = 0
+  for (const e of edges) {
+    const from = processDef.value!.nodes.find(n => n.id === e.from)
+    const to = processDef.value!.nodes.find(n => n.id === e.to)
+    if (!from || !to) continue
+    const dx = to.x - from.x, dy = to.y - from.y
+    if (Math.abs(dx) > Math.abs(dy)) { if (dx > 0) rightCount++; else leftCount++ }
+    else { if (dy > 0) downCount++; else upCount++ }
+  }
+  const total = edges.length
+  return [
+    { direction: "→ 右", count: rightCount, percentage: ((rightCount/total)*100).toFixed(1) + "%" }
+    , { direction: "← 左", count: leftCount, percentage: ((leftCount/total)*100).toFixed(1) + "%" }
+    , { direction: "↓ 下", count: downCount, percentage: ((downCount/total)*100).toFixed(1) + "%" }
+    , { direction: "↑ 上", count: upCount, percentage: ((upCount/total)*100).toFixed(1) + "%" }
+  ].filter(e => e.count > 0)
+}
+// ── Path Length Analysis ───────────────────────────────────────────
+interface PathInfo { length: number; nodes: string[]; isCyclic: boolean }
+function analyzeLongestPaths(): PathInfo[] {
+  if (!processDef.value) return []
+  const nodes = processDef.value.nodes
+  const edges = processDef.value.edges || []
+  const adj = new Map<string, string[]>()
+  for (const e of edges) {
+    if (!adj.has(e.from)) adj.set(e.from, [])
+    adj.get(e.from)!.push(e.to)
+  }
+  const paths: PathInfo[] = []
+  const startNodes = nodes.filter(n => !edges.some(e => e.to === n.id))
+  function dfs(nodeId: string, path: string[], visited: Set<string>) {
+    if (path.length >= 4) paths.push({ length: path.length, nodes: [...path], isCyclic: false })
+    for (const next of (adj.get(nodeId) || [])) {
+      if (!visited.has(next)) { visited.add(next); dfs(next, [...path, next], visited); visited.delete(next) }
+    }
+  }
+  for (const n of startNodes) { dfs(n.id, [n.id], new Set([n.id])) }
+  return paths.sort((a,b) => b.length - a.length).slice(0, 5)
+}
 </script>
 
 <style scoped>
@@ -4043,4 +4188,42 @@ kbd{display:inline-block;padding:3px 8px;border-radius:4px;border:1px solid var(
 .enhanced-style-presets{display:flex;gap:4px;flex-wrap:wrap;margin-top:8px}
 .enhanced-style-btn{width:24px;height:24px;border-radius:50%;border:2px solid var(--border-color);cursor:pointer;transition:all .15s}
 .enhanced-style-btn:hover{transform:scale(1.2);border-color:var(--color-primary)}
+
+/* Execution controls */
+.exec-controls{padding:12px;border-top:1px solid var(--border-color);display:flex;flex-direction:column;gap:8px}
+.speed-control{display:flex;align-items:center;gap:8px;font-size:11px}
+.speed-label{color:var(--text-muted);white-space:nowrap}
+.speed-val{color:var(--color-primary);font-family:"JetBrains Mono",monospace;min-width:40px;text-align:right}
+.exec-step-controls{display:flex;gap:4px}
+.breakpoint-list{margin-top:4px}
+.bp-title{font-size:11px;font-weight:600;color:var(--color-warning);margin-bottom:4px}
+.bp-item{display:flex;align-items:center;justify-content:space-between;padding:2px 0;font-size:10px}
+.bp-node{color:var(--text-primary)}
+.bp-remove{background:transparent;border:none;color:var(--color-danger);cursor:pointer;font-size:10px;padding:0 4px}
+.bp-toggle{margin-top:4px}
+/* Style preset panel */
+.style-preset-panel{margin-top:12px;padding-top:12px;border-top:1px solid var(--border-color)}
+.sp-title{font-size:11px;font-weight:600;color:var(--color-primary);margin-bottom:6px;text-transform:uppercase;letter-spacing:0.5px}
+.style-preset-btn{width:28px;height:28px;border-radius:50%;border:2px solid var(--border-color);cursor:pointer;transition:all .15s;display:flex;align-items:center;justify-content:center;font-size:14px}
+.style-preset-btn:hover{transform:scale(1.15);border-color:var(--color-primary)}
+/* Flow stats modal */
+.stats-detail-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:16px}
+.sd-card{padding:12px;background:var(--bg-secondary);border-radius:var(--radius-md);text-align:center;border:1px solid var(--border-color)}
+.sd-value{font-size:24px;font-weight:700;color:var(--color-primary);font-family:"JetBrains Mono",monospace}
+.sd-label{font-size:11px;color:var(--text-muted);margin-top:4px;text-transform:uppercase}
+.sd-desc{font-size:9px;color:var(--text-muted);margin-top:2px}
+.stats-warning{padding:8px 12px;background:rgba(245,158,11,.1);border:1px solid var(--color-warning);border-radius:var(--radius-sm);color:var(--color-warning);font-size:12px;margin-top:8px}
+.stats-good{padding:8px 12px;background:rgba(16,185,129,.1);border:1px solid var(--color-success);border-radius:var(--radius-sm);color:var(--color-success);font-size:12px;margin-top:8px}
+/* Node type analysis */
+.nta-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-top:8px}
+.nta-item{padding:6px;background:var(--bg-secondary);border-radius:var(--radius-sm);text-align:center;font-size:11px}
+.nta-icon{font-size:16px}
+.nta-count{font-size:14px;font-weight:700;color:var(--color-primary);font-family:"JetBrains Mono",monospace}
+.nta-type{font-size:9px;color:var(--text-muted)}
+/* Edge direction analysis */
+.eda-bar{display:flex;align-items:center;gap:8px;margin:4px 0;font-size:11px}
+.eda-label{width:50px;color:var(--text-muted)}
+.eda-track{flex:1;height:8px;background:var(--border-color);border-radius:4px;overflow:hidden}
+.eda-fill{height:100%;background:var(--color-primary);transition:width .3s}
+.eda-val{width:40px;text-align:right;font-family:"JetBrains Mono",monospace;color:var(--color-primary)}
 </style>
