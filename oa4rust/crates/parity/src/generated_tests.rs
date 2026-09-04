@@ -22238,7 +22238,7 @@ use shared::testing::test_pool;
         let response = router
             .oneshot(
                 axum::http::Request::builder()
-                    .uri("/jaxrs/file/file/clean/unused/referencetype/cmsdocument/manage")
+                    .uri("/jaxrs/file/clean/unused/referencetype/cmsdocument/manage")
                     .method(axum::http::Method::GET)
                     .body(axum::body::Body::empty())
                     .expect("build request"),
@@ -22260,7 +22260,7 @@ use shared::testing::test_pool;
         let response = router
             .oneshot(
                 axum::http::Request::builder()
-                    .uri("/jaxrs/file/file/copy/attachment/attachmentId/referencetype/referenceType/reference/reference/scale/scale")
+                    .uri("/jaxrs/file/copy/attachment/attachmentId/referencetype/referenceType/reference/reference/scale/scale")
                     .method(axum::http::Method::GET)
                     .body(axum::body::Body::empty())
                     .expect("build request"),
@@ -22282,7 +22282,7 @@ use shared::testing::test_pool;
         let response = router
             .oneshot(
                 axum::http::Request::builder()
-                    .uri("/jaxrs/file/file/id")
+                    .uri("/jaxrs/file/id")
                     .method(axum::http::Method::GET)
                     .body(axum::body::Body::empty())
                     .expect("build request"),
@@ -22304,7 +22304,7 @@ use shared::testing::test_pool;
         let response = router
             .oneshot(
                 axum::http::Request::builder()
-                    .uri("/jaxrs/file/file/id/binary/base64")
+                    .uri("/jaxrs/file/id/binary/base64")
                     .method(axum::http::Method::GET)
                     .body(axum::body::Body::empty())
                     .expect("build request"),
@@ -22326,7 +22326,7 @@ use shared::testing::test_pool;
         let response = router
             .oneshot(
                 axum::http::Request::builder()
-                    .uri("/jaxrs/file/file/id/download")
+                    .uri("/jaxrs/file/id/download")
                     .method(axum::http::Method::GET)
                     .body(axum::body::Body::empty())
                     .expect("build request"),
@@ -22348,7 +22348,7 @@ use shared::testing::test_pool;
         let response = router
             .oneshot(
                 axum::http::Request::builder()
-                    .uri("/jaxrs/file/file/list/id/next/count")
+                    .uri("/jaxrs/file/list/id/next/count")
                     .method(axum::http::Method::GET)
                     .body(axum::body::Body::empty())
                     .expect("build request"),
@@ -22370,7 +22370,7 @@ use shared::testing::test_pool;
         let response = router
             .oneshot(
                 axum::http::Request::builder()
-                    .uri("/jaxrs/file/file/list/id/next/count/all")
+                    .uri("/jaxrs/file/list/id/next/count/all")
                     .method(axum::http::Method::GET)
                     .body(axum::body::Body::empty())
                     .expect("build request"),
@@ -22392,7 +22392,7 @@ use shared::testing::test_pool;
         let response = router
             .oneshot(
                 axum::http::Request::builder()
-                    .uri("/jaxrs/file/file/list/id/next/count/referencetype/referenceType")
+                    .uri("/jaxrs/file/list/id/next/count/referencetype/referenceType")
                     .method(axum::http::Method::GET)
                     .body(axum::body::Body::empty())
                     .expect("build request"),
@@ -22414,7 +22414,7 @@ use shared::testing::test_pool;
         let response = router
             .oneshot(
                 axum::http::Request::builder()
-                    .uri("/jaxrs/file/file/list/id/prev/count")
+                    .uri("/jaxrs/file/list/id/prev/count")
                     .method(axum::http::Method::GET)
                     .body(axum::body::Body::empty())
                     .expect("build request"),
@@ -22436,7 +22436,7 @@ use shared::testing::test_pool;
         let response = router
             .oneshot(
                 axum::http::Request::builder()
-                    .uri("/jaxrs/file/file/list/id/prev/count/all")
+                    .uri("/jaxrs/file/list/id/prev/count/all")
                     .method(axum::http::Method::GET)
                     .body(axum::body::Body::empty())
                     .expect("build request"),
@@ -22458,7 +22458,7 @@ use shared::testing::test_pool;
         let response = router
             .oneshot(
                 axum::http::Request::builder()
-                    .uri("/jaxrs/file/file/list/id/prev/count/referencetype/referenceType")
+                    .uri("/jaxrs/file/list/id/prev/count/referencetype/referenceType")
                     .method(axum::http::Method::GET)
                     .body(axum::body::Body::empty())
                     .expect("build request"),
@@ -22480,7 +22480,7 @@ use shared::testing::test_pool;
         let response = router
             .oneshot(
                 axum::http::Request::builder()
-                    .uri("/jaxrs/file/file/list/referencetype")
+                    .uri("/jaxrs/file/list/referencetype")
                     .method(axum::http::Method::GET)
                     .body(axum::body::Body::empty())
                     .expect("build request"),
@@ -22502,7 +22502,7 @@ use shared::testing::test_pool;
         let response = router
             .oneshot(
                 axum::http::Request::builder()
-                    .uri("/jaxrs/file/file/list/referencetype/referenceType/reference/reference")
+                    .uri("/jaxrs/file/list/referencetype/referenceType/reference/reference")
                     .method(axum::http::Method::GET)
                     .body(axum::body::Body::empty())
                     .expect("build request"),
@@ -22524,7 +22524,7 @@ use shared::testing::test_pool;
         let response = router
             .oneshot(
                 axum::http::Request::builder()
-                    .uri("/jaxrs/file/file/list/unused/referencetype/cmsdocument/manage")
+                    .uri("/jaxrs/file/list/unused/referencetype/cmsdocument/manage")
                     .method(axum::http::Method::GET)
                     .body(axum::body::Body::empty())
                     .expect("build request"),
@@ -22546,7 +22546,7 @@ use shared::testing::test_pool;
         let response = router
             .oneshot(
                 axum::http::Request::builder()
-                    .uri("/jaxrs/file/file/referencetype/referenceType/reference/reference")
+                    .uri("/jaxrs/file/referencetype/referenceType/reference/reference")
                     .method(axum::http::Method::GET)
                     .body(axum::body::Body::empty())
                     .expect("build request"),

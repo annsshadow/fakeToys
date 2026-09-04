@@ -503,6 +503,16 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "2af50177e190e07a26ab74f8b1efbfe2ef87da2116221318cb1c2e82baf7de06"
 
 [[package]]
+name = "base_core_project"
+version = "0.1.0"
+dependencies = [
+ "axum 0.8.9",
+ "deadpool-postgres",
+ "serde_json",
+ "shared",
+]
+
+[[package]]
 name = "bbs"
 version = "0.1.0"
 dependencies = [
@@ -3624,6 +3634,7 @@ dependencies = [
  "axum 0.8.9",
  "base",
  "base64 0.22.1",
+ "base_core_project",
  "bbs",
  "bbs_assemble_control",
  "bbs_core_entity",
