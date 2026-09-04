@@ -1157,7 +1157,6 @@ function applyTemplate2(tpl: FieldTemplate) {
 }
 // ── Export/Import Enhancements ──────────────────────────────────────
 function exportFormSchema() {
-  if (!currentForm.value) return
     formName: currentForm.value.name,
     formFlag: currentForm.value.flag,
     columnCount: columnCount.value,
