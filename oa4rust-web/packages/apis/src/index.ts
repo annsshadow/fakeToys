@@ -1216,10 +1216,86 @@ export const signatureApi = {
   },
 };
 
+
 // ─────────────────────────────────────────────────────────────
-// Unified export object
+// AI 聊天 / 配置 (ai + ai_assemble_control — ~90 routes)
 // ─────────────────────────────────────────────────────────────
+export const aiApi = {
+  chatList: (page: number, size: number) =>
+    api.get(`/jaxrs/ai_assemble_control/chat/list/paging/${page}/${size}`),
+  chatCompletionList: (clueId: string, page: number, size: number) =>
+    api.get(`/jaxrs/ai_assemble_control/chat/list/completion/${clueId}/paging/${page}/${size}`),
+  chatDelete: (clueId: string) =>
+    api.delete(`/jaxrs/ai_assemble_control/chat/delete/${clueId}`),
+  chatCompletion: (data: unknown) => api.post("/jaxrs/ai_assemble_control/chat/completion", data),
+  chatCompletionStream: (data: unknown) => api.post("/jaxrs/ai_assemble_control/chat/completion/stream", data),
+  configGet: () => api.get("/jaxrs/ai_assemble_control/config/get"),
+  configBase: () => api.get("/jaxrs/ai_assemble_control/config/base/config"),
+  configListMcp: (page: number, size: number) =>
+    api.get(`/jaxrs/ai_assemble_control/config/list/mcp/paging/${page}/${size}`),
+  configListModel: (page: number, size: number) =>
+    api.get(`/jaxrs/ai_assemble_control/config/list/model/paging/${page}/${size}`),
+  configEnableModel: () => api.get("/jaxrs/ai_assemble_control/config/list/enable/model"),
+  configCreateMcp: (data: unknown) => api.post("/jaxrs/ai_assemble_control/config/create/mcp", data),
+  configCreateModel: (data: unknown) => api.post("/jaxrs/ai_assemble_control/config/create/model", data),
+  configUpdateMcp: (flag: string, data: unknown) => api.put(`/jaxrs/ai_assemble_control/config/update/mcp/${flag}`, data),
+  configUpdateModel: (flag: string, data: unknown) => api.put(`/jaxrs/ai_assemble_control/config/update/model/${flag}`, data),
+  configDeleteMcp: (flag: string) => api.delete(`/jaxrs/ai_assemble_control/config/delete/mcp/${flag}`),
+  configDeleteModel: (flag: string) => api.delete(`/jaxrs/ai_assemble_control/config/delete/model/${flag}`),
+  configGetMcp: (flag: string) => api.get(`/jaxrs/ai_assemble_control/config/get/mcp/${flag}`),
+  configGetModel: (flag: string) => api.get(`/jaxrs/ai_assemble_control/config/get/model/${flag}`),
+  configSave: (data: unknown) => api.put("/jaxrs/ai_assemble_control/config/save", data),
+  getControlConfig: () => api.get("/jaxrs/ai_assemble_control/get/ai/control/config"),
+  getUsageStats: () => api.get("/jaxrs/ai_assemble_control/get/usage/stats"),
+  listModels: () => api.get("/jaxrs/ai_assemble_control/list/ai/models"),
+  fileList: (page: number, size: number) =>
+    api.get(`/jaxrs/ai_assemble_control/file/list/paging/${page}/${size}`),
+  file: (flag: string) => api.get(`/jaxrs/ai_assemble_control/file/${flag}`),
+  fileDownload: (flag: string) => api.get(`/jaxrs/ai_assemble_control/file/${flag}/download`),
+  fileDelete: (flag: string) => api.delete(`/jaxrs/ai_assemble_control/file/delete/${flag}`),
+  fileUpload: (data: unknown) => api.post("/jaxrs/ai_assemble_control/file/upload", data),
+  indexDelete: (flag: string) => api.delete(`/jaxrs/ai_assemble_control/index/delete/${flag}`),
+  indexList: (page: number, size: number) =>
+    api.get(`/jaxrs/ai_assemble_control/index/list/paging/${page}/${size}`),
+  indexSync: (data: unknown) => api.post("/jaxrs/ai_assemble_control/index/sync/to/knowledge", data),
+  appList: () => api.get("/jaxrs/ai/core/entity/app/list"),
+  modelList: () => api.get("/jaxrs/ai/core/entity/model/list"),
+  conversationList: () => api.get("/jaxrs/ai/core/entity/conversation/list"),
+  request: (method: string, path: string, body?: unknown) => {
+    const url = "/jaxrs/ai" + path;
+    if (method === "GET") return api.get(url);
+    if (method === "POST") return api.post(url, body);
+    if (method === "PUT") return api.put(url, body);
+    return api.delete(url);
+  },
+};
+
+// ─────────────────────────────────────────────────────────────
+// 角色管理 (role — ~9 routes)
+// ─────────────────────────────────────────────────────────────
+export const roleApi = {
+  list: () => api.get("/jaxrs/role/list"),
+  get: (flag: string) => api.get(`/jaxrs/role/${flag}`),
+  create: (data: unknown) => api.post("/jaxrs/role", data),
+  update: (flag: string, data: unknown) => api.put(`/jaxrs/role/${flag}`, data),
+  delete: (flag: string) => api.delete(`/jaxrs/role/${flag}`),
+  listNext: (flag: string, count: number) =>
+    api.get(`/jaxrs/role/list/${flag}/next/${count}`),
+  listPrev: (flag: string, count: number) =>
+    api.get(`/jaxrs/role/list/${flag}/prev/${count}`),
+  expressList: () => api.get("/jaxrs/express/role/list"),
+  request: (method: string, path: string, body?: unknown) => {
+    const url = "/jaxrs/role" + path;
+    if (method === "GET") return api.get(url);
+    if (method === "POST") return api.post(url, body);
+    if (method === "PUT") return api.put(url, body);
+    return api.delete(url);
+  },
+};
+
 export const extraApis = {
+  ai: aiApi,
+  role: roleApi,
   ai_core_entity: ai_core_entityApi,
   query_service: query_serviceApi,
   query_service_processing: query_service_processingApi,
