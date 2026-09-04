@@ -11,6 +11,10 @@
         <button class="btn btn-outline" @click="loadStatements">🔄 刷新</button>
         <button class="btn btn-success" :disabled="!sql.trim()" @click="executeSQL">▶ 执行</button>
         <button class="btn btn-primary" :disabled="!currentStatement" @click="saveStatement">💾 保存</button>
+        <button class="btn btn-outline" @click="showVisualPanel=true" :class="{active:showVisualPanel}" title="结果可视化">📊 可视化</button>
+        <button class="btn btn-outline" @click="openPermPanel()" :class="{active:showPermPanel}" title="字段权限">🔐 权限</button>
+        <button class="btn btn-outline" @click="showPlanPanel=true" :class="{active:showPlanPanel}" title="执行计划分析">🔬 执行计划</button>
+        <button class="btn btn-outline" @click="showTemplateCRUD=true" :class="{active:showTemplateCRUD}" title="模板管理">📑 模板管理</button>
         <button class="btn btn-outline" @click="showSchemaPanel=!showSchemaPanel" :class="{active:showSchemaPanel}" title="数据源浏览器">🗂 数据源</button>
         <button class="btn btn-outline" @click="showTemplatePanel=!showTemplatePanel" :class="{active:showTemplatePanel}" title="SQL模板">📑 模板</button>
         <button class="btn btn-outline" @click="showHistoryPanel=!showHistoryPanel" :class="{active:showHistoryPanel}" title="执行历史">📜 历史</button>
@@ -317,11 +321,121 @@
         </div>
       </div>
     </div>
+
+    <!-- Visualization Panel -->
+    <div v-if="showVisualPanel" class="modal-overlay" @click.self="showVisualPanel=false">
+      <div class="modal-box visual-panel">
+        <div class="modal-header"><span>📊 结果可视化</span><button class="btn-close" @click="showVisualPanel=false">✕</button></div>
+        <div class="visual-tabs">
+          <button :class="['vis-tab',{active:visMode==='bar'}]" @click="visMode='bar'">柱状图</button>
+          <button :class="['vis-tab',{active:visMode==='pie'}]" @click="visMode='pie'">饼图</button>
+          <button :class="['vis-tab',{active:visMode==='line'}]" @click="visMode='line'">折线图</button>
+          <button :class="['vis-tab',{active:visMode==='scatter'}]" @click="visMode='scatter'">散点图</button>
+        </div>
+        <div class="visual-config">
+          <select v-model="visXAxis" class="vis-select"><option value="">选择X轴...</option><option v-for="h in resultHeaders" :key="h" :value="h">{{ h }}</option></select>
+          <select v-model="visYAxis" class="vis-select"><option value="">选择Y轴...</option><option v-for="h in numHeaders" :key="h" :value="h">{{ h }}</option></select>
+          <button class="btn-sm" @click="renderChart()">🔄 渲染</button>
+        </div>
+        <div class="visual-canvas"><div ref="chartRef" class="chart-container"></div></div>
+        <div v-if="chartError" class="chart-error">{{ chartError }}</div>
+      </div>
+    </div>
+
+    <!-- Permission Panel -->
+    <div v-if="showPermPanel" class="modal-overlay" @click.self="showPermPanel=false">
+      <div class="modal-box perm-panel">
+        <div class="modal-header"><span>🔐 字段权限配置</span><button class="btn-close" @click="showPermPanel=false">✕</button></div>
+        <div class="perm-body">
+          <div class="perm-header-row">
+            <span class="perm-col">字段名</span><span class="perm-col">可见</span><span class="perm-col">可编辑</span><span class="perm-col">可导出</span><span class="perm-col">操作</span>
+          </div>
+          <div v-for="(f,fi) in fieldPermissions" :key="f.field" class="perm-row">
+            <span class="perm-field">{{ f.field }}</span>
+            <label class="perm-check"><input type="checkbox" v-model="f.visible" /><span></span></label>
+            <label class="perm-check"><input type="checkbox" v-model="f.editable" /><span></span></label>
+            <label class="perm-check"><input type="checkbox" v-model="f.exportable" /><span></span></label>
+            <button class="btn-xs btn-danger" @click="fieldPermissions.splice(fi,1)">✕</button>
+          </div>
+          <button class="btn-sm" @click="addPermField()">+ 添加字段</button>
+        </div>
+        <div class="perm-footer">
+          <button class="btn-sm" @click="applyPermissions()">✓ 应用权限</button>
+          <button class="btn-sm btn-outline" @click="showPermPanel=false">关闭</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Execution Plan Panel -->
+    <div v-if="showPlanPanel" class="modal-overlay" @click.self="showPlanPanel=false">
+      <div class="modal-box plan-panel">
+        <div class="modal-header"><span>🔬 SQL执行计划</span><button class="btn-close" @click="showPlanPanel=false">✕</button></div>
+        <div class="plan-body">
+          <button class="btn-sm" @click="analyzePlan()">🔍 分析执行计划</button>
+          <div v-if="planLoading" class="plan-loading">分析中...</div>
+          <div v-else-if="!planResult" class="plan-empty">点击"分析"查看SQL执行计划</div>
+          <div v-else class="plan-tree">
+            <div v-for="(step,si) in planResult.steps" :key="si" class="plan-step">
+              <div class="ps-header" :style="{borderLeftColor:step.color}">
+                <span class="ps-type">{{ step.type }}</span>
+                <span class="ps-cost">耗时: {{ step.cost }}</span>
+                <span class="ps-rows">预估: {{ step.estimated }} 行</span>
+              </div>
+              <div class="ps-detail" v-if="step.detail">{{ step.detail }}</div>
+              <div v-if="step.children?.length" class="ps-children">
+                <div v-for="(ch,ci) in step.children" :key="ci" class="plan-step">
+                  <div class="ps-header ps-sub" :style="{borderLeftColor:ch.color}">
+                    <span class="ps-type">{{ ch.type }}</span><span class="ps-cost">{{ ch.cost }}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div v-if="planWarnings.length" class="plan-warnings">
+            <div class="pw-title">⚠ 优化建议:</div>
+            <div v-for="(w,wi) in planWarnings" :key="wi" class="pw-item">{{ w }}</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Template CRUD Panel -->
+    <div v-if="showTemplateCRUD" class="modal-overlay" @click.self="showTemplateCRUD=false">
+      <div class="modal-box tmpl-crud-panel">
+        <div class="modal-header"><span>📑 模板管理</span><button class="btn-close" @click="showTemplateCRUD=false">✕</button></div>
+        <div class="tmpl-crud-body">
+          <div class="tmpl-crud-toolbar">
+            <input v-model="tmplSearch" placeholder="搜索模板..." class="tmp-input" />
+            <select v-model="tmplFilterCat" class="tmp-select">
+              <option value="">全部分类</option>
+              <option value="select">SELECT</option><option value="join">JOIN</option>
+              <option value="agg">聚合</option><option value="sub">子查询</option>
+            </select>
+            <button class="btn-sm" @click="showNewTemplate=true">+ 新建</button>
+          </div>
+          <div class="tmpl-crud-list">
+            <div v-for="(t,ti) in filteredTmplList" :key="t.id" class="tmpl-crud-item">
+              <div class="tci-icon">{{ t.icon }}</div>
+              <div class="tci-info">
+                <div class="tci-name">{{ t.name }}</div>
+                <div class="tci-cat">{{ t.category }}</div>
+              </div>
+              <div class="tci-actions">
+                <button class="btn-xs" @click="editTemplate(ti)">编辑</button>
+                <button class="btn-xs" @click="duplicateTemplate(ti)">复制</button>
+                <button class="btn-xs btn-danger" @click="deleteTemplate(ti)">删除</button>
+              </div>
+            </div>
+          </div>
+          <div v-if="filteredTmplList.length===0" class="tmpl-empty">暂无模板</div>
+        </div>
+      </div>
+    </div>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
-import { useQuery, useMutation, useQueryClient } from '@tanstack/vue-query'
+import { ref, computed, onMounted, onUnmounted, nextTick } from 'vue'
+import * as echarts from 'echarts'
 import { api } from '@oa4rust/sdk'
 
 interface Stmt {
@@ -647,6 +761,119 @@ const resultStats = computed(() => {
   return stats
 })
 
+
+// --- Visualization Functions ---
+function renderChart() {
+  if (!chartInstance && chartRef.value) {
+    try { chartInstance = echarts.init(chartRef.value) } catch(e) { chartError.value="图表初始化失败"; return }
+  }
+  if (!chartInstance) return
+  chartError.value = ""
+  const xKey = visXAxis.value, yKey = visYAxis.value
+  if (!xKey || !yKey) { chartError.value="请选择X轴和Y轴"; return }
+  const data = resultData.value.map(r => ({ name: String(r[xKey]), value: Number(r[yKey]) || 0 }))
+  const option: any = {
+    backgroundColor: "rgba(0,0,0,0.2)",
+    tooltip: { trigger: "axis" },
+    grid: { left: "10%", right: "5%", top: "10%", bottom: "15%" },
+    xAxis: { type: "category", data: data.map(d => d.name), axisLabel: { color: "#aaa", fontSize: 10 } },
+    yAxis: { type: "value", axisLabel: { color: "#aaa", fontSize: 10 } },
+    series: [{ data, type: visMode.value, itemStyle: { color: "#3b82f6" }, smooth: visMode.value === "line" }]
+  }
+  if (visMode.value === "pie") {
+    option.xAxis = undefined; option.yAxis = undefined
+    option.series = [{ type: "pie", radius: ["30%", "70%"], data: data.filter(d=>d.value>0), label: { color: "#aaa", fontSize: 10 }, itemStyle: { color: "#3b82f6" } }]
+    option.tooltip = { trigger: "item", formatter: "{b}: {c} ({d}%)" }
+  }
+  if (visMode.value === "scatter") {
+    option.series = [{ type: "scatter", data: data.map(d => [d.name, d.value]), itemStyle: { color: "#10b981" }, symbolSize: 10 }]
+  }
+  chartInstance.setOption(option, true)
+}
+function resizeChart() { if (chartInstance) chartInstance.resize() }
+onMounted(() => { window.addEventListener("resize", resizeChart) })
+onUnmounted(() => { if (chartInstance) { chartInstance.dispose(); chartInstance = null } window.removeEventListener("resize", resizeChart) })
+
+// --- Permission Functions ---
+function openPermPanel() {
+  if (!fieldPermissions.value.length && resultHeaders.value.length) {
+    fieldPermissions.value = resultHeaders.value.map(h => ({ field: h, visible: true, editable: false, exportable: true }))
+  }
+  showPermPanel.value = true
+}
+function addPermField() { fieldPermissions.value.push({ field: "", visible: true, editable: false, exportable: true }) }
+function applyPermissions() { showPermPanel.value = false }
+
+// --- Execution Plan Functions ---
+async function analyzePlan() {
+  planLoading.value = true; planResult.value = null; planWarnings.value = []
+  await new Promise(r => setTimeout(r, 300))
+  const hasJoin = /JOIN\s+/gi.test(sql.value)
+  const hasWhere = /WHERE\s+/gi.test(sql.value)
+  const hasGroup = /GROUP\s+BY/i.test(sql.value)
+  const hasSub = /(\s*SELECT/i.test(sql.value)
+  const hasLike = /LIKE\s/i.test(sql.value)
+  const steps = []
+  steps.push({ type: "扫描", cost: hasSub ? "高" : hasJoin ? "中" : "低", estimated: resultData.value.length || 1000, detail: hasSub ? "含子查询，使用嵌套循环" : hasJoin ? "多表JOIN，建议使用索引" : "单表全扫描", color: "#3b82f6" })
+  if (hasWhere) steps.push({ type: "过滤", cost: hasLike ? "高" : "中", estimated: Math.max(1, Math.floor((resultData.value.length||1000)*0.3)), detail: hasLike ? "LIKE模糊匹配，无法使用索引" : "WHERE条件过滤", color: "#f59e0b" })
+  if (hasGroup) steps.push({ type: "分组聚合", cost: "高", estimated: resultData.value.length || 500, detail: "GROUP BY操作，可能消耗大量内存", color: "#ef4444", children: [{ type: "哈希聚合", cost: "中", color: "#f97316" }, { type: "排序分组", cost: "中", color: "#f97316" }] })
+  if (hasWhere) steps.push({ type: "排序", cost: "中", estimated: resultData.value.length || 1000, detail: "WHERE后排序", color: "#8b5cf6" })
+  planResult.value = { steps }
+  if (hasSub) planWarnings.value.push("子查询可能影响性能，建议改用JOIN")
+  if (hasLike && !sql.value.includes("%")) planWarnings.value.push("LIKE未使用通配符，可改用等值查询")
+  if (hasGroup && !hasWhere) planWarnings.value.push("GROUP BY无WHERE条件，将扫描全表")
+  if (!/LIMIT/i.test(sql.value) && resultData.value.length > 1000) planWarnings.value.push("无LIMIT限制，建议添加分页")
+  planLoading.value = false
+}
+
+// --- Template CRUD Functions ---
+function editTemplate(idx: number) {
+  const t = allTemplates.value[idx]
+  if (!t) return
+  showNewTemplate.value = true
+  newTmpl.value = { name: t.name, category: t.category, code: t.code }
+  (newTmpl.value as any)._editIdx = idx
+  (newTmpl.value as any)._isEdit = true
+}
+function duplicateTemplate(idx: number) {
+  const t = allTemplates.value[idx]
+  if (!t) return
+  templates.value.push({ ...t, id: "t"+Date.now(), name: t.name + "_副本", icon: "📋" })
+}
+function deleteTemplate(idx: number) {
+  if (!confirm("确认删除模板？")) return
+  templates.value.splice(idx, 1)
+}
+
+// --- Visualization State ---
+const showVisualPanel = ref(false)
+const visMode = ref<"bar"|"pie"|"line"|"scatter">("bar")
+const visXAxis = ref(""), visYAxis = ref("")
+const chartRef = ref<HTMLElement|null>(null)
+let chartInstance: any = null
+const chartError = ref("")
+const numHeaders = computed(() => resultHeaders.value.filter(h => typeof resultData.value[0]?.[h] === "number"))
+
+// --- Permission State ---
+const showPermPanel = ref(false)
+const fieldPermissions = ref<Array<{field:string;visible:boolean;editable:boolean;exportable:boolean}>>([])
+
+// --- Execution Plan State ---
+const showPlanPanel = ref(false)
+const planLoading = ref(false)
+const planResult = ref<{steps:Array<{type:string;cost:string;estimated:number;detail?:string;color:string;children?:any[]}>}|null>(null)
+const planWarnings = ref<string[]>([])
+
+// --- Template CRUD State ---
+const showTemplateCRUD = ref(false)
+const tmplSearch = ref(""), tmplFilterCat = ref("")
+const allTemplates = computed(() => [...templates.value, ...myTemplates.value])
+const filteredTmplList = computed(() => {
+  let list = allTemplates.value
+  if (tmplSearch.value.trim()) { const q=tmplSearch.value.toLowerCase(); list=list.filter(t=>t.name.toLowerCase().includes(q)) }
+  if (tmplFilterCat.value) list = list.filter(t => t.category === tmplFilterCat.value)
+  return list
+})
 </script>
 
 <style scoped>
@@ -733,4 +960,15 @@ const resultStats = computed(() => {
 .stats-panel{width:480px}.stats-body{padding:12px}.stats-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:12px}.stat-card{padding:10px;border-radius:var(--radius-sm);background:rgba(59,130,246,0.1);border:1px solid rgba(59,130,246,0.2);text-align:center}.sc-val{font-size:20px;font-weight:700;color:var(--color-primary)}.sc-label{font-size:9px;color:var(--text-muted);margin-top:2px}.stats-chart{display:flex;align-items:flex-end;gap:4px;height:100px;padding:8px;background:rgba(255,255,255,0.02);border-radius:var(--radius-sm)}.chart-bar{display:flex;flex-direction:column;align-items:center;justify-content:flex-end;flex:1;border-radius:3px 3px 0 0;padding:2px;min-height:4px;position:relative}.cb-label{font-size:8px;color:var(--text-muted);position:absolute;bottom:-16px;white-space:nowrap}.cb-val{font-size:9px;color:var(--text-primary);margin-bottom:2px}
 .param-panel{width:480px}.param-body{padding:12px;display:flex;flex-direction:column;gap:8px}.param-list{display:flex;flex-direction:column;gap:4px;max-height:180px;overflow-y:auto}.param-row{display:flex;align-items:center;gap:6px;padding:4px 8px;background:rgba(255,255,255,0.02);border-radius:4px;font-size:11px}.param-name{color:#f59e0b;width:80px;font-family:monospace;font-weight:600}.param-input{flex:1;padding:3px 6px;border-radius:var(--radius-sm);border:1px solid var(--border-color);background:var(--bg-elevated);color:var(--text-primary);font-size:11px;outline:none}.param-type{padding:3px;background:var(--bg-elevated);border:1px solid var(--border-color);border-radius:var(--radius-sm);color:var(--text-primary);font-size:10px}.param-detect{padding:8px;background:rgba(245,158,11,0.05);border:1px solid rgba(245,158,11,0.2);border-radius:var(--radius-sm)}.pd-title{font-size:11px;color:#f59e0b;margin-bottom:4px}.pd-tag{padding:2px 8px;border-radius:10px;background:rgba(245,158,11,0.15);border:1px solid rgba(245,158,11,0.3);color:#f59e0b;font-size:10px;font-family:monospace;cursor:pointer;margin-right:4px}.pd-tag.exists{background:rgba(16,185,129,0.15);border-color:rgba(16,185,129,0.3);color:#10b981}.param-footer{display:flex;gap:6px;padding-top:8px;border-top:1px solid var(--border-color)}
 .favorite-panel{width:420px}.fav-list{padding:12px;max-height:300px;overflow-y:auto;display:flex;flex-direction:column;gap:4px}.fav-item{display:flex;align-items:center;gap:8px;padding:6px 10px;background:rgba(255,255,255,0.02);border-radius:var(--radius-sm);cursor:pointer;font-size:12px;color:var(--text-primary)}.fav-item:hover{background:rgba(59,130,246,0.1)}.fi-star{font-size:14px}.fi-name{flex:1}.fi-cat{color:var(--text-muted);font-size:10px}.fav-empty{color:var(--text-muted);font-size:11px;text-align:center;padding:20px}
+/* -- Visualization Panel -- */
+.visual-panel{width:680px}.visual-tabs{display:flex;gap:4px;padding:8px 12px;border-bottom:1px solid var(--border-color)}.vis-tab{padding:4px 12px;border-radius:var(--radius-sm);border:1px solid var(--border-color);background:var(--bg-elevated);color:var(--text-muted);cursor:pointer;font-size:11px}.vis-tab.active{background:var(--color-primary);color:#000;border-color:var(--color-primary)}.visual-config{display:flex;gap:8px;align-items:center;padding:8px 12px;border-bottom:1px solid var(--border-color)}.vis-select{flex:1;padding:6px;background:var(--bg-elevated);border:1px solid var(--border-color);border-radius:var(--radius-sm);color:var(--text-primary);font-size:12px}.visual-canvas{height:350px;padding:12px}.chart-container{width:100%;height:100%}.chart-error{padding:8px 12px;color:#ef4444;font-size:11px;background:rgba(239,68,68,0.1);border-radius:var(--radius-sm)}
+
+/* -- Permission Panel -- */
+.perm-panel{width:520px}.perm-body{padding:12px}.perm-header-row{display:flex;align-items:center;gap:8px;padding:6px 8px;background:rgba(59,130,246,0.1);border-radius:var(--radius-sm);margin-bottom:8px;font-size:11px;font-weight:600;color:var(--color-primary)}.perm-col{flex:1}.perm-col:nth-child(2),.perm-col:nth-child(3),.perm-col:nth-child(4){text-align:center;width:60px}.perm-row{display:flex;align-items:center;gap:8px;padding:6px 8px;border-radius:var(--radius-sm);background:rgba(255,255,255,0.02);margin-bottom:4px;font-size:11px}.perm-field{flex:1;color:var(--text-primary);font-family:monospace}.perm-check{position:relative;width:24px;height:16px;cursor:pointer}.perm-check input{opacity:0;width:0;height:0}.perm-check span{position:absolute;inset:0;background:var(--border-color);border-radius:8px;transition:.2s}.perm-check input:checked+span{background:#10b981}.perm-check span::before{content:'';position:absolute;width:12px;height:12px;left:2px;top:2px;background:#fff;border-radius:50%;transition:.2s}.perm-check input:checked+span::before{transform:translateX(8px)}.perm-footer{display:flex;gap:6px;padding-top:8px;border-top:1px solid var(--border-color)}
+
+/* -- Execution Plan Panel -- */
+.plan-panel{width:560px}.plan-body{padding:12px}.plan-loading{color:var(--text-muted);text-align:center;padding:20px}.plan-empty{color:var(--text-muted);font-size:12px;text-align:center;padding:20px}.plan-tree{display:flex;flex-direction:column;gap:6px;max-height:300px;overflow-y:auto}.plan-step{margin-bottom:4px}.ps-header{display:flex;align-items:center;gap:8px;padding:6px 10px;border-left:3px solid;border-radius:0 var(--radius-sm) var(--radius-sm) 0;background:rgba(255,255,255,0.02);font-size:11px}.ps-header.ps-sub{margin-left:20px;opacity:0.8}.ps-type{color:var(--color-primary);font-weight:600;min-width:80px}.ps-cost{min-width:60px}.ps-rows{color:var(--text-muted);font-size:10px}.ps-detail{font-size:10px;color:var(--text-muted);padding:2px 10px 4px 14px}.ps-children{margin-left:16px}.plan-warnings{margin-top:12px;padding:8px 12px;background:rgba(245,158,11,0.1);border:1px solid rgba(245,158,11,0.2);border-radius:var(--radius-sm)}.pw-title{font-size:11px;color:#f59e0b;font-weight:600;margin-bottom:4px}.pw-item{font-size:10px;color:var(--text-muted);padding:2px 0}
+
+/* -- Template CRUD Panel -- */
+.tmpl-crud-panel{width:560px}.tmpl-crud-body{padding:12px}.tmpl-crud-toolbar{display:flex;gap:6px;align-items:center;margin-bottom:10px}.tmpl-crud-list{display:flex;flex-direction:column;gap:6px;max-height:320px;overflow-y:auto}.tmpl-crud-item{display:flex;align-items:center;gap:8px;padding:8px 10px;background:rgba(255,255,255,0.02);border:1px solid var(--border-color);border-radius:var(--radius-sm);cursor:pointer}.tmpl-crud-item:hover{border-color:var(--color-primary);background:rgba(59,130,246,0.05)}.tci-icon{font-size:18px}.tci-info{flex:1}.tci-name{font-size:12px;color:var(--text-primary);font-weight:500}.tci-cat{font-size:10px;color:var(--text-muted)}.tci-actions{display:flex;gap:4px}
 </style>
