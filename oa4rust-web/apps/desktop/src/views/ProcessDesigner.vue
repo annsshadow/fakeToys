@@ -6074,7 +6074,6 @@ const versionDiffResult = ref<{added: number; removed: number; modified: number}
 const showPerfMonitorPanel = ref(false)
 const perfStatsData = ref<{fps: number; nodes: number; edges: number; renderMs: number; memMb: number}>({ fps: 60, nodes: 0, edges: 0, renderMs: 0, memMb: 0 })
 // ── Notification Center State ────────────────────────────────────────
-const showNotificationPanel = ref(false)
 const notificationsList = ref<Array<{id: string; type: string; title: string; message: string; timestamp: number; read: boolean; category: string}>>([])
 const unreadNotificationCount = computed(() => notificationsList.value.filter(n => !n.read).length)
 // ── Audit Trail State ────────────────────────────────────────────────
