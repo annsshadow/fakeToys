@@ -512,17 +512,7 @@ function onFieldDrop(e: DragEvent, idx: number) {
 // ── Conditional Display ────────────────────────────────────────────────
 interface FieldCondition { operator: string; value: string; fieldKey?: string }
 
-function addCondition() {
-  if (!selectedField.value) return
-  if (!(selectedField.value as any).conditions) (selectedField.value as any).conditions = []
-  ;(selectedField.value as any).conditions.push({ operator: "equals", value: "", fieldKey: "" })
-}
 
-function removeCondition(i: number) {
-  if (!selectedField.value) return
-  const conds = (selectedField.value as any).conditions
-  if (Array.isArray(conds)) conds.splice(i, 1)
-}
 
 function fmtCondition(c: FieldCondition): string {
   const ops: Record<string, string> = { equals: '==', contains: 'includes', gt: '>', lt: '<' }
