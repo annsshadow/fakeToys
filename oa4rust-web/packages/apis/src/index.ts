@@ -903,80 +903,14 @@ export const attendanceControlApi = {
 // ─────────────────────────────────────────────────────────────
 // 工作流表面 (processplatform_assemble_surface — 963 routes)
 // ─────────────────────────────────────────────────────────────
-export const processplatformSurfaceApi = {
-  openapi: () => api.get("/jaxrs/processplatform/assemble/surface/openapi"),
-  get: (id: string) => api.get(`/jaxrs/processplatform/assemble/surface/get/${id}`),
-  sign: (id: string) => api.get(`/jaxrs/processplatform/assemble/surface/sign/${id}`),
-  snap: (id: string) => api.get(`/jaxrs/processplatform/assemble/surface/snap/${id}`),
-  task: (id: string) => api.get(`/jaxrs/processplatform/assemble/surface/task/${id}`),
-  work: (id: string) => api.get(`/jaxrs/processplatform/assemble/surface/work/${id}`),
-  draft: (id: string) => api.get(`/jaxrs/processplatform/assemble/surface/draft/${id}`),
-  route: (id: string) => api.get(`/jaxrs/processplatform/assemble/surface/route/${id}`),
-  form: (flag: string) => api.get(`/jaxrs/processplatform/assemble/surface/form/${flag}`),
-  review: (id: string) => api.get(`/jaxrs/processplatform/assemble/surface/review/${id}`),
-  preview: (id: string) => api.get(`/jaxrs/processplatform/assemble/surface/preview/${id}`),
-  handover: (id: string) => api.post(`/jaxrs/processplatform/assemble/surface/handover/${id}`, null),
-  create: (data: unknown) => api.post("/jaxrs/processplatform/assemble/surface/create", data),
-  save: (id: string, data: unknown) => api.put(`/jaxrs/processplatform/assemble/surface/save/${id}`, data),
-  delete: (id: string) => api.delete(`/jaxrs/processplatform/assemble/surface/${id}`),
-  request: (method: string, path: string, body?: unknown) => {
-    const url = "/jaxrs/processplatform/assemble/surface" + path;
-    if (method === "GET") return api.get(url);
-    if (method === "POST") return api.post(url, body);
-    if (method === "PUT") return api.put(url, body);
-    return api.delete(url);
-  },
-};
 
 // ─────────────────────────────────────────────────────────────
 // CMS 内容管理 (cms_assemble_control — 405 routes)
 // ─────────────────────────────────────────────────────────────
-export const cmsApi = {
-  log: (id: string) => api.get(`/jaxrs/cms/log/${id}`),
-  file: (id: string) => api.get(`/jaxrs/cms/file/${id}`),
-  form: (id: string) => api.get(`/jaxrs/cms/form/${id}`),
-  view: (id: string) => api.get(`/jaxrs/cms/view/${id}`),
-  script: (id: string) => api.get(`/jaxrs/cms/script/${id}`),
-  outputList: () => api.get("/jaxrs/cms/output/list"),
-  create: (type: string, data: unknown) => api.post(`/jaxrs/cms/${type}`, data),
-  update: (type: string, id: string, data: unknown) => api.put(`/jaxrs/cms/${type}/${id}`, data),
-  delete: (type: string, id: string) => api.delete(`/jaxrs/cms/${type}/${id}`),
-  comment: (id: string) => api.get(`/jaxrs/cms/comment/${id}`),
-  request: (method: string, path: string, body?: unknown) => {
-    const url = "/jaxrs/cms" + path;
-    if (method === "GET") return api.get(url);
-    if (method === "POST") return api.post(url, body);
-    if (method === "PUT") return api.put(url, body);
-    return api.delete(url);
-  },
-};
 
 // ─────────────────────────────────────────────────────────────
 // 组织控制 (organization_assemble_control — 235 routes)
 // ─────────────────────────────────────────────────────────────
-export const organizationControlApi = {
-  identity: (flag: string) => api.get(`/jaxrs/organization/assemble/control/identity/${flag}`),
-  role: (flag: string) => api.get(`/jaxrs/organization/assemble/control/role/${flag}`),
-  unit: (flag: string) => api.get(`/jaxrs/organization/assemble/control/unit/${flag}`),
-  group: (flag: string) => api.get(`/jaxrs/organization/assemble/control/group/${flag}`),
-  person: (flag: string) => api.get(`/jaxrs/organization/assemble/control/person/${flag}`),
-  getRoot: () => api.get("/jaxrs/organization/assemble/control/unit/get/root"),
-  listTop: () => api.get("/jaxrs/organization/assemble/control/unit/list/top"),
-  roleListLike: () => api.get("/jaxrs/organization/assemble/control/role/list/like"),
-  unitListLike: () => api.get("/jaxrs/organization/assemble/control/unit/list/like"),
-  groupListLike: () => api.get("/jaxrs/organization/assemble/control/group/list/like"),
-  identityListLike: () => api.get("/jaxrs/organization/assemble/control/identity/list/like"),
-  create: (type: string, data: unknown) => api.post(`/jaxrs/organization/assemble/control/${type}`, data),
-  update: (type: string, flag: string, data: unknown) => api.put(`/jaxrs/organization/assemble/control/${type}/${flag}`, data),
-  delete: (type: string, flag: string) => api.delete(`/jaxrs/organization/assemble/control/${type}/${flag}`),
-  request: (method: string, path: string, body?: unknown) => {
-    const url = "/jaxrs/organization/assemble/control" + path;
-    if (method === "GET") return api.get(url);
-    if (method === "POST") return api.post(url, body);
-    if (method === "PUT") return api.put(url, body);
-    return api.delete(url);
-  },
-};
 
 // ─────────────────────────────────────────────────────────────
 // 考勤控制 (attendance_assemble_control — 228 routes)
