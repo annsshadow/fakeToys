@@ -13,6 +13,8 @@
         <button class="btn" @click="zoomOut" title="缩小">🔍-</button>
         <button class="btn" @click="zoomToFit" title="适配内容">⊞ 适配</button>
         <button class="btn" @click="clearCanvas" title="清空">🗑</button>
+        <button class="btn" @click="createVersion()" title="创建版本快照">📌 快照</button>
+        <button class="btn btn-outline" :class="{active: showVersionPanel}" @click="showVersionPanel=!showVersionPanel">📜 版本</button>
         <button class="btn btn-outline" @click="loadProcesses">🔄 刷新</button>
         <button class="btn btn-primary" @click="saveProcess" :disabled="!currentProcess">💾 保存</button>
       </div>
@@ -199,8 +201,31 @@
                 <option value="">默认</option><option value="high">高</option><option value="medium">中</option><option value="low">低</option>
               </select>
             </div>
-            <div class="pg"><label>脚本内容</label>
-              <textarea v-if="getNodeProp('type')==='script'" :value="getNodeProp('script')" @input="_setNodeProp('script',$event.target.value)" class="pi code-textarea" rows="3" placeholder="// JavaScript代码"></textarea>
+            <div class="pg" v-if="getNodeProp('type')==='script'">
+              <label>脚本配置</label>
+              <div class="script-panel">
+                <div class="script-tabs">
+                  <button :class="{active: scriptTab==='code'}" @click="scriptTab='code'">代码</button>
+                  <button :class="{active: scriptTab==='vars'}" @click="scriptTab='vars'">变量</button>
+                  <button :class="{active: scriptTab==='error'}" @click="scriptTab='error'">错误处理</button>
+                </div>
+                <div v-if="scriptTab==='code'" class="script-code-area">
+                  <textarea :value="getNodeProp('script')" @input="_setNodeProp('script',$event.target.value)" class="code-editor" rows="8" placeholder="// JavaScript代码&#10;// 可用变量: inputData, context, output"></textarea>
+                  <div class="script-hint">提示: inputData(输入数据), context(流程上下文), output(输出结果)</div>
+                </div>
+                <div v-if="scriptTab==='vars'" class="script-vars">
+                  <div class="var-row"><span class="var-label">输入变量</span><input class="var-input" placeholder="inputData" /></div>
+                  <div class="var-row"><span class="var-label">输出变量</span><input class="var-input" placeholder="output" /></div>
+                  <div class="var-row"><span class="var-label">上下文</span><input class="var-input" placeholder="context" /></div>
+                </div>
+                <div v-if="scriptTab==='error'" class="script-error">
+                  <div class="pg"><label>失败行为</label>
+                    <select class="pi"><option value="fail">终止流程</option><option value="skip">跳过此节点</option><option value="retry">重试</option></select>
+                  </div>
+                  <div class="pg"><label>最大重试</label><input type="number" class="pi" value="3" min="1" max="10" /></div>
+                  <div class="pg"><label>重试间隔(ms)</label><input type="number" class="pi" value="1000" min="100" /></div>
+                </div>
+              </div>
             </div>
             <div class="pg"><label>X</label><input :value="getNodeProp('x')" type="number" @input="_setNodeProp('x',+$event.target.value)" class="pi" /></div>
             <div class="pg"><label>Y</label><input :value="getNodeProp('y')" type="number" @input="_setNodeProp('y',+$event.target.value)" class="pi" /></div>
@@ -223,9 +248,23 @@
           <p v-if="currentProcess" class="hint">双击子流程节点进入嵌套编辑</p>
         </div>
       </aside>
+      <!-- Version Panel -->
+      <aside v-if="showVersionPanel" class="pd-version-panel glass-card">
+        <div class="vp-header"><span>📜 版本历史</span><button class="btn-sm" @click="showVersionPanel=false">✕</button></div>
+        <div class="vp-list">
+          <div v-if="versions.length===0" class="vp-empty">暂无版本记录（点击「快照」创建）</div>
+          <div v-for="(v, i) in versions" :key="v.id" class="vp-item" :class="{active: selectedVersion?.id===v.id}" @click="selectedVersion=v">
+            <div class="vp-info"><div class="vp-label">{{ v.label }}</div><div class="vp-meta">{{ new Date(v.timestamp).toLocaleString('zh-CN',{month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'}) }} · {{ v.author }}</div></div>
+            <div class="vp-actions"><button class="vp-btn" @click.stop="revertToVersion(v)" title="恢复">↩</button><button class="vp-btn vp-del" @click.stop="deleteVersion(i)" title="删除">🗑</button></div>
+          </div>
+        </div>
+        <div v-if="selectedVersion" class="vp-diff">
+          <div class="vp-diff-title">{{ selectedVersion.label }}</div>
+          <div class="vp-diff-info"><span>节点: {{ selectedVersion.config.nodes.length }}</span><span>连线: {{ (selectedVersion.config.edges||[]).length }}</span></div>
+          <button class="btn-sm" style="width:100%" @click="revertToVersion(selectedVersion)">恢复到版本</button>
+        </div>
+      </aside>
     </div>
-
-    <!-- New Process Modal -->
     <div v-if="showNewModal" class="modal-overlay" @click.self="showNewModal=false">
       <div class="modal glass-card">
         <h3>新建流程</h3>
@@ -398,6 +437,15 @@ const anchorPoints = computed(() => {
 
 // Group state
 const groupedNodes = ref<Set<string>>(new Set())
+
+// Script tab state
+const scriptTab = ref<'code'|'vars'|'error'>('code')
+
+// Version control state
+interface ProcVersion { id: string; timestamp: number; label: string; config: { nodes: PDNode[]; edges: PDEdge[] }; author: string; message: string }
+const versions = ref<ProcVersion[]>([])
+const showVersionPanel = ref(false)
+const selectedVersion = ref<ProcVersion|null>(null)
 
 // Multi-select state
 const multiSelected = ref<Set<string>>(new Set())
@@ -621,6 +669,28 @@ function duplicateSelected() {
     newNode.condition = orig.condition; newNode.timeout = orig.timeout
     newNode.priority = orig.priority; newNode.script = orig.script
   }
+}
+
+// ── Version Control ──────────────────────────────────────────────────
+function createVersion(label?: string) {
+  if (!processDef.value || !currentProcess.value) return
+  const v: ProcVersion = {
+    id: genId(), timestamp: Date.now(),
+    label: label || '版本 ' + (versions.value.length + 1),
+    config: JSON.parse(JSON.stringify(processDef.value)),
+    author: 'user', message: label || '自动快照'
+  }
+  versions.value.unshift(v)
+  if (versions.value.length > 20) versions.value.pop()
+}
+function revertToVersion(v: ProcVersion) {
+  processDef.value = JSON.parse(JSON.stringify(v.config))
+  selectedNode.value = null; selectedEdge.value = null
+  history.value = []; histIdx.value = -1; pushHistory()
+}
+function deleteVersion(idx: number) {
+  versions.value.splice(idx, 1)
+  if (selectedVersion.value?.id === versions.value[idx]?.id) selectedVersion.value = null
 }
 
 function clearCanvas() {
@@ -1256,6 +1326,38 @@ onUnmounted(() => {
 .btn-del-sm{padding:6px 10px;border-radius:var(--radius-sm);border:1px solid var(--color-danger);background:transparent;color:var(--color-danger);cursor:pointer;font-size:12px;width:100%;margin-top:8px}
 .props-empty{padding:20px;text-align:center;color:var(--text-muted);font-size:12px}
 .props-empty .hint{font-size:11px;color:var(--text-muted);margin-top:8px;opacity:0.7}
+/* Version panel */
+.pd-version-panel{width:280px;flex-shrink:0;display:flex;flex-direction:column;border-left:1px solid var(--border-color);overflow:hidden;background:var(--bg-surface)}
+.vp-header{display:flex;align-items:center;justify-content:space-between;padding:8px 12px;border-bottom:1px solid var(--border-color);font-size:13px;font-weight:600;color:var(--color-primary)}
+.vp-list{flex:1;overflow-y:auto;padding:4px}
+.vp-empty{padding:16px;text-align:center;color:var(--text-muted);font-size:12px}
+.vp-item{display:flex;align-items:center;gap:8px;padding:8px;border-radius:var(--radius-sm);cursor:pointer;margin-bottom:2px}
+.vp-item:hover{background:var(--bg-hover)}
+.vp-item.active{background:var(--color-primary-soft);border-left:3px solid var(--color-primary)}
+.vp-info{flex:1;min-width:0}
+.vp-label{font-size:13px;color:var(--text-primary);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.vp-meta{font-size:10px;color:var(--text-muted);font-family:'JetBrains Mono',monospace;margin-top:2px}
+.vp-actions{display:flex;gap:4px}
+.vp-btn{padding:3px 8px;border-radius:var(--radius-sm);border:1px solid var(--border-color);background:transparent;color:var(--text-muted);cursor:pointer;font-size:11px}
+.vp-btn:hover{border-color:var(--color-primary);color:var(--color-primary)}
+.vp-del:hover{border-color:var(--color-danger);color:var(--color-danger)}
+.vp-diff{padding:10px;border-top:1px solid var(--border-color)}
+.vp-diff-title{font-size:12px;font-weight:600;color:var(--color-primary);margin-bottom:6px}
+.vp-diff-info{display:flex;gap:12px;font-size:11px;color:var(--text-muted);margin-bottom:8px}
+/* Script panel */
+.script-panel{border:1px solid var(--border-color);border-radius:var(--radius-md);overflow:hidden;margin-top:2px}
+.script-tabs{display:flex;border-bottom:1px solid var(--border-color)}
+.script-tabs button{flex:1;padding:5px 4px;font-size:11px;border:none;background:transparent;color:var(--text-muted);cursor:pointer;border-right:1px solid var(--border-color)}
+.script-tabs button:last-child{border-right:none}
+.script-tabs button.active{background:var(--color-primary-soft);color:var(--color-primary);font-weight:600}
+.script-code-area{padding:6px}
+.code-editor{width:100%;padding:8px;border-radius:var(--radius-sm);border:1px solid var(--border-color);background:var(--bg-terminal);color:#7fdbca;font-family:'JetBrains Mono',monospace;font-size:11px;outline:none;resize:vertical;line-height:1.5;box-sizing:border-box}
+.script-hint{font-size:10px;color:var(--text-muted);margin-top:4px}
+.script-vars{padding:8px;display:flex;flex-direction:column;gap:6px}
+.var-row{display:flex;align-items:center;gap:8px}
+.var-label{font-size:11px;color:var(--text-muted);width:70px;flex-shrink:0}
+.var-input{flex:1;padding:4px 8px;border-radius:var(--radius-sm);border:1px solid var(--border-color);background:var(--bg-elevated);color:var(--text-primary);font-size:11px;outline:none;font-family:'JetBrains Mono',monospace}
+.script-error{padding:8px;display:flex;flex-direction:column;gap:6px}
 /* Modal */
 .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.6);display:flex;align-items:center;justify-content:center;z-index:200}
 .modal{padding:24px;width:480px;max-width:90vw;display:flex;flex-direction:column;gap:12px}
