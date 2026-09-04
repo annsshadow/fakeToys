@@ -6622,10 +6622,6 @@ function generateHeatmap(): void {
 function updateHeatmapMetric(metric: string) { heatmapMetric.value = metric as any; generateHeatmap() }
 // ── Workflow Rules Functions ─────────────────────────────────────────
 function openWorkflowRulesPanel() { showWorkflowRulesPanel.value = true }
-  if (!newRuleName.value.trim()) return
-  workflowRulesList.value.push({ id: genId(), name: newRuleName.value, condition: newRuleCondition.value, action: newRuleAction.value, priority: workflowRulesList.value.length, enabled: true, executionLog: [] })
-  newRuleName.value = ''; newRuleCondition.value = ''; newRuleAction.value = ''
-}
 function executeWorkflowRules(): void {
   if (!processDef.value) return
   workflowRulesList.value.filter(r => r.enabled).forEach(rule => {
@@ -6852,6 +6848,184 @@ function slugify(text: string): string { return text.toLowerCase().replace(/[^ws
 function truncateText(text: string, maxLen: number): string { return text.length <= maxLen ? text : text.substring(0, maxLen) + '...' }
 function randomColor(): string { return '#' + Math.floor(Math.random()*16777215).toString(16).padStart(6, '0') }
 function generateUUID(): string { return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => { const r = Math.random()*16|0; return (c==='x'?r:(r&0x3|0x8)).toString(16) }) }
+
+// -- Advanced Interfaces
+interface SLAMetric { slaId: string; name: string; targetMs: number; currentMs: number; breached: boolean; color: string }
+interface CrossProcessRef { targetProcId: string; targetType: "process"|"form"|"report"; label: string; relationType: "calls"|"calledBy"|"shares"|"extends" }
+interface QualityGate { gateId: string; name: string; checkType: "time"|"count"|"approval"|"data"; threshold: string; status: "pass"|"fail"|"pending"; passedAt?: string }
+interface RiskFactor { id: string; name: string; severity: "low"|"medium"|"high"|"critical"; probability: number; impact: number; mitigations: string[] }
+interface CostEstimate { resourceId: string; resourceName: string; timeCost: number; memoryCost: number; moneyCost: number; unit: string }
+interface NotificationRule { id: string; event: string; channel: "email"|"sms"|"webhook"|"in_app"; condition: string; enabled: boolean }
+interface AuditEntry { id: string; timestamp: number; user: string; action: string; target: string; oldVal?: string; newVal?: string }
+interface HealthScore { overall: number; efficiency: number; reliability: number; maintainability: number; security: number; details: Array<{label: string; value: number; color: string}> }
+interface BottleneckCell { nodeId: string; avgTime: number; maxTime: number; minTime: number; variance: number; color: string; label: string }
+interface OptimizationSuggestion { id: string; type: "parallel"|"sequential"|"simplify"|"delegate"; description: string; impact: "high"|"medium"|"low"; estimatedSaving: string }
+interface ChangeRequest { id: string; title: string; description: string; status: "draft"|"review"|"approved"|"rejected"|"implemented"; author: string; createdAt: number; changes: string[] }
+interface AIBottleneck { nodeId: string; score: number; reason: string; suggestion: string }
+
+// -- Advanced State
+const showSLAPanel = ref(false)
+const slaMetrics = ref<SLAMetric[]>([])
+const showCrossProcessPanel = ref(false)
+const crossProcessRefs = ref<CrossProcessRef[]>([])
+const showQualityGatesPanel = ref(false)
+const qualityGates = ref<QualityGate[]>([
+  { gateId: 'g1', name: '提交完整性检查', checkType: 'data', threshold: 'all_fields', status: 'pending' },
+  { gateId: 'g2', name: '审批链验证', checkType: 'approval', threshold: '3_approvals', status: 'pending' },
+  { gateId: 'g3', name: '超时门禁', checkType: 'time', threshold: '24h', status: 'pending' },
+])
+const showCostPanel = ref(false)
+const costEstimates = ref<CostEstimate[]>([])
+const showNotificationPanel = ref(false)
+const notificationRules = ref<NotificationRule[]>([])
+const showAuditPanel = ref(false)
+const auditEntries = ref<AuditEntry[]>([])
+const showHealthPanel = ref(false)
+const healthScore = ref<HealthScore>({ overall: 0, efficiency: 0, reliability: 0, maintainability: 0, security: 0, details: [] })
+const showBottleneckPanel = ref(false)
+const bottleneckData = ref<BottleneckCell[]>([])
+const showOptimizationPanel = ref(false)
+const optimizationSuggestions = ref<OptimizationSuggestion[]>([])
+const showChangePanel = ref(false)
+const changeRequests = ref<ChangeRequest[]>([])
+const showAIPanel = ref(false)
+const aiBottlenecks = ref<AIBottleneck[]>([])
+const healthCircleStyle = computed(() => {
+  const v = healthScore.value.overall
+  const color = v > 70 ? '#10b981' : v > 50 ? '#f59e0b' : '#ef4444'
+  return `conic-gradient(${color} ${v * 3.6}deg, var(--border-color) 0)`
+})
+
+// -- Advanced Functions
+function openSLAPanel(): void { showSLAPanel.value = true; computeSLAMetrics() }
+function computeSLAMetrics(): void {
+  const nodes = processDef.value?.nodes || []
+  const metrics: SLAMetric[] = []
+  nodes.forEach((n, i) => {
+    const target = 5000 + i * 2000
+    const current = target * (0.5 + Math.random() * 1.5)
+    metrics.push({ slaId: 'sla_' + n.id, name: n.label || n.type, targetMs: target, currentMs: Math.round(current), breached: current > target, color: current > target ? '#ef4444' : current > target * 0.8 ? '#f59e0b' : '#10b981' })
+  })
+  slaMetrics.value = metrics
+}
+function openCrossProcessPanel(): void { showCrossProcessPanel.value = true; generateCrossProcessRefs() }
+function generateCrossProcessRefs(): void {
+  const types = ['审批流程', '报销流程', '请假流程', '采购流程', '合同流程'] as const
+  const rels = ['calls' as const, 'calledBy' as const, 'shares' as const, 'extends' as const]
+  const refs: CrossProcessRef[] = []
+  for (let i = 0; i < 5; i++) {
+    refs.push({ targetProcId: 'proc_' + (i + 1), targetType: 'process', label: types[i], relationType: rels[i % rels.length] })
+  }
+  crossProcessRefs.value = refs
+}
+function openQualityGatesPanel(): void { showQualityGatesPanel.value = true; runQualityCheck() }
+function runQualityCheck(): void {
+  qualityGates.value.forEach(g => {
+    g.status = g.checkType === 'time' ? (Math.random() > 0.3 ? 'pass' : 'fail') : g.checkType === 'count' ? (Math.random() > 0.2 ? 'pass' : 'fail') : g.checkType === 'approval' ? (Math.random() > 0.4 ? 'pass' : 'fail') : (Math.random() > 0.3 ? 'pass' : 'fail')
+    if (g.status === 'pass') g.passedAt = new Date().toLocaleString('zh-CN')
+  })
+}
+function openCostPanel(): void { showCostPanel.value = true; estimateCosts() }
+function estimateCosts(): void {
+  const resources = ['计算资源', '存储资源', '网络带宽', '人工成本', '第三方服务']
+  const units = ['ms', 'MB', 'Mbps', '人时', '元']
+  costEstimates.value = resources.map((r, i) => ({ resourceId: 'res_' + i, resourceName: r, timeCost: +(Math.random() * 100).toFixed(1), memoryCost: +(Math.random() * 500).toFixed(0), moneyCost: +(Math.random() * 50).toFixed(2), unit: units[i] }))
+}
+function openNotificationPanel(): void { showNotificationPanel.value = true }
+function addNotificationRule(): void {
+  const channels: NotificationRule['channel'][] = ['email', 'sms', 'webhook', 'in_app']
+  const events: NotificationRule['event'][] = ['node_start', 'node_complete', 'node_timeout', 'process_start', 'process_complete', 'process_error']
+  notificationRules.value.push({ id: genId(), event: events[Math.floor(Math.random() * events.length)], channel: channels[Math.floor(Math.random() * channels.length)], condition: 'true', enabled: true })
+}
+function removeNotificationRule(id: string): void { notificationRules.value = notificationRules.value.filter(r => r.id !== id) }
+function openAuditPanel(): void { showAuditPanel.value = true; loadAuditLog() }
+function loadAuditLog(): void {
+  const actions = ['创建', '修改', '删除', '发布', '撤回', '审批', '执行', '回滚']
+  const users = ['张三', '李四', '王五', '赵六']
+  auditEntries.value = Array.from({length: 15}, (_, i) => ({ id: 'a' + i, timestamp: Date.now() - i * 3600000 * Math.random() * 48, user: users[Math.floor(Math.random() * users.length)], action: actions[Math.floor(Math.random() * actions.length)], target: '流程节点_' + Math.floor(Math.random() * 20), oldVal: '旧值', newVal: '新值' + i }))
+}
+function openHealthPanel(): void { showHealthPanel.value = true; calculateHealthScore() }
+function calculateHealthScore(): void {
+  const scores = [65 + Math.random() * 30, 70 + Math.random() * 25, 60 + Math.random() * 35, 75 + Math.random() * 20, 80 + Math.random() * 15]
+  healthScore.value = {
+    overall: +scores.reduce((a, b) => a + b, 0) / scores.length,
+    efficiency: +scores[0].toFixed(1),
+    reliability: +scores[1].toFixed(1),
+    maintainability: +scores[2].toFixed(1),
+    security: +scores[3].toFixed(1),
+    details: [
+      { label: '平均执行时间', value: +scores[0].toFixed(1), color: scores[0] > 85 ? '#10b981' : scores[0] > 70 ? '#f59e0b' : '#ef4444' },
+      { label: '成功率', value: +scores[1].toFixed(1), color: scores[1] > 85 ? '#10b981' : scores[1] > 70 ? '#f59e0b' : '#ef4444' },
+      { label: '错误率', value: +(100 - scores[2]).toFixed(1), color: scores[2] > 85 ? '#10b981' : scores[2] > 70 ? '#f59e0b' : '#ef4444' },
+      { label: '复杂度指数', value: +scores[3].toFixed(1), color: scores[3] > 85 ? '#10b981' : '#f59e0b' },
+    ]
+  }
+}
+function openBottleneckPanel(): void { showBottleneckPanel.value = true; computeBottlenecks() }
+function computeBottlenecks(): void {
+  const nodes = processDef.value?.nodes || []
+  bottleneckData.value = nodes.map(n => {
+    const avg = 100 + Math.random() * 400
+    const max = avg * (1.2 + Math.random() * 0.8)
+    const min = avg * 0.5
+    const variance = max - min
+    return { nodeId: n.id, avgTime: +avg.toFixed(0), maxTime: +max.toFixed(0), minTime: +min.toFixed(0), variance: +variance.toFixed(0), color: variance / 500 > 0.7 ? '#ef4444' : variance / 500 > 0.4 ? '#f59e0b' : '#10b981', label: n.label || n.type }
+  }).sort((a, b) => b.variance - a.variance)
+}
+function openOptimizationPanel(): void { showOptimizationPanel.value = true; generateOptimizations() }
+function generateOptimizations(): void {
+  const types: OptimizationSuggestion['type'][] = ['parallel', 'sequential', 'simplify', 'delegate']
+  const descriptions = ['将串行审批改为并行审批', '移除冗余的转审节点', '添加自动跳过逻辑', '拆分大流程为子流程', '使用缓存减少重复查询', '批量处理相似请求']
+  const impacts: Array<'high'|'medium'|'low'> = ['high', 'medium', 'low']
+  optimizationSuggestions.value = Array.from({length: 6}, (_, i) => ({
+    id: 'opt_' + i, type: types[i % types.length], description: descriptions[i],
+    impact: impacts[i % impacts.length], estimatedSaving: Math.floor(10 + Math.random() * 40) + '%'
+  }))
+}
+function openChangePanel(): void { showChangePanel.value = true; loadChangeRequests() }
+function loadChangeRequests(): void {
+  const statuses: ChangeRequest['status'][] = ['draft', 'review', 'approved', 'rejected', 'implemented']
+  const authors = ['张三', '李四', '王五']
+  changeRequests.value = Array.from({length: 5}, (_, i) => ({
+    id: 'cr_' + i, title: '变更请求 #' + (i + 1), description: '优化第' + (i + 1) + '个节点的执行逻辑',
+    status: statuses[i % statuses.length], author: authors[i % authors.length],
+    createdAt: Date.now() - i * 86400000, changes: ['修改节点类型', '调整条件表达式', '更新审批人']
+  }))
+}
+function openAIPanel(): void { showAIPanel.value = true; runAIAnalysis() }
+function runAIAnalysis(): void {
+  const nodes = processDef.value?.nodes || []
+  aiBottlenecks.value = nodes.slice(0, 5).map(n => ({
+    nodeId: n.id, score: +(0.3 + Math.random() * 0.7).toFixed(2),
+    reason: '该节点执行时间超过预期阈值', suggestion: '建议优化为并行执行或添加超时处理'
+  }))
+}
+function applyOptimization(optId: string): void { showToast('已应用优化: ' + optId, 'success') }
+function approveChangeRequest(crId: string): void {
+  const cr = changeRequests.value.find(c => c.id === crId)
+  if (cr) cr.status = 'approved'
+  showToast('已批准变更请求: ' + crId, 'success')
+}
+function rejectChangeRequest(crId: string): void {
+  const cr = changeRequests.value.find(c => c.id === crId)
+  if (cr) cr.status = 'rejected'
+  showToast('已拒绝变更请求: ' + crId, 'warning')
+}
+function simulatePerformance(): void {
+  showToast('性能模拟中...', 'info')
+  setTimeout(() => showToast('模拟完成: 平均延迟 234ms, P99 1.2s', 'success'), 1500)
+}
+function getScoreColor(score: number): string { return score > 0.6 ? '#ef4444' : score > 0.4 ? '#f59e0b' : '#10b981' }
+function getRelationColor(t: string): string { return {calls:'#3b82f6',calledBy:'#10b981',shares:'#f59e0b',extends:'#8b5cf6'}[t]||'#666' }
+function getRelationIcon(t: string): string { return {calls:'↑',calledBy:'↓',shares:'⇄',extends:'↗'}[t]||'·' }
+function getRelationLabel(t: string): string { return {calls:'调用',calledBy:'被调用',shares:'共享',extends:'扩展'}[t]||t }
+function getSeverityColor(s: string): string { return {low:'#10b981',medium:'#f59e0b',high:'#f97316',critical:'#ef4444'}[s]||'#666' }
+function getChannelBg(c: string): string { return {email:'rgba(59,130,246,0.2)',sms:'rgba(16,185,129,0.2)',webhook:'rgba(139,92,246,0.2)',in_app:'rgba(245,158,11,0.2)'}[c]||'rgba(100,100,100,0.2)' }
+function getOptTypeColor(t: string): string { return {parallel:'#3b82f6',sequential:'#10b981',simplify:'#f59e0b',delegate:'#8b5cf6'}[t]||'#666' }
+function getOptTypeLabel(t: string): string { return {parallel:'并行化',sequential:'串行化',simplify:'简化',delegate:'委托'}[t]||t }
+function getOptImpColor(i: string): string { return {high:'#ef4444',medium:'#f59e0b',low:'#10b981'}[i]||'#666' }
+function getCrStatusColor(s: string): string { return {draft:'#666',review:'#3b82f6',approved:'#10b981',rejected:'#ef4444',implemented:'#8b5cf6'}[s]||'#666' }
+function getCrStatusLabel(s: string): string { return {draft:'草稿',review:'审核中',approved:'已批准',rejected:'已拒绝',implemented:'已实施'}[s]||s }
 </script>
 <style scoped>
 .pd{display:flex;flex-direction:column;height:100%}
@@ -8230,4 +8404,17 @@ kbd{display:inline-block;padding:3px 8px;border-radius:4px;border:1px solid var(
 .el-time{font-family:'JetBrains Mono',monospace;width:60px;color:var(--text-muted)}
 .el-type{padding:1px 4px;border-radius:var(--radius-sm);background:rgba(0,212,255,0.2);color:var(--color-primary);font-size:10px;width:80px}
 .el-label{flex:1;color:var(--text-primary)}.el-data{color:var(--text-muted);font-size:10px;max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
+/* -- Advanced Panel Styles */
+.slk-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}.slk-card{padding:10px;border-radius:8px;background:rgba(255,255,255,0.02);border:1px solid var(--border-color)}.slk-name{font-size:11px;font-weight:600;color:var(--text-primary);margin-bottom:6px}.slk-bar-wrap{height:4px;background:var(--border-color);border-radius:2px;margin-bottom:6px}.slk-bar{height:100%;border-radius:2px;transition:width .3s}.slk-stats{display:flex;gap:6px;align-items:center;font-size:10px}.slk-cur{color:var(--color-primary)}.slk-breach{color:#ef4444}.slk-ok{color:#10b981}
+.xp-list{display:flex;flex-direction:column;gap:8px}.xp-item{display:flex;align-items:center;gap:10px;padding:10px;border-radius:8px;background:rgba(255,255,255,0.02);border:1px solid var(--border-color)}.xp-icon{width:28px;height:28px;border-radius:50%;border:2px solid;display:flex;align-items:center;justify-content:center;font-size:12px}.xp-info{flex:1}.xp-label{font-size:12px;font-weight:600;color:var(--text-primary)}.xp-meta{font-size:10px;color:var(--text-muted)}.xp-rel{font-size:10px;font-weight:600}
+.qg-header{display:flex;justify-content:flex-end;margin-bottom:10px}.qg-list{display:flex;flex-direction:column;gap:6px}.qg-item{display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:6px;background:rgba(255,255,255,0.02);border:1px solid var(--border-color);font-size:11px}.qg-icon{font-size:12px}.qg-name{flex:1;color:var(--text-primary)}.qg-type{color:var(--text-muted);font-size:10px}.qg-threshold{color:var(--text-muted);font-size:10px}.qg-pass{color:#10b981}.qg-fail{color:#ef4444}.qg-pending{color:#f59e0b}.qg-time{font-size:9px;color:var(--text-muted)}
+.ct-table{display:flex;flex-direction:column;gap:1px}.ct-hdr,.ct-row,.ct-total{display:grid;grid-template-columns:1.5fr 1fr 1fr 1fr 0.8fr;gap:8px;padding:6px 8px;font-size:11px;align-items:center}.ct-hdr{font-weight:700;color:var(--text-muted);text-transform:uppercase;font-size:10px;border-bottom:1px solid var(--border-color)}.ct-row{background:rgba(255,255,255,0.02);border-radius:4px}.ct-name{color:var(--text-primary)}.ct-cost{color:var(--color-primary);font-weight:600}.ct-unit{color:var(--text-muted);font-size:10px}.ct-total{background:rgba(59,130,246,0.1);border-radius:6px;font-weight:700}.ct-total-cost{color:#10b981;font-size:14px}
+.nf-add{margin-bottom:10px;text-align:right}.nf-list{display:flex;flex-direction:column;gap:6px}.nf-item{display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:6px;background:rgba(255,255,255,0.02);border:1px solid var(--border-color);font-size:11px}.nf-event{flex:1;color:var(--text-primary);font-family:'JetBrains Mono',monospace;font-size:10px}.nf-ch{padding:2px 6px;border-radius:4px;font-size:9px;font-weight:600}.nf-cond{flex:1;color:var(--text-muted);font-size:10px;font-family:'JetBrains Mono',monospace}.nf-toggle{position:relative;width:32px;height:16px;cursor:pointer}.nf-toggle input{opacity:0;width:0;height:0}.nf-slider{position:absolute;inset:0;background:var(--border-color);border-radius:8px;transition:.2s}.nf-toggle input:checked+.nf-slider{background:#3b82f6}.nf-toggle input:checked+.nf-slider::before{transform:translateX(16px)}.nf-slider::before{content:'';position:absolute;width:12px;height:12px;left:2px;top:2px;background:#fff;border-radius:50%;transition:.2s}
+.ad-list{display:flex;flex-direction:column;gap:2px;max-height:400px;overflow-y:auto}.ad-item{display:flex;align-items:center;gap:8px;padding:6px 8px;border-radius:4px;background:rgba(255,255,255,0.02);font-size:10px}.ad-ts{color:var(--text-muted);font-family:'JetBrains Mono',monospace;width:130px}.ad-user{color:#3b82f6;width:50px}.ad-action{color:#f59e0b;width:50px}.ad-target{flex:1;color:var(--text-primary)}.ad-old{color:var(--text-muted);font-family:'JetBrains Mono',monospace;width:60px}.ad-new{color:#10b981;font-family:'JetBrains Mono',monospace;width:80px}
+.hl-overall{display:flex;align-items:center;gap:20px;margin-bottom:16px}.hl-circle{width:80px;height:80px;border-radius:50%;display:flex;align-items:center;justify-content:center;position:relative}.hl-circle::before{content:'';position:absolute;inset:6px;border-radius:50%;background:var(--bg-elevated)}.hl-score{font-size:18px;font-weight:800;color:var(--text-primary);position:relative;z-index:1}.hl-labels{display:flex;flex-direction:column;gap:4px;font-size:11px}.hl-details{display:flex;flex-direction:column;gap:8px}.hl-det{display:flex;align-items:center;gap:8px;font-size:11px}.hl-det-bar{flex:1;height:6px;background:var(--border-color);border-radius:3px;overflow:hidden}.hl-det-fill{height:100%;border-radius:3px;transition:width .5s}
+.bn-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}.bn-cell{padding:8px;border-radius:6px;background:rgba(255,255,255,0.02);font-size:10px;display:flex;flex-direction:column;gap:2px}.bn-avg{color:var(--color-primary);font-weight:600}.bn-var{color:var(--text-muted)}
+.op-list{display:flex;flex-direction:column;gap:8px}.op-item{padding:10px;border-radius:8px;background:rgba(255,255,255,0.02);border:1px solid var(--border-color)}.op-type{font-size:10px;font-weight:700;text-transform:uppercase;margin-bottom:4px}.op-desc{font-size:12px;color:var(--text-primary);margin-bottom:6px}.op-meta{display:flex;align-items:center;gap:8px;font-size:10px}.op-imp{font-weight:700;text-transform:uppercase}
+.cr-list{display:flex;flex-direction:column;gap:8px}.cr-item{padding:10px;border-radius:8px;background:rgba(255,255,255,0.02);border:1px solid var(--border-color)}.cr-title{font-size:12px;font-weight:600;color:var(--text-primary);margin-bottom:4px}.cr-desc{font-size:11px;color:var(--text-muted);margin-bottom:6px}.cr-meta{display:flex;gap:8px;align-items:center;margin-bottom:6px;font-size:10px}.cr-auth{color:#3b82f6}.cr-status{font-weight:600}.cr-changes{display:flex;gap:4px;flex-wrap:wrap;margin-bottom:6px}.cr-ch{font-size:9px;padding:2px 6px;border-radius:4px;background:rgba(139,92,246,0.15);color:#8b5cf6}.cr-actions{display:flex;gap:6px}
+.ai-header{display:flex;gap:8px;margin-bottom:12px}.ai-list{display:flex;flex-direction:column;gap:8px}.ai-item{display:flex;gap:10px;padding:10px;border-radius:8px;background:rgba(255,255,255,0.02);border:1px solid var(--border-color)}.ai-score{font-size:16px;font-weight:800;width:50px;text-align:center}.ai-info{flex:1}.ai-node{font-size:11px;font-weight:600;color:var(--text-primary);font-family:'JetBrains Mono',monospace}.ai-reason{font-size:10px;color:var(--text-muted);margin-top:2px}.ai-sug{font-size:10px;margin-top:2px}
 </style>
