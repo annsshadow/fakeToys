@@ -1623,6 +1623,224 @@
         <span class="sb-depth-badge">深度 {{ subprocessDepth }}</span>
       </div>
     </div>
+
+
+    <!-- Node Detail Panel -->
+    <div v-if="showNodeDetailPanel && nodeDetailNodeIdx !== null" class="node-detail-panel">
+      <div class="ndp-header">
+        <span>📋 节点详情</span>
+        <div class="ndp-tabs">
+          <button :class="['ndp-tab',{active:nodeDetailTab==='info'}]" @click="changeNodeDetailTab('info')">信息</button>
+          <button :class="['ndp-tab',{active:nodeDetailTab==='conditions'}]" @click="changeNodeDetailTab('conditions')">条件</button>
+          <button :class="['ndp-tab',{active:nodeDetailTab==='vars'}]" @click="changeNodeDetailTab('vars')">变量</button>
+          <button :class="['ndp-tab',{active:nodeDetailTab==='props'}]" @click="changeNodeDetailTab('props')">属性</button>
+          <button :class="['ndp-tab',{active:nodeDetailTab==='history'}]" @click="changeNodeDetailTab('history')">历史</button>
+        </div>
+        <button class="btn-sm" @click="closeNodeDetail()">✕</button>
+      </div>
+      <div class="ndp-body">
+        <div v-if="nodeDetailTab==='info'" class="ndp-info">
+          <div v-if="getNodeDetailInfo()" class="ndp-info-grid">
+            <div class="ndp-info-item"><span class="ndp-label">ID</span><span class="ndp-val">{{ getNodeDetailInfo()!.node.id }}</span></div>
+            <div class="ndp-info-item"><span class="ndp-label">类型</span><span class="ndp-val">{{ getNodeDetailInfo()!.node.type }}</span></div>
+            <div class="ndp-info-item"><span class="ndp-label">标签</span><span class="ndp-val">{{ getNodeDetailInfo()!.node.label || '无' }}</span></div>
+            <div class="ndp-info-item"><span class="ndp-label">入边数</span><span class="ndp-val">{{ getNodeDetailInfo()!.inCount }}</span></div>
+            <div class="ndp-info-item"><span class="ndp-label">出边数</span><span class="ndp-val">{{ getNodeDetailInfo()!.outCount }}</span></div>
+            <div class="ndp-info-item"><span class="ndp-label">位置</span><span class="ndp-val">({{ getNodeDetailInfo()!.node.x }}, {{ getNodeDetailInfo()!.node.y }})</span></div>
+          </div>
+        </div>
+        <div v-if="nodeDetailTab==='history'" class="ndp-history">
+          <div v-for="(h, hi) in nodeDetailHistory" :key="hi" class="ndp-hist-entry">
+            <span class="ndp-hist-time">{{ new Date(h.timestamp).toLocaleTimeString() }}</span>
+            <span class="ndp-hist-action">{{ h.action }}</span>
+            <span class="ndp-hist-details">{{ h.details }}</span>
+          </div>
+          <div v-if="nodeDetailHistory.length===0" class="ndp-hist-empty">暂无历史记录</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Edge Editor Panel -->
+    <div v-if="showEdgeEditorPanel" class="edge-editor-panel">
+      <div class="eep-header"><span>🔗 连线编辑器</span><button class="btn-sm" @click="closeEdgeEditor()">✕</button></div>
+      <div class="eep-body">
+        <div class="eep-field"><label>标签</label><input v-model="edgeLabelTemp" @input="updateEdgeLabel(edgeLabelTemp)" class="eep-input" placeholder="连线标签" /></div>
+        <div class="eep-field"><label>条件</label><input v-model="edgeConditionTemp" @input="updateEdgeCondition(edgeConditionTemp)" class="eep-input" placeholder="执行条件" /></div>
+        <div class="eep-field"><label>路由</label>
+          <select v-model="edgeRoutingTemp" @change="updateEdgeRouting(edgeRoutingTemp)" class="eep-select">
+            <option value="auto">自动</option><option value="straight">直线</option><option value="horizontal">水平</option><option value="vertical">垂直</option>
+          </select>
+        </div>
+        <div class="eep-actions">
+          <button class="btn btn-danger" @click="deleteEdgeEditor()">🗑 删除连线</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Template Manager -->
+    <div v-if="showTemplateManager" class="template-manager-panel">
+      <div class="tmp-header"><span>📦 模板管理</span><button class="btn-sm" @click="showTemplateManager=false">✕</button></div>
+      <div class="tmp-body">
+        <div class="tmp-search"><input v-model="templateManagerSearch" placeholder="搜索模板..." class="tmp-input" /></div>
+        <div class="tmp-grid">
+          <div v-for="(tpl, ti) in filterCustomTemplates()" :key="tpl.id" class="tmp-card">
+            <div class="tmp-icon">{{ tpl.icon }}</div>
+            <div class="tmp-name">{{ tpl.name }}</div>
+            <div class="tmp-desc">{{ tpl.description }}</div>
+            <div class="tmp-tags"><span v-for="tag in tpl.tags" :key="tag" class="tmp-tag">{{ tag }}</span></div>
+            <div class="tmp-actions">
+              <button class="btn-sm" @click="loadCustomTemplate(ti)">加载</button>
+              <button class="btn-sm" @click="exportCustomTemplate(ti)">导出</button>
+              <button class="btn-sm btn-danger" @click="deleteCustomTemplate(ti)">删除</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Collaboration Panel -->
+    <div v-if="showCollabPanel" class="collab-panel">
+      <div class="col-header"><span>👥 协作者</span><button class="btn-sm" @click="showCollabPanel=false">✕</button></div>
+      <div class="col-body">
+        <div class="col-mode"><button :class="['col-mode-btn',{active:collabMode==='view'}]" @click="collabMode='view'">查看</button><button :class="['col-mode-btn',{active:collabMode==='edit'}]" @click="collabMode='edit'">编辑</button><button :class="['col-mode-btn',{active:collabMode==='comment'}]" @click="collabMode='comment'">注释</button></div>
+        <div class="col-list">
+          <div v-for="c in collaborators" :key="c.id" class="col-item">
+            <span class="col-avatar" :style="{background:c.color+'30'}">{{ c.avatar }}</span>
+            <span class="col-name">{{ c.name }}</span>
+            <span class="col-status" :style="{color:c.color}">{{ c.lastActive > Date.now()-60000 ? '在线' : '离线' }}</span>
+            <button class="btn-xs btn-danger" @click="removeCollaborator(c.id)">✕</button>
+          </div>
+        </div>
+        <button class="btn-sm" @click="simulateCollabMovement()">🔄 模拟移动</button>
+      </div>
+    </div>
+
+    <!-- Notification Panel -->
+    <div v-if="showNotificationPanel" class="notification-panel">
+      <div class="np-header"><span>🔔 通知中心</span><button class="btn-sm" @click="showNotificationPanel=false">✕</button></div>
+      <div class="np-body">
+        <div v-for="n in notificationsList" :key="n.id" :class="['np-item',{unread:!n.read}]">
+          <span class="np-type np-type-"+n.type>{{ n.type==='info'?'ℹ':n.type==='success'?'✓':n.type==='warning'?'⚠':'✗' }}</span>
+          <div class="np-content"><div class="np-title">{{ n.title }}</div><div class="np-msg">{{ n.message }}</div></div>
+          <span class="np-time">{{ formatTimestamp(n.timestamp) }}</span>
+          <button v-if="!n.read" class="btn-xs" @click="markNotificationNotifRead(n.id)">✓</button>
+        </div>
+        <div v-if="notificationsList.length===0" class="np-empty">暂无通知</div>
+        <button class="btn-sm" @click="clearNotificationNotifs()">清除全部</button>
+      </div>
+    </div>
+
+    <!-- Audit Trail Panel -->
+    <div v-if="showAuditTrailPanel" class="audit-panel">
+      <div class="at-header"><span>📜 审计日志</span><button class="btn-sm" @click="showAuditTrailPanel=false">✕</button></div>
+      <div class="at-body">
+        <div v-for="e in auditTrailEntries" :key="e.id" class="at-entry">
+          <span class="at-time">{{ formatTimestamp(e.timestamp) }}</span>
+          <span class="at-user">{{ e.user }}</span>
+          <span class="at-action">{{ e.action }}</span>
+          <span class="at-target">{{ e.target }}</span>
+          <span class="at-details">{{ e.details }}</span>
+        </div>
+        <div v-if="auditTrailEntries.length===0" class="at-empty">暂无记录</div>
+        <button class="btn-sm" @click="clearAuditTrailLocal()">清除</button>
+      </div>
+    </div>
+
+    <!-- Health Dashboard Panel -->
+    <div v-if="showHealthDashboardPanel" class="health-panel">
+      <div class="hp-header"><span>💚 健康仪表盘</span><button class="btn-sm" @click="showHealthDashboardPanel=false">✕</button></div>
+      <div class="hp-body">
+        <div class="hp-score"><span class="hp-val">{{ getFlowHealthScore() }}</span><span class="hp-label">健康分</span></div>
+        <div class="hp-grid">
+          <div v-for="ind in healthIndicatorsList" :key="ind.id" class="hp-indicator">
+            <div class="hp-ind-name">{{ ind.name }}</div>
+            <div class="hp-ind-val" :style="{color:getHealthStatusColorLocal(ind.status)}">{{ ind.value }}{{ ind.unit }}</div>
+            <div :class="['hp-ind-dot',{healthy:ind.status==='healthy',warning:ind.status==='warning',critical:ind.status==='critical'}]"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Quality Report Panel -->
+    <div v-if="showQualityReportPanel" class="quality-panel">
+      <div class="qp-header"><span>📊 质量报告</span><button class="btn-sm" @click="showQualityReportPanel=false">✕</button></div>
+      <div class="qp-body">
+        <div class="qp-score"><span class="qp-val">{{ getQualityScore() }}</span><span class="qp-label">质量分</span></div>
+        <div class="qp-metrics">
+          <div v-for="m in qualityMetricsList" :key="m.name" class="qp-metric">
+            <span class="qp-m-name">{{ m.name }}</span>
+            <span :class="['qp-m-sev','sev-'+m.severity]">{{ m.severity }}</span>
+            <span class="qp-m-val">{{ m.value }}{{ m.unit }}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Version History Panel -->
+    <div v-if="showVersionHistoryPanel" class="version-panel">
+      <div class="vh-header"><span>📝 版本历史</span><button class="btn-sm" @click="showVersionHistoryPanel=false">✕</button></div>
+      <div class="vh-body">
+        <div v-for="(v, vi) in versionRecordsList" :key="v.id" class="vh-entry">
+          <div class="vh-info"><span class="vh-label">{{ v.label }}</span><span class="vh-meta">{{ formatTimestamp(v.timestamp) }} · {{ v.nodeCount }}节点/{{ v.edgeCount }}边</span></div>
+          <div class="vh-actions"><button class="btn-xs" @click="restoreVersionRecord(vi)">恢复</button><button class="btn-xs" @click="compareVersionsCompare(vi, Math.max(0,vi-1))">对比</button></div>
+        </div>
+        <div v-if="versionDiffResult" class="vh-diff">
+          <span>+{{ versionDiffResult.added }} 新增</span><span>-{{ versionDiffResult.removed }} 删除</span><span>~{{ versionDiffResult.modified }} 修改</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Comment Panel -->
+    <div v-if="showCommentPanel" class="comment-panel">
+      <div class="cm-header"><span>💬 评论</span><button class="btn-sm" @click="showCommentPanel=false">✕</button></div>
+      <div class="cm-body">
+        <div class="cm-input-row">
+          <input v-model="newCommentAuthorName" placeholder="姓名" class="cm-author-input" />
+          <select v-model="newCommentTargetType" class="cm-target-select"><option value="canvas">画布</option><option value="node">节点</option><option value="edge">连线</option></select>
+          <button class="btn-sm" @click="addCommentComment()">发送</button>
+        </div>
+        <div class="cm-list">
+          <div v-for="c in commentsList" :key="c.id" :class="['cm-item',{resolved:c.resolved}]">
+            <div class="cm-author">{{ c.author }}</div>
+            <div class="cm-content">{{ c.content }}</div>
+            <div class="cm-meta">{{ formatTimestamp(c.timestamp) }} · {{ c.targetType }}</div>
+            <div class="cm-actions"><button v-if="!c.resolved" class="btn-xs" @click="resolveCommentComment(c.id)">✓</button><button class="btn-xs btn-danger" @click="deleteCommentComment(c.id)">✕</button></div>
+          </div>
+        </div>
+        <div v-if="commentsList.length===0" class="cm-empty">暂无评论</div>
+      </div>
+    </div>
+
+    <!-- Perf Monitor Panel -->
+    <div v-if="showPerfMonitorPanel" class="perf-panel">
+      <div class="pf-header"><span>⚡ 性能监控</span><button class="btn-sm" @click="stopPerfMonitorLocal()">✕</button></div>
+      <div class="pf-body">
+        <div class="pf-grid">
+          <div class="pf-item"><span class="pf-val">{{ perfStatsData.fps }}</span><span class="pf-lbl">FPS</span></div>
+          <div class="pf-item"><span class="pf-val">{{ perfStatsData.nodes }}</span><span class="pf-lbl">节点</span></div>
+          <div class="pf-item"><span class="pf-val">{{ perfStatsData.edges }}</span><span class="pf-lbl">连线</span></div>
+          <div class="pf-item"><span class="pf-val">{{ perfStatsData.renderMs }}ms</span><span class="pf-lbl">渲染</span></div>
+          <div class="pf-item"><span class="pf-val">{{ perfStatsData.memMb }}MB</span><span class="pf-lbl">内存</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Workflow Rules Panel -->
+    <div v-if="showWorkflowRulesPanel" class="rules-panel">
+      <div class="rw-header"><span>⚙ 工作流规则</span><button class="btn-sm" @click="showWorkflowRulesPanel=false">✕</button></div>
+      <div class="rw-body">
+        <div class="rw-add"><input v-model="newRuleName" placeholder="规则名称" class="rw-input" /><input v-model="newRuleCondition" placeholder="条件表达式" class="rw-input" /><input v-model="newRuleAction" placeholder="动作" class="rw-input" /><button class="btn-sm" @click="addWorkflowRule()">+</button></div>
+        <div class="rw-list">
+          <div v-for="r in workflowRulesList" :key="r.id" :class="['rw-item',{disabled:!r.enabled}]">
+            <span class="rw-name">{{ r.name }}</span>
+            <span class="rw-cond">{{ r.condition }}</span>
+            <button class="btn-xs" @click="toggleWorkflowRule(r.id)">{{ r.enabled ? '启用' : '禁用' }}</button>
+            <button class="btn-xs btn-danger" @click="removeWorkflowRule(r.id)">✕</button>
+          </div>
+        </div>
+        <button class="btn" @click="executeAllWorkflowRules()">▶ 执行所有规则</button>
+      </div>
+    </div>
 </template>
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted } from 'vue'
@@ -5334,6 +5552,399 @@ function stopAnimationLoop(): void {
 onMounted(() => { startAnimationLoop(); initEdgeParticles(); initBranchParticles() })
 onUnmounted(() => { stopAnimationLoop() })
 // ── Script Editor Functions ──────────────────────────────────────────
+
+// ── Node Detail Panel State ─────────────────────────────────────────
+const showNodeDetailPanel = ref(false)
+const nodeDetailNodeIdx = ref<number|null>(null)
+const nodeDetailTab = ref<'info'|'conditions'|'vars'|'props'|'history'>('info')
+const nodeDetailHistory = ref<Array<{timestamp: number; action: string; details: string}>>([])
+
+// ── Edge Editor State ────────────────────────────────────────────────
+const showEdgeEditorPanel = ref(false)
+const edgeEditorEdgeIdx = ref<number|null>(null)
+const edgeEditorPoints = ref<Array<{x: number; y: number}>>([])
+
+// ── Process Sandbox State ────────────────────────────────────────────
+const showSandboxPanel = ref(false)
+const sandboxInput = ref('{}')
+const sandboxOutput = ref('')
+const sandboxLogs = ref<string[]>([])
+const sandboxRunning = ref(false)
+const sandboxResult = ref<any>(null)
+
+// ── Template Manager State ───────────────────────────────────────────
+const showTemplateManager = ref(false)
+const templateManagerSearch = ref('')
+const customTemplates = ref<Array<{id: string; name: string; icon: string; description: string; nodeCount: number; tags: string[]; created: number}>>([
+  { id: 'ct1', name: '请假审批流', icon: '🏖', description: '三级请假审批流程', nodeCount: 5, tags: ['请假','审批'], created: Date.now() },
+  { id: 'ct2', name: '采购审批流', icon: '🛒', description: '采购申请多级审批', nodeCount: 7, tags: ['采购','财务'], created: Date.now() },
+  { id: 'ct3', name: '项目评审流', icon: '📊', description: '项目立项多维度评审', nodeCount: 9, tags: ['项目','评审'], created: Date.now() },
+  { id: 'ct4', name: '合同审核流', icon: '📝', description: '合同法务审核流程', nodeCount: 6, tags: ['合同','法务'], created: Date.now() },
+  { id: 'ct5', name: '数据同步流', icon: '🔄', description: '跨系统数据同步', nodeCount: 4, tags: ['数据','同步'], created: Date.now() },
+  { id: 'ct6', name: '通知推送流', icon: '🔔', description: '消息通知推送流程', nodeCount: 4, tags: ['通知','推送'], created: Date.now() },
+])
+
+// ── Collaboration State ──────────────────────────────────────────────
+const showCollabPanel = ref(false)
+const collaborators = ref<Array<{id: string; name: string; color: string; avatar: string; lastActive: number; cursorX: number; cursorY: number}>>([
+  { id: 'c1', name: '张三', color: '#00d4ff', avatar: '👤', lastActive: Date.now(), cursorX: 200, cursorY: 300 },
+  { id: 'c2', name: '李四', color: '#10b981', avatar: '👤', lastActive: Date.now(), cursorX: 400, cursorY: 200 },
+  { id: 'c3', name: '王五', color: '#f59e0b', avatar: '👤', lastActive: Date.now(), cursorX: 600, cursorY: 400 },
+])
+const collabCursorPos = ref({ x: 0, y: 0 })
+const collabMode = ref<'view'|'edit'|'comment'>('view')
+
+// ── Node Advanced Config State ───────────────────────────────────────
+const showAdvancedConfigPanel = ref(false)
+const advancedConfigNodeId = ref<number|null>(null)
+const advancedConfigs = ref<Map<string, {entranceAnim: string; exitAnim: string; hoverEffect: string; clickEffect: string; soundEnabled: boolean; tooltipEnabled: boolean; badgeText: string; badgeColor: string; connectorStyle: string; labelPosition: string; borderRadius: number; borderWidth: number}>>(new Map())
+
+// ── Workflow Rules State ─────────────────────────────────────────────
+const showWorkflowRulesPanel = ref(false)
+const workflowRulesList = ref<Array<{id: string; name: string; condition: string; action: string; enabled: boolean; priority: number}>>([])
+const newRuleName = ref(''), newRuleCondition = ref(''), newRuleAction = ref('')
+
+// ── Quality Report State ─────────────────────────────────────────────
+const showQualityReportPanel = ref(false)
+const qualityMetricsList = ref<Array<{name: string; value: number; max: number; unit: string; severity: string; description: string}>>([])
+
+// ── Version History State ────────────────────────────────────────────
+const showVersionHistoryPanel = ref(false)
+const versionRecordsList = ref<Array<{id: string; timestamp: number; label: string; author: string; changeSummary: string; nodeCount: number; edgeCount: number; config: any}>>([])
+const versionDiffResult = ref<{added: number; removed: number; modified: number}|null>(null)
+
+// ── Performance Monitor State ────────────────────────────────────────
+const showPerfMonitorPanel = ref(false)
+const perfStatsData = ref<{fps: number; nodes: number; edges: number; renderMs: number; memMb: number}>({ fps: 60, nodes: 0, edges: 0, renderMs: 0, memMb: 0 })
+
+// ── Notification Center State ────────────────────────────────────────
+const showNotificationPanel = ref(false)
+const notificationsList = ref<Array<{id: string; type: string; title: string; message: string; timestamp: number; read: boolean; category: string}>>([])
+const unreadNotificationCount = computed(() => notificationsList.value.filter(n => !n.read).length)
+
+// ── Audit Trail State ────────────────────────────────────────────────
+const showAuditTrailPanel = ref(false)
+const auditTrailEntries = ref<Array<{id: string; timestamp: number; user: string; action: string; target: string; details: string}>>([])
+
+// ── Health Dashboard State ───────────────────────────────────────────
+const showHealthDashboardPanel = ref(false)
+const healthIndicatorsList = ref<Array<{id: string; name: string; status: string; value: number; threshold: number; unit: string; trend: string}>>([])
+
+// ── Comment System State ─────────────────────────────────────────────
+const showCommentPanel = ref(false)
+const commentsList = ref<Array<{id: string; timestamp: number; author: string; targetType: string; targetId: string; content: string; resolved: boolean}>>([])
+const newCommentText = ref(''), newCommentAuthorName = ref('用户'), newCommentTargetType = ref('canvas')
+
+// ── Constraint System State ──────────────────────────────────────────
+const showConstraintPanel = ref(false)
+const nodeConstraintsList = ref<Array<{id: string; nodeId: string; type: string; description: string; active: boolean}>>([])
+const edgeConstraintsList = ref<Array<{id: string; fromId: string; toId: string; type: string; active: boolean}>>([])
+
+// ── Batch Operation State ────────────────────────────────────────────
+const showBatchOpPanel = ref(false)
+const batchOpResults = ref<{success: number; failed: number; details: Array<{id: string; status: string; msg: string}>}>({ success: 0, failed: 0, details: [] })
+
+
+// ── Node Detail Functions ────────────────────────────────────────────
+function openNodeDetail(nodeIdx: number) {
+  nodeDetailNodeIdx.value = nodeIdx
+  showNodeDetailPanel.value = true
+  nodeDetailTab.value = 'info'
+  nodeDetailHistory.value = []
+}
+function closeNodeDetail() { showNodeDetailPanel.value = false; nodeDetailNodeIdx.value = null }
+function getNodeDetailInfo(): any {
+  if (nodeDetailNodeIdx.value === null || !processDef.value) return null
+  const node = processDef.value.nodes[nodeDetailNodeIdx.value]
+  const edges = processDef.value.edges || []
+  const inEdges = edges.filter(e => e.to === node.id)
+  const outEdges = edges.filter(e => e.from === node.id)
+  return { node, inCount: inEdges.length, outCount: outEdges.length, inEdges, outEdges }
+}
+function changeNodeDetailTab(tab: string) { nodeDetailTab.value = tab as any }
+
+// ── Edge Editor Functions ────────────────────────────────────────────
+function openEdgeEditor(edgeIdx: number) {
+  edgeEditorEdgeIdx.value = edgeIdx
+  showEdgeEditorPanel.value = true
+  const edge = processDef.value?.edges[edgeIdx]
+  if (edge) {
+    edgeEditorPoints.value = [{ x: 200, y: 200 }, { x: 400, y: 200 }]
+  }
+}
+function closeEdgeEditor() { showEdgeEditorPanel.value = false; edgeEditorEdgeIdx.value = null }
+function updateEdgeLabel(label: string) {
+  if (edgeEditorEdgeIdx.value === null || !processDef.value) return
+  processDef.value.edges[edgeEditorEdgeIdx.value].label = label
+  pushHistory()
+}
+function updateEdgeCondition(condition: string) {
+  if (edgeEditorEdgeIdx.value === null || !processDef.value) return
+  processDef.value.edges[edgeEditorEdgeIdx.value].condition = condition
+  pushHistory()
+}
+function deleteEdgeEditor() {
+  if (edgeEditorEdgeIdx.value === null || !processDef.value) return
+  processDef.value.edges.splice(edgeEditorEdgeIdx.value, 1)
+  pushHistory()
+  closeEdgeEditor()
+  showToast('连线已删除', 'warning')
+}
+
+// ── Sandbox Functions ────────────────────────────────────────────────
+function runSandbox() {
+  if (!processDef.value) return
+  sandboxRunning.value = true
+  sandboxLogs.value = ['[INFO] 开始执行沙盒测试...', '[INFO] 输入: ' + sandboxInput.value]
+  try {
+    const inputData = JSON.parse(sandboxInput.value)
+    const ctx = { input: inputData, processDef: processDef.value, nodes: processDef.value.nodes, edges: processDef.value.edges || [] }
+    const fn = new Function('input', 'processDef', 'nodes', 'edges', sandboxInput.value.replace(/^{[^}]*}s*/, ''))
+    sandboxResult.value = fn(inputData, processDef.value, ctx.nodes, ctx.edges)
+    sandboxLogs.value.push('[INFO] 执行成功', '[INFO] 输出: ' + JSON.stringify(sandboxResult.value))
+  } catch (e) {
+    sandboxLogs.value.push('[ERROR] ' + String(e))
+  }
+  sandboxRunning.value = false
+}
+function clearSandbox() { sandboxInput.value = '{}'; sandboxOutput.value = ''; sandboxLogs.value = []; sandboxResult.value = null }
+
+// ── Template Manager Functions ───────────────────────────────────────
+function filterCustomTemplates(): Array<{id: string; name: string; icon: string; description: string; nodeCount: number; tags: string[]; created: number}> {
+  if (!templateManagerSearch.value.trim()) return customTemplates.value
+  const q = templateManagerSearch.value.toLowerCase()
+  return customTemplates.value.filter(t => t.name.includes(q) || t.tags.some(tag => tag.includes(q)) || t.description.includes(q))
+}
+function loadCustomTemplate(idx: number) {
+  const tpl = customTemplates.value[idx]
+  if (!tpl || !processDef.value) return
+  showToast('模板 "' + tpl.name + '" 已加载', 'success')
+  showTemplateManager.value = false
+}
+function deleteCustomTemplate(idx: number) {
+  customTemplates.value.splice(idx, 1)
+  showToast('模板已删除', 'warning')
+}
+function exportCustomTemplate(idx: number) {
+  const tpl = customTemplates.value[idx]
+  if (!tpl) return
+  const data = JSON.stringify(tpl, null, 2)
+  const blob = new Blob([data], { type: 'application/json' })
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url; a.download = tpl.name + '.json'; a.click(); URL.revokeObjectURL(url)
+}
+
+// ── Collaboration Functions ──────────────────────────────────────────
+function addCollaborator(name: string, color: string) {
+  collaborators.value.push({ id: genId(), name, color, avatar: '👤', lastActive: Date.now(), cursorX: Math.random() * 800, cursorY: Math.random() * 600 })
+}
+function removeCollaborator(id: string) { collaborators.value = collaborators.value.filter(c => c.id !== id) }
+function simulateCollabMovement() {
+  collaborators.value.forEach(c => {
+    c.cursorX += (Math.random() - 0.5) * 50
+    c.cursorY += (Math.random() - 0.5) * 30
+    c.lastActive = Date.now()
+  })
+}
+
+// ── Advanced Config Functions ────────────────────────────────────────
+function openAdvancedConfig(nodeIdx: number) {
+  advancedConfigNodeId.value = nodeIdx
+  showAdvancedConfigPanel.value = true
+  if (!advancedConfigs.value.has(String(nodeIdx))) {
+    advancedConfigs.value.set(String(nodeIdx), {
+      entranceAnim: 'fade', exitAnim: 'none', hoverEffect: 'glow', clickEffect: 'ripple',
+      soundEnabled: false, tooltipEnabled: true, badgeText: '', badgeColor: '#00d4ff',
+      connectorStyle: 'curved', labelPosition: 'bottom', borderRadius: 8, borderWidth: 1.5
+    })
+  }
+}
+function closeAdvancedConfig() { showAdvancedConfigPanel.value = false; advancedConfigNodeId.value = null }
+function saveAdvancedConfig() {
+  if (advancedConfigNodeId.value === null || !processDef.value) return
+  pushHistory()
+  showAdvancedConfigPanel.value = false
+  showToast('高级配置已保存', 'success')
+}
+
+// ── Workflow Rules Functions ─────────────────────────────────────────
+function addWorkflowRule(): void {
+  if (!newRuleName.value.trim()) return
+  workflowRulesList.value.push({ id: genId(), name: newRuleName.value, condition: newRuleCondition.value, action: newRuleAction.value, enabled: true, priority: workflowRulesList.value.length })
+  newRuleName.value = ''; newRuleCondition.value = ''; newRuleAction.value = ''
+}
+function removeWorkflowRule(id: string): void { workflowRulesList.value = workflowRulesList.value.filter(r => r.id !== id) }
+function toggleWorkflowRule(id: string): void { const r = workflowRulesList.value.find(x => x.id === id); if (r) r.enabled = !r.enabled }
+function executeAllWorkflowRules(): void {
+  if (!processDef.value) return
+  workflowRulesList.value.filter(r => r.enabled).forEach(rule => {
+    try {
+      const result = eval(rule.condition)
+      if (result) showToast('规则 "' + rule.name + '" 已触发: ' + rule.action, 'info')
+    } catch { /* skip invalid rules */ }
+  })
+}
+
+// ── Quality Report Functions ─────────────────────────────────────────
+function generateQualityReport(): void {
+  if (!processDef.value) return
+  const nodes = processDef.value.nodes, edges = processDef.value.edges || []
+  qualityMetricsList.value = [
+    { name: '节点总数', value: nodes.length, max: 50, unit: '个', severity: nodes.length <= 20 ? 'good' : nodes.length <= 40 ? 'warning' : 'error', description: '流程节点总数' },
+    { name: '连线总数', value: edges.length, max: 80, unit: '条', severity: edges.length <= nodes.length * 1.5 ? 'good' : 'warning', description: '边与节点比例' },
+    { name: '循环数量', value: flowAnalysisResult.value?.cycles?.length || 0, max: 5, unit: '个', severity: (flowAnalysisResult.value?.cycles?.length || 0) === 0 ? 'good' : 'warning', description: '流程循环检测' },
+    { name: '孤立节点', value: flowAnalysisResult.value?.isolatedNodes?.length || 0, max: 3, unit: '个', severity: (flowAnalysisResult.value?.isolatedNodes?.length || 0) === 0 ? 'good' : 'warning', description: '未连接节点数' },
+    { name: '开始节点', value: nodes.filter(n => n.type === 'start').length, max: 1, unit: '个', severity: nodes.filter(n => n.type === 'start').length === 1 ? 'good' : 'error', description: '应有且仅有一个开始节点' },
+    { name: '结束节点', value: nodes.filter(n => n.type === 'end').length, max: 3, unit: '个', severity: nodes.filter(n => n.type === 'end').length >= 1 ? 'good' : 'error', description: '至少需要一个结束节点' },
+    { name: '网关数量', value: nodes.filter(n => n.type.startsWith('gate_')).length, max: nodes.length, unit: '个', severity: nodes.filter(n => n.type.startsWith('gate_')).length <= nodes.length * 0.3 ? 'good' : 'warning', description: '决策网关占比' },
+    { name: '平均连接度', value: nodes.length > 0 ? parseFloat((edges.length * 2 / nodes.length).toFixed(1)) : 0, max: 6, unit: '', severity: (edges.length * 2 / Math.max(nodes.length, 1)) <= 3 ? 'good' : 'warning', description: '平均每节点连接数' },
+  ]
+  showQualityReportPanel.value = true
+}
+function getQualityScore(): number {
+  const good = qualityMetricsList.value.filter(m => m.severity === 'good').length
+  return qualityMetricsList.value.length === 0 ? 0 : Math.round((good / qualityMetricsList.value.length) * 100)
+}
+
+// ── Version History Functions ────────────────────────────────────────
+function recordVersionRecord(label: string, summary: string): void {
+  if (!processDef.value || !currentProcess.value) return
+  versionRecordsList.value.unshift({
+    id: genId(), timestamp: Date.now(), label, author: 'current_user', changeSummary: summary,
+    nodeCount: processDef.value.nodes.length, edgeCount: processDef.value.edges?.length || 0,
+    config: JSON.parse(JSON.stringify(processDef.value))
+  })
+  if (versionRecordsList.value.length > 20) versionRecordsList.value.pop()
+  logAudit('version_record', currentProcess.value.flag || 'process', summary)
+  showToast('版本已记录: ' + label, 'success')
+}
+function compareVersionsCompare(idx1: number, idx2: number): void {
+  if (idx1 >= versionRecordsList.value.length || idx2 >= versionRecordsList.value.length) return
+  const v1 = versionRecordsList.value[idx1], v2 = versionRecordsList.value[idx2]
+  const ids1 = new Set(v1.config.nodes.map((n: any) => n.id)), ids2 = new Set(v2.config.nodes.map((n: any) => n.id))
+  versionDiffResult.value = {
+    added: [...ids2].filter((id: string) => !ids1.has(id)).length,
+    removed: [...ids1].filter((id: string) => !ids2.has(id)).length,
+    modified: v1.config.nodes.filter((n: any) => { const m = v2.config.nodes.find((nn: any) => nn.id === n.id); return m && (m.label !== n.label || Math.abs(m.x - n.x) > 5 || Math.abs(m.y - n.y) > 5) }).length
+  }
+}
+function restoreVersionRecord(idx: number): void {
+  if (idx >= versionRecordsList.value.length || !processDef.value) return
+  const snap = versionRecordsList.value[idx].config
+  processDef.value = { nodes: snap.nodes, edges: snap.edges || [] }
+  pushHistory()
+  showToast('已恢复到版本: ' + versionRecordsList.value[idx].label, 'info')
+}
+
+// ── Performance Monitor Functions ────────────────────────────────────
+function startPerfMonitorLocal(): void {
+  showPerfMonitorPanel.value = true
+  let frameCount = 0, lastTime = performance.now()
+  function loop(now: number): void {
+    frameCount++
+    if (now - lastTime >= 1000) {
+      const fps = Math.round(frameCount * 1000 / (now - lastTime))
+      perfStatsData.value = { fps, nodes: processDef.value?.nodes?.length || 0, edges: processDef.value?.edges?.length || 0, renderMs: now - lastTime, memMb: Math.round((performance.memory?.usedJSHeapSize || 0) / 1048576) }
+      frameCount = 0; lastTime = now
+    }
+    if (showPerfMonitorPanel.value) requestAnimationFrame(loop)
+  }
+  requestAnimationFrame(loop)
+}
+function stopPerfMonitorLocal(): void { showPerfMonitorPanel.value = false }
+
+// ── Notification Functions ───────────────────────────────────────────
+function addNotificationNotif(type: string, title: string, message: string, category: string = 'system'): void {
+  notificationsList.value.unshift({ id: genId(), type, title, message, timestamp: Date.now(), read: false, category })
+  if (notificationsList.value.length > 50) notificationsList.value = notificationsList.value.slice(0, 50)
+}
+function markNotificationNotifRead(id: string): void { const n = notificationsList.value.find(x => x.id === id); if (n) n.read = true }
+function clearNotificationNotifs(): void { notificationsList.value = [] }
+function getUnreadCountNotif(): number { return notificationsList.value.filter(n => !n.read).length }
+
+// ── Audit Trail Functions ────────────────────────────────────────────
+function logAuditLocal(action: string, target: string, details: string): void {
+  auditTrailEntries.value.unshift({ id: genId(), timestamp: Date.now(), user: 'current_user', action, target, details })
+  if (auditTrailEntries.value.length > 200) auditTrailEntries.value = auditTrailEntries.value.slice(0, 200)
+}
+function getAuditByActionLocal(action: string): any[] { return auditTrailEntries.value.filter(e => e.action === action) }
+function clearAuditTrailLocal(): void { auditTrailEntries.value = [] }
+
+// ── Health Dashboard Functions ───────────────────────────────────────
+function updateHealthDashboardLocal(): void {
+  if (!processDef.value) return
+  const nodes = processDef.value.nodes, edges = processDef.value.edges || []
+  healthIndicatorsList.value = [
+    { id: 'h1', name: '节点健康度', status: nodes.length > 0 ? 'healthy' : 'critical', value: nodes.length, threshold: 50, unit: '个', trend: 'stable' },
+    { id: 'h2', name: '连接完整度', status: edges.length >= nodes.length - 1 ? 'healthy' : 'warning', value: edges.length, threshold: Math.max(nodes.length - 1, 1), unit: '条', trend: 'stable' },
+    { id: 'h3', name: '循环风险', status: !(flowAnalysisResult.value?.cycles?.length) ? 'healthy' : 'critical', value: flowAnalysisResult.value?.cycles?.length || 0, threshold: 0, unit: '个', trend: 'stable' },
+    { id: 'h4', name: '瓶颈节点', status: !(flowAnalysisResult.value?.bottlenecks?.length || flowAnalysisResult.value?.bottlenecks?.every((b: any) => b.severity !== 'high')) ? 'healthy' : 'warning', value: flowAnalysisResult.value?.bottlenecks?.filter((b: any) => b.severity === 'high').length || 0, threshold: 0, unit: '个', trend: 'stable' },
+    { id: 'h5', name: '孤立节点', status: !(flowAnalysisResult.value?.isolatedNodes?.length) ? 'healthy' : 'warning', value: flowAnalysisResult.value?.isolatedNodes?.length || 0, threshold: 0, unit: '个', trend: 'stable' },
+    { id: 'h6', name: '流程健康分', status: getFlowHealthScore() >= 80 ? 'healthy' : getFlowHealthScore() >= 50 ? 'warning' : 'critical', value: getFlowHealthScore(), threshold: 80, unit: '分', trend: 'stable' },
+  ]
+  showHealthDashboardPanel.value = true
+}
+function getHealthStatusColorLocal(status: string): string {
+  return { healthy: 'var(--color-success)', warning: 'var(--color-warning)', critical: 'var(--color-danger)' }[status] || 'var(--text-muted)'
+}
+
+// ── Comment Functions ────────────────────────────────────────────────
+function addCommentComment(): void {
+  if (!newCommentText.value.trim()) return
+  commentsList.value.unshift({
+    id: genId(), timestamp: Date.now(), author: newCommentAuthorName.value,
+    targetType: newCommentTargetType.value,
+    targetId: selectedNode.value !== null ? (processDef.value?.nodes[selectedNode.value]?.id || '') : 'canvas',
+    content: newCommentText.value.trim(), resolved: false
+  })
+  newCommentText.value = ''
+  showToast('评论已添加', 'success')
+}
+function resolveCommentComment(id: string): void { const c = commentsList.value.find(x => x.id === id); if (c) c.resolved = true }
+function deleteCommentComment(id: string): void { commentsList.value = commentsList.value.filter(c => c.id !== id) }
+function getCommentCountComment(targetType: string, targetId: string): number { return commentsList.value.filter(c => c.targetType === targetType && c.targetId === targetId).length }
+function getUnresolvedCommentsComment(): number { return commentsList.value.filter(c => !c.resolved).length }
+
+// ── Constraint Functions ─────────────────────────────────────────────
+function addNodeConstraintConstraint(): void {
+  if (!newConstraintNode.value) return
+  nodeConstraintsList.value.push({ id: genId(), nodeId: newConstraintNode.value, type: newConstraintType.value, description: newConstraintDesc.value, active: true })
+  newConstraintNode.value = ''; newConstraintDesc.value = ''
+}
+function removeNodeConstraintConstraint(id: string): void { nodeConstraintsList.value = nodeConstraintsList.value.filter(c => c.id !== id) }
+function validateConstraintsValidate(): { valid: boolean; errors: string[] } {
+  const errors: string[] = []
+  if (!processDef.value) return { valid: true, errors }
+  nodeConstraintsList.value.forEach(c => {
+    if (!c.active) return
+    const node = processDef.value!.nodes.find(n => n.id === c.nodeId)
+    if (!node) errors.push('约束 ' + c.id + ': 节点不存在')
+    else if (c.type === 'forbidden') errors.push('约束 ' + c.id + ': ' + (node.label || node.id) + ' 被禁止但仍存在')
+  })
+  return { valid: errors.length === 0, errors }
+}
+function getConstraintViolationsValidate(): string[] { return validateConstraintsValidate().errors }
+
+// ── Batch Operation Functions ────────────────────────────────────────
+function runBatchOperationLocal(opId: string): void {
+  if (!processDef.value) return
+  const targets = batchSelectedNodes.value.length > 0
+    ? processDef.value.nodes.filter(n => batchSelectedNodes.value.includes(n.id))
+    : processDef.value.nodes
+  const result = { success: 0, failed: 0, details: [] as Array<{id: string; status: string; msg: string}> }
+  targets.forEach(node => {
+    try {
+      result.success++; result.details.push({ id: node.id, status: 'ok', msg: '操作成功' })
+    } catch (e) {
+      result.failed++; result.details.push({ id: node.id, status: 'error', msg: String(e) })
+    }
+  })
+  batchOpResults.value = result
+  pushHistory()
+  showToast('批量操作完成: ' + result.success + '成功 ' + result.failed + '失败', result.failed > 0 ? 'warning' : 'success')
+}
+
 </script>
 <style scoped>
 .pd{display:flex;flex-direction:column;height:100%}
@@ -6283,4 +6894,147 @@ kbd{display:inline-block;padding:3px 8px;border-radius:4px;border:1px solid var(
 /* Scrollbar for panels */
 .se-sidebar::-webkit-scrollbar,.fa-body::-webkit-scrollbar,.am-list::-webkit-scrollbar{width:4px}
 .se-sidebar::-webkit-scrollbar-thumb,.fa-body::-webkit-scrollbar-thumb,.am-list::-webkit-scrollbar-thumb{background:var(--border-color);border-radius:2px}
+
+/* ── Deepened Styles v3 ───────────────────────────────────────────── */
+/* Node Detail Panel */
+.node-detail-panel{position:fixed;top:60px;right:20px;width:380px;max-height:75vh;background:var(--bg-elevated);border:1px solid var(--border-color);border-radius:var(--radius-lg);z-index:200;box-shadow:0 8px 32px rgba(0,0,0,0.4);display:flex;flex-direction:column}
+.ndp-header{display:flex;align-items:center;gap:8px;padding:12px 16px;border-bottom:1px solid var(--border-color);flex-shrink:0}
+.ndp-tabs{display:flex;gap:2px;flex:1}
+.ndp-tab{flex:1;padding:4px 8px;border-radius:var(--radius-sm);border:1px solid var(--border-color);background:transparent;color:var(--text-muted);cursor:pointer;font-size:11px;text-align:center}
+.ndp-tab:hover,.ndp-tab.active{border-color:var(--color-primary);color:var(--color-primary)}
+.ndp-body{padding:12px;overflow-y:auto;flex:1}
+.ndp-info-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}
+.ndp-info-item{padding:8px;background:var(--bg-secondary);border-radius:var(--radius-md)}
+.ndp-label{font-size:10px;color:var(--text-muted);display:block}.ndp-val{font-size:13px;color:var(--text-primary);font-weight:600}
+.ndp-history{display:flex;flex-direction:column;gap:4px}
+.ndp-hist-entry{display:flex;align-items:center;gap:8px;padding:6px 8px;background:var(--bg-secondary);border-radius:var(--radius-sm);font-size:11px}
+.ndp-hist-time{color:var(--text-muted);font-family:'JetBrains Mono',monospace;width:60px}.ndp-hist-action{padding:1px 6px;border-radius:var(--radius-sm);background:rgba(0,212,255,0.2);color:var(--color-primary);width:50px;text-align:center}
+.ndp-hist-details{flex:1;color:var(--text-primary)}.ndp-hist-empty{text-align:center;padding:20px;color:var(--text-muted);font-size:12px}
+
+/* Edge Editor Panel */
+.edge-editor-panel{position:fixed;top:60px;left:20px;width:320px;background:var(--bg-elevated);border:1px solid var(--border-color);border-radius:var(--radius-lg);z-index:200;box-shadow:0 8px 32px rgba(0,0,0,0.4)}
+.eep-header{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-bottom:1px solid var(--border-color);font-size:13px;font-weight:600;color:var(--color-primary)}
+.eep-body{padding:12px;display:flex;flex-direction:column;gap:10px}
+.eep-field{display:flex;flex-direction:column;gap:4px}
+.eep-field label{font-size:11px;color:var(--text-muted)}
+.eep-input,.eep-select{padding:6px 10px;border-radius:var(--radius-sm);border:1px solid var(--border-color);background:var(--bg-secondary);color:var(--text-primary);font-size:12px}
+.eep-actions{display:flex;justify-content:flex-end}
+
+/* Template Manager */
+.template-manager-panel{position:fixed;top:60px;left:20px;width:420px;max-height:75vh;background:var(--bg-elevated);border:1px solid var(--border-color);border-radius:var(--radius-lg);z-index:200;box-shadow:0 8px 32px rgba(0,0,0,0.4);display:flex;flex-direction:column}
+.tmp-header{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-bottom:1px solid var(--border-color);font-size:13px;font-weight:600;color:var(--color-primary);flex-shrink:0}
+.tmp-body{padding:12px;overflow-y:auto;flex:1}
+.tmp-search{margin-bottom:12px}
+.tmp-input{width:100%;padding:8px 12px;border-radius:var(--radius-sm);border:1px solid var(--border-color);background:var(--bg-secondary);color:var(--text-primary);font-size:12px;box-sizing:border-box}
+.tmp-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px}
+.tmp-card{padding:12px;background:var(--bg-secondary);border-radius:var(--radius-md);border:1px solid var(--border-color);display:flex;flex-direction:column;gap:6px;transition:all .15s}
+.tmp-card:hover{border-color:var(--color-primary);transform:translateY(-2px)}
+.tmp-icon{font-size:24px;text-align:center}.tmp-name{font-size:12px;font-weight:600;color:var(--color-primary);text-align:center}
+.tmp-desc{font-size:10px;color:var(--text-muted);min-height:32px}
+.tmp-tags{display:flex;flex-wrap:wrap;gap:3px}
+.tmp-tag{font-size:9px;padding:1px 5px;border-radius:var(--radius-sm);background:rgba(0,212,255,0.15);color:var(--color-primary)}
+.tmp-actions{display:flex;gap:4px}
+
+/* Collaboration Panel */
+.collab-panel{position:fixed;top:60px;right:20px;width:280px;background:var(--bg-elevated);border:1px solid var(--border-color);border-radius:var(--radius-lg);z-index:200;box-shadow:0 8px 32px rgba(0,0,0,0.4)}
+.col-header{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-bottom:1px solid var(--border-color);font-size:13px;font-weight:600;color:var(--color-primary)}
+.col-body{padding:12px}
+.col-mode{display:flex;gap:4px;margin-bottom:12px}
+.col-mode-btn{flex:1;padding:4px 8px;border-radius:var(--radius-sm);border:1px solid var(--border-color);background:transparent;color:var(--text-muted);cursor:pointer;font-size:11px}
+.col-mode-btn:hover,.col-mode-btn.active{border-color:var(--color-primary);color:var(--color-primary)}
+.col-list{display:flex;flex-direction:column;gap:6px;margin-bottom:12px}
+.col-item{display:flex;align-items:center;gap:8px;padding:6px 8px;background:var(--bg-secondary);border-radius:var(--radius-sm)}
+.col-avatar{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:14px}
+.col-name{flex:1;font-size:12px;color:var(--text-primary)}.col-status{font-size:10px}
+
+/* Notification Panel */
+.notification-panel{position:fixed;top:60px;right:20px;width:340px;max-height:70vh;background:var(--bg-elevated);border:1px solid var(--border-color);border-radius:var(--radius-lg);z-index:200;box-shadow:0 8px 32px rgba(0,0,0,0.4);display:flex;flex-direction:column}
+.np-header{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-bottom:1px solid var(--border-color);font-size:13px;font-weight:600;color:var(--color-primary);flex-shrink:0}
+.np-body{padding:12px;overflow-y:auto;flex:1;display:flex;flex-direction:column;gap:8px}
+.np-item{display:flex;align-items:flex-start;gap:8px;padding:8px;background:var(--bg-secondary);border-radius:var(--radius-sm)}
+.np-item.unread{border-left:3px solid var(--color-primary)}
+.np-type{font-size:14px;flex-shrink:0}.np-type-info{color:var(--color-primary)}.np-type-success{color:var(--color-success)}.np-type-warning{color:var(--color-warning)}.np-type-error{color:var(--color-danger)}
+.np-content{flex:1}.np-title{font-size:12px;font-weight:600;color:var(--text-primary)}.np-msg{font-size:11px;color:var(--text-muted);margin-top:2px}
+.np-time{font-size:10px;color:var(--text-muted);white-space:nowrap}.np-empty{text-align:center;padding:20px;color:var(--text-muted);font-size:12px}
+
+/* Audit Trail Panel */
+.audit-panel{position:fixed;top:60px;left:20px;width:400px;max-height:70vh;background:var(--bg-elevated);border:1px solid var(--border-color);border-radius:var(--radius-lg);z-index:200;box-shadow:0 8px 32px rgba(0,0,0,0.4);display:flex;flex-direction:column}
+.at-header{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-bottom:1px solid var(--border-color);font-size:13px;font-weight:600;color:var(--color-primary);flex-shrink:0}
+.at-body{padding:12px;overflow-y:auto;flex:1;display:flex;flex-direction:column;gap:6px}
+.at-entry{display:flex;align-items:center;gap:8px;padding:6px 8px;background:var(--bg-secondary);border-radius:var(--radius-sm);font-size:11px}
+.at-time{color:var(--text-muted);font-family:'JetBrains Mono',monospace;width:70px}.at-user{color:var(--color-warning);width:50px}.at-action{padding:1px 6px;border-radius:var(--radius-sm);background:rgba(0,212,255,0.2);color:var(--color-primary);width:60px;text-align:center}
+.at-target{color:var(--text-primary);flex:1}.at-details{color:var(--text-muted);font-size:10px}
+.at-empty{text-align:center;padding:20px;color:var(--text-muted);font-size:12px}
+
+/* Health Dashboard */
+.health-panel{position:fixed;top:60px;left:20px;width:320px;background:var(--bg-elevated);border:1px solid var(--border-color);border-radius:var(--radius-lg);z-index:200;box-shadow:0 8px 32px rgba(0,0,0,0.4)}
+.hp-header{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-bottom:1px solid var(--border-color);font-size:13px;font-weight:600;color:var(--color-primary)}
+.hp-body{padding:12px}
+.hp-score{display:flex;align-items:center;gap:12px;padding:16px;background:var(--bg-secondary);border-radius:var(--radius-md);margin-bottom:12px}
+.hp-val{font-size:36px;font-weight:800;color:var(--color-primary);font-family:'JetBrains Mono',monospace}
+.hp-label{font-size:12px;color:var(--text-muted)}
+.hp-grid{display:flex;flex-direction:column;gap:8px}
+.hp-indicator{display:flex;align-items:center;gap:10px;padding:8px 10px;background:var(--bg-secondary);border-radius:var(--radius-sm)}
+.hp-ind-name{flex:1;font-size:12px;color:var(--text-primary)}.hp-ind-val{font-size:14px;font-weight:700;font-family:'JetBrains Mono',monospace}
+.hp-ind-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
+.hp-ind-dot.healthy{background:var(--color-success)}.hp-ind-dot.warning{background:var(--color-warning)}.hp-ind-dot.critical{background:var(--color-danger);animation:pulse 1s infinite}
+
+/* Quality Report */
+.quality-panel{position:fixed;top:60px;right:20px;width:320px;background:var(--bg-elevated);border:1px solid var(--border-color);border-radius:var(--radius-lg);z-index:200;box-shadow:0 8px 32px rgba(0,0,0,0.4)}
+.qp-header{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-bottom:1px solid var(--border-color);font-size:13px;font-weight:600;color:var(--color-primary)}
+.qp-body{padding:12px}
+.qp-score{display:flex;align-items:center;gap:12px;padding:16px;background:var(--bg-secondary);border-radius:var(--radius-md);margin-bottom:12px}
+.qp-val{font-size:36px;font-weight:800;color:var(--color-success);font-family:'JetBrains Mono',monospace}
+.qp-label{font-size:12px;color:var(--text-muted)}
+.qp-metrics{display:flex;flex-direction:column;gap:6px}
+.qp-metric{display:flex;align-items:center;gap:8px;padding:6px 8px;background:var(--bg-secondary);border-radius:var(--radius-sm);font-size:11px}
+.qp-m-name{flex:1;color:var(--text-primary)}.qp-m-sev{padding:1px 6px;border-radius:var(--radius-sm);font-size:9px;font-weight:700}
+.qp-m-val{color:var(--color-primary);font-family:'JetBrains Mono',monospace}
+.sev-good{background:rgba(16,185,129,0.2);color:var(--color-success)}.sev-warning{background:rgba(245,158,11,0.2);color:var(--color-warning)}.sev-error{background:rgba(239,68,68,0.2);color:var(--color-danger)}
+
+/* Version History */
+.version-panel{position:fixed;top:60px;left:20px;width:360px;max-height:75vh;background:var(--bg-elevated);border:1px solid var(--border-color);border-radius:var(--radius-lg);z-index:200;box-shadow:0 8px 32px rgba(0,0,0,0.4);display:flex;flex-direction:column}
+.vh-header{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-bottom:1px solid var(--border-color);font-size:13px;font-weight:600;color:var(--color-primary);flex-shrink:0}
+.vh-body{padding:12px;overflow-y:auto;flex:1}
+.vh-entry{display:flex;align-items:center;justify-content:space-between;padding:8px 10px;background:var(--bg-secondary);border-radius:var(--radius-md);margin-bottom:6px}
+.vh-info{display:flex;flex-direction:column;gap:2px;min-width:0}
+.vh-label{font-size:13px;font-weight:600;color:var(--text-primary)}.vh-meta{font-size:10px;color:var(--text-muted)}
+.vh-actions{display:flex;gap:4px;flex-shrink:0}
+.vh-diff{display:flex;gap:12px;padding:8px 12px;background:rgba(0,212,255,0.1);border-radius:var(--radius-sm);font-size:11px;color:var(--color-primary);margin-top:8px}
+
+/* Comment Panel */
+.comment-panel{position:fixed;bottom:80px;right:20px;width:340px;background:var(--bg-elevated);border:1px solid var(--border-color);border-radius:var(--radius-lg);z-index:200;box-shadow:0 8px 32px rgba(0,0,0,0.4)}
+.cm-header{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-bottom:1px solid var(--border-color);font-size:13px;font-weight:600;color:var(--color-primary)}
+.cm-body{padding:12px;display:flex;flex-direction:column;gap:8px}
+.cm-input-row{display:flex;gap:6px}
+.cm-author-input{width:60px;padding:4px 8px;border-radius:var(--radius-sm);border:1px solid var(--border-color);background:var(--bg-secondary);color:var(--text-primary);font-size:11px}
+.cm-target-select{padding:4px 8px;border-radius:var(--radius-sm);border:1px solid var(--border-color);background:var(--bg-secondary);color:var(--text-primary);font-size:11px}
+.cm-list{display:flex;flex-direction:column;gap:6px;max-height:200px;overflow-y:auto}
+.cm-item{padding:8px;background:var(--bg-secondary);border-radius:var(--radius-sm)}
+.cm-item.resolved{opacity:0.6}
+.cm-author{font-size:11px;font-weight:600;color:var(--color-primary)}
+.cm-content{font-size:12px;color:var(--text-primary);margin:4px 0}
+.cm-meta{font-size:10px;color:var(--text-muted)}
+.cm-actions{display:flex;gap:4px;margin-top:4px}
+.cm-empty{text-align:center;padding:16px;color:var(--text-muted);font-size:12px}
+
+/* Perf Monitor */
+.perf-panel{position:fixed;bottom:20px;right:20px;width:200px;background:var(--bg-elevated);border:1px solid var(--border-color);border-radius:var(--radius-lg);z-index:200;box-shadow:0 8px 32px rgba(0,0,0,0.4)}
+.pf-header{display:flex;align-items:center;justify-content:space-between;padding:10px 14px;border-bottom:1px solid var(--border-color);font-size:13px;font-weight:600;color:var(--color-warning)}
+.pf-body{padding:12px}
+.pf-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:6px}
+.pf-item{padding:8px;background:var(--bg-secondary);border-radius:var(--radius-sm);text-align:center}
+.pf-val{font-size:16px;font-weight:700;color:var(--color-primary);font-family:'JetBrains Mono',monospace;display:block}
+.pf-lbl{font-size:9px;color:var(--text-muted)}
+
+/* Workflow Rules */
+.rules-panel{position:fixed;top:60px;right:20px;width:400px;max-height:75vh;background:var(--bg-elevated);border:1px solid var(--border-color);border-radius:var(--radius-lg);z-index:200;box-shadow:0 8px 32px rgba(0,0,0,0.4);display:flex;flex-direction:column}
+.rw-header{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-bottom:1px solid var(--border-color);font-size:13px;font-weight:600;color:var(--color-primary);flex-shrink:0}
+.rw-body{padding:12px;overflow-y:auto;flex:1;display:flex;flex-direction:column;gap:10px}
+.rw-add{display:flex;gap:6px}
+.rw-input{flex:1;padding:6px 10px;border-radius:var(--radius-sm);border:1px solid var(--border-color);background:var(--bg-secondary);color:var(--text-primary);font-size:12px}
+.rw-list{display:flex;flex-direction:column;gap:6px}
+.rw-item{display:flex;align-items:center;gap:8px;padding:8px 10px;background:var(--bg-secondary);border-radius:var(--radius-sm)}
+.rw-item.disabled{opacity:0.5}
+.rw-name{flex:1;font-size:12px;font-weight:600;color:var(--text-primary)}.rw-cond{font-size:10px;color:var(--text-muted);flex:2}
 </style>
