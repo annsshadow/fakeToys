@@ -989,6 +989,38 @@
         </div>
       </div>
     </div>
+
+    <!-- Network Analysis Modal -->
+    <div v-if="showNetworkAnalysis" class="modal-overlay" @click.self="showNetworkAnalysis=false">
+      <div class="modal modal-lg glass-card">
+        <div class="modal-header"><h3>📊 网络分析</h3><button class="btn-close" @click="showNetworkAnalysis=false">✕</button></div>
+        <div class="modal-body">
+          <div class="network-grid">
+            <div v-for="m in networkMetrics" :key="m.metric" class="network-card">
+              <div class="nc-value">{{ m.value }}</div>
+              <div class="nc-label">{{ m.metric }}</div>
+              <div class="nc-desc">{{ m.description }}</div>
+            </div>
+          </div>
+          <div v-if="networkMetrics.some(m => m.metric === `环数量` && m.value > 0)" class="analysis-warning">
+            ⚠️ 检测到环，可能导致流程死循环
+          </div>
+          <div v-if="networkMetrics.some(m => m.metric === `孤立节点` && m.value > 0)" class="analysis-warning">
+            ⚠️ 存在孤立节点，请检查连接性
+          </div>
+        </div>
+      </div>
+    </div>
+    <!-- Style Presets Panel -->
+    <div v-if="selectedNode !== null" class="style-presets-panel">
+      <div class="spp-title">🎨 节点样式预设</div>
+      <div class="spp-grid">
+        <button v-for="(preset, pi) in stylePresets" :key="pi"
+          class="spp-btn" :style="{background: preset.fill, border: '2px solid ' + preset.stroke}"
+          :title="preset.name"
+          @click="applyStylePreset(preset)">{{ preset.icon }}</button>
+      </div>
+    </div>
 </template>
 
 <script setup lang="ts">
@@ -3589,6 +3621,230 @@ function analyzeLongestPaths(): PathInfo[] {
   for (const n of startNodes) { dfs(n.id, [n.id], new Set([n.id])) }
   return paths.sort((a,b) => b.length - a.length).slice(0, 5)
 }
+
+// ── Execution Control ──────────────────────────────────────────────
+function startExecutionEnhanced() {
+  if (!processDef.value) return
+  isRunning.value = true
+  execState.value = { currentNodeIdx: 0, progress: 0, status: "running", completedNodes: [] }
+  executionLog.value = []
+  simulateNextEnhanced()
+}
+function pauseExecutionEnhanced() { isRunning.value = false; execState.value.status = "paused" }
+function resumeExecutionEnhanced() { isRunning.value = true; execState.value.status = "running"; simulateNextEnhanced() }
+function resetExecutionEnhanced() { isRunning.value = false; execState.value = { currentNodeIdx: null, progress: 0, status: "idle", completedNodes: [] }; executionLog.value = [] }
+function toggleExecutionEnhanced() { if (isRunning.value) pauseExecutionEnhanced(); else resumeExecutionEnhanced() }
+function simulateNextEnhanced() {
+  if (!isRunning.value || !processDef.value || execState.value.currentNodeIdx === null) return
+  const curIdx = execState.value.currentNodeIdx
+  const curNode = processDef.value.nodes[curIdx]
+  if (!curNode) return
+  executionLog.value.push({ timestamp: Date.now(), nodeId: curNode.id, nodeLabel: curNode.label || curNode.id, action: "executing" })
+  if (!execState.value.completedNodes.includes(curNode.id)) {
+    execState.value.completedNodes = [...execState.value.completedNodes, curNode.id]
+  }
+  const edges = processDef.value.edges || []
+  const nextEdges = edges.filter(e => e.from === curNode.id)
+  if (nextEdges.length > 0) {
+    const nextIdx = processDef.value.nodes.findIndex(n => n.id === nextEdges[0].to)
+    execState.value.currentNodeIdx = nextIdx
+    execState.value.progress = Math.round((nextIdx + 1) / processDef.value.nodes.length * 100)
+    setTimeout(() => simulateNextEnhanced(), executionSpeed.value)
+  } else {
+    execState.value.status = "finished"
+    isRunning.value = false
+  }
+}
+// ── Breakpoint Management ───────────────────────────────────────────
+function addBreakpoint(nodeId: string) {
+  const node = processDef.value?.nodes?.find(n => n.id === nodeId)
+  if (!breakpoints.value.find(b => b.nodeId === nodeId)) {
+    breakpoints.value.push({ nodeId, label: node?.label, enabled: true })
+  }
+}
+function removeBreakpoint(nodeId: string) {
+  breakpoints.value = breakpoints.value.filter(b => b.nodeId !== nodeId)
+}
+function clearAllBreakpoints() { breakpoints.value = [] }
+
+// ── Style Preset Functions ──────────────────────────────────────────
+function applyStylePreset(preset: StylePreset) {
+  if (selectedNode.value === null || !processDef.value) return
+  const node = processDef.value.nodes[selectedNode.value]
+  node.style = JSON.stringify({ fill: preset.fill, stroke: preset.stroke })
+  pushHistory()
+}
+
+// ── Network Analysis Functions ──────────────────────────────────────
+function computeNetworkMetrics(): NetworkMetric[] {
+  if (!processDef.value) return []
+  const nodes = processDef.value.nodes
+  const edges = processDef.value.edges || []
+  const inDeg = new Map<string, number>(), outDeg = new Map<string, number>()
+  for (const n of nodes) { inDeg.set(n.id, 0); outDeg.set(n.id, 0) }
+  for (const e of edges) { outDeg.set(e.from, (outDeg.get(e.from)||0)+1); inDeg.set(e.to, (inDeg.get(e.to)||0)+1) }
+  let totalOut = 0, maxOut = 0
+  for (const d of outDeg.values()) { totalOut += d; if (d > maxOut) maxOut = d }
+  const density = nodes.length > 1 ? (edges.length / (nodes.length * (nodes.length - 1))).toFixed(4) : "0"
+  const isolated = nodes.filter(n => (inDeg.get(n.id)||0) === 0 && (outDeg.get(n.id)||0) === 0).length
+  let cycles = 0, visited = new Set<string>()
+  for (const n of nodes) {
+    if (visited.has(n.id)) continue
+    const stack = [n.id], path = new Set<string>()
+    while (stack.length > 0) {
+      const curr = stack.pop()!
+      if (path.has(curr)) { cycles++; break }
+      if (visited.has(curr)) continue
+      path.add(curr); visited.add(curr)
+      for (const e of edges) { if (e.from === curr) stack.push(e.to) }
+    }
+  }
+  return [
+    { metric: "节点总数", value: nodes.length, description: "图中所有节点数量" },
+    { metric: "连边总数", value: edges.length, description: "图中所有连线数量" },
+    { metric: "网络密度", value: parseFloat(density), description: "实际连边/最大可能连边" },
+    { metric: "平均出度", value: nodes.length > 0 ? Math.round(totalOut / nodes.length * 10) / 10 : 0, description: "每节点平均发出连边" },
+    { metric: "最大出度", value: maxOut, description: "单节点最大发出连边" },
+    { metric: "环数量", value: cycles, description: "图中循环路径数" },
+    { metric: "孤立节点", value: isolated, description: "无入边也无出边的节点" },
+  ]
+}
+function openNetworkAnalysis() {
+  networkMetrics.value = computeNetworkMetrics()
+  showNetworkAnalysis.value = true
+}
+
+// ── Connection Rules Grid ───────────────────────────────────────────
+function renderConnectionRulesGridEnhanced() {
+  const types = ["start","task","approval","timer","end","gate_and","gate_or","gate_xor","subprocess","script","parallel"]
+  const grid: Record<string, Record<string, boolean>> = {}
+  for (const from of types) {
+    grid[from] = {}
+    for (const to of types) {
+      if (from === to) { grid[from][to] = false; continue }
+      const allowed: Record<string, string[]> = {
+        "start": ["task","approval","script","gate_and","gate_or","gate_xor"],
+        "task": ["task","approval","end","script","gate_and","gate_or","gate_xor"],
+        "approval": ["task","approval","end","script","gate_and","gate_or","gate_xor"],
+        "script": ["task","approval","end","script","gate_and","gate_or","gate_xor"],
+        "timer": ["task","approval","end","script"],
+        "end": [],
+        "gate_and": ["task","approval","end","script"],
+        "gate_or": ["task","approval","end","script"],
+        "gate_xor": ["task","approval","end","script"],
+        "subprocess": ["task","approval","end","script"],
+        "parallel": ["task","approval","end","script"],
+      }
+      grid[from][to] = (allowed[from]||[]).includes(to)
+    }
+  }
+  connectionRules.value = grid
+}
+function toggleConnectionRuleEnhanced(from: string, to: string) {
+  if (!connectionRules.value[from]) connectionRules.value[from] = {}
+  connectionRules.value[from][to] = !connectionRules.value[from][to]
+  saveConnectionRules()
+}
+function saveConnectionRulesEnhanced() {
+  const rules: Array<{from: string; to: string}> = []
+  for (const from of Object.keys(connectionRules.value)) {
+    for (const to of Object.keys(connectionRules.value[from])) {
+      if (connectionRules.value[from][to]) rules.push({ from, to })
+    }
+  }
+  if (processDef.value) processDef.value.connectionRules = rules
+  pushHistory()
+}
+function resetConnectionRulesEnhanced() { renderConnectionRulesGridEnhanced(); saveConnectionRulesEnhanced() }
+
+// ── Export Functions ─────────────────────────────────────────────────
+function exportAsSvgEnhanced() {
+  if (!processDef.value) return
+  const nodes = processDef.value.nodes
+  const edges = processDef.value.edges || []
+  if (nodes.length === 0) return
+  let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity
+  for (const n of nodes) { minX = Math.min(minX, n.x); minY = Math.min(minY, n.y); maxX = Math.max(maxX, n.x + (n.w||120)); maxY = Math.max(maxY, n.y + (n.h||50)) }
+  const pad = 80
+  const w = maxX - minX + pad*2, h = maxY - minY + pad*2
+  let svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}" viewBox="0 0 ${w} ${h}">`
+  svg += `<defs><marker id="arr" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto"><polygon points="0 0,10 3.5,0 7" fill="#00d4ff"/></marker></defs>`
+  svg += `<rect width="${w}" height="${h}" fill="#0a0e1a"/>`
+  svg += `<g transform="translate(${pad-minX},${pad-minY})">`
+  for (const edge of edges) {
+    const from = nodes.find(n => n.id === edge.from), to = nodes.find(n => n.id === edge.to)
+    if (!from || !to) continue
+    const fp = { x: from.x + (from.w||120), y: from.y + (from.h||50)/2 }, tp = { x: to.x, y: to.y + (to.h||50)/2 }
+    const dx = Math.abs(tp.x - fp.x), cx = Math.max(dx * 0.5, 60)
+    svg += `<path d="M ${fp.x} ${fp.y} C ${fp.x+cx} ${fp.y}, ${tp.x-cx} ${tp.y}, ${tp.x} ${tp.y}" stroke="#00d4ff" stroke-width="2" fill="none" marker-end="url(#arr)"/>`
+  }
+  for (const node of nodes) {
+    const nw = node.w||120, nh = node.h||50
+    const colors: Record<string,string> = { start:"#10b981", end:"#ef4444", task:"#00d4ff", approval:"#6366f1", subprocess:"#a855f7", script:"#22c55e", gate_and:"#f59e0b", gate_or:"#f59e0b", gate_xor:"#f59e0b" }
+    svg += `<rect x="${node.x}" y="${node.y}" width="${nw}" height="${nh}" rx="8" fill="${colors[node.type]||"#374151"}80" stroke="${colors[node.type]||"#6b7280"}" stroke-width="1.5"/>`
+    svg += `<text x="${node.x+nw/2}" y="${node.y+nh/2+4}" text-anchor="middle" fill="white" font-size="12">${node.label||""}</text>`
+  }
+  svg += `</g></svg>`
+  const blob = new Blob([svg], { type: "image/svg+xml" })
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement("a")
+  a.href = url; a.download = (currentProcess.value?.flag || "process") + "_enhanced.svg"
+  a.click(); URL.revokeObjectURL(url)
+}
+function exportAsJsonEnhanced() {
+  if (!processDef.value || !currentProcess.value) return
+  const data = { process: currentProcess.value, definition: processDef.value, exportedAt: new Date().toISOString() }
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" })
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement("a")
+  a.href = url; a.download = (currentProcess.value.flag || "process") + "_enhanced.json"
+  a.click(); URL.revokeObjectURL(url)
+}
+
+// ── Execution Features ─────────────────────────────────────────────
+const executionLog = ref<ExecutionLog[]>([])
+const isRunning = ref(false)
+const showBreakpointsPanel = ref(false)
+
+// ── Breakpoints ────────────────────────────────────────────────────
+
+// ── Style Presets ──────────────────────────────────────────────────
+const stylePresets: StylePreset[] = [
+  { name: "霓虹蓝", fill: "rgba(0,212,255,0.2)", stroke: "#00d4ff", icon: "🔵" },
+  { name: "极光绿", fill: "rgba(16,185,129,0.2)", stroke: "#10b981", icon: "🟢" },
+  { name: "烈焰红", fill: "rgba(239,68,68,0.2)", stroke: "#ef4444", icon: "🔴" },
+  { name: "紫罗兰", fill: "rgba(168,85,247,0.2)", stroke: "#a855f7", icon: "🟣" },
+  { name: "琥珀黄", fill: "rgba(245,158,11,0.2)", stroke: "#f59e0b", icon: "🟡" },
+  { name: "樱花粉", fill: "rgba(236,72,153,0.2)", stroke: "#ec4899", icon: "🩷" },
+  { name: "深海青", fill: "rgba(6,182,212,0.2)", stroke: "#06b6d4", icon: "🔷" },
+  { name: "暗夜黑", fill: "rgba(107,114,128,0.2)", stroke: "#6b7280", icon: "⚫" },
+  { name: "黎明金", fill: "rgba(234,179,8,0.2)", stroke: "#eab308", icon: "🟠" },
+  { name: "薄荷绿", fill: "rgba(34,197,94,0.2)", stroke: "#22c55e", icon: "🍃" },
+]
+
+// ── Network Analysis ───────────────────────────────────────────────
+const showNetworkAnalysis = ref(false)
+const networkMetrics = ref<NetworkMetric[]>([])
+
+// ── Keyboard Shortcuts ──────────────────────────────────────────────
+const shortcuts = ref<ShortcutDef[]>([
+  { key: "Z", ctrl: true, action: "撤销" },
+  { key: "Y", ctrl: true, action: "重做" },
+  { key: "A", ctrl: true, action: "全选" },
+  { key: "Delete", action: "删除" },
+  { key: "D", ctrl: true, action: "复制" },
+  { key: "G", action: "分组" },
+  { key: "Space", action: "暂停/继续" },
+  { key: "F5", action: "执行" },
+  { key: "Escape", action: "取消" },
+])
+
+// ── Advanced Interfaces ────────────────────────────────────────────
+interface ExecutionLog { timestamp: number; nodeId: string; nodeLabel: string; action: string }
+interface StylePreset { name: string; fill: string; stroke: string; icon: string }
+interface NetworkMetric { metric: string; value: number; description: string }
+interface ShortcutDef { key: string; ctrl?: boolean; action: string }
+interface Breakpoint { nodeId: string; label?: string; enabled: boolean }
 </script>
 
 <style scoped>
@@ -4226,4 +4482,18 @@ kbd{display:inline-block;padding:3px 8px;border-radius:4px;border:1px solid var(
 .eda-track{flex:1;height:8px;background:var(--border-color);border-radius:4px;overflow:hidden}
 .eda-fill{height:100%;background:var(--color-primary);transition:width .3s}
 .eda-val{width:40px;text-align:right;font-family:"JetBrains Mono",monospace;color:var(--color-primary)}
+
+/* Network Analysis */
+.network-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:12px}
+.network-card{padding:10px;background:var(--bg-secondary);border-radius:var(--radius-sm);text-align:center;border:1px solid var(--border-color)}
+.nc-value{font-size:20px;font-weight:700;color:var(--color-primary);font-family:"JetBrains Mono",monospace}
+.nc-label{font-size:10px;color:var(--text-muted);margin-top:2px;text-transform:uppercase}
+.nc-desc{font-size:8px;color:var(--text-muted);margin-top:2px}
+.analysis-warning{padding:8px 12px;background:rgba(245,158,11,.1);border:1px solid var(--color-warning);border-radius:var(--radius-sm);color:var(--color-warning);font-size:12px;margin-top:8px}
+/* Style Presets */
+.style-presets-panel{margin-top:12px;padding-top:12px;border-top:1px solid var(--border-color)}
+.spp-title{font-size:11px;font-weight:600;color:var(--color-primary);margin-bottom:6px;text-transform:uppercase;letter-spacing:0.5px}
+.spp-grid{display:flex;gap:4px;flex-wrap:wrap}
+.spp-btn{width:28px;height:28px;border-radius:50%;cursor:pointer;transition:all .15s;display:flex;align-items:center;justify-content:center;font-size:14px}
+.spp-btn:hover{transform:scale(1.2);box-shadow:0 0 8px var(--color-primary)}
 </style>
