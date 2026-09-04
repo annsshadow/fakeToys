@@ -917,8 +917,6 @@ interface ScriptActionConfig { language: "javascript"|"python"|"typescript"; cod
 interface ForkJoinAnnotation { id: string; type: "fork"|"join"; branchIndices: number[]; forkNodeIdx: number; joinNodeIdx?: number; label: string; color: string; annotations: Array<{type:"label"|"flow"|"count"; text: string}> }
 
 // ── Group Drag/Resize ──────────────────────────────────────────────
-interface GroupDragState { idx: number; startX: number; startY: number; origX: number; origY: number }
-interface GroupResizeState { idx: number; dir: string; startX: number; startY: number; origW: number; origH: number; origX: number; origY: number }
 // ── Edge Routing ────────────────────────────────────────────────────
 interface RoutingPoint { x: number; y: number; type: "anchor"|"control" }
 interface EdgeRouteConfig { edgeId: string; fromNodeIdx: number; toNodeIdx: number; routing: "auto"|"straight"|"horizontal"|"vertical"|"custom"; controlPoints: RoutingPoint[]; offset: number; labelPos: "auto"|"start"|"mid"|"end"; arrowStyle: "default"|"none"|"both" }
