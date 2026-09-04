@@ -1021,6 +1021,133 @@
           @click="applyStylePreset(preset)">{{ preset.icon }}</button>
       </div>
     </div>
+
+    <!-- Condition Builder Modal -->
+    <div v-if="showCondBuilder" class="modal-overlay" @click.self="showCondBuilder=false">
+      <div class="modal modal-lg glass-card">
+        <div class="modal-header"><h3>🔀 复杂条件构建器</h3><button class="btn-close" @click="showCondBuilder=false">✕</button></div>
+        <div class="modal-body" style="display:flex;gap:16px">
+          <div style="flex:1">
+            <div class="fg"><label>条件树</label>
+              <div v-if="condTree" class="cond-tree">
+                <div class="cond-group and-group">
+                  <span class="cond-logic">AND</span>
+                  <button class="btn-sm" @click="addCondGroup(condTree)">+ 组</button>
+                  <button class="btn-sm" @click="addCondCondition(condTree)">+ 条件</button>
+                  <div v-for="(cond, ci) in (condTree.conditions||[])" :key="ci" class="cond-row">
+                    <select v-model="cond.field" class="fi" style="width:90px">
+                      <option v-for="f in condFields" :value="f">{{ f }}</option>
+                    </select>
+                    <select v-model="cond.operator" class="fi" style="width:60px">
+                      <option value="==">等于</option><option value="!=">不等于</option><option value=">">大于</option><option value="<">小于</option>
+                    </select>
+                    <input v-model="cond.value" class="fi" placeholder="值" style="flex:1" />
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="fg"><label>表达式预览</label>
+              <textarea class="json-editor" :value="condPreview" readonly rows="3"></textarea>
+            </div>
+          </div>
+          <div style="width:180px">
+            <div class="fg"><label>快捷模板</label>
+              <button class="btn-sm" style="width:100%;margin-bottom:4px;text-align:left" @click="condTree={id:genId(),type:'group',logic:'AND',conditions:[{field:'amount',operator:'>',value:'1000'}],children:[]}">金额 > 1000</button>
+              <button class="btn-sm" style="width:100%;margin-bottom:4px;text-align:left" @click="condTree={id:genId(),type:'group',logic:'OR',conditions:[{field:'status',operator:'==',value:'pending'},{field:'priority',operator:'==',value:'high'}],children:[]}">待处理 或 高优先级</button>
+              <button class="btn-sm" style="width:100%;margin-bottom:4px;text-align:left" @click="condTree={id:genId(),type:'group',logic:'AND',conditions:[{field:'userId',operator:'==',value:'current'},{field:'department',operator:'contains',value:'tech'}],children:[]}">当前用户且技术部</button>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="bc" @click="showCondBuilder=false">取消</button>
+          <button class="bs" @click="previewCond()">👁 预览</button>
+          <button class="bs" @click="showCondBuilder=false">💾 保存</button>
+        </div>
+      </div>
+    </div>
+    <!-- Variable Binding Panel -->
+    <div v-if="showVarBindingPanel" class="var-binding-panel">
+      <div class="vb-header"><span>📎 变量绑定</span><button class="btn-sm" @click="showVarBindingPanel=false">✕</button></div>
+      <div class="vb-body">
+        <div v-for="(vb, vi) in varBindings" :key="vi" class="vb-row">
+          <select v-model="vb.sourceNode" class="fi" style="width:70px">
+            <option value="">源节点</option>
+            <option v-for="n in processDef?.nodes" :key="n.id" :value="n.id">{{ (n.label||n.id).slice(0,5) }}</option>
+          </select>
+          <input v-model="vb.sourceField" class="fi" placeholder="源字段" style="width:70px" />
+          <span class="vb-arrow">→</span>
+          <select v-model="vb.targetNode" class="fi" style="width:70px">
+            <option value="">目标</option>
+            <option v-for="n in processDef?.nodes" :key="n.id" :value="n.id">{{ (n.label||n.id).slice(0,5) }}</option>
+          </select>
+          <input v-model="vb.targetField" class="fi" placeholder="目标字段" style="width:70px" />
+          <button class="btn-sm" style="color:var(--color-danger)" @click="removeVarBinding(vi)">✕</button>
+        </div>
+        <button class="btn-sm" @click="addVarBinding()">+ 添加绑定</button>
+        <button class="bs" @click="applyVarBindings()">💾 应用</button>
+      </div>
+    </div>
+    <!-- Form Rules Panel -->
+    <div v-if="showFormRulesPanel" class="form-rules-panel">
+      <div class="fr-header"><span>🔗 表单联动规则</span><button class="btn-sm" @click="showFormRulesPanel=false">✕</button></div>
+      <div class="fr-body">
+        <div v-for="(rule, ri) in formRules" :key="rule.id" class="fr-row">
+          <select v-model="rule.sourceField" class="fi" style="width:90px">
+            <option value="">字段</option>
+            <option v-for="f in (currentForm?.fields||[])" :key="f.key" :value="f.key">{{ f.label }}</option>
+          </select>
+          <select v-model="rule.operator" class="fi" style="width:55px">
+            <option value="==">等于</option><option value="!=">不等于</option><option value="contains">包含</option>
+          </select>
+          <input v-model="rule.value" class="fi" style="width:70px" placeholder="值" />
+          <select v-model="rule.action" class="fi" style="width:60px">
+            <option value="show">显示</option><option value="hide">隐藏</option><option value="enable">启用</option><option value="disable">禁用</option><option value="require">必填</option>
+          </select>
+          <button class="btn-sm" style="color:var(--color-danger)" @click="removeFormRule(ri)">✕</button>
+        </div>
+        <button class="btn-sm" @click="addFormRule()">+ 添加规则</button>
+        <button class="bs" @click="saveFormRules()">💾 保存</button>
+      </div>
+    </div>
+    <!-- Batch Toolbar -->
+    <div v-if="showBatchToolbar" class="batch-toolbar">
+      <div class="batch-toolbar-inner">
+        <span class="batch-info">批量操作模式</span>
+        <button class="btn-sm" @click="batchAlign('left')">⬅ 左对齐</button>
+        <button class="btn-sm" @click="batchAlign('top')">⬆ 顶对齐</button>
+        <button class="btn-sm" @click="enterBatchMode()">✕ 退出</button>
+      </div>
+    </div>
+    <!-- Theme Editor -->
+    <div v-if="showThemeEditor" class="modal-overlay" @click.self="showThemeEditor=false">
+      <div class="modal modal-lg glass-card">
+        <div class="modal-header"><h3>🎨 画布主题定制</h3><button class="btn-close" @click="showThemeEditor=false">✕</button></div>
+        <div class="modal-body">
+          <div class="theme-grid">
+            <div v-for="(t, ti) in themePresets" :key="ti" class="theme-card" :class="{active: activeTheme.name===t.name}" @click="applyTheme(t); showThemeEditor=false">
+              <div class="theme-preview" :style="{background: t.bg, borderBottom: '3px solid ' + t.accentColor}"></div>
+              <div class="theme-name">{{ t.name }}</div>
+            </div>
+          </div>
+          <div class="fg" style="margin-top:12px"><label>自定义颜色</label>
+            <div style="display:flex;gap:8px;flex-wrap:wrap">
+              <div><label style="font-size:10px;color:var(--text-muted)">背景</label><input type="color" :value="activeTheme.bg" @change="activeTheme.bg=$event.target.value;applyTheme(activeTheme)" class="color-input" /></div>
+              <div><label style="font-size:10px;color:var(--text-muted)">主色</label><input type="color" :value="activeTheme.accentColor" @change="activeTheme.accentColor=$event.target.value;applyTheme(activeTheme)" class="color-input" /></div>
+              <div><label style="font-size:10px;color:var(--text-muted)">文字</label><input type="color" :value="activeTheme.textColor" @change="activeTheme.textColor=$event.target.value;applyTheme(activeTheme)" class="color-input" /></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <!-- Animation Panel -->
+    <div v-if="showAnimPanel" class="anim-panel">
+      <div class="anim-header"><span>✨ 动画效果</span><button class="btn-sm" @click="showAnimPanel=false">✕</button></div>
+      <div class="anim-body">
+        <div v-for="s in animSettings" :key="s.key" class="anim-item" :class="{active: s.enabled}" @click="toggleAnimSetting(s.key)">
+          <span>{{ s.icon }}</span><span>{{ s.label }}</span>
+        </div>
+      </div>
+    </div>
 </template>
 
 <script setup lang="ts">
@@ -3845,6 +3972,146 @@ interface StylePreset { name: string; fill: string; stroke: string; icon: string
 interface NetworkMetric { metric: string; value: number; description: string }
 interface ShortcutDef { key: string; ctrl?: boolean; action: string }
 interface Breakpoint { nodeId: string; label?: string; enabled: boolean }
+
+// ── Condition Builder Functions ─────────────────────────────────────
+function initCondBuilder() {
+  condTree.value = { id: genId(), type: "group", logic: "AND", conditions: [], children: [] }
+  showCondBuilder.value = true
+}
+function addCondGroup(parent: CondNode) {
+  if (!parent.children) parent.children = []
+  parent.children.push({ id: genId(), type: "group", logic: "AND", conditions: [], children: [] })
+}
+function addCondCondition(parent: CondNode) {
+  if (!parent.conditions) parent.conditions = []
+  parent.conditions.push({ field: "", operator: "==", value: "" })
+}
+function generateCondExpression(node: CondNode): string {
+  if (node.conditions && node.conditions.length > 0) {
+    return node.conditions.map(c => `${c.field} ${c.operator} ${c.value}`).join(` ${node.logic} `)
+  }
+  if (node.children && node.children.length > 0) {
+    return `(${node.children.map(generateCondExpression).join(` ${node.logic} `)})`
+  }
+  return "true"
+}
+function previewCond() {
+  if (condTree.value) condPreview.value = generateCondExpression(condTree.value)
+}
+
+// ── Variable Binding Functions ──────────────────────────────────────
+function addVarBinding() {
+  varBindings.value.push({ sourceNode: "", sourceField: "", targetNode: "", targetField: "" })
+}
+function removeVarBinding(idx: number) { varBindings.value.splice(idx, 1) }
+function applyVarBindings() {
+  if (!processDef.value) return
+  console.log("Applied", varBindings.value.length, "bindings")
+  pushHistory()
+}
+
+// ── Form Rules Functions ────────────────────────────────────────────
+function addFormRule() {
+  formRules.value.push({ id: genId(), sourceField: "", operator: "==", value: "", action: "show", targetFields: [] })
+}
+function removeFormRule(idx: number) { formRules.value.splice(idx, 1) }
+function saveFormRules() {
+  if (!currentForm.value) return
+  currentForm.value.formRules = formRules.value
+  pushFormHistory()
+}
+
+// ── Batch Operation Functions ───────────────────────────────────────
+function enterBatchMode() { showBatchToolbar.value = true }
+function exitBatchMode() { showBatchToolbar.value = false }
+function batchAlign(dir: string) {
+  if (!processDef.value) return
+  const nodes = processDef.value.nodes
+  if (dir === "left") {
+    const minX = Math.min(...nodes.map(n => n.x))
+    nodes.forEach(n => { n.x = minX; if (snapToGrid.value) n.x = Math.round(n.x / GRID_SIZE) * GRID_SIZE })
+  }
+  if (dir === "top") {
+    const minY = Math.min(...nodes.map(n => n.y))
+    nodes.forEach(n => { n.y = minY; if (snapToGrid.value) n.y = Math.round(n.y / GRID_SIZE) * GRID_SIZE })
+  }
+  pushHistory()
+}
+
+// ── Theme Functions ─────────────────────────────────────────────────
+function applyTheme(preset: ThemePreset) {
+  activeTheme.value = preset
+  document.documentElement.style.setProperty("--canvas-bg", preset.bg)
+  document.documentElement.style.setProperty("--canvas-grid", preset.grid)
+  document.documentElement.style.setProperty("--pd-text", preset.textColor)
+  document.documentElement.style.setProperty("--pd-accent", preset.accentColor)
+}
+function toggleAnimSetting(key: string) {
+  const setting = animSettings.value.find(s => s.key === key)
+  if (setting) setting.enabled = !setting.enabled
+}
+
+// ── Subprocess Enhancement Functions ────────────────────────────────
+function renameSubprocess(name: string) { subprocessTitle.value = name }
+function setSubprocessDesc(desc: string) { subprocessDesc.value = desc }
+
+// ── Data Mapping Drag Functions ─────────────────────────────────────
+function onMapDragStart(e: DragEvent, item: any) {
+  e.dataTransfer?.setData("text/plain", JSON.stringify(item))
+}
+function onMapDrop(e: DragEvent, target: any) {
+  try { const data = JSON.parse(e.dataTransfer?.getData("text/plain") || "{}"); console.log("Dropped:", data, "on:", target) } catch { }
+}
+
+// ── Condition Builder ───────────────────────────────────────────────
+const showCondBuilder = ref(false)
+const condTree = ref<CondNode|null>(null)
+const condPreview = ref("")
+
+// ── Variable Binding ────────────────────────────────────────────────
+const showVarBindingPanel = ref(false)
+const varBindings = ref<VarBinding[]>([])
+
+// ── Form Rules ──────────────────────────────────────────────────────
+const showFormRulesPanel = ref(false)
+const formRules = ref<FormRule[]>([])
+
+// ── Batch Operations ────────────────────────────────────────────────
+const showBatchToolbar = ref(false)
+
+// ── Theme Customization ────────────────────────────────────────────
+const themePresets: ThemePreset[] = [
+  { name: "赛博朋克", bg: "#0a0e1a", grid: "rgba(0,212,255,0.08)", textColor: "#00d4ff", accentColor: "#00d4ff", nodeBg: "rgba(0,212,255,0.1)", nodeBorder: "#00d4ff" },
+  { name: "极光绿", bg: "#0a1a0a", grid: "rgba(34,197,94,0.08)", textColor: "#22c55e", accentColor: "#22c55e", nodeBg: "rgba(34,197,94,0.1)", nodeBorder: "#22c55e" },
+  { name: "霓虹粉", bg: "#1a0a1a", grid: "rgba(236,72,153,0.08)", textColor: "#ec4899", accentColor: "#ec4899", nodeBg: "rgba(236,72,153,0.1)", nodeBorder: "#ec4899" },
+  { name: "深海青", bg: "#0a1a2a", grid: "rgba(6,182,212,0.08)", textColor: "#06b6d4", accentColor: "#06b6d4", nodeBg: "rgba(6,182,212,0.1)", nodeBorder: "#06b6d4" },
+  { name: "琥珀黄", bg: "#1a150a", grid: "rgba(245,158,11,0.08)", textColor: "#f59e0b", accentColor: "#f59e0b", nodeBg: "rgba(245,158,11,0.1)", nodeBorder: "#f59e0b" },
+  { name: "紫雾", bg: "#1a0a2e", grid: "rgba(168,85,247,0.08)", textColor: "#a855f7", accentColor: "#a855f7", nodeBg: "rgba(168,85,247,0.1)", nodeBorder: "#a855f7" },
+  { name: "极简白", bg: "#f8fafc", grid: "rgba(100,116,139,0.1)", textColor: "#475569", accentColor: "#3b82f6", nodeBg: "rgba(255,255,255,0.9)", nodeBorder: "#94a3b8" },
+  { name: "暗夜", bg: "#111827", grid: "rgba(156,163,175,0.05)", textColor: "#9ca3af", accentColor: "#6b7280", nodeBg: "rgba(31,41,55,0.8)", nodeBorder: "#4b5563" },
+]
+const activeTheme = ref<ThemePreset>(themePresets[0])
+const showThemeEditor = ref(false)
+
+// ── Animation Settings ──────────────────────────────────────────────
+const animSettings = ref<AnimSetting[]>([
+  { key: "edgeFlow", label: "连线流动", enabled: true, icon: "🌊" },
+  { key: "nodeAppear", label: "节点出现", enabled: true, icon: "✨" },
+  { key: "groupExpand", label: "分组展开", enabled: true, icon: "📦" },
+  { key: "forkJoin", label: "分支标注", enabled: true, icon: "⚡" },
+  { key: "heartbeat", label: "心跳脉冲", enabled: false, icon: "💓" },
+  { key: "shadow", label: "节点阴影", enabled: true, icon: "🌑" },
+  { key: "glow", label: "节点发光", enabled: false, icon: "💡" },
+  { key: "gridAnim", label: "网格动画", enabled: false, icon: "📐" },
+])
+const showAnimPanel = ref(false)
+
+// ── Advanced Interfaces ────────────────────────────────────────────
+interface CondNode { id: string; type: "group"|"condition"; logic: "AND"|"OR"; conditions?: Array<{field: string; operator: string; value: string}>; children?: CondNode[] }
+interface VarBinding { sourceNode: string; sourceField: string; targetNode: string; targetField: string }
+interface FormRule { id: string; sourceField: string; operator: string; value: string; action: "show"|"hide"|"enable"|"disable"; targetFields: string[] }
+interface ThemePreset { name: string; bg: string; grid: string; textColor: string; accentColor: string; nodeBg: string; nodeBorder: string }
+interface AnimSetting { key: string; label: string; enabled: boolean; icon: string }
 </script>
 
 <style scoped>
@@ -4229,6 +4496,46 @@ kbd{display:inline-block;padding:3px 8px;border-radius:4px;border:1px solid var(
 .node-body.parallel{fill:rgba(236,72,153,.4);stroke:#ec4899}
 .node-icon-text{font-size:14px;fill:var(--text-primary)}
 .node-label{fill:var(--text-primary);font-size:12px;font-weight:500}
+
+/* Condition Builder */
+.cond-tree{padding:8px;background:var(--bg-secondary);border-radius:var(--radius-sm);min-height:180px}
+.cond-group{padding:8px;margin:4px 0;border-radius:var(--radius-sm);border:1px solid var(--border-color);background:var(--bg-elevated)}
+.cond-logic{font-size:10px;font-weight:700;padding:2px 6px;border-radius:var(--radius-sm);background:var(--color-primary-soft);color:var(--color-primary);display:inline-block;margin-right:8px}
+.cond-row{display:flex;align-items:center;gap:4px;margin:4px 0}
+/* Variable Binding */
+.var-binding-panel{position:fixed;right:20px;top:120px;width:340px;background:var(--bg-elevated);border:1px solid var(--border-color);border-radius:var(--radius-lg);z-index:200;box-shadow:0 4px 20px rgba(0,0,0,0.3)}
+.vb-header{display:flex;align-items:center;justify-content:space-between;padding:10px 12px;border-bottom:1px solid var(--border-color);font-size:12px;font-weight:600;color:var(--color-primary)}
+.vb-body{padding:12px;display:flex;flex-direction:column;gap:6px;max-height:60vh;overflow-y:auto}
+.vb-row{display:flex;align-items:center;gap:4px}
+.vb-arrow{color:var(--color-primary);font-size:12px}
+/* Form Rules */
+.form-rules-panel{position:fixed;left:20px;top:120px;width:360px;background:var(--bg-elevated);border:1px solid var(--border-color);border-radius:var(--radius-lg);z-index:200;box-shadow:0 4px 20px rgba(0,0,0,0.3)}
+.fr-header{display:flex;align-items:center;justify-content:space-between;padding:10px 12px;border-bottom:1px solid var(--border-color);font-size:12px;font-weight:600;color:var(--color-primary)}
+.fr-body{padding:12px;display:flex;flex-direction:column;gap:6px;max-height:60vh;overflow-y:auto}
+.fr-row{display:flex;align-items:center;gap:4px}
+/* Batch Toolbar */
+.batch-toolbar{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:var(--bg-elevated);border:1px solid var(--color-primary);border-radius:var(--radius-lg);z-index:300;box-shadow:0 4px 20px rgba(0,212,255,0.2)}
+.batch-toolbar-inner{display:flex;align-items:center;gap:8px;padding:10px 16px}
+.batch-info{font-size:11px;color:var(--color-primary);font-weight:600;margin-right:8px}
+/* Theme Editor */
+.theme-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.theme-card{cursor:pointer;border-radius:var(--radius-md);overflow:hidden;border:2px solid transparent;transition:all .15s}
+.theme-card:hover,.theme-card.active{border-color:var(--color-primary);transform:scale(1.03)}
+.theme-preview{height:50px;width:100%}
+.theme-name{font-size:10px;text-align:center;padding:4px;color:var(--text-primary);background:var(--bg-secondary)}
+.color-input{width:32px;height:24px;border:none;cursor:pointer;padding:0}
+/* Animation Panel */
+.anim-panel{position:fixed;right:20px;bottom:80px;width:150px;background:var(--bg-elevated);border:1px solid var(--border-color);border-radius:var(--radius-lg);z-index:200;box-shadow:0 4px 20px rgba(0,0,0,0.3)}
+.anim-header{display:flex;align-items:center;justify-content:space-between;padding:10px 12px;border-bottom:1px solid var(--border-color);font-size:12px;font-weight:600;color:var(--color-primary)}
+.anim-body{padding:8px;display:flex;flex-direction:column;gap:4px}
+.anim-item{padding:6px 8px;border-radius:var(--radius-sm);cursor:pointer;font-size:11px;display:flex;align-items:center;gap:6px;transition:all .15s}
+.anim-item:hover{background:var(--color-primary-soft)}
+.anim-item.active{background:var(--color-primary-soft);color:var(--color-primary);border:1px solid var(--color-primary)}
+/* Node animations */
+@keyframes nodeAppear{from{opacity:0;transform:scale(0.85)}to{opacity:1;transform:scale(1)}}
+.node-appear{animation:nodeAppear 0.3s ease-out}
+@keyframes pulseGlow{0%,100%{box-shadow:0 0 5px var(--color-primary)}50%{box-shadow:0 0 20px var(--color-primary)}}
+.pulse-active{animation:pulseGlow 1.5s ease-in-out infinite}
 .node-sublabel{fill:var(--text-muted);font-size:9px}
 .port{stroke:var(--text-muted);stroke-width:1.5;fill:var(--bg-surface);cursor:crosshair}
 .port-in{fill:rgba(16,185,129,.6)}
