@@ -27,6 +27,16 @@ import CategoryApp from './views/CategoryApp.vue';
 import CalendarApp from './views/CalendarApp.vue';
 import FileManager from './views/FileManager.vue';
 import BBSForum from './views/BBSForum.vue';
+import MindApp from './views/MindApp.vue';
+import DocumentApp from './views/DocumentApp.vue';
+import ProgramCenterApp from './views/ProgramCenterApp.vue';
+import QueryViewApp from './views/QueryViewApp.vue';
+import RecycleApp from './views/RecycleApp.vue';
+import ServerApp from './views/ServerApp.vue';
+import UnitApp from './views/UnitApp.vue';
+import FormApp from './views/FormApp.vue';
+import ViewApp from './views/ViewApp.vue';
+import FileInfoApp from './views/FileInfoApp.vue';
 
 const router = createRouter({
   history: createWebHistory(),
@@ -53,6 +63,16 @@ const router = createRouter({
         { path: 'jpush', name: 'JPushApp', component: JPushApp, meta: { title: '消息推送' } },
         { path: 'appinfo', name: 'AppInfoApp', component: AppInfoApp, meta: { title: '应用管理' } },
         { path: 'category', name: 'CategoryApp', component: CategoryApp, meta: { title: '分类管理' } },
+        { path: 'mind', name: 'MindApp', component: MindApp, meta: { title: '思维导图' } },
+        { path: 'document', name: 'DocumentApp', component: DocumentApp, meta: { title: '文档管理' } },
+        { path: 'program', name: 'ProgramCenterApp', component: ProgramCenterApp, meta: { title: '程序中心' } },
+        { path: 'queryview', name: 'QueryViewApp', component: QueryViewApp, meta: { title: '查询视图' } },
+        { path: 'recycle', name: 'RecycleApp', component: RecycleApp, meta: { title: '回收站' } },
+        { path: 'server', name: 'ServerApp', component: ServerApp, meta: { title: '服务器管理' } },
+        { path: 'unit', name: 'UnitApp', component: UnitApp, meta: { title: '单元管理' } },
+        { path: 'form', name: 'FormApp', component: FormApp, meta: { title: '表单管理' } },
+        { path: 'view', name: 'ViewApp', component: ViewApp, meta: { title: '视图管理' } },
+        { path: 'fileinfo', name: 'FileInfoApp', component: FileInfoApp, meta: { title: '文件信息' } },
       ],
     },
     { path: '/oauth/callback/:platform', name: 'OAuthCallback', component: OAuthCallback, meta: { requiresAuth: false } },

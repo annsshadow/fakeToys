@@ -12,10 +12,20 @@
       <nav class="sidebar-nav">
         <div
           v-for="item in navItems"
+          v-if="!item.disabled"
           :key="item.path"
           class="nav-item"
           :class="{ active: isActive(item.path) }"
           @click="navigate(item)"
+        >
+          <span class="nav-icon">{{ item.icon }}</span>
+          <span v-show="!sidebarCollapsed" class="nav-label">{{ item.label }}</span>
+        </div>
+        <div
+          v-for="item in navItems"
+          v-if="item.disabled"
+          :key="item.label"
+          class="nav-section-label"
         >
           <span class="nav-icon">{{ item.icon }}</span>
           <span v-show="!sidebarCollapsed" class="nav-label">{{ item.label }}</span>
@@ -148,6 +158,17 @@ const navItems = [
   { path: '/app/file', label: '文件', icon: '📁' },
   { path: '/app/bbs', label: '论坛', icon: '💭' },
   { path: '/app/admin', label: '管理', icon: '🔧' },
+  { label: '工具', icon: '🧰', disabled: true },
+  { path: '/app/mind', label: '思维导图', icon: '🧠' },
+  { path: '/app/document', label: '文档管理', icon: '📄' },
+  { path: '/app/program', label: '程序中心', icon: '⚙️' },
+  { path: '/app/queryview', label: '查询视图', icon: '📊' },
+  { path: '/app/recycle', label: '回收站', icon: '🗑️' },
+  { path: '/app/server', label: '服务器', icon: '🖥️' },
+  { path: '/app/unit', label: '单元管理', icon: '🏗️' },
+  { path: '/app/form', label: '表单管理', icon: '📝' },
+  { path: '/app/view', label: '视图管理', icon: '👁️' },
+  { path: '/app/fileinfo', label: '文件信息', icon: '📎' },
 ];
 
 // 移动端导航项（精简）
@@ -264,6 +285,21 @@ document.addEventListener('click', (e) => {
   flex: 1;
   overflow-y: auto;
   padding: 8px 0;
+}
+
+.nav-section-label {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px 4px;
+  margin: 4px 8px;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--text-muted);
+  border-top: 1px solid var(--border-subtle);
+  margin-top: 8px;
 }
 
 .nav-item {
