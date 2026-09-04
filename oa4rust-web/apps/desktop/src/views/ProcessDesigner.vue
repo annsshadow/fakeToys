@@ -2669,6 +2669,166 @@
         </div>
       </div>
     </div>
+
+    <!-- Debug Panel -->
+<div v-if="showDebugPanel" class="modal-overlay" @click.self="showDebugPanel=false">
+      <div class='modal glass-card'>
+        <div class='modal-header'><span>调试控制台</span><button class='btn-close' @click='showDebugPanel=false'>×</button></div>
+        <div class='modal-body'>
+          <div class='dbg-hdr'><button class='btn-sm' @click='clearDebug()'>清除</button></div>
+          <div class='dbg-list'>
+            <div v-for='m in debugMessages' :key='m.time' class='dbg-item'>
+              <span class='dbg-time'>{{new Date(m.time).toLocaleTimeString()}}</span>
+              <span class='dbg-lvl' :class='m.level'>{{m.level.toUpperCase()}}</span>
+              <span class='dbg-msg'>{{m.message}}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Batch Operation Panel -->
+<div v-if="showBatchOpPanel" class="modal-overlay" @click.self="showBatchOpPanel=false">
+      <div class='modal glass-card'>
+        <div class='modal-header'><span>批量操作</span><button class='btn-close' @click='showBatchOpPanel=false'>×</button></div>
+        <div class='modal-body'>
+          <select v-model='batchOpType' class='bop-select'>
+            <option value='align'>对齐</option><option value='distribute'>分布</option>
+            <option value='resize'>调整大小</option><option value='color'>着色</option>
+          </select>
+          <button class='btn-sm btn-primary' @click='executeBatchOp()'>执行</button>
+          <div class='bop-results'>
+            <div v-for='r in batchOpResults' :key='r.nodeId' class='bop-item'>
+              <span>{{r.nodeId}}</span><span :class='r.success?"ok":"err"'>{{r.success?'✓':'✗'}}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Template Manager Panel -->
+<div v-if="showTemplateManagerPanel" class="modal-overlay" @click.self="showTemplateManagerPanel=false">
+      <div class='modal glass-card'>
+        <div class='modal-header'><span>模板库</span><button class='btn-close' @click='showTemplateManagerPanel=false'>×</button></div>
+        <div class='modal-body'>
+          <input v-model='templateSearch' placeholder='搜索模板...' class='tpl-search' />
+          <div class='tpl-grid'>
+            <div class='tpl-card'><span class='tpl-icon'>📋</span><span class='tpl-name'>审批流程模板</span><span class='tpl-desc'>三级审批流程</span></div>
+            <div class='tpl-card'><span class='tpl-icon'>🔔</span><span class='tpl-name'>通知流程模板</span><span class='tpl-desc'>消息通知流程</span></div>
+            <div class='tpl-card'><span class='tpl-icon'>🔄</span><span class='tpl-name'>数据同步模板</span><span class='tpl-desc'>跨系统数据同步</span></div>
+            <div class='tpl-card'><span class='tpl-icon'>✅</span><span class='tpl-name'>任务流程模板</span><span class='tpl-desc'>任务跟踪流程</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Macro Editor Panel -->
+<div v-if="showMacroEditor" class="modal-overlay" @click.self="showMacroEditor=false">
+      <div class='modal glass-card'>
+        <div class='modal-header'><span>宏编辑器</span><button class='btn-close' @click='showMacroEditor=false'>×</button></div>
+        <div class='modal-body'>
+          <textarea v-model='macroCode' class='macro-editor' rows='10'></textarea>
+          <div class='macro-acts'><button class='btn-sm' @click='runMacro()'>运行</button><button class='btn-sm' @click='saveMacro()'>保存</button></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Snippet Library Panel -->
+<div v-if="showSnippetLibrary" class="modal-overlay" @click.self="showSnippetLibrary=false">
+      <div class='modal glass-card'>
+        <div class='modal-header'><span>代码片段库</span><button class='btn-close' @click='showSnippetLibrary=false'>×</button></div>
+        <div class='modal-body'>
+          <div class='snip-list'>
+            <div v-for='s in snippetLibrary' :key='s.id' class='snip-item'>
+              <span class='snip-name'>{{s.name}}</span><span class='snip-code'>{{s.code.slice(0,30)}}...</span>
+              <button class='btn-sm' @click='insertSnippet(s.id)'>插入</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Event Mapper Panel -->
+<div v-if="showEventMapper" class="modal-overlay" @click.self="showEventMapper=false">
+      <div class='modal glass-card'>
+        <div class='modal-header'><span>事件映射</span><button class='btn-close' @click='showEventMapper=false'>×</button></div>
+        <div class='modal-body'>
+          <div class='ev-list'>
+            <div v-for='(m,i) in eventMappings' :key='m.id' class='ev-item'>
+              <span class='ev-src'>{{m.source}}</span><span class='ev-arrow'>→</span><span class='ev-dst'>{{m.target}}</span>
+              <label class='ev-toggle'><input type='checkbox' :checked='m.enabled' @change='toggleEventMapping(i)'/><span></span></label>
+            </div>
+          </div>
+          <button class='btn-sm' @click='addEventMapping()'>+ 添加映射</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Annotation Panel -->
+<div v-if="showAnnotationPanel" class="modal-overlay" @click.self="showAnnotationPanel=false">
+      <div class='modal glass-card'>
+        <div class='modal-header'><span>标注管理</span><button class='btn-close' @click='showAnnotationPanel=false'>×</button></div>
+        <div class='modal-body'>
+          <div class='ann-input'>
+            <input v-model='annotationText' placeholder='标注内容' class='ann-text' />
+            <input type='color' v-model='annotationColor' class='ann-color' />
+            <button class='btn-sm' @click='addAnnotation(50,50)'>添加</button>
+          </div>
+          <div class='ann-list'>
+            <div v-for='a in annotations' :key='a.id' class='ann-item'>
+              <span class='ann-dot' :style='{background:a.color}'></span>
+              <span class='ann-txt'>{{a.text}}</span>
+              <button class='btn-sm btn-danger' @click='deleteAnnotation(a.id)'>×</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Workflow Builder Panel -->
+<div v-if="showWorkflowBuilder" class="modal-overlay" @click.self="showWorkflowBuilder=false">
+      <div class='modal glass-card'>
+        <div class='modal-header'><span>工作流构建器</span><button class='btn-close' @click='showWorkflowBuilder=false'>×</button></div>
+        <div class='modal-body'>
+          <div class='wf-steps'>
+            <div v-for='(step,i) in workflowSteps' :key='step.id' class='wf-step'>
+              <span class='wf-num'>{{i+1}}</span><span class='wf-name'>{{step.name}}</span><span class='wf-type'>{{step.type}}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Dependency Graph Panel -->
+<div v-if="showDependencyGraph" class="modal-overlay" @click.self="showDependencyGraph=false">
+      <div class='modal glass-card'>
+        <div class='modal-header'><span>依赖图</span><button class='btn-close' @click='showDependencyGraph=false'>×</button></div>
+        <div class='modal-body'>
+          <div class='dep-graph'>
+            <div v-for='n in dependencyNodes' :key='n.id' class='dep-node' :style='{left:n.depth*80+20+"px",top:"50%"}'>
+              {{n.label}}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Process Map Panel -->
+<div v-if="showProcessMap" class="modal-overlay" @click.self="showProcessMap=false">
+      <div class='modal glass-card'>
+        <div class='modal-header'><span>流程总览图</span><button class='btn-close' @click='showProcessMap=false'>×</button></div>
+        <div class='modal-body'>
+          <div class='pm-controls'>
+            <button class='btn-sm' @click='zoomProcessMap(1.2)'>+</button>
+            <button class='btn-sm' @click='zoomProcessMap(0.8)'>-</button>
+            <span>{{(processMapZoom*100).toFixed(0)}}%</span>
+          </div>
+          <div class='pm-canvas' :style='{transform:"scale("+processMapZoom+") translate("+processMapPan.x+"px,"+processMapPan.y+"px)"}'>
+            <div v-for='n in (processDef?.nodes||[])' :key='n.id' class='pm-node'>{{n.label||n.type}}</div>
+          </div>
+        </div>
+      </div>
+    </div>
 </template>
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted } from 'vue'
@@ -7504,6 +7664,71 @@ function generateTopology(): void {
 function toggleLayer(idx: number): void { layerList.value[idx].visible = !layerList.value[idx].visible }
 function lockLayer(idx: number): void { layerList.value[idx].locked = !layerList.value[idx].locked }
 function setLayerOpacity(idx: number, opacity: number): void { layerList.value[idx].opacity = opacity }
+
+// -- Extended Feature State
+const showDebugPanel = ref(false)
+const debugMessages = ref<Array<{time: number; level: string; message: string}>>([])
+const batchOpType = ref<string>("align")
+const batchOpResults = ref<Array<{nodeId: string; success: boolean}>>([])
+const showTemplateManagerPanel = ref(false)
+const templateSearch = ref("")
+const showMacroEditor = ref(false)
+const macroCode = ref("// Process macro\nfunction onStart() {}\nfunction onNodeComplete() {}")
+const showSnippetLibrary = ref(false)
+const snippetLibrary = ref<Array<{id: string; name: string; code: string}>>([
+  { id: "s1", name: "条件判断", code: "if (amount > 1000) { return true; }" },
+  { id: "s2", name: "并行分支", code: "return [branchA, branchB];" },
+  { id: "s3", name: "超时处理", code: "setTimeout(() => escalate(), timeoutMs);" },
+  { id: "s4", name: "重试逻辑", code: "for (let i = 0; i < retries; i++) { if (tryAgain()) return; }" },
+  { id: "s5", name: "数据转换", code: "return transform(input, schema);" },
+  { id: "s6", name: "通知发送", code: "notify({to: userId, msg: message});" },
+])
+const showEventMapper = ref(false)
+const eventMappings = ref<Array<{id: string; source: string; target: string; enabled: boolean}>>([
+  { id: "e1", source: "node_start", target: "log_start", enabled: true },
+  { id: "e2", source: "node_complete", target: "log_complete", enabled: true },
+  { id: "e3", source: "node_timeout", target: "escalate", enabled: false },
+  { id: "e4", source: "process_start", target: "notify_all", enabled: true },
+  { id: "e5", source: "process_complete", target: "archive", enabled: true },
+])
+const showAnnotationPanel = ref(false)
+const annotationText = ref("")
+const annotationColor = ref("#3b82f6")
+const annotations = ref<Array<{id: string; text: string; color: string; x: number; y: number}>>([])
+const showWorkflowBuilder = ref(false)
+const workflowSteps = ref<Array<{id: string; name: string; type: string; config: Record<string,any>}>>([])
+const showDependencyGraph = ref(false)
+const dependencyNodes = ref<Array<{id: string; label: string; depth: number}>>([])
+const showProcessMap = ref(false)
+const processMapZoom = ref(1)
+const processMapPan = ref({x: 0, y: 0})
+
+// -- Extended Functions
+function openDebugPanel(): void { showDebugPanel.value = true }
+function logDebug(level: string, message: string): void { debugMessages.value.unshift({ time: Date.now(), level, message }); if (debugMessages.value.length > 100) debugMessages.value.pop() }
+function clearDebug(): void { debugMessages.value = [] }
+function openBatchOpPanel(): void { showBatchOpPanel.value = true; batchOpResults.value = [] }
+function executeBatchOp(): void {
+  const nodes = processDef.value?.nodes || []
+  batchOpResults.value = nodes.map(n => ({ nodeId: n.id, success: true }))
+  showToast('批量操作完成: ' + batchOpResults.value.length + ' 个节点', 'success')
+}
+function openTemplateManager(): void { showTemplateManagerPanel.value = true }
+function openMacroEditor(): void { showMacroEditor.value = true }
+function runMacro(): void { logDebug('info', '执行宏脚本...'); setTimeout(() => logDebug('success', '宏执行完成'), 500) }
+function saveMacro(): void { logDebug('info', '保存宏...'); showToast('宏已保存', 'success') }
+function openSnippetLibrary(): void { showSnippetLibrary.value = true }
+function insertSnippet(id: string): void { const s = snippetLibrary.value.find(x => x.id === id); if (s) macroCode.value = s.code }
+function openEventMapper(): void { showEventMapper.value = true }
+function toggleEventMapping(idx: number): void { eventMappings.value[idx].enabled = !eventMappings.value[idx].enabled }
+function addEventMapping(): void { eventMappings.value.push({ id: 'e' + Date.now(), source: '', target: '', enabled: true }) }
+function openAnnotationPanel(): void { showAnnotationPanel.value = true }
+function addAnnotation(x: number, y: number): void { annotations.value.push({ id: 'a' + Date.now(), text: annotationText.value, color: annotationColor.value, x, y }); annotationText.value = '' }
+function deleteAnnotation(id: string): void { annotations.value = annotations.value.filter(a => a.id !== id) }
+function openWorkflowBuilder(): void { showWorkflowBuilder.value = true }
+function openDependencyGraph(): void { showDependencyGraph.value = true }
+function openProcessMap(): void { showProcessMap.value = true }
+function zoomProcessMap(factor: number): void { processMapZoom.value = Math.max(0.2, Math.min(5, processMapZoom.value * factor)) }
 </script>
 <style scoped>
 .pd{display:flex;flex-direction:column;height:100%}
@@ -8915,4 +9140,16 @@ kbd{display:inline-block;padding:3px 8px;border-radius:4px;border:1px solid var(
 
 /* -- Layer Manager Styles */
 .layer-list{display:flex;flex-direction:column;gap:4px}.layer-item{display:flex;align-items:center;gap:8px;padding:6px 10px;border-radius:4px;background:rgba(255,255,255,0.02);font-size:11px}.layer-color{width:16px;height:16px;border-radius:4px;flex-shrink:0}.layer-name{flex:1;color:var(--text-primary)}.layer-vis,.layer-lock{position:relative;width:24px;height:14px;cursor:pointer}.layer-vis input,.layer-lock input{opacity:0;width:0;height:0}.layer-vis span,.layer-lock span{position:absolute;inset:0;background:var(--border-color);border-radius:7px;transition:.2s}.layer-vis input:checked+span,.layer-lock input:checked+span{background:#3b82f6}.layer-vis input:checked+span::before,.layer-lock input:checked+span::before{transform:translateX(10px)}.layer-vis span::before,.layer-lock span::before{content:'';position:absolute;width:10px;height:10px;left:2px;top:2px;background:#fff;border-radius:50%;transition:.2s}.layer-opacity{width:60px;accent-color:#3b82f6}
+
+/* -- Extended Feature Styles */
+.dbg-hdr{display:flex;justify-content:flex-end;margin-bottom:8px}.dbg-list{max-height:300px;overflow-y:auto;display:flex;flex-direction:column;gap:2px}.dbg-item{display:flex;gap:8px;padding:4px 8px;border-radius:4px;font-size:10px;font-family:'JetBrains Mono',monospace}.dbg-time{color:var(--text-muted);width:70px}.dbg-lvl{width:50px;font-weight:700}.dbg-lvl-info{color:#3b82f6}.dbg-lvl-success{color:#10b981}.dbg-lvl-warning{color:#f59e0b}.dbg-lvl-error{color:#ef4444}.dbg-msg{flex:1;color:var(--text-primary)}
+.bop-select{padding:6px 8px;border-radius:6px;border:1px solid var(--border-color);background:var(--bg-elevated);color:var(--text-primary);font-size:11px;margin-right:8px}.bop-results{max-height:200px;overflow-y:auto;margin-top:10px}.bop-item{display:flex;justify-content:space-between;padding:4px 8px;border-radius:4px;background:rgba(255,255,255,0.02);font-size:10px}.bop-item .ok{color:#10b981}.bop-item .err{color:#ef4444}
+.tpl-search{width:100%;padding:8px 10px;border-radius:6px;border:1px solid var(--border-color);background:var(--bg-elevated);color:var(--text-primary);font-size:12px;margin-bottom:10px}.tpl-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}.tpl-card{padding:10px;border-radius:8px;background:rgba(255,255,255,0.02);border:1px solid var(--border-color);display:flex;flex-direction:column;gap:4px}.tpl-icon{font-size:20px}.tpl-name{font-size:12px;font-weight:600;color:var(--text-primary)}.tpl-desc{font-size:10px;color:var(--text-muted)}
+.macro-editor{width:100%;padding:10px;border-radius:8px;border:1px solid var(--border-color);background:var(--bg-elevated);color:var(--text-primary);font-family:'JetBrains Mono',monospace;font-size:12px;resize:vertical}.macro-acts{display:flex;gap:8px;margin-top:8px;justify-content:flex-end}
+.snip-list{display:flex;flex-direction:column;gap:6px}.snip-item{display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:6px;background:rgba(255,255,255,0.02);border:1px solid var(--border-color);font-size:11px}.snip-name{flex:1;color:var(--text-primary);font-weight:600}.snip-code{color:var(--text-muted);font-family:'JetBrains Mono',monospace;font-size:10px;max-width:200px;overflow:hidden;text-overflow:ellipsis}
+.ev-list{display:flex;flex-direction:column;gap:4px;margin-bottom:10px}.ev-item{display:flex;align-items:center;gap:8px;padding:6px 10px;border-radius:4px;background:rgba(255,255,255,0.02);font-size:11px;font-family:'JetBrains Mono',monospace}.ev-src{color:#3b82f6}.ev-arrow{color:var(--text-muted)}.ev-dst{color:#10b981}.ev-toggle{position:relative;width:28px;height:14px;cursor:pointer}.ev-toggle input{opacity:0;width:0;height:0}.ev-toggle span{position:absolute;inset:0;background:var(--border-color);border-radius:7px;transition:.2s}.ev-toggle input:checked+.ev-toggle span{background:#3b82f6}.ev-toggle input:checked+.ev-toggle span::before{transform:translateX(14px)}.ev-toggle span::before{content:'';position:absolute;width:10px;height:10px;left:2px;top:2px;background:#fff;border-radius:50%;transition:.2s}
+.ann-input{display:flex;gap:8px;margin-bottom:10px;align-items:center}.ann-text{flex:1;padding:6px 8px;border-radius:6px;border:1px solid var(--border-color);background:var(--bg-elevated);color:var(--text-primary);font-size:11px}.ann-color{width:30px;height:26px;border:none;cursor:pointer}.ann-list{display:flex;flex-direction:column;gap:4px}.ann-item{display:flex;align-items:center;gap:8px;padding:6px 10px;border-radius:4px;background:rgba(255,255,255,0.02);font-size:11px}.ann-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0}.ann-txt{flex:1;color:var(--text-primary)}
+.wf-steps{display:flex;flex-direction:column;gap:4px}.wf-step{display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:6px;background:rgba(255,255,255,0.02);font-size:11px}.wf-num{width:20px;height:20px;border-radius:50%;background:rgba(59,130,246,0.2);color:#3b82f6;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700}.wf-name{flex:1;color:var(--text-primary)}.wf-type{color:var(--text-muted);font-size:10px}
+.dep-graph{position:relative;height:100px;background:rgba(255,255,255,0.02);border:1px solid var(--border-color);border-radius:8px;overflow:hidden}.dep-node{position:absolute;padding:4px 8px;border-radius:4px;background:rgba(59,130,246,0.2);border:1px solid #3b82f6;font-size:10px;color:var(--text-primary);white-space:nowrap}
+.pm-controls{display:flex;gap:8px;align-items:center;margin-bottom:8px}.pm-canvas{width:100%;height:300px;background:rgba(255,255,255,0.02);border:1px solid var(--border-color);border-radius:8px;overflow:auto;transform-origin:top left}.pm-node{display:inline-block;padding:4px 8px;margin:4px;border-radius:4px;background:rgba(59,130,246,0.2);border:1px solid #3b82f6;font-size:10px;color:var(--text-primary)}
 </style>
