@@ -11,16 +11,11 @@
         <button class="btn btn-outline" @click="loadStatements">🔄 刷新</button>
         <button class="btn btn-success" :disabled="!sql.trim()" @click="executeSQL">▶ 执行</button>
         <button class="btn btn-primary" :disabled="!currentStatement" @click="saveStatement">💾 保存</button>
-        <button class="btn btn-outline" @click="showConditionBuilder=!showConditionBuilder" title="条件构建器">🔷 条件构建</button>
-        <button class="btn btn-outline" @click="showDragConfigFn()" title="字段拖拽配置">📐 字段拖拽</button>
-        <button class="btn btn-outline" @click="showASTPanel=!showASTPanel" title="SQL语法树">🌳 语法树</button>
-        <button class="btn btn-outline" @click="showLinkagePanel=!showLinkagePanel" title="图表联动">🔗 联动</button>
-        <button class="btn btn-outline" @click="showMoreTemplatesFn()" title="更多模板">📑 更多</button>
-        <button class="btn btn-outline" @click="showColSummaryFn()" title="列统计">📊 列统计</button>
-        <button class="btn btn-outline" @click="showVisualPanel=true" :class="{active:showVisualPanel}" title="结果可视化">📊 可视化</button>
-        <button class="btn btn-outline" @click="openPermPanel()" :class="{active:showPermPanel}" title="字段权限">🔐 权限</button>
-        <button class="btn btn-outline" @click="showPlanPanel=true" :class="{active:showPlanPanel}" title="执行计划分析">🔬 执行计划</button>
-        <button class="btn btn-outline" @click="showTemplateCRUD=true" :class="{active:showTemplateCRUD}" title="模板管理">📑 模板管理</button>
+        <button class="btn btn-outline" @click="showVisualEditor=!showVisualEditor" title="SQL可视化编辑器">✏️ 可视化编辑器</button>
+        <button class="btn btn-outline" @click="showRuleChain=!showRuleChain" title="规则链编辑器">🔗 规则链</button>
+        <button class="btn btn-outline" @click="showFieldDrag=!showFieldDrag" title="字段配置器">📐 字段配置</button>
+        <button class="btn btn-outline" @click="showChartLinkage=!showChartLinkage" title="图表联动配置">📊 图表联动</button>
+        <button class="btn btn-outline" @click="showAdvancedTemplatesFn" title="高级模板库">📑 高级模板</button>
         <button class="btn btn-outline" @click="showSchemaPanel=!showSchemaPanel" :class="{active:showSchemaPanel}" title="数据源浏览器">🗂 数据源</button>
         <button class="btn btn-outline" @click="showTemplatePanel=!showTemplatePanel" :class="{active:showTemplatePanel}" title="SQL模板">📑 模板</button>
         <button class="btn btn-outline" @click="showHistoryPanel=!showHistoryPanel" :class="{active:showHistoryPanel}" title="执行历史">📜 历史</button>
@@ -328,281 +323,158 @@
       </div>
     </div>
 
-    <!-- Visualization Panel -->
-    <div v-if="showVisualPanel" class="modal-overlay" @click.self="showVisualPanel=false">
-      <div class="modal-box visual-panel">
-        <div class="modal-header"><span>📊 结果可视化</span><button class="btn-close" @click="showVisualPanel=false">✕</button></div>
-        <div class="visual-tabs">
-          <button :class="['vis-tab',{active:visMode==='bar'}]" @click="visMode='bar'">柱状图</button>
-          <button :class="['vis-tab',{active:visMode==='pie'}]" @click="visMode='pie'">饼图</button>
-          <button :class="['vis-tab',{active:visMode==='line'}]" @click="visMode='line'">折线图</button>
-          <button :class="['vis-tab',{active:visMode==='scatter'}]" @click="visMode='scatter'">散点图</button>
-        </div>
-        <div class="visual-config">
-          <select v-model="visXAxis" class="vis-select"><option value="">选择X轴...</option><option v-for="h in resultHeaders" :key="h" :value="h">{{ h }}</option></select>
-          <select v-model="visYAxis" class="vis-select"><option value="">选择Y轴...</option><option v-for="h in numHeaders" :key="h" :value="h">{{ h }}</option></select>
-          <button class="btn-sm" @click="renderChart()">🔄 渲染</button>
-        </div>
-        <div class="visual-canvas"><div ref="chartRef" class="chart-container"></div></div>
-        <div v-if="chartError" class="chart-error">{{ chartError }}</div>
-      </div>
-    </div>
-
-    <!-- Permission Panel -->
-    <div v-if="showPermPanel" class="modal-overlay" @click.self="showPermPanel=false">
-      <div class="modal-box perm-panel">
-        <div class="modal-header"><span>🔐 字段权限配置</span><button class="btn-close" @click="showPermPanel=false">✕</button></div>
-        <div class="perm-body">
-          <div class="perm-header-row">
-            <span class="perm-col">字段名</span><span class="perm-col">可见</span><span class="perm-col">可编辑</span><span class="perm-col">可导出</span><span class="perm-col">操作</span>
-          </div>
-          <div v-for="(f,fi) in fieldPermissions" :key="f.field" class="perm-row">
-            <span class="perm-field">{{ f.field }}</span>
-            <label class="perm-check"><input type="checkbox" v-model="f.visible" /><span></span></label>
-            <label class="perm-check"><input type="checkbox" v-model="f.editable" /><span></span></label>
-            <label class="perm-check"><input type="checkbox" v-model="f.exportable" /><span></span></label>
-            <button class="btn-xs btn-danger" @click="fieldPermissions.splice(fi,1)">✕</button>
-          </div>
-          <button class="btn-sm" @click="addPermField()">+ 添加字段</button>
-        </div>
-        <div class="perm-footer">
-          <button class="btn-sm" @click="applyPermissions()">✓ 应用权限</button>
-          <button class="btn-sm btn-outline" @click="showPermPanel=false">关闭</button>
-        </div>
-      </div>
-    </div>
-
-    <!-- Execution Plan Panel -->
-    <div v-if="showPlanPanel" class="modal-overlay" @click.self="showPlanPanel=false">
-      <div class="modal-box plan-panel">
-        <div class="modal-header"><span>🔬 SQL执行计划</span><button class="btn-close" @click="showPlanPanel=false">✕</button></div>
-        <div class="plan-body">
-          <button class="btn-sm" @click="analyzePlan()">🔍 分析执行计划</button>
-          <div v-if="planLoading" class="plan-loading">分析中...</div>
-          <div v-else-if="!planResult" class="plan-empty">点击"分析"查看SQL执行计划</div>
-          <div v-else class="plan-tree">
-            <div v-for="(step,si) in planResult.steps" :key="si" class="plan-step">
-              <div class="ps-header" :style="{borderLeftColor:step.color}">
-                <span class="ps-type">{{ step.type }}</span>
-                <span class="ps-cost">耗时: {{ step.cost }}</span>
-                <span class="ps-rows">预估: {{ step.estimated }} 行</span>
-              </div>
-              <div class="ps-detail" v-if="step.detail">{{ step.detail }}</div>
-              <div v-if="step.children?.length" class="ps-children">
-                <div v-for="(ch,ci) in step.children" :key="ci" class="plan-step">
-                  <div class="ps-header ps-sub" :style="{borderLeftColor:ch.color}">
-                    <span class="ps-type">{{ ch.type }}</span><span class="ps-cost">{{ ch.cost }}</span>
-                  </div>
-                </div>
-              </div>
+    <!-- Visual SQL Editor -->
+    <div v-if="showVisualEditor" class="modal-overlay" @click.self="showVisualEditor=false">
+      <div class="modal-box visual-editor-panel">
+        <div class="modal-header"><span>✏️ SQL可视化编辑器</span><button class="btn-close" @click="showVisualEditor=false">✕</button></div>
+        <div class="ve-body">
+          <div class="ve-section">
+            <div class="ve-section-title">SELECT 字段</div>
+            <div class="ve-fields">
+              <span v-for="(f,fi) in veSelectFields" :key="f" class="ve-field-tag" @click="veSelectFields.splice(fi,1)">✕ {{ f }}</span>
+              <button class="ve-add-btn" @click="addVeSelectField()">+ 添加字段</button>
             </div>
           </div>
-          <div v-if="planWarnings.length" class="plan-warnings">
-            <div class="pw-title">⚠ 优化建议:</div>
-            <div v-for="(w,wi) in planWarnings" :key="wi" class="pw-item">{{ w }}</div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Template CRUD Panel -->
-    <div v-if="showTemplateCRUD" class="modal-overlay" @click.self="showTemplateCRUD=false">
-      <div class="modal-box tmpl-crud-panel">
-        <div class="modal-header"><span>📑 模板管理</span><button class="btn-close" @click="showTemplateCRUD=false">✕</button></div>
-        <div class="tmpl-crud-body">
-          <div class="tmpl-crud-toolbar">
-            <input v-model="tmplSearch" placeholder="搜索模板..." class="tmp-input" />
-            <select v-model="tmplFilterCat" class="tmp-select">
-              <option value="">全部分类</option>
-              <option value="select">SELECT</option><option value="join">JOIN</option>
-              <option value="agg">聚合</option><option value="sub">子查询</option>
+          <div class="ve-section">
+            <div class="ve-section-title">FROM 表</div>
+            <select v-model="veFromTable" class="ve-select">
+              <option value="">选择表...</option>
+              <option v-for="t in allTables" :key="t.name" :value="t.name">{{ t.name }}</option>
             </select>
-            <button class="btn-sm" @click="showNewTemplate=true">+ 新建</button>
           </div>
-          <div class="tmpl-crud-list">
-            <div v-for="(t,ti) in filteredTmplList" :key="t.id" class="tmpl-crud-item">
-              <div class="tci-icon">{{ t.icon }}</div>
-              <div class="tci-info">
-                <div class="tci-name">{{ t.name }}</div>
-                <div class="tci-cat">{{ t.category }}</div>
-              </div>
-              <div class="tci-actions">
-                <button class="btn-xs" @click="editTemplate(ti)">编辑</button>
-                <button class="btn-xs" @click="duplicateTemplate(ti)">复制</button>
-                <button class="btn-xs btn-danger" @click="deleteTemplate(ti)">删除</button>
-              </div>
+          <div class="ve-section">
+            <div class="ve-section-title">WHERE 条件</div>
+            <div v-for="(c,ci) in veWhereConditions" :key="ci" class="ve-condition-row">
+              <select v-model="c.field" class="ve-select-sm"><option v-for="h in resultHeaders" :value="h">{{ h }}</option></select>
+              <select v-model="c.op" class="ve-select-sm"><option value="eq">=</option><option value="gt">></option><option value="lt"><</option><option value="like">LIKE</option></select>
+              <input v-model="c.value" class="ve-input-sm" placeholder="值" />
+              <button class="ve-del-btn" @click="veWhereConditions.splice(ci,1)">✕</button>
             </div>
+            <button class="ve-add-btn" @click="addVeWhereCondition()">+ 添加条件</button>
           </div>
-          <div v-if="filteredTmplList.length===0" class="tmpl-empty">暂无模板</div>
+          <div class="ve-section">
+            <div class="ve-section-title">排序与分页</div>
+            <select v-model="veOrderBy" class="ve-select-sm"><option value="">排序字段...</option><option v-for="h in resultHeaders" :value="h">{{ h }}</option></select>
+            <select v-model="veOrderDir" class="ve-select-sm"><option value="ASC">升序</option><option value="DESC">降序</option></select>
+            <input v-model.number="veLimit" type="number" class="ve-input-sm" placeholder="LIMIT" min="1" max="10000" />
+          </div>
+          <div class="ve-preview">
+            <div class="ve-preview-label">预览SQL:</div>
+            <pre class="ve-preview-sql">{{ generatedVisualSql }}</pre>
+          </div>
+          <div class="ve-actions">
+            <button class="btn-sm" @click="applyVisualEditor()">✓ 应用到编辑器</button>
+            <button class="btn-sm btn-outline" @click="clearVisualEditor()">清空</button>
+          </div>
         </div>
       </div>
     </div>
 
-    <!-- Condition Builder -->
-    <div v-if="showConditionBuilder" class="modal-overlay" @click.self="showConditionBuilder=false">
-      <div class="modal-box cond-builder-panel">
-        <div class="modal-header"><span>🔷 查询条件构建器</span><button class="btn-close" @click="showConditionBuilder=false">✕</button></div>
-        <div class="cond-body">
-          <div class="cond-rules">
-            <div v-for="(rule,ri) in conditionRules" :key="ri" class="cond-rule-row">
-              <select v-model="rule.field" class="cond-select">
-                <option value="">选择字段...</option>
-                <option v-for="h in resultHeaders" :key="h" :value="h">{{ h }}</option>
-              </select>
-              <select v-model="rule.op" class="cond-select">
-                <option value="eq">=</option><option value="neq">!=</option>
-                <option value="gt">&gt;</option><option value="lt">&lt;</option>
-                <option value="gte">>=</option><option value="lte"><=</option>
-                <option value="like">LIKE</option><option value="in">IN</option>
-              </select>
-              <input v-model="rule.value" class="cond-input" placeholder="值..." />
-              <button class="btn-xs btn-danger" @click="conditionRules.splice(ri,1)">✕</button>
+    <!-- Rule Chain Editor -->
+    <div v-if="showRuleChain" class="modal-overlay" @click.self="showRuleChain=false">
+      <div class="modal-box rule-chain-panel">
+        <div class="modal-header"><span>🔗 规则链编辑器</span><button class="btn-close" @click="showRuleChain=false">✕</button></div>
+        <div class="rc-body">
+          <div class="rc-chain">
+            <div v-for="(rule,ri) in ruleChain" :key="ri" class="rc-rule">
+              <div class="rc-rule-header">
+                <span class="rc-rule-num">#{{ ri+1 }}</span>
+                <span class="rc-rule-type">{{ rule.type }}</span>
+                <span :class="{active:rule.enabled,inactive:!rule.enabled}">{{ rule.enabled ? "启用" : "禁用" }}</span>
+                <button class="btn-xs" @click="toggleRule(ri)">{{ rule.enabled ? "禁用" : "启用" }}</button>
+                <button class="btn-xs btn-danger" @click="ruleChain.splice(ri,1)">🗑</button>
+              </div>
+              <div class="rc-rule-body">
+                <div class="rc-row"><label>字段:</label><select v-model="ruleChain[ri].field" class="rc-select"><option v-for="h in resultHeaders" :value="h">{{ h }}</option></select></div>
+                <div class="rc-row"><label>操作:</label><select v-model="ruleChain[ri].op" class="rc-select"><option value="eq">=</option><option value="gt">></option><option value="lt"><</option><option value="like">LIKE</option></select></div>
+                <div class="rc-row"><label>值:</label><input v-model="ruleChain[ri].value" class="rc-input" placeholder="值..." /></div>
+              </div>
             </div>
           </div>
-          <div class="cond-logic">
-            <label><input type="radio" v-model="conditionLogic" value="AND" /> AND</label>
-            <label><input type="radio" v-model="conditionLogic" value="OR" /> OR</label>
-          </div>
-          <button class="btn-sm" @click="addConditionRule()">+ 添加条件</button>
-          <button class="btn-sm btn-primary" @click="applyConditionBuilder()">✓ 应用并执行</button>
+          <button class="btn-sm" @click="addRuleToChain()">+ 添加规则</button>
+          <button class="btn-sm" @click="applyRuleChain()">✓ 应用规则链</button>
         </div>
       </div>
     </div>
 
-    <!-- Field Drag Config -->
-    <div v-if="showDragConfig" class="modal-overlay" @click.self="showDragConfig=false">
-      <div class="modal-box drag-config-panel">
-        <div class="modal-header"><span>📐 字段拖拽配置</span><button class="btn-close" @click="showDragConfig=false">✕</button></div>
-        <div class="drag-body">
-          <div class="drag-columns">
-            <div class="drag-col">
-              <div class="dc-title">可用字段</div>
-              <div v-for="f in availableFields" :key="f" class="drag-item" draggable="true" @dragstart="draggedField=f">{{ f }}</div>
+    <!-- Field Drag Panel -->
+    <div v-if="showFieldDrag" class="modal-overlay" @click.self="showFieldDrag=false">
+      <div class="modal-box field-drag-panel">
+        <div class="modal-header"><span>📐 字段配置器</span><button class="btn-close" @click="showFieldDrag=false">✕</button></div>
+        <div class="fd-body">
+          <div class="fd-columns">
+            <div class="fd-col"><div class="fd-title">所有字段</div>
+              <div v-for="f in allSchemaFields" :key="f" class="fd-item">{{ f }}</div>
             </div>
-            <div class="drag-col">
-              <div class="dc-title">已选字段</div>
-              <div v-for="(f,fi) in selectedFields" :key="f" class="drag-item selected" @dblclick="selectedFields.splice(fi,1)">{{ f }} ✕</div>
-              <div v-if="selectedFields.length===0" class="drag-empty">拖拽字段到此处</div>
+            <div class="fd-col"><div class="fd-title">SELECT 字段</div>
+              <div class="fd-target">
+                <div v-for="(f,fi) in fdSelectFields" :key="f" class="fd-target-item">{{ f }} <span class="fd-x" @click="fdSelectFields.splice(fi,1)">✕</span></div>
+                <div v-if="fdSelectFields.length===0" class="fd-hint">拖拽到此处</div>
+              </div>
+            </div>
+            <div class="fd-col"><div class="fd-title">WHERE 字段</div>
+              <div class="fd-target">
+                <div v-for="(f,fi) in fdWhereFields" :key="f" class="fd-target-item">{{ f }} <span class="fd-x" @click="fdWhereFields.splice(fi,1)">✕</span></div>
+                <div v-if="fdWhereFields.length===0" class="fd-hint">拖拽到此处</div>
+              </div>
             </div>
           </div>
-          <div class="drag-preview">
+          <div class="fd-preview">
             <div class="dp-label">生成SQL:</div>
-            <pre class="dp-sql">{{ generatedSelectSql }}</pre>
+            <pre class="dp-sql">{{ generatedFieldDragSql }}</pre>
           </div>
-          <div class="drag-actions">
-            <button class="btn-sm" @click="autoSelectAllFields()">全选</button>
-            <button class="btn-sm" @click="clearSelectedFields()">清空</button>
-            <button class="btn-sm btn-primary" @click="applySelectedFields()">应用</button>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- AST Panel -->
-    <div v-if="showASTPanel" class="modal-overlay" @click.self="showASTPanel=false">
-      <div class="modal-box ast-panel">
-        <div class="modal-header"><span>🌳 SQL语法树</span><button class="btn-close" @click="showASTPanel=false">✕</button></div>
-        <div class="ast-body">
-          <button class="btn-sm" @click="parseAST()">🔍 解析SQL</button>
-          <div v-if="astLoading" class="ast-loading">解析中...</div>
-          <div v-else-if="!astTree?.length" class="ast-empty">点击"解析"查看SQL语法树</div>
-          <div v-else class="ast-tree">
-            <div v-for="(node,ni) in astTree" :key="ni" class="ast-node">
-              <div class="ast-node-header" :style="{borderLeftColor:getAstColor(node.type)}">
-                <span class="ast-type">{{ node.type }}</span>
-                <span class="ast-val">{{ node.value || "" }}</span>
-              </div>
-              <div v-if="node.children?.length" class="ast-children">
-                <div v-for="(child,ci) in node.children" :key="ci" class="ast-node ast-sub">
-                  <div class="ast-node-header" :style="{borderLeftColor:getAstColor(child.type)}">
-                    <span class="ast-type">{{ child.type }}</span><span class="ast-val">{{ child.value || "" }}</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-          <div v-if="astSummary" class="ast-summary">
-            <span>类型: <strong>{{ astSummary.type }}</strong></span>
-            <span>表: <strong>{{ astSummary.tables.join(", ") }}</strong></span>
-            <span>条件: <strong>{{ astSummary.whereCount }}</strong></span>
-            <span>字段: <strong>{{ astSummary.selectCount }}</strong></span>
+          <div class="fd-actions">
+            <button class="btn-sm" @click="fdApply()">✓ 应用</button>
+            <button class="btn-sm" @click="fdAutoFill()">智能填充</button>
+            <button class="btn-sm btn-outline" @click="fdReset()">重置</button>
           </div>
         </div>
       </div>
     </div>
 
     <!-- Chart Linkage Panel -->
-    <div v-if="showLinkagePanel" class="modal-overlay" @click.self="showLinkagePanel=false">
-      <div class="modal-box linkage-panel">
-        <div class="modal-header"><span>🔗 图表联动</span><button class="btn-close" @click="showLinkagePanel=false">✕</button></div>
-        <div class="linkage-body">
-          <div class="linkage-config">
-            <div class="lc-row"><label>联动模式:</label>
-              <select v-model="linkageMode" class="lc-select">
-                <option value="none">无联动</option>
-                <option value="filter">点击过滤</option>
-                <option value="detail">点击查看明细</option>
-                <option value="sort">点击排序</option>
-              </select>
-            </div>
-            <div class="lc-row"><label>X轴字段:</label>
-              <select v-model="linkageXAxis" class="lc-select">
-                <option v-for="h in resultHeaders" :value="h">{{ h }}</option>
-              </select>
-            </div>
-            <div class="lc-row"><label>联动条件:</label>
-              <input v-model="linkageConditionField" class="lc-input" placeholder="用于过滤的字段名" />
-            </div>
+    <div v-if="showChartLinkage" class="modal-overlay" @click.self="showChartLinkage=false">
+      <div class="modal-box chart-linkage-panel">
+        <div class="modal-header"><span>📊 图表联动配置</span><button class="btn-close" @click="showChartLinkage=false">✕</button></div>
+        <div class="cl-body">
+          <div class="cl-cards">
+            <div class="cl-card"><div class="cl-card-title">联动模式</div><select v-model="clMode" class="cl-select"><option value="filter">点击过滤</option><option value="detail">点击查看</option><option value="compare">点击对比</option></select></div>
+            <div class="cl-card"><div class="cl-card-title">X轴字段</div><select v-model="clXAxis" class="cl-select"><option v-for="h in resultHeaders" :value="h">{{ h }}</option></select></div>
+            <div class="cl-card"><div class="cl-card-title">Y轴字段</div><select v-model="clYAxis" class="cl-select"><option v-for="h in numHeaders" :value="h">{{ h }}</option></select></div>
+            <div class="cl-card"><div class="cl-card-title">过滤字段</div><input v-model="clFilterField" class="cl-input" placeholder="用于过滤的字段名" /></div>
           </div>
-          <div v-if="linkagePreview.length" class="linkage-preview">
-            <div class="lp-title">预览数据:</div>
-            <div v-for="(item,ii) in linkagePreview" :key="ii" class="lp-item">{{ item }}</div>
+          <div class="cl-preview">
+            <div class="cl-preview-title">预览:</div>
+            <div v-for="(item,pi) in clPreviewData" :key="pi" class="cl-preview-item">{{ item }}</div>
+            <div v-if="clPreviewData.length===0" class="cl-empty">配置后点击测试</div>
           </div>
-          <button class="btn-sm" @click="applyLinkage()">✓ 应用联动</button>
-        </div>
-      </div>
-    </div>
-
-    <!-- More Templates Panel -->
-    <div v-if="showMoreTemplates" class="modal-overlay" @click.self="showMoreTemplates=false">
-      <div class="modal-box more-tmpl-panel">
-        <div class="modal-header"><span>📑 更多SQL模板</span><button class="btn-close" @click="showMoreTemplates=false">✕</button></div>
-        <div class="mt-grid">
-          <div v-for="(t,ti) in moreTemplates" :key="t.id" class="mt-card">
-            <div class="mt-header"><span class="mt-icon">{{ t.icon }}</span><span class="mt-name">{{ t.name }}</span><span class="mt-cat">{{ t.category }}</span></div>
-            <pre class="mt-code">{{ t.code }}</pre>
-            <div class="mt-actions">
-              <button class="btn-sm" @click="applyTemplate(t)">应用</button>
-              <button class="btn-sm" @click="saveMoreTemplate(t)">收藏</button>
-            </div>
+          <div class="cl-actions">
+            <button class="btn-sm" @click="applyChartLinkage()">✓ 应用</button>
+            <button class="btn-sm" @click="testChartLinkage()">测试</button>
           </div>
         </div>
       </div>
     </div>
 
-    <!-- Column Summary Panel -->
-    <div v-if="showColSummary" class="modal-overlay" @click.self="showColSummary=false">
-      <div class="modal-box col-summary-panel">
-        <div class="modal-header"><span>📊 列统计摘要</span><button class="btn-close" @click="showColSummary=false">✕</button></div>
-        <div class="col-summary-body">
-          <div v-for="col in columnStats" :key="col.name" class="cs-row">
-            <span class="cs-name">{{ col.name }}</span>
-            <span class="cs-type">{{ col.type }}</span>
-            <span class="cs-nulls">{{ col.nulls }}空/{{ col.total }}总</span>
-            <span class="cs-distinct">{{ col.distinct }}唯一</span>
-            <span class="cs-sum" v-if="col.sum!==undefined">Σ={{ col.sum }}</span>
-            <span class="cs-avg" v-if="col.avg!==undefined">μ={{ col.avg.toFixed(2) }}</span>
+    <!-- Advanced Templates Panel -->
+    <div v-if="showAdvancedTemplates" class="modal-overlay" @click.self="showAdvancedTemplates=false">
+      <div class="modal-box adv-tmpl-panel">
+        <div class="modal-header"><span>📑 高级SQL模板库</span><button class="btn-close" @click="showAdvancedTemplates=false">✕</button></div>
+        <div class="adv-grid">
+          <div v-for="(t,ti) in advancedTemplates" :key="t.id" class="adv-card">
+            <div class="adv-header"><span class="adv-icon">{{ t.icon }}</span><span class="adv-name">{{ t.name }}</span><span class="adv-diff">{{ t.difficulty }}</span></div>
+            <pre class="adv-code">{{ t.code }}</pre>
+            <div class="adv-desc">{{ t.description }}</div>
+            <div class="adv-actions"><button class="btn-sm" @click="applyAdvancedTemplate(t)">应用</button><button class="btn-sm" @click="saveAdvancedTemplate(t)">收藏</button></div>
           </div>
-          <div v-if="columnStats.length===0" class="cs-empty">执行查询后显示列统计</div>
         </div>
-        <div class="cs-footer"><button class="btn-sm" @click="showColSummary=false">关闭</button></div>
       </div>
     </div>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted, nextTick } from 'vue'
-import * as echarts from 'echarts'
+import { ref, computed, onMounted } from 'vue'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/vue-query'
 import { api } from '@oa4rust/sdk'
 
 interface Stmt {
@@ -928,259 +800,6 @@ const resultStats = computed(() => {
   return stats
 })
 
-
-// --- Visualization Functions ---
-function renderChart() {
-  if (!chartInstance && chartRef.value) {
-    try { chartInstance = echarts.init(chartRef.value) } catch(e) { chartError.value="图表初始化失败"; return }
-  }
-  if (!chartInstance) return
-  chartError.value = ""
-  const xKey = visXAxis.value, yKey = visYAxis.value
-  if (!xKey || !yKey) { chartError.value="请选择X轴和Y轴"; return }
-  const data = resultData.value.map(r => ({ name: String(r[xKey]), value: Number(r[yKey]) || 0 }))
-  const option: any = {
-    backgroundColor: "rgba(0,0,0,0.2)",
-    tooltip: { trigger: "axis" },
-    grid: { left: "10%", right: "5%", top: "10%", bottom: "15%" },
-    xAxis: { type: "category", data: data.map(d => d.name), axisLabel: { color: "#aaa", fontSize: 10 } },
-    yAxis: { type: "value", axisLabel: { color: "#aaa", fontSize: 10 } },
-    series: [{ data, type: visMode.value, itemStyle: { color: "#3b82f6" }, smooth: visMode.value === "line" }]
-  }
-  if (visMode.value === "pie") {
-    option.xAxis = undefined; option.yAxis = undefined
-    option.series = [{ type: "pie", radius: ["30%", "70%"], data: data.filter(d=>d.value>0), label: { color: "#aaa", fontSize: 10 }, itemStyle: { color: "#3b82f6" } }]
-    option.tooltip = { trigger: "item", formatter: "{b}: {c} ({d}%)" }
-  }
-  if (visMode.value === "scatter") {
-    option.series = [{ type: "scatter", data: data.map(d => [d.name, d.value]), itemStyle: { color: "#10b981" }, symbolSize: 10 }]
-  }
-  chartInstance.setOption(option, true)
-}
-function resizeChart() { if (chartInstance) chartInstance.resize() }
-onMounted(() => { window.addEventListener("resize", resizeChart) })
-onUnmounted(() => { if (chartInstance) { chartInstance.dispose(); chartInstance = null } window.removeEventListener("resize", resizeChart) })
-
-// --- Permission Functions ---
-function openPermPanel() {
-  if (!fieldPermissions.value.length && resultHeaders.value.length) {
-    fieldPermissions.value = resultHeaders.value.map(h => ({ field: h, visible: true, editable: false, exportable: true }))
-  }
-  showPermPanel.value = true
-}
-function addPermField() { fieldPermissions.value.push({ field: "", visible: true, editable: false, exportable: true }) }
-function applyPermissions() { showPermPanel.value = false }
-
-// --- Execution Plan Functions ---
-async function analyzePlan() {
-  planLoading.value = true; planResult.value = null; planWarnings.value = []
-  await new Promise(r => setTimeout(r, 300))
-  const hasJoin = /JOIN\s+/gi.test(sql.value)
-  const hasWhere = /WHERE\s+/gi.test(sql.value)
-  const hasGroup = /GROUP\s+BY/i.test(sql.value)
-  const hasSub = /\s*SELECT/i.test(sql.value)
-  const hasLike = /LIKE\s/i.test(sql.value)
-  const steps = []
-  steps.push({ type: "扫描", cost: hasSub ? "高" : hasJoin ? "中" : "低", estimated: resultData.value.length || 1000, detail: hasSub ? "含子查询，使用嵌套循环" : hasJoin ? "多表JOIN，建议使用索引" : "单表全扫描", color: "#3b82f6" })
-  if (hasWhere) steps.push({ type: "过滤", cost: hasLike ? "高" : "中", estimated: Math.max(1, Math.floor((resultData.value.length||1000)*0.3)), detail: hasLike ? "LIKE模糊匹配，无法使用索引" : "WHERE条件过滤", color: "#f59e0b" })
-  if (hasGroup) steps.push({ type: "分组聚合", cost: "高", estimated: resultData.value.length || 500, detail: "GROUP BY操作，可能消耗大量内存", color: "#ef4444", children: [{ type: "哈希聚合", cost: "中", color: "#f97316" }, { type: "排序分组", cost: "中", color: "#f97316" }] })
-  if (hasWhere) steps.push({ type: "排序", cost: "中", estimated: resultData.value.length || 1000, detail: "WHERE后排序", color: "#8b5cf6" })
-  planResult.value = { steps }
-  if (hasSub) planWarnings.value.push("子查询可能影响性能，建议改用JOIN")
-  if (hasLike && !sql.value.includes("%")) planWarnings.value.push("LIKE未使用通配符，可改用等值查询")
-  if (hasGroup && !hasWhere) planWarnings.value.push("GROUP BY无WHERE条件，将扫描全表")
-  if (!/LIMIT/i.test(sql.value) && resultData.value.length > 1000) planWarnings.value.push("无LIMIT限制，建议添加分页")
-  planLoading.value = false
-}
-
-// --- Template CRUD Functions ---
-function editTemplate(idx: number) {
-  const t = allTemplates.value[idx]
-  if (!t) return
-  showNewTemplate.value = true
-  newTmpl.value = { name: t.name, category: t.category, code: t.code }
-  (newTmpl.value as any)._editIdx = idx
-  (newTmpl.value as any)._isEdit = true
-}
-function duplicateTemplate(idx: number) {
-  const t = allTemplates.value[idx]
-  if (!t) return
-  templates.value.push({ ...t, id: "t"+Date.now(), name: t.name + "_副本", icon: "📋" })
-}
-function deleteTemplate(idx: number) {
-  if (!confirm("确认删除模板？")) return
-  templates.value.splice(idx, 1)
-}
-
-// --- Visualization State ---
-const showVisualPanel = ref(false)
-const visMode = ref<"bar"|"pie"|"line"|"scatter">("bar")
-const visXAxis = ref(""), visYAxis = ref("")
-const chartRef = ref<HTMLElement|null>(null)
-let chartInstance: any = null
-const chartError = ref("")
-const numHeaders = computed(() => resultHeaders.value.filter(h => typeof resultData.value[0]?.[h] === "number"))
-
-// --- Permission State ---
-const showPermPanel = ref(false)
-const fieldPermissions = ref<Array<{field:string;visible:boolean;editable:boolean;exportable:boolean}>>([])
-
-// --- Execution Plan State ---
-const showPlanPanel = ref(false)
-const planLoading = ref(false)
-const planResult = ref<{steps:Array<{type:string;cost:string;estimated:number;detail?:string;color:string;children?:any[]}>}|null>(null)
-const planWarnings = ref<string[]>([])
-
-// --- Template CRUD State ---
-const showTemplateCRUD = ref(false)
-const tmplSearch = ref(""), tmplFilterCat = ref("")
-const allTemplates = computed(() => [...templates.value, ...myTemplates.value])
-const filteredTmplList = computed(() => {
-  let list = allTemplates.value
-  if (tmplSearch.value.trim()) { const q=tmplSearch.value.toLowerCase(); list=list.filter(t=>t.name.toLowerCase().includes(q)) }
-  if (tmplFilterCat.value) list = list.filter(t => t.category === tmplFilterCat.value)
-  return list
-})
-
-// --- Condition Builder State ---
-const showConditionBuilder = ref(false)
-const conditionRules = ref<Array<{field:string;op:string;value:string}>>([])
-const conditionLogic = ref("AND")
-
-// --- Drag-Drop Field Config ---
-const showDragConfig = ref(false)
-const availableFields = ref<string[]>([])
-const selectedFields = ref<string[]>([])
-const draggedField = ref("")
-
-// --- AST State ---
-const showASTPanel = ref(false)
-const astLoading = ref(false)
-const astTree = ref<Array<{type:string;value:string;children?:any[]}>|null>(null)
-const astSummary = ref<{type:string;tables:string[];whereCount:number;selectCount:number}|null>(null)
-
-// --- Chart Linkage State ---
-const showLinkagePanel = ref(false)
-const linkageMode = ref("none")
-const linkageXAxis = ref(""), linkageConditionField = ref("")
-const linkagePreview = ref<string[]>([])
-
-// --- More Templates State ---
-const showMoreTemplates = ref(false)
-const moreTemplates = ref<Array<{id:string;name:string;category:string;code:string;icon:string}>>([
-  {id:"mt1",name:"CTE递归查询",category:"sub",code:"WITH RECURSIVE cte AS (SELECT id, parent_id, name, 1 as level FROM categories WHERE parent_id IS NULL UNION ALL SELECT c.id, c.parent_id, c.name, level+1 FROM categories c JOIN cte ON c.parent_id = cte.id) SELECT * FROM cte ORDER BY level;",icon:"\ud83d\udd01"},
-  {id:"mt2",name:"PIVOT行转列",category:"agg",code:"SELECT * FROM (SELECT department, salary FROM employees) src PIVOT (AVG(salary) FOR department IN (IT, HR, Sales));",icon:"\ud83d\udd04"},
-  {id:"mt3",name:"自连接查询",category:"join",code:"SELECT e.name as emp, m.name as mgr FROM employees e LEFT JOIN employees m ON e.manager_id = m.id;",icon:"\ud83d\udd17"},
-  {id:"mt4",name:"窗口函数RANK",category:"agg",code:"SELECT name, score, RANK() OVER (ORDER BY score DESC) as rank_num FROM students;",icon:"\ud83c\udfc6"},
-  {id:"mt5",name:"交叉连接笛卡尔积",category:"join",code:"SELECT a.name, b.name FROM table_a a CROSS JOIN table_b b LIMIT 100;",icon:"\u2b1c"},
-  {id:"mt6",name:"UNION合并查询",category:"select",code:"SELECT name, email FROM users UNION ALL SELECT name, email FROM customers;",icon:"\u2b06"},
-  {id:"mt7",name:"删除重复数据",category:"sub",code:"DELETE FROM users WHERE id NOT IN (SELECT min_id FROM (SELECT MIN(id) as min_id FROM users GROUP BY email) t);",icon:"\ud83d\uddd1"},
-  {id:"mt8",name:"日期范围查询",category:"select",code:"SELECT * FROM orders WHERE order_date BETWEEN ? AND ? ORDER BY order_date DESC LIMIT 50;",icon:"\ud83d\udcc5"},
-  {id:"mt9",name:"分组TOP N",category:"agg",code:"SELECT department, name, salary, rn FROM (SELECT *, ROW_NUMBER() OVER (PARTITION BY department ORDER BY salary DESC) as rn FROM employees) t WHERE rn <= 3;",icon:"\ud83d\udcca"},
-  {id:"mt10",name:"临时表CTE",category:"sub",code:"WITH user_stats AS (SELECT user_id, COUNT(*) as order_cnt, SUM(amount) as total_amount FROM orders GROUP BY user_id) SELECT u.name, us.order_cnt, us.total_amount FROM users u JOIN user_stats us ON u.id = us.user_id;",icon:"\ud83e\udde9"},
-])
-
-// --- Column Summary State ---
-const showColSummary = ref(false)
-const columnStats = ref<Array<{name:string;type:string;nulls:number;total:number;distinct:number;sum?:number;avg?:number}>>([])
-
-// --- Condition Builder Functions ---
-function addConditionRule() { conditionRules.value.push({ field: "", op: "eq", value: "" }) }
-function applyConditionBuilder() {
-  if (!conditionRules.value.length) return
-  const clauses = conditionRules.value.filter(r => r.field && r.value).map(r => {
-    if (r.op === "eq") return `${r.field} = '${r.value}'`
-    if (r.op === "neq") return `${r.field} != '${r.value}'`
-    if (r.op === "gt") return `${r.field} > ${r.value}`
-    if (r.op === "lt") return `${r.field} < ${r.value}`
-    if (r.op === "gte") return `${r.field} >= ${r.value}`
-    if (r.op === "lte") return `${r.field} <= ${r.value}`
-    if (r.op === "like") return `${r.field} LIKE '%${r.value}%'`
-    if (r.op === "in") return `${r.field} IN (${r.value})`
-    return ""
-  }).filter(Boolean)
-  if (!clauses.length) return
-  const whereClause = clauses.join(` ${conditionLogic.value} `)
-  const hasWhere = /WHERE\s+/i.test(sql.value)
-  if (hasWhere) { sql.value = sql.value.replace(/WHERE\s+[^;]+/i, whereClause) }
-  else { sql.value += "\nWHERE " + whereClause }
-  showConditionBuilder.value = false
-  conditionRules.value = []
-}
-
-// --- Drag-Drop Functions ---
-function showDragConfigFn() {
-  if (resultHeaders.value.length) availableFields.value = [...resultHeaders.value]
-  else if (allTables.value.length) availableFields.value = allTables.value.flatMap(t => [t.name+".id", t.name+".name"])
-  showDragConfig.value = true
-}
-function autoSelectAllFields() { selectedFields.value = [...availableFields.value] }
-function clearSelectedFields() { selectedFields.value = [] }
-function applySelectedFields() {
-  if (!selectedFields.value.length) return
-  const fromTable = allTables.value[0]?.name || "table_name"
-  sql.value = "SELECT " + selectedFields.value.join(", ") + " FROM " + fromTable
-  showDragConfig.value = false
-}
-const generatedSelectSql = computed(() => {
-  if (!selectedFields.value.length) return "SELECT * FROM table_name"
-  return "SELECT " + selectedFields.value.join(", ") + " FROM ..."
-})
-
-// --- AST Functions ---
-function parseAST() {
-  astLoading.value = true; astTree.value = null; astSummary.value = null
-  setTimeout(() => {
-    const s = sql.value.toUpperCase()
-    const tree: any[] = [{ type: "STATEMENT", value: s.includes("SELECT") ? "SELECT" : s.includes("INSERT") ? "INSERT" : "OTHER" }]
-    const fromMatch = s.match(/FROM\s+(\w+)/)
-    if (fromMatch) tree.push({ type: "FROM", value: fromMatch[1] })
-    const whereMatch = s.match(/WHERE\s+(.+?)(?:ORDER|GROUP|LIMIT|$)/i)
-    if (whereMatch) tree.push({ type: "WHERE", value: whereMatch[1].trim() })
-    const orderMatch = s.match(/ORDER\s+BY\s+(.+)/i)
-    if (orderMatch) tree.push({ type: "ORDER BY", value: orderMatch[1] })
-    const groupMatch = s.match(/GROUP\s+BY\s+(.+)/i)
-    if (groupMatch) tree.push({ type: "GROUP BY", value: groupMatch[1] })
-    const limitMatch = s.match(/LIMIT\s+(\d+)/i)
-    if (limitMatch) tree.push({ type: "LIMIT", value: limitMatch[1] })
-    astTree.value = tree
-    astSummary.value = {
-      type: s.includes("SELECT") ? "查询" : s.includes("INSERT") ? "插入" : "其他",
-      tables: [...new Set(s.match(/FROM\s+(\w+)/gi)?.map((m:string) => m.replace("FROM ", "").trim()) || [])],
-      whereCount: (s.match(/WHERE/g) || []).length,
-      selectCount: (s.match(/\bSELECT\b/g) || []).length
-    }
-    astLoading.value = false
-  }, 200)
-}
-function getAstColor(type: string): string {
-  const colors: Record<string,string> = { STATEMENT:"#3b82f6", FROM:"#10b981", WHERE:"#f59e0b", "ORDER BY":"#8b5cf6", "GROUP BY":"#ef4444", LIMIT:"#06b6d4" }
-  return colors[type] || "#6b7280"
-}
-
-// --- Chart Linkage Functions ---
-function applyLinkage() {
-  if (linkageMode.value === "filter" && linkageConditionField.value && linkageXAxis.value) {
-    linkagePreview.value = resultData.value.slice(0, 5).map(r => `${r[linkageXAxis.value]} | ${r[linkageConditionField.value]}`).filter(Boolean)
-  } else if (linkageMode.value === "detail") {
-    linkagePreview.value = resultData.value.slice(0, 3).map((r, i) => `Row ${i+1}: ${Object.entries(r).slice(0,3).map(([k,v]) => k+"="+v).join(", ")}`)
-  }
-  showLinkagePanel.value = false
-}
-
-// --- More Template Functions ---
-
-// --- Column Summary ---
-function showColSummaryFn() {
-  if (!resultHeaders.value.length || !resultData.value.length) { alert("请先执行查询"); return }
-  columnStats.value = resultHeaders.value.map(name => {
-    const vals = resultData.value.map(r => r[name])
-    const nonNull = vals.filter(v => v !== null && v !== undefined)
-    const nums = nonNull.filter(v => typeof v === "number")
-    return { name, type: typeof vals[0] ?? "unknown", nulls: vals.length - nonNull.length, total: vals.length, distinct: new Set(nonNull).size, sum: nums.length ? nums.reduce((a:number,b:number)=>a+b,0) : undefined, avg: nums.length ? nums.reduce((a:number,b:number)=>a+b,0)/nums.length : undefined }
-  })
-  showColSummary.value = true
-}
 </script>
 
 <style scoped>
@@ -1267,32 +886,14 @@ function showColSummaryFn() {
 .stats-panel{width:480px}.stats-body{padding:12px}.stats-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:12px}.stat-card{padding:10px;border-radius:var(--radius-sm);background:rgba(59,130,246,0.1);border:1px solid rgba(59,130,246,0.2);text-align:center}.sc-val{font-size:20px;font-weight:700;color:var(--color-primary)}.sc-label{font-size:9px;color:var(--text-muted);margin-top:2px}.stats-chart{display:flex;align-items:flex-end;gap:4px;height:100px;padding:8px;background:rgba(255,255,255,0.02);border-radius:var(--radius-sm)}.chart-bar{display:flex;flex-direction:column;align-items:center;justify-content:flex-end;flex:1;border-radius:3px 3px 0 0;padding:2px;min-height:4px;position:relative}.cb-label{font-size:8px;color:var(--text-muted);position:absolute;bottom:-16px;white-space:nowrap}.cb-val{font-size:9px;color:var(--text-primary);margin-bottom:2px}
 .param-panel{width:480px}.param-body{padding:12px;display:flex;flex-direction:column;gap:8px}.param-list{display:flex;flex-direction:column;gap:4px;max-height:180px;overflow-y:auto}.param-row{display:flex;align-items:center;gap:6px;padding:4px 8px;background:rgba(255,255,255,0.02);border-radius:4px;font-size:11px}.param-name{color:#f59e0b;width:80px;font-family:monospace;font-weight:600}.param-input{flex:1;padding:3px 6px;border-radius:var(--radius-sm);border:1px solid var(--border-color);background:var(--bg-elevated);color:var(--text-primary);font-size:11px;outline:none}.param-type{padding:3px;background:var(--bg-elevated);border:1px solid var(--border-color);border-radius:var(--radius-sm);color:var(--text-primary);font-size:10px}.param-detect{padding:8px;background:rgba(245,158,11,0.05);border:1px solid rgba(245,158,11,0.2);border-radius:var(--radius-sm)}.pd-title{font-size:11px;color:#f59e0b;margin-bottom:4px}.pd-tag{padding:2px 8px;border-radius:10px;background:rgba(245,158,11,0.15);border:1px solid rgba(245,158,11,0.3);color:#f59e0b;font-size:10px;font-family:monospace;cursor:pointer;margin-right:4px}.pd-tag.exists{background:rgba(16,185,129,0.15);border-color:rgba(16,185,129,0.3);color:#10b981}.param-footer{display:flex;gap:6px;padding-top:8px;border-top:1px solid var(--border-color)}
 .favorite-panel{width:420px}.fav-list{padding:12px;max-height:300px;overflow-y:auto;display:flex;flex-direction:column;gap:4px}.fav-item{display:flex;align-items:center;gap:8px;padding:6px 10px;background:rgba(255,255,255,0.02);border-radius:var(--radius-sm);cursor:pointer;font-size:12px;color:var(--text-primary)}.fav-item:hover{background:rgba(59,130,246,0.1)}.fi-star{font-size:14px}.fi-name{flex:1}.fi-cat{color:var(--text-muted);font-size:10px}.fav-empty{color:var(--text-muted);font-size:11px;text-align:center;padding:20px}
-/* -- Visualization Panel -- */
-.visual-panel{width:680px}.visual-tabs{display:flex;gap:4px;padding:8px 12px;border-bottom:1px solid var(--border-color)}.vis-tab{padding:4px 12px;border-radius:var(--radius-sm);border:1px solid var(--border-color);background:var(--bg-elevated);color:var(--text-muted);cursor:pointer;font-size:11px}.vis-tab.active{background:var(--color-primary);color:#000;border-color:var(--color-primary)}.visual-config{display:flex;gap:8px;align-items:center;padding:8px 12px;border-bottom:1px solid var(--border-color)}.vis-select{flex:1;padding:6px;background:var(--bg-elevated);border:1px solid var(--border-color);border-radius:var(--radius-sm);color:var(--text-primary);font-size:12px}.visual-canvas{height:350px;padding:12px}.chart-container{width:100%;height:100%}.chart-error{padding:8px 12px;color:#ef4444;font-size:11px;background:rgba(239,68,68,0.1);border-radius:var(--radius-sm)}
-
-/* -- Permission Panel -- */
-.perm-panel{width:520px}.perm-body{padding:12px}.perm-header-row{display:flex;align-items:center;gap:8px;padding:6px 8px;background:rgba(59,130,246,0.1);border-radius:var(--radius-sm);margin-bottom:8px;font-size:11px;font-weight:600;color:var(--color-primary)}.perm-col{flex:1}.perm-col:nth-child(2),.perm-col:nth-child(3),.perm-col:nth-child(4){text-align:center;width:60px}.perm-row{display:flex;align-items:center;gap:8px;padding:6px 8px;border-radius:var(--radius-sm);background:rgba(255,255,255,0.02);margin-bottom:4px;font-size:11px}.perm-field{flex:1;color:var(--text-primary);font-family:monospace}.perm-check{position:relative;width:24px;height:16px;cursor:pointer}.perm-check input{opacity:0;width:0;height:0}.perm-check span{position:absolute;inset:0;background:var(--border-color);border-radius:8px;transition:.2s}.perm-check input:checked+span{background:#10b981}.perm-check span::before{content:'';position:absolute;width:12px;height:12px;left:2px;top:2px;background:#fff;border-radius:50%;transition:.2s}.perm-check input:checked+span::before{transform:translateX(8px)}.perm-footer{display:flex;gap:6px;padding-top:8px;border-top:1px solid var(--border-color)}
-
-/* -- Execution Plan Panel -- */
-.plan-panel{width:560px}.plan-body{padding:12px}.plan-loading{color:var(--text-muted);text-align:center;padding:20px}.plan-empty{color:var(--text-muted);font-size:12px;text-align:center;padding:20px}.plan-tree{display:flex;flex-direction:column;gap:6px;max-height:300px;overflow-y:auto}.plan-step{margin-bottom:4px}.ps-header{display:flex;align-items:center;gap:8px;padding:6px 10px;border-left:3px solid;border-radius:0 var(--radius-sm) var(--radius-sm) 0;background:rgba(255,255,255,0.02);font-size:11px}.ps-header.ps-sub{margin-left:20px;opacity:0.8}.ps-type{color:var(--color-primary);font-weight:600;min-width:80px}.ps-cost{min-width:60px}.ps-rows{color:var(--text-muted);font-size:10px}.ps-detail{font-size:10px;color:var(--text-muted);padding:2px 10px 4px 14px}.ps-children{margin-left:16px}.plan-warnings{margin-top:12px;padding:8px 12px;background:rgba(245,158,11,0.1);border:1px solid rgba(245,158,11,0.2);border-radius:var(--radius-sm)}.pw-title{font-size:11px;color:#f59e0b;font-weight:600;margin-bottom:4px}.pw-item{font-size:10px;color:var(--text-muted);padding:2px 0}
-
-/* -- Template CRUD Panel -- */
-.tmpl-crud-panel{width:560px}.tmpl-crud-body{padding:12px}.tmpl-crud-toolbar{display:flex;gap:6px;align-items:center;margin-bottom:10px}.tmpl-crud-list{display:flex;flex-direction:column;gap:6px;max-height:320px;overflow-y:auto}.tmpl-crud-item{display:flex;align-items:center;gap:8px;padding:8px 10px;background:rgba(255,255,255,0.02);border:1px solid var(--border-color);border-radius:var(--radius-sm);cursor:pointer}.tmpl-crud-item:hover{border-color:var(--color-primary);background:rgba(59,130,246,0.05)}.tci-icon{font-size:18px}.tci-info{flex:1}.tci-name{font-size:12px;color:var(--text-primary);font-weight:500}.tci-cat{font-size:10px;color:var(--text-muted)}.tci-actions{display:flex;gap:4px}
-/* -- Condition Builder Panel -- */
-.cond-builder-panel{width:560px}.cond-body{padding:12px}.cond-rules{display:flex;flex-direction:column;gap:6px;margin-bottom:10px}.cond-rule-row{display:flex;align-items:center;gap:6px}.cond-select{padding:4px 8px;background:var(--bg-elevated);border:1px solid var(--border-color);border-radius:var(--radius-sm);color:var(--text-primary);font-size:11px;min-width:100px}.cond-input{flex:1;padding:4px 8px;border-radius:var(--radius-sm);border:1px solid var(--border-color);background:var(--bg-elevated);color:var(--text-primary);font-size:11px;outline:none}.cond-logic{display:flex;gap:12px;padding:8px;background:rgba(59,130,246,0.05);border-radius:var(--radius-sm);margin-bottom:8px;font-size:11px}
-
-/* -- Drag Config Panel -- */
-.drag-config-panel{width:520px}.drag-body{padding:12px}.drag-columns{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:10px}.drag-col{display:flex;flex-direction:column;gap:4px}.dc-title{font-size:11px;font-weight:600;color:var(--color-primary);margin-bottom:4px}.drag-item{padding:4px 8px;border-radius:var(--radius-sm);border:1px solid var(--border-color);background:rgba(255,255,255,0.02);font-size:11px;color:var(--text-primary);cursor:grab;user-select:none}.drag-item:hover{border-color:var(--color-primary)}.drag-item.selected{background:rgba(59,130,246,0.1);border-color:var(--color-primary)}.drag-empty{color:var(--text-muted);font-size:11px;text-align:center;padding:20px}.drag-preview{padding:8px;background:rgba(0,0,0,0.2);border-radius:var(--radius-sm);margin-top:8px}.dp-label{font-size:10px;color:var(--text-muted);margin-bottom:4px}.dp-sql{margin:0;font-size:11px;color:#10b981;font-family:monospace;white-space:pre-wrap}.drag-actions{display:flex;gap:6px;margin-top:8px}
-
-/* -- AST Panel -- */
-.ast-panel{width:520px}.ast-body{padding:12px}.ast-loading{color:var(--text-muted);text-align:center;padding:20px}.ast-empty{color:var(--text-muted);font-size:12px;text-align:center;padding:20px}.ast-tree{display:flex;flex-direction:column;gap:4px;max-height:300px;overflow-y:auto}.ast-node{margin-bottom:2px}.ast-node-header{display:flex;align-items:center;gap:8px;padding:4px 10px;border-left:3px solid;border-radius:0 var(--radius-sm) var(--radius-sm) 0;background:rgba(255,255,255,0.02);font-size:11px}.ast-node-header.ast-sub{margin-left:20px;opacity:0.8}.ast-type{color:var(--color-primary);font-weight:600;min-width:80px}.ast-val{color:var(--text-muted);font-family:monospace;font-size:10px}.ast-children{margin-left:16px}.ast-summary{margin-top:12px;padding:8px 12px;background:rgba(59,130,246,0.1);border:1px solid rgba(59,130,246,0.2);border-radius:var(--radius-sm);display:flex;gap:16px;flex-wrap:wrap;font-size:11px}.ast-summary span{color:var(--text-muted)}.ast-summary strong{color:var(--color-primary)}
-
-/* -- Linkage Panel -- */
-.linkage-panel{width:480px}.linkage-body{padding:12px}.linkage-config{display:flex;flex-direction:column;gap:8px;margin-bottom:10px}.lc-row{display:flex;align-items:center;gap:8px;font-size:11px}.lc-row label{color:var(--text-muted);min-width:80px}.lc-select{flex:1;padding:4px 8px;background:var(--bg-elevated);border:1px solid var(--border-color);border-radius:var(--radius-sm);color:var(--text-primary);font-size:11px}.lc-input{flex:1;padding:4px 8px;border-radius:var(--radius-sm);border:1px solid var(--border-color);background:var(--bg-elevated);color:var(--text-primary);font-size:11px;outline:none}.linkage-preview{margin-top:8px;padding:8px;background:rgba(0,0,0,0.2);border-radius:var(--radius-sm)}.lp-title{font-size:10px;color:var(--text-muted);margin-bottom:4px}.lp-list{max-height:100px;overflow-y:auto}.lp-item{font-size:10px;color:#7fdbca;font-family:monospace;padding:2px 0}
-
-/* -- More Templates Panel -- */
-.more-tmpl-panel{width:560px}.mt-grid{display:flex;flex-direction:column;gap:8px;padding:12px;max-height:360px;overflow-y:auto}.mt-card{background:rgba(255,255,255,0.02);border:1px solid var(--border-color);border-radius:var(--radius-md);overflow:hidden}.mt-header{display:flex;align-items:center;gap:6px;padding:6px 10px;background:rgba(59,130,246,0.1);border-bottom:1px solid var(--border-color)}.mt-icon{font-size:14px}.mt-name{flex:1;color:var(--text-primary);font-size:12px;font-weight:500}.mt-cat{font-size:10px;color:var(--color-primary);background:rgba(59,130,246,0.2);padding:1px 6px;border-radius:3px}.mt-code{margin:0;padding:8px 10px;background:rgba(0,0,0,0.3);color:#10b981;font-size:10px;font-family:monospace;white-space:pre-wrap;word-break:break-all;max-height:50px;overflow-y:auto}.mt-actions{display:flex;gap:4px;padding:6px 10px;border-top:1px solid var(--border-color)}
-
-/* -- Column Summary Panel -- */
-.col-summary-panel{width:520px}.col-summary-body{padding:12px;max-height:320px;overflow-y:auto;display:flex;flex-direction:column;gap:4px}.cs-row{display:flex;align-items:center;gap:8px;padding:4px 8px;background:rgba(255,255,255,0.02);border-radius:4px;font-size:11px}.cs-name{color:var(--color-primary);font-family:monospace;min-width:80px;font-weight:600}.cs-type{color:var(--text-muted);width:50px}.cs-nulls,.cs-distinct{color:var(--text-muted);width:70px}.cs-sum,.cs-avg{color:#10b981;font-family:monospace;width:70px}.cs-empty{color:var(--text-muted);font-size:11px;text-align:center;padding:20px}.cs-footer{display:flex;justify-content:flex-end;padding-top:8px;border-top:1px solid var(--border-color)}
+/* -- Visual Editor Panel -- */
+.visual-editor-panel{width:620px}.ve-body{padding:12px;display:flex;flex-direction:column;gap:10px}.ve-section{padding:10px;background:rgba(255,255,255,0.02);border:1px solid var(--border-color);border-radius:var(--radius-sm)}.ve-section-title{font-size:11px;color:var(--color-primary);font-weight:600;margin-bottom:6px}.ve-fields{display:flex;flex-wrap:wrap;gap:4px;align-items:center}.ve-field-tag{padding:2px 8px;border-radius:10px;background:rgba(59,130,246,0.2);border:1px solid rgba(59,130,246,0.4);color:#3b82f6;font-size:11px;cursor:pointer}.ve-add-btn{padding:2px 8px;border-radius:var(--radius-sm);border:1px dashed var(--border-color);background:transparent;color:var(--color-primary);font-size:11px;cursor:pointer}.ve-select{width:100%;padding:6px;background:var(--bg-elevated);border:1px solid var(--border-color);border-radius:var(--radius-sm);color:var(--text-primary);font-size:12px}.ve-select-sm{padding:4px 8px;background:var(--bg-elevated);border:1px solid var(--border-color);border-radius:var(--radius-sm);color:var(--text-primary);font-size:11px}.ve-input-sm{flex:1;padding:4px 8px;border-radius:var(--radius-sm);border:1px solid var(--border-color);background:var(--bg-elevated);color:var(--text-primary);font-size:11px;outline:none}.ve-condition-row{display:flex;align-items:center;gap:6px;margin-bottom:4px}.ve-del-btn{padding:2px 6px;border-radius:var(--radius-sm);border:1px solid var(--border-color);background:transparent;color:var(--text-muted);cursor:pointer;font-size:10px}.ve-preview{padding:10px;background:rgba(0,0,0,0.3);border-radius:var(--radius-sm)}.ve-preview-label{font-size:10px;color:var(--text-muted);margin-bottom:4px}.ve-preview-sql{margin:0;font-size:11px;color:#10b981;font-family:monospace;white-space:pre-wrap;max-height:120px;overflow-y:auto}.ve-actions{display:flex;gap:6px}
+/* -- Rule Chain Panel -- */
+.rule-chain-panel{width:560px}.rc-body{padding:12px}.rc-chain{display:flex;flex-direction:column;gap:4px;margin-bottom:10px}.rc-rule{background:rgba(255,255,255,0.02);border:1px solid var(--border-color);border-radius:var(--radius-sm)}.rc-rule-header{display:flex;align-items:center;gap:6px;padding:6px 10px;background:rgba(59,130,246,0.05)}.rc-rule-num{color:var(--text-muted);font-size:10px;width:20px}.rc-rule-type{padding:2px 8px;border-radius:10px;background:rgba(59,130,246,0.2);color:#3b82f6;font-size:10px;font-weight:600}.rc-status.active{color:#10b981}.rc-status.inactive{color:#ef4444}.rc-rule-body{padding:8px 10px;display:flex;flex-direction:column;gap:4px}.rc-row{display:flex;align-items:center;gap:8px;font-size:11px}.rc-row label{color:var(--text-muted);min-width:30px}.rc-select{flex:1;padding:4px 8px;background:var(--bg-elevated);border:1px solid var(--border-color);border-radius:var(--radius-sm);color:var(--text-primary);font-size:11px}.rc-input{flex:1;padding:4px 8px;border-radius:var(--radius-sm);border:1px solid var(--border-color);background:var(--bg-elevated);color:var(--text-primary);font-size:11px;outline:none}
+/* -- Field Drag Panel -- */
+.field-drag-panel{width:680px}.fd-body{padding:12px}.fd-columns{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:10px}.fd-col{display:flex;flex-direction:column;gap:4px}.fd-title{font-size:10px;font-weight:600;color:var(--color-primary);margin-bottom:4px}.fd-item{padding:4px 8px;border-radius:var(--radius-sm);border:1px solid var(--border-color);background:rgba(255,255,255,0.02);font-size:11px;color:var(--text-primary);cursor:grab}.fd-item:hover{border-color:var(--color-primary)}.fd-target{min-height:40px;padding:4px;border:1px dashed var(--border-color);border-radius:var(--radius-sm)}.fd-target-item{display:flex;align-items:center;gap:4px;padding:3px 6px;background:rgba(59,130,246,0.1);border:1px solid rgba(59,130,246,0.3);border-radius:3px;font-size:10px;color:var(--text-primary)}.fd-x{color:#ef4444;cursor:pointer;margin-left:auto;font-size:9px}.fd-hint{color:var(--text-muted);font-size:10px;text-align:center;padding:8px}.fd-preview{padding:8px;background:rgba(0,0,0,0.2);border-radius:var(--radius-sm);margin-bottom:8px}.dp-label{font-size:10px;color:var(--text-muted);margin-bottom:4px}.dp-sql{margin:0;font-size:11px;color:#10b981;font-family:monospace;white-space:pre-wrap}.fd-actions{display:flex;gap:6px}
+/* -- Chart Linkage Panel -- */
+.chart-linkage-panel{width:560px}.cl-body{padding:12px}.cl-cards{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px}.cl-card{padding:10px;background:rgba(255,255,255,0.02);border:1px solid var(--border-color);border-radius:var(--radius-sm)}.cl-card-title{font-size:10px;color:var(--text-muted);margin-bottom:4px;font-weight:600}.cl-select{width:100%;padding:4px;background:var(--bg-elevated);border:1px solid var(--border-color);border-radius:var(--radius-sm);color:var(--text-primary);font-size:11px}.cl-input{width:100%;padding:4px 8px;border-radius:var(--radius-sm);border:1px solid var(--border-color);background:var(--bg-elevated);color:var(--text-primary);font-size:11px;outline:none}.cl-preview{padding:8px;background:rgba(0,0,0,0.2);border-radius:var(--radius-sm);margin-bottom:8px}.cl-preview-title{font-size:10px;color:var(--text-muted);margin-bottom:4px}.cl-preview-item{font-size:10px;color:#7fdbca;font-family:monospace;padding:2px 0}.cl-empty{color:var(--text-muted);font-size:11px;text-align:center;padding:12px}.cl-actions{display:flex;gap:6px}
+/* -- Advanced Templates Panel -- */
+.adv-tmpl-panel{width:640px}.adv-grid{display:flex;flex-direction:column;gap:8px;padding:12px;max-height:400px;overflow-y:auto}.adv-card{background:rgba(255,255,255,0.02);border:1px solid var(--border-color);border-radius:var(--radius-md);overflow:hidden}.adv-header{display:flex;align-items:center;gap:6px;padding:6px 10px;background:rgba(59,130,246,0.1);border-bottom:1px solid var(--border-color)}.adv-icon{font-size:14px}.adv-name{flex:1;color:var(--text-primary);font-size:12px;font-weight:500}.adv-diff{font-size:10px;padding:1px 6px;border-radius:10px;background:rgba(245,158,11,0.2);color:#f59e0b}.adv-code{margin:0;padding:8px 10px;background:rgba(0,0,0,0.3);color:#10b981;font-size:10px;font-family:monospace;white-space:pre-wrap;word-break:break-all;max-height:60px;overflow-y:auto}.adv-desc{padding:4px 10px;font-size:10px;color:var(--text-muted);border-top:1px solid var(--border-color)}.adv-actions{display:flex;gap:4px;padding:6px 10px;border-top:1px solid var(--border-color)}
 </style>
