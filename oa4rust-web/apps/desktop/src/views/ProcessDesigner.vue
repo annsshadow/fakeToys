@@ -177,7 +177,8 @@
         </svg>
 
         <div class="canvas-hint">
-          <span>拖拽右侧节点到画布 | 从端口拖出创建连线 | Shift+点击多选 | Ctrl+A全选 | G键分组 | Del删除 | Ctrl+D复制</span>
+          <span v-if="subprocessEditing">← 返回主流程 | 拖拽节点 | 点击边缘拖出连线 | Shift+多选</span>
+          <span v-else>拖拽右侧节点到画布 | 从端口拖出创建连线 | 点击节点边缘拖出连线 | Shift+点击多选 | Ctrl+A全选 | G键分组 | Del删除 | Ctrl+D复制</span>
         </div>
       </main>
 
@@ -238,33 +239,90 @@
       </div>
     </div>
 
-    <!-- Subprocess Editor Modal -->
-    <div v-if="showSubprocess" class="modal-overlay" @click.self="showSubprocess=false">
-      <div class="modal modal-lg glass-card">
-        <div class="sp-header">
-          <h3>📦 子流程编辑器 — {{ subprocessTitle }}</h3>
-          <button class="btn-close" @click="showSubprocess=false">✕</button>
-        </div>
-        <div class="sp-body">
-          <p class="sp-hint">在此编辑子流程的节点和连线，保存后返回主流程</p>
-          <div v-if="subprocessDef.nodes.length===0" class="sp-empty">
-            <div class="ce-icon">📦</div>
-            <p>子流程为空，请添加节点开始设计</p>
-            <button class="btn btn-primary" @click="addNode('start'); addNode('task')">+ 添加开始+任务</button>
-          </div>
-          <div v-else class="sp-nodes-preview">
-            <div v-for="(n,i) in subprocessDef.nodes" :key="n.id" class="sp-node-tag"
-              :class="n.type" @dblclick="openSubprocessNode(i)">
-              {{ n.label || getNodeLabel(n.type) }}
-            </div>
-          </div>
-        </div>
-        <div class="sp-footer">
-          <button class="bc" @click="showSubprocess=false">关闭</button>
-          <button class="bs" @click="saveSubprocess">保存子流程</button>
+    <!-- Subprocess Inline Editor -->
+    <div v-if="subprocessEditing && processDef" class="subprocess-editor">
+      <div class="sp-toolbar glass-card">
+        <button class="btn" @click="exitSubprocess">← 返回主流程</button>
+        <span class="sp-title">📦 子流程编辑 — {{ subprocessTitle }}</span>
+        <button class="btn btn-outline" @click="addNode('start'); addNode('task')">+ 添加开始+任务</button>
+        <button class="btn btn-primary" @click="saveSubprocess">💾 保存</button>
+      </div>
+      <div class="subprocess-canvas pd-canvas glass-card" ref="subprocessCanvasRef">
+        <div class="canvas-bg" :style="{ backgroundSize: gridScale+'px '+gridScale+'px', backgroundPosition: subPanX+'px '+subPanY+'px' }"></div>
+        <svg class="canvas-svg" :style="subSvgTransform">
+          <defs>
+            <marker id="arrowhead-sub" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+              <polygon points="0 0, 10 3.5, 0 7" fill="var(--color-primary)" />
+            </marker>
+            <marker id="arrowhead-sub-sel" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+              <polygon points="0 0, 10 3.5, 0 7" fill="var(--color-warning)" />
+            </marker>
+          </defs>
+          <!-- Edges -->
+          <g class="edges">
+            <path v-for="(edge, i) in subprocessDef.edges||[]" :key="edge.id"
+              :d="computeSubEdgePath(edge)"
+              :class="['edge-path', { selected: subSelectedEdge===i }]"
+              :marker-end="subSelectedEdge===i ? 'url(#arrowhead-sub-sel)' : 'url(#arrowhead-sub)'"
+              @click.stop="subSelectEdge(i)" />
+          </g>
+          <!-- Temp edge -->
+          <path v-if="subTempEdge" :d="subTempEdgePath()" class="edge-temp" marker-end="url(#arrowhead-sub)" />
+          <!-- Nodes -->
+          <g class="nodes">
+            <g v-for="(node, i) in subprocessDef.nodes||[]" :key="node.id"
+              :transform="`translate(${node.x},${node.y})`"
+              :class="['node-group', { selected: subSelectedNode===i, dragging: subIsDragging&&subDragIdx===i }]">
+              <rect v-if="subSelectedNode===i" x="-6" y="-6" :width="(node.w||120)+12" :height="(node.h||50)+12" rx="10"
+                fill="none" stroke="var(--color-primary)" stroke-width="2" stroke-dasharray="4,2" pointer-events="none" />
+              <rect :class="['node-body', node.type]" :width="node.w||120" :height="node.h||50" rx="8" />
+              <text :x="16" :y="(node.h||50)/2+5" class="node-icon-text">{{ getNodeIcon(node.type) }}</text>
+              <text :x="(node.w||120)/2+8" :y="(node.h||50)/2-4" text-anchor="middle" class="node-label">{{ node.label || getNodeLabel(node.type) }}</text>
+              <text :x="(node.w||120)/2+8" :y="(node.h||50)/2+10" text-anchor="middle" font-size="9" fill="var(--text-muted)">{{ node.assignee || '' }}</text>
+              <!-- In port -->
+              <circle v-if="node.type!=='start'" cx="0" :cy="(node.h||50)/2" r="6" class="port port-in"
+                @mousedown.stop="subOnPortMouseDown($event, i, 'in')" />
+              <!-- Gate output ports -->
+              <template v-if="isGate(node.type)">
+                <circle v-for="(cond, ci) in getNodeConditions(node)" :key="ci"
+                  :cx="node.w||120" :cy="(node.h||50)/2 + (ci - (getNodeConditions(node).length-1)/2) * 20"
+                  r="6" class="port port-out port-gate"
+                  @mousedown.stop="subOnPortMouseDown($event, i, 'out')" />
+              </template>
+              <!-- Regular out port -->
+              <circle v-if="node.type!=='end' && !isGate(node.type)"
+                cx="(node.w||120)" :cy="(node.h||50)/2" r="6" class="port port-out"
+                @mousedown.stop="subOnPortMouseDown($event, i, 'out')" />
+              <!-- Condition badge -->
+              <rect v-if="node.condition" x="4" y="4" width="10" height="10" rx="3" fill="var(--color-warning)" />
+              <!-- Resize handles -->
+              <template v-if="subSelectedNode===i">
+                <rect v-for="pos in resizePositions" :key="'sh'+pos"
+                  :x="getSubNodeResizeX(node, pos) - 4" :y="getSubNodeResizeY(node, pos) - 4"
+                  width="8" height="8" rx="2" fill="var(--color-primary)" stroke="white" stroke-width="1"
+                  class="resize-handle" :style="{ cursor: getResizeCursor(pos) }"
+                  @mousedown.stop="subOnResizeMouseDown($event, i, pos)" />
+              </template>
+              <!-- Anchor points -->
+              <template v-if="subSelectedNode===i && subIsDraggingAnchor">
+                <circle v-for="(ah, ahi) in getSubAnchorPoints(node)" :key="ahi"
+                  :cx="ah.x" :cy="ah.y" r="5" fill="var(--color-warning)" stroke="white" stroke-width="1.5"
+                  style="cursor:grab" @mousedown.stop="subOnAnchorMouseDown($event, i, ahi)" />
+              </template>
+              <!-- Edge click zone (invisible rectangle around node for arbitrary edge creation) -->
+              <rect :x="-8" :y="-8" :width="(node.w||120)+16" :height="(node.h||50)+16"
+                fill="transparent" class="edge-create-zone"
+                @mousedown.stop="subOnEdgeMouseDown($event, i)" />
+            </g>
+          </g>
+        </svg>
+        <div class="canvas-hint">
+          <span>← 返回主流程 | 拖拽节点 | 从端口拖出连线 | 点击边缘拖出连线 | Del删除</span>
         </div>
       </div>
     </div>
+
+    <!-- Subprocess Editor (fallback modal when not in editing mode) -->
   </div>
 </template>
 
@@ -356,6 +414,19 @@ const subprocessTitle = ref('')
 const subprocessNodeIdx = ref<number|null>(null)
 const subprocessDef = ref<{nodes: PDNode[]; edges: PDEdge[]}>({ nodes: [], edges: [] })
 
+// Subprocess inline editor state
+const subprocessEditing = ref(false)
+const subCanvasRef = ref<HTMLElement|null>(null)
+const subPanX = ref(0), subPanY = ref(0), subZoom = ref(1)
+const subSelectedNode = ref<number|null>(null)
+const subSelectedEdge = ref<number|null>(null)
+const subIsDragging = ref(false), subDragIdx = ref<number|null>(null)
+const subDragOffset = ref({ x: 0, y: 0 })
+const subTempEdge = ref<{ from: number; fromPort: 'out'|'in'; startX: number; startY: number; endX: number; endY: number }|null>(null)
+const subIsDraggingAnchor = ref(false)
+const subHistory = ref<{nodes: PDNode[]; edges: PDEdge[]}[]>([])
+const subHistIdx = ref(-1)
+
 // ── Computed ──────────────────────────────────────────────────────────
 const filteredProc = computed(() =>
   sbFilter.value
@@ -394,6 +465,10 @@ const minimapBounds = computed(() => {
 })
 const minimapWidth = computed(() => canvasRef.value ? canvasRef.value.clientWidth * minimapScale : 150)
 const minimapHeight = computed(() => canvasRef.value ? canvasRef.value.clientHeight * minimapScale : 100)
+
+// Subprocess inline editor computed
+const subSvgTransform = computed(() => ({ transform: `translate(${subPanX.value}px,${subPanY.value}px) scale(${subZoom.value})`, transformOrigin: '0 0' }))
+const subGridScale = computed(() => GRID_SIZE * subZoom.value)
 
 // Parallel branch detection
 function detectParallelBranches(): number[][] {
@@ -924,12 +999,19 @@ function openSubprocess(nodeIdx: number) {
   if (node.type !== 'subprocess') return
   subprocessNodeIdx.value = nodeIdx
   subprocessTitle.value = node.label || '子流程'
-  // Load subprocess definition from process config or default
+  // Load subprocess definition
   const subs = (currentProcess.value?.subprocesses as any) || {}
-  const subKey = node.id
-  const subData = subs[subKey] || { nodes: [], edges: [] }
+  const subData = subs[node.id] || { nodes: [], edges: [] }
   subprocessDef.value = JSON.parse(JSON.stringify(subData))
-  showSubprocess.value = true
+  subprocessEditing.value = true
+  subSelectedNode.value = null; subSelectedEdge.value = null
+  subHistory.value = []; subHistIdx.value = -1
+  subPanX.value = 0; subPanY.value = 0; subZoom.value = 1
+}
+
+function exitSubprocess() {
+  subprocessEditing.value = false
+  subSelectedNode.value = null; subSelectedEdge.value = null
 }
 
 function saveSubprocess() {
@@ -939,9 +1021,84 @@ function saveSubprocess() {
   subs[node.id] = JSON.parse(JSON.stringify(subprocessDef.value))
   if (!currentProcess.value) return
   ;(currentProcess.value as any).subprocesses = subs
-  showSubprocess.value = false
+  subprocessEditing.value = false
   pushHistory()
 }
+
+// ── Subprocess inline editor helpers ──────────────────────────────────
+function getSubNodeResizeX(node: PDNode, dir: string): number {
+  const w = node.w||120
+  if (dir==='nw'||dir==='n'||dir==='sw'||dir==='w') return node.x
+  return node.x + w
+}
+function getSubNodeResizeY(node: PDNode, dir: string): number {
+  const h = node.h||50
+  if (dir==='nw'||dir==='ne'||dir==='n') return node.y
+  return node.y + h
+}
+function getSubAnchorPoints(node: PDNode): {x:number;y:number}[] {
+  const w = node.w||120, h = node.h||50
+  const offsets = (node as any).anchorOffset || []
+  return [
+    { x: node.x + w/2, y: node.y },
+    { x: offsets[1]?.x ?? node.x + w, y: node.y + h/2 },
+    { x: node.x + w/2, y: node.y + h },
+    { x: offsets[3]?.x ?? node.x, y: node.y + h/2 },
+  ]
+}
+function getSubNodePort(node: PDNode, port: 'in'|'out', portIdx?: number): {x:number;y:number} {
+  const w = node.w||120, h = node.h||50
+  if (port === 'in') return { x: node.x, y: node.y + h/2 }
+  if (isGate(node.type) && portIdx !== undefined) {
+    const conds = getNodeConditions(node)
+    const spread = Math.max(conds.length * 12, 20)
+    return { x: node.x + w, y: node.y + h/2 + (portIdx - (conds.length-1)/2) * spread }
+  }
+  return { x: node.x + w, y: node.y + h/2 }
+}
+function subComputeEdgePath(edge: PDEdge): string {
+  if (!subprocessDef.value) return ''
+  const from = subprocessDef.value.nodes.find(n => n.id === edge.from)
+  const to = subprocessDef.value.nodes.find(n => n.id === edge.to)
+  if (!from || !to) return ''
+  const fp = getSubNodePort(from, 'out')
+  const tp = getSubNodePort(to, 'in')
+  const dx = Math.abs(tp.x - fp.x)
+  const cx = Math.max(dx * 0.5, 60)
+  return `M ${fp.x} ${fp.y} C ${fp.x+cx} ${fp.y}, ${tp.x-cx} ${tp.y}, ${tp.x} ${tp.y}`
+}
+function subTempEdgePath(): string {
+  if (!subTempEdge.value) return ''
+  const { startX, startY, endX, endY } = subTempEdge.value
+  const from = subprocessDef.value?.nodes[subTempEdge.value.from]
+  if (!from) return ''
+  const fp = getSubNodePort(from, subTempEdge.value.fromPort)
+  const cx = Math.max(Math.abs(endX - fp.x) * 0.5, 60)
+  const sign = subTempEdge.value.fromPort === 'out' ? 1 : -1
+  return `M ${fp.x} ${fp.y} C ${fp.x+cx*sign} ${fp.y}, ${endX-cx*sign} ${endY}, ${endX} ${endY}`
+}
+function subCreateEdge(fromId: string, toId: string) {
+  if (!subprocessDef.value) return
+  const exists = subprocessDef.value.edges.some(e => e.from === fromId && e.to === toId)
+  if (exists) return
+  subprocessDef.value.edges.push({ id: genEdgeId(), from: fromId, to: toId })
+  subPushHistory()
+}
+function subDeleteEdge(i: number) {
+  if (!subprocessDef.value) return
+  subprocessDef.value.edges.splice(i, 1)
+  subSelectedEdge.value = null
+  subPushHistory()
+}
+function subSelectEdge(i: number) { subSelectedEdge.value = i; subSelectedNode.value = null }
+function subPushHistory() {
+  if (!subprocessDef.value) return
+  subHistory.value = subHistory.value.slice(0, subHistIdx.value + 1)
+  subHistory.value.push(JSON.parse(JSON.stringify(subprocessDef.value)))
+  subHistIdx.value = subHistory.value.length - 1
+}
+function subUndo() { if (subHistIdx.value <= 0) return; subHistIdx.value--; subprocessDef.value = JSON.parse(JSON.stringify(subHistory.value[subHistIdx.value])); subSelectedNode.value = null }
+function subRedo() { if (subHistIdx.value >= subHistory.value.length - 1) return; subHistIdx.value++; subprocessDef.value = JSON.parse(JSON.stringify(subHistory.value[subHistIdx.value])); subSelectedNode.value = null }
 
 // ── Process CRUD ──────────────────────────────────────────────────────
 async function loadProcess(p: ProcDef) {
