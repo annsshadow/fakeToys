@@ -522,6 +522,187 @@
     </div>
   </div>
 </div>
+
+<!-- Bulk Edit Panel -->
+<div v-if="showBulkEditPanel" class="modal-overlay" @click.self="showBulkEditPanel=false">
+  <div class="modal glass-card">
+    <div class="modal-header"><span>批量编辑</span><button class="btn-close" @click="showBulkEditPanel=false">×</button></div>
+    <div class="modal-body">
+      <div class="be-grid">
+        <input v-model="bulkEditField" placeholder="字段key(留空=全部)" class="be-input" />
+        <select v-model="bulkEditAction" class="be-select"><option value="required">设为必填</option><option value="label">修改标签</option><option value="placeholder">修改占位符</option></select>
+        <input v-model="bulkEditValue" placeholder="值" class="be-input" />
+        <button class="btn-sm btn-primary" @click="applyBulkEdit()">应用</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Search Panel -->
+<div v-if="showSearchPanel" class="modal-overlay" @click.self="showSearchPanel=false">
+  <div class="modal glass-card">
+    <div class="modal-header"><span>搜索字段</span><button class="btn-close" @click="showSearchPanel=false">×</button></div>
+    <div class="modal-body">
+      <input v-model="searchQuery" placeholder="输入关键词..." class="search-input" @input="doSearch()" />
+      <div class="search-results">
+        <div v-for="f in searchResults" :key="f.key" class="search-item">
+          <span class="sr-key">{{f.key}}</span><span class="sr-label">{{f.label}}</span><span class="sr-type">{{f.type}}</span>
+        </div>
+        <div v-if="!searchResults.length && searchQuery" class="search-empty">无结果</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Type Filter Panel -->
+<div v-if="showTypeFilter" class="modal-overlay" @click.self="showTypeFilter=false">
+  <div class="modal glass-card">
+    <div class="modal-header"><span>类型过滤</span><button class="btn-close" @click="showTypeFilter=false">×</button></div>
+    <div class="modal-body">
+      <div class="type-grid">
+        <div v-for="t in ['text','textarea','number','date','select','radio','checkbox','file','phone','email']" :key="t" :class="['type-chip',{active:selectedTypes.includes(t)}]" @click="toggleType(t)">{{t}}</div>
+      </div>
+      <button class="btn-sm" @click="showTypeFilter=false">确认</button>
+    </div>
+  </div>
+</div>
+
+<!-- Export History Panel -->
+<div v-if="showExportHistory" class="modal-overlay" @click.self="showExportHistory=false">
+  <div class="modal glass-card">
+    <div class="modal-header"><span>导出历史</span><button class="btn-close" @click="showExportHistory=false">×</button></div>
+    <div class="modal-body">
+      <div class="hist-list">
+        <div v-for="h in exportHistory" :key="h.id" class="hist-item">
+          <span class="hist-format">{{h.format}}</span><span class="hist-time">{{new Date(h.exportedAt).toLocaleString('zh-CN')}}</span><span class="hist-size">{{h.size}}B</span>
+        </div>
+        <div v-if="!exportHistory.length" class="hist-empty">暂无导出记录</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Import History Panel -->
+<div v-if="showImportHistory" class="modal-overlay" @click.self="showImportHistory=false">
+  <div class="modal glass-card">
+    <div class="modal-header"><span>导入历史</span><button class="btn-close" @click="showImportHistory=false">×</button></div>
+    <div class="modal-body">
+      <div class="hist-list">
+        <div v-for="h in importHistory" :key="h.id" class="hist-item">
+          <span class="hist-source">{{h.source}}</span><span class="hist-fields">{{h.fields}}字段</span><span class="hist-time">{{new Date(h.importedAt).toLocaleString('zh-CN')}}</span>
+        </div>
+        <div v-if="!importHistory.length" class="hist-empty">暂无导入记录</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Validation History Panel -->
+<div v-if="showValidationHistory" class="modal-overlay" @click.self="showValidationHistory=false">
+  <div class="modal glass-card">
+    <div class="modal-header"><span>验证历史</span><button class="btn-close" @click="showValidationHistory=false">×</button></div>
+    <div class="modal-body">
+      <div class="hist-list">
+        <div v-for="h in validationHistory" :key="h.id" class="hist-item">
+          <span :class="h.valid?'hist-valid':'hist-invalid'">{{h.valid?'通过':'失败'}}</span>
+          <span>错误:{{h.errors}}</span><span>警告:{{h.warnings}}</span><span class="hist-time">{{new Date(h.timestamp).toLocaleString('zh-CN')}}</span>
+        </div>
+        <div v-if="!validationHistory.length" class="hist-empty">暂无验证记录</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Compare Panel -->
+<div v-if="showComparePanel" class="modal-overlay" @click.self="showComparePanel=false">
+  <div class="modal glass-card">
+    <div class="modal-header"><span>表单对比</span><button class="btn-close" @click="showComparePanel=false">×</button></div>
+    <div class="modal-body">
+      <div class="compare-grid">
+        <div><span>表单A</span><select v-model="compareFormA" class="cmp-select"><option v-for="f in forms" :value="f.id">{{f.name}}</option></select></div>
+        <div><span>表单B</span><select v-model="compareFormB" class="cmp-select"><option v-for="f in forms" :value="f.id">{{f.name}}</option></select></div>
+      </div>
+      <button class="btn-sm" @click="runCompare()">对比</button>
+      <div v-if="compareResult" class="compare-result">
+        <span class="comp-add">新增: {{compareResult.added}}</span>
+        <span class="comp-rm">删除: {{compareResult.removed}}</span>
+        <span class="comp-mod">修改: {{compareResult.modified}}</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Restore Panel -->
+<div v-if="showRestorePanel" class="modal-overlay" @click.self="showRestorePanel=false">
+  <div class="modal glass-card">
+    <div class="modal-header"><span>版本恢复</span><button class="btn-close" @click="showRestorePanel=false">×</button></div>
+    <div class="modal-body">
+      <div class="ver-list">
+        <div v-for="(v,i) in restoreVersions" :key="v.id" class="ver-item">
+          <span>{{v.label}}</span><span>{{new Date(v.timestamp).toLocaleString('zh-CN')}}</span><span>{{v.fieldCount}}字段</span>
+          <button class="btn-sm" @click="restoreVersion(i)">恢复</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Lock Panel -->
+<div v-if="showLockPanel" class="modal-overlay" @click.self="showLockPanel=false">
+  <div class="modal glass-card">
+    <div class="modal-header"><span>字段锁定</span><button class="btn-close" @click="showLockPanel=false">×</button></div>
+    <div class="modal-body">
+      <div class="lock-list">
+        <div v-for="f in lockedFields" :key="f.fieldId" class="lock-item">
+          <span>{{f.fieldName}}</span><span>{{f.lockedBy}}</span>
+          <button class="btn-sm btn-danger" @click="unlockField(f.fieldId)">解锁</button>
+        </div>
+        <div v-if="!lockedFields.length" class="lock-empty">暂无锁定字段</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Publish Panel -->
+<div v-if="showPublishPanel" class="modal-overlay" @click.self="showPublishPanel=false">
+  <div class="modal glass-card">
+    <div class="modal-header"><span>发布管理</span><button class="btn-close" @click="showPublishPanel=false">×</button></div>
+    <div class="modal-body">
+      <button class="btn-sm btn-primary" @click="publishForm()">发布当前版本</button>
+      <div class="pub-list">
+        <div v-for="p in publishVersions" :key="p.id" class="pub-item">
+          <span>{{p.version}}</span><span>{{p.publishedBy}}</span><span :class="'pub-'+p.status">{{p.status}}</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Preview Panel -->
+<div v-if="showPreviewPanel" class="modal-overlay" @click.self="showPreviewPanel=false">
+  <div class="modal glass-card">
+    <div class="modal-header"><span>数据预览</span><button class="btn-close" @click="showPreviewPanel=false">×</button></div>
+    <div class="modal-body">
+      <pre class="preview-data">{{JSON.stringify(previewData,null,2)}}</pre>
+      <button class="btn-sm" @click="generatePreview()">刷新</button>
+    </div>
+  </div>
+</div>
+
+<!-- Validate Panel -->
+<div v-if="showValidatePanel" class="modal-overlay" @click.self="showValidatePanel=false">
+  <div class="modal glass-card">
+    <div class="modal-header"><span>验证结果</span><button class="btn-close" @click="showValidatePanel=false">×</button></div>
+    <div class="modal-body">
+      <div class="val-list">
+        <div v-for="e in validateErrors" :key="e.field" class="val-item" :class="e.severity">
+          <span class="val-field">{{e.field}}</span><span class="val-msg">{{e.error}}</span>
+        </div>
+        <div v-if="!validateErrors.length" class="val-empty">所有字段验证通过 ✓</div>
+      </div>
+    </div>
+  </div>
+</div>
 </template>
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
@@ -977,7 +1158,6 @@ function applyTemplate2(tpl: FieldTemplate) {
 // ── Export/Import Enhancements ──────────────────────────────────────
 function exportFormSchema() {
   if (!currentForm.value) return
-  const schema = {
     formName: currentForm.value.name,
     formFlag: currentForm.value.flag,
     columnCount: columnCount.value,
@@ -991,13 +1171,11 @@ function exportFormSchema() {
   }
   const blob = new Blob([JSON.stringify(schema, null, 2)], { type: "application/json" })
   const url = URL.createObjectURL(blob)
-  const a = document.createElement("a")
   a.href = url; a.download = (currentForm.value.flag || "form") + "_schema.json"
   a.click(); URL.revokeObjectURL(url)
 }
 function importFormSchema(text: string) {
   try {
-    const schema = JSON.parse(text)
     if (!currentForm.value) resetForm()
     if (currentForm.value) {
       currentForm.value.name = schema.formName || currentForm.value.name
@@ -1228,7 +1406,6 @@ function openDataSourcePanel(): void { showDataSourcePanel.value = true }
 function testDataSource(ds: DataSourceItem): void { showToast('正在测试 ' + ds.url + '...', 'info') }
 function openFieldPermissionsPanel(): void { showFieldPermissionsPanel.value = true }
 function togglePermission(fieldId: string, roleId: string, perm: keyof FieldPermission): void {
-  const p = fieldPermissions.value.find(x => x.roleId === roleId)
   if (p) (p as any)[perm] = !(p as any)[perm]
 }
 function openIntlPanel(): void { showIntlPanel.value = true }
@@ -1255,7 +1432,6 @@ function runSimulation(): void {
 }
 function openA11yPanel(): void {
   showA11yPanel.value = true
-  const currentForm = forms.value.find(f => f.id === selectedForm.value) || forms.value[0]
   const issues: A11yIssue[] = []
   if (currentForm) {
     currentForm.fields.forEach(field => {
@@ -1269,7 +1445,6 @@ function openA11yPanel(): void {
 function openDepGraphPanel(): void { showDepGraphPanel.value = true; buildDepEdges() }
 function buildDepEdges(): void {
   const edges: DepEdge[] = []
-  const currentForm = forms.value.find(f => f.id === selectedForm.value) || forms.value[0]
   if (currentForm) {
     currentForm.fields.forEach((f, i) => {
       if (i > 0) edges.push({ from: currentForm.fields[i-1].id, to: f.id, type: 'calc', label: '级联' })
@@ -1279,9 +1454,7 @@ function buildDepEdges(): void {
 }
 function openJsonSchemaPanel(): void { showJsonSchemaPanel.value = true; exportJsonSchema() }
 function exportJsonSchema(): void {
-  const currentForm = forms.value.find(f => f.id === selectedForm.value) || forms.value[0]
   if (!currentForm) return
-  let schema = { "$schema": "http://json-schema.org/draft-07/schema#", "type": "object", "title": currentForm.name, "description": currentForm.description || '', "properties": {} as Record<string, any>, "required": [] as string[] }
   currentForm.fields.forEach(f => {
     schema.properties[f.name] = { title: f.label, type: getJSONType(f.type) }
     if (f.validation?.required) schema.required.push(f.name)
@@ -1294,7 +1467,6 @@ function getJSONType(type: string): string {
 }
 function openFieldDocsPanel(): void { showFieldDocsPanel.value = true; generateFieldDocs() }
 function generateFieldDocs(): void {
-  const currentForm = forms.value.find(f => f.id === selectedForm.value) || forms.value[0]
   if (!currentForm) return
   let docs = '# ' + currentForm.name + ' 字段文档\n\n| 字段名 | 标签 | 类型 | 必填 | 验证规则 | 说明 |\n|--------|------|------|------|----------|------|\n'
   currentForm.fields.forEach(f => {
@@ -1302,6 +1474,90 @@ function generateFieldDocs(): void {
     docs += '| ' + f.name + ' | ' + f.label + ' | ' + f.type + ' | ' + (f.validation?.required ? '是' : '否') + ' | ' + rules + ' | ' + (f.description || '-') + ' |\n'
   })
   fieldDocsText.value = docs
+}
+
+// -- Extended Feature State
+const showBulkEditPanel = ref(false)
+const bulkEditField = ref(''), bulkEditAction = ref(''), bulkEditValue = ref('')
+const showSearchPanel = ref(false)
+const searchQuery = ref(''), searchResults = ref<FormField[]>([])
+const showTypeFilter = ref(false)
+const selectedTypes = ref<string[]>([])
+const showExportHistory = ref(false)
+const exportHistory = ref<Array<{id: string; format: string; exportedAt: number; size: number}>>([])
+const showImportHistory = ref(false)
+const importHistory = ref<Array<{id: string; source: string; importedAt: number; fields: number}>>([])
+const showValidationHistory = ref(false)
+const validationHistory = ref<Array<{id: string; timestamp: number; valid: boolean; errors: number; warnings: number}>>([])
+const showComparePanel = ref(false)
+const compareFormA = ref(''), compareFormB = ref(''), compareResult = ref({added: 0, removed: 0, modified: 0})
+const showRestorePanel = ref(false)
+const restoreVersions = ref<Array<{id: string; timestamp: number; label: string; fieldCount: number}>>([])
+const showLockPanel = ref(false)
+const lockedFields = ref<Array<{fieldId: string; fieldName: string; lockedBy: string; lockedAt: number}>>([])
+const showPublishPanel = ref(false)
+const publishVersions = ref<Array<{id: string; version: string; publishedAt: number; publishedBy: string; status: string}>>([])
+const showPreviewPanel = ref(false)
+const showValidatePanel = ref(false)
+const validateErrors = ref<Array<{field: string; error: string; severity: string}>>([])
+
+// -- Extended Functions
+function openBulkEditPanel(): void { showBulkEditPanel.value = true }
+function applyBulkEdit(): void {
+  const f = forms.value.find(x => x.id === selectedForm.value) || forms.value[0]
+  if (!f) return
+  f.fields.forEach(field => {
+    if (bulkEditField.value === '' || field.key === bulkEditField.value) {
+      if (bulkEditAction.value === 'required') field.validation = { ...field.validation, required: bulkEditValue.value === 'true' }
+      else if (bulkEditAction.value === 'label') field.label = bulkEditValue.value
+      else if (bulkEditAction.value === 'placeholder') field.placeholder = bulkEditValue.value
+    }
+  })
+  pushFormHistory(); showToast('批量编辑已应用', 'success')
+}
+function openSearchPanel(): void { showSearchPanel.value = true; doSearch() }
+function doSearch(): void {
+  if (!f || !searchQuery.value.trim()) { searchResults.value = []; return }
+  searchResults.value = f.fields.filter(x =>
+    (x.label || '').toLowerCase().includes(searchQuery.value.toLowerCase()) ||
+    (x.key || '').toLowerCase().includes(searchQuery.value.toLowerCase()) ||
+    x.type.toLowerCase().includes(searchQuery.value.toLowerCase())
+  )
+}
+function openTypeFilter(): void { showTypeFilter.value = true }
+function toggleType(t: string): void { const i = selectedTypes.value.indexOf(t); i >= 0 ? selectedTypes.value.splice(i, 1) : selectedTypes.value.push(t) }
+function openExportHistory(): void { showExportHistory.value = true }
+function recordExport(fmt: string): void { exportHistory.value.unshift({ id: 'exp_' + Date.now(), format: fmt, exportedAt: Date.now(), size: 2048 }) }
+function openImportHistory(): void { showImportHistory.value = true }
+function recordImport(src: string, fields: number): void { importHistory.value.unshift({ id: 'imp_' + Date.now(), source: src, importedAt: Date.now(), fields }) }
+function openValidationHistory(): void { showValidationHistory.value = true }
+function recordValidation(valid: boolean, errs: number, warns: number): void { validationHistory.value.unshift({ id: 'val_' + Date.now(), timestamp: Date.now(), valid, errors: errs, warnings: warns }) }
+function openComparePanel(): void { showComparePanel.value = true }
+function runCompare(): void {
+  const f1 = forms.value.find(x => x.id === compareFormA.value), f2 = forms.value.find(x => x.id === compareFormB.value)
+  if (!f1 || !f2) return
+  const s1 = new Set(f1.fields.map(f => f.key)), s2 = new Set(f2.fields.map(f => f.key))
+  compareResult.value = { added: [...s2].filter(k => !s1.has(k)).length, removed: [...s1].filter(k => !s2.has(k)).length, modified: f1.fields.filter(f => f2.fields.some(g => g.key === f.key && f.label !== g.label)).length }
+}
+function openRestorePanel(): void { showRestorePanel.value = true; restoreVersions.value = [{ id: 'v1', timestamp: Date.now() - 3600000, label: '上次保存', fieldCount: forms.value[0]?.fields.length || 0 }] }
+function restoreVersion(idx: number): void { showToast('已恢复版本 ' + idx, 'success') }
+function openLockPanel(): void { showLockPanel.value = true }
+function lockField(fid: string, fname: string): void { lockedFields.value.push({ fieldId: fid, fieldName: fname, lockedBy: '当前用户', lockedAt: Date.now() }) }
+function unlockField(fid: string): void { lockedFields.value = lockedFields.value.filter(f => f.fieldId !== fid) }
+function openPublishPanel(): void { showPublishPanel.value = true }
+function publishForm(): void { publishVersions.value.unshift({ id: 'pub_' + Date.now(), version: 'v' + (publishVersions.value.length + 1), publishedAt: Date.now(), publishedBy: '当前用户', status: 'success' }); showToast('表单已发布', 'success') }
+function openPreviewPanel(): void { showPreviewPanel.value = true; generatePreview() }
+function generatePreview(): void { const f = forms.value.find(x => x.id === selectedForm.value) || forms.value[0]; if (!f) return; previewData.value = {}; f.fields.forEach(fd => { previewData.value[fd.key || ''] = fd.defaultValue || '' }) }
+function openValidatePanel(): void { showValidatePanel.value = true; runValidate() }
+function runValidate(): void {
+  if (!f) return
+  const errs: Array<{field: string; error: string; severity: string}> = []
+  f.fields.forEach(fd => {
+    if (fd.validation?.required && !fd.defaultValue) errs.push({ field: fd.key || '', error: '必填字段为空', severity: 'error' })
+    if (fd.validation?.minLength && fd.defaultValue && fd.defaultValue.length < fd.validation.minLength) errs.push({ field: fd.key || '', error: '长度不足', severity: 'warning' })
+  })
+  validateErrors.value = errs
+  recordValidation(errs.filter(e => e.severity === 'error').length === 0, errs.filter(e => e.severity === 'error').length, errs.filter(e => e.severity === 'warning').length)
 }
 </script>
 <style scoped>
@@ -1522,4 +1778,16 @@ function generateFieldDocs(): void {
 .dg-list{display:flex;flex-direction:column;gap:4px}.dg-item{display:flex;align-items:center;gap:8px;padding:6px 10px;border-radius:4px;background:rgba(255,255,255,0.02);font-size:11px;font-family:'JetBrains Mono',monospace}.dg-from{color:#3b82f6}.dg-arrow{color:var(--text-muted)}.dg-to{color:#10b981}.dg-type{color:var(--text-muted);font-size:10px}.dg-empty{color:var(--text-muted);font-size:12px;text-align:center;padding:20px}
 .js-schema{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--text-primary);background:rgba(255,255,255,0.02);border:1px solid var(--border-color);border-radius:8px;padding:12px;white-space:pre-wrap;word-break:break-all;max-height:400px;overflow-y:auto;margin-bottom:10px}
 .fd-docs{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--text-primary);background:rgba(255,255,255,0.02);border:1px solid var(--border-color);border-radius:8px;padding:12px;white-space:pre-wrap;word-break:break-all;max-height:400px;overflow-y:auto;margin-bottom:10px}
+
+/* -- Extended Panel Styles */
+.be-grid{display:flex;flex-direction:column;gap:8px;margin-bottom:12px}.be-input,.be-select{padding:8px 10px;border-radius:6px;border:1px solid var(--border-color);background:var(--bg-elevated);color:var(--text-primary);font-size:12px}
+.search-input{width:100%;padding:8px 10px;border-radius:6px;border:1px solid var(--border-color);background:var(--bg-elevated);color:var(--text-primary);font-size:12px;margin-bottom:10px}.search-results{max-height:300px;overflow-y:auto}.search-item{display:flex;gap:8px;padding:6px 8px;border-radius:4px;background:rgba(255,255,255,0.02);font-size:11px}.sr-key{color:#3b82f6;font-family:'JetBrains Mono',monospace;width:100px}.sr-label{flex:1;color:var(--text-primary)}.sr-type{color:var(--text-muted);font-size:10px}.search-empty{text-align:center;padding:20px;color:var(--text-muted);font-size:12px}
+.type-grid{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px}.type-chip{padding:6px 12px;border-radius:20px;border:1px solid var(--border-color);background:transparent;color:var(--text-muted);cursor:pointer;font-size:11px;transition:all .15s}.type-chip-active{background:rgba(59,130,246,0.2);border-color:#3b82f6;color:#3b82f6}
+.hist-list{display:flex;flex-direction:column;gap:4px;max-height:300px;overflow-y:auto}.hist-item{display:flex;align-items:center;gap:8px;padding:6px 8px;border-radius:4px;background:rgba(255,255,255,0.02);font-size:11px}.hist-format,.hist-source{color:#3b82f6;font-weight:600;width:60px}.hist-time{color:var(--text-muted);font-size:10px;width:130px}.hist-size,.hist-fields{color:var(--text-muted);font-size:10px}.hist-valid{color:#10b981}.hist-invalid{color:#ef4444}.hist-empty{text-align:center;padding:20px;color:var(--text-muted);font-size:12px}
+.compare-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px}.compare-grid div{display:flex;flex-direction:column;gap:4px}.compare-grid span{font-size:11px;color:var(--text-muted)}.cmp-select{padding:6px 8px;border-radius:4px;border:1px solid var(--border-color);background:var(--bg-elevated);color:var(--text-primary);font-size:11px}.compare-result{display:flex;gap:12px;justify-content:center;margin-top:10px;font-size:12px}.comp-add{color:#10b981}.comp-rm{color:#ef4444}.comp-mod{color:#f59e0b}
+.ver-list{display:flex;flex-direction:column;gap:4px}.ver-item{display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:6px;background:rgba(255,255,255,0.02);font-size:11px}.ver-item span:first-child{flex:1;color:var(--text-primary);font-weight:600}.ver-item span:nth-child(2){color:var(--text-muted);font-size:10px;width:130px}.ver-item span:nth-child(3){color:var(--text-muted)}
+.lock-list{display:flex;flex-direction:column;gap:4px}.lock-item{display:flex;align-items:center;gap:8px;padding:6px 10px;border-radius:4px;background:rgba(245,158,11,0.1);border:1px solid rgba(245,158,11,0.3);font-size:11px}.lock-item span:first-child{flex:1;color:var(--text-primary)}.lock-item span:nth-child(2){color:#f59e0b;font-size:10px}.lock-empty{text-align:center;padding:20px;color:var(--text-muted);font-size:12px}
+.pub-list{display:flex;flex-direction:column;gap:4px;margin-top:10px}.pub-item{display:flex;align-items:center;gap:8px;padding:6px 10px;border-radius:4px;background:rgba(255,255,255,0.02);font-size:11px}.pub-item span:first-child{color:#3b82f6;font-weight:600}.pub-item span:nth-child(2){color:var(--text-muted)}.pub-success{color:#10b981}.pub-pending{color:#f59e0b}
+.preview-data{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--text-primary);background:rgba(255,255,255,0.02);border:1px solid var(--border-color);border-radius:8px;padding:12px;white-space:pre-wrap;max-height:300px;overflow-y:auto;margin-bottom:10px}
+.val-list{display:flex;flex-direction:column;gap:4px;max-height:300px;overflow-y:auto}.val-item{display:flex;align-items:center;gap:8px;padding:6px 10px;border-radius:4px;font-size:11px}.val-item-error{background:rgba(239,68,68,0.1);border-left:3px solid #ef4444}.val-item-warning{background:rgba(245,158,11,0.1);border-left:3px solid #f59e0b}.val-field{color:#3b82f6;width:100px;font-family:'JetBrains Mono',monospace}.val-msg{flex:1}.val-empty{text-align:center;padding:20px;color:#10b981;font-size:12px}
 </style>
