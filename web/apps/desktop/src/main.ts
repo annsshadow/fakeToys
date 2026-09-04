@@ -15,6 +15,8 @@ import IMChat from './views/IMChat.vue';
 import Personal from './views/Personal.vue';
 import Settings from './views/Settings.vue';
 import SSO from './views/SSO.vue';
+import CalendarApp from './views/CalendarApp.vue';
+import FileManager from './views/FileManager.vue';
 
 const router = createRouter({
   history: createWebHistory(),
@@ -30,6 +32,8 @@ const router = createRouter({
         { path: 'im', name: 'IMChat', component: IMChat, meta: { title: '即时通讯' } },
         { path: 'personal', name: 'Personal', component: Personal, meta: { title: '个人中心' } },
         { path: 'settings', name: 'Settings', component: Settings, meta: { title: '系统设置' } },
+        { path: 'calendar', name: 'CalendarApp', component: CalendarApp, meta: { title: '日历' } },
+        { path: 'file', name: 'FileManager', component: FileManager, meta: { title: '文件管理' } },
       ],
     },
     { path: '/oauth/callback/:platform', name: 'OAuthCallback', component: OAuthCallback, meta: { requiresAuth: false } },
