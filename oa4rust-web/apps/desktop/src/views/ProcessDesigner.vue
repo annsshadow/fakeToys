@@ -868,6 +868,22 @@
       <path v-for="ann in forkJoinAnnotations" :key="ann.id" :d="getForkJoinPath(ann.branchIndices)" class="fork-flow" stroke-width="2" fill="none" :stroke="ann.color" stroke-dasharray="6,3" />
       <text v-for="ann in forkJoinAnnotations" :key="ann.id+'l'" :x="processDef.nodes[ann.branchIndices[0]]?.x + (processDef.nodes[ann.branchIndices[0]]?.w||120) + 8" :y="processDef.nodes[ann.branchIndices[0]]?.y + 14" fill="var(--color-warning)" font-size="10" font-weight="600">{{ ann.label }}</text>
     </g>
+
+    <!-- Group drag/resize handles -->
+    <g v-if="!subprocessEditing" class="group-handles" :transform="edgeTransform">
+      <g v-for="(g, gi) in groupNodes" :key="g.node.id">
+        <rect :x="g.bounds.x+4" :y="g.bounds.y+24" :width="g.bounds.width-8" height="18"
+          rx="4" fill="transparent" class="group-drag-zone"
+          @mousedown.stop="onGroupMouseDown($event, gi)" />
+        <rect v-for="dir in groupResizeDirs" :key="dir"
+          :x="getGroupResizeX(g.node, dir) - 5" :y="getGroupResizeY(g.node, dir) - 5"
+          width="10" height="10" rx="2"
+          fill="var(--color-primary)" stroke="white" stroke-width="1.5"
+          class="group-resize-handle" :class="dir"
+          :style="{ cursor: getResizeCursor(dir) }"
+          @mousedown.stop="onGroupResizeMouseDown($event, gi, dir)" />
+      </g>
+    </g>
 </template>
 
 <script setup lang="ts">
@@ -885,6 +901,20 @@ interface PDNode {
 }
 interface PDEdge { id: string; from: string; to: string; label?: string; condition?: string; flowLabel?: string; strokeWidth?: number; routing?: 'auto'|'straight'|'horizontal'|'vertical' }
 interface ProcDef { id?: string; name: string; flag: string; desc?: string; status?: string; config?: { nodes: PDNode[]; edges: PDEdge[] }; subprocesses?: Record<string, { nodes: PDNode[]; edges: PDEdge[] }> }
+
+// ── Group Drag/Resize State ────────────────────────────────────────
+interface GroupDragState { idx: number; startX: number; startY: number; origX: number; origY: number }
+interface GroupResizeState { idx: number; dir: string; startX: number; startY: number; origW: number; origH: number; origX: number; origY: number }
+// ── Edge Routing ────────────────────────────────────────────────────
+interface RoutingPoint { x: number; y: number; type: "anchor"|"control" }
+interface EdgeRouteConfig { edgeId: string; fromNodeIdx: number; toNodeIdx: number; routing: "auto"|"straight"|"horizontal"|"vertical"|"custom"; controlPoints: RoutingPoint[]; offset: number; labelPos: "auto"|"start"|"mid"|"end"; arrowStyle: "default"|"none"|"both" }
+// ── Script Action Editor ────────────────────────────────────────────
+interface ScriptVar { name: string; type: string; defaultValue: string; description: string }
+interface ScriptErrorHandling { onFail: "abort"|"skip"|"retry"; retryCount?: number; retryDelay?: number }
+interface ScriptOutputMapping { from: string; to: string; transform?: string }
+interface ScriptActionConfig { language: "javascript"|"python"|"typescript"; code: string; imports: string[]; variables: ScriptVar[]; errorHandling: ScriptErrorHandling; outputMapping: ScriptOutputMapping[]; timeout: number; description: string }
+// ── Fork/Join Enhanced ──────────────────────────────────────────────
+interface ForkJoinAnnotation { id: string; type: "fork"|"join"; branchIndices: number[]; forkNodeIdx: number; joinNodeIdx?: number; label: string; color: string; annotations: Array<{type:"label"|"flow"|"count"; text: string}> }
 
 // ── Group Drag/Resize ──────────────────────────────────────────────
 interface GroupDragState { idx: number; startX: number; startY: number; origX: number; origY: number }
@@ -1293,6 +1323,7 @@ const scriptEditors = ref<Map<string, ScriptActionConfig>>(new Map())
 const scriptEditorNodeIdx = ref<number|null>(null)
 const showBranchAnnot = ref(false)
 const forkJoinAnnotations = ref<ForkJoinAnnotation[]>([])
+
 
 // ── Computed ──────────────────────────────────────────────────────────
 const filteredProc = computed(() =>
@@ -3183,31 +3214,6 @@ function deleteArchive(idx:number) { processArchive.value.splice(idx,1) }onUnmou
 })
 
 // ── Group Drag ──────────────────────────────────────────────────────
-function onGroupMouseDown(e: MouseEvent, idx: number) {
-  e.stopPropagation()
-  if (!processDef.value) return
-  const g = groupNodes.value[idx]
-  if (!g) return
-  groupDragState.value = { idx, startX: e.clientX, startY: e.clientY, origX: g.node.x, origY: g.node.y }
-  const onMove = (ev: MouseEvent) => {
-    if (!groupDragState.value || !g) return
-    const dx = (ev.clientX - groupDragState.value.startX) / zoom.value
-    const dy = (ev.clientY - groupDragState.value.startY) / zoom.value
-    g.node.x = groupDragState.value.origX + dx
-    g.node.y = groupDragState.value.origY + dy
-    if (snapToGrid.value) { g.node.x = Math.round(g.node.x / customGridSize.value) * customGridSize.value; g.node.y = Math.round(g.node.y / customGridSize.value) * customGridSize.value }
-    for (const id of g.node.groupMembers!) {
-      const n = processDef.value!.nodes.find(nd => nd.id === id)
-      if (n && (n as any).__origX !== undefined) {
-        const ox = (n as any).__origX, oy = (n as any).__origY
-        n.x = ox + (g.node.x - groupDragState.value.origX); n.y = oy + (g.node.y - groupDragState.value.origY)
-        if (snapToGrid.value) { n.x = Math.round(n.x / customGridSize.value) * customGridSize.value; n.y = Math.round(n.y / customGridSize.value) * customGridSize.value }
-      }
-    }
-  }
-  const onUp = () => { document.removeEventListener("mousemove", onMove); document.removeEventListener("mouseup", onUp); groupDragState.value = null; pushHistory() }
-  document.addEventListener("mousemove", onMove); document.addEventListener("mouseup", onUp)
-}
 function onGroupResizeMouseDown(e: MouseEvent, idx: number, dir: string) {
   e.stopPropagation()
   if (!processDef.value) return
@@ -3344,6 +3350,8 @@ function getForkJoinPath(branchIndices: number[]): string {
   for (let i = 1; i < nodes.length; i++) { const n = nodes[i]; d += ` L ${n.x + (n.w||120)} ${n.y + (n.h||50)/2}` }
   return d
 }
+// ── Group Resize Directions ─────────────────────────────────────────
+const groupResizeDirs = ["nw","n","ne","e","se","s","sw","w"] as const
 </script>
 
 <style scoped>
@@ -3913,4 +3921,19 @@ kbd{display:inline-block;padding:3px 8px;border-radius:4px;border:1px solid var(
 .fork-flow{stroke-opacity:0.6;animation:forkPulse 2s ease-in-out infinite}
 @keyframes forkPulse{0%,100%{stroke-opacity:0.4}50%{stroke-opacity:0.9}}
 .fork-join-layer{pointer-events:none}
+
+/* Group drag & resize */
+.group-drag-zone{cursor:move;transition:fill .15s}
+.group-drag-zone:hover{fill:rgba(0,212,255,0.15)}
+.group-resize-handle{transition:transform .15s,opacity .15s;opacity:0.7}
+.group-resize-handle:hover{transform:scale(1.4);opacity:1}
+.group-resize-handle.nw{top:-6px;left:-6px}.group-resize-handle.n{top:-6px;left:50%;transform:translateX(-50%)}.group-resize-handle.ne{top:-6px;right:-6px}
+.group-resize-handle.e{top:50%;right:-6px;transform:translateY(-50%)}.group-resize-handle.se{bottom:-6px;right:-6px}.group-resize-handle.s{bottom:-6px;left:50%;transform:translateX(-50%)}
+.group-resize-handle.sw{bottom:-6px;left:-6px}.group-resize-handle.w{top:50%;left:-6px;transform:translateY(-50%)}
+/* Fork/Join */
+.fork-flow{stroke-opacity:0.6;animation:forkPulse 2s ease-in-out infinite}
+@keyframes forkPulse{0%,100%{stroke-opacity:0.4}50%{stroke-opacity:0.9}}
+.fork-join-layer{pointer-events:none}
+/* Toolbar fork/join button */
+.tb-btn.active{background:var(--color-primary-soft);color:var(--color-primary);border-color:var(--color-primary)}
 </style>
