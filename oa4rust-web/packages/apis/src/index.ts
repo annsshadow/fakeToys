@@ -915,32 +915,6 @@ export const attendanceControlApi = {
 // ─────────────────────────────────────────────────────────────
 // 考勤控制 (attendance_assemble_control — 228 routes)
 // ─────────────────────────────────────────────────────────────
-export const attendanceControlApi = {
-  ruleList: () => api.get("/jaxrs/attendance/assemble/control/rule/list"),
-  v2Config: () => api.get("/jaxrs/attendance/assemble/control/v2/config"),
-  uuid: () => api.get("/jaxrs/attendance/assemble/control/uuid/random"),
-  statistic: () => api.post("/jaxrs/attendance/assemble/control/statistic/do", null),
-  v2Group: (id: string) => api.get(`/jaxrs/attendance/assemble/control/v2/group/${id}`),
-  v2MyVersion: () => api.get("/jaxrs/attendance/assemble/control/v2/my/version"),
-  v2Shift: (id: string) => api.get(`/jaxrs/attendance/assemble/control/v2/shift/${id}`),
-  qywxSyncList: () => api.get("/jaxrs/attendance/assemble/control/qywx/sync/list"),
-  workplace: (data: unknown) => api.post("/jaxrs/attendance/assemble/control/workplace", data),
-  toggleRule: (id: string) => api.put(`/jaxrs/attendance/assemble/control/rule/${id}/toggle`, null),
-  auditAppeal: (id: string, data: unknown) => api.put(`/jaxrs/attendance/assemble/control/attendanceappealInfo/audit/${id}`, data),
-  checkDetail: (params: unknown) => api.post("/jaxrs/attendance/assemble/control/attendancedetail/filter/list", params),
-  deleteWorkplace: (id: string) => api.delete(`/jaxrs/attendance/assemble/control/workplace/${id}`),
-  deleteAdmin: (id: string) => api.delete(`/jaxrs/attendance/assemble/control/attendanceadmin/${id}`),
-  deleteDetail: (id: string) => api.delete(`/jaxrs/attendance/assemble/control/attendancedetail/${id}`),
-  dingdingSync: () => api.delete("/jaxrs/attendance/assemble/control/dingding/all"),
-  qywxSync: () => api.delete("/jaxrs/attendance/assemble/control/qywx/all"),
-  request: (method: string, path: string, body?: unknown) => {
-    const url = "/jaxrs/attendance/assemble/control" + path;
-    if (method === "GET") return api.get(url);
-    if (method === "POST") return api.post(url, body);
-    if (method === "PUT") return api.put(url, body);
-    return api.delete(url);
-  },
-};
 
 // ─────────────────────────────────────────────────────────────
 // 文件控制 (file_assemble_control — 182 routes)
@@ -1014,10 +988,10 @@ export const portalSurfaceApi = {
   file: (flag: string) => api.get(`/jaxrs/portal/assemble/surface/file/${flag}`),
   script: (id: string) => api.get(`/jaxrs/portal/assemble/surface/script/${id}`),
   widget: (id: string) => api.get(`/jaxrs/portal/assemble/surface/widget/${id}`),
-  publish: (data: unknown) => api.post("/jaxrs/portal/assemble/surface/publish", data),
-  create: (data: unknown) => api.post("/jaxrs/portal/assemble/surface/create", data),
-  saveLayout: (data: unknown) => api.put("/jaxrs/portal/assemble/surface/save/layout", data),
-  deleteLayout: (data: unknown) => api.delete("/jaxrs/portal/assemble/surface/delete/layout", data),
+  publish: (data: Record<string, unknown>) => api.post("/jaxrs/portal/assemble/surface/publish", data),
+  create: (data: Record<string, unknown>) => api.post("/jaxrs/portal/assemble/surface/create", data),
+  saveLayout: (data: Record<string, unknown>) => api.put("/jaxrs/portal/assemble/surface/save/layout", data),
+  deleteLayout: (data: Record<string, unknown>) => api.delete("/jaxrs/portal/assemble/surface/delete/layout", data),
   request: (method: string, path: string, body?: unknown) => {
     const url = "/jaxrs/portal/assemble/surface" + path;
     if (method === "GET") return api.get(url);
@@ -1083,4 +1057,175 @@ export const messageCommunicateApi = {
     if (method === "PUT") return api.put(url, body);
     return api.delete(url);
   },
+}
+
+/**
+ * Extra API modules for remaining backend crates
+ * Auto-generated — do not edit manually
+ */
+
+
+// ─────────────────────────────────────────────────────────────
+// ai_core_entity (3 unique endpoints)
+// ─────────────────────────────────────────────────────────────
+export const ai_core_entityApi = {
+  getlist: () => api.get("/jaxrs/ai/core/entity/app/list"),
+  getlist_1: () => api.get("/jaxrs/ai/core/entity/model/list"),
+  getlist_2: () => api.get("/jaxrs/ai/core/entity/conversation/list"),
+  // Generic fallback for 0 remaining paths
+  request: (method: string, path: string, body?: unknown) => {
+    const url = '/jaxrs/' + path;
+    if (method === 'GET') return api.get(url);
+    if (method === 'POST') return api.post(url, body);
+    if (method === 'PUT') return api.put(url, body);
+    return api.delete(url);
+  },
+};
+
+// ─────────────────────────────────────────────────────────────
+// query_service (3 unique endpoints)
+// ─────────────────────────────────────────────────────────────
+export const query_serviceApi = {
+  getlist: () => api.get("/jaxrs/query/service/neural/list"),
+  postexecute: (body?: unknown) => api.post("/jaxrs/query/service/processing/execute", body),
+  postmodelflag: (model_flag: string, body?: unknown) => api.post("/jaxrs/query/service/neural/generate/:model_flag", body),
+  // Generic fallback for 0 remaining paths
+  request: (method: string, path: string, body?: unknown) => {
+    const url = '/jaxrs/' + path;
+    if (method === 'GET') return api.get(url);
+    if (method === 'POST') return api.post(url, body);
+    if (method === 'PUT') return api.put(url, body);
+    return api.delete(url);
+  },
+};
+
+// ─────────────────────────────────────────────────────────────
+// query_service_processing (4 unique endpoints)
+// ─────────────────────────────────────────────────────────────
+export const query_service_processingApi = {
+  getstatus: () => api.get("/jaxrs/query/service/processing/status"),
+  postbatch: (body?: unknown) => api.post("/jaxrs/query/service/processing/batch", body),
+  postreset: (body?: unknown) => api.post("/jaxrs/query/service/processing/reset", body),
+  postprocess: (body?: unknown) => api.post("/jaxrs/query/service/processing/process", body),
+  // Generic fallback for 0 remaining paths
+  request: (method: string, path: string, body?: unknown) => {
+    const url = '/jaxrs/' + path;
+    if (method === 'GET') return api.get(url);
+    if (method === 'POST') return api.post(url, body);
+    if (method === 'PUT') return api.put(url, body);
+    return api.delete(url);
+  },
+};
+
+// ─────────────────────────────────────────────────────────────
+// empower (16 unique endpoints)
+// ─────────────────────────────────────────────────────────────
+export const empowerApi = {
+  getid: (id: string) => api.get("/jaxrs/person/empower/:id"),
+  getto: () => api.get("/jaxrs/person/empower/list/to"),
+  getenable: (id: string) => api.get("/jaxrs/person/empower/:id/enable"),
+  getdisable: (id: string) => api.get("/jaxrs/person/empower/:id/disable"),
+  getenable_4: () => api.get("/jaxrs/person/empower/list/to/enable"),
+  getcurrentperson: () => api.get("/jaxrs/person/empower/list/currentperson"),
+  getenable_6: () => api.get("/jaxrs/person/empower/list/currentperson/enable"),
+  postempower: (body?: unknown) => api.post("/jaxrs/person/empower", body),
+  postmanager: (body?: unknown) => api.post("/jaxrs/person/empower/manager", body),
+  postenable: (id: string, body?: unknown) => api.post("/jaxrs/person/empower/:id/enable", body),
+  postdisable: (id: string, body?: unknown) => api.post("/jaxrs/person/empower/:id/disable", body),
+  postsize: (page: string, size: string, body?: unknown) => api.post("/jaxrs/person/empower/manager/list/paging/:page/size/:size", body),
+  // Generic fallback for 4 remaining paths
+  request: (method: string, path: string, body?: unknown) => {
+    const url = '/jaxrs/' + path;
+    if (method === 'GET') return api.get(url);
+    if (method === 'POST') return api.post(url, body);
+    if (method === 'PUT') return api.put(url, body);
+    return api.delete(url);
+  },
+};
+
+// ─────────────────────────────────────────────────────────────
+// realtime (3 unique endpoints)
+// ─────────────────────────────────────────────────────────────
+export const realtimeApi = {
+  getrealtime: () => api.get("/jaxrs//ws/realtime"),
+  getroomid: (room_id: string) => api.get("/jaxrs//ws/realtime/room/:room_id"),
+  getstats: (room_id: string) => api.get("/jaxrs//ws/realtime/room/:room_id/stats"),
+  // Generic fallback for 0 remaining paths
+  request: (method: string, path: string, body?: unknown) => {
+    const url = '/jaxrs/' + path;
+    if (method === 'GET') return api.get(url);
+    if (method === 'POST') return api.post(url, body);
+    if (method === 'PUT') return api.put(url, body);
+    return api.delete(url);
+  },
+};
+
+// ─────────────────────────────────────────────────────────────
+// base (9 unique endpoints)
+// ─────────────────────────────────────────────────────────────
+export const baseApi = {
+  getecho: () => api.get("/jaxrs/base/echo"),
+  getget: () => api.get("/jaxrs/base/echo/get"),
+  getdetail: () => api.get("/jaxrs/base/cache/detail"),
+  getinfo: () => api.get("/jaxrs/base/openapi/info"),
+  getflush: () => api.get("/jaxrs/base/cache/config/flush"),
+  getflush_5: () => api.get("/jaxrs/base/cache/commonscript/flush"),
+  getfilePath: (filePath: string) => api.get("/jaxrs/base/sysresource/filePath/:filePath"),
+  getclassName: (className: string) => api.get("/jaxrs/base/fireschedule/classname/:className"),
+  postcache: (body?: unknown) => api.post("/jaxrs/base/cache", body),
+  // Generic fallback for 0 remaining paths
+  request: (method: string, path: string, body?: unknown) => {
+    const url = '/jaxrs/' + path;
+    if (method === 'GET') return api.get(url);
+    if (method === 'POST') return api.post(url, body);
+    if (method === 'PUT') return api.put(url, body);
+    return api.delete(url);
+  },
+};
+
+// ─────────────────────────────────────────────────────────────
+// preview (2 unique endpoints)
+// ─────────────────────────────────────────────────────────────
+export const previewApi = {
+  postupload: (body?: unknown) => api.post("/jaxrs//preview/upload", body),
+  postconvert: (body?: unknown) => api.post("/jaxrs//preview/convert", body),
+  // Generic fallback for 0 remaining paths
+  request: (method: string, path: string, body?: unknown) => {
+    const url = '/jaxrs/' + path;
+    if (method === 'GET') return api.get(url);
+    if (method === 'POST') return api.post(url, body);
+    if (method === 'PUT') return api.put(url, body);
+    return api.delete(url);
+  },
+};
+
+// ─────────────────────────────────────────────────────────────
+// signature (3 unique endpoints)
+// ─────────────────────────────────────────────────────────────
+export const signatureApi = {
+  postsign: (body?: unknown) => api.post("/jaxrs//signature/pdf/sign", body),
+  poststatus: (body?: unknown) => api.post("/jaxrs//signature/pdf/status", body),
+  postverify: (body?: unknown) => api.post("/jaxrs//signature/pdf/verify", body),
+  // Generic fallback for 0 remaining paths
+  request: (method: string, path: string, body?: unknown) => {
+    const url = '/jaxrs/' + path;
+    if (method === 'GET') return api.get(url);
+    if (method === 'POST') return api.post(url, body);
+    if (method === 'PUT') return api.put(url, body);
+    return api.delete(url);
+  },
+};
+
+// ─────────────────────────────────────────────────────────────
+// Unified export object
+// ─────────────────────────────────────────────────────────────
+export const extraApis = {
+  ai_core_entity: ai_core_entityApi,
+  query_service: query_serviceApi,
+  query_service_processing: query_service_processingApi,
+  empower: empowerApi,
+  realtime: realtimeApi,
+  base: baseApi,
+  preview: previewApi,
+  signature: signatureApi,
 };
