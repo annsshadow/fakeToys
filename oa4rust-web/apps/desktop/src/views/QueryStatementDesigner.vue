@@ -841,8 +841,7 @@ const generatedVisualSql = computed(() => {
 const generatedFieldDragSql = computed(() => {
   let s = "SELECT " + (fdSelectFields.value.length ? fdSelectFields.value.join(", ") : "*")
   if (allSchemaFields.value[0]) s += " FROM " + allSchemaFields.value[0].split(".")[0]
-  if (fdWhereFields.value.length) s += "
-WHERE " + fdWhereFields.value.map(f => f + " IS NOT NULL").join(" AND ")
+  if (fdWhereFields.value.length) s += "\nWHERE " + fdWhereFields.value.map(f => f + " IS NOT NULL").join(" AND ")
   return s
 })
 
