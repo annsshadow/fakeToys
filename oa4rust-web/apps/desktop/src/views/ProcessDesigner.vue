@@ -28,7 +28,6 @@
         <button class="btn btn-primary" @click="saveProcess" :disabled="!currentProcess">💾 保存</button>
       </div>
     </div>
-
     <div class="pd-body">
       <!-- Left: Process List -->
       <aside class="pd-sidebar glass-card">
@@ -47,7 +46,6 @@
           </div>
         </div>
       </aside>
-
       <!-- Left: Node Palette -->
       <aside class="pd-palette glass-card" v-if="currentProcess">
         <div class="pal-title">基础节点</div>
@@ -89,15 +87,12 @@
           </div>
         </div>
       </aside>
-
       <!-- Center: Canvas -->
       <main class="pd-canvas glass-card" ref="canvasRef"
         @drop="onDropNode" @dragover.prevent
         @click.self="selectedNode=null; selectedEdge=null; tempEdge=null"
         @keydown.delete="deleteSelected" @keydown.ctrl.d.prevent="duplicateSelected">
-
         <div class="canvas-bg" :style="{ backgroundSize: gridScale+'px '+gridScale+'px', backgroundPosition: panX+'px '+panY+'px' }"></div>
-
         <svg class="canvas-svg" :style="svgTransform">
           <defs>
             <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
@@ -110,7 +105,6 @@
               <polygon points="0 0, 10 3.5, 0 7" fill="var(--color-secondary)" />
             </marker>
           </defs>
-
           <!-- Edges -->
           <g class="edges" :transform="edgeTransform">
             <path v-for="(edge, i) in processDef?.edges||[]" :key="edge.id"
@@ -125,7 +119,6 @@
                 text-anchor="middle" class="edge-label-text">{{ edge.label }}</text>
             </g>
           </g>
-
           <!-- Temp edge -->
           <path v-if="tempEdge" :d="tempEdgePath()" class="edge-temp" marker-end="url(#arrowhead-temp)" />
           <!-- Predicted connection path -->
@@ -134,7 +127,6 @@
           <rect v-if="predictedTarget !== null && processDef" :x="(processDef.nodes[predictedTarget]!.x)-6" :y="(processDef.nodes[predictedTarget]!.y)-6"
             :width="(processDef.nodes[predictedTarget]!.w||120)+12" :height="(processDef.nodes[predictedTarget]!.h||50)+12"
             rx="10" fill="rgba(0,212,255,0.15)" stroke="var(--color-primary)" stroke-width="2" stroke-dasharray="4,2" pointer-events="none" />
-
           <!-- Fork/Join branch backgrounds -->
           <g v-if="!subprocessEditing" class="fork-branches">
             <g v-for="(fl, fli) in forkLabels" :key="fli">
@@ -154,7 +146,6 @@
                 class="join-label">⚡ JOIN #{{ fli+1 }}</text>
             </g>
           </g>
-
           <!-- Group backgrounds -->
           <g v-if="!subprocessEditing" class="group-backgrounds" :transform="edgeTransform">
             <g v-for="(g, gi) in groupNodes" :key="g.node.id" @contextmenu.prevent="showGroupMenu($event, gi)">
@@ -184,17 +175,14 @@
                 text-anchor="middle" font-size="10" fill="var(--text-muted)">点击展开</text>
             </g>
           </g>
-
           <!-- Nodes -->
           <g class="nodes" :transform="nodeTransform">
             <g v-for="(node, i) in processDef?.nodes||[]" :key="node.id"
               :transform="`translate(${node.x},${node.y})`"
               :class="['node-group', { selected: selectedNode===i, dragging: isDragging&&dragIdx===i }]">
-
               <!-- Selection box (shows when selected) -->
               <rect v-if="selectedNode===i" x="-6" y="-6" :width="(node.w||120)+12" :height="(node.h||50)+12"
                 rx="10" fill="none" stroke="var(--color-primary)" stroke-width="2" stroke-dasharray="4,2" pointer-events="none" />
-
               <!-- Resize handles (8 directions) -->
               <template v-if="selectedNode===i">
                 <!-- Corners -->
@@ -203,8 +191,286 @@
                   width="8" height="8" rx="2" fill="var(--color-primary)" stroke="white" stroke-width="1"
                   class="resize-handle" :style="{ cursor: getResizeCursor(pos) }"
                   @mousedown.stop="onResizeMouseDown($event, i, pos)" />
-              </template>
-
+    <!-- Data Mapping Editor Modal -->
+    <div v-if="showDataMappingEditor" class="modal-overlay" @click.self="showDataMappingEditor=false">
+      <div class="modal data-mapping-modal">
+        <div class="modal-header">
+          <span>🔗 数据映射编辑器</span>
+          <button class="btn-sm" @click="showDataMappingEditor=false">✕</button>
+        </div>
+        <div class="modal-body">
+          <div class="dm-fields-section">
+            <h4>📋 源字段 (左侧)</h4>
+            <div class="dm-field-list">
+              <div v-for="(f, fi) in dataFields" :key="fi" class="dm-field-item" draggable="true" @dragstart="onMapDragStart($event, {field: f.name, nodeIdx: f.nodeIdx})">
+                <span class="dm-field-icon">{{ getNodeIcon(f.type) }}</span>
+                <span class="dm-field-name">{{ f.label }}</span>
+                <span class="dm-field-type">{{ f.type }}</span>
+              </div>
+            </div>
+          </div>
+          <div class="dm-mappings-section">
+            <h4>🔀 映射关系</h4>
+            <div class="dm-mapping-row" v-for="(me, mi) in mappingEdgesList" :key="mi">
+              <select v-model="me.fromNodeIdx" class="dm-select">
+                <option v-for="(f,fi) in dataFields" :value="fi">{{ f.label }}</option>
+              </select>
+              <span class="dm-arrow">→</span>
+              <input v-model="me.fromField" placeholder="源字段" class="dm-input" />
+              <select v-model="me.transform" class="dm-select">
+                <option value="identity">恒等</option>
+                <option value="upper">大写</option>
+                <option value="lower">小写</option>
+                <option value="trim">去空格</option>
+                <option value="format">格式化</option>
+              </select>
+              <span class="dm-arrow">→</span>
+              <input v-model="me.toField" placeholder="目标字段" class="dm-input" />
+              <input v-model="me.condition" placeholder="条件(可选)" class="dm-input dm-cond" />
+              <button class="btn-sm dm-del" @click="removeMappingRow(mi)">✕</button>
+            </div>
+            <button class="btn-sm" @click="addMappingRow">+ 添加映射</button>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn" @click="applyMapping">✓ 应用映射</button>
+          <button class="btn btn-ghost" @click="showDataMappingEditor=false">取消</button>
+        </div>
+      </div>
+    </div>
+    <!-- Flow Variable Panel -->
+    <div v-if="showFlowVarPanel" class="flow-var-panel">
+      <div class="fv-header">
+        <span>🌊 流程变量</span>
+        <button class="btn-sm" @click="showFlowVarPanel=false">✕</button>
+      </div>
+      <div class="fv-body">
+        <div class="fv-add">
+          <input v-model="newVarName" placeholder="变量名" class="fv-input" />
+          <select v-model="newVarType" class="fv-select">
+            <option value="string">string</option>
+            <option value="number">number</option>
+            <option value="boolean">boolean</option>
+            <option value="datetime">datetime</option>
+            <option value="json">json</option>
+          </select>
+          <button class="btn-sm" @click="addFlowVar">+</button>
+        </div>
+        <div class="fv-list">
+          <div v-for="v in flowVars" :key="v.id" class="fv-item" :class="v.scope">
+            <span class="fv-icon">{{ v.type==='json'?'📦':v.type==='datetime'?'📅':v.type==='boolean'?'✅':'📝' }}</span>
+            <div class="fv-info">
+              <span class="fv-name">{{ v.name }}</span>
+              <span class="fv-type">{{ v.type }}</span>
+              <span class="fv-scope">{{ v.scope }}</span>
+            </div>
+            <div class="fv-actions">
+              <button class="btn-xs" @click="toggleVarScope(v)">{{ v.scope }}</button>
+              <button class="btn-xs btn-danger" @click="removeFlowVar(v.id)">✕</button>
+            </div>
+          </div>
+        </div>
+        <div class="fv-export">
+          <button class="btn-sm" @click="() => { navigator.clipboard.writeText(exportFlowVars()) }">📋 复制JSON</button>
+        </div>
+      </div>
+    </div>
+    <!-- Node Templates Modal -->
+    <div v-if="showNodeTemplatesModal" class="modal-overlay" @click.self="showNodeTemplatesModal=false">
+      <div class="modal node-tpl-modal">
+        <div class="modal-header">
+          <span>📦 节点模板库</span>
+          <button class="btn-sm" @click="showNodeTemplatesModal=false">✕</button>
+        </div>
+        <div class="modal-body">
+          <div class="tpl-add">
+            <input v-model="newNodeTemplateName" placeholder="模板名称" class="tpl-input" />
+            <input v-model="newNodeTemplateDesc" placeholder="描述" class="tpl-input" />
+            <button class="btn-sm" @click="addNodeTemplate">+ 新建模板</button>
+          </div>
+          <div class="tpl-grid">
+            <div v-for="(tpl, ti) in customNodeTemplates" :key="tpl.id" class="tpl-card">
+              <div class="tpl-header">
+                <span class="tpl-icon">{{ tpl.icon }}</span>
+                <span class="tpl-name">{{ tpl.name }}</span>
+              </div>
+              <div class="tpl-desc">{{ tpl.description }}</div>
+              <div class="tpl-nodes-preview">
+                <span v-for="(n, ni) in tpl.nodes.slice(0,4)" :key="ni" class="tpl-node-dot">{{ getNodeIcon(n.type) }}</span>
+                <span v-if="tpl.nodes.length>4" class="tpl-more">+{{tpl.nodes.length-4}}</span>
+              </div>
+              <div class="tpl-actions">
+                <button class="btn-sm" @click="loadNodeTemplate(tpl)">加载</button>
+                <button class="btn-sm btn-danger" @click="deleteNodeTemplate(ti)">删除</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <!-- Performance Monitor -->
+    <div v-if="perfMonitoring" class="perf-monitor">
+      <div class="perf-header">
+        <span>⏱ 性能监控</span>
+        <button class="btn-sm" @click="stopPerfMonitor()">停止</button>
+      </div>
+      <div class="perf-body">
+        <div class="perf-table">
+          <div class="perf-row perf-row-header">
+            <span>节点</span><span>状态</span><span>耗时(ms)</span>
+          </div>
+          <div v-for="m in perfMetrics" :key="m.nodeId" class="perf-row">
+            <span>{{ processDef?.nodes.find(n=>n.id===m.nodeId)?.label || m.nodeId }}</span>
+            <span :class="'perf-status ' + m.status">{{ m.status }}</span>
+            <span>{{ calculateDuration(m.nodeId) }}ms</span>
+          </div>
+        </div>
+      </div>
+    </div>
+    <!-- Context Menu -->
+    <div v-if="showContextMenu" class="context-menu" :style="{left: contextMenuX+'px', top: contextMenuY+'px'}">
+      <div class="ctx-item" @click="execContextAction('properties')">📋 属性</div>
+      <div class="ctx-item" @click="execContextAction('duplicate')">📑 复制节点</div>
+      <div class="ctx-item" @click="execContextAction('delete')">🗑 删除</div>
+      <div v-if="contextMenuNodeId !== null" class="ctx-sep"></div>
+      <div class="ctx-item" @click="execContextAction('group')">📦 分组</div>
+      <div class="ctx-item" @click="execContextAction('ungroup')">📂 解散分组</div>
+      <div class="ctx-sep"></div>
+      <div class="ctx-item" @click="showNodeTemplatesModal=true">📦 插入模板</div>
+      <div class="ctx-item" @click="previewNode('task','预览')">👁 预览</div>
+    </div>
+    <!-- Tooltip -->
+    <div v-if="showTooltip" class="pd-tooltip" :style="{left: tooltipX+'px', top: (tooltipY-10)+'px'}">
+      {{ tooltipContent }}
+    </div>
+    <!-- Guide Lines Panel -->
+    <div v-if="showGuideLines" class="guide-lines-panel">
+      <div class="gl-header">
+        <span>📐 辅助线</span>
+        <button class="btn-xs" @click="addGuideLine('vertical')">+ 垂直</button>
+        <button class="btn-xs" @click="addGuideLine('horizontal')">+ 水平</button>
+        <button class="btn-xs" @click="toggleGuidelines">✕</button>
+      </div>
+      <div class="gl-list">
+        <div v-for="(gl, gi) in guideLines" :key="gi" class="gl-item">
+          <span class="gl-type">{{ gl.type }}</span>
+          <input type="range" v-model.number="gl.position" :min="0" :max="2000" class="gl-slider" />
+          <span class="gl-pos">{{ gl.position }}</span>
+          <button class="btn-xs" @click="removeGuideLine(gi)">✕</button>
+        </div>
+      </div>
+    </div>
+    <!-- Box Selection -->
+    <svg v-if="boxSelection.active" class="box-select-svg" @mousedown.stop="startBoxSelect($event)" @mousemove="moveBoxSelect($event)" @mouseup="endBoxSelect">
+      <rect
+        :x="Math.min(boxSelection.start.x, boxSelection.end.x)"
+        :y="Math.min(boxSelection.start.y, boxSelection.end.y)"
+        :width="Math.abs(boxSelection.end.x - boxSelection.start.x)"
+        :height="Math.abs(boxSelection.end.y - boxSelection.start.y)"
+        fill="rgba(0,212,255,0.1)" stroke="var(--color-primary)" stroke-width="1" stroke-dasharray="4,2"
+      />
+    </svg>
+    <!-- Conflict Detection Panel -->
+    <div v-if="showConflictDetection" class="conflict-panel">
+      <div class="cp-header">
+        <span>⚠ 连接冲突检测</span>
+        <button class="btn-sm" @click="showConflictDetection=false">✕</button>
+      </div>
+      <div class="cp-body">
+        <button class="btn" @click="detectConflicts()">🔍 检测冲突</button>
+        <div v-if="connectionConflicts.length > 0" class="cp-conflicts">
+          <div v-for="(c, ci) in connectionConflicts" :key="ci" :class="'cp-conflict cp-' + c.severity">
+            <span>{{ c.issue }}</span>
+            <span class="cp-edges">边: {{ c.edge1.id }} ↔ {{ c.edge2.id }}</span>
+          </div>
+        </div>
+        <div v-else class="cp-ok">✅ 未发现冲突</div>
+      </div>
+    </div>
+    <!-- Simulation Timeline -->
+    <div v-if="showSimTimeline" class="sim-timeline">
+      <div class="st-header">
+        <span>📊 执行时间线</span>
+        <div class="st-controls">
+          <button class="btn-sm" :disabled="simRunning" @click="startSimulation()">▶ 运行</button>
+          <button class="btn-sm" :disabled="!simRunning" @click="stopSimulation()">⏹ 停止</button>
+          <button class="btn-sm" @click="showSimTimeline=false">✕</button>
+        </div>
+      </div>
+      <div class="st-progress">
+        <div class="st-bar" :style="{width: simProgress+'%'}"></div>
+        <span class="st-pct">{{ Math.round(simProgress) }}%</span>
+      </div>
+      <div class="st-events">
+        <div v-for="(ev, ei) in simEvents" :key="ei" class="st-event" :class="ev.event">
+          <span class="st-time">{{ ev.time }}ms</span>
+          <span class="st-node">{{ processDef?.nodes.find(n=>n.id===ev.nodeId)?.label || ev.nodeId }}</span>
+          <span class="st-label">{{ ev.label }}</span>
+          <span class="st-type">{{ ev.event }}</span>
+        </div>
+      </div>
+    </div>
+    <!-- Shortcut Help -->
+    <div v-if="showShortcutHelp" class="shortcut-help">
+      <div class="sh-header">
+        <span>⌨ 快捷键</span>
+        <button class="btn-sm" @click="showShortcutHelp=false">✕</button>
+      </div>
+      <div class="sh-body">
+        <div v-for="s in shortcuts" :key="s.key" class="sh-row">
+          <kbd class="sh-key">{{ s.key }}</kbd>
+          <span class="sh-label">{{ s.label }}</span>
+        </div>
+      </div>
+    </div>
+    <!-- Form Rules Panel -->
+    <div v-if="showFormRulesPanel" class="form-rules-panel">
+      <div class="frp-header">
+        <span>📝 表单联动规则</span>
+        <div class="frp-actions">
+          <button class="btn-sm" @click="addFormRuleSet">+ 新规则组</button>
+          <button class="btn-sm" @click="showFormRulesPanel=false">✕</button>
+        </div>
+      </div>
+      <div class="frp-body">
+        <div v-for="(set, si) in formRuleSets" :key="set.id" class="frp-set">
+          <div class="frp-set-header">
+            <input v-model="set.name" class="frp-set-name" />
+            <button class="btn-xs btn-danger" @click="removeFormRuleSet(si)">✕</button>
+          </div>
+          <div class="frp-rules">
+            <div v-for="(rule, ri) in set.rules" :key="rule.id" class="frp-rule">
+              <select v-model="rule.sourceField" class="frp-select"><option v-for="f in availableFields" :value="f">{{ f }}</option></select>
+              <select v-model="rule.operator" class="frp-select frp-op">
+                <option value=">">></option><option value="<"><</option>
+                <option value=">=">>=</option><option value="<="><=</option>
+                <option value="===">=</option><option value="!==">≠</option>
+              </select>
+              <input v-model="rule.value" placeholder="值" class="frp-input" />
+              <select v-model="rule.action" class="frp-select frp-act">
+                <option value="show">显示</option><option value="hide">隐藏</option>
+                <option value="enable">启用</option><option value="disable">禁用</option>
+              </select>
+              <button class="btn-xs btn-danger" @click="removeFormRule(si, ri)">✕</button>
+            </div>
+            <button class="btn-sm" @click="addFormRule(si)">+ 添加规则</button>
+          </div>
+          <button class="btn-sm frp-apply" @click="applyFormRules(si)">✓ 应用</button>
+        </div>
+      </div>
+    </div>
+    <!-- Toast Container -->
+    <div class="toast-container">
+      <div v-for="t in toastQueue" :key="t.id" :class="['toast', 'toast-'+t.type]">
+        {{ t.message }}
+      </div>
+    </div>
+    <!-- Process Status Indicator -->
+    <div class="process-status" :class="'ps-' + getProcessStatus()">
+      <span class="ps-dot"></span>
+      <span>{{ getProcessStatus() === 'valid' ? '✓ 流程有效' : getProcessStatus() === 'empty' ? '空流程' : '⚠ 需要修复' }}</span>
+    </div>
+</template>
               <!-- Anchor point handles on edges -->
               <template v-if="selectedNode===i && selectedAnchorNode===i">
                 <circle v-for="(ah,ahi) in anchorPoints" :key="ahi"
@@ -212,31 +478,25 @@
                   class="anchor-handle" style="cursor:grab"
                   @mousedown.stop="onAnchorMouseDown($event, i, ahi)" />
               </template>
-
               <!-- Node body click zone for arbitrary edge creation -->
               <rect :x="0" :y="0" :width="node.w||120" :height="node.h||50" fill="transparent" class="node-click-zone" @mousedown.stop="onNodeBodyMouseDown($event, i)" />
               <!-- Edge click zone (invisible rectangle around node for arbitrary edge creation) -->
               <rect :x="-8" :y="-8" :width="(node.w||120)+16" :height="(node.h||50)+16"
                 fill="transparent" class="edge-create-zone"
                 @mousedown.stop="onEdgeMouseDown($event, i)" />
-
               <!-- Node body -->
               <rect :class="['node-body', node.type]"
                 :width="node.w||120" :height="node.h||50" rx="8" />
-
               <!-- Node icon -->
               <text :x="16" :y="(node.h||50)/2+5" class="node-icon-text">{{ getNodeIcon(node.type) }}</text>
-
               <!-- Node label -->
               <text :x="(node.w||120)/2+8" :y="(node.h||50)/2-4"
                 text-anchor="middle" class="node-label">{{ node.label || getNodeLabel(node.type) }}</text>
               <text :x="(node.w||120)/2+8" :y="(node.h||50)/2+10"
                 text-anchor="middle" class="node-sublabel" font-size="9">{{ node.assignee || '' }}</text>
-
               <!-- In port -->
               <circle v-if="node.type!=='start'" cx="0" :cy="(node.h||50)/2" r="6" class="port port-in"
                 @mousedown.stop="onPortMouseDown($event, i, 'in')" />
-
               <!-- Gate output ports (multiple) -->
               <template v-if="isGate(node.type)">
                 <circle v-for="(cond, ci) in getNodeConditions(node)" :key="ci"
@@ -247,12 +507,10 @@
                   :x="(node.w||120)+12" :y="(node.h||50)/2 - getNodeConditions(node).length*6"
                   font-size="9" fill="var(--text-muted)">条件出口</text>
               </template>
-
               <!-- Regular out port -->
               <circle v-if="node.type!=='end' && !isGate(node.type)"
                 cx="(node.w||120)" :cy="(node.h||50)/2" r="6" class="port port-out"
                 @mousedown.stop="onPortMouseDown($event, i, 'out')" />
-
               <!-- Note badge -->
               <text v-if="node.note" :x="(node.w||120)/2" :y="(node.h||50)/2+20"
                 font-size="8" fill="var(--text-muted)" text-anchor="middle">📝 {{ node.note }}</text>
@@ -260,7 +518,6 @@
               <rect v-if="node.condition" x="4" y="4" width="10" height="10" rx="3" fill="var(--color-warning)" />
               <text v-if="node.condition" :x="(node.w||120)/2+8" :y="14"
                 font-size="9" fill="var(--color-warning)" text-anchor="middle">?</text>
-
               <!-- Subprocess indicator -->
               <rect v-if="node.type==='subprocess'" x="4" y="4" width="10" height="10" rx="3" fill="rgb(168,85,247)" />
               <text v-if="node.type==='subprocess'" :x="(node.w||120)/2+8" :y="14"
@@ -268,7 +525,6 @@
             </g>
           </g>
         </svg>
-
         <div class="canvas-hint">
           <span v-if="subprocessEditing">
           <button class="tb-btn" @click="jumpToLevel(0)" title="返回主流程">🏠 主页</button>
@@ -283,7 +539,6 @@
           <span v-else>拖拽右侧节点到画布 | 从端口拖出创建连线 | 点击节点边缘拖出连线 | Shift+点击多选 | Ctrl+A全选 | G键分组 | Del删除 | Ctrl+D复制</span>
         </div>
       </main>
-
       <!-- Animation Playback Controls -->
       <div v-if="processDef && processDef.nodes.length > 0" class="playback-controls glass-card">
         <button class="play-btn" :class="{playing: isPlaying}" @click="togglePlay" title="播放/暂停">
@@ -297,7 +552,6 @@
         <button class="tb-btn" @click="playbackSpeed=Math.min(3, playbackSpeed+0.5)">快</button>
         <button class="tb-btn" @click="resetPlayback">重置</button>
       </div>
-
       <!-- Process Stats Panel -->
       <aside v-if="processStats" class="pd-stats-panel glass-card">
         <div class="stats-header"><span>📊 流程统计</span><button class="btn-sm" @click="showStats=!showStats">{{ showStats?'收起':'展开' }}</button></div>
@@ -321,7 +575,6 @@
           </div>
         </div>
       </aside>
-
       <!-- Execution Simulation Panel -->
       <aside v-if="showExecPanel && processDef" class="pd-exec-panel glass-card">
         <div class="exec-header">
@@ -351,8 +604,6 @@
           </div>
         </div>
       </aside>
-
-
       <!-- Breakpoint & Speed Controls -->
       <div v-if="showExecPanel && processDef" class="exec-controls">
         <div class="speed-control">
@@ -584,7 +835,6 @@
         </div>
       </div>
     </div>
-
     <!-- Import/Export Modal -->
     <div v-if="showIoModal" class="modal-overlay" @click.self="showIoModal=false">
       <div class="modal modal-lg glass-card">
@@ -630,7 +880,6 @@
         </div>
       </div>
     </div>
-
     <!-- Version Comparison Modal -->
     <div v-if="showCompareModal" class="modal-overlay" @click.self="showCompareModal=false">
       <div class="modal modal-xl glass-card">
@@ -669,7 +918,6 @@
         </div>
       </div>
     </div>
-
     <!-- Connection Rules Modal -->
     <div v-if="showRulesModal" class="modal-overlay" @click.self="showRulesModal=false">
       <div class="modal modal-lg glass-card">
@@ -706,7 +954,6 @@
         </div>
       </div>
     </div>
-
     <!-- Node Templates Modal -->
     <div v-if="showTemplatesModal" class="modal-overlay" @click.self="showTemplatesModal=false">
       <div class="modal modal-lg glass-card">
@@ -727,7 +974,6 @@
         </div>
       </div>
     </div>
-
     <!-- Keyboard Shortcuts Help -->
     <div v-if="showHelpModal" class="modal-overlay" @click.self="showHelpModal=false">
       <div class="modal modal-md glass-card">
@@ -763,7 +1009,6 @@
         </div>
       </div>
     </div>
-
     <!-- Subprocess Inline Editor -->
     <div v-if="subprocessEditing && processDef" class="subprocess-editor">
           <div class="sp-toolbar glass-card">
@@ -871,9 +1116,7 @@
         </div>
       </div>
     </div>
-
     <!-- Subprocess Editor (fallback modal when not in editing mode) -->
-
     <!-- Group Context Menu -->
     <div v-if="groupContextMenu.groupIdx !== null" class="context-menu"
       :style="{ left: groupContextMenu.x+'px', top: groupContextMenu.y+'px' }"
@@ -886,13 +1129,11 @@
       </div>
     </div>
   </div>
-
     <!-- Fork/Join Enhanced SVG Layer -->
     <g v-if="showBranchAnnot && processDef" class="fork-join-layer">
       <path v-for="ann in forkJoinAnnotations" :key="ann.id" :d="getForkJoinPath(ann.branchIndices)" class="fork-flow" stroke-width="2" fill="none" :stroke="ann.color" stroke-dasharray="6,3" />
       <text v-for="ann in forkJoinAnnotations" :key="ann.id+'l'" :x="processDef.nodes[ann.branchIndices[0]]?.x + (processDef.nodes[ann.branchIndices[0]]?.w||120) + 8" :y="processDef.nodes[ann.branchIndices[0]]?.y + 14" fill="var(--color-warning)" font-size="10" font-weight="600">{{ ann.label }}</text>
     </g>
-
     <!-- Group drag/resize handles -->
     <g v-if="!subprocessEditing" class="group-handles" :transform="edgeTransform">
       <g v-for="(g, gi) in groupNodes" :key="g.node.id">
@@ -908,7 +1149,6 @@
           @mousedown.stop="onGroupResizeMouseDown($event, gi, dir)" />
       </g>
     </g>
-
     <!-- Breakpoint indicators -->
     <g v-if="breakpoints.length > 0" class="breakpoint-layer">
       <circle v-for="bp in breakpoints" :key="bp.nodeId"
@@ -929,7 +1169,6 @@
         <div class="stat-item"><div class="stat-value">{{ flowStats.isolatedNodes }}</div><div class="stat-label">孤立节点</div></div>
       </div>
     </div>
-
     <!-- Flow Statistics Detail Modal -->
     <div v-if="showFlowStatsModal" class="modal-overlay" @click.self="showFlowStatsModal=false">
       <div class="modal modal-lg glass-card">
@@ -989,7 +1228,6 @@
         </div>
       </div>
     </div>
-
     <!-- Network Analysis Modal -->
     <div v-if="showNetworkAnalysis" class="modal-overlay" @click.self="showNetworkAnalysis=false">
       <div class="modal modal-lg glass-card">
@@ -1021,7 +1259,6 @@
           @click="applyStylePreset(preset)">{{ preset.icon }}</button>
       </div>
     </div>
-
     <!-- Condition Builder Modal -->
     <div v-if="showCondBuilder" class="modal-overlay" @click.self="showCondBuilder=false">
       <div class="modal modal-lg glass-card">
@@ -1149,12 +1386,10 @@
       </div>
     </div>
 </template>
-
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/vue-query'
 import { api } from '@oa4rust/sdk'
-
 // ── Types ────────────────────────────────────────────────────────────
 interface PDNode {
   id: string; type: string; label?: string; x: number; y: number
@@ -1165,14 +1400,12 @@ interface PDNode {
 }
 interface PDEdge { id: string; from: string; to: string; label?: string; condition?: string; flowLabel?: string; strokeWidth?: number; routing?: 'auto'|'straight'|'horizontal'|'vertical' }
 interface ProcDef { id?: string; name: string; flag: string; desc?: string; status?: string; config?: { nodes: PDNode[]; edges: PDEdge[] }; subprocesses?: Record<string, { nodes: PDNode[]; edges: PDEdge[] }> }
-
 // ── Execution Breakpoint ──────────────────────────────────────────
 interface Breakpoint { nodeId: string; label?: string }
 // ── Flow Statistics ────────────────────────────────────────────────
 interface FlowStats { totalNodes: number; totalEdges: number; avgDegree: string; maxDegree: number; density: string; cycles: number; isolatedNodes: number }
 // ── Enhanced Node Style ────────────────────────────────────────────
 interface EnhancedNodeStyle { color: string; bgColor: string; borderColor: string; icon: string }
-
 // ── Group Drag/Resize State ────────────────────────────────────────
 interface GroupDragState { idx: number; startX: number; startY: number; origX: number; origY: number }
 interface GroupResizeState { idx: number; dir: string; startX: number; startY: number; origW: number; origH: number; origX: number; origY: number }
@@ -1186,7 +1419,6 @@ interface ScriptOutputMapping { from: string; to: string; transform?: string }
 interface ScriptActionConfig { language: "javascript"|"python"|"typescript"; code: string; imports: string[]; variables: ScriptVar[]; errorHandling: ScriptErrorHandling; outputMapping: ScriptOutputMapping[]; timeout: number; description: string }
 // ── Fork/Join Enhanced ──────────────────────────────────────────────
 interface ForkJoinAnnotation { id: string; type: "fork"|"join"; branchIndices: number[]; forkNodeIdx: number; joinNodeIdx?: number; label: string; color: string; annotations: Array<{type:"label"|"flow"|"count"; text: string}> }
-
 // ── Group Drag/Resize ──────────────────────────────────────────────
 // ── Edge Routing ────────────────────────────────────────────────────
 interface RoutingPoint { x: number; y: number; type: "anchor"|"control" }
@@ -1198,20 +1430,16 @@ interface ScriptOutputMapping { from: string; to: string; transform?: string }
 interface ScriptActionConfig { language: "javascript"|"python"|"typescript"; code: string; imports: string[]; variables: ScriptVar[]; errorHandling: ScriptErrorHandling; outputMapping: ScriptOutputMapping[]; timeout: number; description: string }
 // ── Fork/Join Enhanced ──────────────────────────────────────────────
 interface ForkJoinAnnotation { id: string; type: "fork"|"join"; branchIndices: number[]; forkNodeIdx: number; joinNodeIdx?: number; label: string; color: string; annotations: Array<{type:"label"|"flow"|"count"; text: string}> }
-
 // ── Constants ─────────────────────────────────────────────────────────
 const GRID_SIZE = 20
 const SNAP_THRESHOLD = 15
-
 const nodeTypes = [
   { type: 'start',    label: '开始', icon: '🟢' },
   { type: 'task',     label: '任务', icon: '📋' },
   { type: 'approval', label: '审批', icon: '✅' },
   { type: 'end',      label: '结束', icon: '🔴' },
 ]
-
 const allNodeTypes = ['start','task','approval','timer','end','gate_and','gate_or','gate_xor','subprocess','script','parallel']
-
 // ── Advanced Node Configuration ─────────────────────────────────────
 interface NodeConfig {
   type: string; label: string; icon: string
@@ -1251,7 +1479,6 @@ function getNodeConditions(node: PDNode): string[] {
   if (!cfg.supportsCondition) return []
   return ['通过', '拒绝', '超时']
 }
-
 // ── Node Template Presets ────────────────────────────────────────────
 interface NodeTemplate { name: string; icon: string; nodes: Array<{type: string; label: string}>; edges: Array<{from: number; to: number; label?: string}> }
 const nodeTemplatesExpanded: NodeTemplate[] = [
@@ -1262,7 +1489,6 @@ const nodeTemplatesExpanded: NodeTemplate[] = [
   { name: '循环重试', icon: '🔄', nodes: [{type:'start',label:'开始'},{type:'task',label:'执行任务'},{type:'gate_or',label:'成功?'},{type:'script',label:'错误处理'},{type:'end',label:'结束'}], edges: [{from:0,to:1},{from:1,to:2},{from:2,to:3,label:'失败'},{from:2,to:4,label:'成功'},{from:3,to:1}] },
   { name: '多级审批', icon: '📑', nodes: [{type:'start',label:'开始'},{type:'task',label:'提交'},{type:'approval',label:'一级审批'},{type:'approval',label:'二级审批'},{type:'approval',label:'三级审批'},{type:'end',label:'完成'}], edges: [{from:0,to:1},{from:1,to:2},{from:2,to:3},{from:3,to:4},{from:4,to:5}] },
 ]
-
 // ── Edge Style Presets ───────────────────────────────────────────────
 interface EdgeStyle { name: string; color: string; width: number; dash: string }
 const edgeStylePresets: EdgeStyle[] = [
@@ -1272,7 +1498,6 @@ const edgeStylePresets: EdgeStyle[] = [
   { name: '点线', color: 'var(--color-info)', width: 1.5, dash: '2,4' },
   { name: '加粗', color: 'var(--color-success)', width: 4, dash: 'none' },
 ]
-
 // ── Conditional Flow Editor ──────────────────────────────────────────
 const showCondEditor = ref(false)
 const condEditorField = ref('')
@@ -1293,7 +1518,6 @@ function applyCondExpression() {
 function clearCondition() { _setNodeProp('condition', '') }
 const condOperators = ['>', '<', '>=', '<=', '===', '!==', 'in', 'contains']
 const condFields = ['amount', 'status', 'userId', 'priority', 'deadline', 'department', 'role', 'type', 'result']
-
 // ── Script Binding Editor ────────────────────────────────────────────
 const showScriptEditor = ref(false)
 const scriptBindingVars = ref<Array<{name: string; type: string; defaultVal: string}>>([
@@ -1307,7 +1531,6 @@ function addScriptVar() {
 function removeScriptVar(idx: number) {
   scriptBindingVars.value.splice(idx, 1)
 }
-
 // ── Retry Strategy Visualizer ────────────────────────────────────────
 const showRetryVisualizer = ref(false)
 const retryStrategies: Array<{name: string; desc: string; formula: string; example: number[]}> = [
@@ -1326,7 +1549,6 @@ function getRetryDelays(strategy: string, count: number, baseDelay: number, mult
   }
   return delays
 }
-
 // ── Subprocess Node Type Config ──────────────────────────────────────
 const subNodeTypesExpanded = [
   { type: 'start', label: '开始', icon: '🟢', w: 100, h: 50 },
@@ -1341,7 +1563,6 @@ const subNodeTypesExpanded = [
   { type: 'script', label: '脚本', icon: '💻', w: 120, h: 50 },
   { type: 'parallel', label: '并行', icon: '⚡', w: 120, h: 50 },
 ]
-
 // ── Canvas Zoom Presets ──────────────────────────────────────────────
 const zoomPresets = [
   { label: '25%', value: 0.25 }, { label: '50%', value: 0.5 },
@@ -1349,12 +1570,9 @@ const zoomPresets = [
   { label: '150%', value: 1.5 }, { label: '200%', value: 2 },
   { label: '_fit', value: -1 },
 ]
-
-
 // ── Condition Editor Helpers ────────────────────────────────────────
 const nodeVars = ref<string[]>(['amount', 'userId', 'status', 'priority', 'deadline', 'department', 'role'])
 const availableFields = ref<string[]>(['name', 'amount', 'status', 'userId', 'priority', 'date', 'comment', 'result', 'output'])
-
 // ── State ─────────────────────────────────────────────────────────────
 const plLoading = ref(false), sbFilter = ref('')
 const currentProcess = ref<ProcDef|null>(null)
@@ -1376,13 +1594,11 @@ const predictedTarget = ref<number|null>(null)
 const predictedPath = ref<string>('')
 const showPrediction = ref(false)
 const isPanning = ref(false), panStart = ref({ x: 0, y: 0 })
-
 // Resize state
 const isResizing = ref(false)
 const resizeIdx = ref<number|null>(null)
 const resizeDir = ref<string>('')
 const resizeStart = ref({ x: 0, y: 0, w: 0, h: 0 })
-
 // Anchor point drag state
 const isDraggingAnchor = ref(false)
 const anchorNodeIdx = ref<number|null>(null)
@@ -1400,13 +1616,10 @@ const anchorPoints = computed(() => {
     { x: offsets[3]?.x ?? node.x, y: node.y + h/2 },
   ]
 })
-
 // Group state
 const groupedNodes = ref<Set<string>>(new Set())
-
 // Script tab state
 const scriptTab = ref<'code'|'vars'|'error'>('code')
-
 // Version control state
 interface ProcVersion { id: string; timestamp: number; label: string; config: { nodes: PDNode[]; edges: PDEdge[] }; author: string; message: string }
 const versions = ref<ProcVersion[]>([])
@@ -1416,17 +1629,14 @@ const showDiff = ref(false)
 const addedNodes = ref<PDNode[]>([])
 const removedNodes = ref<PDNode[]>([])
 const changedNodes = ref<PDNode[]>([])
-
 // Multi-select state
 const multiSelected = ref<Set<string>>(new Set())
 const isMultiDragging = ref(false)
 const multiDragOffset = ref({ x: 0, y: 0 })
-
 // Minimap state
 const minimapVisible = ref(true)
 const minimapScale = 0.15
 const minimapCanvasRef = ref<HTMLCanvasElement|null>(null)
-
 // ── Execution Simulation ────────────────────────────────────────────
 interface ExecState { currentNodeIdx: number|null; progress: number; status: 'idle'|'running'|'paused'|'finished'; completedNodes: string[] }
 const execState = ref<ExecState>({ currentNodeIdx: null, progress: 0, status: 'idle', completedNodes: [] })
@@ -1484,7 +1694,6 @@ function resetExecution() {
   execState.value = { currentNodeIdx: null, progress: 0, status: 'idle', completedNodes: [] }
   showExecPanel.value = false
 }
-
 // ── Node Type Config Profiles ────────────────────────────────────────
 interface NodeProfile {
   type: string; label: string; icon: string
@@ -1524,13 +1733,11 @@ function isProfileEditable(node: PDNode, prop: string): boolean {
     default: return true
   }
 }
-
 // Subprocess state
 const showSubprocess = ref(false)
 const subprocessTitle = ref('')
 const subprocessNodeIdx = ref<number|null>(null)
 const subprocessDef = ref<{nodes: PDNode[]; edges: PDEdge[]}>({ nodes: [], edges: [] })
-
 // Subprocess inline editor state
 const subprocessEditing = ref(false)
 const subprocessStack = ref<Array<{nodes: PDNode[]; edges: PDEdge[]; title: string; parentIdx?: number}>>([])
@@ -1546,7 +1753,6 @@ const subTempEdge = ref<{ from: number; fromPort: 'out'|'in'; startX: number; st
 const subIsDraggingAnchor = ref(false)
 const subHistory = ref<{nodes: PDNode[]; edges: PDEdge[]}[]>([])
 const subHistIdx = ref(-1)
-
 // Animation playback state
 const isPlaying = ref(false)
 const playbackProgress = ref(0)
@@ -1579,17 +1785,14 @@ function getPlaybackTime(): string {
   const current = Math.floor((playbackProgress.value / 100) * totalNodes)
   return `${current}/${totalNodes}`
 }
-
 // Help modal
 const showHelpModal = ref(false)
-
 const breakpoints = ref<Breakpoint[]>([])
 const showBreakpoints = ref(false)
 const executionSpeed = ref(1000)
 const isStepping = ref(false)
 const showExecutionPanel = ref(true)
 const flowStats = computed(() => computeFlowStats())
-
 const groupDragState = ref<GroupDragState|null>(null)
 const groupResizeState = ref<GroupResizeState|null>(null)
 const showRoutingPanel = ref(false)
@@ -1599,8 +1802,6 @@ const scriptEditors = ref<Map<string, ScriptActionConfig>>(new Map())
 const scriptEditorNodeIdx = ref<number|null>(null)
 const showBranchAnnot = ref(false)
 const forkJoinAnnotations = ref<ForkJoinAnnotation[]>([])
-
-
 // ── Computed ──────────────────────────────────────────────────────────
 const filteredProc = computed(() =>
   sbFilter.value
@@ -1611,7 +1812,6 @@ const svgTransform = computed(() => ({ transform: `translate(${panX.value}px,${p
 const edgeTransform = computed(() => ({ transform: `translate(${-panX.value}px,${-panY.value}px) scale(${1/zoom.value})` }))
 const nodeTransform = computed(() => ({ transform: `translate(${-panX.value}px,${-panY.value}px) scale(${1/zoom.value})` }))
 const gridScale = computed(() => GRID_SIZE * zoom.value)
-
 // Multi-select helpers
 function isSelectedNode(id: string): boolean {
   if (selectedNode.value !== null && processDef.value?.nodes[selectedNode.value]?.id === id) return true
@@ -1625,7 +1825,6 @@ function toggleSelectNode(i: number) {
   else multiSelected.value.add(node.id)
   selectedNode.value = i
 }
-
 // Minimap bounds
 const minimapBounds = computed(() => {
   if (!processDef.value || processDef.value.nodes.length === 0)
@@ -1639,11 +1838,9 @@ const minimapBounds = computed(() => {
 })
 const minimapWidth = computed(() => canvasRef.value ? canvasRef.value.clientWidth * minimapScale : 150)
 const minimapHeight = computed(() => canvasRef.value ? canvasRef.value.clientHeight * minimapScale : 100)
-
 // Subprocess inline editor computed
 const subSvgTransform = computed(() => ({ transform: `translate(${subPanX.value}px,${subPanY.value}px) scale(${subZoom.value})`, transformOrigin: '0 0' }))
 const subGridScale = computed(() => GRID_SIZE * subZoom.value)
-
 // Parallel branch detection
 function detectParallelBranches(): number[][] {
   if (!processDef.value) return []
@@ -1664,7 +1861,6 @@ function detectParallelBranches(): number[][] {
   return groups
 }
 const parallelBranches = computed(() => detectParallelBranches())
-
 // ── Process Statistics ──────────────────────────────────────────────
 const showStats = ref(false)
 const processStats = computed(() => {
@@ -1686,7 +1882,6 @@ const processStats = computed(() => {
     })
   }
 })
-
 // Fork/Join labels for parallel branches
 const forkLabels = computed(() => {
   if (!processDef.value) return []
@@ -1705,7 +1900,6 @@ const forkLabels = computed(() => {
   }
   return labels
 })
-
 // ── Process List ──────────────────────────────────────────────────────
 const { data: procData } = useQuery({ queryKey: ['pd','list'], queryFn: async () => {
   plLoading.value = true
@@ -1713,7 +1907,6 @@ const { data: procData } = useQuery({ queryKey: ['pd','list'], queryFn: async ()
   finally { plLoading.value = false }
 }})
 const procList = ref<ProcDef[]>(procData.value ?? [])
-
 // ── History ───────────────────────────────────────────────────────────
 function pushHistory() {
   if (!processDef.value) return
@@ -1724,7 +1917,6 @@ function pushHistory() {
 }
 function undo() { if (histIdx.value <= 0) return; histIdx.value--; processDef.value = JSON.parse(JSON.stringify(history.value[histIdx.value])); selectedNode.value = null }
 function redo() { if (histIdx.value >= history.value.length - 1) return; histIdx.value++; processDef.value = JSON.parse(JSON.stringify(history.value[histIdx.value])); selectedNode.value = null }
-
 // ── Helpers ───────────────────────────────────────────────────────────
 function genId() { return 'n_' + Date.now() + '_' + Math.random().toString(36).slice(2,6) }
 function genEdgeId() { return 'e_' + Date.now() + '_' + Math.random().toString(36).slice(2,6) }
@@ -1759,7 +1951,6 @@ function computeForkJoinPath(branchIndices: number[]): string {
   }
   return d
 }
-
 // ── Port position ─────────────────────────────────────────────────────
 function getNodePort(node: PDNode, port: 'in'|'out', portIdx?: number): {x:number;y:number} {
   const w = node.w||120, h = node.h||50
@@ -1771,7 +1962,6 @@ function getNodePort(node: PDNode, port: 'in'|'out', portIdx?: number): {x:numbe
   }
   return { x: node.x + w, y: node.y + h/2 }
 }
-
 // ── Edge path ─────────────────────────────────────────────────────────
 function computeEdgePath(edge: PDEdge): string {
   if (!processDef.value) return ''
@@ -1799,7 +1989,6 @@ function tempEdgePath(): string {
   const sign = tempEdge.value.fromPort === 'out' ? 1 : -1
   return `M ${fp.x} ${fp.y} C ${fp.x+cx*sign} ${fp.y}, ${endX-cx*sign} ${endY}, ${endX} ${endY}`
 }
-
 // ── Node CRUD ─────────────────────────────────────────────────────────
 function addNode(type: string, opts?: { x?: number; y?: number; autoConnect?: boolean }) {
   if (!processDef.value) return
@@ -1809,7 +1998,6 @@ function addNode(type: string, opts?: { x?: number; y?: number; autoConnect?: bo
   const y = opts?.y ?? (80 + Math.random() * 100)
   const newNode: PDNode = { id: genId(), type, label: getNodeLabel(type), x, y, w, h }
   processDef.value.nodes.push(newNode)
-
   // Auto-connect to previously selected node
   if (opts?.autoConnect !== false && selectedNode.value !== null && selectedNode.value < processDef.value.nodes.length - 1) {
     const src = processDef.value.nodes[selectedNode.value]
@@ -1817,11 +2005,9 @@ function addNode(type: string, opts?: { x?: number; y?: number; autoConnect?: bo
       createEdge(src.id, newNode.id)
     }
   }
-
   selectedNode.value = processDef.value.nodes.length - 1
   pushHistory()
 }
-
 function deleteNode(i: number) {
   if (!processDef.value) return
   const id = processDef.value.nodes[i].id
@@ -1831,12 +2017,10 @@ function deleteNode(i: number) {
   else if (selectedNode.value !== null && selectedNode.value > i) selectedNode.value--
   pushHistory()
 }
-
 function deleteSelected() {
   if (selectedNode.value !== null) deleteNode(selectedNode.value)
   else if (selectedEdge.value !== null) deleteEdge(selectedEdge.value)
 }
-
 function duplicateSelected() {
   if (selectedNode.value === null || !processDef.value) return
   const orig = processDef.value.nodes[selectedNode.value]
@@ -1848,7 +2032,6 @@ function duplicateSelected() {
     newNode.priority = orig.priority; newNode.script = orig.script
   }
 }
-
 // ── Version Control ──────────────────────────────────────────────────
 function createVersion(label?: string) {
   if (!processDef.value || !currentProcess.value) return
@@ -1870,13 +2053,11 @@ function deleteVersion(idx: number) {
   versions.value.splice(idx, 1)
   if (selectedVersion.value?.id === versions.value[idx]?.id) selectedVersion.value = null
 }
-
 function toggleDiff() {
   if (!selectedVersion.value || !processDef.value) return
   showDiff.value = !showDiff.value
   if (showDiff.value) computeDiff()
 }
-
 function computeDiff() {
   if (!selectedVersion.value || !processDef.value) return
   const currentIds = new Set(processDef.value.nodes.map(n => n.id))
@@ -1889,14 +2070,12 @@ function computeDiff() {
     return orig && (orig.label !== n.label || Math.abs(orig.x - n.x) > 10 || Math.abs(orig.y - n.y) > 10)
   })
 }
-
 function clearCanvas() {
   if (!processDef.value || !confirm('清空画布？所有节点和连线将删除。')) return
   processDef.value = { nodes: [], edges: [] }
   selectedNode.value = null; selectedEdge.value = null
   pushHistory()
 }
-
 function autoLayout() {
   if (!processDef.value || processDef.value.nodes.length === 0) return
   const cols = Math.ceil(Math.sqrt(processDef.value.nodes.length))
@@ -1906,7 +2085,6 @@ function autoLayout() {
   })
   pushHistory()
 }
-
 // ── Advanced Auto-Layout (topological) ──────────────────────────────
 function autoLayoutTopo() {
   if (!processDef.value || processDef.value.nodes.length === 0) return
@@ -1975,7 +2153,6 @@ function autoLayoutTopo() {
   }
   pushHistory()
 }
-
 // Apply template to canvas
 function applyTemplate(tpl: TemplateDef) {
   if (!processDef.value) return
@@ -2002,7 +2179,6 @@ function applyTemplate(tpl: TemplateDef) {
   }
   showTemplatesModal.value = false
 }
-
 // ── Property access ───────────────────────────────────────────────────
 function getNodeProp(prop: string): any {
   if (selectedNode.value === null || !processDef.value?.nodes[selectedNode.value]) return ''
@@ -2032,7 +2208,6 @@ function getEdgeToLabel() {
   const n = processDef.value.nodes.find(n => n.id === edge.to)
   return n?.label || n?.id?.slice(0,8) || '?'
 }
-
 // Data mapping helpers
 function getNodeMappings(): any[] {
   if (selectedNode.value === null || !processDef.value) return []
@@ -2049,7 +2224,6 @@ function removeDataMapping(i: number) {
   m.splice(i, 1)
   _setNodeProp('mappings', m)
 }
-
 // ── Edge CRUD ─────────────────────────────────────────────────────────
 function createEdge(fromId: string, toId: string) {
   if (!processDef.value) return
@@ -2066,7 +2240,6 @@ function deleteEdge(i: number) {
   pushHistory()
 }
 function selectEdge(i: number) { selectedEdge.value = i; selectedNode.value = null }
-
 // ── Edge Label Helpers ───────────────────────────────────────────────
 // Cubic Bezier: B(t) = (1-t)³P₀ + 3(1-t)²tP₁ + 3(1-t)t²P₂ + t³P₃
 function bezierPoint(p0: {x:number;y:number}, p1: {x:number;y:number}, p2: {x:number;y:number}, p3: {x:number;y:number}, t: number): {x:number;y:number} {
@@ -2144,7 +2317,6 @@ function computeVerticalEdgePath(edge: PDEdge): string {
   const my = (fp.y + tp.y) / 2
   return `M ${fp.x} ${fp.y} C ${fp.x} ${my}, ${tp.x} ${my}, ${tp.x} ${tp.y}`
 }
-
 // ── Export as SVG ────────────────────────────────────────────────────
 function exportAsSvg(): string {
   if (!processDef.value) return ''
@@ -2198,11 +2370,9 @@ function copySvg() {
   const svg = exportAsSvg()
   if (svg) navigator.clipboard.writeText(svg)
 }
-
 // ── Resize ────────────────────────────────────────────────────────────
 type ResizeDir = 'nw'|'n'|'ne'|'e'|'se'|'s'|'sw'|'w'
 const resizePositions: ResizeDir[] = ['nw','n','ne','e','se','s','sw','w']
-
 function getNodeResizeX(node: PDNode, dir: ResizeDir): number {
   const w = node.w||120
   if (dir==='nw'||dir==='n'||dir==='sw'||dir==='w') return node.x
@@ -2217,7 +2387,6 @@ function getResizeCursor(dir: ResizeDir): string {
   const map: Record<string,string> = { nw:'nwse-resize', n:'ns-resize', ne:'nesw-resize', e:'ew-resize', se:'nwse-resize', s:'ns-resize', sw:'nesw-resize', w:'ew-resize' }
   return map[dir] || 'move'
 }
-
 function onResizeMouseDown(e: MouseEvent, nodeIdx: number, dir: ResizeDir) {
   e.stopPropagation()
   if (!processDef.value) return
@@ -2258,7 +2427,6 @@ function onResizeMouseDown(e: MouseEvent, nodeIdx: number, dir: ResizeDir) {
   document.addEventListener('mousemove', onMove)
   document.addEventListener('mouseup', onUp)
 }
-
 // ── Anchor point drag ─────────────────────────────────────────────────
 function getAnchorPoints(node: PDNode): {x:number;y:number}[] {
   const w = node.w||120, h = node.h||50
@@ -2269,7 +2437,6 @@ function getAnchorPoints(node: PDNode): {x:number;y:number}[] {
     { x: node.x, y: node.y + h/2 },           // left
   ]
 }
-
 function onAnchorMouseDown(e: MouseEvent, nodeIdx: number, anchorI: number) {
   e.stopPropagation()
   if (!processDef.value) return
@@ -2301,9 +2468,7 @@ function onAnchorMouseDown(e: MouseEvent, nodeIdx: number, anchorI: number) {
   document.addEventListener('mousemove', onMove)
   document.addEventListener('mouseup', onUp)
 }
-
 // ── Group management ──────────────────────────────────────────────────
-
 function createGroup() {
   if (groupedNodes.value.size < 2 || !processDef.value) return
   const members: string[] = Array.from(groupedNodes.value)
@@ -2338,7 +2503,6 @@ function createGroup() {
   selectedEdge.value = null
   pushHistory()
 }
-
 function ungroup(nodeIdx: number) {
   if (!processDef.value) return
   const node = processDef.value.nodes[nodeIdx]
@@ -2363,7 +2527,6 @@ function ungroup(nodeIdx: number) {
   selectedNode.value = null
   pushHistory()
 }
-
 // ── Group Visualization ─────────────────────────────────────────────
 interface GroupInfo { node: PDNode; members: PDNode[]; bounds: {x:number;y:number;width:number;height:number} }
 function computeGroupBounds(groupNode: PDNode): {x:number;y:number;width:number;height:number} {
@@ -2417,7 +2580,6 @@ function toggleGroupCollapse(idx: number) {
   pushHistory()
 }
 function expandGroup(idx: number) { ungroup(groupNodes.value[idx]?.node ? processDef.value!.nodes.findIndex(n => n.id === groupNodes.value[idx].node.id) : -1) }
-
 // Group context menu state
 const groupContextMenu = ref<{x:number;y:number;groupIdx:number|null}>({x:0,y:0,groupIdx:null})
 function showGroupMenu(e: MouseEvent, idx: number) {
@@ -2495,7 +2657,6 @@ function zoomToFit() {
   panX.value = (rect.width - contentW * zoom.value) / 2 - minX * zoom.value
   panY.value = (rect.height - contentH * zoom.value) / 2 - minY * zoom.value
 }
-
 // ── Minimap ──────────────────────────────────────────────────────────
 function renderMinimap() {
   const canvas = minimapCanvasRef.value
@@ -2585,7 +2746,6 @@ function minimapClick(e: MouseEvent) {
     panY.value = cy - (n.y + (n.h||50)/2) * zoom.value
   }
 }
-
 // ── Canvas Themes ────────────────────────────────────────────────────
 type CanvasTheme = 'dark'|'midnight'|'ocean'|'forest'
 const canvasThemes: Record<CanvasTheme, {bg:string;grid:string;name:string}> = {
@@ -2598,7 +2758,6 @@ const canvasTheme = ref<CanvasTheme>('dark')
 function setCanvasTheme(theme: CanvasTheme) {
   canvasTheme.value = theme
 }
-
 // ── Node Style Presets ───────────────────────────────────────────────
 interface NodeStylePreset { name: string; icon: string; colors: { fill: string; stroke: string; text: string } }
 const nodeStylePresets: NodeStylePreset[] = [
@@ -2617,7 +2776,6 @@ function applyNodeStylePreset(preset: NodeStylePreset) {
   ;(node as any).styleText = preset.colors.text
   pushHistory()
 }
-
 // ── Edge Flow Animation ──────────────────────────────────────────────
 const edgeAnimOffset = ref(0)
 let edgeAnimFrame: number|null = null
@@ -2633,7 +2791,6 @@ function stopEdgeAnimation() {
   if (edgeAnimFrame) { cancelAnimationFrame(edgeAnimFrame); edgeAnimFrame = null }
 }
 let showEdgeAnim = ref(false)
-
 // ── Process Metadata Editor ──────────────────────────────────────────
 const showMetaEditor = ref(false)
 const metaForm = ref({ description: '', owner: '', tags: '', version: '1.0.0' })
@@ -2652,7 +2809,6 @@ function saveMeta() {
   currentProcess.value.desc = metaForm.value.description
   showMetaEditor.value = false
 }
-
 function onNodeMouseDown(e: MouseEvent, i: number) {
   if (!processDef.value) return
   // Shift+click for multi-select
@@ -2730,7 +2886,6 @@ function onNodeMouseUp() {
   isDragging.value = false; dragIdx.value = null; snapX.value = null; snapY.value = null
   isMultiDragging.value = false; multiSelected.value.clear()
 }
-
 // ── Drag: Edge from port ──────────────────────────────────────────────
 function onPortMouseDown(e: MouseEvent, nodeIdx: number, port: 'in'|'out') {
   e.stopPropagation()
@@ -2764,7 +2919,6 @@ function onPortMouseDown(e: MouseEvent, nodeIdx: number, port: 'in'|'out') {
   }
   document.addEventListener('mousemove', onMove); document.addEventListener('mouseup', onUp)
 }
-
 // ── Canvas pan ────────────────────────────────────────────────────────
 function onCanvasMouseDown(e: MouseEvent) {
   if (e.button !== 0) return
@@ -2774,7 +2928,6 @@ function onCanvasMouseDown(e: MouseEvent) {
   const onUp = () => { isPanning.value = false }
   document.addEventListener('mousemove', onMove); document.addEventListener('mouseup', onUp)
 }
-
 // ── Node body click: arbitrary position edge creation ─────────────────
 function onNodeBodyMouseDown(e: MouseEvent, nodeIdx: number) {
   e.stopPropagation()
@@ -2824,7 +2977,6 @@ function onNodeBodyMouseDown(e: MouseEvent, nodeIdx: number) {
   document.addEventListener('mousemove', onMove)
   document.addEventListener('mouseup', onUp)
 }
-
 // ── Edge creation from any position on node ──────────────────────────
 function onEdgeMouseDown(e: MouseEvent, nodeIdx: number) {
   e.stopPropagation()
@@ -2872,12 +3024,10 @@ function onEdgeMouseDown(e: MouseEvent, nodeIdx: number) {
   }
   document.addEventListener('mousemove', onMove); document.addEventListener('mouseup', onUp)
 }
-
 // ── Zoom ──────────────────────────────────────────────────────────────
 function zoomIn() { zoom.value = Math.min(3, zoom.value + 0.1) }
 function zoomOut() { zoom.value = Math.max(0.3, zoom.value - 0.1) }
 function fitCanvas() { zoom.value = 1; panX.value = 0; panY.value = 0 }
-
 // ── Drag from palette ─────────────────────────────────────────────────
 function onDragNode(e: DragEvent, nt: { type: string }) {
   ;(e.dataTransfer as any)?.setData('nodeType', nt.type)
@@ -2895,7 +3045,6 @@ function onDropNode(e: DragEvent) {
   const h = type === 'approval' ? 70 : type === 'subprocess' ? 60 : 50
   addNode(type, { x: sx - w/2, y: sy - h/2, autoConnect: true })
 }
-
 // ── Subprocess ────────────────────────────────────────────────────────
 function openSubprocess(nodeIdx: number) {
   if (!processDef.value) return
@@ -2912,12 +3061,10 @@ function openSubprocess(nodeIdx: number) {
   subHistory.value = []; subHistIdx.value = -1
   subPanX.value = 0; subPanY.value = 0; subZoom.value = 1
 }
-
 function exitSubprocess() {
   subprocessEditing.value = false
   subSelectedNode.value = null; subSelectedEdge.value = null
 }
-
 function saveSubprocess() {
   if (subprocessNodeIdx.value === null || !processDef.value) return
   const subs = (currentProcess.value?.subprocesses as any) || {}
@@ -2928,7 +3075,6 @@ function saveSubprocess() {
   subprocessEditing.value = false
   pushHistory()
 }
-
 // ── Subprocess inline editor helpers ──────────────────────────────────
 function getSubNodeResizeX(node: PDNode, dir: string): number {
   const w = node.w||120
@@ -2994,7 +3140,6 @@ function subDeleteEdge(i: number) {
   subSelectedEdge.value = null
   subPushHistory()
 }
-
 // Subprocess toolbar actions
 function subUndo() { if (subHistIdx.value > 0) { subHistIdx.value--; subprocessDef.value = JSON.parse(JSON.stringify(subHistory.value[subHistIdx.value])); subSelectedNode.value = null } }
 function subZoomIn() { subZoom.value = Math.min(3, subZoom.value + 0.1) }
@@ -3076,8 +3221,6 @@ function subPushHistory() {
   subHistory.value.push(JSON.parse(JSON.stringify(subprocessDef.value)))
   subHistIdx.value = subHistory.value.length - 1
 }
-
-
 // ── Process CRUD ──────────────────────────────────────────────────────
 async function loadProcess(p: ProcDef) {
   try {
@@ -3128,7 +3271,6 @@ async function loadProcesses() {
   try { const r: any = await api.get('/jaxrs/processplatform/assemble/designer/process/list'); procList.value = r?.data?.list ?? r?.data ?? [] }
   catch { procList.value = [] }
 }
-
 // Connection rules state
 const showRulesModal = ref(false)
 const connectionRules = ref<Record<string, Record<string, boolean>>>({})
@@ -3169,7 +3311,6 @@ function saveRules() {
   pushHistory()
   showRulesModal.value = false
 }
-
 // Node templates
 const showTemplatesModal = ref(false)
 interface TemplateNodeDef { type: string; label: string; icon: string }
@@ -3206,7 +3347,6 @@ const nodeTemplates: TemplateDef[] = [
     edges: [{from:0,to:1},{from:1,to:2},{from:2,to:3},{from:2,to:4},{from:3,to:1}]
   },
 ]
-
 // Version comparison state
 const showCompareModal = ref(false)
 const compareV1 = ref('')
@@ -3255,7 +3395,6 @@ function formatNodeDiff(id1: string, id2: string, _mode: string): string {
   if (modified.length) lines.push(`修改: ${modified.length} 节点`)
   return lines.join(' | ') || '无差异'
 }
-
 // Import/Export state
 const showIoModal = ref(false)
 const ioMode = ref<'export'|'import'|'validate'>('export')
@@ -3287,7 +3426,6 @@ function doImportJson() {
     }
   } catch { alert('JSON格式错误，请检查导入内容') }
 }
-
 // Validation
 function runValidation(): void {
   if (!processDef.value) { validationResult.value = null; return }
@@ -3335,7 +3473,6 @@ function runValidation(): void {
   const healthScore = nodes.length > 0 ? Math.max(0, 100 - issues.filter(i => i.severity === 'error').length * 20 - issues.filter(i => i.severity === 'warning').length * 5) : null
   validationResult.value = { totalNodes: nodes.length, totalEdges: edges.length, issues, suggestions, healthScore }
 }
-
 // ── Lifecycle ─────────────────────────────────────────────────────────
 onMounted(() => {
   document.addEventListener('mousemove', (e) => { onNodeMouseMove(e) })
@@ -3366,7 +3503,6 @@ document.addEventListener('keydown', (e) => {
   })
   loadProcesses()
 })
-
 // --- Canvas Annotations ---
 interface Annotation { id: string; x: number; y: number; text: string; color: string; w: number; h: number }
 const annotations = ref<Annotation[]>([])
@@ -3383,7 +3519,6 @@ function addAnnotation() {
 }
 function deleteAnnotation(idx: number) { annotations.value.splice(idx, 1) }
 function updateAnnotation(idx: number, prop: keyof Annotation, val: any) { if (annotations.value[idx]) annotations.value[idx][prop] = val }
-
 // --- Snap to Grid ---
 const snapToGrid = ref(true)
 const gridSnapThreshold = ref(15)
@@ -3391,7 +3526,6 @@ const showGrid = ref(true)
 const customGridSize = ref(GRID_SIZE)
 function toggleSnap() { snapToGrid.value = !snapToGrid.value }
 function setGridSize(size: number) { if (customGridSize) customGridSize.value = Math.max(10, Math.min(50, size)) }
-
 // --- Node Alignment ---
 type AlignDir = "left"|"right"|"top"|"bottom"|"center-x"|"center-y"|"distribute-h"|"distribute-v"
 function alignNodes(dir: AlignDir) {
@@ -3409,7 +3543,6 @@ function alignNodes(dir: AlignDir) {
   }
   pushHistory()
 }
-
 // --- Batch Operations ---
 function batchSetProperty(prop: string, val: any) {
   if (!processDef.value) return
@@ -3418,7 +3551,6 @@ function batchSetProperty(prop: string, val: any) {
   pushHistory()
 }
 function batchSetColor(color: string) { batchSetProperty("style", color) }
-
 // --- Connection Validation ---
 interface ValidationResult { valid: boolean; issues: Array<{type: string; message: string; severity: "error"|"warning"}>; stats: {totalNodes: number; totalEdges: number; isolatedNodes: number; missingStart: boolean; missingEnd: boolean; unreachableNodes: string[]} }
 function validateConnections(): ValidationResult {
@@ -3443,7 +3575,6 @@ function validateConnections(): ValidationResult {
   const valid = issues.filter(i=>i.severity==="error").length===0
   return { valid, issues, stats: {totalNodes:nodes.length,totalEdges:edges.length,isolatedNodes:isolated.length,missingStart:starts.length===0,missingEnd:ends.length===0,unreachableNodes:unreachable} }
 }
-
 // --- Dimension Presets ---
 const dimPresets = [{name:"窄型",w:80,h:40},{name:"标准",w:120,h:50},{name:"宽型",w:160,h:50},{name:"高型",w:120,h:80},{name:"大方块",w:140,h:140},{name:"标签",w:100,h:30}]
 function applyDimPreset(idx: number) {
@@ -3451,7 +3582,6 @@ function applyDimPreset(idx: number) {
   const p = dimPresets[idx]; if(!p) return
   const n = processDef.value.nodes[selectedNode.value]; n.w=p.w; n.h=p.h; pushHistory()
 }
-
 // --- Flow Analysis ---
 interface FlowInfo { nodeId:string; label:string; inDegree:number; outDegree:number; role:string }
 function computeFlowInfo(): FlowInfo[] {
@@ -3469,7 +3599,6 @@ function computeFlowInfo(): FlowInfo[] {
   }).sort((a,b)=>b.outDegree-a.outDegree||a.inDegree-b.inDegree)
 }
 const flowInfo = computed(() => computeFlowInfo())
-
 // --- Process Archive ---
 interface ProcessArchive { id:string; timestamp:number; name:string; nodeCount:number; edgeCount:number; snapshot:{nodes:PDNode[];edges:PDEdge[]} }
 const processArchive = ref<ProcessArchive[]>([])
@@ -3488,7 +3617,6 @@ function deleteArchive(idx:number) { processArchive.value.splice(idx,1) }onUnmou
   document.removeEventListener('mousemove', () => {})
   document.removeEventListener('mouseup', () => {})
 })
-
 // ── Group Drag ──────────────────────────────────────────────────────
 function onGroupResizeMouseDown(e: MouseEvent, idx: number, dir: string) {
   e.stopPropagation()
@@ -3628,7 +3756,6 @@ function getForkJoinPath(branchIndices: number[]): string {
 }
 // ── Group Resize Directions ─────────────────────────────────────────
 const groupResizeDirs = ["nw","n","ne","e","se","s","sw","w"] as const
-
 // ── Breakpoint Management ─────────────────────────────────────────
 function toggleBreakpoint(nodeId: string) {
   const idx = breakpoints.value.findIndex(b => b.nodeId === nodeId)
@@ -3687,7 +3814,6 @@ function applyEnhancedNodeStyle(preset: EnhancedNodeStyle) {
   node.style = JSON.stringify({ color: preset.color, bgColor: preset.bgColor, borderColor: preset.borderColor })
   pushHistory()
 }
-
 // ── Flow Stats Modal ───────────────────────────────────────────────
 const showFlowStatsModal = ref(false)
 function openFlowStatsModal() { showFlowStatsModal.value = true }
@@ -3748,7 +3874,6 @@ function analyzeLongestPaths(): PathInfo[] {
   for (const n of startNodes) { dfs(n.id, [n.id], new Set([n.id])) }
   return paths.sort((a,b) => b.length - a.length).slice(0, 5)
 }
-
 // ── Execution Control ──────────────────────────────────────────────
 function startExecutionEnhanced() {
   if (!processDef.value) return
@@ -3793,7 +3918,6 @@ function removeBreakpoint(nodeId: string) {
   breakpoints.value = breakpoints.value.filter(b => b.nodeId !== nodeId)
 }
 function clearAllBreakpoints() { breakpoints.value = [] }
-
 // ── Style Preset Functions ──────────────────────────────────────────
 function applyStylePreset(preset: StylePreset) {
   if (selectedNode.value === null || !processDef.value) return
@@ -3801,7 +3925,6 @@ function applyStylePreset(preset: StylePreset) {
   node.style = JSON.stringify({ fill: preset.fill, stroke: preset.stroke })
   pushHistory()
 }
-
 // ── Network Analysis Functions ──────────────────────────────────────
 function computeNetworkMetrics(): NetworkMetric[] {
   if (!processDef.value) return []
@@ -3840,7 +3963,6 @@ function openNetworkAnalysis() {
   networkMetrics.value = computeNetworkMetrics()
   showNetworkAnalysis.value = true
 }
-
 // ── Connection Rules Grid ───────────────────────────────────────────
 function renderConnectionRulesGridEnhanced() {
   const types = ["start","task","approval","timer","end","gate_and","gate_or","gate_xor","subprocess","script","parallel"]
@@ -3883,7 +4005,6 @@ function saveConnectionRulesEnhanced() {
   pushHistory()
 }
 function resetConnectionRulesEnhanced() { renderConnectionRulesGridEnhanced(); saveConnectionRulesEnhanced() }
-
 // ── Export Functions ─────────────────────────────────────────────────
 function exportAsSvgEnhanced() {
   if (!processDef.value) return
@@ -3927,14 +4048,11 @@ function exportAsJsonEnhanced() {
   a.href = url; a.download = (currentProcess.value.flag || "process") + "_enhanced.json"
   a.click(); URL.revokeObjectURL(url)
 }
-
 // ── Execution Features ─────────────────────────────────────────────
 const executionLog = ref<ExecutionLog[]>([])
 const isRunning = ref(false)
 const showBreakpointsPanel = ref(false)
-
 // ── Breakpoints ────────────────────────────────────────────────────
-
 // ── Style Presets ──────────────────────────────────────────────────
 const stylePresets: StylePreset[] = [
   { name: "霓虹蓝", fill: "rgba(0,212,255,0.2)", stroke: "#00d4ff", icon: "🔵" },
@@ -3948,11 +4066,9 @@ const stylePresets: StylePreset[] = [
   { name: "黎明金", fill: "rgba(234,179,8,0.2)", stroke: "#eab308", icon: "🟠" },
   { name: "薄荷绿", fill: "rgba(34,197,94,0.2)", stroke: "#22c55e", icon: "🍃" },
 ]
-
 // ── Network Analysis ───────────────────────────────────────────────
 const showNetworkAnalysis = ref(false)
 const networkMetrics = ref<NetworkMetric[]>([])
-
 // ── Keyboard Shortcuts ──────────────────────────────────────────────
 const shortcuts = ref<ShortcutDef[]>([
   { key: "Z", ctrl: true, action: "撤销" },
@@ -3965,14 +4081,26 @@ const shortcuts = ref<ShortcutDef[]>([
   { key: "F5", action: "执行" },
   { key: "Escape", action: "取消" },
 ])
-
+// ── Deepened Interfaces ────────────────────────────────────────────
+interface DataField { name: string; type: string; label: string; nodeIdx?: number; source?: string }
+interface MappingEdge { fromField: string; toField: string; fromNodeIdx: number; toNodeIdx: number; transform: string; condition: string }
+interface FlowVar { id: string; name: string; type: string; scope: "global"|"local"|"node"; defaultValue: string; description: string }
+interface NodeTemplate { id: string; name: string; icon: string; nodes: PDNode[]; description: string }
+interface PerfMetric { nodeId: string; startTime: number; endTime: number; duration: number; status: "running"|"completed"|"failed" }
+interface ContextMenuItem { id: string; label: string; icon: string; shortcut?: string; action: string; disabled?: boolean }
+interface TooltipState { visible: boolean; x: number; y: number; content: string; nodeId?: string }
+interface GuideLineConfig { type: "horizontal"|"vertical"; position: number; length: number }
+interface GridConfig { enabled: boolean; size: number; showLabels: boolean; color: string; opacity: number }
+interface ToastItem { id: string; message: string; type: "info"|"success"|"warning"|"error"; duration: number }
+interface ConnectionConflict { edge1: PDEdge; edge2: PDEdge; issue: string; severity: "error"|"warning" }
+interface SimTimelineEvent { time: number; nodeId: string; event: string; label: string }
+interface ShortcutDef { key: string; ctrl?: boolean; shift?: boolean; action: string; label: string }
 // ── Advanced Interfaces ────────────────────────────────────────────
 interface ExecutionLog { timestamp: number; nodeId: string; nodeLabel: string; action: string }
 interface StylePreset { name: string; fill: string; stroke: string; icon: string }
 interface NetworkMetric { metric: string; value: number; description: string }
 interface ShortcutDef { key: string; ctrl?: boolean; action: string }
 interface Breakpoint { nodeId: string; label?: string; enabled: boolean }
-
 // ── Condition Builder Functions ─────────────────────────────────────
 function initCondBuilder() {
   condTree.value = { id: genId(), type: "group", logic: "AND", conditions: [], children: [] }
@@ -3998,7 +4126,6 @@ function generateCondExpression(node: CondNode): string {
 function previewCond() {
   if (condTree.value) condPreview.value = generateCondExpression(condTree.value)
 }
-
 // ── Variable Binding Functions ──────────────────────────────────────
 function addVarBinding() {
   varBindings.value.push({ sourceNode: "", sourceField: "", targetNode: "", targetField: "" })
@@ -4009,7 +4136,6 @@ function applyVarBindings() {
   console.log("Applied", varBindings.value.length, "bindings")
   pushHistory()
 }
-
 // ── Form Rules Functions ────────────────────────────────────────────
 function addFormRule() {
   formRules.value.push({ id: genId(), sourceField: "", operator: "==", value: "", action: "show", targetFields: [] })
@@ -4020,7 +4146,6 @@ function saveFormRules() {
   currentForm.value.formRules = formRules.value
   pushFormHistory()
 }
-
 // ── Batch Operation Functions ───────────────────────────────────────
 function enterBatchMode() { showBatchToolbar.value = true }
 function exitBatchMode() { showBatchToolbar.value = false }
@@ -4037,7 +4162,6 @@ function batchAlign(dir: string) {
   }
   pushHistory()
 }
-
 // ── Theme Functions ─────────────────────────────────────────────────
 function applyTheme(preset: ThemePreset) {
   activeTheme.value = preset
@@ -4050,11 +4174,9 @@ function toggleAnimSetting(key: string) {
   const setting = animSettings.value.find(s => s.key === key)
   if (setting) setting.enabled = !setting.enabled
 }
-
 // ── Subprocess Enhancement Functions ────────────────────────────────
 function renameSubprocess(name: string) { subprocessTitle.value = name }
 function setSubprocessDesc(desc: string) { subprocessDesc.value = desc }
-
 // ── Data Mapping Drag Functions ─────────────────────────────────────
 function onMapDragStart(e: DragEvent, item: any) {
   e.dataTransfer?.setData("text/plain", JSON.stringify(item))
@@ -4062,23 +4184,18 @@ function onMapDragStart(e: DragEvent, item: any) {
 function onMapDrop(e: DragEvent, target: any) {
   try { const data = JSON.parse(e.dataTransfer?.getData("text/plain") || "{}"); console.log("Dropped:", data, "on:", target) } catch { }
 }
-
 // ── Condition Builder ───────────────────────────────────────────────
 const showCondBuilder = ref(false)
 const condTree = ref<CondNode|null>(null)
 const condPreview = ref("")
-
 // ── Variable Binding ────────────────────────────────────────────────
 const showVarBindingPanel = ref(false)
 const varBindings = ref<VarBinding[]>([])
-
 // ── Form Rules ──────────────────────────────────────────────────────
 const showFormRulesPanel = ref(false)
 const formRules = ref<FormRule[]>([])
-
 // ── Batch Operations ────────────────────────────────────────────────
 const showBatchToolbar = ref(false)
-
 // ── Theme Customization ────────────────────────────────────────────
 const themePresets: ThemePreset[] = [
   { name: "赛博朋克", bg: "#0a0e1a", grid: "rgba(0,212,255,0.08)", textColor: "#00d4ff", accentColor: "#00d4ff", nodeBg: "rgba(0,212,255,0.1)", nodeBorder: "#00d4ff" },
@@ -4092,7 +4209,6 @@ const themePresets: ThemePreset[] = [
 ]
 const activeTheme = ref<ThemePreset>(themePresets[0])
 const showThemeEditor = ref(false)
-
 // ── Animation Settings ──────────────────────────────────────────────
 const animSettings = ref<AnimSetting[]>([
   { key: "edgeFlow", label: "连线流动", enabled: true, icon: "🌊" },
@@ -4105,15 +4221,359 @@ const animSettings = ref<AnimSetting[]>([
   { key: "gridAnim", label: "网格动画", enabled: false, icon: "📐" },
 ])
 const showAnimPanel = ref(false)
-
 // ── Advanced Interfaces ────────────────────────────────────────────
 interface CondNode { id: string; type: "group"|"condition"; logic: "AND"|"OR"; conditions?: Array<{field: string; operator: string; value: string}>; children?: CondNode[] }
 interface VarBinding { sourceNode: string; sourceField: string; targetNode: string; targetField: string }
 interface FormRule { id: string; sourceField: string; operator: string; value: string; action: "show"|"hide"|"enable"|"disable"; targetFields: string[] }
 interface ThemePreset { name: string; bg: string; grid: string; textColor: string; accentColor: string; nodeBg: string; nodeBorder: string }
 interface AnimSetting { key: string; label: string; enabled: boolean; icon: string }
+// ── Deepened State ──────────────────────────────────────────────────
+const showDataMappingEditor = ref(false)
+const dataFields = ref<DataField[]>([])
+const mappingEdgesList = ref<MappingEdge[]>([])
+const showFlowVarPanel = ref(false)
+const flowVars = ref<FlowVar[]>([
+  { id: 'f1', name: 'processId', type: 'string', scope: 'global', defaultValue: '', description: '流程实例ID' },
+  { id: 'f2', name: 'userId', type: 'string', scope: 'global', defaultValue: '', description: '当前用户ID' },
+  { id: 'f3', name: 'startTime', type: 'datetime', scope: 'global', defaultValue: '', description: '流程开始时间' },
+])
+const newVarName = ref('')
+const newVarType = ref('string')
+const showNodeTemplatesModal = ref(false)
+const customNodeTemplates = ref<NodeTemplate[]>([
+  { id: 't1', name: '审批流', icon: '📋', description: '多级审批流程模板', nodes: [
+    { id: 'tn1', type: 'start', label: '开始', x: 50, y: 200, w: 100, h: 50 },
+    { id: 'tn2', type: 'approval', label: '部门审批', x: 250, y: 200, w: 120, h: 60 },
+    { id: 'tn3', type: 'approval', label: '主管审批', x: 450, y: 200, w: 120, h: 60 },
+    { id: 'tn4', type: 'end', label: '结束', x: 650, y: 200, w: 100, h: 50 },
+  ]},
+  { id: 't2', name: '数据同步', icon: '🔄', description: '数据同步流程模板', nodes: [
+    { id: 'tn5', type: 'start', label: '开始', x: 50, y: 200, w: 100, h: 50 },
+    { id: 'tn6', type: 'script', label: '数据提取', x: 250, y: 200, w: 120, h: 50 },
+    { id: 'tn7', type: 'script', label: '数据转换', x: 450, y: 200, w: 120, h: 50 },
+    { id: 'tn8', type: 'script', label: '数据写入', x: 650, y: 200, w: 120, h: 50 },
+    { id: 'tn9', type: 'end', label: '完成', x: 850, y: 200, w: 100, h: 50 },
+  ]},
+  { id: 't3', name: '通知流程', icon: '🔔', description: '消息通知流程模板', nodes: [
+    { id: 'tn10', type: 'start', label: '触发', x: 50, y: 200, w: 100, h: 50 },
+    { id: 'tn11', type: 'task', label: '准备内容', x: 250, y: 200, w: 120, h: 50 },
+    { id: 'tn12', type: 'task', label: '发送通知', x: 450, y: 200, w: 120, h: 50 },
+    { id: 'tn13', type: 'end', label: '完成', x: 650, y: 200, w: 100, h: 50 },
+  ]},
+])
+const perfMonitoring = ref(false)
+const perfMetrics = ref<PerfMetric[]>([])
+const showContextMenu = ref(false)
+const contextMenuX = ref(0)
+const contextMenuY = ref(0)
+const contextMenuNodeId = ref<number|null>(null)
+const contextMenuEdges = ref<PDEdge[]>([])
+const showTooltip = ref(false)
+const tooltipX = ref(0)
+const tooltipY = ref(0)
+const tooltipContent = ref('')
+const showGuideLines = ref(true)
+const guideLines = ref<GuideLineConfig[]>([])
+const snapConfig = ref<GridConfig>({ enabled: true, size: 20, showLabels: true, color: 'rgba(0,212,255,0.3)', opacity: 0.5 })
+const boxSelection = ref<{ active: boolean; start: {x:number;y:number}; end: {x:number;y:number} }>({ active: false, start: {x:0,y:0}, end: {x:0,y:0} })
+const toastQueue = ref<ToastItem[]>([])
+const showConflictDetection = ref(false)
+const connectionConflicts = ref<ConnectionConflict[]>([])
+const showSimTimeline = ref(false)
+const simEvents = ref<SimTimelineEvent[]>([])
+const simProgress = ref(0)
+const simRunning = ref(false)
+const showShortcutHelp = ref(false)
+// ── Deepened Functions ─────────────────────────────────────────────
+function initFlowVars() {
+  flowVars.value = [
+    { id: genId(), name: 'processId', type: 'string', scope: 'global', defaultValue: '', description: '流程实例ID' },
+    { id: genId(), name: 'userId', type: 'string', scope: 'global', defaultValue: '', description: '当前用户ID' },
+    { id: genId(), name: 'startTime', type: 'datetime', scope: 'global', defaultValue: '', description: '流程开始时间' },
+    { id: genId(), name: 'formData', type: 'json', scope: 'global', defaultValue: '{}', description: '表单数据' },
+  ]
+}
+function addFlowVar() {
+  if (!newVarName.value.trim()) return
+  flowVars.value.push({
+    id: genId(), name: newVarName.value.trim(), type: newVarType.value,
+    scope: 'global', defaultValue: '', description: newVarName.value.trim() + '变量'
+  })
+  newVarName.value = ''
+}
+function removeFlowVar(id: string) {
+  flowVars.value = flowVars.value.filter(v => v.id !== id)
+}
+function openDataMapping() {
+  showDataMappingEditor.value = true
+  dataFields.value = processDef.value.nodes.map((n, i) => ({
+    name: n.id, type: n.type, label: n.label || n.type, nodeIdx: i, source: n.label
+  }))
+  if (mappingEdgesList.value.length === 0) {
+    mappingEdgesList.value = [
+      { fromField: 'start.output', toField: 'task1.input', fromNodeIdx: 0, toNodeIdx: 1, transform: 'identity', condition: '' }
+    ]
+  }
+}
+function addMappingRow() {
+  mappingEdgesList.value.push({ fromField: '', toField: '', fromNodeIdx: 0, toNodeIdx: 1, transform: 'identity', condition: '' })
+}
+function removeMappingRow(idx: number) {
+  mappingEdgesList.value.splice(idx, 1)
+}
+function applyMapping() {
+  console.log('Applied', mappingEdgesList.value.length, 'mappings');
+  pushHistory()
+  showToast('数据映射已应用', 'success')
+}
+function openFlowVarPanel() { showFlowVarPanel.value = !showFlowVarPanel.value }
+function toggleVarScope(v: FlowVar) {
+  v.scope = v.scope === 'global' ? 'local' : v.scope === 'local' ? 'node' : 'global'
+}
+function addNodeTemplate() {
+  if (!newNodeTemplateName.value.trim()) return
+  customNodeTemplates.value.push({
+    id: genId(), name: newNodeTemplateName.value, icon: '📦',
+    description: newNodeTemplateDesc.value, nodes: []
+  })
+  newNodeTemplateName.value = ''
+  newNodeTemplateDesc.value = ''
+}
+function loadNodeTemplate(tpl: NodeTemplate) {
+  if (!processDef.value) return
+  const baseX = 100, baseY = 100
+  tpl.nodes.forEach((n, i) => {
+    const newNode: PDNode = {
+      ...n,
+      id: genId(),
+      x: baseX + i * 200,
+      y: baseY,
+    }
+    processDef.value.nodes.push(newNode)
+    pushHistory()
+  })
+  showNodeTemplatesModal.value = false
+  showToast('模板已加载', 'success')
+}
+function deleteNodeTemplate(idx: number) {
+  customNodeTemplates.value.splice(idx, 1)
+}
+function startPerfMonitor() {
+  perfMonitoring.value = !perfMonitoring.value
+  if (perfMonitoring.value) {
+    perfMetrics.value = processDef.value.nodes.map(n => ({
+      nodeId: n.id, startTime: 0, endTime: 0, duration: 0, status: 'running' as const
+    }))
+  }
+}
+function stopPerfMonitor() {
+  perfMonitoring.value = false
+  perfMetrics.value = []
+}
+function calculateDuration(nodeId: string): number {
+  const m = perfMetrics.value.find(p => p.nodeId === nodeId)
+  return m ? m.endTime - m.startTime : 0
+}
+function showContext(x: number, y: number, nodeId: number|null, edges: PDEdge[]) {
+  contextMenuNodeId.value = nodeId
+  contextMenuEdges.value = edges
+  contextMenuX.value = x
+  contextMenuY.value = y
+  showContextMenu.value = true
+}
+function hideContext() { showContextMenu.value = false }
+function execContextAction(action: string) {
+  hideContext()
+  if (action === 'delete') deleteSelectedNode()
+  else if (action === 'duplicate') subDuplicateNode()
+  else if (action === 'group') createGroup()
+  else if (action === 'ungroup') ungroupSelected()
+  else if (action === 'properties') selectedNode.value = contextMenuNodeId.value
+  showToast('操作: ' + action, 'info')
+}
+function showNodeTooltip(x: number, y: number, content: string) {
+  tooltipX.value = x; tooltipY.value = y; tooltipContent.value = content
+  showTooltip.value = true
+}
+function hideNodeTooltip() { showTooltip.value = false }
+function getNodeTooltipContent(node: PDNode): string {
+  const outEdges = (processDef.value?.edges || []).filter(e => e.from === node.id).length
+  const inEdges = (processDef.value?.edges || []).filter(e => e.to === node.id).length
+  const profile = getNodeProfile(node.type)
+  return `📌 ${node.label || node.type} | 入边:${inEdges} 出边:${outEdges} | 尺寸:${node.w||120}×${node.h||50} | ${profile.role}`
+}
+function toggleGuidelines() { showGuideLines.value = !showGuideLines.value }
+function updateGuideLine(idx: number, key: string, val: number|string) {
+  if (idx < guideLines.value.length) {
+    (guideLines.value[idx] as any)[key] = val
+  }
+}
+function addGuideLine(type: 'horizontal'|'vertical') {
+  guideLines.value.push({ type, position: 200, length: 400 })
+}
+function removeGuideLine(idx: number) {
+  guideLines.value.splice(idx, 1)
+}
+function startBoxSelect(e: MouseEvent) {
+  if (e.button !== 0) return
+  const rect = (e.currentTarget as HTMLElement).getBoundingClientRect()
+  boxSelection.value = {
+    active: true,
+    start: { x: e.clientX - rect.left, y: e.clientY - rect.top },
+    end: { x: e.clientX - rect.left, y: e.clientY - rect.top }
+  }
+}
+function moveBoxSelect(e: MouseEvent) {
+  if (!boxSelection.value.active) return
+  const rect = (e.currentTarget as HTMLElement).getBoundingClientRect()
+  boxSelection.value.end = { x: e.clientX - rect.left, y: e.clientY - rect.top }
+}
+function endBoxSelect() {
+  if (!boxSelection.value.active) return
+  boxSelection.value.active = false
+  const s = boxSelection.value.start, en = boxSelection.value.end
+  const sx = Math.min(s.x, en.x), sy = Math.min(s.y, en.y)
+  const ex = Math.max(s.x, en.x), ey = Math.max(s.y, en.y)
+  const ws = snapConfig.value.size
+  const nodes = processDef.value?.nodes || []
+  const canvasW = canvasRef.value?.clientWidth || 800
+  const canvasH = canvasRef.value?.clientHeight || 600
+  nodes.forEach(n => {
+    const nx = (n.x * zoom.value + panX.value) / 1
+    const ny = (n.y * zoom.value + panY.value) / 1
+    if (nx >= sx && nx <= ex && ny >= sy && ny <= ey) {
+      multiSelected.value.add(n.id)
+    }
+  })
+}
+function showToast(message: string, type: "info"|"success"|"warning"|"error" = "info") {
+  const id = genId()
+  toastQueue.value.push({ id, message, type, duration: 3000 })
+  setTimeout(() => {
+    toastQueue.value = toastQueue.value.filter(t => t.id !== id)
+  }, 3000)
+}
+function detectConflicts(): ConnectionConflict[] {
+  const conflicts: ConnectionConflict[] = []
+  const edges = processDef.value?.edges || []
+  for (let i = 0; i < edges.length; i++) {
+    for (let j = i + 1; j < edges.length; j++) {
+      const e1 = edges[i], e2 = edges[j]
+      if (e1.from === e2.from && e1.to === e2.to && e1.id !== e2.id) {
+        conflicts.push({ edge1: e1, edge2: e2, issue: '重复连接', severity: 'warning' })
+      }
+      const n1 = processDef.value?.nodes.find(n => n.id === e1.from)
+      const n2 = processDef.value?.nodes.find(n => n.id === e1.to)
+      const n3 = processDef.value?.nodes.find(n => n.id === e2.from)
+      const n4 = processDef.value?.nodes.find(n => n.id === e2.to)
+      if (n1 && n2 && n3 && n4) {
+        const dx = Math.abs((n1.x+n2.x)/2 - (n3.x+n4.x)/2)
+        const dy = Math.abs((n1.y+n2.y)/2 - (n3.y+n4.y)/2)
+        if (dx < 30 && dy < 20 && !(e1.from===e2.from && e1.to===e2.to)) {
+          conflicts.push({ edge1: e1, edge2: e2, issue: '连线交叉', severity: 'error' })
+        }
+      }
+    }
+  }
+  connectionConflicts.value = conflicts
+  return conflicts
+}
+function startSimulation() {
+  simRunning.value = true
+  simProgress.value = 0
+  simEvents.value = []
+  const nodes = processDef.value?.nodes || []
+  let t = 0
+  nodes.forEach((n, i) => {
+    t += 500 + Math.random() * 1000
+    simEvents.value.push({ time: t, nodeId: n.id, event: 'start', label: n.label || n.type })
+    t += 200 + Math.random() * 500
+    simEvents.value.push({ time: t, nodeId: n.id, event: 'complete', label: n.label || n.type })
+  })
+  const totalDuration = t + 500
+  const interval = setInterval(() => {
+    simProgress.value = Math.min(100, (Date.now() % totalDuration) / totalDuration * 100)
+    if (simProgress.value >= 100) {
+      clearInterval(interval)
+      simRunning.value = false
+      showToast('模拟完成', 'success')
+    }
+  }, 100)
+}
+function stopSimulation() {
+  simRunning.value = false
+  simProgress.value = 0
+}
+function toggleShortcutHelp() { showShortcutHelp.value = !showShortcutHelp.value }
+function handleShortcut(e: KeyboardEvent) {
+  const key = e.key
+  const ctrl = e.ctrlKey || e.metaKey
+  const shift = e.shiftKey
+  const combo = ctrl ? (shift ? 'Ctrl+Shift+'+key : 'Ctrl+'+key) : key
+  const match = shortcuts.find(s => {
+    if (s.key === combo) return true
+    if (s.key === key && !ctrl && !shift) return true
+    return false
+  })
+  if (match) {
+    e.preventDefault()
+    if (match.action === 'undo') undo()
+    else if (match.action === 'redo') redo()
+    else if (match.action === 'delete') deleteSelectedNode()
+    else if (match.action === 'selectAll') selectAllNodes()
+    else if (match.action === 'togglePlay') togglePlay()
+    else if (match.action === 'deselect') { selectedNode.value = null; multiSelected.value.clear() }
+    else if (match.action === 'group') createGroup()
+    else if (match.action === 'ungroup') ungroupSelected()
+    else if (match.action === 'duplicate') subDuplicateNode()
+    else if (match.action === 'save') saveCurrentProcess()
+    else if (match.action === 'autoLayout') autoLayout()
+    else if (match.action === 'refresh') location.reload()
+  }
+}
+function previewNode(type: string, label: string) {
+  nodePreviewType.value = type
+  nodePreviewLabel.value = label
+  nodePreviewVisible.value = true
+}
+function getProcessStatus(): string {
+  const nodes = processDef.value?.nodes || []
+  if (nodes.length === 0) return 'empty'
+  const hasStart = nodes.some(n => n.type === 'start')
+  const hasEnd = nodes.some(n => n.type === 'end')
+  if (!hasStart) return 'no-start'
+  if (!hasEnd) return 'no-end'
+  const connected = nodes.every(n => {
+    const outs = (processDef.value?.edges || []).some(e => e.from === n.id)
+    const ins = (processDef.value?.edges || []).some(e => e.to === n.id)
+    return n.type === 'start' || outs || ins
+  })
+  return connected ? 'valid' : 'disconnected'
+}
+function getFlowVarValue(varName: string): string {
+  const v = flowVars.value.find(fv => fv.name === varName)
+  return v?.defaultValue || ''
+}
+function exportFlowVars(): string {
+  return JSON.stringify(flowVars.value, null, 2)
+}
+function importFlowVars(json: string) {
+  try {
+    flowVars.value = JSON.parse(json)
+    showToast('变量导入成功', 'success')
+  } catch { showToast('导入失败', 'error') }
+}
+function addFormRuleSet() {
+  formRuleSets.value.push({ id: genId(), name: '新规则组', rules: [] })
+}
+function removeFormRuleSet(idx: number) {
+  formRuleSets.value.splice(idx, 1)
+}
+function applyFormRules(ruleSetIdx: number) {
+  console.log('Applied rules from set', ruleSetIdx)
+  showToast('规则已应用', 'success')
+}
 </script>
-
 <style scoped>
 .pd{display:flex;flex-direction:column;height:100%}
 .pd-header{display:flex;align-items:center;justify-content:space-between;padding:10px 16px;flex-shrink:0}
@@ -4496,7 +4956,6 @@ kbd{display:inline-block;padding:3px 8px;border-radius:4px;border:1px solid var(
 .node-body.parallel{fill:rgba(236,72,153,.4);stroke:#ec4899}
 .node-icon-text{font-size:14px;fill:var(--text-primary)}
 .node-label{fill:var(--text-primary);font-size:12px;font-weight:500}
-
 /* Condition Builder */
 .cond-tree{padding:8px;background:var(--bg-secondary);border-radius:var(--radius-sm);min-height:180px}
 .cond-group{padding:8px;margin:4px 0;border-radius:var(--radius-sm);border:1px solid var(--border-color);background:var(--bg-elevated)}
@@ -4632,7 +5091,6 @@ kbd{display:inline-block;padding:3px 8px;border-radius:4px;border:1px solid var(
 .meta-field textarea{resize:vertical}
 .meta-tags{display:flex;flex-wrap:wrap;gap:4px;margin-top:4px}
 .meta-tag{padding:2px 8px;border-radius:var(--radius-sm);background:var(--color-primary-soft);color:var(--color-primary);font-size:10px}
-
 /* Path prediction */
 .edge-predicted{fill:none;stroke:var(--color-primary);stroke-width:2;opacity:0.7;animation:dashFlow 0.5s linear infinite}
 @keyframes dashFlow{from{stroke-dashoffset:0}to{stroke-dashoffset:-18}}
@@ -4671,7 +5129,6 @@ kbd{display:inline-block;padding:3px 8px;border-radius:4px;border:1px solid var(
 .sp-breadcrumbs{display:flex;align-items:center;gap:2px;padding:4px 8px;border-bottom:1px solid var(--border-color);background:rgba(0,212,255,.05);flex-shrink:0}
 .sp-depth-badge{padding:1px 6px;border-radius:var(--radius-sm);background:var(--color-primary);color:#000;font-size:9px;font-weight:700;margin-left:8px}
 /* Prediction target highlight is handled in SVG */
-
 /* Quick actions in empty props */
 .quick-actions{display:flex;gap:4px;margin-top:12px;flex-wrap:wrap}
 .quick-actions .btn-sm{flex:1}
@@ -4709,7 +5166,6 @@ kbd{display:inline-block;padding:3px 8px;border-radius:4px;border:1px solid var(
 .edge-predicted{animation:predictedPulse 1s ease-in-out infinite}
 /* Node type badge colors */
 .node-type-badge{display:inline-flex;align-items:center;gap:3px;padding:1px 6px;border-radius:var(--radius-sm);font-size:9px;font-weight:600}
-
 /* Group drag & resize */
 .group-resize-handle{position:absolute;width:12px;height:12px;background:var(--color-primary);border:2px solid #fff;border-radius:50%;cursor:pointer;z-index:10;transition:transform .15s}
 .group-resize-handle:hover{transform:scale(1.3)}
@@ -4721,7 +5177,6 @@ kbd{display:inline-block;padding:3px 8px;border-radius:4px;border:1px solid var(
 .fork-flow{stroke-opacity:0.6;animation:forkPulse 2s ease-in-out infinite}
 @keyframes forkPulse{0%,100%{stroke-opacity:0.4}50%{stroke-opacity:0.9}}
 .fork-join-layer{pointer-events:none}
-
 /* Group drag & resize */
 .group-drag-zone{cursor:move;transition:fill .15s}
 .group-drag-zone:hover{fill:rgba(0,212,255,0.15)}
@@ -4736,7 +5191,6 @@ kbd{display:inline-block;padding:3px 8px;border-radius:4px;border:1px solid var(
 .fork-join-layer{pointer-events:none}
 /* Toolbar fork/join button */
 .tb-btn.active{background:var(--color-primary-soft);color:var(--color-primary);border-color:var(--color-primary)}
-
 /* Breakpoint dots */
 .breakpoint-dot{cursor:pointer;transition:r .2s,fill .2s}
 .breakpoint-dot:hover{r:8;fill:#fbbf24}
@@ -4751,7 +5205,6 @@ kbd{display:inline-block;padding:3px 8px;border-radius:4px;border:1px solid var(
 .enhanced-style-presets{display:flex;gap:4px;flex-wrap:wrap;margin-top:8px}
 .enhanced-style-btn{width:24px;height:24px;border-radius:50%;border:2px solid var(--border-color);cursor:pointer;transition:all .15s}
 .enhanced-style-btn:hover{transform:scale(1.2);border-color:var(--color-primary)}
-
 /* Execution controls */
 .exec-controls{padding:12px;border-top:1px solid var(--border-color);display:flex;flex-direction:column;gap:8px}
 .speed-control{display:flex;align-items:center;gap:8px;font-size:11px}
@@ -4789,7 +5242,6 @@ kbd{display:inline-block;padding:3px 8px;border-radius:4px;border:1px solid var(
 .eda-track{flex:1;height:8px;background:var(--border-color);border-radius:4px;overflow:hidden}
 .eda-fill{height:100%;background:var(--color-primary);transition:width .3s}
 .eda-val{width:40px;text-align:right;font-family:"JetBrains Mono",monospace;color:var(--color-primary)}
-
 /* Network Analysis */
 .network-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:12px}
 .network-card{padding:10px;background:var(--bg-secondary);border-radius:var(--radius-sm);text-align:center;border:1px solid var(--border-color)}
@@ -4803,4 +5255,141 @@ kbd{display:inline-block;padding:3px 8px;border-radius:4px;border:1px solid var(
 .spp-grid{display:flex;gap:4px;flex-wrap:wrap}
 .spp-btn{width:28px;height:28px;border-radius:50%;cursor:pointer;transition:all .15s;display:flex;align-items:center;justify-content:center;font-size:14px}
 .spp-btn:hover{transform:scale(1.2);box-shadow:0 0 8px var(--color-primary)}
+/* ── Deepened Styles ─────────────────────────────────────────────── */
+/* Data Mapping Editor */
+.data-mapping-modal{width:720px;max-width:90vw}
+.dm-fields-section,.dm-mappings-section{margin-bottom:16px}
+.dm-field-list{display:flex;flex-direction:column;gap:4px;max-height:200px;overflow-y:auto}
+.dm-field-item{display:flex;align-items:center;gap:8px;padding:6px 10px;background:var(--bg-secondary);border-radius:var(--radius-sm);cursor:grab;font-size:12px;border:1px solid var(--border-color)}
+.dm-field-item:hover{border-color:var(--color-primary)}
+.dm-field-icon{font-size:14px}.dm-field-name{flex:1}.dm-field-type{font-size:10px;color:var(--text-muted);background:var(--bg-elevated);padding:1px 6px;border-radius:var(--radius-sm)}
+.dm-mapping-row{display:flex;align-items:center;gap:6px;margin-bottom:8px;padding:8px;background:var(--bg-secondary);border-radius:var(--radius-sm)}
+.dm-select{padding:4px 8px;border-radius:var(--radius-sm);border:1px solid var(--border-color);background:var(--bg-elevated);color:var(--text-primary);font-size:12px}
+.dm-input{padding:4px 8px;border-radius:var(--radius-sm);border:1px solid var(--border-color);background:var(--bg-elevated);color:var(--text-primary);font-size:12px;width:100px}
+.dm-arrow{color:var(--color-primary);font-weight:bold}.dm-cond{width:80px}.dm-del{padding:2px 6px}
+/* Flow Variable Panel */
+.flow-var-panel{position:fixed;top:60px;right:20px;width:320px;background:var(--bg-elevated);border:1px solid var(--border-color);border-radius:var(--radius-lg);z-index:200;box-shadow:0 8px 32px rgba(0,0,0,0.4)}
+.fv-header{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-bottom:1px solid var(--border-color)}
+.fv-body{padding:12px;max-height:400px;overflow-y:auto}
+.fv-add{display:flex;gap:6px;margin-bottom:12px}
+.fv-input{flex:1;padding:6px 10px;border-radius:var(--radius-sm);border:1px solid var(--border-color);background:var(--bg-secondary);color:var(--text-primary);font-size:12px}
+.fv-select{padding:6px 8px;border-radius:var(--radius-sm);border:1px solid var(--border-color);background:var(--bg-secondary);color:var(--text-primary);font-size:12px}
+.fv-list{display:flex;flex-direction:column;gap:4px}
+.fv-item{display:flex;align-items:center;gap:8px;padding:8px;background:var(--bg-secondary);border-radius:var(--radius-sm);border:1px solid var(--border-color)}
+.fv-item.global{border-left:3px solid var(--color-primary)}.fv-item.local{border-left:3px solid var(--color-warning)}.fv-item.node{border-left:3px solid var(--color-success)}
+.fv-icon{font-size:14px}.fv-info{flex:1;display:flex;flex-direction:column;gap:2px}
+.fv-name{font-size:13px;font-weight:600;color:var(--text-primary)}.fv-type{font-size:10px;color:var(--text-muted)}
+.fv-scope{font-size:9px;padding:1px 4px;border-radius:var(--radius-sm);background:rgba(0,212,255,0.2);color:var(--color-primary)}
+.fv-actions{display:flex;gap:4px}
+.fv-export{margin-top:12px;padding-top:12px;border-top:1px solid var(--border-color)}
+/* Node Templates */
+.node-tpl-modal{width:600px;max-width:90vw}
+.tpl-add{display:flex;gap:8px;margin-bottom:16px}
+.tpl-input{flex:1;padding:8px 12px;border-radius:var(--radius-sm);border:1px solid var(--border-color);background:var(--bg-secondary);color:var(--text-primary);font-size:13px}
+.tpl-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:12px}
+.tpl-card{padding:14px;border-radius:var(--radius-md);border:1px solid var(--border-color);background:var(--bg-secondary);cursor:pointer;transition:all .15s}
+.tpl-card:hover{border-color:var(--color-primary);transform:translateY(-2px);box-shadow:0 4px 16px rgba(0,212,255,0.2)}
+.tpl-header{display:flex;align-items:center;gap:6px;margin-bottom:6px}
+.tpl-icon{font-size:20px}.tpl-name{font-size:13px;font-weight:600;color:var(--color-primary)}
+.tpl-desc{font-size:11px;color:var(--text-muted);margin-bottom:8px;min-height:32px}
+.tpl-nodes-preview{display:flex;gap:4px;margin-bottom:8px;font-size:14px}
+.tpl-more{font-size:10px;color:var(--text-muted)}
+.tpl-actions{display:flex;gap:4px}
+/* Performance Monitor */
+.perf-monitor{position:fixed;top:60px;left:20px;width:280px;background:var(--bg-elevated);border:1px solid var(--border-color);border-radius:var(--radius-lg);z-index:200;box-shadow:0 8px 32px rgba(0,0,0,0.4)}
+.perf-header{display:flex;align-items:center;justify-content:space-between;padding:10px 14px;border-bottom:1px solid var(--border-color);font-size:13px;font-weight:600;color:var(--color-primary)}
+.perf-body{padding:10px}
+.perf-table{display:flex;flex-direction:column;gap:2px}
+.perf-row{display:grid;grid-template-columns:1fr 60px 70px;padding:4px 8px;font-size:11px;border-radius:var(--radius-sm)}
+.perf-row-header{background:var(--bg-secondary);font-weight:600;color:var(--text-muted)}
+.perf-status.running{color:var(--color-warning)}.perf-status.completed{color:var(--color-success)}.perf-status.failed{color:var(--color-danger)}
+/* Context Menu */
+.context-menu{position:fixed;z-index:500;background:var(--bg-elevated);border:1px solid var(--border-color);border-radius:var(--radius-md);padding:4px;min-width:160px;box-shadow:0 8px 24px rgba(0,0,0,0.5)}
+.ctx-item{padding:8px 12px;font-size:13px;cursor:pointer;border-radius:var(--radius-sm);display:flex;align-items:center;gap:8px;transition:background .1s}
+.ctx-item:hover{background:var(--color-primary-soft)}
+.ctx-sep{height:1px;background:var(--border-color);margin:4px 0}
+/* Tooltip */
+.pd-tooltip{position:fixed;z-index:400;background:var(--bg-elevated);border:1px solid var(--border-color);border-radius:var(--radius-sm);padding:6px 10px;font-size:11px;color:var(--text-primary);box-shadow:0 4px 12px rgba(0,0,0,0.3);pointer-events:none;max-width:280px;white-space:nowrap}
+/* Guide Lines */
+.guide-lines-panel{position:fixed;top:60px;left:50%;transform:translateX(-50%);z-index:150;background:var(--bg-elevated);border:1px solid var(--border-color);border-radius:var(--radius-md);padding:8px 12px;display:flex;align-items:center;gap:8px;box-shadow:0 4px 16px rgba(0,0,0,0.3)}
+.gl-header{display:flex;align-items:center;gap:6px;font-size:12px;font-weight:600;color:var(--color-primary)}
+.gl-list{display:flex;flex-direction:column;gap:4px;margin-top:8px}
+.gl-item{display:flex;align-items:center;gap:6px;font-size:11px}
+.gl-type{width:60px;color:var(--text-muted)}
+.gl-slider{flex:1}.gl-pos{width:40px;text-align:right;font-family:'JetBrains Mono',monospace;color:var(--color-primary)}
+/* Box Selection */
+.box-select-svg{position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:50}
+/* Conflict Detection */
+.conflict-panel{position:fixed;top:60px;right:20px;width:300px;background:var(--bg-elevated);border:1px solid var(--border-color);border-radius:var(--radius-lg);z-index:200;box-shadow:0 8px 32px rgba(0,0,0,0.4)}
+.cp-header{display:flex;align-items:center;justify-content:space-between;padding:10px 14px;border-bottom:1px solid var(--border-color);font-size:13px;font-weight:600;color:var(--color-warning)}
+.cp-body{padding:12px}
+.cp-conflicts{margin-top:8px;display:flex;flex-direction:column;gap:4px}
+.cp-conflict{padding:8px;border-radius:var(--radius-sm);font-size:11px}
+.cp-conflict.cp-error{background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.3);color:var(--color-danger)}
+.cp-conflict.cp-warning{background:rgba(245,158,11,0.1);border:1px solid rgba(245,158,11,0.3);color:var(--color-warning)}
+.cp-edges{font-size:10px;color:var(--text-muted);margin-top:2px}
+.cp-ok{padding:12px;text-align:center;color:var(--color-success);font-size:13px}
+/* Simulation Timeline */
+.sim-timeline{position:fixed;bottom:20px;left:20px;width:400px;max-width:90vw;background:var(--bg-elevated);border:1px solid var(--border-color);border-radius:var(--radius-lg);z-index:200;box-shadow:0 8px 32px rgba(0,0,0,0.4)}
+.st-header{display:flex;align-items:center;justify-content:space-between;padding:10px 14px;border-bottom:1px solid var(--border-color);font-size:13px;font-weight:600;color:var(--color-primary)}
+.st-controls{display:flex;gap:4px}
+.st-progress{height:8px;background:var(--bg-secondary);border-radius:4px;overflow:hidden;position:relative;margin:8px 0}
+.st-bar{height:100%;background:linear-gradient(90deg,var(--color-primary),var(--color-success));transition:width .3s}
+.st-pct{position:absolute;right:8px;top:-16px;font-size:10px;color:var(--text-muted)}
+.st-events{max-height:200px;overflow-y:auto;display:flex;flex-direction:column;gap:2px}
+.st-event{display:flex;align-items:center;gap:8px;padding:4px 8px;font-size:11px;border-radius:var(--radius-sm)}
+.st-event.start{background:rgba(0,212,255,0.1);color:var(--color-primary)}
+.st-event.complete{background:rgba(16,185,129,0.1);color:var(--color-success)}
+.st-time{font-family:'JetBrains Mono',monospace;color:var(--text-muted);width:50px}
+.st-node{flex:1}.st-label{color:var(--text-primary)}.st-type{font-size:10px;padding:1px 4px;border-radius:var(--radius-sm);background:var(--bg-secondary)}
+/* Shortcut Help */
+.shortcut-help{position:fixed;top:60px;left:20px;width:260px;background:var(--bg-elevated);border:1px solid var(--border-color);border-radius:var(--radius-lg);z-index:200;box-shadow:0 8px 32px rgba(0,0,0,0.4)}
+.sh-header{display:flex;align-items:center;justify-content:space-between;padding:10px 14px;border-bottom:1px solid var(--border-color);font-size:13px;font-weight:600;color:var(--color-primary)}
+.sh-body{padding:10px;display:flex;flex-direction:column;gap:4px}
+.sh-row{display:flex;align-items:center;gap:10px;padding:4px 8px;border-radius:var(--radius-sm)}
+.sh-row:hover{background:var(--bg-secondary)}
+.sh-key{font-family:'JetBrains Mono',monospace;font-size:11px;padding:2px 6px;background:var(--bg-elevated);border:1px solid var(--border-color);border-radius:var(--radius-sm);color:var(--color-primary);min-width:80px;text-align:center}
+.sh-label{font-size:12px;color:var(--text-primary)}
+/* Form Rules Panel */
+.form-rules-panel{position:fixed;top:60px;right:20px;width:480px;max-width:90vw;background:var(--bg-elevated);border:1px solid var(--border-color);border-radius:var(--radius-lg);z-index:200;box-shadow:0 8px 32px rgba(0,0,0,0.4);max-height:80vh;overflow-y:auto}
+.frp-header{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-bottom:1px solid var(--border-color);position:sticky;top:0;background:var(--bg-elevated);z-index:1}
+.frp-actions{display:flex;gap:4px}
+.frp-body{padding:12px}
+.frp-set{margin-bottom:16px;padding:12px;background:var(--bg-secondary);border-radius:var(--radius-md);border:1px solid var(--border-color)}
+.frp-set-header{display:flex;align-items:center;gap:8px;margin-bottom:8px}
+.frp-set-name{flex:1;padding:4px 8px;border-radius:var(--radius-sm);border:1px solid var(--border-color);background:var(--bg-elevated);color:var(--color-primary);font-size:13px;font-weight:600}
+.frp-rules{display:flex;flex-direction:column;gap:6px}
+.frp-rule{display:flex;align-items:center;gap:4px}
+.frp-select{padding:3px 6px;border-radius:var(--radius-sm);border:1px solid var(--border-color);background:var(--bg-elevated);color:var(--text-primary);font-size:11px}
+.frp-op{width:44px}.frp-act{width:56px}
+.frp-input{padding:3px 8px;border-radius:var(--radius-sm);border:1px solid var(--border-color);background:var(--bg-elevated);color:var(--text-primary);font-size:11px;flex:1}
+.frp-apply{margin-top:8px;width:100%}
+/* Toast */
+.toast-container{position:fixed;bottom:20px;right:20px;z-index:600;display:flex;flex-direction:column;gap:8px}
+.toast{padding:10px 16px;border-radius:var(--radius-md);font-size:13px;box-shadow:0 4px 16px rgba(0,0,0,0.4);animation:toastIn .3s ease}
+.toast-info{background:rgba(0,212,255,0.2);border:1px solid var(--color-primary);color:var(--color-primary)}
+.toast-success{background:rgba(16,185,129,0.2);border:1px solid var(--color-success);color:var(--color-success)}
+.toast-warning{background:rgba(245,158,11,0.2);border:1px solid var(--color-warning);color:var(--color-warning)}
+.toast-error{background:rgba(239,68,68,0.2);border:1px solid var(--color-danger);color:var(--color-danger)}
+@keyframes toastIn{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+/* Process Status */
+.process-status{position:fixed;bottom:20px;left:20px;z-index:150;display:flex;align-items:center;gap:8px;padding:8px 14px;border-radius:var(--radius-full);background:var(--bg-elevated);border:1px solid var(--border-color);font-size:12px;font-weight:600;box-shadow:0 4px 16px rgba(0,0,0,0.3)}
+.ps-valid .ps-dot{background:var(--color-success)}.ps-empty .ps-dot{background:var(--text-muted)}
+.ps-no-start .ps-dot,.ps-no-end .ps-dot,.ps-disconnected .ps-dot{background:var(--color-warning);animation:pulse 1.5s infinite}
+.ps-dot{width:8px;height:8px;border-radius:50%}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.4}}
+/* Node hover preview */
+.node-hover-preview{position:absolute;z-index:100;background:var(--bg-elevated);border:1px solid var(--border-color);border-radius:var(--radius-md);padding:10px;box-shadow:0 4px 16px rgba(0,0,0,0.4);pointer-events:none}
+/* Enhanced node animations */
+@keyframes nodeAppear{from{opacity:0;transform:scale(0.8)}to{opacity:1;transform:scale(1)}}
+.node-appear{animation:nodeAppear .2s ease-out}
+@keyframes edgeFlow{from{stroke-dashoffset:20}to{stroke-dashoffset:0}}
+.edge-flow-anim{stroke-dasharray:8,4;animation:edgeFlow .8s linear infinite}
+.node-selected-pulse{animation:selectedPulse 1.5s ease-in-out infinite}
+@keyframes selectedPulse{0%,100%{filter:brightness(1)}50%{filter:brightness(1.3)}}
+/* Snap indicator */
+.snap-indicator{position:absolute;width:8px;height:8px;border-radius:50%;background:var(--color-warning);pointer-events:none;z-index:60;opacity:0.8}
+/* Scrollbar styling for panels */
+.fv-body::-webkit-scrollbar,.form-rules-panel::-webkit-scrollbar,.st-events::-webkit-scrollbar,.perf-body::-webkit-scrollbar{width:4px}
+.fv-body::-webkit-scrollbar-thumb,.form-rules-panel::-webkit-scrollbar-thumb,.st-events::-webkit-scrollbar-thumb,.perf-body::-webkit-scrollbar-thumb{background:var(--border-color);border-radius:2px}
 </style>

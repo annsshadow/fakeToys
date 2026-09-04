@@ -183,6 +183,203 @@
         </div>
       </div>
     </div>
+
+
+    <!-- Access Control Panel -->
+    <div v-if="showAccessControl" class="access-panel">
+      <div class="ap-header"><span>🔒 访问控制</span><button class="btn-sm" @click="showAccessControl=false">✕</button></div>
+      <div class="ap-body">
+        <div class="ap-add">
+          <select v-model="newAccessRule.fieldKey" class="ap-select">
+            <option v-for="f in currentForm?.fields" :value="f.key">{{ f.label || f.key }}</option>
+          </select>
+          <select v-model="newAccessRule.role" class="ap-select">
+            <option value="admin">管理员</option><option value="editor">编辑</option><option value="viewer">查看</option>
+          </select>
+          <select v-model="newAccessRule.action" class="ap-select">
+            <option value="show">显示</option><option value="hide">隐藏</option><option value="readonly">只读</option>
+          </select>
+          <button class="btn-sm" @click="addAccessRule(accessRules[accessRules.length-1]?.fieldKey||'', accessRules[accessRules.length-1]?.role||'', accessRules[accessRules.length-1]?.action||'')">+</button>
+        </div>
+        <div class="ap-list">
+          <div v-for="(r, ri) in accessRules" :key="ri" class="ap-row">
+            <span class="ap-field">{{ r.fieldKey }}</span>
+            <span class="ap-role">{{ r.role }}</span>
+            <span :class="['ap-action', 'ap-action-'+r.action]">{{ r.action }}</span>
+            <button class="btn-xs btn-danger" @click="removeAccessRule(ri)">✕</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Data Source Panel -->
+    <div v-if="showDataSourcePanel" class="ds-panel">
+      <div class="ds-header"><span>🔗 数据源配置</span><button class="btn-sm" @click="showDataSourcePanel=false">✕</button></div>
+      <div class="ds-body">
+        <div class="ds-add">
+          <select v-model="newDataSource.fieldKey" class="ds-select">
+            <option v-for="f in currentForm?.fields" :value="f.key">{{ f.label }}</option>
+          </select>
+          <input v-model="newDataSource.url" placeholder="API URL" class="ds-input" />
+          <select v-model="newDataSource.method" class="ds-select">
+            <option value="GET">GET</option><option value="POST">POST</option>
+          </select>
+          <button class="btn-sm" @click="addDataSource(dataSources[dataSources.length-1]?.fieldKey||'', dataSources[dataSources.length-1]?.url||'', dataSources[dataSources.length-1]?.method||'GET', '', '')">+</button>
+        </div>
+        <div class="ds-list">
+          <div v-for="(ds, di) in dataSources" :key="di" class="ds-row">
+            <span class="ds-field">{{ ds.fieldKey }}</span>
+            <span class="ds-url">{{ ds.url }}</span>
+            <span class="ds-method">{{ ds.method }}</span>
+            <button class="btn-xs btn-danger" @click="removeDataSource(di)">✕</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Condition Tree Builder -->
+    <div v-if="showConditionTree" class="cond-tree-panel">
+      <div class="ct-header"><span>🌳 条件树构建器</span><button class="btn-sm" @click="showConditionTree=false">✕</button></div>
+      <div class="ct-body">
+        <div class="ct-tree">
+          <div v-if="conditionTreeRoot" class="ct-node ct-group" :class="conditionTreeRoot.logic">
+            <div class="ct-node-header">
+              <span class="ct-logic">{{ conditionTreeRoot.logic === "AND" ? "且" : "或" }}</span>
+              <span>分组条件</span>
+              <button class="btn-xs" @click="addConditionNode(conditionTreeRoot.id)">+ 条件</button>
+              <button class="btn-xs" @click="addGroupNode(conditionTreeRoot.id)">+ 分组</button>
+            </div>
+            <div v-for="child in conditionTreeRoot.children" :key="child.id" class="ct-children">
+              <cond-tree-item :node="child" :fields="currentForm?.fields||[]" @add-condition="(pid)=>addConditionNode(pid)" @add-group="(pid)=>addGroupNode(pid)" @remove="(nid)=>removeConditionNode(nid)" />
+            </div>
+          </div>
+        </div>
+        <button class="btn" @click="openConditionTree">🔄 重新生成</button>
+      </div>
+    </div>
+
+    <!-- Layout Config Panel -->
+    <div v-if="showLayoutConfig" class="layout-panel">
+      <div class="lp-header"><span>📐 布局配置</span><button class="btn-sm" @click="showLayoutConfig=false">✕</button></div>
+      <div class="lp-body">
+        <div class="lp-row"><label>列数</label><div class="lp-cols">
+          <button v-for="n in 3" :key="n" :class="['lp-col-btn',{active: layoutConfig.columns===n}]" @click="layoutConfig={...layoutConfig, columns: n as 1|2|3}">{{ n }}列</button>
+        </div></div>
+        <div class="lp-row"><label>间距</label><input type="range" v-model.number="layoutConfig.gutter" min="0" max="40" class="lp-range" /><span>{{ layoutConfig.gutter }}px</span></div>
+        <div class="lp-row"><label>标签宽</label><input type="range" v-model.number="layoutConfig.labelWidth" min="60" max="200" class="lp-range" /><span>{{ layoutConfig.labelWidth }}px</span></div>
+        <div class="lp-row"><label>对齐</label><div class="lp-align">
+          <button v-for="a in ['left','center','right']" :key="a" :class="['lp-align-btn',{active: layoutConfig.align===a}]" @click="layoutConfig={...layoutConfig, align: a as any}">{{ a }}</button>
+        </div></div>
+        <button class="btn" @click="autoLayout()">📐 自动排列</button>
+      </div>
+    </div>
+
+    <!-- Validation Builder -->
+    <div v-if="showValidationBuilder" class="val-builder">
+      <div class="vb-header"><span>✅ 验证规则构建器</span><button class="btn-sm" @click="showValidationBuilder=false">✕</button></div>
+      <div class="vb-body">
+        <div class="vb-rules">
+          <div v-for="(vr, vi) in validationRules" :key="vi" class="vb-rule">
+            <select v-model="vr.fieldKey" class="vb-select"><option v-for="f in currentForm?.fields" :value="f.key">{{ f.label }}</option></select>
+            <select v-model="vr.rule" class="vb-select">
+              <option value="required:">必填</option><option value="min:1">最小1</option><option value="max:100">最大100</option>
+              <option value="pattern:^\d+$">数字</option><option value="pattern:^\w+@\w+\.\w+$">邮箱</option>
+            </select>
+            <input v-model="vr.message" placeholder="错误提示" class="vb-input" />
+            <button class="btn-xs btn-danger" @click="removeValidationRule(vi)">✕</button>
+          </div>
+        </div>
+        <button class="btn-sm" @click="addValidationRule">+ 添加规则</button>
+        <button class="btn" @click="applyValidationRules">✓ 应用到选中</button>
+        <button class="btn" @click="runValidation()">🔍 全部验证</button>
+      </div>
+    </div>
+
+    <!-- Field History -->
+    <div v-if="showFieldHistory" class="field-history">
+      <div class="fh-header"><span>📜 操作历史</span><button class="btn-sm" @click="showFieldHistory=false">✕</button></div>
+      <div class="fh-body">
+        <div v-for="(h, hi) in fieldHistory.slice().reverse()" :key="hi" class="fh-entry">
+          <span class="fh-time">{{ new Date(h.timestamp).toLocaleTimeString() }}</span>
+          <span class="fh-action">{{ h.action }}</span>
+          <span class="fh-detail">{{ h.details }}</span>
+        </div>
+        <div v-if="fieldHistory.length===0" class="fh-empty">暂无操作记录</div>
+      </div>
+    </div>
+
+    <!-- Export Modal -->
+    <div v-if="showExportModal" class="modal-overlay" @click.self="showExportModal=false">
+      <div class="modal export-modal">
+        <div class="modal-header"><span>📤 导出表单</span><button class="btn-sm" @click="showExportModal=false">✕</button></div>
+        <div class="modal-body">
+          <div class="export-tabs">
+            <button :class="['exp-tab',{active: exportFormat==='json'}]" @click="exportFormat='json'">JSON</button>
+            <button :class="['exp-tab',{active: exportFormat==='yaml'}]" @click="exportFormat='yaml'">YAML</button>
+            <button :class="['exp-tab',{active: exportFormat==='html'}]" @click="exportFormat='html'">HTML</button>
+          </div>
+          <textarea class="export-textarea" readonly>{{ exportResult }}</textarea>
+        </div>
+        <div class="modal-footer">
+          <button class="btn" @click="copyExportResult()">📋 复制</button>
+          <button class="btn" @click="()=>{const b=new Blob([exportResult],{type:'text/plain'});const u=URL.createObjectURL(b);const a=document.createElement('a');a.href=u;a.download='form.'+exportFormat;a.click();}">💾 下载</button>
+          <button class="btn btn-ghost" @click="showExportModal=false">关闭</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Field Stats Panel -->
+    <div v-if="showFieldStats" class="field-stats-panel">
+      <div class="fsp-header"><span>📊 字段统计</span><button class="btn-sm" @click="showFieldStats=false">✕</button></div>
+      <div class="fsp-body">
+        <div class="fsp-grid">
+          <div class="fsp-item"><span class="fsp-value">{{ getFormFieldStats().total }}</span><span class="fsp-label">总字段</span></div>
+          <div class="fsp-item"><span class="fsp-value" style="color:var(--color-success)">{{ getFormFieldStats().required }}</span><span class="fsp-label">必填</span></div>
+          <div class="fsp-item"><span class="fsp-value" style="color:var(--color-warning)">{{ getFormFieldStats().withValidation }}</span><span class="fsp-label">有验证</span></div>
+          <div class="fsp-item"><span class="fsp-value" style="color:var(--color-primary)">{{ getFormFieldStats().withCondition }}</span><span class="fsp-label">有条件</span></div>
+        </div>
+        <div class="fsp-types">
+          <div v-for="(count, type) in getFormFieldStats().byType" :key="type" class="fsp-type-row">
+            <span class="fsp-type">{{ type }}</span>
+            <div class="fsp-bar"><div class="fsp-bar-fill" :style="{width: (count/getFormFieldStats().total*100)+'%'}"></div></div>
+            <span class="fsp-count">{{ count }}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Bulk Edit Panel -->
+    <div v-if="showBulkEdit" class="bulk-edit-panel">
+      <div class="be-header">🔧 批量编辑</div>
+      <div class="be-body">
+        <select v-model="bulkEditAction" class="be-select">
+          <option value="setRequired">设置必填</option><option value="setPlaceholder">设置占位符</option>
+          <option value="setDisabled">设置禁用</option><option value="readOnly">设置只读</option>
+        </select>
+        <input v-model="bulkEditValue" placeholder="值" class="be-input" />
+        <button class="btn" @click="bulkApplyAction(bulkEditAction, bulkEditValue)">✓ 应用</button>
+      </div>
+    </div>
+
+    <!-- Validation Summary Badge -->
+    <div v-if="validationSummary.errors > 0" class="val-summary-badge">
+      <span class="vsb-icon">⚠️</span>
+      <span>{{ validationSummary.errors }} 个验证错误</span>
+    </div>
+
+    <!-- Audit Log Panel -->
+    <div v-if="showAuditPanel" class="audit-panel">
+      <div class="ap-header"><span>📋 审计日志</span><button class="btn-sm" @click="showAuditPanel=false">✕</button></div>
+      <div class="ap-body">
+        <div v-for="(log, li) in auditLogs.slice().reverse()" :key="log.id" class="audit-entry">
+          <span class="audit-time">{{ new Date(log.timestamp).toLocaleTimeString() }}</span>
+          <span class="audit-user">{{ log.user }}</span>
+          <span class="audit-action">{{ log.action }}</span>
+          <span v-if="log.fieldKey" class="audit-field">{{ log.fieldKey }}</span>
+        </div>
+        <div v-if="auditLogs.length===0" class="audit-empty">暂无审计记录</div>
+      </div>
+    </div>
 </template>
 
 <script setup lang="ts">
@@ -709,6 +906,119 @@ function importFormSchema(text: string) {
     }
   } catch (e) { alert("导入失败: 无效的JSON格式") }
 }
+
+// ── Advanced Interfaces ────────────────────────────────────────────
+interface FieldAccessRule { fieldKey: string; role: string; action: "show"|"hide"|"readonly" }
+interface FieldDataSource { fieldKey: string; url: string; method: string; keyField: string; labelField: string }
+interface ConditionTree { id: string; type: "group"|"condition"; logic: "AND"|"OR"; conditions?: Array<{field: string; op: string; value: string}>; children?: ConditionTree[] }
+interface FormLayoutConfig { columns: number; gutter: number; align: "left"|"center"|"right"; labelWidth: number; labelAlign: "left"|"right" }
+interface FieldHistoryEntry { timestamp: number; action: "add"|"remove"|"move"|"modify"; fieldKey: string; details: string }
+interface FieldOption { label: string; value: string; disabled?: boolean }
+interface FormAuditLog { id: string; timestamp: number; user: string; action: string; fieldKey?: string; oldValue?: string; newValue?: string }
+
+// ── Advanced State ──────────────────────────────────────────────────
+const showAccessControl = ref(false)
+const showDataSourcePanel = ref(false)
+const showConditionTree = ref(false)
+const showLayoutConfig = ref(false)
+const showFieldHistory = ref(false)
+const showValidationBuilder = ref(false)
+const showPreviewDataEditor = ref(false)
+const newAccessRule = ref<{fieldKey: string; role: string; action: string}>({ fieldKey: "", role: "admin", action: "show" })
+const accessRules = ref<FieldAccessRule[]>([])
+const newDataSource = ref<{fieldKey: string; url: string; method: string}>({ fieldKey: "", url: "", method: "GET" })
+const dataSources = ref<FieldDataSource[]>([])
+const conditionTreeRoot = ref<ConditionTree|null>(null)
+const layoutConfig = ref<FormLayoutConfig>({ columns: 1, gutter: 16, align: "left", labelWidth: 100, labelAlign: "right" })
+const fieldHistory = ref<FieldHistoryEntry[]>([])
+const validationGroups = ref<Array<{id: string; name: string; fields: string[]; rules: string[]}>>([])
+const showSectionManager = ref(false)
+const newSectionName = ref('')
+const showTabManager = ref(false)
+const newTabName = ref('')
+const newTabIcon = ref('📑')
+const previewMode = ref<'form' | 'json' | 'schema'>('form')
+const jsonPreview = ref('')
+const schemaPreview = ref('')
+const validationSummary = ref<{valid: boolean; errors: number; warnings: number}>({ valid: true, errors: 0, warnings: 0 })
+const fieldDragSource = ref<number|null>(null)
+const showExportModal = ref(false)
+const exportFormat = ref<'json'|'yaml'|'html'>('json')
+const exportResult = ref('')
+const showFieldPicker = ref(false)
+const fieldPickerSearch = ref('')
+const showAdvancedConfig = ref(false)
+const fieldPropsExpanded = ref<Record<string, boolean>>({})
+const searchFieldQuery = ref('')
+const showBulkEdit = ref(false)
+const bulkEditAction = ref('')
+const bulkEditValue = ref('')
+const showFieldStats = ref(false)
+const formFieldStats = ref<{total: number; byType: Record<string, number>; withValidation: number; withCondition: number; requiredCount: number}>({ total: 0, byType: {}, withValidation: 0, withCondition: 0, requiredCount: 0 })
+const auditLogs = ref<FormAuditLog[]>([])
+const showAuditPanel = ref(false)
+const fieldOptionsCache = ref<Record<string, FieldOption[]>>({})
+
+// ── Advanced Functions ─────────────────────────────────────────────
+function toggleFieldProps(fieldKey: string) { fieldPropsExpanded.value[fieldKey] = !fieldPropsExpanded.value[fieldKey] }
+function getFieldTypeStats(): Record<string, number> { const stats: Record<string, number> = {}; currentForm.value?.fields.forEach(f => { stats[f.type] = (stats[f.type] || 0) + 1 }); return stats }
+function updateFieldStats() { const fields = currentForm.value?.fields || []; const byType: Record<string, number> = {}; let withValidation = 0, withCondition = 0, requiredCount = 0; fields.forEach(f => { byType[f.type] = (byType[f.type] || 0) + 1; if (f.validation?.required) requiredCount++; if (f.validation) withValidation++; if (f.condition) withCondition++; }); formFieldStats.value = { total: fields.length, byType, withValidation, withCondition, requiredCount }; }
+function searchFields(query: string) { searchFieldQuery.value = query; if (!query.trim()) return []; return (currentForm.value?.fields || []).filter(f => f.label?.toLowerCase().includes(query.toLowerCase()) || f.key?.toLowerCase().includes(query.toLowerCase()) || f.type.toLowerCase().includes(query.toLowerCase())); }
+function bulkApplyAction(action: string, value: string) { if (!currentForm.value) return; const fields = currentForm.value.fields; if (action === "setRequired") { fields.forEach(f => { if (f.validation) f.validation.required = value === "true"; }); } else if (action === "setPlaceholder") { fields.forEach(f => { f.placeholder = value; }); } else if (action === "setDisabled") { fields.forEach(f => { f.disabled = value === "true"; }); } else if (action === "readOnly") { fields.forEach(f => { f.readonly = value === "true"; }); } pushFormHistory(); showToast("批量操作已应用", "success"); }
+function generateConditionTree(): ConditionTree { return { id: genId(), type: "group", logic: "AND", children: (currentForm.value?.fields || []).filter(f => f.condition).map(f => ({ id: genId(), type: "condition", logic: "AND", conditions: [{ field: f.condition?.field || "", op: f.condition?.operator || "=", value: f.condition?.value || "" }] })) }; }
+function evaluateConditionTree(tree: ConditionTree|null, data: Record<string,any>): boolean { if (!tree) return true; if (tree.type === "condition" && tree.conditions) { return tree.conditions.every(c => { const val = data[c.field]; if (c.op === "=") return String(val) === c.value; if (c.op === "!=") return String(val) !== c.value; if (c.op === ">") return Number(val) > Number(c.value); if (c.op === "<") return Number(val) < Number(c.value); if (c.op === ">=") return Number(val) >= Number(c.value); if (c.op === "<=") return Number(val) <= Number(c.value); return true; }); } if (tree.type === "group") { const results = tree.children?.map(c => evaluateConditionTree(c, data)) || []; return tree.logic === "AND" ? results.every(r => r) : results.some(r => r); } return true; }
+function addAccessRule(fieldKey: string, role: string, action: string) { accessRules.value.push({ fieldKey, role, action: action as "show"|"hide"|"readonly" }); }
+function removeAccessRule(idx: number) { accessRules.value.splice(idx, 1); }
+function getAccessAction(fieldKey: string, role: string): "show"|"hide"|"readonly"|null { const rule = accessRules.value.find(r => r.fieldKey === fieldKey && r.role === role); return rule?.action || null; }
+function addDataSource(fieldKey: string, url: string, method: string, keyField: string, labelField: string) { dataSources.value.push({ fieldKey, url, method, keyField, labelField }); }
+function removeDataSource(idx: number) { dataSources.value.splice(idx, 1); }
+function openConditionTree() { showConditionTree.value = true; conditionTreeRoot.value = generateConditionTree(); }
+function addConditionNode(parentId: string) { if (!conditionTreeRoot.value) return; const addChildren = (node: ConditionTree): void => { if (node.id === parentId && node.children) { node.children.push({ id: genId(), type: "condition", logic: "AND", conditions: [{ field: "", op: "=", value: "" }] }); } else if (node.children) { node.children.forEach(addChildren); } }; addChildren(conditionTreeRoot.value); }
+function addGroupNode(parentId: string) { if (!conditionTreeRoot.value) return; const addChildren = (node: ConditionTree): void => { if (node.id === parentId && node.children) { node.children.push({ id: genId(), type: "group", logic: "AND", children: [] }); } else if (node.children) { node.children.forEach(addChildren); } }; addChildren(conditionTreeRoot.value); }
+function removeConditionNode(nodeId: string) { if (!conditionTreeRoot.value) return; const remove = (node: ConditionTree): boolean => { if (node.children) { const idx = node.children.findIndex(c => c.id === nodeId); if (idx !== -1) { node.children.splice(idx, 1); return true; } return node.children.some(remove); } return false; }; remove(conditionTreeRoot.value); }
+function validateField(field: FormField): string[] { const errors: string[] = []; if (field.validation?.required && (!field.defaultValue || field.defaultValue === "")) { errors.push((field.label || field.key) + " 不能为空"); } if (field.validation?.minLength && field.defaultValue && field.defaultValue.length < field.validation.minLength) { errors.push((field.label || field.key) + " 长度不能少于 " + field.validation.minLength); } if (field.validation?.maxLength && field.defaultValue && field.defaultValue.length > field.validation.maxLength) { errors.push((field.label || field.key) + " 长度不能超过 " + field.validation.maxLength); } if (field.validation?.pattern && field.defaultValue && !new RegExp(field.validation.pattern).test(field.defaultValue)) { errors.push(field.validation.patternMsg || (field.label || field.key) + " 格式不正确"); } return errors; }
+function validateAllFields(): { valid: boolean; errors: Record<string,string> } { const errors: Record<string,string> = {}; let valid = true; currentForm.value?.fields.forEach(f => { const fieldErrors = validateField(f); if (fieldErrors.length > 0) { errors[f.key || ""] = fieldErrors.join("; "); valid = false; } }); return { valid, errors }; }
+function runValidation() { const result = validateAllFields(); validationSummary.value = { valid: result.valid, errors: Object.keys(result.errors).length, warnings: (currentForm.value?.fields || []).filter(f => f.condition).length }; showToast(result.valid ? "验证通过" : "发现 " + result.errors.length + " 个错误", result.valid ? "success" : "error"); }
+function simulateSubmit() { if (!currentForm.value) return; const result = validateAllFields(); if (!result.valid) { previewErrors.value = result.errors; showToast("表单验证失败", "error"); return; } submissionResult.value = { status: "success", data: previewData.value, errors: {} }; showToast("提交成功!", "success"); }
+function exportForm(format: "json"|"yaml"|"html") { if (!currentForm.value) return; let output = ""; if (format === "json") { output = JSON.stringify(currentForm.value, null, 2); } else if (format === "yaml") { output = JSON.stringify(currentForm.value, null, 2); } else { output = generateHTMLForm(); } exportResult.value = output; showExportModal.value = true; exportFormat.value = format; }
+function generateHTMLForm(): string { if (!currentForm.value) return ""; let html = '<form class="oa4rust-form">'; currentForm.value.fields.forEach(f => { html += '<div class="form-item"><label>' + (f.label || f.key) + '</label><input type="' + f.type + '" /></div>'; }); html += '</form>'; return html; }
+function copyExportResult() { navigator.clipboard.writeText(exportResult.value); showToast("已复制到剪贴板", "success"); }
+
+function mapFieldType(type: string): string { const map: Record<string,string> = { text:"string", textarea:"string", number:"number", email:"string", phone:"string", date:"string", datetime:"string", time:"string", switch:"boolean", checkbox:"boolean", radio:"string", select:"string", rate:"number", color:"string", file:"string", image:"string", signature:"string", rich:"string", markdown:"string", divider:"string", spacer:"string", section:"string", address:"string", link:"string", cascader:"string", transfer:"string", slider:"number", upload:"string", array:"array", object:"object" }; return map[type] || "string"; }
+function exportFormData() { const data = currentForm.value?.fields.reduce((acc, f) => { acc[f.key] = f.defaultValue || ""; return acc; }, {} as Record<string, string>) || {}; exportResult.value = JSON.stringify(data, null, 2); showExportModal.value = true; exportFormat.value = "json"; }
+function autoLayout() { if (!currentForm.value) return; const cols = layoutConfig.value.columns; const fields = currentForm.value.fields; fields.forEach((f, i) => { f.span = Math.min(cols, Math.max(1, Math.ceil(fields.length / cols))); }); pushFormHistory(); showToast("自动布局已应用", "success"); }
+function duplicateField(idx: number) { if (!currentForm.value || idx < 0) return; const orig = currentForm.value.fields[idx]; const clone = JSON.parse(JSON.stringify(orig)); clone.key = orig.key + "_copy"; clone.label = orig.label + " (副本)"; currentForm.value.fields.splice(idx + 1, 0, clone); pushFormHistory(); showToast("字段已复制", "success"); }
+function deleteField(idx: number) { if (!currentForm.value || idx < 0) return; currentForm.value.fields.splice(idx, 1); if (selectedField.value && selectedField.value.key === currentForm.value?.fields[idx]?.key) selectedField.value = null; pushFormHistory(); showToast("字段已删除", "warning"); }
+function toggleSectionField(sectionId: string, fieldKey: string) { const section = sections.value.find(s => s.id === sectionId); if (!section) return; const idx = section.fields.indexOf(fieldKey); if (idx >= 0) section.fields.splice(idx, 1); else section.fields.push(fieldKey); }
+function toggleTabField(tabId: string, fieldKey: string) { const tab = tabs.value.find(t => t.id === tabId); if (!tab) return; const idx = tab.fields.indexOf(fieldKey); if (idx >= 0) tab.fields.splice(idx, 1); else tab.fields.push(fieldKey); }
+function getFieldInSection(sectionId: string, fieldKey: string): boolean { const section = sections.value.find(s => s.id === sectionId); return section?.fields.includes(fieldKey) || false; }
+function getFieldInTab(tabId: string, fieldKey: string): boolean { const tab = tabs.value.find(t => t.id === tabId); return tab?.fields.includes(fieldKey) || false; }
+function getFormDataPreview(): Record<string, any> { const data: Record<string, any> = {}; currentForm.value?.fields.forEach(f => { data[f.key] = f.defaultValue || ""; }); return data; }
+function clearPreviewData() { previewData.value = {}; previewErrors.value = {}; submissionResult.value = null; }
+function resetFieldDefaults() { if (!currentForm.value) return; currentForm.value.fields.forEach(f => { f.defaultValue = f.default || ""; }); previewData.value = getFormDataPreview(); }
+function openBulkEdit() { showBulkEdit.value = true; }
+function closeBulkEdit() { showBulkEdit.value = false; bulkEditAction.value = ""; bulkEditValue.value = ""; }
+function openFieldPicker() { showFieldPicker.value = true; }
+function closeFieldPicker() { showFieldPicker.value = false; }
+function filterFieldPicker(query: string) { fieldPickerSearch.value = query; }
+
+
+
+function onFieldDragEnd() { fieldDragSource.value = null; }
+function getFormFieldStats(): { total: number; byType: Record<string,number>; required: number; withValidation: number; withCondition: number } { updateFieldStats(); return { total: formFieldStats.value.total, byType: formFieldStats.value.byType, required: formFieldStats.value.requiredCount, withValidation: formFieldStats.value.withValidation, withCondition: formFieldStats.value.withCondition }; }
+function generateFormDocumentation(): string { if (!currentForm.value) return ""; let doc = "# " + (currentForm.value.name || "未命名表单") + "\n\n"; doc += "**字段总数**: " + (currentForm.value.fields || []).length + "\n\n"; (currentForm.value.fields || []).forEach((f, i) => { doc += "## " + (i+1) + ". " + (f.label || f.key) + "\n"; doc += "- 类型: " + f.type + "\n"; doc += "- 键名: " + f.key + "\n"; if (f.validation?.required) doc += "- 必填: 是\n"; if (f.description) doc += "- 说明: " + f.description + "\n"; doc += "\n"; }); return doc; }
+function exportDocumentation() { const doc = generateFormDocumentation(); exportResult.value = doc; showExportModal.value = true; exportFormat.value = "json"; }
+function getLayoutClasses(): string { return "fd-canvas " + layoutConfig.value.columns + "-col"; }
+function getColumnClass(span: number): string { return span > 1 ? "span-" + span : ""; }
+function getFieldSpan(field: FormField): number { return field.span || layoutConfig.value.columns; }
+function logAuditEvent(action: string, fieldKey?: string, oldValue?: string, newValue?: string) { auditLogs.value.push({ id: genId(), timestamp: Date.now(), user: "current", action, fieldKey, oldValue, newValue }); }
+function addFieldToSection(sectionId: string, fieldKey: string) { const section = sections.value.find(s => s.id === sectionId); if (section && !section.fields.includes(fieldKey)) section.fields.push(fieldKey); }
+function addFieldToTab(tabId: string, fieldKey: string) { const tab = tabs.value.find(t => t.id === tabId); if (tab && !tab.fields.includes(fieldKey)) tab.fields.push(fieldKey); }
+function getSectionFieldCount(sectionId: string): number { const section = sections.value.find(s => s.id === sectionId); return section?.fields.length || 0; }
+function getTabFieldCount(tabId: string): number { const tab = tabs.value.find(t => t.id === tabId); return tab?.fields.length || 0; }
+function buildFieldOptions(field: FormField): FieldOption[] { if (field.options) { try { return JSON.parse(field.options); } catch { return []; } } if (field.dataSource) { return fieldOptionsCache.value[field.dataSource] || []; } return []; }
+function clearFieldOptionsCache() { fieldOptionsCache.value = {}; }
+function getFieldValidationSummary(field: FormField): string[] { const msgs: string[] = []; if (field.validation?.required) msgs.push("必填"); if (field.validation?.minLength) msgs.push("最少" + field.validation.minLength + "字符"); if (field.validation?.maxLength) msgs.push("最多" + field.validation.maxLength + "字符"); if (field.validation?.min) msgs.push("最小值" + field.validation.min); if (field.validation?.max) msgs.push("最大值" + field.validation.max); if (field.validation?.pattern) msgs.push("格式:" + field.validation.pattern); return msgs; }
 </script>
 
 <style scoped>
@@ -858,4 +1168,66 @@ function importFormSchema(text: string) {
 .tpl-card{padding:12px;border-radius:var(--radius-md);border:1px solid var(--border-color);cursor:pointer;text-align:center;transition:all .15s}
 .tpl-card:hover{border-color:var(--color-primary);background:var(--color-primary-soft);transform:translateY(-2px)}
 .tpl-icon{font-size:24px}.tpl-name{font-size:11px;font-weight:600;margin-top:4px}.tpl-count{font-size:9px;color:var(--text-muted)}
+
+/* ── Advanced Styles ─────────────────────────────────────────────── */
+.access-panel,.ds-panel,.cond-tree-panel,.layout-panel,.val-builder,.field-history,.field-stats-panel,.bulk-edit-panel,.audit-panel{position:fixed;z-index:200;background:var(--bg-elevated);border:1px solid var(--border-color);border-radius:var(--radius-lg);box-shadow:0 8px 32px rgba(0,0,0,0.4)}
+.access-panel{top:60px;right:20px;width:360px}.ds-panel{top:60px;right:20px;width:420px}.cond-tree-panel{top:60px;left:20px;width:400px;max-height:70vh;overflow-y:auto}
+.layout-panel{top:60px;left:20px;width:300px}.val-builder{top:60px;right:20px;width:440px}.field-history{bottom:20px;right:20px;width:360px;max-height:400px;display:flex;flex-direction:column}
+.field-stats-panel{top:60px;right:20px;width:300px}.bulk-edit-panel{bottom:80px;left:50%;transform:translateX(-50%);min-width:360px;padding:16px;display:flex;flex-direction:column;gap:10px}
+.audit-panel{top:60px;left:20px;width:340px;max-height:60vh;display:flex;flex-direction:column}
+.ap-header,.ds-header,.ct-header,.lp-header,.vb-header,.fh-header,.fsp-header,.audit-header{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-bottom:1px solid var(--border-color);font-size:13px;font-weight:600;color:var(--color-primary)}
+.ap-body,.ds-body,.ct-body,.lp-body,.vb-body{padding:12px;display:flex;flex-direction:column;gap:10px}
+.fh-body,.audit-body{padding:8px;overflow-y:auto;flex:1;display:flex;flex-direction:column;gap:4px}
+.ap-add,.ds-add{display:flex;gap:6px;flex-wrap:wrap}
+.ap-select,.ds-select,.vb-select,.be-select{padding:4px 8px;border-radius:var(--radius-sm);border:1px solid var(--border-color);background:var(--bg-secondary);color:var(--text-primary);font-size:12px}
+.ds-input{flex:1;padding:4px 8px;border-radius:var(--radius-sm);border:1px solid var(--border-color);background:var(--bg-secondary);color:var(--text-primary);font-size:12px}
+.ap-list,.ds-list{display:flex;flex-direction:column;gap:4px;max-height:200px;overflow-y:auto}
+.ap-row,.ds-row{display:flex;align-items:center;gap:8px;padding:6px 8px;background:var(--bg-secondary);border-radius:var(--radius-sm);font-size:12px}
+.ap-field{flex:1;color:var(--text-primary)}.ap-role{color:var(--color-primary);font-size:11px}
+.ap-action{padding:2px 6px;border-radius:var(--radius-sm);font-size:10px;font-weight:600}
+.ap-action-show{background:rgba(16,185,129,.2);color:var(--color-success)}.ap-action-hide{background:rgba(239,68,68,.2);color:var(--color-danger)}.ap-action-readonly{background:rgba(245,158,11,.2);color:var(--color-warning)}
+.ds-field{width:80px;color:var(--color-primary);font-weight:600}.ds-url{flex:1;color:var(--text-muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ds-method{padding:2px 6px;border-radius:var(--radius-sm);background:rgba(0,212,255,0.2);color:var(--color-primary);font-size:10px}
+.ct-tree{padding:8px}.ct-node{padding:8px;border-radius:var(--radius-md);border:1px solid var(--border-color);margin-bottom:6px}
+.ct-node.ct-group{background:rgba(0,212,255,0.05)}.ct-node-header{display:flex;align-items:center;gap:6px;margin-bottom:4px}
+.ct-logic{padding:2px 6px;border-radius:var(--radius-sm);background:var(--color-primary-soft);color:var(--color-primary);font-size:10px;font-weight:700}
+.ct-children{padding-left:16px}.ct-condition{padding:6px 8px;background:var(--bg-secondary);border-radius:var(--radius-sm);font-size:11px;display:flex;align-items:center;gap:6px}
+.lp-row{display:flex;align-items:center;gap:10px}.lp-row label{width:60px;font-size:12px;color:var(--text-muted)}
+.lp-cols,.lp-align{display:flex;gap:4px}
+.lp-col-btn,.lp-align-btn{padding:4px 10px;border-radius:var(--radius-sm);border:1px solid var(--border-color);background:transparent;color:var(--text-muted);cursor:pointer;font-size:12px}
+.lp-col-btn:hover,.lp-col-btn.active,.lp-align-btn:hover,.lp-align-btn.active{border-color:var(--color-primary);color:var(--color-primary)}
+.lp-range{flex:1}
+.vb-rules{display:flex;flex-direction:column;gap:6px;max-height:200px;overflow-y:auto}
+.vb-rule{display:flex;align-items:center;gap:6px}.vb-input{flex:1;padding:4px 8px;border-radius:var(--radius-sm);border:1px solid var(--border-color);background:var(--bg-secondary);color:var(--text-primary);font-size:12px}
+.fh-entry,.audit-entry{display:flex;align-items:center;gap:8px;padding:6px 8px;font-size:11px;background:var(--bg-secondary);border-radius:var(--radius-sm)}
+.fh-time,.audit-time{color:var(--text-muted);font-family:"JetBrains Mono",monospace;width:60px}
+.fh-action,.audit-action{padding:2px 6px;border-radius:var(--radius-sm);background:rgba(0,212,255,0.2);color:var(--color-primary);width:50px;text-align:center}
+.fh-detail,.audit-field{flex:1;color:var(--text-primary)}.audit-user{color:var(--color-warning);font-size:10px}
+.fh-empty,.audit-empty{text-align:center;padding:20px;color:var(--text-muted);font-size:12px}
+.export-modal{width:600px;max-width:90vw}.export-tabs{display:flex;gap:4px;margin-bottom:12px}
+.exp-tab{flex:1;padding:8px;border-radius:var(--radius-sm);border:1px solid var(--border-color);background:transparent;color:var(--text-muted);cursor:pointer;font-size:13px;font-weight:600}
+.exp-tab:hover,.exp-tab.active{border-color:var(--color-primary);color:var(--color-primary)}
+.export-textarea{width:100%;height:300px;padding:12px;border-radius:var(--radius-md);border:1px solid var(--border-color);background:var(--bg-secondary);color:var(--text-primary);font-family:"JetBrains Mono",monospace;font-size:12px;resize:vertical;box-sizing:border-box}
+.fsp-body{padding:12px}.fsp-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-bottom:12px}
+.fsp-item{padding:10px;background:var(--bg-secondary);border-radius:var(--radius-md);text-align:center}
+.fsp-value{font-size:22px;font-weight:700;color:var(--color-primary);font-family:"JetBrains Mono",monospace}
+.fsp-label{font-size:10px;color:var(--text-muted);margin-top:2px}
+.fsp-types{display:flex;flex-direction:column;gap:4px}
+.fsp-type-row{display:flex;align-items:center;gap:8px;font-size:11px}
+.fsp-type{width:60px;color:var(--text-muted);text-transform:capitalize}
+.fsp-bar{flex:1;height:6px;background:var(--border-color);border-radius:3px;overflow:hidden}
+.fsp-bar-fill{height:100%;background:var(--color-primary);border-radius:3px;transition:width .3s}
+.fsp-count{width:20px;text-align:right;color:var(--text-primary)}
+.bulk-edit-panel{background:var(--bg-elevated)}.be-body{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.be-input{flex:1;padding:6px 10px;border-radius:var(--radius-sm);border:1px solid var(--border-color);background:var(--bg-secondary);color:var(--text-primary);font-size:12px}
+.val-summary-badge{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);z-index:300;display:flex;align-items:center;gap:8px;padding:10px 16px;background:rgba(245,158,11,0.2);border:1px solid var(--color-warning);border-radius:var(--radius-full);font-size:13px;color:var(--color-warning);box-shadow:0 4px 16px rgba(0,0,0,0.3)}
+.vsb-icon{font-size:16px}
+.fd-field-row{cursor:grab;transition:all .15s}.fd-field-row:active{cursor:grabbing}
+.fd-field-row.dragging{opacity:0.5;border-color:var(--color-primary)}
+.fd-field-row.drag-over{border-top:2px solid var(--color-primary)}
+.fd-field-row:hover .fd-field-actions{opacity:1}
+.fd-field-actions{opacity:0;transition:opacity .15s}
+/* Scrollbars */
+.access-panel::-webkit-scrollbar,.ds-panel::-webkit-scrollbar,.cond-tree-panel::-webkit-scrollbar,.field-history::-webkit-scrollbar,.audit-panel::-webkit-scrollbar{width:4px}
+.access-panel::-webkit-scrollbar-thumb,.ds-panel::-webkit-scrollbar-thumb,.cond-tree-panel::-webkit-scrollbar-thumb,.field-history::-webkit-scrollbar-thumb,.audit-panel::-webkit-scrollbar-thumb{background:var(--border-color);border-radius:2px}
 </style>
