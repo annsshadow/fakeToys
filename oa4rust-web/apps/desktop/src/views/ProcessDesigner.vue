@@ -2296,7 +2296,7 @@
       </div>
       <div class="el-body">
         <div class="el-stats">
-          <span v-for="(count,type) in getEventCountByType()" :key="type" class="el-stat">{{ type.replace('_',' '): {{ count }} }}</span>
+          <span v-for="(count,type) in getEventCountByType()" :key="type" class="el-stat">{{ type.replace("_", " ") }}: {{ count }}</span>
         </div>
         <div class="el-list">
           <div v-for="e in getFilteredEvents()" :key="e.id" :class="['el-entry','el-'+e.type]">
