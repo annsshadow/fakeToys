@@ -84,7 +84,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/component_assemble_control/get/component")
+                    .uri("/jaxrs/component_assemble_control/get/component/test-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
