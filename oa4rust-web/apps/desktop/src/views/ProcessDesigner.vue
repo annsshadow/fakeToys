@@ -152,6 +152,11 @@
                   @mousedown.stop="onAnchorMouseDown($event, i, ahi)" />
               </template>
 
+              <!-- Edge click zone (invisible rectangle around node for arbitrary edge creation) -->
+              <rect :x="-8" :y="-8" :width="(node.w||120)+16" :height="(node.h||50)+16"
+                fill="transparent" class="edge-create-zone"
+                @mousedown.stop="onEdgeMouseDown($event, i)" />
+
               <!-- Node body -->
               <rect :class="['node-body', node.type]"
                 :width="node.w||120" :height="node.h||50" rx="8" />
@@ -185,6 +190,9 @@
                 cx="(node.w||120)" :cy="(node.h||50)/2" r="6" class="port port-out"
                 @mousedown.stop="onPortMouseDown($event, i, 'out')" />
 
+              <!-- Note badge -->
+              <text v-if="node.note" :x="(node.w||120)/2" :y="(node.h||50)/2+20"
+                font-size="8" fill="var(--text-muted)" text-anchor="middle">📝 {{ node.note }}</text>
               <!-- Condition badge -->
               <rect v-if="node.condition" x="4" y="4" width="10" height="10" rx="3" fill="var(--color-warning)" />
               <text v-if="node.condition" :x="(node.w||120)/2+8" :y="14"
@@ -204,6 +212,20 @@
         </div>
       </main>
 
+      <!-- Process Stats Panel -->
+      <aside v-if="processStats" class="pd-stats-panel glass-card">
+        <div class="stats-header"><span>📊 流程统计</span><button class="btn-sm" @click="showStats=!showStats">{{ showStats?'收起':'展开' }}</button></div>
+        <div v-if="showStats" class="stats-body">
+          <div class="stat-row"><span class="stat-label">总节点</span><span class="stat-val">{{ processStats.totalNodes }}</span></div>
+          <div class="stat-row"><span class="stat-label">总连线</span><span class="stat-val">{{ processStats.totalEdges }}</span></div>
+          <div class="stat-row"><span class="stat-label">开始/结束</span><span class="stat-val">{{ processStats.startNodes }}/{{ processStats.endNodes }}</span></div>
+          <div class="stat-row"><span class="stat-label">任务节点</span><span class="stat-val">{{ processStats.taskNodes }}</span></div>
+          <div class="stat-row"><span class="stat-label">网关节点</span><span class="stat-val">{{ processStats.gateNodes }}</span></div>
+          <div class="stat-row"><span class="stat-label">平均出度</span><span class="stat-val">{{ processStats.avgOutDegree }}</span></div>
+          <div v-if="processStats.hasLoops" class="stat-warning">⚠ 检测到循环</div>
+        </div>
+      </aside>
+
       <!-- Right: Properties -->
       <aside class="pd-props glass-card" v-if="currentProcess">
         <div v-if="selectedNode!==null" class="props-section">
@@ -215,6 +237,12 @@
             <div class="pg"><label>节点标签</label><input :value="getNodeProp('label')" @input="_setNodeProp('label',$event.target.value)" class="pi" /></div>
             <div class="pg"><label>负责人</label><input :value="getNodeProp('assignee')" @input="_setNodeProp('assignee',$event.target.value)" class="pi" placeholder="如: manager_zhang" /></div>
             <div class="pg"><label>流转条件</label><input :value="getNodeProp('condition')" @input="_setNodeProp('condition',$event.target.value)" class="pi" placeholder="如: amount > 1000" /></div>
+            <div class="pg"><label>节点样式</label>
+              <select :value="getNodeProp('style')" @change="_setNodeProp('style',$event.target.value)" class="pi">
+                <option value="default">默认</option><option value="danger">危险</option><option value="success">成功</option><option value="warning">警告</option>
+              </select>
+            </div>
+            <div class="pg"><label>备注</label><input :value="getNodeProp('note')" @input="_setNodeProp('note',$event.target.value)" class="pi" placeholder="节点备注" /></div>
             <div class="pg"><label>超时(分钟)</label><input :value="getNodeProp('timeout')" type="number" @input="_setNodeProp('timeout',+$event.target.value)" class="pi" /></div>
             <div class="pg"><label>重试次数</label><input :value="getNodeProp('retryCount')" type="number" @input="_setNodeProp('retryCount',+$event.target.value)" class="pi" min="0" max="10" /></div>
             <div class="pg"><label>数据映射</label>
@@ -274,6 +302,8 @@
             <div class="pg"><label>标签</label><input :value="getEdgeProp('label')" @input="_setEdgeProp('label',$event.target.value)" class="pi" /></div>
             <div class="pg"><label>流向</label><span class="pv">{{ getEdgeFromLabel() }} → {{ getEdgeToLabel() }}</span></div>
             <div class="pg"><label>条件</label><input :value="getEdgeProp('condition')" @input="_setEdgeProp('condition',$event.target.value)" class="pi" placeholder="如: amount > 1000" /></div>
+            <div class="pg"><label>流向标签</label><input :value="getEdgeProp('flowLabel')" @input="_setEdgeProp('flowLabel',$event.target.value)" class="pi" placeholder="如: 通过/拒绝" /></div>
+            <div class="pg"><label>连线粗细</label><input :value="getEdgeProp('strokeWidth')" type="number" @input="_setEdgeProp('strokeWidth',+$event.target.value)" class="pi" min="1" max="5" /></div>
             <button class="btn-del-sm" @click="deleteEdge(selectedEdge)">🗑 删除连线</button>
           </div>
         </div>
@@ -390,7 +420,7 @@
               :class="['node-group', { selected: subSelectedNode===i, dragging: subIsDragging&&subDragIdx===i }]">
               <rect v-if="subSelectedNode===i" x="-6" y="-6" :width="(node.w||120)+12" :height="(node.h||50)+12" rx="10"
                 fill="none" stroke="var(--color-primary)" stroke-width="2" stroke-dasharray="4,2" pointer-events="none" />
-              <rect :class="['node-body', node.type]" :width="node.w||120" :height="node.h||50" rx="8" />
+              <rect :class="['node-body', node.type, getNodeProp('style')]" :width="node.w||120" :height="node.h||50" rx="8" />
               <text :x="16" :y="(node.h||50)/2+5" class="node-icon-text">{{ getNodeIcon(node.type) }}</text>
               <text :x="(node.w||120)/2+8" :y="(node.h||50)/2-4" text-anchor="middle" class="node-label">{{ node.label || getNodeLabel(node.type) }}</text>
               <text :x="(node.w||120)/2+8" :y="(node.h||50)/2+10" text-anchor="middle" font-size="9" fill="var(--text-muted)">{{ node.assignee || '' }}</text>
@@ -618,6 +648,28 @@ function detectParallelBranches(): number[][] {
   return groups
 }
 const parallelBranches = computed(() => detectParallelBranches())
+
+// ── Process Statistics ──────────────────────────────────────────────
+const showStats = ref(false)
+const processStats = computed(() => {
+  if (!processDef.value) return null
+  const nodes = processDef.value.nodes
+  const edges = processDef.value.edges || []
+  return {
+    totalNodes: nodes.length,
+    totalEdges: edges.length,
+    startNodes: nodes.filter(n => n.type === 'start').length,
+    endNodes: nodes.filter(n => n.type === 'end').length,
+    taskNodes: nodes.filter(n => n.type === 'task' || n.type === 'approval').length,
+    gateNodes: nodes.filter(n => n.type.startsWith('gate')).length,
+    avgOutDegree: nodes.length > 0 ? (edges.length / nodes.length).toFixed(2) : '0',
+    hasLoops: edges.some(e => {
+      const from = nodes.find(n => n.id === e.from)
+      const to = nodes.find(n => n.id === e.to)
+      return from && to && Math.abs(from.x - to.x) < 50 && Math.abs(from.y - to.y) < 50
+    })
+  }
+})
 
 // Fork/Join labels for parallel branches
 const forkLabels = computed(() => {
@@ -1185,6 +1237,54 @@ function onCanvasMouseDown(e: MouseEvent) {
   document.addEventListener('mousemove', onMove); document.addEventListener('mouseup', onUp)
 }
 
+// ── Edge creation from any position on node ──────────────────────────
+function onEdgeMouseDown(e: MouseEvent, nodeIdx: number) {
+  e.stopPropagation()
+  if (!processDef.value) return
+  const node = processDef.value.nodes[nodeIdx]
+  if (!node) return
+  const rect = (e.target as HTMLElement).getBoundingClientRect()
+  const mx = (e.clientX - panX.value) / zoom.value
+  const my = (e.clientY - panY.value) / zoom.value
+  // Determine which side of the node was clicked
+  const w = node.w || 120, h = node.h || 50
+  const cx = node.x + w/2, cy = node.y + h/2
+  const dx = mx - cx, dy = my - cy
+  let port: 'in'|'out' = 'out'
+  if (Math.abs(dx) > Math.abs(dy)) {
+    port = dx < 0 ? 'in' : 'out'
+  } else {
+    if (dy < 0) port = 'in'  // top
+    else port = 'out'  // bottom
+  }
+  tempEdge.value = { from: nodeIdx, fromPort: port, startX: mx, startY: my, endX: mx, endY: my }
+  const onMove = (ev: MouseEvent) => {
+    if (!tempEdge.value) return
+    tempEdge.value.endX = (ev.clientX - panX.value) / zoom.value
+    tempEdge.value.endY = (ev.clientY - panY.value) / zoom.value
+  }
+  const onUp = (ev: MouseEvent) => {
+    document.removeEventListener('mousemove', onMove); document.removeEventListener('mouseup', onUp)
+    if (!tempEdge.value || !processDef.value) { tempEdge.value = null; return }
+    const emx = (ev.clientX - panX.value) / zoom.value, emy = (ev.clientY - panY.value) / zoom.value
+    let targetIdx: number|null = null
+    for (let i = 0; i < processDef.value.nodes.length; i++) {
+      if (i === tempEdge.value!.from) continue
+      const n = processDef.value.nodes[i]
+      if (emx >= n.x-10 && emx <= n.x+(n.w||120)+10 && emy >= n.y-10 && emy <= n.y+(n.h||50)+10) { targetIdx = i; break }
+    }
+    if (targetIdx !== null) {
+      const fn = processDef.value.nodes[tempEdge.value!.from]
+      const tn = processDef.value.nodes[targetIdx]
+      const fp = tempEdge.value!.fromPort
+      if (fp === 'out' && tn.type !== 'start') createEdge(fn.id, tn.id)
+      else if (fp === 'in' && fn.type !== 'end') createEdge(tn.id, fn.id)
+    }
+    tempEdge.value = null
+  }
+  document.addEventListener('mousemove', onMove); document.addEventListener('mouseup', onUp)
+}
+
 // ── Zoom ──────────────────────────────────────────────────────────────
 function zoomIn() { zoom.value = Math.min(3, zoom.value + 0.1) }
 function zoomOut() { zoom.value = Math.max(0.3, zoom.value - 0.1) }
@@ -1466,6 +1566,9 @@ onUnmounted(() => {
 .node-group.dragging{opacity:0.8}
 .node-body{stroke:var(--border-color);stroke-width:2;transition:all 0.15s}
 .node-body.start{fill:rgba(16,185,129,.2);stroke:var(--color-success)}
+.node-body.danger{stroke:var(--color-danger)}
+.node-body.success{stroke:var(--color-success)}
+.node-body.warning{stroke:var(--color-warning)}
 .node-body.task{fill:rgba(0,212,255,.15);stroke:var(--color-primary)}
 .node-body.approval{fill:rgba(99,102,241,.15);stroke:rgb(99,102,241)}
 .node-body.timer{fill:rgba(245,158,11,.15);stroke:var(--color-warning)}
@@ -1496,6 +1599,14 @@ onUnmounted(() => {
 .btn-del-sm{padding:6px 10px;border-radius:var(--radius-sm);border:1px solid var(--color-danger);background:transparent;color:var(--color-danger);cursor:pointer;font-size:12px;width:100%;margin-top:8px}
 .props-empty{padding:20px;text-align:center;color:var(--text-muted);font-size:12px}
 .props-empty .hint{font-size:11px;color:var(--text-muted);margin-top:8px;opacity:0.7}
+/* Process stats panel */
+.pd-stats-panel{width:180px;flex-shrink:0;display:flex;flex-direction:column;border-left:1px solid var(--border-color);overflow:hidden;background:var(--bg-surface)}
+.stats-header{display:flex;align-items:center;justify-content:space-between;padding:8px 12px;border-bottom:1px solid var(--border-color);font-size:13px;font-weight:600;color:var(--color-primary)}
+.stats-body{padding:8px;display:flex;flex-direction:column;gap:6px}
+.stat-row{display:flex;justify-content:space-between;align-items:center;font-size:12px}
+.stat-label{color:var(--text-muted)}
+.stat-val{color:var(--color-primary);font-weight:600;font-family:'JetBrains Mono',monospace}
+.stat-warning{color:var(--color-warning);font-size:11px;padding:4px;background:rgba(245,158,11,.1);border-radius:var(--radius-sm);text-align:center;margin-top:4px}
 /* Data mapping */
 .data-mapping{border:1px solid var(--border-color);border-radius:var(--radius-sm);padding:6px;margin-top:4px}
 .dm-row{display:flex;align-items:center;gap:4px;margin-bottom:4px}
