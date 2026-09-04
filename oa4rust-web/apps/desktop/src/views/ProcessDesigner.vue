@@ -2535,6 +2535,140 @@
         </div>
       </div>
     </div>
+
+    <!-- Permission Panel -->
+    <div v-if="showPermissionPanel" class="modal-overlay" @click.self="showPermissionPanel=false">
+      <div class="modal glass-card">
+        <div class="modal-header"><span>权限管理</span><button class="btn-close" @click="showPermissionPanel=false">×</button></div>
+        <div class="modal-body">
+          <div class="perm-list">
+            <div v-for="(r,i) in permissionRules" :key="r.id" class="perm-item">
+              <span class="perm-type">{{r.nodeType}}</span>
+              <span class="perm-allowed">允许: {{r.allowedRoles.join(', ') || '无'}}</span>
+              <span class="perm-denied">禁止: {{r.deniedRoles.join(', ') || '无'}}</span>
+              <button class="btn-sm btn-danger" @click="removePermissionRule(i)">删除</button>
+            </div>
+          </div>
+          <button class="btn-sm" @click="addPermissionRule()">+ 添加规则</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Lock Panel -->
+    <div v-if="showLockPanel" class="modal-overlay" @click.self="showLockPanel=false">
+      <div class="modal glass-card">
+        <div class="modal-header"><span>节点锁定</span><button class="btn-close" @click="showLockPanel=false">×</button></div>
+        <div class="modal-body">
+          <div class="lock-list">
+            <div v-for="n in lockedNodes" :key="n.nodeId" class="lock-item">
+              <span class="lock-node">{{n.nodeIdRef}}</span>
+              <span class="lock-by">锁定者: {{n.lockedBy}}</span>
+              <span class="lock-time">{{new Date(n.lockedAt).toLocaleString('zh-CN')}}</span>
+              <button class="btn-sm" @click="unlockNode(n.nodeId)">解锁</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Publish Panel -->
+    <div v-if="showPublishPanel" class="modal-overlay" @click.self="showPublishPanel=false">
+      <div class="modal glass-card">
+        <div class="modal-header"><span>发布管理</span><button class="btn-close" @click="showPublishPanel=false">×</button></div>
+        <div class="modal-body">
+          <button class="btn-sm btn-primary" @click="publishProcess()">发布当前版本</button>
+          <div class="pub-list">
+            <div v-for="p in publishHistory" :key="p.id" class="pub-item">
+              <span class="pub-ver">{{p.version}}</span>
+              <span class="pub-by">{{p.publishedBy}}</span>
+              <span class="pub-status" :class="'pub-'+p.status">{{p.status}}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Risk Dashboard Panel -->
+    <div v-if="showRiskDashboard" class="modal-overlay" @click.self="showRiskDashboard=false">
+      <div class="modal glass-card">
+        <div class="modal-header"><span>风险仪表盘</span><button class="btn-close" @click="showRiskDashboard=false">×</button></div>
+        <div class="modal-body">
+          <div class="risk-grid">
+            <div class="risk-card critical"><span class="risk-val">{{riskDashboardData.criticalRisks}}</span><span class="risk-label">严重</span></div>
+            <div class="risk-card high"><span class="risk-val">{{riskDashboardData.highRisks}}</span><span class="risk-label">高</span></div>
+            <div class="risk-card medium"><span class="risk-val">{{riskDashboardData.mediumRisks}}</span><span class="risk-label">中</span></div>
+            <div class="risk-card low"><span class="risk-val">{{riskDashboardData.lowRisks}}</span><span class="risk-label">低</span></div>
+          </div>
+          <div class="risk-total"><span>总风险: {{riskDashboardData.totalRisks}}</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Performance Dashboard Panel -->
+    <div v-if="showPerfDashboard" class="modal-overlay" @click.self="showPerfDashboard=false">
+      <div class="modal glass-card">
+        <div class="modal-header"><span>性能仪表盘</span><button class="btn-close" @click="showPerfDashboard=false">×</button></div>
+        <div class="modal-bd">
+          <div class="perf-grid">
+            <div class="perf-card"><span class="perf-val">{{perfDashboardData.avgResponseMs.toFixed(0)}}ms</span><span class="perf-label">平均响应</span></div>
+            <div class="perf-card"><span class="perf-val">{{perfDashboardData.p99Ms.toFixed(0)}}ms</span><span class="perf-label">P99响应</span></div>
+            <div class="perf-card"><span class="perf-val">{{perfDashboardData.throughput.toFixed(0)}}</span><span class="perf-label">吞吐量/s</span></div>
+            <div class="perf-card"><span class="perf-val">{{(perfDashboardData.errorRate*100).toFixed(2)}}%</span><span class="perf-label">错误率</span></div>
+          </div>
+          <div class="perf-bars">
+            <div class="perf-bar-row"><span>CPU</span><div class="perf-bar-wrap"><div class="perf-bar-fill" :style="{width:perfDashboardData.cpuUsage+'%'}"></div></div><span>{{perfDashboardData.cpuUsage.toFixed(0)}}%</span></div>
+            <div class="perf-bar-row"><span>内存</span><div class="perf-bar-wrap"><div class="perf-bar-fill" :style="{width:perfDashboardData.memUsage+'%'}"></div></div><span>{{perfDashboardData.memUsage.toFixed(0)}}%</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Enhanced Heatmap Panel -->
+    <div v-if="showHeatmapEnhanced" class="modal-overlay" @click.self="showHeatmapEnhanced=false">
+      <div class="modal glass-card">
+        <div class="modal-header"><span>增强热力图</span><button class="btn-close" @click="showHeatmapEnhanced=false">×</button></div>
+        <div class="modal-body">
+          <div class="heatmap-grid">
+            <div v-for="h in heatmapEnhancedData" :key="h.label" class="heatmap-cell" :style="{left:h.x+'%',top:h.y+'%',background:h.color}">
+              <span class="heatmap-label">{{h.label}}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Enhanced Topology Panel -->
+    <div v-if="showTopologyEnhanced" class="modal-overlay" @click.self="showTopologyEnhanced=false">
+      <div class="modal glass-card">
+        <div class="modal-header"><span>拓扑图</span><button class="btn-close" @click="showTopologyEnhanced=false">×</button></div>
+        <div class="modal-body">
+          <div class="topo-canvas">
+            <div v-for="n in topologyNodes" :key="n.id" class="topo-node" :style="{left:n.x+'px',top:n.y+'px'}">
+              <span class="topo-label">{{n.label}}</span>
+              <span class="topo-conns">{{n.connections}}连接</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Layer Manager Panel -->
+    <div v-if="showLayerManagerPanel" class="modal-overlay" @click.self="showLayerManagerPanel=false">
+      <div class="modal glass-card">
+        <div class="modal-header"><span>图层管理</span><button class="btn-close" @click="showLayerManagerPanel=false">×</button></div>
+        <div class="modal-body">
+          <div class="layer-list">
+            <div v-for="(l,i) in layerList" :key="l.id" class="layer-item">
+              <span class="layer-color" :style="{background:l.color}"></span>
+              <span class="layer-name">{{l.name}}</span>
+              <label class="layer-vis"><input type="checkbox" :checked="l.visible" @change="toggleLayer(i)"/><span></span></label>
+              <label class="layer-lock"><input type="checkbox" :checked="l.locked" @change="lockLayer(i)"/><span></span></label>
+              <input type="range" min="0" max="100" :value="l.opacity*100" class="layer-opacity" @input="setLayerOpacity(i, $event.target.value/100)" />
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
 </template>
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted } from 'vue'
@@ -7255,6 +7389,121 @@ function getCrStatusLabel(s: string): string { return {draft:'草稿',review:'�
 function getHealthScoreColor(v: number): string { return v > 70 ? '#10b981' : v > 50 ? '#f59e0b' : '#ef4444' }
 function getCellBg(color: string): string { return color + '22' }
 function getSLAPct(m: any): string { return Math.min(100, m.currentMs / m.targetMs * 100) + '%' }
+
+// -- Permission & Lock State
+const showPermissionPanel = ref(false)
+const permissionRules = ref<Array<{id: string; nodeType: string; allowedRoles: string[]; deniedRoles: string[]}>>([
+  { id: 'p1', nodeType: 'task', allowedRoles: ['manager','admin'], deniedRoles: ['viewer'] },
+  { id: 'p2', nodeType: 'approval', allowedRoles: ['manager','director','admin'], deniedRoles: ['employee','viewer'] },
+  { id: 'p3', nodeType: 'subprocess', allowedRoles: ['admin'], deniedRoles: ['manager','employee','viewer'] },
+])
+const showLockPanel = ref(false)
+const lockedNodes = ref<Array<{nodeId: string; nodeIdRef: string; lockedBy: string; lockedAt: number}>>([])
+const showPublishPanel = ref(false)
+const publishHistory = ref<Array<{id: string; version: string; publishedAt: number; publishedBy: string; status: string; changeLog: string}>>([])
+
+// -- Risk Dashboard State
+const showRiskDashboard = ref(false)
+const riskDashboardData = ref<{totalRisks: number; criticalRisks: number; highRisks: number; mediumRisks: number; lowRisks: number; riskTrend: string[]}>({
+  totalRisks: 12, criticalRisks: 2, highRisks: 3, mediumRisks: 4, lowRisks: 3, riskTrend: ['up','stable','down','up','stable','down']
+})
+
+// -- Performance Dashboard State
+const showPerfDashboard = ref(false)
+const perfDashboardData = ref<{avgResponseMs: number; p99Ms: number; throughput: number; errorRate: number; cpuUsage: number; memUsage: number; trend: Array<{label: string; value: number}>}>({
+  avgResponseMs: 234, p99Ms: 1200, throughput: 450, errorRate: 0.02, cpuUsage: 45, memUsage: 62,
+  trend: [{label:'周一',value:200},{label:'周二',value:220},{label:'周三',value:180},{label:'周四',value:250},{label:'周五',value:210},{label:'周六',value:150},{label:'周日',value:120}]
+})
+
+// -- Additional State for expanded features
+const showHeatmapEnhanced = ref(false)
+const heatmapEnhancedData = ref<Array<{x: number; y: number; value: number; color: string; label: string}>>([])
+const showTopologyEnhanced = ref(false)
+const topologyNodes = ref<Array<{id: string; label: string; x: number; y: number; type: string; connections: number}>>([])
+const showLayerManagerPanel = ref(false)
+const layerList = ref<Array<{id: string; name: string; visible: boolean; locked: boolean; opacity: number; color: string}>>([
+  { id: 'l1', name: '基础节点', visible: true, locked: false, opacity: 1, color: '#3b82f6' },
+  { id: 'l2', name: '连接线', visible: true, locked: false, opacity: 1, color: '#10b981' },
+  { id: 'l3', name: '标注', visible: true, locked: false, opacity: 1, color: '#f59e0b' },
+  { id: 'l4', name: '分组背景', visible: false, locked: true, opacity: 0.3, color: '#8b5cf6' },
+])
+
+// -- Permission Functions
+function openPermissionPanel(): void { showPermissionPanel.value = true }
+function togglePermissionRule(idx: number): void { const r = permissionRules.value[idx]; r.allowedRoles = r.allowedRoles.includes('all') ? [] : ['all']; }
+function addPermissionRule(): void { permissionRules.value.push({ id: 'p' + Date.now(), nodeType: 'task', allowedRoles: [], deniedRoles: [] }) }
+function removePermissionRule(idx: number): void { permissionRules.value.splice(idx, 1) }
+
+// -- Lock Functions
+function openLockPanel(): void { showLockPanel.value = true }
+function lockNode(nodeId: string, nodeIdRef: string): void { lockedNodes.value.push({ nodeId, nodeIdRef, lockedBy: '当前用户', lockedAt: Date.now() }); showToast('节点已锁定', 'info') }
+function unlockNode(nodeId: string): void { lockedNodes.value = lockedNodes.value.filter(n => n.nodeId !== nodeId); showToast('节点已解锁', 'success') }
+
+// -- Publish Functions
+function openPublishPanel(): void { showPublishPanel.value = true }
+function publishProcess(): void {
+  publishHistory.value.unshift({ id: 'pub_' + Date.now(), version: 'v' + (publishHistory.value.length + 1), publishedAt: Date.now(), publishedBy: '当前用户', status: 'success', changeLog: '流程发布' })
+  showToast('流程已发布', 'success')
+}
+
+// -- Risk Dashboard Functions
+function openRiskDashboard(): void { showRiskDashboard.value = true; generateRiskDashboard() }
+function generateRiskDashboard(): void {
+  riskDashboardData.value = {
+    totalRisks: 8 + Math.floor(Math.random() * 10),
+    criticalRisks: Math.floor(Math.random() * 3),
+    highRisks: Math.floor(Math.random() * 4) + 1,
+    mediumRisks: Math.floor(Math.random() * 5) + 2,
+    lowRisks: Math.floor(Math.random() * 4) + 1,
+    riskTrend: ['up','stable','down','up','stable','down','up'].slice(0, 6)
+  }
+}
+
+// -- Performance Dashboard Functions
+function openPerfDashboard(): void { showPerfDashboard.value = true; generatePerfDashboard() }
+function generatePerfDashboard(): void {
+  perfDashboardData.value = {
+    avgResponseMs: 180 + Math.random() * 100,
+    p99Ms: 800 + Math.random() * 600,
+    throughput: 300 + Math.random() * 200,
+    errorRate: Math.random() * 0.05,
+    cpuUsage: 30 + Math.random() * 40,
+    memUsage: 40 + Math.random() * 30,
+    trend: ['周一','周二','周三','周四','周五','周六','周日'].map(d => ({ label: d, value: 150 + Math.random() * 150 }))
+  }
+}
+
+// -- Enhanced Heatmap Functions
+function openHeatmapEnhanced(): void { showHeatmapEnhanced.value = true; generateHeatmapEnhanced() }
+function generateHeatmapEnhanced(): void {
+  const nodes = processDef.value?.nodes || []
+  heatmapEnhancedData.value = nodes.map((n, i) => ({
+    x: (i % 5) * 20 + 10,
+    y: Math.floor(i / 5) * 20 + 10,
+    value: 0.3 + Math.random() * 0.7,
+    color: '#3b82f6',
+    label: n.label || n.type
+  }))
+}
+
+// -- Enhanced Topology Functions
+function openTopologyEnhanced(): void { showTopologyEnhanced.value = true; generateTopology() }
+function generateTopology(): void {
+  const nodes = processDef.value?.nodes || []
+  topologyNodes.value = nodes.map((n, i) => ({
+    id: n.id,
+    label: n.label || n.type,
+    x: 100 + (i % 6) * 120,
+    y: 100 + Math.floor(i / 6) * 80,
+    type: n.type,
+    connections: (processDef.value?.edges || []).filter(e => e.from === n.id || e.to === n.id).length
+  }))
+}
+
+// -- Layer Management Functions
+function toggleLayer(idx: number): void { layerList.value[idx].visible = !layerList.value[idx].visible }
+function lockLayer(idx: number): void { layerList.value[idx].locked = !layerList.value[idx].locked }
+function setLayerOpacity(idx: number, opacity: number): void { layerList.value[idx].opacity = opacity }
 </script>
 <style scoped>
 .pd{display:flex;flex-direction:column;height:100%}
@@ -8646,4 +8895,24 @@ kbd{display:inline-block;padding:3px 8px;border-radius:4px;border:1px solid var(
 .op-list{display:flex;flex-direction:column;gap:8px}.op-item{padding:10px;border-radius:8px;background:rgba(255,255,255,0.02);border:1px solid var(--border-color)}.op-type{font-size:10px;font-weight:700;text-transform:uppercase;margin-bottom:4px}.op-desc{font-size:12px;color:var(--text-primary);margin-bottom:6px}.op-meta{display:flex;align-items:center;gap:8px;font-size:10px}.op-imp{font-weight:700;text-transform:uppercase}
 .cr-list{display:flex;flex-direction:column;gap:8px}.cr-item{padding:10px;border-radius:8px;background:rgba(255,255,255,0.02);border:1px solid var(--border-color)}.cr-title{font-size:12px;font-weight:600;color:var(--text-primary);margin-bottom:4px}.cr-desc{font-size:11px;color:var(--text-muted);margin-bottom:6px}.cr-meta{display:flex;gap:8px;align-items:center;margin-bottom:6px;font-size:10px}.cr-auth{color:#3b82f6}.cr-status{font-weight:600}.cr-changes{display:flex;gap:4px;flex-wrap:wrap;margin-bottom:6px}.cr-ch{font-size:9px;padding:2px 6px;border-radius:4px;background:rgba(139,92,246,0.15);color:#8b5cf6}.cr-actions{display:flex;gap:6px}
 .ai-header{display:flex;gap:8px;margin-bottom:12px}.ai-list{display:flex;flex-direction:column;gap:8px}.ai-item{display:flex;gap:10px;padding:10px;border-radius:8px;background:rgba(255,255,255,0.02);border:1px solid var(--border-color)}.ai-score{font-size:16px;font-weight:800;width:50px;text-align:center}.ai-info{flex:1}.ai-node{font-size:11px;font-weight:600;color:var(--text-primary);font-family:'JetBrains Mono',monospace}.ai-reason{font-size:10px;color:var(--text-muted);margin-top:2px}.ai-sug{font-size:10px;margin-top:2px}
+
+/* -- Permission & Lock Styles */
+.perm-list{display:flex;flex-direction:column;gap:6px}.perm-item{display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:6px;background:rgba(255,255,255,0.02);border:1px solid var(--border-color);font-size:11px}.perm-type{color:var(--color-primary);font-weight:600;width:60px}.perm-allowed{flex:1;color:var(--text-muted)}.perm-denied{flex:1;color:#ef4444}
+.lock-list{display:flex;flex-direction:column;gap:4px}.lock-item{display:flex;align-items:center;gap:8px;padding:6px 10px;border-radius:4px;background:rgba(245,158,11,0.1);border:1px solid rgba(245,158,11,0.3);font-size:11px}.lock-node{color:var(--text-primary);font-family:'JetBrains Mono',monospace}.lock-by{color:var(--color-warning)}.lock-time{color:var(--text-muted);font-size:10px}
+.pub-list{display:flex;flex-direction:column;gap:4px;margin-top:10px}.pub-item{display:flex;align-items:center;gap:8px;padding:6px 10px;border-radius:4px;background:rgba(255,255,255,0.02);font-size:11px}.pub-ver{color:var(--color-primary);font-weight:600}.pub-by{color:var(--text-muted)}.pub-success{color:#10b981}.pub-pending{color:#f59e0b}.pub-failed{color:#ef4444}
+
+/* -- Risk Dashboard Styles */
+.risk-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:12px}.risk-card{padding:12px;border-radius:8px;text-align:center}.risk-card.critical{background:rgba(239,68,68,0.2);border:1px solid #ef4444}.risk-card.high{background:rgba(249,115,22,0.2);border:1px solid #f97316}.risk-card.medium{background:rgba(245,158,11,0.2);border:1px solid #f59e0b}.risk-card.low{background:rgba(16,185,129,0.2);border:1px solid #10b981}.risk-val{font-size:24px;font-weight:800;display:block}.risk-label{font-size:10px;color:var(--text-muted)}.risk-total{font-size:14px;font-weight:700;color:var(--text-primary);text-align:center;padding:8px;background:rgba(59,130,246,0.1);border-radius:6px}
+
+/* -- Performance Dashboard Styles */
+.perf-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:12px}.perf-card{padding:10px;border-radius:8px;background:rgba(255,255,255,0.02);border:1px solid var(--border-color);text-align:center}.perf-val{font-size:18px;font-weight:800;color:var(--color-primary);display:block}.perf-label{font-size:9px;color:var(--text-muted);margin-top:2px}.perf-bars{display:flex;flex-direction:column;gap:6px}.perf-bar-row{display:flex;align-items:center;gap:8px;font-size:11px}.perf-bar-row span:first-child{width:40px;color:var(--text-muted)}.perf-bar-wrap{flex:1;height:6px;background:var(--border-color);border-radius:3px;overflow:hidden}.perf-bar-fill{height:100%;background:linear-gradient(90deg,#3b82f6,#10b981);border-radius:3px;transition:width .3s}
+
+/* -- Enhanced Heatmap Styles */
+.heatmap-grid{position:relative;height:200px;background:rgba(255,255,255,0.02);border:1px solid var(--border-color);border-radius:8px;overflow:hidden}.heatmap-cell{position:absolute;width:12%;height:12%;border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:8px;color:#fff;cursor:pointer;transition:all .2s}.heatmap-cell:hover{transform:scale(1.2);z-index:10}.heatmap-label{font-size:7px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:90%}
+
+/* -- Enhanced Topology Styles */
+.topo-canvas{position:relative;height:300px;background:rgba(255,255,255,0.02);border:1px solid var(--border-color);border-radius:8px;overflow:auto}.topo-node{position:absolute;padding:6px 10px;border-radius:6px;background:rgba(59,130,246,0.2);border:1px solid #3b82f6;cursor:grab;transition:all .2s}.topo-node:hover{background:rgba(59,130,246,0.4);transform:scale(1.05)}.topo-label{font-size:10px;color:var(--text-primary);display:block}.topo-conns{font-size:8px;color:var(--text-muted)}
+
+/* -- Layer Manager Styles */
+.layer-list{display:flex;flex-direction:column;gap:4px}.layer-item{display:flex;align-items:center;gap:8px;padding:6px 10px;border-radius:4px;background:rgba(255,255,255,0.02);font-size:11px}.layer-color{width:16px;height:16px;border-radius:4px;flex-shrink:0}.layer-name{flex:1;color:var(--text-primary)}.layer-vis,.layer-lock{position:relative;width:24px;height:14px;cursor:pointer}.layer-vis input,.layer-lock input{opacity:0;width:0;height:0}.layer-vis span,.layer-lock span{position:absolute;inset:0;background:var(--border-color);border-radius:7px;transition:.2s}.layer-vis input:checked+span,.layer-lock input:checked+span{background:#3b82f6}.layer-vis input:checked+span::before,.layer-lock input:checked+span::before{transform:translateX(10px)}.layer-vis span::before,.layer-lock span::before{content:'';position:absolute;width:10px;height:10px;left:2px;top:2px;background:#fff;border-radius:50%;transition:.2s}.layer-opacity{width:60px;accent-color:#3b82f6}
 </style>
