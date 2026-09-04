@@ -1623,8 +1623,6 @@
         <span class="sb-depth-badge">深度 {{ subprocessDepth }}</span>
       </div>
     </div>
-
-
     <!-- Node Detail Panel -->
     <div v-if="showNodeDetailPanel && nodeDetailNodeIdx !== null" class="node-detail-panel">
       <div class="ndp-header">
@@ -1659,7 +1657,6 @@
         </div>
       </div>
     </div>
-
     <!-- Edge Editor Panel -->
     <div v-if="showEdgeEditorPanel" class="edge-editor-panel">
       <div class="eep-header"><span>🔗 连线编辑器</span><button class="btn-sm" @click="closeEdgeEditor()">✕</button></div>
@@ -1676,7 +1673,6 @@
         </div>
       </div>
     </div>
-
     <!-- Template Manager -->
     <div v-if="showTemplateManager" class="template-manager-panel">
       <div class="tmp-header"><span>📦 模板管理</span><button class="btn-sm" @click="showTemplateManager=false">✕</button></div>
@@ -1697,7 +1693,6 @@
         </div>
       </div>
     </div>
-
     <!-- Collaboration Panel -->
     <div v-if="showCollabPanel" class="collab-panel">
       <div class="col-header"><span>👥 协作者</span><button class="btn-sm" @click="showCollabPanel=false">✕</button></div>
@@ -1714,7 +1709,6 @@
         <button class="btn-sm" @click="simulateCollabMovement()">🔄 模拟移动</button>
       </div>
     </div>
-
     <!-- Notification Panel -->
     <div v-if="showNotificationPanel" class="notification-panel">
       <div class="np-header"><span>🔔 通知中心</span><button class="btn-sm" @click="showNotificationPanel=false">✕</button></div>
@@ -1729,7 +1723,6 @@
         <button class="btn-sm" @click="clearNotificationNotifs()">清除全部</button>
       </div>
     </div>
-
     <!-- Audit Trail Panel -->
     <div v-if="showAuditTrailPanel" class="audit-panel">
       <div class="at-header"><span>📜 审计日志</span><button class="btn-sm" @click="showAuditTrailPanel=false">✕</button></div>
@@ -1745,7 +1738,6 @@
         <button class="btn-sm" @click="clearAuditTrailLocal()">清除</button>
       </div>
     </div>
-
     <!-- Health Dashboard Panel -->
     <div v-if="showHealthDashboardPanel" class="health-panel">
       <div class="hp-header"><span>💚 健康仪表盘</span><button class="btn-sm" @click="showHealthDashboardPanel=false">✕</button></div>
@@ -1760,7 +1752,6 @@
         </div>
       </div>
     </div>
-
     <!-- Quality Report Panel -->
     <div v-if="showQualityReportPanel" class="quality-panel">
       <div class="qp-header"><span>📊 质量报告</span><button class="btn-sm" @click="showQualityReportPanel=false">✕</button></div>
@@ -1775,7 +1766,6 @@
         </div>
       </div>
     </div>
-
     <!-- Version History Panel -->
     <div v-if="showVersionHistoryPanel" class="version-panel">
       <div class="vh-header"><span>📝 版本历史</span><button class="btn-sm" @click="showVersionHistoryPanel=false">✕</button></div>
@@ -1789,7 +1779,6 @@
         </div>
       </div>
     </div>
-
     <!-- Comment Panel -->
     <div v-if="showCommentPanel" class="comment-panel">
       <div class="cm-header"><span>💬 评论</span><button class="btn-sm" @click="showCommentPanel=false">✕</button></div>
@@ -1810,7 +1799,6 @@
         <div v-if="commentsList.length===0" class="cm-empty">暂无评论</div>
       </div>
     </div>
-
     <!-- Perf Monitor Panel -->
     <div v-if="showPerfMonitorPanel" class="perf-panel">
       <div class="pf-header"><span>⚡ 性能监控</span><button class="btn-sm" @click="stopPerfMonitorLocal()">✕</button></div>
@@ -1824,7 +1812,6 @@
         </div>
       </div>
     </div>
-
     <!-- Workflow Rules Panel -->
     <div v-if="showWorkflowRulesPanel" class="rules-panel">
       <div class="rw-header"><span>⚙ 工作流规则</span><button class="btn-sm" @click="showWorkflowRulesPanel=false">✕</button></div>
@@ -1841,8 +1828,6 @@
         <button class="btn" @click="executeAllWorkflowRules()">▶ 执行所有规则</button>
       </div>
     </div>
-
-
     <!-- Animation Config Panel -->
     <div v-if="showAnimationConfig && animationPreviewNodeIdx!==null" class="anim-config-panel">
       <div class="acp-header"><span>✨ 节点动画配置</span><button class="btn-sm" @click="closeAnimationConfig()">✕</button></div>
@@ -1864,7 +1849,6 @@
         </div>
       </div>
     </div>
-
     <!-- Canvas Settings Panel -->
     <div v-if="showCanvasSettings" class="canvas-settings-panel">
       <div class="csp-header"><span>⚙ 画布设置</span><button class="btn-sm" @click="showCanvasSettings=false">✕</button></div>
@@ -1885,7 +1869,6 @@
         <div class="csp-actions"><button class="btn" @click="applyCanvasSettings()">✓ 应用</button><button class="btn btn-ghost" @click="resetCanvasSettings()">重置</button></div>
       </div>
     </div>
-
     <!-- Metadata Panel -->
     <div v-if="showMetadataPanel" class="meta-panel">
       <div class="mp-header"><span>📋 流程元数据</span><button class="btn-sm" @click="showMetadataPanel=false">✕</button></div>
@@ -1903,7 +1886,6 @@
         <div class="mp-actions"><button class="btn" @click="saveMetadata()">💾 保存</button><button class="btn btn-ghost" @click="showMetadataPanel=false">取消</button></div>
       </div>
     </div>
-
     <!-- Performance Profile Panel -->
     <div v-if="showPerfProfilePanel && perfProfileNodeIdx!==null" class="perf-profile-panel">
       <div class="ppp-header"><span>📊 性能分析 - {{ processDef?.nodes[perfProfileNodeIdx]?.label || '节点' }}</span><button class="btn-sm" @click="showPerfProfilePanel=false">✕</button></div>
@@ -1917,7 +1899,6 @@
         <div class="ppp-chart"><div class="ppp-bar"><div class="ppp-fill" :style="{width:'70%', background:getPerfStatusColor(70)}"></div></div></div>
       </div>
     </div>
-
     <!-- Simulation Panel -->
     <div v-if="simState.running || simState.events.length > 0" class="sim-panel">
       <div class="sim-header"><span>▶ 流程模拟</span>
@@ -1935,7 +1916,6 @@
         </div>
       </div>
     </div>
-
     <!-- Gantt Chart Panel -->
     <div v-if="showGanttChart" class="gantt-panel">
       <div class="gantt-header"><span>📅 甘特图</span><button class="btn-sm" @click="showGanttChart=false">✕</button></div>
@@ -1951,7 +1931,6 @@
         </div>
       </div>
     </div>
-
     <!-- Layer Panel -->
     <div v-if="showLayerPanel" class="layer-panel">
       <div class="lp-header"><span>📑 图层管理</span><button class="btn-sm" @click="showLayerPanel=false">✕</button></div>
@@ -1970,7 +1949,6 @@
         </div>
       </div>
     </div>
-
     <!-- Bookmark Panel -->
     <div v-if="showBookmarkPanel" class="bookmark-panel">
       <div class="bm-header"><span>🔖 视图书签</span><button class="btn-sm" @click="showBookmarkPanel=false">✕</button></div>
@@ -1987,7 +1965,6 @@
         <div v-if="bookmarks.length===0" class="bm-empty">暂无书签</div>
       </div>
     </div>
-
     <!-- Workflow Templates Panel -->
     <div v-if="showWorkflowTemplates" class="wf-tpl-panel">
       <div class="wtp-header"><span>📦 工作流模板库</span><button class="btn-sm" @click="showWorkflowTemplates=false">✕</button></div>
@@ -2005,7 +1982,6 @@
         </div>
       </div>
     </div>
-
     <!-- Topology Panel -->
     <div v-if="showTopologyPanel" class="topology-panel">
       <div class="tp-header"><span>🕸 网络拓扑</span><button class="btn-sm" @click="showTopologyPanel=false">✕</button></div>
@@ -2022,7 +1998,6 @@
         </div>
       </div>
     </div>
-
     <!-- Risk Analysis Panel -->
     <div v-if="showRiskPanel" class="risk-panel">
       <div class="rp-header"><span>⚠ 风险分析</span><button class="btn-sm" @click="showRiskPanel=false">✕</button></div>
@@ -2044,7 +2019,6 @@
         </div>
       </div>
     </div>
-
     <!-- Documentation Panel -->
     <div v-if="showDocPanel" class="doc-panel">
       <div class="dp-header"><span>📄 流程文档</span>
@@ -2054,7 +2028,6 @@
         <textarea class="dp-editor" v-model="docContent" readonly></textarea>
       </div>
     </div>
-
     <!-- Node Shape Editor -->
     <div v-if="showShapeEditorDeep && shapePreviewNodeIdx!==null" class="shape-editor-panel">
       <div class="sep-header"><span>🔷 节点形状编辑器</span><button class="btn-sm" @click="showShapeEditorDeep=false">✕</button></div>
@@ -2071,7 +2044,6 @@
         </div>
       </div>
     </div>
-
     <!-- Export Modal -->
     <div v-if="showExportManager" class="modal-overlay" @click.self="showExportManager=false">
       <div class="modal export-modal">
@@ -2095,7 +2067,6 @@
         </div>
       </div>
     </div>
-
     <!-- Batch Ops Panel -->
     <div v-if="showBatchOps" class="batch-ops-panel">
       <div class="bp-header"><span>🔧 批量操作</span><button class="btn-sm" @click="showBatchOps=false">✕</button></div>
@@ -2107,7 +2078,6 @@
         <div v-if="batchOpsResult.success > 0" class="bp-result">成功: {{ batchOpsResult.success }} | 失败: {{ batchOpsResult.failed }}</div>
       </div>
     </div>
-
     <!-- Trace Panel -->
     <div v-if="showTracePanel" class="trace-panel">
       <div class="tr-header"><span>🔍 执行追踪</span><button class="btn-sm" @click="showTracePanel=false">✕</button></div>
@@ -2122,6 +2092,218 @@
             <span class="tr-step-node">{{ processDef?.nodes.find(n=>n.id===ts.nodeId)?.label||ts.nodeId }}</span>
             <span class="tr-step-action">{{ ts.action }}</span>
             <span class="tr-step-time">{{ ts.time }}ms</span>
+          </div>
+        </div>
+      </div>
+    </div>
+    <!-- Dependency Panel -->
+    <div v-if="showDependencyPanel" class="modal-overlay" @click.self="showDependencyPanel=false">
+      <div class="modal modal-lg">
+        <div class="modal-header"><span>🔗 依赖管理</span><button class="btn-sm" @click="showDependencyPanel=false">✕</button></div>
+        <div class="modal-body">
+          <div class="dep-add">
+            <select v-model="newDepSource" class="dep-select"><option v-for="n in processDef?.nodes" :value="n.id">{{ n.label||n.id }}</option></select>
+            <select v-model="newDepType" class="dep-select"><option value="data">数据</option><option value="control">控制</option><option value="timing">定时</option><option value="signal">信号</option></select>
+            <input v-model="newDepCondition" placeholder="条件(可选)" class="dep-input" />
+            <span>→</span>
+            <select v-model="newDepTarget" class="dep-select"><option v-for="n in processDef?.nodes" :value="n.id">{{ n.label||n.id }}</option></select>
+            <button class="btn-sm" @click="addDependency()">+</button>
+          </div>
+          <div class="dep-list">
+            <div v-for="(d,di) in processDependencies" :key="d.id" class="dep-item" :class="{disabled:!d.active}">
+              <span class="dep-source">{{ d.sourceNodeId }}</span>
+              <span class="dep-type dep-type-"+d.depType>{{ d.depType }}</span>
+              <span class="dep-target">{{ d.targetNodeId }}</span>
+              <button class="btn-xs" @click="toggleDependency(di)">{{ d.active?'禁用':'启用' }}</button>
+              <button class="btn-xs btn-danger" @click="removeDependency(di)">✕</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <!-- Color Theme Panel -->
+    <div v-if="showColorThemePanel" class="modal-overlay" @click.self="showColorThemePanel=false">
+      <div class="modal modal-md">
+        <div class="modal-header"><span>🎨 节点颜色主题</span><button class="btn-sm" @click="showColorThemePanel=false">✕</button></div>
+        <div class="modal-body">
+          <div class="theme-grid">
+            <div v-for="t in nodeColorThemes" :key="t.id" :class="['theme-card',{active:activeColorTheme===t.id}]" @click="applyColorTheme(t.id)">
+              <div class="theme-preview" :style="{background:t.fill, border:'2px solid '+t.stroke}"></div>
+              <div class="theme-name">{{ t.icon }} {{ t.name }}</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <!-- Edge Flow Panel -->
+    <div v-if="showEdgeFlowPanel" class="modal-overlay" @click.self="showEdgeFlowPanel=false">
+      <div class="modal modal-md">
+        <div class="modal-header"><span>🌊 连线流动配置</span><button class="btn-sm" @click="showEdgeFlowPanel=false">✕</button></div>
+        <div class="modal-body">
+          <div class="ef-row"><label>全局速度</label><input v-model.number="globalEdgeSpeed" type="range" min="0.5" max="5" step="0.5" /></div>
+          <div class="ef-row"><label>轨迹长度</label><input v-model.number="globalTrailLength" type="range" min="1" max="10" /></div>
+          <div class="ef-row"><label><input v-model="globalGlowEnabled" type="checkbox" /> 发光效果</label></div>
+          <button class="btn" @click="initEdgeFlowConfigs()">初始化配置</button>
+        </div>
+      </div>
+    </div>
+    <!-- KPI Dashboard -->
+    <div v-if="showKPIDashboard" class="kpi-dashboard">
+      <div class="kpi-header"><span>📊 KPI 仪表盘</span><button class="btn-sm" @click="showKPIDashboard=false">✕</button></div>
+      <div class="kpi-body">
+        <div class="kpi-total"><span class="kpi-total-val">{{ getFlowHealthScore() }}</span><span class="kpi-total-label">健康评分</span></div>
+        <div class="kpi-grid">
+          <div v-for="kpi in processKPIs" :key="kpi.name" class="kpi-card">
+            <div class="kpi-card-val" :style="{color:getKPIStatusColor(kpi)}">{{ kpi.value }}<span class="kpi-unit">{{ kpi.unit }}</span></div>
+            <div class="kpi-card-name">{{ kpi.name }}</div>
+            <div class="kpi-card-target">目标: {{ kpi.target }}{{ kpi.unit }}</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <!-- Bookmarks Panel -->
+    <div v-if="showBookmarkPanel" class="bookmark-panel">
+      <div class="bp-header"><span>🔖 流程书签</span><button class="btn-sm" @click="showBookmarkPanel=false">✕</button></div>
+      <div class="bp-body">
+        <div class="bp-add"><input v-model="newBookmarkName" placeholder="书签名称" class="bp-input" /><input v-model="newBookmarkDesc" placeholder="描述" class="bp-input bp-desc" /><button class="btn-sm" @click="addBookmark()">+</button></div>
+        <div class="bp-list">
+          <div v-for="(bm,bmidx) in processBookmarks" :key="bm.id" class="bp-item">
+            <span class="bp-name">{{ bm.name }}</span>
+            <span class="bp-nodes">{{ bm.nodeIds.length }}节点</span>
+            <button class="btn-xs" @click="jumpToBookmark(bmidx)">跳转</button>
+            <button class="btn-xs btn-danger" @click="deleteBookmark(bmidx)">✕</button>
+          </div>
+        </div>
+        <div v-if="processBookmarks.length===0" class="bp-empty">暂无书签</div>
+      </div>
+    </div>
+    <!-- Heatmap Panel -->
+    <div v-if="showHeatmapPanel" class="heatmap-panel">
+      <div class="hm-header"><span>🗺️ 节点热度图</span>
+        <select v-model="heatmapMetric" @change="updateHeatmapMetric(heatmapMetric)" class="hm-metric-select">
+          <option value="degree">连接度</option><option value="centrality">中心性</option>
+        </select>
+        <button class="btn-sm" @click="showHeatmapPanel=false">✕</button>
+      </div>
+      <div class="hm-body">
+        <div class="hm-legend"><span class="hm-low">低</span><div class="hm-gradient"></div><span class="hm-high">高</span></div>
+        <div class="hm-nodes">
+          <div v-for="cell in heatmapData" :key="cell.nodeId" class="hm-node" :style="{background:cell.color}" :title="cell.label + ': ' + cell.value">
+            <span class="hm-node-label">{{ cell.label }}</span>
+            <span class="hm-node-val">{{ cell.value }}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+    <!-- Workflow Rules Panel -->
+    <div v-if="showWorkflowRulesPanel" class="workflow-rules-panel">
+      <div class="wr-header"><span>⚙ 工作流规则</span><button class="btn-sm" @click="showWorkflowRulesPanel=false">✕</button></div>
+      <div class="wr-body">
+        <div class="wr-add"><input v-model="newRuleName" placeholder="规则名称" class="wr-input" /><input v-model="newRuleCondition" placeholder="条件表达式" class="wr-input" /><input v-model="newRuleAction" placeholder="动作" class="wr-input" /><button class="btn-sm" @click="addWorkflowRule()">+</button></div>
+        <div class="wr-list">
+          <div v-for="r in workflowRulesList" :key="r.id" :class="['wr-item',{disabled:!r.enabled}]">
+            <span class="wr-name">{{ r.name }}</span>
+            <span class="wr-cond">{{ r.condition }}</span>
+            <button class="btn-xs" @click="toggleWorkflowRule(r.id)">{{ r.enabled?'启用':'禁用' }}</button>
+            <button class="btn-xs btn-danger" @click="removeWorkflowRule(r.id)">✕</button>
+          </div>
+        </div>
+        <button class="btn" @click="executeWorkflowRules()">▶ 执行所有规则</button>
+      </div>
+    </div>
+    <!-- Export Config Panel -->
+    <div v-if="showExportConfigPanel" class="modal-overlay" @click.self="showExportConfigPanel=false">
+      <div class="modal modal-md">
+        <div class="modal-header"><span>📤 导出设置</span><button class="btn-sm" @click="showExportConfigPanel=false">✕</button></div>
+        <div class="modal-body">
+          <div class="ex-field"><label>格式</label><select v-model="exportConfig.format" class="ex-select"><option value="json">JSON</option><option value="svg">SVG</option><option value="mermaid">Mermaid</option><option value="yaml">YAML</option><option value="html">HTML</option><option value="csv">CSV</option></select></div>
+          <div class="ex-field"><label>质量</label><select v-model="exportConfig.quality" class="ex-select"><option value="low">低</option><option value="medium">中</option><option value="high">高</option></select></div>
+          <div class="ex-field"><label><input v-model="exportConfig.includeAnnotations" type="checkbox" /> 包含标注</label></div>
+          <div class="ex-field"><label><input v-model="exportConfig.includeMetadata" type="checkbox" /> 包含元数据</label></div>
+          <div class="ex-field"><label><input v-model="exportConfig.includeHistory" type="checkbox" /> 包含历史</label></div>
+          <button class="btn" @click="applyExportConfig()">📤 导出</button>
+        </div>
+      </div>
+    </div>
+    <!-- Node Style Editor -->
+    <div v-if="showNodeStyleEditor && nodeStyleEditorIdx!==null" class="modal-overlay" @click.self="showNodeStyleEditor=false">
+      <div class="modal modal-md">
+        <div class="modal-header"><span>🎨 节点样式编辑器</span><button class="btn-sm" @click="showNodeStyleEditor=false">✕</button></div>
+        <div class="modal-body">
+          <div class="nse-grid">
+            <div class="nse-field"><label>圆角</label><input v-model.number="nodeStyleConfig.borderRadius" type="range" min="0" max="30" /><span>{{ nodeStyleConfig.borderRadius }}</span></div>
+            <div class="nse-field"><label>边框宽</label><input v-model.number="nodeStyleConfig.borderWidth" type="range" min="0" max="5" step="0.5" /><span>{{ nodeStyleConfig.borderWidth }}</span></div>
+            <div class="nse-field"><label>字体大小</label><input v-model.number="nodeStyleConfig.fontSize" type="range" min="8" max="24" /><span>{{ nodeStyleConfig.fontSize }}</span></div>
+            <div class="nse-field"><label>填充色</label><input v-model="nodeStyleConfig.fillColor" type="color" class="nse-color" /></div>
+            <div class="nse-field"><label>描边色</label><input v-model="nodeStyleConfig.strokeColor" type="color" class="nse-color" /></div>
+            <div class="nse-field"><label><input v-model="nodeStyleConfig.shadowEnabled" type="checkbox" /> 阴影</label></div>
+            <div class="nse-field"><label><input v-model="nodeStyleConfig.glowEnabled" type="checkbox" /> 发光</label></div>
+          </div>
+          <div class="nse-actions"><button class="btn" @click="saveNodeStyle()">💾 保存</button><button class="btn" @click="applyNodeStyleToAll()">应用到全部</button><button class="btn btn-ghost" @click="showNodeStyleEditor=false">取消</button></div>
+        </div>
+      </div>
+    </div>
+    <!-- Animation Presets Panel -->
+    <div v-if="showAnimationPresetsPanel" class="modal-overlay" @click.self="showAnimationPresetsPanel=false">
+      <div class="modal modal-md">
+        <div class="modal-header"><span>✨ 动画预设</span><button class="btn-sm" @click="showAnimationPresetsPanel=false">✕</button></div>
+        <div class="modal-body">
+          <div class="ap-grid">
+            <div v-for="p in animationPresets" :key="p.id" :class="['ap-card',{active:activeAnimationPreset===p.id}]" @click="applyAnimationPreset(p.id)">
+              <div class="ap-name">{{ p.name }}</div>
+              <div class="ap-preview"><span>{{ p.entrance }}</span><span>{{ p.hover }}</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <!-- Validation Panel -->
+    <div v-if="showValidationPanel" class="modal-overlay" @click.self="showValidationPanel=false">
+      <div class="modal modal-lg">
+        <div class="modal-header"><span>✅ 流程验证</span><button class="btn-sm" @click="showValidationPanel=false">✕</button></div>
+        <div class="modal-body">
+          <div class="val-score"><span class="val-val">{{ validationScore }}</span><span class="val-label">验证得分</span></div>
+          <div class="val-issues">
+            <div v-for="issue in validationIssues" :key="issue.id" :class="['val-issue','val-'+issue.type]">
+              <span class="val-sev" :style="{color:getValidationSeverityColor(issue.severity)}">{{ issue.severity>=3?'严重':issue.severity>=2?'警告':'提示' }}</span>
+              <span class="val-msg">{{ issue.message }}</span>
+              <span class="val-sug">{{ issue.suggestion }}</span>
+            </div>
+          </div>
+          <button class="btn" @click="runFullValidation()">🔄 重新验证</button>
+        </div>
+      </div>
+    </div>
+    <!-- Metrics Panel -->
+    <div v-if="showMetricsPanel" class="metrics-panel">
+      <div class="mp-header"><span>📈 流程指标</span><button class="btn-sm" @click="showMetricsPanel=false">✕</button></div>
+      <div class="mp-body">
+        <div class="mp-grid">
+          <div v-for="m in processMetrics" :key="m.name" class="mp-card">
+            <div class="mp-val">{{ m.value }}<span class="mp-unit">{{ m.unit }}</span></div>
+            <div class="mp-name">{{ m.name }}</div>
+            <div class="mp-desc">{{ m.description }}</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <!-- Event Log Panel -->
+    <div v-if="showEventLogPanel" class="event-log-panel">
+      <div class="el-header"><span>📋 事件日志</span>
+        <select v-model="eventLogType" class="el-filter"><option value="all">全部</option><option value="node_start">节点开始</option><option value="node_end">节点结束</option><option value="error">错误</option></select>
+        <button class="btn-sm" @click="clearEventLog()">清除</button>
+        <button class="btn-sm" @click="showEventLogPanel=false">✕</button>
+      </div>
+      <div class="el-body">
+        <div class="el-stats">
+          <span v-for="(count,type) in getEventCountByType()" :key="type" class="el-stat">{{ type.replace('_',' '): {{ count }} }}</span>
+        </div>
+        <div class="el-list">
+          <div v-for="e in getFilteredEvents()" :key="e.id" :class="['el-entry','el-'+e.type]">
+            <span class="el-time">{{ new Date(e.timestamp).toLocaleTimeString() }}</span>
+            <span class="el-type">{{ e.type }}</span>
+            <span class="el-label">{{ e.label }}</span>
+            <span class="el-data">{{ Object.keys(e.data).length > 0 ? JSON.stringify(e.data).substring(0,50) : '' }}</span>
           </div>
         </div>
       </div>
@@ -5837,18 +6019,15 @@ function stopAnimationLoop(): void {
 onMounted(() => { startAnimationLoop(); initEdgeParticles(); initBranchParticles() })
 onUnmounted(() => { stopAnimationLoop() })
 // ── Script Editor Functions ──────────────────────────────────────────
-
 // ── Node Detail Panel State ─────────────────────────────────────────
 const showNodeDetailPanel = ref(false)
 const nodeDetailNodeIdx = ref<number|null>(null)
 const nodeDetailTab = ref<'info'|'conditions'|'vars'|'props'|'history'>('info')
 const nodeDetailHistory = ref<Array<{timestamp: number; action: string; details: string}>>([])
-
 // ── Edge Editor State ────────────────────────────────────────────────
 const showEdgeEditorPanel = ref(false)
 const edgeEditorEdgeIdx = ref<number|null>(null)
 const edgeEditorPoints = ref<Array<{x: number; y: number}>>([])
-
 // ── Process Sandbox State ────────────────────────────────────────────
 const showSandboxPanel = ref(false)
 const sandboxInput = ref('{}')
@@ -5856,7 +6035,6 @@ const sandboxOutput = ref('')
 const sandboxLogs = ref<string[]>([])
 const sandboxRunning = ref(false)
 const sandboxResult = ref<any>(null)
-
 // ── Template Manager State ───────────────────────────────────────────
 const showTemplateManager = ref(false)
 const templateManagerSearch = ref('')
@@ -5868,7 +6046,6 @@ const customTemplates = ref<Array<{id: string; name: string; icon: string; descr
   { id: 'ct5', name: '数据同步流', icon: '🔄', description: '跨系统数据同步', nodeCount: 4, tags: ['数据','同步'], created: Date.now() },
   { id: 'ct6', name: '通知推送流', icon: '🔔', description: '消息通知推送流程', nodeCount: 4, tags: ['通知','推送'], created: Date.now() },
 ])
-
 // ── Collaboration State ──────────────────────────────────────────────
 const showCollabPanel = ref(false)
 const collaborators = ref<Array<{id: string; name: string; color: string; avatar: string; lastActive: number; cursorX: number; cursorY: number}>>([
@@ -5878,58 +6055,45 @@ const collaborators = ref<Array<{id: string; name: string; color: string; avatar
 ])
 const collabCursorPos = ref({ x: 0, y: 0 })
 const collabMode = ref<'view'|'edit'|'comment'>('view')
-
 // ── Node Advanced Config State ───────────────────────────────────────
 const showAdvancedConfigPanel = ref(false)
 const advancedConfigNodeId = ref<number|null>(null)
 const advancedConfigs = ref<Map<string, {entranceAnim: string; exitAnim: string; hoverEffect: string; clickEffect: string; soundEnabled: boolean; tooltipEnabled: boolean; badgeText: string; badgeColor: string; connectorStyle: string; labelPosition: string; borderRadius: number; borderWidth: number}>>(new Map())
-
 // ── Workflow Rules State ─────────────────────────────────────────────
 const showWorkflowRulesPanel = ref(false)
 const workflowRulesList = ref<Array<{id: string; name: string; condition: string; action: string; enabled: boolean; priority: number}>>([])
 const newRuleName = ref(''), newRuleCondition = ref(''), newRuleAction = ref('')
-
 // ── Quality Report State ─────────────────────────────────────────────
 const showQualityReportPanel = ref(false)
 const qualityMetricsList = ref<Array<{name: string; value: number; max: number; unit: string; severity: string; description: string}>>([])
-
 // ── Version History State ────────────────────────────────────────────
 const showVersionHistoryPanel = ref(false)
 const versionRecordsList = ref<Array<{id: string; timestamp: number; label: string; author: string; changeSummary: string; nodeCount: number; edgeCount: number; config: any}>>([])
 const versionDiffResult = ref<{added: number; removed: number; modified: number}|null>(null)
-
 // ── Performance Monitor State ────────────────────────────────────────
 const showPerfMonitorPanel = ref(false)
 const perfStatsData = ref<{fps: number; nodes: number; edges: number; renderMs: number; memMb: number}>({ fps: 60, nodes: 0, edges: 0, renderMs: 0, memMb: 0 })
-
 // ── Notification Center State ────────────────────────────────────────
 const showNotificationPanel = ref(false)
 const notificationsList = ref<Array<{id: string; type: string; title: string; message: string; timestamp: number; read: boolean; category: string}>>([])
 const unreadNotificationCount = computed(() => notificationsList.value.filter(n => !n.read).length)
-
 // ── Audit Trail State ────────────────────────────────────────────────
 const showAuditTrailPanel = ref(false)
 const auditTrailEntries = ref<Array<{id: string; timestamp: number; user: string; action: string; target: string; details: string}>>([])
-
 // ── Health Dashboard State ───────────────────────────────────────────
 const showHealthDashboardPanel = ref(false)
 const healthIndicatorsList = ref<Array<{id: string; name: string; status: string; value: number; threshold: number; unit: string; trend: string}>>([])
-
 // ── Comment System State ─────────────────────────────────────────────
 const showCommentPanel = ref(false)
 const commentsList = ref<Array<{id: string; timestamp: number; author: string; targetType: string; targetId: string; content: string; resolved: boolean}>>([])
 const newCommentText = ref(''), newCommentAuthorName = ref('用户'), newCommentTargetType = ref('canvas')
-
 // ── Constraint System State ──────────────────────────────────────────
 const showConstraintPanel = ref(false)
 const nodeConstraintsList = ref<Array<{id: string; nodeId: string; type: string; description: string; active: boolean}>>([])
 const edgeConstraintsList = ref<Array<{id: string; fromId: string; toId: string; type: string; active: boolean}>>([])
-
 // ── Batch Operation State ────────────────────────────────────────────
 const showBatchOpPanel = ref(false)
 const batchOpResults = ref<{success: number; failed: number; details: Array<{id: string; status: string; msg: string}>}>({ success: 0, failed: 0, details: [] })
-
-
 // ── Node Detail Functions ────────────────────────────────────────────
 function openNodeDetail(nodeIdx: number) {
   nodeDetailNodeIdx.value = nodeIdx
@@ -5947,7 +6111,6 @@ function getNodeDetailInfo(): any {
   return { node, inCount: inEdges.length, outCount: outEdges.length, inEdges, outEdges }
 }
 function changeNodeDetailTab(tab: string) { nodeDetailTab.value = tab as any }
-
 // ── Edge Editor Functions ────────────────────────────────────────────
 function openEdgeEditor(edgeIdx: number) {
   edgeEditorEdgeIdx.value = edgeIdx
@@ -5975,7 +6138,6 @@ function deleteEdgeEditor() {
   closeEdgeEditor()
   showToast('连线已删除', 'warning')
 }
-
 // ── Sandbox Functions ────────────────────────────────────────────────
 function runSandbox() {
   if (!processDef.value) return
@@ -5993,7 +6155,6 @@ function runSandbox() {
   sandboxRunning.value = false
 }
 function clearSandbox() { sandboxInput.value = '{}'; sandboxOutput.value = ''; sandboxLogs.value = []; sandboxResult.value = null }
-
 // ── Template Manager Functions ───────────────────────────────────────
 function filterCustomTemplates(): Array<{id: string; name: string; icon: string; description: string; nodeCount: number; tags: string[]; created: number}> {
   if (!templateManagerSearch.value.trim()) return customTemplates.value
@@ -6019,7 +6180,6 @@ function exportCustomTemplate(idx: number) {
   const a = document.createElement('a')
   a.href = url; a.download = tpl.name + '.json'; a.click(); URL.revokeObjectURL(url)
 }
-
 // ── Collaboration Functions ──────────────────────────────────────────
 function addCollaborator(name: string, color: string) {
   collaborators.value.push({ id: genId(), name, color, avatar: '👤', lastActive: Date.now(), cursorX: Math.random() * 800, cursorY: Math.random() * 600 })
@@ -6032,7 +6192,6 @@ function simulateCollabMovement() {
     c.lastActive = Date.now()
   })
 }
-
 // ── Advanced Config Functions ────────────────────────────────────────
 function openAdvancedConfig(nodeIdx: number) {
   advancedConfigNodeId.value = nodeIdx
@@ -6052,7 +6211,6 @@ function saveAdvancedConfig() {
   showAdvancedConfigPanel.value = false
   showToast('高级配置已保存', 'success')
 }
-
 // ── Workflow Rules Functions ─────────────────────────────────────────
 function addWorkflowRule(): void {
   if (!newRuleName.value.trim()) return
@@ -6070,7 +6228,6 @@ function executeAllWorkflowRules(): void {
     } catch { /* skip invalid rules */ }
   })
 }
-
 // ── Quality Report Functions ─────────────────────────────────────────
 function generateQualityReport(): void {
   if (!processDef.value) return
@@ -6091,7 +6248,6 @@ function getQualityScore(): number {
   const good = qualityMetricsList.value.filter(m => m.severity === 'good').length
   return qualityMetricsList.value.length === 0 ? 0 : Math.round((good / qualityMetricsList.value.length) * 100)
 }
-
 // ── Version History Functions ────────────────────────────────────────
 function recordVersionRecord(label: string, summary: string): void {
   if (!processDef.value || !currentProcess.value) return
@@ -6121,24 +6277,13 @@ function restoreVersionRecord(idx: number): void {
   pushHistory()
   showToast('已恢复到版本: ' + versionRecordsList.value[idx].label, 'info')
 }
-
 // ── Performance Monitor Functions ────────────────────────────────────
 function startPerfMonitorLocal(): void {
   showPerfMonitorPanel.value = true
   let frameCount = 0, lastTime = performance.now()
-  function loop(now: number): void {
-    frameCount++
-    if (now - lastTime >= 1000) {
-      const fps = Math.round(frameCount * 1000 / (now - lastTime))
-      perfStatsData.value = { fps, nodes: processDef.value?.nodes?.length || 0, edges: processDef.value?.edges?.length || 0, renderMs: now - lastTime, memMb: Math.round((performance.memory?.usedJSHeapSize || 0) / 1048576) }
-      frameCount = 0; lastTime = now
-    }
-    if (showPerfMonitorPanel.value) requestAnimationFrame(loop)
-  }
   requestAnimationFrame(loop)
 }
 function stopPerfMonitorLocal(): void { showPerfMonitorPanel.value = false }
-
 // ── Notification Functions ───────────────────────────────────────────
 function addNotificationNotif(type: string, title: string, message: string, category: string = 'system'): void {
   notificationsList.value.unshift({ id: genId(), type, title, message, timestamp: Date.now(), read: false, category })
@@ -6147,7 +6292,6 @@ function addNotificationNotif(type: string, title: string, message: string, cate
 function markNotificationNotifRead(id: string): void { const n = notificationsList.value.find(x => x.id === id); if (n) n.read = true }
 function clearNotificationNotifs(): void { notificationsList.value = [] }
 function getUnreadCountNotif(): number { return notificationsList.value.filter(n => !n.read).length }
-
 // ── Audit Trail Functions ────────────────────────────────────────────
 function logAuditLocal(action: string, target: string, details: string): void {
   auditTrailEntries.value.unshift({ id: genId(), timestamp: Date.now(), user: 'current_user', action, target, details })
@@ -6155,7 +6299,6 @@ function logAuditLocal(action: string, target: string, details: string): void {
 }
 function getAuditByActionLocal(action: string): any[] { return auditTrailEntries.value.filter(e => e.action === action) }
 function clearAuditTrailLocal(): void { auditTrailEntries.value = [] }
-
 // ── Health Dashboard Functions ───────────────────────────────────────
 function updateHealthDashboardLocal(): void {
   if (!processDef.value) return
@@ -6173,7 +6316,6 @@ function updateHealthDashboardLocal(): void {
 function getHealthStatusColorLocal(status: string): string {
   return { healthy: 'var(--color-success)', warning: 'var(--color-warning)', critical: 'var(--color-danger)' }[status] || 'var(--text-muted)'
 }
-
 // ── Comment Functions ────────────────────────────────────────────────
 function addCommentComment(): void {
   if (!newCommentText.value.trim()) return
@@ -6190,7 +6332,6 @@ function resolveCommentComment(id: string): void { const c = commentsList.value.
 function deleteCommentComment(id: string): void { commentsList.value = commentsList.value.filter(c => c.id !== id) }
 function getCommentCountComment(targetType: string, targetId: string): number { return commentsList.value.filter(c => c.targetType === targetType && c.targetId === targetId).length }
 function getUnresolvedCommentsComment(): number { return commentsList.value.filter(c => !c.resolved).length }
-
 // ── Constraint Functions ─────────────────────────────────────────────
 function addNodeConstraintConstraint(): void {
   if (!newConstraintNode.value) return
@@ -6210,7 +6351,6 @@ function validateConstraintsValidate(): { valid: boolean; errors: string[] } {
   return { valid: errors.length === 0, errors }
 }
 function getConstraintViolationsValidate(): string[] { return validateConstraintsValidate().errors }
-
 // ── Batch Operation Functions ────────────────────────────────────────
 function runBatchOperationLocal(opId: string): void {
   if (!processDef.value) return
@@ -6229,7 +6369,489 @@ function runBatchOperationLocal(opId: string): void {
   pushHistory()
   showToast('批量操作完成: ' + result.success + '成功 ' + result.failed + '失败', result.failed > 0 ? 'warning' : 'success')
 }
-
+// ── Deepened Types ──────────────────────────────────────────────────
+interface ProcessDependency { sourceNodeId: string; targetNodeId: string; depType: 'data'|'control'|'timing'|'signal'; condition: string; priority: number; active: boolean }
+interface NodeColorTheme { id: string; name: string; fill: string; stroke: string; textColor: string; icon: string; isDefault: boolean }
+interface EdgeFlowConfig { speed: number; direction: 'forward'|'backward'|'both'; particlesPerEdge: number; trailLength: number; glowEnabled: boolean; color: string }
+interface ProcessCheckpoint { id: string; nodeId: string; label: string; condition: string; action: string; enabled: boolean; triggered: boolean }
+interface ProcessEvent { id: string; timestamp: number; type: 'node_start'|'node_end'|'edge_cross'|'condition_met'|'error'; nodeId: string; label: string; data: Record<string,any> }
+interface ProcessKPI { name: string; value: number; target: number; unit: string; trend: 'up'|'down'|'stable'; threshold: { warning: number; critical: number } }
+interface ProcessBookmark { id: string; name: string; nodeIds: string[]; description: string; createdAt: number; tags: string[] }
+interface ProcessComparisonResult { addedNodes: string[]; removedNodes: string[]; modifiedNodes: string[]; addedEdges: string[]; removedEdges: string[]; unchangedNodes: string[]; unchangedEdges: string[] }
+interface ProcessHeatmapCell { nodeId: string; metric: string; value: number; color: string; label: string }
+interface ProcessDependencyGraph { nodes: Array<{id: string; label: string; x: number; y: number; type: string}>; edges: Array<{from: string; to: string; type: string; label?: string}> }
+interface ProcessGanttTask { id: string; label: string; start: number; duration: number; color: string; dependencies: string[]; progress: number; status: string }
+interface ProcessNotification { id: string; type: 'info'|'success'|'warning'|'error'; title: string; message: string; timestamp: number; read: boolean; action?: string; actionHandler?: () => void }
+interface ProcessWorkflowRule { id: string; name: string; condition: string; action: string; priority: number; enabled: boolean; executionLog: Array<{time: number; result: string}> }
+interface ProcessExportConfig { format: string; includeAnnotations: boolean; includeMetadata: boolean; includeHistory: boolean; quality: 'low'|'medium'|'high'; pageSize: string; orientation: string }
+interface ProcessNodeStyle { borderRadius: number; borderWidth: number; borderColor: string; fillColor: string; strokeColor: string; shadowEnabled: boolean; glowEnabled: boolean; iconSize: number; fontSize: number; fontWeight: string; textAlign: 'left'|'center'|'right' }
+interface ProcessAnimationPreset { id: string; name: string; entrance: string; exit: string; hover: string; click: string; duration: number; easing: string }
+interface ProcessValidationIssue { id: string; type: 'error'|'warning'|'info'; nodeId?: string; message: string; suggestion: string; severity: number }
+interface ProcessMetric { name: string; value: string; description: string; category: string; trend: number; unit: string }
+interface ProcessTimelineEvent { time: number; type: string; label: string; color: string; details: string }
+// ── Dependencies Manager ────────────────────────────────────────────
+const showDependencyPanel = ref(false)
+const processDependencies = ref<ProcessDependency[]>([])
+const newDepSource = ref('')
+const newDepTarget = ref('')
+const newDepType = ref<'data'|'control'|'timing'|'signal'>('data')
+const newDepCondition = ref('')
+// ── Node Color Themes ────────────────────────────────────────────────
+const showColorThemePanel = ref(false)
+const nodeColorThemes = ref<NodeColorTheme[]>([
+  { id: 'ct1', name: '默认主题', fill: 'rgba(0,212,255,0.15)', stroke: '#00d4ff', textColor: '#00d4ff', icon: '🎨', isDefault: true },
+  { id: 'ct2', name: '极光绿', fill: 'rgba(16,185,129,0.15)', stroke: '#10b981', textColor: '#10b981', icon: '🌿', isDefault: false },
+  { id: 'ct3', name: '烈焰红', fill: 'rgba(239,68,68,0.15)', stroke: '#ef4444', textColor: '#ef4444', icon: '🔥', isDefault: false },
+  { id: 'ct4', name: '紫罗兰', fill: 'rgba(168,85,247,0.15)', stroke: '#a855f7', textColor: '#a855f7', icon: '💜', isDefault: false },
+  { id: 'ct5', name: '琥珀黄', fill: 'rgba(245,158,11,0.15)', stroke: '#f59e0b', textColor: '#f59e0b', icon: '🌟', isDefault: false },
+  { id: 'ct6', name: '樱花粉', fill: 'rgba(236,72,153,0.15)', stroke: '#ec4899', textColor: '#ec4899', icon: '🌸', isDefault: false },
+])
+const activeColorTheme = ref('ct1')
+// ── Edge Flow Config ────────────────────────────────────────────────
+const showEdgeFlowPanel = ref(false)
+const edgeFlowConfigs = ref<Map<string, EdgeFlowConfig>>(new Map())
+const globalEdgeSpeed = ref(2)
+const globalTrailLength = ref(5)
+const globalGlowEnabled = ref(true)
+// ── Checkpoints ─────────────────────────────────────────────────────
+const showCheckpointPanel = ref(false)
+const processCheckpoints = ref<ProcessCheckpoint[]>([])
+const newCheckpointNodeId = ref('')
+const newCheckpointLabel = ref('')
+const newCheckpointCondition = ref('')
+// ── Event Log ───────────────────────────────────────────────────────
+const showEventLogPanel = ref(false)
+const processEvents = ref<ProcessEvent[]>([])
+const eventLogFilter = ref('')
+const eventLogType = ref<'all'|'node_start'|'node_end'|'edge_cross'|'condition_met'|'error'>('all')
+// ── KPI Dashboard ───────────────────────────────────────────────────
+const showKPIDashboard = ref(false)
+const processKPIs = ref<ProcessKPI[]>([])
+// ── Bookmarks ───────────────────────────────────────────────────────
+const showBookmarkPanel = ref(false)
+const processBookmarks = ref<ProcessBookmark[]>([])
+const newBookmarkName = ref('')
+const newBookmarkDesc = ref('')
+// ── Comparison Enhanced ─────────────────────────────────────────────
+const showComparisonEnhanced = ref(false)
+const comparisonResult = ref<ProcessComparisonResult|null>(null)
+// ── Heatmap ─────────────────────────────────────────────────────────
+const showHeatmapPanel = ref(false)
+const heatmapData = ref<ProcessHeatmapCell[]>([])
+const heatmapMetric = ref<'degree'|'centrality'|'betweenness'|' PageRank'>('degree')
+// ── Workflow Rules ──────────────────────────────────────────────────
+// ── Export Config ───────────────────────────────────────────────────
+const showExportConfigPanel = ref(false)
+const exportConfig = ref<ProcessExportConfig>({ format: 'svg', includeAnnotations: true, includeMetadata: true, includeHistory: false, quality: 'high', pageSize: 'A4', orientation: 'landscape' })
+// ── Node Style Editor ───────────────────────────────────────────────
+const showNodeStyleEditor = ref(false)
+const nodeStyleEditorIdx = ref<number|null>(null)
+const nodeStyleConfig = ref<ProcessNodeStyle>({ borderRadius: 8, borderWidth: 1.5, borderColor: 'var(--border-color)', fillColor: 'rgba(0,212,255,0.15)', strokeColor: '#00d4ff', shadowEnabled: true, glowEnabled: false, iconSize: 16, fontSize: 12, fontWeight: '600', textAlign: 'center' })
+// ── Animation Presets ───────────────────────────────────────────────
+const showAnimationPresetsPanel = ref(false)
+const animationPresets = ref<ProcessAnimationPreset[]>([
+  { id: 'ap1', name: '淡入淡出', entrance: 'fade', exit: 'fade', hover: 'glow', click: 'ripple', duration: 300, easing: 'ease-in-out' },
+  { id: 'ap2', name: '滑入', entrance: 'slide-left', exit: 'slide-right', hover: 'shadow', click: 'scale', duration: 400, easing: 'cubic-bezier(0.4, 0, 0.2, 1)' },
+  { id: 'ap3', name: '弹跳', entrance: 'bounce', exit: 'bounce', hover: 'scale', click: 'shake', duration: 500, easing: 'cubic-bezier(0.68, -0.55, 0.265, 1.55)' },
+  { id: 'ap4', name: '脉冲', entrance: 'pulse', exit: 'fade', hover: 'glow', click: 'pulse', duration: 1000, easing: 'ease-in-out' },
+  { id: 'ap5', name: '缩放', entrance: 'scale', exit: 'scale', hover: 'scale', click: 'scale', duration: 200, easing: 'ease-out' },
+  { id: 'ap6', name: '旋转', entrance: 'rotate', exit: 'rotate', hover: 'rotate', click: 'rotate', duration: 600, easing: 'ease-in-out' },
+])
+const activeAnimationPreset = ref('ap1')
+// ── Validation Issues ───────────────────────────────────────────────
+const showValidationPanel = ref(false)
+const validationIssues = ref<ProcessValidationIssue[]>([])
+const validationScore = ref(100)
+// ── Metrics Panel ───────────────────────────────────────────────────
+const showMetricsPanel = ref(false)
+const processMetrics = ref<ProcessMetric[]>([])
+// ── Timeline Enhanced ──────────────────────────────────────────────
+const showTimelineEnhanced = ref(false)
+const timelineEventsEnhanced = ref<ProcessTimelineEvent[]>([])
+const timelineZoomLevel = ref(1)
+const timelineScrollPos = ref(0)
+// ── Dependency Manager Functions ─────────────────────────────────────
+function openDependencyPanel() { showDependencyPanel.value = true }
+function addDependency() {
+  if (!newDepSource.value || !newDepTarget.value) return
+  processDependencies.value.push({ sourceNodeId: newDepSource.value, targetNodeId: newDepTarget.value, depType: newDepType.value, condition: newDepCondition.value, priority: processDependencies.value.length, active: true })
+  newDepSource.value = ''; newDepTarget.value = ''; newDepCondition.value = ''
+}
+function removeDependency(idx: number) { processDependencies.value.splice(idx, 1) }
+function toggleDependency(idx: number) { processDependencies.value[idx].active = !processDependencies.value[idx].active }
+function getDependenciesForNode(nodeId: string): ProcessDependency[] { return processDependencies.value.filter(d => d.sourceNodeId === nodeId || d.targetNodeId === nodeId) }
+function getDependencyChain(startNodeId: string): string[] {
+  const chain: string[] = [startNodeId]
+  const visited = new Set<string>([startNodeId])
+  let current = startNodeId
+  while (true) {
+    const deps = processDependencies.value.filter(d => d.sourceNodeId === current && d.active)
+    if (deps.length === 0) break
+    const next = deps.find(d => !visited.has(d.targetNodeId))
+    if (!next) break
+    chain.push(next.targetNodeId); visited.add(next.targetNodeId); current = next.targetNodeId
+  }
+  return chain
+}
+// ── Color Theme Functions ────────────────────────────────────────────
+function applyColorTheme(themeId: string) {
+  const theme = nodeColorThemes.value.find(t => t.id === themeId)
+  if (!theme) return
+  activeColorTheme.value = themeId
+  if (!processDef.value) return
+  processDef.value.nodes.forEach(n => {
+    ;(n as any).fillColor = theme.fill
+    ;(n as any).strokeColor = theme.stroke
+    ;(n as any).textColor = theme.textColor
+  })
+  pushHistory()
+  showToast('主题已应用: ' + theme.name, 'success')
+}
+function addCustomColorTheme(name: string, fill: string, stroke: string, textColor: string) {
+  nodeColorThemes.value.push({ id: genId(), name, fill, stroke, textColor, icon: '🎨', isDefault: false })
+}
+function deleteColorTheme(id: string) {
+  nodeColorThemes.value = nodeColorThemes.value.filter(t => t.id !== id)
+  if (activeColorTheme.value === id) activeColorTheme.value = nodeColorThemes.value[0]?.id || ''
+}
+// ── Edge Flow Functions ──────────────────────────────────────────────
+function initEdgeFlowConfigs() {
+  if (!processDef.value) return
+  const edges = processDef.value.edges || []
+  edges.forEach(e => {
+    if (!edgeFlowConfigs.value.has(e.id)) {
+      edgeFlowConfigs.value.set(e.id, { speed: globalEdgeSpeed.value, direction: 'forward', particlesPerEdge: 3, trailLength: globalTrailLength.value, glowEnabled: globalGlowEnabled.value, color: '#00d4ff' })
+    }
+  })
+}
+function updateGlobalEdgeSettings(speed: number, trailLength: number, glowEnabled: boolean) {
+  globalEdgeSpeed.value = speed
+  globalTrailLength.value = trailLength
+  globalGlowEnabled.value = glowEnabled
+  edgeFlowConfigs.value.forEach(cfg => { cfg.speed = speed; cfg.trailLength = trailLength; cfg.glowEnabled = glowEnabled })
+}
+// ── Checkpoint Functions ─────────────────────────────────────────────
+function openCheckpointPanel() { showCheckpointPanel.value = true }
+function addCheckpoint() {
+  if (!newCheckpointNodeId.value || !newCheckpointLabel.value) return
+  processCheckpoints.value.push({ id: genId(), nodeId: newCheckpointNodeId.value, label: newCheckpointLabel.value, condition: newCheckpointCondition.value, action: '', enabled: true, triggered: false })
+  newCheckpointNodeId.value = ''; newCheckpointLabel.value = ''; newCheckpointCondition.value = ''
+}
+function removeCheckpoint(idx: number) { processCheckpoints.value.splice(idx, 1) }
+function toggleCheckpoint(idx: number) { processCheckpoints.value[idx].enabled = !processCheckpoints.value[idx].enabled }
+function triggerCheckpoint(id: string) { const cp = processCheckpoints.value.find(c => c.id === id); if (cp) cp.triggered = true }
+function getTriggeredCheckpoints(): number { return processCheckpoints.value.filter(c => c.triggered).length }
+// ── Event Log Functions ──────────────────────────────────────────────
+function openEventLogPanel() { showEventLogPanel.value = true }
+function logEvent(type: string, nodeId: string, label: string, data: Record<string,any> = {}) {
+  processEvents.value.unshift({ id: genId(), timestamp: Date.now(), type, nodeId, label, data })
+  if (processEvents.value.length > 500) processEvents.value = processEvents.value.slice(0, 500)
+}
+function clearEventLog() { processEvents.value = [] }
+function getFilteredEvents(): ProcessEvent[] {
+  if (eventLogType.value === 'all') return processEvents.value
+  return processEvents.value.filter(e => e.type === eventLogType.value)
+}
+function getEventCountByType(): Record<string, number> {
+  const counts: Record<string, number> = {}
+  processEvents.value.forEach(e => { counts[e.type] = (counts[e.type] || 0) + 1 })
+  return counts
+}
+// ── KPI Functions ────────────────────────────────────────────────────
+function calculateKPIs(): void {
+  if (!processDef.value) return
+  const nodes = processDef.value.nodes, edges = processDef.value.edges || []
+  const inDeg = new Map<string, number>(), outDeg = new Map<string, number>()
+  nodes.forEach(n => { inDeg.set(n.id, 0); outDeg.set(n.id, 0) })
+  edges.forEach(e => { inDeg.set(e.to, (inDeg.get(e.to)||0)+1); outDeg.set(e.from, (outDeg.get(e.from)||0)+1) })
+  processKPIs.value = [
+    { name: '节点总数', value: nodes.length, target: 50, unit: '个', trend: 0, threshold: { warning: 40, critical: 60 } },
+    { name: '连线总数', value: edges.length, target: 80, unit: '条', trend: 0, threshold: { warning: 60, critical: 100 } },
+    { name: '平均度', value: nodes.length > 0 ? parseFloat((edges.length * 2 / nodes.length).toFixed(1)) : 0, target: 3, unit: '', trend: 0, threshold: { warning: 5, critical: 8 } },
+    { name: '循环风险', value: flowAnalysisResult.value?.cycles?.length || 0, target: 0, unit: '个', trend: 0, threshold: { warning: 1, critical: 3 } },
+    { name: '孤立节点', value: flowAnalysisResult.value?.isolatedNodes?.length || 0, target: 0, unit: '个', trend: 0, threshold: { warning: 1, critical: 3 } },
+    { name: '健康评分', value: getFlowHealthScore(), target: 80, unit: '分', trend: 0, threshold: { warning: 60, critical: 40 } },
+  ]
+  showKPIDashboard.value = true
+}
+function getKPIStatusColor(kpi: ProcessKPI): string {
+  if (kpi.value >= kpi.threshold.critical) return 'var(--color-danger)'
+  if (kpi.value >= kpi.threshold.warning) return 'var(--color-warning)'
+  return 'var(--color-success)'
+}
+// ── Bookmark Functions ───────────────────────────────────────────────
+function openBookmarkPanel() { showBookmarkPanel.value = true }
+function addBookmark() {
+  if (!newBookmarkName.value.trim()) return
+  processBookmarks.value.push({ id: genId(), name: newBookmarkName.value, nodeIds: [], description: newBookmarkDesc.value, createdAt: Date.now(), tags: [] })
+  newBookmarkName.value = ''; newBookmarkDesc.value = ''
+}
+function deleteBookmark(idx: number) { processBookmarks.value.splice(idx, 1) }
+function jumpToBookmark(idx: number) {
+  const bm = processBookmarks.value[idx]
+  if (!bm || !processDef.value) return
+  const node = processDef.value.nodes.find(n => bm.nodeIds.includes(n.id))
+  if (node) {
+    panX.value = -node.x * zoom.value + 400
+    panY.value = -node.y * zoom.value + 300
+  }
+  showBookmarkPanel.value = false
+}
+function addToBookmark(bmIdx: number, nodeId: string) {
+  if (bmIdx >= processBookmarks.value.length) return
+  if (!processBookmarks.value[bmIdx].nodeIds.includes(nodeId)) {
+    processBookmarks.value[bmIdx].nodeIds.push(nodeId)
+  }
+}
+// ── Heatmap Functions ────────────────────────────────────────────────
+function generateHeatmap(): void {
+  if (!processDef.value) return
+  const nodes = processDef.value.nodes, edges = processDef.value.edges || []
+  const inDeg = new Map<string, number>(), outDeg = new Map<string, number>()
+  nodes.forEach(n => { inDeg.set(n.id, 0); outDeg.set(n.id, 0) })
+  edges.forEach(e => { inDeg.set(e.to, (inDeg.get(e.to)||0)+1); outDeg.set(e.from, (outDeg.get(e.from)||0)+1) })
+  heatmapData.value = nodes.map(n => {
+    const degree = (inDeg.get(n.id)||0) + (outDeg.get(n.id)||0)
+    const maxDegree = Math.max(...[...inDeg.values(), ...outDeg.values()].map(v => v || 0), 1)
+    const intensity = degree / maxDegree
+    const color = intensity > 0.7 ? '#ef4444' : intensity > 0.4 ? '#f59e0b' : '#10b981'
+    return { nodeId: n.id, metric: heatmapMetric.value, value: degree, color, label: n.label||n.type }
+  })
+  showHeatmapPanel.value = true
+}
+function updateHeatmapMetric(metric: string) { heatmapMetric.value = metric as any; generateHeatmap() }
+// ── Workflow Rules Functions ─────────────────────────────────────────
+function openWorkflowRulesPanel() { showWorkflowRulesPanel.value = true }
+  if (!newRuleName.value.trim()) return
+  workflowRulesList.value.push({ id: genId(), name: newRuleName.value, condition: newRuleCondition.value, action: newRuleAction.value, priority: workflowRulesList.value.length, enabled: true, executionLog: [] })
+  newRuleName.value = ''; newRuleCondition.value = ''; newRuleAction.value = ''
+}
+function executeWorkflowRules(): void {
+  if (!processDef.value) return
+  workflowRulesList.value.filter(r => r.enabled).forEach(rule => {
+    try {
+      const result = eval(rule.condition)
+      if (result) {
+        rule.executionLog.push({ time: Date.now(), result: 'triggered' })
+        logEvent('rule_triggered', '', rule.name, { action: rule.action })
+        showToast('工作流规则 "' + rule.name + '" 已触发', 'info')
+      }
+    } catch { rule.executionLog.push({ time: Date.now(), result: 'error' }) }
+  })
+}
+// ── Export Config Functions ──────────────────────────────────────────
+function openExportConfigPanel() { showExportConfigPanel.value = true }
+function applyExportConfig(): void { exportProcessEnhanced() }
+function exportProcessEnhanced(): void {
+  if (!processDef.value) return
+  const fmt = exportConfig.value.format
+  let content = '', mime = '', ext = ''
+  if (fmt === 'json') { content = JSON.stringify({ metadata: processMetadata.value, definition: processDef.value, exportedAt: new Date().toISOString() }, null, 2); mime = 'application/json'; ext = 'json' }
+  else if (fmt === 'svg') { content = generateSVGRich(); mime = 'image/svg+xml'; ext = 'svg' }
+  else if (fmt === 'mermaid') { content = generateMermaid(); mime = 'text/plain'; ext = 'md' }
+  else if (fmt === 'plantuml') { content = generatePlantUML(); mime = 'text/plain'; ext = 'plantuml' }
+  else if (fmt === 'dot') { content = generateDOT(); mime = 'text/plain'; ext = 'dot' }
+  else if (fmt === 'yaml') { content = generateYAMLEnhanced(); mime = 'text/yaml'; ext = 'yaml' }
+  else if (fmt === 'html') { content = generateHTMLReportEnhanced(); mime = 'text/html'; ext = 'html' }
+  else if (fmt === 'csv') { content = generateCSVEnhanced(); mime = 'text/csv'; ext = 'csv' }
+  else { content = JSON.stringify(processDef.value, null, 2); mime = 'application/json'; ext = 'json' }
+  const blob = new Blob([content], { type: mime })
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a'); a.href = url; a.download = (processMetadata.value.flag || 'process') + '.' + ext; a.click()
+  URL.revokeObjectURL(url)
+  showExportConfigPanel.value = false
+  showToast('已导出为 ' + ext.toUpperCase() + ' 格式', 'success')
+}
+// ── Node Style Editor Functions ──────────────────────────────────────
+function openNodeStyleEditor(nodeIdx: number) {
+  nodeStyleEditorIdx.value = nodeIdx
+  showNodeStyleEditor.value = true
+  if (processDef.value && nodeIdx !== null) {
+    const node = processDef.value.nodes[nodeIdx]
+    nodeStyleConfig.value = {
+      borderRadius: (node as any).borderRadius || 8,
+      borderWidth: (node as any).borderWidth || 1.5,
+      borderColor: (node as any).borderColor || 'var(--border-color)',
+      fillColor: (node as any).fillColor || 'rgba(0,212,255,0.15)',
+      strokeColor: (node as any).strokeColor || '#00d4ff',
+      shadowEnabled: (node as any).shadowEnabled !== false,
+      glowEnabled: (node as any).glowEnabled || false,
+      iconSize: (node as any).iconSize || 16,
+      fontSize: (node as any).fontSize || 12,
+      fontWeight: (node as any).fontWeight || '600',
+      textAlign: (node as any).textAlign || 'center' as any,
+    }
+  }
+}
+function saveNodeStyle() {
+  if (nodeStyleEditorIdx.value === null || !processDef.value) return
+  const node = processDef.value.nodes[nodeStyleEditorIdx.value]
+  ;(node as any).borderRadius = nodeStyleConfig.value.borderRadius
+  ;(node as any).borderWidth = nodeStyleConfig.value.borderWidth
+  ;(node as any).borderColor = nodeStyleConfig.value.borderColor
+  ;(node as any).fillColor = nodeStyleConfig.value.fillColor
+  ;(node as any).strokeColor = nodeStyleConfig.value.strokeColor
+  ;(node as any).shadowEnabled = nodeStyleConfig.value.shadowEnabled
+  ;(node as any).glowEnabled = nodeStyleConfig.value.glowEnabled
+  ;(node as any).iconSize = nodeStyleConfig.value.iconSize
+  ;(node as any).fontSize = nodeStyleConfig.value.fontSize
+  ;(node as any).fontWeight = nodeStyleConfig.value.fontWeight
+  ;(node as any).textAlign = nodeStyleConfig.value.textAlign
+  pushHistory()
+  showNodeStyleEditor.value = false
+  showToast('节点样式已保存', 'success')
+}
+function applyNodeStyleToAll() {
+  if (!processDef.value) return
+  processDef.value.nodes.forEach(n => {
+    ;(n as any).borderRadius = nodeStyleConfig.value.borderRadius
+    ;(n as any).borderWidth = nodeStyleConfig.value.borderWidth
+    ;(n as any).fillColor = nodeStyleConfig.value.fillColor
+    ;(n as any).strokeColor = nodeStyleConfig.value.strokeColor
+    ;(n as any).fontSize = nodeStyleConfig.value.fontSize
+    ;(n as any).fontWeight = nodeStyleConfig.value.fontWeight
+  })
+  pushHistory()
+  showNodeStyleEditor.value = false
+  showToast('所有节点样式已更新', 'success')
+}
+// ── Animation Presets Functions ──────────────────────────────────────
+function applyAnimationPreset(presetId: string) {
+  const preset = animationPresets.value.find(p => p.id === presetId)
+  if (!preset || !processDef.value) return
+  ;(processDef.value as any).__animationPreset = presetId
+  pushHistory()
+  showToast('动画预设已应用: ' + preset.name, 'success')
+}
+function addAnimationPreset(name: string, entrance: string, exit: string, hover: string, click: string) {
+  animationPresets.value.push({ id: genId(), name, entrance, exit, hover, click, duration: 300, easing: 'ease-in-out' })
+}
+function deleteAnimationPreset(id: string) {
+  animationPresets.value = animationPresets.value.filter(p => p.id !== id)
+}
+// ── Validation Functions ─────────────────────────────────────────────
+function runFullValidation(): void {
+  if (!processDef.value) return
+  validationIssues.value = []
+  validationScore.value = 100
+  const nodes = processDef.value.nodes, edges = processDef.value.edges || []
+  // Check for missing start/end
+  const hasStart = nodes.some(n => n.type === 'start')
+  const hasEnd = nodes.some(n => n.type === 'end')
+  if (!hasStart) { validationIssues.value.push({ id: genId(), type: 'error', message: '流程缺少开始节点', suggestion: '添加一个 start 类型节点', severity: 3 }); validationScore.value -= 20 }
+  if (!hasEnd) { validationIssues.value.push({ id: genId(), type: 'error', message: '流程缺少结束节点', suggestion: '添加一个 end 类型节点', severity: 3 }); validationScore.value -= 20 }
+  // Check isolated nodes
+  const inDeg = new Map<string, number>(), outDeg = new Map<string, number>()
+  nodes.forEach(n => { inDeg.set(n.id, 0); outDeg.set(n.id, 0) })
+  edges.forEach(e => { inDeg.set(e.to, (inDeg.get(e.to)||0)+1); outDeg.set(e.from, (outDeg.get(e.from)||0)+1) })
+  nodes.forEach(n => {
+    if ((inDeg.get(n.id)||0) === 0 && (outDeg.get(n.id)||0) === 0) {
+      validationIssues.value.push({ id: genId(), type: 'warning', nodeId: n.id, message: '节点 "' + (n.label||n.id) + '" 完全孤立', suggestion: '添加连线或移除节点', severity: 2 }); validationScore.value -= 10
+    }
+  })
+  // Check for high-degree nodes
+  nodes.forEach(n => {
+    const degree = (inDeg.get(n.id)||0) + (outDeg.get(n.id)||0)
+    if (degree >= 5) {
+      validationIssues.value.push({ id: genId(), type: 'warning', nodeId: n.id, message: '节点 "' + (n.label||n.id) + '" 连接度过高 (' + degree + ')', suggestion: '考虑拆分为子流程', severity: 1 }); validationScore.value -= 5
+    }
+  })
+  // Check for long chains
+  if (nodes.length > 20) {
+    validationIssues.value.push({ id: genId(), type: 'info', message: '流程节点数较多 (' + nodes.length + ')', suggestion: '考虑使用子流程拆分', severity: 0 }); validationScore.value -= 5
+  }
+  showValidationPanel.value = true
+}
+function getValidationSeverityColor(severity: number): string {
+  return severity >= 3 ? 'var(--color-danger)' : severity >= 2 ? 'var(--color-warning)' : 'var(--color-info)'
+}
+// ── Metrics Functions ────────────────────────────────────────────────
+function calculateMetrics(): void {
+  if (!processDef.value) return
+  const nodes = processDef.value.nodes, edges = processDef.value.edges || []
+  processMetrics.value = [
+    { name: '节点总数', value: String(nodes.length), description: '流程中的节点数量', category: '结构', trend: 0, unit: '个' },
+    { name: '连线总数', value: String(edges.length), description: '流程中的连线数量', category: '结构', trend: 0, unit: '条' },
+    { name: '平均度', value: nodes.length > 0 ? (edges.length * 2 / nodes.length).toFixed(1) : '0', description: '平均每节点的连接数', category: '结构', trend: 0, unit: '' },
+    { name: '最大度', value: String(Math.max(...[...new Set(edges.flatMap(e => [e.from, e.to]))].map(id => (edges.filter(e => e.from===id||e.to===id)).length), 0)), description: '单节点最大连接数', category: '结构', trend: 0, unit: '' },
+    { name: '循环数量', value: String(flowAnalysisResult.value?.cycles?.length || 0), description: '流程中的循环数量', category: '质量', trend: 0, unit: '个' },
+    { name: '健康评分', value: String(getFlowHealthScore()), description: '流程整体健康评分', category: '质量', trend: 0, unit: '分' },
+    { name: '开始节点', value: String(nodes.filter(n => n.type === 'start').length), description: '开始节点数量', category: '结构', trend: 0, unit: '个' },
+    { name: '结束节点', value: String(nodes.filter(n => n.type === 'end').length), description: '结束节点数量', category: '结构', trend: 0, unit: '个' },
+    { name: '网关节点', value: String(nodes.filter(n => n.type.startsWith('gate_')).length), description: '决策网关数量', category: '结构', trend: 0, unit: '个' },
+    { name: '脚本节点', value: String(nodes.filter(n => n.type === 'script').length), description: '脚本处理节点数量', category: '结构', trend: 0, unit: '个' },
+    { name: '审批节点', value: String(nodes.filter(n => n.type === 'approval').length), description: '审批节点数量', category: '结构', trend: 0, unit: '个' },
+    { name: '子流程节点', value: String(nodes.filter(n => n.type === 'subprocess').length), description: '子流程节点数量', category: '结构', trend: 0, unit: '个' },
+  ]
+  showMetricsPanel.value = true
+}
+// ── Timeline Enhanced Functions ──────────────────────────────────────
+function buildEnhancedTimeline(): void {
+  if (!processDef.value) return
+  timelineEventsEnhanced.value = []
+  const nodes = processDef.value.nodes, edges = processDef.value.edges || []
+  const inDeg = new Map<string, number>()
+  nodes.forEach(n => inDeg.set(n.id, edges.filter(e => e.to === n.id).length))
+  let t = 0
+  const startNodes = nodes.filter(n => (inDeg.get(n.id)||0) === 0)
+  startNodes.forEach(sn => {
+    const dur = 80 + Math.random() * 120
+    timelineEventsEnhanced.value.push({ time: t, type: 'start', label: sn.label||sn.type, color: '#10b981', details: '开始执行' })
+    t += dur
+    timelineEventsEnhanced.value.push({ time: t, type: 'complete', label: sn.label||sn.type, color: '#00d4ff', details: '执行完成' })
+    t += 20
+  })
+  nodes.forEach(n => {
+    if (startNodes.find(s => s.id === n.id)) return
+    const deps = edges.filter(e => e.to === n.id)
+    const startT = Math.max(...deps.map(e => { const sn = nodes.find(nn => nn.id === e.from); return sn ? (timelineEventsEnhanced.value.find(ev => ev.label === sn.label && ev.type === 'complete')?.time || 0) : 0 }))
+    const dur = 60 + Math.random() * 100
+    timelineEventsEnhanced.value.push({ time: startT, type: 'start', label: n.label||n.type, color: '#6366f1', details: '开始执行' })
+    timelineEventsEnhanced.value.push({ time: startT + dur, type: 'complete', label: n.label||n.type, color: '#00d4ff', details: '执行完成' })
+    t = startT + dur + 20
+  })
+  timelineEventsEnhanced.value.sort((a,b) => a.time - b.time)
+  showTimelineEnhanced.value = true
+}
+function getTimelineDuration(): number { return timelineEventsEnhanced.value.length > 0 ? timelineEventsEnhanced.value[timelineEventsEnhanced.value.length-1].time : 0 }
+// ── Utility Functions ────────────────────────────────────────────────
+function debounce(fn: Function, ms: number): Function {
+  let timer: any = null
+  return (...args: any[]) => { if (timer) clearTimeout(timer); timer = setTimeout(() => fn(...args), ms) }
+}
+function throttle(fn: Function, ms: number): Function {
+  let last = 0
+  return (...args: any[]) => { const now = Date.now(); if (now - last >= ms) { fn(...args); last = now } }
+}
+function formatNumber(num: number): string {
+  if (num >= 1000000) return (num/1000000).toFixed(1) + 'M'
+  if (num >= 1000) return (num/1000).toFixed(1) + 'K'
+  return String(num)
+}
+function clampNum(val: number, min: number, max: number): number { return Math.max(min, Math.min(max, val)) }
+function interpolateColor(color1: string, color2: string, factor: number): string {
+  const r1 = parseInt(color1.slice(1,3), 16), g1 = parseInt(color1.slice(3,5), 16), b1 = parseInt(color1.slice(5,7), 16)
+  const r2 = parseInt(color2.slice(1,3), 16), g2 = parseInt(color2.slice(3,5), 16), b2 = parseInt(color2.slice(5,7), 16)
+  const r = Math.round(r1 + (r2-r1)*factor), g = Math.round(g1 + (g2-g1)*factor), b = Math.round(b1 + (b2-b1)*factor)
+  return '#' + [r,g,b].map(x => x.toString(16).padStart(2,'0')).join('')
+}
+function generateChecksum(data: string): string {
+  let hash = 0
+  for (let i = 0; i < data.length; i++) { hash = ((hash << 5) - hash) + data.charCodeAt(i); hash |= 0 }
+  return 'crc_' + Math.abs(hash).toString(16)
+}
+function compareVersions(v1: string, v2: string): number {
+  const p1 = v1.split('.').map(Number), p2 = v2.split('.').map(Number)
+  for (let i = 0; i < Math.max(p1.length, p2.length); i++) {
+    if ((p1[i]||0) > (p2[i]||0)) return 1
+    if ((p1[i]||0) < (p2[i]||0)) return -1
+  }
+  return 0
+}
+function slugify(text: string): string { return text.toLowerCase().replace(/[^ws-]/g, '').replace(/s+/g, '-') }
+function truncateText(text: string, maxLen: number): string { return text.length <= maxLen ? text : text.substring(0, maxLen) + '...' }
+function randomColor(): string { return '#' + Math.floor(Math.random()*16777215).toString(16).padStart(6, '0') }
+function generateUUID(): string { return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => { const r = Math.random()*16|0; return (c==='x'?r:(r&0x3|0x8)).toString(16) }) }
 </script>
 <style scoped>
 .pd{display:flex;flex-direction:column;height:100%}
@@ -7179,7 +7801,6 @@ kbd{display:inline-block;padding:3px 8px;border-radius:4px;border:1px solid var(
 /* Scrollbar for panels */
 .se-sidebar::-webkit-scrollbar,.fa-body::-webkit-scrollbar,.am-list::-webkit-scrollbar{width:4px}
 .se-sidebar::-webkit-scrollbar-thumb,.fa-body::-webkit-scrollbar-thumb,.am-list::-webkit-scrollbar-thumb{background:var(--border-color);border-radius:2px}
-
 /* ── Deepened Styles v3 ───────────────────────────────────────────── */
 /* Node Detail Panel */
 .node-detail-panel{position:fixed;top:60px;right:20px;width:380px;max-height:75vh;background:var(--bg-elevated);border:1px solid var(--border-color);border-radius:var(--radius-lg);z-index:200;box-shadow:0 8px 32px rgba(0,0,0,0.4);display:flex;flex-direction:column}
@@ -7195,7 +7816,6 @@ kbd{display:inline-block;padding:3px 8px;border-radius:4px;border:1px solid var(
 .ndp-hist-entry{display:flex;align-items:center;gap:8px;padding:6px 8px;background:var(--bg-secondary);border-radius:var(--radius-sm);font-size:11px}
 .ndp-hist-time{color:var(--text-muted);font-family:'JetBrains Mono',monospace;width:60px}.ndp-hist-action{padding:1px 6px;border-radius:var(--radius-sm);background:rgba(0,212,255,0.2);color:var(--color-primary);width:50px;text-align:center}
 .ndp-hist-details{flex:1;color:var(--text-primary)}.ndp-hist-empty{text-align:center;padding:20px;color:var(--text-muted);font-size:12px}
-
 /* Edge Editor Panel */
 .edge-editor-panel{position:fixed;top:60px;left:20px;width:320px;background:var(--bg-elevated);border:1px solid var(--border-color);border-radius:var(--radius-lg);z-index:200;box-shadow:0 8px 32px rgba(0,0,0,0.4)}
 .eep-header{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-bottom:1px solid var(--border-color);font-size:13px;font-weight:600;color:var(--color-primary)}
@@ -7204,7 +7824,6 @@ kbd{display:inline-block;padding:3px 8px;border-radius:4px;border:1px solid var(
 .eep-field label{font-size:11px;color:var(--text-muted)}
 .eep-input,.eep-select{padding:6px 10px;border-radius:var(--radius-sm);border:1px solid var(--border-color);background:var(--bg-secondary);color:var(--text-primary);font-size:12px}
 .eep-actions{display:flex;justify-content:flex-end}
-
 /* Template Manager */
 .template-manager-panel{position:fixed;top:60px;left:20px;width:420px;max-height:75vh;background:var(--bg-elevated);border:1px solid var(--border-color);border-radius:var(--radius-lg);z-index:200;box-shadow:0 8px 32px rgba(0,0,0,0.4);display:flex;flex-direction:column}
 .tmp-header{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-bottom:1px solid var(--border-color);font-size:13px;font-weight:600;color:var(--color-primary);flex-shrink:0}
@@ -7219,7 +7838,6 @@ kbd{display:inline-block;padding:3px 8px;border-radius:4px;border:1px solid var(
 .tmp-tags{display:flex;flex-wrap:wrap;gap:3px}
 .tmp-tag{font-size:9px;padding:1px 5px;border-radius:var(--radius-sm);background:rgba(0,212,255,0.15);color:var(--color-primary)}
 .tmp-actions{display:flex;gap:4px}
-
 /* Collaboration Panel */
 .collab-panel{position:fixed;top:60px;right:20px;width:280px;background:var(--bg-elevated);border:1px solid var(--border-color);border-radius:var(--radius-lg);z-index:200;box-shadow:0 8px 32px rgba(0,0,0,0.4)}
 .col-header{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-bottom:1px solid var(--border-color);font-size:13px;font-weight:600;color:var(--color-primary)}
@@ -7231,7 +7849,6 @@ kbd{display:inline-block;padding:3px 8px;border-radius:4px;border:1px solid var(
 .col-item{display:flex;align-items:center;gap:8px;padding:6px 8px;background:var(--bg-secondary);border-radius:var(--radius-sm)}
 .col-avatar{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:14px}
 .col-name{flex:1;font-size:12px;color:var(--text-primary)}.col-status{font-size:10px}
-
 /* Notification Panel */
 .notification-panel{position:fixed;top:60px;right:20px;width:340px;max-height:70vh;background:var(--bg-elevated);border:1px solid var(--border-color);border-radius:var(--radius-lg);z-index:200;box-shadow:0 8px 32px rgba(0,0,0,0.4);display:flex;flex-direction:column}
 .np-header{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-bottom:1px solid var(--border-color);font-size:13px;font-weight:600;color:var(--color-primary);flex-shrink:0}
@@ -7241,7 +7858,6 @@ kbd{display:inline-block;padding:3px 8px;border-radius:4px;border:1px solid var(
 .np-type{font-size:14px;flex-shrink:0}.np-type-info{color:var(--color-primary)}.np-type-success{color:var(--color-success)}.np-type-warning{color:var(--color-warning)}.np-type-error{color:var(--color-danger)}
 .np-content{flex:1}.np-title{font-size:12px;font-weight:600;color:var(--text-primary)}.np-msg{font-size:11px;color:var(--text-muted);margin-top:2px}
 .np-time{font-size:10px;color:var(--text-muted);white-space:nowrap}.np-empty{text-align:center;padding:20px;color:var(--text-muted);font-size:12px}
-
 /* Audit Trail Panel */
 .audit-panel{position:fixed;top:60px;left:20px;width:400px;max-height:70vh;background:var(--bg-elevated);border:1px solid var(--border-color);border-radius:var(--radius-lg);z-index:200;box-shadow:0 8px 32px rgba(0,0,0,0.4);display:flex;flex-direction:column}
 .at-header{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-bottom:1px solid var(--border-color);font-size:13px;font-weight:600;color:var(--color-primary);flex-shrink:0}
@@ -7250,7 +7866,6 @@ kbd{display:inline-block;padding:3px 8px;border-radius:4px;border:1px solid var(
 .at-time{color:var(--text-muted);font-family:'JetBrains Mono',monospace;width:70px}.at-user{color:var(--color-warning);width:50px}.at-action{padding:1px 6px;border-radius:var(--radius-sm);background:rgba(0,212,255,0.2);color:var(--color-primary);width:60px;text-align:center}
 .at-target{color:var(--text-primary);flex:1}.at-details{color:var(--text-muted);font-size:10px}
 .at-empty{text-align:center;padding:20px;color:var(--text-muted);font-size:12px}
-
 /* Health Dashboard */
 .health-panel{position:fixed;top:60px;left:20px;width:320px;background:var(--bg-elevated);border:1px solid var(--border-color);border-radius:var(--radius-lg);z-index:200;box-shadow:0 8px 32px rgba(0,0,0,0.4)}
 .hp-header{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-bottom:1px solid var(--border-color);font-size:13px;font-weight:600;color:var(--color-primary)}
@@ -7263,7 +7878,6 @@ kbd{display:inline-block;padding:3px 8px;border-radius:4px;border:1px solid var(
 .hp-ind-name{flex:1;font-size:12px;color:var(--text-primary)}.hp-ind-val{font-size:14px;font-weight:700;font-family:'JetBrains Mono',monospace}
 .hp-ind-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
 .hp-ind-dot.healthy{background:var(--color-success)}.hp-ind-dot.warning{background:var(--color-warning)}.hp-ind-dot.critical{background:var(--color-danger);animation:pulse 1s infinite}
-
 /* Quality Report */
 .quality-panel{position:fixed;top:60px;right:20px;width:320px;background:var(--bg-elevated);border:1px solid var(--border-color);border-radius:var(--radius-lg);z-index:200;box-shadow:0 8px 32px rgba(0,0,0,0.4)}
 .qp-header{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-bottom:1px solid var(--border-color);font-size:13px;font-weight:600;color:var(--color-primary)}
@@ -7276,7 +7890,6 @@ kbd{display:inline-block;padding:3px 8px;border-radius:4px;border:1px solid var(
 .qp-m-name{flex:1;color:var(--text-primary)}.qp-m-sev{padding:1px 6px;border-radius:var(--radius-sm);font-size:9px;font-weight:700}
 .qp-m-val{color:var(--color-primary);font-family:'JetBrains Mono',monospace}
 .sev-good{background:rgba(16,185,129,0.2);color:var(--color-success)}.sev-warning{background:rgba(245,158,11,0.2);color:var(--color-warning)}.sev-error{background:rgba(239,68,68,0.2);color:var(--color-danger)}
-
 /* Version History */
 .version-panel{position:fixed;top:60px;left:20px;width:360px;max-height:75vh;background:var(--bg-elevated);border:1px solid var(--border-color);border-radius:var(--radius-lg);z-index:200;box-shadow:0 8px 32px rgba(0,0,0,0.4);display:flex;flex-direction:column}
 .vh-header{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-bottom:1px solid var(--border-color);font-size:13px;font-weight:600;color:var(--color-primary);flex-shrink:0}
@@ -7286,7 +7899,6 @@ kbd{display:inline-block;padding:3px 8px;border-radius:4px;border:1px solid var(
 .vh-label{font-size:13px;font-weight:600;color:var(--text-primary)}.vh-meta{font-size:10px;color:var(--text-muted)}
 .vh-actions{display:flex;gap:4px;flex-shrink:0}
 .vh-diff{display:flex;gap:12px;padding:8px 12px;background:rgba(0,212,255,0.1);border-radius:var(--radius-sm);font-size:11px;color:var(--color-primary);margin-top:8px}
-
 /* Comment Panel */
 .comment-panel{position:fixed;bottom:80px;right:20px;width:340px;background:var(--bg-elevated);border:1px solid var(--border-color);border-radius:var(--radius-lg);z-index:200;box-shadow:0 8px 32px rgba(0,0,0,0.4)}
 .cm-header{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-bottom:1px solid var(--border-color);font-size:13px;font-weight:600;color:var(--color-primary)}
@@ -7302,7 +7914,6 @@ kbd{display:inline-block;padding:3px 8px;border-radius:4px;border:1px solid var(
 .cm-meta{font-size:10px;color:var(--text-muted)}
 .cm-actions{display:flex;gap:4px;margin-top:4px}
 .cm-empty{text-align:center;padding:16px;color:var(--text-muted);font-size:12px}
-
 /* Perf Monitor */
 .perf-panel{position:fixed;bottom:20px;right:20px;width:200px;background:var(--bg-elevated);border:1px solid var(--border-color);border-radius:var(--radius-lg);z-index:200;box-shadow:0 8px 32px rgba(0,0,0,0.4)}
 .pf-header{display:flex;align-items:center;justify-content:space-between;padding:10px 14px;border-bottom:1px solid var(--border-color);font-size:13px;font-weight:600;color:var(--color-warning)}
@@ -7311,7 +7922,6 @@ kbd{display:inline-block;padding:3px 8px;border-radius:4px;border:1px solid var(
 .pf-item{padding:8px;background:var(--bg-secondary);border-radius:var(--radius-sm);text-align:center}
 .pf-val{font-size:16px;font-weight:700;color:var(--color-primary);font-family:'JetBrains Mono',monospace;display:block}
 .pf-lbl{font-size:9px;color:var(--text-muted)}
-
 /* Workflow Rules */
 .rules-panel{position:fixed;top:60px;right:20px;width:400px;max-height:75vh;background:var(--bg-elevated);border:1px solid var(--border-color);border-radius:var(--radius-lg);z-index:200;box-shadow:0 8px 32px rgba(0,0,0,0.4);display:flex;flex-direction:column}
 .rw-header{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-bottom:1px solid var(--border-color);font-size:13px;font-weight:600;color:var(--color-primary);flex-shrink:0}
@@ -7322,7 +7932,6 @@ kbd{display:inline-block;padding:3px 8px;border-radius:4px;border:1px solid var(
 .rw-item{display:flex;align-items:center;gap:8px;padding:8px 10px;background:var(--bg-secondary);border-radius:var(--radius-sm)}
 .rw-item.disabled{opacity:0.5}
 .rw-name{flex:1;font-size:12px;font-weight:600;color:var(--text-primary)}.rw-cond{font-size:10px;color:var(--text-muted);flex:2}
-
 /* ── Deepened Styles v4 ───────────────────────────────────────────── */
 /* Animation Config */
 .anim-config-panel{position:fixed;top:60px;left:20px;width:300px;background:var(--bg-elevated);border:1px solid var(--border-color);border-radius:var(--radius-lg);z-index:200;box-shadow:0 8px 32px rgba(0,0,0,0.4)}
@@ -7333,7 +7942,6 @@ kbd{display:inline-block;padding:3px 8px;border-radius:4px;border:1px solid var(
 .acp-preset-btn{padding:6px 8px;border-radius:var(--radius-sm);border:1px solid var(--border-color);background:transparent;color:var(--text-muted);cursor:pointer;font-size:11px;transition:all .15s}
 .acp-preset-btn:hover{border-color:var(--color-primary);color:var(--color-primary)}
 .acp-controls{display:flex;flex-direction:column;gap:6px;font-size:12px}
-
 /* Canvas Settings */
 .canvas-settings-panel{position:fixed;top:60px;left:20px;width:280px;background:var(--bg-elevated);border:1px solid var(--border-color);border-radius:var(--radius-lg);z-index:200;box-shadow:0 8px 32px rgba(0,0,0,0.4)}
 .csp-header{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-bottom:1px solid var(--border-color);font-size:13px;font-weight:600;color:var(--color-primary)}
@@ -7342,7 +7950,6 @@ kbd{display:inline-block;padding:3px 8px;border-radius:4px;border:1px solid var(
 .csp-title{font-size:11px;font-weight:700;color:var(--color-primary);text-transform:uppercase;letter-spacing:0.5px}
 .csp-select{padding:4px 8px;border-radius:var(--radius-sm);border:1px solid var(--border-color);background:var(--bg-secondary);color:var(--text-primary);font-size:12px}
 .csp-actions{display:flex;gap:8px;margin-top:8px}
-
 /* Metadata Panel */
 .meta-panel{position:fixed;top:60px;right:20px;width:360px;background:var(--bg-elevated);border:1px solid var(--border-color);border-radius:var(--radius-lg);z-index:200;box-shadow:0 8px 32px rgba(0,0,0,0.4)}
 .mp-header{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-bottom:1px solid var(--border-color);font-size:13px;font-weight:600;color:var(--color-primary)}
@@ -7352,7 +7959,6 @@ kbd{display:inline-block;padding:3px 8px;border-radius:4px;border:1px solid var(
 .mp-input,.mp-textarea,.mp-select{padding:6px 10px;border-radius:var(--radius-sm);border:1px solid var(--border-color);background:var(--bg-secondary);color:var(--text-primary);font-size:12px}
 .mp-textarea{resize:vertical;min-height:60px}
 .mp-actions{display:flex;gap:8px;margin-top:8px}
-
 /* Performance Profile */
 .perf-profile-panel{position:fixed;top:60px;right:20px;width:300px;background:var(--bg-elevated);border:1px solid var(--border-color);border-radius:var(--radius-lg);z-index:200;box-shadow:0 8px 32px rgba(0,0,0,0.4)}
 .ppp-header{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-bottom:1px solid var(--border-color);font-size:13px;font-weight:600;color:var(--color-primary)}
@@ -7364,7 +7970,6 @@ kbd{display:inline-block;padding:3px 8px;border-radius:4px;border:1px solid var(
 .ppp-chart{padding:8px;background:var(--bg-secondary);border-radius:var(--radius-md)}
 .ppp-bar{height:8px;background:var(--border-color);border-radius:4px;overflow:hidden}
 .ppp-fill{height:100%;border-radius:4px;transition:width .3s}
-
 /* Simulation Panel */
 .sim-panel{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);width:600px;max-width:90vw;background:var(--bg-elevated);border:1px solid var(--border-color);border-radius:var(--radius-lg);z-index:200;box-shadow:0 8px 32px rgba(0,0,0,0.4)}
 .sim-header{display:flex;align-items:center;gap:8px;padding:10px 16px;border-bottom:1px solid var(--border-color);font-size:13px;font-weight:600;color:var(--color-warning)}
@@ -7380,7 +7985,6 @@ kbd{display:inline-block;padding:3px 8px;border-radius:4px;border:1px solid var(
 .sim-event.isolated{background:rgba(100,116,139,0.1);color:var(--text-muted)}
 .sim-time{font-family:'JetBrains Mono',monospace;width:50px;color:var(--text-muted)}
 .sim-node{flex:1}.sim-action{padding:1px 4px;border-radius:var(--radius-sm);font-size:10px}
-
 /* Gantt Chart */
 .gantt-panel{position:fixed;top:60px;left:20px;width:500px;max-height:70vh;background:var(--bg-elevated);border:1px solid var(--border-color);border-radius:var(--radius-lg);z-index:200;box-shadow:0 8px 32px rgba(0,0,0,0.4);display:flex;flex-direction:column}
 .gantt-header{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-bottom:1px solid var(--border-color);font-size:13px;font-weight:600;color:var(--color-primary)}
@@ -7394,7 +7998,6 @@ kbd{display:inline-block;padding:3px 8px;border-radius:4px;border:1px solid var(
 .gantt-track{flex:1;height:20px;background:var(--bg-secondary);border-radius:3px;position:relative}
 .gantt-bar{position:absolute;height:100%;border-radius:3px;cursor:pointer;transition:opacity .15s}
 .gantt-bar:hover{opacity:0.8}
-
 /* Layer Panel */
 .layer-panel{position:fixed;top:60px;left:20px;width:260px;background:var(--bg-elevated);border:1px solid var(--border-color);border-radius:var(--radius-lg);z-index:200;box-shadow:0 8px 32px rgba(0,0,0,0.4)}
 .lp-header{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-bottom:1px solid var(--border-color);font-size:13px;font-weight:600;color:var(--color-primary)}
@@ -7407,7 +8010,6 @@ kbd{display:inline-block;padding:3px 8px;border-radius:4px;border:1px solid var(
 .lp-btn{padding:2px 6px;border-radius:var(--radius-sm);border:1px solid var(--border-color);background:transparent;color:var(--text-muted);cursor:pointer;font-size:10px}
 .lp-btn:hover{border-color:var(--color-primary);color:var(--color-primary)}
 .lp-btn.active{background:var(--color-primary-soft);color:var(--color-primary)}
-
 /* Bookmark Panel */
 .bookmark-panel{position:fixed;top:60px;left:20px;width:240px;background:var(--bg-elevated);border:1px solid var(--border-color);border-radius:var(--radius-lg);z-index:200;box-shadow:0 8px 32px rgba(0,0,0,0.4)}
 .bm-header{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-bottom:1px solid var(--border-color);font-size:13px;font-weight:600;color:var(--color-primary)}
@@ -7419,7 +8021,6 @@ kbd{display:inline-block;padding:3px 8px;border-radius:4px;border:1px solid var(
 .bm-item{display:flex;align-items:center;gap:6px;padding:6px 8px;background:var(--bg-secondary);border-radius:var(--radius-sm);font-size:11px}
 .bm-name{flex:1;color:var(--text-primary)}.bm-zoom{color:var(--color-primary);font-family:'JetBrains Mono',monospace;font-size:10px}
 .bm-empty{text-align:center;padding:16px;color:var(--text-muted);font-size:11px}
-
 /* Workflow Templates */
 .wf-tpl-panel{position:fixed;top:60px;left:20px;width:480px;max-height:75vh;background:var(--bg-elevated);border:1px solid var(--border-color);border-radius:var(--radius-lg);z-index:200;box-shadow:0 8px 32px rgba(0,0,0,0.4);display:flex;flex-direction:column}
 .wtp-header{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-bottom:1px solid var(--border-color);font-size:13px;font-weight:600;color:var(--color-primary);flex-shrink:0}
@@ -7438,7 +8039,6 @@ kbd{display:inline-block;padding:3px 8px;border-radius:4px;border:1px solid var(
 .wtp-tags{display:flex;flex-wrap:wrap;gap:2px}
 .wtp-tag{font-size:9px;padding:1px 4px;border-radius:var(--radius-sm);background:rgba(168,85,247,0.15);color:var(--color-primary)}
 .wtp-actions{display:flex;gap:4px}
-
 /* Topology */
 .topology-panel{position:fixed;top:60px;left:20px;width:500px;max-height:75vh;background:var(--bg-elevated);border:1px solid var(--border-color);border-radius:var(--radius-lg);z-index:200;box-shadow:0 8px 32px rgba(0,0,0,0.4);display:flex;flex-direction:column}
 .tp-header{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-bottom:1px solid var(--border-color);font-size:13px;font-weight:600;color:var(--color-primary)}
@@ -7449,7 +8049,6 @@ kbd{display:inline-block;padding:3px 8px;border-radius:4px;border:1px solid var(
 .tp-node-label{font-size:9px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;width:50px;text-align:center}
 .tp-node-degree{font-size:8px;color:var(--text-muted)}
 .tp-svg{position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none}
-
 /* Risk Analysis */
 .risk-panel{position:fixed;top:60px;right:20px;width:400px;max-height:75vh;background:var(--bg-elevated);border:1px solid var(--border-color);border-radius:var(--radius-lg);z-index:200;box-shadow:0 8px 32px rgba(0,0,0,0.4);display:flex;flex-direction:column}
 .rp-header{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-bottom:1px solid var(--border-color);font-size:13px;font-weight:600;color:var(--color-warning)}
@@ -7465,14 +8064,12 @@ kbd{display:inline-block;padding:3px 8px;border-radius:4px;border:1px solid var(
 .rp-sev{font-size:9px;font-weight:700;padding:1px 4px;border-radius:var(--radius-sm);min-width:30px;text-align:center}
 .rp-type{color:var(--color-primary);font-size:10px;width:80px}.rp-desc{flex:1;color:var(--text-primary)}.rp-mit{color:var(--text-muted);font-size:10px;width:100px}
 .rp-actions{display:flex;gap:4px}
-
 /* Documentation */
 .doc-panel{position:fixed;top:60px;left:50%;transform:translateX(-50%);width:600px;max-width:90vw;max-height:80vh;background:var(--bg-elevated);border:1px solid var(--border-color);border-radius:var(--radius-lg);z-index:200;box-shadow:0 8px 32px rgba(0,0,0,0.4);display:flex;flex-direction:column}
 .dp-header{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-bottom:1px solid var(--border-color);font-size:13px;font-weight:600;color:var(--color-primary)}
 .dp-actions{display:flex;gap:4px}
 .dp-body{padding:12px;flex:1;overflow:auto}
 .dp-editor{width:100%;height:400px;padding:12px;border-radius:var(--radius-md);border:1px solid var(--border-color);background:var(--bg-secondary);color:var(--text-primary);font-family:'JetBrains Mono',monospace;font-size:12px;resize:none;box-sizing:border-box}
-
 /* Shape Editor */
 .shape-editor-panel{position:fixed;top:60px;left:20px;width:200px;background:var(--bg-elevated);border:1px solid var(--border-color);border-radius:var(--radius-lg);z-index:200;box-shadow:0 8px 32px rgba(0,0,0,0.4)}
 .sep-header{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-bottom:1px solid var(--border-color);font-size:13px;font-weight:600;color:var(--color-primary)}
@@ -7481,7 +8078,6 @@ kbd{display:inline-block;padding:3px 8px;border-radius:4px;border:1px solid var(
 .sep-shapes{display:grid;grid-template-columns:repeat(4,1fr);gap:4px}
 .sep-shape-btn{padding:6px;border-radius:var(--radius-sm);border:1px solid var(--border-color);background:transparent;color:var(--text-muted);cursor:pointer;font-size:10px;font-family:'JetBrains Mono',monospace}
 .sep-shape-btn:hover,.sep-shape-btn.active{border-color:var(--color-primary);color:var(--color-primary)}
-
 /* Export Modal */
 .export-modal{width:480px;max-width:90vw}
 .exp-formats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:16px}
@@ -7492,7 +8088,6 @@ kbd{display:inline-block;padding:3px 8px;border-radius:4px;border:1px solid var(
 .exp-progress{margin-top:12px}
 .exp-bar{height:4px;background:var(--color-primary);border-radius:2px;transition:width .3s}
 .exp-status{font-size:11px;color:var(--text-muted);margin-top:4px}
-
 /* Batch Ops */
 .batch-ops-panel{position:fixed;bottom:80px;left:50%;transform:translateX(-50%);width:400px;background:var(--bg-elevated);border:1px solid var(--border-color);border-radius:var(--radius-lg);z-index:200;box-shadow:0 8px 32px rgba(0,0,0,0.4)}
 .bp-header{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-bottom:1px solid var(--border-color);font-size:13px;font-weight:600;color:var(--color-warning)}
@@ -7503,7 +8098,6 @@ kbd{display:inline-block;padding:3px 8px;border-radius:4px;border:1px solid var(
 .bp-color{width:40px;height:28px;border-radius:var(--radius-sm);border:1px solid var(--border-color);cursor:pointer}
 .bp-num{width:60px;padding:4px 8px;border-radius:var(--radius-sm);border:1px solid var(--border-color);background:var(--bg-secondary);color:var(--text-primary);font-size:12px}
 .bp-result{padding:8px;background:var(--bg-secondary);border-radius:var(--radius-sm);font-size:12px;color:var(--color-success)}
-
 /* Trace Panel */
 .trace-panel{position:fixed;bottom:20px;left:20px;width:360px;max-height:60vh;background:var(--bg-elevated);border:1px solid var(--border-color);border-radius:var(--radius-lg);z-index:200;box-shadow:0 8px 32px rgba(0,0,0,0.4);display:flex;flex-direction:column}
 .tr-header{display:flex;align-items:center;justify-content:space-between;padding:10px 14px;border-bottom:1px solid var(--border-color);font-size:13px;font-weight:600;color:var(--color-primary)}
@@ -7514,4 +8108,126 @@ kbd{display:inline-block;padding:3px 8px;border-radius:4px;border:1px solid var(
 .tr-step{display:flex;align-items:center;gap:8px;padding:4px 8px;font-size:11px;border-radius:var(--radius-sm);background:var(--bg-secondary)}
 .tr-step.active{background:rgba(0,212,255,0.15);border:1px solid var(--color-primary)}
 .tr-step-num{width:20px;color:var(--color-primary);font-weight:700}.tr-step-node{flex:1;color:var(--text-primary)}.tr-step-action{color:var(--text-muted)}.tr-step-time{font-family:'JetBrains Mono',monospace;color:var(--text-muted);font-size:10px}
+/* ── Deepened Styles v5 ───────────────────────────────────────────── */
+/* Dependency Panel */
+.dep-add{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:12px}
+.dep-select{padding:4px 8px;border-radius:var(--radius-sm);border:1px solid var(--border-color);background:var(--bg-secondary);color:var(--text-primary);font-size:12px}
+.dep-input{flex:1;padding:4px 8px;border-radius:var(--radius-sm);border:1px solid var(--border-color);background:var(--bg-secondary);color:var(--text-primary);font-size:12px}
+.dep-list{display:flex;flex-direction:column;gap:6px;max-height:300px;overflow-y:auto}
+.dep-item{display:flex;align-items:center;gap:8px;padding:8px 10px;background:var(--bg-secondary);border-radius:var(--radius-sm)}
+.dep-item.disabled{opacity:0.5}
+.dep-source,.dep-target{font-size:11px;color:var(--text-muted);max-width:80px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.dep-type{padding:2px 6px;border-radius:var(--radius-sm);font-size:10px;font-weight:600}
+.dep-type-data{background:rgba(0,212,255,0.2);color:var(--color-primary)}.dep-type-control{background:rgba(16,185,129,0.2);color:var(--color-success)}
+.dep-type-timing{background:rgba(245,158,11,0.2);color:var(--color-warning)}.dep-type-signal{background:rgba(168,85,247,0.2);color:var(--color-primary)}
+/* Color Theme Panel */
+.theme-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.theme-card{padding:12px;background:var(--bg-secondary);border-radius:var(--radius-md);border:2px solid transparent;cursor:pointer;transition:all .15s;text-align:center}
+.theme-card:hover{border-color:var(--color-primary);transform:translateY(-2px)}
+.theme-card.active{border-color:var(--color-primary);box-shadow:0 0 12px rgba(0,212,255,0.3)}
+.theme-preview{width:40px;height:40px;border-radius:50%;margin:0 auto 8px}
+.theme-name{font-size:12px;font-weight:600;color:var(--text-primary)}
+/* Edge Flow Panel */
+.ef-row{display:flex;align-items:center;gap:10px;padding:8px 0}
+.ef-row label{font-size:12px;color:var(--text-muted);min-width:60px}
+.ef-row input[type="range"]{flex:1;accent-color:var(--color-primary)}
+/* KPI Dashboard */
+.kpi-dashboard{position:fixed;top:60px;left:20px;width:380px;max-height:80vh;background:var(--bg-elevated);border:1px solid var(--border-color);border-radius:var(--radius-lg);z-index:200;box-shadow:0 8px 32px rgba(0,0,0,0.4);display:flex;flex-direction:column}
+.kpi-header{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-bottom:1px solid var(--border-color);font-size:13px;font-weight:600;color:var(--color-primary);flex-shrink:0}
+.kpi-body{padding:12px;overflow-y:auto;flex:1}
+.kpi-total{display:flex;align-items:center;gap:16px;padding:20px;background:var(--bg-secondary);border-radius:var(--radius-md);margin-bottom:12px}
+.kpi-total-val{font-size:48px;font-weight:800;color:var(--color-primary);font-family:'JetBrains Mono',monospace}
+.kpi-total-label{font-size:14px;color:var(--text-muted)}
+.kpi-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}
+.kpi-card{padding:12px;background:var(--bg-secondary);border-radius:var(--radius-md)}
+.kpi-card-val{font-size:22px;font-weight:700;font-family:'JetBrains Mono',monospace}
+.kpi-unit{font-size:11px;color:var(--text-muted)}
+.kpi-card-name{font-size:11px;color:var(--text-primary);margin-top:2px}
+.kpi-card-target{font-size:10px;color:var(--text-muted)}
+/* Bookmark Panel */
+.bookmark-panel{position:fixed;top:60px;left:20px;width:280px;background:var(--bg-elevated);border:1px solid var(--border-color);border-radius:var(--radius-lg);z-index:200;box-shadow:0 8px 32px rgba(0,0,0,0.4)}
+.bp-header{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-bottom:1px solid var(--border-color);font-size:13px;font-weight:600;color:var(--color-primary)}
+.bp-body{padding:12px}
+.bp-add{display:flex;gap:6px;margin-bottom:10px}
+.bp-input{flex:1;padding:5px 8px;border-radius:var(--radius-sm);border:1px solid var(--border-color);background:var(--bg-secondary);color:var(--text-primary);font-size:11px}
+.bp-desc{flex:2}
+.bp-list{display:flex;flex-direction:column;gap:4px;max-height:250px;overflow-y:auto}
+.bp-item{display:flex;align-items:center;gap:6px;padding:6px 8px;background:var(--bg-secondary);border-radius:var(--radius-sm);font-size:11px}
+.bp-name{flex:1;color:var(--text-primary);font-weight:600}.bp-nodes{color:var(--text-muted);font-size:10px}
+.bp-empty{text-align:center;padding:16px;color:var(--text-muted);font-size:11px}
+/* Heatmap */
+.heatmap-panel{position:fixed;top:60px;left:20px;width:400px;max-height:75vh;background:var(--bg-elevated);border:1px solid var(--border-color);border-radius:var(--radius-lg);z-index:200;box-shadow:0 8px 32px rgba(0,0,0,0.4);display:flex;flex-direction:column}
+.hm-header{display:flex;align-items:center;gap:8px;padding:12px 16px;border-bottom:1px solid var(--border-color);font-size:13px;font-weight:600;color:var(--color-primary)}
+.hm-metric-select{padding:4px 8px;border-radius:var(--radius-sm);border:1px solid var(--border-color);background:var(--bg-secondary);color:var(--text-primary);font-size:11px}
+.hm-body{padding:12px}
+.hm-legend{display:flex;align-items:center;gap:8px;margin-bottom:12px;font-size:10px;color:var(--text-muted)}
+.hm-gradient{flex:1;height:12px;border-radius:6px;background:linear-gradient(90deg,#10b981,#f59e0b,#ef4444)}
+.hm-low,.hm-high{width:20px}
+.hm-nodes{display:flex;flex-wrap:wrap;gap:4px}
+.hm-node{padding:6px 10px;border-radius:var(--radius-sm);font-size:10px;display:flex;flex-direction:column;align-items:center;gap:2px;cursor:pointer;transition:transform .15s}
+.hm-node:hover{transform:scale(1.1)}
+.hm-node-label{color:#fff;font-weight:600;max-width:60px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.hm-node-val{color:rgba(255,255,255,0.7);font-size:9px}
+/* Workflow Rules */
+.workflow-rules-panel{position:fixed;top:60px;right:20px;width:420px;max-height:75vh;background:var(--bg-elevated);border:1px solid var(--border-color);border-radius:var(--radius-lg);z-index:200;box-shadow:0 8px 32px rgba(0,0,0,0.4);display:flex;flex-direction:column}
+.wr-header{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-bottom:1px solid var(--border-color);font-size:13px;font-weight:600;color:var(--color-primary);flex-shrink:0}
+.wr-body{padding:12px;overflow-y:auto;flex:1;display:flex;flex-direction:column;gap:10px}
+.wr-add{display:flex;gap:6px}
+.wr-input{flex:1;padding:5px 8px;border-radius:var(--radius-sm);border:1px solid var(--border-color);background:var(--bg-secondary);color:var(--text-primary);font-size:11px}
+.wr-list{display:flex;flex-direction:column;gap:4px}
+.wr-item{display:flex;align-items:center;gap:8px;padding:8px 10px;background:var(--bg-secondary);border-radius:var(--radius-sm)}
+.wr-item.disabled{opacity:0.5}
+.wr-name{flex:1;font-size:12px;font-weight:600;color:var(--text-primary)}.wr-cond{font-size:10px;color:var(--text-muted);flex:2}
+/* Node Style Editor */
+.nse-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;margin-bottom:12px}
+.nse-field{display:flex;flex-direction:column;gap:4px}
+.nse-field label{font-size:11px;color:var(--text-muted)}
+.nse-field input[type="range"]{width:100%;accent-color:var(--color-primary)}
+.nse-field span{font-size:11px;color:var(--color-primary);text-align:right}
+.nse-color{width:100%;height:32px;border-radius:var(--radius-sm);border:1px solid var(--border-color);cursor:pointer}
+.nse-actions{display:flex;gap:8px}
+/* Animation Presets */
+.ap-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.ap-card{padding:12px;background:var(--bg-secondary);border-radius:var(--radius-md);border:2px solid transparent;cursor:pointer;text-align:center;transition:all .15s}
+.ap-card:hover{border-color:var(--color-primary)}
+.ap-card.active{border-color:var(--color-primary);background:rgba(0,212,255,0.1)}
+.ap-name{font-size:12px;font-weight:600;color:var(--text-primary);margin-bottom:4px}
+.ap-preview{display:flex;gap:4px;justify-content:center;font-size:10px}
+.ap-preview span{padding:2px 4px;background:var(--bg-elevated);border-radius:var(--radius-sm);color:var(--text-muted)}
+/* Validation */
+.val-score{display:flex;align-items:center;gap:16px;padding:20px;background:var(--bg-secondary);border-radius:var(--radius-md);margin-bottom:12px}
+.val-val{font-size:48px;font-weight:800;color:var(--color-success);font-family:'JetBrains Mono',monospace}
+.val-label{font-size:14px;color:var(--text-muted)}
+.val-issues{display:flex;flex-direction:column;gap:6px;margin-bottom:12px}
+.val-issue{display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:var(--radius-sm);font-size:11px}
+.val-issue.val-error{background:rgba(239,68,68,0.1);border-left:3px solid var(--color-danger)}
+.val-issue.val-warning{background:rgba(245,158,11,0.1);border-left:3px solid var(--color-warning)}
+.val-issue.val-info{background:rgba(0,212,255,0.1);border-left:3px solid var(--color-primary)}
+.val-sev{font-size:10px;font-weight:700;padding:1px 4px;border-radius:var(--radius-sm);min-width:30px;text-align:center}
+.val-msg{flex:1;color:var(--text-primary)}.val-sug{font-size:10px;color:var(--text-muted)}
+/* Metrics */
+.metrics-panel{position:fixed;top:60px;right:20px;width:360px;max-height:80vh;background:var(--bg-elevated);border:1px solid var(--border-color);border-radius:var(--radius-lg);z-index:200;box-shadow:0 8px 32px rgba(0,0,0,0.4);display:flex;flex-direction:column}
+.mp-header{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-bottom:1px solid var(--border-color);font-size:13px;font-weight:600;color:var(--color-primary);flex-shrink:0}
+.mp-body{padding:12px;overflow-y:auto;flex:1}
+.mp-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}
+.mp-card{padding:10px;background:var(--bg-secondary);border-radius:var(--radius-md)}
+.mp-val{font-size:20px;font-weight:700;color:var(--color-primary);font-family:'JetBrains Mono',monospace}
+.mp-unit{font-size:10px;color:var(--text-muted)}
+.mp-name{font-size:11px;font-weight:600;color:var(--text-primary);margin-top:2px}
+.mp-desc{font-size:10px;color:var(--text-muted);margin-top:1px}
+/* Event Log */
+.event-log-panel{position:fixed;bottom:20px;left:20px;width:480px;max-height:60vh;background:var(--bg-elevated);border:1px solid var(--border-color);border-radius:var(--radius-lg);z-index:200;box-shadow:0 8px 32px rgba(0,0,0,0.4);display:flex;flex-direction:column}
+.el-header{display:flex;align-items:center;gap:8px;padding:10px 14px;border-bottom:1px solid var(--border-color);font-size:13px;font-weight:600;color:var(--color-primary)}
+.el-filter{padding:4px 8px;border-radius:var(--radius-sm);border:1px solid var(--border-color);background:var(--bg-secondary);color:var(--text-primary);font-size:11px}
+.el-body{padding:12px;overflow-y:auto;flex:1;display:flex;flex-direction:column;gap:8px}
+.el-stats{display:flex;gap:8px;flex-wrap:wrap}
+.el-stat{padding:4px 8px;background:var(--bg-secondary);border-radius:var(--radius-sm);font-size:10px;color:var(--text-muted)}
+.el-list{display:flex;flex-direction:column;gap:2px}
+.el-entry{display:flex;align-items:center;gap:8px;padding:4px 8px;font-size:11px;border-radius:var(--radius-sm)}
+.el-entry.el-node_start{background:rgba(16,185,129,0.1);color:var(--color-success)}
+.el-entry.el-node_end{background:rgba(0,212,255,0.1);color:var(--color-primary)}
+.el-entry.el-error{background:rgba(239,68,68,0.1);color:var(--color-danger)}
+.el-time{font-family:'JetBrains Mono',monospace;width:60px;color:var(--text-muted)}
+.el-type{padding:1px 4px;border-radius:var(--radius-sm);background:rgba(0,212,255,0.2);color:var(--color-primary);font-size:10px;width:80px}
+.el-label{flex:1;color:var(--text-primary)}.el-data{color:var(--text-muted);font-size:10px;max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 </style>
