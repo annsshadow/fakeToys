@@ -1,0 +1,29 @@
+{
+  "name": "@oa4rust/ui",
+  "version": "0.1.0",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    },
+    "./style.css": "./dist/style.css"
+  },
+  "scripts": {
+    "build": "vite build",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@oa4rust/sdk": "workspace:*",
+    "naive-ui": "^2.40.3",
+    "vue": "^3.5.13",
+    "uno-css": "npm:@unocss/vite@^66.0.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.8.0",
+    "@vitejs/plugin-vue": "^5.2.0",
+    "vite": "^6.0.0"
+  }
+}
