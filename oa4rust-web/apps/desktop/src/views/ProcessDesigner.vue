@@ -104,6 +104,26 @@
           <!-- Temp edge -->
           <path v-if="tempEdge" :d="tempEdgePath()" class="edge-temp" marker-end="url(#arrowhead-temp)" />
 
+          <!-- Fork/Join branch backgrounds -->
+          <g v-if="!subprocessEditing" class="fork-branches">
+            <g v-for="(fl, fli) in forkLabels" :key="fli">
+              <rect
+                :x="Math.min(...fl.branch.map(i=>(processDef?.nodes[i]?.x ?? 0))) - 15"
+                :y="Math.min(...fl.branch.map(i=>(processDef?.nodes[i]?.y ?? 0))) - 15"
+                :width="Math.max(...fl.branch.map(i=>(processDef?.nodes[i]?.x ?? 0)+(processDef?.nodes[i]?.w ?? 120)))-Math.min(...fl.branch.map(i=>(processDef?.nodes[i]?.x ?? 0)))+30"
+                :height="Math.max(...fl.branch.map(i=>(processDef?.nodes[i]?.y ?? 0)+(processDef?.nodes[i]?.h ?? 50)))-Math.min(...fl.branch.map(i=>(processDef?.nodes[i]?.y ?? 0)))+30"
+                fill="rgba(245,158,11,0.06)" stroke="var(--color-warning)" stroke-width="1.5" stroke-dasharray="6,3" rx="8" />
+              <text :x="Math.min(...fl.branch.map(i=>(processDef?.nodes[i]?.x ?? 0))) - 25"
+                :y="Math.min(...fl.branch.map(i=>(processDef?.nodes[i]?.y ?? 0))) - 5"
+                class="branch-num">B#{{ fli+1 }}</text>
+              <text :x="fl.forkNode.x + (fl.forkNode.w||120)/2" :y="fl.forkNode.y - 15"
+                class="fork-label">⚡ FORK #{{ fli+1 }}</text>
+              <path v-if="fl.branch.length >= 2" :d="computeForkJoinPath(fl.branch)" class="fork-flow" />
+              <text v-if="fl.joinNode" :x="fl.joinNode.x + (fl.joinNode.w||120)/2" :y="fl.joinNode.y + (fl.joinNode.h||50) + 16"
+                class="join-label">⚡ JOIN #{{ fli+1 }}</text>
+            </g>
+          </g>
+
           <!-- Nodes -->
           <g class="nodes" :transform="nodeTransform">
             <g v-for="(node, i) in processDef?.nodes||[]" :key="node.id"
@@ -194,8 +214,22 @@
           <div class="props-body">
             <div class="pg"><label>节点标签</label><input :value="getNodeProp('label')" @input="_setNodeProp('label',$event.target.value)" class="pi" /></div>
             <div class="pg"><label>负责人</label><input :value="getNodeProp('assignee')" @input="_setNodeProp('assignee',$event.target.value)" class="pi" placeholder="如: manager_zhang" /></div>
-            <div class="pg"><label>条件表达式</label><input :value="getNodeProp('condition')" @input="_setNodeProp('condition',$event.target.value)" class="pi" placeholder="如: amount > 1000" /></div>
+            <div class="pg"><label>流转条件</label><input :value="getNodeProp('condition')" @input="_setNodeProp('condition',$event.target.value)" class="pi" placeholder="如: amount > 1000" /></div>
             <div class="pg"><label>超时(分钟)</label><input :value="getNodeProp('timeout')" type="number" @input="_setNodeProp('timeout',+$event.target.value)" class="pi" /></div>
+            <div class="pg"><label>重试次数</label><input :value="getNodeProp('retryCount')" type="number" @input="_setNodeProp('retryCount',+$event.target.value)" class="pi" min="0" max="10" /></div>
+            <div class="pg"><label>数据映射</label>
+              <div class="data-mapping">
+                <div class="dm-row"><button class="dm-add" @click="addDataMapping">+ 添加映射</button></div>
+                <div v-for="(m, i) in getNodeMappings()" :key="i" class="dm-row">
+                  <select :value="m.from" @change="getNodeMappings()[i].from=$event.target.value" class="dm-select">
+                    <option value="">选择字段</option><option>name</option><option>amount</option><option>status</option><option>userId</option>
+                  </select>
+                  <span class="dm-arrow">→</span>
+                  <input :value="m.to" @input="getNodeMappings()[i].to=$event.target.value" class="dm-input" placeholder="输出字段" />
+                  <button class="dm-del" @click="removeDataMapping(i)">×</button>
+                </div>
+              </div>
+            </div>
             <div class="pg"><label>优先级</label>
               <select :value="getNodeProp('priority')" @change="_setNodeProp('priority',$event.target.value)" class="pi">
                 <option value="">默认</option><option value="high">高</option><option value="medium">中</option><option value="low">低</option>
@@ -307,11 +341,26 @@
 
     <!-- Subprocess Inline Editor -->
     <div v-if="subprocessEditing && processDef" class="subprocess-editor">
-      <div class="sp-toolbar glass-card">
-        <button class="btn" @click="exitSubprocess">← 返回主流程</button>
-        <span class="sp-title">📦 子流程编辑 — {{ subprocessTitle }}</span>
-        <button class="btn btn-outline" @click="addNode('start'); addNode('task')">+ 添加开始+任务</button>
-        <button class="btn btn-primary" @click="saveSubprocess">💾 保存</button>
+          <div class="sp-toolbar glass-card">
+        <button class="btn" @click="exitSubprocess">← 返回</button>
+        <div class="sp-tools">
+          <button class="tb-btn" @click="subUndo" :disabled="subHistIdx<=0" title="撤销">↩</button>
+          <button class="tb-btn" @click="subRedo" :disabled="subHistIdx>=subHistory.length-1" title="重做">↪</button>
+          <button class="tb-btn" @click="subZoomIn">🔍+</button>
+          <button class="tb-btn" @click="subZoomOut">🔍-</button>
+          <button class="tb-btn" @click="subFitCanvas">⊞</button>
+          <span class="tb-sep"></span>
+          <button class="tb-btn" @click="subAddNode('start')">+开始</button>
+          <button class="tb-btn" @click="subAddNode('task')">+任务</button>
+          <button class="tb-btn" @click="subAddNode('approval')">+审批</button>
+          <button class="tb-btn" @click="subAddNode('end')">+结束</button>
+          <button class="tb-btn" @click="subClearCanvas">🗑清空</button>
+        </div>
+        <span class="sp-title">📦 {{ subprocessTitle }}</span>
+        <div class="sp-actions">
+          <button class="tb-btn" @click="createSubVersion">📌快照</button>
+          <button class="btn btn-primary" @click="saveSubprocess">💾保存</button>
+        </div>
       </div>
       <div class="subprocess-canvas pd-canvas glass-card" ref="subprocessCanvasRef">
         <div class="canvas-bg" :style="{ backgroundSize: gridScale+'px '+gridScale+'px', backgroundPosition: subPanX+'px '+subPanY+'px' }"></div>
@@ -570,6 +619,25 @@ function detectParallelBranches(): number[][] {
 }
 const parallelBranches = computed(() => detectParallelBranches())
 
+// Fork/Join labels for parallel branches
+const forkLabels = computed(() => {
+  if (!processDef.value) return []
+  const labels: { branch: number[]; forkNode: PDNode; joinNode?: PDNode }[] = []
+  for (const branch of parallelBranches.value) {
+    const forkNode = processDef.value.nodes[branch[0]]
+    if (!forkNode) continue
+    // Find join node (node with incoming edges from all branch nodes)
+    let joinNode: PDNode | undefined
+    const branchIds = branch.map(i => processDef.value!.nodes[i]?.id).filter(Boolean) as string[]
+    const potentialJoins = processDef.value.nodes.filter(n =>
+      branchIds.every(bid => (processDef.value!.edges || []).some(e => e.from === bid && e.to === n.id))
+    )
+    if (potentialJoins.length > 0) joinNode = potentialJoins[0]
+    labels.push({ branch, forkNode, joinNode })
+  }
+  return labels
+})
+
 // ── Process List ──────────────────────────────────────────────────────
 const { data: procData } = useQuery({ queryKey: ['pd','list'], queryFn: async () => {
   plLoading.value = true
@@ -613,6 +681,17 @@ function getNodeIcon(type: string) {
   return m[type] || '⬜'
 }
 function isGate(type: string) { return type.startsWith('gate_') }
+function computeForkJoinPath(branchIndices: number[]): string {
+  if (branchIndices.length < 2 || !processDef.value) return ""
+  const nodes = branchIndices.map(i => processDef.value!.nodes[i]).filter(Boolean)
+  if (nodes.length < 2) return ""
+  let d = "M " + (nodes[0].x + (nodes[0].w||120)) + " " + (nodes[0].y + (nodes[0].h||50)/2)
+  for (let i = 1; i < nodes.length; i++) {
+    const n = nodes[i]
+    d += " L " + (n.x + (n.w||120)) + " " + (n.y + (n.h||50)/2)
+  }
+  return d
+}
 function getNodeConditions(node: PDNode): string[] {
   if (!node.condition) return []
   return node.condition.split(',').map(s => s.trim()).filter(Boolean)
@@ -788,6 +867,23 @@ function getEdgeToLabel() {
   const edge = processDef.value.edges[selectedEdge.value]
   const n = processDef.value.nodes.find(n => n.id === edge.to)
   return n?.label || n?.id?.slice(0,8) || '?'
+}
+
+// Data mapping helpers
+function getNodeMappings(): any[] {
+  if (selectedNode.value === null || !processDef.value) return []
+  return (processDef.value.nodes[selectedNode.value] as any).mappings || []
+}
+function addDataMapping() {
+  if (selectedNode.value === null || !processDef.value) return
+  const m = getNodeMappings()
+  m.push({ from: '', to: '' })
+  _setNodeProp('mappings', m)
+}
+function removeDataMapping(i: number) {
+  const m = getNodeMappings()
+  m.splice(i, 1)
+  _setNodeProp('mappings', m)
 }
 
 // ── Edge CRUD ─────────────────────────────────────────────────────────
@@ -1210,6 +1306,31 @@ function subDeleteEdge(i: number) {
   subSelectedEdge.value = null
   subPushHistory()
 }
+
+// Subprocess toolbar actions
+function subUndo() { if (subHistIdx.value > 0) { subHistIdx.value--; subprocessDef.value = JSON.parse(JSON.stringify(subHistory.value[subHistIdx.value])); subSelectedNode.value = null } }
+function subZoomIn() { subZoom.value = Math.min(3, subZoom.value + 0.1) }
+function subZoomOut() { subZoom.value = Math.max(0.3, subZoom.value - 0.1) }
+function subFitCanvas() { subZoom.value = 1; subPanX.value = 0; subPanY.value = 0 }
+function subAddNode(type: string) {
+  if (!subprocessDef.value) return
+  const w = type === 'approval' ? 130 : 120
+  const h = type === 'approval' ? 70 : 50
+  subprocessDef.value.nodes.push({ id: genId(), type, label: getNodeLabel(type), x: 100 + Math.random() * 200, y: 80 + Math.random() * 100, w, h })
+  subPushHistory()
+}
+function subClearCanvas() {
+  if (!confirm('清空子流程画布？')) return
+  subprocessDef.value = { nodes: [], edges: [] }
+  subSelectedNode.value = null; subSelectedEdge.value = null
+  subPushHistory()
+}
+function createSubVersion() {
+  if (!subprocessDef.value) return
+  const v: ProcVersion = { id: genId(), timestamp: Date.now(), label: '子流程快照', config: JSON.parse(JSON.stringify(subprocessDef.value)), author: 'user', message: '子流程快照' }
+  versions.value.unshift(v)
+  if (versions.value.length > 20) versions.value.pop()
+}
 function subSelectEdge(i: number) { subSelectedEdge.value = i; subSelectedNode.value = null }
 function subPushHistory() {
   if (!subprocessDef.value) return
@@ -1217,8 +1338,7 @@ function subPushHistory() {
   subHistory.value.push(JSON.parse(JSON.stringify(subprocessDef.value)))
   subHistIdx.value = subHistory.value.length - 1
 }
-function subUndo() { if (subHistIdx.value <= 0) return; subHistIdx.value--; subprocessDef.value = JSON.parse(JSON.stringify(subHistory.value[subHistIdx.value])); subSelectedNode.value = null }
-function subRedo() { if (subHistIdx.value >= subHistory.value.length - 1) return; subHistIdx.value++; subprocessDef.value = JSON.parse(JSON.stringify(subHistory.value[subHistIdx.value])); subSelectedNode.value = null }
+
 
 // ── Process CRUD ──────────────────────────────────────────────────────
 async function loadProcess(p: ProcDef) {
@@ -1376,6 +1496,14 @@ onUnmounted(() => {
 .btn-del-sm{padding:6px 10px;border-radius:var(--radius-sm);border:1px solid var(--color-danger);background:transparent;color:var(--color-danger);cursor:pointer;font-size:12px;width:100%;margin-top:8px}
 .props-empty{padding:20px;text-align:center;color:var(--text-muted);font-size:12px}
 .props-empty .hint{font-size:11px;color:var(--text-muted);margin-top:8px;opacity:0.7}
+/* Data mapping */
+.data-mapping{border:1px solid var(--border-color);border-radius:var(--radius-sm);padding:6px;margin-top:4px}
+.dm-row{display:flex;align-items:center;gap:4px;margin-bottom:4px}
+.dm-select{flex:1;padding:3px 6px;border-radius:var(--radius-sm);border:1px solid var(--border-color);background:var(--bg-elevated);color:var(--text-primary);font-size:11px;outline:none}
+.dm-input{flex:1;padding:3px 6px;border-radius:var(--radius-sm);border:1px solid var(--border-color);background:var(--bg-elevated);color:var(--text-primary);font-size:11px;outline:none}
+.dm-arrow{color:var(--color-primary);font-size:12px}
+.dm-add{padding:2px 8px;border-radius:var(--radius-sm);border:1px solid var(--color-success);color:var(--color-success);background:transparent;cursor:pointer;font-size:10px}
+.dm-del{padding:2px 6px;border-radius:var(--radius-sm);border:1px solid var(--color-danger);color:var(--color-danger);background:transparent;cursor:pointer;font-size:12px}
 /* Version panel */
 .pd-version-panel{width:280px;flex-shrink:0;display:flex;flex-direction:column;border-left:1px solid var(--border-color);overflow:hidden;background:var(--bg-surface)}
 .vp-header{display:flex;align-items:center;justify-content:space-between;padding:8px 12px;border-bottom:1px solid var(--border-color);font-size:13px;font-weight:600;color:var(--color-primary)}
@@ -1445,4 +1573,22 @@ onUnmounted(() => {
 .sp-node-tag.end{background:rgba(239,68,68,.2);color:var(--color-danger)}
 .sp-node-tag.subprocess{background:rgba(168,85,247,.15);color:rgb(168,85,247)}
 .sp-footer{display:flex;justify-content:flex-end;gap:8px;margin-top:12px}
+/* Fork/Join labels */
+.fork-branches rect{fill:rgba(245,158,11,0.05);stroke:var(--color-warning);stroke-width:1.5;stroke-dasharray:6,3;rx:8}
+.fork-label{fill:var(--color-warning);font-size:10px;font-weight:700;text-anchor:middle;letter-spacing:1px}
+.join-label{fill:var(--color-success);font-size:10px;font-weight:700;text-anchor:middle;letter-spacing:1px}
+.branch-num{fill:var(--text-muted);font-size:9px;font-weight:600;text-anchor:end}
+.fork-flow{fill:none;stroke:var(--color-warning);stroke-width:1.5;stroke-dasharray:4,2;opacity:0.4}
+.join-label{fill:var(--color-success);font-size:10px;font-weight:700;text-anchor:middle;letter-spacing:1px}
+.edge-create-zone{fill:transparent;cursor:crosshair}
+/* Subprocess toolbar */
+.subprocess-editor{display:flex;flex-direction:column;height:100%;position:absolute;inset:0;z-index:50;background:var(--bg-surface)}
+.sp-toolbar{display:flex;align-items:center;gap:6px;padding:6px 10px;border-bottom:1px solid var(--border-color);flex-shrink:0;background:var(--bg-elevated)}
+.sp-tools{display:flex;align-items:center;gap:3px;flex:1}
+.sp-actions{display:flex;gap:6px}
+.sp-title{font-size:12px;font-weight:600;color:var(--color-primary);text-align:center;flex:0 0 160px}
+.tb-btn{padding:3px 8px;border-radius:var(--radius-sm);border:1px solid var(--border-color);background:var(--bg-surface);color:var(--text-muted);cursor:pointer;font-size:11px;white-space:nowrap}
+.tb-btn:hover{border-color:var(--color-primary);color:var(--color-primary)}
+.tb-btn:disabled{opacity:0.3;cursor:not-allowed}
+.tb-sep{width:1px;height:18px;background:var(--border-color);margin:0 2px}
 </style>
