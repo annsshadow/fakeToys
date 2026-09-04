@@ -8,19 +8,10 @@ Orchestrates gcov/kcov configuration, data collection, and report generation.
 
 import argparse
 import os
-import shutil
 import subprocess
 import sys
 import time
 from typing import Dict, List, Optional
-import platform
-
-
-def get_make_command() -> str:
-    """Return the appropriate make command for the current platform."""
-    if sys.platform == "win32":
-        return "mingw32-make"
-    return "make"
 
 from gcov_parser import GcovParser
 from kcov_parser import KcovParser
@@ -87,49 +78,29 @@ class CoverageHarness:
         return True
 
     def collect_gcov_data(self) -> Dict[str, object]:
-        """Collect gcov coverage data after the instrumented kernel has run.
-
-        The runtime coverage data (``.gcda``) for a gcov-instrumented kernel
-        lives in the kernel's memory and is exposed via debugfs at
-        ``/sys/kernel/debug/gcov`` while the kernel is *running*. We copy those
-        files into the build tree (next to the ``.gcno`` notes) and then let the
-        GcovParser run ``gcov -b`` to emit ``.gcov`` text for parsing.
-        """
+        """Collect gcov coverage data after test run."""
         print("Collecting gcov coverage data...")
 
-        # 1) Ensure debugfs is mounted (inside the running instrumented kernel).
+        # Mount debugfs if needed
         debugfs_mount = "/sys/kernel/debug"
         if not os.path.ismount(debugfs_mount):
             try:
                 subprocess.run(["mount", "-t", "debugfs", "none", debugfs_mount],
                              check=False, capture_output=True)
-            except (subprocess.CalledProcessError, FileNotFoundError, OSError):
+            except (subprocess.CalledProcessError, FileNotFoundError):
                 print("WARNING: Could not mount debugfs", file=sys.stderr)
 
-        # 2) Copy .gcda from the kernel's gcov debugfs into the build tree,
-        #    mirroring the directory structure next to the .gcno files.
-        gcov_root = os.path.join(debugfs_mount, "gcov")
-        if os.path.isdir(gcov_root):
-            copied = 0
-            for root, dirs, files in os.walk(gcov_root):
-                dirs.sort()
-                for f in sorted(files):
-                    src = os.path.join(root, f)
-                    rel = os.path.relpath(src, gcov_root)
-                    dst = os.path.join(self.build_dir, rel)
-                    os.makedirs(os.path.dirname(dst), exist_ok=True)
-                    try:
-                        shutil.copyfile(src, dst)
-                        copied += 1
-                    except OSError as e:
-                        print(f"WARNING: copy failed {src}: {e}", file=sys.stderr)
-            print(f"Copied {copied} .gcda files from {gcov_root}")
-        else:
-            print("WARNING: gcov debugfs not found at " + gcov_root +
-                  " -- was the instrumented kernel actually booted and run?",
-                  file=sys.stderr)
+        # Find .gcda files in build directory
+        gcda_files = []
+        for root, dirs, files in os.walk(self.build_dir):
+            dirs.sort()
+            for f in sorted(files):
+                if f.endswith(".gcda"):
+                    gcda_files.append(os.path.join(root, f))
 
-        # 3) Generate .gcov text and parse it.
+        print(f"Found {len(gcda_files)} .gcda files")
+
+        # Parse coverage data
         coverage = self.gcov_parser.collect_coverage(self.build_dir)
         return coverage
 
@@ -181,7 +152,7 @@ class CoverageHarness:
         # Build kernel
         print("Building kernel with coverage enabled...")
         result = subprocess.run(
-            [get_make_command(), "-C", self.source_dir, "O=" + self.build_dir, "-j$(nproc)"],
+            ["make", "-C", self.source_dir, "O=" + self.build_dir, "-j$(nproc)"],
             capture_output=True, shell=False
         )
         if result.returncode != 0:
