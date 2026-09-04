@@ -167,6 +167,22 @@
       </div>
     </div>
   </div>
+
+    <!-- Field Templates Modal -->
+    <div v-if="showFieldTemplates" class="modal-overlay" @click.self="showFieldTemplates=false">
+      <div class="modal modal-lg glass-card">
+        <div class="modal-header"><h3>📦 字段模板库</h3><button class="btn-close" @click="showFieldTemplates=false">✕</button></div>
+        <div class="modal-body">
+          <div class="tpl-grid">
+            <div v-for="tpl in fieldTemplates2" :key="tpl.name" class="tpl-card" @click="applyTemplate2(tpl)">
+              <div class="tpl-icon">{{ tpl.icon }}</div>
+              <div class="tpl-name">{{ tpl.name }}</div>
+              <div class="tpl-count">{{ tpl.fields.length }} 个字段</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
 </template>
 
 <script setup lang="ts">
@@ -191,6 +207,14 @@ interface FormDef {
   fields: FormField[]; updatedAt?: string; version?: string
   settings?: { showReset?: boolean; showSubmit?: boolean; layoutClass?: string }
 }
+
+// ── Advanced Form Types ───────────────────────────────────────────
+interface FieldDependency { sourceField: string; operator: string; values: string[]; action: 'show'|'hide' }
+interface FormSection { id: string; label: string; fields: string[] }
+interface FormTab { id: string; label: string; icon: string; fields: string[] }
+interface FormValidationRule { fieldKey: string; rule: string; message: string }
+interface FormSubmission { status: 'idle'|'submitting'|'success'|'error'; data: Record<string,any>; errors: Record<string,string> }
+interface FieldTemplate { name: string; icon: string; fields: string[] }
 interface FormDef {
   id?: string; name: string; flag: string; desc?: string
   fields: FormField[]; updatedAt?: string
@@ -230,6 +254,27 @@ const extraFieldTypes = [
   { type: 'upload', label: '上传', icon: '📤' },
   { type: 'map', label: '地图', icon: '🗺️' },
   { type: 'code', label: '代码', icon: '</>' },
+  // Additional field types
+  { type: "rating", label: "评分", icon: "⭐", key: "rating_field" },
+  { type: "slider", label: "滑块", icon: "🎚️", key: "slider_field" },
+  { type: "color", label: "颜色选择", icon: "🎨", key: "color_field" },
+  { type: "signature", label: "签名", icon: "✍️", key: "signature_field" },
+  { type: "image", label: "图片上传", icon: "🖼️", key: "image_field" },
+  { type: "rich_text", label: "富文本", icon: "📝", key: "rich_text_field" },
+  { type: "json", label: "JSON编辑器", icon: "🔧", key: "json_field" },
+  { type: "cascader", label: "级联选择", icon: "🌳", key: "cascader_field" },
+  { type: "switch", label: "开关", icon: "🔘", key: "switch_field" },
+  { type: "upload", label: "文件上传", icon: "📤", key: "upload_field" },
+  { type: "map", label: "地图选点", icon: "📍", key: "map_field" },
+  { type: "code", label: "代码编辑器", icon: "💻", key: "code_field" },
+  { type: "time", label: "时间选择", icon: "🕐", key: "time_field" },
+  { type: "datetime", label: "日期时间", icon: "📅", key: "datetime_field" },
+  { type: "rate", label: "等级评定", icon: "📊", key: "rate_field" },
+  { type: "transfer", label: "穿梭框", icon: "🔄", key: "transfer_field" },
+  { type: "tree_select", label: "树形选择", icon: "🌲", key: "tree_select_field" },
+  { type: "date_range", label: "日期范围", icon: "📆", key: "date_range_field" },
+  { type: "time_range", label: "时间范围", icon: "⏰", key: "time_range_field" },
+  { type: "number_range", label: "数字范围", icon: "🔢", key: "number_range_field" },
 ]
 
 const mode = ref<'edit'|'preview'|'schema'>('edit')
@@ -249,6 +294,27 @@ const forms = ref<FormDef[]>([])
 const formsLoading = ref(false)
 const currentForm = ref<FormDef|null>(null)
 const selectedField = ref<FormField|null>(null)
+
+const showAdvancedProps = ref(false)
+const showValidationPanel = ref(false)
+const showDependencyPanel = ref(false)
+const submissionResult = ref<FormSubmission|null>(null)
+const sections = ref<FormSection[]>([])
+const tabs = ref<FormTab[]>([])
+const validationRules = ref<FormValidationRule[]>([])
+const showSchemaExport = ref(false)
+const fieldTemplates2: FieldTemplate[] = [
+  { name: "基础表单", icon: "📋", fields: ["text", "textarea", "number", "date"] },
+  { name: "选择表单", icon: "📝", fields: ["select", "checkbox", "checkbox_group", "radio"] },
+  { name: "联系表单", icon: "📞", fields: ["text", "email", "phone", "textarea"] },
+  { name: "反馈表单", icon: "💬", fields: ["select", "textarea", "rating", "file"] },
+  { name: "注册表单", icon: "🆕", fields: ["text", "email", "password", "phone", "date"] },
+  { name: "问卷表单", icon: "📊", fields: ["select", "checkbox_group", "rating", "slider", "textarea"] },
+  { name: "订单表单", icon: "🛒", fields: ["select", "text", "number", "date", "textarea"] },
+  { name: "审批表单", icon: "✅", fields: ["text", "select", "textarea", "file", "signature"] },
+  { name: "调查表单", icon: "🔍", fields: ["radio", "checkbox", "rating", "slider", "textarea"] },
+  { name: "预约表单", icon: "📅", fields: ["text", "phone", "date", "time", "textarea"] },
+]
 const draggedType = ref<string|null>(null)
 
 const filteredForms = computed(() =>
@@ -518,6 +584,131 @@ function fmtCondition(c: FieldCondition): string {
   const ops: Record<string, string> = { equals: '==', contains: 'includes', gt: '>', lt: '<' }
   return ops[c.operator] || c.operator
 }
+
+// ── Field Dependency Management ────────────────────────────────────
+function addDependency() {
+  if (!selectedField.value) return
+  if (!selectedField.value.dependencies) selectedField.value.dependencies = []
+  selectedField.value.dependencies.push({ sourceField: "", operator: "==", values: [""], action: "show" })
+}
+function removeDependency(idx: number) {
+  if (!selectedField.value || !selectedField.value.dependencies) return
+  selectedField.value.dependencies.splice(idx, 1)
+}
+// ── Section Management ─────────────────────────────────────────────
+function addSection() {
+  sections.value.push({ id: genId(), label: "分组 " + (sections.value.length + 1), fields: [] })
+}
+function removeSection(idx: number) { sections.value.splice(idx, 1) }
+// ── Tab Management ─────────────────────────────────────────────────
+function addTab() {
+  tabs.value.push({ id: genId(), label: "页签 " + (tabs.value.length + 1), icon: "📑", fields: [] })
+}
+function removeTab(idx: number) { tabs.value.splice(idx, 1) }
+// ── Validation Rules ────────────────────────────────────────────────
+function addValidationRule() {
+  validationRules.value.push({ fieldKey: "", rule: "required", message: "必填字段" })
+}
+function removeValidationRule(idx: number) { validationRules.value.splice(idx, 1) }
+function validateAll(formData: Record<string,any>): { valid: boolean; errors: Record<string,string> } {
+  const errors: Record<string,string> = {}
+  for (const rule of validationRules.value) {
+    const value = formData[rule.fieldKey]
+    if (rule.rule === "required" && !value) errors[rule.fieldKey] = rule.message || "必填"
+  }
+  return { valid: Object.keys(errors).length === 0, errors }
+}
+// ── Form Submission Simulation ─────────────────────────────────────
+function simulateSubmission(formData: Record<string,any>) {
+  submissionResult.value = { status: "submitting", data: formData, errors: {} }
+  setTimeout(() => {
+    const validation = validateAll(formData)
+    if (validation.valid) {
+      submissionResult.value = { status: "success", data: formData, errors: {}, timestamp: Date.now() }
+    } else {
+      submissionResult.value = { status: "error", data: formData, errors: validation.errors }
+    }
+  }, 800)
+}
+// ── Schema Export ───────────────────────────────────────────────────
+function exportSchema() {
+  if (!currentForm.value) return
+  const schema = {
+    name: currentForm.value.name,
+    flag: currentForm.value.flag,
+    version: "1.0",
+    fields: currentForm.value.fields.map(f => ({ ...f, dependencies: f.dependencies || [], validation: f.validation || null }))
+  }
+  schemaJson.value = JSON.stringify(schema, null, 2)
+  showSchemaExport.value = true
+}
+// ── Field Type Helpers ──────────────────────────────────────────────
+function isLayoutField(type: string): boolean {
+  return ["section", "divider", "spacer", "tabs", "columns"].includes(type)
+}
+function getFieldCategory(type: string): string {
+  const inputTypes = ["text", "textarea", "number", "date", "time", "datetime", "email", "phone", "password", "url", "color", "rating", "slider", "switch", "rate", "code", "json", "rich_text"]
+  const selectTypes = ["select", "checkbox", "checkbox_group", "radio", "cascader", "transfer", "tree_select"]
+  const uploadTypes = ["file", "image", "upload", "signature"]
+  if (inputTypes.includes(type)) return "input"
+  if (selectTypes.includes(type)) return "select"
+  if (uploadTypes.includes(type)) return "upload"
+  return "other"
+}
+// ── Bulk Operations ─────────────────────────────────────────────────
+function batchSetRequired(flag: boolean) {
+  if (!currentForm.value || !selectedField.value) return
+  if (selectedField.value.validation) selectedField.value.validation.required = flag
+  else selectedField.value.validation = { required: flag }
+}
+// ── Field Templates ─────────────────────────────────────────────────
+function applyTemplate2(tpl: FieldTemplate) {
+  if (!currentForm.value) return
+  currentForm.value.fields = tpl.fields.map(type => makeField(type))
+  pushFormHistory()
+}
+// ── Export/Import Enhancements ──────────────────────────────────────
+function exportFormSchema() {
+  if (!currentForm.value) return
+  const schema = {
+    formName: currentForm.value.name,
+    formFlag: currentForm.value.flag,
+    columnCount: columnCount.value,
+    fields: currentForm.value.fields.map(f => ({
+      type: f.type, label: f.label, key: f.key,
+      required: f.required, disabled: f.disabled,
+      placeholder: f.placeholder,
+      options: parseOptions(f.optionsStr),
+      validation: f.validation,
+    }))
+  }
+  const blob = new Blob([JSON.stringify(schema, null, 2)], { type: "application/json" })
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement("a")
+  a.href = url; a.download = (currentForm.value.flag || "form") + "_schema.json"
+  a.click(); URL.revokeObjectURL(url)
+}
+function importFormSchema(text: string) {
+  try {
+    const schema = JSON.parse(text)
+    if (!currentForm.value) resetForm()
+    if (currentForm.value) {
+      currentForm.value.name = schema.formName || currentForm.value.name
+      currentForm.value.flag = schema.formFlag || currentForm.value.flag
+      if (schema.fields) {
+        currentForm.value.fields = schema.fields.map((f: any) => ({
+          id: genId(), type: f.type, label: f.label, key: f.key,
+          placeholder: f.placeholder, defaultValue: f.defaultValue,
+          required: f.required || false, disabled: f.disabled || false,
+          optionsStr: f.options ? f.options.map((o: any) => o.value + "|" + o.label).join("\n") : "",
+          validation: f.validation || null,
+          dependencies: f.dependencies || null,
+        }))
+      }
+      pushFormHistory()
+    }
+  } catch (e) { alert("导入失败: 无效的JSON格式") }
+}
 </script>
 
 <style scoped>
@@ -661,4 +852,10 @@ function fmtCondition(c: FieldCondition): string {
 .spacer-preview{height:16px;background:repeating-linear-gradient(90deg,var(--border-color),var(--border-color) 4px,transparent 4px,transparent 8px);border-radius:2px;margin:4px 0}
 .divider-preview{height:1px;background:var(--border-color);margin:8px 0}
 
+
+/* Field templates */
+.tpl-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(100px,1fr));gap:8px}
+.tpl-card{padding:12px;border-radius:var(--radius-md);border:1px solid var(--border-color);cursor:pointer;text-align:center;transition:all .15s}
+.tpl-card:hover{border-color:var(--color-primary);background:var(--color-primary-soft);transform:translateY(-2px)}
+.tpl-icon{font-size:24px}.tpl-name{font-size:11px;font-weight:600;margin-top:4px}.tpl-count{font-size:9px;color:var(--text-muted)}
 </style>
