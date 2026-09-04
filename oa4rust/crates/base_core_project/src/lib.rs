@@ -3,7 +3,7 @@ use deadpool_postgres::Pool;
 use serde_json::Value;
 use shared::{error::AppError, response::ActionResult};
 
-pub const JAVA_BASE: &str = '/jaxrs';
+pub const JAVA_BASE: &str = "/jaxrs";
 
 #[axum::debug_handler]
 pub async fn cache_post(pool: Extension<Pool>, Json(_req): Json<Value>) -> Result<Json<ActionResult<Value>>, AppError> {
