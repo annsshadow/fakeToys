@@ -1,6 +1,6 @@
 # oa4rust 前端架构设计——o2web-next
 
-> 状态：草稿 | 日期：2026-09-04 | 关联后端：oa4rust（Axum + SeaORM）
+> 状态：Phase 0-1 已实施 ✅ | 日期：2026-09-04 | 关联后端：oa4rust（Axum + SeaORM）
 
 ---
 
