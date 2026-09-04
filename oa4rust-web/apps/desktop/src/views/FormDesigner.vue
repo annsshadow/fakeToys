@@ -22,7 +22,7 @@
         <div class="list-items">
           <div v-if="formsLoading" class="list-loading">加载中...</div>
           <div v-else-if="filteredForms.length===0" class="list-empty">暂无表单</div>
-          <div v-for="f in filteredForms" :key="f.id" class="list-item" :class="{active:currentForm?.id===f.id}" @click="loadForm(f)">
+          <div v-for="f in filteredForms" :key="f.id" class="list-item" :class="{active:currentForm && currentForm.id===f.id}" @click="loadForm(f)">
             <div class="li-name">{{ f.name||f.title||'未命名' }}</div>
             <div class="li-meta">{{ f.flag||f.id }}</div>
           </div>
@@ -66,8 +66,9 @@
             </div>
             <div class="cf-fields">
               <div v-if="currentForm.fields.length===0" class="fields-empty">拖拽字段到此处，或点击上方组件添加</div>
-              <div v-for="(field, index) in currentForm.fields" :key="field.id" class="field-row"
-                :class="{ selected: selectedField?.id===field.id }" @click="selectField(field)">
+              <div v-for="(field, index) in currentForm.fields" :key="field.id" class="field-row" draggable="true"
+                @dragstart="(e)=>onFieldDragStart(e,index)" @dragover="(e)=>onFieldDragOver(e,index)" @drop="(e)=>onFieldDrop(e,index)"
+                :class="{ selected: selectedField && selectedField.id===field.id }" @click="selectField(field)">
                 <div class="fr-handle">⠿</div>
                 <div class="fr-icon">{{ getFieldIcon(field.type) }}</div>
                 <div class="fr-info">
@@ -319,6 +320,53 @@ async function saveForm() {
 
 function togglePreview() { mode.value = mode.value === 'preview' ? 'edit' : 'preview' }
 onMounted(loadForms)
+
+// ── Field Drag Reorder ────────────────────────────────────────────────
+const dragFieldIdx = ref<number|null>(null)
+const dragOverIdx = ref<number|null>(null)
+
+function onFieldDragStart(e: DragEvent, idx: number) {
+  dragFieldIdx.value = idx
+  e.dataTransfer?.setData('text/plain', String(idx))
+  if (e.dataTransfer) e.dataTransfer.effectAllowed = 'move'
+}
+
+function onFieldDragOver(e: DragEvent, idx: number) {
+  e.preventDefault()
+  dragOverIdx.value = idx
+}
+
+function onFieldDrop(e: DragEvent, idx: number) {
+  e.preventDefault()
+  if (dragFieldIdx.value === null || dragFieldIdx.value === idx || !currentForm.value) return
+  const fields = currentForm.value.fields
+  const from = dragFieldIdx.value
+  const to = idx
+  const [removed] = fields.splice(from, 1)
+  fields.splice(to, 0, removed)
+  dragFieldIdx.value = null
+  dragOverIdx.value = null
+}
+
+// ── Conditional Display ────────────────────────────────────────────────
+interface FieldCondition { operator: string; value: string }
+
+function addCondition() {
+  if (!selectedField.value) return
+  if (!(selectedField.value as any).conditions) (selectedField.value as any).conditions = []
+  ;(selectedField.value as any).conditions.push({ operator: 'equals', value: '' })
+}
+
+function removeCondition(i: number) {
+  if (!selectedField.value) return
+  const conds = (selectedField.value as any).conditions
+  if (Array.isArray(conds)) conds.splice(i, 1)
+}
+
+function fmtCondition(c: FieldCondition): string {
+  const ops: Record<string, string> = { equals: '==', contains: 'includes', gt: '>', lt: '<' }
+  return ops[c.operator] || c.operator
+}
 </script>
 
 <style scoped>
@@ -372,6 +420,8 @@ onMounted(loadForms)
 .fields-empty { padding: 24px; text-align: center; color: var(--text-muted); font-size: 13px }
 .field-row { display: flex; align-items: center; gap: 8px; padding: 8px 12px; border-radius: var(--radius-md); border: 1px solid transparent; cursor: pointer; transition: all 0.15s; background: var(--bg-elevated) }
 .field-row:hover { border-color: var(--border-color) }
+.field-row.drag-over { border-top: 2px solid var(--color-primary); margin-top: -2px }
+.field-row.dragging { opacity: 0.4 }
 .field-row.selected { border-color: var(--color-primary); background: var(--color-primary-soft) }
 .fr-handle { color: var(--text-muted); cursor: grab; font-size: 14px; flex-shrink: 0 }
 .fr-icon { font-size: 18px; flex-shrink: 0 }
@@ -397,6 +447,12 @@ onMounted(loadForms)
 .checkbox-label { display: flex; align-items: center; gap: 6px; font-size: 13px; color: var(--text-primary); text-transform: none; cursor: pointer }
 .prop-row2 { display: flex; gap: 8px }
 .prop-row2 .prop-input { flex: 1 }
+.cond-logic{display:flex;flex-direction:column;gap:4px}
+.cond-row{display:flex;gap:4px;align-items:center}
+.cond-select{width:80px;padding:4px 6px;border-radius:var(--radius-sm);border:1px solid var(--border-color);background:var(--bg-elevated);color:var(--text-primary);font-size:11px;outline:none}
+.cond-input{flex:1;padding:4px 6px;border-radius:var(--radius-sm);border:1px solid var(--border-color);background:var(--bg-elevated);color:var(--text-primary);font-size:11px;outline:none}
+.cond-del{padding:2px 6px;border-radius:var(--radius-sm);border:1px solid var(--color-danger);background:transparent;color:var(--color-danger);cursor:pointer;font-size:10px}
+.cond-add{padding:4px 8px;border-radius:var(--radius-sm);border:1px dashed var(--border-color);background:transparent;color:var(--text-muted);cursor:pointer;font-size:11px;width:100%;margin-top:4px}
 /* Preview */
 .preview-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.7); display: flex; align-items: center; justify-content: center; z-index: 200 }
 .preview-modal { width: 560px; max-width: 90vw; max-height: 85vh; overflow: auto; padding: 24px; display: flex; flex-direction: column; gap: 16px }

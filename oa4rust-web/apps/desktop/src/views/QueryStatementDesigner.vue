@@ -60,8 +60,7 @@
           <button class="tb-btn" @click="clearSQL" title="清空">🗑 清空</button>
           <span class="tb-info">{{ sqlLines }} 行 · {{ sql.length }} 字符</span>
         </div>
-        <textarea v-model="sql" class="sql-editor" placeholder="在此输入SQL语句..." spellcheck="false"
-          @keydown.ctrl.enter="executeSQL" @keydown.meta.enter="executeSQL"></textarea>
+        <SqlEditor v-model="sql" />
         <div class="editor-status">{{ statusText }}</div>
       </main>
 
