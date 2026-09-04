@@ -11,7 +11,8 @@
         <button class="btn" @click="redo" :disabled="!canRedo" title="重做">↪</button>
         <button class="btn" @click="zoomIn" title="放大">🔍+</button>
         <button class="btn" @click="zoomOut" title="缩小">🔍-</button>
-        <button class="btn" @click="fitCanvas" title="适配">⊞</button>
+        <button class="btn" @click="zoomToFit" title="适配内容">⊞ 适配</button>
+        <button class="btn" @click="clearCanvas" title="清空">🗑</button>
         <button class="btn btn-outline" @click="loadProcesses">🔄 刷新</button>
         <button class="btn btn-primary" @click="saveProcess" :disabled="!currentProcess">💾 保存</button>
       </div>
@@ -176,7 +177,7 @@
         </svg>
 
         <div class="canvas-hint">
-          <span>拖拽右侧节点到画布 | 从端口拖出创建连线 | 拖拽节点角点调整大小 | 拖拽锚点改变连线方向 | 多选后按G分组 | Del删除 | Ctrl+D复制</span>
+          <span>拖拽右侧节点到画布 | 从端口拖出创建连线 | Shift+点击多选 | Ctrl+A全选 | G键分组 | Del删除 | Ctrl+D复制</span>
         </div>
       </main>
 
@@ -340,6 +341,15 @@ const anchorPoints = computed(() => {
 // Group state
 const groupedNodes = ref<Set<string>>(new Set())
 
+// Multi-select state
+const multiSelected = ref<Set<string>>(new Set())
+const isMultiDragging = ref(false)
+const multiDragOffset = ref({ x: 0, y: 0 })
+
+// Minimap state
+const minimapVisible = ref(true)
+const minimapScale = 0.15
+
 // Subprocess state
 const showSubprocess = ref(false)
 const subprocessTitle = ref('')
@@ -356,6 +366,55 @@ const svgTransform = computed(() => ({ transform: `translate(${panX.value}px,${p
 const edgeTransform = computed(() => ({ transform: `translate(${-panX.value}px,${-panY.value}px) scale(${1/zoom.value})` }))
 const nodeTransform = computed(() => ({ transform: `translate(${-panX.value}px,${-panY.value}px) scale(${1/zoom.value})` }))
 const gridScale = computed(() => GRID_SIZE * zoom.value)
+
+// Multi-select helpers
+function isSelectedNode(id: string): boolean {
+  if (selectedNode.value !== null && processDef.value?.nodes[selectedNode.value]?.id === id) return true
+  return multiSelected.value.has(id)
+}
+function toggleSelectNode(i: number) {
+  if (!processDef.value) return
+  const node = processDef.value.nodes[i]
+  if (!node) return
+  if (multiSelected.value.has(node.id)) multiSelected.value.delete(node.id)
+  else multiSelected.value.add(node.id)
+  selectedNode.value = i
+}
+
+// Minimap bounds
+const minimapBounds = computed(() => {
+  if (!processDef.value || processDef.value.nodes.length === 0)
+    return { minX: 0, minY: 0, maxX: 800, maxY: 600 }
+  let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity
+  for (const n of processDef.value.nodes) {
+    minX = Math.min(minX, n.x); minY = Math.min(minY, n.y)
+    maxX = Math.max(maxX, n.x + (n.w || 120)); maxY = Math.max(maxY, n.y + (n.h || 50))
+  }
+  return { minX: minX - 50, minY: minY - 50, maxX: maxX + 50, maxY: maxY + 50 }
+})
+const minimapWidth = computed(() => canvasRef.value ? canvasRef.value.clientWidth * minimapScale : 150)
+const minimapHeight = computed(() => canvasRef.value ? canvasRef.value.clientHeight * minimapScale : 100)
+
+// Parallel branch detection
+function detectParallelBranches(): number[][] {
+  if (!processDef.value) return []
+  const groups: number[][] = []
+  const visited = new Set<number>()
+  for (let i = 0; i < processDef.value.nodes.length; i++) {
+    const node = processDef.value.nodes[i]
+    const outgoing = (processDef.value.edges || []).filter(e => e.from === node.id)
+    if (outgoing.length >= 2 && !visited.has(i)) {
+      const branch: number[] = [i]
+      for (const edge of outgoing) {
+        const tIdx = processDef.value!.nodes.findIndex(n => n.id === edge.to)
+        if (tIdx !== -1 && !visited.has(tIdx)) { branch.push(tIdx); visited.add(tIdx) }
+      }
+      if (branch.length > 1) groups.push(branch)
+    }
+  }
+  return groups
+}
+const parallelBranches = computed(() => detectParallelBranches())
 
 // ── Process List ──────────────────────────────────────────────────────
 const { data: procData } = useQuery({ queryKey: ['pd','list'], queryFn: async () => {
@@ -383,6 +442,16 @@ function getNodeLabel(type: string) {
   const m: Record<string,string> = { start:'开始', end:'结束', task:'任务', approval:'审批', timer:'定时',
     gate_and:'且网关', gate_or:'或网关', gate_xor:'异或网关', subprocess:'子流程', script:'脚本', parallel:'并行' }
   return m[type] || type
+}
+// ── Node color helpers ────────────────────────────────────────────────
+function getNodeBgColor(type: string): string {
+  const m: Record<string,string> = {
+    start:'rgba(16,185,129,.6)', end:'rgba(239,68,68,.6)', task:'rgba(0,212,255,.4)',
+    approval:'rgba(99,102,241,.4)', timer:'rgba(245,158,11,.4)',
+    gate_and:'rgba(245,158,11,.4)', gate_or:'rgba(245,158,11,.4)', gate_xor:'rgba(245,158,11,.4)',
+    subprocess:'rgba(168,85,247,.4)', script:'rgba(34,197,94,.4)', parallel:'rgba(236,72,153,.4)'
+  }
+  return m[type] || 'rgba(100,100,100,.4)'
 }
 function getNodeIcon(type: string) {
   const m: Record<string,string> = { start:'🟢', end:'🔴', task:'📋', approval:'✅', timer:'⏱️',
@@ -687,8 +756,38 @@ function ungroup(nodeIdx: number) {
   // For now just deselect
   selectedNode.value = null
 }
+function zoomToFit() {
+  if (!processDef.value || processDef.value.nodes.length === 0) { fitCanvas(); return }
+  if (!canvasRef.value) return
+  const rect = canvasRef.value.getBoundingClientRect()
+  let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity
+  for (const n of processDef.value.nodes) {
+    minX = Math.min(minX, n.x); minY = Math.min(minY, n.y)
+    maxX = Math.max(maxX, n.x + (n.w||120)); maxY = Math.max(maxY, n.y + (n.h||50))
+  }
+  const contentW = maxX - minX + 40, contentH = maxY - minY + 40
+  const scaleX = rect.width / contentW, scaleY = rect.height / contentH
+  zoom.value = Math.min(scaleX, scaleY, 1.5) * 0.9
+  panX.value = (rect.width - contentW * zoom.value) / 2 - minX * zoom.value
+  panY.value = (rect.height - contentH * zoom.value) / 2 - minY * zoom.value
+}
+
 function onNodeMouseDown(e: MouseEvent, i: number) {
   if (!processDef.value) return
+  // Shift+click for multi-select
+  if (e.shiftKey) {
+    toggleSelectNode(i)
+    isMultiDragging.value = true
+    const ids = Array.from(multiSelected.value)
+    if (ids.length > 0) {
+      const first = processDef.value.nodes[ids[0]]
+      multiDragOffset.value = {
+        x: (e.clientX - panX.value) / zoom.value - (first?.x ?? 0),
+        y: (e.clientY - panY.value) / zoom.value - (first?.y ?? 0)
+      }
+    }
+    return
+  }
   isDragging.value = true; dragIdx.value = i
   const node = processDef.value.nodes[i]
   dragOffset.value = {
@@ -699,6 +798,19 @@ function onNodeMouseDown(e: MouseEvent, i: number) {
 }
 function onNodeMouseMove(e: MouseEvent) {
   if (!isDragging.value || dragIdx.value === null || !processDef.value) return
+  // Multi-node drag
+  if (isMultiDragging.value && multiSelected.value.size > 1) {
+    const dx = (e.clientX - panX.value) / zoom.value - multiDragOffset.value.x
+    const dy = (e.clientY - panY.value) / zoom.value - multiDragOffset.value.y
+    for (const id of multiSelected.value) {
+      const idx = processDef.value.nodes.findIndex(n => n.id === id)
+      if (idx !== -1) {
+        processDef.value.nodes[idx].x = Math.round(dx / GRID_SIZE) * GRID_SIZE
+        processDef.value.nodes[idx].y = Math.round(dy / GRID_SIZE) * GRID_SIZE
+      }
+    }
+    return
+  }
   const idx = dragIdx.value
   const rawX = (e.clientX - panX.value) / zoom.value - dragOffset.value.x
   const rawY = (e.clientY - panY.value) / zoom.value - dragOffset.value.y
@@ -719,13 +831,23 @@ function onNodeMouseMove(e: MouseEvent) {
   snapX.value = nearX; snapY.value = nearY
 }
 function onNodeMouseUp() {
-  if (isDragging.value && processDef.value && dragIdx.value !== null) {
+  if (isMultiDragging.value && multiSelected.value.size > 1 && processDef.value) {
+    for (const id of multiSelected.value) {
+      const idx = processDef.value.nodes.findIndex(n => n.id === id)
+      if (idx !== -1) {
+        processDef.value.nodes[idx].x = Math.round(processDef.value.nodes[idx].x / GRID_SIZE) * GRID_SIZE
+        processDef.value.nodes[idx].y = Math.round(processDef.value.nodes[idx].y / GRID_SIZE) * GRID_SIZE
+      }
+    }
+    pushHistory()
+  } else if (isDragging.value && processDef.value && dragIdx.value !== null) {
     const n = processDef.value.nodes[dragIdx.value]
     if (snapX.value !== null) n.x = snapX.value
     if (snapY.value !== null) n.y = snapY.value
     pushHistory()
   }
   isDragging.value = false; dragIdx.value = null; snapX.value = null; snapY.value = null
+  isMultiDragging.value = false; multiSelected.value.clear()
 }
 
 // ── Drag: Edge from port ──────────────────────────────────────────────
@@ -876,6 +998,17 @@ async function loadProcesses() {
 onMounted(() => {
   document.addEventListener('mousemove', (e) => { onNodeMouseMove(e) })
   document.addEventListener('mouseup', () => { onNodeMouseUp() })
+document.addEventListener('keydown', (e) => {
+    if (e.ctrlKey && e.key === 'a' && currentProcess.value) {
+      e.preventDefault()
+      multiSelected.value.clear()
+      if (processDef.value) processDef.value.nodes.forEach((n,i) => { multiSelected.value.add(n.id); selectedNode.value = i })
+    }
+    if (e.key === 'g' && !e.ctrlKey && multiSelected.value.size >= 2) {
+      e.preventDefault()
+      createGroup()
+    }
+  })
   loadProcesses()
 })
 onUnmounted(() => {
