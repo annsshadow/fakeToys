@@ -11,6 +11,12 @@
         <button class="btn btn-outline" @click="loadStatements">🔄 刷新</button>
         <button class="btn btn-success" :disabled="!sql.trim()" @click="executeSQL">▶ 执行</button>
         <button class="btn btn-primary" :disabled="!currentStatement" @click="saveStatement">💾 保存</button>
+        <button class="btn btn-outline" @click="showConditionBuilder=!showConditionBuilder" title="条件构建器">🔷 条件构建</button>
+        <button class="btn btn-outline" @click="showDragConfigFn()" title="字段拖拽配置">📐 字段拖拽</button>
+        <button class="btn btn-outline" @click="showASTPanel=!showASTPanel" title="SQL语法树">🌳 语法树</button>
+        <button class="btn btn-outline" @click="showLinkagePanel=!showLinkagePanel" title="图表联动">🔗 联动</button>
+        <button class="btn btn-outline" @click="showMoreTemplatesFn()" title="更多模板">📑 更多</button>
+        <button class="btn btn-outline" @click="showColSummaryFn()" title="列统计">📊 列统计</button>
         <button class="btn btn-outline" @click="showVisualPanel=true" :class="{active:showVisualPanel}" title="结果可视化">📊 可视化</button>
         <button class="btn btn-outline" @click="openPermPanel()" :class="{active:showPermPanel}" title="字段权限">🔐 权限</button>
         <button class="btn btn-outline" @click="showPlanPanel=true" :class="{active:showPlanPanel}" title="执行计划分析">🔬 执行计划</button>
@@ -429,6 +435,167 @@
           </div>
           <div v-if="filteredTmplList.length===0" class="tmpl-empty">暂无模板</div>
         </div>
+      </div>
+    </div>
+
+    <!-- Condition Builder -->
+    <div v-if="showConditionBuilder" class="modal-overlay" @click.self="showConditionBuilder=false">
+      <div class="modal-box cond-builder-panel">
+        <div class="modal-header"><span>🔷 查询条件构建器</span><button class="btn-close" @click="showConditionBuilder=false">✕</button></div>
+        <div class="cond-body">
+          <div class="cond-rules">
+            <div v-for="(rule,ri) in conditionRules" :key="ri" class="cond-rule-row">
+              <select v-model="rule.field" class="cond-select">
+                <option value="">选择字段...</option>
+                <option v-for="h in resultHeaders" :key="h" :value="h">{{ h }}</option>
+              </select>
+              <select v-model="rule.op" class="cond-select">
+                <option value="eq">=</option><option value="neq">!=</option>
+                <option value="gt">&gt;</option><option value="lt">&lt;</option>
+                <option value="gte">>=</option><option value="lte"><=</option>
+                <option value="like">LIKE</option><option value="in">IN</option>
+              </select>
+              <input v-model="rule.value" class="cond-input" placeholder="值..." />
+              <button class="btn-xs btn-danger" @click="conditionRules.splice(ri,1)">✕</button>
+            </div>
+          </div>
+          <div class="cond-logic">
+            <label><input type="radio" v-model="conditionLogic" value="AND" /> AND</label>
+            <label><input type="radio" v-model="conditionLogic" value="OR" /> OR</label>
+          </div>
+          <button class="btn-sm" @click="addConditionRule()">+ 添加条件</button>
+          <button class="btn-sm btn-primary" @click="applyConditionBuilder()">✓ 应用并执行</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Field Drag Config -->
+    <div v-if="showDragConfig" class="modal-overlay" @click.self="showDragConfig=false">
+      <div class="modal-box drag-config-panel">
+        <div class="modal-header"><span>📐 字段拖拽配置</span><button class="btn-close" @click="showDragConfig=false">✕</button></div>
+        <div class="drag-body">
+          <div class="drag-columns">
+            <div class="drag-col">
+              <div class="dc-title">可用字段</div>
+              <div v-for="f in availableFields" :key="f" class="drag-item" draggable="true" @dragstart="draggedField=f">{{ f }}</div>
+            </div>
+            <div class="drag-col">
+              <div class="dc-title">已选字段</div>
+              <div v-for="(f,fi) in selectedFields" :key="f" class="drag-item selected" @dblclick="selectedFields.splice(fi,1)">{{ f }} ✕</div>
+              <div v-if="selectedFields.length===0" class="drag-empty">拖拽字段到此处</div>
+            </div>
+          </div>
+          <div class="drag-preview">
+            <div class="dp-label">生成SQL:</div>
+            <pre class="dp-sql">{{ generatedSelectSql }}</pre>
+          </div>
+          <div class="drag-actions">
+            <button class="btn-sm" @click="autoSelectAllFields()">全选</button>
+            <button class="btn-sm" @click="clearSelectedFields()">清空</button>
+            <button class="btn-sm btn-primary" @click="applySelectedFields()">应用</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- AST Panel -->
+    <div v-if="showASTPanel" class="modal-overlay" @click.self="showASTPanel=false">
+      <div class="modal-box ast-panel">
+        <div class="modal-header"><span>🌳 SQL语法树</span><button class="btn-close" @click="showASTPanel=false">✕</button></div>
+        <div class="ast-body">
+          <button class="btn-sm" @click="parseAST()">🔍 解析SQL</button>
+          <div v-if="astLoading" class="ast-loading">解析中...</div>
+          <div v-else-if="!astTree?.length" class="ast-empty">点击"解析"查看SQL语法树</div>
+          <div v-else class="ast-tree">
+            <div v-for="(node,ni) in astTree" :key="ni" class="ast-node">
+              <div class="ast-node-header" :style="{borderLeftColor:getAstColor(node.type)}">
+                <span class="ast-type">{{ node.type }}</span>
+                <span class="ast-val">{{ node.value || "" }}</span>
+              </div>
+              <div v-if="node.children?.length" class="ast-children">
+                <div v-for="(child,ci) in node.children" :key="ci" class="ast-node ast-sub">
+                  <div class="ast-node-header" :style="{borderLeftColor:getAstColor(child.type)}">
+                    <span class="ast-type">{{ child.type }}</span><span class="ast-val">{{ child.value || "" }}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div v-if="astSummary" class="ast-summary">
+            <span>类型: <strong>{{ astSummary.type }}</strong></span>
+            <span>表: <strong>{{ astSummary.tables.join(", ") }}</strong></span>
+            <span>条件: <strong>{{ astSummary.whereCount }}</strong></span>
+            <span>字段: <strong>{{ astSummary.selectCount }}</strong></span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Chart Linkage Panel -->
+    <div v-if="showLinkagePanel" class="modal-overlay" @click.self="showLinkagePanel=false">
+      <div class="modal-box linkage-panel">
+        <div class="modal-header"><span>🔗 图表联动</span><button class="btn-close" @click="showLinkagePanel=false">✕</button></div>
+        <div class="linkage-body">
+          <div class="linkage-config">
+            <div class="lc-row"><label>联动模式:</label>
+              <select v-model="linkageMode" class="lc-select">
+                <option value="none">无联动</option>
+                <option value="filter">点击过滤</option>
+                <option value="detail">点击查看明细</option>
+                <option value="sort">点击排序</option>
+              </select>
+            </div>
+            <div class="lc-row"><label>X轴字段:</label>
+              <select v-model="linkageXAxis" class="lc-select">
+                <option v-for="h in resultHeaders" :value="h">{{ h }}</option>
+              </select>
+            </div>
+            <div class="lc-row"><label>联动条件:</label>
+              <input v-model="linkageConditionField" class="lc-input" placeholder="用于过滤的字段名" />
+            </div>
+          </div>
+          <div v-if="linkagePreview.length" class="linkage-preview">
+            <div class="lp-title">预览数据:</div>
+            <div v-for="(item,ii) in linkagePreview" :key="ii" class="lp-item">{{ item }}</div>
+          </div>
+          <button class="btn-sm" @click="applyLinkage()">✓ 应用联动</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- More Templates Panel -->
+    <div v-if="showMoreTemplates" class="modal-overlay" @click.self="showMoreTemplates=false">
+      <div class="modal-box more-tmpl-panel">
+        <div class="modal-header"><span>📑 更多SQL模板</span><button class="btn-close" @click="showMoreTemplates=false">✕</button></div>
+        <div class="mt-grid">
+          <div v-for="(t,ti) in moreTemplates" :key="t.id" class="mt-card">
+            <div class="mt-header"><span class="mt-icon">{{ t.icon }}</span><span class="mt-name">{{ t.name }}</span><span class="mt-cat">{{ t.category }}</span></div>
+            <pre class="mt-code">{{ t.code }}</pre>
+            <div class="mt-actions">
+              <button class="btn-sm" @click="applyTemplate(t)">应用</button>
+              <button class="btn-sm" @click="saveMoreTemplate(t)">收藏</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Column Summary Panel -->
+    <div v-if="showColSummary" class="modal-overlay" @click.self="showColSummary=false">
+      <div class="modal-box col-summary-panel">
+        <div class="modal-header"><span>📊 列统计摘要</span><button class="btn-close" @click="showColSummary=false">✕</button></div>
+        <div class="col-summary-body">
+          <div v-for="col in columnStats" :key="col.name" class="cs-row">
+            <span class="cs-name">{{ col.name }}</span>
+            <span class="cs-type">{{ col.type }}</span>
+            <span class="cs-nulls">{{ col.nulls }}空/{{ col.total }}总</span>
+            <span class="cs-distinct">{{ col.distinct }}唯一</span>
+            <span class="cs-sum" v-if="col.sum!==undefined">Σ={{ col.sum }}</span>
+            <span class="cs-avg" v-if="col.avg!==undefined">μ={{ col.avg.toFixed(2) }}</span>
+          </div>
+          <div v-if="columnStats.length===0" class="cs-empty">执行查询后显示列统计</div>
+        </div>
+        <div class="cs-footer"><button class="btn-sm" @click="showColSummary=false">关闭</button></div>
       </div>
     </div>
 </template>
@@ -874,6 +1041,146 @@ const filteredTmplList = computed(() => {
   if (tmplFilterCat.value) list = list.filter(t => t.category === tmplFilterCat.value)
   return list
 })
+
+// --- Condition Builder State ---
+const showConditionBuilder = ref(false)
+const conditionRules = ref<Array<{field:string;op:string;value:string}>>([])
+const conditionLogic = ref("AND")
+
+// --- Drag-Drop Field Config ---
+const showDragConfig = ref(false)
+const availableFields = ref<string[]>([])
+const selectedFields = ref<string[]>([])
+const draggedField = ref("")
+
+// --- AST State ---
+const showASTPanel = ref(false)
+const astLoading = ref(false)
+const astTree = ref<Array<{type:string;value:string;children?:any[]}>|null>(null)
+const astSummary = ref<{type:string;tables:string[];whereCount:number;selectCount:number}|null>(null)
+
+// --- Chart Linkage State ---
+const showLinkagePanel = ref(false)
+const linkageMode = ref("none")
+const linkageXAxis = ref(""), linkageConditionField = ref("")
+const linkagePreview = ref<string[]>([])
+
+// --- More Templates State ---
+const showMoreTemplates = ref(false)
+const moreTemplates = ref<Array<{id:string;name:string;category:string;code:string;icon:string}>>([
+  {id:"mt1",name:"CTE递归查询",category:"sub",code:"WITH RECURSIVE cte AS (SELECT id, parent_id, name, 1 as level FROM categories WHERE parent_id IS NULL UNION ALL SELECT c.id, c.parent_id, c.name, level+1 FROM categories c JOIN cte ON c.parent_id = cte.id) SELECT * FROM cte ORDER BY level;",icon:"\ud83d\udd01"},
+  {id:"mt2",name:"PIVOT行转列",category:"agg",code:"SELECT * FROM (SELECT department, salary FROM employees) src PIVOT (AVG(salary) FOR department IN (IT, HR, Sales));",icon:"\ud83d\udd04"},
+  {id:"mt3",name:"自连接查询",category:"join",code:"SELECT e.name as emp, m.name as mgr FROM employees e LEFT JOIN employees m ON e.manager_id = m.id;",icon:"\ud83d\udd17"},
+  {id:"mt4",name:"窗口函数RANK",category:"agg",code:"SELECT name, score, RANK() OVER (ORDER BY score DESC) as rank_num FROM students;",icon:"\ud83c\udfc6"},
+  {id:"mt5",name:"交叉连接笛卡尔积",category:"join",code:"SELECT a.name, b.name FROM table_a a CROSS JOIN table_b b LIMIT 100;",icon:"\u2b1c"},
+  {id:"mt6",name:"UNION合并查询",category:"select",code:"SELECT name, email FROM users UNION ALL SELECT name, email FROM customers;",icon:"\u2b06"},
+  {id:"mt7",name:"删除重复数据",category:"sub",code:"DELETE FROM users WHERE id NOT IN (SELECT min_id FROM (SELECT MIN(id) as min_id FROM users GROUP BY email) t);",icon:"\ud83d\uddd1"},
+  {id:"mt8",name:"日期范围查询",category:"select",code:"SELECT * FROM orders WHERE order_date BETWEEN ? AND ? ORDER BY order_date DESC LIMIT 50;",icon:"\ud83d\udcc5"},
+  {id:"mt9",name:"分组TOP N",category:"agg",code:"SELECT department, name, salary, rn FROM (SELECT *, ROW_NUMBER() OVER (PARTITION BY department ORDER BY salary DESC) as rn FROM employees) t WHERE rn <= 3;",icon:"\ud83d\udcca"},
+  {id:"mt10",name:"临时表CTE",category:"sub",code:"WITH user_stats AS (SELECT user_id, COUNT(*) as order_cnt, SUM(amount) as total_amount FROM orders GROUP BY user_id) SELECT u.name, us.order_cnt, us.total_amount FROM users u JOIN user_stats us ON u.id = us.user_id;",icon:"\ud83e\udde9"},
+])
+
+// --- Column Summary State ---
+const showColSummary = ref(false)
+const columnStats = ref<Array<{name:string;type:string;nulls:number;total:number;distinct:number;sum?:number;avg?:number}>>([])
+
+// --- Condition Builder Functions ---
+function addConditionRule() { conditionRules.value.push({ field: "", op: "eq", value: "" }) }
+function applyConditionBuilder() {
+  if (!conditionRules.value.length) return
+  const clauses = conditionRules.value.filter(r => r.field && r.value).map(r => {
+    if (r.op === "eq") return `${r.field} = '${r.value}'`
+    if (r.op === "neq") return `${r.field} != '${r.value}'`
+    if (r.op === "gt") return `${r.field} > ${r.value}`
+    if (r.op === "lt") return `${r.field} < ${r.value}`
+    if (r.op === "gte") return `${r.field} >= ${r.value}`
+    if (r.op === "lte") return `${r.field} <= ${r.value}`
+    if (r.op === "like") return `${r.field} LIKE '%${r.value}%'`
+    if (r.op === "in") return `${r.field} IN (${r.value})`
+    return ""
+  }).filter(Boolean)
+  if (!clauses.length) return
+  const whereClause = clauses.join(` ${conditionLogic.value} `)
+  const hasWhere = /WHERE\s+/i.test(sql.value)
+  if (hasWhere) { sql.value = sql.value.replace(/WHERE\s+[^;]+/i, whereClause) }
+  else { sql.value += "\nWHERE " + whereClause }
+  showConditionBuilder.value = false
+  conditionRules.value = []
+}
+
+// --- Drag-Drop Functions ---
+function showDragConfigFn() {
+  if (resultHeaders.value.length) availableFields.value = [...resultHeaders.value]
+  else if (allTables.value.length) availableFields.value = allTables.value.flatMap(t => [t.name+".id", t.name+".name"])
+  showDragConfig.value = true
+}
+function autoSelectAllFields() { selectedFields.value = [...availableFields.value] }
+function clearSelectedFields() { selectedFields.value = [] }
+function applySelectedFields() {
+  if (!selectedFields.value.length) return
+  const fromTable = allTables.value[0]?.name || "table_name"
+  sql.value = "SELECT " + selectedFields.value.join(", ") + " FROM " + fromTable
+  showDragConfig.value = false
+}
+const generatedSelectSql = computed(() => {
+  if (!selectedFields.value.length) return "SELECT * FROM table_name"
+  return "SELECT " + selectedFields.value.join(", ") + " FROM ..."
+})
+
+// --- AST Functions ---
+function parseAST() {
+  astLoading.value = true; astTree.value = null; astSummary.value = null
+  setTimeout(() => {
+    const s = sql.value.toUpperCase()
+    const tree: any[] = [{ type: "STATEMENT", value: s.includes("SELECT") ? "SELECT" : s.includes("INSERT") ? "INSERT" : "OTHER" }]
+    const fromMatch = s.match(/FROM\s+(\w+)/)
+    if (fromMatch) tree.push({ type: "FROM", value: fromMatch[1] })
+    const whereMatch = s.match(/WHERE\s+(.+?)(?:ORDER|GROUP|LIMIT|$)/i)
+    if (whereMatch) tree.push({ type: "WHERE", value: whereMatch[1].trim() })
+    const orderMatch = s.match(/ORDER\s+BY\s+(.+)/i)
+    if (orderMatch) tree.push({ type: "ORDER BY", value: orderMatch[1] })
+    const groupMatch = s.match(/GROUP\s+BY\s+(.+)/i)
+    if (groupMatch) tree.push({ type: "GROUP BY", value: groupMatch[1] })
+    const limitMatch = s.match(/LIMIT\s+(\d+)/i)
+    if (limitMatch) tree.push({ type: "LIMIT", value: limitMatch[1] })
+    astTree.value = tree
+    astSummary.value = {
+      type: s.includes("SELECT") ? "查询" : s.includes("INSERT") ? "插入" : "其他",
+      tables: [...new Set(s.match(/FROM\s+(\w+)/gi)?.map((m:string) => m.replace("FROM ", "").trim()) || [])],
+      whereCount: (s.match(/WHERE/g) || []).length,
+      selectCount: (s.match(/\bSELECT\b/g) || []).length
+    }
+    astLoading.value = false
+  }, 200)
+}
+function getAstColor(type: string): string {
+  const colors: Record<string,string> = { STATEMENT:"#3b82f6", FROM:"#10b981", WHERE:"#f59e0b", "ORDER BY":"#8b5cf6", "GROUP BY":"#ef4444", LIMIT:"#06b6d4" }
+  return colors[type] || "#6b7280"
+}
+
+// --- Chart Linkage Functions ---
+function applyLinkage() {
+  if (linkageMode.value === "filter" && linkageConditionField.value && linkageXAxis.value) {
+    linkagePreview.value = resultData.value.slice(0, 5).map(r => `${r[linkageXAxis.value]} | ${r[linkageConditionField.value]}`).filter(Boolean)
+  } else if (linkageMode.value === "detail") {
+    linkagePreview.value = resultData.value.slice(0, 3).map((r, i) => `Row ${i+1}: ${Object.entries(r).slice(0,3).map(([k,v]) => k+"="+v).join(", ")}`)
+  }
+  showLinkagePanel.value = false
+}
+
+// --- More Template Functions ---
+
+// --- Column Summary ---
+function showColSummaryFn() {
+  if (!resultHeaders.value.length || !resultData.value.length) { alert("请先执行查询"); return }
+  columnStats.value = resultHeaders.value.map(name => {
+    const vals = resultData.value.map(r => r[name])
+    const nonNull = vals.filter(v => v !== null && v !== undefined)
+    const nums = nonNull.filter(v => typeof v === "number")
+    return { name, type: typeof vals[0] ?? "unknown", nulls: vals.length - nonNull.length, total: vals.length, distinct: new Set(nonNull).size, sum: nums.length ? nums.reduce((a:number,b:number)=>a+b,0) : undefined, avg: nums.length ? nums.reduce((a:number,b:number)=>a+b,0)/nums.length : undefined }
+  })
+  showColSummary.value = true
+}
 </script>
 
 <style scoped>
@@ -971,4 +1278,21 @@ const filteredTmplList = computed(() => {
 
 /* -- Template CRUD Panel -- */
 .tmpl-crud-panel{width:560px}.tmpl-crud-body{padding:12px}.tmpl-crud-toolbar{display:flex;gap:6px;align-items:center;margin-bottom:10px}.tmpl-crud-list{display:flex;flex-direction:column;gap:6px;max-height:320px;overflow-y:auto}.tmpl-crud-item{display:flex;align-items:center;gap:8px;padding:8px 10px;background:rgba(255,255,255,0.02);border:1px solid var(--border-color);border-radius:var(--radius-sm);cursor:pointer}.tmpl-crud-item:hover{border-color:var(--color-primary);background:rgba(59,130,246,0.05)}.tci-icon{font-size:18px}.tci-info{flex:1}.tci-name{font-size:12px;color:var(--text-primary);font-weight:500}.tci-cat{font-size:10px;color:var(--text-muted)}.tci-actions{display:flex;gap:4px}
+/* -- Condition Builder Panel -- */
+.cond-builder-panel{width:560px}.cond-body{padding:12px}.cond-rules{display:flex;flex-direction:column;gap:6px;margin-bottom:10px}.cond-rule-row{display:flex;align-items:center;gap:6px}.cond-select{padding:4px 8px;background:var(--bg-elevated);border:1px solid var(--border-color);border-radius:var(--radius-sm);color:var(--text-primary);font-size:11px;min-width:100px}.cond-input{flex:1;padding:4px 8px;border-radius:var(--radius-sm);border:1px solid var(--border-color);background:var(--bg-elevated);color:var(--text-primary);font-size:11px;outline:none}.cond-logic{display:flex;gap:12px;padding:8px;background:rgba(59,130,246,0.05);border-radius:var(--radius-sm);margin-bottom:8px;font-size:11px}
+
+/* -- Drag Config Panel -- */
+.drag-config-panel{width:520px}.drag-body{padding:12px}.drag-columns{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:10px}.drag-col{display:flex;flex-direction:column;gap:4px}.dc-title{font-size:11px;font-weight:600;color:var(--color-primary);margin-bottom:4px}.drag-item{padding:4px 8px;border-radius:var(--radius-sm);border:1px solid var(--border-color);background:rgba(255,255,255,0.02);font-size:11px;color:var(--text-primary);cursor:grab;user-select:none}.drag-item:hover{border-color:var(--color-primary)}.drag-item.selected{background:rgba(59,130,246,0.1);border-color:var(--color-primary)}.drag-empty{color:var(--text-muted);font-size:11px;text-align:center;padding:20px}.drag-preview{padding:8px;background:rgba(0,0,0,0.2);border-radius:var(--radius-sm);margin-top:8px}.dp-label{font-size:10px;color:var(--text-muted);margin-bottom:4px}.dp-sql{margin:0;font-size:11px;color:#10b981;font-family:monospace;white-space:pre-wrap}.drag-actions{display:flex;gap:6px;margin-top:8px}
+
+/* -- AST Panel -- */
+.ast-panel{width:520px}.ast-body{padding:12px}.ast-loading{color:var(--text-muted);text-align:center;padding:20px}.ast-empty{color:var(--text-muted);font-size:12px;text-align:center;padding:20px}.ast-tree{display:flex;flex-direction:column;gap:4px;max-height:300px;overflow-y:auto}.ast-node{margin-bottom:2px}.ast-node-header{display:flex;align-items:center;gap:8px;padding:4px 10px;border-left:3px solid;border-radius:0 var(--radius-sm) var(--radius-sm) 0;background:rgba(255,255,255,0.02);font-size:11px}.ast-node-header.ast-sub{margin-left:20px;opacity:0.8}.ast-type{color:var(--color-primary);font-weight:600;min-width:80px}.ast-val{color:var(--text-muted);font-family:monospace;font-size:10px}.ast-children{margin-left:16px}.ast-summary{margin-top:12px;padding:8px 12px;background:rgba(59,130,246,0.1);border:1px solid rgba(59,130,246,0.2);border-radius:var(--radius-sm);display:flex;gap:16px;flex-wrap:wrap;font-size:11px}.ast-summary span{color:var(--text-muted)}.ast-summary strong{color:var(--color-primary)}
+
+/* -- Linkage Panel -- */
+.linkage-panel{width:480px}.linkage-body{padding:12px}.linkage-config{display:flex;flex-direction:column;gap:8px;margin-bottom:10px}.lc-row{display:flex;align-items:center;gap:8px;font-size:11px}.lc-row label{color:var(--text-muted);min-width:80px}.lc-select{flex:1;padding:4px 8px;background:var(--bg-elevated);border:1px solid var(--border-color);border-radius:var(--radius-sm);color:var(--text-primary);font-size:11px}.lc-input{flex:1;padding:4px 8px;border-radius:var(--radius-sm);border:1px solid var(--border-color);background:var(--bg-elevated);color:var(--text-primary);font-size:11px;outline:none}.linkage-preview{margin-top:8px;padding:8px;background:rgba(0,0,0,0.2);border-radius:var(--radius-sm)}.lp-title{font-size:10px;color:var(--text-muted);margin-bottom:4px}.lp-list{max-height:100px;overflow-y:auto}.lp-item{font-size:10px;color:#7fdbca;font-family:monospace;padding:2px 0}
+
+/* -- More Templates Panel -- */
+.more-tmpl-panel{width:560px}.mt-grid{display:flex;flex-direction:column;gap:8px;padding:12px;max-height:360px;overflow-y:auto}.mt-card{background:rgba(255,255,255,0.02);border:1px solid var(--border-color);border-radius:var(--radius-md);overflow:hidden}.mt-header{display:flex;align-items:center;gap:6px;padding:6px 10px;background:rgba(59,130,246,0.1);border-bottom:1px solid var(--border-color)}.mt-icon{font-size:14px}.mt-name{flex:1;color:var(--text-primary);font-size:12px;font-weight:500}.mt-cat{font-size:10px;color:var(--color-primary);background:rgba(59,130,246,0.2);padding:1px 6px;border-radius:3px}.mt-code{margin:0;padding:8px 10px;background:rgba(0,0,0,0.3);color:#10b981;font-size:10px;font-family:monospace;white-space:pre-wrap;word-break:break-all;max-height:50px;overflow-y:auto}.mt-actions{display:flex;gap:4px;padding:6px 10px;border-top:1px solid var(--border-color)}
+
+/* -- Column Summary Panel -- */
+.col-summary-panel{width:520px}.col-summary-body{padding:12px;max-height:320px;overflow-y:auto;display:flex;flex-direction:column;gap:4px}.cs-row{display:flex;align-items:center;gap:8px;padding:4px 8px;background:rgba(255,255,255,0.02);border-radius:4px;font-size:11px}.cs-name{color:var(--color-primary);font-family:monospace;min-width:80px;font-weight:600}.cs-type{color:var(--text-muted);width:50px}.cs-nulls,.cs-distinct{color:var(--text-muted);width:70px}.cs-sum,.cs-avg{color:#10b981;font-family:monospace;width:70px}.cs-empty{color:var(--text-muted);font-size:11px;text-align:center;padding:20px}.cs-footer{display:flex;justify-content:flex-end;padding-top:8px;border-top:1px solid var(--border-color)}
 </style>
