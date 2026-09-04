@@ -115,9 +115,3 @@ app.use(VueQueryPlugin, { queryClient });
 app.mount('#o2-app-root');
 
 import { registerSW } from './registerSW';
-registerSW();
-console.log('[OA4Rust] App initialized');
-
-// AI Chat & Role Manager routes
-import AIChatApp from './views/AIChatApp.vue';
-import RoleManager from './views/RoleManager.vue';
