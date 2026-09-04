@@ -1,0 +1,115 @@
+<template>
+  <div class="mod-view">
+    <div class="view-header glass-card">
+      <h1>服务器管理</h1>
+      <p class="subtitle">/jaxrs/server/* — 命令执行与授权管理</p>
+    </div>
+    <div class="content-panel glass-card">
+      <div class="grid-2col">
+        <!-- License -->
+        <div class="panel glass-card">
+          <h3>授权信息</h3>
+          <div v-if="loadingLicense" class="loading-small">加载中...</div>
+          <div v-else class="license-info">
+            <div v-if="license" v-for="(v,k) in license" :key="k" class="info-row">
+              <span class="info-key">{{ k }}</span>
+              <span class="info-val">{{ String(v) }}</span>
+            </div>
+            <div v-else class="empty-license">暂无授权信息</div>
+          </div>
+        </div>
+        <!-- Command -->
+        <div class="panel glass-card">
+          <h3>执行命令</h3>
+          <div class="cmd-input-row">
+            <input v-model="command" placeholder="输入服务器命令..." class="cmd-input" @keydown.enter="executeCommand" />
+            <button class="btn-execute" :disabled="executing" @click="executeCommand">执行</button>
+          </div>
+          <div v-if="execOutput" class="cmd-output">
+            <pre>{{ execOutput }}</pre>
+          </div>
+          <div v-if="execError" class="cmd-error">{{ execError }}</div>
+        </div>
+      </div>
+      <!-- Stop server -->
+      <div class="danger-zone glass-card">
+        <h3 style="color:var(--color-error)">⚠ 危险操作</h3>
+        <button class="btn-stop" @click="stopServer">停止服务器</button>
+      </div>
+    </div>
+  </div>
+</template>
+
+<script setup lang="ts">
+import { ref } from 'vue'
+import { api } from '@oa4rust/sdk'
+
+const command = ref('')
+const executing = ref(false)
+const execOutput = ref('')
+const execError = ref('')
+const loadingLicense = ref(false)
+const license = ref<Record<string, unknown> | null>(null)
+
+async function loadLicense() {
+  loadingLicense.value = true
+  try {
+    const r = await api.get('/jaxrs/server/license')
+    license.value = r.data ?? null
+  } catch { license.value = null } finally { loadingLicense.value = false }
+}
+
+async function executeCommand() {
+  if (!command.value.trim()) return
+  executing.value = true
+  execOutput.value = ''
+  execError.value = ''
+  try {
+    const r = await api.post('/jaxrs/server/execute', { command: command.value })
+    execOutput.value = JSON.stringify(r.data, null, 2)
+  } catch (e: any) {
+    execError.value = e?.message ?? '命令执行失败'
+  } finally { executing.value = false }
+}
+
+async function stopServer() {
+  if (!confirm('确定要停止服务器？所有连接将被断开。')) return
+  try {
+    await api.post('/jaxrs/server/stop', null)
+    execOutput.value = '服务器已停止'
+  } catch (e: any) {
+    execError.value = '停止失败: ' + (e?.message ?? '')
+  }
+}
+
+loadLicense()
+</script>
+
+<style scoped>
+.mod-view{display:flex;flex-direction:column;gap:16px;height:100%}
+.view-header{padding:16px 24px}
+.view-header h1{font-family:'Orbitron',sans-serif;font-size:20px;color:var(--color-primary);margin:0 0 4px;text-shadow:0 0 15px var(--color-primary-glow)}
+.subtitle{font-size:12px;color:var(--text-muted);margin:0;font-family:'JetBrains Mono',monospace}
+.content-panel{flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:16px}
+.grid-2col{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.panel{padding:16px;display:flex;flex-direction:column;gap:12px}
+.panel h3{font-size:15px;color:var(--color-primary);margin:0;font-family:'Orbitron',sans-serif}
+.license-info{display:flex;flex-direction:column;gap:8px}
+.info-row{display:flex;justify-content:space-between;padding:8px 12px;background:var(--bg-elevated);border-radius:var(--radius-sm)}
+.info-key{font-size:13px;color:var(--text-muted);font-weight:600}
+.info-val{font-size:13px;color:var(--text-primary);font-family:'JetBrains Mono',monospace}
+.empty-license{color:var(--text-muted);font-size:13px;text-align:center;padding:20px}
+.cmd-input-row{display:flex;gap:8px}
+.cmd-input{flex:1;background:var(--bg-elevated);border:1px solid var(--border-subtle);border-radius:var(--radius-md);color:var(--text-primary);padding:8px 12px;font-size:13px;font-family:'JetBrains Mono',monospace}
+.cmd-input:focus{outline:none;border-color:var(--color-primary)}
+.btn-execute{padding:8px 20px;background:var(--color-primary);color:#000;border:none;border-radius:var(--radius-md);font-size:13px;cursor:pointer;font-weight:600}
+.btn-execute:disabled{opacity:0.5;cursor:not-allowed}
+.cmd-output{background:var(--bg-base);border:1px solid var(--border-subtle);border-radius:var(--radius-md);padding:12px;font-size:12px;color:var(--color-success);font-family:'JetBrains Mono',monospace;max-height:200px;overflow:auto;white-space:pre-wrap}
+.cmd-error{color:var(--color-error);font-size:13px;padding:8px;background:rgba(239,68,68,.1);border-radius:var(--radius-sm)}
+.danger-zone{padding:16px;display:flex;align-items:center;gap:16px}
+.danger-zone h3{margin:0;font-size:15px}
+.btn-stop{padding:10px 24px;background:transparent;border:2px solid var(--color-error);color:var(--color-error);border-radius:var(--radius-md);font-size:14px;cursor:pointer;font-weight:600;transition:all var(--transition-fast)}
+.btn-stop:hover{background:var(--color-error);color:#fff}
+.loading-small{color:var(--text-muted);font-size:13px}
+@media(max-width:768px){.grid-2col{grid-template-columns:1fr}}
+</style>

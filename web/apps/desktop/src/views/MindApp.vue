@@ -1,0 +1,155 @@
+<template>
+  <div class="mod-view">
+    <div class="view-header glass-card">
+      <h1>思维导图</h1>
+      <p class="subtitle">/jaxrs/mind/*</p>
+    </div>
+    <div class="split-panel">
+      <!-- 左侧目录树 -->
+      <div class="tree-panel glass-card">
+        <div class="tree-toolbar">
+          <button class="btn-sm" @click="loadFolders">刷新</button>
+        </div>
+        <div v-if="loadingFolder" class="tree-loading">加载中...</div>
+        <ul v-else class="tree">
+          <li v-for="f in folders" :key="f.id" class="tree-node">
+            <span class="node-label" @click="selectFolder(f)">{{ f.name || f.title || '未命名目录' }}</span>
+            <span class="node-children" v-if="hasChildren(f)">{{ expandedFolders.has(f.id) ? '▼' : '▶' }}</span>
+            <ul v-if="expandedFolders.has(f.id)" class="tree-children">
+              <li v-for="c in (f.children || [])" :key="c.id" class="tree-node child">
+                <span class="node-label" @click="selectFolder(c)">{{ c.name || c.title || '未命名' }}</span>
+              </li>
+            </ul>
+          </li>
+        </ul>
+        <div v-if="!loadingFolder && folders.length === 0" class="tree-empty">暂无目录</div>
+      </div>
+      <!-- 右侧内容 -->
+      <div class="content-panel glass-card">
+        <div class="content-header">
+          <h3>{{ currentFolder?.name || '全部思维导图' }}</h3>
+          <span class="count">{{ minds.length }} 个导图</span>
+        </div>
+        <div v-if="loadingMinds" class="loading-row"><div class="sk" v-for="i in 4" :key="i"></div></div>
+        <div v-else-if="minds.length === 0" class="empty"><div class="ei">🧠</div><p>该目录下暂无思维导图</p></div>
+        <div v-else class="mind-grid">
+          <div v-for="m in minds" :key="m.id" class="mind-card glass-card" @click="viewMind(m)">
+            <div class="mc-icon">🧠</div>
+            <div class="mc-info">
+              <div class="mc-title">{{ m.title || m.name || '未命名导图' }}</div>
+              <div class="mc-meta">更新: {{ formatDate(m.updatedAt || m.updateTime) }}</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <!-- Mind detail modal -->
+    <div v-if="selectedMind" class="modal-overlay" @click.self="selectedMind=null">
+      <div class="modal glass-card">
+        <div class="modal-header">
+          <h3>{{ selectedMind.title || selectedMind.name }}</h3>
+          <button class="btn-close" @click="selectedMind=null">✕</button>
+        </div>
+        <pre class="mind-json">{{ formatMindJson(selectedMind) }}</pre>
+      </div>
+    </div>
+  </div>
+</template>
+
+<script setup lang="ts">
+import { ref, computed } from 'vue'
+import { api } from '@oa4rust/sdk'
+
+type Folder = { id: string; name?: string; title?: string; children?: Folder[] }
+type MindItem = { id: string; title?: string; name?: string; updatedAt?: string; updateTime?: string; [k: string]: unknown }
+
+const loadingFolder = ref(false)
+const loadingMinds = ref(false)
+const folders = ref<Folder[]>([])
+const currentFolder = ref<Folder | null>(null)
+const minds = ref<MindItem[]>([])
+const expandedFolders = ref(new Set<string>())
+const selectedMind = ref<MindItem | null>(null)
+
+function hasChildren(f: Folder) { return (f.children?.length ?? 0) > 0 }
+
+function toggleFolder(f: Folder) {
+  const s = expandedFolders.value
+  if (s.has(f.id)) s.delete(f.id); else s.add(f.id)
+  expandedFolders.value = new Set(s)
+}
+
+function selectFolder(f: Folder) {
+  if (hasChildren(f)) toggleFolder(f)
+  currentFolder.value = f
+  loadMinds(f.id)
+}
+
+async function loadFolders() {
+  loadingFolder.value = true
+  try {
+    const r = await api.get('/jaxrs/mind/folder/tree/my')
+    folders.value = r.data ?? []
+  } catch { folders.value = [] } finally { loadingFolder.value = false }
+}
+
+async function loadMinds(folderId: string) {
+  loadingMinds.value = true
+  try {
+    const r = await api.get(`/jaxrs/mind/mind/list/${folderId}/1`)
+    minds.value = r.data?.list ?? r.data ?? []
+  } catch { minds.value = [] } finally { loadingMinds.value = false }
+}
+
+function viewMind(m: MindItem) { selectedMind.value = m }
+function formatDate(d?: string) { return d ? new Date(d).toLocaleString('zh-CN') : '-' }
+function formatMindJson(m: MindItem) {
+  const { title, name, updatedAt, updateTime, ...rest } = m
+  return JSON.stringify(rest, null, 2)
+}
+
+loadFolders()
+</script>
+
+<style scoped>
+.mod-view{display:flex;flex-direction:column;gap:16px;height:100%}
+.view-header{padding:16px 24px}
+.view-header h1{font-family:'Orbitron',sans-serif;font-size:20px;color:var(--color-primary);margin:0 0 4px;text-shadow:0 0 15px var(--color-primary-glow)}
+.subtitle{font-size:12px;color:var(--text-muted);margin:0;font-family:'JetBrains Mono',monospace}
+.split-panel{flex:1;display:grid;grid-template-columns:260px 1fr;gap:16px;overflow:hidden}
+.tree-panel,.content-panel{padding:16px;display:flex;flex-direction:column;gap:12px;overflow:hidden}
+.tree-panel{overflow-y:auto}
+.tree-toolbar{display:flex;gap:8px}
+.btn-sm{padding:4px 12px;background:var(--bg-elevated);border:1px solid var(--border-subtle);border-radius:var(--radius-sm);color:var(--text-secondary);font-size:12px;cursor:pointer}
+.btn-sm:hover{border-color:var(--color-primary);color:var(--color-primary)}
+.tree{list-style:none;padding:0;margin:0}
+.tree-node{padding:6px 8px;border-radius:var(--radius-sm);cursor:pointer;display:flex;align-items:center;gap:6px;font-size:13px;color:var(--text-secondary)}
+.tree-node:hover{background:var(--color-primary-soft);color:var(--color-primary)}
+.node-label{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.node-children{font-size:10px;color:var(--text-muted)}
+.tree-children{list-style:none;padding-left:16px;margin:0}
+.tree-children .tree-node.child{font-size:12px;color:var(--text-muted)}
+.tree-empty,.tree-loading{color:var(--text-muted);font-size:13px;text-align:center;padding:20px}
+.content-header{display:flex;align-items:center;justify-content:space-between}
+.content-header h3{font-size:15px;color:var(--text-primary);margin:0}
+.content-header .count{font-size:12px;color:var(--text-muted)}
+.mind-grid{flex:1;overflow-y:auto;display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:10px}
+.mind-card{display:flex;align-items:center;gap:10px;padding:12px;cursor:pointer;transition:all var(--transition-fast);border:1px solid var(--border-subtle);border-radius:var(--radius-md);background:var(--bg-elevated)}
+.mind-card:hover{border-color:var(--color-primary);transform:translateX(3px);box-shadow:var(--shadow-glow)}
+.mc-icon{font-size:24px}
+.mc-info{flex:1;min-width:0}
+.mc-title{font-size:13px;font-weight:600;color:var(--text-primary);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.mc-meta{font-size:11px;color:var(--text-muted);margin-top:2px}
+.empty,.loading-row{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:40px;color:var(--text-muted);gap:12px;flex:1}
+.ei{font-size:48px;opacity:0.4}
+.sk{height:36px;border-radius:var(--radius-md);background:var(--bg-elevated);animation:pulse 1.2s ease-in-out infinite}
+@keyframes pulse{0%,100%{opacity:.4}50%{opacity:.8}}
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.7);display:flex;align-items:center;justify-content:center;z-index:100}
+.modal{background:var(--bg-surface);border:1px solid var(--border-subtle);border-radius:var(--radius-lg);padding:24px;max-width:600px;width:90%;max-height:80vh;display:flex;flex-direction:column;overflow:hidden}
+.modal-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+.modal-header h3{font-family:'Orbitron',sans-serif;color:var(--color-primary);margin:0;font-size:16px}
+.btn-close{background:none;border:none;color:var(--text-muted);font-size:18px;cursor:pointer}
+.btn-close:hover{color:var(--color-error)}
+.mind-json{flex:1;overflow:auto;background:var(--bg-base);border:1px solid var(--border-subtle);border-radius:var(--radius-md);padding:12px;font-size:12px;color:var(--text-secondary);font-family:'JetBrains Mono',monospace;white-space:pre-wrap;word-break:break-all}
+@media(max-width:768px){.split-panel{grid-template-columns:1fr}}
+</style>
