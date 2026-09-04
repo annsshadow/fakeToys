@@ -7500,7 +7500,7 @@ const templateCategories = ref<Array<{id: string; name: string; count: number}>>
 const showMacroEditor = ref(false)
 const macroCode = ref("// 流程宏
 function onStart() {}
-")
+");
 const showSnippetLibrary = ref(false)
 const snippetList = ref<Array<{id: string; name: string; code: string}>>([
   { id: "s1", name: "条件判断", code: "if (amount > 1000) { return true; }" },
