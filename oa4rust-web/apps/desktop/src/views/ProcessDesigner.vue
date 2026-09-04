@@ -111,6 +111,24 @@
               <rect v-if="selectedNode===i" x="-6" y="-6" :width="(node.w||120)+12" :height="(node.h||50)+12"
                 rx="10" fill="none" stroke="var(--color-primary)" stroke-width="2" stroke-dasharray="4,2" pointer-events="none" />
 
+              <!-- Resize handles (8 directions) -->
+              <template v-if="selectedNode===i">
+                <!-- Corners -->
+                <rect v-for="(pos,pi) in resizePositions" :key="'h'+pi"
+                  :x="getNodeResizeX(node, pos) - 4" :y="getNodeResizeY(node, pos) - 4"
+                  width="8" height="8" rx="2" fill="var(--color-primary)" stroke="white" stroke-width="1"
+                  class="resize-handle" :style="{ cursor: getResizeCursor(pos) }"
+                  @mousedown.stop="onResizeMouseDown($event, i, pos)" />
+              </template>
+
+              <!-- Anchor point handles on edges -->
+              <template v-if="selectedNode===i && selectedAnchorNode===i">
+                <circle v-for="(ah,ahi) in anchorPoints" :key="ahi"
+                  :cx="ah.x" :cy="ah.y" r="5" fill="var(--color-warning)" stroke="white" stroke-width="1.5"
+                  class="anchor-handle" style="cursor:grab"
+                  @mousedown.stop="onAnchorMouseDown($event, i, ahi)" />
+              </template>
+
               <!-- Node body -->
               <rect :class="['node-body', node.type]"
                 :width="node.w||120" :height="node.h||50" rx="8" />
@@ -158,7 +176,7 @@
         </svg>
 
         <div class="canvas-hint">
-          <span>拖拽右侧节点到画布 | 从端口拖出创建连线 | 双击子流程节点进入嵌套 | Del删除 | Ctrl+D复制</span>
+          <span>拖拽右侧节点到画布 | 从端口拖出创建连线 | 拖拽节点角点调整大小 | 拖拽锚点改变连线方向 | 多选后按G分组 | Del删除 | Ctrl+D复制</span>
         </div>
       </main>
 
@@ -294,6 +312,33 @@ const dragOffset = ref({ x: 0, y: 0 })
 const snapX = ref<number|null>(null), snapY = ref<number|null>(null)
 const tempEdge = ref<{ from: number; fromPort: 'out'|'in'; startX: number; startY: number; endX: number; endY: number }|null>(null)
 const isPanning = ref(false), panStart = ref({ x: 0, y: 0 })
+
+// Resize state
+const isResizing = ref(false)
+const resizeIdx = ref<number|null>(null)
+const resizeDir = ref<string>('')
+const resizeStart = ref({ x: 0, y: 0, w: 0, h: 0 })
+
+// Anchor point drag state
+const isDraggingAnchor = ref(false)
+const anchorNodeIdx = ref<number|null>(null)
+const anchorIdx = ref<number|null>(null)
+const selectedAnchorNode = computed(() => isDraggingAnchor.value ? anchorNodeIdx.value : null)
+const anchorPoints = computed(() => {
+  if (anchorNodeIdx.value === null || !processDef.value?.nodes[anchorNodeIdx.value]) return []
+  const node = processDef.value.nodes[anchorNodeIdx.value]
+  const w = node.w||120, h = node.h||50
+  const offsets = (node as any).anchorOffset || []
+  return [
+    { x: node.x + w/2, y: node.y },
+    { x: offsets[1]?.x ?? node.x + w, y: node.y + h/2 },
+    { x: node.x + w/2, y: node.y + h },
+    { x: offsets[3]?.x ?? node.x, y: node.y + h/2 },
+  ]
+})
+
+// Group state
+const groupedNodes = ref<Set<string>>(new Set())
 
 // Subprocess state
 const showSubprocess = ref(false)
@@ -498,7 +543,150 @@ function deleteEdge(i: number) {
 }
 function selectEdge(i: number) { selectedEdge.value = i; selectedNode.value = null }
 
-// ── Drag: Node ────────────────────────────────────────────────────────
+// ── Resize ────────────────────────────────────────────────────────────
+type ResizeDir = 'nw'|'n'|'ne'|'e'|'se'|'s'|'sw'|'w'
+const resizePositions: ResizeDir[] = ['nw','n','ne','e','se','s','sw','w']
+
+function getNodeResizeX(node: PDNode, dir: ResizeDir): number {
+  const w = node.w||120
+  if (dir==='nw'||dir==='n'||dir==='sw'||dir==='w') return node.x
+  return node.x + w
+}
+function getNodeResizeY(node: PDNode, dir: ResizeDir): number {
+  const h = node.h||50
+  if (dir==='nw'||dir==='ne'||dir==='n') return node.y
+  return node.y + h
+}
+function getResizeCursor(dir: ResizeDir): string {
+  const map: Record<string,string> = { nw:'nwse-resize', n:'ns-resize', ne:'nesw-resize', e:'ew-resize', se:'nwse-resize', s:'ns-resize', sw:'nesw-resize', w:'ew-resize' }
+  return map[dir] || 'move'
+}
+
+function onResizeMouseDown(e: MouseEvent, nodeIdx: number, dir: ResizeDir) {
+  e.stopPropagation()
+  if (!processDef.value) return
+  isResizing.value = true
+  resizeIdx.value = nodeIdx
+  resizeDir.value = dir
+  const node = processDef.value.nodes[nodeIdx]
+  resizeStart.value = {
+    x: e.clientX, y: e.clientY,
+    w: node.w||120, h: node.h||50,
+    nx: node.x, ny: node.y
+  }
+  const onMove = (ev: MouseEvent) => {
+    if (!isResizing.value || resizeIdx.value===null || !processDef.value) return
+    const dx = (ev.clientX - resizeStart.value.x) / zoom.value
+    const dy = (ev.clientY - resizeStart.value.y) / zoom.value
+    const node = processDef.value.nodes[resizeIdx.value]
+    const dir = resizeDir.value
+    const minW = 80, minH = 40
+    if (dir.includes('e')) { node.w = Math.max(minW, resizeStart.value.w + dx); node.x = resizeStart.value.nx }
+    else if (dir.includes('w')) { node.w = Math.max(minW, resizeStart.value.w - dx); node.x = resizeStart.value.nx + dx }
+    else { node.w = resizeStart.value.w; node.x = resizeStart.value.nx }
+    if (dir.includes('s')) { node.h = Math.max(minH, resizeStart.value.h + dy); node.y = resizeStart.value.ny }
+    else if (dir.includes('n')) { node.h = Math.max(minH, resizeStart.value.h - dy); node.y = resizeStart.value.ny + dy }
+    else { node.h = resizeStart.value.h; node.y = resizeStart.value.ny }
+    // Snap to grid
+    node.w = Math.round((node.w||120) / GRID_SIZE) * GRID_SIZE
+    node.h = Math.round((node.h||50) / GRID_SIZE) * GRID_SIZE
+    node.x = Math.round(node.x / GRID_SIZE) * GRID_SIZE
+    node.y = Math.round(node.y / GRID_SIZE) * GRID_SIZE
+  }
+  const onUp = () => {
+    if (isResizing.value && processDef.value && resizeIdx.value !== null) pushHistory()
+    isResizing.value = false; resizeIdx.value = null
+    document.removeEventListener('mousemove', onMove)
+    document.removeEventListener('mouseup', onUp)
+  }
+  document.addEventListener('mousemove', onMove)
+  document.addEventListener('mouseup', onUp)
+}
+
+// ── Anchor point drag ─────────────────────────────────────────────────
+function getAnchorPoints(node: PDNode): {x:number;y:number}[] {
+  const w = node.w||120, h = node.h||50
+  return [
+    { x: node.x + w/2, y: node.y },           // top
+    { x: node.x + w, y: node.y + h/2 },       // right
+    { x: node.x + w/2, y: node.y + h },       // bottom
+    { x: node.x, y: node.y + h/2 },           // left
+  ]
+}
+
+function onAnchorMouseDown(e: MouseEvent, nodeIdx: number, anchorI: number) {
+  e.stopPropagation()
+  if (!processDef.value) return
+  isDraggingAnchor.value = true
+  anchorNodeIdx.value = nodeIdx
+  anchorIdx.value = anchorI
+  const onMove = (ev: MouseEvent) => {
+    if (!isDraggingAnchor.value || anchorNodeIdx.value===null || !processDef.value) return
+    // Update edge connection points for edges connected to this anchor
+    const node = processDef.value!.nodes[anchorNodeIdx.value]
+    const w = node.w||120, h = node.h||50
+    const ax = ev.clientX, ay = ev.clientY
+    // Project onto node edge
+    let px = node.x, py = node.y
+    if (anchorI === 0) { px = node.x + w/2; py = Math.max(node.y, Math.min(node.y+h, ay/zoom.value)) }
+    else if (anchorI === 1) { px = Math.max(node.x, Math.min(node.x+w, ax/zoom.value)); py = node.y + h/2 }
+    else if (anchorI === 2) { px = node.x + w/2; py = Math.min(node.y+h, Math.max(node.y, ay/zoom.value)) }
+    else { px = Math.min(node.x, Math.max(node.x-w, ax/zoom.value)); py = node.y + h/2 }
+    // Store anchor offset for edges
+    if (!node.anchorOffset) node.anchorOffset = []
+    node.anchorOffset[anchorI] = { x: px, y: py }
+  }
+  const onUp = () => {
+    isDraggingAnchor.value = false; anchorNodeIdx.value = null; anchorIdx.value = null
+    if (processDef.value && anchorNodeIdx.value !== null) pushHistory()
+    document.removeEventListener('mousemove', onMove)
+    document.removeEventListener('mouseup', onUp)
+  }
+  document.addEventListener('mousemove', onMove)
+  document.addEventListener('mouseup', onUp)
+}
+
+// ── Group management ──────────────────────────────────────────────────
+function toggleGroup(nodeIdx: number) {
+  if (!processDef.value) return
+  const node = processDef.value.nodes[nodeIdx]
+  if (!groupedNodes.value.has(node.id)) {
+    groupedNodes.value.add(node.id)
+  } else {
+    groupedNodes.value.delete(node.id)
+  }
+}
+
+function createGroup() {
+  if (groupedNodes.value.size < 2 || !processDef.value) return
+  // Find bounding box
+  let minX=Infinity, minY=Infinity, maxX=-Infinity, maxY=-Infinity
+  for (const id of groupedNodes.value) {
+    const n = processDef.value.nodes.find(nd => nd.id === id)
+    if (!n) continue
+    minX = Math.min(minX, n.x); minY = Math.min(minY, n.y)
+    maxX = Math.max(maxX, n.x + (n.w||120)); maxY = Math.max(maxY, n.y + (n.h||50))
+  }
+  // Create group node
+  const groupNode: PDNode = {
+    id: genId(), type: 'subprocess', label: '分组',
+    x: minX - 10, y: minY - 10,
+    w: maxX - minX + 20, h: maxY - minY + 20
+  }
+  processDef.value.nodes.push(groupNode)
+  groupedNodes.value.clear()
+  selectedNode.value = processDef.value.nodes.length - 1
+  pushHistory()
+}
+
+function ungroup(nodeIdx: number) {
+  if (!processDef.value) return
+  const node = processDef.value.nodes[nodeIdx]
+  if (node.type !== 'subprocess') return
+  // Could expand group back to individual nodes
+  // For now just deselect
+  selectedNode.value = null
+}
 function onNodeMouseDown(e: MouseEvent, i: number) {
   if (!processDef.value) return
   isDragging.value = true; dragIdx.value = i
