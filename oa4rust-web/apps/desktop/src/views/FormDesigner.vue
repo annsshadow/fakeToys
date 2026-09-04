@@ -1169,19 +1169,16 @@ function exportFormSchema() {
       type: f.type, label: f.label, key: f.key,
       required: f.required, disabled: f.disabled,
       placeholder: f.placeholder,
-      options: parseOptions(f.optionsStr),
+      options: f.options,
       validation: f.validation,
+      condition: f.condition
     }))
   }
-  const blob = new Blob([JSON.stringify(schema, null, 2)], { type: "application/json" })
-  const url = URL.createObjectURL(blob)
-  const a = document.createElement("a")
-  a.href = url; a.download = (currentForm.value.flag || "form") + "_schema.json"
-  a.click(); URL.revokeObjectURL(url)
+  jsonSchemaText.value = JSON.stringify(schema, null, 2)
+  showJsonSchemaPanel.value = true
 }
 function importFormSchema(text: string) {
   try {
-    const schema = JSON.parse(text)
     if (!currentForm.value) resetForm()
     if (currentForm.value) {
       currentForm.value.name = schema.formName || currentForm.value.name
