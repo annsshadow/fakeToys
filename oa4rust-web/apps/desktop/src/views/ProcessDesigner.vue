@@ -884,6 +884,27 @@
           @mousedown.stop="onGroupResizeMouseDown($event, gi, dir)" />
       </g>
     </g>
+
+    <!-- Breakpoint indicators -->
+    <g v-if="breakpoints.length > 0" class="breakpoint-layer">
+      <circle v-for="bp in breakpoints" :key="bp.nodeId"
+        :cx="processDef?.nodes?.find(n=>n.id===bp.nodeId)?.x + (processDef.nodes.find(n=>n.id===bp.nodeId)?.w||120)/2"
+        :cy="processDef?.nodes?.find(n=>n.id===bp.nodeId)?.y - 10"
+        r="6" fill="var(--color-warning)" stroke="#fff" stroke-width="2"
+        @click.stop="toggleBreakpoint(bp.nodeId)" class="breakpoint-dot" />
+    </g>
+    <!-- Flow Stats Panel -->
+    <div v-if="flowStats.totalNodes > 0" class="flow-stats-panel">
+      <div class="stats-grid">
+        <div class="stat-item"><div class="stat-value">{{ flowStats.totalNodes }}</div><div class="stat-label">节点数</div></div>
+        <div class="stat-item"><div class="stat-value">{{ flowStats.totalEdges }}</div><div class="stat-label">连边数</div></div>
+        <div class="stat-item"><div class="stat-value">{{ flowStats.avgDegree }}</div><div class="stat-label">平均度数</div></div>
+        <div class="stat-item"><div class="stat-value">{{ flowStats.maxDegree }}</div><div class="stat-label">最大出度</div></div>
+        <div class="stat-item"><div class="stat-value">{{ flowStats.density }}</div><div class="stat-label">网络密度</div></div>
+        <div class="stat-item"><div class="stat-value">{{ flowStats.cycles }}</div><div class="stat-label">环数量</div></div>
+        <div class="stat-item"><div class="stat-value">{{ flowStats.isolatedNodes }}</div><div class="stat-label">孤立节点</div></div>
+      </div>
+    </div>
 </template>
 
 <script setup lang="ts">
@@ -901,6 +922,13 @@ interface PDNode {
 }
 interface PDEdge { id: string; from: string; to: string; label?: string; condition?: string; flowLabel?: string; strokeWidth?: number; routing?: 'auto'|'straight'|'horizontal'|'vertical' }
 interface ProcDef { id?: string; name: string; flag: string; desc?: string; status?: string; config?: { nodes: PDNode[]; edges: PDEdge[] }; subprocesses?: Record<string, { nodes: PDNode[]; edges: PDEdge[] }> }
+
+// ── Execution Breakpoint ──────────────────────────────────────────
+interface Breakpoint { nodeId: string; label?: string }
+// ── Flow Statistics ────────────────────────────────────────────────
+interface FlowStats { totalNodes: number; totalEdges: number; avgDegree: string; maxDegree: number; density: string; cycles: number; isolatedNodes: number }
+// ── Enhanced Node Style ────────────────────────────────────────────
+interface EnhancedNodeStyle { color: string; bgColor: string; borderColor: string; icon: string }
 
 // ── Group Drag/Resize State ────────────────────────────────────────
 interface GroupDragState { idx: number; startX: number; startY: number; origX: number; origY: number }
@@ -1311,6 +1339,13 @@ function getPlaybackTime(): string {
 
 // Help modal
 const showHelpModal = ref(false)
+
+const breakpoints = ref<Breakpoint[]>([])
+const showBreakpoints = ref(false)
+const executionSpeed = ref(1000)
+const isStepping = ref(false)
+const showExecutionPanel = ref(true)
+const flowStats = computed(() => computeFlowStats())
 
 const groupDragState = ref<GroupDragState|null>(null)
 const groupResizeState = ref<GroupResizeState|null>(null)
@@ -3350,6 +3385,65 @@ function getForkJoinPath(branchIndices: number[]): string {
 }
 // ── Group Resize Directions ─────────────────────────────────────────
 const groupResizeDirs = ["nw","n","ne","e","se","s","sw","w"] as const
+
+// ── Breakpoint Management ─────────────────────────────────────────
+function toggleBreakpoint(nodeId: string) {
+  const idx = breakpoints.value.findIndex(b => b.nodeId === nodeId)
+  if (idx >= 0) breakpoints.value.splice(idx, 1)
+  else {
+    const node = processDef.value?.nodes?.find(n => n.id === nodeId)
+    breakpoints.value.push({ nodeId, label: node?.label })
+  }
+}
+function clearBreakpoints() { breakpoints.value = [] }
+// ── Execution Speed Control ───────────────────────────────────────
+function setExecutionSpeed(ms: number) { executionSpeed.value = Math.max(100, Math.min(5000, ms)) }
+function stepForward() { if (!processDef.value || execState.value.status !== "running") return; simulateNext() }
+function stepBackward() { if (histIdx.value <= 0) return; histIdx.value--; processDef.value = JSON.parse(JSON.stringify(history.value[histIdx.value].config)) }
+// ── Enhanced Flow Statistics ──────────────────────────────────────
+function computeFlowStats(): FlowStats {
+  if (!processDef.value) return { totalNodes: 0, totalEdges: 0, avgDegree: "0", maxDegree: 0, density: "0", cycles: 0, isolatedNodes: 0 }
+  const nodes = processDef.value.nodes
+  const edges = processDef.value.edges || []
+  const inDegree = new Map<string, number>()
+  const outDegree = new Map<string, number>()
+  for (const n of nodes) { inDegree.set(n.id, 0); outDegree.set(n.id, 0) }
+  for (const e of edges) { outDegree.set(e.from, (outDegree.get(e.from) || 0) + 1); inDegree.set(e.to, (inDegree.get(e.to) || 0) + 1) }
+  let maxOut = 0, totalOut = 0
+  for (const d of outDegree.values()) { totalOut += d; if (d > maxOut) maxOut = d }
+  const isolated = nodes.filter(n => (inDegree.get(n.id) || 0) === 0 && (outDegree.get(n.id) || 0) === 0).length
+  const density = nodes.length > 1 ? (edges.length / (nodes.length * (nodes.length - 1))).toFixed(3) : "0"
+  let cycles = 0, visited = new Set<string>()
+  for (const n of nodes) {
+    if (visited.has(n.id)) continue
+    const stack = [n.id], path = new Set<string>()
+    while (stack.length > 0) {
+      const curr = stack.pop()!
+      if (path.has(curr)) { cycles++; break }
+      if (visited.has(curr)) continue
+      path.add(curr); visited.add(curr)
+      for (const e of edges) { if (e.from === curr) stack.push(e.to) }
+    }
+  }
+  return { totalNodes: nodes.length, totalEdges: edges.length, avgDegree: (totalOut / nodes.length).toFixed(2), maxDegree: maxOut, density, cycles, isolatedNodes: isolated }
+}
+// ── Enhanced Node Style Presets ────────────────────────────────────
+const enhancedNodeStylePresets: EnhancedNodeStyle[] = [
+  { name: "霓虹蓝", color: "#00d4ff", bgColor: "rgba(0,212,255,0.15)", borderColor: "#00d4ff", icon: "🔵" },
+  { name: "极光绿", color: "#10b981", bgColor: "rgba(16,185,129,0.15)", borderColor: "#10b981", icon: "🟢" },
+  { name: "烈焰红", color: "#ef4444", bgColor: "rgba(239,68,68,0.15)", borderColor: "#ef4444", icon: "🔴" },
+  { name: "紫罗兰", color: "#a855f7", bgColor: "rgba(168,85,247,0.15)", borderColor: "#a855f7", icon: "🟣" },
+  { name: "琥珀黄", color: "#f59e0b", bgColor: "rgba(245,158,11,0.15)", borderColor: "#f59e0b", icon: "🟡" },
+  { name: "樱花粉", color: "#ec4899", bgColor: "rgba(236,72,153,0.15)", borderColor: "#ec4899", icon: "🩷" },
+  { name: "深海青", color: "#06b6d4", bgColor: "rgba(6,182,212,0.15)", borderColor: "#06b6d4", icon: "🔷" },
+  { name: "暗夜黑", color: "#6b7280", bgColor: "rgba(107,114,128,0.15)", borderColor: "#6b7280", icon: "⚫" },
+]
+function applyEnhancedNodeStyle(preset: EnhancedNodeStyle) {
+  if (selectedNode.value === null || !processDef.value) return
+  const node = processDef.value.nodes[selectedNode.value]
+  node.style = JSON.stringify({ color: preset.color, bgColor: preset.bgColor, borderColor: preset.borderColor })
+  pushHistory()
+}
 </script>
 
 <style scoped>
@@ -3934,4 +4028,19 @@ kbd{display:inline-block;padding:3px 8px;border-radius:4px;border:1px solid var(
 .fork-join-layer{pointer-events:none}
 /* Toolbar fork/join button */
 .tb-btn.active{background:var(--color-primary-soft);color:var(--color-primary);border-color:var(--color-primary)}
+
+/* Breakpoint dots */
+.breakpoint-dot{cursor:pointer;transition:r .2s,fill .2s}
+.breakpoint-dot:hover{r:8;fill:#fbbf24}
+.breakpoint-layer{pointer-events:all}
+/* Flow stats panel */
+.flow-stats-panel{position:fixed;bottom:20px;right:20px;background:var(--bg-elevated);border:1px solid var(--border-color);border-radius:var(--radius-lg);padding:12px;z-index:100;box-shadow:0 4px 20px rgba(0,0,0,0.3)}
+.stats-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.stat-item{padding:6px;background:var(--bg-secondary);border-radius:var(--radius-sm);text-align:center}
+.stat-value{font-size:16px;font-weight:700;color:var(--color-primary);font-family:"JetBrains Mono",monospace}
+.stat-label{font-size:9px;color:var(--text-muted);margin-top:2px}
+/* Enhanced style presets */
+.enhanced-style-presets{display:flex;gap:4px;flex-wrap:wrap;margin-top:8px}
+.enhanced-style-btn{width:24px;height:24px;border-radius:50%;border:2px solid var(--border-color);cursor:pointer;transition:all .15s}
+.enhanced-style-btn:hover{transform:scale(1.2);border-color:var(--color-primary)}
 </style>
