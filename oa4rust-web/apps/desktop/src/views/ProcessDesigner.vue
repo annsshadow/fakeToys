@@ -261,7 +261,34 @@
         <div v-if="selectedVersion" class="vp-diff">
           <div class="vp-diff-title">{{ selectedVersion.label }}</div>
           <div class="vp-diff-info"><span>节点: {{ selectedVersion.config.nodes.length }}</span><span>连线: {{ (selectedVersion.config.edges||[]).length }}</span></div>
-          <button class="btn-sm" style="width:100%" @click="revertToVersion(selectedVersion)">恢复到版本</button>
+          <!-- Diff view -->
+          <div v-if="showDiff" class="vp-diff-view">
+            <div class="diff-header">
+              <span>与当前版本对比</span>
+              <button class="btn-sm" @click="showDiff=false">✕</button>
+            </div>
+            <div class="diff-body">
+              <div class="diff-section">
+                <div class="diff-title">新增节点</div>
+                <div v-for="n in addedNodes" :key="n.id" class="diff-item diff-add">+ {{ n.label||n.id }}</div>
+                <div v-if="addedNodes.length===0" class="diff-empty">无</div>
+              </div>
+              <div class="diff-section">
+                <div class="diff-title">删除节点</div>
+                <div v-for="n in removedNodes" :key="n.id" class="diff-item diff-del">- {{ n.label||n.id }}</div>
+                <div v-if="removedNodes.length===0" class="diff-empty">无</div>
+              </div>
+              <div class="diff-section">
+                <div class="diff-title">变更节点</div>
+                <div v-for="n in changedNodes" :key="n.id" class="diff-item diff-mod">~ {{ n.label||n.id }} (标签/位置变更)</div>
+                <div v-if="changedNodes.length===0" class="diff-empty">无</div>
+              </div>
+            </div>
+          </div>
+          <div class="vp-diff-actions">
+            <button class="btn-sm" @click="toggleDiff">📊 对比差异</button>
+            <button class="btn-sm" style="background:var(--color-primary);color:#000" @click="revertToVersion(selectedVersion)">↩ 恢复到此版本</button>
+          </div>
         </div>
       </aside>
     </div>
@@ -446,6 +473,10 @@ interface ProcVersion { id: string; timestamp: number; label: string; config: { 
 const versions = ref<ProcVersion[]>([])
 const showVersionPanel = ref(false)
 const selectedVersion = ref<ProcVersion|null>(null)
+const showDiff = ref(false)
+const addedNodes = ref<PDNode[]>([])
+const removedNodes = ref<PDNode[]>([])
+const changedNodes = ref<PDNode[]>([])
 
 // Multi-select state
 const multiSelected = ref<Set<string>>(new Set())
@@ -691,6 +722,25 @@ function revertToVersion(v: ProcVersion) {
 function deleteVersion(idx: number) {
   versions.value.splice(idx, 1)
   if (selectedVersion.value?.id === versions.value[idx]?.id) selectedVersion.value = null
+}
+
+function toggleDiff() {
+  if (!selectedVersion.value || !processDef.value) return
+  showDiff.value = !showDiff.value
+  if (showDiff.value) computeDiff()
+}
+
+function computeDiff() {
+  if (!selectedVersion.value || !processDef.value) return
+  const currentIds = new Set(processDef.value.nodes.map(n => n.id))
+  const versionIds = new Set(selectedVersion.value.config.nodes.map(n => n.id))
+  addedNodes.value = processDef.value.nodes.filter(n => !versionIds.has(n.id))
+  removedNodes.value = selectedVersion.value.config.nodes.filter(n => !currentIds.has(n.id))
+  changedNodes.value = processDef.value.nodes.filter(n => {
+    if (!versionIds.has(n.id)) return false
+    const orig = selectedVersion.value!.config.nodes.find(vn => vn.id === n.id)
+    return orig && (orig.label !== n.label || Math.abs(orig.x - n.x) > 10 || Math.abs(orig.y - n.y) > 10)
+  })
 }
 
 function clearCanvas() {
@@ -1344,6 +1394,17 @@ onUnmounted(() => {
 .vp-diff{padding:10px;border-top:1px solid var(--border-color)}
 .vp-diff-title{font-size:12px;font-weight:600;color:var(--color-primary);margin-bottom:6px}
 .vp-diff-info{display:flex;gap:12px;font-size:11px;color:var(--text-muted);margin-bottom:8px}
+.vp-diff-actions{display:flex;gap:6px;margin-top:6px}
+.vp-diff-view{border:1px solid var(--border-color);border-radius:var(--radius-md);margin-bottom:8px;overflow:hidden}
+.diff-header{display:flex;align-items:center;justify-content:space-between;padding:6px 10px;border-bottom:1px solid var(--border-color);font-size:12px;font-weight:600;color:var(--color-primary)}
+.diff-body{padding:8px;display:flex;flex-direction:column;gap:8px;max-height:200px;overflow-y:auto}
+.diff-section{display:flex;flex-direction:column;gap:4px}
+.diff-title{font-size:11px;color:var(--text-muted);text-transform:uppercase;font-weight:600}
+.diff-item{padding:3px 8px;border-radius:var(--radius-sm);font-size:12px;font-family:'JetBrains Mono',monospace}
+.diff-add{background:rgba(16,185,129,.15);color:var(--color-success);border-left:3px solid var(--color-success)}
+.diff-del{background:rgba(239,68,68,.15);color:var(--color-danger);border-left:3px solid var(--color-danger)}
+.diff-mod{background:rgba(245,158,11,.15);color:var(--color-warning);border-left:3px solid var(--color-warning)}
+.diff-empty{font-size:11px;color:var(--text-muted);opacity:0.6}
 /* Script panel */
 .script-panel{border:1px solid var(--border-color);border-radius:var(--radius-md);overflow:hidden;margin-top:2px}
 .script-tabs{display:flex;border-bottom:1px solid var(--border-color)}
