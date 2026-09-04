@@ -431,15 +431,16 @@ fn test_v9_id_generate_clamps_count_and_generates_uuids() {
     let rt = tokio::runtime::Runtime::new().unwrap();
     rt.block_on(async {
         let resp = u2_closures::id_generate(axum::extract::Path(3i64)).await.unwrap();
-        let data = resp.0.data.unwrap();
-        assert_eq!(data["count"], 3, "count=3 应生成 3 个 id");
-        assert_eq!(data["data"].as_array().unwrap().len(), 3);
+        let ar = resp.0;
+        let data = ar.data.as_ref().unwrap();
+        assert_eq!(ar.count.unwrap(), 3, "count=3 应生成 3 个 id");
+        assert_eq!(data.as_array().unwrap().len(), 3);
 
         let resp = u2_closures::id_generate(axum::extract::Path(500i64)).await.unwrap();
-        assert_eq!(resp.0.data.unwrap()["count"], 199, "count>200 截断为 199");
+        assert_eq!(resp.0.count.unwrap(), 199, "count>200 截断为 199");
 
         let resp = u2_closures::id_generate(axum::extract::Path(0i64)).await.unwrap();
-        assert_eq!(resp.0.data.unwrap()["count"], 0, "count=0 不生成");
+        assert_eq!(resp.0.count.unwrap(), 0, "count=0 不生成");
     });
 }
 

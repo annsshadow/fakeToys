@@ -35,7 +35,10 @@ async fn test_uuid_random_returns_uuid() {
 
     assert_eq!(json.get("type").and_then(|v| v.as_str()), Some("success"));
     assert!(json.get("data").is_some());
-    assert!(json["data"]["uuid"].is_string());
+    // Handler returns Array [uuid_string], not {uuid: string}
+    let data = json["data"].as_array().expect("data should be array");
+    assert!(!data.is_empty(), "uuid array should not be empty");
+    assert!(data[0].is_string(), "first element should be uuid string");
 }
 
 #[tokio::test]
