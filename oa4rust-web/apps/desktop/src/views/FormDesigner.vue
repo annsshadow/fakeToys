@@ -13,7 +13,6 @@
         <button class="btn btn-primary" :disabled="!currentForm || !currentForm.name" @click="saveForm">💾 保存</button>
       </div>
     </div>
-
     <div class="fd-body">
       <!-- Left: Form List -->
       <aside class="fd-list-panel glass-card">
@@ -28,7 +27,6 @@
           </div>
         </div>
       </aside>
-
       <!-- Palette + Canvas + Props -->
       <div class="fd-center">
         <!-- Left: Field Palette -->
@@ -51,7 +49,6 @@
             </div>
           </div>
         </aside>
-
         <!-- Center: Canvas -->
         <main class="fd-canvas glass-card" @dragover.prevent @drop="onDrop">
           <div v-if="!currentForm" class="canvas-empty">
@@ -84,7 +81,6 @@
             </div>
           </div>
         </main>
-
         <!-- Right: Property Panel -->
         <aside class="fd-props glass-card" v-if="mode==='edit' && selectedField">
           <div class="props-title"><span>属性面板</span><span class="props-type">{{ selectedField.type }}</span></div>
@@ -115,7 +111,6 @@
         </aside>
       </div>
     </div>
-
     <!-- Preview Modal -->
     <div v-if="mode==='preview' && currentForm" class="preview-overlay" @click.self="mode='edit'">
       <div class="preview-modal glass-card">
@@ -167,7 +162,6 @@
       </div>
     </div>
   </div>
-
     <!-- Field Templates Modal -->
     <div v-if="showFieldTemplates" class="modal-overlay" @click.self="showFieldTemplates=false">
       <div class="modal modal-lg glass-card">
@@ -183,8 +177,6 @@
         </div>
       </div>
     </div>
-
-
     <!-- Access Control Panel -->
     <div v-if="showAccessControl" class="access-panel">
       <div class="ap-header"><span>🔒 访问控制</span><button class="btn-sm" @click="showAccessControl=false">✕</button></div>
@@ -211,7 +203,6 @@
         </div>
       </div>
     </div>
-
     <!-- Data Source Panel -->
     <div v-if="showDataSourcePanel" class="ds-panel">
       <div class="ds-header"><span>🔗 数据源配置</span><button class="btn-sm" @click="showDataSourcePanel=false">✕</button></div>
@@ -236,7 +227,6 @@
         </div>
       </div>
     </div>
-
     <!-- Condition Tree Builder -->
     <div v-if="showConditionTree" class="cond-tree-panel">
       <div class="ct-header"><span>🌳 条件树构建器</span><button class="btn-sm" @click="showConditionTree=false">✕</button></div>
@@ -257,7 +247,6 @@
         <button class="btn" @click="openConditionTree">🔄 重新生成</button>
       </div>
     </div>
-
     <!-- Layout Config Panel -->
     <div v-if="showLayoutConfig" class="layout-panel">
       <div class="lp-header"><span>📐 布局配置</span><button class="btn-sm" @click="showLayoutConfig=false">✕</button></div>
@@ -273,7 +262,6 @@
         <button class="btn" @click="autoLayout()">📐 自动排列</button>
       </div>
     </div>
-
     <!-- Validation Builder -->
     <div v-if="showValidationBuilder" class="val-builder">
       <div class="vb-header"><span>✅ 验证规则构建器</span><button class="btn-sm" @click="showValidationBuilder=false">✕</button></div>
@@ -294,7 +282,6 @@
         <button class="btn" @click="runValidation()">🔍 全部验证</button>
       </div>
     </div>
-
     <!-- Field History -->
     <div v-if="showFieldHistory" class="field-history">
       <div class="fh-header"><span>📜 操作历史</span><button class="btn-sm" @click="showFieldHistory=false">✕</button></div>
@@ -307,7 +294,6 @@
         <div v-if="fieldHistory.length===0" class="fh-empty">暂无操作记录</div>
       </div>
     </div>
-
     <!-- Export Modal -->
     <div v-if="showExportModal" class="modal-overlay" @click.self="showExportModal=false">
       <div class="modal export-modal">
@@ -327,7 +313,6 @@
         </div>
       </div>
     </div>
-
     <!-- Field Stats Panel -->
     <div v-if="showFieldStats" class="field-stats-panel">
       <div class="fsp-header"><span>📊 字段统计</span><button class="btn-sm" @click="showFieldStats=false">✕</button></div>
@@ -347,7 +332,6 @@
         </div>
       </div>
     </div>
-
     <!-- Bulk Edit Panel -->
     <div v-if="showBulkEdit" class="bulk-edit-panel">
       <div class="be-header">🔧 批量编辑</div>
@@ -360,13 +344,11 @@
         <button class="btn" @click="bulkApplyAction(bulkEditAction, bulkEditValue)">✓ 应用</button>
       </div>
     </div>
-
     <!-- Validation Summary Badge -->
     <div v-if="validationSummary.errors > 0" class="val-summary-badge">
       <span class="vsb-icon">⚠️</span>
       <span>{{ validationSummary.errors }} 个验证错误</span>
     </div>
-
     <!-- Audit Log Panel -->
     <div v-if="showAuditPanel" class="audit-panel">
       <div class="ap-header"><span>📋 审计日志</span><button class="btn-sm" @click="showAuditPanel=false">✕</button></div>
@@ -381,11 +363,9 @@
       </div>
     </div>
 </template>
-
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
 import { api } from '@oa4rust/sdk'
-
 interface FormField {
   id: string; type: string; label: string; key: string
   placeholder?: string; defaultValue?: string; required?: boolean; disabled?: boolean
@@ -404,7 +384,6 @@ interface FormDef {
   fields: FormField[]; updatedAt?: string; version?: string
   settings?: { showReset?: boolean; showSubmit?: boolean; layoutClass?: string }
 }
-
 // ── Advanced Form Types ───────────────────────────────────────────
 interface FieldDependency { sourceField: string; operator: string; values: string[]; action: 'show'|'hide' }
 interface FormSection { id: string; label: string; fields: string[] }
@@ -416,7 +395,6 @@ interface FormDef {
   id?: string; name: string; flag: string; desc?: string
   fields: FormField[]; updatedAt?: string
 }
-
 const fieldTypes = [
   { type: 'text',     label: '文本',   icon: '📝' },
   { type: 'textarea', label: '多行文本', icon: '📄' },
@@ -473,7 +451,6 @@ const extraFieldTypes = [
   { type: "time_range", label: "时间范围", icon: "⏰", key: "time_range_field" },
   { type: "number_range", label: "数字范围", icon: "🔢", key: "number_range_field" },
 ]
-
 const mode = ref<'edit'|'preview'|'schema'>('edit')
 const listFilter = ref('')
 const showFieldTemplates = ref(false)
@@ -491,7 +468,6 @@ const forms = ref<FormDef[]>([])
 const formsLoading = ref(false)
 const currentForm = ref<FormDef|null>(null)
 const selectedField = ref<FormField|null>(null)
-
 const showAdvancedProps = ref(false)
 const showValidationPanel = ref(false)
 const showDependencyPanel = ref(false)
@@ -513,13 +489,11 @@ const fieldTemplates2: FieldTemplate[] = [
   { name: "预约表单", icon: "📅", fields: ["text", "phone", "date", "time", "textarea"] },
 ]
 const draggedType = ref<string|null>(null)
-
 const filteredForms = computed(() =>
   listFilter.value
     ? forms.value.filter(f => (f.name||'').toLowerCase().includes(listFilter.value.toLowerCase()) || (f.flag||'').toLowerCase().includes(listFilter.value.toLowerCase()))
     : forms.value
 )
-
 function onDragStart(e: DragEvent, ft: { type: string }) {
   draggedType.value = ft.type
   e.dataTransfer?.setData('text/plain', ft.type)
@@ -530,9 +504,7 @@ function onDrop(e: DragEvent) {
   if (type) addField({ type, label: '' })
   draggedType.value = null
 }
-
 function genId() { return 'f_' + Date.now() + '_' + Math.random().toString(36).slice(2,6) }
-
 function makeField(type: string): FormField {
   const d: Record<string, Partial<FormField>> = {
     text: { label: '文本字段', key: 'text_field', placeholder: '请输入' },
@@ -568,7 +540,6 @@ function makeField(type: string): FormField {
   }
   return { id: genId(), type, ...d[type], required: false, disabled: false } as FormField
 }
-
 function addField(ft: { type: string; label?: string }) {
   if (!currentForm.value) { resetForm(); return }
   const field = makeField(ft.type)
@@ -596,7 +567,6 @@ function parseOptions(s?: string) {
   if (!s?.trim()) return []
   return s.split('\n').filter(Boolean).map(l => { const [v, lb = v] = l.split('|'); return { value: v.trim(), label: lb.trim() } })
 }
-
 async function loadForms() {
   formsLoading.value = true
   try { const r: any = await api.get('/jaxrs/form/list'); forms.value = r?.data ?? [] }
@@ -622,7 +592,6 @@ async function loadForm(f: FormDef) {
   } catch { currentForm.value = { ...f, fields: [] }; selectedField.value = null }
 }
 function resetForm() { currentForm.value = { name: '', flag: '', fields: [] }; selectedField.value = null }
-
 async function saveForm() {
   if (!currentForm.value?.name.trim()) { alert('请输入表单名称'); return }
   try {
@@ -641,9 +610,7 @@ async function saveForm() {
     await loadForms(); alert('保存成功')
   } catch (e: any) { alert('保存失败: ' + (e?.message ?? '')) }
 }
-
 function togglePreview() { mode.value = mode.value === 'preview' ? 'edit' : 'preview' }
-
 // --- Form History ---
 function pushFormHistory() {
   if (!currentForm.value) return
@@ -653,7 +620,6 @@ function pushFormHistory() {
 }
 function formUndo() { if (!canUndo.value || !currentForm.value) return; historyIdx.value--; currentForm.value.fields = JSON.parse(JSON.stringify(formHistory.value[historyIdx.value].fields)) }
 function formRedo() { if (!canRedo.value || !currentForm.value) return; historyIdx.value++; currentForm.value.fields = JSON.parse(JSON.stringify(formHistory.value[historyIdx.value].fields)) }
-
 // --- Field Templates ---
 const fieldTemplates = [
   { name: '姓名信息', icon: '👤', fields: [{type:'text',label:'姓名',key:'name',required:true},{type:'email',label:'邮箱',key:'email'},{type:'phone',label:'手机',key:'phone'}] },
@@ -673,7 +639,6 @@ function applyTemplate(tpl: typeof fieldTemplates[0]) {
   selectedField.value = null
   pushFormHistory()
 }
-
 // --- Validation & Preview ---
 function validatePreview(): boolean {
   if (!currentForm.value) return false
@@ -694,7 +659,6 @@ async function submitPreview() {
   try { await api.post('/jaxrs/form/submit', { formFlag: currentForm.value.flag, data: previewData.value }); alert('提交成功'); previewData.value = {}; previewErrors.value = {} }
   catch(e: any) { alert('提交失败: ' + (e?.message ?? '')) }
 }
-
 // --- Import/Export ---
 function exportFormJson(): string { return JSON.stringify(currentForm.value, null, 2) }
 function importFormJson(text: string) {
@@ -705,20 +669,17 @@ function downloadFormJson() {
   const b = new Blob([exportFormJson()], {type:'application/json'}); const u = URL.createObjectURL(b)
   const a = document.createElement('a'); a.href=u; a.download=(currentForm.value?.flag||'form')+'.json'; a.click(); URL.revokeObjectURL(u)
 }
-
 // --- Schema ---
 const schemaJson = computed(() => {
   if (!currentForm.value) return ''
   return JSON.stringify({name:currentForm.value.name,flag:currentForm.value.flag,layout:currentForm.value.layout,fields:currentForm.value.fields.map(f=>({type:f.type,label:f.label,key:f.key,required:f.required,validation:f.validation}))},null,2)
 })
-
 // --- Column Layout ---
 function setColumnCount(n:1|2|3) { columnCount.value = n }
 function getFieldWidth(type:string): string {
   if (['section','section_end','divider','spacer','html'].includes(type)) return '100%'
   return columnCount.value===1?'100%':columnCount.value===2?'50%':'33.33%'
 }
-
 // --- Bulk Operations ---
 function batchCopyField() {
   if (!currentForm.value||!selectedField.value) return
@@ -730,7 +691,6 @@ function batchDeleteField() {
   const idx=currentForm.value.fields.findIndex(f=>f.id===selectedField.value!.id)
   if(idx!==-1){currentForm.value.fields.splice(idx,1);selectedField.value=null;pushFormHistory()}
 }
-
 // --- Conditional Logic ---
 function addCondition() {
   if (!selectedField.value) return
@@ -742,24 +702,19 @@ function removeCondition(i:number) {
   const conds = (selectedField.value as any).conditions
   if (Array.isArray(conds)) conds.splice(i, 1)
 }
-
 onMounted(loadForms)
-
 // ── Field Drag Reorder ────────────────────────────────────────────────
 const dragFieldIdx = ref<number|null>(null)
 const dragOverIdx = ref<number|null>(null)
-
 function onFieldDragStart(e: DragEvent, idx: number) {
   dragFieldIdx.value = idx
   e.dataTransfer?.setData('text/plain', String(idx))
   if (e.dataTransfer) e.dataTransfer.effectAllowed = 'move'
 }
-
 function onFieldDragOver(e: DragEvent, idx: number) {
   e.preventDefault()
   dragOverIdx.value = idx
 }
-
 function onFieldDrop(e: DragEvent, idx: number) {
   e.preventDefault()
   if (dragFieldIdx.value === null || dragFieldIdx.value === idx || !currentForm.value) return
@@ -771,17 +726,12 @@ function onFieldDrop(e: DragEvent, idx: number) {
   dragFieldIdx.value = null
   dragOverIdx.value = null
 }
-
 // ── Conditional Display ────────────────────────────────────────────────
 interface FieldCondition { operator: string; value: string; fieldKey?: string }
-
-
-
 function fmtCondition(c: FieldCondition): string {
   const ops: Record<string, string> = { equals: '==', contains: 'includes', gt: '>', lt: '<' }
   return ops[c.operator] || c.operator
 }
-
 // ── Field Dependency Management ────────────────────────────────────
 function addDependency() {
   if (!selectedField.value) return
@@ -906,7 +856,6 @@ function importFormSchema(text: string) {
     }
   } catch (e) { alert("导入失败: 无效的JSON格式") }
 }
-
 // ── Advanced Interfaces ────────────────────────────────────────────
 interface FieldAccessRule { fieldKey: string; role: string; action: "show"|"hide"|"readonly" }
 interface FieldDataSource { fieldKey: string; url: string; method: string; keyField: string; labelField: string }
@@ -915,7 +864,6 @@ interface FormLayoutConfig { columns: number; gutter: number; align: "left"|"cen
 interface FieldHistoryEntry { timestamp: number; action: "add"|"remove"|"move"|"modify"; fieldKey: string; details: string }
 interface FieldOption { label: string; value: string; disabled?: boolean }
 interface FormAuditLog { id: string; timestamp: number; user: string; action: string; fieldKey?: string; oldValue?: string; newValue?: string }
-
 // ── Advanced State ──────────────────────────────────────────────────
 const showAccessControl = ref(false)
 const showDataSourcePanel = ref(false)
@@ -958,7 +906,6 @@ const formFieldStats = ref<{total: number; byType: Record<string, number>; withV
 const auditLogs = ref<FormAuditLog[]>([])
 const showAuditPanel = ref(false)
 const fieldOptionsCache = ref<Record<string, FieldOption[]>>({})
-
 // ── Advanced Functions ─────────────────────────────────────────────
 function toggleFieldProps(fieldKey: string) { fieldPropsExpanded.value[fieldKey] = !fieldPropsExpanded.value[fieldKey] }
 function getFieldTypeStats(): Record<string, number> { const stats: Record<string, number> = {}; currentForm.value?.fields.forEach(f => { stats[f.type] = (stats[f.type] || 0) + 1 }); return stats }
@@ -983,7 +930,6 @@ function simulateSubmit() { if (!currentForm.value) return; const result = valid
 function exportForm(format: "json"|"yaml"|"html") { if (!currentForm.value) return; let output = ""; if (format === "json") { output = JSON.stringify(currentForm.value, null, 2); } else if (format === "yaml") { output = JSON.stringify(currentForm.value, null, 2); } else { output = generateHTMLForm(); } exportResult.value = output; showExportModal.value = true; exportFormat.value = format; }
 function generateHTMLForm(): string { if (!currentForm.value) return ""; let html = '<form class="oa4rust-form">'; currentForm.value.fields.forEach(f => { html += '<div class="form-item"><label>' + (f.label || f.key) + '</label><input type="' + f.type + '" /></div>'; }); html += '</form>'; return html; }
 function copyExportResult() { navigator.clipboard.writeText(exportResult.value); showToast("已复制到剪贴板", "success"); }
-
 function mapFieldType(type: string): string { const map: Record<string,string> = { text:"string", textarea:"string", number:"number", email:"string", phone:"string", date:"string", datetime:"string", time:"string", switch:"boolean", checkbox:"boolean", radio:"string", select:"string", rate:"number", color:"string", file:"string", image:"string", signature:"string", rich:"string", markdown:"string", divider:"string", spacer:"string", section:"string", address:"string", link:"string", cascader:"string", transfer:"string", slider:"number", upload:"string", array:"array", object:"object" }; return map[type] || "string"; }
 function exportFormData() { const data = currentForm.value?.fields.reduce((acc, f) => { acc[f.key] = f.defaultValue || ""; return acc; }, {} as Record<string, string>) || {}; exportResult.value = JSON.stringify(data, null, 2); showExportModal.value = true; exportFormat.value = "json"; }
 function autoLayout() { if (!currentForm.value) return; const cols = layoutConfig.value.columns; const fields = currentForm.value.fields; fields.forEach((f, i) => { f.span = Math.min(cols, Math.max(1, Math.ceil(fields.length / cols))); }); pushFormHistory(); showToast("自动布局已应用", "success"); }
@@ -1001,9 +947,6 @@ function closeBulkEdit() { showBulkEdit.value = false; bulkEditAction.value = ""
 function openFieldPicker() { showFieldPicker.value = true; }
 function closeFieldPicker() { showFieldPicker.value = false; }
 function filterFieldPicker(query: string) { fieldPickerSearch.value = query; }
-
-
-
 function onFieldDragEnd() { fieldDragSource.value = null; }
 function getFormFieldStats(): { total: number; byType: Record<string,number>; required: number; withValidation: number; withCondition: number } { updateFieldStats(); return { total: formFieldStats.value.total, byType: formFieldStats.value.byType, required: formFieldStats.value.requiredCount, withValidation: formFieldStats.value.withValidation, withCondition: formFieldStats.value.withCondition }; }
 function generateFormDocumentation(): string { if (!currentForm.value) return ""; let doc = "# " + (currentForm.value.name || "未命名表单") + "\n\n"; doc += "**字段总数**: " + (currentForm.value.fields || []).length + "\n\n"; (currentForm.value.fields || []).forEach((f, i) => { doc += "## " + (i+1) + ". " + (f.label || f.key) + "\n"; doc += "- 类型: " + f.type + "\n"; doc += "- 键名: " + f.key + "\n"; if (f.validation?.required) doc += "- 必填: 是\n"; if (f.description) doc += "- 说明: " + f.description + "\n"; doc += "\n"; }); return doc; }
@@ -1019,8 +962,58 @@ function getTabFieldCount(tabId: string): number { const tab = tabs.value.find(t
 function buildFieldOptions(field: FormField): FieldOption[] { if (field.options) { try { return JSON.parse(field.options); } catch { return []; } } if (field.dataSource) { return fieldOptionsCache.value[field.dataSource] || []; } return []; }
 function clearFieldOptionsCache() { fieldOptionsCache.value = {}; }
 function getFieldValidationSummary(field: FormField): string[] { const msgs: string[] = []; if (field.validation?.required) msgs.push("必填"); if (field.validation?.minLength) msgs.push("最少" + field.validation.minLength + "字符"); if (field.validation?.maxLength) msgs.push("最多" + field.validation.maxLength + "字符"); if (field.validation?.min) msgs.push("最小值" + field.validation.min); if (field.validation?.max) msgs.push("最大值" + field.validation.max); if (field.validation?.pattern) msgs.push("格式:" + field.validation.pattern); return msgs; }
+// ── Security & Performance ──────────────────────────────────────────
+const showSecurityPanel = ref(false)
+const showPerfPanel = ref(false)
+const securityIssues = ref<string[]>([])
+const perfStats = ref<{renderTime:number;fieldCount:number;validationTime:number;errorRate:number}>({ renderTime:0, fieldCount:0, validationTime:0, errorRate:0 })
+function checkFormSecurity(): void {
+  securityIssues.value = []
+  if (!currentForm.value) return
+  currentForm.value.fields.forEach(f => {
+    if (f.type === 'password' && !f.validation?.pattern) securityIssues.value.push('密码字段 "' + f.key + '" 缺少格式验证')
+    if (f.type === 'email' && f.validation?.pattern && !f.validation.pattern.includes('@')) securityIssues.value.push('邮箱 "' + f.key + '" 正则可能不正确')
+  })
+  if (currentForm.value.fields.length === 0) securityIssues.value.push('表单无字段')
+}
+function measurePerformance(): void {
+  if (!currentForm.value) return
+  const start = performance.now()
+  validateAll({})
+  perfStats.value = { renderTime: performance.now()-start, fieldCount: currentForm.value.fields.length, validationTime: performance.now()-start, errorRate: 0 }
+  showPerfPanel.value = true
+}
+// ── Schema Export ─────────────────────────────────────────────────────
+const schemaJSON = ref('')
+function exportSchemaAsJSON(): void {
+  if (!currentForm.value) return
+  const props: Record<string,any> = {}
+  currentForm.value.fields.forEach(f => {
+    const p: Record<string,any> = { type: mapFieldType(f.type), title: f.label || f.key }
+    if (f.validation?.required) { if (!props[f.key]) props[f.key] = {}; props[f.key].required = true }
+    if (f.validation?.minLength) p.minLength = f.validation.minLength
+    if (f.validation?.maxLength) p.maxLength = f.validation.maxLength
+    if (f.validation?.pattern) p.pattern = f.validation.pattern
+    props[f.key] = p
+  })
+  schemaJSON.value = JSON.stringify({ type: 'object', properties: props }, null, 2)
+  showSchemaExport.value = true
+}
+function generateFieldDocumentation(): string {
+  if (!currentForm.value) return ''
+  let doc = '# 表单设计文档: ' + (currentForm.value.name || '未命名') + '\n\n'
+  doc += '**字段总数**: ' + currentForm.value.fields.length + '\n\n'
+  doc += '| # | 键名 | 类型 | 标签 | 必填 | 验证 | 说明 |\n|---|------|------|------|------|------|------|\n'
+  currentForm.value.fields.forEach((f, i) => {
+    const v = getFieldValidationSummary(f).join(', ') || '-'
+    doc += '| ' + (i+1) + ' | ' + f.key + ' | ' + f.type + ' | ' + (f.label||'-') + ' | ' + (f.validation?.required?'是':'否') + ' | ' + v + ' | ' + (f.description||'-') + ' |\n'
+  })
+  return doc
+}
+function copyToClipboard(text: string): void {
+  navigator.clipboard.writeText(text).then(() => showToast('已复制到剪贴板', 'success'))
+}
 </script>
-
 <style scoped>
 .fd { display: flex; flex-direction: column; gap: 0; height: 100% }
 .fd-header { display: flex; align-items: center; justify-content: space-between; padding: 12px 20px; flex-shrink: 0 }
@@ -1123,7 +1116,6 @@ function getFieldValidationSummary(field: FormField): string[] { const msgs: str
 .pv-fieldset { border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 12px; margin-bottom: 14px }
 .pv-legend { font-size: 13px; font-weight: 600; color: var(--color-primary); padding: 0 8px }
 .pv-submit { margin-top: 8px; padding: 10px 24px; font-size: 14px }
-
 /* Templates modal */
 .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.6);display:flex;align-items:center;justify-content:center;z-index:200}
 .modal{background:var(--bg-surface);border:1px solid var(--border-color);border-radius:var(--radius-lg);padding:20px;max-height:85vh;overflow-y:auto}
@@ -1161,14 +1153,11 @@ function getFieldValidationSummary(field: FormField): string[] { const msgs: str
 .canvas-form.three-col .field-row.span-3{grid-column:span 3}
 .spacer-preview{height:16px;background:repeating-linear-gradient(90deg,var(--border-color),var(--border-color) 4px,transparent 4px,transparent 8px);border-radius:2px;margin:4px 0}
 .divider-preview{height:1px;background:var(--border-color);margin:8px 0}
-
-
 /* Field templates */
 .tpl-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(100px,1fr));gap:8px}
 .tpl-card{padding:12px;border-radius:var(--radius-md);border:1px solid var(--border-color);cursor:pointer;text-align:center;transition:all .15s}
 .tpl-card:hover{border-color:var(--color-primary);background:var(--color-primary-soft);transform:translateY(-2px)}
 .tpl-icon{font-size:24px}.tpl-name{font-size:11px;font-weight:600;margin-top:4px}.tpl-count{font-size:9px;color:var(--text-muted)}
-
 /* ── Advanced Styles ─────────────────────────────────────────────── */
 .access-panel,.ds-panel,.cond-tree-panel,.layout-panel,.val-builder,.field-history,.field-stats-panel,.bulk-edit-panel,.audit-panel{position:fixed;z-index:200;background:var(--bg-elevated);border:1px solid var(--border-color);border-radius:var(--radius-lg);box-shadow:0 8px 32px rgba(0,0,0,0.4)}
 .access-panel{top:60px;right:20px;width:360px}.ds-panel{top:60px;right:20px;width:420px}.cond-tree-panel{top:60px;left:20px;width:400px;max-height:70vh;overflow-y:auto}
