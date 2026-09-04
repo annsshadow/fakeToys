@@ -329,6 +329,7 @@ async fn test_get_process_instance_route_exists() {
 #[cfg(test)]
 mod u2_contract {
     use super::*;
+    use shared::testing::is_db_available;
     use axum::body::Body;
     use axum::http::{Method, Request, StatusCode};
     use deadpool_postgres::Pool;
@@ -399,6 +400,14 @@ mod u2_contract {
 
     #[tokio::test]
     async fn u2_dict_path_set_then_delete_roundtrip() {
+        if !is_db_available().await {
+            eprintln!("skipping u2_dict_path_set_then_delete_roundtrip: DATABASE_URL not reachable");
+            return;
+        }
+        if !is_db_available().await {
+            eprintln!("skipping u2_dict_path_set_then_delete_roundtrip: DATABASE_URL not reachable");
+            return;
+        }
         let pool = test_pool();
         ensure_schema(&pool).await;
         let base = "/jaxrs/processplatform/service/processing/applicationdict";
@@ -418,6 +427,14 @@ mod u2_contract {
 
     #[tokio::test]
     async fn u2_data_work_create_then_update_conflict_semantics() {
+        if !is_db_available().await {
+            eprintln!("skipping u2_data_work_create_then_update_conflict_semantics: DATABASE_URL not reachable");
+            return;
+        }
+        if !is_db_available().await {
+            eprintln!("skipping u2_data_work_create_then_update_conflict_semantics: DATABASE_URL not reachable");
+            return;
+        }
         let pool = test_pool();
         ensure_schema(&pool).await;
         {
@@ -445,6 +462,14 @@ mod u2_contract {
 
     #[tokio::test]
     async fn u2_attachment_copy_dedups_by_name() {
+        if !is_db_available().await {
+            eprintln!("skipping u2_attachment_copy_dedups_by_name: DATABASE_URL not reachable");
+            return;
+        }
+        if !is_db_available().await {
+            eprintln!("skipping u2_attachment_copy_dedups_by_name: DATABASE_URL not reachable");
+            return;
+        }
         let pool = test_pool();
         ensure_schema(&pool).await;
         {
@@ -472,6 +497,14 @@ mod u2_contract {
 
     #[tokio::test]
     async fn u2_attachment_delete_with_wrong_work_is_idor_rejected() {
+        if !is_db_available().await {
+            eprintln!("skipping u2_attachment_delete_with_wrong_work_is_idor_rejected: DATABASE_URL not reachable");
+            return;
+        }
+        if !is_db_available().await {
+            eprintln!("skipping u2_attachment_delete_with_wrong_work_is_idor_rejected: DATABASE_URL not reachable");
+            return;
+        }
         let pool = test_pool();
         ensure_schema(&pool).await;
         {
@@ -490,6 +523,14 @@ mod u2_contract {
 
     #[tokio::test]
     async fn u2_review_create_dedups_same_reviewer_per_work() {
+        if !is_db_available().await {
+            eprintln!("skipping u2_review_create_dedups_same_reviewer_per_work: DATABASE_URL not reachable");
+            return;
+        }
+        if !is_db_available().await {
+            eprintln!("skipping u2_review_create_dedups_same_reviewer_per_work: DATABASE_URL not reachable");
+            return;
+        }
         let pool = test_pool();
         ensure_schema(&pool).await;
         {
@@ -513,6 +554,14 @@ mod u2_contract {
 
     #[tokio::test]
     async fn u2_read_processing_moves_row_into_completed_exactly_once() {
+        if !is_db_available().await {
+            eprintln!("skipping u2_read_processing_moves_row_into_completed_exactly_once: DATABASE_URL not reachable");
+            return;
+        }
+        if !is_db_available().await {
+            eprintln!("skipping u2_read_processing_moves_row_into_completed_exactly_once: DATABASE_URL not reachable");
+            return;
+        }
         let pool = test_pool();
         ensure_schema(&pool).await;
         {
@@ -536,6 +585,14 @@ mod u2_contract {
 
     #[tokio::test]
     async fn u2_record_create_is_content_deduped() {
+        if !is_db_available().await {
+            eprintln!("skipping u2_record_create_is_content_deduped: DATABASE_URL not reachable");
+            return;
+        }
+        if !is_db_available().await {
+            eprintln!("skipping u2_record_create_is_content_deduped: DATABASE_URL not reachable");
+            return;
+        }
         let pool = test_pool();
         ensure_schema(&pool).await;
         {
@@ -556,6 +613,14 @@ mod u2_contract {
 
     #[tokio::test]
     async fn u2_documentversion_versions_increment_monotonically() {
+        if !is_db_available().await {
+            eprintln!("skipping u2_documentversion_versions_increment_monotonically: DATABASE_URL not reachable");
+            return;
+        }
+        if !is_db_available().await {
+            eprintln!("skipping u2_documentversion_versions_increment_monotonically: DATABASE_URL not reachable");
+            return;
+        }
         let pool = test_pool();
         ensure_schema(&pool).await;
         {
@@ -577,6 +642,14 @@ mod u2_contract {
 
     #[tokio::test]
     async fn u2_snap_suspend_snapshots_and_sets_status() {
+        if !is_db_available().await {
+            eprintln!("skipping u2_snap_suspend_snapshots_and_sets_status: DATABASE_URL not reachable");
+            return;
+        }
+        if !is_db_available().await {
+            eprintln!("skipping u2_snap_suspend_snapshots_and_sets_status: DATABASE_URL not reachable");
+            return;
+        }
         let pool = test_pool();
         ensure_schema(&pool).await;
         {
@@ -602,6 +675,14 @@ mod u2_contract {
 
     #[tokio::test]
     async fn u2_task_expire_contract_route_updates_state() {
+        if !is_db_available().await {
+            eprintln!("skipping u2_task_expire_contract_route_updates_state: DATABASE_URL not reachable");
+            return;
+        }
+        if !is_db_available().await {
+            eprintln!("skipping u2_task_expire_contract_route_updates_state: DATABASE_URL not reachable");
+            return;
+        }
         let pool = test_pool();
         ensure_schema(&pool).await;
         {
@@ -623,6 +704,14 @@ mod u2_contract {
 
     #[tokio::test]
     async fn u2_taskcompleted_press_cross_work_rejected_then_dedup() {
+        if !is_db_available().await {
+            eprintln!("skipping u2_taskcompleted_press_cross_work_rejected_then_dedup: DATABASE_URL not reachable");
+            return;
+        }
+        if !is_db_available().await {
+            eprintln!("skipping u2_taskcompleted_press_cross_work_rejected_then_dedup: DATABASE_URL not reachable");
+            return;
+        }
         let pool = test_pool();
         ensure_schema(&pool).await;
         {
@@ -648,6 +737,14 @@ mod u2_contract {
 
     #[tokio::test]
     async fn u2_touch_clean_event_removes_only_stale_events() {
+        if !is_db_available().await {
+            eprintln!("skipping u2_touch_clean_event_removes_only_stale_events: DATABASE_URL not reachable");
+            return;
+        }
+        if !is_db_available().await {
+            eprintln!("skipping u2_touch_clean_event_removes_only_stale_events: DATABASE_URL not reachable");
+            return;
+        }
         let pool = test_pool();
         ensure_schema(&pool).await;
         {
@@ -669,6 +766,10 @@ mod u2_contract {
 
     #[tokio::test]
     async fn u2_work_v3_retract_cancels_active_tasks_transactionally() {
+        if !is_db_available().await {
+            eprintln!("skipping u2_work_v3_retract_cancels_active_tasks_transactionally: DATABASE_URL not reachable");
+            return;
+        }
         let pool = test_pool();
         ensure_schema(&pool).await;
         {
@@ -694,6 +795,14 @@ mod u2_contract {
 
     #[tokio::test]
     async fn u2_wc_merge_keeps_flag_collapses_duplicates() {
+        if !is_db_available().await {
+            eprintln!("skipping u2_wc_merge_keeps_flag_collapses_duplicates: DATABASE_URL not reachable");
+            return;
+        }
+        if !is_db_available().await {
+            eprintln!("skipping u2_wc_merge_keeps_flag_collapses_duplicates: DATABASE_URL not reachable");
+            return;
+        }
         let pool = test_pool();
         ensure_schema(&pool).await;
         {
@@ -716,6 +825,14 @@ mod u2_contract {
 
     #[tokio::test]
     async fn u2_taskcompleted_next_identity_updates_task() {
+        if !is_db_available().await {
+            eprintln!("skipping u2_taskcompleted_next_identity_updates_task: DATABASE_URL not reachable");
+            return;
+        }
+        if !is_db_available().await {
+            eprintln!("skipping u2_taskcompleted_next_identity_updates_task: DATABASE_URL not reachable");
+            return;
+        }
         let pool = test_pool();
         ensure_schema(&pool).await;
         {
@@ -737,6 +854,14 @@ mod u2_contract {
 
     #[tokio::test]
     async fn u2_work_create_via_process_path_bootstraps_instance() {
+        if !is_db_available().await {
+            eprintln!("skipping u2_work_create_via_process_path_bootstraps_instance: DATABASE_URL not reachable");
+            return;
+        }
+        if !is_db_available().await {
+            eprintln!("skipping u2_work_create_via_process_path_bootstraps_instance: DATABASE_URL not reachable");
+            return;
+        }
         let pool = test_pool();
         ensure_schema(&pool).await;
         {

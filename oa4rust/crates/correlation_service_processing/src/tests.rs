@@ -647,6 +647,11 @@ mod u2_contract {
 
     #[tokio::test]
     async fn u2_create_pp_upserts_without_duplicates() {
+        use shared::testing::is_db_available;
+        if !is_db_available().await {
+            eprintln!("skipping u2_create_pp_upserts_without_duplicates: DATABASE_URL not reachable");
+            return;
+        }
         let pool = test_pool();
         ensure_schema(&pool).await;
         {
@@ -688,6 +693,11 @@ mod u2_contract {
 
     #[tokio::test]
     async fn u2_create_reports_invalid_targets() {
+        use shared::testing::is_db_available;
+        if !is_db_available().await {
+            eprintln!("skipping u2_create_reports_invalid_targets: DATABASE_URL not reachable");
+            return;
+        }
         let pool = test_pool();
         ensure_schema(&pool).await;
         {
@@ -723,6 +733,11 @@ mod u2_contract {
 
     #[tokio::test]
     async fn u2_delete_rejects_cross_job_ids() {
+        use shared::testing::is_db_available;
+        if !is_db_available().await {
+            eprintln!("skipping u2_delete_rejects_cross_job_ids: DATABASE_URL not reachable");
+            return;
+        }
         let pool = test_pool();
         ensure_schema(&pool).await;
         {
@@ -760,6 +775,11 @@ mod u2_contract {
 
     #[tokio::test]
     async fn u2_readable_requires_evidence() {
+        use shared::testing::is_db_available;
+        if !is_db_available().await {
+            eprintln!("skipping u2_readable_requires_evidence: DATABASE_URL not reachable");
+            return;
+        }
         let pool = test_pool();
         ensure_schema(&pool).await;
         // 无任何关联行 → value=false（缺证据不得放行）
@@ -809,6 +829,11 @@ mod u2_contract {
 
     #[tokio::test]
     async fn u2_list_by_site_filters() {
+        use shared::testing::is_db_available;
+        if !is_db_available().await {
+            eprintln!("skipping u2_list_by_site_filters: DATABASE_URL not reachable");
+            return;
+        }
         let pool = test_pool();
         ensure_schema(&pool).await;
         {
@@ -843,6 +868,11 @@ mod u2_contract {
     /// update 按 site 替换：旧 site 行被清除，仅保留新集合
     #[tokio::test]
     async fn u2_update_replaces_site_scope() {
+        use shared::testing::is_db_available;
+        if !is_db_available().await {
+            eprintln!("skipping u2_update_replaces_site_scope: DATABASE_URL not reachable");
+            return;
+        }
         let pool = test_pool();
         ensure_schema(&pool).await;
         {
