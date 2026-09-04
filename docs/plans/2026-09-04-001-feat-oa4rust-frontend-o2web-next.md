@@ -27,7 +27,7 @@ oa4rust 已有 **96 个 crates、40+ router、3000+ 端点**，但前端是一�
 2. **彻底现代化**：Vue 3 + TypeScript + Vite 单栈，消除 o2web 的双栈维护负担。
 3. **全新视觉语言**：抛弃 o2web 的陈旧扁平风，采用深色科幻主题（Neon + Glassmorphism），突出数据可视化与效率感。
 4. **零冗余依赖**：每个库按需引入，首屏 gzip ≤ 180KB（对比 o2web 的 2MB+ 裸 JS 包）。
-5. **与后端同仓库**：前端代码置于 `web/` monorepo，与 Rust crates 共用 CI/CD。
+5. **与后端同仓库**：前端代码置于 `oa4rust-web/` monorepo，与 Rust crates 共用 CI/CD。
 6. **全端覆盖**：PC 桌面端 + 移动端响应式 + 独立 PWA 能力，一套代码多端运行。
 
 ### 1.3 范围说明（重要）
@@ -77,7 +77,7 @@ oa4rust 已有 **96 个 crates、40+ router、3000+ 端点**，但前端是一�
 o2web 依赖 `@o2oa/component` SDK 实现组件注册和全局 o2/layout 注入。新栈需要自建等价的 lightweight SDK：
 
 ```typescript
-// web/packages/sdk/src/index.ts
+// oa4rust-web/packages/sdk/src/index.ts
 export { createO2App }     // 应用初始化（替代 o2.load()）
 export { useRouter }       // 路由（替代 MWF.xDesktop.open()）
 export { useSession }      // 会话：user/person_unique/icon（替代 layout.desktop.session）
@@ -95,7 +95,7 @@ export { ThemeProvider }   // 主题切换（新：o2web 不支持）
 ```
 D:/WORKSPACE/fakeToys/
 ├── oa4rust/                      # 现有 Rust 后端（不动）
-└── web/                          # 全新前端 monorepo
+└── oa4rust-web/                  # 全新前端 monorepo
     ├── pnpm-workspace.yaml
     ├── package.json              # root workspace config（Biome/Vitest 共享）
     ├── tsconfig.base.json        # 共享 TS 配置
@@ -541,7 +541,7 @@ export function useIMWebSocket() {
 ### 5.1 色彩体系
 
 ```css
-/* web/packages/ui/src/theme/dark.css */
+/* oa4rust-web/packages/ui/src/theme/dark.css */
 :root {
   /* 主色：电光蓝青渐变 */
   --color-primary:        #00d4ff;   /* 霓虹青 */
@@ -803,7 +803,7 @@ let app = app
 - 请求 `/js/app.js` → 返回对应静态文件
 - 请求 `/非路由路径` → 回退到 `dist/index.html`（Vue Router history 模式必需）
 
-**目录约定：** Vite 构建输出到 `web/apps/desktop/dist/`，Rust 侧引用同仓库相对路径 `../web/apps/desktop/dist`（部署时通过 Cargo 构建顺序保证 dist 已生成）。
+**目录约定：** Vite 构建输出到 `oa4rust-web/apps/desktop/dist/`，Rust 侧引用同仓库相对路径 `../oa4rust-web/apps/desktop/dist`（部署时通过 Cargo 构建顺序保证 dist 已生成）。
 
 ### 9.2 开发模式
 
