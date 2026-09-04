@@ -37,6 +37,8 @@ import UnitApp from './views/UnitApp.vue';
 import FormApp from './views/FormApp.vue';
 import ViewApp from './views/ViewApp.vue';
 import FileInfoApp from './views/FileInfoApp.vue';
+import AIChatApp from './views/AIChatApp.vue';
+import RoleManager from './views/RoleManager.vue';
 
 const router = createRouter({
   history: createWebHistory(),
@@ -73,6 +75,8 @@ const router = createRouter({
         { path: 'form', name: 'FormApp', component: FormApp, meta: { title: '表单管理' } },
         { path: 'view', name: 'ViewApp', component: ViewApp, meta: { title: '视图管理' } },
         { path: 'fileinfo', name: 'FileInfoApp', component: FileInfoApp, meta: { title: '文件信息' } },
+        { path: 'ai-chat', name: 'AIChatApp', component: AIChatApp, meta: { title: 'AI助手' } },
+        { path: 'role', name: 'RoleManager', component: RoleManager, meta: { title: '角色管理' } },
       ],
     },
     { path: '/oauth/callback/:platform', name: 'OAuthCallback', component: OAuthCallback, meta: { requiresAuth: false } },
@@ -113,3 +117,7 @@ app.mount('#o2-app-root');
 import { registerSW } from './registerSW';
 registerSW();
 console.log('[OA4Rust] App initialized');
+
+// AI Chat & Role Manager routes
+import AIChatApp from './views/AIChatApp.vue';
+import RoleManager from './views/RoleManager.vue';
