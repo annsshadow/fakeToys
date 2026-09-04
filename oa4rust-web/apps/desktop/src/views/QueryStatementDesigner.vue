@@ -831,7 +831,7 @@ const generatedVisualSql = computed(() => {
   let s = "SELECT " + (veSelectFields.value.length ? veSelectFields.value.join(", ") : "*")
   if (veFromTable.value) s += " FROM " + veFromTable.value
   if (veWhereConditions.value.length) {
-    const wh = veWhereConditions.value.filter(c => c.field && c.value).map(c => c.field + " " + c.op +  + String.fromCharCode(39) + c.value + String.fromCharCode(39)).join(" AND ")
+    const wh = veWhereConditions.value.filter(c => c.field && c.value).map(c => c.field + " " + c.op + " " + String.fromCharCode(39) + c.value + String.fromCharCode(39)).join(" AND ")
     if (wh) s += "
 WHERE " + wh
   }
@@ -859,7 +859,7 @@ function toggleRule(idx: number) { ruleChain.value[idx].enabled = !ruleChain.val
 function applyRuleChain() {
   const r = ruleChain.value.filter(x => x.enabled && x.field && x.value)
   if (!r.length) return
-  const w = r.map(x => x.field + " " + x.op +  + String.fromCharCode(39) + x.value + String.fromCharCode(39)).join(" AND ")
+  const w = r.map(x => x.field + " " + x.op + " " + String.fromCharCode(39) + x.value + String.fromCharCode(39)).join(" AND ")
   if (/WHERE/i.test(sql.value)) sql.value = sql.value.replace(/WHEREs+[^;]+/i, w)
   else sql.value += "
 WHERE " + w
