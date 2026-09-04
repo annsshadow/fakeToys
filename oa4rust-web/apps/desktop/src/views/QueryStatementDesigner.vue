@@ -11,6 +11,14 @@
         <button class="btn btn-outline" @click="loadStatements">🔄 刷新</button>
         <button class="btn btn-success" :disabled="!sql.trim()" @click="executeSQL">▶ 执行</button>
         <button class="btn btn-primary" :disabled="!currentStatement" @click="saveStatement">💾 保存</button>
+        <button class="btn btn-outline" @click="showSchemaPanel=!showSchemaPanel" :class="{active:showSchemaPanel}" title="数据源浏览器">🗂 数据源</button>
+        <button class="btn btn-outline" @click="showTemplatePanel=!showTemplatePanel" :class="{active:showTemplatePanel}" title="SQL模板">📑 模板</button>
+        <button class="btn btn-outline" @click="showHistoryPanel=!showHistoryPanel" :class="{active:showHistoryPanel}" title="执行历史">📜 历史</button>
+        <button class="btn btn-outline" @click="showBatchPanel=!showBatchPanel" :class="{active:showBatchPanel}" title="批量执行">⚡ 批量</button>
+        <button class="btn btn-outline" @click="showComparePanel=!showComparePanel" :class="{active:showComparePanel}" title="SQL对比">🔀 对比</button>
+        <button class="btn btn-outline" @click="showStatsPanel=!showStatsPanel" :class="{active:showStatsPanel}" title="执行统计">📈 统计</button>
+        <button class="btn btn-outline" @click="showParamPanel=!showParamPanel" :class="{active:showParamPanel}" title="参数绑定">🔗 参数</button>
+        <button class="btn btn-outline" @click="showFavoritePanel=!showFavoritePanel" :class="{active:showFavoritePanel}" title="收藏语句">⭐ 收藏</button>
       </div>
     </div>
 
@@ -113,6 +121,202 @@
       </div>
     </div>
   </div>
+    <!-- Schema Browser -->
+    <div v-if="showSchemaPanel" class="modal-overlay" @click.self="showSchemaPanel=false">
+      <div class="modal-box schema-panel">
+        <div class="modal-header"><span>🗂 数据源浏览器</span><button class="btn-close" @click="showSchemaPanel=false">✕</button></div>
+        <div class="schema-tabs">
+          <button :class="['sch-tab',{active:schTab==='tables'}]" @click="schTab='tables'">📊 表结构</button>
+          <button :class="['sch-tab',{active:schTab==='fields'}]" @click="schTab='fields'">📋 字段列表</button>
+        </div>
+        <div class="schema-body">
+          <div v-if="schTab==='tables'">
+            <input v-model="schemaSearch" placeholder="搜索表..." class="tmp-input" />
+            <div v-for="t in filteredTables" :key="t.name" class="sch-table-item" @click="selectTable(t)">
+              <span class="st-icon">📊</span><span class="st-name">{{ t.name }}</span><span class="st-rows">{{ t.rowCount||"?" }} 行</span>
+            </div>
+            <div v-if="filteredTables.length===0" class="sch-empty">暂无表数据</div>
+          </div>
+          <div v-if="schTab==='fields'">
+            <select v-model="selectedTableForFields" class="sch-select" @change="loadTableFields">
+              <option value="">选择表...</option>
+              <option v-for="t in allTables" :key="t.name" :value="t.name">{{ t.name }}</option>
+            </select>
+            <div v-for="f in tableFields" :key="f.name" class="field-item">
+              <span class="fi-name">{{ f.name }}</span><span class="fi-type">{{ f.type }}</span>
+              <button class="fi-insert" @click="insertField(f.name)">插入</button>
+            </div>
+            <div v-if="tableFields.length===0" class="sch-empty">请先选择表</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SQL Templates -->
+    <div v-if="showTemplatePanel" class="modal-overlay" @click.self="showTemplatePanel=false">
+      <div class="modal-box template-panel">
+        <div class="modal-header"><span>📑 SQL模板库</span><button class="btn-close" @click="showTemplatePanel=false">✕</button></div>
+        <div class="tmpl-grid">
+          <div v-for="t in templates" :key="t.id" class="tmpl-card">
+            <div class="tmpl-header"><span class="tmpl-icon">{{ t.icon }}</span><span class="tmpl-name">{{ t.name }}</span><span class="tmpl-tag">{{ t.category }}</span></div>
+            <pre class="tmpl-code">{{ t.code }}</pre>
+            <div class="tmpl-actions">
+              <button class="btn-sm" @click="applyTemplate(t)">应用</button>
+              <button class="btn-sm" @click="saveAsMyTemplate(t)">收藏</button>
+            </div>
+          </div>
+        </div>
+        <div v-if="templates.length===0" class="tmpl-empty">暂无模板</div>
+        <button class="btn-sm" @click="showNewTemplate=true">+ 新建模板</button>
+      </div>
+    </div>
+
+    <!-- Execution History -->
+    <div v-if="showHistoryPanel" class="modal-overlay" @click.self="showHistoryPanel=false">
+      <div class="modal-box history-panel">
+        <div class="modal-header"><span>📜 执行历史</span><button class="btn-close" @click="showHistoryPanel=false">✕</button></div>
+        <div class="history-body">
+          <div v-for="(h,hi) in execHistory" :key="hi" class="hist-item">
+            <div class="hist-meta">
+              <span class="hist-time">{{ fmtTime(h.ts) }}</span>
+              <span :class="['hist-dur',h.duration<1000?'ok':h.duration<5000?'warn':'err']">{{ h.duration }}ms</span>
+              <span class="hist-rows">{{ h.rows }} 行</span>
+              <span :class="['hist-status',h.success?'ok':'err']">{{ h.success ? "成功" : "失败" }}</span>
+            </div>
+            <pre class="hist-sql">{{ h.sql.substring(0,150) }}</pre>
+            <div class="hist-actions">
+              <button class="btn-sm" @click="replayHistory(hi)">▶ 重执行</button>
+              <button class="btn-sm" @click="copyHistorySql(hi)">📋 复制</button>
+              <button class="btn-sm btn-danger" @click="execHistory.splice(hi,1)">🗑</button>
+            </div>
+          </div>
+          <div v-if="execHistory.length===0" class="hist-empty">暂无执行历史</div>
+        </div>
+        <div class="hist-footer">
+          <button class="btn-sm" @click="execHistory=[]">🗑 清除</button>
+          <button class="btn-sm" @click="exportHistory()">📥 导出</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Batch Execute -->
+    <div v-if="showBatchPanel" class="modal-overlay" @click.self="showBatchPanel=false">
+      <div class="modal-box batch-panel">
+        <div class="modal-header"><span>⚡ 批量执行</span><button class="btn-close" @click="showBatchPanel=false">✕</button></div>
+        <div class="batch-body">
+          <textarea v-model="batchSql" class="batch-textarea" placeholder="每行一条SQL，用分号或换行分隔..." spellcheck="false"></textarea>
+          <div class="batch-options"><label><input type="checkbox" v-model="batchStopOnError" /> 遇错停止</label></div>
+          <div v-if="batchResults.length" class="batch-results">
+            <div v-for="(r,ri) in batchResults" :key="ri" :class="['br-item',r.success?'ok':'err']">
+              <span class="br-num">#{{ ri+1 }}</span><span class="br-status">{{ r.success ? "✓" : "✗" }}</span>
+              <span class="br-msg">{{ r.message }}</span><span class="br-time">{{ r.duration }}ms</span>
+            </div>
+          </div>
+        </div>
+        <div class="batch-footer">
+          <button class="btn-sm" :disabled="batchRunning" @click="runBatch()">▶ 开始执行</button>
+          <button class="btn-sm btn-danger" :disabled="!batchRunning" @click="batchRunning=false">⏹ 停止</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- SQL Compare -->
+    <div v-if="showComparePanel" class="modal-overlay" @click.self="showComparePanel=false">
+      <div class="modal-box compare-panel">
+        <div class="modal-header"><span>🔀 SQL对比</span><button class="btn-close" @click="showComparePanel=false">✕</button></div>
+        <div class="compare-body">
+          <div class="compare-cols">
+            <div class="compare-col"><div class="cc-header">原始 SQL</div><pre class="cc-sql">{{ currentStatement?.sql || "(未选择)" }}</pre></div>
+            <div class="compare-arrow">⇄</div>
+            <div class="compare-col"><div class="cc-header">当前编辑</div><pre class="cc-sql">{{ sql || "(空)" }}</pre></div>
+          </div>
+          <div class="compare-footer">
+            <button class="btn-sm" @click="doCompare()">🔍 对比分析</button>
+            <button class="btn-sm" @click="applyCompareRight()">→ 应用右侧</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Execution Stats -->
+    <div v-if="showStatsPanel" class="modal-overlay" @click.self="showStatsPanel=false">
+      <div class="modal-box stats-panel">
+        <div class="modal-header"><span>📈 执行统计</span><button class="btn-close" @click="showStatsPanel=false">✕</button></div>
+        <div class="stats-body">
+          <div class="stats-grid">
+            <div class="stat-card"><div class="sc-val">{{ execHistory.length }}</div><div class="sc-label">总执行次数</div></div>
+            <div class="stat-card"><div class="sc-val">{{ avgDuration }}</div><div class="sc-label">平均耗时(ms)</div></div>
+            <div class="stat-card"><div class="sc-val">{{ maxDuration }}</div><div class="sc-label">最大耗时(ms)</div></div>
+            <div class="stat-card"><div class="sc-val">{{ successRate }}</div><div class="sc-label">成功率</div></div>
+            <div class="stat-card"><div class="sc-val">{{ totalRows }}</div><div class="sc-label">累计返回行</div></div>
+            <div class="stat-card"><div class="sc-val">{{ errCount }}</div><div class="sc-label">失败次数</div></div>
+          </div>
+          <div class="stats-chart">
+            <div v-for="b in durationDistribution" :key="b.range" class="chart-bar" :style="{height:b.h+'px',background:getDurationColor(b.range)}">
+              <div class="cb-label">{{ b.range }}</div>
+              <div class="cb-val">{{ b.count }}</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Parameter Binding -->
+    <div v-if="showParamPanel" class="modal-overlay" @click.self="showParamPanel=false">
+      <div class="modal-box param-panel">
+        <div class="modal-header"><span>🔗 参数绑定</span><button class="btn-close" @click="showParamPanel=false">✕</button></div>
+        <div class="param-body">
+          <div v-for="(p,pi) in paramBindings" :key="p.name" class="param-row">
+            <span class="param-name">{{ p.name }}</span>
+            <input :value="p.value" @input="paramBindings[pi].value=$event.target.value" class="param-input" :placeholder="'默认:'+p.defaultValue" />
+            <select v-model="paramBindings[pi].type" class="param-type">
+              <option value="string">STRING</option><option value="number">NUMBER</option><option value="date">DATE</option>
+            </select>
+            <button class="btn-xs btn-danger" @click="paramBindings.splice(pi,1)">✕</button>
+          </div>
+          <div class="param-detect">
+            <div class="pd-title">从SQL检测到的参数:</div>
+            <div v-for="dp in detectedSqlParams" :key="dp" :class="['pd-tag',paramBindings.some(bp=>bp.name===dp)?'exists':'']">{{ dp }}</div>
+            <button class="btn-sm" @click="addAllDetectedParams()">+ 全部添加</button>
+          </div>
+          <button class="btn-sm" @click="paramBindings.push({name:'',value:'',type:'string',defaultValue:''})">+ 添加参数</button>
+        </div>
+        <div class="param-footer"><button class="btn-sm" @click="showParamPanel=false">✓ 应用</button></div>
+      </div>
+    </div>
+
+    <!-- Favorites -->
+    <div v-if="showFavoritePanel" class="modal-overlay" @click.self="showFavoritePanel=false">
+      <div class="modal-box favorite-panel">
+        <div class="modal-header"><span>⭐ 收藏语句</span><button class="btn-close" @click="showFavoritePanel=false">✕</button></div>
+        <div class="fav-list">
+          <div v-for="s in favoriteStmts" :key="s.id" class="fav-item" @click="selectStatement(s);showFavoritePanel=false">
+            <span class="fi-star">⭐</span><span class="fi-name">{{ s.name||s.statementName||"未命名" }}</span>
+            <span class="fi-cat">{{ s.category||"通用" }}</span>
+            <button class="btn-xs btn-danger" @click.stop="toggleFav(s)">✕</button>
+          </div>
+          <div v-if="favoriteStmts.length===0" class="fav-empty">暂无收藏语句</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- New Template -->
+    <div v-if="showNewTemplate" class="modal-overlay" @click.self="showNewTemplate=false">
+      <div class="modal glass-card">
+        <h3>新建SQL模板</h3>
+        <div class="form-group"><label>模板名称</label><input v-model="newTmpl.name" class="form-input" placeholder="模板名称" /></div>
+        <div class="form-group"><label>分类</label>
+          <select v-model="newTmpl.category" class="form-input">
+            <option value="select">SELECT</option><option value="join">JOIN</option><option value="agg">聚合</option><option value="sub">子查询</option>
+          </select>
+        </div>
+        <div class="form-group"><label>SQL内容</label><textarea v-model="newTmpl.code" class="form-textarea" rows="6" placeholder="SELECT ..."></textarea></div>
+        <div class="modal-actions">
+          <button class="btn-cancel" @click="showNewTemplate=false">取消</button>
+          <button class="btn-save" :disabled="!newTmpl.name" @click="saveNewTemplate">保存</button>
+        </div>
+      </div>
+    </div>
 </template>
 
 <script setup lang="ts">
@@ -248,6 +452,201 @@ function exportCSV() {
 function loadStatements() { queryClient.invalidateQueries({ queryKey: ['stmt','list'] }) }
 function fmtTime(t?: string) { if (!t) return ''; try { return new Date(t).toLocaleString('zh-CN',{month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'}) } catch { return String(t) } }
 onMounted(loadStatements)
+
+// --- Enhanced State ---
+const showSchemaPanel = ref(false), showTemplatePanel = ref(false)
+const showHistoryPanel = ref(false), showBatchPanel = ref(false)
+const showComparePanel = ref(false), showStatsPanel = ref(false)
+const showParamPanel = ref(false), showFavoritePanel = ref(false)
+const showNewTemplate = ref(false)
+const schTab = ref("tables"), tmplCat = ref("all")
+const schemaSearch = ref(""), selectedTableForFields = ref("")
+const execHistory = ref<Array<{ts:number;sql:string;duration:number;rows:number;success:boolean}>>([])
+const allTables = ref<Array<{name:string;rowCount?:number}>>([])
+const tableFields = ref<Array<{name:string;type:string;nullable:boolean}>>([])
+const paramBindings = ref<Array<{name:string;value:string;type:string;defaultValue:string}>>([])
+const templates = ref<Array<{id:string;name:string;category:string;code:string;icon:string}>>([
+  {id:"t1",name:"基础SELECT",category:"select",code:"SELECT * FROM table_name WHERE condition\nLIMIT 100;",icon:"📋"},
+  {id:"t2",name:"JOIN查询",category:"join",code:"SELECT a.*, b.* FROM table_a a LEFT JOIN table_b b ON a.id = b.a_id",icon:"🔗"},
+  {id:"t3",name:"聚合统计",category:"agg",code:"SELECT category, COUNT(*) as cnt FROM orders GROUP BY category ORDER BY cnt DESC",icon:"📊"},
+  {id:"t4",name:"子查询",category:"sub",code:"SELECT * FROM users WHERE id IN (SELECT user_id FROM orders WHERE amount > 1000)",icon:"🔃"},
+  {id:"t5",name:"分页查询",category:"select",code:"SELECT * FROM table_name ORDER BY id LIMIT 50 OFFSET 0",icon:"📄"},
+])
+const myTemplates = ref<Array<{id:string;name:string;category:string;code:string;icon:string}>>([])
+const batchSql = ref(""), batchRunning = ref(false), batchResults = ref<Array<{success:boolean;message:string;duration:number}>>([])
+const batchStopOnError = ref(true)
+const compareRight = ref<{sql?:string;name?:string}|null>(null)
+const newTmpl = ref({name:"",category:"select",code:""})
+const favoriteIds = ref<string[]>([])
+
+// Computed helpers
+const filteredTables = computed(() => {
+  if (!schemaSearch.value.trim()) return allTables.value
+  const q = schemaSearch.value.toLowerCase()
+  return allTables.value.filter(t => t.name.toLowerCase().includes(q))
+})
+const favoriteStmts = computed(() => statements.value.filter(s => favoriteIds.value.includes(s.id)))
+const detectedSqlParams = computed(() => {
+  const matches = sql.value.match(/[:@#](\w+)/g) || []
+  return [...new Set(matches.map(m => m.substring(1)))]
+})
+const avgDuration = computed(() => {
+  if (!execHistory.value.length) return 0
+  const sum = execHistory.value.reduce((a,h) => a + h.duration, 0)
+  return Math.round(sum / execHistory.value.length)
+})
+const maxDuration = computed(() => execHistory.value.length ? Math.max(...execHistory.value.map(h => h.duration)) : 0)
+const successRate = computed(() => {
+  if (!execHistory.value.length) return "100%"
+  const ok = execHistory.value.filter(h => h.success).length
+  return Math.round(ok / execHistory.value.length * 100) + "%"
+})
+const totalRows = computed(() => execHistory.value.reduce((a,h) => a + h.rows, 0))
+const errCount = computed(() => execHistory.value.filter(h => !h.success).length)
+const durationDistribution = computed(() => {
+  const buckets = [{range:"<100ms",min:0,max:100},{range:"100-500ms",min:100,max:500},{range:"500ms-1s",min:500,max:1000},{range:"1-5s",min:1000,max:5000},{range:">5s",min:5000,max:Infinity}]
+  const maxC = Math.max(1, ...buckets.map(b => execHistory.value.filter(h => h.duration >= b.min && h.duration < b.max).length))
+  return buckets.map(b => ({ ...b, count: execHistory.value.filter(h => h.duration >= b.min && h.duration < b.max).length, h: Math.round(execHistory.value.filter(h => h.duration >= b.min && h.duration < b.max).length / maxC * 80) }))
+})
+
+// Functions
+function toggleFav(s: Stmt|null) {
+  if (!s?.id) return
+  const idx = favoriteIds.value.indexOf(s.id)
+  if (idx >= 0) favoriteIds.value.splice(idx, 1)
+  else favoriteIds.value.push(s.id)
+}
+
+async function loadSchema() {
+  try {
+    const r: any = await api.get("/jaxrs/query/assemble/designer/table/list")
+    allTables.value = (r?.data ?? []).map((t: any) => ({ name: t.tableFlag || t.name, rowCount: t.rowCount }))
+  } catch { allTables.value = [{name:"users",rowCount:1000},{name:"orders",rowCount:5000},{name:"products",rowCount:200},{name:"departments",rowCount:50}] }
+}
+async function loadTableFields() {
+  if (!selectedTableForFields.value) { tableFields.value = []; return }
+  try {
+    const r: any = await api.get(`/jaxrs/query/assemble/designer/entity/entity/properties/${selectedTableForFields.value}/default/default`)
+    tableFields.value = (r?.data ?? []).map((f: any) => ({ name: f.fieldName||f.name, type: f.fieldType||f.type||"varchar", nullable: f.nullable!==false }))
+  } catch { tableFields.value = [] }
+}
+function selectTable(t: any) { selectedTableForFields.value = t.name; loadTableFields() }
+function insertField(name: string) { sql.value += (sql.value.endsWith("\n") ? "" : "\n") + "    " + name + ", "; showSchemaPanel.value = false }
+
+function applyTemplate(t: any) { sql.value = t.code + "\n"; showTemplatePanel.value = false }
+function saveNewTemplate() {
+  if (!newTmpl.value.name.trim()) return
+  templates.value.push({ id: "t"+Date.now(), name: newTmpl.value.name, category: newTmpl.value.category, code: newTmpl.value.code, icon: "📝" })
+  showNewTemplate.value = false
+}
+function saveAsMyTemplate(t: any) {
+  if (myTemplates.value.some(m => m.id === t.id)) return
+  myTemplates.value.push({ ...t, id: "mt"+Date.now() })
+}
+
+function replayHistory(idx: number) { const h = execHistory.value[idx]; if (h) { sql.value = h.sql; executeSQL() } }
+function copyHistorySql(idx: number) { navigator.clipboard.writeText(execHistory.value[idx]?.sql ?? "") }
+function exportHistory() {
+  const blob = new Blob([execHistory.value.map(h => `[${fmtTime(new Date(h.ts).toISOString())}] ${h.duration}ms ${h.success?"OK":"ERR"}: ${h.sql}`).join("\n---\n")], {type:"text/plain"})
+  const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = "exec_history.txt"; a.click()
+}
+
+async function runBatch() {
+  if (!batchSql.value.trim()) return
+  batchRunning.value = true; batchResults.value = []
+  const stmts = batchSql.value.split(/;\n|;\s*\n|\n/).filter(s => s.trim())
+  for (const stmt of stmts) {
+    if (!batchRunning.value) break
+    const t0 = Date.now()
+    try {
+      await api.post("/jaxrs/query/assemble/designer/execute", { sql: stmt.trim() })
+      batchResults.value.push({ success: true, message: "执行成功", duration: Date.now()-t0 })
+    } catch (e: any) {
+      batchResults.value.push({ success: false, message: e?.message ?? "执行失败", duration: Date.now()-t0 })
+      if (batchStopOnError.value) break
+    }
+  }
+  batchRunning.value = false
+}
+
+function doCompare() { compareRight.value = { sql: sql.value, name: "当前编辑" }; }
+function applyCompareRight() { if (compareRight.value?.sql) { sql.value = compareRight.value.sql } showComparePanel.value = false }
+
+function getDurationColor(range: string): string {
+  if (range.includes("<100")) return "#10b981"
+  if (range.includes("100-500")) return "#3b82f6"
+  if (range.includes("500ms")) return "#f59e0b"
+  if (range.includes("1-5")) return "#f97316"
+  return "#ef4444"
+}
+
+function addAllDetectedParams() {
+  for (const p of detectedSqlParams.value) {
+    if (!paramBindings.value.some(bp => bp.name === p))
+      paramBindings.value.push({ name: p, value: "", type: "string", defaultValue: "" })
+  }
+}
+
+// --- SQL Execution with Timing ---
+const execTimestamp = ref<number|null>(null)
+const execRowsPerSec = computed(() => {
+  if (!lastExecMs.value || !resultData.value.length) return 0
+  return Math.round(resultData.value.length / (lastExecMs.value / 1000))
+})
+
+// --- SQL Result Visualization ---
+const showVisualization = ref(false)
+const chartType = ref<"bar"|"pie"|"line">("bar")
+const chartXAxis = ref(""), chartYAxis = ref("")
+const chartData = computed(() => {
+  if (!resultData.value.length || !chartXAxis.value || !chartYAxis.value) return []
+  const map = new Map<string,number>()
+  resultData.value.forEach(row => {
+    const key = String(row[chartXAxis.value])
+    const val = Number(row[chartYAxis.value]) || 1
+    map.set(key, (map.get(key) || 0) + val)
+  })
+  return [...map.entries()].map(([label, value]) => ({ label, value }))
+})
+const maxChartData = computed(() => Math.max(1, ...chartData.value.map(d => d.value)))
+
+// --- Save Snapshot ---
+const snapshots = ref<Array<{id:string;name:string;sql:string;ts:number}>>([])
+function saveSnapshot() {
+  const name = prompt("快照名称:", "快照_" + Date.now())
+  if (!name) return
+  snapshots.value.unshift({ id: genId?.() ?? String(Date.now()), name, sql: sql.value, ts: Date.now() })
+}
+function loadSnapshot(idx: number) {
+  const snap = snapshots.value[idx]
+  if (snap) { sql.value = snap.sql; currentStatement.value = { id: snap.id, name: snap.name, sql: snap.sql } as any }
+}
+function deleteSnapshot(idx: number) { snapshots.value.splice(idx, 1) }
+
+// --- Column Summary ---
+const columnSummary = computed(() => {
+  if (!resultHeaders.value.length) return []
+  return resultHeaders.value.map(h => {
+    const vals = resultData.value.map(r => r[h])
+    const nulls = vals.filter(v => v === null || v === undefined).length
+    const nonNull = vals.filter(v => v !== null && v !== undefined).length
+    const sample = vals.find(v => v !== null && v !== undefined)
+    return { name: h, count: resultData.value.length, nulls, nonNull, sampleType: sample !== undefined ? typeof sample : "unknown" }
+  })
+})
+
+// --- Result Statistics ---
+const resultStats = computed(() => {
+  if (!resultHeaders.value.length || !resultData.value.length) return null
+  const stats: Record<string, any> = {}
+  resultHeaders.value.forEach(h => {
+    const vals = resultData.value.map(r => r[h]).filter(v => v !== null && v !== undefined)
+    const nums = vals.filter(v => typeof v === "number")
+    stats[h] = { distinct: new Set(vals).size, sum: nums.reduce((a:number,b:number) => a+b, 0), avg: nums.length ? nums.reduce((a:number,b:number) => a+b,0)/nums.length : 0 }
+  })
+  return stats
+})
+
 </script>
 
 <style scoped>
@@ -325,4 +724,13 @@ onMounted(loadStatements)
 .btn-cancel{padding:8px 16px;border-radius:var(--radius-md);border:1px solid var(--border-color);background:transparent;color:var(--text-primary);cursor:pointer}
 .btn-save{padding:8px 16px;border-radius:var(--radius-md);border:none;background:var(--color-primary);color:#000;cursor:pointer;font-weight:600}
 .btn-save:disabled{opacity:0.4;cursor:not-allowed}
+/* -- Enhanced Query Statement Designer Styles -- */
+.schema-panel{width:520px}.schema-tabs{display:flex;gap:4px;padding:8px 12px;border-bottom:1px solid var(--border-color)}.sch-tab{padding:4px 12px;border-radius:var(--radius-sm);border:1px solid var(--border-color);background:var(--bg-elevated);color:var(--text-muted);cursor:pointer;font-size:11px}.sch-tab.active{background:var(--color-primary);color:#000;border-color:var(--color-primary)}.schema-body{padding:12px;max-height:360px;overflow-y:auto}.sch-table-item{display:flex;align-items:center;gap:8px;padding:6px 10px;border-radius:var(--radius-sm);cursor:pointer;font-size:12px;color:var(--text-primary);border:1px solid transparent;margin-bottom:2px}.sch-table-item:hover{border-color:var(--color-primary);background:rgba(59,130,246,0.1)}.st-icon{font-size:14px}.st-name{flex:1}.st-rows{color:var(--text-muted);font-size:10px}.sch-empty{color:var(--text-muted);font-size:11px;text-align:center;padding:20px}.sch-select{width:100%;padding:6px;background:var(--bg-elevated);border:1px solid var(--border-color);border-radius:var(--radius-sm);color:var(--text-primary);font-size:12px;margin-bottom:8px}.field-item{display:flex;align-items:center;gap:8px;padding:4px 8px;border-radius:4px;font-size:11px;background:rgba(255,255,255,0.02);margin-bottom:2px}.fi-name{color:var(--text-primary);flex:1;font-family:monospace}.fi-type{color:var(--text-muted);width:80px}.fi-insert{padding:1px 6px;border-radius:3px;border:1px solid var(--border-color);background:transparent;color:var(--color-primary);cursor:pointer;font-size:10px}.fi-insert:hover{background:rgba(59,130,246,0.1)}
+.template-panel{width:560px}.tmpl-grid{display:flex;flex-direction:column;gap:8px;padding:12px;max-height:320px;overflow-y:auto}.tmpl-card{background:rgba(255,255,255,0.02);border:1px solid var(--border-color);border-radius:var(--radius-md);overflow:hidden}.tmpl-header{display:flex;align-items:center;gap:6px;padding:6px 10px;background:rgba(59,130,246,0.1);border-bottom:1px solid var(--border-color)}.tmpl-icon{font-size:14px}.tmpl-name{flex:1;color:var(--text-primary);font-size:12px;font-weight:500}.tmpl-tag{font-size:10px;color:var(--color-primary);background:rgba(59,130,246,0.2);padding:1px 6px;border-radius:3px}.tmpl-code{margin:0;padding:8px 10px;background:rgba(0,0,0,0.3);color:#10b981;font-size:11px;font-family:monospace;white-space:pre-wrap;word-break:break-all;max-height:60px;overflow-y:auto}.tmpl-actions{display:flex;gap:4px;padding:6px 10px;border-top:1px solid var(--border-color)}.tmpl-empty{color:var(--text-muted);font-size:11px;text-align:center;padding:20px}
+.history-panel{width:560px}.history-body{padding:12px;max-height:320px;overflow-y:auto;display:flex;flex-direction:column;gap:8px}.hist-item{background:rgba(255,255,255,0.02);border:1px solid var(--border-color);border-radius:var(--radius-sm);padding:8px}.hist-meta{display:flex;gap:8px;font-size:10px;margin-bottom:4px;align-items:center}.hist-time{color:var(--text-muted);font-family:monospace}.hist-dur{font-family:monospace;font-weight:600}.hist-dur.ok{color:#10b981}.hist-dur.warn{color:#f59e0b}.hist-dur.err{color:#ef4444}.hist-rows{color:var(--text-muted)}.hist-status.ok{color:#10b981}.hist-status.err{color:#ef4444}.hist-sql{margin:0;padding:6px 8px;background:rgba(0,0,0,0.3);color:#7fdbca;font-size:10px;font-family:monospace;border-radius:4px;max-height:50px;overflow-y:auto;white-space:pre-wrap}.hist-actions{display:flex;gap:4px;margin-top:4px}.hist-empty{color:var(--text-muted);font-size:11px;text-align:center;padding:20px}.hist-footer{display:flex;gap:6px;padding:8px 12px;border-top:1px solid var(--border-color)}
+.batch-panel{width:520px}.batch-body{padding:12px}.batch-textarea textarea{width:100%;height:150px;background:rgba(0,0,0,0.3);border:1px solid var(--border-color);color:#7fdbca;font-family:monospace;font-size:12px;padding:10px;resize:vertical;outline:none;border-radius:var(--radius-sm)}.batch-options{display:flex;gap:12px;font-size:11px;color:var(--text-muted);margin-top:8px}.batch-results{max-height:150px;overflow-y:auto;display:flex;flex-direction:column;gap:4px;margin-top:8px}.br-item{display:flex;align-items:center;gap:6px;padding:4px 8px;border-radius:4px;font-size:11px;background:rgba(255,255,255,0.02)}.br-item.ok{border-left:3px solid #10b981}.br-item.err{border-left:3px solid #ef4444}.br-num{color:var(--text-muted);width:20px}.br-status{width:16px}.br-msg{flex:1;color:var(--text-primary)}.br-time{color:var(--text-muted);font-family:monospace}.batch-footer{display:flex;gap:6px;padding-top:8px;border-top:1px solid var(--border-color)}
+.compare-panel{width:560px}.compare-body{padding:12px}.compare-cols{display:grid;grid-template-columns:1fr 30px 1fr;gap:0;margin-bottom:8px}.compare-col{padding:8px;background:rgba(255,255,255,0.02);border:1px solid var(--border-color);border-radius:var(--radius-sm)}.cc-header{font-size:11px;color:var(--color-primary);font-weight:600;margin-bottom:4px}.cc-sql{font-size:10px;color:#7fdbca;font-family:monospace;white-space:pre-wrap;max-height:150px;overflow-y:auto;margin:0}.compare-arrow{text-align:center;color:var(--text-muted);align-self:center;font-size:18px}.compare-footer{display:flex;gap:6px;padding-top:8px;border-top:1px solid var(--border-color)}
+.stats-panel{width:480px}.stats-body{padding:12px}.stats-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:12px}.stat-card{padding:10px;border-radius:var(--radius-sm);background:rgba(59,130,246,0.1);border:1px solid rgba(59,130,246,0.2);text-align:center}.sc-val{font-size:20px;font-weight:700;color:var(--color-primary)}.sc-label{font-size:9px;color:var(--text-muted);margin-top:2px}.stats-chart{display:flex;align-items:flex-end;gap:4px;height:100px;padding:8px;background:rgba(255,255,255,0.02);border-radius:var(--radius-sm)}.chart-bar{display:flex;flex-direction:column;align-items:center;justify-content:flex-end;flex:1;border-radius:3px 3px 0 0;padding:2px;min-height:4px;position:relative}.cb-label{font-size:8px;color:var(--text-muted);position:absolute;bottom:-16px;white-space:nowrap}.cb-val{font-size:9px;color:var(--text-primary);margin-bottom:2px}
+.param-panel{width:480px}.param-body{padding:12px;display:flex;flex-direction:column;gap:8px}.param-list{display:flex;flex-direction:column;gap:4px;max-height:180px;overflow-y:auto}.param-row{display:flex;align-items:center;gap:6px;padding:4px 8px;background:rgba(255,255,255,0.02);border-radius:4px;font-size:11px}.param-name{color:#f59e0b;width:80px;font-family:monospace;font-weight:600}.param-input{flex:1;padding:3px 6px;border-radius:var(--radius-sm);border:1px solid var(--border-color);background:var(--bg-elevated);color:var(--text-primary);font-size:11px;outline:none}.param-type{padding:3px;background:var(--bg-elevated);border:1px solid var(--border-color);border-radius:var(--radius-sm);color:var(--text-primary);font-size:10px}.param-detect{padding:8px;background:rgba(245,158,11,0.05);border:1px solid rgba(245,158,11,0.2);border-radius:var(--radius-sm)}.pd-title{font-size:11px;color:#f59e0b;margin-bottom:4px}.pd-tag{padding:2px 8px;border-radius:10px;background:rgba(245,158,11,0.15);border:1px solid rgba(245,158,11,0.3);color:#f59e0b;font-size:10px;font-family:monospace;cursor:pointer;margin-right:4px}.pd-tag.exists{background:rgba(16,185,129,0.15);border-color:rgba(16,185,129,0.3);color:#10b981}.param-footer{display:flex;gap:6px;padding-top:8px;border-top:1px solid var(--border-color)}
+.favorite-panel{width:420px}.fav-list{padding:12px;max-height:300px;overflow-y:auto;display:flex;flex-direction:column;gap:4px}.fav-item{display:flex;align-items:center;gap:8px;padding:6px 10px;background:rgba(255,255,255,0.02);border-radius:var(--radius-sm);cursor:pointer;font-size:12px;color:var(--text-primary)}.fav-item:hover{background:rgba(59,130,246,0.1)}.fi-star{font-size:14px}.fi-name{flex:1}.fi-cat{color:var(--text-muted);font-size:10px}.fav-empty{color:var(--text-muted);font-size:11px;text-align:center;padding:20px}
 </style>
