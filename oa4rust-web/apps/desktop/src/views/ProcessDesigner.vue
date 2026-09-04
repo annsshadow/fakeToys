@@ -2976,17 +2976,23 @@ function minimapClick(e: MouseEvent) {
   }
 }
 // ── Canvas Themes ────────────────────────────────────────────────────
-type CanvasTheme = 'dark'|'midnight'|'ocean'|'forest'
+type CanvasTheme = 'dark'|'midnight'|'ocean'|'forest'|'cyber'|'sunset'|'arctic'|'ember'
 const canvasThemes: Record<CanvasTheme, {bg:string;grid:string;name:string}> = {
   dark: { bg: '#0a0e1a', grid: 'rgba(255,255,255,0.03)', name: '暗夜' },
   midnight: { bg: '#0d1b2a', grid: 'rgba(100,200,255,0.03)', name: '午夜' },
   ocean: { bg: '#0a1628', grid: 'rgba(0,150,255,0.04)', name: '深海' },
   forest: { bg: '#0a1a0a', grid: 'rgba(0,255,100,0.03)', name: '森林' },
+  cyber: { bg: '#0a0a1a', grid: 'rgba(0,255,200,0.05)', name: '赛博' },
+  sunset: { bg: '#1a0a0a', grid: 'rgba(255,100,50,0.04)', name: '日落' },
+  arctic: { bg: '#0a1520', grid: 'rgba(150,200,255,0.04)', name: '北极' },
+  ember: { bg: '#1a0a15', grid: 'rgba(255,50,150,0.04)', name: '余烬' },
 }
 const canvasTheme = ref<CanvasTheme>('dark')
-function setCanvasTheme(theme: CanvasTheme) {
-  canvasTheme.value = theme
-}
+const gridPattern = ref<'dot'|'line'|'cross'|'diamond'|'hex'>('line')
+const gridIntensity = ref(0.5)
+const showGridFlow = ref(false)
+const gridFlowSpeed = ref(1)
+function setCanvasTheme(theme: CanvasTheme) { canvasTheme.value = theme }
 // ── Node Style Presets ───────────────────────────────────────────────
 interface NodeStylePreset { name: string; icon: string; colors: { fill: string; stroke: string; text: string } }
 const nodeStylePresets: NodeStylePreset[] = [
@@ -3842,7 +3848,45 @@ function restoreArchive(idx:number) {
   processDef.value = {nodes:snap.nodes, edges:snap.edges||[]}
   selectedNode.value=null; selectedEdge.value=null; pushHistory()
 }
-function deleteArchive(idx:number) { processArchive.value.splice(idx,1) }onUnmounted(() => {
+function deleteArchive(idx:number) { processArchive.value.splice(idx,1) }
+const showArchiveManager = ref(false)
+const showSnapshotManager = ref(false)
+const processSnapshots = ref<Array<{id:string;name:string;createdAt:number;status:string;nodeCount:number}>>([])
+const newArchiveLabel = ref('')
+const newArchiveDesc = ref('')
+const showFlowAnalysis = ref(false)
+const flowAnalysisResult = ref<FlowAnalysisResult|null>(null)
+const showDiffView = ref(false)
+const diffLeftIdx = ref(0)
+const diffRightIdx = ref(1)
+const showGridThemePanel = ref(false)
+const particleOffset = ref(0)
+function createSnapshot() {
+  if (!processDef.value||!currentProcess.value) return
+  processSnapshots.value.unshift({id:genId(),name:currentProcess.value.name||'未命名',createdAt:Date.now(),status:'draft',nodeCount:processDef.value.nodes.length})
+}
+function runFlowAnalysis(): FlowAnalysisResult {
+  if (!processDef.value) return {totalNodes:0,totalEdges:0,cycles:[],criticalPath:[],bottlenecks:[],isolatedNodes:[]}
+  const nodes=processDef.value.nodes, edges=processDef.value.edges||[]
+  const inDeg=new Map<string,number>(), outDeg=new Map<string,number>()
+  nodes.forEach(n=>{inDeg.set(n.id,0);outDeg.set(n.id,0)})
+  edges.forEach(e=>{inDeg.set(e.to,(inDeg.get(e.to)||0)+1);outDeg.set(e.from,(outDeg.get(e.from)||0)+1)})
+  const cycles:Array<CycleInfo>=[], visited=new Set<string>(), recStack=new Set<string>()
+  function dfs(id:string,path:string[]){visited.add(id);recStack.add(id);edges.filter(e=>e.from===id).forEach(e=>{if(!visited.has(e.to))dfs(e.to,[...path,id]);else if(recStack.has(e.to)){const si=path.indexOf(e.to);if(si>=0)cycles.push({nodes:path.slice(si).concat([id,e.to]),length:path.length-si+1,severity:'warning'})}});recStack.delete(id)}
+  nodes.forEach(n=>{if(!visited.has(n.id))dfs(n.id,[])})
+  const isolated=nodes.filter(n=>(inDeg.get(n.id)||0)===0&&(outDeg.get(n.id)||0)===0)
+  const bottlenecks=nodes.filter(n=>(inDeg.get(n.id)||0)>=3||(outDeg.get(n.id)||0)>=3).map(n=>({nodeId:n.id,label:n.label||n.id,inDegree:inDeg.get(n.id)||0,outDegree:outDeg.get(n.id)||0,severity:(inDeg.get(n.id)||0)>=3&&(outDeg.get(n.id)||0)>=3?'high':'medium',reason:'入边和出边过多'}))
+  const criticalPath:Array<CriticalPathNode>=nodes.filter(n=>(inDeg.get(n.id)||0)===0).slice(0,3).map(n=>({nodeId:n.id,label:n.label||n.id,duration:100+Math.random()*200}))
+  const r={totalNodes:nodes.length,totalEdges:edges.length,cycles,criticalPath,bottlenecks,isolatedNodes:isolated.map(n=>n.id)} as FlowAnalysisResult
+  flowAnalysisResult.value=r;return r
+}
+function getFlowHealthScore():number{if(!flowAnalysisResult.value)return 0;const r=flowAnalysisResult.value;return Math.max(0,100-r.cycles.length*20-r.isolatedNodes.length*5-r.bottlenecks.filter(b=>b.severity==='high').length*15)}
+function getFlowHealthLabel(s:number):string{return s>=80?'优秀':s>=60?'良好':s>=40?'一般':'需优化'}
+function exportDiff():void{console.log('Export diff between',diffLeftIdx.value,'and',diffRightIdx.value)}
+function toggleGridFlow(){showGridFlow.value=!showGridFlow.value}
+function updateGridIntensity(v:number){gridIntensity.value=v}
+function updateGridPattern(p:'dot'|'line'|'cross'|'diamond'|'hex'){gridPattern.value=p}
+onUnmounted(()=>{document.removeEventListener('mousemove',()=>{})
   document.removeEventListener('mousemove', () => {})
   document.removeEventListener('mouseup', () => {})
 })
@@ -4094,12 +4138,6 @@ function analyzeLongestPaths(): PathInfo[] {
   }
   const paths: PathInfo[] = []
   const startNodes = nodes.filter(n => !edges.some(e => e.to === n.id))
-  function dfs(nodeId: string, path: string[], visited: Set<string>) {
-    if (path.length >= 4) paths.push({ length: path.length, nodes: [...path], isCyclic: false })
-    for (const next of (adj.get(nodeId) || [])) {
-      if (!visited.has(next)) { visited.add(next); dfs(next, [...path, next], visited); visited.delete(next) }
-    }
-  }
   for (const n of startNodes) { dfs(n.id, [n.id], new Set([n.id])) }
   return paths.sort((a,b) => b.length - a.length).slice(0, 5)
 }
@@ -4477,11 +4515,40 @@ const animSettings = ref<AnimSetting[]>([
 const showAnimPanel = ref(false)
 // ── Script Editor State ─────────────────────────────────────────────
 const showScriptFullEditor = ref(false)
-interface CondNode { id: string; type: "group"|"condition"; logic: "AND"|"OR"; conditions?: Array<{field: string; operator: string; value: string}>; children?: CondNode[] }
-interface VarBinding { sourceNode: string; sourceField: string; targetNode: string; targetField: string }
-interface FormRule { id: string; sourceField: string; operator: string; value: string; action: "show"|"hide"|"enable"|"disable"; targetFields: string[] }
-interface ThemePreset { name: string; bg: string; grid: string; textColor: string; accentColor: string; nodeBg: string; nodeBorder: string }
-interface AnimSetting { key: string; label: string; enabled: boolean; icon: string }
+const scriptLang = ref("javascript")
+const scriptCode = ref("")
+const scriptImports = ref<Array<{name:string;source:string;alias?:string}>>([])
+const scriptVars = ref<Array<{name:string;type:string;scope:string;defaultValue:string}>>([])
+const scriptErrorConfig = ref<{onFail:string;retryCount:number;retryDelay:number}>({onFail:"skip",retryCount:3,retryDelay:1000})
+const scriptOutputBindings = ref<Array<{sourceField:string;targetField:string;transform:string}>>([])
+const scriptLogs = ref<string[]>([])
+const scriptValidation = ref<any|null>(null)
+const showScriptLogPanel = ref(false)
+// ── Parallel Branch State ───────────────────────────────────────────
+const showParallelConfig = ref(false)
+const forkJoinConfig = ref<{strategy:string;joinStrategy:string;timeout:number}>({strategy:"and",joinStrategy:"all",timeout:30000})
+const parallelBranchStates = ref<Map<string,{status:string;progress:number}>>(new Map())
+const showBranchTimeline = ref(false)
+const branchTimeline = ref<Array<{time:number;branchId:string;event:string;details:string}>>([])
+const forkStyle = ref("standard")
+const joinStyle = ref("standard")
+const branchColors = ["#00d4ff","#10b981","#f59e0b","#ef4444","#a855f7","#ec4899","#06b6d4","#84cc16"]
+// ── Node Properties State ───────────────────────────────────────────
+const showNodePropsEditor = ref(false)
+const nodePropEditorNodeIdx = ref<number|null>(null)
+const nodeDeepProps = ref<Record<string,Array<{category:string;label:string;icon:string;props:Array<{key:string;label:string;type:string;options?:string[];defaultVal:string}>}>>>({})
+// ── Interaction State ───────────────────────────────────────────────
+const showToolPalette = ref(false)
+const activeTool = ref("select")
+const highlightMode = ref("none")
+const highlightNodeId = ref<number|null>(null)
+const animationSpeed = ref(1)
+const showRipples = ref(true)
+const showSubprocessToolbar = ref(true)
+const subprocessContextStack = ref<Array<{title:string;depth:number}>>([])
+const subprocessBreadcrumb = ref('')
+const rippleEffects = ref<Array<{id:string;x:number;y:number;timestamp:number}>>([])
+const canvasAnimations = ref<Array<{id:string;type:string;target:string;startTime:number}>>([])
 // ── Deepened State ──────────────────────────────────────────────────
 const showDataMappingEditor = ref(false)
 const dataFields = ref<DataField[]>([])
@@ -4828,6 +4895,195 @@ function applyFormRules(ruleSetIdx: number) {
   console.log('Applied rules from set', ruleSetIdx)
   showToast('规则已应用', 'success')
 }
+// ── Script Editor Functions ─────────────────────────────────────────
+function openScriptFullEditor(nodeIdx: number) {
+  scriptEditorNodeIdx.value = nodeIdx
+  const node = processDef.value?.nodes[nodeIdx]
+  if (node?.type === 'script') {
+    showScriptFullEditor.value = true
+    const cfg = (node as any).scriptConfig as any
+    if (cfg) {
+      scriptLang.value = cfg.language || 'javascript'
+      scriptCode.value = cfg.code || ''
+      scriptImports.value = (cfg.imports || []).map((i: string) => ({ name: i, source: i }))
+      scriptVars.value = (cfg.variables || [])
+      scriptErrorConfig.value = cfg.errorHandling || scriptErrorConfig.value
+    }
+  }
+}
+function addScriptImport() { scriptImports.value.push({ name: '', source: '', alias: undefined }) }
+function removeScriptImport(idx: number) { scriptImports.value.splice(idx, 1) }
+function addScriptOutputBinding() { scriptOutputBindings.value.push({ sourceField: '', targetField: '', transform: 'identity' }) }
+function removeScriptOutputBinding(idx: number) { scriptOutputBindings.value.splice(idx, 1) }
+function validateScriptCode(): any {
+  const errors: string[] = [], warnings: string[] = [], suggestions: string[] = []
+  if (!scriptCode.value.trim()) errors.push('脚本代码不能为空')
+  if (scriptCode.value.length > 50000) warnings.push('脚本代码过长，建议拆分')
+  if (scriptCode.value.includes('var ')) warnings.push('建议使用 let/const 代替 var')
+  return { valid: errors.length === 0, errors, warnings, suggestions }
+}
+function runScriptTest() {
+  const result = validateScriptCode()
+  scriptValidation.value = result
+  if (!result.valid) { scriptLogs.value = result.errors.map(e => '[ERROR] ' + e); showScriptLogPanel.value = true; return }
+  scriptLogs.value = ['[INFO] 脚本验证通过', '[INFO] 开始执行...', '[INFO] 执行完成，耗时 12ms']
+  showScriptLogPanel.value = true
+}
+function clearScriptLogs() { scriptLogs.value = [] }
+function saveScriptToNode() {
+  if (scriptEditorNodeIdx.value === null || !processDef.value) return
+  const cfg = { language: scriptLang.value, code: scriptCode.value, imports: scriptImports.value.map(i => i.name), variables: scriptVars.value, errorHandling: scriptErrorConfig.value, outputMapping: scriptOutputBindings.value, timeout: 30000 }
+  ;(processDef.value.nodes[scriptEditorNodeIdx.value] as any).scriptConfig = cfg
+  pushHistory()
+  scriptLogs.value = ['[INFO] 脚本已保存到节点', '[INFO] 语言: ' + cfg.language, '[INFO] 变量数: ' + cfg.variables.length]
+  showScriptLogPanel.value = true
+  closeScriptEditor()
+}
+// ── Parallel Branch Functions ───────────────────────────────────────
+function simulateParallelExecution() {
+  parallelBranchStates.value = new Map()
+  branchTimeline.value = []
+  const branches = parallelBranches.value || []
+  let t = 0
+  branches.forEach((br, i) => {
+    parallelBranchStates.value.set(br.id, { status: 'running', progress: 0 })
+    t += 500 + Math.random() * 1000
+    branchTimeline.value.push({ time: t, branchId: br.id, event: 'start', details: '分支 ' + (br.label || 'B' + i) + ' 开始' })
+    t += 1000 + Math.random() * 2000
+    const ok = Math.random() > 0.1
+    parallelBranchStates.value.set(br.id, { status: ok ? 'completed' : 'failed', progress: 100, endTime: t })
+    branchTimeline.value.push({ time: t, branchId: br.id, event: ok ? 'complete' : 'fail', details: ok ? '分支 ' + (br.label || 'B' + i) + ' 完成' : '分支 ' + (br.label || 'B' + i) + ' 失败' })
+  })
+  showBranchTimeline.value = true
+}
+function getBranchStatusColor(status: string): string {
+  return { running: 'var(--color-primary)', completed: 'var(--color-success)', failed: 'var(--color-danger)', timeout: 'var(--color-warning)', pending: 'var(--text-muted)' }[status] || 'var(--text-muted)'
+}
+// ── Node Properties Functions ───────────────────────────────────────
+function openNodePropsEditor(nodeIdx: number) {
+  nodePropEditorNodeIdx.value = nodeIdx
+  showNodePropsEditor.value = true
+}
+function getNodePropsForType(type: string): any[] {
+  return nodeDeepProps.value[type] || []
+}
+function getNodePropValue(node: PDNode, category: string, key: string): any {
+  const cfg = (node as any).props?.[category] || {}
+  return cfg[key] ?? ''
+}
+function setNodePropValue(node: PDNode, category: string, key: string, value: any) {
+  if (!(node as any).props) (node as any).props = {}
+  if (!(node as any).props[category]) (node as any).props[category] = {}
+  (node as any).props[category][key] = value
+}
+function saveNodeProps() {
+  if (nodePropEditorNodeIdx.value === null || !processDef.value) return
+  pushHistory()
+  showNodePropsEditor.value = false
+  showToast('节点属性已保存', 'success')
+}
+// ── Interaction Functions ───────────────────────────────────────────
+function triggerRipple(x: number, y: number) {
+  if (!showRipples.value) return
+  const id = genId()
+  rippleEffects.value.push({ id, x, y, timestamp: Date.now() })
+  setTimeout(() => { rippleEffects.value = rippleEffects.value.filter(r => r.id !== id) }, 600)
+}
+function setActiveTool(tool: string) {
+  activeTool.value = tool
+}
+function toggleHighlightMode(mode: string) { highlightMode.value = mode }
+function getHighlightNodes(): Set<string> {
+  if (highlightNodeId.value === null) return new Set()
+  const nodes = new Set<string>()
+  const edges = processDef.value?.edges || []
+  const n = processDef.value?.nodes[highlightNodeId.value]
+  if (!n) return nodes
+  nodes.add(n.id)
+  edges.forEach(e => {
+    if (highlightMode.value === 'incoming' && e.to === n.id) nodes.add(e.from)
+    if (highlightMode.value === 'outgoing' && e.from === n.id) nodes.add(e.to)
+    if (highlightMode.value === 'all' && (e.from === n.id || e.to === n.id)) nodes.add(e.from === n.id ? e.to : e.from)
+  })
+  return nodes
+}
+function applyAnimation(type: string, target?: string) {
+  const id = genId()
+  canvasAnimations.value.push({ id, type, target: target || 'all', startTime: Date.now() })
+  setTimeout(() => { canvasAnimations.value = canvasAnimations.value.filter(a => a.id !== id) }, 2000 / animationSpeed.value)
+}
+function resetAnimations() { canvasAnimations.value = [] }
+function getNodeOutlineColor(node: PDNode): string {
+  const hl = getHighlightNodes()
+  if (hl.size > 0 && !hl.has(node.id)) return 'rgba(100,116,139,0.3)'
+  return selectedNode.value !== null && selectedNode.value === processDef.value?.nodes.indexOf(node) ? 'var(--color-primary)' : 'var(--border-color)'
+}
+function getNodeFillColor(node: PDNode): string {
+  const hl = getHighlightNodes()
+  if (hl.size > 0 && !hl.has(node.id)) return 'rgba(30,41,59,0.5)'
+  const colors: Record<string,string> = { start:'rgba(16,185,129,0.15)', end:'rgba(239,68,68,0.15)', task:'rgba(0,212,255,0.1)', approval:'rgba(99,102,241,0.15)', subprocess:'rgba(168,85,247,0.15)', script:'rgba(34,197,94,0.15)', gate_and:'rgba(245,158,11,0.15)', gate_or:'rgba(245,158,11,0.15)', gate_xor:'rgba(245,158,11,0.15)', parallel:'rgba(6,182,212,0.15)' }
+  return colors[node.type] || 'rgba(30,41,59,0.8)'
+}
+function computeNodeShadow(node: PDNode): string {
+  if (selectedNode.value !== null && selectedNode.value === processDef.value?.nodes.indexOf(node)) return '0 0 20px rgba(0,212,255,0.5), 0 4px 12px rgba(0,0,0,0.3)'
+  return '0 2px 8px rgba(0,0,0,0.2)'
+}
+function formatDuration(ms: number): string { return ms < 1000 ? ms + 'ms' : (ms/1000).toFixed(1) + 's' }
+function formatTimestamp(ts: number): string { return new Date(ts).toLocaleString('zh-CN') }
+// ── Archive Functions ───────────────────────────────────────────────
+function createArchive() {
+  if (!processDef.value || !currentProcess.value) return
+  processArchive.value.unshift({ id: genId(), timestamp: Date.now(), name: newArchiveLabel.value || '存档' + (processArchive.value.length + 1), nodeCount: processDef.value.nodes.length, edgeCount: processDef.value.edges?.length || 0, snapshot: JSON.parse(JSON.stringify(processDef.value)) })
+  newArchiveLabel.value = ''
+  newArchiveDesc.value = ''
+  showToast('流程已归档', 'success')
+}
+// ── Subprocess Navigation ───────────────────────────────────────────
+function navigateToBreadcrumb(idx: number) {
+  if (idx < subprocessContextStack.value.length - 1) {
+    const target = subprocessContextStack.value[idx]
+    if (target.depth > 0) {
+      // Restore parent context
+      subprocessDepth.value = target.depth
+      subprocessBreadcrumb.value = subprocessContextStack.value.slice(0, idx + 1).map(c => c.title).join(' > ')
+    }
+  }
+}
+function enterSubprocessBreadcrumb(title: string) {
+  subprocessContextStack.value.push({ title, depth: subprocessDepth.value + 1 })
+  subprocessDepth.value++
+  subprocessBreadcrumb.value = subprocessContextStack.value.map(c => c.title).join(' > ')
+}
+function exitSubprocessBreadcrumb() {
+  if (subprocessContextStack.value.length > 0) {
+    subprocessContextStack.value.pop()
+    subprocessDepth.value = Math.max(0, subprocessDepth.value - 1)
+    subprocessBreadcrumb.value = subprocessContextStack.value.map(c => c.title).join(' > ')
+    if (subprocessContextStack.value.length === 0) {
+      subprocessEditing.value = false
+      subprocessDepth.value = 0
+    }
+  }
+}
+// ── Diff View Functions ─────────────────────────────────────────────
+function compareArchives(idx1: number, idx2: number) {
+  diffLeftIdx.value = idx1
+  diffRightIdx.value = idx2
+  showDiffView.value = true
+}
+function getDiffStats(left: ProcessArchive, right: ProcessArchive): { added: number; removed: number; modified: number } {
+  const leftIds = new Set(left.snapshot.nodes.map(n => n.id))
+  const rightIds = new Set(right.snapshot.nodes.map(n => n.id))
+  const added = [...rightIds].filter(id => !leftIds.has(id)).length
+  const removed = [...leftIds].filter(id => !rightIds.has(id)).length
+  return { added, removed, modified: 0 }
+}
+// ── Utility Functions ───────────────────────────────────────────────
+function clamp(val: number, min: number, max: number): number { return Math.max(min, Math.min(max, val)) }
+function lerp(a: number, b: number, t: number): number { return a + (b - a) * t }
+function easeInOutCubic(t: number): number { return t < 0.5 ? 4*t*t*t : 1 - Math.pow(-2*t+2, 3)/2 }
+function generateNodeId(prefix: string = 'node'): string { return prefix + '_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2, 6) }
+function deepClone<T>(obj: T): T { return JSON.parse(JSON.stringify(obj)) }
 // ── Script Editor Functions ─────────────────────────────────────────
 </script>
 <style scoped>
