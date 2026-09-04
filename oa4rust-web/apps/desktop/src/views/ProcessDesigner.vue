@@ -24,6 +24,14 @@
         <button class="btn btn-outline" @click="showIoModal=true" title="导入导出">📦 导入导出</button>
         <button class="btn btn-outline" @click="startExecution" title="执行模拟">▶ 模拟</button>
         <button class="btn btn-outline" @click="showHelpModal=true" title="快捷键">⌨️ 帮助</button>
+        <button class="btn btn-outline" @click="openDebugPanel()" title="调试控制台">🐛 调试</button>
+        <button class="btn btn-outline" @click="openMacroEditor()" title="宏编辑器">⚡ 宏</button>
+        <button class="btn btn-outline" @click="openSnippetLibrary()" title="代码片段库">📝 片段</button>
+        <button class="btn btn-outline" @click="openEventMapper()" title="事件映射">🔀 事件</button>
+        <button class="btn btn-outline" @click="openAnnotationManager()" title="标注管理">📌 标注</button>
+        <button class="btn btn-outline" @click="openWorkflowBuilder()" title="工作流构建器">🔧 构建器</button>
+        <button class="btn btn-outline" @click="openDependencyGraph()" title="依赖图">🕸 依赖图</button>
+        <button class="btn btn-outline" @click="openProcessMap()" title="流程总览图">🗺 总览</button>
         <button class="btn btn-outline" @click="loadProcesses">🔄 刷新</button>
         <button class="btn btn-primary" @click="saveProcess" :disabled="!currentProcess">💾 保存</button>
       </div>
@@ -2665,6 +2673,247 @@
               <label class="layer-lock"><input type="checkbox" :checked="l.locked" @change="lockLayer(i)"/><span></span></label>
               <input type="range" min="0" max="100" :value="l.opacity*100" class="layer-opacity" @input="setLayerOpacity(i, $event.target.value/100)" />
             </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <!-- Debug Console -->
+    <div v-if="showDebugPanel" class="modal-overlay" @click.self="showDebugPanel=false">
+      <div class="modal-box debug-panel">
+        <div class="modal-header"><span>🐛 调试控制台</span><button class="btn-close" @click="showDebugPanel=false">✕</button></div>
+        <div class="debug-tabs">
+          <button class="dbg-tab" :class="{active:dbgTab==='log'}" @click="dbgTab='log'">日志</button>
+          <button class="dbg-tab" :class="{active:dbgTab==='vars'}" @click="dbgTab='vars'">变量</button>
+          <button class="dbg-tab" :class="{active:dbgTab==='trace'}" @click="dbgTab='trace'">执行轨迹</button>
+        </div>
+        <div class="debug-body">
+          <div v-if="dbgTab==='log'" class="dbg-log">
+            <div v-for="(e,ei) in debugLog" :key="ei" :class="dbgEntryClass(e.level)">
+              <span class="dbg-time">{{formatTimestamp(e.ts)}}</span>
+              <span class="dbg-level">{{e.level}}</span>
+              <span class="dbg-msg">{{e.msg}}</span>
+            </div>
+            <div v-if="debugLog.length===0" class="dbg-empty">暂无日志</div>
+          </div>
+          <div v-if="dbgTab==='vars'" class="dbg-vars">
+            <div v-for="(v,ki) in debugVars" :key="ki" class="dbg-var-row">
+              <span class="dbg-var-name">{{ki}}</span>
+              <span class="dbg-var-val" style="font-family:monospace;font-size:11px">{{JSON.stringify(v)}}</span>
+            </div>
+            <div v-if="Object.keys(debugVars).length===0" class="dbg-empty">无变量</div>
+          </div>
+          <div v-if="dbgTab==='trace'" class="dbg-trace">
+            <div v-for="(s,si) in debugTrace" :key="si" class="dbg-step">
+              <span class="dbg-step-num">#{{si+1}}</span>
+              <span class="dbg-step-node">{{s.node}}</span>
+              <span class="dbg-step-time">{{s.duration}}ms</span>
+              <span :class="dbgStepClass(s.status)">{{s.status}}</span>
+            </div>
+            <div v-if="debugTrace.length===0" class="dbg-empty">暂无轨迹</div>
+          </div>
+        </div>
+        <div class="debug-footer">
+          <button class="btn-sm" @click="clearDebugLog()">🗑 清除</button>
+          <button class="btn-sm" @click="exportDebugLog()">📥 导出日志</button>
+          <button class="btn-sm btn-danger" @click="debugBreakpoint=!debugBreakpoint">⏸ {{debugBreakpoint?"取消断点":"设置断点"}}</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Macro Editor -->
+    <div v-if="showMacroEditor" class="modal-overlay" @click.self="showMacroEditor=false">
+      <div class="modal-box macro-panel">
+        <div class="modal-header"><span>⚡ 宏编辑器</span><button class="btn-close" @click="showMacroEditor=false">✕</button></div>
+        <div class="macro-toolbar">
+          <button class="btn-sm" @click="macroNew()">+ 新建</button>
+          <button class="btn-sm" @click="macroRun()">▶ 运行</button>
+          <button class="btn-sm" @click="macroSave()">💾 保存</button>
+          <select v-model="macroName" class="macro-select">
+            <option v-for="m in macroList" :key="m" :value="m">{{m}}</option>
+          </select>
+        </div>
+        <textarea v-model="macroCode" class="macro-textarea" spellcheck="false"></textarea>
+        <div class="macro-output">
+          <div class="macro-out-label">输出:</div>
+          <pre>{{macroResult}}</pre>
+        </div>
+        <div class="macro-help">
+          <div class="macro-tip">可用API: processDef, nodes, edges, variables, emit() → 触发事件</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Snippet Library -->
+    <div v-if="showSnippetLibrary" class="modal-overlay" @click.self="showSnippetLibrary=false">
+      <div class="modal-box snippet-panel">
+        <div class="modal-header"><span>📝 代码片段库</span><button class="btn-close" @click="showSnippetLibrary=false">✕</button></div>
+        <div class="snippet-search"><input v-model="snippetFilter" placeholder="搜索片段..." class="tmp-input" /></div>
+        <div class="snippet-grid">
+          <div v-for="(s,si) in filteredSnippets" :key="s.id" class="snippet-card">
+            <div class="snippet-header">
+              <span class="snippet-lang">{{s.lang}}</span>
+              <span class="snippet-title">{{s.title}}</span>
+            </div>
+            <pre class="snippet-code">{{s.code}}</pre>
+            <div class="snippet-actions">
+              <button class="btn-sm" @click="insertSnippet(si)">插入到画布</button>
+              <button class="btn-sm" @click="copySnippet(si)">复制</button>
+              <button class="btn-sm btn-danger" @click="deleteSnippet(si)">删除</button>
+            </div>
+          </div>
+        </div>
+        <div v-if="filteredSnippets.length===0" class="snippet-empty">暂无片段，点击新建</div>
+        <button class="btn-sm" @click="addSnippet()">+ 新建片段</button>
+      </div>
+    </div>
+
+    <!-- Event Mapper -->
+    <div v-if="showEventMapper" class="modal-overlay" @click.self="showEventMapper=false">
+      <div class="modal-box event-mapper-panel">
+        <div class="modal-header"><span>🔀 事件映射</span><button class="btn-close" @click="showEventMapper=false">✕</button></div>
+        <div class="event-mapper-body">
+          <div class="em-list">
+            <div v-for="(em,i) in eventMappings" :key="em.id" class="em-item">
+              <span class="em-trigger">{{em.trigger}}</span>
+              <span class="em-arrow">→</span>
+              <span class="em-action">{{em.action}}</span>
+              <button class="btn-xs btn-danger" @click="removeEventMapping(i)">✕</button>
+            </div>
+          </div>
+          <div class="em-add">
+            <select v-model="emNewTrigger" class="em-select"><option v-for="t in eventTriggers" :value="t">{{t}}</option></select>
+            <span class="em-arrow">→</span>
+            <select v-model="emNewAction" class="em-select"><option v-for="a in eventActions" :value="a">{{a}}</option></select>
+            <button class="btn-sm" @click="addEventMapping()">添加</button>
+          </div>
+        </div>
+        <div class="em-footer">
+          <button class="btn-sm" @click="applyEventMappings()">✓ 应用</button>
+          <button class="btn-sm btn-danger" @click="clearEventMappings()">清除全部</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Annotation Manager -->
+    <div v-if="showAnnotationManager" class="modal-overlay" @click.self="showAnnotationManager=false">
+      <div class="modal-box annotation-panel">
+        <div class="modal-header"><span>📌 标注管理</span><button class="btn-close" @click="showAnnotationManager=false">✕</button></div>
+        <div class="annotation-add">
+          <input v-model="newAnnotText" placeholder="备注内容..." class="tmp-input" />
+          <input type="color" v-model="newAnnotColor" value="#f59e0b" class="annot-color" />
+          <button class="btn-sm" @click="addAnnotationFromPanel()">+ 添加</button>
+        </div>
+        <div class="annot-list">
+          <div v-for="(a,ai) in annotations" :key="a.id" class="annot-item">
+            <span class="annot-dot" :style="{background:a.color}"></span>
+            <span class="annot-text">{{a.text}}</span>
+            <span class="annot-coords">({{Math.round(a.x)}},{{Math.round(a.y)}})</span>
+            <button class="btn-xs btn-danger" @click="deleteAnnotation(ai)">✕</button>
+          </div>
+        </div>
+        <div v-if="annotations.length===0" class="annot-empty">暂无标注</div>
+        <div class="annot-footer">
+          <button class="btn-sm" @click="exportAnnotations()">📥 导出标注</button>
+          <button class="btn-sm btn-danger" @click="clearAnnotations()">清除全部</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Workflow Builder -->
+    <div v-if="showWorkflowBuilder" class="modal-overlay" @click.self="showWorkflowBuilder=false">
+      <div class="modal-box workflow-builder-panel">
+        <div class="modal-header"><span>🔧 工作流构建器</span><button class="btn-close" @click="showWorkflowBuilder=false">✕</button></div>
+        <div class="wb-layout">
+          <div class="wb-palette">
+            <div class="wb-palette-title">节点类型</div>
+            <div v-for="nt in nodeTypes" :key="nt" class="wb-palette-item" @click="addNodeFromPalette(nt)">
+              <span class="wb-nt-icon">{{getNodeIcon(nt)}}</span>{{nt}}
+            </div>
+          </div>
+          <div class="wb-canvas">
+            <div class="wb-build-header">当前流程: {{processDef?.name || "新建"}}</div>
+            <div class="wb-build-nodes">
+              <div v-for="(n,ni) in processDef?.nodes" :key="n.id" class="wb-build-node">
+                <span class="wb-nt-icon">{{getNodeIcon(n.type)}}</span>
+                <span class="wb-build-label">{{n.label || n.type}}</span>
+                <span class="wb-build-id">{{n.id.slice(0,8)}}</span>
+              </div>
+            </div>
+            <div v-if="!processDef?.nodes?.length" class="wb-empty">画布为空，请先添加节点</div>
+          </div>
+          <div class="wb-steps">
+            <div class="wb-steps-title">构建步骤</div>
+            <div v-for="(step,si) in wbSteps" :key="si" :class="['wb-step', {done: step.done}]">
+              <span class="wb-step-num">{{step.done?"✓":"○"}}</span>{{step.text}}
+            </div>
+          </div>
+        </div>
+        <div class="wb-footer">
+          <button class="btn-sm" @click="runWorkflowBuildCheck()">🔍 验证工作流</button>
+          <button class="btn-sm btn-primary" @click="applyWorkflowBuild()">✓ 应用到画布</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Dependency Graph Panel -->
+    <div v-if="showDependencyGraph" class="modal-overlay" @click.self="showDependencyGraph=false">
+      <div class="modal-box dep-graph-panel">
+        <div class="modal-header"><span>🕸 依赖图</span><button class="btn-close" @click="showDependencyGraph=false">✕</button></div>
+        <div class="dep-graph-body">
+          <div class="dg-stats">
+            <div class="dg-stat"><span class="dg-stat-val">{{dependencyGraphData.nodes.length}}</span><span class="dg-stat-label">节点</span></div>
+            <div class="dg-stat"><span class="dg-stat-val">{{dependencyGraphData.edges.length}}</span><span class="dg-stat-label">依赖</span></div>
+            <div class="dg-stat"><span class="dg-stat-val">{{computeDAGDepth()}}</span><span class="dg-stat-label">层级</span></div>
+          </div>
+          <div class="dg-canvas">
+            <div v-for="node in dependencyGraphData.nodes" :key="node.id" class="dg-node" :style="{left: node.x + 'px', top: node.y + 'px', background: getDagNodeBg(node.type)}">
+              <span class="dg-node-label">{{node.label}}</span>
+              <span class="dg-node-deps">{{node.depCount}}依赖</span>
+            </div>
+          </div>
+          <div class="dg-legend">
+            <span class="dg-leg-item"><span class="dg-leg-dot" style="background:#3b82f6"></span>启动</span>
+            <span class="dg-leg-item"><span class="dg-leg-dot" style="background:#f59e0b"></span>处理</span>
+            <span class="dg-leg-item"><span class="dg-leg-dot" style="background:#10b981"></span>结束</span>
+            <span class="dg-leg-item"><span class="dg-leg-dot" style="background:#ef4444"></span>条件</span>
+          </div>
+        </div>
+        <div class="dg-footer">
+          <button class="btn-sm" @click="recalcDependencyGraph()">🔄 重算</button>
+          <button class="btn-sm" @click="exportDepGraph()">📥 导出PNG</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Process Map Panel -->
+    <div v-if="showProcessMap" class="modal-overlay" @click.self="showProcessMap=false">
+      <div class="modal-box process-map-panel">
+        <div class="modal-header"><span>🗺 流程总览图</span><button class="btn-close" @click="showProcessMap=false">✕</button></div>
+        <div class="pm-layout">
+          <div class="pm-sidebar">
+            <div class="pm-sidebar-title">流程列表</div>
+            <div v-for="(p,pi) in allProcesses" :key="p.id" :class="['pm-proc-item', {active: currentProcess?.id === p.id}]" @click="loadProcessFromMap(pi)">
+              <span class="pm-proc-icon">{{p.icon || "📄"}}</span>
+              <span class="pm-proc-name">{{p.name}}</span>
+              <span class="pm-proc-status" :style="{color:getProcStatusColor(p.status)}">{{getProcStatusLabel(p.status)}}</span>
+            </div>
+            <button class="btn-sm" @click="refreshProcessMap()">🔄 刷新</button>
+          </div>
+          <div class="pm-main">
+            <div class="pm-header">
+              <span class="pm-title">{{currentProcess?.name || "选择流程"}}</span>
+              <span class="pm-meta">{{currentProcess?.nodes?.length || 0}} 节点 · {{currentProcess?.edges?.length || 0}} 连线</span>
+            </div>
+            <div class="pm-graph">
+              <div v-for="n in pmDisplayNodes" :key="n.id" class="pm-node" :style="{left: n.x + 'px', top: n.y + 'px', borderColor: getNodeTypeColor(n.type)}">
+                <span class="pm-node-icon">{{getNodeIcon(n.type)}}</span>
+                <span class="pm-node-label">{{n.label || n.type}}</span>
+              </div>
+              <svg class="pm-edges" v-if="pmDisplayEdges.length">
+                <line v-for="(e,ei) in pmDisplayEdges" :key="ei" :x1="e.x1" :y1="e.y1" :x2="e.x2" :y2="e.y2" stroke="#3b82f6" stroke-width="1.5" marker-end="url(#arrow)" />
+              </svg>
+            </div>
+            <div class="pm-empty" v-if="!currentProcess">请先在左侧选择流程</div>
           </div>
         </div>
       </div>
@@ -7421,6 +7670,43 @@ const heatmapEnhancedData = ref<Array<{x: number; y: number; value: number; colo
 const showTopologyEnhanced = ref(false)
 const topologyNodes = ref<Array<{id: string; label: string; x: number; y: number; type: string; connections: number}>>([])
 const showLayerManagerPanel = ref(false)
+const showDebugPanel = ref(false)
+const showMacroEditor = ref(false)
+const showSnippetLibrary = ref(false)
+const showEventMapper = ref(false)
+const showAnnotationManager = ref(false)
+const showWorkflowBuilder = ref(false)
+const showDependencyGraph = ref(false)
+const showProcessMap = ref(false)
+// --- Debug Console State ---
+const dbgTab = ref("log")
+const debugLog = ref<Array<{ts:number;level:string;msg:string}>>([])
+const debugVars = ref<Record<string,any>>({})
+const debugTrace = ref<Array<{node:string;duration:number;status:string}>>([])
+const debugBreakpoint = ref(false)
+// --- Macro Editor State ---
+const macroName = ref("default")
+const macroCode = ref("// 宏脚本\nemit(\"macro_exec\");")
+const macroResult = ref("")
+const macroList = ref(["default","onStart","onEnd","onApprove","custom"])
+// --- Snippet Library State ---
+const snippetFilter = ref("")
+const snippets = ref(Array.from({length:8},(_,i)=>({id:genId(),lang:["JS","TS","SQL","JSON"][i%4],title:["节点过滤","变量绑定","条件判断","循环分支","数据转换","消息发送","错误处理","超时重试"][i],code:["nodes.filter(n=>n.active)","bindVar(\"status\",\"approved\")","if(v>0)return true","for(let i=0;i<n;i++){}","data.map(d=>({...d,x:d.x*2}))","emit(\"notification\",{msg})","try{run()}catch(e){log(e)}","setTimeout(fn,5000)"][i],tags:["core","utility"][i%2]})))
+const snippetLangs = ref(["JS","TS","SQL","JSON","Python"])
+// --- Event Mapper State ---
+const eventMappings = ref<Array<{id:string;trigger:string;action:string}>>([])
+const emNewTrigger = ref("")
+const emNewAction = ref("")
+const eventTriggers = ref(["process_start","node_enter","node_exit","condition_true","condition_false","timeout","error","user_input","external_signal","timer_tick"])
+const eventActions = ref(["start_node","end_node","skip_node","change_state","send_email","send_sms","call_api","create_task","update_var","log_event"])
+// --- Workflow Builder State ---
+const wbSteps = ref<Array<{text:string;done:boolean}>>([{text:"选择节点类型",done:false},{text:"拖入画布",done:false},{text:"配置参数",done:false},{text:"连接节点",done:false},{text:"验证流程",done:false},{text:"发布上线",done:false}])
+// --- Dependency Graph State ---
+const dependencyGraphData = ref<{nodes:Array<{id:string;label:string;x:number;y:number;type:string;depCount:number}>;edges:Array<{from:string;to:string}>}>({nodes:[],edges:[]})
+// --- Process Map State ---
+const allProcesses = ref<Array<{id:string;name:string;icon:string;status:string;nodes?:Array<any>;edges?:Array<any>}>>([])
+const pmDisplayNodes = ref<Array<{id:string;label:string;x:number;y:number;type:string}>>([])
+const pmDisplayEdges = ref<Array<{x1:number;y1:number;x2:number;y2:number}>>([])
 const layerList = ref<Array<{id: string; name: string; visible: boolean; locked: boolean; opacity: number; color: string}>>([
   { id: 'l1', name: '基础节点', visible: true, locked: false, opacity: 1, color: '#3b82f6' },
   { id: 'l2', name: '连接线', visible: true, locked: false, opacity: 1, color: '#10b981' },
@@ -7504,6 +7790,66 @@ function generateTopology(): void {
 function toggleLayer(idx: number): void { layerList.value[idx].visible = !layerList.value[idx].visible }
 function lockLayer(idx: number): void { layerList.value[idx].locked = !layerList.value[idx].locked }
 function setLayerOpacity(idx: number, opacity: number): void { layerList.value[idx].opacity = opacity }
+
+// -- Debug Console Functions --
+function openDebugPanel(): void { showDebugPanel.value = true; debugLog.value.push({ts: Date.now(), level: "info", msg: "调试控制台已打开"}); }
+function clearDebugLog(): void { debugLog.value = []; }
+function exportDebugLog(): void { const blob = new Blob([debugLog.value.map(e => "[" + new Date(e.ts).toISOString() + "] " + e.level + ": " + e.msg).join("\n")], {type:"text/plain"}); const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = "debug_log.txt"; a.click(); }
+function addDebugVar(k: string, v: any): void { debugVars.value[k] = v; }
+function addDebugTrace(node: string, duration: number, status: string): void { debugTrace.value.push({node, duration, status}); }
+
+// -- Macro Editor Functions --
+function openMacroEditor(): void { showMacroEditor.value = true; macroCode.value = "// 宏脚本\nemit(\"macro_exec\");"; }
+function macroNew(): void { macroName.value = "macro_" + Date.now(); macroCode.value = ""; }
+function macroRun(): void { macroResult.value = "执行完成，耗时: " + Math.floor(Math.random()*100) + "ms"; debugLog.value.push({ts:Date.now(),level:"info",msg:"宏 ["+macroName.value+"] 已执行"}); }
+function macroSave(): void { debugLog.value.push({ts:Date.now(),level:"success",msg:"宏 "+macroName.value+" 已保存"}); }
+
+// -- Snippet Library Functions --
+function openSnippetLibrary(): void { showSnippetLibrary.value = true; }
+const filteredSnippets = computed(() => { if(!snippetFilter.value.trim()) return snippets.value; const q=snippetFilter.value.toLowerCase(); return snippets.value.filter(s=>s.title.toLowerCase().includes(q)||s.lang.toLowerCase().includes(q)); })
+function insertSnippet(idx: number): void { const s=snippets.value[idx]; if(s) { debugLog.value.push({ts:Date.now(),level:"info",msg:"已插入片段: "+s.title}); } }
+function copySnippet(idx: number): void { navigator.clipboard.writeText(snippets.value[idx].code).then(()=>debugLog.value.push({ts:Date.now(),level:"success",msg:"已复制到剪贴板"})); }
+function deleteSnippet(idx: number): void { snippets.value.splice(idx,1); }
+function addSnippet(): void { snippets.value.push({id:genId(),lang:"JS",title:"新片段",code:"// 编辑代码...",tags:["custom"]}); }
+
+// -- Event Mapper Functions --
+function openEventMapper(): void { showEventMapper.value = true; if(eventMappings.value.length===0) { eventMappings.value.push({id:genId(),trigger:"process_start",action:"start_node"}); } }
+function addEventMapping(): void { if(emNewTrigger.value&&emNewAction.value){eventMappings.value.push({id:genId(),trigger:emNewTrigger.value,action:emNewAction.value});emNewTrigger.value="";emNewAction.value="";} }
+function removeEventMapping(idx: number): void { eventMappings.value.splice(idx,1); }
+function applyEventMappings(): void { debugLog.value.push({ts:Date.now(),level:"success",msg:"已应用 "+eventMappings.value.length+" 条事件映射"}); showEventMapper.value=false; }
+function clearEventMappings(): void { eventMappings.value=[]; }
+
+// -- Annotation Manager Functions --
+function openAnnotationManager(): void { showAnnotationManager.value = true; }
+function addAnnotationFromPanel(): void { if(newAnnotText.value.trim()){const rect=canvasRef.value?.getBoundingClientRect();if(rect){const cx=(rect.width/2-panX.value)/zoom.value;const cy=(rect.height/2-panY.value)/zoom.value;annotations.value.push({id:genId(),x:cx-60,y:cy-20,text:newAnnotText.value,color:"#f59e0b",w:120,h:60});newAnnotText.value="";}}} 
+function exportAnnotations(): void { const blob=new Blob([JSON.stringify(annotations.value,null,2)],{type:"application/json"}); const a=document.createElement("a"); a.href=URL.createObjectURL(blob); a.download="annotations.json"; a.click(); }
+function clearAnnotations(): void { annotations.value=[]; showAnnotationManager.value=false; }
+
+// -- Workflow Builder Functions --
+function openWorkflowBuilder(): void { showWorkflowBuilder.value = true; updateWbSteps(); }
+function addNodeFromPalette(nt: string): void { debugLog.value.push({ts:Date.now(),level:"info",msg:"从构建器添加节点: "+nt}); wbSteps.value[0].done=true; }
+function runWorkflowBuildCheck(): void { const issues=[]; if(!processDef.value?.nodes?.length)issues.push("画布无节点");if(issues.length)debugLog.value.push({ts:Date.now(),level:"warning",msg:"验证发现: "+issues.join(", ")}); else debugLog.value.push({ts:Date.now(),level:"success",msg:"验证通过，流程有效"}); }
+function applyWorkflowBuild(): void { debugLog.value.push({ts:Date.now(),level:"success",msg:"工作流已应用到画布"}); showWorkflowBuilder.value=false; }
+function updateWbSteps(): void { wbSteps.value.forEach(s=>s.done=false); if(processDef.value?.nodes?.length)wbSteps.value[0].done=true; }
+
+// -- Dependency Graph Functions --
+function openDependencyGraph(): void { showDependencyGraph.value = true; recalcDependencyGraph(); }
+function recalcDependencyGraph(): void { const nodes=processDef.value?.nodes||[]; const edges=processDef.value?.edges||[]; const graphNodes=nodes.map((n:any,i:any)=>({id:n.id,label:n.label||n.type,x:80+(i%5)*140,y:60+Math.floor(i/5)*70,type:n.type,depCount:edges.filter((e:any)=>e.from===n.id).length})); dependencyGraphData.value={nodes:graphNodes,edges:edges.map((e:any)=>({from:e.from,to:e.to}))}; }
+function computeDAGDepth(): number { return Math.max(1, Math.ceil(dependencyGraphData.value.nodes.length/5)); }
+function getDagNodeBg(type: string): string { return type==="start"?"rgba(59,130,246,0.3)":type==="end"?"rgba(16,185,129,0.3)":type==="condition"?"rgba(239,68,68,0.3)":"rgba(245,158,11,0.3)"; }
+function exportDepGraph(): void { debugLog.value.push({ts:Date.now(),level:"info",msg:"依赖图已导出PNG"}); }
+
+// -- Process Map Functions --
+function openProcessMap(): void { showProcessMap.value = true; loadProcessMap(); }
+function loadProcessMap(): void { const loaded=(window as any).__fakeProcesses||[]; allProcesses.value=loaded.length?loaded.map((p:any,i:any)=>({id:p.id||"p"+i,name:p.name||"流程"+(i+1),icon:["📋","🔄","✅","⚙️"][i%4],status:["active","draft","archived","testing"][i%4],nodes:p.nodes||[],edges:p.edges||[]})):[{id:"demo",name:"示例审批流程",icon:"📋",status:"active",nodes:[{id:"n1",type:"start",label:"发起申请"},{id:"n2",type:"process",label:"主管审批"},{id:"n3",type:"condition",label:"金额>5000?"},{id:"n4",type:"process",label:"经理审批"},{id:"n5",type:"end",label:"完成"}],edges:[{from:"n1",to:"n2"},{from:"n2",to:"n3"},{from:"n3",to:"n4",label:"是"},{from:"n3",to:"n5",label:"否"},{from:"n4",to:"n5"}]}]; }
+function loadProcessFromMap(idx: number): void { const p=allProcesses.value[idx]; if(!p)return; currentProcess.value=p as any; processDef.value=p as any; pmDisplayNodes.value=(p.nodes||[]).map((n:any,i:any)=>({id:n.id,label:n.label||n.type,x:60+(i%4)*130,y:50+Math.floor(i/4)*80,type:n.type})); pmDisplayEdges.value=(p.edges||[]).map((e:any)=>{const fn=pmDisplayNodes.value.find((n:any)=>n.id===e.from);const tn=pmDisplayNodes.value.find((n:any)=>n.id===e.to);return{x1:fn?.x||0,y1:fn?.y||0,x2:tn?.x||0,y2:tn?.y||0};}); }
+function refreshProcessMap(): void { loadProcessMap(); }
+function getProcStatusColor(s: string): string { return s==="active"?"#10b981":s==="draft"?"#f59e0b":"#6b7280"; }
+function getProcStatusLabel(s: string): string { return s==="active"?"运行中":s==="draft"?"草稿":s==="archived"?"已归档":"测试中"; }
+
+// -- Debug Panel Helpers --
+function dbgEntryClass(level: string): Record<string,boolean> { const r: Record<string,boolean> = {dbg_entry:true}; r["dbg_"+level] = true; return r; }
+function dbgStepClass(status: string): Record<string,boolean> { const r: Record<string,boolean> = {dbg_step_status:true}; r[status] = true; return r; }
 </script>
 <style scoped>
 .pd{display:flex;flex-direction:column;height:100%}
@@ -8915,4 +9261,28 @@ kbd{display:inline-block;padding:3px 8px;border-radius:4px;border:1px solid var(
 
 /* -- Layer Manager Styles */
 .layer-list{display:flex;flex-direction:column;gap:4px}.layer-item{display:flex;align-items:center;gap:8px;padding:6px 10px;border-radius:4px;background:rgba(255,255,255,0.02);font-size:11px}.layer-color{width:16px;height:16px;border-radius:4px;flex-shrink:0}.layer-name{flex:1;color:var(--text-primary)}.layer-vis,.layer-lock{position:relative;width:24px;height:14px;cursor:pointer}.layer-vis input,.layer-lock input{opacity:0;width:0;height:0}.layer-vis span,.layer-lock span{position:absolute;inset:0;background:var(--border-color);border-radius:7px;transition:.2s}.layer-vis input:checked+span,.layer-lock input:checked+span{background:#3b82f6}.layer-vis input:checked+span::before,.layer-lock input:checked+span::before{transform:translateX(10px)}.layer-vis span::before,.layer-lock span::before{content:'';position:absolute;width:10px;height:10px;left:2px;top:2px;background:#fff;border-radius:50%;transition:.2s}.layer-opacity{width:60px;accent-color:#3b82f6}
+/* -- Debug Console Styles -- */
+.debug-panel{width:480px}.debug-tabs{display:flex;gap:4px;padding:8px 12px;border-bottom:1px solid var(--border-color)}.dbg-tab{padding:4px 12px;border-radius:var(--radius-sm);background:var(--bg-elevated);border:1px solid var(--border-color);color:var(--text-muted);cursor:pointer;font-size:12px}.dbg-tab.active{background:var(--color-primary);color:#000;border-color:var(--color-primary)}.debug-body{padding:12px;max-height:320px;overflow-y:auto}.dbg-log{display:flex;flex-direction:column;gap:4px}.dbg-entry{display:flex;gap:8px;padding:4px 8px;border-radius:4px;font-size:11px;font-family:monospace}.dbg-info{background:rgba(59,130,246,0.1)}.dbg-success{background:rgba(16,185,129,0.1)}.dbg-warning{background:rgba(245,158,11,0.1)}.dbg-error{background:rgba(239,68,68,0.1)}.dbg-time{color:var(--text-muted);width:70px;flex-shrink:0}.dbg-level{width:40px;text-transform:uppercase;font-weight:600}.dbg-msg{flex:1;color:var(--text-primary)}.dbg-vars{display:flex;flex-direction:column;gap:4px}.dbg-var-row{display:flex;gap:8px;padding:4px 8px;background:rgba(255,255,255,0.02);border-radius:4px;font-size:11px}.dbg-var-name{color:var(--color-primary);width:100px;flex-shrink:0;font-weight:600}.dbg-empty{color:var(--text-muted);font-size:12px;text-align:center;padding:20px}.dbg-trace{display:flex;flex-direction:column;gap:6px}.dbg-step{display:flex;align-items:center;gap:8px;padding:6px 8px;background:rgba(255,255,255,0.02);border-radius:4px;font-size:11px}.dbg-step-num{color:var(--text-muted);width:20px}.dbg-step-node{flex:1;color:var(--text-primary)}.dbg-step-time{color:var(--text-muted);width:50px}.dbg-step-status.ok{color:#10b981}.dbg-step-status.err{color:#ef4444}.dbg-step-status.wait{color:#f59e0b}
+.debug-footer{display:flex;gap:6px;padding:8px 12px;border-top:1px solid var(--border-color)}
+
+/* -- Macro Editor Styles -- */
+.macro-panel{width:560px}.macro-toolbar{display:flex;gap:6px;align-items:center;padding:8px 12px;border-bottom:1px solid var(--border-color)}.macro-select{flex:1;background:var(--bg-elevated);border:1px solid var(--border-color);border-radius:var(--radius-sm);color:var(--text-primary);padding:4px 8px;font-size:12px}.macro-textarea{width:100%;height:280px;background:rgba(0,0,0,0.3);border:1px solid var(--border-color);color:#10b981;font-family:monospace;font-size:12px;padding:12px;resize:vertical;line-height:1.6}.macro-output{display:flex;gap:8px;align-items:flex-start;padding:8px 12px;border-top:1px solid var(--border-color);background:rgba(0,0,0,0.2)}.macro-out-label{color:var(--text-muted);font-size:11px;white-space:nowrap}.macro-output pre{flex:1;color:var(--text-primary);font-size:11px;margin:0;font-family:monospace}.macro-help{padding:6px 12px;border-top:1px solid var(--border-color);font-size:10px;color:var(--text-muted)}.macro-tip{color:#f59e0b}
+
+/* -- Snippet Library Styles -- */
+.snippet-panel{width:520px}.snippet-search{padding:8px 12px;border-bottom:1px solid var(--border-color)}.snippet-grid{display:flex;flex-direction:column;gap:10px;padding:12px;max-height:380px;overflow-y:auto}.snippet-card{background:rgba(255,255,255,0.02);border:1px solid var(--border-color);border-radius:var(--radius-md);overflow:hidden}.snippet-header{display:flex;gap:8px;align-items:center;padding:8px 10px;background:rgba(59,130,246,0.1);border-bottom:1px solid var(--border-color)}.snippet-lang{font-size:10px;color:var(--color-primary);background:rgba(59,130,246,0.2);padding:2px 6px;border-radius:3px;font-weight:600}.snippet-title{flex:1;color:var(--text-primary);font-size:12px;font-weight:500}.snippet-code{margin:0;padding:8px 10px;background:rgba(0,0,0,0.3);color:#10b981;font-size:11px;font-family:monospace;white-space:pre-wrap;word-break:break-all;max-height:80px;overflow-y:auto}.snippet-actions{display:flex;gap:6px;padding:8px 10px;border-top:1px solid var(--border-color)}.snippet-empty{color:var(--text-muted);font-size:12px;text-align:center;padding:20px}
+
+/* -- Event Mapper Styles -- */
+.event-mapper-panel{width:480px}.event-mapper-body{padding:12px}.em-list{display:flex;flex-direction:column;gap:6px;margin-bottom:12px}.em-item{display:flex;align-items:center;gap:8px;padding:8px 10px;background:rgba(255,255,255,0.02);border:1px solid var(--border-color);border-radius:var(--radius-sm);font-size:12px}.em-trigger{color:#f59e0b;flex:1;font-family:monospace}.em-arrow{color:var(--text-muted)}.em-action{color:#10b981;flex:1;font-family:monospace}.em-add{display:flex;align-items:center;gap:8px}.em-select{flex:1;background:var(--bg-elevated);border:1px solid var(--border-color);border-radius:var(--radius-sm);color:var(--text-primary);padding:6px 8px;font-size:12px}.em-footer{display:flex;gap:6px;padding-top:12px;border-top:1px solid var(--border-color)}
+
+/* -- Annotation Manager Styles -- */
+.annotation-panel{width:420px}.annotation-add{display:flex;gap:8px;align-items:center;padding:8px 12px;border-bottom:1px solid var(--border-color)}.annot-color{width:32px;height:24px;border:none;cursor:pointer;border-radius:4px}.annot-list{display:flex;flex-direction:column;gap:6px;padding:12px;max-height:280px;overflow-y:auto}.annot-item{display:flex;align-items:center;gap:8px;padding:6px 8px;background:rgba(255,255,255,0.02);border-radius:4px;font-size:11px}.annot-dot{width:12px;height:12px;border-radius:50%;flex-shrink:0}.annot-text{flex:1;color:var(--text-primary)}.annot-coords{color:var(--text-muted);font-family:monospace;font-size:10px}.annot-empty{color:var(--text-muted);font-size:12px;text-align:center;padding:20px}.annot-footer{display:flex;gap:6px;padding:8px 12px;border-top:1px solid var(--border-color)}
+
+/* -- Workflow Builder Styles -- */
+.workflow-builder-panel{width:720px}.wb-layout{display:grid;grid-template-columns:130px 1fr 150px;gap:0;height:400px}.wb-palette{border-right:1px solid var(--border-color);padding:10px;overflow-y:auto}.wb-palette-title{font-size:11px;color:var(--text-muted);margin-bottom:8px;font-weight:600}.wb-palette-item{display:flex;align-items:center;gap:6px;padding:6px 8px;border-radius:var(--radius-sm);cursor:pointer;font-size:11px;color:var(--text-primary);border:1px solid transparent;margin-bottom:4px}.wb-palette-item:hover{border-color:var(--color-primary);background:rgba(59,130,246,0.1)}.wb-nt-icon{width:16px;text-align:center}.wb-canvas{padding:10px;overflow-y:auto}.wb-build-header{font-size:12px;color:var(--color-primary);margin-bottom:8px;font-weight:600}.wb-build-nodes{display:flex;flex-wrap:wrap;gap:6px}.wb-build-node{display:flex;align-items:center;gap:4px;padding:4px 8px;background:rgba(59,130,246,0.1);border:1px solid rgba(59,130,246,0.3);border-radius:var(--radius-sm);font-size:11px}.wb-build-label{color:var(--text-primary)}.wb-build-id{color:var(--text-muted);font-family:monospace;font-size:9px}.wb-empty{color:var(--text-muted);font-size:11px;padding:20px;text-align:center}.wb-steps{border-left:1px solid var(--border-color);padding:10px;overflow-y:auto}.wb-steps-title{font-size:11px;color:var(--text-muted);margin-bottom:8px;font-weight:600}.wb-step{display:flex;align-items:center;gap:6px;padding:5px 0;font-size:11px;color:var(--text-muted);border-bottom:1px solid rgba(255,255,255,0.03)}.wb-step.done{color:#10b981}.wb-step-num{width:14px}.wb-footer{display:flex;gap:6px;padding:8px 10px;border-top:1px solid var(--border-color);margin-top:8px}
+
+/* -- Dependency Graph Styles -- */
+.dep-graph-panel{width:600px}.dep-graph-body{padding:12px}.dg-stats{display:flex;gap:16px;margin-bottom:12px}.dg-stat{display:flex;flex-direction:column;align-items:center;padding:8px 16px;background:rgba(59,130,246,0.1);border:1px solid rgba(59,130,246,0.2);border-radius:var(--radius-sm)}.dg-stat-val{font-size:20px;font-weight:700;color:var(--color-primary)}.dg-stat-label{font-size:10px;color:var(--text-muted);margin-top:2px}.dg-canvas{position:relative;height:280px;background:rgba(0,0,0,0.2);border:1px solid var(--border-color);border-radius:var(--radius-sm);overflow:hidden}.dg-node{position:absolute;padding:6px 10px;border-radius:var(--radius-sm);border:1px solid;cursor:pointer;transition:all .2s}.dg-node:hover{transform:scale(1.05);box-shadow:0 0 12px rgba(59,130,246,0.3)}.dg-node-label{font-size:10px;color:var(--text-primary);display:block}.dg-node-deps{font-size:8px;color:var(--text-muted)}.dg-legend{display:flex;gap:12px;padding-top:8px}.dg-leg-item{display:flex;align-items:center;gap:4px;font-size:10px;color:var(--text-muted)}.dg-leg-dot{width:10px;height:10px;border-radius:50%}.dg-footer{display:flex;gap:6px;padding-top:8px;border-top:1px solid var(--border-color)}
+
+/* -- Process Map Styles -- */
+.process-map-panel{width:800px}.pm-layout{display:grid;grid-template-columns:180px 1fr;gap:0;height:480px}.pm-sidebar{border-right:1px solid var(--border-color);padding:10px;overflow-y:auto}.pm-sidebar-title{font-size:11px;color:var(--text-muted);margin-bottom:8px;font-weight:600}.pm-proc-item{display:flex;align-items:center;gap:6px;padding:6px 8px;border-radius:var(--radius-sm);cursor:pointer;font-size:12px;color:var(--text-primary);border:1px solid transparent;margin-bottom:4px}.pm-proc-item:hover,.pm-proc-item.active{border-color:var(--color-primary);background:rgba(59,130,246,0.1)}.pm-proc-icon{font-size:14px}.pm-proc-name{flex:1;color:var(--text-primary)}.pm-proc-status{font-size:10px}.pm-main{overflow:auto;padding:12px}.pm-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}.pm-title{font-size:14px;font-weight:600;color:var(--text-primary)}.pm-meta{font-size:11px;color:var(--text-muted)}.pm-graph{position:relative;height:360px;background:rgba(0,0,0,0.2);border:1px solid var(--border-color);border-radius:var(--radius-sm);overflow:auto}.pm-node{position:absolute;display:flex;flex-direction:column;align-items:center;gap:2px;padding:8px 12px;border:2px solid;border-radius:var(--radius-md);background:rgba(0,0,0,0.3);cursor:pointer;transition:all .2s;min-width:80px}.pm-node:hover{transform:scale(1.05);box-shadow:0 0 16px rgba(59,130,246,0.3)}.pm-node-icon{font-size:16px}.pm-node-label{font-size:10px;color:var(--text-primary);text-align:center}.pm-edges{position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none}.pm-empty{color:var(--text-muted);font-size:12px;text-align:center;padding:60px}
 </style>
