@@ -1,242 +1,399 @@
 <template>
-  <div class="designer-view">
-    <div class="view-header glass-card">
-      <h1>流程设计器</h1>
-      <p class="subtitle">/jaxrs/processplatform/assemble/designer/*</p>
-      <button class="btn-create" @click="openCreate">+ 新建流程</button>
+  <div class="pd">
+    <!-- Header -->
+    <div class="pd-header glass-card">
+      <div class="pd-title"><h1>流程设计器</h1><p class="subtitle">/jaxrs/processplatform/assemble/designer/*</p></div>
+      <div class="pd-actions">
+        <button class="btn" @click="undo" :disabled="!canUndo">↩ 撤销</button>
+        <button class="btn" @click="redo" :disabled="!canRedo">↪ 重做</button>
+        <button class="btn" @click="zoomIn">🔍+</button>
+        <button class="btn" @click="zoomOut">🔍-</button>
+        <button class="btn" @click="fitCanvas">⊞ 适配</button>
+        <button class="btn btn-outline" @click="loadProcesses">🔄 刷新</button>
+        <button class="btn btn-primary" @click="saveProcess" :disabled="!currentProcess">💾 保存</button>
+      </div>
     </div>
 
-    <div class="toolbar glass-card">
-      <div class="search-box">
-        <span class="search-icon">⌕</span>
-        <input v-model="keyword" placeholder="搜索流程..." class="search-input" @keyup.enter="doSearch" />
-      </div>
-      <button class="btn-refresh" @click="loadProcesses">刷新</button>
-    </div>
-
-    <div class="content-panel glass-card">
-      <div v-if="loading" class="loading-state">
-        <div class="sk" v-for="i in 6" :key="i"></div>
-      </div>
-      <div v-else-if="processes.length === 0" class="empty-state">
-        <div class="ei">⚙️</div>
-        <p>暂无流程定义</p>
-      </div>
-      <div v-else class="process-grid">
-        <div v-for="p in processes" :key="p.id" class="process-card glass-card" @click="editProcess(p)">
-          <div class="pc-header">
-            <span class="pc-icon">⚙️</span>
-            <div class="pc-info">
-              <div class="pc-title">{{ p.name || p.processName || '未命名流程' }}</div>
-              <div class="pc-flag">{{ p.flag || p.id }}</div>
-            </div>
-            <span class="pc-status" :class="p.status || 'active'">{{ statusLabel(p) }}</span>
-          </div>
-          <div class="pc-desc">{{ p.description || p.desc || '暂无描述' }}</div>
-          <div class="pc-footer">
-            <span class="pc-time">{{ fmtTime(p.updatedAt || p.updateTime) }}</span>
-            <div class="pc-actions">
-              <button class="btn-edit" @click.stop="editProcess(p)">编辑</button>
-              <button class="btn-delete" @click.stop="deleteProcess(p)">删除</button>
-            </div>
+    <div class="pd-body">
+      <!-- Left: Process List -->
+      <aside class="pd-sidebar glass-card">
+        <div class="sb-header"><span>📋 流程列表</span><button class="btn-sm" @click="newProcess">+ 新建</button></div>
+        <div class="sb-search"><input v-model="sbFilter" placeholder="搜索..." class="sb-input" /></div>
+        <div class="sb-list">
+          <div v-if="plLoading" class="sb-loading">加载中...</div>
+          <div v-else-if="procList.length===0" class="sb-empty">暂无流程</div>
+          <div v-for="p in filteredProc" :key="p.id" class="sb-item" :class="{active:currentProcess?.id===p.id}" @click="loadProcess(p)">
+            <div class="si-icon">{{ p.status==='disabled'?'⏸':'▶' }}</div>
+            <div class="si-info"><div class="si-name">{{ p.name||p.processName||'未命名' }}</div><div class="si-meta">{{ p.flag||p.id }}</div></div>
           </div>
         </div>
-      </div>
+      </aside>
+
+      <!-- Left: Node Palette -->
+      <aside class="pd-palette glass-card" v-if="currentProcess">
+        <div class="pal-title">节点类型</div>
+        <div class="pal-grid">
+          <div v-for="nt in nodeTypes" :key="nt.type" class="pal-item" draggable="true"
+            @dragstart="onDragNode($event, nt)" @click="addNode(nt.type)">
+            <span class="ni">{{ nt.icon }}</span><span class="nl">{{ nt.label }}</span>
+          </div>
+        </div>
+        <div class="pal-sep"></div>
+        <div class="pal-title">操作</div>
+        <div class="pal-grid">
+          <div class="pal-item" @click="clearCanvas"><span class="ni">🗑</span><span class="nl">清空</span></div>
+          <div class="pal-item" @click="autoLayout"><span class="ni">⊞</span><span class="nl">自动排列</span></div>
+        </div>
+      </aside>
+
+      <!-- Center: Canvas -->
+      <main class="pd-canvas glass-card" ref="canvasRef"
+        @drop="onDropNode" @dragover.prevent
+        @click.self="selectedNode=null">
+        <div v-if="!currentProcess" class="canvas-empty">
+          <div class="ce-icon">⚙️</div>
+          <p>选择或新建流程开始设计</p>
+          <button class="btn btn-primary" @click="newProcess">+ 新建流程</button>
+        </div>
+        <div v-else class="canvas-wrap">
+          <svg class="canvas-svg" :style="svgStyle">
+            <!-- Edges -->
+            <g class="edges">
+              <path v-for="(edge,i) in processDef?.edges||[]" :key="i"
+                :d="edgePath(edge)" :class="['edge', {selected: selectedEdge===i}]"
+                @click.stop="selectedEdge=i" />
+            </g>
+            <!-- Nodes -->
+            <g class="nodes" :transform="`translate(${panX},${panY}) scale(${zoom})`">
+              <g v-for="(node,i) in processDef?.nodes||[]" :key="node.id"
+                :transform="`translate(${node.x},${node.y})`"
+                :class="['node', {selected: selectedNode===i}]"
+                @click.stop="selectNode(i)" @mousedown="onNodeDragStart($event, i)">
+                <rect :class="['node-bg', node.type]" :width="node.w||120" :height="node.h||40" rx="6" />
+                <text :x="(node.w||120)/2" :y="(node.h||40)/2+5" text-anchor="middle" class="node-label">{{ node.label||node.type }}</text>
+                <!-- Port dots -->
+                <circle v-if="node.type!=='end'" cx="0" :cy="(node.h||40)/2" r="4" class="port port-out" />
+                <circle v-if="node.type!=='start'" cx="(node.w||120)" :cy="(node.h||40)/2" r="4" class="port port-in" />
+              </g>
+            </g>
+          </svg>
+          <div class="canvas-hint">提示：拖拽节点到画布，点击节点编辑属性</div>
+        </div>
+      </main>
+
+      <!-- Right: Properties -->
+      <aside class="pd-props glass-card" v-if="currentProcess && (selectedNode!==null || selectedEdge!==null)">
+        <div v-if="selectedNode!==null" class="props-section">
+          <div class="props-title">节点属性</div>
+          <div class="props-body">
+            <div class="pg"><label>类型</label><span class="pv">{{ _getNodeProp('type') }}</span></div>
+            <div class="pg"><label>标签</label><input :value="_getNodeProp('label')" @input="_setNodeProp('label', $event.target.value)" class="pi" /></div>
+            <div class="pg"><label>X</label><input :value="_getNodeProp('x')" @input="_setNodeProp('x', +$event.target.value)" type="number" class="pi" /></div>
+            <div class="pg"><label>Y</label><input :value="_getNodeProp('y')" @input="_setNodeProp('y', +$event.target.value)" type="number" class="pi" /></div>
+            <div class="pg"><label>宽</label><input :value="_getNodeProp('w')" @input="_setNodeProp('w', +$event.target.value)" type="number" class="pi" min="80" max="300" /></div>
+            <div class="pg"><label>高</label><input :value="_getNodeProp('h')" @input="_setNodeProp('h', +$event.target.value)" type="number" class="pi" min="30" max="100" /></div>
+            <div class="pg"><label>负责人</label><input :value="_getNodeProp('assignee')" @input="_setNodeProp('assignee', $event.target.value)" class="pi" placeholder="负责人标识" /></div>
+            <div class="pg"><label>条件表达式</label><input :value="_getNodeProp('condition')" @input="_setNodeProp('condition', $event.target.value)" class="pi" placeholder="如: amount > 1000" /></div>
+            <button class="btn-del-sm" @click="deleteNode(selectedNode)">🗑 删除节点</button>
+          </div>
+        </div>
+        <div v-if="selectedEdge!==null" class="props-section">
+          <div class="props-title">连线属性</div>
+          <div class="props-body">
+            <div class="pg"><label>标签</label><input :value="_getEdgeProp('label')" @input="_setEdgeProp('label', $event.target.value)" class="pi" /></div>
+            <button class="btn-del-sm" @click="deleteEdge(selectedEdge)">🗑 删除连线</button>
+          </div>
+        </div>
+      </aside>
     </div>
 
-    <!-- Create/Edit Modal -->
-    <div v-if="showModal" class="modal-overlay" @click.self="showModal = false">
+    <!-- New Process Modal -->
+    <div v-if="showNewModal" class="modal-overlay" @click.self="showNewModal=false">
       <div class="modal glass-card">
-        <h3>{{ editingProcess ? '编辑流程' : '新建流程' }}</h3>
-        <div class="form-grid">
-          <div class="form-group">
-            <label>流程名称</label>
-            <input v-model="form.name" class="form-input" placeholder="请输入流程名称" />
-          </div>
-          <div class="form-group">
-            <label>Flag（唯一标识）</label>
-            <input v-model="form.flag" class="form-input" placeholder="如: leave_approval" :disabled="!!editingProcess" />
-          </div>
-          <div class="form-group full-width">
-            <label>描述</label>
-            <textarea v-model="form.desc" class="form-textarea" placeholder="流程描述"></textarea>
-          </div>
-          <div class="form-group full-width">
-            <label>流程配置（JSON）</label>
-            <textarea v-model="form.config" class="form-textarea code-area" rows="8" placeholder='{"nodes":[...],"edges":[...]}'></textarea>
-          </div>
-        </div>
-        <div class="modal-actions">
-          <button class="btn-cancel" @click="showModal = false">取消</button>
-          <button class="btn-save" :disabled="saving" @click="saveProcess">
-            {{ saving ? '保存中...' : '保存' }}
-          </button>
-        </div>
+        <h3>新建流程</h3>
+        <div class="fg"><label>流程名称</label><input v-model="newForm.name" class="fi" placeholder="如: 请假审批" /></div>
+        <div class="fg"><label>唯一标识</label><input v-model="newForm.flag" class="fi" placeholder="如: leave_approval" /></div>
+        <div class="fg"><label>描述</label><textarea v-model="newForm.desc" class="fta" rows="2"></textarea></div>
+        <div class="ma"><button class="bc" @click="showNewModal=false">取消</button><button class="bs" :disabled="!newForm.name" @click="createProcess">创建</button></div>
       </div>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/vue-query'
 import { api } from '@oa4rust/sdk'
 
-type ProcessDef = {
-  id?: string
-  name?: string
-  processName?: string
-  flag?: string
-  description?: string
-  desc?: string
-  status?: string
-  updatedAt?: string
-  updateTime?: string
-  config?: Record<string, unknown>
+interface PDNode { id: string; type: string; label: string; x: number; y: number; w?: number; h?: number; assignee?: string; condition?: string }
+interface PDEdge { id: string; from: string; to: string; label?: string }
+interface ProcDef { id?: string; name: string; flag: string; desc?: string; status?: string; config?: { nodes: PDNode[]; edges: PDEdge[] } }
+
+const nodeTypes = [
+  { type: 'start', label: '开始', icon: '🟢' },
+  { type: 'task',  label: '任务', icon: '📋' },
+  { type: 'gate',  label: '网关', icon: '🔶' },
+  { type: 'end',   label: '结束', icon: '🔴' },
+]
+
+const plLoading = ref(false)
+const sbFilter = ref('')
+const currentProcess = ref<ProcDef|null>(null)
+const processDef = ref<{nodes: PDNode[]; edges: PDEdge[]}>({ nodes: [], edges: [] })
+const selectedNode = ref<number|null>(null)
+const selectedEdge = ref<number|null>(null)
+const showNewModal = ref(false)
+const newForm = ref({ name: '', flag: '', desc: '' })
+const canvasRef = ref<HTMLElement|null>(null)
+const panX = ref(0), panY = ref(0), zoom = ref(1)
+const canUndo = ref(false), canRedo = ref(false)
+const history: {nodes: PDNode[]; edges: PDEdge[]}[] = []
+const histIdx = ref(-1)
+const isDragging = ref(false)
+const dragNode = ref<number|null>(null)
+const dragOffset = ref({x:0,y:0})
+
+const filteredProc = computed(() =>
+  sbFilter.value ? procList.value.filter(p => (p.name||'').toLowerCase().includes(sbFilter.value.toLowerCase()) || (p.flag||'').toLowerCase().includes(sbFilter.value.toLowerCase()))
+  : procList.value
+)
+
+const { data: procData } = useQuery({ queryKey: ['pd','list'], queryFn: async () => { plLoading.value = true; try { const r: any = await api.get('/jaxrs/processplatform/assemble/designer/process/list'); return r?.data?.list ?? r?.data ?? [] } finally { plLoading.value = false } } })
+const procList = ref<ProcDef[]>(procData.value ?? [])
+
+const svgStyle = computed(() => `transform-origin:0 0;`)
+
+function saveHistory() {
+  if (!processDef.value) return
+  history.splice(histIdx.value + 1)
+  history.push(JSON.parse(JSON.stringify(processDef.value)))
+  histIdx.value = history.length - 1
+  canUndo.value = histIdx.value > 0
+  canRedo.value = false
 }
 
-const keyword = ref('')
-const loading = ref(false)
-const processes = ref<ProcessDef[]>([])
-const showModal = ref(false)
-const editingProcess = ref<ProcessDef | null>(null)
-const saving = ref(false)
-const form = ref({ name: '', flag: '', desc: '', config: '' })
+function getNodeProp(prop: string) {
+  if (selectedNode.value === null) return ''
+  return (processDef.value?.nodes[selectedNode.value] as any)?.[prop] ?? ''
+}
+function setNodeProp(prop: string, val: any) {
+  if (selectedNode.value === null || !processDef.value) return
+  ;(processDef.value.nodes[selectedNode.value] as any)[prop] = val
+  saveHistory()
+}
+function getNodeProp2(prop: string) { return getNodeProp(prop) }
+function setNodeProp2(prop: string, val: any) { setNodeProp(prop, val) }
 
-const stats = computed(() => [
-  { label: '总流程', value: processes.value.length, color: 'var(--color-primary)' },
-  { label: '已启用', value: processes.value.filter(p => p.status !== 'disabled').length, color: 'var(--color-success)' },
-  { label: '已禁用', value: processes.value.filter(p => p.status === 'disabled').length, color: 'var(--color-error)' },
-])
+// Override computed getters for template use
+const _getNodeProp = (p: string) => getNodeProp(p)
+const _setNodeProp = (p: string, v: any) => setNodeProp(p, v)
+const _getEdgeProp = (p: string) => { if (selectedEdge.value === null || !processDef.value?.edges[selectedEdge.value]) return ''; return (processDef.value.edges[selectedEdge.value] as any)[p] ?? '' }
+const _setEdgeProp = (p: string, v: any) => { if (selectedEdge.value === null || !processDef.value?.edges[selectedEdge.value]) return; (processDef.value.edges[selectedEdge.value] as any)[p] = v; saveHistory() }
 
-function statusLabel(p: ProcessDef) {
-  if (p.status === 'disabled') return '禁用'
-  if (p.status === 'draft') return '草稿'
-  return '启用'
+function getEdgeProp(p: string) { return _getEdgeProp(p) }
+function setEdgeProp(p: string, v: any) { _setEdgeProp(p, v) }
+
+function edgePath(edge: PDEdge) {
+  const from = processDef.value?.nodes.find(n => n.id === edge.from)
+  const to = processDef.value?.nodes.find(n => n.id === edge.to)
+  if (!from || !to) return ''
+  const fw = from.w || 120, fh = from.h || 40, tw = to.w || 120, th = to.h || 40
+  const x1 = from.x + fw, y1 = from.y + fh / 2
+  const x2 = to.x, y2 = to.y + th / 2
+  const cx = (x1 + x2) / 2
+  return `M ${x1} ${y1} C ${cx} ${y1}, ${cx} ${y2}, ${x2} ${y2}`
 }
 
-function fmtTime(t?: string) {
-  if (!t) return '-'
-  return new Date(t).toLocaleString('zh-CN', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })
+function selectNode(i: number) { selectedNode.value = i; selectedEdge.value = null }
+function deleteNode(i: number) {
+  if (!processDef.value) return
+  processDef.value.nodes.splice(i, 1)
+  processDef.value.edges = (processDef.value.edges||[]).filter(e => e.from !== processDef.value!.nodes[i]?.id && e.to !== processDef.value!.nodes[i]?.id)
+  if (selectedNode.value === i) selectedNode.value = null
+  saveHistory()
+}
+function deleteEdge(i: number) {
+  if (!processDef.value) return
+  processDef.value.edges.splice(i, 1)
+  selectedEdge.value = null
+  saveHistory()
+}
+function addNode(type: string) {
+  if (!processDef.value) return
+  const existing = processDef.value.nodes
+  processDef.value.nodes.push({
+    id: 'n_' + Date.now(), type, label: type === 'start' ? '开始' : type === 'end' ? '结束' : type === 'gate' ? '网关' : '任务节点',
+    x: 100 + (existing.length % 3) * 160, y: 80 + Math.floor(existing.length / 3) * 70,
+    w: type === 'gate' ? 100 : 120, h: 40
+  })
+  saveHistory()
+}
+function clearCanvas() { if (confirm('清空画布？')) { processDef.value = { nodes: [], edges: [] }; selectedNode.value = null; selectedEdge.value = null } }
+function autoLayout() {
+  if (!processDef.value || processDef.value.nodes.length === 0) return
+  const cols = 3
+  processDef.value.nodes.forEach((n, i) => { n.x = 80 + (i % cols) * 160; n.y = 80 + Math.floor(i / cols) * 80 })
+  saveHistory()
 }
 
-async function doSearch() {
-  loading.value = true
-  try {
-    const r = await api.post(`/jaxrs/processplatform/assemble/designer/process/list/paging/1/20`, {})
-    processes.value = r.data?.list ?? r.data ?? []
-    if (keyword.value) {
-      processes.value = processes.value.filter(p =>
-        (p.name || p.processName || '').toLowerCase().includes(keyword.value.toLowerCase())
-      )
-    }
-  } catch { processes.value = [] } finally { loading.value = false }
-}
+function undo() { if (histIdx.value > 0) { histIdx.value--; processDef.value = JSON.parse(JSON.stringify(history[histIdx.value])); selectedNode.value = null } }
+function redo() { if (histIdx.value < history.length - 1) { histIdx.value++; processDef.value = JSON.parse(JSON.stringify(history[histIdx.value])); selectedNode.value = null } }
+function zoomIn() { zoom.value = Math.min(3, zoom.value + 0.1) }
+function zoomOut() { zoom.value = Math.max(0.3, zoom.value - 0.1) }
+function fitCanvas() { zoom.value = 1; panX.value = 0; panY.value = 0 }
 
-async function loadProcesses() {
-  await doSearch()
+function onDragNode(e: DragEvent, nt: { type: string }) {
+  (e.dataTransfer as any)?.setData('nodeType', nt.type)
 }
-
-function openCreate() {
-  editingProcess.value = null
-  form.value = { name: '', flag: '', desc: '', config: '' }
-  showModal.value = true
+function onDropNode(e: DragEvent) {
+  e.preventDefault()
+  const type = (e.dataTransfer as any)?.getData('nodeType')
+  if (!type || !processDef.value) return
+  const rect = (e.currentTarget as HTMLElement).getBoundingClientRect()
+  const cx = (e.clientX - rect.left - panX.value) / zoom.value
+  const cy = (e.clientY - rect.top - panY.value) / zoom.value
+  processDef.value.nodes.push({ id: 'n_' + Date.now(), type, label: type === 'start' ? '开始' : type === 'end' ? '结束' : type === 'gate' ? '网关' : '任务节点', x: cx - 60, y: cy - 20, w: 120, h: 40 })
+  saveHistory()
 }
-
-function editProcess(p: ProcessDef) {
-  editingProcess.value = p
-  form.value = {
-    name: p.name || p.processName || '',
-    flag: p.flag || '',
-    desc: p.description || p.desc || '',
-    config: p.config ? JSON.stringify(p.config, null, 2) : '',
+function onNodeDragStart(e: MouseEvent, i: number) {
+  e.stopPropagation()
+  isDragging.value = true; dragNode.value = i
+  if (!processDef.value) return
+  const n = processDef.value.nodes[i]
+  dragOffset.value = { x: e.clientX / zoom.value - n.x, y: e.clientY / zoom.value - n.y }
+  const onMove = (ev: MouseEvent) => {
+    if (!isDragging.value || !processDef.value || dragNode.value === null) return
+    processDef.value.nodes[dragNode.value].x = ev.clientX / zoom.value - dragOffset.value.x
+    processDef.value.nodes[dragNode.value].y = ev.clientY / zoom.value - dragOffset.value.y
   }
-  showModal.value = true
+  const onUp = () => { isDragging.value = false; dragNode.value = null; document.removeEventListener('mousemove', onMove); document.removeEventListener('mouseup', onUp); saveHistory() }
+  document.addEventListener('mousemove', onMove)
+  document.addEventListener('mouseup', onUp)
 }
 
+async function loadProcess(p: ProcDef) {
+  try {
+    const r: any = await api.get(`/jaxrs/processplatform/assemble/designer/process/${p.id}`)
+    const data = r?.data ?? p
+    currentProcess.value = data
+    processDef.value = data.config ?? { nodes: [], edges: [] }
+    if (!processDef.value.nodes.length) {
+      processDef.value = {
+        nodes: [
+          { id: 'n_start', type: 'start', label: '开始', x: 80, y: 100, w: 100, h: 40 },
+          { id: 'n_task1', type: 'task', label: '审批任务', x: 300, y: 80, w: 120, h: 40 },
+          { id: 'n_end', type: 'end', label: '结束', x: 520, y: 100, w: 100, h: 40 }
+        ],
+        edges: [{ id: 'e1', from: 'n_start', to: 'n_task1' }, { id: 'e2', from: 'n_task1', to: 'n_end' }]
+      }
+    }
+    selectedNode.value = null; selectedEdge.value = null; history.length = 0; histIdx.value = -1; saveHistory()
+  } catch { currentProcess.value = { ...p, name: p.name, flag: p.flag, config: { nodes: [], edges: [] } }; processDef.value = { nodes: [], edges: [] } }
+}
+function newProcess() { newForm.value = { name: '', flag: '', desc: '' }; showNewModal.value = true }
+const savePM = useMutation({
+  mutationFn: async (data: any) => {
+    if (currentProcess.value?.id) return api.put(`/jaxrs/processplatform/assemble/designer/process/${currentProcess.value!.id}`, data)
+    return api.post('/jaxrs/processplatform/assemble/designer/process', data)
+  },
+  onSuccess: () => { showNewModal.value = false; loadProcesses() }
+})
+async function createProcess() {
+  if (!newForm.value.name.trim()) return
+  const data = { name: newForm.value.name, flag: newForm.value.flag, description: newForm.value.desc, config: processDef.value }
+  savePM.mutate(data)
+}
 async function saveProcess() {
-  if (!form.value.name.trim()) { alert('请输入流程名称'); return }
-  saving.value = true
+  if (!currentProcess.value) return
   try {
-    const data = {
-      name: form.value.name,
-      flag: form.value.flag,
-      description: form.value.desc,
-      ...(form.value.config ? { config: JSON.parse(form.value.config) } : {}),
-    }
-    if (editingProcess.value?.id) {
-      await api.put(`/jaxrs/processplatform/assemble/designer/process/${editingProcess.value.id}`, data)
-    } else {
-      await api.post('/jaxrs/processplatform/assemble/designer/process', data)
-    }
-    showModal.value = false
-    loadProcesses()
-  } catch (e: any) {
-    alert('保存失败: ' + (e?.message ?? '未知错误'))
-  } finally { saving.value = false }
+    await api.put(`/jaxrs/processplatform/assemble/designer/process/${currentProcess.value.id}`, {
+      name: currentProcess.value.name, flag: currentProcess.value.flag, config: processDef.value
+    })
+    alert('保存成功')
+  } catch (e: any) { alert('保存失败: ' + (e?.message ?? '')) }
 }
-
-async function deleteProcess(p: ProcessDef) {
-  if (!confirm(`确定删除流程「${p.name || p.flag}」？`)) return
-  try {
-    await api.delete(`/jaxrs/processplatform/assemble/designer/process/${p.id}`)
-    processes.value = processes.value.filter(x => x.id !== p.id)
-  } catch (e: any) { alert('删除失败: ' + (e?.message ?? '')) }
-}
-
-loadProcesses()
+function loadProcesses() { loadProc() }
+const loadProc = async () => { try { const r: any = await api.get('/jaxrs/processplatform/assemble/designer/process/list'); procList.value = r?.data?.list ?? r?.data ?? [] } catch { procList.value = [] } }
+onMounted(loadProcesses)
 </script>
 
 <style scoped>
-.designer-view { display: flex; flex-direction: column; gap: 16px; height: 100% }
-.view-header { display: flex; align-items: center; justify-content: space-between; padding: 16px 24px }
-.view-header h1 { font-family: 'Orbitron', sans-serif; font-size: 20px; color: var(--color-primary); margin: 0; text-shadow: 0 0 15px var(--color-primary-glow) }
-.subtitle { font-size: 12px; color: var(--text-muted); margin: 4px 0 0; font-family: 'JetBrains Mono', monospace }
-.btn-create { padding: 8px 20px; background: var(--color-primary); color: #000; border: none; border-radius: var(--radius-md); font-size: 13px; cursor: pointer; font-weight: 600 }
-.toolbar { display: flex; gap: 8px; padding: 12px 16px }
-.search-box { flex: 1; display: flex; align-items: center; gap: 8px; background: var(--bg-elevated); border: 1px solid var(--border-subtle); border-radius: var(--radius-md); padding: 6px 12px }
-.search-icon { color: var(--text-muted); font-size: 16px }
-.search-input { background: none; border: none; outline: none; color: var(--text-primary); font-size: 14px; flex: 1 }
-.btn-refresh { padding: 6px 16px; background: var(--bg-elevated); border: 1px solid var(--border-subtle); border-radius: var(--radius-md); color: var(--text-secondary); font-size: 13px; cursor: pointer }
-.btn-refresh:hover { border-color: var(--color-primary); color: var(--color-primary) }
-.content-panel { flex: 1; overflow-y: auto; padding: 16px }
-.process-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 12px }
-.process-card { padding: 16px; cursor: pointer; transition: all var(--transition-fast); border: 1px solid var(--border-subtle); border-radius: var(--radius-lg); background: var(--bg-elevated) }
-.process-card:hover { border-color: var(--color-primary); transform: translateY(-2px); box-shadow: var(--shadow-glow) }
-.pc-header { display: flex; align-items: center; gap: 12px; margin-bottom: 8px }
-.pc-icon { font-size: 24px }
-.pc-info { flex: 1; min-width: 0 }
-.pc-title { font-size: 14px; font-weight: 600; color: var(--text-primary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap }
-.pc-flag { font-size: 11px; color: var(--color-primary-deep); font-family: 'JetBrains Mono', monospace; margin-top: 2px }
-.pc-status { font-size: 11px; padding: 2px 8px; border-radius: var(--radius-sm); font-weight: 600 }
-.pc-status.active { background: rgba(16,185,129,.15); color: var(--color-success) }
-.pc-status.disabled { background: rgba(239,68,68,.15); color: var(--color-error) }
-.pc-status.draft { background: rgba(245,158,11,.15); color: var(--color-warning) }
-.pc-desc { font-size: 12px; color: var(--text-muted); margin-bottom: 12px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap }
-.pc-footer { display: flex; justify-content: space-between; align-items: center }
-.pc-time { font-size: 11px; color: var(--text-muted) }
-.pc-actions { display: flex; gap: 6px }
-.btn-edit { padding: 4px 10px; background: transparent; border: 1px solid var(--color-primary); color: var(--color-primary); border-radius: var(--radius-sm); font-size: 12px; cursor: pointer }
-.btn-edit:hover { background: var(--color-primary); color: #000 }
-.btn-delete { padding: 4px 10px; background: transparent; border: 1px solid var(--color-error); color: var(--color-error); border-radius: var(--radius-sm); font-size: 12px; cursor: pointer }
-.btn-delete:hover { background: var(--color-error); color: #fff }
-.loading-state, .empty-state { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 60px; color: var(--text-muted); gap: 12px }
-.sk { height: 40px; border-radius: var(--radius-md); background: var(--bg-elevated); animation: pulse 1.2s ease-in-out infinite }
-@keyframes pulse { 0%,100%{opacity:.4}50%{opacity:.8} }
-.ei { font-size: 48px; opacity: 0.4 }
-.modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,.7); display: flex; align-items: center; justify-content: center; z-index: 100 }
-.modal { background: var(--bg-surface); border: 1px solid var(--border-subtle); border-radius: var(--radius-lg); padding: 24px; width: 600px; max-width: 90vw; max-height: 85vh; overflow: auto; display: flex; flex-direction: column; gap: 16px }
-.modal h3 { font-family: 'Orbitron', sans-serif; color: var(--color-primary); margin: 0; font-size: 16px }
-.form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px }
-.form-group { display: flex; flex-direction: column; gap: 6px }
-.form-group.full-width { grid-column: span 2 }
-.form-group label { font-size: 13px; color: var(--text-muted) }
-.form-input, .form-textarea { background: var(--bg-elevated); border: 1px solid var(--border-subtle); border-radius: var(--radius-md); color: var(--text-primary); padding: 10px 12px; font-size: 14px; font-family: inherit }
-.form-input:focus, .form-textarea:focus { outline: none; border-color: var(--color-primary) }
-.form-textarea { resize: vertical; min-height: 60px }
-.code-area { font-family: 'JetBrains Mono', monospace; font-size: 12px }
-.modal-actions { display: flex; justify-content: flex-end; gap: 8px }
-.btn-cancel { padding: 8px 20px; background: transparent; border: 1px solid var(--border-subtle); color: var(--text-secondary); border-radius: var(--radius-md); cursor: pointer }
-.btn-save { padding: 8px 20px; background: var(--color-primary); color: #000; border: none; border-radius: var(--radius-md); font-size: 13px; cursor: pointer; font-weight: 600 }
-.btn-save:disabled { opacity: 0.5; cursor: not-allowed }
-@media(max-width:768px){.form-grid{grid-template-columns:1fr}.form-group.full-width{grid-column:span 1}}
+.pd{display:flex;flex-direction:column;gap:0;height:100%}
+.pd-header{display:flex;align-items:center;justify-content:space-between;padding:10px 16px;flex-shrink:0}
+.pd-title h1{font-family:'Orbitron',sans-serif;font-size:18px;color:var(--color-primary);margin:0 0 2px;text-shadow:0 0 15px var(--color-primary-glow)}
+.subtitle{font-size:11px;color:var(--text-muted);margin:0;font-family:'JetBrains Mono',monospace}
+.pd-actions{display:flex;gap:6px;flex-wrap:wrap}
+.btn{padding:5px 12px;border-radius:var(--radius-md);border:1px solid var(--border-color);background:var(--bg-elevated);color:var(--text-primary);cursor:pointer;font-size:12px}
+.btn:hover{border-color:var(--color-primary);color:var(--color-primary)}
+.btn:disabled{opacity:0.3;cursor:not-allowed}
+.btn-primary{background:var(--color-primary);color:#000;border-color:var(--color-primary);font-weight:600}
+.btn-outline{background:transparent}
+.pd-body{display:flex;flex:1;gap:0;min-height:0;overflow:hidden}
+/* Sidebar */
+.pd-sidebar{width:200px;flex-shrink:0;display:flex;flex-direction:column;border-right:1px solid var(--border-color)}
+.sb-header{display:flex;align-items:center;justify-content:space-between;padding:8px 10px;border-bottom:1px solid var(--border-color);font-size:13px;font-weight:600;color:var(--color-primary)}
+.btn-sm{padding:3px 8px;border-radius:var(--radius-sm);border:1px solid var(--border-color);background:transparent;color:var(--text-muted);cursor:pointer;font-size:11px}
+.sb-search{padding:6px 8px}
+.sb-input{width:100%;padding:5px 8px;border-radius:var(--radius-sm);border:1px solid var(--border-color);background:var(--bg-elevated);color:var(--text-primary);font-size:12px;outline:none;box-sizing:border-box}
+.sb-list{flex:1;overflow-y:auto;padding:4px}
+.sb-loading,.sb-empty{padding:16px;text-align:center;color:var(--text-muted);font-size:12px}
+.sb-item{display:flex;align-items:center;gap:6px;padding:8px;border-radius:var(--radius-sm);cursor:pointer;margin-bottom:2px}
+.sb-item:hover{background:var(--bg-hover)}
+.sb-item.active{background:var(--color-primary-soft);border-left:3px solid var(--color-primary)}
+.si-icon{font-size:16px;flex-shrink:0}
+.si-info{flex:1;min-width:0}
+.si-name{font-size:13px;color:var(--text-primary);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.si-meta{font-size:10px;color:var(--text-muted);font-family:'JetBrains Mono',monospace}
+/* Palette */
+.pd-palette{width:140px;flex-shrink:0;padding:12px;border-right:1px solid var(--border-color)}
+.pal-title{font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:1px;margin:8px 0 6px;font-weight:600}
+.pal-sep{height:1px;background:var(--border-color);margin:8px 0}
+.pal-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.pal-item{display:flex;flex-direction:column;align-items:center;padding:10px 4px;border-radius:var(--radius-md);border:1px solid var(--border-color);cursor:grab;background:var(--bg-elevated);transition:all var(--transition-fast)}
+.pal-item:hover{border-color:var(--color-primary);background:var(--color-primary-soft)}
+.ni{font-size:20px}
+.nl{font-size:10px;color:var(--text-muted);margin-top:4px}
+/* Canvas */
+.pd-canvas{flex:1;position:relative;overflow:hidden;min-width:0}
+.canvas-empty{display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;gap:16px;color:var(--text-muted)}
+.ce-icon{font-size:64px;opacity:0.3}
+.canvas-wrap{width:100%;height:100%;position:relative;overflow:hidden}
+.canvas-svg{width:100%;height:100%;cursor:grab}
+.canvas-svg:active{cursor:grabbing}
+.canvas-hint{position:absolute;bottom:8px;left:50%;transform:translateX(-50%);font-size:11px;color:var(--text-muted);pointer-events:none}
+.edge{fill:none;stroke:var(--color-primary);stroke-width:2;cursor:pointer;opacity:0.6}
+.edge:hover,.edge.selected{stroke:var(--color-warning);stroke-width:3;opacity:1}
+.node{cursor:pointer}
+.node-bg{stroke:var(--border-color);stroke-width:1.5;transition:all 0.15s}
+.node.start .node-bg{fill:rgba(16,185,129,.2);stroke:var(--color-success)}
+.node.task .node-bg{fill:rgba(0,212,255,.15);stroke:var(--color-primary)}
+.node.gate .node-bg{fill:rgba(245,158,11,.15);stroke:var(--color-warning)}
+.node.end .node-bg{fill:rgba(239,68,68,.2);stroke:var(--color-danger)}
+.node.selected .node-bg{stroke-width:3;filter:drop-shadow(0 0 8px var(--color-primary))}
+.node-label{fill:var(--text-primary);font-size:12px;font-weight:500;pointer-events:none}
+.port{fill:var(--color-primary);opacity:0.4;cursor:crosshair}
+.port:hover{opacity:1}
+/* Props */
+.pd-props{width:240px;flex-shrink:0;padding:12px;border-left:1px solid var(--border-color);overflow-y:auto}
+.props-section{margin-bottom:16px}
+.props-title{font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;font-weight:600}
+.props-body{display:flex;flex-direction:column;gap:8px}
+.pg{display:flex;flex-direction:column;gap:3px}
+.pg label{font-size:11px;color:var(--text-muted)}
+.pi{padding:5px 8px;border-radius:var(--radius-sm);border:1px solid var(--border-color);background:var(--bg-elevated);color:var(--text-primary);font-size:12px;outline:none}
+.pi:focus{border-color:var(--color-primary)}
+.pv{font-size:12px;color:var(--color-primary);font-family:'JetBrains Mono',monospace}
+.btn-del-sm{padding:5px 10px;border-radius:var(--radius-sm);border:1px solid var(--color-danger);background:transparent;color:var(--color-danger);cursor:pointer;font-size:12px}
+/* Modal */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.6);display:flex;align-items:center;justify-content:center;z-index:200}
+.modal{padding:24px;width:480px;max-width:90vw;display:flex;flex-direction:column;gap:12px}
+.modal h3{font-size:16px;color:var(--color-primary);margin:0}
+.fg{display:flex;flex-direction:column;gap:4px}
+.fg label{font-size:12px;color:var(--text-muted)}
+.fi,.fta{padding:8px 12px;border-radius:var(--radius-md);border:1px solid var(--border-color);background:var(--bg-elevated);color:var(--text-primary);outline:none;font-size:13px;box-sizing:border-box}
+.fta{resize:vertical;font-family:inherit}
+.ma{display:flex;justify-content:flex-end;gap:8px;margin-top:8px}
+.bc{padding:8px 16px;border-radius:var(--radius-md);border:1px solid var(--border-color);background:transparent;color:var(--text-primary);cursor:pointer}
+.bs{padding:8px 16px;border-radius:var(--radius-md);border:none;background:var(--color-primary);color:#000;cursor:pointer;font-weight:600}
+.bs:disabled{opacity:0.4;cursor:not-allowed}
 </style>
