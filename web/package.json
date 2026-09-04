@@ -1,0 +1,34 @@
+{
+  "name": "oa4rust-web",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "pnpm --filter @oa4rust/desktop dev",
+    "build": "pnpm --filter @oa4rust/desktop build",
+    "preview": "pnpm --filter @oa4rust/desktop preview",
+    "lint": "biome check --write .",
+    "typecheck": "pnpm --recursive run typecheck",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "gen-api": "tsx scripts/gen-api.ts"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "^2.1.0",
+    "@types/node": "^24.0.0",
+    "@unocss/vite": "^66.0.0",
+    "@vitejs/plugin-vue": "^5.2.0",
+    "@vue/tsconfig": "^0.7.0",
+    "typescript": "^5.8.0",
+    "unocss": "^66.0.0",
+    "vite": "^6.0.0",
+    "vitest": "^3.1.0",
+    "tsx": "^4.19.0",
+    "vue": "^3.5.13",
+    "vue-router": "^4.5.0",
+    "pinia": "^2.3.1",
+    "@tanstack/vue-query": "^5.80.0",
+    "naive-ui": "^2.40.3"
+  },
+  "packageManager": "pnpm@11.25.0"
+}
