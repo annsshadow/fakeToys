@@ -17,8 +17,13 @@ import Settings from './views/Settings.vue';
 import SSO from './views/SSO.vue';
 import MeetingApp from './views/MeetingApp.vue';
 import AttendanceApp from './views/AttendanceApp.vue';
-import AIAssistant from './views/AIAssistant.vue';
 import QueryManager from './views/QueryManager.vue';
+import AIAssistant from './views/AIAssistant.vue';
+import PortalApp from './views/PortalApp.vue';
+import HotpicApp from './views/HotpicApp.vue';
+import JPushApp from './views/JPushApp.vue';
+import AppInfoApp from './views/AppInfoApp.vue';
+import CategoryApp from './views/CategoryApp.vue';
 import CalendarApp from './views/CalendarApp.vue';
 import FileManager from './views/FileManager.vue';
 import BBSForum from './views/BBSForum.vue';
@@ -42,8 +47,12 @@ const router = createRouter({
         { path: 'bbs', name: 'BBSForum', component: BBSForum, meta: { title: '论坛' } },
         { path: 'meeting', name: 'MeetingApp', component: MeetingApp, meta: { title: '会议管理' } },
         { path: 'attendance', name: 'AttendanceApp', component: AttendanceApp, meta: { title: '考勤管理' } },
-        { path: 'ai', name: 'AIAssistant', component: AIAssistant, meta: { title: 'AI助手' } },
         { path: 'query', name: 'QueryManager', component: QueryManager, meta: { title: '查询管理' } },
+        { path: 'portal', name: 'PortalApp', component: PortalApp, meta: { title: '门户管理' } },
+        { path: 'hotpic', name: 'HotpicApp', component: HotpicApp, meta: { title: '热帖管理' } },
+        { path: 'jpush', name: 'JPushApp', component: JPushApp, meta: { title: '消息推送' } },
+        { path: 'appinfo', name: 'AppInfoApp', component: AppInfoApp, meta: { title: '应用管理' } },
+        { path: 'category', name: 'CategoryApp', component: CategoryApp, meta: { title: '分类管理' } },
       ],
     },
     { path: '/oauth/callback/:platform', name: 'OAuthCallback', component: OAuthCallback, meta: { requiresAuth: false } },
