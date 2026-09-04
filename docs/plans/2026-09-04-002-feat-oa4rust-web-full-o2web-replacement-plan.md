@@ -1,6 +1,6 @@
 ---
 module: oa4rust-web
-tags: [frontend, o2web-migration, parity, design-editor, roadmap]
+tags: [frontend, o2web-migration, parity, 100-percent, roadmap, design-editor]
 problem_type: feature-gap-closure
 created: 2026-09-04
 status: in_progress
@@ -8,296 +8,329 @@ status: in_progress
 
 # OA4Rust Web 前端 100% 替代 o2web 完整实施计划
 
-## 一、当前状态审计
+## 一、精确数据与现状审计
 
-### 已有能力
+### 1.1 后端能力（已完成）
 
 | 维度 | 状态 | 数据 |
 |------|------|------|
 | 后端模块覆盖 | ✅ 100% | 110 crates, 4684 路由 |
 | API模块数 | ✅ 80个 | 含 `request()` 通配兜底 |
-| Vue视图数 | ✅ 36个 | 全部接入真实API |
-| 前端路由数 | ✅ 35条 | 覆盖核心业务 |
 | TypeScript | ✅ 零错误 | apis + desktop 双包通过 |
 | Vite构建 | ✅ 通过 | 65KB JS gzip |
 
-### 缺口分析（o2web 86个组件 vs oa4rust-web 36个视图）
+### 1.2 前端视图（已完成 36/84 = 43%）
 
-| 类别 | o2web组件 | 已覆盖 | 缺失 | 优先级 | 后端endpoint数 |
-|------|-----------|--------|------|--------|---------------|
-| **日常办公** | 12 | 12 | 0 | — | — |
-| **CMS内容设计** | 10 | 0 | 10 | P0 | 450 |
-| **服务设计** | 5 | 0 | 5 | P0 | 405 |
-| **流程深化** | 5 | 2 | 3 | P1 | 344 |
-| **查询深化** | 6 | 2 | 4 | P1 | 288 |
-| **门户深化** | 5 | 2 | 3 | P1 | 150 |
-| **系统管理** | 6 | 0 | 6 | P2 | ~10 |
-| **扩展功能** | 19 | 1 | 18 | P3 | ~50 |
-| **合计** | **68** | **19** | **49** | — | **~1700** |
+**o2web 共 84 个组件目录**（已过滤 node_modules 中的空组件）。
 
-> 注：o2web共86个组件，其中18个为子组件/工具类（如 ForumCategory、ForumDocument 等），与 oa4rust-web 的聚合视图不对应，不计入替代目标。
+**已有 oa4rust-web 视图 36 个，映射关系如下：**
+
+| # | oa4rust-web 视图 | 覆盖的 o2web 组件 | 后端API模块 |
+|---|-----------------|-------------------|------------|
+| 1 | Dashboard.vue | (首页聚合) | — |
+| 2 | OrgViewer.vue | Org | organization_assemble_control |
+| 3 | ProcessWork.vue | process_Work, process_TaskCenter, process_workcenter, process_Xform, process_Application, process_ProcessManager, process_ApplicationExplorer | processplatform_assemble_surface, processplatform_service_processing |
+| 4 | IMChat.vue | IMV2 (核心聊天) | — |
+| 5 | Personal.vue | Profile | personal |
+| 6 | Settings.vue | Setting, systemconfig (部分) | config, sysresource |
+| 7 | SSO.vue | (SSO登录) | — |
+| 8 | MeetingApp.vue | Meeting | meeting_control |
+| 9 | AttendanceApp.vue | Attendance, attendancev2 | attendance_control |
+| 10 | QueryManager.vue | query_QueryManager, query_Query, query_TableDesigner, query_ViewDesigner, query_StatementDesigner, query_StatDesigner, query_ImporterDesigner, query_QueryExplorer | query_assemble_designer, query_assemble_surface |
+| 11 | AIAssistant.vue | AI | ai_assemble_control |
+| 12 | PortalApp.vue | portal_Portal, portal_PortalManager, portal_PortalExplorer | portal_assemble_surface |
+| 13 | HotpicApp.vue | HotArticle | cms_assemble_control |
+| 14 | JPushApp.vue | (消息推送) | — |
+| 15 | AppInfoApp.vue | AppCenter, AppMarketV2, appstore, appstore_application | program_center |
+| 16 | CategoryApp.vue | (分类管理) | cms_core_entity |
+| 17 | CalendarApp.vue | Calendar | calendar |
+| 18 | FileManager.vue | File | file_control |
+| 19 | BBSForum.vue | Forum, ForumCategory, ForumDocument, ForumPerson, ForumSearch, ForumSection | bbs_assemble_control |
+| 20 | MindApp.vue | Minder, MinderEditor | mind_assemble_control |
+| 21 | DocumentApp.vue | cms_Document, cms_Module, cms_Column, cms_ColumnManager, cms_Index, cms_Xform, cms_FormDesigner, cms_ViewDesigner, cms_ScriptDesigner, cms_DictionaryDesigner | cms_assemble_control, cms_core_entity |
+| 22 | ProgramCenterApp.vue | service_ServiceManager, service_AgentDesigner, service_ScriptDesigner, service_DictionaryDesigner, service_InvokeDesigner, AppMarketV2 | program_center |
+| 23 | QueryViewApp.vue | query_ViewDesigner (独立入口) | queryview |
+| 24 | RecycleApp.vue | (回收站) | — |
+| 25 | ServerApp.vue | (服务器管理) | server |
+| 26 | UnitApp.vue | (单元管理) | unit |
+| 27 | FormApp.vue | form (表单列表) | form |
+| 28 | ViewApp.vue | view (视图列表) | view |
+| 29 | FileInfoApp.vue | (文件信息) | file_control |
+| 30 | AIChatApp.vue | AI (聊天入口) | ai_assemble_control |
+| 31 | RoleManager.vue | (角色管理) | role |
+| 32 | ProcessDesigner.vue | process_ProcessDesigner, process_FormDesigner, process_DictionaryDesigner, process_ScriptDesigner | processplatform_assemble_designer |
+| 33 | FormDesigner.vue | cms_FormDesigner (CMS表单设计器) | cms_assemble_control |
+| 34 | QueryDesigner.vue | query_ViewDesigner, query_TableDesigner, query_StatementDesigner, query_StatDesigner, query_ImporterDesigner | query_assemble_designer |
+| 35 | PortalDesigner.vue | portal_WidgetDesigner, portal_ScriptDesigner, portal_DictionaryDesigner, portal_PageDesigner | portal_assemble_designer |
+| 36 | PlaceholderView.vue | (占位) | — |
+
+### 1.3 未覆盖的 o2web 组件（48个）
+
+| # | o2web 组件 | 对应功能 | 优先级 | 后端API路径模式 | 估计复杂度 |
+|---|-----------|---------|--------|---------------|-----------|
+| 1 | ANN | 神经网络AI配置 | P3 | /jaxrs/ai_assemble_control/* | 低 |
+| 2 | BAM | 业务活动监控(图表+时间线) | P2 | /jaxrs/processplatform_assemble_bam/* | 中 |
+| 3 | Collect | 收集管理(表单收集+数据汇总) | P2 | /jaxrs/program_center/* | 中 |
+| 4 | Common | 公共组件库 | P3 | /jaxrs/general_assemble_control/* | 低 |
+| 5 | ConfigDesigner | 配置设计器 | P2 | /jaxrs/config/* | 中 |
+| 6 | ControlPanel | 控制面板(统计+快捷操作) | P2 | /jaxrs/sysresource/* | 中 |
+| 7 | Deployment | 部署管理 | P2 | /jaxrs/server/* | 高 |
+| 8 | DesignCenter | 设计中心入口(聚合导航) | P2 | 多模块 | 低 |
+| 9 | Empty | 空页面占位 | P3 | — | 极低 |
+| 10 | FaceSet | 人脸设置 | P3 | /jaxrs/personal/* | 中 |
+| 11 | FindDesigner | 查找设计器(搜索配置) | P2 | /jaxrs/query_assemble_designer/* | 中 |
+| 12 | Homepage | 首页配置(门户首页布局) | P2 | /jaxrs/portal_assemble_surface/* | 中 |
+| 13 | LogViewer | 日志查看器 | P1 | /jaxrs/log/* | 低 |
+| 14 | Note | 笔记管理(列表+富文本) | P2 | /jaxrs/cms_core_entity/* | 低 |
+| 15 | PdfViewer | PDF在线查看 | P2 | /jaxrs/preview/* | 低 |
+| 16 | Search | 全局搜索 | P2 | /jaxrs/search/* | 中 |
+| 17 | Selector | 通用选择器(选人/选组织) | P1 | /jaxrs/organization_assemble_control/* | 低 |
+| 18 | Template | 模板管理(列表+预览) | P2 | /jaxrs/templateform/* | 低 |
+| 19 | ThreeMember | 三方成员管理 | P2 | /jaxrs/organization_assemble_control/* | 低 |
+| 20 | ftsearch | 全文搜索 | P3 | /jaxrs/ftsearch/* | 中 |
+| 21 | cms_Column (独立) | CMS列管理(详细字段编辑) | P1 | /jaxrs/cms_core_entity/column/* | 低 |
+| 22 | cms_ColumnManager | CMS列管理器(批量管理) | P1 | /jaxrs/cms_core_entity/column_manager/* | 低 |
+| 23 | cms_DictionaryDesigner | CMS字典设计器(独立入口) | P1 | /jaxrs/cms_assemble_control/dict/* | 低 |
+| 24 | cms_FormDesigner (独立) | CMS表单设计器(独立入口) | P1 | /jaxrs/cms_assemble_control/form/* | 低 |
+| 25 | cms_Index | CMS索引设计 | P1 | /jaxrs/cms_core_entity/index/* | 低 |
+| 26 | cms_Module (独立) | CMS模块管理(独立入口) | P1 | /jaxrs/cms_core_entity/module/* | 低 |
+| 27 | cms_ScriptDesigner | CMS脚本设计器(独立入口) | P1 | /jaxrs/cms_assemble_control/script/* | 低 |
+| 28 | cms_ViewDesigner | CMS视图设计器(独立入口) | P1 | /jaxrs/cms_assemble_control/view/* | 低 |
+| 29 | cms_Xform (独立) | CMS XForm表单(独立入口) | P1 | /jaxrs/cms_assemble_control/xform/* | 低 |
+| 30 | portal_DictionaryDesigner | 门户字典设计器(独立入口) | P1 | /jaxrs/portal_assemble_designer/dict/* | 低 |
+| 31 | portal_PageDesigner | 门户页面设计器(独立入口) | P1 | /jaxrs/portal_assemble_designer/page/* | 低 |
+| 32 | portal_ScriptDesigner | 门户脚本设计器(独立入口) | P1 | /jaxrs/portal_assemble_designer/script/* | 低 |
+| 33 | portal_WidgetDesigner | 门户组件设计器(独立入口) | P1 | /jaxrs/portal_assemble_designer/widget/* | 低 |
+| 34 | process_Application (独立) | 流程应用管理(独立入口) | P1 | /jaxrs/program_center/application/* | 低 |
+| 35 | process_DictionaryDesigner | 流程字典设计器(独立入口) | P1 | /jaxrs/processplatform_assemble_designer/dict/* | 低 |
+| 36 | process_FormDesigner (独立) | 流程表单设计器(独立入口) | P1 | /jaxrs/processplatform_assemble_designer/form/* | 低 |
+| 37 | process_ProcessManager (独立) | 流程实例管理(独立入口) | P1 | /jaxrs/processplatform_assemble_surface/process_manager/* | 低 |
+| 38 | process_ScriptDesigner | 流程脚本设计器(独立入口) | P1 | /jaxrs/processplatform_assemble_designer/script/* | 低 |
+| 39 | process_TaskCenter (独立) | 流程任务中心(独立入口) | P1 | /jaxrs/processplatform_service_processing/task/* | 低 |
+| 40 | process_Xform (独立) | 流程XForm(独立入口) | P1 | /jaxrs/processplatform_assemble_designer/xform/* | 低 |
+| 41 | query_ImporterDesigner (独立) | 查询导入设计器(独立入口) | P1 | /jaxrs/query_assemble_designer/importer/* | 低 |
+| 42 | query_Query (独立) | 查询定义管理(独立入口) | P1 | /jaxrs/query_assemble_designer/query/* | 低 |
+| 43 | query_QueryExplorer (独立) | 查询浏览器(独立入口) | P1 | /jaxrs/query_assemble_surface/explorer/* | 低 |
+| 44 | query_StatDesigner (独立) | 统计设计器(独立入口) | P1 | /jaxrs/query_assemble_designer/stat/* | 低 |
+| 45 | query_StatementDesigner (独立) | SQL语句设计器(独立入口) | P1 | /jaxrs/query_assemble_designer/statement/* | 低 |
+| 46 | query_TableDesigner (独立) | 表格设计器(独立入口) | P1 | /jaxrs/query_assemble_surface/table/* | 低 |
+| 47 | query_ViewDesigner (独立) | 视图设计器(独立入口) | P1 | /jaxrs/query_assemble_designer/view/* | 低 |
+| 48 | service_InvokeDesigner (独立) | 服务调用设计器(独立入口) | P1 | /jaxrs/program_center/invoke/* | 低 |
+
+### 1.4 覆盖统计
+
+| 指标 | 目标 | 当前 | 差距 |
+|------|------|------|------|
+| o2web组件覆盖率 | **100%** (84/84) | 43% (36/84) | 48个缺失 |
+| 核心业务操作 | 100% | 100% | ✅ |
+| 设计器能力 | 100% | 47% (4/8) | 4个设计器需独立入口 |
+| 系统管理 | 100% | 25% | 需补齐 |
+| TypeScript错误 | 0 | 0 | ✅ |
+| Vite构建 | 通过 | 通过 | ✅ |
 
 ---
 
-## 二、实施阶段规划
+## 二、实施策略
 
-### Phase 0：基础确认（已完成）
+### 2.1 实现原则
+
+1. **聚合优先**：对功能相近的组件，优先合并到单一视图中（如 DocumentApp 聚合了10个CMS组件）
+2. **MVP路线**：先实现 CRUD 列表视图（满足基本操作），再迭代增强设计器交互
+3. **复用模式**：新视图复用现有 UI 模式（glass-card + 深色主题 + naive-ui）
+4. **独立入口**：重要设计器提供独立路由（`/app/designer-name`）
+5. **占位兜底**：低频组件先实现占位视图（显示"开发中"），后续逐步完善
+
+### 2.2 实现模式库
+
+新视图统一使用以下模式之一：
+
+**模式A：列表CRUD视图**（适用 60% 组件）
+```
+顶部搜索栏 + 新建按钮
+→ 数据表格（分页+排序）
+→ 行操作：编辑/删除/详情
+→ 创建/编辑弹窗（表单）
+```
+代表：LogViewer, Note, Template, Selector, ThreeMember, FaceSet, PdfViewer, Search
+
+**模式B：编辑器视图**（适用 25% 组件）
+```
+左侧：列表/目录树
+右侧：JSON/YAML 配置编辑器（代码编辑器）
+底部：预览面板
+顶部：保存/预览/导出按钮
+```
+代表：ConfigDesigner, FindDesigner, cms_Index, query_ImporterDesigner
+
+**模式C：聚合导航视图**（适用 10% 组件）
+```
+功能卡片网格（每个卡片链接到子功能）
+```
+代表：DesignCenter
+
+**模式D：可视化展示视图**（适用 5% 组件）
+```
+图表/时间线/统计面板
+```
+代表：BAM, Homepage
+
+### 2.3 文件组织约定
+
+- 新视图文件：`oa4rust-web/apps/desktop/src/views/[Name]App.vue`
+- 路由注册：`oa4rust-web/apps/desktop/src/main.ts`
+- API模块：`oa4rust-web/packages/apis/src/index.ts`（如有需要）
+
+---
+
+## 三、实施阶段规划
+
+### Phase 0：基础设施确认（已完成 ✅）
 
 - [x] 后端API层100%覆盖（80个API模块）
 - [x] 核心业务视图36个
 - [x] TypeScript零错误，Vite构建通过
-- [x] 4个基础设计器（流程/表单/查询/门户）
+- [x] 4个设计器（流程/表单/查询/门户）
+- [x] AI聊天 + 角色管理
 
-### Phase 1：CMS内容管理系统（P0，预计3天）
+### Phase 1：高频缺失组件（P1，预计 2 天）
 
-**目标**：实现o2web `cms_*` 系列组件的等价功能
+**目标**：补齐用户日常操作最频繁但尚未实现的组件
 
-| # | o2web组件 | oa4rust路由 | 后端模块 | Endpoint数 | 视图名 |
-|---|-----------|------------|---------|-----------|--------|
-| 1 | cms_Document | /app/cms-document | cms_assemble_control | 450 | CmsDocumentApp.vue |
-| 2 | cms_FormDesigner | /app/cms-form-designer | cms_assemble_control | (含在450中) | CmsFormDesigner.vue |
-| 3 | cms_ViewDesigner | /app/cms-view-designer | cms_assemble_control | (含在450中) | CmsViewDesigner.vue |
-| 4 | cms_ScriptDesigner | /app/cms-script-designer | cms_assemble_control | (含在450中) | CmsScriptDesigner.vue |
-| 5 | cms_Column | /app/cms-column | cms_core_entity | ~20 | CmsColumnApp.vue |
-| 6 | cms_ColumnManager | /app/cms-column-manager | cms_core_entity | ~15 | CmsColumnManager.vue |
-| 7 | cms_DictionaryDesigner | /app/cms-dict-designer | cms_assemble_control | (含在450中) | CmsDictDesigner.vue |
-| 8 | cms_Index | /app/cms-index | cms_core_entity | ~10 | CmsIndexApp.vue |
-| 9 | cms_Module | /app/cms-module | cms_core_entity | ~15 | CmsModuleApp.vue |
-| 10 | cms_Xform | /app/cms-xform | cms_assemble_control | ~30 | CmsXformApp.vue |
+| # | o2web组件 | oa4rust路由 | 实现方式 | 视图名 |
+|---|-----------|------------|---------|--------|
+| 1 | LogViewer | /app/log-viewer | /jaxrs/log/* | LogViewerApp.vue |
+| 2 | Selector | /app/selector | /jaxrs/organization_assemble_control/* | SelectorApp.vue |
+| 3 | query_Query (独立) | /app/query-query | /jaxrs/query_assemble_designer/query/* | QueryQueryApp.vue |
+| 4 | query_QueryExplorer (独立) | /app/query-explorer | /jaxrs/query_assemble_surface/explorer/* | QueryExplorerApp.vue |
+| 5 | query_TableDesigner (独立) | /app/query-table-designer | /jaxrs/query_assemble_surface/table/* | QueryTableDesignerApp.vue |
+| 6 | query_ViewDesigner (独立) | /app/query-view-designer | /jaxrs/query_assemble_designer/view/* | QueryViewDesignerApp.vue |
+| 7 | query_StatementDesigner (独立) | /app/query-statement-designer | /jaxrs/query_assemble_designer/statement/* | QueryStatementDesignerApp.vue |
+| 8 | query_StatDesigner (独立) | /app/query-stat-designer | /jaxrs/query_assemble_designer/stat/* | QueryStatDesignerApp.vue |
+| 9 | query_ImporterDesigner (独立) | /app/query-importer-designer | /jaxrs/query_assemble_designer/importer/* | QueryImporterDesignerApp.vue |
+| 10 | cms_Column (独立) | /app/cms-column | /jaxrs/cms_core_entity/column/* | CmsColumnApp.vue |
+| 11 | cms_ColumnManager | /app/cms-column-manager | /jaxrs/cms_core_entity/column_manager/* | CmsColumnManagerApp.vue |
+| 12 | cms_Index | /app/cms-index | /jaxrs/cms_core_entity/index/* | CmsIndexApp.vue |
+| 13 | process_TaskCenter (独立) | /app/process-task-center | /jaxrs/processplatform_service_processing/task/* | ProcessTaskCenterApp.vue |
+| 14 | process_ProcessManager (独立) | /app/process-manager | /jaxrs/processplatform_assemble_surface/process_manager/* | ProcessManagerApp.vue |
 
-**实现策略**：
-- cms_Document / cms_Module / cms_Column：列表+CRUD视图（参考 DocumentApp.vue 模式）
-- cms_FormDesigner / cms_ViewDesigner / cms_ScriptDesigner：编辑器视图，复用 QueryDesigner.vue 的JSON编辑模式
-- cms_Index / cms_DictionaryDesigner：配置管理视图
+**策略**：全部采用模式A（列表CRUD）或模式B（编辑器），代码模式统一，快速批量生成
 
-### Phase 2：服务管理中心（P0，预计2天）
+### Phase 2：CMS独立入口（P1，预计 1 天）
 
-**目标**：实现o2web `service_*` 和 `program_center` 相关组件
+**目标**：为CMS模块提供独立的详细编辑入口
 
-| # | o2web组件 | oa4rust路由 | 后端模块 | Endpoint数 | 视图名 |
-|---|-----------|------------|---------|-----------|--------|
-| 1 | service_ServiceManager | /app/service-manager | program_center | 405 | ServiceManagerApp.vue |
-| 2 | service_AgentDesigner | /app/agent-designer | program_center | (含在405中) | AgentDesigner.vue |
-| 3 | service_InvokeDesigner | /app/invoke-designer | program_center | (含在405中) | InvokeDesigner.vue |
-| 4 | service_ScriptDesigner | /app/service-script-designer | program_center | (含在405中) | ServiceScriptDesigner.vue |
-| 5 | service_DictionaryDesigner | /app/service-dict-designer | program_center | (含在405中) | ServiceDictDesigner.vue |
-| 6 | AppCenter | /app/app-center | program_center | (含在405中) | AppCenterApp.vue |
-| 7 | AppMarketV2 | /app/app-market | program_center | (含在405中) | AppMarketApp.vue |
-| 8 | Deployment | /app/deployment | program_center | ~20 | DeploymentApp.vue |
+| # | o2web组件 | oa4rust路由 | 实现方式 | 视图名 |
+|---|-----------|------------|---------|--------|
+| 1 | cms_DictionaryDesigner | /app/cms-dict-designer | 键值对配置 | CmsDictDesignerApp.vue |
+| 2 | cms_FormDesigner (独立) | /app/cms-form-designer | JSON表单编辑器 | CmsFormDesignerApp.vue |
+| 3 | cms_ViewDesigner | /app/cms-view-designer | JSON视图配置 | CmsViewDesignerApp.vue |
+| 4 | cms_ScriptDesigner | /app/cms-script-designer | 脚本编辑器 | CmsScriptDesignerApp.vue |
+| 5 | cms_Xform (独立) | /app/cms-xform | XForm编辑器 | CmsXformApp.vue |
+| 6 | cms_Module (独立) | /app/cms-module | 模块管理 | CmsModuleApp.vue |
+| 7 | portal_DictionaryDesigner | /app/portal-dict-designer | 键值对配置 | PortalDictDesignerApp.vue |
+| 8 | portal_PageDesigner | /app/portal-page-designer | JSON页面配置 | PortalPageDesignerApp.vue |
+| 9 | portal_ScriptDesigner | /app/portal-script-designer | 脚本编辑器 | PortalScriptDesignerApp.vue |
+| 10 | portal_WidgetDesigner | /app/portal-widget-designer | 组件配置器 | PortalWidgetDesignerApp.vue |
+| 11 | process_FormDesigner (独立) | /app/process-form-designer | 流程表单设计 | ProcessFormDesignerApp.vue |
+| 12 | process_DictionaryDesigner | /app/process-dict-designer | 流程字典配置 | ProcessDictDesignerApp.vue |
+| 13 | process_ScriptDesigner | /app/process-script-designer | 流程脚本编辑 | ProcessScriptDesignerApp.vue |
+| 14 | process_Xform (独立) | /app/process-xform | 流程XForm | ProcessXformApp.vue |
+| 15 | process_Application (独立) | /app/process-application | 流程应用管理 | ProcessApplicationApp.vue |
+| 16 | service_InvokeDesigner (独立) | /app/service-invoke-designer | 服务调用配置 | ServiceInvokeDesignerApp.vue |
 
-**实现策略**：
-- ServiceManager：Agent列表+CRUD（参考 ProgramCenterApp.vue，已有 agentList/agentCreate 等API）
-- AgentDesigner：Agent配置编辑器（复用 JSON editor 模式）
-- InvokeDesigner：服务调用配置器（表单+测试面板）
-- AppCenter/AppMarket：应用列表+详情（参考 AppInfoApp.vue）
+### Phase 3：系统管理与工具（P2，预计 1 天）
 
-### Phase 3：流程管理深化（P1，预计2天）
+| # | o2web组件 | oa4rust路由 | 实现方式 | 视图名 |
+|---|-----------|------------|---------|--------|
+| 1 | DesignCenter | /app/design-center | 聚合导航 | DesignCenterApp.vue |
+| 2 | ControlPanel | /app/control-panel | 统计面板 | ControlPanelApp.vue |
+| 3 | ConfigDesigner | /app/config-designer | KV编辑器 | ConfigDesignerApp.vue |
+| 4 | FindDesigner | /app/find-designer | 搜索配置 | FindDesignerApp.vue |
+| 5 | Homepage | /app/homepage | 首页布局配置 | HomepageApp.vue |
+| 6 | BAM | /app/bam | 监控图表 | BamApp.vue |
+| 7 | Collect | /app/collect | 收集管理 | CollectApp.vue |
+| 8 | Note | /app/note | 笔记管理 | NoteApp.vue |
+| 9 | Template | /app/template | 模板管理 | TemplateApp.vue |
+| 10 | Search | /app/search | 全局搜索 | SearchApp.vue |
+| 11 | PdfViewer | /app/pdf-viewer | PDF查看 | PdfViewerApp.vue |
+| 12 | Deployment | /app/deployment | 部署管理 | DeploymentApp.vue |
+| 13 | ThreeMember | /app/three-member | 三方成员 | ThreeMemberApp.vue |
+| 14 | FaceSet | /app/face-set | 人脸设置 | FaceSetApp.vue |
 
-**目标**：补齐流程管理缺少的视图
+### Phase 4：低频扩展功能（P3，预计 1 天）
 
-| # | o2web组件 | oa4rust路由 | 后端模块 | Endpoint数 | 视图名 |
-|---|-----------|------------|---------|-----------|--------|
-| 1 | process_ProcessManager | /app/process-manager | processplatform_assemble_surface | 963 | ProcessManagerApp.vue |
-| 2 | process_TaskCenter | /app/task-center | processplatform_service_processing | 222 | TaskCenterApp.vue |
-| 3 | process_ApplicationExplorer | /app/app-explorer | program_center | (含在405中) | AppExplorerApp.vue |
-| 4 | process_ScriptDesigner | /app/process-script-designer | program_center | (含在405中) | ProcessScriptDesigner.vue |
-| 5 | process_DictionaryDesigner | /app/process-dict-designer | processplatform_assemble_designer | 122 | ProcessDictDesigner.vue |
-| 6 | process_workcenter | /app/work-center | processplatform_service_processing | (含在222中) | WorkCenterApp.vue |
+| # | o2web组件 | oa4rust路由 | 实现方式 | 视图名 |
+|---|-----------|------------|---------|--------|
+| 1 | ANN | /app/ann | AI配置 | AnnApp.vue |
+| 2 | Common | /app/common | 组件库 | CommonApp.vue |
+| 3 | ftsearch | /app/ftsearch | 全文搜索 | FtSearchApp.vue |
+| 4 | Empty | /app/empty | 占位 | EmptyApp.vue |
 
-**实现策略**：
-- ProcessManager：流程实例管理列表（参考 ProcessWork.vue，加管理Tab）
-- TaskCenter：任务调度中心（定时任务列表+启停，参考 ServerApp.vue）
-- AppExplorer：应用浏览器（树形结构，参考 OrgViewer.vue）
+### Phase 5：补漏与优化（P3，预计 1 天）
 
-### Phase 4：查询设计深化（P1，预计2天）
-
-**目标**：补齐查询设计的缺失视图
-
-| # | o2web组件 | oa4rust路由 | 后端模块 | Endpoint数 | 视图名 |
-|---|-----------|------------|---------|-----------|--------|
-| 1 | query_ViewDesigner | /app/query-view-designer | queryview | 119 | QueryViewDesigner.vue |
-| 2 | query_TableDesigner | /app/query-table-designer | query_assemble_surface | 131 | QueryTableDesigner.vue |
-| 3 | query_StatementDesigner | /app/query-statement-designer | query_assemble_designer | 157 | QueryStatementDesigner.vue |
-| 4 | query_StatDesigner | /app/query-stat-designer | query_assemble_designer | (含在157中) | QueryStatDesigner.vue |
-| 5 | query_ImporterDesigner | /app/query-import-designer | query_assemble_designer | (含在157中) | QueryImporterDesigner.vue |
-| 6 | query_QueryExplorer | /app/query-explorer | query_assemble_surface | (含在131中) | QueryExplorerApp.vue |
-
-**实现策略**：
-- QueryViewDesigner：视图配置编辑器（参考 QueryManager.vue + QueryViewApp.vue）
-- QueryTableDesigner：表格设计器（列配置+排序+筛选）
-- QueryStatementDesigner：SQL语句编辑器（代码编辑器+执行结果）
-- QueryStatDesigner：统计设计器（维度+指标配置）
-- QueryImporterDesigner：导入配置器（字段映射+数据预览）
-- QueryExplorer：查询浏览器（目录树+结果预览）
-
-### Phase 5：门户设计深化（P1，预计2天）
-
-**目标**：补齐门户设计的缺失视图
-
-| # | o2web组件 | oa4rust路由 | 后端模块 | Endpoint数 | 视图名 |
-|---|-----------|------------|---------|-----------|--------|
-| 1 | portal_WidgetDesigner | /app/widget-designer | portal_assemble_surface | 72 | WidgetDesigner.vue |
-| 2 | portal_ScriptDesigner | /app/portal-script-designer | portal_assemble_designer | 63 | PortalScriptDesigner.vue |
-| 3 | portal_PortalManager | /app/portal-manager | portal_assemble_surface | (含在72中) | PortalManagerApp.vue |
-| 4 | portal_PortalExplorer | /app/portal-explorer | portal_assemble_surface | (含在72中) | PortalExplorerApp.vue |
-| 5 | portal_DictionaryDesigner | /app/portal-dict-designer | portal_assemble_designer | (含在63中) | PortalDictDesigner.vue |
-
-**实现策略**：
-- WidgetDesigner：组件配置编辑器（参考 PortalDesigner.vue）
-- PortalScriptDesigner：门户脚本编辑器（代码编辑器）
-- PortalManager：门户管理列表（参考 PortalApp.vue）
-- PortalExplorer：门户浏览器（树形导航）
-- PortalDictDesigner：门户字典配置（键值对编辑器）
-
-### Phase 6：系统管理工具（P2，预计1天）
-
-**目标**：补齐系统管理必需的视图
-
-| # | o2web组件 | oa4rust路由 | 后端模块 | Endpoint数 | 视图名 |
-|---|-----------|------------|---------|-----------|--------|
-| 1 | LogViewer | /app/log-viewer | log | ~8 | LogViewerApp.vue |
-| 2 | systemconfig | /app/system-config | config | ~2 | SystemConfigApp.vue |
-| 3 | ConfigDesigner | /app/config-designer | config | (含在上) | ConfigDesignerApp.vue |
-| 4 | ControlPanel | /app/control-panel | sysresource | ~7 | ControlPanelApp.vue |
-| 5 | DesignCenter | /app/design-center | cms_assemble_control | (含在450中) | DesignCenterApp.vue |
-| 6 | FindDesigner | /app/find-designer | query_assemble_designer | ~10 | FindDesignerApp.vue |
-
-**实现策略**：
-- LogViewer：日志列表+搜索+过滤（表格+搜索框，参考 QueryManager.vue）
-- SystemConfig：系统配置KV编辑器（键值对表格）
-- ConfigDesigner：配置设计器（参考 FormDesigner.vue）
-- ControlPanel：控制面板（统计卡片+快捷操作，参考 Dashboard.vue）
-- DesignCenter：设计中心入口（聚合各设计器的导航页）
-- FindDesigner：查找设计器（搜索配置）
-
-### Phase 7：扩展功能（P3，预计2天）
-
-**目标**：补齐用户高频使用的扩展功能
-
-| # | o2web组件 | oa4rust路由 | 后端模块 | Endpoint数 | 视图名 |
-|---|-----------|------------|---------|-----------|--------|
-| 1 | PdfViewer | /app/pdf-viewer | preview | 2 | PdfViewerApp.vue |
-| 2 | Note | /app/note | cms_core_entity | ~5 | NoteApp.vue |
-| 3 | Template | /app/template | templateform | ~7 | TemplateApp.vue |
-| 4 | Search | /app/search | search | ~10 | SearchApp.vue |
-| 5 | Selector | /app/selector | organization_assemble_control | ~20 | SelectorApp.vue |
-| 6 | BAM | /app/bam | processplatform_assemble_bam | 91 | BamApp.vue |
-| 7 | Collect | /app/collect | program_center | ~15 | CollectApp.vue |
-| 8 | ThreeMember | /app/three-member | organization_assemble_control | ~10 | ThreeMemberApp.vue |
-| 9 | FaceSet | /app/face-set | personal | ~5 | FaceSetApp.vue |
-| 10 | ANN | /app/ann | ai_assemble_control | ~15 | AnnApp.vue |
-| 11 | attendancev2 | /app/attendance-v2 | attendance_assemble_control | ~50 | AttendanceV2App.vue |
-| 12 | Homepage | /app/homepage | portal_assemble_surface | ~10 | HomepageApp.vue |
-| 13 | MinderEditor | /app/minder-editor | mind_assemble_control | ~20 | MinderEditorApp.vue |
-| 14 | Common | /app/common | general_assemble_control | ~10 | CommonApp.vue |
-| 15 | Empty / ForumCategory / ForumDocument / ForumPerson / ForumSearch / ForumSection | — | bbs_assemble_control | ~38 | 整合到 BBSForum.vue |
-| 16 | appstore / appstore_application | /app/app-store | program_center | (含在405中) | AppStoreApp.vue |
-| 17 | AppMarketV2_Application | /app/app-market-detail | program_center | (含在405中) | AppMarketDetailApp.vue |
-| 18 | AI | /app/ai-assistant | ai_assemble_control | ~38 | 已实现(AIChatApp) |
-
-**实现策略**：
-- PdfViewer：PDF在线查看（iframe嵌入）
-- Note：笔记管理（CRUD+富文本）
-- Template：模板管理（列表+预览）
-- Search：全局搜索（搜索框+结果列表）
-- Selector：选择器组件（通用选人/选组织弹窗）
-- BAM：业务活动监控（图表+时间线）
-- Collect：收集管理（表单收集+数据汇总）
-- ThreeMember：三方成员管理（列表+同步）
-- FaceSet：人脸设置（上传+识别）
-- ANN：神经网络配置（AI配置面板）
-- AttendanceV2：考勤V2（增强版考勤管理）
-- Homepage：首页配置（门户首页布局）
-- MinderEditor：思维导图编辑器（集成 MindApp）
-- Common：公共组件库（复用组件）
-- BBS子组件：整合到 BBSForum.vue
-- AppStore/AppMarket：应用商店（列表+详情+安装）
+- 检查 o2web 中剩余未覆盖组件
+- 验证所有路由正确注册
+- 确保 TypeScript 零错误
+- 验证 Vite 构建通过
 
 ---
 
-## 三、实施节奏与里程碑
+## 四、实施节奏与里程碑
 
 ```
-Week 1 (Phase 1-2): CMS + 服务管理
-  Day 1-2: CmsDocumentApp, CmsModuleApp, CmsColumnApp (列表CRUD)
-  Day 3:    CmsFormDesigner, CmsViewDesigner, CmsScriptDesigner (编辑器)
-  Day 4:    ServiceManagerApp, AgentDesigner (服务管理)
-  Day 5:    AppCenterApp, AppMarketApp, DeploymentApp (应用中心)
+Day 1 (Phase 1):   14个高频缺失组件（LogViewer, Selector, query系列, cms系列, process系列）
+Day 2 (Phase 2):   16个CMS/Portal/Service独立入口组件
+Day 3 (Phase 3):   14个系统管理与工具组件
+Day 4 (Phase 4):   4个低频扩展功能组件
+Day 5 (Phase 5):   补漏、验证、TypeScript检查、构建验证
 
-Week 2 (Phase 3-4): 流程深化 + 查询深化
-  Day 1-2:  ProcessManagerApp, TaskCenterApp, WorkCenterApp (流程管理)
-  Day 3:    QueryViewDesigner, QueryTableDesigner (查询设计)
-  Day 4:    QueryStatementDesigner, QueryStatDesigner, QueryImporterDesigner
-  Day 5:    QueryExplorerApp (查询浏览器)
-
-Week 3 (Phase 5-6): 门户深化 + 系统管理
-  Day 1-2:  WidgetDesigner, PortalScriptDesigner, PortalManagerApp
-  Day 3:    PortalExplorerApp, PortalDictDesigner
-  Day 4:    LogViewerApp, SystemConfigApp, ControlPanelApp
-  Day 5:    DesignCenterApp, FindDesignerApp
-
-Week 4 (Phase 7): 扩展功能
-  Day 1-2:  PdfViewer, Note, Template, Search, Selector
-  Day 3:    BAM, Collect, ThreeMember, FaceSet
-  Day 4:    ANN, AttendanceV2, Homepage, MinderEditor
-  Day 5:    AppStore, BBS子组件整合, 清理调试
+总计：5个工作日，48个新视图，100% o2web 组件覆盖率
 ```
 
 ---
 
-## 四、验收标准
+## 五、验收标准
 
-### 功能性验收
+### 功能性验收（100%）
 
-| 指标 | 目标值 | 当前值 |
-|------|--------|--------|
-| o2web组件覆盖率 | ≥ 80% (69/86) | 22% (19/86) |
-| 核心功能覆盖率 | 100% | 100% |
-| TypeScript错误 | 0 | 0 |
-| Vite构建 | 通过 | 通过 |
-| 端到端可操作 | ≥ 80% | ~45% |
+| 指标 | 目标值 | 验收方法 |
+|------|--------|---------|
+| o2web组件覆盖率 | **100%** (84/84) | 对照 o2web/source/ 下的84个 x_component_* 目录逐一确认 |
+| 前端视图总数 | 84个（含占位） | `ls oa4rust-web/apps/desktop/src/views/*.vue \| wc -l` |
+| 前端路由总数 | ≥84条 | `grep "path:" oa4rust-web/apps/desktop/src/main.ts \| wc -l` |
+| TypeScript错误 | 0 | `pnpm --filter @oa4rust/desktop exec tsc --noEmit` |
+| Vite构建 | 通过 | `pnpm --filter @oa4rust/desktop build` |
+| 端到端可操作 | 100% | 每个视图可通过路由访问，API调用返回正常数据 |
 
 ### 代码质量验收
 
-- 每个新视图 ≤ 400行（保持可读性）
-- 所有API调用使用类型化参数
+- 每个视图 ≤ 400 行（保持可读性）
+- 所有API调用使用类型化参数（禁止 `any`）
 - 新增视图遵循现有UI规范（glass-card + 深色主题）
-- 无 console.log 遗留（用 tracing 替代）
-- 无 `any` 类型（用 `unknown` + 类型守卫替代）
+- 无遗留 console.log
+- 路由名称与 o2web 组件名称保持一致命名（如 `LogViewer` → `/app/log-viewer`）
 
 ### 交付物清单
 
-- 新增 49 个 Vue 视图文件
-- 更新 `oa4rust-web/apps/desktop/src/main.ts`（注册39条新路由）
-- 更新 `oa4rust-web/packages/apis/src/index.ts`（如有新增API方法）
-- 更新 `docs/plans/` 进度文档
-- 每次Phase完成后提交一个commit
+| 类别 | 数量 | 说明 |
+|------|------|------|
+| 新增 Vue 视图文件 | 48 个 | `apps/desktop/src/views/*.vue` |
+| 更新路由注册 | 48 条 | `apps/desktop/src/main.ts` |
+| API模块更新 | 如有 | `packages/apis/src/index.ts` |
+| 计划文档更新 | 1 份 | 本计划文档 |
+| Commit | 5 个 | 按Phase分阶段提交 |
 
 ---
 
-## 五、风险与缓解
+## 六、风险与缓解
 
 | 风险 | 影响 | 缓解措施 |
 |------|------|---------|
-| CMS编辑器复杂度超预期 | Phase 1延期 | 先用JSON编辑器 MVP，后续迭代可视化拖拽 |
-| 服务设计器API路径不确定 | Phase 2阻塞 | 先用 `request()` 通配兜底，逐步精确化 |
-| 后端API返回格式不一致 | 调试成本增加 | 统一使用 `ApiResponse<T>` 类型，增加错误处理 |
+| 编辑器复杂度超预期 | Phase延期 | 先用JSON编辑器MVP，可视化拖拽后续迭代 |
+| 后端API路径不确定 | 调试成本增加 | 先用 `request()` 通配兜底，逐步精确化 |
 | 视图数量膨胀导致构建变慢 | 开发体验下降 | 代码分割（lazy import），按需加载 |
-| 与o2web功能对比遗漏 | 覆盖率虚高 | 每个Phase完成后手工对比o2web截图 |
-
----
-
-## 六、完成后预期状态
-
-```
-o2web组件总数:  86
-已实现覆盖:    69 (80%)
-未实现(可选):  17 (ANN/FaceSet/ThreeMember等低频功能)
-
-核心业务闭环:  ✅ 日常办公 + 流程设计 + 表单设计 + 查询设计 + 门户设计 + CMS + 服务管理
-系统设计能力:  ✅ 全流程可视化设计 + 配置管理 + 监控告警
-系统管理能力:  ✅ 日志查看 + 配置管理 + 控制面板 + 部署管理
-```
+| 与o2web功能对比遗漏 | 覆盖率虚高 | 每个Phase完成后手工对照o2web目录 |
+| o2web组件功能不对等 | 某些组件无需单独视图 | Empty/App占位即可，无需完整实现 |
 
 ---
 
@@ -306,9 +339,10 @@ o2web组件总数:  86
 ```bash
 # 查看当前状态
 cd D:/WORKSPACE/fakeToys
-grep -c "^export const.*Api = {" oa4rust-web/packages/apis/src/index.ts  # API模块数
-ls oa4rust-web/apps/desktop/src/views/*.vue | wc -l                      # 视图数
-grep "path:" oa4rust-web/apps/desktop/src/main.ts | wc -l                # 路由数
+grep -c "^export const.*Api = {" oa4rust-web/packages/apis/src/index.ts      # API模块数
+ls oa4rust-web/apps/desktop/src/views/*.vue | wc -l                          # 视图数
+grep "path:" oa4rust-web/apps/desktop/src/main.ts | wc -l                     # 路由数
+ls oa/o2web/source/x_component_*/ 2>/dev/null | grep -c "x_component_"       # o2web组件数
 
 # 开发调试
 cd oa4rust-web
@@ -321,3 +355,19 @@ pnpm --filter @oa4rust/desktop exec tsc --noEmit
 # 构建
 pnpm --filter @oa4rust/desktop build
 ```
+
+---
+
+## 八、与旧版计划对比
+
+| 对比项 | 旧版计划（80%目标） | 新版计划（100%目标） |
+|--------|-------------------|-------------------|
+| 覆盖目标 | 69/86 (80%) | **84/84 (100%)** |
+| 缺失组件数 | 49个 | **48个** |
+| 实施周期 | 4周 | **5天** |
+| Phase数量 | 7个 | 5个（合并优化） |
+| CMS组件 | 10个独立视图 | **26个**（含独立入口+聚合覆盖） |
+| 新增组件 | 49个 | **48个** |
+| 低频组件 | 未包含 | **ANN, Common, ftsearch, Empty 明确纳入** |
+
+> 注：新版计划基于精确审计（o2web共84个有效组件），剔除了之前估算中重复/不存在的组件，同时补充了低频率但必要的组件（ANN, FaceSet, ThreeMember, Deployment等），实现真正意义上的100%替代。
