@@ -645,6 +645,13 @@ mod tests {
 
     #[tokio::test]
     async fn test_unit_list_db_connected() {
+        use shared::testing::is_db_available;
+
+        if !is_db_available().await {
+            eprintln!("skipping test_unit_list_db_connected: DATABASE_URL not reachable");
+            return;
+        }
+
         let pool = shared::testing::test_pool();
         let rate_limiter = RateLimiter::new();
         let session_manager = SessionManager::with_pool(pool.clone());
@@ -667,6 +674,13 @@ mod tests {
 
     #[tokio::test]
     async fn test_role_list_db_connected() {
+        use shared::testing::is_db_available;
+
+        if !is_db_available().await {
+            eprintln!("skipping test_role_list_db_connected: DATABASE_URL not reachable");
+            return;
+        }
+
         let pool = shared::testing::test_pool();
         let rate_limiter = RateLimiter::new();
         let session_manager = SessionManager::with_pool(pool.clone());
@@ -689,6 +703,13 @@ mod tests {
 
     #[tokio::test]
     async fn test_code_send_db_connected() {
+        use shared::testing::is_db_available;
+
+        if !is_db_available().await {
+            eprintln!("skipping test_code_send_db_connected: DATABASE_URL not reachable");
+            return;
+        }
+
         let pool = shared::testing::test_pool();
         let rate_limiter = RateLimiter::new();
         let session_manager = SessionManager::with_pool(pool.clone());
