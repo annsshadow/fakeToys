@@ -15,6 +15,7 @@ use shared::rate_limit::RateLimiter;
 use shared::Pool;
 use shared::session::SessionManager;
 use tracing_subscriber::EnvFilter;
+use tower_http::services::ServeDir;
 use express;
 use message;
 use openapi::ApiDoc;
@@ -167,6 +168,16 @@ async fn main() -> anyhow::Result<()> {
     } else {
         app
     };
+
+    // ── 静态文件服务（前端构建产物）─────────────────────────────────────
+    // OA4RUST_WEB_DIST 环境变量指定 dist 目录，默认相对于二进制位置向上两级再进 dist/web
+    let web_dist = env::var("OA4RUST_WEB_DIST")
+        .unwrap_or_else(|_| "../../dist/web".to_string());
+    let app = app.fallback_service(
+        ServeDir::new(&web_dist)
+            .append_index_html_on_directories(true),
+    );
+    tracing::info!(web_dist, "static frontend files mounted");
 
     let listener = tokio::net::TcpListener::bind("0.0.0.0:3000").await?;
     tracing::info!("listening on {}", listener.local_addr()?);
