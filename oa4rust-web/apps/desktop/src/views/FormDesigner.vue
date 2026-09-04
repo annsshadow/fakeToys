@@ -1157,6 +1157,8 @@ function applyTemplate2(tpl: FieldTemplate) {
 }
 // ── Export/Import Enhancements ──────────────────────────────────────
 function exportFormSchema() {
+  if (!currentForm.value) return
+  const schema = {
     formName: currentForm.value.name,
     formFlag: currentForm.value.flag,
     columnCount: columnCount.value,
@@ -1164,14 +1166,13 @@ function exportFormSchema() {
       type: f.type, label: f.label, key: f.key,
       required: f.required, disabled: f.disabled,
       placeholder: f.placeholder,
-      options: parseOptions(f.optionsStr),
+      options: f.options,
       validation: f.validation,
+      condition: f.condition
     }))
   }
-  const blob = new Blob([JSON.stringify(schema, null, 2)], { type: "application/json" })
-  const url = URL.createObjectURL(blob)
-  a.href = url; a.download = (currentForm.value.flag || "form") + "_schema.json"
-  a.click(); URL.revokeObjectURL(url)
+  jsonSchemaText.value = JSON.stringify(schema, null, 2)
+  showJsonSchemaPanel.value = true
 }
 function importFormSchema(text: string) {
   try {
@@ -1477,7 +1478,6 @@ function generateFieldDocs(): void {
 
 // -- Extended Feature State
 const showBulkEditPanel = ref(false)
-const bulkEditField = ref(''), bulkEditAction = ref(''), bulkEditValue = ref('')
 const showSearchPanel = ref(false)
 const searchQuery = ref(''), searchResults = ref<FormField[]>([])
 const showTypeFilter = ref(false)
