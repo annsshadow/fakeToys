@@ -58,7 +58,7 @@ async function doSearch() {
 }
 
 async function onDelete(item: any) {
-  if (!confirm(`确定删除热帖「${item.title || item.id}」？`)) return
+  if (!confirmMsg(`确定删除热帖「${item.title || item.id}」？`)) return
   try {
     await api.delete(`/jaxrs/hotpic/core/entity/delete/${item.id}`)
     items.value = items.value.filter(i => i.id !== item.id)
@@ -112,6 +112,11 @@ async function api_control_list_control_applications() { try { await api.get("/j
 async function api_control_user_hotpic_hotpic_001() { try { await api.get("/jaxrs/hotpic/assemble/control/user/hotpic/hotpic-001") } catch {} }
 async function api_control_list_control_panels() { try { await api.get("/jaxrs/hotpic/assemble/control/list/control/panels") } catch {} }
 
+async function api_jaxrs_hotpic_assemble_control_cipher_hotpic_filter_list_page_1_count_1() { try { await api.get("/jaxrs/hotpic/assemble/control/cipher/hotpic/filter/list/page/1/count/1") } catch {} }
+async function api_jaxrs_hotpic_assemble_control_user_hotpic_exists_check() { try { await api.get("/jaxrs/hotpic/assemble/control/user/hotpic/exists/check") } catch {} }
+async function api_jaxrs_hotpic_assemble_control_user_hotpic_filter_list_page_1_count_1() { try { await api.get("/jaxrs/hotpic/assemble/control/user/hotpic/filter/list/page/1/count/1") } catch {} }
+async function api_jaxrs_hotpic_core_entity_exists_check_app_app_001_info_001() { try { await api.get("/jaxrs/hotpic/core/entity/exists/check/app/app-001/info-001") } catch {} }
+async function api_jaxrs_hotpic_core_entity_list_by_app_app_001_info_001() { try { await api.get("/jaxrs/hotpic/core/entity/list/by/app/app-001/info-001") } catch {} }
 </script>
 
 <style scoped>

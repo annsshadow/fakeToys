@@ -167,6 +167,14 @@ async function api_meeting_assemble_control() { try { await api.get("/jaxrs/meet
 async function api_entity_room_save_room_001() { try { await api.get("/jaxrs/meeting/core/entity/room/save/room-001") } catch {} }
 async function api_control_openmeeting_list_room() { try { await api.get("/jaxrs/meeting/assemble/control/openmeeting/list/room") } catch {} }
 
+async function api_jaxrs_meeting_assemble_control_attachment_create_from_processplatform() { try { await api.get("/jaxrs/meeting/assemble/control/attachment/create/from/processplatform") } catch {} }
+async function api_jaxrs_meeting_assemble_control_config_system_config_manage() { try { await api.get("/jaxrs/meeting/assemble/control/config/system/config/manage") } catch {} }
+async function api_jaxrs_meeting_assemble_control_meeting_list_applied_completed() { try { await api.get("/jaxrs/meeting/assemble/control/meeting/list/applied/completed") } catch {} }
+async function api_jaxrs_meeting_assemble_control_meeting_list_applied_wait() { try { await api.get("/jaxrs/meeting/assemble/control/meeting/list/applied/wait") } catch {} }
+async function api_jaxrs_meeting_assemble_control_meeting_list_invited_completed() { try { await api.get("/jaxrs/meeting/assemble/control/meeting/list/invited/completed") } catch {} }
+async function api_jaxrs_meeting_assemble_control_meeting_list_invited_wait() { try { await api.get("/jaxrs/meeting/assemble/control/meeting/list/invited/wait") } catch {} }
+async function api_jaxrs_meeting_assemble_control_meeting_meeting_001_add_invite() { try { await api.get("/jaxrs/meeting/assemble/control/meeting/meeting-001/add/invite") } catch {} }
+async function api_jaxrs_meeting_assemble_control_meeting_meeting_001_delete_invite() { try { await api.get("/jaxrs/meeting/assemble/control/meeting/meeting-001/delete/invite") } catch {} }
 </script>
 <style scoped>
 .meeting-view{display:flex;flex-direction:column;gap:16px;height:100%}

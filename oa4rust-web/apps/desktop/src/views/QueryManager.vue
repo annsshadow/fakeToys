@@ -58,7 +58,7 @@ const qsFiltered=computed(()=>sq.value?qs2.value.filter(q=>(q.name||'').toLowerC
 function selQ(q:Q){selected.value=q;rdata.value=[];rheaders.value=[]}
 async function runQ(){if(!selected.value)return;rloading.value=true;try{const r=await api.post('/jaxrs/query/assemble/designer/execute',{id:selected.value!.id,filter:filterText.value});const d=(r as any)?.data;rdata.value=d?.list??[];if(rdata.value.length>0)rheaders.value=Object.keys(rdata.value[0])}catch{}finally{rloading.value=false}}
 const dm=useMutation({mutationFn:(id:string)=>api.delete(`/jaxrs/query/assemble/designer/delete/${id}`),onSuccess:()=>{qc.invalidateQueries({queryKey:['query','defs']});if(selected.value?.id)selected.value=null}})
-function delQ(){if(selected.value&&confirm('确定删除？'))dm.mutate(selected.value.id)}
+function delQ(){if(selected.value&&confirmMsg('确定删除？'))dm.mutate(selected.value.id)}
 const cm=useMutation({mutationFn:()=>api.post('/jaxrs/query/assemble/designer/create',nform.value),onSuccess:()=>{showCreate.value=false;qc.invalidateQueries({queryKey:['query','defs']})}})
 function createQ(){if(nform.value.name)cm.mutate()}
 function fmtT(t?:string){if(!t)return'';try{return new Date(t).toLocaleString('zh-CN',{month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'})}catch{return String(t)}}

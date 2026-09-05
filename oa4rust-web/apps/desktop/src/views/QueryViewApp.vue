@@ -154,6 +154,14 @@ async function api_viewrecord_unread() { try { await api.get("/jaxrs/viewrecord/
 async function api_viewrecord_person_p_1() { try { await api.get("/jaxrs/viewrecord/person/p-1") } catch {} }
 async function api_document_d_1_has_view() { try { await api.get("/jaxrs/viewrecord/document/d-1/has/view") } catch {} }
 
+async function api_jaxrs_queryview_stat_flag_s_1_query_qf_1_execute() { try { await api.get("/jaxrs/queryview/stat/flag/s-1/query/qf-1/execute") } catch {} }
+async function api_jaxrs_queryview_stat_flag_s_1_query_qf_1_execute_mockputtopost() { try { await api.get("/jaxrs/queryview/stat/flag/s-1/query/qf-1/execute/mockputtopost") } catch {} }
+async function api_jaxrs_queryview_statement_execute_st_1_page_1_size_20() { try { await api.get("/jaxrs/queryview/statement/execute/st-1/page/1/size/20") } catch {} }
+async function api_jaxrs_queryview_statement_st_1_execute_page_1_size_20() { try { await api.get("/jaxrs/queryview/statement/st-1/execute/page/1/size/20") } catch {} }
+async function api_jaxrs_queryview_table_list_paging_1_size_20() { try { await api.get("/jaxrs/queryview/table/list/paging/1/size/20") } catch {} }
+async function api_jaxrs_queryview_table_list_table_tf_1_row_paging_1_size_20() { try { await api.get("/jaxrs/queryview/table/list/table/tf-1/row/paging/1/size/20") } catch {} }
+async function api_jaxrs_queryview_view_flag_v_1_query_qf_1_bundle_mockputtopost() { try { await api.get("/jaxrs/queryview/view/flag/v-1/query/qf-1/bundle/mockputtopost") } catch {} }
+async function api_jaxrs_queryview_view_flag_v_1_query_qf_1_execute_v2_page_1_size_20() { try { await api.get("/jaxrs/queryview/view/flag/v-1/query/qf-1/execute/v2/page/1/size/20") } catch {} }
 </script>
 
 <style scoped>

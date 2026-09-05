@@ -189,6 +189,8 @@ function confirmMsg(msg: string): Promise<boolean> {
 
 async function api_list_i_1_next_10() { try { await api.get("/jaxrs/document/draft/list/i-1/next/10") } catch {} }
 
+async function api_jaxrs_document_cipher_filter_list_p_1_size_10() { try { await api.get("/jaxrs/document/cipher/filter/list/p-1/size/10") } catch {} }
+async function api_jaxrs_document_filter_list_i_1_size_10_manager() { try { await api.get("/jaxrs/document/filter/list/i-1/size/10/manager") } catch {} }
 </script>
 
 <style scoped>

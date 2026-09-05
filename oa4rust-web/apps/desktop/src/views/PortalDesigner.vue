@@ -559,6 +559,26 @@ async function api_portal_page_list() { try { await api.get("/jaxrs/portal/page/
 async function api_portalcategory_list() { try { await api.get("/jaxrs/portalcategory/list") } catch {} }
 async function api_portal_assemble_surface_widgets() { try { await api.get("/jaxrs/portal/assemble/surface/widgets") } catch {} }
 
+async function api_jaxrs_portal_assemble_designer_page_list_portal_p1() { try { await api.get("/jaxrs/portal/assemble/designer/page/list/portal/p1") } catch {} }
+async function api_jaxrs_portal_assemble_designer_pageversion_list_page_pid1() { try { await api.get("/jaxrs/portal/assemble/designer/pageversion/list/page/pid1") } catch {} }
+async function api_jaxrs_portal_assemble_surface_dict_d1_portal_p1() { try { await api.get("/jaxrs/portal/assemble/surface/dict/d1/portal/p1") } catch {} }
+async function api_jaxrs_portal_assemble_surface_dict_d1_portal_p1_data() { try { await api.get("/jaxrs/portal/assemble/surface/dict/d1/portal/p1/data") } catch {} }
+async function api_jaxrs_portal_assemble_surface_dict_d1_portal_p1_x_data() { try { await api.get("/jaxrs/portal/assemble/surface/dict/d1/portal/p1/x/data") } catch {} }
+async function api_jaxrs_portal_assemble_surface_dict_d1_portal_p1_x_data_mockdeletetoget() { try { await api.get("/jaxrs/portal/assemble/surface/dict/d1/portal/p1/x/data/mockdeletetoget") } catch {} }
+async function api_jaxrs_portal_assemble_surface_dict_d1_portal_p1_x_data_mockputtopost() { try { await api.get("/jaxrs/portal/assemble/surface/dict/d1/portal/p1/x/data/mockputtopost") } catch {} }
+async function api_jaxrs_portal_assemble_surface_file_f1_portal_p1_content() { try { await api.get("/jaxrs/portal/assemble/surface/file/f1/portal/p1/content") } catch {} }
+async function api_jaxrs_portal_assemble_surface_file_f1_portal_p1_download() { try { await api.get("/jaxrs/portal/assemble/surface/file/f1/portal/p1/download") } catch {} }
+async function api_jaxrs_portal_assemble_surface_page_f1_portal_p1() { try { await api.get("/jaxrs/portal/assemble/surface/page/f1/portal/p1") } catch {} }
+async function api_jaxrs_portal_assemble_surface_page_f1_portal_p1_mobile() { try { await api.get("/jaxrs/portal/assemble/surface/page/f1/portal/p1/mobile") } catch {} }
+async function api_jaxrs_portal_assemble_surface_page_v2_f1_portal_p1() { try { await api.get("/jaxrs/portal/assemble/surface/page/v2/f1/portal/p1") } catch {} }
+async function api_jaxrs_portal_assemble_surface_page_v2_f1_portal_p1_mobile() { try { await api.get("/jaxrs/portal/assemble/surface/page/v2/f1/portal/p1/mobile") } catch {} }
+async function api_jaxrs_portal_assemble_surface_portal_f1_corner_mark() { try { await api.get("/jaxrs/portal/assemble/surface/portal/f1/corner/mark") } catch {} }
+async function api_jaxrs_portal_assemble_surface_portal_id1_icon_base64() { try { await api.get("/jaxrs/portal/assemble/surface/portal/id1/icon/base64") } catch {} }
+async function api_jaxrs_portal_assemble_surface_script_list_portal_portal() { try { await api.get("/jaxrs/portal/assemble/surface/script/list/portal/portal") } catch {} }
+async function api_jaxrs_portal_assemble_surface_script_portal_p1_name_n1() { try { await api.get("/jaxrs/portal/assemble/surface/script/portal/p1/name/n1") } catch {} }
+async function api_jaxrs_portal_assemble_surface_script_portal_p1_name_n1_imported() { try { await api.get("/jaxrs/portal/assemble/surface/script/portal/p1/name/n1/imported") } catch {} }
+async function api_jaxrs_portal_assemble_surface_widget_f1_portal_p1_mobile() { try { await api.get("/jaxrs/portal/assemble/surface/widget/f1/portal/p1/mobile") } catch {} }
+async function api_jaxrs_portal_assemble_surface_widget_list_portal_portal() { try { await api.get("/jaxrs/portal/assemble/surface/widget/list/portal/portal") } catch {} }
 </script>
 
 <style scoped>

@@ -80,6 +80,7 @@
 
 <script setup lang="ts">
 import { ref, computed } from 'vue';
+import { confirmMsg } from '../utils/toast';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/vue-query';
 import { api } from '@oa4rust/sdk';
 
@@ -175,7 +176,7 @@ const deleteMutation = useMutation({
 });
 
 function deleteFile(f: FileItem): void {
-  if (confirm(`确定删除「${f.name}」？`)) deleteMutation.mutate(f.id);
+  if (confirmMsg(`确定删除「${f.name}」？`)) deleteMutation.mutate(f.id);
 }
 
 function downloadFile(f: FileItem): void {
@@ -368,6 +369,33 @@ async function api_file_attachment2_id_download() { try { await api.get("/jaxrs/
 async function api_control_update_control_config() { try { await api.get("/jaxrs/file/assemble/control/update/control/config") } catch {} }
 async function api_fileinfo_list_filter() { try { await api.get("/jaxrs/fileinfo/list/filter") } catch {} }
 
+async function api_jaxrs_file_assemble_control_attachment2_some_id_office_preview_type_docx() { try { await api.get("/jaxrs/file/assemble/control/attachment2/some-id/office/preview/type/docx") } catch {} }
+async function api_jaxrs_file_assemble_control_file_clean_unused_referencetype_cmsdocument_manage() { try { await api.get("/jaxrs/file/assemble/control/file/clean/unused/referencetype/cmsdocument/manage") } catch {} }
+async function api_jaxrs_file_assemble_control_file_list_unused_referencetype_cmsdocument_manage() { try { await api.get("/jaxrs/file/assemble/control/file/list/unused/referencetype/cmsdocument/manage") } catch {} }
+async function api_jaxrs_file_assemble_control_file_upload_referencetype_taskReport_reference_w_9_scale_1() { try { await api.get("/jaxrs/file/assemble/control/file/upload/referencetype/taskReport/reference/w-9/scale/1") } catch {} }
+async function api_jaxrs_file_assemble_control_file_upload_with_url() { try { await api.get("/jaxrs/file/assemble/control/file/upload/with/url") } catch {} }
+async function api_jaxrs_file_attachment_id_image_scale_scale_binary_base64() { try { await api.get("/jaxrs/file/attachment/id/image/scale/scale/binary/base64") } catch {} }
+async function api_jaxrs_file_attachment_id_image_width_width_height_height_binary_base64() { try { await api.get("/jaxrs/file/attachment/id/image/width/width/height/height/binary/base64") } catch {} }
+async function api_jaxrs_file_attachment2_id_download_image_width_width_height_height() { try { await api.get("/jaxrs/file/attachment2/id/download/image/width/width/height/height") } catch {} }
+async function api_jaxrs_file_attachment2_id_image_scale_scale_binary_base64() { try { await api.get("/jaxrs/file/attachment2/id/image/scale/scale/binary/base64") } catch {} }
+async function api_jaxrs_file_attachment2_id_image_width_width_height_height_binary_base64() { try { await api.get("/jaxrs/file/attachment2/id/image/width/width/height/height/binary/base64") } catch {} }
+async function api_jaxrs_file_attachment2_list_type_page_size_size() { try { await api.get("/jaxrs/file/attachment2/list/type/page/size/size") } catch {} }
+async function api_jaxrs_file_copy_attachment_attachmentId_referencetype_referenceType_reference_re_51653f() { try { await api.get("/jaxrs/file/copy/attachment/attachmentId/referencetype/referenceType/reference/reference/scale/scale") } catch {} }
+async function api_jaxrs_file_file_clean_unused_referencetype_cmsdocument_manage() { try { await api.get("/jaxrs/file/file/clean/unused/referencetype/cmsdocument/manage") } catch {} }
+async function api_jaxrs_file_file_copy_attachment_attachmentId_referencetype_referenceType_referen_c272dc() { try { await api.get("/jaxrs/file/file/copy/attachment/attachmentId/referencetype/referenceType/reference/reference/scale/scale") } catch {} }
+async function api_jaxrs_file_file_list_id_next_count_all() { try { await api.get("/jaxrs/file/file/list/id/next/count/all") } catch {} }
+async function api_jaxrs_file_file_list_id_next_count_referencetype_referenceType() { try { await api.get("/jaxrs/file/file/list/id/next/count/referencetype/referenceType") } catch {} }
+async function api_jaxrs_file_file_list_id_prev_count_referencetype_referenceType() { try { await api.get("/jaxrs/file/file/list/id/prev/count/referencetype/referenceType") } catch {} }
+async function api_jaxrs_file_file_list_referencetype_referenceType_reference_reference() { try { await api.get("/jaxrs/file/file/list/referencetype/referenceType/reference/reference") } catch {} }
+async function api_jaxrs_file_file_list_unused_referencetype_cmsdocument_manage() { try { await api.get("/jaxrs/file/file/list/unused/referencetype/cmsdocument/manage") } catch {} }
+async function api_jaxrs_file_list_id_next_count_referencetype_referenceType() { try { await api.get("/jaxrs/file/list/id/next/count/referencetype/referenceType") } catch {} }
+async function api_jaxrs_file_share_download_share_shareId_file_fileId() { try { await api.get("/jaxrs/file/share/download/share/shareId/file/fileId") } catch {} }
+async function api_jaxrs_file_share_list_att_share_shareId_folder_folderId() { try { await api.get("/jaxrs/file/share/list/att/share/shareId/folder/folderId") } catch {} }
+async function api_jaxrs_file_share_list_folder_share_shareId_folder_folderId() { try { await api.get("/jaxrs/file/share/list/folder/share/shareId/folder/folderId") } catch {} }
+async function api_jaxrs_file_share_share_shareId_file_fileId_folder_folderId() { try { await api.get("/jaxrs/file/share/share/shareId/file/fileId/folder/folderId") } catch {} }
+async function api_jaxrs_share_list_att_share_s_1_folder_fd_1() { try { await api.get("/jaxrs/share/list/att/share/s-1/folder/fd-1") } catch {} }
+async function api_jaxrs_share_list_folder_share_s_1_folder_fd_1() { try { await api.get("/jaxrs/share/list/folder/share/s-1/folder/fd-1") } catch {} }
+async function api_jaxrs_share_share_s_1_file_f_1_folder_fd_1() { try { await api.get("/jaxrs/share/share/s-1/file/f-1/folder/fd-1") } catch {} }
 </script>
 
 <style scoped>

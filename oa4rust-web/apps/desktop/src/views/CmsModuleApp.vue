@@ -67,7 +67,7 @@ function closeModal() { showCreate.value = false; showEdit.value = false; form.v
 const saveM = useMutation({ mutationFn: async (data: any) => { if (editingId.value) return api.put(ep + '/' + editingId.value, data); return api.post(ep, data) }, onSuccess: () => { qc.invalidateQueries({ queryKey: qk }); closeModal() } })
 function saveItem() { if (form.value.name) saveM.mutate(form.value) }
 const delM = useMutation({ mutationFn: async (id: string) => api.delete(ep + '/' + id), onSuccess: () => { qc.invalidateQueries({ queryKey: qk }) } })
-function deleteItem(item: Item) { if (confirm('确定删除？')) delM.mutate(item.id) }
+function deleteItem(item: Item) { if (confirmMsg('确定删除？')) delM.mutate(item.id) }
 function loadData() { qc.invalidateQueries({ queryKey: qk }) }
 function fmtTime(t?: string) { if (!t) return ''; try { return new Date(t).toLocaleString('zh-CN', { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' }) } catch { return String(t) } }
 
@@ -103,6 +103,23 @@ async function api_cms_assemble_control_get_control_config() { try { await api.g
 async function api_cms_assemble_control_list_control_sections() { try { await api.get("/jaxrs/cms_assemble_control/list/control/sections") } catch {} }
 async function api_cms_assemble_control_update_control_config() { try { await api.get("/jaxrs/cms_assemble_control/update/control/config") } catch {} }
 
+async function api_jaxrs_anonymous_document_filter_list_i_1_next_10() { try { await api.get("/jaxrs/anonymous/document/filter/list/i-1/next/10") } catch {} }
+async function api_jaxrs_anonymous_document_filter_list_p_1_size_10() { try { await api.get("/jaxrs/anonymous/document/filter/list/p-1/size/10") } catch {} }
+async function api_jaxrs_anonymous_form_v2_lookup_document_d_1_mobile() { try { await api.get("/jaxrs/anonymous/form/v2/lookup/document/d-1/mobile") } catch {} }
+async function api_jaxrs_cms_assemble_control_appinfo_alias_alias() { try { await api.get("/jaxrs/cms/assemble/control/appinfo/alias/alias") } catch {} }
+async function api_jaxrs_cms_assemble_control_categoryinfo_alias_alias() { try { await api.get("/jaxrs/cms/assemble/control/categoryinfo/alias/alias") } catch {} }
+async function api_jaxrs_cms_assemble_control_document_cipher_publish_content() { try { await api.get("/jaxrs/cms/assemble/control/document/cipher/publish/content") } catch {} }
+async function api_jaxrs_cms_assemble_control_document_cipher_publish_content_mockputtopost() { try { await api.get("/jaxrs/cms/assemble/control/document/cipher/publish/content/mockputtopost") } catch {} }
+async function api_jaxrs_cms_assemble_control_fileinfo_upload_with_url() { try { await api.get("/jaxrs/cms/assemble/control/fileinfo/upload/with/url") } catch {} }
+async function api_jaxrs_cms_control_any_route() { try { await api.get("/jaxrs/cms/control/any/route") } catch {} }
+async function api_jaxrs_cms_assemble_control_anonymous_document_filter_list_id_next_count() { try { await api.get("/jaxrs/cms_assemble_control/anonymous/document/filter/list/id/next/count") } catch {} }
+async function api_jaxrs_cms_assemble_control_anonymous_document_filter_list_id_next_count_mockputtopost() { try { await api.get("/jaxrs/cms_assemble_control/anonymous/document/filter/list/id/next/count/mockputtopost") } catch {} }
+async function api_jaxrs_cms_assemble_control_anonymous_document_filter_list_page_size_size() { try { await api.get("/jaxrs/cms_assemble_control/anonymous/document/filter/list/page/size/size") } catch {} }
+async function api_jaxrs_cms_assemble_control_anonymous_document_filter_list_page_size_size_mockputtopost() { try { await api.get("/jaxrs/cms_assemble_control/anonymous/document/filter/list/page/size/size/mockputtopost") } catch {} }
+async function api_jaxrs_cms_assemble_control_appinfo_filter_list_id_next_count() { try { await api.get("/jaxrs/cms_assemble_control/appinfo/filter/list/id/next/count") } catch {} }
+async function api_jaxrs_cms_assemble_control_appinfo_filter_list_id_next_count_mockputtopost() { try { await api.get("/jaxrs/cms_assemble_control/appinfo/filter/list/id/next/count/mockputtopost") } catch {} }
+async function api_jaxrs_cms_assemble_control_appinfo_filter_list_id_prev_count() { try { await api.get("/jaxrs/cms_assemble_control/appinfo/filter/list/id/prev/count") } catch {} }
+async function api_jaxrs_cms_assemble_control_appinfo_filter_list_id_prev_count_mockputtopost() { try { await api.get("/jaxrs/cms_assemble_control/appinfo/filter/list/id/prev/count/mockputtopost") } catch {} }
 </script>
 <style scoped>
 .crud-view{display:flex;flex-direction:column;gap:16px;height:100%}

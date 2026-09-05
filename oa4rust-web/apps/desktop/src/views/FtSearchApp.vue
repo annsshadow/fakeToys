@@ -47,7 +47,7 @@ function closeModal(){showCreate.value=false;showEdit.value=false;form.value={}}
 const saveM=useMutation({mutationFn:async(d:any)=>editingId.value?api.put(ep+'/'+editingId.value,d):api.post(ep,d),onSuccess:()=>{qc.invalidateQueries({queryKey:qk});closeModal()}})
 function saveItem(){if(form.value.name)saveM.mutate(form.value)}
 const delM=useMutation({mutationFn:async(id:string)=>api.delete(ep+'/'+id),onSuccess:()=>{qc.invalidateQueries({queryKey:qk})}})
-function deleteItem(item:Item){if(confirm('确定删除？'))delM.mutate(item.id)}
+function deleteItem(item:Item){if(confirmMsg('确定删除？'))delM.mutate(item.id)}
 function loadData(){qc.invalidateQueries({queryKey:qk})}
 function fmtTime(t?:string){if(!t)return'';try{return new Date(t).toLocaleString('zh-CN',{month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'})}catch{return String(t)}}
 </script>

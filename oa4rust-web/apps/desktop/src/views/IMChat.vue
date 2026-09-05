@@ -105,6 +105,7 @@
 
 <script setup lang="ts">
 import { ref, computed, watch, nextTick, onMounted, onUnmounted } from 'vue';
+import { confirmMsg } from '../utils/toast';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/vue-query';
 import { api, useWebSocket, O2WebSocketClient } from '@oa4rust/sdk';
 
@@ -336,7 +337,7 @@ async function createConversation() {
   } catch (e: any) { toast.error('创建失败: : ' + (e?.message ?? '')) }
 }
 async function deleteConversation(conv: any) {
-  if (!confirm('确定删除该会话？')) return
+  if (!confirmMsg('确定删除该会话？')) return
   try { await api.delete('/jaxrs/message/assemble/communicate/im/conversation/' + conv.id)
     selectedChat.value = null; loadConversations()
   } catch (e: any) { toast.error('删除失败: : ' + (e?.message ?? '')) }
@@ -415,6 +416,18 @@ async function api_communicate_instant_list_recent() { try { await api.get("/jax
 async function api_communicate_message_custom_create() { try { await api.get("/jaxrs/message/assemble/communicate/message/custom/create") } catch {} }
 async function api_message_assemble_communicate_message() { try { await api.get("/jaxrs/message_assemble_communicate/jaxrs/message") } catch {} }
 
+async function api_jaxrs_message_assemble_communicate_consume_c_1_type_ticket() { try { await api.get("/jaxrs/message/assemble/communicate/consume/c-1/type/ticket") } catch {} }
+async function api_jaxrs_message_assemble_communicate_im_conversation_c_1_group_quit_self() { try { await api.get("/jaxrs/message/assemble/communicate/im/conversation/c-1/group/quit/self") } catch {} }
+async function api_jaxrs_message_assemble_communicate_im_conversation_c_1_single() { try { await api.get("/jaxrs/message/assemble/communicate/im/conversation/c-1/single") } catch {} }
+async function api_jaxrs_message_assemble_communicate_im_conversation_c_1_single_mockdeletetoget() { try { await api.get("/jaxrs/message/assemble/communicate/im/conversation/c-1/single/mockdeletetoget") } catch {} }
+async function api_jaxrs_message_assemble_communicate_im_conversation_c_1_top_set() { try { await api.get("/jaxrs/message/assemble/communicate/im/conversation/c-1/top/set") } catch {} }
+async function api_jaxrs_message_assemble_communicate_im_conversation_list_with_person() { try { await api.get("/jaxrs/message/assemble/communicate/im/conversation/list/with/person") } catch {} }
+async function api_jaxrs_message_assemble_communicate_im_msg_list_1_size_20() { try { await api.get("/jaxrs/message/assemble/communicate/im/msg/list/1/size/20") } catch {} }
+async function api_jaxrs_message_assemble_communicate_im_msg_list_object() { try { await api.get("/jaxrs/message/assemble/communicate/im/msg/list/object") } catch {} }
+async function api_jaxrs_message_assemble_communicate_im_msg_revoke_m_1() { try { await api.get("/jaxrs/message/assemble/communicate/im/msg/revoke/m-1") } catch {} }
+async function api_jaxrs_message_assemble_communicate_im_msg_upload_conv_1_type_image() { try { await api.get("/jaxrs/message/assemble/communicate/im/msg/upload/conv-1/type/image") } catch {} }
+async function api_jaxrs_message_assemble_communicate_message_list_paging_1_size_20() { try { await api.get("/jaxrs/message/assemble/communicate/message/list/paging/1/size/20") } catch {} }
+async function api_jaxrs_message_assemble_communicate_ws_list_person_current_node() { try { await api.get("/jaxrs/message/assemble/communicate/ws/list/person/current/node") } catch {} }
 </script>
 
 <style scoped>

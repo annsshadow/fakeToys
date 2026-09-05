@@ -411,7 +411,7 @@ const delM = useMutation({
   onSuccess: () => { qc.invalidateQueries({ queryKey: ['qm','list'] }); if (selected.value?.id) selected.value = null }
 })
 function deleteQuery() {
-  if (!selected.value || !confirm('确定删除此查询？')) return
+  if (!selected.value || !confirmMsg('确定删除此查询？')) return
   delM.mutate(selected.value.id)
 }
 
@@ -548,6 +548,16 @@ function getQueryExecCount(id: string) { return execCounts.value[id] || 0 }
 function getQueryLastRun(id: string) { return lastRuns.value[id] || '—' }
 function openProps() { if(selected.value) showProps.value = true }
 
+async function api_jaxrs_query_assemble_designer_neural_model_m1_reset_status() { try { await api.get("/jaxrs/query/assemble/designer/neural/model/m1/reset/status") } catch {} }
+async function api_jaxrs_query_assemble_designer_statement_execute_st_1_mode_count_page_1_size_20() { try { await api.get("/jaxrs/query/assemble/designer/statement/execute/st-1/mode/count/page/1/size/20") } catch {} }
+async function api_jaxrs_query_assemble_designer_statement_execute_st_1_page_1_size_20() { try { await api.get("/jaxrs/query/assemble/designer/statement/execute/st-1/page/1/size/20") } catch {} }
+async function api_jaxrs_query_assemble_designer_statement_st_1_execute_mode_count_page_1_size_20() { try { await api.get("/jaxrs/query/assemble/designer/statement/st-1/execute/mode/count/page/1/size/20") } catch {} }
+async function api_jaxrs_query_assemble_designer_statement_st_1_execute_page_1_size_20() { try { await api.get("/jaxrs/query/assemble/designer/statement/st-1/execute/page/1/size/20") } catch {} }
+async function api_jaxrs_query_service_processing_index_directory_document_count() { try { await api.get("/jaxrs/query/service/processing/index/directory/document/count") } catch {} }
+async function api_jaxrs_query_service_processing_index_update_extra_document() { try { await api.get("/jaxrs/query/service/processing/index/update/extra/document") } catch {} }
+async function api_jaxrs_query_service_processing_touch_high_freq_work_node_u2node_reset() { try { await api.get("/jaxrs/query/service/processing/touch/high/freq/work/node/u2node/reset") } catch {} }
+async function api_jaxrs_query_service_processing_touch_high_freq_work_node_u2node_touch() { try { await api.get("/jaxrs/query/service/processing/touch/high/freq/work/node/u2node/touch") } catch {} }
+async function api_jaxrs_query_service_processing_touch_optimize_index_n0_touch() { try { await api.get("/jaxrs/query/service/processing/touch/optimize/index/n0/touch") } catch {} }
 </script>
 
 <style scoped>
