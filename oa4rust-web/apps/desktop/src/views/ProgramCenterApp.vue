@@ -188,7 +188,7 @@ async function onCreateAgent() {
     showCreateAgent.value = false
     agentForm.value = { name: '', flag: '' }
     loadAgents()
-  } catch (e: any) { alert('创建失败: ' + (e?.message ?? '')) }
+  } catch (e: any) { toast.error('创建失败: : ' + (e?.message ?? '')) }
 }
 
 // Watch tab changes to load data

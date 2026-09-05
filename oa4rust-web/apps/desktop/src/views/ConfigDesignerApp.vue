@@ -213,7 +213,7 @@ async function save() {
     await api.put('/jaxrs/config/update/'+selected.value.id, { ...selected.value, config: config.value })
     qc.invalidateQueries({ queryKey: ['config','list'] })
     addHistory(true)
-  } catch (e: any) { alert('保存失败: '+(e?.message??'')) }
+  } catch (e: any) { toast.error('保存失败: : ' + (e?.message??'')) }
 }
 async function preview() { alert('配置预览:\n'+config.value) }
 function clearConfig() { if(confirmMsg('清空配置？')) config.value = '{}' }

@@ -333,13 +333,13 @@ async function createConversation() {
   if (!name) return
   try { await api.post('/jaxrs/message/assemble/communicate/im/conversation/create', { name })
     loadConversations()
-  } catch (e: any) { alert('创建失败: ' + (e?.message ?? '')) }
+  } catch (e: any) { toast.error('创建失败: : ' + (e?.message ?? '')) }
 }
 async function deleteConversation(conv: any) {
   if (!confirm('确定删除该会话？')) return
   try { await api.delete('/jaxrs/message/assemble/communicate/im/conversation/' + conv.id)
     selectedChat.value = null; loadConversations()
-  } catch (e: any) { alert('删除失败: ' + (e?.message ?? '')) }
+  } catch (e: any) { toast.error('删除失败: : ' + (e?.message ?? '')) }
 }
 async function searchUsers() {
   const q = prompt('搜索用户:')

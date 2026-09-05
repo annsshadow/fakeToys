@@ -105,7 +105,7 @@ async function onCreate() {
     showCreate.value = false
     createForm.value = { title: '', content: '' }
     doSearch()
-  } catch (e: any) { alert('创建失败: ' + (e?.message ?? '未知错误')) } finally { creating.value = false }
+  } catch (e: any) { toast.error('创建失败: : ' + (e?.message ?? '未知错误')) } finally { creating.value = false }
 }
 
 async function onDelete(item: DocItem) {
@@ -113,7 +113,7 @@ async function onDelete(item: DocItem) {
   try {
     await api.delete(`/jaxrs/document/${item.id}`)
     items.value = items.value.filter(i => i.id !== item.id)
-  } catch (e: any) { alert('删除失败: ' + (e?.message ?? '')) }
+  } catch (e: any) { toast.error('删除失败: : ' + (e?.message ?? '')) }
 }
 
 doSearch()

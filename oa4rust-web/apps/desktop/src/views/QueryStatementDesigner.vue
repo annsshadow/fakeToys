@@ -975,7 +975,7 @@ async function executeSQL() {
   } catch (e: any) {
     resultData.value = []
     resultHeaders.value = []
-    alert('执行失败: ' + (e?.message ?? '未知错误'))
+    toast.error('执行失败: : ' + (e?.message ?? '未知错误'))
     lastExecDuration.value = Date.now() - t0
   } finally { loadingResult.value = false }
 }

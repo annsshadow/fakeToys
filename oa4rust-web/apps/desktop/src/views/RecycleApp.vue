@@ -62,7 +62,7 @@ async function resume(item: RecycleItem) {
   try {
     await api.post(`/jaxrs/recycle/resume/${item.id}`, null)
     items.value = items.value.filter(i => i.id !== item.id)
-  } catch (e: any) { alert('恢复失败: ' + (e?.message ?? '')) }
+  } catch (e: any) { toast.error('恢复失败: : ' + (e?.message ?? '')) }
 }
 
 async function permanentDelete(item: RecycleItem) {
@@ -70,7 +70,7 @@ async function permanentDelete(item: RecycleItem) {
   try {
     await api.delete(`/jaxrs/recycle/${item.id}`)
     items.value = items.value.filter(i => i.id !== item.id)
-  } catch (e: any) { alert('删除失败: ' + (e?.message ?? '')) }
+  } catch (e: any) { toast.error('删除失败: : ' + (e?.message ?? '')) }
 }
 
 async function emptyRecycle() {
@@ -78,7 +78,7 @@ async function emptyRecycle() {
   try {
     await api.post('/jaxrs/recycle/empty', null)
     items.value = []
-  } catch (e: any) { alert('清空失败: ' + (e?.message ?? '')) }
+  } catch (e: any) { toast.error('清空失败: : ' + (e?.message ?? '')) }
 }
 
 function formatDate(d?: string) {

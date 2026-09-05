@@ -94,7 +94,7 @@ async function executeView(v: ViewItem) {
   try {
     const r = await api.post(`/jaxrs/queryview/execute/${v.flag || v.id}`, {})
     execResult.value = r.data?.list ?? r.data ?? []
-  } catch (e: any) { alert('执行失败: ' + (e?.message ?? '未知错误')) } finally { execLoading.value = false }
+  } catch (e: any) { toast.error('执行失败: : ' + (e?.message ?? '未知错误')) } finally { execLoading.value = false }
 }
 
 async function exportExcel(v: ViewItem) {
@@ -105,7 +105,7 @@ async function exportExcel(v: ViewItem) {
     } else {
       toast.info('Excel导出暂未生成URL')
     }
-  } catch (e: any) { alert('导出失败: ' + (e?.message ?? '')) }
+  } catch (e: any) { toast.error('导出失败: : ' + (e?.message ?? '')) }
 }
 
 loadViews()

@@ -97,7 +97,7 @@ async function onSave() {
     editingRole.value = null
     form.value = { name: '', flag: '', desc: '' }
     loadRoles()
-  } catch (e: any) { alert('保存失败: ' + (e?.message ?? '未知错误')) } finally { creating.value = false }
+  } catch (e: any) { toast.error('保存失败: : ' + (e?.message ?? '未知错误')) } finally { creating.value = false }
 }
 
 async function deleteRole(r: Role) {
@@ -105,7 +105,7 @@ async function deleteRole(r: Role) {
   try {
     await api.delete(`/jaxrs/role/${r.flag || r.id}`)
     roles.value = roles.value.filter(x => x.flag !== r.flag)
-  } catch (e: any) { alert('删除失败: ' + (e?.message ?? '')) }
+  } catch (e: any) { toast.error('删除失败: : ' + (e?.message ?? '')) }
 }
 
 loadRoles()

@@ -319,7 +319,7 @@ async function savePage() {
     }
     showModal.value = false
     loadPages()
-  } catch (e: any) { alert('保存失败: ' + (e?.message ?? '')) } finally { saving.value = false }
+  } catch (e: any) { toast.error('保存失败: : ' + (e?.message ?? '')) } finally { saving.value = false }
 }
 
 async function deletePage(p: PageDef) {
@@ -327,7 +327,7 @@ async function deletePage(p: PageDef) {
   try {
     await api.delete(`/jaxrs/portal/assemble/designer/page/${p.id}`)
     pages.value = pages.value.filter(x => x.id !== p.id)
-  } catch (e: any) { alert('删除失败: ' + (e?.message ?? '')) }
+  } catch (e: any) { toast.error('删除失败: : ' + (e?.message ?? '')) }
 }
 
 // Watch tab changes
@@ -366,7 +366,7 @@ async function saveScript() {
     }
     showScriptItemEditor.value = false
     loadScripts()
-  } catch (e: any) { alert('保存失败: ' + (e?.message ?? '')) }
+  } catch (e: any) { toast.error('保存失败: : ' + (e?.message ?? '')) }
 }
 async function deleteScriptItem(idx: number) {
   if (!confirmMsg('确定删除此脚本？')) return
@@ -379,7 +379,7 @@ async function runScript(s: any) {
   try {
     const r = await api.post('/jaxrs/portal/assemble/designer/script/run', { id: s.id, code: s.code })
     alert('执行结果: ' + JSON.stringify(r?.data ?? '未知'))
-  } catch (e: any) { alert('执行失败: ' + (e?.message ?? '')) }
+  } catch (e: any) { toast.error('执行失败: : ' + (e?.message ?? '')) }
 }
 
 // --- Widget Picker ---

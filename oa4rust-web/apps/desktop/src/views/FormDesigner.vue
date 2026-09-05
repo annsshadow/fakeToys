@@ -950,7 +950,7 @@ async function saveForm() {
     if (currentForm.value.id) await api.put(`/jaxrs/form/${currentForm.value.id}`, payload)
     else await api.post('/jaxrs/form', payload)
     await loadForms(); toast.info('保存成功')
-  } catch (e: any) { alert('保存失败: ' + (e?.message ?? '')) }
+  } catch (e: any) { toast.error('保存失败: : ' + (e?.message ?? '')) }
 }
 function togglePreview() { mode.value = mode.value === 'preview' ? 'edit' : 'preview' }
 // --- Form History ---
@@ -999,7 +999,7 @@ function validatePreview(): boolean {
 async function submitPreview() {
   if (!validatePreview()) return
   try { await api.post('/jaxrs/form/submit', { formFlag: currentForm.value.flag, data: previewData.value }); toast.info('提交成功'); previewData.value = {}; previewErrors.value = {} }
-  catch(e: any) { alert('提交失败: ' + (e?.message ?? '')) }
+  catch(e: any) { toast.error('提交失败: : ' + (e?.message ?? '')) }
 }
 // --- Import/Export ---
 function exportFormJson(): string { return JSON.stringify(currentForm.value, null, 2) }

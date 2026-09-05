@@ -51,7 +51,7 @@ async function doSearch() {
 async function checkUnit(u: UnitItem) {
   try {
     await api.get(`/jaxrs/unit/check/${u.flag || u.id}`)
-  } catch (e: any) { alert('验证失败: ' + (e?.message ?? '')) }
+  } catch (e: any) { toast.error('验证失败: : ' + (e?.message ?? '')) }
 }
 
 loadUnits()
