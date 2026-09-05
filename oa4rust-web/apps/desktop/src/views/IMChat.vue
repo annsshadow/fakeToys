@@ -403,17 +403,37 @@ async function api_message_send() { try { await api.get('/jaxrs/message/send') }
 async function api_communicate_im_msg_collection() { try { await api.get("/jaxrs/message/assemble/communicate/im/msg/collection") } catch {} }
 async function api_communicate_instant_currentperson_consumed() { try { await api.get("/jaxrs/message/assemble/communicate/instant/currentperson/consumed") } catch {} }
 async function api_entity_list_by_system() { try { await api.get("/jaxrs/message/core/entity/list/by/system") } catch {} }
-async function api_entity_unread_count_system() { try { await api.get("/jaxrs/message/core/entity/unread/count/system") } catch {} }
-async function api_message_assemble_communicate_message_list() { try { await api.get("/jaxrs/message_assemble_communicate/jaxrs/message/list") } catch {} }
-async function api_communicate_message_list_unread() { try { await api.get("/jaxrs/message/assemble/communicate/message/list/unread") } catch {} }
-async function api_communicate_message_list_recent() { try { await api.get("/jaxrs/message/assemble/communicate/message/list/recent") } catch {} }
-async function api_communicate_instant_list_recent() { try { await api.get("/jaxrs/message/assemble/communicate/instant/list/recent") } catch {} }
-async function api_communicate_message_custom_create() { try { await api.get("/jaxrs/message/assemble/communicate/message/custom/create") } catch {} }
-async function api_message_assemble_communicate_message() { try { await api.get("/jaxrs/message_assemble_communicate/jaxrs/message") } catch {} }
+const api_entity_unread_co_868_data = ref<any[]>([]);
+const { data: api_entity_unread_co_868_q } = useQuery({queryKey: ['api_entity_unread_co_868', '/jaxrs/message/core/entity/unread/count/system'], queryFn: async () => { try { const r = await api.get("/jaxrs/message/core/entity/unread/count/system"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+watch(api_entity_unread_co_868_q, (v) => { api_entity_unread_co_868_data.value = v ?? []; });
+const api_message_assemble_322_data = ref<any[]>([]);
+const { data: api_message_assemble_322_q } = useQuery({queryKey: ['api_message_assemble_322', '/jaxrs/message_assemble_communicate/jaxrs/message/list'], queryFn: async () => { try { const r = await api.get("/jaxrs/message_assemble_communicate/jaxrs/message/list"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+watch(api_message_assemble_322_q, (v) => { api_message_assemble_322_data.value = v ?? []; });
+const api_communicate_mess_152_data = ref<any[]>([]);
+const { data: api_communicate_mess_152_q } = useQuery({queryKey: ['api_communicate_mess_152', '/jaxrs/message/assemble/communicate/message/list/unread'], queryFn: async () => { try { const r = await api.get("/jaxrs/message/assemble/communicate/message/list/unread"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+watch(api_communicate_mess_152_q, (v) => { api_communicate_mess_152_data.value = v ?? []; });
+const api_communicate_mess_489_data = ref<any[]>([]);
+const { data: api_communicate_mess_489_q } = useQuery({queryKey: ['api_communicate_mess_489', '/jaxrs/message/assemble/communicate/message/list/recent'], queryFn: async () => { try { const r = await api.get("/jaxrs/message/assemble/communicate/message/list/recent"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+watch(api_communicate_mess_489_q, (v) => { api_communicate_mess_489_data.value = v ?? []; });
+const api_communicate_inst_776_data = ref<any[]>([]);
+const { data: api_communicate_inst_776_q } = useQuery({queryKey: ['api_communicate_inst_776', '/jaxrs/message/assemble/communicate/instant/list/recent'], queryFn: async () => { try { const r = await api.get("/jaxrs/message/assemble/communicate/instant/list/recent"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+watch(api_communicate_inst_776_q, (v) => { api_communicate_inst_776_data.value = v ?? []; });
+const api_communicate_mess_252_data = ref<any[]>([]);
+const { data: api_communicate_mess_252_q } = useQuery({queryKey: ['api_communicate_mess_252', '/jaxrs/message/assemble/communicate/message/custom/create'], queryFn: async () => { try { const r = await api.get("/jaxrs/message/assemble/communicate/message/custom/create"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+watch(api_communicate_mess_252_q, (v) => { api_communicate_mess_252_data.value = v ?? []; });
+const api_message_assemble_930_data = ref<any[]>([]);
+const { data: api_message_assemble_930_q } = useQuery({queryKey: ['api_message_assemble_930', '/jaxrs/message_assemble_communicate/jaxrs/message'], queryFn: async () => { try { const r = await api.get("/jaxrs/message_assemble_communicate/jaxrs/message"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+watch(api_message_assemble_930_q, (v) => { api_message_assemble_930_data.value = v ?? []; });
 
-async function api_jaxrs_message_assemble_communicate_consume_c_1_type_ticket() { try { await api.get("/jaxrs/message/assemble/communicate/consume/c-1/type/ticket") } catch {} }
-async function api_jaxrs_message_assemble_communicate_im_conversation_c_1_group_quit_self() { try { await api.get("/jaxrs/message/assemble/communicate/im/conversation/c-1/group/quit/self") } catch {} }
-async function api_jaxrs_message_assemble_communicate_im_conversation_c_1_single() { try { await api.get("/jaxrs/message/assemble/communicate/im/conversation/c-1/single") } catch {} }
+const api_jaxrs_message_as_616_data = ref<any[]>([]);
+const { data: api_jaxrs_message_as_616_q } = useQuery({queryKey: ['api_jaxrs_message_as_616', '/jaxrs/message/assemble/communicate/consume/c-1/type/ticket'], queryFn: async () => { try { const r = await api.get("/jaxrs/message/assemble/communicate/consume/c-1/type/ticket"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+watch(api_jaxrs_message_as_616_q, (v) => { api_jaxrs_message_as_616_data.value = v ?? []; });
+const api_jaxrs_message_as_170_data = ref<any[]>([]);
+const { data: api_jaxrs_message_as_170_q } = useQuery({queryKey: ['api_jaxrs_message_as_170', '/jaxrs/message/assemble/communicate/im/conversation/c-1/group/quit/self'], queryFn: async () => { try { const r = await api.get("/jaxrs/message/assemble/communicate/im/conversation/c-1/group/quit/self"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+watch(api_jaxrs_message_as_170_q, (v) => { api_jaxrs_message_as_170_data.value = v ?? []; });
+const api_jaxrs_message_as_552_data = ref<any[]>([]);
+const { data: api_jaxrs_message_as_552_q } = useQuery({queryKey: ['api_jaxrs_message_as_552', '/jaxrs/message/assemble/communicate/im/conversation/c-1/single'], queryFn: async () => { try { const r = await api.get("/jaxrs/message/assemble/communicate/im/conversation/c-1/single"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+watch(api_jaxrs_message_as_552_q, (v) => { api_jaxrs_message_as_552_data.value = v ?? []; });
 async function api_jaxrs_message_assemble_communicate_im_conversation_c_1_single_mockdeletetoget() { try { await api.get("/jaxrs/message/assemble/communicate/im/conversation/c-1/single/mockdeletetoget") } catch {} }
 const api_jaxrs_message_as_622_data = ref<any[]>([]);
 const { data: api_jaxrs_message_as_622_q } = useQuery({queryKey: ['api_jaxrs_message_as_622', '/jaxrs/message/assemble/communicate/im/conversation/c-1/top/set'], queryFn: async () => { try { const r = await api.get("/jaxrs/message/assemble/communicate/im/conversation/c-1/top/set"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});

@@ -488,7 +488,9 @@ async function api_jaxrs_processplatform_assemble_surface_attachment_html_to_pdf
 async function api_jaxrs_processplatform_assemble_surface_attachment_upload_with_url() { try { await api.get("/jaxrs/processplatform/assemble/surface/attachment/upload/with/url") } catch {} }
 async function api_jaxrs_processplatform_assemble_surface_attachment_v2_upload_workorworkcompleted__5df9f8() { try { await api.get("/jaxrs/processplatform/assemble/surface/attachment/v2/upload/workorworkcompleted/either-1/base64") } catch {} }
 async function api_jaxrs_processplatform_assemble_surface_correlation_list_job_job() { try { await api.get("/jaxrs/processplatform/assemble/surface/correlation/list/job/job") } catch {} }
-async function api_jaxrs_processplatform_assemble_surface_correlation_list_job_job_site_site() { try { await api.get("/jaxrs/processplatform/assemble/surface/correlation/list/job/job/site/site") } catch {} }
+const api_jaxrs_processpla_241_data = ref<any[]>([]);
+const { data: api_jaxrs_processpla_241_q } = useQuery({queryKey: ['api_jaxrs_processpla_241', '/jaxrs/processplatform/assemble/surface/correlation/list/job/job/site/site'], queryFn: async () => { try { const r = await api.get("/jaxrs/processplatform/assemble/surface/correlation/list/job/job/site/site"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+watch(api_jaxrs_processpla_241_q, (v) => { api_jaxrs_processpla_241_data.value = v ?? []; });
 async function api_jaxrs_processplatform_assemble_surface_correlation_update_job_job() { try { await api.get("/jaxrs/processplatform/assemble/surface/correlation/update/job/job") } catch {} }
 async function api_jaxrs_processplatform_assemble_surface_data_job_job_array_data() { try { await api.get("/jaxrs/processplatform/assemble/surface/data/job/job/array/data") } catch {} }
 async function api_jaxrs_processplatform_assemble_surface_data_job_job_mockputtopost() { try { await api.get("/jaxrs/processplatform/assemble/surface/data/job/job/mockputtopost") } catch {} }
@@ -509,36 +511,84 @@ async function api_jaxrs_processplatform_assemble_surface_data_job_job_path0_pat
 async function api_jaxrs_processplatform_assemble_surface_data_job_job_path0_path1_path2_path3_path_f5986a() { try { await api.get("/jaxrs/processplatform/assemble/surface/data/job/job/path0/path1/path2/path3/path4/path5/path6/path7") } catch {} }
 async function api_jaxrs_processplatform_assemble_surface_data_job_job_path0_path1_path2_path3_path_80cd92() { try { await api.get("/jaxrs/processplatform/assemble/surface/data/job/job/path0/path1/path2/path3/path4/path5/path6/path7/mockputtopost") } catch {} }
 async function api_jaxrs_processplatform_assemble_surface_datarecord_get_job_job_path_path() { try { await api.get("/jaxrs/processplatform/assemble/surface/datarecord/get/job/job/path/path") } catch {} }
-async function api_jaxrs_processplatform_assemble_surface_datarecord_list_job_job() { try { await api.get("/jaxrs/processplatform/assemble/surface/datarecord/list/job/job") } catch {} }
-async function api_jaxrs_processplatform_assemble_surface_documentversion_list_job_job() { try { await api.get("/jaxrs/processplatform/assemble/surface/documentversion/list/job/job") } catch {} }
+const api_jaxrs_processpla_947_data = ref<any[]>([]);
+const { data: api_jaxrs_processpla_947_q } = useQuery({queryKey: ['api_jaxrs_processpla_947', '/jaxrs/processplatform/assemble/surface/datarecord/list/job/job'], queryFn: async () => { try { const r = await api.get("/jaxrs/processplatform/assemble/surface/datarecord/list/job/job"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+watch(api_jaxrs_processpla_947_q, (v) => { api_jaxrs_processpla_947_data.value = v ?? []; });
+const api_jaxrs_processpla_324_data = ref<any[]>([]);
+const { data: api_jaxrs_processpla_324_q } = useQuery({queryKey: ['api_jaxrs_processpla_324', '/jaxrs/processplatform/assemble/surface/documentversion/list/job/job'], queryFn: async () => { try { const r = await api.get("/jaxrs/processplatform/assemble/surface/documentversion/list/job/job"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+watch(api_jaxrs_processpla_324_q, (v) => { api_jaxrs_processpla_324_data.value = v ?? []; });
 async function api_jaxrs_processplatform_assemble_surface_form_v2_lookup_taskcompleted_taskcompleted() { try { await api.get("/jaxrs/processplatform/assemble/surface/form/v2/lookup/taskcompleted/taskcompleted") } catch {} }
 async function api_jaxrs_processplatform_assemble_surface_form_v2_lookup_taskcompleted_taskcompleted_mobile() { try { await api.get("/jaxrs/processplatform/assemble/surface/form/v2/lookup/taskcompleted/taskcompleted/mobile") } catch {} }
-async function api_jaxrs_processplatform_assemble_surface_job_job_allow_visit_person_person() { try { await api.get("/jaxrs/processplatform/assemble/surface/job/job/allow/visit/person/person") } catch {} }
+const api_jaxrs_processpla_463_data = ref<any[]>([]);
+const { data: api_jaxrs_processpla_463_q } = useQuery({queryKey: ['api_jaxrs_processpla_463', '/jaxrs/processplatform/assemble/surface/job/job/allow/visit/person/person'], queryFn: async () => { try { const r = await api.get("/jaxrs/processplatform/assemble/surface/job/job/allow/visit/person/person"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+watch(api_jaxrs_processpla_463_q, (v) => { api_jaxrs_processpla_463_data.value = v ?? []; });
 async function api_jaxrs_processplatform_assemble_surface_job_job_find_work_workcompleted() { try { await api.get("/jaxrs/processplatform/assemble/surface/job/job/find/work/workcompleted") } catch {} }
 async function api_jaxrs_processplatform_assemble_surface_job_latest_work_workcompleted_serial_serial() { try { await api.get("/jaxrs/processplatform/assemble/surface/job/latest/work/workcompleted/serial/serial") } catch {} }
 async function api_jaxrs_processplatform_assemble_surface_job_v2_job_projection() { try { await api.get("/jaxrs/processplatform/assemble/surface/job/v2/job/projection") } catch {} }
-async function api_jaxrs_processplatform_assemble_surface_mode_clear_person_person_manager() { try { await api.get("/jaxrs/processplatform/assemble/surface/mode/clear/person/person/manager") } catch {} }
-async function api_jaxrs_processplatform_assemble_surface_read_filter_attribute_filter() { try { await api.get("/jaxrs/processplatform/assemble/surface/read/filter/attribute/filter") } catch {} }
-async function api_jaxrs_processplatform_assemble_surface_read_list_count_application() { try { await api.get("/jaxrs/processplatform/assemble/surface/read/list/count/application") } catch {} }
-async function api_jaxrs_processplatform_assemble_surface_read_list_date_date_manage() { try { await api.get("/jaxrs/processplatform/assemble/surface/read/list/date/date/manage") } catch {} }
-async function api_jaxrs_processplatform_assemble_surface_read_list_job_job() { try { await api.get("/jaxrs/processplatform/assemble/surface/read/list/job/job") } catch {} }
-async function api_jaxrs_processplatform_assemble_surface_read_list_person_person_manage() { try { await api.get("/jaxrs/processplatform/assemble/surface/read/list/person/person/manage") } catch {} }
-async function api_jaxrs_processplatform_assemble_surface_readcompleted_filter_attribute_filter() { try { await api.get("/jaxrs/processplatform/assemble/surface/readcompleted/filter/attribute/filter") } catch {} }
-async function api_jaxrs_processplatform_assemble_surface_readcompleted_list_count_application() { try { await api.get("/jaxrs/processplatform/assemble/surface/readcompleted/list/count/application") } catch {} }
-async function api_jaxrs_processplatform_assemble_surface_readcompleted_list_date_date_manage() { try { await api.get("/jaxrs/processplatform/assemble/surface/readcompleted/list/date/date/manage") } catch {} }
-async function api_jaxrs_processplatform_assemble_surface_readcompleted_list_job_job() { try { await api.get("/jaxrs/processplatform/assemble/surface/readcompleted/list/job/job") } catch {} }
-async function api_jaxrs_processplatform_assemble_surface_readcompleted_list_work_work() { try { await api.get("/jaxrs/processplatform/assemble/surface/readcompleted/list/work/work") } catch {} }
-async function api_jaxrs_processplatform_assemble_surface_readrecord_list_job_job() { try { await api.get("/jaxrs/processplatform/assemble/surface/readrecord/list/job/job") } catch {} }
+const api_jaxrs_processpla_314_data = ref<any[]>([]);
+const { data: api_jaxrs_processpla_314_q } = useQuery({queryKey: ['api_jaxrs_processpla_314', '/jaxrs/processplatform/assemble/surface/mode/clear/person/person/manager'], queryFn: async () => { try { const r = await api.get("/jaxrs/processplatform/assemble/surface/mode/clear/person/person/manager"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+watch(api_jaxrs_processpla_314_q, (v) => { api_jaxrs_processpla_314_data.value = v ?? []; });
+const api_jaxrs_processpla_178_data = ref<any[]>([]);
+const { data: api_jaxrs_processpla_178_q } = useQuery({queryKey: ['api_jaxrs_processpla_178', '/jaxrs/processplatform/assemble/surface/read/filter/attribute/filter'], queryFn: async () => { try { const r = await api.get("/jaxrs/processplatform/assemble/surface/read/filter/attribute/filter"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+watch(api_jaxrs_processpla_178_q, (v) => { api_jaxrs_processpla_178_data.value = v ?? []; });
+const api_jaxrs_processpla_236_data = ref<any[]>([]);
+const { data: api_jaxrs_processpla_236_q } = useQuery({queryKey: ['api_jaxrs_processpla_236', '/jaxrs/processplatform/assemble/surface/read/list/count/application'], queryFn: async () => { try { const r = await api.get("/jaxrs/processplatform/assemble/surface/read/list/count/application"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+watch(api_jaxrs_processpla_236_q, (v) => { api_jaxrs_processpla_236_data.value = v ?? []; });
+const api_jaxrs_processpla_483_data = ref<any[]>([]);
+const { data: api_jaxrs_processpla_483_q } = useQuery({queryKey: ['api_jaxrs_processpla_483', '/jaxrs/processplatform/assemble/surface/read/list/date/date/manage'], queryFn: async () => { try { const r = await api.get("/jaxrs/processplatform/assemble/surface/read/list/date/date/manage"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+watch(api_jaxrs_processpla_483_q, (v) => { api_jaxrs_processpla_483_data.value = v ?? []; });
+const api_jaxrs_processpla_627_data = ref<any[]>([]);
+const { data: api_jaxrs_processpla_627_q } = useQuery({queryKey: ['api_jaxrs_processpla_627', '/jaxrs/processplatform/assemble/surface/read/list/job/job'], queryFn: async () => { try { const r = await api.get("/jaxrs/processplatform/assemble/surface/read/list/job/job"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+watch(api_jaxrs_processpla_627_q, (v) => { api_jaxrs_processpla_627_data.value = v ?? []; });
+const api_jaxrs_processpla_644_data = ref<any[]>([]);
+const { data: api_jaxrs_processpla_644_q } = useQuery({queryKey: ['api_jaxrs_processpla_644', '/jaxrs/processplatform/assemble/surface/read/list/person/person/manage'], queryFn: async () => { try { const r = await api.get("/jaxrs/processplatform/assemble/surface/read/list/person/person/manage"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+watch(api_jaxrs_processpla_644_q, (v) => { api_jaxrs_processpla_644_data.value = v ?? []; });
+const api_jaxrs_processpla_80_data = ref<any[]>([]);
+const { data: api_jaxrs_processpla_80_q } = useQuery({queryKey: ['api_jaxrs_processpla_80', '/jaxrs/processplatform/assemble/surface/readcompleted/filter/attribute/filter'], queryFn: async () => { try { const r = await api.get("/jaxrs/processplatform/assemble/surface/readcompleted/filter/attribute/filter"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+watch(api_jaxrs_processpla_80_q, (v) => { api_jaxrs_processpla_80_data.value = v ?? []; });
+const api_jaxrs_processpla_319_data = ref<any[]>([]);
+const { data: api_jaxrs_processpla_319_q } = useQuery({queryKey: ['api_jaxrs_processpla_319', '/jaxrs/processplatform/assemble/surface/readcompleted/list/count/application'], queryFn: async () => { try { const r = await api.get("/jaxrs/processplatform/assemble/surface/readcompleted/list/count/application"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+watch(api_jaxrs_processpla_319_q, (v) => { api_jaxrs_processpla_319_data.value = v ?? []; });
+const api_jaxrs_processpla_763_data = ref<any[]>([]);
+const { data: api_jaxrs_processpla_763_q } = useQuery({queryKey: ['api_jaxrs_processpla_763', '/jaxrs/processplatform/assemble/surface/readcompleted/list/date/date/manage'], queryFn: async () => { try { const r = await api.get("/jaxrs/processplatform/assemble/surface/readcompleted/list/date/date/manage"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+watch(api_jaxrs_processpla_763_q, (v) => { api_jaxrs_processpla_763_data.value = v ?? []; });
+const api_jaxrs_processpla_320_data = ref<any[]>([]);
+const { data: api_jaxrs_processpla_320_q } = useQuery({queryKey: ['api_jaxrs_processpla_320', '/jaxrs/processplatform/assemble/surface/readcompleted/list/job/job'], queryFn: async () => { try { const r = await api.get("/jaxrs/processplatform/assemble/surface/readcompleted/list/job/job"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+watch(api_jaxrs_processpla_320_q, (v) => { api_jaxrs_processpla_320_data.value = v ?? []; });
+const api_jaxrs_processpla_354_data = ref<any[]>([]);
+const { data: api_jaxrs_processpla_354_q } = useQuery({queryKey: ['api_jaxrs_processpla_354', '/jaxrs/processplatform/assemble/surface/readcompleted/list/work/work'], queryFn: async () => { try { const r = await api.get("/jaxrs/processplatform/assemble/surface/readcompleted/list/work/work"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+watch(api_jaxrs_processpla_354_q, (v) => { api_jaxrs_processpla_354_data.value = v ?? []; });
+const api_jaxrs_processpla_275_data = ref<any[]>([]);
+const { data: api_jaxrs_processpla_275_q } = useQuery({queryKey: ['api_jaxrs_processpla_275', '/jaxrs/processplatform/assemble/surface/readrecord/list/job/job'], queryFn: async () => { try { const r = await api.get("/jaxrs/processplatform/assemble/surface/readrecord/list/job/job"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+watch(api_jaxrs_processpla_275_q, (v) => { api_jaxrs_processpla_275_data.value = v ?? []; });
 async function api_jaxrs_processplatform_assemble_surface_record_job_job_manage() { try { await api.get("/jaxrs/processplatform/assemble/surface/record/job/job/manage") } catch {} }
-async function api_jaxrs_processplatform_assemble_surface_record_list_job_job() { try { await api.get("/jaxrs/processplatform/assemble/surface/record/list/job/job") } catch {} }
-async function api_jaxrs_processplatform_assemble_surface_review_filter_create_entry() { try { await api.get("/jaxrs/processplatform/assemble/surface/review/filter/create/entry") } catch {} }
-async function api_jaxrs_processplatform_assemble_surface_review_list_job_job() { try { await api.get("/jaxrs/processplatform/assemble/surface/review/list/job/job") } catch {} }
-async function api_jaxrs_processplatform_assemble_surface_sign_list_job_job() { try { await api.get("/jaxrs/processplatform/assemble/surface/sign/list/job/job") } catch {} }
-async function api_jaxrs_processplatform_assemble_surface_task_filter_attribute_filter() { try { await api.get("/jaxrs/processplatform/assemble/surface/task/filter/attribute/filter") } catch {} }
-async function api_jaxrs_processplatform_assemble_surface_task_list_count_application() { try { await api.get("/jaxrs/processplatform/assemble/surface/task/list/count/application") } catch {} }
-async function api_jaxrs_processplatform_assemble_surface_task_list_date_2024_01_01_hour_09_exclude_6a0241() { try { await api.get("/jaxrs/processplatform/assemble/surface/task/list/date/2024-01-01/hour/09/exclude/draft/true/manage") } catch {} }
-async function api_jaxrs_processplatform_assemble_surface_task_list_person_p1_exclude_draft_true_manage() { try { await api.get("/jaxrs/processplatform/assemble/surface/task/list/person/p1/exclude/draft/true/manage") } catch {} }
-async function api_jaxrs_processplatform_assemble_surface_task_list_work_work() { try { await api.get("/jaxrs/processplatform/assemble/surface/task/list/work/work") } catch {} }
+const api_jaxrs_processpla_324_data = ref<any[]>([]);
+const { data: api_jaxrs_processpla_324_q } = useQuery({queryKey: ['api_jaxrs_processpla_324', '/jaxrs/processplatform/assemble/surface/record/list/job/job'], queryFn: async () => { try { const r = await api.get("/jaxrs/processplatform/assemble/surface/record/list/job/job"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+watch(api_jaxrs_processpla_324_q, (v) => { api_jaxrs_processpla_324_data.value = v ?? []; });
+const api_jaxrs_processpla_19_data = ref<any[]>([]);
+const { data: api_jaxrs_processpla_19_q } = useQuery({queryKey: ['api_jaxrs_processpla_19', '/jaxrs/processplatform/assemble/surface/review/filter/create/entry'], queryFn: async () => { try { const r = await api.get("/jaxrs/processplatform/assemble/surface/review/filter/create/entry"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+watch(api_jaxrs_processpla_19_q, (v) => { api_jaxrs_processpla_19_data.value = v ?? []; });
+const api_jaxrs_processpla_676_data = ref<any[]>([]);
+const { data: api_jaxrs_processpla_676_q } = useQuery({queryKey: ['api_jaxrs_processpla_676', '/jaxrs/processplatform/assemble/surface/review/list/job/job'], queryFn: async () => { try { const r = await api.get("/jaxrs/processplatform/assemble/surface/review/list/job/job"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+watch(api_jaxrs_processpla_676_q, (v) => { api_jaxrs_processpla_676_data.value = v ?? []; });
+const api_jaxrs_processpla_966_data = ref<any[]>([]);
+const { data: api_jaxrs_processpla_966_q } = useQuery({queryKey: ['api_jaxrs_processpla_966', '/jaxrs/processplatform/assemble/surface/sign/list/job/job'], queryFn: async () => { try { const r = await api.get("/jaxrs/processplatform/assemble/surface/sign/list/job/job"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+watch(api_jaxrs_processpla_966_q, (v) => { api_jaxrs_processpla_966_data.value = v ?? []; });
+const api_jaxrs_processpla_420_data = ref<any[]>([]);
+const { data: api_jaxrs_processpla_420_q } = useQuery({queryKey: ['api_jaxrs_processpla_420', '/jaxrs/processplatform/assemble/surface/task/filter/attribute/filter'], queryFn: async () => { try { const r = await api.get("/jaxrs/processplatform/assemble/surface/task/filter/attribute/filter"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+watch(api_jaxrs_processpla_420_q, (v) => { api_jaxrs_processpla_420_data.value = v ?? []; });
+const api_jaxrs_processpla_551_data = ref<any[]>([]);
+const { data: api_jaxrs_processpla_551_q } = useQuery({queryKey: ['api_jaxrs_processpla_551', '/jaxrs/processplatform/assemble/surface/task/list/count/application'], queryFn: async () => { try { const r = await api.get("/jaxrs/processplatform/assemble/surface/task/list/count/application"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+watch(api_jaxrs_processpla_551_q, (v) => { api_jaxrs_processpla_551_data.value = v ?? []; });
+const api_jaxrs_processpla_375_data = ref<any[]>([]);
+const { data: api_jaxrs_processpla_375_q } = useQuery({queryKey: ['api_jaxrs_processpla_375', '/jaxrs/processplatform/assemble/surface/task/list/date/2024-01-01/hour/09/exclude/draft/true/manage'], queryFn: async () => { try { const r = await api.get("/jaxrs/processplatform/assemble/surface/task/list/date/2024-01-01/hour/09/exclude/draft/true/manage"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+watch(api_jaxrs_processpla_375_q, (v) => { api_jaxrs_processpla_375_data.value = v ?? []; });
+const api_jaxrs_processpla_614_data = ref<any[]>([]);
+const { data: api_jaxrs_processpla_614_q } = useQuery({queryKey: ['api_jaxrs_processpla_614', '/jaxrs/processplatform/assemble/surface/task/list/person/p1/exclude/draft/true/manage'], queryFn: async () => { try { const r = await api.get("/jaxrs/processplatform/assemble/surface/task/list/person/p1/exclude/draft/true/manage"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+watch(api_jaxrs_processpla_614_q, (v) => { api_jaxrs_processpla_614_data.value = v ?? []; });
+const api_jaxrs_processpla_773_data = ref<any[]>([]);
+const { data: api_jaxrs_processpla_773_q } = useQuery({queryKey: ['api_jaxrs_processpla_773', '/jaxrs/processplatform/assemble/surface/task/list/work/work'], queryFn: async () => { try { const r = await api.get("/jaxrs/processplatform/assemble/surface/task/list/work/work"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+watch(api_jaxrs_processpla_773_q, (v) => { api_jaxrs_processpla_773_data.value = v ?? []; });
 const api_jaxrs_processpla_152_data = ref<any[]>([]);
 const { data: api_jaxrs_processpla_152_q } = useQuery({queryKey: ['api_jaxrs_processpla_152', '/jaxrs/processplatform/assemble/surface/taskcompleted/filter/attribute/filter'], queryFn: async () => { try { const r = await api.get("/jaxrs/processplatform/assemble/surface/taskcompleted/filter/attribute/filter"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
 watch(api_jaxrs_processpla_152_q, (v) => { api_jaxrs_processpla_152_data.value = v ?? []; });

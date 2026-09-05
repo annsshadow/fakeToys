@@ -457,11 +457,6 @@ const previewTargetPage = ref<any>(null)
 function renderLayout(layout: string): string { try { const nodes = JSON.parse(layout); return nodes.map((n: any) => `<div style="padding:12px;border:1px dashed var(--border-subtle);margin:4px;border-radius:var(--radius-sm)">${n.type||"block"}</div>`).join("") } catch { return "<div style=\"padding:12px;color:var(--text-muted)\">解析布局失败</div>" } }
 
 
-
-
-
-
-
 async function call_portal() { try { await api.get("/jaxrs/portal") } catch {} }
 async function call_assemble_designer_create() { try { await api.get("/jaxrs/portal/assemble/designer/create") } catch {} }
 async function call_designer_designer_search() { try { await api.get("/jaxrs/portal/assemble/designer/designer/search") } catch {} }
@@ -571,14 +566,30 @@ async function api_jaxrs_portal_assemble_surface_file_f1_portal_p1_download() { 
 async function api_jaxrs_portal_assemble_surface_page_f1_portal_p1() { try { await api.get("/jaxrs/portal/assemble/surface/page/f1/portal/p1") } catch {} }
 async function api_jaxrs_portal_assemble_surface_page_f1_portal_p1_mobile() { try { await api.get("/jaxrs/portal/assemble/surface/page/f1/portal/p1/mobile") } catch {} }
 async function api_jaxrs_portal_assemble_surface_page_v2_f1_portal_p1() { try { await api.get("/jaxrs/portal/assemble/surface/page/v2/f1/portal/p1") } catch {} }
-async function api_jaxrs_portal_assemble_surface_page_v2_f1_portal_p1_mobile() { try { await api.get("/jaxrs/portal/assemble/surface/page/v2/f1/portal/p1/mobile") } catch {} }
-async function api_jaxrs_portal_assemble_surface_portal_f1_corner_mark() { try { await api.get("/jaxrs/portal/assemble/surface/portal/f1/corner/mark") } catch {} }
-async function api_jaxrs_portal_assemble_surface_portal_id1_icon_base64() { try { await api.get("/jaxrs/portal/assemble/surface/portal/id1/icon/base64") } catch {} }
-async function api_jaxrs_portal_assemble_surface_script_list_portal_portal() { try { await api.get("/jaxrs/portal/assemble/surface/script/list/portal/portal") } catch {} }
-async function api_jaxrs_portal_assemble_surface_script_portal_p1_name_n1() { try { await api.get("/jaxrs/portal/assemble/surface/script/portal/p1/name/n1") } catch {} }
-async function api_jaxrs_portal_assemble_surface_script_portal_p1_name_n1_imported() { try { await api.get("/jaxrs/portal/assemble/surface/script/portal/p1/name/n1/imported") } catch {} }
-async function api_jaxrs_portal_assemble_surface_widget_f1_portal_p1_mobile() { try { await api.get("/jaxrs/portal/assemble/surface/widget/f1/portal/p1/mobile") } catch {} }
-async function api_jaxrs_portal_assemble_surface_widget_list_portal_portal() { try { await api.get("/jaxrs/portal/assemble/surface/widget/list/portal/portal") } catch {} }
+const api_jaxrs_portal_ass_627_data = ref<any[]>([]);
+const { data: api_jaxrs_portal_ass_627_q } = useQuery({queryKey: ['api_jaxrs_portal_ass_627', '/jaxrs/portal/assemble/surface/page/v2/f1/portal/p1/mobile'], queryFn: async () => { try { const r = await api.get("/jaxrs/portal/assemble/surface/page/v2/f1/portal/p1/mobile"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+watch(api_jaxrs_portal_ass_627_q, (v) => { api_jaxrs_portal_ass_627_data.value = v ?? []; });
+const api_jaxrs_portal_ass_669_data = ref<any[]>([]);
+const { data: api_jaxrs_portal_ass_669_q } = useQuery({queryKey: ['api_jaxrs_portal_ass_669', '/jaxrs/portal/assemble/surface/portal/f1/corner/mark'], queryFn: async () => { try { const r = await api.get("/jaxrs/portal/assemble/surface/portal/f1/corner/mark"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+watch(api_jaxrs_portal_ass_669_q, (v) => { api_jaxrs_portal_ass_669_data.value = v ?? []; });
+const api_jaxrs_portal_ass_927_data = ref<any[]>([]);
+const { data: api_jaxrs_portal_ass_927_q } = useQuery({queryKey: ['api_jaxrs_portal_ass_927', '/jaxrs/portal/assemble/surface/portal/id1/icon/base64'], queryFn: async () => { try { const r = await api.get("/jaxrs/portal/assemble/surface/portal/id1/icon/base64"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+watch(api_jaxrs_portal_ass_927_q, (v) => { api_jaxrs_portal_ass_927_data.value = v ?? []; });
+const api_jaxrs_portal_ass_733_data = ref<any[]>([]);
+const { data: api_jaxrs_portal_ass_733_q } = useQuery({queryKey: ['api_jaxrs_portal_ass_733', '/jaxrs/portal/assemble/surface/script/list/portal/portal'], queryFn: async () => { try { const r = await api.get("/jaxrs/portal/assemble/surface/script/list/portal/portal"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+watch(api_jaxrs_portal_ass_733_q, (v) => { api_jaxrs_portal_ass_733_data.value = v ?? []; });
+const api_jaxrs_portal_ass_653_data = ref<any[]>([]);
+const { data: api_jaxrs_portal_ass_653_q } = useQuery({queryKey: ['api_jaxrs_portal_ass_653', '/jaxrs/portal/assemble/surface/script/portal/p1/name/n1'], queryFn: async () => { try { const r = await api.get("/jaxrs/portal/assemble/surface/script/portal/p1/name/n1"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+watch(api_jaxrs_portal_ass_653_q, (v) => { api_jaxrs_portal_ass_653_data.value = v ?? []; });
+const api_jaxrs_portal_ass_429_data = ref<any[]>([]);
+const { data: api_jaxrs_portal_ass_429_q } = useQuery({queryKey: ['api_jaxrs_portal_ass_429', '/jaxrs/portal/assemble/surface/script/portal/p1/name/n1/imported'], queryFn: async () => { try { const r = await api.get("/jaxrs/portal/assemble/surface/script/portal/p1/name/n1/imported"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+watch(api_jaxrs_portal_ass_429_q, (v) => { api_jaxrs_portal_ass_429_data.value = v ?? []; });
+const api_jaxrs_portal_ass_24_data = ref<any[]>([]);
+const { data: api_jaxrs_portal_ass_24_q } = useQuery({queryKey: ['api_jaxrs_portal_ass_24', '/jaxrs/portal/assemble/surface/widget/f1/portal/p1/mobile'], queryFn: async () => { try { const r = await api.get("/jaxrs/portal/assemble/surface/widget/f1/portal/p1/mobile"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+watch(api_jaxrs_portal_ass_24_q, (v) => { api_jaxrs_portal_ass_24_data.value = v ?? []; });
+const api_jaxrs_portal_ass_686_data = ref<any[]>([]);
+const { data: api_jaxrs_portal_ass_686_q } = useQuery({queryKey: ['api_jaxrs_portal_ass_686', '/jaxrs/portal/assemble/surface/widget/list/portal/portal'], queryFn: async () => { try { const r = await api.get("/jaxrs/portal/assemble/surface/widget/list/portal/portal"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+watch(api_jaxrs_portal_ass_686_q, (v) => { api_jaxrs_portal_ass_686_data.value = v ?? []; });
 </script>
 
 <style scoped>
