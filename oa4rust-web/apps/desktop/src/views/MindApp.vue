@@ -57,6 +57,7 @@
 </template>
 
 <script setup lang="ts">
+import { toast } from '../utils/toast';
 import { ref, computed } from 'vue'
 import { api } from '@oa4rust/sdk'
 

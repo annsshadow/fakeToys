@@ -159,6 +159,7 @@
 
 <script setup lang="ts">
 import { ref, computed, watch, onMounted } from 'vue';
+import { toast } from '../utils/toast';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/vue-query';
 import { api } from '@oa4rust/sdk';
 
@@ -284,7 +285,10 @@ const newTopic = ref({ sectionId: '', title: '', content: '' });
 
 function createTopic(): void {
   if (!newTopic.value.title.trim() || !newTopic.value.sectionId) return;
-  createMutation.mutate({ ...newTopic.value });
+  createMutation.mutate({ ...newTopic.value }, {
+    onSuccess: () => { showNewTopic.value = false; newTopic.value = { sectionId: '', title: '', content: '' }; toast.success('帖子已发布'); },
+    onError: () => { createError.value = '发布失败，请重试'; },
+  });
 }
 
 // 发布回复
@@ -304,7 +308,10 @@ const replyMutation = useMutation({
 
 function submitReply(): void {
   if (!replyText.value.trim() || !viewingTopic.value) return;
-  replyMutation.mutate(replyText.value);
+  replyMutation.mutate(replyText.value, {
+    onSuccess: () => { replyText.value = ''; toast.success('回复已发送'); },
+    onError: () => { toast.error('回复失败'); },
+  });
 }
 
 function selectSection(sec: Section): void {
