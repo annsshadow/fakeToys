@@ -7896,11 +7896,21 @@ function confirmMsg(msg: string): Promise<boolean> {
 
 async function api_process_application_list() { try { await api.get("/jaxrs/process/application/list") } catch {} }
 async function api_process_list_ids() { try { await api.get("/jaxrs/process/list/ids") } catch {} }
-async function api_process_designer_application_list() { try { await api.get("/jaxrs/process/designer/application/list") } catch {} }
-async function api_process_ticket_list() { try { await api.get("/jaxrs/process/ticket/list") } catch {} }
-async function api_process_work_list() { try { await api.get("/jaxrs/process/work/list") } catch {} }
-async function api_process_designer_application_remove() { try { await api.get("/jaxrs/process/designer/application/remove") } catch {} }
-async function api_process_designer_application_create() { try { await api.get("/jaxrs/process/designer/application/create") } catch {} }
+const api_process__844_data = ref<any[]>([]);
+const { data: api_process__844_q } = useQuery({queryKey: ['api_process__844', '/jaxrs/process/designer/application/list'], queryFn: async () => { try { const r = await api.get("/jaxrs/process/designer/application/list"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+watch(api_process__844_q, (v) => { api_process__844_data.value = v ?? []; });
+const api_process__645_data = ref<any[]>([]);
+const { data: api_process__645_q } = useQuery({queryKey: ['api_process__645', '/jaxrs/process/ticket/list'], queryFn: async () => { try { const r = await api.get("/jaxrs/process/ticket/list"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+watch(api_process__645_q, (v) => { api_process__645_data.value = v ?? []; });
+const api_process__297_data = ref<any[]>([]);
+const { data: api_process__297_q } = useQuery({queryKey: ['api_process__297', '/jaxrs/process/work/list'], queryFn: async () => { try { const r = await api.get("/jaxrs/process/work/list"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+watch(api_process__297_q, (v) => { api_process__297_data.value = v ?? []; });
+const api_process__196_data = ref<any[]>([]);
+const { data: api_process__196_q } = useQuery({queryKey: ['api_process__196', '/jaxrs/process/designer/application/remove'], queryFn: async () => { try { const r = await api.get("/jaxrs/process/designer/application/remove"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+watch(api_process__196_q, (v) => { api_process__196_data.value = v ?? []; });
+const api_process__692_data = ref<any[]>([]);
+const { data: api_process__692_q } = useQuery({queryKey: ['api_process__692', '/jaxrs/process/designer/application/create'], queryFn: async () => { try { const r = await api.get("/jaxrs/process/designer/application/create"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+watch(api_process__692_q, (v) => { api_process__692_data.value = v ?? []; });
 
 </script>
 <style scoped>

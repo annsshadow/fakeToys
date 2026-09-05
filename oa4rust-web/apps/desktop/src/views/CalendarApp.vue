@@ -234,11 +234,21 @@ async function api_calendar_follow_x_cancel() { try { await api.get("/jaxrs/cale
 async function api_calendar_assemble_control_setting_code_x() { try { await api.get("/jaxrs/calendar_assemble_control/setting/code/x") } catch {} }
 async function api_calendar_assemble_control_event_all_x() { try { await api.get("/jaxrs/calendar_assemble_control/event/all/x") } catch {} }
 async function api_calendar_assemble_control_calendar_list_my() { try { await api.get("/jaxrs/calendar_assemble_control/calendar/list/my") } catch {} }
-async function api_calendar_assemble_control_calendar_ismanager() { try { await api.get("/jaxrs/calendar_assemble_control/calendar/ismanager") } catch {} }
-async function api_calendar_assemble_control_setting_ismanager() { try { await api.get("/jaxrs/calendar_assemble_control/setting/ismanager") } catch {} }
-async function api_calendar_assemble_control_calendar_list_filter() { try { await api.get("/jaxrs/calendar_assemble_control/calendar/list/filter") } catch {} }
-async function api_calendar_assemble_control_calendar_x() { try { await api.get("/jaxrs/calendar_assemble_control/calendar/x") } catch {} }
-async function api_list_filter_sample_manager() { try { await api.get("/jaxrs/calendar_assemble_control/event/list/filter/sample/manager") } catch {} }
+const api_calendar_769_data = ref<any[]>([]);
+const { data: api_calendar_769_q } = useQuery({queryKey: ['api_calendar_769', '/jaxrs/calendar_assemble_control/calendar/ismanager'], queryFn: async () => { try { const r = await api.get("/jaxrs/calendar_assemble_control/calendar/ismanager"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+watch(api_calendar_769_q, (v) => { api_calendar_769_data.value = v ?? []; });
+const api_calendar_390_data = ref<any[]>([]);
+const { data: api_calendar_390_q } = useQuery({queryKey: ['api_calendar_390', '/jaxrs/calendar_assemble_control/setting/ismanager'], queryFn: async () => { try { const r = await api.get("/jaxrs/calendar_assemble_control/setting/ismanager"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+watch(api_calendar_390_q, (v) => { api_calendar_390_data.value = v ?? []; });
+const api_calendar_731_data = ref<any[]>([]);
+const { data: api_calendar_731_q } = useQuery({queryKey: ['api_calendar_731', '/jaxrs/calendar_assemble_control/calendar/list/filter'], queryFn: async () => { try { const r = await api.get("/jaxrs/calendar_assemble_control/calendar/list/filter"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+watch(api_calendar_731_q, (v) => { api_calendar_731_data.value = v ?? []; });
+const api_calendar_231_data = ref<any[]>([]);
+const { data: api_calendar_231_q } = useQuery({queryKey: ['api_calendar_231', '/jaxrs/calendar_assemble_control/calendar/x'], queryFn: async () => { try { const r = await api.get("/jaxrs/calendar_assemble_control/calendar/x"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+watch(api_calendar_231_q, (v) => { api_calendar_231_data.value = v ?? []; });
+const api_list_fil_758_data = ref<any[]>([]);
+const { data: api_list_fil_758_q } = useQuery({queryKey: ['api_list_fil_758', '/jaxrs/calendar_assemble_control/event/list/filter/sample/manager'], queryFn: async () => { try { const r = await api.get("/jaxrs/calendar_assemble_control/event/list/filter/sample/manager"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+watch(api_list_fil_758_q, (v) => { api_list_fil_758_data.value = v ?? []; });
 const api_calendar_assembl_268_data = ref<any[]>([]);
 const { data: api_calendar_assembl_268_q } = useQuery({queryKey: ['api_calendar_assembl_268', '/jaxrs/calendar_assemble_control/calendar'], queryFn: async () => { try { const r = await api.get("/jaxrs/calendar_assemble_control/calendar"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
 watch(api_calendar_assembl_268_q, (v) => { api_calendar_assembl_268_data.value = v ?? []; });

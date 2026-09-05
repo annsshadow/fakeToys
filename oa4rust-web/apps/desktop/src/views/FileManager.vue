@@ -376,11 +376,21 @@ async function api_fileinfo_list_filter() { try { await api.get("/jaxrs/fileinfo
 
 async function api_jaxrs_file_assemble_control_attachment2_some_id_office_preview_type_docx() { try { await api.get("/jaxrs/file/assemble/control/attachment2/some-id/office/preview/type/docx") } catch {} }
 async function api_jaxrs_file_assemble_control_file_clean_unused_referencetype_cmsdocument_manage() { try { await api.get("/jaxrs/file/assemble/control/file/clean/unused/referencetype/cmsdocument/manage") } catch {} }
-async function api_jaxrs_file_assemble_control_file_list_unused_referencetype_cmsdocument_manage() { try { await api.get("/jaxrs/file/assemble/control/file/list/unused/referencetype/cmsdocument/manage") } catch {} }
-async function api_jaxrs_file_assemble_control_file_upload_referencetype_taskReport_reference_w_9_scale_1() { try { await api.get("/jaxrs/file/assemble/control/file/upload/referencetype/taskReport/reference/w-9/scale/1") } catch {} }
-async function api_jaxrs_file_assemble_control_file_upload_with_url() { try { await api.get("/jaxrs/file/assemble/control/file/upload/with/url") } catch {} }
-async function api_jaxrs_file_attachment_id_image_scale_scale_binary_base64() { try { await api.get("/jaxrs/file/attachment/id/image/scale/scale/binary/base64") } catch {} }
-async function api_jaxrs_file_attachment_id_image_width_width_height_height_binary_base64() { try { await api.get("/jaxrs/file/attachment/id/image/width/width/height/height/binary/base64") } catch {} }
+const api_jaxrs_fi_624_data = ref<any[]>([]);
+const { data: api_jaxrs_fi_624_q } = useQuery({queryKey: ['api_jaxrs_fi_624', '/jaxrs/file/assemble/control/file/list/unused/referencetype/cmsdocument/manage'], queryFn: async () => { try { const r = await api.get("/jaxrs/file/assemble/control/file/list/unused/referencetype/cmsdocument/manage"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+watch(api_jaxrs_fi_624_q, (v) => { api_jaxrs_fi_624_data.value = v ?? []; });
+const api_jaxrs_fi_700_data = ref<any[]>([]);
+const { data: api_jaxrs_fi_700_q } = useQuery({queryKey: ['api_jaxrs_fi_700', '/jaxrs/file/assemble/control/file/upload/referencetype/taskReport/reference/w-9/scale/1'], queryFn: async () => { try { const r = await api.get("/jaxrs/file/assemble/control/file/upload/referencetype/taskReport/reference/w-9/scale/1"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+watch(api_jaxrs_fi_700_q, (v) => { api_jaxrs_fi_700_data.value = v ?? []; });
+const api_jaxrs_fi_291_data = ref<any[]>([]);
+const { data: api_jaxrs_fi_291_q } = useQuery({queryKey: ['api_jaxrs_fi_291', '/jaxrs/file/assemble/control/file/upload/with/url'], queryFn: async () => { try { const r = await api.get("/jaxrs/file/assemble/control/file/upload/with/url"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+watch(api_jaxrs_fi_291_q, (v) => { api_jaxrs_fi_291_data.value = v ?? []; });
+const api_jaxrs_fi_60_data = ref<any[]>([]);
+const { data: api_jaxrs_fi_60_q } = useQuery({queryKey: ['api_jaxrs_fi_60', '/jaxrs/file/attachment/id/image/scale/scale/binary/base64'], queryFn: async () => { try { const r = await api.get("/jaxrs/file/attachment/id/image/scale/scale/binary/base64"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+watch(api_jaxrs_fi_60_q, (v) => { api_jaxrs_fi_60_data.value = v ?? []; });
+const api_jaxrs_fi_753_data = ref<any[]>([]);
+const { data: api_jaxrs_fi_753_q } = useQuery({queryKey: ['api_jaxrs_fi_753', '/jaxrs/file/attachment/id/image/width/width/height/height/binary/base64'], queryFn: async () => { try { const r = await api.get("/jaxrs/file/attachment/id/image/width/width/height/height/binary/base64"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+watch(api_jaxrs_fi_753_q, (v) => { api_jaxrs_fi_753_data.value = v ?? []; });
 const api_jaxrs_file_attac_182_data = ref<any[]>([]);
 const { data: api_jaxrs_file_attac_182_q } = useQuery({queryKey: ['api_jaxrs_file_attac_182', '/jaxrs/file/attachment2/id/download/image/width/width/height/height'], queryFn: async () => { try { const r = await api.get("/jaxrs/file/attachment2/id/download/image/width/width/height/height"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
 watch(api_jaxrs_file_attac_182_q, (v) => { api_jaxrs_file_attac_182_data.value = v ?? []; });

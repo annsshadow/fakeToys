@@ -227,14 +227,24 @@ async function api_jaxrs_attendance_assemble_control_v2_mobile_check_pre() { try
 async function api_jaxrs_attendance_assemble_control_v2_my_controls() { try { await api.get("/jaxrs/attendance/assemble/control/v2/my/controls") } catch {} }
 async function api_jaxrs_attendance_assemble_control_v2_my_detail_list() { try { await api.get("/jaxrs/attendance/assemble/control/v2/my/detail/list") } catch {} }
 async function api_jaxrs_attendance_assemble_control_v2_my_rest_date_check() { try { await api.get("/jaxrs/attendance/assemble/control/v2/my/rest/date/check") } catch {} }
-async function api_jaxrs_attendance_assemble_control_v2_my_statistic() { try { await api.get("/jaxrs/attendance/assemble/control/v2/my/statistic") } catch {} }
-async function api_jaxrs_attendance_assemble_control_v2_my_version() { try { await api.get("/jaxrs/attendance/assemble/control/v2/my/version") } catch {} }
-async function api_jaxrs_attendance_assemble_control_v2_record_import() { try { await api.get("/jaxrs/attendance/assemble/control/v2/record/import") } catch {} }
-async function api_jaxrs_attendance_assemble_control_v2_record_import_daily() { try { await api.get("/jaxrs/attendance/assemble/control/v2/record/import/daily") } catch {} }
+const api_jaxrs_at_746_data = ref<any[]>([]);
+const { data: api_jaxrs_at_746_q } = useQuery({queryKey: ['api_jaxrs_at_746', '/jaxrs/attendance/assemble/control/v2/my/statistic'], queryFn: async () => { try { const r = await api.get("/jaxrs/attendance/assemble/control/v2/my/statistic"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+watch(api_jaxrs_at_746_q, (v) => { api_jaxrs_at_746_data.value = v ?? []; });
+const api_jaxrs_at_346_data = ref<any[]>([]);
+const { data: api_jaxrs_at_346_q } = useQuery({queryKey: ['api_jaxrs_at_346', '/jaxrs/attendance/assemble/control/v2/my/version'], queryFn: async () => { try { const r = await api.get("/jaxrs/attendance/assemble/control/v2/my/version"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+watch(api_jaxrs_at_346_q, (v) => { api_jaxrs_at_346_data.value = v ?? []; });
+const api_jaxrs_at_752_data = ref<any[]>([]);
+const { data: api_jaxrs_at_752_q } = useQuery({queryKey: ['api_jaxrs_at_752', '/jaxrs/attendance/assemble/control/v2/record/import'], queryFn: async () => { try { const r = await api.get("/jaxrs/attendance/assemble/control/v2/record/import"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+watch(api_jaxrs_at_752_q, (v) => { api_jaxrs_at_752_data.value = v ?? []; });
+const api_jaxrs_at_271_data = ref<any[]>([]);
+const { data: api_jaxrs_at_271_q } = useQuery({queryKey: ['api_jaxrs_at_271', '/jaxrs/attendance/assemble/control/v2/record/import/daily'], queryFn: async () => { try { const r = await api.get("/jaxrs/attendance/assemble/control/v2/record/import/daily"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+watch(api_jaxrs_at_271_q, (v) => { api_jaxrs_at_271_data.value = v ?? []; });
 const api_jaxrs_attendance_785_data = ref<any[]>([]);
 const { data: api_jaxrs_attendance_785_q } = useQuery({queryKey: ['api_jaxrs_attendance_785', '/jaxrs/attendance/assemble/control/v2/record/list/1/size/20'], queryFn: async () => { try { const r = await api.get("/jaxrs/attendance/assemble/control/v2/record/list/1/size/20"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
 watch(api_jaxrs_attendance_785_q, (v) => { api_jaxrs_attendance_785_data.value = v ?? []; });
-async function api_jaxrs_attendance_assemble_control_v2_record_r_1() { try { await api.get("/jaxrs/attendance/assemble/control/v2/record/r-1") } catch {} }
+const api_jaxrs_at_256_data = ref<any[]>([]);
+const { data: api_jaxrs_at_256_q } = useQuery({queryKey: ['api_jaxrs_at_256', '/jaxrs/attendance/assemble/control/v2/record/r-1'], queryFn: async () => { try { const r = await api.get("/jaxrs/attendance/assemble/control/v2/record/r-1"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+watch(api_jaxrs_at_256_q, (v) => { api_jaxrs_at_256_data.value = v ?? []; });
 const api_jaxrs_attendance_474_data = ref<any[]>([]);
 const { data: api_jaxrs_attendance_474_q } = useQuery({queryKey: ['api_jaxrs_attendance_474', '/jaxrs/attendance/assemble/control/v2/record/template'], queryFn: async () => { try { const r = await api.get("/jaxrs/attendance/assemble/control/v2/record/template"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
 watch(api_jaxrs_attendance_474_q, (v) => { api_jaxrs_attendance_474_data.value = v ?? []; });
