@@ -151,6 +151,10 @@ async function api_control_mind_x_destorymind() { try { await api.get("/jaxrs/mi
 async function api_control_folder_move_x() { try { await api.get("/jaxrs/mind/assemble/control/folder/move/x") } catch {} }
 async function api_control_mind_share_x() { try { await api.get("/jaxrs/mind/assemble/control/mind/share/x") } catch {} }
 
+async function api_jaxrs_mind_assemble_control_mind_filter_list_x_next_1() { try { await api.get("/jaxrs/mind/assemble/control/mind/filter/list/x/next/1") } catch {} }
+async function api_jaxrs_mind_assemble_control_mind_filter_recycle_x_next_1() { try { await api.get("/jaxrs/mind/assemble/control/mind/filter/recycle/x/next/1") } catch {} }
+async function api_jaxrs_mind_assemble_control_mind_filter_shared_x_next_1() { try { await api.get("/jaxrs/mind/assemble/control/mind/filter/shared/x/next/1") } catch {} }
+async function api_jaxrs_mind_assemble_control_mind_x_icon_size_64() { try { await api.get("/jaxrs/mind/assemble/control/mind/x/icon/size/64") } catch {} }
 </script>
 
 <style scoped>

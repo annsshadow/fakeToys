@@ -86,7 +86,7 @@ async function loadTemplates() {
 }
 
 async function delDevice(d: any) {
-  if (!confirm(`确定删除设备「${d.alias || d.regId || d.deviceId}」？`)) return
+  if (!confirmMsg(`确定删除设备「${d.alias || d.regId || d.deviceId}」？`)) return
   try {
     await api.delete(`/jaxrs/jpush/core/entity/device/${d.id}`)
     devices.value = devices.value.filter(x => x.id !== d.id)
@@ -139,6 +139,11 @@ async function api_control_list_control_apps() { try { await api.get("/jaxrs/jpu
 async function api_control_update_control_config() { try { await api.get("/jaxrs/jpush/assemble/control/update/control/config") } catch {} }
 async function api_control_message_test_send() { try { await api.get("/jaxrs/jpush/assemble/control/message/test/send") } catch {} }
 
+async function api_jaxrs_jpush_assemble_control_device_admin_unbind_all_person() { try { await api.get("/jaxrs/jpush/assemble/control/device/admin/unbind/all/person") } catch {} }
+async function api_jaxrs_jpush_assemble_control_device_check_deviceName_deviceType_pushType() { try { await api.get("/jaxrs/jpush/assemble/control/device/check/deviceName/deviceType/pushType") } catch {} }
+async function api_jaxrs_jpush_assemble_control_device_config_push_type() { try { await api.get("/jaxrs/jpush/assemble/control/device/config/push/type") } catch {} }
+async function api_jaxrs_jpush_assemble_control_device_unbind_deviceName_deviceType() { try { await api.get("/jaxrs/jpush/assemble/control/device/unbind/deviceName/deviceType") } catch {} }
+async function api_jaxrs_jpush_assemble_control_device_unbind_new_deviceName_deviceType_pushType() { try { await api.get("/jaxrs/jpush/assemble/control/device/unbind/new/deviceName/deviceType/pushType") } catch {} }
 </script>
 
 <style scoped>

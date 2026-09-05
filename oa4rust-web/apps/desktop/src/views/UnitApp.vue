@@ -117,6 +117,36 @@ async function api_list_unit_sup_direct() { try { await api.get("/jaxrs/unit/lis
 async function api_check_unit_has_person() { try { await api.get("/jaxrs/unit/check/unit/has/person") } catch {} }
 async function api_unit_sup_nested_object() { try { await api.get("/jaxrs/unit/list/unit/sup/nested/object") } catch {} }
 
+async function api_jaxrs_organization_assemble_authentication_authentication_oauth_dingding_config() { try { await api.get("/jaxrs/organization/assemble/authentication/authentication/oauth/dingding/config") } catch {} }
+async function api_jaxrs_organization_assemble_authentication_authentication_oauth_qywx_config() { try { await api.get("/jaxrs/organization/assemble/authentication/authentication/oauth/qywx/config") } catch {} }
+async function api_jaxrs_organization_assemble_authentication_sso_encrypt_client_u2c_key_u2key_1234_95d5ba() { try { await api.get("/jaxrs/organization/assemble/authentication/sso/encrypt/client/u2c/key/u2key-1234567890-abcdef-/credential/user@P") } catch {} }
+async function api_jaxrs_organization_assemble_control_group_list_like_mockputtopost() { try { await api.get("/jaxrs/organization/assemble/control/group/list/like/mockputtopost") } catch {} }
+async function api_jaxrs_organization_assemble_control_group_list_like_pinyin() { try { await api.get("/jaxrs/organization/assemble/control/group/list/like/pinyin") } catch {} }
+async function api_jaxrs_organization_assemble_control_group_list_like_pinyin_mockputtopost() { try { await api.get("/jaxrs/organization/assemble/control/group/list/like/pinyin/mockputtopost") } catch {} }
+async function api_jaxrs_organization_assemble_control_group_list_pinyininitial_mockputtopost() { try { await api.get("/jaxrs/organization/assemble/control/group/list/pinyininitial/mockputtopost") } catch {} }
+async function api_jaxrs_organization_assemble_control_identity_list_like_mockputtopost() { try { await api.get("/jaxrs/organization/assemble/control/identity/list/like/mockputtopost") } catch {} }
+async function api_jaxrs_organization_assemble_control_identity_list_like_pinyin() { try { await api.get("/jaxrs/organization/assemble/control/identity/list/like/pinyin") } catch {} }
+async function api_jaxrs_organization_assemble_control_identity_list_like_pinyin_mockputtopost() { try { await api.get("/jaxrs/organization/assemble/control/identity/list/like/pinyin/mockputtopost") } catch {} }
+async function api_jaxrs_organization_assemble_control_identity_list_pinyininitial_mockputtopost() { try { await api.get("/jaxrs/organization/assemble/control/identity/list/pinyininitial/mockputtopost") } catch {} }
+async function api_jaxrs_organization_assemble_control_person_list_like_mockputtopost() { try { await api.get("/jaxrs/organization/assemble/control/person/list/like/mockputtopost") } catch {} }
+async function api_jaxrs_organization_assemble_control_person_list_like_pinyin() { try { await api.get("/jaxrs/organization/assemble/control/person/list/like/pinyin") } catch {} }
+async function api_jaxrs_organization_assemble_control_person_list_like_pinyin_mockputtopost() { try { await api.get("/jaxrs/organization/assemble/control/person/list/like/pinyin/mockputtopost") } catch {} }
+async function api_jaxrs_organization_assemble_control_person_list_pinyininitial_mockputtopost() { try { await api.get("/jaxrs/organization/assemble/control/person/list/pinyininitial/mockputtopost") } catch {} }
+async function api_jaxrs_organization_assemble_control_role_list_0_next_10() { try { await api.get("/jaxrs/organization/assemble/control/role/list/0/next/10") } catch {} }
+async function api_jaxrs_organization_assemble_control_role_list_like_mockputtopost() { try { await api.get("/jaxrs/organization/assemble/control/role/list/like/mockputtopost") } catch {} }
+async function api_jaxrs_organization_assemble_control_role_list_like_pinyin() { try { await api.get("/jaxrs/organization/assemble/control/role/list/like/pinyin") } catch {} }
+async function api_jaxrs_organization_assemble_control_role_list_like_pinyin_mockputtopost() { try { await api.get("/jaxrs/organization/assemble/control/role/list/like/pinyin/mockputtopost") } catch {} }
+async function api_jaxrs_organization_assemble_control_unit_list_0_next_10() { try { await api.get("/jaxrs/organization/assemble/control/unit/list/0/next/10") } catch {} }
+async function api_jaxrs_organization_assemble_control_unit_list_control_top() { try { await api.get("/jaxrs/organization/assemble/control/unit/list/control/top") } catch {} }
+async function api_jaxrs_organization_assemble_control_unit_list_like_mockputtopost() { try { await api.get("/jaxrs/organization/assemble/control/unit/list/like/mockputtopost") } catch {} }
+async function api_jaxrs_organization_assemble_control_unit_list_like_pinyin() { try { await api.get("/jaxrs/organization/assemble/control/unit/list/like/pinyin") } catch {} }
+async function api_jaxrs_organization_assemble_control_unit_list_like_pinyin_mockputtopost() { try { await api.get("/jaxrs/organization/assemble/control/unit/list/like/pinyin/mockputtopost") } catch {} }
+async function api_jaxrs_organization_assemble_control_unit_list_pinyininitial_mockputtopost() { try { await api.get("/jaxrs/organization/assemble/control/unit/list/pinyininitial/mockputtopost") } catch {} }
+async function api_jaxrs_organization_assemble_control_unit_list_test_unit_sub_nested() { try { await api.get("/jaxrs/organization/assemble/control/unit/list/test-unit/sub/nested") } catch {} }
+async function api_jaxrs_organization_assemble_control_unit_list_test_unit_sup_nested() { try { await api.get("/jaxrs/organization/assemble/control/unit/list/test-unit/sup/nested") } catch {} }
+async function api_jaxrs_organization_assemble_control_unit_list_test_unit_sup_nested_type_company() { try { await api.get("/jaxrs/organization/assemble/control/unit/list/test-unit/sup/nested/type/company") } catch {} }
+async function api_jaxrs_organization_assemble_control_unit_list_unit_type() { try { await api.get("/jaxrs/organization/assemble/control/unit/list/unit/type") } catch {} }
+async function api_jaxrs_organization_assemble_control_unit_list_unit_type_mockputtopost() { try { await api.get("/jaxrs/organization/assemble/control/unit/list/unit/type/mockputtopost") } catch {} }
 </script>
 
 <style scoped>

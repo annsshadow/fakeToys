@@ -27,6 +27,7 @@
 
 <script setup lang="ts">
 import { ref } from 'vue';
+import { confirmMsg } from '../utils/toast';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/vue-query';
 import { api } from '@oa4rust/sdk';
 
@@ -71,7 +72,7 @@ function publishPage(_page: PortalPage): void {
 }
 
 function deletePage(id: string): void {
-  if (confirm('确定删除此页面？')) deleteMutation.mutate(id);
+  if (confirmMsg('确定删除此页面？')) deleteMutation.mutate(id);
 }
 </script>
 
