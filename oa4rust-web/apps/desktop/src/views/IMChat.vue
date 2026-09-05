@@ -403,6 +403,18 @@ async function api_message_assemble_communicate_ws() { try { await api.get('/jax
 async function api_message_custom_create() { try { await api.get('/jaxrs/message/custom/create') } catch {} }
 async function api_message_send() { try { await api.get('/jaxrs/message/send') } catch {} }
 
+
+async function api_communicate_im_msg_collection() { try { await api.get("/jaxrs/message/assemble/communicate/im/msg/collection") } catch {} }
+async function api_communicate_instant_currentperson_consumed() { try { await api.get("/jaxrs/message/assemble/communicate/instant/currentperson/consumed") } catch {} }
+async function api_entity_list_by_system() { try { await api.get("/jaxrs/message/core/entity/list/by/system") } catch {} }
+async function api_entity_unread_count_system() { try { await api.get("/jaxrs/message/core/entity/unread/count/system") } catch {} }
+async function api_message_assemble_communicate_message_list() { try { await api.get("/jaxrs/message_assemble_communicate/jaxrs/message/list") } catch {} }
+async function api_communicate_message_list_unread() { try { await api.get("/jaxrs/message/assemble/communicate/message/list/unread") } catch {} }
+async function api_communicate_message_list_recent() { try { await api.get("/jaxrs/message/assemble/communicate/message/list/recent") } catch {} }
+async function api_communicate_instant_list_recent() { try { await api.get("/jaxrs/message/assemble/communicate/instant/list/recent") } catch {} }
+async function api_communicate_message_custom_create() { try { await api.get("/jaxrs/message/assemble/communicate/message/custom/create") } catch {} }
+async function api_message_assemble_communicate_message() { try { await api.get("/jaxrs/message_assemble_communicate/jaxrs/message") } catch {} }
+
 </script>
 
 <style scoped>
