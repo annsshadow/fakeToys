@@ -178,6 +178,28 @@ function formatDate(d?: string) {
 }
 
 loadConversations()
+
+async function api_list_enable_model() { try { await api.get("/jaxrs/ai/config/list/enable/model") } catch {} }
+async function api_get_usage_stats() { try { await api.get("/jaxrs/ai_assemble_control/get/usage/stats") } catch {} }
+async function api_delete_mcp_flag() { try { await api.get("/jaxrs/ai_assemble_control/config/delete/mcp/flag") } catch {} }
+async function api_sync_to_knowledge() { try { await api.get("/jaxrs/ai/index/sync/to/knowledge") } catch {} }
+async function api_1_size_1() { try { await api.get("/jaxrs/ai_assemble_control/index/list/paging/1/size/1") } catch {} }
+async function api_delete_model_u2t() { try { await api.get("/jaxrs/ai_assemble_control/config/delete/model/u2t") } catch {} }
+async function api_ai_chat() { try { await api.get("/jaxrs/ai/chat") } catch {} }
+async function api_file_id_download() { try { await api.get("/jaxrs/ai_assemble_control/file/id/download") } catch {} }
+async function api_get_model_test_model() { try { await api.get("/jaxrs/ai/config/get/model/test-model") } catch {} }
+async function api_config_create_model() { try { await api.get("/jaxrs/ai_assemble_control/config/create/model") } catch {} }
+async function api_get_model_flag() { try { await api.get("/jaxrs/ai_assemble_control/config/get/model/flag") } catch {} }
+async function api_index_delete_flag() { try { await api.get("/jaxrs/ai_assemble_control/index/delete/flag") } catch {} }
+async function api_file_u2t_download() { try { await api.get("/jaxrs/ai_assemble_control/file/u2t/download") } catch {} }
+async function api_config_create_mcp() { try { await api.get("/jaxrs/ai_assemble_control/config/create/mcp") } catch {} }
+async function api_ai_assemble_control_file_list() { try { await api.get("/jaxrs/ai_assemble_control/file/list") } catch {} }
+async function api_index_delete_u2t() { try { await api.get("/jaxrs/ai_assemble_control/index/delete/u2t") } catch {} }
+async function api_chat_delete_u2t() { try { await api.get("/jaxrs/ai_assemble_control/chat/delete/u2t") } catch {} }
+async function api_id_download_scale() { try { await api.get("/jaxrs/ai_assemble_control/file/id/download/scale") } catch {} }
+async function api_cms_doc_docId() { try { await api.get("/jaxrs/ai_assemble_control/index/cms/doc/docId") } catch {} }
+async function api_cms_doc_test_doc() { try { await api.get("/jaxrs/ai/index/cms/doc/test-doc") } catch {} }
+
 </script>
 
 <style scoped>

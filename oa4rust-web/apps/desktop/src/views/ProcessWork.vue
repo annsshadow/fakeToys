@@ -201,6 +201,28 @@ async function call_processplatform_assemble_designer() { try { await api.get("/
 async function call_designer_application_app_1() { try { await api.get("/jaxrs/processplatform/assemble/designer/application/app-1") } catch {} }
 async function call_designer_applicationcategory_list() { try { await api.get("/jaxrs/processplatform/assemble/designer/applicationcategory/list") } catch {} }
 
+
+async function api_review_v2_count() { try { await api.get("/jaxrs/processplatform/assemble/surface/review/v2/count") } catch {} }
+async function api_manual_after_processing() { try { await api.get("/jaxrs/processplatform/service/processing/work/manual/after/processing") } catch {} }
+async function api_review_v2_search() { try { await api.get("/jaxrs/processplatform/assemble/surface/review/v2/search") } catch {} }
+async function api_list_job_job() { try { await api.get("/jaxrs/processplatform/assemble/surface/task/list/job/job") } catch {} }
+async function api_surface_touch_touchdetained() { try { await api.get("/jaxrs/processplatform/assemble/surface/touch/touchdetained") } catch {} }
+async function api_read_read_mv_processing() { try { await api.get("/jaxrs/processplatform/service/processing/read/read-mv/processing") } catch {} }
+async function api_documentversion_work_work() { try { await api.get("/jaxrs/processplatform/assemble/surface/documentversion/work/work") } catch {} }
+async function api_batch_upload_manage() { try { await api.get("/jaxrs/processplatform/assemble/surface/attachment/batch/upload/manage") } catch {} }
+async function api_available_work_unit() { try { await api.get("/jaxrs/processplatform/assemble/surface/available/work/unit") } catch {} }
+async function api_record_work_terminate() { try { await api.get("/jaxrs/processplatform/service/processing/record/work/terminate") } catch {} }
+async function api_fetch_job_job() { try { await api.get("/jaxrs/processplatform/assemble/surface/data/fetch/job/job") } catch {} }
+async function api_job_job_delete() { try { await api.get("/jaxrs/processplatform/assemble/surface/correlation/job/job/delete") } catch {} }
+async function api_task_processing_task_001() { try { await api.get("/jaxrs/processplatform/task/processing/task-001") } catch {} }
+async function api_processing_touch_merge() { try { await api.get("/jaxrs/processplatform/service/processing/touch/merge") } catch {} }
+async function api_workcompleted_mrg_keep_merge() { try { await api.get("/jaxrs/processplatform/service/processing/workcompleted/mrg-keep/merge") } catch {} }
+async function api_list_count_application() { try { await api.get("/jaxrs/processplatform/assemble/surface/work/list/count/application") } catch {} }
+async function api_list_work_work() { try { await api.get("/jaxrs/processplatform/assemble/surface/read/list/work/work") } catch {} }
+async function api_read_count_filter() { try { await api.get("/jaxrs/processplatform/assemble/surface/read/count/filter") } catch {} }
+async function api_list_job_job() { try { await api.get("/jaxrs/processplatform/assemble/surface/taskcompleted/list/job/job") } catch {} }
+async function api_batch_delete_manage() { try { await api.get("/jaxrs/processplatform/assemble/surface/attachment/batch/delete/manage") } catch {} }
+
 </script>
 
 <style scoped>

@@ -116,6 +116,28 @@ async function onDelete(item: DocItem) {
 }
 
 doSearch()
+
+async function api_document_achive_d_1() { try { await api.get("/jaxrs/document/achive/d-1") } catch {} }
+async function api_document_d_1_persons() { try { await api.get("/jaxrs/document/d-1/persons") } catch {} }
+async function api_document_batch_status() { try { await api.get("/jaxrs/document/batch/status") } catch {} }
+async function api_d_1_document_data() { try { await api.get("/jaxrs/document/d-1/document/data") } catch {} }
+async function api_cipher_publish_content() { try { await api.get("/jaxrs/document/cipher/publish/content") } catch {} }
+async function api_document_d_1_unTop() { try { await api.get("/jaxrs/document/d-1/unTop") } catch {} }
+async function api_document_batch() { try { await api.get("/jaxrs/document/batch") } catch {} }
+async function api_read_person_p_1() { try { await api.get("/jaxrs/document/cipher/c-1/permission/read/person/p-1") } catch {} }
+async function api_next_10_mockputtopost() { try { await api.get("/jaxrs/document/filter/list/i-1/next/10/mockputtopost") } catch {} }
+async function api_document() { try { await api.get("/jaxrs/document") } catch {} }
+async function api_document_list_document() { try { await api.get("/jaxrs/document/list/document") } catch {} }
+async function api_list_document_data() { try { await api.get("/jaxrs/document/list/document/data") } catch {} }
+async function api_document_d_1_top() { try { await api.get("/jaxrs/document/d-1/top") } catch {} }
+async function api_batch_u3_batch_x_mockdeletetoget() { try { await api.get("/jaxrs/document/batch/u3-batch-x/mockdeletetoget") } catch {} }
+async function api_document_batch_b_1() { try { await api.get("/jaxrs/document/batch/b-1") } catch {} }
+async function api_batch_b_1_mockdeletetoget() { try { await api.get("/jaxrs/document/batch/b-1/mockdeletetoget") } catch {} }
+async function api_data_modify_mockputtopost() { try { await api.get("/jaxrs/document/batch/data/modify/mockputtopost") } catch {} }
+async function api_document_filter_count() { try { await api.get("/jaxrs/document/filter/count") } catch {} }
+async function api_i_1_next_10() { try { await api.get("/jaxrs/document/filter/list/i-1/next/10") } catch {} }
+async function api_publish_content_mockputtopost() { try { await api.get("/jaxrs/document/cipher/publish/content/mockputtopost") } catch {} }
+
 </script>
 
 <style scoped>

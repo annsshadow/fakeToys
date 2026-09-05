@@ -342,6 +342,28 @@ function fmtTime(ts?: string): string {
 onMounted(() => {
   refetch();
 });
+
+async function api_core_entity_section() { try { await api.get("/jaxrs/bbs/core/entity/section") } catch {} }
+async function api_subject_view_sub_001() { try { await api.get("/jaxrs/bbs/assemble/control/subject/view/sub-001") } catch {} }
+async function api_bbsreply_list_recent() { try { await api.get("/jaxrs/bbs/assemble/control/bbsreply/list/recent") } catch {} }
+async function api_bbs_post_list() { try { await api.get("/jaxrs/bbs/post/list") } catch {} }
+async function api_section_view_all() { try { await api.get("/jaxrs/bbs/section/view/all") } catch {} }
+async function api_topic_recommended_index() { try { await api.get("/jaxrs/bbs/assemble/control/topic/recommended/index") } catch {} }
+async function api_core_entity_forum() { try { await api.get("/jaxrs/bbs/core/entity/forum") } catch {} }
+async function api_forum_view_1() { try { await api.get("/jaxrs/bbs/forum/view/1") } catch {} }
+async function api_control_topic_search() { try { await api.get("/jaxrs/bbs/assemble/control/topic/search") } catch {} }
+async function api_core_entity_subject() { try { await api.get("/jaxrs/bbs/core/entity/subject") } catch {} }
+async function api_bbs_assemble_control() { try { await api.get("/jaxrs/bbs/assemble/control") } catch {} }
+async function api_assemble_control_bbstopic() { try { await api.get("/jaxrs/bbs/assemble/control/bbstopic") } catch {} }
+async function api_section_list_test_forum_id() { try { await api.get("/jaxrs/bbs/core/entity/section/list/test-forum-id") } catch {} }
+async function api_subject_index_list() { try { await api.get("/jaxrs/bbs/assemble/control/subject/index/list") } catch {} }
+async function api_topic_filter_listsubjectinfo() { try { await api.get("/jaxrs/bbs/assemble/control/topic/filter/listsubjectinfo") } catch {} }
+async function api_topic_filter_list() { try { await api.get("/jaxrs/bbs/assemble/control/topic/filter/list") } catch {} }
+async function api_core_entity_reply() { try { await api.get("/jaxrs/bbs/core/entity/reply") } catch {} }
+async function api_control_subject_statgrade() { try { await api.get("/jaxrs/bbs/assemble/control/subject/statgrade") } catch {} }
+async function api_bbs_subject_search() { try { await api.get("/jaxrs/bbs/subject/search") } catch {} }
+async function api_entity_subject_subject_001() { try { await api.get("/jaxrs/bbs/core/entity/subject/subject-001") } catch {} }
+
 </script>
 
 <style scoped>

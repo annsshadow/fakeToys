@@ -518,6 +518,28 @@ async function call_designer_input_cover() { try { await api.get("/jaxrs/query/a
 async function call_designer_input_create() { try { await api.get("/jaxrs/query/assemble/designer/input/create") } catch {} }
 async function call_designer_list_default() { try { await api.get("/jaxrs/query/assemble/designer/list/default") } catch {} }
 
+
+async function api_neural_generate_test_model() { try { await api.get("/jaxrs/query/service/neural/generate/test-model") } catch {} }
+async function api_table_tf_1_row() { try { await api.get("/jaxrs/query/assemble/designer/table/tf-1/row") } catch {} }
+async function api_designer_statement_st_1() { try { await api.get("/jaxrs/query/assemble/designer/statement/st-1") } catch {} }
+async function api_designer_list_summary() { try { await api.get("/jaxrs/query/assemble/designer/list/summary") } catch {} }
+async function api_designer_view_view_1() { try { await api.get("/jaxrs/query/assemble/designer/view/view-1") } catch {} }
+async function api_designer_neural_model() { try { await api.get("/jaxrs/query/assemble/designer/neural/model") } catch {} }
+async function api_processing_design_search() { try { await api.get("/jaxrs/query/service/processing/design/search") } catch {} }
+async function api_query_create() { try { await api.get("/jaxrs/query/create") } catch {} }
+async function api_tf_1_row_r_1() { try { await api.get("/jaxrs/query/assemble/designer/table/tf-1/row/r-1") } catch {} }
+async function api_table_u2table_update() { try { await api.get("/jaxrs/query/service/processing/table/u2table/update") } catch {} }
+async function api_cache_status_query_1() { try { await api.get("/jaxrs/query/core/express/cache/status/query-1") } catch {} }
+async function api_assemble_designer_table() { try { await api.get("/jaxrs/query/assemble/designer/table") } catch {} }
+async function api_query_service() { try { await api.get("/jaxrs/query/service") } catch {} }
+async function api_stat_s1_simulate() { try { await api.get("/jaxrs/query/assemble/designer/stat/s1/simulate") } catch {} }
+async function api_table_reload_dynamic() { try { await api.get("/jaxrs/query/assemble/designer/table/reload/dynamic") } catch {} }
+async function api_assemble_designer_search() { try { await api.get("/jaxrs/query/assemble/designer/search") } catch {} }
+async function api_surface_delete_surface_1() { try { await api.get("/jaxrs/query/assemble/surface/delete/surface-1") } catch {} }
+async function api_table_list_manage() { try { await api.get("/jaxrs/query/assemble/designer/table/list/manage") } catch {} }
+async function api_assemble_designer_stat() { try { await api.get("/jaxrs/query/assemble/designer/stat") } catch {} }
+async function api_assemble_surface_create() { try { await api.get("/jaxrs/query/assemble/surface/create") } catch {} }
+
 </script>
 
 <style scoped>

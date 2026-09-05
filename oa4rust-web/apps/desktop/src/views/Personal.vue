@@ -148,6 +148,28 @@ async function call_person_detail_p1() { try { await api.get("/jaxrs/person/deta
 async function call_person_empower() { try { await api.get("/jaxrs/person/empower") } catch {} }
 async function call_empower_list_currentperson() { try { await api.get("/jaxrs/person/empower/list/currentperson") } catch {} }
 
+
+async function api_unit_list_type() { try { await api.get("/jaxrs/organization/assemble/control/unit/list/type") } catch {} }
+async function api_exmail_new_count() { try { await api.get("/jaxrs/person/exmail/new/count") } catch {} }
+async function api_two_factory_login() { try { await api.get("/jaxrs/organization/assemble/authentication/authentication/two/factory/login") } catch {} }
+async function api_login_after_object() { try { await api.get("/jaxrs/person/list/login/after/object") } catch {} }
+async function api_role_list_like() { try { await api.get("/jaxrs/organization/assemble/control/role/list/like") } catch {} }
+async function api_assemble_authentication_sso() { try { await api.get("/jaxrs/organization/assemble/authentication/sso") } catch {} }
+async function api_control_inputperson_template() { try { await api.get("/jaxrs/organization/assemble/control/inputperson/template") } catch {} }
+async function api_person_mockputtopost() { try { await api.get("/jaxrs/person/mockputtopost") } catch {} }
+async function api_person_list_pinyininitial() { try { await api.get("/jaxrs/organization/assemble/control/person/list/pinyininitial") } catch {} }
+async function api_direct_like_object() { try { await api.get("/jaxrs/person/list/unit/sub/direct/like/object") } catch {} }
+async function api_authentication_check_token() { try { await api.get("/jaxrs/organization/assemble/authentication/authentication/check/token") } catch {} }
+async function api_list_pinyininitial_mockputtopost() { try { await api.get("/jaxrs/organization/assemble/control/role/list/pinyininitial/mockputtopost") } catch {} }
+async function api_authentication_authentication_mode() { try { await api.get("/jaxrs/organization/assemble/authentication/authentication/mode") } catch {} }
+async function api_person_icon_upload() { try { await api.get("/jaxrs/person/icon/upload") } catch {} }
+async function api_person_exmail() { try { await api.get("/jaxrs/person/exmail") } catch {} }
+async function api_authentication_switchuser_mockputtopost() { try { await api.get("/jaxrs/organization/assemble/authentication/authentication/switchuser/mockputtopost") } catch {} }
+async function api_organization_person_list() { try { await api.get("/jaxrs/organization/person/list") } catch {} }
+async function api_list_group_object() { try { await api.get("/jaxrs/person/list/group/object") } catch {} }
+async function api_assemble_control_person() { try { await api.get("/jaxrs/organization/assemble/control/person") } catch {} }
+async function api_oauth_token_jira() { try { await api.get("/jaxrs/organization/assemble/authentication/oauth/token/jira") } catch {} }
+
 </script>
 
 <style scoped>

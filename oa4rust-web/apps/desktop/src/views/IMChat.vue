@@ -374,6 +374,28 @@ async function call_communicate_mass_m_1() { try { await api.get("/jaxrs/message
 async function call_assemble_communicate_message() { try { await api.get("/jaxrs/message/assemble/communicate/message") } catch {} }
 async function call_communicate_message_list() { try { await api.get("/jaxrs/message/assemble/communicate/message/list") } catch {} }
 
+
+async function api_assemble_communicate_send() { try { await api.get("/jaxrs/message/assemble/communicate/send") } catch {} }
+async function api_message_inbox_list() { try { await api.get("/jaxrs/message/inbox/list") } catch {} }
+async function api_currentperson_consumed_all() { try { await api.get("/jaxrs/message/assemble/communicate/instant/currentperson/consumed/all") } catch {} }
+async function api_msg_collection_remove() { try { await api.get("/jaxrs/message/assemble/communicate/im/msg/collection/remove") } catch {} }
+async function api_ws_count_person() { try { await api.get("/jaxrs/message/assemble/communicate/ws/count/person") } catch {} }
+async function api_instant_list_unread() { try { await api.get("/jaxrs/message/assemble/communicate/instant/list/unread") } catch {} }
+async function api_message_core_list() { try { await api.get("/jaxrs/message/core/list") } catch {} }
+async function api_mass_m_1_mockdeletetoget() { try { await api.get("/jaxrs/message/assemble/communicate/mass/m-1/mockdeletetoget") } catch {} }
+async function api_conversation_c_1_read() { try { await api.get("/jaxrs/message/assemble/communicate/im/conversation/c-1/read") } catch {} }
+async function api_currentperson_consumed_mockputtopost() { try { await api.get("/jaxrs/message/assemble/communicate/instant/currentperson/consumed/mockputtopost") } catch {} }
+async function api_mass_list_recent() { try { await api.get("/jaxrs/message/assemble/communicate/mass/list/recent") } catch {} }
+async function api_im_conversation_mockputtopost() { try { await api.get("/jaxrs/message/assemble/communicate/im/conversation/mockputtopost") } catch {} }
+async function api_communicate_receive_consumer1() { try { await api.get("/jaxrs/message/assemble/communicate/receive/consumer1") } catch {} }
+async function api_consume_type_ticket() { try { await api.get("/jaxrs/message/assemble/communicate/consume/type/ticket") } catch {} }
+async function api_testuser_count_10() { try { await api.get("/jaxrs/message/consume/list/testuser/count/10") } catch {} }
+async function api_im_msg_clear() { try { await api.get("/jaxrs/message/assemble/communicate/im/msg/clear") } catch {} }
+async function api_im_manager_config() { try { await api.get("/jaxrs/message/assemble/communicate/im/manager/config") } catch {} }
+async function api_unread_count_testuser() { try { await api.get("/jaxrs/message/unread/count/testuser") } catch {} }
+async function api_mass_enable_type() { try { await api.get("/jaxrs/message/assemble/communicate/mass/enable/type") } catch {} }
+async function api_ws_list_person() { try { await api.get("/jaxrs/message/assemble/communicate/ws/list/person") } catch {} }
+
 </script>
 
 <style scoped>

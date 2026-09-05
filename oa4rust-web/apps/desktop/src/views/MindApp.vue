@@ -109,6 +109,28 @@ function formatMindJson(m: MindItem) {
 }
 
 loadFolders()
+
+async function api_entity_folder_folder_001() { try { await api.get("/jaxrs/mind/core/entity/folder/folder-001") } catch {} }
+async function api_mind_version() { try { await api.get("/jaxrs/mind/version") } catch {} }
+async function api_mind_mind() { try { await api.get("/jaxrs/mind/mind") } catch {} }
+async function api_folder_x_force() { try { await api.get("/jaxrs/mind/assemble/control/folder/x/force") } catch {} }
+async function api_mind_recycle_x() { try { await api.get("/jaxrs/mind/assemble/control/mind/recycle/x") } catch {} }
+async function api_mind_view_x() { try { await api.get("/jaxrs/mind/assemble/control/mind/view/x") } catch {} }
+async function api_mind_core_list() { try { await api.get("/jaxrs/mind/core/list") } catch {} }
+async function api_entity_mind_mind_001() { try { await api.get("/jaxrs/mind/core/entity/mind/mind-001") } catch {} }
+async function api_mind_map() { try { await api.get("/jaxrs/mind/map") } catch {} }
+async function api_control_folder_x() { try { await api.get("/jaxrs/mind/assemble/control/folder/x") } catch {} }
+async function api_mind_folder() { try { await api.get("/jaxrs/mind/folder") } catch {} }
+async function api_control_mind_save() { try { await api.get("/jaxrs/mind/assemble/control/mind/save") } catch {} }
+async function api_list_x_shareRecords() { try { await api.get("/jaxrs/mind/assemble/control/mind/list/x/shareRecords") } catch {} }
+async function api_assemble_control_config() { try { await api.get("/jaxrs/mind/assemble/control/config") } catch {} }
+async function api_folder_tree_my() { try { await api.get("/jaxrs/mind/assemble/control/folder/tree/my") } catch {} }
+async function api_mind_x_icon() { try { await api.get("/jaxrs/mind/assemble/control/mind/x/icon") } catch {} }
+async function api_entity_folder_list() { try { await api.get("/jaxrs/mind/core/entity/folder/list") } catch {} }
+async function api_list_x_version() { try { await api.get("/jaxrs/mind/assemble/control/mind/list/x/version") } catch {} }
+async function api_mind_assemble_list() { try { await api.get("/jaxrs/mind/assemble/list") } catch {} }
+async function api_share_x_cancel() { try { await api.get("/jaxrs/mind/assemble/control/mind/share/x/cancel") } catch {} }
+
 </script>
 
 <style scoped>
