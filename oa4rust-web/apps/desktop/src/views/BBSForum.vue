@@ -419,22 +419,34 @@ async function api_control_bbstopic_list_recent() { try { await api.get("/jaxrs/
 async function api_list_i_1_next_10() { try { await api.get("/jaxrs/comment/list/i-1/next/10") } catch {} }
 async function api_comment_c_1() { try { await api.get("/jaxrs/comment/c-1") } catch {} }
 async function api_1_size_10_mockputtopost() { try { await api.get("/jaxrs/comment/list/1/size/10/mockputtopost") } catch {} }
-async function api_list_i_1_prev_10() { try { await api.get("/jaxrs/comment/list/i-1/prev/10") } catch {} }
-async function api_list_1_size_50() { try { await api.get("/jaxrs/comment/list/1/size/50") } catch {} }
+const api_list_i_1_prev_10_data = ref<any[]>([]);
+const { data: api_list_i_1_prev_10_q } = useQuery({queryKey: ['api_list_i_1_prev_10', '/jaxrs/comment/list/i-1/prev/10'], queryFn: async () => { try { const r = await api.get("/jaxrs/comment/list/i-1/prev/10"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+watch(api_list_i_1_prev_10_q, (v) => { api_list_i_1_prev_10_data.value = v ?? []; });
+const api_list_1_size_50_data = ref<any[]>([]);
+const { data: api_list_1_size_50_q } = useQuery({queryKey: ['api_list_1_size_50', '/jaxrs/comment/list/1/size/50'], queryFn: async () => { try { const r = await api.get("/jaxrs/comment/list/1/size/50"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+watch(api_list_1_size_50_q, (v) => { api_list_1_size_50_data.value = v ?? []; });
 async function api_comment_c_1_commend() { try { await api.get("/jaxrs/comment/c-1/commend") } catch {} }
 async function api_comment() { try { await api.get("/jaxrs/comment") } catch {} }
 async function api_comment_c_1_uncommend() { try { await api.get("/jaxrs/comment/c-1/uncommend") } catch {} }
-async function api_list_1_size_10() { try { await api.get("/jaxrs/comment/list/1/size/10") } catch {} }
+const api_list_1_size_10_data = ref<any[]>([]);
+const { data: api_list_1_size_10_q } = useQuery({queryKey: ['api_list_1_size_10', '/jaxrs/comment/list/1/size/10'], queryFn: async () => { try { const r = await api.get("/jaxrs/comment/list/1/size/10"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+watch(api_list_1_size_10_q, (v) => { api_list_1_size_10_data.value = v ?? []; });
 async function api_comment_u3_cmt_uncommend() { try { await api.get("/jaxrs/comment/u3-cmt/uncommend") } catch {} }
 async function api_comment_u3_cmt_commend() { try { await api.get("/jaxrs/comment/u3-cmt/commend") } catch {} }
 
 
-async function api_review_v2_search() { try { await api.get("/jaxrs/review/v2/search") } catch {} }
+const api_review_v2_search_data = ref<any[]>([]);
+const { data: api_review_v2_search_q } = useQuery({queryKey: ['api_review_v2_search', '/jaxrs/review/v2/search'], queryFn: async () => { try { const r = await api.get("/jaxrs/review/v2/search"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+watch(api_review_v2_search_q, (v) => { api_review_v2_search_data.value = v ?? []; });
 
 
 async function api_assemble_control_shutup_delete() { try { await api.get("/jaxrs/bbs/assemble/control/shutup/delete") } catch {} }
-async function api_control_forum_view_all() { try { await api.get("/jaxrs/bbs/assemble/control/forum/view/all") } catch {} }
-async function api_control_list_topics_creamed() { try { await api.get("/jaxrs/bbs/assemble/control/list/topics/creamed") } catch {} }
+const api_control_forum_vi_79_data = ref<any[]>([]);
+const { data: api_control_forum_vi_79_q } = useQuery({queryKey: ['api_control_forum_vi_79', '/jaxrs/bbs/assemble/control/forum/view/all'], queryFn: async () => { try { const r = await api.get("/jaxrs/bbs/assemble/control/forum/view/all"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+watch(api_control_forum_vi_79_q, (v) => { api_control_forum_vi_79_data.value = v ?? []; });
+const api_control_list_top_720_data = ref<any[]>([]);
+const { data: api_control_list_top_720_q } = useQuery({queryKey: ['api_control_list_top_720', '/jaxrs/bbs/assemble/control/list/topics/creamed'], queryFn: async () => { try { const r = await api.get("/jaxrs/bbs/assemble/control/list/topics/creamed"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+watch(api_control_list_top_720_q, (v) => { api_control_list_top_720_data.value = v ?? []; });
 
 </script>
 
