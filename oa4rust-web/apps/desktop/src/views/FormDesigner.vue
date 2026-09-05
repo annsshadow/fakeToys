@@ -706,6 +706,7 @@
 </template>
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
+import { toast } from '../../utils/toast'
 import { api } from '@oa4rust/sdk'
 interface FormField {
   id: string; type: string; label: string; key: string
@@ -934,7 +935,7 @@ async function loadForm(f: FormDef) {
 }
 function resetForm() { currentForm.value = { name: '', flag: '', fields: [] }; selectedField.value = null }
 async function saveForm() {
-  if (!currentForm.value?.name.trim()) { alert('请输入表单名称'); return }
+  if (!currentForm.value?.name.trim()) { toast.info('请输入表单名称'); return }
   try {
     const payload = {
       name: currentForm.value.name, flag: currentForm.value.flag,
@@ -948,7 +949,7 @@ async function saveForm() {
     }
     if (currentForm.value.id) await api.put(`/jaxrs/form/${currentForm.value.id}`, payload)
     else await api.post('/jaxrs/form', payload)
-    await loadForms(); alert('保存成功')
+    await loadForms(); toast.info('保存成功')
   } catch (e: any) { alert('保存失败: ' + (e?.message ?? '')) }
 }
 function togglePreview() { mode.value = mode.value === 'preview' ? 'edit' : 'preview' }
@@ -997,14 +998,14 @@ function validatePreview(): boolean {
 }
 async function submitPreview() {
   if (!validatePreview()) return
-  try { await api.post('/jaxrs/form/submit', { formFlag: currentForm.value.flag, data: previewData.value }); alert('提交成功'); previewData.value = {}; previewErrors.value = {} }
+  try { await api.post('/jaxrs/form/submit', { formFlag: currentForm.value.flag, data: previewData.value }); toast.info('提交成功'); previewData.value = {}; previewErrors.value = {} }
   catch(e: any) { alert('提交失败: ' + (e?.message ?? '')) }
 }
 // --- Import/Export ---
 function exportFormJson(): string { return JSON.stringify(currentForm.value, null, 2) }
 function importFormJson(text: string) {
   try { const d = JSON.parse(text); currentForm.value = {...d, fields: (d.fields||[]).map((f:any)=>({...f,id:f.id||genId()}))}; selectedField.value=null; pushFormHistory() }
-  catch { alert('JSON格式错误') }
+  catch { toast.info('JSON格式错误') }
 }
 function downloadFormJson() {
   const b = new Blob([exportFormJson()], {type:'application/json'}); const u = URL.createObjectURL(b)
@@ -1192,7 +1193,7 @@ function importFormSchema(text: string) {
       }
       pushFormHistory()
     }
-  } catch (e) { alert("导入失败: 无效的JSON格式") }
+  } catch (e) { toast.info('导入失败: 无效的JSON格式') }
 }
 // ── Advanced Interfaces ────────────────────────────────────────────
 interface FieldAccessRule { fieldKey: string; role: string; action: "show"|"hide"|"readonly" }

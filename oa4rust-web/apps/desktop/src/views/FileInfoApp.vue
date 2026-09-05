@@ -37,6 +37,7 @@
 
 <script setup lang="ts">
 import { ref } from 'vue'
+import { toast } from '../../utils/toast'
 import { api } from '@oa4rust/sdk'
 
 type FileInfo = {
@@ -73,7 +74,7 @@ async function downloadFile(f: FileInfo) {
   try {
     const r = await api.get(`/jaxrs/fileinfo/download/document/${f.id}`)
     if (r.data?.url) window.open(r.data.url, '_blank')
-    else alert('下载链接未生成')
+    else toast.info('下载链接未生成')
   } catch (e: any) { alert('下载失败: ' + (e?.message ?? '')) }
 }
 

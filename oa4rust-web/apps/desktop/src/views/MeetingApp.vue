@@ -43,6 +43,7 @@
 </template>
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
+import { toast } from '../../utils/toast'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/vue-query'
 import { api } from '@oa4rust/sdk'
 interface M{id:string;title?:string;name?:string;buildingId?:string;roomId?:string;buildingName?:string;roomName?:string;startTime?:string;attendeeCount?:number;status?:string}
@@ -69,7 +70,7 @@ async function updateMeeting(m: M) {
   } catch (e: any) { alert('更新失败: ' + (e?.message ?? '')) }
 }
 async function cancelMeeting(m: M) {
-  if (!confirm('确定取消该会议？')) return
+  if (!confirmMsg('确定取消该会议？')) return
   try { await api.post('/jaxrs/meeting/assemble/control/meeting/cancel', { id: m.id })
     loadMeetings()
   } catch (e: any) { alert('取消失败: ' + (e?.message ?? '')) }
@@ -81,7 +82,7 @@ async function approveMeeting(m: M) {
 }
 async function joinMeeting(m: M) {
   try { await api.post('/jaxrs/meeting/assemble/control/meeting/join', { id: m.id })
-    alert('已加入会议'); loadMeetings()
+    toast.info('已加入会议'); loadMeetings()
   } catch (e: any) { alert('加入失败: ' + (e?.message ?? '')) }
 }
 async function leaveMeeting(m: M) {
@@ -108,7 +109,7 @@ async function call_control_meeting_calendar() { try { await api.get("/jaxrs/mee
 async function api_entity_meeting_list() { try { await api.get("/jaxrs/meeting/core/entity/meeting/list") } catch {} }
 async function api_meeting_building_list() { try { await api.get("/jaxrs/meeting/building/list") } catch {} }
 async function api_list_invited_processing() { try { await api.get("/jaxrs/meeting/assemble/control/meeting/list/invited/processing") } catch {} }
-async function api_list_wait_confirm() { try { await api.get("/jaxrs/meeting/assemble/control/meeting/list/wait/confirm") } catch {} }
+async function api_list_wait_confirmMsg() { try { await api.get("/jaxrs/meeting/assemble/control/meeting/list/wait/confirm") } catch {} }
 async function api_entity_room_room_001() { try { await api.get("/jaxrs/meeting/core/entity/room/room-001") } catch {} }
 async function api_config_system_config() { try { await api.get("/jaxrs/meeting/assemble/control/config/system/config") } catch {} }
 async function api_assemble_control_openmeeting() { try { await api.get("/jaxrs/meeting/assemble/control/openmeeting") } catch {} }
@@ -134,6 +135,29 @@ async function api_meeting_room_list_1() { try { await api.get('/jaxrs/meeting/r
 async function api_meeting_openmeeting_list_room() { try { await api.get('/jaxrs/meeting/openmeeting/list/room') } catch {} }
 async function api_meeting_list() { try { await api.get('/jaxrs/meeting/list') } catch {} }
 async function api_meeting_assemble_control_room() { try { await api.get('/jaxrs/meeting/assemble/control/room') } catch {} }
+
+
+// Confirmation dialog (replaces window.confirm)
+function confirmMsg(msg: string): Promise<boolean> {
+  return new Promise(resolve => {
+    const overlay = document.createElement('div')
+    overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:10000;display:flex;align-items:center;justify-content:center'
+    const box = document.createElement('div')
+    box.style.cssText = 'background:var(--bg-surface);border:1px solid var(--border-color);border-radius:var(--radius-lg);padding:24px;max-width:360px;width:90%;display:flex;flex-direction:column;gap:16px'
+    box.innerHTML = '<p style="margin:0;color:var(--text-primary);font-size:14px">' + msg + '</p>' +
+      '<div style="display:flex;gap:8px;justify-content:flex-end">' +
+      '<button class="tc-cancel" style="padding:6px 16px;border-radius:var(--radius-md);border:1px solid var(--border-color);background:transparent;color:var(--text-primary);cursor:pointer">取消</button>' +
+      '<button class="tc-ok" style="padding:6px 16px;border-radius:var(--radius-md);border:none;background:var(--color-primary);color:#000;cursor:pointer;font-weight:600">确认</button>' +
+      '</div>'
+    overlay.appendChild(box)
+    document.body.appendChild(overlay)
+    const ok = () => { overlay.remove(); resolve(true) }
+    const cancel = () => { overlay.remove(); resolve(false) }
+    box.querySelector('.tc-ok').addEventListener('click', ok)
+    box.querySelector('.tc-cancel').addEventListener('click', cancel)
+    overlay.addEventListener('click', e => { if (e.target === overlay) cancel() })
+  })
+}
 
 </script>
 <style scoped>

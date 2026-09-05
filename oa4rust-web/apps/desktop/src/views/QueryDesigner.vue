@@ -259,6 +259,7 @@
 
 <script setup lang="ts">
 import { ref, computed } from 'vue'
+import { toast } from '../../utils/toast'
 import { api } from '@oa4rust/sdk'
 
 type QueryDef = {
@@ -334,7 +335,7 @@ function openEdit() {
 }
 
 async function saveQuery() {
-  if (!mform.value.name.trim()) { alert('请输入查询名称'); return }
+  if (!mform.value.name.trim()) { toast.info('请输入查询名称'); return }
   try {
     const data = {
       name: mform.value.name,
@@ -369,7 +370,7 @@ async function runQuery() {
 }
 
 async function deleteQuery(q: QueryDef) {
-  if (!confirm(`删除查询「${q.name || q.id}」？`)) return
+  if (!confirmMsg(`删除查询「${q.name || q.id}」？`)) return
   try {
     await api.delete(`/jaxrs/query/assemble/designer/delete/${q.id}`)
     if (selected.value?.id === q.id) selected.value = null
@@ -383,7 +384,7 @@ loadQueries()
 const showSqlEditor = ref(false)
 const sqlEditorForm = ref({ name: '', sql: '', category: '', desc: '' })
 function saveSqlQuery() {
-  if (!sqlEditorForm.value.name.trim()) { alert('请输入查询名称'); return }
+  if (!sqlEditorForm.value.name.trim()) { toast.info('请输入查询名称'); return }
   // Save via API
   showModal.value = true
   editingQuery.value = null
@@ -588,6 +589,29 @@ async function api_designer_query_list_summary() { try { await api.get("/jaxrs/q
 async function api_designer_importmodel_im_flag_1_permission() { try { await api.get("/jaxrs/query/assemble/designer/importmodel/im-flag-1/permission") } catch {} }
 async function api_query_service_processing_process() { try { await api.get("/jaxrs/query/service/processing/process") } catch {} }
 async function api_designer_statement_list_manage() { try { await api.get("/jaxrs/query/assemble/designer/statement/list/manage") } catch {} }
+
+
+// Confirmation dialog (replaces window.confirm)
+function confirmMsg(msg: string): Promise<boolean> {
+  return new Promise(resolve => {
+    const overlay = document.createElement('div')
+    overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:10000;display:flex;align-items:center;justify-content:center'
+    const box = document.createElement('div')
+    box.style.cssText = 'background:var(--bg-surface);border:1px solid var(--border-color);border-radius:var(--radius-lg);padding:24px;max-width:360px;width:90%;display:flex;flex-direction:column;gap:16px'
+    box.innerHTML = '<p style="margin:0;color:var(--text-primary);font-size:14px">' + msg + '</p>' +
+      '<div style="display:flex;gap:8px;justify-content:flex-end">' +
+      '<button class="tc-cancel" style="padding:6px 16px;border-radius:var(--radius-md);border:1px solid var(--border-color);background:transparent;color:var(--text-primary);cursor:pointer">取消</button>' +
+      '<button class="tc-ok" style="padding:6px 16px;border-radius:var(--radius-md);border:none;background:var(--color-primary);color:#000;cursor:pointer;font-weight:600">确认</button>' +
+      '</div>'
+    overlay.appendChild(box)
+    document.body.appendChild(overlay)
+    const ok = () => { overlay.remove(); resolve(true) }
+    const cancel = () => { overlay.remove(); resolve(false) }
+    box.querySelector('.tc-ok').addEventListener('click', ok)
+    box.querySelector('.tc-cancel').addEventListener('click', cancel)
+    overlay.addEventListener('click', e => { if (e.target === overlay) cancel() })
+  })
+}
 
 </script>
 

@@ -52,6 +52,7 @@
 </template>
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
+import { toast } from '../../utils/toast'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/vue-query'
 import { api } from '@oa4rust/sdk'
 interface R{id:string;personName?:string;name?:string;date?:string;checkInTime?:string;checkOutTime?:string;workHours?:number;status?:string;isLate?:boolean}
@@ -84,7 +85,7 @@ async function createRule() {
   } catch (e: any) { alert('创建失败: ' + (e?.message ?? '')) }
 }
 async function deleteRule(rule: any) {
-  if (!confirm('确定删除规则「' + (rule.name||rule.id) + '」？')) return
+  if (!confirmMsg('确定删除规则「' + (rule.name||rule.id) + '」？')) return
   try { await api.delete('/jaxrs/attendance/assemble/control/rule/' + rule.id)
     loadRules()
   } catch (e: any) { alert('删除失败: ' + (e?.message ?? '')) }
@@ -207,6 +208,29 @@ async function api_control_v2_record_import() { try { await api.get("/jaxrs/atte
 async function api_control_attendancestatisticrequirelog_list_all() { try { await api.get("/jaxrs/attendance/assemble/control/attendancestatisticrequirelog/list/all") } catch {} }
 async function api_control_v2_my_controls() { try { await api.get("/jaxrs/attendance/assemble/control/v2/my/controls") } catch {} }
 async function api_entity_record_record_001_delete() { try { await api.get("/jaxrs/attendance/core/entity/record/record-001/delete") } catch {} }
+
+
+// Confirmation dialog (replaces window.confirm)
+function confirmMsg(msg: string): Promise<boolean> {
+  return new Promise(resolve => {
+    const overlay = document.createElement('div')
+    overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:10000;display:flex;align-items:center;justify-content:center'
+    const box = document.createElement('div')
+    box.style.cssText = 'background:var(--bg-surface);border:1px solid var(--border-color);border-radius:var(--radius-lg);padding:24px;max-width:360px;width:90%;display:flex;flex-direction:column;gap:16px'
+    box.innerHTML = '<p style="margin:0;color:var(--text-primary);font-size:14px">' + msg + '</p>' +
+      '<div style="display:flex;gap:8px;justify-content:flex-end">' +
+      '<button class="tc-cancel" style="padding:6px 16px;border-radius:var(--radius-md);border:1px solid var(--border-color);background:transparent;color:var(--text-primary);cursor:pointer">取消</button>' +
+      '<button class="tc-ok" style="padding:6px 16px;border-radius:var(--radius-md);border:none;background:var(--color-primary);color:#000;cursor:pointer;font-weight:600">确认</button>' +
+      '</div>'
+    overlay.appendChild(box)
+    document.body.appendChild(overlay)
+    const ok = () => { overlay.remove(); resolve(true) }
+    const cancel = () => { overlay.remove(); resolve(false) }
+    box.querySelector('.tc-ok').addEventListener('click', ok)
+    box.querySelector('.tc-cancel').addEventListener('click', cancel)
+    overlay.addEventListener('click', e => { if (e.target === overlay) cancel() })
+  })
+}
 
 </script>
 <style scoped>
