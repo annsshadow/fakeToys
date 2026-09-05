@@ -163,16 +163,30 @@ function confirmMsg(msg: string): Promise<boolean> {
   })
 }
 
-async function api_jaxrs_document() { try { await api.get("/jaxrs/document") } catch {} }
-async function api_jaxrs_document_achive_d_1() { try { await api.get("/jaxrs/document/achive/d-1") } catch {} }
-async function api_jaxrs_document_batch() { try { await api.get("/jaxrs/document/batch") } catch {} }
-async function api_jaxrs_document_batch_b_1() { try { await api.get("/jaxrs/document/batch/b-1") } catch {} }
+const api_jaxrs_document_data = ref<any[]>([]);
+const { data: api_jaxrs_document_q } = useQuery({queryKey: ['api_jaxrs_document', '/jaxrs/document'], queryFn: async () => { try { const r = await api.get("/jaxrs/document"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+watch(api_jaxrs_document_q, (v) => { api_jaxrs_document_data.value = v ?? []; });
+const api_jaxrs_do_359_data = ref<any[]>([]);
+const { data: api_jaxrs_do_359_q } = useQuery({queryKey: ['api_jaxrs_do_359', '/jaxrs/document/achive/d-1'], queryFn: async () => { try { const r = await api.get("/jaxrs/document/achive/d-1"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+watch(api_jaxrs_do_359_q, (v) => { api_jaxrs_do_359_data.value = v ?? []; });
+const api_jaxrs_do_831_data = ref<any[]>([]);
+const { data: api_jaxrs_do_831_q } = useQuery({queryKey: ['api_jaxrs_do_831', '/jaxrs/document/batch'], queryFn: async () => { try { const r = await api.get("/jaxrs/document/batch"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+watch(api_jaxrs_do_831_q, (v) => { api_jaxrs_do_831_data.value = v ?? []; });
+const api_jaxrs_do_494_data = ref<any[]>([]);
+const { data: api_jaxrs_do_494_q } = useQuery({queryKey: ['api_jaxrs_do_494', '/jaxrs/document/batch/b-1'], queryFn: async () => { try { const r = await api.get("/jaxrs/document/batch/b-1"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+watch(api_jaxrs_do_494_q, (v) => { api_jaxrs_do_494_data.value = v ?? []; });
 async function api_jaxrs_document_batch_b_1_mockdeletetoget() { try { await api.get("/jaxrs/document/batch/b-1/mockdeletetoget") } catch {} }
 async function api_jaxrs_document_batch_data_modify_mockputtopost() { try { await api.get("/jaxrs/document/batch/data/modify/mockputtopost") } catch {} }
-async function api_jaxrs_document_batch_status() { try { await api.get("/jaxrs/document/batch/status") } catch {} }
+const api_jaxrs_do_532_data = ref<any[]>([]);
+const { data: api_jaxrs_do_532_q } = useQuery({queryKey: ['api_jaxrs_do_532', '/jaxrs/document/batch/status'], queryFn: async () => { try { const r = await api.get("/jaxrs/document/batch/status"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+watch(api_jaxrs_do_532_q, (v) => { api_jaxrs_do_532_data.value = v ?? []; });
 async function api_jaxrs_document_batch_u3_batch_x_mockdeletetoget() { try { await api.get("/jaxrs/document/batch/u3-batch-x/mockdeletetoget") } catch {} }
-async function api_jaxrs_document_cipher_c_1_permission_read_person_p_1() { try { await api.get("/jaxrs/document/cipher/c-1/permission/read/person/p-1") } catch {} }
-async function api_jaxrs_document_cipher_filter_list_p_1_size_10() { try { await api.get("/jaxrs/document/cipher/filter/list/p-1/size/10") } catch {} }
+const api_jaxrs_do_862_data = ref<any[]>([]);
+const { data: api_jaxrs_do_862_q } = useQuery({queryKey: ['api_jaxrs_do_862', '/jaxrs/document/cipher/c-1/permission/read/person/p-1'], queryFn: async () => { try { const r = await api.get("/jaxrs/document/cipher/c-1/permission/read/person/p-1"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+watch(api_jaxrs_do_862_q, (v) => { api_jaxrs_do_862_data.value = v ?? []; });
+const api_jaxrs_do_389_data = ref<any[]>([]);
+const { data: api_jaxrs_do_389_q } = useQuery({queryKey: ['api_jaxrs_do_389', '/jaxrs/document/cipher/filter/list/p-1/size/10'], queryFn: async () => { try { const r = await api.get("/jaxrs/document/cipher/filter/list/p-1/size/10"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+watch(api_jaxrs_do_389_q, (v) => { api_jaxrs_do_389_data.value = v ?? []; });
 const api_jaxrs_do_733_data = ref<any[]>([]);
 const { data: api_jaxrs_do_733_q } = useQuery({queryKey: ['api_jaxrs_do_733', '/jaxrs/document/cipher/publish/content'], queryFn: async () => { try { const r = await api.get("/jaxrs/document/cipher/publish/content"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
 watch(api_jaxrs_do_733_q, (v) => { api_jaxrs_do_733_data.value = v ?? []; });

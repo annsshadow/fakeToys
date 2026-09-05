@@ -98,9 +98,15 @@ async function api_cms_article() { try { await api.get('/jaxrs/cms/article') } c
 async function api_cms_view_unpublish_view_001() { try { await api.get('/jaxrs/cms/view/unpublish/view-001') } catch {} }
 
 
-async function api_cms_assemble_control_document_search() { try { await api.get("/jaxrs/cms_assemble_control/document/search") } catch {} }
-async function api_cms_assemble_control_get_control_config() { try { await api.get("/jaxrs/cms_assemble_control/get/control/config") } catch {} }
-async function api_cms_assemble_control_list_control_sections() { try { await api.get("/jaxrs/cms_assemble_control/list/control/sections") } catch {} }
+const api_cms_asse_559_data = ref<any[]>([]);
+const { data: api_cms_asse_559_q } = useQuery({queryKey: ['api_cms_asse_559', '/jaxrs/cms_assemble_control/document/search'], queryFn: async () => { try { const r = await api.get("/jaxrs/cms_assemble_control/document/search"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+watch(api_cms_asse_559_q, (v) => { api_cms_asse_559_data.value = v ?? []; });
+const api_cms_asse_804_data = ref<any[]>([]);
+const { data: api_cms_asse_804_q } = useQuery({queryKey: ['api_cms_asse_804', '/jaxrs/cms_assemble_control/get/control/config'], queryFn: async () => { try { const r = await api.get("/jaxrs/cms_assemble_control/get/control/config"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+watch(api_cms_asse_804_q, (v) => { api_cms_asse_804_data.value = v ?? []; });
+const api_cms_asse_862_data = ref<any[]>([]);
+const { data: api_cms_asse_862_q } = useQuery({queryKey: ['api_cms_asse_862', '/jaxrs/cms_assemble_control/list/control/sections'], queryFn: async () => { try { const r = await api.get("/jaxrs/cms_assemble_control/list/control/sections"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+watch(api_cms_asse_862_q, (v) => { api_cms_asse_862_data.value = v ?? []; });
 const api_cms_asse_501_data = ref<any[]>([]);
 const { data: api_cms_asse_501_q } = useQuery({queryKey: ['api_cms_asse_501', '/jaxrs/cms_assemble_control/update/control/config'], queryFn: async () => { try { const r = await api.get("/jaxrs/cms_assemble_control/update/control/config"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
 watch(api_cms_asse_501_q, (v) => { api_cms_asse_501_data.value = v ?? []; });

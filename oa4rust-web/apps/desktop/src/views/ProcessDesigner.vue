@@ -7856,19 +7856,35 @@ async function exportProcess(){if(!selectedProcess.value?.id)return;try{const r=
 
 async function api_process_state_running() { try { await api.get("/jaxrs/process/state/running") } catch {} }
 async function api_process_workcompleted_list() { try { await api.get("/jaxrs/process/workcompleted/list") } catch {} }
-async function api_process_state_summary() { try { await api.get("/jaxrs/process/state/summary") } catch {} }
+const api_process__282_data = ref<any[]>([]);
+const { data: api_process__282_q } = useQuery({queryKey: ['api_process__282', '/jaxrs/process/state/summary'], queryFn: async () => { try { const r = await api.get("/jaxrs/process/state/summary"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+watch(api_process__282_q, (v) => { api_process__282_data.value = v ?? []; });
 async function api_process_bam_monitor() { try { await api.get("/jaxrs/process/bam/monitor") } catch {} }
-async function api_process_designer_application_update() { try { await api.get("/jaxrs/process/designer/application/update") } catch {} }
-async function api_process_surface_task_list() { try { await api.get("/jaxrs/process/surface/task/list") } catch {} }
-async function api_process_instance_list() { try { await api.get("/jaxrs/process/instance/list") } catch {} }
+const api_process__850_data = ref<any[]>([]);
+const { data: api_process__850_q } = useQuery({queryKey: ['api_process__850', '/jaxrs/process/designer/application/update'], queryFn: async () => { try { const r = await api.get("/jaxrs/process/designer/application/update"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+watch(api_process__850_q, (v) => { api_process__850_data.value = v ?? []; });
+const api_process__643_data = ref<any[]>([]);
+const { data: api_process__643_q } = useQuery({queryKey: ['api_process__643', '/jaxrs/process/surface/task/list'], queryFn: async () => { try { const r = await api.get("/jaxrs/process/surface/task/list"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+watch(api_process__643_q, (v) => { api_process__643_data.value = v ?? []; });
+const api_process__116_data = ref<any[]>([]);
+const { data: api_process__116_q } = useQuery({queryKey: ['api_process__116', '/jaxrs/process/instance/list'], queryFn: async () => { try { const r = await api.get("/jaxrs/process/instance/list"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+watch(api_process__116_q, (v) => { api_process__116_data.value = v ?? []; });
 async function api_process_task_count_test_user() { try { await api.get("/jaxrs/process/task/count/test_user") } catch {} }
-async function api_process_application_list_summary() { try { await api.get("/jaxrs/process/application/list/summary") } catch {} }
+const api_process__274_data = ref<any[]>([]);
+const { data: api_process__274_q } = useQuery({queryKey: ['api_process__274', '/jaxrs/process/application/list/summary'], queryFn: async () => { try { const r = await api.get("/jaxrs/process/application/list/summary"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+watch(api_process__274_q, (v) => { api_process__274_data.value = v ?? []; });
 async function api_process_instance_start() { try { await api.get("/jaxrs/process/instance/start") } catch {} }
-async function api_process_state_organization() { try { await api.get("/jaxrs/process/state/organization") } catch {} }
+const api_process__30_data = ref<any[]>([]);
+const { data: api_process__30_q } = useQuery({queryKey: ['api_process__30', '/jaxrs/process/state/organization'], queryFn: async () => { try { const r = await api.get("/jaxrs/process/state/organization"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+watch(api_process__30_q, (v) => { api_process__30_data.value = v ?? []; });
 async function api_process_read_count_test_user() { try { await api.get("/jaxrs/process/read/count/test_user") } catch {} }
-async function api_process_design_list() { try { await api.get("/jaxrs/process/design/list") } catch {} }
+const api_process__730_data = ref<any[]>([]);
+const { data: api_process__730_q } = useQuery({queryKey: ['api_process__730', '/jaxrs/process/design/list'], queryFn: async () => { try { const r = await api.get("/jaxrs/process/design/list"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+watch(api_process__730_q, (v) => { api_process__730_data.value = v ?? []; });
 async function api_surface_route_list_mockputtopost() { try { await api.get("/jaxrs/processplatform/assemble/surface/route/list/mockputtopost") } catch {} }
-async function api_process_task_list() { try { await api.get("/jaxrs/process/task/list") } catch {} }
+const api_process__612_data = ref<any[]>([]);
+const { data: api_process__612_q } = useQuery({queryKey: ['api_process__612', '/jaxrs/process/task/list'], queryFn: async () => { try { const r = await api.get("/jaxrs/process/task/list"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+watch(api_process__612_q, (v) => { api_process__612_data.value = v ?? []; });
 
 
 // Confirmation dialog (replaces window.confirm)
@@ -7894,8 +7910,12 @@ function confirmMsg(msg: string): Promise<boolean> {
 }
 
 
-async function api_process_application_list() { try { await api.get("/jaxrs/process/application/list") } catch {} }
-async function api_process_list_ids() { try { await api.get("/jaxrs/process/list/ids") } catch {} }
+const api_process__899_data = ref<any[]>([]);
+const { data: api_process__899_q } = useQuery({queryKey: ['api_process__899', '/jaxrs/process/application/list'], queryFn: async () => { try { const r = await api.get("/jaxrs/process/application/list"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+watch(api_process__899_q, (v) => { api_process__899_data.value = v ?? []; });
+const api_process__666_data = ref<any[]>([]);
+const { data: api_process__666_q } = useQuery({queryKey: ['api_process__666', '/jaxrs/process/list/ids'], queryFn: async () => { try { const r = await api.get("/jaxrs/process/list/ids"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+watch(api_process__666_q, (v) => { api_process__666_data.value = v ?? []; });
 const api_process__844_data = ref<any[]>([]);
 const { data: api_process__844_q } = useQuery({queryKey: ['api_process__844', '/jaxrs/process/designer/application/list'], queryFn: async () => { try { const r = await api.get("/jaxrs/process/designer/application/list"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
 watch(api_process__844_q, (v) => { api_process__844_data.value = v ?? []; });

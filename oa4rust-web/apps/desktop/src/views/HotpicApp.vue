@@ -85,20 +85,48 @@ async function api_assemble_control_user_hotpic() { try { await api.get('/jaxrs/
 async function api_hotpic_list() { try { await api.get('/jaxrs/hotpic/list') } catch {} }
 
 
-async function api_hotpic_assemble_control() { try { await api.get("/jaxrs/hotpic_assemble_control") } catch {} }
-async function api_hotpic_assemble_control_save_hotpic() { try { await api.get("/jaxrs/hotpic_assemble_control/save/hotpic") } catch {} }
-async function api_hotpic_assemble_control_list_hotpics() { try { await api.get("/jaxrs/hotpic_assemble_control/list/hotpics") } catch {} }
-async function api_hotpic_assemble_control_cipher_hotpic_id() { try { await api.get("/jaxrs/hotpic_assemble_control/cipher/hotpic/id") } catch {} }
-async function api_hotpic_assemble_control_create_hotpic() { try { await api.get("/jaxrs/hotpic_assemble_control/create/hotpic") } catch {} }
-async function api_hotpic_assemble_control_user_hotpic_changeTitle() { try { await api.get("/jaxrs/hotpic_assemble_control/user/hotpic/changeTitle") } catch {} }
-async function api_hotpic_assemble_control_list_control_applications() { try { await api.get("/jaxrs/hotpic_assemble_control/list/control/applications") } catch {} }
-async function api_hotpic_assemble_control_delete_hotpic() { try { await api.get("/jaxrs/hotpic_assemble_control/delete/hotpic") } catch {} }
-async function api_user_hotpic_exists_check_1() { try { await api.get("/jaxrs/hotpic_assemble_control/user/hotpic/exists/check") } catch {} }
-async function api_hotpic_assemble_control_get_hotpic() { try { await api.get("/jaxrs/hotpic_assemble_control/get/hotpic") } catch {} }
-async function api_hotpic_assemble_control_update_control_config() { try { await api.get("/jaxrs/hotpic_assemble_control/update/control/config") } catch {} }
-async function api_hotpic_assemble_control_user_hotpic_id() { try { await api.get("/jaxrs/hotpic_assemble_control/user/hotpic/id") } catch {} }
-async function api_hotpic_assemble_control_get_control_config() { try { await api.get("/jaxrs/hotpic_assemble_control/get/control/config") } catch {} }
-async function api_user_hotpic_application_infoId() { try { await api.get("/jaxrs/hotpic_assemble_control/user/hotpic/application/infoId") } catch {} }
+const api_hotpic_a_81_data = ref<any[]>([]);
+const { data: api_hotpic_a_81_q } = useQuery({queryKey: ['api_hotpic_a_81', '/jaxrs/hotpic_assemble_control'], queryFn: async () => { try { const r = await api.get("/jaxrs/hotpic_assemble_control"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+watch(api_hotpic_a_81_q, (v) => { api_hotpic_a_81_data.value = v ?? []; });
+const api_hotpic_a_902_data = ref<any[]>([]);
+const { data: api_hotpic_a_902_q } = useQuery({queryKey: ['api_hotpic_a_902', '/jaxrs/hotpic_assemble_control/save/hotpic'], queryFn: async () => { try { const r = await api.get("/jaxrs/hotpic_assemble_control/save/hotpic"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+watch(api_hotpic_a_902_q, (v) => { api_hotpic_a_902_data.value = v ?? []; });
+const api_hotpic_a_553_data = ref<any[]>([]);
+const { data: api_hotpic_a_553_q } = useQuery({queryKey: ['api_hotpic_a_553', '/jaxrs/hotpic_assemble_control/list/hotpics'], queryFn: async () => { try { const r = await api.get("/jaxrs/hotpic_assemble_control/list/hotpics"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+watch(api_hotpic_a_553_q, (v) => { api_hotpic_a_553_data.value = v ?? []; });
+const api_hotpic_a_938_data = ref<any[]>([]);
+const { data: api_hotpic_a_938_q } = useQuery({queryKey: ['api_hotpic_a_938', '/jaxrs/hotpic_assemble_control/cipher/hotpic/id'], queryFn: async () => { try { const r = await api.get("/jaxrs/hotpic_assemble_control/cipher/hotpic/id"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+watch(api_hotpic_a_938_q, (v) => { api_hotpic_a_938_data.value = v ?? []; });
+const api_hotpic_a_451_data = ref<any[]>([]);
+const { data: api_hotpic_a_451_q } = useQuery({queryKey: ['api_hotpic_a_451', '/jaxrs/hotpic_assemble_control/create/hotpic'], queryFn: async () => { try { const r = await api.get("/jaxrs/hotpic_assemble_control/create/hotpic"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+watch(api_hotpic_a_451_q, (v) => { api_hotpic_a_451_data.value = v ?? []; });
+const api_hotpic_a_267_data = ref<any[]>([]);
+const { data: api_hotpic_a_267_q } = useQuery({queryKey: ['api_hotpic_a_267', '/jaxrs/hotpic_assemble_control/user/hotpic/changeTitle'], queryFn: async () => { try { const r = await api.get("/jaxrs/hotpic_assemble_control/user/hotpic/changeTitle"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+watch(api_hotpic_a_267_q, (v) => { api_hotpic_a_267_data.value = v ?? []; });
+const api_hotpic_a_853_data = ref<any[]>([]);
+const { data: api_hotpic_a_853_q } = useQuery({queryKey: ['api_hotpic_a_853', '/jaxrs/hotpic_assemble_control/list/control/applications'], queryFn: async () => { try { const r = await api.get("/jaxrs/hotpic_assemble_control/list/control/applications"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+watch(api_hotpic_a_853_q, (v) => { api_hotpic_a_853_data.value = v ?? []; });
+const api_hotpic_a_727_data = ref<any[]>([]);
+const { data: api_hotpic_a_727_q } = useQuery({queryKey: ['api_hotpic_a_727', '/jaxrs/hotpic_assemble_control/delete/hotpic'], queryFn: async () => { try { const r = await api.get("/jaxrs/hotpic_assemble_control/delete/hotpic"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+watch(api_hotpic_a_727_q, (v) => { api_hotpic_a_727_data.value = v ?? []; });
+const api_user_hot_589_data = ref<any[]>([]);
+const { data: api_user_hot_589_q } = useQuery({queryKey: ['api_user_hot_589', '/jaxrs/hotpic_assemble_control/user/hotpic/exists/check'], queryFn: async () => { try { const r = await api.get("/jaxrs/hotpic_assemble_control/user/hotpic/exists/check"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+watch(api_user_hot_589_q, (v) => { api_user_hot_589_data.value = v ?? []; });
+const api_hotpic_a_155_data = ref<any[]>([]);
+const { data: api_hotpic_a_155_q } = useQuery({queryKey: ['api_hotpic_a_155', '/jaxrs/hotpic_assemble_control/get/hotpic'], queryFn: async () => { try { const r = await api.get("/jaxrs/hotpic_assemble_control/get/hotpic"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+watch(api_hotpic_a_155_q, (v) => { api_hotpic_a_155_data.value = v ?? []; });
+const api_hotpic_a_48_data = ref<any[]>([]);
+const { data: api_hotpic_a_48_q } = useQuery({queryKey: ['api_hotpic_a_48', '/jaxrs/hotpic_assemble_control/update/control/config'], queryFn: async () => { try { const r = await api.get("/jaxrs/hotpic_assemble_control/update/control/config"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+watch(api_hotpic_a_48_q, (v) => { api_hotpic_a_48_data.value = v ?? []; });
+const api_hotpic_a_594_data = ref<any[]>([]);
+const { data: api_hotpic_a_594_q } = useQuery({queryKey: ['api_hotpic_a_594', '/jaxrs/hotpic_assemble_control/user/hotpic/id'], queryFn: async () => { try { const r = await api.get("/jaxrs/hotpic_assemble_control/user/hotpic/id"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+watch(api_hotpic_a_594_q, (v) => { api_hotpic_a_594_data.value = v ?? []; });
+const api_hotpic_a_441_data = ref<any[]>([]);
+const { data: api_hotpic_a_441_q } = useQuery({queryKey: ['api_hotpic_a_441', '/jaxrs/hotpic_assemble_control/get/control/config'], queryFn: async () => { try { const r = await api.get("/jaxrs/hotpic_assemble_control/get/control/config"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+watch(api_hotpic_a_441_q, (v) => { api_hotpic_a_441_data.value = v ?? []; });
+const api_user_hot_763_data = ref<any[]>([]);
+const { data: api_user_hot_763_q } = useQuery({queryKey: ['api_user_hot_763', '/jaxrs/hotpic_assemble_control/user/hotpic/application/infoId'], queryFn: async () => { try { const r = await api.get("/jaxrs/hotpic_assemble_control/user/hotpic/application/infoId"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+watch(api_user_hot_763_q, (v) => { api_user_hot_763_data.value = v ?? []; });
 const api_hotpic_a_799_data = ref<any[]>([]);
 const { data: api_hotpic_a_799_q } = useQuery({queryKey: ['api_hotpic_a_799', '/jaxrs/hotpic_assemble_control/list/control/panels'], queryFn: async () => { try { const r = await api.get("/jaxrs/hotpic_assemble_control/list/control/panels"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
 watch(api_hotpic_a_799_q, (v) => { api_hotpic_a_799_data.value = v ?? []; });

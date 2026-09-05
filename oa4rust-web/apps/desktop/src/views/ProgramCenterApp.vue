@@ -581,31 +581,81 @@ async function api_jaxrs_program_center_bar_select3_field_name_value_x_count_5()
 async function api_jaxrs_program_center_bar_select4_field_entity_value_y_count_5() { try { await api.get("/jaxrs/program_center/bar/select4/field/entity/value/y/count/5") } catch {} }
 async function api_jaxrs_program_center_bar_select4_field_field_value_value_count_count() { try { await api.get("/jaxrs/program_center/bar/select4/field/field/value/value/count/count") } catch {} }
 async function api_jaxrs_program_center_captcha_v2_create_width_200_height_80() { try { await api.get("/jaxrs/program_center/captcha/v2/create/width/200/height/80") } catch {} }
-async function api_jaxrs_program_center_captcha_v2_create_width_width_height_height() { try { await api.get("/jaxrs/program_center/captcha/v2/create/width/width/height/height") } catch {} }
-async function api_jaxrs_program_center_code_list_paging_1_size_20() { try { await api.get("/jaxrs/program_center/code/list/paging/1/size/20") } catch {} }
-async function api_jaxrs_program_center_code_list_paging_page_size_size() { try { await api.get("/jaxrs/program_center/code/list/paging/page/size/size") } catch {} }
-async function api_jaxrs_program_center_code_validate_mobile_13800000000_answer_123456() { try { await api.get("/jaxrs/program_center/code/validate/mobile/13800000000/answer/123456") } catch {} }
-async function api_jaxrs_program_center_code_validate_mobile_13800000000_answer_123456_cascade() { try { await api.get("/jaxrs/program_center/code/validate/mobile/13800000000/answer/123456/cascade") } catch {} }
-async function api_jaxrs_program_center_code_validate_mobile_mobile_answer_answer_cascade() { try { await api.get("/jaxrs/program_center/code/validate/mobile/mobile/answer/answer/cascade") } catch {} }
-async function api_jaxrs_program_center_collect_controllermobile_name_n_mobile_m() { try { await api.get("/jaxrs/program_center/collect/controllermobile/name/n/mobile/m") } catch {} }
-async function api_jaxrs_program_center_collect_controllermobile_name_name_mobile_mobile() { try { await api.get("/jaxrs/program_center/collect/controllermobile/name/name/mobile/mobile") } catch {} }
-async function api_jaxrs_program_center_collect_name_n_mobile_m_code_c() { try { await api.get("/jaxrs/program_center/collect/name/n/mobile/m/code/c") } catch {} }
-async function api_jaxrs_program_center_collect_name_name_mobile_mobile_code_code() { try { await api.get("/jaxrs/program_center/collect/name/name/mobile/mobile/code/code") } catch {} }
-async function api_jaxrs_program_center_config_list_dump_data_current_node() { try { await api.get("/jaxrs/program_center/config/list/dump/data/current/node") } catch {} }
-async function api_jaxrs_program_center_config_open_get_disable_export_enable() { try { await api.get("/jaxrs/program_center/config/open/get/disable/export/enable") } catch {} }
-async function api_jaxrs_program_center_deploy_list_paging_1_size_20() { try { await api.get("/jaxrs/program_center/deploy/list/paging/1/size/20") } catch {} }
-async function api_jaxrs_program_center_deploy_list_paging_page_size_size() { try { await api.get("/jaxrs/program_center/deploy/list/paging/page/size/size") } catch {} }
-async function api_jaxrs_program_center_deploy_web_resource_as_new_asNew() { try { await api.get("/jaxrs/program_center/deploy/web/resource/as/new/asNew") } catch {} }
-async function api_jaxrs_program_center_deploy_web_resource_as_new_newname() { try { await api.get("/jaxrs/program_center/deploy/web/resource/as/new/newname") } catch {} }
-async function api_jaxrs_program_center_dict_list_paging_1_size_20() { try { await api.get("/jaxrs/program_center/dict/list/paging/1/size/20") } catch {} }
-async function api_jaxrs_program_center_dict_list_paging_page_size_size() { try { await api.get("/jaxrs/program_center/dict/list/paging/page/size/size") } catch {} }
-async function api_jaxrs_program_center_dingding_sync_organization_register_callback_true() { try { await api.get("/jaxrs/program_center/dingding/sync/organization/register/callback/true") } catch {} }
-async function api_jaxrs_program_center_invoke_flag_client_client_token_token_execute() { try { await api.get("/jaxrs/program_center/invoke/flag/client/client/token/token/execute") } catch {} }
-async function api_jaxrs_program_center_invoke_i_1_client_web_token_tk_1_execute() { try { await api.get("/jaxrs/program_center/invoke/i-1/client/web/token/tk-1/execute") } catch {} }
-async function api_jaxrs_program_center_market_list_install_log_paging_1_size_20() { try { await api.get("/jaxrs/program_center/market/list/install/log/paging/1/size/20") } catch {} }
-async function api_jaxrs_program_center_market_list_install_log_paging_page_size_size() { try { await api.get("/jaxrs/program_center/market/list/install/log/paging/page/size/size") } catch {} }
-async function api_jaxrs_program_center_market_list_paging_1_size_20() { try { await api.get("/jaxrs/program_center/market/list/paging/1/size/20") } catch {} }
-async function api_jaxrs_program_center_market_list_paging_1_size_20_category_cms() { try { await api.get("/jaxrs/program_center/market/list/paging/1/size/20/category/cms") } catch {} }
+const api_jaxrs_pr_451_data = ref<any[]>([]);
+const { data: api_jaxrs_pr_451_q } = useQuery({queryKey: ['api_jaxrs_pr_451', '/jaxrs/program_center/captcha/v2/create/width/width/height/height'], queryFn: async () => { try { const r = await api.get("/jaxrs/program_center/captcha/v2/create/width/width/height/height"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+watch(api_jaxrs_pr_451_q, (v) => { api_jaxrs_pr_451_data.value = v ?? []; });
+const api_jaxrs_pr_901_data = ref<any[]>([]);
+const { data: api_jaxrs_pr_901_q } = useQuery({queryKey: ['api_jaxrs_pr_901', '/jaxrs/program_center/code/list/paging/1/size/20'], queryFn: async () => { try { const r = await api.get("/jaxrs/program_center/code/list/paging/1/size/20"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+watch(api_jaxrs_pr_901_q, (v) => { api_jaxrs_pr_901_data.value = v ?? []; });
+const api_jaxrs_pr_766_data = ref<any[]>([]);
+const { data: api_jaxrs_pr_766_q } = useQuery({queryKey: ['api_jaxrs_pr_766', '/jaxrs/program_center/code/list/paging/page/size/size'], queryFn: async () => { try { const r = await api.get("/jaxrs/program_center/code/list/paging/page/size/size"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+watch(api_jaxrs_pr_766_q, (v) => { api_jaxrs_pr_766_data.value = v ?? []; });
+const api_jaxrs_pr_281_data = ref<any[]>([]);
+const { data: api_jaxrs_pr_281_q } = useQuery({queryKey: ['api_jaxrs_pr_281', '/jaxrs/program_center/code/validate/mobile/13800000000/answer/123456'], queryFn: async () => { try { const r = await api.get("/jaxrs/program_center/code/validate/mobile/13800000000/answer/123456"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+watch(api_jaxrs_pr_281_q, (v) => { api_jaxrs_pr_281_data.value = v ?? []; });
+const api_jaxrs_pr_273_data = ref<any[]>([]);
+const { data: api_jaxrs_pr_273_q } = useQuery({queryKey: ['api_jaxrs_pr_273', '/jaxrs/program_center/code/validate/mobile/13800000000/answer/123456/cascade'], queryFn: async () => { try { const r = await api.get("/jaxrs/program_center/code/validate/mobile/13800000000/answer/123456/cascade"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+watch(api_jaxrs_pr_273_q, (v) => { api_jaxrs_pr_273_data.value = v ?? []; });
+const api_jaxrs_pr_914_data = ref<any[]>([]);
+const { data: api_jaxrs_pr_914_q } = useQuery({queryKey: ['api_jaxrs_pr_914', '/jaxrs/program_center/code/validate/mobile/mobile/answer/answer/cascade'], queryFn: async () => { try { const r = await api.get("/jaxrs/program_center/code/validate/mobile/mobile/answer/answer/cascade"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+watch(api_jaxrs_pr_914_q, (v) => { api_jaxrs_pr_914_data.value = v ?? []; });
+const api_jaxrs_pr_817_data = ref<any[]>([]);
+const { data: api_jaxrs_pr_817_q } = useQuery({queryKey: ['api_jaxrs_pr_817', '/jaxrs/program_center/collect/controllermobile/name/n/mobile/m'], queryFn: async () => { try { const r = await api.get("/jaxrs/program_center/collect/controllermobile/name/n/mobile/m"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+watch(api_jaxrs_pr_817_q, (v) => { api_jaxrs_pr_817_data.value = v ?? []; });
+const api_jaxrs_pr_953_data = ref<any[]>([]);
+const { data: api_jaxrs_pr_953_q } = useQuery({queryKey: ['api_jaxrs_pr_953', '/jaxrs/program_center/collect/controllermobile/name/name/mobile/mobile'], queryFn: async () => { try { const r = await api.get("/jaxrs/program_center/collect/controllermobile/name/name/mobile/mobile"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+watch(api_jaxrs_pr_953_q, (v) => { api_jaxrs_pr_953_data.value = v ?? []; });
+const api_jaxrs_pr_183_data = ref<any[]>([]);
+const { data: api_jaxrs_pr_183_q } = useQuery({queryKey: ['api_jaxrs_pr_183', '/jaxrs/program_center/collect/name/n/mobile/m/code/c'], queryFn: async () => { try { const r = await api.get("/jaxrs/program_center/collect/name/n/mobile/m/code/c"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+watch(api_jaxrs_pr_183_q, (v) => { api_jaxrs_pr_183_data.value = v ?? []; });
+const api_jaxrs_pr_955_data = ref<any[]>([]);
+const { data: api_jaxrs_pr_955_q } = useQuery({queryKey: ['api_jaxrs_pr_955', '/jaxrs/program_center/collect/name/name/mobile/mobile/code/code'], queryFn: async () => { try { const r = await api.get("/jaxrs/program_center/collect/name/name/mobile/mobile/code/code"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+watch(api_jaxrs_pr_955_q, (v) => { api_jaxrs_pr_955_data.value = v ?? []; });
+const api_jaxrs_pr_736_data = ref<any[]>([]);
+const { data: api_jaxrs_pr_736_q } = useQuery({queryKey: ['api_jaxrs_pr_736', '/jaxrs/program_center/config/list/dump/data/current/node'], queryFn: async () => { try { const r = await api.get("/jaxrs/program_center/config/list/dump/data/current/node"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+watch(api_jaxrs_pr_736_q, (v) => { api_jaxrs_pr_736_data.value = v ?? []; });
+const api_jaxrs_pr_512_data = ref<any[]>([]);
+const { data: api_jaxrs_pr_512_q } = useQuery({queryKey: ['api_jaxrs_pr_512', '/jaxrs/program_center/config/open/get/disable/export/enable'], queryFn: async () => { try { const r = await api.get("/jaxrs/program_center/config/open/get/disable/export/enable"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+watch(api_jaxrs_pr_512_q, (v) => { api_jaxrs_pr_512_data.value = v ?? []; });
+const api_jaxrs_pr_933_data = ref<any[]>([]);
+const { data: api_jaxrs_pr_933_q } = useQuery({queryKey: ['api_jaxrs_pr_933', '/jaxrs/program_center/deploy/list/paging/1/size/20'], queryFn: async () => { try { const r = await api.get("/jaxrs/program_center/deploy/list/paging/1/size/20"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+watch(api_jaxrs_pr_933_q, (v) => { api_jaxrs_pr_933_data.value = v ?? []; });
+const api_jaxrs_pr_787_data = ref<any[]>([]);
+const { data: api_jaxrs_pr_787_q } = useQuery({queryKey: ['api_jaxrs_pr_787', '/jaxrs/program_center/deploy/list/paging/page/size/size'], queryFn: async () => { try { const r = await api.get("/jaxrs/program_center/deploy/list/paging/page/size/size"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+watch(api_jaxrs_pr_787_q, (v) => { api_jaxrs_pr_787_data.value = v ?? []; });
+const api_jaxrs_pr_649_data = ref<any[]>([]);
+const { data: api_jaxrs_pr_649_q } = useQuery({queryKey: ['api_jaxrs_pr_649', '/jaxrs/program_center/deploy/web/resource/as/new/asNew'], queryFn: async () => { try { const r = await api.get("/jaxrs/program_center/deploy/web/resource/as/new/asNew"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+watch(api_jaxrs_pr_649_q, (v) => { api_jaxrs_pr_649_data.value = v ?? []; });
+const api_jaxrs_pr_39_data = ref<any[]>([]);
+const { data: api_jaxrs_pr_39_q } = useQuery({queryKey: ['api_jaxrs_pr_39', '/jaxrs/program_center/deploy/web/resource/as/new/newname'], queryFn: async () => { try { const r = await api.get("/jaxrs/program_center/deploy/web/resource/as/new/newname"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+watch(api_jaxrs_pr_39_q, (v) => { api_jaxrs_pr_39_data.value = v ?? []; });
+const api_jaxrs_pr_49_data = ref<any[]>([]);
+const { data: api_jaxrs_pr_49_q } = useQuery({queryKey: ['api_jaxrs_pr_49', '/jaxrs/program_center/dict/list/paging/1/size/20'], queryFn: async () => { try { const r = await api.get("/jaxrs/program_center/dict/list/paging/1/size/20"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+watch(api_jaxrs_pr_49_q, (v) => { api_jaxrs_pr_49_data.value = v ?? []; });
+const api_jaxrs_pr_28_data = ref<any[]>([]);
+const { data: api_jaxrs_pr_28_q } = useQuery({queryKey: ['api_jaxrs_pr_28', '/jaxrs/program_center/dict/list/paging/page/size/size'], queryFn: async () => { try { const r = await api.get("/jaxrs/program_center/dict/list/paging/page/size/size"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+watch(api_jaxrs_pr_28_q, (v) => { api_jaxrs_pr_28_data.value = v ?? []; });
+const api_jaxrs_pr_545_data = ref<any[]>([]);
+const { data: api_jaxrs_pr_545_q } = useQuery({queryKey: ['api_jaxrs_pr_545', '/jaxrs/program_center/dingding/sync/organization/register/callback/true'], queryFn: async () => { try { const r = await api.get("/jaxrs/program_center/dingding/sync/organization/register/callback/true"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+watch(api_jaxrs_pr_545_q, (v) => { api_jaxrs_pr_545_data.value = v ?? []; });
+const api_jaxrs_pr_940_data = ref<any[]>([]);
+const { data: api_jaxrs_pr_940_q } = useQuery({queryKey: ['api_jaxrs_pr_940', '/jaxrs/program_center/invoke/flag/client/client/token/token/execute'], queryFn: async () => { try { const r = await api.get("/jaxrs/program_center/invoke/flag/client/client/token/token/execute"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+watch(api_jaxrs_pr_940_q, (v) => { api_jaxrs_pr_940_data.value = v ?? []; });
+const api_jaxrs_pr_354_data = ref<any[]>([]);
+const { data: api_jaxrs_pr_354_q } = useQuery({queryKey: ['api_jaxrs_pr_354', '/jaxrs/program_center/invoke/i-1/client/web/token/tk-1/execute'], queryFn: async () => { try { const r = await api.get("/jaxrs/program_center/invoke/i-1/client/web/token/tk-1/execute"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+watch(api_jaxrs_pr_354_q, (v) => { api_jaxrs_pr_354_data.value = v ?? []; });
+const api_jaxrs_pr_888_data = ref<any[]>([]);
+const { data: api_jaxrs_pr_888_q } = useQuery({queryKey: ['api_jaxrs_pr_888', '/jaxrs/program_center/market/list/install/log/paging/1/size/20'], queryFn: async () => { try { const r = await api.get("/jaxrs/program_center/market/list/install/log/paging/1/size/20"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+watch(api_jaxrs_pr_888_q, (v) => { api_jaxrs_pr_888_data.value = v ?? []; });
+const api_jaxrs_pr_558_data = ref<any[]>([]);
+const { data: api_jaxrs_pr_558_q } = useQuery({queryKey: ['api_jaxrs_pr_558', '/jaxrs/program_center/market/list/install/log/paging/page/size/size'], queryFn: async () => { try { const r = await api.get("/jaxrs/program_center/market/list/install/log/paging/page/size/size"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+watch(api_jaxrs_pr_558_q, (v) => { api_jaxrs_pr_558_data.value = v ?? []; });
+const api_jaxrs_pr_222_data = ref<any[]>([]);
+const { data: api_jaxrs_pr_222_q } = useQuery({queryKey: ['api_jaxrs_pr_222', '/jaxrs/program_center/market/list/paging/1/size/20'], queryFn: async () => { try { const r = await api.get("/jaxrs/program_center/market/list/paging/1/size/20"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+watch(api_jaxrs_pr_222_q, (v) => { api_jaxrs_pr_222_data.value = v ?? []; });
+const api_jaxrs_pr_194_data = ref<any[]>([]);
+const { data: api_jaxrs_pr_194_q } = useQuery({queryKey: ['api_jaxrs_pr_194', '/jaxrs/program_center/market/list/paging/1/size/20/category/cms'], queryFn: async () => { try { const r = await api.get("/jaxrs/program_center/market/list/paging/1/size/20/category/cms"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+watch(api_jaxrs_pr_194_q, (v) => { api_jaxrs_pr_194_data.value = v ?? []; });
 const api_jaxrs_pr_708_data = ref<any[]>([]);
 const { data: api_jaxrs_pr_708_q } = useQuery({queryKey: ['api_jaxrs_pr_708', '/jaxrs/program_center/market/list/paging/page/size/size'], queryFn: async () => { try { const r = await api.get("/jaxrs/program_center/market/list/paging/page/size/size"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
 watch(api_jaxrs_pr_708_q, (v) => { api_jaxrs_pr_708_data.value = v ?? []; });
