@@ -378,7 +378,7 @@ async function runScript(s: any) {
   if (!s?.code) { toast.info('脚本无代码内容'); return }
   try {
     const r = await api.post('/jaxrs/portal/assemble/designer/script/run', { id: s.id, code: s.code })
-    alert('执行结果: ' + JSON.stringify(r?.data ?? '未知'))
+    toast.info('执行结果')
   } catch (e: any) { toast.error('执行失败: : ' + (e?.message ?? '')) }
 }
 

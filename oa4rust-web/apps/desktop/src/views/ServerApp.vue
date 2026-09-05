@@ -117,6 +117,16 @@ async function api_list_i_1_next_10() { try { await api.get("/jaxrs/log/filter/l
 
 async function api_server_execute_status() { try { await api.get("/jaxrs/server/execute/status") } catch {} }
 
+
+async function api_base_openapi_info() { try { await api.get("/jaxrs/base/openapi/info") } catch {} }
+async function api_cache_config_flush_1() { try { await api.get("/jaxrs/base/cache/config/flush") } catch {} }
+async function api_base_cache_detail() { try { await api.get("/jaxrs/base/cache/detail") } catch {} }
+async function api_base_echo() { try { await api.get("/jaxrs/base/echo") } catch {} }
+async function api_base_cache() { try { await api.get("/jaxrs/base/cache") } catch {} }
+async function api_cache_commonscript_flush_1() { try { await api.get("/jaxrs/base/cache/commonscript/flush") } catch {} }
+async function api_fireschedule_classname_com_x_processplatform_service_processing_ScheduleApplication() { try { await api.get("/jaxrs/base/fireschedule/classname/com.x.processplatform.service.processing.ScheduleApplication") } catch {} }
+async function api_base_echo_get() { try { await api.get("/jaxrs/base/echo/get") } catch {} }
+
 </script>
 
 <style scoped>
