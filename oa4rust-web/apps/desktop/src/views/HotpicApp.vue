@@ -105,6 +105,13 @@ async function api_hotpic_assemble_control_list_control_panels() { try { await a
 async function api_cipher_hotpic_bbs_id() { try { await api.get("/jaxrs/hotpic_assemble_control/cipher/hotpic/bbs/id") } catch {} }
 async function api_cipher_hotpic_cms_id() { try { await api.get("/jaxrs/hotpic_assemble_control/cipher/hotpic/cms/id") } catch {} }
 
+
+async function api_control_user_hotpic_changeTitle() { try { await api.get("/jaxrs/hotpic/assemble/control/user/hotpic/changeTitle") } catch {} }
+async function api_control_update_control_config() { try { await api.get("/jaxrs/hotpic/assemble/control/update/control/config") } catch {} }
+async function api_control_list_control_applications() { try { await api.get("/jaxrs/hotpic/assemble/control/list/control/applications") } catch {} }
+async function api_control_user_hotpic_hotpic_001() { try { await api.get("/jaxrs/hotpic/assemble/control/user/hotpic/hotpic-001") } catch {} }
+async function api_control_list_control_panels() { try { await api.get("/jaxrs/hotpic/assemble/control/list/control/panels") } catch {} }
+
 </script>
 
 <style scoped>

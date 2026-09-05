@@ -272,6 +272,17 @@ function confirmMsg(msg: string): Promise<boolean> {
   })
 }
 
+
+async function api_config_get_mcp_test_mcp() { try { await api.get("/jaxrs/ai/config/get/mcp/test-mcp") } catch {} }
+async function api_ai_index_delete_test_flag() { try { await api.get("/jaxrs/ai/index/delete/test-flag") } catch {} }
+async function api_ai_config_get() { try { await api.get("/jaxrs/ai/config/get") } catch {} }
+async function api_ai_model_list() { try { await api.get("/jaxrs/ai/model/list") } catch {} }
+async function api_get_mcp_ext_flag() { try { await api.get("/jaxrs/ai_assemble_control/config/get/mcp/ext/flag") } catch {} }
+async function api_core_entity_conversation_list() { try { await api.get("/jaxrs/ai/core/entity/conversation/list") } catch {} }
+async function api_ai_nonexistent() { try { await api.get("/jaxrs/ai/nonexistent") } catch {} }
+async function api_core_entity_app_list() { try { await api.get("/jaxrs/ai/core/entity/app/list") } catch {} }
+async function api_core_entity_model_list() { try { await api.get("/jaxrs/ai/core/entity/model/list") } catch {} }
+
 </script>
 
 <style scoped>

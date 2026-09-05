@@ -283,6 +283,15 @@ function confirmMsg(msg: string): Promise<boolean> {
   })
 }
 
+
+async function api_form_f_1_appinfo_app_1() { try { await api.get("/jaxrs/form/f-1/appinfo/app-1") } catch {} }
+async function api_form_v2_f_1_mobile() { try { await api.get("/jaxrs/form/v2/f-1/mobile") } catch {} }
+async function api_form_list_all() { try { await api.get("/jaxrs/form/list/all") } catch {} }
+async function api_form_f_1_mockdeletetoget() { try { await api.get("/jaxrs/form/f-1/mockdeletetoget") } catch {} }
+async function api_form_f_1() { try { await api.get("/jaxrs/form/f-1") } catch {} }
+async function api_formversion_list_form_f_1() { try { await api.get("/jaxrs/formversion/list/form/f-1") } catch {} }
+async function api_formversion_fv_1() { try { await api.get("/jaxrs/formversion/fv-1") } catch {} }
+
 </script>
 
 <style scoped>

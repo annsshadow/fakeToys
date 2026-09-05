@@ -382,6 +382,41 @@ async function api_person_nick_name() { try { await api.get("/jaxrs/person/nick/
 async function api_list_attribute_person_name() { try { await api.get("/jaxrs/personattribute/list/attribute/person/name") } catch {} }
 async function api_personattribute_append_person_name() { try { await api.get("/jaxrs/personattribute/append/person/name") } catch {} }
 
+
+async function api_form_v2_f_1_mobile() { try { await api.get("/jaxrs/anonymous/form/v2/f-1/mobile") } catch {} }
+async function api_anonymous_form_f_1() { try { await api.get("/jaxrs/anonymous/form/f-1") } catch {} }
+async function api_v2_lookup_document_d_1() { try { await api.get("/jaxrs/anonymous/form/v2/lookup/document/d-1") } catch {} }
+async function api_download_document_d_1_stream() { try { await api.get("/jaxrs/anonymous/fileinfo/download/document/d-1/stream") } catch {} }
+async function api_fileinfo_fi_1_document_d_1() { try { await api.get("/jaxrs/anonymous/fileinfo/fi-1/document/d-1") } catch {} }
+async function api_file_an_1_download_stream() { try { await api.get("/jaxrs/anonymous/file/an-1/download/stream") } catch {} }
+async function api_anonymous_form_v2_f_1() { try { await api.get("/jaxrs/anonymous/form/v2/f-1") } catch {} }
+async function api_fileinfo_list_document_d_1() { try { await api.get("/jaxrs/anonymous/fileinfo/list/document/d-1") } catch {} }
+async function api_anonymous_file_an_1_download() { try { await api.get("/jaxrs/anonymous/file/an-1/download") } catch {} }
+
+
+async function api_authentication_role_list() { try { await api.get("/jaxrs/authentication/role/list") } catch {} }
+async function api_authentication_switchuser() { try { await api.get("/jaxrs/authentication/switchuser") } catch {} }
+async function api_authentication_oauth_list() { try { await api.get("/jaxrs/authentication/oauth/list") } catch {} }
+async function api_authentication_logout() { try { await api.get("/jaxrs/authentication/logout") } catch {} }
+async function api_authentication_oauth() { try { await api.get("/jaxrs/authentication/oauth") } catch {} }
+async function api_authentication_switchuser_mockputtopost_1() { try { await api.get("/jaxrs/authentication/switchuser/mockputtopost") } catch {} }
+async function api_authentication_code_credential_2fa_full_user() { try { await api.get("/jaxrs/authentication/code/credential/2fa-full-user") } catch {} }
+async function api_authentication_code_credential_admin() { try { await api.get("/jaxrs/authentication/code/credential/admin") } catch {} }
+async function api_authentication_sso() { try { await api.get("/jaxrs/authentication/sso") } catch {} }
+async function api_authentication_two() { try { await api.get("/jaxrs/authentication/two") } catch {} }
+async function api_authentication_code() { try { await api.get("/jaxrs/authentication/code") } catch {} }
+async function api_authentication_oauth_qywx_config() { try { await api.get("/jaxrs/authentication/oauth/qywx/config") } catch {} }
+async function api_authentication_safe() { try { await api.get("/jaxrs/authentication/safe") } catch {} }
+async function api_authentication_bind() { try { await api.get("/jaxrs/authentication/bind") } catch {} }
+async function api_authentication_oidc_authorize() { try { await api.get("/jaxrs/authentication/oidc/authorize") } catch {} }
+
+
+async function api_group_list_identity() { try { await api.get("/jaxrs/group/list/identity") } catch {} }
+async function api_group_list_group_tree() { try { await api.get("/jaxrs/group/list/group/tree") } catch {} }
+async function api_group_sup_direct_object() { try { await api.get("/jaxrs/group/list/group/sup/direct/object") } catch {} }
+async function api_list_group_sup_direct() { try { await api.get("/jaxrs/group/list/group/sup/direct") } catch {} }
+async function api_list_group_sup_nested() { try { await api.get("/jaxrs/group/list/group/sup/nested") } catch {} }
+
 </script>
 
 <style scoped>
