@@ -147,6 +147,14 @@ async function api_assemble_control_securityclearance_subject() { try { await ap
 async function api_assemble_control_status_update() { try { await api.get("/jaxrs/general/assemble/control/status/update") } catch {} }
 async function api_general_file_create() { try { await api.get("/jaxrs/general/file/create") } catch {} }
 
+
+async function api_component_comp_001() { try { await api.get("/jaxrs/component/comp-001") } catch {} }
+async function api_component_list() { try { await api.get("/jaxrs/component/list") } catch {} }
+async function api_control_component_delete_all() { try { await api.get("/jaxrs/component/assemble/control/component/delete/all") } catch {} }
+async function api_component_core_entity_nonexistent() { try { await api.get("/jaxrs/component/core/entity/nonexistent") } catch {} }
+async function api_assemble_control_status_list() { try { await api.get("/jaxrs/component/assemble/control/status/list") } catch {} }
+async function api_component_core_entity_count() { try { await api.get("/jaxrs/component/core/entity/count") } catch {} }
+
 </script>
 <style scoped>
 .crud-view{display:flex;flex-direction:column;gap:16px;height:100%}
