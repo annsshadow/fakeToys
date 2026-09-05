@@ -127,10 +127,14 @@ function handleAvatarUpload(e: Event): void {
   if (!file || !user.value) return;
   const formData = new FormData();
   formData.append('file', file);
-  api.upload(`/jaxrs/person/icon/${user.value.unique}`, formData)
-    .then(() => console.log('头像上传成功'))
-    .catch((err: any) => console.error('头像上传失败:', err));
+  avatarMutation.mutate(formData);
 }
+
+const avatarMutation = useMutation({
+  mutationFn: (formData: FormData) => api.upload(`/jaxrs/person/icon/${user.value!.unique}`, formData),
+  onSuccess: () => { toast.success('头像上传成功'); },
+  onError: () => { toast.error('头像上传失败'); },
+});
 
 function saveSignature(): void {
   api.post('/jaxrs/person/signature/save', { signature: signature.value })
