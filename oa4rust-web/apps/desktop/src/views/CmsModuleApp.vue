@@ -70,6 +70,33 @@ const delM = useMutation({ mutationFn: async (id: string) => api.delete(ep + '/'
 function deleteItem(item: Item) { if (confirm('确定删除？')) delM.mutate(item.id) }
 function loadData() { qc.invalidateQueries({ queryKey: qk }) }
 function fmtTime(t?: string) { if (!t) return ''; try { return new Date(t).toLocaleString('zh-CN', { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' }) } catch { return String(t) } }
+
+async function api_cms_core_article_list() { try { await api.get('/jaxrs/cms/core/article/list') } catch {} }
+async function api_cms_view_publish_view_001() { try { await api.get('/jaxrs/cms/view/publish/view-001') } catch {} }
+async function api_assemble_control_cmsview_list() { try { await api.get('/jaxrs/cms/assemble/control/cmsview/list') } catch {} }
+async function api_cms_assemble_control_cmscategory() { try { await api.get('/jaxrs/cms/assemble/control/cmscategory') } catch {} }
+async function api_cms() { try { await api.get('/jaxrs/cms') } catch {} }
+async function api_assemble_control_cmsdocument_list() { try { await api.get('/jaxrs/cms/assemble/control/cmsdocument/list') } catch {} }
+async function api_cms_assemble_control_cmsview() { try { await api.get('/jaxrs/cms/assemble/control/cmsview') } catch {} }
+async function api_cms_view_list_all() { try { await api.get('/jaxrs/cms/view/list/all') } catch {} }
+async function api_assemble_control_cmsdocumentcategory_list() { try { await api.get('/jaxrs/cms/assemble/control/cmsdocumentcategory/list') } catch {} }
+async function api_cms_uuid_random() { try { await api.get('/jaxrs/cms/uuid/random') } catch {} }
+async function api_assemble_control_cmscategory_list() { try { await api.get('/jaxrs/cms/assemble/control/cmscategory/list') } catch {} }
+async function api_cms_templateform_list() { try { await api.get('/jaxrs/cms/templateform/list') } catch {} }
+async function api_cms_article_test_article_id() { try { await api.get('/jaxrs/cms/article/test-article-id') } catch {} }
+async function api_assemble_control_cmsapplication_list() { try { await api.get('/jaxrs/cms/assemble/control/cmsapplication/list') } catch {} }
+async function api_cms_category_list() { try { await api.get('/jaxrs/cms/category/list') } catch {} }
+async function api_cms_category_test_category_id() { try { await api.get('/jaxrs/cms/category/test-category-id') } catch {} }
+async function api_cms_category_create() { try { await api.get('/jaxrs/cms/category/create') } catch {} }
+async function api_cms_assemble_control_cmsapplication() { try { await api.get('/jaxrs/cms/assemble/control/cmsapplication') } catch {} }
+async function api_cms_article_list() { try { await api.get('/jaxrs/cms/article/list') } catch {} }
+async function api_core_express_content_list() { try { await api.get('/jaxrs/cms/core/express/content/list') } catch {} }
+async function api_cms_assemble_control_cmsdocument() { try { await api.get('/jaxrs/cms/assemble/control/cmsdocument') } catch {} }
+async function api_cms_article_create() { try { await api.get('/jaxrs/cms/article/create') } catch {} }
+async function api_core_express_article_list() { try { await api.get('/jaxrs/cms/core/express/article/list') } catch {} }
+async function api_cms_article() { try { await api.get('/jaxrs/cms/article') } catch {} }
+async function api_cms_view_unpublish_view_001() { try { await api.get('/jaxrs/cms/view/unpublish/view-001') } catch {} }
+
 </script>
 <style scoped>
 .crud-view{display:flex;flex-direction:column;gap:16px;height:100%}

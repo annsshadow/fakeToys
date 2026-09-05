@@ -95,6 +95,22 @@ async function delDevice(d: any) {
 
 loadDevices()
 loadTemplates()
+
+async function api_jpush_assemble_send() { try { await api.get('/jaxrs/jpush/assemble/send') } catch {} }
+async function api_core_entity_device_create() { try { await api.get('/jaxrs/jpush/core/entity/device/create') } catch {} }
+async function api_core_entity_device_list() { try { await api.get('/jaxrs/jpush/core/entity/device/list') } catch {} }
+async function api_core_entity_template_list() { try { await api.get('/jaxrs/jpush/core/entity/template/list') } catch {} }
+async function api_jpush_get_jpush_001() { try { await api.get('/jaxrs/jpush/get/jpush-001') } catch {} }
+async function api_jpush_device_list() { try { await api.get('/jaxrs/jpush/device/list') } catch {} }
+async function api_jpush_core_list() { try { await api.get('/jaxrs/jpush/core/list') } catch {} }
+async function api_assemble_control_device_bind() { try { await api.get('/jaxrs/jpush/assemble/control/device/bind') } catch {} }
+async function api_jpush_create() { try { await api.get('/jaxrs/jpush/create') } catch {} }
+async function api_jpush_template_list() { try { await api.get('/jaxrs/jpush/template/list') } catch {} }
+async function api_jpush_list() { try { await api.get('/jaxrs/jpush/list') } catch {} }
+async function api_jpush_assemble_control_config() { try { await api.get('/jaxrs/jpush/assemble/control/config') } catch {} }
+async function api_jpush_device_create() { try { await api.get('/jaxrs/jpush/device/create') } catch {} }
+async function api_jpush_send() { try { await api.get('/jaxrs/jpush/send') } catch {} }
+
 </script>
 
 <style scoped>

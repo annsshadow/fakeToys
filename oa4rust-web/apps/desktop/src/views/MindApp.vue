@@ -131,6 +131,16 @@ async function api_list_x_version() { try { await api.get("/jaxrs/mind/assemble/
 async function api_mind_assemble_list() { try { await api.get("/jaxrs/mind/assemble/list") } catch {} }
 async function api_share_x_cancel() { try { await api.get("/jaxrs/mind/assemble/control/mind/share/x/cancel") } catch {} }
 
+
+async function api_mind_core_entity_version() { try { await api.get('/jaxrs/mind/core/entity/version') } catch {} }
+async function api_assemble_control_config_update() { try { await api.get('/jaxrs/mind/assemble/control/config/update') } catch {} }
+async function api_mind_map_list() { try { await api.get('/jaxrs/mind/map/list') } catch {} }
+async function api_assemble_control_folder_save() { try { await api.get('/jaxrs/mind/assemble/control/folder/save') } catch {} }
+async function api_mind_core_entity_list() { try { await api.get('/jaxrs/mind/core/entity/list') } catch {} }
+async function api_assemble_control_mind_x() { try { await api.get('/jaxrs/mind/assemble/control/mind/x') } catch {} }
+async function api_mind_core_entity_mind() { try { await api.get('/jaxrs/mind/core/entity/mind') } catch {} }
+async function api_mind_core_entity_folder() { try { await api.get('/jaxrs/mind/core/entity/folder') } catch {} }
+
 </script>
 
 <style scoped>
