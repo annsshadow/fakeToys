@@ -187,6 +187,8 @@ function handleView(_item: TaskItem): void {
   // Navigate to detail (future)
   console.log('View task:', _item.id);
 }
+
+async function handleComment(item) { const comment = prompt('添加评论:'); if(!comment)return; await api.post('/jaxrs/processplatform/assemble/surface/work/comment',{id:item.id,comment}); query.refetch() }
 </script>
 
 <style scoped>

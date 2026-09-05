@@ -360,6 +360,8 @@ async function pinConversation(conv: any) {
 
 
 
+
+async function searchConversations() { const q=prompt('搜索会话:'); if(!q)return; const r=await api.get('/jaxrs/message/assemble/communicate/im/conversation/search?q='+encodeURIComponent(q)); searchResults.value=(r.data??[]) }
 </script>
 
 <style scoped>
@@ -523,4 +525,4 @@ async function pinConversation(conv: any) {
   .im-sidebar.collapsed { transform: translateX(-100%); }
   .back-btn { display: block; }
 }
-</style>
+</style>

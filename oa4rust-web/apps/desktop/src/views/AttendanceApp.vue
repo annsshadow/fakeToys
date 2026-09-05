@@ -106,6 +106,8 @@ async function loadAppeals() {
 }
 loadRules()
 
+
+async function loadStatistics(){try{const r=await api.get('/jaxrs/attendance/assemble/control/statistics/list?month='+month.value);attStats.value=(r.data??[])}catch{attStats.value=[]}}
 </script>
 <style scoped>
 .attendance-view{display:flex;flex-direction:column;gap:16px;height:100%}

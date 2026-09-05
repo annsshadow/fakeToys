@@ -90,6 +90,8 @@ async function leaveMeeting(m: M) {
   } catch (e: any) { alert('离开失败: ' + (e?.message ?? '')) }
 }
 
+
+async function loadReservations(){try{const r=await api.get('/jaxrs/meeting/assemble/control/reservation/list');reservations.value=(r.data??[])}catch{reservations.value=[]}}
 </script>
 <style scoped>
 .meeting-view{display:flex;flex-direction:column;gap:16px;height:100%}
