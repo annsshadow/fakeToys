@@ -68,6 +68,7 @@
 
 <script setup lang="ts">
 import { ref, computed } from 'vue';
+import { toast } from '../utils/toast';
 import { useQuery } from '@tanstack/vue-query';
 import { api } from '@oa4rust/sdk';
 

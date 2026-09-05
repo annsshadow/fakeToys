@@ -70,6 +70,7 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue';
+import { toast } from '../utils/toast';
 import { useQuery, useMutation } from '@tanstack/vue-query';
 import { api, useSession } from '@oa4rust/sdk';
 
@@ -114,8 +115,11 @@ function savePassword(): void {
     pwdError.value = '两次密码不一致'; return;
   }
   pwdSaving.value = true;
-  pwdMutation.mutate({ oldPassword: pwdForm.value.oldPassword, newPassword: pwdForm.value.newPassword });
-  pwdSaving.value = false;
+  pwdMutation.mutate({ oldPassword: pwdForm.value.oldPassword, newPassword: pwdForm.value.newPassword }, {
+    onSuccess: () => { toast.success('密码修改成功'); pwdForm.value = { oldPassword: '', newPassword: '', confirmPassword: '' }; },
+    onError: () => { pwdError.value = '修改失败'; pwdSaving.value = false; },
+  });
+  pwdSaving.value = true;
 }
 
 function handleAvatarUpload(e: Event): void {
@@ -129,8 +133,9 @@ function handleAvatarUpload(e: Event): void {
 }
 
 function saveSignature(): void {
-  // Placeholder - actual API would be /jaxrs/person/signature/create or update
-  console.log('签名已保存:', signature.value);
+  api.post('/jaxrs/person/signature/save', { signature: signature.value })
+    .then(() => toast.success('签名已保存'))
+    .catch(() => toast.error('保存失败'));
 }
 
 onMounted(() => {

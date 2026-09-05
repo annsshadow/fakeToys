@@ -59,6 +59,7 @@
 
 <script setup lang="ts">
 import { ref, computed } from 'vue';
+import { toast } from '../utils/toast';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/vue-query';
 import { api } from '@oa4rust/sdk';
 
@@ -180,7 +181,10 @@ function fmtTime(ts: unknown): string {
 }
 
 function handleApprove(item: TaskItem): void {
-  approveMutation.mutate(item.id);
+  approveMutation.mutate(item.id, {
+    onSuccess: () => toast.success('审批通过'),
+    onError: () => toast.error('审批失败'),
+  });
 }
 
 function handleView(_item: TaskItem): void {

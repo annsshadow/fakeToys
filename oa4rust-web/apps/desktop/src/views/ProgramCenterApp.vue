@@ -27,9 +27,8 @@
             <span class="col-flag font-mono">{{ a.flag || a.id }}</span>
             <span class="col-status" :class="a.enabled!==false?'enabled':'disabled'">{{ a.enabled!==false?'启用':'禁用' }}</span>
             <span class="col-actions">
-              <button class="btn-sm" @click="toggleAgent(a)">
-                {{ a.enabled!==false ? '禁用' : '启用' }}
-              </button>
+              <button class="btn-sm" @click="toggleAgent(a)">{{ a.enabled!==false ? '禁用' : '启用' }}</button>
+              <button class="btn-sm" style="color:var(--color-error)" @click="deleteAgent(a)">删除</button>
             </span>
           </div>
         </div>
@@ -45,6 +44,7 @@
               <div class="it">{{ app.name || app.appName || '未命名' }}</div>
               <div class="im">{{ app.desc || app.description || '' }}</div>
               <div class="meta">flag: {{ app.flag || app.id }}</div>
+              <button class="btn-sm" style="color:var(--color-error);margin-top:4px" @click="deleteApp(app)">删除</button>
             </div>
           </div>
         </div>
@@ -59,6 +59,7 @@
             <div class="ib">
               <div class="it">{{ s.name || s.scriptName || '未命名' }}</div>
               <div class="im">flag: {{ s.flag || s.id }}</div>
+              <button class="btn-sm" style="color:var(--color-error);margin-top:4px" @click="deleteScript(s)">删除</button>
             </div>
           </div>
         </div>
@@ -77,6 +78,7 @@
             <div class="ib">
               <div class="it">{{ d.name || d.dictName || '未命名' }}</div>
               <div class="im">flag: {{ d.flag || d.id }}</div>
+              <button class="btn-sm" style="color:var(--color-error);margin-top:4px" @click="deleteDict(d)">删除</button>
             </div>
           </div>
         </div>
@@ -112,8 +114,10 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, watch } from 'vue'
+import { useMutation } from '@tanstack/vue-query'
 import { api } from '@oa4rust/sdk'
+import { toast } from '../utils/toast'
 
 type Tab = 'agent'|'application'|'script'|'dict'|'market'
 type Agent = { id?: string; name?: string; label?: string; agentName?: string; flag?: string; enabled?: boolean }
@@ -194,6 +198,28 @@ async function onCreateAgent() {
 // Watch tab changes to load data
 import { watch } from 'vue'
 watch(tab, (t) => switchTab(t), { immediate: true })
+
+
+const deleteAgentM = useMutation({
+  mutationFn: (id: string) => api.delete(`/jaxrs/program_center/agent/${id}`),
+  onSuccess: () => { loadAgents(); toast.success('Agent已删除') }
+})
+const deleteAppM = useMutation({
+  mutationFn: (id: string) => api.delete(`/jaxrs/program_center/application/${id}`),
+  onSuccess: () => { loadApps(); toast.success('Application已删除') }
+})
+const deleteScriptM = useMutation({
+  mutationFn: (id: string) => api.delete(`/jaxrs/program_center/script/${id}`),
+  onSuccess: () => { loadScripts(); toast.success('Script已删除') }
+})
+const deleteDictM = useMutation({
+  mutationFn: (id: string) => api.delete(`/jaxrs/program_center/dict/${id}`),
+  onSuccess: () => { loadDict(); toast.success('字典已删除') }
+})
+function deleteAgent(a: Agent) { if(confirmMsg('确定删除该Agent？')) deleteAgentM.mutate(a.id!) }
+function deleteApp(a: App) { if(confirmMsg('确定删除该Application？')) deleteAppM.mutate(a.id!) }
+function deleteScript(s: Script) { if(confirmMsg('确定删除该Script？')) deleteScriptM.mutate(s.id!) }
+function deleteDict(d: Dict) { if(confirmMsg('确定删除该字典？')) deleteDictM.mutate(d.id!) }
 
 async function api_media_add_forever() { try { await api.get("/jaxrs/program_center/mpweixin/media/add/forever") } catch {} }
 async function api_login_avatar_erase() { try { await api.get("/jaxrs/program_center/appstyle/image/login/avatar/erase") } catch {} }
