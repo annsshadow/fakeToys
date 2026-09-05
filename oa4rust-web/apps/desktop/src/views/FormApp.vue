@@ -207,7 +207,7 @@ function viewDetail(f: FormItem) { api.get('/jaxrs/form/' + f.id).then(r => { de
 function viewDetailV2(f: FormItem) { detailItem.value = f }
 function editForm(f: FormItem) { editingForm.value = f; mform.value = { name: f.name||'', flag: f.flag||'', category: f.category||'', schema: f.schema||'{}' }; showCreate.value = true }
 function editFormV2(f: FormItem) { editForm(f as FormItem) }
-function previewForm(f: FormItem) { alert('预览表单: ' + (f.name||f.id)) }
+function previewForm(f: FormItem) { toast.info('预览表单: ' + (f.name||f.id)) }
 function previewFormV2(f: FormItem) { previewForm(f as FormItem) }
 
 async function saveForm() {
@@ -230,8 +230,8 @@ function useTemplate(t: any) {
   editingForm.value = null; showCreate.value = true
 }
 
-function restoreVersion(vi: number) { alert('恢复版本 ' + (versionList.value[vi]?.version || '?')) }
-function compareVersion(vi: number) { alert('对比版本 ' + (vi + 1)) }
+function restoreVersion(vi: number) { toast.info('恢复版本 ' + (versionList.value[vi]?.version || '?')) }
+function compareVersion(vi: number) { toast.info('对比版本 ' + (vi + 1)) }
 
 function doExport() {
   const data = items.value.map(f => ({ name: f.name, flag: f.flag, version: f.version, schema: f.schema }))

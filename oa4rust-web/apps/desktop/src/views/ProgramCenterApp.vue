@@ -179,7 +179,7 @@ async function toggleAgent(a: Agent) {
     if (a.enabled !== false) await api.post(`/jaxrs/program_center/agent/${a.flag || a.id}/disable`, null)
     else await api.post(`/jaxrs/program_center/agent/${a.flag || a.id}/enable`, null)
     loadAgents()
-  } catch (e: any) { alert((e?.message ?? '操作失败')) }
+  } catch (e: any) { toast.error(e?.message ?? '操作失败') }
 }
 
 async function onCreateAgent() {
