@@ -29,7 +29,7 @@
 </template>
 <script setup lang="ts">
 import { ref } from 'vue'
-import { toast } from '../../utils/toast'
+import { toast } from '../utils/toast'
 import { useQuery } from '@tanstack/vue-query'
 import { api } from '@oa4rust/sdk'
 interface Item { id:string; name?:string; flag?:string; config?:string }

@@ -43,7 +43,7 @@
 </template>
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
-import { toast } from '../../utils/toast'
+import { toast } from '../utils/toast'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/vue-query'
 import { api } from '@oa4rust/sdk'
 interface M{id:string;title?:string;name?:string;buildingId?:string;roomId?:string;buildingName?:string;roomName?:string;startTime?:string;attendeeCount?:number;status?:string}
