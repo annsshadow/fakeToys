@@ -52,7 +52,7 @@
 </template>
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
-import { toast } from '../../utils/toast'
+import { toast } from '../utils/toast'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/vue-query'
 import { api } from '@oa4rust/sdk'
 interface R{id:string;personName?:string;name?:string;date?:string;checkInTime?:string;checkOutTime?:string;workHours?:number;status?:string;isLate?:boolean}

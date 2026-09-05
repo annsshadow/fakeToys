@@ -95,7 +95,7 @@
 
 <script setup lang="ts">
 import { ref, computed, nextTick } from 'vue'
-import { toast } from '../../utils/toast'
+import { toast } from '../utils/toast'
 import { api } from '@oa4rust/sdk'
 
 type Message = { role: 'user' | 'assistant'; content: string; timestamp?: string }

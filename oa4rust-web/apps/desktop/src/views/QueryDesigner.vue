@@ -259,7 +259,7 @@
 
 <script setup lang="ts">
 import { ref, computed } from 'vue'
-import { toast } from '../../utils/toast'
+import { toast } from '../utils/toast'
 import { api } from '@oa4rust/sdk'
 
 type QueryDef = {
