@@ -197,6 +197,28 @@ function selectDay(cell: typeof calendarCells.value[0]): void {
     selectedDate.value = { year: cell.year, month: cell.month, day: cell.day };
   }
 }
+
+async function api_entity_calendar_remove() { try { await api.get("/jaxrs/calendar/core/entity/calendar/remove") } catch {} }
+async function api_calendar_event() { try { await api.get("/jaxrs/calendar/event") } catch {} }
+async function api_control_calendar_list() { try { await api.get("/jaxrs/calendar/assemble/control/calendar/list") } catch {} }
+async function api_calendar_list_public() { try { await api.get("/jaxrs/calendar/core/entity/calendar/list/public") } catch {} }
+async function api_calendar_calendar_create() { try { await api.get("/jaxrs/calendar/calendar/create") } catch {} }
+async function api_calendar_event_create() { try { await api.get("/jaxrs/calendar/event/create") } catch {} }
+async function api_entity_calendar_update() { try { await api.get("/jaxrs/calendar/core/entity/calendar/update") } catch {} }
+async function api_control_event_list() { try { await api.get("/jaxrs/calendar/assemble/control/event/list") } catch {} }
+async function api_entity_event_remove() { try { await api.get("/jaxrs/calendar/core/entity/event/remove") } catch {} }
+async function api_entity_event_update() { try { await api.get("/jaxrs/calendar/core/entity/event/update") } catch {} }
+async function api_control_period_list() { try { await api.get("/jaxrs/calendar/assemble/control/period/list") } catch {} }
+async function api_assemble_control_calendar() { try { await api.get("/jaxrs/calendar/assemble/control/calendar") } catch {} }
+async function api_calendar_list_public() { try { await api.get("/jaxrs/calendar/calendar/list/public") } catch {} }
+async function api_assemble_control_event() { try { await api.get("/jaxrs/calendar/assemble/control/event") } catch {} }
+async function api_calendar_calendar_remove() { try { await api.get("/jaxrs/calendar/calendar/remove") } catch {} }
+async function api_control_calendar_follow() { try { await api.get("/jaxrs/calendar/assemble/control/calendar/follow") } catch {} }
+async function api_entity_event_create() { try { await api.get("/jaxrs/calendar/core/entity/event/create") } catch {} }
+async function api_assemble_event_list() { try { await api.get("/jaxrs/calendar/assemble/event/list") } catch {} }
+async function api_core_event_list() { try { await api.get("/jaxrs/calendar/core/event/list") } catch {} }
+async function api_calendar_calendar_update() { try { await api.get("/jaxrs/calendar/calendar/update") } catch {} }
+
 </script>
 
 <style scoped>

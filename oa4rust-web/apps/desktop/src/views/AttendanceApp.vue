@@ -120,6 +120,28 @@ async function call_assemble_control_attendanceconfig() { try { await api.get("/
 async function call_control_attendanceconfig_list() { try { await api.get("/jaxrs/attendance/assemble/control/attendanceconfig/list") } catch {} }
 async function call_assemble_control_attendancedetail() { try { await api.get("/jaxrs/attendance/assemble/control/attendancedetail") } catch {} }
 
+
+async function api_filter_list_unit() { try { await api.get("/jaxrs/attendance/assemble/control/attendancedetail/filter/list/unit") } catch {} }
+async function api_assemble_control_attendancestatisticalcycle() { try { await api.get("/jaxrs/attendance/assemble/control/attendancestatisticalcycle") } catch {} }
+async function api_control_attendancestatistical_total() { try { await api.get("/jaxrs/attendance/assemble/control/attendancestatistical/total") } catch {} }
+async function api_attendancedetail_mobile_m_1() { try { await api.get("/jaxrs/attendance/assemble/control/attendancedetail/mobile/m-1") } catch {} }
+async function api_entity_rule_list() { try { await api.get("/jaxrs/attendance/core/entity/rule/list") } catch {} }
+async function api_attendance_record_list() { try { await api.get("/jaxrs/attendance/record/list") } catch {} }
+async function api_assemble_control_attendanceemployeeconfig() { try { await api.get("/jaxrs/attendance/assemble/control/attendanceemployeeconfig") } catch {} }
+async function api_control_v2_leave() { try { await api.get("/jaxrs/attendance/assemble/control/v2/leave") } catch {} }
+async function api_attendanceworkdayconfig_list_all() { try { await api.get("/jaxrs/attendance/assemble/control/attendanceworkdayconfig/list/all") } catch {} }
+async function api_filter_list_user() { try { await api.get("/jaxrs/attendance/assemble/control/attendancedetail/filter/list/user") } catch {} }
+async function api_rule_rule_001_delete() { try { await api.get("/jaxrs/attendance/core/entity/rule/rule-001/delete") } catch {} }
+async function api_attendancedetail_mobile_my() { try { await api.get("/jaxrs/attendance/assemble/control/attendancedetail/mobile/my") } catch {} }
+async function api_attendancedetail_mobile_recive() { try { await api.get("/jaxrs/attendance/assemble/control/attendancedetail/mobile/recive") } catch {} }
+async function api_control_workplace_w_1() { try { await api.get("/jaxrs/attendance/assemble/control/workplace/w-1") } catch {} }
+async function api_record_import_daily() { try { await api.get("/jaxrs/attendance/assemble/control/v2/record/import/daily") } catch {} }
+async function api_attendanceemployeeconfig_list_all() { try { await api.get("/jaxrs/attendance/assemble/control/attendanceemployeeconfig/list/all") } catch {} }
+async function api_control_attendanceworkplancalendar_list() { try { await api.get("/jaxrs/attendance/assemble/control/attendanceworkplancalendar/list") } catch {} }
+async function api_v2_shift_create() { try { await api.get("/jaxrs/attendance/assemble/control/v2/shift/create") } catch {} }
+async function api_assemble_control_attendanceworkplancalendar() { try { await api.get("/jaxrs/attendance/assemble/control/attendanceworkplancalendar") } catch {} }
+async function api_attendance_assemble_daily() { try { await api.get("/jaxrs/attendance/assemble/daily") } catch {} }
+
 </script>
 <style scoped>
 .attendance-view{display:flex;flex-direction:column;gap:16px;height:100%}

@@ -194,6 +194,28 @@ async function onCreateAgent() {
 // Watch tab changes to load data
 import { watch } from 'vue'
 watch(tab, (t) => switchTab(t), { immediate: true })
+
+async function api_media_add_forever() { try { await api.get("/jaxrs/program_center/mpweixin/media/add/forever") } catch {} }
+async function api_login_avatar_erase() { try { await api.get("/jaxrs/program_center/appstyle/image/login/avatar/erase") } catch {} }
+async function api_file_download_pk_1() { try { await api.get("/jaxrs/program_center/apppackanony/pack/info/file/download/pk-1") } catch {} }
+async function api_program_center_config_proxy() { try { await api.get("/jaxrs/program_center/config/proxy") } catch {} }
+async function api_register_callback_enable() { try { await api.get("/jaxrs/program_center/dingding/sync/organization/register/callback/enable") } catch {} }
+async function api_with_category_category() { try { await api.get("/jaxrs/program_center/invoke/list/with/category/category") } catch {} }
+async function api_dingding_get_callback() { try { await api.get("/jaxrs/program_center/dingding/get/callback") } catch {} }
+async function api_program_center_config_person() { try { await api.get("/jaxrs/program_center/config/person") } catch {} }
+async function api_program_center_designer_search() { try { await api.get("/jaxrs/program_center/designer/search") } catch {} }
+async function api_output_appInfoFlag_select() { try { await api.get("/jaxrs/program_center/output/appInfoFlag/select") } catch {} }
+async function api_program_center_collect_person() { try { await api.get("/jaxrs/program_center/collect/person") } catch {} }
+async function api_mobile_answer_answer() { try { await api.get("/jaxrs/program_center/code/validate/mobile/mobile/answer/answer") } catch {} }
+async function api_program_center_prompterrorlog_id() { try { await api.get("/jaxrs/program_center/prompterrorlog/id") } catch {} }
+async function api_program_center_appstyle() { try { await api.get("/jaxrs/program_center/appstyle") } catch {} }
+async function api_id_prev_count() { try { await api.get("/jaxrs/program_center/prompterrorlog/list/id/prev/count") } catch {} }
+async function api_output_flag_file() { try { await api.get("/jaxrs/program_center/module/output/flag/file") } catch {} }
+async function api_mass_0_10() { try { await api.get("/jaxrs/program_center/bar/create/mass/0/10") } catch {} }
+async function api_module_id_compare() { try { await api.get("/jaxrs/program_center/module/id/compare") } catch {} }
+async function api_create_mobile_mobile() { try { await api.get("/jaxrs/program_center/code/create/mobile/mobile") } catch {} }
+async function api_m_1_install_log() { try { await api.get("/jaxrs/program_center/market/m-1/install/log") } catch {} }
+
 </script>
 
 <style scoped>
