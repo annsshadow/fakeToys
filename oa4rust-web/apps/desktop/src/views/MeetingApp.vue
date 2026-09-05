@@ -159,6 +159,14 @@ function confirmMsg(msg: string): Promise<boolean> {
   })
 }
 
+
+async function api_control_meeting_calendar_list() { try { await api.get("/jaxrs/meeting/assemble/control/meeting/calendar/list") } catch {} }
+async function api_control_list_meeting_controls() { try { await api.get("/jaxrs/meeting/assemble/control/list/meeting/controls") } catch {} }
+async function api_control_meeting_coming_list() { try { await api.get("/jaxrs/meeting/assemble/control/meeting/coming/list") } catch {} }
+async function api_meeting_assemble_control() { try { await api.get("/jaxrs/meeting_assemble_control") } catch {} }
+async function api_entity_room_save_room_001() { try { await api.get("/jaxrs/meeting/core/entity/room/save/room-001") } catch {} }
+async function api_control_openmeeting_list_room() { try { await api.get("/jaxrs/meeting/assemble/control/openmeeting/list/room") } catch {} }
+
 </script>
 <style scoped>
 .meeting-view{display:flex;flex-direction:column;gap:16px;height:100%}

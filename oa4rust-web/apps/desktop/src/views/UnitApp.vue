@@ -108,6 +108,15 @@ async function api_unitduty_list_name_identity() { try { await api.get("/jaxrs/u
 async function api_unitduty_list_name() { try { await api.get("/jaxrs/unitduty/list/name") } catch {} }
 async function api_find_by_unit_name() { try { await api.get("/jaxrs/unitduty/find/by/unit/name") } catch {} }
 
+
+async function api_unit_list_all() { try { await api.get("/jaxrs/unit/list/all") } catch {} }
+async function api_unit_list_types() { try { await api.get("/jaxrs/unit/list/types") } catch {} }
+async function api_unit_list_unitduty() { try { await api.get("/jaxrs/unit/list/unitduty") } catch {} }
+async function api_unit_sub_nested_object() { try { await api.get("/jaxrs/unit/list/unit/sub/nested/object") } catch {} }
+async function api_list_unit_sup_direct() { try { await api.get("/jaxrs/unit/list/unit/sup/direct") } catch {} }
+async function api_check_unit_has_person() { try { await api.get("/jaxrs/unit/check/unit/has/person") } catch {} }
+async function api_unit_sup_nested_object() { try { await api.get("/jaxrs/unit/list/unit/sup/nested/object") } catch {} }
+
 </script>
 
 <style scoped>

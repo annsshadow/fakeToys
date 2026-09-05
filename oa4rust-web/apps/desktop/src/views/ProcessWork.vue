@@ -386,6 +386,15 @@ async function api_correlation_service_processing_create() { try { await api.get
 async function api_correlation_update_doc_d_1() { try { await api.get("/jaxrs/correlation/update/doc/d-1") } catch {} }
 async function api_correlation_type_processplatform_list() { try { await api.get("/jaxrs/correlation/type/processplatform/list") } catch {} }
 
+
+async function api_processing_workcompleted_shift_time() { try { await api.get("/jaxrs/processplatform/service/processing/workcompleted/shift/time") } catch {} }
+async function api_processplatform_service_processing_work() { try { await api.get("/jaxrs/processplatform/service/processing/work") } catch {} }
+async function api_service_processing_execute_proc_1() { try { await api.get("/jaxrs/processplatform/service/processing/execute/proc-1") } catch {} }
+async function api_surface_task_filter_attribute() { try { await api.get("/jaxrs/processplatform/assemble/surface/task/filter/attribute") } catch {} }
+async function api_surface_read_v2_list() { try { await api.get("/jaxrs/processplatform/assemble/surface/read/v2/list") } catch {} }
+async function api_assemble_surface_record_list() { try { await api.get("/jaxrs/processplatform/assemble/surface/record/list") } catch {} }
+async function api_designer_item_access_bach_save() { try { await api.get("/jaxrs/processplatform/assemble/designer/item-access/bach/save") } catch {} }
+
 </script>
 
 <style scoped>

@@ -381,6 +381,38 @@ async function api_script_s_1_appInfo_app_1() { try { await api.get("/jaxrs/scri
 async function api_script_s_1_app_app_1() { try { await api.get("/jaxrs/script/s-1/app/app-1") } catch {} }
 async function api_scriptversion_list_script_s_1() { try { await api.get("/jaxrs/scriptversion/list/script/s-1") } catch {} }
 
+
+async function api_program_center_schedule_report() { try { await api.get("/jaxrs/program_center/schedule/report") } catch {} }
+async function api_image_menu_logo_blur() { try { await api.get("/jaxrs/program_center/appstyle/image/menu/logo/blur") } catch {} }
+async function api_program_center_collect_remove() { try { await api.get("/jaxrs/program_center/collect/remove") } catch {} }
+async function api_program_center_warnlog_w_1() { try { await api.get("/jaxrs/program_center/warnlog/w-1") } catch {} }
+async function api_image_setup_about_logo() { try { await api.get("/jaxrs/program_center/appstyle/image/setup/about/logo") } catch {} }
+async function api_program_center_script_id() { try { await api.get("/jaxrs/program_center/script/id") } catch {} }
+async function api_qiyeweixin_request_pull_sync() { try { await api.get("/jaxrs/program_center/qiyeweixin/request/pull/sync") } catch {} }
+async function api_program_center_authentication() { try { await api.get("/jaxrs/program_center/authentication") } catch {} }
+async function api_module_remove_structure_m_1() { try { await api.get("/jaxrs/program_center/module/remove/structure/m-1") } catch {} }
+async function api_program_center_config_get() { try { await api.get("/jaxrs/program_center/config/get") } catch {} }
+async function api_market_flag_cover_pic() { try { await api.get("/jaxrs/program_center/market/flag/cover/pic") } catch {} }
+async function api_program_center_invoke_flag() { try { await api.get("/jaxrs/program_center/invoke/flag") } catch {} }
+async function api_output_flag_select_file() { try { await api.get("/jaxrs/program_center/output/flag/select/file") } catch {} }
+async function api_mpweixin_message_template_send() { try { await api.get("/jaxrs/program_center/mpweixin/message/template/send") } catch {} }
+async function api_create_mass_from_count() { try { await api.get("/jaxrs/program_center/bar/create/mass/from/count") } catch {} }
+async function api_program_center_invoke_token() { try { await api.get("/jaxrs/program_center/invoke/token") } catch {} }
+async function api_create_mass_from_count_1() { try { await api.get("/jaxrs/program_center/foo/create/mass/from/count") } catch {} }
+async function api_distribute_assemble_source_o2() { try { await api.get("/jaxrs/program_center/distribute/assemble/source/o2") } catch {} }
+async function api_program_center_config_portal() { try { await api.get("/jaxrs/program_center/config/portal") } catch {} }
+async function api_list_schedulelog_application_application() { try { await api.get("/jaxrs/program_center/schedule/list/schedulelog/application/application") } catch {} }
+async function api_program_center_market_flag() { try { await api.get("/jaxrs/program_center/market/flag") } catch {} }
+async function api_module_output_list_structure() { try { await api.get("/jaxrs/program_center/module/output/list/structure") } catch {} }
+async function api_pack_info_file_publish() { try { await api.get("/jaxrs/program_center/apppack/pack/info/file/publish") } catch {} }
+async function api_program_center_market_m_1() { try { await api.get("/jaxrs/program_center/market/m-1") } catch {} }
+async function api_jest_clear_cache_source() { try { await api.get("/jaxrs/program_center/jest/clear/cache/source") } catch {} }
+async function api_program_center_output_f_1_select() { try { await api.get("/jaxrs/program_center/output/f-1/select") } catch {} }
+async function api_program_center_config_list() { try { await api.get("/jaxrs/program_center/config/list") } catch {} }
+async function api_dict_my_flag_my_path_data() { try { await api.get("/jaxrs/program_center/dict/my-flag/my-path/data") } catch {} }
+async function api_my_flag_my_path_data_mockdeletetoget() { try { await api.get("/jaxrs/program_center/dict/my-flag/my-path/data/mockdeletetoget") } catch {} }
+async function api_program_center_market_installed_version() { try { await api.get("/jaxrs/program_center/market/installed/version") } catch {} }
+
 </script>
 
 <style scoped>

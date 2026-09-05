@@ -613,6 +613,12 @@ function confirmMsg(msg: string): Promise<boolean> {
   })
 }
 
+
+async function api_designer_input_prepare_create() { try { await api.get("/jaxrs/query/assemble/designer/input/prepare/create") } catch {} }
+async function api_designer_input_prepare_cover() { try { await api.get("/jaxrs/query/assemble/designer/input/prepare/cover") } catch {} }
+async function api_processing_table_u2table_insert() { try { await api.get("/jaxrs/query/service/processing/table/u2table/insert") } catch {} }
+async function api_query_service_processing_1() { try { await api.get("/jaxrs/query_service_processing") } catch {} }
+
 </script>
 
 <style scoped>

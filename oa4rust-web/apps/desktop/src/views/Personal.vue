@@ -368,6 +368,20 @@ async function api_group() { try { await api.get("/jaxrs/group") } catch {} }
 async function api_list_group_sub_direct() { try { await api.get("/jaxrs/group/list/group/sub/direct") } catch {} }
 async function api_list_group_sub_nested() { try { await api.get("/jaxrs/group/list/group/sub/nested") } catch {} }
 
+
+async function api_person_empower_manager() { try { await api.get("/jaxrs/person/empower/manager") } catch {} }
+async function api_person_list_all_object() { try { await api.get("/jaxrs/person/list/all/object") } catch {} }
+async function api_personal_update() { try { await api.get("/jaxrs/personal/update") } catch {} }
+async function api_person_list_role() { try { await api.get("/jaxrs/person/list/role") } catch {} }
+async function api_empower_list_currentperson_enable() { try { await api.get("/jaxrs/person/empower/list/currentperson/enable") } catch {} }
+async function api_person_regist_mode() { try { await api.get("/jaxrs/person/regist/mode") } catch {} }
+async function api_person_list_personattribute() { try { await api.get("/jaxrs/person/list/personattribute") } catch {} }
+async function api_unit_sub_nested_object_1() { try { await api.get("/jaxrs/person/list/unit/sub/nested/object") } catch {} }
+async function api_unit_sub_direct_object_1() { try { await api.get("/jaxrs/person/list/unit/sub/direct/object") } catch {} }
+async function api_person_nick_name() { try { await api.get("/jaxrs/person/nick/name") } catch {} }
+async function api_list_attribute_person_name() { try { await api.get("/jaxrs/personattribute/list/attribute/person/name") } catch {} }
+async function api_personattribute_append_person_name() { try { await api.get("/jaxrs/personattribute/append/person/name") } catch {} }
+
 </script>
 
 <style scoped>
