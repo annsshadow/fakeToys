@@ -455,6 +455,45 @@ async function api_get_disable_export_enable() { try { await api.get("/jaxrs/pro
 async function api_program_center_agent_a_1_enable() { try { await api.get("/jaxrs/program_center/agent/a-1/enable") } catch {} }
 async function api_program_center_application() { try { await api.get("/jaxrs/program_center/application") } catch {} }
 
+
+async function api_collect_name_name_exist() { try { await api.get("/jaxrs/program_center/collect/name/name/exist") } catch {} }
+async function api_market_list_top_three() { try { await api.get("/jaxrs/program_center/market/list/top/three") } catch {} }
+async function api_list_w_1_prev_5() { try { await api.get("/jaxrs/program_center/warnlog/list/w-1/prev/5") } catch {} }
+async function api_qiyeweixin_get_callback_aes() { try { await api.get("/jaxrs/program_center/qiyeweixin/get/callback/aes") } catch {} }
+async function api_program_center_config_save() { try { await api.get("/jaxrs/program_center/config/save") } catch {} }
+async function api_program_center_center_applications() { try { await api.get("/jaxrs/program_center/center/applications") } catch {} }
+async function api_program_center_test_test1() { try { await api.get("/jaxrs/program_center/test/test1") } catch {} }
+async function api_program_center_script_name_demo() { try { await api.get("/jaxrs/program_center/script/name/demo") } catch {} }
+async function api_script_name_demo_imported() { try { await api.get("/jaxrs/program_center/script/name/demo/imported") } catch {} }
+async function api_program_center_script_sc_id() { try { await api.get("/jaxrs/program_center/script/sc-id") } catch {} }
+async function api_list_u_1_prev_5() { try { await api.get("/jaxrs/program_center/unexpectederrorlog/list/u-1/prev/5") } catch {} }
+async function api_appstyle_image_login_avatar() { try { await api.get("/jaxrs/program_center/appstyle/image/login/avatar") } catch {} }
+async function api_program_center_dingding_pull_sync() { try { await api.get("/jaxrs/program_center/dingding/pull/sync") } catch {} }
+async function api_program_center_agent_flag_file() { try { await api.get("/jaxrs/program_center/agent/flag/file") } catch {} }
+async function api_program_center_command_execute() { try { await api.get("/jaxrs/program_center/command/execute") } catch {} }
+async function api_m_1_install_or_update() { try { await api.get("/jaxrs/program_center/market/m-1/install/or/update") } catch {} }
+async function api_pack_info_file_last_1() { try { await api.get("/jaxrs/program_center/apppackanony/pack/info/file/last") } catch {} }
+async function api_program_center_agent() { try { await api.get("/jaxrs/program_center/agent") } catch {} }
+async function api_welink_request_pull_sync() { try { await api.get("/jaxrs/program_center/welink/request/pull/sync") } catch {} }
+async function api_program_center_config_ternary_management() { try { await api.get("/jaxrs/program_center/config/ternary/management") } catch {} }
+async function api_mpweixin_menu_update_id() { try { await api.get("/jaxrs/program_center/mpweixin/menu/update/id") } catch {} }
+async function api_program_center_session_list_all() { try { await api.get("/jaxrs/program_center/session/list/all") } catch {} }
+async function api_program_center_module_write_m_1() { try { await api.get("/jaxrs/program_center/module/write/m-1") } catch {} }
+async function api_program_center_module_compare_upload() { try { await api.get("/jaxrs/program_center/module/compare/upload") } catch {} }
+async function api_menu_create_to_weixin() { try { await api.get("/jaxrs/program_center/mpweixin/menu/create/to/weixin") } catch {} }
+async function api_distribute_assemble_source_source() { try { await api.get("/jaxrs/program_center/distribute/assemble/source/source") } catch {} }
+async function api_invoke_flag_execute_get() { try { await api.get("/jaxrs/program_center/invoke/flag/execute/get") } catch {} }
+async function api_program_center_mpweixin_menu_subscribe() { try { await api.get("/jaxrs/program_center/mpweixin/menu/subscribe") } catch {} }
+async function api_program_center_captcha_list() { try { await api.get("/jaxrs/program_center/captcha/list") } catch {} }
+async function api_program_center_config() { try { await api.get("/jaxrs/program_center/config") } catch {} }
+async function api_list_w_1_next_10() { try { await api.get("/jaxrs/program_center/warnlog/list/w-1/next/10") } catch {} }
+async function api_program_center_agent_a_1_file() { try { await api.get("/jaxrs/program_center/agent/a-1/file") } catch {} }
+async function api_mpweixin_menu_delete_id() { try { await api.get("/jaxrs/program_center/mpweixin/menu/delete/id") } catch {} }
+async function api_appstyle_image_launch_logo() { try { await api.get("/jaxrs/program_center/appstyle/image/launch/logo") } catch {} }
+async function api_mpweixin_menu_update_wm_1() { try { await api.get("/jaxrs/program_center/mpweixin/menu/update/wm-1") } catch {} }
+async function api_market_flag_install_log() { try { await api.get("/jaxrs/program_center/market/flag/install/log") } catch {} }
+async function api_program_center_appstyle_index_portal() { try { await api.get("/jaxrs/program_center/appstyle/index/portal") } catch {} }
+
 </script>
 
 <style scoped>
