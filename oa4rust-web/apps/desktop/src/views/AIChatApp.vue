@@ -244,6 +244,10 @@ async function api_ai_app_list() { try { await api.get("/jaxrs/ai/app/list") } c
 async function api_get_ai_control_config() { try { await api.get("/jaxrs/ai_assemble_control/get/ai/control/config") } catch {} }
 async function api_index_sync_to_knowledge() { try { await api.get("/jaxrs/ai_assemble_control/index/sync/to/knowledge") } catch {} }
 
+
+async function api_neural_list() { try { await api.get("/jaxrs/neural/list") } catch {} }
+async function api_neural() { try { await api.get("/jaxrs/neural") } catch {} }
+
 </script>
 
 <style scoped>

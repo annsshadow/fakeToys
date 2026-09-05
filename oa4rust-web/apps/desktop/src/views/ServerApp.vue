@@ -103,6 +103,13 @@ async function api_output_o_1_select_mockputtopost() { try { await api.get("/jax
 async function api_output_o_1_select() { try { await api.get("/jaxrs/output/o-1/select") } catch {} }
 async function api_output_list() { try { await api.get("/jaxrs/output/list") } catch {} }
 
+
+async function api_secret_captcha_verify() { try { await api.get("/jaxrs/secret/captcha/verify") } catch {} }
+async function api_secret_cancel() { try { await api.get("/jaxrs/secret/cancel") } catch {} }
+async function api_secret_check() { try { await api.get("/jaxrs/secret/check") } catch {} }
+async function api_secret_set_cancel() { try { await api.get("/jaxrs/secret/set/cancel") } catch {} }
+async function api_secret_set() { try { await api.get("/jaxrs/secret/set") } catch {} }
+
 </script>
 
 <style scoped>

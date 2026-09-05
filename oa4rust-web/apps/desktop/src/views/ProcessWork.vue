@@ -376,6 +376,16 @@ async function api_assemble_surface_preview_surface_1() { try { await api.get("/
 async function api_count_with_person_person_001_1() { try { await api.get("/jaxrs/processplatform/work/count/with/person/person-001") } catch {} }
 async function api_surface_read_v2_count() { try { await api.get("/jaxrs/processplatform/assemble/surface/read/v2/count") } catch {} }
 
+
+async function api_correlation_link() { try { await api.get("/jaxrs/correlation/link") } catch {} }
+async function api_correlation_update_doc_u3_cor_doc() { try { await api.get("/jaxrs/correlation/update/doc/u3-cor-doc") } catch {} }
+async function api_correlation_service_processing_link() { try { await api.get("/jaxrs/correlation/service/processing/link") } catch {} }
+async function api_correlation() { try { await api.get("/jaxrs/correlation") } catch {} }
+async function api_correlation_core_link_list() { try { await api.get("/jaxrs/correlation/core/link/list") } catch {} }
+async function api_correlation_service_processing_create() { try { await api.get("/jaxrs/correlation/service/processing/create") } catch {} }
+async function api_correlation_update_doc_d_1() { try { await api.get("/jaxrs/correlation/update/doc/d-1") } catch {} }
+async function api_correlation_type_processplatform_list() { try { await api.get("/jaxrs/correlation/type/processplatform/list") } catch {} }
+
 </script>
 
 <style scoped>

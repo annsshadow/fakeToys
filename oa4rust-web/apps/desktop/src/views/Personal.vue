@@ -354,6 +354,20 @@ async function api_identity_list_object() { try { await api.get("/jaxrs/identity
 async function api_identity_list_unit_person() { try { await api.get("/jaxrs/identity/list/unit/person") } catch {} }
 async function api_list_unit_sub_nested_1() { try { await api.get("/jaxrs/identity/list/unit/sub/nested") } catch {} }
 
+
+async function api_group_sup_nested_object() { try { await api.get("/jaxrs/group/list/group/sup/nested/object") } catch {} }
+async function api_group_list_person_object() { try { await api.get("/jaxrs/group/list/person/object") } catch {} }
+async function api_group_list_identity_object() { try { await api.get("/jaxrs/group/list/identity/object") } catch {} }
+async function api_group_has_role() { try { await api.get("/jaxrs/group/has/role") } catch {} }
+async function api_group_sub_direct_object() { try { await api.get("/jaxrs/group/list/group/sub/direct/object") } catch {} }
+async function api_group_list_person() { try { await api.get("/jaxrs/group/list/person") } catch {} }
+async function api_group_list() { try { await api.get("/jaxrs/group/list") } catch {} }
+async function api_group_sub_nested_object() { try { await api.get("/jaxrs/group/list/group/sub/nested/object") } catch {} }
+async function api_group_list_object() { try { await api.get("/jaxrs/group/list/object") } catch {} }
+async function api_group() { try { await api.get("/jaxrs/group") } catch {} }
+async function api_list_group_sub_direct() { try { await api.get("/jaxrs/group/list/group/sub/direct") } catch {} }
+async function api_list_group_sub_nested() { try { await api.get("/jaxrs/group/list/group/sub/nested") } catch {} }
+
 </script>
 
 <style scoped>

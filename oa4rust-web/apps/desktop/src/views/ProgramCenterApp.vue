@@ -370,6 +370,17 @@ async function api_collect_mobile_check_connect() { try { await api.get("/jaxrs/
 async function api_program_center_application_create() { try { await api.get("/jaxrs/program_center/application/create") } catch {} }
 async function api_program_center_collect_updateUnit() { try { await api.get("/jaxrs/program_center/collect/updateUnit") } catch {} }
 
+
+async function api_script() { try { await api.get("/jaxrs/script") } catch {} }
+async function api_s_1_app_app_1_imported() { try { await api.get("/jaxrs/script/s-1/app/app-1/imported") } catch {} }
+async function api_script_s_1() { try { await api.get("/jaxrs/script/s-1") } catch {} }
+async function api_script_list_manager() { try { await api.get("/jaxrs/script/list/manager") } catch {} }
+async function api_scriptversion_sv_1() { try { await api.get("/jaxrs/scriptversion/sv-1") } catch {} }
+async function api_list_i_1_next_10() { try { await api.get("/jaxrs/script/list/i-1/next/10") } catch {} }
+async function api_script_s_1_appInfo_app_1() { try { await api.get("/jaxrs/script/s-1/appInfo/app-1") } catch {} }
+async function api_script_s_1_app_app_1() { try { await api.get("/jaxrs/script/s-1/app/app-1") } catch {} }
+async function api_scriptversion_list_script_s_1() { try { await api.get("/jaxrs/scriptversion/list/script/s-1") } catch {} }
+
 </script>
 
 <style scoped>
