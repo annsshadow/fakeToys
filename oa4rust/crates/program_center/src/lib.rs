@@ -434,7 +434,7 @@ pub async fn appstyle_current_style(pool: Extension<Pool>) -> Result<Json<Action
                 ]),
             ))))
         }
-        None => Ok(Json(ActionResult::error("application not found"))),
+        None => Err(AppError::NotFound),
     }
 }
 
@@ -461,7 +461,7 @@ pub async fn appstyle_current_update(pool: Extension<Pool>) -> Result<Json<Actio
                 ]),
             ))))
         }
-        None => Ok(Json(ActionResult::error("application not found"))),
+        None => Err(AppError::NotFound),
     }
 }
 
@@ -4782,6 +4782,53 @@ pub async fn application_create(
             ("appId".to_string(), Value::String(app_id)),
             ("description".to_string(), Value::String(description)),
         ]),
+    ))))
+}
+
+#[axum::debug_handler]
+pub async fn application_get_by_id(
+    pool: Extension<Pool>,
+    Path(id): Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let row = client
+        .query_opt(
+            "SELECT id, name, app_id, description FROM x_applications WHERE id = $1",
+            &[&id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+    match row {
+        Some(row) => Ok(Json(ActionResult::success(Value::Object(
+            serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                ("name".to_string(), Value::String(row.get("name"))),
+                ("appId".to_string(), Value::String(row.get("app_id"))),
+                ("description".to_string(), Value::Null),
+            ]),
+        )))),
+        None => Err(AppError::NotFound),
+    }
+}
+
+#[axum::debug_handler]
+pub async fn application_delete(
+    pool: Extension<Pool>,
+    Path(id): Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let result = client
+        .execute(
+            "DELETE FROM x_applications WHERE id = $1",
+            &[&id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+    if result == 0 {
+        return Ok(Json(ActionResult::error("application not found")));
+    }
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([("id".to_string(), Value::String(id))]),
     ))))
 }
 

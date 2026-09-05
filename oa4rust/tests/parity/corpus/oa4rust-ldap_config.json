@@ -1,18 +1,5 @@
 {
-  "body": {
-    "count": null,
-    "data": {
-      "enabled": false,
-      "host": ""
-    },
-    "date": null,
-    "message": null,
-    "position": null,
-    "prompt": null,
-    "size": null,
-    "spent": null,
-    "type": "success"
-  },
+  "body": null,
   "method": "GET",
   "name": "ldap_config",
   "path": "/jaxrs/ldap/config",

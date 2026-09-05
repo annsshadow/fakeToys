@@ -1,18 +1,5 @@
 {
-  "body": {
-    "count": null,
-    "data": {
-      "count": 0,
-      "data": []
-    },
-    "date": null,
-    "message": null,
-    "position": null,
-    "prompt": null,
-    "size": null,
-    "spent": null,
-    "type": "success"
-  },
+  "body": null,
   "method": "GET",
   "name": "cms_document_list",
   "path": "/jaxrs/cms_assemble_control/data/document",
