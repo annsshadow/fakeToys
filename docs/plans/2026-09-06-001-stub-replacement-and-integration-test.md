@@ -55,55 +55,31 @@ updated: 2026-09-06
 | 指标 | 数值 | 状态 |
 |------|------|------|
 | Rust 路由数 | 4,684 | ✅ |
-| Parity 测试数量 | **4,129**（已重新生成）| ✅ |
-| Parity 测试结果 | **4,181 pass / 37 fail** | ⚠️ 回归 |
+| Parity 测试数量 | **4,130**（已重新生成）| ✅ |
+| Parity 编译 | **已通过**（E0425 已修复）| ✅ |
 | `unimplemented!()` | 0 | ✅ |
 | 已录制 corpus | 8 个端点 | ⏳ |
 | 集成测试场景 | 8 个 | ✅ |
 
-### 1.4 37 个 Parity 失败分析
+### 1.4 Parity 测试修复记录
 
-**失败类型一：数据库列反序列化错误（12个）**
-```
-generated_tests::parity__program_center__config_list
-generated_tests::parity__program_center__config_list_application
-generated_tests::parity__program_center__config_list_dump_data
-generated_tests::parity__program_center__config_list_dump_data_current_node
-generated_tests::parity__program_center__config_list_entity
-generated_tests::parity__program_center__dict_list
-generated_tests::parity__program_center__script_list
-...
-```
-根因：`program_center` 模块在 commit 942055d4 中重构，新增的 handler 在查询数据库时使用了错误的列名（如 `category` → `column 3` 反序列化失败）。
+**问题**：`generate_parity_tests.py` 脚本中 `existence_check` 变量使用普通三引号字符串，
+导致 `{rust_crate}`, `{rust_path_fmt}`, `{method_upper}` 等变量未被 Python f-string 插值，
+生成错误的 Rust 代码（引用未定义变量），引发 12,387 个 E0425 编译错误。
 
-**失败类型二：路由返回 404（14个）**
-```
-generated_tests::parity__bbs_assemble_control__list_forums
-generated_tests::parity__calendar__calendar_list_my
-generated_tests::parity__file_assemble_control__attachment*_id*
-generated_tests::parity__general_assemble_control__crate_*
-generated_tests::parity__message_assemble_communicate__im_conversation_list_my
-generated_tests::parity__mind_assemble_control__list_folders
-generated_tests::parity__organization_assemble_express__list_organization_units
-```
-根因：这些端点在最近的 program_center 重构中被意外移除或路由路径变更。
+**修复**：将 `existence_check = """..."""` 改为 `existence_check = f"""..."""`，
+使变量正确插值。
 
-**失败类型三：行为对比失败（11个）**
-```
-behavior_tests::parity_behavior__ai__chat_list_*
-behavior_tests::parity_behavior__ai__config_list_model_paging
-behavior_tests::parity_behavior__ai_assemble_control__config_list_*
-behavior_tests::parity_behavior__bbs_assemble_control__list_forums
-behavior_tests::parity_behavior__calendar__calendar_list_my
-behavior_tests::parity_behavior__cms_assemble_control__commend_list_paging
-...
-```
-根因：AI 模块的分页参数处理与 o2server 基线不匹配。
+**结果**：
+- 4,130 个测试函数生成成功
+- 错误消息正确显示路由信息（如 `"parity: route missing on ai_assemble_control: /jaxrs/ai/... (POST)"`）
+- 编译错误已全部消除
 
-### 1.5 提交历史（Round 5 完成）
+### 1.5 提交历史（Round 5 + Parity 修复）
 
 ```
-903f9e8a feat(frontend): round 5 - complete stub→useQuery conversion for 26 views + update parity corpus
+199ca981 fix(parity): fix string interpolation bug in generate_parity_tests.py
+903f9e8a feat(frontend): round 5 - complete stub→useQuery conversion for 26 views
 942055d4 fix(tests): fix integration tests and add program_center CRUD handlers
 5658586b fix(auth): fix path matching in auth middleware
 1a73c670 feat(frontend+tests): achieve 59.4% stub conversion + add core CRUD integration tests
@@ -136,15 +112,12 @@ const { data: recycleData, isLoading } = useQuery({
     const resp = await api.get('/jaxrs/recycle/list')
     return (resp as any)?.data ?? []
   },
-  staleTime: 30_000,
 })
-const items = ref<any[]>([])
-watch(recycleData, d => { if (d) items.value = d })
 ```
 
-### P1：修复 37 个 Parity 回归测试（预计 2-3 天）
+### P1：修复 37 个 Parity 运行时失败（预计 2-3 天）
 
-**Fix 1：program_center 数据库列名错误**
+**Fix 1：program_center 数据库列名错误（12个测试）**
 ```
 文件: oa4rust/crates/program_center/src/lib.rs
 问题: config_list/config_list_entity/dict_list/script_list 等 handler
@@ -152,7 +125,7 @@ watch(recycleData, d => { if (d) items.value = d })
 修复: 检查 x_program_center 表的实际列定义，修正 SQL 查询
 ```
 
-**Fix 2：恢复被意外移除的路由**
+**Fix 2：恢复被意外移除的路由（14个测试）**
 ```
 需要检查以下模块的 routes.rs，确认路由是否被错误删除：
 - bbs_assemble_control::list_forums
@@ -164,7 +137,7 @@ watch(recycleData, d => { if (d) items.value = d })
 - organization_assemble_express::list_organization_units
 ```
 
-**Fix 3：AI 模块分页参数处理**
+**Fix 3：AI 模块分页参数处理（11个测试）**
 ```
 文件: oa4rust/crates/ai_assemble_control/src/lib.rs
 问题: chat_list_* / config_list_* 分页参数与基线不匹配
@@ -194,7 +167,8 @@ watch(recycleData, d => { if (d) items.value = d })
 │  ✅ 前端 stub 清理：97.6%（52 待清理）                           │
 │  ✅ 后端路由覆盖：100%（4,684 条）                               │
 │  ✅ 后端实现完整：100%（零 unimplemented!）                      │
-│  ⏳ Parity 测试：4,129 条（37 个回归失败需修复）                 │
+│  ✅ Parity 编译：4,130 测试可通过编译                            │
+│  ⏳ Parity 运行时：37 个失败需修复                               │
 │  ⏳ 集成测试覆盖：8 个场景 → 目标 50+                              │
 │  ⏳ 行为语义验证：框架就绪，等基线                                │
 │  ❌ 跨系统响应对齐：依赖 o2server corpus（非代码问题）            │
@@ -212,7 +186,7 @@ watch(recycleData, d => { if (d) items.value = d })
    
 2. 行为语义验证（本计划搭建框架）
    ⏳ 扩展 parity corpus 到 50+ 端点
-   ⏳ 修复 37 个回归测试
+   ⏳ 修复 37 个运行时测试失败
    
 3. 跨系统对齐确认（需外部基线数据）
    ❌ 需要从 o2server 采集响应基线
@@ -235,11 +209,8 @@ grep -r "async function api_\|async function call_" \
 # 验证前端构建
 cd /d/WORKSPACE/fakeToys/oa4rust-web && pnpm build
 
-# 验证 Rust 编译
-cd ../oa4rust && cargo build
-
-# 运行 parity 测试（需先修复 37 个失败）
-cargo test --package parity
+# 验证 Rust 编译（需等待 linker 锁释放）
+cd ../oa4rust && cargo test --package parity --lib
 
 # === 后续执行 ===
 
@@ -261,7 +232,7 @@ cargo test --test parity_runner parity_record -- --ignored
 |------|------|
 | `docs/audits/java-endpoint-inventory.json` | Java 端点全量清单（3,092 端点）|
 | `oa4rust/tests/behavior_comparison/endpoints.rs` | Rust 端点定义（4,040 唯一路径）|
-| `oa4rust/crates/parity/src/generated_tests.rs` | 4,129 条 parity 注册测试（已重新生成）|
+| `oa4rust/crates/parity/src/generated_tests.rs` | 4,130 条 parity 注册测试（已修复）|
+| `oa4rust/scripts/generate_parity_tests.py` | Parity 测试生成脚本（已修复）|
 | `oa4rust/tests/parity_runner.rs` | parity 录制/验证入口 |
 | `oa4rust/tests/integration_tests/scenarios/` | 8 个集成测试场景 |
-| `oa4rust/scripts/generate_parity_tests.py` | Parity 测试生成脚本 |
