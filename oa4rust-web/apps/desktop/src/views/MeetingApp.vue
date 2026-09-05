@@ -120,7 +120,6 @@ async function api_list_applied_processing() { try { await api.get("/jaxrs/meeti
 async function api_meeting_create() { try { await api.get("/jaxrs/meeting/create") } catch {} }
 async function api_meeting_room_list() { try { await api.get("/jaxrs/meeting/assemble/control/meeting/room/list") } catch {} }
 async function api_list_by_room_001() { try { await api.get("/jaxrs/meeting/core/entity/meeting/list/by/room-001") } catch {} }
-async function api_meeting_room_list() { try { await api.get("/jaxrs/meeting/room/list") } catch {} }
 async function api_list_wait_accept() { try { await api.get("/jaxrs/meeting/assemble/control/meeting/list/wait/accept") } catch {} }
 async function api_control_meeting_room() { try { await api.get("/jaxrs/meeting/assemble/control/meeting/room") } catch {} }
 async function api_list_invited_rejected() { try { await api.get("/jaxrs/meeting/assemble/control/meeting/list/invited/rejected") } catch {} }

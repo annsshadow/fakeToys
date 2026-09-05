@@ -227,7 +227,6 @@ async function api_entity_complex_top() { try { await api.get("/jaxrs/file/core/
 async function api_file_folder2_id() { try { await api.get("/jaxrs/file/folder2/id") } catch {} }
 async function api_core_entity_folder() { try { await api.get("/jaxrs/file/core/entity/folder") } catch {} }
 async function api_file_f_1() { try { await api.get("/jaxrs/file/f-1") } catch {} }
-async function api_referenceType_reference_reference() { try { await api.get("/jaxrs/file/file/list/referencetype/referenceType/reference/reference") } catch {} }
 async function api_control_fileinfo_list() { try { await api.get("/jaxrs/file/assemble/control/fileinfo/list") } catch {} }
 async function api_next_count_all() { try { await api.get("/jaxrs/file/list/id/next/count/all") } catch {} }
 async function api_folder2_batch_download() { try { await api.get("/jaxrs/file/folder2/batch/download") } catch {} }

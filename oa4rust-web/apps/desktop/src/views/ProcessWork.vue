@@ -220,7 +220,6 @@ async function api_workcompleted_mrg_keep_merge() { try { await api.get("/jaxrs/
 async function api_list_count_application() { try { await api.get("/jaxrs/processplatform/assemble/surface/work/list/count/application") } catch {} }
 async function api_list_work_work() { try { await api.get("/jaxrs/processplatform/assemble/surface/read/list/work/work") } catch {} }
 async function api_read_count_filter() { try { await api.get("/jaxrs/processplatform/assemble/surface/read/count/filter") } catch {} }
-async function api_list_job_job() { try { await api.get("/jaxrs/processplatform/assemble/surface/taskcompleted/list/job/job") } catch {} }
 async function api_batch_delete_manage() { try { await api.get("/jaxrs/processplatform/assemble/surface/attachment/batch/delete/manage") } catch {} }
 
 </script>
