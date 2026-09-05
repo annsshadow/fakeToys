@@ -960,7 +960,7 @@ const delM = useMutation({
   onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['stmt','list'] }); if (currentStatement.value?.id) currentStatement.value = null }
 })
 function deleteStatement(s: Stmt) {
-  if (!confirm(`删除语句「${s.name||s.id}」？`)) return
+  if (!confirmMsg(`删除语句「${s.name||s.id}」？`)) return
   delM.mutate(s.id)
 }
 
@@ -1574,7 +1574,7 @@ function saveTpl() {
   showTplEditor.value = false
 }
 function deleteTpl(idx: number) {
-  if (!confirm("确定删除此模板？")) return
+  if (!confirmMsg("确定删除此模板？")) return
   templates.value.splice(idx, 1)
 }
 

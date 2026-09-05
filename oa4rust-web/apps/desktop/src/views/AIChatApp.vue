@@ -283,6 +283,30 @@ async function api_ai_nonexistent() { try { await api.get("/jaxrs/ai/nonexistent
 async function api_core_entity_app_list() { try { await api.get("/jaxrs/ai/core/entity/app/list") } catch {} }
 async function api_core_entity_model_list() { try { await api.get("/jaxrs/ai/core/entity/model/list") } catch {} }
 
+async function api_jaxrs_ai_assemble_control_config_list_mcp_paging_1_size_1() { try { await api.get("/jaxrs/ai/assemble/control/config/list/mcp/paging/1/size/1") } catch {} }
+async function api_jaxrs_ai_chat_list_completion_test_clue_paging_1_size_10() { try { await api.get("/jaxrs/ai/chat/list/completion/test-clue/paging/1/size/10") } catch {} }
+async function api_jaxrs_ai_chat_list_paging_1_size_1() { try { await api.get("/jaxrs/ai/chat/list/paging/1/size/1") } catch {} }
+async function api_jaxrs_ai_chat_list_paging_1_size_10() { try { await api.get("/jaxrs/ai/chat/list/paging/1/size/10") } catch {} }
+async function api_jaxrs_ai_config_list_mcp_paging_1_size_1() { try { await api.get("/jaxrs/ai/config/list/mcp/paging/1/size/1") } catch {} }
+async function api_jaxrs_ai_config_list_mcp_paging_1_size_10() { try { await api.get("/jaxrs/ai/config/list/mcp/paging/1/size/10") } catch {} }
+async function api_jaxrs_ai_config_list_model_paging_1_size_1() { try { await api.get("/jaxrs/ai/config/list/model/paging/1/size/1") } catch {} }
+async function api_jaxrs_ai_config_list_model_paging_1_size_10() { try { await api.get("/jaxrs/ai/config/list/model/paging/1/size/10") } catch {} }
+async function api_jaxrs_ai_index_cms_doc_with_app_test_app() { try { await api.get("/jaxrs/ai/index/cms/doc/with/app/test-app") } catch {} }
+async function api_jaxrs_ai_assemble_control_chat_list_completion_clue_1_paging_1_size_20() { try { await api.get("/jaxrs/ai_assemble_control/chat/list/completion/clue-1/paging/1/size/20") } catch {} }
+async function api_jaxrs_ai_assemble_control_chat_list_completion_u2t_paging_1_size_20() { try { await api.get("/jaxrs/ai_assemble_control/chat/list/completion/u2t/paging/1/size/20") } catch {} }
+async function api_jaxrs_ai_assemble_control_chat_list_paging_1_size_20() { try { await api.get("/jaxrs/ai_assemble_control/chat/list/paging/1/size/20") } catch {} }
+async function api_jaxrs_ai_assemble_control_config_list_mcp_paging_1_size_20() { try { await api.get("/jaxrs/ai_assemble_control/config/list/mcp/paging/1/size/20") } catch {} }
+async function api_jaxrs_ai_assemble_control_config_list_mcp_paging_page_size_size() { try { await api.get("/jaxrs/ai_assemble_control/config/list/mcp/paging/page/size/size") } catch {} }
+async function api_jaxrs_ai_assemble_control_config_list_model_paging_1_size_1() { try { await api.get("/jaxrs/ai_assemble_control/config/list/model/paging/1/size/1") } catch {} }
+async function api_jaxrs_ai_assemble_control_config_list_model_paging_1_size_20() { try { await api.get("/jaxrs/ai_assemble_control/config/list/model/paging/1/size/20") } catch {} }
+async function api_jaxrs_ai_assemble_control_config_list_model_paging_page_size_size() { try { await api.get("/jaxrs/ai_assemble_control/config/list/model/paging/page/size/size") } catch {} }
+async function api_jaxrs_ai_assemble_control_file_list_paging_1_size_1() { try { await api.get("/jaxrs/ai_assemble_control/file/list/paging/1/size/1") } catch {} }
+async function api_jaxrs_ai_assemble_control_file_list_paging_1_size_20() { try { await api.get("/jaxrs/ai_assemble_control/file/list/paging/1/size/20") } catch {} }
+async function api_jaxrs_ai_assemble_control_file_list_paging_page_size_size() { try { await api.get("/jaxrs/ai_assemble_control/file/list/paging/page/size/size") } catch {} }
+async function api_jaxrs_ai_assemble_control_index_cms_doc_with_app_appId() { try { await api.get("/jaxrs/ai_assemble_control/index/cms/doc/with/app/appId") } catch {} }
+async function api_jaxrs_ai_assemble_control_index_cms_doc_with_app_u2t() { try { await api.get("/jaxrs/ai_assemble_control/index/cms/doc/with/app/u2t") } catch {} }
+async function api_jaxrs_ai_assemble_control_index_list_paging_1_size_20() { try { await api.get("/jaxrs/ai_assemble_control/index/list/paging/1/size/20") } catch {} }
+async function api_jaxrs_ai_assemble_control_index_list_paging_page_size_size() { try { await api.get("/jaxrs/ai_assemble_control/index/list/paging/page/size/size") } catch {} }
 </script>
 
 <style scoped>

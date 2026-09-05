@@ -417,6 +417,9 @@ async function api_group_sup_direct_object() { try { await api.get("/jaxrs/group
 async function api_list_group_sup_direct() { try { await api.get("/jaxrs/group/list/group/sup/direct") } catch {} }
 async function api_list_group_sup_nested() { try { await api.get("/jaxrs/group/list/group/sup/nested") } catch {} }
 
+async function api_jaxrs_person_empower_manager_list_paging_1_size_10() { try { await api.get("/jaxrs/person/empower/manager/list/paging/1/size/10") } catch {} }
+async function api_jaxrs_person_empowerlog_list_currentperson_paging_1_size_10() { try { await api.get("/jaxrs/person/empowerlog/list/currentperson/paging/1/size/10") } catch {} }
+async function api_jaxrs_person_list_unit_sub_nested_like_object() { try { await api.get("/jaxrs/person/list/unit/sub/nested/like/object") } catch {} }
 </script>
 
 <style scoped>
