@@ -90,6 +90,10 @@ async function api_recycle_r_1() { try { await api.get('/jaxrs/recycle/r-1') } c
 async function api_recycle_r_1_resume() { try { await api.get('/jaxrs/recycle/r-1/resume') } catch {} }
 async function api_recycle_r_1_delete() { try { await api.get('/jaxrs/recycle/r-1/delete') } catch {} }
 
+
+async function api_restore_upload() { try { await api.get("/jaxrs/restore/upload") } catch {} }
+async function api_restore_upload_cancel() { try { await api.get("/jaxrs/restore/upload/cancel") } catch {} }
+
 </script>
 
 <style scoped>

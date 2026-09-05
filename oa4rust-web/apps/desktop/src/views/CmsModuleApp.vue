@@ -97,6 +97,12 @@ async function api_core_express_article_list() { try { await api.get('/jaxrs/cms
 async function api_cms_article() { try { await api.get('/jaxrs/cms/article') } catch {} }
 async function api_cms_view_unpublish_view_001() { try { await api.get('/jaxrs/cms/view/unpublish/view-001') } catch {} }
 
+
+async function api_cms_assemble_control_document_search() { try { await api.get("/jaxrs/cms_assemble_control/document/search") } catch {} }
+async function api_cms_assemble_control_get_control_config() { try { await api.get("/jaxrs/cms_assemble_control/get/control/config") } catch {} }
+async function api_cms_assemble_control_list_control_sections() { try { await api.get("/jaxrs/cms_assemble_control/list/control/sections") } catch {} }
+async function api_cms_assemble_control_update_control_config() { try { await api.get("/jaxrs/cms_assemble_control/update/control/config") } catch {} }
+
 </script>
 <style scoped>
 .crud-view{display:flex;flex-direction:column;gap:16px;height:100%}

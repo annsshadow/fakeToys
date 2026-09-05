@@ -99,6 +99,15 @@ async function api_unitduty_list_unit_object() { try { await api.get("/jaxrs/uni
 async function api_unitattribute_list_unit_object() { try { await api.get("/jaxrs/unitattribute/list/unit/object") } catch {} }
 async function api_identity_sup_nested_object() { try { await api.get("/jaxrs/unit/list/identity/sup/nested/object") } catch {} }
 
+
+async function api_unitattribute_list_name_unit() { try { await api.get("/jaxrs/unitattribute/list/name/unit") } catch {} }
+async function api_unitattribute_append_unit_name() { try { await api.get("/jaxrs/unitattribute/append/unit/name") } catch {} }
+
+
+async function api_unitduty_list_name_identity() { try { await api.get("/jaxrs/unitduty/list/name/identity") } catch {} }
+async function api_unitduty_list_name() { try { await api.get("/jaxrs/unitduty/list/name") } catch {} }
+async function api_find_by_unit_name() { try { await api.get("/jaxrs/unitduty/find/by/unit/name") } catch {} }
+
 </script>
 
 <style scoped>
