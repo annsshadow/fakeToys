@@ -67,28 +67,28 @@ async function updateMeeting(m: M) {
   if (!title) return
   try { await api.put('/jaxrs/meeting/assemble/control/meeting/update', { id: m.id, title })
     loadMeetings()
-  } catch (e: any) { alert('更新失败: ' + (e?.message ?? '')) }
+  } catch (e: any) { toast.error('更新失败: : ' + (e?.message ?? '')) }
 }
 async function cancelMeeting(m: M) {
   if (!confirmMsg('确定取消该会议？')) return
   try { await api.post('/jaxrs/meeting/assemble/control/meeting/cancel', { id: m.id })
     loadMeetings()
-  } catch (e: any) { alert('取消失败: ' + (e?.message ?? '')) }
+  } catch (e: any) { toast.error('取消失败: : ' + (e?.message ?? '')) }
 }
 async function approveMeeting(m: M) {
   try { await api.post('/jaxrs/meeting/assemble/control/meeting/approve', { id: m.id })
     loadMeetings()
-  } catch (e: any) { alert('审批失败: ' + (e?.message ?? '')) }
+  } catch (e: any) { toast.error('审批失败: : ' + (e?.message ?? '')) }
 }
 async function joinMeeting(m: M) {
   try { await api.post('/jaxrs/meeting/assemble/control/meeting/join', { id: m.id })
     toast.info('已加入会议'); loadMeetings()
-  } catch (e: any) { alert('加入失败: ' + (e?.message ?? '')) }
+  } catch (e: any) { toast.error('加入失败: : ' + (e?.message ?? '')) }
 }
 async function leaveMeeting(m: M) {
   try { await api.post('/jaxrs/meeting/assemble/control/meeting/leave', { id: m.id })
     loadMeetings()
-  } catch (e: any) { alert('离开失败: ' + (e?.message ?? '')) }
+  } catch (e: any) { toast.error('离开失败: : ' + (e?.message ?? '')) }
 }
 
 
