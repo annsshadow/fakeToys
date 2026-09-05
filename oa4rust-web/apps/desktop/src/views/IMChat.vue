@@ -326,6 +326,40 @@ onMounted(initWebSocket);
 onUnmounted(() => {
   wsClient.value?.close();
 });
+
+// Additional message API calls
+async function createConversation() {
+  const name = prompt('输入会话名称:')
+  if (!name) return
+  try { await api.post('/jaxrs/message/assemble/communicate/im/conversation/create', { name })
+    loadConversations()
+  } catch (e: any) { alert('创建失败: ' + (e?.message ?? '')) }
+}
+async function deleteConversation(conv: any) {
+  if (!confirm('确定删除该会话？')) return
+  try { await api.delete('/jaxrs/message/assemble/communicate/im/conversation/' + conv.id)
+    selectedChat.value = null; loadConversations()
+  } catch (e: any) { alert('删除失败: ' + (e?.message ?? '')) }
+}
+async function searchUsers() {
+  const q = prompt('搜索用户:')
+  if (!q) return
+  try { const r = await api.get('/jaxrs/message/assemble/communicate/im/user/search?q=' + q)
+    searchResults.value = (r.data ?? []) as any[]
+    showSearchResults.value = true
+  } catch {}
+}
+async function pinConversation(conv: any) {
+  try { await api.post('/jaxrs/message/assemble/communicate/im/conversation/pin', { id: conv.id })
+    loadConversations()
+  } catch {}
+}
+
+
+
+
+
+
 </script>
 
 <style scoped>
@@ -489,4 +523,4 @@ onUnmounted(() => {
   .im-sidebar.collapsed { transform: translateX(-100%); }
   .back-btn { display: block; }
 }
-</style>
+</style>
