@@ -391,6 +391,23 @@ async function api_assemble_control_delete_reply() { try { await api.get('/jaxrs
 async function api_assemble_control_delete_forum() { try { await api.get('/jaxrs/bbs/assemble/control/delete/forum') } catch {} }
 async function api_assemble_control_picture_list() { try { await api.get('/jaxrs/bbs/assemble/control/picture/list') } catch {} }
 
+
+async function api_entity_subject_list_test_section_id() { try { await api.get("/jaxrs/bbs/core/entity/subject/list/test-section-id") } catch {} }
+async function api_control_topic_recommended_list() { try { await api.get("/jaxrs/bbs/assemble/control/topic/recommended/list") } catch {} }
+async function api_control_topic_creamed_list() { try { await api.get("/jaxrs/bbs/assemble/control/topic/creamed/list") } catch {} }
+async function api_control_update_control_config() { try { await api.get("/jaxrs/bbs/assemble/control/update/control/config") } catch {} }
+async function api_entity_subject_top_test_section_id() { try { await api.get("/jaxrs/bbs/core/entity/subject/top/test-section-id") } catch {} }
+async function api_control_permission_section_sec_001() { try { await api.get("/jaxrs/bbs/assemble/control/permission/section/sec-001") } catch {} }
+async function api_bbs_assemble_control_1() { try { await api.get("/jaxrs/bbs_assemble_control") } catch {} }
+async function api_control_list_topics_recommended() { try { await api.get("/jaxrs/bbs/assemble/control/list/topics/recommended") } catch {} }
+async function api_control_list_reply_filter() { try { await api.get("/jaxrs/bbs/assemble/control/list/reply/filter") } catch {} }
+async function api_control_list_subjects_filtered() { try { await api.get("/jaxrs/bbs/assemble/control/list/subjects/filtered") } catch {} }
+async function api_assemble_control_shutup_create() { try { await api.get("/jaxrs/bbs/assemble/control/shutup/create") } catch {} }
+async function api_bbs_assemble_topic_list() { try { await api.get("/jaxrs/bbs/assemble/topic/list") } catch {} }
+async function api_control_topic_index_list() { try { await api.get("/jaxrs/bbs/assemble/control/topic/index/list") } catch {} }
+async function api_assemble_control_bbsforum_list() { try { await api.get("/jaxrs/bbs/assemble/control/bbsforum/list") } catch {} }
+async function api_control_bbstopic_list_recent() { try { await api.get("/jaxrs/bbs/assemble/control/bbstopic/list/recent") } catch {} }
+
 </script>
 
 <style scoped>

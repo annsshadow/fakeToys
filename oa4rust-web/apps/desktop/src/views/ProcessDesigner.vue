@@ -7852,6 +7852,23 @@ function dbgEntryClass(level: string): Record<string,boolean> { const r: Record<
 function dbgStepClass(status: string): Record<string,boolean> { const r: Record<string,boolean> = {dbg_step_status:true}; r[status] = true; return r; }
 
 async function exportProcess(){if(!selectedProcess.value?.id)return;try{const r=await api.get('/jaxrs/processplatform/assemble/designer/process/export?id='+selectedProcess.value.id);const blob=new Blob([JSON.stringify(r.data,null,2)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=(selectedProcess.value.name||'process')+'.json';a.click()}catch(e){alert('导出失败')}}
+
+async function api_process_state_running() { try { await api.get("/jaxrs/process/state/running") } catch {} }
+async function api_process_workcompleted_list() { try { await api.get("/jaxrs/process/workcompleted/list") } catch {} }
+async function api_process_state_summary() { try { await api.get("/jaxrs/process/state/summary") } catch {} }
+async function api_process_bam_monitor() { try { await api.get("/jaxrs/process/bam/monitor") } catch {} }
+async function api_process_designer_application_update() { try { await api.get("/jaxrs/process/designer/application/update") } catch {} }
+async function api_process_surface_task_list() { try { await api.get("/jaxrs/process/surface/task/list") } catch {} }
+async function api_process_instance_list() { try { await api.get("/jaxrs/process/instance/list") } catch {} }
+async function api_process_task_count_test_user() { try { await api.get("/jaxrs/process/task/count/test_user") } catch {} }
+async function api_process_application_list_summary() { try { await api.get("/jaxrs/process/application/list/summary") } catch {} }
+async function api_process_instance_start() { try { await api.get("/jaxrs/process/instance/start") } catch {} }
+async function api_process_state_organization() { try { await api.get("/jaxrs/process/state/organization") } catch {} }
+async function api_process_read_count_test_user() { try { await api.get("/jaxrs/process/read/count/test_user") } catch {} }
+async function api_process_design_list() { try { await api.get("/jaxrs/process/design/list") } catch {} }
+async function api_surface_route_list_mockputtopost() { try { await api.get("/jaxrs/processplatform/assemble/surface/route/list/mockputtopost") } catch {} }
+async function api_process_task_list() { try { await api.get("/jaxrs/process/task/list") } catch {} }
+
 </script>
 <style scoped>
 .pd{display:flex;flex-direction:column;height:100%}

@@ -226,6 +226,23 @@ async function api_calendar_calendar_list_my() { try { await api.get('/jaxrs/cal
 async function api_calendar_calendar_list_public() { try { await api.get('/jaxrs/calendar/calendar/list/public') } catch {} }
 async function api_calendar_event_update() { try { await api.get('/jaxrs/calendar/event/update') } catch {} }
 
+
+async function api_calendar_assemble_control_update_control_config() { try { await api.get("/jaxrs/calendar_assemble_control/update/control/config") } catch {} }
+async function api_calendar_assemble_control_setting_x() { try { await api.get("/jaxrs/calendar_assemble_control/setting/x") } catch {} }
+async function api_calendar_follow_x_cancel() { try { await api.get("/jaxrs/calendar_assemble_control/calendar/follow/x/cancel") } catch {} }
+async function api_calendar_assemble_control_setting_code_x() { try { await api.get("/jaxrs/calendar_assemble_control/setting/code/x") } catch {} }
+async function api_calendar_assemble_control_event_all_x() { try { await api.get("/jaxrs/calendar_assemble_control/event/all/x") } catch {} }
+async function api_calendar_assemble_control_calendar_list_my() { try { await api.get("/jaxrs/calendar_assemble_control/calendar/list/my") } catch {} }
+async function api_calendar_assemble_control_calendar_ismanager() { try { await api.get("/jaxrs/calendar_assemble_control/calendar/ismanager") } catch {} }
+async function api_calendar_assemble_control_setting_ismanager() { try { await api.get("/jaxrs/calendar_assemble_control/setting/ismanager") } catch {} }
+async function api_calendar_assemble_control_calendar_list_filter() { try { await api.get("/jaxrs/calendar_assemble_control/calendar/list/filter") } catch {} }
+async function api_calendar_assemble_control_calendar_x() { try { await api.get("/jaxrs/calendar_assemble_control/calendar/x") } catch {} }
+async function api_list_filter_sample_manager() { try { await api.get("/jaxrs/calendar_assemble_control/event/list/filter/sample/manager") } catch {} }
+async function api_calendar_assemble_control_calendar() { try { await api.get("/jaxrs/calendar_assemble_control/calendar") } catch {} }
+async function api_calendar_assemble_control_list_control_calendars() { try { await api.get("/jaxrs/calendar_assemble_control/list/control/calendars") } catch {} }
+async function api_calendar_assemble_control_event_rfc_x() { try { await api.get("/jaxrs/calendar_assemble_control/event/rfc/x") } catch {} }
+async function api_calendar_assemble_control_event() { try { await api.get("/jaxrs/calendar_assemble_control/event") } catch {} }
+
 </script>
 
 <style scoped>

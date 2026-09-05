@@ -84,6 +84,23 @@ async function api_hotpic_get_hotpic_hotpic_001() { try { await api.get('/jaxrs/
 async function api_assemble_control_user_hotpic() { try { await api.get('/jaxrs/hotpic/assemble/control/user/hotpic') } catch {} }
 async function api_hotpic_list() { try { await api.get('/jaxrs/hotpic/list') } catch {} }
 
+
+async function api_hotpic_assemble_control() { try { await api.get("/jaxrs/hotpic_assemble_control") } catch {} }
+async function api_hotpic_assemble_control_save_hotpic() { try { await api.get("/jaxrs/hotpic_assemble_control/save/hotpic") } catch {} }
+async function api_hotpic_assemble_control_list_hotpics() { try { await api.get("/jaxrs/hotpic_assemble_control/list/hotpics") } catch {} }
+async function api_hotpic_assemble_control_cipher_hotpic_id() { try { await api.get("/jaxrs/hotpic_assemble_control/cipher/hotpic/id") } catch {} }
+async function api_hotpic_assemble_control_create_hotpic() { try { await api.get("/jaxrs/hotpic_assemble_control/create/hotpic") } catch {} }
+async function api_hotpic_assemble_control_user_hotpic_changeTitle() { try { await api.get("/jaxrs/hotpic_assemble_control/user/hotpic/changeTitle") } catch {} }
+async function api_hotpic_assemble_control_list_control_applications() { try { await api.get("/jaxrs/hotpic_assemble_control/list/control/applications") } catch {} }
+async function api_hotpic_assemble_control_delete_hotpic() { try { await api.get("/jaxrs/hotpic_assemble_control/delete/hotpic") } catch {} }
+async function api_user_hotpic_exists_check_1() { try { await api.get("/jaxrs/hotpic_assemble_control/user/hotpic/exists/check") } catch {} }
+async function api_hotpic_assemble_control_get_hotpic() { try { await api.get("/jaxrs/hotpic_assemble_control/get/hotpic") } catch {} }
+async function api_hotpic_assemble_control_update_control_config() { try { await api.get("/jaxrs/hotpic_assemble_control/update/control/config") } catch {} }
+async function api_hotpic_assemble_control_user_hotpic_id() { try { await api.get("/jaxrs/hotpic_assemble_control/user/hotpic/id") } catch {} }
+async function api_hotpic_assemble_control_get_control_config() { try { await api.get("/jaxrs/hotpic_assemble_control/get/control/config") } catch {} }
+async function api_user_hotpic_application_infoId() { try { await api.get("/jaxrs/hotpic_assemble_control/user/hotpic/application/infoId") } catch {} }
+async function api_hotpic_assemble_control_list_control_panels() { try { await api.get("/jaxrs/hotpic_assemble_control/list/control/panels") } catch {} }
+
 </script>
 
 <style scoped>

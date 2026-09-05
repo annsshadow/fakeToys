@@ -336,6 +336,23 @@ async function api_program_center_agent_a_1_execute() { try { await api.get("/ja
 async function api_program_center_market_list_category() { try { await api.get("/jaxrs/program_center/market/list/category") } catch {} }
 async function api_program_center_invoke_list_category() { try { await api.get("/jaxrs/program_center/invoke/list/category") } catch {} }
 
+
+async function api_program_center_config_license() { try { await api.get("/jaxrs/program_center/config/license") } catch {} }
+async function api_program_center_prompterrorlog() { try { await api.get("/jaxrs/program_center/prompterrorlog") } catch {} }
+async function api_program_center_collect_add() { try { await api.get("/jaxrs/program_center/collect/add") } catch {} }
+async function api_dingding_sync_organization_callback() { try { await api.get("/jaxrs/program_center/dingding/sync/organization/callback") } catch {} }
+async function api_program_center_appstyle_current_update() { try { await api.get("/jaxrs/program_center/appstyle/current/update") } catch {} }
+async function api_image_launch_logo_erase() { try { await api.get("/jaxrs/program_center/appstyle/image/launch/logo/erase") } catch {} }
+async function api_list_id_next_count_1() { try { await api.get("/jaxrs/program_center/unexpectederrorlog/list/id/next/count") } catch {} }
+async function api_webserver_assemble_source_source() { try { await api.get("/jaxrs/program_center/distribute/webserver/assemble/source/source") } catch {} }
+async function api_script_name_name_imported() { try { await api.get("/jaxrs/program_center/script/name/name/imported") } catch {} }
+async function api_program_center_apppack_pack_info() { try { await api.get("/jaxrs/program_center/apppack/pack/info") } catch {} }
+async function api_program_center_input_cover() { try { await api.get("/jaxrs/program_center/input/cover") } catch {} }
+async function api_dingding_get_callback_aes() { try { await api.get("/jaxrs/program_center/dingding/get/callback/aes") } catch {} }
+async function api_program_center_config_token() { try { await api.get("/jaxrs/program_center/config/token") } catch {} }
+async function api_program_center_market_m_1_download() { try { await api.get("/jaxrs/program_center/market/m-1/download") } catch {} }
+async function api_program_center_script() { try { await api.get("/jaxrs/program_center/script") } catch {} }
+
 </script>
 
 <style scoped>

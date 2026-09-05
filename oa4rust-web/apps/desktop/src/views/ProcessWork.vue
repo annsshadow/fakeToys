@@ -359,6 +359,23 @@ async function api_surface_task_count_filter() { try { await api.get("/jaxrs/pro
 async function api_processplatform_assemble_designer_list() { try { await api.get("/jaxrs/processplatform/assemble/designer/list") } catch {} }
 async function api_assemble_surface_touch_expire() { try { await api.get("/jaxrs/processplatform/assemble/surface/touch/expire") } catch {} }
 
+
+async function api_surface_review_create_workcompleted() { try { await api.get("/jaxrs/processplatform/assemble/surface/review/create/workcompleted") } catch {} }
+async function api_surface_keylock_lock_mockputtopost() { try { await api.get("/jaxrs/processplatform/assemble/surface/keylock/lock/mockputtopost") } catch {} }
+async function api_designer_application_app_1_icon() { try { await api.get("/jaxrs/processplatform/assemble/designer/application/app-1/icon") } catch {} }
+async function api_surface_review_v2_list() { try { await api.get("/jaxrs/processplatform/assemble/surface/review/v2/list") } catch {} }
+async function api_designer_elementtool_applicationdict_orphan() { try { await api.get("/jaxrs/processplatform/assemble/designer/elementtool/applicationdict/orphan") } catch {} }
+async function api_service_processing_touch_handoverjob() { try { await api.get("/jaxrs/processplatform/service/processing/touch/handoverjob") } catch {} }
+async function api_assemble_surface_snap_list() { try { await api.get("/jaxrs/processplatform/assemble/surface/snap/list") } catch {} }
+async function api_assemble_surface_application_list() { try { await api.get("/jaxrs/processplatform/assemble/surface/application/list") } catch {} }
+async function api_surface_review_create_work() { try { await api.get("/jaxrs/processplatform/assemble/surface/review/create/work") } catch {} }
+async function api_processplatform_assemble_surface_snap() { try { await api.get("/jaxrs/processplatform/assemble/surface/snap") } catch {} }
+async function api_processing_data_work_dw_1() { try { await api.get("/jaxrs/processplatform/service/processing/data/work/dw-1") } catch {} }
+async function api_service_processing_touch_loglongdetained() { try { await api.get("/jaxrs/processplatform/service/processing/touch/loglongdetained") } catch {} }
+async function api_assemble_surface_preview_surface_1() { try { await api.get("/jaxrs/processplatform/assemble/surface/preview/surface-1") } catch {} }
+async function api_count_with_person_person_001_1() { try { await api.get("/jaxrs/processplatform/work/count/with/person/person-001") } catch {} }
+async function api_surface_read_v2_count() { try { await api.get("/jaxrs/processplatform/assemble/surface/read/v2/count") } catch {} }
+
 </script>
 
 <style scoped>
