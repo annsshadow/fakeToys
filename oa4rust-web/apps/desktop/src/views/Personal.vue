@@ -280,6 +280,23 @@ async function api_person_empower_some_id_disable() { try { await api.get("/jaxr
 async function api_person_empower_list_to() { try { await api.get("/jaxrs/person/empower/list/to") } catch {} }
 async function api_person_nick_name_p1() { try { await api.get("/jaxrs/person/nick/name/p1") } catch {} }
 
+
+async function api_list_person_sub_nested() { try { await api.get("/jaxrs/person/list/person/sub/nested") } catch {} }
+async function api_person_regist() { try { await api.get("/jaxrs/person/regist") } catch {} }
+async function api_unit_sub_nested_like() { try { await api.get("/jaxrs/person/list/unit/sub/nested/like") } catch {} }
+async function api_list_unit_sub_nested() { try { await api.get("/jaxrs/person/list/unit/sub/nested") } catch {} }
+async function api_list_person_sup_direct() { try { await api.get("/jaxrs/person/list/person/sup/direct") } catch {} }
+async function api_person_signature_upload() { try { await api.get("/jaxrs/person/signature/upload") } catch {} }
+async function api_person_list_all() { try { await api.get("/jaxrs/person/list/all") } catch {} }
+async function api_list_person_sup_nested() { try { await api.get("/jaxrs/person/list/person/sup/nested") } catch {} }
+async function api_list_person_sub_direct() { try { await api.get("/jaxrs/person/list/person/sub/direct") } catch {} }
+async function api_person_list_group() { try { await api.get("/jaxrs/person/list/group") } catch {} }
+async function api_personattribute_list_name_person() { try { await api.get("/jaxrs/personattribute/list/name/person") } catch {} }
+async function api_exmail_new_count_passive() { try { await api.get("/jaxrs/person/exmail/new/count/passive") } catch {} }
+async function api_person_icon_mockputtopost() { try { await api.get("/jaxrs/person/icon/mockputtopost") } catch {} }
+async function api_filter_1_size_20() { try { await api.get("/jaxrs/person/list/filter/1/size/20") } catch {} }
+async function api_personattribute_set_person_name() { try { await api.get("/jaxrs/personattribute/set/person/name") } catch {} }
+
 </script>
 
 <style scoped>
