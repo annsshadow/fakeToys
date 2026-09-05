@@ -227,6 +227,23 @@ async function api_ai_assemble_control_file_delete_flag() { try { await api.get(
 async function api_ai_assemble_control_config_base_config() { try { await api.get('/jaxrs/ai_assemble_control/config/base/config') } catch {} }
 async function api_config_update_model_flag() { try { await api.get('/jaxrs/ai_assemble_control/config/update/model/flag') } catch {} }
 
+
+async function api_ai_chat_delete_test_clue() { try { await api.get("/jaxrs/ai/chat/delete/test-clue") } catch {} }
+async function api_ai_config_base_config() { try { await api.get("/jaxrs/ai/config/base/config") } catch {} }
+async function api_ai() { try { await api.get("/jaxrs/ai") } catch {} }
+async function api_config_get_model_u2t() { try { await api.get("/jaxrs/ai_assemble_control/config/get/model/u2t") } catch {} }
+async function api_ai_chat_delete() { try { await api.get("/jaxrs/ai/chat/delete") } catch {} }
+async function api_ai_file_delete_test_flag() { try { await api.get("/jaxrs/ai/file/delete/test-flag") } catch {} }
+async function api_ai_assemble_control_file_flag() { try { await api.get("/jaxrs/ai_assemble_control/file/flag") } catch {} }
+async function api_ai_assemble_config() { try { await api.get("/jaxrs/ai/assemble/config") } catch {} }
+async function api_ai_file_test_flag() { try { await api.get("/jaxrs/ai/file/test-flag") } catch {} }
+async function api_get_mcp_ext_u2t() { try { await api.get("/jaxrs/ai_assemble_control/config/get/mcp/ext/u2t") } catch {} }
+async function api_control_config_create_mcp() { try { await api.get("/jaxrs/ai/assemble/control/config/create/mcp") } catch {} }
+async function api_ai_core_list() { try { await api.get("/jaxrs/ai/core/list") } catch {} }
+async function api_ai_app_list() { try { await api.get("/jaxrs/ai/app/list") } catch {} }
+async function api_get_ai_control_config() { try { await api.get("/jaxrs/ai_assemble_control/get/ai/control/config") } catch {} }
+async function api_index_sync_to_knowledge() { try { await api.get("/jaxrs/ai_assemble_control/index/sync/to/knowledge") } catch {} }
+
 </script>
 
 <style scoped>
