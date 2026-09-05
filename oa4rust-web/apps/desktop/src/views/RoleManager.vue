@@ -113,6 +113,15 @@ async function api_role_list_person() { try { await api.get('/jaxrs/role/list/pe
 async function api_role_list_person_object() { try { await api.get('/jaxrs/role/list/person/object') } catch {} }
 async function api_role_list_object() { try { await api.get('/jaxrs/role/list/object') } catch {} }
 
+
+async function api_permission_management_refresh_all() { try { await api.get("/jaxrs/permission/management/refresh/all") } catch {} }
+async function api_permission_manager_categoryInfo_c_1() { try { await api.get("/jaxrs/permission/manager/categoryInfo/c-1") } catch {} }
+async function api_permission_viewer_appInfo_a_1() { try { await api.get("/jaxrs/permission/viewer/appInfo/a-1") } catch {} }
+async function api_permission_publisher_appInfo_a_1() { try { await api.get("/jaxrs/permission/publisher/appInfo/a-1") } catch {} }
+async function api_permission_publisher_categoryInfo_c_1() { try { await api.get("/jaxrs/permission/publisher/categoryInfo/c-1") } catch {} }
+async function api_permission_manager_appInfo_a_1() { try { await api.get("/jaxrs/permission/manager/appInfo/a-1") } catch {} }
+async function api_permission_viewer_categoryInfo_c_1() { try { await api.get("/jaxrs/permission/viewer/categoryInfo/c-1") } catch {} }
+
 </script>
 
 <style scoped>

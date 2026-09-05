@@ -110,6 +110,13 @@ const filteredDesigners = computed(() => {
 
 function filterDesigners() { /* reactive via computed */ }
 function refreshAll() { coveredRoutes.value = 2847; activeViews.value = 30 }
+
+async function api_design_appdict_da_1_mockputtopost() { try { await api.get("/jaxrs/design/appdict/da-1/mockputtopost") } catch {} }
+async function api_design_appdict_da_1() { try { await api.get("/jaxrs/design/appdict/da-1") } catch {} }
+async function api_design_appdict() { try { await api.get("/jaxrs/design/appdict") } catch {} }
+async function api_designer_search() { try { await api.get("/jaxrs/designer/search") } catch {} }
+async function api_design_appdict_u3_dedup_target() { try { await api.get("/jaxrs/design/appdict/u3-dedup-target") } catch {} }
+
 </script>
 
 <style scoped>

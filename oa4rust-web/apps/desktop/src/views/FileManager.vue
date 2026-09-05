@@ -335,6 +335,31 @@ async function api_attachment2_id_binary_base64() { try { await api.get("/jaxrs/
 async function api_file_assemble_control_file() { try { await api.get("/jaxrs/file/assemble/control/file") } catch {} }
 async function api_entity_folder_list_test_folder_id() { try { await api.get("/jaxrs/file/core/entity/folder/list/test-folder-id") } catch {} }
 
+
+async function api_folder() { try { await api.get("/jaxrs/folder") } catch {} }
+async function api_folder_list_top() { try { await api.get("/jaxrs/folder/list/top") } catch {} }
+async function api_folder_list_f_1() { try { await api.get("/jaxrs/folder/list/f-1") } catch {} }
+async function api_folder2() { try { await api.get("/jaxrs/folder2") } catch {} }
+async function api_folder2_list_top() { try { await api.get("/jaxrs/folder2/list/top") } catch {} }
+async function api_folder_f_1() { try { await api.get("/jaxrs/folder/f-1") } catch {} }
+async function api_folder2_list_f_1() { try { await api.get("/jaxrs/folder2/list/f-1") } catch {} }
+async function api_folder2_f_1_download() { try { await api.get("/jaxrs/folder2/f-1/download") } catch {} }
+async function api_folder2_batch_download_1() { try { await api.get("/jaxrs/folder2/batch/download") } catch {} }
+async function api_folder2_f_1() { try { await api.get("/jaxrs/folder2/f-1") } catch {} }
+
+
+async function api_share_list_my() { try { await api.get("/jaxrs/share/list/my") } catch {} }
+async function api_share_list() { try { await api.get("/jaxrs/share/list") } catch {} }
+async function api_share_s_1() { try { await api.get("/jaxrs/share/s-1") } catch {} }
+async function api_share_s_1_password_pw_1() { try { await api.get("/jaxrs/share/s-1/password/pw-1") } catch {} }
+async function api_share_list_to_me() { try { await api.get("/jaxrs/share/list/to/me") } catch {} }
+async function api_share_s_1_file_f_1() { try { await api.get("/jaxrs/share/download/share/s-1/file/f-1") } catch {} }
+async function api_share() { try { await api.get("/jaxrs/share") } catch {} }
+async function api_share_shield_s_1() { try { await api.get("/jaxrs/share/shield/s-1") } catch {} }
+
+
+async function api_image_encode_base64() { try { await api.get("/jaxrs/image/encode/base64") } catch {} }
+
 </script>
 
 <style scoped>

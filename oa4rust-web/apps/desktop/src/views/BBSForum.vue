@@ -408,6 +408,19 @@ async function api_control_topic_index_list() { try { await api.get("/jaxrs/bbs/
 async function api_assemble_control_bbsforum_list() { try { await api.get("/jaxrs/bbs/assemble/control/bbsforum/list") } catch {} }
 async function api_control_bbstopic_list_recent() { try { await api.get("/jaxrs/bbs/assemble/control/bbstopic/list/recent") } catch {} }
 
+
+async function api_list_i_1_next_10() { try { await api.get("/jaxrs/comment/list/i-1/next/10") } catch {} }
+async function api_comment_c_1() { try { await api.get("/jaxrs/comment/c-1") } catch {} }
+async function api_1_size_10_mockputtopost() { try { await api.get("/jaxrs/comment/list/1/size/10/mockputtopost") } catch {} }
+async function api_list_i_1_prev_10() { try { await api.get("/jaxrs/comment/list/i-1/prev/10") } catch {} }
+async function api_list_1_size_50() { try { await api.get("/jaxrs/comment/list/1/size/50") } catch {} }
+async function api_comment_c_1_commend() { try { await api.get("/jaxrs/comment/c-1/commend") } catch {} }
+async function api_comment() { try { await api.get("/jaxrs/comment") } catch {} }
+async function api_comment_c_1_uncommend() { try { await api.get("/jaxrs/comment/c-1/uncommend") } catch {} }
+async function api_list_1_size_10() { try { await api.get("/jaxrs/comment/list/1/size/10") } catch {} }
+async function api_comment_u3_cmt_uncommend() { try { await api.get("/jaxrs/comment/u3-cmt/uncommend") } catch {} }
+async function api_comment_u3_cmt_commend() { try { await api.get("/jaxrs/comment/u3-cmt/commend") } catch {} }
+
 </script>
 
 <style scoped>
