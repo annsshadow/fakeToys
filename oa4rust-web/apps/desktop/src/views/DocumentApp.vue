@@ -173,12 +173,22 @@ async function api_jaxrs_document_batch_status() { try { await api.get("/jaxrs/d
 async function api_jaxrs_document_batch_u3_batch_x_mockdeletetoget() { try { await api.get("/jaxrs/document/batch/u3-batch-x/mockdeletetoget") } catch {} }
 async function api_jaxrs_document_cipher_c_1_permission_read_person_p_1() { try { await api.get("/jaxrs/document/cipher/c-1/permission/read/person/p-1") } catch {} }
 async function api_jaxrs_document_cipher_filter_list_p_1_size_10() { try { await api.get("/jaxrs/document/cipher/filter/list/p-1/size/10") } catch {} }
-async function api_jaxrs_document_cipher_publish_content() { try { await api.get("/jaxrs/document/cipher/publish/content") } catch {} }
+const api_jaxrs_do_733_data = ref<any[]>([]);
+const { data: api_jaxrs_do_733_q } = useQuery({queryKey: ['api_jaxrs_do_733', '/jaxrs/document/cipher/publish/content'], queryFn: async () => { try { const r = await api.get("/jaxrs/document/cipher/publish/content"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+watch(api_jaxrs_do_733_q, (v) => { api_jaxrs_do_733_data.value = v ?? []; });
 async function api_jaxrs_document_cipher_publish_content_mockputtopost() { try { await api.get("/jaxrs/document/cipher/publish/content/mockputtopost") } catch {} }
-async function api_jaxrs_document_d_1_document_data() { try { await api.get("/jaxrs/document/d-1/document/data") } catch {} }
-async function api_jaxrs_document_d_1_persons() { try { await api.get("/jaxrs/document/d-1/persons") } catch {} }
-async function api_jaxrs_document_d_1_top() { try { await api.get("/jaxrs/document/d-1/top") } catch {} }
-async function api_jaxrs_document_d_1_unTop() { try { await api.get("/jaxrs/document/d-1/unTop") } catch {} }
+const api_jaxrs_do_392_data = ref<any[]>([]);
+const { data: api_jaxrs_do_392_q } = useQuery({queryKey: ['api_jaxrs_do_392', '/jaxrs/document/d-1/document/data'], queryFn: async () => { try { const r = await api.get("/jaxrs/document/d-1/document/data"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+watch(api_jaxrs_do_392_q, (v) => { api_jaxrs_do_392_data.value = v ?? []; });
+const api_jaxrs_do_98_data = ref<any[]>([]);
+const { data: api_jaxrs_do_98_q } = useQuery({queryKey: ['api_jaxrs_do_98', '/jaxrs/document/d-1/persons'], queryFn: async () => { try { const r = await api.get("/jaxrs/document/d-1/persons"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+watch(api_jaxrs_do_98_q, (v) => { api_jaxrs_do_98_data.value = v ?? []; });
+const api_jaxrs_do_590_data = ref<any[]>([]);
+const { data: api_jaxrs_do_590_q } = useQuery({queryKey: ['api_jaxrs_do_590', '/jaxrs/document/d-1/top'], queryFn: async () => { try { const r = await api.get("/jaxrs/document/d-1/top"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+watch(api_jaxrs_do_590_q, (v) => { api_jaxrs_do_590_data.value = v ?? []; });
+const api_jaxrs_do_500_data = ref<any[]>([]);
+const { data: api_jaxrs_do_500_q } = useQuery({queryKey: ['api_jaxrs_do_500', '/jaxrs/document/d-1/unTop'], queryFn: async () => { try { const r = await api.get("/jaxrs/document/d-1/unTop"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+watch(api_jaxrs_do_500_q, (v) => { api_jaxrs_do_500_data.value = v ?? []; });
 const api_jaxrs_document_d_142_data = ref<any[]>([]);
 const { data: api_jaxrs_document_d_142_q } = useQuery({queryKey: ['api_jaxrs_document_d_142', '/jaxrs/document/draft/list/i-1/next/10'], queryFn: async () => { try { const r = await api.get("/jaxrs/document/draft/list/i-1/next/10"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
 watch(api_jaxrs_document_d_142_q, (v) => { api_jaxrs_document_d_142_data.value = v ?? []; });

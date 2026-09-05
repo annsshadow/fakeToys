@@ -101,12 +101,22 @@ async function api_cms_view_unpublish_view_001() { try { await api.get('/jaxrs/c
 async function api_cms_assemble_control_document_search() { try { await api.get("/jaxrs/cms_assemble_control/document/search") } catch {} }
 async function api_cms_assemble_control_get_control_config() { try { await api.get("/jaxrs/cms_assemble_control/get/control/config") } catch {} }
 async function api_cms_assemble_control_list_control_sections() { try { await api.get("/jaxrs/cms_assemble_control/list/control/sections") } catch {} }
-async function api_cms_assemble_control_update_control_config() { try { await api.get("/jaxrs/cms_assemble_control/update/control/config") } catch {} }
+const api_cms_asse_501_data = ref<any[]>([]);
+const { data: api_cms_asse_501_q } = useQuery({queryKey: ['api_cms_asse_501', '/jaxrs/cms_assemble_control/update/control/config'], queryFn: async () => { try { const r = await api.get("/jaxrs/cms_assemble_control/update/control/config"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+watch(api_cms_asse_501_q, (v) => { api_cms_asse_501_data.value = v ?? []; });
 
-async function api_jaxrs_anonymous_document_filter_list_i_1_next_10() { try { await api.get("/jaxrs/anonymous/document/filter/list/i-1/next/10") } catch {} }
-async function api_jaxrs_anonymous_document_filter_list_p_1_size_10() { try { await api.get("/jaxrs/anonymous/document/filter/list/p-1/size/10") } catch {} }
-async function api_jaxrs_anonymous_form_v2_lookup_document_d_1_mobile() { try { await api.get("/jaxrs/anonymous/form/v2/lookup/document/d-1/mobile") } catch {} }
-async function api_jaxrs_cms_assemble_control_appinfo_alias_alias() { try { await api.get("/jaxrs/cms/assemble/control/appinfo/alias/alias") } catch {} }
+const api_jaxrs_an_996_data = ref<any[]>([]);
+const { data: api_jaxrs_an_996_q } = useQuery({queryKey: ['api_jaxrs_an_996', '/jaxrs/anonymous/document/filter/list/i-1/next/10'], queryFn: async () => { try { const r = await api.get("/jaxrs/anonymous/document/filter/list/i-1/next/10"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+watch(api_jaxrs_an_996_q, (v) => { api_jaxrs_an_996_data.value = v ?? []; });
+const api_jaxrs_an_237_data = ref<any[]>([]);
+const { data: api_jaxrs_an_237_q } = useQuery({queryKey: ['api_jaxrs_an_237', '/jaxrs/anonymous/document/filter/list/p-1/size/10'], queryFn: async () => { try { const r = await api.get("/jaxrs/anonymous/document/filter/list/p-1/size/10"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+watch(api_jaxrs_an_237_q, (v) => { api_jaxrs_an_237_data.value = v ?? []; });
+const api_jaxrs_an_787_data = ref<any[]>([]);
+const { data: api_jaxrs_an_787_q } = useQuery({queryKey: ['api_jaxrs_an_787', '/jaxrs/anonymous/form/v2/lookup/document/d-1/mobile'], queryFn: async () => { try { const r = await api.get("/jaxrs/anonymous/form/v2/lookup/document/d-1/mobile"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+watch(api_jaxrs_an_787_q, (v) => { api_jaxrs_an_787_data.value = v ?? []; });
+const api_jaxrs_cm_42_data = ref<any[]>([]);
+const { data: api_jaxrs_cm_42_q } = useQuery({queryKey: ['api_jaxrs_cm_42', '/jaxrs/cms/assemble/control/appinfo/alias/alias'], queryFn: async () => { try { const r = await api.get("/jaxrs/cms/assemble/control/appinfo/alias/alias"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+watch(api_jaxrs_cm_42_q, (v) => { api_jaxrs_cm_42_data.value = v ?? []; });
 const api_jaxrs_cms_assemb_820_data = ref<any[]>([]);
 const { data: api_jaxrs_cms_assemb_820_q } = useQuery({queryKey: ['api_jaxrs_cms_assemb_820', '/jaxrs/cms/assemble/control/categoryinfo/alias/alias'], queryFn: async () => { try { const r = await api.get("/jaxrs/cms/assemble/control/categoryinfo/alias/alias"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
 watch(api_jaxrs_cms_assemb_820_q, (v) => { api_jaxrs_cms_assemb_820_data.value = v ?? []; });
