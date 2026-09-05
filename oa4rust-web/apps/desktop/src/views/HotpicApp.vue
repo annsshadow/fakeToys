@@ -101,6 +101,10 @@ async function api_hotpic_assemble_control_get_control_config() { try { await ap
 async function api_user_hotpic_application_infoId() { try { await api.get("/jaxrs/hotpic_assemble_control/user/hotpic/application/infoId") } catch {} }
 async function api_hotpic_assemble_control_list_control_panels() { try { await api.get("/jaxrs/hotpic_assemble_control/list/control/panels") } catch {} }
 
+
+async function api_cipher_hotpic_bbs_id() { try { await api.get("/jaxrs/hotpic_assemble_control/cipher/hotpic/bbs/id") } catch {} }
+async function api_cipher_hotpic_cms_id() { try { await api.get("/jaxrs/hotpic_assemble_control/cipher/hotpic/cms/id") } catch {} }
+
 </script>
 
 <style scoped>

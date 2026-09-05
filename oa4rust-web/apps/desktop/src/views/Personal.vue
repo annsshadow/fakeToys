@@ -330,6 +330,30 @@ async function api_control_export_export_all() { try { await api.get("/jaxrs/org
 async function api_assemble_authentication_oauth_info() { try { await api.get("/jaxrs/organization/assemble/authentication/oauth/info") } catch {} }
 async function api_organization_core_unit_list() { try { await api.get("/jaxrs/organization/core/unit/list") } catch {} }
 
+
+async function api_reset() { try { await api.get("/jaxrs/reset") } catch {} }
+async function api_reset_check() { try { await api.get("/jaxrs/reset/check") } catch {} }
+async function api_reset_password_anonymous() { try { await api.get("/jaxrs/reset/password/anonymous") } catch {} }
+async function api_reset_mockputtopost() { try { await api.get("/jaxrs/reset/mockputtopost") } catch {} }
+async function api_reset_set() { try { await api.get("/jaxrs/reset/set") } catch {} }
+async function api_reset_code() { try { await api.get("/jaxrs/reset/code") } catch {} }
+
+
+async function api_unit_sub_nested_object() { try { await api.get("/jaxrs/identity/list/unit/sub/nested/object") } catch {} }
+async function api_identity_list_person() { try { await api.get("/jaxrs/identity/list/person") } catch {} }
+async function api_identity_list_group() { try { await api.get("/jaxrs/identity/list/group") } catch {} }
+async function api_list_unit_person_object() { try { await api.get("/jaxrs/identity/list/unit/person/object") } catch {} }
+async function api_identity_list_group_object() { try { await api.get("/jaxrs/identity/list/group/object") } catch {} }
+async function api_list_major_person_object() { try { await api.get("/jaxrs/identity/list/major/person/object") } catch {} }
+async function api_unit_sub_direct_object() { try { await api.get("/jaxrs/identity/list/unit/sub/direct/object") } catch {} }
+async function api_identity_list_major_person() { try { await api.get("/jaxrs/identity/list/major/person") } catch {} }
+async function api_identity_list() { try { await api.get("/jaxrs/identity/list") } catch {} }
+async function api_list_unit_sub_direct_1() { try { await api.get("/jaxrs/identity/list/unit/sub/direct") } catch {} }
+async function api_identity_list_person_object() { try { await api.get("/jaxrs/identity/list/person/object") } catch {} }
+async function api_identity_list_object() { try { await api.get("/jaxrs/identity/list/object") } catch {} }
+async function api_identity_list_unit_person() { try { await api.get("/jaxrs/identity/list/unit/person") } catch {} }
+async function api_list_unit_sub_nested_1() { try { await api.get("/jaxrs/identity/list/unit/sub/nested") } catch {} }
+
 </script>
 
 <style scoped>

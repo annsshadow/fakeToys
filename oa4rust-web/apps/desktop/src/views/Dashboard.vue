@@ -158,6 +158,16 @@ function fmtTime(ts?: string): string {
 }
 
 onMounted(loadPending);
+
+async function api_document_d_1_x_mockdeletetoget() { try { await api.get("/jaxrs/data/document/d-1/x/mockdeletetoget") } catch {} }
+async function api_data_document_d_1_path0() { try { await api.get("/jaxrs/data/document/d-1/path0") } catch {} }
+async function api_document_d_1_x_mockputtopost() { try { await api.get("/jaxrs/data/document/d-1/x/mockputtopost") } catch {} }
+async function api_document_d_1_array_data() { try { await api.get("/jaxrs/data/document/d-1/array/data") } catch {} }
+async function api_data_document_d_1_field() { try { await api.get("/jaxrs/data/document/d-1/field") } catch {} }
+async function api_data_document_d_1() { try { await api.get("/jaxrs/data/document/d-1") } catch {} }
+async function api_d_1_a_b_c() { try { await api.get("/jaxrs/data/document/d-1/a/b/c") } catch {} }
+async function api_data_document_d_1_anything() { try { await api.get("/jaxrs/data/document/d-1/anything") } catch {} }
+
 </script>
 
 <style scoped>
