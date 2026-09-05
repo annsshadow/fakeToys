@@ -268,7 +268,7 @@ def generate_route_test_single(
     # an EMPTY body. A wired handler may legitimately answer 404 for an unknown
     # resource (AppError::NotFound renders the O2OA error envelope), so a 404
     # with a non-empty body counts as "route exists".
-    existence_check = """let (parts, body) = response.into_parts();
+    existence_check = f"""let (parts, body) = response.into_parts();
         let bytes = axum::body::to_bytes(body, usize::MAX)
             .await
             .expect("read parity body");
