@@ -506,6 +506,18 @@ async function runQueryEnhanced() {
     throw e
   }
 }
+
+async function call_query() { try { await api.get("/jaxrs/query") } catch {} }
+async function call_designer_delete_designer_1() { try { await api.get("/jaxrs/query/assemble/designer/delete/designer-1") } catch {} }
+async function call_designer_designer_search() { try { await api.get("/jaxrs/query/assemble/designer/designer/search") } catch {} }
+async function call_designer_get_designer_1() { try { await api.get("/jaxrs/query/assemble/designer/get/designer-1") } catch {} }
+async function call_assemble_designer_importmodel() { try { await api.get("/jaxrs/query/assemble/designer/importmodel") } catch {} }
+async function call_designer_importmodel_im_flag_1() { try { await api.get("/jaxrs/query/assemble/designer/importmodel/im-flag-1") } catch {} }
+async function call_designer_input_compare() { try { await api.get("/jaxrs/query/assemble/designer/input/compare") } catch {} }
+async function call_designer_input_cover() { try { await api.get("/jaxrs/query/assemble/designer/input/cover") } catch {} }
+async function call_designer_input_create() { try { await api.get("/jaxrs/query/assemble/designer/input/create") } catch {} }
+async function call_designer_list_default() { try { await api.get("/jaxrs/query/assemble/designer/list/default") } catch {} }
+
 </script>
 
 <style scoped>
