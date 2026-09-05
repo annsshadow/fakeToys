@@ -559,28 +559,68 @@ async function api_distribute_assemble_source_source() { try { await api.get("/j
 async function api_invoke_flag_execute_get() { try { await api.get("/jaxrs/program_center/invoke/flag/execute/get") } catch {} }
 async function api_program_center_mpweixin_menu_subscribe() { try { await api.get("/jaxrs/program_center/mpweixin/menu/subscribe") } catch {} }
 async function api_program_center_captcha_list() { try { await api.get("/jaxrs/program_center/captcha/list") } catch {} }
-async function api_program_center_config() { try { await api.get("/jaxrs/program_center/config") } catch {} }
-async function api_list_w_1_next_10() { try { await api.get("/jaxrs/program_center/warnlog/list/w-1/next/10") } catch {} }
-async function api_program_center_agent_a_1_file() { try { await api.get("/jaxrs/program_center/agent/a-1/file") } catch {} }
-async function api_mpweixin_menu_delete_id() { try { await api.get("/jaxrs/program_center/mpweixin/menu/delete/id") } catch {} }
-async function api_appstyle_image_launch_logo() { try { await api.get("/jaxrs/program_center/appstyle/image/launch/logo") } catch {} }
-async function api_mpweixin_menu_update_wm_1() { try { await api.get("/jaxrs/program_center/mpweixin/menu/update/wm-1") } catch {} }
-async function api_market_flag_install_log() { try { await api.get("/jaxrs/program_center/market/flag/install/log") } catch {} }
-async function api_program_center_appstyle_index_portal() { try { await api.get("/jaxrs/program_center/appstyle/index/portal") } catch {} }
+const api_program__516_data = ref<any[]>([]);
+const { data: api_program__516_q } = useQuery({queryKey: ['api_program__516', '/jaxrs/program_center/config'], queryFn: async () => { try { const r = await api.get("/jaxrs/program_center/config"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+watch(api_program__516_q, (v) => { api_program__516_data.value = v ?? []; });
+const api_list_w_1_545_data = ref<any[]>([]);
+const { data: api_list_w_1_545_q } = useQuery({queryKey: ['api_list_w_1_545', '/jaxrs/program_center/warnlog/list/w-1/next/10'], queryFn: async () => { try { const r = await api.get("/jaxrs/program_center/warnlog/list/w-1/next/10"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+watch(api_list_w_1_545_q, (v) => { api_list_w_1_545_data.value = v ?? []; });
+const api_program__50_data = ref<any[]>([]);
+const { data: api_program__50_q } = useQuery({queryKey: ['api_program__50', '/jaxrs/program_center/agent/a-1/file'], queryFn: async () => { try { const r = await api.get("/jaxrs/program_center/agent/a-1/file"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+watch(api_program__50_q, (v) => { api_program__50_data.value = v ?? []; });
+const api_mpweixin_653_data = ref<any[]>([]);
+const { data: api_mpweixin_653_q } = useQuery({queryKey: ['api_mpweixin_653', '/jaxrs/program_center/mpweixin/menu/delete/id'], queryFn: async () => { try { const r = await api.get("/jaxrs/program_center/mpweixin/menu/delete/id"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+watch(api_mpweixin_653_q, (v) => { api_mpweixin_653_data.value = v ?? []; });
+const api_appstyle_29_data = ref<any[]>([]);
+const { data: api_appstyle_29_q } = useQuery({queryKey: ['api_appstyle_29', '/jaxrs/program_center/appstyle/image/launch/logo'], queryFn: async () => { try { const r = await api.get("/jaxrs/program_center/appstyle/image/launch/logo"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+watch(api_appstyle_29_q, (v) => { api_appstyle_29_data.value = v ?? []; });
+const api_mpweixin_987_data = ref<any[]>([]);
+const { data: api_mpweixin_987_q } = useQuery({queryKey: ['api_mpweixin_987', '/jaxrs/program_center/mpweixin/menu/update/wm-1'], queryFn: async () => { try { const r = await api.get("/jaxrs/program_center/mpweixin/menu/update/wm-1"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+watch(api_mpweixin_987_q, (v) => { api_mpweixin_987_data.value = v ?? []; });
+const api_market_f_581_data = ref<any[]>([]);
+const { data: api_market_f_581_q } = useQuery({queryKey: ['api_market_f_581', '/jaxrs/program_center/market/flag/install/log'], queryFn: async () => { try { const r = await api.get("/jaxrs/program_center/market/flag/install/log"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+watch(api_market_f_581_q, (v) => { api_market_f_581_data.value = v ?? []; });
+const api_program__665_data = ref<any[]>([]);
+const { data: api_program__665_q } = useQuery({queryKey: ['api_program__665', '/jaxrs/program_center/appstyle/index/portal'], queryFn: async () => { try { const r = await api.get("/jaxrs/program_center/appstyle/index/portal"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+watch(api_program__665_q, (v) => { api_program__665_data.value = v ?? []; });
 
 async function api_jaxrs_program() { try { await api.get("/jaxrs/program") } catch {} }
-async function api_jaxrs_program_applications() { try { await api.get("/jaxrs/program/applications") } catch {} }
-async function api_jaxrs_program_center_apppack_pack_info_file_download_pk_1() { try { await api.get("/jaxrs/program_center/apppack/pack/info/file/download/pk-1") } catch {} }
-async function api_jaxrs_program_center_appstyle_image_menu_logo_blur_erase() { try { await api.get("/jaxrs/program_center/appstyle/image/menu/logo/blur/erase") } catch {} }
-async function api_jaxrs_program_center_appstyle_image_menu_logo_focus_erase() { try { await api.get("/jaxrs/program_center/appstyle/image/menu/logo/focus/erase") } catch {} }
-async function api_jaxrs_program_center_appstyle_image_setup_about_logo_erase() { try { await api.get("/jaxrs/program_center/appstyle/image/setup/about/logo/erase") } catch {} }
-async function api_jaxrs_program_center_bar_select1_field_field_value_value_count_count() { try { await api.get("/jaxrs/program_center/bar/select1/field/field/value/value/count/count") } catch {} }
-async function api_jaxrs_program_center_bar_select1_field_status_value_open_count_10() { try { await api.get("/jaxrs/program_center/bar/select1/field/status/value/open/count/10") } catch {} }
-async function api_jaxrs_program_center_bar_select3_field_field_value_value_count_count() { try { await api.get("/jaxrs/program_center/bar/select3/field/field/value/value/count/count") } catch {} }
-async function api_jaxrs_program_center_bar_select3_field_name_value_x_count_5() { try { await api.get("/jaxrs/program_center/bar/select3/field/name/value/x/count/5") } catch {} }
-async function api_jaxrs_program_center_bar_select4_field_entity_value_y_count_5() { try { await api.get("/jaxrs/program_center/bar/select4/field/entity/value/y/count/5") } catch {} }
-async function api_jaxrs_program_center_bar_select4_field_field_value_value_count_count() { try { await api.get("/jaxrs/program_center/bar/select4/field/field/value/value/count/count") } catch {} }
-async function api_jaxrs_program_center_captcha_v2_create_width_200_height_80() { try { await api.get("/jaxrs/program_center/captcha/v2/create/width/200/height/80") } catch {} }
+const api_jaxrs_pr_38_data = ref<any[]>([]);
+const { data: api_jaxrs_pr_38_q } = useQuery({queryKey: ['api_jaxrs_pr_38', '/jaxrs/program/applications'], queryFn: async () => { try { const r = await api.get("/jaxrs/program/applications"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+watch(api_jaxrs_pr_38_q, (v) => { api_jaxrs_pr_38_data.value = v ?? []; });
+const api_jaxrs_pr_373_data = ref<any[]>([]);
+const { data: api_jaxrs_pr_373_q } = useQuery({queryKey: ['api_jaxrs_pr_373', '/jaxrs/program_center/apppack/pack/info/file/download/pk-1'], queryFn: async () => { try { const r = await api.get("/jaxrs/program_center/apppack/pack/info/file/download/pk-1"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+watch(api_jaxrs_pr_373_q, (v) => { api_jaxrs_pr_373_data.value = v ?? []; });
+const api_jaxrs_pr_402_data = ref<any[]>([]);
+const { data: api_jaxrs_pr_402_q } = useQuery({queryKey: ['api_jaxrs_pr_402', '/jaxrs/program_center/appstyle/image/menu/logo/blur/erase'], queryFn: async () => { try { const r = await api.get("/jaxrs/program_center/appstyle/image/menu/logo/blur/erase"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+watch(api_jaxrs_pr_402_q, (v) => { api_jaxrs_pr_402_data.value = v ?? []; });
+const api_jaxrs_pr_550_data = ref<any[]>([]);
+const { data: api_jaxrs_pr_550_q } = useQuery({queryKey: ['api_jaxrs_pr_550', '/jaxrs/program_center/appstyle/image/menu/logo/focus/erase'], queryFn: async () => { try { const r = await api.get("/jaxrs/program_center/appstyle/image/menu/logo/focus/erase"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+watch(api_jaxrs_pr_550_q, (v) => { api_jaxrs_pr_550_data.value = v ?? []; });
+const api_jaxrs_pr_633_data = ref<any[]>([]);
+const { data: api_jaxrs_pr_633_q } = useQuery({queryKey: ['api_jaxrs_pr_633', '/jaxrs/program_center/appstyle/image/setup/about/logo/erase'], queryFn: async () => { try { const r = await api.get("/jaxrs/program_center/appstyle/image/setup/about/logo/erase"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+watch(api_jaxrs_pr_633_q, (v) => { api_jaxrs_pr_633_data.value = v ?? []; });
+const api_jaxrs_pr_464_data = ref<any[]>([]);
+const { data: api_jaxrs_pr_464_q } = useQuery({queryKey: ['api_jaxrs_pr_464', '/jaxrs/program_center/bar/select1/field/field/value/value/count/count'], queryFn: async () => { try { const r = await api.get("/jaxrs/program_center/bar/select1/field/field/value/value/count/count"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+watch(api_jaxrs_pr_464_q, (v) => { api_jaxrs_pr_464_data.value = v ?? []; });
+const api_jaxrs_pr_432_data = ref<any[]>([]);
+const { data: api_jaxrs_pr_432_q } = useQuery({queryKey: ['api_jaxrs_pr_432', '/jaxrs/program_center/bar/select1/field/status/value/open/count/10'], queryFn: async () => { try { const r = await api.get("/jaxrs/program_center/bar/select1/field/status/value/open/count/10"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+watch(api_jaxrs_pr_432_q, (v) => { api_jaxrs_pr_432_data.value = v ?? []; });
+const api_jaxrs_pr_768_data = ref<any[]>([]);
+const { data: api_jaxrs_pr_768_q } = useQuery({queryKey: ['api_jaxrs_pr_768', '/jaxrs/program_center/bar/select3/field/field/value/value/count/count'], queryFn: async () => { try { const r = await api.get("/jaxrs/program_center/bar/select3/field/field/value/value/count/count"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+watch(api_jaxrs_pr_768_q, (v) => { api_jaxrs_pr_768_data.value = v ?? []; });
+const api_jaxrs_pr_411_data = ref<any[]>([]);
+const { data: api_jaxrs_pr_411_q } = useQuery({queryKey: ['api_jaxrs_pr_411', '/jaxrs/program_center/bar/select3/field/name/value/x/count/5'], queryFn: async () => { try { const r = await api.get("/jaxrs/program_center/bar/select3/field/name/value/x/count/5"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+watch(api_jaxrs_pr_411_q, (v) => { api_jaxrs_pr_411_data.value = v ?? []; });
+const api_jaxrs_pr_907_data = ref<any[]>([]);
+const { data: api_jaxrs_pr_907_q } = useQuery({queryKey: ['api_jaxrs_pr_907', '/jaxrs/program_center/bar/select4/field/entity/value/y/count/5'], queryFn: async () => { try { const r = await api.get("/jaxrs/program_center/bar/select4/field/entity/value/y/count/5"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+watch(api_jaxrs_pr_907_q, (v) => { api_jaxrs_pr_907_data.value = v ?? []; });
+const api_jaxrs_pr_185_data = ref<any[]>([]);
+const { data: api_jaxrs_pr_185_q } = useQuery({queryKey: ['api_jaxrs_pr_185', '/jaxrs/program_center/bar/select4/field/field/value/value/count/count'], queryFn: async () => { try { const r = await api.get("/jaxrs/program_center/bar/select4/field/field/value/value/count/count"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+watch(api_jaxrs_pr_185_q, (v) => { api_jaxrs_pr_185_data.value = v ?? []; });
+const api_jaxrs_pr_241_data = ref<any[]>([]);
+const { data: api_jaxrs_pr_241_q } = useQuery({queryKey: ['api_jaxrs_pr_241', '/jaxrs/program_center/captcha/v2/create/width/200/height/80'], queryFn: async () => { try { const r = await api.get("/jaxrs/program_center/captcha/v2/create/width/200/height/80"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+watch(api_jaxrs_pr_241_q, (v) => { api_jaxrs_pr_241_data.value = v ?? []; });
 const api_jaxrs_pr_451_data = ref<any[]>([]);
 const { data: api_jaxrs_pr_451_q } = useQuery({queryKey: ['api_jaxrs_pr_451', '/jaxrs/program_center/captcha/v2/create/width/width/height/height'], queryFn: async () => { try { const r = await api.get("/jaxrs/program_center/captcha/v2/create/width/width/height/height"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
 watch(api_jaxrs_pr_451_q, (v) => { api_jaxrs_pr_451_data.value = v ?? []; });

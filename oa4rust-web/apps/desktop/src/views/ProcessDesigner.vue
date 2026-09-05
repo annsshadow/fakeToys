@@ -7854,8 +7854,12 @@ function dbgStepClass(status: string): Record<string,boolean> { const r: Record<
 
 async function exportProcess(){if(!selectedProcess.value?.id)return;try{const r=await api.get('/jaxrs/processplatform/assemble/designer/process/export?id='+selectedProcess.value.id);const blob=new Blob([JSON.stringify(r.data,null,2)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=(selectedProcess.value.name||'process')+'.json';a.click()}catch(e){toast.info('导出失败')}}
 
-async function api_process_state_running() { try { await api.get("/jaxrs/process/state/running") } catch {} }
-async function api_process_workcompleted_list() { try { await api.get("/jaxrs/process/workcompleted/list") } catch {} }
+const api_process__983_data = ref<any[]>([]);
+const { data: api_process__983_q } = useQuery({queryKey: ['api_process__983', '/jaxrs/process/state/running'], queryFn: async () => { try { const r = await api.get("/jaxrs/process/state/running"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+watch(api_process__983_q, (v) => { api_process__983_data.value = v ?? []; });
+const api_process__364_data = ref<any[]>([]);
+const { data: api_process__364_q } = useQuery({queryKey: ['api_process__364', '/jaxrs/process/workcompleted/list'], queryFn: async () => { try { const r = await api.get("/jaxrs/process/workcompleted/list"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+watch(api_process__364_q, (v) => { api_process__364_data.value = v ?? []; });
 const api_process__282_data = ref<any[]>([]);
 const { data: api_process__282_q } = useQuery({queryKey: ['api_process__282', '/jaxrs/process/state/summary'], queryFn: async () => { try { const r = await api.get("/jaxrs/process/state/summary"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
 watch(api_process__282_q, (v) => { api_process__282_data.value = v ?? []; });

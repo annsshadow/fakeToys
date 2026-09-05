@@ -111,7 +111,9 @@ watch(api_jaxrs_correlatio_939_q, (v) => { api_jaxrs_correlatio_939_data.value =
 const api_jaxrs_correlatio_390_data = ref<any[]>([]);
 const { data: api_jaxrs_correlatio_390_q } = useQuery({queryKey: ['api_jaxrs_correlatio_390', '/jaxrs/correlation/service/processing/correlation/readable/type/cms'], queryFn: async () => { try { const r = await api.get("/jaxrs/correlation/service/processing/correlation/readable/type/cms"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
 watch(api_jaxrs_correlatio_390_q, (v) => { api_jaxrs_correlatio_390_data.value = v ?? []; });
-async function api_jaxrs_correlation_service_processing_correlation_readable_type_processplatform() { try { await api.get("/jaxrs/correlation/service/processing/correlation/readable/type/processplatform") } catch {} }
+const api_jaxrs_co_467_data = ref<any[]>([]);
+const { data: api_jaxrs_co_467_q } = useQuery({queryKey: ['api_jaxrs_co_467', '/jaxrs/correlation/service/processing/correlation/readable/type/processplatform'], queryFn: async () => { try { const r = await api.get("/jaxrs/correlation/service/processing/correlation/readable/type/processplatform"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+watch(api_jaxrs_co_467_q, (v) => { api_jaxrs_co_467_data.value = v ?? []; });
 const api_jaxrs_correlatio_484_data = ref<any[]>([]);
 const { data: api_jaxrs_correlatio_484_q } = useQuery({queryKey: ['api_jaxrs_correlatio_484', '/jaxrs/correlation/service/processing/correlation/type/cms/document/doc-1'], queryFn: async () => { try { const r = await api.get("/jaxrs/correlation/service/processing/correlation/type/cms/document/doc-1"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
 watch(api_jaxrs_correlatio_484_q, (v) => { api_jaxrs_correlatio_484_data.value = v ?? []; });

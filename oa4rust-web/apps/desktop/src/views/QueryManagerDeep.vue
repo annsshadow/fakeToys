@@ -548,11 +548,21 @@ function getQueryExecCount(id: string) { return execCounts.value[id] || 0 }
 function getQueryLastRun(id: string) { return lastRuns.value[id] || '—' }
 function openProps() { if(selected.value) showProps.value = true }
 
-async function api_jaxrs_query_assemble_designer_neural_model_m1_reset_status() { try { await api.get("/jaxrs/query/assemble/designer/neural/model/m1/reset/status") } catch {} }
-async function api_jaxrs_query_assemble_designer_statement_execute_st_1_mode_count_page_1_size_20() { try { await api.get("/jaxrs/query/assemble/designer/statement/execute/st-1/mode/count/page/1/size/20") } catch {} }
-async function api_jaxrs_query_assemble_designer_statement_execute_st_1_page_1_size_20() { try { await api.get("/jaxrs/query/assemble/designer/statement/execute/st-1/page/1/size/20") } catch {} }
-async function api_jaxrs_query_assemble_designer_statement_st_1_execute_mode_count_page_1_size_20() { try { await api.get("/jaxrs/query/assemble/designer/statement/st-1/execute/mode/count/page/1/size/20") } catch {} }
-async function api_jaxrs_query_assemble_designer_statement_st_1_execute_page_1_size_20() { try { await api.get("/jaxrs/query/assemble/designer/statement/st-1/execute/page/1/size/20") } catch {} }
+const api_jaxrs_qu_102_data = ref<any[]>([]);
+const { data: api_jaxrs_qu_102_q } = useQuery({queryKey: ['api_jaxrs_qu_102', '/jaxrs/query/assemble/designer/neural/model/m1/reset/status'], queryFn: async () => { try { const r = await api.get("/jaxrs/query/assemble/designer/neural/model/m1/reset/status"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+watch(api_jaxrs_qu_102_q, (v) => { api_jaxrs_qu_102_data.value = v ?? []; });
+const api_jaxrs_qu_109_data = ref<any[]>([]);
+const { data: api_jaxrs_qu_109_q } = useQuery({queryKey: ['api_jaxrs_qu_109', '/jaxrs/query/assemble/designer/statement/execute/st-1/mode/count/page/1/size/20'], queryFn: async () => { try { const r = await api.get("/jaxrs/query/assemble/designer/statement/execute/st-1/mode/count/page/1/size/20"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+watch(api_jaxrs_qu_109_q, (v) => { api_jaxrs_qu_109_data.value = v ?? []; });
+const api_jaxrs_qu_615_data = ref<any[]>([]);
+const { data: api_jaxrs_qu_615_q } = useQuery({queryKey: ['api_jaxrs_qu_615', '/jaxrs/query/assemble/designer/statement/execute/st-1/page/1/size/20'], queryFn: async () => { try { const r = await api.get("/jaxrs/query/assemble/designer/statement/execute/st-1/page/1/size/20"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+watch(api_jaxrs_qu_615_q, (v) => { api_jaxrs_qu_615_data.value = v ?? []; });
+const api_jaxrs_qu_186_data = ref<any[]>([]);
+const { data: api_jaxrs_qu_186_q } = useQuery({queryKey: ['api_jaxrs_qu_186', '/jaxrs/query/assemble/designer/statement/st-1/execute/mode/count/page/1/size/20'], queryFn: async () => { try { const r = await api.get("/jaxrs/query/assemble/designer/statement/st-1/execute/mode/count/page/1/size/20"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+watch(api_jaxrs_qu_186_q, (v) => { api_jaxrs_qu_186_data.value = v ?? []; });
+const api_jaxrs_qu_731_data = ref<any[]>([]);
+const { data: api_jaxrs_qu_731_q } = useQuery({queryKey: ['api_jaxrs_qu_731', '/jaxrs/query/assemble/designer/statement/st-1/execute/page/1/size/20'], queryFn: async () => { try { const r = await api.get("/jaxrs/query/assemble/designer/statement/st-1/execute/page/1/size/20"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+watch(api_jaxrs_qu_731_q, (v) => { api_jaxrs_qu_731_data.value = v ?? []; });
 const api_jaxrs_qu_720_data = ref<any[]>([]);
 const { data: api_jaxrs_qu_720_q } = useQuery({queryKey: ['api_jaxrs_qu_720', '/jaxrs/query/service/processing/index/directory/document/count'], queryFn: async () => { try { const r = await api.get("/jaxrs/query/service/processing/index/directory/document/count"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
 watch(api_jaxrs_qu_720_q, (v) => { api_jaxrs_qu_720_data.value = v ?? []; });
