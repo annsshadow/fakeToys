@@ -49,6 +49,9 @@
           </div>
           <div class="item-actions">
             <button class="btn-sm primary" @click="handleApprove(item)">审批</button>
+            <button class="btn-sm btn-reject" @click="handleReject(item)">驳回</button>
+            <button class="btn-sm" @click="handleDelegate(item)">转办</button>
+            <button class="btn-sm" @click="handleForward(item)">抄送</button>
             <button class="btn-sm" @click="handleView(item)">详情</button>
           </div>
         </div>
@@ -184,6 +187,56 @@ function handleApprove(item: TaskItem): void {
   approveMutation.mutate(item.id, {
     onSuccess: () => toast.success('审批通过'),
     onError: () => toast.error('审批失败'),
+  });
+}
+
+const rejectMutation = useMutation({
+  mutationFn: (id: string) =>
+    api.post(`/jaxrs/processplatform/assemble/surface/work/${id}/reject`, {}),
+  onSettled: () => {
+    queryClient.invalidateQueries({ queryKey: ['process', 'tasks'] });
+    queryClient.invalidateQueries({ queryKey: ['process', 'counts'] });
+  },
+});
+function handleReject(item: TaskItem): void {
+  if (!confirmMsg('确定驳回该任务？')) return;
+  rejectMutation.mutate(item.id, {
+    onSuccess: () => toast.success('已驳回'),
+    onError: () => toast.error('驳回失败'),
+  });
+}
+
+const delegateMutation = useMutation({
+  mutationFn: ({ id, targetId }: { id: string; targetId: string }) =>
+    api.post(`/jaxrs/processplatform/assemble/surface/work/${id}/delegate`, { targetId }),
+  onSettled: () => {
+    queryClient.invalidateQueries({ queryKey: ['process', 'tasks'] });
+    queryClient.invalidateQueries({ queryKey: ['process', 'counts'] });
+  },
+});
+async function handleDelegate(item: TaskItem): void {
+  const targetId = prompt('请输入转办对象ID:', '');
+  if (!targetId) return;
+  delegateMutation.mutate({ id: item.id, targetId }, {
+    onSuccess: () => toast.success('转办成功'),
+    onError: () => toast.error('转办失败'),
+  });
+}
+
+const forwardMutation = useMutation({
+  mutationFn: ({ id, targetId }: { id: string; targetId: string }) =>
+    api.post(`/jaxrs/processplatform/assemble/surface/work/${id}/forward`, { targetId }),
+  onSettled: () => {
+    queryClient.invalidateQueries({ queryKey: ['process', 'tasks'] });
+    queryClient.invalidateQueries({ queryKey: ['process', 'counts'] });
+  },
+});
+async function handleForward(item: TaskItem): void {
+  const targetId = prompt('请输入抄送对象ID:', '');
+  if (!targetId) return;
+  forwardMutation.mutate({ id: item.id, targetId }, {
+    onSuccess: () => toast.success('抄送成功'),
+    onError: () => toast.error('抄送失败'),
   });
 }
 
@@ -552,6 +605,8 @@ async function api_jaxrs_processplatform_service_processing_work_process_pd_boot
 .btn-sm:hover { border-color: var(--color-primary); color: var(--color-primary); }
 .btn-sm.primary { background: var(--color-primary); color: white; border-color: var(--color-primary); }
 .btn-sm.primary:hover { background: var(--color-primary-deep); }
+.btn-sm.btn-reject { border-color: var(--color-error); color: var(--color-error); }
+.btn-sm.btn-reject:hover { background: var(--color-error); color: white; }
 
 .empty-state, .loading-state, .error-state {
   display: flex; flex-direction: column; align-items: center; justify-content: center;
