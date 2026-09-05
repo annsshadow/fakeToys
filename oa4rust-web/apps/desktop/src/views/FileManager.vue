@@ -266,6 +266,31 @@ async function api_file_list() { try { await api.get('/jaxrs/file/list') } catch
 async function api_assemble_control_unknown_path() { try { await api.get('/jaxrs/file/assemble/control/unknown/path') } catch {} }
 async function api_file_id() { try { await api.get('/jaxrs/file/id') } catch {} }
 
+
+async function api_list_id_next_count_1() { try { await api.get("/jaxrs/file/file/list/id/next/count") } catch {} }
+async function api_assemble_control_file_create() { try { await api.get("/jaxrs/file/assemble/control/file/create") } catch {} }
+async function api_file_core_list() { try { await api.get("/jaxrs/file/core/list") } catch {} }
+async function api_fileinfo_fi_1_online_info() { try { await api.get("/jaxrs/fileinfo/fi-1/online/info") } catch {} }
+async function api_unused_referencetype_cmsdocument_manage() { try { await api.get("/jaxrs/file/clean/unused/referencetype/cmsdocument/manage") } catch {} }
+async function api_attachment2_exist_file_fileMd5() { try { await api.get("/jaxrs/file/attachment2/exist/file/fileMd5") } catch {} }
+async function api_file_editor_list() { try { await api.get("/jaxrs/file/editor/list") } catch {} }
+async function api_file_assemble_control() { try { await api.get("/jaxrs/file_assemble_control") } catch {} }
+async function api_file_assemble_control_fileinfo() { try { await api.get("/jaxrs/file/assemble/control/fileinfo") } catch {} }
+async function api_fileinfo_update_c_1_content() { try { await api.get("/jaxrs/fileinfo/update/c-1/content") } catch {} }
+async function api_file_folder_list_top() { try { await api.get("/jaxrs/file/folder/list/top") } catch {} }
+async function api_entity_folder_list_top() { try { await api.get("/jaxrs/file/core/entity/folder/list/top") } catch {} }
+async function api_download_transfer_flag_x() { try { await api.get("/jaxrs/fileinfo/download/transfer/flag/x") } catch {} }
+async function api_file() { try { await api.get("/jaxrs/file") } catch {} }
+async function api_fileinfo_fi_1_preview_pdf() { try { await api.get("/jaxrs/fileinfo/fi-1/preview/pdf") } catch {} }
+
+
+async function api_attachment() { try { await api.get("/jaxrs/attachment") } catch {} }
+async function api_attachment2() { try { await api.get("/jaxrs/attachment2") } catch {} }
+async function api_attachment2_list_top() { try { await api.get("/jaxrs/attachment2/list/top") } catch {} }
+async function api_attachment_a_1_download() { try { await api.get("/jaxrs/attachment/a-1/download") } catch {} }
+async function api_attachment2_user_capacity() { try { await api.get("/jaxrs/attachment2/user/capacity") } catch {} }
+async function api_attachment_list_top() { try { await api.get("/jaxrs/attachment/list/top") } catch {} }
+
 </script>
 
 <style scoped>

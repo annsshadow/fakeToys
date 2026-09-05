@@ -243,6 +243,23 @@ async function api_program_center_market_id_download() { try { await api.get('/j
 async function api_program_center_market_m_1_uninstall() { try { await api.get('/jaxrs/program_center/market/m-1/uninstall') } catch {} }
 async function api_dict_dictFlag_path_data() { try { await api.get('/jaxrs/program_center/dict/dictFlag/path/data') } catch {} }
 
+
+async function api_program_center_center_version() { try { await api.get("/jaxrs/program_center/center/version") } catch {} }
+async function api_program_center_agent_flag_disable() { try { await api.get("/jaxrs/program_center/agent/flag/disable") } catch {} }
+async function api_config_list_dump_data() { try { await api.get("/jaxrs/program_center/config/list/dump/data") } catch {} }
+async function api_market_m_1_cover_pic() { try { await api.get("/jaxrs/program_center/market/m-1/cover/pic") } catch {} }
+async function api_list_schedulelog_application_app_1() { try { await api.get("/jaxrs/program_center/schedule/list/schedulelog/application/app-1") } catch {} }
+async function api_program_center_datastructure_modules_all() { try { await api.get("/jaxrs/program_center/datastructure/modules/all") } catch {} }
+async function api_program_center_prompterrorlog_count_loggername() { try { await api.get("/jaxrs/program_center/prompterrorlog/count/loggername") } catch {} }
+async function api_program_center_agent_flag_enable() { try { await api.get("/jaxrs/program_center/agent/flag/enable") } catch {} }
+async function api_apppack_pack_info_logo() { try { await api.get("/jaxrs/program_center/apppack/pack/info/logo") } catch {} }
+async function api_program_center_qiyeweixin() { try { await api.get("/jaxrs/program_center/qiyeweixin") } catch {} }
+async function api_market_flag_installed_version() { try { await api.get("/jaxrs/program_center/market/flag/installed/version") } catch {} }
+async function api_program_center_prompterrorlog_p_1() { try { await api.get("/jaxrs/program_center/prompterrorlog/p-1") } catch {} }
+async function api_program_center_validation_timeout_timeout() { try { await api.get("/jaxrs/program_center/validation/timeout/timeout") } catch {} }
+async function api_list_p_1_next_10() { try { await api.get("/jaxrs/program_center/prompterrorlog/list/p-1/next/10") } catch {} }
+async function api_list_id_next_count() { try { await api.get("/jaxrs/program_center/prompterrorlog/list/id/next/count") } catch {} }
+
 </script>
 
 <style scoped>
