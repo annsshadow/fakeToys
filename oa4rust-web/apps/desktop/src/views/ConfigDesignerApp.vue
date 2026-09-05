@@ -215,10 +215,10 @@ async function save() {
     addHistory(true)
   } catch (e: any) { toast.error('保存失败: : ' + (e?.message??'')) }
 }
-async function preview() { alert('配置预览:\n'+config.value) }
+async function preview() { toast.info('配置预览: ' + config.value) }
 function clearConfig() { if(confirmMsg('清空配置？')) config.value = '{}' }
 function formatConfig() { try { config.value = JSON.stringify(JSON.parse(config.value), null, 2) } catch { toast.info('JSON格式错误') } }
-function validateConfig() { try { JSON.parse(config.value); toast.info('JSON格式有效') } catch (e: any) { alert('JSON格式错误: ' + e.message) } }
+function validateConfig() { try { JSON.parse(config.value); toast.info('JSON格式有效') } catch (e: any) { toast.error('JSON格式错误: ' + e.message) } }
 function applyFormat() { config.value = formattedOutput.value; showFormat.value = false }
 function copyConfig() { navigator.clipboard.writeText(config.value); toast.info('已复制') }
 function downloadConfig() {
