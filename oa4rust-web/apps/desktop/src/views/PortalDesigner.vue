@@ -544,6 +544,21 @@ function confirmMsg(msg: string): Promise<boolean> {
   })
 }
 
+
+async function api_surface_widget_w1_mobile() { try { await api.get("/jaxrs/portal/assemble/surface/widget/w1/mobile") } catch {} }
+async function api_surface_page_v2_id1() { try { await api.get("/jaxrs/portal/assemble/surface/page/v2/id1") } catch {} }
+async function api_designer_input_prepare_cover() { try { await api.get("/jaxrs/portal/assemble/designer/input/prepare/cover") } catch {} }
+async function api_surface_portal_id1_icon() { try { await api.get("/jaxrs/portal/assemble/surface/portal/id1/icon") } catch {} }
+async function api_designer_script_list_manager() { try { await api.get("/jaxrs/portal/assemble/designer/script/list/manager") } catch {} }
+async function api_assemble_designer_portal_id1() { try { await api.get("/jaxrs/portal/assemble/designer/portal/id1") } catch {} }
+async function api_assemble_designer_templatepage_list() { try { await api.get("/jaxrs/portal/assemble/designer/templatepage/list") } catch {} }
+async function api_designer_portal_list_summary() { try { await api.get("/jaxrs/portal/assemble/designer/portal/list/summary") } catch {} }
+async function api_designer_templatepage_list_category() { try { await api.get("/jaxrs/portal/assemble/designer/templatepage/list/category") } catch {} }
+async function api_surface_portal_list_mobile() { try { await api.get("/jaxrs/portal/assemble/surface/portal/list/mobile") } catch {} }
+async function api_portal_page_list() { try { await api.get("/jaxrs/portal/page/list") } catch {} }
+async function api_portalcategory_list() { try { await api.get("/jaxrs/portalcategory/list") } catch {} }
+async function api_portal_assemble_surface_widgets() { try { await api.get("/jaxrs/portal/assemble/surface/widgets") } catch {} }
+
 </script>
 
 <style scoped>

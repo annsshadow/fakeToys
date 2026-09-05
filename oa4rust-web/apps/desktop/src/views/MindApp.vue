@@ -141,6 +141,16 @@ async function api_assemble_control_mind_x() { try { await api.get('/jaxrs/mind/
 async function api_mind_core_entity_mind() { try { await api.get('/jaxrs/mind/core/entity/mind') } catch {} }
 async function api_mind_core_entity_folder() { try { await api.get('/jaxrs/mind/core/entity/folder') } catch {} }
 
+
+async function api_control_mind_x_destoryrecycle() { try { await api.get("/jaxrs/mind/assemble/control/mind/x/destoryrecycle") } catch {} }
+async function api_entity_version_list_mind_001() { try { await api.get("/jaxrs/mind/core/entity/version/list/mind-001") } catch {} }
+async function api_control_mind_restore_x() { try { await api.get("/jaxrs/mind/assemble/control/mind/restore/x") } catch {} }
+async function api_mind_assemble_control() { try { await api.get("/jaxrs/mind_assemble_control") } catch {} }
+async function api_control_mind_version_x() { try { await api.get("/jaxrs/mind/assemble/control/mind/version/x") } catch {} }
+async function api_control_mind_x_destorymind() { try { await api.get("/jaxrs/mind/assemble/control/mind/x/destorymind") } catch {} }
+async function api_control_folder_move_x() { try { await api.get("/jaxrs/mind/assemble/control/folder/move/x") } catch {} }
+async function api_control_mind_share_x() { try { await api.get("/jaxrs/mind/assemble/control/mind/share/x") } catch {} }
+
 </script>
 
 <style scoped>

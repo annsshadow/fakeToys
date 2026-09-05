@@ -424,6 +424,11 @@ async function api_comment_u3_cmt_commend() { try { await api.get("/jaxrs/commen
 
 async function api_review_v2_search() { try { await api.get("/jaxrs/review/v2/search") } catch {} }
 
+
+async function api_assemble_control_shutup_delete() { try { await api.get("/jaxrs/bbs/assemble/control/shutup/delete") } catch {} }
+async function api_control_forum_view_all() { try { await api.get("/jaxrs/bbs/assemble/control/forum/view/all") } catch {} }
+async function api_control_list_topics_creamed() { try { await api.get("/jaxrs/bbs/assemble/control/list/topics/creamed") } catch {} }
+
 </script>
 
 <style scoped>

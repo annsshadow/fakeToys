@@ -141,6 +141,12 @@ async function api_component_assemble_control_get_component() { try { await api.
 async function api_complex_folder_c_1() { try { await api.get("/jaxrs/complex/folder/c-1") } catch {} }
 async function api_complex_top() { try { await api.get("/jaxrs/complex/top") } catch {} }
 
+
+async function api_general_assemble_control_qrcode() { try { await api.get("/jaxrs/general/assemble/control/qrcode") } catch {} }
+async function api_assemble_control_securityclearance_subject() { try { await api.get("/jaxrs/general/assemble/control/securityclearance/subject") } catch {} }
+async function api_assemble_control_status_update() { try { await api.get("/jaxrs/general/assemble/control/status/update") } catch {} }
+async function api_general_file_create() { try { await api.get("/jaxrs/general/file/create") } catch {} }
+
 </script>
 <style scoped>
 .crud-view{display:flex;flex-direction:column;gap:16px;height:100%}

@@ -232,6 +232,16 @@ function confirmMsg(msg: string): Promise<boolean> {
   })
 }
 
+
+async function api_control_attendanceschedulesetting_list_all() { try { await api.get("/jaxrs/attendance/assemble/control/attendanceschedulesetting/list/all") } catch {} }
+async function api_core_entity_rule_create() { try { await api.get("/jaxrs/attendance/core/entity/rule/create") } catch {} }
+async function api_control_attendancestatisticalcycle_list_all() { try { await api.get("/jaxrs/attendance/assemble/control/attendancestatisticalcycle/list/all") } catch {} }
+async function api_attendance_assemble_control() { try { await api.get("/jaxrs/attendance_assemble_control") } catch {} }
+async function api_control_v2_mobile_check() { try { await api.get("/jaxrs/attendance/assemble/control/v2/mobile/check") } catch {} }
+async function api_control_attendancedetail_mobile_mobilepreview() { try { await api.get("/jaxrs/attendance/assemble/control/attendancedetail/mobile/mobilepreview") } catch {} }
+async function api_attendance_assemble_control_attendanceworkdayconfig() { try { await api.get("/jaxrs/attendance/assemble/control/attendanceworkdayconfig") } catch {} }
+async function api_control_qywx_sync_list() { try { await api.get("/jaxrs/attendance/assemble/control/qywx/sync/list") } catch {} }
+
 </script>
 <style scoped>
 .attendance-view{display:flex;flex-direction:column;gap:16px;height:100%}

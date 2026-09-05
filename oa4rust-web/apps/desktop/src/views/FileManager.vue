@@ -360,6 +360,14 @@ async function api_share_shield_s_1() { try { await api.get("/jaxrs/share/shield
 
 async function api_image_encode_base64() { try { await api.get("/jaxrs/image/encode/base64") } catch {} }
 
+
+async function api_f_1_appInfo_app_1_content() { try { await api.get("/jaxrs/file/f-1/appInfo/app-1/content") } catch {} }
+async function api_file_folder_create() { try { await api.get("/jaxrs/file/folder/create") } catch {} }
+async function api_core_entity_file_list() { try { await api.get("/jaxrs/file/core/entity/file/list") } catch {} }
+async function api_file_attachment2_id_download() { try { await api.get("/jaxrs/file/attachment2/id/download") } catch {} }
+async function api_control_update_control_config() { try { await api.get("/jaxrs/file/assemble/control/update/control/config") } catch {} }
+async function api_fileinfo_list_filter() { try { await api.get("/jaxrs/fileinfo/list/filter") } catch {} }
+
 </script>
 
 <style scoped>
