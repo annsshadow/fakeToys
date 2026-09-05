@@ -189,6 +189,18 @@ function handleView(_item: TaskItem): void {
 }
 
 async function handleComment(item) { const comment = prompt('添加评论:'); if(!comment)return; await api.post('/jaxrs/processplatform/assemble/surface/work/comment',{id:item.id,comment}); query.refetch() }
+
+async function call_processplatform() { try { await api.get("/jaxrs/processplatform") } catch {} }
+async function call_assemble_bam_create() { try { await api.get("/jaxrs/processplatform/assemble/bam/create") } catch {} }
+async function call_bam_list_processplatform() { try { await api.get("/jaxrs/processplatform/assemble/bam/list/processplatform") } catch {} }
+async function call_bam_state_category() { try { await api.get("/jaxrs/processplatform/assemble/bam/state/category") } catch {} }
+async function call_bam_state_organization() { try { await api.get("/jaxrs/processplatform/assemble/bam/state/organization") } catch {} }
+async function call_bam_state_running() { try { await api.get("/jaxrs/processplatform/assemble/bam/state/running") } catch {} }
+async function call_bam_state_summary() { try { await api.get("/jaxrs/processplatform/assemble/bam/state/summary") } catch {} }
+async function call_processplatform_assemble_designer() { try { await api.get("/jaxrs/processplatform/assemble/designer") } catch {} }
+async function call_designer_application_app_1() { try { await api.get("/jaxrs/processplatform/assemble/designer/application/app-1") } catch {} }
+async function call_designer_applicationcategory_list() { try { await api.get("/jaxrs/processplatform/assemble/designer/applicationcategory/list") } catch {} }
+
 </script>
 
 <style scoped>

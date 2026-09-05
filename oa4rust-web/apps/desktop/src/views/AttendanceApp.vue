@@ -108,6 +108,18 @@ loadRules()
 
 
 async function loadStatistics(){try{const r=await api.get('/jaxrs/attendance/assemble/control/statistics/list?month='+month.value);attStats.value=(r.data??[])}catch{attStats.value=[]}}
+
+async function call_admin_list_all() { try { await api.get("/jaxrs/attendance/admin/list/all") } catch {} }
+async function call_attendance_appeal_submit() { try { await api.get("/jaxrs/attendance/appeal/submit") } catch {} }
+async function call_attendance_assemble_control() { try { await api.get("/jaxrs/attendance/assemble/control") } catch {} }
+async function call_assemble_control_attendanceadmin() { try { await api.get("/jaxrs/attendance/assemble/control/attendanceadmin") } catch {} }
+async function call_control_attendanceadmin_a_1() { try { await api.get("/jaxrs/attendance/assemble/control/attendanceadmin/a-1") } catch {} }
+async function call_control_attendanceappealInfo_audit() { try { await api.get("/jaxrs/attendance/assemble/control/attendanceappealInfo/audit") } catch {} }
+async function call_control_attendanceappealInfo_check() { try { await api.get("/jaxrs/attendance/assemble/control/attendanceappealInfo/check") } catch {} }
+async function call_assemble_control_attendanceconfig() { try { await api.get("/jaxrs/attendance/assemble/control/attendanceconfig") } catch {} }
+async function call_control_attendanceconfig_list() { try { await api.get("/jaxrs/attendance/assemble/control/attendanceconfig/list") } catch {} }
+async function call_assemble_control_attendancedetail() { try { await api.get("/jaxrs/attendance/assemble/control/attendancedetail") } catch {} }
+
 </script>
 <style scoped>
 .attendance-view{display:flex;flex-direction:column;gap:16px;height:100%}
