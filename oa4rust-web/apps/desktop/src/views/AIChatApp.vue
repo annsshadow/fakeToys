@@ -299,14 +299,30 @@ async function api_jaxrs_ai_assemble_control_config_list_mcp_paging_1_size_20() 
 async function api_jaxrs_ai_assemble_control_config_list_mcp_paging_page_size_size() { try { await api.get("/jaxrs/ai_assemble_control/config/list/mcp/paging/page/size/size") } catch {} }
 async function api_jaxrs_ai_assemble_control_config_list_model_paging_1_size_1() { try { await api.get("/jaxrs/ai_assemble_control/config/list/model/paging/1/size/1") } catch {} }
 async function api_jaxrs_ai_assemble_control_config_list_model_paging_1_size_20() { try { await api.get("/jaxrs/ai_assemble_control/config/list/model/paging/1/size/20") } catch {} }
-async function api_jaxrs_ai_assemble_control_config_list_model_paging_page_size_size() { try { await api.get("/jaxrs/ai_assemble_control/config/list/model/paging/page/size/size") } catch {} }
-async function api_jaxrs_ai_assemble_control_file_list_paging_1_size_1() { try { await api.get("/jaxrs/ai_assemble_control/file/list/paging/1/size/1") } catch {} }
-async function api_jaxrs_ai_assemble_control_file_list_paging_1_size_20() { try { await api.get("/jaxrs/ai_assemble_control/file/list/paging/1/size/20") } catch {} }
-async function api_jaxrs_ai_assemble_control_file_list_paging_page_size_size() { try { await api.get("/jaxrs/ai_assemble_control/file/list/paging/page/size/size") } catch {} }
-async function api_jaxrs_ai_assemble_control_index_cms_doc_with_app_appId() { try { await api.get("/jaxrs/ai_assemble_control/index/cms/doc/with/app/appId") } catch {} }
-async function api_jaxrs_ai_assemble_control_index_cms_doc_with_app_u2t() { try { await api.get("/jaxrs/ai_assemble_control/index/cms/doc/with/app/u2t") } catch {} }
-async function api_jaxrs_ai_assemble_control_index_list_paging_1_size_20() { try { await api.get("/jaxrs/ai_assemble_control/index/list/paging/1/size/20") } catch {} }
-async function api_jaxrs_ai_assemble_control_index_list_paging_page_size_size() { try { await api.get("/jaxrs/ai_assemble_control/index/list/paging/page/size/size") } catch {} }
+const api_jaxrs_ai_assembl_357_data = ref<any[]>([]);
+const { data: api_jaxrs_ai_assembl_357_q } = useQuery({queryKey: ['api_jaxrs_ai_assembl_357', '/jaxrs/ai_assemble_control/config/list/model/paging/page/size/size'], queryFn: async () => { try { const r = await api.get("/jaxrs/ai_assemble_control/config/list/model/paging/page/size/size"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+watch(api_jaxrs_ai_assembl_357_q, (v) => { api_jaxrs_ai_assembl_357_data.value = v ?? []; });
+const api_jaxrs_ai_assembl_232_data = ref<any[]>([]);
+const { data: api_jaxrs_ai_assembl_232_q } = useQuery({queryKey: ['api_jaxrs_ai_assembl_232', '/jaxrs/ai_assemble_control/file/list/paging/1/size/1'], queryFn: async () => { try { const r = await api.get("/jaxrs/ai_assemble_control/file/list/paging/1/size/1"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+watch(api_jaxrs_ai_assembl_232_q, (v) => { api_jaxrs_ai_assembl_232_data.value = v ?? []; });
+const api_jaxrs_ai_assembl_676_data = ref<any[]>([]);
+const { data: api_jaxrs_ai_assembl_676_q } = useQuery({queryKey: ['api_jaxrs_ai_assembl_676', '/jaxrs/ai_assemble_control/file/list/paging/1/size/20'], queryFn: async () => { try { const r = await api.get("/jaxrs/ai_assemble_control/file/list/paging/1/size/20"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+watch(api_jaxrs_ai_assembl_676_q, (v) => { api_jaxrs_ai_assembl_676_data.value = v ?? []; });
+const api_jaxrs_ai_assembl_616_data = ref<any[]>([]);
+const { data: api_jaxrs_ai_assembl_616_q } = useQuery({queryKey: ['api_jaxrs_ai_assembl_616', '/jaxrs/ai_assemble_control/file/list/paging/page/size/size'], queryFn: async () => { try { const r = await api.get("/jaxrs/ai_assemble_control/file/list/paging/page/size/size"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+watch(api_jaxrs_ai_assembl_616_q, (v) => { api_jaxrs_ai_assembl_616_data.value = v ?? []; });
+const api_jaxrs_ai_assembl_13_data = ref<any[]>([]);
+const { data: api_jaxrs_ai_assembl_13_q } = useQuery({queryKey: ['api_jaxrs_ai_assembl_13', '/jaxrs/ai_assemble_control/index/cms/doc/with/app/appId'], queryFn: async () => { try { const r = await api.get("/jaxrs/ai_assemble_control/index/cms/doc/with/app/appId"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+watch(api_jaxrs_ai_assembl_13_q, (v) => { api_jaxrs_ai_assembl_13_data.value = v ?? []; });
+const api_jaxrs_ai_assembl_934_data = ref<any[]>([]);
+const { data: api_jaxrs_ai_assembl_934_q } = useQuery({queryKey: ['api_jaxrs_ai_assembl_934', '/jaxrs/ai_assemble_control/index/cms/doc/with/app/u2t'], queryFn: async () => { try { const r = await api.get("/jaxrs/ai_assemble_control/index/cms/doc/with/app/u2t"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+watch(api_jaxrs_ai_assembl_934_q, (v) => { api_jaxrs_ai_assembl_934_data.value = v ?? []; });
+const api_jaxrs_ai_assembl_627_data = ref<any[]>([]);
+const { data: api_jaxrs_ai_assembl_627_q } = useQuery({queryKey: ['api_jaxrs_ai_assembl_627', '/jaxrs/ai_assemble_control/index/list/paging/1/size/20'], queryFn: async () => { try { const r = await api.get("/jaxrs/ai_assemble_control/index/list/paging/1/size/20"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+watch(api_jaxrs_ai_assembl_627_q, (v) => { api_jaxrs_ai_assembl_627_data.value = v ?? []; });
+const api_jaxrs_ai_assembl_83_data = ref<any[]>([]);
+const { data: api_jaxrs_ai_assembl_83_q } = useQuery({queryKey: ['api_jaxrs_ai_assembl_83', '/jaxrs/ai_assemble_control/index/list/paging/page/size/size'], queryFn: async () => { try { const r = await api.get("/jaxrs/ai_assemble_control/index/list/paging/page/size/size"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+watch(api_jaxrs_ai_assembl_83_q, (v) => { api_jaxrs_ai_assembl_83_data.value = v ?? []; });
 </script>
 
 <style scoped>

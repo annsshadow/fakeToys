@@ -167,14 +167,30 @@ async function api_meeting_assemble_control() { try { await api.get("/jaxrs/meet
 async function api_entity_room_save_room_001() { try { await api.get("/jaxrs/meeting/core/entity/room/save/room-001") } catch {} }
 async function api_control_openmeeting_list_room() { try { await api.get("/jaxrs/meeting/assemble/control/openmeeting/list/room") } catch {} }
 
-async function api_jaxrs_meeting_assemble_control_attachment_create_from_processplatform() { try { await api.get("/jaxrs/meeting/assemble/control/attachment/create/from/processplatform") } catch {} }
-async function api_jaxrs_meeting_assemble_control_config_system_config_manage() { try { await api.get("/jaxrs/meeting/assemble/control/config/system/config/manage") } catch {} }
-async function api_jaxrs_meeting_assemble_control_meeting_list_applied_completed() { try { await api.get("/jaxrs/meeting/assemble/control/meeting/list/applied/completed") } catch {} }
-async function api_jaxrs_meeting_assemble_control_meeting_list_applied_wait() { try { await api.get("/jaxrs/meeting/assemble/control/meeting/list/applied/wait") } catch {} }
-async function api_jaxrs_meeting_assemble_control_meeting_list_invited_completed() { try { await api.get("/jaxrs/meeting/assemble/control/meeting/list/invited/completed") } catch {} }
-async function api_jaxrs_meeting_assemble_control_meeting_list_invited_wait() { try { await api.get("/jaxrs/meeting/assemble/control/meeting/list/invited/wait") } catch {} }
-async function api_jaxrs_meeting_assemble_control_meeting_meeting_001_add_invite() { try { await api.get("/jaxrs/meeting/assemble/control/meeting/meeting-001/add/invite") } catch {} }
-async function api_jaxrs_meeting_assemble_control_meeting_meeting_001_delete_invite() { try { await api.get("/jaxrs/meeting/assemble/control/meeting/meeting-001/delete/invite") } catch {} }
+const api_jaxrs_meeting_as_202_data = ref<any[]>([]);
+const { data: api_jaxrs_meeting_as_202_q } = useQuery({queryKey: ['api_jaxrs_meeting_as_202', '/jaxrs/meeting/assemble/control/attachment/create/from/processplatform'], queryFn: async () => { try { const r = await api.get("/jaxrs/meeting/assemble/control/attachment/create/from/processplatform"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+watch(api_jaxrs_meeting_as_202_q, (v) => { api_jaxrs_meeting_as_202_data.value = v ?? []; });
+const api_jaxrs_meeting_as_324_data = ref<any[]>([]);
+const { data: api_jaxrs_meeting_as_324_q } = useQuery({queryKey: ['api_jaxrs_meeting_as_324', '/jaxrs/meeting/assemble/control/config/system/config/manage'], queryFn: async () => { try { const r = await api.get("/jaxrs/meeting/assemble/control/config/system/config/manage"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+watch(api_jaxrs_meeting_as_324_q, (v) => { api_jaxrs_meeting_as_324_data.value = v ?? []; });
+const api_jaxrs_meeting_as_890_data = ref<any[]>([]);
+const { data: api_jaxrs_meeting_as_890_q } = useQuery({queryKey: ['api_jaxrs_meeting_as_890', '/jaxrs/meeting/assemble/control/meeting/list/applied/completed'], queryFn: async () => { try { const r = await api.get("/jaxrs/meeting/assemble/control/meeting/list/applied/completed"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+watch(api_jaxrs_meeting_as_890_q, (v) => { api_jaxrs_meeting_as_890_data.value = v ?? []; });
+const api_jaxrs_meeting_as_804_data = ref<any[]>([]);
+const { data: api_jaxrs_meeting_as_804_q } = useQuery({queryKey: ['api_jaxrs_meeting_as_804', '/jaxrs/meeting/assemble/control/meeting/list/applied/wait'], queryFn: async () => { try { const r = await api.get("/jaxrs/meeting/assemble/control/meeting/list/applied/wait"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+watch(api_jaxrs_meeting_as_804_q, (v) => { api_jaxrs_meeting_as_804_data.value = v ?? []; });
+const api_jaxrs_meeting_as_189_data = ref<any[]>([]);
+const { data: api_jaxrs_meeting_as_189_q } = useQuery({queryKey: ['api_jaxrs_meeting_as_189', '/jaxrs/meeting/assemble/control/meeting/list/invited/completed'], queryFn: async () => { try { const r = await api.get("/jaxrs/meeting/assemble/control/meeting/list/invited/completed"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+watch(api_jaxrs_meeting_as_189_q, (v) => { api_jaxrs_meeting_as_189_data.value = v ?? []; });
+const api_jaxrs_meeting_as_149_data = ref<any[]>([]);
+const { data: api_jaxrs_meeting_as_149_q } = useQuery({queryKey: ['api_jaxrs_meeting_as_149', '/jaxrs/meeting/assemble/control/meeting/list/invited/wait'], queryFn: async () => { try { const r = await api.get("/jaxrs/meeting/assemble/control/meeting/list/invited/wait"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+watch(api_jaxrs_meeting_as_149_q, (v) => { api_jaxrs_meeting_as_149_data.value = v ?? []; });
+const api_jaxrs_meeting_as_443_data = ref<any[]>([]);
+const { data: api_jaxrs_meeting_as_443_q } = useQuery({queryKey: ['api_jaxrs_meeting_as_443', '/jaxrs/meeting/assemble/control/meeting/meeting-001/add/invite'], queryFn: async () => { try { const r = await api.get("/jaxrs/meeting/assemble/control/meeting/meeting-001/add/invite"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+watch(api_jaxrs_meeting_as_443_q, (v) => { api_jaxrs_meeting_as_443_data.value = v ?? []; });
+const api_jaxrs_meeting_as_895_data = ref<any[]>([]);
+const { data: api_jaxrs_meeting_as_895_q } = useQuery({queryKey: ['api_jaxrs_meeting_as_895', '/jaxrs/meeting/assemble/control/meeting/meeting-001/delete/invite'], queryFn: async () => { try { const r = await api.get("/jaxrs/meeting/assemble/control/meeting/meeting-001/delete/invite"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+watch(api_jaxrs_meeting_as_895_q, (v) => { api_jaxrs_meeting_as_895_data.value = v ?? []; });
 </script>
 <style scoped>
 .meeting-view{display:flex;flex-direction:column;gap:16px;height:100%}

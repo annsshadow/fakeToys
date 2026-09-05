@@ -423,12 +423,22 @@ async function api_authentication_oidc_authorize() { try { await api.get("/jaxrs
 async function api_group_list_identity() { try { await api.get("/jaxrs/group/list/identity") } catch {} }
 async function api_group_list_group_tree() { try { await api.get("/jaxrs/group/list/group/tree") } catch {} }
 async function api_group_sup_direct_object() { try { await api.get("/jaxrs/group/list/group/sup/direct/object") } catch {} }
-async function api_list_group_sup_direct() { try { await api.get("/jaxrs/group/list/group/sup/direct") } catch {} }
-async function api_list_group_sup_nested() { try { await api.get("/jaxrs/group/list/group/sup/nested") } catch {} }
+const api_list_group_sup_direct_data = ref<any[]>([]);
+const { data: api_list_group_sup_direct_q } = useQuery({queryKey: ['api_list_group_sup_direct', '/jaxrs/group/list/group/sup/direct'], queryFn: async () => { try { const r = await api.get("/jaxrs/group/list/group/sup/direct"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+watch(api_list_group_sup_direct_q, (v) => { api_list_group_sup_direct_data.value = v ?? []; });
+const api_list_group_sup_nested_data = ref<any[]>([]);
+const { data: api_list_group_sup_nested_q } = useQuery({queryKey: ['api_list_group_sup_nested', '/jaxrs/group/list/group/sup/nested'], queryFn: async () => { try { const r = await api.get("/jaxrs/group/list/group/sup/nested"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+watch(api_list_group_sup_nested_q, (v) => { api_list_group_sup_nested_data.value = v ?? []; });
 
-async function api_jaxrs_person_empower_manager_list_paging_1_size_10() { try { await api.get("/jaxrs/person/empower/manager/list/paging/1/size/10") } catch {} }
-async function api_jaxrs_person_empowerlog_list_currentperson_paging_1_size_10() { try { await api.get("/jaxrs/person/empowerlog/list/currentperson/paging/1/size/10") } catch {} }
-async function api_jaxrs_person_list_unit_sub_nested_like_object() { try { await api.get("/jaxrs/person/list/unit/sub/nested/like/object") } catch {} }
+const api_jaxrs_person_emp_379_data = ref<any[]>([]);
+const { data: api_jaxrs_person_emp_379_q } = useQuery({queryKey: ['api_jaxrs_person_emp_379', '/jaxrs/person/empower/manager/list/paging/1/size/10'], queryFn: async () => { try { const r = await api.get("/jaxrs/person/empower/manager/list/paging/1/size/10"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+watch(api_jaxrs_person_emp_379_q, (v) => { api_jaxrs_person_emp_379_data.value = v ?? []; });
+const api_jaxrs_person_emp_727_data = ref<any[]>([]);
+const { data: api_jaxrs_person_emp_727_q } = useQuery({queryKey: ['api_jaxrs_person_emp_727', '/jaxrs/person/empowerlog/list/currentperson/paging/1/size/10'], queryFn: async () => { try { const r = await api.get("/jaxrs/person/empowerlog/list/currentperson/paging/1/size/10"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+watch(api_jaxrs_person_emp_727_q, (v) => { api_jaxrs_person_emp_727_data.value = v ?? []; });
+const api_jaxrs_person_lis_778_data = ref<any[]>([]);
+const { data: api_jaxrs_person_lis_778_q } = useQuery({queryKey: ['api_jaxrs_person_lis_778', '/jaxrs/person/list/unit/sub/nested/like/object'], queryFn: async () => { try { const r = await api.get("/jaxrs/person/list/unit/sub/nested/like/object"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+watch(api_jaxrs_person_lis_778_q, (v) => { api_jaxrs_person_lis_778_data.value = v ?? []; });
 </script>
 
 <style scoped>

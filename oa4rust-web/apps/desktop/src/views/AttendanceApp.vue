@@ -231,27 +231,43 @@ async function api_jaxrs_attendance_assemble_control_v2_my_statistic() { try { a
 async function api_jaxrs_attendance_assemble_control_v2_my_version() { try { await api.get("/jaxrs/attendance/assemble/control/v2/my/version") } catch {} }
 async function api_jaxrs_attendance_assemble_control_v2_record_import() { try { await api.get("/jaxrs/attendance/assemble/control/v2/record/import") } catch {} }
 async function api_jaxrs_attendance_assemble_control_v2_record_import_daily() { try { await api.get("/jaxrs/attendance/assemble/control/v2/record/import/daily") } catch {} }
-async function api_jaxrs_attendance_assemble_control_v2_record_list_1_size_20() { try { await api.get("/jaxrs/attendance/assemble/control/v2/record/list/1/size/20") } catch {} }
+const api_jaxrs_attendance_785_data = ref<any[]>([]);
+const { data: api_jaxrs_attendance_785_q } = useQuery({queryKey: ['api_jaxrs_attendance_785', '/jaxrs/attendance/assemble/control/v2/record/list/1/size/20'], queryFn: async () => { try { const r = await api.get("/jaxrs/attendance/assemble/control/v2/record/list/1/size/20"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+watch(api_jaxrs_attendance_785_q, (v) => { api_jaxrs_attendance_785_data.value = v ?? []; });
 async function api_jaxrs_attendance_assemble_control_v2_record_r_1() { try { await api.get("/jaxrs/attendance/assemble/control/v2/record/r-1") } catch {} }
 async function api_jaxrs_attendance_assemble_control_v2_record_template() { try { await api.get("/jaxrs/attendance/assemble/control/v2/record/template") } catch {} }
 async function api_jaxrs_attendance_assemble_control_v2_shift_abc() { try { await api.get("/jaxrs/attendance/assemble/control/v2/shift/abc") } catch {} }
 async function api_jaxrs_attendance_assemble_control_v2_shift_create() { try { await api.get("/jaxrs/attendance/assemble/control/v2/shift/create") } catch {} }
 async function api_jaxrs_attendance_assemble_control_v2_shift_delete_abc() { try { await api.get("/jaxrs/attendance/assemble/control/v2/shift/delete/abc") } catch {} }
-async function api_jaxrs_attendance_assemble_control_v2_shift_list_1_size_20() { try { await api.get("/jaxrs/attendance/assemble/control/v2/shift/list/1/size/20") } catch {} }
+const api_jaxrs_attendance_374_data = ref<any[]>([]);
+const { data: api_jaxrs_attendance_374_q } = useQuery({queryKey: ['api_jaxrs_attendance_374', '/jaxrs/attendance/assemble/control/v2/shift/list/1/size/20'], queryFn: async () => { try { const r = await api.get("/jaxrs/attendance/assemble/control/v2/shift/list/1/size/20"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+watch(api_jaxrs_attendance_374_q, (v) => { api_jaxrs_attendance_374_data.value = v ?? []; });
 async function api_jaxrs_attendance_assemble_control_v2_shift_update() { try { await api.get("/jaxrs/attendance/assemble/control/v2/shift/update") } catch {} }
-async function api_jaxrs_attendance_assemble_control_v2_workplace_list_all() { try { await api.get("/jaxrs/attendance/assemble/control/v2/workplace/list/all") } catch {} }
-async function api_jaxrs_attendance_assemble_control_v2_workplace_list_ids() { try { await api.get("/jaxrs/attendance/assemble/control/v2/workplace/list/ids") } catch {} }
-async function api_jaxrs_attendance_assemble_control_workplace_list_all() { try { await api.get("/jaxrs/attendance/assemble/control/workplace/list/all") } catch {} }
+const api_jaxrs_attendance_703_data = ref<any[]>([]);
+const { data: api_jaxrs_attendance_703_q } = useQuery({queryKey: ['api_jaxrs_attendance_703', '/jaxrs/attendance/assemble/control/v2/workplace/list/all'], queryFn: async () => { try { const r = await api.get("/jaxrs/attendance/assemble/control/v2/workplace/list/all"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+watch(api_jaxrs_attendance_703_q, (v) => { api_jaxrs_attendance_703_data.value = v ?? []; });
+const api_jaxrs_attendance_968_data = ref<any[]>([]);
+const { data: api_jaxrs_attendance_968_q } = useQuery({queryKey: ['api_jaxrs_attendance_968', '/jaxrs/attendance/assemble/control/v2/workplace/list/ids'], queryFn: async () => { try { const r = await api.get("/jaxrs/attendance/assemble/control/v2/workplace/list/ids"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+watch(api_jaxrs_attendance_968_q, (v) => { api_jaxrs_attendance_968_data.value = v ?? []; });
+const api_jaxrs_attendance_232_data = ref<any[]>([]);
+const { data: api_jaxrs_attendance_232_q } = useQuery({queryKey: ['api_jaxrs_attendance_232', '/jaxrs/attendance/assemble/control/workplace/list/all'], queryFn: async () => { try { const r = await api.get("/jaxrs/attendance/assemble/control/workplace/list/all"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+watch(api_jaxrs_attendance_232_q, (v) => { api_jaxrs_attendance_232_data.value = v ?? []; });
 async function api_jaxrs_attendance_assemble_control_workplace_w_1() { try { await api.get("/jaxrs/attendance/assemble/control/workplace/w-1") } catch {} }
 async function api_jaxrs_attendance_assemble_daily() { try { await api.get("/jaxrs/attendance/assemble/daily") } catch {} }
 async function api_jaxrs_attendance_core_entity_record_record_001_delete() { try { await api.get("/jaxrs/attendance/core/entity/record/record-001/delete") } catch {} }
 async function api_jaxrs_attendance_core_entity_record_record_001_update() { try { await api.get("/jaxrs/attendance/core/entity/record/record-001/update") } catch {} }
 async function api_jaxrs_attendance_core_entity_rule_create() { try { await api.get("/jaxrs/attendance/core/entity/rule/create") } catch {} }
-async function api_jaxrs_attendance_core_entity_rule_list() { try { await api.get("/jaxrs/attendance/core/entity/rule/list") } catch {} }
+const api_jaxrs_attendance_279_data = ref<any[]>([]);
+const { data: api_jaxrs_attendance_279_q } = useQuery({queryKey: ['api_jaxrs_attendance_279', '/jaxrs/attendance/core/entity/rule/list'], queryFn: async () => { try { const r = await api.get("/jaxrs/attendance/core/entity/rule/list"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+watch(api_jaxrs_attendance_279_q, (v) => { api_jaxrs_attendance_279_data.value = v ?? []; });
 async function api_jaxrs_attendance_core_entity_rule_rule_001_delete() { try { await api.get("/jaxrs/attendance/core/entity/rule/rule-001/delete") } catch {} }
 async function api_jaxrs_attendance_core_entity_rule_rule_001_update() { try { await api.get("/jaxrs/attendance/core/entity/rule/rule-001/update") } catch {} }
-async function api_jaxrs_attendance_employee_config_list_all() { try { await api.get("/jaxrs/attendance/employee/config/list/all") } catch {} }
-async function api_jaxrs_attendance_record_list() { try { await api.get("/jaxrs/attendance/record/list") } catch {} }
+const api_jaxrs_attendance_744_data = ref<any[]>([]);
+const { data: api_jaxrs_attendance_744_q } = useQuery({queryKey: ['api_jaxrs_attendance_744', '/jaxrs/attendance/employee/config/list/all'], queryFn: async () => { try { const r = await api.get("/jaxrs/attendance/employee/config/list/all"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+watch(api_jaxrs_attendance_744_q, (v) => { api_jaxrs_attendance_744_data.value = v ?? []; });
+const api_jaxrs_attendance_135_data = ref<any[]>([]);
+const { data: api_jaxrs_attendance_135_q } = useQuery({queryKey: ['api_jaxrs_attendance_135', '/jaxrs/attendance/record/list'], queryFn: async () => { try { const r = await api.get("/jaxrs/attendance/record/list"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+watch(api_jaxrs_attendance_135_q, (v) => { api_jaxrs_attendance_135_data.value = v ?? []; });
 </script>
 <style scoped>
 .attendance-view{display:flex;flex-direction:column;gap:16px;height:100%}

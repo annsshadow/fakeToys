@@ -613,14 +613,30 @@ async function api_jaxrs_program_center_prompterrorlog_list_id_next_count_except
 async function api_jaxrs_program_center_prompterrorlog_list_id_next_count_loggername_loggerName() { try { await api.get("/jaxrs/program_center/prompterrorlog/list/id/next/count/loggername/loggerName") } catch {} }
 async function api_jaxrs_program_center_prompterrorlog_list_id_prev_count_date_date() { try { await api.get("/jaxrs/program_center/prompterrorlog/list/id/prev/count/date/date") } catch {} }
 async function api_jaxrs_program_center_prompterrorlog_list_id_prev_count_exceptionclass_exceptionClass() { try { await api.get("/jaxrs/program_center/prompterrorlog/list/id/prev/count/exceptionclass/exceptionClass") } catch {} }
-async function api_jaxrs_program_center_prompterrorlog_list_id_prev_count_loggername_loggerName() { try { await api.get("/jaxrs/program_center/prompterrorlog/list/id/prev/count/loggername/loggerName") } catch {} }
-async function api_jaxrs_program_center_prompterrorlog_list_p_1_next_10_date_2026_08_24() { try { await api.get("/jaxrs/program_center/prompterrorlog/list/p-1/next/10/date/2026-08-24") } catch {} }
-async function api_jaxrs_program_center_script_list_paging_1_size_20() { try { await api.get("/jaxrs/program_center/script/list/paging/1/size/20") } catch {} }
-async function api_jaxrs_program_center_script_list_paging_page_size_size() { try { await api.get("/jaxrs/program_center/script/list/paging/page/size/size") } catch {} }
-async function api_jaxrs_program_center_unexpectederrorlog_list_id_next_count_date_date() { try { await api.get("/jaxrs/program_center/unexpectederrorlog/list/id/next/count/date/date") } catch {} }
-async function api_jaxrs_program_center_unexpectederrorlog_list_id_prev_count_date_date() { try { await api.get("/jaxrs/program_center/unexpectederrorlog/list/id/prev/count/date/date") } catch {} }
-async function api_jaxrs_program_center_warnlog_list_w_1_next_10_date_2026_08_22() { try { await api.get("/jaxrs/program_center/warnlog/list/w-1/next/10/date/2026-08-22") } catch {} }
-async function api_jaxrs_program_center_warnlog_list_w_1_prev_5_date_2026_08_22() { try { await api.get("/jaxrs/program_center/warnlog/list/w-1/prev/5/date/2026-08-22") } catch {} }
+const api_jaxrs_program_ce_215_data = ref<any[]>([]);
+const { data: api_jaxrs_program_ce_215_q } = useQuery({queryKey: ['api_jaxrs_program_ce_215', '/jaxrs/program_center/prompterrorlog/list/id/prev/count/loggername/loggerName'], queryFn: async () => { try { const r = await api.get("/jaxrs/program_center/prompterrorlog/list/id/prev/count/loggername/loggerName"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+watch(api_jaxrs_program_ce_215_q, (v) => { api_jaxrs_program_ce_215_data.value = v ?? []; });
+const api_jaxrs_program_ce_748_data = ref<any[]>([]);
+const { data: api_jaxrs_program_ce_748_q } = useQuery({queryKey: ['api_jaxrs_program_ce_748', '/jaxrs/program_center/prompterrorlog/list/p-1/next/10/date/2026-08-24'], queryFn: async () => { try { const r = await api.get("/jaxrs/program_center/prompterrorlog/list/p-1/next/10/date/2026-08-24"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+watch(api_jaxrs_program_ce_748_q, (v) => { api_jaxrs_program_ce_748_data.value = v ?? []; });
+const api_jaxrs_program_ce_931_data = ref<any[]>([]);
+const { data: api_jaxrs_program_ce_931_q } = useQuery({queryKey: ['api_jaxrs_program_ce_931', '/jaxrs/program_center/script/list/paging/1/size/20'], queryFn: async () => { try { const r = await api.get("/jaxrs/program_center/script/list/paging/1/size/20"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+watch(api_jaxrs_program_ce_931_q, (v) => { api_jaxrs_program_ce_931_data.value = v ?? []; });
+const api_jaxrs_program_ce_744_data = ref<any[]>([]);
+const { data: api_jaxrs_program_ce_744_q } = useQuery({queryKey: ['api_jaxrs_program_ce_744', '/jaxrs/program_center/script/list/paging/page/size/size'], queryFn: async () => { try { const r = await api.get("/jaxrs/program_center/script/list/paging/page/size/size"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+watch(api_jaxrs_program_ce_744_q, (v) => { api_jaxrs_program_ce_744_data.value = v ?? []; });
+const api_jaxrs_program_ce_211_data = ref<any[]>([]);
+const { data: api_jaxrs_program_ce_211_q } = useQuery({queryKey: ['api_jaxrs_program_ce_211', '/jaxrs/program_center/unexpectederrorlog/list/id/next/count/date/date'], queryFn: async () => { try { const r = await api.get("/jaxrs/program_center/unexpectederrorlog/list/id/next/count/date/date"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+watch(api_jaxrs_program_ce_211_q, (v) => { api_jaxrs_program_ce_211_data.value = v ?? []; });
+const api_jaxrs_program_ce_579_data = ref<any[]>([]);
+const { data: api_jaxrs_program_ce_579_q } = useQuery({queryKey: ['api_jaxrs_program_ce_579', '/jaxrs/program_center/unexpectederrorlog/list/id/prev/count/date/date'], queryFn: async () => { try { const r = await api.get("/jaxrs/program_center/unexpectederrorlog/list/id/prev/count/date/date"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+watch(api_jaxrs_program_ce_579_q, (v) => { api_jaxrs_program_ce_579_data.value = v ?? []; });
+const api_jaxrs_program_ce_452_data = ref<any[]>([]);
+const { data: api_jaxrs_program_ce_452_q } = useQuery({queryKey: ['api_jaxrs_program_ce_452', '/jaxrs/program_center/warnlog/list/w-1/next/10/date/2026-08-22'], queryFn: async () => { try { const r = await api.get("/jaxrs/program_center/warnlog/list/w-1/next/10/date/2026-08-22"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+watch(api_jaxrs_program_ce_452_q, (v) => { api_jaxrs_program_ce_452_data.value = v ?? []; });
+const api_jaxrs_program_ce_89_data = ref<any[]>([]);
+const { data: api_jaxrs_program_ce_89_q } = useQuery({queryKey: ['api_jaxrs_program_ce_89', '/jaxrs/program_center/warnlog/list/w-1/prev/5/date/2026-08-22'], queryFn: async () => { try { const r = await api.get("/jaxrs/program_center/warnlog/list/w-1/prev/5/date/2026-08-22"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+watch(api_jaxrs_program_ce_89_q, (v) => { api_jaxrs_program_ce_89_data.value = v ?? []; });
 async function api_jaxrs_program_center_warnlog_view_system_log_tag_sync() { try { await api.get("/jaxrs/program_center/warnlog/view/system/log/tag/sync") } catch {} }
 </script>
 
