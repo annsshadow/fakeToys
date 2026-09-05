@@ -62,7 +62,7 @@ async function onDelete(item: any) {
   try {
     await api.delete(`/jaxrs/hotpic/core/entity/delete/${item.id}`)
     items.value = items.value.filter(i => i.id !== item.id)
-  } catch (e: any) { alert('删除失败: ' + (e?.message ?? '未知错误')) }
+  } catch (e: any) { toast.error('删除失败: : ' + (e?.message ?? '未知错误')) }
 }
 
 doSearch()

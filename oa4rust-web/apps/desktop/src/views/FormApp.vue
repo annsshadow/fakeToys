@@ -216,13 +216,13 @@ async function saveForm() {
     if (editingForm.value?.id) { await api.put('/jaxrs/form/update/' + editingForm.value.id, mform.value) }
     else { await api.post('/jaxrs/form/create', mform.value) }
     showCreate.value = false; loadList()
-  } catch (e: any) { alert('保存失败: ' + (e?.message ?? '')) }
+  } catch (e: any) { toast.error('保存失败: : ' + (e?.message ?? '')) }
 }
 
 async function deleteForm(f: FormItem) {
   if (!confirmMsg('确定删除表单「' + (f.name||f.id) + '」？')) return
   try { await api.delete('/jaxrs/form/delete/' + f.id); items.value = items.value.filter(x => x.id !== f.id) }
-  catch (e: any) { alert('删除失败: ' + (e?.message ?? '')) }
+  catch (e: any) { toast.error('删除失败: : ' + (e?.message ?? '')) }
 }
 
 function useTemplate(t: any) {

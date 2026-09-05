@@ -4796,7 +4796,7 @@ async function saveProcess() {
       ...(currentProcess.value.subprocesses ? { subprocesses: (currentProcess.value as any).subprocesses } : {})
     })
     toast.info('保存成功')
-  } catch (e: any) { alert('保存失败: ' + (e?.message ?? '')) }
+  } catch (e: any) { toast.error('保存失败: : ' + (e?.message ?? '')) }
 }
 async function loadProcesses() {
   try { const r: any = await api.get('/jaxrs/processplatform/assemble/designer/process/list'); procList.value = r?.data?.list ?? r?.data ?? [] }

@@ -349,7 +349,7 @@ async function saveQuery() {
     }
     showModal.value = false
     loadQueries()
-  } catch (e: any) { alert('保存失败: ' + (e?.message ?? '')) }
+  } catch (e: any) { toast.error('保存失败: : ' + (e?.message ?? '')) }
 }
 
 async function runQuery() {
@@ -366,7 +366,7 @@ async function runQuery() {
       ...params,
     })
     resultData.value = r.data?.list ?? r.data ?? []
-  } catch (e: any) { alert('执行失败: ' + (e?.message ?? '')) } finally { rLoading.value = false }
+  } catch (e: any) { toast.error('执行失败: : ' + (e?.message ?? '')) } finally { rLoading.value = false }
 }
 
 async function deleteQuery(q: QueryDef) {
@@ -375,7 +375,7 @@ async function deleteQuery(q: QueryDef) {
     await api.delete(`/jaxrs/query/assemble/designer/delete/${q.id}`)
     if (selected.value?.id === q.id) selected.value = null
     queries.value = queries.value.filter(x => x.id !== q.id)
-  } catch (e: any) { alert('删除失败: ' + (e?.message ?? '')) }
+  } catch (e: any) { toast.error('删除失败: : ' + (e?.message ?? '')) }
 }
 
 loadQueries()

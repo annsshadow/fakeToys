@@ -90,7 +90,7 @@ async function delDevice(d: any) {
   try {
     await api.delete(`/jaxrs/jpush/core/entity/device/${d.id}`)
     devices.value = devices.value.filter(x => x.id !== d.id)
-  } catch (e: any) { alert('删除失败: ' + (e?.message ?? '')) }
+  } catch (e: any) { toast.error('删除失败: : ' + (e?.message ?? '')) }
 }
 
 loadDevices()

@@ -82,13 +82,13 @@ async function createRule() {
   if (!name) return
   try { await api.post('/jaxrs/attendance/assemble/control/rule/create', { name })
     loadRules()
-  } catch (e: any) { alert('创建失败: ' + (e?.message ?? '')) }
+  } catch (e: any) { toast.error('创建失败: : ' + (e?.message ?? '')) }
 }
 async function deleteRule(rule: any) {
   if (!confirmMsg('确定删除规则「' + (rule.name||rule.id) + '」？')) return
   try { await api.delete('/jaxrs/attendance/assemble/control/rule/' + rule.id)
     loadRules()
-  } catch (e: any) { alert('删除失败: ' + (e?.message ?? '')) }
+  } catch (e: any) { toast.error('删除失败: : ' + (e?.message ?? '')) }
 }
 async function submitAppeal() {
   const type = prompt('请假类型 (sick/personal/vacation):', 'sick')
@@ -98,7 +98,7 @@ async function submitAppeal() {
   if (!start || !end) return
   try { await api.post('/jaxrs/attendance/appeal/create', { type, startDate: start, endDate: end })
     loadAppeals()
-  } catch (e: any) { alert('申请失败: ' + (e?.message ?? '')) }
+  } catch (e: any) { toast.error('申请失败: : ' + (e?.message ?? '')) }
 }
 async function loadAppeals() {
   try { const r = await api.get('/jaxrs/attendance/appeal/list')
