@@ -381,18 +381,42 @@ async function api_jaxrs_file_assemble_control_file_upload_referencetype_taskRep
 async function api_jaxrs_file_assemble_control_file_upload_with_url() { try { await api.get("/jaxrs/file/assemble/control/file/upload/with/url") } catch {} }
 async function api_jaxrs_file_attachment_id_image_scale_scale_binary_base64() { try { await api.get("/jaxrs/file/attachment/id/image/scale/scale/binary/base64") } catch {} }
 async function api_jaxrs_file_attachment_id_image_width_width_height_height_binary_base64() { try { await api.get("/jaxrs/file/attachment/id/image/width/width/height/height/binary/base64") } catch {} }
-async function api_jaxrs_file_attachment2_id_download_image_width_width_height_height() { try { await api.get("/jaxrs/file/attachment2/id/download/image/width/width/height/height") } catch {} }
-async function api_jaxrs_file_attachment2_id_image_scale_scale_binary_base64() { try { await api.get("/jaxrs/file/attachment2/id/image/scale/scale/binary/base64") } catch {} }
-async function api_jaxrs_file_attachment2_id_image_width_width_height_height_binary_base64() { try { await api.get("/jaxrs/file/attachment2/id/image/width/width/height/height/binary/base64") } catch {} }
-async function api_jaxrs_file_attachment2_list_type_page_size_size() { try { await api.get("/jaxrs/file/attachment2/list/type/page/size/size") } catch {} }
-async function api_jaxrs_file_copy_attachment_attachmentId_referencetype_referenceType_reference_re_51653f() { try { await api.get("/jaxrs/file/copy/attachment/attachmentId/referencetype/referenceType/reference/reference/scale/scale") } catch {} }
-async function api_jaxrs_file_file_clean_unused_referencetype_cmsdocument_manage() { try { await api.get("/jaxrs/file/file/clean/unused/referencetype/cmsdocument/manage") } catch {} }
-async function api_jaxrs_file_file_copy_attachment_attachmentId_referencetype_referenceType_referen_c272dc() { try { await api.get("/jaxrs/file/file/copy/attachment/attachmentId/referencetype/referenceType/reference/reference/scale/scale") } catch {} }
-async function api_jaxrs_file_file_list_id_next_count_all() { try { await api.get("/jaxrs/file/file/list/id/next/count/all") } catch {} }
-async function api_jaxrs_file_file_list_id_next_count_referencetype_referenceType() { try { await api.get("/jaxrs/file/file/list/id/next/count/referencetype/referenceType") } catch {} }
-async function api_jaxrs_file_file_list_id_prev_count_referencetype_referenceType() { try { await api.get("/jaxrs/file/file/list/id/prev/count/referencetype/referenceType") } catch {} }
-async function api_jaxrs_file_file_list_referencetype_referenceType_reference_reference() { try { await api.get("/jaxrs/file/file/list/referencetype/referenceType/reference/reference") } catch {} }
-async function api_jaxrs_file_file_list_unused_referencetype_cmsdocument_manage() { try { await api.get("/jaxrs/file/file/list/unused/referencetype/cmsdocument/manage") } catch {} }
+const api_jaxrs_file_attac_182_data = ref<any[]>([]);
+const { data: api_jaxrs_file_attac_182_q } = useQuery({queryKey: ['api_jaxrs_file_attac_182', '/jaxrs/file/attachment2/id/download/image/width/width/height/height'], queryFn: async () => { try { const r = await api.get("/jaxrs/file/attachment2/id/download/image/width/width/height/height"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+watch(api_jaxrs_file_attac_182_q, (v) => { api_jaxrs_file_attac_182_data.value = v ?? []; });
+const api_jaxrs_file_attac_331_data = ref<any[]>([]);
+const { data: api_jaxrs_file_attac_331_q } = useQuery({queryKey: ['api_jaxrs_file_attac_331', '/jaxrs/file/attachment2/id/image/scale/scale/binary/base64'], queryFn: async () => { try { const r = await api.get("/jaxrs/file/attachment2/id/image/scale/scale/binary/base64"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+watch(api_jaxrs_file_attac_331_q, (v) => { api_jaxrs_file_attac_331_data.value = v ?? []; });
+const api_jaxrs_file_attac_219_data = ref<any[]>([]);
+const { data: api_jaxrs_file_attac_219_q } = useQuery({queryKey: ['api_jaxrs_file_attac_219', '/jaxrs/file/attachment2/id/image/width/width/height/height/binary/base64'], queryFn: async () => { try { const r = await api.get("/jaxrs/file/attachment2/id/image/width/width/height/height/binary/base64"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+watch(api_jaxrs_file_attac_219_q, (v) => { api_jaxrs_file_attac_219_data.value = v ?? []; });
+const api_jaxrs_file_attac_45_data = ref<any[]>([]);
+const { data: api_jaxrs_file_attac_45_q } = useQuery({queryKey: ['api_jaxrs_file_attac_45', '/jaxrs/file/attachment2/list/type/page/size/size'], queryFn: async () => { try { const r = await api.get("/jaxrs/file/attachment2/list/type/page/size/size"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+watch(api_jaxrs_file_attac_45_q, (v) => { api_jaxrs_file_attac_45_data.value = v ?? []; });
+const api_jaxrs_file_copy__641_data = ref<any[]>([]);
+const { data: api_jaxrs_file_copy__641_q } = useQuery({queryKey: ['api_jaxrs_file_copy__641', '/jaxrs/file/copy/attachment/attachmentId/referencetype/referenceType/reference/reference/scale/scale'], queryFn: async () => { try { const r = await api.get("/jaxrs/file/copy/attachment/attachmentId/referencetype/referenceType/reference/reference/scale/scale"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+watch(api_jaxrs_file_copy__641_q, (v) => { api_jaxrs_file_copy__641_data.value = v ?? []; });
+const api_jaxrs_file_file__432_data = ref<any[]>([]);
+const { data: api_jaxrs_file_file__432_q } = useQuery({queryKey: ['api_jaxrs_file_file__432', '/jaxrs/file/file/clean/unused/referencetype/cmsdocument/manage'], queryFn: async () => { try { const r = await api.get("/jaxrs/file/file/clean/unused/referencetype/cmsdocument/manage"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+watch(api_jaxrs_file_file__432_q, (v) => { api_jaxrs_file_file__432_data.value = v ?? []; });
+const api_jaxrs_file_file__149_data = ref<any[]>([]);
+const { data: api_jaxrs_file_file__149_q } = useQuery({queryKey: ['api_jaxrs_file_file__149', '/jaxrs/file/file/copy/attachment/attachmentId/referencetype/referenceType/reference/reference/scale/scale'], queryFn: async () => { try { const r = await api.get("/jaxrs/file/file/copy/attachment/attachmentId/referencetype/referenceType/reference/reference/scale/scale"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+watch(api_jaxrs_file_file__149_q, (v) => { api_jaxrs_file_file__149_data.value = v ?? []; });
+const api_jaxrs_file_file__575_data = ref<any[]>([]);
+const { data: api_jaxrs_file_file__575_q } = useQuery({queryKey: ['api_jaxrs_file_file__575', '/jaxrs/file/file/list/id/next/count/all'], queryFn: async () => { try { const r = await api.get("/jaxrs/file/file/list/id/next/count/all"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+watch(api_jaxrs_file_file__575_q, (v) => { api_jaxrs_file_file__575_data.value = v ?? []; });
+const api_jaxrs_file_file__201_data = ref<any[]>([]);
+const { data: api_jaxrs_file_file__201_q } = useQuery({queryKey: ['api_jaxrs_file_file__201', '/jaxrs/file/file/list/id/next/count/referencetype/referenceType'], queryFn: async () => { try { const r = await api.get("/jaxrs/file/file/list/id/next/count/referencetype/referenceType"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+watch(api_jaxrs_file_file__201_q, (v) => { api_jaxrs_file_file__201_data.value = v ?? []; });
+const api_jaxrs_file_file__917_data = ref<any[]>([]);
+const { data: api_jaxrs_file_file__917_q } = useQuery({queryKey: ['api_jaxrs_file_file__917', '/jaxrs/file/file/list/id/prev/count/referencetype/referenceType'], queryFn: async () => { try { const r = await api.get("/jaxrs/file/file/list/id/prev/count/referencetype/referenceType"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+watch(api_jaxrs_file_file__917_q, (v) => { api_jaxrs_file_file__917_data.value = v ?? []; });
+const api_jaxrs_file_file__121_data = ref<any[]>([]);
+const { data: api_jaxrs_file_file__121_q } = useQuery({queryKey: ['api_jaxrs_file_file__121', '/jaxrs/file/file/list/referencetype/referenceType/reference/reference'], queryFn: async () => { try { const r = await api.get("/jaxrs/file/file/list/referencetype/referenceType/reference/reference"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+watch(api_jaxrs_file_file__121_q, (v) => { api_jaxrs_file_file__121_data.value = v ?? []; });
+const api_jaxrs_file_file__824_data = ref<any[]>([]);
+const { data: api_jaxrs_file_file__824_q } = useQuery({queryKey: ['api_jaxrs_file_file__824', '/jaxrs/file/file/list/unused/referencetype/cmsdocument/manage'], queryFn: async () => { try { const r = await api.get("/jaxrs/file/file/list/unused/referencetype/cmsdocument/manage"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+watch(api_jaxrs_file_file__824_q, (v) => { api_jaxrs_file_file__824_data.value = v ?? []; });
 const api_jaxrs_file_list__365_data = ref<any[]>([]);
 const { data: api_jaxrs_file_list__365_q } = useQuery({queryKey: ['api_jaxrs_file_list__365', '/jaxrs/file/list/id/next/count/referencetype/referenceType'], queryFn: async () => { try { const r = await api.get("/jaxrs/file/list/id/next/count/referencetype/referenceType"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
 watch(api_jaxrs_file_list__365_q, (v) => { api_jaxrs_file_list__365_data.value = v ?? []; });

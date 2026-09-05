@@ -121,10 +121,18 @@ async function api_list_applied_processing() { try { await api.get("/jaxrs/meeti
 async function api_meeting_create() { try { await api.get("/jaxrs/meeting/create") } catch {} }
 async function api_meeting_room_list() { try { await api.get("/jaxrs/meeting/assemble/control/meeting/room/list") } catch {} }
 async function api_list_by_room_001() { try { await api.get("/jaxrs/meeting/core/entity/meeting/list/by/room-001") } catch {} }
-async function api_list_wait_accept() { try { await api.get("/jaxrs/meeting/assemble/control/meeting/list/wait/accept") } catch {} }
-async function api_control_meeting_room() { try { await api.get("/jaxrs/meeting/assemble/control/meeting/room") } catch {} }
-async function api_list_invited_rejected() { try { await api.get("/jaxrs/meeting/assemble/control/meeting/list/invited/rejected") } catch {} }
-async function api_entity_meeting_create() { try { await api.get("/jaxrs/meeting/core/entity/meeting/create") } catch {} }
+const api_list_wait_accept_data = ref<any[]>([]);
+const { data: api_list_wait_accept_q } = useQuery({queryKey: ['api_list_wait_accept', '/jaxrs/meeting/assemble/control/meeting/list/wait/accept'], queryFn: async () => { try { const r = await api.get("/jaxrs/meeting/assemble/control/meeting/list/wait/accept"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+watch(api_list_wait_accept_q, (v) => { api_list_wait_accept_data.value = v ?? []; });
+const api_control_meeting_room_data = ref<any[]>([]);
+const { data: api_control_meeting_room_q } = useQuery({queryKey: ['api_control_meeting_room', '/jaxrs/meeting/assemble/control/meeting/room'], queryFn: async () => { try { const r = await api.get("/jaxrs/meeting/assemble/control/meeting/room"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+watch(api_control_meeting_room_q, (v) => { api_control_meeting_room_data.value = v ?? []; });
+const api_list_invited_rejected_data = ref<any[]>([]);
+const { data: api_list_invited_rejected_q } = useQuery({queryKey: ['api_list_invited_rejected', '/jaxrs/meeting/assemble/control/meeting/list/invited/rejected'], queryFn: async () => { try { const r = await api.get("/jaxrs/meeting/assemble/control/meeting/list/invited/rejected"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+watch(api_list_invited_rejected_q, (v) => { api_list_invited_rejected_data.value = v ?? []; });
+const api_entity_meeting_create_data = ref<any[]>([]);
+const { data: api_entity_meeting_create_q } = useQuery({queryKey: ['api_entity_meeting_create', '/jaxrs/meeting/core/entity/meeting/create'], queryFn: async () => { try { const r = await api.get("/jaxrs/meeting/core/entity/meeting/create"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+watch(api_entity_meeting_create_q, (v) => { api_entity_meeting_create_data.value = v ?? []; });
 
 
 async function api_core_entity_room_create() { try { await api.get('/jaxrs/meeting/core/entity/room/create') } catch {} }
@@ -160,12 +168,24 @@ function confirmMsg(msg: string): Promise<boolean> {
 }
 
 
-async function api_control_meeting_calendar_list() { try { await api.get("/jaxrs/meeting/assemble/control/meeting/calendar/list") } catch {} }
-async function api_control_list_meeting_controls() { try { await api.get("/jaxrs/meeting/assemble/control/list/meeting/controls") } catch {} }
-async function api_control_meeting_coming_list() { try { await api.get("/jaxrs/meeting/assemble/control/meeting/coming/list") } catch {} }
-async function api_meeting_assemble_control() { try { await api.get("/jaxrs/meeting_assemble_control") } catch {} }
-async function api_entity_room_save_room_001() { try { await api.get("/jaxrs/meeting/core/entity/room/save/room-001") } catch {} }
-async function api_control_openmeeting_list_room() { try { await api.get("/jaxrs/meeting/assemble/control/openmeeting/list/room") } catch {} }
+const api_control_meeting__768_data = ref<any[]>([]);
+const { data: api_control_meeting__768_q } = useQuery({queryKey: ['api_control_meeting__768', '/jaxrs/meeting/assemble/control/meeting/calendar/list'], queryFn: async () => { try { const r = await api.get("/jaxrs/meeting/assemble/control/meeting/calendar/list"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+watch(api_control_meeting__768_q, (v) => { api_control_meeting__768_data.value = v ?? []; });
+const api_control_list_mee_599_data = ref<any[]>([]);
+const { data: api_control_list_mee_599_q } = useQuery({queryKey: ['api_control_list_mee_599', '/jaxrs/meeting/assemble/control/list/meeting/controls'], queryFn: async () => { try { const r = await api.get("/jaxrs/meeting/assemble/control/list/meeting/controls"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+watch(api_control_list_mee_599_q, (v) => { api_control_list_mee_599_data.value = v ?? []; });
+const api_control_meeting__341_data = ref<any[]>([]);
+const { data: api_control_meeting__341_q } = useQuery({queryKey: ['api_control_meeting__341', '/jaxrs/meeting/assemble/control/meeting/coming/list'], queryFn: async () => { try { const r = await api.get("/jaxrs/meeting/assemble/control/meeting/coming/list"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+watch(api_control_meeting__341_q, (v) => { api_control_meeting__341_data.value = v ?? []; });
+const api_meeting_assemble_599_data = ref<any[]>([]);
+const { data: api_meeting_assemble_599_q } = useQuery({queryKey: ['api_meeting_assemble_599', '/jaxrs/meeting_assemble_control'], queryFn: async () => { try { const r = await api.get("/jaxrs/meeting_assemble_control"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+watch(api_meeting_assemble_599_q, (v) => { api_meeting_assemble_599_data.value = v ?? []; });
+const api_entity_room_save_468_data = ref<any[]>([]);
+const { data: api_entity_room_save_468_q } = useQuery({queryKey: ['api_entity_room_save_468', '/jaxrs/meeting/core/entity/room/save/room-001'], queryFn: async () => { try { const r = await api.get("/jaxrs/meeting/core/entity/room/save/room-001"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+watch(api_entity_room_save_468_q, (v) => { api_entity_room_save_468_data.value = v ?? []; });
+const api_control_openmeet_497_data = ref<any[]>([]);
+const { data: api_control_openmeet_497_q } = useQuery({queryKey: ['api_control_openmeet_497', '/jaxrs/meeting/assemble/control/openmeeting/list/room'], queryFn: async () => { try { const r = await api.get("/jaxrs/meeting/assemble/control/openmeeting/list/room"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+watch(api_control_openmeet_497_q, (v) => { api_control_openmeet_497_data.value = v ?? []; });
 
 const api_jaxrs_meeting_as_202_data = ref<any[]>([]);
 const { data: api_jaxrs_meeting_as_202_q } = useQuery({queryKey: ['api_jaxrs_meeting_as_202', '/jaxrs/meeting/assemble/control/attachment/create/from/processplatform'], queryFn: async () => { try { const r = await api.get("/jaxrs/meeting/assemble/control/attachment/create/from/processplatform"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
