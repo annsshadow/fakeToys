@@ -7893,6 +7893,15 @@ function confirmMsg(msg: string): Promise<boolean> {
   })
 }
 
+
+async function api_process_application_list() { try { await api.get("/jaxrs/process/application/list") } catch {} }
+async function api_process_list_ids() { try { await api.get("/jaxrs/process/list/ids") } catch {} }
+async function api_process_designer_application_list() { try { await api.get("/jaxrs/process/designer/application/list") } catch {} }
+async function api_process_ticket_list() { try { await api.get("/jaxrs/process/ticket/list") } catch {} }
+async function api_process_work_list() { try { await api.get("/jaxrs/process/work/list") } catch {} }
+async function api_process_designer_application_remove() { try { await api.get("/jaxrs/process/designer/application/remove") } catch {} }
+async function api_process_designer_application_create() { try { await api.get("/jaxrs/process/designer/application/create") } catch {} }
+
 </script>
 <style scoped>
 .pd{display:flex;flex-direction:column;height:100%}
