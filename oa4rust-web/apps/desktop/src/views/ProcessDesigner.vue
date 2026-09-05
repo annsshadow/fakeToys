@@ -2921,6 +2921,7 @@
 </template>
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { toast } from '../../utils/toast'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/vue-query'
 import { api } from '@oa4rust/sdk'
 // ── Types ────────────────────────────────────────────────────────────
@@ -3595,7 +3596,7 @@ function computeDiff() {
   })
 }
 function clearCanvas() {
-  if (!processDef.value || !confirm('清空画布？所有节点和连线将删除。')) return
+  if (!processDef.value || !confirmMsg('清空画布？所有节点和连线将删除。')) return
   processDef.value = { nodes: [], edges: [] }
   selectedNode.value = null; selectedEdge.value = null
   pushHistory()
@@ -3883,7 +3884,7 @@ function exportAsSvg(): string {
 }
 function downloadSvg() {
   const svg = exportAsSvg()
-  if (!svg) { alert('画布为空，无法导出'); return }
+  if (!svg) { toast.info('画布为空，无法导出'); return }
   const blob = new Blob([svg], { type: 'image/svg+xml' })
   const url = URL.createObjectURL(blob)
   const a = document.createElement('a')
@@ -4733,7 +4734,7 @@ function subOnWheel(e: WheelEvent) {
   }
 }
 function subClearCanvas() {
-  if (!confirm('清空子流程画布？')) return
+  if (!confirmMsg('清空子流程画布？')) return
   subprocessDef.value = { nodes: [], edges: [] }
   subSelectedNode.value = null; subSelectedEdge.value = null
   subPushHistory()
@@ -4794,7 +4795,7 @@ async function saveProcess() {
       description: currentProcess.value.desc, config: processDef.value,
       ...(currentProcess.value.subprocesses ? { subprocesses: (currentProcess.value as any).subprocesses } : {})
     })
-    alert('保存成功')
+    toast.info('保存成功')
   } catch (e: any) { alert('保存失败: ' + (e?.message ?? '')) }
 }
 async function loadProcesses() {
@@ -4954,7 +4955,7 @@ function doImportJson() {
       showIoModal.value = false
       importJsonText.value = ''
     }
-  } catch { alert('JSON格式错误，请检查导入内容') }
+  } catch { toast.info('JSON格式错误，请检查导入内容') }
 }
 // Validation
 function runValidation(): void {
@@ -7851,7 +7852,7 @@ function getProcStatusLabel(s: string): string { return s==="active"?"运行中"
 function dbgEntryClass(level: string): Record<string,boolean> { const r: Record<string,boolean> = {dbg_entry:true}; r["dbg_"+level] = true; return r; }
 function dbgStepClass(status: string): Record<string,boolean> { const r: Record<string,boolean> = {dbg_step_status:true}; r[status] = true; return r; }
 
-async function exportProcess(){if(!selectedProcess.value?.id)return;try{const r=await api.get('/jaxrs/processplatform/assemble/designer/process/export?id='+selectedProcess.value.id);const blob=new Blob([JSON.stringify(r.data,null,2)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=(selectedProcess.value.name||'process')+'.json';a.click()}catch(e){alert('导出失败')}}
+async function exportProcess(){if(!selectedProcess.value?.id)return;try{const r=await api.get('/jaxrs/processplatform/assemble/designer/process/export?id='+selectedProcess.value.id);const blob=new Blob([JSON.stringify(r.data,null,2)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=(selectedProcess.value.name||'process')+'.json';a.click()}catch(e){toast.info('导出失败')}}
 
 async function api_process_state_running() { try { await api.get("/jaxrs/process/state/running") } catch {} }
 async function api_process_workcompleted_list() { try { await api.get("/jaxrs/process/workcompleted/list") } catch {} }
@@ -7868,6 +7869,29 @@ async function api_process_read_count_test_user() { try { await api.get("/jaxrs/
 async function api_process_design_list() { try { await api.get("/jaxrs/process/design/list") } catch {} }
 async function api_surface_route_list_mockputtopost() { try { await api.get("/jaxrs/processplatform/assemble/surface/route/list/mockputtopost") } catch {} }
 async function api_process_task_list() { try { await api.get("/jaxrs/process/task/list") } catch {} }
+
+
+// Confirmation dialog (replaces window.confirm)
+function confirmMsg(msg: string): Promise<boolean> {
+  return new Promise(resolve => {
+    const overlay = document.createElement('div')
+    overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:10000;display:flex;align-items:center;justify-content:center'
+    const box = document.createElement('div')
+    box.style.cssText = 'background:var(--bg-surface);border:1px solid var(--border-color);border-radius:var(--radius-lg);padding:24px;max-width:360px;width:90%;display:flex;flex-direction:column;gap:16px'
+    box.innerHTML = '<p style="margin:0;color:var(--text-primary);font-size:14px">' + msg + '</p>' +
+      '<div style="display:flex;gap:8px;justify-content:flex-end">' +
+      '<button class="tc-cancel" style="padding:6px 16px;border-radius:var(--radius-md);border:1px solid var(--border-color);background:transparent;color:var(--text-primary);cursor:pointer">取消</button>' +
+      '<button class="tc-ok" style="padding:6px 16px;border-radius:var(--radius-md);border:none;background:var(--color-primary);color:#000;cursor:pointer;font-weight:600">确认</button>' +
+      '</div>'
+    overlay.appendChild(box)
+    document.body.appendChild(overlay)
+    const ok = () => { overlay.remove(); resolve(true) }
+    const cancel = () => { overlay.remove(); resolve(false) }
+    box.querySelector('.tc-ok').addEventListener('click', ok)
+    box.querySelector('.tc-cancel').addEventListener('click', cancel)
+    overlay.addEventListener('click', e => { if (e.target === overlay) cancel() })
+  })
+}
 
 </script>
 <style scoped>

@@ -160,6 +160,7 @@
 
 <script setup lang="ts">
 import { ref, computed } from 'vue'
+import { toast } from '../../utils/toast'
 import { api } from '@oa4rust/sdk'
 
 type Tab = 'list' | 'v2' | 'versions' | 'templates'
@@ -210,7 +211,7 @@ function previewForm(f: FormItem) { alert('预览表单: ' + (f.name||f.id)) }
 function previewFormV2(f: FormItem) { previewForm(f as FormItem) }
 
 async function saveForm() {
-  if (!mform.value.name.trim()) { alert('请输入表单名称'); return }
+  if (!mform.value.name.trim()) { toast.info('请输入表单名称'); return }
   try {
     if (editingForm.value?.id) { await api.put('/jaxrs/form/update/' + editingForm.value.id, mform.value) }
     else { await api.post('/jaxrs/form/create', mform.value) }
@@ -219,7 +220,7 @@ async function saveForm() {
 }
 
 async function deleteForm(f: FormItem) {
-  if (!confirm('确定删除表单「' + (f.name||f.id) + '」？')) return
+  if (!confirmMsg('确定删除表单「' + (f.name||f.id) + '」？')) return
   try { await api.delete('/jaxrs/form/delete/' + f.id); items.value = items.value.filter(x => x.id !== f.id) }
   catch (e: any) { alert('删除失败: ' + (e?.message ?? '')) }
 }
@@ -259,6 +260,29 @@ async function doImport() {
 
 function fmtTime(t?: string) { if (!t) return ''; try { return new Date(t).toLocaleString('zh-CN', { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' }) } catch { return String(t) } }
 loadList()
+
+// Confirmation dialog (replaces window.confirm)
+function confirmMsg(msg: string): Promise<boolean> {
+  return new Promise(resolve => {
+    const overlay = document.createElement('div')
+    overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:10000;display:flex;align-items:center;justify-content:center'
+    const box = document.createElement('div')
+    box.style.cssText = 'background:var(--bg-surface);border:1px solid var(--border-color);border-radius:var(--radius-lg);padding:24px;max-width:360px;width:90%;display:flex;flex-direction:column;gap:16px'
+    box.innerHTML = '<p style="margin:0;color:var(--text-primary);font-size:14px">' + msg + '</p>' +
+      '<div style="display:flex;gap:8px;justify-content:flex-end">' +
+      '<button class="tc-cancel" style="padding:6px 16px;border-radius:var(--radius-md);border:1px solid var(--border-color);background:transparent;color:var(--text-primary);cursor:pointer">取消</button>' +
+      '<button class="tc-ok" style="padding:6px 16px;border-radius:var(--radius-md);border:none;background:var(--color-primary);color:#000;cursor:pointer;font-weight:600">确认</button>' +
+      '</div>'
+    overlay.appendChild(box)
+    document.body.appendChild(overlay)
+    const ok = () => { overlay.remove(); resolve(true) }
+    const cancel = () => { overlay.remove(); resolve(false) }
+    box.querySelector('.tc-ok').addEventListener('click', ok)
+    box.querySelector('.tc-cancel').addEventListener('click', cancel)
+    overlay.addEventListener('click', e => { if (e.target === overlay) cancel() })
+  })
+}
+
 </script>
 
 <style scoped>

@@ -40,6 +40,7 @@
 
 <script setup lang="ts">
 import { ref, computed } from 'vue'
+import { toast } from '../../utils/toast'
 import { api } from '@oa4rust/sdk'
 
 type RecycleItem = { id: string; name?: string; title?: string; fileName?: string; deleted?: boolean; deletedAt?: string; deleteTime?: string }
@@ -65,7 +66,7 @@ async function resume(item: RecycleItem) {
 }
 
 async function permanentDelete(item: RecycleItem) {
-  if (!confirm(`确定永久删除「${item.name || item.id}」？此操作不可恢复。`)) return
+  if (!confirmMsg(`确定永久删除「${item.name || item.id}」？此操作不可恢复。`)) return
   try {
     await api.delete(`/jaxrs/recycle/${item.id}`)
     items.value = items.value.filter(i => i.id !== item.id)
@@ -73,7 +74,7 @@ async function permanentDelete(item: RecycleItem) {
 }
 
 async function emptyRecycle() {
-  if (!confirm('确定清空回收站？所有项目将被永久删除。')) return
+  if (!confirmMsg('确定清空回收站？所有项目将被永久删除。')) return
   try {
     await api.post('/jaxrs/recycle/empty', null)
     items.value = []
@@ -93,6 +94,29 @@ async function api_recycle_r_1_delete() { try { await api.get('/jaxrs/recycle/r-
 
 async function api_restore_upload() { try { await api.get("/jaxrs/restore/upload") } catch {} }
 async function api_restore_upload_cancel() { try { await api.get("/jaxrs/restore/upload/cancel") } catch {} }
+
+
+// Confirmation dialog (replaces window.confirm)
+function confirmMsg(msg: string): Promise<boolean> {
+  return new Promise(resolve => {
+    const overlay = document.createElement('div')
+    overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:10000;display:flex;align-items:center;justify-content:center'
+    const box = document.createElement('div')
+    box.style.cssText = 'background:var(--bg-surface);border:1px solid var(--border-color);border-radius:var(--radius-lg);padding:24px;max-width:360px;width:90%;display:flex;flex-direction:column;gap:16px'
+    box.innerHTML = '<p style="margin:0;color:var(--text-primary);font-size:14px">' + msg + '</p>' +
+      '<div style="display:flex;gap:8px;justify-content:flex-end">' +
+      '<button class="tc-cancel" style="padding:6px 16px;border-radius:var(--radius-md);border:1px solid var(--border-color);background:transparent;color:var(--text-primary);cursor:pointer">取消</button>' +
+      '<button class="tc-ok" style="padding:6px 16px;border-radius:var(--radius-md);border:none;background:var(--color-primary);color:#000;cursor:pointer;font-weight:600">确认</button>' +
+      '</div>'
+    overlay.appendChild(box)
+    document.body.appendChild(overlay)
+    const ok = () => { overlay.remove(); resolve(true) }
+    const cancel = () => { overlay.remove(); resolve(false) }
+    box.querySelector('.tc-ok').addEventListener('click', ok)
+    box.querySelector('.tc-cancel').addEventListener('click', cancel)
+    overlay.addEventListener('click', e => { if (e.target === overlay) cancel() })
+  })
+}
 
 </script>
 

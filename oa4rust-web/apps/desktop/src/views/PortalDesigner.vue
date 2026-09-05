@@ -211,6 +211,7 @@
 
 <script setup lang="ts">
 import { ref } from 'vue'
+import { toast } from '../../utils/toast'
 import { api } from '@oa4rust/sdk'
 
 type PageDef = {
@@ -294,15 +295,15 @@ function previewPage(p: PageDef) {
 }
 
 function addWidget(w: WidgetDef) {
-  alert(`已添加组件「${w.name}」到当前页面（需要页面编辑模式）`)
+  toast.info('已添加组件「${w.name}」到当前页面（需要页面编辑模式）')
 }
 
 function editScript(s: ScriptDef) {
-  alert(`编辑脚本「${s.name}」— 功能开发中`)
+  toast.info('编辑脚本「${s.name}」— 功能开发中')
 }
 
 async function savePage() {
-  if (!form.value.name.trim()) { alert('请输入页面名称'); return }
+  if (!form.value.name.trim()) { toast.info('请输入页面名称'); return }
   saving.value = true
   try {
     const data = {
@@ -322,7 +323,7 @@ async function savePage() {
 }
 
 async function deletePage(p: PageDef) {
-  if (!confirm(`删除页面「${p.name || p.flag}」？`)) return
+  if (!confirmMsg(`删除页面「${p.name || p.flag}」？`)) return
   try {
     await api.delete(`/jaxrs/portal/assemble/designer/page/${p.id}`)
     pages.value = pages.value.filter(x => x.id !== p.id)
@@ -355,7 +356,7 @@ function openScriptEditor(s: any) {
   showScriptItemEditor.value = true
 }
 async function saveScript() {
-  if (!scriptForm.value.name.trim()) { alert('请输入脚本名称'); return }
+  if (!scriptForm.value.name.trim()) { toast.info('请输入脚本名称'); return }
   try {
     const data = { name: scriptForm.value.name, language: scriptForm.value.language, code: scriptForm.value.code, description: scriptForm.value.desc }
     if (editingScript.value?.id) {
@@ -368,13 +369,13 @@ async function saveScript() {
   } catch (e: any) { alert('保存失败: ' + (e?.message ?? '')) }
 }
 async function deleteScriptItem(idx: number) {
-  if (!confirm('确定删除此脚本？')) return
+  if (!confirmMsg('确定删除此脚本？')) return
   const s = scripts.value[idx]
   if (s?.id) { try { await api.delete(`/jaxrs/portal/assemble/designer/script/${s.id}`) } catch {} }
   scripts.value.splice(idx, 1)
 }
 async function runScript(s: any) {
-  if (!s?.code) { alert('脚本无代码内容'); return }
+  if (!s?.code) { toast.info('脚本无代码内容'); return }
   try {
     const r = await api.post('/jaxrs/portal/assemble/designer/script/run', { id: s.id, code: s.code })
     alert('执行结果: ' + JSON.stringify(r?.data ?? '未知'))
@@ -411,9 +412,9 @@ const filteredWidgets = computed(() => {
 })
 function pickWidget(w: any) {
   if (editingPage.value) {
-    alert(`已添加组件「${w.name}」到当前页面`)
+    toast.info('已添加组件「${w.name}」到当前页面')
   } else {
-    alert('请先选择一个页面进行编辑')
+    toast.info('请先选择一个页面进行编辑')
   }
   showWidgetPicker.value = false
 }
@@ -519,6 +520,29 @@ async function api_assemble_designer_portalcategory_list() { try { await api.get
 async function api_assemble_surface_publish_surface_1() { try { await api.get('/jaxrs/portal/assemble/surface/publish/surface-1') } catch {} }
 async function api_assemble_surface_get_surface_1() { try { await api.get('/jaxrs/portal/assemble/surface/get/surface-1') } catch {} }
 async function api_portal_assemble_designer_widget() { try { await api.get('/jaxrs/portal/assemble/designer/widget') } catch {} }
+
+
+// Confirmation dialog (replaces window.confirm)
+function confirmMsg(msg: string): Promise<boolean> {
+  return new Promise(resolve => {
+    const overlay = document.createElement('div')
+    overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:10000;display:flex;align-items:center;justify-content:center'
+    const box = document.createElement('div')
+    box.style.cssText = 'background:var(--bg-surface);border:1px solid var(--border-color);border-radius:var(--radius-lg);padding:24px;max-width:360px;width:90%;display:flex;flex-direction:column;gap:16px'
+    box.innerHTML = '<p style="margin:0;color:var(--text-primary);font-size:14px">' + msg + '</p>' +
+      '<div style="display:flex;gap:8px;justify-content:flex-end">' +
+      '<button class="tc-cancel" style="padding:6px 16px;border-radius:var(--radius-md);border:1px solid var(--border-color);background:transparent;color:var(--text-primary);cursor:pointer">取消</button>' +
+      '<button class="tc-ok" style="padding:6px 16px;border-radius:var(--radius-md);border:none;background:var(--color-primary);color:#000;cursor:pointer;font-weight:600">确认</button>' +
+      '</div>'
+    overlay.appendChild(box)
+    document.body.appendChild(overlay)
+    const ok = () => { overlay.remove(); resolve(true) }
+    const cancel = () => { overlay.remove(); resolve(false) }
+    box.querySelector('.tc-ok').addEventListener('click', ok)
+    box.querySelector('.tc-cancel').addEventListener('click', cancel)
+    overlay.addEventListener('click', e => { if (e.target === overlay) cancel() })
+  })
+}
 
 </script>
 

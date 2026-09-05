@@ -29,6 +29,7 @@
 </template>
 <script setup lang="ts">
 import { ref } from 'vue'
+import { toast } from '../../utils/toast'
 import { useQuery } from '@tanstack/vue-query'
 import { api } from '@oa4rust/sdk'
 interface Item { id:string; name?:string; flag?:string; config?:string }
@@ -39,7 +40,7 @@ items.value=data.value??[]
 function selectItem(item:Item){selected.value=item;config.value=item.config?'\n'+item.config:'{}'}
 function createNew(){const n:Item={id:Date.now().toString(),name:'未命名',flag:'',config:'{}'};items.value=[n,...items.value];selectItem(n)}
 function preview(){alert('配置预览:\n'+config.value)}
-function save(){if(selected.value&&config.value){api.put(ep+'/'+selected.value.id,{...selected.value,config:config.value}).then(()=>alert('保存成功'))}}
+function save(){if(selected.value&&config.value){api.put(ep+'/'+selected.value.id,{...selected.value,config:config.value}).then(()=>toast.info('保存成功'))}}
 </script>
 <style scoped>
 .editor-view{display:flex;flex-direction:column;gap:16px;height:100%}
