@@ -83,6 +83,26 @@ async function stopServer() {
 }
 
 loadLicense()
+
+async function api_cache() { try { await api.get("/jaxrs/cache") } catch {} }
+async function api_cache_commonscript_flush() { try { await api.get("/jaxrs/cache/commonscript/flush") } catch {} }
+async function api_cache_detail() { try { await api.get("/jaxrs/cache/detail") } catch {} }
+async function api_cache_config_flush() { try { await api.get("/jaxrs/cache/config/flush") } catch {} }
+
+
+async function api_console_cache_clear_all() { try { await api.get("/jaxrs/console/cache/clear/all") } catch {} }
+async function api_console_logs_error() { try { await api.get("/jaxrs/console/logs/error") } catch {} }
+async function api_console_metric_cpu_usage() { try { await api.get("/jaxrs/console/metric/cpu_usage") } catch {} }
+async function api_console_system_info() { try { await api.get("/jaxrs/console/system/info") } catch {} }
+async function api_console_command_execute() { try { await api.get("/jaxrs/console/command/execute") } catch {} }
+async function api_console_send_message() { try { await api.get("/jaxrs/console/send/message") } catch {} }
+async function api_console_status() { try { await api.get("/jaxrs/console/status") } catch {} }
+
+
+async function api_output_o_1_select_mockputtopost() { try { await api.get("/jaxrs/output/o-1/select/mockputtopost") } catch {} }
+async function api_output_o_1_select() { try { await api.get("/jaxrs/output/o-1/select") } catch {} }
+async function api_output_list() { try { await api.get("/jaxrs/output/list") } catch {} }
+
 </script>
 
 <style scoped>

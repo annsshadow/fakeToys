@@ -353,6 +353,23 @@ async function api_program_center_config_token() { try { await api.get("/jaxrs/p
 async function api_program_center_market_m_1_download() { try { await api.get("/jaxrs/program_center/market/m-1/download") } catch {} }
 async function api_program_center_script() { try { await api.get("/jaxrs/program_center/script") } catch {} }
 
+
+async function api_dictFlag_path_data_mockdeletetoget() { try { await api.get("/jaxrs/program_center/dict/dictFlag/path/data/mockdeletetoget") } catch {} }
+async function api_mpweixin_menu_delete_wm_1() { try { await api.get("/jaxrs/program_center/mpweixin/menu/delete/wm-1") } catch {} }
+async function api_cloud_unit_is_vip() { try { await api.get("/jaxrs/program_center/market/cloud/unit/is/vip") } catch {} }
+async function api_program_center_config_open() { try { await api.get("/jaxrs/program_center/config/open") } catch {} }
+async function api_dingding_request_pull_sync() { try { await api.get("/jaxrs/program_center/dingding/request/pull/sync") } catch {} }
+async function api_program_center_code_list() { try { await api.get("/jaxrs/program_center/code/list") } catch {} }
+async function api_program_center_schedule_schedule_fire() { try { await api.get("/jaxrs/program_center/schedule/schedule/fire") } catch {} }
+async function api_program_center_storagemappings() { try { await api.get("/jaxrs/program_center/storagemappings") } catch {} }
+async function api_program_center_zhengwudingding_regist_callback() { try { await api.get("/jaxrs/program_center/zhengwudingding/regist/callback") } catch {} }
+async function api_program_center_config_centerserver() { try { await api.get("/jaxrs/program_center/config/centerserver") } catch {} }
+async function api_program_center_validation_scripting_benchmark() { try { await api.get("/jaxrs/program_center/validation/scripting/benchmark") } catch {} }
+async function api_program_center_jest_clear_cache() { try { await api.get("/jaxrs/program_center/jest/clear/cache") } catch {} }
+async function api_collect_mobile_check_connect() { try { await api.get("/jaxrs/program_center/collect/mobile/check/connect") } catch {} }
+async function api_program_center_application_create() { try { await api.get("/jaxrs/program_center/application/create") } catch {} }
+async function api_program_center_collect_updateUnit() { try { await api.get("/jaxrs/program_center/collect/updateUnit") } catch {} }
+
 </script>
 
 <style scoped>

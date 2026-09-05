@@ -111,6 +111,13 @@ async function api_express_role_list() { try { await api.get("/jaxrs/express/rol
 async function api_express_subscribe() { try { await api.get("/jaxrs/express/subscribe") } catch {} }
 async function api_express_person_with_unit() { try { await api.get("/jaxrs/express/person/with/unit") } catch {} }
 
+
+async function api_externaldatasources_set_cancel() { try { await api.get("/jaxrs/externaldatasources/set/cancel") } catch {} }
+async function api_externaldatasources_validate() { try { await api.get("/jaxrs/externaldatasources/validate") } catch {} }
+async function api_externaldatasources_list() { try { await api.get("/jaxrs/externaldatasources/list") } catch {} }
+async function api_externaldatasources_set() { try { await api.get("/jaxrs/externaldatasources/set") } catch {} }
+async function api_externaldatasources_check() { try { await api.get("/jaxrs/externaldatasources/check") } catch {} }
+
 </script>
 <style scoped>
 .crud-view{display:flex;flex-direction:column;gap:16px;height:100%}
