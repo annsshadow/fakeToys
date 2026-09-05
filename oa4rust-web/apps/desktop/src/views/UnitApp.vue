@@ -82,41 +82,6 @@ async function api_list_unit_sub_direct() { try { await api.get('/jaxrs/unit/lis
 async function api_unit_list_person_object() { try { await api.get('/jaxrs/unit/list/person/object') } catch {} }
 async function api_unit_list_all_object() { try { await api.get('/jaxrs/unit/list/all/object') } catch {} }
 
-
-async function api_unit_list_types_object() { try { await api.get("/jaxrs/unit/list/types/object") } catch {} }
-async function api_list_identity_sup_nested() { try { await api.get("/jaxrs/unit/list/identity/sup/nested") } catch {} }
-async function api_identity_unit_name_object() { try { await api.get("/jaxrs/unitduty/list/identity/unit/name/object") } catch {} }
-async function api_unit_sub_direct_object() { try { await api.get("/jaxrs/unit/list/unit/sub/direct/object") } catch {} }
-async function api_unit_list_level_object() { try { await api.get("/jaxrs/unit/list/level/object") } catch {} }
-async function api_unit_sup_direct_object() { try { await api.get("/jaxrs/unit/list/unit/sup/direct/object") } catch {} }
-async function api_list_attribute_unit_name() { try { await api.get("/jaxrs/unitattribute/list/attribute/unit/name") } catch {} }
-async function api_list_identity_unit_name() { try { await api.get("/jaxrs/unitduty/list/identity/unit/name") } catch {} }
-async function api_unit_identity_level_object() { try { await api.get("/jaxrs/unit/identity/level/object") } catch {} }
-async function api_unitattribute_set_unit_name() { try { await api.get("/jaxrs/unitattribute/set/unit/name") } catch {} }
-async function api_unitduty_list_name_unit() { try { await api.get("/jaxrs/unitduty/list/name/unit") } catch {} }
-async function api_person_sup_nested_object() { try { await api.get("/jaxrs/unit/list/person/sup/nested/object") } catch {} }
-async function api_unitduty_list_unit_object() { try { await api.get("/jaxrs/unitduty/list/unit/object") } catch {} }
-async function api_unitattribute_list_unit_object() { try { await api.get("/jaxrs/unitattribute/list/unit/object") } catch {} }
-async function api_identity_sup_nested_object() { try { await api.get("/jaxrs/unit/list/identity/sup/nested/object") } catch {} }
-
-
-async function api_unitattribute_list_name_unit() { try { await api.get("/jaxrs/unitattribute/list/name/unit") } catch {} }
-async function api_unitattribute_append_unit_name() { try { await api.get("/jaxrs/unitattribute/append/unit/name") } catch {} }
-
-
-async function api_unitduty_list_name_identity() { try { await api.get("/jaxrs/unitduty/list/name/identity") } catch {} }
-async function api_unitduty_list_name() { try { await api.get("/jaxrs/unitduty/list/name") } catch {} }
-async function api_find_by_unit_name() { try { await api.get("/jaxrs/unitduty/find/by/unit/name") } catch {} }
-
-
-async function api_unit_list_all() { try { await api.get("/jaxrs/unit/list/all") } catch {} }
-async function api_unit_list_types() { try { await api.get("/jaxrs/unit/list/types") } catch {} }
-async function api_unit_list_unitduty() { try { await api.get("/jaxrs/unit/list/unitduty") } catch {} }
-async function api_unit_sub_nested_object() { try { await api.get("/jaxrs/unit/list/unit/sub/nested/object") } catch {} }
-async function api_list_unit_sup_direct() { try { await api.get("/jaxrs/unit/list/unit/sup/direct") } catch {} }
-async function api_check_unit_has_person() { try { await api.get("/jaxrs/unit/check/unit/has/person") } catch {} }
-async function api_unit_sup_nested_object() { try { await api.get("/jaxrs/unit/list/unit/sup/nested/object") } catch {} }
-
 async function api_jaxrs_organization_assemble_authentication_authentication_oauth_dingding_config() { try { await api.get("/jaxrs/organization/assemble/authentication/authentication/oauth/dingding/config") } catch {} }
 async function api_jaxrs_organization_assemble_authentication_authentication_oauth_qywx_config() { try { await api.get("/jaxrs/organization/assemble/authentication/authentication/oauth/qywx/config") } catch {} }
 async function api_jaxrs_organization_assemble_authentication_sso_encrypt_client_u2c_key_u2key_1234_95d5ba() { try { await api.get("/jaxrs/organization/assemble/authentication/sso/encrypt/client/u2c/key/u2key-1234567890-abcdef-/credential/user@P") } catch {} }

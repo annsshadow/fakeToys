@@ -260,6 +260,7 @@ async function api_calendar_assemble_control_setting_list_all() { try { await ap
 async function api_calendar_assemble_control_get_control_config() { try { await api.get("/jaxrs/calendar_assemble_control/get/control/config") } catch {} }
 async function api_calendar_assemble_control_test_1() { try { await api.get("/jaxrs/calendar_assemble_control/test/1") } catch {} }
 
+async function api_jaxrs_calendar_assemble_control_calendar_manager_list_with_person_x() { try { await api.get("/jaxrs/calendar_assemble_control/calendar/manager/list/with/person/x") } catch {} }
 </script>
 
 <style scoped>
