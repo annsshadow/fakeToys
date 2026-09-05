@@ -210,7 +210,6 @@ async function api_entity_event_remove() { try { await api.get("/jaxrs/calendar/
 async function api_entity_event_update() { try { await api.get("/jaxrs/calendar/core/entity/event/update") } catch {} }
 async function api_control_period_list() { try { await api.get("/jaxrs/calendar/assemble/control/period/list") } catch {} }
 async function api_assemble_control_calendar() { try { await api.get("/jaxrs/calendar/assemble/control/calendar") } catch {} }
-async function api_calendar_list_public() { try { await api.get("/jaxrs/calendar/calendar/list/public") } catch {} }
 async function api_assemble_control_event() { try { await api.get("/jaxrs/calendar/assemble/control/event") } catch {} }
 async function api_calendar_calendar_remove() { try { await api.get("/jaxrs/calendar/calendar/remove") } catch {} }
 async function api_control_calendar_follow() { try { await api.get("/jaxrs/calendar/assemble/control/calendar/follow") } catch {} }
