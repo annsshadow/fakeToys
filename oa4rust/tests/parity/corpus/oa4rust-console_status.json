@@ -1,17 +1,16 @@
 {
   "body": {
-    "count": null,
+    "count": 0,
     "data": {
       "status": "running",
-      "uptime": null,
-      "version": null
+      "uptime": 0,
+      "version": "1.0.0"
     },
-    "date": null,
-    "message": null,
-    "position": null,
-    "prompt": null,
-    "size": null,
-    "spent": null,
+    "date": "2026-09-06 00:37:23",
+    "message": "",
+    "position": 0,
+    "size": 0,
+    "spent": 0,
     "type": "success"
   },
   "method": "GET",

@@ -28,7 +28,8 @@ use integration_tests::db::init_test_database_async;
 #[ignore = "requires a running database server"]
 #[tokio::test]
 async fn integration_scenarios() {
-    let _ctx = init_test_database_async();
+    use integration_tests::db_isolated::init_isolated;
+    let _ctx = init_isolated().await;
 
     integration_tests::scenarios::org_person_meeting::org_person_meeting_flow().await;
     integration_tests::scenarios::bbs_correlation::bbs_correlation_flow().await;
@@ -43,7 +44,7 @@ async fn integration_scenarios() {
 #[ignore = "requires a running database server"]
 #[tokio::test]
 async fn data_integrity_scenarios() {
-    let _ctx = init_test_database_async();
+    let _ctx = init_test_database_async().await;
 
     integration_tests::scenarios::data_integrity::concurrent_document_updates().await;
     integration_tests::scenarios::data_integrity::soft_delete_isolation().await;

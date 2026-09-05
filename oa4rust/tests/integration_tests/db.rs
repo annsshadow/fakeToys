@@ -208,7 +208,7 @@ fn runtime_or_new() -> std::sync::Arc<tokio::runtime::Runtime> {
     }
 }
 
-async fn setup_postgres_database(test_db_name: &str) -> anyhow::Result<Pool> {
+pub async fn setup_postgres_database(test_db_name: &str) -> anyhow::Result<Pool> {
     dotenvy::dotenv().ok();
 
     let base_url = std::env::var("DATABASE_URL").unwrap_or_else(|_| {

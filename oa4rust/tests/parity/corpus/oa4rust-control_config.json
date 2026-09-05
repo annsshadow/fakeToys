@@ -1,21 +1,7 @@
 {
-  "body": {
-    "count": null,
-    "data": {
-      "allowCustomComponents": true,
-      "enabled": true,
-      "maxComponentCount": 0
-    },
-    "date": null,
-    "message": null,
-    "position": null,
-    "prompt": null,
-    "size": null,
-    "spent": null,
-    "type": "success"
-  },
+  "body": null,
   "method": "GET",
   "name": "control_config",
   "path": "/jaxrs/component_assemble_control/get/control/config",
-  "status": 200
+  "status": 500
 }

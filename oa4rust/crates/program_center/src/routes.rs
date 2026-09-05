@@ -6,7 +6,7 @@
 use deadpool_postgres::Pool;
 
 use crate::{
-    applications, current_style, modules_all, application_create, application_save, agent_create, agent_save, collect_list, collect_add, collect_remove,
+    applications, current_style, modules_all, application_create, application_get_by_id, application_delete, application_save, agent_create, agent_save, collect_list, collect_add, collect_remove,
     config_get, agent_flag, agent_flag_disable, agent_flag_enable, agent_flag_execute, agent_flag_file, andfx_pull_sync, appstyle_current_style, appstyle_current_update, appstyle_image_application_top,
     appstyle_image_application_top_erase, appstyle_image_launch_logo, appstyle_image_launch_logo_erase, appstyle_image_login_avatar, appstyle_image_login_avatar_erase, appstyle_image_menu_logo_blur, appstyle_image_menu_logo_blur_erase, appstyle_image_menu_logo_focus, appstyle_image_menu_logo_focus_erase, appstyle_image_process_default,
     appstyle_image_process_default_erase, appstyle_image_setup_about_logo, appstyle_image_setup_about_logo_erase, appstyle_index_portal, bar_create_mass_from_count, bar_select1_field_field_value_value_count_count, bar_select2_count_count, bar_select3_field_field_value_value_count_count, bar_select4_field_field_value_value_count_count, captcha_list,
@@ -58,6 +58,8 @@ pub fn router(pool: Pool) -> Router {
         .route("/jaxrs/program/appstyle/current/style", get(current_style))
         .route("/jaxrs/program/datastructure/modules/all", get(modules_all))
         .route("/jaxrs/program_center/application/create", post(application_create))
+        .route("/jaxrs/program_center/application/{id}", get(application_get_by_id))
+        .route("/jaxrs/program_center/application/{id}", delete(application_delete))
         .route("/jaxrs/program_center/application/save/{id}", post(application_save))
         .route("/jaxrs/program_center/agent/create", post(agent_create))
         .route("/jaxrs/program_center/agent/save/{id}", post(agent_save))
