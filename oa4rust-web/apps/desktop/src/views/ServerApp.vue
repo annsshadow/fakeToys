@@ -111,20 +111,32 @@ async function api_secret_set_cancel() { try { await api.get("/jaxrs/secret/set/
 async function api_secret_set() { try { await api.get("/jaxrs/secret/set") } catch {} }
 
 
-async function api_filter_1_size_10() { try { await api.get("/jaxrs/log/list/filter/1/size/10") } catch {} }
-async function api_list_i_1_next_10() { try { await api.get("/jaxrs/log/filter/list/i-1/next/10") } catch {} }
+const api_filter_1_size_10_data = ref<any[]>([]);
+const { data: api_filter_1_size_10_q } = useQuery({queryKey: ['api_filter_1_size_10', '/jaxrs/log/list/filter/1/size/10'], queryFn: async () => { try { const r = await api.get("/jaxrs/log/list/filter/1/size/10"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+watch(api_filter_1_size_10_q, (v) => { api_filter_1_size_10_data.value = v ?? []; });
+const api_list_i_1_next_10_data = ref<any[]>([]);
+const { data: api_list_i_1_next_10_q } = useQuery({queryKey: ['api_list_i_1_next_10', '/jaxrs/log/filter/list/i-1/next/10'], queryFn: async () => { try { const r = await api.get("/jaxrs/log/filter/list/i-1/next/10"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+watch(api_list_i_1_next_10_q, (v) => { api_list_i_1_next_10_data.value = v ?? []; });
 
 
-async function api_server_execute_status() { try { await api.get("/jaxrs/server/execute/status") } catch {} }
+const api_server_execute_status_data = ref<any[]>([]);
+const { data: api_server_execute_status_q } = useQuery({queryKey: ['api_server_execute_status', '/jaxrs/server/execute/status'], queryFn: async () => { try { const r = await api.get("/jaxrs/server/execute/status"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+watch(api_server_execute_status_q, (v) => { api_server_execute_status_data.value = v ?? []; });
 
 
 async function api_base_openapi_info() { try { await api.get("/jaxrs/base/openapi/info") } catch {} }
-async function api_cache_config_flush_1() { try { await api.get("/jaxrs/base/cache/config/flush") } catch {} }
+const api_cache_config_flush_1_data = ref<any[]>([]);
+const { data: api_cache_config_flush_1_q } = useQuery({queryKey: ['api_cache_config_flush_1', '/jaxrs/base/cache/config/flush'], queryFn: async () => { try { const r = await api.get("/jaxrs/base/cache/config/flush"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+watch(api_cache_config_flush_1_q, (v) => { api_cache_config_flush_1_data.value = v ?? []; });
 async function api_base_cache_detail() { try { await api.get("/jaxrs/base/cache/detail") } catch {} }
 async function api_base_echo() { try { await api.get("/jaxrs/base/echo") } catch {} }
 async function api_base_cache() { try { await api.get("/jaxrs/base/cache") } catch {} }
-async function api_cache_commonscript_flush_1() { try { await api.get("/jaxrs/base/cache/commonscript/flush") } catch {} }
-async function api_fireschedule_classname_com_x_processplatform_service_processing_ScheduleApplication() { try { await api.get("/jaxrs/base/fireschedule/classname/com.x.processplatform.service.processing.ScheduleApplication") } catch {} }
+const api_cache_commonscri_410_data = ref<any[]>([]);
+const { data: api_cache_commonscri_410_q } = useQuery({queryKey: ['api_cache_commonscri_410', '/jaxrs/base/cache/commonscript/flush'], queryFn: async () => { try { const r = await api.get("/jaxrs/base/cache/commonscript/flush"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+watch(api_cache_commonscri_410_q, (v) => { api_cache_commonscri_410_data.value = v ?? []; });
+const api_fireschedule_cla_721_data = ref<any[]>([]);
+const { data: api_fireschedule_cla_721_q } = useQuery({queryKey: ['api_fireschedule_cla_721', '/jaxrs/base/fireschedule/classname/com.x.processplatform.service.processing.ScheduleApplication'], queryFn: async () => { try { const r = await api.get("/jaxrs/base/fireschedule/classname/com.x.processplatform.service.processing.ScheduleApplication"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+watch(api_fireschedule_cla_721_q, (v) => { api_fireschedule_cla_721_data.value = v ?? []; });
 async function api_base_echo_get() { try { await api.get("/jaxrs/base/echo/get") } catch {} }
 
 </script>

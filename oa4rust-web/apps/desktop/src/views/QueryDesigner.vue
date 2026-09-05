@@ -585,10 +585,18 @@ async function api_query_nonexistent() { try { await api.get("/jaxrs/query/nonex
 async function api_assemble_surface_list_default() { try { await api.get("/jaxrs/query/assemble/surface/list/default") } catch {} }
 async function api_designer_view_v_1_simulate() { try { await api.get("/jaxrs/query/assemble/designer/view/v-1/simulate") } catch {} }
 async function api_query_service_processing() { try { await api.get("/jaxrs/query/service/processing") } catch {} }
-async function api_designer_query_list_summary() { try { await api.get("/jaxrs/query/assemble/designer/query/list/summary") } catch {} }
-async function api_designer_importmodel_im_flag_1_permission() { try { await api.get("/jaxrs/query/assemble/designer/importmodel/im-flag-1/permission") } catch {} }
-async function api_query_service_processing_process() { try { await api.get("/jaxrs/query/service/processing/process") } catch {} }
-async function api_designer_statement_list_manage() { try { await api.get("/jaxrs/query/assemble/designer/statement/list/manage") } catch {} }
+const api_designer_query_l_461_data = ref<any[]>([]);
+const { data: api_designer_query_l_461_q } = useQuery({queryKey: ['api_designer_query_l_461', '/jaxrs/query/assemble/designer/query/list/summary'], queryFn: async () => { try { const r = await api.get("/jaxrs/query/assemble/designer/query/list/summary"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+watch(api_designer_query_l_461_q, (v) => { api_designer_query_l_461_data.value = v ?? []; });
+const api_designer_importm_74_data = ref<any[]>([]);
+const { data: api_designer_importm_74_q } = useQuery({queryKey: ['api_designer_importm_74', '/jaxrs/query/assemble/designer/importmodel/im-flag-1/permission'], queryFn: async () => { try { const r = await api.get("/jaxrs/query/assemble/designer/importmodel/im-flag-1/permission"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+watch(api_designer_importm_74_q, (v) => { api_designer_importm_74_data.value = v ?? []; });
+const api_query_service_pr_177_data = ref<any[]>([]);
+const { data: api_query_service_pr_177_q } = useQuery({queryKey: ['api_query_service_pr_177', '/jaxrs/query/service/processing/process'], queryFn: async () => { try { const r = await api.get("/jaxrs/query/service/processing/process"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+watch(api_query_service_pr_177_q, (v) => { api_query_service_pr_177_data.value = v ?? []; });
+const api_designer_stateme_227_data = ref<any[]>([]);
+const { data: api_designer_stateme_227_q } = useQuery({queryKey: ['api_designer_stateme_227', '/jaxrs/query/assemble/designer/statement/list/manage'], queryFn: async () => { try { const r = await api.get("/jaxrs/query/assemble/designer/statement/list/manage"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+watch(api_designer_stateme_227_q, (v) => { api_designer_stateme_227_data.value = v ?? []; });
 
 
 // Confirmation dialog (replaces window.confirm)
@@ -614,10 +622,18 @@ function confirmMsg(msg: string): Promise<boolean> {
 }
 
 
-async function api_designer_input_prepare_create() { try { await api.get("/jaxrs/query/assemble/designer/input/prepare/create") } catch {} }
-async function api_designer_input_prepare_cover() { try { await api.get("/jaxrs/query/assemble/designer/input/prepare/cover") } catch {} }
-async function api_processing_table_u2table_insert() { try { await api.get("/jaxrs/query/service/processing/table/u2table/insert") } catch {} }
-async function api_query_service_processing_1() { try { await api.get("/jaxrs/query_service_processing") } catch {} }
+const api_designer_input_p_186_data = ref<any[]>([]);
+const { data: api_designer_input_p_186_q } = useQuery({queryKey: ['api_designer_input_p_186', '/jaxrs/query/assemble/designer/input/prepare/create'], queryFn: async () => { try { const r = await api.get("/jaxrs/query/assemble/designer/input/prepare/create"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+watch(api_designer_input_p_186_q, (v) => { api_designer_input_p_186_data.value = v ?? []; });
+const api_designer_input_p_638_data = ref<any[]>([]);
+const { data: api_designer_input_p_638_q } = useQuery({queryKey: ['api_designer_input_p_638', '/jaxrs/query/assemble/designer/input/prepare/cover'], queryFn: async () => { try { const r = await api.get("/jaxrs/query/assemble/designer/input/prepare/cover"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+watch(api_designer_input_p_638_q, (v) => { api_designer_input_p_638_data.value = v ?? []; });
+const api_processing_table_695_data = ref<any[]>([]);
+const { data: api_processing_table_695_q } = useQuery({queryKey: ['api_processing_table_695', '/jaxrs/query/service/processing/table/u2table/insert'], queryFn: async () => { try { const r = await api.get("/jaxrs/query/service/processing/table/u2table/insert"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+watch(api_processing_table_695_q, (v) => { api_processing_table_695_data.value = v ?? []; });
+const api_query_service_pr_699_data = ref<any[]>([]);
+const { data: api_query_service_pr_699_q } = useQuery({queryKey: ['api_query_service_pr_699', '/jaxrs/query_service_processing'], queryFn: async () => { try { const r = await api.get("/jaxrs/query_service_processing"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+watch(api_query_service_pr_699_q, (v) => { api_query_service_pr_699_data.value = v ?? []; });
 
 </script>
 
