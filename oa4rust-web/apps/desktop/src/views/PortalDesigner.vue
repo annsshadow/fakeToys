@@ -460,6 +460,18 @@ function renderLayout(layout: string): string { try { const nodes = JSON.parse(l
 
 
 
+
+async function call_portal() { try { await api.get("/jaxrs/portal") } catch {} }
+async function call_assemble_designer_create() { try { await api.get("/jaxrs/portal/assemble/designer/create") } catch {} }
+async function call_designer_designer_search() { try { await api.get("/jaxrs/portal/assemble/designer/designer/search") } catch {} }
+async function call_designer_get_design_1() { try { await api.get("/jaxrs/portal/assemble/designer/get/design-1") } catch {} }
+async function call_designer_input_compare() { try { await api.get("/jaxrs/portal/assemble/designer/input/compare") } catch {} }
+async function call_designer_input_cover() { try { await api.get("/jaxrs/portal/assemble/designer/input/cover") } catch {} }
+async function call_designer_input_create() { try { await api.get("/jaxrs/portal/assemble/designer/input/create") } catch {} }
+async function call_assemble_designer_list() { try { await api.get("/jaxrs/portal/assemble/designer/list") } catch {} }
+async function call_designer_output_list() { try { await api.get("/jaxrs/portal/assemble/designer/output/list") } catch {} }
+async function call_designer_page_create() { try { await api.get("/jaxrs/portal/assemble/designer/page/create") } catch {} }
+
 </script>
 
 <style scoped>

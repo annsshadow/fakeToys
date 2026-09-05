@@ -362,6 +362,18 @@ async function pinConversation(conv: any) {
 
 
 async function searchConversations() { const q=prompt('搜索会话:'); if(!q)return; const r=await api.get('/jaxrs/message/assemble/communicate/im/conversation/search?q='+encodeURIComponent(q)); searchResults.value=(r.data??[]) }
+
+async function call_message() { try { await api.get("/jaxrs/message") } catch {} }
+async function call_assemble_communicate_connector() { try { await api.get("/jaxrs/message/assemble/communicate/connector") } catch {} }
+async function call_communicate_im_conversation() { try { await api.get("/jaxrs/message/assemble/communicate/im/conversation") } catch {} }
+async function call_communicate_instant_list() { try { await api.get("/jaxrs/message/assemble/communicate/instant/list") } catch {} }
+async function call_communicate_mark_read_msg_1() { try { await api.get("/jaxrs/message/assemble/communicate/mark_read/msg-1") } catch {} }
+async function call_assemble_communicate_mass() { try { await api.get("/jaxrs/message/assemble/communicate/mass") } catch {} }
+async function call_communicate_mass_list() { try { await api.get("/jaxrs/message/assemble/communicate/mass/list") } catch {} }
+async function call_communicate_mass_m_1() { try { await api.get("/jaxrs/message/assemble/communicate/mass/m-1") } catch {} }
+async function call_assemble_communicate_message() { try { await api.get("/jaxrs/message/assemble/communicate/message") } catch {} }
+async function call_communicate_message_list() { try { await api.get("/jaxrs/message/assemble/communicate/message/list") } catch {} }
+
 </script>
 
 <style scoped>

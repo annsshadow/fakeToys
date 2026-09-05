@@ -92,6 +92,18 @@ async function leaveMeeting(m: M) {
 
 
 async function loadReservations(){try{const r=await api.get('/jaxrs/meeting/assemble/control/reservation/list');reservations.value=(r.data??[])}catch{reservations.value=[]}}
+
+async function call_meeting() { try { await api.get("/jaxrs/meeting") } catch {} }
+async function call_meeting_assemble_control() { try { await api.get("/jaxrs/meeting/assemble/control") } catch {} }
+async function call_assemble_control_attachment() { try { await api.get("/jaxrs/meeting/assemble/control/attachment") } catch {} }
+async function call_assemble_control_building() { try { await api.get("/jaxrs/meeting/assemble/control/building") } catch {} }
+async function call_assemble_control_config() { try { await api.get("/jaxrs/meeting/assemble/control/config") } catch {} }
+async function call_control_config_system() { try { await api.get("/jaxrs/meeting/assemble/control/config/system") } catch {} }
+async function call_assemble_control_create() { try { await api.get("/jaxrs/meeting/assemble/control/create") } catch {} }
+async function call_control_list_meeting_001() { try { await api.get("/jaxrs/meeting/assemble/control/list/meeting-001") } catch {} }
+async function call_assemble_control_meeting() { try { await api.get("/jaxrs/meeting/assemble/control/meeting") } catch {} }
+async function call_control_meeting_calendar() { try { await api.get("/jaxrs/meeting/assemble/control/meeting/calendar") } catch {} }
+
 </script>
 <style scoped>
 .meeting-view{display:flex;flex-direction:column;gap:16px;height:100%}
