@@ -249,6 +249,23 @@ async function api_assemble_surface_workorworkcompleted_list() { try { await api
 async function api_assemble_surface_touch_passexpired() { try { await api.get('/jaxrs/processplatform/assemble/surface/touch/passexpired') } catch {} }
 async function api_assemble_surface_publish_surface_1() { try { await api.get('/jaxrs/processplatform/assemble/surface/publish/surface-1') } catch {} }
 
+
+async function api_assemble_surface_mode_list() { try { await api.get("/jaxrs/processplatform/assemble/surface/mode/list") } catch {} }
+async function api_assemble_surface_task_list() { try { await api.get("/jaxrs/processplatform/assemble/surface/task/list") } catch {} }
+async function api_surface_work_v2_list() { try { await api.get("/jaxrs/processplatform/assemble/surface/work/v2/list") } catch {} }
+async function api_surface_application_list_complex() { try { await api.get("/jaxrs/processplatform/assemble/surface/application/list/complex") } catch {} }
+async function api_service_processing_list_default() { try { await api.get("/jaxrs/processplatform/service/processing/list/default") } catch {} }
+async function api_surface_read_filter_attribute() { try { await api.get("/jaxrs/processplatform/assemble/surface/read/filter/attribute") } catch {} }
+async function api_assemble_designer_list_processplatform() { try { await api.get("/jaxrs/processplatform/assemble/designer/list/processplatform") } catch {} }
+async function api_processplatform_work_retract_work_001() { try { await api.get("/jaxrs/processplatform/work/retract/work-001") } catch {} }
+async function api_designer_elementtool_form_orphan() { try { await api.get("/jaxrs/processplatform/assemble/designer/elementtool/form/orphan") } catch {} }
+async function api_designer_elementtool_script_orphan() { try { await api.get("/jaxrs/processplatform/assemble/designer/elementtool/script/orphan") } catch {} }
+async function api_processplatform_core_definition_list() { try { await api.get("/jaxrs/processplatform/core/definition/list") } catch {} }
+async function api_processplatform_assemble_designer_mergeitemplan() { try { await api.get("/jaxrs/processplatform/assemble/designer/mergeitemplan") } catch {} }
+async function api_assemble_surface_snap_snap_1() { try { await api.get("/jaxrs/processplatform/assemble/surface/snap/snap-1") } catch {} }
+async function api_surface_work_v3_retract() { try { await api.get("/jaxrs/processplatform/assemble/surface/work/v3/retract") } catch {} }
+async function api_surface_snap_snap_1_restore() { try { await api.get("/jaxrs/processplatform/assemble/surface/snap/snap-1/restore") } catch {} }
+
 </script>
 
 <style scoped>

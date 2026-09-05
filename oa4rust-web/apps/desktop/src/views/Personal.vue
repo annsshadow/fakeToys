@@ -197,6 +197,40 @@ async function api_organization_assemble_control_identity() { try { await api.ge
 async function api_assemble_control_unit_list() { try { await api.get('/jaxrs/organization/assemble/control/unit/list') } catch {} }
 async function api_assemble_express_config_get() { try { await api.get('/jaxrs/organization/assemble/express/config/get') } catch {} }
 
+
+async function api_authentication_qiyeweixin_info_sign() { try { await api.get("/jaxrs/organization/assemble/authentication/qiyeweixin/info/sign") } catch {} }
+async function api_assemble_control_inputperson_wipe() { try { await api.get("/jaxrs/organization/assemble/control/inputperson/wipe") } catch {} }
+async function api_organization_assemble_person_list() { try { await api.get("/jaxrs/organization/assemble/person/list") } catch {} }
+async function api_assemble_authentication_sso_encrypt() { try { await api.get("/jaxrs/organization/assemble/authentication/sso/encrypt") } catch {} }
+async function api_control_identity_list_pinyininitial() { try { await api.get("/jaxrs/organization/assemble/control/identity/list/pinyininitial") } catch {} }
+async function api_organization_person() { try { await api.get("/jaxrs/organization/person") } catch {} }
+async function api_control_unitduty_distinct_name() { try { await api.get("/jaxrs/organization/assemble/control/unitduty/distinct/name") } catch {} }
+async function api_organization_assemble_express() { try { await api.get("/jaxrs/organization_assemble_express") } catch {} }
+async function api_authentication_oauth_generate_code() { try { await api.get("/jaxrs/organization/assemble/authentication/oauth/generate/code") } catch {} }
+async function api_assemble_authentication_dingding_info() { try { await api.get("/jaxrs/organization/assemble/authentication/dingding/info") } catch {} }
+async function api_organization_assemble_control_unit() { try { await api.get("/jaxrs/organization/assemble/control/unit") } catch {} }
+async function api_organization_definition_list() { try { await api.get("/jaxrs/organization/definition/list") } catch {} }
+async function api_assemble_authentication_authentication_captcha() { try { await api.get("/jaxrs/organization/assemble/authentication/authentication/captcha") } catch {} }
+async function api_authentication_oauth_info_jira() { try { await api.get("/jaxrs/organization/assemble/authentication/oauth/info/jira") } catch {} }
+async function api_organization_assemble_control_role() { try { await api.get("/jaxrs/organization/assemble/control/role") } catch {} }
+
+
+async function api_person_password_mockputtopost() { try { await api.get("/jaxrs/person/password/mockputtopost") } catch {} }
+async function api_person_list_personattribute_object() { try { await api.get("/jaxrs/person/list/personattribute/object") } catch {} }
+async function api_person_list_object() { try { await api.get("/jaxrs/person/list/object") } catch {} }
+async function api_person_empower_some_id() { try { await api.get("/jaxrs/person/empower/some-id") } catch {} }
+async function api_person_icon() { try { await api.get("/jaxrs/person/icon") } catch {} }
+async function api_list_login_recent_object() { try { await api.get("/jaxrs/person/list/login/recent/object") } catch {} }
+async function api_person_list_identity_object() { try { await api.get("/jaxrs/person/list/identity/object") } catch {} }
+async function api_signature_list_person_u2_admin_P() { try { await api.get("/jaxrs/person/signature/list/person/u2-admin@P") } catch {} }
+async function api_person_empower_some_id_enable() { try { await api.get("/jaxrs/person/empower/some-id/enable") } catch {} }
+async function api_list_unit_sub_direct() { try { await api.get("/jaxrs/person/list/unit/sub/direct") } catch {} }
+async function api_person_list_role_object() { try { await api.get("/jaxrs/person/list/role/object") } catch {} }
+async function api_person_list_login_after() { try { await api.get("/jaxrs/person/list/login/after") } catch {} }
+async function api_person_sub_direct_object() { try { await api.get("/jaxrs/person/list/person/sub/direct/object") } catch {} }
+async function api_person_signature_manager_list() { try { await api.get("/jaxrs/person/signature/manager/list") } catch {} }
+async function api_person_has_role() { try { await api.get("/jaxrs/person/has/role") } catch {} }
+
 </script>
 
 <style scoped>
