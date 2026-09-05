@@ -245,7 +245,13 @@ function handleView(_item: TaskItem): void {
   console.log('View task:', _item.id);
 }
 
-async function handleComment(item) { const comment = prompt('添加评论:'); if(!comment)return; await api.post('/jaxrs/processplatform/assemble/surface/work/comment',{id:item.id,comment}); query.refetch() }
+async function handleComment(item) {
+  const comment = prompt('添加评论:');
+  if(!comment) return;
+  await api.post('/jaxrs/processplatform/assemble/surface/work/comment',{id:item.id,comment});
+  query.refetch();
+  toast.success('评论已提交');
+}
 
 async function call_processplatform() { try { await api.get("/jaxrs/processplatform") } catch {} }
 async function call_assemble_bam_create() { try { await api.get("/jaxrs/processplatform/assemble/bam/create") } catch {} }

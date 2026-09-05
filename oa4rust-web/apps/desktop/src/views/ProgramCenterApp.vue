@@ -46,6 +46,7 @@
               <div class="im">{{ app.desc || app.description || '' }}</div>
               <div class="meta">flag: {{ app.flag || app.id }}</div>
               <button class="btn-sm" style="color:var(--color-error);margin-top:4px" @click="deleteApp(app)">删除</button>
+              <button class="btn-sm" style="margin-top:4px" @click="compareApp(app)">对比</button>
             </div>
           </div>
         </div>
@@ -61,6 +62,7 @@
               <div class="it">{{ s.name || s.scriptName || '未命名' }}</div>
               <div class="im">flag: {{ s.flag || s.id }}</div>
               <button class="btn-sm" style="color:var(--color-error);margin-top:4px" @click="deleteScript(s)">删除</button>
+              <button class="btn-sm" style="margin-top:4px" @click="runScript(s)">执行</button>
             </div>
           </div>
         </div>
@@ -187,19 +189,21 @@ function switchTab(t: Tab) {
 
 async function toggleAgent(a: Agent) {
   try {
-    if (a.enabled !== false) await api.post(`/jaxrs/program_center/agent/${a.flag || a.id}/disable`, null)
-    else await api.post(`/jaxrs/program_center/agent/${a.flag || a.id}/enable`, null)
+    const action = a.enabled !== false ? 'disable' : 'enable'
+    await api.post(`/jaxrs/program_center/agent/${a.flag || a.id}/${action}`, null)
+    toast.success(action === 'enable' ? '已启用' : '已禁用')
     loadAgents()
   } catch (e: any) { toast.error(e?.message ?? '操作失败') }
 }
 
+const createAgentM = useMutation({
+  mutationFn: (data: { name: string; flag: string }) => api.post('/jaxrs/program_center/agent/create', data),
+  onSuccess: () => { showCreateAgent.value = false; agentForm.value = { name: '', flag: '' }; toast.success('Agent已创建'); loadAgents() },
+  onError: () => toast.error('创建失败'),
+})
 async function onCreateAgent() {
-  try {
-    await api.post('/jaxrs/program_center/agent/create', agentForm.value)
-    showCreateAgent.value = false
-    agentForm.value = { name: '', flag: '' }
-    loadAgents()
-  } catch (e: any) { toast.error('创建失败: : ' + (e?.message ?? '')) }
+  if (!agentForm.value.name || !agentForm.value.flag) return;
+  createAgentM.mutate(agentForm.value)
 }
 
 // Watch tab changes to load data
@@ -227,6 +231,43 @@ function deleteAgent(a: Agent) { if(confirmMsg('确定删除该Agent？')) delet
 function deleteApp(a: App) { if(confirmMsg('确定删除该Application？')) deleteAppM.mutate(a.id!) }
 function deleteScript(s: Script) { if(confirmMsg('确定删除该Script？')) deleteScriptM.mutate(s.id!) }
 function deleteDict(d: Dict) { if(confirmMsg('确定删除该字典？')) deleteDictM.mutate(d.id!) }
+
+// 新建字典
+const createDictM = useMutation({
+  mutationFn: (data: { name: string; flag: string }) => api.post('/jaxrs/program_center/dict/create', data),
+  onSuccess: () => { showCreateDict.value = false; toast.success('字典已创建'); loadDict() },
+  onError: () => toast.error('创建失败'),
+})
+async function onCreateDict() {
+  // Simple dialog for dict creation
+  const name = prompt('字典名称:')
+  const flag = prompt('字典Flag:')
+  if (!name || !flag) return
+  createDictM.mutate({ name, flag })
+}
+
+// 模块对比
+const compareM = useMutation({
+  mutationFn: (id: string) => api.post(`/jaxrs/program_center/module/${id}/compare`, {}),
+  onSuccess: () => toast.success('对比完成'),
+  onError: () => toast.error('对比失败'),
+})
+function compareApp(app: App) {
+  if (!app.id) return;
+  compareM.mutate(app.id)
+}
+
+// 执行脚本
+const runScriptM = useMutation({
+  mutationFn: (flag: string) => api.post(`/jaxrs/program_center/invoke/${flag}/execute`, {}),
+  onSuccess: () => toast.success('脚本已执行'),
+  onError: () => toast.error('执行失败'),
+})
+function runScript(s: Script) {
+  if (!s.flag) return;
+  if (!confirmMsg(`确认执行脚本「${s.flag}」？`)) return;
+  runScriptM.mutate(s.flag)
+}
 
 async function api_media_add_forever() { try { await api.get("/jaxrs/program_center/mpweixin/media/add/forever") } catch {} }
 async function api_login_avatar_erase() { try { await api.get("/jaxrs/program_center/appstyle/image/login/avatar/erase") } catch {} }
