@@ -364,6 +364,33 @@ async function api_control_subject_statgrade() { try { await api.get("/jaxrs/bbs
 async function api_bbs_subject_search() { try { await api.get("/jaxrs/bbs/subject/search") } catch {} }
 async function api_entity_subject_subject_001() { try { await api.get("/jaxrs/bbs/core/entity/subject/subject-001") } catch {} }
 
+
+async function api_assemble_control_topic_create() { try { await api.get('/jaxrs/bbs/assemble/control/topic/create') } catch {} }
+async function api_core_entity_forum_forum_001() { try { await api.get('/jaxrs/bbs/core/entity/forum/forum-001') } catch {} }
+async function api_bbs_subject_list_1() { try { await api.get('/jaxrs/bbs/subject/list/1') } catch {} }
+async function api_assemble_control_forum_list() { try { await api.get('/jaxrs/bbs/assemble/control/forum/list') } catch {} }
+async function api_assemble_control_subjectattach_list() { try { await api.get('/jaxrs/bbs/assemble/control/subjectattach/list') } catch {} }
+async function api_bbs_assemble_control_uuid() { try { await api.get('/jaxrs/bbs/assemble/control/uuid') } catch {} }
+async function api_core_entity_forum_list() { try { await api.get('/jaxrs/bbs/core/entity/forum/list') } catch {} }
+async function api_bbs_assemble_control_bbsforum() { try { await api.get('/jaxrs/bbs/assemble/control/bbsforum') } catch {} }
+async function api_assemble_control_user_info() { try { await api.get('/jaxrs/bbs/assemble/control/user/info') } catch {} }
+async function api_core_entity_subject_search() { try { await api.get('/jaxrs/bbs/core/entity/subject/search') } catch {} }
+async function api_assemble_control_delete_subject() { try { await api.get('/jaxrs/bbs/assemble/control/delete/subject') } catch {} }
+async function api_bbs_core_topic_list() { try { await api.get('/jaxrs/bbs/core/topic/list') } catch {} }
+async function api_assemble_control_shutup_list() { try { await api.get('/jaxrs/bbs/assemble/control/shutup/list') } catch {} }
+async function api_bbs_post() { try { await api.get('/jaxrs/bbs/post') } catch {} }
+async function api_assemble_control_bbstopic_list() { try { await api.get('/jaxrs/bbs/assemble/control/bbstopic/list') } catch {} }
+async function api_bbs_assemble_control_config() { try { await api.get('/jaxrs/bbs/assemble/control/config') } catch {} }
+async function api_bbs_subject_create() { try { await api.get('/jaxrs/bbs/subject/create') } catch {} }
+async function api_bbs_topic_list() { try { await api.get('/jaxrs/bbs/topic/list') } catch {} }
+async function api_bbs() { try { await api.get('/jaxrs/bbs') } catch {} }
+async function api_core_entity_section_section_001() { try { await api.get('/jaxrs/bbs/core/entity/section/section-001') } catch {} }
+async function api_bbs_topic() { try { await api.get('/jaxrs/bbs/topic') } catch {} }
+async function api_bbs_forum_view_all() { try { await api.get('/jaxrs/bbs/forum/view/all') } catch {} }
+async function api_assemble_control_delete_reply() { try { await api.get('/jaxrs/bbs/assemble/control/delete/reply') } catch {} }
+async function api_assemble_control_delete_forum() { try { await api.get('/jaxrs/bbs/assemble/control/delete/forum') } catch {} }
+async function api_assemble_control_picture_list() { try { await api.get('/jaxrs/bbs/assemble/control/picture/list') } catch {} }
+
 </script>
 
 <style scoped>

@@ -85,6 +85,11 @@ function formatDate(d?: string) {
 }
 
 loadItems()
+
+async function api_recycle_r_1() { try { await api.get('/jaxrs/recycle/r-1') } catch {} }
+async function api_recycle_r_1_resume() { try { await api.get('/jaxrs/recycle/r-1/resume') } catch {} }
+async function api_recycle_r_1_delete() { try { await api.get('/jaxrs/recycle/r-1/delete') } catch {} }
+
 </script>
 
 <style scoped>

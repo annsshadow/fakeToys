@@ -50,6 +50,33 @@ const delM=useMutation({mutationFn:async(id:string)=>api.delete(ep+'/'+id),onSuc
 function deleteItem(item:Item){if(confirm('确定删除？'))delM.mutate(item.id)}
 function loadData(){qc.invalidateQueries({queryKey:qk})}
 function fmtTime(t?:string){if(!t)return'';try{return new Date(t).toLocaleString('zh-CN',{month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'})}catch{return String(t)}}
+
+async function api_assemble_control_qrcode_list() { try { await api.get('/jaxrs/general/assemble/control/qrcode/list') } catch {} }
+async function api_assemble_control_securityclearance_enable() { try { await api.get('/jaxrs/general/assemble/control/securityclearance/enable') } catch {} }
+async function api_general_assemble_control_invoice() { try { await api.get('/jaxrs/general/assemble/control/invoice') } catch {} }
+async function api_general_core_list() { try { await api.get('/jaxrs/general/core/list') } catch {} }
+async function api_general_assemble_control_office() { try { await api.get('/jaxrs/general/assemble/control/office') } catch {} }
+async function api_general_dict_item_create() { try { await api.get('/jaxrs/general/dict/item/create') } catch {} }
+async function api_general_area_list() { try { await api.get('/jaxrs/general/area/list') } catch {} }
+async function api_general_config_list() { try { await api.get('/jaxrs/general/config/list') } catch {} }
+async function api_assemble_control_attendscope_list() { try { await api.get('/jaxrs/general/assemble/control/attendscope/list') } catch {} }
+async function api_assemble_control_excel_upload() { try { await api.get('/jaxrs/general/assemble/control/excel/upload') } catch {} }
+async function api_assemble_control_area_create() { try { await api.get('/jaxrs/general/assemble/control/area/create') } catch {} }
+async function api_dict_item_list_test_dict_id() { try { await api.get('/jaxrs/general/dict/item/list/test-dict-id') } catch {} }
+async function api_general_assemble_config() { try { await api.get('/jaxrs/general/assemble/config') } catch {} }
+async function api_assemble_control_permissions_mind() { try { await api.get('/jaxrs/general/assemble/control/permissions/mind') } catch {} }
+async function api_general_worktime_isworkday_20240101() { try { await api.get('/jaxrs/general/worktime/isworkday/20240101') } catch {} }
+async function api_assemble_control_area_list() { try { await api.get('/jaxrs/general/assemble/control/area/list') } catch {} }
+async function api_general_assemble_control_securityclearance() { try { await api.get('/jaxrs/general/assemble/control/securityclearance') } catch {} }
+async function api_assemble_control_securityclearance_list() { try { await api.get('/jaxrs/general/assemble/control/securityclearance/list') } catch {} }
+async function api_assemble_control_securityclearance_object() { try { await api.get('/jaxrs/general/assemble/control/securityclearance/object') } catch {} }
+async function api_assemble_control_invoice_list() { try { await api.get('/jaxrs/general/assemble/control/invoice/list') } catch {} }
+async function api_general_assemble_control_status() { try { await api.get('/jaxrs/general/assemble/control/status') } catch {} }
+async function api_assemble_control_worktime_minutesofworkday() { try { await api.get('/jaxrs/general/assemble/control/worktime/minutesofworkday') } catch {} }
+async function api_general_worktime_isworkday() { try { await api.get('/jaxrs/general/worktime/isworkday/') } catch {} }
+async function api_assemble_control_upgrade_2021090902() { try { await api.get('/jaxrs/general/assemble/control/upgrade/2021090902') } catch {} }
+async function api_general_file_list() { try { await api.get('/jaxrs/general/file/list') } catch {} }
+
 </script>
 <style scoped>
 .crud-view{display:flex;flex-direction:column;gap:16px;height:100%}

@@ -396,6 +396,13 @@ async function api_unread_count_testuser() { try { await api.get("/jaxrs/message
 async function api_mass_enable_type() { try { await api.get("/jaxrs/message/assemble/communicate/mass/enable/type") } catch {} }
 async function api_ws_list_person() { try { await api.get("/jaxrs/message/assemble/communicate/ws/list/person") } catch {} }
 
+
+async function api_message_assemble_send() { try { await api.get('/jaxrs/message/assemble/send') } catch {} }
+async function api_message_core_entity_list() { try { await api.get('/jaxrs/message/core/entity/list') } catch {} }
+async function api_message_assemble_communicate_ws() { try { await api.get('/jaxrs/message/assemble/communicate/ws') } catch {} }
+async function api_message_custom_create() { try { await api.get('/jaxrs/message/custom/create') } catch {} }
+async function api_message_send() { try { await api.get('/jaxrs/message/send') } catch {} }
+
 </script>
 
 <style scoped>

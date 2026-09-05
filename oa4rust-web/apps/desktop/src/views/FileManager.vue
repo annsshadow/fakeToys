@@ -239,6 +239,33 @@ async function api_file_id_download() { try { await api.get("/jaxrs/file/anonymo
 async function api_file_folder_update() { try { await api.get("/jaxrs/file/folder/update") } catch {} }
 async function api_file_list_referencetype() { try { await api.get("/jaxrs/file/assemble/control/file/list/referencetype") } catch {} }
 
+
+async function api_file_permission_set() { try { await api.get('/jaxrs/file/permission/set') } catch {} }
+async function api_file_complex_top() { try { await api.get('/jaxrs/file/complex/top') } catch {} }
+async function api_file_file_id_download() { try { await api.get('/jaxrs/file/file/id/download') } catch {} }
+async function api_attachment_list_folder_folderId() { try { await api.get('/jaxrs/file/attachment/list/folder/folderId') } catch {} }
+async function api_file_attachment2_list_top() { try { await api.get('/jaxrs/file/attachment2/list/top') } catch {} }
+async function api_file_id_download_1() { try { await api.get('/jaxrs/file/id/download') } catch {} }
+async function api_list_id_next_count() { try { await api.get('/jaxrs/file/list/id/next/count') } catch {} }
+async function api_file_folder2_list_id() { try { await api.get('/jaxrs/file/folder2/list/id') } catch {} }
+async function api_file_attachment_list_top() { try { await api.get('/jaxrs/file/attachment/list/top') } catch {} }
+async function api_file_folder2_id_download() { try { await api.get('/jaxrs/file/folder2/id/download') } catch {} }
+async function api_file_f_1_upload() { try { await api.get('/jaxrs/file/f-1/upload') } catch {} }
+async function api_file_folder_list_id() { try { await api.get('/jaxrs/file/folder/list/id') } catch {} }
+async function api_attachment2_id_download_stream() { try { await api.get('/jaxrs/file/attachment2/id/download/stream') } catch {} }
+async function api_file_list_referencetype_1() { try { await api.get('/jaxrs/file/list/referencetype') } catch {} }
+async function api_file_share_id() { try { await api.get('/jaxrs/file/share/id') } catch {} }
+async function api_file_attachment2_id() { try { await api.get('/jaxrs/file/attachment2/id') } catch {} }
+async function api_file_f_1_content() { try { await api.get('/jaxrs/file/f-1/content') } catch {} }
+async function api_file_f_1_appInfo_app_1() { try { await api.get('/jaxrs/file/f-1/appInfo/app-1') } catch {} }
+async function api_file_flag() { try { await api.get('/jaxrs/file/flag') } catch {} }
+async function api_file_attachment_id() { try { await api.get('/jaxrs/file/attachment/id') } catch {} }
+async function api_file_f_1_mockdeletetoget() { try { await api.get('/jaxrs/file/f-1/mockdeletetoget') } catch {} }
+async function api_share_id_password_password() { try { await api.get('/jaxrs/file/share/id/password/password') } catch {} }
+async function api_file_list() { try { await api.get('/jaxrs/file/list') } catch {} }
+async function api_assemble_control_unknown_path() { try { await api.get('/jaxrs/file/assemble/control/unknown/path') } catch {} }
+async function api_file_id() { try { await api.get('/jaxrs/file/id') } catch {} }
+
 </script>
 
 <style scoped>

@@ -138,6 +138,30 @@ async function api_document_filter_count() { try { await api.get("/jaxrs/documen
 async function api_i_1_next_10() { try { await api.get("/jaxrs/document/filter/list/i-1/next/10") } catch {} }
 async function api_publish_content_mockputtopost() { try { await api.get("/jaxrs/document/cipher/publish/content/mockputtopost") } catch {} }
 
+
+async function api_document_d_1_mockdeletetoget() { try { await api.get('/jaxrs/document/d-1/mockdeletetoget') } catch {} }
+async function api_document_publish_d_1_mockputtopost() { try { await api.get('/jaxrs/document/publish/d-1/mockputtopost') } catch {} }
+async function api_document_category_change() { try { await api.get('/jaxrs/document/category/change') } catch {} }
+async function api_document_d_1_update() { try { await api.get('/jaxrs/document/d-1/update') } catch {} }
+async function api_document_publish_d_1() { try { await api.get('/jaxrs/document/publish/d-1') } catch {} }
+async function api_document_d_1_commend() { try { await api.get('/jaxrs/document/d-1/commend') } catch {} }
+async function api_document_d_1_permission_read() { try { await api.get('/jaxrs/document/d-1/permission/read') } catch {} }
+async function api_document_d_1_uncommend() { try { await api.get('/jaxrs/document/d-1/uncommend') } catch {} }
+async function api_document_batch_b_1_status() { try { await api.get('/jaxrs/document/batch/b-1/status') } catch {} }
+async function api_document_publish_content_mockputtopost() { try { await api.get('/jaxrs/document/publish/content/mockputtopost') } catch {} }
+async function api_document_batch_u3_batch_x_status() { try { await api.get('/jaxrs/document/batch/u3-batch-x/status') } catch {} }
+async function api_document_d_1_view() { try { await api.get('/jaxrs/document/d-1/view') } catch {} }
+async function api_document_batch_u3_batch_x() { try { await api.get('/jaxrs/document/batch/u3-batch-x') } catch {} }
+async function api_document_filter_count_mockputtopost() { try { await api.get('/jaxrs/document/filter/count/mockputtopost') } catch {} }
+async function api_document_publish_d_1_cancel() { try { await api.get('/jaxrs/document/publish/d-1/cancel') } catch {} }
+async function api_document_publish_content() { try { await api.get('/jaxrs/document/publish/content') } catch {} }
+async function api_document_document_fields() { try { await api.get('/jaxrs/document/document/fields') } catch {} }
+async function api_document_d_1_view_count() { try { await api.get('/jaxrs/document/d-1/view/count') } catch {} }
+async function api_document_d_1_control() { try { await api.get('/jaxrs/document/d-1/control') } catch {} }
+async function api_document_d_1() { try { await api.get('/jaxrs/document/d-1') } catch {} }
+async function api_document_category_change_mockputtopost() { try { await api.get('/jaxrs/document/category/change/mockputtopost') } catch {} }
+async function api_document_batch_data_modify() { try { await api.get('/jaxrs/document/batch/data/modify') } catch {} }
+
 </script>
 
 <style scoped>

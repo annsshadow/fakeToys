@@ -66,6 +66,24 @@ async function onDelete(item: any) {
 }
 
 doSearch()
+
+async function api_user_hotpic_CMS_doc_123() { try { await api.get('/jaxrs/hotpic/user/hotpic/CMS/doc-123') } catch {} }
+async function api_hotpic_save_hotpic() { try { await api.get('/jaxrs/hotpic/save/hotpic') } catch {} }
+async function api_hotpic_delete_hotpic() { try { await api.get('/jaxrs/hotpic/delete/hotpic') } catch {} }
+async function api_hotpic_core_entity_create() { try { await api.get('/jaxrs/hotpic/core/entity/create') } catch {} }
+async function api_hotpic_core_list() { try { await api.get('/jaxrs/hotpic/core/list') } catch {} }
+async function api_hotpic_user_hotpic_hotpic_001() { try { await api.get('/jaxrs/hotpic/user/hotpic/hotpic-001') } catch {} }
+async function api_hotpic_assemble_list() { try { await api.get('/jaxrs/hotpic/assemble/list') } catch {} }
+async function api_hotpic_create_hotpic() { try { await api.get('/jaxrs/hotpic/create/hotpic') } catch {} }
+async function api_hotpic_upload() { try { await api.get('/jaxrs/hotpic/upload') } catch {} }
+async function api_core_entity_delete_hotpic_test_001() { try { await api.get('/jaxrs/hotpic/core/entity/delete/hotpic-test-001') } catch {} }
+async function api_user_hotpic_exists_check() { try { await api.get('/jaxrs/hotpic/user/hotpic/exists/check') } catch {} }
+async function api_hotpic_list_hotpics() { try { await api.get('/jaxrs/hotpic/list/hotpics') } catch {} }
+async function api_hotpic_assemble_control_config() { try { await api.get('/jaxrs/hotpic/assemble/control/config') } catch {} }
+async function api_hotpic_get_hotpic_hotpic_001() { try { await api.get('/jaxrs/hotpic/get/hotpic/hotpic-001') } catch {} }
+async function api_assemble_control_user_hotpic() { try { await api.get('/jaxrs/hotpic/assemble/control/user/hotpic') } catch {} }
+async function api_hotpic_list() { try { await api.get('/jaxrs/hotpic/list') } catch {} }
+
 </script>
 
 <style scoped>

@@ -493,6 +493,33 @@ async function api_portal_id1_permission() { try { await api.get("/jaxrs/portal/
 async function api_page_id1_mobile() { try { await api.get("/jaxrs/portal/assemble/surface/page/id1/mobile") } catch {} }
 async function api_core_page_list() { try { await api.get("/jaxrs/portal/core/page/list") } catch {} }
 
+
+async function api_portal_widget_list() { try { await api.get('/jaxrs/portal/widget/list') } catch {} }
+async function api_portal_design_save() { try { await api.get('/jaxrs/portal/design/save') } catch {} }
+async function api_portal_script_list() { try { await api.get('/jaxrs/portal/script/list') } catch {} }
+async function api_assemble_surface_list_default() { try { await api.get('/jaxrs/portal/assemble/surface/list/default') } catch {} }
+async function api_portal_assemble_designer_portal() { try { await api.get('/jaxrs/portal/assemble/designer/portal') } catch {} }
+async function api_assemble_designer_save_design_1() { try { await api.get('/jaxrs/portal/assemble/designer/save/design-1') } catch {} }
+async function api_portal_surface_list() { try { await api.get('/jaxrs/portal/surface/list') } catch {} }
+async function api_portal_assemble_designer_templatepage() { try { await api.get('/jaxrs/portal/assemble/designer/templatepage') } catch {} }
+async function api_portal_list() { try { await api.get('/jaxrs/portal/list') } catch {} }
+async function api_portal_page_get_test_page_id() { try { await api.get('/jaxrs/portal/page/get/test-page-id') } catch {} }
+async function api_assemble_surface_list_layouts() { try { await api.get('/jaxrs/portal/assemble/surface/list/layouts') } catch {} }
+async function api_assemble_surface_save_layout() { try { await api.get('/jaxrs/portal/assemble/surface/save/layout') } catch {} }
+async function api_assemble_designer_templatepage_id1() { try { await api.get('/jaxrs/portal/assemble/designer/templatepage/id1') } catch {} }
+async function api_portal_portal_list() { try { await api.get('/jaxrs/portal/portal/list') } catch {} }
+async function api_assemble_surface_preview_surface_1() { try { await api.get('/jaxrs/portal/assemble/surface/preview/surface-1') } catch {} }
+async function api_assemble_designer_portal_list() { try { await api.get('/jaxrs/portal/assemble/designer/portal/list') } catch {} }
+async function api_portal_page_remove() { try { await api.get('/jaxrs/portal/page/remove') } catch {} }
+async function api_portal_assemble_surface_create() { try { await api.get('/jaxrs/portal/assemble/surface/create') } catch {} }
+async function api_portal_dict_list() { try { await api.get('/jaxrs/portal/dict/list') } catch {} }
+async function api_portal_design_list() { try { await api.get('/jaxrs/portal/design/list') } catch {} }
+async function api_portal_surface_surface_1_preview() { try { await api.get('/jaxrs/portal/surface/surface-1/preview') } catch {} }
+async function api_assemble_designer_portalcategory_list() { try { await api.get('/jaxrs/portal/assemble/designer/portalcategory/list') } catch {} }
+async function api_assemble_surface_publish_surface_1() { try { await api.get('/jaxrs/portal/assemble/surface/publish/surface-1') } catch {} }
+async function api_assemble_surface_get_surface_1() { try { await api.get('/jaxrs/portal/assemble/surface/get/surface-1') } catch {} }
+async function api_portal_assemble_designer_widget() { try { await api.get('/jaxrs/portal/assemble/designer/widget') } catch {} }
+
 </script>
 
 <style scoped>

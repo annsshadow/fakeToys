@@ -78,6 +78,27 @@ async function viewDetail(item: any) {
 }
 
 doSearch()
+
+async function api_appinfo_list_user_view() { try { await api.get('/jaxrs/appinfo/list/user/view') } catch {} }
+async function api_a_1_icon_size_64() { try { await api.get('/jaxrs/appinfo/a-1/icon/size/64') } catch {} }
+async function api_appinfo_a_1_permission() { try { await api.get('/jaxrs/appinfo/a-1/permission') } catch {} }
+async function api_list_user_view_all() { try { await api.get('/jaxrs/appinfo/list/user/view/all') } catch {} }
+async function api_appinfo_list_appType_manager() { try { await api.get('/jaxrs/appinfo/list/appType/manager') } catch {} }
+async function api_appinfo_list_has_document() { try { await api.get('/jaxrs/appinfo/list/has/document') } catch {} }
+async function api_appinfo() { try { await api.get('/jaxrs/appinfo') } catch {} }
+async function api_appinfo_list_manage() { try { await api.get('/jaxrs/appinfo/list/manage') } catch {} }
+async function api_appinfo_list_all() { try { await api.get('/jaxrs/appinfo/list/all') } catch {} }
+async function api_list_user_view_data() { try { await api.get('/jaxrs/appinfo/list/user/view/data') } catch {} }
+async function api_appinfo_a_1() { try { await api.get('/jaxrs/appinfo/a-1') } catch {} }
+async function api_appinfo_flag() { try { await api.get('/jaxrs/appinfo/flag') } catch {} }
+async function api_appinfo_alias_alpha() { try { await api.get('/jaxrs/appinfo/alias/alpha') } catch {} }
+async function api_appinfo_list_appType() { try { await api.get('/jaxrs/appinfo/list/appType') } catch {} }
+async function api_get_user_publish_app_1() { try { await api.get('/jaxrs/appinfo/get/user/publish/app-1') } catch {} }
+async function api_appinfo_a_1_mockdeletetoget() { try { await api.get('/jaxrs/appinfo/a-1/mockdeletetoget') } catch {} }
+async function api_list_has_document_appType() { try { await api.get('/jaxrs/appinfo/list/has/document/appType') } catch {} }
+async function api_appinfo_list_user_publish() { try { await api.get('/jaxrs/appinfo/list/user/publish') } catch {} }
+async function api_appinfo_a_1_control() { try { await api.get('/jaxrs/appinfo/a-1/control') } catch {} }
+
 </script>
 
 <style scoped>
