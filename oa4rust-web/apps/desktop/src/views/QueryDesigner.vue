@@ -540,7 +540,15 @@ const { data: call_designe_209_q } = useQuery({queryKey: ['call_designe_209', '/
 watch(call_designe_209_q, (v) => { call_designe_209_data.value = v ?? []; });
 
 
-async function api_neural_generate_test_model() { try { await api.get("/jaxrs/query/service/neural/generate/test-model") } catch {} }
+const neural_generate_test_model_ref = ref<any[]>([]);
+const neural_generate_test_model_q = useQuery({
+  queryKey: ['neural_generate_test_model'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/query/service/neural/generate/test-model"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
 const api_table_tf_1_row_data = ref<any[]>([]);
 const { data: api_table_tf_1_row_q } = useQuery({queryKey: ['api_table_tf_1_row', '/jaxrs/query/assemble/designer/table/tf-1/row'], queryFn: async () => { try { const r = await api.get("/jaxrs/query/assemble/designer/table/tf-1/row"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
 watch(api_table_tf_1_row_q, (v) => { api_table_tf_1_row_data.value = v ?? []; });
@@ -600,31 +608,231 @@ const { data: api_assemble_697_q } = useQuery({queryKey: ['api_assemble_697', '/
 watch(api_assemble_697_q, (v) => { api_assemble_697_data.value = v ?? []; });
 
 
-async function api_assemble_designer_save_designer_1() { try { await api.get('/jaxrs/query/assemble/designer/save/designer-1') } catch {} }
-async function api_assemble_surface_get_surface_1() { try { await api.get('/jaxrs/query/assemble/surface/get/surface-1') } catch {} }
-async function api_query_core_express_list() { try { await api.get('/jaxrs/query/core/express/list') } catch {} }
-async function api_query_core_express_execute() { try { await api.get('/jaxrs/query/core/express/execute') } catch {} }
-async function api_query_view_test_view_id() { try { await api.get('/jaxrs/query/view/test-view-id') } catch {} }
-async function api_query_import_list() { try { await api.get('/jaxrs/query/import/list') } catch {} }
-async function api_core_express_cache_query_1() { try { await api.get('/jaxrs/query/core/express/cache/query-1') } catch {} }
-async function api_query_assemble_designer_query() { try { await api.get('/jaxrs/query/assemble/designer/query') } catch {} }
-async function api_assemble_designer_querycategory_list() { try { await api.get('/jaxrs/query/assemble/designer/querycategory/list') } catch {} }
-async function api_core_express_history_10() { try { await api.get('/jaxrs/query/core/express/history/10') } catch {} }
-async function api_query_service_process() { try { await api.get('/jaxrs/query/service/process') } catch {} }
-async function api_query_service_processing_neural() { try { await api.get('/jaxrs/query/service/processing/neural') } catch {} }
-async function api_query_assemble_designer_view() { try { await api.get('/jaxrs/query/assemble/designer/view') } catch {} }
-async function api_query_view_create() { try { await api.get('/jaxrs/query/view/create') } catch {} }
-async function api_query_service_processing_status() { try { await api.get('/jaxrs/query/service/processing/status') } catch {} }
-async function api_query_service_neural_list() { try { await api.get('/jaxrs/query/service/neural/list') } catch {} }
-async function api_query_view_list() { try { await api.get('/jaxrs/query/view/list') } catch {} }
-async function api_assemble_designer_query_q_flag_1() { try { await api.get('/jaxrs/query/assemble/designer/query/q-flag-1') } catch {} }
-async function api_query_service_processing_execute() { try { await api.get('/jaxrs/query/service/processing/execute') } catch {} }
-async function api_query_search() { try { await api.get('/jaxrs/query/search') } catch {} }
-async function api_query_item_list() { try { await api.get('/jaxrs/query/item/list') } catch {} }
-async function api_assemble_designer_output_list() { try { await api.get('/jaxrs/query/assemble/designer/output/list') } catch {} }
-async function api_query_service_processing_reset() { try { await api.get('/jaxrs/query/service/processing/reset') } catch {} }
-async function api_assemble_surface_save_surface_1() { try { await api.get('/jaxrs/query/assemble/surface/save/surface-1') } catch {} }
-async function api_query_list() { try { await api.get('/jaxrs/query/list') } catch {} }
+const assemble_designer_save_designer_1_ref = ref<any[]>([]);
+const assemble_designer_save_designer_1_q = useQuery({
+  queryKey: ['assemble_designer_save_designer_1'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/query/assemble/designer/save/designer-1"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const assemble_surface_get_surface_1_ref = ref<any[]>([]);
+const assemble_surface_get_surface_1_q = useQuery({
+  queryKey: ['assemble_surface_get_surface_1'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/query/assemble/surface/get/surface-1"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const query_core_express_list_ref = ref<any[]>([]);
+const query_core_express_list_q = useQuery({
+  queryKey: ['query_core_express_list'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/query/core/express/list"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const query_core_express_execute_ref = ref<any[]>([]);
+const query_core_express_execute_q = useQuery({
+  queryKey: ['query_core_express_execute'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/query/core/express/execute"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const query_view_test_view_id_ref = ref<any[]>([]);
+const query_view_test_view_id_q = useQuery({
+  queryKey: ['query_view_test_view_id'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/query/view/test-view-id"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const query_import_list_ref = ref<any[]>([]);
+const query_import_list_q = useQuery({
+  queryKey: ['query_import_list'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/query/import/list"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const core_express_cache_query_1_ref = ref<any[]>([]);
+const core_express_cache_query_1_q = useQuery({
+  queryKey: ['core_express_cache_query_1'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/query/core/express/cache/query-1"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const query_assemble_designer_query_ref = ref<any[]>([]);
+const query_assemble_designer_query_q = useQuery({
+  queryKey: ['query_assemble_designer_query'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/query/assemble/designer/query"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const assemble_designer_querycategory_list_ref = ref<any[]>([]);
+const assemble_designer_querycategory_list_q = useQuery({
+  queryKey: ['assemble_designer_querycategory_list'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/query/assemble/designer/querycategory/list"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const core_express_history_10_ref = ref<any[]>([]);
+const core_express_history_10_q = useQuery({
+  queryKey: ['core_express_history_10'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/query/core/express/history/10"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const query_service_process_ref = ref<any[]>([]);
+const query_service_process_q = useQuery({
+  queryKey: ['query_service_process'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/query/service/process"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const query_service_processing_neural_ref = ref<any[]>([]);
+const query_service_processing_neural_q = useQuery({
+  queryKey: ['query_service_processing_neural'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/query/service/processing/neural"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const query_assemble_designer_view_ref = ref<any[]>([]);
+const query_assemble_designer_view_q = useQuery({
+  queryKey: ['query_assemble_designer_view'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/query/assemble/designer/view"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const query_view_create_ref = ref<any[]>([]);
+const query_view_create_q = useQuery({
+  queryKey: ['query_view_create'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/query/view/create"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const query_service_processing_status_ref = ref<any[]>([]);
+const query_service_processing_status_q = useQuery({
+  queryKey: ['query_service_processing_status'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/query/service/processing/status"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const query_service_neural_list_ref = ref<any[]>([]);
+const query_service_neural_list_q = useQuery({
+  queryKey: ['query_service_neural_list'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/query/service/neural/list"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const query_view_list_ref = ref<any[]>([]);
+const query_view_list_q = useQuery({
+  queryKey: ['query_view_list'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/query/view/list"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const assemble_designer_query_q_flag_1_ref = ref<any[]>([]);
+const assemble_designer_query_q_flag_1_q = useQuery({
+  queryKey: ['assemble_designer_query_q_flag_1'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/query/assemble/designer/query/q-flag-1"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const query_service_processing_execute_ref = ref<any[]>([]);
+const query_service_processing_execute_q = useQuery({
+  queryKey: ['query_service_processing_execute'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/query/service/processing/execute"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const query_search_ref = ref<any[]>([]);
+const query_search_q = useQuery({
+  queryKey: ['query_search'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/query/search"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const query_item_list_ref = ref<any[]>([]);
+const query_item_list_q = useQuery({
+  queryKey: ['query_item_list'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/query/item/list"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const assemble_designer_output_list_ref = ref<any[]>([]);
+const assemble_designer_output_list_q = useQuery({
+  queryKey: ['assemble_designer_output_list'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/query/assemble/designer/output/list"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const query_service_processing_reset_ref = ref<any[]>([]);
+const query_service_processing_reset_q = useQuery({
+  queryKey: ['query_service_processing_reset'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/query/service/processing/reset"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const assemble_surface_save_surface_1_ref = ref<any[]>([]);
+const assemble_surface_save_surface_1_q = useQuery({
+  queryKey: ['assemble_surface_save_surface_1'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/query/assemble/surface/save/surface-1"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const query_list_ref = ref<any[]>([]);
+const query_list_q = useQuery({
+  queryKey: ['query_list'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/query/list"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
 
 
 const api_query_se_934_data = ref<any[]>([]);

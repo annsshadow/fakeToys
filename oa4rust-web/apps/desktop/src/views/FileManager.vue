@@ -225,89 +225,689 @@ function uploadFile(file: File): void {
     });
 }
 
-async function api_file_file_id() { try { await api.get("/jaxrs/file/file/id") } catch {} }
-async function api_list_filter_name() { try { await api.get("/jaxrs/file/attachment2/list/filter/name") } catch {} }
-async function api_referenceType_reference_reference() { try { await api.get("/jaxrs/file/referencetype/referenceType/reference/reference") } catch {} }
-async function api_entity_folder_folder_001() { try { await api.get("/jaxrs/file/core/entity/folder/folder-001") } catch {} }
-async function api_entity_complex_top() { try { await api.get("/jaxrs/file/core/entity/complex/top") } catch {} }
-async function api_file_folder2_id() { try { await api.get("/jaxrs/file/folder2/id") } catch {} }
-async function api_core_entity_folder() { try { await api.get("/jaxrs/file/core/entity/folder") } catch {} }
-async function api_file_f_1() { try { await api.get("/jaxrs/file/f-1") } catch {} }
-async function api_control_fileinfo_list() { try { await api.get("/jaxrs/file/assemble/control/fileinfo/list") } catch {} }
-async function api_next_count_all() { try { await api.get("/jaxrs/file/list/id/next/count/all") } catch {} }
-async function api_folder2_batch_download() { try { await api.get("/jaxrs/file/folder2/batch/download") } catch {} }
-async function api_count_referencetype_referenceType() { try { await api.get("/jaxrs/file/list/id/prev/count/referencetype/referenceType") } catch {} }
-async function api_list_folder_folderId() { try { await api.get("/jaxrs/file/attachment2/list/folder/folderId") } catch {} }
-async function api_file_folder_remove() { try { await api.get("/jaxrs/file/folder/remove") } catch {} }
-async function api_prev_count_all() { try { await api.get("/jaxrs/file/file/list/id/prev/count/all") } catch {} }
-async function api_core_entity_file() { try { await api.get("/jaxrs/file/core/entity/file") } catch {} }
-async function api_file_id_download() { try { await api.get("/jaxrs/file/anonymous/file/id/download") } catch {} }
-async function api_file_folder_update() { try { await api.get("/jaxrs/file/folder/update") } catch {} }
-async function api_file_list_referencetype() { try { await api.get("/jaxrs/file/assemble/control/file/list/referencetype") } catch {} }
+const file_file_id_ref = ref<any[]>([]);
+const file_file_id_q = useQuery({
+  queryKey: ['file_file_id'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/file/file/id"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const list_filter_name_ref = ref<any[]>([]);
+const list_filter_name_q = useQuery({
+  queryKey: ['list_filter_name'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/file/attachment2/list/filter/name"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const referenceType_reference_reference_ref = ref<any[]>([]);
+const referenceType_reference_reference_q = useQuery({
+  queryKey: ['referenceType_reference_reference'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/file/referencetype/referenceType/reference/reference"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const entity_folder_folder_001_ref = ref<any[]>([]);
+const entity_folder_folder_001_q = useQuery({
+  queryKey: ['entity_folder_folder_001'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/file/core/entity/folder/folder-001"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const entity_complex_top_ref = ref<any[]>([]);
+const entity_complex_top_q = useQuery({
+  queryKey: ['entity_complex_top'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/file/core/entity/complex/top"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const file_folder2_id_ref = ref<any[]>([]);
+const file_folder2_id_q = useQuery({
+  queryKey: ['file_folder2_id'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/file/folder2/id"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const core_entity_folder_ref = ref<any[]>([]);
+const core_entity_folder_q = useQuery({
+  queryKey: ['core_entity_folder'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/file/core/entity/folder"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const file_f_1_ref = ref<any[]>([]);
+const file_f_1_q = useQuery({
+  queryKey: ['file_f_1'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/file/f-1"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const control_fileinfo_list_ref = ref<any[]>([]);
+const control_fileinfo_list_q = useQuery({
+  queryKey: ['control_fileinfo_list'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/file/assemble/control/fileinfo/list"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const next_count_all_ref = ref<any[]>([]);
+const next_count_all_q = useQuery({
+  queryKey: ['next_count_all'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/file/list/id/next/count/all"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const folder2_batch_download_ref = ref<any[]>([]);
+const folder2_batch_download_q = useQuery({
+  queryKey: ['folder2_batch_download'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/file/folder2/batch/download"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const count_referencetype_referenceType_ref = ref<any[]>([]);
+const count_referencetype_referenceType_q = useQuery({
+  queryKey: ['count_referencetype_referenceType'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/file/list/id/prev/count/referencetype/referenceType"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const list_folder_folderId_ref = ref<any[]>([]);
+const list_folder_folderId_q = useQuery({
+  queryKey: ['list_folder_folderId'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/file/attachment2/list/folder/folderId"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const file_folder_remove_ref = ref<any[]>([]);
+const file_folder_remove_q = useQuery({
+  queryKey: ['file_folder_remove'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/file/folder/remove"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const prev_count_all_ref = ref<any[]>([]);
+const prev_count_all_q = useQuery({
+  queryKey: ['prev_count_all'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/file/file/list/id/prev/count/all"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const core_entity_file_ref = ref<any[]>([]);
+const core_entity_file_q = useQuery({
+  queryKey: ['core_entity_file'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/file/core/entity/file"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const file_id_download_ref = ref<any[]>([]);
+const file_id_download_q = useQuery({
+  queryKey: ['file_id_download'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/file/anonymous/file/id/download"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const file_folder_update_ref = ref<any[]>([]);
+const file_folder_update_q = useQuery({
+  queryKey: ['file_folder_update'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/file/folder/update"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const file_list_referencetype_ref = ref<any[]>([]);
+const file_list_referencetype_q = useQuery({
+  queryKey: ['file_list_referencetype'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/file/assemble/control/file/list/referencetype"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
 
 
-async function api_file_permission_set() { try { await api.get('/jaxrs/file/permission/set') } catch {} }
-async function api_file_complex_top() { try { await api.get('/jaxrs/file/complex/top') } catch {} }
-async function api_file_file_id_download() { try { await api.get('/jaxrs/file/file/id/download') } catch {} }
-async function api_attachment_list_folder_folderId() { try { await api.get('/jaxrs/file/attachment/list/folder/folderId') } catch {} }
-async function api_file_attachment2_list_top() { try { await api.get('/jaxrs/file/attachment2/list/top') } catch {} }
-async function api_file_id_download_1() { try { await api.get('/jaxrs/file/id/download') } catch {} }
-async function api_list_id_next_count() { try { await api.get('/jaxrs/file/list/id/next/count') } catch {} }
-async function api_file_folder2_list_id() { try { await api.get('/jaxrs/file/folder2/list/id') } catch {} }
-async function api_file_attachment_list_top() { try { await api.get('/jaxrs/file/attachment/list/top') } catch {} }
-async function api_file_folder2_id_download() { try { await api.get('/jaxrs/file/folder2/id/download') } catch {} }
-async function api_file_f_1_upload() { try { await api.get('/jaxrs/file/f-1/upload') } catch {} }
-async function api_file_folder_list_id() { try { await api.get('/jaxrs/file/folder/list/id') } catch {} }
-async function api_attachment2_id_download_stream() { try { await api.get('/jaxrs/file/attachment2/id/download/stream') } catch {} }
-async function api_file_list_referencetype_1() { try { await api.get('/jaxrs/file/list/referencetype') } catch {} }
-async function api_file_share_id() { try { await api.get('/jaxrs/file/share/id') } catch {} }
-async function api_file_attachment2_id() { try { await api.get('/jaxrs/file/attachment2/id') } catch {} }
-async function api_file_f_1_content() { try { await api.get('/jaxrs/file/f-1/content') } catch {} }
-async function api_file_f_1_appInfo_app_1() { try { await api.get('/jaxrs/file/f-1/appInfo/app-1') } catch {} }
-async function api_file_flag() { try { await api.get('/jaxrs/file/flag') } catch {} }
-async function api_file_attachment_id() { try { await api.get('/jaxrs/file/attachment/id') } catch {} }
-async function api_file_f_1_mockdeletetoget() { try { await api.get('/jaxrs/file/f-1/mockdeletetoget') } catch {} }
-async function api_share_id_password_password() { try { await api.get('/jaxrs/file/share/id/password/password') } catch {} }
-async function api_file_list() { try { await api.get('/jaxrs/file/list') } catch {} }
-async function api_assemble_control_unknown_path() { try { await api.get('/jaxrs/file/assemble/control/unknown/path') } catch {} }
-async function api_file_id() { try { await api.get('/jaxrs/file/id') } catch {} }
+const file_permission_set_ref = ref<any[]>([]);
+const file_permission_set_q = useQuery({
+  queryKey: ['file_permission_set'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/file/permission/set"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const file_complex_top_ref = ref<any[]>([]);
+const file_complex_top_q = useQuery({
+  queryKey: ['file_complex_top'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/file/complex/top"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const file_file_id_download_ref = ref<any[]>([]);
+const file_file_id_download_q = useQuery({
+  queryKey: ['file_file_id_download'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/file/file/id/download"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const attachment_list_folder_folderId_ref = ref<any[]>([]);
+const attachment_list_folder_folderId_q = useQuery({
+  queryKey: ['attachment_list_folder_folderId'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/file/attachment/list/folder/folderId"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const file_attachment2_list_top_ref = ref<any[]>([]);
+const file_attachment2_list_top_q = useQuery({
+  queryKey: ['file_attachment2_list_top'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/file/attachment2/list/top"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const file_id_download_1_ref = ref<any[]>([]);
+const file_id_download_1_q = useQuery({
+  queryKey: ['file_id_download_1'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/file/id/download"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const list_id_next_count_ref = ref<any[]>([]);
+const list_id_next_count_q = useQuery({
+  queryKey: ['list_id_next_count'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/file/list/id/next/count"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const file_folder2_list_id_ref = ref<any[]>([]);
+const file_folder2_list_id_q = useQuery({
+  queryKey: ['file_folder2_list_id'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/file/folder2/list/id"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const file_attachment_list_top_ref = ref<any[]>([]);
+const file_attachment_list_top_q = useQuery({
+  queryKey: ['file_attachment_list_top'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/file/attachment/list/top"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const file_folder2_id_download_ref = ref<any[]>([]);
+const file_folder2_id_download_q = useQuery({
+  queryKey: ['file_folder2_id_download'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/file/folder2/id/download"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const file_f_1_upload_ref = ref<any[]>([]);
+const file_f_1_upload_q = useQuery({
+  queryKey: ['file_f_1_upload'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/file/f-1/upload"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const file_folder_list_id_ref = ref<any[]>([]);
+const file_folder_list_id_q = useQuery({
+  queryKey: ['file_folder_list_id'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/file/folder/list/id"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const attachment2_id_download_stream_ref = ref<any[]>([]);
+const attachment2_id_download_stream_q = useQuery({
+  queryKey: ['attachment2_id_download_stream'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/file/attachment2/id/download/stream"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const file_list_referencetype_1_ref = ref<any[]>([]);
+const file_list_referencetype_1_q = useQuery({
+  queryKey: ['file_list_referencetype_1'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/file/list/referencetype"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const file_share_id_ref = ref<any[]>([]);
+const file_share_id_q = useQuery({
+  queryKey: ['file_share_id'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/file/share/id"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const file_attachment2_id_ref = ref<any[]>([]);
+const file_attachment2_id_q = useQuery({
+  queryKey: ['file_attachment2_id'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/file/attachment2/id"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const file_f_1_content_ref = ref<any[]>([]);
+const file_f_1_content_q = useQuery({
+  queryKey: ['file_f_1_content'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/file/f-1/content"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const file_f_1_appInfo_app_1_ref = ref<any[]>([]);
+const file_f_1_appInfo_app_1_q = useQuery({
+  queryKey: ['file_f_1_appInfo_app_1'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/file/f-1/appInfo/app-1"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const file_flag_ref = ref<any[]>([]);
+const file_flag_q = useQuery({
+  queryKey: ['file_flag'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/file/flag"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const file_attachment_id_ref = ref<any[]>([]);
+const file_attachment_id_q = useQuery({
+  queryKey: ['file_attachment_id'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/file/attachment/id"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const file_f_1_mockdeletetoget_ref = ref<any[]>([]);
+const file_f_1_mockdeletetoget_q = useQuery({
+  queryKey: ['file_f_1_mockdeletetoget'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/file/f-1/mockdeletetoget"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const share_id_password_password_ref = ref<any[]>([]);
+const share_id_password_password_q = useQuery({
+  queryKey: ['share_id_password_password'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/file/share/id/password/password"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const file_list_ref = ref<any[]>([]);
+const file_list_q = useQuery({
+  queryKey: ['file_list'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/file/list"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const assemble_control_unknown_path_ref = ref<any[]>([]);
+const assemble_control_unknown_path_q = useQuery({
+  queryKey: ['assemble_control_unknown_path'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/file/assemble/control/unknown/path"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const file_id_ref = ref<any[]>([]);
+const file_id_q = useQuery({
+  queryKey: ['file_id'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/file/id"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
 
 
-async function api_list_id_next_count_1() { try { await api.get("/jaxrs/file/file/list/id/next/count") } catch {} }
-async function api_assemble_control_file_create() { try { await api.get("/jaxrs/file/assemble/control/file/create") } catch {} }
-async function api_file_core_list() { try { await api.get("/jaxrs/file/core/list") } catch {} }
-async function api_fileinfo_fi_1_online_info() { try { await api.get("/jaxrs/fileinfo/fi-1/online/info") } catch {} }
-async function api_unused_referencetype_cmsdocument_manage() { try { await api.get("/jaxrs/file/clean/unused/referencetype/cmsdocument/manage") } catch {} }
-async function api_attachment2_exist_file_fileMd5() { try { await api.get("/jaxrs/file/attachment2/exist/file/fileMd5") } catch {} }
-async function api_file_editor_list() { try { await api.get("/jaxrs/file/editor/list") } catch {} }
-async function api_file_assemble_control() { try { await api.get("/jaxrs/file_assemble_control") } catch {} }
-async function api_file_assemble_control_fileinfo() { try { await api.get("/jaxrs/file/assemble/control/fileinfo") } catch {} }
-async function api_fileinfo_update_c_1_content() { try { await api.get("/jaxrs/fileinfo/update/c-1/content") } catch {} }
-async function api_file_folder_list_top() { try { await api.get("/jaxrs/file/folder/list/top") } catch {} }
-async function api_entity_folder_list_top() { try { await api.get("/jaxrs/file/core/entity/folder/list/top") } catch {} }
-async function api_download_transfer_flag_x() { try { await api.get("/jaxrs/fileinfo/download/transfer/flag/x") } catch {} }
-async function api_file() { try { await api.get("/jaxrs/file") } catch {} }
-async function api_fileinfo_fi_1_preview_pdf() { try { await api.get("/jaxrs/fileinfo/fi-1/preview/pdf") } catch {} }
+const list_id_next_count_1_ref = ref<any[]>([]);
+const list_id_next_count_1_q = useQuery({
+  queryKey: ['list_id_next_count_1'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/file/file/list/id/next/count"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const assemble_control_file_create_ref = ref<any[]>([]);
+const assemble_control_file_create_q = useQuery({
+  queryKey: ['assemble_control_file_create'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/file/assemble/control/file/create"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const file_core_list_ref = ref<any[]>([]);
+const file_core_list_q = useQuery({
+  queryKey: ['file_core_list'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/file/core/list"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const fileinfo_fi_1_online_info_ref = ref<any[]>([]);
+const fileinfo_fi_1_online_info_q = useQuery({
+  queryKey: ['fileinfo_fi_1_online_info'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/fileinfo/fi-1/online/info"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const unused_referencetype_cmsdocument_manage_ref = ref<any[]>([]);
+const unused_referencetype_cmsdocument_manage_q = useQuery({
+  queryKey: ['unused_referencetype_cmsdocument_manage'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/file/clean/unused/referencetype/cmsdocument/manage"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const attachment2_exist_file_fileMd5_ref = ref<any[]>([]);
+const attachment2_exist_file_fileMd5_q = useQuery({
+  queryKey: ['attachment2_exist_file_fileMd5'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/file/attachment2/exist/file/fileMd5"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const file_editor_list_ref = ref<any[]>([]);
+const file_editor_list_q = useQuery({
+  queryKey: ['file_editor_list'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/file/editor/list"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const file_assemble_control_ref = ref<any[]>([]);
+const file_assemble_control_q = useQuery({
+  queryKey: ['file_assemble_control'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/file_assemble_control"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const file_assemble_control_fileinfo_ref = ref<any[]>([]);
+const file_assemble_control_fileinfo_q = useQuery({
+  queryKey: ['file_assemble_control_fileinfo'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/file/assemble/control/fileinfo"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const fileinfo_update_c_1_content_ref = ref<any[]>([]);
+const fileinfo_update_c_1_content_q = useQuery({
+  queryKey: ['fileinfo_update_c_1_content'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/fileinfo/update/c-1/content"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const file_folder_list_top_ref = ref<any[]>([]);
+const file_folder_list_top_q = useQuery({
+  queryKey: ['file_folder_list_top'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/file/folder/list/top"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const entity_folder_list_top_ref = ref<any[]>([]);
+const entity_folder_list_top_q = useQuery({
+  queryKey: ['entity_folder_list_top'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/file/core/entity/folder/list/top"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const download_transfer_flag_x_ref = ref<any[]>([]);
+const download_transfer_flag_x_q = useQuery({
+  queryKey: ['download_transfer_flag_x'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/fileinfo/download/transfer/flag/x"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const file_ref = ref<any[]>([]);
+const file_q = useQuery({
+  queryKey: ['file'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/file"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const fileinfo_fi_1_preview_pdf_ref = ref<any[]>([]);
+const fileinfo_fi_1_preview_pdf_q = useQuery({
+  queryKey: ['fileinfo_fi_1_preview_pdf'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/fileinfo/fi-1/preview/pdf"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
 
 
-async function api_attachment() { try { await api.get("/jaxrs/attachment") } catch {} }
-async function api_attachment2() { try { await api.get("/jaxrs/attachment2") } catch {} }
-async function api_attachment2_list_top() { try { await api.get("/jaxrs/attachment2/list/top") } catch {} }
-async function api_attachment_a_1_download() { try { await api.get("/jaxrs/attachment/a-1/download") } catch {} }
-async function api_attachment2_user_capacity() { try { await api.get("/jaxrs/attachment2/user/capacity") } catch {} }
-async function api_attachment_list_top() { try { await api.get("/jaxrs/attachment/list/top") } catch {} }
+const attachment_ref = ref<any[]>([]);
+const attachment_q = useQuery({
+  queryKey: ['attachment'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/attachment"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const attachment2_ref = ref<any[]>([]);
+const attachment2_q = useQuery({
+  queryKey: ['attachment2'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/attachment2"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const attachment2_list_top_ref = ref<any[]>([]);
+const attachment2_list_top_q = useQuery({
+  queryKey: ['attachment2_list_top'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/attachment2/list/top"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const attachment_a_1_download_ref = ref<any[]>([]);
+const attachment_a_1_download_q = useQuery({
+  queryKey: ['attachment_a_1_download'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/attachment/a-1/download"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const attachment2_user_capacity_ref = ref<any[]>([]);
+const attachment2_user_capacity_q = useQuery({
+  queryKey: ['attachment2_user_capacity'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/attachment2/user/capacity"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const attachment_list_top_ref = ref<any[]>([]);
+const attachment_list_top_q = useQuery({
+  queryKey: ['attachment_list_top'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/attachment/list/top"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
 
 
-async function api_assemble_control_file_delete() { try { await api.get("/jaxrs/file/assemble/control/file/delete/") } catch {} }
-async function api_control_file_list_recent() { try { await api.get("/jaxrs/file/assemble/control/file/list/recent") } catch {} }
-async function api_unused_referencetype_cmsdocument_manage_1() { try { await api.get("/jaxrs/file/list/unused/referencetype/cmsdocument/manage") } catch {} }
-async function api_file_recycle_id() { try { await api.get("/jaxrs/file/recycle/id") } catch {} }
-async function api_referencetype_referenceType_reference_reference() { try { await api.get("/jaxrs/file/file/referencetype/referenceType/reference/reference") } catch {} }
-async function api_attachment_id_binary_base64() { try { await api.get("/jaxrs/file/attachment/id/binary/base64") } catch {} }
-async function api_file_upload() { try { await api.get("/jaxrs/file/upload") } catch {} }
-async function api_fileinfo_upload_with_url() { try { await api.get("/jaxrs/fileinfo/upload/with/url") } catch {} }
-async function api_control_file_delete_file_1() { try { await api.get("/jaxrs/file/assemble/control/file/delete/file-1") } catch {} }
-async function api_referencetype_referenceType_reference_reference_1() { try { await api.get("/jaxrs/file/list/referencetype/referenceType/reference/reference") } catch {} }
+const assemble_control_file_delete_ref = ref<any[]>([]);
+const assemble_control_file_delete_q = useQuery({
+  queryKey: ['assemble_control_file_delete'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/file/assemble/control/file/delete/"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const control_file_list_recent_ref = ref<any[]>([]);
+const control_file_list_recent_q = useQuery({
+  queryKey: ['control_file_list_recent'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/file/assemble/control/file/list/recent"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const unused_referencetype_cmsdocument_manage_1_ref = ref<any[]>([]);
+const unused_referencetype_cmsdocument_manage_1_q = useQuery({
+  queryKey: ['unused_referencetype_cmsdocument_manage_1'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/file/list/unused/referencetype/cmsdocument/manage"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const file_recycle_id_ref = ref<any[]>([]);
+const file_recycle_id_q = useQuery({
+  queryKey: ['file_recycle_id'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/file/recycle/id"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const referencetype_referenceType_reference_reference_ref = ref<any[]>([]);
+const referencetype_referenceType_reference_reference_q = useQuery({
+  queryKey: ['referencetype_referenceType_reference_reference'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/file/file/referencetype/referenceType/reference/reference"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const attachment_id_binary_base64_ref = ref<any[]>([]);
+const attachment_id_binary_base64_q = useQuery({
+  queryKey: ['attachment_id_binary_base64'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/file/attachment/id/binary/base64"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const file_upload_ref = ref<any[]>([]);
+const file_upload_q = useQuery({
+  queryKey: ['file_upload'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/file/upload"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const fileinfo_upload_with_url_ref = ref<any[]>([]);
+const fileinfo_upload_with_url_q = useQuery({
+  queryKey: ['fileinfo_upload_with_url'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/fileinfo/upload/with/url"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const control_file_delete_file_1_ref = ref<any[]>([]);
+const control_file_delete_file_1_q = useQuery({
+  queryKey: ['control_file_delete_file_1'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/file/assemble/control/file/delete/file-1"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const referencetype_referenceType_reference_reference_1_ref = ref<any[]>([]);
+const referencetype_referenceType_reference_reference_1_q = useQuery({
+  queryKey: ['referencetype_referenceType_reference_reference_1'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/file/list/referencetype/referenceType/reference/reference"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
 const api_fileinfo_fi_1_data = ref<any[]>([]);
 const { data: api_fileinfo_fi_1_q } = useQuery({queryKey: ['api_fileinfo_fi_1', '/jaxrs/fileinfo/fi-1'], queryFn: async () => { try { const r = await api.get("/jaxrs/fileinfo/fi-1"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
 watch(api_fileinfo_fi_1_q, (v) => { api_fileinfo_fi_1_data.value = v ?? []; });
@@ -326,7 +926,15 @@ watch(api_download_704_q, (v) => { api_download_704_data.value = v ?? []; });
 const api_assemble_861_data = ref<any[]>([]);
 const { data: api_assemble_861_q } = useQuery({queryKey: ['api_assemble_861', '/jaxrs/file/assemble/control/file/file-1'], queryFn: async () => { try { const r = await api.get("/jaxrs/file/assemble/control/file/file-1"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
 watch(api_assemble_861_q, (v) => { api_assemble_861_data.value = v ?? []; });
-async function api_file_f_1_mockputtopost() { try { await api.get("/jaxrs/file/f-1/mockputtopost") } catch {} }
+const file_f_1_mockputtopost_ref = ref<any[]>([]);
+const file_f_1_mockputtopost_q = useQuery({
+  queryKey: ['file_f_1_mockputtopost'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/file/f-1/mockputtopost"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
 const api_assemble_932_data = ref<any[]>([]);
 const { data: api_assemble_932_q } = useQuery({queryKey: ['api_assemble_932', '/jaxrs/file/assemble/control/file/referencetype'], queryFn: async () => { try { const r = await api.get("/jaxrs/file/assemble/control/file/referencetype"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
 watch(api_assemble_932_q, (v) => { api_assemble_932_data.value = v ?? []; });
@@ -395,27 +1003,83 @@ watch(api_attachme_847_q, (v) => { api_attachme_847_data.value = v ?? []; });
 const api_file_ass_1_data = ref<any[]>([]);
 const { data: api_file_ass_1_q } = useQuery({queryKey: ['api_file_ass_1', '/jaxrs/file/assemble/control/file'], queryFn: async () => { try { const r = await api.get("/jaxrs/file/assemble/control/file"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
 watch(api_file_ass_1_q, (v) => { api_file_ass_1_data.value = v ?? []; });
-async function api_entity_folder_list_test_folder_id() { try { await api.get("/jaxrs/file/core/entity/folder/list/test-folder-id") } catch {} }
+const entity_folder_list_test_folder_id_ref = ref<any[]>([]);
+const entity_folder_list_test_folder_id_q = useQuery({
+  queryKey: ['entity_folder_list_test_folder_id'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/file/core/entity/folder/list/test-folder-id"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
 
 
-async function api_folder() { try { await api.get("/jaxrs/folder") } catch {} }
+const folder_ref = ref<any[]>([]);
+const folder_q = useQuery({
+  queryKey: ['folder'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/folder"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
 const api_folder_l_678_data = ref<any[]>([]);
 const { data: api_folder_l_678_q } = useQuery({queryKey: ['api_folder_l_678', '/jaxrs/folder/list/top'], queryFn: async () => { try { const r = await api.get("/jaxrs/folder/list/top"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
 watch(api_folder_l_678_q, (v) => { api_folder_l_678_data.value = v ?? []; });
 const api_folder_l_257_data = ref<any[]>([]);
 const { data: api_folder_l_257_q } = useQuery({queryKey: ['api_folder_l_257', '/jaxrs/folder/list/f-1'], queryFn: async () => { try { const r = await api.get("/jaxrs/folder/list/f-1"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
 watch(api_folder_l_257_q, (v) => { api_folder_l_257_data.value = v ?? []; });
-async function api_folder2() { try { await api.get("/jaxrs/folder2") } catch {} }
+const folder2_ref = ref<any[]>([]);
+const folder2_q = useQuery({
+  queryKey: ['folder2'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/folder2"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
 const api_folder2__496_data = ref<any[]>([]);
 const { data: api_folder2__496_q } = useQuery({queryKey: ['api_folder2__496', '/jaxrs/folder2/list/top'], queryFn: async () => { try { const r = await api.get("/jaxrs/folder2/list/top"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
 watch(api_folder2__496_q, (v) => { api_folder2__496_data.value = v ?? []; });
-async function api_folder_f_1() { try { await api.get("/jaxrs/folder/f-1") } catch {} }
+const folder_f_1_ref = ref<any[]>([]);
+const folder_f_1_q = useQuery({
+  queryKey: ['folder_f_1'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/folder/f-1"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
 const api_folder2__462_data = ref<any[]>([]);
 const { data: api_folder2__462_q } = useQuery({queryKey: ['api_folder2__462', '/jaxrs/folder2/list/f-1'], queryFn: async () => { try { const r = await api.get("/jaxrs/folder2/list/f-1"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
 watch(api_folder2__462_q, (v) => { api_folder2__462_data.value = v ?? []; });
-async function api_folder2_f_1_download() { try { await api.get("/jaxrs/folder2/f-1/download") } catch {} }
-async function api_folder2_batch_download_1() { try { await api.get("/jaxrs/folder2/batch/download") } catch {} }
-async function api_folder2_f_1() { try { await api.get("/jaxrs/folder2/f-1") } catch {} }
+const folder2_f_1_download_ref = ref<any[]>([]);
+const folder2_f_1_download_q = useQuery({
+  queryKey: ['folder2_f_1_download'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/folder2/f-1/download"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const folder2_batch_download_1_ref = ref<any[]>([]);
+const folder2_batch_download_1_q = useQuery({
+  queryKey: ['folder2_batch_download_1'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/folder2/batch/download"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const folder2_f_1_ref = ref<any[]>([]);
+const folder2_f_1_q = useQuery({
+  queryKey: ['folder2_f_1'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/folder2/f-1"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
 
 
 const api_share_list_my_data = ref<any[]>([]);
@@ -424,16 +1088,48 @@ watch(api_share_list_my_q, (v) => { api_share_list_my_data.value = v ?? []; });
 const api_share_list_data = ref<any[]>([]);
 const { data: api_share_list_q } = useQuery({queryKey: ['api_share_list', '/jaxrs/share/list'], queryFn: async () => { try { const r = await api.get("/jaxrs/share/list"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
 watch(api_share_list_q, (v) => { api_share_list_data.value = v ?? []; });
-async function api_share_s_1() { try { await api.get("/jaxrs/share/s-1") } catch {} }
-async function api_share_s_1_password_pw_1() { try { await api.get("/jaxrs/share/s-1/password/pw-1") } catch {} }
+const share_s_1_ref = ref<any[]>([]);
+const share_s_1_q = useQuery({
+  queryKey: ['share_s_1'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/share/s-1"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const share_s_1_password_pw_1_ref = ref<any[]>([]);
+const share_s_1_password_pw_1_q = useQuery({
+  queryKey: ['share_s_1_password_pw_1'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/share/s-1/password/pw-1"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
 const api_share_li_493_data = ref<any[]>([]);
 const { data: api_share_li_493_q } = useQuery({queryKey: ['api_share_li_493', '/jaxrs/share/list/to/me'], queryFn: async () => { try { const r = await api.get("/jaxrs/share/list/to/me"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
 watch(api_share_li_493_q, (v) => { api_share_li_493_data.value = v ?? []; });
 const api_share_s__27_data = ref<any[]>([]);
 const { data: api_share_s__27_q } = useQuery({queryKey: ['api_share_s__27', '/jaxrs/share/download/share/s-1/file/f-1'], queryFn: async () => { try { const r = await api.get("/jaxrs/share/download/share/s-1/file/f-1"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
 watch(api_share_s__27_q, (v) => { api_share_s__27_data.value = v ?? []; });
-async function api_share() { try { await api.get("/jaxrs/share") } catch {} }
-async function api_share_shield_s_1() { try { await api.get("/jaxrs/share/shield/s-1") } catch {} }
+const share_ref = ref<any[]>([]);
+const share_q = useQuery({
+  queryKey: ['share'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/share"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const share_shield_s_1_ref = ref<any[]>([]);
+const share_shield_s_1_q = useQuery({
+  queryKey: ['share_shield_s_1'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/share/shield/s-1"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
 
 
 const api_image_en_241_data = ref<any[]>([]);
