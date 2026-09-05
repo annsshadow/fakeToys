@@ -77,6 +77,40 @@ async function api_general_worktime_isworkday() { try { await api.get('/jaxrs/ge
 async function api_assemble_control_upgrade_2021090902() { try { await api.get('/jaxrs/general/assemble/control/upgrade/2021090902') } catch {} }
 async function api_general_file_list() { try { await api.get('/jaxrs/general/file/list') } catch {} }
 
+
+async function api_control_worktime_isholiday_2024_01_01() { try { await api.get("/jaxrs/general/assemble/control/worktime/isholiday/2024-01-01") } catch {} }
+async function api_general_invoice_list() { try { await api.get("/jaxrs/general/invoice/list") } catch {} }
+async function api_general_assemble_control_generalfile() { try { await api.get("/jaxrs/general/assemble/control/generalfile") } catch {} }
+async function api_assemble_control_upgrade_2021090901() { try { await api.get("/jaxrs/general/assemble/control/upgrade/2021090901") } catch {} }
+async function api_assemble_control_invoice_create() { try { await api.get("/jaxrs/general/assemble/control/invoice/create") } catch {} }
+async function api_assemble_control_attendscope_create() { try { await api.get("/jaxrs/general/assemble/control/attendscope/create") } catch {} }
+async function api_general_dict_list() { try { await api.get("/jaxrs/general/dict/list") } catch {} }
+async function api_general_dict_create() { try { await api.get("/jaxrs/general/dict/create") } catch {} }
+async function api_assemble_control_securityclearance_system() { try { await api.get("/jaxrs/general/assemble/control/securityclearance/system") } catch {} }
+async function api_assemble_control_invoice_upload() { try { await api.get("/jaxrs/general/assemble/control/invoice/upload") } catch {} }
+async function api_general_assemble_control() { try { await api.get("/jaxrs/general_assemble_control") } catch {} }
+async function api_general_invoice_create() { try { await api.get("/jaxrs/general/invoice/create") } catch {} }
+async function api_general_securityclearance_enable() { try { await api.get("/jaxrs/general/securityclearance/enable") } catch {} }
+async function api_assemble_control_ecnet_check() { try { await api.get("/jaxrs/general/assemble/control/ecnet/check") } catch {} }
+async function api_assemble_control_securityclearance_create() { try { await api.get("/jaxrs/general/assemble/control/securityclearance/create") } catch {} }
+
+
+async function api_express_identity_list() { try { await api.get("/jaxrs/express/identity/list") } catch {} }
+async function api_express_companies() { try { await api.get("/jaxrs/express/companies") } catch {} }
+async function api_express_group_list() { try { await api.get("/jaxrs/express/group/list") } catch {} }
+async function api_express_person_with_identity() { try { await api.get("/jaxrs/express/person/with/identity") } catch {} }
+async function api_express_unit() { try { await api.get("/jaxrs/express/unit") } catch {} }
+async function api_express_person_list() { try { await api.get("/jaxrs/express/person/list") } catch {} }
+async function api_express_identity() { try { await api.get("/jaxrs/express/identity") } catch {} }
+async function api_express_group() { try { await api.get("/jaxrs/express/group") } catch {} }
+async function api_express_query() { try { await api.get("/jaxrs/express/query") } catch {} }
+async function api_express_person() { try { await api.get("/jaxrs/express/person") } catch {} }
+async function api_express_unit_list() { try { await api.get("/jaxrs/express/unit/list") } catch {} }
+async function api_express_module_list() { try { await api.get("/jaxrs/express/module/list") } catch {} }
+async function api_express_role_list() { try { await api.get("/jaxrs/express/role/list") } catch {} }
+async function api_express_subscribe() { try { await api.get("/jaxrs/express/subscribe") } catch {} }
+async function api_express_person_with_unit() { try { await api.get("/jaxrs/express/person/with/unit") } catch {} }
+
 </script>
 <style scoped>
 .crud-view{display:flex;flex-direction:column;gap:16px;height:100%}

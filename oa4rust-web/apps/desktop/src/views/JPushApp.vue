@@ -111,6 +111,23 @@ async function api_jpush_assemble_control_config() { try { await api.get('/jaxrs
 async function api_jpush_device_create() { try { await api.get('/jaxrs/jpush/device/create') } catch {} }
 async function api_jpush_send() { try { await api.get('/jaxrs/jpush/send') } catch {} }
 
+
+async function api_jpush_assemble_control_save_jpush() { try { await api.get("/jaxrs/jpush_assemble_control/save/jpush") } catch {} }
+async function api_jpush_assemble_control_message_test_send() { try { await api.get("/jaxrs/jpush_assemble_control/message/test/send") } catch {} }
+async function api_jpush_assemble_control_message_send() { try { await api.get("/jaxrs/jpush_assemble_control/message/send") } catch {} }
+async function api_device_unbind_a_b() { try { await api.get("/jaxrs/jpush_assemble_control/device/unbind/a/b") } catch {} }
+async function api_jpush_assemble_control_update_control_config() { try { await api.get("/jaxrs/jpush_assemble_control/update/control/config") } catch {} }
+async function api_admin_unbind_all_person() { try { await api.get("/jaxrs/jpush_assemble_control/device/admin/unbind/all/person") } catch {} }
+async function api_jpush_assemble_control() { try { await api.get("/jaxrs/jpush_assemble_control") } catch {} }
+async function api_jpush_assemble_control_delete_jpush() { try { await api.get("/jaxrs/jpush_assemble_control/delete/jpush") } catch {} }
+async function api_device_unbind_deviceName_deviceType() { try { await api.get("/jaxrs/jpush_assemble_control/device/unbind/deviceName/deviceType") } catch {} }
+async function api_jpush_assemble_control_get_control_config() { try { await api.get("/jaxrs/jpush_assemble_control/get/control/config") } catch {} }
+async function api_device_config_push_type() { try { await api.get("/jaxrs/jpush_assemble_control/device/config/push/type") } catch {} }
+async function api_jpush_assemble_control_device_bind() { try { await api.get("/jaxrs/jpush_assemble_control/device/bind") } catch {} }
+async function api_jpush_assemble_control_device_list_pushType() { try { await api.get("/jaxrs/jpush_assemble_control/device/list/pushType") } catch {} }
+async function api_jpush_assemble_control_list_control_apps() { try { await api.get("/jaxrs/jpush_assemble_control/list/control/apps") } catch {} }
+async function api_jpush_assemble_control_create_jpush() { try { await api.get("/jaxrs/jpush_assemble_control/create/jpush") } catch {} }
+
 </script>
 
 <style scoped>

@@ -297,6 +297,39 @@ async function api_person_icon_mockputtopost() { try { await api.get("/jaxrs/per
 async function api_filter_1_size_20() { try { await api.get("/jaxrs/person/list/filter/1/size/20") } catch {} }
 async function api_personattribute_set_person_name() { try { await api.get("/jaxrs/personattribute/set/person/name") } catch {} }
 
+
+async function api_authentication_sms_send() { try { await api.get("/jaxrs/authentication/sms/send") } catch {} }
+async function api_authentication_oauth_dingding_config() { try { await api.get("/jaxrs/authentication/oauth/dingding/config") } catch {} }
+async function api_authentication_two_factor() { try { await api.get("/jaxrs/authentication/two_factor") } catch {} }
+async function api_authentication_unit_list() { try { await api.get("/jaxrs/authentication/unit/list") } catch {} }
+async function api_authentication_group_list() { try { await api.get("/jaxrs/authentication/group/list") } catch {} }
+async function api_authentication_refresh() { try { await api.get("/jaxrs/authentication/refresh") } catch {} }
+async function api_authentication() { try { await api.get("/jaxrs/authentication") } catch {} }
+async function api_authentication_who() { try { await api.get("/jaxrs/authentication/who") } catch {} }
+async function api_authentication_captcha() { try { await api.get("/jaxrs/authentication/captcha") } catch {} }
+async function api_authentication_safe_logout() { try { await api.get("/jaxrs/authentication/safe/logout") } catch {} }
+async function api_authentication_sms_verify() { try { await api.get("/jaxrs/authentication/sms/verify") } catch {} }
+async function api_authentication_oidc_callback() { try { await api.get("/jaxrs/authentication/oidc/callback") } catch {} }
+async function api_authentication_sso_encrypt() { try { await api.get("/jaxrs/authentication/sso/encrypt") } catch {} }
+async function api_authentication_login() { try { await api.get("/jaxrs/authentication/login") } catch {} }
+async function api_authentication_check_token_1() { try { await api.get("/jaxrs/authentication/check/token") } catch {} }
+
+
+async function api_organization_core_express_sync() { try { await api.get("/jaxrs/organization/core/express/sync") } catch {} }
+async function api_assemble_authentication_bind_list() { try { await api.get("/jaxrs/organization/assemble/authentication/bind/list") } catch {} }
+async function api_organization_assemble_control() { try { await api.get("/jaxrs/organization/assemble/control") } catch {} }
+async function api_control_unitduty_update_member() { try { await api.get("/jaxrs/organization/assemble/control/unitduty/update/member") } catch {} }
+async function api_assemble_authentication_oauth_token() { try { await api.get("/jaxrs/organization/assemble/authentication/oauth/token") } catch {} }
+async function api_control_unit_list_pinyininitial() { try { await api.get("/jaxrs/organization/assemble/control/unit/list/pinyininitial") } catch {} }
+async function api_control_unit_list_controller() { try { await api.get("/jaxrs/organization/assemble/control/unit/list/controller") } catch {} }
+async function api_organization_core_express_list() { try { await api.get("/jaxrs/organization/core/express/list") } catch {} }
+async function api_organization_definition() { try { await api.get("/jaxrs/organization/definition") } catch {} }
+async function api_organization_assemble_list() { try { await api.get("/jaxrs/organization/assemble/list") } catch {} }
+async function api_authentication_authentication_safe_logout() { try { await api.get("/jaxrs/organization/assemble/authentication/authentication/safe/logout") } catch {} }
+async function api_control_export_export_all() { try { await api.get("/jaxrs/organization/assemble/control/export/export/all") } catch {} }
+async function api_assemble_authentication_oauth_info() { try { await api.get("/jaxrs/organization/assemble/authentication/oauth/info") } catch {} }
+async function api_organization_core_unit_list() { try { await api.get("/jaxrs/organization/core/unit/list") } catch {} }
+
 </script>
 
 <style scoped>

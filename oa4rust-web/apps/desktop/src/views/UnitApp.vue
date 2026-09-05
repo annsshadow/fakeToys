@@ -82,6 +82,23 @@ async function api_list_unit_sub_direct() { try { await api.get('/jaxrs/unit/lis
 async function api_unit_list_person_object() { try { await api.get('/jaxrs/unit/list/person/object') } catch {} }
 async function api_unit_list_all_object() { try { await api.get('/jaxrs/unit/list/all/object') } catch {} }
 
+
+async function api_unit_list_types_object() { try { await api.get("/jaxrs/unit/list/types/object") } catch {} }
+async function api_list_identity_sup_nested() { try { await api.get("/jaxrs/unit/list/identity/sup/nested") } catch {} }
+async function api_identity_unit_name_object() { try { await api.get("/jaxrs/unitduty/list/identity/unit/name/object") } catch {} }
+async function api_unit_sub_direct_object() { try { await api.get("/jaxrs/unit/list/unit/sub/direct/object") } catch {} }
+async function api_unit_list_level_object() { try { await api.get("/jaxrs/unit/list/level/object") } catch {} }
+async function api_unit_sup_direct_object() { try { await api.get("/jaxrs/unit/list/unit/sup/direct/object") } catch {} }
+async function api_list_attribute_unit_name() { try { await api.get("/jaxrs/unitattribute/list/attribute/unit/name") } catch {} }
+async function api_list_identity_unit_name() { try { await api.get("/jaxrs/unitduty/list/identity/unit/name") } catch {} }
+async function api_unit_identity_level_object() { try { await api.get("/jaxrs/unit/identity/level/object") } catch {} }
+async function api_unitattribute_set_unit_name() { try { await api.get("/jaxrs/unitattribute/set/unit/name") } catch {} }
+async function api_unitduty_list_name_unit() { try { await api.get("/jaxrs/unitduty/list/name/unit") } catch {} }
+async function api_person_sup_nested_object() { try { await api.get("/jaxrs/unit/list/person/sup/nested/object") } catch {} }
+async function api_unitduty_list_unit_object() { try { await api.get("/jaxrs/unitduty/list/unit/object") } catch {} }
+async function api_unitattribute_list_unit_object() { try { await api.get("/jaxrs/unitattribute/list/unit/object") } catch {} }
+async function api_identity_sup_nested_object() { try { await api.get("/jaxrs/unit/list/identity/sup/nested/object") } catch {} }
+
 </script>
 
 <style scoped>
