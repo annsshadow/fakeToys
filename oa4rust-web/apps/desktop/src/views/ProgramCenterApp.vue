@@ -282,6 +282,38 @@ async function api_bar_select2_count_count() { try { await api.get("/jaxrs/progr
 async function api_collect_code_mobile_mobile() { try { await api.get("/jaxrs/program_center/collect/code/mobile/mobile") } catch {} }
 async function api_program_center_agent_a_1() { try { await api.get("/jaxrs/program_center/agent/a-1") } catch {} }
 
+
+async function api_dictFlag_path_data_mockputtopost() { try { await api.get("/jaxrs/program_center/dict/dictFlag/path/data/mockputtopost") } catch {} }
+async function api_program_center_warnlog() { try { await api.get("/jaxrs/program_center/warnlog") } catch {} }
+async function api_program_center_test_test2() { try { await api.get("/jaxrs/program_center/test/test2") } catch {} }
+async function api_flag_install_or_update() { try { await api.get("/jaxrs/program_center/market/flag/install/or/update") } catch {} }
+async function api_program_center_agent_flag() { try { await api.get("/jaxrs/program_center/agent/flag") } catch {} }
+async function api_program_center_dict() { try { await api.get("/jaxrs/program_center/dict") } catch {} }
+async function api_program_center_input_create() { try { await api.get("/jaxrs/program_center/input/create") } catch {} }
+async function api_program_center_script_name_name() { try { await api.get("/jaxrs/program_center/script/name/name") } catch {} }
+async function api_program_center_market_flag_uninstall() { try { await api.get("/jaxrs/program_center/market/flag/uninstall") } catch {} }
+async function api_program_center_module_list() { try { await api.get("/jaxrs/program_center/module/list") } catch {} }
+async function api_appstyle_image_application_top() { try { await api.get("/jaxrs/program_center/appstyle/image/application/top") } catch {} }
+async function api_program_center_datastructure() { try { await api.get("/jaxrs/program_center/datastructure") } catch {} }
+async function api_program_center_qiyeweixin_pull_sync() { try { await api.get("/jaxrs/program_center/qiyeweixin/pull/sync") } catch {} }
+async function api_program_center_schedule_list_schedule() { try { await api.get("/jaxrs/program_center/schedule/list/schedule") } catch {} }
+async function api_module_output_m_1_file() { try { await api.get("/jaxrs/program_center/module/output/m-1/file") } catch {} }
+async function api_program_center_applications_list() { try { await api.get("/jaxrs/program_center/applications/list") } catch {} }
+async function api_program_center_appstyle_current_style() { try { await api.get("/jaxrs/program_center/appstyle/current/style") } catch {} }
+async function api_program_center_collect_disconnect() { try { await api.get("/jaxrs/program_center/collect/disconnect") } catch {} }
+async function api_program_center_core_list() { try { await api.get("/jaxrs/program_center/core/list") } catch {} }
+async function api_program_center_config_list_entity() { try { await api.get("/jaxrs/program_center/config/list/entity") } catch {} }
+async function api_program_center_application_some_id() { try { await api.get("/jaxrs/program_center/application/some-id") } catch {} }
+async function api_program_center_jest_version() { try { await api.get("/jaxrs/program_center/jest/version") } catch {} }
+async function api_program_center_welink_pull_sync() { try { await api.get("/jaxrs/program_center/welink/pull/sync") } catch {} }
+async function api_list_id_prev_count() { try { await api.get("/jaxrs/program_center/unexpectederrorlog/list/id/prev/count") } catch {} }
+async function api_program_center_deploy_list() { try { await api.get("/jaxrs/program_center/deploy/list") } catch {} }
+async function api_program_center_deploy_server_resource() { try { await api.get("/jaxrs/program_center/deploy/server/resource") } catch {} }
+async function api_output_f_1_select_file() { try { await api.get("/jaxrs/program_center/output/f-1/select/file") } catch {} }
+async function api_id_validate_answer_answer() { try { await api.get("/jaxrs/program_center/captcha/id/validate/answer/answer") } catch {} }
+async function api_program_center_module_output() { try { await api.get("/jaxrs/program_center/module/output") } catch {} }
+async function api_program_center_module_output_structure() { try { await api.get("/jaxrs/program_center/module/output/structure") } catch {} }
+
 </script>
 
 <style scoped>

@@ -291,6 +291,33 @@ async function api_attachment_a_1_download() { try { await api.get("/jaxrs/attac
 async function api_attachment2_user_capacity() { try { await api.get("/jaxrs/attachment2/user/capacity") } catch {} }
 async function api_attachment_list_top() { try { await api.get("/jaxrs/attachment/list/top") } catch {} }
 
+
+async function api_assemble_control_file_delete() { try { await api.get("/jaxrs/file/assemble/control/file/delete/") } catch {} }
+async function api_control_file_list_recent() { try { await api.get("/jaxrs/file/assemble/control/file/list/recent") } catch {} }
+async function api_unused_referencetype_cmsdocument_manage_1() { try { await api.get("/jaxrs/file/list/unused/referencetype/cmsdocument/manage") } catch {} }
+async function api_file_recycle_id() { try { await api.get("/jaxrs/file/recycle/id") } catch {} }
+async function api_referencetype_referenceType_reference_reference() { try { await api.get("/jaxrs/file/file/referencetype/referenceType/reference/reference") } catch {} }
+async function api_attachment_id_binary_base64() { try { await api.get("/jaxrs/file/attachment/id/binary/base64") } catch {} }
+async function api_file_upload() { try { await api.get("/jaxrs/file/upload") } catch {} }
+async function api_fileinfo_upload_with_url() { try { await api.get("/jaxrs/fileinfo/upload/with/url") } catch {} }
+async function api_control_file_delete_file_1() { try { await api.get("/jaxrs/file/assemble/control/file/delete/file-1") } catch {} }
+async function api_referencetype_referenceType_reference_reference_1() { try { await api.get("/jaxrs/file/list/referencetype/referenceType/reference/reference") } catch {} }
+async function api_fileinfo_fi_1() { try { await api.get("/jaxrs/fileinfo/fi-1") } catch {} }
+async function api_edit_e_1_doc_d_1() { try { await api.get("/jaxrs/fileinfo/edit/e-1/doc/d-1") } catch {} }
+async function api_core_entity_file_create() { try { await api.get("/jaxrs/file/core/entity/file/create") } catch {} }
+async function api_control_folder_list_root() { try { await api.get("/jaxrs/file/assemble/control/folder/list/root") } catch {} }
+async function api_download_document_d_1_stream() { try { await api.get("/jaxrs/fileinfo/download/document/d-1/stream") } catch {} }
+async function api_assemble_control_file_file_1() { try { await api.get("/jaxrs/file/assemble/control/file/file-1") } catch {} }
+async function api_file_f_1_mockputtopost() { try { await api.get("/jaxrs/file/f-1/mockputtopost") } catch {} }
+async function api_assemble_control_file_referencetype() { try { await api.get("/jaxrs/file/assemble/control/file/referencetype") } catch {} }
+async function api_file_id_binary_base64() { try { await api.get("/jaxrs/file/id/binary/base64") } catch {} }
+async function api_replace_to_doc_doc_9() { try { await api.get("/jaxrs/fileinfo/replace/to/doc/doc-9") } catch {} }
+async function api_copy_to_doc_doc_9() { try { await api.get("/jaxrs/fileinfo/copy/to/doc/doc-9") } catch {} }
+async function api_control_file_list_folder_1() { try { await api.get("/jaxrs/file/assemble/control/file/list/folder-1") } catch {} }
+async function api_file_attachment_id_download() { try { await api.get("/jaxrs/file/attachment/id/download") } catch {} }
+async function api_list_id_prev_count() { try { await api.get("/jaxrs/file/file/list/id/prev/count") } catch {} }
+async function api_fi_1_binary_base64_64() { try { await api.get("/jaxrs/fileinfo/fi-1/binary/base64/64") } catch {} }
+
 </script>
 
 <style scoped>
