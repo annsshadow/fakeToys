@@ -118,6 +118,29 @@ async function api_externaldatasources_list() { try { await api.get("/jaxrs/exte
 async function api_externaldatasources_set() { try { await api.get("/jaxrs/externaldatasources/set") } catch {} }
 async function api_externaldatasources_check() { try { await api.get("/jaxrs/externaldatasources/check") } catch {} }
 
+
+async function api_component_assemble_control_get_control_config() { try { await api.get("/jaxrs/component_assemble_control/get/control/config") } catch {} }
+async function api_component_assemble_control_create_component() { try { await api.get("/jaxrs/component_assemble_control/create/component") } catch {} }
+async function api_core_entity_list_all() { try { await api.get("/jaxrs/component/core/entity/list/all") } catch {} }
+async function api_component_assemble_control_save_component() { try { await api.get("/jaxrs/component_assemble_control/save/component") } catch {} }
+async function api_component_assemble_list() { try { await api.get("/jaxrs/component/assemble/list") } catch {} }
+async function api_component_list_all() { try { await api.get("/jaxrs/component/list/all") } catch {} }
+async function api_component_count() { try { await api.get("/jaxrs/component/count") } catch {} }
+async function api_component_core_list() { try { await api.get("/jaxrs/component/core/list") } catch {} }
+async function api_component_assemble_control_list_control_categories() { try { await api.get("/jaxrs/component_assemble_control/list/control/categories") } catch {} }
+async function api_component_assemble_control_delete_component() { try { await api.get("/jaxrs/component_assemble_control/delete/component") } catch {} }
+async function api_component_assemble_control_component() { try { await api.get("/jaxrs/component_assemble_control/component") } catch {} }
+async function api_component_assemble_control_list_components() { try { await api.get("/jaxrs/component_assemble_control/list/components") } catch {} }
+
+
+async function api_component_assemble_control_update_control_config() { try { await api.get("/jaxrs/component_assemble_control/update/control/config") } catch {} }
+async function api_component_assemble_control() { try { await api.get("/jaxrs/component_assemble_control") } catch {} }
+async function api_component_assemble_control_get_component() { try { await api.get("/jaxrs/component_assemble_control/get/component") } catch {} }
+
+
+async function api_complex_folder_c_1() { try { await api.get("/jaxrs/complex/folder/c-1") } catch {} }
+async function api_complex_top() { try { await api.get("/jaxrs/complex/top") } catch {} }
+
 </script>
 <style scoped>
 .crud-view{display:flex;flex-direction:column;gap:16px;height:100%}

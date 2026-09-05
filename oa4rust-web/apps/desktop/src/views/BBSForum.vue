@@ -421,6 +421,9 @@ async function api_list_1_size_10() { try { await api.get("/jaxrs/comment/list/1
 async function api_comment_u3_cmt_uncommend() { try { await api.get("/jaxrs/comment/u3-cmt/uncommend") } catch {} }
 async function api_comment_u3_cmt_commend() { try { await api.get("/jaxrs/comment/u3-cmt/commend") } catch {} }
 
+
+async function api_review_v2_search() { try { await api.get("/jaxrs/review/v2/search") } catch {} }
+
 </script>
 
 <style scoped>

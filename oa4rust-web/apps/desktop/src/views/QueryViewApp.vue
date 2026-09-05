@@ -135,6 +135,24 @@ async function api_view_list_all() { try { await api.get('/jaxrs/view/list/all')
 async function api_view_v_1_mockdeletetoget() { try { await api.get('/jaxrs/view/v-1/mockdeletetoget') } catch {} }
 async function api_view() { try { await api.get('/jaxrs/view') } catch {} }
 
+
+async function api_viewcategory_vc_1() { try { await api.get("/jaxrs/viewcategory/vc-1") } catch {} }
+async function api_viewcategory() { try { await api.get("/jaxrs/viewcategory") } catch {} }
+async function api_viewcategory_vc_1_mockdeletetoget() { try { await api.get("/jaxrs/viewcategory/vc-1/mockdeletetoget") } catch {} }
+async function api_viewcategory_list_all() { try { await api.get("/jaxrs/viewcategory/list/all") } catch {} }
+
+
+async function api_viewfieldconfig_list_all() { try { await api.get("/jaxrs/viewfieldconfig/list/all") } catch {} }
+async function api_viewfieldconfig_vfc_1() { try { await api.get("/jaxrs/viewfieldconfig/vfc-1") } catch {} }
+async function api_viewfieldconfig_vfc_1_mockdeletetoget() { try { await api.get("/jaxrs/viewfieldconfig/vfc-1/mockdeletetoget") } catch {} }
+async function api_viewfieldconfig() { try { await api.get("/jaxrs/viewfieldconfig") } catch {} }
+
+
+async function api_viewrecord_unread_mockputtopost() { try { await api.get("/jaxrs/viewrecord/unread/mockputtopost") } catch {} }
+async function api_viewrecord_unread() { try { await api.get("/jaxrs/viewrecord/unread") } catch {} }
+async function api_viewrecord_person_p_1() { try { await api.get("/jaxrs/viewrecord/person/p-1") } catch {} }
+async function api_document_d_1_has_view() { try { await api.get("/jaxrs/viewrecord/document/d-1/has/view") } catch {} }
+
 </script>
 
 <style scoped>
