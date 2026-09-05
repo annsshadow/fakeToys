@@ -160,6 +160,7 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
+import { toast } from '../../utils/toast'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/vue-query'
 import { api } from '@oa4rust/sdk'
 
@@ -200,7 +201,7 @@ function createNew() {
 }
 function editItem(item: ConfigItem) { selectItem(item) }
 async function deleteItem(item: ConfigItem) {
-  if (!confirm(`删除配置「${item.name||item.flag}」？`)) return
+  if (!confirmMsg(`删除配置「${item.name||item.flag}」？`)) return
   try { await api.delete('/jaxrs/config/delete/'+item.id) } catch {}
   items.value = items.value.filter(i => i.id !== item.id)
   if (selected.value?.id === item.id) selected.value = null
@@ -215,11 +216,11 @@ async function save() {
   } catch (e: any) { alert('保存失败: '+(e?.message??'')) }
 }
 async function preview() { alert('配置预览:\n'+config.value) }
-function clearConfig() { if(confirm('清空配置？')) config.value = '{}' }
-function formatConfig() { try { config.value = JSON.stringify(JSON.parse(config.value), null, 2) } catch { alert('JSON格式错误') } }
-function validateConfig() { try { JSON.parse(config.value); alert('JSON格式有效') } catch (e: any) { alert('JSON格式错误: ' + e.message) } }
+function clearConfig() { if(confirmMsg('清空配置？')) config.value = '{}' }
+function formatConfig() { try { config.value = JSON.stringify(JSON.parse(config.value), null, 2) } catch { toast.info('JSON格式错误') } }
+function validateConfig() { try { JSON.parse(config.value); toast.info('JSON格式有效') } catch (e: any) { alert('JSON格式错误: ' + e.message) } }
 function applyFormat() { config.value = formattedOutput.value; showFormat.value = false }
-function copyConfig() { navigator.clipboard.writeText(config.value); alert('已复制') }
+function copyConfig() { navigator.clipboard.writeText(config.value); toast.info('已复制') }
 function downloadConfig() {
   const blob = new Blob([config.value], { type: 'application/json' })
   const a = document.createElement('a'); a.href = URL.createObjectURL(blob)
@@ -266,6 +267,29 @@ async function api_input_prepare_cover_mockputtopost() { try { await api.get("/j
 async function api_input_prepare_create_mockputtopost() { try { await api.get("/jaxrs/input/prepare/create/mockputtopost") } catch {} }
 async function api_input_create() { try { await api.get("/jaxrs/input/create") } catch {} }
 async function api_input_cover_mockputtopost() { try { await api.get("/jaxrs/input/cover/mockputtopost") } catch {} }
+
+
+// Confirmation dialog (replaces window.confirm)
+function confirmMsg(msg: string): Promise<boolean> {
+  return new Promise(resolve => {
+    const overlay = document.createElement('div')
+    overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:10000;display:flex;align-items:center;justify-content:center'
+    const box = document.createElement('div')
+    box.style.cssText = 'background:var(--bg-surface);border:1px solid var(--border-color);border-radius:var(--radius-lg);padding:24px;max-width:360px;width:90%;display:flex;flex-direction:column;gap:16px'
+    box.innerHTML = '<p style="margin:0;color:var(--text-primary);font-size:14px">' + msg + '</p>' +
+      '<div style="display:flex;gap:8px;justify-content:flex-end">' +
+      '<button class="tc-cancel" style="padding:6px 16px;border-radius:var(--radius-md);border:1px solid var(--border-color);background:transparent;color:var(--text-primary);cursor:pointer">取消</button>' +
+      '<button class="tc-ok" style="padding:6px 16px;border-radius:var(--radius-md);border:none;background:var(--color-primary);color:#000;cursor:pointer;font-weight:600">确认</button>' +
+      '</div>'
+    overlay.appendChild(box)
+    document.body.appendChild(overlay)
+    const ok = () => { overlay.remove(); resolve(true) }
+    const cancel = () => { overlay.remove(); resolve(false) }
+    box.querySelector('.tc-ok').addEventListener('click', ok)
+    box.querySelector('.tc-cancel').addEventListener('click', cancel)
+    overlay.addEventListener('click', e => { if (e.target === overlay) cancel() })
+  })
+}
 
 </script>
 

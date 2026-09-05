@@ -95,6 +95,7 @@
 
 <script setup lang="ts">
 import { ref, computed, nextTick } from 'vue'
+import { toast } from '../../utils/toast'
 import { api } from '@oa4rust/sdk'
 
 type Message = { role: 'user' | 'assistant'; content: string; timestamp?: string }
@@ -136,16 +137,16 @@ async function createNewChat() {
     const newChat = r.data ?? { id: 'new', title: '新对话' }
     conversations.value.unshift(newChat as ChatItem)
     selectChat(newChat as ChatItem)
-  } catch { alert('创建对话失败') }
+  } catch { toast.info('创建对话失败') }
 }
 
 async function deleteChat(chat: ChatItem) {
-  if (!confirm(`删除对话「${chat.title || chat.id}」？`)) return
+  if (!confirmMsg(`删除对话「${chat.title || chat.id}」？`)) return
   try {
     await api.delete(`/jaxrs/ai_assemble_control/chat/delete/${chat.id}`)
     if (currentChat.value?.id === chat.id) { currentChat.value = null; messages.value = [] }
     conversations.value = conversations.value.filter(c => c.id !== chat.id)
-  } catch { alert('删除失败') }
+  } catch { toast.info('删除失败') }
 }
 
 async function sendMessage() {
@@ -247,6 +248,29 @@ async function api_index_sync_to_knowledge() { try { await api.get("/jaxrs/ai_as
 
 async function api_neural_list() { try { await api.get("/jaxrs/neural/list") } catch {} }
 async function api_neural() { try { await api.get("/jaxrs/neural") } catch {} }
+
+
+// Confirmation dialog (replaces window.confirm)
+function confirmMsg(msg: string): Promise<boolean> {
+  return new Promise(resolve => {
+    const overlay = document.createElement('div')
+    overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:10000;display:flex;align-items:center;justify-content:center'
+    const box = document.createElement('div')
+    box.style.cssText = 'background:var(--bg-surface);border:1px solid var(--border-color);border-radius:var(--radius-lg);padding:24px;max-width:360px;width:90%;display:flex;flex-direction:column;gap:16px'
+    box.innerHTML = '<p style="margin:0;color:var(--text-primary);font-size:14px">' + msg + '</p>' +
+      '<div style="display:flex;gap:8px;justify-content:flex-end">' +
+      '<button class="tc-cancel" style="padding:6px 16px;border-radius:var(--radius-md);border:1px solid var(--border-color);background:transparent;color:var(--text-primary);cursor:pointer">取消</button>' +
+      '<button class="tc-ok" style="padding:6px 16px;border-radius:var(--radius-md);border:none;background:var(--color-primary);color:#000;cursor:pointer;font-weight:600">确认</button>' +
+      '</div>'
+    overlay.appendChild(box)
+    document.body.appendChild(overlay)
+    const ok = () => { overlay.remove(); resolve(true) }
+    const cancel = () => { overlay.remove(); resolve(false) }
+    box.querySelector('.tc-ok').addEventListener('click', ok)
+    box.querySelector('.tc-cancel').addEventListener('click', cancel)
+    overlay.addEventListener('click', e => { if (e.target === overlay) cancel() })
+  })
+}
 
 </script>
 

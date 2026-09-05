@@ -59,6 +59,7 @@
 
 <script setup lang="ts">
 import { ref } from 'vue'
+import { toast } from '../../utils/toast'
 import { api } from '@oa4rust/sdk'
 
 type ViewItem = { id?: string; flag?: string; name?: string; viewName?: string; title?: string }
@@ -102,7 +103,7 @@ async function exportExcel(v: ViewItem) {
     if (r.data?.url) {
       window.open(r.data.url, '_blank')
     } else {
-      alert('Excel导出暂未生成URL')
+      toast.info('Excel导出暂未生成URL')
     }
   } catch (e: any) { alert('导出失败: ' + (e?.message ?? '')) }
 }
