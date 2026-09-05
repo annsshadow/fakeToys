@@ -99,6 +99,10 @@ async function api_list_has_document_appType() { try { await api.get('/jaxrs/app
 async function api_appinfo_list_user_publish() { try { await api.get('/jaxrs/appinfo/list/user/publish') } catch {} }
 async function api_appinfo_a_1_control() { try { await api.get('/jaxrs/appinfo/a-1/control') } catch {} }
 
+
+async function api_user_publish_with_process() { try { await api.get("/jaxrs/appinfo/list/user/publish/with/process") } catch {} }
+async function api_list_i_1_next_10() { try { await api.get("/jaxrs/appinfo/filter/list/i-1/next/10") } catch {} }
+
 </script>
 
 <style scoped>

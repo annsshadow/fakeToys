@@ -65,6 +65,9 @@ async function api_categoryinfo_c_1_execute_projection() { try { await api.get('
 async function api_categoryinfo_c_1() { try { await api.get('/jaxrs/categoryinfo/c-1') } catch {} }
 async function api_categoryinfo_bind_c_1_view() { try { await api.get('/jaxrs/categoryinfo/bind/c-1/view') } catch {} }
 
+
+async function api_list_p_1_size_10() { try { await api.get("/jaxrs/categoryinfo/filter/list/p-1/size/10") } catch {} }
+
 </script>
 
 <style scoped>

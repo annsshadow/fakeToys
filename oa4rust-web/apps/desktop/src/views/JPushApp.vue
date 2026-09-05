@@ -133,6 +133,12 @@ async function api_jpush_assemble_control_list_jpushs() { try { await api.get("/
 async function api_check_deviceName_deviceType_pushType() { try { await api.get("/jaxrs/jpush_assemble_control/device/check/deviceName/deviceType/pushType") } catch {} }
 async function api_jpush_assemble_control_get_jpush() { try { await api.get("/jaxrs/jpush_assemble_control/get/jpush") } catch {} }
 
+
+async function api_control_device_list_pushType() { try { await api.get("/jaxrs/jpush/assemble/control/device/list/pushType") } catch {} }
+async function api_control_list_control_apps() { try { await api.get("/jaxrs/jpush/assemble/control/list/control/apps") } catch {} }
+async function api_control_update_control_config() { try { await api.get("/jaxrs/jpush/assemble/control/update/control/config") } catch {} }
+async function api_control_message_test_send() { try { await api.get("/jaxrs/jpush/assemble/control/message/test/send") } catch {} }
+
 </script>
 
 <style scoped>

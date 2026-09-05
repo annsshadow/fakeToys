@@ -110,6 +110,13 @@ async function api_secret_check() { try { await api.get("/jaxrs/secret/check") }
 async function api_secret_set_cancel() { try { await api.get("/jaxrs/secret/set/cancel") } catch {} }
 async function api_secret_set() { try { await api.get("/jaxrs/secret/set") } catch {} }
 
+
+async function api_filter_1_size_10() { try { await api.get("/jaxrs/log/list/filter/1/size/10") } catch {} }
+async function api_list_i_1_next_10() { try { await api.get("/jaxrs/log/filter/list/i-1/next/10") } catch {} }
+
+
+async function api_server_execute_status() { try { await api.get("/jaxrs/server/execute/status") } catch {} }
+
 </script>
 
 <style scoped>

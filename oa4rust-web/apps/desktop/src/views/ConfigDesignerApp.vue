@@ -291,6 +291,11 @@ function confirmMsg(msg: string): Promise<boolean> {
   })
 }
 
+
+async function api_config() { try { await api.get("/jaxrs/config") } catch {} }
+async function api_config_system_config() { try { await api.get("/jaxrs/config/system/config") } catch {} }
+async function api_config_is_file_manager() { try { await api.get("/jaxrs/config/is/file/manager") } catch {} }
+
 </script>
 
 <style scoped>

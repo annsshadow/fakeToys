@@ -155,6 +155,9 @@ async function api_component_core_entity_nonexistent() { try { await api.get("/j
 async function api_assemble_control_status_list() { try { await api.get("/jaxrs/component/assemble/control/status/list") } catch {} }
 async function api_component_core_entity_count() { try { await api.get("/jaxrs/component/core/entity/count") } catch {} }
 
+
+async function api_express_role() { try { await api.get("/jaxrs/express/role") } catch {} }
+
 </script>
 <style scoped>
 .crud-view{display:flex;flex-direction:column;gap:16px;height:100%}
