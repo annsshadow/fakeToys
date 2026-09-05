@@ -202,31 +202,81 @@ async function api_jaxrs_attendance_assemble_control_dingdingstatistic() { try {
 async function api_jaxrs_attendance_assemble_control_qywx() { try { await api.get("/jaxrs/attendance/assemble/control/qywx") } catch {} }
 async function api_jaxrs_attendance_assemble_control_qywx_all() { try { await api.get("/jaxrs/attendance/assemble/control/qywx/all") } catch {} }
 async function api_jaxrs_attendance_assemble_control_qywx_sync_list() { try { await api.get("/jaxrs/attendance/assemble/control/qywx/sync/list") } catch {} }
-async function api_jaxrs_attendance_assemble_control_rule_r_1_toggle() { try { await api.get("/jaxrs/attendance/assemble/control/rule/r-1/toggle") } catch {} }
-async function api_jaxrs_attendance_assemble_control_selfholidaysimple_docId_doc_1() { try { await api.get("/jaxrs/attendance/assemble/control/selfholidaysimple/docId/doc-1") } catch {} }
-async function api_jaxrs_attendance_assemble_control_statisticshow_filter_unitDay_list_x_next_5() { try { await api.get("/jaxrs/attendance/assemble/control/statisticshow/filter/unitDay/list/x/next/5") } catch {} }
-async function api_jaxrs_attendance_assemble_control_v2_config_person() { try { await api.get("/jaxrs/attendance/assemble/control/v2/config/person") } catch {} }
-async function api_jaxrs_attendance_assemble_control_v2_detail_list_1_size_50() { try { await api.get("/jaxrs/attendance/assemble/control/v2/detail/list/1/size/50") } catch {} }
-async function api_jaxrs_attendance_assemble_control_v2_detail_statistic_export_filter() { try { await api.get("/jaxrs/attendance/assemble/control/v2/detail/statistic/export/filter") } catch {} }
-async function api_jaxrs_attendance_assemble_control_v2_detail_statistic_filter() { try { await api.get("/jaxrs/attendance/assemble/control/v2/detail/statistic/filter") } catch {} }
-async function api_jaxrs_attendance_assemble_control_v2_group_list_1_size_20() { try { await api.get("/jaxrs/attendance/assemble/control/v2/group/list/1/size/20") } catch {} }
-async function api_jaxrs_attendance_assemble_control_v2_group_person_u001_date_2026_08_01() { try { await api.get("/jaxrs/attendance/assemble/control/v2/group/person/u001/date/2026-08-01") } catch {} }
-async function api_jaxrs_attendance_assemble_control_v2_group_some_id() { try { await api.get("/jaxrs/attendance/assemble/control/v2/group/some-id") } catch {} }
-async function api_jaxrs_attendance_assemble_control_v2_group_some_id_delete() { try { await api.get("/jaxrs/attendance/assemble/control/v2/group/some-id/delete") } catch {} }
-async function api_jaxrs_attendance_assemble_control_v2_group_some_id_refresh_participate() { try { await api.get("/jaxrs/attendance/assemble/control/v2/group/some-id/refresh/participate") } catch {} }
-async function api_jaxrs_attendance_assemble_control_v2_groupschedule_list_filter() { try { await api.get("/jaxrs/attendance/assemble/control/v2/groupschedule/list/filter") } catch {} }
-async function api_jaxrs_attendance_assemble_control_v2_leave() { try { await api.get("/jaxrs/attendance/assemble/control/v2/leave") } catch {} }
-async function api_jaxrs_attendance_assemble_control_v2_leave_delete_l_1() { try { await api.get("/jaxrs/attendance/assemble/control/v2/leave/delete/l-1") } catch {} }
-async function api_jaxrs_attendance_assemble_control_v2_leave_import() { try { await api.get("/jaxrs/attendance/assemble/control/v2/leave/import") } catch {} }
-async function api_jaxrs_attendance_assemble_control_v2_leave_import_result_flag_flag_x() { try { await api.get("/jaxrs/attendance/assemble/control/v2/leave/import/result/flag/flag-x") } catch {} }
-async function api_jaxrs_attendance_assemble_control_v2_leave_list_1_size_20() { try { await api.get("/jaxrs/attendance/assemble/control/v2/leave/list/1/size/20") } catch {} }
-async function api_jaxrs_attendance_assemble_control_v2_leave_template() { try { await api.get("/jaxrs/attendance/assemble/control/v2/leave/template") } catch {} }
-async function api_jaxrs_attendance_assemble_control_v2_mobile_check() { try { await api.get("/jaxrs/attendance/assemble/control/v2/mobile/check") } catch {} }
-async function api_jaxrs_attendance_assemble_control_v2_mobile_check_20from_out() { try { await api.get("/jaxrs/attendance/assemble/control/v2/mobile/check/%20from/out") } catch {} }
-async function api_jaxrs_attendance_assemble_control_v2_mobile_check_pre() { try { await api.get("/jaxrs/attendance/assemble/control/v2/mobile/check/pre") } catch {} }
-async function api_jaxrs_attendance_assemble_control_v2_my_controls() { try { await api.get("/jaxrs/attendance/assemble/control/v2/my/controls") } catch {} }
-async function api_jaxrs_attendance_assemble_control_v2_my_detail_list() { try { await api.get("/jaxrs/attendance/assemble/control/v2/my/detail/list") } catch {} }
-async function api_jaxrs_attendance_assemble_control_v2_my_rest_date_check() { try { await api.get("/jaxrs/attendance/assemble/control/v2/my/rest/date/check") } catch {} }
+const api_jaxrs_at_684_data = ref<any[]>([]);
+const { data: api_jaxrs_at_684_q } = useQuery({queryKey: ['api_jaxrs_at_684', '/jaxrs/attendance/assemble/control/rule/r-1/toggle'], queryFn: async () => { try { const r = await api.get("/jaxrs/attendance/assemble/control/rule/r-1/toggle"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+watch(api_jaxrs_at_684_q, (v) => { api_jaxrs_at_684_data.value = v ?? []; });
+const api_jaxrs_at_297_data = ref<any[]>([]);
+const { data: api_jaxrs_at_297_q } = useQuery({queryKey: ['api_jaxrs_at_297', '/jaxrs/attendance/assemble/control/selfholidaysimple/docId/doc-1'], queryFn: async () => { try { const r = await api.get("/jaxrs/attendance/assemble/control/selfholidaysimple/docId/doc-1"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+watch(api_jaxrs_at_297_q, (v) => { api_jaxrs_at_297_data.value = v ?? []; });
+const api_jaxrs_at_175_data = ref<any[]>([]);
+const { data: api_jaxrs_at_175_q } = useQuery({queryKey: ['api_jaxrs_at_175', '/jaxrs/attendance/assemble/control/statisticshow/filter/unitDay/list/x/next/5'], queryFn: async () => { try { const r = await api.get("/jaxrs/attendance/assemble/control/statisticshow/filter/unitDay/list/x/next/5"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+watch(api_jaxrs_at_175_q, (v) => { api_jaxrs_at_175_data.value = v ?? []; });
+const api_jaxrs_at_519_data = ref<any[]>([]);
+const { data: api_jaxrs_at_519_q } = useQuery({queryKey: ['api_jaxrs_at_519', '/jaxrs/attendance/assemble/control/v2/config/person'], queryFn: async () => { try { const r = await api.get("/jaxrs/attendance/assemble/control/v2/config/person"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+watch(api_jaxrs_at_519_q, (v) => { api_jaxrs_at_519_data.value = v ?? []; });
+const api_jaxrs_at_460_data = ref<any[]>([]);
+const { data: api_jaxrs_at_460_q } = useQuery({queryKey: ['api_jaxrs_at_460', '/jaxrs/attendance/assemble/control/v2/detail/list/1/size/50'], queryFn: async () => { try { const r = await api.get("/jaxrs/attendance/assemble/control/v2/detail/list/1/size/50"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+watch(api_jaxrs_at_460_q, (v) => { api_jaxrs_at_460_data.value = v ?? []; });
+const api_jaxrs_at_299_data = ref<any[]>([]);
+const { data: api_jaxrs_at_299_q } = useQuery({queryKey: ['api_jaxrs_at_299', '/jaxrs/attendance/assemble/control/v2/detail/statistic/export/filter'], queryFn: async () => { try { const r = await api.get("/jaxrs/attendance/assemble/control/v2/detail/statistic/export/filter"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+watch(api_jaxrs_at_299_q, (v) => { api_jaxrs_at_299_data.value = v ?? []; });
+const api_jaxrs_at_311_data = ref<any[]>([]);
+const { data: api_jaxrs_at_311_q } = useQuery({queryKey: ['api_jaxrs_at_311', '/jaxrs/attendance/assemble/control/v2/detail/statistic/filter'], queryFn: async () => { try { const r = await api.get("/jaxrs/attendance/assemble/control/v2/detail/statistic/filter"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+watch(api_jaxrs_at_311_q, (v) => { api_jaxrs_at_311_data.value = v ?? []; });
+const api_jaxrs_at_385_data = ref<any[]>([]);
+const { data: api_jaxrs_at_385_q } = useQuery({queryKey: ['api_jaxrs_at_385', '/jaxrs/attendance/assemble/control/v2/group/list/1/size/20'], queryFn: async () => { try { const r = await api.get("/jaxrs/attendance/assemble/control/v2/group/list/1/size/20"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+watch(api_jaxrs_at_385_q, (v) => { api_jaxrs_at_385_data.value = v ?? []; });
+const api_jaxrs_at_227_data = ref<any[]>([]);
+const { data: api_jaxrs_at_227_q } = useQuery({queryKey: ['api_jaxrs_at_227', '/jaxrs/attendance/assemble/control/v2/group/person/u001/date/2026-08-01'], queryFn: async () => { try { const r = await api.get("/jaxrs/attendance/assemble/control/v2/group/person/u001/date/2026-08-01"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+watch(api_jaxrs_at_227_q, (v) => { api_jaxrs_at_227_data.value = v ?? []; });
+const api_jaxrs_at_595_data = ref<any[]>([]);
+const { data: api_jaxrs_at_595_q } = useQuery({queryKey: ['api_jaxrs_at_595', '/jaxrs/attendance/assemble/control/v2/group/some-id'], queryFn: async () => { try { const r = await api.get("/jaxrs/attendance/assemble/control/v2/group/some-id"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+watch(api_jaxrs_at_595_q, (v) => { api_jaxrs_at_595_data.value = v ?? []; });
+const api_jaxrs_at_96_data = ref<any[]>([]);
+const { data: api_jaxrs_at_96_q } = useQuery({queryKey: ['api_jaxrs_at_96', '/jaxrs/attendance/assemble/control/v2/group/some-id/delete'], queryFn: async () => { try { const r = await api.get("/jaxrs/attendance/assemble/control/v2/group/some-id/delete"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+watch(api_jaxrs_at_96_q, (v) => { api_jaxrs_at_96_data.value = v ?? []; });
+const api_jaxrs_at_436_data = ref<any[]>([]);
+const { data: api_jaxrs_at_436_q } = useQuery({queryKey: ['api_jaxrs_at_436', '/jaxrs/attendance/assemble/control/v2/group/some-id/refresh/participate'], queryFn: async () => { try { const r = await api.get("/jaxrs/attendance/assemble/control/v2/group/some-id/refresh/participate"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+watch(api_jaxrs_at_436_q, (v) => { api_jaxrs_at_436_data.value = v ?? []; });
+const api_jaxrs_at_114_data = ref<any[]>([]);
+const { data: api_jaxrs_at_114_q } = useQuery({queryKey: ['api_jaxrs_at_114', '/jaxrs/attendance/assemble/control/v2/groupschedule/list/filter'], queryFn: async () => { try { const r = await api.get("/jaxrs/attendance/assemble/control/v2/groupschedule/list/filter"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+watch(api_jaxrs_at_114_q, (v) => { api_jaxrs_at_114_data.value = v ?? []; });
+const api_jaxrs_at_767_data = ref<any[]>([]);
+const { data: api_jaxrs_at_767_q } = useQuery({queryKey: ['api_jaxrs_at_767', '/jaxrs/attendance/assemble/control/v2/leave'], queryFn: async () => { try { const r = await api.get("/jaxrs/attendance/assemble/control/v2/leave"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+watch(api_jaxrs_at_767_q, (v) => { api_jaxrs_at_767_data.value = v ?? []; });
+const api_jaxrs_at_324_data = ref<any[]>([]);
+const { data: api_jaxrs_at_324_q } = useQuery({queryKey: ['api_jaxrs_at_324', '/jaxrs/attendance/assemble/control/v2/leave/delete/l-1'], queryFn: async () => { try { const r = await api.get("/jaxrs/attendance/assemble/control/v2/leave/delete/l-1"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+watch(api_jaxrs_at_324_q, (v) => { api_jaxrs_at_324_data.value = v ?? []; });
+const api_jaxrs_at_615_data = ref<any[]>([]);
+const { data: api_jaxrs_at_615_q } = useQuery({queryKey: ['api_jaxrs_at_615', '/jaxrs/attendance/assemble/control/v2/leave/import'], queryFn: async () => { try { const r = await api.get("/jaxrs/attendance/assemble/control/v2/leave/import"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+watch(api_jaxrs_at_615_q, (v) => { api_jaxrs_at_615_data.value = v ?? []; });
+const api_jaxrs_at_731_data = ref<any[]>([]);
+const { data: api_jaxrs_at_731_q } = useQuery({queryKey: ['api_jaxrs_at_731', '/jaxrs/attendance/assemble/control/v2/leave/import/result/flag/flag-x'], queryFn: async () => { try { const r = await api.get("/jaxrs/attendance/assemble/control/v2/leave/import/result/flag/flag-x"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+watch(api_jaxrs_at_731_q, (v) => { api_jaxrs_at_731_data.value = v ?? []; });
+const api_jaxrs_at_121_data = ref<any[]>([]);
+const { data: api_jaxrs_at_121_q } = useQuery({queryKey: ['api_jaxrs_at_121', '/jaxrs/attendance/assemble/control/v2/leave/list/1/size/20'], queryFn: async () => { try { const r = await api.get("/jaxrs/attendance/assemble/control/v2/leave/list/1/size/20"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+watch(api_jaxrs_at_121_q, (v) => { api_jaxrs_at_121_data.value = v ?? []; });
+const api_jaxrs_at_14_data = ref<any[]>([]);
+const { data: api_jaxrs_at_14_q } = useQuery({queryKey: ['api_jaxrs_at_14', '/jaxrs/attendance/assemble/control/v2/leave/template'], queryFn: async () => { try { const r = await api.get("/jaxrs/attendance/assemble/control/v2/leave/template"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+watch(api_jaxrs_at_14_q, (v) => { api_jaxrs_at_14_data.value = v ?? []; });
+const api_jaxrs_at_242_data = ref<any[]>([]);
+const { data: api_jaxrs_at_242_q } = useQuery({queryKey: ['api_jaxrs_at_242', '/jaxrs/attendance/assemble/control/v2/mobile/check'], queryFn: async () => { try { const r = await api.get("/jaxrs/attendance/assemble/control/v2/mobile/check"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+watch(api_jaxrs_at_242_q, (v) => { api_jaxrs_at_242_data.value = v ?? []; });
+const api_jaxrs_at_891_data = ref<any[]>([]);
+const { data: api_jaxrs_at_891_q } = useQuery({queryKey: ['api_jaxrs_at_891', '/jaxrs/attendance/assemble/control/v2/mobile/check/%20from/out'], queryFn: async () => { try { const r = await api.get("/jaxrs/attendance/assemble/control/v2/mobile/check/%20from/out"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+watch(api_jaxrs_at_891_q, (v) => { api_jaxrs_at_891_data.value = v ?? []; });
+const api_jaxrs_at_381_data = ref<any[]>([]);
+const { data: api_jaxrs_at_381_q } = useQuery({queryKey: ['api_jaxrs_at_381', '/jaxrs/attendance/assemble/control/v2/mobile/check/pre'], queryFn: async () => { try { const r = await api.get("/jaxrs/attendance/assemble/control/v2/mobile/check/pre"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+watch(api_jaxrs_at_381_q, (v) => { api_jaxrs_at_381_data.value = v ?? []; });
+const api_jaxrs_at_81_data = ref<any[]>([]);
+const { data: api_jaxrs_at_81_q } = useQuery({queryKey: ['api_jaxrs_at_81', '/jaxrs/attendance/assemble/control/v2/my/controls'], queryFn: async () => { try { const r = await api.get("/jaxrs/attendance/assemble/control/v2/my/controls"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+watch(api_jaxrs_at_81_q, (v) => { api_jaxrs_at_81_data.value = v ?? []; });
+const api_jaxrs_at_493_data = ref<any[]>([]);
+const { data: api_jaxrs_at_493_q } = useQuery({queryKey: ['api_jaxrs_at_493', '/jaxrs/attendance/assemble/control/v2/my/detail/list'], queryFn: async () => { try { const r = await api.get("/jaxrs/attendance/assemble/control/v2/my/detail/list"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+watch(api_jaxrs_at_493_q, (v) => { api_jaxrs_at_493_data.value = v ?? []; });
+const api_jaxrs_at_372_data = ref<any[]>([]);
+const { data: api_jaxrs_at_372_q } = useQuery({queryKey: ['api_jaxrs_at_372', '/jaxrs/attendance/assemble/control/v2/my/rest/date/check'], queryFn: async () => { try { const r = await api.get("/jaxrs/attendance/assemble/control/v2/my/rest/date/check"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+watch(api_jaxrs_at_372_q, (v) => { api_jaxrs_at_372_data.value = v ?? []; });
 const api_jaxrs_at_746_data = ref<any[]>([]);
 const { data: api_jaxrs_at_746_q } = useQuery({queryKey: ['api_jaxrs_at_746', '/jaxrs/attendance/assemble/control/v2/my/statistic'], queryFn: async () => { try { const r = await api.get("/jaxrs/attendance/assemble/control/v2/my/statistic"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
 watch(api_jaxrs_at_746_q, (v) => { api_jaxrs_at_746_data.value = v ?? []; });

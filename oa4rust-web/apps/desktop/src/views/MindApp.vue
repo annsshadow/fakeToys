@@ -111,25 +111,63 @@ function formatMindJson(m: MindItem) {
 
 loadFolders()
 
-async function api_entity_folder_folder_001() { try { await api.get("/jaxrs/mind/core/entity/folder/folder-001") } catch {} }
-async function api_mind_version() { try { await api.get("/jaxrs/mind/version") } catch {} }
-async function api_mind_mind() { try { await api.get("/jaxrs/mind/mind") } catch {} }
-async function api_folder_x_force() { try { await api.get("/jaxrs/mind/assemble/control/folder/x/force") } catch {} }
-async function api_mind_recycle_x() { try { await api.get("/jaxrs/mind/assemble/control/mind/recycle/x") } catch {} }
-async function api_mind_view_x() { try { await api.get("/jaxrs/mind/assemble/control/mind/view/x") } catch {} }
-async function api_mind_core_list() { try { await api.get("/jaxrs/mind/core/list") } catch {} }
-async function api_entity_mind_mind_001() { try { await api.get("/jaxrs/mind/core/entity/mind/mind-001") } catch {} }
-async function api_mind_map() { try { await api.get("/jaxrs/mind/map") } catch {} }
-async function api_control_folder_x() { try { await api.get("/jaxrs/mind/assemble/control/folder/x") } catch {} }
-async function api_mind_folder() { try { await api.get("/jaxrs/mind/folder") } catch {} }
-async function api_control_mind_save() { try { await api.get("/jaxrs/mind/assemble/control/mind/save") } catch {} }
-async function api_list_x_shareRecords() { try { await api.get("/jaxrs/mind/assemble/control/mind/list/x/shareRecords") } catch {} }
-async function api_assemble_control_config() { try { await api.get("/jaxrs/mind/assemble/control/config") } catch {} }
-async function api_folder_tree_my() { try { await api.get("/jaxrs/mind/assemble/control/folder/tree/my") } catch {} }
-async function api_mind_x_icon() { try { await api.get("/jaxrs/mind/assemble/control/mind/x/icon") } catch {} }
-async function api_entity_folder_list() { try { await api.get("/jaxrs/mind/core/entity/folder/list") } catch {} }
-async function api_list_x_version() { try { await api.get("/jaxrs/mind/assemble/control/mind/list/x/version") } catch {} }
-async function api_mind_assemble_list() { try { await api.get("/jaxrs/mind/assemble/list") } catch {} }
+const api_entity_f_578_data = ref<any[]>([]);
+const { data: api_entity_f_578_q } = useQuery({queryKey: ['api_entity_f_578', '/jaxrs/mind/core/entity/folder/folder-001'], queryFn: async () => { try { const r = await api.get("/jaxrs/mind/core/entity/folder/folder-001"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+watch(api_entity_f_578_q, (v) => { api_entity_f_578_data.value = v ?? []; });
+const api_mind_version_data = ref<any[]>([]);
+const { data: api_mind_version_q } = useQuery({queryKey: ['api_mind_version', '/jaxrs/mind/version'], queryFn: async () => { try { const r = await api.get("/jaxrs/mind/version"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+watch(api_mind_version_q, (v) => { api_mind_version_data.value = v ?? []; });
+const api_mind_mind_data = ref<any[]>([]);
+const { data: api_mind_mind_q } = useQuery({queryKey: ['api_mind_mind', '/jaxrs/mind/mind'], queryFn: async () => { try { const r = await api.get("/jaxrs/mind/mind"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+watch(api_mind_mind_q, (v) => { api_mind_mind_data.value = v ?? []; });
+const api_folder_x_force_data = ref<any[]>([]);
+const { data: api_folder_x_force_q } = useQuery({queryKey: ['api_folder_x_force', '/jaxrs/mind/assemble/control/folder/x/force'], queryFn: async () => { try { const r = await api.get("/jaxrs/mind/assemble/control/folder/x/force"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+watch(api_folder_x_force_q, (v) => { api_folder_x_force_data.value = v ?? []; });
+const api_mind_recycle_x_data = ref<any[]>([]);
+const { data: api_mind_recycle_x_q } = useQuery({queryKey: ['api_mind_recycle_x', '/jaxrs/mind/assemble/control/mind/recycle/x'], queryFn: async () => { try { const r = await api.get("/jaxrs/mind/assemble/control/mind/recycle/x"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+watch(api_mind_recycle_x_q, (v) => { api_mind_recycle_x_data.value = v ?? []; });
+const api_mind_view_x_data = ref<any[]>([]);
+const { data: api_mind_view_x_q } = useQuery({queryKey: ['api_mind_view_x', '/jaxrs/mind/assemble/control/mind/view/x'], queryFn: async () => { try { const r = await api.get("/jaxrs/mind/assemble/control/mind/view/x"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+watch(api_mind_view_x_q, (v) => { api_mind_view_x_data.value = v ?? []; });
+const api_mind_core_list_data = ref<any[]>([]);
+const { data: api_mind_core_list_q } = useQuery({queryKey: ['api_mind_core_list', '/jaxrs/mind/core/list'], queryFn: async () => { try { const r = await api.get("/jaxrs/mind/core/list"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+watch(api_mind_core_list_q, (v) => { api_mind_core_list_data.value = v ?? []; });
+const api_entity_m_376_data = ref<any[]>([]);
+const { data: api_entity_m_376_q } = useQuery({queryKey: ['api_entity_m_376', '/jaxrs/mind/core/entity/mind/mind-001'], queryFn: async () => { try { const r = await api.get("/jaxrs/mind/core/entity/mind/mind-001"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+watch(api_entity_m_376_q, (v) => { api_entity_m_376_data.value = v ?? []; });
+const api_mind_map_data = ref<any[]>([]);
+const { data: api_mind_map_q } = useQuery({queryKey: ['api_mind_map', '/jaxrs/mind/map'], queryFn: async () => { try { const r = await api.get("/jaxrs/mind/map"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+watch(api_mind_map_q, (v) => { api_mind_map_data.value = v ?? []; });
+const api_control__997_data = ref<any[]>([]);
+const { data: api_control__997_q } = useQuery({queryKey: ['api_control__997', '/jaxrs/mind/assemble/control/folder/x'], queryFn: async () => { try { const r = await api.get("/jaxrs/mind/assemble/control/folder/x"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+watch(api_control__997_q, (v) => { api_control__997_data.value = v ?? []; });
+const api_mind_folder_data = ref<any[]>([]);
+const { data: api_mind_folder_q } = useQuery({queryKey: ['api_mind_folder', '/jaxrs/mind/folder'], queryFn: async () => { try { const r = await api.get("/jaxrs/mind/folder"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+watch(api_mind_folder_q, (v) => { api_mind_folder_data.value = v ?? []; });
+const api_control__448_data = ref<any[]>([]);
+const { data: api_control__448_q } = useQuery({queryKey: ['api_control__448', '/jaxrs/mind/assemble/control/mind/save'], queryFn: async () => { try { const r = await api.get("/jaxrs/mind/assemble/control/mind/save"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+watch(api_control__448_q, (v) => { api_control__448_data.value = v ?? []; });
+const api_list_x_s_620_data = ref<any[]>([]);
+const { data: api_list_x_s_620_q } = useQuery({queryKey: ['api_list_x_s_620', '/jaxrs/mind/assemble/control/mind/list/x/shareRecords'], queryFn: async () => { try { const r = await api.get("/jaxrs/mind/assemble/control/mind/list/x/shareRecords"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+watch(api_list_x_s_620_q, (v) => { api_list_x_s_620_data.value = v ?? []; });
+const api_assemble_184_data = ref<any[]>([]);
+const { data: api_assemble_184_q } = useQuery({queryKey: ['api_assemble_184', '/jaxrs/mind/assemble/control/config'], queryFn: async () => { try { const r = await api.get("/jaxrs/mind/assemble/control/config"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+watch(api_assemble_184_q, (v) => { api_assemble_184_data.value = v ?? []; });
+const api_folder_tree_my_data = ref<any[]>([]);
+const { data: api_folder_tree_my_q } = useQuery({queryKey: ['api_folder_tree_my', '/jaxrs/mind/assemble/control/folder/tree/my'], queryFn: async () => { try { const r = await api.get("/jaxrs/mind/assemble/control/folder/tree/my"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+watch(api_folder_tree_my_q, (v) => { api_folder_tree_my_data.value = v ?? []; });
+const api_mind_x_icon_data = ref<any[]>([]);
+const { data: api_mind_x_icon_q } = useQuery({queryKey: ['api_mind_x_icon', '/jaxrs/mind/assemble/control/mind/x/icon'], queryFn: async () => { try { const r = await api.get("/jaxrs/mind/assemble/control/mind/x/icon"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+watch(api_mind_x_icon_q, (v) => { api_mind_x_icon_data.value = v ?? []; });
+const api_entity_f_454_data = ref<any[]>([]);
+const { data: api_entity_f_454_q } = useQuery({queryKey: ['api_entity_f_454', '/jaxrs/mind/core/entity/folder/list'], queryFn: async () => { try { const r = await api.get("/jaxrs/mind/core/entity/folder/list"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+watch(api_entity_f_454_q, (v) => { api_entity_f_454_data.value = v ?? []; });
+const api_list_x_version_data = ref<any[]>([]);
+const { data: api_list_x_version_q } = useQuery({queryKey: ['api_list_x_version', '/jaxrs/mind/assemble/control/mind/list/x/version'], queryFn: async () => { try { const r = await api.get("/jaxrs/mind/assemble/control/mind/list/x/version"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+watch(api_list_x_version_q, (v) => { api_list_x_version_data.value = v ?? []; });
+const api_mind_ass_232_data = ref<any[]>([]);
+const { data: api_mind_ass_232_q } = useQuery({queryKey: ['api_mind_ass_232', '/jaxrs/mind/assemble/list'], queryFn: async () => { try { const r = await api.get("/jaxrs/mind/assemble/list"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+watch(api_mind_ass_232_q, (v) => { api_mind_ass_232_data.value = v ?? []; });
 const api_share_x_cancel_data = ref<any[]>([]);
 const { data: api_share_x_cancel_q } = useQuery({queryKey: ['api_share_x_cancel', '/jaxrs/mind/assemble/control/mind/share/x/cancel'], queryFn: async () => { try { const r = await api.get("/jaxrs/mind/assemble/control/mind/share/x/cancel"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
 watch(api_share_x_cancel_q, (v) => { api_share_x_cancel_data.value = v ?? []; });

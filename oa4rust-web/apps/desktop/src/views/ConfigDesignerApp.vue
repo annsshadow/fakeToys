@@ -257,7 +257,9 @@ function onConfigChange() { /* auto-save debounce could go here */ }
 function fmtTime(t?: string) { if (!t) return ''; try { return new Date(t).toLocaleString('zh-CN',{month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'}) } catch { return String(t) } }
 onMounted(() => { qc.invalidateQueries({ queryKey: ['config','list'] }) })
 
-async function api_input_prepare_create() { try { await api.get("/jaxrs/input/prepare/create") } catch {} }
+const api_input_pr_78_data = ref<any[]>([]);
+const { data: api_input_pr_78_q } = useQuery({queryKey: ['api_input_pr_78', '/jaxrs/input/prepare/create'], queryFn: async () => { try { const r = await api.get("/jaxrs/input/prepare/create"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+watch(api_input_pr_78_q, (v) => { api_input_pr_78_data.value = v ?? []; });
 async function api_input_compare_mockputtopost() { try { await api.get("/jaxrs/input/compare/mockputtopost") } catch {} }
 async function api_input_prepare_cover() { try { await api.get("/jaxrs/input/prepare/cover") } catch {} }
 async function api_input_create_mockputtopost() { try { await api.get("/jaxrs/input/create/mockputtopost") } catch {} }
