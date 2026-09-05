@@ -85,17 +85,29 @@ async function stopServer() {
 loadLicense()
 
 async function api_cache() { try { await api.get("/jaxrs/cache") } catch {} }
-async function api_cache_commonscript_flush() { try { await api.get("/jaxrs/cache/commonscript/flush") } catch {} }
+const api_cache_co_205_data = ref<any[]>([]);
+const { data: api_cache_co_205_q } = useQuery({queryKey: ['api_cache_co_205', '/jaxrs/cache/commonscript/flush'], queryFn: async () => { try { const r = await api.get("/jaxrs/cache/commonscript/flush"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+watch(api_cache_co_205_q, (v) => { api_cache_co_205_data.value = v ?? []; });
 async function api_cache_detail() { try { await api.get("/jaxrs/cache/detail") } catch {} }
-async function api_cache_config_flush() { try { await api.get("/jaxrs/cache/config/flush") } catch {} }
+const api_cache_co_100_data = ref<any[]>([]);
+const { data: api_cache_co_100_q } = useQuery({queryKey: ['api_cache_co_100', '/jaxrs/cache/config/flush'], queryFn: async () => { try { const r = await api.get("/jaxrs/cache/config/flush"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+watch(api_cache_co_100_q, (v) => { api_cache_co_100_data.value = v ?? []; });
 
 
-async function api_console_cache_clear_all() { try { await api.get("/jaxrs/console/cache/clear/all") } catch {} }
-async function api_console_logs_error() { try { await api.get("/jaxrs/console/logs/error") } catch {} }
+const api_console__997_data = ref<any[]>([]);
+const { data: api_console__997_q } = useQuery({queryKey: ['api_console__997', '/jaxrs/console/cache/clear/all'], queryFn: async () => { try { const r = await api.get("/jaxrs/console/cache/clear/all"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+watch(api_console__997_q, (v) => { api_console__997_data.value = v ?? []; });
+const api_console__543_data = ref<any[]>([]);
+const { data: api_console__543_q } = useQuery({queryKey: ['api_console__543', '/jaxrs/console/logs/error'], queryFn: async () => { try { const r = await api.get("/jaxrs/console/logs/error"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+watch(api_console__543_q, (v) => { api_console__543_data.value = v ?? []; });
 async function api_console_metric_cpu_usage() { try { await api.get("/jaxrs/console/metric/cpu_usage") } catch {} }
 async function api_console_system_info() { try { await api.get("/jaxrs/console/system/info") } catch {} }
-async function api_console_command_execute() { try { await api.get("/jaxrs/console/command/execute") } catch {} }
-async function api_console_send_message() { try { await api.get("/jaxrs/console/send/message") } catch {} }
+const api_console__450_data = ref<any[]>([]);
+const { data: api_console__450_q } = useQuery({queryKey: ['api_console__450', '/jaxrs/console/command/execute'], queryFn: async () => { try { const r = await api.get("/jaxrs/console/command/execute"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+watch(api_console__450_q, (v) => { api_console__450_data.value = v ?? []; });
+const api_console__982_data = ref<any[]>([]);
+const { data: api_console__982_q } = useQuery({queryKey: ['api_console__982', '/jaxrs/console/send/message'], queryFn: async () => { try { const r = await api.get("/jaxrs/console/send/message"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+watch(api_console__982_q, (v) => { api_console__982_data.value = v ?? []; });
 const api_console_status_data = ref<any[]>([]);
 const { data: api_console_status_q } = useQuery({queryKey: ['api_console_status', '/jaxrs/console/status'], queryFn: async () => { try { const r = await api.get("/jaxrs/console/status"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
 watch(api_console_status_q, (v) => { api_console_status_data.value = v ?? []; });
