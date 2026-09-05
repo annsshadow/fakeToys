@@ -423,7 +423,7 @@ function createQuery() { if (nform.value.name) cm.mutate() }
 
 function refresh() { qc.invalidateQueries({ queryKey: ['qm','list'] }) }
 function applyViewConfig() { /* apply config to current query */ }
-function importData() { alert('导入功能开发中') }
+function importData() { toast.warning('导入功能开发中') }
 function exportResults() {
   if (!resultData.value.length) return
   const header = resultHeaders.value.join(',')
