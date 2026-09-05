@@ -318,6 +318,23 @@ async function api_file_attachment_id_download() { try { await api.get("/jaxrs/f
 async function api_list_id_prev_count() { try { await api.get("/jaxrs/file/file/list/id/prev/count") } catch {} }
 async function api_fi_1_binary_base64_64() { try { await api.get("/jaxrs/fileinfo/fi-1/binary/base64/64") } catch {} }
 
+
+async function api_file_id_binary_base64_1() { try { await api.get("/jaxrs/file/file/id/binary/base64") } catch {} }
+async function api_list_i_1_next_10() { try { await api.get("/jaxrs/file/list/i-1/next/10") } catch {} }
+async function api_file_file_list_referencetype() { try { await api.get("/jaxrs/file/file/list/referencetype") } catch {} }
+async function api_file_folder_id() { try { await api.get("/jaxrs/file/folder/id") } catch {} }
+async function api_file_complex_folder_id() { try { await api.get("/jaxrs/file/complex/folder/id") } catch {} }
+async function api_file_core_entity_nonexistent() { try { await api.get("/jaxrs/file/core/entity/nonexistent") } catch {} }
+async function api_f_1_appInfo_app_1_download() { try { await api.get("/jaxrs/file/f-1/appInfo/app-1/download") } catch {} }
+async function api_file_folder2_list_top() { try { await api.get("/jaxrs/file/folder2/list/top") } catch {} }
+async function api_file_f_1_download() { try { await api.get("/jaxrs/file/f-1/download") } catch {} }
+async function api_file_share_shield_id() { try { await api.get("/jaxrs/file/share/shield/id") } catch {} }
+async function api_list_id_prev_count_1() { try { await api.get("/jaxrs/file/list/id/prev/count") } catch {} }
+async function api_id_prev_count_all() { try { await api.get("/jaxrs/file/list/id/prev/count/all") } catch {} }
+async function api_attachment2_id_binary_base64() { try { await api.get("/jaxrs/file/attachment2/id/binary/base64") } catch {} }
+async function api_file_assemble_control_file() { try { await api.get("/jaxrs/file/assemble/control/file") } catch {} }
+async function api_entity_folder_list_test_folder_id() { try { await api.get("/jaxrs/file/core/entity/folder/list/test-folder-id") } catch {} }
+
 </script>
 
 <style scoped>
