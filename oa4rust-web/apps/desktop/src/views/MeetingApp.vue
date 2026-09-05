@@ -125,6 +125,16 @@ async function api_control_meeting_room() { try { await api.get("/jaxrs/meeting/
 async function api_list_invited_rejected() { try { await api.get("/jaxrs/meeting/assemble/control/meeting/list/invited/rejected") } catch {} }
 async function api_entity_meeting_create() { try { await api.get("/jaxrs/meeting/core/entity/meeting/create") } catch {} }
 
+
+async function api_core_entity_room_create() { try { await api.get('/jaxrs/meeting/core/entity/room/create') } catch {} }
+async function api_assemble_control_room_list() { try { await api.get('/jaxrs/meeting/assemble/control/room/list') } catch {} }
+async function api_assemble_control_meeting_coming() { try { await api.get('/jaxrs/meeting/assemble/control/meeting/coming') } catch {} }
+async function api_meeting_core_list() { try { await api.get('/jaxrs/meeting/core/list') } catch {} }
+async function api_meeting_room_list_1() { try { await api.get('/jaxrs/meeting/room/list') } catch {} }
+async function api_meeting_openmeeting_list_room() { try { await api.get('/jaxrs/meeting/openmeeting/list/room') } catch {} }
+async function api_meeting_list() { try { await api.get('/jaxrs/meeting/list') } catch {} }
+async function api_meeting_assemble_control_room() { try { await api.get('/jaxrs/meeting/assemble/control/room') } catch {} }
+
 </script>
 <style scoped>
 .meeting-view{display:flex;flex-direction:column;gap:16px;height:100%}

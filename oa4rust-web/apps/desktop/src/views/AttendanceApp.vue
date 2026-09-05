@@ -142,6 +142,33 @@ async function api_v2_shift_create() { try { await api.get("/jaxrs/attendance/as
 async function api_assemble_control_attendanceworkplancalendar() { try { await api.get("/jaxrs/attendance/assemble/control/attendanceworkplancalendar") } catch {} }
 async function api_attendance_assemble_daily() { try { await api.get("/jaxrs/attendance/assemble/daily") } catch {} }
 
+
+async function api_assemble_control_attendancedetail_recive() { try { await api.get('/jaxrs/attendance/assemble/control/attendancedetail/recive') } catch {} }
+async function api_assemble_control_dingding_all() { try { await api.get('/jaxrs/attendance/assemble/control/dingding/all') } catch {} }
+async function api_assemble_control_attendancedetail_d_1() { try { await api.get('/jaxrs/attendance/assemble/control/attendancedetail/d-1') } catch {} }
+async function api_attendance_assemble_control_workplace() { try { await api.get('/jaxrs/attendance/assemble/control/workplace') } catch {} }
+async function api_attendance_assemble_control_attendancestatisticrequirelog() { try { await api.get('/jaxrs/attendance/assemble/control/attendancestatisticrequirelog') } catch {} }
+async function api_attendance_assemble_control_attendanceselfholiday() { try { await api.get('/jaxrs/attendance/assemble/control/attendanceselfholiday') } catch {} }
+async function api_statistical_cycle_list_all() { try { await api.get('/jaxrs/attendance/statistical/cycle/list/all') } catch {} }
+async function api_assemble_control_attendancedetail_reciveSingle() { try { await api.get('/jaxrs/attendance/assemble/control/attendancedetail/reciveSingle') } catch {} }
+async function api_assemble_control_v2_config() { try { await api.get('/jaxrs/attendance/assemble/control/v2/config') } catch {} }
+async function api_attendance_assemble_control_qywxstatistic() { try { await api.get('/jaxrs/attendance/assemble/control/qywxstatistic') } catch {} }
+async function api_attendance_assemble_control_selfholidaysimple() { try { await api.get('/jaxrs/attendance/assemble/control/selfholidaysimple') } catch {} }
+async function api_attendance_rule_list() { try { await api.get('/jaxrs/attendance/rule/list') } catch {} }
+async function api_attendance_record() { try { await api.get('/jaxrs/attendance/record') } catch {} }
+async function api_assemble_control_v2_workplace() { try { await api.get('/jaxrs/attendance/assemble/control/v2/workplace') } catch {} }
+async function api_core_entity_record_create() { try { await api.get('/jaxrs/attendance/core/entity/record/create') } catch {} }
+async function api_assemble_control_v2_groupschedule() { try { await api.get('/jaxrs/attendance/assemble/control/v2/groupschedule') } catch {} }
+async function api_assemble_control_attendancedetail_analyse() { try { await api.get('/jaxrs/attendance/assemble/control/attendancedetail/analyse') } catch {} }
+async function api_attendance_assemble_control_attendanceschedulesetting() { try { await api.get('/jaxrs/attendance/assemble/control/attendanceschedulesetting') } catch {} }
+async function api_attendance_assemble_control_statistic() { try { await api.get('/jaxrs/attendance/assemble/control/statistic') } catch {} }
+async function api_assemble_control_v2_group() { try { await api.get('/jaxrs/attendance/assemble/control/v2/group') } catch {} }
+async function api_core_entity_record_list() { try { await api.get('/jaxrs/attendance/core/entity/record/list') } catch {} }
+async function api_attendance_assemble_control_attendancestatistical() { try { await api.get('/jaxrs/attendance/assemble/control/attendancestatistical') } catch {} }
+async function api_attendance_core_list() { try { await api.get('/jaxrs/attendance/core/list') } catch {} }
+async function api_assemble_control_uuid_random() { try { await api.get('/jaxrs/attendance/assemble/control/uuid/random') } catch {} }
+async function api_assemble_control_statistic_do() { try { await api.get('/jaxrs/attendance/assemble/control/statistic/do') } catch {} }
+
 </script>
 <style scoped>
 .attendance-view{display:flex;flex-direction:column;gap:16px;height:100%}

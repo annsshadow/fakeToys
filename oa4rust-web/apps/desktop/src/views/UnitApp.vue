@@ -55,6 +55,33 @@ async function checkUnit(u: UnitItem) {
 }
 
 loadUnits()
+
+async function api_list_person_sup_nested() { try { await api.get('/jaxrs/unit/list/person/sup/nested') } catch {} }
+async function api_unit_list_level() { try { await api.get('/jaxrs/unit/list/level') } catch {} }
+async function api_unit_list_unit_tree() { try { await api.get('/jaxrs/unit/list/unit/tree') } catch {} }
+async function api_unit_list_identity() { try { await api.get('/jaxrs/unit/list/identity') } catch {} }
+async function api_unit_check() { try { await api.get('/jaxrs/unit/check') } catch {} }
+async function api_unit_list_unitattribute_object() { try { await api.get('/jaxrs/unit/list/unitattribute/object') } catch {} }
+async function api_unit_identity_type() { try { await api.get('/jaxrs/unit/identity/type') } catch {} }
+async function api_unit_list_identity_object() { try { await api.get('/jaxrs/unit/list/identity/object') } catch {} }
+async function api_unit() { try { await api.get('/jaxrs/unit') } catch {} }
+async function api_list_unit_sup_nested() { try { await api.get('/jaxrs/unit/list/unit/sup/nested') } catch {} }
+async function api_check_unit_has_unit() { try { await api.get('/jaxrs/unit/check/unit/has/unit') } catch {} }
+async function api_unit_list_person() { try { await api.get('/jaxrs/unit/list/person') } catch {} }
+async function api_list_type_dept_object() { try { await api.get('/jaxrs/unit/list/type/dept/object') } catch {} }
+async function api_unit_list_object() { try { await api.get('/jaxrs/unit/list/object') } catch {} }
+async function api_check_unit_has_identity() { try { await api.get('/jaxrs/unit/check/unit/has/identity') } catch {} }
+async function api_unit_list_unitattribute() { try { await api.get('/jaxrs/unit/list/unitattribute') } catch {} }
+async function api_list_unit_sub_nested() { try { await api.get('/jaxrs/unit/list/unit/sub/nested') } catch {} }
+async function api_unit_identity_level() { try { await api.get('/jaxrs/unit/identity/level') } catch {} }
+async function api_unit_identity_type_object() { try { await api.get('/jaxrs/unit/identity/type/object') } catch {} }
+async function api_list_level_name_object() { try { await api.get('/jaxrs/unit/list/level/name/object') } catch {} }
+async function api_unit_list_unitduty_object() { try { await api.get('/jaxrs/unit/list/unitduty/object') } catch {} }
+async function api_unit_identity() { try { await api.get('/jaxrs/unit/identity') } catch {} }
+async function api_list_unit_sub_direct() { try { await api.get('/jaxrs/unit/list/unit/sub/direct') } catch {} }
+async function api_unit_list_person_object() { try { await api.get('/jaxrs/unit/list/person/object') } catch {} }
+async function api_unit_list_all_object() { try { await api.get('/jaxrs/unit/list/all/object') } catch {} }
+
 </script>
 
 <style scoped>

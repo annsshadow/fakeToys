@@ -170,6 +170,33 @@ async function api_list_group_object() { try { await api.get("/jaxrs/person/list
 async function api_assemble_control_person() { try { await api.get("/jaxrs/organization/assemble/control/person") } catch {} }
 async function api_oauth_token_jira() { try { await api.get("/jaxrs/organization/assemble/authentication/oauth/token/jira") } catch {} }
 
+
+async function api_assemble_authentication_authentication_bind() { try { await api.get('/jaxrs/organization/assemble/authentication/authentication/bind') } catch {} }
+async function api_organization_group() { try { await api.get('/jaxrs/organization/group') } catch {} }
+async function api_organization_assemble_control_personcard() { try { await api.get('/jaxrs/organization/assemble/control/personcard') } catch {} }
+async function api_assemble_authentication_authentication_mockdeletetoget() { try { await api.get('/jaxrs/organization/assemble/authentication/authentication/mockdeletetoget') } catch {} }
+async function api_assemble_authentication_oauth_auth() { try { await api.get('/jaxrs/organization/assemble/authentication/oauth/auth') } catch {} }
+async function api_assemble_control_personcard_listgrouptypes() { try { await api.get('/jaxrs/organization/assemble/control/personcard/listgrouptypes') } catch {} }
+async function api_organization_core_express_config() { try { await api.get('/jaxrs/organization/core/express/config') } catch {} }
+async function api_organization_assemble_control_permissionsetting() { try { await api.get('/jaxrs/organization/assemble/control/permissionsetting') } catch {} }
+async function api_organization_assemble_unit_tree() { try { await api.get('/jaxrs/organization/assemble/unit/tree') } catch {} }
+async function api_organization_assemble_control_unitattribute() { try { await api.get('/jaxrs/organization/assemble/control/unitattribute') } catch {} }
+async function api_organization_assemble_authentication_authentication() { try { await api.get('/jaxrs/organization/assemble/authentication/authentication') } catch {} }
+async function api_organization_bind_list() { try { await api.get('/jaxrs/organization/bind/list') } catch {} }
+async function api_assemble_authentication_authentication_switchuser() { try { await api.get('/jaxrs/organization/assemble/authentication/authentication/switchuser') } catch {} }
+async function api_organization_assemble_control_personattribute() { try { await api.get('/jaxrs/organization/assemble/control/personattribute') } catch {} }
+async function api_organization_person_person_001() { try { await api.get('/jaxrs/organization/person/person-001') } catch {} }
+async function api_assemble_express_units_list() { try { await api.get('/jaxrs/organization/assemble/express/units/list') } catch {} }
+async function api_organization_bind() { try { await api.get('/jaxrs/organization/bind') } catch {} }
+async function api_assemble_express_data_sync() { try { await api.get('/jaxrs/organization/assemble/express/data/sync') } catch {} }
+async function api_organization_core_express_status() { try { await api.get('/jaxrs/organization/core/express/status') } catch {} }
+async function api_organization_custom() { try { await api.get('/jaxrs/organization/custom') } catch {} }
+async function api_assemble_express_status_get() { try { await api.get('/jaxrs/organization/assemble/express/status/get') } catch {} }
+async function api_organization_group_group_001() { try { await api.get('/jaxrs/organization/group/group-001') } catch {} }
+async function api_organization_assemble_control_identity() { try { await api.get('/jaxrs/organization/assemble/control/identity') } catch {} }
+async function api_assemble_control_unit_list() { try { await api.get('/jaxrs/organization/assemble/control/unit/list') } catch {} }
+async function api_assemble_express_config_get() { try { await api.get('/jaxrs/organization/assemble/express/config/get') } catch {} }
+
 </script>
 
 <style scoped>

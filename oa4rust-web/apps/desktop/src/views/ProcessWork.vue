@@ -222,6 +222,33 @@ async function api_list_work_work() { try { await api.get("/jaxrs/processplatfor
 async function api_read_count_filter() { try { await api.get("/jaxrs/processplatform/assemble/surface/read/count/filter") } catch {} }
 async function api_batch_delete_manage() { try { await api.get("/jaxrs/processplatform/assemble/surface/attachment/batch/delete/manage") } catch {} }
 
+
+async function api_processplatform_assemble_designer_item_access() { try { await api.get('/jaxrs/processplatform/assemble/designer/item-access') } catch {} }
+async function api_processplatform_assemble_surface_handover() { try { await api.get('/jaxrs/processplatform/assemble/surface/handover') } catch {} }
+async function api_processplatform_assemble_surface_openapi() { try { await api.get('/jaxrs/processplatform/assemble/surface/openapi') } catch {} }
+async function api_service_processing_work_list() { try { await api.get('/jaxrs/processplatform/service/processing/work/list') } catch {} }
+async function api_assemble_surface_work_list() { try { await api.get('/jaxrs/processplatform/assemble/surface/work/list') } catch {} }
+async function api_assemble_surface_data_job() { try { await api.get('/jaxrs/processplatform/assemble/surface/data/job') } catch {} }
+async function api_service_processing_touch_touchdelay() { try { await api.get('/jaxrs/processplatform/service/processing/touch/touchdelay') } catch {} }
+async function api_assemble_surface_data_work() { try { await api.get('/jaxrs/processplatform/assemble/surface/data/work') } catch {} }
+async function api_assemble_surface_draft_mockputtopost() { try { await api.get('/jaxrs/processplatform/assemble/surface/draft/mockputtopost') } catch {} }
+async function api_service_processing_touch_mergeitem() { try { await api.get('/jaxrs/processplatform/service/processing/touch/mergeitem') } catch {} }
+async function api_assemble_designer_save_flow_1() { try { await api.get('/jaxrs/processplatform/assemble/designer/save/flow-1') } catch {} }
+async function api_processplatform_assemble_designer_create() { try { await api.get('/jaxrs/processplatform/assemble/designer/create') } catch {} }
+async function api_processplatform_service_processing_create() { try { await api.get('/jaxrs/processplatform/service/processing/create') } catch {} }
+async function api_processplatform_assemble_surface_data() { try { await api.get('/jaxrs/processplatform/assemble/surface/data') } catch {} }
+async function api_assemble_surface_work_count() { try { await api.get('/jaxrs/processplatform/assemble/surface/work/count') } catch {} }
+async function api_assemble_surface_save_surface_1() { try { await api.get('/jaxrs/processplatform/assemble/surface/save/surface-1') } catch {} }
+async function api_assemble_surface_attachment_list() { try { await api.get('/jaxrs/processplatform/assemble/surface/attachment/list') } catch {} }
+async function api_assemble_surface_mode_save() { try { await api.get('/jaxrs/processplatform/assemble/surface/mode/save') } catch {} }
+async function api_assemble_designer_preview_flow_1() { try { await api.get('/jaxrs/processplatform/assemble/designer/preview/flow-1') } catch {} }
+async function api_assemble_designer_delete_flow_1() { try { await api.get('/jaxrs/processplatform/assemble/designer/delete/flow-1') } catch {} }
+async function api_assemble_surface_get_surface_1() { try { await api.get('/jaxrs/processplatform/assemble/surface/get/surface-1') } catch {} }
+async function api_core_express_task_list() { try { await api.get('/jaxrs/processplatform/core/express/task/list') } catch {} }
+async function api_assemble_surface_workorworkcompleted_list() { try { await api.get('/jaxrs/processplatform/assemble/surface/workorworkcompleted/list') } catch {} }
+async function api_assemble_surface_touch_passexpired() { try { await api.get('/jaxrs/processplatform/assemble/surface/touch/passexpired') } catch {} }
+async function api_assemble_surface_publish_surface_1() { try { await api.get('/jaxrs/processplatform/assemble/surface/publish/surface-1') } catch {} }
+
 </script>
 
 <style scoped>

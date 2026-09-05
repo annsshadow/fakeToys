@@ -216,6 +216,33 @@ async function api_module_id_compare() { try { await api.get("/jaxrs/program_cen
 async function api_create_mobile_mobile() { try { await api.get("/jaxrs/program_center/code/create/mobile/mobile") } catch {} }
 async function api_m_1_install_log() { try { await api.get("/jaxrs/program_center/market/m-1/install/log") } catch {} }
 
+
+async function api_program_center_invoke_flag_execute() { try { await api.get('/jaxrs/program_center/invoke/flag/execute') } catch {} }
+async function api_program_center_jest_center_list() { try { await api.get('/jaxrs/program_center/jest/center/list') } catch {} }
+async function api_module_remove_structure_id() { try { await api.get('/jaxrs/program_center/module/remove/structure/id') } catch {} }
+async function api_program_center_collect_validate() { try { await api.get('/jaxrs/program_center/collect/validate') } catch {} }
+async function api_program_center_invoke_flag_file() { try { await api.get('/jaxrs/program_center/invoke/flag/file') } catch {} }
+async function api_program_center_invoke() { try { await api.get('/jaxrs/program_center/invoke') } catch {} }
+async function api_program_center_schedule_list_schedulelocal() { try { await api.get('/jaxrs/program_center/schedule/list/schedulelocal') } catch {} }
+async function api_program_center_collect_sync_area() { try { await api.get('/jaxrs/program_center/collect/sync/area') } catch {} }
+async function api_program_center_module_list_category() { try { await api.get('/jaxrs/program_center/module/list/category') } catch {} }
+async function api_collect_name_n_exist() { try { await api.get('/jaxrs/program_center/collect/name/n/exist') } catch {} }
+async function api_program_center_invoke_some_flag() { try { await api.get('/jaxrs/program_center/invoke/some-flag') } catch {} }
+async function api_program_center_andfx_pull_sync() { try { await api.get('/jaxrs/program_center/andfx/pull/sync') } catch {} }
+async function api_program_center_validation_timeout_30000() { try { await api.get('/jaxrs/program_center/validation/timeout/30000') } catch {} }
+async function api_program_center_output_list() { try { await api.get('/jaxrs/program_center/output/list') } catch {} }
+async function api_program_center_deploy_server_o2() { try { await api.get('/jaxrs/program_center/deploy/server/o2') } catch {} }
+async function api_program_center_collect_controllebbs() { try { await api.get('/jaxrs/program_center/collect/controllebbs') } catch {} }
+async function api_program_center_datastructure_fileds_all() { try { await api.get('/jaxrs/program_center/datastructure/fileds/all') } catch {} }
+async function api_program_center_module_m_1_compare() { try { await api.get('/jaxrs/program_center/module/m-1/compare') } catch {} }
+async function api_program_center_unexpectederrorlog() { try { await api.get('/jaxrs/program_center/unexpectederrorlog') } catch {} }
+async function api_program_center_applications() { try { await api.get('/jaxrs/program_center/applications') } catch {} }
+async function api_program_center_deploy_id() { try { await api.get('/jaxrs/program_center/deploy/id') } catch {} }
+async function api_market_m_1_installed_version() { try { await api.get('/jaxrs/program_center/market/m-1/installed/version') } catch {} }
+async function api_program_center_market_id_download() { try { await api.get('/jaxrs/program_center/market/id/download') } catch {} }
+async function api_program_center_market_m_1_uninstall() { try { await api.get('/jaxrs/program_center/market/m-1/uninstall') } catch {} }
+async function api_dict_dictFlag_path_data() { try { await api.get('/jaxrs/program_center/dict/dictFlag/path/data') } catch {} }
+
 </script>
 
 <style scoped>

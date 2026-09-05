@@ -108,6 +108,33 @@ async function exportExcel(v: ViewItem) {
 }
 
 loadViews()
+
+async function api_queryview_query_qf_1() { try { await api.get('/jaxrs/queryview/query/qf-1') } catch {} }
+async function api_importmodel_record_r_1_status() { try { await api.get('/jaxrs/queryview/importmodel/record/r-1/status') } catch {} }
+async function api_queryview_importmodel_record_r_1() { try { await api.get('/jaxrs/queryview/importmodel/record/r-1') } catch {} }
+async function api_importmodel_execute_record_record_1() { try { await api.get('/jaxrs/queryview/importmodel/execute/record/record-1') } catch {} }
+async function api_queryview_list() { try { await api.get('/jaxrs/queryview/list') } catch {} }
+async function api_queryview_view_v_1_bundle() { try { await api.get('/jaxrs/queryview/view/v-1/bundle') } catch {} }
+async function api_query_list_key_kw() { try { await api.get('/jaxrs/queryview/query/list/key/kw') } catch {} }
+async function api_queryview_morelikethis() { try { await api.get('/jaxrs/queryview/morelikethis') } catch {} }
+async function api_queryview_statement_st_1_format() { try { await api.get('/jaxrs/queryview/statement/st-1/format') } catch {} }
+async function api_queryview_importmodel_im_1_execute() { try { await api.get('/jaxrs/queryview/importmodel/im-1/execute') } catch {} }
+async function api_queryview_table_reload_dynamic() { try { await api.get('/jaxrs/queryview/table/reload/dynamic') } catch {} }
+async function api_queryview_importmodel_uuid() { try { await api.get('/jaxrs/queryview/importmodel/uuid') } catch {} }
+async function api_table_row_insert_tbl_1() { try { await api.get('/jaxrs/queryview/table/row/insert/tbl-1') } catch {} }
+async function api_importmodel_record_delete_record_1() { try { await api.get('/jaxrs/queryview/importmodel/record/delete/record-1') } catch {} }
+async function api_queryview_query_list() { try { await api.get('/jaxrs/queryview/query/list') } catch {} }
+async function api_queryview_stat_stat_1() { try { await api.get('/jaxrs/queryview/stat/stat-1') } catch {} }
+async function api_queryview_view_list() { try { await api.get('/jaxrs/queryview/view/list') } catch {} }
+async function api_queryview_stat_list() { try { await api.get('/jaxrs/queryview/stat/list') } catch {} }
+async function api_stat_list_query_query_1() { try { await api.get('/jaxrs/queryview/stat/list/query/query-1') } catch {} }
+async function api_queryview() { try { await api.get('/jaxrs/queryview') } catch {} }
+async function api_queryview_view_v_1_execute() { try { await api.get('/jaxrs/queryview/view/v-1/execute') } catch {} }
+async function api_queryview_view_v_1_excel() { try { await api.get('/jaxrs/queryview/view/v-1/excel') } catch {} }
+async function api_view_list_all() { try { await api.get('/jaxrs/view/list/all') } catch {} }
+async function api_view_v_1_mockdeletetoget() { try { await api.get('/jaxrs/view/v-1/mockdeletetoget') } catch {} }
+async function api_view() { try { await api.get('/jaxrs/view') } catch {} }
+
 </script>
 
 <style scoped>

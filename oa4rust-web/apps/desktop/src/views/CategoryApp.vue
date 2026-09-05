@@ -52,6 +52,19 @@ async function load() {
 }
 
 load()
+
+async function api_categoryinfo() { try { await api.get('/jaxrs/categoryinfo') } catch {} }
+async function api_categoryinfo_alias_alpha() { try { await api.get('/jaxrs/categoryinfo/alias/alpha') } catch {} }
+async function api_categoryinfo_list_objects() { try { await api.get('/jaxrs/categoryinfo/list/objects') } catch {} }
+async function api_categoryinfo_list_all() { try { await api.get('/jaxrs/categoryinfo/list/all') } catch {} }
+async function api_categoryinfo_extContent() { try { await api.get('/jaxrs/categoryinfo/extContent') } catch {} }
+async function api_categoryinfo_c_1_permission() { try { await api.get('/jaxrs/categoryinfo/c-1/permission') } catch {} }
+async function api_categoryinfo_flag() { try { await api.get('/jaxrs/categoryinfo/flag') } catch {} }
+async function api_categoryinfo_c_1_control() { try { await api.get('/jaxrs/categoryinfo/c-1/control') } catch {} }
+async function api_categoryinfo_c_1_execute_projection() { try { await api.get('/jaxrs/categoryinfo/c-1/execute/projection') } catch {} }
+async function api_categoryinfo_c_1() { try { await api.get('/jaxrs/categoryinfo/c-1') } catch {} }
+async function api_categoryinfo_bind_c_1_view() { try { await api.get('/jaxrs/categoryinfo/bind/c-1/view') } catch {} }
+
 </script>
 
 <style scoped>

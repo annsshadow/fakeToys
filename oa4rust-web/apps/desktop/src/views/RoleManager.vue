@@ -108,6 +108,11 @@ async function deleteRole(r: Role) {
 }
 
 loadRoles()
+
+async function api_role_list_person() { try { await api.get('/jaxrs/role/list/person') } catch {} }
+async function api_role_list_person_object() { try { await api.get('/jaxrs/role/list/person/object') } catch {} }
+async function api_role_list_object() { try { await api.get('/jaxrs/role/list/object') } catch {} }
+
 </script>
 
 <style scoped>

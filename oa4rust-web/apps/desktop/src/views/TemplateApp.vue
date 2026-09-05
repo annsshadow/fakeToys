@@ -51,6 +51,13 @@ const delM=useMutation({mutationFn:async(id:string)=>api.delete(ep+'/'+id),onSuc
 function deleteItem(item:Item){if(confirm('确定删除？'))delM.mutate(item.id)}
 function loadData(){qc.invalidateQueries({queryKey:qk})}
 function fmtTime(t?:string){if(!t)return'';try{return new Date(t).toLocaleString('zh-CN',{month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'})}catch{return String(t)}}
+
+async function api_templateform_list_category() { try { await api.get('/jaxrs/templateform/list/category') } catch {} }
+async function api_templateform() { try { await api.get('/jaxrs/templateform') } catch {} }
+async function api_templateform_tf_1_mockdeletetoget() { try { await api.get('/jaxrs/templateform/tf-1/mockdeletetoget') } catch {} }
+async function api_templateform_list_category_mockputtopost() { try { await api.get('/jaxrs/templateform/list/category/mockputtopost') } catch {} }
+async function api_templateform_tf_1() { try { await api.get('/jaxrs/templateform/tf-1') } catch {} }
+
 </script>
 <style scoped>
 .crud-view{display:flex;flex-direction:column;gap:16px;height:100%}

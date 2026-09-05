@@ -200,6 +200,33 @@ async function api_id_download_scale() { try { await api.get("/jaxrs/ai_assemble
 async function api_cms_doc_docId() { try { await api.get("/jaxrs/ai_assemble_control/index/cms/doc/docId") } catch {} }
 async function api_cms_doc_test_doc() { try { await api.get("/jaxrs/ai/index/cms/doc/test-doc") } catch {} }
 
+
+async function api_ai_assemble_control_file_any_file_flag() { try { await api.get('/jaxrs/ai_assemble_control/file/any-file-flag') } catch {} }
+async function api_ai_assemble_control_file_copy_file() { try { await api.get('/jaxrs/ai_assemble_control/file/copy/file') } catch {} }
+async function api_ai_assemble_control_list_ai_models() { try { await api.get('/jaxrs/ai_assemble_control/list/ai/models') } catch {} }
+async function api_ai_assemble_control_config_save() { try { await api.get('/jaxrs/ai_assemble_control/config/save') } catch {} }
+async function api_ai_assemble_control() { try { await api.get('/jaxrs/ai_assemble_control') } catch {} }
+async function api_config_get_mcp_flag() { try { await api.get('/jaxrs/ai_assemble_control/config/get/mcp/flag') } catch {} }
+async function api_update_ai_control_config() { try { await api.get('/jaxrs/ai_assemble_control/update/ai/control/config') } catch {} }
+async function api_config_update_mcp_u2t() { try { await api.get('/jaxrs/ai_assemble_control/config/update/mcp/u2t') } catch {} }
+async function api_file_u2t_download_scale() { try { await api.get('/jaxrs/ai_assemble_control/file/u2t/download/scale') } catch {} }
+async function api_ai_assemble_control_config_get() { try { await api.get('/jaxrs/ai_assemble_control/config/get') } catch {} }
+async function api_config_delete_mcp_u2t() { try { await api.get('/jaxrs/ai_assemble_control/config/delete/mcp/u2t') } catch {} }
+async function api_config_update_mcp_flag() { try { await api.get('/jaxrs/ai_assemble_control/config/update/mcp/flag') } catch {} }
+async function api_ai_assemble_control_file_upload() { try { await api.get('/jaxrs/ai_assemble_control/file/upload') } catch {} }
+async function api_index_cms_doc_u2t() { try { await api.get('/jaxrs/ai_assemble_control/index/cms/doc/u2t') } catch {} }
+async function api_config_update_model_u2t() { try { await api.get('/jaxrs/ai_assemble_control/config/update/model/u2t') } catch {} }
+async function api_ai_assemble_control_file_u2t() { try { await api.get('/jaxrs/ai_assemble_control/file/u2t') } catch {} }
+async function api_ai_assemble_control_file_delete_u2t() { try { await api.get('/jaxrs/ai_assemble_control/file/delete/u2t') } catch {} }
+async function api_config_get_mcp_u2t() { try { await api.get('/jaxrs/ai_assemble_control/config/get/mcp/u2t') } catch {} }
+async function api_config_get_mcp_any_id_here() { try { await api.get('/jaxrs/ai_assemble_control/config/get/mcp/any-id-here') } catch {} }
+async function api_ai_assemble_control_chat_delete_clue_1() { try { await api.get('/jaxrs/ai_assemble_control/chat/delete/clue-1') } catch {} }
+async function api_config_list_enable_model() { try { await api.get('/jaxrs/ai_assemble_control/config/list/enable/model') } catch {} }
+async function api_config_delete_model_flag() { try { await api.get('/jaxrs/ai_assemble_control/config/delete/model/flag') } catch {} }
+async function api_ai_assemble_control_file_delete_flag() { try { await api.get('/jaxrs/ai_assemble_control/file/delete/flag') } catch {} }
+async function api_ai_assemble_control_config_base_config() { try { await api.get('/jaxrs/ai_assemble_control/config/base/config') } catch {} }
+async function api_config_update_model_flag() { try { await api.get('/jaxrs/ai_assemble_control/config/update/model/flag') } catch {} }
+
 </script>
 
 <style scoped>
