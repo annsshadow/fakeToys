@@ -567,6 +567,28 @@ async function api_query_service_processing_reset() { try { await api.get('/jaxr
 async function api_assemble_surface_save_surface_1() { try { await api.get('/jaxrs/query/assemble/surface/save/surface-1') } catch {} }
 async function api_query_list() { try { await api.get('/jaxrs/query/list') } catch {} }
 
+
+async function api_query_service_processing_batch() { try { await api.get("/jaxrs/query/service/processing/batch") } catch {} }
+async function api_query_core_list() { try { await api.get("/jaxrs/query/core/list") } catch {} }
+async function api_row_delete_tbl_1_row_1() { try { await api.get("/jaxrs/queryview/table/row/delete/tbl-1/row-1") } catch {} }
+async function api_query_assemble_designer_statement() { try { await api.get("/jaxrs/query/assemble/designer/statement") } catch {} }
+async function api_designer_query_list_all() { try { await api.get("/jaxrs/query/assemble/designer/query/list/all") } catch {} }
+async function api_designer_query_querycategory_list() { try { await api.get("/jaxrs/query/assemble/designer/query/querycategory/list") } catch {} }
+async function api_flag_im_1_query_qf_1() { try { await api.get("/jaxrs/queryview/importmodel/flag/im-1/query/qf-1") } catch {} }
+async function api_processing_table_reload_dynamic() { try { await api.get("/jaxrs/query/service/processing/table/reload/dynamic") } catch {} }
+async function api_list_tf_1_row_select() { try { await api.get("/jaxrs/queryview/table/list/tf-1/row/select") } catch {} }
+async function api_designer_view_v_1_bundle() { try { await api.get("/jaxrs/query/assemble/designer/view/v-1/bundle") } catch {} }
+async function api_designer_neural_list_model() { try { await api.get("/jaxrs/query/assemble/designer/neural/list/model") } catch {} }
+async function api_query_assemble_surface_list() { try { await api.get("/jaxrs/query/assemble/surface/list") } catch {} }
+async function api_query_nonexistent() { try { await api.get("/jaxrs/query/nonexistent") } catch {} }
+async function api_assemble_surface_list_default() { try { await api.get("/jaxrs/query/assemble/surface/list/default") } catch {} }
+async function api_designer_view_v_1_simulate() { try { await api.get("/jaxrs/query/assemble/designer/view/v-1/simulate") } catch {} }
+async function api_query_service_processing() { try { await api.get("/jaxrs/query/service/processing") } catch {} }
+async function api_designer_query_list_summary() { try { await api.get("/jaxrs/query/assemble/designer/query/list/summary") } catch {} }
+async function api_designer_importmodel_im_flag_1_permission() { try { await api.get("/jaxrs/query/assemble/designer/importmodel/im-flag-1/permission") } catch {} }
+async function api_query_service_processing_process() { try { await api.get("/jaxrs/query/service/processing/process") } catch {} }
+async function api_designer_statement_list_manage() { try { await api.get("/jaxrs/query/assemble/designer/statement/list/manage") } catch {} }
+
 </script>
 
 <style scoped>

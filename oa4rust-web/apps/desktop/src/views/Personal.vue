@@ -231,6 +231,55 @@ async function api_person_sub_direct_object() { try { await api.get("/jaxrs/pers
 async function api_person_signature_manager_list() { try { await api.get("/jaxrs/person/signature/manager/list") } catch {} }
 async function api_person_has_role() { try { await api.get("/jaxrs/person/has/role") } catch {} }
 
+
+async function api_assemble_authentication_zhengwudingding_info() { try { await api.get("/jaxrs/organization/assemble/authentication/zhengwudingding/info") } catch {} }
+async function api_organization_assemble_authentication() { try { await api.get("/jaxrs/organization_assemble_authentication") } catch {} }
+async function api_organization_identity_list() { try { await api.get("/jaxrs/organization/identity/list") } catch {} }
+async function api_organization_assemble_personal() { try { await api.get("/jaxrs/organization_assemble_personal") } catch {} }
+async function api_assemble_control_personcard_mylist() { try { await api.get("/jaxrs/organization/assemble/control/personcard/mylist") } catch {} }
+async function api_organization_group_list() { try { await api.get("/jaxrs/organization/group/list") } catch {} }
+async function api_organization_assemble_control_group() { try { await api.get("/jaxrs/organization/assemble/control/group") } catch {} }
+async function api_assemble_authentication_authentication_code() { try { await api.get("/jaxrs/organization/assemble/authentication/authentication/code") } catch {} }
+async function api_organization_assemble_control_inputperson() { try { await api.get("/jaxrs/organization/assemble/control/inputperson") } catch {} }
+async function api_organization_identity() { try { await api.get("/jaxrs/organization/identity") } catch {} }
+async function api_personal_custom_alt_id_mockputtopost() { try { await api.get("/jaxrs/organization/assemble/personal/custom/alt-id/mockputtopost") } catch {} }
+async function api_organization_assemble_control_unitduty() { try { await api.get("/jaxrs/organization/assemble/control/unitduty") } catch {} }
+async function api_control_unit_get_root() { try { await api.get("/jaxrs/organization/assemble/control/unit/get/root") } catch {} }
+async function api_control_unit_list_like() { try { await api.get("/jaxrs/organization/assemble/control/unit/list/like") } catch {} }
+async function api_control_export_zhengwudingding_person() { try { await api.get("/jaxrs/organization/assemble/control/export/zhengwudingding/person") } catch {} }
+async function api_control_unitduty_list_like() { try { await api.get("/jaxrs/organization/assemble/control/unitduty/list/like") } catch {} }
+async function api_control_role_list_pinyininitial() { try { await api.get("/jaxrs/organization/assemble/control/role/list/pinyininitial") } catch {} }
+async function api_control_identity_list_like() { try { await api.get("/jaxrs/organization/assemble/control/identity/list/like") } catch {} }
+async function api_control_group_list_pinyininitial() { try { await api.get("/jaxrs/organization/assemble/control/group/list/pinyininitial") } catch {} }
+async function api_assemble_control_permissionsetting_list() { try { await api.get("/jaxrs/organization/assemble/control/permissionsetting/list") } catch {} }
+async function api_control_person_list_like() { try { await api.get("/jaxrs/organization/assemble/control/person/list/like") } catch {} }
+async function api_control_unit_list_top() { try { await api.get("/jaxrs/organization/assemble/control/unit/list/top") } catch {} }
+async function api_assemble_authentication_authentication_captchaRSAPublicKey() { try { await api.get("/jaxrs/organization/assemble/authentication/authentication/captchaRSAPublicKey") } catch {} }
+async function api_authentication_qiyeweixin_login_testcode() { try { await api.get("/jaxrs/organization/assemble/authentication/qiyeweixin/login/testcode") } catch {} }
+async function api_authentication_authentication_oauth_list() { try { await api.get("/jaxrs/organization/assemble/authentication/authentication/oauth/list") } catch {} }
+
+
+async function api_unit_sub_direct_like() { try { await api.get("/jaxrs/person/list/unit/sub/direct/like") } catch {} }
+async function api_person_list_pair_identity() { try { await api.get("/jaxrs/person/list/pair/identity") } catch {} }
+async function api_person_empower_manager_some_id() { try { await api.get("/jaxrs/person/empower/manager/some-id") } catch {} }
+async function api_personal_info() { try { await api.get("/jaxrs/personal/info") } catch {} }
+async function api_no_such_java_action() { try { await api.get("/jaxrs/person/no/such/java/action") } catch {} }
+async function api_person_list() { try { await api.get("/jaxrs/person/list") } catch {} }
+async function api_person_list_login_recent() { try { await api.get("/jaxrs/person/list/login/recent") } catch {} }
+async function api_person_list_identity() { try { await api.get("/jaxrs/person/list/identity") } catch {} }
+async function api_empower_list_to_enable() { try { await api.get("/jaxrs/person/empower/list/to/enable") } catch {} }
+async function api_personattribute_list_person_object() { try { await api.get("/jaxrs/personattribute/list/person/object") } catch {} }
+async function api_person_mobile_p1() { try { await api.get("/jaxrs/person/mobile/p1") } catch {} }
+async function api_person_regist_code() { try { await api.get("/jaxrs/person/regist/code") } catch {} }
+async function api_person_exmail_sso() { try { await api.get("/jaxrs/person/exmail/sso") } catch {} }
+async function api_person_sub_nested_object() { try { await api.get("/jaxrs/person/list/person/sub/nested/object") } catch {} }
+async function api_person_sup_nested_object() { try { await api.get("/jaxrs/person/list/person/sup/nested/object") } catch {} }
+async function api_person_sup_direct_object() { try { await api.get("/jaxrs/person/list/person/sup/direct/object") } catch {} }
+async function api_exmail_list_title_passive() { try { await api.get("/jaxrs/person/exmail/list/title/passive") } catch {} }
+async function api_person_empower_some_id_disable() { try { await api.get("/jaxrs/person/empower/some-id/disable") } catch {} }
+async function api_person_empower_list_to() { try { await api.get("/jaxrs/person/empower/list/to") } catch {} }
+async function api_person_nick_name_p1() { try { await api.get("/jaxrs/person/nick/name/p1") } catch {} }
+
 </script>
 
 <style scoped>

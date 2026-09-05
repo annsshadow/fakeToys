@@ -288,6 +288,55 @@ async function api_surface_data_job_job() { try { await api.get("/jaxrs/processp
 async function api_assemble_surface_keylock_lock() { try { await api.get("/jaxrs/processplatform/assemble/surface/keylock/lock") } catch {} }
 async function api_designer_mapping_m_1_execute() { try { await api.get("/jaxrs/processplatform/assemble/designer/mapping/m-1/execute") } catch {} }
 
+
+async function api_processplatform_assemble_surface_draft() { try { await api.get("/jaxrs/processplatform/assemble/surface/draft") } catch {} }
+async function api_assemble_designer_mergeitemplan_estimate() { try { await api.get("/jaxrs/processplatform/assemble/designer/mergeitemplan/estimate") } catch {} }
+async function api_processplatform_work_processing_work_001() { try { await api.get("/jaxrs/processplatform/work/processing/work-001") } catch {} }
+async function api_surface_readcompleted_filter_attribute() { try { await api.get("/jaxrs/processplatform/assemble/surface/readcompleted/filter/attribute") } catch {} }
+async function api_processing_record_job_rec_job() { try { await api.get("/jaxrs/processplatform/service/processing/record/job/rec-job") } catch {} }
+async function api_service_processing_instance_proc_1() { try { await api.get("/jaxrs/processplatform/service/processing/instance/proc-1") } catch {} }
+async function api_surface_task_v2_list() { try { await api.get("/jaxrs/processplatform/assemble/surface/task/v2/list") } catch {} }
+async function api_processing_work_v3_retract() { try { await api.get("/jaxrs/processplatform/service/processing/work/v3/retract") } catch {} }
+async function api_service_processing_cancel_proc_1() { try { await api.get("/jaxrs/processplatform/service/processing/cancel/proc-1") } catch {} }
+async function api_service_processing_touch_urge() { try { await api.get("/jaxrs/processplatform/service/processing/touch/urge") } catch {} }
+async function api_surface_application_list_range() { try { await api.get("/jaxrs/processplatform/assemble/surface/application/list/range") } catch {} }
+async function api_processplatform_service_processing_applicationdict() { try { await api.get("/jaxrs/processplatform/service/processing/applicationdict") } catch {} }
+async function api_processing_task_tk_exp_expire() { try { await api.get("/jaxrs/processplatform/service/processing/task/tk-exp/expire") } catch {} }
+async function api_service_processing_get_proc_1() { try { await api.get("/jaxrs/processplatform/service/processing/get/proc-1") } catch {} }
+async function api_designer_elementtool_process_orphan() { try { await api.get("/jaxrs/processplatform/assemble/designer/elementtool/process/orphan") } catch {} }
+async function api_surface_taskcompleted_v2_count() { try { await api.get("/jaxrs/processplatform/assemble/surface/taskcompleted/v2/count") } catch {} }
+async function api_processplatform_assemble_designer_applicationdict() { try { await api.get("/jaxrs/processplatform/assemble/designer/applicationdict") } catch {} }
+async function api_surface_task_list_all() { try { await api.get("/jaxrs/processplatform/assemble/surface/task/list/all") } catch {} }
+async function api_processing_review_create_workcompleted() { try { await api.get("/jaxrs/processplatform/service/processing/review/create/workcompleted") } catch {} }
+async function api_processplatform_assemble_designer_mapping() { try { await api.get("/jaxrs/processplatform/assemble/designer/mapping") } catch {} }
+async function api_bam_state_applicationtstubs_trigger() { try { await api.get("/jaxrs/processplatform/assemble/bam/state/applicationtstubs/trigger") } catch {} }
+async function api_assemble_surface_snap_upload() { try { await api.get("/jaxrs/processplatform/assemble/surface/snap/upload") } catch {} }
+async function api_service_processing_timer_start() { try { await api.get("/jaxrs/processplatform/service/processing/timer/start") } catch {} }
+async function api_surface_correlation_job_job() { try { await api.get("/jaxrs/processplatform/assemble/surface/correlation/job/job") } catch {} }
+async function api_surface_taskcompleted_filter_attribute() { try { await api.get("/jaxrs/processplatform/assemble/surface/taskcompleted/filter/attribute") } catch {} }
+async function api_assemble_surface_delete_surface_1() { try { await api.get("/jaxrs/processplatform/assemble/surface/delete/surface-1") } catch {} }
+async function api_service_processing_touch_deletedraft() { try { await api.get("/jaxrs/processplatform/service/processing/touch/deletedraft") } catch {} }
+async function api_surface_available_work_person() { try { await api.get("/jaxrs/processplatform/assemble/surface/available/work/person") } catch {} }
+async function api_surface_task_v2_count() { try { await api.get("/jaxrs/processplatform/assemble/surface/task/v2/count") } catch {} }
+async function api_assemble_surface_route_list() { try { await api.get("/jaxrs/processplatform/assemble/surface/route/list") } catch {} }
+
+
+async function api_correlation_core_express_status() { try { await api.get("/jaxrs/correlation/core/express/status") } catch {} }
+async function api_service_processing_list_message() { try { await api.get("/jaxrs/correlation/service/processing/list/message") } catch {} }
+async function api_correlation_doc_d_1() { try { await api.get("/jaxrs/correlation/doc/d-1") } catch {} }
+async function api_correlation_type_cms_list() { try { await api.get("/jaxrs/correlation/type/cms/list") } catch {} }
+async function api_correlation_core_express_list() { try { await api.get("/jaxrs/correlation/core/express/list") } catch {} }
+async function api_processing_link_message_msg_1() { try { await api.get("/jaxrs/correlation/service/processing/link/message/msg-1") } catch {} }
+async function api_correlation_service_processing() { try { await api.get("/jaxrs/correlation_service_processing") } catch {} }
+async function api_correlation_doc_doc_9_delete() { try { await api.get("/jaxrs/correlation/doc/doc-9/delete") } catch {} }
+async function api_correlation_core_entity_create() { try { await api.get("/jaxrs/correlation/core/entity/create") } catch {} }
+async function api_correlation_core_express_sync() { try { await api.get("/jaxrs/correlation/core/express/sync") } catch {} }
+async function api_core_entity_delete_corr_test_001() { try { await api.get("/jaxrs/correlation/core/entity/delete/corr-test-001") } catch {} }
+async function api_correlation_service_process() { try { await api.get("/jaxrs/correlation/service/process") } catch {} }
+async function api_correlation_link_list() { try { await api.get("/jaxrs/correlation/link/list") } catch {} }
+async function api_correlation_core_entity_list() { try { await api.get("/jaxrs/correlation/core/entity/list") } catch {} }
+async function api_correlation_type_cms_readable() { try { await api.get("/jaxrs/correlation/type/cms/readable") } catch {} }
+
 </script>
 
 <style scoped>
