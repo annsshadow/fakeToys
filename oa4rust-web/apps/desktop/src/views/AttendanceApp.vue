@@ -68,6 +68,44 @@ const am=useMutation({mutationFn:({id,status}:{id:string;status:string})=>api.po
 function audit(a:A,action:string){am.mutate({id:a.id,status:action})}
 function exportData(){window.open('/jaxrs/attendance/assemble/control/export')}
 onMounted(loadData)
+
+// Additional attendance API calls
+const ruleList = ref<Array<{id:string;name?:string;type?:string;config?:string}>>([])
+async function loadRules() {
+  try { const r = await api.get('/jaxrs/attendance/assemble/control/rule/list')
+    ruleList.value = (r.data ?? []) as any[]
+  } catch { ruleList.value = [] }
+}
+async function createRule() {
+  const name = prompt('规则名称:')
+  if (!name) return
+  try { await api.post('/jaxrs/attendance/assemble/control/rule/create', { name })
+    loadRules()
+  } catch (e: any) { alert('创建失败: ' + (e?.message ?? '')) }
+}
+async function deleteRule(rule: any) {
+  if (!confirm('确定删除规则「' + (rule.name||rule.id) + '」？')) return
+  try { await api.delete('/jaxrs/attendance/assemble/control/rule/' + rule.id)
+    loadRules()
+  } catch (e: any) { alert('删除失败: ' + (e?.message ?? '')) }
+}
+async function submitAppeal() {
+  const type = prompt('请假类型 (sick/personal/vacation):', 'sick')
+  if (!type) return
+  const start = prompt('开始日期:', new Date().toISOString().slice(0,10))
+  const end = prompt('结束日期:', new Date().toISOString().slice(0,10))
+  if (!start || !end) return
+  try { await api.post('/jaxrs/attendance/appeal/create', { type, startDate: start, endDate: end })
+    loadAppeals()
+  } catch (e: any) { alert('申请失败: ' + (e?.message ?? '')) }
+}
+async function loadAppeals() {
+  try { const r = await api.get('/jaxrs/attendance/appeal/list')
+    appeals.value = (r.data ?? []) as A[]
+  } catch { appeals.value = [] }
+}
+loadRules()
+
 </script>
 <style scoped>
 .attendance-view{display:flex;flex-direction:column;gap:16px;height:100%}

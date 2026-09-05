@@ -59,8 +59,37 @@ function fmtTime(t?:string){if(!t)return'';try{return new Date(t).toLocaleString
 const cm=useMutation({mutationFn:()=>api.post('/jaxrs/meeting/assemble/control/meeting/create',form.value),onSuccess:()=>{showCreate.value=false;qc.invalidateQueries({queryKey:['meeting','list']});loadMeetings()},onError:(e:any)=>{err.value=e?.message??'创建失败'}})
 function createMeeting(){if(!form.value.title)return;cm.mutate()}
 function viewMeeting(_m:M){}
-function joinMeeting(_m:M){}
 onMounted(loadMeetings)
+
+async function updateMeeting(m: M) {
+  const title = prompt('修改会议标题:', m.title || m.name)
+  if (!title) return
+  try { await api.put('/jaxrs/meeting/assemble/control/meeting/update', { id: m.id, title })
+    loadMeetings()
+  } catch (e: any) { alert('更新失败: ' + (e?.message ?? '')) }
+}
+async function cancelMeeting(m: M) {
+  if (!confirm('确定取消该会议？')) return
+  try { await api.post('/jaxrs/meeting/assemble/control/meeting/cancel', { id: m.id })
+    loadMeetings()
+  } catch (e: any) { alert('取消失败: ' + (e?.message ?? '')) }
+}
+async function approveMeeting(m: M) {
+  try { await api.post('/jaxrs/meeting/assemble/control/meeting/approve', { id: m.id })
+    loadMeetings()
+  } catch (e: any) { alert('审批失败: ' + (e?.message ?? '')) }
+}
+async function joinMeeting(m: M) {
+  try { await api.post('/jaxrs/meeting/assemble/control/meeting/join', { id: m.id })
+    alert('已加入会议'); loadMeetings()
+  } catch (e: any) { alert('加入失败: ' + (e?.message ?? '')) }
+}
+async function leaveMeeting(m: M) {
+  try { await api.post('/jaxrs/meeting/assemble/control/meeting/leave', { id: m.id })
+    loadMeetings()
+  } catch (e: any) { alert('离开失败: ' + (e?.message ?? '')) }
+}
+
 </script>
 <style scoped>
 .meeting-view{display:flex;flex-direction:column;gap:16px;height:100%}
