@@ -393,14 +393,30 @@ async function api_jaxrs_file_file_list_id_next_count_referencetype_referenceTyp
 async function api_jaxrs_file_file_list_id_prev_count_referencetype_referenceType() { try { await api.get("/jaxrs/file/file/list/id/prev/count/referencetype/referenceType") } catch {} }
 async function api_jaxrs_file_file_list_referencetype_referenceType_reference_reference() { try { await api.get("/jaxrs/file/file/list/referencetype/referenceType/reference/reference") } catch {} }
 async function api_jaxrs_file_file_list_unused_referencetype_cmsdocument_manage() { try { await api.get("/jaxrs/file/file/list/unused/referencetype/cmsdocument/manage") } catch {} }
-async function api_jaxrs_file_list_id_next_count_referencetype_referenceType() { try { await api.get("/jaxrs/file/list/id/next/count/referencetype/referenceType") } catch {} }
-async function api_jaxrs_file_share_download_share_shareId_file_fileId() { try { await api.get("/jaxrs/file/share/download/share/shareId/file/fileId") } catch {} }
-async function api_jaxrs_file_share_list_att_share_shareId_folder_folderId() { try { await api.get("/jaxrs/file/share/list/att/share/shareId/folder/folderId") } catch {} }
-async function api_jaxrs_file_share_list_folder_share_shareId_folder_folderId() { try { await api.get("/jaxrs/file/share/list/folder/share/shareId/folder/folderId") } catch {} }
-async function api_jaxrs_file_share_share_shareId_file_fileId_folder_folderId() { try { await api.get("/jaxrs/file/share/share/shareId/file/fileId/folder/folderId") } catch {} }
-async function api_jaxrs_share_list_att_share_s_1_folder_fd_1() { try { await api.get("/jaxrs/share/list/att/share/s-1/folder/fd-1") } catch {} }
-async function api_jaxrs_share_list_folder_share_s_1_folder_fd_1() { try { await api.get("/jaxrs/share/list/folder/share/s-1/folder/fd-1") } catch {} }
-async function api_jaxrs_share_share_s_1_file_f_1_folder_fd_1() { try { await api.get("/jaxrs/share/share/s-1/file/f-1/folder/fd-1") } catch {} }
+const api_jaxrs_file_list__365_data = ref<any[]>([]);
+const { data: api_jaxrs_file_list__365_q } = useQuery({queryKey: ['api_jaxrs_file_list__365', '/jaxrs/file/list/id/next/count/referencetype/referenceType'], queryFn: async () => { try { const r = await api.get("/jaxrs/file/list/id/next/count/referencetype/referenceType"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+watch(api_jaxrs_file_list__365_q, (v) => { api_jaxrs_file_list__365_data.value = v ?? []; });
+const api_jaxrs_file_share_803_data = ref<any[]>([]);
+const { data: api_jaxrs_file_share_803_q } = useQuery({queryKey: ['api_jaxrs_file_share_803', '/jaxrs/file/share/download/share/shareId/file/fileId'], queryFn: async () => { try { const r = await api.get("/jaxrs/file/share/download/share/shareId/file/fileId"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+watch(api_jaxrs_file_share_803_q, (v) => { api_jaxrs_file_share_803_data.value = v ?? []; });
+const api_jaxrs_file_share_496_data = ref<any[]>([]);
+const { data: api_jaxrs_file_share_496_q } = useQuery({queryKey: ['api_jaxrs_file_share_496', '/jaxrs/file/share/list/att/share/shareId/folder/folderId'], queryFn: async () => { try { const r = await api.get("/jaxrs/file/share/list/att/share/shareId/folder/folderId"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+watch(api_jaxrs_file_share_496_q, (v) => { api_jaxrs_file_share_496_data.value = v ?? []; });
+const api_jaxrs_file_share_715_data = ref<any[]>([]);
+const { data: api_jaxrs_file_share_715_q } = useQuery({queryKey: ['api_jaxrs_file_share_715', '/jaxrs/file/share/list/folder/share/shareId/folder/folderId'], queryFn: async () => { try { const r = await api.get("/jaxrs/file/share/list/folder/share/shareId/folder/folderId"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+watch(api_jaxrs_file_share_715_q, (v) => { api_jaxrs_file_share_715_data.value = v ?? []; });
+const api_jaxrs_file_share_618_data = ref<any[]>([]);
+const { data: api_jaxrs_file_share_618_q } = useQuery({queryKey: ['api_jaxrs_file_share_618', '/jaxrs/file/share/share/shareId/file/fileId/folder/folderId'], queryFn: async () => { try { const r = await api.get("/jaxrs/file/share/share/shareId/file/fileId/folder/folderId"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+watch(api_jaxrs_file_share_618_q, (v) => { api_jaxrs_file_share_618_data.value = v ?? []; });
+const api_jaxrs_share_list_738_data = ref<any[]>([]);
+const { data: api_jaxrs_share_list_738_q } = useQuery({queryKey: ['api_jaxrs_share_list_738', '/jaxrs/share/list/att/share/s-1/folder/fd-1'], queryFn: async () => { try { const r = await api.get("/jaxrs/share/list/att/share/s-1/folder/fd-1"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+watch(api_jaxrs_share_list_738_q, (v) => { api_jaxrs_share_list_738_data.value = v ?? []; });
+const api_jaxrs_share_list_807_data = ref<any[]>([]);
+const { data: api_jaxrs_share_list_807_q } = useQuery({queryKey: ['api_jaxrs_share_list_807', '/jaxrs/share/list/folder/share/s-1/folder/fd-1'], queryFn: async () => { try { const r = await api.get("/jaxrs/share/list/folder/share/s-1/folder/fd-1"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+watch(api_jaxrs_share_list_807_q, (v) => { api_jaxrs_share_list_807_data.value = v ?? []; });
+const api_jaxrs_share_shar_858_data = ref<any[]>([]);
+const { data: api_jaxrs_share_shar_858_q } = useQuery({queryKey: ['api_jaxrs_share_shar_858', '/jaxrs/share/share/s-1/file/f-1/folder/fd-1'], queryFn: async () => { try { const r = await api.get("/jaxrs/share/share/s-1/file/f-1/folder/fd-1"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+watch(api_jaxrs_share_shar_858_q, (v) => { api_jaxrs_share_shar_858_data.value = v ?? []; });
 </script>
 
 <style scoped>

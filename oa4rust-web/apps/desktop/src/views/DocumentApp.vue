@@ -179,13 +179,25 @@ async function api_jaxrs_document_d_1_document_data() { try { await api.get("/ja
 async function api_jaxrs_document_d_1_persons() { try { await api.get("/jaxrs/document/d-1/persons") } catch {} }
 async function api_jaxrs_document_d_1_top() { try { await api.get("/jaxrs/document/d-1/top") } catch {} }
 async function api_jaxrs_document_d_1_unTop() { try { await api.get("/jaxrs/document/d-1/unTop") } catch {} }
-async function api_jaxrs_document_draft_list_i_1_next_10() { try { await api.get("/jaxrs/document/draft/list/i-1/next/10") } catch {} }
-async function api_jaxrs_document_filter_count() { try { await api.get("/jaxrs/document/filter/count") } catch {} }
-async function api_jaxrs_document_filter_list_i_1_next_10() { try { await api.get("/jaxrs/document/filter/list/i-1/next/10") } catch {} }
+const api_jaxrs_document_d_142_data = ref<any[]>([]);
+const { data: api_jaxrs_document_d_142_q } = useQuery({queryKey: ['api_jaxrs_document_d_142', '/jaxrs/document/draft/list/i-1/next/10'], queryFn: async () => { try { const r = await api.get("/jaxrs/document/draft/list/i-1/next/10"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+watch(api_jaxrs_document_d_142_q, (v) => { api_jaxrs_document_d_142_data.value = v ?? []; });
+const api_jaxrs_document_f_206_data = ref<any[]>([]);
+const { data: api_jaxrs_document_f_206_q } = useQuery({queryKey: ['api_jaxrs_document_f_206', '/jaxrs/document/filter/count'], queryFn: async () => { try { const r = await api.get("/jaxrs/document/filter/count"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+watch(api_jaxrs_document_f_206_q, (v) => { api_jaxrs_document_f_206_data.value = v ?? []; });
+const api_jaxrs_document_f_644_data = ref<any[]>([]);
+const { data: api_jaxrs_document_f_644_q } = useQuery({queryKey: ['api_jaxrs_document_f_644', '/jaxrs/document/filter/list/i-1/next/10'], queryFn: async () => { try { const r = await api.get("/jaxrs/document/filter/list/i-1/next/10"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+watch(api_jaxrs_document_f_644_q, (v) => { api_jaxrs_document_f_644_data.value = v ?? []; });
 async function api_jaxrs_document_filter_list_i_1_next_10_mockputtopost() { try { await api.get("/jaxrs/document/filter/list/i-1/next/10/mockputtopost") } catch {} }
-async function api_jaxrs_document_filter_list_i_1_size_10_manager() { try { await api.get("/jaxrs/document/filter/list/i-1/size/10/manager") } catch {} }
-async function api_jaxrs_document_list_document() { try { await api.get("/jaxrs/document/list/document") } catch {} }
-async function api_jaxrs_document_list_document_data() { try { await api.get("/jaxrs/document/list/document/data") } catch {} }
+const api_jaxrs_document_f_856_data = ref<any[]>([]);
+const { data: api_jaxrs_document_f_856_q } = useQuery({queryKey: ['api_jaxrs_document_f_856', '/jaxrs/document/filter/list/i-1/size/10/manager'], queryFn: async () => { try { const r = await api.get("/jaxrs/document/filter/list/i-1/size/10/manager"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+watch(api_jaxrs_document_f_856_q, (v) => { api_jaxrs_document_f_856_data.value = v ?? []; });
+const api_jaxrs_document_l_753_data = ref<any[]>([]);
+const { data: api_jaxrs_document_l_753_q } = useQuery({queryKey: ['api_jaxrs_document_l_753', '/jaxrs/document/list/document'], queryFn: async () => { try { const r = await api.get("/jaxrs/document/list/document"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+watch(api_jaxrs_document_l_753_q, (v) => { api_jaxrs_document_l_753_data.value = v ?? []; });
+const api_jaxrs_document_l_855_data = ref<any[]>([]);
+const { data: api_jaxrs_document_l_855_q } = useQuery({queryKey: ['api_jaxrs_document_l_855', '/jaxrs/document/list/document/data'], queryFn: async () => { try { const r = await api.get("/jaxrs/document/list/document/data"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+watch(api_jaxrs_document_l_855_q, (v) => { api_jaxrs_document_l_855_data.value = v ?? []; });
 </script>
 
 <style scoped>

@@ -357,11 +357,6 @@ async function pinConversation(conv: any) {
 }
 
 
-
-
-
-
-
 async function searchConversations() { const q=prompt('搜索会话:'); if(!q)return; const r=await api.get('/jaxrs/message/assemble/communicate/im/conversation/search?q='+encodeURIComponent(q)); searchResults.value=(r.data??[]) }
 
 async function call_message() { try { await api.get("/jaxrs/message") } catch {} }
@@ -420,14 +415,30 @@ async function api_jaxrs_message_assemble_communicate_consume_c_1_type_ticket() 
 async function api_jaxrs_message_assemble_communicate_im_conversation_c_1_group_quit_self() { try { await api.get("/jaxrs/message/assemble/communicate/im/conversation/c-1/group/quit/self") } catch {} }
 async function api_jaxrs_message_assemble_communicate_im_conversation_c_1_single() { try { await api.get("/jaxrs/message/assemble/communicate/im/conversation/c-1/single") } catch {} }
 async function api_jaxrs_message_assemble_communicate_im_conversation_c_1_single_mockdeletetoget() { try { await api.get("/jaxrs/message/assemble/communicate/im/conversation/c-1/single/mockdeletetoget") } catch {} }
-async function api_jaxrs_message_assemble_communicate_im_conversation_c_1_top_set() { try { await api.get("/jaxrs/message/assemble/communicate/im/conversation/c-1/top/set") } catch {} }
-async function api_jaxrs_message_assemble_communicate_im_conversation_list_with_person() { try { await api.get("/jaxrs/message/assemble/communicate/im/conversation/list/with/person") } catch {} }
-async function api_jaxrs_message_assemble_communicate_im_msg_list_1_size_20() { try { await api.get("/jaxrs/message/assemble/communicate/im/msg/list/1/size/20") } catch {} }
-async function api_jaxrs_message_assemble_communicate_im_msg_list_object() { try { await api.get("/jaxrs/message/assemble/communicate/im/msg/list/object") } catch {} }
-async function api_jaxrs_message_assemble_communicate_im_msg_revoke_m_1() { try { await api.get("/jaxrs/message/assemble/communicate/im/msg/revoke/m-1") } catch {} }
-async function api_jaxrs_message_assemble_communicate_im_msg_upload_conv_1_type_image() { try { await api.get("/jaxrs/message/assemble/communicate/im/msg/upload/conv-1/type/image") } catch {} }
-async function api_jaxrs_message_assemble_communicate_message_list_paging_1_size_20() { try { await api.get("/jaxrs/message/assemble/communicate/message/list/paging/1/size/20") } catch {} }
-async function api_jaxrs_message_assemble_communicate_ws_list_person_current_node() { try { await api.get("/jaxrs/message/assemble/communicate/ws/list/person/current/node") } catch {} }
+const api_jaxrs_message_as_622_data = ref<any[]>([]);
+const { data: api_jaxrs_message_as_622_q } = useQuery({queryKey: ['api_jaxrs_message_as_622', '/jaxrs/message/assemble/communicate/im/conversation/c-1/top/set'], queryFn: async () => { try { const r = await api.get("/jaxrs/message/assemble/communicate/im/conversation/c-1/top/set"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+watch(api_jaxrs_message_as_622_q, (v) => { api_jaxrs_message_as_622_data.value = v ?? []; });
+const api_jaxrs_message_as_978_data = ref<any[]>([]);
+const { data: api_jaxrs_message_as_978_q } = useQuery({queryKey: ['api_jaxrs_message_as_978', '/jaxrs/message/assemble/communicate/im/conversation/list/with/person'], queryFn: async () => { try { const r = await api.get("/jaxrs/message/assemble/communicate/im/conversation/list/with/person"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+watch(api_jaxrs_message_as_978_q, (v) => { api_jaxrs_message_as_978_data.value = v ?? []; });
+const api_jaxrs_message_as_734_data = ref<any[]>([]);
+const { data: api_jaxrs_message_as_734_q } = useQuery({queryKey: ['api_jaxrs_message_as_734', '/jaxrs/message/assemble/communicate/im/msg/list/1/size/20'], queryFn: async () => { try { const r = await api.get("/jaxrs/message/assemble/communicate/im/msg/list/1/size/20"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+watch(api_jaxrs_message_as_734_q, (v) => { api_jaxrs_message_as_734_data.value = v ?? []; });
+const api_jaxrs_message_as_380_data = ref<any[]>([]);
+const { data: api_jaxrs_message_as_380_q } = useQuery({queryKey: ['api_jaxrs_message_as_380', '/jaxrs/message/assemble/communicate/im/msg/list/object'], queryFn: async () => { try { const r = await api.get("/jaxrs/message/assemble/communicate/im/msg/list/object"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+watch(api_jaxrs_message_as_380_q, (v) => { api_jaxrs_message_as_380_data.value = v ?? []; });
+const api_jaxrs_message_as_913_data = ref<any[]>([]);
+const { data: api_jaxrs_message_as_913_q } = useQuery({queryKey: ['api_jaxrs_message_as_913', '/jaxrs/message/assemble/communicate/im/msg/revoke/m-1'], queryFn: async () => { try { const r = await api.get("/jaxrs/message/assemble/communicate/im/msg/revoke/m-1"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+watch(api_jaxrs_message_as_913_q, (v) => { api_jaxrs_message_as_913_data.value = v ?? []; });
+const api_jaxrs_message_as_491_data = ref<any[]>([]);
+const { data: api_jaxrs_message_as_491_q } = useQuery({queryKey: ['api_jaxrs_message_as_491', '/jaxrs/message/assemble/communicate/im/msg/upload/conv-1/type/image'], queryFn: async () => { try { const r = await api.get("/jaxrs/message/assemble/communicate/im/msg/upload/conv-1/type/image"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+watch(api_jaxrs_message_as_491_q, (v) => { api_jaxrs_message_as_491_data.value = v ?? []; });
+const api_jaxrs_message_as_711_data = ref<any[]>([]);
+const { data: api_jaxrs_message_as_711_q } = useQuery({queryKey: ['api_jaxrs_message_as_711', '/jaxrs/message/assemble/communicate/message/list/paging/1/size/20'], queryFn: async () => { try { const r = await api.get("/jaxrs/message/assemble/communicate/message/list/paging/1/size/20"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+watch(api_jaxrs_message_as_711_q, (v) => { api_jaxrs_message_as_711_data.value = v ?? []; });
+const api_jaxrs_message_as_318_data = ref<any[]>([]);
+const { data: api_jaxrs_message_as_318_q } = useQuery({queryKey: ['api_jaxrs_message_as_318', '/jaxrs/message/assemble/communicate/ws/list/person/current/node'], queryFn: async () => { try { const r = await api.get("/jaxrs/message/assemble/communicate/ws/list/person/current/node"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+watch(api_jaxrs_message_as_318_q, (v) => { api_jaxrs_message_as_318_data.value = v ?? []; });
 </script>
 
 <style scoped>
