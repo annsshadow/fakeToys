@@ -88,7 +88,9 @@ async function api_cache() { try { await api.get("/jaxrs/cache") } catch {} }
 const api_cache_co_205_data = ref<any[]>([]);
 const { data: api_cache_co_205_q } = useQuery({queryKey: ['api_cache_co_205', '/jaxrs/cache/commonscript/flush'], queryFn: async () => { try { const r = await api.get("/jaxrs/cache/commonscript/flush"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
 watch(api_cache_co_205_q, (v) => { api_cache_co_205_data.value = v ?? []; });
-async function api_cache_detail() { try { await api.get("/jaxrs/cache/detail") } catch {} }
+const api_cache_detail_data = ref<any[]>([]);
+const { data: api_cache_detail_q } = useQuery({queryKey: ['api_cache_detail', '/jaxrs/cache/detail'], queryFn: async () => { try { const r = await api.get("/jaxrs/cache/detail"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+watch(api_cache_detail_q, (v) => { api_cache_detail_data.value = v ?? []; });
 const api_cache_co_100_data = ref<any[]>([]);
 const { data: api_cache_co_100_q } = useQuery({queryKey: ['api_cache_co_100', '/jaxrs/cache/config/flush'], queryFn: async () => { try { const r = await api.get("/jaxrs/cache/config/flush"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
 watch(api_cache_co_100_q, (v) => { api_cache_co_100_data.value = v ?? []; });
@@ -101,7 +103,9 @@ const api_console__543_data = ref<any[]>([]);
 const { data: api_console__543_q } = useQuery({queryKey: ['api_console__543', '/jaxrs/console/logs/error'], queryFn: async () => { try { const r = await api.get("/jaxrs/console/logs/error"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
 watch(api_console__543_q, (v) => { api_console__543_data.value = v ?? []; });
 async function api_console_metric_cpu_usage() { try { await api.get("/jaxrs/console/metric/cpu_usage") } catch {} }
-async function api_console_system_info() { try { await api.get("/jaxrs/console/system/info") } catch {} }
+const api_console__409_data = ref<any[]>([]);
+const { data: api_console__409_q } = useQuery({queryKey: ['api_console__409', '/jaxrs/console/system/info'], queryFn: async () => { try { const r = await api.get("/jaxrs/console/system/info"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+watch(api_console__409_q, (v) => { api_console__409_data.value = v ?? []; });
 const api_console__450_data = ref<any[]>([]);
 const { data: api_console__450_q } = useQuery({queryKey: ['api_console__450', '/jaxrs/console/command/execute'], queryFn: async () => { try { const r = await api.get("/jaxrs/console/command/execute"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
 watch(api_console__450_q, (v) => { api_console__450_data.value = v ?? []; });
@@ -146,11 +150,15 @@ const { data: api_server_execute_status_q } = useQuery({queryKey: ['api_server_e
 watch(api_server_execute_status_q, (v) => { api_server_execute_status_data.value = v ?? []; });
 
 
-async function api_base_openapi_info() { try { await api.get("/jaxrs/base/openapi/info") } catch {} }
+const api_base_ope_660_data = ref<any[]>([]);
+const { data: api_base_ope_660_q } = useQuery({queryKey: ['api_base_ope_660', '/jaxrs/base/openapi/info'], queryFn: async () => { try { const r = await api.get("/jaxrs/base/openapi/info"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+watch(api_base_ope_660_q, (v) => { api_base_ope_660_data.value = v ?? []; });
 const api_cache_config_flush_1_data = ref<any[]>([]);
 const { data: api_cache_config_flush_1_q } = useQuery({queryKey: ['api_cache_config_flush_1', '/jaxrs/base/cache/config/flush'], queryFn: async () => { try { const r = await api.get("/jaxrs/base/cache/config/flush"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
 watch(api_cache_config_flush_1_q, (v) => { api_cache_config_flush_1_data.value = v ?? []; });
-async function api_base_cache_detail() { try { await api.get("/jaxrs/base/cache/detail") } catch {} }
+const api_base_cac_432_data = ref<any[]>([]);
+const { data: api_base_cac_432_q } = useQuery({queryKey: ['api_base_cac_432', '/jaxrs/base/cache/detail'], queryFn: async () => { try { const r = await api.get("/jaxrs/base/cache/detail"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+watch(api_base_cac_432_q, (v) => { api_base_cac_432_data.value = v ?? []; });
 async function api_base_echo() { try { await api.get("/jaxrs/base/echo") } catch {} }
 async function api_base_cache() { try { await api.get("/jaxrs/base/cache") } catch {} }
 const api_cache_commonscri_410_data = ref<any[]>([]);

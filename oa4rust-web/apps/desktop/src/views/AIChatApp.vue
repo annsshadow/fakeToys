@@ -180,25 +180,61 @@ function formatDate(d?: string) {
 
 loadConversations()
 
-async function api_list_enable_model() { try { await api.get("/jaxrs/ai/config/list/enable/model") } catch {} }
-async function api_get_usage_stats() { try { await api.get("/jaxrs/ai_assemble_control/get/usage/stats") } catch {} }
-async function api_delete_mcp_flag() { try { await api.get("/jaxrs/ai_assemble_control/config/delete/mcp/flag") } catch {} }
-async function api_sync_to_knowledge() { try { await api.get("/jaxrs/ai/index/sync/to/knowledge") } catch {} }
-async function api_1_size_1() { try { await api.get("/jaxrs/ai_assemble_control/index/list/paging/1/size/1") } catch {} }
-async function api_delete_model_u2t() { try { await api.get("/jaxrs/ai_assemble_control/config/delete/model/u2t") } catch {} }
-async function api_ai_chat() { try { await api.get("/jaxrs/ai/chat") } catch {} }
-async function api_file_id_download() { try { await api.get("/jaxrs/ai_assemble_control/file/id/download") } catch {} }
+const api_list_ena_175_data = ref<any[]>([]);
+const { data: api_list_ena_175_q } = useQuery({queryKey: ['api_list_ena_175', '/jaxrs/ai/config/list/enable/model'], queryFn: async () => { try { const r = await api.get("/jaxrs/ai/config/list/enable/model"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+watch(api_list_ena_175_q, (v) => { api_list_ena_175_data.value = v ?? []; });
+const api_get_usag_355_data = ref<any[]>([]);
+const { data: api_get_usag_355_q } = useQuery({queryKey: ['api_get_usag_355', '/jaxrs/ai_assemble_control/get/usage/stats'], queryFn: async () => { try { const r = await api.get("/jaxrs/ai_assemble_control/get/usage/stats"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+watch(api_get_usag_355_q, (v) => { api_get_usag_355_data.value = v ?? []; });
+const api_delete_m_589_data = ref<any[]>([]);
+const { data: api_delete_m_589_q } = useQuery({queryKey: ['api_delete_m_589', '/jaxrs/ai_assemble_control/config/delete/mcp/flag'], queryFn: async () => { try { const r = await api.get("/jaxrs/ai_assemble_control/config/delete/mcp/flag"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+watch(api_delete_m_589_q, (v) => { api_delete_m_589_data.value = v ?? []; });
+const api_sync_to__866_data = ref<any[]>([]);
+const { data: api_sync_to__866_q } = useQuery({queryKey: ['api_sync_to__866', '/jaxrs/ai/index/sync/to/knowledge'], queryFn: async () => { try { const r = await api.get("/jaxrs/ai/index/sync/to/knowledge"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+watch(api_sync_to__866_q, (v) => { api_sync_to__866_data.value = v ?? []; });
+const api_1_size_1_data = ref<any[]>([]);
+const { data: api_1_size_1_q } = useQuery({queryKey: ['api_1_size_1', '/jaxrs/ai_assemble_control/index/list/paging/1/size/1'], queryFn: async () => { try { const r = await api.get("/jaxrs/ai_assemble_control/index/list/paging/1/size/1"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+watch(api_1_size_1_q, (v) => { api_1_size_1_data.value = v ?? []; });
+const api_delete_m_776_data = ref<any[]>([]);
+const { data: api_delete_m_776_q } = useQuery({queryKey: ['api_delete_m_776', '/jaxrs/ai_assemble_control/config/delete/model/u2t'], queryFn: async () => { try { const r = await api.get("/jaxrs/ai_assemble_control/config/delete/model/u2t"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+watch(api_delete_m_776_q, (v) => { api_delete_m_776_data.value = v ?? []; });
+const api_ai_chat_data = ref<any[]>([]);
+const { data: api_ai_chat_q } = useQuery({queryKey: ['api_ai_chat', '/jaxrs/ai/chat'], queryFn: async () => { try { const r = await api.get("/jaxrs/ai/chat"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+watch(api_ai_chat_q, (v) => { api_ai_chat_data.value = v ?? []; });
+const api_file_id__998_data = ref<any[]>([]);
+const { data: api_file_id__998_q } = useQuery({queryKey: ['api_file_id__998', '/jaxrs/ai_assemble_control/file/id/download'], queryFn: async () => { try { const r = await api.get("/jaxrs/ai_assemble_control/file/id/download"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+watch(api_file_id__998_q, (v) => { api_file_id__998_data.value = v ?? []; });
 async function api_get_model_test_model() { try { await api.get("/jaxrs/ai/config/get/model/test-model") } catch {} }
-async function api_config_create_model() { try { await api.get("/jaxrs/ai_assemble_control/config/create/model") } catch {} }
-async function api_get_model_flag() { try { await api.get("/jaxrs/ai_assemble_control/config/get/model/flag") } catch {} }
-async function api_index_delete_flag() { try { await api.get("/jaxrs/ai_assemble_control/index/delete/flag") } catch {} }
-async function api_file_u2t_download() { try { await api.get("/jaxrs/ai_assemble_control/file/u2t/download") } catch {} }
-async function api_config_create_mcp() { try { await api.get("/jaxrs/ai_assemble_control/config/create/mcp") } catch {} }
-async function api_ai_assemble_control_file_list() { try { await api.get("/jaxrs/ai_assemble_control/file/list") } catch {} }
-async function api_index_delete_u2t() { try { await api.get("/jaxrs/ai_assemble_control/index/delete/u2t") } catch {} }
-async function api_chat_delete_u2t() { try { await api.get("/jaxrs/ai_assemble_control/chat/delete/u2t") } catch {} }
-async function api_id_download_scale() { try { await api.get("/jaxrs/ai_assemble_control/file/id/download/scale") } catch {} }
-async function api_cms_doc_docId() { try { await api.get("/jaxrs/ai_assemble_control/index/cms/doc/docId") } catch {} }
+const api_config_c_366_data = ref<any[]>([]);
+const { data: api_config_c_366_q } = useQuery({queryKey: ['api_config_c_366', '/jaxrs/ai_assemble_control/config/create/model'], queryFn: async () => { try { const r = await api.get("/jaxrs/ai_assemble_control/config/create/model"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+watch(api_config_c_366_q, (v) => { api_config_c_366_data.value = v ?? []; });
+const api_get_model_flag_data = ref<any[]>([]);
+const { data: api_get_model_flag_q } = useQuery({queryKey: ['api_get_model_flag', '/jaxrs/ai_assemble_control/config/get/model/flag'], queryFn: async () => { try { const r = await api.get("/jaxrs/ai_assemble_control/config/get/model/flag"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+watch(api_get_model_flag_q, (v) => { api_get_model_flag_data.value = v ?? []; });
+const api_index_de_745_data = ref<any[]>([]);
+const { data: api_index_de_745_q } = useQuery({queryKey: ['api_index_de_745', '/jaxrs/ai_assemble_control/index/delete/flag'], queryFn: async () => { try { const r = await api.get("/jaxrs/ai_assemble_control/index/delete/flag"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+watch(api_index_de_745_q, (v) => { api_index_de_745_data.value = v ?? []; });
+const api_file_u2t_729_data = ref<any[]>([]);
+const { data: api_file_u2t_729_q } = useQuery({queryKey: ['api_file_u2t_729', '/jaxrs/ai_assemble_control/file/u2t/download'], queryFn: async () => { try { const r = await api.get("/jaxrs/ai_assemble_control/file/u2t/download"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+watch(api_file_u2t_729_q, (v) => { api_file_u2t_729_data.value = v ?? []; });
+const api_config_c_878_data = ref<any[]>([]);
+const { data: api_config_c_878_q } = useQuery({queryKey: ['api_config_c_878', '/jaxrs/ai_assemble_control/config/create/mcp'], queryFn: async () => { try { const r = await api.get("/jaxrs/ai_assemble_control/config/create/mcp"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+watch(api_config_c_878_q, (v) => { api_config_c_878_data.value = v ?? []; });
+const api_ai_assem_462_data = ref<any[]>([]);
+const { data: api_ai_assem_462_q } = useQuery({queryKey: ['api_ai_assem_462', '/jaxrs/ai_assemble_control/file/list'], queryFn: async () => { try { const r = await api.get("/jaxrs/ai_assemble_control/file/list"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+watch(api_ai_assem_462_q, (v) => { api_ai_assem_462_data.value = v ?? []; });
+const api_index_de_239_data = ref<any[]>([]);
+const { data: api_index_de_239_q } = useQuery({queryKey: ['api_index_de_239', '/jaxrs/ai_assemble_control/index/delete/u2t'], queryFn: async () => { try { const r = await api.get("/jaxrs/ai_assemble_control/index/delete/u2t"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+watch(api_index_de_239_q, (v) => { api_index_de_239_data.value = v ?? []; });
+const api_chat_del_208_data = ref<any[]>([]);
+const { data: api_chat_del_208_q } = useQuery({queryKey: ['api_chat_del_208', '/jaxrs/ai_assemble_control/chat/delete/u2t'], queryFn: async () => { try { const r = await api.get("/jaxrs/ai_assemble_control/chat/delete/u2t"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+watch(api_chat_del_208_q, (v) => { api_chat_del_208_data.value = v ?? []; });
+const api_id_downl_768_data = ref<any[]>([]);
+const { data: api_id_downl_768_q } = useQuery({queryKey: ['api_id_downl_768', '/jaxrs/ai_assemble_control/file/id/download/scale'], queryFn: async () => { try { const r = await api.get("/jaxrs/ai_assemble_control/file/id/download/scale"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+watch(api_id_downl_768_q, (v) => { api_id_downl_768_data.value = v ?? []; });
+const api_cms_doc_docid_data = ref<any[]>([]);
+const { data: api_cms_doc_docid_q } = useQuery({queryKey: ['api_cms_doc_docid', '/jaxrs/ai_assemble_control/index/cms/doc/docId'], queryFn: async () => { try { const r = await api.get("/jaxrs/ai_assemble_control/index/cms/doc/docId"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+watch(api_cms_doc_docid_q, (v) => { api_cms_doc_docid_data.value = v ?? []; });
 async function api_cms_doc_test_doc() { try { await api.get("/jaxrs/ai/index/cms/doc/test-doc") } catch {} }
 
 
@@ -230,9 +266,13 @@ async function api_config_update_model_flag() { try { await api.get('/jaxrs/ai_a
 
 
 async function api_ai_chat_delete_test_clue() { try { await api.get("/jaxrs/ai/chat/delete/test-clue") } catch {} }
-async function api_ai_config_base_config() { try { await api.get("/jaxrs/ai/config/base/config") } catch {} }
+const api_ai_confi_6_data = ref<any[]>([]);
+const { data: api_ai_confi_6_q } = useQuery({queryKey: ['api_ai_confi_6', '/jaxrs/ai/config/base/config'], queryFn: async () => { try { const r = await api.get("/jaxrs/ai/config/base/config"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+watch(api_ai_confi_6_q, (v) => { api_ai_confi_6_data.value = v ?? []; });
 async function api_ai() { try { await api.get("/jaxrs/ai") } catch {} }
-async function api_config_get_model_u2t() { try { await api.get("/jaxrs/ai_assemble_control/config/get/model/u2t") } catch {} }
+const api_config_g_480_data = ref<any[]>([]);
+const { data: api_config_g_480_q } = useQuery({queryKey: ['api_config_g_480', '/jaxrs/ai_assemble_control/config/get/model/u2t'], queryFn: async () => { try { const r = await api.get("/jaxrs/ai_assemble_control/config/get/model/u2t"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+watch(api_config_g_480_q, (v) => { api_config_g_480_data.value = v ?? []; });
 const api_ai_chat_delete_data = ref<any[]>([]);
 const { data: api_ai_chat_delete_q } = useQuery({queryKey: ['api_ai_chat_delete', '/jaxrs/ai/chat/delete'], queryFn: async () => { try { const r = await api.get("/jaxrs/ai/chat/delete"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
 watch(api_ai_chat_delete_q, (v) => { api_ai_chat_delete_data.value = v ?? []; });
