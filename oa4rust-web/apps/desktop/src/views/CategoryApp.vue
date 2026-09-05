@@ -53,17 +53,105 @@ async function load() {
 
 load()
 
-async function api_categoryinfo() { try { await api.get('/jaxrs/categoryinfo') } catch {} }
-async function api_categoryinfo_alias_alpha() { try { await api.get('/jaxrs/categoryinfo/alias/alpha') } catch {} }
-async function api_categoryinfo_list_objects() { try { await api.get('/jaxrs/categoryinfo/list/objects') } catch {} }
-async function api_categoryinfo_list_all() { try { await api.get('/jaxrs/categoryinfo/list/all') } catch {} }
-async function api_categoryinfo_extContent() { try { await api.get('/jaxrs/categoryinfo/extContent') } catch {} }
-async function api_categoryinfo_c_1_permission() { try { await api.get('/jaxrs/categoryinfo/c-1/permission') } catch {} }
-async function api_categoryinfo_flag() { try { await api.get('/jaxrs/categoryinfo/flag') } catch {} }
-async function api_categoryinfo_c_1_control() { try { await api.get('/jaxrs/categoryinfo/c-1/control') } catch {} }
-async function api_categoryinfo_c_1_execute_projection() { try { await api.get('/jaxrs/categoryinfo/c-1/execute/projection') } catch {} }
-async function api_categoryinfo_c_1() { try { await api.get('/jaxrs/categoryinfo/c-1') } catch {} }
-async function api_categoryinfo_bind_c_1_view() { try { await api.get('/jaxrs/categoryinfo/bind/c-1/view') } catch {} }
+const categoryinfo_ref = ref<any[]>([]);
+const categoryinfo_q = useQuery({
+  queryKey: ['categoryinfo'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/categoryinfo"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const categoryinfo_alias_alpha_ref = ref<any[]>([]);
+const categoryinfo_alias_alpha_q = useQuery({
+  queryKey: ['categoryinfo_alias_alpha'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/categoryinfo/alias/alpha"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const categoryinfo_list_objects_ref = ref<any[]>([]);
+const categoryinfo_list_objects_q = useQuery({
+  queryKey: ['categoryinfo_list_objects'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/categoryinfo/list/objects"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const categoryinfo_list_all_ref = ref<any[]>([]);
+const categoryinfo_list_all_q = useQuery({
+  queryKey: ['categoryinfo_list_all'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/categoryinfo/list/all"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const categoryinfo_extContent_ref = ref<any[]>([]);
+const categoryinfo_extContent_q = useQuery({
+  queryKey: ['categoryinfo_extContent'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/categoryinfo/extContent"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const categoryinfo_c_1_permission_ref = ref<any[]>([]);
+const categoryinfo_c_1_permission_q = useQuery({
+  queryKey: ['categoryinfo_c_1_permission'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/categoryinfo/c-1/permission"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const categoryinfo_flag_ref = ref<any[]>([]);
+const categoryinfo_flag_q = useQuery({
+  queryKey: ['categoryinfo_flag'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/categoryinfo/flag"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const categoryinfo_c_1_control_ref = ref<any[]>([]);
+const categoryinfo_c_1_control_q = useQuery({
+  queryKey: ['categoryinfo_c_1_control'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/categoryinfo/c-1/control"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const categoryinfo_c_1_execute_projection_ref = ref<any[]>([]);
+const categoryinfo_c_1_execute_projection_q = useQuery({
+  queryKey: ['categoryinfo_c_1_execute_projection'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/categoryinfo/c-1/execute/projection"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const categoryinfo_c_1_ref = ref<any[]>([]);
+const categoryinfo_c_1_q = useQuery({
+  queryKey: ['categoryinfo_c_1'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/categoryinfo/c-1"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const categoryinfo_bind_c_1_view_ref = ref<any[]>([]);
+const categoryinfo_bind_c_1_view_q = useQuery({
+  queryKey: ['categoryinfo_bind_c_1_view'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/categoryinfo/bind/c-1/view"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
 
 
 const api_list_p_1_860_data = ref<any[]>([]);

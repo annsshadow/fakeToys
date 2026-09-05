@@ -264,246 +264,2014 @@ async function call_processplatform_assemble_designer() { try { await api.get("/
 async function call_designer_application_app_1() { try { await api.get("/jaxrs/processplatform/assemble/designer/application/app-1") } catch {} }
 async function call_designer_applicationcategory_list() { try { await api.get("/jaxrs/processplatform/assemble/designer/applicationcategory/list") } catch {} }
 
-async function api_review_v2_count() { try { await api.get("/jaxrs/processplatform/assemble/surface/review/v2/count") } catch {} }
-async function api_manual_after_processing() { try { await api.get("/jaxrs/processplatform/service/processing/work/manual/after/processing") } catch {} }
-async function api_review_v2_search() { try { await api.get("/jaxrs/processplatform/assemble/surface/review/v2/search") } catch {} }
-async function api_list_job_job() { try { await api.get("/jaxrs/processplatform/assemble/surface/task/list/job/job") } catch {} }
-async function api_surface_touch_touchdetained() { try { await api.get("/jaxrs/processplatform/assemble/surface/touch/touchdetained") } catch {} }
-async function api_read_read_mv_processing() { try { await api.get("/jaxrs/processplatform/service/processing/read/read-mv/processing") } catch {} }
-async function api_documentversion_work_work() { try { await api.get("/jaxrs/processplatform/assemble/surface/documentversion/work/work") } catch {} }
-async function api_batch_upload_manage() { try { await api.get("/jaxrs/processplatform/assemble/surface/attachment/batch/upload/manage") } catch {} }
-async function api_available_work_unit() { try { await api.get("/jaxrs/processplatform/assemble/surface/available/work/unit") } catch {} }
-async function api_record_work_terminate() { try { await api.get("/jaxrs/processplatform/service/processing/record/work/terminate") } catch {} }
-async function api_fetch_job_job() { try { await api.get("/jaxrs/processplatform/assemble/surface/data/fetch/job/job") } catch {} }
-async function api_job_job_delete() { try { await api.get("/jaxrs/processplatform/assemble/surface/correlation/job/job/delete") } catch {} }
-async function api_task_processing_task_001() { try { await api.get("/jaxrs/processplatform/task/processing/task-001") } catch {} }
-async function api_processing_touch_merge() { try { await api.get("/jaxrs/processplatform/service/processing/touch/merge") } catch {} }
-async function api_workcompleted_mrg_keep_merge() { try { await api.get("/jaxrs/processplatform/service/processing/workcompleted/mrg-keep/merge") } catch {} }
-async function api_list_count_application() { try { await api.get("/jaxrs/processplatform/assemble/surface/work/list/count/application") } catch {} }
-async function api_list_work_work() { try { await api.get("/jaxrs/processplatform/assemble/surface/read/list/work/work") } catch {} }
-async function api_read_count_filter() { try { await api.get("/jaxrs/processplatform/assemble/surface/read/count/filter") } catch {} }
-async function api_batch_delete_manage() { try { await api.get("/jaxrs/processplatform/assemble/surface/attachment/batch/delete/manage") } catch {} }
+const review_v2_count_ref = ref<any[]>([]);
+const review_v2_count_q = useQuery({
+  queryKey: ['review_v2_count'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/processplatform/assemble/surface/review/v2/count"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const manual_after_processing_ref = ref<any[]>([]);
+const manual_after_processing_q = useQuery({
+  queryKey: ['manual_after_processing'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/processplatform/service/processing/work/manual/after/processing"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const review_v2_search_ref = ref<any[]>([]);
+const review_v2_search_q = useQuery({
+  queryKey: ['review_v2_search'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/processplatform/assemble/surface/review/v2/search"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const list_job_job_ref = ref<any[]>([]);
+const list_job_job_q = useQuery({
+  queryKey: ['list_job_job'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/processplatform/assemble/surface/task/list/job/job"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const surface_touch_touchdetained_ref = ref<any[]>([]);
+const surface_touch_touchdetained_q = useQuery({
+  queryKey: ['surface_touch_touchdetained'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/processplatform/assemble/surface/touch/touchdetained"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const read_read_mv_processing_ref = ref<any[]>([]);
+const read_read_mv_processing_q = useQuery({
+  queryKey: ['read_read_mv_processing'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/processplatform/service/processing/read/read-mv/processing"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const documentversion_work_work_ref = ref<any[]>([]);
+const documentversion_work_work_q = useQuery({
+  queryKey: ['documentversion_work_work'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/processplatform/assemble/surface/documentversion/work/work"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const batch_upload_manage_ref = ref<any[]>([]);
+const batch_upload_manage_q = useQuery({
+  queryKey: ['batch_upload_manage'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/processplatform/assemble/surface/attachment/batch/upload/manage"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const available_work_unit_ref = ref<any[]>([]);
+const available_work_unit_q = useQuery({
+  queryKey: ['available_work_unit'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/processplatform/assemble/surface/available/work/unit"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const record_work_terminate_ref = ref<any[]>([]);
+const record_work_terminate_q = useQuery({
+  queryKey: ['record_work_terminate'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/processplatform/service/processing/record/work/terminate"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const fetch_job_job_ref = ref<any[]>([]);
+const fetch_job_job_q = useQuery({
+  queryKey: ['fetch_job_job'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/processplatform/assemble/surface/data/fetch/job/job"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const job_job_delete_ref = ref<any[]>([]);
+const job_job_delete_q = useQuery({
+  queryKey: ['job_job_delete'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/processplatform/assemble/surface/correlation/job/job/delete"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const task_processing_task_001_ref = ref<any[]>([]);
+const task_processing_task_001_q = useQuery({
+  queryKey: ['task_processing_task_001'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/processplatform/task/processing/task-001"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const processing_touch_merge_ref = ref<any[]>([]);
+const processing_touch_merge_q = useQuery({
+  queryKey: ['processing_touch_merge'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/processplatform/service/processing/touch/merge"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const workcompleted_mrg_keep_merge_ref = ref<any[]>([]);
+const workcompleted_mrg_keep_merge_q = useQuery({
+  queryKey: ['workcompleted_mrg_keep_merge'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/processplatform/service/processing/workcompleted/mrg-keep/merge"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const list_count_application_ref = ref<any[]>([]);
+const list_count_application_q = useQuery({
+  queryKey: ['list_count_application'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/processplatform/assemble/surface/work/list/count/application"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const list_work_work_ref = ref<any[]>([]);
+const list_work_work_q = useQuery({
+  queryKey: ['list_work_work'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/processplatform/assemble/surface/read/list/work/work"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const read_count_filter_ref = ref<any[]>([]);
+const read_count_filter_q = useQuery({
+  queryKey: ['read_count_filter'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/processplatform/assemble/surface/read/count/filter"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const batch_delete_manage_ref = ref<any[]>([]);
+const batch_delete_manage_q = useQuery({
+  queryKey: ['batch_delete_manage'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/processplatform/assemble/surface/attachment/batch/delete/manage"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
 
-async function api_processplatform_assemble_designer_item_access() { try { await api.get('/jaxrs/processplatform/assemble/designer/item-access') } catch {} }
-async function api_processplatform_assemble_surface_handover() { try { await api.get('/jaxrs/processplatform/assemble/surface/handover') } catch {} }
-async function api_processplatform_assemble_surface_openapi() { try { await api.get('/jaxrs/processplatform/assemble/surface/openapi') } catch {} }
-async function api_service_processing_work_list() { try { await api.get('/jaxrs/processplatform/service/processing/work/list') } catch {} }
-async function api_assemble_surface_work_list() { try { await api.get('/jaxrs/processplatform/assemble/surface/work/list') } catch {} }
-async function api_assemble_surface_data_job() { try { await api.get('/jaxrs/processplatform/assemble/surface/data/job') } catch {} }
-async function api_service_processing_touch_touchdelay() { try { await api.get('/jaxrs/processplatform/service/processing/touch/touchdelay') } catch {} }
-async function api_assemble_surface_data_work() { try { await api.get('/jaxrs/processplatform/assemble/surface/data/work') } catch {} }
-async function api_assemble_surface_draft_mockputtopost() { try { await api.get('/jaxrs/processplatform/assemble/surface/draft/mockputtopost') } catch {} }
-async function api_service_processing_touch_mergeitem() { try { await api.get('/jaxrs/processplatform/service/processing/touch/mergeitem') } catch {} }
-async function api_assemble_designer_save_flow_1() { try { await api.get('/jaxrs/processplatform/assemble/designer/save/flow-1') } catch {} }
-async function api_processplatform_assemble_designer_create() { try { await api.get('/jaxrs/processplatform/assemble/designer/create') } catch {} }
-async function api_processplatform_service_processing_create() { try { await api.get('/jaxrs/processplatform/service/processing/create') } catch {} }
-async function api_processplatform_assemble_surface_data() { try { await api.get('/jaxrs/processplatform/assemble/surface/data') } catch {} }
-async function api_assemble_surface_work_count() { try { await api.get('/jaxrs/processplatform/assemble/surface/work/count') } catch {} }
-async function api_assemble_surface_save_surface_1() { try { await api.get('/jaxrs/processplatform/assemble/surface/save/surface-1') } catch {} }
-async function api_assemble_surface_attachment_list() { try { await api.get('/jaxrs/processplatform/assemble/surface/attachment/list') } catch {} }
-async function api_assemble_surface_mode_save() { try { await api.get('/jaxrs/processplatform/assemble/surface/mode/save') } catch {} }
-async function api_assemble_designer_preview_flow_1() { try { await api.get('/jaxrs/processplatform/assemble/designer/preview/flow-1') } catch {} }
-async function api_assemble_designer_delete_flow_1() { try { await api.get('/jaxrs/processplatform/assemble/designer/delete/flow-1') } catch {} }
-async function api_assemble_surface_get_surface_1() { try { await api.get('/jaxrs/processplatform/assemble/surface/get/surface-1') } catch {} }
-async function api_core_express_task_list() { try { await api.get('/jaxrs/processplatform/core/express/task/list') } catch {} }
-async function api_assemble_surface_workorworkcompleted_list() { try { await api.get('/jaxrs/processplatform/assemble/surface/workorworkcompleted/list') } catch {} }
-async function api_assemble_surface_touch_passexpired() { try { await api.get('/jaxrs/processplatform/assemble/surface/touch/passexpired') } catch {} }
-async function api_assemble_surface_publish_surface_1() { try { await api.get('/jaxrs/processplatform/assemble/surface/publish/surface-1') } catch {} }
+const processplatform_assemble_designer_item_access_ref = ref<any[]>([]);
+const processplatform_assemble_designer_item_access_q = useQuery({
+  queryKey: ['processplatform_assemble_designer_item_access'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/processplatform/assemble/designer/item-access"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const processplatform_assemble_surface_handover_ref = ref<any[]>([]);
+const processplatform_assemble_surface_handover_q = useQuery({
+  queryKey: ['processplatform_assemble_surface_handover'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/processplatform/assemble/surface/handover"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const processplatform_assemble_surface_openapi_ref = ref<any[]>([]);
+const processplatform_assemble_surface_openapi_q = useQuery({
+  queryKey: ['processplatform_assemble_surface_openapi'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/processplatform/assemble/surface/openapi"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const service_processing_work_list_ref = ref<any[]>([]);
+const service_processing_work_list_q = useQuery({
+  queryKey: ['service_processing_work_list'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/processplatform/service/processing/work/list"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const assemble_surface_work_list_ref = ref<any[]>([]);
+const assemble_surface_work_list_q = useQuery({
+  queryKey: ['assemble_surface_work_list'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/processplatform/assemble/surface/work/list"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const assemble_surface_data_job_ref = ref<any[]>([]);
+const assemble_surface_data_job_q = useQuery({
+  queryKey: ['assemble_surface_data_job'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/processplatform/assemble/surface/data/job"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const service_processing_touch_touchdelay_ref = ref<any[]>([]);
+const service_processing_touch_touchdelay_q = useQuery({
+  queryKey: ['service_processing_touch_touchdelay'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/processplatform/service/processing/touch/touchdelay"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const assemble_surface_data_work_ref = ref<any[]>([]);
+const assemble_surface_data_work_q = useQuery({
+  queryKey: ['assemble_surface_data_work'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/processplatform/assemble/surface/data/work"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const assemble_surface_draft_mockputtopost_ref = ref<any[]>([]);
+const assemble_surface_draft_mockputtopost_q = useQuery({
+  queryKey: ['assemble_surface_draft_mockputtopost'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/processplatform/assemble/surface/draft/mockputtopost"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const service_processing_touch_mergeitem_ref = ref<any[]>([]);
+const service_processing_touch_mergeitem_q = useQuery({
+  queryKey: ['service_processing_touch_mergeitem'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/processplatform/service/processing/touch/mergeitem"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const assemble_designer_save_flow_1_ref = ref<any[]>([]);
+const assemble_designer_save_flow_1_q = useQuery({
+  queryKey: ['assemble_designer_save_flow_1'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/processplatform/assemble/designer/save/flow-1"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const processplatform_assemble_designer_create_ref = ref<any[]>([]);
+const processplatform_assemble_designer_create_q = useQuery({
+  queryKey: ['processplatform_assemble_designer_create'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/processplatform/assemble/designer/create"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const processplatform_service_processing_create_ref = ref<any[]>([]);
+const processplatform_service_processing_create_q = useQuery({
+  queryKey: ['processplatform_service_processing_create'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/processplatform/service/processing/create"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const processplatform_assemble_surface_data_ref = ref<any[]>([]);
+const processplatform_assemble_surface_data_q = useQuery({
+  queryKey: ['processplatform_assemble_surface_data'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/processplatform/assemble/surface/data"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const assemble_surface_work_count_ref = ref<any[]>([]);
+const assemble_surface_work_count_q = useQuery({
+  queryKey: ['assemble_surface_work_count'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/processplatform/assemble/surface/work/count"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const assemble_surface_save_surface_1_ref = ref<any[]>([]);
+const assemble_surface_save_surface_1_q = useQuery({
+  queryKey: ['assemble_surface_save_surface_1'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/processplatform/assemble/surface/save/surface-1"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const assemble_surface_attachment_list_ref = ref<any[]>([]);
+const assemble_surface_attachment_list_q = useQuery({
+  queryKey: ['assemble_surface_attachment_list'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/processplatform/assemble/surface/attachment/list"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const assemble_surface_mode_save_ref = ref<any[]>([]);
+const assemble_surface_mode_save_q = useQuery({
+  queryKey: ['assemble_surface_mode_save'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/processplatform/assemble/surface/mode/save"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const assemble_designer_preview_flow_1_ref = ref<any[]>([]);
+const assemble_designer_preview_flow_1_q = useQuery({
+  queryKey: ['assemble_designer_preview_flow_1'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/processplatform/assemble/designer/preview/flow-1"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const assemble_designer_delete_flow_1_ref = ref<any[]>([]);
+const assemble_designer_delete_flow_1_q = useQuery({
+  queryKey: ['assemble_designer_delete_flow_1'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/processplatform/assemble/designer/delete/flow-1"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const assemble_surface_get_surface_1_ref = ref<any[]>([]);
+const assemble_surface_get_surface_1_q = useQuery({
+  queryKey: ['assemble_surface_get_surface_1'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/processplatform/assemble/surface/get/surface-1"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const core_express_task_list_ref = ref<any[]>([]);
+const core_express_task_list_q = useQuery({
+  queryKey: ['core_express_task_list'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/processplatform/core/express/task/list"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const assemble_surface_workorworkcompleted_list_ref = ref<any[]>([]);
+const assemble_surface_workorworkcompleted_list_q = useQuery({
+  queryKey: ['assemble_surface_workorworkcompleted_list'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/processplatform/assemble/surface/workorworkcompleted/list"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const assemble_surface_touch_passexpired_ref = ref<any[]>([]);
+const assemble_surface_touch_passexpired_q = useQuery({
+  queryKey: ['assemble_surface_touch_passexpired'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/processplatform/assemble/surface/touch/passexpired"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const assemble_surface_publish_surface_1_ref = ref<any[]>([]);
+const assemble_surface_publish_surface_1_q = useQuery({
+  queryKey: ['assemble_surface_publish_surface_1'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/processplatform/assemble/surface/publish/surface-1"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
 
-async function api_assemble_surface_mode_list() { try { await api.get("/jaxrs/processplatform/assemble/surface/mode/list") } catch {} }
-async function api_assemble_surface_task_list() { try { await api.get("/jaxrs/processplatform/assemble/surface/task/list") } catch {} }
-async function api_surface_work_v2_list() { try { await api.get("/jaxrs/processplatform/assemble/surface/work/v2/list") } catch {} }
-async function api_surface_application_list_complex() { try { await api.get("/jaxrs/processplatform/assemble/surface/application/list/complex") } catch {} }
-async function api_service_processing_list_default() { try { await api.get("/jaxrs/processplatform/service/processing/list/default") } catch {} }
-async function api_surface_read_filter_attribute() { try { await api.get("/jaxrs/processplatform/assemble/surface/read/filter/attribute") } catch {} }
-async function api_assemble_designer_list_processplatform() { try { await api.get("/jaxrs/processplatform/assemble/designer/list/processplatform") } catch {} }
-async function api_processplatform_work_retract_work_001() { try { await api.get("/jaxrs/processplatform/work/retract/work-001") } catch {} }
-async function api_designer_elementtool_form_orphan() { try { await api.get("/jaxrs/processplatform/assemble/designer/elementtool/form/orphan") } catch {} }
-async function api_designer_elementtool_script_orphan() { try { await api.get("/jaxrs/processplatform/assemble/designer/elementtool/script/orphan") } catch {} }
-async function api_processplatform_core_definition_list() { try { await api.get("/jaxrs/processplatform/core/definition/list") } catch {} }
-async function api_processplatform_assemble_designer_mergeitemplan() { try { await api.get("/jaxrs/processplatform/assemble/designer/mergeitemplan") } catch {} }
-async function api_assemble_surface_snap_snap_1() { try { await api.get("/jaxrs/processplatform/assemble/surface/snap/snap-1") } catch {} }
-async function api_surface_work_v3_retract() { try { await api.get("/jaxrs/processplatform/assemble/surface/work/v3/retract") } catch {} }
-async function api_surface_snap_snap_1_restore() { try { await api.get("/jaxrs/processplatform/assemble/surface/snap/snap-1/restore") } catch {} }
+const assemble_surface_mode_list_ref = ref<any[]>([]);
+const assemble_surface_mode_list_q = useQuery({
+  queryKey: ['assemble_surface_mode_list'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/processplatform/assemble/surface/mode/list"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const assemble_surface_task_list_ref = ref<any[]>([]);
+const assemble_surface_task_list_q = useQuery({
+  queryKey: ['assemble_surface_task_list'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/processplatform/assemble/surface/task/list"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const surface_work_v2_list_ref = ref<any[]>([]);
+const surface_work_v2_list_q = useQuery({
+  queryKey: ['surface_work_v2_list'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/processplatform/assemble/surface/work/v2/list"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const surface_application_list_complex_ref = ref<any[]>([]);
+const surface_application_list_complex_q = useQuery({
+  queryKey: ['surface_application_list_complex'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/processplatform/assemble/surface/application/list/complex"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const service_processing_list_default_ref = ref<any[]>([]);
+const service_processing_list_default_q = useQuery({
+  queryKey: ['service_processing_list_default'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/processplatform/service/processing/list/default"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const surface_read_filter_attribute_ref = ref<any[]>([]);
+const surface_read_filter_attribute_q = useQuery({
+  queryKey: ['surface_read_filter_attribute'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/processplatform/assemble/surface/read/filter/attribute"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const assemble_designer_list_processplatform_ref = ref<any[]>([]);
+const assemble_designer_list_processplatform_q = useQuery({
+  queryKey: ['assemble_designer_list_processplatform'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/processplatform/assemble/designer/list/processplatform"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const processplatform_work_retract_work_001_ref = ref<any[]>([]);
+const processplatform_work_retract_work_001_q = useQuery({
+  queryKey: ['processplatform_work_retract_work_001'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/processplatform/work/retract/work-001"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const designer_elementtool_form_orphan_ref = ref<any[]>([]);
+const designer_elementtool_form_orphan_q = useQuery({
+  queryKey: ['designer_elementtool_form_orphan'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/processplatform/assemble/designer/elementtool/form/orphan"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const designer_elementtool_script_orphan_ref = ref<any[]>([]);
+const designer_elementtool_script_orphan_q = useQuery({
+  queryKey: ['designer_elementtool_script_orphan'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/processplatform/assemble/designer/elementtool/script/orphan"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const processplatform_core_definition_list_ref = ref<any[]>([]);
+const processplatform_core_definition_list_q = useQuery({
+  queryKey: ['processplatform_core_definition_list'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/processplatform/core/definition/list"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const processplatform_assemble_designer_mergeitemplan_ref = ref<any[]>([]);
+const processplatform_assemble_designer_mergeitemplan_q = useQuery({
+  queryKey: ['processplatform_assemble_designer_mergeitemplan'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/processplatform/assemble/designer/mergeitemplan"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const assemble_surface_snap_snap_1_ref = ref<any[]>([]);
+const assemble_surface_snap_snap_1_q = useQuery({
+  queryKey: ['assemble_surface_snap_snap_1'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/processplatform/assemble/surface/snap/snap-1"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const surface_work_v3_retract_ref = ref<any[]>([]);
+const surface_work_v3_retract_q = useQuery({
+  queryKey: ['surface_work_v3_retract'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/processplatform/assemble/surface/work/v3/retract"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const surface_snap_snap_1_restore_ref = ref<any[]>([]);
+const surface_snap_snap_1_restore_q = useQuery({
+  queryKey: ['surface_snap_snap_1_restore'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/processplatform/assemble/surface/snap/snap-1/restore"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
 
-async function api_assemble_designer_get_flow_1() { try { await api.get("/jaxrs/processplatform/assemble/designer/get/flow-1") } catch {} }
-async function api_surface_taskcompleted_v2_list() { try { await api.get("/jaxrs/processplatform/assemble/surface/taskcompleted/v2/list") } catch {} }
-async function api_designer_process_upgrade_all() { try { await api.get("/jaxrs/processplatform/assemble/designer/process/upgrade/all") } catch {} }
-async function api_service_processing_touch_cleanevent() { try { await api.get("/jaxrs/processplatform/service/processing/touch/cleanevent") } catch {} }
-async function api_surface_available_work_identity() { try { await api.get("/jaxrs/processplatform/assemble/surface/available/work/identity") } catch {} }
-async function api_processplatform_assemble_surface_create() { try { await api.get("/jaxrs/processplatform/assemble/surface/create") } catch {} }
-async function api_processplatform_service_task_list() { try { await api.get("/jaxrs/processplatform/service/task/list") } catch {} }
-async function api_surface_review_filter_attribute() { try { await api.get("/jaxrs/processplatform/assemble/surface/review/filter/attribute") } catch {} }
-async function api_surface_attachment_att_1_available() { try { await api.get("/jaxrs/processplatform/assemble/surface/attachment/att-1/available") } catch {} }
-async function api_assemble_surface_data_workcompleted() { try { await api.get("/jaxrs/processplatform/assemble/surface/data/workcompleted") } catch {} }
-async function api_assemble_surface_list_processplatform() { try { await api.get("/jaxrs/processplatform/assemble/surface/list/processplatform") } catch {} }
-async function api_surface_process_list_ids() { try { await api.get("/jaxrs/processplatform/assemble/surface/process/list/ids") } catch {} }
-async function api_processplatform_assemble_surface() { try { await api.get("/jaxrs/processplatform/assemble/surface") } catch {} }
-async function api_assemble_surface_sign_list() { try { await api.get("/jaxrs/processplatform/assemble/surface/sign/list") } catch {} }
-async function api_processing_record_task_processing() { try { await api.get("/jaxrs/processplatform/service/processing/record/task/processing") } catch {} }
-async function api_assemble_designer_mapping_m_1() { try { await api.get("/jaxrs/processplatform/assemble/designer/mapping/m-1") } catch {} }
-async function api_surface_readcompleted_v2_list() { try { await api.get("/jaxrs/processplatform/assemble/surface/readcompleted/v2/list") } catch {} }
-async function api_surface_data_job_job() { try { await api.get("/jaxrs/processplatform/assemble/surface/data/job/job") } catch {} }
-async function api_assemble_surface_keylock_lock() { try { await api.get("/jaxrs/processplatform/assemble/surface/keylock/lock") } catch {} }
-async function api_designer_mapping_m_1_execute() { try { await api.get("/jaxrs/processplatform/assemble/designer/mapping/m-1/execute") } catch {} }
+const assemble_designer_get_flow_1_ref = ref<any[]>([]);
+const assemble_designer_get_flow_1_q = useQuery({
+  queryKey: ['assemble_designer_get_flow_1'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/processplatform/assemble/designer/get/flow-1"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const surface_taskcompleted_v2_list_ref = ref<any[]>([]);
+const surface_taskcompleted_v2_list_q = useQuery({
+  queryKey: ['surface_taskcompleted_v2_list'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/processplatform/assemble/surface/taskcompleted/v2/list"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const designer_process_upgrade_all_ref = ref<any[]>([]);
+const designer_process_upgrade_all_q = useQuery({
+  queryKey: ['designer_process_upgrade_all'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/processplatform/assemble/designer/process/upgrade/all"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const service_processing_touch_cleanevent_ref = ref<any[]>([]);
+const service_processing_touch_cleanevent_q = useQuery({
+  queryKey: ['service_processing_touch_cleanevent'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/processplatform/service/processing/touch/cleanevent"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const surface_available_work_identity_ref = ref<any[]>([]);
+const surface_available_work_identity_q = useQuery({
+  queryKey: ['surface_available_work_identity'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/processplatform/assemble/surface/available/work/identity"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const processplatform_assemble_surface_create_ref = ref<any[]>([]);
+const processplatform_assemble_surface_create_q = useQuery({
+  queryKey: ['processplatform_assemble_surface_create'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/processplatform/assemble/surface/create"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const processplatform_service_task_list_ref = ref<any[]>([]);
+const processplatform_service_task_list_q = useQuery({
+  queryKey: ['processplatform_service_task_list'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/processplatform/service/task/list"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const surface_review_filter_attribute_ref = ref<any[]>([]);
+const surface_review_filter_attribute_q = useQuery({
+  queryKey: ['surface_review_filter_attribute'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/processplatform/assemble/surface/review/filter/attribute"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const surface_attachment_att_1_available_ref = ref<any[]>([]);
+const surface_attachment_att_1_available_q = useQuery({
+  queryKey: ['surface_attachment_att_1_available'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/processplatform/assemble/surface/attachment/att-1/available"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const assemble_surface_data_workcompleted_ref = ref<any[]>([]);
+const assemble_surface_data_workcompleted_q = useQuery({
+  queryKey: ['assemble_surface_data_workcompleted'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/processplatform/assemble/surface/data/workcompleted"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const assemble_surface_list_processplatform_ref = ref<any[]>([]);
+const assemble_surface_list_processplatform_q = useQuery({
+  queryKey: ['assemble_surface_list_processplatform'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/processplatform/assemble/surface/list/processplatform"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const surface_process_list_ids_ref = ref<any[]>([]);
+const surface_process_list_ids_q = useQuery({
+  queryKey: ['surface_process_list_ids'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/processplatform/assemble/surface/process/list/ids"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const processplatform_assemble_surface_ref = ref<any[]>([]);
+const processplatform_assemble_surface_q = useQuery({
+  queryKey: ['processplatform_assemble_surface'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/processplatform/assemble/surface"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const assemble_surface_sign_list_ref = ref<any[]>([]);
+const assemble_surface_sign_list_q = useQuery({
+  queryKey: ['assemble_surface_sign_list'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/processplatform/assemble/surface/sign/list"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const processing_record_task_processing_ref = ref<any[]>([]);
+const processing_record_task_processing_q = useQuery({
+  queryKey: ['processing_record_task_processing'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/processplatform/service/processing/record/task/processing"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const assemble_designer_mapping_m_1_ref = ref<any[]>([]);
+const assemble_designer_mapping_m_1_q = useQuery({
+  queryKey: ['assemble_designer_mapping_m_1'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/processplatform/assemble/designer/mapping/m-1"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const surface_readcompleted_v2_list_ref = ref<any[]>([]);
+const surface_readcompleted_v2_list_q = useQuery({
+  queryKey: ['surface_readcompleted_v2_list'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/processplatform/assemble/surface/readcompleted/v2/list"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const surface_data_job_job_ref = ref<any[]>([]);
+const surface_data_job_job_q = useQuery({
+  queryKey: ['surface_data_job_job'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/processplatform/assemble/surface/data/job/job"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const assemble_surface_keylock_lock_ref = ref<any[]>([]);
+const assemble_surface_keylock_lock_q = useQuery({
+  queryKey: ['assemble_surface_keylock_lock'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/processplatform/assemble/surface/keylock/lock"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const designer_mapping_m_1_execute_ref = ref<any[]>([]);
+const designer_mapping_m_1_execute_q = useQuery({
+  queryKey: ['designer_mapping_m_1_execute'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/processplatform/assemble/designer/mapping/m-1/execute"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
 
-async function api_processplatform_assemble_surface_draft() { try { await api.get("/jaxrs/processplatform/assemble/surface/draft") } catch {} }
-async function api_assemble_designer_mergeitemplan_estimate() { try { await api.get("/jaxrs/processplatform/assemble/designer/mergeitemplan/estimate") } catch {} }
-async function api_processplatform_work_processing_work_001() { try { await api.get("/jaxrs/processplatform/work/processing/work-001") } catch {} }
-async function api_surface_readcompleted_filter_attribute() { try { await api.get("/jaxrs/processplatform/assemble/surface/readcompleted/filter/attribute") } catch {} }
-async function api_processing_record_job_rec_job() { try { await api.get("/jaxrs/processplatform/service/processing/record/job/rec-job") } catch {} }
-async function api_service_processing_instance_proc_1() { try { await api.get("/jaxrs/processplatform/service/processing/instance/proc-1") } catch {} }
-async function api_surface_task_v2_list() { try { await api.get("/jaxrs/processplatform/assemble/surface/task/v2/list") } catch {} }
-async function api_processing_work_v3_retract() { try { await api.get("/jaxrs/processplatform/service/processing/work/v3/retract") } catch {} }
-async function api_service_processing_cancel_proc_1() { try { await api.get("/jaxrs/processplatform/service/processing/cancel/proc-1") } catch {} }
-async function api_service_processing_touch_urge() { try { await api.get("/jaxrs/processplatform/service/processing/touch/urge") } catch {} }
-async function api_surface_application_list_range() { try { await api.get("/jaxrs/processplatform/assemble/surface/application/list/range") } catch {} }
-async function api_processplatform_service_processing_applicationdict() { try { await api.get("/jaxrs/processplatform/service/processing/applicationdict") } catch {} }
-async function api_processing_task_tk_exp_expire() { try { await api.get("/jaxrs/processplatform/service/processing/task/tk-exp/expire") } catch {} }
-async function api_service_processing_get_proc_1() { try { await api.get("/jaxrs/processplatform/service/processing/get/proc-1") } catch {} }
-async function api_designer_elementtool_process_orphan() { try { await api.get("/jaxrs/processplatform/assemble/designer/elementtool/process/orphan") } catch {} }
-async function api_surface_taskcompleted_v2_count() { try { await api.get("/jaxrs/processplatform/assemble/surface/taskcompleted/v2/count") } catch {} }
-async function api_processplatform_assemble_designer_applicationdict() { try { await api.get("/jaxrs/processplatform/assemble/designer/applicationdict") } catch {} }
-async function api_surface_task_list_all() { try { await api.get("/jaxrs/processplatform/assemble/surface/task/list/all") } catch {} }
-async function api_processing_review_create_workcompleted() { try { await api.get("/jaxrs/processplatform/service/processing/review/create/workcompleted") } catch {} }
-async function api_processplatform_assemble_designer_mapping() { try { await api.get("/jaxrs/processplatform/assemble/designer/mapping") } catch {} }
-async function api_bam_state_applicationtstubs_trigger() { try { await api.get("/jaxrs/processplatform/assemble/bam/state/applicationtstubs/trigger") } catch {} }
-async function api_assemble_surface_snap_upload() { try { await api.get("/jaxrs/processplatform/assemble/surface/snap/upload") } catch {} }
-async function api_service_processing_timer_start() { try { await api.get("/jaxrs/processplatform/service/processing/timer/start") } catch {} }
-async function api_surface_correlation_job_job() { try { await api.get("/jaxrs/processplatform/assemble/surface/correlation/job/job") } catch {} }
-async function api_surface_taskcompleted_filter_attribute() { try { await api.get("/jaxrs/processplatform/assemble/surface/taskcompleted/filter/attribute") } catch {} }
-async function api_assemble_surface_delete_surface_1() { try { await api.get("/jaxrs/processplatform/assemble/surface/delete/surface-1") } catch {} }
-async function api_service_processing_touch_deletedraft() { try { await api.get("/jaxrs/processplatform/service/processing/touch/deletedraft") } catch {} }
-async function api_surface_available_work_person() { try { await api.get("/jaxrs/processplatform/assemble/surface/available/work/person") } catch {} }
-async function api_surface_task_v2_count() { try { await api.get("/jaxrs/processplatform/assemble/surface/task/v2/count") } catch {} }
-async function api_assemble_surface_route_list() { try { await api.get("/jaxrs/processplatform/assemble/surface/route/list") } catch {} }
+const processplatform_assemble_surface_draft_ref = ref<any[]>([]);
+const processplatform_assemble_surface_draft_q = useQuery({
+  queryKey: ['processplatform_assemble_surface_draft'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/processplatform/assemble/surface/draft"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const assemble_designer_mergeitemplan_estimate_ref = ref<any[]>([]);
+const assemble_designer_mergeitemplan_estimate_q = useQuery({
+  queryKey: ['assemble_designer_mergeitemplan_estimate'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/processplatform/assemble/designer/mergeitemplan/estimate"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const processplatform_work_processing_work_001_ref = ref<any[]>([]);
+const processplatform_work_processing_work_001_q = useQuery({
+  queryKey: ['processplatform_work_processing_work_001'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/processplatform/work/processing/work-001"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const surface_readcompleted_filter_attribute_ref = ref<any[]>([]);
+const surface_readcompleted_filter_attribute_q = useQuery({
+  queryKey: ['surface_readcompleted_filter_attribute'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/processplatform/assemble/surface/readcompleted/filter/attribute"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const processing_record_job_rec_job_ref = ref<any[]>([]);
+const processing_record_job_rec_job_q = useQuery({
+  queryKey: ['processing_record_job_rec_job'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/processplatform/service/processing/record/job/rec-job"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const service_processing_instance_proc_1_ref = ref<any[]>([]);
+const service_processing_instance_proc_1_q = useQuery({
+  queryKey: ['service_processing_instance_proc_1'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/processplatform/service/processing/instance/proc-1"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const surface_task_v2_list_ref = ref<any[]>([]);
+const surface_task_v2_list_q = useQuery({
+  queryKey: ['surface_task_v2_list'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/processplatform/assemble/surface/task/v2/list"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const processing_work_v3_retract_ref = ref<any[]>([]);
+const processing_work_v3_retract_q = useQuery({
+  queryKey: ['processing_work_v3_retract'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/processplatform/service/processing/work/v3/retract"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const service_processing_cancel_proc_1_ref = ref<any[]>([]);
+const service_processing_cancel_proc_1_q = useQuery({
+  queryKey: ['service_processing_cancel_proc_1'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/processplatform/service/processing/cancel/proc-1"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const service_processing_touch_urge_ref = ref<any[]>([]);
+const service_processing_touch_urge_q = useQuery({
+  queryKey: ['service_processing_touch_urge'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/processplatform/service/processing/touch/urge"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const surface_application_list_range_ref = ref<any[]>([]);
+const surface_application_list_range_q = useQuery({
+  queryKey: ['surface_application_list_range'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/processplatform/assemble/surface/application/list/range"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const processplatform_service_processing_applicationdict_ref = ref<any[]>([]);
+const processplatform_service_processing_applicationdict_q = useQuery({
+  queryKey: ['processplatform_service_processing_applicationdict'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/processplatform/service/processing/applicationdict"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const processing_task_tk_exp_expire_ref = ref<any[]>([]);
+const processing_task_tk_exp_expire_q = useQuery({
+  queryKey: ['processing_task_tk_exp_expire'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/processplatform/service/processing/task/tk-exp/expire"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const service_processing_get_proc_1_ref = ref<any[]>([]);
+const service_processing_get_proc_1_q = useQuery({
+  queryKey: ['service_processing_get_proc_1'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/processplatform/service/processing/get/proc-1"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const designer_elementtool_process_orphan_ref = ref<any[]>([]);
+const designer_elementtool_process_orphan_q = useQuery({
+  queryKey: ['designer_elementtool_process_orphan'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/processplatform/assemble/designer/elementtool/process/orphan"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const surface_taskcompleted_v2_count_ref = ref<any[]>([]);
+const surface_taskcompleted_v2_count_q = useQuery({
+  queryKey: ['surface_taskcompleted_v2_count'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/processplatform/assemble/surface/taskcompleted/v2/count"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const processplatform_assemble_designer_applicationdict_ref = ref<any[]>([]);
+const processplatform_assemble_designer_applicationdict_q = useQuery({
+  queryKey: ['processplatform_assemble_designer_applicationdict'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/processplatform/assemble/designer/applicationdict"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const surface_task_list_all_ref = ref<any[]>([]);
+const surface_task_list_all_q = useQuery({
+  queryKey: ['surface_task_list_all'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/processplatform/assemble/surface/task/list/all"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const processing_review_create_workcompleted_ref = ref<any[]>([]);
+const processing_review_create_workcompleted_q = useQuery({
+  queryKey: ['processing_review_create_workcompleted'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/processplatform/service/processing/review/create/workcompleted"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const processplatform_assemble_designer_mapping_ref = ref<any[]>([]);
+const processplatform_assemble_designer_mapping_q = useQuery({
+  queryKey: ['processplatform_assemble_designer_mapping'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/processplatform/assemble/designer/mapping"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const bam_state_applicationtstubs_trigger_ref = ref<any[]>([]);
+const bam_state_applicationtstubs_trigger_q = useQuery({
+  queryKey: ['bam_state_applicationtstubs_trigger'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/processplatform/assemble/bam/state/applicationtstubs/trigger"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const assemble_surface_snap_upload_ref = ref<any[]>([]);
+const assemble_surface_snap_upload_q = useQuery({
+  queryKey: ['assemble_surface_snap_upload'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/processplatform/assemble/surface/snap/upload"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const service_processing_timer_start_ref = ref<any[]>([]);
+const service_processing_timer_start_q = useQuery({
+  queryKey: ['service_processing_timer_start'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/processplatform/service/processing/timer/start"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const surface_correlation_job_job_ref = ref<any[]>([]);
+const surface_correlation_job_job_q = useQuery({
+  queryKey: ['surface_correlation_job_job'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/processplatform/assemble/surface/correlation/job/job"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const surface_taskcompleted_filter_attribute_ref = ref<any[]>([]);
+const surface_taskcompleted_filter_attribute_q = useQuery({
+  queryKey: ['surface_taskcompleted_filter_attribute'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/processplatform/assemble/surface/taskcompleted/filter/attribute"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const assemble_surface_delete_surface_1_ref = ref<any[]>([]);
+const assemble_surface_delete_surface_1_q = useQuery({
+  queryKey: ['assemble_surface_delete_surface_1'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/processplatform/assemble/surface/delete/surface-1"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const service_processing_touch_deletedraft_ref = ref<any[]>([]);
+const service_processing_touch_deletedraft_q = useQuery({
+  queryKey: ['service_processing_touch_deletedraft'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/processplatform/service/processing/touch/deletedraft"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const surface_available_work_person_ref = ref<any[]>([]);
+const surface_available_work_person_q = useQuery({
+  queryKey: ['surface_available_work_person'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/processplatform/assemble/surface/available/work/person"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const surface_task_v2_count_ref = ref<any[]>([]);
+const surface_task_v2_count_q = useQuery({
+  queryKey: ['surface_task_v2_count'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/processplatform/assemble/surface/task/v2/count"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const assemble_surface_route_list_ref = ref<any[]>([]);
+const assemble_surface_route_list_q = useQuery({
+  queryKey: ['assemble_surface_route_list'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/processplatform/assemble/surface/route/list"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
 
-async function api_correlation_core_express_status() { try { await api.get("/jaxrs/correlation/core/express/status") } catch {} }
-async function api_service_processing_list_message() { try { await api.get("/jaxrs/correlation/service/processing/list/message") } catch {} }
-async function api_correlation_doc_d_1() { try { await api.get("/jaxrs/correlation/doc/d-1") } catch {} }
-async function api_correlation_type_cms_list() { try { await api.get("/jaxrs/correlation/type/cms/list") } catch {} }
-async function api_correlation_core_express_list() { try { await api.get("/jaxrs/correlation/core/express/list") } catch {} }
-async function api_processing_link_message_msg_1() { try { await api.get("/jaxrs/correlation/service/processing/link/message/msg-1") } catch {} }
-async function api_correlation_service_processing() { try { await api.get("/jaxrs/correlation_service_processing") } catch {} }
-async function api_correlation_doc_doc_9_delete() { try { await api.get("/jaxrs/correlation/doc/doc-9/delete") } catch {} }
-async function api_correlation_core_entity_create() { try { await api.get("/jaxrs/correlation/core/entity/create") } catch {} }
-async function api_correlation_core_express_sync() { try { await api.get("/jaxrs/correlation/core/express/sync") } catch {} }
-async function api_core_entity_delete_corr_test_001() { try { await api.get("/jaxrs/correlation/core/entity/delete/corr-test-001") } catch {} }
-async function api_correlation_service_process() { try { await api.get("/jaxrs/correlation/service/process") } catch {} }
-async function api_correlation_link_list() { try { await api.get("/jaxrs/correlation/link/list") } catch {} }
-async function api_correlation_core_entity_list() { try { await api.get("/jaxrs/correlation/core/entity/list") } catch {} }
-async function api_correlation_type_cms_readable() { try { await api.get("/jaxrs/correlation/type/cms/readable") } catch {} }
+const correlation_core_express_status_ref = ref<any[]>([]);
+const correlation_core_express_status_q = useQuery({
+  queryKey: ['correlation_core_express_status'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/correlation/core/express/status"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const service_processing_list_message_ref = ref<any[]>([]);
+const service_processing_list_message_q = useQuery({
+  queryKey: ['service_processing_list_message'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/correlation/service/processing/list/message"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const correlation_doc_d_1_ref = ref<any[]>([]);
+const correlation_doc_d_1_q = useQuery({
+  queryKey: ['correlation_doc_d_1'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/correlation/doc/d-1"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const correlation_type_cms_list_ref = ref<any[]>([]);
+const correlation_type_cms_list_q = useQuery({
+  queryKey: ['correlation_type_cms_list'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/correlation/type/cms/list"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const correlation_core_express_list_ref = ref<any[]>([]);
+const correlation_core_express_list_q = useQuery({
+  queryKey: ['correlation_core_express_list'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/correlation/core/express/list"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const processing_link_message_msg_1_ref = ref<any[]>([]);
+const processing_link_message_msg_1_q = useQuery({
+  queryKey: ['processing_link_message_msg_1'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/correlation/service/processing/link/message/msg-1"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const correlation_service_processing_ref = ref<any[]>([]);
+const correlation_service_processing_q = useQuery({
+  queryKey: ['correlation_service_processing'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/correlation_service_processing"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const correlation_doc_doc_9_delete_ref = ref<any[]>([]);
+const correlation_doc_doc_9_delete_q = useQuery({
+  queryKey: ['correlation_doc_doc_9_delete'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/correlation/doc/doc-9/delete"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const correlation_core_entity_create_ref = ref<any[]>([]);
+const correlation_core_entity_create_q = useQuery({
+  queryKey: ['correlation_core_entity_create'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/correlation/core/entity/create"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const correlation_core_express_sync_ref = ref<any[]>([]);
+const correlation_core_express_sync_q = useQuery({
+  queryKey: ['correlation_core_express_sync'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/correlation/core/express/sync"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const core_entity_delete_corr_test_001_ref = ref<any[]>([]);
+const core_entity_delete_corr_test_001_q = useQuery({
+  queryKey: ['core_entity_delete_corr_test_001'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/correlation/core/entity/delete/corr-test-001"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const correlation_service_process_ref = ref<any[]>([]);
+const correlation_service_process_q = useQuery({
+  queryKey: ['correlation_service_process'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/correlation/service/process"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const correlation_link_list_ref = ref<any[]>([]);
+const correlation_link_list_q = useQuery({
+  queryKey: ['correlation_link_list'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/correlation/link/list"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const correlation_core_entity_list_ref = ref<any[]>([]);
+const correlation_core_entity_list_q = useQuery({
+  queryKey: ['correlation_core_entity_list'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/correlation/core/entity/list"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const correlation_type_cms_readable_ref = ref<any[]>([]);
+const correlation_type_cms_readable_q = useQuery({
+  queryKey: ['correlation_type_cms_readable'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/correlation/type/cms/readable"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
 
-async function api_processplatform_work_terminate_work_001() { try { await api.get("/jaxrs/processplatform/work/terminate/work-001") } catch {} }
-async function api_assemble_surface_readrecord_list() { try { await api.get("/jaxrs/processplatform/assemble/surface/readrecord/list") } catch {} }
-async function api_assemble_surface_control_workorworkcompleted() { try { await api.get("/jaxrs/processplatform/assemble/surface/control/workorworkcompleted") } catch {} }
-async function api_bam_state_category_trigger() { try { await api.get("/jaxrs/processplatform/assemble/bam/state/category/trigger") } catch {} }
-async function api_service_processing_snap_upload() { try { await api.get("/jaxrs/processplatform/service/processing/snap/upload") } catch {} }
-async function api_surface_readcompleted_v2_count() { try { await api.get("/jaxrs/processplatform/assemble/surface/readcompleted/v2/count") } catch {} }
-async function api_processing_review_create_work() { try { await api.get("/jaxrs/processplatform/service/processing/review/create/work") } catch {} }
-async function api_surface_review_filter_entry() { try { await api.get("/jaxrs/processplatform/assemble/surface/review/filter/entry") } catch {} }
-async function api_processing_documentversion_work_dv_w() { try { await api.get("/jaxrs/processplatform/service/processing/documentversion/work/dv-w") } catch {} }
-async function api_surface_review_count_application() { try { await api.get("/jaxrs/processplatform/assemble/surface/review/count/application") } catch {} }
-async function api_designer_application_app_1_permission() { try { await api.get("/jaxrs/processplatform/assemble/designer/application/app-1/permission") } catch {} }
-async function api_surface_workcompleted_shift_time() { try { await api.get("/jaxrs/processplatform/assemble/surface/workcompleted/shift/time") } catch {} }
-async function api_processing_record_work_processing() { try { await api.get("/jaxrs/processplatform/service/processing/record/work/processing") } catch {} }
-async function api_processplatform_assemble_surface_attachment() { try { await api.get("/jaxrs/processplatform/assemble/surface/attachment") } catch {} }
-async function api_processplatform_assemble_surface_serialnumber() { try { await api.get("/jaxrs/processplatform/assemble/surface/serialnumber") } catch {} }
-async function api_processing_review_init_review() { try { await api.get("/jaxrs/processplatform/service/processing/review/init/review") } catch {} }
-async function api_count_with_person_person_001() { try { await api.get("/jaxrs/processplatform/task/count/with/person/person-001") } catch {} }
-async function api_surface_task_count_filter() { try { await api.get("/jaxrs/processplatform/assemble/surface/task/count/filter") } catch {} }
-async function api_processplatform_assemble_designer_list() { try { await api.get("/jaxrs/processplatform/assemble/designer/list") } catch {} }
-async function api_assemble_surface_touch_expire() { try { await api.get("/jaxrs/processplatform/assemble/surface/touch/expire") } catch {} }
+const processplatform_work_terminate_work_001_ref = ref<any[]>([]);
+const processplatform_work_terminate_work_001_q = useQuery({
+  queryKey: ['processplatform_work_terminate_work_001'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/processplatform/work/terminate/work-001"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const assemble_surface_readrecord_list_ref = ref<any[]>([]);
+const assemble_surface_readrecord_list_q = useQuery({
+  queryKey: ['assemble_surface_readrecord_list'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/processplatform/assemble/surface/readrecord/list"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const assemble_surface_control_workorworkcompleted_ref = ref<any[]>([]);
+const assemble_surface_control_workorworkcompleted_q = useQuery({
+  queryKey: ['assemble_surface_control_workorworkcompleted'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/processplatform/assemble/surface/control/workorworkcompleted"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const bam_state_category_trigger_ref = ref<any[]>([]);
+const bam_state_category_trigger_q = useQuery({
+  queryKey: ['bam_state_category_trigger'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/processplatform/assemble/bam/state/category/trigger"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const service_processing_snap_upload_ref = ref<any[]>([]);
+const service_processing_snap_upload_q = useQuery({
+  queryKey: ['service_processing_snap_upload'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/processplatform/service/processing/snap/upload"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const surface_readcompleted_v2_count_ref = ref<any[]>([]);
+const surface_readcompleted_v2_count_q = useQuery({
+  queryKey: ['surface_readcompleted_v2_count'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/processplatform/assemble/surface/readcompleted/v2/count"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const processing_review_create_work_ref = ref<any[]>([]);
+const processing_review_create_work_q = useQuery({
+  queryKey: ['processing_review_create_work'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/processplatform/service/processing/review/create/work"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const surface_review_filter_entry_ref = ref<any[]>([]);
+const surface_review_filter_entry_q = useQuery({
+  queryKey: ['surface_review_filter_entry'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/processplatform/assemble/surface/review/filter/entry"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const processing_documentversion_work_dv_w_ref = ref<any[]>([]);
+const processing_documentversion_work_dv_w_q = useQuery({
+  queryKey: ['processing_documentversion_work_dv_w'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/processplatform/service/processing/documentversion/work/dv-w"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const surface_review_count_application_ref = ref<any[]>([]);
+const surface_review_count_application_q = useQuery({
+  queryKey: ['surface_review_count_application'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/processplatform/assemble/surface/review/count/application"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const designer_application_app_1_permission_ref = ref<any[]>([]);
+const designer_application_app_1_permission_q = useQuery({
+  queryKey: ['designer_application_app_1_permission'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/processplatform/assemble/designer/application/app-1/permission"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const surface_workcompleted_shift_time_ref = ref<any[]>([]);
+const surface_workcompleted_shift_time_q = useQuery({
+  queryKey: ['surface_workcompleted_shift_time'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/processplatform/assemble/surface/workcompleted/shift/time"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const processing_record_work_processing_ref = ref<any[]>([]);
+const processing_record_work_processing_q = useQuery({
+  queryKey: ['processing_record_work_processing'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/processplatform/service/processing/record/work/processing"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const processplatform_assemble_surface_attachment_ref = ref<any[]>([]);
+const processplatform_assemble_surface_attachment_q = useQuery({
+  queryKey: ['processplatform_assemble_surface_attachment'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/processplatform/assemble/surface/attachment"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const processplatform_assemble_surface_serialnumber_ref = ref<any[]>([]);
+const processplatform_assemble_surface_serialnumber_q = useQuery({
+  queryKey: ['processplatform_assemble_surface_serialnumber'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/processplatform/assemble/surface/serialnumber"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const processing_review_init_review_ref = ref<any[]>([]);
+const processing_review_init_review_q = useQuery({
+  queryKey: ['processing_review_init_review'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/processplatform/service/processing/review/init/review"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const count_with_person_person_001_ref = ref<any[]>([]);
+const count_with_person_person_001_q = useQuery({
+  queryKey: ['count_with_person_person_001'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/processplatform/task/count/with/person/person-001"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const surface_task_count_filter_ref = ref<any[]>([]);
+const surface_task_count_filter_q = useQuery({
+  queryKey: ['surface_task_count_filter'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/processplatform/assemble/surface/task/count/filter"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const processplatform_assemble_designer_list_ref = ref<any[]>([]);
+const processplatform_assemble_designer_list_q = useQuery({
+  queryKey: ['processplatform_assemble_designer_list'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/processplatform/assemble/designer/list"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const assemble_surface_touch_expire_ref = ref<any[]>([]);
+const assemble_surface_touch_expire_q = useQuery({
+  queryKey: ['assemble_surface_touch_expire'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/processplatform/assemble/surface/touch/expire"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
 
-async function api_surface_review_create_workcompleted() { try { await api.get("/jaxrs/processplatform/assemble/surface/review/create/workcompleted") } catch {} }
-async function api_surface_keylock_lock_mockputtopost() { try { await api.get("/jaxrs/processplatform/assemble/surface/keylock/lock/mockputtopost") } catch {} }
-async function api_designer_application_app_1_icon() { try { await api.get("/jaxrs/processplatform/assemble/designer/application/app-1/icon") } catch {} }
-async function api_surface_review_v2_list() { try { await api.get("/jaxrs/processplatform/assemble/surface/review/v2/list") } catch {} }
-async function api_designer_elementtool_applicationdict_orphan() { try { await api.get("/jaxrs/processplatform/assemble/designer/elementtool/applicationdict/orphan") } catch {} }
-async function api_service_processing_touch_handoverjob() { try { await api.get("/jaxrs/processplatform/service/processing/touch/handoverjob") } catch {} }
-async function api_assemble_surface_snap_list() { try { await api.get("/jaxrs/processplatform/assemble/surface/snap/list") } catch {} }
-async function api_assemble_surface_application_list() { try { await api.get("/jaxrs/processplatform/assemble/surface/application/list") } catch {} }
-async function api_surface_review_create_work() { try { await api.get("/jaxrs/processplatform/assemble/surface/review/create/work") } catch {} }
-async function api_processplatform_assemble_surface_snap() { try { await api.get("/jaxrs/processplatform/assemble/surface/snap") } catch {} }
-async function api_processing_data_work_dw_1() { try { await api.get("/jaxrs/processplatform/service/processing/data/work/dw-1") } catch {} }
-async function api_service_processing_touch_loglongdetained() { try { await api.get("/jaxrs/processplatform/service/processing/touch/loglongdetained") } catch {} }
-async function api_assemble_surface_preview_surface_1() { try { await api.get("/jaxrs/processplatform/assemble/surface/preview/surface-1") } catch {} }
-async function api_count_with_person_person_001_1() { try { await api.get("/jaxrs/processplatform/work/count/with/person/person-001") } catch {} }
-async function api_surface_read_v2_count() { try { await api.get("/jaxrs/processplatform/assemble/surface/read/v2/count") } catch {} }
+const surface_review_create_workcompleted_ref = ref<any[]>([]);
+const surface_review_create_workcompleted_q = useQuery({
+  queryKey: ['surface_review_create_workcompleted'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/processplatform/assemble/surface/review/create/workcompleted"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const surface_keylock_lock_mockputtopost_ref = ref<any[]>([]);
+const surface_keylock_lock_mockputtopost_q = useQuery({
+  queryKey: ['surface_keylock_lock_mockputtopost'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/processplatform/assemble/surface/keylock/lock/mockputtopost"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const designer_application_app_1_icon_ref = ref<any[]>([]);
+const designer_application_app_1_icon_q = useQuery({
+  queryKey: ['designer_application_app_1_icon'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/processplatform/assemble/designer/application/app-1/icon"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const surface_review_v2_list_ref = ref<any[]>([]);
+const surface_review_v2_list_q = useQuery({
+  queryKey: ['surface_review_v2_list'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/processplatform/assemble/surface/review/v2/list"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const designer_elementtool_applicationdict_orphan_ref = ref<any[]>([]);
+const designer_elementtool_applicationdict_orphan_q = useQuery({
+  queryKey: ['designer_elementtool_applicationdict_orphan'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/processplatform/assemble/designer/elementtool/applicationdict/orphan"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const service_processing_touch_handoverjob_ref = ref<any[]>([]);
+const service_processing_touch_handoverjob_q = useQuery({
+  queryKey: ['service_processing_touch_handoverjob'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/processplatform/service/processing/touch/handoverjob"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const assemble_surface_snap_list_ref = ref<any[]>([]);
+const assemble_surface_snap_list_q = useQuery({
+  queryKey: ['assemble_surface_snap_list'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/processplatform/assemble/surface/snap/list"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const assemble_surface_application_list_ref = ref<any[]>([]);
+const assemble_surface_application_list_q = useQuery({
+  queryKey: ['assemble_surface_application_list'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/processplatform/assemble/surface/application/list"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const surface_review_create_work_ref = ref<any[]>([]);
+const surface_review_create_work_q = useQuery({
+  queryKey: ['surface_review_create_work'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/processplatform/assemble/surface/review/create/work"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const processplatform_assemble_surface_snap_ref = ref<any[]>([]);
+const processplatform_assemble_surface_snap_q = useQuery({
+  queryKey: ['processplatform_assemble_surface_snap'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/processplatform/assemble/surface/snap"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const processing_data_work_dw_1_ref = ref<any[]>([]);
+const processing_data_work_dw_1_q = useQuery({
+  queryKey: ['processing_data_work_dw_1'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/processplatform/service/processing/data/work/dw-1"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const service_processing_touch_loglongdetained_ref = ref<any[]>([]);
+const service_processing_touch_loglongdetained_q = useQuery({
+  queryKey: ['service_processing_touch_loglongdetained'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/processplatform/service/processing/touch/loglongdetained"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const assemble_surface_preview_surface_1_ref = ref<any[]>([]);
+const assemble_surface_preview_surface_1_q = useQuery({
+  queryKey: ['assemble_surface_preview_surface_1'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/processplatform/assemble/surface/preview/surface-1"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const count_with_person_person_001_1_ref = ref<any[]>([]);
+const count_with_person_person_001_1_q = useQuery({
+  queryKey: ['count_with_person_person_001_1'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/processplatform/work/count/with/person/person-001"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const surface_read_v2_count_ref = ref<any[]>([]);
+const surface_read_v2_count_q = useQuery({
+  queryKey: ['surface_read_v2_count'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/processplatform/assemble/surface/read/v2/count"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
 
-async function api_correlation_link() { try { await api.get("/jaxrs/correlation/link") } catch {} }
-async function api_correlation_update_doc_u3_cor_doc() { try { await api.get("/jaxrs/correlation/update/doc/u3-cor-doc") } catch {} }
-async function api_correlation_service_processing_link() { try { await api.get("/jaxrs/correlation/service/processing/link") } catch {} }
-async function api_correlation() { try { await api.get("/jaxrs/correlation") } catch {} }
-async function api_correlation_core_link_list() { try { await api.get("/jaxrs/correlation/core/link/list") } catch {} }
-async function api_correlation_service_processing_create() { try { await api.get("/jaxrs/correlation/service/processing/create") } catch {} }
-async function api_correlation_update_doc_d_1() { try { await api.get("/jaxrs/correlation/update/doc/d-1") } catch {} }
-async function api_correlation_type_processplatform_list() { try { await api.get("/jaxrs/correlation/type/processplatform/list") } catch {} }
+const correlation_link_ref = ref<any[]>([]);
+const correlation_link_q = useQuery({
+  queryKey: ['correlation_link'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/correlation/link"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const correlation_update_doc_u3_cor_doc_ref = ref<any[]>([]);
+const correlation_update_doc_u3_cor_doc_q = useQuery({
+  queryKey: ['correlation_update_doc_u3_cor_doc'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/correlation/update/doc/u3-cor-doc"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const correlation_service_processing_link_ref = ref<any[]>([]);
+const correlation_service_processing_link_q = useQuery({
+  queryKey: ['correlation_service_processing_link'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/correlation/service/processing/link"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const correlation_ref = ref<any[]>([]);
+const correlation_q = useQuery({
+  queryKey: ['correlation'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/correlation"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const correlation_core_link_list_ref = ref<any[]>([]);
+const correlation_core_link_list_q = useQuery({
+  queryKey: ['correlation_core_link_list'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/correlation/core/link/list"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const correlation_service_processing_create_ref = ref<any[]>([]);
+const correlation_service_processing_create_q = useQuery({
+  queryKey: ['correlation_service_processing_create'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/correlation/service/processing/create"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const correlation_update_doc_d_1_ref = ref<any[]>([]);
+const correlation_update_doc_d_1_q = useQuery({
+  queryKey: ['correlation_update_doc_d_1'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/correlation/update/doc/d-1"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const correlation_type_processplatform_list_ref = ref<any[]>([]);
+const correlation_type_processplatform_list_q = useQuery({
+  queryKey: ['correlation_type_processplatform_list'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/correlation/type/processplatform/list"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
 
-async function api_processing_workcompleted_shift_time() { try { await api.get("/jaxrs/processplatform/service/processing/workcompleted/shift/time") } catch {} }
-async function api_processplatform_service_processing_work() { try { await api.get("/jaxrs/processplatform/service/processing/work") } catch {} }
-async function api_service_processing_execute_proc_1() { try { await api.get("/jaxrs/processplatform/service/processing/execute/proc-1") } catch {} }
-async function api_surface_task_filter_attribute() { try { await api.get("/jaxrs/processplatform/assemble/surface/task/filter/attribute") } catch {} }
-async function api_surface_read_v2_list() { try { await api.get("/jaxrs/processplatform/assemble/surface/read/v2/list") } catch {} }
-async function api_assemble_surface_record_list() { try { await api.get("/jaxrs/processplatform/assemble/surface/record/list") } catch {} }
-async function api_designer_item_access_bach_save() { try { await api.get("/jaxrs/processplatform/assemble/designer/item-access/bach/save") } catch {} }
+const processing_workcompleted_shift_time_ref = ref<any[]>([]);
+const processing_workcompleted_shift_time_q = useQuery({
+  queryKey: ['processing_workcompleted_shift_time'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/processplatform/service/processing/workcompleted/shift/time"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const processplatform_service_processing_work_ref = ref<any[]>([]);
+const processplatform_service_processing_work_q = useQuery({
+  queryKey: ['processplatform_service_processing_work'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/processplatform/service/processing/work"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const service_processing_execute_proc_1_ref = ref<any[]>([]);
+const service_processing_execute_proc_1_q = useQuery({
+  queryKey: ['service_processing_execute_proc_1'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/processplatform/service/processing/execute/proc-1"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const surface_task_filter_attribute_ref = ref<any[]>([]);
+const surface_task_filter_attribute_q = useQuery({
+  queryKey: ['surface_task_filter_attribute'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/processplatform/assemble/surface/task/filter/attribute"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const surface_read_v2_list_ref = ref<any[]>([]);
+const surface_read_v2_list_q = useQuery({
+  queryKey: ['surface_read_v2_list'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/processplatform/assemble/surface/read/v2/list"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const assemble_surface_record_list_ref = ref<any[]>([]);
+const assemble_surface_record_list_q = useQuery({
+  queryKey: ['assemble_surface_record_list'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/processplatform/assemble/surface/record/list"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const designer_item_access_bach_save_ref = ref<any[]>([]);
+const designer_item_access_bach_save_q = useQuery({
+  queryKey: ['designer_item_access_bach_save'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/processplatform/assemble/designer/item-access/bach/save"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
 
-async function api_jaxrs_processplatform_assemble_bam_period_list_completed_task_application() { try { await api.get("/jaxrs/processplatform/assemble/bam/period/list/completed/task/application") } catch {} }
-async function api_jaxrs_processplatform_assemble_bam_period_list_completed_task_applicationstubs() { try { await api.get("/jaxrs/processplatform/assemble/bam/period/list/completed/task/applicationstubs") } catch {} }
-async function api_jaxrs_processplatform_assemble_bam_period_list_completed_task_unitstubs() { try { await api.get("/jaxrs/processplatform/assemble/bam/period/list/completed/task/unitstubs") } catch {} }
-async function api_jaxrs_processplatform_assemble_bam_period_list_completed_work_applicationstubs() { try { await api.get("/jaxrs/processplatform/assemble/bam/period/list/completed/work/applicationstubs") } catch {} }
-async function api_jaxrs_processplatform_assemble_bam_period_list_completed_work_unitstubs() { try { await api.get("/jaxrs/processplatform/assemble/bam/period/list/completed/work/unitstubs") } catch {} }
-async function api_jaxrs_processplatform_assemble_bam_period_list_count_completed_task_application__92e84b() { try { await api.get("/jaxrs/processplatform/assemble/bam/period/list/count/completed/task/application/app1/process/p1/activity/a1/by/unit") } catch {} }
-async function api_jaxrs_processplatform_assemble_bam_period_list_count_start_work_application_app1_31fe10() { try { await api.get("/jaxrs/processplatform/assemble/bam/period/list/count/start/work/application/app1/process/p1/unit/u1/person/per1") } catch {} }
-async function api_jaxrs_processplatform_assemble_bam_period_list_expired_task_application() { try { await api.get("/jaxrs/processplatform/assemble/bam/period/list/expired/task/application") } catch {} }
-async function api_jaxrs_processplatform_assemble_bam_period_list_expired_task_applicationstubs() { try { await api.get("/jaxrs/processplatform/assemble/bam/period/list/expired/task/applicationstubs") } catch {} }
-async function api_jaxrs_processplatform_assemble_bam_period_list_expired_task_unitstubs() { try { await api.get("/jaxrs/processplatform/assemble/bam/period/list/expired/task/unitstubs") } catch {} }
-async function api_jaxrs_processplatform_assemble_bam_period_list_expired_work_applicationstubs() { try { await api.get("/jaxrs/processplatform/assemble/bam/period/list/expired/work/applicationstubs") } catch {} }
-async function api_jaxrs_processplatform_assemble_bam_period_list_expired_work_unitstubs() { try { await api.get("/jaxrs/processplatform/assemble/bam/period/list/expired/work/unitstubs") } catch {} }
-async function api_jaxrs_processplatform_assemble_bam_period_list_start_task_applicationstubs() { try { await api.get("/jaxrs/processplatform/assemble/bam/period/list/start/task/applicationstubs") } catch {} }
-async function api_jaxrs_processplatform_assemble_bam_period_list_start_task_unitstubs() { try { await api.get("/jaxrs/processplatform/assemble/bam/period/list/start/task/unitstubs") } catch {} }
-async function api_jaxrs_processplatform_assemble_bam_period_list_start_work_applicationstubs() { try { await api.get("/jaxrs/processplatform/assemble/bam/period/list/start/work/applicationstubs") } catch {} }
-async function api_jaxrs_processplatform_assemble_bam_period_list_start_work_unitstubs() { try { await api.get("/jaxrs/processplatform/assemble/bam/period/list/start/work/unitstubs") } catch {} }
-async function api_jaxrs_processplatform_assemble_designer_item_access_path_path() { try { await api.get("/jaxrs/processplatform/assemble/designer/item/access/path/path") } catch {} }
-async function api_jaxrs_processplatform_assemble_surface_application_list_complex_manage_person() { try { await api.get("/jaxrs/processplatform/assemble/surface/application/list/complex/manage/person") } catch {} }
-async function api_jaxrs_processplatform_assemble_surface_application_list_key_key() { try { await api.get("/jaxrs/processplatform/assemble/surface/application/list/key/key") } catch {} }
-async function api_jaxrs_processplatform_assemble_surface_application_list_terminal_terminal() { try { await api.get("/jaxrs/processplatform/assemble/surface/application/list/terminal/terminal") } catch {} }
-async function api_jaxrs_processplatform_assemble_surface_applicationdict_d1_application_a1_p0_data() { try { await api.get("/jaxrs/processplatform/assemble/surface/applicationdict/d1/application/a1/p0/data") } catch {} }
-async function api_jaxrs_processplatform_assemble_surface_attachment_att_1_work_work_1() { try { await api.get("/jaxrs/processplatform/assemble/surface/attachment/att-1/work/work-1") } catch {} }
-async function api_jaxrs_processplatform_assemble_surface_attachment_att_1_work_work_1_text() { try { await api.get("/jaxrs/processplatform/assemble/surface/attachment/att-1/work/work-1/text") } catch {} }
-async function api_jaxrs_processplatform_assemble_surface_attachment_batch_update_manage() { try { await api.get("/jaxrs/processplatform/assemble/surface/attachment/batch/update/manage") } catch {} }
-async function api_jaxrs_processplatform_assemble_surface_attachment_download_x_work_w_abc_txt_def() { try { await api.get("/jaxrs/processplatform/assemble/surface/attachment/download/x/work/w/abc.txt.def") } catch {} }
-async function api_jaxrs_processplatform_assemble_surface_attachment_html_to_image() { try { await api.get("/jaxrs/processplatform/assemble/surface/attachment/html/to/image") } catch {} }
-async function api_jaxrs_processplatform_assemble_surface_attachment_html_to_pdf() { try { await api.get("/jaxrs/processplatform/assemble/surface/attachment/html/to/pdf") } catch {} }
-async function api_jaxrs_processplatform_assemble_surface_attachment_upload_with_url() { try { await api.get("/jaxrs/processplatform/assemble/surface/attachment/upload/with/url") } catch {} }
-async function api_jaxrs_processplatform_assemble_surface_attachment_v2_upload_workorworkcompleted__5df9f8() { try { await api.get("/jaxrs/processplatform/assemble/surface/attachment/v2/upload/workorworkcompleted/either-1/base64") } catch {} }
-async function api_jaxrs_processplatform_assemble_surface_correlation_list_job_job() { try { await api.get("/jaxrs/processplatform/assemble/surface/correlation/list/job/job") } catch {} }
-async function api_jaxrs_processplatform_assemble_surface_correlation_list_job_job_site_site() { try { await api.get("/jaxrs/processplatform/assemble/surface/correlation/list/job/job/site/site") } catch {} }
-async function api_jaxrs_processplatform_assemble_surface_correlation_update_job_job() { try { await api.get("/jaxrs/processplatform/assemble/surface/correlation/update/job/job") } catch {} }
+const jaxrs_processplatform_assemble_bam_period_list_completed_task_application_ref = ref<any[]>([]);
+const jaxrs_processplatform_assemble_bam_period_list_completed_task_application_q = useQuery({
+  queryKey: ['jaxrs_processplatform_assemble_bam_period_list_completed_task_application'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/processplatform/assemble/bam/period/list/completed/task/application"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const jaxrs_processplatform_assemble_bam_period_list_completed_task_applicationstubs_ref = ref<any[]>([]);
+const jaxrs_processplatform_assemble_bam_period_list_completed_task_applicationstubs_q = useQuery({
+  queryKey: ['jaxrs_processplatform_assemble_bam_period_list_completed_task_applicationstubs'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/processplatform/assemble/bam/period/list/completed/task/applicationstubs"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const jaxrs_processplatform_assemble_bam_period_list_completed_task_unitstubs_ref = ref<any[]>([]);
+const jaxrs_processplatform_assemble_bam_period_list_completed_task_unitstubs_q = useQuery({
+  queryKey: ['jaxrs_processplatform_assemble_bam_period_list_completed_task_unitstubs'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/processplatform/assemble/bam/period/list/completed/task/unitstubs"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const jaxrs_processplatform_assemble_bam_period_list_completed_work_applicationstubs_ref = ref<any[]>([]);
+const jaxrs_processplatform_assemble_bam_period_list_completed_work_applicationstubs_q = useQuery({
+  queryKey: ['jaxrs_processplatform_assemble_bam_period_list_completed_work_applicationstubs'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/processplatform/assemble/bam/period/list/completed/work/applicationstubs"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const jaxrs_processplatform_assemble_bam_period_list_completed_work_unitstubs_ref = ref<any[]>([]);
+const jaxrs_processplatform_assemble_bam_period_list_completed_work_unitstubs_q = useQuery({
+  queryKey: ['jaxrs_processplatform_assemble_bam_period_list_completed_work_unitstubs'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/processplatform/assemble/bam/period/list/completed/work/unitstubs"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const jaxrs_processplatform_assemble_bam_period_list_count_completed_task_application__92e84b_ref = ref<any[]>([]);
+const jaxrs_processplatform_assemble_bam_period_list_count_completed_task_application__92e84b_q = useQuery({
+  queryKey: ['jaxrs_processplatform_assemble_bam_period_list_count_completed_task_application__92e84b'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/processplatform/assemble/bam/period/list/count/completed/task/application/app1/process/p1/activity/a1/by/unit"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const jaxrs_processplatform_assemble_bam_period_list_count_start_work_application_app1_31fe10_ref = ref<any[]>([]);
+const jaxrs_processplatform_assemble_bam_period_list_count_start_work_application_app1_31fe10_q = useQuery({
+  queryKey: ['jaxrs_processplatform_assemble_bam_period_list_count_start_work_application_app1_31fe10'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/processplatform/assemble/bam/period/list/count/start/work/application/app1/process/p1/unit/u1/person/per1"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const jaxrs_processplatform_assemble_bam_period_list_expired_task_application_ref = ref<any[]>([]);
+const jaxrs_processplatform_assemble_bam_period_list_expired_task_application_q = useQuery({
+  queryKey: ['jaxrs_processplatform_assemble_bam_period_list_expired_task_application'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/processplatform/assemble/bam/period/list/expired/task/application"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const jaxrs_processplatform_assemble_bam_period_list_expired_task_applicationstubs_ref = ref<any[]>([]);
+const jaxrs_processplatform_assemble_bam_period_list_expired_task_applicationstubs_q = useQuery({
+  queryKey: ['jaxrs_processplatform_assemble_bam_period_list_expired_task_applicationstubs'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/processplatform/assemble/bam/period/list/expired/task/applicationstubs"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const jaxrs_processplatform_assemble_bam_period_list_expired_task_unitstubs_ref = ref<any[]>([]);
+const jaxrs_processplatform_assemble_bam_period_list_expired_task_unitstubs_q = useQuery({
+  queryKey: ['jaxrs_processplatform_assemble_bam_period_list_expired_task_unitstubs'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/processplatform/assemble/bam/period/list/expired/task/unitstubs"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const jaxrs_processplatform_assemble_bam_period_list_expired_work_applicationstubs_ref = ref<any[]>([]);
+const jaxrs_processplatform_assemble_bam_period_list_expired_work_applicationstubs_q = useQuery({
+  queryKey: ['jaxrs_processplatform_assemble_bam_period_list_expired_work_applicationstubs'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/processplatform/assemble/bam/period/list/expired/work/applicationstubs"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const jaxrs_processplatform_assemble_bam_period_list_expired_work_unitstubs_ref = ref<any[]>([]);
+const jaxrs_processplatform_assemble_bam_period_list_expired_work_unitstubs_q = useQuery({
+  queryKey: ['jaxrs_processplatform_assemble_bam_period_list_expired_work_unitstubs'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/processplatform/assemble/bam/period/list/expired/work/unitstubs"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const jaxrs_processplatform_assemble_bam_period_list_start_task_applicationstubs_ref = ref<any[]>([]);
+const jaxrs_processplatform_assemble_bam_period_list_start_task_applicationstubs_q = useQuery({
+  queryKey: ['jaxrs_processplatform_assemble_bam_period_list_start_task_applicationstubs'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/processplatform/assemble/bam/period/list/start/task/applicationstubs"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const jaxrs_processplatform_assemble_bam_period_list_start_task_unitstubs_ref = ref<any[]>([]);
+const jaxrs_processplatform_assemble_bam_period_list_start_task_unitstubs_q = useQuery({
+  queryKey: ['jaxrs_processplatform_assemble_bam_period_list_start_task_unitstubs'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/processplatform/assemble/bam/period/list/start/task/unitstubs"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const jaxrs_processplatform_assemble_bam_period_list_start_work_applicationstubs_ref = ref<any[]>([]);
+const jaxrs_processplatform_assemble_bam_period_list_start_work_applicationstubs_q = useQuery({
+  queryKey: ['jaxrs_processplatform_assemble_bam_period_list_start_work_applicationstubs'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/processplatform/assemble/bam/period/list/start/work/applicationstubs"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const jaxrs_processplatform_assemble_bam_period_list_start_work_unitstubs_ref = ref<any[]>([]);
+const jaxrs_processplatform_assemble_bam_period_list_start_work_unitstubs_q = useQuery({
+  queryKey: ['jaxrs_processplatform_assemble_bam_period_list_start_work_unitstubs'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/processplatform/assemble/bam/period/list/start/work/unitstubs"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const jaxrs_processplatform_assemble_designer_item_access_path_path_ref = ref<any[]>([]);
+const jaxrs_processplatform_assemble_designer_item_access_path_path_q = useQuery({
+  queryKey: ['jaxrs_processplatform_assemble_designer_item_access_path_path'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/processplatform/assemble/designer/item/access/path/path"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const jaxrs_processplatform_assemble_surface_application_list_complex_manage_person_ref = ref<any[]>([]);
+const jaxrs_processplatform_assemble_surface_application_list_complex_manage_person_q = useQuery({
+  queryKey: ['jaxrs_processplatform_assemble_surface_application_list_complex_manage_person'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/processplatform/assemble/surface/application/list/complex/manage/person"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const jaxrs_processplatform_assemble_surface_application_list_key_key_ref = ref<any[]>([]);
+const jaxrs_processplatform_assemble_surface_application_list_key_key_q = useQuery({
+  queryKey: ['jaxrs_processplatform_assemble_surface_application_list_key_key'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/processplatform/assemble/surface/application/list/key/key"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const jaxrs_processplatform_assemble_surface_application_list_terminal_terminal_ref = ref<any[]>([]);
+const jaxrs_processplatform_assemble_surface_application_list_terminal_terminal_q = useQuery({
+  queryKey: ['jaxrs_processplatform_assemble_surface_application_list_terminal_terminal'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/processplatform/assemble/surface/application/list/terminal/terminal"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const jaxrs_processplatform_assemble_surface_applicationdict_d1_application_a1_p0_data_ref = ref<any[]>([]);
+const jaxrs_processplatform_assemble_surface_applicationdict_d1_application_a1_p0_data_q = useQuery({
+  queryKey: ['jaxrs_processplatform_assemble_surface_applicationdict_d1_application_a1_p0_data'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/processplatform/assemble/surface/applicationdict/d1/application/a1/p0/data"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const jaxrs_processplatform_assemble_surface_attachment_att_1_work_work_1_ref = ref<any[]>([]);
+const jaxrs_processplatform_assemble_surface_attachment_att_1_work_work_1_q = useQuery({
+  queryKey: ['jaxrs_processplatform_assemble_surface_attachment_att_1_work_work_1'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/processplatform/assemble/surface/attachment/att-1/work/work-1"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const jaxrs_processplatform_assemble_surface_attachment_att_1_work_work_1_text_ref = ref<any[]>([]);
+const jaxrs_processplatform_assemble_surface_attachment_att_1_work_work_1_text_q = useQuery({
+  queryKey: ['jaxrs_processplatform_assemble_surface_attachment_att_1_work_work_1_text'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/processplatform/assemble/surface/attachment/att-1/work/work-1/text"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const jaxrs_processplatform_assemble_surface_attachment_batch_update_manage_ref = ref<any[]>([]);
+const jaxrs_processplatform_assemble_surface_attachment_batch_update_manage_q = useQuery({
+  queryKey: ['jaxrs_processplatform_assemble_surface_attachment_batch_update_manage'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/processplatform/assemble/surface/attachment/batch/update/manage"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const jaxrs_processplatform_assemble_surface_attachment_download_x_work_w_abc_txt_def_ref = ref<any[]>([]);
+const jaxrs_processplatform_assemble_surface_attachment_download_x_work_w_abc_txt_def_q = useQuery({
+  queryKey: ['jaxrs_processplatform_assemble_surface_attachment_download_x_work_w_abc_txt_def'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/processplatform/assemble/surface/attachment/download/x/work/w/abc.txt.def"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const jaxrs_processplatform_assemble_surface_attachment_html_to_image_ref = ref<any[]>([]);
+const jaxrs_processplatform_assemble_surface_attachment_html_to_image_q = useQuery({
+  queryKey: ['jaxrs_processplatform_assemble_surface_attachment_html_to_image'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/processplatform/assemble/surface/attachment/html/to/image"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const jaxrs_processplatform_assemble_surface_attachment_html_to_pdf_ref = ref<any[]>([]);
+const jaxrs_processplatform_assemble_surface_attachment_html_to_pdf_q = useQuery({
+  queryKey: ['jaxrs_processplatform_assemble_surface_attachment_html_to_pdf'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/processplatform/assemble/surface/attachment/html/to/pdf"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const jaxrs_processplatform_assemble_surface_attachment_upload_with_url_ref = ref<any[]>([]);
+const jaxrs_processplatform_assemble_surface_attachment_upload_with_url_q = useQuery({
+  queryKey: ['jaxrs_processplatform_assemble_surface_attachment_upload_with_url'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/processplatform/assemble/surface/attachment/upload/with/url"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const jaxrs_processplatform_assemble_surface_attachment_v2_upload_workorworkcompleted__5df9f8_ref = ref<any[]>([]);
+const jaxrs_processplatform_assemble_surface_attachment_v2_upload_workorworkcompleted__5df9f8_q = useQuery({
+  queryKey: ['jaxrs_processplatform_assemble_surface_attachment_v2_upload_workorworkcompleted__5df9f8'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/processplatform/assemble/surface/attachment/v2/upload/workorworkcompleted/either-1/base64"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const jaxrs_processplatform_assemble_surface_correlation_list_job_job_ref = ref<any[]>([]);
+const jaxrs_processplatform_assemble_surface_correlation_list_job_job_q = useQuery({
+  queryKey: ['jaxrs_processplatform_assemble_surface_correlation_list_job_job'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/processplatform/assemble/surface/correlation/list/job/job"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const jaxrs_processplatform_assemble_surface_correlation_list_job_job_site_site_ref = ref<any[]>([]);
+const jaxrs_processplatform_assemble_surface_correlation_list_job_job_site_site_q = useQuery({
+  queryKey: ['jaxrs_processplatform_assemble_surface_correlation_list_job_job_site_site'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/processplatform/assemble/surface/correlation/list/job/job/site/site"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const jaxrs_processplatform_assemble_surface_correlation_update_job_job_ref = ref<any[]>([]);
+const jaxrs_processplatform_assemble_surface_correlation_update_job_job_q = useQuery({
+  queryKey: ['jaxrs_processplatform_assemble_surface_correlation_update_job_job'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/processplatform/assemble/surface/correlation/update/job/job"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
 const api_jaxrs_pr_277_data = ref<any[]>([]);
 const { data: api_jaxrs_pr_277_q } = useQuery({queryKey: ['api_jaxrs_pr_277', '/jaxrs/processplatform/assemble/surface/data/job/job/array/data'], queryFn: async () => { try { const r = await api.get("/jaxrs/processplatform/assemble/surface/data/job/job/array/data"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
 watch(api_jaxrs_pr_277_q, (v) => { api_jaxrs_pr_277_data.value = v ?? []; });
-async function api_jaxrs_processplatform_assemble_surface_data_job_job_mockputtopost() { try { await api.get("/jaxrs/processplatform/assemble/surface/data/job/job/mockputtopost") } catch {} }
+const jaxrs_processplatform_assemble_surface_data_job_job_mockputtopost_ref = ref<any[]>([]);
+const jaxrs_processplatform_assemble_surface_data_job_job_mockputtopost_q = useQuery({
+  queryKey: ['jaxrs_processplatform_assemble_surface_data_job_job_mockputtopost'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/processplatform/assemble/surface/data/job/job/mockputtopost"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
 const api_jaxrs_pr_735_data = ref<any[]>([]);
 const { data: api_jaxrs_pr_735_q } = useQuery({queryKey: ['api_jaxrs_pr_735', '/jaxrs/processplatform/assemble/surface/data/job/job/path0'], queryFn: async () => { try { const r = await api.get("/jaxrs/processplatform/assemble/surface/data/job/job/path0"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
 watch(api_jaxrs_pr_735_q, (v) => { api_jaxrs_pr_735_data.value = v ?? []; });
-async function api_jaxrs_processplatform_assemble_surface_data_job_job_path0_mockputtopost() { try { await api.get("/jaxrs/processplatform/assemble/surface/data/job/job/path0/mockputtopost") } catch {} }
+const jaxrs_processplatform_assemble_surface_data_job_job_path0_mockputtopost_ref = ref<any[]>([]);
+const jaxrs_processplatform_assemble_surface_data_job_job_path0_mockputtopost_q = useQuery({
+  queryKey: ['jaxrs_processplatform_assemble_surface_data_job_job_path0_mockputtopost'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/processplatform/assemble/surface/data/job/job/path0/mockputtopost"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
 const api_jaxrs_pr_401_data = ref<any[]>([]);
 const { data: api_jaxrs_pr_401_q } = useQuery({queryKey: ['api_jaxrs_pr_401', '/jaxrs/processplatform/assemble/surface/data/job/job/path0/path1'], queryFn: async () => { try { const r = await api.get("/jaxrs/processplatform/assemble/surface/data/job/job/path0/path1"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
 watch(api_jaxrs_pr_401_q, (v) => { api_jaxrs_pr_401_data.value = v ?? []; });
-async function api_jaxrs_processplatform_assemble_surface_data_job_job_path0_path1_mockputtopost() { try { await api.get("/jaxrs/processplatform/assemble/surface/data/job/job/path0/path1/mockputtopost") } catch {} }
-async function api_jaxrs_processplatform_assemble_surface_data_job_job_path0_path1_path2() { try { await api.get("/jaxrs/processplatform/assemble/surface/data/job/job/path0/path1/path2") } catch {} }
-async function api_jaxrs_processplatform_assemble_surface_data_job_job_path0_path1_path2_mockputtopost() { try { await api.get("/jaxrs/processplatform/assemble/surface/data/job/job/path0/path1/path2/mockputtopost") } catch {} }
-async function api_jaxrs_processplatform_assemble_surface_data_job_job_path0_path1_path2_path3() { try { await api.get("/jaxrs/processplatform/assemble/surface/data/job/job/path0/path1/path2/path3") } catch {} }
-async function api_jaxrs_processplatform_assemble_surface_data_job_job_path0_path1_path2_path3_mock_e5a3fd() { try { await api.get("/jaxrs/processplatform/assemble/surface/data/job/job/path0/path1/path2/path3/mockputtopost") } catch {} }
-async function api_jaxrs_processplatform_assemble_surface_data_job_job_path0_path1_path2_path3_path4() { try { await api.get("/jaxrs/processplatform/assemble/surface/data/job/job/path0/path1/path2/path3/path4") } catch {} }
-async function api_jaxrs_processplatform_assemble_surface_data_job_job_path0_path1_path2_path3_path_df94bf() { try { await api.get("/jaxrs/processplatform/assemble/surface/data/job/job/path0/path1/path2/path3/path4/mockputtopost") } catch {} }
-async function api_jaxrs_processplatform_assemble_surface_data_job_job_path0_path1_path2_path3_path4_path5() { try { await api.get("/jaxrs/processplatform/assemble/surface/data/job/job/path0/path1/path2/path3/path4/path5") } catch {} }
-async function api_jaxrs_processplatform_assemble_surface_data_job_job_path0_path1_path2_path3_path_ecbec3() { try { await api.get("/jaxrs/processplatform/assemble/surface/data/job/job/path0/path1/path2/path3/path4/path5/mockputtopost") } catch {} }
-async function api_jaxrs_processplatform_assemble_surface_data_job_job_path0_path1_path2_path3_path_1020aa() { try { await api.get("/jaxrs/processplatform/assemble/surface/data/job/job/path0/path1/path2/path3/path4/path5/path6") } catch {} }
-async function api_jaxrs_processplatform_assemble_surface_data_job_job_path0_path1_path2_path3_path_a6df9d() { try { await api.get("/jaxrs/processplatform/assemble/surface/data/job/job/path0/path1/path2/path3/path4/path5/path6/mockputtopost") } catch {} }
-async function api_jaxrs_processplatform_assemble_surface_data_job_job_path0_path1_path2_path3_path_f5986a() { try { await api.get("/jaxrs/processplatform/assemble/surface/data/job/job/path0/path1/path2/path3/path4/path5/path6/path7") } catch {} }
-async function api_jaxrs_processplatform_assemble_surface_data_job_job_path0_path1_path2_path3_path_80cd92() { try { await api.get("/jaxrs/processplatform/assemble/surface/data/job/job/path0/path1/path2/path3/path4/path5/path6/path7/mockputtopost") } catch {} }
+const jaxrs_processplatform_assemble_surface_data_job_job_path0_path1_mockputtopost_ref = ref<any[]>([]);
+const jaxrs_processplatform_assemble_surface_data_job_job_path0_path1_mockputtopost_q = useQuery({
+  queryKey: ['jaxrs_processplatform_assemble_surface_data_job_job_path0_path1_mockputtopost'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/processplatform/assemble/surface/data/job/job/path0/path1/mockputtopost"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const jaxrs_processplatform_assemble_surface_data_job_job_path0_path1_path2_ref = ref<any[]>([]);
+const jaxrs_processplatform_assemble_surface_data_job_job_path0_path1_path2_q = useQuery({
+  queryKey: ['jaxrs_processplatform_assemble_surface_data_job_job_path0_path1_path2'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/processplatform/assemble/surface/data/job/job/path0/path1/path2"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const jaxrs_processplatform_assemble_surface_data_job_job_path0_path1_path2_mockputtopost_ref = ref<any[]>([]);
+const jaxrs_processplatform_assemble_surface_data_job_job_path0_path1_path2_mockputtopost_q = useQuery({
+  queryKey: ['jaxrs_processplatform_assemble_surface_data_job_job_path0_path1_path2_mockputtopost'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/processplatform/assemble/surface/data/job/job/path0/path1/path2/mockputtopost"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const jaxrs_processplatform_assemble_surface_data_job_job_path0_path1_path2_path3_ref = ref<any[]>([]);
+const jaxrs_processplatform_assemble_surface_data_job_job_path0_path1_path2_path3_q = useQuery({
+  queryKey: ['jaxrs_processplatform_assemble_surface_data_job_job_path0_path1_path2_path3'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/processplatform/assemble/surface/data/job/job/path0/path1/path2/path3"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const jaxrs_processplatform_assemble_surface_data_job_job_path0_path1_path2_path3_mock_e5a3fd_ref = ref<any[]>([]);
+const jaxrs_processplatform_assemble_surface_data_job_job_path0_path1_path2_path3_mock_e5a3fd_q = useQuery({
+  queryKey: ['jaxrs_processplatform_assemble_surface_data_job_job_path0_path1_path2_path3_mock_e5a3fd'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/processplatform/assemble/surface/data/job/job/path0/path1/path2/path3/mockputtopost"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const jaxrs_processplatform_assemble_surface_data_job_job_path0_path1_path2_path3_path4_ref = ref<any[]>([]);
+const jaxrs_processplatform_assemble_surface_data_job_job_path0_path1_path2_path3_path4_q = useQuery({
+  queryKey: ['jaxrs_processplatform_assemble_surface_data_job_job_path0_path1_path2_path3_path4'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/processplatform/assemble/surface/data/job/job/path0/path1/path2/path3/path4"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const jaxrs_processplatform_assemble_surface_data_job_job_path0_path1_path2_path3_path_df94bf_ref = ref<any[]>([]);
+const jaxrs_processplatform_assemble_surface_data_job_job_path0_path1_path2_path3_path_df94bf_q = useQuery({
+  queryKey: ['jaxrs_processplatform_assemble_surface_data_job_job_path0_path1_path2_path3_path_df94bf'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/processplatform/assemble/surface/data/job/job/path0/path1/path2/path3/path4/mockputtopost"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const jaxrs_processplatform_assemble_surface_data_job_job_path0_path1_path2_path3_path4_path5_ref = ref<any[]>([]);
+const jaxrs_processplatform_assemble_surface_data_job_job_path0_path1_path2_path3_path4_path5_q = useQuery({
+  queryKey: ['jaxrs_processplatform_assemble_surface_data_job_job_path0_path1_path2_path3_path4_path5'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/processplatform/assemble/surface/data/job/job/path0/path1/path2/path3/path4/path5"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const jaxrs_processplatform_assemble_surface_data_job_job_path0_path1_path2_path3_path_ecbec3_ref = ref<any[]>([]);
+const jaxrs_processplatform_assemble_surface_data_job_job_path0_path1_path2_path3_path_ecbec3_q = useQuery({
+  queryKey: ['jaxrs_processplatform_assemble_surface_data_job_job_path0_path1_path2_path3_path_ecbec3'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/processplatform/assemble/surface/data/job/job/path0/path1/path2/path3/path4/path5/mockputtopost"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const jaxrs_processplatform_assemble_surface_data_job_job_path0_path1_path2_path3_path_1020aa_ref = ref<any[]>([]);
+const jaxrs_processplatform_assemble_surface_data_job_job_path0_path1_path2_path3_path_1020aa_q = useQuery({
+  queryKey: ['jaxrs_processplatform_assemble_surface_data_job_job_path0_path1_path2_path3_path_1020aa'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/processplatform/assemble/surface/data/job/job/path0/path1/path2/path3/path4/path5/path6"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const jaxrs_processplatform_assemble_surface_data_job_job_path0_path1_path2_path3_path_a6df9d_ref = ref<any[]>([]);
+const jaxrs_processplatform_assemble_surface_data_job_job_path0_path1_path2_path3_path_a6df9d_q = useQuery({
+  queryKey: ['jaxrs_processplatform_assemble_surface_data_job_job_path0_path1_path2_path3_path_a6df9d'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/processplatform/assemble/surface/data/job/job/path0/path1/path2/path3/path4/path5/path6/mockputtopost"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const jaxrs_processplatform_assemble_surface_data_job_job_path0_path1_path2_path3_path_f5986a_ref = ref<any[]>([]);
+const jaxrs_processplatform_assemble_surface_data_job_job_path0_path1_path2_path3_path_f5986a_q = useQuery({
+  queryKey: ['jaxrs_processplatform_assemble_surface_data_job_job_path0_path1_path2_path3_path_f5986a'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/processplatform/assemble/surface/data/job/job/path0/path1/path2/path3/path4/path5/path6/path7"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const jaxrs_processplatform_assemble_surface_data_job_job_path0_path1_path2_path3_path_80cd92_ref = ref<any[]>([]);
+const jaxrs_processplatform_assemble_surface_data_job_job_path0_path1_path2_path3_path_80cd92_q = useQuery({
+  queryKey: ['jaxrs_processplatform_assemble_surface_data_job_job_path0_path1_path2_path3_path_80cd92'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/processplatform/assemble/surface/data/job/job/path0/path1/path2/path3/path4/path5/path6/path7/mockputtopost"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
 const api_jaxrs_pr_319_data = ref<any[]>([]);
 const { data: api_jaxrs_pr_319_q } = useQuery({queryKey: ['api_jaxrs_pr_319', '/jaxrs/processplatform/assemble/surface/datarecord/get/job/job/path/path'], queryFn: async () => { try { const r = await api.get("/jaxrs/processplatform/assemble/surface/datarecord/get/job/job/path/path"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
 watch(api_jaxrs_pr_319_q, (v) => { api_jaxrs_pr_319_data.value = v ?? []; });
@@ -525,9 +2293,33 @@ watch(api_jaxrs_pr_26_q, (v) => { api_jaxrs_pr_26_data.value = v ?? []; });
 const api_jaxrs_pr_824_data = ref<any[]>([]);
 const { data: api_jaxrs_pr_824_q } = useQuery({queryKey: ['api_jaxrs_pr_824', '/jaxrs/processplatform/assemble/surface/job/job/find/work/workcompleted'], queryFn: async () => { try { const r = await api.get("/jaxrs/processplatform/assemble/surface/job/job/find/work/workcompleted"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
 watch(api_jaxrs_pr_824_q, (v) => { api_jaxrs_pr_824_data.value = v ?? []; });
-async function api_jaxrs_processplatform_assemble_surface_job_latest_work_workcompleted_serial_serial() { try { await api.get("/jaxrs/processplatform/assemble/surface/job/latest/work/workcompleted/serial/serial") } catch {} }
-async function api_jaxrs_processplatform_assemble_surface_job_v2_job_projection() { try { await api.get("/jaxrs/processplatform/assemble/surface/job/v2/job/projection") } catch {} }
-async function api_jaxrs_processplatform_assemble_surface_mode_clear_person_person_manager() { try { await api.get("/jaxrs/processplatform/assemble/surface/mode/clear/person/person/manager") } catch {} }
+const jaxrs_processplatform_assemble_surface_job_latest_work_workcompleted_serial_serial_ref = ref<any[]>([]);
+const jaxrs_processplatform_assemble_surface_job_latest_work_workcompleted_serial_serial_q = useQuery({
+  queryKey: ['jaxrs_processplatform_assemble_surface_job_latest_work_workcompleted_serial_serial'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/processplatform/assemble/surface/job/latest/work/workcompleted/serial/serial"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const jaxrs_processplatform_assemble_surface_job_v2_job_projection_ref = ref<any[]>([]);
+const jaxrs_processplatform_assemble_surface_job_v2_job_projection_q = useQuery({
+  queryKey: ['jaxrs_processplatform_assemble_surface_job_v2_job_projection'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/processplatform/assemble/surface/job/v2/job/projection"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const jaxrs_processplatform_assemble_surface_mode_clear_person_person_manager_ref = ref<any[]>([]);
+const jaxrs_processplatform_assemble_surface_mode_clear_person_person_manager_q = useQuery({
+  queryKey: ['jaxrs_processplatform_assemble_surface_mode_clear_person_person_manager'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/processplatform/assemble/surface/mode/clear/person/person/manager"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
 const api_jaxrs_pr_183_data = ref<any[]>([]);
 const { data: api_jaxrs_pr_183_q } = useQuery({queryKey: ['api_jaxrs_pr_183', '/jaxrs/processplatform/assemble/surface/read/filter/attribute/filter'], queryFn: async () => { try { const r = await api.get("/jaxrs/processplatform/assemble/surface/read/filter/attribute/filter"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
 watch(api_jaxrs_pr_183_q, (v) => { api_jaxrs_pr_183_data.value = v ?? []; });

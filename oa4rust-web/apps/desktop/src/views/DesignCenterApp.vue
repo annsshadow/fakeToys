@@ -111,11 +111,51 @@ const filteredDesigners = computed(() => {
 function filterDesigners() { /* reactive via computed */ }
 function refreshAll() { coveredRoutes.value = 2847; activeViews.value = 30 }
 
-async function api_design_appdict_da_1_mockputtopost() { try { await api.get("/jaxrs/design/appdict/da-1/mockputtopost") } catch {} }
-async function api_design_appdict_da_1() { try { await api.get("/jaxrs/design/appdict/da-1") } catch {} }
-async function api_design_appdict() { try { await api.get("/jaxrs/design/appdict") } catch {} }
-async function api_designer_search() { try { await api.get("/jaxrs/designer/search") } catch {} }
-async function api_design_appdict_u3_dedup_target() { try { await api.get("/jaxrs/design/appdict/u3-dedup-target") } catch {} }
+const design_appdict_da_1_mockputtopost_ref = ref<any[]>([]);
+const design_appdict_da_1_mockputtopost_q = useQuery({
+  queryKey: ['design_appdict_da_1_mockputtopost'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/design/appdict/da-1/mockputtopost"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const design_appdict_da_1_ref = ref<any[]>([]);
+const design_appdict_da_1_q = useQuery({
+  queryKey: ['design_appdict_da_1'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/design/appdict/da-1"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const design_appdict_ref = ref<any[]>([]);
+const design_appdict_q = useQuery({
+  queryKey: ['design_appdict'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/design/appdict"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const designer_search_ref = ref<any[]>([]);
+const designer_search_q = useQuery({
+  queryKey: ['designer_search'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/designer/search"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const design_appdict_u3_dedup_target_ref = ref<any[]>([]);
+const design_appdict_u3_dedup_target_q = useQuery({
+  queryKey: ['design_appdict_u3_dedup_target'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/design/appdict/u3-dedup-target"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
 
 </script>
 
