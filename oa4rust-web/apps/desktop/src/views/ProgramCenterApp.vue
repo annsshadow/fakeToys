@@ -15,14 +15,15 @@
       <!-- Agent tab -->
       <div v-if="tab==='agent'" class="tab-content">
         <div class="toolbar">
+          <input v-model="agentSearch" placeholder="搜索Agent..." class="search-input" />
           <button class="btn-primary" @click="loadAgents">刷新</button>
           <button class="btn-create" @click="showCreateAgent=true">+ 新建Agent</button>
         </div>
         <div v-if="loadingAgent" class="loading-row"><div class="sk" v-for="i in 4" :key="i"></div></div>
-        <div v-else-if="agents.length===0" class="empty"><div class="ei">🤖</div><p>暂无Agent</p></div>
+        <div v-else-if="filteredAgents.length===0" class="empty"><div class="ei">🤖</div><p>暂无Agent</p></div>
         <div v-else class="item-table">
           <div class="table-header"><span class="col-name">名称</span><span class="col-flag">Flag</span><span class="col-status">状态</span><span class="col-actions">操作</span></div>
-          <div v-for="a in agents" :key="a.id" class="table-row glass-card">
+          <div v-for="a in filteredAgents" :key="a.id" class="table-row glass-card">
             <span class="col-name">{{ a.name || a.label || a.agentName || '未命名' }}</span>
             <span class="col-flag font-mono">{{ a.flag || a.id }}</span>
             <span class="col-status" :class="a.enabled!==false?'enabled':'disabled'">{{ a.enabled!==false?'启用':'禁用' }}</span>
@@ -114,7 +115,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch } from 'vue'
+import { ref, watch, computed } from 'vue'
 import { useMutation } from '@tanstack/vue-query'
 import { api } from '@oa4rust/sdk'
 import { toast } from '../utils/toast'
@@ -140,6 +141,12 @@ const markets = ref<Market[]>([])
 const showCreateAgent = ref(false)
 const showCreateDict = ref(false)
 const agentForm = ref({ name: '', flag: '' })
+const agentSearch = ref('')
+const filteredAgents = computed(() =>
+  agentSearch.value
+    ? agents.value.filter(a => (a.name||a.flag||'').toLowerCase().includes(agentSearch.value.toLowerCase()))
+    : agents.value
+)
 
 async function loadAgents() {
   loadingAgent.value = true
