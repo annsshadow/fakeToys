@@ -236,3 +236,84 @@ cargo test --test parity_runner parity_record -- --ignored
 | `oa4rust/scripts/generate_parity_tests.py` | Parity 测试生成脚本（已修复）|
 | `oa4rust/tests/parity_runner.rs` | parity 录制/验证入口 |
 | `oa4rust/tests/integration_tests/scenarios/` | 8 个集成测试场景 |
+
+---
+
+## 附录：Parity 测试失败详细分析（2026-09-06）
+
+### 测试结果摘要
+```
+总计：4,194 个测试
+通过：4,157（99.1%）
+失败：37（0.9%）
+```
+
+### 失败分类
+
+#### 类型 1：路由返回 404（14 个 generated_tests）
+```
+parity__bbs_assemble_control__list_forums
+parity__calendar__calendar_list_my
+parity__file_assemble_control__attachment2_id
+parity__file_assemble_control__attachment2_list_top
+parity__file_assemble_control__attachment2_list_top_1
+parity__file_assemble_control__attachment_id
+parity__file_assemble_control__attachment_list_top
+parity__file_assemble_control__attachment_list_top_1
+parity__file_assemble_control__file_list_referencetype_referenceType_reference_reference
+parity__general_assemble_control__crate_55
+parity__general_assemble_control__crate_93
+parity__general_assemble_control__crate_94
+parity__message_assemble_communicate__im_conversation_list_my
+parity__mind_assemble_control__list_folders
+parity__organization_assemble_express__list_organization_units
+```
+**原因**：路由可能已被重构、路径变更或意外移除。
+**修复**：检查各模块的 routes.rs，确认路由注册是否正确。
+
+#### 类型 2：数据库列反序列化错误（4 个）
+```
+parity__program_center__config_list
+parity__program_center__config_list_entity
+parity__program_center__dict_list
+parity__program_center__script_list
+```
+**原因**：SQL 查询引用了不存在的列（column 3/4 = category/creator）。
+**修复**：检查 x_program_center 表结构，修正 SQL 查询中的列名。
+
+#### 类型 3：运行时 500 错误（19 个 behavior_tests）
+```
+AI 模块：
+- parity_behavior__ai__chat_list_paging
+- parity_behavior__ai__chat_list_completion_paging
+- parity_behavior__ai__config_list_model_paging
+- parity_behavior__ai_assemble_control__config_list_mcp_paging_page_size_size
+- parity_behavior__ai_assemble_control__file_list_paging_page_size_size
+- parity_behavior__ai_assemble_control__index_list_paging_page_size_size
+
+Component 模块：
+- parity_behavior__component_assemble_control__list_components
+- parity_behavior__component_assemble_control__list_control_categories
+- parity_behavior__component_assemble_control__status_list
+
+CMS 模块：
+- parity_behavior__cms_assemble_control__commend_list_paging
+
+Hotpic 模块：
+- parity_behavior__hotpic_assemble_control__cipher_hotpic_filter_list_page_page_count_count
+- parity_behavior__hotpic_assemble_control__user_hotpic_filter_list_page_page_count_count
+
+其他：
+- parity_behavior__bbs_assemble_control__list_forums
+- parity_behavior__calendar__calendar_list_my
+```
+**原因**：Handler 内部错误（数据库查询、权限检查、空指针等）。
+**修复**：需要逐个排查每个 handler 的日志和错误信息。
+
+### 修复优先级
+
+| 优先级 | 类别 | 数量 | 预计工时 |
+|--------|------|------|---------|
+| P0 | 数据库列名错误 | 4 | 1 天 |
+| P0 | 路由 404 | 14 | 1 天 |
+| P1 | 运行时 500 错误 | 19 | 2-3 天 |
