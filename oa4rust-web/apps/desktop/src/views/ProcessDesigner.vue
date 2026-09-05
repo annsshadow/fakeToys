@@ -7850,6 +7850,8 @@ function getProcStatusLabel(s: string): string { return s==="active"?"运行中"
 // -- Debug Panel Helpers --
 function dbgEntryClass(level: string): Record<string,boolean> { const r: Record<string,boolean> = {dbg_entry:true}; r["dbg_"+level] = true; return r; }
 function dbgStepClass(status: string): Record<string,boolean> { const r: Record<string,boolean> = {dbg_step_status:true}; r[status] = true; return r; }
+
+async function exportProcess(){if(!selectedProcess.value?.id)return;try{const r=await api.get('/jaxrs/processplatform/assemble/designer/process/export?id='+selectedProcess.value.id);const blob=new Blob([JSON.stringify(r.data,null,2)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=(selectedProcess.value.name||'process')+'.json';a.click()}catch(e){alert('导出失败')}}
 </script>
 <style scoped>
 .pd{display:flex;flex-direction:column;height:100%}
