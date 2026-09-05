@@ -140,17 +140,27 @@ async function api_view() { try { await api.get('/jaxrs/view') } catch {} }
 async function api_viewcategory_vc_1() { try { await api.get("/jaxrs/viewcategory/vc-1") } catch {} }
 async function api_viewcategory() { try { await api.get("/jaxrs/viewcategory") } catch {} }
 async function api_viewcategory_vc_1_mockdeletetoget() { try { await api.get("/jaxrs/viewcategory/vc-1/mockdeletetoget") } catch {} }
-async function api_viewcategory_list_all() { try { await api.get("/jaxrs/viewcategory/list/all") } catch {} }
+const api_viewcate_548_data = ref<any[]>([]);
+const { data: api_viewcate_548_q } = useQuery({queryKey: ['api_viewcate_548', '/jaxrs/viewcategory/list/all'], queryFn: async () => { try { const r = await api.get("/jaxrs/viewcategory/list/all"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+watch(api_viewcate_548_q, (v) => { api_viewcate_548_data.value = v ?? []; });
 
 
-async function api_viewfieldconfig_list_all() { try { await api.get("/jaxrs/viewfieldconfig/list/all") } catch {} }
-async function api_viewfieldconfig_vfc_1() { try { await api.get("/jaxrs/viewfieldconfig/vfc-1") } catch {} }
+const api_viewfiel_567_data = ref<any[]>([]);
+const { data: api_viewfiel_567_q } = useQuery({queryKey: ['api_viewfiel_567', '/jaxrs/viewfieldconfig/list/all'], queryFn: async () => { try { const r = await api.get("/jaxrs/viewfieldconfig/list/all"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+watch(api_viewfiel_567_q, (v) => { api_viewfiel_567_data.value = v ?? []; });
+const api_viewfiel_215_data = ref<any[]>([]);
+const { data: api_viewfiel_215_q } = useQuery({queryKey: ['api_viewfiel_215', '/jaxrs/viewfieldconfig/vfc-1'], queryFn: async () => { try { const r = await api.get("/jaxrs/viewfieldconfig/vfc-1"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+watch(api_viewfiel_215_q, (v) => { api_viewfiel_215_data.value = v ?? []; });
 async function api_viewfieldconfig_vfc_1_mockdeletetoget() { try { await api.get("/jaxrs/viewfieldconfig/vfc-1/mockdeletetoget") } catch {} }
-async function api_viewfieldconfig() { try { await api.get("/jaxrs/viewfieldconfig") } catch {} }
+const api_viewfiel_260_data = ref<any[]>([]);
+const { data: api_viewfiel_260_q } = useQuery({queryKey: ['api_viewfiel_260', '/jaxrs/viewfieldconfig'], queryFn: async () => { try { const r = await api.get("/jaxrs/viewfieldconfig"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+watch(api_viewfiel_260_q, (v) => { api_viewfiel_260_data.value = v ?? []; });
 
 
 async function api_viewrecord_unread_mockputtopost() { try { await api.get("/jaxrs/viewrecord/unread/mockputtopost") } catch {} }
-async function api_viewrecord_unread() { try { await api.get("/jaxrs/viewrecord/unread") } catch {} }
+const api_viewreco_372_data = ref<any[]>([]);
+const { data: api_viewreco_372_q } = useQuery({queryKey: ['api_viewreco_372', '/jaxrs/viewrecord/unread'], queryFn: async () => { try { const r = await api.get("/jaxrs/viewrecord/unread"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+watch(api_viewreco_372_q, (v) => { api_viewreco_372_data.value = v ?? []; });
 const api_viewrecord_person_p_1_data = ref<any[]>([]);
 const { data: api_viewrecord_person_p_1_q } = useQuery({queryKey: ['api_viewrecord_person_p_1', '/jaxrs/viewrecord/person/p-1'], queryFn: async () => { try { const r = await api.get("/jaxrs/viewrecord/person/p-1"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
 watch(api_viewrecord_person_p_1_q, (v) => { api_viewrecord_person_p_1_data.value = v ?? []; });

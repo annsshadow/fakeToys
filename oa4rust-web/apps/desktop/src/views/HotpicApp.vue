@@ -99,15 +99,25 @@ async function api_hotpic_assemble_control_update_control_config() { try { await
 async function api_hotpic_assemble_control_user_hotpic_id() { try { await api.get("/jaxrs/hotpic_assemble_control/user/hotpic/id") } catch {} }
 async function api_hotpic_assemble_control_get_control_config() { try { await api.get("/jaxrs/hotpic_assemble_control/get/control/config") } catch {} }
 async function api_user_hotpic_application_infoId() { try { await api.get("/jaxrs/hotpic_assemble_control/user/hotpic/application/infoId") } catch {} }
-async function api_hotpic_assemble_control_list_control_panels() { try { await api.get("/jaxrs/hotpic_assemble_control/list/control/panels") } catch {} }
+const api_hotpic_a_799_data = ref<any[]>([]);
+const { data: api_hotpic_a_799_q } = useQuery({queryKey: ['api_hotpic_a_799', '/jaxrs/hotpic_assemble_control/list/control/panels'], queryFn: async () => { try { const r = await api.get("/jaxrs/hotpic_assemble_control/list/control/panels"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+watch(api_hotpic_a_799_q, (v) => { api_hotpic_a_799_data.value = v ?? []; });
 
 
-async function api_cipher_hotpic_bbs_id() { try { await api.get("/jaxrs/hotpic_assemble_control/cipher/hotpic/bbs/id") } catch {} }
-async function api_cipher_hotpic_cms_id() { try { await api.get("/jaxrs/hotpic_assemble_control/cipher/hotpic/cms/id") } catch {} }
+const api_cipher_h_274_data = ref<any[]>([]);
+const { data: api_cipher_h_274_q } = useQuery({queryKey: ['api_cipher_h_274', '/jaxrs/hotpic_assemble_control/cipher/hotpic/bbs/id'], queryFn: async () => { try { const r = await api.get("/jaxrs/hotpic_assemble_control/cipher/hotpic/bbs/id"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+watch(api_cipher_h_274_q, (v) => { api_cipher_h_274_data.value = v ?? []; });
+const api_cipher_h_765_data = ref<any[]>([]);
+const { data: api_cipher_h_765_q } = useQuery({queryKey: ['api_cipher_h_765', '/jaxrs/hotpic_assemble_control/cipher/hotpic/cms/id'], queryFn: async () => { try { const r = await api.get("/jaxrs/hotpic_assemble_control/cipher/hotpic/cms/id"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+watch(api_cipher_h_765_q, (v) => { api_cipher_h_765_data.value = v ?? []; });
 
 
-async function api_control_user_hotpic_changeTitle() { try { await api.get("/jaxrs/hotpic/assemble/control/user/hotpic/changeTitle") } catch {} }
-async function api_control_update_control_config() { try { await api.get("/jaxrs/hotpic/assemble/control/update/control/config") } catch {} }
+const api_control__12_data = ref<any[]>([]);
+const { data: api_control__12_q } = useQuery({queryKey: ['api_control__12', '/jaxrs/hotpic/assemble/control/user/hotpic/changeTitle'], queryFn: async () => { try { const r = await api.get("/jaxrs/hotpic/assemble/control/user/hotpic/changeTitle"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+watch(api_control__12_q, (v) => { api_control__12_data.value = v ?? []; });
+const api_control__542_data = ref<any[]>([]);
+const { data: api_control__542_q } = useQuery({queryKey: ['api_control__542', '/jaxrs/hotpic/assemble/control/update/control/config'], queryFn: async () => { try { const r = await api.get("/jaxrs/hotpic/assemble/control/update/control/config"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+watch(api_control__542_q, (v) => { api_control__542_data.value = v ?? []; });
 const api_control_list_con_641_data = ref<any[]>([]);
 const { data: api_control_list_con_641_q } = useQuery({queryKey: ['api_control_list_con_641', '/jaxrs/hotpic/assemble/control/list/control/applications'], queryFn: async () => { try { const r = await api.get("/jaxrs/hotpic/assemble/control/list/control/applications"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
 watch(api_control_list_con_641_q, (v) => { api_control_list_con_641_data.value = v ?? []; });

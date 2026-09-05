@@ -261,11 +261,15 @@ async function api_input_prepare_create() { try { await api.get("/jaxrs/input/pr
 async function api_input_compare_mockputtopost() { try { await api.get("/jaxrs/input/compare/mockputtopost") } catch {} }
 async function api_input_prepare_cover() { try { await api.get("/jaxrs/input/prepare/cover") } catch {} }
 async function api_input_create_mockputtopost() { try { await api.get("/jaxrs/input/create/mockputtopost") } catch {} }
-async function api_input_compare() { try { await api.get("/jaxrs/input/compare") } catch {} }
+const api_input_compare_data = ref<any[]>([]);
+const { data: api_input_compare_q } = useQuery({queryKey: ['api_input_compare', '/jaxrs/input/compare'], queryFn: async () => { try { const r = await api.get("/jaxrs/input/compare"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+watch(api_input_compare_q, (v) => { api_input_compare_data.value = v ?? []; });
 async function api_input_cover() { try { await api.get("/jaxrs/input/cover") } catch {} }
 async function api_input_prepare_cover_mockputtopost() { try { await api.get("/jaxrs/input/prepare/cover/mockputtopost") } catch {} }
 async function api_input_prepare_create_mockputtopost() { try { await api.get("/jaxrs/input/prepare/create/mockputtopost") } catch {} }
-async function api_input_create() { try { await api.get("/jaxrs/input/create") } catch {} }
+const api_input_create_data = ref<any[]>([]);
+const { data: api_input_create_q } = useQuery({queryKey: ['api_input_create', '/jaxrs/input/create'], queryFn: async () => { try { const r = await api.get("/jaxrs/input/create"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+watch(api_input_create_q, (v) => { api_input_create_data.value = v ?? []; });
 async function api_input_cover_mockputtopost() { try { await api.get("/jaxrs/input/cover/mockputtopost") } catch {} }
 
 
@@ -292,9 +296,15 @@ function confirmMsg(msg: string): Promise<boolean> {
 }
 
 
-async function api_config() { try { await api.get("/jaxrs/config") } catch {} }
-async function api_config_system_config() { try { await api.get("/jaxrs/config/system/config") } catch {} }
-async function api_config_is_file_manager() { try { await api.get("/jaxrs/config/is/file/manager") } catch {} }
+const api_config_data = ref<any[]>([]);
+const { data: api_config_q } = useQuery({queryKey: ['api_config', '/jaxrs/config'], queryFn: async () => { try { const r = await api.get("/jaxrs/config"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+watch(api_config_q, (v) => { api_config_data.value = v ?? []; });
+const api_config_s_497_data = ref<any[]>([]);
+const { data: api_config_s_497_q } = useQuery({queryKey: ['api_config_s_497', '/jaxrs/config/system/config'], queryFn: async () => { try { const r = await api.get("/jaxrs/config/system/config"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+watch(api_config_s_497_q, (v) => { api_config_s_497_data.value = v ?? []; });
+const api_config_i_771_data = ref<any[]>([]);
+const { data: api_config_i_771_q } = useQuery({queryKey: ['api_config_i_771', '/jaxrs/config/is/file/manager'], queryFn: async () => { try { const r = await api.get("/jaxrs/config/is/file/manager"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+watch(api_config_i_771_q, (v) => { api_config_i_771_data.value = v ?? []; });
 
 </script>
 

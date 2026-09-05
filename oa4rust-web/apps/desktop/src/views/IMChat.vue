@@ -389,8 +389,12 @@ async function api_testuser_count_10() { try { await api.get("/jaxrs/message/con
 async function api_im_msg_clear() { try { await api.get("/jaxrs/message/assemble/communicate/im/msg/clear") } catch {} }
 async function api_im_manager_config() { try { await api.get("/jaxrs/message/assemble/communicate/im/manager/config") } catch {} }
 async function api_unread_count_testuser() { try { await api.get("/jaxrs/message/unread/count/testuser") } catch {} }
-async function api_mass_enable_type() { try { await api.get("/jaxrs/message/assemble/communicate/mass/enable/type") } catch {} }
-async function api_ws_list_person() { try { await api.get("/jaxrs/message/assemble/communicate/ws/list/person") } catch {} }
+const api_mass_ena_457_data = ref<any[]>([]);
+const { data: api_mass_ena_457_q } = useQuery({queryKey: ['api_mass_ena_457', '/jaxrs/message/assemble/communicate/mass/enable/type'], queryFn: async () => { try { const r = await api.get("/jaxrs/message/assemble/communicate/mass/enable/type"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+watch(api_mass_ena_457_q, (v) => { api_mass_ena_457_data.value = v ?? []; });
+const api_ws_list_person_data = ref<any[]>([]);
+const { data: api_ws_list_person_q } = useQuery({queryKey: ['api_ws_list_person', '/jaxrs/message/assemble/communicate/ws/list/person'], queryFn: async () => { try { const r = await api.get("/jaxrs/message/assemble/communicate/ws/list/person"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+watch(api_ws_list_person_q, (v) => { api_ws_list_person_data.value = v ?? []; });
 
 
 async function api_message_assemble_send() { try { await api.get('/jaxrs/message/assemble/send') } catch {} }
@@ -400,9 +404,15 @@ async function api_message_custom_create() { try { await api.get('/jaxrs/message
 async function api_message_send() { try { await api.get('/jaxrs/message/send') } catch {} }
 
 
-async function api_communicate_im_msg_collection() { try { await api.get("/jaxrs/message/assemble/communicate/im/msg/collection") } catch {} }
-async function api_communicate_instant_currentperson_consumed() { try { await api.get("/jaxrs/message/assemble/communicate/instant/currentperson/consumed") } catch {} }
-async function api_entity_list_by_system() { try { await api.get("/jaxrs/message/core/entity/list/by/system") } catch {} }
+const api_communic_135_data = ref<any[]>([]);
+const { data: api_communic_135_q } = useQuery({queryKey: ['api_communic_135', '/jaxrs/message/assemble/communicate/im/msg/collection'], queryFn: async () => { try { const r = await api.get("/jaxrs/message/assemble/communicate/im/msg/collection"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+watch(api_communic_135_q, (v) => { api_communic_135_data.value = v ?? []; });
+const api_communic_834_data = ref<any[]>([]);
+const { data: api_communic_834_q } = useQuery({queryKey: ['api_communic_834', '/jaxrs/message/assemble/communicate/instant/currentperson/consumed'], queryFn: async () => { try { const r = await api.get("/jaxrs/message/assemble/communicate/instant/currentperson/consumed"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+watch(api_communic_834_q, (v) => { api_communic_834_data.value = v ?? []; });
+const api_entity_l_587_data = ref<any[]>([]);
+const { data: api_entity_l_587_q } = useQuery({queryKey: ['api_entity_l_587', '/jaxrs/message/core/entity/list/by/system'], queryFn: async () => { try { const r = await api.get("/jaxrs/message/core/entity/list/by/system"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+watch(api_entity_l_587_q, (v) => { api_entity_l_587_data.value = v ?? []; });
 const api_entity_unread_co_868_data = ref<any[]>([]);
 const { data: api_entity_unread_co_868_q } = useQuery({queryKey: ['api_entity_unread_co_868', '/jaxrs/message/core/entity/unread/count/system'], queryFn: async () => { try { const r = await api.get("/jaxrs/message/core/entity/unread/count/system"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
 watch(api_entity_unread_co_868_q, (v) => { api_entity_unread_co_868_data.value = v ?? []; });

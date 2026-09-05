@@ -96,17 +96,27 @@ async function api_console_metric_cpu_usage() { try { await api.get("/jaxrs/cons
 async function api_console_system_info() { try { await api.get("/jaxrs/console/system/info") } catch {} }
 async function api_console_command_execute() { try { await api.get("/jaxrs/console/command/execute") } catch {} }
 async function api_console_send_message() { try { await api.get("/jaxrs/console/send/message") } catch {} }
-async function api_console_status() { try { await api.get("/jaxrs/console/status") } catch {} }
+const api_console_status_data = ref<any[]>([]);
+const { data: api_console_status_q } = useQuery({queryKey: ['api_console_status', '/jaxrs/console/status'], queryFn: async () => { try { const r = await api.get("/jaxrs/console/status"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+watch(api_console_status_q, (v) => { api_console_status_data.value = v ?? []; });
 
 
 async function api_output_o_1_select_mockputtopost() { try { await api.get("/jaxrs/output/o-1/select/mockputtopost") } catch {} }
-async function api_output_o_1_select() { try { await api.get("/jaxrs/output/o-1/select") } catch {} }
-async function api_output_list() { try { await api.get("/jaxrs/output/list") } catch {} }
+const api_output_o_164_data = ref<any[]>([]);
+const { data: api_output_o_164_q } = useQuery({queryKey: ['api_output_o_164', '/jaxrs/output/o-1/select'], queryFn: async () => { try { const r = await api.get("/jaxrs/output/o-1/select"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+watch(api_output_o_164_q, (v) => { api_output_o_164_data.value = v ?? []; });
+const api_output_list_data = ref<any[]>([]);
+const { data: api_output_list_q } = useQuery({queryKey: ['api_output_list', '/jaxrs/output/list'], queryFn: async () => { try { const r = await api.get("/jaxrs/output/list"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+watch(api_output_list_q, (v) => { api_output_list_data.value = v ?? []; });
 
 
-async function api_secret_captcha_verify() { try { await api.get("/jaxrs/secret/captcha/verify") } catch {} }
+const api_secret_c_983_data = ref<any[]>([]);
+const { data: api_secret_c_983_q } = useQuery({queryKey: ['api_secret_c_983', '/jaxrs/secret/captcha/verify'], queryFn: async () => { try { const r = await api.get("/jaxrs/secret/captcha/verify"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+watch(api_secret_c_983_q, (v) => { api_secret_c_983_data.value = v ?? []; });
 async function api_secret_cancel() { try { await api.get("/jaxrs/secret/cancel") } catch {} }
-async function api_secret_check() { try { await api.get("/jaxrs/secret/check") } catch {} }
+const api_secret_check_data = ref<any[]>([]);
+const { data: api_secret_check_q } = useQuery({queryKey: ['api_secret_check', '/jaxrs/secret/check'], queryFn: async () => { try { const r = await api.get("/jaxrs/secret/check"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+watch(api_secret_check_q, (v) => { api_secret_check_data.value = v ?? []; });
 async function api_secret_set_cancel() { try { await api.get("/jaxrs/secret/set/cancel") } catch {} }
 async function api_secret_set() { try { await api.get("/jaxrs/secret/set") } catch {} }
 

@@ -541,11 +541,21 @@ async function api_jaxrs_processplatform_assemble_surface_worklog_list_job_job()
 async function api_jaxrs_processplatform_service_processing_attachment_att_x_work_w_other() { try { await api.get("/jaxrs/processplatform/service/processing/attachment/att-x/work/w-other") } catch {} }
 async function api_jaxrs_processplatform_service_processing_attachment_copy_work_att_dst_w() { try { await api.get("/jaxrs/processplatform/service/processing/attachment/copy/work/att-dst-w") } catch {} }
 async function api_jaxrs_processplatform_service_processing_event_add_update_table() { try { await api.get("/jaxrs/processplatform/service/processing/event/add/update/table") } catch {} }
-async function api_jaxrs_processplatform_service_processing_snap_work_sus_w_type_suspend() { try { await api.get("/jaxrs/processplatform/service/processing/snap/work/sus-w/type/suspend") } catch {} }
-async function api_jaxrs_processplatform_service_processing_taskcompleted_next_task_identity() { try { await api.get("/jaxrs/processplatform/service/processing/taskcompleted/next/task/identity") } catch {} }
-async function api_jaxrs_processplatform_service_processing_taskcompleted_tc_press_press_work_tc_other() { try { await api.get("/jaxrs/processplatform/service/processing/taskcompleted/tc-press/press/work/tc-other") } catch {} }
-async function api_jaxrs_processplatform_service_processing_taskcompleted_tc_press_press_work_tc_w() { try { await api.get("/jaxrs/processplatform/service/processing/taskcompleted/tc-press/press/work/tc-w") } catch {} }
-async function api_jaxrs_processplatform_service_processing_work_process_pd_boot_name_boot_serial() { try { await api.get("/jaxrs/processplatform/service/processing/work/process/pd-boot/name/boot/serial") } catch {} }
+const api_jaxrs_pr_604_data = ref<any[]>([]);
+const { data: api_jaxrs_pr_604_q } = useQuery({queryKey: ['api_jaxrs_pr_604', '/jaxrs/processplatform/service/processing/snap/work/sus-w/type/suspend'], queryFn: async () => { try { const r = await api.get("/jaxrs/processplatform/service/processing/snap/work/sus-w/type/suspend"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+watch(api_jaxrs_pr_604_q, (v) => { api_jaxrs_pr_604_data.value = v ?? []; });
+const api_jaxrs_pr_706_data = ref<any[]>([]);
+const { data: api_jaxrs_pr_706_q } = useQuery({queryKey: ['api_jaxrs_pr_706', '/jaxrs/processplatform/service/processing/taskcompleted/next/task/identity'], queryFn: async () => { try { const r = await api.get("/jaxrs/processplatform/service/processing/taskcompleted/next/task/identity"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+watch(api_jaxrs_pr_706_q, (v) => { api_jaxrs_pr_706_data.value = v ?? []; });
+const api_jaxrs_pr_329_data = ref<any[]>([]);
+const { data: api_jaxrs_pr_329_q } = useQuery({queryKey: ['api_jaxrs_pr_329', '/jaxrs/processplatform/service/processing/taskcompleted/tc-press/press/work/tc-other'], queryFn: async () => { try { const r = await api.get("/jaxrs/processplatform/service/processing/taskcompleted/tc-press/press/work/tc-other"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+watch(api_jaxrs_pr_329_q, (v) => { api_jaxrs_pr_329_data.value = v ?? []; });
+const api_jaxrs_pr_695_data = ref<any[]>([]);
+const { data: api_jaxrs_pr_695_q } = useQuery({queryKey: ['api_jaxrs_pr_695', '/jaxrs/processplatform/service/processing/taskcompleted/tc-press/press/work/tc-w'], queryFn: async () => { try { const r = await api.get("/jaxrs/processplatform/service/processing/taskcompleted/tc-press/press/work/tc-w"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+watch(api_jaxrs_pr_695_q, (v) => { api_jaxrs_pr_695_data.value = v ?? []; });
+const api_jaxrs_pr_440_data = ref<any[]>([]);
+const { data: api_jaxrs_pr_440_q } = useQuery({queryKey: ['api_jaxrs_pr_440', '/jaxrs/processplatform/service/processing/work/process/pd-boot/name/boot/serial'], queryFn: async () => { try { const r = await api.get("/jaxrs/processplatform/service/processing/work/process/pd-boot/name/boot/serial"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+watch(api_jaxrs_pr_440_q, (v) => { api_jaxrs_pr_440_data.value = v ?? []; });
 </script>
 
 <style scoped>

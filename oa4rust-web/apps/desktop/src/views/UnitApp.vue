@@ -82,11 +82,17 @@ async function api_list_unit_sub_direct() { try { await api.get('/jaxrs/unit/lis
 async function api_unit_list_person_object() { try { await api.get('/jaxrs/unit/list/person/object') } catch {} }
 async function api_unit_list_all_object() { try { await api.get('/jaxrs/unit/list/all/object') } catch {} }
 
-async function api_jaxrs_organization_assemble_authentication_authentication_oauth_dingding_config() { try { await api.get("/jaxrs/organization/assemble/authentication/authentication/oauth/dingding/config") } catch {} }
-async function api_jaxrs_organization_assemble_authentication_authentication_oauth_qywx_config() { try { await api.get("/jaxrs/organization/assemble/authentication/authentication/oauth/qywx/config") } catch {} }
+const api_jaxrs_or_150_data = ref<any[]>([]);
+const { data: api_jaxrs_or_150_q } = useQuery({queryKey: ['api_jaxrs_or_150', '/jaxrs/organization/assemble/authentication/authentication/oauth/dingding/config'], queryFn: async () => { try { const r = await api.get("/jaxrs/organization/assemble/authentication/authentication/oauth/dingding/config"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+watch(api_jaxrs_or_150_q, (v) => { api_jaxrs_or_150_data.value = v ?? []; });
+const api_jaxrs_or_60_data = ref<any[]>([]);
+const { data: api_jaxrs_or_60_q } = useQuery({queryKey: ['api_jaxrs_or_60', '/jaxrs/organization/assemble/authentication/authentication/oauth/qywx/config'], queryFn: async () => { try { const r = await api.get("/jaxrs/organization/assemble/authentication/authentication/oauth/qywx/config"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+watch(api_jaxrs_or_60_q, (v) => { api_jaxrs_or_60_data.value = v ?? []; });
 async function api_jaxrs_organization_assemble_authentication_sso_encrypt_client_u2c_key_u2key_1234_95d5ba() { try { await api.get("/jaxrs/organization/assemble/authentication/sso/encrypt/client/u2c/key/u2key-1234567890-abcdef-/credential/user@P") } catch {} }
 async function api_jaxrs_organization_assemble_control_group_list_like_mockputtopost() { try { await api.get("/jaxrs/organization/assemble/control/group/list/like/mockputtopost") } catch {} }
-async function api_jaxrs_organization_assemble_control_group_list_like_pinyin() { try { await api.get("/jaxrs/organization/assemble/control/group/list/like/pinyin") } catch {} }
+const api_jaxrs_or_174_data = ref<any[]>([]);
+const { data: api_jaxrs_or_174_q } = useQuery({queryKey: ['api_jaxrs_or_174', '/jaxrs/organization/assemble/control/group/list/like/pinyin'], queryFn: async () => { try { const r = await api.get("/jaxrs/organization/assemble/control/group/list/like/pinyin"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+watch(api_jaxrs_or_174_q, (v) => { api_jaxrs_or_174_data.value = v ?? []; });
 async function api_jaxrs_organization_assemble_control_group_list_like_pinyin_mockputtopost() { try { await api.get("/jaxrs/organization/assemble/control/group/list/like/pinyin/mockputtopost") } catch {} }
 async function api_jaxrs_organization_assemble_control_group_list_pinyininitial_mockputtopost() { try { await api.get("/jaxrs/organization/assemble/control/group/list/pinyininitial/mockputtopost") } catch {} }
 async function api_jaxrs_organization_assemble_control_identity_list_like_mockputtopost() { try { await api.get("/jaxrs/organization/assemble/control/identity/list/like/mockputtopost") } catch {} }

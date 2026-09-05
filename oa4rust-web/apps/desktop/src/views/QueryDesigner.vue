@@ -580,11 +580,21 @@ async function api_processing_table_reload_dynamic() { try { await api.get("/jax
 async function api_list_tf_1_row_select() { try { await api.get("/jaxrs/queryview/table/list/tf-1/row/select") } catch {} }
 async function api_designer_view_v_1_bundle() { try { await api.get("/jaxrs/query/assemble/designer/view/v-1/bundle") } catch {} }
 async function api_designer_neural_list_model() { try { await api.get("/jaxrs/query/assemble/designer/neural/list/model") } catch {} }
-async function api_query_assemble_surface_list() { try { await api.get("/jaxrs/query/assemble/surface/list") } catch {} }
-async function api_query_nonexistent() { try { await api.get("/jaxrs/query/nonexistent") } catch {} }
-async function api_assemble_surface_list_default() { try { await api.get("/jaxrs/query/assemble/surface/list/default") } catch {} }
-async function api_designer_view_v_1_simulate() { try { await api.get("/jaxrs/query/assemble/designer/view/v-1/simulate") } catch {} }
-async function api_query_service_processing() { try { await api.get("/jaxrs/query/service/processing") } catch {} }
+const api_query_as_108_data = ref<any[]>([]);
+const { data: api_query_as_108_q } = useQuery({queryKey: ['api_query_as_108', '/jaxrs/query/assemble/surface/list'], queryFn: async () => { try { const r = await api.get("/jaxrs/query/assemble/surface/list"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+watch(api_query_as_108_q, (v) => { api_query_as_108_data.value = v ?? []; });
+const api_query_no_631_data = ref<any[]>([]);
+const { data: api_query_no_631_q } = useQuery({queryKey: ['api_query_no_631', '/jaxrs/query/nonexistent'], queryFn: async () => { try { const r = await api.get("/jaxrs/query/nonexistent"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+watch(api_query_no_631_q, (v) => { api_query_no_631_data.value = v ?? []; });
+const api_assemble_103_data = ref<any[]>([]);
+const { data: api_assemble_103_q } = useQuery({queryKey: ['api_assemble_103', '/jaxrs/query/assemble/surface/list/default'], queryFn: async () => { try { const r = await api.get("/jaxrs/query/assemble/surface/list/default"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+watch(api_assemble_103_q, (v) => { api_assemble_103_data.value = v ?? []; });
+const api_designer_73_data = ref<any[]>([]);
+const { data: api_designer_73_q } = useQuery({queryKey: ['api_designer_73', '/jaxrs/query/assemble/designer/view/v-1/simulate'], queryFn: async () => { try { const r = await api.get("/jaxrs/query/assemble/designer/view/v-1/simulate"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+watch(api_designer_73_q, (v) => { api_designer_73_data.value = v ?? []; });
+const api_query_se_453_data = ref<any[]>([]);
+const { data: api_query_se_453_q } = useQuery({queryKey: ['api_query_se_453', '/jaxrs/query/service/processing'], queryFn: async () => { try { const r = await api.get("/jaxrs/query/service/processing"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+watch(api_query_se_453_q, (v) => { api_query_se_453_data.value = v ?? []; });
 const api_designer_query_l_461_data = ref<any[]>([]);
 const { data: api_designer_query_l_461_q } = useQuery({queryKey: ['api_designer_query_l_461', '/jaxrs/query/assemble/designer/query/list/summary'], queryFn: async () => { try { const r = await api.get("/jaxrs/query/assemble/designer/query/list/summary"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
 watch(api_designer_query_l_461_q, (v) => { api_designer_query_l_461_data.value = v ?? []; });

@@ -294,11 +294,21 @@ async function api_jaxrs_ai_config_list_model_paging_1_size_10() { try { await a
 async function api_jaxrs_ai_index_cms_doc_with_app_test_app() { try { await api.get("/jaxrs/ai/index/cms/doc/with/app/test-app") } catch {} }
 async function api_jaxrs_ai_assemble_control_chat_list_completion_clue_1_paging_1_size_20() { try { await api.get("/jaxrs/ai_assemble_control/chat/list/completion/clue-1/paging/1/size/20") } catch {} }
 async function api_jaxrs_ai_assemble_control_chat_list_completion_u2t_paging_1_size_20() { try { await api.get("/jaxrs/ai_assemble_control/chat/list/completion/u2t/paging/1/size/20") } catch {} }
-async function api_jaxrs_ai_assemble_control_chat_list_paging_1_size_20() { try { await api.get("/jaxrs/ai_assemble_control/chat/list/paging/1/size/20") } catch {} }
-async function api_jaxrs_ai_assemble_control_config_list_mcp_paging_1_size_20() { try { await api.get("/jaxrs/ai_assemble_control/config/list/mcp/paging/1/size/20") } catch {} }
-async function api_jaxrs_ai_assemble_control_config_list_mcp_paging_page_size_size() { try { await api.get("/jaxrs/ai_assemble_control/config/list/mcp/paging/page/size/size") } catch {} }
-async function api_jaxrs_ai_assemble_control_config_list_model_paging_1_size_1() { try { await api.get("/jaxrs/ai_assemble_control/config/list/model/paging/1/size/1") } catch {} }
-async function api_jaxrs_ai_assemble_control_config_list_model_paging_1_size_20() { try { await api.get("/jaxrs/ai_assemble_control/config/list/model/paging/1/size/20") } catch {} }
+const api_jaxrs_ai_463_data = ref<any[]>([]);
+const { data: api_jaxrs_ai_463_q } = useQuery({queryKey: ['api_jaxrs_ai_463', '/jaxrs/ai_assemble_control/chat/list/paging/1/size/20'], queryFn: async () => { try { const r = await api.get("/jaxrs/ai_assemble_control/chat/list/paging/1/size/20"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+watch(api_jaxrs_ai_463_q, (v) => { api_jaxrs_ai_463_data.value = v ?? []; });
+const api_jaxrs_ai_256_data = ref<any[]>([]);
+const { data: api_jaxrs_ai_256_q } = useQuery({queryKey: ['api_jaxrs_ai_256', '/jaxrs/ai_assemble_control/config/list/mcp/paging/1/size/20'], queryFn: async () => { try { const r = await api.get("/jaxrs/ai_assemble_control/config/list/mcp/paging/1/size/20"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+watch(api_jaxrs_ai_256_q, (v) => { api_jaxrs_ai_256_data.value = v ?? []; });
+const api_jaxrs_ai_110_data = ref<any[]>([]);
+const { data: api_jaxrs_ai_110_q } = useQuery({queryKey: ['api_jaxrs_ai_110', '/jaxrs/ai_assemble_control/config/list/mcp/paging/page/size/size'], queryFn: async () => { try { const r = await api.get("/jaxrs/ai_assemble_control/config/list/mcp/paging/page/size/size"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+watch(api_jaxrs_ai_110_q, (v) => { api_jaxrs_ai_110_data.value = v ?? []; });
+const api_jaxrs_ai_593_data = ref<any[]>([]);
+const { data: api_jaxrs_ai_593_q } = useQuery({queryKey: ['api_jaxrs_ai_593', '/jaxrs/ai_assemble_control/config/list/model/paging/1/size/1'], queryFn: async () => { try { const r = await api.get("/jaxrs/ai_assemble_control/config/list/model/paging/1/size/1"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+watch(api_jaxrs_ai_593_q, (v) => { api_jaxrs_ai_593_data.value = v ?? []; });
+const api_jaxrs_ai_431_data = ref<any[]>([]);
+const { data: api_jaxrs_ai_431_q } = useQuery({queryKey: ['api_jaxrs_ai_431', '/jaxrs/ai_assemble_control/config/list/model/paging/1/size/20'], queryFn: async () => { try { const r = await api.get("/jaxrs/ai_assemble_control/config/list/model/paging/1/size/20"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+watch(api_jaxrs_ai_431_q, (v) => { api_jaxrs_ai_431_data.value = v ?? []; });
 const api_jaxrs_ai_assembl_357_data = ref<any[]>([]);
 const { data: api_jaxrs_ai_assembl_357_q } = useQuery({queryKey: ['api_jaxrs_ai_assembl_357', '/jaxrs/ai_assemble_control/config/list/model/paging/page/size/size'], queryFn: async () => { try { const r = await api.get("/jaxrs/ai_assemble_control/config/list/model/paging/page/size/size"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
 watch(api_jaxrs_ai_assembl_357_q, (v) => { api_jaxrs_ai_assembl_357_data.value = v ?? []; });

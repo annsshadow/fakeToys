@@ -553,11 +553,21 @@ async function api_jaxrs_query_assemble_designer_statement_execute_st_1_mode_cou
 async function api_jaxrs_query_assemble_designer_statement_execute_st_1_page_1_size_20() { try { await api.get("/jaxrs/query/assemble/designer/statement/execute/st-1/page/1/size/20") } catch {} }
 async function api_jaxrs_query_assemble_designer_statement_st_1_execute_mode_count_page_1_size_20() { try { await api.get("/jaxrs/query/assemble/designer/statement/st-1/execute/mode/count/page/1/size/20") } catch {} }
 async function api_jaxrs_query_assemble_designer_statement_st_1_execute_page_1_size_20() { try { await api.get("/jaxrs/query/assemble/designer/statement/st-1/execute/page/1/size/20") } catch {} }
-async function api_jaxrs_query_service_processing_index_directory_document_count() { try { await api.get("/jaxrs/query/service/processing/index/directory/document/count") } catch {} }
-async function api_jaxrs_query_service_processing_index_update_extra_document() { try { await api.get("/jaxrs/query/service/processing/index/update/extra/document") } catch {} }
-async function api_jaxrs_query_service_processing_touch_high_freq_work_node_u2node_reset() { try { await api.get("/jaxrs/query/service/processing/touch/high/freq/work/node/u2node/reset") } catch {} }
-async function api_jaxrs_query_service_processing_touch_high_freq_work_node_u2node_touch() { try { await api.get("/jaxrs/query/service/processing/touch/high/freq/work/node/u2node/touch") } catch {} }
-async function api_jaxrs_query_service_processing_touch_optimize_index_n0_touch() { try { await api.get("/jaxrs/query/service/processing/touch/optimize/index/n0/touch") } catch {} }
+const api_jaxrs_qu_720_data = ref<any[]>([]);
+const { data: api_jaxrs_qu_720_q } = useQuery({queryKey: ['api_jaxrs_qu_720', '/jaxrs/query/service/processing/index/directory/document/count'], queryFn: async () => { try { const r = await api.get("/jaxrs/query/service/processing/index/directory/document/count"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+watch(api_jaxrs_qu_720_q, (v) => { api_jaxrs_qu_720_data.value = v ?? []; });
+const api_jaxrs_qu_81_data = ref<any[]>([]);
+const { data: api_jaxrs_qu_81_q } = useQuery({queryKey: ['api_jaxrs_qu_81', '/jaxrs/query/service/processing/index/update/extra/document'], queryFn: async () => { try { const r = await api.get("/jaxrs/query/service/processing/index/update/extra/document"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+watch(api_jaxrs_qu_81_q, (v) => { api_jaxrs_qu_81_data.value = v ?? []; });
+const api_jaxrs_qu_760_data = ref<any[]>([]);
+const { data: api_jaxrs_qu_760_q } = useQuery({queryKey: ['api_jaxrs_qu_760', '/jaxrs/query/service/processing/touch/high/freq/work/node/u2node/reset'], queryFn: async () => { try { const r = await api.get("/jaxrs/query/service/processing/touch/high/freq/work/node/u2node/reset"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+watch(api_jaxrs_qu_760_q, (v) => { api_jaxrs_qu_760_data.value = v ?? []; });
+const api_jaxrs_qu_523_data = ref<any[]>([]);
+const { data: api_jaxrs_qu_523_q } = useQuery({queryKey: ['api_jaxrs_qu_523', '/jaxrs/query/service/processing/touch/high/freq/work/node/u2node/touch'], queryFn: async () => { try { const r = await api.get("/jaxrs/query/service/processing/touch/high/freq/work/node/u2node/touch"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+watch(api_jaxrs_qu_523_q, (v) => { api_jaxrs_qu_523_data.value = v ?? []; });
+const api_jaxrs_qu_39_data = ref<any[]>([]);
+const { data: api_jaxrs_qu_39_q } = useQuery({queryKey: ['api_jaxrs_qu_39', '/jaxrs/query/service/processing/touch/optimize/index/n0/touch'], queryFn: async () => { try { const r = await api.get("/jaxrs/query/service/processing/touch/optimize/index/n0/touch"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+watch(api_jaxrs_qu_39_q, (v) => { api_jaxrs_qu_39_data.value = v ?? []; });
 </script>
 
 <style scoped>

@@ -606,13 +606,27 @@ async function api_jaxrs_program_center_market_list_install_log_paging_1_size_20
 async function api_jaxrs_program_center_market_list_install_log_paging_page_size_size() { try { await api.get("/jaxrs/program_center/market/list/install/log/paging/page/size/size") } catch {} }
 async function api_jaxrs_program_center_market_list_paging_1_size_20() { try { await api.get("/jaxrs/program_center/market/list/paging/1/size/20") } catch {} }
 async function api_jaxrs_program_center_market_list_paging_1_size_20_category_cms() { try { await api.get("/jaxrs/program_center/market/list/paging/1/size/20/category/cms") } catch {} }
-async function api_jaxrs_program_center_market_list_paging_page_size_size() { try { await api.get("/jaxrs/program_center/market/list/paging/page/size/size") } catch {} }
-async function api_jaxrs_program_center_market_list_paging_page_size_size_category_category() { try { await api.get("/jaxrs/program_center/market/list/paging/page/size/size/category/category") } catch {} }
-async function api_jaxrs_program_center_prompterrorlog_list_id_next_count_date_date() { try { await api.get("/jaxrs/program_center/prompterrorlog/list/id/next/count/date/date") } catch {} }
-async function api_jaxrs_program_center_prompterrorlog_list_id_next_count_exceptionclass_exceptionClass() { try { await api.get("/jaxrs/program_center/prompterrorlog/list/id/next/count/exceptionclass/exceptionClass") } catch {} }
-async function api_jaxrs_program_center_prompterrorlog_list_id_next_count_loggername_loggerName() { try { await api.get("/jaxrs/program_center/prompterrorlog/list/id/next/count/loggername/loggerName") } catch {} }
-async function api_jaxrs_program_center_prompterrorlog_list_id_prev_count_date_date() { try { await api.get("/jaxrs/program_center/prompterrorlog/list/id/prev/count/date/date") } catch {} }
-async function api_jaxrs_program_center_prompterrorlog_list_id_prev_count_exceptionclass_exceptionClass() { try { await api.get("/jaxrs/program_center/prompterrorlog/list/id/prev/count/exceptionclass/exceptionClass") } catch {} }
+const api_jaxrs_pr_708_data = ref<any[]>([]);
+const { data: api_jaxrs_pr_708_q } = useQuery({queryKey: ['api_jaxrs_pr_708', '/jaxrs/program_center/market/list/paging/page/size/size'], queryFn: async () => { try { const r = await api.get("/jaxrs/program_center/market/list/paging/page/size/size"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+watch(api_jaxrs_pr_708_q, (v) => { api_jaxrs_pr_708_data.value = v ?? []; });
+const api_jaxrs_pr_192_data = ref<any[]>([]);
+const { data: api_jaxrs_pr_192_q } = useQuery({queryKey: ['api_jaxrs_pr_192', '/jaxrs/program_center/market/list/paging/page/size/size/category/category'], queryFn: async () => { try { const r = await api.get("/jaxrs/program_center/market/list/paging/page/size/size/category/category"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+watch(api_jaxrs_pr_192_q, (v) => { api_jaxrs_pr_192_data.value = v ?? []; });
+const api_jaxrs_pr_31_data = ref<any[]>([]);
+const { data: api_jaxrs_pr_31_q } = useQuery({queryKey: ['api_jaxrs_pr_31', '/jaxrs/program_center/prompterrorlog/list/id/next/count/date/date'], queryFn: async () => { try { const r = await api.get("/jaxrs/program_center/prompterrorlog/list/id/next/count/date/date"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+watch(api_jaxrs_pr_31_q, (v) => { api_jaxrs_pr_31_data.value = v ?? []; });
+const api_jaxrs_pr_36_data = ref<any[]>([]);
+const { data: api_jaxrs_pr_36_q } = useQuery({queryKey: ['api_jaxrs_pr_36', '/jaxrs/program_center/prompterrorlog/list/id/next/count/exceptionclass/exceptionClass'], queryFn: async () => { try { const r = await api.get("/jaxrs/program_center/prompterrorlog/list/id/next/count/exceptionclass/exceptionClass"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+watch(api_jaxrs_pr_36_q, (v) => { api_jaxrs_pr_36_data.value = v ?? []; });
+const api_jaxrs_pr_596_data = ref<any[]>([]);
+const { data: api_jaxrs_pr_596_q } = useQuery({queryKey: ['api_jaxrs_pr_596', '/jaxrs/program_center/prompterrorlog/list/id/next/count/loggername/loggerName'], queryFn: async () => { try { const r = await api.get("/jaxrs/program_center/prompterrorlog/list/id/next/count/loggername/loggerName"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+watch(api_jaxrs_pr_596_q, (v) => { api_jaxrs_pr_596_data.value = v ?? []; });
+const api_jaxrs_progr_136_data = ref<any[]>([]);
+const { data: api_jaxrs_progr_136_q } = useQuery({queryKey: ['api_jaxrs_progr_136', '/jaxrs/program_center/prompterrorlog/list/id/prev/count/date/date'], queryFn: async () => { try { const r = await api.get("/jaxrs/program_center/prompterrorlog/list/id/prev/count/date/date"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+watch(api_jaxrs_progr_136_q, (v) => { api_jaxrs_progr_136_data.value = v ?? []; });
+const api_jaxrs_progr_794_data = ref<any[]>([]);
+const { data: api_jaxrs_progr_794_q } = useQuery({queryKey: ['api_jaxrs_progr_794', '/jaxrs/program_center/prompterrorlog/list/id/prev/count/exceptionclass/exceptionClass'], queryFn: async () => { try { const r = await api.get("/jaxrs/program_center/prompterrorlog/list/id/prev/count/exceptionclass/exceptionClass"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+watch(api_jaxrs_progr_794_q, (v) => { api_jaxrs_progr_794_data.value = v ?? []; });
 const api_jaxrs_program_ce_215_data = ref<any[]>([]);
 const { data: api_jaxrs_program_ce_215_q } = useQuery({queryKey: ['api_jaxrs_program_ce_215', '/jaxrs/program_center/prompterrorlog/list/id/prev/count/loggername/loggerName'], queryFn: async () => { try { const r = await api.get("/jaxrs/program_center/prompterrorlog/list/id/prev/count/loggername/loggerName"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
 watch(api_jaxrs_program_ce_215_q, (v) => { api_jaxrs_program_ce_215_data.value = v ?? []; });
@@ -637,7 +651,9 @@ watch(api_jaxrs_program_ce_452_q, (v) => { api_jaxrs_program_ce_452_data.value =
 const api_jaxrs_program_ce_89_data = ref<any[]>([]);
 const { data: api_jaxrs_program_ce_89_q } = useQuery({queryKey: ['api_jaxrs_program_ce_89', '/jaxrs/program_center/warnlog/list/w-1/prev/5/date/2026-08-22'], queryFn: async () => { try { const r = await api.get("/jaxrs/program_center/warnlog/list/w-1/prev/5/date/2026-08-22"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
 watch(api_jaxrs_program_ce_89_q, (v) => { api_jaxrs_program_ce_89_data.value = v ?? []; });
-async function api_jaxrs_program_center_warnlog_view_system_log_tag_sync() { try { await api.get("/jaxrs/program_center/warnlog/view/system/log/tag/sync") } catch {} }
+const api_jaxrs_progr_708_data = ref<any[]>([]);
+const { data: api_jaxrs_progr_708_q } = useQuery({queryKey: ['api_jaxrs_progr_708', '/jaxrs/program_center/warnlog/view/system/log/tag/sync'], queryFn: async () => { try { const r = await api.get("/jaxrs/program_center/warnlog/view/system/log/tag/sync"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+watch(api_jaxrs_progr_708_q, (v) => { api_jaxrs_progr_708_data.value = v ?? []; });
 </script>
 
 <style scoped>

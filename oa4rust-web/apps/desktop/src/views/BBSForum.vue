@@ -400,12 +400,22 @@ async function api_assemble_control_picture_list() { try { await api.get('/jaxrs
 
 
 async function api_entity_subject_list_test_section_id() { try { await api.get("/jaxrs/bbs/core/entity/subject/list/test-section-id") } catch {} }
-async function api_control_topic_recommended_list() { try { await api.get("/jaxrs/bbs/assemble/control/topic/recommended/list") } catch {} }
-async function api_control_topic_creamed_list() { try { await api.get("/jaxrs/bbs/assemble/control/topic/creamed/list") } catch {} }
-async function api_control_update_control_config() { try { await api.get("/jaxrs/bbs/assemble/control/update/control/config") } catch {} }
+const api_control__149_data = ref<any[]>([]);
+const { data: api_control__149_q } = useQuery({queryKey: ['api_control__149', '/jaxrs/bbs/assemble/control/topic/recommended/list'], queryFn: async () => { try { const r = await api.get("/jaxrs/bbs/assemble/control/topic/recommended/list"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+watch(api_control__149_q, (v) => { api_control__149_data.value = v ?? []; });
+const api_control__495_data = ref<any[]>([]);
+const { data: api_control__495_q } = useQuery({queryKey: ['api_control__495', '/jaxrs/bbs/assemble/control/topic/creamed/list'], queryFn: async () => { try { const r = await api.get("/jaxrs/bbs/assemble/control/topic/creamed/list"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+watch(api_control__495_q, (v) => { api_control__495_data.value = v ?? []; });
+const api_control__813_data = ref<any[]>([]);
+const { data: api_control__813_q } = useQuery({queryKey: ['api_control__813', '/jaxrs/bbs/assemble/control/update/control/config'], queryFn: async () => { try { const r = await api.get("/jaxrs/bbs/assemble/control/update/control/config"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+watch(api_control__813_q, (v) => { api_control__813_data.value = v ?? []; });
 async function api_entity_subject_top_test_section_id() { try { await api.get("/jaxrs/bbs/core/entity/subject/top/test-section-id") } catch {} }
-async function api_control_permission_section_sec_001() { try { await api.get("/jaxrs/bbs/assemble/control/permission/section/sec-001") } catch {} }
-async function api_bbs_assemble_control_1() { try { await api.get("/jaxrs/bbs_assemble_control") } catch {} }
+const api_control__909_data = ref<any[]>([]);
+const { data: api_control__909_q } = useQuery({queryKey: ['api_control__909', '/jaxrs/bbs/assemble/control/permission/section/sec-001'], queryFn: async () => { try { const r = await api.get("/jaxrs/bbs/assemble/control/permission/section/sec-001"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+watch(api_control__909_q, (v) => { api_control__909_data.value = v ?? []; });
+const api_bbs_asse_610_data = ref<any[]>([]);
+const { data: api_bbs_asse_610_q } = useQuery({queryKey: ['api_bbs_asse_610', '/jaxrs/bbs_assemble_control'], queryFn: async () => { try { const r = await api.get("/jaxrs/bbs_assemble_control"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+watch(api_bbs_asse_610_q, (v) => { api_bbs_asse_610_data.value = v ?? []; });
 const api_control_list_top_576_data = ref<any[]>([]);
 const { data: api_control_list_top_576_q } = useQuery({queryKey: ['api_control_list_top_576', '/jaxrs/bbs/assemble/control/list/topics/recommended'], queryFn: async () => { try { const r = await api.get("/jaxrs/bbs/assemble/control/list/topics/recommended"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
 watch(api_control_list_top_576_q, (v) => { api_control_list_top_576_data.value = v ?? []; });
