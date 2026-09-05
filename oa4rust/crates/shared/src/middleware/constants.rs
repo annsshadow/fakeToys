@@ -352,7 +352,10 @@ pub const AUTH_EXEMPT_PATHS: &[&str] = &[
     // program_center 只读查询
     "/jaxrs/program_center/applications",
     "/jaxrs/program_center/applications/list",
-    "/jaxrs/program_center/application/{id}",
+    // NOTE: /jaxrs/program_center/application/{id} intentionally NOT listed here —
+    // the {id} wildcard matches any segment (e.g. "create"), incorrectly exempting
+    // write endpoints. Use the permission registry (rbac.rs) which has a proper
+    // prefix entry for program_center (Authenticated) instead.
     "/jaxrs/program_center/center/applications",
     "/jaxrs/program_center/center/applications/list",
     "/jaxrs/program_center/application/{id}/deploy",
@@ -459,6 +462,6 @@ pub const AUTH_EXEMPT_PREFIXES: &[&str] = &[
     "/jaxrs/ai/chat/delete",
     "/jaxrs/attendance/assemble/control/dingdingstatistic",
     "/jaxrs/attendance/assemble/control/qywxstatistic",
-    "/jaxrs/meeting/assemble/control/config/system",
+    "/jaxrs/meeting/assemble/control/config/system",
     "/jaxrs/person/icon",
 ];

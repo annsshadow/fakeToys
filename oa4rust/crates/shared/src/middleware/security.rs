@@ -94,12 +94,12 @@ pub(crate) fn is_auth_exempt(path: &str) -> bool {
     // 精确路径匹配（带 {param} 通配）
     AUTH_EXEMPT_PATHS.iter().any(|pattern| path_matches(path, pattern))
         // 前缀匹配（覆盖带动态路径段的子路径）
-        || AUTH_EXEMPT_PREFIXES.iter().any(|prefix| path.starts_with(prefix))
+        || AUTH_EXEMPT_PREFIXES.iter().any(|prefix| path_starts_with_segment(path, prefix))
 }
 
 pub(crate) fn is_auth_rate_limited(path: &str) -> bool {
     AUTH_RATE_LIMIT_EXACT.iter().any(|p| path == *p)
-        || AUTH_RATE_LIMIT_PREFIXES.iter().any(|prefix| path.starts_with(prefix))
+        || AUTH_RATE_LIMIT_PREFIXES.iter().any(|prefix| path_starts_with_segment(path, prefix))
 }
 
 /// 路径段前缀匹配：`path` 等于 `prefix` 或 `prefix + "/"` 开头。
