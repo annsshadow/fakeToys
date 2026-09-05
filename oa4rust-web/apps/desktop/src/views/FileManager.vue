@@ -176,7 +176,12 @@ const deleteMutation = useMutation({
 });
 
 function deleteFile(f: FileItem): void {
-  if (confirmMsg(`确定删除「${f.name}」？`)) deleteMutation.mutate(f.id);
+  if (confirmMsg(`确定删除「${f.name}」？`)) {
+    deleteMutation.mutate(f.id, {
+      onSuccess: () => toast.success('文件已删除'),
+      onError: () => toast.error('删除失败'),
+    });
+  }
 }
 
 function downloadFile(f: FileItem): void {
