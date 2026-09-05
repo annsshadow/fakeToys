@@ -284,13 +284,69 @@ function confirmMsg(msg: string): Promise<boolean> {
 }
 
 
-async function api_form_f_1_appinfo_app_1() { try { await api.get("/jaxrs/form/f-1/appinfo/app-1") } catch {} }
-async function api_form_v2_f_1_mobile() { try { await api.get("/jaxrs/form/v2/f-1/mobile") } catch {} }
-async function api_form_list_all() { try { await api.get("/jaxrs/form/list/all") } catch {} }
-async function api_form_f_1_mockdeletetoget() { try { await api.get("/jaxrs/form/f-1/mockdeletetoget") } catch {} }
-async function api_form_f_1() { try { await api.get("/jaxrs/form/f-1") } catch {} }
-async function api_formversion_list_form_f_1() { try { await api.get("/jaxrs/formversion/list/form/f-1") } catch {} }
-async function api_formversion_fv_1() { try { await api.get("/jaxrs/formversion/fv-1") } catch {} }
+const form_f_1_appinfo_app_1_ref = ref<any[]>([]);
+const form_f_1_appinfo_app_1_q = useQuery({
+  queryKey: ['form_f_1_appinfo_app_1'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/form/f-1/appinfo/app-1"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const form_v2_f_1_mobile_ref = ref<any[]>([]);
+const form_v2_f_1_mobile_q = useQuery({
+  queryKey: ['form_v2_f_1_mobile'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/form/v2/f-1/mobile"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const form_list_all_ref = ref<any[]>([]);
+const form_list_all_q = useQuery({
+  queryKey: ['form_list_all'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/form/list/all"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const form_f_1_mockdeletetoget_ref = ref<any[]>([]);
+const form_f_1_mockdeletetoget_q = useQuery({
+  queryKey: ['form_f_1_mockdeletetoget'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/form/f-1/mockdeletetoget"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const form_f_1_ref = ref<any[]>([]);
+const form_f_1_q = useQuery({
+  queryKey: ['form_f_1'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/form/f-1"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const formversion_list_form_f_1_ref = ref<any[]>([]);
+const formversion_list_form_f_1_q = useQuery({
+  queryKey: ['formversion_list_form_f_1'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/formversion/list/form/f-1"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const formversion_fv_1_ref = ref<any[]>([]);
+const formversion_fv_1_q = useQuery({
+  queryKey: ['formversion_fv_1'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/formversion/fv-1"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
 
 </script>
 

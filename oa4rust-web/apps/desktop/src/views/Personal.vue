@@ -158,181 +158,1453 @@ async function call_person_empower() { try { await api.get("/jaxrs/person/empowe
 async function call_empower_list_currentperson() { try { await api.get("/jaxrs/person/empower/list/currentperson") } catch {} }
 
 
-async function api_unit_list_type() { try { await api.get("/jaxrs/organization/assemble/control/unit/list/type") } catch {} }
-async function api_exmail_new_count() { try { await api.get("/jaxrs/person/exmail/new/count") } catch {} }
-async function api_two_factory_login() { try { await api.get("/jaxrs/organization/assemble/authentication/authentication/two/factory/login") } catch {} }
-async function api_login_after_object() { try { await api.get("/jaxrs/person/list/login/after/object") } catch {} }
-async function api_role_list_like() { try { await api.get("/jaxrs/organization/assemble/control/role/list/like") } catch {} }
-async function api_assemble_authentication_sso() { try { await api.get("/jaxrs/organization/assemble/authentication/sso") } catch {} }
-async function api_control_inputperson_template() { try { await api.get("/jaxrs/organization/assemble/control/inputperson/template") } catch {} }
-async function api_person_mockputtopost() { try { await api.get("/jaxrs/person/mockputtopost") } catch {} }
-async function api_person_list_pinyininitial() { try { await api.get("/jaxrs/organization/assemble/control/person/list/pinyininitial") } catch {} }
-async function api_direct_like_object() { try { await api.get("/jaxrs/person/list/unit/sub/direct/like/object") } catch {} }
-async function api_authentication_check_token() { try { await api.get("/jaxrs/organization/assemble/authentication/authentication/check/token") } catch {} }
-async function api_list_pinyininitial_mockputtopost() { try { await api.get("/jaxrs/organization/assemble/control/role/list/pinyininitial/mockputtopost") } catch {} }
-async function api_authentication_authentication_mode() { try { await api.get("/jaxrs/organization/assemble/authentication/authentication/mode") } catch {} }
-async function api_person_icon_upload() { try { await api.get("/jaxrs/person/icon/upload") } catch {} }
-async function api_person_exmail() { try { await api.get("/jaxrs/person/exmail") } catch {} }
-async function api_authentication_switchuser_mockputtopost() { try { await api.get("/jaxrs/organization/assemble/authentication/authentication/switchuser/mockputtopost") } catch {} }
-async function api_organization_person_list() { try { await api.get("/jaxrs/organization/person/list") } catch {} }
-async function api_list_group_object() { try { await api.get("/jaxrs/person/list/group/object") } catch {} }
-async function api_assemble_control_person() { try { await api.get("/jaxrs/organization/assemble/control/person") } catch {} }
-async function api_oauth_token_jira() { try { await api.get("/jaxrs/organization/assemble/authentication/oauth/token/jira") } catch {} }
+const unit_list_type_ref = ref<any[]>([]);
+const unit_list_type_q = useQuery({
+  queryKey: ['unit_list_type'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/organization/assemble/control/unit/list/type"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const exmail_new_count_ref = ref<any[]>([]);
+const exmail_new_count_q = useQuery({
+  queryKey: ['exmail_new_count'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/person/exmail/new/count"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const two_factory_login_ref = ref<any[]>([]);
+const two_factory_login_q = useQuery({
+  queryKey: ['two_factory_login'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/organization/assemble/authentication/authentication/two/factory/login"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const login_after_object_ref = ref<any[]>([]);
+const login_after_object_q = useQuery({
+  queryKey: ['login_after_object'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/person/list/login/after/object"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const role_list_like_ref = ref<any[]>([]);
+const role_list_like_q = useQuery({
+  queryKey: ['role_list_like'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/organization/assemble/control/role/list/like"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const assemble_authentication_sso_ref = ref<any[]>([]);
+const assemble_authentication_sso_q = useQuery({
+  queryKey: ['assemble_authentication_sso'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/organization/assemble/authentication/sso"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const control_inputperson_template_ref = ref<any[]>([]);
+const control_inputperson_template_q = useQuery({
+  queryKey: ['control_inputperson_template'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/organization/assemble/control/inputperson/template"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const person_mockputtopost_ref = ref<any[]>([]);
+const person_mockputtopost_q = useQuery({
+  queryKey: ['person_mockputtopost'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/person/mockputtopost"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const person_list_pinyininitial_ref = ref<any[]>([]);
+const person_list_pinyininitial_q = useQuery({
+  queryKey: ['person_list_pinyininitial'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/organization/assemble/control/person/list/pinyininitial"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const direct_like_object_ref = ref<any[]>([]);
+const direct_like_object_q = useQuery({
+  queryKey: ['direct_like_object'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/person/list/unit/sub/direct/like/object"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const authentication_check_token_ref = ref<any[]>([]);
+const authentication_check_token_q = useQuery({
+  queryKey: ['authentication_check_token'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/organization/assemble/authentication/authentication/check/token"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const list_pinyininitial_mockputtopost_ref = ref<any[]>([]);
+const list_pinyininitial_mockputtopost_q = useQuery({
+  queryKey: ['list_pinyininitial_mockputtopost'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/organization/assemble/control/role/list/pinyininitial/mockputtopost"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const authentication_authentication_mode_ref = ref<any[]>([]);
+const authentication_authentication_mode_q = useQuery({
+  queryKey: ['authentication_authentication_mode'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/organization/assemble/authentication/authentication/mode"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const person_icon_upload_ref = ref<any[]>([]);
+const person_icon_upload_q = useQuery({
+  queryKey: ['person_icon_upload'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/person/icon/upload"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const person_exmail_ref = ref<any[]>([]);
+const person_exmail_q = useQuery({
+  queryKey: ['person_exmail'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/person/exmail"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const authentication_switchuser_mockputtopost_ref = ref<any[]>([]);
+const authentication_switchuser_mockputtopost_q = useQuery({
+  queryKey: ['authentication_switchuser_mockputtopost'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/organization/assemble/authentication/authentication/switchuser/mockputtopost"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const organization_person_list_ref = ref<any[]>([]);
+const organization_person_list_q = useQuery({
+  queryKey: ['organization_person_list'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/organization/person/list"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const list_group_object_ref = ref<any[]>([]);
+const list_group_object_q = useQuery({
+  queryKey: ['list_group_object'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/person/list/group/object"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const assemble_control_person_ref = ref<any[]>([]);
+const assemble_control_person_q = useQuery({
+  queryKey: ['assemble_control_person'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/organization/assemble/control/person"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const oauth_token_jira_ref = ref<any[]>([]);
+const oauth_token_jira_q = useQuery({
+  queryKey: ['oauth_token_jira'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/organization/assemble/authentication/oauth/token/jira"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
 
 
-async function api_assemble_authentication_authentication_bind() { try { await api.get('/jaxrs/organization/assemble/authentication/authentication/bind') } catch {} }
-async function api_organization_group() { try { await api.get('/jaxrs/organization/group') } catch {} }
-async function api_organization_assemble_control_personcard() { try { await api.get('/jaxrs/organization/assemble/control/personcard') } catch {} }
-async function api_assemble_authentication_authentication_mockdeletetoget() { try { await api.get('/jaxrs/organization/assemble/authentication/authentication/mockdeletetoget') } catch {} }
-async function api_assemble_authentication_oauth_auth() { try { await api.get('/jaxrs/organization/assemble/authentication/oauth/auth') } catch {} }
-async function api_assemble_control_personcard_listgrouptypes() { try { await api.get('/jaxrs/organization/assemble/control/personcard/listgrouptypes') } catch {} }
-async function api_organization_core_express_config() { try { await api.get('/jaxrs/organization/core/express/config') } catch {} }
-async function api_organization_assemble_control_permissionsetting() { try { await api.get('/jaxrs/organization/assemble/control/permissionsetting') } catch {} }
-async function api_organization_assemble_unit_tree() { try { await api.get('/jaxrs/organization/assemble/unit/tree') } catch {} }
-async function api_organization_assemble_control_unitattribute() { try { await api.get('/jaxrs/organization/assemble/control/unitattribute') } catch {} }
-async function api_organization_assemble_authentication_authentication() { try { await api.get('/jaxrs/organization/assemble/authentication/authentication') } catch {} }
-async function api_organization_bind_list() { try { await api.get('/jaxrs/organization/bind/list') } catch {} }
-async function api_assemble_authentication_authentication_switchuser() { try { await api.get('/jaxrs/organization/assemble/authentication/authentication/switchuser') } catch {} }
-async function api_organization_assemble_control_personattribute() { try { await api.get('/jaxrs/organization/assemble/control/personattribute') } catch {} }
-async function api_organization_person_person_001() { try { await api.get('/jaxrs/organization/person/person-001') } catch {} }
-async function api_assemble_express_units_list() { try { await api.get('/jaxrs/organization/assemble/express/units/list') } catch {} }
-async function api_organization_bind() { try { await api.get('/jaxrs/organization/bind') } catch {} }
-async function api_assemble_express_data_sync() { try { await api.get('/jaxrs/organization/assemble/express/data/sync') } catch {} }
-async function api_organization_core_express_status() { try { await api.get('/jaxrs/organization/core/express/status') } catch {} }
-async function api_organization_custom() { try { await api.get('/jaxrs/organization/custom') } catch {} }
-async function api_assemble_express_status_get() { try { await api.get('/jaxrs/organization/assemble/express/status/get') } catch {} }
-async function api_organization_group_group_001() { try { await api.get('/jaxrs/organization/group/group-001') } catch {} }
-async function api_organization_assemble_control_identity() { try { await api.get('/jaxrs/organization/assemble/control/identity') } catch {} }
-async function api_assemble_control_unit_list() { try { await api.get('/jaxrs/organization/assemble/control/unit/list') } catch {} }
-async function api_assemble_express_config_get() { try { await api.get('/jaxrs/organization/assemble/express/config/get') } catch {} }
+const assemble_authentication_authentication_bind_ref = ref<any[]>([]);
+const assemble_authentication_authentication_bind_q = useQuery({
+  queryKey: ['assemble_authentication_authentication_bind'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/organization/assemble/authentication/authentication/bind"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const organization_group_ref = ref<any[]>([]);
+const organization_group_q = useQuery({
+  queryKey: ['organization_group'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/organization/group"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const organization_assemble_control_personcard_ref = ref<any[]>([]);
+const organization_assemble_control_personcard_q = useQuery({
+  queryKey: ['organization_assemble_control_personcard'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/organization/assemble/control/personcard"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const assemble_authentication_authentication_mockdeletetoget_ref = ref<any[]>([]);
+const assemble_authentication_authentication_mockdeletetoget_q = useQuery({
+  queryKey: ['assemble_authentication_authentication_mockdeletetoget'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/organization/assemble/authentication/authentication/mockdeletetoget"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const assemble_authentication_oauth_auth_ref = ref<any[]>([]);
+const assemble_authentication_oauth_auth_q = useQuery({
+  queryKey: ['assemble_authentication_oauth_auth'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/organization/assemble/authentication/oauth/auth"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const assemble_control_personcard_listgrouptypes_ref = ref<any[]>([]);
+const assemble_control_personcard_listgrouptypes_q = useQuery({
+  queryKey: ['assemble_control_personcard_listgrouptypes'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/organization/assemble/control/personcard/listgrouptypes"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const organization_core_express_config_ref = ref<any[]>([]);
+const organization_core_express_config_q = useQuery({
+  queryKey: ['organization_core_express_config'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/organization/core/express/config"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const organization_assemble_control_permissionsetting_ref = ref<any[]>([]);
+const organization_assemble_control_permissionsetting_q = useQuery({
+  queryKey: ['organization_assemble_control_permissionsetting'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/organization/assemble/control/permissionsetting"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const organization_assemble_unit_tree_ref = ref<any[]>([]);
+const organization_assemble_unit_tree_q = useQuery({
+  queryKey: ['organization_assemble_unit_tree'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/organization/assemble/unit/tree"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const organization_assemble_control_unitattribute_ref = ref<any[]>([]);
+const organization_assemble_control_unitattribute_q = useQuery({
+  queryKey: ['organization_assemble_control_unitattribute'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/organization/assemble/control/unitattribute"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const organization_assemble_authentication_authentication_ref = ref<any[]>([]);
+const organization_assemble_authentication_authentication_q = useQuery({
+  queryKey: ['organization_assemble_authentication_authentication'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/organization/assemble/authentication/authentication"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const organization_bind_list_ref = ref<any[]>([]);
+const organization_bind_list_q = useQuery({
+  queryKey: ['organization_bind_list'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/organization/bind/list"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const assemble_authentication_authentication_switchuser_ref = ref<any[]>([]);
+const assemble_authentication_authentication_switchuser_q = useQuery({
+  queryKey: ['assemble_authentication_authentication_switchuser'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/organization/assemble/authentication/authentication/switchuser"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const organization_assemble_control_personattribute_ref = ref<any[]>([]);
+const organization_assemble_control_personattribute_q = useQuery({
+  queryKey: ['organization_assemble_control_personattribute'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/organization/assemble/control/personattribute"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const organization_person_person_001_ref = ref<any[]>([]);
+const organization_person_person_001_q = useQuery({
+  queryKey: ['organization_person_person_001'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/organization/person/person-001"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const assemble_express_units_list_ref = ref<any[]>([]);
+const assemble_express_units_list_q = useQuery({
+  queryKey: ['assemble_express_units_list'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/organization/assemble/express/units/list"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const organization_bind_ref = ref<any[]>([]);
+const organization_bind_q = useQuery({
+  queryKey: ['organization_bind'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/organization/bind"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const assemble_express_data_sync_ref = ref<any[]>([]);
+const assemble_express_data_sync_q = useQuery({
+  queryKey: ['assemble_express_data_sync'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/organization/assemble/express/data/sync"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const organization_core_express_status_ref = ref<any[]>([]);
+const organization_core_express_status_q = useQuery({
+  queryKey: ['organization_core_express_status'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/organization/core/express/status"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const organization_custom_ref = ref<any[]>([]);
+const organization_custom_q = useQuery({
+  queryKey: ['organization_custom'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/organization/custom"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const assemble_express_status_get_ref = ref<any[]>([]);
+const assemble_express_status_get_q = useQuery({
+  queryKey: ['assemble_express_status_get'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/organization/assemble/express/status/get"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const organization_group_group_001_ref = ref<any[]>([]);
+const organization_group_group_001_q = useQuery({
+  queryKey: ['organization_group_group_001'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/organization/group/group-001"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const organization_assemble_control_identity_ref = ref<any[]>([]);
+const organization_assemble_control_identity_q = useQuery({
+  queryKey: ['organization_assemble_control_identity'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/organization/assemble/control/identity"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const assemble_control_unit_list_ref = ref<any[]>([]);
+const assemble_control_unit_list_q = useQuery({
+  queryKey: ['assemble_control_unit_list'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/organization/assemble/control/unit/list"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const assemble_express_config_get_ref = ref<any[]>([]);
+const assemble_express_config_get_q = useQuery({
+  queryKey: ['assemble_express_config_get'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/organization/assemble/express/config/get"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
 
 
-async function api_authentication_qiyeweixin_info_sign() { try { await api.get("/jaxrs/organization/assemble/authentication/qiyeweixin/info/sign") } catch {} }
-async function api_assemble_control_inputperson_wipe() { try { await api.get("/jaxrs/organization/assemble/control/inputperson/wipe") } catch {} }
-async function api_organization_assemble_person_list() { try { await api.get("/jaxrs/organization/assemble/person/list") } catch {} }
-async function api_assemble_authentication_sso_encrypt() { try { await api.get("/jaxrs/organization/assemble/authentication/sso/encrypt") } catch {} }
-async function api_control_identity_list_pinyininitial() { try { await api.get("/jaxrs/organization/assemble/control/identity/list/pinyininitial") } catch {} }
-async function api_organization_person() { try { await api.get("/jaxrs/organization/person") } catch {} }
-async function api_control_unitduty_distinct_name() { try { await api.get("/jaxrs/organization/assemble/control/unitduty/distinct/name") } catch {} }
-async function api_organization_assemble_express() { try { await api.get("/jaxrs/organization_assemble_express") } catch {} }
-async function api_authentication_oauth_generate_code() { try { await api.get("/jaxrs/organization/assemble/authentication/oauth/generate/code") } catch {} }
-async function api_assemble_authentication_dingding_info() { try { await api.get("/jaxrs/organization/assemble/authentication/dingding/info") } catch {} }
-async function api_organization_assemble_control_unit() { try { await api.get("/jaxrs/organization/assemble/control/unit") } catch {} }
-async function api_organization_definition_list() { try { await api.get("/jaxrs/organization/definition/list") } catch {} }
-async function api_assemble_authentication_authentication_captcha() { try { await api.get("/jaxrs/organization/assemble/authentication/authentication/captcha") } catch {} }
-async function api_authentication_oauth_info_jira() { try { await api.get("/jaxrs/organization/assemble/authentication/oauth/info/jira") } catch {} }
-async function api_organization_assemble_control_role() { try { await api.get("/jaxrs/organization/assemble/control/role") } catch {} }
+const authentication_qiyeweixin_info_sign_ref = ref<any[]>([]);
+const authentication_qiyeweixin_info_sign_q = useQuery({
+  queryKey: ['authentication_qiyeweixin_info_sign'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/organization/assemble/authentication/qiyeweixin/info/sign"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const assemble_control_inputperson_wipe_ref = ref<any[]>([]);
+const assemble_control_inputperson_wipe_q = useQuery({
+  queryKey: ['assemble_control_inputperson_wipe'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/organization/assemble/control/inputperson/wipe"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const organization_assemble_person_list_ref = ref<any[]>([]);
+const organization_assemble_person_list_q = useQuery({
+  queryKey: ['organization_assemble_person_list'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/organization/assemble/person/list"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const assemble_authentication_sso_encrypt_ref = ref<any[]>([]);
+const assemble_authentication_sso_encrypt_q = useQuery({
+  queryKey: ['assemble_authentication_sso_encrypt'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/organization/assemble/authentication/sso/encrypt"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const control_identity_list_pinyininitial_ref = ref<any[]>([]);
+const control_identity_list_pinyininitial_q = useQuery({
+  queryKey: ['control_identity_list_pinyininitial'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/organization/assemble/control/identity/list/pinyininitial"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const organization_person_ref = ref<any[]>([]);
+const organization_person_q = useQuery({
+  queryKey: ['organization_person'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/organization/person"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const control_unitduty_distinct_name_ref = ref<any[]>([]);
+const control_unitduty_distinct_name_q = useQuery({
+  queryKey: ['control_unitduty_distinct_name'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/organization/assemble/control/unitduty/distinct/name"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const organization_assemble_express_ref = ref<any[]>([]);
+const organization_assemble_express_q = useQuery({
+  queryKey: ['organization_assemble_express'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/organization_assemble_express"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const authentication_oauth_generate_code_ref = ref<any[]>([]);
+const authentication_oauth_generate_code_q = useQuery({
+  queryKey: ['authentication_oauth_generate_code'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/organization/assemble/authentication/oauth/generate/code"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const assemble_authentication_dingding_info_ref = ref<any[]>([]);
+const assemble_authentication_dingding_info_q = useQuery({
+  queryKey: ['assemble_authentication_dingding_info'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/organization/assemble/authentication/dingding/info"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const organization_assemble_control_unit_ref = ref<any[]>([]);
+const organization_assemble_control_unit_q = useQuery({
+  queryKey: ['organization_assemble_control_unit'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/organization/assemble/control/unit"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const organization_definition_list_ref = ref<any[]>([]);
+const organization_definition_list_q = useQuery({
+  queryKey: ['organization_definition_list'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/organization/definition/list"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const assemble_authentication_authentication_captcha_ref = ref<any[]>([]);
+const assemble_authentication_authentication_captcha_q = useQuery({
+  queryKey: ['assemble_authentication_authentication_captcha'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/organization/assemble/authentication/authentication/captcha"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const authentication_oauth_info_jira_ref = ref<any[]>([]);
+const authentication_oauth_info_jira_q = useQuery({
+  queryKey: ['authentication_oauth_info_jira'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/organization/assemble/authentication/oauth/info/jira"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const organization_assemble_control_role_ref = ref<any[]>([]);
+const organization_assemble_control_role_q = useQuery({
+  queryKey: ['organization_assemble_control_role'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/organization/assemble/control/role"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
 
 
-async function api_person_password_mockputtopost() { try { await api.get("/jaxrs/person/password/mockputtopost") } catch {} }
-async function api_person_list_personattribute_object() { try { await api.get("/jaxrs/person/list/personattribute/object") } catch {} }
-async function api_person_list_object() { try { await api.get("/jaxrs/person/list/object") } catch {} }
-async function api_person_empower_some_id() { try { await api.get("/jaxrs/person/empower/some-id") } catch {} }
-async function api_person_icon() { try { await api.get("/jaxrs/person/icon") } catch {} }
-async function api_list_login_recent_object() { try { await api.get("/jaxrs/person/list/login/recent/object") } catch {} }
-async function api_person_list_identity_object() { try { await api.get("/jaxrs/person/list/identity/object") } catch {} }
-async function api_signature_list_person_u2_admin_P() { try { await api.get("/jaxrs/person/signature/list/person/u2-admin@P") } catch {} }
-async function api_person_empower_some_id_enable() { try { await api.get("/jaxrs/person/empower/some-id/enable") } catch {} }
-async function api_list_unit_sub_direct() { try { await api.get("/jaxrs/person/list/unit/sub/direct") } catch {} }
-async function api_person_list_role_object() { try { await api.get("/jaxrs/person/list/role/object") } catch {} }
-async function api_person_list_login_after() { try { await api.get("/jaxrs/person/list/login/after") } catch {} }
-async function api_person_sub_direct_object() { try { await api.get("/jaxrs/person/list/person/sub/direct/object") } catch {} }
-async function api_person_signature_manager_list() { try { await api.get("/jaxrs/person/signature/manager/list") } catch {} }
-async function api_person_has_role() { try { await api.get("/jaxrs/person/has/role") } catch {} }
+const person_password_mockputtopost_ref = ref<any[]>([]);
+const person_password_mockputtopost_q = useQuery({
+  queryKey: ['person_password_mockputtopost'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/person/password/mockputtopost"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const person_list_personattribute_object_ref = ref<any[]>([]);
+const person_list_personattribute_object_q = useQuery({
+  queryKey: ['person_list_personattribute_object'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/person/list/personattribute/object"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const person_list_object_ref = ref<any[]>([]);
+const person_list_object_q = useQuery({
+  queryKey: ['person_list_object'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/person/list/object"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const person_empower_some_id_ref = ref<any[]>([]);
+const person_empower_some_id_q = useQuery({
+  queryKey: ['person_empower_some_id'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/person/empower/some-id"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const person_icon_ref = ref<any[]>([]);
+const person_icon_q = useQuery({
+  queryKey: ['person_icon'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/person/icon"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const list_login_recent_object_ref = ref<any[]>([]);
+const list_login_recent_object_q = useQuery({
+  queryKey: ['list_login_recent_object'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/person/list/login/recent/object"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const person_list_identity_object_ref = ref<any[]>([]);
+const person_list_identity_object_q = useQuery({
+  queryKey: ['person_list_identity_object'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/person/list/identity/object"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const signature_list_person_u2_admin_P_ref = ref<any[]>([]);
+const signature_list_person_u2_admin_P_q = useQuery({
+  queryKey: ['signature_list_person_u2_admin_P'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/person/signature/list/person/u2-admin@P"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const person_empower_some_id_enable_ref = ref<any[]>([]);
+const person_empower_some_id_enable_q = useQuery({
+  queryKey: ['person_empower_some_id_enable'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/person/empower/some-id/enable"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const list_unit_sub_direct_ref = ref<any[]>([]);
+const list_unit_sub_direct_q = useQuery({
+  queryKey: ['list_unit_sub_direct'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/person/list/unit/sub/direct"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const person_list_role_object_ref = ref<any[]>([]);
+const person_list_role_object_q = useQuery({
+  queryKey: ['person_list_role_object'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/person/list/role/object"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const person_list_login_after_ref = ref<any[]>([]);
+const person_list_login_after_q = useQuery({
+  queryKey: ['person_list_login_after'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/person/list/login/after"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const person_sub_direct_object_ref = ref<any[]>([]);
+const person_sub_direct_object_q = useQuery({
+  queryKey: ['person_sub_direct_object'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/person/list/person/sub/direct/object"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const person_signature_manager_list_ref = ref<any[]>([]);
+const person_signature_manager_list_q = useQuery({
+  queryKey: ['person_signature_manager_list'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/person/signature/manager/list"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const person_has_role_ref = ref<any[]>([]);
+const person_has_role_q = useQuery({
+  queryKey: ['person_has_role'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/person/has/role"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
 
 
-async function api_assemble_authentication_zhengwudingding_info() { try { await api.get("/jaxrs/organization/assemble/authentication/zhengwudingding/info") } catch {} }
-async function api_organization_assemble_authentication() { try { await api.get("/jaxrs/organization_assemble_authentication") } catch {} }
-async function api_organization_identity_list() { try { await api.get("/jaxrs/organization/identity/list") } catch {} }
-async function api_organization_assemble_personal() { try { await api.get("/jaxrs/organization_assemble_personal") } catch {} }
-async function api_assemble_control_personcard_mylist() { try { await api.get("/jaxrs/organization/assemble/control/personcard/mylist") } catch {} }
-async function api_organization_group_list() { try { await api.get("/jaxrs/organization/group/list") } catch {} }
-async function api_organization_assemble_control_group() { try { await api.get("/jaxrs/organization/assemble/control/group") } catch {} }
-async function api_assemble_authentication_authentication_code() { try { await api.get("/jaxrs/organization/assemble/authentication/authentication/code") } catch {} }
-async function api_organization_assemble_control_inputperson() { try { await api.get("/jaxrs/organization/assemble/control/inputperson") } catch {} }
-async function api_organization_identity() { try { await api.get("/jaxrs/organization/identity") } catch {} }
-async function api_personal_custom_alt_id_mockputtopost() { try { await api.get("/jaxrs/organization/assemble/personal/custom/alt-id/mockputtopost") } catch {} }
-async function api_organization_assemble_control_unitduty() { try { await api.get("/jaxrs/organization/assemble/control/unitduty") } catch {} }
-async function api_control_unit_get_root() { try { await api.get("/jaxrs/organization/assemble/control/unit/get/root") } catch {} }
-async function api_control_unit_list_like() { try { await api.get("/jaxrs/organization/assemble/control/unit/list/like") } catch {} }
-async function api_control_export_zhengwudingding_person() { try { await api.get("/jaxrs/organization/assemble/control/export/zhengwudingding/person") } catch {} }
-async function api_control_unitduty_list_like() { try { await api.get("/jaxrs/organization/assemble/control/unitduty/list/like") } catch {} }
-async function api_control_role_list_pinyininitial() { try { await api.get("/jaxrs/organization/assemble/control/role/list/pinyininitial") } catch {} }
-async function api_control_identity_list_like() { try { await api.get("/jaxrs/organization/assemble/control/identity/list/like") } catch {} }
-async function api_control_group_list_pinyininitial() { try { await api.get("/jaxrs/organization/assemble/control/group/list/pinyininitial") } catch {} }
-async function api_assemble_control_permissionsetting_list() { try { await api.get("/jaxrs/organization/assemble/control/permissionsetting/list") } catch {} }
-async function api_control_person_list_like() { try { await api.get("/jaxrs/organization/assemble/control/person/list/like") } catch {} }
-async function api_control_unit_list_top() { try { await api.get("/jaxrs/organization/assemble/control/unit/list/top") } catch {} }
-async function api_assemble_authentication_authentication_captchaRSAPublicKey() { try { await api.get("/jaxrs/organization/assemble/authentication/authentication/captchaRSAPublicKey") } catch {} }
-async function api_authentication_qiyeweixin_login_testcode() { try { await api.get("/jaxrs/organization/assemble/authentication/qiyeweixin/login/testcode") } catch {} }
-async function api_authentication_authentication_oauth_list() { try { await api.get("/jaxrs/organization/assemble/authentication/authentication/oauth/list") } catch {} }
+const assemble_authentication_zhengwudingding_info_ref = ref<any[]>([]);
+const assemble_authentication_zhengwudingding_info_q = useQuery({
+  queryKey: ['assemble_authentication_zhengwudingding_info'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/organization/assemble/authentication/zhengwudingding/info"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const organization_assemble_authentication_ref = ref<any[]>([]);
+const organization_assemble_authentication_q = useQuery({
+  queryKey: ['organization_assemble_authentication'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/organization_assemble_authentication"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const organization_identity_list_ref = ref<any[]>([]);
+const organization_identity_list_q = useQuery({
+  queryKey: ['organization_identity_list'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/organization/identity/list"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const organization_assemble_personal_ref = ref<any[]>([]);
+const organization_assemble_personal_q = useQuery({
+  queryKey: ['organization_assemble_personal'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/organization_assemble_personal"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const assemble_control_personcard_mylist_ref = ref<any[]>([]);
+const assemble_control_personcard_mylist_q = useQuery({
+  queryKey: ['assemble_control_personcard_mylist'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/organization/assemble/control/personcard/mylist"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const organization_group_list_ref = ref<any[]>([]);
+const organization_group_list_q = useQuery({
+  queryKey: ['organization_group_list'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/organization/group/list"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const organization_assemble_control_group_ref = ref<any[]>([]);
+const organization_assemble_control_group_q = useQuery({
+  queryKey: ['organization_assemble_control_group'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/organization/assemble/control/group"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const assemble_authentication_authentication_code_ref = ref<any[]>([]);
+const assemble_authentication_authentication_code_q = useQuery({
+  queryKey: ['assemble_authentication_authentication_code'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/organization/assemble/authentication/authentication/code"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const organization_assemble_control_inputperson_ref = ref<any[]>([]);
+const organization_assemble_control_inputperson_q = useQuery({
+  queryKey: ['organization_assemble_control_inputperson'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/organization/assemble/control/inputperson"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const organization_identity_ref = ref<any[]>([]);
+const organization_identity_q = useQuery({
+  queryKey: ['organization_identity'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/organization/identity"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const personal_custom_alt_id_mockputtopost_ref = ref<any[]>([]);
+const personal_custom_alt_id_mockputtopost_q = useQuery({
+  queryKey: ['personal_custom_alt_id_mockputtopost'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/organization/assemble/personal/custom/alt-id/mockputtopost"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const organization_assemble_control_unitduty_ref = ref<any[]>([]);
+const organization_assemble_control_unitduty_q = useQuery({
+  queryKey: ['organization_assemble_control_unitduty'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/organization/assemble/control/unitduty"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const control_unit_get_root_ref = ref<any[]>([]);
+const control_unit_get_root_q = useQuery({
+  queryKey: ['control_unit_get_root'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/organization/assemble/control/unit/get/root"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const control_unit_list_like_ref = ref<any[]>([]);
+const control_unit_list_like_q = useQuery({
+  queryKey: ['control_unit_list_like'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/organization/assemble/control/unit/list/like"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const control_export_zhengwudingding_person_ref = ref<any[]>([]);
+const control_export_zhengwudingding_person_q = useQuery({
+  queryKey: ['control_export_zhengwudingding_person'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/organization/assemble/control/export/zhengwudingding/person"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const control_unitduty_list_like_ref = ref<any[]>([]);
+const control_unitduty_list_like_q = useQuery({
+  queryKey: ['control_unitduty_list_like'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/organization/assemble/control/unitduty/list/like"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const control_role_list_pinyininitial_ref = ref<any[]>([]);
+const control_role_list_pinyininitial_q = useQuery({
+  queryKey: ['control_role_list_pinyininitial'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/organization/assemble/control/role/list/pinyininitial"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const control_identity_list_like_ref = ref<any[]>([]);
+const control_identity_list_like_q = useQuery({
+  queryKey: ['control_identity_list_like'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/organization/assemble/control/identity/list/like"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const control_group_list_pinyininitial_ref = ref<any[]>([]);
+const control_group_list_pinyininitial_q = useQuery({
+  queryKey: ['control_group_list_pinyininitial'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/organization/assemble/control/group/list/pinyininitial"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const assemble_control_permissionsetting_list_ref = ref<any[]>([]);
+const assemble_control_permissionsetting_list_q = useQuery({
+  queryKey: ['assemble_control_permissionsetting_list'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/organization/assemble/control/permissionsetting/list"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const control_person_list_like_ref = ref<any[]>([]);
+const control_person_list_like_q = useQuery({
+  queryKey: ['control_person_list_like'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/organization/assemble/control/person/list/like"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const control_unit_list_top_ref = ref<any[]>([]);
+const control_unit_list_top_q = useQuery({
+  queryKey: ['control_unit_list_top'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/organization/assemble/control/unit/list/top"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const assemble_authentication_authentication_captchaRSAPublicKey_ref = ref<any[]>([]);
+const assemble_authentication_authentication_captchaRSAPublicKey_q = useQuery({
+  queryKey: ['assemble_authentication_authentication_captchaRSAPublicKey'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/organization/assemble/authentication/authentication/captchaRSAPublicKey"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const authentication_qiyeweixin_login_testcode_ref = ref<any[]>([]);
+const authentication_qiyeweixin_login_testcode_q = useQuery({
+  queryKey: ['authentication_qiyeweixin_login_testcode'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/organization/assemble/authentication/qiyeweixin/login/testcode"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const authentication_authentication_oauth_list_ref = ref<any[]>([]);
+const authentication_authentication_oauth_list_q = useQuery({
+  queryKey: ['authentication_authentication_oauth_list'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/organization/assemble/authentication/authentication/oauth/list"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
 
 
-async function api_unit_sub_direct_like() { try { await api.get("/jaxrs/person/list/unit/sub/direct/like") } catch {} }
-async function api_person_list_pair_identity() { try { await api.get("/jaxrs/person/list/pair/identity") } catch {} }
-async function api_person_empower_manager_some_id() { try { await api.get("/jaxrs/person/empower/manager/some-id") } catch {} }
-async function api_personal_info() { try { await api.get("/jaxrs/personal/info") } catch {} }
-async function api_no_such_java_action() { try { await api.get("/jaxrs/person/no/such/java/action") } catch {} }
-async function api_person_list() { try { await api.get("/jaxrs/person/list") } catch {} }
-async function api_person_list_login_recent() { try { await api.get("/jaxrs/person/list/login/recent") } catch {} }
-async function api_person_list_identity() { try { await api.get("/jaxrs/person/list/identity") } catch {} }
-async function api_empower_list_to_enable() { try { await api.get("/jaxrs/person/empower/list/to/enable") } catch {} }
-async function api_personattribute_list_person_object() { try { await api.get("/jaxrs/personattribute/list/person/object") } catch {} }
-async function api_person_mobile_p1() { try { await api.get("/jaxrs/person/mobile/p1") } catch {} }
-async function api_person_regist_code() { try { await api.get("/jaxrs/person/regist/code") } catch {} }
-async function api_person_exmail_sso() { try { await api.get("/jaxrs/person/exmail/sso") } catch {} }
-async function api_person_sub_nested_object() { try { await api.get("/jaxrs/person/list/person/sub/nested/object") } catch {} }
-async function api_person_sup_nested_object() { try { await api.get("/jaxrs/person/list/person/sup/nested/object") } catch {} }
-async function api_person_sup_direct_object() { try { await api.get("/jaxrs/person/list/person/sup/direct/object") } catch {} }
-async function api_exmail_list_title_passive() { try { await api.get("/jaxrs/person/exmail/list/title/passive") } catch {} }
-async function api_person_empower_some_id_disable() { try { await api.get("/jaxrs/person/empower/some-id/disable") } catch {} }
-async function api_person_empower_list_to() { try { await api.get("/jaxrs/person/empower/list/to") } catch {} }
-async function api_person_nick_name_p1() { try { await api.get("/jaxrs/person/nick/name/p1") } catch {} }
+const unit_sub_direct_like_ref = ref<any[]>([]);
+const unit_sub_direct_like_q = useQuery({
+  queryKey: ['unit_sub_direct_like'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/person/list/unit/sub/direct/like"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const person_list_pair_identity_ref = ref<any[]>([]);
+const person_list_pair_identity_q = useQuery({
+  queryKey: ['person_list_pair_identity'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/person/list/pair/identity"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const person_empower_manager_some_id_ref = ref<any[]>([]);
+const person_empower_manager_some_id_q = useQuery({
+  queryKey: ['person_empower_manager_some_id'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/person/empower/manager/some-id"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const personal_info_ref = ref<any[]>([]);
+const personal_info_q = useQuery({
+  queryKey: ['personal_info'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/personal/info"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const no_such_java_action_ref = ref<any[]>([]);
+const no_such_java_action_q = useQuery({
+  queryKey: ['no_such_java_action'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/person/no/such/java/action"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const person_list_ref = ref<any[]>([]);
+const person_list_q = useQuery({
+  queryKey: ['person_list'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/person/list"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const person_list_login_recent_ref = ref<any[]>([]);
+const person_list_login_recent_q = useQuery({
+  queryKey: ['person_list_login_recent'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/person/list/login/recent"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const person_list_identity_ref = ref<any[]>([]);
+const person_list_identity_q = useQuery({
+  queryKey: ['person_list_identity'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/person/list/identity"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const empower_list_to_enable_ref = ref<any[]>([]);
+const empower_list_to_enable_q = useQuery({
+  queryKey: ['empower_list_to_enable'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/person/empower/list/to/enable"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const personattribute_list_person_object_ref = ref<any[]>([]);
+const personattribute_list_person_object_q = useQuery({
+  queryKey: ['personattribute_list_person_object'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/personattribute/list/person/object"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const person_mobile_p1_ref = ref<any[]>([]);
+const person_mobile_p1_q = useQuery({
+  queryKey: ['person_mobile_p1'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/person/mobile/p1"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const person_regist_code_ref = ref<any[]>([]);
+const person_regist_code_q = useQuery({
+  queryKey: ['person_regist_code'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/person/regist/code"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const person_exmail_sso_ref = ref<any[]>([]);
+const person_exmail_sso_q = useQuery({
+  queryKey: ['person_exmail_sso'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/person/exmail/sso"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const person_sub_nested_object_ref = ref<any[]>([]);
+const person_sub_nested_object_q = useQuery({
+  queryKey: ['person_sub_nested_object'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/person/list/person/sub/nested/object"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const person_sup_nested_object_ref = ref<any[]>([]);
+const person_sup_nested_object_q = useQuery({
+  queryKey: ['person_sup_nested_object'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/person/list/person/sup/nested/object"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const person_sup_direct_object_ref = ref<any[]>([]);
+const person_sup_direct_object_q = useQuery({
+  queryKey: ['person_sup_direct_object'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/person/list/person/sup/direct/object"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const exmail_list_title_passive_ref = ref<any[]>([]);
+const exmail_list_title_passive_q = useQuery({
+  queryKey: ['exmail_list_title_passive'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/person/exmail/list/title/passive"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const person_empower_some_id_disable_ref = ref<any[]>([]);
+const person_empower_some_id_disable_q = useQuery({
+  queryKey: ['person_empower_some_id_disable'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/person/empower/some-id/disable"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const person_empower_list_to_ref = ref<any[]>([]);
+const person_empower_list_to_q = useQuery({
+  queryKey: ['person_empower_list_to'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/person/empower/list/to"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const person_nick_name_p1_ref = ref<any[]>([]);
+const person_nick_name_p1_q = useQuery({
+  queryKey: ['person_nick_name_p1'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/person/nick/name/p1"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
 
 
-async function api_list_person_sub_nested() { try { await api.get("/jaxrs/person/list/person/sub/nested") } catch {} }
-async function api_person_regist() { try { await api.get("/jaxrs/person/regist") } catch {} }
-async function api_unit_sub_nested_like() { try { await api.get("/jaxrs/person/list/unit/sub/nested/like") } catch {} }
-async function api_list_unit_sub_nested() { try { await api.get("/jaxrs/person/list/unit/sub/nested") } catch {} }
-async function api_list_person_sup_direct() { try { await api.get("/jaxrs/person/list/person/sup/direct") } catch {} }
-async function api_person_signature_upload() { try { await api.get("/jaxrs/person/signature/upload") } catch {} }
-async function api_person_list_all() { try { await api.get("/jaxrs/person/list/all") } catch {} }
-async function api_list_person_sup_nested() { try { await api.get("/jaxrs/person/list/person/sup/nested") } catch {} }
-async function api_list_person_sub_direct() { try { await api.get("/jaxrs/person/list/person/sub/direct") } catch {} }
-async function api_person_list_group() { try { await api.get("/jaxrs/person/list/group") } catch {} }
-async function api_personattribute_list_name_person() { try { await api.get("/jaxrs/personattribute/list/name/person") } catch {} }
-async function api_exmail_new_count_passive() { try { await api.get("/jaxrs/person/exmail/new/count/passive") } catch {} }
-async function api_person_icon_mockputtopost() { try { await api.get("/jaxrs/person/icon/mockputtopost") } catch {} }
-async function api_filter_1_size_20() { try { await api.get("/jaxrs/person/list/filter/1/size/20") } catch {} }
-async function api_personattribute_set_person_name() { try { await api.get("/jaxrs/personattribute/set/person/name") } catch {} }
+const list_person_sub_nested_ref = ref<any[]>([]);
+const list_person_sub_nested_q = useQuery({
+  queryKey: ['list_person_sub_nested'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/person/list/person/sub/nested"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const person_regist_ref = ref<any[]>([]);
+const person_regist_q = useQuery({
+  queryKey: ['person_regist'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/person/regist"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const unit_sub_nested_like_ref = ref<any[]>([]);
+const unit_sub_nested_like_q = useQuery({
+  queryKey: ['unit_sub_nested_like'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/person/list/unit/sub/nested/like"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const list_unit_sub_nested_ref = ref<any[]>([]);
+const list_unit_sub_nested_q = useQuery({
+  queryKey: ['list_unit_sub_nested'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/person/list/unit/sub/nested"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const list_person_sup_direct_ref = ref<any[]>([]);
+const list_person_sup_direct_q = useQuery({
+  queryKey: ['list_person_sup_direct'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/person/list/person/sup/direct"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const person_signature_upload_ref = ref<any[]>([]);
+const person_signature_upload_q = useQuery({
+  queryKey: ['person_signature_upload'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/person/signature/upload"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const person_list_all_ref = ref<any[]>([]);
+const person_list_all_q = useQuery({
+  queryKey: ['person_list_all'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/person/list/all"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const list_person_sup_nested_ref = ref<any[]>([]);
+const list_person_sup_nested_q = useQuery({
+  queryKey: ['list_person_sup_nested'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/person/list/person/sup/nested"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const list_person_sub_direct_ref = ref<any[]>([]);
+const list_person_sub_direct_q = useQuery({
+  queryKey: ['list_person_sub_direct'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/person/list/person/sub/direct"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const person_list_group_ref = ref<any[]>([]);
+const person_list_group_q = useQuery({
+  queryKey: ['person_list_group'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/person/list/group"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const personattribute_list_name_person_ref = ref<any[]>([]);
+const personattribute_list_name_person_q = useQuery({
+  queryKey: ['personattribute_list_name_person'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/personattribute/list/name/person"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const exmail_new_count_passive_ref = ref<any[]>([]);
+const exmail_new_count_passive_q = useQuery({
+  queryKey: ['exmail_new_count_passive'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/person/exmail/new/count/passive"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const person_icon_mockputtopost_ref = ref<any[]>([]);
+const person_icon_mockputtopost_q = useQuery({
+  queryKey: ['person_icon_mockputtopost'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/person/icon/mockputtopost"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const filter_1_size_20_ref = ref<any[]>([]);
+const filter_1_size_20_q = useQuery({
+  queryKey: ['filter_1_size_20'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/person/list/filter/1/size/20"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const personattribute_set_person_name_ref = ref<any[]>([]);
+const personattribute_set_person_name_q = useQuery({
+  queryKey: ['personattribute_set_person_name'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/personattribute/set/person/name"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
 
 
-async function api_authentication_sms_send() { try { await api.get("/jaxrs/authentication/sms/send") } catch {} }
-async function api_authentication_oauth_dingding_config() { try { await api.get("/jaxrs/authentication/oauth/dingding/config") } catch {} }
-async function api_authentication_two_factor() { try { await api.get("/jaxrs/authentication/two_factor") } catch {} }
-async function api_authentication_unit_list() { try { await api.get("/jaxrs/authentication/unit/list") } catch {} }
-async function api_authentication_group_list() { try { await api.get("/jaxrs/authentication/group/list") } catch {} }
-async function api_authentication_refresh() { try { await api.get("/jaxrs/authentication/refresh") } catch {} }
-async function api_authentication() { try { await api.get("/jaxrs/authentication") } catch {} }
-async function api_authentication_who() { try { await api.get("/jaxrs/authentication/who") } catch {} }
-async function api_authentication_captcha() { try { await api.get("/jaxrs/authentication/captcha") } catch {} }
-async function api_authentication_safe_logout() { try { await api.get("/jaxrs/authentication/safe/logout") } catch {} }
-async function api_authentication_sms_verify() { try { await api.get("/jaxrs/authentication/sms/verify") } catch {} }
-async function api_authentication_oidc_callback() { try { await api.get("/jaxrs/authentication/oidc/callback") } catch {} }
-async function api_authentication_sso_encrypt() { try { await api.get("/jaxrs/authentication/sso/encrypt") } catch {} }
-async function api_authentication_login() { try { await api.get("/jaxrs/authentication/login") } catch {} }
-async function api_authentication_check_token_1() { try { await api.get("/jaxrs/authentication/check/token") } catch {} }
+const authentication_sms_send_ref = ref<any[]>([]);
+const authentication_sms_send_q = useQuery({
+  queryKey: ['authentication_sms_send'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/authentication/sms/send"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const authentication_oauth_dingding_config_ref = ref<any[]>([]);
+const authentication_oauth_dingding_config_q = useQuery({
+  queryKey: ['authentication_oauth_dingding_config'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/authentication/oauth/dingding/config"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const authentication_two_factor_ref = ref<any[]>([]);
+const authentication_two_factor_q = useQuery({
+  queryKey: ['authentication_two_factor'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/authentication/two_factor"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const authentication_unit_list_ref = ref<any[]>([]);
+const authentication_unit_list_q = useQuery({
+  queryKey: ['authentication_unit_list'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/authentication/unit/list"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const authentication_group_list_ref = ref<any[]>([]);
+const authentication_group_list_q = useQuery({
+  queryKey: ['authentication_group_list'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/authentication/group/list"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const authentication_refresh_ref = ref<any[]>([]);
+const authentication_refresh_q = useQuery({
+  queryKey: ['authentication_refresh'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/authentication/refresh"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const authentication_ref = ref<any[]>([]);
+const authentication_q = useQuery({
+  queryKey: ['authentication'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/authentication"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const authentication_who_ref = ref<any[]>([]);
+const authentication_who_q = useQuery({
+  queryKey: ['authentication_who'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/authentication/who"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const authentication_captcha_ref = ref<any[]>([]);
+const authentication_captcha_q = useQuery({
+  queryKey: ['authentication_captcha'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/authentication/captcha"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const authentication_safe_logout_ref = ref<any[]>([]);
+const authentication_safe_logout_q = useQuery({
+  queryKey: ['authentication_safe_logout'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/authentication/safe/logout"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const authentication_sms_verify_ref = ref<any[]>([]);
+const authentication_sms_verify_q = useQuery({
+  queryKey: ['authentication_sms_verify'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/authentication/sms/verify"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const authentication_oidc_callback_ref = ref<any[]>([]);
+const authentication_oidc_callback_q = useQuery({
+  queryKey: ['authentication_oidc_callback'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/authentication/oidc/callback"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const authentication_sso_encrypt_ref = ref<any[]>([]);
+const authentication_sso_encrypt_q = useQuery({
+  queryKey: ['authentication_sso_encrypt'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/authentication/sso/encrypt"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const authentication_login_ref = ref<any[]>([]);
+const authentication_login_q = useQuery({
+  queryKey: ['authentication_login'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/authentication/login"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const authentication_check_token_1_ref = ref<any[]>([]);
+const authentication_check_token_1_q = useQuery({
+  queryKey: ['authentication_check_token_1'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/authentication/check/token"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
 
 
-async function api_organization_core_express_sync() { try { await api.get("/jaxrs/organization/core/express/sync") } catch {} }
-async function api_assemble_authentication_bind_list() { try { await api.get("/jaxrs/organization/assemble/authentication/bind/list") } catch {} }
-async function api_organization_assemble_control() { try { await api.get("/jaxrs/organization/assemble/control") } catch {} }
-async function api_control_unitduty_update_member() { try { await api.get("/jaxrs/organization/assemble/control/unitduty/update/member") } catch {} }
-async function api_assemble_authentication_oauth_token() { try { await api.get("/jaxrs/organization/assemble/authentication/oauth/token") } catch {} }
-async function api_control_unit_list_pinyininitial() { try { await api.get("/jaxrs/organization/assemble/control/unit/list/pinyininitial") } catch {} }
-async function api_control_unit_list_controller() { try { await api.get("/jaxrs/organization/assemble/control/unit/list/controller") } catch {} }
-async function api_organization_core_express_list() { try { await api.get("/jaxrs/organization/core/express/list") } catch {} }
-async function api_organization_definition() { try { await api.get("/jaxrs/organization/definition") } catch {} }
+const organization_core_express_sync_ref = ref<any[]>([]);
+const organization_core_express_sync_q = useQuery({
+  queryKey: ['organization_core_express_sync'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/organization/core/express/sync"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const assemble_authentication_bind_list_ref = ref<any[]>([]);
+const assemble_authentication_bind_list_q = useQuery({
+  queryKey: ['assemble_authentication_bind_list'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/organization/assemble/authentication/bind/list"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const organization_assemble_control_ref = ref<any[]>([]);
+const organization_assemble_control_q = useQuery({
+  queryKey: ['organization_assemble_control'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/organization/assemble/control"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const control_unitduty_update_member_ref = ref<any[]>([]);
+const control_unitduty_update_member_q = useQuery({
+  queryKey: ['control_unitduty_update_member'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/organization/assemble/control/unitduty/update/member"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const assemble_authentication_oauth_token_ref = ref<any[]>([]);
+const assemble_authentication_oauth_token_q = useQuery({
+  queryKey: ['assemble_authentication_oauth_token'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/organization/assemble/authentication/oauth/token"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const control_unit_list_pinyininitial_ref = ref<any[]>([]);
+const control_unit_list_pinyininitial_q = useQuery({
+  queryKey: ['control_unit_list_pinyininitial'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/organization/assemble/control/unit/list/pinyininitial"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const control_unit_list_controller_ref = ref<any[]>([]);
+const control_unit_list_controller_q = useQuery({
+  queryKey: ['control_unit_list_controller'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/organization/assemble/control/unit/list/controller"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const organization_core_express_list_ref = ref<any[]>([]);
+const organization_core_express_list_q = useQuery({
+  queryKey: ['organization_core_express_list'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/organization/core/express/list"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const organization_definition_ref = ref<any[]>([]);
+const organization_definition_q = useQuery({
+  queryKey: ['organization_definition'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/organization/definition"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
 const api_organiza_643_data = ref<any[]>([]);
 const { data: api_organiza_643_q } = useQuery({queryKey: ['api_organiza_643', '/jaxrs/organization/assemble/list'], queryFn: async () => { try { const r = await api.get("/jaxrs/organization/assemble/list"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
 watch(api_organiza_643_q, (v) => { api_organiza_643_data.value = v ?? []; });
@@ -350,13 +1622,45 @@ const { data: api_organiza_368_q } = useQuery({queryKey: ['api_organiza_368', '/
 watch(api_organiza_368_q, (v) => { api_organiza_368_data.value = v ?? []; });
 
 
-async function api_reset() { try { await api.get("/jaxrs/reset") } catch {} }
+const reset_ref = ref<any[]>([]);
+const reset_q = useQuery({
+  queryKey: ['reset'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/reset"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
 const api_reset_check_data = ref<any[]>([]);
 const { data: api_reset_check_q } = useQuery({queryKey: ['api_reset_check', '/jaxrs/reset/check'], queryFn: async () => { try { const r = await api.get("/jaxrs/reset/check"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
 watch(api_reset_check_q, (v) => { api_reset_check_data.value = v ?? []; });
-async function api_reset_password_anonymous() { try { await api.get("/jaxrs/reset/password/anonymous") } catch {} }
-async function api_reset_mockputtopost() { try { await api.get("/jaxrs/reset/mockputtopost") } catch {} }
-async function api_reset_set() { try { await api.get("/jaxrs/reset/set") } catch {} }
+const reset_password_anonymous_ref = ref<any[]>([]);
+const reset_password_anonymous_q = useQuery({
+  queryKey: ['reset_password_anonymous'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/reset/password/anonymous"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const reset_mockputtopost_ref = ref<any[]>([]);
+const reset_mockputtopost_q = useQuery({
+  queryKey: ['reset_mockputtopost'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/reset/mockputtopost"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const reset_set_ref = ref<any[]>([]);
+const reset_set_q = useQuery({
+  queryKey: ['reset_set'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/reset/set"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
 const api_reset_code_data = ref<any[]>([]);
 const { data: api_reset_code_q } = useQuery({queryKey: ['api_reset_code', '/jaxrs/reset/code'], queryFn: async () => { try { const r = await api.get("/jaxrs/reset/code"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
 watch(api_reset_code_q, (v) => { api_reset_code_data.value = v ?? []; });
@@ -482,8 +1786,24 @@ const { data: api_personat_650_q } = useQuery({queryKey: ['api_personat_650', '/
 watch(api_personat_650_q, (v) => { api_personat_650_data.value = v ?? []; });
 
 
-async function api_form_v2_f_1_mobile() { try { await api.get("/jaxrs/anonymous/form/v2/f-1/mobile") } catch {} }
-async function api_anonymous_form_f_1() { try { await api.get("/jaxrs/anonymous/form/f-1") } catch {} }
+const form_v2_f_1_mobile_ref = ref<any[]>([]);
+const form_v2_f_1_mobile_q = useQuery({
+  queryKey: ['form_v2_f_1_mobile'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/anonymous/form/v2/f-1/mobile"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const anonymous_form_f_1_ref = ref<any[]>([]);
+const anonymous_form_f_1_q = useQuery({
+  queryKey: ['anonymous_form_f_1'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/anonymous/form/f-1"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
 const api_v2_lookup_docume_21_data = ref<any[]>([]);
 const { data: api_v2_lookup_docume_21_q } = useQuery({queryKey: ['api_v2_lookup_docume_21', '/jaxrs/anonymous/form/v2/lookup/document/d-1'], queryFn: async () => { try { const r = await api.get("/jaxrs/anonymous/form/v2/lookup/document/d-1"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
 watch(api_v2_lookup_docume_21_q, (v) => { api_v2_lookup_docume_21_data.value = v ?? []; });
@@ -496,7 +1816,15 @@ watch(api_fileinfo_fi_1_do_680_q, (v) => { api_fileinfo_fi_1_do_680_data.value =
 const api_file_an_1_downlo_103_data = ref<any[]>([]);
 const { data: api_file_an_1_downlo_103_q } = useQuery({queryKey: ['api_file_an_1_downlo_103', '/jaxrs/anonymous/file/an-1/download/stream'], queryFn: async () => { try { const r = await api.get("/jaxrs/anonymous/file/an-1/download/stream"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
 watch(api_file_an_1_downlo_103_q, (v) => { api_file_an_1_downlo_103_data.value = v ?? []; });
-async function api_anonymous_form_v2_f_1() { try { await api.get("/jaxrs/anonymous/form/v2/f-1") } catch {} }
+const anonymous_form_v2_f_1_ref = ref<any[]>([]);
+const anonymous_form_v2_f_1_q = useQuery({
+  queryKey: ['anonymous_form_v2_f_1'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/anonymous/form/v2/f-1"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
 const api_fileinfo_list_do_265_data = ref<any[]>([]);
 const { data: api_fileinfo_list_do_265_q } = useQuery({queryKey: ['api_fileinfo_list_do_265', '/jaxrs/anonymous/fileinfo/list/document/d-1'], queryFn: async () => { try { const r = await api.get("/jaxrs/anonymous/fileinfo/list/document/d-1"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
 watch(api_fileinfo_list_do_265_q, (v) => { api_fileinfo_list_do_265_data.value = v ?? []; });
@@ -508,34 +1836,90 @@ watch(api_anonymous_file_a_860_q, (v) => { api_anonymous_file_a_860_data.value =
 const api_authentication_r_85_data = ref<any[]>([]);
 const { data: api_authentication_r_85_q } = useQuery({queryKey: ['api_authentication_r_85', '/jaxrs/authentication/role/list'], queryFn: async () => { try { const r = await api.get("/jaxrs/authentication/role/list"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
 watch(api_authentication_r_85_q, (v) => { api_authentication_r_85_data.value = v ?? []; });
-async function api_authentication_switchuser() { try { await api.get("/jaxrs/authentication/switchuser") } catch {} }
+const authentication_switchuser_ref = ref<any[]>([]);
+const authentication_switchuser_q = useQuery({
+  queryKey: ['authentication_switchuser'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/authentication/switchuser"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
 const api_authentication_o_26_data = ref<any[]>([]);
 const { data: api_authentication_o_26_q } = useQuery({queryKey: ['api_authentication_o_26', '/jaxrs/authentication/oauth/list'], queryFn: async () => { try { const r = await api.get("/jaxrs/authentication/oauth/list"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
 watch(api_authentication_o_26_q, (v) => { api_authentication_o_26_data.value = v ?? []; });
 const api_authenti_261_data = ref<any[]>([]);
 const { data: api_authenti_261_q } = useQuery({queryKey: ['api_authenti_261', '/jaxrs/authentication/logout'], queryFn: async () => { try { const r = await api.get("/jaxrs/authentication/logout"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
 watch(api_authenti_261_q, (v) => { api_authenti_261_data.value = v ?? []; });
-async function api_authentication_oauth() { try { await api.get("/jaxrs/authentication/oauth") } catch {} }
-async function api_authentication_switchuser_mockputtopost_1() { try { await api.get("/jaxrs/authentication/switchuser/mockputtopost") } catch {} }
+const authentication_oauth_ref = ref<any[]>([]);
+const authentication_oauth_q = useQuery({
+  queryKey: ['authentication_oauth'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/authentication/oauth"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const authentication_switchuser_mockputtopost_1_ref = ref<any[]>([]);
+const authentication_switchuser_mockputtopost_1_q = useQuery({
+  queryKey: ['authentication_switchuser_mockputtopost_1'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/authentication/switchuser/mockputtopost"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
 const api_authenti_932_data = ref<any[]>([]);
 const { data: api_authenti_932_q } = useQuery({queryKey: ['api_authenti_932', '/jaxrs/authentication/code/credential/2fa-full-user'], queryFn: async () => { try { const r = await api.get("/jaxrs/authentication/code/credential/2fa-full-user"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
 watch(api_authenti_932_q, (v) => { api_authenti_932_data.value = v ?? []; });
 const api_authenti_77_data = ref<any[]>([]);
 const { data: api_authenti_77_q } = useQuery({queryKey: ['api_authenti_77', '/jaxrs/authentication/code/credential/admin'], queryFn: async () => { try { const r = await api.get("/jaxrs/authentication/code/credential/admin"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
 watch(api_authenti_77_q, (v) => { api_authenti_77_data.value = v ?? []; });
-async function api_authentication_sso() { try { await api.get("/jaxrs/authentication/sso") } catch {} }
-async function api_authentication_two() { try { await api.get("/jaxrs/authentication/two") } catch {} }
+const authentication_sso_ref = ref<any[]>([]);
+const authentication_sso_q = useQuery({
+  queryKey: ['authentication_sso'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/authentication/sso"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const authentication_two_ref = ref<any[]>([]);
+const authentication_two_q = useQuery({
+  queryKey: ['authentication_two'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/authentication/two"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
 const api_authenti_296_data = ref<any[]>([]);
 const { data: api_authenti_296_q } = useQuery({queryKey: ['api_authenti_296', '/jaxrs/authentication/code'], queryFn: async () => { try { const r = await api.get("/jaxrs/authentication/code"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
 watch(api_authenti_296_q, (v) => { api_authenti_296_data.value = v ?? []; });
 const api_authentication_o_923_data = ref<any[]>([]);
 const { data: api_authentication_o_923_q } = useQuery({queryKey: ['api_authentication_o_923', '/jaxrs/authentication/oauth/qywx/config'], queryFn: async () => { try { const r = await api.get("/jaxrs/authentication/oauth/qywx/config"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
 watch(api_authentication_o_923_q, (v) => { api_authentication_o_923_data.value = v ?? []; });
-async function api_authentication_safe() { try { await api.get("/jaxrs/authentication/safe") } catch {} }
+const authentication_safe_ref = ref<any[]>([]);
+const authentication_safe_q = useQuery({
+  queryKey: ['authentication_safe'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/authentication/safe"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
 const api_authenti_908_data = ref<any[]>([]);
 const { data: api_authenti_908_q } = useQuery({queryKey: ['api_authenti_908', '/jaxrs/authentication/bind'], queryFn: async () => { try { const r = await api.get("/jaxrs/authentication/bind"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
 watch(api_authenti_908_q, (v) => { api_authenti_908_data.value = v ?? []; });
-async function api_authentication_oidc_authorize() { try { await api.get("/jaxrs/authentication/oidc/authorize") } catch {} }
+const authentication_oidc_authorize_ref = ref<any[]>([]);
+const authentication_oidc_authorize_q = useQuery({
+  queryKey: ['authentication_oidc_authorize'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/authentication/oidc/authorize"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
 
 
 const api_group_list_identity_data = ref<any[]>([]);

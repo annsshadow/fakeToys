@@ -185,14 +185,78 @@ const { data: api_entity_meeting_create_q } = useQuery({queryKey: ['api_entity_m
 watch(api_entity_meeting_create_q, (v) => { api_entity_meeting_create_data.value = v ?? []; });
 
 
-async function api_core_entity_room_create() { try { await api.get('/jaxrs/meeting/core/entity/room/create') } catch {} }
-async function api_assemble_control_room_list() { try { await api.get('/jaxrs/meeting/assemble/control/room/list') } catch {} }
-async function api_assemble_control_meeting_coming() { try { await api.get('/jaxrs/meeting/assemble/control/meeting/coming') } catch {} }
-async function api_meeting_core_list() { try { await api.get('/jaxrs/meeting/core/list') } catch {} }
-async function api_meeting_room_list_1() { try { await api.get('/jaxrs/meeting/room/list') } catch {} }
-async function api_meeting_openmeeting_list_room() { try { await api.get('/jaxrs/meeting/openmeeting/list/room') } catch {} }
-async function api_meeting_list() { try { await api.get('/jaxrs/meeting/list') } catch {} }
-async function api_meeting_assemble_control_room() { try { await api.get('/jaxrs/meeting/assemble/control/room') } catch {} }
+const core_entity_room_create_ref = ref<any[]>([]);
+const core_entity_room_create_q = useQuery({
+  queryKey: ['core_entity_room_create'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/meeting/core/entity/room/create"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const assemble_control_room_list_ref = ref<any[]>([]);
+const assemble_control_room_list_q = useQuery({
+  queryKey: ['assemble_control_room_list'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/meeting/assemble/control/room/list"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const assemble_control_meeting_coming_ref = ref<any[]>([]);
+const assemble_control_meeting_coming_q = useQuery({
+  queryKey: ['assemble_control_meeting_coming'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/meeting/assemble/control/meeting/coming"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const meeting_core_list_ref = ref<any[]>([]);
+const meeting_core_list_q = useQuery({
+  queryKey: ['meeting_core_list'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/meeting/core/list"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const meeting_room_list_1_ref = ref<any[]>([]);
+const meeting_room_list_1_q = useQuery({
+  queryKey: ['meeting_room_list_1'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/meeting/room/list"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const meeting_openmeeting_list_room_ref = ref<any[]>([]);
+const meeting_openmeeting_list_room_q = useQuery({
+  queryKey: ['meeting_openmeeting_list_room'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/meeting/openmeeting/list/room"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const meeting_list_ref = ref<any[]>([]);
+const meeting_list_q = useQuery({
+  queryKey: ['meeting_list'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/meeting/list"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const meeting_assemble_control_room_ref = ref<any[]>([]);
+const meeting_assemble_control_room_q = useQuery({
+  queryKey: ['meeting_assemble_control_room'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/meeting/assemble/control/room"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
 
 
 // Confirmation dialog (replaces window.confirm)

@@ -79,25 +79,177 @@ async function viewDetail(item: any) {
 
 doSearch()
 
-async function api_appinfo_list_user_view() { try { await api.get('/jaxrs/appinfo/list/user/view') } catch {} }
-async function api_a_1_icon_size_64() { try { await api.get('/jaxrs/appinfo/a-1/icon/size/64') } catch {} }
-async function api_appinfo_a_1_permission() { try { await api.get('/jaxrs/appinfo/a-1/permission') } catch {} }
-async function api_list_user_view_all() { try { await api.get('/jaxrs/appinfo/list/user/view/all') } catch {} }
-async function api_appinfo_list_appType_manager() { try { await api.get('/jaxrs/appinfo/list/appType/manager') } catch {} }
-async function api_appinfo_list_has_document() { try { await api.get('/jaxrs/appinfo/list/has/document') } catch {} }
-async function api_appinfo() { try { await api.get('/jaxrs/appinfo') } catch {} }
-async function api_appinfo_list_manage() { try { await api.get('/jaxrs/appinfo/list/manage') } catch {} }
-async function api_appinfo_list_all() { try { await api.get('/jaxrs/appinfo/list/all') } catch {} }
-async function api_list_user_view_data() { try { await api.get('/jaxrs/appinfo/list/user/view/data') } catch {} }
-async function api_appinfo_a_1() { try { await api.get('/jaxrs/appinfo/a-1') } catch {} }
-async function api_appinfo_flag() { try { await api.get('/jaxrs/appinfo/flag') } catch {} }
-async function api_appinfo_alias_alpha() { try { await api.get('/jaxrs/appinfo/alias/alpha') } catch {} }
-async function api_appinfo_list_appType() { try { await api.get('/jaxrs/appinfo/list/appType') } catch {} }
-async function api_get_user_publish_app_1() { try { await api.get('/jaxrs/appinfo/get/user/publish/app-1') } catch {} }
-async function api_appinfo_a_1_mockdeletetoget() { try { await api.get('/jaxrs/appinfo/a-1/mockdeletetoget') } catch {} }
-async function api_list_has_document_appType() { try { await api.get('/jaxrs/appinfo/list/has/document/appType') } catch {} }
-async function api_appinfo_list_user_publish() { try { await api.get('/jaxrs/appinfo/list/user/publish') } catch {} }
-async function api_appinfo_a_1_control() { try { await api.get('/jaxrs/appinfo/a-1/control') } catch {} }
+const appinfo_list_user_view_ref = ref<any[]>([]);
+const appinfo_list_user_view_q = useQuery({
+  queryKey: ['appinfo_list_user_view'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/appinfo/list/user/view"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const a_1_icon_size_64_ref = ref<any[]>([]);
+const a_1_icon_size_64_q = useQuery({
+  queryKey: ['a_1_icon_size_64'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/appinfo/a-1/icon/size/64"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const appinfo_a_1_permission_ref = ref<any[]>([]);
+const appinfo_a_1_permission_q = useQuery({
+  queryKey: ['appinfo_a_1_permission'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/appinfo/a-1/permission"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const list_user_view_all_ref = ref<any[]>([]);
+const list_user_view_all_q = useQuery({
+  queryKey: ['list_user_view_all'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/appinfo/list/user/view/all"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const appinfo_list_appType_manager_ref = ref<any[]>([]);
+const appinfo_list_appType_manager_q = useQuery({
+  queryKey: ['appinfo_list_appType_manager'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/appinfo/list/appType/manager"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const appinfo_list_has_document_ref = ref<any[]>([]);
+const appinfo_list_has_document_q = useQuery({
+  queryKey: ['appinfo_list_has_document'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/appinfo/list/has/document"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const appinfo_ref = ref<any[]>([]);
+const appinfo_q = useQuery({
+  queryKey: ['appinfo'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/appinfo"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const appinfo_list_manage_ref = ref<any[]>([]);
+const appinfo_list_manage_q = useQuery({
+  queryKey: ['appinfo_list_manage'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/appinfo/list/manage"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const appinfo_list_all_ref = ref<any[]>([]);
+const appinfo_list_all_q = useQuery({
+  queryKey: ['appinfo_list_all'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/appinfo/list/all"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const list_user_view_data_ref = ref<any[]>([]);
+const list_user_view_data_q = useQuery({
+  queryKey: ['list_user_view_data'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/appinfo/list/user/view/data"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const appinfo_a_1_ref = ref<any[]>([]);
+const appinfo_a_1_q = useQuery({
+  queryKey: ['appinfo_a_1'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/appinfo/a-1"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const appinfo_flag_ref = ref<any[]>([]);
+const appinfo_flag_q = useQuery({
+  queryKey: ['appinfo_flag'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/appinfo/flag"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const appinfo_alias_alpha_ref = ref<any[]>([]);
+const appinfo_alias_alpha_q = useQuery({
+  queryKey: ['appinfo_alias_alpha'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/appinfo/alias/alpha"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const appinfo_list_appType_ref = ref<any[]>([]);
+const appinfo_list_appType_q = useQuery({
+  queryKey: ['appinfo_list_appType'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/appinfo/list/appType"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const get_user_publish_app_1_ref = ref<any[]>([]);
+const get_user_publish_app_1_q = useQuery({
+  queryKey: ['get_user_publish_app_1'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/appinfo/get/user/publish/app-1"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const appinfo_a_1_mockdeletetoget_ref = ref<any[]>([]);
+const appinfo_a_1_mockdeletetoget_q = useQuery({
+  queryKey: ['appinfo_a_1_mockdeletetoget'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/appinfo/a-1/mockdeletetoget"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const list_has_document_appType_ref = ref<any[]>([]);
+const list_has_document_appType_q = useQuery({
+  queryKey: ['list_has_document_appType'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/appinfo/list/has/document/appType"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const appinfo_list_user_publish_ref = ref<any[]>([]);
+const appinfo_list_user_publish_q = useQuery({
+  queryKey: ['appinfo_list_user_publish'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/appinfo/list/user/publish"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const appinfo_a_1_control_ref = ref<any[]>([]);
+const appinfo_a_1_control_q = useQuery({
+  queryKey: ['appinfo_a_1_control'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/appinfo/a-1/control"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
 
 
 const api_user_pub_261_data = ref<any[]>([]);

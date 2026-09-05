@@ -109,31 +109,231 @@ loadRules()
 
 async function loadStatistics(){try{const r=await api.get('/jaxrs/attendance/assemble/control/statistics/list?month='+month.value);attStats.value=(r.data??[])}catch{attStats.value=[]}}
 
-async function api_assemble_control_attendancedetail_recive() { try { await api.get('/jaxrs/attendance/assemble/control/attendancedetail/recive') } catch {} }
-async function api_assemble_control_dingding_all() { try { await api.get('/jaxrs/attendance/assemble/control/dingding/all') } catch {} }
-async function api_assemble_control_attendancedetail_d_1() { try { await api.get('/jaxrs/attendance/assemble/control/attendancedetail/d-1') } catch {} }
-async function api_attendance_assemble_control_workplace() { try { await api.get('/jaxrs/attendance/assemble/control/workplace') } catch {} }
-async function api_attendance_assemble_control_attendancestatisticrequirelog() { try { await api.get('/jaxrs/attendance/assemble/control/attendancestatisticrequirelog') } catch {} }
-async function api_attendance_assemble_control_attendanceselfholiday() { try { await api.get('/jaxrs/attendance/assemble/control/attendanceselfholiday') } catch {} }
-async function api_statistical_cycle_list_all() { try { await api.get('/jaxrs/attendance/statistical/cycle/list/all') } catch {} }
-async function api_assemble_control_attendancedetail_reciveSingle() { try { await api.get('/jaxrs/attendance/assemble/control/attendancedetail/reciveSingle') } catch {} }
-async function api_assemble_control_v2_config() { try { await api.get('/jaxrs/attendance/assemble/control/v2/config') } catch {} }
-async function api_attendance_assemble_control_qywxstatistic() { try { await api.get('/jaxrs/attendance/assemble/control/qywxstatistic') } catch {} }
-async function api_attendance_assemble_control_selfholidaysimple() { try { await api.get('/jaxrs/attendance/assemble/control/selfholidaysimple') } catch {} }
-async function api_attendance_rule_list() { try { await api.get('/jaxrs/attendance/rule/list') } catch {} }
-async function api_attendance_record() { try { await api.get('/jaxrs/attendance/record') } catch {} }
-async function api_assemble_control_v2_workplace() { try { await api.get('/jaxrs/attendance/assemble/control/v2/workplace') } catch {} }
-async function api_core_entity_record_create() { try { await api.get('/jaxrs/attendance/core/entity/record/create') } catch {} }
-async function api_assemble_control_v2_groupschedule() { try { await api.get('/jaxrs/attendance/assemble/control/v2/groupschedule') } catch {} }
-async function api_assemble_control_attendancedetail_analyse() { try { await api.get('/jaxrs/attendance/assemble/control/attendancedetail/analyse') } catch {} }
-async function api_attendance_assemble_control_attendanceschedulesetting() { try { await api.get('/jaxrs/attendance/assemble/control/attendanceschedulesetting') } catch {} }
-async function api_attendance_assemble_control_statistic() { try { await api.get('/jaxrs/attendance/assemble/control/statistic') } catch {} }
-async function api_assemble_control_v2_group() { try { await api.get('/jaxrs/attendance/assemble/control/v2/group') } catch {} }
-async function api_core_entity_record_list() { try { await api.get('/jaxrs/attendance/core/entity/record/list') } catch {} }
-async function api_attendance_assemble_control_attendancestatistical() { try { await api.get('/jaxrs/attendance/assemble/control/attendancestatistical') } catch {} }
-async function api_attendance_core_list() { try { await api.get('/jaxrs/attendance/core/list') } catch {} }
-async function api_assemble_control_uuid_random() { try { await api.get('/jaxrs/attendance/assemble/control/uuid/random') } catch {} }
-async function api_assemble_control_statistic_do() { try { await api.get('/jaxrs/attendance/assemble/control/statistic/do') } catch {} }
+const assemble_control_attendancedetail_recive_ref = ref<any[]>([]);
+const assemble_control_attendancedetail_recive_q = useQuery({
+  queryKey: ['assemble_control_attendancedetail_recive'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/attendance/assemble/control/attendancedetail/recive"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const assemble_control_dingding_all_ref = ref<any[]>([]);
+const assemble_control_dingding_all_q = useQuery({
+  queryKey: ['assemble_control_dingding_all'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/attendance/assemble/control/dingding/all"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const assemble_control_attendancedetail_d_1_ref = ref<any[]>([]);
+const assemble_control_attendancedetail_d_1_q = useQuery({
+  queryKey: ['assemble_control_attendancedetail_d_1'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/attendance/assemble/control/attendancedetail/d-1"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const attendance_assemble_control_workplace_ref = ref<any[]>([]);
+const attendance_assemble_control_workplace_q = useQuery({
+  queryKey: ['attendance_assemble_control_workplace'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/attendance/assemble/control/workplace"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const attendance_assemble_control_attendancestatisticrequirelog_ref = ref<any[]>([]);
+const attendance_assemble_control_attendancestatisticrequirelog_q = useQuery({
+  queryKey: ['attendance_assemble_control_attendancestatisticrequirelog'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/attendance/assemble/control/attendancestatisticrequirelog"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const attendance_assemble_control_attendanceselfholiday_ref = ref<any[]>([]);
+const attendance_assemble_control_attendanceselfholiday_q = useQuery({
+  queryKey: ['attendance_assemble_control_attendanceselfholiday'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/attendance/assemble/control/attendanceselfholiday"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const statistical_cycle_list_all_ref = ref<any[]>([]);
+const statistical_cycle_list_all_q = useQuery({
+  queryKey: ['statistical_cycle_list_all'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/attendance/statistical/cycle/list/all"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const assemble_control_attendancedetail_reciveSingle_ref = ref<any[]>([]);
+const assemble_control_attendancedetail_reciveSingle_q = useQuery({
+  queryKey: ['assemble_control_attendancedetail_reciveSingle'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/attendance/assemble/control/attendancedetail/reciveSingle"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const assemble_control_v2_config_ref = ref<any[]>([]);
+const assemble_control_v2_config_q = useQuery({
+  queryKey: ['assemble_control_v2_config'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/attendance/assemble/control/v2/config"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const attendance_assemble_control_qywxstatistic_ref = ref<any[]>([]);
+const attendance_assemble_control_qywxstatistic_q = useQuery({
+  queryKey: ['attendance_assemble_control_qywxstatistic'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/attendance/assemble/control/qywxstatistic"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const attendance_assemble_control_selfholidaysimple_ref = ref<any[]>([]);
+const attendance_assemble_control_selfholidaysimple_q = useQuery({
+  queryKey: ['attendance_assemble_control_selfholidaysimple'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/attendance/assemble/control/selfholidaysimple"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const attendance_rule_list_ref = ref<any[]>([]);
+const attendance_rule_list_q = useQuery({
+  queryKey: ['attendance_rule_list'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/attendance/rule/list"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const attendance_record_ref = ref<any[]>([]);
+const attendance_record_q = useQuery({
+  queryKey: ['attendance_record'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/attendance/record"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const assemble_control_v2_workplace_ref = ref<any[]>([]);
+const assemble_control_v2_workplace_q = useQuery({
+  queryKey: ['assemble_control_v2_workplace'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/attendance/assemble/control/v2/workplace"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const core_entity_record_create_ref = ref<any[]>([]);
+const core_entity_record_create_q = useQuery({
+  queryKey: ['core_entity_record_create'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/attendance/core/entity/record/create"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const assemble_control_v2_groupschedule_ref = ref<any[]>([]);
+const assemble_control_v2_groupschedule_q = useQuery({
+  queryKey: ['assemble_control_v2_groupschedule'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/attendance/assemble/control/v2/groupschedule"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const assemble_control_attendancedetail_analyse_ref = ref<any[]>([]);
+const assemble_control_attendancedetail_analyse_q = useQuery({
+  queryKey: ['assemble_control_attendancedetail_analyse'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/attendance/assemble/control/attendancedetail/analyse"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const attendance_assemble_control_attendanceschedulesetting_ref = ref<any[]>([]);
+const attendance_assemble_control_attendanceschedulesetting_q = useQuery({
+  queryKey: ['attendance_assemble_control_attendanceschedulesetting'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/attendance/assemble/control/attendanceschedulesetting"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const attendance_assemble_control_statistic_ref = ref<any[]>([]);
+const attendance_assemble_control_statistic_q = useQuery({
+  queryKey: ['attendance_assemble_control_statistic'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/attendance/assemble/control/statistic"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const assemble_control_v2_group_ref = ref<any[]>([]);
+const assemble_control_v2_group_q = useQuery({
+  queryKey: ['assemble_control_v2_group'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/attendance/assemble/control/v2/group"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const core_entity_record_list_ref = ref<any[]>([]);
+const core_entity_record_list_q = useQuery({
+  queryKey: ['core_entity_record_list'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/attendance/core/entity/record/list"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const attendance_assemble_control_attendancestatistical_ref = ref<any[]>([]);
+const attendance_assemble_control_attendancestatistical_q = useQuery({
+  queryKey: ['attendance_assemble_control_attendancestatistical'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/attendance/assemble/control/attendancestatistical"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const attendance_core_list_ref = ref<any[]>([]);
+const attendance_core_list_q = useQuery({
+  queryKey: ['attendance_core_list'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/attendance/core/list"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const assemble_control_uuid_random_ref = ref<any[]>([]);
+const assemble_control_uuid_random_q = useQuery({
+  queryKey: ['assemble_control_uuid_random'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/attendance/assemble/control/uuid/random"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const assemble_control_statistic_do_ref = ref<any[]>([]);
+const assemble_control_statistic_do_q = useQuery({
+  queryKey: ['assemble_control_statistic_do'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/attendance/assemble/control/statistic/do"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
 
 // Confirmation dialog (replaces window.confirm)
 function confirmMsg(msg: string): Promise<boolean> {
@@ -157,31 +357,231 @@ function confirmMsg(msg: string): Promise<boolean> {
   })
 }
 
-async function api_jaxrs_attendance_admin_list_all() { try { await api.get("/jaxrs/attendance/admin/list/all") } catch {} }
-async function api_jaxrs_attendance_appeal_submit() { try { await api.get("/jaxrs/attendance/appeal/submit") } catch {} }
-async function api_jaxrs_attendance_assemble_control() { try { await api.get("/jaxrs/attendance/assemble/control") } catch {} }
-async function api_jaxrs_attendance_assemble_control_attendanceadmin() { try { await api.get("/jaxrs/attendance/assemble/control/attendanceadmin") } catch {} }
-async function api_jaxrs_attendance_assemble_control_attendanceadmin_a_1() { try { await api.get("/jaxrs/attendance/assemble/control/attendanceadmin/a-1") } catch {} }
-async function api_jaxrs_attendance_assemble_control_attendanceadmin_list_all() { try { await api.get("/jaxrs/attendance/assemble/control/attendanceadmin/list/all") } catch {} }
-async function api_jaxrs_attendance_assemble_control_attendanceappealInfo_audit() { try { await api.get("/jaxrs/attendance/assemble/control/attendanceappealInfo/audit") } catch {} }
-async function api_jaxrs_attendance_assemble_control_attendanceappealInfo_check() { try { await api.get("/jaxrs/attendance/assemble/control/attendanceappealInfo/check") } catch {} }
-async function api_jaxrs_attendance_assemble_control_attendanceappealInfo_workflow_sync() { try { await api.get("/jaxrs/attendance/assemble/control/attendanceappealInfo/workflow/sync") } catch {} }
-async function api_jaxrs_attendance_assemble_control_attendanceconfig() { try { await api.get("/jaxrs/attendance/assemble/control/attendanceconfig") } catch {} }
-async function api_jaxrs_attendance_assemble_control_attendanceconfig_list() { try { await api.get("/jaxrs/attendance/assemble/control/attendanceconfig/list") } catch {} }
-async function api_jaxrs_attendance_assemble_control_attendancedetail() { try { await api.get("/jaxrs/attendance/assemble/control/attendancedetail") } catch {} }
-async function api_jaxrs_attendance_assemble_control_attendancedetail_analyse_redo() { try { await api.get("/jaxrs/attendance/assemble/control/attendancedetail/analyse/redo") } catch {} }
-async function api_jaxrs_attendance_assemble_control_attendancedetail_filter_list() { try { await api.get("/jaxrs/attendance/assemble/control/attendancedetail/filter/list") } catch {} }
-async function api_jaxrs_attendance_assemble_control_attendancedetail_filter_list_topUnit() { try { await api.get("/jaxrs/attendance/assemble/control/attendancedetail/filter/list/topUnit") } catch {} }
-async function api_jaxrs_attendance_assemble_control_attendancedetail_filter_list_unit() { try { await api.get("/jaxrs/attendance/assemble/control/attendancedetail/filter/list/unit") } catch {} }
-async function api_jaxrs_attendance_assemble_control_attendancedetail_filter_list_user() { try { await api.get("/jaxrs/attendance/assemble/control/attendancedetail/filter/list/user") } catch {} }
-async function api_jaxrs_attendance_assemble_control_attendancedetail_list_persons_nonesign() { try { await api.get("/jaxrs/attendance/assemble/control/attendancedetail/list/persons/nonesign") } catch {} }
-async function api_jaxrs_attendance_assemble_control_attendancedetail_mobile_m_1() { try { await api.get("/jaxrs/attendance/assemble/control/attendancedetail/mobile/m-1") } catch {} }
-async function api_jaxrs_attendance_assemble_control_attendancedetail_mobile_mobilepreview() { try { await api.get("/jaxrs/attendance/assemble/control/attendancedetail/mobile/mobilepreview") } catch {} }
-async function api_jaxrs_attendance_assemble_control_attendancedetail_mobile_my() { try { await api.get("/jaxrs/attendance/assemble/control/attendancedetail/mobile/my") } catch {} }
-async function api_jaxrs_attendance_assemble_control_attendancedetail_mobile_recive() { try { await api.get("/jaxrs/attendance/assemble/control/attendancedetail/mobile/recive") } catch {} }
-async function api_jaxrs_attendance_assemble_control_attendanceemployeeconfig() { try { await api.get("/jaxrs/attendance/assemble/control/attendanceemployeeconfig") } catch {} }
-async function api_jaxrs_attendance_assemble_control_attendanceemployeeconfig_list_all() { try { await api.get("/jaxrs/attendance/assemble/control/attendanceemployeeconfig/list/all") } catch {} }
-async function api_jaxrs_attendance_assemble_control_attendanceimportfileinfo_list_all() { try { await api.get("/jaxrs/attendance/assemble/control/attendanceimportfileinfo/list/all") } catch {} }
+const jaxrs_attendance_admin_list_all_ref = ref<any[]>([]);
+const jaxrs_attendance_admin_list_all_q = useQuery({
+  queryKey: ['jaxrs_attendance_admin_list_all'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/attendance/admin/list/all"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const jaxrs_attendance_appeal_submit_ref = ref<any[]>([]);
+const jaxrs_attendance_appeal_submit_q = useQuery({
+  queryKey: ['jaxrs_attendance_appeal_submit'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/attendance/appeal/submit"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const jaxrs_attendance_assemble_control_ref = ref<any[]>([]);
+const jaxrs_attendance_assemble_control_q = useQuery({
+  queryKey: ['jaxrs_attendance_assemble_control'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/attendance/assemble/control"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const jaxrs_attendance_assemble_control_attendanceadmin_ref = ref<any[]>([]);
+const jaxrs_attendance_assemble_control_attendanceadmin_q = useQuery({
+  queryKey: ['jaxrs_attendance_assemble_control_attendanceadmin'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/attendance/assemble/control/attendanceadmin"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const jaxrs_attendance_assemble_control_attendanceadmin_a_1_ref = ref<any[]>([]);
+const jaxrs_attendance_assemble_control_attendanceadmin_a_1_q = useQuery({
+  queryKey: ['jaxrs_attendance_assemble_control_attendanceadmin_a_1'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/attendance/assemble/control/attendanceadmin/a-1"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const jaxrs_attendance_assemble_control_attendanceadmin_list_all_ref = ref<any[]>([]);
+const jaxrs_attendance_assemble_control_attendanceadmin_list_all_q = useQuery({
+  queryKey: ['jaxrs_attendance_assemble_control_attendanceadmin_list_all'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/attendance/assemble/control/attendanceadmin/list/all"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const jaxrs_attendance_assemble_control_attendanceappealInfo_audit_ref = ref<any[]>([]);
+const jaxrs_attendance_assemble_control_attendanceappealInfo_audit_q = useQuery({
+  queryKey: ['jaxrs_attendance_assemble_control_attendanceappealInfo_audit'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/attendance/assemble/control/attendanceappealInfo/audit"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const jaxrs_attendance_assemble_control_attendanceappealInfo_check_ref = ref<any[]>([]);
+const jaxrs_attendance_assemble_control_attendanceappealInfo_check_q = useQuery({
+  queryKey: ['jaxrs_attendance_assemble_control_attendanceappealInfo_check'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/attendance/assemble/control/attendanceappealInfo/check"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const jaxrs_attendance_assemble_control_attendanceappealInfo_workflow_sync_ref = ref<any[]>([]);
+const jaxrs_attendance_assemble_control_attendanceappealInfo_workflow_sync_q = useQuery({
+  queryKey: ['jaxrs_attendance_assemble_control_attendanceappealInfo_workflow_sync'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/attendance/assemble/control/attendanceappealInfo/workflow/sync"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const jaxrs_attendance_assemble_control_attendanceconfig_ref = ref<any[]>([]);
+const jaxrs_attendance_assemble_control_attendanceconfig_q = useQuery({
+  queryKey: ['jaxrs_attendance_assemble_control_attendanceconfig'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/attendance/assemble/control/attendanceconfig"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const jaxrs_attendance_assemble_control_attendanceconfig_list_ref = ref<any[]>([]);
+const jaxrs_attendance_assemble_control_attendanceconfig_list_q = useQuery({
+  queryKey: ['jaxrs_attendance_assemble_control_attendanceconfig_list'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/attendance/assemble/control/attendanceconfig/list"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const jaxrs_attendance_assemble_control_attendancedetail_ref = ref<any[]>([]);
+const jaxrs_attendance_assemble_control_attendancedetail_q = useQuery({
+  queryKey: ['jaxrs_attendance_assemble_control_attendancedetail'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/attendance/assemble/control/attendancedetail"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const jaxrs_attendance_assemble_control_attendancedetail_analyse_redo_ref = ref<any[]>([]);
+const jaxrs_attendance_assemble_control_attendancedetail_analyse_redo_q = useQuery({
+  queryKey: ['jaxrs_attendance_assemble_control_attendancedetail_analyse_redo'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/attendance/assemble/control/attendancedetail/analyse/redo"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const jaxrs_attendance_assemble_control_attendancedetail_filter_list_ref = ref<any[]>([]);
+const jaxrs_attendance_assemble_control_attendancedetail_filter_list_q = useQuery({
+  queryKey: ['jaxrs_attendance_assemble_control_attendancedetail_filter_list'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/attendance/assemble/control/attendancedetail/filter/list"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const jaxrs_attendance_assemble_control_attendancedetail_filter_list_topUnit_ref = ref<any[]>([]);
+const jaxrs_attendance_assemble_control_attendancedetail_filter_list_topUnit_q = useQuery({
+  queryKey: ['jaxrs_attendance_assemble_control_attendancedetail_filter_list_topUnit'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/attendance/assemble/control/attendancedetail/filter/list/topUnit"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const jaxrs_attendance_assemble_control_attendancedetail_filter_list_unit_ref = ref<any[]>([]);
+const jaxrs_attendance_assemble_control_attendancedetail_filter_list_unit_q = useQuery({
+  queryKey: ['jaxrs_attendance_assemble_control_attendancedetail_filter_list_unit'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/attendance/assemble/control/attendancedetail/filter/list/unit"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const jaxrs_attendance_assemble_control_attendancedetail_filter_list_user_ref = ref<any[]>([]);
+const jaxrs_attendance_assemble_control_attendancedetail_filter_list_user_q = useQuery({
+  queryKey: ['jaxrs_attendance_assemble_control_attendancedetail_filter_list_user'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/attendance/assemble/control/attendancedetail/filter/list/user"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const jaxrs_attendance_assemble_control_attendancedetail_list_persons_nonesign_ref = ref<any[]>([]);
+const jaxrs_attendance_assemble_control_attendancedetail_list_persons_nonesign_q = useQuery({
+  queryKey: ['jaxrs_attendance_assemble_control_attendancedetail_list_persons_nonesign'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/attendance/assemble/control/attendancedetail/list/persons/nonesign"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const jaxrs_attendance_assemble_control_attendancedetail_mobile_m_1_ref = ref<any[]>([]);
+const jaxrs_attendance_assemble_control_attendancedetail_mobile_m_1_q = useQuery({
+  queryKey: ['jaxrs_attendance_assemble_control_attendancedetail_mobile_m_1'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/attendance/assemble/control/attendancedetail/mobile/m-1"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const jaxrs_attendance_assemble_control_attendancedetail_mobile_mobilepreview_ref = ref<any[]>([]);
+const jaxrs_attendance_assemble_control_attendancedetail_mobile_mobilepreview_q = useQuery({
+  queryKey: ['jaxrs_attendance_assemble_control_attendancedetail_mobile_mobilepreview'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/attendance/assemble/control/attendancedetail/mobile/mobilepreview"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const jaxrs_attendance_assemble_control_attendancedetail_mobile_my_ref = ref<any[]>([]);
+const jaxrs_attendance_assemble_control_attendancedetail_mobile_my_q = useQuery({
+  queryKey: ['jaxrs_attendance_assemble_control_attendancedetail_mobile_my'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/attendance/assemble/control/attendancedetail/mobile/my"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const jaxrs_attendance_assemble_control_attendancedetail_mobile_recive_ref = ref<any[]>([]);
+const jaxrs_attendance_assemble_control_attendancedetail_mobile_recive_q = useQuery({
+  queryKey: ['jaxrs_attendance_assemble_control_attendancedetail_mobile_recive'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/attendance/assemble/control/attendancedetail/mobile/recive"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const jaxrs_attendance_assemble_control_attendanceemployeeconfig_ref = ref<any[]>([]);
+const jaxrs_attendance_assemble_control_attendanceemployeeconfig_q = useQuery({
+  queryKey: ['jaxrs_attendance_assemble_control_attendanceemployeeconfig'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/attendance/assemble/control/attendanceemployeeconfig"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const jaxrs_attendance_assemble_control_attendanceemployeeconfig_list_all_ref = ref<any[]>([]);
+const jaxrs_attendance_assemble_control_attendanceemployeeconfig_list_all_q = useQuery({
+  queryKey: ['jaxrs_attendance_assemble_control_attendanceemployeeconfig_list_all'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/attendance/assemble/control/attendanceemployeeconfig/list/all"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const jaxrs_attendance_assemble_control_attendanceimportfileinfo_list_all_ref = ref<any[]>([]);
+const jaxrs_attendance_assemble_control_attendanceimportfileinfo_list_all_q = useQuery({
+  queryKey: ['jaxrs_attendance_assemble_control_attendanceimportfileinfo_list_all'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/attendance/assemble/control/attendanceimportfileinfo/list/all"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
 const api_jaxrs_at_71_data = ref<any[]>([]);
 const { data: api_jaxrs_at_71_q } = useQuery({queryKey: ['api_jaxrs_at_71', '/jaxrs/attendance/assemble/control/attendanceschedulesetting/list/all'], queryFn: async () => { try { const r = await api.get("/jaxrs/attendance/assemble/control/attendanceschedulesetting/list/all"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
 watch(api_jaxrs_at_71_q, (v) => { api_jaxrs_at_71_data.value = v ?? []; });

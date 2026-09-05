@@ -118,28 +118,204 @@ async function onDelete(item: DocItem) {
 
 doSearch()
 
-async function api_document_d_1_mockdeletetoget() { try { await api.get('/jaxrs/document/d-1/mockdeletetoget') } catch {} }
-async function api_document_publish_d_1_mockputtopost() { try { await api.get('/jaxrs/document/publish/d-1/mockputtopost') } catch {} }
-async function api_document_category_change() { try { await api.get('/jaxrs/document/category/change') } catch {} }
-async function api_document_d_1_update() { try { await api.get('/jaxrs/document/d-1/update') } catch {} }
-async function api_document_publish_d_1() { try { await api.get('/jaxrs/document/publish/d-1') } catch {} }
-async function api_document_d_1_commend() { try { await api.get('/jaxrs/document/d-1/commend') } catch {} }
-async function api_document_d_1_permission_read() { try { await api.get('/jaxrs/document/d-1/permission/read') } catch {} }
-async function api_document_d_1_uncommend() { try { await api.get('/jaxrs/document/d-1/uncommend') } catch {} }
-async function api_document_batch_b_1_status() { try { await api.get('/jaxrs/document/batch/b-1/status') } catch {} }
-async function api_document_publish_content_mockputtopost() { try { await api.get('/jaxrs/document/publish/content/mockputtopost') } catch {} }
-async function api_document_batch_u3_batch_x_status() { try { await api.get('/jaxrs/document/batch/u3-batch-x/status') } catch {} }
-async function api_document_d_1_view() { try { await api.get('/jaxrs/document/d-1/view') } catch {} }
-async function api_document_batch_u3_batch_x() { try { await api.get('/jaxrs/document/batch/u3-batch-x') } catch {} }
-async function api_document_filter_count_mockputtopost() { try { await api.get('/jaxrs/document/filter/count/mockputtopost') } catch {} }
-async function api_document_publish_d_1_cancel() { try { await api.get('/jaxrs/document/publish/d-1/cancel') } catch {} }
-async function api_document_publish_content() { try { await api.get('/jaxrs/document/publish/content') } catch {} }
-async function api_document_document_fields() { try { await api.get('/jaxrs/document/document/fields') } catch {} }
-async function api_document_d_1_view_count() { try { await api.get('/jaxrs/document/d-1/view/count') } catch {} }
-async function api_document_d_1_control() { try { await api.get('/jaxrs/document/d-1/control') } catch {} }
-async function api_document_d_1() { try { await api.get('/jaxrs/document/d-1') } catch {} }
-async function api_document_category_change_mockputtopost() { try { await api.get('/jaxrs/document/category/change/mockputtopost') } catch {} }
-async function api_document_batch_data_modify() { try { await api.get('/jaxrs/document/batch/data/modify') } catch {} }
+const document_d_1_mockdeletetoget_ref = ref<any[]>([]);
+const document_d_1_mockdeletetoget_q = useQuery({
+  queryKey: ['document_d_1_mockdeletetoget'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/document/d-1/mockdeletetoget"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const document_publish_d_1_mockputtopost_ref = ref<any[]>([]);
+const document_publish_d_1_mockputtopost_q = useQuery({
+  queryKey: ['document_publish_d_1_mockputtopost'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/document/publish/d-1/mockputtopost"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const document_category_change_ref = ref<any[]>([]);
+const document_category_change_q = useQuery({
+  queryKey: ['document_category_change'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/document/category/change"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const document_d_1_update_ref = ref<any[]>([]);
+const document_d_1_update_q = useQuery({
+  queryKey: ['document_d_1_update'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/document/d-1/update"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const document_publish_d_1_ref = ref<any[]>([]);
+const document_publish_d_1_q = useQuery({
+  queryKey: ['document_publish_d_1'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/document/publish/d-1"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const document_d_1_commend_ref = ref<any[]>([]);
+const document_d_1_commend_q = useQuery({
+  queryKey: ['document_d_1_commend'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/document/d-1/commend"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const document_d_1_permission_read_ref = ref<any[]>([]);
+const document_d_1_permission_read_q = useQuery({
+  queryKey: ['document_d_1_permission_read'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/document/d-1/permission/read"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const document_d_1_uncommend_ref = ref<any[]>([]);
+const document_d_1_uncommend_q = useQuery({
+  queryKey: ['document_d_1_uncommend'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/document/d-1/uncommend"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const document_batch_b_1_status_ref = ref<any[]>([]);
+const document_batch_b_1_status_q = useQuery({
+  queryKey: ['document_batch_b_1_status'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/document/batch/b-1/status"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const document_publish_content_mockputtopost_ref = ref<any[]>([]);
+const document_publish_content_mockputtopost_q = useQuery({
+  queryKey: ['document_publish_content_mockputtopost'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/document/publish/content/mockputtopost"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const document_batch_u3_batch_x_status_ref = ref<any[]>([]);
+const document_batch_u3_batch_x_status_q = useQuery({
+  queryKey: ['document_batch_u3_batch_x_status'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/document/batch/u3-batch-x/status"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const document_d_1_view_ref = ref<any[]>([]);
+const document_d_1_view_q = useQuery({
+  queryKey: ['document_d_1_view'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/document/d-1/view"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const document_batch_u3_batch_x_ref = ref<any[]>([]);
+const document_batch_u3_batch_x_q = useQuery({
+  queryKey: ['document_batch_u3_batch_x'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/document/batch/u3-batch-x"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const document_filter_count_mockputtopost_ref = ref<any[]>([]);
+const document_filter_count_mockputtopost_q = useQuery({
+  queryKey: ['document_filter_count_mockputtopost'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/document/filter/count/mockputtopost"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const document_publish_d_1_cancel_ref = ref<any[]>([]);
+const document_publish_d_1_cancel_q = useQuery({
+  queryKey: ['document_publish_d_1_cancel'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/document/publish/d-1/cancel"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const document_publish_content_ref = ref<any[]>([]);
+const document_publish_content_q = useQuery({
+  queryKey: ['document_publish_content'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/document/publish/content"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const document_document_fields_ref = ref<any[]>([]);
+const document_document_fields_q = useQuery({
+  queryKey: ['document_document_fields'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/document/document/fields"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const document_d_1_view_count_ref = ref<any[]>([]);
+const document_d_1_view_count_q = useQuery({
+  queryKey: ['document_d_1_view_count'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/document/d-1/view/count"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const document_d_1_control_ref = ref<any[]>([]);
+const document_d_1_control_q = useQuery({
+  queryKey: ['document_d_1_control'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/document/d-1/control"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const document_d_1_ref = ref<any[]>([]);
+const document_d_1_q = useQuery({
+  queryKey: ['document_d_1'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/document/d-1"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const document_category_change_mockputtopost_ref = ref<any[]>([]);
+const document_category_change_mockputtopost_q = useQuery({
+  queryKey: ['document_category_change_mockputtopost'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/document/category/change/mockputtopost"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const document_batch_data_modify_ref = ref<any[]>([]);
+const document_batch_data_modify_q = useQuery({
+  queryKey: ['document_batch_data_modify'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/document/batch/data/modify"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
 
 // Confirmation dialog (replaces window.confirm)
 function confirmMsg(msg: string): Promise<boolean> {
@@ -175,12 +351,36 @@ watch(api_jaxrs_do_831_q, (v) => { api_jaxrs_do_831_data.value = v ?? []; });
 const api_jaxrs_do_494_data = ref<any[]>([]);
 const { data: api_jaxrs_do_494_q } = useQuery({queryKey: ['api_jaxrs_do_494', '/jaxrs/document/batch/b-1'], queryFn: async () => { try { const r = await api.get("/jaxrs/document/batch/b-1"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
 watch(api_jaxrs_do_494_q, (v) => { api_jaxrs_do_494_data.value = v ?? []; });
-async function api_jaxrs_document_batch_b_1_mockdeletetoget() { try { await api.get("/jaxrs/document/batch/b-1/mockdeletetoget") } catch {} }
-async function api_jaxrs_document_batch_data_modify_mockputtopost() { try { await api.get("/jaxrs/document/batch/data/modify/mockputtopost") } catch {} }
+const jaxrs_document_batch_b_1_mockdeletetoget_ref = ref<any[]>([]);
+const jaxrs_document_batch_b_1_mockdeletetoget_q = useQuery({
+  queryKey: ['jaxrs_document_batch_b_1_mockdeletetoget'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/document/batch/b-1/mockdeletetoget"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const jaxrs_document_batch_data_modify_mockputtopost_ref = ref<any[]>([]);
+const jaxrs_document_batch_data_modify_mockputtopost_q = useQuery({
+  queryKey: ['jaxrs_document_batch_data_modify_mockputtopost'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/document/batch/data/modify/mockputtopost"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
 const api_jaxrs_do_532_data = ref<any[]>([]);
 const { data: api_jaxrs_do_532_q } = useQuery({queryKey: ['api_jaxrs_do_532', '/jaxrs/document/batch/status'], queryFn: async () => { try { const r = await api.get("/jaxrs/document/batch/status"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
 watch(api_jaxrs_do_532_q, (v) => { api_jaxrs_do_532_data.value = v ?? []; });
-async function api_jaxrs_document_batch_u3_batch_x_mockdeletetoget() { try { await api.get("/jaxrs/document/batch/u3-batch-x/mockdeletetoget") } catch {} }
+const jaxrs_document_batch_u3_batch_x_mockdeletetoget_ref = ref<any[]>([]);
+const jaxrs_document_batch_u3_batch_x_mockdeletetoget_q = useQuery({
+  queryKey: ['jaxrs_document_batch_u3_batch_x_mockdeletetoget'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/document/batch/u3-batch-x/mockdeletetoget"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
 const api_jaxrs_do_862_data = ref<any[]>([]);
 const { data: api_jaxrs_do_862_q } = useQuery({queryKey: ['api_jaxrs_do_862', '/jaxrs/document/cipher/c-1/permission/read/person/p-1'], queryFn: async () => { try { const r = await api.get("/jaxrs/document/cipher/c-1/permission/read/person/p-1"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
 watch(api_jaxrs_do_862_q, (v) => { api_jaxrs_do_862_data.value = v ?? []; });
@@ -190,7 +390,15 @@ watch(api_jaxrs_do_389_q, (v) => { api_jaxrs_do_389_data.value = v ?? []; });
 const api_jaxrs_do_733_data = ref<any[]>([]);
 const { data: api_jaxrs_do_733_q } = useQuery({queryKey: ['api_jaxrs_do_733', '/jaxrs/document/cipher/publish/content'], queryFn: async () => { try { const r = await api.get("/jaxrs/document/cipher/publish/content"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
 watch(api_jaxrs_do_733_q, (v) => { api_jaxrs_do_733_data.value = v ?? []; });
-async function api_jaxrs_document_cipher_publish_content_mockputtopost() { try { await api.get("/jaxrs/document/cipher/publish/content/mockputtopost") } catch {} }
+const jaxrs_document_cipher_publish_content_mockputtopost_ref = ref<any[]>([]);
+const jaxrs_document_cipher_publish_content_mockputtopost_q = useQuery({
+  queryKey: ['jaxrs_document_cipher_publish_content_mockputtopost'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/document/cipher/publish/content/mockputtopost"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
 const api_jaxrs_do_392_data = ref<any[]>([]);
 const { data: api_jaxrs_do_392_q } = useQuery({queryKey: ['api_jaxrs_do_392', '/jaxrs/document/d-1/document/data'], queryFn: async () => { try { const r = await api.get("/jaxrs/document/d-1/document/data"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
 watch(api_jaxrs_do_392_q, (v) => { api_jaxrs_do_392_data.value = v ?? []; });
@@ -212,7 +420,15 @@ watch(api_jaxrs_document_f_206_q, (v) => { api_jaxrs_document_f_206_data.value =
 const api_jaxrs_document_f_644_data = ref<any[]>([]);
 const { data: api_jaxrs_document_f_644_q } = useQuery({queryKey: ['api_jaxrs_document_f_644', '/jaxrs/document/filter/list/i-1/next/10'], queryFn: async () => { try { const r = await api.get("/jaxrs/document/filter/list/i-1/next/10"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
 watch(api_jaxrs_document_f_644_q, (v) => { api_jaxrs_document_f_644_data.value = v ?? []; });
-async function api_jaxrs_document_filter_list_i_1_next_10_mockputtopost() { try { await api.get("/jaxrs/document/filter/list/i-1/next/10/mockputtopost") } catch {} }
+const jaxrs_document_filter_list_i_1_next_10_mockputtopost_ref = ref<any[]>([]);
+const jaxrs_document_filter_list_i_1_next_10_mockputtopost_q = useQuery({
+  queryKey: ['jaxrs_document_filter_list_i_1_next_10_mockputtopost'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/document/filter/list/i-1/next/10/mockputtopost"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
 const api_jaxrs_document_f_856_data = ref<any[]>([]);
 const { data: api_jaxrs_document_f_856_q } = useQuery({queryKey: ['api_jaxrs_document_f_856', '/jaxrs/document/filter/list/i-1/size/10/manager'], queryFn: async () => { try { const r = await api.get("/jaxrs/document/filter/list/i-1/size/10/manager"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
 watch(api_jaxrs_document_f_856_q, (v) => { api_jaxrs_document_f_856_data.value = v ?? []; });

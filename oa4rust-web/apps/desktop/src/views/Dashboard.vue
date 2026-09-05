@@ -159,11 +159,27 @@ function fmtTime(ts?: string): string {
 
 onMounted(loadPending);
 
-async function api_document_d_1_x_mockdeletetoget() { try { await api.get("/jaxrs/data/document/d-1/x/mockdeletetoget") } catch {} }
+const document_d_1_x_mockdeletetoget_ref = ref<any[]>([]);
+const document_d_1_x_mockdeletetoget_q = useQuery({
+  queryKey: ['document_d_1_x_mockdeletetoget'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/data/document/d-1/x/mockdeletetoget"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
 const api_data_doc_692_data = ref<any[]>([]);
 const { data: api_data_doc_692_q } = useQuery({queryKey: ['api_data_doc_692', '/jaxrs/data/document/d-1/path0'], queryFn: async () => { try { const r = await api.get("/jaxrs/data/document/d-1/path0"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
 watch(api_data_doc_692_q, (v) => { api_data_doc_692_data.value = v ?? []; });
-async function api_document_d_1_x_mockputtopost() { try { await api.get("/jaxrs/data/document/d-1/x/mockputtopost") } catch {} }
+const document_d_1_x_mockputtopost_ref = ref<any[]>([]);
+const document_d_1_x_mockputtopost_q = useQuery({
+  queryKey: ['document_d_1_x_mockputtopost'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/data/document/d-1/x/mockputtopost"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
 const api_document_46_data = ref<any[]>([]);
 const { data: api_document_46_q } = useQuery({queryKey: ['api_document_46', '/jaxrs/data/document/d-1/array/data'], queryFn: async () => { try { const r = await api.get("/jaxrs/data/document/d-1/array/data"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
 watch(api_document_46_q, (v) => { api_document_46_data.value = v ?? []; });

@@ -56,31 +56,231 @@ async function checkUnit(u: UnitItem) {
 
 loadUnits()
 
-async function api_list_person_sup_nested() { try { await api.get('/jaxrs/unit/list/person/sup/nested') } catch {} }
-async function api_unit_list_level() { try { await api.get('/jaxrs/unit/list/level') } catch {} }
-async function api_unit_list_unit_tree() { try { await api.get('/jaxrs/unit/list/unit/tree') } catch {} }
-async function api_unit_list_identity() { try { await api.get('/jaxrs/unit/list/identity') } catch {} }
-async function api_unit_check() { try { await api.get('/jaxrs/unit/check') } catch {} }
-async function api_unit_list_unitattribute_object() { try { await api.get('/jaxrs/unit/list/unitattribute/object') } catch {} }
-async function api_unit_identity_type() { try { await api.get('/jaxrs/unit/identity/type') } catch {} }
-async function api_unit_list_identity_object() { try { await api.get('/jaxrs/unit/list/identity/object') } catch {} }
-async function api_unit() { try { await api.get('/jaxrs/unit') } catch {} }
-async function api_list_unit_sup_nested() { try { await api.get('/jaxrs/unit/list/unit/sup/nested') } catch {} }
-async function api_check_unit_has_unit() { try { await api.get('/jaxrs/unit/check/unit/has/unit') } catch {} }
-async function api_unit_list_person() { try { await api.get('/jaxrs/unit/list/person') } catch {} }
-async function api_list_type_dept_object() { try { await api.get('/jaxrs/unit/list/type/dept/object') } catch {} }
-async function api_unit_list_object() { try { await api.get('/jaxrs/unit/list/object') } catch {} }
-async function api_check_unit_has_identity() { try { await api.get('/jaxrs/unit/check/unit/has/identity') } catch {} }
-async function api_unit_list_unitattribute() { try { await api.get('/jaxrs/unit/list/unitattribute') } catch {} }
-async function api_list_unit_sub_nested() { try { await api.get('/jaxrs/unit/list/unit/sub/nested') } catch {} }
-async function api_unit_identity_level() { try { await api.get('/jaxrs/unit/identity/level') } catch {} }
-async function api_unit_identity_type_object() { try { await api.get('/jaxrs/unit/identity/type/object') } catch {} }
-async function api_list_level_name_object() { try { await api.get('/jaxrs/unit/list/level/name/object') } catch {} }
-async function api_unit_list_unitduty_object() { try { await api.get('/jaxrs/unit/list/unitduty/object') } catch {} }
-async function api_unit_identity() { try { await api.get('/jaxrs/unit/identity') } catch {} }
-async function api_list_unit_sub_direct() { try { await api.get('/jaxrs/unit/list/unit/sub/direct') } catch {} }
-async function api_unit_list_person_object() { try { await api.get('/jaxrs/unit/list/person/object') } catch {} }
-async function api_unit_list_all_object() { try { await api.get('/jaxrs/unit/list/all/object') } catch {} }
+const list_person_sup_nested_ref = ref<any[]>([]);
+const list_person_sup_nested_q = useQuery({
+  queryKey: ['list_person_sup_nested'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/unit/list/person/sup/nested"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const unit_list_level_ref = ref<any[]>([]);
+const unit_list_level_q = useQuery({
+  queryKey: ['unit_list_level'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/unit/list/level"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const unit_list_unit_tree_ref = ref<any[]>([]);
+const unit_list_unit_tree_q = useQuery({
+  queryKey: ['unit_list_unit_tree'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/unit/list/unit/tree"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const unit_list_identity_ref = ref<any[]>([]);
+const unit_list_identity_q = useQuery({
+  queryKey: ['unit_list_identity'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/unit/list/identity"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const unit_check_ref = ref<any[]>([]);
+const unit_check_q = useQuery({
+  queryKey: ['unit_check'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/unit/check"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const unit_list_unitattribute_object_ref = ref<any[]>([]);
+const unit_list_unitattribute_object_q = useQuery({
+  queryKey: ['unit_list_unitattribute_object'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/unit/list/unitattribute/object"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const unit_identity_type_ref = ref<any[]>([]);
+const unit_identity_type_q = useQuery({
+  queryKey: ['unit_identity_type'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/unit/identity/type"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const unit_list_identity_object_ref = ref<any[]>([]);
+const unit_list_identity_object_q = useQuery({
+  queryKey: ['unit_list_identity_object'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/unit/list/identity/object"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const unit_ref = ref<any[]>([]);
+const unit_q = useQuery({
+  queryKey: ['unit'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/unit"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const list_unit_sup_nested_ref = ref<any[]>([]);
+const list_unit_sup_nested_q = useQuery({
+  queryKey: ['list_unit_sup_nested'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/unit/list/unit/sup/nested"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const check_unit_has_unit_ref = ref<any[]>([]);
+const check_unit_has_unit_q = useQuery({
+  queryKey: ['check_unit_has_unit'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/unit/check/unit/has/unit"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const unit_list_person_ref = ref<any[]>([]);
+const unit_list_person_q = useQuery({
+  queryKey: ['unit_list_person'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/unit/list/person"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const list_type_dept_object_ref = ref<any[]>([]);
+const list_type_dept_object_q = useQuery({
+  queryKey: ['list_type_dept_object'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/unit/list/type/dept/object"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const unit_list_object_ref = ref<any[]>([]);
+const unit_list_object_q = useQuery({
+  queryKey: ['unit_list_object'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/unit/list/object"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const check_unit_has_identity_ref = ref<any[]>([]);
+const check_unit_has_identity_q = useQuery({
+  queryKey: ['check_unit_has_identity'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/unit/check/unit/has/identity"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const unit_list_unitattribute_ref = ref<any[]>([]);
+const unit_list_unitattribute_q = useQuery({
+  queryKey: ['unit_list_unitattribute'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/unit/list/unitattribute"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const list_unit_sub_nested_ref = ref<any[]>([]);
+const list_unit_sub_nested_q = useQuery({
+  queryKey: ['list_unit_sub_nested'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/unit/list/unit/sub/nested"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const unit_identity_level_ref = ref<any[]>([]);
+const unit_identity_level_q = useQuery({
+  queryKey: ['unit_identity_level'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/unit/identity/level"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const unit_identity_type_object_ref = ref<any[]>([]);
+const unit_identity_type_object_q = useQuery({
+  queryKey: ['unit_identity_type_object'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/unit/identity/type/object"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const list_level_name_object_ref = ref<any[]>([]);
+const list_level_name_object_q = useQuery({
+  queryKey: ['list_level_name_object'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/unit/list/level/name/object"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const unit_list_unitduty_object_ref = ref<any[]>([]);
+const unit_list_unitduty_object_q = useQuery({
+  queryKey: ['unit_list_unitduty_object'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/unit/list/unitduty/object"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const unit_identity_ref = ref<any[]>([]);
+const unit_identity_q = useQuery({
+  queryKey: ['unit_identity'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/unit/identity"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const list_unit_sub_direct_ref = ref<any[]>([]);
+const list_unit_sub_direct_q = useQuery({
+  queryKey: ['list_unit_sub_direct'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/unit/list/unit/sub/direct"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const unit_list_person_object_ref = ref<any[]>([]);
+const unit_list_person_object_q = useQuery({
+  queryKey: ['unit_list_person_object'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/unit/list/person/object"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const unit_list_all_object_ref = ref<any[]>([]);
+const unit_list_all_object_q = useQuery({
+  queryKey: ['unit_list_all_object'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/unit/list/all/object"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
 
 const api_jaxrs_or_150_data = ref<any[]>([]);
 const { data: api_jaxrs_or_150_q } = useQuery({queryKey: ['api_jaxrs_or_150', '/jaxrs/organization/assemble/authentication/authentication/oauth/dingding/config'], queryFn: async () => { try { const r = await api.get("/jaxrs/organization/assemble/authentication/authentication/oauth/dingding/config"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
@@ -88,52 +288,204 @@ watch(api_jaxrs_or_150_q, (v) => { api_jaxrs_or_150_data.value = v ?? []; });
 const api_jaxrs_or_60_data = ref<any[]>([]);
 const { data: api_jaxrs_or_60_q } = useQuery({queryKey: ['api_jaxrs_or_60', '/jaxrs/organization/assemble/authentication/authentication/oauth/qywx/config'], queryFn: async () => { try { const r = await api.get("/jaxrs/organization/assemble/authentication/authentication/oauth/qywx/config"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
 watch(api_jaxrs_or_60_q, (v) => { api_jaxrs_or_60_data.value = v ?? []; });
-async function api_jaxrs_organization_assemble_authentication_sso_encrypt_client_u2c_key_u2key_1234_95d5ba() { try { await api.get("/jaxrs/organization/assemble/authentication/sso/encrypt/client/u2c/key/u2key-1234567890-abcdef-/credential/user@P") } catch {} }
-async function api_jaxrs_organization_assemble_control_group_list_like_mockputtopost() { try { await api.get("/jaxrs/organization/assemble/control/group/list/like/mockputtopost") } catch {} }
+const jaxrs_organization_assemble_authentication_sso_encrypt_client_u2c_key_u2key_1234_95d5ba_ref = ref<any[]>([]);
+const jaxrs_organization_assemble_authentication_sso_encrypt_client_u2c_key_u2key_1234_95d5ba_q = useQuery({
+  queryKey: ['jaxrs_organization_assemble_authentication_sso_encrypt_client_u2c_key_u2key_1234_95d5ba'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/organization/assemble/authentication/sso/encrypt/client/u2c/key/u2key-1234567890-abcdef-/credential/user@P"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const jaxrs_organization_assemble_control_group_list_like_mockputtopost_ref = ref<any[]>([]);
+const jaxrs_organization_assemble_control_group_list_like_mockputtopost_q = useQuery({
+  queryKey: ['jaxrs_organization_assemble_control_group_list_like_mockputtopost'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/organization/assemble/control/group/list/like/mockputtopost"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
 const api_jaxrs_or_174_data = ref<any[]>([]);
 const { data: api_jaxrs_or_174_q } = useQuery({queryKey: ['api_jaxrs_or_174', '/jaxrs/organization/assemble/control/group/list/like/pinyin'], queryFn: async () => { try { const r = await api.get("/jaxrs/organization/assemble/control/group/list/like/pinyin"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
 watch(api_jaxrs_or_174_q, (v) => { api_jaxrs_or_174_data.value = v ?? []; });
-async function api_jaxrs_organization_assemble_control_group_list_like_pinyin_mockputtopost() { try { await api.get("/jaxrs/organization/assemble/control/group/list/like/pinyin/mockputtopost") } catch {} }
-async function api_jaxrs_organization_assemble_control_group_list_pinyininitial_mockputtopost() { try { await api.get("/jaxrs/organization/assemble/control/group/list/pinyininitial/mockputtopost") } catch {} }
-async function api_jaxrs_organization_assemble_control_identity_list_like_mockputtopost() { try { await api.get("/jaxrs/organization/assemble/control/identity/list/like/mockputtopost") } catch {} }
+const jaxrs_organization_assemble_control_group_list_like_pinyin_mockputtopost_ref = ref<any[]>([]);
+const jaxrs_organization_assemble_control_group_list_like_pinyin_mockputtopost_q = useQuery({
+  queryKey: ['jaxrs_organization_assemble_control_group_list_like_pinyin_mockputtopost'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/organization/assemble/control/group/list/like/pinyin/mockputtopost"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const jaxrs_organization_assemble_control_group_list_pinyininitial_mockputtopost_ref = ref<any[]>([]);
+const jaxrs_organization_assemble_control_group_list_pinyininitial_mockputtopost_q = useQuery({
+  queryKey: ['jaxrs_organization_assemble_control_group_list_pinyininitial_mockputtopost'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/organization/assemble/control/group/list/pinyininitial/mockputtopost"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const jaxrs_organization_assemble_control_identity_list_like_mockputtopost_ref = ref<any[]>([]);
+const jaxrs_organization_assemble_control_identity_list_like_mockputtopost_q = useQuery({
+  queryKey: ['jaxrs_organization_assemble_control_identity_list_like_mockputtopost'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/organization/assemble/control/identity/list/like/mockputtopost"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
 const api_jaxrs_organizati_494_data = ref<any[]>([]);
 const { data: api_jaxrs_organizati_494_q } = useQuery({queryKey: ['api_jaxrs_organizati_494', '/jaxrs/organization/assemble/control/identity/list/like/pinyin'], queryFn: async () => { try { const r = await api.get("/jaxrs/organization/assemble/control/identity/list/like/pinyin"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
 watch(api_jaxrs_organizati_494_q, (v) => { api_jaxrs_organizati_494_data.value = v ?? []; });
-async function api_jaxrs_organization_assemble_control_identity_list_like_pinyin_mockputtopost() { try { await api.get("/jaxrs/organization/assemble/control/identity/list/like/pinyin/mockputtopost") } catch {} }
-async function api_jaxrs_organization_assemble_control_identity_list_pinyininitial_mockputtopost() { try { await api.get("/jaxrs/organization/assemble/control/identity/list/pinyininitial/mockputtopost") } catch {} }
-async function api_jaxrs_organization_assemble_control_person_list_like_mockputtopost() { try { await api.get("/jaxrs/organization/assemble/control/person/list/like/mockputtopost") } catch {} }
+const jaxrs_organization_assemble_control_identity_list_like_pinyin_mockputtopost_ref = ref<any[]>([]);
+const jaxrs_organization_assemble_control_identity_list_like_pinyin_mockputtopost_q = useQuery({
+  queryKey: ['jaxrs_organization_assemble_control_identity_list_like_pinyin_mockputtopost'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/organization/assemble/control/identity/list/like/pinyin/mockputtopost"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const jaxrs_organization_assemble_control_identity_list_pinyininitial_mockputtopost_ref = ref<any[]>([]);
+const jaxrs_organization_assemble_control_identity_list_pinyininitial_mockputtopost_q = useQuery({
+  queryKey: ['jaxrs_organization_assemble_control_identity_list_pinyininitial_mockputtopost'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/organization/assemble/control/identity/list/pinyininitial/mockputtopost"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const jaxrs_organization_assemble_control_person_list_like_mockputtopost_ref = ref<any[]>([]);
+const jaxrs_organization_assemble_control_person_list_like_mockputtopost_q = useQuery({
+  queryKey: ['jaxrs_organization_assemble_control_person_list_like_mockputtopost'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/organization/assemble/control/person/list/like/mockputtopost"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
 const api_jaxrs_organizati_346_data = ref<any[]>([]);
 const { data: api_jaxrs_organizati_346_q } = useQuery({queryKey: ['api_jaxrs_organizati_346', '/jaxrs/organization/assemble/control/person/list/like/pinyin'], queryFn: async () => { try { const r = await api.get("/jaxrs/organization/assemble/control/person/list/like/pinyin"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
 watch(api_jaxrs_organizati_346_q, (v) => { api_jaxrs_organizati_346_data.value = v ?? []; });
-async function api_jaxrs_organization_assemble_control_person_list_like_pinyin_mockputtopost() { try { await api.get("/jaxrs/organization/assemble/control/person/list/like/pinyin/mockputtopost") } catch {} }
-async function api_jaxrs_organization_assemble_control_person_list_pinyininitial_mockputtopost() { try { await api.get("/jaxrs/organization/assemble/control/person/list/pinyininitial/mockputtopost") } catch {} }
+const jaxrs_organization_assemble_control_person_list_like_pinyin_mockputtopost_ref = ref<any[]>([]);
+const jaxrs_organization_assemble_control_person_list_like_pinyin_mockputtopost_q = useQuery({
+  queryKey: ['jaxrs_organization_assemble_control_person_list_like_pinyin_mockputtopost'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/organization/assemble/control/person/list/like/pinyin/mockputtopost"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const jaxrs_organization_assemble_control_person_list_pinyininitial_mockputtopost_ref = ref<any[]>([]);
+const jaxrs_organization_assemble_control_person_list_pinyininitial_mockputtopost_q = useQuery({
+  queryKey: ['jaxrs_organization_assemble_control_person_list_pinyininitial_mockputtopost'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/organization/assemble/control/person/list/pinyininitial/mockputtopost"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
 const api_jaxrs_organizati_256_data = ref<any[]>([]);
 const { data: api_jaxrs_organizati_256_q } = useQuery({queryKey: ['api_jaxrs_organizati_256', '/jaxrs/organization/assemble/control/role/list/0/next/10'], queryFn: async () => { try { const r = await api.get("/jaxrs/organization/assemble/control/role/list/0/next/10"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
 watch(api_jaxrs_organizati_256_q, (v) => { api_jaxrs_organizati_256_data.value = v ?? []; });
-async function api_jaxrs_organization_assemble_control_role_list_like_mockputtopost() { try { await api.get("/jaxrs/organization/assemble/control/role/list/like/mockputtopost") } catch {} }
+const jaxrs_organization_assemble_control_role_list_like_mockputtopost_ref = ref<any[]>([]);
+const jaxrs_organization_assemble_control_role_list_like_mockputtopost_q = useQuery({
+  queryKey: ['jaxrs_organization_assemble_control_role_list_like_mockputtopost'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/organization/assemble/control/role/list/like/mockputtopost"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
 const api_jaxrs_organizati_285_data = ref<any[]>([]);
 const { data: api_jaxrs_organizati_285_q } = useQuery({queryKey: ['api_jaxrs_organizati_285', '/jaxrs/organization/assemble/control/role/list/like/pinyin'], queryFn: async () => { try { const r = await api.get("/jaxrs/organization/assemble/control/role/list/like/pinyin"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
 watch(api_jaxrs_organizati_285_q, (v) => { api_jaxrs_organizati_285_data.value = v ?? []; });
-async function api_jaxrs_organization_assemble_control_role_list_like_pinyin_mockputtopost() { try { await api.get("/jaxrs/organization/assemble/control/role/list/like/pinyin/mockputtopost") } catch {} }
+const jaxrs_organization_assemble_control_role_list_like_pinyin_mockputtopost_ref = ref<any[]>([]);
+const jaxrs_organization_assemble_control_role_list_like_pinyin_mockputtopost_q = useQuery({
+  queryKey: ['jaxrs_organization_assemble_control_role_list_like_pinyin_mockputtopost'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/organization/assemble/control/role/list/like/pinyin/mockputtopost"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
 const api_jaxrs_organizati_824_data = ref<any[]>([]);
 const { data: api_jaxrs_organizati_824_q } = useQuery({queryKey: ['api_jaxrs_organizati_824', '/jaxrs/organization/assemble/control/unit/list/0/next/10'], queryFn: async () => { try { const r = await api.get("/jaxrs/organization/assemble/control/unit/list/0/next/10"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
 watch(api_jaxrs_organizati_824_q, (v) => { api_jaxrs_organizati_824_data.value = v ?? []; });
 const api_jaxrs_organizati_923_data = ref<any[]>([]);
 const { data: api_jaxrs_organizati_923_q } = useQuery({queryKey: ['api_jaxrs_organizati_923', '/jaxrs/organization/assemble/control/unit/list/control/top'], queryFn: async () => { try { const r = await api.get("/jaxrs/organization/assemble/control/unit/list/control/top"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
 watch(api_jaxrs_organizati_923_q, (v) => { api_jaxrs_organizati_923_data.value = v ?? []; });
-async function api_jaxrs_organization_assemble_control_unit_list_like_mockputtopost() { try { await api.get("/jaxrs/organization/assemble/control/unit/list/like/mockputtopost") } catch {} }
+const jaxrs_organization_assemble_control_unit_list_like_mockputtopost_ref = ref<any[]>([]);
+const jaxrs_organization_assemble_control_unit_list_like_mockputtopost_q = useQuery({
+  queryKey: ['jaxrs_organization_assemble_control_unit_list_like_mockputtopost'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/organization/assemble/control/unit/list/like/mockputtopost"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
 const api_jaxrs_organizati_439_data = ref<any[]>([]);
 const { data: api_jaxrs_organizati_439_q } = useQuery({queryKey: ['api_jaxrs_organizati_439', '/jaxrs/organization/assemble/control/unit/list/like/pinyin'], queryFn: async () => { try { const r = await api.get("/jaxrs/organization/assemble/control/unit/list/like/pinyin"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
 watch(api_jaxrs_organizati_439_q, (v) => { api_jaxrs_organizati_439_data.value = v ?? []; });
-async function api_jaxrs_organization_assemble_control_unit_list_like_pinyin_mockputtopost() { try { await api.get("/jaxrs/organization/assemble/control/unit/list/like/pinyin/mockputtopost") } catch {} }
-async function api_jaxrs_organization_assemble_control_unit_list_pinyininitial_mockputtopost() { try { await api.get("/jaxrs/organization/assemble/control/unit/list/pinyininitial/mockputtopost") } catch {} }
-async function api_jaxrs_organization_assemble_control_unit_list_test_unit_sub_nested() { try { await api.get("/jaxrs/organization/assemble/control/unit/list/test-unit/sub/nested") } catch {} }
-async function api_jaxrs_organization_assemble_control_unit_list_test_unit_sup_nested() { try { await api.get("/jaxrs/organization/assemble/control/unit/list/test-unit/sup/nested") } catch {} }
-async function api_jaxrs_organization_assemble_control_unit_list_test_unit_sup_nested_type_company() { try { await api.get("/jaxrs/organization/assemble/control/unit/list/test-unit/sup/nested/type/company") } catch {} }
+const jaxrs_organization_assemble_control_unit_list_like_pinyin_mockputtopost_ref = ref<any[]>([]);
+const jaxrs_organization_assemble_control_unit_list_like_pinyin_mockputtopost_q = useQuery({
+  queryKey: ['jaxrs_organization_assemble_control_unit_list_like_pinyin_mockputtopost'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/organization/assemble/control/unit/list/like/pinyin/mockputtopost"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const jaxrs_organization_assemble_control_unit_list_pinyininitial_mockputtopost_ref = ref<any[]>([]);
+const jaxrs_organization_assemble_control_unit_list_pinyininitial_mockputtopost_q = useQuery({
+  queryKey: ['jaxrs_organization_assemble_control_unit_list_pinyininitial_mockputtopost'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/organization/assemble/control/unit/list/pinyininitial/mockputtopost"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const jaxrs_organization_assemble_control_unit_list_test_unit_sub_nested_ref = ref<any[]>([]);
+const jaxrs_organization_assemble_control_unit_list_test_unit_sub_nested_q = useQuery({
+  queryKey: ['jaxrs_organization_assemble_control_unit_list_test_unit_sub_nested'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/organization/assemble/control/unit/list/test-unit/sub/nested"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const jaxrs_organization_assemble_control_unit_list_test_unit_sup_nested_ref = ref<any[]>([]);
+const jaxrs_organization_assemble_control_unit_list_test_unit_sup_nested_q = useQuery({
+  queryKey: ['jaxrs_organization_assemble_control_unit_list_test_unit_sup_nested'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/organization/assemble/control/unit/list/test-unit/sup/nested"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const jaxrs_organization_assemble_control_unit_list_test_unit_sup_nested_type_company_ref = ref<any[]>([]);
+const jaxrs_organization_assemble_control_unit_list_test_unit_sup_nested_type_company_q = useQuery({
+  queryKey: ['jaxrs_organization_assemble_control_unit_list_test_unit_sup_nested_type_company'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/organization/assemble/control/unit/list/test-unit/sup/nested/type/company"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
 const api_jaxrs_organizati_842_data = ref<any[]>([]);
 const { data: api_jaxrs_organizati_842_q } = useQuery({queryKey: ['api_jaxrs_organizati_842', '/jaxrs/organization/assemble/control/unit/list/unit/type'], queryFn: async () => { try { const r = await api.get("/jaxrs/organization/assemble/control/unit/list/unit/type"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
 watch(api_jaxrs_organizati_842_q, (v) => { api_jaxrs_organizati_842_data.value = v ?? []; });
-async function api_jaxrs_organization_assemble_control_unit_list_unit_type_mockputtopost() { try { await api.get("/jaxrs/organization/assemble/control/unit/list/unit/type/mockputtopost") } catch {} }
+const jaxrs_organization_assemble_control_unit_list_unit_type_mockputtopost_ref = ref<any[]>([]);
+const jaxrs_organization_assemble_control_unit_list_unit_type_mockputtopost_q = useQuery({
+  queryKey: ['jaxrs_organization_assemble_control_unit_list_unit_type_mockputtopost'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/organization/assemble/control/unit/list/unit/type/mockputtopost"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
 </script>
 
 <style scoped>

@@ -258,12 +258,60 @@ const { data: api_calendar_411_q } = useQuery({queryKey: ['api_calendar_411', '/
 watch(api_calendar_411_q, (v) => { api_calendar_411_data.value = v ?? []; });
 
 
-async function api_core_entity_calendar_create() { try { await api.get('/jaxrs/calendar/core/entity/calendar/create') } catch {} }
-async function api_calendar_event_remove() { try { await api.get('/jaxrs/calendar/event/remove') } catch {} }
-async function api_calendar_event_list() { try { await api.get('/jaxrs/calendar/event/list') } catch {} }
-async function api_calendar_calendar_list_my() { try { await api.get('/jaxrs/calendar/calendar/list/my') } catch {} }
-async function api_calendar_calendar_list_public() { try { await api.get('/jaxrs/calendar/calendar/list/public') } catch {} }
-async function api_calendar_event_update() { try { await api.get('/jaxrs/calendar/event/update') } catch {} }
+const core_entity_calendar_create_ref = ref<any[]>([]);
+const core_entity_calendar_create_q = useQuery({
+  queryKey: ['core_entity_calendar_create'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/calendar/core/entity/calendar/create"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const calendar_event_remove_ref = ref<any[]>([]);
+const calendar_event_remove_q = useQuery({
+  queryKey: ['calendar_event_remove'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/calendar/event/remove"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const calendar_event_list_ref = ref<any[]>([]);
+const calendar_event_list_q = useQuery({
+  queryKey: ['calendar_event_list'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/calendar/event/list"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const calendar_calendar_list_my_ref = ref<any[]>([]);
+const calendar_calendar_list_my_q = useQuery({
+  queryKey: ['calendar_calendar_list_my'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/calendar/calendar/list/my"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const calendar_calendar_list_public_ref = ref<any[]>([]);
+const calendar_calendar_list_public_q = useQuery({
+  queryKey: ['calendar_calendar_list_public'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/calendar/calendar/list/public"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const calendar_event_update_ref = ref<any[]>([]);
+const calendar_event_update_q = useQuery({
+  queryKey: ['calendar_event_update'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/calendar/event/update"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
 
 
 const api_calendar_426_data = ref<any[]>([]);
@@ -352,7 +400,15 @@ watch(api_calendar_assembl_74_q, (v) => { api_calendar_assembl_74_data.value = v
 const api_calendar_assembl_101_data = ref<any[]>([]);
 const { data: api_calendar_assembl_101_q } = useQuery({queryKey: ['api_calendar_assembl_101', '/jaxrs/calendar_assemble_control/get/control/config'], queryFn: async () => { try { const r = await api.get("/jaxrs/calendar_assemble_control/get/control/config"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
 watch(api_calendar_assembl_101_q, (v) => { api_calendar_assembl_101_data.value = v ?? []; });
-async function api_calendar_assemble_control_test_1() { try { await api.get("/jaxrs/calendar_assemble_control/test/1") } catch {} }
+const calendar_assemble_control_test_1_ref = ref<any[]>([]);
+const calendar_assemble_control_test_1_q = useQuery({
+  queryKey: ['calendar_assemble_control_test_1'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/calendar_assemble_control/test/1"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
 
 const api_jaxrs_calendar_a_291_data = ref<any[]>([]);
 const { data: api_jaxrs_calendar_a_291_q } = useQuery({queryKey: ['api_jaxrs_calendar_a_291', '/jaxrs/calendar_assemble_control/calendar/manager/list/with/person/x'], queryFn: async () => { try { const r = await api.get("/jaxrs/calendar_assemble_control/calendar/manager/list/with/person/x"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});

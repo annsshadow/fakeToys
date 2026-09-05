@@ -260,19 +260,75 @@ onMounted(() => { qc.invalidateQueries({ queryKey: ['config','list'] }) })
 const api_input_pr_78_data = ref<any[]>([]);
 const { data: api_input_pr_78_q } = useQuery({queryKey: ['api_input_pr_78', '/jaxrs/input/prepare/create'], queryFn: async () => { try { const r = await api.get("/jaxrs/input/prepare/create"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
 watch(api_input_pr_78_q, (v) => { api_input_pr_78_data.value = v ?? []; });
-async function api_input_compare_mockputtopost() { try { await api.get("/jaxrs/input/compare/mockputtopost") } catch {} }
-async function api_input_prepare_cover() { try { await api.get("/jaxrs/input/prepare/cover") } catch {} }
-async function api_input_create_mockputtopost() { try { await api.get("/jaxrs/input/create/mockputtopost") } catch {} }
+const input_compare_mockputtopost_ref = ref<any[]>([]);
+const input_compare_mockputtopost_q = useQuery({
+  queryKey: ['input_compare_mockputtopost'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/input/compare/mockputtopost"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const input_prepare_cover_ref = ref<any[]>([]);
+const input_prepare_cover_q = useQuery({
+  queryKey: ['input_prepare_cover'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/input/prepare/cover"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const input_create_mockputtopost_ref = ref<any[]>([]);
+const input_create_mockputtopost_q = useQuery({
+  queryKey: ['input_create_mockputtopost'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/input/create/mockputtopost"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
 const api_input_compare_data = ref<any[]>([]);
 const { data: api_input_compare_q } = useQuery({queryKey: ['api_input_compare', '/jaxrs/input/compare'], queryFn: async () => { try { const r = await api.get("/jaxrs/input/compare"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
 watch(api_input_compare_q, (v) => { api_input_compare_data.value = v ?? []; });
-async function api_input_cover() { try { await api.get("/jaxrs/input/cover") } catch {} }
-async function api_input_prepare_cover_mockputtopost() { try { await api.get("/jaxrs/input/prepare/cover/mockputtopost") } catch {} }
-async function api_input_prepare_create_mockputtopost() { try { await api.get("/jaxrs/input/prepare/create/mockputtopost") } catch {} }
+const input_cover_ref = ref<any[]>([]);
+const input_cover_q = useQuery({
+  queryKey: ['input_cover'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/input/cover"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const input_prepare_cover_mockputtopost_ref = ref<any[]>([]);
+const input_prepare_cover_mockputtopost_q = useQuery({
+  queryKey: ['input_prepare_cover_mockputtopost'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/input/prepare/cover/mockputtopost"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const input_prepare_create_mockputtopost_ref = ref<any[]>([]);
+const input_prepare_create_mockputtopost_q = useQuery({
+  queryKey: ['input_prepare_create_mockputtopost'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/input/prepare/create/mockputtopost"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
 const api_input_create_data = ref<any[]>([]);
 const { data: api_input_create_q } = useQuery({queryKey: ['api_input_create', '/jaxrs/input/create'], queryFn: async () => { try { const r = await api.get("/jaxrs/input/create"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
 watch(api_input_create_q, (v) => { api_input_create_data.value = v ?? []; });
-async function api_input_cover_mockputtopost() { try { await api.get("/jaxrs/input/cover/mockputtopost") } catch {} }
+const input_cover_mockputtopost_ref = ref<any[]>([]);
+const input_cover_mockputtopost_q = useQuery({
+  queryKey: ['input_cover_mockputtopost'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/input/cover/mockputtopost"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
 
 
 // Confirmation dialog (replaces window.confirm)

@@ -71,31 +71,231 @@ function deleteItem(item: Item) { if (confirmMsg('确定删除？')) delM.mutate
 function loadData() { qc.invalidateQueries({ queryKey: qk }) }
 function fmtTime(t?: string) { if (!t) return ''; try { return new Date(t).toLocaleString('zh-CN', { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' }) } catch { return String(t) } }
 
-async function api_cms_core_article_list() { try { await api.get('/jaxrs/cms/core/article/list') } catch {} }
-async function api_cms_view_publish_view_001() { try { await api.get('/jaxrs/cms/view/publish/view-001') } catch {} }
-async function api_assemble_control_cmsview_list() { try { await api.get('/jaxrs/cms/assemble/control/cmsview/list') } catch {} }
-async function api_cms_assemble_control_cmscategory() { try { await api.get('/jaxrs/cms/assemble/control/cmscategory') } catch {} }
-async function api_cms() { try { await api.get('/jaxrs/cms') } catch {} }
-async function api_assemble_control_cmsdocument_list() { try { await api.get('/jaxrs/cms/assemble/control/cmsdocument/list') } catch {} }
-async function api_cms_assemble_control_cmsview() { try { await api.get('/jaxrs/cms/assemble/control/cmsview') } catch {} }
-async function api_cms_view_list_all() { try { await api.get('/jaxrs/cms/view/list/all') } catch {} }
-async function api_assemble_control_cmsdocumentcategory_list() { try { await api.get('/jaxrs/cms/assemble/control/cmsdocumentcategory/list') } catch {} }
-async function api_cms_uuid_random() { try { await api.get('/jaxrs/cms/uuid/random') } catch {} }
-async function api_assemble_control_cmscategory_list() { try { await api.get('/jaxrs/cms/assemble/control/cmscategory/list') } catch {} }
-async function api_cms_templateform_list() { try { await api.get('/jaxrs/cms/templateform/list') } catch {} }
-async function api_cms_article_test_article_id() { try { await api.get('/jaxrs/cms/article/test-article-id') } catch {} }
-async function api_assemble_control_cmsapplication_list() { try { await api.get('/jaxrs/cms/assemble/control/cmsapplication/list') } catch {} }
-async function api_cms_category_list() { try { await api.get('/jaxrs/cms/category/list') } catch {} }
-async function api_cms_category_test_category_id() { try { await api.get('/jaxrs/cms/category/test-category-id') } catch {} }
-async function api_cms_category_create() { try { await api.get('/jaxrs/cms/category/create') } catch {} }
-async function api_cms_assemble_control_cmsapplication() { try { await api.get('/jaxrs/cms/assemble/control/cmsapplication') } catch {} }
-async function api_cms_article_list() { try { await api.get('/jaxrs/cms/article/list') } catch {} }
-async function api_core_express_content_list() { try { await api.get('/jaxrs/cms/core/express/content/list') } catch {} }
-async function api_cms_assemble_control_cmsdocument() { try { await api.get('/jaxrs/cms/assemble/control/cmsdocument') } catch {} }
-async function api_cms_article_create() { try { await api.get('/jaxrs/cms/article/create') } catch {} }
-async function api_core_express_article_list() { try { await api.get('/jaxrs/cms/core/express/article/list') } catch {} }
-async function api_cms_article() { try { await api.get('/jaxrs/cms/article') } catch {} }
-async function api_cms_view_unpublish_view_001() { try { await api.get('/jaxrs/cms/view/unpublish/view-001') } catch {} }
+const cms_core_article_list_ref = ref<any[]>([]);
+const cms_core_article_list_q = useQuery({
+  queryKey: ['cms_core_article_list'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/cms/core/article/list"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const cms_view_publish_view_001_ref = ref<any[]>([]);
+const cms_view_publish_view_001_q = useQuery({
+  queryKey: ['cms_view_publish_view_001'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/cms/view/publish/view-001"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const assemble_control_cmsview_list_ref = ref<any[]>([]);
+const assemble_control_cmsview_list_q = useQuery({
+  queryKey: ['assemble_control_cmsview_list'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/cms/assemble/control/cmsview/list"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const cms_assemble_control_cmscategory_ref = ref<any[]>([]);
+const cms_assemble_control_cmscategory_q = useQuery({
+  queryKey: ['cms_assemble_control_cmscategory'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/cms/assemble/control/cmscategory"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const cms_ref = ref<any[]>([]);
+const cms_q = useQuery({
+  queryKey: ['cms'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/cms"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const assemble_control_cmsdocument_list_ref = ref<any[]>([]);
+const assemble_control_cmsdocument_list_q = useQuery({
+  queryKey: ['assemble_control_cmsdocument_list'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/cms/assemble/control/cmsdocument/list"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const cms_assemble_control_cmsview_ref = ref<any[]>([]);
+const cms_assemble_control_cmsview_q = useQuery({
+  queryKey: ['cms_assemble_control_cmsview'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/cms/assemble/control/cmsview"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const cms_view_list_all_ref = ref<any[]>([]);
+const cms_view_list_all_q = useQuery({
+  queryKey: ['cms_view_list_all'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/cms/view/list/all"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const assemble_control_cmsdocumentcategory_list_ref = ref<any[]>([]);
+const assemble_control_cmsdocumentcategory_list_q = useQuery({
+  queryKey: ['assemble_control_cmsdocumentcategory_list'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/cms/assemble/control/cmsdocumentcategory/list"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const cms_uuid_random_ref = ref<any[]>([]);
+const cms_uuid_random_q = useQuery({
+  queryKey: ['cms_uuid_random'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/cms/uuid/random"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const assemble_control_cmscategory_list_ref = ref<any[]>([]);
+const assemble_control_cmscategory_list_q = useQuery({
+  queryKey: ['assemble_control_cmscategory_list'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/cms/assemble/control/cmscategory/list"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const cms_templateform_list_ref = ref<any[]>([]);
+const cms_templateform_list_q = useQuery({
+  queryKey: ['cms_templateform_list'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/cms/templateform/list"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const cms_article_test_article_id_ref = ref<any[]>([]);
+const cms_article_test_article_id_q = useQuery({
+  queryKey: ['cms_article_test_article_id'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/cms/article/test-article-id"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const assemble_control_cmsapplication_list_ref = ref<any[]>([]);
+const assemble_control_cmsapplication_list_q = useQuery({
+  queryKey: ['assemble_control_cmsapplication_list'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/cms/assemble/control/cmsapplication/list"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const cms_category_list_ref = ref<any[]>([]);
+const cms_category_list_q = useQuery({
+  queryKey: ['cms_category_list'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/cms/category/list"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const cms_category_test_category_id_ref = ref<any[]>([]);
+const cms_category_test_category_id_q = useQuery({
+  queryKey: ['cms_category_test_category_id'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/cms/category/test-category-id"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const cms_category_create_ref = ref<any[]>([]);
+const cms_category_create_q = useQuery({
+  queryKey: ['cms_category_create'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/cms/category/create"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const cms_assemble_control_cmsapplication_ref = ref<any[]>([]);
+const cms_assemble_control_cmsapplication_q = useQuery({
+  queryKey: ['cms_assemble_control_cmsapplication'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/cms/assemble/control/cmsapplication"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const cms_article_list_ref = ref<any[]>([]);
+const cms_article_list_q = useQuery({
+  queryKey: ['cms_article_list'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/cms/article/list"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const core_express_content_list_ref = ref<any[]>([]);
+const core_express_content_list_q = useQuery({
+  queryKey: ['core_express_content_list'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/cms/core/express/content/list"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const cms_assemble_control_cmsdocument_ref = ref<any[]>([]);
+const cms_assemble_control_cmsdocument_q = useQuery({
+  queryKey: ['cms_assemble_control_cmsdocument'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/cms/assemble/control/cmsdocument"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const cms_article_create_ref = ref<any[]>([]);
+const cms_article_create_q = useQuery({
+  queryKey: ['cms_article_create'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/cms/article/create"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const core_express_article_list_ref = ref<any[]>([]);
+const core_express_article_list_q = useQuery({
+  queryKey: ['core_express_article_list'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/cms/core/express/article/list"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const cms_article_ref = ref<any[]>([]);
+const cms_article_q = useQuery({
+  queryKey: ['cms_article'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/cms/article"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
+const cms_view_unpublish_view_001_ref = ref<any[]>([]);
+const cms_view_unpublish_view_001_q = useQuery({
+  queryKey: ['cms_view_unpublish_view_001'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/cms/view/unpublish/view-001"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
 
 
 const api_cms_asse_559_data = ref<any[]>([]);
@@ -129,7 +329,15 @@ watch(api_jaxrs_cms_assemb_820_q, (v) => { api_jaxrs_cms_assemb_820_data.value =
 const api_jaxrs_cms_assemb_441_data = ref<any[]>([]);
 const { data: api_jaxrs_cms_assemb_441_q } = useQuery({queryKey: ['api_jaxrs_cms_assemb_441', '/jaxrs/cms/assemble/control/document/cipher/publish/content'], queryFn: async () => { try { const r = await api.get("/jaxrs/cms/assemble/control/document/cipher/publish/content"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
 watch(api_jaxrs_cms_assemb_441_q, (v) => { api_jaxrs_cms_assemb_441_data.value = v ?? []; });
-async function api_jaxrs_cms_assemble_control_document_cipher_publish_content_mockputtopost() { try { await api.get("/jaxrs/cms/assemble/control/document/cipher/publish/content/mockputtopost") } catch {} }
+const jaxrs_cms_assemble_control_document_cipher_publish_content_mockputtopost_ref = ref<any[]>([]);
+const jaxrs_cms_assemble_control_document_cipher_publish_content_mockputtopost_q = useQuery({
+  queryKey: ['jaxrs_cms_assemble_control_document_cipher_publish_content_mockputtopost'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/cms/assemble/control/document/cipher/publish/content/mockputtopost"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
 const api_jaxrs_cms_assemb_446_data = ref<any[]>([]);
 const { data: api_jaxrs_cms_assemb_446_q } = useQuery({queryKey: ['api_jaxrs_cms_assemb_446', '/jaxrs/cms/assemble/control/fileinfo/upload/with/url'], queryFn: async () => { try { const r = await api.get("/jaxrs/cms/assemble/control/fileinfo/upload/with/url"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
 watch(api_jaxrs_cms_assemb_446_q, (v) => { api_jaxrs_cms_assemb_446_data.value = v ?? []; });
@@ -139,19 +347,51 @@ watch(api_jaxrs_cms_contro_561_q, (v) => { api_jaxrs_cms_contro_561_data.value =
 const api_jaxrs_cms_assemb_881_data = ref<any[]>([]);
 const { data: api_jaxrs_cms_assemb_881_q } = useQuery({queryKey: ['api_jaxrs_cms_assemb_881', '/jaxrs/cms_assemble_control/anonymous/document/filter/list/id/next/count'], queryFn: async () => { try { const r = await api.get("/jaxrs/cms_assemble_control/anonymous/document/filter/list/id/next/count"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
 watch(api_jaxrs_cms_assemb_881_q, (v) => { api_jaxrs_cms_assemb_881_data.value = v ?? []; });
-async function api_jaxrs_cms_assemble_control_anonymous_document_filter_list_id_next_count_mockputtopost() { try { await api.get("/jaxrs/cms_assemble_control/anonymous/document/filter/list/id/next/count/mockputtopost") } catch {} }
+const jaxrs_cms_assemble_control_anonymous_document_filter_list_id_next_count_mockputtopost_ref = ref<any[]>([]);
+const jaxrs_cms_assemble_control_anonymous_document_filter_list_id_next_count_mockputtopost_q = useQuery({
+  queryKey: ['jaxrs_cms_assemble_control_anonymous_document_filter_list_id_next_count_mockputtopost'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/cms_assemble_control/anonymous/document/filter/list/id/next/count/mockputtopost"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
 const api_jaxrs_cms_assemb_479_data = ref<any[]>([]);
 const { data: api_jaxrs_cms_assemb_479_q } = useQuery({queryKey: ['api_jaxrs_cms_assemb_479', '/jaxrs/cms_assemble_control/anonymous/document/filter/list/page/size/size'], queryFn: async () => { try { const r = await api.get("/jaxrs/cms_assemble_control/anonymous/document/filter/list/page/size/size"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
 watch(api_jaxrs_cms_assemb_479_q, (v) => { api_jaxrs_cms_assemb_479_data.value = v ?? []; });
-async function api_jaxrs_cms_assemble_control_anonymous_document_filter_list_page_size_size_mockputtopost() { try { await api.get("/jaxrs/cms_assemble_control/anonymous/document/filter/list/page/size/size/mockputtopost") } catch {} }
+const jaxrs_cms_assemble_control_anonymous_document_filter_list_page_size_size_mockputtopost_ref = ref<any[]>([]);
+const jaxrs_cms_assemble_control_anonymous_document_filter_list_page_size_size_mockputtopost_q = useQuery({
+  queryKey: ['jaxrs_cms_assemble_control_anonymous_document_filter_list_page_size_size_mockputtopost'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/cms_assemble_control/anonymous/document/filter/list/page/size/size/mockputtopost"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
 const api_jaxrs_cms_assemb_716_data = ref<any[]>([]);
 const { data: api_jaxrs_cms_assemb_716_q } = useQuery({queryKey: ['api_jaxrs_cms_assemb_716', '/jaxrs/cms_assemble_control/appinfo/filter/list/id/next/count'], queryFn: async () => { try { const r = await api.get("/jaxrs/cms_assemble_control/appinfo/filter/list/id/next/count"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
 watch(api_jaxrs_cms_assemb_716_q, (v) => { api_jaxrs_cms_assemb_716_data.value = v ?? []; });
-async function api_jaxrs_cms_assemble_control_appinfo_filter_list_id_next_count_mockputtopost() { try { await api.get("/jaxrs/cms_assemble_control/appinfo/filter/list/id/next/count/mockputtopost") } catch {} }
+const jaxrs_cms_assemble_control_appinfo_filter_list_id_next_count_mockputtopost_ref = ref<any[]>([]);
+const jaxrs_cms_assemble_control_appinfo_filter_list_id_next_count_mockputtopost_q = useQuery({
+  queryKey: ['jaxrs_cms_assemble_control_appinfo_filter_list_id_next_count_mockputtopost'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/cms_assemble_control/appinfo/filter/list/id/next/count/mockputtopost"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
 const api_jaxrs_cms_assemb_879_data = ref<any[]>([]);
 const { data: api_jaxrs_cms_assemb_879_q } = useQuery({queryKey: ['api_jaxrs_cms_assemb_879', '/jaxrs/cms_assemble_control/appinfo/filter/list/id/prev/count'], queryFn: async () => { try { const r = await api.get("/jaxrs/cms_assemble_control/appinfo/filter/list/id/prev/count"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
 watch(api_jaxrs_cms_assemb_879_q, (v) => { api_jaxrs_cms_assemb_879_data.value = v ?? []; });
-async function api_jaxrs_cms_assemble_control_appinfo_filter_list_id_prev_count_mockputtopost() { try { await api.get("/jaxrs/cms_assemble_control/appinfo/filter/list/id/prev/count/mockputtopost") } catch {} }
+const jaxrs_cms_assemble_control_appinfo_filter_list_id_prev_count_mockputtopost_ref = ref<any[]>([]);
+const jaxrs_cms_assemble_control_appinfo_filter_list_id_prev_count_mockputtopost_q = useQuery({
+  queryKey: ['jaxrs_cms_assemble_control_appinfo_filter_list_id_prev_count_mockputtopost'],
+  queryFn: async () => {
+    try { const r = await api.get("/jaxrs/cms_assemble_control/appinfo/filter/list/id/prev/count/mockputtopost"); return (r.data ?? []) as any[]; }
+    catch { return []; }
+  },
+  staleTime: 60000,
+});
 </script>
 <style scoped>
 .crud-view{display:flex;flex-direction:column;gap:16px;height:100%}
