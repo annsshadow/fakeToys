@@ -88,6 +88,7 @@ enum HttpMethod {
 }
 
 impl HttpMethod {
+    #[allow(dead_code)]
     fn as_str(self) -> &'static str {
         match self {
             HttpMethod::Get => "GET",
@@ -108,7 +109,7 @@ impl HttpMethod {
 }
 
 #[derive(Debug, Clone, Copy)]
-struct RouteDef {
+pub struct RouteDef {
     tool_name: &'static str,
     method: HttpMethod,
     path: &'static str,
