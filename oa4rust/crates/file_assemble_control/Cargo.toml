@@ -1,4 +1,4 @@
-﻿[package]
+[package]
 name = "file_assemble_control"
 version.workspace = true
 edition.workspace = true
@@ -17,7 +17,7 @@ uuid.workspace = true
 async-trait.workspace = true
 base64.workspace = true
 zip = "2"
+chrono.workspace = true
 
 [dev-dependencies]
 tower.workspace = true
-chrono.workspace = true
