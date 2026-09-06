@@ -5170,7 +5170,7 @@ pub async fn commend_list_paging(
 
     let rows = client
         .query(
-            "SELECT id, doc_id, person_id, create_time::text FROM x_cms_commend WHERE doc_id = $1 AND deleted_at::text IS NULL ORDER BY create_time::text DESC LIMIT $2::int OFFSET $3::int",
+            "SELECT id, doc_id, person_id, create_time::text FROM x_cms_commend WHERE doc_id = $1 AND deleted_at::text IS NULL ORDER BY create_time::text DESC LIMIT $2 OFFSET $3",
             &[&doc_id, &size, &((page - 1) * size)],
         )
         .await
