@@ -25,7 +25,7 @@ pub async fn chat_list_paging(
 
     let rows = client
         .query(
-            "SELECT id, title, person, create_time FROM x_ai_clue ORDER BY create_time DESC LIMIT $1::int OFFSET $2::int",
+            "SELECT id, title, person, create_time FROM x_ai_clue ORDER BY create_time DESC LIMIT $1 OFFSET $2",
             &[&size, &offset],
         )
         .await
@@ -65,7 +65,7 @@ pub async fn chat_list_completion_paging(
 
     let rows = client
         .query(
-            "SELECT id, person, \"clueId\", input, content, \"generateType\", create_time FROM x_ai_completion WHERE \"clueId\" = $1 ORDER BY create_time DESC LIMIT $2::int OFFSET $3::int",
+            "SELECT id, person, \"clueId\", input, content, \"generateType\", create_time FROM x_ai_completion WHERE \"clueId\" = $1 ORDER BY create_time DESC LIMIT $2 OFFSET $3",
             &[&clue_id, &size, &offset],
         )
         .await
