@@ -158,8 +158,8 @@ pub async fn collect_list(
                 ("personId".to_string(), Value::String(row.get("person_id"))),
                 ("title".to_string(), Value::String(row.get("title"))),
                 ("url".to_string(), Value::String(row.get("url"))),
-                ("creator".to_string(), Value::String(row.get("creator"))),
-                ("createTime".to_string(), Value::String(row.get("create_time"))),
+                ("creator".to_string(), Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default())),
+                ("createTime".to_string(), Value::String(row.get::<_, Option<String>>("create_time").unwrap_or_default())),
             ]))
         })
         .collect();
@@ -243,9 +243,9 @@ pub async fn config_get(
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("key".to_string(), Value::String(row.get("key"))),
                 ("value".to_string(), Value::String(row.get("value"))),
-                ("category".to_string(), Value::String(row.get("category"))),
-                ("creator".to_string(), Value::String(row.get("creator"))),
-                ("createTime".to_string(), Value::String(row.get("create_time"))),
+                ("category".to_string(), Value::String(row.get::<_, Option<String>>("category").unwrap_or_default())),
+                ("creator".to_string(), Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default())),
+                ("createTime".to_string(), Value::String(row.get::<_, Option<String>>("create_time").unwrap_or_default())),
             ]));
             Ok(Json(ActionResult::success(result)))
         }
@@ -276,8 +276,8 @@ pub async fn agent_flag(pool: Extension<Pool>, Path(id): Path<String>) -> Result
                     ("id".to_string(), Value::String(row.get("id"))),
                 ("name".to_string(), Value::String(row.get("name"))),
                 ("flag".to_string(), Value::String(row.get("flag"))),
-                ("creator".to_string(), Value::String(row.get("creator"))),
-                ("create_time".to_string(), Value::String(row.get("create_time"))),
+                ("creator".to_string(), Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default())),
+                ("create_time".to_string(), Value::String(row.get::<_, Option<String>>("create_time").unwrap_or_default())),
                 ]),
             ))))
         }
@@ -302,8 +302,8 @@ pub async fn agent_flag_disable(pool: Extension<Pool>, Path(id): Path<String>) -
                     ("id".to_string(), Value::String(row.get("id"))),
                 ("name".to_string(), Value::String(row.get("name"))),
                 ("flag".to_string(), Value::String(row.get("flag"))),
-                ("creator".to_string(), Value::String(row.get("creator"))),
-                ("create_time".to_string(), Value::String(row.get("create_time"))),
+                ("creator".to_string(), Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default())),
+                ("create_time".to_string(), Value::String(row.get::<_, Option<String>>("create_time").unwrap_or_default())),
                 ]),
             ))))
         }
@@ -328,8 +328,8 @@ pub async fn agent_flag_enable(pool: Extension<Pool>, Path(id): Path<String>) ->
                     ("id".to_string(), Value::String(row.get("id"))),
                 ("name".to_string(), Value::String(row.get("name"))),
                 ("flag".to_string(), Value::String(row.get("flag"))),
-                ("creator".to_string(), Value::String(row.get("creator"))),
-                ("create_time".to_string(), Value::String(row.get("create_time"))),
+                ("creator".to_string(), Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default())),
+                ("create_time".to_string(), Value::String(row.get::<_, Option<String>>("create_time").unwrap_or_default())),
                 ]),
             ))))
         }
@@ -354,8 +354,8 @@ pub async fn agent_flag_execute(pool: Extension<Pool>, Path(id): Path<String>) -
                     ("id".to_string(), Value::String(row.get("id"))),
                 ("name".to_string(), Value::String(row.get("name"))),
                 ("flag".to_string(), Value::String(row.get("flag"))),
-                ("creator".to_string(), Value::String(row.get("creator"))),
-                ("create_time".to_string(), Value::String(row.get("create_time"))),
+                ("creator".to_string(), Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default())),
+                ("create_time".to_string(), Value::String(row.get::<_, Option<String>>("create_time").unwrap_or_default())),
                 ]),
             ))))
         }
@@ -380,8 +380,8 @@ pub async fn agent_flag_file(pool: Extension<Pool>, Path(id): Path<String>) -> R
                     ("id".to_string(), Value::String(row.get("id"))),
                 ("name".to_string(), Value::String(row.get("name"))),
                 ("flag".to_string(), Value::String(row.get("flag"))),
-                ("creator".to_string(), Value::String(row.get("creator"))),
-                ("create_time".to_string(), Value::String(row.get("create_time"))),
+                ("creator".to_string(), Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default())),
+                ("create_time".to_string(), Value::String(row.get::<_, Option<String>>("create_time").unwrap_or_default())),
                 ]),
             ))))
         }
@@ -485,8 +485,8 @@ pub async fn appstyle_image_application_top(pool: Extension<Pool>) -> Result<Jso
                     ("resourceName".to_string(), Value::String(row.get("resource_name"))),
                     ("resourceType".to_string(), Value::String(row.get("resource_type"))),
                     ("path".to_string(), Value::String(row.get("path"))),
-                    ("creator".to_string(), Value::String(row.get("creator"))),
-                    ("createTime".to_string(), Value::String(row.get("create_time"))),
+                    ("creator".to_string(), Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default())),
+                    ("createTime".to_string(), Value::String(row.get::<_, Option<String>>("create_time").unwrap_or_default())),
                 ]),
             ))))
         }
@@ -537,8 +537,8 @@ pub async fn appstyle_image_launch_logo(pool: Extension<Pool>) -> Result<Json<Ac
                     ("resourceName".to_string(), Value::String(row.get("resource_name"))),
                     ("resourceType".to_string(), Value::String(row.get("resource_type"))),
                     ("path".to_string(), Value::String(row.get("path"))),
-                    ("creator".to_string(), Value::String(row.get("creator"))),
-                    ("createTime".to_string(), Value::String(row.get("create_time"))),
+                    ("creator".to_string(), Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default())),
+                    ("createTime".to_string(), Value::String(row.get::<_, Option<String>>("create_time").unwrap_or_default())),
                 ]),
             ))))
         }
@@ -589,8 +589,8 @@ pub async fn appstyle_image_login_avatar(pool: Extension<Pool>) -> Result<Json<A
                     ("resourceName".to_string(), Value::String(row.get("resource_name"))),
                     ("resourceType".to_string(), Value::String(row.get("resource_type"))),
                     ("path".to_string(), Value::String(row.get("path"))),
-                    ("creator".to_string(), Value::String(row.get("creator"))),
-                    ("createTime".to_string(), Value::String(row.get("create_time"))),
+                    ("creator".to_string(), Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default())),
+                    ("createTime".to_string(), Value::String(row.get::<_, Option<String>>("create_time").unwrap_or_default())),
                 ]),
             ))))
         }
@@ -641,8 +641,8 @@ pub async fn appstyle_image_menu_logo_blur(pool: Extension<Pool>) -> Result<Json
                     ("resourceName".to_string(), Value::String(row.get("resource_name"))),
                     ("resourceType".to_string(), Value::String(row.get("resource_type"))),
                     ("path".to_string(), Value::String(row.get("path"))),
-                    ("creator".to_string(), Value::String(row.get("creator"))),
-                    ("createTime".to_string(), Value::String(row.get("create_time"))),
+                    ("creator".to_string(), Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default())),
+                    ("createTime".to_string(), Value::String(row.get::<_, Option<String>>("create_time").unwrap_or_default())),
                 ]),
             ))))
         }
@@ -693,8 +693,8 @@ pub async fn appstyle_image_menu_logo_focus(pool: Extension<Pool>) -> Result<Jso
                     ("resourceName".to_string(), Value::String(row.get("resource_name"))),
                     ("resourceType".to_string(), Value::String(row.get("resource_type"))),
                     ("path".to_string(), Value::String(row.get("path"))),
-                    ("creator".to_string(), Value::String(row.get("creator"))),
-                    ("createTime".to_string(), Value::String(row.get("create_time"))),
+                    ("creator".to_string(), Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default())),
+                    ("createTime".to_string(), Value::String(row.get::<_, Option<String>>("create_time").unwrap_or_default())),
                 ]),
             ))))
         }
@@ -745,8 +745,8 @@ pub async fn appstyle_image_process_default(pool: Extension<Pool>) -> Result<Jso
                     ("resourceName".to_string(), Value::String(row.get("resource_name"))),
                     ("resourceType".to_string(), Value::String(row.get("resource_type"))),
                     ("path".to_string(), Value::String(row.get("path"))),
-                    ("creator".to_string(), Value::String(row.get("creator"))),
-                    ("createTime".to_string(), Value::String(row.get("create_time"))),
+                    ("creator".to_string(), Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default())),
+                    ("createTime".to_string(), Value::String(row.get::<_, Option<String>>("create_time").unwrap_or_default())),
                 ]),
             ))))
         }
@@ -797,8 +797,8 @@ pub async fn appstyle_image_setup_about_logo(pool: Extension<Pool>) -> Result<Js
                     ("resourceName".to_string(), Value::String(row.get("resource_name"))),
                     ("resourceType".to_string(), Value::String(row.get("resource_type"))),
                     ("path".to_string(), Value::String(row.get("path"))),
-                    ("creator".to_string(), Value::String(row.get("creator"))),
-                    ("createTime".to_string(), Value::String(row.get("create_time"))),
+                    ("creator".to_string(), Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default())),
+                    ("createTime".to_string(), Value::String(row.get::<_, Option<String>>("create_time").unwrap_or_default())),
                 ]),
             ))))
         }
@@ -876,8 +876,8 @@ pub async fn bar_create_mass_from_count(pool: Extension<Pool>) -> Result<Json<Ac
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("name".to_string(), Value::String(row.get("name"))),
                 ("status".to_string(), Value::String(row.get("status"))),
-                ("creator".to_string(), Value::String(row.get("creator"))),
-                ("createTime".to_string(), Value::String(row.get("create_time"))),
+                ("creator".to_string(), Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default())),
+                ("createTime".to_string(), Value::String(row.get::<_, Option<String>>("create_time").unwrap_or_default())),
             ]))
         })
         .collect();
@@ -905,8 +905,8 @@ pub async fn bar_select1_field_field_value_value_count_count(pool: Extension<Poo
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("name".to_string(), Value::String(row.get("name"))),
                 ("status".to_string(), Value::String(row.get("status"))),
-                ("creator".to_string(), Value::String(row.get("creator"))),
-                ("createTime".to_string(), Value::String(row.get("create_time"))),
+                ("creator".to_string(), Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default())),
+                ("createTime".to_string(), Value::String(row.get::<_, Option<String>>("create_time").unwrap_or_default())),
             ]))
         })
         .collect();
@@ -934,8 +934,8 @@ pub async fn bar_select2_count_count(pool: Extension<Pool>) -> Result<Json<Actio
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("name".to_string(), Value::String(row.get("name"))),
                 ("status".to_string(), Value::String(row.get("status"))),
-                ("creator".to_string(), Value::String(row.get("creator"))),
-                ("createTime".to_string(), Value::String(row.get("create_time"))),
+                ("creator".to_string(), Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default())),
+                ("createTime".to_string(), Value::String(row.get::<_, Option<String>>("create_time").unwrap_or_default())),
             ]))
         })
         .collect();
@@ -963,8 +963,8 @@ pub async fn bar_select3_field_field_value_value_count_count(pool: Extension<Poo
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("name".to_string(), Value::String(row.get("name"))),
                 ("status".to_string(), Value::String(row.get("status"))),
-                ("creator".to_string(), Value::String(row.get("creator"))),
-                ("createTime".to_string(), Value::String(row.get("create_time"))),
+                ("creator".to_string(), Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default())),
+                ("createTime".to_string(), Value::String(row.get::<_, Option<String>>("create_time").unwrap_or_default())),
             ]))
         })
         .collect();
@@ -992,8 +992,8 @@ pub async fn bar_select4_field_field_value_value_count_count(pool: Extension<Poo
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("name".to_string(), Value::String(row.get("name"))),
                 ("status".to_string(), Value::String(row.get("status"))),
-                ("creator".to_string(), Value::String(row.get("creator"))),
-                ("createTime".to_string(), Value::String(row.get("create_time"))),
+                ("creator".to_string(), Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default())),
+                ("createTime".to_string(), Value::String(row.get::<_, Option<String>>("create_time").unwrap_or_default())),
             ]))
         })
         .collect();
@@ -1021,8 +1021,8 @@ pub async fn captcha_list(pool: Extension<Pool>) -> Result<Json<ActionResult<Val
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("name".to_string(), Value::String(row.get("name"))),
                 ("flag".to_string(), Value::String(row.get("flag"))),
-                ("creator".to_string(), Value::String(row.get("creator"))),
-                ("createTime".to_string(), Value::String(row.get("create_time"))),
+                ("creator".to_string(), Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default())),
+                ("createTime".to_string(), Value::String(row.get::<_, Option<String>>("create_time").unwrap_or_default())),
             ]))
         })
         .collect();
@@ -1177,9 +1177,9 @@ pub async fn code_list(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("name".to_string(), Value::String(row.get("name"))),
                 ("flag".to_string(), Value::String(row.get("flag"))),
-                ("category".to_string(), Value::String(row.get("category"))),
-                ("creator".to_string(), Value::String(row.get("creator"))),
-                ("createTime".to_string(), Value::String(row.get("create_time"))),
+                ("category".to_string(), Value::String(row.get::<_, Option<String>>("category").unwrap_or_default())),
+                ("creator".to_string(), Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default())),
+                ("createTime".to_string(), Value::String(row.get::<_, Option<String>>("create_time").unwrap_or_default())),
             ]))
         })
         .collect();
@@ -1207,9 +1207,9 @@ pub async fn code_list_paging_page_size_size(pool: Extension<Pool>) -> Result<Js
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("name".to_string(), Value::String(row.get("name"))),
                 ("flag".to_string(), Value::String(row.get("flag"))),
-                ("category".to_string(), Value::String(row.get("category"))),
-                ("creator".to_string(), Value::String(row.get("creator"))),
-                ("createTime".to_string(), Value::String(row.get("create_time"))),
+                ("category".to_string(), Value::String(row.get::<_, Option<String>>("category").unwrap_or_default())),
+                ("creator".to_string(), Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default())),
+                ("createTime".to_string(), Value::String(row.get::<_, Option<String>>("create_time").unwrap_or_default())),
             ]))
         })
         .collect();
@@ -1278,8 +1278,8 @@ pub async fn collect_code_mobile_mobile(pool: Extension<Pool>, Path(id): Path<St
                 ("person_id".to_string(), Value::String(row.get("person_id"))),
                 ("title".to_string(), Value::String(row.get("title"))),
                 ("url".to_string(), Value::String(row.get("url"))),
-                ("creator".to_string(), Value::String(row.get("creator"))),
-                ("create_time".to_string(), Value::String(row.get("create_time"))),
+                ("creator".to_string(), Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default())),
+                ("create_time".to_string(), Value::String(row.get::<_, Option<String>>("create_time").unwrap_or_default())),
                 ]),
             ))))
         }
@@ -1305,8 +1305,8 @@ pub async fn collect_connect(pool: Extension<Pool>, Path(id): Path<String>) -> R
                 ("person_id".to_string(), Value::String(row.get("person_id"))),
                 ("title".to_string(), Value::String(row.get("title"))),
                 ("url".to_string(), Value::String(row.get("url"))),
-                ("creator".to_string(), Value::String(row.get("creator"))),
-                ("create_time".to_string(), Value::String(row.get("create_time"))),
+                ("creator".to_string(), Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default())),
+                ("create_time".to_string(), Value::String(row.get::<_, Option<String>>("create_time").unwrap_or_default())),
                 ]),
             ))))
         }
@@ -1332,8 +1332,8 @@ pub async fn collect_controllebbs(pool: Extension<Pool>, Path(id): Path<String>)
                 ("person_id".to_string(), Value::String(row.get("person_id"))),
                 ("title".to_string(), Value::String(row.get("title"))),
                 ("url".to_string(), Value::String(row.get("url"))),
-                ("creator".to_string(), Value::String(row.get("creator"))),
-                ("create_time".to_string(), Value::String(row.get("create_time"))),
+                ("creator".to_string(), Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default())),
+                ("create_time".to_string(), Value::String(row.get::<_, Option<String>>("create_time").unwrap_or_default())),
                 ]),
             ))))
         }
@@ -1359,8 +1359,8 @@ pub async fn collect_controllermobile_name_name_mobile_mobile(pool: Extension<Po
                 ("person_id".to_string(), Value::String(row.get("person_id"))),
                 ("title".to_string(), Value::String(row.get("title"))),
                 ("url".to_string(), Value::String(row.get("url"))),
-                ("creator".to_string(), Value::String(row.get("creator"))),
-                ("create_time".to_string(), Value::String(row.get("create_time"))),
+                ("creator".to_string(), Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default())),
+                ("create_time".to_string(), Value::String(row.get::<_, Option<String>>("create_time").unwrap_or_default())),
                 ]),
             ))))
         }
@@ -1386,8 +1386,8 @@ pub async fn collect_disconnect(pool: Extension<Pool>, Path(id): Path<String>) -
                 ("person_id".to_string(), Value::String(row.get("person_id"))),
                 ("title".to_string(), Value::String(row.get("title"))),
                 ("url".to_string(), Value::String(row.get("url"))),
-                ("creator".to_string(), Value::String(row.get("creator"))),
-                ("create_time".to_string(), Value::String(row.get("create_time"))),
+                ("creator".to_string(), Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default())),
+                ("create_time".to_string(), Value::String(row.get::<_, Option<String>>("create_time").unwrap_or_default())),
                 ]),
             ))))
         }
@@ -1413,8 +1413,8 @@ pub async fn collect_login(pool: Extension<Pool>, Path(id): Path<String>) -> Res
                 ("person_id".to_string(), Value::String(row.get("person_id"))),
                 ("title".to_string(), Value::String(row.get("title"))),
                 ("url".to_string(), Value::String(row.get("url"))),
-                ("creator".to_string(), Value::String(row.get("creator"))),
-                ("create_time".to_string(), Value::String(row.get("create_time"))),
+                ("creator".to_string(), Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default())),
+                ("create_time".to_string(), Value::String(row.get::<_, Option<String>>("create_time").unwrap_or_default())),
                 ]),
             ))))
         }
@@ -1440,8 +1440,8 @@ pub async fn collect_mobile_check_connect(pool: Extension<Pool>, Path(id): Path<
                 ("person_id".to_string(), Value::String(row.get("person_id"))),
                 ("title".to_string(), Value::String(row.get("title"))),
                 ("url".to_string(), Value::String(row.get("url"))),
-                ("creator".to_string(), Value::String(row.get("creator"))),
-                ("create_time".to_string(), Value::String(row.get("create_time"))),
+                ("creator".to_string(), Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default())),
+                ("create_time".to_string(), Value::String(row.get::<_, Option<String>>("create_time").unwrap_or_default())),
                 ]),
             ))))
         }
@@ -1467,8 +1467,8 @@ pub async fn collect_name_name_exist(pool: Extension<Pool>, Path(id): Path<Strin
                 ("person_id".to_string(), Value::String(row.get("person_id"))),
                 ("title".to_string(), Value::String(row.get("title"))),
                 ("url".to_string(), Value::String(row.get("url"))),
-                ("creator".to_string(), Value::String(row.get("creator"))),
-                ("create_time".to_string(), Value::String(row.get("create_time"))),
+                ("creator".to_string(), Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default())),
+                ("create_time".to_string(), Value::String(row.get::<_, Option<String>>("create_time").unwrap_or_default())),
                 ]),
             ))))
         }
@@ -1494,8 +1494,8 @@ pub async fn collect_name_name_mobile_mobile_code_code(pool: Extension<Pool>, Pa
                 ("person_id".to_string(), Value::String(row.get("person_id"))),
                 ("title".to_string(), Value::String(row.get("title"))),
                 ("url".to_string(), Value::String(row.get("url"))),
-                ("creator".to_string(), Value::String(row.get("creator"))),
-                ("create_time".to_string(), Value::String(row.get("create_time"))),
+                ("creator".to_string(), Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default())),
+                ("create_time".to_string(), Value::String(row.get::<_, Option<String>>("create_time").unwrap_or_default())),
                 ]),
             ))))
         }
@@ -1521,8 +1521,8 @@ pub async fn collect_person(pool: Extension<Pool>, Path(id): Path<String>) -> Re
                 ("person_id".to_string(), Value::String(row.get("person_id"))),
                 ("title".to_string(), Value::String(row.get("title"))),
                 ("url".to_string(), Value::String(row.get("url"))),
-                ("creator".to_string(), Value::String(row.get("creator"))),
-                ("create_time".to_string(), Value::String(row.get("create_time"))),
+                ("creator".to_string(), Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default())),
+                ("create_time".to_string(), Value::String(row.get::<_, Option<String>>("create_time").unwrap_or_default())),
                 ]),
             ))))
         }
@@ -1548,8 +1548,8 @@ pub async fn collect_resetpassword(pool: Extension<Pool>, Path(id): Path<String>
                 ("person_id".to_string(), Value::String(row.get("person_id"))),
                 ("title".to_string(), Value::String(row.get("title"))),
                 ("url".to_string(), Value::String(row.get("url"))),
-                ("creator".to_string(), Value::String(row.get("creator"))),
-                ("create_time".to_string(), Value::String(row.get("create_time"))),
+                ("creator".to_string(), Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default())),
+                ("create_time".to_string(), Value::String(row.get::<_, Option<String>>("create_time").unwrap_or_default())),
                 ]),
             ))))
         }
@@ -1575,8 +1575,8 @@ pub async fn collect_sync_area(pool: Extension<Pool>, Path(id): Path<String>) ->
                 ("person_id".to_string(), Value::String(row.get("person_id"))),
                 ("title".to_string(), Value::String(row.get("title"))),
                 ("url".to_string(), Value::String(row.get("url"))),
-                ("creator".to_string(), Value::String(row.get("creator"))),
-                ("create_time".to_string(), Value::String(row.get("create_time"))),
+                ("creator".to_string(), Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default())),
+                ("create_time".to_string(), Value::String(row.get::<_, Option<String>>("create_time").unwrap_or_default())),
                 ]),
             ))))
         }
@@ -1602,8 +1602,8 @@ pub async fn collect_updateUnit(pool: Extension<Pool>, Path(id): Path<String>) -
                 ("person_id".to_string(), Value::String(row.get("person_id"))),
                 ("title".to_string(), Value::String(row.get("title"))),
                 ("url".to_string(), Value::String(row.get("url"))),
-                ("creator".to_string(), Value::String(row.get("creator"))),
-                ("create_time".to_string(), Value::String(row.get("create_time"))),
+                ("creator".to_string(), Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default())),
+                ("create_time".to_string(), Value::String(row.get::<_, Option<String>>("create_time").unwrap_or_default())),
                 ]),
             ))))
         }
@@ -1629,8 +1629,8 @@ pub async fn collect_urlMapping(pool: Extension<Pool>, Path(id): Path<String>) -
                 ("person_id".to_string(), Value::String(row.get("person_id"))),
                 ("title".to_string(), Value::String(row.get("title"))),
                 ("url".to_string(), Value::String(row.get("url"))),
-                ("creator".to_string(), Value::String(row.get("creator"))),
-                ("create_time".to_string(), Value::String(row.get("create_time"))),
+                ("creator".to_string(), Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default())),
+                ("create_time".to_string(), Value::String(row.get::<_, Option<String>>("create_time").unwrap_or_default())),
                 ]),
             ))))
         }
@@ -1656,8 +1656,8 @@ pub async fn collect_validate(pool: Extension<Pool>, Path(id): Path<String>) -> 
                 ("person_id".to_string(), Value::String(row.get("person_id"))),
                 ("title".to_string(), Value::String(row.get("title"))),
                 ("url".to_string(), Value::String(row.get("url"))),
-                ("creator".to_string(), Value::String(row.get("creator"))),
-                ("create_time".to_string(), Value::String(row.get("create_time"))),
+                ("creator".to_string(), Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default())),
+                ("create_time".to_string(), Value::String(row.get::<_, Option<String>>("create_time").unwrap_or_default())),
                 ]),
             ))))
         }
@@ -1683,8 +1683,8 @@ pub async fn collect_validate_codeanswer(pool: Extension<Pool>, Path(id): Path<S
                 ("person_id".to_string(), Value::String(row.get("person_id"))),
                 ("title".to_string(), Value::String(row.get("title"))),
                 ("url".to_string(), Value::String(row.get("url"))),
-                ("creator".to_string(), Value::String(row.get("creator"))),
-                ("create_time".to_string(), Value::String(row.get("create_time"))),
+                ("creator".to_string(), Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default())),
+                ("create_time".to_string(), Value::String(row.get::<_, Option<String>>("create_time").unwrap_or_default())),
                 ]),
             ))))
         }
@@ -1710,8 +1710,8 @@ pub async fn collect_validate_direct(pool: Extension<Pool>, Path(id): Path<Strin
                 ("person_id".to_string(), Value::String(row.get("person_id"))),
                 ("title".to_string(), Value::String(row.get("title"))),
                 ("url".to_string(), Value::String(row.get("url"))),
-                ("creator".to_string(), Value::String(row.get("creator"))),
-                ("create_time".to_string(), Value::String(row.get("create_time"))),
+                ("creator".to_string(), Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default())),
+                ("create_time".to_string(), Value::String(row.get::<_, Option<String>>("create_time").unwrap_or_default())),
                 ]),
             ))))
         }
@@ -1737,8 +1737,8 @@ pub async fn collect_validate_password(pool: Extension<Pool>, Path(id): Path<Str
                 ("person_id".to_string(), Value::String(row.get("person_id"))),
                 ("title".to_string(), Value::String(row.get("title"))),
                 ("url".to_string(), Value::String(row.get("url"))),
-                ("creator".to_string(), Value::String(row.get("creator"))),
-                ("create_time".to_string(), Value::String(row.get("create_time"))),
+                ("creator".to_string(), Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default())),
+                ("create_time".to_string(), Value::String(row.get::<_, Option<String>>("create_time").unwrap_or_default())),
                 ]),
             ))))
         }
@@ -1783,9 +1783,9 @@ pub async fn config_open_get_disable_export_enable(pool: Extension<Pool>, Path(i
                     ("id".to_string(), Value::String(row.get("id"))),
                 ("key".to_string(), Value::String(row.get("key"))),
                 ("value".to_string(), Value::String(row.get("value"))),
-                ("category".to_string(), Value::String(row.get("category"))),
-                ("creator".to_string(), Value::String(row.get("creator"))),
-                ("create_time".to_string(), Value::String(row.get("create_time"))),
+                ("category".to_string(), Value::String(row.get::<_, Option<String>>("category").unwrap_or_default())),
+                ("creator".to_string(), Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default())),
+                ("create_time".to_string(), Value::String(row.get::<_, Option<String>>("create_time").unwrap_or_default())),
                 ]),
             ))))
         }
@@ -1810,9 +1810,9 @@ pub async fn config_centerserver(pool: Extension<Pool>, Path(id): Path<String>) 
                     ("id".to_string(), Value::String(row.get("id"))),
                 ("key".to_string(), Value::String(row.get("key"))),
                 ("value".to_string(), Value::String(row.get("value"))),
-                ("category".to_string(), Value::String(row.get("category"))),
-                ("creator".to_string(), Value::String(row.get("creator"))),
-                ("create_time".to_string(), Value::String(row.get("create_time"))),
+                ("category".to_string(), Value::String(row.get::<_, Option<String>>("category").unwrap_or_default())),
+                ("creator".to_string(), Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default())),
+                ("create_time".to_string(), Value::String(row.get::<_, Option<String>>("create_time").unwrap_or_default())),
                 ]),
             ))))
         }
@@ -1837,9 +1837,9 @@ pub async fn config_change_password(pool: Extension<Pool>, Path(id): Path<String
                     ("id".to_string(), Value::String(row.get("id"))),
                 ("key".to_string(), Value::String(row.get("key"))),
                 ("value".to_string(), Value::String(row.get("value"))),
-                ("category".to_string(), Value::String(row.get("category"))),
-                ("creator".to_string(), Value::String(row.get("creator"))),
-                ("create_time".to_string(), Value::String(row.get("create_time"))),
+                ("category".to_string(), Value::String(row.get::<_, Option<String>>("category").unwrap_or_default())),
+                ("creator".to_string(), Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default())),
+                ("create_time".to_string(), Value::String(row.get::<_, Option<String>>("create_time").unwrap_or_default())),
                 ]),
             ))))
         }
@@ -1864,9 +1864,9 @@ pub async fn config_collect(pool: Extension<Pool>, Path(id): Path<String>) -> Re
                     ("id".to_string(), Value::String(row.get("id"))),
                 ("key".to_string(), Value::String(row.get("key"))),
                 ("value".to_string(), Value::String(row.get("value"))),
-                ("category".to_string(), Value::String(row.get("category"))),
-                ("creator".to_string(), Value::String(row.get("creator"))),
-                ("create_time".to_string(), Value::String(row.get("create_time"))),
+                ("category".to_string(), Value::String(row.get::<_, Option<String>>("category").unwrap_or_default())),
+                ("creator".to_string(), Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default())),
+                ("create_time".to_string(), Value::String(row.get::<_, Option<String>>("create_time").unwrap_or_default())),
                 ]),
             ))))
         }
@@ -1891,9 +1891,9 @@ pub async fn config_license(pool: Extension<Pool>, Path(id): Path<String>) -> Re
                     ("id".to_string(), Value::String(row.get("id"))),
                 ("key".to_string(), Value::String(row.get("key"))),
                 ("value".to_string(), Value::String(row.get("value"))),
-                ("category".to_string(), Value::String(row.get("category"))),
-                ("creator".to_string(), Value::String(row.get("creator"))),
-                ("create_time".to_string(), Value::String(row.get("create_time"))),
+                ("category".to_string(), Value::String(row.get::<_, Option<String>>("category").unwrap_or_default())),
+                ("creator".to_string(), Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default())),
+                ("create_time".to_string(), Value::String(row.get::<_, Option<String>>("create_time").unwrap_or_default())),
                 ]),
             ))))
         }
@@ -1918,9 +1918,9 @@ pub async fn config_list(pool: Extension<Pool>) -> Result<Json<ActionResult<Valu
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("key".to_string(), Value::String(row.get("key"))),
                 ("value".to_string(), Value::String(row.get("value"))),
-                ("category".to_string(), Value::String(row.get("category"))),
-                ("creator".to_string(), Value::String(row.get("creator"))),
-                ("create_time".to_string(), Value::String(row.get("create_time"))),
+                ("category".to_string(), Value::String(row.get::<_, Option<String>>("category").unwrap_or_default())),
+                ("creator".to_string(), Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default())),
+                ("create_time".to_string(), Value::String(row.get::<_, Option<String>>("create_time").unwrap_or_default())),
             ]))
         })
         .collect();
@@ -1945,9 +1945,9 @@ pub async fn config_list_application(pool: Extension<Pool>) -> Result<Json<Actio
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("key".to_string(), Value::String(row.get("key"))),
                 ("value".to_string(), Value::String(row.get("value"))),
-                ("category".to_string(), Value::String(row.get("category"))),
-                ("creator".to_string(), Value::String(row.get("creator"))),
-                ("create_time".to_string(), Value::String(row.get("create_time"))),
+                ("category".to_string(), Value::String(row.get::<_, Option<String>>("category").unwrap_or_default())),
+                ("creator".to_string(), Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default())),
+                ("create_time".to_string(), Value::String(row.get::<_, Option<String>>("create_time").unwrap_or_default())),
             ]))
         })
         .collect();
@@ -1972,9 +1972,9 @@ pub async fn config_list_dump_data(pool: Extension<Pool>) -> Result<Json<ActionR
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("key".to_string(), Value::String(row.get("key"))),
                 ("value".to_string(), Value::String(row.get("value"))),
-                ("category".to_string(), Value::String(row.get("category"))),
-                ("creator".to_string(), Value::String(row.get("creator"))),
-                ("create_time".to_string(), Value::String(row.get("create_time"))),
+                ("category".to_string(), Value::String(row.get::<_, Option<String>>("category").unwrap_or_default())),
+                ("creator".to_string(), Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default())),
+                ("create_time".to_string(), Value::String(row.get::<_, Option<String>>("create_time").unwrap_or_default())),
             ]))
         })
         .collect();
@@ -1999,9 +1999,9 @@ pub async fn config_list_dump_data_current_node(pool: Extension<Pool>) -> Result
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("key".to_string(), Value::String(row.get("key"))),
                 ("value".to_string(), Value::String(row.get("value"))),
-                ("category".to_string(), Value::String(row.get("category"))),
-                ("creator".to_string(), Value::String(row.get("creator"))),
-                ("create_time".to_string(), Value::String(row.get("create_time"))),
+                ("category".to_string(), Value::String(row.get::<_, Option<String>>("category").unwrap_or_default())),
+                ("creator".to_string(), Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default())),
+                ("create_time".to_string(), Value::String(row.get::<_, Option<String>>("create_time").unwrap_or_default())),
             ]))
         })
         .collect();
@@ -2026,9 +2026,9 @@ pub async fn config_list_entity(pool: Extension<Pool>) -> Result<Json<ActionResu
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("key".to_string(), Value::String(row.get("key"))),
                 ("value".to_string(), Value::String(row.get("value"))),
-                ("category".to_string(), Value::String(row.get("category"))),
-                ("creator".to_string(), Value::String(row.get("creator"))),
-                ("create_time".to_string(), Value::String(row.get("create_time"))),
+                ("category".to_string(), Value::String(row.get::<_, Option<String>>("category").unwrap_or_default())),
+                ("creator".to_string(), Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default())),
+                ("create_time".to_string(), Value::String(row.get::<_, Option<String>>("create_time").unwrap_or_default())),
             ]))
         })
         .collect();
@@ -2053,9 +2053,9 @@ pub async fn config_open(pool: Extension<Pool>, Path(id): Path<String>) -> Resul
                     ("id".to_string(), Value::String(row.get("id"))),
                 ("key".to_string(), Value::String(row.get("key"))),
                 ("value".to_string(), Value::String(row.get("value"))),
-                ("category".to_string(), Value::String(row.get("category"))),
-                ("creator".to_string(), Value::String(row.get("creator"))),
-                ("create_time".to_string(), Value::String(row.get("create_time"))),
+                ("category".to_string(), Value::String(row.get::<_, Option<String>>("category").unwrap_or_default())),
+                ("creator".to_string(), Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default())),
+                ("create_time".to_string(), Value::String(row.get::<_, Option<String>>("create_time").unwrap_or_default())),
                 ]),
             ))))
         }
@@ -2080,9 +2080,9 @@ pub async fn config_open_run_time_config(pool: Extension<Pool>, Path(id): Path<S
                     ("id".to_string(), Value::String(row.get("id"))),
                 ("key".to_string(), Value::String(row.get("key"))),
                 ("value".to_string(), Value::String(row.get("value"))),
-                ("category".to_string(), Value::String(row.get("category"))),
-                ("creator".to_string(), Value::String(row.get("creator"))),
-                ("create_time".to_string(), Value::String(row.get("create_time"))),
+                ("category".to_string(), Value::String(row.get::<_, Option<String>>("category").unwrap_or_default())),
+                ("creator".to_string(), Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default())),
+                ("create_time".to_string(), Value::String(row.get::<_, Option<String>>("create_time").unwrap_or_default())),
                 ]),
             ))))
         }
@@ -2107,9 +2107,9 @@ pub async fn config_person(pool: Extension<Pool>, Path(id): Path<String>) -> Res
                     ("id".to_string(), Value::String(row.get("id"))),
                 ("key".to_string(), Value::String(row.get("key"))),
                 ("value".to_string(), Value::String(row.get("value"))),
-                ("category".to_string(), Value::String(row.get("category"))),
-                ("creator".to_string(), Value::String(row.get("creator"))),
-                ("create_time".to_string(), Value::String(row.get("create_time"))),
+                ("category".to_string(), Value::String(row.get::<_, Option<String>>("category").unwrap_or_default())),
+                ("creator".to_string(), Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default())),
+                ("create_time".to_string(), Value::String(row.get::<_, Option<String>>("create_time").unwrap_or_default())),
                 ]),
             ))))
         }
@@ -2134,9 +2134,9 @@ pub async fn config_portal(pool: Extension<Pool>, Path(id): Path<String>) -> Res
                     ("id".to_string(), Value::String(row.get("id"))),
                 ("key".to_string(), Value::String(row.get("key"))),
                 ("value".to_string(), Value::String(row.get("value"))),
-                ("category".to_string(), Value::String(row.get("category"))),
-                ("creator".to_string(), Value::String(row.get("creator"))),
-                ("create_time".to_string(), Value::String(row.get("create_time"))),
+                ("category".to_string(), Value::String(row.get::<_, Option<String>>("category").unwrap_or_default())),
+                ("creator".to_string(), Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default())),
+                ("create_time".to_string(), Value::String(row.get::<_, Option<String>>("create_time").unwrap_or_default())),
                 ]),
             ))))
         }
@@ -2161,9 +2161,9 @@ pub async fn config_proxy(pool: Extension<Pool>, Path(id): Path<String>) -> Resu
                     ("id".to_string(), Value::String(row.get("id"))),
                 ("key".to_string(), Value::String(row.get("key"))),
                 ("value".to_string(), Value::String(row.get("value"))),
-                ("category".to_string(), Value::String(row.get("category"))),
-                ("creator".to_string(), Value::String(row.get("creator"))),
-                ("create_time".to_string(), Value::String(row.get("create_time"))),
+                ("category".to_string(), Value::String(row.get::<_, Option<String>>("category").unwrap_or_default())),
+                ("creator".to_string(), Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default())),
+                ("create_time".to_string(), Value::String(row.get::<_, Option<String>>("create_time").unwrap_or_default())),
                 ]),
             ))))
         }
@@ -2222,9 +2222,9 @@ pub async fn config_ternary_management(
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("key".to_string(), Value::String(row.get("key"))),
                 ("value".to_string(), Value::String(row.get("value"))),
-                ("category".to_string(), Value::String(row.get("category"))),
-                ("creator".to_string(), Value::String(row.get("creator"))),
-                ("createTime".to_string(), Value::String(row.get("create_time"))),
+                ("category".to_string(), Value::String(row.get::<_, Option<String>>("category").unwrap_or_default())),
+                ("creator".to_string(), Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default())),
+                ("createTime".to_string(), Value::String(row.get::<_, Option<String>>("create_time").unwrap_or_default())),
             ]))
         })
         .collect();
@@ -2253,8 +2253,8 @@ pub async fn config_token(
                     ("id".to_string(), Value::String(row.get("id"))),
                     ("key".to_string(), Value::String(row.get("key"))),
                     ("value".to_string(), Value::String(row.get("value"))),
-                    ("creator".to_string(), Value::String(row.get("creator"))),
-                    ("createTime".to_string(), Value::String(row.get("create_time"))),
+                    ("creator".to_string(), Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default())),
+                    ("createTime".to_string(), Value::String(row.get::<_, Option<String>>("create_time").unwrap_or_default())),
                 ]),
             ))))
         }
@@ -2284,7 +2284,7 @@ pub async fn datastructure_fileds_all(
                 ("fieldName".to_string(), Value::String(row.get("field_name"))),
                 ("fieldLabel".to_string(), Value::String(row.get("field_label"))),
                 ("fieldType".to_string(), Value::String(row.get("field_type"))),
-                ("createTime".to_string(), Value::String(row.get("create_time"))),
+                ("createTime".to_string(), Value::String(row.get::<_, Option<String>>("create_time").unwrap_or_default())),
             ]))
         })
         .collect();
@@ -2313,8 +2313,8 @@ pub async fn datastructure_modules_all(
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("name".to_string(), Value::String(row.get("name"))),
                 ("entity".to_string(), Value::String(row.get("entity"))),
-                ("creator".to_string(), Value::String(row.get("creator"))),
-                ("createTime".to_string(), Value::String(row.get("create_time"))),
+                ("creator".to_string(), Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default())),
+                ("createTime".to_string(), Value::String(row.get::<_, Option<String>>("create_time").unwrap_or_default())),
             ]))
         })
         .collect();
@@ -2343,8 +2343,8 @@ pub async fn datastructure_tables_all(
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("tableName".to_string(), Value::String(row.get("table_name"))),
                 ("entity".to_string(), Value::String(row.get("entity"))),
-                ("creator".to_string(), Value::String(row.get("creator"))),
-                ("createTime".to_string(), Value::String(row.get("create_time"))),
+                ("creator".to_string(), Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default())),
+                ("createTime".to_string(), Value::String(row.get::<_, Option<String>>("create_time").unwrap_or_default())),
             ]))
         })
         .collect();
@@ -2375,8 +2375,8 @@ pub async fn deploy_list_paging_page_size_size(
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("name".to_string(), Value::String(row.get("name"))),
                 ("version".to_string(), Value::String(row.get("version"))),
-                ("creator".to_string(), Value::String(row.get("creator"))),
-                ("createTime".to_string(), Value::String(row.get("create_time"))),
+                ("creator".to_string(), Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default())),
+                ("createTime".to_string(), Value::String(row.get::<_, Option<String>>("create_time").unwrap_or_default())),
             ]))
         })
         .collect();
@@ -2405,8 +2405,8 @@ pub async fn deploy_server_o2(
                     ("id".to_string(), Value::String(row.get("id"))),
                     ("serverUrl".to_string(), Value::String(row.get("server_url"))),
                     ("status".to_string(), Value::String(row.get("status"))),
-                    ("creator".to_string(), Value::String(row.get("creator"))),
-                    ("createTime".to_string(), Value::String(row.get("create_time"))),
+                    ("creator".to_string(), Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default())),
+                    ("createTime".to_string(), Value::String(row.get::<_, Option<String>>("create_time").unwrap_or_default())),
                 ]),
             ))))
         }
@@ -2492,8 +2492,8 @@ pub async fn deploy_id(
                 ("name".to_string(), Value::String(row.get("name"))),
                 ("version".to_string(), Value::String(row.get("version"))),
                 ("status".to_string(), Value::String(row.get("status"))),
-                ("creator".to_string(), Value::String(row.get("creator"))),
-                ("createTime".to_string(), Value::String(row.get("create_time"))),
+                ("creator".to_string(), Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default())),
+                ("createTime".to_string(), Value::String(row.get::<_, Option<String>>("create_time").unwrap_or_default())),
             ]));
             Ok(Json(ActionResult::success(result)))
         }
@@ -2520,9 +2520,9 @@ pub async fn designer_search(
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("name".to_string(), Value::String(row.get("name"))),
-                ("category".to_string(), Value::String(row.get("category"))),
-                ("creator".to_string(), Value::String(row.get("creator"))),
-                ("createTime".to_string(), Value::String(row.get("create_time"))),
+                ("category".to_string(), Value::String(row.get::<_, Option<String>>("category").unwrap_or_default())),
+                ("creator".to_string(), Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default())),
+                ("createTime".to_string(), Value::String(row.get::<_, Option<String>>("create_time").unwrap_or_default())),
             ]))
         })
         .collect();
@@ -2550,10 +2550,10 @@ pub async fn dict_list(
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("name".to_string(), Value::String(row.get("name"))),
-                ("keyName".to_string(), Value::String(row.get("key_name"))),
-                ("appName".to_string(), Value::String(row.get("app_name"))),
-                ("creator".to_string(), Value::String(row.get("creator"))),
-                ("createTime".to_string(), Value::String(row.get("create_time"))),
+                ("keyName".to_string(), Value::String(row.get::<_, Option<String>>("key_name").unwrap_or_default())),
+                ("appName".to_string(), Value::String(row.get::<_, Option<String>>("app_name").unwrap_or_default())),
+                ("creator".to_string(), Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default())),
+                ("createTime".to_string(), Value::String(row.get::<_, Option<String>>("create_time").unwrap_or_default())),
             ]))
         })
         .collect();
@@ -2583,10 +2583,10 @@ pub async fn dict_list_paging_page_size_size(
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("name".to_string(), Value::String(row.get("name"))),
-                ("keyName".to_string(), Value::String(row.get("key_name"))),
-                ("appName".to_string(), Value::String(row.get("app_name"))),
-                ("creator".to_string(), Value::String(row.get("creator"))),
-                ("createTime".to_string(), Value::String(row.get("create_time"))),
+                ("keyName".to_string(), Value::String(row.get::<_, Option<String>>("key_name").unwrap_or_default())),
+                ("appName".to_string(), Value::String(row.get::<_, Option<String>>("app_name").unwrap_or_default())),
+                ("creator".to_string(), Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default())),
+                ("createTime".to_string(), Value::String(row.get::<_, Option<String>>("create_time").unwrap_or_default())),
             ]))
         })
         .collect();
@@ -2737,11 +2737,11 @@ pub async fn dict_id(
             let result = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("name".to_string(), Value::String(row.get("name"))),
-                ("keyName".to_string(), Value::String(row.get("key_name"))),
-                ("appName".to_string(), Value::String(row.get("app_name"))),
+                ("keyName".to_string(), Value::String(row.get::<_, Option<String>>("key_name").unwrap_or_default())),
+                ("appName".to_string(), Value::String(row.get::<_, Option<String>>("app_name").unwrap_or_default())),
                 ("appData".to_string(), Value::String(row.get("app_data"))),
-                ("creator".to_string(), Value::String(row.get("creator"))),
-                ("createTime".to_string(), Value::String(row.get("create_time"))),
+                ("creator".to_string(), Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default())),
+                ("createTime".to_string(), Value::String(row.get::<_, Option<String>>("create_time").unwrap_or_default())),
             ]));
             Ok(Json(ActionResult::success(result)))
         }
@@ -2767,7 +2767,7 @@ pub async fn dingding_get_callback_aes(pool: Extension<Pool>) -> Result<Json<Act
                     ("id".to_string(), Value::String(row.get("id"))),
                     ("source".to_string(), Value::String(row.get("source"))),
                     ("action".to_string(), Value::String(row.get("action"))),
-                    ("createTime".to_string(), Value::String(row.get("create_time"))),
+                    ("createTime".to_string(), Value::String(row.get::<_, Option<String>>("create_time").unwrap_or_default())),
                 ]),
             ))))
         }
@@ -2885,8 +2885,8 @@ pub async fn distribute_assemble_source_source(pool: Extension<Pool>) -> Result<
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("name".to_string(), Value::String(row.get("name"))),
                 ("entity".to_string(), Value::String(row.get("entity"))),
-                ("creator".to_string(), Value::String(row.get("creator"))),
-                ("createTime".to_string(), Value::String(row.get("create_time"))),
+                ("creator".to_string(), Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default())),
+                ("createTime".to_string(), Value::String(row.get::<_, Option<String>>("create_time").unwrap_or_default())),
             ]))
         })
         .collect();
@@ -2914,8 +2914,8 @@ pub async fn distribute_webserver_assemble_source_source(pool: Extension<Pool>) 
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("name".to_string(), Value::String(row.get("name"))),
                 ("entity".to_string(), Value::String(row.get("entity"))),
-                ("creator".to_string(), Value::String(row.get("creator"))),
-                ("createTime".to_string(), Value::String(row.get("create_time"))),
+                ("creator".to_string(), Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default())),
+                ("createTime".to_string(), Value::String(row.get::<_, Option<String>>("create_time").unwrap_or_default())),
             ]))
         })
         .collect();
@@ -2944,8 +2944,8 @@ pub async fn foo_create_mass_from_count(pool: Extension<Pool>) -> Result<Json<Ac
                 ("name".to_string(), Value::String(row.get("name"))),
                 ("cronExpression".to_string(), Value::String(row.get("cron_expression"))),
                 ("status".to_string(), Value::String(row.get("status"))),
-                ("creator".to_string(), Value::String(row.get("creator"))),
-                ("createTime".to_string(), Value::String(row.get("create_time"))),
+                ("creator".to_string(), Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default())),
+                ("createTime".to_string(), Value::String(row.get::<_, Option<String>>("create_time").unwrap_or_default())),
             ]))
         })
         .collect();
@@ -2973,8 +2973,8 @@ pub async fn input_compare(pool: Extension<Pool>) -> Result<Json<ActionResult<Va
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("name".to_string(), Value::String(row.get("name"))),
                 ("entity".to_string(), Value::String(row.get("entity"))),
-                ("creator".to_string(), Value::String(row.get("creator"))),
-                ("createTime".to_string(), Value::String(row.get("create_time"))),
+                ("creator".to_string(), Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default())),
+                ("createTime".to_string(), Value::String(row.get::<_, Option<String>>("create_time").unwrap_or_default())),
             ]))
         })
         .collect();
@@ -3002,8 +3002,8 @@ pub async fn input_cover(pool: Extension<Pool>) -> Result<Json<ActionResult<Valu
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("name".to_string(), Value::String(row.get("name"))),
                 ("entity".to_string(), Value::String(row.get("entity"))),
-                ("creator".to_string(), Value::String(row.get("creator"))),
-                ("createTime".to_string(), Value::String(row.get("create_time"))),
+                ("creator".to_string(), Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default())),
+                ("createTime".to_string(), Value::String(row.get::<_, Option<String>>("create_time").unwrap_or_default())),
             ]))
         })
         .collect();
@@ -3031,8 +3031,8 @@ pub async fn input_create(pool: Extension<Pool>) -> Result<Json<ActionResult<Val
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("name".to_string(), Value::String(row.get("name"))),
                 ("entity".to_string(), Value::String(row.get("entity"))),
-                ("creator".to_string(), Value::String(row.get("creator"))),
-                ("createTime".to_string(), Value::String(row.get("create_time"))),
+                ("creator".to_string(), Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default())),
+                ("createTime".to_string(), Value::String(row.get::<_, Option<String>>("create_time").unwrap_or_default())),
             ]))
         })
         .collect();
@@ -3060,8 +3060,8 @@ pub async fn input_prepare_cover(pool: Extension<Pool>) -> Result<Json<ActionRes
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("name".to_string(), Value::String(row.get("name"))),
                 ("entity".to_string(), Value::String(row.get("entity"))),
-                ("creator".to_string(), Value::String(row.get("creator"))),
-                ("createTime".to_string(), Value::String(row.get("create_time"))),
+                ("creator".to_string(), Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default())),
+                ("createTime".to_string(), Value::String(row.get::<_, Option<String>>("create_time").unwrap_or_default())),
             ]))
         })
         .collect();
@@ -3089,8 +3089,8 @@ pub async fn input_prepare_create(pool: Extension<Pool>) -> Result<Json<ActionRe
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("name".to_string(), Value::String(row.get("name"))),
                 ("entity".to_string(), Value::String(row.get("entity"))),
-                ("creator".to_string(), Value::String(row.get("creator"))),
-                ("createTime".to_string(), Value::String(row.get("create_time"))),
+                ("creator".to_string(), Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default())),
+                ("createTime".to_string(), Value::String(row.get::<_, Option<String>>("create_time").unwrap_or_default())),
             ]))
         })
         .collect();
@@ -3118,8 +3118,8 @@ pub async fn invoke_list_category(pool: Extension<Pool>) -> Result<Json<ActionRe
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("name".to_string(), Value::String(row.get("name"))),
                 ("entity".to_string(), Value::String(row.get("entity"))),
-                ("creator".to_string(), Value::String(row.get("creator"))),
-                ("createTime".to_string(), Value::String(row.get("create_time"))),
+                ("creator".to_string(), Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default())),
+                ("createTime".to_string(), Value::String(row.get::<_, Option<String>>("create_time").unwrap_or_default())),
             ]))
         })
         .collect();
@@ -3147,8 +3147,8 @@ pub async fn invoke_list_with_category_category(pool: Extension<Pool>) -> Result
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("name".to_string(), Value::String(row.get("name"))),
                 ("entity".to_string(), Value::String(row.get("entity"))),
-                ("creator".to_string(), Value::String(row.get("creator"))),
-                ("createTime".to_string(), Value::String(row.get("create_time"))),
+                ("creator".to_string(), Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default())),
+                ("createTime".to_string(), Value::String(row.get::<_, Option<String>>("create_time").unwrap_or_default())),
             ]))
         })
         .collect();
@@ -3176,8 +3176,8 @@ pub async fn invoke_token(pool: Extension<Pool>) -> Result<Json<ActionResult<Val
                     ("id".to_string(), Value::String(row.get("id"))),
                     ("key".to_string(), Value::String(row.get("key"))),
                     ("value".to_string(), Value::String(row.get("value"))),
-                    ("creator".to_string(), Value::String(row.get("creator"))),
-                    ("createTime".to_string(), Value::String(row.get("create_time"))),
+                    ("creator".to_string(), Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default())),
+                    ("createTime".to_string(), Value::String(row.get::<_, Option<String>>("create_time").unwrap_or_default())),
                 ]),
             ))))
         }
@@ -3205,8 +3205,8 @@ pub async fn invoke_flag(pool: Extension<Pool>) -> Result<Json<ActionResult<Valu
                     ("name".to_string(), Value::String(row.get("name"))),
                     ("flag".to_string(), Value::String(row.get("flag"))),
                     ("description".to_string(), Value::String(row.get("description"))),
-                    ("creator".to_string(), Value::String(row.get("creator"))),
-                    ("createTime".to_string(), Value::String(row.get("create_time"))),
+                    ("creator".to_string(), Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default())),
+                    ("createTime".to_string(), Value::String(row.get::<_, Option<String>>("create_time").unwrap_or_default())),
                 ]),
             ))))
         }
@@ -3323,8 +3323,8 @@ pub async fn invoke_flag_file(pool: Extension<Pool>) -> Result<Json<ActionResult
                     ("id".to_string(), Value::String(row.get("id"))),
                     ("name".to_string(), Value::String(row.get("name"))),
                     ("flag".to_string(), Value::String(row.get("flag"))),
-                    ("creator".to_string(), Value::String(row.get("creator"))),
-                    ("createTime".to_string(), Value::String(row.get("create_time"))),
+                    ("creator".to_string(), Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default())),
+                    ("createTime".to_string(), Value::String(row.get::<_, Option<String>>("create_time").unwrap_or_default())),
                 ]),
             ))))
         }
@@ -3381,9 +3381,9 @@ pub async fn jest_list(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("name".to_string(), Value::String(row.get("name"))),
                 ("flag".to_string(), Value::String(row.get("flag"))),
-                ("category".to_string(), Value::String(row.get("category"))),
-                ("creator".to_string(), Value::String(row.get("creator"))),
-                ("createTime".to_string(), Value::String(row.get("create_time"))),
+                ("category".to_string(), Value::String(row.get::<_, Option<String>>("category").unwrap_or_default())),
+                ("creator".to_string(), Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default())),
+                ("createTime".to_string(), Value::String(row.get::<_, Option<String>>("create_time").unwrap_or_default())),
             ]))
         })
         .collect();
@@ -3422,8 +3422,8 @@ pub async fn market_cloud_unit_is_vip(pool: Extension<Pool>) -> Result<Json<Acti
                     ("name".to_string(), Value::String(row.get("name"))),
                     ("entity".to_string(), Value::String(row.get("entity"))),
                     ("vip".to_string(), Value::Bool(row.get("vip"))),
-                    ("creator".to_string(), Value::String(row.get("creator"))),
-                    ("createTime".to_string(), Value::String(row.get("create_time"))),
+                    ("creator".to_string(), Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default())),
+                    ("createTime".to_string(), Value::String(row.get::<_, Option<String>>("create_time").unwrap_or_default())),
                 ]),
             ))))
         }
@@ -3467,8 +3467,8 @@ pub async fn market_list_category(pool: Extension<Pool>) -> Result<Json<ActionRe
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("name".to_string(), Value::String(row.get("name"))),
                 ("entity".to_string(), Value::String(row.get("entity"))),
-                ("creator".to_string(), Value::String(row.get("creator"))),
-                ("createTime".to_string(), Value::String(row.get("create_time"))),
+                ("creator".to_string(), Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default())),
+                ("createTime".to_string(), Value::String(row.get::<_, Option<String>>("create_time").unwrap_or_default())),
             ]))
         })
         .collect();
@@ -3498,7 +3498,7 @@ pub async fn market_list_install_log_paging_page_size_size(pool: Extension<Pool>
                 ("application".to_string(), Value::String(row.get("application"))),
                 ("status".to_string(), Value::String(row.get("status"))),
                 ("message".to_string(), Value::String(row.get("message"))),
-                ("createTime".to_string(), Value::String(row.get("create_time"))),
+                ("createTime".to_string(), Value::String(row.get::<_, Option<String>>("create_time").unwrap_or_default())),
             ]))
         })
         .collect();
@@ -3526,8 +3526,8 @@ pub async fn market_list_paging_page_size_size(pool: Extension<Pool>) -> Result<
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("name".to_string(), Value::String(row.get("name"))),
                 ("entity".to_string(), Value::String(row.get("entity"))),
-                ("creator".to_string(), Value::String(row.get("creator"))),
-                ("createTime".to_string(), Value::String(row.get("create_time"))),
+                ("creator".to_string(), Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default())),
+                ("createTime".to_string(), Value::String(row.get::<_, Option<String>>("create_time").unwrap_or_default())),
             ]))
         })
         .collect();
@@ -3555,8 +3555,8 @@ pub async fn market_list_paging_page_size_size_category_category(pool: Extension
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("name".to_string(), Value::String(row.get("name"))),
                 ("entity".to_string(), Value::String(row.get("entity"))),
-                ("creator".to_string(), Value::String(row.get("creator"))),
-                ("createTime".to_string(), Value::String(row.get("create_time"))),
+                ("creator".to_string(), Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default())),
+                ("createTime".to_string(), Value::String(row.get::<_, Option<String>>("create_time").unwrap_or_default())),
             ]))
         })
         .collect();
@@ -3584,8 +3584,8 @@ pub async fn market_list_top_three(pool: Extension<Pool>) -> Result<Json<ActionR
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("name".to_string(), Value::String(row.get("name"))),
                 ("entity".to_string(), Value::String(row.get("entity"))),
-                ("creator".to_string(), Value::String(row.get("creator"))),
-                ("createTime".to_string(), Value::String(row.get("create_time"))),
+                ("creator".to_string(), Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default())),
+                ("createTime".to_string(), Value::String(row.get::<_, Option<String>>("create_time").unwrap_or_default())),
             ]))
         })
         .collect();
@@ -3613,8 +3613,8 @@ pub async fn market_flag(pool: Extension<Pool>) -> Result<Json<ActionResult<Valu
                     ("id".to_string(), Value::String(row.get("id"))),
                     ("name".to_string(), Value::String(row.get("name"))),
                     ("entity".to_string(), Value::String(row.get("entity"))),
-                    ("creator".to_string(), Value::String(row.get("creator"))),
-                    ("createTime".to_string(), Value::String(row.get("create_time"))),
+                    ("creator".to_string(), Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default())),
+                    ("createTime".to_string(), Value::String(row.get::<_, Option<String>>("create_time").unwrap_or_default())),
                 ]),
             ))))
         }
@@ -3642,8 +3642,8 @@ pub async fn market_flag_cover_pic(pool: Extension<Pool>) -> Result<Json<ActionR
                     ("resourceName".to_string(), Value::String(row.get("resource_name"))),
                     ("resourceType".to_string(), Value::String(row.get("resource_type"))),
                     ("path".to_string(), Value::String(row.get("path"))),
-                    ("creator".to_string(), Value::String(row.get("creator"))),
-                    ("createTime".to_string(), Value::String(row.get("create_time"))),
+                    ("creator".to_string(), Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default())),
+                    ("createTime".to_string(), Value::String(row.get::<_, Option<String>>("create_time").unwrap_or_default())),
                 ]),
             ))))
         }
@@ -3672,7 +3672,7 @@ pub async fn market_flag_install_log(pool: Extension<Pool>) -> Result<Json<Actio
                 ("application".to_string(), Value::String(row.get("application"))),
                 ("status".to_string(), Value::String(row.get("status"))),
                 ("message".to_string(), Value::String(row.get("message"))),
-                ("createTime".to_string(), Value::String(row.get("create_time"))),
+                ("createTime".to_string(), Value::String(row.get::<_, Option<String>>("create_time").unwrap_or_default())),
             ]))
         })
         .collect();
@@ -3721,8 +3721,8 @@ pub async fn market_flag_installed_version(pool: Extension<Pool>) -> Result<Json
                     ("name".to_string(), Value::String(row.get("name"))),
                     ("version".to_string(), Value::String(row.get("version"))),
                     ("status".to_string(), Value::String(row.get("status"))),
-                    ("creator".to_string(), Value::String(row.get("creator"))),
-                    ("createTime".to_string(), Value::String(row.get("create_time"))),
+                    ("creator".to_string(), Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default())),
+                    ("createTime".to_string(), Value::String(row.get::<_, Option<String>>("create_time").unwrap_or_default())),
                 ]),
             ))))
         }
@@ -3790,8 +3790,8 @@ pub async fn module_compare_upload(pool: Extension<Pool>, Path(id): Path<String>
                     ("id".to_string(), Value::String(row.get("id"))),
                 ("name".to_string(), Value::String(row.get("name"))),
                 ("entity".to_string(), Value::String(row.get("entity"))),
-                ("creator".to_string(), Value::String(row.get("creator"))),
-                ("create_time".to_string(), Value::String(row.get("create_time"))),
+                ("creator".to_string(), Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default())),
+                ("create_time".to_string(), Value::String(row.get::<_, Option<String>>("create_time").unwrap_or_default())),
                 ]),
             ))))
         }
@@ -3816,8 +3816,8 @@ pub async fn module_list(pool: Extension<Pool>) -> Result<Json<ActionResult<Valu
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("name".to_string(), Value::String(row.get("name"))),
                 ("entity".to_string(), Value::String(row.get("entity"))),
-                ("creator".to_string(), Value::String(row.get("creator"))),
-                ("create_time".to_string(), Value::String(row.get("create_time"))),
+                ("creator".to_string(), Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default())),
+                ("create_time".to_string(), Value::String(row.get::<_, Option<String>>("create_time").unwrap_or_default())),
             ]))
         })
         .collect();
@@ -3842,8 +3842,8 @@ pub async fn module_list_category(pool: Extension<Pool>) -> Result<Json<ActionRe
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("name".to_string(), Value::String(row.get("name"))),
                 ("entity".to_string(), Value::String(row.get("entity"))),
-                ("creator".to_string(), Value::String(row.get("creator"))),
-                ("create_time".to_string(), Value::String(row.get("create_time"))),
+                ("creator".to_string(), Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default())),
+                ("create_time".to_string(), Value::String(row.get::<_, Option<String>>("create_time").unwrap_or_default())),
             ]))
         })
         .collect();
@@ -3868,8 +3868,8 @@ pub async fn module_output(pool: Extension<Pool>, Path(id): Path<String>) -> Res
                     ("id".to_string(), Value::String(row.get("id"))),
                 ("name".to_string(), Value::String(row.get("name"))),
                 ("entity".to_string(), Value::String(row.get("entity"))),
-                ("creator".to_string(), Value::String(row.get("creator"))),
-                ("create_time".to_string(), Value::String(row.get("create_time"))),
+                ("creator".to_string(), Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default())),
+                ("create_time".to_string(), Value::String(row.get::<_, Option<String>>("create_time").unwrap_or_default())),
                 ]),
             ))))
         }
@@ -3898,8 +3898,8 @@ pub async fn module_output_structure(pool: Extension<Pool>, Path(id): Path<Strin
                     ("id".to_string(), Value::String(row.get("id"))),
                 ("name".to_string(), Value::String(row.get("name"))),
                 ("entity".to_string(), Value::String(row.get("entity"))),
-                ("creator".to_string(), Value::String(row.get("creator"))),
-                ("create_time".to_string(), Value::String(row.get("create_time"))),
+                ("creator".to_string(), Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default())),
+                ("create_time".to_string(), Value::String(row.get::<_, Option<String>>("create_time").unwrap_or_default())),
                 ]),
             ))))
         }
@@ -3924,8 +3924,8 @@ pub async fn module_output_flag_file(pool: Extension<Pool>, Path(id): Path<Strin
                     ("id".to_string(), Value::String(row.get("id"))),
                 ("name".to_string(), Value::String(row.get("name"))),
                 ("entity".to_string(), Value::String(row.get("entity"))),
-                ("creator".to_string(), Value::String(row.get("creator"))),
-                ("create_time".to_string(), Value::String(row.get("create_time"))),
+                ("creator".to_string(), Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default())),
+                ("create_time".to_string(), Value::String(row.get::<_, Option<String>>("create_time").unwrap_or_default())),
                 ]),
             ))))
         }
@@ -3950,8 +3950,8 @@ pub async fn module_remove_structure_id(pool: Extension<Pool>, Path(id): Path<St
                     ("id".to_string(), Value::String(row.get("id"))),
                 ("name".to_string(), Value::String(row.get("name"))),
                 ("entity".to_string(), Value::String(row.get("entity"))),
-                ("creator".to_string(), Value::String(row.get("creator"))),
-                ("create_time".to_string(), Value::String(row.get("create_time"))),
+                ("creator".to_string(), Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default())),
+                ("create_time".to_string(), Value::String(row.get::<_, Option<String>>("create_time").unwrap_or_default())),
                 ]),
             ))))
         }
@@ -3976,8 +3976,8 @@ pub async fn module_write_flag(pool: Extension<Pool>, Path(id): Path<String>) ->
                     ("id".to_string(), Value::String(row.get("id"))),
                 ("name".to_string(), Value::String(row.get("name"))),
                 ("entity".to_string(), Value::String(row.get("entity"))),
-                ("creator".to_string(), Value::String(row.get("creator"))),
-                ("create_time".to_string(), Value::String(row.get("create_time"))),
+                ("creator".to_string(), Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default())),
+                ("create_time".to_string(), Value::String(row.get::<_, Option<String>>("create_time").unwrap_or_default())),
                 ]),
             ))))
         }
@@ -4002,8 +4002,8 @@ pub async fn module_id_compare(pool: Extension<Pool>, Path(id): Path<String>) ->
                     ("id".to_string(), Value::String(row.get("id"))),
                 ("name".to_string(), Value::String(row.get("name"))),
                 ("entity".to_string(), Value::String(row.get("entity"))),
-                ("creator".to_string(), Value::String(row.get("creator"))),
-                ("create_time".to_string(), Value::String(row.get("create_time"))),
+                ("creator".to_string(), Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default())),
+                ("create_time".to_string(), Value::String(row.get::<_, Option<String>>("create_time").unwrap_or_default())),
                 ]),
             ))))
         }
@@ -4026,7 +4026,7 @@ pub async fn mpweixin_check(pool: Extension<Pool>, Path(id): Path<String>) -> Re
             Ok(Json(ActionResult::success(Value::Object(
                 serde_json::Map::from_iter([
                     ("id".to_string(), Value::String(row.get("id"))),
-                ("create_time".to_string(), Value::String(row.get("create_time"))),
+                ("create_time".to_string(), Value::String(row.get::<_, Option<String>>("create_time").unwrap_or_default())),
                 ]),
             ))))
         }
@@ -4049,7 +4049,7 @@ pub async fn mpweixin_media_add_forever(pool: Extension<Pool>, Path(id): Path<St
             Ok(Json(ActionResult::success(Value::Object(
                 serde_json::Map::from_iter([
                     ("id".to_string(), Value::String(row.get("id"))),
-                ("create_time".to_string(), Value::String(row.get("create_time"))),
+                ("create_time".to_string(), Value::String(row.get::<_, Option<String>>("create_time").unwrap_or_default())),
                 ]),
             ))))
         }
@@ -4072,7 +4072,7 @@ pub async fn mpweixin_menu_add(pool: Extension<Pool>, Path(id): Path<String>) ->
             Ok(Json(ActionResult::success(Value::Object(
                 serde_json::Map::from_iter([
                     ("id".to_string(), Value::String(row.get("id"))),
-                ("create_time".to_string(), Value::String(row.get("create_time"))),
+                ("create_time".to_string(), Value::String(row.get::<_, Option<String>>("create_time").unwrap_or_default())),
                 ]),
             ))))
         }
@@ -4095,7 +4095,7 @@ pub async fn mpweixin_menu_create_to_weixin(pool: Extension<Pool>, Path(id): Pat
             Ok(Json(ActionResult::success(Value::Object(
                 serde_json::Map::from_iter([
                     ("id".to_string(), Value::String(row.get("id"))),
-                ("create_time".to_string(), Value::String(row.get("create_time"))),
+                ("create_time".to_string(), Value::String(row.get::<_, Option<String>>("create_time").unwrap_or_default())),
                 ]),
             ))))
         }
@@ -4146,7 +4146,7 @@ pub async fn mpweixin_menu_subscribe(pool: Extension<Pool>, Path(id): Path<Strin
             Ok(Json(ActionResult::success(Value::Object(
                 serde_json::Map::from_iter([
                     ("id".to_string(), Value::String(row.get("id"))),
-                ("create_time".to_string(), Value::String(row.get("create_time"))),
+                ("create_time".to_string(), Value::String(row.get::<_, Option<String>>("create_time").unwrap_or_default())),
                 ]),
             ))))
         }
@@ -4194,7 +4194,7 @@ pub async fn mpweixin_message_template_send(pool: Extension<Pool>, Path(id): Pat
             Ok(Json(ActionResult::success(Value::Object(
                 serde_json::Map::from_iter([
                     ("id".to_string(), Value::String(row.get("id"))),
-                ("create_time".to_string(), Value::String(row.get("create_time"))),
+                ("create_time".to_string(), Value::String(row.get::<_, Option<String>>("create_time").unwrap_or_default())),
                 ]),
             ))))
         }
@@ -4223,9 +4223,9 @@ pub async fn output_list(
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("name".to_string(), Value::String(row.get("name"))),
                 ("flag".to_string(), Value::String(row.get("flag"))),
-                ("appName".to_string(), Value::String(row.get("app_name"))),
-                ("creator".to_string(), Value::String(row.get("creator"))),
-                ("createTime".to_string(), Value::String(row.get("create_time"))),
+                ("appName".to_string(), Value::String(row.get::<_, Option<String>>("app_name").unwrap_or_default())),
+                ("creator".to_string(), Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default())),
+                ("createTime".to_string(), Value::String(row.get::<_, Option<String>>("create_time").unwrap_or_default())),
             ]))
         })
         .collect();
@@ -4255,9 +4255,9 @@ pub async fn output_appInfoFlag_select(
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("name".to_string(), Value::String(row.get("name"))),
                 ("flag".to_string(), Value::String(row.get("flag"))),
-                ("appName".to_string(), Value::String(row.get("app_name"))),
-                ("creator".to_string(), Value::String(row.get("creator"))),
-                ("createTime".to_string(), Value::String(row.get("create_time"))),
+                ("appName".to_string(), Value::String(row.get::<_, Option<String>>("app_name").unwrap_or_default())),
+                ("creator".to_string(), Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default())),
+                ("createTime".to_string(), Value::String(row.get::<_, Option<String>>("create_time").unwrap_or_default())),
             ]))
         })
         .collect();
@@ -4378,7 +4378,7 @@ pub async fn prompterrorlog_list_id_next_count(
                 ("exceptionClass".to_string(), Value::String(row.get("exception_class"))),
                 ("loggerName".to_string(), Value::String(row.get("logger_name"))),
                 ("message".to_string(), Value::String(row.get("message"))),
-                ("createTime".to_string(), Value::String(row.get("create_time"))),
+                ("createTime".to_string(), Value::String(row.get::<_, Option<String>>("create_time").unwrap_or_default())),
             ]))
         })
         .collect();
@@ -4411,7 +4411,7 @@ pub async fn prompterrorlog_list_id_next_count_date_date(
                 ("exceptionClass".to_string(), Value::String(row.get("exception_class"))),
                 ("loggerName".to_string(), Value::String(row.get("logger_name"))),
                 ("message".to_string(), Value::String(row.get("message"))),
-                ("createTime".to_string(), Value::String(row.get("create_time"))),
+                ("createTime".to_string(), Value::String(row.get::<_, Option<String>>("create_time").unwrap_or_default())),
             ]))
         })
         .collect();
@@ -4444,7 +4444,7 @@ pub async fn prompterrorlog_list_id_next_count_exceptionclass_exceptionClass(
                 ("exceptionClass".to_string(), Value::String(row.get("exception_class"))),
                 ("loggerName".to_string(), Value::String(row.get("logger_name"))),
                 ("message".to_string(), Value::String(row.get("message"))),
-                ("createTime".to_string(), Value::String(row.get("create_time"))),
+                ("createTime".to_string(), Value::String(row.get::<_, Option<String>>("create_time").unwrap_or_default())),
             ]))
         })
         .collect();
@@ -4477,7 +4477,7 @@ pub async fn prompterrorlog_list_id_next_count_loggername_loggerName(
                 ("exceptionClass".to_string(), Value::String(row.get("exception_class"))),
                 ("loggerName".to_string(), Value::String(row.get("logger_name"))),
                 ("message".to_string(), Value::String(row.get("message"))),
-                ("createTime".to_string(), Value::String(row.get("create_time"))),
+                ("createTime".to_string(), Value::String(row.get::<_, Option<String>>("create_time").unwrap_or_default())),
             ]))
         })
         .collect();
@@ -4509,7 +4509,7 @@ pub async fn prompterrorlog_list_id_prev_count(
                 ("exceptionClass".to_string(), Value::String(row.get("exception_class"))),
                 ("loggerName".to_string(), Value::String(row.get("logger_name"))),
                 ("message".to_string(), Value::String(row.get("message"))),
-                ("createTime".to_string(), Value::String(row.get("create_time"))),
+                ("createTime".to_string(), Value::String(row.get::<_, Option<String>>("create_time").unwrap_or_default())),
             ]))
         })
         .collect();
@@ -4542,7 +4542,7 @@ pub async fn prompterrorlog_list_id_prev_count_date_date(
                 ("exceptionClass".to_string(), Value::String(row.get("exception_class"))),
                 ("loggerName".to_string(), Value::String(row.get("logger_name"))),
                 ("message".to_string(), Value::String(row.get("message"))),
-                ("createTime".to_string(), Value::String(row.get("create_time"))),
+                ("createTime".to_string(), Value::String(row.get::<_, Option<String>>("create_time").unwrap_or_default())),
             ]))
         })
         .collect();
@@ -4575,7 +4575,7 @@ pub async fn prompterrorlog_list_id_prev_count_exceptionclass_exceptionClass(
                 ("exceptionClass".to_string(), Value::String(row.get("exception_class"))),
                 ("loggerName".to_string(), Value::String(row.get("logger_name"))),
                 ("message".to_string(), Value::String(row.get("message"))),
-                ("createTime".to_string(), Value::String(row.get("create_time"))),
+                ("createTime".to_string(), Value::String(row.get::<_, Option<String>>("create_time").unwrap_or_default())),
             ]))
         })
         .collect();
@@ -4608,7 +4608,7 @@ pub async fn prompterrorlog_list_id_prev_count_loggername_loggerName(
                 ("exceptionClass".to_string(), Value::String(row.get("exception_class"))),
                 ("loggerName".to_string(), Value::String(row.get("logger_name"))),
                 ("message".to_string(), Value::String(row.get("message"))),
-                ("createTime".to_string(), Value::String(row.get("create_time"))),
+                ("createTime".to_string(), Value::String(row.get::<_, Option<String>>("create_time").unwrap_or_default())),
             ]))
         })
         .collect();
@@ -4638,7 +4638,7 @@ pub async fn prompterrorlog_id(
                 ("exceptionClass".to_string(), Value::String(row.get("exception_class"))),
                 ("loggerName".to_string(), Value::String(row.get("logger_name"))),
                 ("message".to_string(), Value::String(row.get("message"))),
-                ("createTime".to_string(), Value::String(row.get("create_time"))),
+                ("createTime".to_string(), Value::String(row.get::<_, Option<String>>("create_time").unwrap_or_default())),
             ]));
             Ok(Json(ActionResult::success(result)))
         }
@@ -4662,7 +4662,7 @@ pub async fn qiyeweixin_get_callback_aes(pool: Extension<Pool>, Path(id): Path<S
                     ("id".to_string(), Value::String(row.get("id"))),
                 ("source".to_string(), Value::String(row.get("source"))),
                 ("action".to_string(), Value::String(row.get("action"))),
-                ("create_time".to_string(), Value::String(row.get("create_time"))),
+                ("create_time".to_string(), Value::String(row.get::<_, Option<String>>("create_time").unwrap_or_default())),
                 ]),
             ))))
         }
@@ -4710,7 +4710,7 @@ pub async fn qiyeweixin_request_pull_sync(pool: Extension<Pool>, Path(id): Path<
                     ("id".to_string(), Value::String(row.get("id"))),
                     ("source".to_string(), Value::String(row.get("source"))),
                     ("action".to_string(), Value::String(row.get("action"))),
-                    ("create_time".to_string(), Value::String(row.get("create_time"))),
+                    ("create_time".to_string(), Value::String(row.get::<_, Option<String>>("create_time").unwrap_or_default())),
                 ]),
             ))))
         }
@@ -4966,8 +4966,8 @@ pub async fn schedule_list_schedule(
                 ("name".to_string(), Value::String(row.get("name"))),
                 ("cronExpression".to_string(), Value::String(row.get("cron_expression"))),
                 ("status".to_string(), Value::String(row.get("status"))),
-                ("creator".to_string(), Value::String(row.get("creator"))),
-                ("createTime".to_string(), Value::String(row.get("create_time"))),
+                ("creator".to_string(), Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default())),
+                ("createTime".to_string(), Value::String(row.get::<_, Option<String>>("create_time").unwrap_or_default())),
             ]))
         })
         .collect();
@@ -4998,8 +4998,8 @@ pub async fn schedule_list_schedulelocal(
                 ("cronExpression".to_string(), Value::String(row.get("cron_expression"))),
                 ("serverNode".to_string(), Value::String(row.get("server_node"))),
                 ("status".to_string(), Value::String(row.get("status"))),
-                ("creator".to_string(), Value::String(row.get("creator"))),
-                ("createTime".to_string(), Value::String(row.get("create_time"))),
+                ("creator".to_string(), Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default())),
+                ("createTime".to_string(), Value::String(row.get::<_, Option<String>>("create_time").unwrap_or_default())),
             ]))
         })
         .collect();
@@ -5031,7 +5031,7 @@ pub async fn schedule_list_schedulelog_application_application(
                 ("application".to_string(), Value::String(row.get("application"))),
                 ("status".to_string(), Value::String(row.get("status"))),
                 ("message".to_string(), Value::String(row.get("message"))),
-                ("createTime".to_string(), Value::String(row.get("create_time"))),
+                ("createTime".to_string(), Value::String(row.get::<_, Option<String>>("create_time").unwrap_or_default())),
             ]))
         })
         .collect();
@@ -5061,7 +5061,7 @@ pub async fn schedule_report(
                 ("scheduleId".to_string(), Value::String(row.get("schedule_id"))),
                 ("status".to_string(), Value::String(row.get("status"))),
                 ("message".to_string(), Value::String(row.get("message"))),
-                ("createTime".to_string(), Value::String(row.get("create_time"))),
+                ("createTime".to_string(), Value::String(row.get::<_, Option<String>>("create_time").unwrap_or_default())),
             ]))
         })
         .collect();
@@ -5111,9 +5111,9 @@ pub async fn script_list(
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("name".to_string(), Value::String(row.get("name"))),
                 ("flag".to_string(), Value::String(row.get("flag"))),
-                ("category".to_string(), Value::String(row.get("category"))),
-                ("creator".to_string(), Value::String(row.get("creator"))),
-                ("createTime".to_string(), Value::String(row.get("create_time"))),
+                ("category".to_string(), Value::String(row.get::<_, Option<String>>("category").unwrap_or_default())),
+                ("creator".to_string(), Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default())),
+                ("createTime".to_string(), Value::String(row.get::<_, Option<String>>("create_time").unwrap_or_default())),
             ]))
         })
         .collect();
@@ -5144,9 +5144,9 @@ pub async fn script_list_paging_page_size_size(
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("name".to_string(), Value::String(row.get("name"))),
                 ("flag".to_string(), Value::String(row.get("flag"))),
-                ("category".to_string(), Value::String(row.get("category"))),
-                ("creator".to_string(), Value::String(row.get("creator"))),
-                ("createTime".to_string(), Value::String(row.get("create_time"))),
+                ("category".to_string(), Value::String(row.get::<_, Option<String>>("category").unwrap_or_default())),
+                ("creator".to_string(), Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default())),
+                ("createTime".to_string(), Value::String(row.get::<_, Option<String>>("create_time").unwrap_or_default())),
             ]))
         })
         .collect();
@@ -5176,8 +5176,8 @@ pub async fn script_name_name(
                 ("name".to_string(), Value::String(row.get("name"))),
                 ("flag".to_string(), Value::String(row.get("flag"))),
                 ("content".to_string(), Value::String(row.get("content"))),
-                ("creator".to_string(), Value::String(row.get("creator"))),
-                ("createTime".to_string(), Value::String(row.get("create_time"))),
+                ("creator".to_string(), Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default())),
+                ("createTime".to_string(), Value::String(row.get::<_, Option<String>>("create_time").unwrap_or_default())),
             ]));
             Ok(Json(ActionResult::success(result)))
         }
@@ -5206,8 +5206,8 @@ pub async fn script_name_name_imported(
                 ("name".to_string(), Value::String(row.get("name"))),
                 ("flag".to_string(), Value::String(row.get("flag"))),
                 ("importedContent".to_string(), Value::String(row.get("imported_content"))),
-                ("creator".to_string(), Value::String(row.get("creator"))),
-                ("createTime".to_string(), Value::String(row.get("create_time"))),
+                ("creator".to_string(), Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default())),
+                ("createTime".to_string(), Value::String(row.get::<_, Option<String>>("create_time").unwrap_or_default())),
             ]));
             Ok(Json(ActionResult::success(result)))
         }
@@ -5236,8 +5236,8 @@ pub async fn script_flag(
                 ("name".to_string(), Value::String(row.get("name"))),
                 ("flag".to_string(), Value::String(row.get("flag"))),
                 ("content".to_string(), Value::String(row.get("content"))),
-                ("creator".to_string(), Value::String(row.get("creator"))),
-                ("createTime".to_string(), Value::String(row.get("create_time"))),
+                ("creator".to_string(), Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default())),
+                ("createTime".to_string(), Value::String(row.get::<_, Option<String>>("create_time").unwrap_or_default())),
             ]));
             Ok(Json(ActionResult::success(result)))
         }
@@ -5266,8 +5266,8 @@ pub async fn script_id(
                 ("name".to_string(), Value::String(row.get("name"))),
                 ("flag".to_string(), Value::String(row.get("flag"))),
                 ("content".to_string(), Value::String(row.get("content"))),
-                ("creator".to_string(), Value::String(row.get("creator"))),
-                ("createTime".to_string(), Value::String(row.get("create_time"))),
+                ("creator".to_string(), Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default())),
+                ("createTime".to_string(), Value::String(row.get::<_, Option<String>>("create_time").unwrap_or_default())),
             ]));
             Ok(Json(ActionResult::success(result)))
         }
@@ -5352,7 +5352,7 @@ pub async fn unexpectederrorlog_list_id_next_count(
                 ("errorType".to_string(), Value::String(row.get("error_type"))),
                 ("message".to_string(), Value::String(row.get("message"))),
                 ("stackTrace".to_string(), Value::String(row.get("stack_trace"))),
-                ("createTime".to_string(), Value::String(row.get("create_time"))),
+                ("createTime".to_string(), Value::String(row.get::<_, Option<String>>("create_time").unwrap_or_default())),
             ]))
         })
         .collect();
@@ -5385,7 +5385,7 @@ pub async fn unexpectederrorlog_list_id_next_count_date_date(
                 ("errorType".to_string(), Value::String(row.get("error_type"))),
                 ("message".to_string(), Value::String(row.get("message"))),
                 ("stackTrace".to_string(), Value::String(row.get("stack_trace"))),
-                ("createTime".to_string(), Value::String(row.get("create_time"))),
+                ("createTime".to_string(), Value::String(row.get::<_, Option<String>>("create_time").unwrap_or_default())),
             ]))
         })
         .collect();
@@ -5417,7 +5417,7 @@ pub async fn unexpectederrorlog_list_id_prev_count(
                 ("errorType".to_string(), Value::String(row.get("error_type"))),
                 ("message".to_string(), Value::String(row.get("message"))),
                 ("stackTrace".to_string(), Value::String(row.get("stack_trace"))),
-                ("createTime".to_string(), Value::String(row.get("create_time"))),
+                ("createTime".to_string(), Value::String(row.get::<_, Option<String>>("create_time").unwrap_or_default())),
             ]))
         })
         .collect();
@@ -5450,7 +5450,7 @@ pub async fn unexpectederrorlog_list_id_prev_count_date_date(
                 ("errorType".to_string(), Value::String(row.get("error_type"))),
                 ("message".to_string(), Value::String(row.get("message"))),
                 ("stackTrace".to_string(), Value::String(row.get("stack_trace"))),
-                ("createTime".to_string(), Value::String(row.get("create_time"))),
+                ("createTime".to_string(), Value::String(row.get::<_, Option<String>>("create_time").unwrap_or_default())),
             ]))
         })
         .collect();
@@ -5480,7 +5480,7 @@ pub async fn unexpectederrorlog_id(
                 ("errorType".to_string(), Value::String(row.get("error_type"))),
                 ("message".to_string(), Value::String(row.get("message"))),
                 ("stackTrace".to_string(), Value::String(row.get("stack_trace"))),
-                ("createTime".to_string(), Value::String(row.get("create_time"))),
+                ("createTime".to_string(), Value::String(row.get::<_, Option<String>>("create_time").unwrap_or_default())),
             ]));
             Ok(Json(ActionResult::success(result)))
         }

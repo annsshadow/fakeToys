@@ -84,10 +84,10 @@ fn row_to_forum(row: &deadpool_postgres::tokio_postgres::Row) -> ForumRow {
     ForumRow {
         id: row.get("id"),
         name: row.get("name"),
-        description: row.get("description"),
-        sort: row.get("sort"),
-        creator: row.get("creator"),
-        create_time: row.get("create_time"),
+        description: row.get::<_, Option<String>>("description").unwrap_or_default(),
+        sort: row.get::<_, Option<i32>>("sort").unwrap_or(0),
+        creator: row.get::<_, Option<String>>("creator").unwrap_or_default(),
+        create_time: row.get::<_, Option<String>>("create_time").unwrap_or_default(),
     }
 }
 
@@ -97,8 +97,8 @@ fn row_to_topic(row: &deadpool_postgres::tokio_postgres::Row) -> TopicRow {
         forum_id: row.get("forum_id"),
         title: row.get("title"),
         content: row.get("content"),
-        creator: row.get("creator"),
-        create_time: row.get("create_time"),
+        creator: row.get::<_, Option<String>>("creator").unwrap_or_default(),
+        create_time: row.get::<_, Option<String>>("create_time").unwrap_or_default(),
     }
 }
 
@@ -107,8 +107,8 @@ fn row_to_reply(row: &deadpool_postgres::tokio_postgres::Row) -> ReplyRow {
         id: row.get("id"),
         topic_id: row.get("topic_id"),
         content: row.get("content"),
-        creator: row.get("creator"),
-        create_time: row.get("create_time"),
+        creator: row.get::<_, Option<String>>("creator").unwrap_or_default(),
+        create_time: row.get::<_, Option<String>>("create_time").unwrap_or_default(),
     }
 }
 
@@ -999,7 +999,7 @@ pub async fn shutup_list(
             if let Some(val) = row_opt_json::<String>(row, "reason") {
                 map.insert("reason".to_string(), val);
             }
-            map.insert("createTime".to_string(), Value::String(row.get("create_time")));
+            map.insert("createTime".to_string(), Value::String(row.get::<_, Option<String>>("create_time").unwrap_or_default()));
             Value::Object(map)
         })
         .collect();
@@ -1239,7 +1239,7 @@ pub async fn user_forum_list(
             ("description".to_string(), Value::String(row.get("description"))),
             ("sort".to_string(), Value::Number(serde_json::Number::from(row.get::<_, i32>("sort")))),
             ("creator".to_string(), Value::String(row.get("creator"))),
-            ("createTime".to_string(), Value::String(row.get("create_time"))),
+            ("createTime".to_string(), Value::String(row.get::<_, Option<String>>("create_time").unwrap_or_default())),
         ])))
         .collect();
     let total_data = data.len();
