@@ -157,7 +157,7 @@ pub async fn list_components(
 
     let rows = client
         .query(
-            "SELECT id, name, type, creator, create_time FROM x_component WHERE deleted_at IS NULL ORDER BY create_time DESC",
+            "SELECT id, name, type, creator, create_time::text FROM x_component WHERE deleted_at IS NULL ORDER BY create_time::timestamp DESC",
             &[],
         )
         .await
@@ -189,7 +189,7 @@ pub async fn get_component(
 
     let row = client
         .query_opt(
-            "SELECT id, name, type, creator, create_time FROM x_component WHERE id = $1 AND deleted_at IS NULL",
+            "SELECT id, name, type, creator, create_time::text FROM x_component WHERE id = $1 AND deleted_at IS NULL",
             &[&id],
         )
         .await
