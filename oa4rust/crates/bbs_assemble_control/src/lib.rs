@@ -87,7 +87,7 @@ fn row_to_forum(row: &deadpool_postgres::tokio_postgres::Row) -> ForumRow {
         description: row.get::<_, Option<String>>("description").unwrap_or_default(),
         sort: row.get::<_, Option<i32>>("sort").unwrap_or(0),
         creator: row.get::<_, Option<String>>("creator").unwrap_or_default(),
-        create_time: row.get::<_, Option<String>>("create_time").unwrap_or_default(),
+        create_time: match row.get::<_, Option<String>>("create_time") { Some(s) => s, None => String::new() },
     }
 }
 
@@ -98,7 +98,7 @@ fn row_to_topic(row: &deadpool_postgres::tokio_postgres::Row) -> TopicRow {
         title: row.get("title"),
         content: row.get("content"),
         creator: row.get::<_, Option<String>>("creator").unwrap_or_default(),
-        create_time: row.get::<_, Option<String>>("create_time").unwrap_or_default(),
+        create_time: match row.get::<_, Option<String>>("create_time") { Some(s) => s, None => String::new() },
     }
 }
 
@@ -108,7 +108,7 @@ fn row_to_reply(row: &deadpool_postgres::tokio_postgres::Row) -> ReplyRow {
         topic_id: row.get("topic_id"),
         content: row.get("content"),
         creator: row.get::<_, Option<String>>("creator").unwrap_or_default(),
-        create_time: row.get::<_, Option<String>>("create_time").unwrap_or_default(),
+        create_time: match row.get::<_, Option<String>>("create_time") { Some(s) => s, None => String::new() },
     }
 }
 
