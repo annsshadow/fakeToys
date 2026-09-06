@@ -67,6 +67,7 @@ async fn check_owner(pool: &Pool, session_manager: &SessionManager, headers: &He
 // --- 处理器 ---
 
 /// POST /jaxrs/person/empower — 创建授权
+#[allow(non_snake_case)]
 pub async fn create(
     pool: Extension<Pool>,
     session_manager: Extension<SessionManager>,
@@ -117,6 +118,7 @@ pub async fn create(
 }
 
 /// GET /jaxrs/person/empower/{id} — 查询授权（需 owner 验证）
+#[allow(non_snake_case)]
 pub async fn get(
     pool: Extension<Pool>,
     session_manager: Extension<SessionManager>,
@@ -150,6 +152,7 @@ pub async fn get(
 }
 
 /// PUT /jaxrs/person/empower/{id} — 更新授权（需 owner 验证）
+#[allow(non_snake_case)]
 pub async fn update(
     pool: Extension<Pool>,
     session_manager: Extension<SessionManager>,
@@ -196,6 +199,7 @@ pub async fn update(
 }
 
 /// DELETE /jaxrs/person/empower/{id} — 删除授权（需 owner 验证）
+#[allow(non_snake_case)]
 pub async fn delete(
     pool: Extension<Pool>,
     session_manager: Extension<SessionManager>,
@@ -228,6 +232,7 @@ pub async fn delete(
 }
 
 /// POST /jaxrs/person/empower/{id}/enable — 启用授权（需 owner 验证）
+#[allow(non_snake_case)]
 pub async fn enable(
     pool: Extension<Pool>,
     session_manager: Extension<SessionManager>,
@@ -270,6 +275,7 @@ pub async fn enable(
 }
 
 /// POST /jaxrs/person/empower/{id}/disable — 禁用授权（需 owner 验证）
+#[allow(non_snake_case)]
 pub async fn disable(
     pool: Extension<Pool>,
     session_manager: Extension<SessionManager>,
@@ -312,6 +318,7 @@ pub async fn disable(
 }
 
 /// POST /jaxrs/person/empower/manager — 管理员创建授权
+#[allow(non_snake_case)]
 pub async fn manager_create(
     pool: Extension<Pool>,
     session_manager: Extension<SessionManager>,
@@ -366,6 +373,7 @@ pub async fn manager_create(
 }
 
 /// PUT /jaxrs/person/empower/manager/{id} — 管理员更新授权
+#[allow(non_snake_case)]
 pub async fn manager_update(
     pool: Extension<Pool>,
     session_manager: Extension<SessionManager>,
@@ -416,6 +424,7 @@ pub async fn manager_update(
 }
 
 /// DELETE /jaxrs/person/empower/manager/{id} — 管理员删除授权
+#[allow(non_snake_case)]
 pub async fn manager_delete(
     pool: Extension<Pool>,
     session_manager: Extension<SessionManager>,
@@ -446,6 +455,7 @@ pub async fn manager_delete(
 }
 
 /// POST /jaxrs/person/empower/manager/list/paging/{page}/size/{size} — 管理员分页查询
+#[allow(non_snake_case)]
 pub async fn manager_list_paging(
     pool: Extension<Pool>,
     session_manager: Extension<SessionManager>,
@@ -498,6 +508,7 @@ pub async fn manager_list_paging(
 }
 
 /// GET /jaxrs/person/empower/list/currentperson — 我的授权列表
+#[allow(non_snake_case)]
 pub async fn list_current_person(
     pool: Extension<Pool>,
     session_manager: Extension<SessionManager>,
@@ -543,6 +554,7 @@ pub async fn list_current_person(
 }
 
 /// GET /jaxrs/person/empower/list/currentperson/enable — 我的生效授权列表
+#[allow(non_snake_case)]
 pub async fn list_current_person_enable(
     pool: Extension<Pool>,
     session_manager: Extension<SessionManager>,
@@ -588,6 +600,7 @@ pub async fn list_current_person_enable(
 }
 
 /// GET /jaxrs/person/empower/list/to — 我拥有的被授权列表（我授权给他人的）
+#[allow(non_snake_case)]
 pub async fn list_to(
     pool: Extension<Pool>,
     session_manager: Extension<SessionManager>,
@@ -633,6 +646,7 @@ pub async fn list_to(
 }
 
 /// GET /jaxrs/person/empower/list/to/enable — 我生效的被授权列表
+#[allow(non_snake_case)]
 pub async fn list_to_enable(
     pool: Extension<Pool>,
     session_manager: Extension<SessionManager>,

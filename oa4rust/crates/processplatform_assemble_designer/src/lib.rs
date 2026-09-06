@@ -1,3 +1,4 @@
+#[allow(dead_code, non_snake_case)]
 use axum::{
     extract::{Extension, Query},
     Json,
@@ -28,6 +29,7 @@ pub struct CreateFlowRequest {
 
 /// 创建流程定义
 /// 接收请求创建新的流程定义
+#[allow(non_snake_case)]
 pub async fn create_flow(
     pool: Extension<Pool>,
     session: Extension<Session>,
@@ -64,6 +66,7 @@ pub async fn create_flow(
 
 /// 获取流程定义
 /// 根据指定ID获取流程定义
+#[allow(non_snake_case)]
 pub async fn get_flow(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
@@ -97,6 +100,7 @@ pub async fn get_flow(
 
 /// 获取流程列表
 /// 根据指定分类获取流程定义列表
+#[allow(non_snake_case)]
 pub async fn list_flows(
     pool: Extension<Pool>,
     axum::extract::Path(category): axum::extract::Path<String>,
@@ -171,6 +175,7 @@ pub async fn list_flows(
 
 /// 保存流程定义
 /// 根据指定ID更新流程定义到数据库
+#[allow(non_snake_case)]
 pub async fn save_flow(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
@@ -208,6 +213,7 @@ pub async fn save_flow(
 
 /// 删除流程定义
 /// 根据ID删除指定的流程定义
+#[allow(non_snake_case)]
 pub async fn delete_flow(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
@@ -235,6 +241,7 @@ pub async fn delete_flow(
 
 /// 预览流程定义
 /// 返回流程定义的预览信息
+#[allow(non_snake_case)]
 pub async fn preview_flow(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
@@ -327,6 +334,7 @@ fn row_to_process_data(row: &Row) -> Value {
 // application 管理
 // ──────────────────────────────────────────────────────────────────────────────
 
+#[allow(non_snake_case)]
 pub async fn application_list(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -341,7 +349,7 @@ pub async fn application_list(
 
     let data: Vec<Value> = rows
         .iter()
-        .map(|row| row_to_app_data(row))
+        .map(row_to_app_data)
         .collect();
 
     Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
@@ -350,6 +358,7 @@ pub async fn application_list(
     ])))))
 }
 
+#[allow(non_snake_case)]
 pub async fn application_list_applicationcategory_applicationCategory(
     pool: Extension<Pool>,
     axum::extract::Path(applicationCategory): axum::extract::Path<String>,
@@ -365,7 +374,7 @@ pub async fn application_list_applicationcategory_applicationCategory(
 
     let data: Vec<Value> = rows
         .iter()
-        .map(|row| row_to_app_data(row))
+        .map(row_to_app_data)
         .collect();
 
     Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
@@ -374,8 +383,9 @@ pub async fn application_list_applicationcategory_applicationCategory(
     ])))))
 }
 
+#[allow(non_snake_case)]
 pub async fn application_list_summary(
-    pool: Extension<Pool>,
+    _pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -385,9 +395,10 @@ pub async fn application_list_summary(
     ))))
 }
 
+#[allow(non_snake_case)]
 pub async fn application_list_summary_applicationcategory_applicationCategory(
-    pool: Extension<Pool>,
-    axum::extract::Path(applicationCategory): axum::extract::Path<String>,
+    _pool: Extension<Pool>,
+    axum::extract::Path(_applicationCategory): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -397,6 +408,7 @@ pub async fn application_list_summary_applicationcategory_applicationCategory(
     ))))
 }
 
+#[allow(non_snake_case)]
 pub async fn application_id(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
@@ -416,6 +428,7 @@ pub async fn application_id(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn application_id_icon(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
@@ -443,6 +456,7 @@ pub async fn application_id_icon(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn application_id_permission(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
@@ -474,6 +488,7 @@ pub async fn application_id_permission(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn application_id_onlyRemoveNotCompleted(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
@@ -497,6 +512,7 @@ pub async fn application_id_onlyRemoveNotCompleted(
 // applicationcategory 管理
 // ──────────────────────────────────────────────────────────────────────────────
 
+#[allow(non_snake_case)]
 pub async fn applicationcategory_list(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -511,7 +527,7 @@ pub async fn applicationcategory_list(
 
     let data: Vec<Value> = rows
         .iter()
-        .map(|row| row_to_basic_data(row))
+        .map(row_to_basic_data)
         .collect();
 
     Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
@@ -524,6 +540,7 @@ pub async fn applicationcategory_list(
 // applicationdict 管理
 // ──────────────────────────────────────────────────────────────────────────────
 
+#[allow(non_snake_case)]
 pub async fn applicationdict_list_application_applicationId(
     pool: Extension<Pool>,
     axum::extract::Path(applicationId): axum::extract::Path<String>,
@@ -539,7 +556,7 @@ pub async fn applicationdict_list_application_applicationId(
 
     let data: Vec<Value> = rows
         .iter()
-        .map(|row| row_to_app_data(row))
+        .map(row_to_app_data)
         .collect();
 
     Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
@@ -548,6 +565,7 @@ pub async fn applicationdict_list_application_applicationId(
     ])))))
 }
 
+#[allow(non_snake_case)]
 pub async fn applicationdict_list_paging_page_size_size(
     pool: Extension<Pool>,
     axum::extract::Path(size): axum::extract::Path<i64>,
@@ -566,7 +584,7 @@ pub async fn applicationdict_list_paging_page_size_size(
 
     let data: Vec<Value> = rows
         .iter()
-        .map(|row| row_to_app_data(row))
+        .map(row_to_app_data)
         .collect();
 
     Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
@@ -577,6 +595,7 @@ pub async fn applicationdict_list_paging_page_size_size(
     ])))))
 }
 
+#[allow(non_snake_case)]
 pub async fn applicationdict_id(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
@@ -600,6 +619,7 @@ pub async fn applicationdict_id(
 // elementtool 管理
 // ──────────────────────────────────────────────────────────────────────────────
 
+#[allow(non_snake_case)]
 pub async fn elementtool_applicationdict_orphan(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -614,7 +634,7 @@ pub async fn elementtool_applicationdict_orphan(
 
     let data: Vec<Value> = rows
         .iter()
-        .map(|row| row_to_app_data(row))
+        .map(row_to_app_data)
         .collect();
 
     Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
@@ -623,6 +643,7 @@ pub async fn elementtool_applicationdict_orphan(
     ])))))
 }
 
+#[allow(non_snake_case)]
 pub async fn elementtool_form_orphan(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -637,7 +658,7 @@ pub async fn elementtool_form_orphan(
 
     let data: Vec<Value> = rows
         .iter()
-        .map(|row| row_to_form_data(row))
+        .map(row_to_form_data)
         .collect();
 
     Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
@@ -646,6 +667,7 @@ pub async fn elementtool_form_orphan(
     ])))))
 }
 
+#[allow(non_snake_case)]
 pub async fn elementtool_process_orphan(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -660,7 +682,7 @@ pub async fn elementtool_process_orphan(
 
     let data: Vec<Value> = rows
         .iter()
-        .map(|row| row_to_process_data(row))
+        .map(row_to_process_data)
         .collect();
 
     Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
@@ -669,6 +691,7 @@ pub async fn elementtool_process_orphan(
     ])))))
 }
 
+#[allow(non_snake_case)]
 pub async fn elementtool_script_orphan(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -683,7 +706,7 @@ pub async fn elementtool_script_orphan(
 
     let data: Vec<Value> = rows
         .iter()
-        .map(|row| row_to_app_data(row))
+        .map(row_to_app_data)
         .collect();
 
     Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
@@ -696,6 +719,7 @@ pub async fn elementtool_script_orphan(
 // file 管理
 // ──────────────────────────────────────────────────────────────────────────────
 
+#[allow(non_snake_case)]
 pub async fn file_list_application_applicationFlag(
     pool: Extension<Pool>,
     axum::extract::Path(applicationFlag): axum::extract::Path<String>,
@@ -724,6 +748,7 @@ pub async fn file_list_application_applicationFlag(
     ])))))
 }
 
+#[allow(non_snake_case)]
 pub async fn file_list_id_next_count(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
@@ -745,6 +770,7 @@ pub async fn file_list_id_next_count(
     ))))
 }
 
+#[allow(non_snake_case)]
 pub async fn file_list_id_prev_count(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
@@ -766,6 +792,7 @@ pub async fn file_list_id_prev_count(
     ))))
 }
 
+#[allow(non_snake_case)]
 pub async fn file_flag(
     pool: Extension<Pool>,
     axum::extract::Path(flag): axum::extract::Path<String>,
@@ -791,6 +818,7 @@ pub async fn file_flag(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn file_flag_application_applicationFlag(
     pool: Extension<Pool>,
     axum::extract::Path(flag): axum::extract::Path<String>,
@@ -816,6 +844,7 @@ pub async fn file_flag_application_applicationFlag(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn file_id(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
@@ -841,6 +870,7 @@ pub async fn file_id(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn file_id_content(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
@@ -868,6 +898,7 @@ pub async fn file_id_content(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn file_id_download(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
@@ -896,6 +927,7 @@ pub async fn file_id_download(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn file_id_upload(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
@@ -928,6 +960,7 @@ pub async fn file_id_upload(
 // form 管理
 // ──────────────────────────────────────────────────────────────────────────────
 
+#[allow(non_snake_case)]
 pub async fn form_list_application_applicationId(
     pool: Extension<Pool>,
     axum::extract::Path(applicationId): axum::extract::Path<String>,
@@ -943,7 +976,7 @@ pub async fn form_list_application_applicationId(
 
     let data: Vec<Value> = rows
         .iter()
-        .map(|row| row_to_form_data(row))
+        .map(row_to_form_data)
         .collect();
 
     Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
@@ -952,6 +985,7 @@ pub async fn form_list_application_applicationId(
     ])))))
 }
 
+#[allow(non_snake_case)]
 pub async fn form_list_formfield_application_applicationId(
     pool: Extension<Pool>,
     axum::extract::Path(applicationId): axum::extract::Path<String>,
@@ -967,7 +1001,7 @@ pub async fn form_list_formfield_application_applicationId(
 
     let data: Vec<Value> = rows
         .iter()
-        .map(|row| row_to_form_data(row))
+        .map(row_to_form_data)
         .collect();
 
     Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
@@ -976,6 +1010,7 @@ pub async fn form_list_formfield_application_applicationId(
     ])))))
 }
 
+#[allow(non_snake_case)]
 pub async fn form_list_id_formfield(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
@@ -995,6 +1030,7 @@ pub async fn form_list_id_formfield(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn form_list_id_next_count(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
@@ -1016,6 +1052,7 @@ pub async fn form_list_id_next_count(
     ))))
 }
 
+#[allow(non_snake_case)]
 pub async fn form_list_id_prev_count(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
@@ -1037,6 +1074,7 @@ pub async fn form_list_id_prev_count(
     ))))
 }
 
+#[allow(non_snake_case)]
 pub async fn form_id(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
@@ -1056,6 +1094,7 @@ pub async fn form_id(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn formversion_list_form_formId(
     pool: Extension<Pool>,
     axum::extract::Path(formId): axum::extract::Path<String>,
@@ -1087,6 +1126,7 @@ pub async fn formversion_list_form_formId(
     ])))))
 }
 
+#[allow(non_snake_case)]
 pub async fn formversion_id(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
@@ -1124,6 +1164,7 @@ pub async fn formversion_id(
 // id_count
 // ──────────────────────────────────────────────────────────────────────────────
 
+#[allow(non_snake_case)]
 pub async fn id_count(
     pool: Extension<Pool>,
     axum::extract::Path(entity): axum::extract::Path<String>,
@@ -1157,8 +1198,9 @@ pub async fn id_count(
 // input 管理
 // ──────────────────────────────────────────────────────────────────────────────
 
+#[allow(non_snake_case)]
 pub async fn input_compare(
-    pool: Extension<Pool>,
+    _pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -1167,6 +1209,7 @@ pub async fn input_compare(
     ))))
 }
 
+#[allow(non_snake_case)]
 pub async fn input_cover(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -1179,6 +1222,7 @@ pub async fn input_cover(
     ))))
 }
 
+#[allow(non_snake_case)]
 pub async fn input_create(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -1191,6 +1235,7 @@ pub async fn input_create(
     ))))
 }
 
+#[allow(non_snake_case)]
 pub async fn input_prepare_cover(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -1203,6 +1248,7 @@ pub async fn input_prepare_cover(
     ))))
 }
 
+#[allow(non_snake_case)]
 pub async fn input_prepare_create(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -1220,6 +1266,7 @@ pub async fn input_prepare_create(
 // ──────────────────────────────────────────────────────────────────────────────
 
 
+#[allow(non_snake_case)]
 pub async fn item_access_delete_process_processId_path_path(
     pool: Extension<Pool>,
     axum::extract::Path(processId): axum::extract::Path<String>,
@@ -1241,6 +1288,7 @@ pub async fn item_access_delete_process_processId_path_path(
     ))))
 }
 
+#[allow(non_snake_case)]
 pub async fn item_access_path_path(
     pool: Extension<Pool>,
     axum::extract::Path(path): axum::extract::Path<String>,
@@ -1272,6 +1320,7 @@ pub async fn item_access_path_path(
     ])))))
 }
 
+#[allow(non_snake_case)]
 pub async fn item_access_process_processId(
     pool: Extension<Pool>,
     axum::extract::Path(processId): axum::extract::Path<String>,
@@ -1303,6 +1352,7 @@ pub async fn item_access_process_processId(
     ])))))
 }
 
+#[allow(non_snake_case)]
 pub async fn item_access_process_processId_path_path(
     pool: Extension<Pool>,
     axum::extract::Path(processId): axum::extract::Path<String>,
@@ -1335,6 +1385,7 @@ pub async fn item_access_process_processId_path_path(
     ])))))
 }
 
+#[allow(non_snake_case)]
 pub async fn item_access_id(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
@@ -1367,6 +1418,7 @@ pub async fn item_access_id(
 // mapping 管理
 // ──────────────────────────────────────────────────────────────────────────────
 
+#[allow(non_snake_case)]
 pub async fn mapping_list_application_applicationFlag(
     pool: Extension<Pool>,
     axum::extract::Path(applicationFlag): axum::extract::Path<String>,
@@ -1397,6 +1449,7 @@ pub async fn mapping_list_application_applicationFlag(
     ])))))
 }
 
+#[allow(non_snake_case)]
 pub async fn mapping_list_id_next_count(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
@@ -1418,6 +1471,7 @@ pub async fn mapping_list_id_next_count(
     ))))
 }
 
+#[allow(non_snake_case)]
 pub async fn mapping_list_id_prev_count(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
@@ -1439,6 +1493,7 @@ pub async fn mapping_list_id_prev_count(
     ))))
 }
 
+#[allow(non_snake_case)]
 pub async fn mapping_flag(
     pool: Extension<Pool>,
     axum::extract::Path(flag): axum::extract::Path<String>,
@@ -1468,6 +1523,7 @@ pub async fn mapping_flag(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn mapping_flag_execute(
     pool: Extension<Pool>,
     axum::extract::Path(flag): axum::extract::Path<String>,
@@ -1503,6 +1559,7 @@ pub async fn mapping_flag_execute(
 // mergeitemplan 管理
 // ──────────────────────────────────────────────────────────────────────────────
 
+#[allow(non_snake_case)]
 pub async fn mergeitemplan_estimate(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -1523,6 +1580,7 @@ pub async fn mergeitemplan_estimate(
     ))))
 }
 
+#[allow(non_snake_case)]
 pub async fn mergeitemplan_list_application_applicationId_paging_page_size_size(
     pool: Extension<Pool>,
     axum::extract::Path(applicationId): axum::extract::Path<String>,
@@ -1542,7 +1600,7 @@ pub async fn mergeitemplan_list_application_applicationId_paging_page_size_size(
 
     let data: Vec<Value> = rows
         .iter()
-        .map(|row| row_to_app_data(row))
+        .map(row_to_app_data)
         .collect();
 
     Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
@@ -1553,6 +1611,7 @@ pub async fn mergeitemplan_list_application_applicationId_paging_page_size_size(
     ])))))
 }
 
+#[allow(non_snake_case)]
 pub async fn mergeitemplan_list_paging_page_size_size(
     pool: Extension<Pool>,
     axum::extract::Path(size): axum::extract::Path<i64>,
@@ -1571,7 +1630,7 @@ pub async fn mergeitemplan_list_paging_page_size_size(
 
     let data: Vec<Value> = rows
         .iter()
-        .map(|row| row_to_app_data(row))
+        .map(row_to_app_data)
         .collect();
 
     Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
@@ -1582,6 +1641,7 @@ pub async fn mergeitemplan_list_paging_page_size_size(
     ])))))
 }
 
+#[allow(non_snake_case)]
 pub async fn mergeitemplan_id(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
@@ -1605,6 +1665,7 @@ pub async fn mergeitemplan_id(
 // output 管理
 // ──────────────────────────────────────────────────────────────────────────────
 
+#[allow(non_snake_case)]
 pub async fn output_list(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -1635,6 +1696,7 @@ pub async fn output_list(
     ])))))
 }
 
+#[allow(non_snake_case)]
 pub async fn output_applicationFlag_select(
     pool: Extension<Pool>,
     axum::extract::Path(applicationFlag): axum::extract::Path<String>,
@@ -1668,6 +1730,7 @@ pub async fn output_applicationFlag_select(
 // process_activity 管理
 // ──────────────────────────────────────────────────────────────────────────────
 
+#[allow(non_snake_case)]
 pub async fn process_activity_flag_activityType_activityType(
     pool: Extension<Pool>,
     axum::extract::Path(activityType): axum::extract::Path<String>,
@@ -1702,6 +1765,7 @@ pub async fn process_activity_flag_activityType_activityType(
 // process 管理
 // ──────────────────────────────────────────────────────────────────────────────
 
+#[allow(non_snake_case)]
 pub async fn process_application_applicationId(
     pool: Extension<Pool>,
     axum::extract::Path(applicationId): axum::extract::Path<String>,
@@ -1717,7 +1781,7 @@ pub async fn process_application_applicationId(
 
     let data: Vec<Value> = rows
         .iter()
-        .map(|row| row_to_process_data(row))
+        .map(row_to_process_data)
         .collect();
 
     Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
@@ -1726,6 +1790,7 @@ pub async fn process_application_applicationId(
     ])))))
 }
 
+#[allow(non_snake_case)]
 pub async fn process_application_applicationId_disable_edition(
     pool: Extension<Pool>,
     axum::extract::Path(applicationId): axum::extract::Path<String>,
@@ -1756,6 +1821,7 @@ pub async fn process_application_applicationId_disable_edition(
     ])))))
 }
 
+#[allow(non_snake_case)]
 pub async fn process_application_applicationId_edition_edition(
     pool: Extension<Pool>,
     axum::extract::Path(applicationId): axum::extract::Path<String>,
@@ -1787,6 +1853,7 @@ pub async fn process_application_applicationId_edition_edition(
     ])))))
 }
 
+#[allow(non_snake_case)]
 pub async fn process_form_formId(
     pool: Extension<Pool>,
     axum::extract::Path(formId): axum::extract::Path<String>,
@@ -1806,6 +1873,7 @@ pub async fn process_form_formId(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn process_upgrade_all(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -1826,6 +1894,7 @@ pub async fn process_upgrade_all(
     ))))
 }
 
+#[allow(non_snake_case)]
 pub async fn process_id(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
@@ -1845,6 +1914,7 @@ pub async fn process_id(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn process_id_disable(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
@@ -1869,6 +1939,7 @@ pub async fn process_id_disable(
     ))))
 }
 
+#[allow(non_snake_case)]
 pub async fn process_id_enable(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
@@ -1893,6 +1964,7 @@ pub async fn process_id_enable(
     ))))
 }
 
+#[allow(non_snake_case)]
 pub async fn process_id_enabled(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
@@ -1923,6 +1995,7 @@ pub async fn process_id_enabled(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn process_id_execute_projection(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
@@ -1956,6 +2029,7 @@ pub async fn process_id_execute_projection(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn process_id_lead_out(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
@@ -1971,7 +2045,7 @@ pub async fn process_id_lead_out(
 
     match row {
         Some(row) => {
-            let process_def: Option<String> = row.get("xname");
+            let _process_def: Option<String> = row.get("xname");
             Ok(Json(ActionResult::success(Value::Object(
                 serde_json::Map::from_iter([
                     ("id".to_string(), Value::String(row.get("xid"))),
@@ -1984,6 +2058,7 @@ pub async fn process_id_lead_out(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn process_id_list_element(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
@@ -2015,6 +2090,7 @@ pub async fn process_id_list_element(
     ])))))
 }
 
+#[allow(non_snake_case)]
 pub async fn process_id_permission(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
@@ -2046,6 +2122,7 @@ pub async fn process_id_permission(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn process_id_process(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
@@ -2065,6 +2142,7 @@ pub async fn process_id_process(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn process_id_upgrade(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
@@ -2089,6 +2167,7 @@ pub async fn process_id_upgrade(
     ))))
 }
 
+#[allow(non_snake_case)]
 pub async fn process_id_onlyRemoveNotCompleted(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
@@ -2108,6 +2187,7 @@ pub async fn process_id_onlyRemoveNotCompleted(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn process_id_onlyRemoveNotCompleted_edition(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
@@ -2140,6 +2220,7 @@ pub async fn process_id_onlyRemoveNotCompleted_edition(
 // processversion 管理
 // ──────────────────────────────────────────────────────────────────────────────
 
+#[allow(non_snake_case)]
 pub async fn processversion_list_process_processId(
     pool: Extension<Pool>,
     axum::extract::Path(processId): axum::extract::Path<String>,
@@ -2171,6 +2252,7 @@ pub async fn processversion_list_process_processId(
     ])))))
 }
 
+#[allow(non_snake_case)]
 pub async fn processversion_id(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
@@ -2208,6 +2290,7 @@ pub async fn processversion_id(
 // script 管理
 // ──────────────────────────────────────────────────────────────────────────────
 
+#[allow(non_snake_case)]
 pub async fn script_application_applicationId(
     pool: Extension<Pool>,
     axum::extract::Path(applicationId): axum::extract::Path<String>,
@@ -2223,7 +2306,7 @@ pub async fn script_application_applicationId(
 
     let data: Vec<Value> = rows
         .iter()
-        .map(|row| row_to_app_data(row))
+        .map(row_to_app_data)
         .collect();
 
     Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
@@ -2232,6 +2315,7 @@ pub async fn script_application_applicationId(
     ])))))
 }
 
+#[allow(non_snake_case)]
 pub async fn script_application_applicationId_name_name(
     pool: Extension<Pool>,
     axum::extract::Path(applicationId): axum::extract::Path<String>,
@@ -2248,7 +2332,7 @@ pub async fn script_application_applicationId_name_name(
 
     let data: Vec<Value> = rows
         .iter()
-        .map(|row| row_to_app_data(row))
+        .map(row_to_app_data)
         .collect();
 
     Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
@@ -2257,6 +2341,7 @@ pub async fn script_application_applicationId_name_name(
     ])))))
 }
 
+#[allow(non_snake_case)]
 pub async fn script_list_manager(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -2271,7 +2356,7 @@ pub async fn script_list_manager(
 
     let data: Vec<Value> = rows
         .iter()
-        .map(|row| row_to_app_data(row))
+        .map(row_to_app_data)
         .collect();
 
     Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
@@ -2280,6 +2365,7 @@ pub async fn script_list_manager(
     ])))))
 }
 
+#[allow(non_snake_case)]
 pub async fn script_list_paging_page_size_size(
     pool: Extension<Pool>,
     axum::extract::Path(size): axum::extract::Path<i64>,
@@ -2298,7 +2384,7 @@ pub async fn script_list_paging_page_size_size(
 
     let data: Vec<Value> = rows
         .iter()
-        .map(|row| row_to_app_data(row))
+        .map(row_to_app_data)
         .collect();
 
     Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
@@ -2309,6 +2395,7 @@ pub async fn script_list_paging_page_size_size(
     ])))))
 }
 
+#[allow(non_snake_case)]
 pub async fn script_list_id_next_count(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
@@ -2330,6 +2417,7 @@ pub async fn script_list_id_next_count(
     ))))
 }
 
+#[allow(non_snake_case)]
 pub async fn script_list_id_prev_count(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
@@ -2351,6 +2439,7 @@ pub async fn script_list_id_prev_count(
     ))))
 }
 
+#[allow(non_snake_case)]
 pub async fn script_id(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
@@ -2370,6 +2459,7 @@ pub async fn script_id(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn scriptversion_list_script_scriptId(
     pool: Extension<Pool>,
     axum::extract::Path(scriptId): axum::extract::Path<String>,
@@ -2401,6 +2491,7 @@ pub async fn scriptversion_list_script_scriptId(
     ])))))
 }
 
+#[allow(non_snake_case)]
 pub async fn scriptversion_id(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
@@ -2437,6 +2528,7 @@ pub async fn scriptversion_id(
 // templateform 管理
 // ──────────────────────────────────────────────────────────────────────────────
 
+#[allow(non_snake_case)]
 pub async fn templateform_list(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -2466,6 +2558,7 @@ pub async fn templateform_list(
     ])))))
 }
 
+#[allow(non_snake_case)]
 pub async fn templateform_list_category(
     pool: Extension<Pool>,
     axum::extract::Path(category): axum::extract::Path<String>,
@@ -2496,6 +2589,7 @@ pub async fn templateform_list_category(
     ])))))
 }
 
+#[allow(non_snake_case)]
 pub async fn templateform_id(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
@@ -2532,6 +2626,7 @@ pub async fn templateform_id(
 // workcompleted 管理
 // ──────────────────────────────────────────────────────────────────────────────
 
+#[allow(non_snake_case)]
 pub async fn workcompleted_application_applicationFlag_merge_data(
     pool: Extension<Pool>,
     axum::extract::Path(applicationFlag): axum::extract::Path<String>,
@@ -2562,6 +2657,7 @@ pub async fn workcompleted_application_applicationFlag_merge_data(
     ])))))
 }
 
+#[allow(non_snake_case)]
 pub async fn workcompleted_process_processFlag_merge_data(
     pool: Extension<Pool>,
     axum::extract::Path(processFlag): axum::extract::Path<String>,
@@ -2690,6 +2786,7 @@ fn body_str<'a>(body: &'a Value, keys: &[&str]) -> Option<&'a str> {
 // ── application 族 ───────────────────────────────────────────────────────────
 
 /// PUT /application/{id} —— 更新应用基础信息（IDOR 门禁 + 归一化查重排除自身）。
+#[allow(non_snake_case)]
 pub async fn application_id_update(
     pool: Extension<Pool>,
     session: Extension<Session>,
@@ -2739,6 +2836,7 @@ pub async fn application_id_update(
 }
 
 /// PUT /application/{id}/icon —— 更新应用图标（Java 精确路径形态）。
+#[allow(non_snake_case)]
 pub async fn application_id_icon_update(
     pool: Extension<Pool>,
     session: Extension<Session>,
@@ -2772,6 +2870,7 @@ pub async fn application_id_icon_update(
 }
 
 /// POST /application/{id}/permission —— 保存应用权限配置到 xproperties（JSON 文本列）。
+#[allow(non_snake_case)]
 pub async fn application_id_permission_save(
     pool: Extension<Pool>,
     session: Extension<Session>,
@@ -2805,6 +2904,7 @@ pub async fn application_id_permission_save(
 // ── applicationdict 族 ───────────────────────────────────────────────────────
 
 /// POST /applicationdict —— 新建数据字典（创建者取会话；同应用内归一化查重）。
+#[allow(non_snake_case)]
 pub async fn applicationdict_create(
     pool: Extension<Pool>,
     session: Extension<Session>,
@@ -2851,6 +2951,7 @@ pub async fn applicationdict_create(
 }
 
 /// POST /applicationdict/list/paging/{page}/size/{size} —— Java 分页精确形态（POST 动词）。
+#[allow(non_snake_case)]
 pub async fn applicationdict_paging_post(
     pool: Extension<Pool>,
     axum::extract::Path((page, size)): axum::extract::Path<(i64, i64)>,
@@ -2885,6 +2986,7 @@ pub async fn applicationdict_paging_post(
 }
 
 /// DELETE /applicationdict/{id} —— 物理删除（IDOR 门禁）。
+#[allow(non_snake_case)]
 pub async fn applicationdict_id_delete(
     pool: Extension<Pool>,
     session: Extension<Session>,
@@ -2912,6 +3014,7 @@ pub async fn applicationdict_id_delete(
 // ── file / form 导航族 ───────────────────────────────────────────────────────
 
 /// GET /file/{flag}/application/{applicationFlag} —— 校验文件归属指定应用。
+#[allow(non_snake_case)]
 pub async fn file_flag_in_application(
     pool: Extension<Pool>,
     axum::extract::Path((flag, application_flag)): axum::extract::Path<(String, String)>,
@@ -2931,6 +3034,7 @@ pub async fn file_flag_in_application(
 }
 
 /// GET /form/list/{id}/next/{count} —— 按 id 升序向后取 count 条真实记录。
+#[allow(non_snake_case)]
 pub async fn form_list_next_exact(
     pool: Extension<Pool>,
     axum::extract::Path((id, count)): axum::extract::Path<(String, i64)>,
@@ -2954,6 +3058,7 @@ pub async fn form_list_next_exact(
 }
 
 /// GET /form/list/{id}/prev/{count} —— 按 id 降序向前取 count 条真实记录。
+#[allow(non_snake_case)]
 pub async fn form_list_prev_exact(
     pool: Extension<Pool>,
     axum::extract::Path((id, count)): axum::extract::Path<(String, i64)>,
@@ -2979,6 +3084,7 @@ pub async fn form_list_prev_exact(
 // ── item-access 族 ───────────────────────────────────────────────────────────
 
 /// POST /item-access —— 新建条目权限（同 process+归一化 path 查重）。
+#[allow(non_snake_case)]
 pub async fn item_access_create(
     pool: Extension<Pool>,
     session: Extension<Session>,
@@ -3021,6 +3127,7 @@ pub async fn item_access_create(
 }
 
 /// POST /item-access/bach/save —— 批量保存：有 id 且存在则更新，否则插入。
+#[allow(non_snake_case)]
 pub async fn item_access_bach_save(
     pool: Extension<Pool>,
     session: Extension<Session>,
@@ -3074,6 +3181,7 @@ pub async fn item_access_bach_save(
 }
 
 /// DELETE /item-access/delete/process/{processId}/path/{path} —— Java 精确形态删除。
+#[allow(non_snake_case)]
 pub async fn item_access_delete_exact(
     pool: Extension<Pool>,
     axum::extract::Path((process_id, path)): axum::extract::Path<(String, String)>,
@@ -3095,6 +3203,7 @@ pub async fn item_access_delete_exact(
 }
 
 /// GET /item-access/path/{path} —— 按路径列条目权限。
+#[allow(non_snake_case)]
 pub async fn item_access_path_list(
     pool: Extension<Pool>,
     axum::extract::Path(path): axum::extract::Path<String>,
@@ -3118,6 +3227,7 @@ pub async fn item_access_path_list(
 }
 
 /// GET /item-access/process/{processId}/path/{path} —— 双条件精确查询。
+#[allow(non_snake_case)]
 pub async fn item_access_process_path_list(
     pool: Extension<Pool>,
     axum::extract::Path((process_id, path)): axum::extract::Path<(String, String)>,
@@ -3154,6 +3264,7 @@ fn row_to_item_access_data(row: &Row) -> Value {
 // ── mapping 族 ───────────────────────────────────────────────────────────────
 
 /// POST /mapping —— 新建映射（同应用内归一化查重；创建者取会话）。
+#[allow(non_snake_case)]
 pub async fn mapping_create(
     pool: Extension<Pool>,
     session: Extension<Session>,
@@ -3197,6 +3308,7 @@ pub async fn mapping_create(
 }
 
 /// GET /mapping/list/{id}/next/{count} —— 向后导航真实记录。
+#[allow(non_snake_case)]
 pub async fn mapping_list_next_exact(
     pool: Extension<Pool>,
     axum::extract::Path((id, count)): axum::extract::Path<(String, i64)>,
@@ -3219,6 +3331,7 @@ pub async fn mapping_list_next_exact(
 }
 
 /// GET /mapping/list/{id}/prev/{count} —— 向前导航真实记录。
+#[allow(non_snake_case)]
 pub async fn mapping_list_prev_exact(
     pool: Extension<Pool>,
     axum::extract::Path((id, count)): axum::extract::Path<(String, i64)>,
@@ -3241,6 +3354,7 @@ pub async fn mapping_list_prev_exact(
 }
 
 /// PUT /mapping/{flag} —— 更新映射（IDOR 门禁 + 归一化查重排除自身）。
+#[allow(non_snake_case)]
 pub async fn mapping_id_update(
     pool: Extension<Pool>,
     session: Extension<Session>,
@@ -3291,6 +3405,7 @@ pub async fn mapping_id_update(
 }
 
 /// DELETE /mapping/{flag} —— 物理删除（IDOR 门禁）。
+#[allow(non_snake_case)]
 pub async fn mapping_id_delete(
     pool: Extension<Pool>,
     session: Extension<Session>,
@@ -3318,6 +3433,7 @@ pub async fn mapping_id_delete(
 // ── mergeitemplan 族 ─────────────────────────────────────────────────────────
 
 /// POST /mergeitemplan —— 新建合并项计划（同应用内归一化查重）。
+#[allow(non_snake_case)]
 pub async fn mergeitemplan_create(
     pool: Extension<Pool>,
     session: Extension<Session>,
@@ -3359,6 +3475,7 @@ pub async fn mergeitemplan_create(
 }
 
 /// GET /mergeitemplan/list/application/{applicationId}/paging/{page}/size/{size} —— Java 精确形态分页。
+#[allow(non_snake_case)]
 pub async fn mergeitemplan_paging_by_application(
     pool: Extension<Pool>,
     axum::extract::Path((application_id, page, size)): axum::extract::Path<(String, i64, i64)>,
@@ -3396,6 +3513,7 @@ pub async fn mergeitemplan_paging_by_application(
 }
 
 /// GET /mergeitemplan/list/paging/{page}/size/{size} —— 全量精确形态分页。
+#[allow(non_snake_case)]
 pub async fn mergeitemplan_paging_exact(
     pool: Extension<Pool>,
     axum::extract::Path((page, size)): axum::extract::Path<(i64, i64)>,
@@ -3430,6 +3548,7 @@ pub async fn mergeitemplan_paging_exact(
 }
 
 /// PUT /mergeitemplan/{id} —— 更新（IDOR 门禁 + 归一化查重排除自身）。
+#[allow(non_snake_case)]
 pub async fn mergeitemplan_id_update(
     pool: Extension<Pool>,
     session: Extension<Session>,
@@ -3470,6 +3589,7 @@ pub async fn mergeitemplan_id_update(
 }
 
 /// DELETE /mergeitemplan/{id} —— 物理删除（IDOR 门禁）。
+#[allow(non_snake_case)]
 pub async fn mergeitemplan_id_delete(
     pool: Extension<Pool>,
     session: Extension<Session>,
@@ -3497,6 +3617,7 @@ pub async fn mergeitemplan_id_delete(
 // ── process 族 ───────────────────────────────────────────────────────────────
 
 /// GET /process/application/{applicationId}/disable/edition —— 停用流程及其版本列表。
+#[allow(non_snake_case)]
 pub async fn process_disable_edition_list(
     pool: Extension<Pool>,
     axum::extract::Path(application_id): axum::extract::Path<String>,
@@ -3530,6 +3651,7 @@ pub async fn process_disable_edition_list(
 }
 
 /// GET /process/application/{applicationId}/edition/{edition} —— 按版本名列流程。
+#[allow(non_snake_case)]
 pub async fn process_edition_list(
     pool: Extension<Pool>,
     axum::extract::Path((application_id, edition)): axum::extract::Path<(String, String)>,
@@ -3555,6 +3677,7 @@ pub async fn process_edition_list(
 }
 
 /// PUT /process/{id} —— 更新流程基础信息（IDOR 门禁）。
+#[allow(non_snake_case)]
 pub async fn process_id_update(
     pool: Extension<Pool>,
     session: Extension<Session>,
@@ -3602,6 +3725,7 @@ pub async fn process_id_update(
 }
 
 /// POST /process/{id}/permission —— 保存流程权限配置到 xproperties（migration 081 列）。
+#[allow(non_snake_case)]
 pub async fn process_id_permission_save(
     pool: Extension<Pool>,
     session: Extension<Session>,
@@ -3632,6 +3756,7 @@ pub async fn process_id_permission_save(
 }
 
 /// DELETE /process/{id}/{flag}/edition —— 删除流程版本（flag 语义：仅移除未完成实例时先归档在途数据由引擎负责，此处物理删除设计定义本身）。
+#[allow(non_snake_case)]
 pub async fn process_edition_delete(
     pool: Extension<Pool>,
     session: Extension<Session>,
@@ -3660,6 +3785,7 @@ pub async fn process_edition_delete(
 // ── script 族 ────────────────────────────────────────────────────────────────
 
 /// GET /script/application/{applicationId}/name/{name} —— 按名称精确查询脚本。
+#[allow(non_snake_case)]
 pub async fn script_by_name_exact(
     pool: Extension<Pool>,
     axum::extract::Path((application_id, name)): axum::extract::Path<(String, String)>,

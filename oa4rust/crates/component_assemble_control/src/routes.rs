@@ -3,7 +3,6 @@ use axum::{
     routing::{delete, get, post, put},
     Router,
 };
-use deadpool_postgres::Pool;
 
 use crate::{
     get_component, create_component, list_components, save_component, delete_component,

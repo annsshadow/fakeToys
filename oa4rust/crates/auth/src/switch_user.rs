@@ -2,7 +2,6 @@ use axum::{
     extract::{Extension, Json},
     http::HeaderMap,
 };
-use chrono::Utc;
 use serde::Deserialize;
 use shared::error::AppError;
 use shared::middleware::extract_token_from_headers;
@@ -57,13 +56,10 @@ pub async fn switch_user(
     let target_unit: Option<String> = row.get("unit");
     let target_position: Option<String> = row.get("position");
     let change_password_time: Option<String> = row.get("change_password_time");
-    let password_expired_time: Option<String> = row.get("password_expired_time");
+    let _password_expired_time: Option<String> = row.get("password_expired_time");
 
     // 检查密码是否过期（简化实现：如果 change_password_time 为 NULL 则密码过期）
-    let password_expired = match change_password_time {
-        None => true,
-        Some(_) => false,
-    };
+    let password_expired = change_password_time.is_none();
 
     // 查询目标用户角色列表
     let role_list: Vec<String> = {

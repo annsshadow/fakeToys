@@ -31,7 +31,7 @@ pub async fn change(
     axum::extract::Json(req): axum::extract::Json<ChangePasswordRequest>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let char_count = req.new_password.chars().count();
-    if char_count < 6 || char_count > 64 {
+    if !(6..=64).contains(&char_count) {
         return Ok(Json(ActionResult::error("password length must be between 6 and 64")));
     }
 

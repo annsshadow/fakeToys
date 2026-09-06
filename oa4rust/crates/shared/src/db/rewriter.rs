@@ -34,8 +34,8 @@ pub fn rewrite_pg_to_mysql(sql: &str) -> String {
     let s = replace_on_conflict_do_nothing(&s);
     let s = replace_alter_if_not_exists(&s);
     let s = replace_gen_random_uuid(&s);
-    let s = replace_pg_catalog(&s);
-    s
+    
+    replace_pg_catalog(&s)
 }
 
 // ──────────────────────────────────────────────────────────────────────────────
@@ -330,7 +330,7 @@ fn replace_ident_quotes(sql: &str) -> String {
             out.push(c);
         } else if !in_string && c == '"' {
             out.push('`');
-            while let Some(next) = chars.next() {
+            for next in chars.by_ref() {
                 if next == '"' {
                     out.push('`');
                     break;

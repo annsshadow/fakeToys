@@ -57,6 +57,7 @@ pub struct StatisticalCycleInfo {
 
 // --- Handlers ---
 
+#[allow(non_snake_case)]
 pub async fn list_admins(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -88,6 +89,7 @@ pub async fn list_admins(
     Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
 }
 
+#[allow(non_snake_case)]
 pub async fn list_employee_configs(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -122,6 +124,7 @@ pub async fn list_employee_configs(
     Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
 }
 
+#[allow(non_snake_case)]
 pub async fn list_statistical_cycles(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -166,6 +169,7 @@ pub fn router(pool: deadpool_postgres::Pool) -> axum::Router {
 }
 
 
+#[allow(non_snake_case)]
 pub async fn list_check_in_records(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -201,6 +205,7 @@ pub async fn list_check_in_records(
     Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
 }
 
+#[allow(non_snake_case)]
 pub async fn list_schedule_rules(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -230,6 +235,7 @@ pub async fn list_schedule_rules(
     Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
 }
 
+#[allow(non_snake_case)]
 pub async fn list_appeal_records(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -260,6 +266,7 @@ pub async fn list_appeal_records(
     Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
 }
 
+#[allow(non_snake_case)]
 pub async fn submit_appeal(
     pool: Extension<Pool>,
     Json(payload): Json<Value>,
@@ -292,6 +299,7 @@ pub async fn submit_appeal(
     ))))
 }
 
+#[allow(non_snake_case)]
 pub async fn audit_appeal(
     pool: Extension<Pool>,
     Json(payload): Json<Value>,
@@ -321,6 +329,7 @@ pub async fn audit_appeal(
     ))))
 }
 
+#[allow(non_snake_case)]
 pub async fn archive_appeal(
     pool: Extension<Pool>,
     Path(id): Path<String>,

@@ -1,3 +1,4 @@
+#[allow(dead_code, non_snake_case)]
 use axum::{
     extract::{Extension, Path},
     Json, Router, routing::get, routing::post,
@@ -32,6 +33,7 @@ pub struct CorrelationUpdateRequest {
     pub r#type: Option<String>,
 }
 
+#[allow(non_snake_case)]
 pub async fn link_service(
     pool: Extension<Pool>,
     axum::extract::Json(req): Json<LinkRequest>,
@@ -64,6 +66,7 @@ pub async fn link_service(
     ))))
 }
 
+#[allow(non_snake_case)]
 pub async fn get_link(
     pool: Extension<Pool>,
     axum::extract::Path((source_type, source_id)): axum::extract::Path<(String, String)>,
@@ -93,6 +96,7 @@ pub async fn get_link(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn list_correlations(
     pool: Extension<Pool>,
     axum::extract::Path(person_id): axum::extract::Path<String>,
@@ -125,6 +129,7 @@ pub async fn list_correlations(
     Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
 }
 
+#[allow(non_snake_case)]
 pub async fn get_correlation(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
@@ -155,6 +160,7 @@ pub async fn get_correlation(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn create_correlation(
     pool: Extension<Pool>,
     axum::extract::Json(req): Json<CorrelationRequest>,
@@ -185,6 +191,7 @@ pub async fn create_correlation(
     Ok(Json(ActionResult::success(result)))
 }
 
+#[allow(non_snake_case)]
 pub async fn save_correlation(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
@@ -216,6 +223,7 @@ pub async fn save_correlation(
     ))))
 }
 
+#[allow(non_snake_case)]
 pub async fn delete_correlation(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
@@ -241,6 +249,7 @@ pub async fn delete_correlation(
     ))))
 }
 
+#[allow(non_snake_case)]
 pub async fn unlink_service(
     pool: Extension<Pool>,
     axum::extract::Path((source_type, source_id, target_type, target_id)): axum::extract::Path<(String, String, String, String)>,
@@ -343,6 +352,7 @@ pub fn router(pool: deadpool_postgres::Pool) -> axum::Router {
 
 /// GET correlation/type/cms/document/{document}（仓库既有扩展：按目标取单条关联）
 #[axum::debug_handler]
+#[allow(non_snake_case)]
 pub async fn correlation_type_cms_document_document(
     pool: Extension<Pool>,
     Path(document): Path<String>,
@@ -370,6 +380,7 @@ pub async fn correlation_type_cms_document_document(
 
 /// GET correlation/type/processplatform/job/{job}（仓库既有扩展：按目标取单条关联）
 #[axum::debug_handler]
+#[allow(non_snake_case)]
 pub async fn correlation_type_processplatform_job_job(
     pool: Extension<Pool>,
     Path(job): Path<String>,

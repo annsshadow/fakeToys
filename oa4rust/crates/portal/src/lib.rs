@@ -1,6 +1,6 @@
 use axum::{
     extract::Extension,
-    Json, Router, routing::get, routing::post,
+    Json,
 };
 use deadpool_postgres::Pool;
 use serde_json::Value;
@@ -28,6 +28,7 @@ mod tests_generated;
     ),
     tag = "portal"
 )]
+#[allow(non_snake_case)]
 pub async fn portal_id(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
@@ -69,6 +70,7 @@ pub async fn portal_id(
     ),
     tag = "portal"
 )]
+#[allow(non_snake_case)]
 pub async fn portal_list(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -113,6 +115,7 @@ pub async fn portal_list(
     ),
     tag = "portal"
 )]
+#[allow(non_snake_case)]
 pub async fn list_portal_category(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -154,6 +157,7 @@ pub async fn list_portal_category(
     ),
     tag = "portal"
 )]
+#[allow(non_snake_case)]
 pub async fn page_list(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -199,6 +203,7 @@ pub async fn page_list(
     ),
     tag = "portal"
 )]
+#[allow(non_snake_case)]
 pub async fn get_page(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
@@ -241,6 +246,7 @@ pub async fn get_page(
     ),
     tag = "portal"
 )]
+#[allow(non_snake_case)]
 pub async fn create_page(
     pool: Extension<Pool>,
     axum::extract::Json(payload): axum::extract::Json<Value>,
@@ -282,6 +288,7 @@ pub async fn create_page(
     ),
     tag = "portal"
 )]
+#[allow(non_snake_case)]
 pub async fn save_page(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
@@ -324,6 +331,7 @@ pub async fn save_page(
     ),
     tag = "portal"
 )]
+#[allow(non_snake_case)]
 pub async fn delete_page(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
@@ -360,6 +368,7 @@ pub async fn delete_page(
     ),
     tag = "portal"
 )]
+#[allow(non_snake_case)]
 pub async fn widget_list(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -400,6 +409,7 @@ pub async fn widget_list(
     ),
     tag = "portal"
 )]
+#[allow(non_snake_case)]
 pub async fn script_list(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -439,6 +449,7 @@ pub async fn script_list(
     ),
     tag = "portal"
 )]
+#[allow(non_snake_case)]
 pub async fn dict_list(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {

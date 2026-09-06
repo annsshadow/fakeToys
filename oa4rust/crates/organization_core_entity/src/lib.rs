@@ -105,6 +105,7 @@ pub struct BindUpdateRequest {
 
 // ── List handlers (with soft-delete filter) ──────────────────────────────────
 
+#[allow(non_snake_case)]
 pub async fn definition_list(
     db: Extension<DatabaseConnection>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -139,6 +140,7 @@ pub async fn definition_list(
     ))))
 }
 
+#[allow(non_snake_case)]
 pub async fn group_list(
     db: Extension<DatabaseConnection>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -157,7 +159,7 @@ pub async fn group_list(
             let mut map = serde_json::Map::new();
             map.insert("id".to_string(), Value::String(m.id.clone()));
             map.insert("name".to_string(), Value::String(m.name.clone()));
-            if let Some(val) = option_to_json(m.parent_id.clone().map(|s| Value::String(s))) {
+            if let Some(val) = option_to_json(m.parent_id.clone().map(Value::String)) {
                 map.insert("parentId".to_string(), val);
             }
             map.insert("level".to_string(), Value::Number(serde_json::Number::from(m.level)));
@@ -176,6 +178,7 @@ pub async fn group_list(
     ))))
 }
 
+#[allow(non_snake_case)]
 pub async fn identity_list(
     db: Extension<DatabaseConnection>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -213,6 +216,7 @@ pub async fn identity_list(
     ))))
 }
 
+#[allow(non_snake_case)]
 pub async fn person_list(
     db: Extension<DatabaseConnection>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -230,10 +234,10 @@ pub async fn person_list(
             let mut map = serde_json::Map::new();
             map.insert("id".to_string(), Value::String(m.id.clone()));
             map.insert("name".to_string(), Value::String(m.name.clone()));
-            if let Some(val) = option_to_json(m.mobile.clone().map(|s| Value::String(s))) {
+            if let Some(val) = option_to_json(m.mobile.clone().map(Value::String)) {
                 map.insert("mobile".to_string(), val);
             }
-            if let Some(val) = option_to_json(m.email.clone().map(|s| Value::String(s))) {
+            if let Some(val) = option_to_json(m.email.clone().map(Value::String)) {
                 map.insert("email".to_string(), val);
             }
             Value::Object(map)
@@ -251,6 +255,7 @@ pub async fn person_list(
     ))))
 }
 
+#[allow(non_snake_case)]
 pub async fn custom_list(
     db: Extension<DatabaseConnection>,
     axum::extract::Path(identity_id): axum::extract::Path<String>,
@@ -296,6 +301,7 @@ pub async fn custom_list(
     ))))
 }
 
+#[allow(non_snake_case)]
 pub async fn bind_list(
     db: Extension<DatabaseConnection>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -314,7 +320,7 @@ pub async fn bind_list(
             map.insert("id".to_string(), Value::String(m.id.clone()));
             map.insert("identityId".to_string(), Value::String(m.identity_id.clone()));
             map.insert("groupId".to_string(), Value::String(m.group_id.clone()));
-            if let Some(val) = option_to_json(m.role.clone().map(|s| Value::String(s))) {
+            if let Some(val) = option_to_json(m.role.clone().map(Value::String)) {
                 map.insert("role".to_string(), val);
             }
             Value::Object(map)
@@ -334,6 +340,7 @@ pub async fn bind_list(
 
 // ── Definition write handlers ───────────────────────────────────────────────
 
+#[allow(non_snake_case)]
 pub async fn definition_create(
     db: Extension<DatabaseConnection>,
     Json(req): Json<DefinitionCreateRequest>,
@@ -366,6 +373,7 @@ pub async fn definition_create(
     Ok(Json(ActionResult::success(result)))
 }
 
+#[allow(non_snake_case)]
 pub async fn definition_update(
     db: Extension<DatabaseConnection>,
     Path(id): Path<String>,
@@ -400,6 +408,7 @@ pub async fn definition_update(
     Ok(Json(ActionResult::success(result)))
 }
 
+#[allow(non_snake_case)]
 pub async fn definition_delete(
     db: Extension<DatabaseConnection>,
     Path(id): Path<String>,
@@ -422,6 +431,7 @@ pub async fn definition_delete(
 
 // ── Group write handlers ─────────────────────────────────────────────────────
 
+#[allow(non_snake_case)]
 pub async fn group_create(
     db: Extension<DatabaseConnection>,
     Json(req): Json<GroupCreateRequest>,
@@ -442,7 +452,7 @@ pub async fn group_create(
     let mut map = serde_json::Map::new();
     map.insert("id".to_string(), Value::String(model.id.clone()));
     map.insert("name".to_string(), Value::String(model.name.clone()));
-    if let Some(val) = option_to_json(model.parent_id.clone().map(|s| Value::String(s))) {
+    if let Some(val) = option_to_json(model.parent_id.clone().map(Value::String)) {
         map.insert("parentId".to_string(), val);
     }
     map.insert("level".to_string(), Value::Number(serde_json::Number::from(model.level)));
@@ -451,6 +461,7 @@ pub async fn group_create(
     Ok(Json(ActionResult::success(result)))
 }
 
+#[allow(non_snake_case)]
 pub async fn group_update(
     db: Extension<DatabaseConnection>,
     Path(id): Path<String>,
@@ -478,7 +489,7 @@ pub async fn group_update(
     let mut map = serde_json::Map::new();
     map.insert("id".to_string(), Value::String(updated.id.clone()));
     map.insert("name".to_string(), Value::String(updated.name.clone()));
-    if let Some(val) = option_to_json(updated.parent_id.clone().map(|s| Value::String(s))) {
+    if let Some(val) = option_to_json(updated.parent_id.clone().map(Value::String)) {
         map.insert("parentId".to_string(), val);
     }
     map.insert("level".to_string(), Value::Number(serde_json::Number::from(updated.level)));
@@ -487,6 +498,7 @@ pub async fn group_update(
     Ok(Json(ActionResult::success(result)))
 }
 
+#[allow(non_snake_case)]
 pub async fn group_delete(
     db: Extension<DatabaseConnection>,
     Path(id): Path<String>,
@@ -509,6 +521,7 @@ pub async fn group_delete(
 
 // ── Identity write handlers ─────────────────────────────────────────────────
 
+#[allow(non_snake_case)]
 pub async fn identity_create(
     db: Extension<DatabaseConnection>,
     Json(req): Json<IdentityCreateRequest>,
@@ -544,6 +557,7 @@ pub async fn identity_create(
     Ok(Json(ActionResult::success(result)))
 }
 
+#[allow(non_snake_case)]
 pub async fn identity_update(
     db: Extension<DatabaseConnection>,
     Path(id): Path<String>,
@@ -581,6 +595,7 @@ pub async fn identity_update(
     Ok(Json(ActionResult::success(result)))
 }
 
+#[allow(non_snake_case)]
 pub async fn identity_delete(
     db: Extension<DatabaseConnection>,
     Path(id): Path<String>,
@@ -603,6 +618,7 @@ pub async fn identity_delete(
 
 // ── Person write handlers ───────────────────────────────────────────────────
 
+#[allow(non_snake_case)]
 pub async fn person_create(
     db: Extension<DatabaseConnection>,
     Json(req): Json<PersonCreateRequest>,
@@ -623,10 +639,10 @@ pub async fn person_create(
     let mut map = serde_json::Map::new();
     map.insert("id".to_string(), Value::String(model.id.clone()));
     map.insert("name".to_string(), Value::String(model.name.clone()));
-    if let Some(val) = option_to_json(model.mobile.clone().map(|s| Value::String(s))) {
+    if let Some(val) = option_to_json(model.mobile.clone().map(Value::String)) {
         map.insert("mobile".to_string(), val);
     }
-    if let Some(val) = option_to_json(model.email.clone().map(|s| Value::String(s))) {
+    if let Some(val) = option_to_json(model.email.clone().map(Value::String)) {
         map.insert("email".to_string(), val);
     }
     let result = Value::Object(map);
@@ -634,6 +650,7 @@ pub async fn person_create(
     Ok(Json(ActionResult::success(result)))
 }
 
+#[allow(non_snake_case)]
 pub async fn person_update(
     db: Extension<DatabaseConnection>,
     Path(id): Path<String>,
@@ -661,10 +678,10 @@ pub async fn person_update(
     let mut map = serde_json::Map::new();
     map.insert("id".to_string(), Value::String(updated.id.clone()));
     map.insert("name".to_string(), Value::String(updated.name.clone()));
-    if let Some(val) = option_to_json(updated.mobile.clone().map(|s| Value::String(s))) {
+    if let Some(val) = option_to_json(updated.mobile.clone().map(Value::String)) {
         map.insert("mobile".to_string(), val);
     }
-    if let Some(val) = option_to_json(updated.email.clone().map(|s| Value::String(s))) {
+    if let Some(val) = option_to_json(updated.email.clone().map(Value::String)) {
         map.insert("email".to_string(), val);
     }
     let result = Value::Object(map);
@@ -672,6 +689,7 @@ pub async fn person_update(
     Ok(Json(ActionResult::success(result)))
 }
 
+#[allow(non_snake_case)]
 pub async fn person_delete(
     db: Extension<DatabaseConnection>,
     Path(id): Path<String>,
@@ -694,6 +712,7 @@ pub async fn person_delete(
 
 // ── Custom write handlers ───────────────────────────────────────────────────
 
+#[allow(non_snake_case)]
 pub async fn custom_create(
     db: Extension<DatabaseConnection>,
     Json(req): Json<CustomCreateRequest>,
@@ -735,6 +754,7 @@ pub async fn custom_create(
     Ok(Json(ActionResult::success(result)))
 }
 
+#[allow(non_snake_case)]
 pub async fn custom_update(
     db: Extension<DatabaseConnection>,
     Path(id): Path<String>,
@@ -775,6 +795,7 @@ pub async fn custom_update(
     Ok(Json(ActionResult::success(result)))
 }
 
+#[allow(non_snake_case)]
 pub async fn custom_delete(
     db: Extension<DatabaseConnection>,
     Path(id): Path<String>,
@@ -797,6 +818,7 @@ pub async fn custom_delete(
 
 // ── Bind write handlers ─────────────────────────────────────────────────────
 
+#[allow(non_snake_case)]
 pub async fn bind_create(
     db: Extension<DatabaseConnection>,
     Json(req): Json<BindCreateRequest>,
@@ -821,7 +843,7 @@ pub async fn bind_create(
     map.insert("id".to_string(), Value::String(model.id.clone()));
     map.insert("identityId".to_string(), Value::String(model.identity_id.clone()));
     map.insert("groupId".to_string(), Value::String(model.group_id.clone()));
-    if let Some(val) = option_to_json(model.role.clone().map(|s| Value::String(s))) {
+    if let Some(val) = option_to_json(model.role.clone().map(Value::String)) {
         map.insert("role".to_string(), val);
     }
     let result = Value::Object(map);
@@ -829,6 +851,7 @@ pub async fn bind_create(
     Ok(Json(ActionResult::success(result)))
 }
 
+#[allow(non_snake_case)]
 pub async fn bind_update(
     db: Extension<DatabaseConnection>,
     Path(id): Path<String>,
@@ -857,7 +880,7 @@ pub async fn bind_update(
     map.insert("id".to_string(), Value::String(updated.id.clone()));
     map.insert("identityId".to_string(), Value::String(updated.identity_id.clone()));
     map.insert("groupId".to_string(), Value::String(updated.group_id.clone()));
-    if let Some(val) = option_to_json(updated.role.clone().map(|s| Value::String(s))) {
+    if let Some(val) = option_to_json(updated.role.clone().map(Value::String)) {
         map.insert("role".to_string(), val);
     }
     let result = Value::Object(map);
@@ -865,6 +888,7 @@ pub async fn bind_update(
     Ok(Json(ActionResult::success(result)))
 }
 
+#[allow(non_snake_case)]
 pub async fn bind_delete(
     db: Extension<DatabaseConnection>,
     Path(id): Path<String>,

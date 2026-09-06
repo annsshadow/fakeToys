@@ -12,6 +12,7 @@ pub mod routes;
 
 use entities::{bbs_forum_info, bbs_section_info, bbs_subject_info};
 
+#[allow(non_snake_case)]
 pub async fn forum_list(
     db: Extension<DatabaseConnection>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -47,6 +48,7 @@ pub async fn forum_list(
     ))))
 }
 
+#[allow(non_snake_case)]
 pub async fn section_list(
     db: Extension<DatabaseConnection>,
     Path(forum_id): Path<String>,
@@ -86,6 +88,7 @@ pub async fn section_list(
     ))))
 }
 
+#[allow(non_snake_case)]
 pub async fn subject_top_list(
     db: Extension<DatabaseConnection>,
     Path(section_id): Path<String>,
@@ -140,6 +143,7 @@ pub async fn subject_top_list(
     ))))
 }
 
+#[allow(non_snake_case)]
 pub async fn subject_list(
     db: Extension<DatabaseConnection>,
     Path(section_id): Path<String>,
@@ -182,7 +186,6 @@ pub async fn subject_list(
                     "createTime".to_string(),
                     Value::String(
                         m.create_time
-                            .clone()
                             .map(|dt| dt.to_string())
                             .unwrap_or_default(),
                     ),
@@ -203,6 +206,7 @@ pub async fn subject_list(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
 pub async fn create_forum(
     db: Extension<DatabaseConnection>,
     Json(payload): Json<Value>,
@@ -232,6 +236,7 @@ pub async fn create_forum(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
 pub async fn update_forum(
     db: Extension<DatabaseConnection>,
     Path(id): Path<String>,
@@ -283,6 +288,7 @@ pub async fn update_forum(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
 pub async fn delete_forum(
     db: Extension<DatabaseConnection>,
     Path(id): Path<String>,
@@ -310,6 +316,7 @@ pub async fn delete_forum(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
 pub async fn create_section(
     db: Extension<DatabaseConnection>,
     Json(payload): Json<Value>,
@@ -347,6 +354,7 @@ pub async fn create_section(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
 pub async fn update_section(
     db: Extension<DatabaseConnection>,
     Path(id): Path<String>,
@@ -413,6 +421,7 @@ pub async fn update_section(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
 pub async fn delete_section(
     db: Extension<DatabaseConnection>,
     Path(id): Path<String>,
@@ -440,6 +449,7 @@ pub async fn delete_section(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
 pub async fn create_subject(
     db: Extension<DatabaseConnection>,
     Json(payload): Json<Value>,
@@ -487,6 +497,7 @@ pub async fn create_subject(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
 pub async fn update_subject(
     db: Extension<DatabaseConnection>,
     Path(id): Path<String>,
@@ -509,7 +520,6 @@ pub async fn update_subject(
     let m_is_top = m.is_top;
     let m_create_time_str = m
         .create_time
-        .clone()
         .map(|dt| dt.to_string())
         .unwrap_or_default();
 
@@ -572,6 +582,7 @@ pub async fn update_subject(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
 pub async fn delete_subject(
     db: Extension<DatabaseConnection>,
     Path(id): Path<String>,
@@ -599,8 +610,9 @@ pub async fn delete_subject(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
 pub async fn create_reply(
-    db: Extension<DatabaseConnection>,
+    _db: Extension<DatabaseConnection>,
     Json(payload): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     // Note: reply is stored in a separate table not covered by this entity migration
@@ -611,12 +623,12 @@ pub async fn create_reply(
         .and_then(|v| v.as_str())
         .unwrap_or_default()
         .to_string();
-    let content = payload
+    let _content = payload
         .get("content")
         .and_then(|v| v.as_str())
         .unwrap_or_default()
         .to_string();
-    let creator = payload
+    let _creator = payload
         .get("creator")
         .and_then(|v| v.as_str())
         .unwrap_or("system")
@@ -628,6 +640,7 @@ pub async fn create_reply(
     ])))))
 }
 
+#[allow(non_snake_case)]
 pub async fn search_subjects(
     db: Extension<DatabaseConnection>,
     axum::extract::Query(params): axum::extract::Query<std::collections::HashMap<String, String>>,
@@ -674,7 +687,6 @@ pub async fn search_subjects(
                     "createTime".to_string(),
                     Value::String(
                         m.create_time
-                            .clone()
                             .map(|dt| dt.to_string())
                             .unwrap_or_default(),
                     ),

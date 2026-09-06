@@ -3,7 +3,6 @@ use axum::{
     routing::{delete, get, post, put},
     Router,
 };
-use deadpool_postgres::Pool;
 
 use crate::{
     list_hotpics, get_hotpic, create_hotpic, save_hotpic, delete_hotpic,

@@ -275,7 +275,7 @@ pub(crate) fn get_extension(mime: &str, filename: &Option<String>) -> String {
         _ => {
             // 从文件名推断扩展名
             if let Some(name) = filename {
-                if let Some(ext) = name.split('.').last() {
+                if let Some(ext) = name.split('.').next_back() {
                     return ext.to_lowercase();
                 }
             }

@@ -1,6 +1,6 @@
+#[allow(dead_code, non_snake_case)]
 use axum::{
     extract::Extension, Json, Router,
-    routing::get, routing::post,
 };
 use deadpool_postgres::Pool;
 use serde_json::Value;
@@ -16,6 +16,7 @@ mod tests_generated;
 
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
 pub async fn get_control_config(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -48,6 +49,7 @@ pub async fn get_control_config(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
 pub async fn list_control_categories(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -85,6 +87,7 @@ pub async fn list_control_categories(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
 pub async fn update_control_config(
     pool: Extension<Pool>,
     body: axum::extract::Json<Value>,
@@ -150,6 +153,7 @@ pub struct ComponentRequest {
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
 pub async fn list_components(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -181,6 +185,7 @@ pub async fn list_components(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
 pub async fn get_component(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
@@ -211,6 +216,7 @@ pub async fn get_component(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
 pub async fn create_component(
     pool: Extension<Pool>,
     axum::extract::Json(req): Json<ComponentRequest>,
@@ -240,6 +246,7 @@ pub async fn create_component(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
 pub async fn save_component(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
@@ -273,6 +280,7 @@ pub async fn save_component(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
 pub async fn delete_component(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
@@ -299,6 +307,7 @@ pub async fn delete_component(
     ))))
 }
 
+#[allow(non_snake_case)]
 pub async fn component_delete_all(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -320,6 +329,7 @@ pub async fn component_delete_all(
     ))))
 }
 
+#[allow(non_snake_case)]
 pub async fn status_list(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {

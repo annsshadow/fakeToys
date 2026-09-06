@@ -22,6 +22,7 @@ mod tests_generated;
 
 /// 获取会议室列表
 /// 从数据库查询 x_meeting_room 表
+#[allow(non_snake_case)]
 pub async fn room_list(
     db: Extension<DatabaseConnection>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -38,10 +39,10 @@ pub async fn room_list(
             let mut map = serde_json::Map::new();
             map.insert("id".to_string(), Value::String(m.id.clone()));
             map.insert("name".to_string(), Value::String(m.name.clone()));
-            if let Some(val) = option_to_json(m.building_id.clone().map(|s| s)) {
+            if let Some(val) = option_to_json(m.building_id.clone()) {
                 map.insert("buildingId".to_string(), val);
             }
-            if let Some(val) = option_to_json(m.floor.clone().map(|s| s)) {
+            if let Some(val) = option_to_json(m.floor.clone()) {
                 map.insert("floor".to_string(), val);
             }
             if let Some(val) = option_to_json(m.capacity.map(|v| Value::Number(serde_json::Number::from(v)))) {
@@ -62,6 +63,7 @@ pub async fn room_list(
     ))))
 }
 
+#[allow(non_snake_case)]
 pub async fn create_room(
     db: Extension<DatabaseConnection>,
     AxumJson(payload): AxumJson<Value>,
@@ -125,10 +127,10 @@ pub async fn create_room(
         let mut map = serde_json::Map::new();
         map.insert("id".to_string(), Value::String(m.id.clone()));
         map.insert("name".to_string(), Value::String(m.name.clone()));
-        if let Some(val) = option_to_json(m.building_id.clone().map(|s| Value::String(s))) {
+        if let Some(val) = option_to_json(m.building_id.clone().map(Value::String)) {
             map.insert("buildingId".to_string(), val);
         }
-        if let Some(val) = option_to_json(m.floor.clone().map(|s| Value::String(s))) {
+        if let Some(val) = option_to_json(m.floor.clone().map(Value::String)) {
             map.insert("floor".to_string(), val);
         }
         if let Some(val) = option_to_json(m.capacity.map(|v| Value::Number(serde_json::Number::from(v)))) {
@@ -141,6 +143,7 @@ pub async fn create_room(
     }))))
 }
 
+#[allow(non_snake_case)]
 pub async fn get_room(
     db: Extension<DatabaseConnection>,
     Path(id): Path<String>,
@@ -155,10 +158,10 @@ pub async fn get_room(
             let mut map = serde_json::Map::new();
             map.insert("id".to_string(), Value::String(m.id.clone()));
             map.insert("name".to_string(), Value::String(m.name.clone()));
-            if let Some(val) = option_to_json(m.building_id.clone().map(|s| Value::String(s))) {
+            if let Some(val) = option_to_json(m.building_id.clone().map(Value::String)) {
                 map.insert("buildingId".to_string(), val);
             }
-            if let Some(val) = option_to_json(m.floor.clone().map(|s| Value::String(s))) {
+            if let Some(val) = option_to_json(m.floor.clone().map(Value::String)) {
                 map.insert("floor".to_string(), val);
             }
             if let Some(val) = option_to_json(m.capacity.map(|v| Value::Number(serde_json::Number::from(v)))) {
@@ -167,10 +170,10 @@ pub async fn get_room(
             if let Some(val) = option_to_json(m.equipment.clone().and_then(|s| serde_json::from_str::<Value>(&s).ok())) {
                 map.insert("equipment".to_string(), val);
             }
-            if let Some(val) = option_to_json(m.description.clone().map(|s| Value::String(s))) {
+            if let Some(val) = option_to_json(m.description.clone().map(Value::String)) {
                 map.insert("description".to_string(), val);
             }
-            if let Some(val) = option_to_json(m.photo.clone().map(|s| Value::String(s))) {
+            if let Some(val) = option_to_json(m.photo.clone().map(Value::String)) {
                 map.insert("photo".to_string(), val);
             }
             if let Some(val) = option_to_json(m.order_number.map(|v| Value::Number(serde_json::Number::from(v)))) {
@@ -180,7 +183,6 @@ pub async fn get_room(
                 "createTime".to_string(),
                 Value::String(
                     m.create_time
-                        .clone()
                         .map(|dt| dt.to_string())
                         .unwrap_or_default(),
                 ),
@@ -192,6 +194,7 @@ pub async fn get_room(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn update_room(
     _db: Extension<DatabaseConnection>,
     pool: Extension<Pool>,
@@ -253,6 +256,7 @@ pub async fn update_room(
     ])))))
 }
 
+#[allow(non_snake_case)]
 pub async fn delete_room(
     _db: Extension<DatabaseConnection>,
     pool: Extension<Pool>,
@@ -276,6 +280,7 @@ pub async fn delete_room(
 
 /// 获取会议列表
 /// 从数据库查询 x_meeting 表
+#[allow(non_snake_case)]
 pub async fn meeting_list(
     db: Extension<DatabaseConnection>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -319,6 +324,7 @@ pub async fn meeting_list(
 
 /// 按会议室查询会议
 /// 查询指定会议室的会议列表
+#[allow(non_snake_case)]
 pub async fn meeting_list_by_room(
     db: Extension<DatabaseConnection>,
     Path(room_id): Path<String>,
@@ -363,6 +369,7 @@ pub async fn meeting_list_by_room(
 }
 
 /// 创建会议
+#[allow(non_snake_case)]
 pub async fn create_meeting(
     db: Extension<DatabaseConnection>,
     AxumJson(payload): AxumJson<Value>,
@@ -432,6 +439,7 @@ pub async fn create_meeting(
 }
 
 /// 获取单个会议
+#[allow(non_snake_case)]
 pub async fn get_meeting(
     db: Extension<DatabaseConnection>,
     Path(id): Path<String>,
@@ -464,7 +472,6 @@ pub async fn get_meeting(
                     "createTime".to_string(),
                     Value::String(
                         m.create_time
-                            .clone()
                             .map(|dt| dt.to_string())
                             .unwrap_or_default(),
                     ),
@@ -477,6 +484,7 @@ pub async fn get_meeting(
 }
 
 /// 更新会议
+#[allow(non_snake_case)]
 pub async fn update_meeting(
     _db: Extension<DatabaseConnection>,
     pool: Extension<Pool>,
@@ -528,6 +536,7 @@ pub async fn update_meeting(
 }
 
 /// 删除会议
+#[allow(non_snake_case)]
 pub async fn delete_meeting(
     _db: Extension<DatabaseConnection>,
     pool: Extension<Pool>,

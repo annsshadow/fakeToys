@@ -113,7 +113,7 @@ pub async fn chat_delete(
     let clue_person: String = row.get("person");
     shared::middleware::require_owner(&pool, &session, &clue_person).await?;
 
-    let mut tx = client.transaction().await.map_err(|_| AppError::Internal)?;
+    let tx = client.transaction().await.map_err(|_| AppError::Internal)?;
 
     tx.execute("DELETE FROM x_ai_completion WHERE \"clueId\" = $1", &[&clue_id])
         .await

@@ -16,14 +16,14 @@ pub async fn program_center_core_entity_router(pool: Pool) -> Router {
     // create_app. Obtain the SeaORM pool asynchronously instead.
     let db = shared::db::create_sea_orm_pool().await.ok();
 
-    let app = Router::new()
+    
+
+    Router::new()
         .merge(handlers::application::_router(pool.clone(), db.clone()))
         .merge(handlers::script::_router(pool.clone(), db.clone()))
         .merge(handlers::invoke::_router(pool.clone(), db.clone()))
         .merge(handlers::agent::_router(pool.clone(), db.clone()))
-        .merge(handlers::structure::_router(pool, db));
-
-    app
+        .merge(handlers::structure::_router(pool, db))
 }
 
 #[cfg(test)]

@@ -7,6 +7,7 @@ use serde_json::Value;
 use shared::{error::AppError, response::ActionResult};
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
 pub async fn config_get(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -58,6 +59,7 @@ pub async fn config_get(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
 pub async fn config_base_config(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -93,6 +95,7 @@ pub async fn config_base_config(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
 pub async fn config_list_model_paging(
     pool: Extension<Pool>,
     Path((page, size)): Path<(i32, i32)>,
@@ -151,6 +154,7 @@ pub async fn config_list_model_paging(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
 pub async fn config_get_model(
     pool: Extension<Pool>,
     Path(flag): Path<String>,
@@ -197,13 +201,14 @@ pub async fn config_get_model(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
 pub async fn config_list_mcp_paging(
     _pool: Extension<Pool>,
     Path((page, size)): Path<(i32, i32)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let size = size.clamp(1, 200) as i64;
     let page = page.max(1) as i64;
-    let offset = (page - 1) * size;
+    let _offset = (page - 1) * size;
     let total: i64 = 0;
 
     let data: Vec<Value> = vec![];
@@ -212,14 +217,16 @@ pub async fn config_list_mcp_paging(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
 pub async fn config_get_mcp(
     _pool: Extension<Pool>,
-    Path(flag): Path<String>,
+    Path(_flag): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::error("mcp not found")))
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
 pub async fn list_enable_model(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {

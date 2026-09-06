@@ -1,7 +1,6 @@
 ﻿use axum::{
     extract::Extension,
-    Json, Router,
-    routing::get, routing::post, routing::delete,
+    Json,
 };
 use deadpool_postgres::Pool;
 use serde_json::Value;
@@ -12,6 +11,7 @@ pub mod routes;
 #[cfg(test)]
 mod tests_u2;
 
+#[allow(non_snake_case)]
 pub async fn send_message(
     pool: Extension<Pool>,
     axum::extract::Json(req): axum::extract::Json<Value>,
@@ -46,6 +46,7 @@ pub async fn send_message(
     ))))
 }
 
+#[allow(non_snake_case)]
 pub async fn receive_list(
     pool: Extension<Pool>,
     axum::extract::Path(consume): axum::extract::Path<String>,
@@ -70,6 +71,7 @@ pub async fn receive_list(
     let count = data.len() as i64; Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
 }
 
+#[allow(non_snake_case)]
 pub async fn mark_read(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
@@ -98,13 +100,14 @@ mod tests_generated;
 
 
 
+#[allow(non_snake_case)]
 pub async fn consume_list_consume_count_count(
     pool: Extension<Pool>,
     axum::extract::Path((consume, count)): axum::extract::Path<(String, i64)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
-    let limit = count.max(1) as i64;
+    let limit = count.max(1);
     let rows = client
         .query("SELECT id, consume, content, sender, create_time FROM x_message_consume WHERE consume = $1 ORDER BY create_time DESC LIMIT $2::int", &[&consume, &limit])
         .await
@@ -123,13 +126,14 @@ pub async fn consume_list_consume_count_count(
     let count = data.len() as i64; Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
 }
 
+#[allow(non_snake_case)]
 pub async fn consume_list_consume_currentperson_count_count(
     pool: Extension<Pool>,
     axum::extract::Path((consume, count)): axum::extract::Path<(String, i64)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
-    let limit = count.max(1) as i64;
+    let limit = count.max(1);
     let rows = client
         .query("SELECT id, consume, content, sender, read_status, create_time FROM x_message_consume WHERE consume = $1 AND sender = consume ORDER BY create_time DESC LIMIT $2::int", &[&consume, &limit])
         .await
@@ -149,13 +153,14 @@ pub async fn consume_list_consume_currentperson_count_count(
     let count = data.len() as i64; Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
 }
 
+#[allow(non_snake_case)]
 pub async fn consume_list_consume_person_person_count_count(
     pool: Extension<Pool>,
     axum::extract::Path((consume, person, count)): axum::extract::Path<(String, String, i64)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
-    let limit = count.max(1) as i64;
+    let limit = count.max(1);
     let rows = client
         .query("SELECT id, consume, content, sender, create_time FROM x_message_consume WHERE consume = $1 AND sender = $2 ORDER BY create_time DESC LIMIT $3::int", &[&consume, &person, &limit])
         .await
@@ -174,6 +179,7 @@ pub async fn consume_list_consume_person_person_count_count(
     let count = data.len() as i64; Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
 }
 
+#[allow(non_snake_case)]
 pub async fn consume_type_type(
     pool: Extension<Pool>,
     axum::extract::Path(msg_type): axum::extract::Path<String>,
@@ -199,6 +205,7 @@ pub async fn consume_type_type(
     let count = data.len() as i64; Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
 }
 
+#[allow(non_snake_case)]
 pub async fn consume_type_type_mockputtopost(
     pool: Extension<Pool>,
     axum::extract::Path(msg_type): axum::extract::Path<String>,
@@ -216,6 +223,7 @@ pub async fn consume_type_type_mockputtopost(
     ))))
 }
 
+#[allow(non_snake_case)]
 pub async fn consume_id_type_type(
     pool: Extension<Pool>,
     axum::extract::Path((id, msg_type)): axum::extract::Path<(String, String)>,
@@ -236,6 +244,7 @@ pub async fn consume_id_type_type(
     ))))
 }
 
+#[allow(non_snake_case)]
 pub async fn im_conversation(
     pool: Extension<Pool>,
     axum::extract::Json(req): axum::extract::Json<Value>,
@@ -261,6 +270,7 @@ pub async fn im_conversation(
     ))))
 }
 
+#[allow(non_snake_case)]
 pub async fn im_conversation_business_businessId(
     pool: Extension<Pool>,
     axum::extract::Path(business_id): axum::extract::Path<String>,
@@ -287,6 +297,7 @@ pub async fn im_conversation_business_businessId(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn im_conversation_list_my(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -310,6 +321,7 @@ pub async fn im_conversation_list_my(
     let count = data.len() as i64; Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
 }
 
+#[allow(non_snake_case)]
 pub async fn im_conversation_list_with_person(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -332,6 +344,7 @@ pub async fn im_conversation_list_with_person(
     let count = data.len() as i64; Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
 }
 
+#[allow(non_snake_case)]
 pub async fn im_conversation_mockputtopost(
     pool: Extension<Pool>,
     axum::extract::Json(req): axum::extract::Json<Value>,
@@ -352,6 +365,7 @@ pub async fn im_conversation_mockputtopost(
     ))))
 }
 
+#[allow(non_snake_case)]
 pub async fn im_conversation_id(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
@@ -378,6 +392,7 @@ pub async fn im_conversation_id(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn im_conversation_id_group(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
@@ -402,6 +417,7 @@ pub async fn im_conversation_id_group(
     let count = data.len() as i64; Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
 }
 
+#[allow(non_snake_case)]
 pub async fn im_manager_config_post(
     pool: Extension<Pool>,
     axum::extract::Json(req): axum::extract::Json<Value>,
@@ -443,6 +459,7 @@ pub async fn im_manager_config_post(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn im_conversation_update(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
@@ -481,6 +498,7 @@ pub async fn im_conversation_update(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn im_conversation_id_group_mockdeletetoget(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
@@ -497,6 +515,7 @@ pub async fn im_conversation_id_group_mockdeletetoget(
     ))))
 }
 
+#[allow(non_snake_case)]
 pub async fn im_conversation_id_group_quit_self(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
@@ -523,6 +542,7 @@ pub async fn im_conversation_id_group_quit_self(
     ))))
 }
 
+#[allow(non_snake_case)]
 pub async fn im_conversation_id_icon(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
@@ -548,6 +568,7 @@ pub async fn im_conversation_id_icon(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn im_conversation_id_read(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
@@ -570,6 +591,7 @@ pub async fn im_conversation_id_read(
     ))))
 }
 
+#[allow(non_snake_case)]
 pub async fn im_conversation_id_read_mockputtopost(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
@@ -586,6 +608,7 @@ pub async fn im_conversation_id_read_mockputtopost(
     ))))
 }
 
+#[allow(non_snake_case)]
 pub async fn im_conversation_id_single(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
@@ -611,6 +634,7 @@ pub async fn im_conversation_id_single(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn im_conversation_id_single_mockdeletetoget(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
@@ -633,6 +657,7 @@ pub async fn im_conversation_id_single_mockdeletetoget(
     ))))
 }
 
+#[allow(non_snake_case)]
 pub async fn im_conversation_id_top_cancel(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
@@ -649,6 +674,7 @@ pub async fn im_conversation_id_top_cancel(
     ))))
 }
 
+#[allow(non_snake_case)]
 pub async fn im_conversation_id_top_cancel_mockputtopost(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
@@ -665,6 +691,7 @@ pub async fn im_conversation_id_top_cancel_mockputtopost(
     ))))
 }
 
+#[allow(non_snake_case)]
 pub async fn im_conversation_id_top_set(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
@@ -681,6 +708,7 @@ pub async fn im_conversation_id_top_set(
     ))))
 }
 
+#[allow(non_snake_case)]
 pub async fn im_conversation_id_top_set_mockputtopost(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
@@ -697,6 +725,7 @@ pub async fn im_conversation_id_top_set_mockputtopost(
     ))))
 }
 
+#[allow(non_snake_case)]
 pub async fn im_manager_config(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -721,6 +750,7 @@ pub async fn im_manager_config(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn im_msg(
     pool: Extension<Pool>,
     axum::extract::Json(req): axum::extract::Json<Value>,
@@ -750,6 +780,7 @@ pub async fn im_msg(
     ))))
 }
 
+#[allow(non_snake_case)]
 pub async fn im_msg_clear(
     pool: Extension<Pool>,
     axum::extract::Path(conversation_id): axum::extract::Path<String>,
@@ -766,6 +797,7 @@ pub async fn im_msg_clear(
     ))))
 }
 
+#[allow(non_snake_case)]
 pub async fn im_msg_collection(
     pool: Extension<Pool>,
     axum::extract::Json(req): axum::extract::Json<Value>,
@@ -783,6 +815,7 @@ pub async fn im_msg_collection(
     ))))
 }
 
+#[allow(non_snake_case)]
 pub async fn im_msg_collection_list_page_size_size(
     pool: Extension<Pool>,
     axum::extract::Path((page, size)): axum::extract::Path<(i64, i64)>,
@@ -807,6 +840,7 @@ pub async fn im_msg_collection_list_page_size_size(
     let count = data.len() as i64; Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
 }
 
+#[allow(non_snake_case)]
 pub async fn im_msg_collection_remove(
     pool: Extension<Pool>,
     axum::extract::Json(req): axum::extract::Json<Value>,
@@ -824,6 +858,7 @@ pub async fn im_msg_collection_remove(
     ))))
 }
 
+#[allow(non_snake_case)]
 pub async fn im_msg_download_id(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
@@ -850,6 +885,7 @@ pub async fn im_msg_download_id(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn im_msg_download_id_image_width_width_height_height(
     pool: Extension<Pool>,
     axum::extract::Path((id, width, height)): axum::extract::Path<(String, i64, i64)>,
@@ -879,6 +915,7 @@ pub async fn im_msg_download_id_image_width_width_height_height(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn im_msg_list_object(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -903,6 +940,7 @@ pub async fn im_msg_list_object(
     let count = data.len() as i64; Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
 }
 
+#[allow(non_snake_case)]
 pub async fn im_msg_list_page_size_size(
     pool: Extension<Pool>,
     axum::extract::Path((page, size)): axum::extract::Path<(i64, i64)>,
@@ -931,6 +969,7 @@ pub async fn im_msg_list_page_size_size(
     Ok(Json(ActionResult::java_success(Value::Array(data), count, size)))
 }
 
+#[allow(non_snake_case)]
 pub async fn im_msg_revoke_id(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
@@ -947,6 +986,7 @@ pub async fn im_msg_revoke_id(
     ))))
 }
 
+#[allow(non_snake_case)]
 pub async fn im_msg_upload_conversationId_type_type(
     pool: Extension<Pool>,
     axum::extract::Path((conversation_id, msg_type)): axum::extract::Path<(String, String)>,
@@ -957,7 +997,7 @@ pub async fn im_msg_upload_conversationId_type_type(
     let file_url = req.get("\"fileUrl\"").and_then(|v| v.as_str()).unwrap_or_default();
     let file_name = req.get("\"fileName\"").and_then(|v| v.as_str()).unwrap_or_default();
     let file_size = req.get("\"fileSize\"").and_then(|v| v.as_str()).unwrap_or("0");
-    let sender = req.get("sender").and_then(|v| v.as_str()).unwrap_or("system");
+    let _sender = req.get("sender").and_then(|v| v.as_str()).unwrap_or("system");
     let id = Uuid::new_v4().to_string();
 
     let result = client
@@ -976,6 +1016,7 @@ pub async fn im_msg_upload_conversationId_type_type(
     ))))
 }
 
+#[allow(non_snake_case)]
 pub async fn instant_currentperson_consumed(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -999,6 +1040,7 @@ pub async fn instant_currentperson_consumed(
     let count = data.len() as i64; Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
 }
 
+#[allow(non_snake_case)]
 pub async fn instant_currentperson_consumed_all(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -1022,6 +1064,7 @@ pub async fn instant_currentperson_consumed_all(
     let count = data.len() as i64; Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
 }
 
+#[allow(non_snake_case)]
 pub async fn instant_currentperson_consumed_mockputtopost(
     pool: Extension<Pool>,
     axum::extract::Json(req): axum::extract::Json<Value>,
@@ -1047,6 +1090,7 @@ pub async fn instant_currentperson_consumed_mockputtopost(
     ))))
 }
 
+#[allow(non_snake_case)]
 pub async fn instant_list_currentperson_consumed_count_count_asc(
     pool: Extension<Pool>,
     axum::extract::Path(count): axum::extract::Path<i64>,
@@ -1071,6 +1115,7 @@ pub async fn instant_list_currentperson_consumed_count_count_asc(
     let count = data.len() as i64; Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
 }
 
+#[allow(non_snake_case)]
 pub async fn instant_list_currentperson_consumed_count_count_desc(
     pool: Extension<Pool>,
     axum::extract::Path(count): axum::extract::Path<i64>,
@@ -1095,6 +1140,7 @@ pub async fn instant_list_currentperson_consumed_count_count_desc(
     let count = data.len() as i64; Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
 }
 
+#[allow(non_snake_case)]
 pub async fn instant_list_currentperson_count_count_asc(
     pool: Extension<Pool>,
     axum::extract::Path(count): axum::extract::Path<i64>,
@@ -1119,6 +1165,7 @@ pub async fn instant_list_currentperson_count_count_asc(
     let count = data.len() as i64; Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
 }
 
+#[allow(non_snake_case)]
 pub async fn instant_list_currentperson_count_count_desc(
     pool: Extension<Pool>,
     axum::extract::Path(count): axum::extract::Path<i64>,
@@ -1143,6 +1190,7 @@ pub async fn instant_list_currentperson_count_count_desc(
     let count = data.len() as i64; Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
 }
 
+#[allow(non_snake_case)]
 pub async fn instant_list_currentperson_noim_count_count_desc(
     pool: Extension<Pool>,
     axum::extract::Path(count): axum::extract::Path<i64>,
@@ -1167,6 +1215,7 @@ pub async fn instant_list_currentperson_noim_count_count_desc(
     let count = data.len() as i64; Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
 }
 
+#[allow(non_snake_case)]
 pub async fn instant_list_currentperson_not_consumed_count_count_asc(
     pool: Extension<Pool>,
     axum::extract::Path(count): axum::extract::Path<i64>,
@@ -1191,6 +1240,7 @@ pub async fn instant_list_currentperson_not_consumed_count_count_asc(
     let count = data.len() as i64; Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
 }
 
+#[allow(non_snake_case)]
 pub async fn instant_list_currentperson_not_consumed_count_count_desc(
     pool: Extension<Pool>,
     axum::extract::Path(count): axum::extract::Path<i64>,
@@ -1215,6 +1265,7 @@ pub async fn instant_list_currentperson_not_consumed_count_count_desc(
     let count = data.len() as i64; Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
 }
 
+#[allow(non_snake_case)]
 pub async fn instant_list_id_next_count(
     pool: Extension<Pool>,
     axum::extract::Path((id, count)): axum::extract::Path<(String, i64)>,
@@ -1239,6 +1290,7 @@ pub async fn instant_list_id_next_count(
     let count = data.len() as i64; Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
 }
 
+#[allow(non_snake_case)]
 pub async fn instant_list_id_prev_count(
     pool: Extension<Pool>,
     axum::extract::Path((id, count)): axum::extract::Path<(String, i64)>,
@@ -1263,6 +1315,7 @@ pub async fn instant_list_id_prev_count(
     let count = data.len() as i64; Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
 }
 
+#[allow(non_snake_case)]
 pub async fn mass_enable_type(
     pool: Extension<Pool>,
     axum::extract::Json(req): axum::extract::Json<Value>,
@@ -1285,6 +1338,7 @@ pub async fn mass_enable_type(
     ))))
 }
 
+#[allow(non_snake_case)]
 pub async fn mass_list_id_next_count(
     pool: Extension<Pool>,
     axum::extract::Path((id, count)): axum::extract::Path<(String, i64)>,
@@ -1309,6 +1363,7 @@ pub async fn mass_list_id_next_count(
     let count = data.len() as i64; Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
 }
 
+#[allow(non_snake_case)]
 pub async fn mass_list_id_prev_count(
     pool: Extension<Pool>,
     axum::extract::Path((id, count)): axum::extract::Path<(String, i64)>,
@@ -1333,6 +1388,7 @@ pub async fn mass_list_id_prev_count(
     let count = data.len() as i64; Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
 }
 
+#[allow(non_snake_case)]
 pub async fn mass_id(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
@@ -1359,6 +1415,7 @@ pub async fn mass_id(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn message_custom_create(
     pool: Extension<Pool>,
     axum::extract::Json(req): axum::extract::Json<Value>,
@@ -1386,6 +1443,7 @@ pub async fn message_custom_create(
     ))))
 }
 
+#[allow(non_snake_case)]
 pub async fn message_list_paging_page_size_size(
     pool: Extension<Pool>,
     axum::extract::Path((page, size)): axum::extract::Path<(i64, i64)>,
@@ -1464,6 +1522,7 @@ async fn conversation_type(
 
 /// POST /connector — Java ActionCreate：先落 Instant(consumed=false)，
 /// 再为每个启用的 consumer 展开一条 Message 落库。
+#[allow(non_snake_case)]
 pub async fn connector_create(
     pool: Extension<Pool>,
     axum::extract::Json(req): axum::extract::Json<Value>,
@@ -1523,6 +1582,7 @@ pub async fn connector_create(
 
 /// POST /ws — Java ActionCreate：仅向当前打开的 ws 连接投递；
 /// 有在线连接时落 ws 消费记录，返回 value=true，否则如实返回 false。
+#[allow(non_snake_case)]
 pub async fn ws_create(
     pool: Extension<Pool>,
     axum::extract::Json(req): axum::extract::Json<Value>,
@@ -1563,6 +1623,7 @@ pub async fn ws_create(
 }
 
 /// GET /ws/count/person — 当前在线（未断开）ws 连接的去重人数。
+#[allow(non_snake_case)]
 pub async fn ws_count_person(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -1585,6 +1646,7 @@ pub async fn ws_count_person(
 }
 
 /// GET /ws/list/person/current/node — 本节点在线人员列表。
+#[allow(non_snake_case)]
 pub async fn ws_list_person_current_node(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -1616,6 +1678,7 @@ pub async fn ws_list_person_current_node(
 }
 
 /// GET /ws/list/person — 按节点分组的在线人员列表。
+#[allow(non_snake_case)]
 pub async fn ws_list_person(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -1674,6 +1737,7 @@ fn mass_target_list(req: &Value) -> Vec<String> {
 
 /// POST /mass — Java ActionCreate：需 Manager/MessageManager 角色，
 /// 目标人群与 body 必填，落 Mass 记录（creator_person 取自会话）。
+#[allow(non_snake_case)]
 pub async fn mass_create(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
@@ -1716,6 +1780,7 @@ pub async fn mass_create(
 }
 
 /// GET /mass/enable/type — 已启用群发渠道列表。
+#[allow(non_snake_case)]
 pub async fn mass_enable_type_get(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -1739,6 +1804,7 @@ pub async fn mass_enable_type_get(
 
 /// DELETE /mass/{id} 与 GET /mass/{id}/mockdeletetoget 共用：
 /// Java ActionDelete 需 Manager/MessageManager 角色，删除前校验存在性。
+#[allow(non_snake_case)]
 pub async fn mass_id_mockdeletetoget(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
@@ -1771,6 +1837,7 @@ pub async fn mass_id_mockdeletetoget(
 
 /// DELETE /im/conversation/{id}/single（及 GET mockdeletetoget）—
 /// Java ActionDeleteSingleConversationVirtual：单聊虚拟删除（per-person ext 置位）。
+#[allow(non_snake_case)]
 pub async fn im_conversation_id_single_delete_virtual(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
@@ -1830,6 +1897,7 @@ pub async fn im_conversation_id_single_delete_virtual(
 }
 
 /// PUT /instant/currentperson/consumed — Java PUT：将当前人员的 instant 标记已消费。
+#[allow(non_snake_case)]
 pub async fn instant_currentperson_consumed_put(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,

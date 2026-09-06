@@ -12,7 +12,7 @@ use futures_util::{SinkExt, StreamExt};
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
 use tokio::sync::{Mutex, broadcast};
-use tracing::{error, info, warn};
+use tracing::{info, warn};
 use uuid::Uuid;
 
 #[derive(Debug, Error)]
@@ -59,6 +59,12 @@ struct RoomHandle {
 #[derive(Clone)]
 pub struct RealtimeManager {
     rooms: Arc<Mutex<HashMap<String, RoomHandle>>>,
+}
+
+impl Default for RealtimeManager {
+    fn default() -> Self {
+        Self::new()
+    }
 }
 
 impl RealtimeManager {
@@ -191,6 +197,7 @@ async fn handle_connection(socket: WebSocket, manager: Arc<RealtimeManager>, con
     info!(conn_id = %conn_id, room = %room_id, "ws closed");
 }
 
+#[allow(non_snake_case)]
 pub async fn ws_handler(
     ws: WebSocketUpgrade,
     State(manager): State<Arc<RealtimeManager>>,
@@ -201,6 +208,7 @@ pub async fn ws_handler(
     })
 }
 
+#[allow(non_snake_case)]
 pub async fn ws_room_handler(
     ws: WebSocketUpgrade,
     axum::extract::Path(room_id): axum::extract::Path<String>,
@@ -212,6 +220,7 @@ pub async fn ws_room_handler(
     })
 }
 
+#[allow(non_snake_case)]
 pub async fn ws_stats(
     State(manager): State<Arc<RealtimeManager>>,
     axum::extract::Path(room_id): axum::extract::Path<String>,

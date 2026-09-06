@@ -137,7 +137,7 @@ pub async fn view_create(
     let description = payload.get("description").and_then(|v| v.as_str()).map(|s| s.to_string());
     let query_sql = payload.get("querySql").and_then(|v| v.as_str()).map(|s| s.to_string());
     let creator_id = payload.get("creatorId").and_then(|v| v.as_str()).unwrap_or_default().to_string();
-    let status = payload.get("status").and_then(|v| v.as_str()).unwrap_or_else(|| "active").to_string();
+    let status = payload.get("status").and_then(|v| v.as_str()).unwrap_or("active").to_string();
 
     client
         .execute(

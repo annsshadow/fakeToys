@@ -4,7 +4,7 @@ use axum::{
     Json, Router,
 };
 use deadpool_postgres::Pool;
-use sea_orm::{ActiveModelTrait, ColumnTrait, DatabaseConnection, EntityTrait, QueryOrder, QuerySelect, Set};
+use sea_orm::{ActiveModelTrait, DatabaseConnection, EntityTrait, QueryOrder, QuerySelect, Set};
 use serde_json::Value;
 use shared::{error::AppError, response::ActionResult};
 
@@ -34,7 +34,6 @@ pub async fn query_list(
                     "createTime".to_string(),
                     Value::String(
                         m.create_time
-                            .clone()
                             .map(|dt| dt.to_string())
                             .unwrap_or_default(),
                     ),

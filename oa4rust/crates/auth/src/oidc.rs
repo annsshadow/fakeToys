@@ -182,7 +182,7 @@ fn base64url_decode(input: &str) -> Result<Vec<u8>, AppError> {
     let normalized = input.replace('-', "+").replace('_', "/");
     let pad = (4 - normalized.len() % 4) % 4;
     let padded = format!("{}{}", normalized, "=".repeat(pad));
-    base64::decode_engine(&padded, &base64::engine::general_purpose::STANDARD)
+    base64::Engine::decode(&base64::engine::general_purpose::STANDARD, &padded)
         .map_err(|_| AppError::Internal)
 }
 
@@ -210,6 +210,7 @@ fn hex_to_biguint(hex_str: &str) -> Result<rsa::BigUint, ()> {
 }
 
 /// Convert a JWKS base64url-encoded n value directly to bytes (no hex round-trip).
+#[allow(dead_code)]
 fn jwks_n_to_bytes(n_b64: &str) -> Result<Vec<u8>, ()> {
     let normalized = n_b64.replace('-', "+").replace('_', "/");
     let pad = (4 - normalized.len() % 4) % 4;
@@ -218,6 +219,7 @@ fn jwks_n_to_bytes(n_b64: &str) -> Result<Vec<u8>, ()> {
 }
 
 /// Convert a JWKS base64url-encoded e value directly to bytes.
+#[allow(dead_code)]
 fn jwks_e_to_bytes(e_b64: &str) -> Result<Vec<u8>, ()> {
     let normalized = e_b64.replace('-', "+").replace('_', "/");
     let pad = (4 - normalized.len() % 4) % 4;

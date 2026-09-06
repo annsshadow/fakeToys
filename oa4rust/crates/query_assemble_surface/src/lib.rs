@@ -1,3 +1,4 @@
+#[allow(dead_code, non_snake_case)]
 use axum::{
     extract::{Extension, Path},
     Json, Router, routing::get, routing::post, routing::put, routing::delete,
@@ -18,6 +19,7 @@ pub struct CreateSurfaceRequest {
     pub template: Option<String>,
 }
 
+#[allow(non_snake_case)]
 pub async fn get_surface(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
@@ -50,6 +52,7 @@ pub async fn get_surface(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn create_surface(
     pool: Extension<Pool>,
     axum::extract::Json(req): Json<CreateSurfaceRequest>,
@@ -81,6 +84,7 @@ pub async fn create_surface(
     Ok(Json(ActionResult::success(result)))
 }
 
+#[allow(non_snake_case)]
 pub async fn list_surfaces(
     pool: Extension<Pool>,
     axum::extract::Path(category): axum::extract::Path<String>,
@@ -119,6 +123,7 @@ pub async fn list_surfaces(
     )))
 }
 
+#[allow(non_snake_case)]
 pub async fn save_surface(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
@@ -154,6 +159,7 @@ pub async fn save_surface(
     ))))
 }
 
+#[allow(non_snake_case)]
 pub async fn delete_surface(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
@@ -177,6 +183,7 @@ pub async fn delete_surface(
     ))))
 }
 
+#[allow(non_snake_case)]
 pub async fn preview_surface(
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -339,6 +346,7 @@ pub fn router(pool: deadpool_postgres::Pool) -> axum::Router {
 
 
 
+#[allow(non_snake_case)]
 pub async fn importmodel_execute_record_recordId(
     pool: Extension<Pool>,
     Path(record_id): Path<String>,
@@ -367,6 +375,7 @@ pub async fn importmodel_execute_record_recordId(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn importmodel_flag_flag_query_queryFlag(
     pool: Extension<Pool>,
     Path(flag): Path<String>,
@@ -396,6 +405,7 @@ pub async fn importmodel_flag_flag_query_queryFlag(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn importmodel_list_query_queryFlag(
     pool: Extension<Pool>,
     Path(query_flag): Path<String>,
@@ -432,6 +442,7 @@ pub async fn importmodel_list_query_queryFlag(
     )))
 }
 
+#[allow(non_snake_case)]
 pub async fn importmodel_list_record_item_paging_page_size_size(
     pool: Extension<Pool>,
     Path(page): Path<i64>,
@@ -468,6 +479,7 @@ pub async fn importmodel_list_record_item_paging_page_size_size(
     )))
 }
 
+#[allow(non_snake_case)]
 pub async fn importmodel_list_record_paging_page_size_size(
     pool: Extension<Pool>,
     Path(page): Path<i64>,
@@ -504,6 +516,7 @@ pub async fn importmodel_list_record_paging_page_size_size(
     )))
 }
 
+#[allow(non_snake_case)]
 pub async fn importmodel_record_recordId(
     pool: Extension<Pool>,
     Path(record_id): Path<String>,
@@ -533,6 +546,7 @@ pub async fn importmodel_record_recordId(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn importmodel_record_recordId_mockdeletetoget(
     pool: Extension<Pool>,
     Path(record_id): Path<String>,
@@ -561,6 +575,7 @@ pub async fn importmodel_record_recordId_mockdeletetoget(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn importmodel_record_recordId_status(
     pool: Extension<Pool>,
     Path(record_id): Path<String>,
@@ -588,14 +603,16 @@ pub async fn importmodel_record_recordId_status(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn importmodel_uuid(
-    pool: Extension<Pool>,
+    _pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let id = uuid::Uuid::new_v4().to_string();
     // Java returns String(uuid), not Object {uuid: String}
     Ok(Json(ActionResult::success(Value::String(id))))
 }
 
+#[allow(non_snake_case)]
 pub async fn importmodel_id(
     pool: Extension<Pool>,
     Path(id): Path<String>,
@@ -627,6 +644,7 @@ pub async fn importmodel_id(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn importmodel_id_execute(
     pool: Extension<Pool>,
     Path(id): Path<String>,
@@ -665,6 +683,7 @@ pub async fn importmodel_id_execute(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn neural_list_calculate_model_modelFlag_work_workId(
     pool: Extension<Pool>,
     Path(model_flag): Path<String>,
@@ -702,6 +721,7 @@ pub async fn neural_list_calculate_model_modelFlag_work_workId(
     )))
 }
 
+#[allow(non_snake_case)]
 pub async fn query_list(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -736,6 +756,7 @@ pub async fn query_list(
     )))
 }
 
+#[allow(non_snake_case)]
 pub async fn query_list_key_key(
     pool: Extension<Pool>,
     Path(key): Path<String>,
@@ -771,6 +792,7 @@ pub async fn query_list_key_key(
     )))
 }
 
+#[allow(non_snake_case)]
 pub async fn query_flag(
     pool: Extension<Pool>,
     Path(flag): Path<String>,
@@ -801,6 +823,7 @@ pub async fn query_flag(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn table_list_paging_page_size_size(
     pool: Extension<Pool>,
     Path(page): Path<i64>,
@@ -837,6 +860,7 @@ pub async fn table_list_paging_page_size_size(
     )))
 }
 
+#[allow(non_snake_case)]
 pub async fn table_list_table_tableFlag_row_paging_page_size_size(
     pool: Extension<Pool>,
     Path(table_flag): Path<String>,
@@ -872,6 +896,7 @@ pub async fn table_list_table_tableFlag_row_paging_page_size_size(
     )))
 }
 
+#[allow(non_snake_case)]
 pub async fn table_list_id_next_count(
     pool: Extension<Pool>,
     Path(id): Path<String>,
@@ -906,6 +931,7 @@ pub async fn table_list_id_next_count(
     )))
 }
 
+#[allow(non_snake_case)]
 pub async fn table_list_id_prev_count(
     pool: Extension<Pool>,
     Path(id): Path<String>,
@@ -940,6 +966,7 @@ pub async fn table_list_id_prev_count(
     )))
 }
 
+#[allow(non_snake_case)]
 pub async fn table_list_tableFlag_row_select(
     pool: Extension<Pool>,
     Path(table_flag): Path<String>,
@@ -973,6 +1000,7 @@ pub async fn table_list_tableFlag_row_select(
     )))
 }
 
+#[allow(non_snake_case)]
 pub async fn table_list_tableFlag_row_select_where_where(
     pool: Extension<Pool>,
     Path(table_flag): Path<String>,
@@ -982,7 +1010,7 @@ pub async fn table_list_tableFlag_row_select_where_where(
 
     let rows = client
         .query(
-            &format!("SELECT id, table_flag, data FROM x_query_table_data WHERE table_flag = $1 AND data ILIKE $2 ORDER BY id DESC LIMIT 100"),
+            &"SELECT id, table_flag, data FROM x_query_table_data WHERE table_flag = $1 AND data ILIKE $2 ORDER BY id DESC LIMIT 100".to_string(),
             &[&table_flag, &format!("%{}%", _where)],
         )
         .await
@@ -1007,6 +1035,7 @@ pub async fn table_list_tableFlag_row_select_where_where(
     )))
 }
 
+#[allow(non_snake_case)]
 pub async fn table_list_tableFlag_row_id_next_count(
     pool: Extension<Pool>,
     Path(table_flag): Path<String>,
@@ -1042,6 +1071,7 @@ pub async fn table_list_tableFlag_row_id_next_count(
     )))
 }
 
+#[allow(non_snake_case)]
 pub async fn table_list_tableFlag_row_id_prev_count(
     pool: Extension<Pool>,
     Path(table_flag): Path<String>,
@@ -1077,6 +1107,7 @@ pub async fn table_list_tableFlag_row_id_prev_count(
     )))
 }
 
+#[allow(non_snake_case)]
 pub async fn table_reload_dynamic(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -1099,6 +1130,7 @@ pub async fn table_reload_dynamic(
     ))))
 }
 
+#[allow(non_snake_case)]
 pub async fn table_flag(
     pool: Extension<Pool>,
     Path(flag): Path<String>,
@@ -1128,6 +1160,7 @@ pub async fn table_flag(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn table_tableFlag_row(
     pool: Extension<Pool>,
     Path(table_flag): Path<String>,
@@ -1161,6 +1194,7 @@ pub async fn table_tableFlag_row(
     )))
 }
 
+#[allow(non_snake_case)]
 pub async fn table_tableFlag_row_count_where_where(
     pool: Extension<Pool>,
     Path(table_flag): Path<String>,
@@ -1170,7 +1204,7 @@ pub async fn table_tableFlag_row_count_where_where(
 
     let row = client
         .query_one(
-            &format!("SELECT COUNT(*) as cnt FROM x_query_table_data WHERE table_flag = $1 AND data ILIKE $2"),
+            &"SELECT COUNT(*) as cnt FROM x_query_table_data WHERE table_flag = $1 AND data ILIKE $2".to_string(),
             &[&table_flag, &format!("%{}%", _where)],
         )
         .await
@@ -1186,6 +1220,7 @@ pub async fn table_tableFlag_row_count_where_where(
     ))))
 }
 
+#[allow(non_snake_case)]
 pub async fn table_tableFlag_row_delete_all(
     pool: Extension<Pool>,
     Path(table_flag): Path<String>,
@@ -1209,6 +1244,7 @@ pub async fn table_tableFlag_row_delete_all(
     ))))
 }
 
+#[allow(non_snake_case)]
 pub async fn table_tableFlag_row_delete_all_mockdeletetoget(
     pool: Extension<Pool>,
     Path(table_flag): Path<String>,
@@ -1242,6 +1278,7 @@ pub async fn table_tableFlag_row_delete_all_mockdeletetoget(
     )))
 }
 
+#[allow(non_snake_case)]
 pub async fn table_tableFlag_row_one(
     pool: Extension<Pool>,
     Path(table_flag): Path<String>,
@@ -1270,6 +1307,7 @@ pub async fn table_tableFlag_row_one(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn table_tableFlag_row_id(
     pool: Extension<Pool>,
     Path(table_flag): Path<String>,
@@ -1299,6 +1337,7 @@ pub async fn table_tableFlag_row_id(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn table_tableFlag_row_id_mockdeletetoget(
     pool: Extension<Pool>,
     Path(table_flag): Path<String>,
@@ -1328,6 +1367,7 @@ pub async fn table_tableFlag_row_id_mockdeletetoget(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn table_tableFlag_row_id_mockputtopost(
     pool: Extension<Pool>,
     Path(table_flag): Path<String>,
@@ -1359,6 +1399,7 @@ pub async fn table_tableFlag_row_id_mockputtopost(
     ))))
 }
 
+#[allow(non_snake_case)]
 pub async fn table_tableFlag_row_id_part_update(
     pool: Extension<Pool>,
     Path(table_flag): Path<String>,
@@ -1393,6 +1434,7 @@ pub async fn table_tableFlag_row_id_part_update(
     ))))
 }
 
+#[allow(non_snake_case)]
 pub async fn view_excel_result_flag(
     pool: Extension<Pool>,
     Path(flag): Path<String>,
@@ -1428,6 +1470,7 @@ pub async fn view_excel_result_flag(
     )))
 }
 
+#[allow(non_snake_case)]
 pub async fn view_flag_flag_query_queryFlag(
     pool: Extension<Pool>,
     Path(flag): Path<String>,
@@ -1460,6 +1503,7 @@ pub async fn view_flag_flag_query_queryFlag(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn view_flag_flag_query_queryFlag_bundle(
     pool: Extension<Pool>,
     Path(flag): Path<String>,
@@ -1489,6 +1533,7 @@ pub async fn view_flag_flag_query_queryFlag_bundle(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn view_flag_flag_query_queryFlag_bundle_mockputtopost(
     pool: Extension<Pool>,
     Path(flag): Path<String>,
@@ -1520,6 +1565,7 @@ pub async fn view_flag_flag_query_queryFlag_bundle_mockputtopost(
     ))))
 }
 
+#[allow(non_snake_case)]
 pub async fn view_flag_flag_query_queryFlag_excel(
     pool: Extension<Pool>,
     Path(flag): Path<String>,
@@ -1549,6 +1595,7 @@ pub async fn view_flag_flag_query_queryFlag_excel(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn view_flag_flag_query_queryFlag_excel_mockputtopost(
     pool: Extension<Pool>,
     Path(flag): Path<String>,
@@ -1580,6 +1627,7 @@ pub async fn view_flag_flag_query_queryFlag_excel_mockputtopost(
     ))))
 }
 
+#[allow(non_snake_case)]
 pub async fn view_flag_flag_query_queryFlag_execute(
     pool: Extension<Pool>,
     Path((view, app)): Path<(String, String)>,
@@ -1617,6 +1665,7 @@ pub async fn view_flag_flag_query_queryFlag_execute(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn view_flag_flag_query_queryFlag_execute_mockputtopost(
     pool: Extension<Pool>,
     Path(flag): Path<String>,
@@ -1648,6 +1697,7 @@ pub async fn view_flag_flag_query_queryFlag_execute_mockputtopost(
     ))))
 }
 
+#[allow(non_snake_case)]
 pub async fn view_flag_flag_query_queryFlag_execute_v2_page_page_size_size(
     pool: Extension<Pool>,
     Path((view, app, page, size)): Path<(String, String, i64, i64)>,
@@ -1684,6 +1734,7 @@ pub async fn view_flag_flag_query_queryFlag_execute_v2_page_page_size_size(
     )))
 }
 
+#[allow(non_snake_case)]
 pub async fn view_list_query_queryFlag(
     pool: Extension<Pool>,
     Path(query_flag): Path<String>,
@@ -1720,6 +1771,7 @@ pub async fn view_list_query_queryFlag(
     )))
 }
 
+#[allow(non_snake_case)]
 pub async fn view_id(
     pool: Extension<Pool>,
     Path(id): Path<String>,
@@ -1751,6 +1803,7 @@ pub async fn view_id(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn view_id_bundle(
     pool: Extension<Pool>,
     Path(id): Path<String>,
@@ -1779,6 +1832,7 @@ pub async fn view_id_bundle(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn view_id_bundle_mockputtopost(
     pool: Extension<Pool>,
     Path(id): Path<String>,
@@ -1808,6 +1862,7 @@ pub async fn view_id_bundle_mockputtopost(
     ))))
 }
 
+#[allow(non_snake_case)]
 pub async fn view_id_bundle_v2(
     pool: Extension<Pool>,
     Path(id): Path<String>,
@@ -1836,6 +1891,7 @@ pub async fn view_id_bundle_v2(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn view_id_excel(
     pool: Extension<Pool>,
     Path(id): Path<String>,
@@ -1864,6 +1920,7 @@ pub async fn view_id_excel(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn view_id_excel_mockputtopost(
     pool: Extension<Pool>,
     Path(id): Path<String>,
@@ -1893,6 +1950,7 @@ pub async fn view_id_excel_mockputtopost(
     ))))
 }
 
+#[allow(non_snake_case)]
 pub async fn view_id_execute(
     pool: Extension<Pool>,
     Path(id): Path<String>,
@@ -1930,6 +1988,7 @@ pub async fn view_id_execute(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn view_id_execute_mockputtopost(
     pool: Extension<Pool>,
     Path(id): Path<String>,
@@ -1959,6 +2018,7 @@ pub async fn view_id_execute_mockputtopost(
     ))))
 }
 
+#[allow(non_snake_case)]
 pub async fn view_id_execute_v2_page_page_size_size(
     pool: Extension<Pool>,
     Path(id): Path<String>,

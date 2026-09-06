@@ -22,6 +22,7 @@ pub struct CreateBamRequest {
 
 /// 鑾峰彇BAM閰嶇疆
 /// 杩斿洖BAM鐨勫綋鍓嶉厤缃俊鎭?
+#[allow(non_snake_case)]
 pub async fn get_bam_config(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
@@ -52,6 +53,7 @@ pub async fn get_bam_config(
 
 /// 鍒涘缓BAM瀹炰緥
 /// 鏍规嵁璇锋眰鍒涘缓鏂扮殑BAM鐩戞帶瀹炰緥
+#[allow(non_snake_case)]
 pub async fn create_bam(
     pool: Extension<Pool>,
     session: Extension<Session>,
@@ -84,6 +86,7 @@ pub async fn create_bam(
 
 /// 鍒楀嚭BAM瀹炰緥
 /// 杩斿洖鎸囧畾绫诲埆涓嬬殑鎵€鏈塀AM瀹炰緥鍒楄〃
+#[allow(non_snake_case)]
 pub async fn list_bams(
     pool: Extension<Pool>,
     axum::extract::Path(category): axum::extract::Path<String>,
@@ -114,6 +117,7 @@ pub async fn list_bams(
 
 /// 鍒犻櫎BAM瀹炰緥
 /// 鏍规嵁ID鍒犻櫎鎸囧畾鐨凚AM鐩戞帶瀹炰緥
+#[allow(non_snake_case)]
 pub async fn delete_bam(
     pool: Extension<Pool>,
     session: Extension<Session>,
@@ -130,6 +134,7 @@ pub async fn delete_bam(
 
 /// Get BAM status
 /// Returns the current runtime status of a BAM instance
+#[allow(non_snake_case)]
 pub async fn get_bam_status(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
@@ -273,6 +278,7 @@ pub fn router(pool: deadpool_postgres::Pool) -> axum::Router {
 // Period statistics 鈥?completed tasks
 // 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
 
+#[allow(non_snake_case)]
 pub async fn period_list_completed_task_application(
     pool: Extension<Pool>,
     axum::extract::Path(application_id): axum::extract::Path<String>,
@@ -305,6 +311,7 @@ pub async fn period_list_completed_task_application(
     Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
 }
 
+#[allow(non_snake_case)]
 pub async fn period_list_completed_task_unit(
     pool: Extension<Pool>,
     axum::extract::Path(unit_id): axum::extract::Path<String>,
@@ -336,6 +343,7 @@ pub async fn period_list_completed_task_unit(
     Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
 }
 
+#[allow(non_snake_case)]
 pub async fn period_list_completed_work_application(
     pool: Extension<Pool>,
     axum::extract::Path(application_id): axum::extract::Path<String>,
@@ -365,6 +373,7 @@ pub async fn period_list_completed_work_application(
     Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
 }
 
+#[allow(non_snake_case)]
 pub async fn period_list_completed_work_unit(
     pool: Extension<Pool>,
     axum::extract::Path(unit_id): axum::extract::Path<String>,
@@ -399,6 +408,7 @@ pub async fn period_list_completed_work_unit(
 // Period count functions 鈥?completed tasks
 // 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
 
+#[allow(non_snake_case)]
 pub async fn period_list_count_completed_task_application_applicationId_process_processId_activity_activityId_by_unit(
     pool: Extension<Pool>,
     axum::extract::Path((application_id, process_id, activity_id)): axum::extract::Path<(String, String, String)>,
@@ -424,9 +434,10 @@ pub async fn period_list_count_completed_task_application_applicationId_process_
     Ok(Json(ActionResult::java_success(Value::Object(serde_json::Map::new()), count, 0)))
 }
 
+#[allow(non_snake_case)]
 pub async fn period_list_count_completed_task_application_applicationId_process_processId_activity_activityId_unit_unit_person_person(
     pool: Extension<Pool>,
-    axum::extract::Path((application_id, process_id, activity_id, unit_id, person_id)): axum::extract::Path<(String, String, String, String, String)>,
+    axum::extract::Path((application_id, process_id, activity_id, _unit_id, person_id)): axum::extract::Path<(String, String, String, String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let rows = client
@@ -443,9 +454,10 @@ pub async fn period_list_count_completed_task_application_applicationId_process_
     Ok(Json(ActionResult::java_success(Value::Array(vec![]), cnt, 0)))
 }
 
+#[allow(non_snake_case)]
 pub async fn period_list_count_completed_task_application_applicationId_process_processId_unit_unit_person_person_by_activity(
     pool: Extension<Pool>,
-    axum::extract::Path((application_id, process_id, unit_id, person_id)): axum::extract::Path<(String, String, String, String)>,
+    axum::extract::Path((application_id, process_id, _unit_id, person_id)): axum::extract::Path<(String, String, String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let rows = client
@@ -469,9 +481,10 @@ pub async fn period_list_count_completed_task_application_applicationId_process_
     Ok(Json(ActionResult::java_success(Value::Object(serde_json::Map::new()), count, 0)))
 }
 
+#[allow(non_snake_case)]
 pub async fn period_list_count_completed_task_application_applicationId_unit_unit_person_person_by_process(
     pool: Extension<Pool>,
-    axum::extract::Path((application_id, unit_id, person_id)): axum::extract::Path<(String, String, String)>,
+    axum::extract::Path((application_id, _unit_id, person_id)): axum::extract::Path<(String, String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let rows = client
@@ -495,9 +508,10 @@ pub async fn period_list_count_completed_task_application_applicationId_unit_uni
     Ok(Json(ActionResult::java_success(Value::Object(serde_json::Map::new()), count, 0)))
 }
 
+#[allow(non_snake_case)]
 pub async fn period_list_count_completed_task_unit_unit_person_person_by_application(
     pool: Extension<Pool>,
-    axum::extract::Path((unit_id, person_id)): axum::extract::Path<(String, String)>,
+    axum::extract::Path((_unit_id, person_id)): axum::extract::Path<(String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let rows = client
@@ -525,6 +539,7 @@ pub async fn period_list_count_completed_task_unit_unit_person_person_by_applica
 // Period count functions 鈥?completed work
 // 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
 
+#[allow(non_snake_case)]
 pub async fn period_list_count_completed_work_application_applicationId_process_processId_by_unit(
     pool: Extension<Pool>,
     axum::extract::Path((application_id, process_id)): axum::extract::Path<(String, String)>,
@@ -543,6 +558,7 @@ pub async fn period_list_count_completed_work_application_applicationId_process_
     Ok(Json(ActionResult::java_success(Value::Array(vec![]), cnt, 0)))
 }
 
+#[allow(non_snake_case)]
 pub async fn period_list_count_completed_work_application_applicationId_process_processId_unit_unit_person_person(
     pool: Extension<Pool>,
     axum::extract::Path((application_id, process_id, person_id)): axum::extract::Path<(String, String, String)>,
@@ -561,6 +577,7 @@ pub async fn period_list_count_completed_work_application_applicationId_process_
     Ok(Json(ActionResult::java_success(Value::Array(vec![]), cnt, 0)))
 }
 
+#[allow(non_snake_case)]
 pub async fn period_list_count_completed_work_application_applicationId_unit_unit_person_person_by_process(
     pool: Extension<Pool>,
     axum::extract::Path((application_id, person_id)): axum::extract::Path<(String, String)>,
@@ -585,9 +602,10 @@ pub async fn period_list_count_completed_work_application_applicationId_unit_uni
     Ok(Json(ActionResult::java_success(Value::Object(serde_json::Map::new()), count, 0)))
 }
 
+#[allow(non_snake_case)]
 pub async fn period_list_count_completed_work_unit_unit_person_person_by_application(
     pool: Extension<Pool>,
-    axum::extract::Path((person_id)): axum::extract::Path<String>,
+    axum::extract::Path(person_id ): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let rows = client
@@ -613,6 +631,7 @@ pub async fn period_list_count_completed_work_unit_unit_person_person_by_applica
 // Period count functions 鈥?expired tasks
 // 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
 
+#[allow(non_snake_case)]
 pub async fn period_list_count_expired_task_application_applicationId_process_processId_activity_activityId_by_unit(
     pool: Extension<Pool>,
     axum::extract::Path((application_id, process_id, activity_id)): axum::extract::Path<(String, String, String)>,
@@ -639,6 +658,7 @@ pub async fn period_list_count_expired_task_application_applicationId_process_pr
     Ok(Json(ActionResult::java_success(Value::Object(serde_json::Map::new()), count, 0)))
 }
 
+#[allow(non_snake_case)]
 pub async fn period_list_count_expired_task_application_applicationId_process_processId_activity_activityId_unit_unit_person_person(
     pool: Extension<Pool>,
     axum::extract::Path((application_id, process_id, activity_id, person_id)): axum::extract::Path<(String, String, String, String)>,
@@ -658,6 +678,7 @@ pub async fn period_list_count_expired_task_application_applicationId_process_pr
     Ok(Json(ActionResult::java_success(Value::Array(vec![]), cnt, 0)))
 }
 
+#[allow(non_snake_case)]
 pub async fn period_list_count_expired_task_application_applicationId_process_processId_unit_unit_person_person_by_activity(
     pool: Extension<Pool>,
     axum::extract::Path((application_id, process_id, person_id)): axum::extract::Path<(String, String, String)>,
@@ -684,6 +705,7 @@ pub async fn period_list_count_expired_task_application_applicationId_process_pr
     Ok(Json(ActionResult::java_success(Value::Object(serde_json::Map::new()), count, 0)))
 }
 
+#[allow(non_snake_case)]
 pub async fn period_list_count_expired_task_application_applicationId_unit_unit_person_person_by_process(
     pool: Extension<Pool>,
     axum::extract::Path((application_id, person_id)): axum::extract::Path<(String, String)>,
@@ -710,6 +732,7 @@ pub async fn period_list_count_expired_task_application_applicationId_unit_unit_
     Ok(Json(ActionResult::java_success(Value::Object(serde_json::Map::new()), count, 0)))
 }
 
+#[allow(non_snake_case)]
 pub async fn period_list_count_expired_task_unit_unit_person_person_by_application(
     pool: Extension<Pool>,
     axum::extract::Path(person_id): axum::extract::Path<String>,
@@ -740,6 +763,7 @@ pub async fn period_list_count_expired_task_unit_unit_person_person_by_applicati
 // Period count functions 鈥?expired work
 // 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
 
+#[allow(non_snake_case)]
 pub async fn period_list_count_expired_work_application_applicationId_process_processId_by_unit(
     pool: Extension<Pool>,
     axum::extract::Path((application_id, process_id)): axum::extract::Path<(String, String)>,
@@ -758,6 +782,7 @@ pub async fn period_list_count_expired_work_application_applicationId_process_pr
     Ok(Json(ActionResult::java_success(Value::Array(vec![]), cnt, 0)))
 }
 
+#[allow(non_snake_case)]
 pub async fn period_list_count_expired_work_application_applicationId_process_processId_unit_unit_person_person(
     pool: Extension<Pool>,
     axum::extract::Path((application_id, process_id, person_id)): axum::extract::Path<(String, String, String)>,
@@ -776,6 +801,7 @@ pub async fn period_list_count_expired_work_application_applicationId_process_pr
     Ok(Json(ActionResult::java_success(Value::Array(vec![]), cnt, 0)))
 }
 
+#[allow(non_snake_case)]
 pub async fn period_list_count_expired_work_application_applicationId_unit_unit_person_person_by_process(
     pool: Extension<Pool>,
     axum::extract::Path((application_id, person_id)): axum::extract::Path<(String, String)>,
@@ -800,6 +826,7 @@ pub async fn period_list_count_expired_work_application_applicationId_unit_unit_
     Ok(Json(ActionResult::java_success(Value::Object(serde_json::Map::new()), count, 0)))
 }
 
+#[allow(non_snake_case)]
 pub async fn period_list_count_expired_work_unit_unit_person_person_by_application(
     pool: Extension<Pool>,
     axum::extract::Path(person_id): axum::extract::Path<String>,
@@ -828,6 +855,7 @@ pub async fn period_list_count_expired_work_unit_unit_person_person_by_applicati
 // Period count functions 鈥?start tasks
 // 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
 
+#[allow(non_snake_case)]
 pub async fn period_list_count_start_task_application_applicationId_process_processId_activity_activityId_by_unit(
     pool: Extension<Pool>,
     axum::extract::Path((application_id, process_id, activity_id)): axum::extract::Path<(String, String, String)>,
@@ -854,6 +882,7 @@ pub async fn period_list_count_start_task_application_applicationId_process_proc
     Ok(Json(ActionResult::java_success(Value::Object(serde_json::Map::new()), count, 0)))
 }
 
+#[allow(non_snake_case)]
 pub async fn period_list_count_start_task_application_applicationId_process_processId_activity_activityId_unit_unit_person_person(
     pool: Extension<Pool>,
     axum::extract::Path((application_id, process_id, activity_id, person_id)): axum::extract::Path<(String, String, String, String)>,
@@ -873,6 +902,7 @@ pub async fn period_list_count_start_task_application_applicationId_process_proc
     Ok(Json(ActionResult::java_success(Value::Array(vec![]), cnt, 0)))
 }
 
+#[allow(non_snake_case)]
 pub async fn period_list_count_start_task_application_applicationId_process_processId_unit_unit_person_person_by_activity(
     pool: Extension<Pool>,
     axum::extract::Path((application_id, process_id, person_id)): axum::extract::Path<(String, String, String)>,
@@ -899,6 +929,7 @@ pub async fn period_list_count_start_task_application_applicationId_process_proc
     Ok(Json(ActionResult::java_success(Value::Object(serde_json::Map::new()), count, 0)))
 }
 
+#[allow(non_snake_case)]
 pub async fn period_list_count_start_task_application_applicationId_unit_unit_person_person_by_process(
     pool: Extension<Pool>,
     axum::extract::Path((application_id, person_id)): axum::extract::Path<(String, String)>,
@@ -925,6 +956,7 @@ pub async fn period_list_count_start_task_application_applicationId_unit_unit_pe
     Ok(Json(ActionResult::java_success(Value::Object(serde_json::Map::new()), count, 0)))
 }
 
+#[allow(non_snake_case)]
 pub async fn period_list_count_start_task_unit_unit_person_person_by_application(
     pool: Extension<Pool>,
     axum::extract::Path(person_id): axum::extract::Path<String>,
@@ -955,6 +987,7 @@ pub async fn period_list_count_start_task_unit_unit_person_person_by_application
 // Period count functions 鈥?start work
 // 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
 
+#[allow(non_snake_case)]
 pub async fn period_list_count_start_work_application_applicationId_process_processId_by_unit(
     pool: Extension<Pool>,
     axum::extract::Path((application_id, process_id)): axum::extract::Path<(String, String)>,
@@ -973,6 +1006,7 @@ pub async fn period_list_count_start_work_application_applicationId_process_proc
     Ok(Json(ActionResult::java_success(Value::Array(vec![]), cnt, 0)))
 }
 
+#[allow(non_snake_case)]
 pub async fn period_list_count_start_work_application_applicationId_process_processId_unit_unit_person_person(
     pool: Extension<Pool>,
     axum::extract::Path((application_id, process_id, person_id)): axum::extract::Path<(String, String, String)>,
@@ -991,6 +1025,7 @@ pub async fn period_list_count_start_work_application_applicationId_process_proc
     Ok(Json(ActionResult::java_success(Value::Array(vec![]), cnt, 0)))
 }
 
+#[allow(non_snake_case)]
 pub async fn period_list_count_start_work_application_applicationId_unit_unit_person_person_by_process(
     pool: Extension<Pool>,
     axum::extract::Path((application_id, person_id)): axum::extract::Path<(String, String)>,
@@ -1015,6 +1050,7 @@ pub async fn period_list_count_start_work_application_applicationId_unit_unit_pe
     Ok(Json(ActionResult::java_success(Value::Object(serde_json::Map::new()), count, 0)))
 }
 
+#[allow(non_snake_case)]
 pub async fn period_list_count_start_work_unit_unit_person_person_by_application(
     pool: Extension<Pool>,
     axum::extract::Path(person_id): axum::extract::Path<String>,
@@ -1043,6 +1079,7 @@ pub async fn period_list_count_start_work_unit_unit_person_person_by_application
 // Period list functions 鈥?expired
 // 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
 
+#[allow(non_snake_case)]
 pub async fn period_list_expired_task_application(
     pool: Extension<Pool>,
     axum::extract::Path(application_id): axum::extract::Path<String>,
@@ -1074,6 +1111,7 @@ pub async fn period_list_expired_task_application(
     Ok(Json(ActionResult::java_success(Value::Object(serde_json::Map::new()), count, 0)))
 }
 
+#[allow(non_snake_case)]
 pub async fn period_list_expired_task_unit(
     pool: Extension<Pool>,
     axum::extract::Path(unit_id): axum::extract::Path<String>,
@@ -1105,6 +1143,7 @@ pub async fn period_list_expired_task_unit(
     Ok(Json(ActionResult::java_success(Value::Object(serde_json::Map::new()), count, 0)))
 }
 
+#[allow(non_snake_case)]
 pub async fn period_list_expired_work_application(
     pool: Extension<Pool>,
     axum::extract::Path(application_id): axum::extract::Path<String>,
@@ -1134,6 +1173,7 @@ pub async fn period_list_expired_work_application(
     Ok(Json(ActionResult::java_success(Value::Object(serde_json::Map::new()), count, 0)))
 }
 
+#[allow(non_snake_case)]
 pub async fn period_list_expired_work_unit(
     pool: Extension<Pool>,
     axum::extract::Path(unit_id): axum::extract::Path<String>,
@@ -1168,6 +1208,7 @@ pub async fn period_list_expired_work_unit(
 // Period list functions 鈥?start
 // 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
 
+#[allow(non_snake_case)]
 pub async fn period_list_start_task_application(
     pool: Extension<Pool>,
     axum::extract::Path(application_id): axum::extract::Path<String>,
@@ -1199,6 +1240,7 @@ pub async fn period_list_start_task_application(
     Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
 }
 
+#[allow(non_snake_case)]
 pub async fn period_list_start_task_unit(
     pool: Extension<Pool>,
     axum::extract::Path(unit_id): axum::extract::Path<String>,
@@ -1230,6 +1272,7 @@ pub async fn period_list_start_task_unit(
     Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
 }
 
+#[allow(non_snake_case)]
 pub async fn period_list_start_work_application(
     pool: Extension<Pool>,
     axum::extract::Path(application_id): axum::extract::Path<String>,
@@ -1259,6 +1302,7 @@ pub async fn period_list_start_work_application(
     Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
 }
 
+#[allow(non_snake_case)]
 pub async fn period_list_start_work_unit(
     pool: Extension<Pool>,
     axum::extract::Path(unit_id): axum::extract::Path<String>,
@@ -1293,6 +1337,7 @@ pub async fn period_list_start_work_unit(
 // State statistics
 // 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
 
+#[allow(non_snake_case)]
 pub async fn state_applicationtstubs_trigger(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -1327,6 +1372,7 @@ pub async fn state_applicationtstubs_trigger(
     Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
 }
 
+#[allow(non_snake_case)]
 pub async fn state_category(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -1364,6 +1410,7 @@ pub async fn state_category(
     Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
 }
 
+#[allow(non_snake_case)]
 pub async fn state_category_trigger(
     pool: Extension<Pool>,
     session: Extension<Session>,
@@ -1408,6 +1455,7 @@ pub async fn state_category_trigger(
     ))))
 }
 
+#[allow(non_snake_case)]
 pub async fn state_organization(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -1440,6 +1488,7 @@ pub async fn state_organization(
     ))))
 }
 
+#[allow(non_snake_case)]
 pub async fn state_running(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -1486,6 +1535,7 @@ pub async fn state_running(
     ))))
 }
 
+#[allow(non_snake_case)]
 pub async fn state_summary(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -1729,39 +1779,51 @@ async fn bam_stubs_work(pool: Extension<Pool>, period: &'static str, by_unit: bo
     period_count_query_shaped(&pool.0, "work", period, &PeriodFilter::default(), Some(group), true).await
 }
 
+#[allow(non_snake_case)]
 pub async fn bam_stubs_completed_task_by_application(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
     bam_stubs_task(pool, "completed").await
 }
+#[allow(non_snake_case)]
 pub async fn bam_stubs_completed_task_by_unit(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
     bam_stubs_task_unit(pool, "completed").await
 }
+#[allow(non_snake_case)]
 pub async fn bam_stubs_completed_work_by_application(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
     bam_stubs_work(pool, "completed", false).await
 }
+#[allow(non_snake_case)]
 pub async fn bam_stubs_completed_work_by_unit(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
     bam_stubs_work(pool, "completed", true).await
 }
+#[allow(non_snake_case)]
 pub async fn bam_stubs_expired_task_by_application(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
     bam_stubs_task(pool, "expired").await
 }
+#[allow(non_snake_case)]
 pub async fn bam_stubs_expired_task_by_unit(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
     bam_stubs_task_unit(pool, "expired").await
 }
+#[allow(non_snake_case)]
 pub async fn bam_stubs_expired_work_by_application(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
     bam_stubs_work(pool, "expired", false).await
 }
+#[allow(non_snake_case)]
 pub async fn bam_stubs_expired_work_by_unit(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
     bam_stubs_work(pool, "expired", true).await
 }
+#[allow(non_snake_case)]
 pub async fn bam_stubs_start_task_by_application(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
     bam_stubs_task(pool, "start").await
 }
+#[allow(non_snake_case)]
 pub async fn bam_stubs_start_task_by_unit(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
     bam_stubs_task_unit(pool, "start").await
 }
+#[allow(non_snake_case)]
 pub async fn bam_stubs_start_work_by_application(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
     bam_stubs_work(pool, "start", false).await
 }
+#[allow(non_snake_case)]
 pub async fn bam_stubs_start_work_by_unit(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
     bam_stubs_work(pool, "start", true).await
 }
@@ -1772,126 +1834,154 @@ type BamPath4 = axum::extract::Path<(String, String, String, String)>;
 type BamPath5 = axum::extract::Path<(String, String, String, String, String)>;
 
 /// completed/task stubs — Java path unique alias (no double-count)
+#[allow(non_snake_case)]
 pub async fn bam_count_completed_task_by_unit(pool: Extension<Pool>, p: BamPath3) -> Result<Json<ActionResult<Value>>, AppError> {
     let (a, pr, ac) = p.0;
     period_count_query(&pool.0, "task", "completed", &PeriodFilter { application: Some(a), process: Some(pr), activity: Some(ac), ..Default::default() }, Some("unit")).await
 }
+#[allow(non_snake_case)]
 pub async fn bam_count_completed_task_total(pool: Extension<Pool>, p: BamPath5) -> Result<Json<ActionResult<Value>>, AppError> {
     let (a, pr, ac, u, pe) = p.0;
     period_count_query_shaped(&pool.0, "task", "completed", &PeriodFilter { application: Some(a), process: Some(pr), activity: Some(ac), unit: Some(u), person: Some(pe) }, None, true).await
 }
+#[allow(non_snake_case)]
 pub async fn bam_count_completed_task_by_activity(pool: Extension<Pool>, p: BamPath4) -> Result<Json<ActionResult<Value>>, AppError> {
     let (a, pr, u, pe) = p.0;
     period_count_query(&pool.0, "task", "completed", &PeriodFilter { application: Some(a), process: Some(pr), unit: Some(u), person: Some(pe), ..Default::default() }, Some("activity")).await
 }
+#[allow(non_snake_case)]
 pub async fn bam_count_completed_task_by_process(pool: Extension<Pool>, p: BamPath3) -> Result<Json<ActionResult<Value>>, AppError> {
     let (a, u, pe) = p.0;
     period_count_query(&pool.0, "task", "completed", &PeriodFilter { application: Some(a), unit: Some(u), person: Some(pe), ..Default::default() }, Some("process")).await
 }
+#[allow(non_snake_case)]
 pub async fn bam_count_completed_task_by_application(pool: Extension<Pool>, p: BamPath2) -> Result<Json<ActionResult<Value>>, AppError> {
     let (u, pe) = p.0;
     period_count_query(&pool.0, "task", "completed", &PeriodFilter { unit: Some(u), person: Some(pe), ..Default::default() }, Some("application")).await
 }
 
 /// completed/work 鍥涚鍒囩墖銆?
+#[allow(non_snake_case)]
 pub async fn bam_count_completed_work_by_unit(pool: Extension<Pool>, p: BamPath2) -> Result<Json<ActionResult<Value>>, AppError> {
     let (a, pr) = p.0;
     period_count_query(&pool.0, "work", "completed", &PeriodFilter { application: Some(a), process: Some(pr), ..Default::default() }, Some("unit")).await
 }
+#[allow(non_snake_case)]
 pub async fn bam_count_completed_work_total(pool: Extension<Pool>, p: BamPath4) -> Result<Json<ActionResult<Value>>, AppError> {
     let (a, pr, u, pe) = p.0;
     period_count_query_shaped(&pool.0, "work", "completed", &PeriodFilter { application: Some(a), process: Some(pr), unit: Some(u), person: Some(pe), ..Default::default() }, None, true).await
 }
+#[allow(non_snake_case)]
 pub async fn bam_count_completed_work_by_process(pool: Extension<Pool>, p: BamPath3) -> Result<Json<ActionResult<Value>>, AppError> {
     let (a, u, pe) = p.0;
     period_count_query(&pool.0, "work", "completed", &PeriodFilter { application: Some(a), unit: Some(u), person: Some(pe), ..Default::default() }, Some("process")).await
 }
+#[allow(non_snake_case)]
 pub async fn bam_count_completed_work_by_application(pool: Extension<Pool>, p: BamPath2) -> Result<Json<ActionResult<Value>>, AppError> {
     let (u, pe) = p.0;
     period_count_query(&pool.0, "work", "completed", &PeriodFilter { unit: Some(u), person: Some(pe), ..Default::default() }, Some("application")).await
 }
 
 /// expired/task 浜旂鍒囩墖銆?
+#[allow(non_snake_case)]
 pub async fn bam_count_expired_task_by_unit(pool: Extension<Pool>, p: BamPath3) -> Result<Json<ActionResult<Value>>, AppError> {
     let (a, pr, ac) = p.0;
     period_count_query(&pool.0, "task", "expired", &PeriodFilter { application: Some(a), process: Some(pr), activity: Some(ac), ..Default::default() }, Some("unit")).await
 }
+#[allow(non_snake_case)]
 pub async fn bam_count_expired_task_total(pool: Extension<Pool>, p: BamPath5) -> Result<Json<ActionResult<Value>>, AppError> {
     let (a, pr, ac, u, pe) = p.0;
     period_count_query_shaped(&pool.0, "task", "expired", &PeriodFilter { application: Some(a), process: Some(pr), activity: Some(ac), unit: Some(u), person: Some(pe) }, None, true).await
 }
+#[allow(non_snake_case)]
 pub async fn bam_count_expired_task_by_activity(pool: Extension<Pool>, p: BamPath4) -> Result<Json<ActionResult<Value>>, AppError> {
     let (a, pr, u, pe) = p.0;
     period_count_query(&pool.0, "task", "expired", &PeriodFilter { application: Some(a), process: Some(pr), unit: Some(u), person: Some(pe), ..Default::default() }, Some("activity")).await
 }
+#[allow(non_snake_case)]
 pub async fn bam_count_expired_task_by_process(pool: Extension<Pool>, p: BamPath3) -> Result<Json<ActionResult<Value>>, AppError> {
     let (a, u, pe) = p.0;
     period_count_query(&pool.0, "task", "expired", &PeriodFilter { application: Some(a), unit: Some(u), person: Some(pe), ..Default::default() }, Some("process")).await
 }
+#[allow(non_snake_case)]
 pub async fn bam_count_expired_task_by_application(pool: Extension<Pool>, p: BamPath2) -> Result<Json<ActionResult<Value>>, AppError> {
     let (u, pe) = p.0;
     period_count_query(&pool.0, "task", "expired", &PeriodFilter { unit: Some(u), person: Some(pe), ..Default::default() }, Some("application")).await
 }
 
 /// expired/work 鍥涚鍒囩墖銆?
+#[allow(non_snake_case)]
 pub async fn bam_count_expired_work_by_unit(pool: Extension<Pool>, p: BamPath2) -> Result<Json<ActionResult<Value>>, AppError> {
     let (a, pr) = p.0;
     period_count_query(&pool.0, "work", "expired", &PeriodFilter { application: Some(a), process: Some(pr), ..Default::default() }, Some("unit")).await
 }
+#[allow(non_snake_case)]
 pub async fn bam_count_expired_work_total(pool: Extension<Pool>, p: BamPath4) -> Result<Json<ActionResult<Value>>, AppError> {
     let (a, pr, u, pe) = p.0;
     period_count_query_shaped(&pool.0, "work", "expired", &PeriodFilter { application: Some(a), process: Some(pr), unit: Some(u), person: Some(pe), ..Default::default() }, None, true).await
 }
+#[allow(non_snake_case)]
 pub async fn bam_count_expired_work_by_process(pool: Extension<Pool>, p: BamPath3) -> Result<Json<ActionResult<Value>>, AppError> {
     let (a, u, pe) = p.0;
     period_count_query(&pool.0, "work", "expired", &PeriodFilter { application: Some(a), unit: Some(u), person: Some(pe), ..Default::default() }, Some("process")).await
 }
+#[allow(non_snake_case)]
 pub async fn bam_count_expired_work_by_application(pool: Extension<Pool>, p: BamPath2) -> Result<Json<ActionResult<Value>>, AppError> {
     let (u, pe) = p.0;
     period_count_query(&pool.0, "work", "expired", &PeriodFilter { unit: Some(u), person: Some(pe), ..Default::default() }, Some("application")).await
 }
 
 /// start/task 浜旂鍒囩墖銆?
+#[allow(non_snake_case)]
 pub async fn bam_count_start_task_by_unit(pool: Extension<Pool>, p: BamPath3) -> Result<Json<ActionResult<Value>>, AppError> {
     let (a, pr, ac) = p.0;
     period_count_query(&pool.0, "task", "start", &PeriodFilter { application: Some(a), process: Some(pr), activity: Some(ac), ..Default::default() }, Some("unit")).await
 }
+#[allow(non_snake_case)]
 pub async fn bam_count_start_task_total(pool: Extension<Pool>, p: BamPath5) -> Result<Json<ActionResult<Value>>, AppError> {
     let (a, pr, ac, u, pe) = p.0;
     period_count_query_shaped(&pool.0, "task", "start", &PeriodFilter { application: Some(a), process: Some(pr), activity: Some(ac), unit: Some(u), person: Some(pe) }, None, true).await
 }
+#[allow(non_snake_case)]
 pub async fn bam_count_start_task_by_activity(pool: Extension<Pool>, p: BamPath4) -> Result<Json<ActionResult<Value>>, AppError> {
     let (a, pr, u, pe) = p.0;
     period_count_query(&pool.0, "task", "start", &PeriodFilter { application: Some(a), process: Some(pr), unit: Some(u), person: Some(pe), ..Default::default() }, Some("activity")).await
 }
+#[allow(non_snake_case)]
 pub async fn bam_count_start_task_by_process(pool: Extension<Pool>, p: BamPath3) -> Result<Json<ActionResult<Value>>, AppError> {
     let (a, u, pe) = p.0;
     period_count_query(&pool.0, "task", "start", &PeriodFilter { application: Some(a), unit: Some(u), person: Some(pe), ..Default::default() }, Some("process")).await
 }
+#[allow(non_snake_case)]
 pub async fn bam_count_start_task_by_application(pool: Extension<Pool>, p: BamPath2) -> Result<Json<ActionResult<Value>>, AppError> {
     let (u, pe) = p.0;
     period_count_query(&pool.0, "task", "start", &PeriodFilter { unit: Some(u), person: Some(pe), ..Default::default() }, Some("application")).await
 }
 
 /// start/work 鍥涚鍒囩墖銆?
+#[allow(non_snake_case)]
 pub async fn bam_count_start_work_by_unit(pool: Extension<Pool>, p: BamPath2) -> Result<Json<ActionResult<Value>>, AppError> {
     let (a, pr) = p.0;
     period_count_query(&pool.0, "work", "start", &PeriodFilter { application: Some(a), process: Some(pr), ..Default::default() }, Some("unit")).await
 }
+#[allow(non_snake_case)]
 pub async fn bam_count_start_work_total(pool: Extension<Pool>, p: BamPath4) -> Result<Json<ActionResult<Value>>, AppError> {
     let (a, pr, u, pe) = p.0;
     period_count_query_shaped(&pool.0, "work", "start", &PeriodFilter { application: Some(a), process: Some(pr), unit: Some(u), person: Some(pe), ..Default::default() }, None, true).await
 }
+#[allow(non_snake_case)]
 pub async fn bam_count_start_work_by_process(pool: Extension<Pool>, p: BamPath3) -> Result<Json<ActionResult<Value>>, AppError> {
     let (a, u, pe) = p.0;
     period_count_query(&pool.0, "work", "start", &PeriodFilter { application: Some(a), unit: Some(u), person: Some(pe), ..Default::default() }, Some("process")).await
 }
+#[allow(non_snake_case)]
 pub async fn bam_count_start_work_by_application(pool: Extension<Pool>, p: BamPath2) -> Result<Json<ActionResult<Value>>, AppError> {
     let (u, pe) = p.0;
     period_count_query(&pool.0, "work", "start", &PeriodFilter { unit: Some(u), person: Some(pe), ..Default::default() }, Some("application")).await
 }
 
 /// GET /state/category/trigger — unclassified triggers with incomplete status (direct SQL)
+#[allow(non_snake_case)]
 pub async fn state_category_trigger_all(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {

@@ -1,7 +1,7 @@
 mod routes;
 
 use axum::{
-    extract::{Extension, Path},
+    extract::Extension,
     Json,
 };
 use deadpool_postgres::Pool;

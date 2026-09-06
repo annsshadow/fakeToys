@@ -19,7 +19,7 @@ fn qywxpos_config() -> Option<(String, String)> {
 
 fn qywx_client() -> &'static reqwest::Client {
     static CLIENT: OnceLock<reqwest::Client> = OnceLock::new();
-    CLIENT.get_or_init(|| reqwest::Client::new())
+    CLIENT.get_or_init(reqwest::Client::new)
 }
 
 async fn exchange_code_for_userid(config: &(String, String), code: &str) -> Result<String, AppError> {
