@@ -52,7 +52,7 @@ pub async fn get_ai_control_config(
         Some(row) => {
             let result = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
-                ("name".to_string(), Value::String(row.get("name"))),
+                ("name".to_string(), Value::String(row.get::<_, Option<String>>("name").unwrap_or_default())),
                 ("defaultModel".to_string(), Value::String(row.get("default_model"))),
                 ("temperature".to_string(), Value::Number(serde_json::Number::from_f64(row.get::<_, f64>("temperature")).unwrap_or_else(|| serde_json::Number::from_f64(0.0).unwrap()))),
                 ("maxTokens".to_string(), Value::Number(serde_json::Number::from(row.get::<_, i64>("max_tokens")))),
@@ -110,7 +110,7 @@ pub async fn list_ai_models(
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
-                ("name".to_string(), Value::String(row.get("name"))),
+                ("name".to_string(), Value::String(row.get::<_, Option<String>>("name").unwrap_or_default())),
                 ("enabled".to_string(), Value::Bool(row.get("enabled"))),
                 ("contextWindow".to_string(), Value::Number(serde_json::Number::from(8192i64))),
             ]))
@@ -234,7 +234,7 @@ pub async fn config_base_config(
         Some(row) => {
             let result = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
-                ("name".to_string(), Value::String(row.get("name"))),
+                ("name".to_string(), Value::String(row.get::<_, Option<String>>("name").unwrap_or_default())),
                 ("defaultModel".to_string(), Value::String(row.get("default_model"))),
                 ("temperature".to_string(), Value::Number(serde_json::Number::from_f64(row.get::<_, f64>("temperature")).unwrap_or_else(|| serde_json::Number::from_f64(0.0).unwrap()))),
                 ("maxTokens".to_string(), Value::Number(serde_json::Number::from(row.get::<_, i64>("max_tokens")))),
@@ -401,12 +401,12 @@ pub async fn config_get_mcp_ext_flag(
         Some(row) => {
             let result = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
-                ("name".to_string(), Value::String(row.get("name"))),
-                ("url".to_string(), Value::String(row.get("url"))),
+                ("name".to_string(), Value::String(row.get::<_, Option<String>>("name").unwrap_or_default())),
+                ("url".to_string(), Value::String(row.get::<_, Option<String>>("url").unwrap_or_default())),
                 ("enabled".to_string(), Value::Bool(row.get("enabled"))),
                 ("creator".to_string(), Value::String(row.get("creator"))),
-                ("createTime".to_string(), Value::String(row.get("create_time"))),
-                ("updateTime".to_string(), Value::String(row.get("update_time"))),
+                ("createTime".to_string(), Value::String(row.get::<_, Option<String>>("create_time").unwrap_or_default())),
+                ("updateTime".to_string(), Value::String(row.get::<_, Option<String>>("update_time").unwrap_or_default())),
             ]));
             Ok(Json(ActionResult::success(result)))
         }
@@ -433,12 +433,12 @@ pub async fn config_get_mcp_flag(
         Some(row) => {
             let result = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
-                ("name".to_string(), Value::String(row.get("name"))),
-                ("url".to_string(), Value::String(row.get("url"))),
+                ("name".to_string(), Value::String(row.get::<_, Option<String>>("name").unwrap_or_default())),
+                ("url".to_string(), Value::String(row.get::<_, Option<String>>("url").unwrap_or_default())),
                 ("enabled".to_string(), Value::Bool(row.get("enabled"))),
                 ("creator".to_string(), Value::String(row.get("creator"))),
-                ("createTime".to_string(), Value::String(row.get("create_time"))),
-                ("updateTime".to_string(), Value::String(row.get("update_time"))),
+                ("createTime".to_string(), Value::String(row.get::<_, Option<String>>("create_time").unwrap_or_default())),
+                ("updateTime".to_string(), Value::String(row.get::<_, Option<String>>("update_time").unwrap_or_default())),
             ]));
             Ok(Json(ActionResult::success(result)))
         }
@@ -464,12 +464,12 @@ pub async fn config_get_model_flag(
         Some(row) => {
             let result = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
-                ("name".to_string(), Value::String(row.get("name"))),
-                ("url".to_string(), Value::String(row.get("url"))),
+                ("name".to_string(), Value::String(row.get::<_, Option<String>>("name").unwrap_or_default())),
+                ("url".to_string(), Value::String(row.get::<_, Option<String>>("url").unwrap_or_default())),
                 ("enabled".to_string(), Value::Bool(row.get("enabled"))),
                 ("creator".to_string(), Value::String(row.get("creator"))),
-                ("createTime".to_string(), Value::String(row.get("create_time"))),
-                ("updateTime".to_string(), Value::String(row.get("update_time"))),
+                ("createTime".to_string(), Value::String(row.get::<_, Option<String>>("create_time").unwrap_or_default())),
+                ("updateTime".to_string(), Value::String(row.get::<_, Option<String>>("update_time").unwrap_or_default())),
             ]));
             Ok(Json(ActionResult::success(result)))
         }
@@ -495,12 +495,12 @@ pub async fn config_list_enable_model(
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
-                ("name".to_string(), Value::String(row.get("name"))),
-                ("url".to_string(), Value::String(row.get("url"))),
+                ("name".to_string(), Value::String(row.get::<_, Option<String>>("name").unwrap_or_default())),
+                ("url".to_string(), Value::String(row.get::<_, Option<String>>("url").unwrap_or_default())),
                 ("enabled".to_string(), Value::Bool(row.get("enabled"))),
                 ("creator".to_string(), Value::String(row.get("creator"))),
-                ("createTime".to_string(), Value::String(row.get("create_time"))),
-                ("updateTime".to_string(), Value::String(row.get("update_time"))),
+                ("createTime".to_string(), Value::String(row.get::<_, Option<String>>("create_time").unwrap_or_default())),
+                ("updateTime".to_string(), Value::String(row.get::<_, Option<String>>("update_time").unwrap_or_default())),
             ]))
         })
         .collect();
@@ -535,12 +535,12 @@ pub async fn config_list_mcp_paging_page_size_size(
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
-                ("name".to_string(), Value::String(row.get("name"))),
-                ("url".to_string(), Value::String(row.get("url"))),
+                ("name".to_string(), Value::String(row.get::<_, Option<String>>("name").unwrap_or_default())),
+                ("url".to_string(), Value::String(row.get::<_, Option<String>>("url").unwrap_or_default())),
                 ("enabled".to_string(), Value::Bool(row.get("enabled"))),
                 ("creator".to_string(), Value::String(row.get("creator"))),
-                ("createTime".to_string(), Value::String(row.get("create_time"))),
-                ("updateTime".to_string(), Value::String(row.get("update_time"))),
+                ("createTime".to_string(), Value::String(row.get::<_, Option<String>>("create_time").unwrap_or_default())),
+                ("updateTime".to_string(), Value::String(row.get::<_, Option<String>>("update_time").unwrap_or_default())),
             ]))
         })
         .collect();
@@ -572,12 +572,12 @@ pub async fn config_list_model_paging_page_size_size(
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
-                ("name".to_string(), Value::String(row.get("name"))),
-                ("url".to_string(), Value::String(row.get("url"))),
+                ("name".to_string(), Value::String(row.get::<_, Option<String>>("name").unwrap_or_default())),
+                ("url".to_string(), Value::String(row.get::<_, Option<String>>("url").unwrap_or_default())),
                 ("enabled".to_string(), Value::Bool(row.get("enabled"))),
                 ("creator".to_string(), Value::String(row.get("creator"))),
-                ("createTime".to_string(), Value::String(row.get("create_time"))),
-                ("updateTime".to_string(), Value::String(row.get("update_time"))),
+                ("createTime".to_string(), Value::String(row.get::<_, Option<String>>("create_time").unwrap_or_default())),
+                ("updateTime".to_string(), Value::String(row.get::<_, Option<String>>("update_time").unwrap_or_default())),
             ]))
         })
         .collect();
@@ -818,7 +818,7 @@ pub async fn file_list_with_ids(
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
-                ("name".to_string(), Value::String(row.get("name"))),
+                ("name".to_string(), Value::String(row.get::<_, Option<String>>("name").unwrap_or_default())),
                 ("fileName".to_string(), Value::String(row.get("file_name"))),
                 ("fileSize".to_string(), Value::Number(serde_json::Number::from(row.get::<_, i64>("file_size")))),
                 ("fileType".to_string(), Value::String(row.get("file_type"))),
@@ -841,7 +841,7 @@ pub async fn file_list_paging_page_size_size(
     let offset = (page - 1) * size;
     let rows = client
         .query(
-            "SELECT id, name, file_name, file_size, file_type, enabled, creator, create_time FROM x_ai_file ORDER BY create_time DESC LIMIT $2::int OFFSET $1::int",
+            "SELECT id, name, file_name, file_size, file_type, enabled, creator, create_time FROM x_ai_file ORDER BY create_time DESC LIMIT $2 OFFSET $1",
             &[&offset, &size],
         )
         .await
@@ -852,7 +852,7 @@ pub async fn file_list_paging_page_size_size(
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
-                ("name".to_string(), Value::String(row.get("name"))),
+                ("name".to_string(), Value::String(row.get::<_, Option<String>>("name").unwrap_or_default())),
                 ("fileName".to_string(), Value::String(row.get("file_name"))),
                 ("fileSize".to_string(), Value::Number(serde_json::Number::from(row.get::<_, i64>("file_size")))),
                 ("fileType".to_string(), Value::String(row.get("file_type"))),
@@ -924,7 +924,7 @@ pub async fn file_flag(
         Some(row) => {
             let result = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
-                ("name".to_string(), Value::String(row.get("name"))),
+                ("name".to_string(), Value::String(row.get::<_, Option<String>>("name").unwrap_or_default())),
                 ("fileName".to_string(), Value::String(row.get("file_name"))),
                 ("fileSize".to_string(), Value::Number(serde_json::Number::from(row.get::<_, i64>("file_size")))),
                 ("fileType".to_string(), Value::String(row.get("file_type"))),
@@ -955,7 +955,7 @@ pub async fn file_id_download(
         Some(row) => {
             let result = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
-                ("name".to_string(), Value::String(row.get("name"))),
+                ("name".to_string(), Value::String(row.get::<_, Option<String>>("name").unwrap_or_default())),
                 ("url".to_string(), Value::String(format!("/download/{}", row.get::<_, String>("id")))),
                 ("fileSize".to_string(), Value::Number(serde_json::Number::from(row.get::<_, i64>("file_size")))),
             ]));
@@ -1084,7 +1084,7 @@ pub async fn index_list_paging_page_size_size(
     let offset = (page - 1) * size;
     let rows = client
         .query(
-            "SELECT id, doc_id, app_id, title, enabled, creator, create_time FROM x_ai_index ORDER BY create_time DESC LIMIT $2::int OFFSET $1::int",
+            "SELECT id, doc_id, app_id, title, enabled, creator, create_time FROM x_ai_index ORDER BY create_time DESC LIMIT $2 OFFSET $1",
             &[&offset, &size],
         )
         .await
@@ -1212,7 +1212,7 @@ pub async fn chat_completion(
             "SELECT role, content FROM ( \
              SELECT role, content, create_time FROM x_ai_chat \
              WHERE conversation_id = $1 AND deleted_at IS NULL \
-             ORDER BY create_time DESC LIMIT $2::int \
+             ORDER BY create_time DESC LIMIT $2 \
              ) h ORDER BY create_time ASC",
             &[&conversation_id, &context_window],
         )
@@ -1344,7 +1344,7 @@ async fn process_chat_request(
             "SELECT role, content FROM ( \
              SELECT role, content, create_time FROM x_ai_chat \
              WHERE conversation_id = $1 AND deleted_at IS NULL \
-             ORDER BY create_time DESC LIMIT $2::int \
+             ORDER BY create_time DESC LIMIT $2 \
              ) h ORDER BY create_time ASC",
             &[&conversation_id, &context_window],
         )
@@ -1573,7 +1573,7 @@ pub async fn chat_list_paging_page_size_size(
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("title".to_string(), Value::String(row.get("title"))),
                 ("userId".to_string(), Value::String(row.get("user_id"))),
-                ("createTime".to_string(), Value::String(row.get("create_time"))),
+                ("createTime".to_string(), Value::String(row.get::<_, Option<String>>("create_time").unwrap_or_default())),
             ]))
         })
         .collect();
@@ -1618,7 +1618,7 @@ pub async fn chat_list_completion_clue_id_paging_page_size_size(
                 ("role".to_string(), Value::String(row.get("role"))),
                 ("content".to_string(), Value::String(row.get("content"))),
                 ("creator".to_string(), Value::String(row.get("creator"))),
-                ("createTime".to_string(), Value::String(row.get("create_time"))),
+                ("createTime".to_string(), Value::String(row.get::<_, Option<String>>("create_time").unwrap_or_default())),
             ]))
         })
         .collect();

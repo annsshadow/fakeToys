@@ -353,7 +353,7 @@ pub async fn cipher_hotpic_filter_list_page_page_count_count(
     let offset = (page - 1) * count;
     let rows = client
         .query(
-            "SELECT id, title, image_url, creator, create_time FROM x_hotpic WHERE deleted_at IS NULL ORDER BY create_time DESC LIMIT $2::int OFFSET $1::int",
+            "SELECT id, title, image_url, creator, create_time FROM x_hotpic WHERE deleted_at IS NULL ORDER BY create_time DESC LIMIT $2 OFFSET $1",
             &[&offset, &count],
         )
         .await
@@ -469,7 +469,7 @@ pub async fn user_hotpic_filter_list_page_page_count_count(
     let offset = (page - 1) * count;
     let rows = client
         .query(
-            "SELECT id, title, image_url, creator, create_time FROM x_hotpic WHERE deleted_at IS NULL ORDER BY create_time DESC LIMIT $2::int OFFSET $1::int",
+            "SELECT id, title, image_url, creator, create_time FROM x_hotpic WHERE deleted_at IS NULL ORDER BY create_time DESC LIMIT $2 OFFSET $1",
             &[&offset, &count],
         )
         .await
