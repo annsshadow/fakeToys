@@ -1,6 +1,6 @@
 use axum::{
     extract::Extension, extract::Path,
-    Json, Router, routing::get,
+    Json, Router,
 };
 use deadpool_postgres::Pool;
 use serde_json::Value;

@@ -1,13 +1,14 @@
+#[allow(dead_code, non_snake_case)]
 use axum::{
     extract::{Extension, Path},
     Json, Router,
 };
 use bcrypt::verify;
-use chrono::{DateTime, NaiveDateTime, Utc};
+use chrono::Utc;
 use deadpool_postgres::Pool;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
-use shared::{error::AppError, response::{option_to_json, row_opt_json, ActionResult}};
+use shared::{error::AppError, response::{row_opt_json, ActionResult}};
 use std::collections::HashMap;
 use std::sync::Mutex;
 use uuid::Uuid;
@@ -87,7 +88,7 @@ fn row_to_forum(row: &deadpool_postgres::tokio_postgres::Row) -> ForumRow {
         description: row.get::<_, Option<String>>("description").unwrap_or_default(),
         sort: row.get::<_, Option<i32>>("sort").unwrap_or(0),
         creator: row.get::<_, Option<String>>("creator").unwrap_or_default(),
-        create_time: match row.get::<_, Option<String>>("create_time") { Some(s) => s, None => String::new() },
+        create_time: row.get::<_, Option<String>>("create_time").unwrap_or_default(),
     }
 }
 
@@ -98,7 +99,7 @@ fn row_to_topic(row: &deadpool_postgres::tokio_postgres::Row) -> TopicRow {
         title: row.get("title"),
         content: row.get("content"),
         creator: row.get::<_, Option<String>>("creator").unwrap_or_default(),
-        create_time: match row.get::<_, Option<String>>("create_time") { Some(s) => s, None => String::new() },
+        create_time: row.get::<_, Option<String>>("create_time").unwrap_or_default(),
     }
 }
 
@@ -108,7 +109,7 @@ fn row_to_reply(row: &deadpool_postgres::tokio_postgres::Row) -> ReplyRow {
         topic_id: row.get("topic_id"),
         content: row.get("content"),
         creator: row.get::<_, Option<String>>("creator").unwrap_or_default(),
-        create_time: match row.get::<_, Option<String>>("create_time") { Some(s) => s, None => String::new() },
+        create_time: row.get::<_, Option<String>>("create_time").unwrap_or_default(),
     }
 }
 
@@ -126,6 +127,7 @@ fn now_iso() -> String {
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
 pub async fn get_control_config(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -149,6 +151,7 @@ pub async fn get_control_config(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
 pub async fn list_control_sections(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -178,6 +181,7 @@ pub async fn list_control_sections(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
 pub async fn update_control_config(
     pool: Extension<Pool>,
     body: axum::extract::Json<Value>,
@@ -205,6 +209,7 @@ pub async fn update_control_config(
 }
 
 /// GET /jaxrs/bbs/assemble/control/forum/list
+#[allow(non_snake_case)]
 pub async fn list_forums(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -228,6 +233,7 @@ pub async fn list_forums(
 }
 
 /// GET /jaxrs/bbs/assemble/control/forum/{id}
+#[allow(non_snake_case)]
 pub async fn get_forum(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
@@ -248,6 +254,7 @@ pub async fn get_forum(
 }
 
 /// POST /jaxrs/bbs/assemble/control/topic/create
+#[allow(non_snake_case)]
 pub async fn create_topic(
     pool: Extension<Pool>,
     axum::extract::Json(req): Json<CreateTopicRequest>,
@@ -277,6 +284,7 @@ pub async fn create_topic(
 }
 
 /// GET /jaxrs/bbs/assemble/control/topic/list/{forumId}
+#[allow(non_snake_case)]
 pub async fn list_topics_by_forum(
     pool: Extension<Pool>,
     axum::extract::Path(forum_id): axum::extract::Path<String>,
@@ -301,6 +309,7 @@ pub async fn list_topics_by_forum(
 }
 
 /// POST /jaxrs/bbs/assemble/control/reply/create
+#[allow(non_snake_case)]
 pub async fn create_reply(
     pool: Extension<Pool>,
     axum::extract::Json(req): Json<CreateReplyRequest>,
@@ -337,6 +346,7 @@ pub fn router(pool: deadpool_postgres::Pool) -> axum::Router {
 
 
 
+#[allow(non_snake_case)]
 pub async fn forum_view_all(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -359,6 +369,7 @@ pub async fn forum_view_all(
     Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
 }
 
+#[allow(non_snake_case)]
 pub async fn forum_id(
     pool: Extension<Pool>,
     Path(id): Path<String>,
@@ -378,6 +389,7 @@ pub async fn forum_id(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn mobile_view_all(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -400,6 +412,7 @@ pub async fn mobile_view_all(
     Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
 }
 
+#[allow(non_snake_case)]
 pub async fn permission_replyPublishable_subjectId(
     pool: Extension<Pool>,
     Path(subject_id): Path<String>,
@@ -421,6 +434,7 @@ pub async fn permission_replyPublishable_subjectId(
     ))))
 }
 
+#[allow(non_snake_case)]
 pub async fn permission_subjectPublishable_sectionId(
     pool: Extension<Pool>,
     Path(section_id): Path<String>,
@@ -438,6 +452,7 @@ pub async fn permission_subjectPublishable_sectionId(
     ))))
 }
 
+#[allow(non_snake_case)]
 pub async fn reply_filter_list_page_page_count_count(
     pool: Extension<Pool>,
     Path((page, count)): Path<(i64, i64)>,
@@ -463,6 +478,7 @@ pub async fn reply_filter_list_page_page_count_count(
     Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
 }
 
+#[allow(non_snake_case)]
 pub async fn reply_list_sub_id(
     pool: Extension<Pool>,
     Path(id): Path<String>,
@@ -487,6 +503,7 @@ pub async fn reply_list_sub_id(
     Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
 }
 
+#[allow(non_snake_case)]
 pub async fn subject_view_id(
     pool: Extension<Pool>,
     Path(id): Path<String>,
@@ -506,6 +523,7 @@ pub async fn subject_view_id(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn subject_top_sectionId(
     pool: Extension<Pool>,
     Path(section_id): Path<String>,
@@ -530,6 +548,7 @@ pub async fn subject_top_sectionId(
     Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
 }
 
+#[allow(non_snake_case)]
 pub async fn permission_section_sectionId(
     pool: Extension<Pool>,
     Path(section_id): Path<String>,
@@ -548,6 +567,7 @@ pub async fn permission_section_sectionId(
     ))))
 }
 
+#[allow(non_snake_case)]
 pub async fn permission_subject_subjectId(
     pool: Extension<Pool>,
     Path(subject_id): Path<String>,
@@ -566,6 +586,7 @@ pub async fn permission_subject_subjectId(
     ))))
 }
 
+#[allow(non_snake_case)]
 pub async fn section_viewforum_forumId(
     pool: Extension<Pool>,
     Path(forum_id): Path<String>,
@@ -599,6 +620,7 @@ pub async fn section_viewforum_forumId(
     Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
 }
 
+#[allow(non_snake_case)]
 pub async fn delete_forum(
     pool: Extension<Pool>,
     Path(id): Path<String>,
@@ -616,6 +638,7 @@ pub async fn delete_forum(
     ))))
 }
 
+#[allow(non_snake_case)]
 pub async fn delete_reply(
     pool: Extension<Pool>,
     Path(id): Path<String>,
@@ -633,6 +656,7 @@ pub async fn delete_reply(
     ))))
 }
 
+#[allow(non_snake_case)]
 pub async fn delete_subject(
     pool: Extension<Pool>,
     Path(id): Path<String>,
@@ -650,6 +674,7 @@ pub async fn delete_subject(
     ))))
 }
 
+#[allow(non_snake_case)]
 pub async fn list_reply_filter(
     pool: Extension<Pool>,
     Path((page, count)): Path<(i64, i64)>,
@@ -680,6 +705,7 @@ pub async fn list_reply_filter(
     ])))))
 }
 
+#[allow(non_snake_case)]
 pub async fn list_topics_creamed(
     pool: Extension<Pool>,
     Path((page, count)): Path<(i64, i64)>,
@@ -711,6 +737,7 @@ pub async fn list_topics_creamed(
     ])))))
 }
 
+#[allow(non_snake_case)]
 pub async fn list_topics_recommended(
     pool: Extension<Pool>,
     Path((page, count)): Path<(i64, i64)>,
@@ -742,6 +769,7 @@ pub async fn list_topics_recommended(
     ])))))
 }
 
+#[allow(non_snake_case)]
 pub async fn list_subjects_filtered(
     pool: Extension<Pool>,
     Path((page, count)): Path<(i64, i64)>,
@@ -772,6 +800,7 @@ pub async fn list_subjects_filtered(
     ])))))
 }
 
+#[allow(non_snake_case)]
 pub async fn list_subjects_index(
     pool: Extension<Pool>,
     Path((page, count)): Path<(i64, i64)>,
@@ -803,6 +832,7 @@ pub async fn list_subjects_index(
     ])))))
 }
 
+#[allow(non_snake_case)]
 pub async fn list_subjects_recommended_index(
     pool: Extension<Pool>,
     Path((page, count)): Path<(i64, i64)>,
@@ -834,6 +864,7 @@ pub async fn list_subjects_recommended_index(
     ])))))
 }
 
+#[allow(non_snake_case)]
 pub async fn login(
     pool: Extension<Pool>,
     body: axum::extract::Json<LoginRequest>,
@@ -890,12 +921,13 @@ pub async fn login(
     Ok(Json(ActionResult::success(data)))
 }
 
+#[allow(non_snake_case)]
 pub async fn logout(
     _pool: Extension<Pool>,
     body: axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let token = body.get("token").and_then(|v| v.as_str()).map(|s| s.to_string());
-    let removed = token.as_ref().map_or(false, |t| {
+    let removed = token.as_ref().is_some_and(|t| {
         TOKEN_STORE.with(|m| m.lock().unwrap().remove(t).is_some())
     });
     Ok(Json(ActionResult::success(Value::Object(
@@ -909,6 +941,7 @@ pub async fn logout(
 // 未来新增图片/附件上传端点时：调用 shared::storage::storage_from_env() 获取
 // Arc<dyn BlobStorage>，put(bytes) 后把返回 key 存入附件表 url 字段；
 // STORAGE_BACKEND=fs 时写文件、=db 时保持现状行为不变。
+#[allow(non_snake_case)]
 pub async fn picture_list(
     pool: Extension<Pool>,
     Path(subject_id): Path<String>,
@@ -933,6 +966,7 @@ pub async fn picture_list(
     Ok(Json(ActionResult::java_success(Value::Array(urls), total_urls as i64, 0)))
 }
 
+#[allow(non_snake_case)]
 pub async fn shutup_create(
     pool: Extension<Pool>,
     body: axum::extract::Json<Value>,
@@ -957,6 +991,7 @@ pub async fn shutup_create(
     Ok(Json(ActionResult::success(data)))
 }
 
+#[allow(non_snake_case)]
 pub async fn shutup_delete(
     pool: Extension<Pool>,
     Path(id): Path<String>,
@@ -971,6 +1006,7 @@ pub async fn shutup_delete(
     ))))
 }
 
+#[allow(non_snake_case)]
 pub async fn shutup_list(
     pool: Extension<Pool>,
     Path((page, count)): Path<(i64, i64)>,
@@ -1009,6 +1045,7 @@ pub async fn shutup_list(
     ])))))
 }
 
+#[allow(non_snake_case)]
 pub async fn subject_creamed_list(
     pool: Extension<Pool>,
     Path((page, count)): Path<(i64, i64)>,
@@ -1016,6 +1053,7 @@ pub async fn subject_creamed_list(
     list_topics_creamed(pool, Path((page, count))).await
 }
 
+#[allow(non_snake_case)]
 pub async fn subject_filter_list(
     pool: Extension<Pool>,
     Path((page, count)): Path<(i64, i64)>,
@@ -1023,6 +1061,7 @@ pub async fn subject_filter_list(
     list_subjects_filtered(pool, Path((page, count))).await
 }
 
+#[allow(non_snake_case)]
 pub async fn subject_filter_listsubjectinfo(
     pool: Extension<Pool>,
     body: axum::extract::Json<Value>,
@@ -1061,6 +1100,7 @@ pub async fn subject_filter_listsubjectinfo(
     ])))))
 }
 
+#[allow(non_snake_case)]
 pub async fn subject_index_list(
     pool: Extension<Pool>,
     Path((page, count)): Path<(i64, i64)>,
@@ -1068,6 +1108,7 @@ pub async fn subject_index_list(
     list_subjects_index(pool, Path((page, count))).await
 }
 
+#[allow(non_snake_case)]
 pub async fn subject_search(
     pool: Extension<Pool>,
     Path((page, count)): Path<(i64, i64)>,
@@ -1102,6 +1143,7 @@ pub async fn subject_search(
     ])))))
 }
 
+#[allow(non_snake_case)]
 pub async fn subject_statgrade(
     pool: Extension<Pool>,
     Path((_section_name, _subject_type)): Path<(String, String)>,
@@ -1128,6 +1170,7 @@ pub async fn subject_statgrade(
     Ok(Json(ActionResult::success(data)))
 }
 
+#[allow(non_snake_case)]
 pub async fn topic_creamed_list(
     pool: Extension<Pool>,
     Path((page, count)): Path<(i64, i64)>,
@@ -1135,6 +1178,7 @@ pub async fn topic_creamed_list(
     list_topics_creamed(pool, Path((page, count))).await
 }
 
+#[allow(non_snake_case)]
 pub async fn topic_filter_list(
     pool: Extension<Pool>,
     Path((page, count)): Path<(i64, i64)>,
@@ -1142,6 +1186,7 @@ pub async fn topic_filter_list(
     list_subjects_filtered(pool, Path((page, count))).await
 }
 
+#[allow(non_snake_case)]
 pub async fn topic_filter_listsubjectinfo(
     pool: Extension<Pool>,
     body: axum::extract::Json<Value>,
@@ -1149,6 +1194,7 @@ pub async fn topic_filter_listsubjectinfo(
     subject_filter_listsubjectinfo(pool, body).await
 }
 
+#[allow(non_snake_case)]
 pub async fn topic_index_list(
     pool: Extension<Pool>,
     Path((page, count)): Path<(i64, i64)>,
@@ -1156,6 +1202,7 @@ pub async fn topic_index_list(
     list_subjects_index(pool, Path((page, count))).await
 }
 
+#[allow(non_snake_case)]
 pub async fn topic_recommended_index(
     pool: Extension<Pool>,
     Path(count): Path<i64>,
@@ -1178,6 +1225,7 @@ pub async fn topic_recommended_index(
     Ok(Json(ActionResult::java_success(Value::Array(data), total_data as i64, 0)))
 }
 
+#[allow(non_snake_case)]
 pub async fn topic_recommended_list(
     pool: Extension<Pool>,
     Path((page, count)): Path<(i64, i64)>,
@@ -1185,6 +1233,7 @@ pub async fn topic_recommended_list(
     list_topics_recommended(pool, Path((page, count))).await
 }
 
+#[allow(non_snake_case)]
 pub async fn topic_search(
     pool: Extension<Pool>,
     Path((page, count)): Path<(i64, i64)>,
@@ -1219,6 +1268,7 @@ pub async fn topic_search(
     ])))))
 }
 
+#[allow(non_snake_case)]
 pub async fn user_forum_list(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -1246,6 +1296,7 @@ pub async fn user_forum_list(
     Ok(Json(ActionResult::java_success(Value::Array(data), total_data as i64, 0)))
 }
 
+#[allow(non_snake_case)]
 pub async fn user_info(
     pool: Extension<Pool>,
     Path(person): Path<String>,
@@ -1296,6 +1347,7 @@ pub async fn user_info(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn user_reply_list(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -1317,6 +1369,7 @@ pub async fn user_reply_list(
     Ok(Json(ActionResult::java_success(Value::Array(data), total_data as i64, 0)))
 }
 
+#[allow(non_snake_case)]
 pub async fn user_role_list(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -1344,6 +1397,7 @@ pub async fn user_role_list(
     Ok(Json(ActionResult::java_success(Value::Array(data), total_data as i64, 0)))
 }
 
+#[allow(non_snake_case)]
 pub async fn user_section_list(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -1374,6 +1428,7 @@ pub async fn user_section_list(
     Ok(Json(ActionResult::java_success(Value::Array(data), total_data as i64, 0)))
 }
 
+#[allow(non_snake_case)]
 pub async fn user_setting(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -1392,6 +1447,7 @@ pub async fn user_setting(
     Ok(Json(ActionResult::success(data)))
 }
 
+#[allow(non_snake_case)]
 pub async fn user_subject_list(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -1413,6 +1469,7 @@ pub async fn user_subject_list(
     Ok(Json(ActionResult::java_success(Value::Array(data), total_data as i64, 0)))
 }
 
+#[allow(non_snake_case)]
 pub async fn uuid_generate() -> Result<Json<ActionResult<Value>>, AppError> {
     let uuid = uuid::Uuid::new_v4().to_string();
     Ok(Json(ActionResult::success(Value::Object(
@@ -1420,6 +1477,7 @@ pub async fn uuid_generate() -> Result<Json<ActionResult<Value>>, AppError> {
     ))))
 }
 
+#[allow(non_snake_case)]
 pub async fn subjectattach_list(
     pool: Extension<Pool>,
     Path(_subject_id): Path<String>,

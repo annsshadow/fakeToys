@@ -149,7 +149,7 @@ const B64_ALPHABET: &[u8; 64] =
     b"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
 
 pub fn base64_encode(data: &[u8]) -> String {
-    let mut out = String::with_capacity((data.len() + 2) / 3 * 4);
+    let mut out = String::with_capacity(data.len().div_ceil(3) * 4);
     for chunk in data.chunks(3) {
         let b0 = chunk[0] as u32;
         let b1 = chunk.get(1).copied().unwrap_or(0) as u32;
@@ -353,6 +353,7 @@ topic_toggle_endpoints! {
 }
 
 /// GET user/subject/{id} — 单条主题详情。
+#[allow(non_snake_case)]
 pub async fn u2_subject_get(pool: Extension<Pool>, Path(id): Path<String>) -> ApiResult {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let row = client
@@ -419,6 +420,7 @@ pub async fn u2_subject_get(pool: Extension<Pool>, Path(id): Path<String>) -> Ap
 }
 
 /// POST user/subject — 发表主题（Java SubjectInfoManagerUserAction.save）。
+#[allow(non_snake_case)]
 pub async fn u2_subject_save(pool: Extension<Pool>, body: axum::extract::Json<Value>) -> ApiResult {
     let title = match body_str(&body, &["title"]) {
         Some(t) => t,
@@ -455,6 +457,7 @@ pub async fn u2_subject_save(pool: Extension<Pool>, body: axum::extract::Json<Va
 }
 
 /// GET user/subject/acceptreply/{id}/{replyId} — 设定被采纳回复（owner 门禁）。
+#[allow(non_snake_case)]
 pub async fn u2_subject_accept_reply(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
@@ -489,6 +492,7 @@ pub async fn u2_subject_accept_reply(
 }
 
 /// GET user/subject/unacceptreply/{id} — 取消采纳。
+#[allow(non_snake_case)]
 pub async fn u2_subject_unaccept_reply(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
@@ -516,6 +520,7 @@ pub async fn u2_subject_unaccept_reply(
 }
 
 /// DELETE user/subject/{id} — 软删主题（owner 门禁）。
+#[allow(non_snake_case)]
 pub async fn u2_subject_soft_delete(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
@@ -542,6 +547,7 @@ pub async fn u2_subject_soft_delete(
 }
 
 /// PUT user/subject/change/section — 调整主题所在版块（owner 门禁）。
+#[allow(non_snake_case)]
 pub async fn u2_subject_change_section(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
@@ -575,6 +581,7 @@ pub async fn u2_subject_change_section(
 }
 
 /// PUT user/subject — 投票提交（voteSubmit）：写投票记录并累加计数。
+#[allow(non_snake_case)]
 pub async fn u2_vote_submit(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
@@ -614,6 +621,7 @@ pub async fn u2_vote_submit(
 }
 
 /// PUT user/subject/voterecord/list/page/{page}/count/{count} — 投票记录分页。
+#[allow(non_snake_case)]
 pub async fn u2_voterecord_list(
     pool: Extension<Pool>,
     Path((page, count)): Path<(i64, i64)>,
@@ -667,6 +675,7 @@ pub async fn u2_voterecord_list(
 }
 
 /// PUT user/subject/my/list/page/{page}/count/{count} — 我的主题分页（按会话人）。
+#[allow(non_snake_case)]
 pub async fn u2_my_subject_list(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
@@ -725,6 +734,7 @@ pub async fn u2_my_subject_list(
 }
 
 /// PUT user/reply/my/list/page/{page}/count/{count} — 我的回复分页。
+#[allow(non_snake_case)]
 pub async fn u2_my_reply_list(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
@@ -780,6 +790,7 @@ pub async fn u2_my_reply_list(
 // ══════════════════════════════════════════════════════════════════
 
 /// GET reply/{id} — 单条回复。
+#[allow(non_snake_case)]
 pub async fn u2_reply_get(pool: Extension<Pool>, Path(id): Path<String>) -> ApiResult {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let row = client
@@ -812,6 +823,7 @@ pub async fn u2_reply_get(pool: Extension<Pool>, Path(id): Path<String>) -> ApiR
 }
 
 /// PUT reply/filter/list/page/{page}/count/{count} — 回复分页（可按 topicId 过滤）。
+#[allow(non_snake_case)]
 pub async fn u2_reply_filter_list(
     pool: Extension<Pool>,
     Path((page, count)): Path<(i64, i64)>,
@@ -879,6 +891,7 @@ pub async fn u2_reply_filter_list(
 }
 
 /// POST user/reply — 发表回复（Java ReplyInfoManagerUserAction.save）。
+#[allow(non_snake_case)]
 pub async fn u2_user_reply_save(pool: Extension<Pool>, body: axum::extract::Json<Value>) -> ApiResult {
     let content = match body_str(&body, &["content"]) {
         Some(v) => v,
@@ -906,6 +919,7 @@ pub async fn u2_user_reply_save(pool: Extension<Pool>, body: axum::extract::Json
 }
 
 /// PUT user/reply/accept — 采纳回复（owner 门禁：仅主题所有者可采纳）。
+#[allow(non_snake_case)]
 pub async fn u2_user_reply_accept(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
@@ -947,6 +961,7 @@ pub async fn u2_user_reply_accept(
 }
 
 /// DELETE user/reply/{id} — 软删回复（owner 门禁）。
+#[allow(non_snake_case)]
 pub async fn u2_user_reply_delete(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
@@ -977,6 +992,7 @@ pub async fn u2_user_reply_delete(
 // ══════════════════════════════════════════════════════════════════
 
 /// POST user/forum — 创建论坛（admin）。
+#[allow(non_snake_case)]
 pub async fn u2_user_forum_save(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
@@ -1009,6 +1025,7 @@ pub async fn u2_user_forum_save(
 }
 
 /// DELETE user/forum/{id} — 软删论坛（admin）。
+#[allow(non_snake_case)]
 pub async fn u2_user_forum_delete(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
@@ -1067,6 +1084,7 @@ async fn query_sections(client: &PgClient, where_clause: &str, param: &str) -> R
 }
 
 /// GET section/{id} — 版块详情。
+#[allow(non_snake_case)]
 pub async fn u2_section_get(pool: Extension<Pool>, Path(id): Path<String>) -> ApiResult {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let data = query_sections(&client, "id = $1", &id).await?;
@@ -1077,6 +1095,7 @@ pub async fn u2_section_get(pool: Extension<Pool>, Path(id): Path<String>) -> Ap
 }
 
 /// GET section/viewsub/{sectionId} — 主版块的子版块。
+#[allow(non_snake_case)]
 pub async fn u2_section_viewsub(pool: Extension<Pool>, Path(id): Path<String>) -> ApiResult {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let data = query_sections(&client, "parent_id = $1", &id).await?;
@@ -1085,6 +1104,7 @@ pub async fn u2_section_viewsub(pool: Extension<Pool>, Path(id): Path<String>) -
 }
 
 /// GET user/section/forum/{forumId} — 论坛下的版块。
+#[allow(non_snake_case)]
 pub async fn u2_user_section_forum(pool: Extension<Pool>, Path(forum_id): Path<String>) -> ApiResult {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let data = query_sections(&client, "forum_id = $1", &forum_id).await?;
@@ -1093,11 +1113,13 @@ pub async fn u2_user_section_forum(pool: Extension<Pool>, Path(forum_id): Path<S
 }
 
 /// GET user/section/sub/{sectionId} — 子版块全量（管理视图）。
+#[allow(non_snake_case)]
 pub async fn u2_user_section_sub(pool: Extension<Pool>, Path(id): Path<String>) -> ApiResult {
     u2_section_viewsub(pool, Path(id)).await
 }
 
 /// POST user/section — 创建版块（admin）。
+#[allow(non_snake_case)]
 pub async fn u2_user_section_save(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
@@ -1136,6 +1158,7 @@ pub async fn u2_user_section_save(
 }
 
 /// DELETE user/section/{id} — 软删版块（admin）。
+#[allow(non_snake_case)]
 pub async fn u2_user_section_delete(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
@@ -1157,6 +1180,7 @@ pub async fn u2_user_section_delete(
 }
 
 /// DELETE user/section/force/{id} — 物理删除版块（admin）。
+#[allow(non_snake_case)]
 pub async fn u2_user_section_delete_force(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
@@ -1190,6 +1214,7 @@ fn role_row_to_value(row: &deadpool_postgres::tokio_postgres::Row) -> Value {
 }
 
 /// GET user/role/{id} — BBS 角色详情。
+#[allow(non_snake_case)]
 pub async fn u2_role_get(pool: Extension<Pool>, Path(id): Path<String>) -> ApiResult {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let rows = client
@@ -1207,6 +1232,7 @@ pub async fn u2_role_get(pool: Extension<Pool>, Path(id): Path<String>) -> ApiRe
 }
 
 /// GET user/role/all — BBS 角色全量（对齐 Java RoleInfoAction.listAll，读 x_bbs_role）。
+#[allow(non_snake_case)]
 pub async fn u2_role_all(pool: Extension<Pool>) -> ApiResult {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let rows = client
@@ -1223,6 +1249,7 @@ pub async fn u2_role_all(pool: Extension<Pool>) -> ApiResult {
 }
 
 /// POST user/role — 创建角色（admin）。
+#[allow(non_snake_case)]
 pub async fn u2_role_save(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
@@ -1259,6 +1286,7 @@ pub async fn u2_role_save(
 }
 
 /// DELETE user/role/{id} — 软删角色（admin）。
+#[allow(non_snake_case)]
 pub async fn u2_role_delete(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
@@ -1294,11 +1322,13 @@ async fn list_roles_by_column(pool: Extension<Pool>, column: &str, value: &str) 
 }
 
 /// PUT user/role/forum/{forumId} — 按论坛列角色。
+#[allow(non_snake_case)]
 pub async fn u2_role_list_by_forum(pool: Extension<Pool>, Path(forum_id): Path<String>) -> ApiResult {
     list_roles_by_column(pool, "forum_id", &forum_id).await
 }
 
 /// PUT user/role/section/{sectionId} — 按版块列角色。
+#[allow(non_snake_case)]
 pub async fn u2_role_list_by_section(pool: Extension<Pool>, Path(id): Path<String>) -> ApiResult {
     list_roles_by_column(pool, "section_id", &id).await
 }
@@ -1355,6 +1385,7 @@ fn bind_row_to_value(row: &deadpool_postgres::tokio_postgres::Row) -> Value {
 }
 
 /// PUT user/role/bind/object — 绑定对象到角色（admin）。
+#[allow(non_snake_case)]
 pub async fn u2_role_bind_object(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
@@ -1407,6 +1438,7 @@ pub async fn u2_role_bind_object(
 }
 
 /// PUT user/role/bind/role — 把人绑定到一组角色（admin）。
+#[allow(non_snake_case)]
 pub async fn u2_role_bind_user(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
@@ -1448,6 +1480,7 @@ async fn binds_for_role(client: &PgClient, role_id: &str) -> Result<Vec<Value>, 
 }
 
 /// PUT user/role/rolecode/selected — 按 roleCode 列绑定对象。
+#[allow(non_snake_case)]
 pub async fn u2_role_selected_by_code(pool: Extension<Pool>, body: axum::extract::Json<Value>) -> ApiResult {
     let code = match body_str(&body, &["roleCode", "code"]) {
         Some(v) => v,
@@ -1478,6 +1511,7 @@ async fn roles_bound_to(client: &PgClient, object_type: &str, object_code: &str)
 }
 
 /// PUT user/role/unit/selected — 按组织列出已绑角色。
+#[allow(non_snake_case)]
 pub async fn u2_role_by_unit(pool: Extension<Pool>, body: axum::extract::Json<Value>) -> ApiResult {
     let unit = match body_str(&body, &["unitCode", "unit"]) {
         Some(v) => v,
@@ -1490,6 +1524,7 @@ pub async fn u2_role_by_unit(pool: Extension<Pool>, body: axum::extract::Json<Va
 }
 
 /// PUT user/role/user/selected — 按人列出已绑角色。
+#[allow(non_snake_case)]
 pub async fn u2_role_by_user(pool: Extension<Pool>, body: axum::extract::Json<Value>) -> ApiResult {
     let person = match body_str(&body, &["personCode", "userCode", "person"]) {
         Some(v) => v,
@@ -1521,6 +1556,7 @@ fn permission_row_to_value(row: &deadpool_postgres::tokio_postgres::Row) -> Valu
 }
 
 /// GET permission — 全局权限概要（x_bbs_permission 聚合）。
+#[allow(non_snake_case)]
 pub async fn u2_permission_root(pool: Extension<Pool>) -> ApiResult {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let total_row = client
@@ -1552,14 +1588,17 @@ async fn permissions_by_column(pool: Extension<Pool>, column: &str, value: &str)
     Ok(Json(ActionResult::java_success(Value::Array(data), total_data as i64, 0)))
 }
 
+#[allow(non_snake_case)]
 pub async fn u2_permission_admin_forum(pool: Extension<Pool>, Path(id): Path<String>) -> ApiResult {
     permissions_by_column(pool, "forum_id", &id).await
 }
 
+#[allow(non_snake_case)]
 pub async fn u2_permission_admin_section(pool: Extension<Pool>, Path(id): Path<String>) -> ApiResult {
     permissions_by_column(pool, "section_id", &id).await
 }
 
+#[allow(non_snake_case)]
 pub async fn u2_permission_admin_role(pool: Extension<Pool>, Path(code): Path<String>) -> ApiResult {
     permissions_by_column(pool, "role_code", &code).await
 }
@@ -1603,6 +1642,7 @@ async fn query_settings(client: &PgClient, filter: Option<(&str, &str)>) -> Resu
 }
 
 /// GET setting/bbsName — 论坛名称（BBS_NAME 配置，缺省 O2社区）。
+#[allow(non_snake_case)]
 pub async fn u2_setting_bbs_name(pool: Extension<Pool>) -> ApiResult {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let data = query_settings(&client, Some(("code", "BBS_NAME"))).await?;
@@ -1618,6 +1658,7 @@ pub async fn u2_setting_bbs_name(pool: Extension<Pool>) -> ApiResult {
 }
 
 /// GET user/setting/{id} — 单条配置。
+#[allow(non_snake_case)]
 pub async fn u2_setting_get(pool: Extension<Pool>, Path(id): Path<String>) -> ApiResult {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let data = query_settings(&client, Some(("id", &id))).await?;
@@ -1628,6 +1669,7 @@ pub async fn u2_setting_get(pool: Extension<Pool>, Path(id): Path<String>) -> Ap
 }
 
 /// GET user/setting/all — 全量配置。
+#[allow(non_snake_case)]
 pub async fn u2_setting_all(pool: Extension<Pool>) -> ApiResult {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let data = query_settings(&client, None).await?;
@@ -1636,6 +1678,7 @@ pub async fn u2_setting_all(pool: Extension<Pool>) -> ApiResult {
 }
 
 /// PUT user/setting — 更新/新增配置（admin；按 id 更新，未命中则插入）。
+#[allow(non_snake_case)]
 pub async fn u2_setting_update(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
@@ -1679,6 +1722,7 @@ pub async fn u2_setting_update(
 }
 
 /// PUT user/setting/code — 按 code 查配置（Java getByCode）。
+#[allow(non_snake_case)]
 pub async fn u2_setting_get_by_code(pool: Extension<Pool>, body: axum::extract::Json<Value>) -> ApiResult {
     let code = match body_str(&body, &["code"]) {
         Some(v) => v,
@@ -1695,6 +1739,7 @@ pub async fn u2_setting_get_by_code(pool: Extension<Pool>, body: axum::extract::
 // ══════════════════════════════════════════════════════════════════
 
 /// GET userinfo/update/nick/name/{person}?nickname= — 更新 BBS 昵称（UPSERT）。
+#[allow(non_snake_case)]
 pub async fn u2_userinfo_update_nick(
     pool: Extension<Pool>,
     Path(person): Path<String>,
@@ -1752,6 +1797,7 @@ pub async fn u2_userinfo_update_nick(
 }
 
 /// PUT userinfo/filterUserInfo — 按昵称模糊过滤 BBS 用户。
+#[allow(non_snake_case)]
 pub async fn u2_userinfo_filter(pool: Extension<Pool>, body: axum::extract::Json<Value>) -> ApiResult {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let rows = match body_str(&body, &["name", "nickName", "key"]) {
@@ -1830,6 +1876,7 @@ fn attachment_row_to_value(row: &deadpool_postgres::tokio_postgres::Row) -> Valu
 }
 
 /// GET attachment/{id} — 附件元数据。
+#[allow(non_snake_case)]
 pub async fn u2_attachment_get(pool: Extension<Pool>, Path(id): Path<String>) -> ApiResult {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let rows = client
@@ -1847,6 +1894,7 @@ pub async fn u2_attachment_get(pool: Extension<Pool>, Path(id): Path<String>) ->
 }
 
 /// GET attachment/list/subject/{subjectId} — 按主题列附件。
+#[allow(non_snake_case)]
 pub async fn u2_attachment_list_by_subject(
     pool: Extension<Pool>,
     Path(subject_id): Path<String>,
@@ -1866,6 +1914,7 @@ pub async fn u2_attachment_list_by_subject(
 }
 
 /// DELETE attachment/{id} — 软删附件（owner 门禁）。
+#[allow(non_snake_case)]
 pub async fn u2_attachment_delete(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
@@ -1892,6 +1941,7 @@ pub async fn u2_attachment_delete(
 }
 
 /// GET subjectattach/{id} — 主题附件元数据。
+#[allow(non_snake_case)]
 pub async fn u2_subjectattach_get(pool: Extension<Pool>, Path(id): Path<String>) -> ApiResult {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let rows = client
@@ -1909,6 +1959,7 @@ pub async fn u2_subjectattach_get(pool: Extension<Pool>, Path(id): Path<String>)
 }
 
 /// GET subjectattach/list/subject/{id} — 真实查询（替换 unwrap_or_default 存根）。
+#[allow(non_snake_case)]
 pub async fn u2_subjectattach_list(pool: Extension<Pool>, Path(subject_id): Path<String>) -> ApiResult {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let rows = client
@@ -1926,6 +1977,7 @@ pub async fn u2_subjectattach_list(pool: Extension<Pool>, Path(subject_id): Path
 
 /// GET subjectattach/{id}/binary/base64/{size} — 存量字节转 base64。
 /// Java 版会按 size 缩放图片；无图像引擎时返回原始字节 base64（size 仅透传）。
+#[allow(non_snake_case)]
 pub async fn u2_subjectattach_base64(pool: Extension<Pool>, Path((id, size)): Path<(String, i64)>) -> ApiResult {
     if size <= 0 || size > 4096 {
         return Err(AppError::BadRequest("size must be within (0, 4096]".to_string()));
@@ -1955,6 +2007,7 @@ pub async fn u2_subjectattach_base64(pool: Extension<Pool>, Path((id, size)): Pa
 }
 
 /// DELETE subjectattach/{id} — 软删主题附件（owner 门禁）。
+#[allow(non_snake_case)]
 pub async fn u2_subjectattach_delete(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
@@ -1985,6 +2038,7 @@ pub async fn u2_subjectattach_delete(
 // ══════════════════════════════════════════════════════════════════
 
 /// GET shutup/get/shutup — 当前会话人的禁言记录。
+#[allow(non_snake_case)]
 pub async fn u2_shutup_get_mine(pool: Extension<Pool>, session: Extension<shared::session::Session>) -> ApiResult {
     let person = session.person_unique.clone();
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
@@ -2015,6 +2069,7 @@ pub async fn u2_shutup_get_mine(pool: Extension<Pool>, session: Extension<shared
 }
 
 /// DELETE shutup/{id} — 解除禁言（admin 门禁；对齐 ShutupAction.delete 管理语义）。
+#[allow(non_snake_case)]
 pub async fn u2_shutup_delete_admin(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
@@ -2033,6 +2088,7 @@ pub async fn u2_shutup_delete_admin(
 }
 
 /// GET subject/statgrade/sectionName/{s}/subjectType/{t} — 按版块与类型统计等级分布。
+#[allow(non_snake_case)]
 pub async fn u2_statgrade(
     pool: Extension<Pool>,
     Path((section_name, subject_type)): Path<(String, String)>,
@@ -2062,6 +2118,7 @@ pub async fn u2_statgrade(
 }
 
 /// PUT subject/search/list/page/{page}/count/{count} — 关键词参数化搜索。
+#[allow(non_snake_case)]
 pub async fn u2_subject_search_page(
     pool: Extension<Pool>,
     Path((page, count)): Path<(i64, i64)>,
@@ -2140,6 +2197,7 @@ fn search_response(rows: &[deadpool_postgres::tokio_postgres::Row], total: i64) 
 }
 
 /// POST subject/filter/listsubjectinfo/page/{page}/count/{count} — 带体过滤的分页。
+#[allow(non_snake_case)]
 pub async fn u2_subject_listsubjectinfo_page(
     pool: Extension<Pool>,
     Path((page, count)): Path<(i64, i64)>,

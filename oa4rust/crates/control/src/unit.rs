@@ -44,6 +44,7 @@ pub struct UnitUpdateRequest {
     ),
     tag = "control"
 )]
+#[allow(non_snake_case)]
 pub async fn get(
     pool: Extension<Pool>,
     Path(flag): Path<String>,
@@ -73,6 +74,7 @@ pub async fn get(
 }
 
 /// 获取单位列表（树形结构）：GET /jaxrs/unit/list
+#[allow(non_snake_case)]
 pub async fn list(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
@@ -181,6 +183,7 @@ async fn query_page(
     ),
     tag = "control"
 )]
+#[allow(non_snake_case)]
 pub async fn list_next(
     pool: Extension<Pool>,
     Path((flag, count)): Path<(String, i64)>,
@@ -190,6 +193,7 @@ pub async fn list_next(
 }
 
 /// 获取单位列表（上一批）：GET /jaxrs/unit/list/{flag}/prev/{count}
+#[allow(non_snake_case)]
 pub async fn list_prev(
     pool: Extension<Pool>,
     Path((flag, count)): Path<(String, i64)>,
@@ -199,6 +203,7 @@ pub async fn list_prev(
 }
 
 /// 创建单位：POST /jaxrs/unit
+#[allow(non_snake_case)]
 pub async fn create(
     pool: Extension<Pool>,
     Json(req): Json<UnitCreateRequest>,
@@ -236,6 +241,7 @@ pub async fn create(
 }
 
 /// 更新单位信息：PUT /jaxrs/unit/{flag}
+#[allow(non_snake_case)]
 pub async fn update(
     pool: Extension<Pool>,
     Path(flag): Path<String>,
@@ -280,6 +286,7 @@ pub async fn update(
 }
 
 /// 软删除单位：DELETE /jaxrs/unit/{flag}
+#[allow(non_snake_case)]
 pub async fn delete(
     pool: Extension<Pool>,
     Path(flag): Path<String>,

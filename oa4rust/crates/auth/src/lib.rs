@@ -8,11 +8,10 @@ use chrono::{DateTime, Duration, Utc};
 use deadpool_postgres::Pool;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
-use shared::{db::dialect, error::AppError, response::{option_to_json, row_opt_json, ActionResult}};
+use shared::{db::dialect, error::AppError, response::{row_opt_json, ActionResult}};
 use std::collections::HashMap;
 use std::sync::{Mutex, OnceLock};
 use uuid::Uuid;
-use captcha_store::captcha_store;
 
 mod ldap_auth;
 pub mod andfx;
@@ -89,6 +88,7 @@ pub struct TwoFactorLoginResponse {
 ///
 /// 接收用户名/工号（credential）和密码，验证通过后签发 2 小时有效会话令牌。
 /// 支持 bcrypt（前缀 {bcrypt}）与 MD5/DES 兼容校验。限流由 shared 中间件统一处理。
+#[allow(non_snake_case)]
 pub async fn login(
     pool: Extension<Pool>,
     session_manager: Extension<SessionManager>,
@@ -127,7 +127,7 @@ pub async fn login(
     let password_hash: String = row.get("password_hash");
     let locked: bool = row.get("locked");
     let change_password_time: Option<String> = row.get("change_password_time");
-    let password_expired_time: Option<String> = row.get("password_expired_time");
+    let _password_expired_time: Option<String> = row.get("password_expired_time");
 
     // 检查账户是否被锁定
     if locked {
@@ -170,10 +170,7 @@ pub async fn login(
     }
 
     // 检查密码是否过期（简化实现：如果 change_password_time 为 NULL 则密码过期）
-    let password_expired = match change_password_time {
-        None => true,
-        Some(_) => false,
-    };
+    let password_expired = change_password_time.is_none();
 
     // 查询用户角色列表
     let role_list: Vec<String> = {
@@ -234,6 +231,7 @@ pub async fn login(
 
 /// 刷新会话令牌：用旧 token 换取新 token，旧 token 随即失效。
 /// 安全修复：必须从 header 提取有效 token，且与 body 中的 old_token 一致才允许刷新。
+#[allow(non_snake_case)]
 pub async fn refresh(
     _pool: Extension<Pool>,
     session_manager: Extension<SessionManager>,
@@ -261,6 +259,7 @@ pub async fn refresh(
 /// 用户登出接口（契约路径 DELETE /jaxrs/authentication，兼容自造路径）
 ///
 /// 令牌来源：Authorization: Bearer / Cookie token= 优先，请求体 token 字段次之。
+#[allow(non_snake_case)]
 pub async fn logout(
     session_manager: Extension<SessionManager>,
     headers: HeaderMap,
@@ -280,6 +279,7 @@ pub async fn logout(
 ///
 /// 从会话解析当前用户身份，按 unique_id 查询数据库（不再取首条记录）。
 /// 未认证时返回匿名 token 信息（对齐 Java 行为）。
+#[allow(non_snake_case)]
 pub async fn whoami(
     pool: Extension<Pool>,
     session_manager: Extension<SessionManager>,
@@ -578,6 +578,7 @@ pub(crate) fn temp_token_store() -> &'static TempTokenStore {
 }
 
 /// GET /jaxrs/authentication/code/credential/{credential} —— 向凭据发送登录验证码
+#[allow(non_snake_case)]
 pub async fn code_send(
     pool: Extension<Pool>,
     Path(credential): Path<String>,
@@ -609,6 +610,7 @@ pub async fn code_send(
 /// POST /jaxrs/authentication/code —— 双因素登录第二阶段
 ///
 /// 验证 credential + codeAnswer + temp_token，签发完整会话
+#[allow(non_snake_case)]
 pub async fn code(
     pool: Extension<Pool>,
     session_manager: Extension<SessionManager>,
@@ -694,6 +696,7 @@ pub async fn code(
 // --- 组织架构查询（保持既有契约路径）---
 
 /// 获取组织架构树（部门/单位列表）
+#[allow(non_snake_case)]
 pub async fn unit_list(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -726,6 +729,7 @@ pub async fn unit_list(
 }
 
 /// 获取角色列表
+#[allow(non_snake_case)]
 pub async fn role_list(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -756,6 +760,7 @@ pub async fn role_list(
 }
 
 /// 获取用户组列表
+#[allow(non_snake_case)]
 pub async fn group_list(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -785,6 +790,7 @@ pub async fn group_list(
 // --- 验证码 + 短信集成函数 ---
 
 /// 生成验证码（使用 auth::captcha 模块），返回 (captcha_id, data_uri)
+#[allow(non_snake_case)]
 pub async fn captcha_generate() -> Result<(String, String), AppError> {
     let Json(result) = crate::captcha::captcha_default().await?;
     let data = result.data.ok_or(AppError::Internal)?;
@@ -802,6 +808,7 @@ pub async fn captcha_generate() -> Result<(String, String), AppError> {
 }
 
 /// 校验验证码（使用 captcha_store crate）
+#[allow(non_snake_case)]
 pub async fn captcha_verify(captcha_id: &str, answer: &str) -> Result<bool, AppError> {
     use captcha_store::VerifyResult;
     match captcha_store::captcha_store().verify(captcha_id, answer) {

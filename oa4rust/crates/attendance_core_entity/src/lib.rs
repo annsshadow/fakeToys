@@ -3,7 +3,7 @@ use axum::{
     routing::{get, post},
     Json as AxumJson, Router,
 };
-use sea_orm::{ActiveModelTrait, ColumnTrait, DatabaseConnection, EntityTrait, QueryOrder, QuerySelect};
+use sea_orm::{ActiveModelTrait, DatabaseConnection, EntityTrait, QueryOrder, QuerySelect};
 use serde_json::Value;
 use shared::{error::AppError, response::ActionResult};
 
@@ -13,6 +13,7 @@ pub mod routes;
 use entities::{attendance_record, attendance_rule};
 
 /// 获取考勤记录列表
+#[allow(non_snake_case)]
 pub async fn record_list(
     db: Extension<DatabaseConnection>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -55,6 +56,7 @@ pub async fn record_list(
 }
 
 /// 获取考勤规则列表
+#[allow(non_snake_case)]
 pub async fn rule_list(
     db: Extension<DatabaseConnection>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -89,6 +91,7 @@ pub async fn rule_list(
 }
 
 /// 创建考勤记录
+#[allow(non_snake_case)]
 pub async fn record_create(
     db: Extension<DatabaseConnection>,
     AxumJson(payload): AxumJson<Value>,
@@ -130,6 +133,7 @@ pub async fn record_create(
 }
 
 /// 更新考勤记录
+#[allow(non_snake_case)]
 pub async fn record_update(
     db: Extension<DatabaseConnection>,
     Path(id): Path<String>,
@@ -168,6 +172,7 @@ pub async fn record_update(
 }
 
 /// 删除考勤记录
+#[allow(non_snake_case)]
 pub async fn record_delete(
     db: Extension<DatabaseConnection>,
     Path(id): Path<String>,
@@ -190,6 +195,7 @@ pub async fn record_delete(
 }
 
 /// 创建考勤规则
+#[allow(non_snake_case)]
 pub async fn rule_create(
     db: Extension<DatabaseConnection>,
     AxumJson(payload): AxumJson<Value>,
@@ -236,6 +242,7 @@ pub async fn rule_create(
 }
 
 /// 更新考勤规则
+#[allow(non_snake_case)]
 pub async fn rule_update(
     db: Extension<DatabaseConnection>,
     Path(id): Path<String>,
@@ -289,6 +296,7 @@ pub async fn rule_update(
 }
 
 /// 删除考勤规则
+#[allow(non_snake_case)]
 pub async fn rule_delete(
     db: Extension<DatabaseConnection>,
     Path(id): Path<String>,

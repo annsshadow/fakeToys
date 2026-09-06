@@ -12,6 +12,7 @@ pub mod routes;
 
 use entities::{cms_article, cms_category};
 
+#[allow(non_snake_case)]
 pub async fn category_list(
     db: Extension<DatabaseConnection>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -29,12 +30,12 @@ pub async fn category_list(
             let mut map = serde_json::Map::new();
             map.insert("id".to_string(), Value::String(m.id.clone()));
             map.insert("name".to_string(), Value::String(m.name.clone()));
-            if let Some(val) = option_to_json(m.parent_id.clone().map(|s| Value::String(s))) {
+            if let Some(val) = option_to_json(m.parent_id.clone().map(Value::String)) {
                 map.insert("parentId".to_string(), val);
             }
             map.insert("sortOrder".to_string(), Value::Number(serde_json::Number::from(m.sort_order)));
             map.insert("status".to_string(), Value::String(m.status.clone()));
-            map.insert("createTime".to_string(), Value::String(m.create_time.clone().map(|dt| dt.to_string()).unwrap_or_default()));
+            map.insert("createTime".to_string(), Value::String(m.create_time.map(|dt| dt.to_string()).unwrap_or_default()));
             Value::Object(map)
         })
         .collect();
@@ -43,6 +44,7 @@ pub async fn category_list(
     Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
 }
 
+#[allow(non_snake_case)]
 pub async fn category_get(
     db: Extension<DatabaseConnection>,
     Path(id): Path<String>,
@@ -58,12 +60,12 @@ pub async fn category_get(
             let mut map = serde_json::Map::new();
             map.insert("id".to_string(), Value::String(m.id.clone()));
             map.insert("name".to_string(), Value::String(m.name.clone()));
-            if let Some(val) = option_to_json(m.parent_id.clone().map(|s| Value::String(s))) {
+            if let Some(val) = option_to_json(m.parent_id.clone().map(Value::String)) {
                 map.insert("parentId".to_string(), val);
             }
             map.insert("sortOrder".to_string(), Value::Number(serde_json::Number::from(m.sort_order)));
             map.insert("status".to_string(), Value::String(m.status.clone()));
-            map.insert("createTime".to_string(), Value::String(m.create_time.clone().map(|dt| dt.to_string()).unwrap_or_default()));
+            map.insert("createTime".to_string(), Value::String(m.create_time.map(|dt| dt.to_string()).unwrap_or_default()));
             let result = Value::Object(map);
             Ok(Json(ActionResult::success(result)))
         }
@@ -72,6 +74,7 @@ pub async fn category_get(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
 pub async fn category_create(
     db: Extension<DatabaseConnection>,
     Json(payload): Json<Value>,
@@ -83,7 +86,7 @@ pub async fn category_create(
     let status = payload
         .get("status")
         .and_then(|v| v.as_str())
-        .unwrap_or_else(|| "active")
+        .unwrap_or("active")
         .to_string();
     let _create_time = chrono::Utc::now();
 
@@ -109,6 +112,7 @@ pub async fn category_create(
     ])))))
 }
 
+#[allow(non_snake_case)]
 pub async fn article_list(
     db: Extension<DatabaseConnection>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -127,15 +131,15 @@ pub async fn article_list(
             map.insert("id".to_string(), Value::String(m.id.clone()));
             map.insert("categoryId".to_string(), Value::String(m.category_id.clone()));
             map.insert("title".to_string(), Value::String(m.title.clone()));
-            if let Some(val) = option_to_json(m.content.clone().map(|s| Value::String(s))) {
+            if let Some(val) = option_to_json(m.content.clone().map(Value::String)) {
                 map.insert("content".to_string(), val);
             }
             map.insert("authorId".to_string(), Value::String(m.author_id.clone()));
             map.insert("status".to_string(), Value::String(m.status.clone()));
-            if let Some(val) = option_to_json(m.publish_time.clone().map(|dt| Value::String(dt.to_string()))) {
+            if let Some(val) = option_to_json(m.publish_time.map(|dt| Value::String(dt.to_string()))) {
                 map.insert("publishTime".to_string(), val);
             }
-            map.insert("createTime".to_string(), Value::String(m.create_time.clone().map(|dt| dt.to_string()).unwrap_or_default()));
+            map.insert("createTime".to_string(), Value::String(m.create_time.map(|dt| dt.to_string()).unwrap_or_default()));
             Value::Object(map)
         })
         .collect();
@@ -144,6 +148,7 @@ pub async fn article_list(
     Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
 }
 
+#[allow(non_snake_case)]
 pub async fn article_get(
     db: Extension<DatabaseConnection>,
     Path(id): Path<String>,
@@ -160,15 +165,15 @@ pub async fn article_get(
             map.insert("id".to_string(), Value::String(m.id.clone()));
             map.insert("categoryId".to_string(), Value::String(m.category_id.clone()));
             map.insert("title".to_string(), Value::String(m.title.clone()));
-            if let Some(val) = option_to_json(m.content.clone().map(|s| Value::String(s))) {
+            if let Some(val) = option_to_json(m.content.clone().map(Value::String)) {
                 map.insert("content".to_string(), val);
             }
             map.insert("authorId".to_string(), Value::String(m.author_id.clone()));
             map.insert("status".to_string(), Value::String(m.status.clone()));
-            if let Some(val) = option_to_json(m.publish_time.clone().map(|dt| Value::String(dt.to_string()))) {
+            if let Some(val) = option_to_json(m.publish_time.map(|dt| Value::String(dt.to_string()))) {
                 map.insert("publishTime".to_string(), val);
             }
-            map.insert("createTime".to_string(), Value::String(m.create_time.clone().map(|dt| dt.to_string()).unwrap_or_default()));
+            map.insert("createTime".to_string(), Value::String(m.create_time.map(|dt| dt.to_string()).unwrap_or_default()));
             let result = Value::Object(map);
             Ok(Json(ActionResult::success(result)))
         }
@@ -177,6 +182,7 @@ pub async fn article_get(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
 pub async fn article_create(
     db: Extension<DatabaseConnection>,
     Json(payload): Json<Value>,
@@ -201,7 +207,7 @@ pub async fn article_create(
     let status = payload
         .get("status")
         .and_then(|v| v.as_str())
-        .unwrap_or_else(|| "draft")
+        .unwrap_or("draft")
         .to_string();
 
     let active_model = cms_article::ActiveModel {

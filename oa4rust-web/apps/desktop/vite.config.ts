@@ -25,6 +25,7 @@ export default defineConfig({
     outDir: '../../dist/web',
     emptyOutDir: true,
     sourcemap: true,
+    chunkSizeWarningLimit: 1000,
     rollupOptions: {
       output: {
         manualChunks: {

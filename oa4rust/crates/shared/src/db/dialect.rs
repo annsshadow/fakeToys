@@ -48,6 +48,12 @@ pub trait SqlDialect: Send + Sync {
 #[derive(Debug, Clone, Copy)]
 pub struct PostgresDialect;
 
+impl Default for PostgresDialect {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl PostgresDialect {
     pub fn new() -> Self {
         Self
@@ -98,6 +104,12 @@ impl SqlDialect for PostgresDialect {
 
 #[derive(Debug, Clone, Copy)]
 pub struct MySQLDialect;
+
+impl Default for MySQLDialect {
+    fn default() -> Self {
+        Self::new()
+    }
+}
 
 impl MySQLDialect {
     pub fn new() -> Self {

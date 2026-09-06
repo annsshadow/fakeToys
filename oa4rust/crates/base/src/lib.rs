@@ -32,6 +32,7 @@ mod tests_generated;
     ),
     tag = "base"
 )]
+#[allow(non_snake_case)]
 pub async fn echo_get() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
         ("type".to_string(), Value::String("echo".to_string())),
@@ -59,6 +60,7 @@ pub async fn echo_get() -> Result<Json<ActionResult<Value>>, AppError> {
     ),
     tag = "base"
 )]
+#[allow(non_snake_case)]
 pub async fn cache_detail(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -94,6 +96,7 @@ pub async fn cache_detail(
     ),
     tag = "base"
 )]
+#[allow(non_snake_case)]
 pub async fn openapi_info() -> Result<Redirect, AppError> {
     Ok(Redirect::temporary("/openapi.json"))
 }
@@ -148,6 +151,7 @@ fn web_root() -> std::path::PathBuf {
 }
 
 /// POST /jaxrs/base/cache —— 接收缓存刷新指令（回显 className）
+#[allow(non_snake_case)]
 pub async fn cache_receive(
     Json(body): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -171,18 +175,21 @@ pub async fn cache_receive(
 }
 
 /// GET /jaxrs/base/cache/config/flush —— 刷新 Config 配置文件指令确认
+#[allow(non_snake_case)]
 pub async fn cache_config_flush() -> Result<Json<ActionResult<Value>>, AppError> {
     tracing::info!("config flush instruction received");
     Ok(Json(ActionResult::success(json!({ "value": true }))))
 }
 
 /// GET /jaxrs/base/cache/commonscript/flush —— 刷新 CommonScript 指令确认
+#[allow(non_snake_case)]
 pub async fn cache_commonscript_flush() -> Result<Json<ActionResult<Value>>, AppError> {
     tracing::info!("common script flush instruction received");
     Ok(Json(ActionResult::success(json!({ "value": true }))))
 }
 
 /// GET /jaxrs/base/fireschedule/classname/{className} —— 触发定时任务指令
+#[allow(non_snake_case)]
 pub async fn fireschedule_execute(
     Path(class_name): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -202,6 +209,7 @@ pub async fn fireschedule_execute(
 }
 
 /// GET /jaxrs/base/sysresource/filePath/{filePath} —— 列出静态资源（带穿越防护）
+#[allow(non_snake_case)]
 pub async fn sysresource_list(
     Path(file_path): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {

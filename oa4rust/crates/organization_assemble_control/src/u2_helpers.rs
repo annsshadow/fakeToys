@@ -23,7 +23,7 @@ pub fn check_batch_len(len: usize) -> Result<(), AppError> {
 
 pub fn validate_password_policy(password: &str) -> bool {
     let len = password.chars().count();
-    !(len < 6 || len > 64)
+    !!(6..=64).contains(&len)
         && !password.chars().any(char::is_whitespace)
         && password.chars().any(char::is_alphabetic)
         && password.chars().any(|c| c.is_ascii_digit())
@@ -43,6 +43,7 @@ pub fn is_parseable_date(date: &str) -> bool {
     chrono::NaiveDate::parse_from_str(trimmed, "%Y-%m-%d").is_ok()
 }
 
+#[allow(non_snake_case)]
 pub async fn require_admin(
     pool: &Pool,
     session: &shared::session::Session,
@@ -54,6 +55,7 @@ pub async fn require_admin(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn client_of(pool: &Pool) -> Result<Client, AppError> {
     pool.get().await.map_err(|_| AppError::Internal)
 }
@@ -118,6 +120,7 @@ pub fn list_ok_java(rows: Vec<Value>) -> HandlerResult {
     )))
 }
 
+#[allow(non_snake_case)]
 pub async fn resolve_generic_id(
     client: &Client,
     table: &str,
@@ -132,6 +135,7 @@ pub async fn resolve_generic_id(
     Ok(row.map(|r| r.get::<_, String>(0)))
 }
 
+#[allow(non_snake_case)]
 pub async fn soft_delete_generic(
     client: &Client,
     table: &str,
@@ -146,6 +150,7 @@ pub async fn soft_delete_generic(
     Ok(Some(id))
 }
 
+#[allow(non_snake_case)]
 pub async fn normalized_name_dup(
     client: &Client,
     table: &str,
@@ -202,6 +207,7 @@ fn select_cols(extra_cols: &[&str]) -> String {
         .join(", ")
 }
 
+#[allow(non_snake_case)]
 pub async fn generic_list_all(
     pool: &Pool,
     table: &str,
@@ -216,6 +222,7 @@ pub async fn generic_list_all(
     list_ok_java(rows.iter().map(|r| entity_row_json(r, extra_cols)).collect())
 }
 
+#[allow(non_snake_case)]
 pub async fn generic_like_search(
     pool: &Pool,
     table: &str,
@@ -257,6 +264,7 @@ pub async fn generic_like_search(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn generic_pinyininitial_filter(
     pool: &Pool,
     table: &str,

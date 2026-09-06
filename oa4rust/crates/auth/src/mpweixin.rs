@@ -103,7 +103,7 @@ const MPWEXIN_UNIQUE_PREFIX: &str = "mpwx_";
 static MPWEXIN_CLIENT: OnceLock<reqwest::Client> = OnceLock::new();
 
 fn mpweixin_client() -> &'static reqwest::Client {
-    MPWEXIN_CLIENT.get_or_init(|| reqwest::Client::new())
+    MPWEXIN_CLIENT.get_or_init(reqwest::Client::new)
 }
 
 fn mpweixin_config() -> Result<(String, String), AppError> {
@@ -254,7 +254,7 @@ pub async fn mpweixin_login(
         return Ok(Json(ActionResult::error("code is required")));
     }
     let openid = mpweixin_openid(&code).await?;
-    let result = mpweixin_login_or_create(&*pool, &*session_manager, &openid).await?;
+    let result = mpweixin_login_or_create(&pool, &session_manager, &openid).await?;
     Ok(Json(ActionResult::success(result)))
 }
 

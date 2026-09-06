@@ -1,3 +1,4 @@
+#[allow(dead_code, non_snake_case)]
 use axum::{
     extract::{Extension, Path},
     Json,
@@ -20,6 +21,7 @@ pub fn hotpic_assemble_control_router(pool: Pool) -> axum::Router {
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
 pub async fn get_control_config(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -45,6 +47,7 @@ pub async fn get_control_config(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
 pub async fn list_control_panels(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -76,6 +79,7 @@ pub async fn list_control_panels(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
 pub async fn update_control_config(
     pool: Extension<Pool>,
     body: axum::extract::Json<Value>,
@@ -86,7 +90,7 @@ pub async fn update_control_config(
 
     let id = uuid::Uuid::new_v4().to_string();
     let name = config.get("name").and_then(|v| v.as_str()).unwrap_or("default").to_string();
-    let enabled = config.get("enabled").and_then(|v| v.as_bool()).unwrap_or(true);
+    let _enabled = config.get("enabled").and_then(|v| v.as_bool()).unwrap_or(true);
 
     let result = client
         .execute(
@@ -105,6 +109,7 @@ pub async fn update_control_config(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
 pub async fn list_control_applications(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -145,6 +150,7 @@ pub struct HotpicRequest {
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
 pub async fn list_hotpics(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -175,6 +181,7 @@ pub async fn list_hotpics(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
 pub async fn get_hotpic(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
@@ -204,6 +211,7 @@ pub async fn get_hotpic(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
 pub async fn create_hotpic(
     pool: Extension<Pool>,
     axum::extract::Json(req): Json<HotpicRequest>,
@@ -232,6 +240,7 @@ pub async fn create_hotpic(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
 pub async fn save_hotpic(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
@@ -264,6 +273,7 @@ pub async fn save_hotpic(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
 pub async fn delete_hotpic(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
@@ -289,6 +299,7 @@ pub async fn delete_hotpic(
     ))))
 }
 
+#[allow(non_snake_case)]
 pub async fn cipher_hotpic_bbs_id(
     pool: Extension<Pool>,
     Path(id): Path<String>,
@@ -317,6 +328,7 @@ pub async fn cipher_hotpic_bbs_id(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn cipher_hotpic_cms_id(
     pool: Extension<Pool>,
     Path(id): Path<String>,
@@ -345,6 +357,7 @@ pub async fn cipher_hotpic_cms_id(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn cipher_hotpic_filter_list_page_page_count_count(
     pool: Extension<Pool>,
     Path((page, count)): Path<(i64, i64)>,
@@ -376,6 +389,7 @@ pub async fn cipher_hotpic_filter_list_page_page_count_count(
     Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
 }
 
+#[allow(non_snake_case)]
 pub async fn cipher_hotpic_id(
     pool: Extension<Pool>,
     Path(id): Path<String>,
@@ -404,6 +418,7 @@ pub async fn cipher_hotpic_id(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn user_hotpic_changeTitle(
     pool: Extension<Pool>,
     Json(req): Json<Value>,
@@ -437,6 +452,7 @@ pub async fn user_hotpic_changeTitle(
     ))))
 }
 
+#[allow(non_snake_case)]
 pub async fn user_hotpic_exists_check(
     pool: Extension<Pool>,
     Json(req): Json<Value>,
@@ -461,6 +477,7 @@ pub async fn user_hotpic_exists_check(
     Ok(Json(ActionResult::success(Value::Bool(count > 0))))
 }
 
+#[allow(non_snake_case)]
 pub async fn user_hotpic_filter_list_page_page_count_count(
     pool: Extension<Pool>,
     Path((page, count)): Path<(i64, i64)>,
@@ -492,6 +509,7 @@ pub async fn user_hotpic_filter_list_page_page_count_count(
     Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
 }
 
+#[allow(non_snake_case)]
 pub async fn user_hotpic_application_infoId(
     pool: Extension<Pool>,
     Path((application, info_id)): Path<(String, String)>,
@@ -521,6 +539,7 @@ pub async fn user_hotpic_application_infoId(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn user_hotpic_id(
     pool: Extension<Pool>,
     Path(id): Path<String>,
@@ -566,6 +585,7 @@ pub async fn user_hotpic_id(
 }
 
 
+#[allow(non_snake_case)]
 pub async fn user_hotpic_delete_by_ids(
     pool: Extension<Pool>,
     Path((id, id2)): Path<(String, String)>,

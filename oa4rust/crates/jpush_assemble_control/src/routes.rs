@@ -3,7 +3,6 @@ use axum::{
     routing::{delete, get, post},
     Router,
 };
-use deadpool_postgres::Pool;
 
 use crate::{
     list_jpushs, get_jpush, create_jpush, save_jpush, delete_jpush,

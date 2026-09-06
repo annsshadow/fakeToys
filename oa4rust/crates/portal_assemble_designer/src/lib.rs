@@ -1,3 +1,4 @@
+#[allow(dead_code)]
 use axum::{
     extract::{Extension, Path},
     Json, Router, routing::get, routing::post, routing::put, routing::delete,
@@ -27,6 +28,7 @@ pub struct SavePageRequest {
     pub content: Option<Value>,
 }
 
+#[allow(non_snake_case)]
 pub async fn create_design(
     pool: Extension<Pool>,
     axum::extract::Json(req): Json<CreatePortalRequest>,
@@ -53,6 +55,7 @@ pub async fn create_design(
     Ok(Json(ActionResult::success(result)))
 }
 
+#[allow(non_snake_case)]
 pub async fn get_design(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
@@ -83,6 +86,7 @@ pub async fn get_design(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn list_designs(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -114,6 +118,7 @@ pub async fn list_designs(
     ])))))
 }
 
+#[allow(non_snake_case)]
 pub async fn save_design(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
@@ -144,6 +149,7 @@ pub async fn save_design(
     ))))
 }
 
+#[allow(non_snake_case)]
 pub async fn list_pages_by_category(
     pool: Extension<Pool>,
     axum::extract::Path(category): axum::extract::Path<String>,
@@ -182,6 +188,7 @@ pub async fn list_pages_by_category(
     ])))))
 }
 
+#[allow(non_snake_case)]
 pub async fn get_page(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
@@ -216,6 +223,7 @@ pub async fn get_page(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn create_page(
     pool: Extension<Pool>,
     axum::extract::Json(req): Json<CreatePageRequest>,
@@ -247,6 +255,7 @@ pub async fn create_page(
     Ok(Json(ActionResult::success(result)))
 }
 
+#[allow(non_snake_case)]
 pub async fn save_page(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
@@ -278,6 +287,7 @@ pub async fn save_page(
     ))))
 }
 
+#[allow(non_snake_case)]
 pub async fn delete_page(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
@@ -304,12 +314,14 @@ pub async fn delete_page(
     ))))
 }
 
+#[allow(non_snake_case)]
 pub async fn design_list(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     list_designs(pool).await
 }
 
+#[allow(non_snake_case)]
 pub async fn design_get(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
@@ -317,6 +329,7 @@ pub async fn design_get(
     get_design(pool, Path(id)).await
 }
 
+#[allow(non_snake_case)]
 pub async fn design_save(
     pool: Extension<Pool>,
     axum::extract::Json(body): Json<Value>,
@@ -439,6 +452,7 @@ pub fn router(pool: deadpool_postgres::Pool) -> axum::Router {
 
 
 
+#[allow(non_snake_case)]
 pub async fn designer_search(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -471,6 +485,7 @@ pub async fn designer_search(
     ])))))
 }
 
+#[allow(non_snake_case)]
 pub async fn dict_list_paging_page_size_size(
     pool: Extension<Pool>,
     Path(_page): Path<i64>,
@@ -504,6 +519,7 @@ pub async fn dict_list_paging_page_size_size(
     ])))))
 }
 
+#[allow(non_snake_case)]
 pub async fn dict_list_portal_portalId(
     pool: Extension<Pool>,
     Path(portal_id): Path<String>,
@@ -536,6 +552,7 @@ pub async fn dict_list_portal_portalId(
     ])))))
 }
 
+#[allow(non_snake_case)]
 pub async fn dict_id(
     pool: Extension<Pool>,
     Path(id): Path<String>,
@@ -566,6 +583,7 @@ pub async fn dict_id(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn file_list_application_applicationFlag(
     pool: Extension<Pool>,
     Path(application_flag): Path<String>,
@@ -600,6 +618,7 @@ pub async fn file_list_application_applicationFlag(
     ])))))
 }
 
+#[allow(non_snake_case)]
 pub async fn file_list_id_next_count(
     pool: Extension<Pool>,
     Path(id): Path<String>,
@@ -635,6 +654,7 @@ pub async fn file_list_id_next_count(
     ])))))
 }
 
+#[allow(non_snake_case)]
 pub async fn file_list_id_prev_count(
     pool: Extension<Pool>,
     Path(id): Path<String>,
@@ -670,6 +690,7 @@ pub async fn file_list_id_prev_count(
     ])))))
 }
 
+#[allow(non_snake_case)]
 pub async fn file_flag(
     pool: Extension<Pool>,
     Path(flag): Path<String>,
@@ -700,6 +721,7 @@ pub async fn file_flag(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn file_id(
     pool: Extension<Pool>,
     Path(id): Path<String>,
@@ -730,6 +752,7 @@ pub async fn file_id(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn file_id_download(
     pool: Extension<Pool>,
     Path(id): Path<String>,
@@ -759,6 +782,7 @@ pub async fn file_id_download(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn file_id_upload(
     pool: Extension<Pool>,
     Path(id): Path<String>,
@@ -789,6 +813,7 @@ pub async fn file_id_upload(
     ))))
 }
 
+#[allow(non_snake_case)]
 pub async fn id_count(
     pool: Extension<Pool>,
     Path(count): Path<i64>,
@@ -810,6 +835,7 @@ pub async fn id_count(
     ))))
 }
 
+#[allow(non_snake_case)]
 pub async fn input_compare(
     pool: Extension<Pool>,
     Json(body): Json<Value>,
@@ -845,6 +871,7 @@ pub async fn input_compare(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn input_cover(
     pool: Extension<Pool>,
     Json(body): Json<Value>,
@@ -853,7 +880,7 @@ pub async fn input_cover(
 
     let input_id = body.get("id").and_then(|v| v.as_str()).unwrap_or_default();
     let content_str = body.get("content").and_then(|v| v.as_str()).unwrap_or_default();
-    let creator = "system";
+    let _creator = "system";
 
     let result = client
         .execute(
@@ -875,6 +902,7 @@ pub async fn input_cover(
     ))))
 }
 
+#[allow(non_snake_case)]
 pub async fn input_create(
     pool: Extension<Pool>,
     Json(body): Json<Value>,
@@ -901,6 +929,7 @@ pub async fn input_create(
     ))))
 }
 
+#[allow(non_snake_case)]
 pub async fn input_prepare_cover(
     pool: Extension<Pool>,
     Json(body): Json<Value>,
@@ -921,7 +950,7 @@ pub async fn input_prepare_cover(
             let content: Option<String> = row.get("content");
             let mut map = serde_json::Map::new();
             map.insert("id".to_string(), Value::String(input_id.to_string()));
-            if let Some(val) = option_to_json(content.map(|s| Value::String(s))) {
+            if let Some(val) = option_to_json(content.map(Value::String)) {
                 map.insert("content".to_string(), val);
             }
             Ok(Json(ActionResult::success(Value::Object(map))))
@@ -930,6 +959,7 @@ pub async fn input_prepare_cover(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn input_prepare_create(
     pool: Extension<Pool>,
     Json(body): Json<Value>,
@@ -956,6 +986,7 @@ pub async fn input_prepare_create(
     ))))
 }
 
+#[allow(non_snake_case)]
 pub async fn output_list(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -989,6 +1020,7 @@ pub async fn output_list(
     ])))))
 }
 
+#[allow(non_snake_case)]
 pub async fn output_flag_select_file(
     pool: Extension<Pool>,
     Path(flag): Path<String>,
@@ -1017,6 +1049,7 @@ pub async fn output_flag_select_file(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn output_portalFlag_select(
     pool: Extension<Pool>,
     Path(portal_flag): Path<String>,
@@ -1051,6 +1084,7 @@ pub async fn output_portalFlag_select(
     ])))))
 }
 
+#[allow(non_snake_case)]
 pub async fn page_list_portal_portalId(
     pool: Extension<Pool>,
     Path(portal_id): Path<String>,
@@ -1085,6 +1119,7 @@ pub async fn page_list_portal_portalId(
     ])))))
 }
 
+#[allow(non_snake_case)]
 pub async fn page_id(
     pool: Extension<Pool>,
     Path(id): Path<String>,
@@ -1119,6 +1154,7 @@ pub async fn page_id(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn pageversion_list_page_pageId(
     pool: Extension<Pool>,
     Path(page_id): Path<String>,
@@ -1152,6 +1188,7 @@ pub async fn pageversion_list_page_pageId(
     ])))))
 }
 
+#[allow(non_snake_case)]
 pub async fn pageversion_id(
     pool: Extension<Pool>,
     Path(id): Path<String>,
@@ -1182,6 +1219,7 @@ pub async fn pageversion_id(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn portal_list(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -1215,6 +1253,7 @@ pub async fn portal_list(
     ])))))
 }
 
+#[allow(non_snake_case)]
 pub async fn portal_list_portalcategory_portalCategory(
     pool: Extension<Pool>,
     Path(portal_category): Path<String>,
@@ -1249,6 +1288,7 @@ pub async fn portal_list_portalcategory_portalCategory(
     ])))))
 }
 
+#[allow(non_snake_case)]
 pub async fn portal_list_summary(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -1280,6 +1320,7 @@ pub async fn portal_list_summary(
     ])))))
 }
 
+#[allow(non_snake_case)]
 pub async fn portal_list_summary_portalcategory_portalCategory(
     pool: Extension<Pool>,
     Path(portal_category): Path<String>,
@@ -1312,6 +1353,7 @@ pub async fn portal_list_summary_portalcategory_portalCategory(
     ])))))
 }
 
+#[allow(non_snake_case)]
 pub async fn portal_list_summary_v2(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -1346,6 +1388,7 @@ pub async fn portal_list_summary_v2(
     ])))))
 }
 
+#[allow(non_snake_case)]
 pub async fn portal_id(
     pool: Extension<Pool>,
     Path(id): Path<String>,
@@ -1378,6 +1421,7 @@ pub async fn portal_id(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn portal_id_icon(
     pool: Extension<Pool>,
     Path(id): Path<String>,
@@ -1404,6 +1448,7 @@ pub async fn portal_id_icon(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn portal_id_permission(
     pool: Extension<Pool>,
     Path(id): Path<String>,
@@ -1430,6 +1475,7 @@ pub async fn portal_id_permission(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn portalcategory_list(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -1458,6 +1504,7 @@ pub async fn portalcategory_list(
     ])))))
 }
 
+#[allow(non_snake_case)]
 pub async fn script_list_manager(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -1491,6 +1538,7 @@ pub async fn script_list_manager(
     ])))))
 }
 
+#[allow(non_snake_case)]
 pub async fn script_list_paging_page_size_size(
     pool: Extension<Pool>,
     Path(page): Path<i64>,
@@ -1526,6 +1574,7 @@ pub async fn script_list_paging_page_size_size(
     ])))))
 }
 
+#[allow(non_snake_case)]
 pub async fn script_list_portal_portalId(
     pool: Extension<Pool>,
     Path(portal_id): Path<String>,
@@ -1560,6 +1609,7 @@ pub async fn script_list_portal_portalId(
     ])))))
 }
 
+#[allow(non_snake_case)]
 pub async fn script_id(
     pool: Extension<Pool>,
     Path(id): Path<String>,
@@ -1591,6 +1641,7 @@ pub async fn script_id(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn scriptversion_list_script_scriptId(
     pool: Extension<Pool>,
     Path(script_id): Path<String>,
@@ -1624,6 +1675,7 @@ pub async fn scriptversion_list_script_scriptId(
     ])))))
 }
 
+#[allow(non_snake_case)]
 pub async fn scriptversion_id(
     pool: Extension<Pool>,
     Path(id): Path<String>,
@@ -1654,6 +1706,7 @@ pub async fn scriptversion_id(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn templatepage_list(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -1687,6 +1740,7 @@ pub async fn templatepage_list(
     ])))))
 }
 
+#[allow(non_snake_case)]
 pub async fn templatepage_list_category(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -1715,6 +1769,7 @@ pub async fn templatepage_list_category(
     ])))))
 }
 
+#[allow(non_snake_case)]
 pub async fn templatepage_id(
     pool: Extension<Pool>,
     Path(id): Path<String>,
@@ -1748,6 +1803,7 @@ pub async fn templatepage_id(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn widget_list_portal_portalId(
     pool: Extension<Pool>,
     Path(portal_id): Path<String>,
@@ -1783,6 +1839,7 @@ pub async fn widget_list_portal_portalId(
     ])))))
 }
 
+#[allow(non_snake_case)]
 pub async fn widget_id(
     pool: Extension<Pool>,
     Path(id): Path<String>,
@@ -1820,6 +1877,7 @@ pub async fn widget_id(
 // 复用既有 x_portal_* 表，参数化真实 SQL；归一化查重 / IDOR 门禁。
 // ─────────────────────────────────────────────────────────────────────────────
 
+#[allow(non_snake_case)]
 pub async fn create_portal(
     pool: Extension<Pool>,
     axum::extract::Json(req): Json<CreatePortalRequest>,
@@ -1862,6 +1920,7 @@ pub async fn create_portal(
     ))))
 }
 
+#[allow(non_snake_case)]
 pub async fn delete_portal(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
@@ -1885,6 +1944,7 @@ pub async fn delete_portal(
     ))))
 }
 
+#[allow(non_snake_case)]
 pub async fn update_portal(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
@@ -1913,6 +1973,7 @@ pub async fn update_portal(
     ))))
 }
 
+#[allow(non_snake_case)]
 pub async fn update_portal_icon(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
@@ -1938,6 +1999,7 @@ pub async fn update_portal_icon(
     ))))
 }
 
+#[allow(non_snake_case)]
 pub async fn portal_id_permission_post(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
@@ -1963,6 +2025,7 @@ pub async fn portal_id_permission_post(
     ))))
 }
 
+#[allow(non_snake_case)]
 pub async fn create_templatepage(
     pool: Extension<Pool>,
     axum::extract::Json(body): Json<Value>,
@@ -2004,6 +2067,7 @@ pub async fn create_templatepage(
     ))))
 }
 
+#[allow(non_snake_case)]
 pub async fn update_templatepage_category(
     pool: Extension<Pool>,
     axum::extract::Json(body): Json<Value>,
@@ -2036,6 +2100,7 @@ pub async fn update_templatepage_category(
     ))))
 }
 
+#[allow(non_snake_case)]
 pub async fn delete_templatepage(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
@@ -2059,6 +2124,7 @@ pub async fn delete_templatepage(
     ))))
 }
 
+#[allow(non_snake_case)]
 pub async fn create_widget(
     pool: Extension<Pool>,
     axum::extract::Json(body): Json<Value>,
@@ -2102,6 +2168,7 @@ pub async fn create_widget(
     ))))
 }
 
+#[allow(non_snake_case)]
 pub async fn delete_widget(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
@@ -2125,6 +2192,7 @@ pub async fn delete_widget(
     ))))
 }
 
+#[allow(non_snake_case)]
 pub async fn update_widget(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,

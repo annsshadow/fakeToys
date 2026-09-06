@@ -10,7 +10,6 @@ use deadpool_postgres::{Manager, Pool};
 use dotenvy::dotenv;
 use sea_orm::{Database, DatabaseConnection, ConnectOptions};
 use std::env;
-use std::time::Duration;
 use thiserror::Error;
 
 #[derive(Error, Debug)]

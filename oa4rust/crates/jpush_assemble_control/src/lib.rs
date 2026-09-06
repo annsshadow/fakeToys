@@ -1,3 +1,4 @@
+#[allow(dead_code)]
 use axum::{
     extract::{Extension, Path},
     Json, Router,
@@ -23,6 +24,7 @@ mod tests_generated;
 
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
 pub async fn get_control_config(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -48,6 +50,7 @@ pub async fn get_control_config(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
 pub async fn list_control_apps(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -76,6 +79,7 @@ pub async fn list_control_apps(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
 pub async fn update_control_config(
     pool: Extension<Pool>,
     body: axum::extract::Json<Value>,
@@ -120,6 +124,7 @@ pub struct JpushRequest {
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
 pub async fn list_jpushs(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -151,6 +156,7 @@ pub async fn list_jpushs(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
 pub async fn get_jpush(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
@@ -181,6 +187,7 @@ pub async fn get_jpush(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
 pub async fn create_jpush(
     pool: Extension<Pool>,
     axum::extract::Json(req): Json<JpushRequest>,
@@ -211,6 +218,7 @@ pub async fn create_jpush(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
 pub async fn save_jpush(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
@@ -245,6 +253,7 @@ pub async fn save_jpush(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
 pub async fn delete_jpush(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
@@ -270,6 +279,7 @@ pub async fn delete_jpush(
     ))))
 }
 
+#[allow(non_snake_case)]
 pub async fn device_admin_unbind_all_person(
     pool: Extension<Pool>,
     Json(req): Json<Value>,
@@ -298,6 +308,7 @@ pub async fn device_admin_unbind_all_person(
     ))))
 }
 
+#[allow(non_snake_case)]
 pub async fn device_bind(
     pool: Extension<Pool>,
     Json(req): Json<Value>,
@@ -310,7 +321,7 @@ pub async fn device_bind(
 
     let id = uuid::Uuid::new_v4().to_string();
 
-    let result = client
+    let _result = client
         .execute(
             "INSERT INTO x_jpush (id, title, content, target, creator, create_time) VALUES ($1, $2, $3, $4, $5, NOW())",
             &[&id, &device_name, &device_type, &push_type, &creator],
@@ -321,6 +332,7 @@ pub async fn device_bind(
     Ok(Json(ActionResult::success(Value::Object(serde_json::Map::new()))))
 }
 
+#[allow(non_snake_case)]
 pub async fn device_check_deviceName_deviceType_pushType(
     pool: Extension<Pool>,
     Path((device_name, device_type, push_type)): Path<(String, String, String)>,
@@ -342,6 +354,7 @@ pub async fn device_check_deviceName_deviceType_pushType(
     ))))
 }
 
+#[allow(non_snake_case)]
 pub async fn device_config_push_type(
     pool: Extension<Pool>,
     Path(push_type): Path<String>,
@@ -364,6 +377,7 @@ pub async fn device_config_push_type(
     ))))
 }
 
+#[allow(non_snake_case)]
 pub async fn device_list_pushType(
     pool: Extension<Pool>,
     Path(push_type): Path<String>,
@@ -395,6 +409,7 @@ pub async fn device_list_pushType(
     Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
 }
 
+#[allow(non_snake_case)]
 pub async fn device_unbind_new_deviceName_deviceType_pushType(
     pool: Extension<Pool>,
     Path((device_name, device_type, push_type)): Path<(String, String, String)>,
@@ -422,6 +437,7 @@ pub async fn device_unbind_new_deviceName_deviceType_pushType(
     ))))
 }
 
+#[allow(non_snake_case)]
 pub async fn device_unbind_deviceName_deviceType(
     pool: Extension<Pool>,
     Path((device_name, device_type)): Path<(String, String)>,
@@ -448,6 +464,7 @@ pub async fn device_unbind_deviceName_deviceType(
     ))))
 }
 
+#[allow(non_snake_case)]
 pub async fn message_test_send(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -699,6 +716,7 @@ impl PushGateway for JPushGateway {
 
 
 
+#[allow(non_snake_case)]
 pub async fn message_send(
     pool: Extension<Pool>,
     axum::extract::Json(req): Json<Value>,

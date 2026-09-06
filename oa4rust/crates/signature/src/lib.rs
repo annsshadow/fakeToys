@@ -8,7 +8,6 @@ use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
 use thiserror::Error;
 use tracing::warn;
-use x509_parser::prelude::*;
 
 #[derive(Debug, Error)]
 pub enum SignatureError {
@@ -146,6 +145,12 @@ pub trait SignatureService: Send + Sync {
 
 pub struct PdfSignatureService;
 
+impl Default for PdfSignatureService {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl PdfSignatureService {
     pub fn new() -> Self {
         Self
@@ -159,9 +164,7 @@ impl PdfSignatureService {
                 .replace("-----END PRIVATE KEY-----", "")
                 .replace("-----BEGIN RSA PRIVATE KEY-----", "")
                 .replace("-----END RSA PRIVATE KEY-----", "")
-                .replace('\n', "")
-                .replace('\r', "")
-                .replace(' ', "")
+                .replace(['\n', '\r', ' '], "")
         } else {
             pem.to_string()
         };
@@ -181,9 +184,7 @@ impl PdfSignatureService {
             cert_pem[start..end]
                 .replace("-----BEGIN CERTIFICATE-----", "")
                 .replace("-----END CERTIFICATE-----", "")
-                .replace('\n', "")
-                .replace('\r', "")
-                .replace(' ', "")
+                .replace(['\n', '\r', ' '], "")
         } else {
             cert_pem.trim().to_string()
         };
@@ -208,9 +209,7 @@ impl PdfSignatureService {
             cert_pem[start..end]
                 .replace("-----BEGIN CERTIFICATE-----", "")
                 .replace("-----END CERTIFICATE-----", "")
-                .replace('\n', "")
-                .replace('\r', "")
-                .replace(' ', "")
+                .replace(['\n', '\r', ' '], "")
         } else {
             cert_pem.trim().to_string()
         };
@@ -240,9 +239,7 @@ impl PdfSignatureService {
             cert_pem[start..end]
                 .replace("-----BEGIN CERTIFICATE-----", "")
                 .replace("-----END CERTIFICATE-----", "")
-                .replace('\n', "")
-                .replace('\r', "")
-                .replace(' ', "")
+                .replace(['\n', '\r', ' '], "")
         } else {
             cert_pem.trim().to_string()
         };
@@ -277,9 +274,7 @@ impl PdfSignatureService {
                 let b64 = block
                     .replace("-----BEGIN CERTIFICATE-----", "")
                     .replace("-----END CERTIFICATE-----", "")
-                    .replace('\n', "")
-                    .replace('\r', "")
-                    .replace(' ', "");
+                    .replace(['\n', '\r', ' '], "");
                 let bytes = base64::Engine::decode(&base64::engine::general_purpose::STANDARD, b64)
                     .map_err(|_| SignatureError::InvalidCertificate)?;
                 certs.push(bytes);
@@ -402,11 +397,10 @@ impl PdfSignatureService {
                 let oid_str = ext.oid.to_string();
                 if oid_str == "2.5.29.31" {
                     revocation_reason = Some("CRL distribution points extension present; live CRL/OCSP check requires network access to the issuing CA".into());
-                } else if oid_str == "2.5.29.1" {
-                    if revocation_reason.is_none() {
+                } else if oid_str == "2.5.29.1"
+                    && revocation_reason.is_none() {
                         revocation_reason = Some("AuthorityInfoAccess extension present; live OCSP check requires network access".into());
                     }
-                }
             }
 
             statuses.push(CertStatus {
@@ -428,7 +422,7 @@ impl PdfSignatureService {
 impl SignatureService for PdfSignatureService {
     async fn sign_pdf(&self, pdf_data: &[u8], info: &SignatureInfo) -> SignatureResult<Vec<u8>> {
         let private_key = Self::parse_private_key(&info.private_key_pem)?;
-        let public_key = Self::parse_public_key(&info.cert_pem)?;
+        let _public_key = Self::parse_public_key(&info.cert_pem)?;
         
         Self::verify_certificate_dates(&info.cert_pem)?;
         
@@ -576,7 +570,7 @@ impl PdfSignatureService {
         Ok(buf)
     }
     
-    fn embed_signature_fallback(&self, pdf_data: &[u8], signature_hex: &str, info: &SignatureInfo) -> SignatureResult<Vec<u8>> {
+    fn embed_signature_fallback(&self, pdf_data: &[u8], signature_hex: &str, _info: &SignatureInfo) -> SignatureResult<Vec<u8>> {
         let marker = b"/SignaturePlaceholder<</Contents<";
         if let Some(pos) = pdf_data.windows(marker.len()).position(|w| w == marker) {
             let insert_pos = pos + marker.len() + 2;
@@ -595,7 +589,7 @@ impl PdfSignatureService {
     
     fn extract_signature(&self, pdf_data: &[u8]) -> SignatureResult<EmbeddedSignature> {
         let content_start = pdf_data.windows(10).position(|w| w == b"/Contents<");
-        let content_end = pdf_data.windows(2).position(|w| w == b">>" || w == b">>" ).and_then(|p| Some(p + 2));
+        let content_end = pdf_data.windows(2).position(|w| w == b">>" || w == b">>" ).map(|p| p + 2);
         
         if let (Some(start), Some(end)) = (content_start, content_end) {
             let sig_hex = String::from_utf8_lossy(&pdf_data[start + 10..end - 2]).to_string();

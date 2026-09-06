@@ -9,12 +9,10 @@ use std::sync::OnceLock;
 
 use super::constants::*;
 use super::security::{
-    client_ip, error_handler, is_auth_exempt, is_auth_rate_limited, path_starts_with_segment,
+    client_ip, is_auth_exempt, is_auth_rate_limited,
     requires_admin, SecurityState,
 };
-use super::token::system_uninitialized;
 use crate::error::AppError;
-use crate::rate_limit::RateLimiter;
 use crate::response::error_response;
 use crate::session::Session;
 

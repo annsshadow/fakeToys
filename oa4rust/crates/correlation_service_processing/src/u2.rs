@@ -198,7 +198,7 @@ async fn create_impl(
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let person = wi.person.unwrap_or_default();
     let (success, failure) =
-        upsert_targets(&client, from_type, &from_bundle, &person, &wi.target_list).await?;
+        upsert_targets(&client, from_type, from_bundle, &person, &wi.target_list).await?;
     Ok(Json(ActionResult::success(json!({
         "successList": success,
         "failureList": failure,
@@ -206,6 +206,7 @@ async fn create_impl(
 }
 
 /// POST correlation/type/processplatform/job/{job}
+#[allow(non_snake_case)]
 pub async fn create_pp(
     pool: Extension<Pool>,
     Path(job): Path<String>,
@@ -215,6 +216,7 @@ pub async fn create_pp(
 }
 
 /// POST correlation/type/cms/document/{document}
+#[allow(non_snake_case)]
 pub async fn create_cms(
     pool: Extension<Pool>,
     Path(document): Path<String>,
@@ -283,6 +285,7 @@ async fn update_impl(
 }
 
 /// POST correlation/update/type/processplatform/job/{job}
+#[allow(non_snake_case)]
 pub async fn update_pp(
     pool: Extension<Pool>,
     Path(job): Path<String>,
@@ -292,6 +295,7 @@ pub async fn update_pp(
 }
 
 /// POST correlation/update/type/cms/document/{document}
+#[allow(non_snake_case)]
 pub async fn update_cms(
     pool: Extension<Pool>,
     Path(document): Path<String>,
@@ -353,6 +357,7 @@ async fn delete_impl(
 }
 
 /// POST correlation/delete/type/processplatform/job/{job}
+#[allow(non_snake_case)]
 pub async fn delete_pp(
     pool: Extension<Pool>,
     Path(job): Path<String>,
@@ -362,6 +367,7 @@ pub async fn delete_pp(
 }
 
 /// POST correlation/delete/type/cms/document/{document}
+#[allow(non_snake_case)]
 pub async fn delete_cms(
     pool: Extension<Pool>,
     Path(document): Path<String>,
@@ -446,6 +452,7 @@ async fn readable_impl(
 }
 
 /// POST correlation/readable/type/processplatform
+#[allow(non_snake_case)]
 pub async fn readable_pp(
     pool: Extension<Pool>,
     Json(wi): Json<ReadablePpWi>,
@@ -459,6 +466,7 @@ pub async fn readable_pp(
 }
 
 /// POST correlation/readable/type/cms
+#[allow(non_snake_case)]
 pub async fn readable_cms(
     pool: Extension<Pool>,
     Json(wi): Json<ReadableCmsWi>,
@@ -541,6 +549,7 @@ async fn list_impl(
 }
 
 /// GET correlation/list/type/processplatform/job/{job}
+#[allow(non_snake_case)]
 pub async fn list_pp(
     pool: Extension<Pool>,
     Path(job): Path<String>,
@@ -549,6 +558,7 @@ pub async fn list_pp(
 }
 
 /// GET correlation/list/type/processplatform/job/{job}/site/{site}
+#[allow(non_snake_case)]
 pub async fn list_pp_site(
     pool: Extension<Pool>,
     Path((job, site)): Path<(String, String)>,
@@ -557,6 +567,7 @@ pub async fn list_pp_site(
 }
 
 /// GET correlation/list/type/cms/document/{document}
+#[allow(non_snake_case)]
 pub async fn list_cms(
     pool: Extension<Pool>,
     Path(document): Path<String>,
@@ -565,6 +576,7 @@ pub async fn list_cms(
 }
 
 /// GET correlation/list/type/cms/document/{document}/site/{site}
+#[allow(non_snake_case)]
 pub async fn list_cms_site(
     pool: Extension<Pool>,
     Path((document, site)): Path<(String, String)>,

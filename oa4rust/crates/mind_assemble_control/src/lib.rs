@@ -1,3 +1,4 @@
+#[allow(dead_code, non_snake_case)]
 use axum::{
     extract::{Extension, Path},
     Json, Router,
@@ -16,6 +17,7 @@ mod tests;
 mod tests_generated;
 
 
+#[allow(non_snake_case)]
 pub async fn get_control_config(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -46,6 +48,7 @@ pub async fn get_control_config(
     Ok(Json(ActionResult::success(Value::Object(data))))
 }
 
+#[allow(non_snake_case)]
 pub async fn update_control_config(
     pool: Extension<Pool>,
     axum::extract::Json(payload): axum::extract::Json<Value>,
@@ -90,6 +93,7 @@ pub struct MindFolderRequest {
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
 pub async fn list_folders(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -121,6 +125,7 @@ pub async fn list_folders(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
 pub async fn get_folder(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
@@ -151,6 +156,7 @@ pub async fn get_folder(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
 pub async fn save_folder(
     pool: Extension<Pool>,
     axum::extract::Json(req): Json<MindFolderRequest>,
@@ -180,6 +186,7 @@ pub async fn save_folder(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
 pub async fn update_folder(
     pool: Extension<Pool>,
     Path(id): Path<String>,
@@ -218,6 +225,7 @@ pub async fn update_folder(
     ])))))
 }
 
+#[allow(non_snake_case)]
 pub async fn folder_move_folderId(
     pool: Extension<Pool>,
     Path(folder_id): Path<String>,
@@ -267,6 +275,7 @@ pub async fn folder_move_folderId(
     ))))
 }
 
+#[allow(non_snake_case)]
 pub async fn folder_id(
     pool: Extension<Pool>,
     Path(id): Path<String>,
@@ -296,6 +305,7 @@ pub async fn folder_id(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn folder_id_force(
     pool: Extension<Pool>,
     Path(id): Path<String>,

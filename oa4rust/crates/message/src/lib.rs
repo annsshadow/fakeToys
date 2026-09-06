@@ -1,6 +1,6 @@
 use axum::{
     extract::Extension,
-    Json, Router, routing::get, routing::post,
+    Json,
 };
 use deadpool_postgres::Pool;
 use serde::Deserialize;
@@ -31,7 +31,7 @@ pub async fn consume_list(
     let rows = client
         .query(
             "SELECT xid, xtitle, xbody, xtype, xconsumer, xperson, \"xcreateTime\" FROM x_msg_message WHERE xconsumer = $1 AND xconsumed = false ORDER BY \"xcreateTime\" ASC LIMIT $2::int",
-            &[&consume, &(count.min(200).max(1) as i64)],
+            &[&consume, &{ count.min(200).max(1) }],
         )
         .await
         .map_err(|_| AppError::Internal)?;

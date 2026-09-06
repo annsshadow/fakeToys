@@ -1,6 +1,7 @@
+#[allow(dead_code, non_snake_case)]
 use axum::{
     extract::Extension,
-    Json, Router, routing::get, routing::post,
+    Json,
 };
 use deadpool_postgres::Pool;
 use serde::Deserialize;
@@ -17,6 +18,7 @@ pub struct CreateSurfaceRequest {
     pub content: Option<Value>,
 }
 
+#[allow(non_snake_case)]
 pub async fn get_surface(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
@@ -48,6 +50,7 @@ pub async fn get_surface(
     Ok(Json(ActionResult::success(result)))
 }
 
+#[allow(non_snake_case)]
 pub async fn create_surface(
     pool: Extension<Pool>,
     axum::extract::Json(req): Json<CreateSurfaceRequest>,
@@ -85,6 +88,7 @@ pub async fn create_surface(
     Ok(Json(ActionResult::success(result)))
 }
 
+#[allow(non_snake_case)]
 pub async fn list_surfaces(
     pool: Extension<Pool>,
     axum::extract::Path(category): axum::extract::Path<String>,
@@ -117,6 +121,7 @@ pub async fn list_surfaces(
     { let count = data.len() as i64; Ok(Json(ActionResult::java_success(Value::Array(data), count, 0))) }
 }
 
+#[allow(non_snake_case)]
 pub async fn preview_surface(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
@@ -151,6 +156,7 @@ pub async fn preview_surface(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn publish_surface(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
@@ -195,6 +201,7 @@ pub async fn publish_surface(
     Ok(Json(ActionResult::success(result)))
 }
 
+#[allow(non_snake_case)]
 pub async fn delete_surface(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
@@ -234,6 +241,7 @@ pub async fn delete_surface(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn save_surface(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
@@ -286,6 +294,7 @@ pub fn router(pool: deadpool_postgres::Pool) -> axum::Router {
 
 
 
+#[allow(non_snake_case)]
 pub async fn anonymous_read_count_credential(
     pool: Extension<Pool>,
     axum::extract::Path(credential): axum::extract::Path<String>,
@@ -307,6 +316,7 @@ pub async fn anonymous_read_count_credential(
     ))))
 }
 
+#[allow(non_snake_case)]
 pub async fn anonymous_task_count_credential(
     pool: Extension<Pool>,
     axum::extract::Path(credential): axum::extract::Path<String>,
@@ -328,6 +338,7 @@ pub async fn anonymous_task_count_credential(
     ))))
 }
 
+#[allow(non_snake_case)]
 pub async fn application_list(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -358,6 +369,7 @@ pub async fn application_list(
     Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
 }
 
+#[allow(non_snake_case)]
 pub async fn application_list_complex(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -385,6 +397,7 @@ pub async fn application_list_complex(
     Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
 }
 
+#[allow(non_snake_case)]
 pub async fn application_list_complex_manage_person(
     pool: Extension<Pool>,
     axum::extract::Path(person): axum::extract::Path<String>,
@@ -423,6 +436,7 @@ pub async fn application_list_complex_manage_person(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn application_list_key_key(
     pool: Extension<Pool>,
     axum::extract::Path(key): axum::extract::Path<String>,
@@ -450,6 +464,7 @@ pub async fn application_list_key_key(
     { let count = data.len() as i64; Ok(Json(ActionResult::java_success(Value::Array(data), count, 0))) }
 }
 
+#[allow(non_snake_case)]
 pub async fn application_list_range(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -477,6 +492,7 @@ pub async fn application_list_range(
     Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
 }
 
+#[allow(non_snake_case)]
 pub async fn application_list_terminal_terminal(
     pool: Extension<Pool>,
     axum::extract::Path(terminal): axum::extract::Path<String>,
@@ -504,6 +520,7 @@ pub async fn application_list_terminal_terminal(
     { let count = data.len() as i64; Ok(Json(ActionResult::java_success(Value::Array(data), count, 0))) }
 }
 
+#[allow(non_snake_case)]
 pub async fn application_flag(
     pool: Extension<Pool>,
     axum::extract::Path(flag): axum::extract::Path<String>,
@@ -530,6 +547,7 @@ pub async fn application_flag(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn application_flag_icon(
     pool: Extension<Pool>,
     axum::extract::Path(flag): axum::extract::Path<String>,
@@ -556,6 +574,7 @@ pub async fn application_flag_icon(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn application_flag_is_manager(
     pool: Extension<Pool>,
     axum::extract::Path(flag): axum::extract::Path<String>,
@@ -582,6 +601,7 @@ pub async fn application_flag_is_manager(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn application_flag_onlyRemoveNotCompleted(pool: Extension<Pool>,
     axum::extract::Path((flag, _onlyRemoveNotCompleted)): axum::extract::Path<(String, String)>,) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
@@ -606,6 +626,7 @@ pub async fn application_flag_onlyRemoveNotCompleted(pool: Extension<Pool>,
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn applicationdict_list_application_applicationFlag(
     pool: Extension<Pool>,
     axum::extract::Path(applicationFlag): axum::extract::Path<String>,
@@ -633,6 +654,7 @@ pub async fn applicationdict_list_application_applicationFlag(
     { let count = data.len() as i64; Ok(Json(ActionResult::java_success(Value::Array(data), count, 0))) }
 }
 
+#[allow(non_snake_case)]
 pub async fn applicationdict_applicationDictFlag_application_applicationFlag(pool: Extension<Pool>,
     axum::extract::Path((applicationDictFlag, _applicationFlag)): axum::extract::Path<(String, String)>,) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
@@ -657,6 +679,7 @@ pub async fn applicationdict_applicationDictFlag_application_applicationFlag(poo
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn applicationdict_applicationDictFlag_application_applicationFlag_data(pool: Extension<Pool>,
     axum::extract::Path((applicationDictFlag, _applicationFlag)): axum::extract::Path<(String, String)>,) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
@@ -681,6 +704,7 @@ pub async fn applicationdict_applicationDictFlag_application_applicationFlag_dat
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn applicationdict_applicationDictFlag_application_applicationFlag_path0_data(pool: Extension<Pool>,
     axum::extract::Path((applicationDictFlag, _applicationFlag, _path0)): axum::extract::Path<(String, String, String)>,) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
@@ -705,6 +729,7 @@ pub async fn applicationdict_applicationDictFlag_application_applicationFlag_pat
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn applicationdict_applicationDictFlag_application_applicationFlag_path0_data_mockdeletetoget(pool: Extension<Pool>,
     axum::extract::Path((applicationDictFlag, _applicationFlag, _path0)): axum::extract::Path<(String, String, String)>,) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
@@ -753,6 +778,7 @@ pub async fn applicationdict_applicationDictFlag_application_applicationFlag_pat
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn applicationdict_applicationDictFlag_application_applicationFlag_path0_data_mockputtopost(pool: Extension<Pool>,
     axum::extract::Path((applicationDictFlag, _applicationFlag, _path0)): axum::extract::Path<(String, String, String)>,) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
@@ -789,6 +815,7 @@ pub async fn applicationdict_applicationDictFlag_application_applicationFlag_pat
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn applicationdict_applicationDictFlag_application_applicationFlag_path0_path1_data(pool: Extension<Pool>,
     axum::extract::Path((applicationDictFlag, _applicationFlag, _path0, _path1)): axum::extract::Path<(String, String, String, String)>,) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
@@ -813,6 +840,7 @@ pub async fn applicationdict_applicationDictFlag_application_applicationFlag_pat
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn applicationdict_applicationDictFlag_application_applicationFlag_path0_path1_data_mockdeletetoget(pool: Extension<Pool>,
     axum::extract::Path((applicationDictFlag, _applicationFlag, _path0, _path1)): axum::extract::Path<(String, String, String, String)>,) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
@@ -861,6 +889,7 @@ pub async fn applicationdict_applicationDictFlag_application_applicationFlag_pat
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn applicationdict_applicationDictFlag_application_applicationFlag_path0_path1_data_mockputtopost(pool: Extension<Pool>,
     axum::extract::Path((applicationDictFlag, _applicationFlag, _path0, _path1)): axum::extract::Path<(String, String, String, String)>,) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
@@ -897,6 +926,7 @@ pub async fn applicationdict_applicationDictFlag_application_applicationFlag_pat
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn applicationdict_applicationDictFlag_application_applicationFlag_path0_path1_path2_data(pool: Extension<Pool>,
     axum::extract::Path((applicationDictFlag, _applicationFlag, _path0, _path1, _path2)): axum::extract::Path<(String, String, String, String, String)>,) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
@@ -921,6 +951,7 @@ pub async fn applicationdict_applicationDictFlag_application_applicationFlag_pat
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn applicationdict_applicationDictFlag_application_applicationFlag_path0_path1_path2_data_mockdeletetoget(pool: Extension<Pool>,
     axum::extract::Path((applicationDictFlag, _applicationFlag, _path0, _path1, _path2)): axum::extract::Path<(String, String, String, String, String)>,) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
@@ -969,6 +1000,7 @@ pub async fn applicationdict_applicationDictFlag_application_applicationFlag_pat
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn applicationdict_applicationDictFlag_application_applicationFlag_path0_path1_path2_data_mockputtopost(pool: Extension<Pool>,
     axum::extract::Path((applicationDictFlag, _applicationFlag, _path0, _path1, _path2)): axum::extract::Path<(String, String, String, String, String)>,) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
@@ -1005,6 +1037,7 @@ pub async fn applicationdict_applicationDictFlag_application_applicationFlag_pat
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn applicationdict_applicationDictFlag_application_applicationFlag_path0_path1_path2_path3_data(pool: Extension<Pool>,
     axum::extract::Path((applicationDictFlag, _applicationFlag, _path0, _path1, _path2, _path3)): axum::extract::Path<(String, String, String, String, String, String)>,) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
@@ -1029,6 +1062,7 @@ pub async fn applicationdict_applicationDictFlag_application_applicationFlag_pat
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn applicationdict_applicationDictFlag_application_applicationFlag_path0_path1_path2_path3_data_mockdeletetoget(pool: Extension<Pool>,
     axum::extract::Path((applicationDictFlag, _applicationFlag, _path0, _path1, _path2, _path3)): axum::extract::Path<(String, String, String, String, String, String)>,) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
@@ -1077,6 +1111,7 @@ pub async fn applicationdict_applicationDictFlag_application_applicationFlag_pat
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn applicationdict_applicationDictFlag_application_applicationFlag_path0_path1_path2_path3_data_mockputtopost(pool: Extension<Pool>,
     axum::extract::Path((applicationDictFlag, _applicationFlag, _path0, _path1, _path2, _path3)): axum::extract::Path<(String, String, String, String, String, String)>,) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
@@ -1113,6 +1148,7 @@ pub async fn applicationdict_applicationDictFlag_application_applicationFlag_pat
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn applicationdict_applicationDictFlag_application_applicationFlag_path0_path1_path2_path3_path4_data(pool: Extension<Pool>,
     axum::extract::Path((applicationDictFlag, _applicationFlag, _path0, _path1, _path2, _path3, _path4)): axum::extract::Path<(String, String, String, String, String, String, String)>,) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
@@ -1137,6 +1173,7 @@ pub async fn applicationdict_applicationDictFlag_application_applicationFlag_pat
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn applicationdict_applicationDictFlag_application_applicationFlag_path0_path1_path2_path3_path4_data_mockdeletetoget(pool: Extension<Pool>,
     axum::extract::Path((applicationDictFlag, _applicationFlag, _path0, _path1, _path2, _path3, _path4)): axum::extract::Path<(String, String, String, String, String, String, String)>,) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
@@ -1185,6 +1222,7 @@ pub async fn applicationdict_applicationDictFlag_application_applicationFlag_pat
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn applicationdict_applicationDictFlag_application_applicationFlag_path0_path1_path2_path3_path4_data_mockputtopost(pool: Extension<Pool>,
     axum::extract::Path((applicationDictFlag, _applicationFlag, _path0, _path1, _path2, _path3, _path4)): axum::extract::Path<(String, String, String, String, String, String, String)>,) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
@@ -1221,6 +1259,7 @@ pub async fn applicationdict_applicationDictFlag_application_applicationFlag_pat
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn applicationdict_applicationDictFlag_application_applicationFlag_path0_path1_path2_path3_path4_path5_data(pool: Extension<Pool>,
     axum::extract::Path((applicationDictFlag, _applicationFlag, _path0, _path1, _path2, _path3, _path4, _path5)): axum::extract::Path<(String, String, String, String, String, String, String, String)>,) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
@@ -1245,6 +1284,7 @@ pub async fn applicationdict_applicationDictFlag_application_applicationFlag_pat
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn applicationdict_applicationDictFlag_application_applicationFlag_path0_path1_path2_path3_path4_path5_data_mockdeletetoget(pool: Extension<Pool>,
     axum::extract::Path((applicationDictFlag, _applicationFlag, _path0, _path1, _path2, _path3, _path4, _path5)): axum::extract::Path<(String, String, String, String, String, String, String, String)>,) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
@@ -1293,6 +1333,7 @@ pub async fn applicationdict_applicationDictFlag_application_applicationFlag_pat
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn applicationdict_applicationDictFlag_application_applicationFlag_path0_path1_path2_path3_path4_path5_data_mockputtopost(pool: Extension<Pool>,
     axum::extract::Path((applicationDictFlag, _applicationFlag, _path0, _path1, _path2, _path3, _path4, _path5)): axum::extract::Path<(String, String, String, String, String, String, String, String)>,) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
@@ -1329,6 +1370,7 @@ pub async fn applicationdict_applicationDictFlag_application_applicationFlag_pat
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn applicationdict_applicationDictFlag_application_applicationFlag_path0_path1_path2_path3_path4_path5_path6_data(pool: Extension<Pool>,
     axum::extract::Path((applicationDictFlag, _applicationFlag, _path0, _path1, _path2, _path3, _path4, _path5, _path6)): axum::extract::Path<(String, String, String, String, String, String, String, String, String)>,) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
@@ -1353,6 +1395,7 @@ pub async fn applicationdict_applicationDictFlag_application_applicationFlag_pat
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn applicationdict_applicationDictFlag_application_applicationFlag_path0_path1_path2_path3_path4_path5_path6_data_mockdeletetoget(pool: Extension<Pool>,
     axum::extract::Path((applicationDictFlag, _applicationFlag, _path0, _path1, _path2, _path3, _path4, _path5, _path6)): axum::extract::Path<(String, String, String, String, String, String, String, String, String)>,) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
@@ -1401,6 +1444,7 @@ pub async fn applicationdict_applicationDictFlag_application_applicationFlag_pat
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn applicationdict_applicationDictFlag_application_applicationFlag_path0_path1_path2_path3_path4_path5_path6_data_mockputtopost(pool: Extension<Pool>,
     axum::extract::Path((applicationDictFlag, _applicationFlag, _path0, _path1, _path2, _path3, _path4, _path5, _path6)): axum::extract::Path<(String, String, String, String, String, String, String, String, String)>,) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
@@ -1437,6 +1481,7 @@ pub async fn applicationdict_applicationDictFlag_application_applicationFlag_pat
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn applicationdict_applicationDictFlag_application_applicationFlag_path0_path1_path2_path3_path4_path5_path6_path7_data(pool: Extension<Pool>,
     axum::extract::Path((applicationDictFlag, _applicationFlag, _path0, _path1, _path2, _path3, _path4, _path5, _path6, _path7)): axum::extract::Path<(String, String, String, String, String, String, String, String, String, String)>,) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
@@ -1461,6 +1506,7 @@ pub async fn applicationdict_applicationDictFlag_application_applicationFlag_pat
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn applicationdict_applicationDictFlag_application_applicationFlag_path0_path1_path2_path3_path4_path5_path6_path7_data_mockdeletetoget(pool: Extension<Pool>,
     axum::extract::Path((applicationDictFlag, _applicationFlag, _path0, _path1, _path2, _path3, _path4, _path5, _path6, _path7)): axum::extract::Path<(String, String, String, String, String, String, String, String, String, String)>,) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
@@ -1509,6 +1555,7 @@ pub async fn applicationdict_applicationDictFlag_application_applicationFlag_pat
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn applicationdict_applicationDictFlag_application_applicationFlag_path0_path1_path2_path3_path4_path5_path6_path7_data_mockputtopost(pool: Extension<Pool>,
     axum::extract::Path((applicationDictFlag, _applicationFlag, _path0, _path1, _path2, _path3, _path4, _path5, _path6, _path7)): axum::extract::Path<(String, String, String, String, String, String, String, String, String, String)>,) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
@@ -1545,6 +1592,7 @@ pub async fn applicationdict_applicationDictFlag_application_applicationFlag_pat
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn control_workorworkcompleted_workOrWorkCompleted(
     pool: Extension<Pool>,
     axum::extract::Path(workOrWorkCompleted): axum::extract::Path<String>,
@@ -1571,6 +1619,7 @@ pub async fn control_workorworkcompleted_workOrWorkCompleted(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn correlation_job_job(
     pool: Extension<Pool>,
     axum::extract::Path(job): axum::extract::Path<String>,
@@ -1597,6 +1646,7 @@ pub async fn correlation_job_job(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn correlation_job_job_delete(
     pool: Extension<Pool>,
     axum::extract::Path(job): axum::extract::Path<String>,
@@ -1647,6 +1697,7 @@ pub async fn correlation_job_job_delete(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn correlation_list_job_job(
     pool: Extension<Pool>,
     axum::extract::Path(job): axum::extract::Path<String>,
@@ -1674,6 +1725,7 @@ pub async fn correlation_list_job_job(
     { let count = data.len() as i64; Ok(Json(ActionResult::java_success(Value::Array(data), count, 0))) }
 }
 
+#[allow(non_snake_case)]
 pub async fn correlation_list_job_job_site_site(pool: Extension<Pool>,
     axum::extract::Path((job, site)): axum::extract::Path<(String, String)>,) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
@@ -1699,6 +1751,7 @@ pub async fn correlation_list_job_job_site_site(pool: Extension<Pool>,
     { let count = data.len() as i64; Ok(Json(ActionResult::java_success(Value::Array(data), count, 0))) }
 }
 
+#[allow(non_snake_case)]
 pub async fn correlation_update_job_job(
     pool: Extension<Pool>,
     axum::extract::Path(job): axum::extract::Path<String>,
@@ -1725,6 +1778,7 @@ pub async fn correlation_update_job_job(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn data_fetch_job_job(
     pool: Extension<Pool>,
     axum::extract::Path(job): axum::extract::Path<String>,
@@ -1752,6 +1806,7 @@ pub async fn data_fetch_job_job(
     { let count = data.len() as i64; Ok(Json(ActionResult::java_success(Value::Array(data), count, 0))) }
 }
 
+#[allow(non_snake_case)]
 pub async fn data_job_job(
     pool: Extension<Pool>,
     axum::extract::Path(job): axum::extract::Path<String>,
@@ -1779,6 +1834,7 @@ pub async fn data_job_job(
     { let count = data.len() as i64; Ok(Json(ActionResult::java_success(Value::Array(data), count, 0))) }
 }
 
+#[allow(non_snake_case)]
 pub async fn data_job_job_array_data(
     pool: Extension<Pool>,
     axum::extract::Path(job): axum::extract::Path<String>,
@@ -1806,6 +1862,7 @@ pub async fn data_job_job_array_data(
     { let count = data.len() as i64; Ok(Json(ActionResult::java_success(Value::Array(data), count, 0))) }
 }
 
+#[allow(non_snake_case)]
 pub async fn data_job_job_mockputtopost(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
@@ -1844,6 +1901,7 @@ pub async fn data_job_job_mockputtopost(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn data_job_job_path0(pool: Extension<Pool>,
     axum::extract::Path((job, _path0)): axum::extract::Path<(String, String)>,) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
@@ -1869,6 +1927,7 @@ pub async fn data_job_job_path0(pool: Extension<Pool>,
     { let count = data.len() as i64; Ok(Json(ActionResult::java_success(Value::Array(data), count, 0))) }
 }
 
+#[allow(non_snake_case)]
 pub async fn data_job_job_path0_mockputtopost(pool: Extension<Pool>,
     axum::extract::Path((id, _path0)): axum::extract::Path<(String, String)>,) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
@@ -1905,6 +1964,7 @@ pub async fn data_job_job_path0_mockputtopost(pool: Extension<Pool>,
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn data_job_job_path0_path1(pool: Extension<Pool>,
     axum::extract::Path((job, _path0, _path1)): axum::extract::Path<(String, String, String)>,) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
@@ -1930,6 +1990,7 @@ pub async fn data_job_job_path0_path1(pool: Extension<Pool>,
     { let count = data.len() as i64; Ok(Json(ActionResult::java_success(Value::Array(data), count, 0))) }
 }
 
+#[allow(non_snake_case)]
 pub async fn data_job_job_path0_path1_mockputtopost(pool: Extension<Pool>,
     axum::extract::Path((id, _path0, _path1)): axum::extract::Path<(String, String, String)>,) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
@@ -1966,6 +2027,7 @@ pub async fn data_job_job_path0_path1_mockputtopost(pool: Extension<Pool>,
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn data_job_job_path0_path1_path2(pool: Extension<Pool>,
     axum::extract::Path((job, _path0, _path1, _path2)): axum::extract::Path<(String, String, String, String)>,) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
@@ -1991,6 +2053,7 @@ pub async fn data_job_job_path0_path1_path2(pool: Extension<Pool>,
     { let count = data.len() as i64; Ok(Json(ActionResult::java_success(Value::Array(data), count, 0))) }
 }
 
+#[allow(non_snake_case)]
 pub async fn data_job_job_path0_path1_path2_mockputtopost(pool: Extension<Pool>,
     axum::extract::Path((id, _path0, _path1, _path2)): axum::extract::Path<(String, String, String, String)>,) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
@@ -2027,6 +2090,7 @@ pub async fn data_job_job_path0_path1_path2_mockputtopost(pool: Extension<Pool>,
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn data_job_job_path0_path1_path2_path3(pool: Extension<Pool>,
     axum::extract::Path((job, _path0, _path1, _path2, _path3)): axum::extract::Path<(String, String, String, String, String)>,) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
@@ -2052,6 +2116,7 @@ pub async fn data_job_job_path0_path1_path2_path3(pool: Extension<Pool>,
     { let count = data.len() as i64; Ok(Json(ActionResult::java_success(Value::Array(data), count, 0))) }
 }
 
+#[allow(non_snake_case)]
 pub async fn data_job_job_path0_path1_path2_path3_mockputtopost(pool: Extension<Pool>,
     axum::extract::Path((id, _path0, _path1, _path2, _path3)): axum::extract::Path<(String, String, String, String, String)>,) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
@@ -2088,6 +2153,7 @@ pub async fn data_job_job_path0_path1_path2_path3_mockputtopost(pool: Extension<
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn data_job_job_path0_path1_path2_path3_path4(pool: Extension<Pool>,
     axum::extract::Path((job, _path0, _path1, _path2, _path3, _path4)): axum::extract::Path<(String, String, String, String, String, String)>,) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
@@ -2113,6 +2179,7 @@ pub async fn data_job_job_path0_path1_path2_path3_path4(pool: Extension<Pool>,
     { let count = data.len() as i64; Ok(Json(ActionResult::java_success(Value::Array(data), count, 0))) }
 }
 
+#[allow(non_snake_case)]
 pub async fn data_job_job_path0_path1_path2_path3_path4_mockputtopost(pool: Extension<Pool>,
     axum::extract::Path((id, _path0, _path1, _path2, _path3, _path4)): axum::extract::Path<(String, String, String, String, String, String)>,) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
@@ -2149,6 +2216,7 @@ pub async fn data_job_job_path0_path1_path2_path3_path4_mockputtopost(pool: Exte
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn data_job_job_path0_path1_path2_path3_path4_path5(pool: Extension<Pool>,
     axum::extract::Path((job, _path0, _path1, _path2, _path3, _path4, _path5)): axum::extract::Path<(String, String, String, String, String, String, String)>,) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
@@ -2174,6 +2242,7 @@ pub async fn data_job_job_path0_path1_path2_path3_path4_path5(pool: Extension<Po
     { let count = data.len() as i64; Ok(Json(ActionResult::java_success(Value::Array(data), count, 0))) }
 }
 
+#[allow(non_snake_case)]
 pub async fn data_job_job_path0_path1_path2_path3_path4_path5_mockputtopost(pool: Extension<Pool>,
     axum::extract::Path((id, _path0, _path1, _path2, _path3, _path4, _path5)): axum::extract::Path<(String, String, String, String, String, String, String)>,) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
@@ -2210,6 +2279,7 @@ pub async fn data_job_job_path0_path1_path2_path3_path4_path5_mockputtopost(pool
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn data_job_job_path0_path1_path2_path3_path4_path5_path6(pool: Extension<Pool>,
     axum::extract::Path((job, _path0, _path1, _path2, _path3, _path4, _path5, _path6)): axum::extract::Path<(String, String, String, String, String, String, String, String)>,) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
@@ -2235,6 +2305,7 @@ pub async fn data_job_job_path0_path1_path2_path3_path4_path5_path6(pool: Extens
     { let count = data.len() as i64; Ok(Json(ActionResult::java_success(Value::Array(data), count, 0))) }
 }
 
+#[allow(non_snake_case)]
 pub async fn data_job_job_path0_path1_path2_path3_path4_path5_path6_mockputtopost(pool: Extension<Pool>,
     axum::extract::Path((id, _path0, _path1, _path2, _path3, _path4, _path5, _path6)): axum::extract::Path<(String, String, String, String, String, String, String, String)>,) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
@@ -2271,6 +2342,7 @@ pub async fn data_job_job_path0_path1_path2_path3_path4_path5_path6_mockputtopos
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn data_job_job_path0_path1_path2_path3_path4_path5_path6_path7(pool: Extension<Pool>,
     axum::extract::Path((job, _path0, _path1, _path2, _path3, _path4, _path5, _path6, _path7)): axum::extract::Path<(String, String, String, String, String, String, String, String, String)>,) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
@@ -2296,6 +2368,7 @@ pub async fn data_job_job_path0_path1_path2_path3_path4_path5_path6_path7(pool: 
     { let count = data.len() as i64; Ok(Json(ActionResult::java_success(Value::Array(data), count, 0))) }
 }
 
+#[allow(non_snake_case)]
 pub async fn data_job_job_path0_path1_path2_path3_path4_path5_path6_path7_mockputtopost(pool: Extension<Pool>,
     axum::extract::Path((id, _path0, _path1, _path2, _path3, _path4, _path5, _path6, _path7)): axum::extract::Path<(String, String, String, String, String, String, String, String, String)>,) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
@@ -2332,6 +2405,7 @@ pub async fn data_job_job_path0_path1_path2_path3_path4_path5_path6_path7_mockpu
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn data_work_id(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
@@ -2359,6 +2433,7 @@ pub async fn data_work_id(
     { let count = data.len() as i64; Ok(Json(ActionResult::java_success(Value::Array(data), count, 0))) }
 }
 
+#[allow(non_snake_case)]
 pub async fn data_work_id_mockdeletetoget(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
@@ -2409,6 +2484,7 @@ pub async fn data_work_id_mockdeletetoget(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn data_work_id_mockputtopost(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
@@ -2447,6 +2523,7 @@ pub async fn data_work_id_mockputtopost(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn data_work_id_path0(
     pool: Extension<Pool>,
     axum::extract::Path((id, _path0)): axum::extract::Path<(String, String)>,
@@ -2474,6 +2551,7 @@ pub async fn data_work_id_path0(
     { let count = data.len() as i64; Ok(Json(ActionResult::java_success(Value::Array(data), count, 0))) }
 }
 
+#[allow(non_snake_case)]
 pub async fn data_work_id_path0_mockdeletetoget(
     pool: Extension<Pool>,
     axum::extract::Path((id, _path0)): axum::extract::Path<(String, String)>,
@@ -2524,6 +2602,7 @@ pub async fn data_work_id_path0_mockdeletetoget(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn data_work_id_path0_mockputtopost(
     pool: Extension<Pool>,
     axum::extract::Path((id, _path0)): axum::extract::Path<(String, String)>,
@@ -2562,6 +2641,7 @@ pub async fn data_work_id_path0_mockputtopost(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn data_work_id_path0_path1(
     pool: Extension<Pool>,
     axum::extract::Path((id, _path0, _path1)): axum::extract::Path<(String, String, String)>,
@@ -2589,6 +2669,7 @@ pub async fn data_work_id_path0_path1(
     { let count = data.len() as i64; Ok(Json(ActionResult::java_success(Value::Array(data), count, 0))) }
 }
 
+#[allow(non_snake_case)]
 pub async fn data_work_id_path0_path1_mockdeletetoget(
     pool: Extension<Pool>,
     axum::extract::Path((id, _path0, _path1)): axum::extract::Path<(String, String, String)>,
@@ -2639,6 +2720,7 @@ pub async fn data_work_id_path0_path1_mockdeletetoget(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn data_work_id_path0_path1_mockputtopost(
     pool: Extension<Pool>,
     axum::extract::Path((id, _path0, _path1)): axum::extract::Path<(String, String, String)>,
@@ -2677,6 +2759,7 @@ pub async fn data_work_id_path0_path1_mockputtopost(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn data_work_id_path0_path1_path2(
     pool: Extension<Pool>,
     axum::extract::Path((id, _path0, _path1, _path2)): axum::extract::Path<(String, String, String, String)>,
@@ -2704,6 +2787,7 @@ pub async fn data_work_id_path0_path1_path2(
     { let count = data.len() as i64; Ok(Json(ActionResult::java_success(Value::Array(data), count, 0))) }
 }
 
+#[allow(non_snake_case)]
 pub async fn data_work_id_path0_path1_path2_mockdeletetoget(
     pool: Extension<Pool>,
     axum::extract::Path((id, _path0, _path1, _path2)): axum::extract::Path<(String, String, String, String)>,
@@ -2754,6 +2838,7 @@ pub async fn data_work_id_path0_path1_path2_mockdeletetoget(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn data_work_id_path0_path1_path2_mockputtopost(
     pool: Extension<Pool>,
     axum::extract::Path((id, _path0, _path1, _path2)): axum::extract::Path<(String, String, String, String)>,
@@ -2792,6 +2877,7 @@ pub async fn data_work_id_path0_path1_path2_mockputtopost(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn data_work_id_path0_path1_path2_path3(
     pool: Extension<Pool>,
     axum::extract::Path((id, _path0, _path1, _path2, _path3)): axum::extract::Path<(String, String, String, String, String)>,
@@ -2819,6 +2905,7 @@ pub async fn data_work_id_path0_path1_path2_path3(
     { let count = data.len() as i64; Ok(Json(ActionResult::java_success(Value::Array(data), count, 0))) }
 }
 
+#[allow(non_snake_case)]
 pub async fn data_work_id_path0_path1_path2_path3_mockdeletetoget(
     pool: Extension<Pool>,
     axum::extract::Path((id, _path0, _path1, _path2, _path3)): axum::extract::Path<(String, String, String, String, String)>,
@@ -2869,6 +2956,7 @@ pub async fn data_work_id_path0_path1_path2_path3_mockdeletetoget(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn data_work_id_path0_path1_path2_path3_mockputtopost(
     pool: Extension<Pool>,
     axum::extract::Path((id, _path0, _path1, _path2, _path3)): axum::extract::Path<(String, String, String, String, String)>,
@@ -2907,6 +2995,7 @@ pub async fn data_work_id_path0_path1_path2_path3_mockputtopost(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn data_work_id_path0_path1_path2_path3_path4(
     pool: Extension<Pool>,
     axum::extract::Path((id, _path0, _path1, _path2, _path3, _path4)): axum::extract::Path<(String, String, String, String, String, String)>,
@@ -2934,6 +3023,7 @@ pub async fn data_work_id_path0_path1_path2_path3_path4(
     { let count = data.len() as i64; Ok(Json(ActionResult::java_success(Value::Array(data), count, 0))) }
 }
 
+#[allow(non_snake_case)]
 pub async fn data_work_id_path0_path1_path2_path3_path4_mockdeletetoget(
     pool: Extension<Pool>,
     axum::extract::Path((id, _path0, _path1, _path2, _path3, _path4)): axum::extract::Path<(String, String, String, String, String, String)>,
@@ -2984,6 +3074,7 @@ pub async fn data_work_id_path0_path1_path2_path3_path4_mockdeletetoget(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn data_work_id_path0_path1_path2_path3_path4_mockputtopost(
     pool: Extension<Pool>,
     axum::extract::Path((id, _path0, _path1, _path2, _path3, _path4)): axum::extract::Path<(String, String, String, String, String, String)>,
@@ -3022,6 +3113,7 @@ pub async fn data_work_id_path0_path1_path2_path3_path4_mockputtopost(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn data_work_id_path0_path1_path2_path3_path4_path5(
     pool: Extension<Pool>,
     axum::extract::Path((id, _path0, _path1, _path2, _path3, _path4, _path5)): axum::extract::Path<(String, String, String, String, String, String, String)>,
@@ -3049,6 +3141,7 @@ pub async fn data_work_id_path0_path1_path2_path3_path4_path5(
     { let count = data.len() as i64; Ok(Json(ActionResult::java_success(Value::Array(data), count, 0))) }
 }
 
+#[allow(non_snake_case)]
 pub async fn data_work_id_path0_path1_path2_path3_path4_path5_mockdeletetoget(
     pool: Extension<Pool>,
     axum::extract::Path((id, _path0, _path1, _path2, _path3, _path4, _path5)): axum::extract::Path<(String, String, String, String, String, String, String)>,
@@ -3099,6 +3192,7 @@ pub async fn data_work_id_path0_path1_path2_path3_path4_path5_mockdeletetoget(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn data_work_id_path0_path1_path2_path3_path4_path5_mockputtopost(
     pool: Extension<Pool>,
     axum::extract::Path((id, _path0, _path1, _path2, _path3, _path4, _path5)): axum::extract::Path<(String, String, String, String, String, String, String)>,
@@ -3137,6 +3231,7 @@ pub async fn data_work_id_path0_path1_path2_path3_path4_path5_mockputtopost(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn data_work_id_path0_path1_path2_path3_path4_path5_path6(
     pool: Extension<Pool>,
     axum::extract::Path((id, _path0, _path1, _path2, _path3, _path4, _path5, _path6)): axum::extract::Path<(String, String, String, String, String, String, String, String)>,
@@ -3164,6 +3259,7 @@ pub async fn data_work_id_path0_path1_path2_path3_path4_path5_path6(
     { let count = data.len() as i64; Ok(Json(ActionResult::java_success(Value::Array(data), count, 0))) }
 }
 
+#[allow(non_snake_case)]
 pub async fn data_work_id_path0_path1_path2_path3_path4_path5_path6_mockdeletetoget(
     pool: Extension<Pool>,
     axum::extract::Path((id, _path0, _path1, _path2, _path3, _path4, _path5, _path6)): axum::extract::Path<(String, String, String, String, String, String, String, String)>,
@@ -3214,6 +3310,7 @@ pub async fn data_work_id_path0_path1_path2_path3_path4_path5_path6_mockdeleteto
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn data_work_id_path0_path1_path2_path3_path4_path5_path6_mockputtopost(
     pool: Extension<Pool>,
     axum::extract::Path((id, _path0, _path1, _path2, _path3, _path4, _path5, _path6)): axum::extract::Path<(String, String, String, String, String, String, String, String)>,
@@ -3252,6 +3349,7 @@ pub async fn data_work_id_path0_path1_path2_path3_path4_path5_path6_mockputtopos
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn data_work_id_path0_path1_path2_path3_path4_path5_path6_path7(
     pool: Extension<Pool>,
     axum::extract::Path((id, _path0, _path1, _path2, _path3, _path4, _path5, _path6, _path7)): axum::extract::Path<(String, String, String, String, String, String, String, String, String)>,
@@ -3279,6 +3377,7 @@ pub async fn data_work_id_path0_path1_path2_path3_path4_path5_path6_path7(
     { let count = data.len() as i64; Ok(Json(ActionResult::java_success(Value::Array(data), count, 0))) }
 }
 
+#[allow(non_snake_case)]
 pub async fn data_work_id_path0_path1_path2_path3_path4_path5_path6_path7_mockdeletetoget(
     pool: Extension<Pool>,
     axum::extract::Path((id, _path0, _path1, _path2, _path3, _path4, _path5, _path6, _path7)): axum::extract::Path<(String, String, String, String, String, String, String, String, String)>,
@@ -3329,6 +3428,7 @@ pub async fn data_work_id_path0_path1_path2_path3_path4_path5_path6_path7_mockde
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn data_work_id_path0_path1_path2_path3_path4_path5_path6_path7_mockputtopost(
     pool: Extension<Pool>,
     axum::extract::Path((id, _path0, _path1, _path2, _path3, _path4, _path5, _path6, _path7)): axum::extract::Path<(String, String, String, String, String, String, String, String, String)>,
@@ -3367,6 +3467,7 @@ pub async fn data_work_id_path0_path1_path2_path3_path4_path5_path6_path7_mockpu
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn data_workcompleted_id(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
@@ -3394,6 +3495,7 @@ pub async fn data_workcompleted_id(
     { let count = data.len() as i64; Ok(Json(ActionResult::java_success(Value::Array(data), count, 0))) }
 }
 
+#[allow(non_snake_case)]
 pub async fn data_workcompleted_id_from_data(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
@@ -3421,6 +3523,7 @@ pub async fn data_workcompleted_id_from_data(
     { let count = data.len() as i64; Ok(Json(ActionResult::java_success(Value::Array(data), count, 0))) }
 }
 
+#[allow(non_snake_case)]
 pub async fn data_workcompleted_id_from_item(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
@@ -3448,6 +3551,7 @@ pub async fn data_workcompleted_id_from_item(
     { let count = data.len() as i64; Ok(Json(ActionResult::java_success(Value::Array(data), count, 0))) }
 }
 
+#[allow(non_snake_case)]
 pub async fn data_workcompleted_id_mockputtopost(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
@@ -3486,6 +3590,7 @@ pub async fn data_workcompleted_id_mockputtopost(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn data_workcompleted_id_path0(
     pool: Extension<Pool>,
     axum::extract::Path((id, _path0)): axum::extract::Path<(String, String)>,
@@ -3513,6 +3618,7 @@ pub async fn data_workcompleted_id_path0(
     { let count = data.len() as i64; Ok(Json(ActionResult::java_success(Value::Array(data), count, 0))) }
 }
 
+#[allow(non_snake_case)]
 pub async fn data_workcompleted_id_path0_mockputtopost(
     pool: Extension<Pool>,
     axum::extract::Path((id, _path0)): axum::extract::Path<(String, String)>,
@@ -3551,6 +3657,7 @@ pub async fn data_workcompleted_id_path0_mockputtopost(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn data_workcompleted_id_path0_path1(
     pool: Extension<Pool>,
     axum::extract::Path((id, _path0, _path1)): axum::extract::Path<(String, String, String)>,
@@ -3578,6 +3685,7 @@ pub async fn data_workcompleted_id_path0_path1(
     { let count = data.len() as i64; Ok(Json(ActionResult::java_success(Value::Array(data), count, 0))) }
 }
 
+#[allow(non_snake_case)]
 pub async fn data_workcompleted_id_path0_path1_mockputtopost(
     pool: Extension<Pool>,
     axum::extract::Path((id, _path0, _path1)): axum::extract::Path<(String, String, String)>,
@@ -3616,6 +3724,7 @@ pub async fn data_workcompleted_id_path0_path1_mockputtopost(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn data_workcompleted_id_path0_path1_path2(
     pool: Extension<Pool>,
     axum::extract::Path((id, _path0, _path1, _path2)): axum::extract::Path<(String, String, String, String)>,
@@ -3643,6 +3752,7 @@ pub async fn data_workcompleted_id_path0_path1_path2(
     { let count = data.len() as i64; Ok(Json(ActionResult::java_success(Value::Array(data), count, 0))) }
 }
 
+#[allow(non_snake_case)]
 pub async fn data_workcompleted_id_path0_path1_path2_mockputtopost(
     pool: Extension<Pool>,
     axum::extract::Path((id, _path0, _path1, _path2)): axum::extract::Path<(String, String, String, String)>,
@@ -3681,6 +3791,7 @@ pub async fn data_workcompleted_id_path0_path1_path2_mockputtopost(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn data_workcompleted_id_path0_path1_path2_path3(
     pool: Extension<Pool>,
     axum::extract::Path((id, _path0, _path1, _path2, _path3)): axum::extract::Path<(String, String, String, String, String)>,
@@ -3708,6 +3819,7 @@ pub async fn data_workcompleted_id_path0_path1_path2_path3(
     { let count = data.len() as i64; Ok(Json(ActionResult::java_success(Value::Array(data), count, 0))) }
 }
 
+#[allow(non_snake_case)]
 pub async fn data_workcompleted_id_path0_path1_path2_path3_mockputtopost(
     pool: Extension<Pool>,
     axum::extract::Path((id, _path0, _path1, _path2, _path3)): axum::extract::Path<(String, String, String, String, String)>,
@@ -3746,6 +3858,7 @@ pub async fn data_workcompleted_id_path0_path1_path2_path3_mockputtopost(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn data_workcompleted_id_path0_path1_path2_path3_path4(
     pool: Extension<Pool>,
     axum::extract::Path((id, _path0, _path1, _path2, _path3, _path4)): axum::extract::Path<(String, String, String, String, String, String)>,
@@ -3773,6 +3886,7 @@ pub async fn data_workcompleted_id_path0_path1_path2_path3_path4(
     { let count = data.len() as i64; Ok(Json(ActionResult::java_success(Value::Array(data), count, 0))) }
 }
 
+#[allow(non_snake_case)]
 pub async fn data_workcompleted_id_path0_path1_path2_path3_path4_mockputtopost(
     pool: Extension<Pool>,
     axum::extract::Path((id, _path0, _path1, _path2, _path3, _path4)): axum::extract::Path<(String, String, String, String, String, String)>,
@@ -3811,6 +3925,7 @@ pub async fn data_workcompleted_id_path0_path1_path2_path3_path4_mockputtopost(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn data_workcompleted_id_path0_path1_path2_path3_path4_path5(
     pool: Extension<Pool>,
     axum::extract::Path((id, _path0, _path1, _path2, _path3, _path4, _path5)): axum::extract::Path<(String, String, String, String, String, String, String)>,
@@ -3838,6 +3953,7 @@ pub async fn data_workcompleted_id_path0_path1_path2_path3_path4_path5(
     { let count = data.len() as i64; Ok(Json(ActionResult::java_success(Value::Array(data), count, 0))) }
 }
 
+#[allow(non_snake_case)]
 pub async fn data_workcompleted_id_path0_path1_path2_path3_path4_path5_mockputtopost(
     pool: Extension<Pool>,
     axum::extract::Path((id, _path0, _path1, _path2, _path3, _path4, _path5)): axum::extract::Path<(String, String, String, String, String, String, String)>,
@@ -3876,6 +3992,7 @@ pub async fn data_workcompleted_id_path0_path1_path2_path3_path4_path5_mockputto
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn data_workcompleted_id_path0_path1_path2_path3_path4_path5_path6(
     pool: Extension<Pool>,
     axum::extract::Path((id, _path0, _path1, _path2, _path3, _path4, _path5, _path6)): axum::extract::Path<(String, String, String, String, String, String, String, String)>,
@@ -3903,6 +4020,7 @@ pub async fn data_workcompleted_id_path0_path1_path2_path3_path4_path5_path6(
     { let count = data.len() as i64; Ok(Json(ActionResult::java_success(Value::Array(data), count, 0))) }
 }
 
+#[allow(non_snake_case)]
 pub async fn data_workcompleted_id_path0_path1_path2_path3_path4_path5_path6_mockputtopost(
     pool: Extension<Pool>,
     axum::extract::Path((id, _path0, _path1, _path2, _path3, _path4, _path5, _path6)): axum::extract::Path<(String, String, String, String, String, String, String, String)>,
@@ -3941,6 +4059,7 @@ pub async fn data_workcompleted_id_path0_path1_path2_path3_path4_path5_path6_moc
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn data_workcompleted_id_path0_path1_path2_path3_path4_path5_path6_path7(
     pool: Extension<Pool>,
     axum::extract::Path((id, _path0, _path1, _path2, _path3, _path4, _path5, _path6, _path7)): axum::extract::Path<(String, String, String, String, String, String, String, String, String)>,
@@ -3968,6 +4087,7 @@ pub async fn data_workcompleted_id_path0_path1_path2_path3_path4_path5_path6_pat
     { let count = data.len() as i64; Ok(Json(ActionResult::java_success(Value::Array(data), count, 0))) }
 }
 
+#[allow(non_snake_case)]
 pub async fn data_workcompleted_id_path0_path1_path2_path3_path4_path5_path6_path7_mockputtopost(
     pool: Extension<Pool>,
     axum::extract::Path((id, _path0, _path1, _path2, _path3, _path4, _path5, _path6, _path7)): axum::extract::Path<(String, String, String, String, String, String, String, String, String)>,
@@ -4006,6 +4126,7 @@ pub async fn data_workcompleted_id_path0_path1_path2_path3_path4_path5_path6_pat
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn datarecord_get_job_job_path_path(pool: Extension<Pool>,
     axum::extract::Path((job, _path)): axum::extract::Path<(String, String)>,) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
@@ -4030,6 +4151,7 @@ pub async fn datarecord_get_job_job_path_path(pool: Extension<Pool>,
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn datarecord_list_job_job(
     pool: Extension<Pool>,
     axum::extract::Path(job): axum::extract::Path<String>,
@@ -4058,6 +4180,7 @@ pub async fn datarecord_list_job_job(
     Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
 }
 
+#[allow(non_snake_case)]
 pub async fn documentversion_list_job_job(
     pool: Extension<Pool>,
     axum::extract::Path(job): axum::extract::Path<String>,
@@ -4085,6 +4208,7 @@ pub async fn documentversion_list_job_job(
     { let count = data.len() as i64; Ok(Json(ActionResult::java_success(Value::Array(data), count, 0))) }
 }
 
+#[allow(non_snake_case)]
 pub async fn documentversion_list_job_job_category_category(pool: Extension<Pool>,
     axum::extract::Path((job, category)): axum::extract::Path<(String, String)>,) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
@@ -4110,6 +4234,7 @@ pub async fn documentversion_list_job_job_category_category(pool: Extension<Pool
     { let count = data.len() as i64; Ok(Json(ActionResult::java_success(Value::Array(data), count, 0))) }
 }
 
+#[allow(non_snake_case)]
 pub async fn documentversion_list_workorworkcompleted_workOrWorkCompleted(
     pool: Extension<Pool>,
     axum::extract::Path(workOrWorkCompleted): axum::extract::Path<String>,
@@ -4137,6 +4262,7 @@ pub async fn documentversion_list_workorworkcompleted_workOrWorkCompleted(
     { let count = data.len() as i64; Ok(Json(ActionResult::java_success(Value::Array(data), count, 0))) }
 }
 
+#[allow(non_snake_case)]
 pub async fn documentversion_list_workorworkcompleted_workOrWorkCompleted_category_category(pool: Extension<Pool>,
     axum::extract::Path((workOrWorkCompleted, category)): axum::extract::Path<(String, String)>,) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
@@ -4162,6 +4288,7 @@ pub async fn documentversion_list_workorworkcompleted_workOrWorkCompleted_catego
     { let count = data.len() as i64; Ok(Json(ActionResult::java_success(Value::Array(data), count, 0))) }
 }
 
+#[allow(non_snake_case)]
 pub async fn documentversion_work_work(
     pool: Extension<Pool>,
     axum::extract::Path(work): axum::extract::Path<String>,
@@ -4188,6 +4315,7 @@ pub async fn documentversion_work_work(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn documentversion_id(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
@@ -4214,6 +4342,7 @@ pub async fn documentversion_id(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn draft_list_my_paging_page_size_size(pool: Extension<Pool>,
     axum::extract::Path((page, size)): axum::extract::Path<(i64, i64)>,) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
@@ -4239,6 +4368,7 @@ pub async fn draft_list_my_paging_page_size_size(pool: Extension<Pool>,
     { let count = data.len() as i64; Ok(Json(ActionResult::java_success(Value::Array(data), count, 0))) }
 }
 
+#[allow(non_snake_case)]
 pub async fn draft_list_id_next_count(pool: Extension<Pool>,
     axum::extract::Path((id, _count)): axum::extract::Path<(String, i64)>,) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
@@ -4264,6 +4394,7 @@ pub async fn draft_list_id_next_count(pool: Extension<Pool>,
     { let count = data.len() as i64; Ok(Json(ActionResult::java_success(Value::Array(data), count, 0))) }
 }
 
+#[allow(non_snake_case)]
 pub async fn draft_list_id_prev_count(pool: Extension<Pool>,
     axum::extract::Path((id, _count)): axum::extract::Path<(String, i64)>,) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
@@ -4289,6 +4420,7 @@ pub async fn draft_list_id_prev_count(pool: Extension<Pool>,
     { let count = data.len() as i64; Ok(Json(ActionResult::java_success(Value::Array(data), count, 0))) }
 }
 
+#[allow(non_snake_case)]
 pub async fn draft_mockputtopost(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
@@ -4327,6 +4459,7 @@ pub async fn draft_mockputtopost(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn draft_process_processFlag(
     pool: Extension<Pool>,
     axum::extract::Path(processFlag): axum::extract::Path<String>,
@@ -4353,6 +4486,7 @@ pub async fn draft_process_processFlag(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn draft_id(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
@@ -4379,6 +4513,7 @@ pub async fn draft_id(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn draft_id_mockdeletetoget(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
@@ -4429,6 +4564,7 @@ pub async fn draft_id_mockdeletetoget(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn draft_id_start(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
@@ -4467,6 +4603,7 @@ pub async fn draft_id_start(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn file_list_application_applicationFlag(
     pool: Extension<Pool>,
     axum::extract::Path(applicationFlag): axum::extract::Path<String>,
@@ -4494,6 +4631,7 @@ pub async fn file_list_application_applicationFlag(
     { let count = data.len() as i64; Ok(Json(ActionResult::java_success(Value::Array(data), count, 0))) }
 }
 
+#[allow(non_snake_case)]
 pub async fn file_flag_application_applicationFlag_content(pool: Extension<Pool>,
     axum::extract::Path((flag, _applicationFlag)): axum::extract::Path<(String, String)>,) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
@@ -4518,6 +4656,7 @@ pub async fn file_flag_application_applicationFlag_content(pool: Extension<Pool>
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn file_flag_application_applicationFlag_download(pool: Extension<Pool>,
     axum::extract::Path((flag, _applicationFlag)): axum::extract::Path<(String, String)>,) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
@@ -4542,6 +4681,7 @@ pub async fn file_flag_application_applicationFlag_download(pool: Extension<Pool
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn form_v2_lookup_taskcompleted_taskcompleted(
     pool: Extension<Pool>,
     axum::extract::Path(taskcompleted): axum::extract::Path<String>,
@@ -4568,6 +4708,7 @@ pub async fn form_v2_lookup_taskcompleted_taskcompleted(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn form_v2_lookup_taskcompleted_taskcompleted_mobile(
     pool: Extension<Pool>,
     axum::extract::Path(taskcompleted): axum::extract::Path<String>,
@@ -4594,6 +4735,7 @@ pub async fn form_v2_lookup_taskcompleted_taskcompleted_mobile(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn form_v2_lookup_workorworkcompleted_workOrWorkCompleted(
     pool: Extension<Pool>,
     axum::extract::Path(workOrWorkCompleted): axum::extract::Path<String>,
@@ -4620,6 +4762,7 @@ pub async fn form_v2_lookup_workorworkcompleted_workOrWorkCompleted(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn form_v2_lookup_workorworkcompleted_workOrWorkCompleted_mobile(
     pool: Extension<Pool>,
     axum::extract::Path(workOrWorkCompleted): axum::extract::Path<String>,
@@ -4646,6 +4789,7 @@ pub async fn form_v2_lookup_workorworkcompleted_workOrWorkCompleted_mobile(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn form_v2_id(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
@@ -4672,6 +4816,7 @@ pub async fn form_v2_id(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn form_v2_id_mobile(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
@@ -4698,6 +4843,7 @@ pub async fn form_v2_id_mobile(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn form_flag(
     pool: Extension<Pool>,
     axum::extract::Path(flag): axum::extract::Path<String>,
@@ -4724,6 +4870,7 @@ pub async fn form_flag(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn form_flag_application_applicationFlag(pool: Extension<Pool>,
     axum::extract::Path((flag, _applicationFlag)): axum::extract::Path<(String, String)>,) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
@@ -4748,6 +4895,7 @@ pub async fn form_flag_application_applicationFlag(pool: Extension<Pool>,
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn form_flag_application_applicationFlag_mobile(pool: Extension<Pool>,
     axum::extract::Path((flag, _applicationFlag)): axum::extract::Path<(String, String)>,) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
@@ -4772,6 +4920,7 @@ pub async fn form_flag_application_applicationFlag_mobile(pool: Extension<Pool>,
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn form_flag_mobile(
     pool: Extension<Pool>,
     axum::extract::Path(flag): axum::extract::Path<String>,
@@ -4798,6 +4947,7 @@ pub async fn form_flag_mobile(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn handover_list_paging_page_size_size(pool: Extension<Pool>,
     axum::extract::Path((page, size)): axum::extract::Path<(i64, i64)>,) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
@@ -4823,6 +4973,7 @@ pub async fn handover_list_paging_page_size_size(pool: Extension<Pool>,
     { let count = data.len() as i64; Ok(Json(ActionResult::java_success(Value::Array(data), count, 0))) }
 }
 
+#[allow(non_snake_case)]
 pub async fn handover_id(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
@@ -4849,6 +5000,7 @@ pub async fn handover_id(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn handover_id_cancel(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
@@ -4887,6 +5039,7 @@ pub async fn handover_id_cancel(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn handover_id_process(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
@@ -4925,6 +5078,7 @@ pub async fn handover_id_process(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn job_latest_work_workcompleted_serial_serial(
     pool: Extension<Pool>,
     axum::extract::Path(serial): axum::extract::Path<String>,
@@ -4951,6 +5105,7 @@ pub async fn job_latest_work_workcompleted_serial_serial(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn job_v2_job_projection(
     pool: Extension<Pool>,
     axum::extract::Path(job): axum::extract::Path<String>,
@@ -4977,6 +5132,7 @@ pub async fn job_v2_job_projection(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn job_job_allow_visit_person_person(pool: Extension<Pool>,
     axum::extract::Path((job, _person)): axum::extract::Path<(String, String)>,) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
@@ -5001,6 +5157,7 @@ pub async fn job_job_allow_visit_person_person(pool: Extension<Pool>,
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn job_job_find_work_workcompleted(
     pool: Extension<Pool>,
     axum::extract::Path(job): axum::extract::Path<String>,
@@ -5027,6 +5184,7 @@ pub async fn job_job_find_work_workcompleted(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn keylock_lock(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
@@ -5053,6 +5211,7 @@ pub async fn keylock_lock(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn keylock_lock_mockputtopost(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
@@ -5091,6 +5250,7 @@ pub async fn keylock_lock_mockputtopost(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn mode_clear_person_person_manager(
     pool: Extension<Pool>,
     axum::extract::Path(person): axum::extract::Path<String>,
@@ -5117,6 +5277,7 @@ pub async fn mode_clear_person_person_manager(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn mode_list(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -5143,6 +5304,7 @@ pub async fn mode_list(
     { let count = data.len() as i64; Ok(Json(ActionResult::java_success(Value::Array(data), count, 0))) }
 }
 
+#[allow(non_snake_case)]
 pub async fn mode_save(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
@@ -5181,6 +5343,7 @@ pub async fn mode_save(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn mode_id_delete(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
@@ -5219,6 +5382,7 @@ pub async fn mode_id_delete(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn process_activity_activity_activityType_activityType(pool: Extension<Pool>,
     axum::extract::Path((activity, _activityType)): axum::extract::Path<(String, String)>,) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
@@ -5243,6 +5407,7 @@ pub async fn process_activity_activity_activityType_activityType(pool: Extension
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn process_list_application_applicationFlag(
     pool: Extension<Pool>,
     axum::extract::Path(applicationFlag): axum::extract::Path<String>,
@@ -5270,6 +5435,7 @@ pub async fn process_list_application_applicationFlag(
     { let count = data.len() as i64; Ok(Json(ActionResult::java_success(Value::Array(data), count, 0))) }
 }
 
+#[allow(non_snake_case)]
 pub async fn process_list_application_applicationFlag_filter(
     pool: Extension<Pool>,
     axum::extract::Path(applicationFlag): axum::extract::Path<String>,
@@ -5297,6 +5463,7 @@ pub async fn process_list_application_applicationFlag_filter(
     { let count = data.len() as i64; Ok(Json(ActionResult::java_success(Value::Array(data), count, 0))) }
 }
 
+#[allow(non_snake_case)]
 pub async fn process_list_available_identity_process_flag(
     pool: Extension<Pool>,
     axum::extract::Path(flag): axum::extract::Path<String>,
@@ -5324,6 +5491,7 @@ pub async fn process_list_available_identity_process_flag(
     { let count = data.len() as i64; Ok(Json(ActionResult::java_success(Value::Array(data), count, 0))) }
 }
 
+#[allow(non_snake_case)]
 pub async fn process_list_controllable_application_applicationFlag(
     pool: Extension<Pool>,
     axum::extract::Path(applicationFlag): axum::extract::Path<String>,
@@ -5351,6 +5519,7 @@ pub async fn process_list_controllable_application_applicationFlag(
     { let count = data.len() as i64; Ok(Json(ActionResult::java_success(Value::Array(data), count, 0))) }
 }
 
+#[allow(non_snake_case)]
 pub async fn process_list_ids(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -5378,6 +5547,7 @@ pub async fn process_list_ids(
     Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
 }
 
+#[allow(non_snake_case)]
 pub async fn process_flag(
     pool: Extension<Pool>,
     axum::extract::Path(flag): axum::extract::Path<String>,
@@ -5404,6 +5574,7 @@ pub async fn process_flag(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn process_flag_allowrerouteto(
     pool: Extension<Pool>,
     axum::extract::Path(flag): axum::extract::Path<String>,
@@ -5430,6 +5601,7 @@ pub async fn process_flag_allowrerouteto(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn process_flag_application_applicationFlag(pool: Extension<Pool>,
     axum::extract::Path((flag, _applicationFlag)): axum::extract::Path<(String, String)>,) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
@@ -5454,6 +5626,7 @@ pub async fn process_flag_application_applicationFlag(pool: Extension<Pool>,
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn process_flag_complex(
     pool: Extension<Pool>,
     axum::extract::Path(flag): axum::extract::Path<String>,
@@ -5480,6 +5653,7 @@ pub async fn process_flag_complex(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn process_flag_onlyRemoveNotCompleted(pool: Extension<Pool>,
     axum::extract::Path((flag, _onlyRemoveNotCompleted)): axum::extract::Path<(String, String)>,) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
@@ -5504,6 +5678,7 @@ pub async fn process_flag_onlyRemoveNotCompleted(pool: Extension<Pool>,
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn read_count_filter(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -5524,6 +5699,7 @@ pub async fn read_count_filter(
     ))))
 }
 
+#[allow(non_snake_case)]
 pub async fn read_count_credential(
     pool: Extension<Pool>,
     axum::extract::Path(credential): axum::extract::Path<String>,
@@ -5545,6 +5721,7 @@ pub async fn read_count_credential(
     ))))
 }
 
+#[allow(non_snake_case)]
 pub async fn read_filter_attribute(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
@@ -5571,6 +5748,7 @@ pub async fn read_filter_attribute(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn read_filter_attribute_filter(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
@@ -5597,6 +5775,7 @@ pub async fn read_filter_attribute_filter(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn read_list_count_application(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -5613,6 +5792,7 @@ pub async fn read_list_count_application(
     Ok(Json(ActionResult::java_success(Value::Array(vec![]), count, 0)))
 }
 
+#[allow(non_snake_case)]
 pub async fn read_list_count_application_applicationFlag_process(
     pool: Extension<Pool>,
     axum::extract::Path(applicationFlag): axum::extract::Path<String>,
@@ -5651,6 +5831,7 @@ pub async fn read_list_count_application_applicationFlag_process(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn read_list_date_date_manage(
     pool: Extension<Pool>,
     axum::extract::Path(date): axum::extract::Path<String>,
@@ -5677,6 +5858,7 @@ pub async fn read_list_date_date_manage(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn read_list_filter_page_size_size_manage(pool: Extension<Pool>,
     axum::extract::Path((page, _size)): axum::extract::Path<(i64, i64)>,) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
@@ -5701,6 +5883,7 @@ pub async fn read_list_filter_page_size_size_manage(pool: Extension<Pool>,
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn read_list_job_job(
     pool: Extension<Pool>,
     axum::extract::Path(job): axum::extract::Path<String>,
@@ -5728,6 +5911,7 @@ pub async fn read_list_job_job(
     { let count = data.len() as i64; Ok(Json(ActionResult::java_success(Value::Array(data), count, 0))) }
 }
 
+#[allow(non_snake_case)]
 pub async fn read_list_my_filter_page_size_size(pool: Extension<Pool>,
     axum::extract::Path((page, size)): axum::extract::Path<(i64, i64)>,) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
@@ -5753,6 +5937,7 @@ pub async fn read_list_my_filter_page_size_size(pool: Extension<Pool>,
     { let count = data.len() as i64; Ok(Json(ActionResult::java_success(Value::Array(data), count, 0))) }
 }
 
+#[allow(non_snake_case)]
 pub async fn read_list_my_paging_page_size_size(pool: Extension<Pool>,
     axum::extract::Path((page, size)): axum::extract::Path<(i64, i64)>,) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
@@ -5778,6 +5963,7 @@ pub async fn read_list_my_paging_page_size_size(pool: Extension<Pool>,
     { let count = data.len() as i64; Ok(Json(ActionResult::java_success(Value::Array(data), count, 0))) }
 }
 
+#[allow(non_snake_case)]
 pub async fn read_list_person_person_manage(
     pool: Extension<Pool>,
     axum::extract::Path(person): axum::extract::Path<String>,
@@ -5804,6 +5990,7 @@ pub async fn read_list_person_person_manage(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn read_list_work_work(
     pool: Extension<Pool>,
     axum::extract::Path(work): axum::extract::Path<String>,
@@ -5831,6 +6018,7 @@ pub async fn read_list_work_work(
     { let count = data.len() as i64; Ok(Json(ActionResult::java_success(Value::Array(data), count, 0))) }
 }
 
+#[allow(non_snake_case)]
 pub async fn read_list_workorworkcompleted_workOrWorkCompleted(
     pool: Extension<Pool>,
     axum::extract::Path(workOrWorkCompleted): axum::extract::Path<String>,
@@ -5858,6 +6046,7 @@ pub async fn read_list_workorworkcompleted_workOrWorkCompleted(
     { let count = data.len() as i64; Ok(Json(ActionResult::java_success(Value::Array(data), count, 0))) }
 }
 
+#[allow(non_snake_case)]
 pub async fn read_list_id_next_count(pool: Extension<Pool>,
     axum::extract::Path((id, _count)): axum::extract::Path<(String, i64)>,) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
@@ -5883,6 +6072,7 @@ pub async fn read_list_id_next_count(pool: Extension<Pool>,
     { let count = data.len() as i64; Ok(Json(ActionResult::java_success(Value::Array(data), count, 0))) }
 }
 
+#[allow(non_snake_case)]
 pub async fn read_list_id_next_count_application_applicationFlag(pool: Extension<Pool>,
     axum::extract::Path((id, _count, applicationFlag)): axum::extract::Path<(String, i64, String)>,) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
@@ -5908,6 +6098,7 @@ pub async fn read_list_id_next_count_application_applicationFlag(pool: Extension
     { let count = data.len() as i64; Ok(Json(ActionResult::java_success(Value::Array(data), count, 0))) }
 }
 
+#[allow(non_snake_case)]
 pub async fn read_list_id_next_count_filter(pool: Extension<Pool>,
     axum::extract::Path((id, _count)): axum::extract::Path<(String, i64)>,) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
@@ -5933,6 +6124,7 @@ pub async fn read_list_id_next_count_filter(pool: Extension<Pool>,
     { let count = data.len() as i64; Ok(Json(ActionResult::java_success(Value::Array(data), count, 0))) }
 }
 
+#[allow(non_snake_case)]
 pub async fn read_list_id_next_count_process_processFlag(pool: Extension<Pool>,
     axum::extract::Path((id, _count, processFlag)): axum::extract::Path<(String, i64, String)>,) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
@@ -5958,6 +6150,7 @@ pub async fn read_list_id_next_count_process_processFlag(pool: Extension<Pool>,
     { let count = data.len() as i64; Ok(Json(ActionResult::java_success(Value::Array(data), count, 0))) }
 }
 
+#[allow(non_snake_case)]
 pub async fn read_list_id_prev_count(pool: Extension<Pool>,
     axum::extract::Path((id, _count)): axum::extract::Path<(String, i64)>,) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
@@ -5983,6 +6176,7 @@ pub async fn read_list_id_prev_count(pool: Extension<Pool>,
     { let count = data.len() as i64; Ok(Json(ActionResult::java_success(Value::Array(data), count, 0))) }
 }
 
+#[allow(non_snake_case)]
 pub async fn read_list_id_prev_count_application_applicationFlag(pool: Extension<Pool>,
     axum::extract::Path((id, _count, applicationFlag)): axum::extract::Path<(String, i64, String)>,) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
@@ -6008,6 +6202,7 @@ pub async fn read_list_id_prev_count_application_applicationFlag(pool: Extension
     { let count = data.len() as i64; Ok(Json(ActionResult::java_success(Value::Array(data), count, 0))) }
 }
 
+#[allow(non_snake_case)]
 pub async fn read_list_id_prev_count_filter(pool: Extension<Pool>,
     axum::extract::Path((id, _count)): axum::extract::Path<(String, i64)>,) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
@@ -6033,6 +6228,7 @@ pub async fn read_list_id_prev_count_filter(pool: Extension<Pool>,
     { let count = data.len() as i64; Ok(Json(ActionResult::java_success(Value::Array(data), count, 0))) }
 }
 
+#[allow(non_snake_case)]
 pub async fn read_list_id_prev_count_process_processFlag(pool: Extension<Pool>,
     axum::extract::Path((id, _count, processFlag)): axum::extract::Path<(String, i64, String)>,) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
@@ -6058,6 +6254,7 @@ pub async fn read_list_id_prev_count_process_processFlag(pool: Extension<Pool>,
     { let count = data.len() as i64; Ok(Json(ActionResult::java_success(Value::Array(data), count, 0))) }
 }
 
+#[allow(non_snake_case)]
 pub async fn read_v2_count(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -6078,6 +6275,7 @@ pub async fn read_v2_count(
     ))))
 }
 
+#[allow(non_snake_case)]
 pub async fn read_v2_list(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -6105,6 +6303,7 @@ pub async fn read_v2_list(
     Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
 }
 
+#[allow(non_snake_case)]
 pub async fn read_v2_list_create_paging_page_size_size(pool: Extension<Pool>,
     axum::extract::Path((page, size)): axum::extract::Path<(i64, i64)>,) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
@@ -6130,6 +6329,7 @@ pub async fn read_v2_list_create_paging_page_size_size(pool: Extension<Pool>,
     { let count = data.len() as i64; Ok(Json(ActionResult::java_success(Value::Array(data), count, 0))) }
 }
 
+#[allow(non_snake_case)]
 pub async fn read_v2_list_create_id_next_count(pool: Extension<Pool>,
     axum::extract::Path((id, _count)): axum::extract::Path<(String, i64)>,) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
@@ -6155,6 +6355,7 @@ pub async fn read_v2_list_create_id_next_count(pool: Extension<Pool>,
     { let count = data.len() as i64; Ok(Json(ActionResult::java_success(Value::Array(data), count, 0))) }
 }
 
+#[allow(non_snake_case)]
 pub async fn read_v2_list_create_id_prev_count(pool: Extension<Pool>,
     axum::extract::Path((id, _count)): axum::extract::Path<(String, i64)>,) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
@@ -6180,6 +6381,7 @@ pub async fn read_v2_list_create_id_prev_count(pool: Extension<Pool>,
     { let count = data.len() as i64; Ok(Json(ActionResult::java_success(Value::Array(data), count, 0))) }
 }
 
+#[allow(non_snake_case)]
 pub async fn read_v2_list_paging_page_size_size(pool: Extension<Pool>,
     axum::extract::Path((page, size)): axum::extract::Path<(i64, i64)>,) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
@@ -6205,6 +6407,7 @@ pub async fn read_v2_list_paging_page_size_size(pool: Extension<Pool>,
     { let count = data.len() as i64; Ok(Json(ActionResult::java_success(Value::Array(data), count, 0))) }
 }
 
+#[allow(non_snake_case)]
 pub async fn read_v2_list_id_next_count(pool: Extension<Pool>,
     axum::extract::Path((id, _count)): axum::extract::Path<(String, i64)>,) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
@@ -6230,6 +6433,7 @@ pub async fn read_v2_list_id_next_count(pool: Extension<Pool>,
     { let count = data.len() as i64; Ok(Json(ActionResult::java_success(Value::Array(data), count, 0))) }
 }
 
+#[allow(non_snake_case)]
 pub async fn read_v2_list_id_prev_count(pool: Extension<Pool>,
     axum::extract::Path((id, _count)): axum::extract::Path<(String, i64)>,) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
@@ -6255,6 +6459,7 @@ pub async fn read_v2_list_id_prev_count(pool: Extension<Pool>,
     { let count = data.len() as i64; Ok(Json(ActionResult::java_success(Value::Array(data), count, 0))) }
 }
 
+#[allow(non_snake_case)]
 pub async fn read_work_workId(
     pool: Extension<Pool>,
     axum::extract::Path(workId): axum::extract::Path<String>,
@@ -6281,6 +6486,7 @@ pub async fn read_work_workId(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn read_workcompleted_workCompletedId(
     pool: Extension<Pool>,
     axum::extract::Path(workCompletedId): axum::extract::Path<String>,
@@ -6307,6 +6513,7 @@ pub async fn read_workcompleted_workCompletedId(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn read_id(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
@@ -6333,6 +6540,7 @@ pub async fn read_id(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn read_id_manage(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
@@ -6359,6 +6567,7 @@ pub async fn read_id_manage(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn read_id_manage_mockdeletetoget(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
@@ -6409,6 +6618,7 @@ pub async fn read_id_manage_mockdeletetoget(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn read_id_mockputtopost(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
@@ -6447,6 +6657,7 @@ pub async fn read_id_mockputtopost(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn read_id_opinion_manage(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
@@ -6473,6 +6684,7 @@ pub async fn read_id_opinion_manage(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn read_id_opinion_manage_mockputtopost(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
@@ -6511,6 +6723,7 @@ pub async fn read_id_opinion_manage_mockputtopost(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn read_id_processing(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
@@ -6537,6 +6750,7 @@ pub async fn read_id_processing(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn read_id_processing_manage(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
@@ -6563,6 +6777,7 @@ pub async fn read_id_processing_manage(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn read_id_processing_manage_mockputtopost(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
@@ -6601,6 +6816,7 @@ pub async fn read_id_processing_manage_mockputtopost(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn read_id_reference(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
@@ -6627,6 +6843,7 @@ pub async fn read_id_reference(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn read_id_reset_manage(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
@@ -6653,6 +6870,7 @@ pub async fn read_id_reset_manage(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn read_id_reset_manage_mockputtopost(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
@@ -6691,6 +6909,7 @@ pub async fn read_id_reset_manage_mockputtopost(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn readcompleted_count_credential(
     pool: Extension<Pool>,
     axum::extract::Path(credential): axum::extract::Path<String>,
@@ -6712,6 +6931,7 @@ pub async fn readcompleted_count_credential(
     ))))
 }
 
+#[allow(non_snake_case)]
 pub async fn readcompleted_filter_attribute(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
@@ -6738,6 +6958,7 @@ pub async fn readcompleted_filter_attribute(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn readcompleted_filter_attribute_filter(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
@@ -6764,6 +6985,7 @@ pub async fn readcompleted_filter_attribute_filter(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn readcompleted_list_count_application(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -6780,6 +7002,7 @@ pub async fn readcompleted_list_count_application(
     Ok(Json(ActionResult::java_success(Value::Array(vec![]), count, 0)))
 }
 
+#[allow(non_snake_case)]
 pub async fn readcompleted_list_count_application_applicationFlag_process(
     pool: Extension<Pool>,
     axum::extract::Path(applicationFlag): axum::extract::Path<String>,
@@ -6818,6 +7041,7 @@ pub async fn readcompleted_list_count_application_applicationFlag_process(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn readcompleted_list_date_date_manage(
     pool: Extension<Pool>,
     axum::extract::Path(date): axum::extract::Path<String>,
@@ -6844,6 +7068,7 @@ pub async fn readcompleted_list_date_date_manage(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn readcompleted_list_filter_page_size_size_manage(pool: Extension<Pool>,
     axum::extract::Path((page, _size)): axum::extract::Path<(i64, i64)>,) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
@@ -6868,6 +7093,7 @@ pub async fn readcompleted_list_filter_page_size_size_manage(pool: Extension<Poo
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn readcompleted_list_job_job(
     pool: Extension<Pool>,
     axum::extract::Path(job): axum::extract::Path<String>,
@@ -6895,6 +7121,7 @@ pub async fn readcompleted_list_job_job(
     { let count = data.len() as i64; Ok(Json(ActionResult::java_success(Value::Array(data), count, 0))) }
 }
 
+#[allow(non_snake_case)]
 pub async fn readcompleted_list_my_filter_page_size_size(pool: Extension<Pool>,
     axum::extract::Path((page, size)): axum::extract::Path<(i64, i64)>,) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
@@ -6920,6 +7147,7 @@ pub async fn readcompleted_list_my_filter_page_size_size(pool: Extension<Pool>,
     { let count = data.len() as i64; Ok(Json(ActionResult::java_success(Value::Array(data), count, 0))) }
 }
 
+#[allow(non_snake_case)]
 pub async fn readcompleted_list_my_paging_page_size_size(pool: Extension<Pool>,
     axum::extract::Path((page, size)): axum::extract::Path<(i64, i64)>,) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
@@ -6945,6 +7173,7 @@ pub async fn readcompleted_list_my_paging_page_size_size(pool: Extension<Pool>,
     { let count = data.len() as i64; Ok(Json(ActionResult::java_success(Value::Array(data), count, 0))) }
 }
 
+#[allow(non_snake_case)]
 pub async fn readcompleted_list_work_work(
     pool: Extension<Pool>,
     axum::extract::Path(work): axum::extract::Path<String>,
@@ -6972,6 +7201,7 @@ pub async fn readcompleted_list_work_work(
     { let count = data.len() as i64; Ok(Json(ActionResult::java_success(Value::Array(data), count, 0))) }
 }
 
+#[allow(non_snake_case)]
 pub async fn readcompleted_list_workorworkcompleted_workOrWorkCompleted(
     pool: Extension<Pool>,
     axum::extract::Path(workOrWorkCompleted): axum::extract::Path<String>,
@@ -6999,6 +7229,7 @@ pub async fn readcompleted_list_workorworkcompleted_workOrWorkCompleted(
     { let count = data.len() as i64; Ok(Json(ActionResult::java_success(Value::Array(data), count, 0))) }
 }
 
+#[allow(non_snake_case)]
 pub async fn readcompleted_list_id_next_count(pool: Extension<Pool>,
     axum::extract::Path((id, _count)): axum::extract::Path<(String, i64)>,) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
@@ -7024,6 +7255,7 @@ pub async fn readcompleted_list_id_next_count(pool: Extension<Pool>,
     { let count = data.len() as i64; Ok(Json(ActionResult::java_success(Value::Array(data), count, 0))) }
 }
 
+#[allow(non_snake_case)]
 pub async fn readcompleted_list_id_next_count_application_applicationFlag(pool: Extension<Pool>,
     axum::extract::Path((id, _count, applicationFlag)): axum::extract::Path<(String, i64, String)>,) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
@@ -7049,6 +7281,7 @@ pub async fn readcompleted_list_id_next_count_application_applicationFlag(pool: 
     { let count = data.len() as i64; Ok(Json(ActionResult::java_success(Value::Array(data), count, 0))) }
 }
 
+#[allow(non_snake_case)]
 pub async fn readcompleted_list_id_next_count_filter(pool: Extension<Pool>,
     axum::extract::Path((id, _count)): axum::extract::Path<(String, i64)>,) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
@@ -7074,6 +7307,7 @@ pub async fn readcompleted_list_id_next_count_filter(pool: Extension<Pool>,
     { let count = data.len() as i64; Ok(Json(ActionResult::java_success(Value::Array(data), count, 0))) }
 }
 
+#[allow(non_snake_case)]
 pub async fn readcompleted_list_id_next_count_process_processFlag(pool: Extension<Pool>,
     axum::extract::Path((id, _count, processFlag)): axum::extract::Path<(String, i64, String)>,) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
@@ -7099,6 +7333,7 @@ pub async fn readcompleted_list_id_next_count_process_processFlag(pool: Extensio
     { let count = data.len() as i64; Ok(Json(ActionResult::java_success(Value::Array(data), count, 0))) }
 }
 
+#[allow(non_snake_case)]
 pub async fn readcompleted_list_id_prev_count(pool: Extension<Pool>,
     axum::extract::Path((id, _count)): axum::extract::Path<(String, i64)>,) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
@@ -7124,6 +7359,7 @@ pub async fn readcompleted_list_id_prev_count(pool: Extension<Pool>,
     { let count = data.len() as i64; Ok(Json(ActionResult::java_success(Value::Array(data), count, 0))) }
 }
 
+#[allow(non_snake_case)]
 pub async fn readcompleted_list_id_prev_count_application_applicationFlag(pool: Extension<Pool>,
     axum::extract::Path((id, _count, applicationFlag)): axum::extract::Path<(String, i64, String)>,) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
@@ -7149,6 +7385,7 @@ pub async fn readcompleted_list_id_prev_count_application_applicationFlag(pool: 
     { let count = data.len() as i64; Ok(Json(ActionResult::java_success(Value::Array(data), count, 0))) }
 }
 
+#[allow(non_snake_case)]
 pub async fn readcompleted_list_id_prev_count_filter(pool: Extension<Pool>,
     axum::extract::Path((id, _count)): axum::extract::Path<(String, i64)>,) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
@@ -7174,6 +7411,7 @@ pub async fn readcompleted_list_id_prev_count_filter(pool: Extension<Pool>,
     { let count = data.len() as i64; Ok(Json(ActionResult::java_success(Value::Array(data), count, 0))) }
 }
 
+#[allow(non_snake_case)]
 pub async fn readcompleted_list_id_prev_count_process_processFlag(pool: Extension<Pool>,
     axum::extract::Path((id, _count, processFlag)): axum::extract::Path<(String, i64, String)>,) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
@@ -7199,6 +7437,7 @@ pub async fn readcompleted_list_id_prev_count_process_processFlag(pool: Extensio
     { let count = data.len() as i64; Ok(Json(ActionResult::java_success(Value::Array(data), count, 0))) }
 }
 
+#[allow(non_snake_case)]
 pub async fn readcompleted_v2_count(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -7219,6 +7458,7 @@ pub async fn readcompleted_v2_count(
     ))))
 }
 
+#[allow(non_snake_case)]
 pub async fn readcompleted_v2_list(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -7246,6 +7486,7 @@ pub async fn readcompleted_v2_list(
     Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
 }
 
+#[allow(non_snake_case)]
 pub async fn readcompleted_v2_list_create_paging_page_size_size(pool: Extension<Pool>,
     axum::extract::Path((page, size)): axum::extract::Path<(i64, i64)>,) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
@@ -7271,6 +7512,7 @@ pub async fn readcompleted_v2_list_create_paging_page_size_size(pool: Extension<
     { let count = data.len() as i64; Ok(Json(ActionResult::java_success(Value::Array(data), count, 0))) }
 }
 
+#[allow(non_snake_case)]
 pub async fn readcompleted_v2_list_create_id_next_count(pool: Extension<Pool>,
     axum::extract::Path((id, _count)): axum::extract::Path<(String, i64)>,) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
@@ -7296,6 +7538,7 @@ pub async fn readcompleted_v2_list_create_id_next_count(pool: Extension<Pool>,
     { let count = data.len() as i64; Ok(Json(ActionResult::java_success(Value::Array(data), count, 0))) }
 }
 
+#[allow(non_snake_case)]
 pub async fn readcompleted_v2_list_create_id_prev_count(pool: Extension<Pool>,
     axum::extract::Path((id, _count)): axum::extract::Path<(String, i64)>,) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
@@ -7321,6 +7564,7 @@ pub async fn readcompleted_v2_list_create_id_prev_count(pool: Extension<Pool>,
     { let count = data.len() as i64; Ok(Json(ActionResult::java_success(Value::Array(data), count, 0))) }
 }
 
+#[allow(non_snake_case)]
 pub async fn readcompleted_v2_list_paging_page_size_size(pool: Extension<Pool>,
     axum::extract::Path((page, size)): axum::extract::Path<(i64, i64)>,) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
@@ -7346,6 +7590,7 @@ pub async fn readcompleted_v2_list_paging_page_size_size(pool: Extension<Pool>,
     { let count = data.len() as i64; Ok(Json(ActionResult::java_success(Value::Array(data), count, 0))) }
 }
 
+#[allow(non_snake_case)]
 pub async fn readcompleted_v2_list_id_next_count(pool: Extension<Pool>,
     axum::extract::Path((id, _count)): axum::extract::Path<(String, i64)>,) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
@@ -7371,6 +7616,7 @@ pub async fn readcompleted_v2_list_id_next_count(pool: Extension<Pool>,
     { let count = data.len() as i64; Ok(Json(ActionResult::java_success(Value::Array(data), count, 0))) }
 }
 
+#[allow(non_snake_case)]
 pub async fn readcompleted_v2_list_id_prev_count(pool: Extension<Pool>,
     axum::extract::Path((id, _count)): axum::extract::Path<(String, i64)>,) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
@@ -7396,6 +7642,7 @@ pub async fn readcompleted_v2_list_id_prev_count(pool: Extension<Pool>,
     { let count = data.len() as i64; Ok(Json(ActionResult::java_success(Value::Array(data), count, 0))) }
 }
 
+#[allow(non_snake_case)]
 pub async fn readcompleted_id(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
@@ -7422,6 +7669,7 @@ pub async fn readcompleted_id(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn readcompleted_id_manage(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
@@ -7448,6 +7696,7 @@ pub async fn readcompleted_id_manage(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn readcompleted_id_manage_mockdeletetoget(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
@@ -7498,6 +7747,7 @@ pub async fn readcompleted_id_manage_mockdeletetoget(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn readcompleted_id_opinion_manage(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
@@ -7524,6 +7774,7 @@ pub async fn readcompleted_id_opinion_manage(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn readcompleted_id_reference(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
@@ -7550,6 +7801,7 @@ pub async fn readcompleted_id_reference(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn readrecord_list_job_job(
     pool: Extension<Pool>,
     axum::extract::Path(job): axum::extract::Path<String>,
@@ -7577,6 +7829,7 @@ pub async fn readrecord_list_job_job(
     { let count = data.len() as i64; Ok(Json(ActionResult::java_success(Value::Array(data), count, 0))) }
 }
 
+#[allow(non_snake_case)]
 pub async fn readrecord_list_workorworkcompleted_workOrWorkCompleted(
     pool: Extension<Pool>,
     axum::extract::Path(workOrWorkCompleted): axum::extract::Path<String>,
@@ -7604,6 +7857,7 @@ pub async fn readrecord_list_workorworkcompleted_workOrWorkCompleted(
     { let count = data.len() as i64; Ok(Json(ActionResult::java_success(Value::Array(data), count, 0))) }
 }
 
+#[allow(non_snake_case)]
 pub async fn record_job_job_manage(
     pool: Extension<Pool>,
     axum::extract::Path(job): axum::extract::Path<String>,
@@ -7630,6 +7884,7 @@ pub async fn record_job_job_manage(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn record_list_job_job(
     pool: Extension<Pool>,
     axum::extract::Path(job): axum::extract::Path<String>,
@@ -7657,6 +7912,7 @@ pub async fn record_list_job_job(
     { let count = data.len() as i64; Ok(Json(ActionResult::java_success(Value::Array(data), count, 0))) }
 }
 
+#[allow(non_snake_case)]
 pub async fn record_list_job_job_paging_page_size_size(pool: Extension<Pool>,
     axum::extract::Path((job, page, size)): axum::extract::Path<(String, i64, i64)>,) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
@@ -7682,6 +7938,7 @@ pub async fn record_list_job_job_paging_page_size_size(pool: Extension<Pool>,
     { let count = data.len() as i64; Ok(Json(ActionResult::java_success(Value::Array(data), count, 0))) }
 }
 
+#[allow(non_snake_case)]
 pub async fn record_list_workorworkcompleted_workOrWorkCompleted(
     pool: Extension<Pool>,
     axum::extract::Path(workOrWorkCompleted): axum::extract::Path<String>,
@@ -7709,6 +7966,7 @@ pub async fn record_list_workorworkcompleted_workOrWorkCompleted(
     { let count = data.len() as i64; Ok(Json(ActionResult::java_success(Value::Array(data), count, 0))) }
 }
 
+#[allow(non_snake_case)]
 pub async fn record_list_workorworkcompleted_workOrWorkCompleted_paging_page_size_size(pool: Extension<Pool>,
     axum::extract::Path((workOrWorkCompleted, page, size)): axum::extract::Path<(String, i64, i64)>,) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
@@ -7734,6 +7992,7 @@ pub async fn record_list_workorworkcompleted_workOrWorkCompleted_paging_page_siz
     { let count = data.len() as i64; Ok(Json(ActionResult::java_success(Value::Array(data), count, 0))) }
 }
 
+#[allow(non_snake_case)]
 pub async fn record_id_manage(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
@@ -7760,6 +8019,7 @@ pub async fn record_id_manage(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn record_id_manage_mockdeletetoget(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
@@ -7810,6 +8070,7 @@ pub async fn record_id_manage_mockdeletetoget(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn record_id_manage_mockputtopost(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
@@ -7848,6 +8109,7 @@ pub async fn record_id_manage_mockputtopost(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn review_count_application(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -7868,6 +8130,7 @@ pub async fn review_count_application(
     ))))
 }
 
+#[allow(non_snake_case)]
 pub async fn review_count_person_credential(
     pool: Extension<Pool>,
     axum::extract::Path(credential): axum::extract::Path<String>,
@@ -7889,6 +8152,7 @@ pub async fn review_count_person_credential(
     ))))
 }
 
+#[allow(non_snake_case)]
 pub async fn review_create_work(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
@@ -7915,6 +8179,7 @@ pub async fn review_create_work(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn review_create_workcompleted(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
@@ -7941,6 +8206,7 @@ pub async fn review_create_workcompleted(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn review_filter_attribute(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
@@ -7967,6 +8233,7 @@ pub async fn review_filter_attribute(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn review_filter_create_entry(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
@@ -7993,6 +8260,7 @@ pub async fn review_filter_create_entry(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn review_filter_entry(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
@@ -8019,6 +8287,7 @@ pub async fn review_filter_entry(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn review_list_job_job(
     pool: Extension<Pool>,
     axum::extract::Path(job): axum::extract::Path<String>,
@@ -8046,6 +8315,7 @@ pub async fn review_list_job_job(
     { let count = data.len() as i64; Ok(Json(ActionResult::java_success(Value::Array(data), count, 0))) }
 }
 
+#[allow(non_snake_case)]
 pub async fn review_v2_count(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -8066,6 +8336,7 @@ pub async fn review_v2_count(
     ))))
 }
 
+#[allow(non_snake_case)]
 pub async fn review_v2_list(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -8093,6 +8364,7 @@ pub async fn review_v2_list(
     Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
 }
 
+#[allow(non_snake_case)]
 pub async fn review_v2_list_create_paging_page_size_size(pool: Extension<Pool>,
     axum::extract::Path((page, size)): axum::extract::Path<(i64, i64)>,) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
@@ -8118,6 +8390,7 @@ pub async fn review_v2_list_create_paging_page_size_size(pool: Extension<Pool>,
     { let count = data.len() as i64; Ok(Json(ActionResult::java_success(Value::Array(data), count, 0))) }
 }
 
+#[allow(non_snake_case)]
 pub async fn review_v2_list_create_id_next_count(pool: Extension<Pool>,
     axum::extract::Path((id, _count)): axum::extract::Path<(String, i64)>,) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
@@ -8143,6 +8416,7 @@ pub async fn review_v2_list_create_id_next_count(pool: Extension<Pool>,
     { let count = data.len() as i64; Ok(Json(ActionResult::java_success(Value::Array(data), count, 0))) }
 }
 
+#[allow(non_snake_case)]
 pub async fn review_v2_list_create_id_prev_count(pool: Extension<Pool>,
     axum::extract::Path((id, _count)): axum::extract::Path<(String, i64)>,) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
@@ -8168,6 +8442,7 @@ pub async fn review_v2_list_create_id_prev_count(pool: Extension<Pool>,
     { let count = data.len() as i64; Ok(Json(ActionResult::java_success(Value::Array(data), count, 0))) }
 }
 
+#[allow(non_snake_case)]
 pub async fn review_v2_list_paging_page_size_size(pool: Extension<Pool>,
     axum::extract::Path((page, size)): axum::extract::Path<(i64, i64)>,) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
@@ -8193,6 +8468,7 @@ pub async fn review_v2_list_paging_page_size_size(pool: Extension<Pool>,
     { let count = data.len() as i64; Ok(Json(ActionResult::java_success(Value::Array(data), count, 0))) }
 }
 
+#[allow(non_snake_case)]
 pub async fn review_v2_list_paging_page_size_size_manage(pool: Extension<Pool>,
     axum::extract::Path((page, _size)): axum::extract::Path<(i64, i64)>,) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
@@ -8217,6 +8493,7 @@ pub async fn review_v2_list_paging_page_size_size_manage(pool: Extension<Pool>,
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn review_v2_list_id_next_count(pool: Extension<Pool>,
     axum::extract::Path((id, _count)): axum::extract::Path<(String, i64)>,) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
@@ -8242,6 +8519,7 @@ pub async fn review_v2_list_id_next_count(pool: Extension<Pool>,
     { let count = data.len() as i64; Ok(Json(ActionResult::java_success(Value::Array(data), count, 0))) }
 }
 
+#[allow(non_snake_case)]
 pub async fn review_v2_list_id_prev_count(pool: Extension<Pool>,
     axum::extract::Path((id, _count)): axum::extract::Path<(String, i64)>,) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
@@ -8267,6 +8545,7 @@ pub async fn review_v2_list_id_prev_count(pool: Extension<Pool>,
     { let count = data.len() as i64; Ok(Json(ActionResult::java_success(Value::Array(data), count, 0))) }
 }
 
+#[allow(non_snake_case)]
 pub async fn review_v2_search(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
@@ -8293,6 +8572,7 @@ pub async fn review_v2_search(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn review_workorworkcompleted_workOrWorkCompleted(
     pool: Extension<Pool>,
     axum::extract::Path(workOrWorkCompleted): axum::extract::Path<String>,
@@ -8319,6 +8599,7 @@ pub async fn review_workorworkcompleted_workOrWorkCompleted(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn review_id(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
@@ -8345,6 +8626,7 @@ pub async fn review_id(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn review_id_application_applicationFlag_manage(pool: Extension<Pool>,
     axum::extract::Path((id, _applicationFlag)): axum::extract::Path<(String, String)>,) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
@@ -8369,6 +8651,7 @@ pub async fn review_id_application_applicationFlag_manage(pool: Extension<Pool>,
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn review_id_application_applicationFlag_manage_mockdeletetoget(pool: Extension<Pool>,
     axum::extract::Path((id, _applicationFlag)): axum::extract::Path<(String, String)>,) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
@@ -8417,6 +8700,7 @@ pub async fn review_id_application_applicationFlag_manage_mockdeletetoget(pool: 
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn route_list(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -8444,6 +8728,7 @@ pub async fn route_list(
     Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
 }
 
+#[allow(non_snake_case)]
 pub async fn route_list_mockputtopost(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
@@ -8482,6 +8767,7 @@ pub async fn route_list_mockputtopost(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn route_id(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
@@ -8508,6 +8794,7 @@ pub async fn route_id(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn route_id_selectconfig(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
@@ -8534,6 +8821,7 @@ pub async fn route_id_selectconfig(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn script_flag_application_applicationFlag(pool: Extension<Pool>,
     axum::extract::Path((flag, _applicationFlag)): axum::extract::Path<(String, String)>,) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
@@ -8558,6 +8846,7 @@ pub async fn script_flag_application_applicationFlag(pool: Extension<Pool>,
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn script_flag_application_applicationFlag_imported(pool: Extension<Pool>,
     axum::extract::Path((flag, _applicationFlag)): axum::extract::Path<(String, String)>,) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
@@ -8582,6 +8871,7 @@ pub async fn script_flag_application_applicationFlag_imported(pool: Extension<Po
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn serialnumber_generate_process_processId_name_name_serial(
     pool: Extension<Pool>,
     axum::extract::Path(processId): axum::extract::Path<String>,
@@ -8608,6 +8898,7 @@ pub async fn serialnumber_generate_process_processId_name_name_serial(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn serialnumber_list_application_applicationFlag(
     pool: Extension<Pool>,
     axum::extract::Path(applicationFlag): axum::extract::Path<String>,
@@ -8635,6 +8926,7 @@ pub async fn serialnumber_list_application_applicationFlag(
     { let count = data.len() as i64; Ok(Json(ActionResult::java_success(Value::Array(data), count, 0))) }
 }
 
+#[allow(non_snake_case)]
 pub async fn serialnumber_list_paging_page_size_size(pool: Extension<Pool>,
     axum::extract::Path((page, size)): axum::extract::Path<(i64, i64)>,) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
@@ -8660,6 +8952,7 @@ pub async fn serialnumber_list_paging_page_size_size(pool: Extension<Pool>,
     { let count = data.len() as i64; Ok(Json(ActionResult::java_success(Value::Array(data), count, 0))) }
 }
 
+#[allow(non_snake_case)]
 pub async fn serialnumber_id(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
@@ -8686,6 +8979,7 @@ pub async fn serialnumber_id(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn serialnumber_id_mockdeletetoget(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
@@ -8736,6 +9030,7 @@ pub async fn serialnumber_id_mockdeletetoget(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn serialnumber_id_mockputtopost(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
@@ -8774,6 +9069,7 @@ pub async fn serialnumber_id_mockputtopost(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn service_work_id_touch(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
@@ -8812,6 +9108,7 @@ pub async fn service_work_id_touch(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn service_work_id_touch_mockputtopost(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
@@ -8850,6 +9147,7 @@ pub async fn service_work_id_touch_mockputtopost(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn sign_download_scrawlId(
     pool: Extension<Pool>,
     axum::extract::Path(scrawlId): axum::extract::Path<String>,
@@ -8876,6 +9174,7 @@ pub async fn sign_download_scrawlId(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn sign_list_job_job(
     pool: Extension<Pool>,
     axum::extract::Path(job): axum::extract::Path<String>,
@@ -8903,6 +9202,7 @@ pub async fn sign_list_job_job(
     { let count = data.len() as i64; Ok(Json(ActionResult::java_success(Value::Array(data), count, 0))) }
 }
 
+#[allow(non_snake_case)]
 pub async fn sign_save_task_taskId(
     pool: Extension<Pool>,
     axum::extract::Path(taskId): axum::extract::Path<String>,
@@ -8929,6 +9229,7 @@ pub async fn sign_save_task_taskId(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn sign_task_taskId(
     pool: Extension<Pool>,
     axum::extract::Path(taskId): axum::extract::Path<String>,
@@ -8955,6 +9256,7 @@ pub async fn sign_task_taskId(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn sign_task_taskId_mockdeletetoget(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
@@ -9005,6 +9307,7 @@ pub async fn sign_task_taskId_mockdeletetoget(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn sign_id(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
@@ -9031,6 +9334,7 @@ pub async fn sign_id(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn sign_id_mockdeletetoget(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
@@ -9081,6 +9385,7 @@ pub async fn sign_id_mockdeletetoget(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn task_count_filter(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -9101,6 +9406,7 @@ pub async fn task_count_filter(
     ))))
 }
 
+#[allow(non_snake_case)]
 pub async fn task_count_credential(
     pool: Extension<Pool>,
     axum::extract::Path(credential): axum::extract::Path<String>,
@@ -9122,6 +9428,7 @@ pub async fn task_count_credential(
     ))))
 }
 
+#[allow(non_snake_case)]
 pub async fn task_filter_attribute(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
@@ -9148,6 +9455,7 @@ pub async fn task_filter_attribute(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn task_filter_attribute_filter(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
@@ -9174,6 +9482,7 @@ pub async fn task_filter_attribute_filter(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn task_list_count_application(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -9190,6 +9499,7 @@ pub async fn task_list_count_application(
     Ok(Json(ActionResult::java_success(Value::Array(vec![]), count, 0)))
 }
 
+#[allow(non_snake_case)]
 pub async fn task_list_count_application_applicationFlag_process(
     pool: Extension<Pool>,
     axum::extract::Path(applicationFlag): axum::extract::Path<String>,
@@ -9228,6 +9538,7 @@ pub async fn task_list_count_application_applicationFlag_process(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn task_list_date_date_hour_hour_exclude_draft_isExcludeDraft_manage(
     pool: Extension<Pool>,
     axum::extract::Path(date): axum::extract::Path<String>,
@@ -9254,6 +9565,7 @@ pub async fn task_list_date_date_hour_hour_exclude_draft_isExcludeDraft_manage(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn task_list_filter_page_size_size_manage(pool: Extension<Pool>,
     axum::extract::Path((page, _size)): axum::extract::Path<(i64, i64)>,) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
@@ -9278,6 +9590,7 @@ pub async fn task_list_filter_page_size_size_manage(pool: Extension<Pool>,
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn task_list_job_job(
     pool: Extension<Pool>,
     axum::extract::Path(job): axum::extract::Path<String>,
@@ -9305,6 +9618,7 @@ pub async fn task_list_job_job(
     { let count = data.len() as i64; Ok(Json(ActionResult::java_success(Value::Array(data), count, 0))) }
 }
 
+#[allow(non_snake_case)]
 pub async fn task_list_my_filter_page_size_size(pool: Extension<Pool>,
     axum::extract::Path((page, size)): axum::extract::Path<(i64, i64)>,) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
@@ -9330,6 +9644,7 @@ pub async fn task_list_my_filter_page_size_size(pool: Extension<Pool>,
     { let count = data.len() as i64; Ok(Json(ActionResult::java_success(Value::Array(data), count, 0))) }
 }
 
+#[allow(non_snake_case)]
 pub async fn task_list_my_paging_page_size_size(pool: Extension<Pool>,
     axum::extract::Path((page, size)): axum::extract::Path<(i64, i64)>,) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
@@ -9355,6 +9670,7 @@ pub async fn task_list_my_paging_page_size_size(pool: Extension<Pool>,
     { let count = data.len() as i64; Ok(Json(ActionResult::java_success(Value::Array(data), count, 0))) }
 }
 
+#[allow(non_snake_case)]
 pub async fn task_list_person_person_exclude_draft_isExcludeDraft_manage(
     pool: Extension<Pool>,
     axum::extract::Path(person): axum::extract::Path<String>,
@@ -9381,6 +9697,7 @@ pub async fn task_list_person_person_exclude_draft_isExcludeDraft_manage(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn task_list_work_work(
     pool: Extension<Pool>,
     axum::extract::Path(work): axum::extract::Path<String>,
@@ -9408,6 +9725,7 @@ pub async fn task_list_work_work(
     { let count = data.len() as i64; Ok(Json(ActionResult::java_success(Value::Array(data), count, 0))) }
 }
 
+#[allow(non_snake_case)]
 pub async fn task_list_id_next_count(pool: Extension<Pool>,
     axum::extract::Path((id, _count)): axum::extract::Path<(String, i64)>,) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
@@ -9433,6 +9751,7 @@ pub async fn task_list_id_next_count(pool: Extension<Pool>,
     { let count = data.len() as i64; Ok(Json(ActionResult::java_success(Value::Array(data), count, 0))) }
 }
 
+#[allow(non_snake_case)]
 pub async fn task_list_id_next_count_application_applicationFlag(pool: Extension<Pool>,
     axum::extract::Path((id, _count, applicationFlag)): axum::extract::Path<(String, i64, String)>,) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
@@ -9458,6 +9777,7 @@ pub async fn task_list_id_next_count_application_applicationFlag(pool: Extension
     { let count = data.len() as i64; Ok(Json(ActionResult::java_success(Value::Array(data), count, 0))) }
 }
 
+#[allow(non_snake_case)]
 pub async fn task_list_id_next_count_filter(pool: Extension<Pool>,
     axum::extract::Path((id, _count)): axum::extract::Path<(String, i64)>,) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
@@ -9483,6 +9803,7 @@ pub async fn task_list_id_next_count_filter(pool: Extension<Pool>,
     { let count = data.len() as i64; Ok(Json(ActionResult::java_success(Value::Array(data), count, 0))) }
 }
 
+#[allow(non_snake_case)]
 pub async fn task_list_id_next_count_filter_manage(pool: Extension<Pool>,
     axum::extract::Path((id, _count)): axum::extract::Path<(String, i64)>,) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
@@ -9507,6 +9828,7 @@ pub async fn task_list_id_next_count_filter_manage(pool: Extension<Pool>,
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn task_list_id_next_count_manage(pool: Extension<Pool>,
     axum::extract::Path((id, _count)): axum::extract::Path<(String, i64)>,) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
@@ -9531,6 +9853,7 @@ pub async fn task_list_id_next_count_manage(pool: Extension<Pool>,
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn task_list_id_next_count_process_processFlag(pool: Extension<Pool>,
     axum::extract::Path((id, _count, processFlag)): axum::extract::Path<(String, i64, String)>,) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
@@ -9556,6 +9879,7 @@ pub async fn task_list_id_next_count_process_processFlag(pool: Extension<Pool>,
     { let count = data.len() as i64; Ok(Json(ActionResult::java_success(Value::Array(data), count, 0))) }
 }
 
+#[allow(non_snake_case)]
 pub async fn task_list_id_prev_count(pool: Extension<Pool>,
     axum::extract::Path((id, _count)): axum::extract::Path<(String, i64)>,) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
@@ -9581,6 +9905,7 @@ pub async fn task_list_id_prev_count(pool: Extension<Pool>,
     { let count = data.len() as i64; Ok(Json(ActionResult::java_success(Value::Array(data), count, 0))) }
 }
 
+#[allow(non_snake_case)]
 pub async fn task_list_id_prev_count_application_applicationFlag(pool: Extension<Pool>,
     axum::extract::Path((id, _count, applicationFlag)): axum::extract::Path<(String, i64, String)>,) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
@@ -9606,6 +9931,7 @@ pub async fn task_list_id_prev_count_application_applicationFlag(pool: Extension
     { let count = data.len() as i64; Ok(Json(ActionResult::java_success(Value::Array(data), count, 0))) }
 }
 
+#[allow(non_snake_case)]
 pub async fn task_list_id_prev_count_filter(pool: Extension<Pool>,
     axum::extract::Path((id, _count)): axum::extract::Path<(String, i64)>,) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
@@ -9631,6 +9957,7 @@ pub async fn task_list_id_prev_count_filter(pool: Extension<Pool>,
     { let count = data.len() as i64; Ok(Json(ActionResult::java_success(Value::Array(data), count, 0))) }
 }
 
+#[allow(non_snake_case)]
 pub async fn task_list_id_prev_count_filter_manage(pool: Extension<Pool>,
     axum::extract::Path((id, _count)): axum::extract::Path<(String, i64)>,) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
@@ -9655,6 +9982,7 @@ pub async fn task_list_id_prev_count_filter_manage(pool: Extension<Pool>,
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn task_list_id_prev_count_manage(pool: Extension<Pool>,
     axum::extract::Path((id, _count)): axum::extract::Path<(String, i64)>,) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
@@ -9679,6 +10007,7 @@ pub async fn task_list_id_prev_count_manage(pool: Extension<Pool>,
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn task_list_id_prev_count_process_processFlag(pool: Extension<Pool>,
     axum::extract::Path((id, _count, processFlag)): axum::extract::Path<(String, i64, String)>,) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
@@ -9704,6 +10033,7 @@ pub async fn task_list_id_prev_count_process_processFlag(pool: Extension<Pool>,
     { let count = data.len() as i64; Ok(Json(ActionResult::java_success(Value::Array(data), count, 0))) }
 }
 
+#[allow(non_snake_case)]
 pub async fn task_v2_count(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -9724,6 +10054,7 @@ pub async fn task_v2_count(
     ))))
 }
 
+#[allow(non_snake_case)]
 pub async fn task_v2_list(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -9751,6 +10082,7 @@ pub async fn task_v2_list(
     Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
 }
 
+#[allow(non_snake_case)]
 pub async fn task_v2_list_create_paging_page_size_size(pool: Extension<Pool>,
     axum::extract::Path((page, size)): axum::extract::Path<(i64, i64)>,) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
@@ -9776,6 +10108,7 @@ pub async fn task_v2_list_create_paging_page_size_size(pool: Extension<Pool>,
     { let count = data.len() as i64; Ok(Json(ActionResult::java_success(Value::Array(data), count, 0))) }
 }
 
+#[allow(non_snake_case)]
 pub async fn task_v2_list_create_id_next_count(pool: Extension<Pool>,
     axum::extract::Path((id, _count)): axum::extract::Path<(String, i64)>,) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
@@ -9801,6 +10134,7 @@ pub async fn task_v2_list_create_id_next_count(pool: Extension<Pool>,
     { let count = data.len() as i64; Ok(Json(ActionResult::java_success(Value::Array(data), count, 0))) }
 }
 
+#[allow(non_snake_case)]
 pub async fn task_v2_list_create_id_prev_count(pool: Extension<Pool>,
     axum::extract::Path((id, _count)): axum::extract::Path<(String, i64)>,) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
@@ -9826,6 +10160,7 @@ pub async fn task_v2_list_create_id_prev_count(pool: Extension<Pool>,
     { let count = data.len() as i64; Ok(Json(ActionResult::java_success(Value::Array(data), count, 0))) }
 }
 
+#[allow(non_snake_case)]
 pub async fn task_v2_list_paging_page_size_size(pool: Extension<Pool>,
     axum::extract::Path((page, size)): axum::extract::Path<(i64, i64)>,) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
@@ -9851,6 +10186,7 @@ pub async fn task_v2_list_paging_page_size_size(pool: Extension<Pool>,
     { let count = data.len() as i64; Ok(Json(ActionResult::java_success(Value::Array(data), count, 0))) }
 }
 
+#[allow(non_snake_case)]
 pub async fn task_v2_list_id_next_count(pool: Extension<Pool>,
     axum::extract::Path((id, _count)): axum::extract::Path<(String, i64)>,) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
@@ -9876,6 +10212,7 @@ pub async fn task_v2_list_id_next_count(pool: Extension<Pool>,
     { let count = data.len() as i64; Ok(Json(ActionResult::java_success(Value::Array(data), count, 0))) }
 }
 
+#[allow(non_snake_case)]
 pub async fn task_v2_list_id_prev_count(pool: Extension<Pool>,
     axum::extract::Path((id, _count)): axum::extract::Path<(String, i64)>,) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
@@ -9901,6 +10238,7 @@ pub async fn task_v2_list_id_prev_count(pool: Extension<Pool>,
     { let count = data.len() as i64; Ok(Json(ActionResult::java_success(Value::Array(data), count, 0))) }
 }
 
+#[allow(non_snake_case)]
 pub async fn task_v2_id_pause(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
@@ -9927,6 +10265,7 @@ pub async fn task_v2_id_pause(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn task_v2_id_reset(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
@@ -9965,6 +10304,7 @@ pub async fn task_v2_id_reset(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn task_v2_id_reset_mockputtopost(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
@@ -10003,6 +10343,7 @@ pub async fn task_v2_id_reset_mockputtopost(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn task_v2_id_resume(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
@@ -10029,6 +10370,7 @@ pub async fn task_v2_id_resume(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn task_v2_id_trigger_processing(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
@@ -10055,6 +10397,7 @@ pub async fn task_v2_id_trigger_processing(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn task_v3_id_add(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
@@ -10081,6 +10424,7 @@ pub async fn task_v3_id_add(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn task_v3_id_pin(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
@@ -10107,6 +10451,7 @@ pub async fn task_v3_id_pin(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn task_id(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
@@ -10133,6 +10478,7 @@ pub async fn task_id(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn task_id_manage(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
@@ -10159,6 +10505,7 @@ pub async fn task_id_manage(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn task_id_manage_mockdeletetoget(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
@@ -10209,6 +10556,7 @@ pub async fn task_id_manage_mockdeletetoget(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn task_id_mockputtopost(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
@@ -10247,6 +10595,7 @@ pub async fn task_id_mockputtopost(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn task_id_opinion_manage(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
@@ -10273,6 +10622,7 @@ pub async fn task_id_opinion_manage(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn task_id_opinion_manage_mockputtopost(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
@@ -10311,6 +10661,7 @@ pub async fn task_id_opinion_manage_mockputtopost(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn task_id_press_manage(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
@@ -10337,6 +10688,7 @@ pub async fn task_id_press_manage(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn task_id_processing(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
@@ -10363,6 +10715,7 @@ pub async fn task_id_processing(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn task_id_processing_manage(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
@@ -10389,6 +10742,7 @@ pub async fn task_id_processing_manage(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn task_id_processing_manage_mockputtopost(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
@@ -10427,6 +10781,7 @@ pub async fn task_id_processing_manage_mockputtopost(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn task_id_processing_neural(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
@@ -10453,6 +10808,7 @@ pub async fn task_id_processing_neural(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn task_id_reference(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
@@ -10479,6 +10835,7 @@ pub async fn task_id_reference(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn task_id_reset_manage(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
@@ -10505,6 +10862,7 @@ pub async fn task_id_reset_manage(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn task_id_reset_manage_mockputtopost(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
@@ -10543,6 +10901,7 @@ pub async fn task_id_reset_manage_mockputtopost(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn task_id_will(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
@@ -10569,6 +10928,7 @@ pub async fn task_id_will(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn taskcompleted_count_credential(
     pool: Extension<Pool>,
     axum::extract::Path(credential): axum::extract::Path<String>,
@@ -10590,6 +10950,7 @@ pub async fn taskcompleted_count_credential(
     ))))
 }
 
+#[allow(non_snake_case)]
 pub async fn taskcompleted_filter_attribute(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
@@ -10616,6 +10977,7 @@ pub async fn taskcompleted_filter_attribute(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn taskcompleted_filter_attribute_filter(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
@@ -10642,6 +11004,7 @@ pub async fn taskcompleted_filter_attribute_filter(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn taskcompleted_list_count_application(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -10658,6 +11021,7 @@ pub async fn taskcompleted_list_count_application(
     Ok(Json(ActionResult::java_success(Value::Array(vec![]), count, 0)))
 }
 
+#[allow(non_snake_case)]
 pub async fn taskcompleted_list_count_application_applicationFlag_process(
     pool: Extension<Pool>,
     axum::extract::Path(applicationFlag): axum::extract::Path<String>,
@@ -10696,6 +11060,7 @@ pub async fn taskcompleted_list_count_application_applicationFlag_process(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn taskcompleted_list_date_date_hour_hour_manage(pool: Extension<Pool>,
     axum::extract::Path((date, _hour)): axum::extract::Path<(String, String)>,) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
@@ -10720,6 +11085,7 @@ pub async fn taskcompleted_list_date_date_hour_hour_manage(pool: Extension<Pool>
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn taskcompleted_list_filter_page_size_size_manage(pool: Extension<Pool>,
     axum::extract::Path((page, _size)): axum::extract::Path<(i64, i64)>,) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
@@ -10744,6 +11110,7 @@ pub async fn taskcompleted_list_filter_page_size_size_manage(pool: Extension<Poo
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn taskcompleted_list_job_job(
     pool: Extension<Pool>,
     axum::extract::Path(job): axum::extract::Path<String>,
@@ -10771,6 +11138,7 @@ pub async fn taskcompleted_list_job_job(
     { let count = data.len() as i64; Ok(Json(ActionResult::java_success(Value::Array(data), count, 0))) }
 }
 
+#[allow(non_snake_case)]
 pub async fn taskcompleted_list_my_filter_page_size_size(pool: Extension<Pool>,
     axum::extract::Path((page, size)): axum::extract::Path<(i64, i64)>,) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
@@ -10796,6 +11164,7 @@ pub async fn taskcompleted_list_my_filter_page_size_size(pool: Extension<Pool>,
     { let count = data.len() as i64; Ok(Json(ActionResult::java_success(Value::Array(data), count, 0))) }
 }
 
+#[allow(non_snake_case)]
 pub async fn taskcompleted_list_my_paging_page_size_size(pool: Extension<Pool>,
     axum::extract::Path((page, size)): axum::extract::Path<(i64, i64)>,) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
@@ -10821,6 +11190,7 @@ pub async fn taskcompleted_list_my_paging_page_size_size(pool: Extension<Pool>,
     { let count = data.len() as i64; Ok(Json(ActionResult::java_success(Value::Array(data), count, 0))) }
 }
 
+#[allow(non_snake_case)]
 pub async fn taskcompleted_list_prev_manual_flag(
     pool: Extension<Pool>,
     axum::extract::Path(flag): axum::extract::Path<String>,
@@ -10848,6 +11218,7 @@ pub async fn taskcompleted_list_prev_manual_flag(
     { let count = data.len() as i64; Ok(Json(ActionResult::java_success(Value::Array(data), count, 0))) }
 }
 
+#[allow(non_snake_case)]
 pub async fn taskcompleted_list_work_work(
     pool: Extension<Pool>,
     axum::extract::Path(work): axum::extract::Path<String>,
@@ -10875,6 +11246,7 @@ pub async fn taskcompleted_list_work_work(
     { let count = data.len() as i64; Ok(Json(ActionResult::java_success(Value::Array(data), count, 0))) }
 }
 
+#[allow(non_snake_case)]
 pub async fn taskcompleted_list_workorworkcompleted_workOrWorkCompleted(
     pool: Extension<Pool>,
     axum::extract::Path(workOrWorkCompleted): axum::extract::Path<String>,
@@ -10902,6 +11274,7 @@ pub async fn taskcompleted_list_workorworkcompleted_workOrWorkCompleted(
     { let count = data.len() as i64; Ok(Json(ActionResult::java_success(Value::Array(data), count, 0))) }
 }
 
+#[allow(non_snake_case)]
 pub async fn taskcompleted_list_id_next_count(pool: Extension<Pool>,
     axum::extract::Path((id, _count)): axum::extract::Path<(String, i64)>,) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
@@ -10927,6 +11300,7 @@ pub async fn taskcompleted_list_id_next_count(pool: Extension<Pool>,
     { let count = data.len() as i64; Ok(Json(ActionResult::java_success(Value::Array(data), count, 0))) }
 }
 
+#[allow(non_snake_case)]
 pub async fn taskcompleted_list_id_next_count_application_applicationFlag(pool: Extension<Pool>,
     axum::extract::Path((id, _count, applicationFlag)): axum::extract::Path<(String, i64, String)>,) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
@@ -10952,6 +11326,7 @@ pub async fn taskcompleted_list_id_next_count_application_applicationFlag(pool: 
     { let count = data.len() as i64; Ok(Json(ActionResult::java_success(Value::Array(data), count, 0))) }
 }
 
+#[allow(non_snake_case)]
 pub async fn taskcompleted_list_id_next_count_filter(pool: Extension<Pool>,
     axum::extract::Path((id, _count)): axum::extract::Path<(String, i64)>,) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
@@ -10977,6 +11352,7 @@ pub async fn taskcompleted_list_id_next_count_filter(pool: Extension<Pool>,
     { let count = data.len() as i64; Ok(Json(ActionResult::java_success(Value::Array(data), count, 0))) }
 }
 
+#[allow(non_snake_case)]
 pub async fn taskcompleted_list_id_next_count_process_processFlag(pool: Extension<Pool>,
     axum::extract::Path((id, _count, processFlag)): axum::extract::Path<(String, i64, String)>,) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
@@ -11002,6 +11378,7 @@ pub async fn taskcompleted_list_id_next_count_process_processFlag(pool: Extensio
     { let count = data.len() as i64; Ok(Json(ActionResult::java_success(Value::Array(data), count, 0))) }
 }
 
+#[allow(non_snake_case)]
 pub async fn taskcompleted_list_id_prev_count(pool: Extension<Pool>,
     axum::extract::Path((id, _count)): axum::extract::Path<(String, i64)>,) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
@@ -11027,6 +11404,7 @@ pub async fn taskcompleted_list_id_prev_count(pool: Extension<Pool>,
     { let count = data.len() as i64; Ok(Json(ActionResult::java_success(Value::Array(data), count, 0))) }
 }
 
+#[allow(non_snake_case)]
 pub async fn taskcompleted_list_id_prev_count_application_applicationFlag(pool: Extension<Pool>,
     axum::extract::Path((id, _count, applicationFlag)): axum::extract::Path<(String, i64, String)>,) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
@@ -11052,6 +11430,7 @@ pub async fn taskcompleted_list_id_prev_count_application_applicationFlag(pool: 
     { let count = data.len() as i64; Ok(Json(ActionResult::java_success(Value::Array(data), count, 0))) }
 }
 
+#[allow(non_snake_case)]
 pub async fn taskcompleted_list_id_prev_count_filter(pool: Extension<Pool>,
     axum::extract::Path((id, _count)): axum::extract::Path<(String, i64)>,) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
@@ -11077,6 +11456,7 @@ pub async fn taskcompleted_list_id_prev_count_filter(pool: Extension<Pool>,
     { let count = data.len() as i64; Ok(Json(ActionResult::java_success(Value::Array(data), count, 0))) }
 }
 
+#[allow(non_snake_case)]
 pub async fn taskcompleted_list_id_prev_count_process_processFlag(pool: Extension<Pool>,
     axum::extract::Path((id, _count, processFlag)): axum::extract::Path<(String, i64, String)>,) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
@@ -11102,6 +11482,7 @@ pub async fn taskcompleted_list_id_prev_count_process_processFlag(pool: Extensio
     { let count = data.len() as i64; Ok(Json(ActionResult::java_success(Value::Array(data), count, 0))) }
 }
 
+#[allow(non_snake_case)]
 pub async fn taskcompleted_press_work_work(
     pool: Extension<Pool>,
     axum::extract::Path(work): axum::extract::Path<String>,
@@ -11128,6 +11509,7 @@ pub async fn taskcompleted_press_work_work(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn taskcompleted_v2_count(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -11148,6 +11530,7 @@ pub async fn taskcompleted_v2_count(
     ))))
 }
 
+#[allow(non_snake_case)]
 pub async fn taskcompleted_v2_list(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -11175,6 +11558,7 @@ pub async fn taskcompleted_v2_list(
     Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
 }
 
+#[allow(non_snake_case)]
 pub async fn taskcompleted_v2_list_create_paging_page_size_size(pool: Extension<Pool>,
     axum::extract::Path((page, size)): axum::extract::Path<(i64, i64)>,) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
@@ -11200,6 +11584,7 @@ pub async fn taskcompleted_v2_list_create_paging_page_size_size(pool: Extension<
     { let count = data.len() as i64; Ok(Json(ActionResult::java_success(Value::Array(data), count, 0))) }
 }
 
+#[allow(non_snake_case)]
 pub async fn taskcompleted_v2_list_create_id_next_count(pool: Extension<Pool>,
     axum::extract::Path((id, _count)): axum::extract::Path<(String, i64)>,) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
@@ -11225,6 +11610,7 @@ pub async fn taskcompleted_v2_list_create_id_next_count(pool: Extension<Pool>,
     { let count = data.len() as i64; Ok(Json(ActionResult::java_success(Value::Array(data), count, 0))) }
 }
 
+#[allow(non_snake_case)]
 pub async fn taskcompleted_v2_list_create_id_prev_count(pool: Extension<Pool>,
     axum::extract::Path((id, _count)): axum::extract::Path<(String, i64)>,) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
@@ -11250,6 +11636,7 @@ pub async fn taskcompleted_v2_list_create_id_prev_count(pool: Extension<Pool>,
     { let count = data.len() as i64; Ok(Json(ActionResult::java_success(Value::Array(data), count, 0))) }
 }
 
+#[allow(non_snake_case)]
 pub async fn taskcompleted_v2_list_paging_page_size_size(pool: Extension<Pool>,
     axum::extract::Path((page, size)): axum::extract::Path<(i64, i64)>,) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
@@ -11275,6 +11662,7 @@ pub async fn taskcompleted_v2_list_paging_page_size_size(pool: Extension<Pool>,
     { let count = data.len() as i64; Ok(Json(ActionResult::java_success(Value::Array(data), count, 0))) }
 }
 
+#[allow(non_snake_case)]
 pub async fn taskcompleted_v2_list_id_next_count(pool: Extension<Pool>,
     axum::extract::Path((id, _count)): axum::extract::Path<(String, i64)>,) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
@@ -11300,6 +11688,7 @@ pub async fn taskcompleted_v2_list_id_next_count(pool: Extension<Pool>,
     { let count = data.len() as i64; Ok(Json(ActionResult::java_success(Value::Array(data), count, 0))) }
 }
 
+#[allow(non_snake_case)]
 pub async fn taskcompleted_v2_list_id_prev_count(pool: Extension<Pool>,
     axum::extract::Path((id, _count)): axum::extract::Path<(String, i64)>,) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
@@ -11325,6 +11714,7 @@ pub async fn taskcompleted_v2_list_id_prev_count(pool: Extension<Pool>,
     { let count = data.len() as i64; Ok(Json(ActionResult::java_success(Value::Array(data), count, 0))) }
 }
 
+#[allow(non_snake_case)]
 pub async fn taskcompleted_id(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
@@ -11351,6 +11741,7 @@ pub async fn taskcompleted_id(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn taskcompleted_id_manage(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
@@ -11377,6 +11768,7 @@ pub async fn taskcompleted_id_manage(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn taskcompleted_id_manage_mockdeletetoget(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
@@ -11427,6 +11819,7 @@ pub async fn taskcompleted_id_manage_mockdeletetoget(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn taskcompleted_id_opinion_manage(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
@@ -11453,6 +11846,7 @@ pub async fn taskcompleted_id_opinion_manage(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn taskcompleted_id_opinion_manage_mockputtopost(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
@@ -11491,6 +11885,7 @@ pub async fn taskcompleted_id_opinion_manage_mockputtopost(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn taskcompleted_id_reference(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
@@ -11517,6 +11912,7 @@ pub async fn taskcompleted_id_reference(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn taskcompleted_id_reference_control(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
@@ -11543,6 +11939,7 @@ pub async fn taskcompleted_id_reference_control(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn touch_expire(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -11562,6 +11959,7 @@ pub async fn touch_expire(
     ))))
 }
 
+#[allow(non_snake_case)]
 pub async fn touch_passexpired(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -11581,6 +11979,7 @@ pub async fn touch_passexpired(
     ))))
 }
 
+#[allow(non_snake_case)]
 pub async fn touch_touchdetained(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -11600,6 +11999,7 @@ pub async fn touch_touchdetained(
     ))))
 }
 
+#[allow(non_snake_case)]
 pub async fn work_application_applicationFlag_process_processFlag(pool: Extension<Pool>,
     axum::extract::Path((applicationFlag, _processFlag)): axum::extract::Path<(String, String)>,) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
@@ -11624,6 +12024,7 @@ pub async fn work_application_applicationFlag_process_processFlag(pool: Extensio
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn work_count_credential(
     pool: Extension<Pool>,
     axum::extract::Path(credential): axum::extract::Path<String>,
@@ -11645,6 +12046,7 @@ pub async fn work_count_credential(
     ))))
 }
 
+#[allow(non_snake_case)]
 pub async fn work_count_credential_application_appId(
     pool: Extension<Pool>,
     axum::extract::Path(credential): axum::extract::Path<String>,
@@ -11666,6 +12068,7 @@ pub async fn work_count_credential_application_appId(
     ))))
 }
 
+#[allow(non_snake_case)]
 pub async fn work_count_credential_application_appId_u2(
     pool: Extension<Pool>,
     axum::extract::Path((credential, app_id)): axum::extract::Path<(String, String)>,
@@ -11687,6 +12090,7 @@ pub async fn work_count_credential_application_appId_u2(
     ))))
 }
 
+#[allow(non_snake_case)]
 pub async fn work_filter_attribute_application_applicationFlag(
     pool: Extension<Pool>,
     axum::extract::Path(applicationFlag): axum::extract::Path<String>,
@@ -11713,6 +12117,7 @@ pub async fn work_filter_attribute_application_applicationFlag(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn work_filter_attribute_application_applicationFlag_manage(
     pool: Extension<Pool>,
     axum::extract::Path(applicationFlag): axum::extract::Path<String>,
@@ -11739,6 +12144,7 @@ pub async fn work_filter_attribute_application_applicationFlag_manage(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn work_list_count_application(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -11755,6 +12161,7 @@ pub async fn work_list_count_application(
     Ok(Json(ActionResult::java_success(Value::Array(vec![]), count, 0)))
 }
 
+#[allow(non_snake_case)]
 pub async fn work_list_count_application_applicationFlag_process(
     pool: Extension<Pool>,
     axum::extract::Path(applicationFlag): axum::extract::Path<String>,
@@ -11793,6 +12200,7 @@ pub async fn work_list_count_application_applicationFlag_process(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn work_list_count_application_applicationFlag_process_manage(
     pool: Extension<Pool>,
     axum::extract::Path(applicationFlag): axum::extract::Path<String>,
@@ -11819,6 +12227,7 @@ pub async fn work_list_count_application_applicationFlag_process_manage(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn work_list_filter_page_size_size_manage(pool: Extension<Pool>,
     axum::extract::Path((page, _size)): axum::extract::Path<(i64, i64)>,) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
@@ -11843,6 +12252,7 @@ pub async fn work_list_filter_page_size_size_manage(pool: Extension<Pool>,
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn work_list_my_paging_page_size_size(pool: Extension<Pool>,
     axum::extract::Path((page, size)): axum::extract::Path<(i64, i64)>,) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
@@ -11868,6 +12278,7 @@ pub async fn work_list_my_paging_page_size_size(pool: Extension<Pool>,
     { let count = data.len() as i64; Ok(Json(ActionResult::java_success(Value::Array(data), count, 0))) }
 }
 
+#[allow(non_snake_case)]
 pub async fn work_list_paging_page_size_size_application_applicationFlag_filter_manage(pool: Extension<Pool>,
     axum::extract::Path((page, _size, _applicationFlag)): axum::extract::Path<(i64, i64, String)>,) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
@@ -11892,6 +12303,7 @@ pub async fn work_list_paging_page_size_size_application_applicationFlag_filter_
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn work_list_id_next_count_application_applicationFlag(pool: Extension<Pool>,
     axum::extract::Path((id, _count, applicationFlag)): axum::extract::Path<(String, i64, String)>,) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
@@ -11917,6 +12329,7 @@ pub async fn work_list_id_next_count_application_applicationFlag(pool: Extension
     { let count = data.len() as i64; Ok(Json(ActionResult::java_success(Value::Array(data), count, 0))) }
 }
 
+#[allow(non_snake_case)]
 pub async fn work_list_id_next_count_application_applicationFlag_filter(pool: Extension<Pool>,
     axum::extract::Path((id, _count, applicationFlag)): axum::extract::Path<(String, i64, String)>,) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
@@ -11942,6 +12355,7 @@ pub async fn work_list_id_next_count_application_applicationFlag_filter(pool: Ex
     { let count = data.len() as i64; Ok(Json(ActionResult::java_success(Value::Array(data), count, 0))) }
 }
 
+#[allow(non_snake_case)]
 pub async fn work_list_id_next_count_application_applicationFlag_filter_manage(pool: Extension<Pool>,
     axum::extract::Path((id, _count, _applicationFlag)): axum::extract::Path<(String, i64, String)>,) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
@@ -11966,6 +12380,7 @@ pub async fn work_list_id_next_count_application_applicationFlag_filter_manage(p
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn work_list_id_next_count_application_applicationFlag_manage(pool: Extension<Pool>,
     axum::extract::Path((id, _count, _applicationFlag)): axum::extract::Path<(String, i64, String)>,) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
@@ -11990,6 +12405,7 @@ pub async fn work_list_id_next_count_application_applicationFlag_manage(pool: Ex
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn work_list_id_next_count_creator_current(pool: Extension<Pool>,
     axum::extract::Path((id, _count)): axum::extract::Path<(String, i64)>,) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
@@ -12015,6 +12431,7 @@ pub async fn work_list_id_next_count_creator_current(pool: Extension<Pool>,
     { let count = data.len() as i64; Ok(Json(ActionResult::java_success(Value::Array(data), count, 0))) }
 }
 
+#[allow(non_snake_case)]
 pub async fn work_list_id_next_count_creator_current_filter(pool: Extension<Pool>,
     axum::extract::Path((id, _count)): axum::extract::Path<(String, i64)>,) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
@@ -12040,6 +12457,7 @@ pub async fn work_list_id_next_count_creator_current_filter(pool: Extension<Pool
     { let count = data.len() as i64; Ok(Json(ActionResult::java_success(Value::Array(data), count, 0))) }
 }
 
+#[allow(non_snake_case)]
 pub async fn work_list_id_next_count_process_processFlag(pool: Extension<Pool>,
     axum::extract::Path((id, _count, processFlag)): axum::extract::Path<(String, i64, String)>,) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
@@ -12065,6 +12483,7 @@ pub async fn work_list_id_next_count_process_processFlag(pool: Extension<Pool>,
     { let count = data.len() as i64; Ok(Json(ActionResult::java_success(Value::Array(data), count, 0))) }
 }
 
+#[allow(non_snake_case)]
 pub async fn work_list_id_prev_count_application_applicationFlag(pool: Extension<Pool>,
     axum::extract::Path((id, _count, applicationFlag)): axum::extract::Path<(String, i64, String)>,) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
@@ -12090,6 +12509,7 @@ pub async fn work_list_id_prev_count_application_applicationFlag(pool: Extension
     { let count = data.len() as i64; Ok(Json(ActionResult::java_success(Value::Array(data), count, 0))) }
 }
 
+#[allow(non_snake_case)]
 pub async fn work_list_id_prev_count_application_applicationFlag_filter(pool: Extension<Pool>,
     axum::extract::Path((id, _count, applicationFlag)): axum::extract::Path<(String, i64, String)>,) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
@@ -12115,6 +12535,7 @@ pub async fn work_list_id_prev_count_application_applicationFlag_filter(pool: Ex
     { let count = data.len() as i64; Ok(Json(ActionResult::java_success(Value::Array(data), count, 0))) }
 }
 
+#[allow(non_snake_case)]
 pub async fn work_list_id_prev_count_application_applicationFlag_filter_manage(pool: Extension<Pool>,
     axum::extract::Path((id, _count, _applicationFlag)): axum::extract::Path<(String, i64, String)>,) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
@@ -12139,6 +12560,7 @@ pub async fn work_list_id_prev_count_application_applicationFlag_filter_manage(p
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn work_list_id_prev_count_application_applicationFlag_manage(pool: Extension<Pool>,
     axum::extract::Path((id, _count, _applicationFlag)): axum::extract::Path<(String, i64, String)>,) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
@@ -12163,6 +12585,7 @@ pub async fn work_list_id_prev_count_application_applicationFlag_manage(pool: Ex
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn work_list_id_prev_count_creator_current(pool: Extension<Pool>,
     axum::extract::Path((id, _count)): axum::extract::Path<(String, i64)>,) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
@@ -12188,6 +12611,7 @@ pub async fn work_list_id_prev_count_creator_current(pool: Extension<Pool>,
     { let count = data.len() as i64; Ok(Json(ActionResult::java_success(Value::Array(data), count, 0))) }
 }
 
+#[allow(non_snake_case)]
 pub async fn work_list_id_prev_count_creator_current_filter(pool: Extension<Pool>,
     axum::extract::Path((id, _count)): axum::extract::Path<(String, i64)>,) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
@@ -12213,6 +12637,7 @@ pub async fn work_list_id_prev_count_creator_current_filter(pool: Extension<Pool
     { let count = data.len() as i64; Ok(Json(ActionResult::java_success(Value::Array(data), count, 0))) }
 }
 
+#[allow(non_snake_case)]
 pub async fn work_list_id_prev_count_process_processFlag(pool: Extension<Pool>,
     axum::extract::Path((id, _count, processFlag)): axum::extract::Path<(String, i64, String)>,) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
@@ -12238,6 +12663,7 @@ pub async fn work_list_id_prev_count_process_processFlag(pool: Extension<Pool>,
     { let count = data.len() as i64; Ok(Json(ActionResult::java_success(Value::Array(data), count, 0))) }
 }
 
+#[allow(non_snake_case)]
 pub async fn work_process_processFlag(
     pool: Extension<Pool>,
     axum::extract::Path(processFlag): axum::extract::Path<String>,
@@ -12264,6 +12690,7 @@ pub async fn work_process_processFlag(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn work_process_processFlag_force(
     pool: Extension<Pool>,
     axum::extract::Path(processFlag): axum::extract::Path<String>,
@@ -12290,6 +12717,7 @@ pub async fn work_process_processFlag_force(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn work_v2_list(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -12317,6 +12745,7 @@ pub async fn work_v2_list(
     Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
 }
 
+#[allow(non_snake_case)]
 pub async fn work_v2_list_paging_page_size_size(pool: Extension<Pool>,
     axum::extract::Path((page, size)): axum::extract::Path<(i64, i64)>,) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
@@ -12342,6 +12771,7 @@ pub async fn work_v2_list_paging_page_size_size(pool: Extension<Pool>,
     { let count = data.len() as i64; Ok(Json(ActionResult::java_success(Value::Array(data), count, 0))) }
 }
 
+#[allow(non_snake_case)]
 pub async fn work_v2_list_id_activity_goback(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
@@ -12369,6 +12799,7 @@ pub async fn work_v2_list_id_activity_goback(
     { let count = data.len() as i64; Ok(Json(ActionResult::java_success(Value::Array(data), count, 0))) }
 }
 
+#[allow(non_snake_case)]
 pub async fn work_v2_list_id_next_count(pool: Extension<Pool>,
     axum::extract::Path((id, _count)): axum::extract::Path<(String, i64)>,) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
@@ -12394,6 +12825,7 @@ pub async fn work_v2_list_id_next_count(pool: Extension<Pool>,
     { let count = data.len() as i64; Ok(Json(ActionResult::java_success(Value::Array(data), count, 0))) }
 }
 
+#[allow(non_snake_case)]
 pub async fn work_v2_list_id_prev_count(pool: Extension<Pool>,
     axum::extract::Path((id, _count)): axum::extract::Path<(String, i64)>,) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
@@ -12419,6 +12851,7 @@ pub async fn work_v2_list_id_prev_count(pool: Extension<Pool>,
     { let count = data.len() as i64; Ok(Json(ActionResult::java_success(Value::Array(data), count, 0))) }
 }
 
+#[allow(non_snake_case)]
 pub async fn work_v2_workorworkcompleted_workOrWorkCompleted(
     pool: Extension<Pool>,
     axum::extract::Path(workOrWorkCompleted): axum::extract::Path<String>,
@@ -12445,6 +12878,7 @@ pub async fn work_v2_workorworkcompleted_workOrWorkCompleted(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn work_v2_id_add_split(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
@@ -12471,6 +12905,7 @@ pub async fn work_v2_id_add_split(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn work_v2_id_add_split_mockputtopost(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
@@ -12509,6 +12944,7 @@ pub async fn work_v2_id_add_split_mockputtopost(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn work_v2_id_reroute(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
@@ -12535,6 +12971,7 @@ pub async fn work_v2_id_reroute(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn work_v2_id_reroute_mockputtopost(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
@@ -12573,6 +13010,7 @@ pub async fn work_v2_id_reroute_mockputtopost(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn work_v2_id_retract(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
@@ -12599,6 +13037,7 @@ pub async fn work_v2_id_retract(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn work_v2_id_retract_mockputtopost(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
@@ -12637,6 +13076,7 @@ pub async fn work_v2_id_retract_mockputtopost(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn work_v2_id_rollback(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
@@ -12663,6 +13103,7 @@ pub async fn work_v2_id_rollback(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn work_v2_id_rollback_mockputtopost(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
@@ -12701,6 +13142,7 @@ pub async fn work_v2_id_rollback_mockputtopost(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn work_v2_id_terminate(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
@@ -12727,6 +13169,7 @@ pub async fn work_v2_id_terminate(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn work_v2_id_terminate_manage(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
@@ -12753,6 +13196,7 @@ pub async fn work_v2_id_terminate_manage(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn work_v2_id_trigger_processing(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
@@ -12779,6 +13223,7 @@ pub async fn work_v2_id_trigger_processing(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn work_v3_retract(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
@@ -12805,6 +13250,7 @@ pub async fn work_v3_retract(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn work_v3_retract_stage_job_job(
     pool: Extension<Pool>,
     axum::extract::Path(job): axum::extract::Path<String>,
@@ -12831,6 +13277,7 @@ pub async fn work_v3_retract_stage_job_job(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn work_v3_workorworkcompleted_workOrWorkCompleted_permission(
     pool: Extension<Pool>,
     axum::extract::Path(workOrWorkCompleted): axum::extract::Path<String>,
@@ -12857,6 +13304,7 @@ pub async fn work_v3_workorworkcompleted_workOrWorkCompleted_permission(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn work_workorworkcompleted_workOrWorkCompleted(
     pool: Extension<Pool>,
     axum::extract::Path(workOrWorkCompleted): axum::extract::Path<String>,
@@ -12883,6 +13331,7 @@ pub async fn work_workorworkcompleted_workOrWorkCompleted(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn work_id(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
@@ -12909,6 +13358,7 @@ pub async fn work_id(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn work_id_assignment_manage(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
@@ -12935,6 +13385,7 @@ pub async fn work_id_assignment_manage(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn work_id_close_check(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
@@ -12961,6 +13412,7 @@ pub async fn work_id_close_check(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn work_id_manage(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
@@ -12987,6 +13439,7 @@ pub async fn work_id_manage(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn work_id_mockdeletetoget(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
@@ -13037,6 +13490,7 @@ pub async fn work_id_mockdeletetoget(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn work_id_processing(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
@@ -13063,6 +13517,7 @@ pub async fn work_id_processing(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn work_id_processing_mockputtopost(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
@@ -13101,6 +13556,7 @@ pub async fn work_id_processing_mockputtopost(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn work_id_projection(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
@@ -13127,6 +13583,7 @@ pub async fn work_id_projection(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn work_id_refer(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
@@ -13153,6 +13610,7 @@ pub async fn work_id_refer(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn work_id_relative_manage(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
@@ -13179,6 +13637,7 @@ pub async fn work_id_relative_manage(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn work_id_relative_manage_mockdeletetoget(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
@@ -13229,6 +13688,7 @@ pub async fn work_id_relative_manage_mockdeletetoget(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn work_id_single_manage(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
@@ -13255,6 +13715,7 @@ pub async fn work_id_single_manage(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn work_id_single_manage_mockdeletetoget(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
@@ -13305,6 +13766,7 @@ pub async fn work_id_single_manage_mockdeletetoget(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn workcompleted_filter_attribute_application_applicationFlag(
     pool: Extension<Pool>,
     axum::extract::Path(applicationFlag): axum::extract::Path<String>,
@@ -13331,6 +13793,7 @@ pub async fn workcompleted_filter_attribute_application_applicationFlag(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn workcompleted_filter_attribute_application_applicationFlag_manage(
     pool: Extension<Pool>,
     axum::extract::Path(applicationFlag): axum::extract::Path<String>,
@@ -13357,6 +13820,7 @@ pub async fn workcompleted_filter_attribute_application_applicationFlag_manage(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn workcompleted_filter_list_id_prev_count_application_applicationFlag(pool: Extension<Pool>,
     axum::extract::Path((id, _count, applicationFlag)): axum::extract::Path<(String, i64, String)>,) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
@@ -13382,6 +13846,7 @@ pub async fn workcompleted_filter_list_id_prev_count_application_applicationFlag
     { let count = data.len() as i64; Ok(Json(ActionResult::java_success(Value::Array(data), count, 0))) }
 }
 
+#[allow(non_snake_case)]
 pub async fn workcompleted_list_count_application(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -13398,6 +13863,7 @@ pub async fn workcompleted_list_count_application(
     Ok(Json(ActionResult::java_success(Value::Array(vec![]), count, 0)))
 }
 
+#[allow(non_snake_case)]
 pub async fn workcompleted_list_count_application_applicationFlag_process(
     pool: Extension<Pool>,
     axum::extract::Path(applicationFlag): axum::extract::Path<String>,
@@ -13436,6 +13902,7 @@ pub async fn workcompleted_list_count_application_applicationFlag_process(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn workcompleted_list_count_application_applicationFlag_process_manage(
     pool: Extension<Pool>,
     axum::extract::Path(applicationFlag): axum::extract::Path<String>,
@@ -13462,6 +13929,7 @@ pub async fn workcompleted_list_count_application_applicationFlag_process_manage
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn workcompleted_list_filter_page_size_size_manage(pool: Extension<Pool>,
     axum::extract::Path((page, _size)): axum::extract::Path<(i64, i64)>,) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
@@ -13486,6 +13954,7 @@ pub async fn workcompleted_list_filter_page_size_size_manage(pool: Extension<Poo
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn workcompleted_list_paging_page_size_size_application_applicationFlag_filter_manage(pool: Extension<Pool>,
     axum::extract::Path((page, _size, _applicationFlag)): axum::extract::Path<(i64, i64, String)>,) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
@@ -13510,6 +13979,7 @@ pub async fn workcompleted_list_paging_page_size_size_application_applicationFla
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn workcompleted_list_id_next_count_application_applicationFlag(pool: Extension<Pool>,
     axum::extract::Path((id, _count, applicationFlag)): axum::extract::Path<(String, i64, String)>,) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
@@ -13535,6 +14005,7 @@ pub async fn workcompleted_list_id_next_count_application_applicationFlag(pool: 
     { let count = data.len() as i64; Ok(Json(ActionResult::java_success(Value::Array(data), count, 0))) }
 }
 
+#[allow(non_snake_case)]
 pub async fn workcompleted_list_id_next_count_application_applicationFlag_filter(pool: Extension<Pool>,
     axum::extract::Path((id, _count, applicationFlag)): axum::extract::Path<(String, i64, String)>,) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
@@ -13560,6 +14031,7 @@ pub async fn workcompleted_list_id_next_count_application_applicationFlag_filter
     { let count = data.len() as i64; Ok(Json(ActionResult::java_success(Value::Array(data), count, 0))) }
 }
 
+#[allow(non_snake_case)]
 pub async fn workcompleted_list_id_next_count_application_applicationFlag_filter_manage(pool: Extension<Pool>,
     axum::extract::Path((id, _count, _applicationFlag)): axum::extract::Path<(String, i64, String)>,) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
@@ -13584,6 +14056,7 @@ pub async fn workcompleted_list_id_next_count_application_applicationFlag_filter
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn workcompleted_list_id_next_count_application_applicationFlag_manage(pool: Extension<Pool>,
     axum::extract::Path((id, _count, _applicationFlag)): axum::extract::Path<(String, i64, String)>,) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
@@ -13608,6 +14081,7 @@ pub async fn workcompleted_list_id_next_count_application_applicationFlag_manage
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn workcompleted_list_id_prev_count_application_applicationFlag(pool: Extension<Pool>,
     axum::extract::Path((id, _count, applicationFlag)): axum::extract::Path<(String, i64, String)>,) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
@@ -13633,6 +14107,7 @@ pub async fn workcompleted_list_id_prev_count_application_applicationFlag(pool: 
     { let count = data.len() as i64; Ok(Json(ActionResult::java_success(Value::Array(data), count, 0))) }
 }
 
+#[allow(non_snake_case)]
 pub async fn workcompleted_list_id_prev_count_application_applicationFlag_filter(pool: Extension<Pool>,
     axum::extract::Path((id, _count, applicationFlag)): axum::extract::Path<(String, i64, String)>,) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
@@ -13658,6 +14133,7 @@ pub async fn workcompleted_list_id_prev_count_application_applicationFlag_filter
     { let count = data.len() as i64; Ok(Json(ActionResult::java_success(Value::Array(data), count, 0))) }
 }
 
+#[allow(non_snake_case)]
 pub async fn workcompleted_list_id_prev_count_application_applicationFlag_manage(pool: Extension<Pool>,
     axum::extract::Path((id, _count, _applicationFlag)): axum::extract::Path<(String, i64, String)>,) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
@@ -13682,6 +14158,7 @@ pub async fn workcompleted_list_id_prev_count_application_applicationFlag_manage
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn workcompleted_process_processFlag(
     pool: Extension<Pool>,
     axum::extract::Path(processFlag): axum::extract::Path<String>,
@@ -13708,6 +14185,7 @@ pub async fn workcompleted_process_processFlag(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn workcompleted_shift_time(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
@@ -13734,6 +14212,7 @@ pub async fn workcompleted_shift_time(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn workcompleted_flag_rollback(
     pool: Extension<Pool>,
     axum::extract::Path(flag): axum::extract::Path<String>,
@@ -13760,6 +14239,7 @@ pub async fn workcompleted_flag_rollback(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn workcompleted_flag_rollback_mockputtopost(
     pool: Extension<Pool>,
     axum::extract::Path(flag): axum::extract::Path<String>,
@@ -13798,6 +14278,7 @@ pub async fn workcompleted_flag_rollback_mockputtopost(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn workcompleted_id(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
@@ -13824,6 +14305,7 @@ pub async fn workcompleted_id(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn workcompleted_id_assignment_manage(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
@@ -13850,6 +14332,7 @@ pub async fn workcompleted_id_assignment_manage(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn workcompleted_id_delete_manage(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
@@ -13876,6 +14359,7 @@ pub async fn workcompleted_id_delete_manage(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn workcompleted_id_delete_manage_mockdeletetoget(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
@@ -13926,6 +14410,7 @@ pub async fn workcompleted_id_delete_manage_mockdeletetoget(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn workcompleted_id_manage(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
@@ -13952,6 +14437,7 @@ pub async fn workcompleted_id_manage(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn worklog_list_add_split_work_workId(
     pool: Extension<Pool>,
     axum::extract::Path(workId): axum::extract::Path<String>,
@@ -13979,6 +14465,7 @@ pub async fn worklog_list_add_split_work_workId(
     { let count = data.len() as i64; Ok(Json(ActionResult::java_success(Value::Array(data), count, 0))) }
 }
 
+#[allow(non_snake_case)]
 pub async fn worklog_list_job_job(
     pool: Extension<Pool>,
     axum::extract::Path(job): axum::extract::Path<String>,
@@ -14006,6 +14493,7 @@ pub async fn worklog_list_job_job(
     { let count = data.len() as i64; Ok(Json(ActionResult::java_success(Value::Array(data), count, 0))) }
 }
 
+#[allow(non_snake_case)]
 pub async fn worklog_list_rollback_workorworkcompleted_workOrWorkCompleted(
     pool: Extension<Pool>,
     axum::extract::Path(workOrWorkCompleted): axum::extract::Path<String>,
@@ -14033,6 +14521,7 @@ pub async fn worklog_list_rollback_workorworkcompleted_workOrWorkCompleted(
     { let count = data.len() as i64; Ok(Json(ActionResult::java_success(Value::Array(data), count, 0))) }
 }
 
+#[allow(non_snake_case)]
 pub async fn worklog_list_workorworkcompleted_workOrWorkCompleted(
     pool: Extension<Pool>,
     axum::extract::Path(workOrWorkCompleted): axum::extract::Path<String>,
@@ -14154,6 +14643,7 @@ fn u2_snap_json(row: &deadpool_postgres::tokio_postgres::Row) -> Value {
     ]))
 }
 
+#[allow(non_snake_case)]
 pub async fn snap_u2_get(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
@@ -14172,6 +14662,7 @@ pub async fn snap_u2_get(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn snap_u2_delete(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
@@ -14196,6 +14687,7 @@ pub async fn snap_u2_delete(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn snap_u2_restore(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
@@ -14315,6 +14807,7 @@ async fn u2_snap_page_all(
         .map_err(|_| AppError::Internal)
 }
 
+#[allow(non_snake_case)]
 pub async fn snap_u2_list_next_count(
     pool: Extension<Pool>,
     axum::extract::Path((id, count)): axum::extract::Path<(String, i64)>,
@@ -14325,6 +14818,7 @@ pub async fn snap_u2_list_next_count(
     Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
 }
 
+#[allow(non_snake_case)]
 pub async fn snap_u2_list_prev_count(
     pool: Extension<Pool>,
     axum::extract::Path((id, count)): axum::extract::Path<(String, i64)>,
@@ -14336,6 +14830,7 @@ pub async fn snap_u2_list_prev_count(
     Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
 }
 
+#[allow(non_snake_case)]
 pub async fn snap_u2_list_next_count_manage(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
@@ -14348,6 +14843,7 @@ pub async fn snap_u2_list_next_count_manage(
     Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
 }
 
+#[allow(non_snake_case)]
 pub async fn snap_u2_list_prev_count_manage(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
@@ -14389,6 +14885,7 @@ async fn u2_snap_by_type(
     Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
 }
 
+#[allow(non_snake_case)]
 pub async fn snap_u2_work_type_snap(
     pool: Extension<Pool>,
     axum::extract::Path(work): axum::extract::Path<String>,
@@ -14396,6 +14893,7 @@ pub async fn snap_u2_work_type_snap(
     u2_snap_by_type(&pool, "\"xwork\"", &work, "snap").await
 }
 
+#[allow(non_snake_case)]
 pub async fn snap_u2_work_type_abandoned(
     pool: Extension<Pool>,
     axum::extract::Path(work): axum::extract::Path<String>,
@@ -14403,6 +14901,7 @@ pub async fn snap_u2_work_type_abandoned(
     u2_snap_by_type(&pool, "\"xwork\"", &work, "abandoned").await
 }
 
+#[allow(non_snake_case)]
 pub async fn snap_u2_work_type_suspend(
     pool: Extension<Pool>,
     axum::extract::Path(work): axum::extract::Path<String>,
@@ -14410,6 +14909,7 @@ pub async fn snap_u2_work_type_suspend(
     u2_snap_by_type(&pool, "\"xwork\"", &work, "suspend").await
 }
 
+#[allow(non_snake_case)]
 pub async fn snap_u2_workcompleted_type_snapworkcompleted(
     pool: Extension<Pool>,
     axum::extract::Path(work_completed): axum::extract::Path<String>,
@@ -14417,6 +14917,7 @@ pub async fn snap_u2_workcompleted_type_snapworkcompleted(
     u2_snap_by_type(&pool, "\"xworkCompleted\"", &work_completed, "snapWorkCompleted").await
 }
 
+#[allow(non_snake_case)]
 pub async fn snap_u2_workcompleted_type_abandonedworkcompleted(
     pool: Extension<Pool>,
     axum::extract::Path(work_completed): axum::extract::Path<String>,
@@ -14485,6 +14986,7 @@ async fn u2_att_list_shaped(
     Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
 }
 
+#[allow(non_snake_case)]
 pub async fn attachment_u2_list_job_job(
     pool: Extension<Pool>,
     axum::extract::Path(job): axum::extract::Path<String>,
@@ -14492,6 +14994,7 @@ pub async fn attachment_u2_list_job_job(
     u2_att_list_shaped(&pool, "\"xjob\" = $1", &job, true).await
 }
 
+#[allow(non_snake_case)]
 pub async fn attachment_u2_list_work_work_id(
     pool: Extension<Pool>,
     axum::extract::Path(work): axum::extract::Path<String>,
@@ -14499,6 +15002,7 @@ pub async fn attachment_u2_list_work_work_id(
     u2_att_list(&pool, "\"xwork\" = $1", &work).await
 }
 
+#[allow(non_snake_case)]
 pub async fn attachment_u2_list_workcompleted_work_completed_id(
     pool: Extension<Pool>,
     axum::extract::Path(work_completed): axum::extract::Path<String>,
@@ -14506,6 +15010,7 @@ pub async fn attachment_u2_list_workcompleted_work_completed_id(
     u2_att_list(&pool, "\"xworkCompleted\" = $1", &work_completed).await
 }
 
+#[allow(non_snake_case)]
 pub async fn attachment_u2_list_workorworkcompleted_flag(
     pool: Extension<Pool>,
     axum::extract::Path(flag): axum::extract::Path<String>,
@@ -14513,6 +15018,7 @@ pub async fn attachment_u2_list_workorworkcompleted_flag(
     u2_att_list_shaped(&pool, "\"xwork\" = $1 OR \"xworkCompleted\" = $1", &flag, true).await
 }
 
+#[allow(non_snake_case)]
 pub async fn attachment_u2_id_available(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
@@ -14556,6 +15062,7 @@ async fn u2_att_get_with_check(
     client.query_opt(&sql, &[&id, &ref_value]).await.map_err(|_| AppError::Internal)
 }
 
+#[allow(non_snake_case)]
 pub async fn attachment_u2_get_by_work(
     pool: Extension<Pool>,
     axum::extract::Path((id, work)): axum::extract::Path<(String, String)>,
@@ -14567,6 +15074,7 @@ pub async fn attachment_u2_get_by_work(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn attachment_u2_delete_by_work(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
@@ -14594,6 +15102,7 @@ pub async fn attachment_u2_delete_by_work(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn attachment_u2_text_by_work(
     pool: Extension<Pool>,
     axum::extract::Path((id, work)): axum::extract::Path<(String, String)>,
@@ -14614,6 +15123,7 @@ pub async fn attachment_u2_text_by_work(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn attachment_u2_get_by_workcompleted(
     pool: Extension<Pool>,
     axum::extract::Path((id, work_completed)): axum::extract::Path<(String, String)>,
@@ -14630,6 +15140,7 @@ pub async fn attachment_u2_get_by_workcompleted(
 // attachment 元数据读取与删除族。复用 U2 门禁与列映射基建（u2_check_owner/u2_snap_json/u2_att_json）。
 // 分页约定与既有 sibling handler 一致：LIMIT=size，OFFSET=page。
 
+#[allow(non_snake_case)]
 pub async fn snap_id_mockdeletetoget(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
@@ -14671,6 +15182,7 @@ async fn u2_snap_list_offset(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn snap_list_my_paging_page_size_size(
     pool: Extension<Pool>,
     axum::extract::Path((page, size)): axum::extract::Path<(i64, i64)>,
@@ -14679,6 +15191,7 @@ pub async fn snap_list_my_paging_page_size_size(
     Ok(u2_snap_page_json(&rows))
 }
 
+#[allow(non_snake_case)]
 pub async fn snap_list_my_filter_page_size_size(
     pool: Extension<Pool>,
     axum::extract::Path((page, size)): axum::extract::Path<(i64, i64)>,
@@ -14724,6 +15237,7 @@ fn u2_snap_cursor_response(
     { let count = data.len() as i64; Json(ActionResult::java_success(Value::Array(data), count, 0)) }
 }
 
+#[allow(non_snake_case)]
 pub async fn snap_list_id_next_count_application_applicationFlag(
     pool: Extension<Pool>,
     axum::extract::Path((id, count, application_flag)): axum::extract::Path<(String, i64, String)>,
@@ -14732,6 +15246,7 @@ pub async fn snap_list_id_next_count_application_applicationFlag(
     Ok(u2_snap_cursor_response(rows, false))
 }
 
+#[allow(non_snake_case)]
 pub async fn snap_list_id_prev_count_application_applicationFlag(
     pool: Extension<Pool>,
     axum::extract::Path((id, count, application_flag)): axum::extract::Path<(String, i64, String)>,
@@ -14740,6 +15255,7 @@ pub async fn snap_list_id_prev_count_application_applicationFlag(
     Ok(u2_snap_cursor_response(rows, true))
 }
 
+#[allow(non_snake_case)]
 pub async fn snap_list_id_next_count_process_processFlag(
     pool: Extension<Pool>,
     axum::extract::Path((id, count, process_flag)): axum::extract::Path<(String, i64, String)>,
@@ -14748,6 +15264,7 @@ pub async fn snap_list_id_next_count_process_processFlag(
     Ok(u2_snap_cursor_response(rows, false))
 }
 
+#[allow(non_snake_case)]
 pub async fn snap_list_id_prev_count_process_processFlag(
     pool: Extension<Pool>,
     axum::extract::Path((id, count, process_flag)): axum::extract::Path<(String, i64, String)>,
@@ -14756,6 +15273,7 @@ pub async fn snap_list_id_prev_count_process_processFlag(
     Ok(u2_snap_cursor_response(rows, true))
 }
 
+#[allow(non_snake_case)]
 pub async fn attachment_id_workorworkcompleted_workOrWorkCompleted(
     pool: Extension<Pool>,
     axum::extract::Path((id, flag)): axum::extract::Path<(String, String)>,
@@ -14772,6 +15290,7 @@ pub async fn attachment_id_workorworkcompleted_workOrWorkCompleted(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn attachment_id_mockdeletetoget(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
@@ -14790,6 +15309,7 @@ pub async fn attachment_id_mockdeletetoget(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn attachment_id(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
@@ -14903,7 +15423,7 @@ async fn u2_att_store_new(
     ref_col: &str,
     ref_value: &str,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let key = u2_att_blob_key(id, &filename)?;
+    let key = u2_att_blob_key(id, filename)?;
     let storage = shared::storage::storage_from_env();
     u2_att_persist_verified(storage.as_ref(), &key, &bytes).await?;
 
@@ -15005,6 +15525,7 @@ async fn u2_att_download_response(
 
 // ── 下载族 ──────────────────────────────────────────────────────────────────
 
+#[allow(non_snake_case)]
 pub async fn attachment_u2b_download_id(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
@@ -15013,6 +15534,7 @@ pub async fn attachment_u2b_download_id(
     u2_att_download_response(row, &id).await
 }
 
+#[allow(non_snake_case)]
 pub async fn attachment_u2b_download_stream(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
@@ -15020,6 +15542,7 @@ pub async fn attachment_u2b_download_stream(
     attachment_u2b_download_id(pool, axum::extract::Path(id)).await
 }
 
+#[allow(non_snake_case)]
 pub async fn attachment_u2b_download_manage(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
@@ -15030,6 +15553,7 @@ pub async fn attachment_u2b_download_manage(
     u2_att_download_response(row, &id).await
 }
 
+#[allow(non_snake_case)]
 pub async fn attachment_u2b_download_manage_stream(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
@@ -15038,6 +15562,7 @@ pub async fn attachment_u2b_download_manage_stream(
     attachment_u2b_download_manage(pool, session, axum::extract::Path(id)).await
 }
 
+#[allow(non_snake_case)]
 pub async fn attachment_u2b_download_by_work(
     pool: Extension<Pool>,
     axum::extract::Path((id, work)): axum::extract::Path<(String, String)>,
@@ -15046,6 +15571,7 @@ pub async fn attachment_u2b_download_by_work(
     u2_att_download_response(row, &id).await
 }
 
+#[allow(non_snake_case)]
 pub async fn attachment_u2b_download_by_work_stream(
     pool: Extension<Pool>,
     path: axum::extract::Path<(String, String)>,
@@ -15053,6 +15579,7 @@ pub async fn attachment_u2b_download_by_work_stream(
     attachment_u2b_download_by_work(pool, path).await
 }
 
+#[allow(non_snake_case)]
 pub async fn attachment_u2b_download_by_workcompleted(
     pool: Extension<Pool>,
     axum::extract::Path((id, wc)): axum::extract::Path<(String, String)>,
@@ -15061,6 +15588,7 @@ pub async fn attachment_u2b_download_by_workcompleted(
     u2_att_download_response(row, &id).await
 }
 
+#[allow(non_snake_case)]
 pub async fn attachment_u2b_download_by_workcompleted_stream(
     pool: Extension<Pool>,
     path: axum::extract::Path<(String, String)>,
@@ -15068,6 +15596,7 @@ pub async fn attachment_u2b_download_by_workcompleted_stream(
     attachment_u2b_download_by_workcompleted(pool, path).await
 }
 
+#[allow(non_snake_case)]
 pub async fn attachment_u2b_download_work_att(
     pool: Extension<Pool>,
     axum::extract::Path((work, att)): axum::extract::Path<(String, String)>,
@@ -15076,6 +15605,7 @@ pub async fn attachment_u2b_download_work_att(
     u2_att_download_response(row, &att).await
 }
 
+#[allow(non_snake_case)]
 pub async fn attachment_u2b_download_transfer(
     pool: Extension<Pool>,
     axum::extract::Path(flag): axum::extract::Path<String>,
@@ -15090,6 +15620,7 @@ pub async fn attachment_u2b_download_transfer(
 
 // ── 上传族（multipart / base64 → BlobStorage + 元数据行，session 门禁） ─────
 
+#[allow(non_snake_case)]
 pub async fn attachment_u2b_upload_work(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
@@ -15101,6 +15632,7 @@ pub async fn attachment_u2b_upload_work(
     u2_att_store_new(&pool, &session.person_unique, &id, &name, bytes, "\"xwork\"", &work).await
 }
 
+#[allow(non_snake_case)]
 pub async fn attachment_u2b_upload_work_callback(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
@@ -15112,6 +15644,7 @@ pub async fn attachment_u2b_upload_work_callback(
     u2_att_store_new(&pool, &session.person_unique, &id, &name, bytes, "\"xwork\"", &work).await
 }
 
+#[allow(non_snake_case)]
 pub async fn attachment_u2b_upload_workcompleted(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
@@ -15124,6 +15657,7 @@ pub async fn attachment_u2b_upload_workcompleted(
         .await
 }
 
+#[allow(non_snake_case)]
 pub async fn attachment_u2b_upload_save_as(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
@@ -15135,6 +15669,7 @@ pub async fn attachment_u2b_upload_save_as(
     u2_att_store_new(&pool, &session.person_unique, &id, &save_as, bytes, "\"xwork\"", &work).await
 }
 
+#[allow(non_snake_case)]
 pub async fn attachment_u2b_upload_save_as_mockputtopost(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
@@ -15144,6 +15679,7 @@ pub async fn attachment_u2b_upload_save_as_mockputtopost(
     attachment_u2b_upload_save_as(pool, session, path, multipart).await
 }
 
+#[allow(non_snake_case)]
 pub async fn attachment_u2b_v2_upload_wowc(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
@@ -15157,6 +15693,7 @@ pub async fn attachment_u2b_v2_upload_wowc(
     u2_att_store_new(&pool, &session.person_unique, &id, &name, bytes, ref_col, &flag).await
 }
 
+#[allow(non_snake_case)]
 pub async fn attachment_u2b_v2_upload_base64(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
@@ -15185,6 +15722,7 @@ pub struct U2B64UploadBody {
     pub file_base64: Option<String>,
 }
 
+#[allow(non_snake_case)]
 pub async fn attachment_u2b_batch_upload_manage(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
@@ -15199,50 +15737,59 @@ pub async fn attachment_u2b_batch_upload_manage(
 
 // ── 转换 / 预览 / 发票 / URL 拉取 / 批量打包：无引擎，501 + warn（真实语义） ──
 
+#[allow(non_snake_case)]
 pub async fn attachment_u2b_doc_to_word(
     axum::extract::Path(_work): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     Err(u2_capability_unavailable("doc->word conversion"))
 }
 
+#[allow(non_snake_case)]
 pub async fn attachment_u2b_doc_to_word_wowc(
     axum::extract::Path(_flag): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     Err(u2_capability_unavailable("doc->word conversion"))
 }
 
+#[allow(non_snake_case)]
 pub async fn attachment_u2b_html_to_pdf() -> Result<Json<ActionResult<Value>>, AppError> {
     Err(u2_capability_unavailable("html->pdf conversion"))
 }
 
+#[allow(non_snake_case)]
 pub async fn attachment_u2b_html_to_image() -> Result<Json<ActionResult<Value>>, AppError> {
     Err(u2_capability_unavailable("html->image conversion"))
 }
 
+#[allow(non_snake_case)]
 pub async fn attachment_u2b_preview_pdf(
     axum::extract::Path(_id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     Err(u2_capability_unavailable("pdf preview rendering"))
 }
 
+#[allow(non_snake_case)]
 pub async fn attachment_u2b_preview_image_page(
     axum::extract::Path((_id, _page)): axum::extract::Path<(String, i64)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     Err(u2_capability_unavailable("image preview rendering"))
 }
 
+#[allow(non_snake_case)]
 pub async fn attachment_u2b_preview_pdf_result(
     axum::extract::Path(_flag): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     Err(u2_capability_unavailable("pdf preview rendering"))
 }
 
+#[allow(non_snake_case)]
 pub async fn attachment_u2b_preview_image_result(
     axum::extract::Path(_flag): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     Err(u2_capability_unavailable("image preview rendering"))
 }
 
+#[allow(non_snake_case)]
 pub async fn attachment_u2b_invoice_info(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
@@ -15282,6 +15829,7 @@ pub async fn attachment_u2b_invoice_info(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn attachment_u2b_invoice_download(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
@@ -15311,11 +15859,13 @@ pub async fn attachment_u2b_invoice_download(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn attachment_u2b_upload_with_url() -> Result<Json<ActionResult<Value>>, AppError> {
     // 远程 URL 拉取存在 SSRF 面，未引入抓取引擎前显式 501
     Err(u2_capability_unavailable("remote url fetch"))
 }
 
+#[allow(non_snake_case)]
 pub async fn attachment_u2b_batch_download_zip(
     // "job"/"work" 是静态路径段（非参数），动态段仅 {…}/{site} 两个
     axum::extract::Path((_id, _site)): axum::extract::Path<(String, String)>,
@@ -15409,6 +15959,7 @@ fn u2_body_str(body: &Value, keys: &[&str]) -> Option<String> {
         .filter(|s| !s.trim().is_empty())
 }
 
+#[allow(non_snake_case)]
 pub async fn attachment_u2b_update_by_work(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
@@ -15419,6 +15970,7 @@ pub async fn attachment_u2b_update_by_work(
     u2_att_update_meta(&pool, &session.person_unique, &id, &work, name.as_deref()).await
 }
 
+#[allow(non_snake_case)]
 pub async fn attachment_u2b_update_post(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
@@ -15428,6 +15980,7 @@ pub async fn attachment_u2b_update_post(
     attachment_u2b_update_by_work(pool, session, path, Json(body)).await
 }
 
+#[allow(non_snake_case)]
 pub async fn attachment_u2b_update_callback(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
@@ -15438,6 +15991,7 @@ pub async fn attachment_u2b_update_callback(
     u2_att_update_meta(&pool, &session.person_unique, &id, &work, name.as_deref()).await
 }
 
+#[allow(non_snake_case)]
 pub async fn attachment_u2b_update_mockputtopost(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
@@ -15447,6 +16001,7 @@ pub async fn attachment_u2b_update_mockputtopost(
     attachment_u2b_update_by_work(pool, session, path, Json(body)).await
 }
 
+#[allow(non_snake_case)]
 pub async fn attachment_u2b_update_content(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
@@ -15457,6 +16012,7 @@ pub async fn attachment_u2b_update_content(
     u2_att_update_text(&pool, &session.person_unique, &id, &work, text.as_deref()).await
 }
 
+#[allow(non_snake_case)]
 pub async fn attachment_u2b_update_content_mockputtopost(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
@@ -15466,6 +16022,7 @@ pub async fn attachment_u2b_update_content_mockputtopost(
     attachment_u2b_update_content(pool, session, path, Json(body)).await
 }
 
+#[allow(non_snake_case)]
 pub async fn attachment_u2b_edit_by_work(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
@@ -15475,6 +16032,7 @@ pub async fn attachment_u2b_edit_by_work(
     attachment_u2b_update_by_work(pool, session, path, Json(body)).await
 }
 
+#[allow(non_snake_case)]
 pub async fn attachment_u2b_edit_mockputtopost(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
@@ -15484,6 +16042,7 @@ pub async fn attachment_u2b_edit_mockputtopost(
     attachment_u2b_update_by_work(pool, session, path, Json(body)).await
 }
 
+#[allow(non_snake_case)]
 pub async fn attachment_u2b_edit_text(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
@@ -15493,6 +16052,7 @@ pub async fn attachment_u2b_edit_text(
     attachment_u2b_update_content(pool, session, path, Json(body)).await
 }
 
+#[allow(non_snake_case)]
 pub async fn attachment_u2b_edit_text_mockputtopost(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
@@ -15559,6 +16119,7 @@ async fn u2_att_copy(
     ])))))
 }
 
+#[allow(non_snake_case)]
 pub async fn attachment_u2b_copy_to_work(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
@@ -15568,6 +16129,7 @@ pub async fn attachment_u2b_copy_to_work(
     u2_att_copy(&pool, &session.person_unique, &body, "\"xwork\"", &work, false).await
 }
 
+#[allow(non_snake_case)]
 pub async fn attachment_u2b_copy_to_work_soft(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
@@ -15577,6 +16139,7 @@ pub async fn attachment_u2b_copy_to_work_soft(
     u2_att_copy(&pool, &session.person_unique, &body, "\"xwork\"", &work, true).await
 }
 
+#[allow(non_snake_case)]
 pub async fn attachment_u2b_copy_to_workcompleted(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
@@ -15586,6 +16149,7 @@ pub async fn attachment_u2b_copy_to_workcompleted(
     u2_att_copy(&pool, &session.person_unique, &body, "\"xworkCompleted\"", &wc, false).await
 }
 
+#[allow(non_snake_case)]
 pub async fn attachment_u2b_copy_to_workcompleted_soft(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
@@ -15595,6 +16159,7 @@ pub async fn attachment_u2b_copy_to_workcompleted_soft(
     u2_att_copy(&pool, &session.person_unique, &body, "\"xworkCompleted\"", &wc, true).await
 }
 
+#[allow(non_snake_case)]
 pub async fn attachment_u2b_batch_delete_manage(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
@@ -15620,6 +16185,7 @@ pub async fn attachment_u2b_batch_delete_manage(
     ])))))
 }
 
+#[allow(non_snake_case)]
 pub async fn attachment_u2b_batch_update_manage(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
@@ -15653,6 +16219,7 @@ pub async fn attachment_u2b_batch_update_manage(
     ])))))
 }
 
+#[allow(non_snake_case)]
 pub async fn attachment_u2b_online_info(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
@@ -15674,6 +16241,7 @@ pub async fn attachment_u2b_online_info(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn attachment_u2b_change_order_number(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
@@ -15697,6 +16265,7 @@ pub async fn attachment_u2b_change_order_number(
     ])))))
 }
 
+#[allow(non_snake_case)]
 pub async fn attachment_u2b_change_site(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
@@ -15722,6 +16291,7 @@ pub async fn attachment_u2b_change_site(
     ])))))
 }
 
+#[allow(non_snake_case)]
 pub async fn attachment_u2b_delete_by_workcompleted(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
@@ -15752,6 +16322,7 @@ pub async fn attachment_u2b_delete_by_workcompleted(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn attachment_u2b_get_by_work_mockdeletetoget(
     pool: Extension<Pool>,
     axum::extract::Path((id, work)): axum::extract::Path<(String, String)>,
@@ -15764,6 +16335,7 @@ pub async fn attachment_u2b_get_by_work_mockdeletetoget(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn attachment_u2b_get_by_wc_mockdeletetoget(
     pool: Extension<Pool>,
     axum::extract::Path((id, wc)): axum::extract::Path<(String, String)>,
@@ -15983,6 +16555,7 @@ async fn u2_snap_manage_paging(
     Ok(u2_paged_result(data, total))
 }
 
+#[allow(non_snake_case)]
 pub async fn snap_u2_manage_filter_paging(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
@@ -15994,6 +16567,7 @@ pub async fn snap_u2_manage_filter_paging(
     u2_snap_manage_paging(&pool, page, size, fs).await
 }
 
+#[allow(non_snake_case)]
 pub async fn snap_u2_manage_app_paging_filter(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
@@ -16047,6 +16621,7 @@ async fn u2_snap_manage_cursor(
     Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
 }
 
+#[allow(non_snake_case)]
 pub async fn snap_u2_manage_next_filter(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
@@ -16058,6 +16633,7 @@ pub async fn snap_u2_manage_next_filter(
     u2_snap_manage_cursor(&pool, &id, count, false, fs).await
 }
 
+#[allow(non_snake_case)]
 pub async fn snap_u2_manage_prev_filter(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
@@ -16230,6 +16806,7 @@ pub struct U2ReviewSearchWi {
 const U2_REVIEW_SEARCH_COLS: &str = "xid, xjob, xtitle, xserial, xperson, xapplication, \
 \"xapplicationName\", xprocess, \"xprocessName\", \"xcreateTime\", \"xupdateTime\"";
 
+#[allow(non_snake_case)]
 pub async fn review_u2_v2_search(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
@@ -16341,7 +16918,7 @@ async fn u2_draft_save(
     let data_str = wi
         .data
         .as_ref()
-        .map(|v| serde_json::to_string(v))
+        .map(serde_json::to_string)
         .transpose()
         .map_err(|_| AppError::Internal)?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
@@ -16371,6 +16948,7 @@ async fn u2_draft_save(
     ])))))
 }
 
+#[allow(non_snake_case)]
 pub async fn draft_u2_save(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
@@ -16379,6 +16957,7 @@ pub async fn draft_u2_save(
     u2_draft_save(&pool, &session, wi).await
 }
 
+#[allow(non_snake_case)]
 pub async fn draft_u2_save_mockputtopost(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
@@ -16440,6 +17019,7 @@ async fn u2_keylock_lock(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn keylock_u2_lock(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
@@ -16448,6 +17028,7 @@ pub async fn keylock_u2_lock(
     u2_keylock_lock(&pool, &session, wi).await
 }
 
+#[allow(non_snake_case)]
 pub async fn keylock_u2_lock_mockputtopost(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
@@ -16471,6 +17052,7 @@ pub struct U2SerialNumberCreateWi {
     pub application: Option<String>,
 }
 
+#[allow(non_snake_case)]
 pub async fn serialnumber_u2_create(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
@@ -16506,6 +17088,7 @@ pub async fn serialnumber_u2_create(
     ])))))
 }
 
+#[allow(non_snake_case)]
 pub async fn serialnumber_u2_generate(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
@@ -16550,6 +17133,7 @@ pub struct U2HandoverCreateWi {
     pub scheme: Option<String>,
 }
 
+#[allow(non_snake_case)]
 pub async fn handover_u2_create(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
@@ -16623,7 +17207,7 @@ fn u2_collect_routes(src: &str) -> BTreeMap<String, Vec<String>> {
         let boundary = src[start..].find(".route(").map(|r| start + r).unwrap_or(src.len());
         let segment_end = boundary.min(bytes.len());
         let window = &src[start..segment_end];
-        let mut methods = paths.entry(path).or_default();
+        let methods = paths.entry(path).or_default();
         for (token, method) in verb_tokens {
             if window.contains(token) && !methods.contains(&method.to_string()) {
                 methods.push(method.to_string());
@@ -16635,6 +17219,7 @@ fn u2_collect_routes(src: &str) -> BTreeMap<String, Vec<String>> {
     paths
 }
 
+#[allow(non_snake_case)]
 pub async fn openapi_get() -> Result<Json<ActionResult<Value>>, AppError> {
     let routes = u2_collect_routes(include_str!("routes.rs"));
     let mut path_items = serde_json::Map::new();
@@ -16664,6 +17249,7 @@ pub struct U2V3RetractWi {
     pub retractTaskList: Vec<String>,
 }
 
+#[allow(non_snake_case)]
 pub async fn work_u2_v3_retract(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
@@ -16742,6 +17328,7 @@ pub struct U2ShiftTimeWi {
     pub adjustMinutes: Option<i64>,
 }
 
+#[allow(non_snake_case)]
 pub async fn workcompleted_u2_shift_time(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
@@ -16822,6 +17409,7 @@ pub struct U2SnapUploadWi {
     pub identity: Option<String>,
 }
 
+#[allow(non_snake_case)]
 pub async fn snap_u2_upload(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
@@ -16866,6 +17454,7 @@ pub async fn snap_u2_upload(
     ])))))
 }
 
+#[allow(non_snake_case)]
 pub async fn snap_u2_download(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
@@ -16985,6 +17574,7 @@ async fn u2_invoice_check_owner(
 
 // ── review filter/create/entry：person+creatorPerson 双作用域可建阅评入口清单 ──
 
+#[allow(non_snake_case)]
 pub async fn review_u2_filter_create_entry(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
@@ -17047,6 +17637,7 @@ pub struct U2RouteListWi {
     pub valueList: Vec<String>,
 }
 
+#[allow(non_snake_case)]
 pub async fn route_u2_list_by_ids(
     pool: Extension<Pool>,
     Json(wi): Json<U2RouteListWi>,
@@ -17083,6 +17674,7 @@ mod tests_generated;
 #[cfg(test)]
 mod tests_u2;
 
+#[allow(non_snake_case)]
 pub async fn task_list_date_hour_exclude_draft_manage(
     pool: Extension<Pool>,
     axum::extract::Path((date, hour, is_exclude_draft)): axum::extract::Path<(String, String, String)>,
@@ -17111,6 +17703,7 @@ pub async fn task_list_date_hour_exclude_draft_manage(
     Ok(Json(ActionResult::java_success(data, data_len, 0)))
 }
 
+#[allow(non_snake_case)]
 pub async fn task_list_person_exclude_draft_manage(
     pool: Extension<Pool>,
     axum::extract::Path((person, is_exclude_draft)): axum::extract::Path<(String, String)>,

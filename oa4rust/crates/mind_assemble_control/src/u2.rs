@@ -68,6 +68,7 @@ async fn person_can_manage_mind(
 pub use crate::folder_move_folderId as folder_move;
 
 /// DELETE /jaxrs/mind/assemble/control/folder/{id} —— 删除文件夹（软删除）
+#[allow(non_snake_case)]
 pub async fn folder_delete(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
@@ -94,6 +95,7 @@ pub async fn folder_delete(
 pub use crate::folder_id_force as folder_force_delete;
 
 /// PUT /jaxrs/mind/assemble/control/mind/filter/list/{id}/next/{page} —— 列表过滤分页
+#[allow(non_snake_case)]
 pub async fn mind_filter_list(
     pool: Extension<Pool>,
     Path((id, page)): Path<(String, String)>,
@@ -118,6 +120,7 @@ pub async fn mind_filter_list(
 }
 
 /// PUT /jaxrs/mind/assemble/control/mind/filter/recived/{id}/next/{page} —— 收到(共享给我)的过滤分页
+#[allow(non_snake_case)]
 pub async fn mind_filter_received(
     pool: Extension<Pool>,
     Path((id, page)): Path<(String, String)>,
@@ -144,6 +147,7 @@ pub async fn mind_filter_received(
 }
 
 /// PUT /jaxrs/mind/assemble/control/mind/filter/recycle/{id}/next/{page} —— 回收站过滤分页
+#[allow(non_snake_case)]
 pub async fn mind_filter_recycle(
     pool: Extension<Pool>,
     Path((id, page)): Path<(String, String)>,
@@ -168,6 +172,7 @@ pub async fn mind_filter_recycle(
 }
 
 /// PUT /jaxrs/mind/assemble/control/mind/filter/shared/{id}/next/{page} —— 我共享出的过滤分页
+#[allow(non_snake_case)]
 pub async fn mind_filter_shared(
     pool: Extension<Pool>,
     Path((id, page)): Path<(String, String)>,
@@ -193,6 +198,7 @@ pub async fn mind_filter_shared(
 }
 
 /// GET /jaxrs/mind/assemble/control/mind/list/{id}/shareRecords —— 共享记录
+#[allow(non_snake_case)]
 pub async fn mind_share_records(pool: Extension<Pool>, Path(id): Path<String>) -> ApiResult {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let rows = client
@@ -219,6 +225,7 @@ pub async fn mind_share_records(pool: Extension<Pool>, Path(id): Path<String>) -
 }
 
 /// GET /jaxrs/mind/assemble/control/mind/list/{id}/version —— 版本列表
+#[allow(non_snake_case)]
 pub async fn mind_version_list(pool: Extension<Pool>, Path(id): Path<String>) -> ApiResult {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let rows = client
@@ -247,6 +254,7 @@ pub async fn mind_version_list(pool: Extension<Pool>, Path(id): Path<String>) ->
 }
 
 /// DELETE /jaxrs/mind/assemble/control/mind/recycle/{id} —— 移入回收站（软删除）
+#[allow(non_snake_case)]
 pub async fn mind_recycle(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
@@ -270,6 +278,7 @@ pub async fn mind_recycle(
 }
 
 /// GET /jaxrs/mind/assemble/control/mind/restore/{id} —— 从回收站恢复
+#[allow(non_snake_case)]
 pub async fn mind_restore(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
@@ -293,6 +302,7 @@ pub async fn mind_restore(
 }
 
 /// POST /jaxrs/mind/assemble/control/mind/save —— 保存脑图
+#[allow(non_snake_case)]
 pub async fn mind_save(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
@@ -362,6 +372,7 @@ pub async fn mind_save(
 }
 
 /// PUT /jaxrs/mind/assemble/control/mind/share/{id} —— 共享给某人
+#[allow(non_snake_case)]
 pub async fn mind_share(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
@@ -393,6 +404,7 @@ pub async fn mind_share(
 }
 
 /// PUT /jaxrs/mind/assemble/control/mind/share/{id}/cancel —— 取消共享
+#[allow(non_snake_case)]
 pub async fn mind_share_cancel(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
@@ -415,6 +427,7 @@ pub async fn mind_share_cancel(
 }
 
 /// GET /jaxrs/mind/assemble/control/mind/version/{id} —— 最新版本
+#[allow(non_snake_case)]
 pub async fn mind_version_get(pool: Extension<Pool>, Path(id): Path<String>) -> ApiResult {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let row = client
@@ -438,6 +451,7 @@ pub async fn mind_version_get(pool: Extension<Pool>, Path(id): Path<String>) -> 
 }
 
 /// GET /jaxrs/mind/assemble/control/mind/view/{id} —— 查看脑图（返回详情）
+#[allow(non_snake_case)]
 pub async fn mind_view(pool: Extension<Pool>, Path(id): Path<String>) -> ApiResult {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let row = client
@@ -456,6 +470,7 @@ pub async fn mind_view(pool: Extension<Pool>, Path(id): Path<String>) -> ApiResu
 }
 
 /// GET /jaxrs/mind/assemble/control/mind/{id} —— 获取脑图
+#[allow(non_snake_case)]
 pub async fn mind_get(pool: Extension<Pool>, Path(id): Path<String>) -> ApiResult {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let row = client
@@ -474,6 +489,7 @@ pub async fn mind_get(pool: Extension<Pool>, Path(id): Path<String>) -> ApiResul
 }
 
 /// DELETE /jaxrs/mind/assemble/control/mind/{id}/destorymind —— 彻底删除（销毁）
+#[allow(non_snake_case)]
 pub async fn mind_destroy(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
@@ -494,6 +510,7 @@ pub async fn mind_destroy(
 }
 
 /// DELETE /jaxrs/mind/assemble/control/mind/{id}/destoryrecycle —— 从回收站彻底删除
+#[allow(non_snake_case)]
 pub async fn mind_destroy_recycle(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
@@ -514,6 +531,7 @@ pub async fn mind_destroy_recycle(
 }
 
 /// GET /jaxrs/mind/assemble/control/mind/{id}/icon —— 获取图标
+#[allow(non_snake_case)]
 pub async fn mind_icon_get(pool: Extension<Pool>, Path(id): Path<String>) -> ApiResult {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let row = client
@@ -533,6 +551,7 @@ pub async fn mind_icon_get(pool: Extension<Pool>, Path(id): Path<String>) -> Api
 }
 
 /// POST /jaxrs/mind/assemble/control/mind/{id}/icon/size/{size} —— 设置图标（含尺寸变体）
+#[allow(non_snake_case)]
 pub async fn mind_icon_set(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,

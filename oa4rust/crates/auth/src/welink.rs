@@ -51,7 +51,7 @@ fn welink_config() -> Option<WelinkConfig> {
 
 fn welink_client() -> &'static reqwest::Client {
     static CLIENT: OnceLock<reqwest::Client> = OnceLock::new();
-    CLIENT.get_or_init(|| reqwest::Client::new())
+    CLIENT.get_or_init(reqwest::Client::new)
 }
 
 /// 获取 WeLink accessToken
