@@ -169,10 +169,12 @@ impl ControlClient for std::sync::Arc<dyn ControlClient> {
 
 // ---- ControlPool ----
 
+/// acquire 的 boxed future 返回类型
+pub type ControlClientFuture<'a> =
+    std::pin::Pin<Box<dyn std::future::Future<Output = Result<std::sync::Arc<dyn ControlClient>, AppError>> + Send + 'a>>;
+
 pub trait ControlPool: Send + Sync {
-    fn acquire<'a>(
-        &'a self,
-    ) -> std::pin::Pin<Box<dyn std::future::Future<Output = Result<std::sync::Arc<dyn ControlClient>, AppError>> + Send + 'a>>;
+    fn acquire<'a>(&'a self) -> ControlClientFuture<'a>;
 }
 
 #[async_trait::async_trait]
