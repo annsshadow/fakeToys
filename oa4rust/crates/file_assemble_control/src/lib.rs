@@ -177,7 +177,7 @@ pub async fn list_files(
     let rows = client
         .query(
             "SELECT id, name, path, size, creator, create_time, folder_id \
-              FROM x_file WHERE folder_id = $1 AND deleted_at IS NULL ORDER BY create_time DESC",
+              FROM x_file WHERE folder_id = $1 AND deleted_at IS NULL ORDER BY create_time::timestamp DESC",
             &[&folder_id],
         )
         .await
@@ -576,7 +576,7 @@ pub async fn attachment_list_editor_owner(
     let rows = client
         .query(
             "SELECT id, name, person, reference_type, extension, length, mime_type, create_time \
-             FROM FILE_FILE WHERE person = $1 AND deleted_at IS NULL ORDER BY create_time DESC",
+             FROM FILE_FILE WHERE person = $1 AND deleted_at IS NULL ORDER BY create_time::timestamp DESC",
             &[&session.person_unique],
         )
         .await
@@ -606,7 +606,7 @@ pub async fn attachment_list_folder_folderId(
     let rows = client
         .query(
             "SELECT id, name, person, reference_type, extension, length, mime_type, create_time \
-             FROM FILE_FILE WHERE folder_id = $1 AND deleted_at IS NULL ORDER BY create_time DESC",
+             FROM FILE_FILE WHERE folder_id = $1 AND deleted_at IS NULL ORDER BY create_time::timestamp DESC",
             &[&folder_id],
         )
         .await
@@ -636,7 +636,7 @@ pub async fn attachment_list_share_owner(
     let rows = client
         .query(
             "SELECT id, name, person, reference_type, extension, length, mime_type, create_time \
-             FROM FILE_FILE WHERE person = $1 AND deleted_at IS NULL ORDER BY create_time DESC",
+             FROM FILE_FILE WHERE person = $1 AND deleted_at IS NULL ORDER BY create_time::timestamp DESC",
             &[&session.person_unique],
         )
         .await
@@ -665,7 +665,7 @@ pub async fn attachment_list_top(
     let rows = client
         .query(
             "SELECT id, name, person, reference_type, extension, length, mime_type, create_time \
-             FROM FILE_FILE WHERE deleted_at IS NULL ORDER BY create_time DESC LIMIT 20",
+             FROM FILE_FILE WHERE deleted_at IS NULL ORDER BY create_time::timestamp DESC LIMIT 20",
             &[],
         )
         .await
@@ -751,7 +751,7 @@ pub async fn attachment_id(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let row = client
-        .query_opt("SELECT id, name, person, reference_type, extension, length, mime_type, create_time FROM FILE_FILE WHERE id = $1 AND deleted_at IS NULL", &[&id])
+        .query_opt("SELECT id, name, person, reference_type, extension, length, mime_type, create_time::text FROM FILE_FILE WHERE id = $1 AND deleted_at IS NULL", &[&id])
         .await.map_err(|_| AppError::Internal)?;
     match row {
         Some(row) => Ok(Json(ActionResult::success(Value::Object(
@@ -914,7 +914,7 @@ pub async fn attachment2_list_editor_owner(
     let rows = client
         .query(
             "SELECT id, name, person, reference_type, extension, length, mime_type, create_time \
-             FROM FILE_FILE WHERE person = $1 AND deleted_at IS NULL ORDER BY create_time DESC",
+             FROM FILE_FILE WHERE person = $1 AND deleted_at IS NULL ORDER BY create_time::timestamp DESC",
             &[&session.person_unique],
         )
         .await.map_err(|_| AppError::Internal)?;
@@ -943,7 +943,7 @@ pub async fn attachment2_list_filter_name(
     let rows = client
         .query(
             "SELECT id, name, person, reference_type, extension, length, mime_type, create_time \
-             FROM FILE_FILE WHERE name ILIKE $1 AND deleted_at IS NULL ORDER BY create_time DESC",
+             FROM FILE_FILE WHERE name ILIKE $1 AND deleted_at IS NULL ORDER BY create_time::timestamp DESC",
             &[&format!("%{}%", name)],
         )
         .await.map_err(|_| AppError::Internal)?;
@@ -972,7 +972,7 @@ pub async fn attachment2_list_folder_folderId(
     let rows = client
         .query(
             "SELECT id, name, person, reference_type, extension, length, mime_type, create_time \
-             FROM FILE_FILE WHERE folder_id = $1 AND deleted_at IS NULL ORDER BY create_time DESC",
+             FROM FILE_FILE WHERE folder_id = $1 AND deleted_at IS NULL ORDER BY create_time::timestamp DESC",
             &[&folder_id],
         )
         .await.map_err(|_| AppError::Internal)?;
@@ -1001,7 +1001,7 @@ pub async fn attachment2_list_share_owner(
     let rows = client
         .query(
             "SELECT id, name, person, reference_type, extension, length, mime_type, create_time \
-             FROM FILE_FILE WHERE person = $1 AND deleted_at IS NULL ORDER BY create_time DESC",
+             FROM FILE_FILE WHERE person = $1 AND deleted_at IS NULL ORDER BY create_time::timestamp DESC",
             &[&session.person_unique],
         )
         .await.map_err(|_| AppError::Internal)?;
@@ -1029,7 +1029,7 @@ pub async fn attachment2_list_top(
     let rows = client
         .query(
             "SELECT id, name, person, reference_type, extension, length, mime_type, create_time \
-             FROM FILE_FILE WHERE deleted_at IS NULL ORDER BY create_time DESC LIMIT 20",
+             FROM FILE_FILE WHERE deleted_at IS NULL ORDER BY create_time::timestamp DESC LIMIT 20",
             &[],
         )
         .await.map_err(|_| AppError::Internal)?;
@@ -1060,7 +1060,7 @@ pub async fn attachment2_list_type_page_size_size(
     let rows = client
         .query(
             "SELECT id, name, person, reference_type, extension, length, mime_type, create_time \
-             FROM FILE_FILE WHERE deleted_at IS NULL ORDER BY create_time DESC LIMIT $1::int OFFSET $2::int",
+             FROM FILE_FILE WHERE deleted_at IS NULL ORDER BY create_time::timestamp DESC LIMIT $1::int OFFSET $2::int",
             &[&page_size, &offset],
         )
         .await.map_err(|_| AppError::Internal)?;
@@ -1154,7 +1154,7 @@ pub async fn attachment2_id(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let row = client
-        .query_opt("SELECT id, name, person, reference_type, extension, length, mime_type, create_time FROM FILE_FILE WHERE id = $1 AND deleted_at IS NULL", &[&id])
+        .query_opt("SELECT id, name, person, reference_type, extension, length, mime_type, create_time::text FROM FILE_FILE WHERE id = $1 AND deleted_at IS NULL", &[&id])
         .await.map_err(|_| AppError::Internal)?;
     match row {
         Some(row) => Ok(Json(ActionResult::success(Value::Object(
@@ -1715,7 +1715,7 @@ pub async fn file_list_referencetype(
     let rows = client
         .query(
             "SELECT id, name, person, reference_type, extension, length, mime_type, create_time \
-             FROM FILE_FILE WHERE reference_type = $1 AND deleted_at IS NULL ORDER BY create_time DESC",
+             FROM FILE_FILE WHERE reference_type = $1 AND deleted_at IS NULL ORDER BY create_time::timestamp DESC",
             &[&reference_type],
         )
         .await.map_err(|_| AppError::Internal)?;
@@ -1744,7 +1744,7 @@ pub async fn file_list_referencetype_referenceType_reference_reference(
     let rows = client
         .query(
             "SELECT id, name, person, reference_type, extension, length, mime_type, create_time \
-             FROM FILE_FILE WHERE reference_type = $1 AND reference_id = $2 AND deleted_at IS NULL ORDER BY create_time DESC",
+             FROM FILE_FILE WHERE reference_type = $1 AND reference_id = $2 AND deleted_at IS NULL ORDER BY create_time::timestamp DESC",
             &[&reference_type, &reference],
         )
         .await.map_err(|_| AppError::Internal)?;
@@ -1770,7 +1770,7 @@ pub async fn file_list_unused_referencetype_cmsdocument_manage(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let rows = client
-        .query("SELECT id, name, person, reference_type, extension, length FROM FILE_FILE WHERE reference_type = 'cmsdocument_manage' AND deleted_at IS NULL ORDER BY create_time DESC", &[])
+        .query("SELECT id, name, person, reference_type, extension, length FROM FILE_FILE WHERE reference_type = 'cmsdocument_manage' AND deleted_at IS NULL ORDER BY create_time::timestamp DESC", &[])
         .await.map_err(|_| AppError::Internal)?;
     let data: Vec<Value> = rows.iter().map(|row| {
         Value::Object(serde_json::Map::from_iter([
@@ -2007,7 +2007,7 @@ pub async fn file_id(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let row = client
-        .query_opt("SELECT id, name, person, reference_type, extension, length, mime_type, create_time FROM FILE_FILE WHERE id = $1 AND deleted_at IS NULL", &[&id])
+        .query_opt("SELECT id, name, person, reference_type, extension, length, mime_type, create_time::text FROM FILE_FILE WHERE id = $1 AND deleted_at IS NULL", &[&id])
         .await.map_err(|_| AppError::Internal)?;
     match row {
         Some(row) => Ok(Json(ActionResult::success(Value::Object(
@@ -2385,7 +2385,7 @@ pub async fn share_list(
     let rows = client
         .query(
             "SELECT id, name, person, reference_type, extension, length, create_time \
-             FROM FILE_FILE WHERE person = $1 AND deleted_at IS NULL ORDER BY create_time DESC",
+             FROM FILE_FILE WHERE person = $1 AND deleted_at IS NULL ORDER BY create_time::timestamp DESC",
             &[&session.person_unique],
         )
         .await.map_err(|_| AppError::Internal)?;
@@ -2413,7 +2413,7 @@ pub async fn share_list_att_share_shareId_folder_folderId(
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let rows = client
         .query(
-            "SELECT id, name, person, reference_type, extension, length FROM FILE_FILE WHERE folder_id = $1 AND deleted_at IS NULL ORDER BY create_time DESC",
+            "SELECT id, name, person, reference_type, extension, length FROM FILE_FILE WHERE folder_id = $1 AND deleted_at IS NULL ORDER BY create_time::timestamp DESC",
             &[&folder_id],
         )
         .await.map_err(|_| AppError::Internal)?;
@@ -2448,7 +2448,7 @@ pub async fn share_list_my(
     let rows = client
         .query(
             "SELECT id, name, person, reference_type, extension, length, create_time \
-             FROM FILE_FILE WHERE person = $1 AND deleted_at IS NULL ORDER BY create_time DESC",
+             FROM FILE_FILE WHERE person = $1 AND deleted_at IS NULL ORDER BY create_time::timestamp DESC",
             &[&session.person_unique],
         )
         .await.map_err(|_| AppError::Internal)?;
@@ -2476,7 +2476,7 @@ pub async fn share_list_my2_shareType_fileType(
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let rows = client
         .query(
-            "SELECT id, name, person, reference_type, extension, length FROM FILE_FILE WHERE person = $1 AND reference_type = $2 AND deleted_at IS NULL ORDER BY create_time DESC",
+            "SELECT id, name, person, reference_type, extension, length FROM FILE_FILE WHERE person = $1 AND reference_type = $2 AND deleted_at IS NULL ORDER BY create_time::timestamp DESC",
             &[&session.person_unique, &file_type],
         )
         .await.map_err(|_| AppError::Internal)?;
