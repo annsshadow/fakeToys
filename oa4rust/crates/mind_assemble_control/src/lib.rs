@@ -86,6 +86,7 @@ pub fn router(pool: deadpool_postgres::Pool) -> axum::Router {
 
 
 #[derive(Debug, serde::Deserialize)]
+#[allow(non_snake_case)]
 pub struct MindFolderRequest {
     pub name: Option<String>,
     pub content: Option<String>,

@@ -8,7 +8,6 @@ rust-version.workspace = true
 name = "oa4rust"
 path = "src/lib.rs"
 
-build = "scripts/pre_build.rs"
 [[bin]]
 name = "oa4rust"
 path = "src/main.rs"

@@ -1,3 +1,4 @@
+#[allow(dead_code)]
 use axum::{
     extract::{Extension, Multipart},
     Json,
@@ -360,6 +361,7 @@ pub async fn file_upload(
     Ok(Json(ActionResult::success(result)))
 }
 
+#[allow(dead_code)]
 pub(crate) async fn upload_file_record(
     pool: Extension<Pool>,
     data: Vec<u8>,

@@ -129,21 +129,21 @@ macro_rules! group_tree_endpoint {
     };
 }
 
-/// POST /jaxrs/group/list/group/sub/direct。
+// POST /jaxrs/group/list/group/sub/direct。
 group_tree_endpoint!(group_list_group_sub_direct, "sub", false, false);
-/// POST /jaxrs/group/list/group/sub/direct/object。
+// POST /jaxrs/group/list/group/sub/direct/object。
 group_tree_endpoint!(group_list_group_sub_direct_object, "sub", false, true);
-/// POST /jaxrs/group/list/group/sub/nested。
+// POST /jaxrs/group/list/group/sub/nested。
 group_tree_endpoint!(group_list_group_sub_nested, "sub", true, false);
-/// POST /jaxrs/group/list/group/sub/nested/object。
+// POST /jaxrs/group/list/group/sub/nested/object。
 group_tree_endpoint!(group_list_group_sub_nested_object, "sub", true, true);
-/// POST /jaxrs/group/list/group/sup/direct。
+// POST /jaxrs/group/list/group/sup/direct。
 group_tree_endpoint!(group_list_group_sup_direct, "sup", false, false);
-/// POST /jaxrs/group/list/group/sup/direct/object。
+// POST /jaxrs/group/list/group/sup/direct/object。
 group_tree_endpoint!(group_list_group_sup_direct_object, "sup", false, true);
-/// POST /jaxrs/group/list/group/sup/nested。
+// POST /jaxrs/group/list/group/sup/nested。
 group_tree_endpoint!(group_list_group_sup_nested, "sup", true, false);
-/// POST /jaxrs/group/list/group/sup/nested/object。
+// POST /jaxrs/group/list/group/sup/nested/object。
 group_tree_endpoint!(group_list_group_sup_nested_object, "sup", true, true);
 
 /// POST /jaxrs/group/list/person/object (Java ActionListWithPersonObject)。

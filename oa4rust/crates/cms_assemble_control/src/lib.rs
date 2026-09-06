@@ -160,6 +160,7 @@ pub fn router(pool: deadpool_postgres::Pool) -> axum::Router {
 
 // ─── Helper: generic list handler ───────────────────────────────────────────
 
+#[allow(dead_code)]
 async fn list_from_table_inner(
     pool: &Pool,
     table: &str,
@@ -194,6 +195,7 @@ async fn list_from_table_inner(
     Ok((count, data))
 }
 
+#[allow(dead_code)]
 async fn list_from_table(
     pool: &Pool,
     table: &str,
@@ -209,6 +211,7 @@ async fn list_from_table(
 
 // Java 裸数组契约（行为对齐）：data 为数组、count 入信封、size 恒 0。
 #[allow(clippy::too_many_arguments)]
+#[allow(dead_code)]
 async fn list_from_table_java(
     pool: &Pool,
     table: &str,
@@ -257,6 +260,7 @@ async fn list_from_table_filtered_inner(
     Ok((count, data))
 }
 
+#[allow(dead_code)]
 async fn list_from_table_filtered(
     pool: &Pool,
     table: &str,
@@ -285,6 +289,7 @@ async fn list_from_table_filtered_java(
     )))
 }
 
+#[allow(dead_code)]
 async fn delete_by_id(pool: &Pool, table: &str, id: &str) -> Result<Value, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     client
@@ -329,6 +334,7 @@ async fn soft_delete_by_id(pool: &Pool, table: &str, id: &str) -> Result<Value, 
     ])))
 }
 
+#[allow(dead_code)]
 async fn upsert_by_id(pool: &Pool, table: &str, body: &Value) -> Result<Value, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let id = body.get("id").and_then(|v| v.as_str()).unwrap_or("");
