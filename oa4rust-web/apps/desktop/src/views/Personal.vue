@@ -146,16 +146,6 @@ onMounted(() => {
   if (!user.value) session.init();
 });
 
-async function call_person() { try { await api.get("/jaxrs/person") } catch {} }
-async function call_auth_info_p1() { try { await api.get("/jaxrs/person/auth/info/p1") } catch {} }
-async function call_person_custom() { try { await api.get("/jaxrs/person/custom") } catch {} }
-async function call_person_custom_u2cfg() { try { await api.get("/jaxrs/person/custom/u2cfg") } catch {} }
-async function call_person_definition() { try { await api.get("/jaxrs/person/definition") } catch {} }
-async function call_person_definition_u2def() { try { await api.get("/jaxrs/person/definition/u2def") } catch {} }
-async function call_person_detail() { try { await api.get("/jaxrs/person/detail") } catch {} }
-async function call_person_detail_p1() { try { await api.get("/jaxrs/person/detail/p1") } catch {} }
-async function call_person_empower() { try { await api.get("/jaxrs/person/empower") } catch {} }
-async function call_empower_list_currentperson() { try { await api.get("/jaxrs/person/empower/list/currentperson") } catch {} }
 
 
 const unit_list_type_ref = ref<any[]>([]);
