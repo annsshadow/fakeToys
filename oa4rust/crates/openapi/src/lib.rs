@@ -2,7 +2,7 @@
 // Total: 2398 path items, 28 tags
 // Generated at: 2026-08-21 19:40:01
 
-#![allow(dead_code)]
+#![allow(dead_code, non_snake_case)]
 
 #[cfg(test)]
 mod tests;

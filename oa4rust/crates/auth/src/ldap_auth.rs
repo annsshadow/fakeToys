@@ -4,6 +4,7 @@ use tracing::warn;
 
 /// LDAP 认证结果。
 #[derive(Debug)]
+#[allow(dead_code)]
 pub enum LdapAuthOutcome {
     /// LDAP 认证成功，跳过数据库校验
     Success,

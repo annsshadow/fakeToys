@@ -1397,7 +1397,7 @@ pub async fn attendanceschedulesetting_list_all(
 /// GET /jaxrs/attendance/assemble/control/attendanceschedulesetting/list/topUnit/{name}
 pub async fn attendanceschedulesetting_list_topUnit_name(
     pool: Extension<Pool>,
-    Path(name): Path<String>,
+    Path(_name): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
@@ -1427,7 +1427,7 @@ pub async fn attendanceschedulesetting_list_topUnit_name(
 /// GET /jaxrs/attendance/assemble/control/attendanceschedulesetting/list/unit/{name}
 pub async fn attendanceschedulesetting_list_unit_name(
     pool: Extension<Pool>,
-    Path(name): Path<String>,
+    Path(_name): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
@@ -2382,7 +2382,7 @@ pub async fn statisticshow_filter_unitMonth_list_id_prev_count(
 /// GET /jaxrs/attendance/assemble/control/statisticshow/person/{name}/{year}/{month}
 pub async fn statisticshow_person_name_year_month(
     pool: Extension<Pool>,
-    Path((name, year, month)): Path<(String, String, String)>,
+    Path((_name, year, month)): Path<(String, String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
@@ -2412,7 +2412,7 @@ pub async fn statisticshow_person_name_year_month(
 /// GET /jaxrs/attendance/assemble/control/statisticshow/persons/unit/subnested/{name}/{year}/{month}
 pub async fn statisticshow_persons_unit_subnested_name_year_month(
     pool: Extension<Pool>,
-    Path((name, year, month)): Path<(String, String, String)>,
+    Path((_name, year, month)): Path<(String, String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
@@ -2446,7 +2446,7 @@ pub async fn statisticshow_persons_unit_subnested_name_year_month(
 /// GET /jaxrs/attendance/assemble/control/statisticshow/persons/unit/{name}/{year}/{month}
 pub async fn statisticshow_persons_unit_name_year_month(
     pool: Extension<Pool>,
-    Path((name, year, month)): Path<(String, String, String)>,
+    Path((_name, year, month)): Path<(String, String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
@@ -2480,7 +2480,7 @@ pub async fn statisticshow_persons_unit_name_year_month(
 /// GET /jaxrs/attendance/assemble/control/statisticshow/topUnit/day/{name}/{year}/{month}
 pub async fn statisticshow_topUnit_day_name_year_month(
     pool: Extension<Pool>,
-    Path((name, year, month)): Path<(String, String, String)>,
+    Path((_name, year, month)): Path<(String, String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
@@ -2514,7 +2514,7 @@ pub async fn statisticshow_topUnit_day_name_year_month(
 /// GET /jaxrs/attendance/assemble/control/statisticshow/topUnit/{name}/{year}/{month}
 pub async fn statisticshow_topUnit_name_year_month(
     pool: Extension<Pool>,
-    Path((name, year, month)): Path<(String, String, String)>,
+    Path((_name, year, month)): Path<(String, String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
@@ -2618,7 +2618,7 @@ pub async fn statisticshow_unit_day_name_date(
 /// GET /jaxrs/attendance/assemble/control/statisticshow/unit/day/{name}/{year}/{month}
 pub async fn statisticshow_unit_day_name_year_month(
     pool: Extension<Pool>,
-    Path((name, year, month)): Path<(String, String, String)>,
+    Path((_name, year, month)): Path<(String, String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
@@ -2652,7 +2652,7 @@ pub async fn statisticshow_unit_day_name_year_month(
 /// GET /jaxrs/attendance/assemble/control/statisticshow/unit/subnested/{name}/{year}/{month}
 pub async fn statisticshow_unit_subnested_name_year_month(
     pool: Extension<Pool>,
-    Path((name, year, month)): Path<(String, String, String)>,
+    Path((_name, year, month)): Path<(String, String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
@@ -2686,7 +2686,7 @@ pub async fn statisticshow_unit_subnested_name_year_month(
 /// GET /jaxrs/attendance/assemble/control/statisticshow/unit/sum/{name}/{year}/{month}
 pub async fn statisticshow_unit_sum_name_year_month(
     pool: Extension<Pool>,
-    Path((name, year, month)): Path<(String, String, String)>,
+    Path((_name, year, month)): Path<(String, String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
@@ -2719,7 +2719,7 @@ pub async fn statisticshow_unit_sum_name_year_month(
 /// GET /jaxrs/attendance/assemble/control/statisticshow/unit/topUnit/{name}/{year}/{month}
 pub async fn statisticshow_unit_topUnit_name_year_month(
     pool: Extension<Pool>,
-    Path((name, year, month)): Path<(String, String, String)>,
+    Path((_name, year, month)): Path<(String, String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
@@ -2755,7 +2755,7 @@ pub async fn statisticshow_unit_topUnit_name_year_month(
 /// GET /jaxrs/attendance/assemble/control/statisticshow/unit/{name}/{year}/{month}
 pub async fn statisticshow_unit_name_year_month(
     pool: Extension<Pool>,
-    Path((name, year, month)): Path<(String, String, String)>,
+    Path((_name, year, month)): Path<(String, String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
