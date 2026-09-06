@@ -94,8 +94,10 @@ const toggles = ref([
 const { data } = useQuery({ queryKey:['settings'], queryFn:()=>api.get('/jaxrs/systemconfig/list').then((r:any)=>(r.data??{})), staleTime:300_000 })
 if(data.value) Object.assign(cfg.value, data.value)
 
-function saveCfg(_section:string){ console.log('保存', _section, cfg.value) }
-function saveToggles(){ console.log('保存通知配置', toggles.value) }
+function saveCfg(_section:string){
+ }
+function saveToggles(){
+ }
 </script>
 
 <style scoped>

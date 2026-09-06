@@ -3,6 +3,8 @@
   "compilerOptions": {
     "outDir": "dist",
     "baseUrl": ".",
+    "moduleResolution": "bundler",
+    "jsx": "preserve",
     "paths": {
       "@oa4rust/sdk": ["../sdk/src/index.ts"],
       "@oa4rust/sdk/*": ["../sdk/src/*.ts"]

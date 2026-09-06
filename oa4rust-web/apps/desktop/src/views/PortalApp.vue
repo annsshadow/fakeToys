@@ -64,11 +64,11 @@ const deleteMutation = useMutation({
 
 function editPage(_page: PortalPage): void {
   // Navigate to portal designer (future)
-  console.log('Edit portal page:', _page.id);
+
 }
 
 function publishPage(_page: PortalPage): void {
-  console.log('Publish:', _page.id);
+
 }
 
 function deletePage(id: string): void {

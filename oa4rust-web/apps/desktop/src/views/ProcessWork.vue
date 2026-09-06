@@ -242,7 +242,7 @@ async function handleForward(item: TaskItem): void {
 
 function handleView(_item: TaskItem): void {
   // Navigate to detail (future)
-  console.log('View task:', _item.id);
+
 }
 
 async function handleComment(item) {
