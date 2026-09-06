@@ -1,4 +1,4 @@
-#[allow(dead_code)]
+#![allow(dead_code, clippy::type_complexity)]
 use axum::{
     Json,
     extract::Extension,

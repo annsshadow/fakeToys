@@ -1,4 +1,5 @@
-﻿use axum::{
+#![allow(dead_code, non_snake_case)]
+use axum::{
     extract::{Extension, Path},
     Json, Router,
 };
@@ -1397,7 +1398,7 @@ pub async fn attendanceschedulesetting_list_all(
 /// GET /jaxrs/attendance/assemble/control/attendanceschedulesetting/list/topUnit/{name}
 pub async fn attendanceschedulesetting_list_topUnit_name(
     pool: Extension<Pool>,
-    Path(name): Path<String>,
+    Path(_name): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
@@ -2480,7 +2481,7 @@ pub async fn statisticshow_persons_unit_name_year_month(
 /// GET /jaxrs/attendance/assemble/control/statisticshow/topUnit/day/{name}/{year}/{month}
 pub async fn statisticshow_topUnit_day_name_year_month(
     pool: Extension<Pool>,
-    Path((name, year, month)): Path<(String, String, String)>,
+    Path((_name, year, month)): Path<(String, String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
@@ -2514,7 +2515,7 @@ pub async fn statisticshow_topUnit_day_name_year_month(
 /// GET /jaxrs/attendance/assemble/control/statisticshow/topUnit/{name}/{year}/{month}
 pub async fn statisticshow_topUnit_name_year_month(
     pool: Extension<Pool>,
-    Path((name, year, month)): Path<(String, String, String)>,
+    Path((_name, year, month)): Path<(String, String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
@@ -2904,7 +2905,7 @@ fn json_join(payload: &Value, key: &str) -> String {
 }
 
 fn json_page(page: i64, size: i64) -> Result<(i64, i64), AppError> {
-    if page < 1 || size < 1 || size > 500 {
+    if page < 1 || !(1..=500).contains(&size) {
         return Err(AppError::BadRequest("page must be >= 1 and size in 1..=500".to_string()));
     }
     Ok((size, (page - 1) * size))
@@ -4714,7 +4715,7 @@ async fn ddqy_attendance_list_next(
     count: i64,
     body: Option<Json<Value>>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    if count < 1 || count > 500 {
+    if !(1..=500).contains(&count) {
         return Err(AppError::BadRequest("count must be in 1..=500".to_string()));
     }
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
@@ -6470,10 +6471,7 @@ pub async fn v2_workplace_post(
                 .query_opt("SELECT id FROM x_attendance_workplace WHERE id = $1", &[id])
                 .await
                 .map_err(|_| AppError::Internal)?;
-            match exists {
-                Some(row) => Some(row.get::<_, String>("id")),
-                None => None,
-            }
+            exists.map(|row| row.get::<_, String>("id"))
         }
         None => {
             let norm = normalize_key(&name);

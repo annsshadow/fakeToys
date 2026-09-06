@@ -19,7 +19,6 @@
 //! x_query_neural_job 记录真实任务状态（migration 077），动态表行复用既有
 //! x_query_table_data 存储并新增 bundle 定位列。所有 SQL 参数化。
 
-#[allow(non_snake_case)]
 use axum::{
     extract::{Extension, Path},
     Json,
