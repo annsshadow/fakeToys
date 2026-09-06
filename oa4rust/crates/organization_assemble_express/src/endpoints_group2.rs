@@ -294,10 +294,8 @@ pub async fn group_list_group_tree(
         for r in &rows {
             let gid: String = r.get(0);
             let cnt: i64 = r.get(1);
-            if let Some(node) = base.get_mut(&gid) {
-                if let Value::Object(ref mut m) = node {
-                    m.insert(key.to_string(), Value::Number(cnt.into()));
-                }
+            if let Some(Value::Object(ref mut m)) = base.get_mut(&gid) {
+                m.insert(key.to_string(), Value::Number(cnt.into()));
             }
         }
     };

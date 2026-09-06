@@ -163,7 +163,7 @@ pub async fn regist_check_password(
     )))
 }
 
-/// GET /jaxrs/reset/mockputtopost 等 mock 别名直接注册既有 reset_password 处理器。
+// GET /jaxrs/reset/mockputtopost 等 mock 别名直接注册既有 reset_password 处理器。
 
 // ═════════════════════════════════════════════════════════════════════════════
 // CustomAction —— 个性化数据（x_custom：name/person/value 列对应 Java name/person/data）
