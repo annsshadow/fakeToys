@@ -1,5 +1,4 @@
 #[allow(dead_code)]
-#[allow(dead_code)]
 use axum::{
     extract::Extension,
     Json,
@@ -2739,6 +2738,7 @@ async fn u2_read_multipart_file(
 
 /// 上传统一入口：persist(带回读校验) + 写 FILE_FILE 元数据行。
 /// content 列双写 base64：既有下载/预览 handler 直读该列，保持行为基线不变。
+#[allow(clippy::too_many_arguments)]
 async fn u2_store_new(
     pool: &Pool,
     person: &str,

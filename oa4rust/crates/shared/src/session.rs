@@ -144,11 +144,9 @@ impl SessionManager {
             .filter(|s| !s.trim().is_empty())
             .unwrap_or_else(|| "redis://127.0.0.1:6379".to_string());
 
-        let guard = self.redis_pool.lock().unwrap();
-        if guard.is_some() {
+        if self.redis_pool.lock().unwrap().is_some() {
             return true;
         }
-        drop(guard);
 
         let result = tokio::time::timeout(
             std::time::Duration::from_secs(2),
