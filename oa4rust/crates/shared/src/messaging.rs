@@ -84,10 +84,13 @@ pub trait MessageBus<M: Serialize + Send + Sync + Clone + for<'de> Deserialize<'
 // InMemoryBus（单进程）
 // ──────────────────────────────────────────────────────────────────────────────
 
+/// 单进程内存消息总线的订阅者表：topic → 发送端列表
+type SubscriberMap<M> = Arc<RwLock<HashMap<String, Vec<mpsc::Sender<Envelope<M>>>>>>;
+
 /// 单进程内存消息总线
 #[derive(Clone)]
 pub struct InMemoryBus<M: Serialize + Send + Sync + Clone + for<'de> Deserialize<'de> + 'static> {
-    subscribers: Arc<RwLock<HashMap<String, Vec<mpsc::Sender<Envelope<M>>>>>>,
+    subscribers: SubscriberMap<M>,
 }
 
 impl<M: Serialize + Send + Sync + Clone + for<'de> Deserialize<'de> + 'static> InMemoryBus<M> {
@@ -111,7 +114,7 @@ impl<M: Serialize + Send + Sync + Clone + for<'de> Deserialize<'de> + 'static> M
         let subscribers = self.subscribers.read().await;
         if let Some(senders) = subscribers.get(&topic) {
             for sender in senders {
-                if let Err(_) = sender.send(envelope.clone()).await {
+                if sender.send(envelope.clone()).await.is_err() {
                     debug!(topic = %topic, "failed to deliver in-memory message");
                 }
             }
@@ -219,7 +222,7 @@ impl<M: Serialize + Send + Sync + Clone + for<'de> Deserialize<'de> + 'static> M
                             let payload: M = serde_json::from_value(payload_value)
                                 .map_err(|e| MessagingError::SerializationError(e.to_string()))?;
                             let envelope = Envelope { topic, payload, timestamp_ms };
-                            if let Err(_) = tx.send(envelope).await {
+                            if tx.send(envelope).await.is_err() {
                                 debug!(topic = %topic_clone, "subscriber channel closed");
                                 break;
                             }

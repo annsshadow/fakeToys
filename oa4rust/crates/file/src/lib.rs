@@ -361,6 +361,7 @@ pub async fn file_upload(
     Ok(Json(ActionResult::success(result)))
 }
 
+#[allow(clippy::too_many_arguments)]
 #[allow(dead_code)]
 pub(crate) async fn upload_file_record(
     pool: Extension<Pool>,
