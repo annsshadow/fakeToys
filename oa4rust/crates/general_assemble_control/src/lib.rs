@@ -1564,12 +1564,12 @@ pub async fn worktime_betweenminutes_start_start_end_end(
 
     let row = client
         .query_one(
-            "SELECT SUM(minutes) as total FROM x_general_assemble_worktime WHERE date >= $1 AND date <= $2 AND is_worktime = true",
+            "SELECT SUM(minutes)::text as total FROM x_general_assemble_worktime WHERE date >= $1 AND date <= $2 AND is_worktime = true",
             &[&start, &end],
         )
         .await
         .map_err(|_| AppError::Internal)?;
-    let total: Option<i64> = row.get("total");
+    let total: Option<i64> = row.get::<_, Option<String>>("total").and_then(|s| s.parse().ok()).or(Some(0));
 
     Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
         ("minutes".to_string(), Value::Number(serde_json::Number::from(total.unwrap_or(0)))),
@@ -1871,12 +1871,12 @@ pub async fn worktime_minutesofworkday(
 
     let row = client
         .query_one(
-            "SELECT SUM(minutes) as total FROM x_general_assemble_worktime WHERE is_worktime = true",
+            "SELECT SUM(minutes)::text as total FROM x_general_assemble_worktime WHERE is_worktime = true",
             &[],
         )
         .await
         .map_err(|_| AppError::Internal)?;
-    let total: Option<i64> = row.get("total");
+    let total: Option<i64> = row.get::<_, Option<String>>("total").and_then(|s| s.parse().ok()).or(Some(0));
 
     Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
         ("minutes".to_string(), Value::Number(serde_json::Number::from(total.unwrap_or(0)))),
