@@ -1,4 +1,4 @@
-import { h, type Component, type DefineComponent } from 'vue';
+import { h, createApp, type Component, type DefineComponent } from 'vue';
 import type { O2Desktop } from './types.js';
 
 export interface WidgetDefinition {
@@ -43,8 +43,6 @@ export function renderWidget(
     return;
   }
   container.innerHTML = '';
-  // Note: dynamic import in sync context; caller should use async version
-  const { createApp } = require('vue') as typeof import('vue');
   const app = createApp(widget.component, {
     ...widget.options,
     ...options,

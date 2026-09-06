@@ -5178,7 +5178,7 @@ function runFlowAnalysis(): FlowAnalysisResult {
 }
 function getFlowHealthScore():number{if(!flowAnalysisResult.value)return 0;const r=flowAnalysisResult.value;return Math.max(0,100-r.cycles.length*20-r.isolatedNodes.length*5-r.bottlenecks.filter(b=>b.severity==='high').length*15)}
 function getFlowHealthLabel(s:number):string{return s>=80?'优秀':s>=60?'良好':s>=40?'一般':'需优化'}
-function exportDiff():void{console.log('Export diff between',diffLeftIdx.value,'and',diffRightIdx.value)}
+function exportDiff():void{}
 function toggleGridFlow(){showGridFlow.value=!showGridFlow.value}
 function updateGridIntensity(v:number){gridIntensity.value=v}
 function updateGridPattern(p:'dot'|'line'|'cross'|'diamond'|'hex'){gridPattern.value=p}
@@ -5721,7 +5721,6 @@ function addVarBinding() {
 function removeVarBinding(idx: number) { varBindings.value.splice(idx, 1) }
 function applyVarBindings() {
   if (!processDef.value) return
-  console.log("Applied", varBindings.value.length, "bindings")
   pushHistory()
 }
 // ── Form Rules Functions ────────────────────────────────────────────
@@ -5770,7 +5769,7 @@ function onMapDragStart(e: DragEvent, item: any) {
   e.dataTransfer?.setData("text/plain", JSON.stringify(item))
 }
 function onMapDrop(e: DragEvent, target: any) {
-  try { const data = JSON.parse(e.dataTransfer?.getData("text/plain") || "{}"); console.log("Dropped:", data, "on:", target) } catch { }
+  try { const data = JSON.parse(e.dataTransfer?.getData("text/plain") || "{}"); } catch { }
 }
 // ── Condition Builder ───────────────────────────────────────────────
 const showCondBuilder = ref(false)
@@ -5940,7 +5939,7 @@ function removeMappingRow(idx: number) {
   mappingEdgesList.value.splice(idx, 1)
 }
 function applyMapping() {
-  console.log('Applied', mappingEdgesList.value.length, 'mappings');
+  ;
   pushHistory()
   showToast('数据映射已应用', 'success')
 }
@@ -6188,7 +6187,6 @@ function removeFormRuleSet(idx: number) {
   formRuleSets.value.splice(idx, 1)
 }
 function applyFormRules(ruleSetIdx: number) {
-  console.log('Applied rules from set', ruleSetIdx)
   showToast('规则已应用', 'success')
 }
 // ── Script Editor Functions ─────────────────────────────────────────
