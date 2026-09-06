@@ -51,20 +51,16 @@ async fn identities_of_persons_full(
     if flags.is_empty() {
         return ok_java_list(0, vec![]);
     }
-    let sql = format!(
-        "SELECT DISTINCT i.id, i.name, i.unit_id, i.person_id FROM x_org_identity i \
+    let sql = "SELECT DISTINCT i.id, i.name, i.unit_id, i.person_id FROM x_org_identity i \
          JOIN x_org_person p ON p.id = i.person_id AND p.deleted_at IS NULL \
-         WHERE i.deleted_at IS NULL AND (p.id = ANY($1) OR p.name = ANY($1)) ORDER BY i.id"
-    );
+         WHERE i.deleted_at IS NULL AND (p.id = ANY($1) OR p.name = ANY($1)) ORDER BY i.id".to_string();
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let sql_final = if objects {
         sql
     } else {
-        format!(
-            "SELECT DISTINCT i.id FROM x_org_identity i \
+        "SELECT DISTINCT i.id FROM x_org_identity i \
              JOIN x_org_person p ON p.id = i.person_id AND p.deleted_at IS NULL \
-             WHERE i.deleted_at IS NULL AND (p.id = ANY($1) OR p.name = ANY($1)) ORDER BY i.id"
-        )
+             WHERE i.deleted_at IS NULL AND (p.id = ANY($1) OR p.name = ANY($1)) ORDER BY i.id".to_string()
     };
     let rows = client
         .query(&sql_final, &[&flags])
@@ -183,17 +179,13 @@ async fn major_identities_of_persons(
         return ok_java_list(0, vec![]);
     }
     let sql = if objects {
-        format!(
-            "SELECT DISTINCT i.id, i.name, i.unit_id, i.person_id FROM x_org_identity i \
+        "SELECT DISTINCT i.id, i.name, i.unit_id, i.person_id FROM x_org_identity i \
              JOIN x_org_person p ON p.id = i.person_id AND p.deleted_at IS NULL \
-             WHERE i.deleted_at IS NULL AND i.major AND (p.id = ANY($1) OR p.name = ANY($1)) ORDER BY i.id"
-        )
+             WHERE i.deleted_at IS NULL AND i.major AND (p.id = ANY($1) OR p.name = ANY($1)) ORDER BY i.id".to_string()
     } else {
-        format!(
-            "SELECT DISTINCT i.id FROM x_org_identity i \
+        "SELECT DISTINCT i.id FROM x_org_identity i \
              JOIN x_org_person p ON p.id = i.person_id AND p.deleted_at IS NULL \
-             WHERE i.deleted_at IS NULL AND i.major AND (p.id = ANY($1) OR p.name = ANY($1)) ORDER BY i.id"
-        )
+             WHERE i.deleted_at IS NULL AND i.major AND (p.id = ANY($1) OR p.name = ANY($1)) ORDER BY i.id".to_string()
     };
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let rows = client.query(&sql, &[&flags]).await.map_err(|_| AppError::Internal)?;

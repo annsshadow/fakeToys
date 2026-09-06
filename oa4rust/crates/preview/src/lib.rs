@@ -155,7 +155,7 @@ impl OnlyOfficePreview {
 impl PreviewService for OnlyOfficePreview {
     async fn preview(&self, file_data: &[u8], file_name: &str) -> PreviewResult<PreviewResponse> {
         let file_url = self.upload_file(file_data, file_name).await?;
-        let target = if file_name.ends_with(".pdf") { "pdf".to_string() } else { "pdf".to_string() };
+        let target = "pdf".to_string();
         let preview_url = self.convert_file(&file_url, &target).await?;
         Ok(PreviewResponse {
             success: true,
