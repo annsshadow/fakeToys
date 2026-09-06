@@ -457,8 +457,6 @@ const previewTargetPage = ref<any>(null)
 function renderLayout(layout: string): string { try { const nodes = JSON.parse(layout); return nodes.map((n: any) => `<div style="padding:12px;border:1px dashed var(--border-subtle);margin:4px;border-radius:var(--radius-sm)">${n.type||"block"}</div>`).join("") } catch { return "<div style=\"padding:12px;color:var(--text-muted)\">解析布局失败</div>" } }
 
 
-async function call_portal() { try { await api.get("/jaxrs/portal") } catch {} }
-async function call_assemble_designer_create() { try { await api.get("/jaxrs/portal/assemble/designer/create") } catch {} }
 const call_designe_345_data = ref<any[]>([]);
 const { data: call_designe_345_q } = useQuery({queryKey: ['call_designe_345', '/jaxrs/portal/assemble/designer/designer/search'], queryFn: async () => { try { const r = await api.get("/jaxrs/portal/assemble/designer/designer/search"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
 watch(call_designe_345_q, (v) => { call_designe_345_data.value = v ?? []; });
