@@ -3,7 +3,7 @@
 //! 由于 SeaORM 1.x 的泛型约束复杂性，这些助手需要提供具体的 Column 类型。
 //! 每个 crate 应根据自身实体定义具体的查询函数。
 
-use sea_orm::{EntityTrait, QuerySelect};
+use sea_orm::EntityTrait;
 use shared::error::AppError;
 
 /// 查询记录总数（过滤已删除）

@@ -6,7 +6,7 @@ use axum::{
 use deadpool_postgres::Pool;
 
 use crate::{
-    get_control_config, list_control_categories, list_storage_pools, update_control_config, list_files, get_file, upload_file, create_file, delete_file, create_file_entity,
+    update_control_config, list_files, get_file, upload_file, create_file, delete_file, create_file_entity,
     update_file_entity, delete_file_entity, file_id_download_stream, attachment_id_download_stream, anonymous_file_id_download_stream, attachment2_id_office_preview_type_type, anonymous_file_id_download, attachment_list_folder_folderId, attachment_list_top, attachment_id,
     attachment_id_binary_base64, attachment_id_download, attachment_id_image_scale_scale_binary_base64, attachment_id_image_width_width_height_height_binary_base64, attachment2_exist_file_fileMd5, attachment2_list_filter_name, attachment2_list_folder_folderId, attachment2_list_top, attachment2_list_type_page_size_size, attachment2_id,
     attachment2_id_binary_base64, attachment2_id_download, attachment2_id_download_image_width_width_height_height, attachment2_id_download_stream, attachment2_id_image_scale_scale_binary_base64, attachment2_id_image_width_width_height_height_binary_base64, complex_folder_id, complex_top, editor_list, file_clean_unused_referencetype_cmsdocument_manage,

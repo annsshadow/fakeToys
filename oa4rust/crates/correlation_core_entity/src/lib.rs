@@ -152,7 +152,7 @@ pub async fn delete_by_id(
                 target_type: Set(m.target_type.clone()),
                 target_id: Set(m.target_id.clone()),
                 weight: Set(m.weight),
-                create_time: Set(m.create_time.clone()),
+                create_time: Set(m.create_time),
                 deleted_at: Set(Some(chrono::Utc::now().naive_utc())),
             };
             active.update(&db.0).await.map_err(|_| AppError::Internal)?;

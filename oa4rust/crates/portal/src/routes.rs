@@ -6,7 +6,7 @@ use axum::{
 use deadpool_postgres::Pool;
 
 use crate::{
-    create_page, dict_list, delete_page, get_page, list_portal_category,
+    dict_list, delete_page, get_page, list_portal_category,
     portal_id, portal_list, save_page,
 };
 

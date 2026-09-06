@@ -3,7 +3,7 @@ use axum::{
     routing::{get, post},
     Json as AxumJson, Router,
 };
-use sea_orm::{ActiveModelTrait, ColumnTrait, ConnectionTrait, DatabaseConnection, EntityTrait, QueryFilter, QueryOrder, QuerySelect, Statement};
+use sea_orm::{ActiveModelTrait, ColumnTrait, ConnectionTrait, DatabaseConnection, EntityTrait, QueryFilter, QueryOrder, Statement};
 use serde_json::Value;
 use shared::{error::AppError, response::ActionResult};
 
@@ -12,6 +12,7 @@ pub mod routes;
 
 use entities::{portal, widget, portal_page, script};
 
+#[allow(non_snake_case)]
 pub async fn portal_list(
     db: Extension<DatabaseConnection>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -48,6 +49,7 @@ pub async fn portal_list(
     ))))
 }
 
+#[allow(non_snake_case)]
 pub async fn widget_list(
     db: Extension<DatabaseConnection>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -81,6 +83,7 @@ pub async fn widget_list(
     ))))
 }
 
+#[allow(non_snake_case)]
 pub async fn page_list(
     db: Extension<DatabaseConnection>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -106,7 +109,6 @@ pub async fn page_list(
                 "createTime".to_string(),
                 Value::String(
                     m.create_time
-                        .clone()
                         .map(|dt| dt.to_string())
                         .unwrap_or_default(),
                 ),
@@ -126,6 +128,7 @@ pub async fn page_list(
     ))))
 }
 
+#[allow(non_snake_case)]
 pub async fn page_get(
     db: Extension<DatabaseConnection>,
     Path(id): Path<String>,
@@ -151,7 +154,6 @@ pub async fn page_get(
                 "createTime".to_string(),
                 Value::String(
                     m.create_time
-                        .clone()
                         .map(|dt| dt.to_string())
                         .unwrap_or_default(),
                 ),
@@ -163,6 +165,7 @@ pub async fn page_get(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn page_create(
     db: Extension<DatabaseConnection>,
     AxumJson(payload): AxumJson<Value>,
@@ -213,6 +216,7 @@ pub async fn page_create(
     ])))))
 }
 
+#[allow(non_snake_case)]
 pub async fn page_update(
     db: Extension<DatabaseConnection>,
     AxumJson(payload): AxumJson<Value>,
@@ -258,6 +262,7 @@ pub async fn page_update(
     ))))
 }
 
+#[allow(non_snake_case)]
 pub async fn page_remove(
     db: Extension<DatabaseConnection>,
     AxumJson(payload): AxumJson<Value>,
@@ -291,6 +296,7 @@ pub async fn page_remove(
     ))))
 }
 
+#[allow(non_snake_case)]
 pub async fn script_list(
     db: Extension<DatabaseConnection>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {

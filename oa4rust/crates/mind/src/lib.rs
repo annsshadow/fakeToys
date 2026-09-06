@@ -20,6 +20,7 @@ pub fn mind_router() -> Router {
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
 pub async fn get_mind_with_id(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
@@ -50,6 +51,7 @@ pub async fn get_mind_with_id(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
 pub async fn list_my_folders(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -82,6 +84,7 @@ pub async fn list_my_folders(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
 pub async fn list_versions_with_mind_id(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
@@ -119,6 +122,7 @@ pub async fn list_versions_with_mind_id(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
 pub async fn create_mind(
     pool: Extension<Pool>,
     Json(payload): Json<Value>,
@@ -152,6 +156,7 @@ pub async fn create_mind(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
 pub async fn update_mind(
     pool: Extension<Pool>,
     Path(id): Path<String>,
@@ -188,6 +193,7 @@ pub async fn update_mind(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
 pub async fn delete_mind(
     pool: Extension<Pool>,
     Path(id): Path<String>,
@@ -209,6 +215,7 @@ pub async fn delete_mind(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
 pub async fn create_folder(
     pool: Extension<Pool>,
     Json(payload): Json<Value>,
@@ -238,6 +245,7 @@ pub async fn create_folder(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
 pub async fn update_folder(
     pool: Extension<Pool>,
     Path(id): Path<String>,
@@ -272,6 +280,7 @@ pub async fn update_folder(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
 pub async fn delete_folder(
     pool: Extension<Pool>,
     Path(id): Path<String>,
@@ -293,6 +302,7 @@ pub async fn delete_folder(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
 pub async fn create_version(
     pool: Extension<Pool>,
     Json(payload): Json<Value>,

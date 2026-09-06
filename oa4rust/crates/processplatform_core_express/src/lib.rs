@@ -9,6 +9,7 @@ use shared::{error::AppError, response::ActionResult};
 
 pub mod routes;
 
+#[allow(non_snake_case)]
 pub async fn work_terminate(
     pool: Extension<Pool>,
     Path(work_id): Path<String>,
@@ -28,6 +29,7 @@ pub async fn work_terminate(
     ))))
 }
 
+#[allow(non_snake_case)]
 pub async fn work_retract(
     pool: Extension<Pool>,
     Path(work_id): Path<String>,
@@ -51,6 +53,7 @@ pub async fn work_retract(
     ))))
 }
 
+#[allow(non_snake_case)]
 pub async fn work_processing(
     pool: Extension<Pool>,
     Path(work_id): Path<String>,
@@ -71,6 +74,7 @@ pub async fn work_processing(
     ))))
 }
 
+#[allow(non_snake_case)]
 pub async fn task_processing(
     pool: Extension<Pool>,
     Path(task_id): Path<String>,
@@ -91,6 +95,7 @@ pub async fn task_processing(
     ))))
 }
 
+#[allow(non_snake_case)]
 pub async fn work_count_with_person(
     pool: Extension<Pool>,
     Path(person_id): Path<String>,
@@ -114,6 +119,7 @@ pub async fn work_count_with_person(
     ))))
 }
 
+#[allow(non_snake_case)]
 pub async fn task_count_with_person(
     pool: Extension<Pool>,
     Path(person_id): Path<String>,

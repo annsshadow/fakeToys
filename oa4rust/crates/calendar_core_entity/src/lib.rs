@@ -103,6 +103,7 @@ pub struct DeleteEventRequest {
     pub id: Option<String>,
 }
 
+#[allow(non_snake_case)]
 pub async fn calendar_list_public(
     db: Extension<DatabaseConnection>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -127,7 +128,7 @@ pub async fn calendar_list_public(
             map.insert("type".to_string(), Value::String(m.type_.clone()));
             map.insert("target".to_string(), Value::String(m.target.clone()));
             map.insert("color".to_string(), Value::String(m.color.clone()));
-            if let Some(val) = option_to_json(m.description.clone().map(|s| Value::String(s))) {
+            if let Some(val) = option_to_json(m.description.clone().map(Value::String)) {
                 map.insert("description".to_string(), val);
             }
             map.insert("createor".to_string(), Value::String(m.createor.clone()));
@@ -148,6 +149,7 @@ pub async fn calendar_list_public(
     ))))
 }
 
+#[allow(non_snake_case)]
 pub async fn calendar_list_my(
     db: Extension<DatabaseConnection>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -169,7 +171,7 @@ pub async fn calendar_list_my(
         map.insert("type".to_string(), Value::String(m.type_.clone()));
         map.insert("target".to_string(), Value::String(m.target.clone()));
         map.insert("color".to_string(), Value::String(m.color.clone()));
-        if let Some(val) = option_to_json(m.description.clone().map(|s| Value::String(s))) {
+        if let Some(val) = option_to_json(m.description.clone().map(Value::String)) {
             map.insert("description".to_string(), val);
         }
         map.insert("createor".to_string(), Value::String(m.createor.clone()));
@@ -193,6 +195,7 @@ pub async fn calendar_list_my(
     ))))
 }
 
+#[allow(non_snake_case)]
 pub async fn calendar_get(
     db: Extension<DatabaseConnection>,
     Path(id): Path<String>,
@@ -211,7 +214,7 @@ pub async fn calendar_get(
             map.insert("type".to_string(), Value::String(m.type_.clone()));
             map.insert("target".to_string(), Value::String(m.target.clone()));
             map.insert("color".to_string(), Value::String(m.color.clone()));
-            if let Some(val) = option_to_json(m.description.clone().map(|s| Value::String(s))) {
+            if let Some(val) = option_to_json(m.description.clone().map(Value::String)) {
                 map.insert("description".to_string(), val);
             }
             map.insert("createor".to_string(), Value::String(m.createor.clone()));
@@ -224,6 +227,7 @@ pub async fn calendar_get(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn calendar_create(
     db: Extension<DatabaseConnection>,
     AxumJson(req): AxumJson<CreateCalendarRequest>,
@@ -264,10 +268,10 @@ pub async fn calendar_create(
     map.insert("type".to_string(), Value::String(m.type_.clone()));
     map.insert("target".to_string(), Value::String(m.target.clone()));
     map.insert("color".to_string(), Value::String(m.color.clone()));
-    if let Some(val) = option_to_json(m.description.clone().map(|s| Value::String(s))) {
+    if let Some(val) = option_to_json(m.description.clone().map(Value::String)) {
         map.insert("description".to_string(), val);
     }
-    if let Some(val) = option_to_json(m.source.clone().map(|s| Value::String(s))) {
+    if let Some(val) = option_to_json(m.source.clone().map(Value::String)) {
         map.insert("source".to_string(), val);
     }
     map.insert("createor".to_string(), Value::String(m.createor.clone()));
@@ -278,6 +282,7 @@ pub async fn calendar_create(
     Ok(Json(ActionResult::success(data)))
 }
 
+#[allow(non_snake_case)]
 pub async fn calendar_update(
     db: Extension<DatabaseConnection>,
     AxumJson(req): AxumJson<UpdateCalendarRequest>,
@@ -312,7 +317,7 @@ pub async fn calendar_update(
         createor: Set(m.createor.clone()),
         is_public: Set(is_public),
         status: Set(m.status.clone()),
-        create_time: Set(m.create_time.clone()),
+        create_time: Set(m.create_time),
     };
 
     let updated = active_model
@@ -326,10 +331,10 @@ pub async fn calendar_update(
     map.insert("type".to_string(), Value::String(updated.type_.clone()));
     map.insert("target".to_string(), Value::String(updated.target.clone()));
     map.insert("color".to_string(), Value::String(updated.color.clone()));
-    if let Some(val) = option_to_json(updated.description.clone().map(|s| Value::String(s))) {
+    if let Some(val) = option_to_json(updated.description.clone().map(Value::String)) {
         map.insert("description".to_string(), val);
     }
-    if let Some(val) = option_to_json(updated.source.clone().map(|s| Value::String(s))) {
+    if let Some(val) = option_to_json(updated.source.clone().map(Value::String)) {
         map.insert("source".to_string(), val);
     }
     map.insert("createor".to_string(), Value::String(updated.createor.clone()));
@@ -340,6 +345,7 @@ pub async fn calendar_update(
     Ok(Json(ActionResult::success(data)))
 }
 
+#[allow(non_snake_case)]
 pub async fn calendar_remove(
     db: Extension<DatabaseConnection>,
     AxumJson(req): AxumJson<DeleteCalendarRequest>,
@@ -367,7 +373,7 @@ pub async fn calendar_remove(
         createor: Set(m.createor.clone()),
         is_public: Set(m.is_public),
         status: Set("CLOSED".to_string()),
-        create_time: Set(m.create_time.clone()),
+        create_time: Set(m.create_time),
     };
 
     let _updated = active_model
@@ -387,6 +393,7 @@ pub async fn calendar_remove(
     Ok(Json(ActionResult::success(data)))
 }
 
+#[allow(non_snake_case)]
 pub async fn event_create(
     db: Extension<DatabaseConnection>,
     AxumJson(req): AxumJson<CreateEventRequest>,
@@ -438,10 +445,10 @@ pub async fn event_create(
         Value::String(m.calendar_id.clone()),
     );
     map.insert("title".to_string(), Value::String(m.title.clone()));
-    if let Some(val) = option_to_json(m.content.clone().map(|s| Value::String(s))) {
+    if let Some(val) = option_to_json(m.content.clone().map(Value::String)) {
         map.insert("content".to_string(), val);
     }
-    if let Some(val) = option_to_json(m.location.clone().map(|s| Value::String(s))) {
+    if let Some(val) = option_to_json(m.location.clone().map(Value::String)) {
         map.insert("location".to_string(), val);
     }
     map.insert(
@@ -458,6 +465,7 @@ pub async fn event_create(
     Ok(Json(ActionResult::success(data)))
 }
 
+#[allow(non_snake_case)]
 pub async fn event_update(
     db: Extension<DatabaseConnection>,
     AxumJson(req): AxumJson<UpdateEventRequest>,
@@ -498,7 +506,7 @@ pub async fn event_update(
         visibility: Set(visibility.clone()),
         status: Set(status.clone()),
         createor: Set(m.createor.clone()),
-        create_time: Set(m.create_time.clone()),
+        create_time: Set(m.create_time),
     };
 
     let updated = active_model
@@ -513,10 +521,10 @@ pub async fn event_update(
         Value::String(updated.calendar_id.clone()),
     );
     map.insert("title".to_string(), Value::String(updated.title.clone()));
-    if let Some(val) = option_to_json(updated.content.clone().map(|s| Value::String(s))) {
+    if let Some(val) = option_to_json(updated.content.clone().map(Value::String)) {
         map.insert("content".to_string(), val);
     }
-    if let Some(val) = option_to_json(updated.location.clone().map(|s| Value::String(s))) {
+    if let Some(val) = option_to_json(updated.location.clone().map(Value::String)) {
         map.insert("location".to_string(), val);
     }
     map.insert(
@@ -536,6 +544,7 @@ pub async fn event_update(
     Ok(Json(ActionResult::success(data)))
 }
 
+#[allow(non_snake_case)]
 pub async fn event_remove(
     db: Extension<DatabaseConnection>,
     AxumJson(req): AxumJson<DeleteEventRequest>,
@@ -564,7 +573,7 @@ pub async fn event_remove(
         visibility: Set(m.visibility.clone()),
         status: Set("CLOSED".to_string()),
         createor: Set(m.createor.clone()),
-        create_time: Set(m.create_time.clone()),
+        create_time: Set(m.create_time),
     };
 
     let _updated = active_model
@@ -581,6 +590,7 @@ pub async fn event_remove(
     Ok(Json(ActionResult::success(data)))
 }
 
+#[allow(non_snake_case)]
 pub async fn event_list_by_calendar(
     db: Extension<DatabaseConnection>,
     Path(calendar_id): Path<String>,
@@ -606,10 +616,10 @@ pub async fn event_list_by_calendar(
                 Value::String(m.calendar_id.clone()),
             );
             map.insert("title".to_string(), Value::String(m.title.clone()));
-            if let Some(val) = option_to_json(m.content.clone().map(|s| Value::String(s))) {
+            if let Some(val) = option_to_json(m.content.clone().map(Value::String)) {
                 map.insert("content".to_string(), val);
             }
-            if let Some(val) = option_to_json(m.location.clone().map(|s| Value::String(s))) {
+            if let Some(val) = option_to_json(m.location.clone().map(Value::String)) {
                 map.insert("location".to_string(), val);
             }
             map.insert(

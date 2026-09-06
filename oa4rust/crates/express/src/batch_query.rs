@@ -5,7 +5,7 @@ use serde_json::Value;
 use std::collections::HashMap;
 
 use shared::error::AppError;
-use shared::response::{option_to_json, row_opt_json, ActionResult};
+use shared::response::{row_opt_json, ActionResult};
 
 const ID_COUNT_LIMIT: usize = 100;
 
@@ -111,6 +111,7 @@ fn person_row_to_value(
 /// Accepts {"ids":[...]} or {"identities":[...]}, returns full Person list.
 /// No authentication required. ID count capped at 100. PII fields (mobile/email)
 /// excluded by default.
+#[allow(non_snake_case)]
 pub async fn express_person_list(
     pool: Extension<Pool>,
     Json(payload): Json<PersonListRequest>,
@@ -206,6 +207,7 @@ pub async fn express_person_list(
 ///
 /// Accepts unit ID list, returns full Unit list.
 /// No authentication required. ID count capped at 100.
+#[allow(non_snake_case)]
 pub async fn express_unit_list(
     pool: Extension<Pool>,
     Json(payload): Json<UnitListRequest>,
@@ -248,6 +250,7 @@ pub async fn express_unit_list(
 ///
 /// Accepts identity ID list, returns full Identity list.
 /// No authentication required. ID count capped at 100.
+#[allow(non_snake_case)]
 pub async fn express_identity_list(
     pool: Extension<Pool>,
     Json(payload): Json<IdentityListRequest>,
@@ -283,6 +286,7 @@ pub async fn express_identity_list(
 ///
 /// Accepts group ID list, returns full Group list.
 /// No authentication required. ID count capped at 100.
+#[allow(non_snake_case)]
 pub async fn express_group_list(
     pool: Extension<Pool>,
     Json(payload): Json<GroupListRequest>,
@@ -318,6 +322,7 @@ pub async fn express_group_list(
 ///
 /// Accepts role ID list, returns full Role list.
 /// No authentication required. ID count capped at 100.
+#[allow(non_snake_case)]
 pub async fn express_role_list(
     pool: Extension<Pool>,
     Json(payload): Json<RoleListRequest>,
@@ -356,6 +361,7 @@ pub async fn express_role_list(
 ///
 /// Accepts person ID list, returns each person with their organization (unit) info.
 /// No authentication required. ID count capped at 100.
+#[allow(non_snake_case)]
 pub async fn express_person_with_unit(
     pool: Extension<Pool>,
     Json(payload): Json<PersonWithUnitRequest>,
@@ -409,6 +415,7 @@ pub async fn express_person_with_unit(
 ///
 /// Accepts person ID list, returns each person with their identities.
 /// No authentication required. ID count capped at 100.
+#[allow(non_snake_case)]
 pub async fn express_person_with_identity(
     pool: Extension<Pool>,
     Json(payload): Json<PersonWithIdentityRequest>,

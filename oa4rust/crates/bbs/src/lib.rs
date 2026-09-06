@@ -1,6 +1,5 @@
 use axum::{extract::Extension, routing::get, routing::post, Router};
 use deadpool_postgres::Pool;
-use shared::middleware::SecurityState;
 
 pub mod forum;
 pub mod section;

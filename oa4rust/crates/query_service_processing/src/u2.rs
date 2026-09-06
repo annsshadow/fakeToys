@@ -126,6 +126,7 @@ async fn search_module(
 
 /// 模块内 LIKE 模式的轻量包装（避免泄漏 sql 类型到签名）
 /// POST design/search — 在指定模块的设计元素中搜索关键字
+#[allow(non_snake_case)]
 pub async fn design_search(
     pool: Extension<Pool>,
     Json(wi): Json<DesignSearchWi>,
@@ -182,6 +183,7 @@ pub struct IndexCountWi {
 ///
 /// 返回 {category,key,exists,count}；count 为 CMS 文档库真实行数，
 /// category/key 为空时对应 Java 的 CATEGORY_SEARCH + KEY_ENTIRE 全量口径。
+#[allow(non_snake_case)]
 pub async fn index_directory_document_count(
     pool: Extension<Pool>,
     body: Option<Json<IndexCountWi>>,
@@ -230,6 +232,7 @@ pub struct UpdateExtraDocumentWi {
 ///
 /// 校验 Java ActionUpdateExtraDocument 要求的非空字段后，将附加文档 UPSERT 进
 /// x_query_index_extra（type+key+doc_id 唯一）。
+#[allow(non_snake_case)]
 pub async fn index_update_extra_document(
     pool: Extension<Pool>,
     Json(wi): Json<UpdateExtraDocumentWi>,
@@ -390,6 +393,7 @@ touch_endpoints!(
 );
 
 /// GET touch/optimize/index/{node}/touch
+#[allow(non_snake_case)]
 pub async fn optimize_index_touch(
     pool: Extension<Pool>,
     Path(node): Path<String>,
@@ -400,6 +404,7 @@ pub async fn optimize_index_touch(
 // ── table ───────────────────────────────────────────────────────────────────
 
 /// POST table/{flag}/insert — 动态表插入一行，返回新行标识
+#[allow(non_snake_case)]
 pub async fn table_insert(
     pool: Extension<Pool>,
     Path(flag): Path<String>,
@@ -428,6 +433,7 @@ pub async fn table_insert(
 }
 
 /// POST table/{flag}/update/{bundle} — 按 bundle 定位并更新（不存在则创建）
+#[allow(non_snake_case)]
 pub async fn table_update_with_bundle(
     pool: Extension<Pool>,
     Path((flag, bundle)): Path<(String, String)>,
@@ -481,6 +487,7 @@ pub async fn table_update_with_bundle(
 }
 
 /// GET table/reload/dynamic — 动态实体工厂重建标记（记录最近一次 reload 时间戳）
+#[allow(non_snake_case)]
 pub async fn table_reload_dynamic(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -562,6 +569,7 @@ async fn neural_stop(
 }
 
 /// GET neural/generate/model/{modelFlag}
+#[allow(non_snake_case)]
 pub async fn neural_generate(
     pool: Extension<Pool>,
     Path(model_flag): Path<String>,
@@ -570,6 +578,7 @@ pub async fn neural_generate(
 }
 
 /// GET neural/stop/generating/model/{modelFlag}
+#[allow(non_snake_case)]
 pub async fn neural_stop_generating(
     pool: Extension<Pool>,
     Path(model_flag): Path<String>,
@@ -578,6 +587,7 @@ pub async fn neural_stop_generating(
 }
 
 /// GET neural/learn/model/{modelFlag}
+#[allow(non_snake_case)]
 pub async fn neural_learn(
     pool: Extension<Pool>,
     Path(model_flag): Path<String>,
@@ -586,6 +596,7 @@ pub async fn neural_learn(
 }
 
 /// GET neural/stop/learning/model/{modelFlag}
+#[allow(non_snake_case)]
 pub async fn neural_stop_learning(
     pool: Extension<Pool>,
     Path(model_flag): Path<String>,
@@ -597,6 +608,7 @@ pub async fn neural_stop_learning(
 ///
 /// 仅当该模型存在已完成的学习任务时才具备推算能力；否则对齐 Java 抛出
 /// ExceptionModelNotReady。模型就绪但无已落盘推算结果时返回空列表。
+#[allow(non_snake_case)]
 pub async fn neural_list_calculate_with_work(
     pool: Extension<Pool>,
     Path((model_flag, work_id)): Path<(String, String)>,

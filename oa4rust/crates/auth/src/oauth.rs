@@ -112,7 +112,7 @@ fn validate_and_remove_pkce(state: &str, code_verifier: &str) -> bool {
 /// 验证微信签名
 /// 算法：将 token、timestamp、nonce 按字典序排序后拼接，计算 SHA1 哈希，与 signature 对比
 pub fn verify_wechat_signature(token: &str, signature: &str, timestamp: &str, nonce: &str) -> bool {
-    let mut items = vec![token, timestamp, nonce];
+    let mut items = [token, timestamp, nonce];
     items.sort();
     let text = items.concat();
     let hash = format!("{:x}", sha1::Sha1::digest(text.as_bytes()));
@@ -138,6 +138,7 @@ pub fn verify_dingtalk_signature(app_secret: &str, signature: &str, timestamp: &
 // ──────────────────────────────────────────────────────────────────────────────
 
 /// OAuth 提供商健康状态检查
+#[allow(non_snake_case)]
 pub async fn check_oauth_provider_health(name: &str) -> bool {
     match name {
         QYWX_NAME => check_qywx_health().await,
@@ -215,7 +216,7 @@ fn dingding_config() -> Option<OAuthConfig> {
 
 fn oauth_client() -> &'static reqwest::Client {
     static CLIENT: OnceLock<reqwest::Client> = OnceLock::new();
-    CLIENT.get_or_init(|| reqwest::Client::new())
+    CLIENT.get_or_init(reqwest::Client::new)
 }
 
 /// 企业微信授权 URL（snsapi_base 静默授权，支持 PKCE）
@@ -424,6 +425,7 @@ async fn login_or_create_user(
 }
 
 /// GET /jaxrs/authentication/oauth/list —— 可用第三方登录提供方
+#[allow(non_snake_case)]
 pub async fn oauth_list() -> Result<Json<ActionResult<Value>>, AppError> {
     let providers = vec![
         json!({
@@ -458,26 +460,29 @@ fn provider_authorize_url(name: &str, config: &OAuthConfig) -> String {
 }
 
 /// GET /jaxrs/authentication/oauth/qywx/config
+#[allow(non_snake_case)]
 pub async fn oauth_qywx_config() -> Result<Json<ActionResult<Value>>, AppError> {
     let config = qywx_config();
     Ok(Json(ActionResult::success(json!({
         "name": QYWX_NAME,
         "appId": config.as_ref().map(|c| &c.app_id).unwrap_or(&String::new()).clone(),
-        "url": config.as_ref().map(|c| qywx_authorize_url(c)).unwrap_or_default(),
+        "url": config.as_ref().map(qywx_authorize_url).unwrap_or_default(),
     }))))
 }
 
 /// GET /jaxrs/authentication/oauth/dingding/config
+#[allow(non_snake_case)]
 pub async fn oauth_dingding_config() -> Result<Json<ActionResult<Value>>, AppError> {
     let config = dingding_config();
     Ok(Json(ActionResult::success(json!({
         "name": DINGDING_NAME,
         "appId": config.as_ref().map(|c| &c.app_id).unwrap_or(&String::new()).clone(),
-        "url": config.as_ref().map(|c| dingding_authorize_url(c)).unwrap_or_default(),
+        "url": config.as_ref().map(dingding_authorize_url).unwrap_or_default(),
     }))))
 }
 
 /// GET /jaxrs/authentication/oauth/name/{name} —— 按名称分发到对应提供方配置
+#[allow(non_snake_case)]
 pub async fn oauth_name_config(
     Path(name): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -506,7 +511,7 @@ async fn provider_login(
         DINGDING_NAME => DINGDING_UNIQUE_PREFIX,
         _ => unreachable!(),
     };
-    let result = login_or_create_user(&*pool, &*session_manager, format!("{prefix}{user_id}")).await?;
+    let result = login_or_create_user(&pool, &session_manager, format!("{prefix}{user_id}")).await?;
     Ok(Json(ActionResult::success(result)))
 }
 
@@ -517,6 +522,7 @@ pub struct OAuthStateQuery {
 }
 
 /// GET /jaxrs/authentication/oauth/login/qywx/code/{code}
+#[allow(non_snake_case)]
 pub async fn oauth_login_qywx(
     pool: Extension<Pool>,
     session_manager: Extension<SessionManager>,
@@ -535,6 +541,7 @@ pub async fn oauth_login_qywx(
 }
 
 /// GET /jaxrs/authentication/oauth/login/dingding/code/{code}
+#[allow(non_snake_case)]
 pub async fn oauth_login_dingding(
     pool: Extension<Pool>,
     session_manager: Extension<SessionManager>,
@@ -553,6 +560,7 @@ pub async fn oauth_login_dingding(
 }
 
 /// GET /jaxrs/authentication/oauth/login/name/{name}/code/{code}/redirecturi/{redirectUri}
+#[allow(non_snake_case)]
 pub async fn oauth_login_name(
     pool: Extension<Pool>,
     session_manager: Extension<SessionManager>,
@@ -576,6 +584,7 @@ pub async fn oauth_login_name(
 /// 第三方绑定/登录一体化：OAuth 授权码为有效凭证，交换后绑定或创建本地用户。
 /// 注意：与 /login/name/... 行为一致（第三方账号不存在时自动创建），
 /// 与扫码绑定（/jaxrs/authentication/bind）的"确认后签发"语义不同。
+#[allow(non_snake_case)]
 pub async fn oauth_bind_name(
     pool: Extension<Pool>,
     session_manager: Extension<SessionManager>,

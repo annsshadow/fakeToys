@@ -1,4 +1,4 @@
-use axum::{extract::{Extension, Path}, routing::{get, post, put, delete}, Json, Router};
+use axum::{extract::{Extension, Path}, Json, Router};
 use deadpool_postgres::Pool;
 use sea_orm::{ActiveModelTrait, ColumnTrait, DatabaseConnection, EntityTrait, QueryFilter, QueryOrder, QuerySelect, Set};
 use serde::Deserialize;
@@ -57,7 +57,7 @@ pub async fn agent_list(
 
 pub async fn agent_create(
     db: Extension<DatabaseConnection>,
-    Extension(session): Extension<Session>,
+    Extension(_session): Extension<Session>,
     Json(req): Json<AgentCreateRequest>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     if req.name.trim().is_empty() {
@@ -170,7 +170,7 @@ pub async fn agent_delete(
     ))))
 }
 
-pub fn _router(_pool: Pool, db: Option<DatabaseConnection>) -> Router {
+pub fn _router(_pool: Pool, _db: Option<DatabaseConnection>) -> Router {
     // All /jaxrs/program_center/* routes are owned by the program_center
     // crate (raw-SQL implementations). Registering them here too would
     // panic axum at merge time ("Overlapping method route").

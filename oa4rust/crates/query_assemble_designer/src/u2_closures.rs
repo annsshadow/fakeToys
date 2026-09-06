@@ -198,6 +198,7 @@ async fn statement_duplicate_exists(
 
 // ── statement 族 ─────────────────────────────────────────────────────────────
 
+#[allow(non_snake_case)]
 pub async fn statement_create(
     pool: Extension<Pool>,
     Json(body): Json<Value>,
@@ -254,6 +255,7 @@ pub async fn statement_create(
     ))))
 }
 
+#[allow(non_snake_case)]
 pub async fn statement_edit(
     pool: Extension<Pool>,
     Path(flag): Path<String>,
@@ -301,6 +303,7 @@ pub async fn statement_edit(
     ))))
 }
 
+#[allow(non_snake_case)]
 pub async fn statement_delete(
     pool: Extension<Pool>,
     Path(flag): Path<String>,
@@ -321,6 +324,7 @@ pub async fn statement_delete(
     ))))
 }
 
+#[allow(non_snake_case)]
 pub async fn statement_get_flag(
     pool: Extension<Pool>,
     Path(flag): Path<String>,
@@ -341,6 +345,7 @@ pub async fn statement_get_flag(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn statement_manage_list(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -364,6 +369,7 @@ pub async fn statement_manage_list(
     )))
 }
 
+#[allow(non_snake_case)]
 pub async fn statement_list_with_query(
     pool: Extension<Pool>,
     Path(query_flag): Path<String>,
@@ -388,6 +394,7 @@ pub async fn statement_list_with_query(
     )))
 }
 
+#[allow(non_snake_case)]
 pub async fn statement_permission(
     pool: Extension<Pool>,
     Path(id): Path<String>,
@@ -504,6 +511,7 @@ async fn execute_statement_by_flag(
     Ok(Value::Object(payload))
 }
 
+#[allow(non_snake_case)]
 pub async fn statement_execute_v2(
     pool: Extension<Pool>,
     Path((flag, page, size)): Path<(String, i64, i64)>,
@@ -515,6 +523,7 @@ pub async fn statement_execute_v2(
     Ok(Json(ActionResult::success(result)))
 }
 
+#[allow(non_snake_case)]
 pub async fn statement_execute_mode_v2(
     pool: Extension<Pool>,
     Path((flag, mode, page, size)): Path<(String, String, i64, i64)>,
@@ -528,6 +537,7 @@ pub async fn statement_execute_mode_v2(
 
 // ── importmodel CRUD ─────────────────────────────────────────────────────────
 
+#[allow(non_snake_case)]
 pub async fn importmodel_create(
     pool: Extension<Pool>,
     Json(body): Json<Value>,
@@ -575,6 +585,7 @@ pub async fn importmodel_create(
     ))))
 }
 
+#[allow(non_snake_case)]
 pub async fn importmodel_edit(
     pool: Extension<Pool>,
     Path(id): Path<String>,
@@ -605,6 +616,7 @@ pub async fn importmodel_edit(
     ))))
 }
 
+#[allow(non_snake_case)]
 pub async fn importmodel_delete(
     pool: Extension<Pool>,
     Path(id): Path<String>,
@@ -627,6 +639,7 @@ pub async fn importmodel_delete(
 
 // ── neural delete/update ─────────────────────────────────────────────────────
 
+#[allow(non_snake_case)]
 pub async fn neural_delete_model_modelFlag(
     pool: Extension<Pool>,
     Path(model_flag): Path<String>,
@@ -650,6 +663,7 @@ pub async fn neural_delete_model_modelFlag(
     ))))
 }
 
+#[allow(non_snake_case)]
 pub async fn neural_update_model_modelFlag(
     pool: Extension<Pool>,
     Path(model_flag): Path<String>,
@@ -681,6 +695,7 @@ pub async fn neural_update_model_modelFlag(
 
 // ── stat create/edit/delete ──────────────────────────────────────────────
 
+#[allow(non_snake_case)]
 pub async fn stat_create(
     pool: Extension<Pool>,
     Json(body): Json<Value>,
@@ -728,6 +743,7 @@ pub async fn stat_create(
     ))))
 }
 
+#[allow(non_snake_case)]
 pub async fn stat_edit(
     pool: Extension<Pool>,
     Path(id): Path<String>,
@@ -761,6 +777,7 @@ pub async fn stat_edit(
     ))))
 }
 
+#[allow(non_snake_case)]
 pub async fn stat_delete(
     pool: Extension<Pool>,
     Path(id): Path<String>,
@@ -783,6 +800,7 @@ pub async fn stat_delete(
 
 // ── table CRUD + 行级操作补齐 ────────────────────────────────────────────
 
+#[allow(non_snake_case)]
 pub async fn table_create(
     pool: Extension<Pool>,
     Json(body): Json<Value>,
@@ -829,6 +847,7 @@ pub async fn table_create(
     ))))
 }
 
+#[allow(non_snake_case)]
 pub async fn table_edit(
     pool: Extension<Pool>,
     Path(flag): Path<String>,
@@ -858,6 +877,7 @@ pub async fn table_edit(
     ))))
 }
 
+#[allow(non_snake_case)]
 pub async fn table_delete(
     pool: Extension<Pool>,
     Path(flag): Path<String>,
@@ -881,6 +901,7 @@ pub async fn table_delete(
     ))))
 }
 
+#[allow(non_snake_case)]
 pub async fn table_tableFlag_row_insert(
     pool: Extension<Pool>,
     Path(table_flag): Path<String>,
@@ -907,6 +928,7 @@ pub async fn table_tableFlag_row_insert(
     ))))
 }
 
+#[allow(non_snake_case)]
 pub async fn table_tableFlag_row_update(
     pool: Extension<Pool>,
     Path((table_flag, id)): Path<(String, String)>,
@@ -936,6 +958,7 @@ pub async fn table_tableFlag_row_update(
     ))))
 }
 
+#[allow(non_snake_case)]
 pub async fn table_tableFlag_row_delete(
     pool: Extension<Pool>,
     Path((table_flag, id)): Path<(String, String)>,
@@ -964,6 +987,7 @@ pub async fn table_tableFlag_row_delete(
 
 // ── view create/edit/delete + query icon ─────────────────────────────────────
 
+#[allow(non_snake_case)]
 pub async fn view_create(
     pool: Extension<Pool>,
     Json(body): Json<Value>,
@@ -1014,6 +1038,7 @@ pub async fn view_create(
     ))))
 }
 
+#[allow(non_snake_case)]
 pub async fn view_edit(
     pool: Extension<Pool>,
     Path(id): Path<String>,
@@ -1047,6 +1072,7 @@ pub async fn view_edit(
     ))))
 }
 
+#[allow(non_snake_case)]
 pub async fn view_delete(
     pool: Extension<Pool>,
     Path(id): Path<String>,
@@ -1067,6 +1093,7 @@ pub async fn view_delete(
     ))))
 }
 
+#[allow(non_snake_case)]
 pub async fn query_set_icon(
     pool: Extension<Pool>,
     Path(flag): Path<String>,
@@ -1150,6 +1177,7 @@ fn body_str<'a>(body: &'a Value, keys: &[&str]) -> Option<&'a str> {
 }
 
 /// POST /designer/search —— 按关键词检索查询设计（真实 ILIKE，拒绝空 key）。
+#[allow(non_snake_case)]
 pub async fn designer_search_v2(
     pool: Extension<Pool>,
     Json(body): Json<Value>,
@@ -1192,6 +1220,7 @@ pub async fn designer_search_v2(
 }
 
 /// GET /id/{count} —— 生成唯一标识列表（0 < count < 200，对齐 Java ActionGet）。
+#[allow(non_snake_case)]
 pub async fn id_generate(
     Path(count): Path<i64>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -1204,6 +1233,7 @@ pub async fn id_generate(
 }
 
 /// GET /importmodel/{flag} —— 按 id 或 model_flag 获取导入模型。
+#[allow(non_snake_case)]
 pub async fn importmodel_get_flag(
     pool: Extension<Pool>,
     Path(flag): Path<String>,
@@ -1242,6 +1272,7 @@ pub async fn importmodel_get_flag(
 }
 
 /// PUT /importmodel/{flag} —— 更新导入模型（IDOR 门禁 + 归一化查重排除自身）。
+#[allow(non_snake_case)]
 pub async fn importmodel_edit_flag(
     pool: Extension<Pool>,
     session: Extension<Session>,
@@ -1304,6 +1335,7 @@ pub async fn importmodel_edit_flag(
 }
 
 /// DELETE /importmodel/{flag} —— 删除导入模型（IDOR 门禁）。
+#[allow(non_snake_case)]
 pub async fn importmodel_delete_flag(
     pool: Extension<Pool>,
     session: Extension<Session>,
@@ -1342,6 +1374,7 @@ pub async fn importmodel_delete_flag(
 }
 
 /// POST /importmodel/{flag}/permission —— 设置权限（IDOR 门禁，权限体序列化落库）。
+#[allow(non_snake_case)]
 pub async fn importmodel_permission_set(
     pool: Extension<Pool>,
     session: Extension<Session>,
@@ -1390,6 +1423,7 @@ pub async fn importmodel_permission_set(
 }
 
 /// PUT /output/{flag}/select —— 设置输出选择（IDOR 门禁，select_file/query_flag 真实落库）。
+#[allow(non_snake_case)]
 pub async fn output_select_put(
     pool: Extension<Pool>,
     session: Extension<Session>,
@@ -1439,6 +1473,7 @@ pub async fn output_select_put(
 }
 
 /// POST /query —— 创建查询设计（归一化查重，creator 取会话）。
+#[allow(non_snake_case)]
 pub async fn query_create_v2(
     pool: Extension<Pool>,
     session: Extension<Session>,
@@ -1487,6 +1522,7 @@ pub async fn query_create_v2(
 }
 
 /// DELETE /query/{flag} —— 删除查询设计（软删 + IDOR 门禁）。
+#[allow(non_snake_case)]
 pub async fn query_delete_flag(
     pool: Extension<Pool>,
     session: Extension<Session>,
@@ -1525,6 +1561,7 @@ pub async fn query_delete_flag(
 }
 
 /// PUT /query/{flag} —— 更新查询设计（IDOR 门禁 + 归一化查重排除自身）。
+#[allow(non_snake_case)]
 pub async fn query_edit_flag(
     pool: Extension<Pool>,
     session: Extension<Session>,
@@ -1590,6 +1627,7 @@ pub async fn query_edit_flag(
 }
 
 /// POST /query/{flag}/icon —— 设置图标（IDOR 门禁，与 PUT icon 同一落库语义）。
+#[allow(non_snake_case)]
 pub async fn query_icon_set(
     pool: Extension<Pool>,
     session: Extension<Session>,
@@ -1716,6 +1754,7 @@ const PERM_VIEW: PermissionResource = PermissionResource {
 };
 
 /// POST /query/{flag}/permission
+#[allow(non_snake_case)]
 pub async fn query_permission_set(
     pool: Extension<Pool>,
     session: Extension<Session>,
@@ -1726,6 +1765,7 @@ pub async fn query_permission_set(
 }
 
 /// POST /stat/{id}/permission
+#[allow(non_snake_case)]
 pub async fn stat_permission_set(
     pool: Extension<Pool>,
     session: Extension<Session>,
@@ -1736,6 +1776,7 @@ pub async fn stat_permission_set(
 }
 
 /// POST /table/{flag}/permission
+#[allow(non_snake_case)]
 pub async fn table_permission_set(
     pool: Extension<Pool>,
     session: Extension<Session>,
@@ -1746,6 +1787,7 @@ pub async fn table_permission_set(
 }
 
 /// POST /view/{id}/permission
+#[allow(non_snake_case)]
 pub async fn view_permission_set(
     pool: Extension<Pool>,
     session: Extension<Session>,
@@ -1756,6 +1798,7 @@ pub async fn view_permission_set(
 }
 
 /// GET /table/{flag}/build/dispatch —— 按 table_flag 触发构建（真实状态落库）。
+#[allow(non_snake_case)]
 pub async fn table_build_dispatch_flag(
     pool: Extension<Pool>,
     Path(flag): Path<String>,
@@ -1821,6 +1864,7 @@ async fn execute_configured_sql(
 }
 
 /// PUT /stat/{id}/simulate —— 统计模拟（IDOR 门禁 + config.sql 真实执行）。
+#[allow(non_snake_case)]
 pub async fn stat_simulate_put(
     pool: Extension<Pool>,
     session: Extension<Session>,
@@ -1870,6 +1914,7 @@ pub async fn stat_simulate_put(
 }
 
 /// PUT /view/{id}/bundle —— 保存视图 bundle（IDOR 门禁）。
+#[allow(non_snake_case)]
 pub async fn view_bundle_put(
     pool: Extension<Pool>,
     session: Extension<Session>,
@@ -1912,6 +1957,7 @@ pub async fn view_bundle_put(
 }
 
 /// PUT /view/{id}/simulate —— 视图模拟：content JSON 提取 sql 校验后真实执行。
+#[allow(non_snake_case)]
 pub async fn view_simulate_put(
     pool: Extension<Pool>,
     session: Extension<Session>,

@@ -1,5 +1,5 @@
 use axum::body::Body;
-use axum::extract::{ConnectInfo, State};
+use axum::extract::ConnectInfo;
 use axum::http::{header, HeaderValue, Request, StatusCode};
 use axum::middleware::Next;
 use axum::response::{IntoResponse, Response};
@@ -13,8 +13,7 @@ use tracing::warn;
 use super::constants::*;
 use crate::error::AppError;
 use crate::rate_limit::RateLimiter;
-use crate::response::error_response;
-use crate::session::{Session, SessionManager};
+use crate::session::SessionManager;
 
 // ──────────────────────────────────────────────────────────────────────────────
 // CORS 中间件
@@ -98,7 +97,7 @@ pub(crate) fn is_auth_exempt(path: &str) -> bool {
 }
 
 pub(crate) fn is_auth_rate_limited(path: &str) -> bool {
-    AUTH_RATE_LIMIT_EXACT.iter().any(|p| path == *p)
+    AUTH_RATE_LIMIT_EXACT.contains(&path)
         || AUTH_RATE_LIMIT_PREFIXES.iter().any(|prefix| path_starts_with_segment(path, prefix))
 }
 
@@ -163,7 +162,7 @@ pub(crate) fn client_ip(request: &Request<Body>) -> String {
         .map(|info| info.ip().to_string())
         .unwrap_or_else(|| "127.0.0.1".to_string());
 
-    if trusted_proxy_ips().iter().any(|p| *p == socket_ip) {
+    if trusted_proxy_ips().contains(&socket_ip) {
         if let Some(ip) = first_xff_ip(request) {
             return ip;
         }

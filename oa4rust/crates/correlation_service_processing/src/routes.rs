@@ -1,4 +1,3 @@
-use axum::Router;
 
 use crate::correlation_service_processing_router;
 

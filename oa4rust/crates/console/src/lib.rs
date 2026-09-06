@@ -1,11 +1,10 @@
 use axum::{
     extract::Extension,
-    Json, Router, routing::get, routing::post,
+    Json,
 };
 use deadpool_postgres::Pool;
 use serde::Deserialize;
 use serde_json::Value;
-use uuid::Uuid;
 
 use shared::{error::AppError, response::ActionResult};
 use shared::session::Session;
@@ -31,6 +30,7 @@ const ALLOWED_COMMANDS: &[&str] = &["uname", "df", "free", "ps", "uptime"];
 /// shell 元字符黑名单
 const FORBIDDEN_CHARS: &[char] = &[';', '|', '&', '`', '$', '(', ')'];
 
+#[allow(non_snake_case)]
 pub async fn get_status(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -58,6 +58,7 @@ pub async fn get_status(
     Ok(Json(ActionResult::success(data)))
 }
 
+#[allow(non_snake_case)]
 pub async fn get_logs(
     pool: Extension<Pool>,
     axum::extract::Path(log_type): axum::extract::Path<String>,
@@ -91,6 +92,7 @@ pub async fn get_logs(
     ))))
 }
 
+#[allow(non_snake_case)]
 pub async fn send_message(
     pool: Extension<Pool>,
     axum::extract::Json(req): Json<SendMessageRequest>,
@@ -118,6 +120,7 @@ pub async fn send_message(
     ))))
 }
 
+#[allow(non_snake_case)]
 pub async fn clear_cache(
     pool: Extension<Pool>,
     axum::extract::Path(cache_type): axum::extract::Path<String>,
@@ -138,6 +141,7 @@ pub async fn clear_cache(
     ))))
 }
 
+#[allow(non_snake_case)]
 pub async fn get_metric(
     pool: Extension<Pool>,
     axum::extract::Path(metric_name): axum::extract::Path<String>,
@@ -167,6 +171,7 @@ pub async fn get_metric(
     ))))
 }
 
+#[allow(non_snake_case)]
 pub async fn execute_command(
     pool: Extension<Pool>,
     session: Extension<Session>,
@@ -218,6 +223,7 @@ pub async fn execute_command(
     ))))
 }
 
+#[allow(non_snake_case)]
 pub async fn get_system_info() -> Result<Json<ActionResult<Value>>, AppError> {
     let mut sys = sysinfo::System::new_all();
     sys.refresh_all();

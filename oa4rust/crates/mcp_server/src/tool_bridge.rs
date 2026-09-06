@@ -1379,7 +1379,7 @@ include!("generated_routes.rs");
 
 fn all_route_defs() -> Vec<RouteDef> {
     let mut all = ROUTE_DEFS.to_vec();
-    all.extend_from_slice(&GENERATED_ROUTE_DEFS);
+    all.extend_from_slice(GENERATED_ROUTE_DEFS);
     all
 }
 
@@ -1503,7 +1503,7 @@ impl ToolBridge {
         let all_defs = all_route_defs();
         let route_map: HashMap<String, RouteDef> = all_defs
             .iter()
-            .map(|r| (r.tool_name.to_string(), r.clone()))
+            .map(|r| (r.tool_name.to_string(), *r))
             .collect();
 
         Self { app, route_map }
@@ -1534,7 +1534,7 @@ impl ToolBridge {
                         },
                     );
                 }
-                let required: Vec<&str> = def.path_params.iter().copied().collect();
+                let required: Vec<&str> = def.path_params.to_vec();
 
                 McpTool {
                     name: def.tool_name.to_string(),
@@ -1602,12 +1602,12 @@ impl ToolBridge {
             Body::from(json)
         };
 
-        let mut req_builder = Request::builder()
+        let req_builder = Request::builder()
             .method(method)
             .uri(path)
             .header("content-type", "application/json");
 
-        let mut req = req_builder
+        let req = req_builder
             .body(body)
             .map_err(|e| McpError::invalid_request(e.to_string()))?;
 

@@ -118,6 +118,7 @@ pub struct ListEventsRequest {
     pub calendar_id: Option<String>,
 }
 
+#[allow(non_snake_case)]
 pub async fn calendar_list_public(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Vec<CalendarItem>>>, AppError> {
@@ -151,6 +152,7 @@ pub async fn calendar_list_public(
     Ok(Json(ActionResult::success(data)))
 }
 
+#[allow(non_snake_case)]
 pub async fn calendar_list_my(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<MyCalendarResponse>>, AppError> {
@@ -199,6 +201,7 @@ pub async fn calendar_list_my(
     Ok(Json(ActionResult::success(response)))
 }
 
+#[allow(non_snake_case)]
 pub async fn calendar_get(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
@@ -230,6 +233,7 @@ pub async fn calendar_get(
     Ok(Json(ActionResult::success(item)))
 }
 
+#[allow(non_snake_case)]
 pub async fn calendar_create(
     pool: Extension<Pool>,
     axum::extract::Json(req): axum::extract::Json<CreateCalendarRequest>,
@@ -278,6 +282,7 @@ pub async fn calendar_create(
     Ok(Json(ActionResult::success(item)))
 }
 
+#[allow(non_snake_case)]
 pub async fn calendar_update(
     pool: Extension<Pool>,
     axum::extract::Json(req): axum::extract::Json<UpdateCalendarRequest>,
@@ -340,6 +345,7 @@ pub async fn calendar_update(
     Ok(Json(ActionResult::success(item)))
 }
 
+#[allow(non_snake_case)]
 pub async fn calendar_remove(
     pool: Extension<Pool>,
     axum::extract::Json(req): axum::extract::Json<DeleteCalendarRequest>,
@@ -383,6 +389,7 @@ pub async fn calendar_remove(
     Ok(Json(ActionResult::success(item)))
 }
 
+#[allow(non_snake_case)]
 pub async fn event_create(
     pool: Extension<Pool>,
     axum::extract::Json(req): axum::extract::Json<CreateEventRequest>,
@@ -437,6 +444,7 @@ pub async fn event_create(
     Ok(Json(ActionResult::success(event)))
 }
 
+#[allow(non_snake_case)]
 pub async fn event_update(
     pool: Extension<Pool>,
     axum::extract::Json(req): axum::extract::Json<UpdateEventRequest>,
@@ -501,6 +509,7 @@ pub async fn event_update(
     Ok(Json(ActionResult::success(event)))
 }
 
+#[allow(non_snake_case)]
 pub async fn event_remove(
     pool: Extension<Pool>,
     axum::extract::Json(req): axum::extract::Json<DeleteEventRequest>,
@@ -545,6 +554,7 @@ pub async fn event_remove(
     Ok(Json(ActionResult::success(event)))
 }
 
+#[allow(non_snake_case)]
 pub async fn event_list(
     pool: Extension<Pool>,
     axum::extract::Path(calendar_id): axum::extract::Path<String>,

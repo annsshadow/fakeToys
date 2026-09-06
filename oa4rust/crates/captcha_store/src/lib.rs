@@ -10,7 +10,9 @@ use uuid::Uuid;
 
 const TTL_MINUTES: i64 = 5;
 const MAX_ATTEMPTS: u32 = 5;
+#[allow(dead_code)]
 const DEFAULT_WIDTH: u32 = 120;
+#[allow(dead_code)]
 const DEFAULT_HEIGHT: u32 = 40;
 const MAX_WIDTH: u32 = 500;
 const MAX_HEIGHT: u32 = 200;
@@ -169,7 +171,6 @@ pub fn render_png(width: u32, height: u32) -> Result<(String, Vec<u8>), CaptchaE
         .view(width, height);
     c.as_tuple()
         .ok_or(CaptchaError::NotFound)
-        .map(|(chars, png)| (chars, png))
 }
 
 /// 生成验证码并存储，返回 (captcha_id, PNG 字节)

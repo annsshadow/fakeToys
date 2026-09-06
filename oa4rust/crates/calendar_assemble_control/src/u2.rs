@@ -122,6 +122,7 @@ async fn person_can_manage_event(
 // ═══════════════════════════ 第 1 批（既有 7 条）═════════════════════════
 
 /// GET /jaxrs/calendar_assemble_control/calendar/list/my —— 我能访问的日历（个人域）
+#[allow(non_snake_case)]
 pub async fn calendar_list_my(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
@@ -157,6 +158,7 @@ pub async fn calendar_list_my(
 }
 
 /// GET /jaxrs/calendar_assemble_control/calendar/list/public —— 所有公开日历
+#[allow(non_snake_case)]
 pub async fn calendar_list_public(pool: Extension<Pool>) -> ApiResult {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let rows = client
@@ -174,6 +176,7 @@ pub async fn calendar_list_public(pool: Extension<Pool>) -> ApiResult {
 }
 
 /// GET /jaxrs/calendar_assemble_control/calendar/{id} —— 按 ID 获取日历信息
+#[allow(non_snake_case)]
 pub async fn calendar_get(pool: Extension<Pool>, Path(id): Path<String>) -> ApiResult {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let row = client
@@ -191,6 +194,7 @@ pub async fn calendar_get(pool: Extension<Pool>, Path(id): Path<String>) -> ApiR
 }
 
 /// GET /jaxrs/calendar_assemble_control/calendar/ismanager —— 当前用户是否管理员
+#[allow(non_snake_case)]
 pub async fn calendar_ismanager(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
@@ -200,6 +204,7 @@ pub async fn calendar_ismanager(
 }
 
 /// GET /jaxrs/calendar_assemble_control/event/{id} —— 按 ID 获取日程事件
+#[allow(non_snake_case)]
 pub async fn event_get(pool: Extension<Pool>, Path(id): Path<String>) -> ApiResult {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let row = client
@@ -218,6 +223,7 @@ pub async fn event_get(pool: Extension<Pool>, Path(id): Path<String>) -> ApiResu
 }
 
 /// GET /jaxrs/calendar_assemble_control/setting/list/all —— 日历设置列表
+#[allow(non_snake_case)]
 pub async fn setting_list_all(pool: Extension<Pool>) -> ApiResult {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let rows = client
@@ -248,6 +254,7 @@ pub async fn setting_list_all(pool: Extension<Pool>) -> ApiResult {
 }
 
 /// GET /jaxrs/calendar_assemble_control/setting/ismanager —— 当前用户是否设置管理员
+#[allow(non_snake_case)]
 pub async fn setting_ismanager(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
@@ -259,6 +266,7 @@ pub async fn setting_ismanager(
 // ═══════════════════════════ 第 2 批（补齐 24 条）═════════════════════════
 
 /// POST /jaxrs/calendar_assemble_control/calendar —— 创建日历
+#[allow(non_snake_case)]
 pub async fn calendar_create(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
@@ -303,6 +311,7 @@ pub async fn calendar_create(
 }
 
 /// GET /jaxrs/calendar_assemble_control/calendar/follow/{id} —— 当前用户是否关注该日历
+#[allow(non_snake_case)]
 pub async fn calendar_follow_get(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
@@ -321,6 +330,7 @@ pub async fn calendar_follow_get(
 }
 
 /// GET /jaxrs/calendar_assemble_control/calendar/follow/{id}/cancel —— 取消关注
+#[allow(non_snake_case)]
 pub async fn calendar_follow_cancel(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
@@ -338,6 +348,7 @@ pub async fn calendar_follow_cancel(
 }
 
 /// GET /jaxrs/calendar_assemble_control/calendar/ismanager/calendar/{id} —— 当前用户是否某日历管理员
+#[allow(non_snake_case)]
 pub async fn calendar_ismanager_calendar(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
@@ -348,6 +359,7 @@ pub async fn calendar_ismanager_calendar(
 }
 
 /// PUT /jaxrs/calendar_assemble_control/calendar/list/filter —— 按条件过滤日历
+#[allow(non_snake_case)]
 pub async fn calendar_list_filter(
     pool: Extension<Pool>,
     Json(body): Json<Value>,
@@ -373,6 +385,7 @@ pub async fn calendar_list_filter(
 }
 
 /// GET /jaxrs/calendar_assemble_control/calendar/manager/list/with/person/{id} —— 含某人的日历管理员列表
+#[allow(non_snake_case)]
 pub async fn calendar_manager_list_with_person(
     pool: Extension<Pool>,
     Path(id): Path<String>,
@@ -399,6 +412,7 @@ pub async fn calendar_manager_list_with_person(
 }
 
 /// DELETE /jaxrs/calendar_assemble_control/calendar/{id} —— 删除日历（IDOR 门禁）
+#[allow(non_snake_case)]
 pub async fn calendar_delete(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
@@ -419,6 +433,7 @@ pub async fn calendar_delete(
 }
 
 /// POST /jaxrs/calendar_assemble_control/event —— 创建事件
+#[allow(non_snake_case)]
 pub async fn event_create(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
@@ -468,6 +483,7 @@ pub async fn event_create(
 }
 
 /// DELETE /jaxrs/calendar_assemble_control/event/after/{id} —— 删除该事件之后（含）的所有重复实例
+#[allow(non_snake_case)]
 pub async fn event_delete_after(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
@@ -502,6 +518,7 @@ pub async fn event_delete_after(
 }
 
 /// DELETE /jaxrs/calendar_assemble_control/event/all/{id} —— 删除该事件全部重复实例
+#[allow(non_snake_case)]
 pub async fn event_delete_all(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
@@ -527,6 +544,7 @@ pub async fn event_delete_all(
 }
 
 /// PUT /jaxrs/calendar_assemble_control/event/list/filter —— 事件过滤列表
+#[allow(non_snake_case)]
 pub async fn event_list_filter(pool: Extension<Pool>, Json(body): Json<Value>) -> ApiResult {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let calendar_id: Option<String> = body.get("calendarId").and_then(|v| v.as_str()).map(|s| s.to_string());
@@ -550,6 +568,7 @@ pub async fn event_list_filter(pool: Extension<Pool>, Json(body): Json<Value>) -
 }
 
 /// PUT /jaxrs/calendar_assemble_control/event/list/filter/sample —— 事件过滤样例（限量）
+#[allow(non_snake_case)]
 pub async fn event_list_filter_sample(pool: Extension<Pool>, Json(body): Json<Value>) -> ApiResult {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let calendar_id: Option<String> = body.get("calendarId").and_then(|v| v.as_str()).map(|s| s.to_string());
@@ -579,6 +598,7 @@ pub async fn event_list_filter_sample(pool: Extension<Pool>, Json(body): Json<Va
 }
 
 /// POST /jaxrs/calendar_assemble_control/event/list/filter/sample/manager —— 管理视角的事件样例
+#[allow(non_snake_case)]
 pub async fn event_list_filter_sample_manager(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
@@ -616,6 +636,7 @@ pub async fn event_list_filter_sample_manager(
 }
 
 /// POST /jaxrs/calendar_assemble_control/event/manage —— 事件管理（更新状态/可见性）
+#[allow(non_snake_case)]
 pub async fn event_manage(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
@@ -646,6 +667,7 @@ pub async fn event_manage(
 }
 
 /// GET /jaxrs/calendar_assemble_control/event/rfc/{id} —— 返回事件 RFC2445(iCal) 文本
+#[allow(non_snake_case)]
 pub async fn event_rfc(pool: Extension<Pool>, Path(id): Path<String>) -> ApiResult {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let row = client
@@ -679,6 +701,7 @@ pub async fn event_rfc(pool: Extension<Pool>, Path(id): Path<String>) -> ApiResu
 }
 
 /// DELETE /jaxrs/calendar_assemble_control/event/single/{id} —— 删除单个事件
+#[allow(non_snake_case)]
 pub async fn event_delete_single(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
@@ -699,6 +722,7 @@ pub async fn event_delete_single(
 }
 
 /// PUT /jaxrs/calendar_assemble_control/event/update/after/{id} —— 更新该事件之后（含）的重复实例
+#[allow(non_snake_case)]
 pub async fn event_update_after(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
@@ -733,6 +757,7 @@ pub async fn event_update_after(
 }
 
 /// PUT /jaxrs/calendar_assemble_control/event/update/all/{id} —— 更新该事件全部重复实例
+#[allow(non_snake_case)]
 pub async fn event_update_all(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
@@ -762,6 +787,7 @@ pub async fn event_update_all(
 }
 
 /// PUT /jaxrs/calendar_assemble_control/event/update/single/{id} —— 更新单个事件
+#[allow(non_snake_case)]
 pub async fn event_update_single(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
@@ -793,6 +819,7 @@ pub async fn event_update_single(
 }
 
 /// POST /jaxrs/calendar_assemble_control/message —— 创建留言
+#[allow(non_snake_case)]
 pub async fn message_create(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
@@ -821,6 +848,7 @@ pub async fn message_create(
 }
 
 /// POST /jaxrs/calendar_assemble_control/setting —— 创建设置
+#[allow(non_snake_case)]
 pub async fn setting_create(pool: Extension<Pool>, Json(body): Json<Value>) -> ApiResult {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let id = uuid::Uuid::new_v4().to_string();
@@ -846,6 +874,7 @@ pub async fn setting_create(pool: Extension<Pool>, Json(body): Json<Value>) -> A
 }
 
 /// GET /jaxrs/calendar_assemble_control/setting/code/{code} —— 按 code 查询设置
+#[allow(non_snake_case)]
 pub async fn setting_get_by_code(pool: Extension<Pool>, Path(code): Path<String>) -> ApiResult {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let row = client
@@ -870,6 +899,7 @@ pub async fn setting_get_by_code(pool: Extension<Pool>, Path(code): Path<String>
 }
 
 /// GET /jaxrs/calendar_assemble_control/setting/{id} —— 按 id 查询设置
+#[allow(non_snake_case)]
 pub async fn setting_get(pool: Extension<Pool>, Path(id): Path<String>) -> ApiResult {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let row = client
@@ -894,6 +924,7 @@ pub async fn setting_get(pool: Extension<Pool>, Path(id): Path<String>) -> ApiRe
 }
 
 /// GET /jaxrs/calendar_assemble_control/test/1 —— 连通性自检
+#[allow(non_snake_case)]
 pub async fn test_1(pool: Extension<Pool>) -> ApiResult {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let ok: bool = client

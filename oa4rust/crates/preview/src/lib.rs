@@ -8,7 +8,7 @@ use base64::{engine::general_purpose, Engine as _};
 use reqwest::Client;
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
-use tracing::{info, warn};
+use tracing::info;
 
 #[derive(Debug, Error)]
 pub enum PreviewError {

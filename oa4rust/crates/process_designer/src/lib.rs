@@ -1,3 +1,4 @@
+#[allow(dead_code, non_snake_case)]
 use axum::{
     extract::{Extension, Json, Path},
 };
@@ -32,6 +33,7 @@ pub struct ApplicationRemoveRequest {
     pub id: String,
 }
 
+#[allow(non_snake_case)]
 pub async fn application_list_summary(
     pool: Extension<Pool>,
 ) -> Json<ActionResult<Value>> {
@@ -73,6 +75,7 @@ pub async fn application_list_summary(
     Json(ActionResult::java_success(Value::Array(data), count, 0))
 }
 
+#[allow(non_snake_case)]
 pub async fn application_list(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -107,6 +110,7 @@ pub async fn application_list(
     Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
 }
 
+#[allow(non_snake_case)]
 pub async fn application_get(
     pool: Extension<Pool>,
     Path(id): Path<String>,
@@ -136,6 +140,7 @@ pub async fn application_get(
     Ok(Json(ActionResult::success(result)))
 }
 
+#[allow(non_snake_case)]
 pub async fn application_create(
     pool: Extension<Pool>,
     Json(req): Json<ApplicationCreateRequest>,
@@ -172,6 +177,7 @@ pub async fn application_create(
     Ok(Json(ActionResult::success(result)))
 }
 
+#[allow(non_snake_case)]
 pub async fn application_update(
     pool: Extension<Pool>,
     Json(req): Json<ApplicationUpdateRequest>,
@@ -214,6 +220,7 @@ pub async fn application_update(
     Ok(Json(ActionResult::success(result)))
 }
 
+#[allow(non_snake_case)]
 pub async fn application_remove(
     pool: Extension<Pool>,
     Json(req): Json<ApplicationRemoveRequest>,
@@ -236,6 +243,7 @@ pub async fn application_remove(
     ))))
 }
 
+#[allow(non_snake_case)]
 pub async fn designer_get_route(
     pool: Extension<Pool>,
     Path(id): Path<String>,

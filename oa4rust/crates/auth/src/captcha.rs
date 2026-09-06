@@ -4,8 +4,7 @@ use axum::{
     Router,
 };
 use base64::Engine;
-use captcha_store::{captcha_store, generate as captcha_generate, verify as captcha_verify, CaptchaError, VerifyResult};
-use chrono::{DateTime, Duration, Utc};
+use captcha_store::{generate as captcha_generate, verify as captcha_verify, CaptchaError, VerifyResult};
 use serde::Deserialize;
 use serde_json::{json, Value};
 use shared::error::AppError;
@@ -64,8 +63,10 @@ fn generate_captcha(width: u32, height: u32) -> Result<Json<ActionResult<Value>>
 }
 
 #[derive(Debug, Deserialize)]
+#[allow(non_snake_case)]
 pub struct VerifyCaptchaRequest {
-    pub captchaId: String,
+    #[serde(rename = "captchaId")]
+    pub captcha_id: String,
     pub answer: String,
 }
 
@@ -73,7 +74,7 @@ pub struct VerifyCaptchaRequest {
 pub async fn verify(
     Json(req): Json<VerifyCaptchaRequest>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    match captcha_verify(&req.captchaId, &req.answer) {
+    match captcha_verify(&req.captcha_id, &req.answer) {
         VerifyResult::Ok => Ok(Json(ActionResult::success(json!({ "passed": true })))),
         VerifyResult::TooManyAttempts => Ok(Json(ActionResult::error(
             "too many attempts, captcha invalidated",

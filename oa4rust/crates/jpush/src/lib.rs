@@ -1,6 +1,6 @@
 use axum::{
     extract::Extension, extract::Path,
-    Json, Router, routing::get, routing::post,
+    Json, Router,
 };
 use deadpool_postgres::Pool;
 use serde_json::Value;
@@ -12,11 +12,13 @@ pub fn jpush_router(pool: Pool) -> Router {
     routes::jpush_router(pool)
 }
 
+#[allow(non_snake_case)]
 pub async fn hello() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::String("hello".to_string()))))
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
 pub async fn device_list(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -46,6 +48,7 @@ pub async fn device_list(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
 pub async fn device_get(
     pool: Extension<Pool>,
     Path(id): Path<String>,
@@ -75,6 +78,7 @@ pub async fn device_get(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
 pub async fn device_create(
     pool: Extension<Pool>,
     Json(req): Json<Value>,
@@ -106,6 +110,7 @@ pub async fn device_create(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
 pub async fn template_list(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -135,6 +140,7 @@ pub async fn template_list(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
 pub async fn template_get(
     pool: Extension<Pool>,
     Path(id): Path<String>,

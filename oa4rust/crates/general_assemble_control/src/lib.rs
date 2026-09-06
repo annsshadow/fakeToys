@@ -1,7 +1,7 @@
+#[allow(dead_code)]
 use axum::{
-    extract::{Extension, Json, Path},
+    extract::{Extension, Json},
     Router,
-    routing::{get, post},
 };
 use deadpool_postgres::Pool;
 use serde_json::Value;
@@ -17,6 +17,7 @@ mod tests;
 mod tests_generated;
 
 
+#[allow(non_snake_case)]
 pub async fn get_general_control_status(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -49,6 +50,7 @@ pub async fn get_general_control_status(
     Ok(Json(ActionResult::success(Value::Object(data))))
 }
 
+#[allow(non_snake_case)]
 pub async fn update_general_control_status(
     pool: Extension<Pool>,
     axum::extract::Json(payload): axum::extract::Json<Value>,
@@ -73,6 +75,7 @@ pub async fn update_general_control_status(
     ])))))
 }
 
+#[allow(non_snake_case)]
 pub async fn get_module_permissions(
     pool: Extension<Pool>,
     axum::extract::Path(module): axum::extract::Path<String>,
@@ -122,6 +125,7 @@ pub struct AttendScopeCreateRequest {
     pub unit_id: Option<String>,
 }
 
+#[allow(non_snake_case)]
 pub async fn attendscope_list(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -152,6 +156,7 @@ pub async fn attendscope_list(
     Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
 }
 
+#[allow(non_snake_case)]
 pub async fn attendscope_get(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
@@ -181,6 +186,7 @@ pub async fn attendscope_get(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn attendscope_create(
     pool: Extension<Pool>,
     axum::extract::Json(req): Json<AttendScopeCreateRequest>,
@@ -210,6 +216,7 @@ pub async fn attendscope_create(
     Ok(Json(ActionResult::success(result)))
 }
 
+#[allow(non_snake_case)]
 pub async fn attendscope_save(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
@@ -242,6 +249,7 @@ pub async fn attendscope_save(
     ))))
 }
 
+#[allow(non_snake_case)]
 pub async fn attendscope_delete(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
@@ -269,6 +277,7 @@ pub async fn attendscope_delete(
 }
 
 
+#[allow(non_snake_case)]
 pub async fn area_list(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -303,6 +312,7 @@ pub async fn area_list(
     Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
 }
 
+#[allow(non_snake_case)]
 pub async fn area_list_province_province(
     pool: Extension<Pool>,
     axum::extract::Path(province): axum::extract::Path<String>,
@@ -338,6 +348,7 @@ pub async fn area_list_province_province(
     Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
 }
 
+#[allow(non_snake_case)]
 pub async fn area_list_province_province_city_city(
     pool: Extension<Pool>,
     axum::extract::Path(province): axum::extract::Path<String>,
@@ -374,6 +385,7 @@ pub async fn area_list_province_province_city_city(
     Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
 }
 
+#[allow(non_snake_case)]
 pub async fn area_list_province_province_city_city_district_district(
     pool: Extension<Pool>,
     axum::extract::Path(province): axum::extract::Path<String>,
@@ -413,6 +425,7 @@ pub async fn area_list_province_province_city_city_district_district(
 
 // ---- area CRUD ----
 
+#[allow(non_snake_case)]
 pub async fn area_create(
     pool: Extension<Pool>,
     axum::extract::Json(payload): axum::extract::Json<Value>,
@@ -447,6 +460,7 @@ pub async fn area_create(
     ])))))
 }
 
+#[allow(non_snake_case)]
 pub async fn area_get(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
@@ -480,6 +494,7 @@ pub async fn area_get(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn area_update(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
@@ -513,6 +528,7 @@ pub async fn area_update(
     ])))))
 }
 
+#[allow(non_snake_case)]
 pub async fn area_delete(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
@@ -534,6 +550,7 @@ pub async fn area_delete(
     ])))))
 }
 
+#[allow(non_snake_case)]
 pub async fn ecnet_check(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -564,6 +581,7 @@ pub async fn ecnet_check(
     Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
 }
 
+#[allow(non_snake_case)]
 pub async fn excel_excelName_excelName(
     pool: Extension<Pool>,
     axum::extract::Path(excel_name): axum::extract::Path<String>,
@@ -593,6 +611,7 @@ pub async fn excel_excelName_excelName(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn excel_excelName_excelName_sheetList(
     pool: Extension<Pool>,
     axum::extract::Path(excel_name): axum::extract::Path<String>,
@@ -624,6 +643,7 @@ pub async fn excel_excelName_excelName_sheetList(
     Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
 }
 
+#[allow(non_snake_case)]
 pub async fn excel_result_flag(
     pool: Extension<Pool>,
     axum::extract::Path(flag): axum::extract::Path<String>,
@@ -653,6 +673,7 @@ pub async fn excel_result_flag(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn excel_upload(
     pool: Extension<Pool>,
     axum::extract::Json(payload): axum::extract::Json<Value>,
@@ -681,6 +702,7 @@ pub async fn excel_upload(
     ])))))
 }
 
+#[allow(non_snake_case)]
 pub async fn excel_upload_with_url(
     pool: Extension<Pool>,
     axum::extract::Json(payload): axum::extract::Json<Value>,
@@ -709,6 +731,7 @@ pub async fn excel_upload_with_url(
     ])))))
 }
 
+#[allow(non_snake_case)]
 pub async fn generalfile_download_flag_flag(
     pool: Extension<Pool>,
     axum::extract::Path(flag): axum::extract::Path<String>,
@@ -739,6 +762,7 @@ pub async fn generalfile_download_flag_flag(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn generalfile_flag_flag(
     pool: Extension<Pool>,
     axum::extract::Path(flag): axum::extract::Path<String>,
@@ -769,6 +793,7 @@ pub async fn generalfile_flag_flag(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn generalfile_flag_flag_binary_base64(
     pool: Extension<Pool>,
     axum::extract::Path(flag): axum::extract::Path<String>,
@@ -801,6 +826,7 @@ pub async fn generalfile_flag_flag_binary_base64(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn invoice_create(
     pool: Extension<Pool>,
     axum::extract::Json(payload): axum::extract::Json<Value>,
@@ -830,6 +856,7 @@ pub async fn invoice_create(
     ])))))
 }
 
+#[allow(non_snake_case)]
 pub async fn invoice_delete_id(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
@@ -851,6 +878,7 @@ pub async fn invoice_delete_id(
     ])))))
 }
 
+#[allow(non_snake_case)]
 pub async fn invoice_download_flag_flag(
     pool: Extension<Pool>,
     axum::extract::Path(flag): axum::extract::Path<String>,
@@ -881,6 +909,7 @@ pub async fn invoice_download_flag_flag(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn invoice_get_id(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
@@ -911,6 +940,7 @@ pub async fn invoice_get_id(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn invoice_list_paging_page_size_size(
     pool: Extension<Pool>,
     axum::extract::Path(page): axum::extract::Path<i32>,
@@ -951,6 +981,7 @@ pub async fn invoice_list_paging_page_size_size(
     Ok(Json(ActionResult::java_success(Value::Array(data), total, size as i64)))
 }
 
+#[allow(non_snake_case)]
 pub async fn invoice_update_apply_status_id(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
@@ -979,6 +1010,7 @@ pub async fn invoice_update_apply_status_id(
     ])))))
 }
 
+#[allow(non_snake_case)]
 pub async fn invoice_update_id(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
@@ -1009,6 +1041,7 @@ pub async fn invoice_update_id(
     ])))))
 }
 
+#[allow(non_snake_case)]
 pub async fn invoice_upload(
     pool: Extension<Pool>,
     axum::extract::Json(payload): axum::extract::Json<Value>,
@@ -1036,6 +1069,7 @@ pub async fn invoice_upload(
     ])))))
 }
 
+#[allow(non_snake_case)]
 pub async fn invoice_upload_for_create(
     pool: Extension<Pool>,
     axum::extract::Json(payload): axum::extract::Json<Value>,
@@ -1063,6 +1097,7 @@ pub async fn invoice_upload_for_create(
     ])))))
 }
 
+#[allow(non_snake_case)]
 pub async fn invoice_upload_with_url(
     pool: Extension<Pool>,
     axum::extract::Json(payload): axum::extract::Json<Value>,
@@ -1090,6 +1125,7 @@ pub async fn invoice_upload_with_url(
     ])))))
 }
 
+#[allow(non_snake_case)]
 pub async fn office_html_to_word(
     pool: Extension<Pool>,
     axum::extract::Json(payload): axum::extract::Json<Value>,
@@ -1115,6 +1151,7 @@ pub async fn office_html_to_word(
     ])))))
 }
 
+#[allow(non_snake_case)]
 pub async fn office_html_to_word_result_flag(
     pool: Extension<Pool>,
     axum::extract::Path(flag): axum::extract::Path<String>,
@@ -1144,6 +1181,7 @@ pub async fn office_html_to_word_result_flag(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn qrcode_width_width_height_height_text_text(
     pool: Extension<Pool>,
     axum::extract::Path(width): axum::extract::Path<u32>,
@@ -1174,6 +1212,7 @@ pub async fn qrcode_width_width_height_height_text_text(
 
 // ---- qrcode CRUD ----
 
+#[allow(non_snake_case)]
 pub async fn qrcode_list(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -1205,6 +1244,7 @@ pub async fn qrcode_list(
     Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
 }
 
+#[allow(non_snake_case)]
 pub async fn qrcode_get(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
@@ -1236,6 +1276,7 @@ pub async fn qrcode_get(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn qrcode_delete(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
@@ -1257,6 +1298,7 @@ pub async fn qrcode_delete(
     ])))))
 }
 
+#[allow(non_snake_case)]
 pub async fn securityclearance_enable(
     pool: Extension<Pool>,
     axum::extract::Json(payload): axum::extract::Json<Value>,
@@ -1308,6 +1350,7 @@ pub async fn securityclearance_enable(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn securityclearance_object(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -1331,6 +1374,7 @@ pub async fn securityclearance_object(
     Ok(Json(ActionResult::success(Value::Object(map))))
 }
 
+#[allow(non_snake_case)]
 pub async fn securityclearance_subject(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -1354,6 +1398,7 @@ pub async fn securityclearance_subject(
     Ok(Json(ActionResult::success(Value::Object(map))))
 }
 
+#[allow(non_snake_case)]
 pub async fn securityclearance_system(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -1379,6 +1424,7 @@ pub async fn securityclearance_system(
 
 // ---- securityclearance CRUD ----
 
+#[allow(non_snake_case)]
 pub async fn securityclearance_create(
     pool: Extension<Pool>,
     axum::extract::Json(payload): axum::extract::Json<Value>,
@@ -1409,6 +1455,7 @@ pub async fn securityclearance_create(
     ])))))
 }
 
+#[allow(non_snake_case)]
 pub async fn securityclearance_get(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
@@ -1441,6 +1488,7 @@ pub async fn securityclearance_get(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn securityclearance_update(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
@@ -1473,6 +1521,7 @@ pub async fn securityclearance_update(
     ])))))
 }
 
+#[allow(non_snake_case)]
 pub async fn securityclearance_delete(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
@@ -1494,6 +1543,7 @@ pub async fn securityclearance_delete(
     ])))))
 }
 
+#[allow(non_snake_case)]
 pub async fn upgrade_2021090901(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -1513,6 +1563,7 @@ pub async fn upgrade_2021090901(
     ])))))
 }
 
+#[allow(non_snake_case)]
 pub async fn upgrade_2021090902(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -1532,6 +1583,7 @@ pub async fn upgrade_2021090902(
     ])))))
 }
 
+#[allow(non_snake_case)]
 pub async fn worktime_betweenholidaycount_start_startDate_end_endDate(
     pool: Extension<Pool>,
     axum::extract::Path(start_date): axum::extract::Path<String>,
@@ -1555,6 +1607,7 @@ pub async fn worktime_betweenholidaycount_start_startDate_end_endDate(
     ])))))
 }
 
+#[allow(non_snake_case)]
 pub async fn worktime_betweenminutes_start_start_end_end(
     pool: Extension<Pool>,
     axum::extract::Path(start): axum::extract::Path<String>,
@@ -1578,6 +1631,7 @@ pub async fn worktime_betweenminutes_start_start_end_end(
     ])))))
 }
 
+#[allow(non_snake_case)]
 pub async fn worktime_forwarddays_start_start_days_days(
     pool: Extension<Pool>,
     axum::extract::Path(start): axum::extract::Path<String>,
@@ -1615,6 +1669,7 @@ pub async fn worktime_forwarddays_start_start_days_days(
     Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
 }
 
+#[allow(non_snake_case)]
 pub async fn worktime_forwardminutes_start_start_minutes_minutes(
     pool: Extension<Pool>,
     axum::extract::Path(start): axum::extract::Path<String>,
@@ -1653,6 +1708,7 @@ pub async fn worktime_forwardminutes_start_start_minutes_minutes(
     Ok(Json(ActionResult::java_success(Value::Array(worktime_records), count, 0)))
 }
 
+#[allow(non_snake_case)]
 pub async fn worktime_indefinedholiday_date(
     pool: Extension<Pool>,
     axum::extract::Path(date): axum::extract::Path<String>,
@@ -1698,6 +1754,7 @@ pub async fn worktime_indefinedholiday_date(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn worktime_indefinedworkday_date(
     pool: Extension<Pool>,
     axum::extract::Path(date): axum::extract::Path<String>,
@@ -1743,6 +1800,7 @@ pub async fn worktime_indefinedworkday_date(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn worktime_isholiday_date(
     pool: Extension<Pool>,
     axum::extract::Path(date): axum::extract::Path<String>,
@@ -1787,6 +1845,7 @@ pub async fn worktime_isholiday_date(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn worktime_isworkday_date(
     pool: Extension<Pool>,
     axum::extract::Path(date): axum::extract::Path<String>,
@@ -1831,6 +1890,7 @@ pub async fn worktime_isworkday_date(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn worktime_isworktime_date(
     pool: Extension<Pool>,
     axum::extract::Path(date): axum::extract::Path<String>,
@@ -1864,6 +1924,7 @@ pub async fn worktime_isworktime_date(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn worktime_minutesofworkday(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -1883,6 +1944,7 @@ pub async fn worktime_minutesofworkday(
     ])))))
 }
 
+#[allow(non_snake_case)]
 pub async fn generalfile_create(
     pool: Extension<Pool>,
     axum::extract::Json(req): axum::extract::Json<Value>,
@@ -1906,6 +1968,7 @@ pub async fn generalfile_create(
     }))))
 }
 
+#[allow(non_snake_case)]
 pub async fn qrcode_create(
     pool: Extension<Pool>,
     axum::extract::Json(req): axum::extract::Json<Value>,

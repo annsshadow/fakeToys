@@ -58,6 +58,7 @@ fn person_flag_clause(param_index: usize) -> String {
     ),
     tag = "control"
 )]
+#[allow(non_snake_case)]
 pub async fn get(
     pool: Extension<Pool>,
     Path(flag): Path<String>,
@@ -200,6 +201,7 @@ async fn query_page(
     ),
     tag = "control"
 )]
+#[allow(non_snake_case)]
 pub async fn list_next(
     pool: Extension<Pool>,
     Path((flag, count)): Path<(String, i64)>,
@@ -223,6 +225,7 @@ pub async fn list_next(
     ),
     tag = "control"
 )]
+#[allow(non_snake_case)]
 pub async fn list_prev(
     pool: Extension<Pool>,
     Path((flag, count)): Path<(String, i64)>,
@@ -243,6 +246,7 @@ pub async fn list_prev(
     ),
     tag = "control"
 )]
+#[allow(non_snake_case)]
 pub async fn create(
     pool: Extension<Pool>,
     Json(req): Json<PersonCreateRequest>,
@@ -310,6 +314,7 @@ pub async fn create(
     ),
     tag = "control"
 )]
+#[allow(non_snake_case)]
 pub async fn update(
     pool: Extension<Pool>,
     Path(flag): Path<String>,
@@ -372,6 +377,7 @@ pub async fn update(
     ),
     tag = "control"
 )]
+#[allow(non_snake_case)]
 pub async fn delete(
     pool: Extension<Pool>,
     Path(flag): Path<String>,

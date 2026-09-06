@@ -39,7 +39,7 @@ pub async fn upload(
     let person_unique = resolve_current_person_unique(&session_manager, &headers).await?;
 
     let mut file_data: Option<Vec<u8>> = None;
-    let mut filename: Option<String> = None;
+    let mut _filename: Option<String> = None;
 
     while let Some(field) = form
         .next_field()
@@ -49,7 +49,7 @@ pub async fn upload(
         if field.file_name().is_none() {
             continue;
         }
-        filename = field.file_name().map(|f| f.to_string());
+        _filename = field.file_name().map(|f| f.to_string());
         file_data = Some(
             field
                 .bytes()

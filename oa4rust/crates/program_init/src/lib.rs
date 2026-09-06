@@ -100,6 +100,7 @@ pub struct SetSecretRequest {
 }
 
 /// GET /jaxrs/secret/check —— 返回系统初始化状态（从数据库读取）
+#[allow(non_snake_case)]
 pub async fn check(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
@@ -127,6 +128,7 @@ pub async fn check(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, A
 }
 
 /// POST /jaxrs/secret/set —— 设置初始化密钥并持久化到数据库（AES-GCM 加密存储）
+#[allow(non_snake_case)]
 pub async fn set(
     pool: Extension<Pool>,
     Json(req): Json<SetSecretRequest>,
@@ -171,6 +173,7 @@ pub async fn set(
 }
 
 /// 清除已设置的初始化密钥（secret_config 记录删除）
+#[allow(non_snake_case)]
 pub async fn set_cancel(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
@@ -271,6 +274,7 @@ pub fn parse_jdbc_host_port(url: &str) -> Option<(String, i32)> {
 }
 
 /// GET /jaxrs/externaldatasources/check —— 是否已配置及配置内容
+#[allow(non_snake_case)]
 pub async fn external_datasources_check(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -287,6 +291,7 @@ pub async fn external_datasources_check(
 }
 
 /// GET /jaxrs/externaldatasources/list —— 已配置数据源列表
+#[allow(non_snake_case)]
 pub async fn external_datasources_list(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -323,6 +328,7 @@ pub async fn external_datasources_list(
 }
 
 /// POST /jaxrs/externaldatasources/set —— 写入数据源配置（已配置时拒绝，对齐 Java）
+#[allow(non_snake_case)]
 pub async fn external_datasources_set(
     pool: Extension<Pool>,
     Json(req): Json<ExternalDataSourcesRequest>,
@@ -374,6 +380,7 @@ pub async fn external_datasources_set(
 }
 
 /// GET /jaxrs/externaldatasources/set/cancel —— 清除尚未落实的配置
+#[allow(non_snake_case)]
 pub async fn external_datasources_set_cancel(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -386,6 +393,7 @@ pub async fn external_datasources_set_cancel(
 }
 
 /// POST /jaxrs/externaldatasources/validate —— 逐个数据源做真实 TCP 连通性探测
+#[allow(non_snake_case)]
 pub async fn external_datasources_validate(
     Json(req): Json<ExternalDataSourcesRequest>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -431,6 +439,7 @@ pub async fn external_datasources_validate(
 // --- h2 域 ---
 
 /// GET /jaxrs/h2/check —— Rust 侧等价语义：核心表就绪性 + 数据库版本
+#[allow(non_snake_case)]
 pub async fn h2_check(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let version: String = client
@@ -458,6 +467,7 @@ pub async fn h2_check(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>
 const RESTORE_MAX_BYTES: usize = 200 * 1024 * 1024;
 
 /// POST /jaxrs/restore/upload —— 上传恢复包（原始字节流），落盘临时目录并登记
+#[allow(non_snake_case)]
 pub async fn restore_upload(
     pool: Extension<Pool>,
     body: axum::body::Bytes,
@@ -493,6 +503,7 @@ pub async fn restore_upload(
 }
 
 /// GET /jaxrs/restore/upload/cancel —— 作废最近一次未落实的上传
+#[allow(non_snake_case)]
 pub async fn restore_upload_cancel(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -512,6 +523,7 @@ pub async fn restore_upload_cancel(
 // --- server 域 ---
 
 /// GET /jaxrs/server/execute —— 落实待执行的初始化状态并记录命令
+#[allow(non_snake_case)]
 pub async fn server_execute(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
@@ -554,6 +566,7 @@ pub async fn server_execute(pool: Extension<Pool>) -> Result<Json<ActionResult<V
 }
 
 /// GET /jaxrs/server/execute/status —— 最近一次命令的执行状态
+#[allow(non_snake_case)]
 pub async fn server_execute_status(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -586,6 +599,7 @@ pub async fn server_execute_status(
 }
 
 /// GET /jaxrs/server/license —— 从 x_program_config(key='license') 读取授权信息
+#[allow(non_snake_case)]
 pub async fn server_license(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let row = client
@@ -612,6 +626,7 @@ pub async fn server_license(pool: Extension<Pool>) -> Result<Json<ActionResult<V
 }
 
 /// GET /jaxrs/server/stop —— 记录停机命令（进程停机由宿主接线执行）
+#[allow(non_snake_case)]
 pub async fn server_stop(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     client

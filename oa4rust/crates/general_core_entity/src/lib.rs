@@ -47,6 +47,7 @@ pub struct Invoice {
     pub status: String,
 }
 
+#[allow(non_snake_case)]
 pub async fn dict_list(
     db: Extension<DatabaseConnection>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -79,6 +80,7 @@ pub async fn dict_list(
     ))))
 }
 
+#[allow(non_snake_case)]
 pub async fn dict_item_list(
     db: Extension<DatabaseConnection>,
     axum::extract::Path(dict_id): axum::extract::Path<String>,
@@ -112,6 +114,7 @@ pub async fn dict_item_list(
     ))))
 }
 
+#[allow(non_snake_case)]
 pub async fn dict_create(
     db: Extension<DatabaseConnection>,
     axum::extract::Json(payload): axum::extract::Json<Value>,
@@ -141,6 +144,7 @@ pub async fn dict_create(
     ))))
 }
 
+#[allow(non_snake_case)]
 pub async fn dict_get(
     db: Extension<DatabaseConnection>,
     axum::extract::Path(id): axum::extract::Path<String>,
@@ -163,6 +167,7 @@ pub async fn dict_get(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn dict_update(
     db: Extension<DatabaseConnection>,
     axum::extract::Path(id): axum::extract::Path<String>,
@@ -199,6 +204,7 @@ pub async fn dict_update(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn dict_delete(
     db: Extension<DatabaseConnection>,
     axum::extract::Path(id): axum::extract::Path<String>,
@@ -225,6 +231,7 @@ pub async fn dict_delete(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn dict_item_create(
     db: Extension<DatabaseConnection>,
     axum::extract::Json(payload): axum::extract::Json<Value>,
@@ -257,6 +264,7 @@ pub async fn dict_item_create(
     ))))
 }
 
+#[allow(non_snake_case)]
 pub async fn dict_item_get(
     db: Extension<DatabaseConnection>,
     axum::extract::Path(id): axum::extract::Path<String>,
@@ -280,6 +288,7 @@ pub async fn dict_item_get(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn dict_item_update(
     db: Extension<DatabaseConnection>,
     axum::extract::Path(id): axum::extract::Path<String>,
@@ -319,6 +328,7 @@ pub async fn dict_item_update(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn dict_item_delete(
     db: Extension<DatabaseConnection>,
     axum::extract::Path(id): axum::extract::Path<String>,
@@ -346,6 +356,7 @@ pub async fn dict_item_delete(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn file_list(
     db: Extension<DatabaseConnection>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -379,6 +390,7 @@ pub async fn file_list(
     ))))
 }
 
+#[allow(non_snake_case)]
 pub async fn invoice_list(
     db: Extension<DatabaseConnection>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -418,6 +430,7 @@ pub async fn invoice_list(
     ))))
 }
 
+#[allow(non_snake_case)]
 pub async fn file_create(
     db: Extension<DatabaseConnection>,
     axum::extract::Json(payload): axum::extract::Json<Value>,
@@ -453,6 +466,7 @@ pub async fn file_create(
     ))))
 }
 
+#[allow(non_snake_case)]
 pub async fn file_get(
     db: Extension<DatabaseConnection>,
     axum::extract::Path(id): axum::extract::Path<String>,
@@ -477,7 +491,6 @@ pub async fn file_get(
                     "createTime".to_string(),
                     Value::String(
                         m.create_time
-                            .clone()
                             .map(|dt| dt.to_string())
                             .unwrap_or_default(),
                     ),
@@ -489,6 +502,7 @@ pub async fn file_get(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn file_update(
     db: Extension<DatabaseConnection>,
     axum::extract::Path(id): axum::extract::Path<String>,
@@ -532,7 +546,6 @@ pub async fn file_update(
                         "createTime".to_string(),
                         Value::String(
                             m.create_time
-                                .clone()
                                 .map(|dt| dt.to_string())
                                 .unwrap_or_default(),
                         ),
@@ -544,6 +557,7 @@ pub async fn file_update(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn file_delete(
     db: Extension<DatabaseConnection>,
     axum::extract::Path(id): axum::extract::Path<String>,
@@ -575,7 +589,6 @@ pub async fn file_delete(
                     "createTime".to_string(),
                     Value::String(
                         m.create_time
-                            .clone()
                             .map(|dt| dt.to_string())
                             .unwrap_or_default(),
                     ),
@@ -587,6 +600,7 @@ pub async fn file_delete(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn file_download(
     db: Extension<DatabaseConnection>,
     axum::extract::Path(id): axum::extract::Path<String>,
@@ -611,7 +625,6 @@ pub async fn file_download(
                     "createTime".to_string(),
                     Value::String(
                         m.create_time
-                            .clone()
                             .map(|dt| dt.to_string())
                             .unwrap_or_default(),
                     ),
@@ -623,6 +636,7 @@ pub async fn file_download(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn invoice_create(
     db: Extension<DatabaseConnection>,
     axum::extract::Json(payload): axum::extract::Json<Value>,
@@ -670,6 +684,7 @@ pub async fn invoice_create(
     ))))
 }
 
+#[allow(non_snake_case)]
 pub async fn invoice_get(
     db: Extension<DatabaseConnection>,
     axum::extract::Path(id): axum::extract::Path<String>,
@@ -700,7 +715,6 @@ pub async fn invoice_get(
                     "createTime".to_string(),
                     Value::String(
                         m.create_time
-                            .clone()
                             .map(|dt| dt.to_string())
                             .unwrap_or_default(),
                     ),
@@ -712,6 +726,7 @@ pub async fn invoice_get(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn invoice_update(
     db: Extension<DatabaseConnection>,
     axum::extract::Path(id): axum::extract::Path<String>,
@@ -764,7 +779,6 @@ pub async fn invoice_update(
                         "createTime".to_string(),
                         Value::String(
                             m.create_time
-                                .clone()
                                 .map(|dt| dt.to_string())
                                 .unwrap_or_default(),
                         ),
@@ -776,6 +790,7 @@ pub async fn invoice_update(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn invoice_delete(
     db: Extension<DatabaseConnection>,
     axum::extract::Path(id): axum::extract::Path<String>,
@@ -810,7 +825,6 @@ pub async fn invoice_delete(
                     "createTime".to_string(),
                     Value::String(
                         m.create_time
-                            .clone()
                             .map(|dt| dt.to_string())
                             .unwrap_or_default(),
                     ),

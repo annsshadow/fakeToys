@@ -1,10 +1,4 @@
-use axum::{
-    extract::{Extension, Path},
-    Json, routing::get,
-};
 use deadpool_postgres::Pool;
-use serde_json::Value;
-use shared::{error::AppError, response::ActionResult};
 
 mod routes;
 mod config;

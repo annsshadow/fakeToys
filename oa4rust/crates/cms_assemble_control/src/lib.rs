@@ -1,3 +1,4 @@
+#[allow(dead_code, non_snake_case)]
 use axum::{
     extract::Extension,
     Json,
@@ -8,7 +9,6 @@ use serde_json::Value;
 use shared::{error::AppError, response::ActionResult, response::row_to_json};
 use deadpool_postgres::tokio_postgres::types::ToSql;
 use std::collections::HashMap;
-use search::Document;
 use base64::{Engine, engine::general_purpose::STANDARD as BASE64};
 
 pub mod routes;
@@ -26,6 +26,8 @@ mod tests_u3;
 
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
+#[allow(non_snake_case)]
 pub async fn application_id(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
@@ -56,6 +58,8 @@ pub async fn application_id(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
+#[allow(non_snake_case)]
 pub async fn get_control_config(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -87,6 +91,8 @@ pub async fn get_control_config(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
+#[allow(non_snake_case)]
 pub async fn list_control_sections(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -115,6 +121,8 @@ pub async fn list_control_sections(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
+#[allow(non_snake_case)]
 pub async fn update_control_config(
     pool: Extension<Pool>,
     body: axum::extract::Json<Value>,
@@ -181,7 +189,7 @@ async fn list_from_table_inner(
         .await
         .map_err(|_| AppError::Internal)?;
 
-    let data: Vec<Value> = rows.iter().map(|r| row_to_json(r)).collect();
+    let data: Vec<Value> = rows.iter().map(row_to_json).collect();
 
     Ok((count, data))
 }
@@ -244,7 +252,7 @@ async fn list_from_table_filtered_inner(
         .await
         .map_err(|_| AppError::Internal)?;
 
-    let data: Vec<Value> = rows.iter().map(|r| row_to_json(r)).collect();
+    let data: Vec<Value> = rows.iter().map(row_to_json).collect();
 
     Ok((count, data))
 }
@@ -338,8 +346,8 @@ async fn upsert_by_id(pool: &Pool, table: &str, body: &Value) -> Result<Value, A
             ("saved".to_string(), Value::Bool(false)),
         ])));
     }
-    let sets: Vec<String> = cols.iter().enumerate().map(|(i, c)| format!("{} = ${}", c, i + 2)).collect();
-    let placeholders: Vec<String> = cols.iter().enumerate().map(|(i, _)| format!("${}", i + 2)).collect();
+    let _sets: Vec<String> = cols.iter().enumerate().map(|(i, c)| format!("{} = ${}", c, i + 2)).collect();
+    let _placeholders: Vec<String> = cols.iter().enumerate().map(|(i, _)| format!("${}", i + 2)).collect();
     let values: Vec<Box<dyn ToSql + Sync>> = cols
         .iter()
         .map(|c| match body.get(*c) {
@@ -378,6 +386,8 @@ async fn upsert_by_id(pool: &Pool, table: &str, body: &Value) -> Result<Value, A
 // ─── anonymous_* stubs ──────────────────────────────────────────────────────
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
+#[allow(non_snake_case)]
 pub async fn anonymous_document_filter_list_id_next_count(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -385,6 +395,8 @@ pub async fn anonymous_document_filter_list_id_next_count(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
+#[allow(non_snake_case)]
 pub async fn anonymous_document_filter_list_id_next_count_mockputtopost(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -392,6 +404,8 @@ pub async fn anonymous_document_filter_list_id_next_count_mockputtopost(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
+#[allow(non_snake_case)]
 pub async fn anonymous_document_filter_list_page_size_size(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -399,6 +413,8 @@ pub async fn anonymous_document_filter_list_page_size_size(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
+#[allow(non_snake_case)]
 pub async fn anonymous_document_filter_list_page_size_size_mockputtopost(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -406,6 +422,8 @@ pub async fn anonymous_document_filter_list_page_size_size_mockputtopost(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
+#[allow(non_snake_case)]
 pub async fn anonymous_document_id_view(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
@@ -435,6 +453,8 @@ pub async fn anonymous_document_id_view(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
+#[allow(non_snake_case)]
 pub async fn anonymous_fileinfo_list_document_documentId(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -444,6 +464,8 @@ pub async fn anonymous_fileinfo_list_document_documentId(
 // ─── appinfo_* stubs ────────────────────────────────────────────────────────
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
+#[allow(non_snake_case)]
 pub async fn appinfo_alias_alias(
     pool: Extension<Pool>,
     axum::extract::Path(alias): axum::extract::Path<String>,
@@ -473,6 +495,8 @@ pub async fn appinfo_alias_alias(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
+#[allow(non_snake_case)]
 pub async fn appinfo_erase_app_id(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
@@ -484,6 +508,8 @@ pub async fn appinfo_erase_app_id(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
+#[allow(non_snake_case)]
 pub async fn appinfo_erase_app_id_mockdeletetoget(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
@@ -495,6 +521,8 @@ pub async fn appinfo_erase_app_id_mockdeletetoget(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
+#[allow(non_snake_case)]
 pub async fn appinfo_filter_list_id_next_count(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -502,6 +530,8 @@ pub async fn appinfo_filter_list_id_next_count(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
+#[allow(non_snake_case)]
 pub async fn appinfo_filter_list_id_next_count_mockputtopost(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -509,6 +539,8 @@ pub async fn appinfo_filter_list_id_next_count_mockputtopost(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
+#[allow(non_snake_case)]
 pub async fn appinfo_filter_list_id_prev_count(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -516,6 +548,8 @@ pub async fn appinfo_filter_list_id_prev_count(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
+#[allow(non_snake_case)]
 pub async fn appinfo_filter_list_id_prev_count_mockputtopost(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -523,6 +557,8 @@ pub async fn appinfo_filter_list_id_prev_count_mockputtopost(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
+#[allow(non_snake_case)]
 pub async fn appinfo_get_user_publish_appId(
     pool: Extension<Pool>,
     axum::extract::Path(app_id): axum::extract::Path<String>,
@@ -552,6 +588,8 @@ pub async fn appinfo_get_user_publish_appId(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
+#[allow(non_snake_case)]
 pub async fn appinfo_list_all(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -559,6 +597,8 @@ pub async fn appinfo_list_all(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
+#[allow(non_snake_case)]
 pub async fn appinfo_list_appType(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -566,6 +606,8 @@ pub async fn appinfo_list_appType(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
+#[allow(non_snake_case)]
 pub async fn appinfo_list_appType_manager(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -573,6 +615,8 @@ pub async fn appinfo_list_appType_manager(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
+#[allow(non_snake_case)]
 pub async fn appinfo_list_has_document(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -580,6 +624,8 @@ pub async fn appinfo_list_has_document(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
+#[allow(non_snake_case)]
 pub async fn appinfo_list_has_document_appType(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -587,6 +633,8 @@ pub async fn appinfo_list_has_document_appType(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
+#[allow(non_snake_case)]
 pub async fn appinfo_list_has_document_type_appType(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -594,6 +642,8 @@ pub async fn appinfo_list_has_document_type_appType(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
+#[allow(non_snake_case)]
 pub async fn appinfo_list_manage(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -601,6 +651,8 @@ pub async fn appinfo_list_manage(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
+#[allow(non_snake_case)]
 pub async fn appinfo_list_manage_type_appType(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -608,6 +660,8 @@ pub async fn appinfo_list_manage_type_appType(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
+#[allow(non_snake_case)]
 pub async fn appinfo_list_user_publish(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -615,6 +669,8 @@ pub async fn appinfo_list_user_publish(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
+#[allow(non_snake_case)]
 pub async fn appinfo_list_user_publish_type_appType(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -622,6 +678,8 @@ pub async fn appinfo_list_user_publish_type_appType(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
+#[allow(non_snake_case)]
 pub async fn appinfo_list_user_publish_with_process(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -629,6 +687,8 @@ pub async fn appinfo_list_user_publish_with_process(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
+#[allow(non_snake_case)]
 pub async fn appinfo_list_user_view(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -636,6 +696,8 @@ pub async fn appinfo_list_user_view(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
+#[allow(non_snake_case)]
 pub async fn appinfo_list_user_view_all(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -643,6 +705,8 @@ pub async fn appinfo_list_user_view_all(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
+#[allow(non_snake_case)]
 pub async fn appinfo_list_user_view_all_type_appType(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -650,6 +714,8 @@ pub async fn appinfo_list_user_view_all_type_appType(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
+#[allow(non_snake_case)]
 pub async fn appinfo_list_user_view_article_type_appType(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -657,6 +723,8 @@ pub async fn appinfo_list_user_view_article_type_appType(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
+#[allow(non_snake_case)]
 pub async fn appinfo_list_user_view_data(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -664,6 +732,8 @@ pub async fn appinfo_list_user_view_data(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
+#[allow(non_snake_case)]
 pub async fn appinfo_list_user_view_data_type_appType(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -671,9 +741,11 @@ pub async fn appinfo_list_user_view_data_type_appType(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
+#[allow(non_snake_case)]
 pub async fn appinfo_appId_icon_size_size(
     pool: Extension<Pool>,
-    axum::extract::Path((app_id, icon_size)): axum::extract::Path<(String, String)>,
+    axum::extract::Path((app_id, _icon_size)): axum::extract::Path<(String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let row = client
@@ -700,6 +772,8 @@ pub async fn appinfo_appId_icon_size_size(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
+#[allow(non_snake_case)]
 pub async fn appinfo_flag(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -707,6 +781,8 @@ pub async fn appinfo_flag(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
+#[allow(non_snake_case)]
 pub async fn appinfo_id(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
@@ -736,6 +812,8 @@ pub async fn appinfo_id(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
+#[allow(non_snake_case)]
 pub async fn appinfo_id_control(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
@@ -764,6 +842,8 @@ pub async fn appinfo_id_control(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
+#[allow(non_snake_case)]
 pub async fn appinfo_id_mockdeletetoget(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
@@ -775,6 +855,8 @@ pub async fn appinfo_id_mockdeletetoget(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
+#[allow(non_snake_case)]
 pub async fn appinfo_id_permission(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
@@ -803,6 +885,8 @@ pub async fn appinfo_id_permission(
 // ─── categoryinfo_* stubs ───────────────────────────────────────────────────
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
+#[allow(non_snake_case)]
 pub async fn categoryinfo_alias_alias(
     pool: Extension<Pool>,
     axum::extract::Path(alias): axum::extract::Path<String>,
@@ -833,6 +917,8 @@ pub async fn categoryinfo_alias_alias(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
+#[allow(non_snake_case)]
 pub async fn categoryinfo_bind_categoryId_view(
     pool: Extension<Pool>,
     axum::extract::Path(category_id): axum::extract::Path<String>,
@@ -860,6 +946,8 @@ pub async fn categoryinfo_bind_categoryId_view(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
+#[allow(non_snake_case)]
 pub async fn categoryinfo_bind_categoryId_view_mockputtopost(
     pool: Extension<Pool>,
     axum::extract::Path(category_id): axum::extract::Path<String>,
@@ -901,6 +989,8 @@ pub async fn categoryinfo_bind_categoryId_view_mockputtopost(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
+#[allow(non_snake_case)]
 pub async fn categoryinfo_erase_category_id(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
@@ -912,6 +1002,8 @@ pub async fn categoryinfo_erase_category_id(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
+#[allow(non_snake_case)]
 pub async fn categoryinfo_erase_category_id_mockdeletetoget(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
@@ -923,6 +1015,8 @@ pub async fn categoryinfo_erase_category_id_mockdeletetoget(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
+#[allow(non_snake_case)]
 pub async fn categoryinfo_extContent(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
@@ -948,6 +1042,8 @@ pub async fn categoryinfo_extContent(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
+#[allow(non_snake_case)]
 pub async fn categoryinfo_filter_list_id_next_count_app_appId(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -955,6 +1051,8 @@ pub async fn categoryinfo_filter_list_id_next_count_app_appId(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
+#[allow(non_snake_case)]
 pub async fn categoryinfo_filter_list_id_next_count_app_appId_mockputtopost(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -962,6 +1060,8 @@ pub async fn categoryinfo_filter_list_id_next_count_app_appId_mockputtopost(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
+#[allow(non_snake_case)]
 pub async fn categoryinfo_filter_list_id_prev_count_app_appId(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -969,6 +1069,8 @@ pub async fn categoryinfo_filter_list_id_prev_count_app_appId(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
+#[allow(non_snake_case)]
 pub async fn categoryinfo_filter_list_id_prev_count_app_appId_mockputtopost(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -976,6 +1078,8 @@ pub async fn categoryinfo_filter_list_id_prev_count_app_appId_mockputtopost(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
+#[allow(non_snake_case)]
 pub async fn categoryinfo_filter_list_page_size_size(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -983,6 +1087,8 @@ pub async fn categoryinfo_filter_list_page_size_size(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
+#[allow(non_snake_case)]
 pub async fn categoryinfo_filter_list_page_size_size_mockputtopost(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -990,6 +1096,8 @@ pub async fn categoryinfo_filter_list_page_size_size_mockputtopost(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
+#[allow(non_snake_case)]
 pub async fn categoryinfo_list_all(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -997,6 +1105,8 @@ pub async fn categoryinfo_list_all(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
+#[allow(non_snake_case)]
 pub async fn categoryinfo_list_manage_app_appId(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -1004,6 +1114,8 @@ pub async fn categoryinfo_list_manage_app_appId(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
+#[allow(non_snake_case)]
 pub async fn categoryinfo_list_objects(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -1011,6 +1123,8 @@ pub async fn categoryinfo_list_objects(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
+#[allow(non_snake_case)]
 pub async fn categoryinfo_list_publish_app_appId(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -1018,6 +1132,8 @@ pub async fn categoryinfo_list_publish_app_appId(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
+#[allow(non_snake_case)]
 pub async fn categoryinfo_list_view_app_appId(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -1025,6 +1141,8 @@ pub async fn categoryinfo_list_view_app_appId(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
+#[allow(non_snake_case)]
 pub async fn categoryinfo_list_view_app_appId_all(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -1032,6 +1150,8 @@ pub async fn categoryinfo_list_view_app_appId_all(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
+#[allow(non_snake_case)]
 pub async fn categoryinfo_list_view_app_appId_data(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -1039,6 +1159,8 @@ pub async fn categoryinfo_list_view_app_appId_data(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
+#[allow(non_snake_case)]
 pub async fn categoryinfo_flag(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -1046,6 +1168,8 @@ pub async fn categoryinfo_flag(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
+#[allow(non_snake_case)]
 pub async fn categoryinfo_id(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
@@ -1076,6 +1200,8 @@ pub async fn categoryinfo_id(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
+#[allow(non_snake_case)]
 pub async fn categoryinfo_id_control(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
@@ -1105,6 +1231,8 @@ pub async fn categoryinfo_id_control(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
+#[allow(non_snake_case)]
 pub async fn categoryinfo_id_execute_projection(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
@@ -1132,6 +1260,8 @@ pub async fn categoryinfo_id_execute_projection(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
+#[allow(non_snake_case)]
 pub async fn categoryinfo_id_mockdeletetoget(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
@@ -1143,6 +1273,8 @@ pub async fn categoryinfo_id_mockdeletetoget(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
+#[allow(non_snake_case)]
 pub async fn categoryinfo_id_permission(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
@@ -1171,6 +1303,8 @@ pub async fn categoryinfo_id_permission(
 // ─── comment_* / commend_* stubs ────────────────────────────────────────────
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
+#[allow(non_snake_case)]
 pub async fn commend_list_paging_page_size_size(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -1178,6 +1312,8 @@ pub async fn commend_list_paging_page_size_size(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
+#[allow(non_snake_case)]
 pub async fn commend_id(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
@@ -1205,6 +1341,8 @@ pub async fn commend_id(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
+#[allow(non_snake_case)]
 pub async fn comment_list_id_next_count(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -1212,6 +1350,8 @@ pub async fn comment_list_id_next_count(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
+#[allow(non_snake_case)]
 pub async fn comment_list_id_next_count_mockputtopost(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -1219,6 +1359,8 @@ pub async fn comment_list_id_next_count_mockputtopost(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
+#[allow(non_snake_case)]
 pub async fn comment_list_id_prev_count(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -1226,6 +1368,8 @@ pub async fn comment_list_id_prev_count(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
+#[allow(non_snake_case)]
 pub async fn comment_list_id_prev_count_mockputtopost(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -1233,6 +1377,8 @@ pub async fn comment_list_id_prev_count_mockputtopost(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
+#[allow(non_snake_case)]
 pub async fn comment_list_page_size_size(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -1240,6 +1386,8 @@ pub async fn comment_list_page_size_size(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
+#[allow(non_snake_case)]
 pub async fn comment_list_page_size_size_mockputtopost(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -1247,6 +1395,8 @@ pub async fn comment_list_page_size_size_mockputtopost(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
+#[allow(non_snake_case)]
 pub async fn comment_id(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
@@ -1276,6 +1426,8 @@ pub async fn comment_id(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
+#[allow(non_snake_case)]
 pub async fn comment_id_commend(
     pool: Extension<Pool>,
     axum::extract::Path((comment_id, person_id)): axum::extract::Path<(String, String)>,
@@ -1311,6 +1463,8 @@ pub async fn comment_id_commend(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
+#[allow(non_snake_case)]
 pub async fn comment_id_mockdeletetoget(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
@@ -1322,6 +1476,8 @@ pub async fn comment_id_mockdeletetoget(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
+#[allow(non_snake_case)]
 pub async fn comment_id_uncommend(
     pool: Extension<Pool>,
     axum::extract::Path((comment_id, person_id)): axum::extract::Path<(String, String)>,
@@ -1342,6 +1498,8 @@ pub async fn comment_id_uncommend(
 // ─── correlation_* stubs ────────────────────────────────────────────────────
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
+#[allow(non_snake_case)]
 pub async fn correlation_doc_docId(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -1349,6 +1507,8 @@ pub async fn correlation_doc_docId(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
+#[allow(non_snake_case)]
 pub async fn correlation_doc_docId_delete(
     pool: Extension<Pool>,
     axum::extract::Path((doc_id, related_doc_id)): axum::extract::Path<(String, String)>,
@@ -1384,6 +1544,8 @@ pub async fn correlation_doc_docId_delete(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
+#[allow(non_snake_case)]
 pub async fn correlation_list_doc_docId(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -1391,6 +1553,8 @@ pub async fn correlation_list_doc_docId(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
+#[allow(non_snake_case)]
 pub async fn correlation_list_doc_docId_site_site(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -1398,6 +1562,8 @@ pub async fn correlation_list_doc_docId_site_site(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
+#[allow(non_snake_case)]
 pub async fn correlation_update_doc_docId(
     pool: Extension<Pool>,
     axum::extract::Path((doc_id, related_doc_id)): axum::extract::Path<(String, String)>,
@@ -1437,6 +1603,8 @@ pub async fn correlation_update_doc_docId(
 // ─── data_document_* stubs ──────────────────────────────────────────────────
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
+#[allow(non_snake_case)]
 pub async fn data_document_id(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -1565,7 +1733,7 @@ async fn write_doc_fields_base(
                 .map_err(|_| AppError::Internal)?;
             affected += inserted as i64;
         } else {
-            upsert_doc_field(&pool, id, key, &value_str).await?;
+            upsert_doc_field(pool, id, key, &value_str).await?;
             affected += 1;
         }
     }
@@ -1809,6 +1977,8 @@ macro_rules! data_path_write_handlers {
 /// POST data/document/{id}：Java ActionCreateWithDocument —— 新增数据，
 /// 仅填充不存在的字段 key（跳过已有）。
 #[axum::debug_handler]
+#[allow(non_snake_case)]
+#[allow(non_snake_case)]
 pub async fn data_document_id_create(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
@@ -1821,6 +1991,8 @@ pub async fn data_document_id_create(
 /// PUT data/document/{id}：Java ActionUpdateWithDocument —— 更新数据
 /// （顶层 key 全量 upsert）。
 #[axum::debug_handler]
+#[allow(non_snake_case)]
+#[allow(non_snake_case)]
 pub async fn data_document_id_update(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
@@ -1832,6 +2004,8 @@ pub async fn data_document_id_update(
 
 /// DELETE data/document/{id}：Java ActionDeleteWithDocument —— 删除文档数据。
 #[axum::debug_handler]
+#[allow(non_snake_case)]
+#[allow(non_snake_case)]
 pub async fn data_document_id_delete(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
@@ -1908,6 +2082,8 @@ data_path_write_handlers!(
 );
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
+#[allow(non_snake_case)]
 pub async fn data_document_id_array_data(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
@@ -1942,6 +2118,8 @@ pub async fn data_document_id_array_data(
 /// Java ActionDeleteWithDocument 语义：删除文档数据（字段行），而非文档实体本身；
 /// 需要会话且为文档编辑者（IDOR 门禁）。
 #[axum::debug_handler]
+#[allow(non_snake_case)]
+#[allow(non_snake_case)]
 pub async fn data_document_id_mockdeletetoget(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
@@ -1953,6 +2131,8 @@ pub async fn data_document_id_mockdeletetoget(
 /// POST data/document/{id}/mockputtopost：PUT data/document/{id} 的动词别名
 /// （Java ActionUpdateWithDocument）：顶层 key 全量 upsert 到文档数据字段。
 #[axum::debug_handler]
+#[allow(non_snake_case)]
+#[allow(non_snake_case)]
 pub async fn data_document_id_mockputtopost(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
@@ -1963,6 +2143,8 @@ pub async fn data_document_id_mockputtopost(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
+#[allow(non_snake_case)]
 pub async fn data_document_id_path0(
     pool: Extension<Pool>,
     axum::extract::Path((doc_id, path0)): axum::extract::Path<(String, String)>,
@@ -1990,6 +2172,8 @@ pub async fn data_document_id_path0(
 // ─── design_* / document_cipher_* stubs ─────────────────────────────────────
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
+#[allow(non_snake_case)]
 pub async fn design_appdict_list_appInfo_appId(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -1997,6 +2181,8 @@ pub async fn design_appdict_list_appInfo_appId(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
+#[allow(non_snake_case)]
 pub async fn design_appdict_list_paging_page_size_size(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -2004,6 +2190,8 @@ pub async fn design_appdict_list_paging_page_size_size(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
+#[allow(non_snake_case)]
 pub async fn design_appdict_id(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
@@ -2034,6 +2222,8 @@ pub async fn design_appdict_id(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
+#[allow(non_snake_case)]
 pub async fn design_appdict_id_mockdeletetoget(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
@@ -2071,6 +2261,8 @@ pub async fn design_appdict_id_mockdeletetoget(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
+#[allow(non_snake_case)]
 pub async fn design_appdict_id_mockputtopost(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
@@ -2110,6 +2302,8 @@ pub async fn design_appdict_id_mockputtopost(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
+#[allow(non_snake_case)]
 pub async fn designer_search(
     pool: Extension<Pool>,
     axum::extract::Query(params): axum::extract::Query<HashMap<String, String>>,
@@ -2138,6 +2332,8 @@ pub async fn designer_search(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
+#[allow(non_snake_case)]
 pub async fn document_cipher_filter_list_page_size_size(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -2145,6 +2341,8 @@ pub async fn document_cipher_filter_list_page_size_size(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
+#[allow(non_snake_case)]
 pub async fn document_cipher_filter_list_page_size_size_mockputtopost(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -2152,6 +2350,8 @@ pub async fn document_cipher_filter_list_page_size_size_mockputtopost(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
+#[allow(non_snake_case)]
 pub async fn document_cipher_publish_content(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
@@ -2190,6 +2390,8 @@ pub async fn document_cipher_publish_content(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
+#[allow(non_snake_case)]
 pub async fn document_cipher_publish_content_mockputtopost(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
@@ -2228,6 +2430,8 @@ pub async fn document_cipher_publish_content_mockputtopost(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
+#[allow(non_snake_case)]
 pub async fn document_cipher_id_permission_read_person_person(
     pool: Extension<Pool>,
     axum::extract::Path((doc_id, person_id)): axum::extract::Path<(String, String)>,
@@ -2256,6 +2460,8 @@ pub async fn document_cipher_id_permission_read_person_person(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
+#[allow(non_snake_case)]
 pub async fn document_cipher_id_persist_view_record(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
@@ -2294,6 +2500,8 @@ pub async fn document_cipher_id_persist_view_record(
 // ─── file* / fileinfo_* stubs ───────────────────────────────────────────────
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
+#[allow(non_snake_case)]
 pub async fn file_list_appInfo_appInfoFlag(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -2301,6 +2509,8 @@ pub async fn file_list_appInfo_appInfoFlag(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
+#[allow(non_snake_case)]
 pub async fn file_list_id_next_count(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -2308,6 +2518,8 @@ pub async fn file_list_id_next_count(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
+#[allow(non_snake_case)]
 pub async fn file_list_id_prev_count(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -2315,6 +2527,8 @@ pub async fn file_list_id_prev_count(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
+#[allow(non_snake_case)]
 pub async fn file_flag(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -2322,6 +2536,8 @@ pub async fn file_flag(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
+#[allow(non_snake_case)]
 pub async fn file_flag_appInfo_appInfoFlag(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -2329,9 +2545,11 @@ pub async fn file_flag_appInfo_appInfoFlag(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
+#[allow(non_snake_case)]
 pub async fn file_flag_appInfo_appInfoFlag_content(
     pool: Extension<Pool>,
-    axum::extract::Path((app_info_flag, app_info_flag2)): axum::extract::Path<(String, String)>,
+    axum::extract::Path((app_info_flag, _app_info_flag2)): axum::extract::Path<(String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let row = client
@@ -2360,6 +2578,8 @@ pub async fn file_flag_appInfo_appInfoFlag_content(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
+#[allow(non_snake_case)]
 pub async fn file_flag_appInfo_appInfoFlag_download(
     pool: Extension<Pool>,
     axum::extract::Path(app_info_flag): axum::extract::Path<String>,
@@ -2390,6 +2610,8 @@ pub async fn file_flag_appInfo_appInfoFlag_download(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
+#[allow(non_snake_case)]
 pub async fn file_flag_mockdeletetoget(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
@@ -2428,6 +2650,8 @@ pub async fn file_flag_mockdeletetoget(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
+#[allow(non_snake_case)]
 pub async fn file_id(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
@@ -2458,6 +2682,8 @@ pub async fn file_id(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
+#[allow(non_snake_case)]
 pub async fn file_id_content(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
@@ -2484,6 +2710,8 @@ pub async fn file_id_content(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
+#[allow(non_snake_case)]
 pub async fn file_id_download(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
@@ -2512,6 +2740,8 @@ pub async fn file_id_download(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
+#[allow(non_snake_case)]
 pub async fn file_id_mockputtopost(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
@@ -2533,6 +2763,8 @@ pub async fn file_id_mockputtopost(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
+#[allow(non_snake_case)]
 pub async fn file_id_upload(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
@@ -2554,6 +2786,8 @@ pub async fn file_id_upload(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
+#[allow(non_snake_case)]
 pub async fn anonymous_fileinfo_download_document_id(
     pool: Extension<Pool>,
     axum::extract::Path(doc_id): axum::extract::Path<String>,
@@ -2582,6 +2816,8 @@ pub async fn anonymous_fileinfo_download_document_id(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
+#[allow(non_snake_case)]
 pub async fn anonymous_fileinfo_download_document_id_stream(
     pool: Extension<Pool>,
     axum::extract::Path(doc_id): axum::extract::Path<String>,
@@ -2610,9 +2846,11 @@ pub async fn anonymous_fileinfo_download_document_id_stream(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
+#[allow(non_snake_case)]
 pub async fn fileinfo_batch_download_doc_docId_site_site(
     pool: Extension<Pool>,
-    axum::extract::Path((doc_id, site)): axum::extract::Path<(String, String)>,
+    axum::extract::Path((doc_id, _site)): axum::extract::Path<(String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let rows = client
@@ -2636,6 +2874,8 @@ pub async fn fileinfo_batch_download_doc_docId_site_site(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
+#[allow(non_snake_case)]
 pub async fn fileinfo_copy_to_doc_docId(
     pool: Extension<Pool>,
     axum::extract::Path((file_id, doc_id)): axum::extract::Path<(String, String)>,
@@ -2656,6 +2896,8 @@ pub async fn fileinfo_copy_to_doc_docId(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
+#[allow(non_snake_case)]
 pub async fn fileinfo_download_document_id(
     pool: Extension<Pool>,
     axum::extract::Path(doc_id): axum::extract::Path<String>,
@@ -2684,6 +2926,8 @@ pub async fn fileinfo_download_document_id(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
+#[allow(non_snake_case)]
 pub async fn fileinfo_download_document_id_stream(
     pool: Extension<Pool>,
     axum::extract::Path(doc_id): axum::extract::Path<String>,
@@ -2710,6 +2954,8 @@ pub async fn fileinfo_download_document_id_stream(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
+#[allow(non_snake_case)]
 pub async fn fileinfo_download_transfer_flag_flag(
     pool: Extension<Pool>,
     axum::extract::Path(flag): axum::extract::Path<String>,
@@ -2736,6 +2982,8 @@ pub async fn fileinfo_download_transfer_flag_flag(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
+#[allow(non_snake_case)]
 pub async fn fileinfo_edit_id_doc_docId(
     pool: Extension<Pool>,
     axum::extract::Path((file_id, doc_id)): axum::extract::Path<(String, String)>,
@@ -2759,6 +3007,8 @@ pub async fn fileinfo_edit_id_doc_docId(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
+#[allow(non_snake_case)]
 pub async fn fileinfo_edit_id_doc_docId_mockputtopost(
     pool: Extension<Pool>,
     axum::extract::Path((file_id, doc_id)): axum::extract::Path<(String, String)>,
@@ -2782,6 +3032,8 @@ pub async fn fileinfo_edit_id_doc_docId_mockputtopost(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
+#[allow(non_snake_case)]
 pub async fn fileinfo_list_all(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -2789,6 +3041,8 @@ pub async fn fileinfo_list_all(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
+#[allow(non_snake_case)]
 pub async fn fileinfo_list_document_documentId(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -2796,6 +3050,8 @@ pub async fn fileinfo_list_document_documentId(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
+#[allow(non_snake_case)]
 pub async fn fileinfo_list_filter(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -2803,6 +3059,8 @@ pub async fn fileinfo_list_filter(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
+#[allow(non_snake_case)]
 pub async fn fileinfo_replace_to_doc_docId(
     pool: Extension<Pool>,
     axum::extract::Path((file_id, doc_id)): axum::extract::Path<(String, String)>,
@@ -2826,6 +3084,8 @@ pub async fn fileinfo_replace_to_doc_docId(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
+#[allow(non_snake_case)]
 pub async fn fileinfo_update_document_docId_attachment_id(
     pool: Extension<Pool>,
     axum::extract::Path((doc_id, attachment_id)): axum::extract::Path<(String, String)>,
@@ -2849,9 +3109,11 @@ pub async fn fileinfo_update_document_docId_attachment_id(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
+#[allow(non_snake_case)]
 pub async fn fileinfo_update_document_docId_attachment_id_callback_callback(
     pool: Extension<Pool>,
-    axum::extract::Path((doc_id, attachment_id, callback)): axum::extract::Path<(String, String, String)>,
+    axum::extract::Path((doc_id, attachment_id, _callback)): axum::extract::Path<(String, String, String)>,
     body: axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
@@ -2872,6 +3134,8 @@ pub async fn fileinfo_update_document_docId_attachment_id_callback_callback(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
+#[allow(non_snake_case)]
 pub async fn fileinfo_update_id_content(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
@@ -2895,9 +3159,11 @@ pub async fn fileinfo_update_id_content(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
+#[allow(non_snake_case)]
 pub async fn fileinfo_upload_doc_docId_save_as_flag(
     pool: Extension<Pool>,
-    axum::extract::Path((doc_id, save_as)): axum::extract::Path<(String, String)>,
+    axum::extract::Path((doc_id, _save_as)): axum::extract::Path<(String, String)>,
     body: axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
@@ -2915,6 +3181,8 @@ pub async fn fileinfo_upload_doc_docId_save_as_flag(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
+#[allow(non_snake_case)]
 pub async fn fileinfo_upload_document_docId(
     pool: Extension<Pool>,
     axum::extract::Path(doc_id): axum::extract::Path<String>,
@@ -2935,6 +3203,8 @@ pub async fn fileinfo_upload_document_docId(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
+#[allow(non_snake_case)]
 pub async fn fileinfo_upload_document_docId_callback_callback(
     pool: Extension<Pool>,
     axum::extract::Path((doc_id, _callback)): axum::extract::Path<(String, String)>,
@@ -2955,6 +3225,8 @@ pub async fn fileinfo_upload_document_docId_callback_callback(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
+#[allow(non_snake_case)]
 pub async fn fileinfo_upload_with_url(
     pool: Extension<Pool>,
     axum::extract::Path(doc_id): axum::extract::Path<String>,
@@ -2975,6 +3247,8 @@ pub async fn fileinfo_upload_with_url(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
+#[allow(non_snake_case)]
 pub async fn fileinfo_id(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
@@ -3006,6 +3280,8 @@ pub async fn fileinfo_id(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
+#[allow(non_snake_case)]
 pub async fn fileinfo_id_binary_base64_size(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
@@ -3034,9 +3310,11 @@ pub async fn fileinfo_id_binary_base64_size(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
+#[allow(non_snake_case)]
 pub async fn fileinfo_id_doc_docId_change_seqnumber_seqNumber(
     pool: Extension<Pool>,
-    axum::extract::Path((file_id, doc_id, seq_number)): axum::extract::Path<(String, String, String)>,
+    axum::extract::Path((file_id, doc_id, _seq_number)): axum::extract::Path<(String, String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let row = client
@@ -3053,6 +3331,8 @@ pub async fn fileinfo_id_doc_docId_change_seqnumber_seqNumber(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
+#[allow(non_snake_case)]
 pub async fn fileinfo_id_document_documentId(
     pool: Extension<Pool>,
     axum::extract::Path((file_id, doc_id)): axum::extract::Path<(String, String)>,
@@ -3082,6 +3362,8 @@ pub async fn fileinfo_id_document_documentId(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
+#[allow(non_snake_case)]
 pub async fn fileinfo_id_mockdeletetoget(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
@@ -3101,6 +3383,8 @@ pub async fn fileinfo_id_mockdeletetoget(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
+#[allow(non_snake_case)]
 pub async fn fileinfo_id_online_info(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
@@ -3132,6 +3416,8 @@ pub async fn fileinfo_id_online_info(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
+#[allow(non_snake_case)]
 pub async fn fileinfo_id_preview_pdf(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
@@ -3163,6 +3449,8 @@ pub async fn fileinfo_id_preview_pdf(
 // ─── form_* / form_v2_* stubs ───────────────────────────────────────────────
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
+#[allow(non_snake_case)]
 pub async fn form_filter_list_id_next_count_app_appId(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -3170,6 +3458,8 @@ pub async fn form_filter_list_id_next_count_app_appId(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
+#[allow(non_snake_case)]
 pub async fn form_filter_list_id_next_count_app_appId_mockputtopost(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -3177,6 +3467,8 @@ pub async fn form_filter_list_id_next_count_app_appId_mockputtopost(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
+#[allow(non_snake_case)]
 pub async fn form_filter_list_id_prev_count_app_appId(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -3184,6 +3476,8 @@ pub async fn form_filter_list_id_prev_count_app_appId(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
+#[allow(non_snake_case)]
 pub async fn form_filter_list_id_prev_count_app_appId_mockputtopost(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -3191,6 +3485,8 @@ pub async fn form_filter_list_id_prev_count_app_appId_mockputtopost(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
+#[allow(non_snake_case)]
 pub async fn form_list_all(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -3198,6 +3494,8 @@ pub async fn form_list_all(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
+#[allow(non_snake_case)]
 pub async fn form_list_app_appId(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -3205,6 +3503,8 @@ pub async fn form_list_app_appId(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
+#[allow(non_snake_case)]
 pub async fn form_list_formfield_appInfo_appId(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -3212,6 +3512,8 @@ pub async fn form_list_formfield_appInfo_appId(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
+#[allow(non_snake_case)]
 pub async fn form_list_id_formfield(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -3219,6 +3521,8 @@ pub async fn form_list_id_formfield(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
+#[allow(non_snake_case)]
 pub async fn anonymous_form_v2_lookup_document_docId(
     pool: Extension<Pool>,
     axum::extract::Path(doc_id): axum::extract::Path<String>,
@@ -3247,6 +3551,8 @@ pub async fn anonymous_form_v2_lookup_document_docId(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
+#[allow(non_snake_case)]
 pub async fn anonymous_form_v2_lookup_document_docId_mobile(
     pool: Extension<Pool>,
     axum::extract::Path(doc_id): axum::extract::Path<String>,
@@ -3275,6 +3581,8 @@ pub async fn anonymous_form_v2_lookup_document_docId_mobile(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
+#[allow(non_snake_case)]
 pub async fn anonymous_form_v2_id(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
@@ -3303,6 +3611,8 @@ pub async fn anonymous_form_v2_id(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
+#[allow(non_snake_case)]
 pub async fn anonymous_form_v2_id_mobile(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
@@ -3331,6 +3641,8 @@ pub async fn anonymous_form_v2_id_mobile(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
+#[allow(non_snake_case)]
 pub async fn anonymous_form_id(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
@@ -3359,6 +3671,8 @@ pub async fn anonymous_form_id(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
+#[allow(non_snake_case)]
 pub async fn form_formFlag_appinfo_appFlag(
     pool: Extension<Pool>,
     axum::extract::Path(app_flag): axum::extract::Path<String>,
@@ -3386,6 +3700,8 @@ pub async fn form_formFlag_appinfo_appFlag(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
+#[allow(non_snake_case)]
 pub async fn form_id(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
@@ -3416,6 +3732,8 @@ pub async fn form_id(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
+#[allow(non_snake_case)]
 pub async fn form_id_mockdeletetoget(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
@@ -3435,6 +3753,8 @@ pub async fn form_id_mockdeletetoget(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
+#[allow(non_snake_case)]
 pub async fn form_id_mockputtopost(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
@@ -3455,6 +3775,8 @@ pub async fn form_id_mockputtopost(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
+#[allow(non_snake_case)]
 pub async fn form_v2_lookup_document_docId(
     pool: Extension<Pool>,
     axum::extract::Path(doc_id): axum::extract::Path<String>,
@@ -3483,6 +3805,8 @@ pub async fn form_v2_lookup_document_docId(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
+#[allow(non_snake_case)]
 pub async fn form_v2_lookup_document_docId_mobile(
     pool: Extension<Pool>,
     axum::extract::Path(doc_id): axum::extract::Path<String>,
@@ -3511,6 +3835,8 @@ pub async fn form_v2_lookup_document_docId_mobile(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
+#[allow(non_snake_case)]
 pub async fn form_v2_id(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -3518,6 +3844,8 @@ pub async fn form_v2_id(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
+#[allow(non_snake_case)]
 pub async fn form_v2_id_mobile(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
@@ -3546,6 +3874,8 @@ pub async fn form_v2_id_mobile(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
+#[allow(non_snake_case)]
 pub async fn formversion_list_form_formId(
     pool: Extension<Pool>,
     axum::extract::Path(form_id): axum::extract::Path<String>,
@@ -3554,6 +3884,8 @@ pub async fn formversion_list_form_formId(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
+#[allow(non_snake_case)]
 pub async fn formversion_id(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
@@ -3584,6 +3916,8 @@ pub async fn formversion_id(
 // ─── log_* stubs ────────────────────────────────────────────────────────────
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
+#[allow(non_snake_case)]
 pub async fn log_filter_list_id_next_count(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -3591,6 +3925,8 @@ pub async fn log_filter_list_id_next_count(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
+#[allow(non_snake_case)]
 pub async fn log_filter_list_id_prev_count(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -3598,6 +3934,8 @@ pub async fn log_filter_list_id_prev_count(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
+#[allow(non_snake_case)]
 pub async fn log_list_app_appId(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -3605,6 +3943,8 @@ pub async fn log_list_app_appId(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
+#[allow(non_snake_case)]
 pub async fn log_list_category_categoryId(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -3612,6 +3952,8 @@ pub async fn log_list_category_categoryId(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
+#[allow(non_snake_case)]
 pub async fn log_list_document_documentId(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -3619,6 +3961,8 @@ pub async fn log_list_document_documentId(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
+#[allow(non_snake_case)]
 pub async fn log_list_filter_page_size_size(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -3626,6 +3970,8 @@ pub async fn log_list_filter_page_size_size(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
+#[allow(non_snake_case)]
 pub async fn log_list_level_operationLevel(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -3633,6 +3979,8 @@ pub async fn log_list_level_operationLevel(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
+#[allow(non_snake_case)]
 pub async fn log_id(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -3642,6 +3990,8 @@ pub async fn log_id(
 // ─── output_* stubs ─────────────────────────────────────────────────────────
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
+#[allow(non_snake_case)]
 pub async fn output_list(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -3649,6 +3999,8 @@ pub async fn output_list(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
+#[allow(non_snake_case)]
 pub async fn output_appInfoFlag_select(
     pool: Extension<Pool>,
     axum::extract::Path(app_info_flag): axum::extract::Path<String>,
@@ -3675,6 +4027,8 @@ pub async fn output_appInfoFlag_select(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
+#[allow(non_snake_case)]
 pub async fn output_appInfoFlag_select_mockputtopost(
     pool: Extension<Pool>,
     axum::extract::Path(app_info_flag): axum::extract::Path<String>,
@@ -3696,6 +4050,8 @@ pub async fn output_appInfoFlag_select_mockputtopost(
 // ─── permission_* stubs ─────────────────────────────────────────────────────
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
+#[allow(non_snake_case)]
 pub async fn permission_appInfo_id_manageable(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -3703,6 +4059,8 @@ pub async fn permission_appInfo_id_manageable(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
+#[allow(non_snake_case)]
 pub async fn permission_appInfo_id_managers(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -3710,6 +4068,8 @@ pub async fn permission_appInfo_id_managers(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
+#[allow(non_snake_case)]
 pub async fn permission_appInfo_id_publishers(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -3717,6 +4077,8 @@ pub async fn permission_appInfo_id_publishers(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
+#[allow(non_snake_case)]
 pub async fn permission_appInfo_id_viewers(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -3724,6 +4086,8 @@ pub async fn permission_appInfo_id_viewers(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
+#[allow(non_snake_case)]
 pub async fn permission_category_id_managers(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -3731,6 +4095,8 @@ pub async fn permission_category_id_managers(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
+#[allow(non_snake_case)]
 pub async fn permission_category_id_publishers(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -3738,6 +4104,8 @@ pub async fn permission_category_id_publishers(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
+#[allow(non_snake_case)]
 pub async fn permission_category_id_viewers(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -3745,6 +4113,8 @@ pub async fn permission_category_id_viewers(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
+#[allow(non_snake_case)]
 pub async fn permission_categoryInfo_id_manageable(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -3752,6 +4122,8 @@ pub async fn permission_categoryInfo_id_manageable(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
+#[allow(non_snake_case)]
 pub async fn permission_management_refresh_all(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -3766,6 +4138,8 @@ pub async fn permission_management_refresh_all(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
+#[allow(non_snake_case)]
 pub async fn permission_management_refresh_category_categoryId(
     pool: Extension<Pool>,
     axum::extract::Path(category_id): axum::extract::Path<String>,
@@ -3781,6 +4155,8 @@ pub async fn permission_management_refresh_category_categoryId(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
+#[allow(non_snake_case)]
 pub async fn permission_manager_appInfo_id(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -3788,6 +4164,8 @@ pub async fn permission_manager_appInfo_id(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
+#[allow(non_snake_case)]
 pub async fn permission_manager_categoryInfo_id(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -3795,6 +4173,8 @@ pub async fn permission_manager_categoryInfo_id(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
+#[allow(non_snake_case)]
 pub async fn permission_publisher_appInfo_id(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -3802,6 +4182,8 @@ pub async fn permission_publisher_appInfo_id(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
+#[allow(non_snake_case)]
 pub async fn permission_publisher_categoryInfo_id(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -3809,6 +4191,8 @@ pub async fn permission_publisher_categoryInfo_id(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
+#[allow(non_snake_case)]
 pub async fn permission_viewer_appInfo_id(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -3816,6 +4200,8 @@ pub async fn permission_viewer_appInfo_id(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
+#[allow(non_snake_case)]
 pub async fn permission_viewer_categoryInfo_id(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -3825,6 +4211,8 @@ pub async fn permission_viewer_categoryInfo_id(
 // ─── review_* / script_* stubs ──────────────────────────────────────────────
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
+#[allow(non_snake_case)]
 pub async fn review_v2_search(
     pool: Extension<Pool>,
     axum::extract::Query(params): axum::extract::Query<HashMap<String, String>>,
@@ -3850,6 +4238,8 @@ pub async fn review_v2_search(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
+#[allow(non_snake_case)]
 pub async fn script_list_app_appId_name_name(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -3857,6 +4247,8 @@ pub async fn script_list_app_appId_name_name(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
+#[allow(non_snake_case)]
 pub async fn script_list_app_flag(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -3864,6 +4256,8 @@ pub async fn script_list_app_flag(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
+#[allow(non_snake_case)]
 pub async fn script_list_manager(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -3871,6 +4265,8 @@ pub async fn script_list_manager(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
+#[allow(non_snake_case)]
 pub async fn script_list_paging_page_size_size(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -3878,6 +4274,8 @@ pub async fn script_list_paging_page_size_size(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
+#[allow(non_snake_case)]
 pub async fn script_list_id_next_count(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -3885,6 +4283,8 @@ pub async fn script_list_id_next_count(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
+#[allow(non_snake_case)]
 pub async fn script_list_id_prev_count(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -3892,6 +4292,8 @@ pub async fn script_list_id_prev_count(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
+#[allow(non_snake_case)]
 pub async fn script_flag_appInfo_appInfoFlag(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -3899,6 +4301,8 @@ pub async fn script_flag_appInfo_appInfoFlag(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
+#[allow(non_snake_case)]
 pub async fn script_id(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -3906,6 +4310,8 @@ pub async fn script_id(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
+#[allow(non_snake_case)]
 pub async fn script_id_mockdeletetoget(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
@@ -3917,6 +4323,8 @@ pub async fn script_id_mockdeletetoget(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
+#[allow(non_snake_case)]
 pub async fn script_id_mockputtopost(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
@@ -3955,6 +4363,8 @@ pub async fn script_id_mockputtopost(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
+#[allow(non_snake_case)]
 pub async fn script_uniqueName_app_flag(
     pool: Extension<Pool>,
     axum::extract::Path((app_flag, unique_name)): axum::extract::Path<(String, String)>,
@@ -3986,6 +4396,8 @@ pub async fn script_uniqueName_app_flag(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
+#[allow(non_snake_case)]
 pub async fn script_uniqueName_app_flag_imported(
     pool: Extension<Pool>,
     axum::extract::Path((app_flag, unique_name)): axum::extract::Path<(String, String)>,
@@ -4015,6 +4427,8 @@ pub async fn script_uniqueName_app_flag_imported(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
+#[allow(non_snake_case)]
 pub async fn scriptversion_list_script_scriptId(
     pool: Extension<Pool>,
     axum::extract::Path(script_id): axum::extract::Path<String>,
@@ -4023,6 +4437,8 @@ pub async fn scriptversion_list_script_scriptId(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
+#[allow(non_snake_case)]
 pub async fn scriptversion_id(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
@@ -4051,6 +4467,8 @@ pub async fn scriptversion_id(
 // ─── searchfilter_* stubs ───────────────────────────────────────────────────
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
+#[allow(non_snake_case)]
 pub async fn searchfilter_list_archive_filter_category_categoryId(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -4058,6 +4476,8 @@ pub async fn searchfilter_list_archive_filter_category_categoryId(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
+#[allow(non_snake_case)]
 pub async fn searchfilter_list_draft_filter_category_categoryId(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -4065,6 +4485,8 @@ pub async fn searchfilter_list_draft_filter_category_categoryId(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
+#[allow(non_snake_case)]
 pub async fn searchfilter_list_publish_filter_category_categoryId(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -4385,6 +4807,8 @@ macro_rules! appdict_depth_family {
 
 /// GET anonymous/surface/appdict/{appDictFlag}/appInfo/{appInfoFlag}
 #[axum::debug_handler]
+#[allow(non_snake_case)]
+#[allow(non_snake_case)]
 pub async fn anonymous_surface_appdict_appDictFlag_appInfo_appInfoFlag(
     pool: Extension<Pool>,
     axum::extract::Path((app_dict_flag, app_info_flag)): axum::extract::Path<(String, String)>,
@@ -4403,6 +4827,8 @@ pub async fn anonymous_surface_appdict_appDictFlag_appInfo_appInfoFlag(
 
 /// GET surface/appdict/{appDictFlag}/appInfo/{appInfoFlag}
 #[axum::debug_handler]
+#[allow(non_snake_case)]
+#[allow(non_snake_case)]
 pub async fn surface_appdict_appDictFlag_appInfo_appInfoFlag(
     pool: Extension<Pool>,
     axum::extract::Path((app_dict_flag, app_info_flag)): axum::extract::Path<(String, String)>,
@@ -4416,6 +4842,8 @@ pub async fn surface_appdict_appDictFlag_appInfo_appInfoFlag(
 
 /// GET anonymous/surface/appdict/{appDictFlag}/appInfo/{appInfoFlag}/data
 #[axum::debug_handler]
+#[allow(non_snake_case)]
+#[allow(non_snake_case)]
 pub async fn anonymous_surface_appdict_appDictFlag_appInfo_appInfoFlag_data(
     pool: Extension<Pool>,
     axum::extract::Path((app_dict_flag, app_info_flag)): axum::extract::Path<(String, String)>,
@@ -4425,6 +4853,8 @@ pub async fn anonymous_surface_appdict_appDictFlag_appInfo_appInfoFlag_data(
 
 /// GET surface/appdict/{appDictFlag}/appInfo/{appInfoFlag}/data
 #[axum::debug_handler]
+#[allow(non_snake_case)]
+#[allow(non_snake_case)]
 pub async fn surface_appdict_appDictFlag_appInfo_appInfoFlag_data(
     pool: Extension<Pool>,
     axum::extract::Path((app_dict_flag, app_info_flag)): axum::extract::Path<(String, String)>,
@@ -4436,6 +4866,8 @@ pub async fn surface_appdict_appDictFlag_appInfo_appInfoFlag_data(
 /// Java ActionUpdate —— 更新字典根数据；POST .../mockputtopost 为其动词别名，
 /// 与 Java ActionUpdateMockPutToPost 复用 ActionUpdate 一致。
 #[axum::debug_handler]
+#[allow(non_snake_case)]
+#[allow(non_snake_case)]
 pub async fn surface_appdict_appDictFlag_appInfo_appInfoFlag_update(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
@@ -4458,6 +4890,8 @@ pub async fn surface_appdict_appDictFlag_appInfo_appInfoFlag_update(
 /// GET anonymous/surface/appdict/list/appInfo/{appInfoFlag}：
 /// Java ActionListWithAppInfo —— 按栏目过滤字典列表。
 #[axum::debug_handler]
+#[allow(non_snake_case)]
+#[allow(non_snake_case)]
 pub async fn anonymous_surface_appdict_list_appInfo_appInfoFlag(
     pool: Extension<Pool>,
     axum::extract::Path(app_info_flag): axum::extract::Path<String>,
@@ -4476,6 +4910,8 @@ pub async fn anonymous_surface_appdict_list_appInfo_appInfoFlag(
 
 /// GET surface/appdict/list/appInfo/{appInfoFlag}
 #[axum::debug_handler]
+#[allow(non_snake_case)]
+#[allow(non_snake_case)]
 pub async fn surface_appdict_list_appInfo_appInfoFlag(
     pool: Extension<Pool>,
     axum::extract::Path(app_info_flag): axum::extract::Path<String>,
@@ -4546,6 +4982,8 @@ appdict_depth_family!(10;
 // ─── templateform_* stubs ───────────────────────────────────────────────────
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
+#[allow(non_snake_case)]
 pub async fn templateform_list(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -4553,6 +4991,8 @@ pub async fn templateform_list(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
+#[allow(non_snake_case)]
 pub async fn templateform_list_category(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -4560,6 +5000,8 @@ pub async fn templateform_list_category(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
+#[allow(non_snake_case)]
 pub async fn templateform_list_category_mockputtopost(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -4567,6 +5009,8 @@ pub async fn templateform_list_category_mockputtopost(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
+#[allow(non_snake_case)]
 pub async fn templateform_id(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
@@ -4595,6 +5039,8 @@ pub async fn templateform_id(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
+#[allow(non_snake_case)]
 pub async fn templateform_id_mockdeletetoget(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
@@ -4608,6 +5054,8 @@ pub async fn templateform_id_mockdeletetoget(
 // ─── uuid_random ────────────────────────────────────────────────────────────
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
+#[allow(non_snake_case)]
 pub async fn uuid_random(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -4621,6 +5069,8 @@ pub async fn uuid_random(
 // ─── view* / viewcategory* / viewfieldconfig* / viewrecord_* stubs ──────────
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
+#[allow(non_snake_case)]
 pub async fn view_list_all(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -4628,6 +5078,8 @@ pub async fn view_list_all(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
+#[allow(non_snake_case)]
 pub async fn view_list_app_appId(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -4635,6 +5087,8 @@ pub async fn view_list_app_appId(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
+#[allow(non_snake_case)]
 pub async fn view_list_category_categoryId(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -4642,6 +5096,8 @@ pub async fn view_list_category_categoryId(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
+#[allow(non_snake_case)]
 pub async fn view_list_form_formId(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -4649,6 +5105,8 @@ pub async fn view_list_form_formId(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
+#[allow(non_snake_case)]
 pub async fn view_viewdata_list_id_next_count(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -4656,6 +5114,8 @@ pub async fn view_viewdata_list_id_next_count(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
+#[allow(non_snake_case)]
 pub async fn view_id(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -4663,6 +5123,8 @@ pub async fn view_id(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
+#[allow(non_snake_case)]
 pub async fn view_id_mockdeletetoget(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
@@ -4674,6 +5136,8 @@ pub async fn view_id_mockdeletetoget(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
+#[allow(non_snake_case)]
 pub async fn view_id_mockputtopost(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
@@ -4712,6 +5176,8 @@ pub async fn view_id_mockputtopost(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
+#[allow(non_snake_case)]
 pub async fn viewcategory_list_all(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -4719,6 +5185,8 @@ pub async fn viewcategory_list_all(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
+#[allow(non_snake_case)]
 pub async fn viewcategory_list_category_categoryId(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -4726,6 +5194,8 @@ pub async fn viewcategory_list_category_categoryId(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
+#[allow(non_snake_case)]
 pub async fn viewcategory_list_view_viewId(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -4733,6 +5203,8 @@ pub async fn viewcategory_list_view_viewId(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
+#[allow(non_snake_case)]
 pub async fn viewcategory_id(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -4740,6 +5212,8 @@ pub async fn viewcategory_id(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
+#[allow(non_snake_case)]
 pub async fn viewcategory_id_mockdeletetoget(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
@@ -4751,6 +5225,8 @@ pub async fn viewcategory_id_mockdeletetoget(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
+#[allow(non_snake_case)]
 pub async fn viewfieldconfig_list_all(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -4758,6 +5234,8 @@ pub async fn viewfieldconfig_list_all(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
+#[allow(non_snake_case)]
 pub async fn viewfieldconfig_list_view_viewId(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -4765,6 +5243,8 @@ pub async fn viewfieldconfig_list_view_viewId(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
+#[allow(non_snake_case)]
 pub async fn viewfieldconfig_id(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -4772,6 +5252,8 @@ pub async fn viewfieldconfig_id(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
+#[allow(non_snake_case)]
 pub async fn viewfieldconfig_id_mockdeletetoget(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
@@ -4783,6 +5265,8 @@ pub async fn viewfieldconfig_id_mockdeletetoget(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
+#[allow(non_snake_case)]
 pub async fn viewfieldconfig_id_mockputtopost(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
@@ -4821,6 +5305,8 @@ pub async fn viewfieldconfig_id_mockputtopost(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
+#[allow(non_snake_case)]
 pub async fn viewrecord_document_docId_filter_list_id_next_count(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -4828,6 +5314,8 @@ pub async fn viewrecord_document_docId_filter_list_id_next_count(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
+#[allow(non_snake_case)]
 pub async fn viewrecord_document_docId_has_view(
     pool: Extension<Pool>,
     axum::extract::Path(doc_id): axum::extract::Path<String>,
@@ -4847,6 +5335,8 @@ pub async fn viewrecord_document_docId_has_view(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
+#[allow(non_snake_case)]
 pub async fn viewrecord_list_install_log_paging_page_size_size(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -4858,13 +5348,15 @@ pub async fn viewrecord_list_install_log_paging_page_size_size(
 // STUB: image_encode_base64 - image processing utility, no DB table mapping
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
+#[allow(non_snake_case)]
 pub async fn image_encode_base64(
     pool: Extension<Pool>,
     body: axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let _ = pool;
     let data_url = body.get("dataUrl").and_then(|v| v.as_str()).unwrap_or_default();
-    let b64_str: String = data_url.replace("data:image/", "").split(',').last().unwrap_or("").to_string();
+    let b64_str: String = data_url.replace("data:image/", "").split(',').next_back().unwrap_or("").to_string();
     let decoded = BASE64.decode(&b64_str).ok();
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -4876,13 +5368,15 @@ pub async fn image_encode_base64(
 
 // STUB: image_encode_base64_size_size - image processing utility, no DB table mapping
 #[axum::debug_handler]
+#[allow(non_snake_case)]
+#[allow(non_snake_case)]
 pub async fn image_encode_base64_size_size(
     pool: Extension<Pool>,
     body: axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let _ = pool;
     let data_url = body.get("dataUrl").and_then(|v| v.as_str()).unwrap_or_default();
-    let b64_str: String = data_url.replace("data:image/", "").split(',').last().unwrap_or("").to_string();
+    let b64_str: String = data_url.replace("data:image/", "").split(',').next_back().unwrap_or("").to_string();
     let decoded = BASE64.decode(&b64_str).ok();
     let size = decoded.as_ref().map(|d| d.len()).unwrap_or(0);
     Ok(Json(ActionResult::success(Value::Object(
@@ -4896,6 +5390,8 @@ pub async fn image_encode_base64_size_size(
 
 // STUB: image_resize_id_id_width_width_height_height - image processing utility, no DB table mapping
 #[axum::debug_handler]
+#[allow(non_snake_case)]
+#[allow(non_snake_case)]
 pub async fn image_resize_id_id_width_width_height_height(
     pool: Extension<Pool>,
     body: axum::extract::Json<Value>,
@@ -4915,6 +5411,8 @@ pub async fn image_resize_id_id_width_width_height_height(
 
 // STUB: export_app_info_app_info_flag - U2 收尾对齐：Java GET /export/appInfo/{appInfoFlag}
 #[axum::debug_handler]
+#[allow(non_snake_case)]
+#[allow(non_snake_case)]
 pub async fn export_app_info_app_info_flag(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -4923,6 +5421,8 @@ pub async fn export_app_info_app_info_flag(
 
 // STUB: import_app_info_app_info_flag - U2 收尾对齐：Java GET /import/appInfo/{appInfoFlag}
 #[axum::debug_handler]
+#[allow(non_snake_case)]
+#[allow(non_snake_case)]
 pub async fn import_app_info_app_info_flag(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -4931,6 +5431,8 @@ pub async fn import_app_info_app_info_flag(
 
 // STUB: input_compare - input processing utility, no DB table mapping
 #[axum::debug_handler]
+#[allow(non_snake_case)]
+#[allow(non_snake_case)]
 pub async fn input_compare(
     pool: Extension<Pool>,
     body: axum::extract::Json<Value>,
@@ -4950,6 +5452,8 @@ pub async fn input_compare(
 
 // STUB: input_compare_mockputtopost - input processing utility, no DB table mapping
 #[axum::debug_handler]
+#[allow(non_snake_case)]
+#[allow(non_snake_case)]
 pub async fn input_compare_mockputtopost(
     pool: Extension<Pool>,
     body: axum::extract::Json<Value>,
@@ -4969,6 +5473,8 @@ pub async fn input_compare_mockputtopost(
 
 // STUB: input_cover - input processing utility, no DB table mapping
 #[axum::debug_handler]
+#[allow(non_snake_case)]
+#[allow(non_snake_case)]
 pub async fn input_cover(
     pool: Extension<Pool>,
     body: axum::extract::Json<Value>,
@@ -4987,6 +5493,8 @@ pub async fn input_cover(
 
 // STUB: input_cover_mockputtopost - input processing utility, no DB table mapping
 #[axum::debug_handler]
+#[allow(non_snake_case)]
+#[allow(non_snake_case)]
 pub async fn input_cover_mockputtopost(
     pool: Extension<Pool>,
     body: axum::extract::Json<Value>,
@@ -5005,6 +5513,8 @@ pub async fn input_cover_mockputtopost(
 
 // STUB: input_create - input processing utility, no DB table mapping
 #[axum::debug_handler]
+#[allow(non_snake_case)]
+#[allow(non_snake_case)]
 pub async fn input_create(
     pool: Extension<Pool>,
     body: axum::extract::Json<Value>,
@@ -5022,6 +5532,8 @@ pub async fn input_create(
 
 // STUB: input_create_mockputtopost - input processing utility, no DB table mapping
 #[axum::debug_handler]
+#[allow(non_snake_case)]
+#[allow(non_snake_case)]
 pub async fn input_create_mockputtopost(
     pool: Extension<Pool>,
     body: axum::extract::Json<Value>,
@@ -5039,6 +5551,8 @@ pub async fn input_create_mockputtopost(
 
 // STUB: input_prepare_cover - input processing utility, no DB table mapping
 #[axum::debug_handler]
+#[allow(non_snake_case)]
+#[allow(non_snake_case)]
 pub async fn input_prepare_cover(
     pool: Extension<Pool>,
     body: axum::extract::Json<Value>,
@@ -5056,6 +5570,8 @@ pub async fn input_prepare_cover(
 
 // STUB: input_prepare_cover_mockputtopost - input processing utility, no DB table mapping
 #[axum::debug_handler]
+#[allow(non_snake_case)]
+#[allow(non_snake_case)]
 pub async fn input_prepare_cover_mockputtopost(
     pool: Extension<Pool>,
     body: axum::extract::Json<Value>,
@@ -5073,6 +5589,8 @@ pub async fn input_prepare_cover_mockputtopost(
 
 // STUB: input_prepare_create - input processing utility, no DB table mapping
 #[axum::debug_handler]
+#[allow(non_snake_case)]
+#[allow(non_snake_case)]
 pub async fn input_prepare_create(
     pool: Extension<Pool>,
     body: axum::extract::Json<Value>,
@@ -5090,6 +5608,8 @@ pub async fn input_prepare_create(
 
 // STUB: input_prepare_create_mockputtopost - input processing utility, no DB table mapping
 #[axum::debug_handler]
+#[allow(non_snake_case)]
+#[allow(non_snake_case)]
 pub async fn input_prepare_create_mockputtopost(
     pool: Extension<Pool>,
     body: axum::extract::Json<Value>,
@@ -5108,6 +5628,8 @@ pub async fn input_prepare_create_mockputtopost(
 // ─── document_id_view_count ─────────────────────────────────────────────────
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
+#[allow(non_snake_case)]
 pub async fn document_id_view_count(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
@@ -5139,6 +5661,8 @@ pub async fn document_id_view_count(
 // ─── commend_list_paging ────────────────────────────────────────────────────
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
+#[allow(non_snake_case)]
 pub async fn commend_list_paging(
     pool: Extension<Pool>,
     axum::extract::Query(params): axum::extract::Query<HashMap<String, String>>,
@@ -5194,6 +5718,8 @@ pub async fn commend_list_paging(
 // ─── document_search ─────────────────────────────────────────────────────────
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
+#[allow(non_snake_case)]
 pub async fn document_search(
     pool: Extension<Pool>,
     axum::extract::Query(params): axum::extract::Query<HashMap<String, String>>,
@@ -5228,6 +5754,8 @@ pub async fn document_search(
 
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
+#[allow(non_snake_case)]
 pub async fn queryview_flag_definition(
     pool: Extension<Pool>,
     axum::extract::Path((view_flag, query_flag)): axum::extract::Path<(String, String)>,
@@ -5364,6 +5892,8 @@ fn u2_body_strs(body: &Value, key: &str) -> Vec<String> {
 // ─── document 域 ────────────────────────────────────────────────────────
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
+#[allow(non_snake_case)]
 pub async fn document_u2_get(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
@@ -5375,6 +5905,8 @@ pub async fn document_u2_get(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
+#[allow(non_snake_case)]
 pub async fn document_u2_delete(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
@@ -5393,6 +5925,8 @@ pub async fn document_u2_delete(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
+#[allow(non_snake_case)]
 pub async fn document_u2_create(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
@@ -5423,6 +5957,8 @@ pub async fn document_u2_create(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
+#[allow(non_snake_case)]
 pub async fn document_u2_update(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
@@ -5498,6 +6034,8 @@ async fn document_u2_status_response(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
+#[allow(non_snake_case)]
 pub async fn document_u2_publish(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
@@ -5514,6 +6052,8 @@ pub async fn document_u2_publish(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
+#[allow(non_snake_case)]
 pub async fn document_u2_publish_cancel(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
@@ -5530,6 +6070,8 @@ pub async fn document_u2_publish_cancel(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
+#[allow(non_snake_case)]
 pub async fn document_u2_commend(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
@@ -5565,6 +6107,8 @@ pub async fn document_u2_commend(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
+#[allow(non_snake_case)]
 pub async fn document_u2_uncommend(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
@@ -5618,6 +6162,8 @@ async fn document_u2_set_top(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
+#[allow(non_snake_case)]
 pub async fn document_u2_top(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
@@ -5627,6 +6173,8 @@ pub async fn document_u2_top(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
+#[allow(non_snake_case)]
 pub async fn document_u2_un_top(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
@@ -5636,6 +6184,8 @@ pub async fn document_u2_un_top(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
+#[allow(non_snake_case)]
 pub async fn document_u2_category_change(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
@@ -5668,6 +6218,8 @@ pub async fn document_u2_category_change(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
+#[allow(non_snake_case)]
 pub async fn document_u2_document_data(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
@@ -5692,6 +6244,8 @@ pub async fn document_u2_document_data(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
+#[allow(non_snake_case)]
 pub async fn document_u2_list_document(
     pool: Extension<Pool>,
     body: axum::extract::Json<Value>,
@@ -5710,6 +6264,8 @@ pub async fn document_u2_list_document(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
+#[allow(non_snake_case)]
 pub async fn document_u2_fields(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -5735,6 +6291,8 @@ pub async fn document_u2_fields(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
+#[allow(non_snake_case)]
 pub async fn document_u2_filter_count(
     pool: Extension<Pool>,
     body: axum::extract::Json<Value>,
@@ -5763,6 +6321,8 @@ pub async fn document_u2_filter_count(
 // ─── comment 域 ─────────────────────────────────────────────────────────
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
+#[allow(non_snake_case)]
 pub async fn comment_u2_create(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
@@ -5803,6 +6363,8 @@ pub async fn comment_u2_create(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
+#[allow(non_snake_case)]
 pub async fn comment_u2_delete(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
@@ -5821,6 +6383,8 @@ pub async fn comment_u2_delete(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
+#[allow(non_snake_case)]
 pub async fn comment_u2_list_page_size_size(
     pool: Extension<Pool>,
     axum::extract::Path((page, size)): axum::extract::Path<(i64, i64)>,
@@ -5845,7 +6409,7 @@ pub async fn comment_u2_list_page_size_size(
         )
         .await
         .map_err(|_| AppError::Internal)?;
-    let data: Vec<Value> = rows.iter().map(|r| row_to_json(r)).collect();
+    let data: Vec<Value> = rows.iter().map(row_to_json).collect();
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("count".to_string(), Value::Number(serde_json::Number::from(total))),
@@ -5859,6 +6423,8 @@ pub async fn comment_u2_list_page_size_size(
 // ─── correlation 域 ─────────────────────────────────────────────────────
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
+#[allow(non_snake_case)]
 pub async fn correlation_u2_doc_delete(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
@@ -5890,6 +6456,8 @@ pub async fn correlation_u2_doc_delete(
 // ─── file / fileinfo 域 ─────────────────────────────────────────────────
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
+#[allow(non_snake_case)]
 pub async fn file_u2_create(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
@@ -5921,6 +6489,8 @@ pub async fn file_u2_create(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
+#[allow(non_snake_case)]
 pub async fn file_u2_update(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
@@ -5960,6 +6530,8 @@ pub async fn file_u2_update(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
+#[allow(non_snake_case)]
 pub async fn fileinfo_u2_delete(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
@@ -5978,6 +6550,8 @@ pub async fn fileinfo_u2_delete(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
+#[allow(non_snake_case)]
 pub async fn fileinfo_u2_filter(
     pool: Extension<Pool>,
     body: axum::extract::Json<Value>,
@@ -6007,7 +6581,7 @@ pub async fn fileinfo_u2_filter(
         )
         .await
         .map_err(|_| AppError::Internal)?;
-    let data: Vec<Value> = rows.iter().map(|r| row_to_json(r)).collect();
+    let data: Vec<Value> = rows.iter().map(row_to_json).collect();
     Ok(Json(ActionResult::java_success(
         Value::Array(data),
         total,
@@ -6026,6 +6600,8 @@ async fn fileinfo_u2_doc_gate(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
+#[allow(non_snake_case)]
 pub async fn fileinfo_u2_copy_to_doc(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
@@ -6061,6 +6637,8 @@ pub async fn fileinfo_u2_copy_to_doc(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
+#[allow(non_snake_case)]
 pub async fn fileinfo_u2_replace_to_doc(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
@@ -6097,6 +6675,8 @@ pub async fn fileinfo_u2_replace_to_doc(
 // ─── form 域 ────────────────────────────────────────────────────────────
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
+#[allow(non_snake_case)]
 pub async fn form_u2_create(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
@@ -6137,6 +6717,8 @@ pub async fn form_u2_create(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
+#[allow(non_snake_case)]
 pub async fn form_u2_update(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
@@ -6176,6 +6758,8 @@ pub async fn form_u2_update(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
+#[allow(non_snake_case)]
 pub async fn form_u2_delete(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
@@ -6196,6 +6780,8 @@ pub async fn form_u2_delete(
 // ─── script 域 ──────────────────────────────────────────────────────────
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
+#[allow(non_snake_case)]
 pub async fn script_u2_create(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
@@ -6237,6 +6823,8 @@ pub async fn script_u2_create(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
+#[allow(non_snake_case)]
 pub async fn script_u2_update(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
@@ -6278,6 +6866,8 @@ pub async fn script_u2_update(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
+#[allow(non_snake_case)]
 pub async fn script_u2_delete(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
@@ -6296,6 +6886,8 @@ pub async fn script_u2_delete(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
+#[allow(non_snake_case)]
 pub async fn script_u2_list_manager(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
@@ -6307,6 +6899,8 @@ pub async fn script_u2_list_manager(
 // ─── templateform / view / viewcategory / viewfieldconfig 域 ────────────
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
+#[allow(non_snake_case)]
 pub async fn templateform_u2_create(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
@@ -6330,6 +6924,8 @@ pub async fn templateform_u2_create(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
+#[allow(non_snake_case)]
 pub async fn templateform_u2_delete(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
@@ -6348,6 +6944,8 @@ pub async fn templateform_u2_delete(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
+#[allow(non_snake_case)]
 pub async fn view_u2_create(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
@@ -6376,6 +6974,8 @@ pub async fn view_u2_create(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
+#[allow(non_snake_case)]
 pub async fn view_u2_update(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
@@ -6413,6 +7013,8 @@ pub async fn view_u2_update(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
+#[allow(non_snake_case)]
 pub async fn view_u2_delete(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
@@ -6431,6 +7033,8 @@ pub async fn view_u2_delete(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
+#[allow(non_snake_case)]
 pub async fn viewcategory_u2_create(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
@@ -6457,6 +7061,8 @@ pub async fn viewcategory_u2_create(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
+#[allow(non_snake_case)]
 pub async fn viewcategory_u2_delete(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
@@ -6479,6 +7085,8 @@ const U2_VIEW_FIELD_OWNER_SQL: &str =
      JOIN x_cms_view v ON v.id = vfc.view_id WHERE vfc.id = $1 AND vfc.deleted_at IS NULL";
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
+#[allow(non_snake_case)]
 pub async fn viewfieldconfig_u2_create(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
@@ -6520,6 +7128,8 @@ pub async fn viewfieldconfig_u2_create(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
+#[allow(non_snake_case)]
 pub async fn viewfieldconfig_u2_update(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
@@ -6557,6 +7167,8 @@ pub async fn viewfieldconfig_u2_update(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
+#[allow(non_snake_case)]
 pub async fn viewfieldconfig_u2_delete(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
@@ -6577,6 +7189,8 @@ pub async fn viewfieldconfig_u2_delete(
 // ─── appinfo / categoryinfo / permission / appconfig / designer 域 ──────
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
+#[allow(non_snake_case)]
 pub async fn appinfo_u2_create(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
@@ -6609,6 +7223,8 @@ pub async fn appinfo_u2_create(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
+#[allow(non_snake_case)]
 pub async fn appinfo_u2_delete(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
@@ -6627,6 +7243,8 @@ pub async fn appinfo_u2_delete(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
+#[allow(non_snake_case)]
 pub async fn categoryinfo_u2_create(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
@@ -6664,6 +7282,8 @@ pub async fn categoryinfo_u2_create(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
+#[allow(non_snake_case)]
 pub async fn categoryinfo_u2_delete(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
@@ -6731,6 +7351,8 @@ async fn u2_write_permissions(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
+#[allow(non_snake_case)]
 pub async fn permission_u2_app_info(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
@@ -6753,6 +7375,8 @@ pub async fn permission_u2_app_info(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
+#[allow(non_snake_case)]
 pub async fn permission_u2_category_info(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
@@ -6775,6 +7399,8 @@ pub async fn permission_u2_category_info(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
+#[allow(non_snake_case)]
 pub async fn appconfig_u2_update(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
@@ -6808,6 +7434,8 @@ pub async fn appconfig_u2_update(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
+#[allow(non_snake_case)]
 pub async fn appconfig_u2_get(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
@@ -6834,6 +7462,8 @@ pub async fn appconfig_u2_get(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
+#[allow(non_snake_case)]
 pub async fn designer_u2_search(
     pool: Extension<Pool>,
     body: axum::extract::Json<Value>,
@@ -7053,6 +7683,8 @@ async fn u3_save_scope_permissions(
 // ── categoryinfo 管理面 ─────────────────────────────────────────────────────
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
+#[allow(non_snake_case)]
 pub async fn categoryinfo_ext_content_save_u3(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
@@ -7089,6 +7721,8 @@ pub async fn categoryinfo_ext_content_save_u3(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
+#[allow(non_snake_case)]
 pub async fn categoryinfo_list_objects_u3(
     pool: Extension<Pool>,
     body: axum::extract::Json<Value>,
@@ -7107,6 +7741,8 @@ pub async fn categoryinfo_list_objects_u3(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
+#[allow(non_snake_case)]
 pub async fn comment_commend_u3(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
@@ -7137,6 +7773,8 @@ pub async fn comment_commend_u3(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
+#[allow(non_snake_case)]
 pub async fn comment_uncommend_u3(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
@@ -7172,6 +7810,8 @@ pub async fn comment_uncommend_u3(
 // ── correlation create / update（canonical）────────────────────────────────
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
+#[allow(non_snake_case)]
 pub async fn correlation_create_u3(
     pool: Extension<Pool>,
     axum::extract::Path(doc_id): axum::extract::Path<String>,
@@ -7215,6 +7855,8 @@ pub async fn correlation_create_u3(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
+#[allow(non_snake_case)]
 pub async fn correlation_update_u3(
     pool: Extension<Pool>,
     axum::extract::Path(doc_id): axum::extract::Path<String>,
@@ -7266,6 +7908,8 @@ fn u3_normalize_path_levels(raw_levels: &[String]) -> String {
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
+#[allow(non_snake_case)]
 pub async fn design_appdict_create_u3(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
@@ -7314,6 +7958,8 @@ pub async fn design_appdict_create_u3(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
+#[allow(non_snake_case)]
 pub async fn design_appdict_update_u3(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
@@ -7357,6 +8003,8 @@ pub async fn design_appdict_update_u3(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
+#[allow(non_snake_case)]
 pub async fn design_appdict_delete_u3(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
@@ -7372,6 +8020,8 @@ pub async fn design_appdict_delete_u3(
 // ── review 搜索 ─────────────────────────────────────────────────────────────
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
+#[allow(non_snake_case)]
 pub async fn review_v2_search_u3(
     pool: Extension<Pool>,
     body: axum::extract::Json<Value>,
@@ -7399,6 +8049,8 @@ pub async fn review_v2_search_u3(
 // ── document 管理面 ─────────────────────────────────────────────────────────
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
+#[allow(non_snake_case)]
 pub async fn document_achive_u3(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
@@ -7463,6 +8115,8 @@ async fn u3_batch_modify_impl(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
+#[allow(non_snake_case)]
 pub async fn document_batch_modify_u3(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
@@ -7472,6 +8126,8 @@ pub async fn document_batch_modify_u3(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
+#[allow(non_snake_case)]
 pub async fn document_batch_modify_mock_u3(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
@@ -7481,6 +8137,8 @@ pub async fn document_batch_modify_mock_u3(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
+#[allow(non_snake_case)]
 pub async fn document_batch_status_u3(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -7512,6 +8170,8 @@ pub async fn document_batch_status_u3(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
+#[allow(non_snake_case)]
 pub async fn document_batch_name_status_u3(
     pool: Extension<Pool>,
     axum::extract::Path(batch_name): axum::extract::Path<String>,
@@ -7537,6 +8197,8 @@ pub async fn document_batch_name_status_u3(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
+#[allow(non_snake_case)]
 pub async fn document_batch_delete_u3(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
@@ -7561,6 +8223,8 @@ pub async fn document_batch_delete_u3(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
+#[allow(non_snake_case)]
 pub async fn document_batch_delete_mock_u3(
     pool: Extension<Pool>,
     axum::extract::Path(batch_name): axum::extract::Path<String>,
@@ -7604,6 +8268,8 @@ async fn u3_publish_content_impl(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
+#[allow(non_snake_case)]
 pub async fn document_publish_content_u3(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
@@ -7613,6 +8279,8 @@ pub async fn document_publish_content_u3(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
+#[allow(non_snake_case)]
 pub async fn document_publish_content_mock_u3(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
@@ -7642,6 +8310,8 @@ async fn u3_cipher_publish_workflow_impl(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
+#[allow(non_snake_case)]
 pub async fn document_cipher_publish_workflow_u3(
     pool: Extension<Pool>,
     body: axum::extract::Json<Value>,
@@ -7650,6 +8320,8 @@ pub async fn document_cipher_publish_workflow_u3(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
+#[allow(non_snake_case)]
 pub async fn document_cipher_publish_workflow_mock_u3(
     pool: Extension<Pool>,
     body: axum::extract::Json<Value>,
@@ -7658,6 +8330,8 @@ pub async fn document_cipher_publish_workflow_mock_u3(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
+#[allow(non_snake_case)]
 pub async fn document_cipher_permission_read_u3(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
@@ -7692,6 +8366,8 @@ pub async fn document_cipher_permission_read_u3(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
+#[allow(non_snake_case)]
 pub async fn document_draft_next_u3(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -7705,6 +8381,8 @@ pub async fn document_draft_next_u3(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
+#[allow(non_snake_case)]
 pub async fn document_filter_next_u3(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -7718,6 +8396,8 @@ pub async fn document_filter_next_u3(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
+#[allow(non_snake_case)]
 pub async fn document_filter_prev_u3(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -7731,6 +8411,8 @@ pub async fn document_filter_prev_u3(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
+#[allow(non_snake_case)]
 pub async fn document_filter_paging_u3(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -7744,6 +8426,8 @@ pub async fn document_filter_paging_u3(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
+#[allow(non_snake_case)]
 pub async fn document_filter_paging_manager_u3(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
@@ -7759,6 +8443,8 @@ pub async fn document_filter_paging_manager_u3(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
+#[allow(non_snake_case)]
 pub async fn document_control_u3(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
@@ -7791,6 +8477,8 @@ pub async fn document_control_u3(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
+#[allow(non_snake_case)]
 pub async fn document_notify_u3(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
@@ -7820,6 +8508,8 @@ pub async fn document_notify_u3(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
+#[allow(non_snake_case)]
 pub async fn document_permission_read_u3(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
@@ -7851,6 +8541,8 @@ pub async fn document_permission_read_u3(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
+#[allow(non_snake_case)]
 pub async fn document_persons_u3(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
@@ -7895,6 +8587,8 @@ pub async fn document_persons_u3(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
+#[allow(non_snake_case)]
 pub async fn document_publish_html_u3(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
@@ -7932,6 +8626,8 @@ pub async fn document_publish_html_u3(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
+#[allow(non_snake_case)]
 pub async fn document_list_document_data_u3(
     pool: Extension<Pool>,
     body: axum::extract::Json<Value>,
@@ -7989,6 +8685,8 @@ pub async fn document_list_document_data_u3(
 // ── file 域（canonical 写路径与复制）───────────────────────────────────────
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
+#[allow(non_snake_case)]
 pub async fn file_update_u3(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
@@ -8026,6 +8724,8 @@ pub async fn file_update_u3(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
+#[allow(non_snake_case)]
 pub async fn file_delete_u3(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
@@ -8044,6 +8744,8 @@ pub async fn file_delete_u3(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
+#[allow(non_snake_case)]
 pub async fn file_copy_u3(
     pool: Extension<Pool>,
     axum::extract::Path((id, app_flag)): axum::extract::Path<(String, String)>,
@@ -8087,6 +8789,8 @@ pub async fn file_copy_u3(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
+#[allow(non_snake_case)]
 pub async fn file_download_with_app_u3(
     pool: Extension<Pool>,
     axum::extract::Path((flag, app_info_flag)): axum::extract::Path<(String, String)>,
@@ -8109,6 +8813,8 @@ pub async fn file_download_with_app_u3(
 // ── fileinfo 域（canonical）────────────────────────────────────────────────
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
+#[allow(non_snake_case)]
 pub async fn fileinfo_binary_base64_u3(
     pool: Extension<Pool>,
     axum::extract::Path((id, size)): axum::extract::Path<(String, String)>,
@@ -8145,6 +8851,8 @@ pub async fn fileinfo_binary_base64_u3(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
+#[allow(non_snake_case)]
 pub async fn fileinfo_upload_with_url_u3(
     pool: Extension<Pool>,
     body: axum::extract::Json<Value>,
@@ -8175,6 +8883,8 @@ pub async fn fileinfo_upload_with_url_u3(
 // ── form 域（canonical getWithAppInfo）─────────────────────────────────────
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
+#[allow(non_snake_case)]
 pub async fn form_get_with_appinfo_u3(
     pool: Extension<Pool>,
     axum::extract::Path((form_flag, app_flag)): axum::extract::Path<(String, String)>,
@@ -8219,6 +8929,8 @@ u3_permission_save_handler!(permission_save_viewer_category_u3, "viewer", "categ
 // ── script nested import / load ────────────────────────────────────────────
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
+#[allow(non_snake_case)]
 pub async fn script_post_nested_u3(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
@@ -8271,6 +8983,8 @@ pub async fn script_post_nested_u3(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
+#[allow(non_snake_case)]
 pub async fn script_load_u3(
     pool: Extension<Pool>,
     axum::extract::Path((unique_name, app_flag)): axum::extract::Path<(String, String)>,
@@ -8308,6 +9022,8 @@ pub async fn script_load_u3(
 // ── viewrecord ─────────────────────────────────────────────────────────────
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
+#[allow(non_snake_case)]
 pub async fn viewrecord_by_person_u3(
     pool: Extension<Pool>,
     axum::extract::Path(person): axum::extract::Path<String>,
@@ -8322,6 +9038,8 @@ pub async fn viewrecord_by_person_u3(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
+#[allow(non_snake_case)]
 pub async fn viewrecord_unread_u3(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,

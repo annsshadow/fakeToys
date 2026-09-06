@@ -6,42 +6,50 @@ use shared::{error::AppError, response::ActionResult};
 pub const JAVA_BASE: &str = "/jaxrs";
 
 #[axum::debug_handler]
-pub async fn cache_post(pool: Extension<Pool>, Json(_req): Json<Value>) -> Result<Json<ActionResult<Value>>, AppError> {
+#[allow(non_snake_case)]
+pub async fn cache_post(_pool: Extension<Pool>, Json(_req): Json<Value>) -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(serde_json::json!({"status": "ok"}))))
 }
 
 #[axum::debug_handler]
-pub async fn cache_config_flush(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
+#[allow(non_snake_case)]
+pub async fn cache_config_flush(_pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(serde_json::json!({"status": "flushed"}))))
 }
 
 #[axum::debug_handler]
-pub async fn cache_commonscript_flush(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
+#[allow(non_snake_case)]
+pub async fn cache_commonscript_flush(_pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(serde_json::json!({"status": "flushed"}))))
 }
 
 #[axum::debug_handler]
-pub async fn cache_detail(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
+#[allow(non_snake_case)]
+pub async fn cache_detail(_pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(serde_json::json!({"detail": "cache info"}))))
 }
 
 #[axum::debug_handler]
-pub async fn echo(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
+#[allow(non_snake_case)]
+pub async fn echo(_pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(serde_json::json!({"message": "pong"}))))
 }
 
 #[axum::debug_handler]
-pub async fn fireschedule_classname(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
+#[allow(non_snake_case)]
+pub async fn fireschedule_classname(_pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(serde_json::json!({"class": "test"}))))
 }
 
 #[axum::debug_handler]
-pub async fn openapi(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
+#[allow(non_snake_case)]
+pub async fn openapi(_pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(serde_json::json!({"openapi": "3.0"}))))
 }
 
 #[axum::debug_handler]
-pub async fn sysresource_filepath(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
+#[allow(non_snake_case)]
+pub async fn sysresource_filepath(_pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(serde_json::json!({"path": "/"}))))
 }
 

@@ -91,7 +91,7 @@ async fn mcp_http_handler(
     axum::extract::State(bridge): axum::extract::State<Arc<ToolBridge>>,
     axum::Json(req): axum::Json<serde_json::Value>,
 ) -> axum::Json<serde_json::Value> {
-    use mcp_server::tool_bridge::{JsonRpcRequest, JsonRpcResponse};
+    use mcp_server::tool_bridge::JsonRpcResponse;
 
     let method = req.get("method").and_then(|v| v.as_str()).unwrap_or("");
     let id = req.get("id").cloned();

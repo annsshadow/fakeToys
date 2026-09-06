@@ -1,4 +1,3 @@
-use axum::Router;
 use deadpool_postgres::Pool;
 
 use crate::query_service_processing_router;

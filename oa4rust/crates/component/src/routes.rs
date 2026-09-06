@@ -6,7 +6,7 @@ use deadpool_postgres::Pool;
 
 use crate::{list_all, count, get_component};
 
-pub fn component_router(pool: Pool) -> Router {
+pub fn component_router(_pool: Pool) -> Router {
     Router::new()
         .route("/jaxrs/component/list/all", get(list_all))
         .route("/jaxrs/component/count", get(count))

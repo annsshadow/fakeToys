@@ -7,6 +7,7 @@ use deadpool_postgres::Pool;
 use serde_json::Value;
 use shared::error::AppError;
 
+#[allow(non_snake_case)]
 pub async fn unit_attribute_create(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
@@ -40,6 +41,7 @@ pub async fn unit_attribute_create(
     ))
 }
 
+#[allow(non_snake_case)]
 pub async fn unit_attribute_edit(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
@@ -72,6 +74,7 @@ pub async fn unit_attribute_edit(
     ))
 }
 
+#[allow(non_snake_case)]
 pub async fn unit_attribute_mock_put_to_post(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
@@ -81,6 +84,7 @@ pub async fn unit_attribute_mock_put_to_post(
     unit_attribute_edit(pool, session, Path(flag), Json(body)).await
 }
 
+#[allow(non_snake_case)]
 pub async fn unit_attribute_delete(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
@@ -97,6 +101,7 @@ pub async fn unit_attribute_delete(
 }
 
 
+#[allow(non_snake_case)]
 pub async fn person_attribute_create(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
@@ -130,6 +135,7 @@ pub async fn person_attribute_create(
     ))
 }
 
+#[allow(non_snake_case)]
 pub async fn person_attribute_edit(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
@@ -162,6 +168,7 @@ pub async fn person_attribute_edit(
     ))
 }
 
+#[allow(non_snake_case)]
 pub async fn person_attribute_mock_put_to_post(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
@@ -171,6 +178,7 @@ pub async fn person_attribute_mock_put_to_post(
     person_attribute_edit(pool, session, Path(flag), Json(body)).await
 }
 
+#[allow(non_snake_case)]
 pub async fn person_attribute_delete(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
@@ -187,6 +195,7 @@ pub async fn person_attribute_delete(
 }
 
 
+#[allow(non_snake_case)]
 pub async fn permission_setting_create(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
@@ -223,6 +232,7 @@ pub async fn permission_setting_create(
     ))
 }
 
+#[allow(non_snake_case)]
 pub async fn permission_setting_edit(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
@@ -255,6 +265,7 @@ pub async fn permission_setting_edit(
     ))
 }
 
+#[allow(non_snake_case)]
 pub async fn permission_setting_mock_put_to_post(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
@@ -264,6 +275,7 @@ pub async fn permission_setting_mock_put_to_post(
     permission_setting_edit(pool, session, Path(flag), Json(body)).await
 }
 
+#[allow(non_snake_case)]
 pub async fn permission_setting_delete(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
@@ -279,6 +291,7 @@ pub async fn permission_setting_delete(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn person_card_create(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
@@ -319,6 +332,7 @@ pub async fn person_card_create(
     ))
 }
 
+#[allow(non_snake_case)]
 pub async fn person_card_edit(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
@@ -361,6 +375,7 @@ pub async fn person_card_edit(
     ))
 }
 
+#[allow(non_snake_case)]
 pub async fn person_card_delete(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
@@ -442,6 +457,7 @@ async fn card_page(pool: &Pool, page: i64, size: i64, body: &Value, with_group: 
     ))
 }
 
+#[allow(non_snake_case)]
 pub async fn person_card_listpaging(
     pool: Extension<Pool>,
     Path((page, size)): Path<(i64, i64)>,
@@ -450,6 +466,7 @@ pub async fn person_card_listpaging(
     card_page(&pool, page, size, &body, false).await
 }
 
+#[allow(non_snake_case)]
 pub async fn person_card_listpaging_mock_put_to_post(
     pool: Extension<Pool>,
     Path((page, size)): Path<(i64, i64)>,
@@ -458,6 +475,7 @@ pub async fn person_card_listpaging_mock_put_to_post(
     card_page(&pool, page, size, &body, false).await
 }
 
+#[allow(non_snake_case)]
 pub async fn person_card_listpaging_with_group(
     pool: Extension<Pool>,
     Path((page, size)): Path<(i64, i64)>,
@@ -466,6 +484,7 @@ pub async fn person_card_listpaging_with_group(
     card_page(&pool, page, size, &body, true).await
 }
 
+#[allow(non_snake_case)]
 pub async fn person_card_listpaging_with_group_mock_put_to_post(
     pool: Extension<Pool>,
     Path((page, size)): Path<(i64, i64)>,
@@ -474,6 +493,7 @@ pub async fn person_card_listpaging_with_group_mock_put_to_post(
     card_page(&pool, page, size, &body, true).await
 }
 
+#[allow(non_snake_case)]
 pub async fn input_person_import(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,

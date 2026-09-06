@@ -38,6 +38,7 @@ use crate::reset::is_password_acceptable;
 // ═════════════════════════════════════════════════════════════════════════════
 
 /// GET /jaxrs/person/icon —— 当前登录用户头像（Java ActionGetIcon）
+#[allow(non_snake_case)]
 pub async fn get_my_icon(
     pool: Extension<Pool>,
     session_manager: Extension<SessionManager>,
@@ -69,6 +70,7 @@ pub async fn get_my_icon(
 /// POST /jaxrs/person/icon（application/octet-stream，Java ActionSetIconOctetStream）
 ///
 /// 请求体即图片字节；base64 后写入当前用户 auth_person.icon。
+#[allow(non_snake_case)]
 pub async fn set_icon_octet_stream(
     pool: Extension<Pool>,
     session_manager: Extension<SessionManager>,
@@ -88,6 +90,7 @@ pub async fn set_icon_octet_stream(
 }
 
 /// PUT/POST multipart 头像设置复用 icon::upload（同一存储位置与校验规则）
+#[allow(non_snake_case)]
 pub async fn upload_multipart_alias(
     pool: Extension<Pool>,
     session_manager: Extension<SessionManager>,
@@ -122,6 +125,7 @@ async fn write_icon(
 // ═════════════════════════════════════════════════════════════════════════════
 
 /// GET /jaxrs/person/regist/mode —— 注册开关（对齐 Config.person().getRegister()）
+#[allow(non_snake_case)]
 pub async fn regist_mode() -> Result<Json<ActionResult<Value>>, AppError> {
     let enabled = std::env::var("PERSON_REGISTER")
         .map(|v| matches!(v.to_ascii_lowercase().as_str(), "1" | "true" | "yes" | "on"))
@@ -131,6 +135,7 @@ pub async fn regist_mode() -> Result<Json<ActionResult<Value>>, AppError> {
 }
 
 /// GET /jaxrs/person/regist/code/mobile/{mobile} —— 发送注册验证码（短信渠道）
+#[allow(non_snake_case)]
 pub async fn regist_code_mobile(
     store: Extension<ResetCodeStore>,
     Path(mobile): Path<String>,
@@ -146,6 +151,7 @@ pub async fn regist_code_mobile(
 /// GET /jaxrs/person/regist/check/password/{password}
 ///
 /// 对齐 Java：不满足密码策略时返回策略提示文案；满足时无 data。
+#[allow(non_snake_case)]
 pub async fn regist_check_password(
     Path(password): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -193,6 +199,7 @@ async fn custom_find(
 }
 
 /// GET /jaxrs/person/custom/{name} —— 当前用户指定名称数据
+#[allow(non_snake_case)]
 pub async fn custom_get(
     pool: Extension<Pool>,
     session_manager: Extension<SessionManager>,
@@ -211,6 +218,7 @@ pub async fn custom_get(
 }
 
 /// PUT /jaxrs/person/custom/{name} —— 更新（不存在则创建），返回 {id}
+#[allow(non_snake_case)]
 pub async fn custom_edit(
     pool: Extension<Pool>,
     session_manager: Extension<SessionManager>,
@@ -252,6 +260,7 @@ pub async fn custom_edit(
 }
 
 /// DELETE /jaxrs/person/custom/{name} —— 删除（软删），GET mockdeletetoget 同义
+#[allow(non_snake_case)]
 pub async fn custom_delete(
     pool: Extension<Pool>,
     session_manager: Extension<SessionManager>,
@@ -300,6 +309,7 @@ async fn require_admin(pool: &Pool, session_manager: &SessionManager, headers: &
 }
 
 /// GET /jaxrs/person/custom/manager/person/{person}/name/{name} —— 管理员读取
+#[allow(non_snake_case)]
 pub async fn custom_manager_get(
     pool: Extension<Pool>,
     session_manager: Extension<SessionManager>,
@@ -321,6 +331,7 @@ pub async fn custom_manager_get(
 }
 
 /// PUT /jaxrs/person/custom/manager/person/{person}/name/{name} —— 管理员更新
+#[allow(non_snake_case)]
 pub async fn custom_manager_edit(
     pool: Extension<Pool>,
     session_manager: Extension<SessionManager>,
@@ -368,6 +379,7 @@ pub async fn custom_manager_edit(
 // ═════════════════════════════════════════════════════════════════════════════
 
 /// GET /jaxrs/person/definition/{name}
+#[allow(non_snake_case)]
 pub async fn definition_get(
     pool: Extension<Pool>,
     session_manager: Extension<SessionManager>,
@@ -392,6 +404,7 @@ pub async fn definition_get(
 }
 
 /// PUT /jaxrs/person/definition/{name} —— upsert（唯一索引保证同名单行）
+#[allow(non_snake_case)]
 pub async fn definition_edit(
     pool: Extension<Pool>,
     session_manager: Extension<SessionManager>,
@@ -456,6 +469,7 @@ pub async fn definition_edit(
 }
 
 /// DELETE /jaxrs/person/definition/{name}
+#[allow(non_snake_case)]
 pub async fn definition_delete(
     pool: Extension<Pool>,
     session_manager: Extension<SessionManager>,
@@ -557,6 +571,7 @@ async fn empower_page(
 }
 
 /// GET /jaxrs/person/empower/list/{id}/next/{count} —— 管理员下一页
+#[allow(non_snake_case)]
 pub async fn empower_list_next(
     pool: Extension<Pool>,
     session_manager: Extension<SessionManager>,
@@ -580,6 +595,7 @@ pub async fn empower_list_next(
 }
 
 /// GET /jaxrs/person/empower/list/{id}/prev/{count} —— 管理员上一页
+#[allow(non_snake_case)]
 pub async fn empower_list_prev(
     pool: Extension<Pool>,
     session_manager: Extension<SessionManager>,
@@ -605,6 +621,7 @@ pub async fn empower_list_prev(
 }
 
 /// GET /jaxrs/person/empower/list/person/{flag} —— 查询指定人员的授权
+#[allow(non_snake_case)]
 pub async fn empower_list_with_person(
     pool: Extension<Pool>,
     session_manager: Extension<SessionManager>,
@@ -662,6 +679,7 @@ fn log_row_json(r: &deadpool_postgres::tokio_postgres::Row) -> Value {
 }
 
 /// GET /jaxrs/person/empowerlog/list/{id}/next|prev/{count} —— 管理员翻页
+#[allow(non_snake_case)]
 pub async fn log_list_next(
     pool: Extension<Pool>,
     session_manager: Extension<SessionManager>,
@@ -697,6 +715,7 @@ pub async fn log_list_next(
     Ok(Json(ActionResult::java_success(Value::Array(items), count, 0)))
 }
 
+#[allow(non_snake_case)]
 pub async fn log_list_prev(
     pool: Extension<Pool>,
     session_manager: Extension<SessionManager>,
@@ -734,15 +753,16 @@ pub async fn log_list_prev(
 }
 
 #[derive(Debug, Deserialize)]
+#[allow(non_snake_case)]
 pub struct LogPagingWi {
     #[serde(default)]
     pub key: Option<String>,
     #[serde(rename = "fromPerson", default)]
     pub from_person: Option<String>,
-    #[serde(default)]
-    pub startTime: Option<String>,
-    #[serde(default)]
-    pub endTime: Option<String>,
+    #[serde(rename = "startTime", default)]
+    pub start_time: Option<String>,
+    #[serde(rename = "endTime", default)]
+    pub end_time: Option<String>,
 }
 
 async fn log_paging(
@@ -774,11 +794,11 @@ async fn log_paging(
         where_parts.push(format!("COALESCE({col},'') = ${}", params.len()));
     }
 
-    if let Some(start) = wi.startTime.as_deref().map(str::trim).filter(|s| !s.is_empty()) {
+    if let Some(start) = wi.start_time.as_deref().map(str::trim).filter(|s| !s.is_empty()) {
         params.push(start.to_string());
         where_parts.push(format!("created_at > ${}", params.len()));
     }
-    if let Some(end) = wi.endTime.as_deref().map(str::trim).filter(|s| !s.is_empty()) {
+    if let Some(end) = wi.end_time.as_deref().map(str::trim).filter(|s| !s.is_empty()) {
         params.push(end.to_string());
         where_parts.push(format!("created_at < ${}", params.len()));
     }
@@ -826,6 +846,7 @@ fn escape_like_key(key: &str) -> String {
 }
 
 /// POST /jaxrs/person/empowerlog/list/currentperson/paging/{page}/size/{size}
+#[allow(non_snake_case)]
 pub async fn log_currentperson_paging(
     pool: Extension<Pool>,
     session_manager: Extension<SessionManager>,
@@ -838,6 +859,7 @@ pub async fn log_currentperson_paging(
 }
 
 /// POST /jaxrs/person/empowerlog/list/to/currentperson/paging/{page}/size/{size}
+#[allow(non_snake_case)]
 pub async fn log_to_currentperson_paging(
     pool: Extension<Pool>,
     session_manager: Extension<SessionManager>,
@@ -850,6 +872,7 @@ pub async fn log_to_currentperson_paging(
 }
 
 /// POST /jaxrs/person/empowerlog/manager/list/paging/{page}/size/{size}
+#[allow(non_snake_case)]
 pub async fn log_manager_paging(
     pool: Extension<Pool>,
     session_manager: Extension<SessionManager>,
@@ -862,6 +885,7 @@ pub async fn log_manager_paging(
 }
 
 /// DELETE /jaxrs/person/empowerlog/{id} —— 管理员删除（Java isNotManager 拒绝）
+#[allow(non_snake_case)]
 pub async fn log_delete(
     pool: Extension<Pool>,
     session_manager: Extension<SessionManager>,
@@ -902,8 +926,9 @@ async fn read_exmail_extend(
 }
 
 /// GET /jaxrs/person/exmail/new/count —— 即时获取（需配置取数地址）
+#[allow(non_snake_case)]
 pub async fn exmail_new_count(
-    pool: Extension<Pool>,
+    _pool: Extension<Pool>,
     session_manager: Extension<SessionManager>,
     headers: HeaderMap,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -932,6 +957,7 @@ pub async fn exmail_new_count(
 }
 
 /// GET /jaxrs/person/exmail/new/count/passive —— 读回调写入的未读数
+#[allow(non_snake_case)]
 pub async fn exmail_new_count_passive(
     pool: Extension<Pool>,
 
@@ -955,6 +981,7 @@ pub async fn exmail_new_count_passive(
 }
 
 /// GET /jaxrs/person/exmail/list/title/passive —— 读回调写入的邮件标题列表
+#[allow(non_snake_case)]
 pub async fn exmail_list_title_passive(
     pool: Extension<Pool>,
     session_manager: Extension<SessionManager>,
@@ -983,6 +1010,7 @@ pub async fn exmail_list_title_passive(
 }
 
 /// GET /jaxrs/person/exmail/sso —— 单点登录地址（模板注入 userid）
+#[allow(non_snake_case)]
 pub async fn exmail_sso(
     session_manager: Extension<SessionManager>,
     headers: HeaderMap,
@@ -1034,7 +1062,7 @@ fn verify_callback_signature(
     let nonce = q.nonce.as_deref().ok_or("nonce is required")?;
     let payload = encrypt_text.ok_or("echostr is required")?;
 
-    let mut parts = vec![token.as_str(), timestamp, nonce, payload];
+    let mut parts = [token.as_str(), timestamp, nonce, payload];
     parts.sort();
     let computed = sha1_hex(&parts.concat());
     if !computed.eq_ignore_ascii_case(signature) {
@@ -1107,6 +1135,7 @@ fn decrypt_echostr(
 ///
 /// 验证回调签名并解密 echostr（AES-128-CBC，EXMAIL_CALLBACK_AES_KEY /
 /// EXMAIL_CALLBACK_RECEIVE_ID），成功时原样返回明文供企业邮校验。
+#[allow(non_snake_case)]
 pub async fn exmail_callback_get(
     Query(q): Query<CallbackQuery>,
 ) -> Result<Json<ActionResult<String>>, AppError> {
@@ -1121,6 +1150,7 @@ pub async fn exmail_callback_get(
 }
 
 /// POST /jaxrs/person/exmail —— 接收加密事件推送（同样先验签）
+#[allow(non_snake_case)]
 pub async fn exmail_callback_post(
     Query(q): Query<CallbackQuery>,
     body: String,
@@ -1142,6 +1172,7 @@ fn extract_token_from_headers_pub(headers: &HeaderMap) -> Option<String> {
 ///
 /// 对齐 Java ActionManagerList：管理员查看指定人员的电子签名列表
 /// （x_custom 中 name LIKE 'SIGNATURE_%' 的行）。
+#[allow(non_snake_case)]
 pub async fn signature_list_person(
     pool: Extension<Pool>,
     session_manager: Extension<SessionManager>,

@@ -1,3 +1,4 @@
+#[allow(dead_code, non_snake_case)]
 use axum::{
     extract::Extension,
     Json, Router,
@@ -30,6 +31,7 @@ pub struct MeetingControl {
     pub config: Option<String>,
 }
 
+#[allow(non_snake_case)]
 pub async fn list_meeting_controls(
     pool: Extension<Pool>,
     axum::extract::Path(meeting_id): axum::extract::Path<String>,
@@ -61,6 +63,7 @@ pub async fn list_meeting_controls(
     Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
 }
 
+#[allow(non_snake_case)]
 pub async fn create_meeting_control(
     pool: Extension<Pool>,
     axum::extract::Json(payload): axum::extract::Json<Value>,
@@ -90,6 +93,7 @@ pub async fn create_meeting_control(
     ])))))
 }
 
+#[allow(non_snake_case)]
 pub async fn delete_meeting_control(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
@@ -120,6 +124,7 @@ pub fn router(pool: deadpool_postgres::Pool) -> axum::Router {
 
 
 
+#[allow(non_snake_case)]
 pub async fn building_list(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -152,6 +157,7 @@ pub async fn building_list(
     Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
 }
 
+#[allow(non_snake_case)]
 pub async fn building_list_like_pinyin_key(
     pool: Extension<Pool>,
     axum::extract::Path(key): axum::extract::Path<String>,
@@ -186,6 +192,7 @@ pub async fn building_list_like_pinyin_key(
     Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
 }
 
+#[allow(non_snake_case)]
 pub async fn building_list_like_key(
     pool: Extension<Pool>,
     axum::extract::Path(key): axum::extract::Path<String>,
@@ -220,6 +227,7 @@ pub async fn building_list_like_key(
     Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
 }
 
+#[allow(non_snake_case)]
 pub async fn building_list_pinyininitial_key(
     pool: Extension<Pool>,
     axum::extract::Path(key): axum::extract::Path<String>,
@@ -253,6 +261,7 @@ pub async fn building_list_pinyininitial_key(
     Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
 }
 
+#[allow(non_snake_case)]
 pub async fn building_list_start_start_completed_completed(
     pool: Extension<Pool>,
     axum::extract::Path((start, completed)): axum::extract::Path<(String, String)>,
@@ -286,6 +295,7 @@ pub async fn building_list_start_start_completed_completed(
     Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
 }
 
+#[allow(non_snake_case)]
 pub async fn building_list_start_start_completed_completed_allmeeting(
     pool: Extension<Pool>,
     axum::extract::Path((start, completed)): axum::extract::Path<(String, String)>,
@@ -319,6 +329,7 @@ pub async fn building_list_start_start_completed_completed_allmeeting(
     Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
 }
 
+#[allow(non_snake_case)]
 pub async fn building_list_start_start_completed_completed_room_room_meeting_meeting(
     pool: Extension<Pool>,
     axum::extract::Path((start, completed, room, meeting)): axum::extract::Path<(String, String, String, String)>,
@@ -352,6 +363,7 @@ pub async fn building_list_start_start_completed_completed_room_room_meeting_mee
     Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
 }
 
+#[allow(non_snake_case)]
 pub async fn building_id(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
@@ -383,6 +395,7 @@ pub async fn building_id(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn config_system_config(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -424,6 +437,7 @@ pub async fn config_system_config(
     Ok(Json(ActionResult::java_success(data, 1, 1)))
 }
 
+#[allow(non_snake_case)]
 pub async fn config_system_config_manage(
     pool: Extension<Pool>,
     axum::extract::Json(payload): axum::extract::Json<Value>,
@@ -455,6 +469,7 @@ pub async fn config_system_config_manage(
     ))))
 }
 
+#[allow(non_snake_case)]
 pub async fn meeting_list_applied_completed(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -487,6 +502,7 @@ pub async fn meeting_list_applied_completed(
     Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
 }
 
+#[allow(non_snake_case)]
 pub async fn meeting_list_applied_processing(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -519,6 +535,7 @@ pub async fn meeting_list_applied_processing(
     Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
 }
 
+#[allow(non_snake_case)]
 pub async fn meeting_list_applied_wait(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -551,6 +568,7 @@ pub async fn meeting_list_applied_wait(
     Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
 }
 
+#[allow(non_snake_case)]
 pub async fn meeting_list_apply_page_size_size(
     pool: Extension<Pool>,
     axum::extract::Path((page, size)): axum::extract::Path<(i64, i64)>,
@@ -587,6 +605,7 @@ pub async fn meeting_list_apply_page_size_size(
     Ok(Json(ActionResult::java_success(Value::Array(data), count, size)))
 }
 
+#[allow(non_snake_case)]
 pub async fn meeting_list_coming_day_count(
     pool: Extension<Pool>,
     axum::extract::Path(count): axum::extract::Path<i64>,
@@ -626,6 +645,7 @@ pub async fn meeting_list_coming_day_count(
     Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
 }
 
+#[allow(non_snake_case)]
 pub async fn meeting_list_coming_month_count(
     pool: Extension<Pool>,
     axum::extract::Path(count): axum::extract::Path<i64>,
@@ -659,6 +679,7 @@ pub async fn meeting_list_coming_month_count(
     Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
 }
 
+#[allow(non_snake_case)]
 pub async fn meeting_list_forward_monthcount_monthCount(
     pool: Extension<Pool>,
     axum::extract::Path(month_count): axum::extract::Path<i64>,
@@ -692,6 +713,7 @@ pub async fn meeting_list_forward_monthcount_monthCount(
     Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
 }
 
+#[allow(non_snake_case)]
 pub async fn meeting_list_forward_monthcount_monthCount_all(
     pool: Extension<Pool>,
     axum::extract::Path(month_count): axum::extract::Path<i64>,
@@ -725,6 +747,7 @@ pub async fn meeting_list_forward_monthcount_monthCount_all(
     Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
 }
 
+#[allow(non_snake_case)]
 pub async fn meeting_list_invite_page_size_size(
     pool: Extension<Pool>,
     axum::extract::Path((page, size)): axum::extract::Path<(i64, i64)>,
@@ -761,6 +784,7 @@ pub async fn meeting_list_invite_page_size_size(
     Ok(Json(ActionResult::java_success(Value::Array(data), count, size)))
 }
 
+#[allow(non_snake_case)]
 pub async fn meeting_list_invited_completed(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -793,6 +817,7 @@ pub async fn meeting_list_invited_completed(
     Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
 }
 
+#[allow(non_snake_case)]
 pub async fn meeting_list_invited_processing(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -825,6 +850,7 @@ pub async fn meeting_list_invited_processing(
     Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
 }
 
+#[allow(non_snake_case)]
 pub async fn meeting_list_invited_rejected(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -857,6 +883,7 @@ pub async fn meeting_list_invited_rejected(
     Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
 }
 
+#[allow(non_snake_case)]
 pub async fn meeting_list_invited_wait(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -889,6 +916,7 @@ pub async fn meeting_list_invited_wait(
     Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
 }
 
+#[allow(non_snake_case)]
 pub async fn meeting_list_wait_accept(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -921,6 +949,7 @@ pub async fn meeting_list_wait_accept(
     Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
 }
 
+#[allow(non_snake_case)]
 pub async fn meeting_list_wait_confirm(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -953,6 +982,7 @@ pub async fn meeting_list_wait_confirm(
     Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
 }
 
+#[allow(non_snake_case)]
 pub async fn meeting_list_year_year_month_month(
     pool: Extension<Pool>,
     axum::extract::Path((year, month)): axum::extract::Path<(i32, i32)>,
@@ -993,6 +1023,7 @@ pub async fn meeting_list_year_year_month_month(
     Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
 }
 
+#[allow(non_snake_case)]
 pub async fn meeting_list_year_year_month_month_all(
     pool: Extension<Pool>,
     axum::extract::Path((year, month)): axum::extract::Path<(i32, i32)>,
@@ -1033,6 +1064,7 @@ pub async fn meeting_list_year_year_month_month_all(
     Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
 }
 
+#[allow(non_snake_case)]
 pub async fn meeting_list_year_year_month_month_day_day(
     pool: Extension<Pool>,
     axum::extract::Path((year, month, day)): axum::extract::Path<(i32, i32, i32)>,
@@ -1069,6 +1101,7 @@ pub async fn meeting_list_year_year_month_month_day_day(
     Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
 }
 
+#[allow(non_snake_case)]
 pub async fn meeting_list_year_year_month_month_day_day_all(
     pool: Extension<Pool>,
     axum::extract::Path((year, month, day)): axum::extract::Path<(i32, i32, i32)>,
@@ -1105,6 +1138,7 @@ pub async fn meeting_list_year_year_month_month_day_day_all(
     Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
 }
 
+#[allow(non_snake_case)]
 pub async fn meeting_list_year_year_month_month_day_day_roomId(
     pool: Extension<Pool>,
     axum::extract::Path((year, month, day, room_id)): axum::extract::Path<(i32, i32, i32, String)>,
@@ -1141,6 +1175,7 @@ pub async fn meeting_list_year_year_month_month_day_day_roomId(
     Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
 }
 
+#[allow(non_snake_case)]
 pub async fn meeting_list_id_next_count(
     pool: Extension<Pool>,
     axum::extract::Path((flag, count)): axum::extract::Path<(String, i64)>,
@@ -1186,6 +1221,7 @@ pub async fn meeting_list_id_next_count(
     Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
 }
 
+#[allow(non_snake_case)]
 pub async fn meeting_list_id_prev_count(
     pool: Extension<Pool>,
     axum::extract::Path((id, count)): axum::extract::Path<(String, i64)>,
@@ -1221,6 +1257,7 @@ pub async fn meeting_list_id_prev_count(
     Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
 }
 
+#[allow(non_snake_case)]
 pub async fn meeting_list_page_size_size(
     pool: Extension<Pool>,
     axum::extract::Path((page, size)): axum::extract::Path<(i64, i64)>,
@@ -1257,6 +1294,7 @@ pub async fn meeting_list_page_size_size(
     Ok(Json(ActionResult::java_success(Value::Array(data), count, size)))
 }
 
+#[allow(non_snake_case)]
 pub async fn meeting_list_page_size_size_manage(
     pool: Extension<Pool>,
     axum::extract::Path((page, size)): axum::extract::Path<(i64, i64)>,
@@ -1293,6 +1331,7 @@ pub async fn meeting_list_page_size_size_manage(
     Ok(Json(ActionResult::java_success(Value::Array(data), count, size)))
 }
 
+#[allow(non_snake_case)]
 pub async fn meeting_id(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
@@ -1324,6 +1363,7 @@ pub async fn meeting_id(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn create_meeting(
     pool: Extension<Pool>,
     axum::extract::Json(payload): axum::extract::Json<Value>,
@@ -1355,6 +1395,7 @@ pub async fn create_meeting(
     ])))))
 }
 
+#[allow(non_snake_case)]
 pub async fn save_meeting(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
@@ -1388,6 +1429,7 @@ pub async fn save_meeting(
     ))))
 }
 
+#[allow(non_snake_case)]
 pub async fn delete_meeting(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
@@ -1414,6 +1456,7 @@ pub async fn delete_meeting(
     ))))
 }
 
+#[allow(non_snake_case)]
 pub async fn meeting_id_accept(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
@@ -1436,6 +1479,7 @@ pub async fn meeting_id_accept(
     ))))
 }
 
+#[allow(non_snake_case)]
 pub async fn meeting_id_add_invite(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
@@ -1464,6 +1508,7 @@ pub async fn meeting_id_add_invite(
     ))))
 }
 
+#[allow(non_snake_case)]
 pub async fn meeting_id_checkin(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
@@ -1492,6 +1537,7 @@ pub async fn meeting_id_checkin(
     ))))
 }
 
+#[allow(non_snake_case)]
 pub async fn meeting_id_checkin_code(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
@@ -1519,6 +1565,7 @@ pub async fn meeting_id_checkin_code(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn meeting_id_confirm_allow(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
@@ -1541,6 +1588,7 @@ pub async fn meeting_id_confirm_allow(
     ))))
 }
 
+#[allow(non_snake_case)]
 pub async fn meeting_id_confirm_deny(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
@@ -1563,6 +1611,7 @@ pub async fn meeting_id_confirm_deny(
     ))))
 }
 
+#[allow(non_snake_case)]
 pub async fn meeting_id_delete_invite(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
@@ -1589,6 +1638,7 @@ pub async fn meeting_id_delete_invite(
     ))))
 }
 
+#[allow(non_snake_case)]
 pub async fn meeting_id_manual_completed(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
@@ -1611,6 +1661,7 @@ pub async fn meeting_id_manual_completed(
     ))))
 }
 
+#[allow(non_snake_case)]
 pub async fn meeting_id_modify_completedtime(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
@@ -1637,6 +1688,7 @@ pub async fn meeting_id_modify_completedtime(
     ))))
 }
 
+#[allow(non_snake_case)]
 pub async fn meeting_id_modify_starttime(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
@@ -1674,6 +1726,7 @@ pub async fn meeting_id_modify_starttime(
     ))))
 }
 
+#[allow(non_snake_case)]
 pub async fn meeting_id_reject(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
@@ -1696,6 +1749,7 @@ pub async fn meeting_id_reject(
     ))))
 }
 
+#[allow(non_snake_case)]
 pub async fn openmeeting_list_room(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -1728,6 +1782,7 @@ pub async fn openmeeting_list_room(
     Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
 }
 
+#[allow(non_snake_case)]
 pub async fn room_list(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -1760,6 +1815,7 @@ pub async fn room_list(
     Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
 }
 
+#[allow(non_snake_case)]
 pub async fn room_list_like_pinyin_key(
     pool: Extension<Pool>,
     axum::extract::Path(key): axum::extract::Path<String>,
@@ -1794,6 +1850,7 @@ pub async fn room_list_like_pinyin_key(
     Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
 }
 
+#[allow(non_snake_case)]
 pub async fn room_list_like_key(
     pool: Extension<Pool>,
     axum::extract::Path(key): axum::extract::Path<String>,
@@ -1828,6 +1885,7 @@ pub async fn room_list_like_key(
     Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
 }
 
+#[allow(non_snake_case)]
 pub async fn room_list_pinyininitial_key(
     pool: Extension<Pool>,
     axum::extract::Path(key): axum::extract::Path<String>,
@@ -1861,6 +1919,7 @@ pub async fn room_list_pinyininitial_key(
     Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
 }
 
+#[allow(non_snake_case)]
 pub async fn room_id(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
@@ -1892,6 +1951,7 @@ pub async fn room_id(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn room_id_photo(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
@@ -2097,6 +2157,7 @@ async fn u2_extract_multipart(
 
 // ── Attachment 族（11 端点）──────────────────────────────────────────────────
 
+#[allow(non_snake_case)]
 pub async fn u2_attachment_list_with_meeting(
     pool: Extension<Pool>,
     axum::extract::Path(meeting_id): axum::extract::Path<String>,
@@ -2114,6 +2175,7 @@ pub async fn u2_attachment_list_with_meeting(
     Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
 }
 
+#[allow(non_snake_case)]
 pub async fn u2_attachment_get(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
@@ -2132,6 +2194,7 @@ pub async fn u2_attachment_get(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn u2_attachment_download(
     pool: Extension<Pool>,
     Extension(session): Extension<shared::session::Session>,
@@ -2160,6 +2223,7 @@ pub async fn u2_attachment_download(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn u2_attachment_update(
     pool: Extension<Pool>,
     Extension(session): Extension<shared::session::Session>,
@@ -2169,6 +2233,7 @@ pub async fn u2_attachment_update(
     u2_attachment_update_inner(pool, session, id, body).await
 }
 
+#[allow(non_snake_case)]
 pub async fn u2_attachment_update_callback(
     pool: Extension<Pool>,
     Extension(session): Extension<shared::session::Session>,
@@ -2234,6 +2299,7 @@ async fn u2_attachment_update_inner(
     ))))
 }
 
+#[allow(non_snake_case)]
 pub async fn u2_attachment_create_from_processplatform(
     pool: Extension<Pool>,
     Extension(session): Extension<shared::session::Session>,
@@ -2321,6 +2387,7 @@ async fn u2_attachment_paged(
     Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
 }
 
+#[allow(non_snake_case)]
 pub async fn u2_attachment_list_next(
     pool: Extension<Pool>,
     axum::extract::Path((id, count)): axum::extract::Path<(String, String)>,
@@ -2329,6 +2396,7 @@ pub async fn u2_attachment_list_next(
     u2_attachment_paged(pool, id, count, false).await
 }
 
+#[allow(non_snake_case)]
 pub async fn u2_attachment_list_prev(
     pool: Extension<Pool>,
     axum::extract::Path((id, count)): axum::extract::Path<(String, String)>,
@@ -2337,6 +2405,7 @@ pub async fn u2_attachment_list_prev(
     u2_attachment_paged(pool, id, count, true).await
 }
 
+#[allow(non_snake_case)]
 pub async fn u2_attachment_upload(
     pool: Extension<Pool>,
     Extension(session): Extension<shared::session::Session>,
@@ -2349,6 +2418,7 @@ pub async fn u2_attachment_upload(
     u2_attachment_store_new(&pool, &session, &meeting_id, summary, &filename, mime.as_deref(), data).await
 }
 
+#[allow(non_snake_case)]
 pub async fn u2_attachment_upload_callback(
     pool: Extension<Pool>,
     Extension(session): Extension<shared::session::Session>,
@@ -2362,6 +2432,7 @@ pub async fn u2_attachment_upload_callback(
     u2_attachment_store_new(&pool, &session, &meeting_id, summary, &filename, mime.as_deref(), data).await
 }
 
+#[allow(non_snake_case)]
 pub async fn u2_attachment_delete(
     pool: Extension<Pool>,
     Extension(session): Extension<shared::session::Session>,
@@ -2411,6 +2482,7 @@ async fn u2_building_name_taken(client: &deadpool_postgres::tokio_postgres::Clie
         .any(|r| u2_normalize_name(&r.get::<_, String>("name")) == target))
 }
 
+#[allow(non_snake_case)]
 pub async fn u2_building_create(
     pool: Extension<Pool>,
     Extension(session): Extension<shared::session::Session>,
@@ -2449,6 +2521,7 @@ pub async fn u2_building_create(
     ))))
 }
 
+#[allow(non_snake_case)]
 pub async fn u2_building_edit(
     pool: Extension<Pool>,
     Extension(session): Extension<shared::session::Session>,
@@ -2493,6 +2566,7 @@ pub async fn u2_building_edit(
     ))))
 }
 
+#[allow(non_snake_case)]
 pub async fn u2_building_delete(
     pool: Extension<Pool>,
     Extension(session): Extension<shared::session::Session>,
@@ -2526,6 +2600,7 @@ pub async fn u2_building_delete(
 
 // ── Config 族补齐（POST save + GET manage 读视图）────────────────────────────
 
+#[allow(non_snake_case)]
 pub async fn u2_config_save(
     pool: Extension<Pool>,
     Extension(session): Extension<shared::session::Session>,
@@ -2578,6 +2653,7 @@ pub async fn u2_config_save(
     ))))
 }
 
+#[allow(non_snake_case)]
 pub async fn u2_config_manage_get(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -2608,6 +2684,7 @@ pub async fn u2_config_manage_get(
 
 // ── Meeting 族补齐（IDOR 删除 / modify / PUT save / GET checkin）────────────
 
+#[allow(non_snake_case)]
 pub async fn u2_meeting_delete_owned(
     pool: Extension<Pool>,
     Extension(session): Extension<shared::session::Session>,
@@ -2634,6 +2711,7 @@ pub async fn u2_meeting_delete_owned(
     ))))
 }
 
+#[allow(non_snake_case)]
 pub async fn u2_meeting_modify(
     pool: Extension<Pool>,
     Extension(session): Extension<shared::session::Session>,
@@ -2666,6 +2744,7 @@ pub async fn u2_meeting_modify(
     ))))
 }
 
+#[allow(non_snake_case)]
 pub async fn u2_meeting_put_save(
     pool: Extension<Pool>,
     Extension(session): Extension<shared::session::Session>,
@@ -2701,6 +2780,7 @@ pub async fn u2_meeting_put_save(
 }
 
 /// Java ActionCheckIn.execute(effectivePerson, id)：以当前登录人签到。
+#[allow(non_snake_case)]
 pub async fn u2_meeting_checkin_get(
     pool: Extension<Pool>,
     Extension(session): Extension<shared::session::Session>,
@@ -2731,6 +2811,7 @@ pub async fn u2_meeting_checkin_get(
 
 // ── OpenMeeting 根端点（开放会议服务器配置读视图）────────────────────────────
 
+#[allow(non_snake_case)]
 pub async fn u2_openmeeting_get(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -2773,6 +2854,7 @@ async fn u2_room_name_taken(client: &deadpool_postgres::tokio_postgres::Client, 
         .any(|r| u2_normalize_name(&r.get::<_, String>("name")) == target))
 }
 
+#[allow(non_snake_case)]
 pub async fn u2_room_create(
     pool: Extension<Pool>,
     Extension(session): Extension<shared::session::Session>,
@@ -2818,6 +2900,7 @@ pub async fn u2_room_create(
     ))))
 }
 
+#[allow(non_snake_case)]
 pub async fn u2_room_edit(
     pool: Extension<Pool>,
     Extension(session): Extension<shared::session::Session>,
@@ -2862,6 +2945,7 @@ pub async fn u2_room_edit(
     ))))
 }
 
+#[allow(non_snake_case)]
 pub async fn u2_room_delete(
     pool: Extension<Pool>,
     Extension(session): Extension<shared::session::Session>,
@@ -2887,6 +2971,7 @@ pub async fn u2_room_delete(
 
 /// Java ActionSetPhoto：multipart 上传照片字节。落地为 x_meeting_room_photo 行
 /// （photo_url 存 base64 回放数据，photo_name 存文件名）。
+#[allow(non_snake_case)]
 pub async fn u2_room_set_photo(
     pool: Extension<Pool>,
     Extension(_session): Extension<shared::session::Session>,

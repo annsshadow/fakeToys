@@ -1,4 +1,5 @@
-use chrono::NaiveDateTime;
+#[allow(dead_code)]
+#[allow(dead_code)]
 use axum::{
     extract::Extension,
     Json,
@@ -25,6 +26,7 @@ pub fn file_assemble_control_router(pool: Pool) -> axum::Router {
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
 pub async fn get_control_config(
     pool: Extension<Arc<dyn ControlPool>>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -56,6 +58,7 @@ pub async fn get_control_config(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
 pub async fn list_storage_pools(
     pool: Extension<Arc<dyn ControlPool>>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -89,6 +92,7 @@ pub async fn list_storage_pools(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
 pub async fn update_control_config(
     pool: Extension<Arc<dyn ControlPool>>,
     body: axum::extract::Json<Value>,
@@ -130,6 +134,7 @@ pub async fn update_control_config(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
 pub async fn list_control_categories(
     pool: Extension<Arc<dyn ControlPool>>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -168,6 +173,7 @@ pub fn router(pool: deadpool_postgres::Pool) -> axum::Router {
 
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
 pub async fn list_files(
     pool: Extension<Pool>,
     axum::extract::Path(folder_id): axum::extract::Path<String>,
@@ -203,6 +209,7 @@ pub async fn list_files(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
 pub async fn get_file(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
@@ -236,6 +243,7 @@ pub async fn get_file(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
 pub async fn upload_file(
     pool: Extension<Pool>,
     Extension(session): Extension<shared::session::Session>,
@@ -273,6 +281,7 @@ pub async fn upload_file(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
 pub async fn create_file(
     pool: Extension<Pool>,
     Extension(session): Extension<shared::session::Session>,
@@ -305,6 +314,7 @@ pub async fn create_file(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
 pub async fn delete_file(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
@@ -332,6 +342,7 @@ pub async fn delete_file(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
 pub async fn create_file_entity(
     pool: Extension<Pool>,
     axum::extract::Json(body): axum::extract::Json<Value>,
@@ -367,6 +378,7 @@ pub async fn create_file_entity(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
 pub async fn update_file_entity(
     pool: Extension<Pool>,
     Extension(session): Extension<shared::session::Session>,
@@ -483,6 +495,7 @@ pub async fn update_file_entity(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
 pub async fn delete_file_entity(
     pool: Extension<Pool>,
     Extension(session): Extension<shared::session::Session>,
@@ -524,6 +537,7 @@ pub async fn delete_file_entity(
 
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
 pub async fn anonymous_file_id_download(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
@@ -560,6 +574,7 @@ pub async fn anonymous_file_id_download(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
 pub async fn anonymous_file_id_download_stream(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
@@ -568,6 +583,7 @@ pub async fn anonymous_file_id_download_stream(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
 pub async fn attachment_list_editor_owner(
     pool: Extension<Pool>,
     Extension(session): Extension<shared::session::Session>,
@@ -598,6 +614,7 @@ pub async fn attachment_list_editor_owner(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
 pub async fn attachment_list_folder_folderId(
     pool: Extension<Pool>,
     axum::extract::Path(folder_id): axum::extract::Path<String>,
@@ -628,6 +645,7 @@ pub async fn attachment_list_folder_folderId(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
 pub async fn attachment_list_share_owner(
     pool: Extension<Pool>,
     Extension(session): Extension<shared::session::Session>,
@@ -658,6 +676,7 @@ pub async fn attachment_list_share_owner(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
 pub async fn attachment_list_top(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -687,6 +706,7 @@ pub async fn attachment_list_top(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
 pub async fn attachment_upload_folder_folderId(
     pool: Extension<Pool>,
     Extension(session): Extension<shared::session::Session>,
@@ -716,7 +736,7 @@ pub async fn attachment_upload_folder_folderId(
     let ext = match mime {
         "image/jpeg" => "jpg", "image/png" => "png", "image/gif" => "gif",
         "application/pdf" => "pdf", "text/plain" => "txt",
-        _ => { if let Some(ref fname) = filename { fname.split('.').last().unwrap_or("bin") } else { "bin" } }
+        _ => { if let Some(ref fname) = filename { fname.split('.').next_back().unwrap_or("bin") } else { "bin" } }
     };
     let content_b64 = base64::engine::general_purpose::STANDARD.encode(&data);
     let ref_type = String::from("attachment");
@@ -735,16 +755,18 @@ pub async fn attachment_upload_folder_folderId(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
 pub async fn attachment_upload_folder_folderId_callback_callback(
     pool: Extension<Pool>,
     Extension(session): Extension<shared::session::Session>,
     axum::extract::Path((folder_id, _callback)): axum::extract::Path<(String, String)>,
-    mut form: axum::extract::Multipart,
+    form: axum::extract::Multipart,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     attachment_upload_folder_folderId(pool, Extension(session), axum::extract::Path(folder_id), form).await
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
 pub async fn attachment_id(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
@@ -771,6 +793,7 @@ pub async fn attachment_id(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
 pub async fn attachment_id_binary_base64(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
@@ -794,6 +817,7 @@ pub async fn attachment_id_binary_base64(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
 pub async fn attachment_id_download(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
@@ -826,6 +850,7 @@ pub async fn attachment_id_download(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
 pub async fn attachment_id_download_stream(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
@@ -834,6 +859,7 @@ pub async fn attachment_id_download_stream(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
 pub async fn attachment_id_image_scale_scale_binary_base64(
     pool: Extension<Pool>,
     axum::extract::Path((id, _scale)): axum::extract::Path<(String, String)>,
@@ -842,6 +868,7 @@ pub async fn attachment_id_image_scale_scale_binary_base64(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
 pub async fn attachment_id_image_width_width_height_height_binary_base64(
     pool: Extension<Pool>,
     axum::extract::Path((id, _width, _height)): axum::extract::Path<(String, String, String)>,
@@ -850,6 +877,7 @@ pub async fn attachment_id_image_width_width_height_height_binary_base64(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
 pub async fn attachment_id_update(
     pool: Extension<Pool>,
     Extension(session): Extension<shared::session::Session>,
@@ -878,6 +906,7 @@ pub async fn attachment_id_update(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
 pub async fn attachment_id_update_callback_callback(
     pool: Extension<Pool>,
     Extension(session): Extension<shared::session::Session>,
@@ -888,6 +917,7 @@ pub async fn attachment_id_update_callback_callback(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
 pub async fn attachment2_exist_file_fileMd5(
     pool: Extension<Pool>,
     axum::extract::Path(md5): axum::extract::Path<String>,
@@ -906,6 +936,7 @@ pub async fn attachment2_exist_file_fileMd5(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
 pub async fn attachment2_list_editor_owner(
     pool: Extension<Pool>,
     Extension(session): Extension<shared::session::Session>,
@@ -935,6 +966,7 @@ pub async fn attachment2_list_editor_owner(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
 pub async fn attachment2_list_filter_name(
     pool: Extension<Pool>,
     axum::extract::Path(name): axum::extract::Path<String>,
@@ -964,6 +996,7 @@ pub async fn attachment2_list_filter_name(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
 pub async fn attachment2_list_folder_folderId(
     pool: Extension<Pool>,
     axum::extract::Path(folder_id): axum::extract::Path<String>,
@@ -993,6 +1026,7 @@ pub async fn attachment2_list_folder_folderId(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
 pub async fn attachment2_list_share_owner(
     pool: Extension<Pool>,
     Extension(session): Extension<shared::session::Session>,
@@ -1022,6 +1056,7 @@ pub async fn attachment2_list_share_owner(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
 pub async fn attachment2_list_top(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -1050,6 +1085,7 @@ pub async fn attachment2_list_top(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
 pub async fn attachment2_list_type_page_size_size(
     pool: Extension<Pool>,
     axum::extract::Path((_type, page, size)): axum::extract::Path<(String, String, String)>,
@@ -1081,6 +1117,7 @@ pub async fn attachment2_list_type_page_size_size(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
 pub async fn attachment2_upload_folder_folderId(
     pool: Extension<Pool>,
     Extension(session): Extension<shared::session::Session>,
@@ -1110,7 +1147,7 @@ pub async fn attachment2_upload_folder_folderId(
     let ext = match mime {
         "image/jpeg" => "jpg", "image/png" => "png", "image/gif" => "gif",
         "application/pdf" => "pdf", "text/plain" => "txt",
-        _ => { if let Some(ref fname) = filename { fname.split('.').last().unwrap_or("bin") } else { "bin" } }
+        _ => { if let Some(ref fname) = filename { fname.split('.').next_back().unwrap_or("bin") } else { "bin" } }
     };
     let content_b64 = base64::engine::general_purpose::STANDARD.encode(&data);
     let ref_type = String::from("attachment");
@@ -1129,6 +1166,7 @@ pub async fn attachment2_upload_folder_folderId(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
 pub async fn attachment2_user_capacity(
     pool: Extension<Pool>,
     Extension(session): Extension<shared::session::Session>,
@@ -1148,6 +1186,7 @@ pub async fn attachment2_user_capacity(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
 pub async fn attachment2_id(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
@@ -1174,6 +1213,7 @@ pub async fn attachment2_id(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
 pub async fn attachment2_id_binary_base64(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
@@ -1197,6 +1237,7 @@ pub async fn attachment2_id_binary_base64(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
 pub async fn attachment2_id_download(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
@@ -1229,6 +1270,7 @@ pub async fn attachment2_id_download(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
 pub async fn attachment2_id_download_image_width_width_height_height(
     pool: Extension<Pool>,
     axum::extract::Path((id, _width, _height)): axum::extract::Path<(String, String, String)>,
@@ -1237,6 +1279,7 @@ pub async fn attachment2_id_download_image_width_width_height_height(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
 pub async fn attachment2_id_download_stream(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
@@ -1245,6 +1288,7 @@ pub async fn attachment2_id_download_stream(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
 pub async fn attachment2_id_image_scale_scale_binary_base64(
     pool: Extension<Pool>,
     axum::extract::Path((id, _scale)): axum::extract::Path<(String, String)>,
@@ -1253,6 +1297,7 @@ pub async fn attachment2_id_image_scale_scale_binary_base64(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
 pub async fn attachment2_id_image_width_width_height_height_binary_base64(
     pool: Extension<Pool>,
     axum::extract::Path((id, _width, _height)): axum::extract::Path<(String, String, String)>,
@@ -1468,6 +1513,7 @@ fn read_zip_entry(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
 pub async fn attachment2_id_office_preview_type_type(
     pool: Extension<Pool>,
     Extension(session): Extension<shared::session::Session>,
@@ -1556,6 +1602,7 @@ pub async fn attachment2_id_office_preview_type_type(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
 pub async fn complex_folder_id(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
@@ -1583,6 +1630,7 @@ pub async fn complex_folder_id(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
 pub async fn complex_top(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -1625,6 +1673,7 @@ pub async fn complex_top(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
 pub async fn config_is_file_manager(
     pool: Extension<Pool>,
     Extension(session): Extension<shared::session::Session>,
@@ -1639,11 +1688,13 @@ pub async fn config_is_file_manager(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
 pub async fn config_system_config() -> Result<Json<ActionResult<Value>>, AppError> {
     Err(u2_capability_unavailable("file-system-config-read"))
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
 pub async fn editor_list(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -1661,6 +1712,7 @@ pub async fn editor_list(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
 pub async fn file_clean_unused_referencetype_cmsdocument_manage(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -1677,6 +1729,7 @@ pub async fn file_clean_unused_referencetype_cmsdocument_manage(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
 pub async fn file_copy_attachment_attachmentId_referencetype_referenceType_reference_reference_scale_scale(
     pool: Extension<Pool>,
     axum::extract::Path((attachment_id, reference_type, reference, _scale)): axum::extract::Path<(String, String, String, String)>,
@@ -1707,6 +1760,7 @@ pub async fn file_copy_attachment_attachmentId_referencetype_referenceType_refer
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
 pub async fn file_list_referencetype(
     pool: Extension<Pool>,
     axum::extract::Path(reference_type): axum::extract::Path<String>,
@@ -1736,6 +1790,7 @@ pub async fn file_list_referencetype(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
 pub async fn file_list_referencetype_referenceType_reference_reference(
     pool: Extension<Pool>,
     axum::extract::Path((reference_type, reference)): axum::extract::Path<(String, String)>,
@@ -1765,6 +1820,7 @@ pub async fn file_list_referencetype_referenceType_reference_reference(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
 pub async fn file_list_unused_referencetype_cmsdocument_manage(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -1787,6 +1843,7 @@ pub async fn file_list_unused_referencetype_cmsdocument_manage(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
 pub async fn file_list_id_next_count(
     pool: Extension<Pool>,
     axum::extract::Path((id, _count)): axum::extract::Path<(String, String)>,
@@ -1810,6 +1867,7 @@ pub async fn file_list_id_next_count(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
 pub async fn file_list_id_next_count_all(
     pool: Extension<Pool>,
     axum::extract::Path((id, count)): axum::extract::Path<(String, String)>,
@@ -1818,9 +1876,10 @@ pub async fn file_list_id_next_count_all(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
 pub async fn file_list_id_next_count_referencetype_referenceType(
     pool: Extension<Pool>,
-    axum::extract::Path((id, count, reference_type)): axum::extract::Path<(String, String, String)>,
+    axum::extract::Path((id, _count, reference_type)): axum::extract::Path<(String, String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let rows = client
@@ -1841,6 +1900,7 @@ pub async fn file_list_id_next_count_referencetype_referenceType(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
 pub async fn file_list_id_prev_count(
     pool: Extension<Pool>,
     axum::extract::Path((id, _count)): axum::extract::Path<(String, String)>,
@@ -1864,6 +1924,7 @@ pub async fn file_list_id_prev_count(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
 pub async fn file_list_id_prev_count_all(
     pool: Extension<Pool>,
     axum::extract::Path((id, count)): axum::extract::Path<(String, String)>,
@@ -1872,9 +1933,10 @@ pub async fn file_list_id_prev_count_all(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
 pub async fn file_list_id_prev_count_referencetype_referenceType(
     pool: Extension<Pool>,
-    axum::extract::Path((id, count, reference_type)): axum::extract::Path<(String, String, String)>,
+    axum::extract::Path((id, _count, reference_type)): axum::extract::Path<(String, String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let rows = client
@@ -1895,6 +1957,7 @@ pub async fn file_list_id_prev_count_referencetype_referenceType(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
 pub async fn file_referencetype_referenceType_reference_reference(
     pool: Extension<Pool>,
     axum::extract::Path((reference_type, reference)): axum::extract::Path<(String, String)>,
@@ -1903,6 +1966,7 @@ pub async fn file_referencetype_referenceType_reference_reference(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
 pub async fn file_upload_referencetype_referenceType_reference_reference_scale_scale(
     pool: Extension<Pool>,
     Extension(session): Extension<shared::session::Session>,
@@ -1932,7 +1996,7 @@ pub async fn file_upload_referencetype_referenceType_reference_reference_scale_s
     let ext = match mime {
         "image/jpeg" => "jpg", "image/png" => "png", "image/gif" => "gif",
         "application/pdf" => "pdf", "text/plain" => "txt",
-        _ => { if let Some(ref fname) = filename { fname.split('.').last().unwrap_or("bin") } else { "bin" } }
+        _ => { if let Some(ref fname) = filename { fname.split('.').next_back().unwrap_or("bin") } else { "bin" } }
     };
     let content_b64 = base64::engine::general_purpose::STANDARD.encode(&data);
     client.execute(
@@ -1950,16 +2014,18 @@ pub async fn file_upload_referencetype_referenceType_reference_reference_scale_s
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
 pub async fn file_upload_referencetype_referenceType_reference_reference_scale_scale_callback_callback(
     pool: Extension<Pool>,
     Extension(session): Extension<shared::session::Session>,
     axum::extract::Path((reference_type, reference, _scale, _callback)): axum::extract::Path<(String, String, String, String)>,
-    mut form: axum::extract::Multipart,
+    form: axum::extract::Multipart,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     file_upload_referencetype_referenceType_reference_reference_scale_scale(pool, Extension(session), axum::extract::Path((reference_type, reference, _scale)), form).await
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
 pub async fn file_upload_with_url(
     pool: Extension<Pool>,
     Extension(session): Extension<shared::session::Session>,
@@ -1977,7 +2043,7 @@ pub async fn file_upload_with_url(
     let id = uuid::Uuid::new_v4().to_string();
     let creator = session.person_unique.clone();
     let content_b64 = base64::engine::general_purpose::STANDARD.encode(&url);
-    let ext = if let Some(ref fname) = name.split('.').last() { fname } else { "bin" };
+    let ext = if let Some(ref fname) = name.split('.').next_back() { fname } else { "bin" };
 
     client
         .execute(
@@ -2001,6 +2067,7 @@ pub async fn file_upload_with_url(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
 pub async fn file_id(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
@@ -2027,6 +2094,7 @@ pub async fn file_id(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
 pub async fn file_id_binary_base64(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
@@ -2050,6 +2118,7 @@ pub async fn file_id_binary_base64(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
 pub async fn file_id_download(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
@@ -2082,6 +2151,7 @@ pub async fn file_id_download(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
 pub async fn file_id_download_stream(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
@@ -2090,6 +2160,7 @@ pub async fn file_id_download_stream(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
 pub async fn folder_list_top(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -2115,6 +2186,7 @@ pub async fn folder_list_top(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
 pub async fn folder_list_id(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
@@ -2141,6 +2213,7 @@ pub async fn folder_list_id(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
 pub async fn folder_id(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
@@ -2168,6 +2241,7 @@ pub async fn folder_id(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
 pub async fn folder2_batch_download(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -2177,6 +2251,7 @@ pub async fn folder2_batch_download(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
 pub async fn folder2_list_top(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -2202,6 +2277,7 @@ pub async fn folder2_list_top(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
 pub async fn folder2_list_id(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
@@ -2210,6 +2286,7 @@ pub async fn folder2_list_id(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
 pub async fn folder2_id(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
@@ -2218,6 +2295,7 @@ pub async fn folder2_id(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
 pub async fn folder2_id_download(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
@@ -2228,6 +2306,7 @@ pub async fn folder2_id_download(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
 pub async fn recycle_empty(
     pool: Extension<Pool>,
     Extension(session): Extension<shared::session::Session>,
@@ -2245,6 +2324,7 @@ pub async fn recycle_empty(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
 pub async fn recycle_list(
     pool: Extension<Pool>,
     Extension(session): Extension<shared::session::Session>,
@@ -2274,6 +2354,7 @@ pub async fn recycle_list(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
 pub async fn recycle_id(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
@@ -2296,6 +2377,7 @@ pub async fn recycle_id(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
 pub async fn recycle_id_delete(
     pool: Extension<Pool>,
     Extension(session): Extension<shared::session::Session>,
@@ -2321,6 +2403,7 @@ pub async fn recycle_id_delete(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
 pub async fn recycle_id_resume(
     pool: Extension<Pool>,
     Extension(session): Extension<shared::session::Session>,
@@ -2344,6 +2427,7 @@ pub async fn recycle_id_resume(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
 pub async fn share_download_share_shareId_file_fileId(
     pool: Extension<Pool>,
     axum::extract::Path((share_id, file_id)): axum::extract::Path<(String, String)>,
@@ -2377,6 +2461,7 @@ pub async fn share_download_share_shareId_file_fileId(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
 pub async fn share_list(
     pool: Extension<Pool>,
     Extension(session): Extension<shared::session::Session>,
@@ -2405,6 +2490,7 @@ pub async fn share_list(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
 pub async fn share_list_att_share_shareId_folder_folderId(
     pool: Extension<Pool>,
     axum::extract::Path((share_id, folder_id)): axum::extract::Path<(String, String)>,
@@ -2432,6 +2518,7 @@ pub async fn share_list_att_share_shareId_folder_folderId(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
 pub async fn share_list_folder_share_shareId_folder_folderId(
     pool: Extension<Pool>,
     axum::extract::Path((share_id, folder_id)): axum::extract::Path<(String, String)>,
@@ -2440,6 +2527,7 @@ pub async fn share_list_folder_share_shareId_folder_folderId(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
 pub async fn share_list_my(
     pool: Extension<Pool>,
     Extension(session): Extension<shared::session::Session>,
@@ -2468,6 +2556,7 @@ pub async fn share_list_my(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
 pub async fn share_list_my2_shareType_fileType(
     pool: Extension<Pool>,
     Extension(session): Extension<shared::session::Session>,
@@ -2495,6 +2584,7 @@ pub async fn share_list_my2_shareType_fileType(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
 pub async fn share_list_to_me(
     pool: Extension<Pool>,
     Extension(session): Extension<shared::session::Session>,
@@ -2504,6 +2594,7 @@ pub async fn share_list_to_me(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
 pub async fn share_list_to_me2_fileType(
     pool: Extension<Pool>,
     Extension(session): Extension<shared::session::Session>,
@@ -2514,6 +2605,7 @@ pub async fn share_list_to_me2_fileType(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
 pub async fn share_share_shareId_file_fileId_folder_folderId(
     pool: Extension<Pool>,
     Extension(session): Extension<shared::session::Session>,
@@ -2523,6 +2615,7 @@ pub async fn share_share_shareId_file_fileId_folder_folderId(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
 pub async fn share_shield_id(
     pool: Extension<Pool>,
     Extension(session): Extension<shared::session::Session>,
@@ -2532,6 +2625,7 @@ pub async fn share_shield_id(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
 pub async fn share_id(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
@@ -2540,6 +2634,7 @@ pub async fn share_id(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
 pub async fn share_id_password_password(
     pool: Extension<Pool>,
     axum::extract::Path((id, password)): axum::extract::Path<(String, String)>,
@@ -2690,6 +2785,7 @@ async fn u2_store_new(
 // ── 上传族（multipart / octet-stream → BlobStorage + 元数据行） ─────────────
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
 pub async fn u2_file_upload_octet_stream(
     pool: Extension<Pool>,
     Extension(session): Extension<shared::session::Session>,
@@ -2710,6 +2806,7 @@ pub async fn u2_file_upload_octet_stream(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
 pub async fn u2_file_upload_multipart(
     pool: Extension<Pool>,
     Extension(session): Extension<shared::session::Session>,
@@ -2722,6 +2819,7 @@ pub async fn u2_file_upload_multipart(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
 pub async fn u2_file_upload_callback(
     pool: Extension<Pool>,
     Extension(session): Extension<shared::session::Session>,
@@ -2734,6 +2832,7 @@ pub async fn u2_file_upload_callback(
 // ── 内容替换族（PUT /attachment/{id}/update：multipart → BlobStorage 回填） ──
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
 pub async fn u2_attachment_update_content(
     pool: Extension<Pool>,
     Extension(session): Extension<shared::session::Session>,
@@ -2776,6 +2875,7 @@ pub async fn u2_attachment_update_content(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
 pub async fn u2_attachment_update_content_callback(
     pool: Extension<Pool>,
     Extension(session): Extension<shared::session::Session>,
@@ -2788,6 +2888,7 @@ pub async fn u2_attachment_update_content_callback(
 // ── 元数据管理族（真实 SQL + IDOR 门禁） ────────────────────────────────────
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
 pub async fn u2_attachment_delete(
     pool: Extension<Pool>,
     Extension(session): Extension<shared::session::Session>,
@@ -2814,6 +2915,7 @@ pub async fn u2_attachment_delete(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
 pub async fn u2_attachment2_update(
     pool: Extension<Pool>,
     Extension(session): Extension<shared::session::Session>,
@@ -2847,6 +2949,7 @@ pub async fn u2_attachment2_update(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
 pub async fn u2_attachment2_delete(
     pool: Extension<Pool>,
     Extension(session): Extension<shared::session::Session>,
@@ -2873,6 +2976,7 @@ pub async fn u2_attachment2_delete(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
 pub async fn u2_file_delete_by_id(
     pool: Extension<Pool>,
     Extension(session): Extension<shared::session::Session>,
@@ -2900,6 +3004,7 @@ pub async fn u2_file_delete_by_id(
 
 /// Java FileAction.delete(referenceType, reference)：manager-only，按引用批量清除。
 #[axum::debug_handler]
+#[allow(non_snake_case)]
 pub async fn u2_file_delete_by_reference(
     pool: Extension<Pool>,
     Extension(session): Extension<shared::session::Session>,
@@ -2923,6 +3028,7 @@ pub async fn u2_file_delete_by_reference(
 
 /// Java ActionListReferenceType：当前用户各 referenceType 的文件计数。
 #[axum::debug_handler]
+#[allow(non_snake_case)]
 pub async fn u2_file_list_reference_types(
     pool: Extension<Pool>,
     Extension(session): Extension<shared::session::Session>,
@@ -2953,6 +3059,7 @@ pub async fn u2_file_list_reference_types(
 // ── 文件夹族（FILE_FOLDER 真实 CRUD + IDOR 门禁；folder2 复用同一实现） ─────
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
 pub async fn u2_folder_create(
     pool: Extension<Pool>,
     Extension(session): Extension<shared::session::Session>,
@@ -2987,6 +3094,7 @@ pub async fn u2_folder_create(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
 pub async fn u2_folder_rename(
     pool: Extension<Pool>,
     Extension(session): Extension<shared::session::Session>,
@@ -3022,6 +3130,7 @@ pub async fn u2_folder_rename(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
 pub async fn u2_folder_delete(
     pool: Extension<Pool>,
     Extension(session): Extension<shared::session::Session>,
@@ -3071,6 +3180,7 @@ fn u2_share_row_to_json(row: &deadpool_postgres::tokio_postgres::Row) -> Value {
 const U2_SHARE_SELECT: &str = "SELECT id, person, name, file_id, file_type, extension, length, share_type FROM FILE_SHARE";
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
 pub async fn u2_share_create(
     pool: Extension<Pool>,
     Extension(session): Extension<shared::session::Session>,
@@ -3142,6 +3252,7 @@ pub async fn u2_share_create(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
 pub async fn u2_share_get(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
@@ -3157,6 +3268,7 @@ pub async fn u2_share_get(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
 pub async fn u2_share_delete(
     pool: Extension<Pool>,
     Extension(session): Extension<shared::session::Session>,
@@ -3184,6 +3296,7 @@ pub async fn u2_share_delete(
 
 /// 屏蔽分享：将 validTime 置为过去时刻（Java shield 语义 = 使分享失效）。
 #[axum::debug_handler]
+#[allow(non_snake_case)]
 pub async fn u2_share_shield(
     pool: Extension<Pool>,
     Extension(session): Extension<shared::session::Session>,
@@ -3214,6 +3327,7 @@ pub async fn u2_share_shield(
 
 /// 密码访问：校验密码与有效期后返回分享信息（不含密码本身）。
 #[axum::debug_handler]
+#[allow(non_snake_case)]
 pub async fn u2_share_get_with_password(
     pool: Extension<Pool>,
     axum::extract::Path((id, password)): axum::extract::Path<(String, String)>,
@@ -3236,6 +3350,7 @@ pub async fn u2_share_get_with_password(
 
 /// 保存分享到我的文件夹：复制 FILE_FILE 行归属当前用户（需提供有效 shareId+fileId 对）。
 #[axum::debug_handler]
+#[allow(non_snake_case)]
 pub async fn u2_share_save_to_folder(
     pool: Extension<Pool>,
     Extension(session): Extension<shared::session::Session>,
@@ -3279,6 +3394,7 @@ pub async fn u2_share_save_to_folder(
 /// Java 真实路径为 /list/type/{page}/size/{size}（2 段参数）；既有 handler 为历史
 /// 字面路由设计的 3 元组 —— 以适配器复用其查询逻辑，不改动原函数。
 #[axum::debug_handler]
+#[allow(non_snake_case)]
 pub async fn u2_attachment2_list_type_page_size_size(
     pool: Extension<Pool>,
     axum::extract::Path((page, size)): axum::extract::Path<(String, String)>,
@@ -3287,6 +3403,7 @@ pub async fn u2_attachment2_list_type_page_size_size(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
 pub async fn u2_config_save_system_config() -> Result<Json<ActionResult<Value>>, AppError> {
     Err(u2_capability_unavailable("file-system-config-write"))
 }

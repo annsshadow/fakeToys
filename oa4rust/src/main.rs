@@ -8,7 +8,7 @@ use axum::Router;
 use mcp_server::tool_bridge::ToolBridge;
 use shared::db::create_pool;
 use shared::middleware::{
-    auth_middleware, authorize_middleware, behavior_comparison_middleware, cors_middleware, rate_limit_middleware, security_headers_middleware,
+    auth_middleware, authorize_middleware, behavior_comparison_middleware, rate_limit_middleware, security_headers_middleware,
     trace_middleware, SecurityState,
 };
 use shared::rate_limit::RateLimiter;
@@ -196,7 +196,6 @@ async fn main() -> anyhow::Result<()> {
 fn mcp_app(bridge: Arc<ToolBridge>, security_state: shared::middleware::SecurityState) -> Router {
     use axum::middleware;
     use axum::routing::post;
-    use axum::Json;
 
     async fn mcp_handler(
         axum::extract::State(bridge): axum::extract::State<Arc<ToolBridge>>,

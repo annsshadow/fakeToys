@@ -1,3 +1,4 @@
+#[allow(dead_code)]
 use axum::{
     extract::Extension,
     Json, Router,
@@ -10,7 +11,6 @@ use deadpool_postgres::Pool;
 use serde::Deserialize;
 use serde_json::Value;
 use shared::{error::AppError, response::ActionResult};
-use uuid::Uuid;
 
 mod u2_helpers;
 mod u2_misc;
@@ -23,6 +23,7 @@ pub struct PersonLikeRequest {
     pub name: Option<String>,
 }
 
+#[allow(non_snake_case)]
 pub async fn organization_assemble_control_role_list_flag_next_count(
     pool: Extension<Pool>,
     axum::extract::Path((flag, count_str)): axum::extract::Path<(String, String)>,
@@ -69,6 +70,7 @@ pub async fn organization_assemble_control_role_list_flag_next_count(
     )))
 }
 
+#[allow(non_snake_case)]
 pub async fn organization_assemble_control_role_flag(
     pool: Extension<Pool>,
     axum::extract::Path(flag): axum::extract::Path<String>,
@@ -98,6 +100,7 @@ pub async fn organization_assemble_control_role_flag(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn organization_assemble_control_unit_list_flag_next_count(
     pool: Extension<Pool>,
     axum::extract::Path((flag, count_str)): axum::extract::Path<(String, String)>,
@@ -150,6 +153,7 @@ pub async fn organization_assemble_control_unit_list_flag_next_count(
     )))
 }
 
+#[allow(non_snake_case)]
 pub async fn organization_assemble_control_unit_flag(
     pool: Extension<Pool>,
     axum::extract::Path(flag): axum::extract::Path<String>,
@@ -185,6 +189,7 @@ pub async fn organization_assemble_control_unit_flag(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn organization_assemble_control_unit_list_flag_sub_nested(
     pool: Extension<Pool>,
     axum::extract::Path(flag): axum::extract::Path<String>,
@@ -232,6 +237,7 @@ pub async fn organization_assemble_control_unit_list_flag_sub_nested(
     )))
 }
 
+#[allow(non_snake_case)]
 pub async fn organization_assemble_control_unit_list_flag_sup_nested(
     pool: Extension<Pool>,
     axum::extract::Path(flag): axum::extract::Path<String>,
@@ -279,6 +285,7 @@ pub async fn organization_assemble_control_unit_list_flag_sup_nested(
     )))
 }
 
+#[allow(non_snake_case)]
 pub async fn organization_assemble_control_unit_list_flag_sup_nested_type_type(
     pool: Extension<Pool>,
     axum::extract::Path((flag, _ty)): axum::extract::Path<(String, String)>,
@@ -287,6 +294,7 @@ pub async fn organization_assemble_control_unit_list_flag_sup_nested_type_type(
     organization_assemble_control_unit_list_flag_sup_nested(pool, axum::extract::Path(flag)).await
 }
 
+#[allow(non_snake_case)]
 pub async fn organization_assemble_control_person_list_like(
     pool: Extension<Pool>,
     axum::extract::Json(req): axum::extract::Json<PersonLikeRequest>,
@@ -327,6 +335,7 @@ pub async fn organization_assemble_control_person_list_like(
     )))
 }
 
+#[allow(non_snake_case)]
 pub async fn export_export_all(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -357,6 +366,7 @@ pub async fn export_export_all(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn export_result_flag_flag(
     pool: Extension<Pool>,
     axum::extract::Path(flag): axum::extract::Path<String>,
@@ -383,6 +393,7 @@ pub async fn export_result_flag_flag(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn export_zhengwudingding_person(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -415,6 +426,7 @@ pub async fn export_zhengwudingding_person(
 
 
 
+#[allow(non_snake_case)]
 pub async fn group_list_like_mockputtopost(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -443,6 +455,7 @@ pub async fn group_list_like_mockputtopost(
         0,
     )))
 }
+#[allow(non_snake_case)]
 pub async fn group_list_like_pinyin(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -471,6 +484,7 @@ pub async fn group_list_like_pinyin(
         0,
     )))
 }
+#[allow(non_snake_case)]
 pub async fn group_list_like_pinyin_mockputtopost(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -503,6 +517,7 @@ pub async fn group_list_like_pinyin_mockputtopost(
 
 
 
+#[allow(non_snake_case)]
 pub async fn group_list_pinyininitial(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -531,6 +546,7 @@ pub async fn group_list_pinyininitial(
         0,
     )))
 }
+#[allow(non_snake_case)]
 pub async fn group_list_pinyininitial_mockputtopost(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -565,6 +581,7 @@ pub async fn group_list_pinyininitial_mockputtopost(
 
 
 
+#[allow(non_snake_case)]
 pub async fn group_list_flag_sub_direct(
     pool: Extension<Pool>,
     axum::extract::Path(flag): axum::extract::Path<String>,
@@ -598,6 +615,7 @@ pub async fn group_list_flag_sub_direct(
     )))
 }
 
+#[allow(non_snake_case)]
 pub async fn group_list_flag_sub_nested(
     pool: Extension<Pool>,
     axum::extract::Path(flag): axum::extract::Path<String>,
@@ -631,6 +649,7 @@ pub async fn group_list_flag_sub_nested(
     )))
 }
 
+#[allow(non_snake_case)]
 pub async fn group_list_flag_sup_direct(
     pool: Extension<Pool>,
     axum::extract::Path(flag): axum::extract::Path<String>,
@@ -670,6 +689,7 @@ pub async fn group_list_flag_sup_direct(
     )))
 }
 
+#[allow(non_snake_case)]
 pub async fn group_list_flag_sup_nested(
     pool: Extension<Pool>,
     axum::extract::Path(flag): axum::extract::Path<String>,
@@ -711,6 +731,7 @@ pub async fn group_list_flag_sup_nested(
     )))
 }
 
+#[allow(non_snake_case)]
 pub async fn group_flag(
     pool: Extension<Pool>,
     axum::extract::Path(flag): axum::extract::Path<String>,
@@ -741,6 +762,7 @@ pub async fn group_flag(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn group_flag_add_member(
     pool: Extension<Pool>,
     axum::extract::Path(flag): axum::extract::Path<String>,
@@ -763,6 +785,7 @@ pub async fn group_flag_add_member(
     ))))
 }
 
+#[allow(non_snake_case)]
 pub async fn group_flag_add_member_mockputtopost(
     pool: Extension<Pool>,
     axum::extract::Path(flag): axum::extract::Path<String>,
@@ -785,6 +808,7 @@ pub async fn group_flag_add_member_mockputtopost(
     ))))
 }
 
+#[allow(non_snake_case)]
 pub async fn group_flag_delete_member(
     pool: Extension<Pool>,
     axum::extract::Path(flag): axum::extract::Path<String>,
@@ -807,6 +831,7 @@ pub async fn group_flag_delete_member(
     ))))
 }
 
+#[allow(non_snake_case)]
 pub async fn group_flag_delete_member_mockputtopost(
     pool: Extension<Pool>,
     axum::extract::Path(flag): axum::extract::Path<String>,
@@ -829,6 +854,7 @@ pub async fn group_flag_delete_member_mockputtopost(
     ))))
 }
 
+#[allow(non_snake_case)]
 pub async fn group_flag_mockdeletetoget(
     pool: Extension<Pool>,
     axum::extract::Path(flag): axum::extract::Path<String>,
@@ -863,6 +889,7 @@ pub async fn group_flag_mockdeletetoget(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn group_flag_mockputtopost(
     pool: Extension<Pool>,
     axum::extract::Path(flag): axum::extract::Path<String>,
@@ -895,6 +922,7 @@ pub async fn group_flag_mockputtopost(
 
 
 
+#[allow(non_snake_case)]
 pub async fn identity_id(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
@@ -921,6 +949,7 @@ pub async fn identity_id(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn identity_list_like_mockputtopost(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -949,6 +978,7 @@ pub async fn identity_list_like_mockputtopost(
         0,
     )))
 }
+#[allow(non_snake_case)]
 pub async fn identity_list_like_pinyin(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -977,6 +1007,7 @@ pub async fn identity_list_like_pinyin(
         0,
     )))
 }
+#[allow(non_snake_case)]
 pub async fn identity_list_like_pinyin_mockputtopost(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -1007,6 +1038,7 @@ pub async fn identity_list_like_pinyin_mockputtopost(
 }
 
 
+#[allow(non_snake_case)]
 pub async fn identity_list_pinyininitial(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -1035,6 +1067,7 @@ pub async fn identity_list_pinyininitial(
         0,
     )))
 }
+#[allow(non_snake_case)]
 pub async fn identity_list_pinyininitial_mockputtopost(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -1073,6 +1106,7 @@ pub async fn identity_list_pinyininitial_mockputtopost(
 
 
 
+#[allow(non_snake_case)]
 pub async fn identity_flag(
     pool: Extension<Pool>,
     axum::extract::Path(flag): axum::extract::Path<String>,
@@ -1103,6 +1137,7 @@ pub async fn identity_flag(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn identity_flag_mockdeletetoget(
     pool: Extension<Pool>,
     axum::extract::Path(flag): axum::extract::Path<String>,
@@ -1137,6 +1172,7 @@ pub async fn identity_flag_mockdeletetoget(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn identity_flag_mockputtopost(
     pool: Extension<Pool>,
     axum::extract::Path(flag): axum::extract::Path<String>,
@@ -1171,6 +1207,7 @@ pub async fn identity_flag_mockputtopost(
 
 
 
+#[allow(non_snake_case)]
 pub async fn inputperson_template(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -1198,6 +1235,7 @@ pub async fn inputperson_template(
         0,
     )))
 }
+#[allow(non_snake_case)]
 pub async fn inputperson_wipe(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -1227,6 +1265,7 @@ pub async fn inputperson_wipe(
 }
 
 
+#[allow(non_snake_case)]
 pub async fn permissionsetting_list(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -1253,6 +1292,7 @@ pub async fn permissionsetting_list(
         0,
     )))
 }
+#[allow(non_snake_case)]
 pub async fn permissionsetting_flag(
     pool: Extension<Pool>,
     axum::extract::Path(flag): axum::extract::Path<String>,
@@ -1282,6 +1322,7 @@ pub async fn permissionsetting_flag(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn permissionsetting_flag_mockdeletetoget(
     pool: Extension<Pool>,
     axum::extract::Path(flag): axum::extract::Path<String>,
@@ -1315,6 +1356,7 @@ pub async fn permissionsetting_flag_mockdeletetoget(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn permissionsetting_flag_mockputtopost(
     pool: Extension<Pool>,
     axum::extract::Path(flag): axum::extract::Path<String>,
@@ -1350,6 +1392,7 @@ pub async fn permissionsetting_flag_mockputtopost(
 
 
 
+#[allow(non_snake_case)]
 pub async fn personattribute_flag(
     pool: Extension<Pool>,
     axum::extract::Path(flag): axum::extract::Path<String>,
@@ -1380,6 +1423,7 @@ pub async fn personattribute_flag(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn personattribute_flag_mockdeletetoget(
     pool: Extension<Pool>,
     axum::extract::Path(flag): axum::extract::Path<String>,
@@ -1414,6 +1458,7 @@ pub async fn personattribute_flag_mockdeletetoget(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn personattribute_flag_mockputtopost(
     pool: Extension<Pool>,
     axum::extract::Path(flag): axum::extract::Path<String>,
@@ -1452,6 +1497,7 @@ pub async fn personattribute_flag_mockputtopost(
 
 
 
+#[allow(non_snake_case)]
 pub async fn personcard_listgrouptypes(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -1487,6 +1533,7 @@ pub async fn personcard_listgrouptypes(
 }
 
 
+#[allow(non_snake_case)]
 pub async fn personcard_listpaging_page_page_size_size_mockputtopost(
     pool: Extension<Pool>,
     axum::extract::Path((page, size)): axum::extract::Path<(i64, i64)>,
@@ -1518,6 +1565,7 @@ pub async fn personcard_listpaging_page_page_size_size_mockputtopost(
 }
 
 
+#[allow(non_snake_case)]
 pub async fn personcard_listpagingwithgroup_page_page_size_size_mockputtopost(
     pool: Extension<Pool>,
     axum::extract::Path((page, size)): axum::extract::Path<(i64, i64)>,
@@ -1548,6 +1596,7 @@ pub async fn personcard_listpagingwithgroup_page_page_size_size_mockputtopost(
     Ok(Json(ActionResult::java_success(Value::Array(data), count, size)))
 }
 
+#[allow(non_snake_case)]
 pub async fn personcard_mylist(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -1582,6 +1631,7 @@ pub async fn personcard_mylist(
     )))
 }
 
+#[allow(non_snake_case)]
 pub async fn personcard_flag(
     pool: Extension<Pool>,
     axum::extract::Path(flag): axum::extract::Path<String>,
@@ -1613,6 +1663,7 @@ pub async fn personcard_flag(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn personcard_flag_mockdeletetoget(
     pool: Extension<Pool>,
     axum::extract::Path(flag): axum::extract::Path<String>,
@@ -1652,6 +1703,7 @@ pub async fn personcard_flag_mockdeletetoget(
 
 
 
+#[allow(non_snake_case)]
 pub async fn role_list_like_mockputtopost(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -1679,6 +1731,7 @@ pub async fn role_list_like_mockputtopost(
         0,
     )))
 }
+#[allow(non_snake_case)]
 pub async fn role_list_like_pinyin(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -1706,6 +1759,7 @@ pub async fn role_list_like_pinyin(
         0,
     )))
 }
+#[allow(non_snake_case)]
 pub async fn role_list_like_pinyin_mockputtopost(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -1735,6 +1789,7 @@ pub async fn role_list_like_pinyin_mockputtopost(
 }
 
 
+#[allow(non_snake_case)]
 pub async fn role_list_pinyininitial(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -1762,6 +1817,7 @@ pub async fn role_list_pinyininitial(
         0,
     )))
 }
+#[allow(non_snake_case)]
 pub async fn role_list_pinyininitial_mockputtopost(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -1791,6 +1847,7 @@ pub async fn role_list_pinyininitial_mockputtopost(
 }
 
 
+#[allow(non_snake_case)]
 pub async fn role_flag_mockdeletetoget(
     pool: Extension<Pool>,
     axum::extract::Path(flag): axum::extract::Path<String>,
@@ -1824,6 +1881,7 @@ pub async fn role_flag_mockdeletetoget(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn role_flag_mockputtopost(
     pool: Extension<Pool>,
     axum::extract::Path(flag): axum::extract::Path<String>,
@@ -1859,6 +1917,7 @@ pub async fn role_flag_mockputtopost(
 
 
 
+#[allow(non_snake_case)]
 pub async fn unitattribute_flag(
     pool: Extension<Pool>,
     axum::extract::Path(flag): axum::extract::Path<String>,
@@ -1889,6 +1948,7 @@ pub async fn unitattribute_flag(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn unitattribute_flag_mockdeletetoget(
     pool: Extension<Pool>,
     axum::extract::Path(flag): axum::extract::Path<String>,
@@ -1923,6 +1983,7 @@ pub async fn unitattribute_flag_mockdeletetoget(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn unitattribute_flag_mockputtopost(
     pool: Extension<Pool>,
     axum::extract::Path(flag): axum::extract::Path<String>,
@@ -1953,6 +2014,7 @@ pub async fn unitattribute_flag_mockputtopost(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn unitduty_distinct_name(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -1985,6 +2047,7 @@ pub async fn unitduty_distinct_name(
 
 
 
+#[allow(non_snake_case)]
 pub async fn unitduty_flag_mockputtopost(
     pool: Extension<Pool>,
     axum::extract::Path(flag): axum::extract::Path<String>,
@@ -2001,6 +2064,7 @@ pub async fn unitduty_flag_mockputtopost(
     ))))
 }
 
+#[allow(non_snake_case)]
 pub async fn unitduty_flag_mockdeletetoget(
     pool: Extension<Pool>,
     axum::extract::Path(flag): axum::extract::Path<String>,
@@ -2017,6 +2081,7 @@ pub async fn unitduty_flag_mockdeletetoget(
     ))))
 }
 
+#[allow(non_snake_case)]
 pub async fn unitduty_flag(
     pool: Extension<Pool>,
     axum::extract::Path(flag): axum::extract::Path<String>,
@@ -2047,6 +2112,7 @@ pub async fn unitduty_flag(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn unitduty_update_member(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -2076,6 +2142,7 @@ pub async fn unitduty_update_member(
     )))
 }
 
+#[allow(non_snake_case)]
 pub async fn unitduty_list_flag_prev_count(
     pool: Extension<Pool>,
     axum::extract::Path((flag, count_str)): axum::extract::Path<(String, String)>,
@@ -2114,6 +2181,7 @@ pub async fn unitduty_list_flag_prev_count(
     )))
 }
 
+#[allow(non_snake_case)]
 pub async fn unitduty_list_flag_next_count(
     pool: Extension<Pool>,
     axum::extract::Path((flag, count_str)): axum::extract::Path<(String, String)>,
@@ -2152,6 +2220,7 @@ pub async fn unitduty_list_flag_next_count(
     )))
 }
 
+#[allow(non_snake_case)]
 pub async fn unitduty_list_unit_unitFlag(
     pool: Extension<Pool>,
     axum::extract::Path(unit_flag): axum::extract::Path<String>,
@@ -2182,6 +2251,7 @@ pub async fn unitduty_list_unit_unitFlag(
     )))
 }
 
+#[allow(non_snake_case)]
 pub async fn unitduty_list_name_name(
     pool: Extension<Pool>,
     axum::extract::Path(name): axum::extract::Path<String>,
@@ -2213,6 +2283,7 @@ pub async fn unitduty_list_name_name(
     )))
 }
 
+#[allow(non_snake_case)]
 pub async fn unitduty_list_like(
     pool: Extension<Pool>,
     axum::extract::Json(req): axum::extract::Json<Value>,
@@ -2245,6 +2316,7 @@ pub async fn unitduty_list_like(
     )))
 }
 
+#[allow(non_snake_case)]
 pub async fn unitduty_list_identity_identityFlag(
     pool: Extension<Pool>,
     axum::extract::Path(identity_flag): axum::extract::Path<String>,
@@ -2275,6 +2347,7 @@ pub async fn unitduty_list_identity_identityFlag(
     )))
 }
 
+#[allow(non_snake_case)]
 pub async fn unitduty_distinct_name_like_key(
     pool: Extension<Pool>,
     axum::extract::Path(key): axum::extract::Path<String>,
@@ -2303,6 +2376,7 @@ pub async fn unitduty_distinct_name_like_key(
 
 
 
+#[allow(non_snake_case)]
 pub async fn unitattribute_list_flag_prev_count(
     pool: Extension<Pool>,
     axum::extract::Path((flag, count_str)): axum::extract::Path<(String, String)>,
@@ -2341,6 +2415,7 @@ pub async fn unitattribute_list_flag_prev_count(
     )))
 }
 
+#[allow(non_snake_case)]
 pub async fn unitattribute_list_flag_next_count(
     pool: Extension<Pool>,
     axum::extract::Path((flag, count_str)): axum::extract::Path<(String, String)>,
@@ -2379,6 +2454,7 @@ pub async fn unitattribute_list_flag_next_count(
     )))
 }
 
+#[allow(non_snake_case)]
 pub async fn unitattribute_list_unit_flag(
     pool: Extension<Pool>,
     axum::extract::Path(unit_flag): axum::extract::Path<String>,
@@ -2411,6 +2487,7 @@ pub async fn unitattribute_list_unit_flag(
 
 
 
+#[allow(non_snake_case)]
 pub async fn role_list_flag_prev_count(
     pool: Extension<Pool>,
     axum::extract::Path((flag, count_str)): axum::extract::Path<(String, String)>,
@@ -2450,6 +2527,7 @@ pub async fn role_list_flag_prev_count(
 
 
 
+#[allow(non_snake_case)]
 pub async fn role_list_person_personFlag(
     pool: Extension<Pool>,
     axum::extract::Path(person_flag): axum::extract::Path<String>,
@@ -2482,6 +2560,7 @@ pub async fn role_list_person_personFlag(
 
 
 
+#[allow(non_snake_case)]
 pub async fn role_list_like(
     pool: Extension<Pool>,
     axum::extract::Json(req): axum::extract::Json<Value>,
@@ -2513,6 +2592,7 @@ pub async fn role_list_like(
     )))
 }
 
+#[allow(non_snake_case)]
 pub async fn role_list_group_groupFlag(
     pool: Extension<Pool>,
     axum::extract::Path(group_flag): axum::extract::Path<String>,
@@ -2546,6 +2626,7 @@ pub async fn role_list_group_groupFlag(
 
 
 
+#[allow(non_snake_case)]
 pub async fn personcard_listpagingwithgroup_page_page_size_size(
     pool: Extension<Pool>,
     axum::extract::Path((page, size)): axum::extract::Path<(i64, i64)>,
@@ -2577,6 +2658,7 @@ pub async fn personcard_listpagingwithgroup_page_page_size_size(
 }
 
 
+#[allow(non_snake_case)]
 pub async fn personcard_listpaging_page_page_size_size(
     pool: Extension<Pool>,
     axum::extract::Path((page, size)): axum::extract::Path<(i64, i64)>,
@@ -2608,6 +2690,7 @@ pub async fn personcard_listpaging_page_page_size_size(
 }
 
 
+#[allow(non_snake_case)]
 pub async fn personcard_listVCf_idList(
     pool: Extension<Pool>,
     axum::extract::Path(id_list): axum::extract::Path<String>,
@@ -2638,6 +2721,7 @@ pub async fn personcard_listVCf_idList(
     )))
 }
 
+#[allow(non_snake_case)]
 pub async fn personcard_listPersonalVCf_idList(
     pool: Extension<Pool>,
     axum::extract::Path(id_list): axum::extract::Path<String>,
@@ -2668,6 +2752,7 @@ pub async fn personcard_listPersonalVCf_idList(
     )))
 }
 
+#[allow(non_snake_case)]
 pub async fn personcard_createQR_cardId(
     pool: Extension<Pool>,
     axum::extract::Path(card_id): axum::extract::Path<String>,
@@ -2705,6 +2790,7 @@ pub async fn personcard_createQR_cardId(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn personcard_createCode_cardId(
     pool: Extension<Pool>,
     axum::extract::Path(card_id): axum::extract::Path<String>,
@@ -2745,6 +2831,7 @@ pub async fn personcard_createCode_cardId(
 
 
 
+#[allow(non_snake_case)]
 pub async fn personattribute_list_flag_prev_count(
     pool: Extension<Pool>,
     axum::extract::Path((flag, count_str)): axum::extract::Path<(String, String)>,
@@ -2783,6 +2870,7 @@ pub async fn personattribute_list_flag_prev_count(
     )))
 }
 
+#[allow(non_snake_case)]
 pub async fn personattribute_list_flag_next_count(
     pool: Extension<Pool>,
     axum::extract::Path((flag, count_str)): axum::extract::Path<(String, String)>,
@@ -2821,6 +2909,7 @@ pub async fn personattribute_list_flag_next_count(
     )))
 }
 
+#[allow(non_snake_case)]
 pub async fn personattribute_list_person_personFlag(
     pool: Extension<Pool>,
     axum::extract::Path(person_flag): axum::extract::Path<String>,
@@ -2855,6 +2944,7 @@ pub async fn personattribute_list_person_personFlag(
 
 
 
+#[allow(non_snake_case)]
 pub async fn loginrecord_stream(
     pool: Extension<Pool>,
     axum::extract::Path(stream): axum::extract::Path<String>,
@@ -2886,6 +2976,7 @@ pub async fn loginrecord_stream(
 
 
 
+#[allow(non_snake_case)]
 pub async fn inputperson_result_flag_flag(
     pool: Extension<Pool>,
     axum::extract::Path(flag): axum::extract::Path<String>,
@@ -2915,6 +3006,7 @@ pub async fn inputperson_result_flag_flag(
     )))
 }
 
+#[allow(non_snake_case)]
 pub async fn identity_flag_order_before_followFlag(
     pool: Extension<Pool>,
     axum::extract::Path((flag, follow_flag)): axum::extract::Path<(String, String)>,
@@ -2983,6 +3075,7 @@ pub async fn identity_flag_order_before_followFlag(
 
 
 
+#[allow(non_snake_case)]
 pub async fn identity_list_flag_unitduty_name_unitDutyName(
     pool: Extension<Pool>,
     axum::extract::Path((flag, unit_duty_name)): axum::extract::Path<(String, String)>,
@@ -3013,6 +3106,7 @@ pub async fn identity_list_flag_unitduty_name_unitDutyName(
     )))
 }
 
+#[allow(non_snake_case)]
 pub async fn identity_list_flag_prev_count(
     pool: Extension<Pool>,
     axum::extract::Path((flag, count_str)): axum::extract::Path<(String, String)>,
@@ -3051,6 +3145,7 @@ pub async fn identity_list_flag_prev_count(
     )))
 }
 
+#[allow(non_snake_case)]
 pub async fn identity_list_flag_next_count(
     pool: Extension<Pool>,
     axum::extract::Path((flag, count_str)): axum::extract::Path<(String, String)>,
@@ -3089,6 +3184,7 @@ pub async fn identity_list_flag_next_count(
     )))
 }
 
+#[allow(non_snake_case)]
 pub async fn identity_list_unitduty_name_unitDutyName(
     pool: Extension<Pool>,
     axum::extract::Path(unit_duty_name): axum::extract::Path<String>,
@@ -3119,6 +3215,7 @@ pub async fn identity_list_unitduty_name_unitDutyName(
     )))
 }
 
+#[allow(non_snake_case)]
 pub async fn identity_list_unit_unitFlag(
     pool: Extension<Pool>,
     axum::extract::Path(unit_flag): axum::extract::Path<String>,
@@ -3151,6 +3248,7 @@ pub async fn identity_list_unit_unitFlag(
 
 
 
+#[allow(non_snake_case)]
 pub async fn identity_list_person_personFlag(
     pool: Extension<Pool>,
     axum::extract::Path(person_flag): axum::extract::Path<String>,
@@ -3184,6 +3282,7 @@ pub async fn identity_list_person_personFlag(
 
 
 
+#[allow(non_snake_case)]
 pub async fn identity_list_like(
     pool: Extension<Pool>,
     axum::extract::Json(req): axum::extract::Json<Value>,
@@ -3227,6 +3326,7 @@ pub async fn identity_list_like(
 
 
 
+#[allow(non_snake_case)]
 pub async fn group_list_flag_prev_count(
     pool: Extension<Pool>,
     axum::extract::Path((flag, count_str)): axum::extract::Path<(String, String)>,
@@ -3265,6 +3365,7 @@ pub async fn group_list_flag_prev_count(
     )))
 }
 
+#[allow(non_snake_case)]
 pub async fn group_list_flag_next_count(
     pool: Extension<Pool>,
     axum::extract::Path((flag, count_str)): axum::extract::Path<(String, String)>,
@@ -3303,6 +3404,7 @@ pub async fn group_list_flag_next_count(
     )))
 }
 
+#[allow(non_snake_case)]
 pub async fn group_list_role_roleFlag(
     pool: Extension<Pool>,
     axum::extract::Path(role_flag): axum::extract::Path<String>,
@@ -3335,6 +3437,7 @@ pub async fn group_list_role_roleFlag(
 
 
 
+#[allow(non_snake_case)]
 pub async fn group_list_person_personFlag_sup_nested(
     pool: Extension<Pool>,
     axum::extract::Path(person_flag): axum::extract::Path<String>,
@@ -3365,6 +3468,7 @@ pub async fn group_list_person_personFlag_sup_nested(
     )))
 }
 
+#[allow(non_snake_case)]
 pub async fn group_list_person_personFlag_sup_direct(
     pool: Extension<Pool>,
     axum::extract::Path(person_flag): axum::extract::Path<String>,
@@ -3398,6 +3502,7 @@ pub async fn group_list_person_personFlag_sup_direct(
 
 
 
+#[allow(non_snake_case)]
 pub async fn group_list_like(
     pool: Extension<Pool>,
     axum::extract::Json(req): axum::extract::Json<Value>,
@@ -3431,7 +3536,8 @@ pub async fn group_list_like(
 }
 
 pub fn router(pool: deadpool_postgres::Pool) -> Router {
-    let router = Router::new()
+    
+    Router::new()
     .route("/jaxrs/organization/assemble/control/export/export/all", get(export_export_all))
     .route("/jaxrs/organization/assemble/control/export/result/flag/{flag}", get(export_result_flag_flag))
     .route("/jaxrs/organization/assemble/control/export/zhengwudingding/person", get(export_zhengwudingding_person))
@@ -3549,8 +3655,7 @@ pub fn router(pool: deadpool_postgres::Pool) -> Router {
     .route("/jaxrs/organization/assemble/control/unitduty/{flag}/mockdeletetoget", delete(unitduty_flag_mockdeletetoget))
     .route("/jaxrs/organization/assemble/control/unitduty/update/member", put(unitduty_update_member))
     .merge(u2_router::router())
-    .layer(Extension(pool));
-    router
+    .layer(Extension(pool))
 }
 
 #[cfg(test)]

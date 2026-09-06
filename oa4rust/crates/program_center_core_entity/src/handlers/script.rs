@@ -1,6 +1,6 @@
-use axum::{extract::{Extension, Path}, routing::{get, post, put, delete}, Json, Router};
+use axum::{extract::{Extension, Path}, Json, Router};
 use deadpool_postgres::Pool;
-use sea_orm::{ActiveModelTrait, ColumnTrait, DatabaseConnection, EntityTrait, QueryOrder, QuerySelect, Set};
+use sea_orm::{ActiveModelTrait, DatabaseConnection, EntityTrait, QueryOrder, QuerySelect, Set};
 use serde::Deserialize;
 use serde_json::Value;
 use shared::{error::AppError, middleware::require_owner, response::ActionResult, session::Session};

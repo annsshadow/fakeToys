@@ -50,4 +50,3 @@ pub mod soft_delete;
 
 pub use helpers::*;
 pub use pagination::*;
-pub use soft_delete::*;

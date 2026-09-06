@@ -23,6 +23,7 @@ fn build_json_object(pairs: &[(&str, Option<Value>)]) -> Value {
 }
 
 /// 获取思维导图列表
+#[allow(non_snake_case)]
 pub async fn list(
     db: Extension<DatabaseConnection>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -61,6 +62,7 @@ pub async fn list(
 }
 
 /// 获取思维导图文件夹列表
+#[allow(non_snake_case)]
 pub async fn folder_list(
     db: Extension<DatabaseConnection>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -106,6 +108,7 @@ pub async fn folder_list(
 }
 
 /// 获取思维导图版本列表
+#[allow(non_snake_case)]
 pub async fn version_list(
     db: Extension<DatabaseConnection>,
     Path(mind_id): Path<String>,
@@ -157,6 +160,7 @@ pub async fn version_list(
 }
 
 /// 创建思维导图
+#[allow(non_snake_case)]
 pub async fn create_mind(
     db: Extension<DatabaseConnection>,
     Json(payload): Json<Value>,
@@ -202,6 +206,7 @@ pub async fn create_mind(
 }
 
 /// 更新思维导图
+#[allow(non_snake_case)]
 pub async fn update_mind(
     db: Extension<DatabaseConnection>,
     Path(id): Path<String>,
@@ -251,6 +256,7 @@ pub async fn update_mind(
 }
 
 /// 删除思维导图
+#[allow(non_snake_case)]
 pub async fn delete_mind(
     db: Extension<DatabaseConnection>,
     Path(id): Path<String>,
@@ -274,6 +280,7 @@ pub async fn delete_mind(
 }
 
 /// 创建文件夹
+#[allow(non_snake_case)]
 pub async fn create_folder(
     db: Extension<DatabaseConnection>,
     Json(payload): Json<Value>,
@@ -322,6 +329,7 @@ pub async fn create_folder(
 }
 
 /// 更新文件夹
+#[allow(non_snake_case)]
 pub async fn update_folder(
     db: Extension<DatabaseConnection>,
     Path(id): Path<String>,
@@ -382,6 +390,7 @@ pub async fn update_folder(
 }
 
 /// 删除文件夹
+#[allow(non_snake_case)]
 pub async fn delete_folder(
     db: Extension<DatabaseConnection>,
     Path(id): Path<String>,
@@ -405,6 +414,7 @@ pub async fn delete_folder(
 }
 
 /// 创建版本
+#[allow(non_snake_case)]
 pub async fn create_version(
     db: Extension<DatabaseConnection>,
     Json(payload): Json<Value>,

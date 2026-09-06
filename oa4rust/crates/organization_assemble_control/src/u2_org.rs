@@ -11,6 +11,7 @@ fn unit_row_json(row: &deadpool_postgres::tokio_postgres::Row) -> Value {
     entity_row_json(row, UNIT_EXTRA)
 }
 
+#[allow(non_snake_case)]
 pub async fn unit_create(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
@@ -58,6 +59,7 @@ pub async fn unit_create(
     ))
 }
 
+#[allow(non_snake_case)]
 pub async fn unit_edit(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
@@ -102,6 +104,7 @@ pub async fn unit_edit(
     ))
 }
 
+#[allow(non_snake_case)]
 pub async fn unit_mock_put_to_post(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
@@ -111,6 +114,7 @@ pub async fn unit_mock_put_to_post(
     unit_edit(pool, session, Path(flag), Json(body)).await
 }
 
+#[allow(non_snake_case)]
 pub async fn unit_delete(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
@@ -126,6 +130,7 @@ pub async fn unit_delete(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn unit_mock_delete_to_get(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
@@ -163,14 +168,17 @@ async fn top_units(pool: &Pool, unit_type: Option<&str>, java_bare: bool) -> Han
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn unit_get_root(pool: Extension<Pool>) -> HandlerResult {
     top_units(&pool, None, false).await
 }
 
+#[allow(non_snake_case)]
 pub async fn unit_list_top_root(pool: Extension<Pool>) -> HandlerResult {
     top_units(&pool, None, true).await
 }
 
+#[allow(non_snake_case)]
 pub async fn unit_list_top_with_type(
     pool: Extension<Pool>,
     Path(unit_type): Path<String>,
@@ -178,10 +186,12 @@ pub async fn unit_list_top_with_type(
     top_units(&pool, Some(&unit_type), true).await
 }
 
+#[allow(non_snake_case)]
 pub async fn unit_control_top(pool: Extension<Pool>) -> HandlerResult {
     top_units(&pool, None, true).await
 }
 
+#[allow(non_snake_case)]
 pub async fn unit_list_types(pool: Extension<Pool>) -> HandlerResult {
     let client = client_of(&pool).await?;
     let rows = client
@@ -199,6 +209,7 @@ pub async fn unit_list_types(pool: Extension<Pool>) -> HandlerResult {
     list_ok(data)
 }
 
+#[allow(non_snake_case)]
 pub async fn unit_list_prev(
     pool: Extension<Pool>,
     Path((flag, count)): Path<(String, i64)>,
@@ -225,6 +236,7 @@ pub async fn unit_list_prev(
     list_ok(rows.iter().map(unit_row_json).collect())
 }
 
+#[allow(non_snake_case)]
 pub async fn unit_list_sub_direct(
     pool: Extension<Pool>,
     Path(flag): Path<String>,
@@ -240,6 +252,7 @@ pub async fn unit_list_sub_direct(
     list_ok(rows.iter().map(unit_row_json).collect())
 }
 
+#[allow(non_snake_case)]
 pub async fn unit_list_sub_direct_with_type(
     pool: Extension<Pool>,
     Path((flag, unit_type)): Path<(String, String)>,
@@ -272,6 +285,7 @@ const ANCESTOR_CTE: &str = "WITH RECURSIVE chain(id, depth) AS (
     SELECT u.id, c.depth + 1 FROM x_org_unit u JOIN chain c ON u.parent_id = c.id WHERE c.depth < 32
 )";
 
+#[allow(non_snake_case)]
 pub async fn unit_get_with_identity_level(
     pool: Extension<Pool>,
     Path((identity_flag, level)): Path<(String, i32)>,
@@ -297,6 +311,7 @@ pub async fn unit_get_with_identity_level(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn unit_get_with_identity_type(
     pool: Extension<Pool>,
     Path((identity_flag, unit_type)): Path<(String, String)>,
@@ -318,6 +333,7 @@ pub async fn unit_get_with_identity_type(
     list_ok(rows.iter().map(unit_row_json).collect())
 }
 
+#[allow(non_snake_case)]
 pub async fn unit_get_sup_direct(
     pool: Extension<Pool>,
     Path(flag): Path<String>,
@@ -359,6 +375,7 @@ async fn units_by_flags(pool: &Pool, flags: &[String]) -> HandlerResult {
     list_ok_java(data)
 }
 
+#[allow(non_snake_case)]
 pub async fn unit_list_by_body(pool: Extension<Pool>, Json(body): Json<Value>) -> HandlerResult {
     let flags = json_str_list(&body, &["unitList"]);
     if flags.is_empty() {
@@ -367,6 +384,7 @@ pub async fn unit_list_by_body(pool: Extension<Pool>, Json(body): Json<Value>) -
     units_by_flags(&pool, &flags).await
 }
 
+#[allow(non_snake_case)]
 pub async fn unit_list_controller(pool: Extension<Pool>, Json(body): Json<Value>) -> HandlerResult {
     let flags = json_str_list(&body, &["unitList", "controllerList"]);
     if flags.is_empty() {
@@ -375,6 +393,7 @@ pub async fn unit_list_controller(pool: Extension<Pool>, Json(body): Json<Value>
     units_by_flags(&pool, &flags).await
 }
 
+#[allow(non_snake_case)]
 pub async fn unit_list_with_unit_type(
     pool: Extension<Pool>,
     Json(body): Json<Value>,
@@ -412,6 +431,7 @@ pub async fn unit_list_with_unit_type(
     list_ok(rows.iter().map(unit_row_json).collect())
 }
 
+#[allow(non_snake_case)]
 pub async fn unit_list_pinyininitial(
     pool: Extension<Pool>,
     Json(body): Json<Value>,
@@ -420,11 +440,13 @@ pub async fn unit_list_pinyininitial(
     generic_pinyininitial_filter(&pool, UNIT_TABLE, &initials, UNIT_EXTRA, true).await
 }
 
+#[allow(non_snake_case)]
 pub async fn unit_list_like(pool: Extension<Pool>, Json(body): Json<Value>) -> HandlerResult {
     let key = opt(&body, &["key", "name"]).unwrap_or_default();
     generic_like_search(&pool, UNIT_TABLE, key, false, UNIT_EXTRA, true).await
 }
 
+#[allow(non_snake_case)]
 pub async fn unit_list_like_pinyin(
     pool: Extension<Pool>,
     Json(body): Json<Value>,
@@ -435,6 +457,7 @@ pub async fn unit_list_like_pinyin(
 
 // 鈹€鈹€ identity 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
 
+#[allow(non_snake_case)]
 pub async fn identity_create(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
@@ -484,6 +507,7 @@ pub async fn identity_create(
     ))
 }
 
+#[allow(non_snake_case)]
 pub async fn identity_edit(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
@@ -520,6 +544,7 @@ pub async fn identity_edit(
     ))
 }
 
+#[allow(non_snake_case)]
 pub async fn identity_mock_put_to_post(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
@@ -529,6 +554,7 @@ pub async fn identity_mock_put_to_post(
     identity_edit(pool, session, Path(flag), Json(body)).await
 }
 
+#[allow(non_snake_case)]
 pub async fn identity_delete(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
@@ -544,6 +570,7 @@ pub async fn identity_delete(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn identity_list_like(
     pool: Extension<Pool>,
     Json(body): Json<Value>,
@@ -552,6 +579,7 @@ pub async fn identity_list_like(
     generic_like_search(&pool, IDENTITY_TABLE, key, false, IDENTITY_EXTRA, false).await
 }
 
+#[allow(non_snake_case)]
 pub async fn identity_list_like_pinyin(
     pool: Extension<Pool>,
     Json(body): Json<Value>,
@@ -560,6 +588,7 @@ pub async fn identity_list_like_pinyin(
     generic_like_search(&pool, IDENTITY_TABLE, key, true, IDENTITY_EXTRA, false).await
 }
 
+#[allow(non_snake_case)]
 pub async fn identity_list_pinyininitial(
     pool: Extension<Pool>,
     Json(body): Json<Value>,
@@ -570,6 +599,7 @@ pub async fn identity_list_pinyininitial(
 
 // 鈹€鈹€ group 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
 
+#[allow(non_snake_case)]
 pub async fn group_create(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
@@ -613,6 +643,7 @@ pub async fn group_create(
     ))
 }
 
+#[allow(non_snake_case)]
 pub async fn group_edit(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
@@ -651,6 +682,7 @@ pub async fn group_edit(
     ))
 }
 
+#[allow(non_snake_case)]
 pub async fn group_mock_put_to_post(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
@@ -660,6 +692,7 @@ pub async fn group_mock_put_to_post(
     group_edit(pool, session, Path(flag), Json(body)).await
 }
 
+#[allow(non_snake_case)]
 pub async fn group_delete(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
@@ -683,6 +716,7 @@ pub async fn group_delete(
     ))
 }
 
+#[allow(non_snake_case)]
 pub async fn group_add_member(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
@@ -723,6 +757,7 @@ pub async fn group_add_member(
     ))
 }
 
+#[allow(non_snake_case)]
 pub async fn group_add_member_mock_put_to_post(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
@@ -732,6 +767,7 @@ pub async fn group_add_member_mock_put_to_post(
     group_add_member(pool, session, Path(flag), Json(body)).await
 }
 
+#[allow(non_snake_case)]
 pub async fn group_delete_member(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
@@ -768,6 +804,7 @@ pub async fn group_delete_member(
     ))
 }
 
+#[allow(non_snake_case)]
 pub async fn group_delete_member_mock_put_to_post(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
@@ -777,11 +814,13 @@ pub async fn group_delete_member_mock_put_to_post(
     group_delete_member(pool, session, Path(flag), Json(body)).await
 }
 
+#[allow(non_snake_case)]
 pub async fn group_list_like(pool: Extension<Pool>, Json(body): Json<Value>) -> HandlerResult {
     let key = opt(&body, &["key", "name"]).unwrap_or_default();
     generic_like_search(&pool, GROUP_TABLE, key, false, GROUP_EXTRA, false).await
 }
 
+#[allow(non_snake_case)]
 pub async fn group_list_like_pinyin(
     pool: Extension<Pool>,
     Json(body): Json<Value>,
@@ -790,6 +829,7 @@ pub async fn group_list_like_pinyin(
     generic_like_search(&pool, GROUP_TABLE, key, true, GROUP_EXTRA, false).await
 }
 
+#[allow(non_snake_case)]
 pub async fn group_list_pinyininitial(
     pool: Extension<Pool>,
     Json(body): Json<Value>,
@@ -800,6 +840,7 @@ pub async fn group_list_pinyininitial(
 
 // 鈹€鈹€ role 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
 
+#[allow(non_snake_case)]
 pub async fn role_create(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
@@ -834,6 +875,7 @@ pub async fn role_create(
     ))
 }
 
+#[allow(non_snake_case)]
 pub async fn role_edit(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
@@ -870,6 +912,7 @@ pub async fn role_edit(
     ))
 }
 
+#[allow(non_snake_case)]
 pub async fn role_mock_put_to_post(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
@@ -879,6 +922,7 @@ pub async fn role_mock_put_to_post(
     role_edit(pool, session, Path(flag), Json(body)).await
 }
 
+#[allow(non_snake_case)]
 pub async fn role_delete(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
@@ -898,11 +942,13 @@ pub async fn role_delete(
     ))
 }
 
+#[allow(non_snake_case)]
 pub async fn role_list_like(pool: Extension<Pool>, Json(body): Json<Value>) -> HandlerResult {
     let key = opt(&body, &["key", "name"]).unwrap_or_default();
     generic_like_search(&pool, ROLE_TABLE, key, false, ROLE_EXTRA, false).await
 }
 
+#[allow(non_snake_case)]
 pub async fn role_list_like_pinyin(
     pool: Extension<Pool>,
     Json(body): Json<Value>,
@@ -911,6 +957,7 @@ pub async fn role_list_like_pinyin(
     generic_like_search(&pool, ROLE_TABLE, key, true, ROLE_EXTRA, false).await
 }
 
+#[allow(non_snake_case)]
 pub async fn role_list_pinyininitial(
     pool: Extension<Pool>,
     Json(body): Json<Value>,
@@ -921,6 +968,7 @@ pub async fn role_list_pinyininitial(
 
 // 鈹€鈹€ unitduty 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
 
+#[allow(non_snake_case)]
 pub async fn duty_create(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
@@ -965,6 +1013,7 @@ pub async fn duty_create(
     ))
 }
 
+#[allow(non_snake_case)]
 pub async fn duty_edit(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
@@ -1003,6 +1052,7 @@ pub async fn duty_edit(
     ))
 }
 
+#[allow(non_snake_case)]
 pub async fn duty_mock_put_to_post(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
@@ -1012,6 +1062,7 @@ pub async fn duty_mock_put_to_post(
     duty_edit(pool, session, Path(flag), Json(body)).await
 }
 
+#[allow(non_snake_case)]
 pub async fn duty_delete(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
@@ -1027,6 +1078,7 @@ pub async fn duty_delete(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn duty_update_member(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
@@ -1080,6 +1132,7 @@ pub async fn duty_update_member(
     ))
 }
 
+#[allow(non_snake_case)]
 pub async fn duty_list_like(pool: Extension<Pool>, Json(body): Json<Value>) -> HandlerResult {
     let key = opt(&body, &["key", "name"]).unwrap_or_default();
     generic_like_search(&pool, DUTY_TABLE, key, false, DUTY_EXTRA, false).await

@@ -107,6 +107,7 @@ async fn record_exists(
 
 // ── applicationdict（ApplicationDictAction）─────────────────────────────────
 
+#[allow(non_snake_case)]
 pub async fn dict_edit(
     pool: Extension<Pool>,
     Path(id): Path<String>,
@@ -427,6 +428,7 @@ async fn data_delete_key(pool: &Pool, scope: &str, bundle: &str, key: &str) -> H
     ok(json!({ "scope": scope, "bundle": bundle, "deleted": true }))
 }
 
+#[allow(non_snake_case)]
 pub async fn data_job_put(
     pool: Extension<Pool>,
     Path(job): Path<String>,
@@ -435,6 +437,7 @@ pub async fn data_job_put(
     data_put_whole(&pool, DATA_SCOPE_JOB, &job, body).await
 }
 
+#[allow(non_snake_case)]
 pub async fn data_job_put_path(
     pool: Extension<Pool>,
     Path((job, path)): Path<(String, String)>,
@@ -443,6 +446,7 @@ pub async fn data_job_put_path(
     data_set_key(&pool, DATA_SCOPE_JOB, &job, &path, body, false).await
 }
 
+#[allow(non_snake_case)]
 pub async fn data_work_create(
     pool: Extension<Pool>,
     Path(id): Path<String>,
@@ -451,6 +455,7 @@ pub async fn data_work_create(
     data_create_whole(&pool, DATA_SCOPE_WORK, &id, body, Some("x_work")).await
 }
 
+#[allow(non_snake_case)]
 pub async fn data_work_update(
     pool: Extension<Pool>,
     Path(id): Path<String>,
@@ -459,6 +464,7 @@ pub async fn data_work_update(
     data_update_whole(&pool, DATA_SCOPE_WORK, &id, body).await
 }
 
+#[allow(non_snake_case)]
 pub async fn data_work_create_path(
     pool: Extension<Pool>,
     Path((id, path)): Path<(String, String)>,
@@ -467,6 +473,7 @@ pub async fn data_work_create_path(
     data_set_key(&pool, DATA_SCOPE_WORK, &id, &path, body, true).await
 }
 
+#[allow(non_snake_case)]
 pub async fn data_work_update_path(
     pool: Extension<Pool>,
     Path((id, path)): Path<(String, String)>,
@@ -475,6 +482,7 @@ pub async fn data_work_update_path(
     data_set_key(&pool, DATA_SCOPE_WORK, &id, &path, body, false).await
 }
 
+#[allow(non_snake_case)]
 pub async fn data_work_delete(
     pool: Extension<Pool>,
     Path(id): Path<String>,
@@ -482,6 +490,7 @@ pub async fn data_work_delete(
     data_delete_whole(&pool, DATA_SCOPE_WORK, &id).await
 }
 
+#[allow(non_snake_case)]
 pub async fn data_work_delete_path(
     pool: Extension<Pool>,
     Path((id, path)): Path<(String, String)>,
@@ -489,6 +498,7 @@ pub async fn data_work_delete_path(
     data_delete_key(&pool, DATA_SCOPE_WORK, &id, &path).await
 }
 
+#[allow(non_snake_case)]
 pub async fn data_wc_update(
     pool: Extension<Pool>,
     Path(id): Path<String>,
@@ -502,6 +512,7 @@ pub async fn data_wc_update(
     data_put_whole(&pool, DATA_SCOPE_WC, &id, body).await
 }
 
+#[allow(non_snake_case)]
 pub async fn data_wc_update_path(
     pool: Extension<Pool>,
     Path((id, path)): Path<(String, String)>,
@@ -518,6 +529,7 @@ pub async fn data_wc_update_path(
 // ── attachment（AttachmentAction）───────────────────────────────────────────
 
 /// DELETE attachment/{id}：软删除
+#[allow(non_snake_case)]
 pub async fn att_delete_id(pool: Extension<Pool>, Path(id): Path<String>) -> H {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let n = client
@@ -535,6 +547,7 @@ pub async fn att_delete_id(pool: Extension<Pool>, Path(id): Path<String>) -> H {
 }
 
 /// DELETE attachment/{id}/work/{workId}：IDOR 门禁——附件必须归属该 work
+#[allow(non_snake_case)]
 pub async fn att_delete_with_work(
     pool: Extension<Pool>,
     Path((id, work_id)): Path<(String, String)>,
@@ -565,6 +578,7 @@ pub async fn att_delete_with_work(
 }
 
 /// DELETE attachment/{id}/workcompleted/{workCompletedId}：IDOR 门禁同理
+#[allow(non_snake_case)]
 pub async fn att_delete_with_workcompleted(
     pool: Extension<Pool>,
     Path((id, wc_id)): Path<(String, String)>,
@@ -595,6 +609,7 @@ pub async fn att_delete_with_workcompleted(
 }
 
 /// PUT attachment/{id}：编辑元信息（name）
+#[allow(non_snake_case)]
 pub async fn att_edit_id(
     pool: Extension<Pool>,
     Path(id): Path<String>,
@@ -626,6 +641,7 @@ pub async fn att_edit_id(
 }
 
 /// PUT attachment/edit/{id}/text：编辑文本内容（content 列承载 text）
+#[allow(non_snake_case)]
 pub async fn att_edit_text(
     pool: Extension<Pool>,
     Path(id): Path<String>,
@@ -651,6 +667,7 @@ pub async fn att_edit_text(
 
 /// POST attachment/copy/work/{workId}：按 Wi.attachmentList 复制到目标 work；
 /// 归一化查重——目标下同名附件已存在则跳过。
+#[allow(non_snake_case)]
 pub async fn att_copy_to_work(
     pool: Extension<Pool>,
     Path(work_id): Path<String>,
@@ -714,6 +731,7 @@ pub async fn att_copy_to_work(
 // ── job（JobAction）────────────────────────────────────────────────────────
 
 /// DELETE job/{job}：结束 job 及其运行任务
+#[allow(non_snake_case)]
 pub async fn job_delete(pool: Extension<Pool>, Path(job): Path<String>) -> H {
     let mut client = pool.get().await.map_err(|_| AppError::Internal)?;
     let tx = client.transaction().await.map_err(|_| AppError::Internal)?;
@@ -740,6 +758,7 @@ pub async fn job_delete(pool: Extension<Pool>, Path(job): Path<String>) -> H {
 }
 
 /// GET job/v2/{job}/person/{person}/view：该人员视角下的 job 任务视图
+#[allow(non_snake_case)]
 pub async fn job_v2_view(
     pool: Extension<Pool>,
     Path((job, person)): Path<(String, String)>,
@@ -807,6 +826,7 @@ async fn read_create(pool: &Pool, bundle: &str, body: Value, scope: &str, gate_t
 }
 
 /// POST read/work/{workId}
+#[allow(non_snake_case)]
 pub async fn read_create_with_work(
     pool: Extension<Pool>,
     Path(work_id): Path<String>,
@@ -816,6 +836,7 @@ pub async fn read_create_with_work(
 }
 
 /// POST read/workcompleted/{workCompletedId}
+#[allow(non_snake_case)]
 pub async fn read_create_with_workcompleted(
     pool: Extension<Pool>,
     Path(wc_id): Path<String>,
@@ -825,6 +846,7 @@ pub async fn read_create_with_workcompleted(
 }
 
 /// DELETE read/{id}：软删除
+#[allow(non_snake_case)]
 pub async fn read_delete(pool: Extension<Pool>, Path(id): Path<String>) -> H {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let n = client
@@ -841,6 +863,7 @@ pub async fn read_delete(pool: Extension<Pool>, Path(id): Path<String>) -> H {
 }
 
 /// PUT read/{id}/processing：标记已读——事务内迁移至 x_readcompleted 并软删源记录
+#[allow(non_snake_case)]
 pub async fn read_processing(pool: Extension<Pool>, Path(id): Path<String>) -> H {
     let mut client = pool.get().await.map_err(|_| AppError::Internal)?;
     let tx = client.transaction().await.map_err(|_| AppError::Internal)?;
@@ -877,6 +900,7 @@ pub async fn read_processing(pool: Extension<Pool>, Path(id): Path<String>) -> H
 }
 
 /// POST read/{id}/replace：更换阅读人
+#[allow(non_snake_case)]
 pub async fn read_replace(
     pool: Extension<Pool>,
     Path(id): Path<String>,
@@ -901,6 +925,7 @@ pub async fn read_replace(
 }
 
 /// POST read/{id}/reset：重置为待读（可同时更换阅读人）
+#[allow(non_snake_case)]
 pub async fn read_reset(
     pool: Extension<Pool>,
     Path(id): Path<String>,
@@ -934,6 +959,7 @@ pub async fn read_reset(
 // ── readcompleted ──────────────────────────────────────────────────────────
 
 /// DELETE readcompleted/{id}
+#[allow(non_snake_case)]
 pub async fn readcompleted_delete(pool: Extension<Pool>, Path(id): Path<String>) -> H {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let n = client
@@ -971,6 +997,7 @@ async fn record_create_dedup(pool: &Pool, work_id: &str, body: Value) -> H {
 }
 
 /// POST record/job/{job}
+#[allow(non_snake_case)]
 pub async fn record_create_with_job(
     pool: Extension<Pool>,
     Path(job): Path<String>,
@@ -980,6 +1007,7 @@ pub async fn record_create_with_job(
 }
 
 /// POST record/work/processing
+#[allow(non_snake_case)]
 pub async fn record_work_processing(pool: Extension<Pool>, Json(body): Json<Value>) -> H {
     let work = body_str(&body, &["work", "workId"]);
     if work.is_empty() {
@@ -989,6 +1017,7 @@ pub async fn record_work_processing(pool: Extension<Pool>, Json(body): Json<Valu
 }
 
 /// POST record/work/terminate
+#[allow(non_snake_case)]
 pub async fn record_work_terminate(pool: Extension<Pool>, Json(body): Json<Value>) -> H {
     let work = body_str(&body, &["work", "workId"]);
     if work.is_empty() {
@@ -1003,6 +1032,7 @@ pub async fn record_work_terminate(pool: Extension<Pool>, Json(body): Json<Value
 }
 
 /// PUT record/{id}：编辑记录内容/类型
+#[allow(non_snake_case)]
 pub async fn record_edit(
     pool: Extension<Pool>,
     Path(id): Path<String>,
@@ -1052,6 +1082,7 @@ pub async fn record_edit(
 }
 
 /// DELETE record/{id}：物理删除（Java Record delete 语义）
+#[allow(non_snake_case)]
 pub async fn record_delete(pool: Extension<Pool>, Path(id): Path<String>) -> H {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let n = client
@@ -1124,6 +1155,7 @@ async fn review_create_batch(pool: &Pool, work_id: &str, body: Value, gate_table
 }
 
 /// POST review/create/work
+#[allow(non_snake_case)]
 pub async fn review_create_work(
     pool: Extension<Pool>,
     Json(body): Json<Value>,
@@ -1133,6 +1165,7 @@ pub async fn review_create_work(
 }
 
 /// POST review/create/workcompleted
+#[allow(non_snake_case)]
 pub async fn review_create_workcompleted(
     pool: Extension<Pool>,
     Json(body): Json<Value>,
@@ -1142,6 +1175,7 @@ pub async fn review_create_workcompleted(
 }
 
 /// POST review/init/review：为所有有任务的工作补齐缺失评审（幂等批量）
+#[allow(non_snake_case)]
 pub async fn review_init_for_view(pool: Extension<Pool>) -> H {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let rows = client
@@ -1175,6 +1209,7 @@ pub async fn review_init_for_view(pool: Extension<Pool>) -> H {
 }
 
 /// DELETE review/{id}：软删除
+#[allow(non_snake_case)]
 pub async fn review_delete(pool: Extension<Pool>, Path(id): Path<String>) -> H {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let n = client
@@ -1193,6 +1228,7 @@ pub async fn review_delete(pool: Extension<Pool>, Path(id): Path<String>) -> H {
 // ── snap（SnapAction）──────────────────────────────────────────────────────
 
 /// DELETE snap/{id}
+#[allow(non_snake_case)]
 pub async fn snap_delete(pool: Extension<Pool>, Path(id): Path<String>) -> H {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let n = client
@@ -1280,6 +1316,7 @@ async fn snap_take_for_wc(pool: &Pool, wc_id: &str, snap_type: &str) -> H {
 }
 
 /// GET snap/work/{workId}/type/abandoned：放弃工作（快照+取消任务+置状态）
+#[allow(non_snake_case)]
 pub async fn snap_type_abandoned(
     pool: Extension<Pool>,
     Path(work_id): Path<String>,
@@ -1288,11 +1325,13 @@ pub async fn snap_type_abandoned(
 }
 
 /// GET snap/work/{workId}/type/snap
+#[allow(non_snake_case)]
 pub async fn snap_type_snap(pool: Extension<Pool>, Path(work_id): Path<String>) -> H {
     snap_take_for_work(&pool, &work_id, "snap", false, None).await
 }
 
 /// GET snap/work/{workId}/type/suspend：挂起工作
+#[allow(non_snake_case)]
 pub async fn snap_type_suspend(
     pool: Extension<Pool>,
     Path(work_id): Path<String>,
@@ -1301,6 +1340,7 @@ pub async fn snap_type_suspend(
 }
 
 /// GET snap/workcompleted/{workCompletedId}/type/abandonedworkcompleted
+#[allow(non_snake_case)]
 pub async fn snap_wc_type_abandoned(
     pool: Extension<Pool>,
     Path(wc_id): Path<String>,
@@ -1309,6 +1349,7 @@ pub async fn snap_wc_type_abandoned(
 }
 
 /// GET snap/workcompleted/{workCompletedId}/type/snapworkcompleted
+#[allow(non_snake_case)]
 pub async fn snap_wc_type_snap(
     pool: Extension<Pool>,
     Path(wc_id): Path<String>,
@@ -1319,6 +1360,7 @@ pub async fn snap_wc_type_snap(
 // ── task（TaskAction 补缺）─────────────────────────────────────────────────
 
 /// DELETE task/{id}：软删除待办
+#[allow(non_snake_case)]
 pub async fn task_delete(pool: Extension<Pool>, Path(id): Path<String>) -> H {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let n = client
@@ -1337,6 +1379,7 @@ pub async fn task_delete(pool: Extension<Pool>, Path(id): Path<String>) -> H {
 // ── taskcompleted（TaskCompletedAction 补缺）───────────────────────────────
 
 /// DELETE taskcompleted/{id}：物理删除已完成任务
+#[allow(non_snake_case)]
 pub async fn taskcompleted_delete(pool: Extension<Pool>, Path(id): Path<String>) -> H {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let n = client
@@ -1350,6 +1393,7 @@ pub async fn taskcompleted_delete(pool: Extension<Pool>, Path(id): Path<String>)
 }
 
 /// GET taskcompleted/{id}/press/work/{work}：催办；IDOR 门禁——记录必须归属该 work
+#[allow(non_snake_case)]
 pub async fn taskcompleted_press(
     pool: Extension<Pool>,
     Path((id, work)): Path<(String, String)>,
@@ -1377,6 +1421,7 @@ pub async fn taskcompleted_press(
 }
 
 /// PUT taskcompleted/next/task/identity：设置任务的下一处理身份
+#[allow(non_snake_case)]
 pub async fn taskcompleted_update_next_identity(pool: Extension<Pool>, Json(body): Json<Value>) -> H {
     let id = body_str(&body, &["id", "taskId"]);
     let identity = body_str(&body, &["nextTaskIdentity", "nextIdentity", "identity"]);
@@ -1400,6 +1445,7 @@ pub async fn taskcompleted_update_next_identity(pool: Extension<Pool>, Json(body
 // ── touch（TouchAction：参数化批量维护作业，全部真实 SQL）──────────────────
 
 /// GET touch/cleanevent：清理超过 24h 的陈旧事件记录
+#[allow(non_snake_case)]
 pub async fn touch_clean_event(pool: Extension<Pool>) -> H {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let n = client
@@ -1414,6 +1460,7 @@ pub async fn touch_clean_event(pool: Extension<Pool>) -> H {
 }
 
 /// GET touch/deletedraft：清理已结束工作的草稿
+#[allow(non_snake_case)]
 pub async fn touch_delete_draft(pool: Extension<Pool>) -> H {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let n = client
@@ -1429,6 +1476,7 @@ pub async fn touch_delete_draft(pool: Extension<Pool>) -> H {
 }
 
 /// GET touch/handoverjob：把无主 job 移交其工作创建者
+#[allow(non_snake_case)]
 pub async fn touch_handover_job(pool: Extension<Pool>) -> H {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let n = client
@@ -1445,6 +1493,7 @@ pub async fn touch_handover_job(pool: Extension<Pool>) -> H {
 }
 
 /// GET touch/loglongdetained：滞留超 24h 的活动工作补记日志（按内容幂等去重）
+#[allow(non_snake_case)]
 pub async fn touch_log_long_detained(pool: Extension<Pool>) -> H {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let rows = client
@@ -1472,6 +1521,7 @@ pub async fn touch_log_long_detained(pool: Extension<Pool>) -> H {
 }
 
 /// GET touch/touchdelay：为存在过期任务的工作补接触摸记录（每日去重）
+#[allow(non_snake_case)]
 pub async fn touch_delay(pool: Extension<Pool>) -> H {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let rows = client
@@ -1496,6 +1546,7 @@ pub async fn touch_delay(pool: Extension<Pool>) -> H {
 }
 
 /// GET touch/urge：为滞留超 24h 的活动任务补催办记录（每日去重）
+#[allow(non_snake_case)]
 pub async fn touch_urge(pool: Extension<Pool>) -> H {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let rows = client
@@ -1519,6 +1570,7 @@ pub async fn touch_urge(pool: Extension<Pool>) -> H {
 }
 
 /// GET touch/merge：合并同 work 的重复 workcompleted（保留最早一条）
+#[allow(non_snake_case)]
 pub async fn touch_merge(pool: Extension<Pool>) -> H {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let n = client
@@ -1535,6 +1587,7 @@ pub async fn touch_merge(pool: Extension<Pool>) -> H {
 }
 
 /// GET touch/mergeitem：合并同名重复附件（同一归属下保留最早一条）
+#[allow(non_snake_case)]
 pub async fn touch_merge_item(pool: Extension<Pool>) -> H {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let n = client
@@ -1556,6 +1609,7 @@ pub async fn touch_merge_item(pool: Extension<Pool>) -> H {
 // ── documentversion ────────────────────────────────────────────────────────
 
 /// POST documentversion/work/{work}：版本号取 max+1（归一化查重防并发重号）
+#[allow(non_snake_case)]
 pub async fn documentversion_create(
     pool: Extension<Pool>,
     Path(work): Path<String>,
@@ -1597,12 +1651,14 @@ pub async fn documentversion_create(
 // ── work（WorkAction 补缺）─────────────────────────────────────────────────
 
 /// POST work：按流程标识创建工作实例（事务内建 work + 首个任务）
+#[allow(non_snake_case)]
 pub async fn work_create(pool: Extension<Pool>, Json(body): Json<Value>) -> H {
     let process_id = body_str(&body, &["process", "processId"]);
     work_start_impl(pool, process_id, None, body).await
 }
 
 /// POST work/process/{processId}：流程标识取自路径
+#[allow(non_snake_case)]
 pub async fn work_create_for_process(
     pool: Extension<Pool>,
     Path(process_id): Path<String>,
@@ -1612,6 +1668,7 @@ pub async fn work_create_for_process(
 }
 
 /// POST work/process/{processId}/name/{name}/serial：按名称创建，流水号服务端生成（同流程现有工作数+1）
+#[allow(non_snake_case)]
 pub async fn work_create_with_serial(
     pool: Extension<Pool>,
     Path((process_id, name)): Path<(String, String)>,
@@ -1683,6 +1740,7 @@ async fn work_start_impl(
 }
 
 /// GET work/{id}
+#[allow(non_snake_case)]
 pub async fn work_get(pool: Extension<Pool>, Path(id): Path<String>) -> H {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let row = client
@@ -1714,6 +1772,7 @@ pub async fn work_get(pool: Extension<Pool>, Path(id): Path<String>) -> H {
 }
 
 /// PUT work/{id}：编辑标题等基础信息
+#[allow(non_snake_case)]
 pub async fn work_edit(
     pool: Extension<Pool>,
     Path(id): Path<String>,
@@ -1742,6 +1801,7 @@ pub async fn work_edit(
 }
 
 /// DELETE work/{id}：物理删除工作及其任务（Java delete 级联语义，事务内执行）
+#[allow(non_snake_case)]
 pub async fn work_delete(pool: Extension<Pool>, Path(id): Path<String>) -> H {
     let mut client = pool.get().await.map_err(|_| AppError::Internal)?;
     let tx = client.transaction().await.map_err(|_| AppError::Internal)?;
@@ -1763,6 +1823,7 @@ pub async fn work_delete(pool: Extension<Pool>, Path(id): Path<String>) -> H {
 }
 
 /// DELETE work/{id}/draft：删除该工作的全部草稿；无草稿报错（Java ExceptionDeleteDraft）
+#[allow(non_snake_case)]
 pub async fn work_draft_delete(pool: Extension<Pool>, Path(work): Path<String>) -> H {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let n = client
@@ -1776,6 +1837,7 @@ pub async fn work_draft_delete(pool: Extension<Pool>, Path(work): Path<String>) 
 }
 
 /// POST work/manual/after/processing：人工流转后置记录（内容幂等去重）
+#[allow(non_snake_case)]
 pub async fn work_manual_after(pool: Extension<Pool>, Json(body): Json<Value>) -> H {
     let work = body_str(&body, &["work", "workId"]);
     if work.is_empty() {
@@ -1793,6 +1855,7 @@ pub async fn work_manual_after(pool: Extension<Pool>, Json(body): Json<Value>) -
 }
 
 /// POST work/v3/retract：按 body.work 撤回（状态机迁移 + 任务取消，事务内）
+#[allow(non_snake_case)]
 pub async fn work_v3_retract_body(pool: Extension<Pool>, Json(body): Json<Value>) -> H {
     let work = body_str(&body, &["work", "workId"]);
     if work.is_empty() {
@@ -1842,6 +1905,7 @@ async fn record_insert_tx(
 
 /// GET work/{id}/series/{series}/activitytoken/{activityToken}/processing/signal：
 /// 按 activityToken 定位任务并完成信号处理
+#[allow(non_snake_case)]
 pub async fn work_processing_signal(
     pool: Extension<Pool>,
     Path((id, series, activity_token)): Path<(String, String, String)>,
@@ -1873,6 +1937,7 @@ pub async fn work_processing_signal(
 }
 
 /// POST work/v2/{id}/add/manual/task/identity/matrix：为工作追加身份矩阵任务
+#[allow(non_snake_case)]
 pub async fn work_add_identity_matrix(
     pool: Extension<Pool>,
     Path(id): Path<String>,
@@ -1914,6 +1979,7 @@ pub async fn work_add_identity_matrix(
 // ── workcompleted ──────────────────────────────────────────────────────────
 
 /// GET workcompleted/{flag}/merge：保留 flag 指定项，合并同 work 的其余重复项
+#[allow(non_snake_case)]
 pub async fn wc_merge_flag(pool: Extension<Pool>, Path(flag): Path<String>) -> H {
     let mut client = pool.get().await.map_err(|_| AppError::Internal)?;
     let tx = client.transaction().await.map_err(|_| AppError::Internal)?;
@@ -1940,6 +2006,7 @@ pub async fn wc_merge_flag(pool: Extension<Pool>, Path(flag): Path<String>) -> H
 }
 
 /// POST workcompleted/process/{processFlag}：为该流程已结束工作补齐完成记录（幂等）
+#[allow(non_snake_case)]
 pub async fn wc_process_flag(pool: Extension<Pool>, Path(process_flag): Path<String>) -> H {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let rows = client
@@ -1969,6 +2036,7 @@ pub async fn wc_process_flag(pool: Extension<Pool>, Path(process_flag): Path<Str
 }
 
 /// POST workcompleted/shift/time：平移完成时间（minutes 可正可负）
+#[allow(non_snake_case)]
 pub async fn wc_shift_time(pool: Extension<Pool>, Json(body): Json<Value>) -> H {
     let minutes = body.get("minutes").and_then(|v| v.as_i64()).unwrap_or(0);
     if minutes == 0 || minutes.abs() > 5_256_000 {
@@ -1998,6 +2066,7 @@ pub async fn wc_shift_time(pool: Extension<Pool>, Json(body): Json<Value>) -> H 
 }
 
 /// PUT workcompleted/{flag}/rollback：回滚完成态——对应工作恢复运行并补记 rollback
+#[allow(non_snake_case)]
 pub async fn wc_rollback_flag(pool: Extension<Pool>, Path(flag): Path<String>) -> H {
     let mut client = pool.get().await.map_err(|_| AppError::Internal)?;
     let tx = client.transaction().await.map_err(|_| AppError::Internal)?;

@@ -1,7 +1,7 @@
+#[allow(dead_code, non_snake_case)]
 use axum::{
     extract::{Extension, Path},
-    routing::{get, post},
-    Json, Router,
+    Json,
 };
 use deadpool_postgres::Pool;
 use serde::Deserialize;
@@ -32,6 +32,7 @@ pub struct ConfigSaveRequest {
     pub creator: Option<String>,
 }
 
+#[allow(non_snake_case)]
 pub async fn applications(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -60,6 +61,7 @@ pub async fn applications(
     Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
 }
 
+#[allow(non_snake_case)]
 pub async fn current_style(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -93,6 +95,7 @@ pub async fn current_style(
     ))))
 }
 
+#[allow(non_snake_case)]
 pub async fn modules_all(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -137,6 +140,7 @@ pub fn router(pool: deadpool_postgres::Pool) -> axum::Router {
     routes::router(pool)
 }
 
+#[allow(non_snake_case)]
 pub async fn collect_list(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -168,6 +172,7 @@ pub async fn collect_list(
     Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
 }
 
+#[allow(non_snake_case)]
 pub async fn collect_add(
     pool: Extension<Pool>,
     axum::extract::Json(req): Json<CollectAddRequest>,
@@ -198,6 +203,7 @@ pub async fn collect_add(
     ))))
 }
 
+#[allow(non_snake_case)]
 pub async fn collect_remove(
     pool: Extension<Pool>,
     Path(id): Path<String>,
@@ -223,6 +229,7 @@ pub async fn collect_remove(
     ))))
 }
 
+#[allow(non_snake_case)]
 pub async fn config_get(
     pool: Extension<Pool>,
     Path(key): Path<String>,
@@ -260,6 +267,7 @@ mod tests_generated;
 
 
 
+#[allow(non_snake_case)]
 pub async fn agent_flag(pool: Extension<Pool>, Path(id): Path<String>) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let row = client
@@ -286,6 +294,7 @@ pub async fn agent_flag(pool: Extension<Pool>, Path(id): Path<String>) -> Result
 }
 
 
+#[allow(non_snake_case)]
 pub async fn agent_flag_disable(pool: Extension<Pool>, Path(id): Path<String>) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let row = client
@@ -312,6 +321,7 @@ pub async fn agent_flag_disable(pool: Extension<Pool>, Path(id): Path<String>) -
 }
 
 
+#[allow(non_snake_case)]
 pub async fn agent_flag_enable(pool: Extension<Pool>, Path(id): Path<String>) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let row = client
@@ -338,6 +348,7 @@ pub async fn agent_flag_enable(pool: Extension<Pool>, Path(id): Path<String>) ->
 }
 
 
+#[allow(non_snake_case)]
 pub async fn agent_flag_execute(pool: Extension<Pool>, Path(id): Path<String>) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let row = client
@@ -364,6 +375,7 @@ pub async fn agent_flag_execute(pool: Extension<Pool>, Path(id): Path<String>) -
 }
 
 
+#[allow(non_snake_case)]
 pub async fn agent_flag_file(pool: Extension<Pool>, Path(id): Path<String>) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let row = client
@@ -390,6 +402,7 @@ pub async fn agent_flag_file(pool: Extension<Pool>, Path(id): Path<String>) -> R
 }
 
 
+#[allow(non_snake_case)]
 pub async fn andfx_pull_sync(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
@@ -412,6 +425,7 @@ pub async fn andfx_pull_sync(pool: Extension<Pool>) -> Result<Json<ActionResult<
 }
 
 
+#[allow(non_snake_case)]
 pub async fn appstyle_current_style(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
@@ -439,6 +453,7 @@ pub async fn appstyle_current_style(pool: Extension<Pool>) -> Result<Json<Action
 }
 
 
+#[allow(non_snake_case)]
 pub async fn appstyle_current_update(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
@@ -466,6 +481,7 @@ pub async fn appstyle_current_update(pool: Extension<Pool>) -> Result<Json<Actio
 }
 
 
+#[allow(non_snake_case)]
 pub async fn appstyle_image_application_top(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
@@ -495,6 +511,7 @@ pub async fn appstyle_image_application_top(pool: Extension<Pool>) -> Result<Jso
 }
 
 
+#[allow(non_snake_case)]
 pub async fn appstyle_image_application_top_erase(pool: Extension<Pool>, Path(id): Path<String>) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
@@ -518,6 +535,7 @@ pub async fn appstyle_image_application_top_erase(pool: Extension<Pool>, Path(id
 }
 
 
+#[allow(non_snake_case)]
 pub async fn appstyle_image_launch_logo(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
@@ -547,6 +565,7 @@ pub async fn appstyle_image_launch_logo(pool: Extension<Pool>) -> Result<Json<Ac
 }
 
 
+#[allow(non_snake_case)]
 pub async fn appstyle_image_launch_logo_erase(pool: Extension<Pool>, Path(id): Path<String>) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
@@ -570,6 +589,7 @@ pub async fn appstyle_image_launch_logo_erase(pool: Extension<Pool>, Path(id): P
 }
 
 
+#[allow(non_snake_case)]
 pub async fn appstyle_image_login_avatar(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
@@ -599,6 +619,7 @@ pub async fn appstyle_image_login_avatar(pool: Extension<Pool>) -> Result<Json<A
 }
 
 
+#[allow(non_snake_case)]
 pub async fn appstyle_image_login_avatar_erase(pool: Extension<Pool>, Path(id): Path<String>) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
@@ -622,6 +643,7 @@ pub async fn appstyle_image_login_avatar_erase(pool: Extension<Pool>, Path(id): 
 }
 
 
+#[allow(non_snake_case)]
 pub async fn appstyle_image_menu_logo_blur(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
@@ -651,6 +673,7 @@ pub async fn appstyle_image_menu_logo_blur(pool: Extension<Pool>) -> Result<Json
 }
 
 
+#[allow(non_snake_case)]
 pub async fn appstyle_image_menu_logo_blur_erase(pool: Extension<Pool>, Path(id): Path<String>) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
@@ -674,6 +697,7 @@ pub async fn appstyle_image_menu_logo_blur_erase(pool: Extension<Pool>, Path(id)
 }
 
 
+#[allow(non_snake_case)]
 pub async fn appstyle_image_menu_logo_focus(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
@@ -703,6 +727,7 @@ pub async fn appstyle_image_menu_logo_focus(pool: Extension<Pool>) -> Result<Jso
 }
 
 
+#[allow(non_snake_case)]
 pub async fn appstyle_image_menu_logo_focus_erase(pool: Extension<Pool>, Path(id): Path<String>) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
@@ -726,6 +751,7 @@ pub async fn appstyle_image_menu_logo_focus_erase(pool: Extension<Pool>, Path(id
 }
 
 
+#[allow(non_snake_case)]
 pub async fn appstyle_image_process_default(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
@@ -755,6 +781,7 @@ pub async fn appstyle_image_process_default(pool: Extension<Pool>) -> Result<Jso
 }
 
 
+#[allow(non_snake_case)]
 pub async fn appstyle_image_process_default_erase(pool: Extension<Pool>, Path(id): Path<String>) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
@@ -778,6 +805,7 @@ pub async fn appstyle_image_process_default_erase(pool: Extension<Pool>, Path(id
 }
 
 
+#[allow(non_snake_case)]
 pub async fn appstyle_image_setup_about_logo(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
@@ -807,6 +835,7 @@ pub async fn appstyle_image_setup_about_logo(pool: Extension<Pool>) -> Result<Js
 }
 
 
+#[allow(non_snake_case)]
 pub async fn appstyle_image_setup_about_logo_erase(pool: Extension<Pool>, Path(id): Path<String>) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
@@ -830,6 +859,7 @@ pub async fn appstyle_image_setup_about_logo_erase(pool: Extension<Pool>, Path(i
 }
 
 
+#[allow(non_snake_case)]
 pub async fn appstyle_index_portal(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
@@ -858,6 +888,7 @@ pub async fn appstyle_index_portal(pool: Extension<Pool>) -> Result<Json<ActionR
 }
 
 
+#[allow(non_snake_case)]
 pub async fn bar_create_mass_from_count(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
@@ -887,6 +918,7 @@ pub async fn bar_create_mass_from_count(pool: Extension<Pool>) -> Result<Json<Ac
 }
 
 
+#[allow(non_snake_case)]
 pub async fn bar_select1_field_field_value_value_count_count(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
@@ -916,6 +948,7 @@ pub async fn bar_select1_field_field_value_value_count_count(pool: Extension<Poo
 }
 
 
+#[allow(non_snake_case)]
 pub async fn bar_select2_count_count(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
@@ -945,6 +978,7 @@ pub async fn bar_select2_count_count(pool: Extension<Pool>) -> Result<Json<Actio
 }
 
 
+#[allow(non_snake_case)]
 pub async fn bar_select3_field_field_value_value_count_count(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
@@ -974,6 +1008,7 @@ pub async fn bar_select3_field_field_value_value_count_count(pool: Extension<Poo
 }
 
 
+#[allow(non_snake_case)]
 pub async fn bar_select4_field_field_value_value_count_count(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
@@ -1003,6 +1038,7 @@ pub async fn bar_select4_field_field_value_value_count_count(pool: Extension<Poo
 }
 
 
+#[allow(non_snake_case)]
 pub async fn captcha_list(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
@@ -1032,6 +1068,7 @@ pub async fn captcha_list(pool: Extension<Pool>) -> Result<Json<ActionResult<Val
 }
 
 
+#[allow(non_snake_case)]
 pub async fn captcha_v2_create_width_width_height_height(pool: Extension<Pool>, Path(width): Path<i64>, Path(height): Path<i64>) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let id = uuid::Uuid::new_v4().to_string();
@@ -1050,6 +1087,7 @@ pub async fn captcha_v2_create_width_width_height_height(pool: Extension<Pool>, 
 }
 
 
+#[allow(non_snake_case)]
 pub async fn captcha_id_validate_answer_answer(pool: Extension<Pool>, Path(id): Path<String>, Path(answer): Path<String>) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let row = client
@@ -1074,6 +1112,7 @@ pub async fn captcha_id_validate_answer_answer(pool: Extension<Pool>, Path(id): 
 }
 
 
+#[allow(non_snake_case)]
 pub async fn center_applications(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
@@ -1102,6 +1141,7 @@ pub async fn center_applications(pool: Extension<Pool>) -> Result<Json<ActionRes
 }
 
 
+#[allow(non_snake_case)]
 pub async fn center_regist_applications(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
@@ -1130,6 +1170,7 @@ pub async fn center_regist_applications(pool: Extension<Pool>) -> Result<Json<Ac
 }
 
 
+#[allow(non_snake_case)]
 pub async fn center_version(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
     let _client = pool.get().await.map_err(|_| AppError::Internal)?;
     Ok(Json(ActionResult::success(Value::Object(
@@ -1140,6 +1181,7 @@ pub async fn center_version(pool: Extension<Pool>) -> Result<Json<ActionResult<V
 }
 
 
+#[allow(non_snake_case)]
 pub async fn code_create_mobile_mobile(pool: Extension<Pool>, Path(mobile): Path<String>) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let id = uuid::Uuid::new_v4().to_string();
@@ -1159,6 +1201,7 @@ pub async fn code_create_mobile_mobile(pool: Extension<Pool>, Path(mobile): Path
 }
 
 
+#[allow(non_snake_case)]
 pub async fn code_list(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
@@ -1189,6 +1232,7 @@ pub async fn code_list(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>
 }
 
 
+#[allow(non_snake_case)]
 pub async fn code_list_paging_page_size_size(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
@@ -1219,6 +1263,7 @@ pub async fn code_list_paging_page_size_size(pool: Extension<Pool>) -> Result<Js
 }
 
 
+#[allow(non_snake_case)]
 pub async fn code_validate_mobile_mobile_answer_answer(pool: Extension<Pool>, Path(mobile): Path<String>, Path(answer): Path<String>) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let row = client
@@ -1240,6 +1285,7 @@ pub async fn code_validate_mobile_mobile_answer_answer(pool: Extension<Pool>, Pa
 }
 
 
+#[allow(non_snake_case)]
 pub async fn code_validate_mobile_mobile_answer_answer_cascade(pool: Extension<Pool>, Path(mobile): Path<String>, Path(answer): Path<String>) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let row = client
@@ -1261,6 +1307,7 @@ pub async fn code_validate_mobile_mobile_answer_answer_cascade(pool: Extension<P
 }
 
 
+#[allow(non_snake_case)]
 pub async fn collect_code_mobile_mobile(pool: Extension<Pool>, Path(id): Path<String>) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let row = client
@@ -1288,6 +1335,7 @@ pub async fn collect_code_mobile_mobile(pool: Extension<Pool>, Path(id): Path<St
 }
 
 
+#[allow(non_snake_case)]
 pub async fn collect_connect(pool: Extension<Pool>, Path(id): Path<String>) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let row = client
@@ -1315,6 +1363,7 @@ pub async fn collect_connect(pool: Extension<Pool>, Path(id): Path<String>) -> R
 }
 
 
+#[allow(non_snake_case)]
 pub async fn collect_controllebbs(pool: Extension<Pool>, Path(id): Path<String>) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let row = client
@@ -1342,6 +1391,7 @@ pub async fn collect_controllebbs(pool: Extension<Pool>, Path(id): Path<String>)
 }
 
 
+#[allow(non_snake_case)]
 pub async fn collect_controllermobile_name_name_mobile_mobile(pool: Extension<Pool>, Path(id): Path<String>) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let row = client
@@ -1369,6 +1419,7 @@ pub async fn collect_controllermobile_name_name_mobile_mobile(pool: Extension<Po
 }
 
 
+#[allow(non_snake_case)]
 pub async fn collect_disconnect(pool: Extension<Pool>, Path(id): Path<String>) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let row = client
@@ -1396,6 +1447,7 @@ pub async fn collect_disconnect(pool: Extension<Pool>, Path(id): Path<String>) -
 }
 
 
+#[allow(non_snake_case)]
 pub async fn collect_login(pool: Extension<Pool>, Path(id): Path<String>) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let row = client
@@ -1423,6 +1475,7 @@ pub async fn collect_login(pool: Extension<Pool>, Path(id): Path<String>) -> Res
 }
 
 
+#[allow(non_snake_case)]
 pub async fn collect_mobile_check_connect(pool: Extension<Pool>, Path(id): Path<String>) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let row = client
@@ -1450,6 +1503,7 @@ pub async fn collect_mobile_check_connect(pool: Extension<Pool>, Path(id): Path<
 }
 
 
+#[allow(non_snake_case)]
 pub async fn collect_name_name_exist(pool: Extension<Pool>, Path(id): Path<String>) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let row = client
@@ -1477,6 +1531,7 @@ pub async fn collect_name_name_exist(pool: Extension<Pool>, Path(id): Path<Strin
 }
 
 
+#[allow(non_snake_case)]
 pub async fn collect_name_name_mobile_mobile_code_code(pool: Extension<Pool>, Path(id): Path<String>) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let row = client
@@ -1504,6 +1559,7 @@ pub async fn collect_name_name_mobile_mobile_code_code(pool: Extension<Pool>, Pa
 }
 
 
+#[allow(non_snake_case)]
 pub async fn collect_person(pool: Extension<Pool>, Path(id): Path<String>) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let row = client
@@ -1531,6 +1587,7 @@ pub async fn collect_person(pool: Extension<Pool>, Path(id): Path<String>) -> Re
 }
 
 
+#[allow(non_snake_case)]
 pub async fn collect_resetpassword(pool: Extension<Pool>, Path(id): Path<String>) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let row = client
@@ -1558,6 +1615,7 @@ pub async fn collect_resetpassword(pool: Extension<Pool>, Path(id): Path<String>
 }
 
 
+#[allow(non_snake_case)]
 pub async fn collect_sync_area(pool: Extension<Pool>, Path(id): Path<String>) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let row = client
@@ -1585,6 +1643,7 @@ pub async fn collect_sync_area(pool: Extension<Pool>, Path(id): Path<String>) ->
 }
 
 
+#[allow(non_snake_case)]
 pub async fn collect_updateUnit(pool: Extension<Pool>, Path(id): Path<String>) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let row = client
@@ -1612,6 +1671,7 @@ pub async fn collect_updateUnit(pool: Extension<Pool>, Path(id): Path<String>) -
 }
 
 
+#[allow(non_snake_case)]
 pub async fn collect_urlMapping(pool: Extension<Pool>, Path(id): Path<String>) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let row = client
@@ -1639,6 +1699,7 @@ pub async fn collect_urlMapping(pool: Extension<Pool>, Path(id): Path<String>) -
 }
 
 
+#[allow(non_snake_case)]
 pub async fn collect_validate(pool: Extension<Pool>, Path(id): Path<String>) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let row = client
@@ -1666,6 +1727,7 @@ pub async fn collect_validate(pool: Extension<Pool>, Path(id): Path<String>) -> 
 }
 
 
+#[allow(non_snake_case)]
 pub async fn collect_validate_codeanswer(pool: Extension<Pool>, Path(id): Path<String>) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let row = client
@@ -1693,6 +1755,7 @@ pub async fn collect_validate_codeanswer(pool: Extension<Pool>, Path(id): Path<S
 }
 
 
+#[allow(non_snake_case)]
 pub async fn collect_validate_direct(pool: Extension<Pool>, Path(id): Path<String>) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let row = client
@@ -1720,6 +1783,7 @@ pub async fn collect_validate_direct(pool: Extension<Pool>, Path(id): Path<Strin
 }
 
 
+#[allow(non_snake_case)]
 pub async fn collect_validate_password(pool: Extension<Pool>, Path(id): Path<String>) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let row = client
@@ -1747,6 +1811,7 @@ pub async fn collect_validate_password(pool: Extension<Pool>, Path(id): Path<Str
 }
 
 
+#[allow(non_snake_case)]
 pub async fn command_execute(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
     let _client = pool.get().await.map_err(|_| AppError::Internal)?;
     Ok(Json(ActionResult::java_success(
@@ -1757,6 +1822,7 @@ pub async fn command_execute(pool: Extension<Pool>) -> Result<Json<ActionResult<
 }
 
 
+#[allow(non_snake_case)]
 pub async fn command_list_node(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
     let _client = pool.get().await.map_err(|_| AppError::Internal)?;
     Ok(Json(ActionResult::java_success(
@@ -1767,6 +1833,7 @@ pub async fn command_list_node(pool: Extension<Pool>) -> Result<Json<ActionResul
 }
 
 
+#[allow(non_snake_case)]
 pub async fn config_open_get_disable_export_enable(pool: Extension<Pool>, Path(id): Path<String>) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let row = client
@@ -1794,6 +1861,7 @@ pub async fn config_open_get_disable_export_enable(pool: Extension<Pool>, Path(i
 }
 
 
+#[allow(non_snake_case)]
 pub async fn config_centerserver(pool: Extension<Pool>, Path(id): Path<String>) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let row = client
@@ -1821,6 +1889,7 @@ pub async fn config_centerserver(pool: Extension<Pool>, Path(id): Path<String>) 
 }
 
 
+#[allow(non_snake_case)]
 pub async fn config_change_password(pool: Extension<Pool>, Path(id): Path<String>) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let row = client
@@ -1848,6 +1917,7 @@ pub async fn config_change_password(pool: Extension<Pool>, Path(id): Path<String
 }
 
 
+#[allow(non_snake_case)]
 pub async fn config_collect(pool: Extension<Pool>, Path(id): Path<String>) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let row = client
@@ -1875,6 +1945,7 @@ pub async fn config_collect(pool: Extension<Pool>, Path(id): Path<String>) -> Re
 }
 
 
+#[allow(non_snake_case)]
 pub async fn config_license(pool: Extension<Pool>, Path(id): Path<String>) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let row = client
@@ -1902,6 +1973,7 @@ pub async fn config_license(pool: Extension<Pool>, Path(id): Path<String>) -> Re
 }
 
 
+#[allow(non_snake_case)]
 pub async fn config_list(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let rows = client
@@ -1929,6 +2001,7 @@ pub async fn config_list(pool: Extension<Pool>) -> Result<Json<ActionResult<Valu
 }
 
 
+#[allow(non_snake_case)]
 pub async fn config_list_application(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let rows = client
@@ -1956,6 +2029,7 @@ pub async fn config_list_application(pool: Extension<Pool>) -> Result<Json<Actio
 }
 
 
+#[allow(non_snake_case)]
 pub async fn config_list_dump_data(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let rows = client
@@ -1983,6 +2057,7 @@ pub async fn config_list_dump_data(pool: Extension<Pool>) -> Result<Json<ActionR
 }
 
 
+#[allow(non_snake_case)]
 pub async fn config_list_dump_data_current_node(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let rows = client
@@ -2010,6 +2085,7 @@ pub async fn config_list_dump_data_current_node(pool: Extension<Pool>) -> Result
 }
 
 
+#[allow(non_snake_case)]
 pub async fn config_list_entity(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let rows = client
@@ -2037,6 +2113,7 @@ pub async fn config_list_entity(pool: Extension<Pool>) -> Result<Json<ActionResu
 }
 
 
+#[allow(non_snake_case)]
 pub async fn config_open(pool: Extension<Pool>, Path(id): Path<String>) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let row = client
@@ -2064,6 +2141,7 @@ pub async fn config_open(pool: Extension<Pool>, Path(id): Path<String>) -> Resul
 }
 
 
+#[allow(non_snake_case)]
 pub async fn config_open_run_time_config(pool: Extension<Pool>, Path(id): Path<String>) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let row = client
@@ -2091,6 +2169,7 @@ pub async fn config_open_run_time_config(pool: Extension<Pool>, Path(id): Path<S
 }
 
 
+#[allow(non_snake_case)]
 pub async fn config_person(pool: Extension<Pool>, Path(id): Path<String>) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let row = client
@@ -2118,6 +2197,7 @@ pub async fn config_person(pool: Extension<Pool>, Path(id): Path<String>) -> Res
 }
 
 
+#[allow(non_snake_case)]
 pub async fn config_portal(pool: Extension<Pool>, Path(id): Path<String>) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let row = client
@@ -2145,6 +2225,7 @@ pub async fn config_portal(pool: Extension<Pool>, Path(id): Path<String>) -> Res
 }
 
 
+#[allow(non_snake_case)]
 pub async fn config_proxy(pool: Extension<Pool>, Path(id): Path<String>) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let row = client
@@ -2172,6 +2253,7 @@ pub async fn config_proxy(pool: Extension<Pool>, Path(id): Path<String>) -> Resu
 }
 
 
+#[allow(non_snake_case)]
 pub async fn config_save(
     pool: Extension<Pool>,
     axum::extract::Json(req): Json<ConfigSaveRequest>,
@@ -2202,6 +2284,7 @@ pub async fn config_save(
     ))))
 }
 
+#[allow(non_snake_case)]
 pub async fn config_ternary_management(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -2233,6 +2316,7 @@ pub async fn config_ternary_management(
     Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
 }
 
+#[allow(non_snake_case)]
 pub async fn config_token(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -2262,6 +2346,7 @@ pub async fn config_token(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn datastructure_fileds_all(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -2293,6 +2378,7 @@ pub async fn datastructure_fileds_all(
     Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
 }
 
+#[allow(non_snake_case)]
 pub async fn datastructure_modules_all(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -2323,6 +2409,7 @@ pub async fn datastructure_modules_all(
     Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
 }
 
+#[allow(non_snake_case)]
 pub async fn datastructure_tables_all(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -2353,6 +2440,7 @@ pub async fn datastructure_tables_all(
     Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
 }
 
+#[allow(non_snake_case)]
 pub async fn deploy_list_paging_page_size_size(
     pool: Extension<Pool>,
     Path(page): Path<i64>,
@@ -2385,6 +2473,7 @@ pub async fn deploy_list_paging_page_size_size(
     Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
 }
 
+#[allow(non_snake_case)]
 pub async fn deploy_server_o2(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -2414,6 +2503,7 @@ pub async fn deploy_server_o2(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn deploy_server_resource(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -2446,6 +2536,7 @@ pub async fn deploy_server_resource(
     Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
 }
 
+#[allow(non_snake_case)]
 pub async fn deploy_web_resource_as_new_asNew(
     pool: Extension<Pool>,
     Path(as_new): Path<String>,
@@ -2471,6 +2562,7 @@ pub async fn deploy_web_resource_as_new_asNew(
     ))))
 }
 
+#[allow(non_snake_case)]
 pub async fn deploy_id(
     pool: Extension<Pool>,
     Path(id): Path<String>,
@@ -2501,6 +2593,7 @@ pub async fn deploy_id(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn designer_search(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -2531,6 +2624,7 @@ pub async fn designer_search(
     Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
 }
 
+#[allow(non_snake_case)]
 pub async fn dict_list(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -2562,6 +2656,7 @@ pub async fn dict_list(
     Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
 }
 
+#[allow(non_snake_case)]
 pub async fn dict_list_paging_page_size_size(
     pool: Extension<Pool>,
     Path(page): Path<i64>,
@@ -2595,6 +2690,7 @@ pub async fn dict_list_paging_page_size_size(
     Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
 }
 
+#[allow(non_snake_case)]
 pub async fn dict_dictFlag_data(
     pool: Extension<Pool>,
     Path(dict_flag): Path<String>,
@@ -2622,6 +2718,7 @@ pub async fn dict_dictFlag_data(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn dict_dictFlag_path_data(
     pool: Extension<Pool>,
     Path(dict_flag): Path<String>,
@@ -2651,6 +2748,7 @@ pub async fn dict_dictFlag_path_data(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn dict_dictFlag_path_data_mockdeletetoget(
     pool: Extension<Pool>,
     Path(dict_flag): Path<String>,
@@ -2685,6 +2783,7 @@ pub async fn dict_dictFlag_path_data_mockdeletetoget(
     ])))))
 }
 
+#[allow(non_snake_case)]
 pub async fn dict_dictFlag_path_data_mockputtopost(
     pool: Extension<Pool>,
     Path(dict_flag): Path<String>,
@@ -2718,6 +2817,7 @@ pub async fn dict_dictFlag_path_data_mockputtopost(
     ))))
 }
 
+#[allow(non_snake_case)]
 pub async fn dict_id(
     pool: Extension<Pool>,
     Path(id): Path<String>,
@@ -2749,6 +2849,7 @@ pub async fn dict_id(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn dingding_get_callback_aes(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
@@ -2776,6 +2877,7 @@ pub async fn dingding_get_callback_aes(pool: Extension<Pool>) -> Result<Json<Act
 }
 
 
+#[allow(non_snake_case)]
 pub async fn dingding_pull_sync(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -2796,6 +2898,7 @@ pub async fn dingding_pull_sync(
     ))))
 }
 
+#[allow(non_snake_case)]
 pub async fn dingding_request_pull_sync(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
@@ -2818,6 +2921,7 @@ pub async fn dingding_request_pull_sync(pool: Extension<Pool>) -> Result<Json<Ac
 }
 
 
+#[allow(non_snake_case)]
 pub async fn dingding_sync_organization_callback(
     pool: Extension<Pool>,
     Json(body): Json<Value>,
@@ -2847,6 +2951,7 @@ pub async fn dingding_sync_organization_callback(
     ))))
 }
 
+#[allow(non_snake_case)]
 pub async fn dingding_sync_organization_register_callback_enable(
     pool: Extension<Pool>,
     Path(enable): Path<String>,
@@ -2867,6 +2972,7 @@ pub async fn dingding_sync_organization_register_callback_enable(
     ))))
 }
 
+#[allow(non_snake_case)]
 pub async fn distribute_assemble_source_source(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
@@ -2896,6 +3002,7 @@ pub async fn distribute_assemble_source_source(pool: Extension<Pool>) -> Result<
 }
 
 
+#[allow(non_snake_case)]
 pub async fn distribute_webserver_assemble_source_source(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
@@ -2925,6 +3032,7 @@ pub async fn distribute_webserver_assemble_source_source(pool: Extension<Pool>) 
 }
 
 
+#[allow(non_snake_case)]
 pub async fn foo_create_mass_from_count(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
@@ -2955,6 +3063,7 @@ pub async fn foo_create_mass_from_count(pool: Extension<Pool>) -> Result<Json<Ac
 }
 
 
+#[allow(non_snake_case)]
 pub async fn input_compare(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
@@ -2984,6 +3093,7 @@ pub async fn input_compare(pool: Extension<Pool>) -> Result<Json<ActionResult<Va
 }
 
 
+#[allow(non_snake_case)]
 pub async fn input_cover(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
@@ -3013,6 +3123,7 @@ pub async fn input_cover(pool: Extension<Pool>) -> Result<Json<ActionResult<Valu
 }
 
 
+#[allow(non_snake_case)]
 pub async fn input_create(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
@@ -3042,6 +3153,7 @@ pub async fn input_create(pool: Extension<Pool>) -> Result<Json<ActionResult<Val
 }
 
 
+#[allow(non_snake_case)]
 pub async fn input_prepare_cover(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
@@ -3071,6 +3183,7 @@ pub async fn input_prepare_cover(pool: Extension<Pool>) -> Result<Json<ActionRes
 }
 
 
+#[allow(non_snake_case)]
 pub async fn input_prepare_create(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
@@ -3100,6 +3213,7 @@ pub async fn input_prepare_create(pool: Extension<Pool>) -> Result<Json<ActionRe
 }
 
 
+#[allow(non_snake_case)]
 pub async fn invoke_list_category(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
@@ -3129,6 +3243,7 @@ pub async fn invoke_list_category(pool: Extension<Pool>) -> Result<Json<ActionRe
 }
 
 
+#[allow(non_snake_case)]
 pub async fn invoke_list_with_category_category(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
@@ -3158,6 +3273,7 @@ pub async fn invoke_list_with_category_category(pool: Extension<Pool>) -> Result
 }
 
 
+#[allow(non_snake_case)]
 pub async fn invoke_token(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
@@ -3186,6 +3302,7 @@ pub async fn invoke_token(pool: Extension<Pool>) -> Result<Json<ActionResult<Val
 }
 
 
+#[allow(non_snake_case)]
 pub async fn invoke_flag(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
@@ -3215,6 +3332,7 @@ pub async fn invoke_flag(pool: Extension<Pool>) -> Result<Json<ActionResult<Valu
 }
 
 
+#[allow(non_snake_case)]
 pub async fn invoke_flag_client_client_token_token_execute(pool: Extension<Pool>, Path(client): Path<String>, Path(token): Path<String>) -> Result<Json<ActionResult<Value>>, AppError> {
     let db_client = pool.get().await.map_err(|_| AppError::Internal)?;
     let row = db_client
@@ -3245,6 +3363,7 @@ pub async fn invoke_flag_client_client_token_token_execute(pool: Extension<Pool>
 }
 
 
+#[allow(non_snake_case)]
 pub async fn invoke_flag_execute(pool: Extension<Pool>, Path(id): Path<String>) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let row = client
@@ -3275,6 +3394,7 @@ pub async fn invoke_flag_execute(pool: Extension<Pool>, Path(id): Path<String>) 
 }
 
 
+#[allow(non_snake_case)]
 pub async fn invoke_flag_execute_get(pool: Extension<Pool>, Path(id): Path<String>) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let row = client
@@ -3305,6 +3425,7 @@ pub async fn invoke_flag_execute_get(pool: Extension<Pool>, Path(id): Path<Strin
 }
 
 
+#[allow(non_snake_case)]
 pub async fn invoke_flag_file(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
@@ -3333,6 +3454,7 @@ pub async fn invoke_flag_file(pool: Extension<Pool>) -> Result<Json<ActionResult
 }
 
 
+#[allow(non_snake_case)]
 pub async fn jest_center_list() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::java_success(
         Value::Array(Vec::new()),
@@ -3341,6 +3463,7 @@ pub async fn jest_center_list() -> Result<Json<ActionResult<Value>>, AppError> {
     )))
 }
 
+#[allow(non_snake_case)]
 pub async fn jest_clear_cache_source(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
@@ -3363,6 +3486,7 @@ pub async fn jest_clear_cache_source(pool: Extension<Pool>) -> Result<Json<Actio
 }
 
 
+#[allow(non_snake_case)]
 pub async fn jest_list(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
@@ -3393,6 +3517,7 @@ pub async fn jest_list(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>
 }
 
 
+#[allow(non_snake_case)]
 pub async fn jest_version(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
     let _client = pool.get().await.map_err(|_| AppError::Internal)?;
     Ok(Json(ActionResult::success(Value::Object(
@@ -3403,6 +3528,7 @@ pub async fn jest_version(pool: Extension<Pool>) -> Result<Json<ActionResult<Val
 }
 
 
+#[allow(non_snake_case)]
 pub async fn market_cloud_unit_is_vip(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
@@ -3432,6 +3558,7 @@ pub async fn market_cloud_unit_is_vip(pool: Extension<Pool>) -> Result<Json<Acti
 }
 
 
+#[allow(non_snake_case)]
 pub async fn market_install_offline(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let id = uuid::Uuid::new_v4().to_string();
@@ -3449,6 +3576,7 @@ pub async fn market_install_offline(pool: Extension<Pool>) -> Result<Json<Action
     ))))
 }
 
+#[allow(non_snake_case)]
 pub async fn market_list_category(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
@@ -3478,6 +3606,7 @@ pub async fn market_list_category(pool: Extension<Pool>) -> Result<Json<ActionRe
 }
 
 
+#[allow(non_snake_case)]
 pub async fn market_list_install_log_paging_page_size_size(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
@@ -3508,6 +3637,7 @@ pub async fn market_list_install_log_paging_page_size_size(pool: Extension<Pool>
 }
 
 
+#[allow(non_snake_case)]
 pub async fn market_list_paging_page_size_size(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
@@ -3537,6 +3667,7 @@ pub async fn market_list_paging_page_size_size(pool: Extension<Pool>) -> Result<
 }
 
 
+#[allow(non_snake_case)]
 pub async fn market_list_paging_page_size_size_category_category(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
@@ -3566,6 +3697,7 @@ pub async fn market_list_paging_page_size_size_category_category(pool: Extension
 }
 
 
+#[allow(non_snake_case)]
 pub async fn market_list_top_three(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
@@ -3595,6 +3727,7 @@ pub async fn market_list_top_three(pool: Extension<Pool>) -> Result<Json<ActionR
 }
 
 
+#[allow(non_snake_case)]
 pub async fn market_flag(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
@@ -3623,6 +3756,7 @@ pub async fn market_flag(pool: Extension<Pool>) -> Result<Json<ActionResult<Valu
 }
 
 
+#[allow(non_snake_case)]
 pub async fn market_flag_cover_pic(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
@@ -3652,6 +3786,7 @@ pub async fn market_flag_cover_pic(pool: Extension<Pool>) -> Result<Json<ActionR
 }
 
 
+#[allow(non_snake_case)]
 pub async fn market_flag_install_log(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
@@ -3682,6 +3817,7 @@ pub async fn market_flag_install_log(pool: Extension<Pool>) -> Result<Json<Actio
 }
 
 
+#[allow(non_snake_case)]
 pub async fn market_flag_install_or_update(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let id = uuid::Uuid::new_v4().to_string();
@@ -3702,6 +3838,7 @@ pub async fn market_flag_install_or_update(pool: Extension<Pool>) -> Result<Json
 }
 
 
+#[allow(non_snake_case)]
 pub async fn market_flag_installed_version(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
@@ -3731,6 +3868,7 @@ pub async fn market_flag_installed_version(pool: Extension<Pool>) -> Result<Json
 }
 
 
+#[allow(non_snake_case)]
 pub async fn market_flag_uninstall(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let id = uuid::Uuid::new_v4().to_string();
@@ -3751,6 +3889,7 @@ pub async fn market_flag_uninstall(pool: Extension<Pool>) -> Result<Json<ActionR
 }
 
 
+#[allow(non_snake_case)]
 pub async fn market_id_download(pool: Extension<Pool>, Path(id): Path<String>) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let row = client
@@ -3774,6 +3913,7 @@ pub async fn market_id_download(pool: Extension<Pool>, Path(id): Path<String>) -
 }
 
 
+#[allow(non_snake_case)]
 pub async fn module_compare_upload(pool: Extension<Pool>, Path(id): Path<String>) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let row = client
@@ -3800,6 +3940,7 @@ pub async fn module_compare_upload(pool: Extension<Pool>, Path(id): Path<String>
 }
 
 
+#[allow(non_snake_case)]
 pub async fn module_list(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let rows = client
@@ -3826,6 +3967,7 @@ pub async fn module_list(pool: Extension<Pool>) -> Result<Json<ActionResult<Valu
 }
 
 
+#[allow(non_snake_case)]
 pub async fn module_list_category(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let rows = client
@@ -3852,6 +3994,7 @@ pub async fn module_list_category(pool: Extension<Pool>) -> Result<Json<ActionRe
 }
 
 
+#[allow(non_snake_case)]
 pub async fn module_output(pool: Extension<Pool>, Path(id): Path<String>) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let row = client
@@ -3878,10 +4021,12 @@ pub async fn module_output(pool: Extension<Pool>, Path(id): Path<String>) -> Res
 }
 
 
+#[allow(non_snake_case)]
 pub async fn module_output_list_structure() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::java_success(Value::Array(vec![]), 0, 0)))
 }
 
+#[allow(non_snake_case)]
 pub async fn module_output_structure(pool: Extension<Pool>, Path(id): Path<String>) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let row = client
@@ -3908,6 +4053,7 @@ pub async fn module_output_structure(pool: Extension<Pool>, Path(id): Path<Strin
 }
 
 
+#[allow(non_snake_case)]
 pub async fn module_output_flag_file(pool: Extension<Pool>, Path(id): Path<String>) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let row = client
@@ -3934,6 +4080,7 @@ pub async fn module_output_flag_file(pool: Extension<Pool>, Path(id): Path<Strin
 }
 
 
+#[allow(non_snake_case)]
 pub async fn module_remove_structure_id(pool: Extension<Pool>, Path(id): Path<String>) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let row = client
@@ -3960,6 +4107,7 @@ pub async fn module_remove_structure_id(pool: Extension<Pool>, Path(id): Path<St
 }
 
 
+#[allow(non_snake_case)]
 pub async fn module_write_flag(pool: Extension<Pool>, Path(id): Path<String>) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let row = client
@@ -3986,6 +4134,7 @@ pub async fn module_write_flag(pool: Extension<Pool>, Path(id): Path<String>) ->
 }
 
 
+#[allow(non_snake_case)]
 pub async fn module_id_compare(pool: Extension<Pool>, Path(id): Path<String>) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let row = client
@@ -4012,6 +4161,7 @@ pub async fn module_id_compare(pool: Extension<Pool>, Path(id): Path<String>) ->
 }
 
 
+#[allow(non_snake_case)]
 pub async fn mpweixin_check(pool: Extension<Pool>, Path(id): Path<String>) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let row = client
@@ -4035,6 +4185,7 @@ pub async fn mpweixin_check(pool: Extension<Pool>, Path(id): Path<String>) -> Re
 }
 
 
+#[allow(non_snake_case)]
 pub async fn mpweixin_media_add_forever(pool: Extension<Pool>, Path(id): Path<String>) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let row = client
@@ -4058,6 +4209,7 @@ pub async fn mpweixin_media_add_forever(pool: Extension<Pool>, Path(id): Path<St
 }
 
 
+#[allow(non_snake_case)]
 pub async fn mpweixin_menu_add(pool: Extension<Pool>, Path(id): Path<String>) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let row = client
@@ -4081,6 +4233,7 @@ pub async fn mpweixin_menu_add(pool: Extension<Pool>, Path(id): Path<String>) ->
 }
 
 
+#[allow(non_snake_case)]
 pub async fn mpweixin_menu_create_to_weixin(pool: Extension<Pool>, Path(id): Path<String>) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let row = client
@@ -4104,6 +4257,7 @@ pub async fn mpweixin_menu_create_to_weixin(pool: Extension<Pool>, Path(id): Pat
 }
 
 
+#[allow(non_snake_case)]
 pub async fn mpweixin_menu_delete_id(pool: Extension<Pool>, Path(id): Path<String>) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let result = client
@@ -4124,6 +4278,7 @@ pub async fn mpweixin_menu_delete_id(pool: Extension<Pool>, Path(id): Path<Strin
 }
 
 
+#[allow(non_snake_case)]
 pub async fn mpweixin_menu_list_weixin() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::java_success(
         Value::Array(Vec::new()),
@@ -4132,6 +4287,7 @@ pub async fn mpweixin_menu_list_weixin() -> Result<Json<ActionResult<Value>>, Ap
     )))
 }
 
+#[allow(non_snake_case)]
 pub async fn mpweixin_menu_subscribe(pool: Extension<Pool>, Path(id): Path<String>) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let row = client
@@ -4155,6 +4311,7 @@ pub async fn mpweixin_menu_subscribe(pool: Extension<Pool>, Path(id): Path<Strin
 }
 
 
+#[allow(non_snake_case)]
 pub async fn mpweixin_menu_update_id(
     pool: Extension<Pool>,
     Path(id): Path<String>,
@@ -4180,6 +4337,7 @@ pub async fn mpweixin_menu_update_id(
     ))))
 }
 
+#[allow(non_snake_case)]
 pub async fn mpweixin_message_template_send(pool: Extension<Pool>, Path(id): Path<String>) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let row = client
@@ -4203,6 +4361,7 @@ pub async fn mpweixin_message_template_send(pool: Extension<Pool>, Path(id): Pat
 }
 
 
+#[allow(non_snake_case)]
 pub async fn output_list(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -4234,6 +4393,7 @@ pub async fn output_list(
     Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
 }
 
+#[allow(non_snake_case)]
 pub async fn output_appInfoFlag_select(
     pool: Extension<Pool>,
     Path(app_info_flag): Path<String>,
@@ -4266,6 +4426,7 @@ pub async fn output_appInfoFlag_select(
     Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
 }
 
+#[allow(non_snake_case)]
 pub async fn output_flag_select_file(
     pool: Extension<Pool>,
     Path(flag): Path<String>,
@@ -4295,6 +4456,7 @@ pub async fn output_flag_select_file(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn prompterrorlog_count_exceptionclass(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -4325,6 +4487,7 @@ pub async fn prompterrorlog_count_exceptionclass(
     Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
 }
 
+#[allow(non_snake_case)]
 pub async fn prompterrorlog_count_loggername(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -4355,6 +4518,7 @@ pub async fn prompterrorlog_count_loggername(
     Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
 }
 
+#[allow(non_snake_case)]
 pub async fn prompterrorlog_list_id_next_count(
     pool: Extension<Pool>,
     Path(id): Path<String>,
@@ -4387,6 +4551,7 @@ pub async fn prompterrorlog_list_id_next_count(
     Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
 }
 
+#[allow(non_snake_case)]
 pub async fn prompterrorlog_list_id_next_count_date_date(
     pool: Extension<Pool>,
     Path(id): Path<String>,
@@ -4420,6 +4585,7 @@ pub async fn prompterrorlog_list_id_next_count_date_date(
     Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
 }
 
+#[allow(non_snake_case)]
 pub async fn prompterrorlog_list_id_next_count_exceptionclass_exceptionClass(
     pool: Extension<Pool>,
     Path(id): Path<String>,
@@ -4453,6 +4619,7 @@ pub async fn prompterrorlog_list_id_next_count_exceptionclass_exceptionClass(
     Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
 }
 
+#[allow(non_snake_case)]
 pub async fn prompterrorlog_list_id_next_count_loggername_loggerName(
     pool: Extension<Pool>,
     Path(id): Path<String>,
@@ -4486,6 +4653,7 @@ pub async fn prompterrorlog_list_id_next_count_loggername_loggerName(
     Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
 }
 
+#[allow(non_snake_case)]
 pub async fn prompterrorlog_list_id_prev_count(
     pool: Extension<Pool>,
     Path(id): Path<String>,
@@ -4518,6 +4686,7 @@ pub async fn prompterrorlog_list_id_prev_count(
     Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
 }
 
+#[allow(non_snake_case)]
 pub async fn prompterrorlog_list_id_prev_count_date_date(
     pool: Extension<Pool>,
     Path(id): Path<String>,
@@ -4551,6 +4720,7 @@ pub async fn prompterrorlog_list_id_prev_count_date_date(
     Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
 }
 
+#[allow(non_snake_case)]
 pub async fn prompterrorlog_list_id_prev_count_exceptionclass_exceptionClass(
     pool: Extension<Pool>,
     Path(id): Path<String>,
@@ -4584,6 +4754,7 @@ pub async fn prompterrorlog_list_id_prev_count_exceptionclass_exceptionClass(
     Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
 }
 
+#[allow(non_snake_case)]
 pub async fn prompterrorlog_list_id_prev_count_loggername_loggerName(
     pool: Extension<Pool>,
     Path(id): Path<String>,
@@ -4617,6 +4788,7 @@ pub async fn prompterrorlog_list_id_prev_count_loggername_loggerName(
     Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
 }
 
+#[allow(non_snake_case)]
 pub async fn prompterrorlog_id(
     pool: Extension<Pool>,
     Path(id): Path<String>,
@@ -4646,6 +4818,7 @@ pub async fn prompterrorlog_id(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn qiyeweixin_get_callback_aes(pool: Extension<Pool>, Path(id): Path<String>) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let row = client
@@ -4671,6 +4844,7 @@ pub async fn qiyeweixin_get_callback_aes(pool: Extension<Pool>, Path(id): Path<S
 }
 
 
+#[allow(non_snake_case)]
 pub async fn qiyeweixin_pull_sync(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -4694,6 +4868,7 @@ pub async fn qiyeweixin_pull_sync(
     ))))
 }
 
+#[allow(non_snake_case)]
 pub async fn qiyeweixin_request_pull_sync(pool: Extension<Pool>, Path(id): Path<String>) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let row = client
@@ -4719,6 +4894,7 @@ pub async fn qiyeweixin_request_pull_sync(pool: Extension<Pool>, Path(id): Path<
 }
 
 
+#[allow(non_snake_case)]
 pub async fn qiyeweixin_send_getprivateinfo_message(
     pool: Extension<Pool>,
     Json(body): Json<Value>,
@@ -4750,6 +4926,7 @@ pub struct ApplicationCreateRequest {
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
 pub async fn application_create(
     pool: Extension<Pool>,
     Json(req): Json<ApplicationCreateRequest>,
@@ -4786,6 +4963,7 @@ pub async fn application_create(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
 pub async fn application_get_by_id(
     pool: Extension<Pool>,
     Path(id): Path<String>,
@@ -4812,6 +4990,7 @@ pub async fn application_get_by_id(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
 pub async fn application_delete(
     pool: Extension<Pool>,
     Path(id): Path<String>,
@@ -4841,6 +5020,7 @@ pub struct ApplicationSaveRequest {
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
 pub async fn application_save(
     pool: Extension<Pool>,
     Path(id): Path<String>,
@@ -4876,6 +5056,7 @@ pub struct AgentCreateRequest {
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
 pub async fn agent_create(
     pool: Extension<Pool>,
     Json(req): Json<AgentCreateRequest>,
@@ -4919,6 +5100,7 @@ pub struct AgentSaveRequest {
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
 pub async fn agent_save(
     pool: Extension<Pool>,
     Path(id): Path<String>,
@@ -4945,6 +5127,7 @@ pub async fn agent_save(
     ))))
 }
 
+#[allow(non_snake_case)]
 pub async fn schedule_list_schedule(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -4976,6 +5159,7 @@ pub async fn schedule_list_schedule(
     Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
 }
 
+#[allow(non_snake_case)]
 pub async fn schedule_list_schedulelocal(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -5008,6 +5192,7 @@ pub async fn schedule_list_schedulelocal(
     Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
 }
 
+#[allow(non_snake_case)]
 pub async fn schedule_list_schedulelog_application_application(
     pool: Extension<Pool>,
     Path(application): Path<String>,
@@ -5040,6 +5225,7 @@ pub async fn schedule_list_schedulelog_application_application(
     Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
 }
 
+#[allow(non_snake_case)]
 pub async fn schedule_report(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -5070,6 +5256,7 @@ pub async fn schedule_report(
     Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
 }
 
+#[allow(non_snake_case)]
 pub async fn schedule_schedule_fire(
     pool: Extension<Pool>,
     Path(schedule_id): Path<String>,
@@ -5091,6 +5278,7 @@ pub async fn schedule_schedule_fire(
     ))))
 }
 
+#[allow(non_snake_case)]
 pub async fn script_list(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -5122,6 +5310,7 @@ pub async fn script_list(
     Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
 }
 
+#[allow(non_snake_case)]
 pub async fn script_list_paging_page_size_size(
     pool: Extension<Pool>,
     Path(page): Path<i64>,
@@ -5155,6 +5344,7 @@ pub async fn script_list_paging_page_size_size(
     Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
 }
 
+#[allow(non_snake_case)]
 pub async fn script_name_name(
     pool: Extension<Pool>,
     Path(name): Path<String>,
@@ -5185,6 +5375,7 @@ pub async fn script_name_name(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn script_name_name_imported(
     pool: Extension<Pool>,
     Path(name): Path<String>,
@@ -5215,6 +5406,7 @@ pub async fn script_name_name_imported(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn script_flag(
     pool: Extension<Pool>,
     Path(flag): Path<String>,
@@ -5245,6 +5437,7 @@ pub async fn script_flag(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn script_id(
     pool: Extension<Pool>,
     Path(id): Path<String>,
@@ -5275,6 +5468,7 @@ pub async fn script_id(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn test_test1(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
     let _client = pool.get().await.map_err(|_| AppError::Internal)?;
     Ok(Json(ActionResult::java_success(
@@ -5285,6 +5479,7 @@ pub async fn test_test1(pool: Extension<Pool>) -> Result<Json<ActionResult<Value
 }
 
 
+#[allow(non_snake_case)]
 pub async fn test_test2(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
     let _client = pool.get().await.map_err(|_| AppError::Internal)?;
     Ok(Json(ActionResult::java_success(
@@ -5295,6 +5490,7 @@ pub async fn test_test2(pool: Extension<Pool>) -> Result<Json<ActionResult<Value
 }
 
 
+#[allow(non_snake_case)]
 pub async fn tokenthreshold_update(
     pool: Extension<Pool>,
     Json(body): Json<Value>,
@@ -5329,6 +5525,7 @@ pub async fn tokenthreshold_update(
     ))))
 }
 
+#[allow(non_snake_case)]
 pub async fn unexpectederrorlog_list_id_next_count(
     pool: Extension<Pool>,
     Path(id): Path<String>,
@@ -5361,6 +5558,7 @@ pub async fn unexpectederrorlog_list_id_next_count(
     Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
 }
 
+#[allow(non_snake_case)]
 pub async fn unexpectederrorlog_list_id_next_count_date_date(
     pool: Extension<Pool>,
     Path(id): Path<String>,
@@ -5394,6 +5592,7 @@ pub async fn unexpectederrorlog_list_id_next_count_date_date(
     Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
 }
 
+#[allow(non_snake_case)]
 pub async fn unexpectederrorlog_list_id_prev_count(
     pool: Extension<Pool>,
     Path(id): Path<String>,
@@ -5426,6 +5625,7 @@ pub async fn unexpectederrorlog_list_id_prev_count(
     Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
 }
 
+#[allow(non_snake_case)]
 pub async fn unexpectederrorlog_list_id_prev_count_date_date(
     pool: Extension<Pool>,
     Path(id): Path<String>,
@@ -5459,6 +5659,7 @@ pub async fn unexpectederrorlog_list_id_prev_count_date_date(
     Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
 }
 
+#[allow(non_snake_case)]
 pub async fn unexpectederrorlog_id(
     pool: Extension<Pool>,
     Path(id): Path<String>,
@@ -5488,6 +5689,7 @@ pub async fn unexpectederrorlog_id(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn validation_meta(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
     let _client = pool.get().await.map_err(|_| AppError::Internal)?;
     Ok(Json(ActionResult::java_success(
@@ -5498,6 +5700,7 @@ pub async fn validation_meta(pool: Extension<Pool>) -> Result<Json<ActionResult<
 }
 
 
+#[allow(non_snake_case)]
 pub async fn validation_scripting_benchmark(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
     let _client = pool.get().await.map_err(|_| AppError::Internal)?;
     Ok(Json(ActionResult::java_success(
@@ -5508,6 +5711,7 @@ pub async fn validation_scripting_benchmark(pool: Extension<Pool>) -> Result<Jso
 }
 
 
+#[allow(non_snake_case)]
 pub async fn validation_timeout_timeout(
     pool: Extension<Pool>,
     Path(timeout): Path<i64>,
@@ -5527,6 +5731,7 @@ pub async fn validation_timeout_timeout(
     ))))
 }
 
+#[allow(non_snake_case)]
 pub async fn zhengwudingding_pull_sync(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -5550,6 +5755,7 @@ pub async fn zhengwudingding_pull_sync(
     ))))
 }
 
+#[allow(non_snake_case)]
 pub async fn zhengwudingding_regist_callback(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -5572,6 +5778,7 @@ pub async fn zhengwudingding_regist_callback(
     ))))
 }
 
+#[allow(non_snake_case)]
 pub async fn zhengwudingding_sync_organization_callback(
     pool: Extension<Pool>,
     Json(body): Json<Value>,
@@ -5644,6 +5851,7 @@ pub struct WarnLogCreateRequest {
     pub port: Option<String>,
 }
 
+#[allow(non_snake_case)]
 pub async fn warnlog_create(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
@@ -5689,6 +5897,7 @@ fn warnlog_row_to_value(row: &deadpool_postgres::tokio_postgres::Row) -> Value {
     ]))
 }
 
+#[allow(non_snake_case)]
 pub async fn warnlog_id(
     pool: Extension<Pool>,
     Path(id): Path<String>,
@@ -5728,6 +5937,7 @@ async fn warnlog_list(
     Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
 }
 
+#[allow(non_snake_case)]
 pub async fn warnlog_list_next_count(
     pool: Extension<Pool>,
     Path(id): Path<String>,
@@ -5736,6 +5946,7 @@ pub async fn warnlog_list_next_count(
     warnlog_list(&pool, "WHERE id < $1", &[&id, &count]).await
 }
 
+#[allow(non_snake_case)]
 pub async fn warnlog_list_next_count_date_date(
     pool: Extension<Pool>,
     Path(id): Path<String>,
@@ -5750,6 +5961,7 @@ pub async fn warnlog_list_next_count_date_date(
     .await
 }
 
+#[allow(non_snake_case)]
 pub async fn warnlog_list_prev_count(
     pool: Extension<Pool>,
     Path(id): Path<String>,
@@ -5758,6 +5970,7 @@ pub async fn warnlog_list_prev_count(
     warnlog_list(&pool, "WHERE id > $1", &[&id, &count]).await
 }
 
+#[allow(non_snake_case)]
 pub async fn warnlog_list_prev_count_date_date(
     pool: Extension<Pool>,
     Path(id): Path<String>,
@@ -5772,6 +5985,7 @@ pub async fn warnlog_list_prev_count_date_date(
     .await
 }
 
+#[allow(non_snake_case)]
 pub async fn warnlog_view_system_log_tag_tag(
     pool: Extension<Pool>,
     Path(tag): Path<String>,
@@ -5784,6 +5998,7 @@ pub async fn warnlog_view_system_log_tag_tag(
 
 // ── storagemappings / adminlogin / authentication / cachedispatch / center ──
 
+#[allow(non_snake_case)]
 pub async fn storagemappings_list(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -5811,6 +6026,7 @@ pub async fn storagemappings_list(
     Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
 }
 
+#[allow(non_snake_case)]
 pub async fn adminlogin_logout(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
@@ -5832,6 +6048,7 @@ pub async fn adminlogin_logout(
     ])))))
 }
 
+#[allow(non_snake_case)]
 pub async fn authentication_who(
     session: Option<Extension<shared::session::Session>>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -5850,6 +6067,7 @@ pub async fn authentication_who(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn cachedispatch_dispatch(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
@@ -5873,6 +6091,7 @@ pub async fn cachedispatch_dispatch(
     ])))))
 }
 
+#[allow(non_snake_case)]
 pub async fn center_regist_applications_update(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
@@ -5957,6 +6176,7 @@ async fn u2_config_domain_put(
 }
 
 /// PUT /jaxrs/program_center/config/centerserver —— 保存中心服务器配置
+#[allow(non_snake_case)]
 pub async fn u2_config_centerserver_put(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
@@ -5966,6 +6186,7 @@ pub async fn u2_config_centerserver_put(
 }
 
 /// PUT /jaxrs/program_center/config/person —— 人员配置保存
+#[allow(non_snake_case)]
 pub async fn u2_config_person_put(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
@@ -5975,6 +6196,7 @@ pub async fn u2_config_person_put(
 }
 
 /// PUT /jaxrs/program_center/config/token —— 令牌配置保存
+#[allow(non_snake_case)]
 pub async fn u2_config_token_put(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
@@ -6046,6 +6268,7 @@ async fn u2_invoke_find_by_flag(
 }
 
 /// POST /jaxrs/program_center/invoke —— 创建服务调用
+#[allow(non_snake_case)]
 pub async fn u2_invoke_create(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
@@ -6127,6 +6350,7 @@ pub async fn u2_invoke_create(
 }
 
 /// GET /jaxrs/program_center/invoke/{flag} —— 按 id/name/alias 查询
+#[allow(non_snake_case)]
 pub async fn u2_invoke_get(
     pool: Extension<Pool>,
     Path(flag): Path<String>,
@@ -6163,6 +6387,7 @@ pub async fn u2_invoke_get(
 }
 
 /// PUT /jaxrs/program_center/invoke/{flag} —— 更新服务调用
+#[allow(non_snake_case)]
 pub async fn u2_invoke_update(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
@@ -6230,6 +6455,7 @@ pub async fn u2_invoke_update(
 }
 
 /// DELETE /jaxrs/program_center/invoke/{flag} —— 删除服务调用
+#[allow(non_snake_case)]
 pub async fn u2_invoke_delete(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
@@ -6281,6 +6507,7 @@ async fn u2_appstyle_erase_current(
 }
 
 /// GET /jaxrs/program_center/appstyle/image/login/avatar/erase —— 清除当前登录头像
+#[allow(non_snake_case)]
 pub async fn u2_appstyle_login_avatar_erase_get(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
@@ -6289,6 +6516,7 @@ pub async fn u2_appstyle_login_avatar_erase_get(
 }
 
 /// GET /jaxrs/program_center/appstyle/image/launch/logo/erase —— 清除当前启动 Logo
+#[allow(non_snake_case)]
 pub async fn u2_appstyle_launch_logo_erase_get(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
@@ -6298,6 +6526,7 @@ pub async fn u2_appstyle_launch_logo_erase_get(
 
 // ── agent list / delete（Java: GET/DELETE /agent）──────────────────────
 
+#[allow(non_snake_case)]
 pub async fn agent_list_all(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -6330,6 +6559,7 @@ pub async fn agent_list_all(
     Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
 }
 
+#[allow(non_snake_case)]
 pub async fn agent_delete_flag(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
@@ -6368,6 +6598,7 @@ pub async fn agent_delete_flag(
 // --- agent 参数化家族 ---
 
 /// GET /agent/{flag} —— 按 id/flag 查询 agent
+#[allow(non_snake_case)]
 pub async fn u3_agent_get_flag(
     pool: Extension<Pool>,
     Path(flag): Path<String>,
@@ -6398,6 +6629,7 @@ pub async fn u3_agent_get_flag(
 }
 
 /// PUT /agent/{flag} —— 更新 agent（管理员门禁）
+#[allow(non_snake_case)]
 pub async fn u3_agent_update_flag(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
@@ -6444,6 +6676,7 @@ async fn u3_agent_set_enable(
 }
 
 /// GET /agent/{flag}/disable —— 停用 agent
+#[allow(non_snake_case)]
 pub async fn u3_agent_flag_disable(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
@@ -6453,6 +6686,7 @@ pub async fn u3_agent_flag_disable(
 }
 
 /// GET /agent/{flag}/enable —— 启用 agent
+#[allow(non_snake_case)]
 pub async fn u3_agent_flag_enable(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
@@ -6462,6 +6696,7 @@ pub async fn u3_agent_flag_enable(
 }
 
 /// GET /agent/{flag}/execute —— 触发 agent 执行并记录调度日志
+#[allow(non_snake_case)]
 pub async fn u3_agent_flag_execute(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
@@ -6492,6 +6727,7 @@ pub async fn u3_agent_flag_execute(
 }
 
 /// PUT /agent/{flag}/file —— 登记 agent 文件资源（管理员门禁）
+#[allow(non_snake_case)]
 pub async fn u3_agent_file_flag(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
@@ -6531,6 +6767,7 @@ fn appstyle_resource_type_of(path: &'static str) -> &'static str {
 }
 
 /// GET /appstyle/current/update —— 读取当前样式配置（Java 该端点为 GET）
+#[allow(non_snake_case)]
 pub async fn u3_appstyle_current_update_get(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -6556,6 +6793,7 @@ pub async fn u3_appstyle_current_update_get(
 }
 
 /// PUT /jaxrs/program_center/appstyle —— 保存当前样式（复用 config 键值域，管理员门禁）
+#[allow(non_snake_case)]
 pub async fn u3_appstyle_put(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
@@ -6593,6 +6831,7 @@ async fn u3_appstyle_image_put(
     }))))
 }
 
+#[allow(non_snake_case)]
 pub async fn u3_appstyle_image_application_top_put(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
@@ -6601,6 +6840,7 @@ pub async fn u3_appstyle_image_application_top_put(
     u3_appstyle_image_put(&pool, &session, appstyle_resource_type_of("application_top"), body).await
 }
 
+#[allow(non_snake_case)]
 pub async fn u3_appstyle_image_launch_logo_put(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
@@ -6609,6 +6849,7 @@ pub async fn u3_appstyle_image_launch_logo_put(
     u3_appstyle_image_put(&pool, &session, appstyle_resource_type_of("launch_logo"), body).await
 }
 
+#[allow(non_snake_case)]
 pub async fn u3_appstyle_image_login_avatar_put(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
@@ -6617,6 +6858,7 @@ pub async fn u3_appstyle_image_login_avatar_put(
     u3_appstyle_image_put(&pool, &session, appstyle_resource_type_of("login_avatar"), body).await
 }
 
+#[allow(non_snake_case)]
 pub async fn u3_appstyle_image_menu_logo_blur_put(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
@@ -6625,6 +6867,7 @@ pub async fn u3_appstyle_image_menu_logo_blur_put(
     u3_appstyle_image_put(&pool, &session, appstyle_resource_type_of("menu_logo_blur"), body).await
 }
 
+#[allow(non_snake_case)]
 pub async fn u3_appstyle_image_menu_logo_focus_put(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
@@ -6633,6 +6876,7 @@ pub async fn u3_appstyle_image_menu_logo_focus_put(
     u3_appstyle_image_put(&pool, &session, appstyle_resource_type_of("menu_logo_focus"), body).await
 }
 
+#[allow(non_snake_case)]
 pub async fn u3_appstyle_image_process_default_put(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
@@ -6641,6 +6885,7 @@ pub async fn u3_appstyle_image_process_default_put(
     u3_appstyle_image_put(&pool, &session, appstyle_resource_type_of("process_default"), body).await
 }
 
+#[allow(non_snake_case)]
 pub async fn u3_appstyle_image_setup_about_logo_put(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
@@ -6651,6 +6896,7 @@ pub async fn u3_appstyle_image_setup_about_logo_put(
 
 // --- appstyle erase GET 家族剩余 5 类 ---
 
+#[allow(non_snake_case)]
 pub async fn u3_appstyle_application_top_erase_get(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
@@ -6658,6 +6904,7 @@ pub async fn u3_appstyle_application_top_erase_get(
     u2_appstyle_erase_current(&pool, &session, "application_top").await
 }
 
+#[allow(non_snake_case)]
 pub async fn u3_appstyle_menu_logo_blur_erase_get(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
@@ -6665,6 +6912,7 @@ pub async fn u3_appstyle_menu_logo_blur_erase_get(
     u2_appstyle_erase_current(&pool, &session, "menu_logo_blur").await
 }
 
+#[allow(non_snake_case)]
 pub async fn u3_appstyle_menu_logo_focus_erase_get(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
@@ -6672,6 +6920,7 @@ pub async fn u3_appstyle_menu_logo_focus_erase_get(
     u2_appstyle_erase_current(&pool, &session, "menu_logo_focus").await
 }
 
+#[allow(non_snake_case)]
 pub async fn u3_appstyle_process_default_erase_get(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
@@ -6679,6 +6928,7 @@ pub async fn u3_appstyle_process_default_erase_get(
     u2_appstyle_erase_current(&pool, &session, "process_default").await
 }
 
+#[allow(non_snake_case)]
 pub async fn u3_appstyle_setup_about_logo_erase_get(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
@@ -6723,6 +6973,7 @@ async fn u3_bar_mass_page(
     }))))
 }
 
+#[allow(non_snake_case)]
 pub async fn u3_bar_create_mass_from_count(
     pool: Extension<Pool>,
     Path(from): Path<i64>,
@@ -6731,6 +6982,7 @@ pub async fn u3_bar_create_mass_from_count(
     u3_bar_mass_page(&pool, from, count, "bar").await
 }
 
+#[allow(non_snake_case)]
 pub async fn u3_foo_create_mass_from_count(
     pool: Extension<Pool>,
     Path(from): Path<i64>,
@@ -6773,6 +7025,7 @@ async fn u3_bar_select_grouped(
     }))))
 }
 
+#[allow(non_snake_case)]
 pub async fn u3_bar_select1_field_value_count(
     pool: Extension<Pool>,
     Path(field): Path<String>,
@@ -6782,6 +7035,7 @@ pub async fn u3_bar_select1_field_value_count(
     u3_bar_select_grouped(&pool, &field, &value, count, "select1").await
 }
 
+#[allow(non_snake_case)]
 pub async fn u3_bar_select2_count(
     pool: Extension<Pool>,
     Path(count): Path<i64>,
@@ -6789,6 +7043,7 @@ pub async fn u3_bar_select2_count(
     u3_bar_select_grouped(&pool, "", "", count, "select2").await
 }
 
+#[allow(non_snake_case)]
 pub async fn u3_bar_select3_field_value_count(
     pool: Extension<Pool>,
     Path(field): Path<String>,
@@ -6798,6 +7053,7 @@ pub async fn u3_bar_select3_field_value_count(
     u3_bar_select_grouped(&pool, &field, &value, count, "select3").await
 }
 
+#[allow(non_snake_case)]
 pub async fn u3_bar_select4_field_value_count(
     pool: Extension<Pool>,
     Path(field): Path<String>,
@@ -6810,6 +7066,7 @@ pub async fn u3_bar_select4_field_value_count(
 // --- collect 家族补齐 ---
 
 /// PUT /collect —— 更新收藏（owner 门禁）
+#[allow(non_snake_case)]
 pub async fn u3_collect_update(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
@@ -6849,6 +7106,7 @@ pub async fn u3_collect_update(
 }
 
 /// DELETE /collect/name/{name}/mobile/{mobile}/code/{code} —— 按注册三元组解绑
+#[allow(non_snake_case)]
 pub async fn u3_collect_delete_name_mobile_code(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
@@ -6873,6 +7131,7 @@ pub async fn u3_collect_delete_name_mobile_code(
 }
 
 /// GET /collect/controllermobile/name/{name}/mobile/{mobile} —— 按人员与手机号查询绑定
+#[allow(non_snake_case)]
 pub async fn u3_collect_controllermobile_get(
     pool: Extension<Pool>,
     Path(name): Path<String>,
@@ -6906,6 +7165,7 @@ pub async fn u3_collect_controllermobile_get(
 }
 
 /// PUT /collect/resetpassword —— 管理员重置人员密码（auth_person）
+#[allow(non_snake_case)]
 pub async fn u3_collect_resetpassword_put(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
@@ -6934,6 +7194,7 @@ pub async fn u3_collect_resetpassword_put(
 }
 
 /// PUT /collect/urlMapping —— URL 映射保存（config 键值域）
+#[allow(non_snake_case)]
 pub async fn u3_collect_urlmapping_put(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
@@ -6945,6 +7206,7 @@ pub async fn u3_collect_urlmapping_put(
 // --- config 家族补齐 ---
 
 /// GET /config —— 全量配置导出
+#[allow(non_snake_case)]
 pub async fn u3_config_dump(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -6974,6 +7236,7 @@ pub async fn u3_config_dump(
 }
 
 /// POST /config/change/password —— 本人改密（校验旧密码后写回 bcrypt 哈希）
+#[allow(non_snake_case)]
 pub async fn u3_config_change_password_post(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
@@ -7016,6 +7279,7 @@ pub async fn u3_config_change_password_post(
 }
 
 /// POST /config/open —— 打开配置保存
+#[allow(non_snake_case)]
 pub async fn u3_config_open_post(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
@@ -7025,6 +7289,7 @@ pub async fn u3_config_open_post(
 }
 
 /// POST /config/open/run/time/config —— 运行时配置保存
+#[allow(non_snake_case)]
 pub async fn u3_config_open_run_time_post(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
@@ -7034,6 +7299,7 @@ pub async fn u3_config_open_run_time_post(
 }
 
 /// POST /config/ternary/management —— 三元管理配置保存
+#[allow(non_snake_case)]
 pub async fn u3_config_ternary_management_post(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
@@ -7043,6 +7309,7 @@ pub async fn u3_config_ternary_management_post(
 }
 
 /// PUT /config/collect —— 采集端配置保存
+#[allow(non_snake_case)]
 pub async fn u3_config_collect_put(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
@@ -7052,6 +7319,7 @@ pub async fn u3_config_collect_put(
 }
 
 /// PUT /config/portal —— 门户配置保存
+#[allow(non_snake_case)]
 pub async fn u3_config_portal_put(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
@@ -7061,6 +7329,7 @@ pub async fn u3_config_portal_put(
 }
 
 /// PUT /config/proxy —— 代理配置保存
+#[allow(non_snake_case)]
 pub async fn u3_config_proxy_put(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
@@ -7072,6 +7341,7 @@ pub async fn u3_config_proxy_put(
 // --- deploy 家族补齐 ---
 
 /// POST /deploy/server/resource —— 登记服务器资源（管理员门禁）
+#[allow(non_snake_case)]
 pub async fn u3_deploy_server_resource_post(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
@@ -7098,6 +7368,7 @@ pub async fn u3_deploy_server_resource_post(
 }
 
 /// POST /deploy/web/resource/as/new/{asNew} —— 以新名称克隆最新 web 资源
+#[allow(non_snake_case)]
 pub async fn u3_deploy_web_resource_as_new_post(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
@@ -7124,6 +7395,7 @@ pub async fn u3_deploy_web_resource_as_new_post(
 // --- dict 家族补齐 ---
 
 /// PUT /dict/{id} —— 按 id 更新字典（owner 门禁）
+#[allow(non_snake_case)]
 pub async fn u3_dict_update_id(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
@@ -7198,6 +7470,7 @@ async fn u3_distribute_source(
     }))))
 }
 
+#[allow(non_snake_case)]
 pub async fn u3_distribute_source_get(
     pool: Extension<Pool>,
     Path(source): Path<String>,
@@ -7205,6 +7478,7 @@ pub async fn u3_distribute_source_get(
     u3_distribute_source(&pool, source.trim(), false).await
 }
 
+#[allow(non_snake_case)]
 pub async fn u3_distribute_webserver_source_get(
     pool: Extension<Pool>,
     Path(source): Path<String>,
@@ -7215,6 +7489,7 @@ pub async fn u3_distribute_webserver_source_get(
 // --- invoke 家族补齐 ---
 
 /// GET /invoke —— 服务调用全量列表
+#[allow(non_snake_case)]
 pub async fn u3_invoke_list_all(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -7247,6 +7522,7 @@ pub async fn u3_invoke_list_all(
 }
 
 /// GET /invoke/list/with/category/{category}
+#[allow(non_snake_case)]
 pub async fn u3_invoke_list_by_category(
     pool: Extension<Pool>,
     Path(category): Path<String>,
@@ -7314,6 +7590,7 @@ async fn u3_invoke_execute_inner(
 }
 
 /// POST /invoke/{flag}/execute —— 执行服务调用
+#[allow(non_snake_case)]
 pub async fn u3_invoke_execute(
     pool: Extension<Pool>,
     Path(flag): Path<String>,
@@ -7323,6 +7600,7 @@ pub async fn u3_invoke_execute(
 }
 
 /// POST /invoke/{flag}/client/{client}/token/{token}/execute
+#[allow(non_snake_case)]
 pub async fn u3_invoke_execute_with_token(
     pool: Extension<Pool>,
     Path(flag): Path<String>,
@@ -7334,6 +7612,7 @@ pub async fn u3_invoke_execute_with_token(
 }
 
 /// PUT /invoke/{flag}/file —— 更新服务调用脚本内容（管理员门禁）
+#[allow(non_snake_case)]
 pub async fn u3_invoke_file_put(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
@@ -7362,6 +7641,7 @@ pub async fn u3_invoke_file_put(
 // --- jest / market / module / mpweixin / output 补齐 ---
 
 /// GET /jest/clear/cache/{source} —— 记录指定来源缓存清理
+#[allow(non_snake_case)]
 pub async fn u3_jest_clear_cache_source(
     pool: Extension<Pool>,
     Path(source): Path<String>,
@@ -7379,6 +7659,7 @@ pub async fn u3_jest_clear_cache_source(
 }
 
 /// GET /market/{flag} —— 按 id/name 查询市场模块
+#[allow(non_snake_case)]
 pub async fn u3_market_get_flag(
     pool: Extension<Pool>,
     Path(flag): Path<String>,
@@ -7408,6 +7689,7 @@ pub async fn u3_market_get_flag(
 }
 
 /// GET /market/{flag}/cover/pic —— 按模块名查封面资源
+#[allow(non_snake_case)]
 pub async fn u3_market_cover_pic_flag(
     pool: Extension<Pool>,
     Path(flag): Path<String>,
@@ -7435,6 +7717,7 @@ pub async fn u3_market_cover_pic_flag(
 }
 
 /// GET /market/{flag}/install/log —— 按应用过滤安装日志
+#[allow(non_snake_case)]
 pub async fn u3_market_install_log_flag(
     pool: Extension<Pool>,
     Path(flag): Path<String>,
@@ -7515,6 +7798,7 @@ async fn u3_market_list_paged(
 }
 
 /// POST /market/list/paging/{page}/size/{size}
+#[allow(non_snake_case)]
 pub async fn u3_market_list_paging_post(
     pool: Extension<Pool>,
     Path(page): Path<i64>,
@@ -7525,6 +7809,7 @@ pub async fn u3_market_list_paging_post(
 }
 
 /// GET /market/list/paging/{page}/size/{size}/category/{category}
+#[allow(non_snake_case)]
 pub async fn u3_market_list_paging_category(
     pool: Extension<Pool>,
     Path(page): Path<i64>,
@@ -7535,6 +7820,7 @@ pub async fn u3_market_list_paging_category(
 }
 
 /// POST /market/list/install/log/paging/{page}/size/{size}
+#[allow(non_snake_case)]
 pub async fn u3_market_install_log_paging_post(
     pool: Extension<Pool>,
     Path(page): Path<i64>,
@@ -7557,6 +7843,7 @@ pub async fn u3_market_install_log_paging_post(
 }
 
 /// GET /module/output/structure —— 最新模块结构（Java 该端点无参数）
+#[allow(non_snake_case)]
 pub async fn u3_module_output_structure_latest(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -7599,6 +7886,7 @@ async fn u3_module_sync_action(
 }
 
 /// PUT /module/output
+#[allow(non_snake_case)]
 pub async fn u3_module_output_put(
     pool: Extension<Pool>,
     _session: Extension<shared::session::Session>,
@@ -7607,6 +7895,7 @@ pub async fn u3_module_output_put(
 }
 
 /// PUT /module/list
+#[allow(non_snake_case)]
 pub async fn u3_module_list_put(
     pool: Extension<Pool>,
     _session: Extension<shared::session::Session>,
@@ -7615,6 +7904,7 @@ pub async fn u3_module_list_put(
 }
 
 /// PUT /module/compare/upload
+#[allow(non_snake_case)]
 pub async fn u3_module_compare_upload_put(
     pool: Extension<Pool>,
     _session: Extension<shared::session::Session>,
@@ -7623,6 +7913,7 @@ pub async fn u3_module_compare_upload_put(
 }
 
 /// GET /mpweixin/menu/create/to/weixin —— 读取最新菜单（Java GET 无参数变体）
+#[allow(non_snake_case)]
 pub async fn u3_mpweixin_menu_latest(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -7647,6 +7938,7 @@ pub async fn u3_mpweixin_menu_latest(
 }
 
 /// POST /mpweixin/check —— 校验最新菜单可达性
+#[allow(non_snake_case)]
 pub async fn u3_mpweixin_check_post(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -7660,6 +7952,7 @@ pub async fn u3_mpweixin_check_post(
 }
 
 /// POST /mpweixin/message/template/send —— 发送模板消息并落消息日志
+#[allow(non_snake_case)]
 pub async fn u3_mpweixin_template_send_post(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
@@ -7678,6 +7971,7 @@ pub async fn u3_mpweixin_template_send_post(
 }
 
 /// PUT /output/{flag}/select —— 标记输出为选中（owner 门禁）
+#[allow(non_snake_case)]
 pub async fn u3_output_select_put(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
@@ -7723,6 +8017,7 @@ pub struct U3PromptErrorLogRequest {
 }
 
 /// POST /prompterrorlog —— 上报提示级异常日志
+#[allow(non_snake_case)]
 pub async fn u3_prompterrorlog_create(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
@@ -7758,6 +8053,7 @@ pub struct U3UnexpectedErrorLogRequest {
 }
 
 /// POST /unexpectederrorlog —— 上报未捕获异常日志
+#[allow(non_snake_case)]
 pub async fn u3_unexpectederrorlog_create(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
@@ -7785,6 +8081,7 @@ pub async fn u3_unexpectederrorlog_create(
 // --- qiyeweixin / schedule / script / welink 补齐 ---
 
 /// POST /qiyeweixin —— 登记企微回调注册
+#[allow(non_snake_case)]
 pub async fn u3_qiyeweixin_create(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
@@ -7802,6 +8099,7 @@ pub async fn u3_qiyeweixin_create(
 }
 
 /// POST /qiyeweixin/request/pull/sync —— 请求企微拉取同步
+#[allow(non_snake_case)]
 pub async fn u3_qiyeweixin_request_pull_sync_post(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -7818,6 +8116,7 @@ pub async fn u3_qiyeweixin_request_pull_sync_post(
 }
 
 /// POST /schedule/schedule/fire —— 触发指定（或最新）调度并记录日志
+#[allow(non_snake_case)]
 pub async fn u3_schedule_fire_post(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
@@ -7860,6 +8159,7 @@ pub async fn u3_schedule_fire_post(
 }
 
 /// POST /script/name/{name} —— 按名称保存脚本（复用 script_save owner 门禁）
+#[allow(non_snake_case)]
 pub async fn u3_script_save_name(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
@@ -7870,6 +8170,7 @@ pub async fn u3_script_save_name(
 }
 
 /// GET /script/name/{name}/imported —— 按名称查询导入脚本
+#[allow(non_snake_case)]
 pub async fn u3_script_name_imported(
     pool: Extension<Pool>,
     Path(name): Path<String>,
@@ -7899,6 +8200,7 @@ pub async fn u3_script_name_imported(
 // --- welink（华为 WeLink，镜像 dingding/qiyeweixin 同步日志模式）---
 
 /// GET /welink/pull/sync
+#[allow(non_snake_case)]
 pub async fn u3_welink_pull_sync(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -7915,6 +8217,7 @@ pub async fn u3_welink_pull_sync(
 }
 
 /// POST /welink/request/pull/sync
+#[allow(non_snake_case)]
 pub async fn u3_welink_request_pull_sync_post(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -7965,6 +8268,7 @@ fn apppack_row_to_value(row: &deadpool_postgres::tokio_postgres::Row) -> Value {
     ]))
 }
 
+#[allow(non_snake_case)]
 pub async fn apppack_info_list(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -7985,6 +8289,7 @@ pub async fn apppack_info_list(
 const APPPACK_FILE_COLUMNS: &str =
     "SELECT id, name, version, status, file_name, file_path, description, create_time, update_time FROM x_program_app_pack";
 
+#[allow(non_snake_case)]
 pub async fn apppack_file_last(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -8003,6 +8308,7 @@ pub async fn apppack_file_last(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn apppack_file_download(
     pool: Extension<Pool>,
     Path(id): Path<String>,
@@ -8022,6 +8328,7 @@ pub async fn apppack_file_download(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn apppack_logo_get(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -8050,6 +8357,7 @@ pub async fn apppack_logo_get(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn apppack_android_repack(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
@@ -8074,6 +8382,7 @@ pub async fn apppack_android_repack(
     ])))))
 }
 
+#[allow(non_snake_case)]
 pub async fn apppack_android_start(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
@@ -8102,6 +8411,7 @@ pub async fn apppack_android_start(
     ])))))
 }
 
+#[allow(non_snake_case)]
 pub async fn apppack_publish(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
@@ -8128,6 +8438,7 @@ pub async fn apppack_publish(
     ])))))
 }
 
+#[allow(non_snake_case)]
 pub async fn apppack_server_connect(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -8159,6 +8470,7 @@ pub struct DictCreateRequest {
     pub app_data: Option<String>,
 }
 
+#[allow(non_snake_case)]
 pub async fn dict_create(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
@@ -8219,6 +8531,7 @@ async fn dict_data_write(
     ])))))
 }
 
+#[allow(non_snake_case)]
 pub async fn dict_data_save_put(
     pool: Extension<Pool>,
     Path(dict_flag): Path<String>,
@@ -8228,6 +8541,7 @@ pub async fn dict_data_save_put(
     dict_data_write(pool, dict_flag, path, body).await
 }
 
+#[allow(non_snake_case)]
 pub async fn dict_data_delete_path(
     pool: Extension<Pool>,
     Path(dict_flag): Path<String>,
@@ -8253,6 +8567,7 @@ pub async fn dict_data_delete_path(
     ])))))
 }
 
+#[allow(non_snake_case)]
 pub async fn dict_delete_id(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
@@ -8309,6 +8624,7 @@ pub struct ScriptSaveRequest {
     pub category: Option<String>,
 }
 
+#[allow(non_snake_case)]
 pub async fn script_create(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
@@ -8385,6 +8701,7 @@ async fn script_save(
     ])))))
 }
 
+#[allow(non_snake_case)]
 pub async fn script_save_flag(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
@@ -8394,6 +8711,7 @@ pub async fn script_save_flag(
     script_save(pool, session, "flag", flag, req).await
 }
 
+#[allow(non_snake_case)]
 pub async fn script_update_id(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
@@ -8403,6 +8721,7 @@ pub async fn script_update_id(
     script_save(pool, session, "id", id, req).await
 }
 
+#[allow(non_snake_case)]
 pub async fn script_delete_id(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,

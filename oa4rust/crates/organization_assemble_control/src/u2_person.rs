@@ -13,6 +13,7 @@ const PERSON_TABLE: &str = "x_org_person";
 const PERSON_COLS: &str =
     "id, name, mobile, email, unit_id, icon, status, status_des, creator, create_time::text";
 
+#[allow(non_snake_case)]
 pub async fn resolve_person_id(client: &deadpool_postgres::Client, flag: &str) -> Result<Option<String>, AppError> {
     resolve_generic_id(client, PERSON_TABLE, flag).await
 }
@@ -39,6 +40,7 @@ fn person_row_json(row: &PgRow) -> Value {
     Value::Object(map)
 }
 
+#[allow(non_snake_case)]
 pub async fn person_get(
     pool: Extension<Pool>,
     Path(flag): Path<String>,
@@ -54,6 +56,7 @@ pub async fn person_get(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn person_create(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
@@ -97,6 +100,7 @@ pub async fn person_create(
     ))
 }
 
+#[allow(non_snake_case)]
 pub async fn person_edit(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
@@ -139,6 +143,7 @@ pub async fn person_edit(
     ))
 }
 
+#[allow(non_snake_case)]
 pub async fn person_mock_put_to_post(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
@@ -162,6 +167,7 @@ async fn soft_delete_person(client: &deadpool_postgres::Client, flag: &str) -> R
     Ok(Some(pid))
 }
 
+#[allow(non_snake_case)]
 pub async fn person_delete(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
@@ -177,6 +183,7 @@ pub async fn person_delete(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn person_mock_delete_to_get(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
@@ -185,6 +192,7 @@ pub async fn person_mock_delete_to_get(
     person_delete(pool, session, Path(flag)).await
 }
 
+#[allow(non_snake_case)]
 pub async fn person_reserve_delete(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
@@ -214,6 +222,7 @@ pub async fn person_reserve_delete(
     ))
 }
 
+#[allow(non_snake_case)]
 pub async fn person_reserve_mock_delete_to_get(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
@@ -243,6 +252,7 @@ async fn cursor_page(pool: &Pool, flag: &str, count: i64, next: bool) -> Handler
     list_ok(rows.iter().map(person_row_json).collect())
 }
 
+#[allow(non_snake_case)]
 pub async fn person_list_next(
     pool: Extension<Pool>,
     Path((flag, count)): Path<(String, i64)>,
@@ -250,6 +260,7 @@ pub async fn person_list_next(
     cursor_page(&pool, &flag, count, true).await
 }
 
+#[allow(non_snake_case)]
 pub async fn person_list_prev(
     pool: Extension<Pool>,
     Path((flag, count)): Path<(String, i64)>,
@@ -281,6 +292,7 @@ async fn persons_in_group(pool: &Pool, group_flag: &str, nested: bool) -> Handle
     list_ok(rows.iter().map(person_row_json).collect())
 }
 
+#[allow(non_snake_case)]
 pub async fn person_list_group_sub_direct(
     pool: Extension<Pool>,
     Path(group_flag): Path<String>,
@@ -288,6 +300,7 @@ pub async fn person_list_group_sub_direct(
     persons_in_group(&pool, &group_flag, false).await
 }
 
+#[allow(non_snake_case)]
 pub async fn person_list_group_sub_nested(
     pool: Extension<Pool>,
     Path(group_flag): Path<String>,
@@ -295,6 +308,7 @@ pub async fn person_list_group_sub_nested(
     persons_in_group(&pool, &group_flag, true).await
 }
 
+#[allow(non_snake_case)]
 pub async fn person_list_with_role(
     pool: Extension<Pool>,
     Path(role_flag): Path<String>,
@@ -310,6 +324,7 @@ pub async fn person_list_with_role(
     list_ok(rows.iter().map(person_row_json).collect())
 }
 
+#[allow(non_snake_case)]
 pub async fn person_list_pinyininitial(
     pool: Extension<Pool>,
     Json(body): Json<Value>,
@@ -330,6 +345,7 @@ pub async fn person_list_pinyininitial(
     list_ok_java(rows.iter().map(person_row_json).collect())
 }
 
+#[allow(non_snake_case)]
 pub async fn person_list_like(
     pool: Extension<Pool>,
     Json(body): Json<Value>,
@@ -349,6 +365,7 @@ pub async fn person_list_like(
     list_ok_java(rows.iter().map(person_row_json).collect())
 }
 
+#[allow(non_snake_case)]
 pub async fn person_list_like_pinyin(
     pool: Extension<Pool>,
     Json(body): Json<Value>,
@@ -369,6 +386,7 @@ pub async fn person_list_like_pinyin(
     list_ok_java(rows.iter().map(person_row_json).collect())
 }
 
+#[allow(non_snake_case)]
 pub async fn person_set_password(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
@@ -391,6 +409,7 @@ pub async fn person_set_password(
     ok(Value::Bool(true))
 }
 
+#[allow(non_snake_case)]
 pub async fn person_set_password_mock_put_to_post(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
@@ -400,6 +419,7 @@ pub async fn person_set_password_mock_put_to_post(
     person_set_password(pool, session, Path(flag), Json(body)).await
 }
 
+#[allow(non_snake_case)]
 pub async fn person_reset_password(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
@@ -419,6 +439,7 @@ pub async fn person_reset_password(
     ))
 }
 
+#[allow(non_snake_case)]
 pub async fn person_check_password(Path(password): Path<String>) -> HandlerResult {
     ok(Value::Object(
         vec![("value".to_string(), Value::Bool(validate_password_policy(&password)))]
@@ -427,6 +448,7 @@ pub async fn person_check_password(Path(password): Path<String>) -> HandlerResul
     ))
 }
 
+#[allow(non_snake_case)]
 pub async fn person_get_icon(
     pool: Extension<Pool>,
     Path(flag): Path<String>,
@@ -448,6 +470,7 @@ pub async fn person_get_icon(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn person_set_icon(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
@@ -473,6 +496,7 @@ pub async fn person_set_icon(
     ok(Value::Bool(true))
 }
 
+#[allow(non_snake_case)]
 pub async fn person_set_icon_mock_put_to_post(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
@@ -482,6 +506,7 @@ pub async fn person_set_icon_mock_put_to_post(
     person_set_icon(pool, session, Path(flag), Json(body)).await
 }
 
+#[allow(non_snake_case)]
 pub async fn person_lock(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
@@ -505,6 +530,7 @@ pub async fn person_lock(
     ok(Value::Bool(true))
 }
 
+#[allow(non_snake_case)]
 pub async fn person_unlock(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
@@ -525,6 +551,7 @@ pub async fn person_unlock(
     ok(Value::Bool(true))
 }
 
+#[allow(non_snake_case)]
 pub async fn person_ban(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
@@ -545,6 +572,7 @@ pub async fn person_ban(
     ok(Value::Bool(true))
 }
 
+#[allow(non_snake_case)]
 pub async fn person_unban(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
@@ -565,6 +593,7 @@ pub async fn person_unban(
     ok(Value::Bool(true))
 }
 
+#[allow(non_snake_case)]
 pub async fn person_set_password_expired_time(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
@@ -589,6 +618,7 @@ pub async fn person_set_password_expired_time(
     ok(Value::Bool(true))
 }
 
+#[allow(non_snake_case)]
 pub async fn person_list_filter_paging(
     pool: Extension<Pool>,
     Path((page, size)): Path<(i64, i64)>,
@@ -640,6 +670,7 @@ pub async fn person_list_filter_paging(
     ))
 }
 
+#[allow(non_snake_case)]
 pub async fn person_list_delete_paging(
     pool: Extension<Pool>,
     Path((page, size)): Path<(i64, i64)>,

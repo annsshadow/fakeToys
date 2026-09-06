@@ -1,7 +1,6 @@
 use axum::{
     extract::{Extension, Multipart},
-    routing::{get, post},
-    Json, Router,
+    Json,
 };
 use deadpool_postgres::Pool;
 use serde::Serialize;
@@ -45,6 +44,7 @@ struct ComplexTopResponse {
     tag = "file"
 )]
 #[axum::debug_handler]
+#[allow(non_snake_case)]
 pub async fn folder_list_top(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -101,6 +101,7 @@ pub async fn folder_list_top(
     tag = "file"
 )]
 #[axum::debug_handler]
+#[allow(non_snake_case)]
 pub async fn folder_list_with_folder(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
@@ -155,6 +156,7 @@ pub async fn folder_list_with_folder(
     tag = "file"
 )]
 #[axum::debug_handler]
+#[allow(non_snake_case)]
 pub async fn complex_top(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -251,6 +253,7 @@ pub async fn complex_top(
     tag = "file"
 )]
 #[axum::debug_handler]
+#[allow(non_snake_case)]
 pub async fn file_upload(
     pool: Extension<Pool>,
     mut form: Multipart,
@@ -311,7 +314,7 @@ pub async fn file_upload(
         "text/plain" => "txt".to_string(),
         _ => {
             if let Some(ref fname) = filename {
-                if let Some(ext) = fname.split('.').last() {
+                if let Some(ext) = fname.split('.').next_back() {
                     ext.to_lowercase()
                 } else {
                     "bin".to_string()
@@ -378,7 +381,7 @@ pub(crate) async fn upload_file_record(
         "text/plain" => "txt".to_string(),
         _ => {
             if let Some(ref fname) = filename {
-                if let Some(ext) = fname.split('.').last() {
+                if let Some(ext) = fname.split('.').next_back() {
                     ext.to_lowercase()
                 } else {
                     "bin".to_string()
@@ -439,6 +442,7 @@ pub(crate) async fn upload_file_record(
     tag = "file"
 )]
 #[axum::debug_handler]
+#[allow(non_snake_case)]
 pub async fn file_download(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
@@ -487,6 +491,7 @@ pub async fn file_download(
     tag = "file"
 )]
 #[axum::debug_handler]
+#[allow(non_snake_case)]
 pub async fn folder_create(
     pool: Extension<Pool>,
     axum::extract::Json(body): axum::extract::Json<Value>,
@@ -537,6 +542,7 @@ pub async fn folder_create(
     tag = "file"
 )]
 #[axum::debug_handler]
+#[allow(non_snake_case)]
 pub async fn folder_update(
     pool: Extension<Pool>,
     axum::extract::Json(body): axum::extract::Json<Value>,
@@ -583,6 +589,7 @@ pub async fn folder_update(
     tag = "file"
 )]
 #[axum::debug_handler]
+#[allow(non_snake_case)]
 pub async fn folder_remove(
     pool: Extension<Pool>,
     axum::extract::Json(body): axum::extract::Json<Value>,
@@ -624,6 +631,7 @@ pub async fn folder_remove(
     tag = "file"
 )]
 #[axum::debug_handler]
+#[allow(non_snake_case)]
 pub async fn permission_set(
     pool: Extension<Pool>,
     axum::extract::Json(body): axum::extract::Json<Value>,

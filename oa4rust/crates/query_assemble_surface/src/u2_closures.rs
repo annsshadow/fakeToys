@@ -191,6 +191,7 @@ pub fn format_sql(sql: &str) -> String {
 
 // ── statement 族 ─────────────────────────────────────────────────────────────
 
+#[allow(non_snake_case)]
 pub async fn statement_get_id(
     pool: Extension<Pool>,
     Path(id): Path<String>,
@@ -211,6 +212,7 @@ pub async fn statement_get_id(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn statement_get_format(
     pool: Extension<Pool>,
     Path(id): Path<String>,
@@ -247,6 +249,7 @@ pub async fn statement_get_format(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn statement_list_with_query(
     pool: Extension<Pool>,
     Path(query_flag): Path<String>,
@@ -354,6 +357,7 @@ async fn execute_statement_by_flag(
     Ok(Value::Object(payload))
 }
 
+#[allow(non_snake_case)]
 pub async fn statement_execute(
     pool: Extension<Pool>,
     Path((flag, page, size)): Path<(String, i64, i64)>,
@@ -365,6 +369,7 @@ pub async fn statement_execute(
     Ok(Json(ActionResult::success(result)))
 }
 
+#[allow(non_snake_case)]
 pub async fn statement_execute_mode_v2(
     pool: Extension<Pool>,
     Path((flag, mode, page, size)): Path<(String, String, i64, i64)>,
@@ -460,6 +465,7 @@ async fn execute_stat_by_id(client: &deadpool_postgres::Client, id: &str) -> Res
     Ok(Value::Object(payload))
 }
 
+#[allow(non_snake_case)]
 pub async fn stat_get_id(
     pool: Extension<Pool>,
     Path(id): Path<String>,
@@ -480,6 +486,7 @@ pub async fn stat_get_id(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn stat_get_with_query(
     pool: Extension<Pool>,
     Path((flag, query_flag)): Path<(String, String)>,
@@ -500,6 +507,7 @@ pub async fn stat_get_with_query(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn stat_list_with_query(
     pool: Extension<Pool>,
     Path(query_flag): Path<String>,
@@ -524,6 +532,7 @@ pub async fn stat_list_with_query(
     )))
 }
 
+#[allow(non_snake_case)]
 pub async fn stat_execute(
     pool: Extension<Pool>,
     Path(id): Path<String>,
@@ -536,6 +545,7 @@ pub async fn stat_execute(
 // ── search / morelikethis ────────────────────────────────────────────────────
 
 /// 全局搜索：按关键词匹配查询设计与视图名称（真实 ILIKE 查询）。
+#[allow(non_snake_case)]
 pub async fn search_post(
     pool: Extension<Pool>,
     Json(body): Json<Value>,
@@ -612,6 +622,7 @@ pub async fn search_post(
 }
 
 /// 相似查找：在动态表数据中按关键词检索相似条目（真实 ILIKE 查询）。
+#[allow(non_snake_case)]
 pub async fn morelikethis_post(
     pool: Extension<Pool>,
     Json(body): Json<Value>,
@@ -662,6 +673,7 @@ pub async fn morelikethis_post(
 
 // ── table 行级操作补齐 ───────────────────────────────────────────────────
 
+#[allow(non_snake_case)]
 pub async fn table_row_delete(
     pool: Extension<Pool>,
     Path((table_flag, id)): Path<(String, String)>,
@@ -688,6 +700,7 @@ pub async fn table_row_delete(
     ))))
 }
 
+#[allow(non_snake_case)]
 pub async fn table_row_insert(
     pool: Extension<Pool>,
     Path(table_flag): Path<String>,
@@ -714,6 +727,7 @@ pub async fn table_row_insert(
     ))))
 }
 
+#[allow(non_snake_case)]
 pub async fn table_row_insert_one(
     pool: Extension<Pool>,
     Path(table_flag): Path<String>,
@@ -743,6 +757,7 @@ pub async fn table_row_insert_one(
 // ── importmodel 记录管理补齐 ─────────────────────────────────────────────
 
 /// 删除导入记录（Java ActionDeleteRecord）
+#[allow(non_snake_case)]
 pub async fn importmodel_record_delete(
     pool: Extension<Pool>,
     Path(record_id): Path<String>,
@@ -770,6 +785,7 @@ pub async fn importmodel_record_delete(
 }
 
 /// 重新执行导入失败记录：重置记录状态并新建一条执行记录（真实写库）。
+#[allow(non_snake_case)]
 pub async fn importmodel_reexecute_record(
     pool: Extension<Pool>,
     Path(record_id): Path<String>,
@@ -820,6 +836,7 @@ pub async fn importmodel_reexecute_record(
 }
 
 /// bundle/v2：读取视图 bundle_data_v2 JSON 数组并按 body.page/size 分页切片。
+#[allow(non_snake_case)]
 pub async fn view_bundle_v2_post(
     pool: Extension<Pool>,
     Path(id): Path<String>,
@@ -952,6 +969,7 @@ async fn stat_execute_scoped(
 }
 
 /// PUT /stat/flag/{flag}/query/{queryFlag}/execute
+#[allow(non_snake_case)]
 pub async fn stat_execute_with_query_put(
     pool: Extension<Pool>,
     path: Path<(String, String)>,
@@ -960,6 +978,7 @@ pub async fn stat_execute_with_query_put(
 }
 
 /// POST /stat/flag/{flag}/query/{queryFlag}/execute/mockputtopost
+#[allow(non_snake_case)]
 pub async fn stat_execute_with_query_mock(
     pool: Extension<Pool>,
     path: Path<(String, String)>,
@@ -1044,6 +1063,7 @@ const FIELD_EXCEL: ViewField = ViewField { column: "excel_data", label: "excel" 
 const FIELD_CONTENT: ViewField = ViewField { column: "content", label: "content" };
 
 /// PUT /view/flag/{flag}/query/{queryFlag}/bundle
+#[allow(non_snake_case)]
 pub async fn view_flag_query_bundle_put(
     pool: Extension<Pool>,
     session: Extension<Session>,
@@ -1054,6 +1074,7 @@ pub async fn view_flag_query_bundle_put(
 }
 
 /// POST /view/flag/{flag}/query/{queryFlag}/bundle/mockputtopost
+#[allow(non_snake_case)]
 pub async fn view_flag_query_bundle_mock(
     pool: Extension<Pool>,
     session: Extension<Session>,
@@ -1064,6 +1085,7 @@ pub async fn view_flag_query_bundle_mock(
 }
 
 /// PUT /view/flag/{flag}/query/{queryFlag}/excel
+#[allow(non_snake_case)]
 pub async fn view_flag_query_excel_put(
     pool: Extension<Pool>,
     session: Extension<Session>,
@@ -1074,6 +1096,7 @@ pub async fn view_flag_query_excel_put(
 }
 
 /// POST /view/flag/{flag}/query/{queryFlag}/excel/mockputtopost
+#[allow(non_snake_case)]
 pub async fn view_flag_query_excel_mock(
     pool: Extension<Pool>,
     session: Extension<Session>,
@@ -1084,6 +1107,7 @@ pub async fn view_flag_query_excel_mock(
 }
 
 /// PUT /view/flag/{flag}/query/{queryFlag}/execute
+#[allow(non_snake_case)]
 pub async fn view_flag_query_execute_put(
     pool: Extension<Pool>,
     session: Extension<Session>,
@@ -1094,6 +1118,7 @@ pub async fn view_flag_query_execute_put(
 }
 
 /// POST /view/flag/{flag}/query/{queryFlag}/execute/mockputtopost
+#[allow(non_snake_case)]
 pub async fn view_flag_query_execute_mock(
     pool: Extension<Pool>,
     session: Extension<Session>,
@@ -1113,6 +1138,7 @@ fn view_rows_payload(rows: &[deadpool_postgres::tokio_postgres::Row]) -> Value {
 }
 
 /// POST /view/flag/{flag}/query/{queryFlag}/execute/v2/page/{page}/size/{size}
+#[allow(non_snake_case)]
 pub async fn view_execute_v2_flag_query(
     pool: Extension<Pool>,
     Path((flag, query_flag, page, size)): Path<(String, String, i64, i64)>,
@@ -1132,6 +1158,7 @@ pub async fn view_execute_v2_flag_query(
 }
 
 /// POST /view/{id}/execute/v2/page/{page}/size/{size}
+#[allow(non_snake_case)]
 pub async fn view_execute_v2_id(
     pool: Extension<Pool>,
     Path((id, page, size)): Path<(String, i64, i64)>,
@@ -1195,6 +1222,7 @@ async fn view_update_field_by_id(
 }
 
 /// PUT /view/{id}/bundle
+#[allow(non_snake_case)]
 pub async fn view_id_bundle_put(
     pool: Extension<Pool>,
     session: Extension<Session>,
@@ -1205,6 +1233,7 @@ pub async fn view_id_bundle_put(
 }
 
 /// POST /view/{id}/bundle/mockputtopost
+#[allow(non_snake_case)]
 pub async fn view_id_bundle_mock(
     pool: Extension<Pool>,
     session: Extension<Session>,
@@ -1215,6 +1244,7 @@ pub async fn view_id_bundle_mock(
 }
 
 /// PUT /view/{id}/excel
+#[allow(non_snake_case)]
 pub async fn view_id_excel_put(
     pool: Extension<Pool>,
     session: Extension<Session>,
@@ -1225,6 +1255,7 @@ pub async fn view_id_excel_put(
 }
 
 /// POST /view/{id}/excel/mockputtopost
+#[allow(non_snake_case)]
 pub async fn view_id_excel_mock(
     pool: Extension<Pool>,
     session: Extension<Session>,
@@ -1235,6 +1266,7 @@ pub async fn view_id_excel_mock(
 }
 
 /// PUT /view/{id}/execute
+#[allow(non_snake_case)]
 pub async fn view_id_execute_put(
     pool: Extension<Pool>,
     session: Extension<Session>,
@@ -1245,6 +1277,7 @@ pub async fn view_id_execute_put(
 }
 
 /// POST /view/{id}/execute/mockputtopost
+#[allow(non_snake_case)]
 pub async fn view_id_execute_mock(
     pool: Extension<Pool>,
     session: Extension<Session>,
@@ -1255,6 +1288,7 @@ pub async fn view_id_execute_mock(
 }
 
 /// POST /table/list/{tableFlag}/row/select —— 按过滤词检索动态表数据（参数化 ILIKE，绝不拼接 SQL）。
+#[allow(non_snake_case)]
 pub async fn table_row_select_post(
     pool: Extension<Pool>,
     Path(table_flag): Path<String>,

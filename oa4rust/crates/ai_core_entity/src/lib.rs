@@ -136,7 +136,6 @@ pub async fn conversation_list(
                     "createTime".to_string(),
                     Value::String(
                         m.create_time
-                            .clone()
                             .map(|dt| dt.to_string())
                             .unwrap_or_default(),
                     ),

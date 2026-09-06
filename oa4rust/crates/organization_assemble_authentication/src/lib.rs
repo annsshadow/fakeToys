@@ -1,7 +1,7 @@
 use axum::{
     extract::{Extension, Path},
     http::HeaderMap,
-    routing::{delete, get, post, put},
+    routing::{get, post, put},
     Json, Router,
 };
 use chrono::{DateTime, Duration, Utc};
@@ -107,8 +107,8 @@ impl OrganizationBindStore {
         };
         match map.get(meta) {
             Some(e) if e.confirmed => {
-                let entry = map.remove(meta);
-                entry
+                
+                map.remove(meta)
             }
             _ => None,
         }
@@ -127,6 +127,7 @@ fn bind_store() -> &'static OrganizationBindStore {
 /// POST /jaxrs/organization/assemble/authentication/bind/{provider}/init
 ///
 /// 已登录用户请求绑定第三方账号，生成 meta 供后续回调使用
+#[allow(non_snake_case)]
 pub async fn bind_init(
     session_manager: Extension<SessionManager>,
     headers: HeaderMap,
@@ -219,6 +220,7 @@ async fn qywx_exchange_code(config: &(String, String), code: &str) -> Result<Str
 /// GET /jaxrs/organization/assemble/authentication/qiyeweixin/bind/{meta}/callback/{code}
 ///
 /// 企业微信 OAuth 回调：用 code 换取 userid，绑定到 meta 对应的用户
+#[allow(non_snake_case)]
 pub async fn qiyeweixin_bind_callback(
     Path((meta, code)): Path<(String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -251,6 +253,7 @@ pub async fn qiyeweixin_bind_callback(
 /// POST /jaxrs/organization/assemble/authentication/qiyeweixin/bind/{meta}/confirm
 ///
 /// 客户端确认绑定：创建/更新 auth_person 的 unique_id
+#[allow(non_snake_case)]
 pub async fn qiyeweixin_bind_confirm(
     pool: Extension<Pool>,
     session_manager: Extension<SessionManager>,
@@ -312,6 +315,7 @@ pub async fn qiyeweixin_bind_confirm(
 /// GET /jaxrs/organization/assemble/authentication/qiyeweixin/login/{code}
 ///
 /// 企业微信扫码登录：用 code 换取 userid → 查 auth_person → 签发会话
+#[allow(non_snake_case)]
 pub async fn qiyeweixin_login(
     pool: Extension<Pool>,
     session_manager: Extension<SessionManager>,
@@ -420,6 +424,7 @@ async fn dingding_exchange_code(config: &(String, String), code: &str) -> Result
 }
 
 /// GET /jaxrs/organization/assemble/authentication/dingding/bind/{meta}/callback/{code}
+#[allow(non_snake_case)]
 pub async fn dingding_bind_callback(
     Path((meta, code)): Path<(String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -442,6 +447,7 @@ pub async fn dingding_bind_callback(
 }
 
 /// POST /jaxrs/organization/assemble/authentication/dingding/bind/{meta}/confirm
+#[allow(non_snake_case)]
 pub async fn dingding_bind_confirm(
     pool: Extension<Pool>,
     session_manager: Extension<SessionManager>,
@@ -497,6 +503,7 @@ pub async fn dingding_bind_confirm(
 }
 
 /// GET /jaxrs/organization/assemble/authentication/dingding/login/{code}
+#[allow(non_snake_case)]
 pub async fn dingding_login(
     pool: Extension<Pool>,
     session_manager: Extension<SessionManager>,
@@ -557,6 +564,7 @@ pub async fn dingding_login(
 const ZWDINGDING_UNIQUE_PREFIX: &str = "zwding_";
 
 /// GET /jaxrs/organization/assemble/authentication/zhengwudingding/bind/{meta}/callback/{code}
+#[allow(non_snake_case)]
 pub async fn zhengwudingding_bind_callback(
     Path((meta, code)): Path<(String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -618,6 +626,7 @@ pub async fn zhengwudingding_bind_callback(
 }
 
 /// POST /jaxrs/organization/assemble/authentication/zhengwudingding/bind/{meta}/confirm
+#[allow(non_snake_case)]
 pub async fn zhengwudingding_bind_confirm(
     pool: Extension<Pool>,
     session_manager: Extension<SessionManager>,
@@ -673,6 +682,7 @@ pub async fn zhengwudingding_bind_confirm(
 }
 
 /// GET /jaxrs/organization/assemble/authentication/zhengwudingding/login/{code}
+#[allow(non_snake_case)]
 pub async fn zhengwudingding_login(
     pool: Extension<Pool>,
     session_manager: Extension<SessionManager>,
@@ -767,81 +777,100 @@ pub fn router(pool: Pool) -> Router {
 }
 
 // oauth_list
-pub async fn oauth_list(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
+#[allow(non_snake_case)]
+pub async fn oauth_list(_pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(serde_json::json!({"list": []}))))
 }
 // oauth_qywx_config
-pub async fn oauth_qywx_config(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
+#[allow(non_snake_case)]
+pub async fn oauth_qywx_config(_pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(serde_json::json!({}))))
 }
 // oauth_dingding_config
-pub async fn oauth_dingding_config(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
+#[allow(non_snake_case)]
+pub async fn oauth_dingding_config(_pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(serde_json::json!({}))))
 }
 // oauth_name
-pub async fn oauth_name(pool: Extension<Pool>, Path(name): Path<String>) -> Result<Json<ActionResult<Value>>, AppError> {
+#[allow(non_snake_case)]
+pub async fn oauth_name(_pool: Extension<Pool>, Path(name): Path<String>) -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(serde_json::json!({"name": name}))))
 }
 // oauth_login_name_code_redirecturi
-pub async fn oauth_login_name_code_redirecturi(pool: Extension<Pool>, Path(name): Path<String>, axum::extract::Query(q): axum::extract::Query<std::collections::HashMap<String, String>>) -> Result<Json<ActionResult<Value>>, AppError> {
+#[allow(non_snake_case)]
+pub async fn oauth_login_name_code_redirecturi(_pool: Extension<Pool>, Path(name): Path<String>, axum::extract::Query(q): axum::extract::Query<std::collections::HashMap<String, String>>) -> Result<Json<ActionResult<Value>>, AppError> {
     let code = q.get("code").cloned().unwrap_or_default();
     Ok(Json(ActionResult::success(serde_json::json!({"name": name, "code": code}))))
 }
 // oauth_login_qywx_code
-pub async fn oauth_login_qywx_code(pool: Extension<Pool>, Path(code): Path<String>) -> Result<Json<ActionResult<Value>>, AppError> {
+#[allow(non_snake_case)]
+pub async fn oauth_login_qywx_code(_pool: Extension<Pool>, Path(code): Path<String>) -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(serde_json::json!({"code": code}))))
 }
 // oauth_login_dingding_code
-pub async fn oauth_login_dingding_code(pool: Extension<Pool>, Path(code): Path<String>) -> Result<Json<ActionResult<Value>>, AppError> {
+#[allow(non_snake_case)]
+pub async fn oauth_login_dingding_code(_pool: Extension<Pool>, Path(code): Path<String>) -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(serde_json::json!({"code": code}))))
 }
 // oauth_bind_name_code_redirecturi
-pub async fn oauth_bind_name_code_redirecturi(pool: Extension<Pool>, Path(name): Path<String>, axum::extract::Query(q): axum::extract::Query<std::collections::HashMap<String, String>>) -> Result<Json<ActionResult<Value>>, AppError> {
+#[allow(non_snake_case)]
+pub async fn oauth_bind_name_code_redirecturi(_pool: Extension<Pool>, Path(name): Path<String>, axum::extract::Query(q): axum::extract::Query<std::collections::HashMap<String, String>>) -> Result<Json<ActionResult<Value>>, AppError> {
     let code = q.get("code").cloned().unwrap_or_default();
     Ok(Json(ActionResult::success(serde_json::json!({"name": name, "code": code}))))
 }
 // mpweixin_login_code
-pub async fn mpweixin_login_code(pool: Extension<Pool>, Path(code): Path<String>) -> Result<Json<ActionResult<Value>>, AppError> {
+#[allow(non_snake_case)]
+pub async fn mpweixin_login_code(_pool: Extension<Pool>, Path(code): Path<String>) -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(serde_json::json!({"code": code}))))
 }
 // mpweixin_bind_openid
-pub async fn mpweixin_bind_openid(pool: Extension<Pool>, Path(openid): Path<String>) -> Result<Json<ActionResult<Value>>, AppError> {
+#[allow(non_snake_case)]
+pub async fn mpweixin_bind_openid(_pool: Extension<Pool>, Path(openid): Path<String>) -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(serde_json::json!({"openid": openid}))))
 }
 // mpweixin_bind_code
-pub async fn mpweixin_bind_code(pool: Extension<Pool>, Path(code): Path<String>) -> Result<Json<ActionResult<Value>>, AppError> {
+#[allow(non_snake_case)]
+pub async fn mpweixin_bind_code(_pool: Extension<Pool>, Path(code): Path<String>) -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(serde_json::json!({"code": code}))))
 }
 // mpweixin_menu_test_send_to
-pub async fn mpweixin_menu_test_send_to(pool: Extension<Pool>, Path(person): Path<String>) -> Result<Json<ActionResult<Value>>, AppError> {
+#[allow(non_snake_case)]
+pub async fn mpweixin_menu_test_send_to(_pool: Extension<Pool>, Path(person): Path<String>) -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(serde_json::json!({"person": person}))))
 }
 // qiyeweixin_code
-pub async fn qiyeweixin_code(pool: Extension<Pool>, Path(code): Path<String>) -> Result<Json<ActionResult<Value>>, AppError> {
+#[allow(non_snake_case)]
+pub async fn qiyeweixin_code(_pool: Extension<Pool>, Path(code): Path<String>) -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(serde_json::json!({"code": code}))))
 }
 // qiyeweixin_update_person_detail
-pub async fn qiyeweixin_update_person_detail(pool: Extension<Pool>, Path(code): Path<String>) -> Result<Json<ActionResult<Value>>, AppError> {
+#[allow(non_snake_case)]
+pub async fn qiyeweixin_update_person_detail(_pool: Extension<Pool>, Path(code): Path<String>) -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(serde_json::json!({"code": code}))))
 }
 // welink_code
-pub async fn welink_code(pool: Extension<Pool>, Path(code): Path<String>) -> Result<Json<ActionResult<Value>>, AppError> {
+#[allow(non_snake_case)]
+pub async fn welink_code(_pool: Extension<Pool>, Path(code): Path<String>) -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(serde_json::json!({"code": code}))))
 }
 // zhengwudingding_code
-pub async fn zhengwudingding_code(pool: Extension<Pool>, Path(code): Path<String>) -> Result<Json<ActionResult<Value>>, AppError> {
+#[allow(non_snake_case)]
+pub async fn zhengwudingding_code(_pool: Extension<Pool>, Path(code): Path<String>) -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(serde_json::json!({"code": code}))))
 }
 // authentication_bind_meta_get
-pub async fn authentication_bind_meta_get(pool: Extension<Pool>, Path(meta): Path<String>) -> Result<Json<ActionResult<Value>>, AppError> {
+#[allow(non_snake_case)]
+pub async fn authentication_bind_meta_get(_pool: Extension<Pool>, Path(meta): Path<String>) -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(serde_json::json!({"meta": meta}))))
 }
 // authentication_bind_meta_post
-pub async fn authentication_bind_meta_post(pool: Extension<Pool>, Path(meta): Path<String>) -> Result<Json<ActionResult<Value>>, AppError> {
+#[allow(non_snake_case)]
+pub async fn authentication_bind_meta_post(_pool: Extension<Pool>, Path(meta): Path<String>) -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(serde_json::json!({"meta": meta}))))
 }
 // andfx_moa_sso_token_enter
-pub async fn andfx_moa_sso_token_enter(pool: Extension<Pool>, axum::extract::Query(q): axum::extract::Query<std::collections::HashMap<String, String>>) -> Result<Json<ActionResult<Value>>, AppError> {
+#[allow(non_snake_case)]
+pub async fn andfx_moa_sso_token_enter(_pool: Extension<Pool>, axum::extract::Query(q): axum::extract::Query<std::collections::HashMap<String, String>>) -> Result<Json<ActionResult<Value>>, AppError> {
     let token = q.get("token").cloned().unwrap_or_default();
     Ok(Json(ActionResult::success(serde_json::json!({"token": token}))))
 }
@@ -1014,6 +1043,7 @@ pub fn organization_assemble_authentication_router() -> Router {
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
 pub async fn person_id_icon(
     pool: Extension<Pool>,
     Path(id): Path<String>,
@@ -1035,6 +1065,7 @@ pub async fn person_id_icon(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
 pub async fn identity_id(
     pool: Extension<Pool>,
     Path(id): Path<String>,
@@ -1075,18 +1106,20 @@ async fn oauth_code_store(
     Ok(id)
 }
 
+#[allow(non_snake_case)]
 pub async fn oauth_auth(
     pool: Extension<Pool>,
     axum::extract::Query(q): axum::extract::Query<std::collections::HashMap<String, String>>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = q.get("client_id").cloned().unwrap_or_default();
-    let _ = oauth_code_store(&*pool, &client, "auth-challenge", None, "auth").await.is_ok();
+    let _ = oauth_code_store(&pool, &client, "auth-challenge", None, "auth").await.is_ok();
     Ok(Json(ActionResult::success(serde_json::json!({
         "authorize_endpoint": format!("/oauth/generate/code?client_id={}", client),
         "client": client
     }))))
 }
 
+#[allow(non_snake_case)]
 pub async fn oauth_generate_code(
     pool: Extension<Pool>,
     axum::extract::Json(req): axum::extract::Json<Value>,
@@ -1094,42 +1127,47 @@ pub async fn oauth_generate_code(
     let client = req.get("clientId").and_then(|v| v.as_str()).unwrap_or("");
     let person_id = req.get("personId").and_then(|v| v.as_str());
     let code = uuid::Uuid::new_v4().to_string();
-    oauth_code_store(&*pool, client, &code, person_id, "code").await?;
+    oauth_code_store(&pool, client, &code, person_id, "code").await?;
     Ok(Json(ActionResult::success(serde_json::json!({ "code": code, "client": client }))))
 }
 
+#[allow(non_snake_case)]
 pub async fn oauth_info_get(
-    pool: Extension<Pool>,
+    _pool: Extension<Pool>,
     axum::extract::Query(q): axum::extract::Query<std::collections::HashMap<String, String>>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = q.get("clientId").cloned().unwrap_or_default();
     Ok(Json(ActionResult::success(serde_json::json!({ "client": client, "granted": true }))))
 }
 
+#[allow(non_snake_case)]
 pub async fn oauth_info_post(
-    pool: Extension<Pool>,
+    _pool: Extension<Pool>,
     axum::extract::Json(req): axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = req.get("clientId").and_then(|v| v.as_str()).unwrap_or_default();
     Ok(Json(ActionResult::success(serde_json::json!({ "client": client, "granted": true }))))
 }
 
+#[allow(non_snake_case)]
 pub async fn oauth_info_jira_get(
-    pool: Extension<Pool>,
+    _pool: Extension<Pool>,
     axum::extract::Query(q): axum::extract::Query<std::collections::HashMap<String, String>>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = q.get("clientId").cloned().unwrap_or_default();
     Ok(Json(ActionResult::success(serde_json::json!({ "client": client, "type": "jira" }))))
 }
 
+#[allow(non_snake_case)]
 pub async fn oauth_info_jira_post(
-    pool: Extension<Pool>,
+    _pool: Extension<Pool>,
     axum::extract::Json(req): axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = req.get("clientId").and_then(|v| v.as_str()).unwrap_or_default();
     Ok(Json(ActionResult::success(serde_json::json!({ "client": client, "type": "jira" }))))
 }
 
+#[allow(non_snake_case)]
 pub async fn oauth_token_get(
     pool: Extension<Pool>,
     axum::extract::Query(q): axum::extract::Query<std::collections::HashMap<String, String>>,
@@ -1155,6 +1193,7 @@ pub async fn oauth_token_get(
     Ok(Json(result))
 }
 
+#[allow(non_snake_case)]
 pub async fn oauth_token_post(
     pool: Extension<Pool>,
     axum::extract::Json(req): axum::extract::Json<Value>,
@@ -1163,6 +1202,7 @@ pub async fn oauth_token_post(
     oauth_token_get(pool, axum::extract::Query(std::collections::HashMap::from([("code".to_string(), code.to_string())]))).await
 }
 
+#[allow(non_snake_case)]
 pub async fn oauth_token_jira_post(
     pool: Extension<Pool>,
     axum::extract::Json(req): axum::extract::Json<Value>,
@@ -1171,6 +1211,7 @@ pub async fn oauth_token_jira_post(
     oauth_token_get(pool, axum::extract::Query(std::collections::HashMap::from([("code".to_string(), code.to_string())]))).await
 }
 
+#[allow(non_snake_case)]
 pub async fn qiyeweixin_info_sign(
     pool: Extension<Pool>,
     axum::extract::Json(req): axum::extract::Json<Value>,

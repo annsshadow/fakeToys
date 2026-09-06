@@ -1,3 +1,4 @@
+#[allow(dead_code)]
 use axum::{
     extract::{Extension, Path},
     Json, Router, routing::get, routing::post, routing::put, routing::delete,
@@ -22,6 +23,7 @@ pub struct CreateLayoutRequest {
     pub content: Option<String>,
 }
 
+#[allow(non_snake_case)]
 pub async fn get_surface(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
@@ -55,6 +57,7 @@ pub async fn get_surface(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn create_surface(
     pool: Extension<Pool>,
     axum::extract::Json(req): Json<CreateSurfaceRequest>,
@@ -87,6 +90,7 @@ pub async fn create_surface(
     Ok(Json(ActionResult::success(result)))
 }
 
+#[allow(non_snake_case)]
 pub async fn list_surfaces(
     pool: Extension<Pool>,
     axum::extract::Path(category): axum::extract::Path<String>,
@@ -122,6 +126,7 @@ pub async fn list_surfaces(
     Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
 }
 
+#[allow(non_snake_case)]
 pub async fn preview_surface(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
@@ -150,6 +155,7 @@ pub async fn preview_surface(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn publish_surface(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
@@ -185,6 +191,7 @@ pub async fn publish_surface(
     ))))
 }
 
+#[allow(non_snake_case)]
 pub async fn surface_list(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -215,6 +222,7 @@ pub async fn surface_list(
     Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
 }
 
+#[allow(non_snake_case)]
 pub async fn surface_preview(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
@@ -242,6 +250,7 @@ pub async fn surface_preview(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn surface_publish(
     pool: Extension<Pool>,
     axum::extract::Json(body): Json<Value>,
@@ -363,6 +372,7 @@ mod tests;
 mod tests_generated;
 
 
+#[allow(non_snake_case)]
 pub async fn get_layout(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
@@ -395,6 +405,7 @@ pub async fn get_layout(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn list_layouts(
     pool: Extension<Pool>,
     axum::extract::Path(category): axum::extract::Path<String>,
@@ -429,6 +440,7 @@ pub async fn list_layouts(
     Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
 }
 
+#[allow(non_snake_case)]
 pub async fn create_layout(
     pool: Extension<Pool>,
     axum::extract::Json(req): Json<CreateLayoutRequest>,
@@ -460,6 +472,7 @@ pub async fn create_layout(
     Ok(Json(ActionResult::success(result)))
 }
 
+#[allow(non_snake_case)]
 pub async fn save_layout(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
@@ -503,6 +516,7 @@ pub async fn save_layout(
     ))))
 }
 
+#[allow(non_snake_case)]
 pub async fn delete_layout(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
@@ -535,6 +549,7 @@ pub fn router(pool: deadpool_postgres::Pool) -> axum::Router {
 
 
 
+#[allow(non_snake_case)]
 pub async fn dict_list_portal_portalFlag(
     pool: Extension<Pool>,
     Path(portal_flag): Path<String>,
@@ -567,6 +582,7 @@ pub async fn dict_list_portal_portalFlag(
     Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
 }
 
+#[allow(non_snake_case)]
 pub async fn dict_dictFlag_portal_portalFlag(
     pool: Extension<Pool>,
     Path(dict_flag): Path<String>,
@@ -599,6 +615,7 @@ pub async fn dict_dictFlag_portal_portalFlag(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn dict_dictFlag_portal_portalFlag_data(
     pool: Extension<Pool>,
     Path(dict_flag): Path<String>,
@@ -631,6 +648,7 @@ pub async fn dict_dictFlag_portal_portalFlag_data(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn dict_dictFlag_portal_portalFlag_path_data(
     pool: Extension<Pool>,
     Path(dict_flag): Path<String>,
@@ -665,6 +683,7 @@ pub async fn dict_dictFlag_portal_portalFlag_path_data(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn dict_dictFlag_portal_portalFlag_path_data_mockdeletetoget(
     pool: Extension<Pool>,
     Path(dict_flag): Path<String>,
@@ -700,6 +719,7 @@ pub async fn dict_dictFlag_portal_portalFlag_path_data_mockdeletetoget(
     ])))))
 }
 
+#[allow(non_snake_case)]
 pub async fn dict_dictFlag_portal_portalFlag_path_data_mockputtopost(
     pool: Extension<Pool>,
     Path(dict_flag): Path<String>,
@@ -747,6 +767,7 @@ pub async fn dict_dictFlag_portal_portalFlag_path_data_mockputtopost(
     ))))
 }
 
+#[allow(non_snake_case)]
 pub async fn file_list_portal_portalFlag(
     pool: Extension<Pool>,
     Path(portal_flag): Path<String>,
@@ -779,6 +800,7 @@ pub async fn file_list_portal_portalFlag(
     Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
 }
 
+#[allow(non_snake_case)]
 pub async fn file_flag(
     pool: Extension<Pool>,
     Path(flag): Path<String>,
@@ -809,6 +831,7 @@ pub async fn file_flag(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn file_flag_download(
     pool: Extension<Pool>,
     Path(flag): Path<String>,
@@ -838,6 +861,7 @@ pub async fn file_flag_download(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn file_flag_portal_portalFlag_content(
     pool: Extension<Pool>,
     Path(flag): Path<String>,
@@ -867,6 +891,7 @@ pub async fn file_flag_portal_portalFlag_content(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn file_flag_portal_portalFlag_download(
     pool: Extension<Pool>,
     Path(flag): Path<String>,
@@ -897,6 +922,7 @@ pub async fn file_flag_portal_portalFlag_download(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn page_list_portal_portal(
     pool: Extension<Pool>,
     Path(portal): Path<String>,
@@ -928,6 +954,7 @@ pub async fn page_list_portal_portal(
     Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
 }
 
+#[allow(non_snake_case)]
 pub async fn page_v2_flag_portal_portalFlag(
     pool: Extension<Pool>,
     Path(flag): Path<String>,
@@ -958,6 +985,7 @@ pub async fn page_v2_flag_portal_portalFlag(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn page_v2_flag_portal_portalFlag_mobile(
     pool: Extension<Pool>,
     Path(flag): Path<String>,
@@ -988,6 +1016,7 @@ pub async fn page_v2_flag_portal_portalFlag_mobile(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn page_v2_id(
     pool: Extension<Pool>,
     Path(id): Path<String>,
@@ -1017,6 +1046,7 @@ pub async fn page_v2_id(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn page_v2_id_mobile(
     pool: Extension<Pool>,
     Path(id): Path<String>,
@@ -1046,6 +1076,7 @@ pub async fn page_v2_id_mobile(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn page_flag_portal_portalFlag(
     pool: Extension<Pool>,
     Path(flag): Path<String>,
@@ -1076,6 +1107,7 @@ pub async fn page_flag_portal_portalFlag(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn page_flag_portal_portalFlag_mobile(
     pool: Extension<Pool>,
     Path(flag): Path<String>,
@@ -1106,6 +1138,7 @@ pub async fn page_flag_portal_portalFlag_mobile(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn page_id(
     pool: Extension<Pool>,
     Path(id): Path<String>,
@@ -1135,6 +1168,7 @@ pub async fn page_id(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn page_id_mobile(
     pool: Extension<Pool>,
     Path(id): Path<String>,
@@ -1164,6 +1198,7 @@ pub async fn page_id_mobile(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn portal_list(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -1195,6 +1230,7 @@ pub async fn portal_list(
     Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
 }
 
+#[allow(non_snake_case)]
 pub async fn portal_list_mobile(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -1230,6 +1266,7 @@ pub async fn portal_list_mobile(
     )))
 }
 
+#[allow(non_snake_case)]
 pub async fn portal_flag(
     pool: Extension<Pool>,
     Path(flag): Path<String>,
@@ -1261,6 +1298,7 @@ pub async fn portal_flag(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn portal_flag_corner_mark(
     pool: Extension<Pool>,
     Path(flag): Path<String>,
@@ -1288,6 +1326,7 @@ pub async fn portal_flag_corner_mark(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn portal_id_icon(
     pool: Extension<Pool>,
     Path(id): Path<String>,
@@ -1315,6 +1354,7 @@ pub async fn portal_id_icon(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn portal_id_icon_base64(
     pool: Extension<Pool>,
     Path(id): Path<String>,
@@ -1342,6 +1382,7 @@ pub async fn portal_id_icon_base64(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn script_list_portal_portal(
     pool: Extension<Pool>,
     Path(portal): Path<String>,
@@ -1374,6 +1415,7 @@ pub async fn script_list_portal_portal(
     Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
 }
 
+#[allow(non_snake_case)]
 pub async fn script_portal_portal_name_name(
     pool: Extension<Pool>,
     Path(portal): Path<String>,
@@ -1405,6 +1447,7 @@ pub async fn script_portal_portal_name_name(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn script_portal_portal_name_name_imported(
     pool: Extension<Pool>,
     Path(portal): Path<String>,
@@ -1436,6 +1479,7 @@ pub async fn script_portal_portal_name_name_imported(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn script_id(
     pool: Extension<Pool>,
     Path(id): Path<String>,
@@ -1466,6 +1510,7 @@ pub async fn script_id(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn widget_list_portal_portal(
     pool: Extension<Pool>,
     Path(portal): Path<String>,
@@ -1499,6 +1544,7 @@ pub async fn widget_list_portal_portal(
     Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
 }
 
+#[allow(non_snake_case)]
 pub async fn widget_flag_portal_portalFlag(
     pool: Extension<Pool>,
     Path(flag): Path<String>,
@@ -1531,6 +1577,7 @@ pub async fn widget_flag_portal_portalFlag(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn widget_flag_portal_portalFlag_mobile(
     pool: Extension<Pool>,
     Path(flag): Path<String>,
@@ -1562,6 +1609,7 @@ pub async fn widget_flag_portal_portalFlag_mobile(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn widget_id(
     pool: Extension<Pool>,
     Path(id): Path<String>,
@@ -1594,6 +1642,7 @@ pub async fn widget_id(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn widget_id_mobile(
     pool: Extension<Pool>,
     Path(id): Path<String>,
@@ -1630,6 +1679,7 @@ pub async fn widget_id_mobile(
 // 复用既有 x_portal_* 表，参数化真实 SQL；归一化查重 / IDOR 门禁（按 flag+portal_flag 作用域）。
 // ─────────────────────────────────────────────────────────────────────────────
 
+#[allow(non_snake_case)]
 pub async fn dict_dictFlag_portal_portalFlag_path_data_delete(
     pool: Extension<Pool>,
     Path(dict_flag): Path<String>,
@@ -1653,6 +1703,7 @@ pub async fn dict_dictFlag_portal_portalFlag_path_data_delete(
     ))))
 }
 
+#[allow(non_snake_case)]
 pub async fn dict_dictFlag_portal_portalFlag_path_data_post(
     pool: Extension<Pool>,
     Path(dict_flag): Path<String>,
@@ -1700,6 +1751,7 @@ pub async fn dict_dictFlag_portal_portalFlag_path_data_post(
     ))))
 }
 
+#[allow(non_snake_case)]
 pub async fn dict_dictFlag_portal_portalFlag_path_data_put(
     pool: Extension<Pool>,
     Path(dict_flag): Path<String>,
@@ -1767,6 +1819,7 @@ pub async fn dict_dictFlag_portal_portalFlag_path_data_put(
     ))))
 }
 
+#[allow(non_snake_case)]
 pub async fn script_portal_portal_name_post(
     pool: Extension<Pool>,
     Path(portal): Path<String>,

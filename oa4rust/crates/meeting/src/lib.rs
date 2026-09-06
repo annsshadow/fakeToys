@@ -74,6 +74,7 @@ pub struct Participant {
     ),
     tag = "meeting"
 )]
+#[allow(non_snake_case)]
 pub async fn room_list(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -132,6 +133,7 @@ pub async fn room_list(
     ),
     tag = "meeting"
 )]
+#[allow(non_snake_case)]
 pub async fn building_list(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -179,6 +181,7 @@ pub async fn building_list(
     ),
     tag = "meeting"
 )]
+#[allow(non_snake_case)]
 pub async fn openmeeting_list_room(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -220,6 +223,7 @@ pub async fn openmeeting_list_room(
     ),
     tag = "meeting"
 )]
+#[allow(non_snake_case)]
 pub async fn create_meeting(
     pool: Extension<Pool>,
     axum::extract::Json(payload): axum::extract::Json<Value>,
@@ -264,6 +268,7 @@ pub async fn create_meeting(
     ),
     tag = "meeting"
 )]
+#[allow(non_snake_case)]
 pub async fn get_meeting(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
@@ -306,6 +311,7 @@ pub async fn get_meeting(
     ),
     tag = "meeting"
 )]
+#[allow(non_snake_case)]
 pub async fn list_meetings(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -353,6 +359,7 @@ pub async fn list_meetings(
     ),
     tag = "meeting"
 )]
+#[allow(non_snake_case)]
 pub async fn add_participant(
     pool: Extension<Pool>,
     axum::extract::Path(meeting_id): axum::extract::Path<String>,
@@ -392,6 +399,7 @@ pub async fn add_participant(
     ),
     tag = "meeting"
 )]
+#[allow(non_snake_case)]
 pub async fn list_participants(
     pool: Extension<Pool>,
     axum::extract::Path(meeting_id): axum::extract::Path<String>,
@@ -436,6 +444,7 @@ pub async fn list_participants(
     ),
     tag = "meeting"
 )]
+#[allow(non_snake_case)]
 pub async fn list_schedule(
     pool: Extension<Pool>,
     axum::extract::Path(days): axum::extract::Path<i64>,

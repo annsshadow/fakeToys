@@ -1,3 +1,5 @@
+#[allow(dead_code)]
+#[allow(non_snake_case, dead_code)]
 use axum::{
     extract::{Extension, Path},
     Json, Router, routing::get, routing::post, routing::put, routing::delete,
@@ -6,9 +8,6 @@ use deadpool_postgres::Pool;
 use serde::Deserialize;
 use serde_json::Value;
 use shared::{error::AppError, response::ActionResult, response::row_to_json};
-use sqlparser::ast::Statement;
-use sqlparser::dialect::PostgreSqlDialect;
-use sqlparser::parser::Parser;
 
 pub mod routes;
 pub mod u2_closures;
@@ -22,6 +21,7 @@ pub struct CreateDesignerRequest {
     pub category: Option<String>,
 }
 
+#[allow(non_snake_case)]
 pub async fn get_designer(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
@@ -54,6 +54,7 @@ pub async fn get_designer(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn create_designer(
     pool: Extension<Pool>,
     axum::extract::Json(req): Json<CreateDesignerRequest>,
@@ -85,6 +86,7 @@ pub async fn create_designer(
     Ok(Json(ActionResult::success(result)))
 }
 
+#[allow(non_snake_case)]
 pub async fn list_designers(
     pool: Extension<Pool>,
     axum::extract::Path(category): axum::extract::Path<String>,
@@ -121,6 +123,7 @@ pub async fn list_designers(
     )))
 }
 
+#[allow(non_snake_case)]
 pub async fn save_designer(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
@@ -155,6 +158,7 @@ pub async fn save_designer(
     ))))
 }
 
+#[allow(non_snake_case)]
 pub async fn delete_designer(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
@@ -354,6 +358,7 @@ pub fn router(pool: deadpool_postgres::Pool) -> axum::Router {
 
 
 
+#[allow(non_snake_case)]
 pub async fn designer_search(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -388,6 +393,7 @@ pub async fn designer_search(
     )))
 }
 
+#[allow(non_snake_case)]
 pub async fn id_count(
     pool: Extension<Pool>,
     Path(count): Path<i64>,
@@ -409,6 +415,7 @@ pub async fn id_count(
     ))))
 }
 
+#[allow(non_snake_case)]
 pub async fn importmodel_list_query_flag(
     pool: Extension<Pool>,
     Path(query_flag): Path<String>,
@@ -445,6 +452,7 @@ pub async fn importmodel_list_query_flag(
     )))
 }
 
+#[allow(non_snake_case)]
 pub async fn importmodel_id(
     pool: Extension<Pool>,
     Path(id): Path<String>,
@@ -476,6 +484,7 @@ pub async fn importmodel_id(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn importmodel_id_permission(
     pool: Extension<Pool>,
     Path(id): Path<String>,
@@ -503,6 +512,7 @@ pub async fn importmodel_id_permission(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn input_compare(
     pool: Extension<Pool>,
     Json(body): Json<Value>,
@@ -538,6 +548,7 @@ pub async fn input_compare(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn input_cover(
     pool: Extension<Pool>,
     Json(body): Json<Value>,
@@ -567,6 +578,7 @@ pub async fn input_cover(
     ))))
 }
 
+#[allow(non_snake_case)]
 pub async fn input_create(
     pool: Extension<Pool>,
     Json(body): Json<Value>,
@@ -593,6 +605,7 @@ pub async fn input_create(
     ))))
 }
 
+#[allow(non_snake_case)]
 pub async fn input_prepare_cover(
     pool: Extension<Pool>,
     Json(body): Json<Value>,
@@ -622,6 +635,7 @@ pub async fn input_prepare_cover(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn input_prepare_create(
     pool: Extension<Pool>,
     Json(body): Json<Value>,
@@ -648,6 +662,7 @@ pub async fn input_prepare_create(
     ))))
 }
 
+#[allow(non_snake_case)]
 pub async fn neural_generate_model_modelFlag(
     pool: Extension<Pool>,
     Path(model_flag): Path<String>,
@@ -674,6 +689,7 @@ pub async fn neural_generate_model_modelFlag(
     ))))
 }
 
+#[allow(non_snake_case)]
 pub async fn neural_learn_model_modelFlag(
     pool: Extension<Pool>,
     Path(model_flag): Path<String>,
@@ -700,6 +716,7 @@ pub async fn neural_learn_model_modelFlag(
     ))))
 }
 
+#[allow(non_snake_case)]
 pub async fn neural_list_model(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -735,6 +752,7 @@ pub async fn neural_list_model(
     )))
 }
 
+#[allow(non_snake_case)]
 pub async fn neural_model(
     pool: Extension<Pool>,
     Json(body): Json<Value>,
@@ -764,6 +782,7 @@ pub async fn neural_model(
     ))))
 }
 
+#[allow(non_snake_case)]
 pub async fn neural_model_modelFlag(
     pool: Extension<Pool>,
     Path(model_flag): Path<String>,
@@ -794,6 +813,7 @@ pub async fn neural_model_modelFlag(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn neural_model_modelFlag_reset_status(
     pool: Extension<Pool>,
     Path(model_flag): Path<String>,
@@ -820,6 +840,7 @@ pub async fn neural_model_modelFlag_reset_status(
     ))))
 }
 
+#[allow(non_snake_case)]
 pub async fn neural_stop_generating_model_modelFlag(
     pool: Extension<Pool>,
     Path(model_flag): Path<String>,
@@ -846,6 +867,7 @@ pub async fn neural_stop_generating_model_modelFlag(
     ))))
 }
 
+#[allow(non_snake_case)]
 pub async fn neural_stop_learn_model_modelFlag(
     pool: Extension<Pool>,
     Path(model_flag): Path<String>,
@@ -872,6 +894,7 @@ pub async fn neural_stop_learn_model_modelFlag(
     ))))
 }
 
+#[allow(non_snake_case)]
 pub async fn output_list(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -907,6 +930,7 @@ pub async fn output_list(
     )))
 }
 
+#[allow(non_snake_case)]
 pub async fn output_flag_select_file(
     pool: Extension<Pool>,
     Path(flag): Path<String>,
@@ -935,6 +959,7 @@ pub async fn output_flag_select_file(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn output_queryFlag_select(
     pool: Extension<Pool>,
     Path(query_flag): Path<String>,
@@ -971,6 +996,7 @@ pub async fn output_queryFlag_select(
     )))
 }
 
+#[allow(non_snake_case)]
 pub async fn query_entity_entity_category_entityCategory_properties(
     pool: Extension<Pool>,
     Path(entity): Path<String>,
@@ -1002,6 +1028,7 @@ pub async fn query_entity_entity_category_entityCategory_properties(
     ])))))
 }
 
+#[allow(non_snake_case)]
 pub async fn query_list_all(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -1036,6 +1063,7 @@ pub async fn query_list_all(
     )))
 }
 
+#[allow(non_snake_case)]
 pub async fn query_list_querycategory_queryCategory(
     pool: Extension<Pool>,
     Path(query_category): Path<String>,
@@ -1071,6 +1099,7 @@ pub async fn query_list_querycategory_queryCategory(
     )))
 }
 
+#[allow(non_snake_case)]
 pub async fn query_list_summary(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -1103,6 +1132,7 @@ pub async fn query_list_summary(
     )))
 }
 
+#[allow(non_snake_case)]
 pub async fn query_list_summary_querycategory_queryCategory(
     pool: Extension<Pool>,
     Path(query_category): Path<String>,
@@ -1136,6 +1166,7 @@ pub async fn query_list_summary_querycategory_queryCategory(
     )))
 }
 
+#[allow(non_snake_case)]
 pub async fn query_querycategory_list(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -1166,6 +1197,7 @@ pub async fn query_querycategory_list(
     )))
 }
 
+#[allow(non_snake_case)]
 pub async fn query_flag(
     pool: Extension<Pool>,
     Path(flag): Path<String>,
@@ -1196,6 +1228,7 @@ pub async fn query_flag(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn query_flag_icon(
     pool: Extension<Pool>,
     Path(flag): Path<String>,
@@ -1223,6 +1256,7 @@ pub async fn query_flag_icon(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn query_id_permission(
     pool: Extension<Pool>,
     Path(id): Path<String>,
@@ -1250,6 +1284,7 @@ pub async fn query_id_permission(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn stat_list_query_flag(
     pool: Extension<Pool>,
     Path(query_flag): Path<String>,
@@ -1286,6 +1321,7 @@ pub async fn stat_list_query_flag(
     )))
 }
 
+#[allow(non_snake_case)]
 pub async fn stat_list_id_next_count(
     pool: Extension<Pool>,
     Path(id): Path<String>,
@@ -1321,6 +1357,7 @@ pub async fn stat_list_id_next_count(
     )))
 }
 
+#[allow(non_snake_case)]
 pub async fn stat_list_id_prev_count(
     pool: Extension<Pool>,
     Path(id): Path<String>,
@@ -1356,6 +1393,7 @@ pub async fn stat_list_id_prev_count(
     )))
 }
 
+#[allow(non_snake_case)]
 pub async fn stat_id(
     pool: Extension<Pool>,
     Path(id): Path<String>,
@@ -1387,6 +1425,7 @@ pub async fn stat_id(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn stat_id_permission(
     pool: Extension<Pool>,
     Path(id): Path<String>,
@@ -1414,6 +1453,7 @@ pub async fn stat_id_permission(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn stat_id_simulate(
     pool: Extension<Pool>,
     Path(id): Path<String>,
@@ -1441,6 +1481,7 @@ pub async fn stat_id_simulate(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn table_export_tableFlag_count_count(
     pool: Extension<Pool>,
     Path(table_flag): Path<String>,
@@ -1475,6 +1516,7 @@ pub async fn table_export_tableFlag_count_count(
     )))
 }
 
+#[allow(non_snake_case)]
 pub async fn table_list_manage(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -1509,6 +1551,7 @@ pub async fn table_list_manage(
     )))
 }
 
+#[allow(non_snake_case)]
 pub async fn table_list_query_flag(
     pool: Extension<Pool>,
     Path(query_flag): Path<String>,
@@ -1545,6 +1588,7 @@ pub async fn table_list_query_flag(
     )))
 }
 
+#[allow(non_snake_case)]
 pub async fn table_list_tableFlag_row_select_where_where(
     pool: Extension<Pool>,
     Path(table_flag): Path<String>,
@@ -1554,7 +1598,7 @@ pub async fn table_list_tableFlag_row_select_where_where(
 
     let rows = client
         .query(
-            &format!("SELECT id, table_flag, data FROM x_query_table_data WHERE table_flag = $1 AND data ILIKE $2 ORDER BY id DESC"),
+            &"SELECT id, table_flag, data FROM x_query_table_data WHERE table_flag = $1 AND data ILIKE $2 ORDER BY id DESC".to_string(),
             &[&table_flag, &format!("%{}%", _where)],
         )
         .await
@@ -1579,6 +1623,7 @@ pub async fn table_list_tableFlag_row_select_where_where(
     )))
 }
 
+#[allow(non_snake_case)]
 pub async fn table_list_tableFlag_row_id_next_count(
     pool: Extension<Pool>,
     Path(table_flag): Path<String>,
@@ -1614,6 +1659,7 @@ pub async fn table_list_tableFlag_row_id_next_count(
     )))
 }
 
+#[allow(non_snake_case)]
 pub async fn table_list_tableFlag_row_id_prev_count(
     pool: Extension<Pool>,
     Path(table_flag): Path<String>,
@@ -1649,6 +1695,7 @@ pub async fn table_list_tableFlag_row_id_prev_count(
     )))
 }
 
+#[allow(non_snake_case)]
 pub async fn table_query_query_build(
     pool: Extension<Pool>,
     Path(query): Path<String>,
@@ -1671,6 +1718,7 @@ pub async fn table_query_query_build(
     ))))
 }
 
+#[allow(non_snake_case)]
 pub async fn table_reload_dynamic(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -1692,6 +1740,7 @@ pub async fn table_reload_dynamic(
     ))))
 }
 
+#[allow(non_snake_case)]
 pub async fn table_flag(
     pool: Extension<Pool>,
     Path(flag): Path<String>,
@@ -1721,9 +1770,10 @@ pub async fn table_flag(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn table_flag_execute(
     pool: Extension<Pool>,
-    Path(flag): Path<String>,
+    Path(_flag): Path<String>,
     Json(body): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
@@ -1748,6 +1798,7 @@ pub async fn table_flag_execute(
     )))
 }
 
+#[allow(non_snake_case)]
 pub async fn table_flag_status_build(
     pool: Extension<Pool>,
     Path(flag): Path<String>,
@@ -1774,6 +1825,7 @@ pub async fn table_flag_status_build(
     ))))
 }
 
+#[allow(non_snake_case)]
 pub async fn table_flag_status_draft(
     pool: Extension<Pool>,
     Path(flag): Path<String>,
@@ -1800,6 +1852,7 @@ pub async fn table_flag_status_draft(
     ))))
 }
 
+#[allow(non_snake_case)]
 pub async fn table_id_permission(
     pool: Extension<Pool>,
     Path(id): Path<String>,
@@ -1827,6 +1880,7 @@ pub async fn table_id_permission(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn table_query_build_dispatch(
     pool: Extension<Pool>,
     Path(query): Path<String>,
@@ -1849,6 +1903,7 @@ pub async fn table_query_build_dispatch(
     ))))
 }
 
+#[allow(non_snake_case)]
 pub async fn table_tableFlag_row(
     pool: Extension<Pool>,
     Path(table_flag): Path<String>,
@@ -1882,6 +1937,7 @@ pub async fn table_tableFlag_row(
     )))
 }
 
+#[allow(non_snake_case)]
 pub async fn table_tableFlag_row_count_where_where(
     pool: Extension<Pool>,
     Path(table_flag): Path<String>,
@@ -1891,7 +1947,7 @@ pub async fn table_tableFlag_row_count_where_where(
 
     let row = client
         .query_one(
-            &format!("SELECT COUNT(*) as cnt FROM x_query_table_data WHERE table_flag = $1 AND data ILIKE $2"),
+            &"SELECT COUNT(*) as cnt FROM x_query_table_data WHERE table_flag = $1 AND data ILIKE $2".to_string(),
             &[&table_flag, &format!("%{}%", _where)],
         )
         .await
@@ -1907,6 +1963,7 @@ pub async fn table_tableFlag_row_count_where_where(
     ))))
 }
 
+#[allow(non_snake_case)]
 pub async fn table_tableFlag_row_delete_all(
     pool: Extension<Pool>,
     Path(table_flag): Path<String>,
@@ -1930,6 +1987,7 @@ pub async fn table_tableFlag_row_delete_all(
     ))))
 }
 
+#[allow(non_snake_case)]
 pub async fn table_tableFlag_row_save(
     pool: Extension<Pool>,
     Path(table_flag): Path<String>,
@@ -1957,6 +2015,7 @@ pub async fn table_tableFlag_row_save(
     ))))
 }
 
+#[allow(non_snake_case)]
 pub async fn table_tableFlag_row_id(
     pool: Extension<Pool>,
     Path(table_flag): Path<String>,
@@ -1985,6 +2044,7 @@ pub async fn table_tableFlag_row_id(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn view_list_query_flag(
     pool: Extension<Pool>,
     Path(query_flag): Path<String>,
@@ -2021,6 +2081,7 @@ pub async fn view_list_query_flag(
     )))
 }
 
+#[allow(non_snake_case)]
 pub async fn view_list_id_next_count(
     pool: Extension<Pool>,
     Path(id): Path<String>,
@@ -2057,6 +2118,7 @@ pub async fn view_list_id_next_count(
     )))
 }
 
+#[allow(non_snake_case)]
 pub async fn view_list_id_prev_count(
     pool: Extension<Pool>,
     Path(id): Path<String>,
@@ -2093,6 +2155,7 @@ pub async fn view_list_id_prev_count(
     )))
 }
 
+#[allow(non_snake_case)]
 pub async fn view_id(
     pool: Extension<Pool>,
     Path(id): Path<String>,
@@ -2124,6 +2187,7 @@ pub async fn view_id(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn view_id_bundle(
     pool: Extension<Pool>,
     Path(id): Path<String>,
@@ -2152,6 +2216,7 @@ pub async fn view_id_bundle(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn view_id_permission(
     pool: Extension<Pool>,
     Path(id): Path<String>,
@@ -2179,6 +2244,7 @@ pub async fn view_id_permission(
     }
 }
 
+#[allow(non_snake_case)]
 pub async fn view_id_simulate(
     pool: Extension<Pool>,
     Path(id): Path<String>,

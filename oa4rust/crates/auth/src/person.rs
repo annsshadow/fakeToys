@@ -35,10 +35,10 @@ pub async fn get(
     person_map.insert("id".to_string(), Value::String(id));
     person_map.insert("unique".to_string(), Value::String(unique));
     person_map.insert("name".to_string(), Value::String(name));
-    if let Some(val) = option_to_json(mobile.map(|s| Value::String(s))) {
+    if let Some(val) = option_to_json(mobile.map(Value::String)) {
         person_map.insert("mobile".to_string(), val);
     }
-    if let Some(val) = option_to_json(email.map(|s| Value::String(s))) {
+    if let Some(val) = option_to_json(email.map(Value::String)) {
         person_map.insert("email".to_string(), val);
     }
     let result = ActionResult::success(Value::Object(person_map));

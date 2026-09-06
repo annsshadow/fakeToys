@@ -109,7 +109,7 @@ impl RateLimiter {
             .filter(|s| !s.trim().is_empty())
             .unwrap_or_else(|| "redis://127.0.0.1:6379".to_string());
 
-        let mut guard = self.redis_pool.lock().unwrap();
+        let guard = self.redis_pool.lock().unwrap();
         if guard.is_some() {
             return true;
         }

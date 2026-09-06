@@ -12,6 +12,7 @@ pub mod routes;
 
 use entities::{pp_work, pp_task, pp_ticket, pp_work_completed};
 
+#[allow(non_snake_case)]
 pub async fn work_list(
     db: Extension<DatabaseConnection>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -40,7 +41,6 @@ pub async fn work_list(
                     "createTime".to_string(),
                     Value::String(
                         m.create_time
-                            .clone()
                             .map(|dt| dt.to_string())
                             .unwrap_or_default(),
                     ),
@@ -49,7 +49,6 @@ pub async fn work_list(
                     "updateTime".to_string(),
                     Value::String(
                         m.update_time
-                            .clone()
                             .map(|dt| dt.to_string())
                             .unwrap_or_default(),
                     ),
@@ -69,6 +68,7 @@ pub async fn work_list(
     ))))
 }
 
+#[allow(non_snake_case)]
 pub async fn work_get(
     db: Extension<DatabaseConnection>,
     Path(id): Path<String>,
@@ -96,7 +96,6 @@ pub async fn work_get(
             Value::String(
                 model
                     .create_time
-                    .clone()
                     .map(|dt| dt.to_string())
                     .unwrap_or_default(),
             ),
@@ -106,7 +105,6 @@ pub async fn work_get(
             Value::String(
                 model
                     .update_time
-                    .clone()
                     .map(|dt| dt.to_string())
                     .unwrap_or_default(),
             ),
@@ -116,6 +114,7 @@ pub async fn work_get(
     Ok(Json(ActionResult::success(result)))
 }
 
+#[allow(non_snake_case)]
 pub async fn task_list(
     db: Extension<DatabaseConnection>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -140,7 +139,6 @@ pub async fn task_list(
                     "createTime".to_string(),
                     Value::String(
                         m.create_time
-                            .clone()
                             .map(|dt| dt.to_string())
                             .unwrap_or_default(),
                     ),
@@ -160,6 +158,7 @@ pub async fn task_list(
     ))))
 }
 
+#[allow(non_snake_case)]
 pub async fn task_get(
     db: Extension<DatabaseConnection>,
     Path(id): Path<String>,
@@ -183,7 +182,6 @@ pub async fn task_get(
             Value::String(
                 model
                     .create_time
-                    .clone()
                     .map(|dt| dt.to_string())
                     .unwrap_or_default(),
             ),
@@ -193,6 +191,7 @@ pub async fn task_get(
     Ok(Json(ActionResult::success(result)))
 }
 
+#[allow(non_snake_case)]
 pub async fn ticket_list(
     db: Extension<DatabaseConnection>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -223,7 +222,6 @@ pub async fn ticket_list(
                     "createTime".to_string(),
                     Value::String(
                         m.create_time
-                            .clone()
                             .map(|dt| dt.to_string())
                             .unwrap_or_default(),
                     ),
@@ -243,6 +241,7 @@ pub async fn ticket_list(
     ))))
 }
 
+#[allow(non_snake_case)]
 pub async fn workcompleted_list(
     db: Extension<DatabaseConnection>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -265,7 +264,6 @@ pub async fn workcompleted_list(
                     "completeTime".to_string(),
                     Value::String(
                         m.complete_time
-                            .clone()
                             .map(|dt| dt.to_string())
                             .unwrap_or_default(),
                     ),

@@ -57,6 +57,7 @@ pub struct FileCreateRequest {
 
 // ── List handlers (with soft-delete filter) ──────────────────────────────────
 
+#[allow(non_snake_case)]
 pub async fn folder_list_top(
     Extension(db): Extension<DatabaseConnection>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -102,6 +103,7 @@ pub async fn folder_list_top(
     ))))
 }
 
+#[allow(non_snake_case)]
 pub async fn folder_list_with_folder(
     Extension(db): Extension<DatabaseConnection>,
     axum::extract::Path(id): axum::extract::Path<String>,
@@ -146,6 +148,7 @@ pub async fn folder_list_with_folder(
     ))))
 }
 
+#[allow(non_snake_case)]
 pub async fn file_list(
     Extension(db): Extension<DatabaseConnection>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -192,6 +195,7 @@ pub async fn file_list(
     ))))
 }
 
+#[allow(non_snake_case)]
 pub async fn complex_top(
     Extension(db): Extension<DatabaseConnection>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -268,6 +272,7 @@ pub async fn complex_top(
 
 // ── Folder create handler ───────────────────────────────────────────────────
 
+#[allow(non_snake_case)]
 pub async fn folder_create(
     Extension(db): Extension<DatabaseConnection>,
     Json(req): Json<FolderCreateRequest>,
@@ -302,6 +307,7 @@ pub async fn folder_create(
 
 // ── Folder delete handler ───────────────────────────────────────────────────
 
+#[allow(non_snake_case)]
 pub async fn folder_delete(
     Extension(db): Extension<DatabaseConnection>,
     Path(id): Path<String>,
@@ -323,6 +329,7 @@ pub async fn folder_delete(
 
 // ── File create handler ─────────────────────────────────────────────────────
 
+#[allow(non_snake_case)]
 pub async fn file_create(
     Extension(db): Extension<DatabaseConnection>,
     Json(req): Json<FileCreateRequest>,

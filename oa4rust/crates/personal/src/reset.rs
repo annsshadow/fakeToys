@@ -144,6 +144,7 @@ pub struct ResetPasswordRequest {
 /// GET /jaxrs/reset/check/credential/{credential}
 ///
 /// 校验凭据（unique_id）是否存在且可用。
+#[allow(non_snake_case)]
 pub async fn check_credential(
     pool: Extension<Pool>,
     Path(credential): Path<String>,
@@ -169,6 +170,7 @@ pub async fn check_credential(
 /// 注意：密码以明文形式出现在 URL path 中，此端点仅用于开发联调。
 /// 生产环境应通过内部网络或防火墙限制调用来源，避免密码泄露到访问日志或代理服务器日志中。
 /// 密码仅用于本地校验，不存储、不记录日志。
+#[allow(non_snake_case)]
 pub async fn check_password(
     Path(password): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -191,6 +193,7 @@ pub fn is_password_acceptable(password: &str) -> bool {
 ///
 /// 校验凭据后生成一次性重置验证码（5 分钟有效、尝试上限 5 次）。
 /// 原型阶段未接入短信/邮件渠道，验证码在响应中返回以便联调。
+#[allow(non_snake_case)]
 pub async fn send_code(
     pool: Extension<Pool>,
     store: Extension<ResetCodeStore>,
@@ -216,6 +219,7 @@ pub async fn send_code(
 }
 
 /// PUT /jaxrs/reset —— 校验验证码并重置当前凭据密码
+#[allow(non_snake_case)]
 pub async fn reset_password(
     pool: Extension<Pool>,
     store: Extension<ResetCodeStore>,
@@ -225,6 +229,7 @@ pub async fn reset_password(
 }
 
 /// POST /jaxrs/reset/password/anonymous —— 匿名重置密码（校验验证码）
+#[allow(non_snake_case)]
 pub async fn reset_password_anonymous(
     pool: Extension<Pool>,
     store: Extension<ResetCodeStore>,

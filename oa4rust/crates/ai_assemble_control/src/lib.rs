@@ -1,3 +1,4 @@
+#[allow(dead_code)]
 use axum::{
     extract::{Extension, Path},
     Json, Router, response::Sse,
@@ -36,6 +37,7 @@ pub fn ai_assemble_control_router(pool: Pool) -> axum::Router {
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
 pub async fn get_ai_control_config(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -93,6 +95,7 @@ pub async fn get_ai_control_config(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
 pub async fn list_ai_models(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -122,6 +125,7 @@ pub async fn list_ai_models(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
 pub async fn update_ai_control_config(
     pool: Extension<Pool>,
     body: axum::extract::Json<Value>,
@@ -168,6 +172,7 @@ pub async fn update_ai_control_config(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
 pub async fn get_usage_stats(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -218,6 +223,7 @@ pub fn router(pool: deadpool_postgres::Pool) -> axum::Router {
 
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
 pub async fn config_base_config(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -255,6 +261,7 @@ pub async fn config_base_config(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
 pub async fn config_create_mcp(
     pool: Extension<Pool>,
     req: Option<axum::extract::Json<Value>>,
@@ -294,6 +301,7 @@ pub async fn config_create_mcp(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
 pub async fn config_create_model(
     pool: Extension<Pool>,
     req: Option<axum::extract::Json<Value>>,
@@ -333,6 +341,7 @@ pub async fn config_create_model(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
 pub async fn config_delete_mcp_flag(
     pool: Extension<Pool>,
     Path(id): Path<String>,
@@ -359,6 +368,7 @@ pub async fn config_delete_mcp_flag(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
 pub async fn config_delete_model_flag(
     pool: Extension<Pool>,
     Path(id): Path<String>,
@@ -385,6 +395,7 @@ pub async fn config_delete_model_flag(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
 pub async fn config_get_mcp_ext_flag(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -415,6 +426,7 @@ pub async fn config_get_mcp_ext_flag(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
 pub async fn config_get_mcp_flag(
     pool: Extension<Pool>,
     Path(id): Path<String>,
@@ -447,6 +459,7 @@ pub async fn config_get_mcp_flag(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
 pub async fn config_get_model_flag(
     pool: Extension<Pool>,
     Path(id): Path<String>,
@@ -478,6 +491,7 @@ pub async fn config_get_model_flag(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
 pub async fn config_list_enable_model(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -510,6 +524,7 @@ pub async fn config_list_enable_model(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
 pub async fn config_list_mcp_paging_page_size_size(
     pool: Extension<Pool>,
     Path((page, size)): Path<(i64, i64)>,
@@ -550,6 +565,7 @@ pub async fn config_list_mcp_paging_page_size_size(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
 pub async fn config_list_model_paging_page_size_size(
     pool: Extension<Pool>,
     Path((page, size)): Path<(i64, i64)>,
@@ -587,6 +603,7 @@ pub async fn config_list_model_paging_page_size_size(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
 pub async fn config_save(
     pool: Extension<Pool>,
     req: Option<axum::extract::Json<Value>>,
@@ -648,6 +665,7 @@ pub async fn config_save(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
 pub async fn config_update_mcp_flag(
     pool: Extension<Pool>,
     Path(id): Path<String>,
@@ -684,6 +702,7 @@ pub async fn config_update_mcp_flag(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
 pub async fn config_update_model_flag(
     pool: Extension<Pool>,
     Path(id): Path<String>,
@@ -719,6 +738,7 @@ pub async fn config_update_model_flag(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
 pub async fn file_copy_file(
     pool: Extension<Pool>,
     req: Option<axum::extract::Json<Value>>,
@@ -748,6 +768,7 @@ pub async fn file_copy_file(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
 pub async fn file_delete_flag(
     pool: Extension<Pool>,
     Path(id): Path<String>,
@@ -776,6 +797,7 @@ pub async fn file_delete_flag(
 /// Java FileAction.listWithIds（POST /file/list）：按 id 列表查找文件。
 /// ids 经归一化查重（trim、去空、保序去重）。
 #[axum::debug_handler]
+#[allow(non_snake_case)]
 pub async fn file_list_with_ids(
     pool: Extension<Pool>,
     req: Option<axum::extract::Json<Value>>,
@@ -833,6 +855,7 @@ pub async fn file_list_with_ids(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
 pub async fn file_list_paging_page_size_size(
     pool: Extension<Pool>,
     Path((page, size)): Path<(i64, i64)>,
@@ -866,6 +889,7 @@ pub async fn file_list_paging_page_size_size(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
 pub async fn file_upload(
     pool: Extension<Pool>,
     req: Option<axum::extract::Json<Value>>,
@@ -907,6 +931,7 @@ pub async fn file_upload(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
 pub async fn file_flag(
     pool: Extension<Pool>,
     Path(id): Path<String>,
@@ -938,6 +963,7 @@ pub async fn file_flag(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
 pub async fn file_id_download(
     pool: Extension<Pool>,
     Path(id): Path<String>,
@@ -966,6 +992,7 @@ pub async fn file_id_download(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
 pub async fn file_id_download_scale(
     pool: Extension<Pool>,
     Path(id): Path<String>,
@@ -993,6 +1020,7 @@ pub async fn file_id_download_scale(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
 pub async fn index_cms_doc_with_app_appId(
     pool: Extension<Pool>,
     Path(app_id): Path<String>,
@@ -1022,6 +1050,7 @@ pub async fn index_cms_doc_with_app_appId(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
 pub async fn index_cms_doc_docId(
     pool: Extension<Pool>,
     Path(doc_id): Path<String>,
@@ -1050,6 +1079,7 @@ pub async fn index_cms_doc_docId(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
 pub async fn index_delete_flag(
     pool: Extension<Pool>,
     Path(id): Path<String>,
@@ -1076,6 +1106,7 @@ pub async fn index_delete_flag(
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
 pub async fn index_list_paging_page_size_size(
     pool: Extension<Pool>,
     Path((page, size)): Path<(i64, i64)>,
@@ -1110,6 +1141,7 @@ pub async fn index_list_paging_page_size_size(
 /// Java IndexAction.syncToKnowledge（GET /index/sync/to/knowledge，无参数）：
 /// 将全部启用文档标记为已同步知识库。GET 无请求体——不得要求 JSON body。
 #[axum::debug_handler]
+#[allow(non_snake_case)]
 pub async fn index_sync_to_knowledge(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -1133,7 +1165,7 @@ pub async fn index_sync_to_knowledge(
 
 fn ai_client() -> &'static reqwest::Client {
     static CLIENT: std::sync::OnceLock<reqwest::Client> = std::sync::OnceLock::new();
-    CLIENT.get_or_init(|| reqwest::Client::new())
+    CLIENT.get_or_init(reqwest::Client::new)
 }
 
 async fn call_llm(messages: &[ChatMessage]) -> Result<String, AppError> {
@@ -1162,6 +1194,7 @@ async fn call_llm(messages: &[ChatMessage]) -> Result<String, AppError> {
 }
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
 pub async fn chat_completion(
     pool: Extension<Pool>,
     Extension(session): Extension<shared::session::Session>,
@@ -1472,6 +1505,7 @@ fn parse_stream_chunk(data: &str) -> Result<String, AppError> {
 // ──────────────────────────────────────────────────────────────────────────────
 
 #[axum::debug_handler]
+#[allow(non_snake_case)]
 pub async fn chat_completion_stream(
     pool: Extension<Pool>,
     Extension(session): Extension<shared::session::Session>,
@@ -1534,6 +1568,7 @@ async fn u2_normalized_name_dup(
 
 /// Java ConfigAction.getConfig（GET /config/get）：读取基础 AI 配置。
 #[axum::debug_handler]
+#[allow(non_snake_case)]
 pub async fn config_get(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
     get_ai_control_config(pool).await
 }
@@ -1541,6 +1576,7 @@ pub async fn config_get(pool: Extension<Pool>) -> Result<Json<ActionResult<Value
 /// Java ChatAction.listPaging（GET /chat/list/paging/{page}/size/{size}）：
 /// 分页列示当前用户的线索（映射 x_ai_conversation，按 create_time 倒序）。
 #[axum::debug_handler]
+#[allow(non_snake_case)]
 pub async fn chat_list_paging_page_size_size(
     pool: Extension<Pool>,
     Extension(session): Extension<shared::session::Session>,
@@ -1585,6 +1621,7 @@ pub async fn chat_list_paging_page_size_size(
 /// Java ChatAction.listCompletionPaging（GET /chat/list/completion/{clueId}/paging/{page}/size/{size}）：
 /// 按线索分页查找对话（映射 x_ai_chat.conversation_id，按 create_time 倒序）。
 #[axum::debug_handler]
+#[allow(non_snake_case)]
 pub async fn chat_list_completion_clue_id_paging_page_size_size(
     pool: Extension<Pool>,
     Path((clue_id, page, size)): Path<(String, i64, i64)>,
@@ -1630,6 +1667,7 @@ pub async fn chat_list_completion_clue_id_paging_page_size_size(
 /// Java ChatAction.delete（GET /chat/delete/{clueId}）：删除线索及其对话。
 /// 归属校验：仅线索所有者可删（他人线索 → 403）。软删除保持既有约定。
 #[axum::debug_handler]
+#[allow(non_snake_case)]
 pub async fn chat_delete_clue_id(
     pool: Extension<Pool>,
     Extension(session): Extension<shared::session::Session>,
@@ -1687,6 +1725,7 @@ pub async fn chat_delete_clue_id(
 /// x_ai_chat.extra；网关转发沿用 AI_API_KEY 门控——无 key 时标记 simulated，
 /// 落库仍真实发生（非假成功）。
 #[axum::debug_handler]
+#[allow(non_snake_case)]
 pub async fn chat_write_completion_extra(
     pool: Extension<Pool>,
     req: Option<axum::extract::Json<Value>>,

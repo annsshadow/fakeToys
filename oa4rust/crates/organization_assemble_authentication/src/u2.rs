@@ -42,6 +42,7 @@ fn env_flag(name: &str) -> bool {
 }
 
 /// GET authentication/mode —— 登录模式开关（对齐 Config.person() 投影，经环境变量注入）
+#[allow(non_snake_case)]
 pub async fn mode() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(json!({
         "codeLogin": env_flag("AUTH_CODE_LOGIN"),
@@ -57,6 +58,7 @@ pub async fn mode() -> Result<Json<ActionResult<Value>>, AppError> {
 
 /// GET authentication/mockdeletetoget —— Java MockDeleteToGet 语义：GET 触发登出。
 /// 独立实现以避免复用带 JSON body 提取器的 logout 处理器。
+#[allow(non_snake_case)]
 pub async fn logout_get(
     session_manager: Extension<SessionManager>,
     headers: HeaderMap,
@@ -70,6 +72,7 @@ pub async fn logout_get(
 }
 
 /// GET authentication/captcha/width/{width}/height/{height} —— auth crate 复用
+#[allow(non_snake_case)]
 pub async fn captcha_with_size_alias(
     Path((width, height)): Path<(u32, u32)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -79,6 +82,7 @@ pub async fn captcha_with_size_alias(
 // ── captchaRSAPublicKey ─────────────────────────────────────────────────────
 
 /// GET authentication/captchaRSAPublicKey —— 对齐 Config.publicKey()/token().getRsaEnable()
+#[allow(non_snake_case)]
 pub async fn captcha_rsa_public_key() -> Result<Json<ActionResult<Value>>, AppError> {
     let public_key = std::env::var("AUTH_RSA_PUBLIC_KEY").unwrap_or_default();
     Ok(Json(ActionResult::success(json!({
@@ -105,6 +109,7 @@ pub struct CaptchaLoginRequest {
 ///
 /// 流程：验证码校验（captcha_store，一次性）→ 凭据定位用户 → 锁定检查 →
 /// 密码校验 → 签发会话。任一环节失败均拒绝，不产生会话。
+#[allow(non_snake_case)]
 pub async fn captcha_login(
     pool: Extension<Pool>,
     session_manager: Extension<SessionManager>,
@@ -174,6 +179,7 @@ pub async fn captcha_login(
 ///
 /// Java ActionSafeLogout 通过 TokenThreshold 广播实现；此处等价地按人撤销全部会话。
 /// 未认证时返回成功（对齐 Java 行为）。
+#[allow(non_snake_case)]
 pub async fn safe_logout_get(
     pool: Extension<Pool>,
     session_manager: Extension<SessionManager>,
@@ -227,6 +233,7 @@ pub struct SsoEncryptQuery {
 }
 
 /// GET authentication/captcha —— 生成图片验证码（默认尺寸，auth crate 复用）
+#[allow(non_snake_case)]
 pub async fn captcha_default_alias() -> Result<Json<ActionResult<Value>>, AppError> {
     auth::captcha::captcha_default().await
 }
@@ -234,6 +241,7 @@ pub async fn captcha_default_alias() -> Result<Json<ActionResult<Value>>, AppErr
 /// GET sso/encrypt/client/{client}/key/{key}/credential/{credential}
 ///
 /// 与 POST /sso/encrypt 同义（Java 提供两种入口），复用 auth crate 的加密逻辑。
+#[allow(non_snake_case)]
 pub async fn sso_encrypt_get(
     Path((client, key, credential)): Path<(String, String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -244,6 +252,7 @@ pub async fn sso_encrypt_get(
 // ── bind/list ───────────────────────────────────────────────────────────────
 
 /// GET bind/list —— 扫码绑定记录列表（x_org_bind_record，按创建时间升序）
+#[allow(non_snake_case)]
 pub async fn bind_list(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let rows = client
@@ -281,6 +290,7 @@ pub struct DingdingInfoWi {
 ///
 /// 对齐 Java DingdingAction.info：signature = SHA1(jsapi_ticket=..&noncestr=..&timestamp=..&url=..)。
 /// 未配置 DINGDING_CORP_ID/DINGDING_AGENT_ID/DINGDING_JSAPI_TICKET 时显式报错（与 Java 配置缺失行为一致）。
+#[allow(non_snake_case)]
 pub async fn dingding_info(
     Json(wi): Json<DingdingInfoWi>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -319,6 +329,7 @@ pub async fn dingding_info(
 // ── zhengwudingding/info（POST 契约路径）────────────────────────────────────
 
 /// POST zhengwudingding/info —— 政务钉钉配置状态（Java 为 POST；GET 已由 auth crate 提供）
+#[allow(non_snake_case)]
 pub async fn zhengwudingding_info_post() -> Result<Json<ActionResult<Value>>, AppError> {
     match std::env::var("ZWDINGDING_API_BASE") {
         Ok(api_base) if !api_base.is_empty() => Ok(Json(ActionResult::success(json!({

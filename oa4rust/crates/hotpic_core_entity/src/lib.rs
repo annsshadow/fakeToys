@@ -172,7 +172,7 @@ pub async fn delete_by_id(
                 info_id: Set(m.info_id.clone()),
                 title: Set(m.title.clone()),
                 base64: Set(m.base64.clone()),
-                create_time: Set(m.create_time.clone()),
+                create_time: Set(m.create_time),
                 deleted_at: Set(Some(chrono::Utc::now().naive_utc())),
             };
             active.update(&db.0).await.map_err(|_| AppError::Internal)?;

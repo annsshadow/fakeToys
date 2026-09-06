@@ -1,14 +1,13 @@
 use axum::body::Body;
 use axum::extract::State;
-use axum::http::{header, HeaderMap, Request, StatusCode};
+use axum::http::{header, HeaderMap, Request};
 use axum::middleware::Next;
 use axum::response::{IntoResponse, Response};
 use deadpool_postgres::Pool;
 
 use super::constants::*;
-use super::security::{is_auth_exempt, is_auth_rate_limited, path_matches, SecurityState};
+use super::security::{is_auth_exempt, path_matches, SecurityState};
 use crate::error::AppError;
-use crate::session::Session;
 
 /// 从 HeaderMap 提取会话令牌：优先 Authorization: Bearer <token>，
 /// 回退 Cookie 中的 `token` 字段。

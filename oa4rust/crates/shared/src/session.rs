@@ -144,7 +144,7 @@ impl SessionManager {
             .filter(|s| !s.trim().is_empty())
             .unwrap_or_else(|| "redis://127.0.0.1:6379".to_string());
 
-        let mut guard = self.redis_pool.lock().unwrap();
+        let guard = self.redis_pool.lock().unwrap();
         if guard.is_some() {
             return true;
         }
@@ -464,11 +464,11 @@ impl SessionManager {
         {
             Ok(Some(row)) => {
                 let threshold_str: String = row.get("threshold_time");
-                let threshold = match NaiveDateTime::parse_from_str(&threshold_str, "%Y-%m-%d %H:%M:%S") {
+                
+                match NaiveDateTime::parse_from_str(&threshold_str, "%Y-%m-%d %H:%M:%S") {
                     Ok(t) => t,
                     Err(_) => return,
-                };
-                threshold
+                }
             }
             _ => return,
         };
