@@ -13,6 +13,7 @@ use crate::personal;
 /// - `PUT /jaxrs/person/icon`        上传当前用户头像（formData）
 /// - `GET /jaxrs/person/icon`        获取当前用户头像
 /// - `GET /jaxrs/icon/{person}`      获取指定用户头像（flag: unique_id/name/id）
+///
 /// 已移除自造路径：/jaxrs/password/change|reset|verify、/jaxrs/personal/avatar/*。
 ///
 /// # 参数

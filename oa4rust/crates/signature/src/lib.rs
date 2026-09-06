@@ -314,7 +314,7 @@ impl PdfSignatureService {
             let is_self_signed = subject == issuer;
 
             let mut signature_valid = false;
-            if !is_self_signed || (is_self_signed && certs.len() == 1) {
+            if !is_self_signed || certs.len() == 1 {
                 if let Some(issuer_bytes) = certs.get(i + 1) {
                     if let Ok((_, issuer_cert)) =
                         x509_parser::parse_x509_certificate(issuer_bytes)
@@ -589,7 +589,7 @@ impl PdfSignatureService {
     
     fn extract_signature(&self, pdf_data: &[u8]) -> SignatureResult<EmbeddedSignature> {
         let content_start = pdf_data.windows(10).position(|w| w == b"/Contents<");
-        let content_end = pdf_data.windows(2).position(|w| w == b">>" || w == b">>" ).map(|p| p + 2);
+        let content_end = pdf_data.windows(2).position(|w| w == b">>").map(|p| p + 2);
         
         if let (Some(start), Some(end)) = (content_start, content_end) {
             let sig_hex = String::from_utf8_lossy(&pdf_data[start + 10..end - 2]).to_string();

@@ -35,10 +35,7 @@ pub fn test_pool() -> Pool {
 /// 用于集成测试的运行时 DATABASE_URL 守卫。
 pub async fn is_db_available() -> bool {
     let pool = test_pool();
-    match tokio::time::timeout(Duration::from_secs(2), pool.get()).await {
-        Ok(Ok(_)) => true,
-        _ => false,
-    }
+    matches!(tokio::time::timeout(Duration::from_secs(2), pool.get()).await, Ok(Ok(_)))
 }
 
 /// 连接到 PostgreSQL 的 sea_orm::DatabaseConnection，

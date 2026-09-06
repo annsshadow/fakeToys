@@ -13,6 +13,7 @@ use crate::{group, person, role, unit};
 /// - 创建: POST /jaxrs/{entity}
 /// - 单条: GET/PUT/DELETE /jaxrs/{entity}/{flag}
 /// - 游标分页: GET /jaxrs/{entity}/list/{flag}/next|prev/{count}
+///
 /// 增删改接口（POST/PUT/DELETE）需配合权限中间件使用。
 ///
 /// # 参数

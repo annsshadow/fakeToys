@@ -381,6 +381,7 @@ pub async fn delete_cms(
 /// 查找指向 target 的全部关联的来源；只要存在任一来源满足：
 ///   - processplatform 来源：当前人在 x_review 有评审记录，或为该 work 创建者；
 ///   - cms 来源：文档存在且创建者即本人（或未记录创建者）；
+///
 /// 则 value=true。权限表不存在时视为无证据 → value=false。
 async fn readable_impl(
     pool: &Pool,

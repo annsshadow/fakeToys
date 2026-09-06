@@ -23,7 +23,7 @@ pub fn check_batch_len(len: usize) -> Result<(), AppError> {
 
 pub fn validate_password_policy(password: &str) -> bool {
     let len = password.chars().count();
-    !!(6..=64).contains(&len)
+    (6..=64).contains(&len)
         && !password.chars().any(char::is_whitespace)
         && password.chars().any(char::is_alphabetic)
         && password.chars().any(|c| c.is_ascii_digit())
