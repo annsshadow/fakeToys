@@ -1322,6 +1322,7 @@ pub async fn chat_completion(
 // Shared chat processing logic (ownership check + history load + user msg save)
 // ──────────────────────────────────────────────────────────────────────────────
 
+#[allow(dead_code)]
 struct ChatContext {
     conversation_id: String,
     full_messages: Vec<ChatMessage>,

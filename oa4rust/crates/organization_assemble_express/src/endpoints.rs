@@ -53,6 +53,7 @@ pub(crate) fn ok_json(data: Value) -> Result<AxumJson<ActionResult<Value>>, AppE
     Ok(AxumJson(ActionResult::success(data)))
 }
 
+#[allow(dead_code)]
 pub(crate) fn count_data(count: usize, data: Vec<Value>) -> Value {
     Value::Object(serde_json::Map::from_iter([
         ("count".to_string(), Value::Number((count as i64).into())),

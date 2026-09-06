@@ -50,6 +50,7 @@ impl RealtimeMessage {
     }
 }
 
+#[allow(dead_code)]
 struct RoomHandle {
     room_id: String,
     tx: broadcast::Sender<RealtimeMessage>,

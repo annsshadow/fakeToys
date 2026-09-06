@@ -144,6 +144,7 @@ pub fn router(pool: deadpool_postgres::Pool) -> axum::Router {
 
 
 #[derive(Debug, serde::Deserialize)]
+#[allow(non_snake_case)]
 pub struct HotpicRequest {
     pub title: Option<String>,
     pub imageUrl: Option<String>,

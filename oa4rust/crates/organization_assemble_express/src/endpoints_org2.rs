@@ -13,6 +13,8 @@ use shared::{error::AppError, response::ActionResult};
 
 use crate::endpoints::{capped, normalize_flags, ok_java_list, row_to_map, string_list};
 
+/// #[allow(dead_code)]
+#[allow(dead_code)]
 const IDENTITY_COLS: &str = "id, name, unit_id, person_id";
 
 fn finish_identity_rows(

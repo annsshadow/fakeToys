@@ -1,6 +1,6 @@
 use axum::{
     extract::Extension,
-    Json, Router, routing::get,
+    Json,
 };
 use deadpool_postgres::Pool;
 use serde_json::Value;
@@ -112,7 +112,7 @@ pub async fn sync_organization_data(
 
 #[axum::debug_handler]
 pub async fn get_express_status(
-    pool: Extension<Pool>,
+    _pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let data = Value::Object(serde_json::Map::from_iter([
         ("status".to_string(), Value::String("running".to_string())),
