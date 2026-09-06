@@ -135,16 +135,16 @@ pub async fn calendar_list_public(
     let data: Vec<CalendarItem> = rows
         .iter()
         .map(|row| CalendarItem {
-            id: row.get("id"),
-            name: row.get("name"),
-            calendar_type: row.get("type"),
-            target: row.get("target"),
-            color: row.get("color"),
+            id: row.get::<_, Option<String>>("id").unwrap_or_default(),
+            name: row.get::<_, Option<String>>("name").unwrap_or_default(),
+            calendar_type: row.get::<_, Option<String>>("type").unwrap_or_default(),
+            target: row.get::<_, Option<String>>("target").unwrap_or_default(),
+            color: row.get::<_, Option<String>>("color").unwrap_or_default(),
             description: row.get("description"),
             source: row.get("source"),
-            createor: row.get("createor"),
+            createor: row.get::<_, Option<String>>("createor").unwrap_or_default(),
             is_public: row.get("is_public"),
-            status: row.get("status"),
+            status: row.get::<_, Option<String>>("status").unwrap_or_default(),
         })
         .collect();
 
@@ -169,18 +169,18 @@ pub async fn calendar_list_my(
     let mut unit_calendars = Vec::new();
 
     for row in rows.iter() {
-        let calendar_type: String = row.get("type");
+        let calendar_type: String = row.get::<_, Option<String>>("type").unwrap_or_default();
         let item = CalendarItem {
-            id: row.get("id"),
-            name: row.get("name"),
+            id: row.get::<_, Option<String>>("id").unwrap_or_default(),
+            name: row.get::<_, Option<String>>("name").unwrap_or_default(),
             calendar_type,
-            target: row.get("target"),
-            color: row.get("color"),
+            target: row.get::<_, Option<String>>("target").unwrap_or_default(),
+            color: row.get::<_, Option<String>>("color").unwrap_or_default(),
             description: row.get("description"),
             source: row.get("source"),
-            createor: row.get("createor"),
+            createor: row.get::<_, Option<String>>("createor").unwrap_or_default(),
             is_public: row.get("is_public"),
-            status: row.get("status"),
+            status: row.get::<_, Option<String>>("status").unwrap_or_default(),
         };
 
         if item.calendar_type.eq_ignore_ascii_case("UNIT") {
@@ -215,16 +215,16 @@ pub async fn calendar_get(
         .map_err(|_| AppError::NotFound)?;
 
     let item = CalendarItem {
-        id: row.get("id"),
-        name: row.get("name"),
-        calendar_type: row.get("type"),
-        target: row.get("target"),
-        color: row.get("color"),
+        id: row.get::<_, Option<String>>("id").unwrap_or_default(),
+        name: row.get::<_, Option<String>>("name").unwrap_or_default(),
+        calendar_type: row.get::<_, Option<String>>("type").unwrap_or_default(),
+        target: row.get::<_, Option<String>>("target").unwrap_or_default(),
+        color: row.get::<_, Option<String>>("color").unwrap_or_default(),
         description: row.get("description"),
         source: row.get("source"),
-        createor: row.get("createor"),
+        createor: row.get::<_, Option<String>>("createor").unwrap_or_default(),
         is_public: row.get("is_public"),
-        status: row.get("status"),
+        status: row.get::<_, Option<String>>("status").unwrap_or_default(),
     };
 
     Ok(Json(ActionResult::success(item)))
@@ -563,7 +563,7 @@ pub async fn event_list(
     let data: Vec<CalendarEvent> = rows
         .iter()
         .map(|row| CalendarEvent {
-            id: row.get("id"),
+            id: row.get::<_, Option<String>>("id").unwrap_or_default(),
             calendar_id: row.get("calendar_id"),
             title: row.get("title"),
             content: row.get("content"),
@@ -572,8 +572,8 @@ pub async fn event_list(
             end_time: row.get("end_time"),
             all_day: row.get("all_day"),
             visibility: row.get("visibility"),
-            status: row.get("status"),
-            createor: row.get("createor"),
+            status: row.get::<_, Option<String>>("status").unwrap_or_default(),
+            createor: row.get::<_, Option<String>>("createor").unwrap_or_default(),
         })
         .collect();
 

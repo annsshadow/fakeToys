@@ -142,8 +142,8 @@ pub async fn attendscope_list(
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("name".to_string(), Value::String(row.get("name"))),
                 ("unitId".to_string(), Value::String(row.get("unit_id"))),
-                ("creator".to_string(), Value::String(row.get("creator"))),
-                ("createTime".to_string(), Value::String(row.get("create_time"))),
+                ("creator".to_string(), Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default())),
+                ("createTime".to_string(), Value::String(row.get::<_, Option<String>>("create_time").unwrap_or_default())),
             ]))
         })
         .collect();
@@ -172,8 +172,8 @@ pub async fn attendscope_get(
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("name".to_string(), Value::String(row.get("name"))),
                 ("unitId".to_string(), Value::String(row.get("unit_id"))),
-                ("creator".to_string(), Value::String(row.get("creator"))),
-                ("createTime".to_string(), Value::String(row.get("create_time"))),
+                ("creator".to_string(), Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default())),
+                ("createTime".to_string(), Value::String(row.get::<_, Option<String>>("create_time").unwrap_or_default())),
             ]));
             Ok(Json(ActionResult::success(result)))
         }
@@ -293,8 +293,8 @@ pub async fn area_list(
                 ("province".to_string(), Value::String(row.get("province"))),
                 ("city".to_string(), Value::String(row.get("city"))),
                 ("district".to_string(), Value::String(row.get("district"))),
-                ("creator".to_string(), Value::String(row.get("creator"))),
-                ("createTime".to_string(), Value::String(row.get("create_time"))),
+                ("creator".to_string(), Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default())),
+                ("createTime".to_string(), Value::String(row.get::<_, Option<String>>("create_time").unwrap_or_default())),
             ]))
         })
         .collect();
@@ -328,8 +328,8 @@ pub async fn area_list_province_province(
                 ("province".to_string(), Value::String(row.get("province"))),
                 ("city".to_string(), Value::String(row.get("city"))),
                 ("district".to_string(), Value::String(row.get("district"))),
-                ("creator".to_string(), Value::String(row.get("creator"))),
-                ("createTime".to_string(), Value::String(row.get("create_time"))),
+                ("creator".to_string(), Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default())),
+                ("createTime".to_string(), Value::String(row.get::<_, Option<String>>("create_time").unwrap_or_default())),
             ]))
         })
         .collect();
@@ -364,8 +364,8 @@ pub async fn area_list_province_province_city_city(
                 ("province".to_string(), Value::String(row.get("province"))),
                 ("city".to_string(), Value::String(row.get("city"))),
                 ("district".to_string(), Value::String(row.get("district"))),
-                ("creator".to_string(), Value::String(row.get("creator"))),
-                ("createTime".to_string(), Value::String(row.get("create_time"))),
+                ("creator".to_string(), Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default())),
+                ("createTime".to_string(), Value::String(row.get::<_, Option<String>>("create_time").unwrap_or_default())),
             ]))
         })
         .collect();
@@ -401,8 +401,8 @@ pub async fn area_list_province_province_city_city_district_district(
                 ("province".to_string(), Value::String(row.get("province"))),
                 ("city".to_string(), Value::String(row.get("city"))),
                 ("district".to_string(), Value::String(row.get("district"))),
-                ("creator".to_string(), Value::String(row.get("creator"))),
-                ("createTime".to_string(), Value::String(row.get("create_time"))),
+                ("creator".to_string(), Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default())),
+                ("createTime".to_string(), Value::String(row.get::<_, Option<String>>("create_time").unwrap_or_default())),
             ]))
         })
         .collect();
@@ -471,8 +471,8 @@ pub async fn area_get(
                 ("province".to_string(), Value::String(row.get("province"))),
                 ("city".to_string(), Value::String(row.get("city"))),
                 ("district".to_string(), Value::String(row.get("district"))),
-                ("creator".to_string(), Value::String(row.get("creator"))),
-                ("createTime".to_string(), Value::String(row.get("create_time"))),
+                ("creator".to_string(), Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default())),
+                ("createTime".to_string(), Value::String(row.get::<_, Option<String>>("create_time").unwrap_or_default())),
             ]));
             Ok(Json(ActionResult::success(result)))
         }
@@ -554,8 +554,8 @@ pub async fn ecnet_check(
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("name".to_string(), Value::String(row.get("name"))),
                 ("value".to_string(), Value::String(row.get("value"))),
-                ("creator".to_string(), Value::String(row.get("creator"))),
-                ("createTime".to_string(), Value::String(row.get("create_time"))),
+                ("creator".to_string(), Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default())),
+                ("createTime".to_string(), Value::String(row.get::<_, Option<String>>("create_time").unwrap_or_default())),
             ]))
         })
         .collect();
@@ -584,8 +584,8 @@ pub async fn excel_excelName_excelName(
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("name".to_string(), Value::String(row.get("name"))),
                 ("\"excelName\"".to_string(), Value::String(row.get("excel_name"))),
-                ("creator".to_string(), Value::String(row.get("creator"))),
-                ("createTime".to_string(), Value::String(row.get("create_time"))),
+                ("creator".to_string(), Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default())),
+                ("createTime".to_string(), Value::String(row.get::<_, Option<String>>("create_time").unwrap_or_default())),
             ]));
             Ok(Json(ActionResult::success(result)))
         }
@@ -614,8 +614,8 @@ pub async fn excel_excelName_excelName_sheetList(
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("sheetName".to_string(), Value::String(row.get("sheet_name"))),
                 ("excelId".to_string(), Value::String(row.get("excel_id"))),
-                ("creator".to_string(), Value::String(row.get("creator"))),
-                ("createTime".to_string(), Value::String(row.get("create_time"))),
+                ("creator".to_string(), Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default())),
+                ("createTime".to_string(), Value::String(row.get::<_, Option<String>>("create_time").unwrap_or_default())),
             ]))
         })
         .collect();
@@ -644,8 +644,8 @@ pub async fn excel_result_flag(
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("flag".to_string(), Value::String(row.get("flag"))),
                 ("result".to_string(), Value::String(row.get("result"))),
-                ("creator".to_string(), Value::String(row.get("creator"))),
-                ("createTime".to_string(), Value::String(row.get("create_time"))),
+                ("creator".to_string(), Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default())),
+                ("createTime".to_string(), Value::String(row.get::<_, Option<String>>("create_time").unwrap_or_default())),
             ]));
             Ok(Json(ActionResult::success(result)))
         }
@@ -730,8 +730,8 @@ pub async fn generalfile_download_flag_flag(
                 ("name".to_string(), Value::String(row.get("name"))),
                 ("flag".to_string(), Value::String(row.get("flag"))),
                 ("size".to_string(), Value::String(row.get::<_, i64>("size").to_string())),
-                ("creator".to_string(), Value::String(row.get("creator"))),
-                ("createTime".to_string(), Value::String(row.get("create_time"))),
+                ("creator".to_string(), Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default())),
+                ("createTime".to_string(), Value::String(row.get::<_, Option<String>>("create_time").unwrap_or_default())),
             ]));
             Ok(Json(ActionResult::success(result)))
         }
@@ -760,8 +760,8 @@ pub async fn generalfile_flag_flag(
                 ("name".to_string(), Value::String(row.get("name"))),
                 ("flag".to_string(), Value::String(row.get("flag"))),
                 ("size".to_string(), Value::String(row.get::<_, i64>("size").to_string())),
-                ("creator".to_string(), Value::String(row.get("creator"))),
-                ("createTime".to_string(), Value::String(row.get("create_time"))),
+                ("creator".to_string(), Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default())),
+                ("createTime".to_string(), Value::String(row.get::<_, Option<String>>("create_time").unwrap_or_default())),
             ]));
             Ok(Json(ActionResult::success(result)))
         }
@@ -792,8 +792,8 @@ pub async fn generalfile_flag_flag_binary_base64(
                 ("flag".to_string(), Value::String(row.get("flag"))),
                 ("content".to_string(), Value::String(content.unwrap_or_default())),
                 ("size".to_string(), Value::String(row.get::<_, i64>("size").to_string())),
-                ("creator".to_string(), Value::String(row.get("creator"))),
-                ("createTime".to_string(), Value::String(row.get("create_time"))),
+                ("creator".to_string(), Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default())),
+                ("createTime".to_string(), Value::String(row.get::<_, Option<String>>("create_time").unwrap_or_default())),
             ]));
             Ok(Json(ActionResult::success(result)))
         }
@@ -872,8 +872,8 @@ pub async fn invoice_download_flag_flag(
                 ("name".to_string(), Value::String(row.get("name"))),
                 ("flag".to_string(), Value::String(row.get("flag"))),
                 ("status".to_string(), Value::String(row.get("status"))),
-                ("creator".to_string(), Value::String(row.get("creator"))),
-                ("createTime".to_string(), Value::String(row.get("create_time"))),
+                ("creator".to_string(), Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default())),
+                ("createTime".to_string(), Value::String(row.get::<_, Option<String>>("create_time").unwrap_or_default())),
             ]));
             Ok(Json(ActionResult::success(result)))
         }
@@ -902,8 +902,8 @@ pub async fn invoice_get_id(
                 ("name".to_string(), Value::String(row.get("name"))),
                 ("flag".to_string(), Value::String(row.get("flag"))),
                 ("status".to_string(), Value::String(row.get("status"))),
-                ("creator".to_string(), Value::String(row.get("creator"))),
-                ("createTime".to_string(), Value::String(row.get("create_time"))),
+                ("creator".to_string(), Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default())),
+                ("createTime".to_string(), Value::String(row.get::<_, Option<String>>("create_time").unwrap_or_default())),
             ]));
             Ok(Json(ActionResult::success(result)))
         }
@@ -942,8 +942,8 @@ pub async fn invoice_list_paging_page_size_size(
                 ("name".to_string(), Value::String(row.get("name"))),
                 ("flag".to_string(), Value::String(row.get("flag"))),
                 ("status".to_string(), Value::String(row.get("status"))),
-                ("creator".to_string(), Value::String(row.get("creator"))),
-                ("createTime".to_string(), Value::String(row.get("create_time"))),
+                ("creator".to_string(), Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default())),
+                ("createTime".to_string(), Value::String(row.get::<_, Option<String>>("create_time").unwrap_or_default())),
             ]))
         })
         .collect();
@@ -1135,8 +1135,8 @@ pub async fn office_html_to_word_result_flag(
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("wordFlag".to_string(), Value::String(row.get("word_flag"))),
                 ("\"htmlContent\"".to_string(), Value::String(row.get("html_content"))),
-                ("creator".to_string(), Value::String(row.get("creator"))),
-                ("createTime".to_string(), Value::String(row.get("create_time"))),
+                ("creator".to_string(), Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default())),
+                ("createTime".to_string(), Value::String(row.get::<_, Option<String>>("create_time").unwrap_or_default())),
             ]));
             Ok(Json(ActionResult::success(result)))
         }
@@ -1192,11 +1192,11 @@ pub async fn qrcode_list(
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
-                ("width".to_string(), Value::Number(serde_json::Number::from(row.get::<_, i32>("width")))),
-                ("height".to_string(), Value::Number(serde_json::Number::from(row.get::<_, i32>("height")))),
-                ("text".to_string(), Value::String(row.get("text"))),
-                ("creator".to_string(), Value::String(row.get("creator"))),
-                ("createTime".to_string(), Value::String(row.get("create_time"))),
+                ("width".to_string(), Value::Number(serde_json::Number::from(row.get::<_, Option<i64>>("width").unwrap_or(0)))),
+                ("height".to_string(), Value::Number(serde_json::Number::from(row.get::<_, Option<i64>>("height").unwrap_or(0)))),
+                ("text".to_string(), Value::String(row.get::<_, Option<String>>("text").unwrap_or_default())),
+                ("creator".to_string(), Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default())),
+                ("createTime".to_string(), Value::String(row.get::<_, Option<String>>("create_time").unwrap_or_default())),
             ]))
         })
         .collect();
@@ -1223,12 +1223,12 @@ pub async fn qrcode_get(
         Some(row) => {
             let result = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
-                ("width".to_string(), Value::Number(serde_json::Number::from(row.get::<_, i32>("width")))),
-                ("height".to_string(), Value::Number(serde_json::Number::from(row.get::<_, i32>("height")))),
-                ("text".to_string(), Value::String(row.get("text"))),
+                ("width".to_string(), Value::Number(serde_json::Number::from(row.get::<_, Option<i64>>("width").unwrap_or(0)))),
+                ("height".to_string(), Value::Number(serde_json::Number::from(row.get::<_, Option<i64>>("height").unwrap_or(0)))),
+                ("text".to_string(), Value::String(row.get::<_, Option<String>>("text").unwrap_or_default())),
                 ("content".to_string(), Value::String(row.get("content"))),
-                ("creator".to_string(), Value::String(row.get("creator"))),
-                ("createTime".to_string(), Value::String(row.get("create_time"))),
+                ("creator".to_string(), Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default())),
+                ("createTime".to_string(), Value::String(row.get::<_, Option<String>>("create_time").unwrap_or_default())),
             ]));
             Ok(Json(ActionResult::success(result)))
         }
@@ -1432,8 +1432,8 @@ pub async fn securityclearance_get(
                 ("enabled".to_string(), Value::Bool(row.get("enabled"))),
                 ("subject".to_string(), Value::String(row.get("subject"))),
                 ("object".to_string(), Value::String(row.get("object"))),
-                ("creator".to_string(), Value::String(row.get("creator"))),
-                ("createTime".to_string(), Value::String(row.get("create_time"))),
+                ("creator".to_string(), Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default())),
+                ("createTime".to_string(), Value::String(row.get::<_, Option<String>>("create_time").unwrap_or_default())),
             ]));
             Ok(Json(ActionResult::success(result)))
         }
@@ -1605,8 +1605,8 @@ pub async fn worktime_forwarddays_start_start_days_days(
                 ("isWorkday".to_string(), Value::Bool(row.get("is_workday"))),
                 ("isWorktime".to_string(), Value::Bool(row.get("is_worktime"))),
                 ("minutes".to_string(), Value::String(row.get::<_, i64>("minutes").to_string())),
-                ("creator".to_string(), Value::String(row.get("creator"))),
-                ("createTime".to_string(), Value::String(row.get("create_time"))),
+                ("creator".to_string(), Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default())),
+                ("createTime".to_string(), Value::String(row.get::<_, Option<String>>("create_time").unwrap_or_default())),
             ]))
         })
         .collect();

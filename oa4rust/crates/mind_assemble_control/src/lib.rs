@@ -108,10 +108,10 @@ pub async fn list_folders(
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
-                ("name".to_string(), Value::String(row.get("name"))),
-                ("content".to_string(), Value::String(row.get("content"))),
-                ("creator".to_string(), Value::String(row.get("creator"))),
-                ("createTime".to_string(), Value::String(row.get("create_time"))),
+                ("name".to_string(), Value::String(row.get::<_, Option<String>>("name").unwrap_or_default())),
+                ("content".to_string(), Value::String(row.get::<_, Option<String>>("content").unwrap_or_default())),
+                ("creator".to_string(), Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default())),
+                ("createTime".to_string(), Value::String(row.get::<_, Option<String>>("create_time").unwrap_or_default())),
             ]))
         })
         .collect();
@@ -139,10 +139,10 @@ pub async fn get_folder(
         Some(row) => {
             let result = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
-                ("name".to_string(), Value::String(row.get("name"))),
-                ("content".to_string(), Value::String(row.get("content"))),
-                ("creator".to_string(), Value::String(row.get("creator"))),
-                ("createTime".to_string(), Value::String(row.get("create_time"))),
+                ("name".to_string(), Value::String(row.get::<_, Option<String>>("name").unwrap_or_default())),
+                ("content".to_string(), Value::String(row.get::<_, Option<String>>("content").unwrap_or_default())),
+                ("creator".to_string(), Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default())),
+                ("createTime".to_string(), Value::String(row.get::<_, Option<String>>("create_time").unwrap_or_default())),
             ]));
             Ok(Json(ActionResult::success(result)))
         }
@@ -200,8 +200,8 @@ pub async fn update_folder(
         None => return Ok(Json(ActionResult::error("mind folder not found"))),
     };
 
-    let name = payload.get("name").and_then(|v| v.as_str()).map(|s| s.to_string()).unwrap_or_else(|| row.get("name"));
-    let content = payload.get("content").and_then(|v| v.as_str()).map(|s| s.to_string()).unwrap_or_else(|| row.get("content"));
+    let name = payload.get("name").and_then(|v| v.as_str()).map(|s| s.to_string()).unwrap_or_else(|| row.get::<_, Option<String>>("name").unwrap_or_default());
+    let content = payload.get("content").and_then(|v| v.as_str()).map(|s| s.to_string()).unwrap_or_else(|| row.get::<_, Option<String>>("content").unwrap_or_default());
 
     let result = client
         .execute(
@@ -285,10 +285,10 @@ pub async fn folder_id(
         Some(row) => {
             let result = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
-                ("name".to_string(), Value::String(row.get("name"))),
-                ("content".to_string(), Value::String(row.get("content"))),
-                ("creator".to_string(), Value::String(row.get("creator"))),
-                ("createTime".to_string(), Value::String(row.get("create_time"))),
+                ("name".to_string(), Value::String(row.get::<_, Option<String>>("name").unwrap_or_default())),
+                ("content".to_string(), Value::String(row.get::<_, Option<String>>("content").unwrap_or_default())),
+                ("creator".to_string(), Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default())),
+                ("createTime".to_string(), Value::String(row.get::<_, Option<String>>("create_time").unwrap_or_default())),
             ]));
             Ok(Json(ActionResult::success(result)))
         }

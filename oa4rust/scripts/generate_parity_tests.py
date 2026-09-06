@@ -147,6 +147,7 @@ def generate_route_test(
     if is_async_router:
         return f"""    #[tokio::test]
     async fn {test_name}() {{
+        if !is_db_available().await {{ return; }}
         let router = {router_expr}.await;
         let response = router
             .oneshot(
@@ -280,6 +281,7 @@ def generate_route_test_single(
     if is_async_router:
         return f"""    #[tokio::test]
     async fn {test_name}() {{
+        if !is_db_available().await {{ return; }}
         let router = {router_expr}.await;
         let response = router
             .oneshot(
@@ -354,7 +356,7 @@ def build_header(total_crates: int, total_routes: int, total_tests: int) -> str:
 use axum::body::Body;
 use axum::http::{{Request, Method, StatusCode}};
 use tower::util::ServiceExt;
-use shared::testing::test_pool;
+use shared::testing::{{test_pool, is_db_available}};
 
 """
 

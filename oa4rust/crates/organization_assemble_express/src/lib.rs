@@ -73,8 +73,8 @@ pub async fn list_organization_units(
             let mut map = serde_json::Map::new();
             map.insert("id".to_string(), Value::String(row.get("id")));
             map.insert("name".to_string(), Value::String(row.get("name")));
-            if let Some(v) = row.get::<_, Option<i32>>("level") {
-                map.insert("type".to_string(), Value::Number(serde_json::Number::from(v)));
+            if let Some(v) = row.get::<_, Option<String>>("level") {
+                if let Ok(n) = v.parse::<i32>() { map.insert("type".to_string(), Value::Number(serde_json::Number::from(n))); }
             }
             if let Some(v) = row.get::<_, Option<String>>("superior") {
                 map.insert("parent".to_string(), Value::String(v));

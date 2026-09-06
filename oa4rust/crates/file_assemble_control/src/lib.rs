@@ -187,11 +187,11 @@ pub async fn list_files(
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
-                ("name".to_string(), Value::String(row.get("name"))),
-                ("path".to_string(), Value::String(row.get("path"))),
+                ("name".to_string(), Value::String(row.get::<_, Option<String>>("name").unwrap_or_default())),
+                ("path".to_string(), Value::String(row.get::<_, Option<String>>("path").unwrap_or_default())),
                 ("size".to_string(), Value::Number(serde_json::Number::from(row.get::<_, i64>("size")))),
-                ("creator".to_string(), Value::String(row.get("creator"))),
-                ("createTime".to_string(), Value::String(row.get("create_time"))),
+                ("creator".to_string(), Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default())),
+                ("createTime".to_string(), Value::String(row.get::<_, Option<String>>("create_time").unwrap_or_default())),
                 ("folderId".to_string(), Value::String(row.get("folder_id"))),
             ]))
         })
@@ -221,11 +221,11 @@ pub async fn get_file(
         Some(row) => {
             let result = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
-                ("name".to_string(), Value::String(row.get("name"))),
-                ("path".to_string(), Value::String(row.get("path"))),
+                ("name".to_string(), Value::String(row.get::<_, Option<String>>("name").unwrap_or_default())),
+                ("path".to_string(), Value::String(row.get::<_, Option<String>>("path").unwrap_or_default())),
                 ("size".to_string(), Value::Number(serde_json::Number::from(row.get::<_, i64>("size")))),
-                ("creator".to_string(), Value::String(row.get("creator"))),
-                ("createTime".to_string(), Value::String(row.get("create_time"))),
+                ("creator".to_string(), Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default())),
+                ("createTime".to_string(), Value::String(row.get::<_, Option<String>>("create_time").unwrap_or_default())),
                 ("folderId".to_string(), Value::String(row.get("folder_id"))),
             ]));
             Ok(Json(ActionResult::success(result)))
@@ -383,7 +383,7 @@ pub async fn update_file_entity(
         return Ok(Json(ActionResult::error("file not found")));
     };
 
-    let creator: String = row.get("creator");
+    let creator: String = row.get::<_, Option<String>>("creator").unwrap_or_default();
     shared::middleware::require_owner(&pool, &session, &creator).await?;
 
     let has_name = body.get("name").is_some();
@@ -461,8 +461,8 @@ pub async fn update_file_entity(
 
     match row {
         Some(row) => {
-            let result_name: String = row.get("name");
-            let result_path: String = row.get("path");
+            let result_name: String = row.get::<_, Option<String>>("name").unwrap_or_default();
+            let result_path: String = row.get::<_, Option<String>>("path").unwrap_or_default();
             let result_size: Option<i64> = row.get("size");
 
             let mut map = serde_json::Map::from_iter([
@@ -498,7 +498,7 @@ pub async fn delete_file_entity(
         return Ok(Json(ActionResult::error("file not found or already deleted")));
     };
 
-    let creator: String = row.get("creator");
+    let creator: String = row.get::<_, Option<String>>("creator").unwrap_or_default();
     shared::middleware::require_owner(&pool, &session, &creator).await?;
 
     let result = client
@@ -538,8 +538,8 @@ pub async fn anonymous_file_id_download(
     match row {
         Some(row) => {
             let content: Option<String> = row.get("content");
-            let mime: String = row.get("mime_type");
-            let name: String = row.get("name");
+            let mime: String = row.get::<_, Option<String>>("mime_type").unwrap_or_default();
+            let name: String = row.get::<_, Option<String>>("name").unwrap_or_default();
             let bytes = match content {
                 Some(c) => base64::engine::general_purpose::STANDARD.decode(c).unwrap_or_default(),
                 None => vec![],
@@ -583,13 +583,13 @@ pub async fn attachment_list_editor_owner(
     let data: Vec<Value> = rows.iter().map(|row| {
         Value::Object(serde_json::Map::from_iter([
             ("id".to_string(), Value::String(row.get("id"))),
-            ("name".to_string(), Value::String(row.get("name"))),
-            ("person".to_string(), Value::String(row.get("person"))),
-            ("referenceType".to_string(), Value::String(row.get("reference_type"))),
-            ("extension".to_string(), Value::String(row.get("extension"))),
+            ("name".to_string(), Value::String(row.get::<_, Option<String>>("name").unwrap_or_default())),
+            ("person".to_string(), Value::String(row.get::<_, Option<String>>("person").unwrap_or_default())),
+            ("referenceType".to_string(), Value::String(row.get::<_, Option<String>>("reference_type").unwrap_or_default())),
+            ("extension".to_string(), Value::String(row.get::<_, Option<String>>("extension").unwrap_or_default())),
             ("length".to_string(), Value::Number(serde_json::Number::from(row.get::<_, i64>("length")))),
-            ("mimeType".to_string(), Value::String(row.get("mime_type"))),
-            ("createTime".to_string(), Value::String(row.get("create_time"))),
+            ("mimeType".to_string(), Value::String(row.get::<_, Option<String>>("mime_type").unwrap_or_default())),
+            ("createTime".to_string(), Value::String(row.get::<_, Option<String>>("create_time").unwrap_or_default())),
         ]))
     }).collect();
     let count = data.len() as i64;
@@ -613,13 +613,13 @@ pub async fn attachment_list_folder_folderId(
     let data: Vec<Value> = rows.iter().map(|row| {
         Value::Object(serde_json::Map::from_iter([
             ("id".to_string(), Value::String(row.get("id"))),
-            ("name".to_string(), Value::String(row.get("name"))),
-            ("person".to_string(), Value::String(row.get("person"))),
-            ("referenceType".to_string(), Value::String(row.get("reference_type"))),
-            ("extension".to_string(), Value::String(row.get("extension"))),
+            ("name".to_string(), Value::String(row.get::<_, Option<String>>("name").unwrap_or_default())),
+            ("person".to_string(), Value::String(row.get::<_, Option<String>>("person").unwrap_or_default())),
+            ("referenceType".to_string(), Value::String(row.get::<_, Option<String>>("reference_type").unwrap_or_default())),
+            ("extension".to_string(), Value::String(row.get::<_, Option<String>>("extension").unwrap_or_default())),
             ("length".to_string(), Value::Number(serde_json::Number::from(row.get::<_, i64>("length")))),
-            ("mimeType".to_string(), Value::String(row.get("mime_type"))),
-            ("createTime".to_string(), Value::String(row.get("create_time"))),
+            ("mimeType".to_string(), Value::String(row.get::<_, Option<String>>("mime_type").unwrap_or_default())),
+            ("createTime".to_string(), Value::String(row.get::<_, Option<String>>("create_time").unwrap_or_default())),
         ]))
     }).collect();
     let count = data.len() as i64;
@@ -643,13 +643,13 @@ pub async fn attachment_list_share_owner(
     let data: Vec<Value> = rows.iter().map(|row| {
         Value::Object(serde_json::Map::from_iter([
             ("id".to_string(), Value::String(row.get("id"))),
-            ("name".to_string(), Value::String(row.get("name"))),
-            ("person".to_string(), Value::String(row.get("person"))),
-            ("referenceType".to_string(), Value::String(row.get("reference_type"))),
-            ("extension".to_string(), Value::String(row.get("extension"))),
+            ("name".to_string(), Value::String(row.get::<_, Option<String>>("name").unwrap_or_default())),
+            ("person".to_string(), Value::String(row.get::<_, Option<String>>("person").unwrap_or_default())),
+            ("referenceType".to_string(), Value::String(row.get::<_, Option<String>>("reference_type").unwrap_or_default())),
+            ("extension".to_string(), Value::String(row.get::<_, Option<String>>("extension").unwrap_or_default())),
             ("length".to_string(), Value::Number(serde_json::Number::from(row.get::<_, i64>("length")))),
-            ("mimeType".to_string(), Value::String(row.get("mime_type"))),
-            ("createTime".to_string(), Value::String(row.get("create_time"))),
+            ("mimeType".to_string(), Value::String(row.get::<_, Option<String>>("mime_type").unwrap_or_default())),
+            ("createTime".to_string(), Value::String(row.get::<_, Option<String>>("create_time").unwrap_or_default())),
         ]))
     }).collect();
     let count = data.len() as i64;
@@ -672,13 +672,13 @@ pub async fn attachment_list_top(
     let data: Vec<Value> = rows.iter().map(|row| {
         Value::Object(serde_json::Map::from_iter([
             ("id".to_string(), Value::String(row.get("id"))),
-            ("name".to_string(), Value::String(row.get("name"))),
-            ("person".to_string(), Value::String(row.get("person"))),
-            ("referenceType".to_string(), Value::String(row.get("reference_type"))),
-            ("extension".to_string(), Value::String(row.get("extension"))),
+            ("name".to_string(), Value::String(row.get::<_, Option<String>>("name").unwrap_or_default())),
+            ("person".to_string(), Value::String(row.get::<_, Option<String>>("person").unwrap_or_default())),
+            ("referenceType".to_string(), Value::String(row.get::<_, Option<String>>("reference_type").unwrap_or_default())),
+            ("extension".to_string(), Value::String(row.get::<_, Option<String>>("extension").unwrap_or_default())),
             ("length".to_string(), Value::Number(serde_json::Number::from(row.get::<_, i64>("length")))),
-            ("mimeType".to_string(), Value::String(row.get("mime_type"))),
-            ("createTime".to_string(), Value::String(row.get("create_time"))),
+            ("mimeType".to_string(), Value::String(row.get::<_, Option<String>>("mime_type").unwrap_or_default())),
+            ("createTime".to_string(), Value::String(row.get::<_, Option<String>>("create_time").unwrap_or_default())),
         ]))
     }).collect();
     let count = data.len() as i64;
@@ -756,13 +756,13 @@ pub async fn attachment_id(
         Some(row) => Ok(Json(ActionResult::success(Value::Object(
             serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
-                ("name".to_string(), Value::String(row.get("name"))),
-                ("person".to_string(), Value::String(row.get("person"))),
-                ("referenceType".to_string(), Value::String(row.get("reference_type"))),
-                ("extension".to_string(), Value::String(row.get("extension"))),
+                ("name".to_string(), Value::String(row.get::<_, Option<String>>("name").unwrap_or_default())),
+                ("person".to_string(), Value::String(row.get::<_, Option<String>>("person").unwrap_or_default())),
+                ("referenceType".to_string(), Value::String(row.get::<_, Option<String>>("reference_type").unwrap_or_default())),
+                ("extension".to_string(), Value::String(row.get::<_, Option<String>>("extension").unwrap_or_default())),
                 ("length".to_string(), Value::Number(serde_json::Number::from(row.get::<_, i64>("length")))),
-                ("mimeType".to_string(), Value::String(row.get("mime_type"))),
-                ("createTime".to_string(), Value::String(row.get("create_time"))),
+                ("mimeType".to_string(), Value::String(row.get::<_, Option<String>>("mime_type").unwrap_or_default())),
+                ("createTime".to_string(), Value::String(row.get::<_, Option<String>>("create_time").unwrap_or_default())),
             ]),
         )))),
         None => Ok(Json(ActionResult::error("attachment not found"))),
@@ -804,8 +804,8 @@ pub async fn attachment_id_download(
     match row {
         Some(row) => {
             let content: Option<String> = row.get("content");
-            let mime: String = row.get("mime_type");
-            let name: String = row.get("name");
+            let mime: String = row.get::<_, Option<String>>("mime_type").unwrap_or_default();
+            let name: String = row.get::<_, Option<String>>("name").unwrap_or_default();
             let bytes = match content {
                 Some(c) => base64::engine::general_purpose::STANDARD.decode(c).unwrap_or_default(),
                 None => vec![],
@@ -860,7 +860,7 @@ pub async fn attachment_id_update(
         .query_opt("SELECT person FROM FILE_FILE WHERE id = $1 AND deleted_at IS NULL", &[&id])
         .await.map_err(|_| AppError::Internal)?;
     let Some(row) = row else { return Ok(Json(ActionResult::error("attachment not found"))); };
-    let creator: String = row.get("person");
+    let creator: String = row.get::<_, Option<String>>("person").unwrap_or_default();
     shared::middleware::require_owner(&pool, &session, &creator).await?;
     let name = body.get("name").and_then(|v| v.as_str()).unwrap_or_default().to_string();
     let mime_type = body.get("mimeType").and_then(|v| v.as_str()).unwrap_or_default().to_string();
@@ -920,13 +920,13 @@ pub async fn attachment2_list_editor_owner(
     let data: Vec<Value> = rows.iter().map(|row| {
         Value::Object(serde_json::Map::from_iter([
             ("id".to_string(), Value::String(row.get("id"))),
-            ("name".to_string(), Value::String(row.get("name"))),
-            ("person".to_string(), Value::String(row.get("person"))),
-            ("referenceType".to_string(), Value::String(row.get("reference_type"))),
-            ("extension".to_string(), Value::String(row.get("extension"))),
+            ("name".to_string(), Value::String(row.get::<_, Option<String>>("name").unwrap_or_default())),
+            ("person".to_string(), Value::String(row.get::<_, Option<String>>("person").unwrap_or_default())),
+            ("referenceType".to_string(), Value::String(row.get::<_, Option<String>>("reference_type").unwrap_or_default())),
+            ("extension".to_string(), Value::String(row.get::<_, Option<String>>("extension").unwrap_or_default())),
             ("length".to_string(), Value::Number(serde_json::Number::from(row.get::<_, i64>("length")))),
-            ("mimeType".to_string(), Value::String(row.get("mime_type"))),
-            ("createTime".to_string(), Value::String(row.get("create_time"))),
+            ("mimeType".to_string(), Value::String(row.get::<_, Option<String>>("mime_type").unwrap_or_default())),
+            ("createTime".to_string(), Value::String(row.get::<_, Option<String>>("create_time").unwrap_or_default())),
         ]))
     }).collect();
     let count = data.len() as i64;
@@ -949,13 +949,13 @@ pub async fn attachment2_list_filter_name(
     let data: Vec<Value> = rows.iter().map(|row| {
         Value::Object(serde_json::Map::from_iter([
             ("id".to_string(), Value::String(row.get("id"))),
-            ("name".to_string(), Value::String(row.get("name"))),
-            ("person".to_string(), Value::String(row.get("person"))),
-            ("referenceType".to_string(), Value::String(row.get("reference_type"))),
-            ("extension".to_string(), Value::String(row.get("extension"))),
+            ("name".to_string(), Value::String(row.get::<_, Option<String>>("name").unwrap_or_default())),
+            ("person".to_string(), Value::String(row.get::<_, Option<String>>("person").unwrap_or_default())),
+            ("referenceType".to_string(), Value::String(row.get::<_, Option<String>>("reference_type").unwrap_or_default())),
+            ("extension".to_string(), Value::String(row.get::<_, Option<String>>("extension").unwrap_or_default())),
             ("length".to_string(), Value::Number(serde_json::Number::from(row.get::<_, i64>("length")))),
-            ("mimeType".to_string(), Value::String(row.get("mime_type"))),
-            ("createTime".to_string(), Value::String(row.get("create_time"))),
+            ("mimeType".to_string(), Value::String(row.get::<_, Option<String>>("mime_type").unwrap_or_default())),
+            ("createTime".to_string(), Value::String(row.get::<_, Option<String>>("create_time").unwrap_or_default())),
         ]))
     }).collect();
     let count = data.len() as i64;
@@ -978,13 +978,13 @@ pub async fn attachment2_list_folder_folderId(
     let data: Vec<Value> = rows.iter().map(|row| {
         Value::Object(serde_json::Map::from_iter([
             ("id".to_string(), Value::String(row.get("id"))),
-            ("name".to_string(), Value::String(row.get("name"))),
-            ("person".to_string(), Value::String(row.get("person"))),
-            ("referenceType".to_string(), Value::String(row.get("reference_type"))),
-            ("extension".to_string(), Value::String(row.get("extension"))),
+            ("name".to_string(), Value::String(row.get::<_, Option<String>>("name").unwrap_or_default())),
+            ("person".to_string(), Value::String(row.get::<_, Option<String>>("person").unwrap_or_default())),
+            ("referenceType".to_string(), Value::String(row.get::<_, Option<String>>("reference_type").unwrap_or_default())),
+            ("extension".to_string(), Value::String(row.get::<_, Option<String>>("extension").unwrap_or_default())),
             ("length".to_string(), Value::Number(serde_json::Number::from(row.get::<_, i64>("length")))),
-            ("mimeType".to_string(), Value::String(row.get("mime_type"))),
-            ("createTime".to_string(), Value::String(row.get("create_time"))),
+            ("mimeType".to_string(), Value::String(row.get::<_, Option<String>>("mime_type").unwrap_or_default())),
+            ("createTime".to_string(), Value::String(row.get::<_, Option<String>>("create_time").unwrap_or_default())),
         ]))
     }).collect();
     let count = data.len() as i64;
@@ -1007,13 +1007,13 @@ pub async fn attachment2_list_share_owner(
     let data: Vec<Value> = rows.iter().map(|row| {
         Value::Object(serde_json::Map::from_iter([
             ("id".to_string(), Value::String(row.get("id"))),
-            ("name".to_string(), Value::String(row.get("name"))),
-            ("person".to_string(), Value::String(row.get("person"))),
-            ("referenceType".to_string(), Value::String(row.get("reference_type"))),
-            ("extension".to_string(), Value::String(row.get("extension"))),
+            ("name".to_string(), Value::String(row.get::<_, Option<String>>("name").unwrap_or_default())),
+            ("person".to_string(), Value::String(row.get::<_, Option<String>>("person").unwrap_or_default())),
+            ("referenceType".to_string(), Value::String(row.get::<_, Option<String>>("reference_type").unwrap_or_default())),
+            ("extension".to_string(), Value::String(row.get::<_, Option<String>>("extension").unwrap_or_default())),
             ("length".to_string(), Value::Number(serde_json::Number::from(row.get::<_, i64>("length")))),
-            ("mimeType".to_string(), Value::String(row.get("mime_type"))),
-            ("createTime".to_string(), Value::String(row.get("create_time"))),
+            ("mimeType".to_string(), Value::String(row.get::<_, Option<String>>("mime_type").unwrap_or_default())),
+            ("createTime".to_string(), Value::String(row.get::<_, Option<String>>("create_time").unwrap_or_default())),
         ]))
     }).collect();
     let count = data.len() as i64;
@@ -1035,13 +1035,13 @@ pub async fn attachment2_list_top(
     let data: Vec<Value> = rows.iter().map(|row| {
         Value::Object(serde_json::Map::from_iter([
             ("id".to_string(), Value::String(row.get("id"))),
-            ("name".to_string(), Value::String(row.get("name"))),
-            ("person".to_string(), Value::String(row.get("person"))),
-            ("referenceType".to_string(), Value::String(row.get("reference_type"))),
-            ("extension".to_string(), Value::String(row.get("extension"))),
+            ("name".to_string(), Value::String(row.get::<_, Option<String>>("name").unwrap_or_default())),
+            ("person".to_string(), Value::String(row.get::<_, Option<String>>("person").unwrap_or_default())),
+            ("referenceType".to_string(), Value::String(row.get::<_, Option<String>>("reference_type").unwrap_or_default())),
+            ("extension".to_string(), Value::String(row.get::<_, Option<String>>("extension").unwrap_or_default())),
             ("length".to_string(), Value::Number(serde_json::Number::from(row.get::<_, i64>("length")))),
-            ("mimeType".to_string(), Value::String(row.get("mime_type"))),
-            ("createTime".to_string(), Value::String(row.get("create_time"))),
+            ("mimeType".to_string(), Value::String(row.get::<_, Option<String>>("mime_type").unwrap_or_default())),
+            ("createTime".to_string(), Value::String(row.get::<_, Option<String>>("create_time").unwrap_or_default())),
         ]))
     }).collect();
     let count = data.len() as i64;
@@ -1066,13 +1066,13 @@ pub async fn attachment2_list_type_page_size_size(
     let data: Vec<Value> = rows.iter().map(|row| {
         Value::Object(serde_json::Map::from_iter([
             ("id".to_string(), Value::String(row.get("id"))),
-            ("name".to_string(), Value::String(row.get("name"))),
-            ("person".to_string(), Value::String(row.get("person"))),
-            ("referenceType".to_string(), Value::String(row.get("reference_type"))),
-            ("extension".to_string(), Value::String(row.get("extension"))),
+            ("name".to_string(), Value::String(row.get::<_, Option<String>>("name").unwrap_or_default())),
+            ("person".to_string(), Value::String(row.get::<_, Option<String>>("person").unwrap_or_default())),
+            ("referenceType".to_string(), Value::String(row.get::<_, Option<String>>("reference_type").unwrap_or_default())),
+            ("extension".to_string(), Value::String(row.get::<_, Option<String>>("extension").unwrap_or_default())),
             ("length".to_string(), Value::Number(serde_json::Number::from(row.get::<_, i64>("length")))),
-            ("mimeType".to_string(), Value::String(row.get("mime_type"))),
-            ("createTime".to_string(), Value::String(row.get("create_time"))),
+            ("mimeType".to_string(), Value::String(row.get::<_, Option<String>>("mime_type").unwrap_or_default())),
+            ("createTime".to_string(), Value::String(row.get::<_, Option<String>>("create_time").unwrap_or_default())),
         ]))
     }).collect();
     let count = data.len() as i64;
@@ -1159,13 +1159,13 @@ pub async fn attachment2_id(
         Some(row) => Ok(Json(ActionResult::success(Value::Object(
             serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
-                ("name".to_string(), Value::String(row.get("name"))),
-                ("person".to_string(), Value::String(row.get("person"))),
-                ("referenceType".to_string(), Value::String(row.get("reference_type"))),
-                ("extension".to_string(), Value::String(row.get("extension"))),
+                ("name".to_string(), Value::String(row.get::<_, Option<String>>("name").unwrap_or_default())),
+                ("person".to_string(), Value::String(row.get::<_, Option<String>>("person").unwrap_or_default())),
+                ("referenceType".to_string(), Value::String(row.get::<_, Option<String>>("reference_type").unwrap_or_default())),
+                ("extension".to_string(), Value::String(row.get::<_, Option<String>>("extension").unwrap_or_default())),
                 ("length".to_string(), Value::Number(serde_json::Number::from(row.get::<_, i64>("length")))),
-                ("mimeType".to_string(), Value::String(row.get("mime_type"))),
-                ("createTime".to_string(), Value::String(row.get("create_time"))),
+                ("mimeType".to_string(), Value::String(row.get::<_, Option<String>>("mime_type").unwrap_or_default())),
+                ("createTime".to_string(), Value::String(row.get::<_, Option<String>>("create_time").unwrap_or_default())),
             ]),
         )))),
         None => Ok(Json(ActionResult::error("attachment not found"))),
@@ -1207,8 +1207,8 @@ pub async fn attachment2_id_download(
     match row {
         Some(row) => {
             let content: Option<String> = row.get("content");
-            let mime: String = row.get("mime_type");
-            let name: String = row.get("name");
+            let mime: String = row.get::<_, Option<String>>("mime_type").unwrap_or_default();
+            let name: String = row.get::<_, Option<String>>("name").unwrap_or_default();
             let bytes = match content {
                 Some(c) => base64::engine::general_purpose::STANDARD.decode(c).unwrap_or_default(),
                 None => vec![],
@@ -1488,10 +1488,10 @@ pub async fn attachment2_id_office_preview_type_type(
     shared::middleware::require_owner(&pool, &session, &row.get::<_, String>("person")).await?;
 
     let content: Option<String> = row.get("content");
-    let extension: String = row.get("extension");
-    let mime: String = row.get("mime_type");
+    let extension: String = row.get::<_, Option<String>>("extension").unwrap_or_default();
+    let mime: String = row.get::<_, Option<String>>("mime_type").unwrap_or_default();
     let id: String = row.get("id");
-    let name: String = row.get("name");
+    let name: String = row.get::<_, Option<String>>("name").unwrap_or_default();
 
     let bytes = match content {
         Some(c) => base64::engine::general_purpose::STANDARD
@@ -1568,8 +1568,8 @@ pub async fn complex_folder_id(
             {
                 let mut map = serde_json::Map::from_iter([
                     ("id".to_string(), Value::String(row.get("id"))),
-                    ("name".to_string(), Value::String(row.get("name"))),
-                    ("person".to_string(), Value::String(row.get("person"))),
+                    ("name".to_string(), Value::String(row.get::<_, Option<String>>("name").unwrap_or_default())),
+                    ("person".to_string(), Value::String(row.get::<_, Option<String>>("person").unwrap_or_default())),
                 ]);
                 if let Some(superior) = row_opt_json::<String>(&row, "superior") {
                     map.insert("superior".to_string(), superior);
@@ -1593,8 +1593,8 @@ pub async fn complex_top(
         Value::Object({
             let mut map = serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
-                ("name".to_string(), Value::String(row.get("name"))),
-                ("person".to_string(), Value::String(row.get("person"))),
+                ("name".to_string(), Value::String(row.get::<_, Option<String>>("name").unwrap_or_default())),
+                ("person".to_string(), Value::String(row.get::<_, Option<String>>("person").unwrap_or_default())),
             ]);
             if let Some(superior) = row_opt_json::<String>(row, "superior") {
                 map.insert("superior".to_string(), superior);
@@ -1608,10 +1608,10 @@ pub async fn complex_top(
     let attachment_list: Vec<Value> = attachment_rows.iter().map(|row| {
         Value::Object(serde_json::Map::from_iter([
             ("id".to_string(), Value::String(row.get("id"))),
-            ("name".to_string(), Value::String(row.get("name"))),
-            ("person".to_string(), Value::String(row.get("person"))),
-            ("\"referenceType\"".to_string(), Value::String(row.get("reference_type"))),
-            ("extension".to_string(), Value::String(row.get("extension"))),
+            ("name".to_string(), Value::String(row.get::<_, Option<String>>("name").unwrap_or_default())),
+            ("person".to_string(), Value::String(row.get::<_, Option<String>>("person").unwrap_or_default())),
+            ("\"referenceType\"".to_string(), Value::String(row.get::<_, Option<String>>("reference_type").unwrap_or_default())),
+            ("extension".to_string(), Value::String(row.get::<_, Option<String>>("extension").unwrap_or_default())),
             ("length".to_string(), Value::Number(serde_json::Number::from(row.get::<_, i64>("length")))),
         ]))
     }).collect();
@@ -1652,7 +1652,7 @@ pub async fn editor_list(
         .await.map_err(|_| AppError::Internal)?;
     let data: Vec<Value> = rows.iter().map(|row| {
         Value::Object(serde_json::Map::from_iter([
-            ("person".to_string(), Value::String(row.get("person"))),
+            ("person".to_string(), Value::String(row.get::<_, Option<String>>("person").unwrap_or_default())),
         ]))
     }).collect();
     let count = data.len() as i64;
@@ -1686,11 +1686,11 @@ pub async fn file_copy_attachment_attachmentId_referencetype_referenceType_refer
         .await.map_err(|_| AppError::Internal)?;
     let Some(row) = row else { return Ok(Json(ActionResult::error("attachment not found"))); };
     let new_id = uuid::Uuid::new_v4().to_string();
-    let name: String = row.get("name");
-    let person: String = row.get("person");
-    let ext: String = row.get("extension");
+    let name: String = row.get::<_, Option<String>>("name").unwrap_or_default();
+    let person: String = row.get::<_, Option<String>>("person").unwrap_or_default();
+    let ext: String = row.get::<_, Option<String>>("extension").unwrap_or_default();
     let length: i64 = row.get("length");
-    let mime: String = row.get("mime_type");
+    let mime: String = row.get::<_, Option<String>>("mime_type").unwrap_or_default();
     let content: Option<String> = row.get("content");
     client.execute(
         "INSERT INTO FILE_FILE (id, name, person, reference_id, reference_type, extension, length, mime_type, content, create_time, update_time) \
@@ -1721,13 +1721,13 @@ pub async fn file_list_referencetype(
     let data: Vec<Value> = rows.iter().map(|row| {
         Value::Object(serde_json::Map::from_iter([
             ("id".to_string(), Value::String(row.get("id"))),
-            ("name".to_string(), Value::String(row.get("name"))),
-            ("person".to_string(), Value::String(row.get("person"))),
-            ("referenceType".to_string(), Value::String(row.get("reference_type"))),
-            ("extension".to_string(), Value::String(row.get("extension"))),
+            ("name".to_string(), Value::String(row.get::<_, Option<String>>("name").unwrap_or_default())),
+            ("person".to_string(), Value::String(row.get::<_, Option<String>>("person").unwrap_or_default())),
+            ("referenceType".to_string(), Value::String(row.get::<_, Option<String>>("reference_type").unwrap_or_default())),
+            ("extension".to_string(), Value::String(row.get::<_, Option<String>>("extension").unwrap_or_default())),
             ("length".to_string(), Value::Number(serde_json::Number::from(row.get::<_, i64>("length")))),
-            ("mimeType".to_string(), Value::String(row.get("mime_type"))),
-            ("createTime".to_string(), Value::String(row.get("create_time"))),
+            ("mimeType".to_string(), Value::String(row.get::<_, Option<String>>("mime_type").unwrap_or_default())),
+            ("createTime".to_string(), Value::String(row.get::<_, Option<String>>("create_time").unwrap_or_default())),
         ]))
     }).collect();
     let count = data.len() as i64;
@@ -1750,13 +1750,13 @@ pub async fn file_list_referencetype_referenceType_reference_reference(
     let data: Vec<Value> = rows.iter().map(|row| {
         Value::Object(serde_json::Map::from_iter([
             ("id".to_string(), Value::String(row.get("id"))),
-            ("name".to_string(), Value::String(row.get("name"))),
-            ("person".to_string(), Value::String(row.get("person"))),
-            ("referenceType".to_string(), Value::String(row.get("reference_type"))),
-            ("extension".to_string(), Value::String(row.get("extension"))),
+            ("name".to_string(), Value::String(row.get::<_, Option<String>>("name").unwrap_or_default())),
+            ("person".to_string(), Value::String(row.get::<_, Option<String>>("person").unwrap_or_default())),
+            ("referenceType".to_string(), Value::String(row.get::<_, Option<String>>("reference_type").unwrap_or_default())),
+            ("extension".to_string(), Value::String(row.get::<_, Option<String>>("extension").unwrap_or_default())),
             ("length".to_string(), Value::Number(serde_json::Number::from(row.get::<_, i64>("length")))),
-            ("mimeType".to_string(), Value::String(row.get("mime_type"))),
-            ("createTime".to_string(), Value::String(row.get("create_time"))),
+            ("mimeType".to_string(), Value::String(row.get::<_, Option<String>>("mime_type").unwrap_or_default())),
+            ("createTime".to_string(), Value::String(row.get::<_, Option<String>>("create_time").unwrap_or_default())),
         ]))
     }).collect();
     let count = data.len() as i64;
@@ -1774,10 +1774,10 @@ pub async fn file_list_unused_referencetype_cmsdocument_manage(
     let data: Vec<Value> = rows.iter().map(|row| {
         Value::Object(serde_json::Map::from_iter([
             ("id".to_string(), Value::String(row.get("id"))),
-            ("name".to_string(), Value::String(row.get("name"))),
-            ("person".to_string(), Value::String(row.get("person"))),
-            ("referenceType".to_string(), Value::String(row.get("reference_type"))),
-            ("extension".to_string(), Value::String(row.get("extension"))),
+            ("name".to_string(), Value::String(row.get::<_, Option<String>>("name").unwrap_or_default())),
+            ("person".to_string(), Value::String(row.get::<_, Option<String>>("person").unwrap_or_default())),
+            ("referenceType".to_string(), Value::String(row.get::<_, Option<String>>("reference_type").unwrap_or_default())),
+            ("extension".to_string(), Value::String(row.get::<_, Option<String>>("extension").unwrap_or_default())),
             ("length".to_string(), Value::Number(serde_json::Number::from(row.get::<_, i64>("length")))),
         ]))
     }).collect();
@@ -1797,10 +1797,10 @@ pub async fn file_list_id_next_count(
     let data: Vec<Value> = rows.iter().map(|row| {
         Value::Object(serde_json::Map::from_iter([
             ("id".to_string(), Value::String(row.get("id"))),
-            ("name".to_string(), Value::String(row.get("name"))),
-            ("person".to_string(), Value::String(row.get("person"))),
-            ("referenceType".to_string(), Value::String(row.get("reference_type"))),
-            ("extension".to_string(), Value::String(row.get("extension"))),
+            ("name".to_string(), Value::String(row.get::<_, Option<String>>("name").unwrap_or_default())),
+            ("person".to_string(), Value::String(row.get::<_, Option<String>>("person").unwrap_or_default())),
+            ("referenceType".to_string(), Value::String(row.get::<_, Option<String>>("reference_type").unwrap_or_default())),
+            ("extension".to_string(), Value::String(row.get::<_, Option<String>>("extension").unwrap_or_default())),
             ("length".to_string(), Value::Number(serde_json::Number::from(row.get::<_, i64>("length")))),
         ]))
     }).collect();
@@ -1828,10 +1828,10 @@ pub async fn file_list_id_next_count_referencetype_referenceType(
     let data: Vec<Value> = rows.iter().map(|row| {
         Value::Object(serde_json::Map::from_iter([
             ("id".to_string(), Value::String(row.get("id"))),
-            ("name".to_string(), Value::String(row.get("name"))),
-            ("person".to_string(), Value::String(row.get("person"))),
-            ("referenceType".to_string(), Value::String(row.get("reference_type"))),
-            ("extension".to_string(), Value::String(row.get("extension"))),
+            ("name".to_string(), Value::String(row.get::<_, Option<String>>("name").unwrap_or_default())),
+            ("person".to_string(), Value::String(row.get::<_, Option<String>>("person").unwrap_or_default())),
+            ("referenceType".to_string(), Value::String(row.get::<_, Option<String>>("reference_type").unwrap_or_default())),
+            ("extension".to_string(), Value::String(row.get::<_, Option<String>>("extension").unwrap_or_default())),
             ("length".to_string(), Value::Number(serde_json::Number::from(row.get::<_, i64>("length")))),
         ]))
     }).collect();
@@ -1851,10 +1851,10 @@ pub async fn file_list_id_prev_count(
     let data: Vec<Value> = rows.iter().map(|row| {
         Value::Object(serde_json::Map::from_iter([
             ("id".to_string(), Value::String(row.get("id"))),
-            ("name".to_string(), Value::String(row.get("name"))),
-            ("person".to_string(), Value::String(row.get("person"))),
-            ("referenceType".to_string(), Value::String(row.get("reference_type"))),
-            ("extension".to_string(), Value::String(row.get("extension"))),
+            ("name".to_string(), Value::String(row.get::<_, Option<String>>("name").unwrap_or_default())),
+            ("person".to_string(), Value::String(row.get::<_, Option<String>>("person").unwrap_or_default())),
+            ("referenceType".to_string(), Value::String(row.get::<_, Option<String>>("reference_type").unwrap_or_default())),
+            ("extension".to_string(), Value::String(row.get::<_, Option<String>>("extension").unwrap_or_default())),
             ("length".to_string(), Value::Number(serde_json::Number::from(row.get::<_, i64>("length")))),
         ]))
     }).collect();
@@ -1882,10 +1882,10 @@ pub async fn file_list_id_prev_count_referencetype_referenceType(
     let data: Vec<Value> = rows.iter().map(|row| {
         Value::Object(serde_json::Map::from_iter([
             ("id".to_string(), Value::String(row.get("id"))),
-            ("name".to_string(), Value::String(row.get("name"))),
-            ("person".to_string(), Value::String(row.get("person"))),
-            ("referenceType".to_string(), Value::String(row.get("reference_type"))),
-            ("extension".to_string(), Value::String(row.get("extension"))),
+            ("name".to_string(), Value::String(row.get::<_, Option<String>>("name").unwrap_or_default())),
+            ("person".to_string(), Value::String(row.get::<_, Option<String>>("person").unwrap_or_default())),
+            ("referenceType".to_string(), Value::String(row.get::<_, Option<String>>("reference_type").unwrap_or_default())),
+            ("extension".to_string(), Value::String(row.get::<_, Option<String>>("extension").unwrap_or_default())),
             ("length".to_string(), Value::Number(serde_json::Number::from(row.get::<_, i64>("length")))),
         ]))
     }).collect();
@@ -2012,13 +2012,13 @@ pub async fn file_id(
         Some(row) => Ok(Json(ActionResult::success(Value::Object(
             serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
-                ("name".to_string(), Value::String(row.get("name"))),
-                ("person".to_string(), Value::String(row.get("person"))),
-                ("referenceType".to_string(), Value::String(row.get("reference_type"))),
-                ("extension".to_string(), Value::String(row.get("extension"))),
+                ("name".to_string(), Value::String(row.get::<_, Option<String>>("name").unwrap_or_default())),
+                ("person".to_string(), Value::String(row.get::<_, Option<String>>("person").unwrap_or_default())),
+                ("referenceType".to_string(), Value::String(row.get::<_, Option<String>>("reference_type").unwrap_or_default())),
+                ("extension".to_string(), Value::String(row.get::<_, Option<String>>("extension").unwrap_or_default())),
                 ("length".to_string(), Value::Number(serde_json::Number::from(row.get::<_, i64>("length")))),
-                ("mimeType".to_string(), Value::String(row.get("mime_type"))),
-                ("createTime".to_string(), Value::String(row.get("create_time"))),
+                ("mimeType".to_string(), Value::String(row.get::<_, Option<String>>("mime_type").unwrap_or_default())),
+                ("createTime".to_string(), Value::String(row.get::<_, Option<String>>("create_time").unwrap_or_default())),
             ]),
         )))),
         None => Ok(Json(ActionResult::error("file not found"))),
@@ -2060,8 +2060,8 @@ pub async fn file_id_download(
     match row {
         Some(row) => {
             let content: Option<String> = row.get("content");
-            let mime: String = row.get("mime_type");
-            let name: String = row.get("name");
+            let mime: String = row.get::<_, Option<String>>("mime_type").unwrap_or_default();
+            let name: String = row.get::<_, Option<String>>("name").unwrap_or_default();
             let bytes = match content {
                 Some(c) => base64::engine::general_purpose::STANDARD.decode(c).unwrap_or_default(),
                 None => vec![],
@@ -2100,8 +2100,8 @@ pub async fn folder_list_top(
         Value::Object({
             let mut map = serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
-                ("name".to_string(), Value::String(row.get("name"))),
-                ("person".to_string(), Value::String(row.get("person"))),
+                ("name".to_string(), Value::String(row.get::<_, Option<String>>("name").unwrap_or_default())),
+                ("person".to_string(), Value::String(row.get::<_, Option<String>>("person").unwrap_or_default())),
             ]);
             if let Some(superior) = row_opt_json::<String>(row, "superior") {
                 map.insert("superior".to_string(), superior);
@@ -2126,8 +2126,8 @@ pub async fn folder_list_id(
         Value::Object({
             let mut map = serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
-                ("name".to_string(), Value::String(row.get("name"))),
-                ("person".to_string(), Value::String(row.get("person"))),
+                ("name".to_string(), Value::String(row.get::<_, Option<String>>("name").unwrap_or_default())),
+                ("person".to_string(), Value::String(row.get::<_, Option<String>>("person").unwrap_or_default())),
             ]);
             if let Some(superior) = row_opt_json::<String>(row, "superior") {
                 map.insert("superior".to_string(), superior);
@@ -2153,8 +2153,8 @@ pub async fn folder_id(
             {
                 let mut map = serde_json::Map::from_iter([
                     ("id".to_string(), Value::String(row.get("id"))),
-                    ("name".to_string(), Value::String(row.get("name"))),
-                    ("person".to_string(), Value::String(row.get("person"))),
+                    ("name".to_string(), Value::String(row.get::<_, Option<String>>("name").unwrap_or_default())),
+                    ("person".to_string(), Value::String(row.get::<_, Option<String>>("person").unwrap_or_default())),
                 ]);
                 if let Some(superior) = row_opt_json::<String>(&row, "superior") {
                     map.insert("superior".to_string(), superior);
@@ -2187,8 +2187,8 @@ pub async fn folder2_list_top(
         Value::Object({
             let mut map = serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
-                ("name".to_string(), Value::String(row.get("name"))),
-                ("person".to_string(), Value::String(row.get("person"))),
+                ("name".to_string(), Value::String(row.get::<_, Option<String>>("name").unwrap_or_default())),
+                ("person".to_string(), Value::String(row.get::<_, Option<String>>("person").unwrap_or_default())),
             ]);
             if let Some(superior) = row_opt_json::<String>(row, "superior") {
                 map.insert("superior".to_string(), superior);
@@ -2259,12 +2259,12 @@ pub async fn recycle_list(
     let data: Vec<Value> = rows.iter().map(|row| {
         Value::Object(serde_json::Map::from_iter([
             ("id".to_string(), Value::String(row.get("id"))),
-            ("name".to_string(), Value::String(row.get("name"))),
-            ("person".to_string(), Value::String(row.get("person"))),
-            ("referenceType".to_string(), Value::String(row.get("reference_type"))),
-            ("extension".to_string(), Value::String(row.get("extension"))),
+            ("name".to_string(), Value::String(row.get::<_, Option<String>>("name").unwrap_or_default())),
+            ("person".to_string(), Value::String(row.get::<_, Option<String>>("person").unwrap_or_default())),
+            ("referenceType".to_string(), Value::String(row.get::<_, Option<String>>("reference_type").unwrap_or_default())),
+            ("extension".to_string(), Value::String(row.get::<_, Option<String>>("extension").unwrap_or_default())),
             ("length".to_string(), Value::Number(serde_json::Number::from(row.get::<_, i64>("length")))),
-            ("mimeType".to_string(), Value::String(row.get("mime_type"))),
+            ("mimeType".to_string(), Value::String(row.get::<_, Option<String>>("mime_type").unwrap_or_default())),
             ("deletedAt".to_string(), Value::String(row.get("deleted_at"))),
         ]))
     }).collect();
@@ -2285,8 +2285,8 @@ pub async fn recycle_id(
         Some(row) => Ok(Json(ActionResult::success(Value::Object(
             serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
-                ("name".to_string(), Value::String(row.get("name"))),
-                ("person".to_string(), Value::String(row.get("person"))),
+                ("name".to_string(), Value::String(row.get::<_, Option<String>>("name").unwrap_or_default())),
+                ("person".to_string(), Value::String(row.get::<_, Option<String>>("person").unwrap_or_default())),
                 ("deletedAt".to_string(), Value::String(row.get("deleted_at"))),
             ]),
         )))),
@@ -2305,7 +2305,7 @@ pub async fn recycle_id_delete(
         .query_opt("SELECT person FROM FILE_FILE WHERE id = $1 AND deleted_at IS NOT NULL", &[&id])
         .await.map_err(|_| AppError::Internal)?;
     let Some(row) = row else { return Ok(Json(ActionResult::error("file not in recycle bin"))); };
-    let creator: String = row.get("person");
+    let creator: String = row.get::<_, Option<String>>("person").unwrap_or_default();
     shared::middleware::require_owner(&pool, &session, &creator).await?;
     let result = client
         .execute("DELETE FROM FILE_FILE WHERE id = $1 AND deleted_at IS NOT NULL", &[&id])
@@ -2330,7 +2330,7 @@ pub async fn recycle_id_resume(
         .query_opt("SELECT person FROM FILE_FILE WHERE id = $1 AND deleted_at IS NOT NULL", &[&id])
         .await.map_err(|_| AppError::Internal)?;
     let Some(row) = row else { return Ok(Json(ActionResult::error("file not in recycle bin"))); };
-    let creator: String = row.get("person");
+    let creator: String = row.get::<_, Option<String>>("person").unwrap_or_default();
     shared::middleware::require_owner(&pool, &session, &creator).await?;
     client.execute("UPDATE FILE_FILE SET deleted_at = NULL, update_time = NOW() WHERE id = $1", &[&id])
         .await.map_err(|_| AppError::Internal)?;
@@ -2355,8 +2355,8 @@ pub async fn share_download_share_shareId_file_fileId(
     match row {
         Some(row) => {
             let content: Option<String> = row.get("content");
-            let mime: String = row.get("mime_type");
-            let name: String = row.get("name");
+            let mime: String = row.get::<_, Option<String>>("mime_type").unwrap_or_default();
+            let name: String = row.get::<_, Option<String>>("name").unwrap_or_default();
             let bytes = match content {
                 Some(c) => base64::engine::general_purpose::STANDARD.decode(c).unwrap_or_default(),
                 None => vec![],
@@ -2391,12 +2391,12 @@ pub async fn share_list(
     let data: Vec<Value> = rows.iter().map(|row| {
         Value::Object(serde_json::Map::from_iter([
             ("id".to_string(), Value::String(row.get("id"))),
-            ("name".to_string(), Value::String(row.get("name"))),
-            ("person".to_string(), Value::String(row.get("person"))),
-            ("referenceType".to_string(), Value::String(row.get("reference_type"))),
-            ("extension".to_string(), Value::String(row.get("extension"))),
+            ("name".to_string(), Value::String(row.get::<_, Option<String>>("name").unwrap_or_default())),
+            ("person".to_string(), Value::String(row.get::<_, Option<String>>("person").unwrap_or_default())),
+            ("referenceType".to_string(), Value::String(row.get::<_, Option<String>>("reference_type").unwrap_or_default())),
+            ("extension".to_string(), Value::String(row.get::<_, Option<String>>("extension").unwrap_or_default())),
             ("length".to_string(), Value::Number(serde_json::Number::from(row.get::<_, i64>("length")))),
-            ("createTime".to_string(), Value::String(row.get("create_time"))),
+            ("createTime".to_string(), Value::String(row.get::<_, Option<String>>("create_time").unwrap_or_default())),
         ]))
     }).collect();
     let count = data.len() as i64;
@@ -2419,10 +2419,10 @@ pub async fn share_list_att_share_shareId_folder_folderId(
     let data: Vec<Value> = rows.iter().map(|row| {
         Value::Object(serde_json::Map::from_iter([
             ("id".to_string(), Value::String(row.get("id"))),
-            ("name".to_string(), Value::String(row.get("name"))),
-            ("person".to_string(), Value::String(row.get("person"))),
-            ("referenceType".to_string(), Value::String(row.get("reference_type"))),
-            ("extension".to_string(), Value::String(row.get("extension"))),
+            ("name".to_string(), Value::String(row.get::<_, Option<String>>("name").unwrap_or_default())),
+            ("person".to_string(), Value::String(row.get::<_, Option<String>>("person").unwrap_or_default())),
+            ("referenceType".to_string(), Value::String(row.get::<_, Option<String>>("reference_type").unwrap_or_default())),
+            ("extension".to_string(), Value::String(row.get::<_, Option<String>>("extension").unwrap_or_default())),
             ("length".to_string(), Value::Number(serde_json::Number::from(row.get::<_, i64>("length")))),
         ]))
     }).collect();
@@ -2454,12 +2454,12 @@ pub async fn share_list_my(
     let data: Vec<Value> = rows.iter().map(|row| {
         Value::Object(serde_json::Map::from_iter([
             ("id".to_string(), Value::String(row.get("id"))),
-            ("name".to_string(), Value::String(row.get("name"))),
-            ("person".to_string(), Value::String(row.get("person"))),
-            ("referenceType".to_string(), Value::String(row.get("reference_type"))),
-            ("extension".to_string(), Value::String(row.get("extension"))),
+            ("name".to_string(), Value::String(row.get::<_, Option<String>>("name").unwrap_or_default())),
+            ("person".to_string(), Value::String(row.get::<_, Option<String>>("person").unwrap_or_default())),
+            ("referenceType".to_string(), Value::String(row.get::<_, Option<String>>("reference_type").unwrap_or_default())),
+            ("extension".to_string(), Value::String(row.get::<_, Option<String>>("extension").unwrap_or_default())),
             ("length".to_string(), Value::Number(serde_json::Number::from(row.get::<_, i64>("length")))),
-            ("createTime".to_string(), Value::String(row.get("create_time"))),
+            ("createTime".to_string(), Value::String(row.get::<_, Option<String>>("create_time").unwrap_or_default())),
         ]))
     }).collect();
     let count = data.len() as i64;
@@ -2482,10 +2482,10 @@ pub async fn share_list_my2_shareType_fileType(
     let data: Vec<Value> = rows.iter().map(|row| {
         Value::Object(serde_json::Map::from_iter([
             ("id".to_string(), Value::String(row.get("id"))),
-            ("name".to_string(), Value::String(row.get("name"))),
-            ("person".to_string(), Value::String(row.get("person"))),
-            ("referenceType".to_string(), Value::String(row.get("reference_type"))),
-            ("extension".to_string(), Value::String(row.get("extension"))),
+            ("name".to_string(), Value::String(row.get::<_, Option<String>>("name").unwrap_or_default())),
+            ("person".to_string(), Value::String(row.get::<_, Option<String>>("person").unwrap_or_default())),
+            ("referenceType".to_string(), Value::String(row.get::<_, Option<String>>("reference_type").unwrap_or_default())),
+            ("extension".to_string(), Value::String(row.get::<_, Option<String>>("extension").unwrap_or_default())),
             ("length".to_string(), Value::Number(serde_json::Number::from(row.get::<_, i64>("length")))),
         ]))
     }).collect();
@@ -2746,7 +2746,7 @@ pub async fn u2_attachment_update_content(
     let Some(row) = row else {
         return Ok(Json(ActionResult::error("attachment not found")));
     };
-    let owner: String = row.get("person");
+    let owner: String = row.get::<_, Option<String>>("person").unwrap_or_default();
     shared::middleware::require_owner(&pool, &session, &owner).await?;
 
     let (filename, _mime, bytes) = u2_read_multipart_file(multipart).await?;
@@ -2799,7 +2799,7 @@ pub async fn u2_attachment_delete(
     let Some(row) = row else {
         return Ok(Json(ActionResult::error("attachment not found")));
     };
-    let owner: String = row.get("person");
+    let owner: String = row.get::<_, Option<String>>("person").unwrap_or_default();
     shared::middleware::require_owner(&pool, &session, &owner).await?;
     client
         .execute("UPDATE FILE_FILE SET deleted_at = NOW(), update_time = NOW() WHERE id = $1 AND deleted_at IS NULL", &[&id])
@@ -2826,7 +2826,7 @@ pub async fn u2_attachment2_update(
     let Some(row) = row else {
         return Ok(Json(ActionResult::error("attachment not found")));
     };
-    let owner: String = row.get("person");
+    let owner: String = row.get::<_, Option<String>>("person").unwrap_or_default();
     shared::middleware::require_owner(&pool, &session, &owner).await?;
 
     let name = body.get("name").and_then(|v| v.as_str()).unwrap_or_default().to_string();
@@ -2858,7 +2858,7 @@ pub async fn u2_attachment2_delete(
     let Some(row) = row else {
         return Ok(Json(ActionResult::error("attachment not found")));
     };
-    let owner: String = row.get("person");
+    let owner: String = row.get::<_, Option<String>>("person").unwrap_or_default();
     shared::middleware::require_owner(&pool, &session, &owner).await?;
     client
         .execute("UPDATE FILE_FILE SET deleted_at = NOW(), update_time = NOW() WHERE id = $1 AND deleted_at IS NULL", &[&id])
@@ -2884,7 +2884,7 @@ pub async fn u2_file_delete_by_id(
     let Some(row) = row else {
         return Ok(Json(ActionResult::error("file not found")));
     };
-    let owner: String = row.get("person");
+    let owner: String = row.get::<_, Option<String>>("person").unwrap_or_default();
     shared::middleware::require_owner(&pool, &session, &owner).await?;
     client
         .execute("UPDATE FILE_FILE SET deleted_at = NOW(), update_time = NOW() WHERE id = $1 AND deleted_at IS NULL", &[&id])
@@ -3003,7 +3003,7 @@ pub async fn u2_folder_rename(
     let Some(row) = row else {
         return Ok(Json(ActionResult::error("folder not found")));
     };
-    let owner: String = row.get("person");
+    let owner: String = row.get::<_, Option<String>>("person").unwrap_or_default();
     shared::middleware::require_owner(&pool, &session, &owner).await?;
     client
         .execute(
@@ -3033,7 +3033,7 @@ pub async fn u2_folder_delete(
     let Some(row) = row else {
         return Ok(Json(ActionResult::error("folder not found")));
     };
-    let owner: String = row.get("person");
+    let owner: String = row.get::<_, Option<String>>("person").unwrap_or_default();
     shared::middleware::require_owner(&pool, &session, &owner).await?;
     client
         .execute(
@@ -3054,7 +3054,7 @@ pub async fn u2_folder_delete(
 fn u2_share_row_to_json(row: &deadpool_postgres::tokio_postgres::Row) -> Value {
     let mut map = serde_json::Map::from_iter([
         ("id".to_string(), Value::String(row.get("id"))),
-        ("person".to_string(), Value::String(row.get("person"))),
+        ("person".to_string(), Value::String(row.get::<_, Option<String>>("person").unwrap_or_default())),
         ("name".to_string(), Value::String(row.get::<_, Option<String>>("name").unwrap_or_default())),
         ("fileId".to_string(), Value::String(row.get("file_id"))),
         ("fileType".to_string(), Value::String(row.get::<_, Option<String>>("file_type").unwrap_or_default())),
@@ -3168,7 +3168,7 @@ pub async fn u2_share_delete(
     let Some(row) = row else {
         return Ok(Json(ActionResult::error("share not found")));
     };
-    let owner: String = row.get("person");
+    let owner: String = row.get::<_, Option<String>>("person").unwrap_or_default();
     shared::middleware::require_owner(&pool, &session, &owner).await?;
     client
         .execute("DELETE FROM FILE_SHARE WHERE id = $1", &[&id])
@@ -3195,7 +3195,7 @@ pub async fn u2_share_shield(
     let Some(row) = row else {
         return Ok(Json(ActionResult::error("share not found")));
     };
-    let owner: String = row.get("person");
+    let owner: String = row.get::<_, Option<String>>("person").unwrap_or_default();
     shared::middleware::require_owner(&pool, &session, &owner).await?;
     client
         .execute(
