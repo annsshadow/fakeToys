@@ -366,15 +366,15 @@ const viewcategory_vc_1_mockdeletetoget_q = useQuery({
 });
 const api_viewcate_548_data = ref<any[]>([]);
 const { data: api_viewcate_548_q } = useQuery({queryKey: ['api_viewcate_548', '/jaxrs/viewcategory/list/all'], queryFn: async () => { try { const r = await api.get("/jaxrs/viewcategory/list/all"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
-watch(api_viewcate_548_q, (v) => { api_viewcate_548_data.value = v ?? []; });
+
 
 
 const api_viewfiel_567_data = ref<any[]>([]);
 const { data: api_viewfiel_567_q } = useQuery({queryKey: ['api_viewfiel_567', '/jaxrs/viewfieldconfig/list/all'], queryFn: async () => { try { const r = await api.get("/jaxrs/viewfieldconfig/list/all"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
-watch(api_viewfiel_567_q, (v) => { api_viewfiel_567_data.value = v ?? []; });
+
 const api_viewfiel_215_data = ref<any[]>([]);
 const { data: api_viewfiel_215_q } = useQuery({queryKey: ['api_viewfiel_215', '/jaxrs/viewfieldconfig/vfc-1'], queryFn: async () => { try { const r = await api.get("/jaxrs/viewfieldconfig/vfc-1"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
-watch(api_viewfiel_215_q, (v) => { api_viewfiel_215_data.value = v ?? []; });
+
 const viewfieldconfig_vfc_1_mockdeletetoget_ref = ref<any[]>([]);
 const viewfieldconfig_vfc_1_mockdeletetoget_q = useQuery({
   queryKey: ['viewfieldconfig_vfc_1_mockdeletetoget'],
@@ -386,7 +386,7 @@ const viewfieldconfig_vfc_1_mockdeletetoget_q = useQuery({
 });
 const api_viewfiel_260_data = ref<any[]>([]);
 const { data: api_viewfiel_260_q } = useQuery({queryKey: ['api_viewfiel_260', '/jaxrs/viewfieldconfig'], queryFn: async () => { try { const r = await api.get("/jaxrs/viewfieldconfig"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
-watch(api_viewfiel_260_q, (v) => { api_viewfiel_260_data.value = v ?? []; });
+
 
 
 const viewrecord_unread_mockputtopost_ref = ref<any[]>([]);
@@ -400,17 +400,16 @@ const viewrecord_unread_mockputtopost_q = useQuery({
 });
 const api_viewreco_372_data = ref<any[]>([]);
 const { data: api_viewreco_372_q } = useQuery({queryKey: ['api_viewreco_372', '/jaxrs/viewrecord/unread'], queryFn: async () => { try { const r = await api.get("/jaxrs/viewrecord/unread"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
-watch(api_viewreco_372_q, (v) => { api_viewreco_372_data.value = v ?? []; });
+
 const api_viewrecord_person_p_1_data = ref<any[]>([]);
 const { data: api_viewrecord_person_p_1_q } = useQuery({queryKey: ['api_viewrecord_person_p_1', '/jaxrs/viewrecord/person/p-1'], queryFn: async () => { try { const r = await api.get("/jaxrs/viewrecord/person/p-1"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
-watch(api_viewrecord_person_p_1_q, (v) => { api_viewrecord_person_p_1_data.value = v ?? []; });
+
 const api_document_d_1_has_view_data = ref<any[]>([]);
 const { data: api_document_d_1_has_view_q } = useQuery({queryKey: ['api_document_d_1_has_view', '/jaxrs/viewrecord/document/d-1/has/view'], queryFn: async () => { try { const r = await api.get("/jaxrs/viewrecord/document/d-1/has/view"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
-watch(api_document_d_1_has_view_q, (v) => { api_document_d_1_has_view_data.value = v ?? []; });
 
 const api_jaxrs_queryview__77_data = ref<any[]>([]);
 const { data: api_jaxrs_queryview__77_q } = useQuery({queryKey: ['api_jaxrs_queryview__77', '/jaxrs/queryview/stat/flag/s-1/query/qf-1/execute'], queryFn: async () => { try { const r = await api.get("/jaxrs/queryview/stat/flag/s-1/query/qf-1/execute"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
-watch(api_jaxrs_queryview__77_q, (v) => { api_jaxrs_queryview__77_data.value = v ?? []; });
+
 const jaxrs_queryview_stat_flag_s_1_query_qf_1_execute_mockputtopost_ref = ref<any[]>([]);
 const jaxrs_queryview_stat_flag_s_1_query_qf_1_execute_mockputtopost_q = useQuery({
   queryKey: ['jaxrs_queryview_stat_flag_s_1_query_qf_1_execute_mockputtopost'],
@@ -422,16 +421,16 @@ const jaxrs_queryview_stat_flag_s_1_query_qf_1_execute_mockputtopost_q = useQuer
 });
 const api_jaxrs_queryview__469_data = ref<any[]>([]);
 const { data: api_jaxrs_queryview__469_q } = useQuery({queryKey: ['api_jaxrs_queryview__469', '/jaxrs/queryview/statement/execute/st-1/page/1/size/20'], queryFn: async () => { try { const r = await api.get("/jaxrs/queryview/statement/execute/st-1/page/1/size/20"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
-watch(api_jaxrs_queryview__469_q, (v) => { api_jaxrs_queryview__469_data.value = v ?? []; });
+
 const api_jaxrs_queryview__994_data = ref<any[]>([]);
 const { data: api_jaxrs_queryview__994_q } = useQuery({queryKey: ['api_jaxrs_queryview__994', '/jaxrs/queryview/statement/st-1/execute/page/1/size/20'], queryFn: async () => { try { const r = await api.get("/jaxrs/queryview/statement/st-1/execute/page/1/size/20"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
-watch(api_jaxrs_queryview__994_q, (v) => { api_jaxrs_queryview__994_data.value = v ?? []; });
+
 const api_jaxrs_queryview__229_data = ref<any[]>([]);
 const { data: api_jaxrs_queryview__229_q } = useQuery({queryKey: ['api_jaxrs_queryview__229', '/jaxrs/queryview/table/list/paging/1/size/20'], queryFn: async () => { try { const r = await api.get("/jaxrs/queryview/table/list/paging/1/size/20"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
-watch(api_jaxrs_queryview__229_q, (v) => { api_jaxrs_queryview__229_data.value = v ?? []; });
+
 const api_jaxrs_queryview__320_data = ref<any[]>([]);
 const { data: api_jaxrs_queryview__320_q } = useQuery({queryKey: ['api_jaxrs_queryview__320', '/jaxrs/queryview/table/list/table/tf-1/row/paging/1/size/20'], queryFn: async () => { try { const r = await api.get("/jaxrs/queryview/table/list/table/tf-1/row/paging/1/size/20"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
-watch(api_jaxrs_queryview__320_q, (v) => { api_jaxrs_queryview__320_data.value = v ?? []; });
+
 const jaxrs_queryview_view_flag_v_1_query_qf_1_bundle_mockputtopost_ref = ref<any[]>([]);
 const jaxrs_queryview_view_flag_v_1_query_qf_1_bundle_mockputtopost_q = useQuery({
   queryKey: ['jaxrs_queryview_view_flag_v_1_query_qf_1_bundle_mockputtopost'],
@@ -443,7 +442,7 @@ const jaxrs_queryview_view_flag_v_1_query_qf_1_bundle_mockputtopost_q = useQuery
 });
 const api_jaxrs_queryview__430_data = ref<any[]>([]);
 const { data: api_jaxrs_queryview__430_q } = useQuery({queryKey: ['api_jaxrs_queryview__430', '/jaxrs/queryview/view/flag/v-1/query/qf-1/execute/v2/page/1/size/20'], queryFn: async () => { try { const r = await api.get("/jaxrs/queryview/view/flag/v-1/query/qf-1/execute/v2/page/1/size/20"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
-watch(api_jaxrs_queryview__430_q, (v) => { api_jaxrs_queryview__430_data.value = v ?? []; });
+
 </script>
 
 <style scoped>

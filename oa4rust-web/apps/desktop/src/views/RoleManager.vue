@@ -114,16 +114,16 @@ loadRoles()
 
 const api_permission_manag_343_data = ref<any[]>([]);
 const { data: api_permission_manag_343_q } = useQuery({queryKey: ['api_permission_manag_343', '/jaxrs/permission/management/refresh/all'], queryFn: async () => { try { const r = await api.get("/jaxrs/permission/management/refresh/all"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
-watch(api_permission_manag_343_q, (v) => { api_permission_manag_343_data.value = v ?? []; });
+
 const api_permission_viewe_710_data = ref<any[]>([]);
 const { data: api_permission_viewe_710_q } = useQuery({queryKey: ['api_permission_viewe_710', '/jaxrs/permission/viewer/appInfo/a-1'], queryFn: async () => { try { const r = await api.get("/jaxrs/permission/viewer/appInfo/a-1"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
-watch(api_permission_viewe_710_q, (v) => { api_permission_viewe_710_data.value = v ?? []; });
+
 const api_permission_publi_309_data = ref<any[]>([]);
 const { data: api_permission_publi_309_q } = useQuery({queryKey: ['api_permission_publi_309', '/jaxrs/permission/publisher/appInfo/a-1'], queryFn: async () => { try { const r = await api.get("/jaxrs/permission/publisher/appInfo/a-1"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
-watch(api_permission_publi_309_q, (v) => { api_permission_publi_309_data.value = v ?? []; });
+
 const api_permission_manag_444_data = ref<any[]>([]);
 const { data: api_permission_manag_444_q } = useQuery({queryKey: ['api_permission_manag_444', '/jaxrs/permission/manager/appInfo/a-1'], queryFn: async () => { try { const r = await api.get("/jaxrs/permission/manager/appInfo/a-1"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
-watch(api_permission_manag_444_q, (v) => { api_permission_manag_444_data.value = v ?? []; });
+
 
 
 // Confirmation dialog (replaces window.confirm)

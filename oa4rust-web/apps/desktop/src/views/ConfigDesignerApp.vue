@@ -259,7 +259,7 @@ onMounted(() => { qc.invalidateQueries({ queryKey: ['config','list'] }) })
 
 const api_input_pr_78_data = ref<any[]>([]);
 const { data: api_input_pr_78_q } = useQuery({queryKey: ['api_input_pr_78', '/jaxrs/input/prepare/create'], queryFn: async () => { try { const r = await api.get("/jaxrs/input/prepare/create"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
-watch(api_input_pr_78_q, (v) => { api_input_pr_78_data.value = v ?? []; });
+
 const input_compare_mockputtopost_ref = ref<any[]>([]);
 const input_compare_mockputtopost_q = useQuery({
   queryKey: ['input_compare_mockputtopost'],
@@ -289,7 +289,6 @@ const input_create_mockputtopost_q = useQuery({
 });
 const api_input_compare_data = ref<any[]>([]);
 const { data: api_input_compare_q } = useQuery({queryKey: ['api_input_compare', '/jaxrs/input/compare'], queryFn: async () => { try { const r = await api.get("/jaxrs/input/compare"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
-watch(api_input_compare_q, (v) => { api_input_compare_data.value = v ?? []; });
 const input_cover_ref = ref<any[]>([]);
 const input_cover_q = useQuery({
   queryKey: ['input_cover'],
@@ -319,7 +318,6 @@ const input_prepare_create_mockputtopost_q = useQuery({
 });
 const api_input_create_data = ref<any[]>([]);
 const { data: api_input_create_q } = useQuery({queryKey: ['api_input_create', '/jaxrs/input/create'], queryFn: async () => { try { const r = await api.get("/jaxrs/input/create"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
-watch(api_input_create_q, (v) => { api_input_create_data.value = v ?? []; });
 const input_cover_mockputtopost_ref = ref<any[]>([]);
 const input_cover_mockputtopost_q = useQuery({
   queryKey: ['input_cover_mockputtopost'],
@@ -356,13 +354,12 @@ function confirmMsg(msg: string): Promise<boolean> {
 
 const api_config_data = ref<any[]>([]);
 const { data: api_config_q } = useQuery({queryKey: ['api_config', '/jaxrs/config'], queryFn: async () => { try { const r = await api.get("/jaxrs/config"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
-watch(api_config_q, (v) => { api_config_data.value = v ?? []; });
 const api_config_s_497_data = ref<any[]>([]);
 const { data: api_config_s_497_q } = useQuery({queryKey: ['api_config_s_497', '/jaxrs/config/system/config'], queryFn: async () => { try { const r = await api.get("/jaxrs/config/system/config"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
-watch(api_config_s_497_q, (v) => { api_config_s_497_data.value = v ?? []; });
+
 const api_config_i_771_data = ref<any[]>([]);
 const { data: api_config_i_771_q } = useQuery({queryKey: ['api_config_i_771', '/jaxrs/config/is/file/manager'], queryFn: async () => { try { const r = await api.get("/jaxrs/config/is/file/manager"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
-watch(api_config_i_771_q, (v) => { api_config_i_771_data.value = v ?? []; });
+
 
 </script>
 

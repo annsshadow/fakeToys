@@ -550,34 +550,34 @@ function openProps() { if(selected.value) showProps.value = true }
 
 const api_jaxrs_qu_102_data = ref<any[]>([]);
 const { data: api_jaxrs_qu_102_q } = useQuery({queryKey: ['api_jaxrs_qu_102', '/jaxrs/query/assemble/designer/neural/model/m1/reset/status'], queryFn: async () => { try { const r = await api.get("/jaxrs/query/assemble/designer/neural/model/m1/reset/status"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
-watch(api_jaxrs_qu_102_q, (v) => { api_jaxrs_qu_102_data.value = v ?? []; });
+
 const api_jaxrs_qu_109_data = ref<any[]>([]);
 const { data: api_jaxrs_qu_109_q } = useQuery({queryKey: ['api_jaxrs_qu_109', '/jaxrs/query/assemble/designer/statement/execute/st-1/mode/count/page/1/size/20'], queryFn: async () => { try { const r = await api.get("/jaxrs/query/assemble/designer/statement/execute/st-1/mode/count/page/1/size/20"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
-watch(api_jaxrs_qu_109_q, (v) => { api_jaxrs_qu_109_data.value = v ?? []; });
+
 const api_jaxrs_qu_615_data = ref<any[]>([]);
 const { data: api_jaxrs_qu_615_q } = useQuery({queryKey: ['api_jaxrs_qu_615', '/jaxrs/query/assemble/designer/statement/execute/st-1/page/1/size/20'], queryFn: async () => { try { const r = await api.get("/jaxrs/query/assemble/designer/statement/execute/st-1/page/1/size/20"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
-watch(api_jaxrs_qu_615_q, (v) => { api_jaxrs_qu_615_data.value = v ?? []; });
+
 const api_jaxrs_qu_186_data = ref<any[]>([]);
 const { data: api_jaxrs_qu_186_q } = useQuery({queryKey: ['api_jaxrs_qu_186', '/jaxrs/query/assemble/designer/statement/st-1/execute/mode/count/page/1/size/20'], queryFn: async () => { try { const r = await api.get("/jaxrs/query/assemble/designer/statement/st-1/execute/mode/count/page/1/size/20"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
-watch(api_jaxrs_qu_186_q, (v) => { api_jaxrs_qu_186_data.value = v ?? []; });
+
 const api_jaxrs_qu_731_data = ref<any[]>([]);
 const { data: api_jaxrs_qu_731_q } = useQuery({queryKey: ['api_jaxrs_qu_731', '/jaxrs/query/assemble/designer/statement/st-1/execute/page/1/size/20'], queryFn: async () => { try { const r = await api.get("/jaxrs/query/assemble/designer/statement/st-1/execute/page/1/size/20"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
-watch(api_jaxrs_qu_731_q, (v) => { api_jaxrs_qu_731_data.value = v ?? []; });
+
 const api_jaxrs_qu_720_data = ref<any[]>([]);
 const { data: api_jaxrs_qu_720_q } = useQuery({queryKey: ['api_jaxrs_qu_720', '/jaxrs/query/service/processing/index/directory/document/count'], queryFn: async () => { try { const r = await api.get("/jaxrs/query/service/processing/index/directory/document/count"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
-watch(api_jaxrs_qu_720_q, (v) => { api_jaxrs_qu_720_data.value = v ?? []; });
+
 const api_jaxrs_qu_81_data = ref<any[]>([]);
 const { data: api_jaxrs_qu_81_q } = useQuery({queryKey: ['api_jaxrs_qu_81', '/jaxrs/query/service/processing/index/update/extra/document'], queryFn: async () => { try { const r = await api.get("/jaxrs/query/service/processing/index/update/extra/document"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
-watch(api_jaxrs_qu_81_q, (v) => { api_jaxrs_qu_81_data.value = v ?? []; });
+
 const api_jaxrs_qu_760_data = ref<any[]>([]);
 const { data: api_jaxrs_qu_760_q } = useQuery({queryKey: ['api_jaxrs_qu_760', '/jaxrs/query/service/processing/touch/high/freq/work/node/u2node/reset'], queryFn: async () => { try { const r = await api.get("/jaxrs/query/service/processing/touch/high/freq/work/node/u2node/reset"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
-watch(api_jaxrs_qu_760_q, (v) => { api_jaxrs_qu_760_data.value = v ?? []; });
+
 const api_jaxrs_qu_523_data = ref<any[]>([]);
 const { data: api_jaxrs_qu_523_q } = useQuery({queryKey: ['api_jaxrs_qu_523', '/jaxrs/query/service/processing/touch/high/freq/work/node/u2node/touch'], queryFn: async () => { try { const r = await api.get("/jaxrs/query/service/processing/touch/high/freq/work/node/u2node/touch"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
-watch(api_jaxrs_qu_523_q, (v) => { api_jaxrs_qu_523_data.value = v ?? []; });
+
 const api_jaxrs_qu_39_data = ref<any[]>([]);
 const { data: api_jaxrs_qu_39_q } = useQuery({queryKey: ['api_jaxrs_qu_39', '/jaxrs/query/service/processing/touch/optimize/index/n0/touch'], queryFn: async () => { try { const r = await api.get("/jaxrs/query/service/processing/touch/optimize/index/n0/touch"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
-watch(api_jaxrs_qu_39_q, (v) => { api_jaxrs_qu_39_data.value = v ?? []; });
+
 </script>
 
 <style scoped>

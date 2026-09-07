@@ -254,10 +254,10 @@ const appinfo_a_1_control_q = useQuery({
 
 const api_user_pub_261_data = ref<any[]>([]);
 const { data: api_user_pub_261_q } = useQuery({queryKey: ['api_user_pub_261', '/jaxrs/appinfo/list/user/publish/with/process'], queryFn: async () => { try { const r = await api.get("/jaxrs/appinfo/list/user/publish/with/process"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
-watch(api_user_pub_261_q, (v) => { api_user_pub_261_data.value = v ?? []; });
+
 const api_list_i_1_574_data = ref<any[]>([]);
 const { data: api_list_i_1_574_q } = useQuery({queryKey: ['api_list_i_1_574', '/jaxrs/appinfo/filter/list/i-1/next/10'], queryFn: async () => { try { const r = await api.get("/jaxrs/appinfo/filter/list/i-1/next/10"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
-watch(api_list_i_1_574_q, (v) => { api_list_i_1_574_data.value = v ?? []; });
+
 
 </script>
 

@@ -156,7 +156,7 @@ const categoryinfo_bind_c_1_view_q = useQuery({
 
 const api_list_p_1_860_data = ref<any[]>([]);
 const { data: api_list_p_1_860_q } = useQuery({queryKey: ['api_list_p_1_860', '/jaxrs/categoryinfo/filter/list/p-1/size/10'], queryFn: async () => { try { const r = await api.get("/jaxrs/categoryinfo/filter/list/p-1/size/10"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
-watch(api_list_p_1_860_q, (v) => { api_list_p_1_860_data.value = v ?? []; });
+
 
 </script>
 
