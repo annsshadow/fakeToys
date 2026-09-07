@@ -291,7 +291,7 @@ const form_f_1_appinfo_app_1_q = useQuery({
     try { const r = await api.get("/jaxrs/form/f-1/appinfo/app-1"); return (r.data ?? []) as any[]; }
     catch { return []; }
   },
-  staleTime: 60000,
+  
 });
 const form_v2_f_1_mobile_ref = ref<any[]>([]);
 const form_v2_f_1_mobile_q = useQuery({
@@ -300,7 +300,7 @@ const form_v2_f_1_mobile_q = useQuery({
     try { const r = await api.get("/jaxrs/form/v2/f-1/mobile"); return (r.data ?? []) as any[]; }
     catch { return []; }
   },
-  staleTime: 60000,
+  
 });
 const form_list_all_ref = ref<any[]>([]);
 const form_list_all_q = useQuery({
@@ -309,7 +309,7 @@ const form_list_all_q = useQuery({
     try { const r = await api.get("/jaxrs/form/list/all"); return (r.data ?? []) as any[]; }
     catch { return []; }
   },
-  staleTime: 60000,
+  
 });
 const form_f_1_mockdeletetoget_ref = ref<any[]>([]);
 const form_f_1_mockdeletetoget_q = useQuery({
@@ -318,7 +318,7 @@ const form_f_1_mockdeletetoget_q = useQuery({
     try { const r = await api.get("/jaxrs/form/f-1/mockdeletetoget"); return (r.data ?? []) as any[]; }
     catch { return []; }
   },
-  staleTime: 60000,
+  
 });
 const form_f_1_ref = ref<any[]>([]);
 const form_f_1_q = useQuery({
@@ -327,7 +327,7 @@ const form_f_1_q = useQuery({
     try { const r = await api.get("/jaxrs/form/f-1"); return (r.data ?? []) as any[]; }
     catch { return []; }
   },
-  staleTime: 60000,
+  
 });
 const formversion_list_form_f_1_ref = ref<any[]>([]);
 const formversion_list_form_f_1_q = useQuery({
@@ -336,7 +336,7 @@ const formversion_list_form_f_1_q = useQuery({
     try { const r = await api.get("/jaxrs/formversion/list/form/f-1"); return (r.data ?? []) as any[]; }
     catch { return []; }
   },
-  staleTime: 60000,
+  
 });
 const formversion_fv_1_ref = ref<any[]>([]);
 const formversion_fv_1_q = useQuery({
@@ -345,7 +345,7 @@ const formversion_fv_1_q = useQuery({
     try { const r = await api.get("/jaxrs/formversion/fv-1"); return (r.data ?? []) as any[]; }
     catch { return []; }
   },
-  staleTime: 60000,
+  
 });
 
 </script>

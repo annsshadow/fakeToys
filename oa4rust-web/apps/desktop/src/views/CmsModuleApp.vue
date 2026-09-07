@@ -78,7 +78,7 @@ const cms_core_article_list_q = useQuery({
     try { const r = await api.get("/jaxrs/cms/core/article/list"); return (r.data ?? []) as any[]; }
     catch { return []; }
   },
-  staleTime: 60000,
+  
 });
 const cms_view_publish_view_001_ref = ref<any[]>([]);
 const cms_view_publish_view_001_q = useQuery({
@@ -87,7 +87,7 @@ const cms_view_publish_view_001_q = useQuery({
     try { const r = await api.get("/jaxrs/cms/view/publish/view-001"); return (r.data ?? []) as any[]; }
     catch { return []; }
   },
-  staleTime: 60000,
+  
 });
 const assemble_control_cmsview_list_ref = ref<any[]>([]);
 const assemble_control_cmsview_list_q = useQuery({
@@ -96,7 +96,7 @@ const assemble_control_cmsview_list_q = useQuery({
     try { const r = await api.get("/jaxrs/cms/assemble/control/cmsview/list"); return (r.data ?? []) as any[]; }
     catch { return []; }
   },
-  staleTime: 60000,
+  
 });
 const cms_assemble_control_cmscategory_ref = ref<any[]>([]);
 const cms_assemble_control_cmscategory_q = useQuery({
@@ -105,7 +105,7 @@ const cms_assemble_control_cmscategory_q = useQuery({
     try { const r = await api.get("/jaxrs/cms/assemble/control/cmscategory"); return (r.data ?? []) as any[]; }
     catch { return []; }
   },
-  staleTime: 60000,
+  
 });
 const cms_ref = ref<any[]>([]);
 const cms_q = useQuery({
@@ -114,7 +114,7 @@ const cms_q = useQuery({
     try { const r = await api.get("/jaxrs/cms"); return (r.data ?? []) as any[]; }
     catch { return []; }
   },
-  staleTime: 60000,
+  
 });
 const assemble_control_cmsdocument_list_ref = ref<any[]>([]);
 const assemble_control_cmsdocument_list_q = useQuery({
@@ -123,7 +123,7 @@ const assemble_control_cmsdocument_list_q = useQuery({
     try { const r = await api.get("/jaxrs/cms/assemble/control/cmsdocument/list"); return (r.data ?? []) as any[]; }
     catch { return []; }
   },
-  staleTime: 60000,
+  
 });
 const cms_assemble_control_cmsview_ref = ref<any[]>([]);
 const cms_assemble_control_cmsview_q = useQuery({
@@ -132,7 +132,7 @@ const cms_assemble_control_cmsview_q = useQuery({
     try { const r = await api.get("/jaxrs/cms/assemble/control/cmsview"); return (r.data ?? []) as any[]; }
     catch { return []; }
   },
-  staleTime: 60000,
+  
 });
 const cms_view_list_all_ref = ref<any[]>([]);
 const cms_view_list_all_q = useQuery({
@@ -141,7 +141,7 @@ const cms_view_list_all_q = useQuery({
     try { const r = await api.get("/jaxrs/cms/view/list/all"); return (r.data ?? []) as any[]; }
     catch { return []; }
   },
-  staleTime: 60000,
+  
 });
 const assemble_control_cmsdocumentcategory_list_ref = ref<any[]>([]);
 const assemble_control_cmsdocumentcategory_list_q = useQuery({
@@ -150,7 +150,7 @@ const assemble_control_cmsdocumentcategory_list_q = useQuery({
     try { const r = await api.get("/jaxrs/cms/assemble/control/cmsdocumentcategory/list"); return (r.data ?? []) as any[]; }
     catch { return []; }
   },
-  staleTime: 60000,
+  
 });
 const cms_uuid_random_ref = ref<any[]>([]);
 const cms_uuid_random_q = useQuery({
@@ -159,7 +159,7 @@ const cms_uuid_random_q = useQuery({
     try { const r = await api.get("/jaxrs/cms/uuid/random"); return (r.data ?? []) as any[]; }
     catch { return []; }
   },
-  staleTime: 60000,
+  
 });
 const assemble_control_cmscategory_list_ref = ref<any[]>([]);
 const assemble_control_cmscategory_list_q = useQuery({
@@ -168,7 +168,7 @@ const assemble_control_cmscategory_list_q = useQuery({
     try { const r = await api.get("/jaxrs/cms/assemble/control/cmscategory/list"); return (r.data ?? []) as any[]; }
     catch { return []; }
   },
-  staleTime: 60000,
+  
 });
 const cms_templateform_list_ref = ref<any[]>([]);
 const cms_templateform_list_q = useQuery({
@@ -177,7 +177,7 @@ const cms_templateform_list_q = useQuery({
     try { const r = await api.get("/jaxrs/cms/templateform/list"); return (r.data ?? []) as any[]; }
     catch { return []; }
   },
-  staleTime: 60000,
+  
 });
 const cms_article_test_article_id_ref = ref<any[]>([]);
 const cms_article_test_article_id_q = useQuery({
@@ -186,7 +186,7 @@ const cms_article_test_article_id_q = useQuery({
     try { const r = await api.get("/jaxrs/cms/article/test-article-id"); return (r.data ?? []) as any[]; }
     catch { return []; }
   },
-  staleTime: 60000,
+  
 });
 const assemble_control_cmsapplication_list_ref = ref<any[]>([]);
 const assemble_control_cmsapplication_list_q = useQuery({
@@ -195,7 +195,7 @@ const assemble_control_cmsapplication_list_q = useQuery({
     try { const r = await api.get("/jaxrs/cms/assemble/control/cmsapplication/list"); return (r.data ?? []) as any[]; }
     catch { return []; }
   },
-  staleTime: 60000,
+  
 });
 const cms_category_list_ref = ref<any[]>([]);
 const cms_category_list_q = useQuery({
@@ -204,7 +204,7 @@ const cms_category_list_q = useQuery({
     try { const r = await api.get("/jaxrs/cms/category/list"); return (r.data ?? []) as any[]; }
     catch { return []; }
   },
-  staleTime: 60000,
+  
 });
 const cms_category_test_category_id_ref = ref<any[]>([]);
 const cms_category_test_category_id_q = useQuery({
@@ -213,7 +213,7 @@ const cms_category_test_category_id_q = useQuery({
     try { const r = await api.get("/jaxrs/cms/category/test-category-id"); return (r.data ?? []) as any[]; }
     catch { return []; }
   },
-  staleTime: 60000,
+  
 });
 const cms_category_create_ref = ref<any[]>([]);
 const cms_category_create_q = useQuery({
@@ -222,7 +222,7 @@ const cms_category_create_q = useQuery({
     try { const r = await api.get("/jaxrs/cms/category/create"); return (r.data ?? []) as any[]; }
     catch { return []; }
   },
-  staleTime: 60000,
+  
 });
 const cms_assemble_control_cmsapplication_ref = ref<any[]>([]);
 const cms_assemble_control_cmsapplication_q = useQuery({
@@ -231,7 +231,7 @@ const cms_assemble_control_cmsapplication_q = useQuery({
     try { const r = await api.get("/jaxrs/cms/assemble/control/cmsapplication"); return (r.data ?? []) as any[]; }
     catch { return []; }
   },
-  staleTime: 60000,
+  
 });
 const cms_article_list_ref = ref<any[]>([]);
 const cms_article_list_q = useQuery({
@@ -240,7 +240,7 @@ const cms_article_list_q = useQuery({
     try { const r = await api.get("/jaxrs/cms/article/list"); return (r.data ?? []) as any[]; }
     catch { return []; }
   },
-  staleTime: 60000,
+  
 });
 const core_express_content_list_ref = ref<any[]>([]);
 const core_express_content_list_q = useQuery({
@@ -249,7 +249,7 @@ const core_express_content_list_q = useQuery({
     try { const r = await api.get("/jaxrs/cms/core/express/content/list"); return (r.data ?? []) as any[]; }
     catch { return []; }
   },
-  staleTime: 60000,
+  
 });
 const cms_assemble_control_cmsdocument_ref = ref<any[]>([]);
 const cms_assemble_control_cmsdocument_q = useQuery({
@@ -258,7 +258,7 @@ const cms_assemble_control_cmsdocument_q = useQuery({
     try { const r = await api.get("/jaxrs/cms/assemble/control/cmsdocument"); return (r.data ?? []) as any[]; }
     catch { return []; }
   },
-  staleTime: 60000,
+  
 });
 const cms_article_create_ref = ref<any[]>([]);
 const cms_article_create_q = useQuery({
@@ -267,7 +267,7 @@ const cms_article_create_q = useQuery({
     try { const r = await api.get("/jaxrs/cms/article/create"); return (r.data ?? []) as any[]; }
     catch { return []; }
   },
-  staleTime: 60000,
+  
 });
 const core_express_article_list_ref = ref<any[]>([]);
 const core_express_article_list_q = useQuery({
@@ -276,7 +276,7 @@ const core_express_article_list_q = useQuery({
     try { const r = await api.get("/jaxrs/cms/core/express/article/list"); return (r.data ?? []) as any[]; }
     catch { return []; }
   },
-  staleTime: 60000,
+  
 });
 const cms_article_ref = ref<any[]>([]);
 const cms_article_q = useQuery({
@@ -285,7 +285,7 @@ const cms_article_q = useQuery({
     try { const r = await api.get("/jaxrs/cms/article"); return (r.data ?? []) as any[]; }
     catch { return []; }
   },
-  staleTime: 60000,
+  
 });
 const cms_view_unpublish_view_001_ref = ref<any[]>([]);
 const cms_view_unpublish_view_001_q = useQuery({
@@ -294,40 +294,40 @@ const cms_view_unpublish_view_001_q = useQuery({
     try { const r = await api.get("/jaxrs/cms/view/unpublish/view-001"); return (r.data ?? []) as any[]; }
     catch { return []; }
   },
-  staleTime: 60000,
+  
 });
 
 
 const api_cms_asse_559_data = ref<any[]>([]);
-const { data: api_cms_asse_559_q } = useQuery({queryKey: ['api_cms_asse_559', '/jaxrs/cms_assemble_control/document/search'], queryFn: async () => { try { const r = await api.get("/jaxrs/cms_assemble_control/document/search"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+const { data: api_cms_asse_559_q } = useQuery({queryKey: ['api_cms_asse_559', '/jaxrs/cms_assemble_control/document/search'], queryFn: async () => { try { const r = await api.get("/jaxrs/cms_assemble_control/document/search"); return (r.data ?? []) as any[]; } catch { return []; } }});
 
 const api_cms_asse_804_data = ref<any[]>([]);
-const { data: api_cms_asse_804_q } = useQuery({queryKey: ['api_cms_asse_804', '/jaxrs/cms_assemble_control/get/control/config'], queryFn: async () => { try { const r = await api.get("/jaxrs/cms_assemble_control/get/control/config"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+const { data: api_cms_asse_804_q } = useQuery({queryKey: ['api_cms_asse_804', '/jaxrs/cms_assemble_control/get/control/config'], queryFn: async () => { try { const r = await api.get("/jaxrs/cms_assemble_control/get/control/config"); return (r.data ?? []) as any[]; } catch { return []; } }});
 
 const api_cms_asse_862_data = ref<any[]>([]);
-const { data: api_cms_asse_862_q } = useQuery({queryKey: ['api_cms_asse_862', '/jaxrs/cms_assemble_control/list/control/sections'], queryFn: async () => { try { const r = await api.get("/jaxrs/cms_assemble_control/list/control/sections"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+const { data: api_cms_asse_862_q } = useQuery({queryKey: ['api_cms_asse_862', '/jaxrs/cms_assemble_control/list/control/sections'], queryFn: async () => { try { const r = await api.get("/jaxrs/cms_assemble_control/list/control/sections"); return (r.data ?? []) as any[]; } catch { return []; } }});
 
 const api_cms_asse_501_data = ref<any[]>([]);
-const { data: api_cms_asse_501_q } = useQuery({queryKey: ['api_cms_asse_501', '/jaxrs/cms_assemble_control/update/control/config'], queryFn: async () => { try { const r = await api.get("/jaxrs/cms_assemble_control/update/control/config"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+const { data: api_cms_asse_501_q } = useQuery({queryKey: ['api_cms_asse_501', '/jaxrs/cms_assemble_control/update/control/config'], queryFn: async () => { try { const r = await api.get("/jaxrs/cms_assemble_control/update/control/config"); return (r.data ?? []) as any[]; } catch { return []; } }});
 
 
 const api_jaxrs_an_996_data = ref<any[]>([]);
-const { data: api_jaxrs_an_996_q } = useQuery({queryKey: ['api_jaxrs_an_996', '/jaxrs/anonymous/document/filter/list/i-1/next/10'], queryFn: async () => { try { const r = await api.get("/jaxrs/anonymous/document/filter/list/i-1/next/10"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+const { data: api_jaxrs_an_996_q } = useQuery({queryKey: ['api_jaxrs_an_996', '/jaxrs/anonymous/document/filter/list/i-1/next/10'], queryFn: async () => { try { const r = await api.get("/jaxrs/anonymous/document/filter/list/i-1/next/10"); return (r.data ?? []) as any[]; } catch { return []; } }});
 
 const api_jaxrs_an_237_data = ref<any[]>([]);
-const { data: api_jaxrs_an_237_q } = useQuery({queryKey: ['api_jaxrs_an_237', '/jaxrs/anonymous/document/filter/list/p-1/size/10'], queryFn: async () => { try { const r = await api.get("/jaxrs/anonymous/document/filter/list/p-1/size/10"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+const { data: api_jaxrs_an_237_q } = useQuery({queryKey: ['api_jaxrs_an_237', '/jaxrs/anonymous/document/filter/list/p-1/size/10'], queryFn: async () => { try { const r = await api.get("/jaxrs/anonymous/document/filter/list/p-1/size/10"); return (r.data ?? []) as any[]; } catch { return []; } }});
 
 const api_jaxrs_an_787_data = ref<any[]>([]);
-const { data: api_jaxrs_an_787_q } = useQuery({queryKey: ['api_jaxrs_an_787', '/jaxrs/anonymous/form/v2/lookup/document/d-1/mobile'], queryFn: async () => { try { const r = await api.get("/jaxrs/anonymous/form/v2/lookup/document/d-1/mobile"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+const { data: api_jaxrs_an_787_q } = useQuery({queryKey: ['api_jaxrs_an_787', '/jaxrs/anonymous/form/v2/lookup/document/d-1/mobile'], queryFn: async () => { try { const r = await api.get("/jaxrs/anonymous/form/v2/lookup/document/d-1/mobile"); return (r.data ?? []) as any[]; } catch { return []; } }});
 
 const api_jaxrs_cm_42_data = ref<any[]>([]);
-const { data: api_jaxrs_cm_42_q } = useQuery({queryKey: ['api_jaxrs_cm_42', '/jaxrs/cms/assemble/control/appinfo/alias/alias'], queryFn: async () => { try { const r = await api.get("/jaxrs/cms/assemble/control/appinfo/alias/alias"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+const { data: api_jaxrs_cm_42_q } = useQuery({queryKey: ['api_jaxrs_cm_42', '/jaxrs/cms/assemble/control/appinfo/alias/alias'], queryFn: async () => { try { const r = await api.get("/jaxrs/cms/assemble/control/appinfo/alias/alias"); return (r.data ?? []) as any[]; } catch { return []; } }});
 
 const api_jaxrs_cms_assemb_820_data = ref<any[]>([]);
-const { data: api_jaxrs_cms_assemb_820_q } = useQuery({queryKey: ['api_jaxrs_cms_assemb_820', '/jaxrs/cms/assemble/control/categoryinfo/alias/alias'], queryFn: async () => { try { const r = await api.get("/jaxrs/cms/assemble/control/categoryinfo/alias/alias"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+const { data: api_jaxrs_cms_assemb_820_q } = useQuery({queryKey: ['api_jaxrs_cms_assemb_820', '/jaxrs/cms/assemble/control/categoryinfo/alias/alias'], queryFn: async () => { try { const r = await api.get("/jaxrs/cms/assemble/control/categoryinfo/alias/alias"); return (r.data ?? []) as any[]; } catch { return []; } }});
 
 const api_jaxrs_cms_assemb_441_data = ref<any[]>([]);
-const { data: api_jaxrs_cms_assemb_441_q } = useQuery({queryKey: ['api_jaxrs_cms_assemb_441', '/jaxrs/cms/assemble/control/document/cipher/publish/content'], queryFn: async () => { try { const r = await api.get("/jaxrs/cms/assemble/control/document/cipher/publish/content"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+const { data: api_jaxrs_cms_assemb_441_q } = useQuery({queryKey: ['api_jaxrs_cms_assemb_441', '/jaxrs/cms/assemble/control/document/cipher/publish/content'], queryFn: async () => { try { const r = await api.get("/jaxrs/cms/assemble/control/document/cipher/publish/content"); return (r.data ?? []) as any[]; } catch { return []; } }});
 
 const jaxrs_cms_assemble_control_document_cipher_publish_content_mockputtopost_ref = ref<any[]>([]);
 const jaxrs_cms_assemble_control_document_cipher_publish_content_mockputtopost_q = useQuery({
@@ -336,16 +336,16 @@ const jaxrs_cms_assemble_control_document_cipher_publish_content_mockputtopost_q
     try { const r = await api.get("/jaxrs/cms/assemble/control/document/cipher/publish/content/mockputtopost"); return (r.data ?? []) as any[]; }
     catch { return []; }
   },
-  staleTime: 60000,
+  
 });
 const api_jaxrs_cms_assemb_446_data = ref<any[]>([]);
-const { data: api_jaxrs_cms_assemb_446_q } = useQuery({queryKey: ['api_jaxrs_cms_assemb_446', '/jaxrs/cms/assemble/control/fileinfo/upload/with/url'], queryFn: async () => { try { const r = await api.get("/jaxrs/cms/assemble/control/fileinfo/upload/with/url"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+const { data: api_jaxrs_cms_assemb_446_q } = useQuery({queryKey: ['api_jaxrs_cms_assemb_446', '/jaxrs/cms/assemble/control/fileinfo/upload/with/url'], queryFn: async () => { try { const r = await api.get("/jaxrs/cms/assemble/control/fileinfo/upload/with/url"); return (r.data ?? []) as any[]; } catch { return []; } }});
 
 const api_jaxrs_cms_contro_561_data = ref<any[]>([]);
-const { data: api_jaxrs_cms_contro_561_q } = useQuery({queryKey: ['api_jaxrs_cms_contro_561', '/jaxrs/cms/control/any/route'], queryFn: async () => { try { const r = await api.get("/jaxrs/cms/control/any/route"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+const { data: api_jaxrs_cms_contro_561_q } = useQuery({queryKey: ['api_jaxrs_cms_contro_561', '/jaxrs/cms/control/any/route'], queryFn: async () => { try { const r = await api.get("/jaxrs/cms/control/any/route"); return (r.data ?? []) as any[]; } catch { return []; } }});
 
 const api_jaxrs_cms_assemb_881_data = ref<any[]>([]);
-const { data: api_jaxrs_cms_assemb_881_q } = useQuery({queryKey: ['api_jaxrs_cms_assemb_881', '/jaxrs/cms_assemble_control/anonymous/document/filter/list/id/next/count'], queryFn: async () => { try { const r = await api.get("/jaxrs/cms_assemble_control/anonymous/document/filter/list/id/next/count"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+const { data: api_jaxrs_cms_assemb_881_q } = useQuery({queryKey: ['api_jaxrs_cms_assemb_881', '/jaxrs/cms_assemble_control/anonymous/document/filter/list/id/next/count'], queryFn: async () => { try { const r = await api.get("/jaxrs/cms_assemble_control/anonymous/document/filter/list/id/next/count"); return (r.data ?? []) as any[]; } catch { return []; } }});
 
 const jaxrs_cms_assemble_control_anonymous_document_filter_list_id_next_count_mockputtopost_ref = ref<any[]>([]);
 const jaxrs_cms_assemble_control_anonymous_document_filter_list_id_next_count_mockputtopost_q = useQuery({
@@ -354,10 +354,10 @@ const jaxrs_cms_assemble_control_anonymous_document_filter_list_id_next_count_mo
     try { const r = await api.get("/jaxrs/cms_assemble_control/anonymous/document/filter/list/id/next/count/mockputtopost"); return (r.data ?? []) as any[]; }
     catch { return []; }
   },
-  staleTime: 60000,
+  
 });
 const api_jaxrs_cms_assemb_479_data = ref<any[]>([]);
-const { data: api_jaxrs_cms_assemb_479_q } = useQuery({queryKey: ['api_jaxrs_cms_assemb_479', '/jaxrs/cms_assemble_control/anonymous/document/filter/list/page/size/size'], queryFn: async () => { try { const r = await api.get("/jaxrs/cms_assemble_control/anonymous/document/filter/list/page/size/size"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+const { data: api_jaxrs_cms_assemb_479_q } = useQuery({queryKey: ['api_jaxrs_cms_assemb_479', '/jaxrs/cms_assemble_control/anonymous/document/filter/list/page/size/size'], queryFn: async () => { try { const r = await api.get("/jaxrs/cms_assemble_control/anonymous/document/filter/list/page/size/size"); return (r.data ?? []) as any[]; } catch { return []; } }});
 
 const jaxrs_cms_assemble_control_anonymous_document_filter_list_page_size_size_mockputtopost_ref = ref<any[]>([]);
 const jaxrs_cms_assemble_control_anonymous_document_filter_list_page_size_size_mockputtopost_q = useQuery({
@@ -366,10 +366,10 @@ const jaxrs_cms_assemble_control_anonymous_document_filter_list_page_size_size_m
     try { const r = await api.get("/jaxrs/cms_assemble_control/anonymous/document/filter/list/page/size/size/mockputtopost"); return (r.data ?? []) as any[]; }
     catch { return []; }
   },
-  staleTime: 60000,
+  
 });
 const api_jaxrs_cms_assemb_716_data = ref<any[]>([]);
-const { data: api_jaxrs_cms_assemb_716_q } = useQuery({queryKey: ['api_jaxrs_cms_assemb_716', '/jaxrs/cms_assemble_control/appinfo/filter/list/id/next/count'], queryFn: async () => { try { const r = await api.get("/jaxrs/cms_assemble_control/appinfo/filter/list/id/next/count"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+const { data: api_jaxrs_cms_assemb_716_q } = useQuery({queryKey: ['api_jaxrs_cms_assemb_716', '/jaxrs/cms_assemble_control/appinfo/filter/list/id/next/count'], queryFn: async () => { try { const r = await api.get("/jaxrs/cms_assemble_control/appinfo/filter/list/id/next/count"); return (r.data ?? []) as any[]; } catch { return []; } }});
 
 const jaxrs_cms_assemble_control_appinfo_filter_list_id_next_count_mockputtopost_ref = ref<any[]>([]);
 const jaxrs_cms_assemble_control_appinfo_filter_list_id_next_count_mockputtopost_q = useQuery({
@@ -378,10 +378,10 @@ const jaxrs_cms_assemble_control_appinfo_filter_list_id_next_count_mockputtopost
     try { const r = await api.get("/jaxrs/cms_assemble_control/appinfo/filter/list/id/next/count/mockputtopost"); return (r.data ?? []) as any[]; }
     catch { return []; }
   },
-  staleTime: 60000,
+  
 });
 const api_jaxrs_cms_assemb_879_data = ref<any[]>([]);
-const { data: api_jaxrs_cms_assemb_879_q } = useQuery({queryKey: ['api_jaxrs_cms_assemb_879', '/jaxrs/cms_assemble_control/appinfo/filter/list/id/prev/count'], queryFn: async () => { try { const r = await api.get("/jaxrs/cms_assemble_control/appinfo/filter/list/id/prev/count"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+const { data: api_jaxrs_cms_assemb_879_q } = useQuery({queryKey: ['api_jaxrs_cms_assemb_879', '/jaxrs/cms_assemble_control/appinfo/filter/list/id/prev/count'], queryFn: async () => { try { const r = await api.get("/jaxrs/cms_assemble_control/appinfo/filter/list/id/prev/count"); return (r.data ?? []) as any[]; } catch { return []; } }});
 
 const jaxrs_cms_assemble_control_appinfo_filter_list_id_prev_count_mockputtopost_ref = ref<any[]>([]);
 const jaxrs_cms_assemble_control_appinfo_filter_list_id_prev_count_mockputtopost_q = useQuery({
@@ -390,7 +390,7 @@ const jaxrs_cms_assemble_control_appinfo_filter_list_id_prev_count_mockputtopost
     try { const r = await api.get("/jaxrs/cms_assemble_control/appinfo/filter/list/id/prev/count/mockputtopost"); return (r.data ?? []) as any[]; }
     catch { return []; }
   },
-  staleTime: 60000,
+  
 });
 </script>
 <style scoped>

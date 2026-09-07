@@ -118,7 +118,7 @@ const design_appdict_da_1_mockputtopost_q = useQuery({
     try { const r = await api.get("/jaxrs/design/appdict/da-1/mockputtopost"); return (r.data ?? []) as any[]; }
     catch { return []; }
   },
-  staleTime: 60000,
+  
 });
 const design_appdict_da_1_ref = ref<any[]>([]);
 const design_appdict_da_1_q = useQuery({
@@ -127,7 +127,7 @@ const design_appdict_da_1_q = useQuery({
     try { const r = await api.get("/jaxrs/design/appdict/da-1"); return (r.data ?? []) as any[]; }
     catch { return []; }
   },
-  staleTime: 60000,
+  
 });
 const design_appdict_ref = ref<any[]>([]);
 const design_appdict_q = useQuery({
@@ -136,7 +136,7 @@ const design_appdict_q = useQuery({
     try { const r = await api.get("/jaxrs/design/appdict"); return (r.data ?? []) as any[]; }
     catch { return []; }
   },
-  staleTime: 60000,
+  
 });
 const designer_search_ref = ref<any[]>([]);
 const designer_search_q = useQuery({
@@ -145,7 +145,7 @@ const designer_search_q = useQuery({
     try { const r = await api.get("/jaxrs/designer/search"); return (r.data ?? []) as any[]; }
     catch { return []; }
   },
-  staleTime: 60000,
+  
 });
 const design_appdict_u3_dedup_target_ref = ref<any[]>([]);
 const design_appdict_u3_dedup_target_q = useQuery({
@@ -154,7 +154,7 @@ const design_appdict_u3_dedup_target_q = useQuery({
     try { const r = await api.get("/jaxrs/design/appdict/u3-dedup-target"); return (r.data ?? []) as any[]; }
     catch { return []; }
   },
-  staleTime: 60000,
+  
 });
 
 </script>

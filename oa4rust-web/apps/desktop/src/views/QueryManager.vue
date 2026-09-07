@@ -52,7 +52,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/vue-query'
 import { api } from '@oa4rust/sdk'
 interface Q{id:string;name?:string;queryName?:string;icon?:string;category?:string;entityCategory?:string;updateTime?:string;sql?:string}
 const sq=ref(''),qs2=ref<Q[]>([]),selected=ref<Q|null>(null),filterText=ref(''),rdata=ref<any[]>([]),rheaders=ref<string[]>([]),rloading=ref(false),showCreate=ref(false),nform=ref({name:'',sql:''}),qc=useQueryClient()
-const{data}=useQuery({queryKey:['query','defs'],queryFn:()=>api.get('/jaxrs/query/assemble/designer/list').then((r:any)=>(r.data??[])as Q[]),staleTime:60000})
+const{data}=useQuery({queryKey:['query','defs'],queryFn:()=>api.get('/jaxrs/query/assemble/designer/list').then((r:any)=>(r.data??[])as Q[])})
 qs2.value=data.value??[]
 const qsFiltered=computed(()=>sq.value?qs2.value.filter(q=>(q.name||'').toLowerCase().includes(sq.value.toLowerCase())):qs2.value)
 function selQ(q:Q){selected.value=q;rdata.value=[];rheaders.value=[]}
