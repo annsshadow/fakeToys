@@ -54,7 +54,7 @@ class CoverageHarness:
             with open(config_path, "w", encoding="utf-8") as f:
                 f.write(new_config)
         else:
-            # 合并到 .config
+            # Merge into .config
             config_file = os.path.join(self.build_dir, ".config")
             with open(config_file, "a", encoding="utf-8") as f:
                 f.write("\n" + "\n".join(gcov_configs) + "\n")
