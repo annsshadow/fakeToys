@@ -844,24 +844,6 @@ const { data: api_jaxrs_po_506_q } = useQuery({queryKey: ['api_jaxrs_po_506', '/
 const api_jaxrs_po_530_data = ref<any[]>([]);
 const { data: api_jaxrs_po_530_q } = useQuery({queryKey: ['api_jaxrs_po_530', '/jaxrs/portal/assemble/surface/dict/d1/portal/p1/x/data'], queryFn: async () => { try { const r = await api.get("/jaxrs/portal/assemble/surface/dict/d1/portal/p1/x/data"); return (r.data ?? []) as any[]; } catch { return []; } }});
 
-const jaxrs_portal_assemble_surface_dict_d1_portal_p1_x_data_mockdeletetoget_ref = ref<any[]>([]);
-const jaxrs_portal_assemble_surface_dict_d1_portal_p1_x_data_mockdeletetoget_q = useQuery({
-  queryKey: ['jaxrs_portal_assemble_surface_dict_d1_portal_p1_x_data_mockdeletetoget'],
-  queryFn: async () => {
-    try { const r = await api.get("/jaxrs/portal/assemble/surface/dict/d1/portal/p1/x/data/mockdeletetoget"); return (r.data ?? []) as any[]; }
-    catch { return []; }
-  },
-  
-});
-const jaxrs_portal_assemble_surface_dict_d1_portal_p1_x_data_mockputtopost_ref = ref<any[]>([]);
-const jaxrs_portal_assemble_surface_dict_d1_portal_p1_x_data_mockputtopost_q = useQuery({
-  queryKey: ['jaxrs_portal_assemble_surface_dict_d1_portal_p1_x_data_mockputtopost'],
-  queryFn: async () => {
-    try { const r = await api.get("/jaxrs/portal/assemble/surface/dict/d1/portal/p1/x/data/mockputtopost"); return (r.data ?? []) as any[]; }
-    catch { return []; }
-  },
-  
-});
 const api_jaxrs_po_860_data = ref<any[]>([]);
 const { data: api_jaxrs_po_860_q } = useQuery({queryKey: ['api_jaxrs_po_860', '/jaxrs/portal/assemble/surface/file/f1/portal/p1/content'], queryFn: async () => { try { const r = await api.get("/jaxrs/portal/assemble/surface/file/f1/portal/p1/content"); return (r.data ?? []) as any[]; } catch { return []; } }});
 

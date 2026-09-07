@@ -297,156 +297,30 @@ const jaxrs_organization_assemble_authentication_sso_encrypt_client_u2c_key_u2ke
   },
   
 });
-const jaxrs_organization_assemble_control_group_list_like_mockputtopost_ref = ref<any[]>([]);
-const jaxrs_organization_assemble_control_group_list_like_mockputtopost_q = useQuery({
-  queryKey: ['jaxrs_organization_assemble_control_group_list_like_mockputtopost'],
-  queryFn: async () => {
-    try { const r = await api.get("/jaxrs/organization/assemble/control/group/list/like/mockputtopost"); return (r.data ?? []) as any[]; }
-    catch { return []; }
-  },
-  
-});
 const api_jaxrs_or_174_data = ref<any[]>([]);
 const { data: api_jaxrs_or_174_q } = useQuery({queryKey: ['api_jaxrs_or_174', '/jaxrs/organization/assemble/control/group/list/like/pinyin'], queryFn: async () => { try { const r = await api.get("/jaxrs/organization/assemble/control/group/list/like/pinyin"); return (r.data ?? []) as any[]; } catch { return []; } }});
 
-const jaxrs_organization_assemble_control_group_list_like_pinyin_mockputtopost_ref = ref<any[]>([]);
-const jaxrs_organization_assemble_control_group_list_like_pinyin_mockputtopost_q = useQuery({
-  queryKey: ['jaxrs_organization_assemble_control_group_list_like_pinyin_mockputtopost'],
-  queryFn: async () => {
-    try { const r = await api.get("/jaxrs/organization/assemble/control/group/list/like/pinyin/mockputtopost"); return (r.data ?? []) as any[]; }
-    catch { return []; }
-  },
-  
-});
-const jaxrs_organization_assemble_control_group_list_pinyininitial_mockputtopost_ref = ref<any[]>([]);
-const jaxrs_organization_assemble_control_group_list_pinyininitial_mockputtopost_q = useQuery({
-  queryKey: ['jaxrs_organization_assemble_control_group_list_pinyininitial_mockputtopost'],
-  queryFn: async () => {
-    try { const r = await api.get("/jaxrs/organization/assemble/control/group/list/pinyininitial/mockputtopost"); return (r.data ?? []) as any[]; }
-    catch { return []; }
-  },
-  
-});
-const jaxrs_organization_assemble_control_identity_list_like_mockputtopost_ref = ref<any[]>([]);
-const jaxrs_organization_assemble_control_identity_list_like_mockputtopost_q = useQuery({
-  queryKey: ['jaxrs_organization_assemble_control_identity_list_like_mockputtopost'],
-  queryFn: async () => {
-    try { const r = await api.get("/jaxrs/organization/assemble/control/identity/list/like/mockputtopost"); return (r.data ?? []) as any[]; }
-    catch { return []; }
-  },
-  
-});
 const api_jaxrs_organizati_494_data = ref<any[]>([]);
 const { data: api_jaxrs_organizati_494_q } = useQuery({queryKey: ['api_jaxrs_organizati_494', '/jaxrs/organization/assemble/control/identity/list/like/pinyin'], queryFn: async () => { try { const r = await api.get("/jaxrs/organization/assemble/control/identity/list/like/pinyin"); return (r.data ?? []) as any[]; } catch { return []; } }});
 
-const jaxrs_organization_assemble_control_identity_list_like_pinyin_mockputtopost_ref = ref<any[]>([]);
-const jaxrs_organization_assemble_control_identity_list_like_pinyin_mockputtopost_q = useQuery({
-  queryKey: ['jaxrs_organization_assemble_control_identity_list_like_pinyin_mockputtopost'],
-  queryFn: async () => {
-    try { const r = await api.get("/jaxrs/organization/assemble/control/identity/list/like/pinyin/mockputtopost"); return (r.data ?? []) as any[]; }
-    catch { return []; }
-  },
-  
-});
-const jaxrs_organization_assemble_control_identity_list_pinyininitial_mockputtopost_ref = ref<any[]>([]);
-const jaxrs_organization_assemble_control_identity_list_pinyininitial_mockputtopost_q = useQuery({
-  queryKey: ['jaxrs_organization_assemble_control_identity_list_pinyininitial_mockputtopost'],
-  queryFn: async () => {
-    try { const r = await api.get("/jaxrs/organization/assemble/control/identity/list/pinyininitial/mockputtopost"); return (r.data ?? []) as any[]; }
-    catch { return []; }
-  },
-  
-});
-const jaxrs_organization_assemble_control_person_list_like_mockputtopost_ref = ref<any[]>([]);
-const jaxrs_organization_assemble_control_person_list_like_mockputtopost_q = useQuery({
-  queryKey: ['jaxrs_organization_assemble_control_person_list_like_mockputtopost'],
-  queryFn: async () => {
-    try { const r = await api.get("/jaxrs/organization/assemble/control/person/list/like/mockputtopost"); return (r.data ?? []) as any[]; }
-    catch { return []; }
-  },
-  
-});
 const api_jaxrs_organizati_346_data = ref<any[]>([]);
 const { data: api_jaxrs_organizati_346_q } = useQuery({queryKey: ['api_jaxrs_organizati_346', '/jaxrs/organization/assemble/control/person/list/like/pinyin'], queryFn: async () => { try { const r = await api.get("/jaxrs/organization/assemble/control/person/list/like/pinyin"); return (r.data ?? []) as any[]; } catch { return []; } }});
 
-const jaxrs_organization_assemble_control_person_list_like_pinyin_mockputtopost_ref = ref<any[]>([]);
-const jaxrs_organization_assemble_control_person_list_like_pinyin_mockputtopost_q = useQuery({
-  queryKey: ['jaxrs_organization_assemble_control_person_list_like_pinyin_mockputtopost'],
-  queryFn: async () => {
-    try { const r = await api.get("/jaxrs/organization/assemble/control/person/list/like/pinyin/mockputtopost"); return (r.data ?? []) as any[]; }
-    catch { return []; }
-  },
-  
-});
-const jaxrs_organization_assemble_control_person_list_pinyininitial_mockputtopost_ref = ref<any[]>([]);
-const jaxrs_organization_assemble_control_person_list_pinyininitial_mockputtopost_q = useQuery({
-  queryKey: ['jaxrs_organization_assemble_control_person_list_pinyininitial_mockputtopost'],
-  queryFn: async () => {
-    try { const r = await api.get("/jaxrs/organization/assemble/control/person/list/pinyininitial/mockputtopost"); return (r.data ?? []) as any[]; }
-    catch { return []; }
-  },
-  
-});
 const api_jaxrs_organizati_256_data = ref<any[]>([]);
 const { data: api_jaxrs_organizati_256_q } = useQuery({queryKey: ['api_jaxrs_organizati_256', '/jaxrs/organization/assemble/control/role/list/0/next/10'], queryFn: async () => { try { const r = await api.get("/jaxrs/organization/assemble/control/role/list/0/next/10"); return (r.data ?? []) as any[]; } catch { return []; } }});
 
-const jaxrs_organization_assemble_control_role_list_like_mockputtopost_ref = ref<any[]>([]);
-const jaxrs_organization_assemble_control_role_list_like_mockputtopost_q = useQuery({
-  queryKey: ['jaxrs_organization_assemble_control_role_list_like_mockputtopost'],
-  queryFn: async () => {
-    try { const r = await api.get("/jaxrs/organization/assemble/control/role/list/like/mockputtopost"); return (r.data ?? []) as any[]; }
-    catch { return []; }
-  },
-  
-});
 const api_jaxrs_organizati_285_data = ref<any[]>([]);
 const { data: api_jaxrs_organizati_285_q } = useQuery({queryKey: ['api_jaxrs_organizati_285', '/jaxrs/organization/assemble/control/role/list/like/pinyin'], queryFn: async () => { try { const r = await api.get("/jaxrs/organization/assemble/control/role/list/like/pinyin"); return (r.data ?? []) as any[]; } catch { return []; } }});
 
-const jaxrs_organization_assemble_control_role_list_like_pinyin_mockputtopost_ref = ref<any[]>([]);
-const jaxrs_organization_assemble_control_role_list_like_pinyin_mockputtopost_q = useQuery({
-  queryKey: ['jaxrs_organization_assemble_control_role_list_like_pinyin_mockputtopost'],
-  queryFn: async () => {
-    try { const r = await api.get("/jaxrs/organization/assemble/control/role/list/like/pinyin/mockputtopost"); return (r.data ?? []) as any[]; }
-    catch { return []; }
-  },
-  
-});
 const api_jaxrs_organizati_824_data = ref<any[]>([]);
 const { data: api_jaxrs_organizati_824_q } = useQuery({queryKey: ['api_jaxrs_organizati_824', '/jaxrs/organization/assemble/control/unit/list/0/next/10'], queryFn: async () => { try { const r = await api.get("/jaxrs/organization/assemble/control/unit/list/0/next/10"); return (r.data ?? []) as any[]; } catch { return []; } }});
 
 const api_jaxrs_organizati_923_data = ref<any[]>([]);
 const { data: api_jaxrs_organizati_923_q } = useQuery({queryKey: ['api_jaxrs_organizati_923', '/jaxrs/organization/assemble/control/unit/list/control/top'], queryFn: async () => { try { const r = await api.get("/jaxrs/organization/assemble/control/unit/list/control/top"); return (r.data ?? []) as any[]; } catch { return []; } }});
 
-const jaxrs_organization_assemble_control_unit_list_like_mockputtopost_ref = ref<any[]>([]);
-const jaxrs_organization_assemble_control_unit_list_like_mockputtopost_q = useQuery({
-  queryKey: ['jaxrs_organization_assemble_control_unit_list_like_mockputtopost'],
-  queryFn: async () => {
-    try { const r = await api.get("/jaxrs/organization/assemble/control/unit/list/like/mockputtopost"); return (r.data ?? []) as any[]; }
-    catch { return []; }
-  },
-  
-});
 const api_jaxrs_organizati_439_data = ref<any[]>([]);
 const { data: api_jaxrs_organizati_439_q } = useQuery({queryKey: ['api_jaxrs_organizati_439', '/jaxrs/organization/assemble/control/unit/list/like/pinyin'], queryFn: async () => { try { const r = await api.get("/jaxrs/organization/assemble/control/unit/list/like/pinyin"); return (r.data ?? []) as any[]; } catch { return []; } }});
 
-const jaxrs_organization_assemble_control_unit_list_like_pinyin_mockputtopost_ref = ref<any[]>([]);
-const jaxrs_organization_assemble_control_unit_list_like_pinyin_mockputtopost_q = useQuery({
-  queryKey: ['jaxrs_organization_assemble_control_unit_list_like_pinyin_mockputtopost'],
-  queryFn: async () => {
-    try { const r = await api.get("/jaxrs/organization/assemble/control/unit/list/like/pinyin/mockputtopost"); return (r.data ?? []) as any[]; }
-    catch { return []; }
-  },
-  
-});
-const jaxrs_organization_assemble_control_unit_list_pinyininitial_mockputtopost_ref = ref<any[]>([]);
-const jaxrs_organization_assemble_control_unit_list_pinyininitial_mockputtopost_q = useQuery({
-  queryKey: ['jaxrs_organization_assemble_control_unit_list_pinyininitial_mockputtopost'],
-  queryFn: async () => {
-    try { const r = await api.get("/jaxrs/organization/assemble/control/unit/list/pinyininitial/mockputtopost"); return (r.data ?? []) as any[]; }
-    catch { return []; }
-  },
-  
-});
 const jaxrs_organization_assemble_control_unit_list_test_unit_sub_nested_ref = ref<any[]>([]);
 const jaxrs_organization_assemble_control_unit_list_test_unit_sub_nested_q = useQuery({
   queryKey: ['jaxrs_organization_assemble_control_unit_list_test_unit_sub_nested'],
@@ -477,15 +351,6 @@ const jaxrs_organization_assemble_control_unit_list_test_unit_sup_nested_type_co
 const api_jaxrs_organizati_842_data = ref<any[]>([]);
 const { data: api_jaxrs_organizati_842_q } = useQuery({queryKey: ['api_jaxrs_organizati_842', '/jaxrs/organization/assemble/control/unit/list/unit/type'], queryFn: async () => { try { const r = await api.get("/jaxrs/organization/assemble/control/unit/list/unit/type"); return (r.data ?? []) as any[]; } catch { return []; } }});
 
-const jaxrs_organization_assemble_control_unit_list_unit_type_mockputtopost_ref = ref<any[]>([]);
-const jaxrs_organization_assemble_control_unit_list_unit_type_mockputtopost_q = useQuery({
-  queryKey: ['jaxrs_organization_assemble_control_unit_list_unit_type_mockputtopost'],
-  queryFn: async () => {
-    try { const r = await api.get("/jaxrs/organization/assemble/control/unit/list/unit/type/mockputtopost"); return (r.data ?? []) as any[]; }
-    catch { return []; }
-  },
-  
-});
 </script>
 
 <style scoped>
