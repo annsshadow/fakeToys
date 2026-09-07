@@ -1,8 +1,10 @@
-/// 行为对比测试端点列表（自动生成）
+#![allow(dead_code)]
+//! 行为对比测试端点列表（自动生成）
 
 /// 生成时间: 2026-09-02 10:47:11
 use super::EndpointDef;
 
+#[allow(dead_code)]
 pub const ENDPOINTS: &[EndpointDef] = &[
 
     EndpointDef {
