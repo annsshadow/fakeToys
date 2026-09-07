@@ -214,15 +214,6 @@ const get_user_publish_app_1_q = useQuery({
   },
   
 });
-const appinfo_a_1_mockdeletetoget_ref = ref<any[]>([]);
-const appinfo_a_1_mockdeletetoget_q = useQuery({
-  queryKey: ['appinfo_a_1_mockdeletetoget'],
-  queryFn: async () => {
-    try { const r = await api.get("/jaxrs/appinfo/a-1/mockdeletetoget"); return (r.data ?? []) as any[]; }
-    catch { return []; }
-  },
-  
-});
 const list_has_document_appType_ref = ref<any[]>([]);
 const list_has_document_appType_q = useQuery({
   queryKey: ['list_has_document_appType'],
