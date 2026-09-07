@@ -111,15 +111,6 @@ const filteredDesigners = computed(() => {
 function filterDesigners() { /* reactive via computed */ }
 function refreshAll() { coveredRoutes.value = 2847; activeViews.value = 30 }
 
-const design_appdict_da_1_mockputtopost_ref = ref<any[]>([]);
-const design_appdict_da_1_mockputtopost_q = useQuery({
-  queryKey: ['design_appdict_da_1_mockputtopost'],
-  queryFn: async () => {
-    try { const r = await api.get("/jaxrs/design/appdict/da-1/mockputtopost"); return (r.data ?? []) as any[]; }
-    catch { return []; }
-  },
-  
-});
 const design_appdict_da_1_ref = ref<any[]>([]);
 const design_appdict_da_1_q = useQuery({
   queryKey: ['design_appdict_da_1'],

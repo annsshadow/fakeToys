@@ -715,15 +715,6 @@ const comment_c_1_q = useQuery({
   },
   
 });
-const _1_size_10_mockputtopost_ref = ref<any[]>([]);
-const _1_size_10_mockputtopost_q = useQuery({
-  queryKey: ['_1_size_10_mockputtopost'],
-  queryFn: async () => {
-    try { const r = await api.get("/jaxrs/comment/list/1/size/10/mockputtopost"); return (r.data ?? []) as any[]; }
-    catch { return []; }
-  },
-  
-});
 const api_list_i_1_prev_10_data = ref<any[]>([]);
 const { data: api_list_i_1_prev_10_q } = useQuery({queryKey: ['api_list_i_1_prev_10', '/jaxrs/comment/list/i-1/prev/10'], queryFn: async () => { try { const r = await api.get("/jaxrs/comment/list/i-1/prev/10"); return (r.data ?? []) as any[]; } catch { return []; } }});
 

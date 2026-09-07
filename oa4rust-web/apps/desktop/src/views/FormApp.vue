@@ -311,15 +311,6 @@ const form_list_all_q = useQuery({
   },
   
 });
-const form_f_1_mockdeletetoget_ref = ref<any[]>([]);
-const form_f_1_mockdeletetoget_q = useQuery({
-  queryKey: ['form_f_1_mockdeletetoget'],
-  queryFn: async () => {
-    try { const r = await api.get("/jaxrs/form/f-1/mockdeletetoget"); return (r.data ?? []) as any[]; }
-    catch { return []; }
-  },
-  
-});
 const form_f_1_ref = ref<any[]>([]);
 const form_f_1_q = useQuery({
   queryKey: ['form_f_1'],
