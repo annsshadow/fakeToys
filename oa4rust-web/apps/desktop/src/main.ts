@@ -8,93 +8,8 @@ import { NConfigProvider } from 'naive-ui';
 import AppShell from '@oa4rust/ui/components/AppShell.vue';
 import LoginScreen from '@oa4rust/ui/components/LoginScreen.vue';
 import OAuthCallback from '@oa4rust/ui/views/OAuthCallback.vue';
-import Dashboard from './views/Dashboard.vue';
-import OrgViewer from './views/OrgViewer.vue';
-import ProcessWork from './views/ProcessWork.vue';
-import IMChat from './views/IMChat.vue';
-import Personal from './views/Personal.vue';
-import Settings from './views/Settings.vue';
-import SSO from './views/SSO.vue';
-import MeetingApp from './views/MeetingApp.vue';
-import AttendanceApp from './views/AttendanceApp.vue';
-import QueryManager from './views/QueryManager.vue';
-import AIAssistant from './views/AIAssistant.vue';
-import PortalApp from './views/PortalApp.vue';
-import HotpicApp from './views/HotpicApp.vue';
-import JPushApp from './views/JPushApp.vue';
-import AppInfoApp from './views/AppInfoApp.vue';
-import CategoryApp from './views/CategoryApp.vue';
-import CalendarApp from './views/CalendarApp.vue';
-import FileManager from './views/FileManager.vue';
-import BBSForum from './views/BBSForum.vue';
-import MindApp from './views/MindApp.vue';
-import DocumentApp from './views/DocumentApp.vue';
-import ProgramCenterApp from './views/ProgramCenterApp.vue';
-import QueryViewApp from './views/QueryViewApp.vue';
-import RecycleApp from './views/RecycleApp.vue';
-import ServerApp from './views/ServerApp.vue';
-import UnitApp from './views/UnitApp.vue';
-import FormApp from './views/FormApp.vue';
-import ViewApp from './views/ViewApp.vue';
-import FileInfoApp from './views/FileInfoApp.vue';
-import AIChatApp from './views/AIChatApp.vue';
-import RoleManager from './views/RoleManager.vue';
-import ProcessDesigner from './views/ProcessDesigner.vue';
-import FormDesigner from './views/FormDesigner.vue';
-import QueryDesigner from './views/QueryDesigner.vue';
-import PortalDesigner from './views/PortalDesigner.vue';
 
 
-import LogViewerApp from './views/LogViewerApp.vue';
-import SelectorApp from './views/SelectorApp.vue';
-import QueryQueryApp from './views/QueryQueryApp.vue';
-import QueryExplorerApp from './views/QueryExplorerApp.vue';
-import QueryTableDesignerApp from './views/QueryTableDesignerApp.vue';
-import QueryViewDesignerApp from './views/QueryViewDesignerApp.vue';
-import QueryManagerDeep from './views/QueryManagerDeep.vue';
-import QueryStatementDesignerApp from './views/QueryStatementDesignerApp.vue';
-import QueryStatDesignerApp from './views/QueryStatDesignerApp.vue';
-import QueryImporterDesignerApp from './views/QueryImporterDesignerApp.vue';
-import CmsColumnApp from './views/CmsColumnApp.vue';
-import CmsColumnManagerApp from './views/CmsColumnManagerApp.vue';
-import CmsIndexApp from './views/CmsIndexApp.vue';
-import ProcessTaskCenterApp from './views/ProcessTaskCenterApp.vue';
-import ProcessManagerApp from './views/ProcessManagerApp.vue';
-import CmsDictDesignerApp from './views/CmsDictDesignerApp.vue';
-import CmsFormDesignerApp from './views/CmsFormDesignerApp.vue';
-import CmsViewDesignerApp from './views/CmsViewDesignerApp.vue';
-import CmsScriptDesignerApp from './views/CmsScriptDesignerApp.vue';
-import CmsXformApp from './views/CmsXformApp.vue';
-import CmsModuleApp from './views/CmsModuleApp.vue';
-import PortalDictDesignerApp from './views/PortalDictDesignerApp.vue';
-import PortalPageDesignerApp from './views/PortalPageDesignerApp.vue';
-import PortalScriptDesignerApp from './views/PortalScriptDesignerApp.vue';
-import PortalWidgetDesignerApp from './views/PortalWidgetDesignerApp.vue';
-import ProcessFormDesignerApp from './views/ProcessFormDesignerApp.vue';
-import ProcessDictDesignerApp from './views/ProcessDictDesignerApp.vue';
-import ProcessScriptDesignerApp from './views/ProcessScriptDesignerApp.vue';
-import ProcessXformApp from './views/ProcessXformApp.vue';
-import ProcessApplicationApp from './views/ProcessApplicationApp.vue';
-import ServiceInvokeDesignerApp from './views/ServiceInvokeDesignerApp.vue';
-import DesignCenterApp from './views/DesignCenterApp.vue';
-import ControlPanelApp from './views/ControlPanelApp.vue';
-import ConfigDesignerApp from './views/ConfigDesignerApp.vue';
-import FindDesignerApp from './views/FindDesignerApp.vue';
-import HomepageApp from './views/HomepageApp.vue';
-import BamApp from './views/BamApp.vue';
-import CollectApp from './views/CollectApp.vue';
-import NoteApp from './views/NoteApp.vue';
-import TemplateApp from './views/TemplateApp.vue';
-import SearchApp from './views/SearchApp.vue';
-import PdfViewerApp from './views/PdfViewerApp.vue';
-import DeploymentApp from './views/DeploymentApp.vue';
-import ThreeMemberApp from './views/ThreeMemberApp.vue';
-import FaceSetApp from './views/FaceSetApp.vue';
-import AnnApp from './views/AnnApp.vue';
-import CommonApp from './views/CommonApp.vue';
-import FtSearchApp from './views/FtSearchApp.vue';
-import EmptyApp from './views/EmptyApp.vue';
-import QueryStatementDesigner from './views/QueryStatementDesigner.vue';
 const router = createRouter({
   history: createWebHistory(),
   routes: [
@@ -103,93 +18,93 @@ const router = createRouter({
       path: '/app/:appId', name: 'AppShell', component: AppShell, meta: { requiresAuth: true },
       children: [
         { path: '', redirect: '/app/dashboard' },
-        { path: 'dashboard', name: 'Dashboard', component: Dashboard, meta: { title: '工作台' } },
-        { path: 'org', name: 'OrgViewer', component: OrgViewer, meta: { title: '组织架构' } },
-        { path: 'process', name: 'ProcessWork', component: ProcessWork, meta: { title: '工作流' } },
-        { path: 'im', name: 'IMChat', component: IMChat, meta: { title: '即时通讯' } },
-        { path: 'personal', name: 'Personal', component: Personal, meta: { title: '个人中心' } },
-        { path: 'settings', name: 'Settings', component: Settings, meta: { title: '系统设置' } },
-        { path: 'calendar', name: 'CalendarApp', component: CalendarApp, meta: { title: '日历' } },
-        { path: 'file', name: 'FileManager', component: FileManager, meta: { title: '文件管理' } },
-        { path: 'bbs', name: 'BBSForum', component: BBSForum, meta: { title: '论坛' } },
-        { path: 'meeting', name: 'MeetingApp', component: MeetingApp, meta: { title: '会议管理' } },
-        { path: 'attendance', name: 'AttendanceApp', component: AttendanceApp, meta: { title: '考勤管理' } },
-        { path: 'query', name: 'QueryManager', component: QueryManager, meta: { title: '查询管理' } },
-        { path: 'portal', name: 'PortalApp', component: PortalApp, meta: { title: '门户管理' } },
-        { path: 'hotpic', name: 'HotpicApp', component: HotpicApp, meta: { title: '热帖管理' } },
-        { path: 'jpush', name: 'JPushApp', component: JPushApp, meta: { title: '消息推送' } },
-        { path: 'appinfo', name: 'AppInfoApp', component: AppInfoApp, meta: { title: '应用管理' } },
-        { path: 'category', name: 'CategoryApp', component: CategoryApp, meta: { title: '分类管理' } },
-        { path: 'mind', name: 'MindApp', component: MindApp, meta: { title: '思维导图' } },
-        { path: 'document', name: 'DocumentApp', component: DocumentApp, meta: { title: '文档管理' } },
-        { path: 'program', name: 'ProgramCenterApp', component: ProgramCenterApp, meta: { title: '程序中心' } },
-        { path: 'queryview', name: 'QueryViewApp', component: QueryViewApp, meta: { title: '查询视图' } },
-        { path: 'recycle', name: 'RecycleApp', component: RecycleApp, meta: { title: '回收站' } },
-        { path: 'server', name: 'ServerApp', component: ServerApp, meta: { title: '服务器管理' } },
-        { path: 'unit', name: 'UnitApp', component: UnitApp, meta: { title: '单元管理' } },
-        { path: 'form', name: 'FormApp', component: FormApp, meta: { title: '表单管理' } },
-        { path: 'view', name: 'ViewApp', component: ViewApp, meta: { title: '视图管理' } },
-        { path: 'fileinfo', name: 'FileInfoApp', component: FileInfoApp, meta: { title: '文件信息' } },
-        { path: 'ai-chat', name: 'AIChatApp', component: AIChatApp, meta: { title: 'AI助手' } },
-        { path: 'role', name: 'RoleManager', component: RoleManager, meta: { title: '角色管理' } },
-        { path: 'process-designer', name: 'ProcessDesigner', component: ProcessDesigner, meta: { title: '流程设计器' } },
-        { path: 'form-designer', name: 'FormDesigner', component: FormDesigner, meta: { title: '表单设计器' } },        { path: 'query-statement-designer', name: 'QueryStatementDesigner', component: QueryStatementDesigner, meta: { title: 'SQL语句设计器' } },
+        { path: 'dashboard', name: 'Dashboard', component: () => import('./views/Dashboard.vue'), meta: { title: '工作台' } },
+        { path: 'org', name: 'OrgViewer', component: () => import('./views/OrgViewer.vue'), meta: { title: '组织架构' } },
+        { path: 'process', name: 'ProcessWork', component: () => import('./views/ProcessWork.vue'), meta: { title: '工作流' } },
+        { path: 'im', name: 'IMChat', component: () => import('./views/IMChat.vue'), meta: { title: '即时通讯' } },
+        { path: 'personal', name: 'Personal', component: () => import('./views/Personal.vue'), meta: { title: '个人中心' } },
+        { path: 'settings', name: 'Settings', component: () => import('./views/Settings.vue'), meta: { title: '系统设置' } },
+        { path: 'calendar', name: 'CalendarApp', component: () => import('./views/CalendarApp.vue'), meta: { title: '日历' } },
+        { path: 'file', name: 'FileManager', component: () => import('./views/FileManager.vue'), meta: { title: '文件管理' } },
+        { path: 'bbs', name: 'BBSForum', component: () => import('./views/BBSForum.vue'), meta: { title: '论坛' } },
+        { path: 'meeting', name: 'MeetingApp', component: () => import('./views/MeetingApp.vue'), meta: { title: '会议管理' } },
+        { path: 'attendance', name: 'AttendanceApp', component: () => import('./views/AttendanceApp.vue'), meta: { title: '考勤管理' } },
+        { path: 'query', name: 'QueryManager', component: () => import('./views/QueryManager.vue'), meta: { title: '查询管理' } },
+        { path: 'portal', name: 'PortalApp', component: () => import('./views/PortalApp.vue'), meta: { title: '门户管理' } },
+        { path: 'hotpic', name: 'HotpicApp', component: () => import('./views/HotpicApp.vue'), meta: { title: '热帖管理' } },
+        { path: 'jpush', name: 'JPushApp', component: () => import('./views/JPushApp.vue'), meta: { title: '消息推送' } },
+        { path: 'appinfo', name: 'AppInfoApp', component: () => import('./views/AppInfoApp.vue'), meta: { title: '应用管理' } },
+        { path: 'category', name: 'CategoryApp', component: () => import('./views/CategoryApp.vue'), meta: { title: '分类管理' } },
+        { path: 'mind', name: 'MindApp', component: () => import('./views/MindApp.vue'), meta: { title: '思维导图' } },
+        { path: 'document', name: 'DocumentApp', component: () => import('./views/DocumentApp.vue'), meta: { title: '文档管理' } },
+        { path: 'program', name: 'ProgramCenterApp', component: () => import('./views/ProgramCenterApp.vue'), meta: { title: '程序中心' } },
+        { path: 'queryview', name: 'QueryViewApp', component: () => import('./views/QueryViewApp.vue'), meta: { title: '查询视图' } },
+        { path: 'recycle', name: 'RecycleApp', component: () => import('./views/RecycleApp.vue'), meta: { title: '回收站' } },
+        { path: 'server', name: 'ServerApp', component: () => import('./views/ServerApp.vue'), meta: { title: '服务器管理' } },
+        { path: 'unit', name: 'UnitApp', component: () => import('./views/UnitApp.vue'), meta: { title: '单元管理' } },
+        { path: 'form', name: 'FormApp', component: () => import('./views/FormApp.vue'), meta: { title: '表单管理' } },
+        { path: 'view', name: 'ViewApp', component: () => import('./views/ViewApp.vue'), meta: { title: '视图管理' } },
+        { path: 'fileinfo', name: 'FileInfoApp', component: () => import('./views/FileInfoApp.vue'), meta: { title: '文件信息' } },
+        { path: 'ai-chat', name: 'AIChatApp', component: () => import('./views/AIChatApp.vue'), meta: { title: 'AI助手' } },
+        { path: 'role', name: 'RoleManager', component: () => import('./views/RoleManager.vue'), meta: { title: '角色管理' } },
+        { path: 'process-designer', name: 'ProcessDesigner', component: () => import('./views/ProcessDesigner.vue'), meta: { title: '流程设计器' } },
+        { path: 'form-designer', name: 'FormDesigner', component: () => import('./views/FormDesigner.vue'), meta: { title: '表单设计器' } },        { path: 'query-statement-designer', name: 'QueryStatementDesigner', component: () => import('./views/QueryStatementDesigner.vue'), meta: { title: 'SQL语句设计器' } },
 
-        { path: 'query-designer', name: 'QueryDesigner', component: QueryDesigner, meta: { title: '查询设计器' } },        { path: 'query-manager-deep', name: 'QueryManagerDeep', component: QueryManagerDeep, meta: { title: '查询管理深化' } },
+        { path: 'query-designer', name: 'QueryDesigner', component: () => import('./views/QueryDesigner.vue'), meta: { title: '查询设计器' } },        { path: 'query-manager-deep', name: 'QueryManagerDeep', component: () => import('./views/QueryManagerDeep.vue'), meta: { title: '查询管理深化' } },
 
-        { path: 'portal-designer', name: 'PortalDesigner', component: PortalDesigner, meta: { title: '门户设计器' } },
-              { path: 'log-viewer', name: 'LogViewerApp', component: LogViewerApp, meta: { title: '日志查看器' } },
-        { path: 'selector', name: 'SelectorApp', component: SelectorApp, meta: { title: '通用选择器' } },
-        { path: 'query-query', name: 'QueryQueryApp', component: QueryQueryApp, meta: { title: '查询定义' } },
-        { path: 'query-explorer', name: 'QueryExplorerApp', component: QueryExplorerApp, meta: { title: '查询浏览器' } },
-        { path: 'query-table-designer', name: 'QueryTableDesignerApp', component: QueryTableDesignerApp, meta: { title: '表格设计器' } },
-        { path: 'query-view-designer', name: 'QueryViewDesignerApp', component: QueryViewDesignerApp, meta: { title: '视图设计器' } },
-        { path: 'query-statement-designer', name: 'QueryStatementDesignerApp', component: QueryStatementDesignerApp, meta: { title: 'SQL设计器' } },
-        { path: 'query-stat-designer', name: 'QueryStatDesignerApp', component: QueryStatDesignerApp, meta: { title: '统计设计器' } },
-        { path: 'query-importer-designer', name: 'QueryImporterDesignerApp', component: QueryImporterDesignerApp, meta: { title: '导入设计器' } },
-        { path: 'cms-column', name: 'CmsColumnApp', component: CmsColumnApp, meta: { title: 'CMS列管理' } },
-        { path: 'cms-column-manager', name: 'CmsColumnManagerApp', component: CmsColumnManagerApp, meta: { title: 'CMS列管理器' } },
-        { path: 'cms-index', name: 'CmsIndexApp', component: CmsIndexApp, meta: { title: 'CMS索引设计' } },
-        { path: 'process-task-center', name: 'ProcessTaskCenterApp', component: ProcessTaskCenterApp, meta: { title: '流程任务中心' } },
-        { path: 'process-manager', name: 'ProcessManagerApp', component: ProcessManagerApp, meta: { title: '流程实例管理' } },
-        { path: 'cms-dict-designer', name: 'CmsDictDesignerApp', component: CmsDictDesignerApp, meta: { title: 'CMS字典设计器' } },
-        { path: 'cms-form-designer', name: 'CmsFormDesignerApp', component: CmsFormDesignerApp, meta: { title: 'CMS表单设计器' } },
-        { path: 'cms-view-designer', name: 'CmsViewDesignerApp', component: CmsViewDesignerApp, meta: { title: 'CMS视图设计器' } },
-        { path: 'cms-script-designer', name: 'CmsScriptDesignerApp', component: CmsScriptDesignerApp, meta: { title: 'CMS脚本设计器' } },
-        { path: 'cms-xform', name: 'CmsXformApp', component: CmsXformApp, meta: { title: 'CMS XForm' } },
-        { path: 'cms-module', name: 'CmsModuleApp', component: CmsModuleApp, meta: { title: 'CMS模块管理' } },
-        { path: 'portal-dict-designer', name: 'PortalDictDesignerApp', component: PortalDictDesignerApp, meta: { title: '门户字典设计器' } },
-        { path: 'portal-page-designer', name: 'PortalPageDesignerApp', component: PortalPageDesignerApp, meta: { title: '门户页面设计器' } },
-        { path: 'portal-script-designer', name: 'PortalScriptDesignerApp', component: PortalScriptDesignerApp, meta: { title: '门户脚本设计器' } },
-        { path: 'portal-widget-designer', name: 'PortalWidgetDesignerApp', component: PortalWidgetDesignerApp, meta: { title: '门户组件设计器' } },
-        { path: 'process-form-designer', name: 'ProcessFormDesignerApp', component: ProcessFormDesignerApp, meta: { title: '流程表单设计器' } },
-        { path: 'process-dict-designer', name: 'ProcessDictDesignerApp', component: ProcessDictDesignerApp, meta: { title: '流程字典设计器' } },
-        { path: 'process-script-designer', name: 'ProcessScriptDesignerApp', component: ProcessScriptDesignerApp, meta: { title: '流程脚本设计器' } },
-        { path: 'process-xform', name: 'ProcessXformApp', component: ProcessXformApp, meta: { title: '流程XForm' } },
-        { path: 'process-application', name: 'ProcessApplicationApp', component: ProcessApplicationApp, meta: { title: '流程应用管理' } },
-        { path: 'service-invoke-designer', name: 'ServiceInvokeDesignerApp', component: ServiceInvokeDesignerApp, meta: { title: '服务调用设计器' } },
-        { path: 'design-center', name: 'DesignCenterApp', component: DesignCenterApp, meta: { title: '设计中心' } },
-        { path: 'control-panel', name: 'ControlPanelApp', component: ControlPanelApp, meta: { title: '控制面板' } },
-        { path: 'config-designer', name: 'ConfigDesignerApp', component: ConfigDesignerApp, meta: { title: '配置设计器' } },
-        { path: 'find-designer', name: 'FindDesignerApp', component: FindDesignerApp, meta: { title: '查找设计器' } },
-        { path: 'homepage', name: 'HomepageApp', component: HomepageApp, meta: { title: '首页配置' } },
-        { path: 'bam', name: 'BamApp', component: BamApp, meta: { title: '业务活动监控' } },
-        { path: 'collect', name: 'CollectApp', component: CollectApp, meta: { title: '收集管理' } },
-        { path: 'note', name: 'NoteApp', component: NoteApp, meta: { title: '笔记管理' } },
-        { path: 'template', name: 'TemplateApp', component: TemplateApp, meta: { title: '模板管理' } },
-        { path: 'search', name: 'SearchApp', component: SearchApp, meta: { title: '全局搜索' } },
-        { path: 'pdf-viewer', name: 'PdfViewerApp', component: PdfViewerApp, meta: { title: 'PDF查看器' } },
-        { path: 'deployment', name: 'DeploymentApp', component: DeploymentApp, meta: { title: '部署管理' } },
-        { path: 'three-member', name: 'ThreeMemberApp', component: ThreeMemberApp, meta: { title: '三方成员管理' } },
-        { path: 'face-set', name: 'FaceSetApp', component: FaceSetApp, meta: { title: '人脸设置' } },
-        { path: 'ann', name: 'AnnApp', component: AnnApp, meta: { title: '神经网络AI配置' } },
-        { path: 'common', name: 'CommonApp', component: CommonApp, meta: { title: '公共组件库' } },
-        { path: 'ftsearch', name: 'FtSearchApp', component: FtSearchApp, meta: { title: '全文搜索引擎' } },
-        { path: 'empty', name: 'EmptyApp', component: EmptyApp, meta: { title: '占位页面' } },
+        { path: 'portal-designer', name: 'PortalDesigner', component: () => import('./views/PortalDesigner.vue'), meta: { title: '门户设计器' } },
+              { path: 'log-viewer', name: 'LogViewerApp', component: () => import('./views/LogViewerApp.vue'), meta: { title: '日志查看器' } },
+        { path: 'selector', name: 'SelectorApp', component: () => import('./views/SelectorApp.vue'), meta: { title: '通用选择器' } },
+        { path: 'query-query', name: 'QueryQueryApp', component: () => import('./views/QueryQueryApp.vue'), meta: { title: '查询定义' } },
+        { path: 'query-explorer', name: 'QueryExplorerApp', component: () => import('./views/QueryExplorerApp.vue'), meta: { title: '查询浏览器' } },
+        { path: 'query-table-designer', name: 'QueryTableDesignerApp', component: () => import('./views/QueryTableDesignerApp.vue'), meta: { title: '表格设计器' } },
+        { path: 'query-view-designer', name: 'QueryViewDesignerApp', component: () => import('./views/QueryViewDesignerApp.vue'), meta: { title: '视图设计器' } },
+        { path: 'query-statement-designer', name: 'QueryStatementDesignerApp', component: () => import('./views/QueryStatementDesignerApp.vue'), meta: { title: 'SQL设计器' } },
+        { path: 'query-stat-designer', name: 'QueryStatDesignerApp', component: () => import('./views/QueryStatDesignerApp.vue'), meta: { title: '统计设计器' } },
+        { path: 'query-importer-designer', name: 'QueryImporterDesignerApp', component: () => import('./views/QueryImporterDesignerApp.vue'), meta: { title: '导入设计器' } },
+        { path: 'cms-column', name: 'CmsColumnApp', component: () => import('./views/CmsColumnApp.vue'), meta: { title: 'CMS列管理' } },
+        { path: 'cms-column-manager', name: 'CmsColumnManagerApp', component: () => import('./views/CmsColumnManagerApp.vue'), meta: { title: 'CMS列管理器' } },
+        { path: 'cms-index', name: 'CmsIndexApp', component: () => import('./views/CmsIndexApp.vue'), meta: { title: 'CMS索引设计' } },
+        { path: 'process-task-center', name: 'ProcessTaskCenterApp', component: () => import('./views/ProcessTaskCenterApp.vue'), meta: { title: '流程任务中心' } },
+        { path: 'process-manager', name: 'ProcessManagerApp', component: () => import('./views/ProcessManagerApp.vue'), meta: { title: '流程实例管理' } },
+        { path: 'cms-dict-designer', name: 'CmsDictDesignerApp', component: () => import('./views/CmsDictDesignerApp.vue'), meta: { title: 'CMS字典设计器' } },
+        { path: 'cms-form-designer', name: 'CmsFormDesignerApp', component: () => import('./views/CmsFormDesignerApp.vue'), meta: { title: 'CMS表单设计器' } },
+        { path: 'cms-view-designer', name: 'CmsViewDesignerApp', component: () => import('./views/CmsViewDesignerApp.vue'), meta: { title: 'CMS视图设计器' } },
+        { path: 'cms-script-designer', name: 'CmsScriptDesignerApp', component: () => import('./views/CmsScriptDesignerApp.vue'), meta: { title: 'CMS脚本设计器' } },
+        { path: 'cms-xform', name: 'CmsXformApp', component: () => import('./views/CmsXformApp.vue'), meta: { title: 'CMS XForm' } },
+        { path: 'cms-module', name: 'CmsModuleApp', component: () => import('./views/CmsModuleApp.vue'), meta: { title: 'CMS模块管理' } },
+        { path: 'portal-dict-designer', name: 'PortalDictDesignerApp', component: () => import('./views/PortalDictDesignerApp.vue'), meta: { title: '门户字典设计器' } },
+        { path: 'portal-page-designer', name: 'PortalPageDesignerApp', component: () => import('./views/PortalPageDesignerApp.vue'), meta: { title: '门户页面设计器' } },
+        { path: 'portal-script-designer', name: 'PortalScriptDesignerApp', component: () => import('./views/PortalScriptDesignerApp.vue'), meta: { title: '门户脚本设计器' } },
+        { path: 'portal-widget-designer', name: 'PortalWidgetDesignerApp', component: () => import('./views/PortalWidgetDesignerApp.vue'), meta: { title: '门户组件设计器' } },
+        { path: 'process-form-designer', name: 'ProcessFormDesignerApp', component: () => import('./views/ProcessFormDesignerApp.vue'), meta: { title: '流程表单设计器' } },
+        { path: 'process-dict-designer', name: 'ProcessDictDesignerApp', component: () => import('./views/ProcessDictDesignerApp.vue'), meta: { title: '流程字典设计器' } },
+        { path: 'process-script-designer', name: 'ProcessScriptDesignerApp', component: () => import('./views/ProcessScriptDesignerApp.vue'), meta: { title: '流程脚本设计器' } },
+        { path: 'process-xform', name: 'ProcessXformApp', component: () => import('./views/ProcessXformApp.vue'), meta: { title: '流程XForm' } },
+        { path: 'process-application', name: 'ProcessApplicationApp', component: () => import('./views/ProcessApplicationApp.vue'), meta: { title: '流程应用管理' } },
+        { path: 'service-invoke-designer', name: 'ServiceInvokeDesignerApp', component: () => import('./views/ServiceInvokeDesignerApp.vue'), meta: { title: '服务调用设计器' } },
+        { path: 'design-center', name: 'DesignCenterApp', component: () => import('./views/DesignCenterApp.vue'), meta: { title: '设计中心' } },
+        { path: 'control-panel', name: 'ControlPanelApp', component: () => import('./views/ControlPanelApp.vue'), meta: { title: '控制面板' } },
+        { path: 'config-designer', name: 'ConfigDesignerApp', component: () => import('./views/ConfigDesignerApp.vue'), meta: { title: '配置设计器' } },
+        { path: 'find-designer', name: 'FindDesignerApp', component: () => import('./views/FindDesignerApp.vue'), meta: { title: '查找设计器' } },
+        { path: 'homepage', name: 'HomepageApp', component: () => import('./views/HomepageApp.vue'), meta: { title: '首页配置' } },
+        { path: 'bam', name: 'BamApp', component: () => import('./views/BamApp.vue'), meta: { title: '业务活动监控' } },
+        { path: 'collect', name: 'CollectApp', component: () => import('./views/CollectApp.vue'), meta: { title: '收集管理' } },
+        { path: 'note', name: 'NoteApp', component: () => import('./views/NoteApp.vue'), meta: { title: '笔记管理' } },
+        { path: 'template', name: 'TemplateApp', component: () => import('./views/TemplateApp.vue'), meta: { title: '模板管理' } },
+        { path: 'search', name: 'SearchApp', component: () => import('./views/SearchApp.vue'), meta: { title: '全局搜索' } },
+        { path: 'pdf-viewer', name: 'PdfViewerApp', component: () => import('./views/PdfViewerApp.vue'), meta: { title: 'PDF查看器' } },
+        { path: 'deployment', name: 'DeploymentApp', component: () => import('./views/DeploymentApp.vue'), meta: { title: '部署管理' } },
+        { path: 'three-member', name: 'ThreeMemberApp', component: () => import('./views/ThreeMemberApp.vue'), meta: { title: '三方成员管理' } },
+        { path: 'face-set', name: 'FaceSetApp', component: () => import('./views/FaceSetApp.vue'), meta: { title: '人脸设置' } },
+        { path: 'ann', name: 'AnnApp', component: () => import('./views/AnnApp.vue'), meta: { title: '神经网络AI配置' } },
+        { path: 'common', name: 'CommonApp', component: () => import('./views/CommonApp.vue'), meta: { title: '公共组件库' } },
+        { path: 'ftsearch', name: 'FtSearchApp', component: () => import('./views/FtSearchApp.vue'), meta: { title: '全文搜索引擎' } },
+        { path: 'empty', name: 'EmptyApp', component: () => import('./views/EmptyApp.vue'), meta: { title: '占位页面' } },
 ],
     },
     { path: '/oauth/callback/:platform', name: 'OAuthCallback', component: OAuthCallback, meta: { requiresAuth: false } },
-    { path: '/sso', name: 'SSO', component: SSO, meta: { requiresAuth: false } },
+    { path: '/sso', name: 'SSO', component: () => import('./views/SSO.vue'), meta: { requiresAuth: false } },
     { path: '/:pathMatch(.*)*', redirect: '/login' },
   ],
 });
