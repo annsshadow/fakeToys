@@ -68,3 +68,4 @@ oa4rust/check_tables.sql
 oa4rust/deploy/.backups/
 
 *.txt
+scripts/cleanup_*.js
