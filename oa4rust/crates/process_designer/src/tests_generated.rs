@@ -1,5 +1,6 @@
 #[cfg(test)]
 mod tests {
+    #![allow(non_snake_case)]
 
     // SKIPPED: application_list_summary not accessible
     // SKIPPED: application_list not accessible

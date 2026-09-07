@@ -1,5 +1,6 @@
 #[cfg(test)]
 mod tests {
+    #![allow(non_snake_case)]
 
     // SKIPPED: record_list not accessible
     // SKIPPED: rule_list not accessible

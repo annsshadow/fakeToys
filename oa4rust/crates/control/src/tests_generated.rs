@@ -1,5 +1,6 @@
 #[cfg(test)]
 mod tests {
+    #![allow(non_snake_case)]
 
     // SKIPPED: get not accessible
     // SKIPPED: list_next not accessible

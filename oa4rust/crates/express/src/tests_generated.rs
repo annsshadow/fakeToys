@@ -1,5 +1,6 @@
 #[cfg(test)]
 mod tests {
+    #![allow(non_snake_case)]
     use axum::body::Body;
     use axum::extract::{Extension, Path, Json};
     use axum::http::{Request, Method, StatusCode};
