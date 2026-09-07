@@ -906,7 +906,7 @@ pub fn router(pool: Pool, rate_limiter: RateLimiter, session_manager: SessionMan
 }
 
 #[cfg(test)]
-pub fn test_router(pool: deadpool_postgres::Pool) -> axum::Router {
+pub fn test_router(_pool: deadpool_postgres::Pool) -> axum::Router {
     use shared::testing::{mock_pool, test_pool};
     let pool = test_pool();
     let rate_limiter = shared::rate_limit::RateLimiter::new();
