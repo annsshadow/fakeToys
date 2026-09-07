@@ -166,10 +166,10 @@ const document_d_1_x_mockdeletetoget_q = useQuery({
     try { const r = await api.get("/jaxrs/data/document/d-1/x/mockdeletetoget"); return (r.data ?? []) as any[]; }
     catch { return []; }
   },
-  staleTime: 60000,
+  
 });
 const api_data_doc_692_data = ref<any[]>([]);
-const { data: api_data_doc_692_q } = useQuery({queryKey: ['api_data_doc_692', '/jaxrs/data/document/d-1/path0'], queryFn: async () => { try { const r = await api.get("/jaxrs/data/document/d-1/path0"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+const { data: api_data_doc_692_q } = useQuery({queryKey: ['api_data_doc_692', '/jaxrs/data/document/d-1/path0'], queryFn: async () => { try { const r = await api.get("/jaxrs/data/document/d-1/path0"); return (r.data ?? []) as any[]; } catch { return []; } }});
 
 const document_d_1_x_mockputtopost_ref = ref<any[]>([]);
 const document_d_1_x_mockputtopost_q = useQuery({
@@ -178,21 +178,21 @@ const document_d_1_x_mockputtopost_q = useQuery({
     try { const r = await api.get("/jaxrs/data/document/d-1/x/mockputtopost"); return (r.data ?? []) as any[]; }
     catch { return []; }
   },
-  staleTime: 60000,
+  
 });
 const api_document_46_data = ref<any[]>([]);
-const { data: api_document_46_q } = useQuery({queryKey: ['api_document_46', '/jaxrs/data/document/d-1/array/data'], queryFn: async () => { try { const r = await api.get("/jaxrs/data/document/d-1/array/data"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+const { data: api_document_46_q } = useQuery({queryKey: ['api_document_46', '/jaxrs/data/document/d-1/array/data'], queryFn: async () => { try { const r = await api.get("/jaxrs/data/document/d-1/array/data"); return (r.data ?? []) as any[]; } catch { return []; } }});
 
 const api_data_doc_868_data = ref<any[]>([]);
-const { data: api_data_doc_868_q } = useQuery({queryKey: ['api_data_doc_868', '/jaxrs/data/document/d-1/field'], queryFn: async () => { try { const r = await api.get("/jaxrs/data/document/d-1/field"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+const { data: api_data_doc_868_q } = useQuery({queryKey: ['api_data_doc_868', '/jaxrs/data/document/d-1/field'], queryFn: async () => { try { const r = await api.get("/jaxrs/data/document/d-1/field"); return (r.data ?? []) as any[]; } catch { return []; } }});
 
 const api_data_doc_344_data = ref<any[]>([]);
-const { data: api_data_doc_344_q } = useQuery({queryKey: ['api_data_doc_344', '/jaxrs/data/document/d-1'], queryFn: async () => { try { const r = await api.get("/jaxrs/data/document/d-1"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+const { data: api_data_doc_344_q } = useQuery({queryKey: ['api_data_doc_344', '/jaxrs/data/document/d-1'], queryFn: async () => { try { const r = await api.get("/jaxrs/data/document/d-1"); return (r.data ?? []) as any[]; } catch { return []; } }});
 
 const api_d_1_a_b_c_data = ref<any[]>([]);
-const { data: api_d_1_a_b_c_q } = useQuery({queryKey: ['api_d_1_a_b_c', '/jaxrs/data/document/d-1/a/b/c'], queryFn: async () => { try { const r = await api.get("/jaxrs/data/document/d-1/a/b/c"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+const { data: api_d_1_a_b_c_q } = useQuery({queryKey: ['api_d_1_a_b_c', '/jaxrs/data/document/d-1/a/b/c'], queryFn: async () => { try { const r = await api.get("/jaxrs/data/document/d-1/a/b/c"); return (r.data ?? []) as any[]; } catch { return []; } }});
 const api_data_doc_386_data = ref<any[]>([]);
-const { data: api_data_doc_386_q } = useQuery({queryKey: ['api_data_doc_386', '/jaxrs/data/document/d-1/anything'], queryFn: async () => { try { const r = await api.get("/jaxrs/data/document/d-1/anything"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+const { data: api_data_doc_386_q } = useQuery({queryKey: ['api_data_doc_386', '/jaxrs/data/document/d-1/anything'], queryFn: async () => { try { const r = await api.get("/jaxrs/data/document/d-1/anything"); return (r.data ?? []) as any[]; } catch { return []; } }});
 
 
 </script>

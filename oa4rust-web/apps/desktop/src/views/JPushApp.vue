@@ -103,7 +103,7 @@ const jpush_assemble_send_q = useQuery({
     try { const r = await api.get("/jaxrs/jpush/assemble/send"); return (r.data ?? []) as any[]; }
     catch { return []; }
   },
-  staleTime: 60000,
+  
 });
 const core_entity_device_create_ref = ref<any[]>([]);
 const core_entity_device_create_q = useQuery({
@@ -112,7 +112,7 @@ const core_entity_device_create_q = useQuery({
     try { const r = await api.get("/jaxrs/jpush/core/entity/device/create"); return (r.data ?? []) as any[]; }
     catch { return []; }
   },
-  staleTime: 60000,
+  
 });
 const core_entity_device_list_ref = ref<any[]>([]);
 const core_entity_device_list_q = useQuery({
@@ -121,7 +121,7 @@ const core_entity_device_list_q = useQuery({
     try { const r = await api.get("/jaxrs/jpush/core/entity/device/list"); return (r.data ?? []) as any[]; }
     catch { return []; }
   },
-  staleTime: 60000,
+  
 });
 const core_entity_template_list_ref = ref<any[]>([]);
 const core_entity_template_list_q = useQuery({
@@ -130,7 +130,7 @@ const core_entity_template_list_q = useQuery({
     try { const r = await api.get("/jaxrs/jpush/core/entity/template/list"); return (r.data ?? []) as any[]; }
     catch { return []; }
   },
-  staleTime: 60000,
+  
 });
 const jpush_get_jpush_001_ref = ref<any[]>([]);
 const jpush_get_jpush_001_q = useQuery({
@@ -139,7 +139,7 @@ const jpush_get_jpush_001_q = useQuery({
     try { const r = await api.get("/jaxrs/jpush/get/jpush-001"); return (r.data ?? []) as any[]; }
     catch { return []; }
   },
-  staleTime: 60000,
+  
 });
 const jpush_device_list_ref = ref<any[]>([]);
 const jpush_device_list_q = useQuery({
@@ -148,7 +148,7 @@ const jpush_device_list_q = useQuery({
     try { const r = await api.get("/jaxrs/jpush/device/list"); return (r.data ?? []) as any[]; }
     catch { return []; }
   },
-  staleTime: 60000,
+  
 });
 const jpush_core_list_ref = ref<any[]>([]);
 const jpush_core_list_q = useQuery({
@@ -157,7 +157,7 @@ const jpush_core_list_q = useQuery({
     try { const r = await api.get("/jaxrs/jpush/core/list"); return (r.data ?? []) as any[]; }
     catch { return []; }
   },
-  staleTime: 60000,
+  
 });
 const assemble_control_device_bind_ref = ref<any[]>([]);
 const assemble_control_device_bind_q = useQuery({
@@ -166,7 +166,7 @@ const assemble_control_device_bind_q = useQuery({
     try { const r = await api.get("/jaxrs/jpush/assemble/control/device/bind"); return (r.data ?? []) as any[]; }
     catch { return []; }
   },
-  staleTime: 60000,
+  
 });
 const jpush_create_ref = ref<any[]>([]);
 const jpush_create_q = useQuery({
@@ -175,7 +175,7 @@ const jpush_create_q = useQuery({
     try { const r = await api.get("/jaxrs/jpush/create"); return (r.data ?? []) as any[]; }
     catch { return []; }
   },
-  staleTime: 60000,
+  
 });
 const jpush_template_list_ref = ref<any[]>([]);
 const jpush_template_list_q = useQuery({
@@ -184,7 +184,7 @@ const jpush_template_list_q = useQuery({
     try { const r = await api.get("/jaxrs/jpush/template/list"); return (r.data ?? []) as any[]; }
     catch { return []; }
   },
-  staleTime: 60000,
+  
 });
 const jpush_list_ref = ref<any[]>([]);
 const jpush_list_q = useQuery({
@@ -193,7 +193,7 @@ const jpush_list_q = useQuery({
     try { const r = await api.get("/jaxrs/jpush/list"); return (r.data ?? []) as any[]; }
     catch { return []; }
   },
-  staleTime: 60000,
+  
 });
 const jpush_assemble_control_config_ref = ref<any[]>([]);
 const jpush_assemble_control_config_q = useQuery({
@@ -202,7 +202,7 @@ const jpush_assemble_control_config_q = useQuery({
     try { const r = await api.get("/jaxrs/jpush/assemble/control/config"); return (r.data ?? []) as any[]; }
     catch { return []; }
   },
-  staleTime: 60000,
+  
 });
 const jpush_device_create_ref = ref<any[]>([]);
 const jpush_device_create_q = useQuery({
@@ -211,7 +211,7 @@ const jpush_device_create_q = useQuery({
     try { const r = await api.get("/jaxrs/jpush/device/create"); return (r.data ?? []) as any[]; }
     catch { return []; }
   },
-  staleTime: 60000,
+  
 });
 const jpush_send_ref = ref<any[]>([]);
 const jpush_send_q = useQuery({
@@ -220,12 +220,12 @@ const jpush_send_q = useQuery({
     try { const r = await api.get("/jaxrs/jpush/send"); return (r.data ?? []) as any[]; }
     catch { return []; }
   },
-  staleTime: 60000,
+  
 });
 
 
 const api_jpush_as_362_data = ref<any[]>([]);
-const { data: api_jpush_as_362_q } = useQuery({queryKey: ['api_jpush_as_362', '/jaxrs/jpush_assemble_control/save/jpush'], queryFn: async () => { try { const r = await api.get("/jaxrs/jpush_assemble_control/save/jpush"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+const { data: api_jpush_as_362_q } = useQuery({queryKey: ['api_jpush_as_362', '/jaxrs/jpush_assemble_control/save/jpush'], queryFn: async () => { try { const r = await api.get("/jaxrs/jpush_assemble_control/save/jpush"); return (r.data ?? []) as any[]; } catch { return []; } }});
 
 const jpush_assemble_control_message_test_send_ref = ref<any[]>([]);
 const jpush_assemble_control_message_test_send_q = useQuery({
@@ -234,68 +234,68 @@ const jpush_assemble_control_message_test_send_q = useQuery({
     try { const r = await api.get("/jaxrs/jpush_assemble_control/message/test/send"); return (r.data ?? []) as any[]; }
     catch { return []; }
   },
-  staleTime: 60000,
+  
 });
 const api_jpush_as_598_data = ref<any[]>([]);
-const { data: api_jpush_as_598_q } = useQuery({queryKey: ['api_jpush_as_598', '/jaxrs/jpush_assemble_control/message/send'], queryFn: async () => { try { const r = await api.get("/jaxrs/jpush_assemble_control/message/send"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+const { data: api_jpush_as_598_q } = useQuery({queryKey: ['api_jpush_as_598', '/jaxrs/jpush_assemble_control/message/send'], queryFn: async () => { try { const r = await api.get("/jaxrs/jpush_assemble_control/message/send"); return (r.data ?? []) as any[]; } catch { return []; } }});
 
 const api_device_u_56_data = ref<any[]>([]);
-const { data: api_device_u_56_q } = useQuery({queryKey: ['api_device_u_56', '/jaxrs/jpush_assemble_control/device/unbind/a/b'], queryFn: async () => { try { const r = await api.get("/jaxrs/jpush_assemble_control/device/unbind/a/b"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+const { data: api_device_u_56_q } = useQuery({queryKey: ['api_device_u_56', '/jaxrs/jpush_assemble_control/device/unbind/a/b'], queryFn: async () => { try { const r = await api.get("/jaxrs/jpush_assemble_control/device/unbind/a/b"); return (r.data ?? []) as any[]; } catch { return []; } }});
 
 const api_jpush_as_458_data = ref<any[]>([]);
-const { data: api_jpush_as_458_q } = useQuery({queryKey: ['api_jpush_as_458', '/jaxrs/jpush_assemble_control/update/control/config'], queryFn: async () => { try { const r = await api.get("/jaxrs/jpush_assemble_control/update/control/config"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+const { data: api_jpush_as_458_q } = useQuery({queryKey: ['api_jpush_as_458', '/jaxrs/jpush_assemble_control/update/control/config'], queryFn: async () => { try { const r = await api.get("/jaxrs/jpush_assemble_control/update/control/config"); return (r.data ?? []) as any[]; } catch { return []; } }});
 
 const api_admin_un_510_data = ref<any[]>([]);
-const { data: api_admin_un_510_q } = useQuery({queryKey: ['api_admin_un_510', '/jaxrs/jpush_assemble_control/device/admin/unbind/all/person'], queryFn: async () => { try { const r = await api.get("/jaxrs/jpush_assemble_control/device/admin/unbind/all/person"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+const { data: api_admin_un_510_q } = useQuery({queryKey: ['api_admin_un_510', '/jaxrs/jpush_assemble_control/device/admin/unbind/all/person'], queryFn: async () => { try { const r = await api.get("/jaxrs/jpush_assemble_control/device/admin/unbind/all/person"); return (r.data ?? []) as any[]; } catch { return []; } }});
 
 const api_jpush_as_890_data = ref<any[]>([]);
-const { data: api_jpush_as_890_q } = useQuery({queryKey: ['api_jpush_as_890', '/jaxrs/jpush_assemble_control'], queryFn: async () => { try { const r = await api.get("/jaxrs/jpush_assemble_control"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+const { data: api_jpush_as_890_q } = useQuery({queryKey: ['api_jpush_as_890', '/jaxrs/jpush_assemble_control'], queryFn: async () => { try { const r = await api.get("/jaxrs/jpush_assemble_control"); return (r.data ?? []) as any[]; } catch { return []; } }});
 
 const api_jpush_as_394_data = ref<any[]>([]);
-const { data: api_jpush_as_394_q } = useQuery({queryKey: ['api_jpush_as_394', '/jaxrs/jpush_assemble_control/delete/jpush'], queryFn: async () => { try { const r = await api.get("/jaxrs/jpush_assemble_control/delete/jpush"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+const { data: api_jpush_as_394_q } = useQuery({queryKey: ['api_jpush_as_394', '/jaxrs/jpush_assemble_control/delete/jpush'], queryFn: async () => { try { const r = await api.get("/jaxrs/jpush_assemble_control/delete/jpush"); return (r.data ?? []) as any[]; } catch { return []; } }});
 
 const api_device_u_877_data = ref<any[]>([]);
-const { data: api_device_u_877_q } = useQuery({queryKey: ['api_device_u_877', '/jaxrs/jpush_assemble_control/device/unbind/deviceName/deviceType'], queryFn: async () => { try { const r = await api.get("/jaxrs/jpush_assemble_control/device/unbind/deviceName/deviceType"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+const { data: api_device_u_877_q } = useQuery({queryKey: ['api_device_u_877', '/jaxrs/jpush_assemble_control/device/unbind/deviceName/deviceType'], queryFn: async () => { try { const r = await api.get("/jaxrs/jpush_assemble_control/device/unbind/deviceName/deviceType"); return (r.data ?? []) as any[]; } catch { return []; } }});
 
 const api_jpush_as_398_data = ref<any[]>([]);
-const { data: api_jpush_as_398_q } = useQuery({queryKey: ['api_jpush_as_398', '/jaxrs/jpush_assemble_control/get/control/config'], queryFn: async () => { try { const r = await api.get("/jaxrs/jpush_assemble_control/get/control/config"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+const { data: api_jpush_as_398_q } = useQuery({queryKey: ['api_jpush_as_398', '/jaxrs/jpush_assemble_control/get/control/config'], queryFn: async () => { try { const r = await api.get("/jaxrs/jpush_assemble_control/get/control/config"); return (r.data ?? []) as any[]; } catch { return []; } }});
 
 const api_device_c_516_data = ref<any[]>([]);
-const { data: api_device_c_516_q } = useQuery({queryKey: ['api_device_c_516', '/jaxrs/jpush_assemble_control/device/config/push/type'], queryFn: async () => { try { const r = await api.get("/jaxrs/jpush_assemble_control/device/config/push/type"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+const { data: api_device_c_516_q } = useQuery({queryKey: ['api_device_c_516', '/jaxrs/jpush_assemble_control/device/config/push/type'], queryFn: async () => { try { const r = await api.get("/jaxrs/jpush_assemble_control/device/config/push/type"); return (r.data ?? []) as any[]; } catch { return []; } }});
 
 const api_jpush_as_148_data = ref<any[]>([]);
-const { data: api_jpush_as_148_q } = useQuery({queryKey: ['api_jpush_as_148', '/jaxrs/jpush_assemble_control/device/bind'], queryFn: async () => { try { const r = await api.get("/jaxrs/jpush_assemble_control/device/bind"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+const { data: api_jpush_as_148_q } = useQuery({queryKey: ['api_jpush_as_148', '/jaxrs/jpush_assemble_control/device/bind'], queryFn: async () => { try { const r = await api.get("/jaxrs/jpush_assemble_control/device/bind"); return (r.data ?? []) as any[]; } catch { return []; } }});
 
 const api_jpush_as_641_data = ref<any[]>([]);
-const { data: api_jpush_as_641_q } = useQuery({queryKey: ['api_jpush_as_641', '/jaxrs/jpush_assemble_control/device/list/pushType'], queryFn: async () => { try { const r = await api.get("/jaxrs/jpush_assemble_control/device/list/pushType"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+const { data: api_jpush_as_641_q } = useQuery({queryKey: ['api_jpush_as_641', '/jaxrs/jpush_assemble_control/device/list/pushType'], queryFn: async () => { try { const r = await api.get("/jaxrs/jpush_assemble_control/device/list/pushType"); return (r.data ?? []) as any[]; } catch { return []; } }});
 
 const api_jpush_as_145_data = ref<any[]>([]);
-const { data: api_jpush_as_145_q } = useQuery({queryKey: ['api_jpush_as_145', '/jaxrs/jpush_assemble_control/list/control/apps'], queryFn: async () => { try { const r = await api.get("/jaxrs/jpush_assemble_control/list/control/apps"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+const { data: api_jpush_as_145_q } = useQuery({queryKey: ['api_jpush_as_145', '/jaxrs/jpush_assemble_control/list/control/apps'], queryFn: async () => { try { const r = await api.get("/jaxrs/jpush_assemble_control/list/control/apps"); return (r.data ?? []) as any[]; } catch { return []; } }});
 
 const api_jpush_as_45_data = ref<any[]>([]);
-const { data: api_jpush_as_45_q } = useQuery({queryKey: ['api_jpush_as_45', '/jaxrs/jpush_assemble_control/create/jpush'], queryFn: async () => { try { const r = await api.get("/jaxrs/jpush_assemble_control/create/jpush"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+const { data: api_jpush_as_45_q } = useQuery({queryKey: ['api_jpush_as_45', '/jaxrs/jpush_assemble_control/create/jpush'], queryFn: async () => { try { const r = await api.get("/jaxrs/jpush_assemble_control/create/jpush"); return (r.data ?? []) as any[]; } catch { return []; } }});
 
 
 
 const api_jpush_as_446_data = ref<any[]>([]);
-const { data: api_jpush_as_446_q } = useQuery({queryKey: ['api_jpush_as_446', '/jaxrs/jpush_assemble_control/list/jpushs'], queryFn: async () => { try { const r = await api.get("/jaxrs/jpush_assemble_control/list/jpushs"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+const { data: api_jpush_as_446_q } = useQuery({queryKey: ['api_jpush_as_446', '/jaxrs/jpush_assemble_control/list/jpushs'], queryFn: async () => { try { const r = await api.get("/jaxrs/jpush_assemble_control/list/jpushs"); return (r.data ?? []) as any[]; } catch { return []; } }});
 
 const api_check_de_819_data = ref<any[]>([]);
-const { data: api_check_de_819_q } = useQuery({queryKey: ['api_check_de_819', '/jaxrs/jpush_assemble_control/device/check/deviceName/deviceType/pushType'], queryFn: async () => { try { const r = await api.get("/jaxrs/jpush_assemble_control/device/check/deviceName/deviceType/pushType"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+const { data: api_check_de_819_q } = useQuery({queryKey: ['api_check_de_819', '/jaxrs/jpush_assemble_control/device/check/deviceName/deviceType/pushType'], queryFn: async () => { try { const r = await api.get("/jaxrs/jpush_assemble_control/device/check/deviceName/deviceType/pushType"); return (r.data ?? []) as any[]; } catch { return []; } }});
 
 const api_jpush_as_867_data = ref<any[]>([]);
-const { data: api_jpush_as_867_q } = useQuery({queryKey: ['api_jpush_as_867', '/jaxrs/jpush_assemble_control/get/jpush'], queryFn: async () => { try { const r = await api.get("/jaxrs/jpush_assemble_control/get/jpush"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+const { data: api_jpush_as_867_q } = useQuery({queryKey: ['api_jpush_as_867', '/jaxrs/jpush_assemble_control/get/jpush'], queryFn: async () => { try { const r = await api.get("/jaxrs/jpush_assemble_control/get/jpush"); return (r.data ?? []) as any[]; } catch { return []; } }});
 
 
 
 const api_control_device_l_732_data = ref<any[]>([]);
-const { data: api_control_device_l_732_q } = useQuery({queryKey: ['api_control_device_l_732', '/jaxrs/jpush/assemble/control/device/list/pushType'], queryFn: async () => { try { const r = await api.get("/jaxrs/jpush/assemble/control/device/list/pushType"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+const { data: api_control_device_l_732_q } = useQuery({queryKey: ['api_control_device_l_732', '/jaxrs/jpush/assemble/control/device/list/pushType'], queryFn: async () => { try { const r = await api.get("/jaxrs/jpush/assemble/control/device/list/pushType"); return (r.data ?? []) as any[]; } catch { return []; } }});
 
 const api_control_list_con_510_data = ref<any[]>([]);
-const { data: api_control_list_con_510_q } = useQuery({queryKey: ['api_control_list_con_510', '/jaxrs/jpush/assemble/control/list/control/apps'], queryFn: async () => { try { const r = await api.get("/jaxrs/jpush/assemble/control/list/control/apps"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+const { data: api_control_list_con_510_q } = useQuery({queryKey: ['api_control_list_con_510', '/jaxrs/jpush/assemble/control/list/control/apps'], queryFn: async () => { try { const r = await api.get("/jaxrs/jpush/assemble/control/list/control/apps"); return (r.data ?? []) as any[]; } catch { return []; } }});
 
 const api_control_update_c_655_data = ref<any[]>([]);
-const { data: api_control_update_c_655_q } = useQuery({queryKey: ['api_control_update_c_655', '/jaxrs/jpush/assemble/control/update/control/config'], queryFn: async () => { try { const r = await api.get("/jaxrs/jpush/assemble/control/update/control/config"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+const { data: api_control_update_c_655_q } = useQuery({queryKey: ['api_control_update_c_655', '/jaxrs/jpush/assemble/control/update/control/config'], queryFn: async () => { try { const r = await api.get("/jaxrs/jpush/assemble/control/update/control/config"); return (r.data ?? []) as any[]; } catch { return []; } }});
 
 const control_message_test_send_ref = ref<any[]>([]);
 const control_message_test_send_q = useQuery({
@@ -304,23 +304,23 @@ const control_message_test_send_q = useQuery({
     try { const r = await api.get("/jaxrs/jpush/assemble/control/message/test/send"); return (r.data ?? []) as any[]; }
     catch { return []; }
   },
-  staleTime: 60000,
+  
 });
 
 const api_jaxrs_jpush_asse_42_data = ref<any[]>([]);
-const { data: api_jaxrs_jpush_asse_42_q } = useQuery({queryKey: ['api_jaxrs_jpush_asse_42', '/jaxrs/jpush/assemble/control/device/admin/unbind/all/person'], queryFn: async () => { try { const r = await api.get("/jaxrs/jpush/assemble/control/device/admin/unbind/all/person"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+const { data: api_jaxrs_jpush_asse_42_q } = useQuery({queryKey: ['api_jaxrs_jpush_asse_42', '/jaxrs/jpush/assemble/control/device/admin/unbind/all/person'], queryFn: async () => { try { const r = await api.get("/jaxrs/jpush/assemble/control/device/admin/unbind/all/person"); return (r.data ?? []) as any[]; } catch { return []; } }});
 
 const api_jaxrs_jpush_asse_288_data = ref<any[]>([]);
-const { data: api_jaxrs_jpush_asse_288_q } = useQuery({queryKey: ['api_jaxrs_jpush_asse_288', '/jaxrs/jpush/assemble/control/device/check/deviceName/deviceType/pushType'], queryFn: async () => { try { const r = await api.get("/jaxrs/jpush/assemble/control/device/check/deviceName/deviceType/pushType"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+const { data: api_jaxrs_jpush_asse_288_q } = useQuery({queryKey: ['api_jaxrs_jpush_asse_288', '/jaxrs/jpush/assemble/control/device/check/deviceName/deviceType/pushType'], queryFn: async () => { try { const r = await api.get("/jaxrs/jpush/assemble/control/device/check/deviceName/deviceType/pushType"); return (r.data ?? []) as any[]; } catch { return []; } }});
 
 const api_jaxrs_jpush_asse_429_data = ref<any[]>([]);
-const { data: api_jaxrs_jpush_asse_429_q } = useQuery({queryKey: ['api_jaxrs_jpush_asse_429', '/jaxrs/jpush/assemble/control/device/config/push/type'], queryFn: async () => { try { const r = await api.get("/jaxrs/jpush/assemble/control/device/config/push/type"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+const { data: api_jaxrs_jpush_asse_429_q } = useQuery({queryKey: ['api_jaxrs_jpush_asse_429', '/jaxrs/jpush/assemble/control/device/config/push/type'], queryFn: async () => { try { const r = await api.get("/jaxrs/jpush/assemble/control/device/config/push/type"); return (r.data ?? []) as any[]; } catch { return []; } }});
 
 const api_jaxrs_jpush_asse_313_data = ref<any[]>([]);
-const { data: api_jaxrs_jpush_asse_313_q } = useQuery({queryKey: ['api_jaxrs_jpush_asse_313', '/jaxrs/jpush/assemble/control/device/unbind/deviceName/deviceType'], queryFn: async () => { try { const r = await api.get("/jaxrs/jpush/assemble/control/device/unbind/deviceName/deviceType"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+const { data: api_jaxrs_jpush_asse_313_q } = useQuery({queryKey: ['api_jaxrs_jpush_asse_313', '/jaxrs/jpush/assemble/control/device/unbind/deviceName/deviceType'], queryFn: async () => { try { const r = await api.get("/jaxrs/jpush/assemble/control/device/unbind/deviceName/deviceType"); return (r.data ?? []) as any[]; } catch { return []; } }});
 
 const api_jaxrs_jpush_asse_984_data = ref<any[]>([]);
-const { data: api_jaxrs_jpush_asse_984_q } = useQuery({queryKey: ['api_jaxrs_jpush_asse_984', '/jaxrs/jpush/assemble/control/device/unbind/new/deviceName/deviceType/pushType'], queryFn: async () => { try { const r = await api.get("/jaxrs/jpush/assemble/control/device/unbind/new/deviceName/deviceType/pushType"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+const { data: api_jaxrs_jpush_asse_984_q } = useQuery({queryKey: ['api_jaxrs_jpush_asse_984', '/jaxrs/jpush/assemble/control/device/unbind/new/deviceName/deviceType/pushType'], queryFn: async () => { try { const r = await api.get("/jaxrs/jpush/assemble/control/device/unbind/new/deviceName/deviceType/pushType"); return (r.data ?? []) as any[]; } catch { return []; } }});
 
 </script>
 

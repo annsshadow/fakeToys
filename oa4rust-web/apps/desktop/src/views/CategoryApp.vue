@@ -60,7 +60,7 @@ const categoryinfo_q = useQuery({
     try { const r = await api.get("/jaxrs/categoryinfo"); return (r.data ?? []) as any[]; }
     catch { return []; }
   },
-  staleTime: 60000,
+  
 });
 const categoryinfo_alias_alpha_ref = ref<any[]>([]);
 const categoryinfo_alias_alpha_q = useQuery({
@@ -69,7 +69,7 @@ const categoryinfo_alias_alpha_q = useQuery({
     try { const r = await api.get("/jaxrs/categoryinfo/alias/alpha"); return (r.data ?? []) as any[]; }
     catch { return []; }
   },
-  staleTime: 60000,
+  
 });
 const categoryinfo_list_objects_ref = ref<any[]>([]);
 const categoryinfo_list_objects_q = useQuery({
@@ -78,7 +78,7 @@ const categoryinfo_list_objects_q = useQuery({
     try { const r = await api.get("/jaxrs/categoryinfo/list/objects"); return (r.data ?? []) as any[]; }
     catch { return []; }
   },
-  staleTime: 60000,
+  
 });
 const categoryinfo_list_all_ref = ref<any[]>([]);
 const categoryinfo_list_all_q = useQuery({
@@ -87,7 +87,7 @@ const categoryinfo_list_all_q = useQuery({
     try { const r = await api.get("/jaxrs/categoryinfo/list/all"); return (r.data ?? []) as any[]; }
     catch { return []; }
   },
-  staleTime: 60000,
+  
 });
 const categoryinfo_extContent_ref = ref<any[]>([]);
 const categoryinfo_extContent_q = useQuery({
@@ -96,7 +96,7 @@ const categoryinfo_extContent_q = useQuery({
     try { const r = await api.get("/jaxrs/categoryinfo/extContent"); return (r.data ?? []) as any[]; }
     catch { return []; }
   },
-  staleTime: 60000,
+  
 });
 const categoryinfo_c_1_permission_ref = ref<any[]>([]);
 const categoryinfo_c_1_permission_q = useQuery({
@@ -105,7 +105,7 @@ const categoryinfo_c_1_permission_q = useQuery({
     try { const r = await api.get("/jaxrs/categoryinfo/c-1/permission"); return (r.data ?? []) as any[]; }
     catch { return []; }
   },
-  staleTime: 60000,
+  
 });
 const categoryinfo_flag_ref = ref<any[]>([]);
 const categoryinfo_flag_q = useQuery({
@@ -114,7 +114,7 @@ const categoryinfo_flag_q = useQuery({
     try { const r = await api.get("/jaxrs/categoryinfo/flag"); return (r.data ?? []) as any[]; }
     catch { return []; }
   },
-  staleTime: 60000,
+  
 });
 const categoryinfo_c_1_control_ref = ref<any[]>([]);
 const categoryinfo_c_1_control_q = useQuery({
@@ -123,7 +123,7 @@ const categoryinfo_c_1_control_q = useQuery({
     try { const r = await api.get("/jaxrs/categoryinfo/c-1/control"); return (r.data ?? []) as any[]; }
     catch { return []; }
   },
-  staleTime: 60000,
+  
 });
 const categoryinfo_c_1_execute_projection_ref = ref<any[]>([]);
 const categoryinfo_c_1_execute_projection_q = useQuery({
@@ -132,7 +132,7 @@ const categoryinfo_c_1_execute_projection_q = useQuery({
     try { const r = await api.get("/jaxrs/categoryinfo/c-1/execute/projection"); return (r.data ?? []) as any[]; }
     catch { return []; }
   },
-  staleTime: 60000,
+  
 });
 const categoryinfo_c_1_ref = ref<any[]>([]);
 const categoryinfo_c_1_q = useQuery({
@@ -141,7 +141,7 @@ const categoryinfo_c_1_q = useQuery({
     try { const r = await api.get("/jaxrs/categoryinfo/c-1"); return (r.data ?? []) as any[]; }
     catch { return []; }
   },
-  staleTime: 60000,
+  
 });
 const categoryinfo_bind_c_1_view_ref = ref<any[]>([]);
 const categoryinfo_bind_c_1_view_q = useQuery({
@@ -150,12 +150,12 @@ const categoryinfo_bind_c_1_view_q = useQuery({
     try { const r = await api.get("/jaxrs/categoryinfo/bind/c-1/view"); return (r.data ?? []) as any[]; }
     catch { return []; }
   },
-  staleTime: 60000,
+  
 });
 
 
 const api_list_p_1_860_data = ref<any[]>([]);
-const { data: api_list_p_1_860_q } = useQuery({queryKey: ['api_list_p_1_860', '/jaxrs/categoryinfo/filter/list/p-1/size/10'], queryFn: async () => { try { const r = await api.get("/jaxrs/categoryinfo/filter/list/p-1/size/10"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+const { data: api_list_p_1_860_q } = useQuery({queryKey: ['api_list_p_1_860', '/jaxrs/categoryinfo/filter/list/p-1/size/10'], queryFn: async () => { try { const r = await api.get("/jaxrs/categoryinfo/filter/list/p-1/size/10"); return (r.data ?? []) as any[]; } catch { return []; } }});
 
 
 </script>

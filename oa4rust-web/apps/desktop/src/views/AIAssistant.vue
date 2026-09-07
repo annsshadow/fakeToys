@@ -65,7 +65,7 @@ const showMcp = ref(false)
 const msgBox = ref<HTMLElement>()
 const mcps = ref<Array<{id:string;name:string;endpoint:string;enabled:boolean}>>([])
 
-const { data } = useQuery({ queryKey:['ai','convs'], queryFn:()=>api.get('/jaxrs/ai/conversation/list').then((r:any)=>(r.data??[]) as Conv[]), staleTime:60000 })
+const { data } = useQuery({ queryKey:['ai','convs'], queryFn:()=>api.get('/jaxrs/ai/conversation/list').then((r:any)=>(r.data??[]) as Conv[]) })
 convs.value = data.value ?? []
 
 function selectConv(c:Conv){ active.value=c; msgs.value=[] }
