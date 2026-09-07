@@ -280,43 +280,43 @@ const general_file_list_q = useQuery({
 
 const api_jaxrs_ap_455_data = ref<any[]>([]);
 const { data: api_jaxrs_ap_455_q } = useQuery({queryKey: ['api_jaxrs_ap_455', '/jaxrs/appconfig/a-1'], queryFn: async () => { try { const r = await api.get("/jaxrs/appconfig/a-1"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
-watch(api_jaxrs_ap_455_q, (v) => { api_jaxrs_ap_455_data.value = v ?? []; });
+
 const api_jaxrs_ap_42_data = ref<any[]>([]);
 const { data: api_jaxrs_ap_42_q } = useQuery({queryKey: ['api_jaxrs_ap_42', '/jaxrs/appconfig/app-1'], queryFn: async () => { try { const r = await api.get("/jaxrs/appconfig/app-1"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
-watch(api_jaxrs_ap_42_q, (v) => { api_jaxrs_ap_42_data.value = v ?? []; });
+
 const api_jaxrs_co_514_data = ref<any[]>([]);
 const { data: api_jaxrs_co_514_q } = useQuery({queryKey: ['api_jaxrs_co_514', '/jaxrs/correlation/core/entity/list/by/user/user-001'], queryFn: async () => { try { const r = await api.get("/jaxrs/correlation/core/entity/list/by/user/user-001"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
-watch(api_jaxrs_co_514_q, (v) => { api_jaxrs_co_514_data.value = v ?? []; });
+
 const api_jaxrs_correlatio_588_data = ref<any[]>([]);
 const { data: api_jaxrs_correlatio_588_q } = useQuery({queryKey: ['api_jaxrs_correlatio_588', '/jaxrs/correlation/service/processing/correlation/delete/type/cms/document/doc-1'], queryFn: async () => { try { const r = await api.get("/jaxrs/correlation/service/processing/correlation/delete/type/cms/document/doc-1"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
-watch(api_jaxrs_correlatio_588_q, (v) => { api_jaxrs_correlatio_588_data.value = v ?? []; });
+
 const api_jaxrs_co_405_data = ref<any[]>([]);
 const { data: api_jaxrs_co_405_q } = useQuery({queryKey: ['api_jaxrs_co_405', '/jaxrs/correlation/service/processing/correlation/delete/type/processplatform/job/job-1'], queryFn: async () => { try { const r = await api.get("/jaxrs/correlation/service/processing/correlation/delete/type/processplatform/job/job-1"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
-watch(api_jaxrs_co_405_q, (v) => { api_jaxrs_co_405_data.value = v ?? []; });
+
 const api_jaxrs_correlatio_128_data = ref<any[]>([]);
 const { data: api_jaxrs_correlatio_128_q } = useQuery({queryKey: ['api_jaxrs_correlatio_128', '/jaxrs/correlation/service/processing/correlation/list/type/cms/document/doc-1'], queryFn: async () => { try { const r = await api.get("/jaxrs/correlation/service/processing/correlation/list/type/cms/document/doc-1"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
-watch(api_jaxrs_correlatio_128_q, (v) => { api_jaxrs_correlatio_128_data.value = v ?? []; });
+
 const api_jaxrs_correlatio_39_data = ref<any[]>([]);
 const { data: api_jaxrs_correlatio_39_q } = useQuery({queryKey: ['api_jaxrs_correlatio_39', '/jaxrs/correlation/service/processing/correlation/list/type/cms/document/doc-1/site/site-1'], queryFn: async () => { try { const r = await api.get("/jaxrs/correlation/service/processing/correlation/list/type/cms/document/doc-1/site/site-1"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
-watch(api_jaxrs_correlatio_39_q, (v) => { api_jaxrs_correlatio_39_data.value = v ?? []; });
+
 const api_jaxrs_correlatio_521_data = ref<any[]>([]);
 const { data: api_jaxrs_correlatio_521_q } = useQuery({queryKey: ['api_jaxrs_correlatio_521', '/jaxrs/correlation/service/processing/correlation/list/type/cms/document/doc-l/site/s1'], queryFn: async () => { try { const r = await api.get("/jaxrs/correlation/service/processing/correlation/list/type/cms/document/doc-l/site/s1"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
-watch(api_jaxrs_correlatio_521_q, (v) => { api_jaxrs_correlatio_521_data.value = v ?? []; });
+
 const api_jaxrs_correlatio_173_data = ref<any[]>([]);
 const { data: api_jaxrs_correlatio_173_q } = useQuery({queryKey: ['api_jaxrs_correlatio_173', '/jaxrs/correlation/service/processing/correlation/list/type/processplatform/job/job-1'], queryFn: async () => { try { const r = await api.get("/jaxrs/correlation/service/processing/correlation/list/type/processplatform/job/job-1"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
-watch(api_jaxrs_correlatio_173_q, (v) => { api_jaxrs_correlatio_173_data.value = v ?? []; });
+
 const api_jaxrs_correlatio_939_data = ref<any[]>([]);
 const { data: api_jaxrs_correlatio_939_q } = useQuery({queryKey: ['api_jaxrs_correlatio_939', '/jaxrs/correlation/service/processing/correlation/list/type/processplatform/job/job-1/site/site-1'], queryFn: async () => { try { const r = await api.get("/jaxrs/correlation/service/processing/correlation/list/type/processplatform/job/job-1/site/site-1"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
-watch(api_jaxrs_correlatio_939_q, (v) => { api_jaxrs_correlatio_939_data.value = v ?? []; });
+
 const api_jaxrs_correlatio_390_data = ref<any[]>([]);
 const { data: api_jaxrs_correlatio_390_q } = useQuery({queryKey: ['api_jaxrs_correlatio_390', '/jaxrs/correlation/service/processing/correlation/readable/type/cms'], queryFn: async () => { try { const r = await api.get("/jaxrs/correlation/service/processing/correlation/readable/type/cms"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
-watch(api_jaxrs_correlatio_390_q, (v) => { api_jaxrs_correlatio_390_data.value = v ?? []; });
+
 const api_jaxrs_co_467_data = ref<any[]>([]);
 const { data: api_jaxrs_co_467_q } = useQuery({queryKey: ['api_jaxrs_co_467', '/jaxrs/correlation/service/processing/correlation/readable/type/processplatform'], queryFn: async () => { try { const r = await api.get("/jaxrs/correlation/service/processing/correlation/readable/type/processplatform"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
-watch(api_jaxrs_co_467_q, (v) => { api_jaxrs_co_467_data.value = v ?? []; });
+
 const api_jaxrs_correlatio_484_data = ref<any[]>([]);
 const { data: api_jaxrs_correlatio_484_q } = useQuery({queryKey: ['api_jaxrs_correlatio_484', '/jaxrs/correlation/service/processing/correlation/type/cms/document/doc-1'], queryFn: async () => { try { const r = await api.get("/jaxrs/correlation/service/processing/correlation/type/cms/document/doc-1"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
-watch(api_jaxrs_correlatio_484_q, (v) => { api_jaxrs_correlatio_484_data.value = v ?? []; });
+
 const jaxrs_correlation_service_processing_correlation_type_processplatform_job_job_1_ref = ref<any[]>([]);
 const jaxrs_correlation_service_processing_correlation_type_processplatform_job_job_1_q = useQuery({
   queryKey: ['jaxrs_correlation_service_processing_correlation_type_processplatform_job_job_1'],
@@ -337,16 +337,16 @@ const jaxrs_correlation_service_processing_correlation_type_processplatform_job_
 });
 const api_jaxrs_correlatio_347_data = ref<any[]>([]);
 const { data: api_jaxrs_correlatio_347_q } = useQuery({queryKey: ['api_jaxrs_correlatio_347', '/jaxrs/correlation/service/processing/correlation/update/type/cms/document/doc-1'], queryFn: async () => { try { const r = await api.get("/jaxrs/correlation/service/processing/correlation/update/type/cms/document/doc-1"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
-watch(api_jaxrs_correlatio_347_q, (v) => { api_jaxrs_correlatio_347_data.value = v ?? []; });
+
 const api_jaxrs_correlatio_549_data = ref<any[]>([]);
 const { data: api_jaxrs_correlatio_549_q } = useQuery({queryKey: ['api_jaxrs_correlatio_549', '/jaxrs/correlation/service/processing/correlation/update/type/cms/document/doc-u'], queryFn: async () => { try { const r = await api.get("/jaxrs/correlation/service/processing/correlation/update/type/cms/document/doc-u"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
-watch(api_jaxrs_correlatio_549_q, (v) => { api_jaxrs_correlatio_549_data.value = v ?? []; });
+
 const api_jaxrs_co_571_data = ref<any[]>([]);
 const { data: api_jaxrs_co_571_q } = useQuery({queryKey: ['api_jaxrs_co_571', '/jaxrs/correlation/service/processing/correlation/update/type/processplatform/job/job-1'], queryFn: async () => { try { const r = await api.get("/jaxrs/correlation/service/processing/correlation/update/type/processplatform/job/job-1"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
-watch(api_jaxrs_co_571_q, (v) => { api_jaxrs_co_571_data.value = v ?? []; });
+
 const api_jaxrs_correlatio_116_data = ref<any[]>([]);
 const { data: api_jaxrs_correlatio_116_q } = useQuery({queryKey: ['api_jaxrs_correlatio_116', '/jaxrs/correlation/service/processing/unlink/message/msg-1/process/proc-1'], queryFn: async () => { try { const r = await api.get("/jaxrs/correlation/service/processing/unlink/message/msg-1/process/proc-1"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
-watch(api_jaxrs_correlatio_116_q, (v) => { api_jaxrs_correlatio_116_data.value = v ?? []; });
+
 const jaxrs_correlation_service_processing_unlink_type1_id1_type2_id2_ref = ref<any[]>([]);
 const jaxrs_correlation_service_processing_unlink_type1_id1_type2_id2_q = useQuery({
   queryKey: ['jaxrs_correlation_service_processing_unlink_type1_id1_type2_id2'],
@@ -358,10 +358,10 @@ const jaxrs_correlation_service_processing_unlink_type1_id1_type2_id2_q = useQue
 });
 const api_jaxrs_ge_584_data = ref<any[]>([]);
 const { data: api_jaxrs_ge_584_q } = useQuery({queryKey: ['api_jaxrs_ge_584', '/jaxrs/general/assemble/control/attendscope/create'], queryFn: async () => { try { const r = await api.get("/jaxrs/general/assemble/control/attendscope/create"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
-watch(api_jaxrs_ge_584_q, (v) => { api_jaxrs_ge_584_data.value = v ?? []; });
+
 const api_jaxrs_ge_88_data = ref<any[]>([]);
 const { data: api_jaxrs_ge_88_q } = useQuery({queryKey: ['api_jaxrs_ge_88', '/jaxrs/general/assemble/control/ecnet/check'], queryFn: async () => { try { const r = await api.get("/jaxrs/general/assemble/control/ecnet/check"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
-watch(api_jaxrs_ge_88_q, (v) => { api_jaxrs_ge_88_data.value = v ?? []; });
+
 const jaxrs_general_assemble_control_excel_upload_with_url_ref = ref<any[]>([]);
 const jaxrs_general_assemble_control_excel_upload_with_url_q = useQuery({
   queryKey: ['jaxrs_general_assemble_control_excel_upload_with_url'],
@@ -373,10 +373,10 @@ const jaxrs_general_assemble_control_excel_upload_with_url_q = useQuery({
 });
 const api_jaxrs_general_as_790_data = ref<any[]>([]);
 const { data: api_jaxrs_general_as_790_q } = useQuery({queryKey: ['api_jaxrs_general_as_790', '/jaxrs/general/assemble/control/generalfile'], queryFn: async () => { try { const r = await api.get("/jaxrs/general/assemble/control/generalfile"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
-watch(api_jaxrs_general_as_790_q, (v) => { api_jaxrs_general_as_790_data.value = v ?? []; });
+
 const api_jaxrs_ge_799_data = ref<any[]>([]);
 const { data: api_jaxrs_ge_799_q } = useQuery({queryKey: ['api_jaxrs_ge_799', '/jaxrs/general/assemble/control/invoice/create'], queryFn: async () => { try { const r = await api.get("/jaxrs/general/assemble/control/invoice/create"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
-watch(api_jaxrs_ge_799_q, (v) => { api_jaxrs_ge_799_data.value = v ?? []; });
+
 const jaxrs_general_assemble_control_invoice_upload_ref = ref<any[]>([]);
 const jaxrs_general_assemble_control_invoice_upload_q = useQuery({
   queryKey: ['jaxrs_general_assemble_control_invoice_upload'],
@@ -388,7 +388,7 @@ const jaxrs_general_assemble_control_invoice_upload_q = useQuery({
 });
 const api_jaxrs_ge_807_data = ref<any[]>([]);
 const { data: api_jaxrs_ge_807_q } = useQuery({queryKey: ['api_jaxrs_ge_807', '/jaxrs/general/assemble/control/invoice/upload/for/create'], queryFn: async () => { try { const r = await api.get("/jaxrs/general/assemble/control/invoice/upload/for/create"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
-watch(api_jaxrs_ge_807_q, (v) => { api_jaxrs_ge_807_data.value = v ?? []; });
+
 const jaxrs_general_assemble_control_invoice_upload_with_url_ref = ref<any[]>([]);
 const jaxrs_general_assemble_control_invoice_upload_with_url_q = useQuery({
   queryKey: ['jaxrs_general_assemble_control_invoice_upload_with_url'],
@@ -409,10 +409,10 @@ const jaxrs_general_assemble_control_office_html_to_word_q = useQuery({
 });
 const api_jaxrs_ge_132_data = ref<any[]>([]);
 const { data: api_jaxrs_ge_132_q } = useQuery({queryKey: ['api_jaxrs_ge_132', '/jaxrs/general/assemble/control/qrcode'], queryFn: async () => { try { const r = await api.get("/jaxrs/general/assemble/control/qrcode"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
-watch(api_jaxrs_ge_132_q, (v) => { api_jaxrs_ge_132_data.value = v ?? []; });
+
 const api_jaxrs_ge_60_data = ref<any[]>([]);
 const { data: api_jaxrs_ge_60_q } = useQuery({queryKey: ['api_jaxrs_ge_60', '/jaxrs/general/assemble/control/securityclearance/create'], queryFn: async () => { try { const r = await api.get("/jaxrs/general/assemble/control/securityclearance/create"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
-watch(api_jaxrs_ge_60_q, (v) => { api_jaxrs_ge_60_data.value = v ?? []; });
+
 const jaxrs_general_assemble_control_securityclearance_subject_ref = ref<any[]>([]);
 const jaxrs_general_assemble_control_securityclearance_subject_q = useQuery({
   queryKey: ['jaxrs_general_assemble_control_securityclearance_subject'],
@@ -433,7 +433,7 @@ const jaxrs_general_assemble_control_securityclearance_system_q = useQuery({
 });
 const api_jaxrs_ge_638_data = ref<any[]>([]);
 const { data: api_jaxrs_ge_638_q } = useQuery({queryKey: ['api_jaxrs_ge_638', '/jaxrs/general/assemble/control/status/update'], queryFn: async () => { try { const r = await api.get("/jaxrs/general/assemble/control/status/update"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
-watch(api_jaxrs_ge_638_q, (v) => { api_jaxrs_ge_638_data.value = v ?? []; });
+
 const jaxrs_general_assemble_control_upgrade_2021090901_ref = ref<any[]>([]);
 const jaxrs_general_assemble_control_upgrade_2021090901_q = useQuery({
   queryKey: ['jaxrs_general_assemble_control_upgrade_2021090901'],
@@ -445,28 +445,28 @@ const jaxrs_general_assemble_control_upgrade_2021090901_q = useQuery({
 });
 const api_jaxrs_ge_840_data = ref<any[]>([]);
 const { data: api_jaxrs_ge_840_q } = useQuery({queryKey: ['api_jaxrs_ge_840', '/jaxrs/general/assemble/control/worktime/isholiday/2024-01-01'], queryFn: async () => { try { const r = await api.get("/jaxrs/general/assemble/control/worktime/isholiday/2024-01-01"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
-watch(api_jaxrs_ge_840_q, (v) => { api_jaxrs_ge_840_data.value = v ?? []; });
+
 const api_jaxrs_ge_83_data = ref<any[]>([]);
 const { data: api_jaxrs_ge_83_q } = useQuery({queryKey: ['api_jaxrs_ge_83', '/jaxrs/general/assemble/control/worktime/minutes/of/workday'], queryFn: async () => { try { const r = await api.get("/jaxrs/general/assemble/control/worktime/minutes/of/workday"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
-watch(api_jaxrs_ge_83_q, (v) => { api_jaxrs_ge_83_data.value = v ?? []; });
+
 const api_jaxrs_general_di_728_data = ref<any[]>([]);
 const { data: api_jaxrs_general_di_728_q } = useQuery({queryKey: ['api_jaxrs_general_di_728', '/jaxrs/general/dict/create'], queryFn: async () => { try { const r = await api.get("/jaxrs/general/dict/create"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
-watch(api_jaxrs_general_di_728_q, (v) => { api_jaxrs_general_di_728_data.value = v ?? []; });
+
 const api_jaxrs_general_di_462_data = ref<any[]>([]);
 const { data: api_jaxrs_general_di_462_q } = useQuery({queryKey: ['api_jaxrs_general_di_462', '/jaxrs/general/dict/list'], queryFn: async () => { try { const r = await api.get("/jaxrs/general/dict/list"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
-watch(api_jaxrs_general_di_462_q, (v) => { api_jaxrs_general_di_462_data.value = v ?? []; });
+
 const api_jaxrs_general_fi_958_data = ref<any[]>([]);
 const { data: api_jaxrs_general_fi_958_q } = useQuery({queryKey: ['api_jaxrs_general_fi_958', '/jaxrs/general/file/create'], queryFn: async () => { try { const r = await api.get("/jaxrs/general/file/create"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
-watch(api_jaxrs_general_fi_958_q, (v) => { api_jaxrs_general_fi_958_data.value = v ?? []; });
+
 const api_jaxrs_ge_977_data = ref<any[]>([]);
 const { data: api_jaxrs_ge_977_q } = useQuery({queryKey: ['api_jaxrs_ge_977', '/jaxrs/general/invoice/create'], queryFn: async () => { try { const r = await api.get("/jaxrs/general/invoice/create"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
-watch(api_jaxrs_ge_977_q, (v) => { api_jaxrs_ge_977_data.value = v ?? []; });
+
 const api_jaxrs_general_in_370_data = ref<any[]>([]);
 const { data: api_jaxrs_general_in_370_q } = useQuery({queryKey: ['api_jaxrs_general_in_370', '/jaxrs/general/invoice/list'], queryFn: async () => { try { const r = await api.get("/jaxrs/general/invoice/list"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
-watch(api_jaxrs_general_in_370_q, (v) => { api_jaxrs_general_in_370_data.value = v ?? []; });
+
 const api_jaxrs_ge_489_data = ref<any[]>([]);
 const { data: api_jaxrs_ge_489_q } = useQuery({queryKey: ['api_jaxrs_ge_489', '/jaxrs/general/securityclearance/enable'], queryFn: async () => { try { const r = await api.get("/jaxrs/general/securityclearance/enable"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
-watch(api_jaxrs_ge_489_q, (v) => { api_jaxrs_ge_489_data.value = v ?? []; });
+
 </script>
 <style scoped>
 .crud-view{display:flex;flex-direction:column;gap:16px;height:100%}
