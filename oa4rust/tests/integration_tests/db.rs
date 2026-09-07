@@ -1,3 +1,4 @@
+#![allow(dead_code)]
 use std::sync::{Arc, OnceLock};
 
 use anyhow::Context as _;

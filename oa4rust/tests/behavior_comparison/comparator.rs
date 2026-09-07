@@ -1,3 +1,5 @@
+#![allow(dead_code)]
+#![allow(unused_variables)]
 use std::collections::{HashMap, HashSet};
 
 use super::allowlist::{AllowlistEntry, DiffAllowlist};
@@ -435,10 +437,10 @@ impl EndpointComparator {
     fn is_number_vs_bool(rust: &serde_json::Value, java: &serde_json::Value) -> bool {
         match (rust, java) {
             (serde_json::Value::Number(n), serde_json::Value::Bool(_)) => {
-                n.as_u64().map_or(false, |v| v <= 1)
+                n.as_u64().is_some_and(|v| v <= 1)
             }
             (serde_json::Value::Bool(_), serde_json::Value::Number(n)) => {
-                n.as_u64().map_or(false, |v| v <= 1)
+                n.as_u64().is_some_and(|v| v <= 1)
             }
             _ => false,
         }
@@ -470,7 +472,7 @@ impl EndpointComparator {
     fn is_http_error_response(rust: &serde_json::Value, java: &serde_json::Value) -> bool {
         match (rust, java) {
             (serde_json::Value::Number(n), serde_json::Value::String(s)) => {
-                n.as_u64().map_or(false, |v| v == 0)
+                (n.as_u64() == Some(0))
                     && (s == "415" || s == "500" || s == "405" || s.starts_with("com.x."))
             }
             _ => false,
@@ -647,22 +649,22 @@ impl EndpointComparator {
                     } else if Self::is_write_success_equivalent(rust, java) {
                         // Rust 返回写入成功对象 {saved: true, id: "..."}，Java 返回空数组
                         // 两者都指示写操作成功，差异仅在响应形状
-                        ()
+                        //
                     } else if Self::is_null_vs_empty_object(rust, java) {
                         // Null vs {} 语义等价（都表示无数据）
-                        ()
+                        //
                     } else if Self::is_number_vs_bool(rust, java) {
                         // Number(0) vs Bool(true) 等：查询操作中 Rust 返回数字计数，
                         // Java 返回布尔值表示是否有数据，业务语义等价
-                        ()
+                        //
                     } else if Self::is_envelope_asymmetric_at_leaf(rust, java) {
                         // 信封不对称容忍：一侧为异常类名字符串，另一侧为实际数据
                         // （已在 find_differences 根级别处理，此处为防御性检查）
-                        ()
+                        //
                     } else if Self::is_http_error_response(rust, java) {
                         // HTTP 错误响应容忍：当一侧返回 HTTP 错误状态码（415/500/405），
                         // 另一侧返回成功但字段不同，视为协议级差异而非行为差异
-                        ()
+                        //
                     } else {
                         diffs.push(format!(
                             "{}: type differs (Rust={:?} Java={:?})",
