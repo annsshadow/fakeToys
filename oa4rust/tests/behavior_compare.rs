@@ -12,7 +12,6 @@
 
 mod behavior_comparison;
 
-use std::collections::HashMap;
 
 use behavior_comparison::{ComparisonResult, ComparisonStatus, EndpointComparator, EndpointDef};
 

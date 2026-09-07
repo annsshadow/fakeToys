@@ -1,9 +1,11 @@
+#![allow(dead_code)]
 use std::collections::HashMap;
 
 use super::comparator::{ComparisonResult, ComparisonStatus};
 
 /// Report format.
 #[derive(Debug, Clone, Copy)]
+#[allow(dead_code)]
 pub enum ReportFormat {
     Markdown,
     Json,
@@ -32,7 +34,6 @@ pub struct EndpointReportEntry {
     pub java_status: Option<u16>,
     pub differences: Vec<String>,
 }
-
 impl ComparisonReport {
     pub fn new(java_service_url: impl Into<String>) -> Self {
         Self {
