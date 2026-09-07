@@ -258,7 +258,7 @@ function fmtTime(t?: string) { if (!t) return ''; try { return new Date(t).toLoc
 onMounted(() => { qc.invalidateQueries({ queryKey: ['config','list'] }) })
 
 const api_input_pr_78_data = ref<any[]>([]);
-const { data: api_input_pr_78_q } = useQuery({queryKey: ['api_input_pr_78', '/jaxrs/input/prepare/create'], queryFn: async () => { try { const r = await api.get("/jaxrs/input/prepare/create"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+const { data: api_input_pr_78_q } = useQuery({queryKey: ['api_input_pr_78', '/jaxrs/input/prepare/create'], queryFn: async () => { try { const r = await api.get("/jaxrs/input/prepare/create"); return (r.data ?? []) as any[]; } catch { return []; } }});
 
 const input_compare_mockputtopost_ref = ref<any[]>([]);
 const input_compare_mockputtopost_q = useQuery({
@@ -267,7 +267,7 @@ const input_compare_mockputtopost_q = useQuery({
     try { const r = await api.get("/jaxrs/input/compare/mockputtopost"); return (r.data ?? []) as any[]; }
     catch { return []; }
   },
-  staleTime: 60000,
+  
 });
 const input_prepare_cover_ref = ref<any[]>([]);
 const input_prepare_cover_q = useQuery({
@@ -276,7 +276,7 @@ const input_prepare_cover_q = useQuery({
     try { const r = await api.get("/jaxrs/input/prepare/cover"); return (r.data ?? []) as any[]; }
     catch { return []; }
   },
-  staleTime: 60000,
+  
 });
 const input_create_mockputtopost_ref = ref<any[]>([]);
 const input_create_mockputtopost_q = useQuery({
@@ -285,10 +285,10 @@ const input_create_mockputtopost_q = useQuery({
     try { const r = await api.get("/jaxrs/input/create/mockputtopost"); return (r.data ?? []) as any[]; }
     catch { return []; }
   },
-  staleTime: 60000,
+  
 });
 const api_input_compare_data = ref<any[]>([]);
-const { data: api_input_compare_q } = useQuery({queryKey: ['api_input_compare', '/jaxrs/input/compare'], queryFn: async () => { try { const r = await api.get("/jaxrs/input/compare"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+const { data: api_input_compare_q } = useQuery({queryKey: ['api_input_compare', '/jaxrs/input/compare'], queryFn: async () => { try { const r = await api.get("/jaxrs/input/compare"); return (r.data ?? []) as any[]; } catch { return []; } }});
 const input_cover_ref = ref<any[]>([]);
 const input_cover_q = useQuery({
   queryKey: ['input_cover'],
@@ -296,7 +296,7 @@ const input_cover_q = useQuery({
     try { const r = await api.get("/jaxrs/input/cover"); return (r.data ?? []) as any[]; }
     catch { return []; }
   },
-  staleTime: 60000,
+  
 });
 const input_prepare_cover_mockputtopost_ref = ref<any[]>([]);
 const input_prepare_cover_mockputtopost_q = useQuery({
@@ -305,7 +305,7 @@ const input_prepare_cover_mockputtopost_q = useQuery({
     try { const r = await api.get("/jaxrs/input/prepare/cover/mockputtopost"); return (r.data ?? []) as any[]; }
     catch { return []; }
   },
-  staleTime: 60000,
+  
 });
 const input_prepare_create_mockputtopost_ref = ref<any[]>([]);
 const input_prepare_create_mockputtopost_q = useQuery({
@@ -314,10 +314,10 @@ const input_prepare_create_mockputtopost_q = useQuery({
     try { const r = await api.get("/jaxrs/input/prepare/create/mockputtopost"); return (r.data ?? []) as any[]; }
     catch { return []; }
   },
-  staleTime: 60000,
+  
 });
 const api_input_create_data = ref<any[]>([]);
-const { data: api_input_create_q } = useQuery({queryKey: ['api_input_create', '/jaxrs/input/create'], queryFn: async () => { try { const r = await api.get("/jaxrs/input/create"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+const { data: api_input_create_q } = useQuery({queryKey: ['api_input_create', '/jaxrs/input/create'], queryFn: async () => { try { const r = await api.get("/jaxrs/input/create"); return (r.data ?? []) as any[]; } catch { return []; } }});
 const input_cover_mockputtopost_ref = ref<any[]>([]);
 const input_cover_mockputtopost_q = useQuery({
   queryKey: ['input_cover_mockputtopost'],
@@ -325,7 +325,7 @@ const input_cover_mockputtopost_q = useQuery({
     try { const r = await api.get("/jaxrs/input/cover/mockputtopost"); return (r.data ?? []) as any[]; }
     catch { return []; }
   },
-  staleTime: 60000,
+  
 });
 
 
@@ -353,12 +353,12 @@ function confirmMsg(msg: string): Promise<boolean> {
 
 
 const api_config_data = ref<any[]>([]);
-const { data: api_config_q } = useQuery({queryKey: ['api_config', '/jaxrs/config'], queryFn: async () => { try { const r = await api.get("/jaxrs/config"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+const { data: api_config_q } = useQuery({queryKey: ['api_config', '/jaxrs/config'], queryFn: async () => { try { const r = await api.get("/jaxrs/config"); return (r.data ?? []) as any[]; } catch { return []; } }});
 const api_config_s_497_data = ref<any[]>([]);
-const { data: api_config_s_497_q } = useQuery({queryKey: ['api_config_s_497', '/jaxrs/config/system/config'], queryFn: async () => { try { const r = await api.get("/jaxrs/config/system/config"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+const { data: api_config_s_497_q } = useQuery({queryKey: ['api_config_s_497', '/jaxrs/config/system/config'], queryFn: async () => { try { const r = await api.get("/jaxrs/config/system/config"); return (r.data ?? []) as any[]; } catch { return []; } }});
 
 const api_config_i_771_data = ref<any[]>([]);
-const { data: api_config_i_771_q } = useQuery({queryKey: ['api_config_i_771', '/jaxrs/config/is/file/manager'], queryFn: async () => { try { const r = await api.get("/jaxrs/config/is/file/manager"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+const { data: api_config_i_771_q } = useQuery({queryKey: ['api_config_i_771', '/jaxrs/config/is/file/manager'], queryFn: async () => { try { const r = await api.get("/jaxrs/config/is/file/manager"); return (r.data ?? []) as any[]; } catch { return []; } }});
 
 
 </script>

@@ -351,39 +351,39 @@ onMounted(() => {
 });
 
 const api_core_ent_719_data = ref<any[]>([]);
-const { data: api_core_ent_719_q } = useQuery({queryKey: ['api_core_ent_719', '/jaxrs/bbs/core/entity/section'], queryFn: async () => { try { const r = await api.get("/jaxrs/bbs/core/entity/section"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+const { data: api_core_ent_719_q } = useQuery({queryKey: ['api_core_ent_719', '/jaxrs/bbs/core/entity/section'], queryFn: async () => { try { const r = await api.get("/jaxrs/bbs/core/entity/section"); return (r.data ?? []) as any[]; } catch { return []; } }});
 
 const api_subject__378_data = ref<any[]>([]);
-const { data: api_subject__378_q } = useQuery({queryKey: ['api_subject__378', '/jaxrs/bbs/assemble/control/subject/view/sub-001'], queryFn: async () => { try { const r = await api.get("/jaxrs/bbs/assemble/control/subject/view/sub-001"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+const { data: api_subject__378_q } = useQuery({queryKey: ['api_subject__378', '/jaxrs/bbs/assemble/control/subject/view/sub-001'], queryFn: async () => { try { const r = await api.get("/jaxrs/bbs/assemble/control/subject/view/sub-001"); return (r.data ?? []) as any[]; } catch { return []; } }});
 
 const api_bbsreply_10_data = ref<any[]>([]);
-const { data: api_bbsreply_10_q } = useQuery({queryKey: ['api_bbsreply_10', '/jaxrs/bbs/assemble/control/bbsreply/list/recent'], queryFn: async () => { try { const r = await api.get("/jaxrs/bbs/assemble/control/bbsreply/list/recent"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+const { data: api_bbsreply_10_q } = useQuery({queryKey: ['api_bbsreply_10', '/jaxrs/bbs/assemble/control/bbsreply/list/recent'], queryFn: async () => { try { const r = await api.get("/jaxrs/bbs/assemble/control/bbsreply/list/recent"); return (r.data ?? []) as any[]; } catch { return []; } }});
 
 const api_bbs_post_list_data = ref<any[]>([]);
-const { data: api_bbs_post_list_q } = useQuery({queryKey: ['api_bbs_post_list', '/jaxrs/bbs/post/list'], queryFn: async () => { try { const r = await api.get("/jaxrs/bbs/post/list"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+const { data: api_bbs_post_list_q } = useQuery({queryKey: ['api_bbs_post_list', '/jaxrs/bbs/post/list'], queryFn: async () => { try { const r = await api.get("/jaxrs/bbs/post/list"); return (r.data ?? []) as any[]; } catch { return []; } }});
 const api_section__170_data = ref<any[]>([]);
-const { data: api_section__170_q } = useQuery({queryKey: ['api_section__170', '/jaxrs/bbs/section/view/all'], queryFn: async () => { try { const r = await api.get("/jaxrs/bbs/section/view/all"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+const { data: api_section__170_q } = useQuery({queryKey: ['api_section__170', '/jaxrs/bbs/section/view/all'], queryFn: async () => { try { const r = await api.get("/jaxrs/bbs/section/view/all"); return (r.data ?? []) as any[]; } catch { return []; } }});
 
 const api_topic_re_887_data = ref<any[]>([]);
-const { data: api_topic_re_887_q } = useQuery({queryKey: ['api_topic_re_887', '/jaxrs/bbs/assemble/control/topic/recommended/index'], queryFn: async () => { try { const r = await api.get("/jaxrs/bbs/assemble/control/topic/recommended/index"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+const { data: api_topic_re_887_q } = useQuery({queryKey: ['api_topic_re_887', '/jaxrs/bbs/assemble/control/topic/recommended/index'], queryFn: async () => { try { const r = await api.get("/jaxrs/bbs/assemble/control/topic/recommended/index"); return (r.data ?? []) as any[]; } catch { return []; } }});
 
 const api_core_ent_461_data = ref<any[]>([]);
-const { data: api_core_ent_461_q } = useQuery({queryKey: ['api_core_ent_461', '/jaxrs/bbs/core/entity/forum'], queryFn: async () => { try { const r = await api.get("/jaxrs/bbs/core/entity/forum"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+const { data: api_core_ent_461_q } = useQuery({queryKey: ['api_core_ent_461', '/jaxrs/bbs/core/entity/forum'], queryFn: async () => { try { const r = await api.get("/jaxrs/bbs/core/entity/forum"); return (r.data ?? []) as any[]; } catch { return []; } }});
 
 const api_forum_view_1_data = ref<any[]>([]);
-const { data: api_forum_view_1_q } = useQuery({queryKey: ['api_forum_view_1', '/jaxrs/bbs/forum/view/1'], queryFn: async () => { try { const r = await api.get("/jaxrs/bbs/forum/view/1"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+const { data: api_forum_view_1_q } = useQuery({queryKey: ['api_forum_view_1', '/jaxrs/bbs/forum/view/1'], queryFn: async () => { try { const r = await api.get("/jaxrs/bbs/forum/view/1"); return (r.data ?? []) as any[]; } catch { return []; } }});
 
 const api_control__714_data = ref<any[]>([]);
-const { data: api_control__714_q } = useQuery({queryKey: ['api_control__714', '/jaxrs/bbs/assemble/control/topic/search'], queryFn: async () => { try { const r = await api.get("/jaxrs/bbs/assemble/control/topic/search"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+const { data: api_control__714_q } = useQuery({queryKey: ['api_control__714', '/jaxrs/bbs/assemble/control/topic/search'], queryFn: async () => { try { const r = await api.get("/jaxrs/bbs/assemble/control/topic/search"); return (r.data ?? []) as any[]; } catch { return []; } }});
 
 const api_core_ent_602_data = ref<any[]>([]);
-const { data: api_core_ent_602_q } = useQuery({queryKey: ['api_core_ent_602', '/jaxrs/bbs/core/entity/subject'], queryFn: async () => { try { const r = await api.get("/jaxrs/bbs/core/entity/subject"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+const { data: api_core_ent_602_q } = useQuery({queryKey: ['api_core_ent_602', '/jaxrs/bbs/core/entity/subject'], queryFn: async () => { try { const r = await api.get("/jaxrs/bbs/core/entity/subject"); return (r.data ?? []) as any[]; } catch { return []; } }});
 
 const api_bbs_asse_881_data = ref<any[]>([]);
-const { data: api_bbs_asse_881_q } = useQuery({queryKey: ['api_bbs_asse_881', '/jaxrs/bbs/assemble/control'], queryFn: async () => { try { const r = await api.get("/jaxrs/bbs/assemble/control"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+const { data: api_bbs_asse_881_q } = useQuery({queryKey: ['api_bbs_asse_881', '/jaxrs/bbs/assemble/control'], queryFn: async () => { try { const r = await api.get("/jaxrs/bbs/assemble/control"); return (r.data ?? []) as any[]; } catch { return []; } }});
 
 const api_assemble_131_data = ref<any[]>([]);
-const { data: api_assemble_131_q } = useQuery({queryKey: ['api_assemble_131', '/jaxrs/bbs/assemble/control/bbstopic'], queryFn: async () => { try { const r = await api.get("/jaxrs/bbs/assemble/control/bbstopic"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+const { data: api_assemble_131_q } = useQuery({queryKey: ['api_assemble_131', '/jaxrs/bbs/assemble/control/bbstopic'], queryFn: async () => { try { const r = await api.get("/jaxrs/bbs/assemble/control/bbstopic"); return (r.data ?? []) as any[]; } catch { return []; } }});
 
 const section_list_test_forum_id_ref = ref<any[]>([]);
 const section_list_test_forum_id_q = useQuery({
@@ -392,28 +392,28 @@ const section_list_test_forum_id_q = useQuery({
     try { const r = await api.get("/jaxrs/bbs/core/entity/section/list/test-forum-id"); return (r.data ?? []) as any[]; }
     catch { return []; }
   },
-  staleTime: 60000,
+  
 });
 const api_subject__154_data = ref<any[]>([]);
-const { data: api_subject__154_q } = useQuery({queryKey: ['api_subject__154', '/jaxrs/bbs/assemble/control/subject/index/list'], queryFn: async () => { try { const r = await api.get("/jaxrs/bbs/assemble/control/subject/index/list"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+const { data: api_subject__154_q } = useQuery({queryKey: ['api_subject__154', '/jaxrs/bbs/assemble/control/subject/index/list'], queryFn: async () => { try { const r = await api.get("/jaxrs/bbs/assemble/control/subject/index/list"); return (r.data ?? []) as any[]; } catch { return []; } }});
 
 const api_topic_fi_164_data = ref<any[]>([]);
-const { data: api_topic_fi_164_q } = useQuery({queryKey: ['api_topic_fi_164', '/jaxrs/bbs/assemble/control/topic/filter/listsubjectinfo'], queryFn: async () => { try { const r = await api.get("/jaxrs/bbs/assemble/control/topic/filter/listsubjectinfo"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+const { data: api_topic_fi_164_q } = useQuery({queryKey: ['api_topic_fi_164', '/jaxrs/bbs/assemble/control/topic/filter/listsubjectinfo'], queryFn: async () => { try { const r = await api.get("/jaxrs/bbs/assemble/control/topic/filter/listsubjectinfo"); return (r.data ?? []) as any[]; } catch { return []; } }});
 
 const api_topic_fi_3_data = ref<any[]>([]);
-const { data: api_topic_fi_3_q } = useQuery({queryKey: ['api_topic_fi_3', '/jaxrs/bbs/assemble/control/topic/filter/list'], queryFn: async () => { try { const r = await api.get("/jaxrs/bbs/assemble/control/topic/filter/list"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+const { data: api_topic_fi_3_q } = useQuery({queryKey: ['api_topic_fi_3', '/jaxrs/bbs/assemble/control/topic/filter/list'], queryFn: async () => { try { const r = await api.get("/jaxrs/bbs/assemble/control/topic/filter/list"); return (r.data ?? []) as any[]; } catch { return []; } }});
 
 const api_core_ent_980_data = ref<any[]>([]);
-const { data: api_core_ent_980_q } = useQuery({queryKey: ['api_core_ent_980', '/jaxrs/bbs/core/entity/reply'], queryFn: async () => { try { const r = await api.get("/jaxrs/bbs/core/entity/reply"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+const { data: api_core_ent_980_q } = useQuery({queryKey: ['api_core_ent_980', '/jaxrs/bbs/core/entity/reply'], queryFn: async () => { try { const r = await api.get("/jaxrs/bbs/core/entity/reply"); return (r.data ?? []) as any[]; } catch { return []; } }});
 
 const api_control__57_data = ref<any[]>([]);
-const { data: api_control__57_q } = useQuery({queryKey: ['api_control__57', '/jaxrs/bbs/assemble/control/subject/statgrade'], queryFn: async () => { try { const r = await api.get("/jaxrs/bbs/assemble/control/subject/statgrade"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+const { data: api_control__57_q } = useQuery({queryKey: ['api_control__57', '/jaxrs/bbs/assemble/control/subject/statgrade'], queryFn: async () => { try { const r = await api.get("/jaxrs/bbs/assemble/control/subject/statgrade"); return (r.data ?? []) as any[]; } catch { return []; } }});
 
 const api_bbs_subj_802_data = ref<any[]>([]);
-const { data: api_bbs_subj_802_q } = useQuery({queryKey: ['api_bbs_subj_802', '/jaxrs/bbs/subject/search'], queryFn: async () => { try { const r = await api.get("/jaxrs/bbs/subject/search"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+const { data: api_bbs_subj_802_q } = useQuery({queryKey: ['api_bbs_subj_802', '/jaxrs/bbs/subject/search'], queryFn: async () => { try { const r = await api.get("/jaxrs/bbs/subject/search"); return (r.data ?? []) as any[]; } catch { return []; } }});
 
 const api_entity_s_932_data = ref<any[]>([]);
-const { data: api_entity_s_932_q } = useQuery({queryKey: ['api_entity_s_932', '/jaxrs/bbs/core/entity/subject/subject-001'], queryFn: async () => { try { const r = await api.get("/jaxrs/bbs/core/entity/subject/subject-001"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+const { data: api_entity_s_932_q } = useQuery({queryKey: ['api_entity_s_932', '/jaxrs/bbs/core/entity/subject/subject-001'], queryFn: async () => { try { const r = await api.get("/jaxrs/bbs/core/entity/subject/subject-001"); return (r.data ?? []) as any[]; } catch { return []; } }});
 
 
 
@@ -424,7 +424,7 @@ const assemble_control_topic_create_q = useQuery({
     try { const r = await api.get("/jaxrs/bbs/assemble/control/topic/create"); return (r.data ?? []) as any[]; }
     catch { return []; }
   },
-  staleTime: 60000,
+  
 });
 const core_entity_forum_forum_001_ref = ref<any[]>([]);
 const core_entity_forum_forum_001_q = useQuery({
@@ -433,7 +433,7 @@ const core_entity_forum_forum_001_q = useQuery({
     try { const r = await api.get("/jaxrs/bbs/core/entity/forum/forum-001"); return (r.data ?? []) as any[]; }
     catch { return []; }
   },
-  staleTime: 60000,
+  
 });
 const bbs_subject_list_1_ref = ref<any[]>([]);
 const bbs_subject_list_1_q = useQuery({
@@ -442,7 +442,7 @@ const bbs_subject_list_1_q = useQuery({
     try { const r = await api.get("/jaxrs/bbs/subject/list/1"); return (r.data ?? []) as any[]; }
     catch { return []; }
   },
-  staleTime: 60000,
+  
 });
 const assemble_control_forum_list_ref = ref<any[]>([]);
 const assemble_control_forum_list_q = useQuery({
@@ -451,7 +451,7 @@ const assemble_control_forum_list_q = useQuery({
     try { const r = await api.get("/jaxrs/bbs/assemble/control/forum/list"); return (r.data ?? []) as any[]; }
     catch { return []; }
   },
-  staleTime: 60000,
+  
 });
 const assemble_control_subjectattach_list_ref = ref<any[]>([]);
 const assemble_control_subjectattach_list_q = useQuery({
@@ -460,7 +460,7 @@ const assemble_control_subjectattach_list_q = useQuery({
     try { const r = await api.get("/jaxrs/bbs/assemble/control/subjectattach/list"); return (r.data ?? []) as any[]; }
     catch { return []; }
   },
-  staleTime: 60000,
+  
 });
 const bbs_assemble_control_uuid_ref = ref<any[]>([]);
 const bbs_assemble_control_uuid_q = useQuery({
@@ -469,7 +469,7 @@ const bbs_assemble_control_uuid_q = useQuery({
     try { const r = await api.get("/jaxrs/bbs/assemble/control/uuid"); return (r.data ?? []) as any[]; }
     catch { return []; }
   },
-  staleTime: 60000,
+  
 });
 const core_entity_forum_list_ref = ref<any[]>([]);
 const core_entity_forum_list_q = useQuery({
@@ -478,7 +478,7 @@ const core_entity_forum_list_q = useQuery({
     try { const r = await api.get("/jaxrs/bbs/core/entity/forum/list"); return (r.data ?? []) as any[]; }
     catch { return []; }
   },
-  staleTime: 60000,
+  
 });
 const bbs_assemble_control_bbsforum_ref = ref<any[]>([]);
 const bbs_assemble_control_bbsforum_q = useQuery({
@@ -487,7 +487,7 @@ const bbs_assemble_control_bbsforum_q = useQuery({
     try { const r = await api.get("/jaxrs/bbs/assemble/control/bbsforum"); return (r.data ?? []) as any[]; }
     catch { return []; }
   },
-  staleTime: 60000,
+  
 });
 const assemble_control_user_info_ref = ref<any[]>([]);
 const assemble_control_user_info_q = useQuery({
@@ -496,7 +496,7 @@ const assemble_control_user_info_q = useQuery({
     try { const r = await api.get("/jaxrs/bbs/assemble/control/user/info"); return (r.data ?? []) as any[]; }
     catch { return []; }
   },
-  staleTime: 60000,
+  
 });
 const core_entity_subject_search_ref = ref<any[]>([]);
 const core_entity_subject_search_q = useQuery({
@@ -505,7 +505,7 @@ const core_entity_subject_search_q = useQuery({
     try { const r = await api.get("/jaxrs/bbs/core/entity/subject/search"); return (r.data ?? []) as any[]; }
     catch { return []; }
   },
-  staleTime: 60000,
+  
 });
 const assemble_control_delete_subject_ref = ref<any[]>([]);
 const assemble_control_delete_subject_q = useQuery({
@@ -514,7 +514,7 @@ const assemble_control_delete_subject_q = useQuery({
     try { const r = await api.get("/jaxrs/bbs/assemble/control/delete/subject"); return (r.data ?? []) as any[]; }
     catch { return []; }
   },
-  staleTime: 60000,
+  
 });
 const bbs_core_topic_list_ref = ref<any[]>([]);
 const bbs_core_topic_list_q = useQuery({
@@ -523,7 +523,7 @@ const bbs_core_topic_list_q = useQuery({
     try { const r = await api.get("/jaxrs/bbs/core/topic/list"); return (r.data ?? []) as any[]; }
     catch { return []; }
   },
-  staleTime: 60000,
+  
 });
 const assemble_control_shutup_list_ref = ref<any[]>([]);
 const assemble_control_shutup_list_q = useQuery({
@@ -532,7 +532,7 @@ const assemble_control_shutup_list_q = useQuery({
     try { const r = await api.get("/jaxrs/bbs/assemble/control/shutup/list"); return (r.data ?? []) as any[]; }
     catch { return []; }
   },
-  staleTime: 60000,
+  
 });
 const bbs_post_ref = ref<any[]>([]);
 const bbs_post_q = useQuery({
@@ -541,7 +541,7 @@ const bbs_post_q = useQuery({
     try { const r = await api.get("/jaxrs/bbs/post"); return (r.data ?? []) as any[]; }
     catch { return []; }
   },
-  staleTime: 60000,
+  
 });
 const assemble_control_bbstopic_list_ref = ref<any[]>([]);
 const assemble_control_bbstopic_list_q = useQuery({
@@ -550,7 +550,7 @@ const assemble_control_bbstopic_list_q = useQuery({
     try { const r = await api.get("/jaxrs/bbs/assemble/control/bbstopic/list"); return (r.data ?? []) as any[]; }
     catch { return []; }
   },
-  staleTime: 60000,
+  
 });
 const bbs_assemble_control_config_ref = ref<any[]>([]);
 const bbs_assemble_control_config_q = useQuery({
@@ -559,7 +559,7 @@ const bbs_assemble_control_config_q = useQuery({
     try { const r = await api.get("/jaxrs/bbs/assemble/control/config"); return (r.data ?? []) as any[]; }
     catch { return []; }
   },
-  staleTime: 60000,
+  
 });
 const bbs_subject_create_ref = ref<any[]>([]);
 const bbs_subject_create_q = useQuery({
@@ -568,7 +568,7 @@ const bbs_subject_create_q = useQuery({
     try { const r = await api.get("/jaxrs/bbs/subject/create"); return (r.data ?? []) as any[]; }
     catch { return []; }
   },
-  staleTime: 60000,
+  
 });
 const bbs_topic_list_ref = ref<any[]>([]);
 const bbs_topic_list_q = useQuery({
@@ -577,7 +577,7 @@ const bbs_topic_list_q = useQuery({
     try { const r = await api.get("/jaxrs/bbs/topic/list"); return (r.data ?? []) as any[]; }
     catch { return []; }
   },
-  staleTime: 60000,
+  
 });
 const bbs_ref = ref<any[]>([]);
 const bbs_q = useQuery({
@@ -586,7 +586,7 @@ const bbs_q = useQuery({
     try { const r = await api.get("/jaxrs/bbs"); return (r.data ?? []) as any[]; }
     catch { return []; }
   },
-  staleTime: 60000,
+  
 });
 const core_entity_section_section_001_ref = ref<any[]>([]);
 const core_entity_section_section_001_q = useQuery({
@@ -595,7 +595,7 @@ const core_entity_section_section_001_q = useQuery({
     try { const r = await api.get("/jaxrs/bbs/core/entity/section/section-001"); return (r.data ?? []) as any[]; }
     catch { return []; }
   },
-  staleTime: 60000,
+  
 });
 const bbs_topic_ref = ref<any[]>([]);
 const bbs_topic_q = useQuery({
@@ -604,7 +604,7 @@ const bbs_topic_q = useQuery({
     try { const r = await api.get("/jaxrs/bbs/topic"); return (r.data ?? []) as any[]; }
     catch { return []; }
   },
-  staleTime: 60000,
+  
 });
 const bbs_forum_view_all_ref = ref<any[]>([]);
 const bbs_forum_view_all_q = useQuery({
@@ -613,7 +613,7 @@ const bbs_forum_view_all_q = useQuery({
     try { const r = await api.get("/jaxrs/bbs/forum/view/all"); return (r.data ?? []) as any[]; }
     catch { return []; }
   },
-  staleTime: 60000,
+  
 });
 const assemble_control_delete_reply_ref = ref<any[]>([]);
 const assemble_control_delete_reply_q = useQuery({
@@ -622,7 +622,7 @@ const assemble_control_delete_reply_q = useQuery({
     try { const r = await api.get("/jaxrs/bbs/assemble/control/delete/reply"); return (r.data ?? []) as any[]; }
     catch { return []; }
   },
-  staleTime: 60000,
+  
 });
 const assemble_control_delete_forum_ref = ref<any[]>([]);
 const assemble_control_delete_forum_q = useQuery({
@@ -631,7 +631,7 @@ const assemble_control_delete_forum_q = useQuery({
     try { const r = await api.get("/jaxrs/bbs/assemble/control/delete/forum"); return (r.data ?? []) as any[]; }
     catch { return []; }
   },
-  staleTime: 60000,
+  
 });
 const assemble_control_picture_list_ref = ref<any[]>([]);
 const assemble_control_picture_list_q = useQuery({
@@ -640,7 +640,7 @@ const assemble_control_picture_list_q = useQuery({
     try { const r = await api.get("/jaxrs/bbs/assemble/control/picture/list"); return (r.data ?? []) as any[]; }
     catch { return []; }
   },
-  staleTime: 60000,
+  
 });
 
 
@@ -651,16 +651,16 @@ const entity_subject_list_test_section_id_q = useQuery({
     try { const r = await api.get("/jaxrs/bbs/core/entity/subject/list/test-section-id"); return (r.data ?? []) as any[]; }
     catch { return []; }
   },
-  staleTime: 60000,
+  
 });
 const api_control__149_data = ref<any[]>([]);
-const { data: api_control__149_q } = useQuery({queryKey: ['api_control__149', '/jaxrs/bbs/assemble/control/topic/recommended/list'], queryFn: async () => { try { const r = await api.get("/jaxrs/bbs/assemble/control/topic/recommended/list"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+const { data: api_control__149_q } = useQuery({queryKey: ['api_control__149', '/jaxrs/bbs/assemble/control/topic/recommended/list'], queryFn: async () => { try { const r = await api.get("/jaxrs/bbs/assemble/control/topic/recommended/list"); return (r.data ?? []) as any[]; } catch { return []; } }});
 
 const api_control__495_data = ref<any[]>([]);
-const { data: api_control__495_q } = useQuery({queryKey: ['api_control__495', '/jaxrs/bbs/assemble/control/topic/creamed/list'], queryFn: async () => { try { const r = await api.get("/jaxrs/bbs/assemble/control/topic/creamed/list"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+const { data: api_control__495_q } = useQuery({queryKey: ['api_control__495', '/jaxrs/bbs/assemble/control/topic/creamed/list'], queryFn: async () => { try { const r = await api.get("/jaxrs/bbs/assemble/control/topic/creamed/list"); return (r.data ?? []) as any[]; } catch { return []; } }});
 
 const api_control__813_data = ref<any[]>([]);
-const { data: api_control__813_q } = useQuery({queryKey: ['api_control__813', '/jaxrs/bbs/assemble/control/update/control/config'], queryFn: async () => { try { const r = await api.get("/jaxrs/bbs/assemble/control/update/control/config"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+const { data: api_control__813_q } = useQuery({queryKey: ['api_control__813', '/jaxrs/bbs/assemble/control/update/control/config'], queryFn: async () => { try { const r = await api.get("/jaxrs/bbs/assemble/control/update/control/config"); return (r.data ?? []) as any[]; } catch { return []; } }});
 
 const entity_subject_top_test_section_id_ref = ref<any[]>([]);
 const entity_subject_top_test_section_id_q = useQuery({
@@ -669,42 +669,42 @@ const entity_subject_top_test_section_id_q = useQuery({
     try { const r = await api.get("/jaxrs/bbs/core/entity/subject/top/test-section-id"); return (r.data ?? []) as any[]; }
     catch { return []; }
   },
-  staleTime: 60000,
+  
 });
 const api_control__909_data = ref<any[]>([]);
-const { data: api_control__909_q } = useQuery({queryKey: ['api_control__909', '/jaxrs/bbs/assemble/control/permission/section/sec-001'], queryFn: async () => { try { const r = await api.get("/jaxrs/bbs/assemble/control/permission/section/sec-001"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+const { data: api_control__909_q } = useQuery({queryKey: ['api_control__909', '/jaxrs/bbs/assemble/control/permission/section/sec-001'], queryFn: async () => { try { const r = await api.get("/jaxrs/bbs/assemble/control/permission/section/sec-001"); return (r.data ?? []) as any[]; } catch { return []; } }});
 
 const api_bbs_asse_610_data = ref<any[]>([]);
-const { data: api_bbs_asse_610_q } = useQuery({queryKey: ['api_bbs_asse_610', '/jaxrs/bbs_assemble_control'], queryFn: async () => { try { const r = await api.get("/jaxrs/bbs_assemble_control"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+const { data: api_bbs_asse_610_q } = useQuery({queryKey: ['api_bbs_asse_610', '/jaxrs/bbs_assemble_control'], queryFn: async () => { try { const r = await api.get("/jaxrs/bbs_assemble_control"); return (r.data ?? []) as any[]; } catch { return []; } }});
 
 const api_control_list_top_576_data = ref<any[]>([]);
-const { data: api_control_list_top_576_q } = useQuery({queryKey: ['api_control_list_top_576', '/jaxrs/bbs/assemble/control/list/topics/recommended'], queryFn: async () => { try { const r = await api.get("/jaxrs/bbs/assemble/control/list/topics/recommended"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+const { data: api_control_list_top_576_q } = useQuery({queryKey: ['api_control_list_top_576', '/jaxrs/bbs/assemble/control/list/topics/recommended'], queryFn: async () => { try { const r = await api.get("/jaxrs/bbs/assemble/control/list/topics/recommended"); return (r.data ?? []) as any[]; } catch { return []; } }});
 
 const api_control_list_rep_531_data = ref<any[]>([]);
-const { data: api_control_list_rep_531_q } = useQuery({queryKey: ['api_control_list_rep_531', '/jaxrs/bbs/assemble/control/list/reply/filter'], queryFn: async () => { try { const r = await api.get("/jaxrs/bbs/assemble/control/list/reply/filter"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+const { data: api_control_list_rep_531_q } = useQuery({queryKey: ['api_control_list_rep_531', '/jaxrs/bbs/assemble/control/list/reply/filter'], queryFn: async () => { try { const r = await api.get("/jaxrs/bbs/assemble/control/list/reply/filter"); return (r.data ?? []) as any[]; } catch { return []; } }});
 
 const api_control_list_sub_543_data = ref<any[]>([]);
-const { data: api_control_list_sub_543_q } = useQuery({queryKey: ['api_control_list_sub_543', '/jaxrs/bbs/assemble/control/list/subjects/filtered'], queryFn: async () => { try { const r = await api.get("/jaxrs/bbs/assemble/control/list/subjects/filtered"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+const { data: api_control_list_sub_543_q } = useQuery({queryKey: ['api_control_list_sub_543', '/jaxrs/bbs/assemble/control/list/subjects/filtered'], queryFn: async () => { try { const r = await api.get("/jaxrs/bbs/assemble/control/list/subjects/filtered"); return (r.data ?? []) as any[]; } catch { return []; } }});
 
 const api_assemble_control_930_data = ref<any[]>([]);
-const { data: api_assemble_control_930_q } = useQuery({queryKey: ['api_assemble_control_930', '/jaxrs/bbs/assemble/control/shutup/create'], queryFn: async () => { try { const r = await api.get("/jaxrs/bbs/assemble/control/shutup/create"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+const { data: api_assemble_control_930_q } = useQuery({queryKey: ['api_assemble_control_930', '/jaxrs/bbs/assemble/control/shutup/create'], queryFn: async () => { try { const r = await api.get("/jaxrs/bbs/assemble/control/shutup/create"); return (r.data ?? []) as any[]; } catch { return []; } }});
 
 const api_bbs_assemble_top_299_data = ref<any[]>([]);
-const { data: api_bbs_assemble_top_299_q } = useQuery({queryKey: ['api_bbs_assemble_top_299', '/jaxrs/bbs/assemble/topic/list'], queryFn: async () => { try { const r = await api.get("/jaxrs/bbs/assemble/topic/list"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+const { data: api_bbs_assemble_top_299_q } = useQuery({queryKey: ['api_bbs_assemble_top_299', '/jaxrs/bbs/assemble/topic/list'], queryFn: async () => { try { const r = await api.get("/jaxrs/bbs/assemble/topic/list"); return (r.data ?? []) as any[]; } catch { return []; } }});
 
 const api_control_topic_in_725_data = ref<any[]>([]);
-const { data: api_control_topic_in_725_q } = useQuery({queryKey: ['api_control_topic_in_725', '/jaxrs/bbs/assemble/control/topic/index/list'], queryFn: async () => { try { const r = await api.get("/jaxrs/bbs/assemble/control/topic/index/list"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+const { data: api_control_topic_in_725_q } = useQuery({queryKey: ['api_control_topic_in_725', '/jaxrs/bbs/assemble/control/topic/index/list'], queryFn: async () => { try { const r = await api.get("/jaxrs/bbs/assemble/control/topic/index/list"); return (r.data ?? []) as any[]; } catch { return []; } }});
 
 const api_assemble_control_501_data = ref<any[]>([]);
-const { data: api_assemble_control_501_q } = useQuery({queryKey: ['api_assemble_control_501', '/jaxrs/bbs/assemble/control/bbsforum/list'], queryFn: async () => { try { const r = await api.get("/jaxrs/bbs/assemble/control/bbsforum/list"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+const { data: api_assemble_control_501_q } = useQuery({queryKey: ['api_assemble_control_501', '/jaxrs/bbs/assemble/control/bbsforum/list'], queryFn: async () => { try { const r = await api.get("/jaxrs/bbs/assemble/control/bbsforum/list"); return (r.data ?? []) as any[]; } catch { return []; } }});
 
 const api_control_bbstopic_556_data = ref<any[]>([]);
-const { data: api_control_bbstopic_556_q } = useQuery({queryKey: ['api_control_bbstopic_556', '/jaxrs/bbs/assemble/control/bbstopic/list/recent'], queryFn: async () => { try { const r = await api.get("/jaxrs/bbs/assemble/control/bbstopic/list/recent"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+const { data: api_control_bbstopic_556_q } = useQuery({queryKey: ['api_control_bbstopic_556', '/jaxrs/bbs/assemble/control/bbstopic/list/recent'], queryFn: async () => { try { const r = await api.get("/jaxrs/bbs/assemble/control/bbstopic/list/recent"); return (r.data ?? []) as any[]; } catch { return []; } }});
 
 
 
 const api_list_i_1_next_10_data = ref<any[]>([]);
-const { data: api_list_i_1_next_10_q } = useQuery({queryKey: ['api_list_i_1_next_10', '/jaxrs/comment/list/i-1/next/10'], queryFn: async () => { try { const r = await api.get("/jaxrs/comment/list/i-1/next/10"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+const { data: api_list_i_1_next_10_q } = useQuery({queryKey: ['api_list_i_1_next_10', '/jaxrs/comment/list/i-1/next/10'], queryFn: async () => { try { const r = await api.get("/jaxrs/comment/list/i-1/next/10"); return (r.data ?? []) as any[]; } catch { return []; } }});
 
 const comment_c_1_ref = ref<any[]>([]);
 const comment_c_1_q = useQuery({
@@ -713,7 +713,7 @@ const comment_c_1_q = useQuery({
     try { const r = await api.get("/jaxrs/comment/c-1"); return (r.data ?? []) as any[]; }
     catch { return []; }
   },
-  staleTime: 60000,
+  
 });
 const _1_size_10_mockputtopost_ref = ref<any[]>([]);
 const _1_size_10_mockputtopost_q = useQuery({
@@ -722,13 +722,13 @@ const _1_size_10_mockputtopost_q = useQuery({
     try { const r = await api.get("/jaxrs/comment/list/1/size/10/mockputtopost"); return (r.data ?? []) as any[]; }
     catch { return []; }
   },
-  staleTime: 60000,
+  
 });
 const api_list_i_1_prev_10_data = ref<any[]>([]);
-const { data: api_list_i_1_prev_10_q } = useQuery({queryKey: ['api_list_i_1_prev_10', '/jaxrs/comment/list/i-1/prev/10'], queryFn: async () => { try { const r = await api.get("/jaxrs/comment/list/i-1/prev/10"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+const { data: api_list_i_1_prev_10_q } = useQuery({queryKey: ['api_list_i_1_prev_10', '/jaxrs/comment/list/i-1/prev/10'], queryFn: async () => { try { const r = await api.get("/jaxrs/comment/list/i-1/prev/10"); return (r.data ?? []) as any[]; } catch { return []; } }});
 
 const api_list_1_size_50_data = ref<any[]>([]);
-const { data: api_list_1_size_50_q } = useQuery({queryKey: ['api_list_1_size_50', '/jaxrs/comment/list/1/size/50'], queryFn: async () => { try { const r = await api.get("/jaxrs/comment/list/1/size/50"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+const { data: api_list_1_size_50_q } = useQuery({queryKey: ['api_list_1_size_50', '/jaxrs/comment/list/1/size/50'], queryFn: async () => { try { const r = await api.get("/jaxrs/comment/list/1/size/50"); return (r.data ?? []) as any[]; } catch { return []; } }});
 
 const comment_c_1_commend_ref = ref<any[]>([]);
 const comment_c_1_commend_q = useQuery({
@@ -737,7 +737,7 @@ const comment_c_1_commend_q = useQuery({
     try { const r = await api.get("/jaxrs/comment/c-1/commend"); return (r.data ?? []) as any[]; }
     catch { return []; }
   },
-  staleTime: 60000,
+  
 });
 const comment_ref = ref<any[]>([]);
 const comment_q = useQuery({
@@ -746,7 +746,7 @@ const comment_q = useQuery({
     try { const r = await api.get("/jaxrs/comment"); return (r.data ?? []) as any[]; }
     catch { return []; }
   },
-  staleTime: 60000,
+  
 });
 const comment_c_1_uncommend_ref = ref<any[]>([]);
 const comment_c_1_uncommend_q = useQuery({
@@ -755,10 +755,10 @@ const comment_c_1_uncommend_q = useQuery({
     try { const r = await api.get("/jaxrs/comment/c-1/uncommend"); return (r.data ?? []) as any[]; }
     catch { return []; }
   },
-  staleTime: 60000,
+  
 });
 const api_list_1_size_10_data = ref<any[]>([]);
-const { data: api_list_1_size_10_q } = useQuery({queryKey: ['api_list_1_size_10', '/jaxrs/comment/list/1/size/10'], queryFn: async () => { try { const r = await api.get("/jaxrs/comment/list/1/size/10"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+const { data: api_list_1_size_10_q } = useQuery({queryKey: ['api_list_1_size_10', '/jaxrs/comment/list/1/size/10'], queryFn: async () => { try { const r = await api.get("/jaxrs/comment/list/1/size/10"); return (r.data ?? []) as any[]; } catch { return []; } }});
 
 const comment_u3_cmt_uncommend_ref = ref<any[]>([]);
 const comment_u3_cmt_uncommend_q = useQuery({
@@ -767,7 +767,7 @@ const comment_u3_cmt_uncommend_q = useQuery({
     try { const r = await api.get("/jaxrs/comment/u3-cmt/uncommend"); return (r.data ?? []) as any[]; }
     catch { return []; }
   },
-  staleTime: 60000,
+  
 });
 const comment_u3_cmt_commend_ref = ref<any[]>([]);
 const comment_u3_cmt_commend_q = useQuery({
@@ -776,22 +776,22 @@ const comment_u3_cmt_commend_q = useQuery({
     try { const r = await api.get("/jaxrs/comment/u3-cmt/commend"); return (r.data ?? []) as any[]; }
     catch { return []; }
   },
-  staleTime: 60000,
+  
 });
 
 
 const api_review_v2_search_data = ref<any[]>([]);
-const { data: api_review_v2_search_q } = useQuery({queryKey: ['api_review_v2_search', '/jaxrs/review/v2/search'], queryFn: async () => { try { const r = await api.get("/jaxrs/review/v2/search"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+const { data: api_review_v2_search_q } = useQuery({queryKey: ['api_review_v2_search', '/jaxrs/review/v2/search'], queryFn: async () => { try { const r = await api.get("/jaxrs/review/v2/search"); return (r.data ?? []) as any[]; } catch { return []; } }});
 
 
 const api_assemble_control_413_data = ref<any[]>([]);
-const { data: api_assemble_control_413_q } = useQuery({queryKey: ['api_assemble_control_413', '/jaxrs/bbs/assemble/control/shutup/delete'], queryFn: async () => { try { const r = await api.get("/jaxrs/bbs/assemble/control/shutup/delete"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+const { data: api_assemble_control_413_q } = useQuery({queryKey: ['api_assemble_control_413', '/jaxrs/bbs/assemble/control/shutup/delete'], queryFn: async () => { try { const r = await api.get("/jaxrs/bbs/assemble/control/shutup/delete"); return (r.data ?? []) as any[]; } catch { return []; } }});
 
 const api_control_forum_vi_79_data = ref<any[]>([]);
-const { data: api_control_forum_vi_79_q } = useQuery({queryKey: ['api_control_forum_vi_79', '/jaxrs/bbs/assemble/control/forum/view/all'], queryFn: async () => { try { const r = await api.get("/jaxrs/bbs/assemble/control/forum/view/all"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+const { data: api_control_forum_vi_79_q } = useQuery({queryKey: ['api_control_forum_vi_79', '/jaxrs/bbs/assemble/control/forum/view/all'], queryFn: async () => { try { const r = await api.get("/jaxrs/bbs/assemble/control/forum/view/all"); return (r.data ?? []) as any[]; } catch { return []; } }});
 
 const api_control_list_top_720_data = ref<any[]>([]);
-const { data: api_control_list_top_720_q } = useQuery({queryKey: ['api_control_list_top_720', '/jaxrs/bbs/assemble/control/list/topics/creamed'], queryFn: async () => { try { const r = await api.get("/jaxrs/bbs/assemble/control/list/topics/creamed"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
+const { data: api_control_list_top_720_q } = useQuery({queryKey: ['api_control_list_top_720', '/jaxrs/bbs/assemble/control/list/topics/creamed'], queryFn: async () => { try { const r = await api.get("/jaxrs/bbs/assemble/control/list/topics/creamed"); return (r.data ?? []) as any[]; } catch { return []; } }});
 
 
 </script>

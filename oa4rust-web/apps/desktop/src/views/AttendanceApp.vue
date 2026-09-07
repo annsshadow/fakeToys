@@ -59,7 +59,7 @@ interface R{id:string;personName?:string;name?:string;date?:string;checkInTime?:
 interface A{id:string;personName?:string;type?:string;typeName?:string;startDate?:string;endDate?:string;status?:string}
 const month=ref(new Date().toISOString().slice(0,7)),page=ref(1),records=ref<R[]>([]),appeals=ref<A[]>([]),loading=ref(false),totalPages=ref(1),qc=useQueryClient()
 const stats=computed(()=>[{label:'应出勤',value:45,color:'var(--color-info)'},{label:'实际出勤',value:42,color:'var(--color-success)'},{label:'迟到',value:3,color:'var(--color-warning)'},{label:'请假',value:2,color:'var(--color-accent)'}])
-const{data}=useQuery({queryKey:['att','recs',month,page],queryFn:()=>api.get(`/jaxrs/attendance/assemble/control/attendancedetail?month=${month.value}&page=${page.value}&size=20`).then((r:any)=>{records.value=(r.data?.list??[]);totalPages.value=Math.ceil((r.data?.total??1)/20);return r}),staleTime:60000})
+const{data}=useQuery({queryKey:['att','recs',month,page],queryFn:()=>api.get(`/jaxrs/attendance/assemble/control/attendancedetail?month=${month.value}&page=${page.value}&size=20`).then((r:any)=>{records.value=(r.data?.list??[]);totalPages.value=Math.ceil((r.data?.total??1)/20);return r})})
 useQuery({queryKey:['att','apps'],queryFn:()=>api.get('/jaxrs/attendance/appeal/list').then((r:any)=>appeals.value=(r.data??[])as A[]),staleTime:120000})
 function loadData(){data.value?.refetch()}
 function fmtDate(d?:string){if(!d)return'—';try{return new Date(d).toLocaleDateString('zh-CN',{month:'2-digit',day:'2-digit'})}catch{return String(d)}}
