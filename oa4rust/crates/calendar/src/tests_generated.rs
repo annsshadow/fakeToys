@@ -1,5 +1,6 @@
 #[cfg(test)]
 mod tests {
+    #![allow(non_snake_case)]
 
     // SKIPPED: calendar_list_public requires tower (not available)
     // SKIPPED: calendar_list_my requires tower (not available)

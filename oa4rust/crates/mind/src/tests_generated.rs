@@ -1,5 +1,6 @@
 #[cfg(test)]
 mod tests {
+    #![allow(non_snake_case)]
 
     // SKIPPED: get_mind_with_id not accessible
     // SKIPPED: list_my_folders not accessible

@@ -1,5 +1,6 @@
 #[cfg(test)]
 mod tests {
+    #![allow(non_snake_case)]
 
     // SKIPPED: get_general_control_status not accessible
     // SKIPPED: update_general_control_status not accessible

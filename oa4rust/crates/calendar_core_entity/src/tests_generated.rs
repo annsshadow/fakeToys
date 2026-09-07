@@ -1,5 +1,6 @@
 #[cfg(test)]
 mod tests {
+    #![allow(non_snake_case)]
 
     // SKIPPED: calendar_list_public not accessible
     // SKIPPED: calendar_list_my not accessible

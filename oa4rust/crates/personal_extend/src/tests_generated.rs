@@ -1,5 +1,6 @@
 #[cfg(test)]
 mod tests {
+    #![allow(non_snake_case)]
 
     // SKIPPED: upload requires Session parameter
     // SKIPPED: get_current_icon requires Session parameter
