@@ -1,10 +1,12 @@
 import type { App } from 'vue';
 import './theme/dark.css';
 
+import AppShell from './components/AppShell.vue';
+import LoginScreen from './components/LoginScreen.vue';
+import OAuthCallback from './views/OAuthCallback.vue';
+
 // Re-export components for tree-shaking
-export { default as AppShell } from './components/AppShell.vue';
-export { default as LoginScreen } from './components/LoginScreen.vue';
-export { default as OAuthCallback } from './views/OAuthCallback.vue';
+export { AppShell, LoginScreen, OAuthCallback };
 
 /** Install all UI components into a Vue app */
 export function installO2Ui(app: App): void {

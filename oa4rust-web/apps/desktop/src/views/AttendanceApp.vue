@@ -25,7 +25,7 @@
           <span class="td cit">{{r.checkInTime||'—'}}</span>
           <span class="td cot">{{r.checkOutTime||'—'}}</span>
           <span class="td hw">{{r.workHours??'—'}}</span>
-          <span class="td"><span class="badge" :class="r.status">{{statusTxt(r.status)}}</span></span>
+          <span class="td"><span class="badge" :class="statusClass(r.status)">{{statusTxt(r.status)}}</span></span>
         </div>
       </template>
       <div v-if="totalPages>1" class="pagination">
@@ -40,7 +40,7 @@
       <div v-else class="al">
         <div v-for="a in appeals" :key="a.id" class="ai">
           <div class="ai-info"><span class="an">{{a.personName}}</span><span class="at">{{a.typeName||a.type}}</span><span class="ad">{{fmtDate(a.startDate)}}~{{fmtDate(a.endDate)}}</span></div>
-          <span class="badge" :class="a.status">{{appealStatus(a.status)}}</span>
+          <span class="badge" :class="appealClass(a.status)">{{appealStatus(a.status)}}</span>
           <div v-if="a.status==='pending'" class="aa">
             <button class="ba" @click="audit(a,'approved')">通过</button>
             <button class="br" @click="audit(a,'rejected')">驳回</button>
@@ -64,6 +64,8 @@ useQuery({queryKey:['att','apps'],queryFn:()=>api.get('/jaxrs/attendance/appeal/
 function loadData(){data.value?.refetch()}
 function fmtDate(d?:string){if(!d)return'—';try{return new Date(d).toLocaleDateString('zh-CN',{month:'2-digit',day:'2-digit'})}catch{return String(d)}}
 function statusTxt(s?:string){return s==='1'?'正常':s==='2'?'迟到':'—'}
+function statusClass(s?:string){return s==='1'?'normal':s==='2'?'late':''}
+function appealClass(s?:string){return s==='approved'?'approved':s==='rejected'?'rejected':s==='pending'?'pending':''}
 function appealStatus(s?:string){return s==='approved'?'已通过':s==='rejected'?'已驳回':s==='pending'?'待审批':'—'}
 const am=useMutation({mutationFn:({id,status}:{id:string;status:string})=>api.post('/jaxrs/attendance/appeal/audit',{id,status}),onSuccess:()=>qc.invalidateQueries({queryKey:['att','apps']})})
 function audit(a:A,action:string){am.mutate({id:a.id,status:action})}
@@ -813,8 +815,9 @@ watch(api_jaxrs_attendance_135_q, (v) => { api_jaxrs_attendance_135_data.value =
 .td{color:var(--text-primary)}
 .td.cit.late{color:var(--color-warning)}
 .badge{padding:2px 8px;border-radius:8px;font-size:11px;font-weight:600}
-.badge.1,.badge.normal{background:var(--color-success-glow);color:var(--color-success)}
-.badge.2,.badge.late{background:var(--color-warning-glow);color:var(--color-warning)}
+.badge.normal,.badge.approved{background:var(--color-success-glow);color:var(--color-success)}
+.badge.late,.badge.pending{background:var(--color-warning-glow);color:var(--color-warning)}
+.badge.rejected{background:var(--color-error-glow);color:var(--color-error)}
 .al{display:flex;flex-direction:column;gap:8px}
 .ai{display:flex;align-items:center;gap:12px;padding:10px 12px;background:var(--bg-elevated);border-radius:var(--radius-md)}
 .ai-info{display:flex;gap:12px;flex:1;font-size:13px;color:var(--text-secondary)}

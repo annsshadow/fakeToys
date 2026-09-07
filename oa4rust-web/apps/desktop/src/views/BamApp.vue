@@ -21,7 +21,7 @@
             <td>{{ fmtTime(e.time) }}</td>
             <td><span class="type-tag" :class="e.type">{{ e.type }}</span></td>
             <td>{{ e.desc }}</td>
-            <td><span class="status" :class="e.status">{{ e.status }}</span></td>
+            <td><span class="status" :class="statusCls(e.status)">{{ e.status }}</span></td>
           </tr>
         </tbody>
       </table>
@@ -49,6 +49,7 @@ const { data } = useQuery({
 })
 function refresh() { events.value = data.value ? (data.value as any).events ?? [] : [] }
 function fmtTime(t?: string) { if (!t) return ''; try { return new Date(t).toLocaleString('zh-CN') } catch { return String(t) } }
+function statusCls(s?: string) { return s === 'running' || s === 'active' ? 'active' : s === 'completed' ? 'done' : s === 'failed' ? 'failed' : s === 'error' ? 'error' : '' }
 </script>
 <style scoped>
 .dash-view{display:flex;flex-direction:column;gap:16px;height:100%}
@@ -67,5 +68,9 @@ function fmtTime(t?: string) { if (!t) return ''; try { return new Date(t).toLoc
 .data-table th{color:var(--text-muted);font-size:12px}
 .type-tag{padding:2px 8px;border-radius:var(--radius-sm);font-size:11px;font-weight:600;background:var(--color-primary-soft);color:var(--color-primary)}
 .status{padding:2px 8px;border-radius:var(--radius-sm);font-size:11px}
+.status.active{background:rgba(0,212,255,0.15);color:var(--color-primary)}
+.status.done{background:rgba(16,185,129,0.15);color:var(--color-success)}
+.status.failed{background:rgba(239,68,68,0.15);color:var(--color-danger)}
+.status.error{background:rgba(239,68,68,0.2);color:var(--color-danger)}
 .loading-state,.empty-state{padding:40px;text-align:center;color:var(--text-muted)}
 </style>

@@ -17,7 +17,7 @@
       <div v-else-if="meetings.length===0" class="es"><div class="ei">👥</div><p>暂无会议</p></div>
       <div v-else class="ml">
         <div v-for="m in meetings" :key="m.id" class="mc" @click="viewMeeting(m)">
-          <div class="ms" :class="m.status">{{statusTxt(m)}}</div>
+          <div class="ms" :class="statusCls(m)">{{statusTxt(m)}}</div>
           <div class="mi"><div class="mt">{{m.title||m.name||'未命名会议'}}</div><div class="mm">
             <span v-if="m.buildingName">🏢{{m.buildingName}}</span>
             <span v-if="m.roomName">🚪{{m.roomName}}</span>
@@ -56,6 +56,7 @@ buildings.value=bData.value??[]
 async function loadRooms(){if(!form.value.buildingId){rooms.value=[];return} const r=await api.get(`/jaxrs/meeting/assemble/control/room/list?buildingId=${form.value.buildingId}`);rooms.value=(r.data??[])as Room[]}
 async function loadMeetings(){loading.value=true;try{const p:Record<string,string>={};if(searchKey.value)p.key=searchKey.value;if(statusFilter.value!=='')p.status=statusFilter.value;const r=await api.get('/jaxrs/meeting/assemble/control/meeting/list',{params:p});meetings.value=(r.data??[])as M[]}catch{meetings.value=[]}finally{loading.value=false}}
 function statusTxt(m:M){return m.status==='1'?'进行中':m.status==='2'?'已结束':'未开始'}
+function statusCls(m:M){return m.status==='1'?'active':m.status==='2'?'ended':'pending'}
 function fmtTime(t?:string){if(!t)return'';try{return new Date(t).toLocaleString('zh-CN',{month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'})}catch{return String(t)}}
 const cm=useMutation({mutationFn:()=>api.post('/jaxrs/meeting/assemble/control/meeting/create',form.value),onSuccess:()=>{showCreate.value=false;qc.invalidateQueries({queryKey:['meeting','list']});loadMeetings()},onError:(e:any)=>{err.value=e?.message??'创建失败'}})
 function createMeeting(){if(!form.value.title)return;cm.mutate()}
@@ -342,9 +343,9 @@ watch(api_jaxrs_meeting_as_895_q, (v) => { api_jaxrs_meeting_as_895_data.value =
 .mc{display:flex;align-items:center;gap:12px;padding:12px 16px;background:var(--bg-elevated);border:1px solid var(--border-subtle);border-radius:var(--radius-md);cursor:pointer;transition:all var(--transition-fast)}
 .mc:hover{border-color:var(--border-active);transform:translateX(4px)}
 .ms{padding:4px 10px;border-radius:var(--radius-sm);font-size:11px;font-weight:600;flex-shrink:0}
-.ms.0{background:var(--color-primary-soft);color:var(--color-primary)}
-.ms.1{background:var(--color-success-glow);color:var(--color-success)}
-.ms.2{background:var(--bg-elevated);color:var(--text-muted)}
+.ms.pending{background:var(--color-primary-soft);color:var(--color-primary)}
+.ms.active{background:var(--color-success-glow);color:var(--color-success)}
+.ms.ended{background:var(--bg-elevated);color:var(--text-muted)}
 .mi{flex:1;min-width:0}
 .mt{font-size:14px;font-weight:500;color:var(--text-primary)}
 .mm{display:flex;gap:8px;margin-top:4px;flex-wrap:wrap;font-size:11px;color:var(--text-muted)}

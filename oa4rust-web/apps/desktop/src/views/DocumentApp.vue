@@ -27,7 +27,7 @@
           <div v-for="item in items" :key="item.id" class="table-row glass-card">
             <span class="col-title">{{ item.title || item.name || '未命名' }}</span>
             <span class="col-id font-mono">{{ item.id?.slice(0,8) }}...</span>
-            <span class="col-status" :class="item.status||''">{{ statusLabel(item) }}</span>
+            <span class="col-status" :class="docStatusCls(item.status)">{{ statusLabel(item) }}</span>
             <span class="col-actions">
               <button class="btn-del" @click="onDelete(item)">删除</button>
             </span>
@@ -84,6 +84,12 @@ function statusLabel(d: DocItem) {
   if (s === 'published' || s === '1') return '已发布'
   if (s === 'draft' || s === '0') return '草稿'
   return s || '未知'
+}
+function docStatusCls(s?: string) {
+  if (!s) return ''
+  if (s === 'published' || s === '1') return 'published'
+  if (s === 'draft' || s === '0') return 'draft'
+  return ''
 }
 
 async function doSearch() {

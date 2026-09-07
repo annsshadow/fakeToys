@@ -32,6 +32,8 @@ export default defineConfig({
           vue: ['vue', 'vue-router', 'pinia'],
           naive: ['naive-ui'],
           query: ['@tanstack/vue-query'],
+          echarts: ['echarts'],
+          codemirror: ['codemirror', '@codemirror/state', '@codemirror/view', '@codemirror/language', '@codemirror/autocomplete', '@codemirror/commands', '@codemirror/lang-sql'],
         },
       },
     },
