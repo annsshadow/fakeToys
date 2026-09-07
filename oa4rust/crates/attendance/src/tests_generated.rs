@@ -1,5 +1,6 @@
 #[cfg(test)]
 mod tests {
+    #![allow(non_snake_case)]
 
     // SKIPPED: list_admins not accessible
     // SKIPPED: list_employee_configs not accessible

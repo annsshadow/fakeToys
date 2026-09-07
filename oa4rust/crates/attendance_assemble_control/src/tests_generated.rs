@@ -1,5 +1,6 @@
 #[cfg(test)]
 mod tests {
+    #![allow(non_snake_case)]
 
     // SKIPPED: list_control_rules not accessible
     // SKIPPED: toggle_control_rule not accessible

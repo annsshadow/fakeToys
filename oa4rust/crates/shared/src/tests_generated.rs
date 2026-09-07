@@ -1,5 +1,6 @@
 #[cfg(test)]
 mod tests {
+    #![allow(non_snake_case)]
 
     // SKIPPED: create_pool not accessible
     // SKIPPED: create_sea_orm_pool not accessible
