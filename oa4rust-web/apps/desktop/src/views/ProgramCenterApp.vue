@@ -269,24 +269,79 @@ function runScript(s: Script) {
   runScriptM.mutate(s.flag)
 }
 
-const media_add_forever_ref = ref<any[]>([]);
-const media_add_forever_q = useQuery({
-  queryKey: ['media_add_forever'],
-  queryFn: async () => {
-    try { const r = await api.get("/jaxrs/program_center/mpweixin/media/add/forever"); return (r.data ?? []) as any[]; }
-    catch { return []; }
-  },
-  staleTime: 60000,
-});
-const login_avatar_erase_ref = ref<any[]>([]);
-const login_avatar_erase_q = useQuery({
-  queryKey: ['login_avatar_erase'],
-  queryFn: async () => {
-    try { const r = await api.get("/jaxrs/program_center/appstyle/image/login/avatar/erase"); return (r.data ?? []) as any[]; }
-    catch { return []; }
-  },
-  staleTime: 60000,
-});
+
+// 收集管理
+const collectAddM = useMutation({
+  mutationFn: () => api.post('/jaxrs/program_center/collect/add', null),
+  onSuccess: () => toast.success('收集已添加'),
+  onError: () => toast.error('添加失败'),
+})
+async function loadCollect() {
+  try { const r = await api.get('/jaxrs/program_center/collect/list'); collectList.value = r.data ?? []; }
+  catch { collectList.value = []; }
+}
+const collectList = ref<Array<{ id: string; name: string }>>([])
+function addCollect() { collectAddM.mutate(); loadCollect(); }
+
+// AppStyle 图片管理
+const eraseImageM = useMutation({
+  mutationFn: ({ type, flag }: { type: string; flag: string }) =>
+    api.post(`/jaxrs/program_center/appstyle/image/${type}/${flag}/erase`, null),
+  onSuccess: () => toast.success('图片已清除'),
+  onError: () => toast.error('操作失败'),
+})
+function eraseAppStyleImage(type: string, flag: string) {
+  if (!confirmMsg(`确认清除 ${type} 图片？`)) return;
+  eraseImageM.mutate({ type, flag });
+}
+
+// 命令执行
+const commandExecM = useMutation({
+  mutationFn: (data: unknown) => api.post('/jaxrs/program_center/command/execute', data),
+  onSuccess: () => toast.success('命令已执行'),
+  onError: () => toast.error('执行失败'),
+})
+function execCommand() {
+  const cmd = prompt('输入命令JSON:');
+  if (!cmd) return;
+  try { commandExecM.mutate(JSON.parse(cmd)); }
+  catch { toast.error('命令JSON格式错误'); }
+}
+
+// Market 扩展
+const marketDownloadM = useMutation({
+  mutationFn: (flag: string) => api.get(`/jaxrs/program_center/market/${flag}/download`),
+  onSuccess: () => toast.success('下载已触发'),
+  onError: () => toast.error('下载失败'),
+})
+function downloadMarket(flag: string) { marketDownloadM.mutate(flag); }
+
+const marketCoverPicM = useMutation({
+  mutationFn: (flag: string) => api.post(`/jaxrs/program_center/market/${flag}/cover/pic`, null),
+  onSuccess: () => toast.success('封面已更新'),
+  onError: () => toast.error('操作失败'),
+})
+function setMarketCover(flag: string) { marketCoverPicM.mutate(flag); }
+
+// MPWeixin 扩展
+const wxCheckM = useMutation({
+  mutationFn: () => api.get('/jaxrs/program_center/mpweixin/check'),
+  onSuccess: () => toast.success('微信检查通过'),
+  onError: () => toast.error('检查失败'),
+})
+function checkWx() { wxCheckM.mutate(); }
+
+const wxMenuAddM = useMutation({
+  mutationFn: (data: unknown) => api.post('/jaxrs/program_center/mpweixin/menu/add', data),
+  onSuccess: () => toast.success('菜单已添加'),
+  onError: () => toast.error('操作失败'),
+})
+function addWxMenu() {
+  const json = prompt('输入菜单JSON:');
+  if (!json) return;
+  try { wxMenuAddM.mutate(JSON.parse(json)); }
+  catch { toast.error('JSON格式错误'); }
+}
 const file_download_pk_1_ref = ref<any[]>([]);
 const file_download_pk_1_q = useQuery({
   queryKey: ['file_download_pk_1'],
@@ -296,146 +351,11 @@ const file_download_pk_1_q = useQuery({
   },
   staleTime: 60000,
 });
-const program_center_config_proxy_ref = ref<any[]>([]);
-const program_center_config_proxy_q = useQuery({
-  queryKey: ['program_center_config_proxy'],
-  queryFn: async () => {
-    try { const r = await api.get("/jaxrs/program_center/config/proxy"); return (r.data ?? []) as any[]; }
-    catch { return []; }
-  },
-  staleTime: 60000,
-});
-const register_callback_enable_ref = ref<any[]>([]);
-const register_callback_enable_q = useQuery({
-  queryKey: ['register_callback_enable'],
-  queryFn: async () => {
-    try { const r = await api.get("/jaxrs/program_center/dingding/sync/organization/register/callback/enable"); return (r.data ?? []) as any[]; }
-    catch { return []; }
-  },
-  staleTime: 60000,
-});
-const with_category_category_ref = ref<any[]>([]);
-const with_category_category_q = useQuery({
-  queryKey: ['with_category_category'],
-  queryFn: async () => {
-    try { const r = await api.get("/jaxrs/program_center/invoke/list/with/category/category"); return (r.data ?? []) as any[]; }
-    catch { return []; }
-  },
-  staleTime: 60000,
-});
-const dingding_get_callback_ref = ref<any[]>([]);
-const dingding_get_callback_q = useQuery({
-  queryKey: ['dingding_get_callback'],
-  queryFn: async () => {
-    try { const r = await api.get("/jaxrs/program_center/dingding/get/callback"); return (r.data ?? []) as any[]; }
-    catch { return []; }
-  },
-  staleTime: 60000,
-});
-const program_center_config_person_ref = ref<any[]>([]);
-const program_center_config_person_q = useQuery({
-  queryKey: ['program_center_config_person'],
-  queryFn: async () => {
-    try { const r = await api.get("/jaxrs/program_center/config/person"); return (r.data ?? []) as any[]; }
-    catch { return []; }
-  },
-  staleTime: 60000,
-});
-const program_center_designer_search_ref = ref<any[]>([]);
-const program_center_designer_search_q = useQuery({
-  queryKey: ['program_center_designer_search'],
-  queryFn: async () => {
-    try { const r = await api.get("/jaxrs/program_center/designer/search"); return (r.data ?? []) as any[]; }
-    catch { return []; }
-  },
-  staleTime: 60000,
-});
-const output_appInfoFlag_select_ref = ref<any[]>([]);
-const output_appInfoFlag_select_q = useQuery({
-  queryKey: ['output_appInfoFlag_select'],
-  queryFn: async () => {
-    try { const r = await api.get("/jaxrs/program_center/output/appInfoFlag/select"); return (r.data ?? []) as any[]; }
-    catch { return []; }
-  },
-  staleTime: 60000,
-});
-const program_center_collect_person_ref = ref<any[]>([]);
-const program_center_collect_person_q = useQuery({
-  queryKey: ['program_center_collect_person'],
-  queryFn: async () => {
-    try { const r = await api.get("/jaxrs/program_center/collect/person"); return (r.data ?? []) as any[]; }
-    catch { return []; }
-  },
-  staleTime: 60000,
-});
-const mobile_answer_answer_ref = ref<any[]>([]);
-const mobile_answer_answer_q = useQuery({
-  queryKey: ['mobile_answer_answer'],
-  queryFn: async () => {
-    try { const r = await api.get("/jaxrs/program_center/code/validate/mobile/mobile/answer/answer"); return (r.data ?? []) as any[]; }
-    catch { return []; }
-  },
-  staleTime: 60000,
-});
-const program_center_prompterrorlog_id_ref = ref<any[]>([]);
-const program_center_prompterrorlog_id_q = useQuery({
-  queryKey: ['program_center_prompterrorlog_id'],
-  queryFn: async () => {
-    try { const r = await api.get("/jaxrs/program_center/prompterrorlog/id"); return (r.data ?? []) as any[]; }
-    catch { return []; }
-  },
-  staleTime: 60000,
-});
-const program_center_appstyle_ref = ref<any[]>([]);
-const program_center_appstyle_q = useQuery({
-  queryKey: ['program_center_appstyle'],
-  queryFn: async () => {
-    try { const r = await api.get("/jaxrs/program_center/appstyle"); return (r.data ?? []) as any[]; }
-    catch { return []; }
-  },
-  staleTime: 60000,
-});
-const id_prev_count_ref = ref<any[]>([]);
-const id_prev_count_q = useQuery({
-  queryKey: ['id_prev_count'],
-  queryFn: async () => {
-    try { const r = await api.get("/jaxrs/program_center/prompterrorlog/list/id/prev/count"); return (r.data ?? []) as any[]; }
-    catch { return []; }
-  },
-  staleTime: 60000,
-});
-const output_flag_file_ref = ref<any[]>([]);
-const output_flag_file_q = useQuery({
-  queryKey: ['output_flag_file'],
-  queryFn: async () => {
-    try { const r = await api.get("/jaxrs/program_center/module/output/flag/file"); return (r.data ?? []) as any[]; }
-    catch { return []; }
-  },
-  staleTime: 60000,
-});
 const mass_0_10_ref = ref<any[]>([]);
 const mass_0_10_q = useQuery({
   queryKey: ['mass_0_10'],
   queryFn: async () => {
     try { const r = await api.get("/jaxrs/program_center/bar/create/mass/0/10"); return (r.data ?? []) as any[]; }
-    catch { return []; }
-  },
-  staleTime: 60000,
-});
-const module_id_compare_ref = ref<any[]>([]);
-const module_id_compare_q = useQuery({
-  queryKey: ['module_id_compare'],
-  queryFn: async () => {
-    try { const r = await api.get("/jaxrs/program_center/module/id/compare"); return (r.data ?? []) as any[]; }
-    catch { return []; }
-  },
-  staleTime: 60000,
-});
-const create_mobile_mobile_ref = ref<any[]>([]);
-const create_mobile_mobile_q = useQuery({
-  queryKey: ['create_mobile_mobile'],
-  queryFn: async () => {
-    try { const r = await api.get("/jaxrs/program_center/code/create/mobile/mobile"); return (r.data ?? []) as any[]; }
     catch { return []; }
   },
   staleTime: 60000,
@@ -451,128 +371,11 @@ const m_1_install_log_q = useQuery({
 });
 
 
-const program_center_invoke_flag_execute_ref = ref<any[]>([]);
-const program_center_invoke_flag_execute_q = useQuery({
-  queryKey: ['program_center_invoke_flag_execute'],
-  queryFn: async () => {
-    try { const r = await api.get("/jaxrs/program_center/invoke/flag/execute"); return (r.data ?? []) as any[]; }
-    catch { return []; }
-  },
-  staleTime: 60000,
-});
-const program_center_jest_center_list_ref = ref<any[]>([]);
-const program_center_jest_center_list_q = useQuery({
-  queryKey: ['program_center_jest_center_list'],
-  queryFn: async () => {
-    try { const r = await api.get("/jaxrs/program_center/jest/center/list"); return (r.data ?? []) as any[]; }
-    catch { return []; }
-  },
-  staleTime: 60000,
-});
-const module_remove_structure_id_ref = ref<any[]>([]);
-const module_remove_structure_id_q = useQuery({
-  queryKey: ['module_remove_structure_id'],
-  queryFn: async () => {
-    try { const r = await api.get("/jaxrs/program_center/module/remove/structure/id"); return (r.data ?? []) as any[]; }
-    catch { return []; }
-  },
-  staleTime: 60000,
-});
-const program_center_collect_validate_ref = ref<any[]>([]);
-const program_center_collect_validate_q = useQuery({
-  queryKey: ['program_center_collect_validate'],
-  queryFn: async () => {
-    try { const r = await api.get("/jaxrs/program_center/collect/validate"); return (r.data ?? []) as any[]; }
-    catch { return []; }
-  },
-  staleTime: 60000,
-});
-const program_center_invoke_flag_file_ref = ref<any[]>([]);
-const program_center_invoke_flag_file_q = useQuery({
-  queryKey: ['program_center_invoke_flag_file'],
-  queryFn: async () => {
-    try { const r = await api.get("/jaxrs/program_center/invoke/flag/file"); return (r.data ?? []) as any[]; }
-    catch { return []; }
-  },
-  staleTime: 60000,
-});
-const program_center_invoke_ref = ref<any[]>([]);
-const program_center_invoke_q = useQuery({
-  queryKey: ['program_center_invoke'],
-  queryFn: async () => {
-    try { const r = await api.get("/jaxrs/program_center/invoke"); return (r.data ?? []) as any[]; }
-    catch { return []; }
-  },
-  staleTime: 60000,
-});
-const program_center_schedule_list_schedulelocal_ref = ref<any[]>([]);
-const program_center_schedule_list_schedulelocal_q = useQuery({
-  queryKey: ['program_center_schedule_list_schedulelocal'],
-  queryFn: async () => {
-    try { const r = await api.get("/jaxrs/program_center/schedule/list/schedulelocal"); return (r.data ?? []) as any[]; }
-    catch { return []; }
-  },
-  staleTime: 60000,
-});
-const program_center_collect_sync_area_ref = ref<any[]>([]);
-const program_center_collect_sync_area_q = useQuery({
-  queryKey: ['program_center_collect_sync_area'],
-  queryFn: async () => {
-    try { const r = await api.get("/jaxrs/program_center/collect/sync/area"); return (r.data ?? []) as any[]; }
-    catch { return []; }
-  },
-  staleTime: 60000,
-});
-const program_center_module_list_category_ref = ref<any[]>([]);
-const program_center_module_list_category_q = useQuery({
-  queryKey: ['program_center_module_list_category'],
-  queryFn: async () => {
-    try { const r = await api.get("/jaxrs/program_center/module/list/category"); return (r.data ?? []) as any[]; }
-    catch { return []; }
-  },
-  staleTime: 60000,
-});
-const collect_name_n_exist_ref = ref<any[]>([]);
-const collect_name_n_exist_q = useQuery({
-  queryKey: ['collect_name_n_exist'],
-  queryFn: async () => {
-    try { const r = await api.get("/jaxrs/program_center/collect/name/n/exist"); return (r.data ?? []) as any[]; }
-    catch { return []; }
-  },
-  staleTime: 60000,
-});
-const program_center_invoke_some_flag_ref = ref<any[]>([]);
-const program_center_invoke_some_flag_q = useQuery({
-  queryKey: ['program_center_invoke_some_flag'],
-  queryFn: async () => {
-    try { const r = await api.get("/jaxrs/program_center/invoke/some-flag"); return (r.data ?? []) as any[]; }
-    catch { return []; }
-  },
-  staleTime: 60000,
-});
-const program_center_andfx_pull_sync_ref = ref<any[]>([]);
-const program_center_andfx_pull_sync_q = useQuery({
-  queryKey: ['program_center_andfx_pull_sync'],
-  queryFn: async () => {
-    try { const r = await api.get("/jaxrs/program_center/andfx/pull/sync"); return (r.data ?? []) as any[]; }
-    catch { return []; }
-  },
-  staleTime: 60000,
-});
 const program_center_validation_timeout_30000_ref = ref<any[]>([]);
 const program_center_validation_timeout_30000_q = useQuery({
   queryKey: ['program_center_validation_timeout_30000'],
   queryFn: async () => {
     try { const r = await api.get("/jaxrs/program_center/validation/timeout/30000"); return (r.data ?? []) as any[]; }
-    catch { return []; }
-  },
-  staleTime: 60000,
-});
-const program_center_output_list_ref = ref<any[]>([]);
-const program_center_output_list_q = useQuery({
-  queryKey: ['program_center_output_list'],
-  queryFn: async () => {
-    try { const r = await api.get("/jaxrs/program_center/output/list"); return (r.data ?? []) as any[]; }
     catch { return []; }
   },
   staleTime: 60000,
@@ -586,56 +389,11 @@ const program_center_deploy_server_o2_q = useQuery({
   },
   staleTime: 60000,
 });
-const program_center_collect_controllebbs_ref = ref<any[]>([]);
-const program_center_collect_controllebbs_q = useQuery({
-  queryKey: ['program_center_collect_controllebbs'],
-  queryFn: async () => {
-    try { const r = await api.get("/jaxrs/program_center/collect/controllebbs"); return (r.data ?? []) as any[]; }
-    catch { return []; }
-  },
-  staleTime: 60000,
-});
-const program_center_datastructure_fileds_all_ref = ref<any[]>([]);
-const program_center_datastructure_fileds_all_q = useQuery({
-  queryKey: ['program_center_datastructure_fileds_all'],
-  queryFn: async () => {
-    try { const r = await api.get("/jaxrs/program_center/datastructure/fileds/all"); return (r.data ?? []) as any[]; }
-    catch { return []; }
-  },
-  staleTime: 60000,
-});
 const program_center_module_m_1_compare_ref = ref<any[]>([]);
 const program_center_module_m_1_compare_q = useQuery({
   queryKey: ['program_center_module_m_1_compare'],
   queryFn: async () => {
     try { const r = await api.get("/jaxrs/program_center/module/m-1/compare"); return (r.data ?? []) as any[]; }
-    catch { return []; }
-  },
-  staleTime: 60000,
-});
-const program_center_unexpectederrorlog_ref = ref<any[]>([]);
-const program_center_unexpectederrorlog_q = useQuery({
-  queryKey: ['program_center_unexpectederrorlog'],
-  queryFn: async () => {
-    try { const r = await api.get("/jaxrs/program_center/unexpectederrorlog"); return (r.data ?? []) as any[]; }
-    catch { return []; }
-  },
-  staleTime: 60000,
-});
-const program_center_applications_ref = ref<any[]>([]);
-const program_center_applications_q = useQuery({
-  queryKey: ['program_center_applications'],
-  queryFn: async () => {
-    try { const r = await api.get("/jaxrs/program_center/applications"); return (r.data ?? []) as any[]; }
-    catch { return []; }
-  },
-  staleTime: 60000,
-});
-const program_center_deploy_id_ref = ref<any[]>([]);
-const program_center_deploy_id_q = useQuery({
-  queryKey: ['program_center_deploy_id'],
-  queryFn: async () => {
-    try { const r = await api.get("/jaxrs/program_center/deploy/id"); return (r.data ?? []) as any[]; }
     catch { return []; }
   },
   staleTime: 60000,
@@ -649,15 +407,6 @@ const market_m_1_installed_version_q = useQuery({
   },
   staleTime: 60000,
 });
-const program_center_market_id_download_ref = ref<any[]>([]);
-const program_center_market_id_download_q = useQuery({
-  queryKey: ['program_center_market_id_download'],
-  queryFn: async () => {
-    try { const r = await api.get("/jaxrs/program_center/market/id/download"); return (r.data ?? []) as any[]; }
-    catch { return []; }
-  },
-  staleTime: 60000,
-});
 const program_center_market_m_1_uninstall_ref = ref<any[]>([]);
 const program_center_market_m_1_uninstall_q = useQuery({
   queryKey: ['program_center_market_m_1_uninstall'],
@@ -667,44 +416,8 @@ const program_center_market_m_1_uninstall_q = useQuery({
   },
   staleTime: 60000,
 });
-const dict_dictFlag_path_data_ref = ref<any[]>([]);
-const dict_dictFlag_path_data_q = useQuery({
-  queryKey: ['dict_dictFlag_path_data'],
-  queryFn: async () => {
-    try { const r = await api.get("/jaxrs/program_center/dict/dictFlag/path/data"); return (r.data ?? []) as any[]; }
-    catch { return []; }
-  },
-  staleTime: 60000,
-});
 
 
-const program_center_center_version_ref = ref<any[]>([]);
-const program_center_center_version_q = useQuery({
-  queryKey: ['program_center_center_version'],
-  queryFn: async () => {
-    try { const r = await api.get("/jaxrs/program_center/center/version"); return (r.data ?? []) as any[]; }
-    catch { return []; }
-  },
-  staleTime: 60000,
-});
-const program_center_agent_flag_disable_ref = ref<any[]>([]);
-const program_center_agent_flag_disable_q = useQuery({
-  queryKey: ['program_center_agent_flag_disable'],
-  queryFn: async () => {
-    try { const r = await api.get("/jaxrs/program_center/agent/flag/disable"); return (r.data ?? []) as any[]; }
-    catch { return []; }
-  },
-  staleTime: 60000,
-});
-const config_list_dump_data_ref = ref<any[]>([]);
-const config_list_dump_data_q = useQuery({
-  queryKey: ['config_list_dump_data'],
-  queryFn: async () => {
-    try { const r = await api.get("/jaxrs/program_center/config/list/dump/data"); return (r.data ?? []) as any[]; }
-    catch { return []; }
-  },
-  staleTime: 60000,
-});
 const market_m_1_cover_pic_ref = ref<any[]>([]);
 const market_m_1_cover_pic_q = useQuery({
   queryKey: ['market_m_1_cover_pic'],
@@ -723,74 +436,11 @@ const list_schedulelog_application_app_1_q = useQuery({
   },
   staleTime: 60000,
 });
-const program_center_datastructure_modules_all_ref = ref<any[]>([]);
-const program_center_datastructure_modules_all_q = useQuery({
-  queryKey: ['program_center_datastructure_modules_all'],
-  queryFn: async () => {
-    try { const r = await api.get("/jaxrs/program_center/datastructure/modules/all"); return (r.data ?? []) as any[]; }
-    catch { return []; }
-  },
-  staleTime: 60000,
-});
-const program_center_prompterrorlog_count_loggername_ref = ref<any[]>([]);
-const program_center_prompterrorlog_count_loggername_q = useQuery({
-  queryKey: ['program_center_prompterrorlog_count_loggername'],
-  queryFn: async () => {
-    try { const r = await api.get("/jaxrs/program_center/prompterrorlog/count/loggername"); return (r.data ?? []) as any[]; }
-    catch { return []; }
-  },
-  staleTime: 60000,
-});
-const program_center_agent_flag_enable_ref = ref<any[]>([]);
-const program_center_agent_flag_enable_q = useQuery({
-  queryKey: ['program_center_agent_flag_enable'],
-  queryFn: async () => {
-    try { const r = await api.get("/jaxrs/program_center/agent/flag/enable"); return (r.data ?? []) as any[]; }
-    catch { return []; }
-  },
-  staleTime: 60000,
-});
-const apppack_pack_info_logo_ref = ref<any[]>([]);
-const apppack_pack_info_logo_q = useQuery({
-  queryKey: ['apppack_pack_info_logo'],
-  queryFn: async () => {
-    try { const r = await api.get("/jaxrs/program_center/apppack/pack/info/logo"); return (r.data ?? []) as any[]; }
-    catch { return []; }
-  },
-  staleTime: 60000,
-});
-const program_center_qiyeweixin_ref = ref<any[]>([]);
-const program_center_qiyeweixin_q = useQuery({
-  queryKey: ['program_center_qiyeweixin'],
-  queryFn: async () => {
-    try { const r = await api.get("/jaxrs/program_center/qiyeweixin"); return (r.data ?? []) as any[]; }
-    catch { return []; }
-  },
-  staleTime: 60000,
-});
-const market_flag_installed_version_ref = ref<any[]>([]);
-const market_flag_installed_version_q = useQuery({
-  queryKey: ['market_flag_installed_version'],
-  queryFn: async () => {
-    try { const r = await api.get("/jaxrs/program_center/market/flag/installed/version"); return (r.data ?? []) as any[]; }
-    catch { return []; }
-  },
-  staleTime: 60000,
-});
 const program_center_prompterrorlog_p_1_ref = ref<any[]>([]);
 const program_center_prompterrorlog_p_1_q = useQuery({
   queryKey: ['program_center_prompterrorlog_p_1'],
   queryFn: async () => {
     try { const r = await api.get("/jaxrs/program_center/prompterrorlog/p-1"); return (r.data ?? []) as any[]; }
-    catch { return []; }
-  },
-  staleTime: 60000,
-});
-const program_center_validation_timeout_timeout_ref = ref<any[]>([]);
-const program_center_validation_timeout_timeout_q = useQuery({
-  queryKey: ['program_center_validation_timeout_timeout'],
-  queryFn: async () => {
-    try { const r = await api.get("/jaxrs/program_center/validation/timeout/timeout"); return (r.data ?? []) as any[]; }
     catch { return []; }
   },
   staleTime: 60000,
@@ -804,152 +454,8 @@ const list_p_1_next_10_q = useQuery({
   },
   staleTime: 60000,
 });
-const list_id_next_count_ref = ref<any[]>([]);
-const list_id_next_count_q = useQuery({
-  queryKey: ['list_id_next_count'],
-  queryFn: async () => {
-    try { const r = await api.get("/jaxrs/program_center/prompterrorlog/list/id/next/count"); return (r.data ?? []) as any[]; }
-    catch { return []; }
-  },
-  staleTime: 60000,
-});
 
 
-const program_center_unexpectederrorlog_id_ref = ref<any[]>([]);
-const program_center_unexpectederrorlog_id_q = useQuery({
-  queryKey: ['program_center_unexpectederrorlog_id'],
-  queryFn: async () => {
-    try { const r = await api.get("/jaxrs/program_center/unexpectederrorlog/id"); return (r.data ?? []) as any[]; }
-    catch { return []; }
-  },
-  staleTime: 60000,
-});
-const program_center_mpweixin_check_ref = ref<any[]>([]);
-const program_center_mpweixin_check_q = useQuery({
-  queryKey: ['program_center_mpweixin_check'],
-  queryFn: async () => {
-    try { const r = await api.get("/jaxrs/program_center/mpweixin/check"); return (r.data ?? []) as any[]; }
-    catch { return []; }
-  },
-  staleTime: 60000,
-});
-const zhengwudingding_sync_organization_callback_ref = ref<any[]>([]);
-const zhengwudingding_sync_organization_callback_q = useQuery({
-  queryKey: ['zhengwudingding_sync_organization_callback'],
-  queryFn: async () => {
-    try { const r = await api.get("/jaxrs/program_center/zhengwudingding/sync/organization/callback"); return (r.data ?? []) as any[]; }
-    catch { return []; }
-  },
-  staleTime: 60000,
-});
-const program_center_jest_list_ref = ref<any[]>([]);
-const program_center_jest_list_q = useQuery({
-  queryKey: ['program_center_jest_list'],
-  queryFn: async () => {
-    try { const r = await api.get("/jaxrs/program_center/jest/list"); return (r.data ?? []) as any[]; }
-    catch { return []; }
-  },
-  staleTime: 60000,
-});
-const program_center_zhengwudingding_pull_sync_ref = ref<any[]>([]);
-const program_center_zhengwudingding_pull_sync_q = useQuery({
-  queryKey: ['program_center_zhengwudingding_pull_sync'],
-  queryFn: async () => {
-    try { const r = await api.get("/jaxrs/program_center/zhengwudingding/pull/sync"); return (r.data ?? []) as any[]; }
-    catch { return []; }
-  },
-  staleTime: 60000,
-});
-const program_center_structure_ref = ref<any[]>([]);
-const program_center_structure_q = useQuery({
-  queryKey: ['program_center_structure'],
-  queryFn: async () => {
-    try { const r = await api.get("/jaxrs/program_center/structure"); return (r.data ?? []) as any[]; }
-    catch { return []; }
-  },
-  staleTime: 60000,
-});
-const program_center_input_compare_ref = ref<any[]>([]);
-const program_center_input_compare_q = useQuery({
-  queryKey: ['program_center_input_compare'],
-  queryFn: async () => {
-    try { const r = await api.get("/jaxrs/program_center/input/compare"); return (r.data ?? []) as any[]; }
-    catch { return []; }
-  },
-  staleTime: 60000,
-});
-const program_center_dict_my_flag_data_ref = ref<any[]>([]);
-const program_center_dict_my_flag_data_q = useQuery({
-  queryKey: ['program_center_dict_my_flag_data'],
-  queryFn: async () => {
-    try { const r = await api.get("/jaxrs/program_center/dict/my-flag/data"); return (r.data ?? []) as any[]; }
-    catch { return []; }
-  },
-  staleTime: 60000,
-});
-const program_center_config_collect_ref = ref<any[]>([]);
-const program_center_config_collect_q = useQuery({
-  queryKey: ['program_center_config_collect'],
-  queryFn: async () => {
-    try { const r = await api.get("/jaxrs/program_center/config/collect"); return (r.data ?? []) as any[]; }
-    catch { return []; }
-  },
-  staleTime: 60000,
-});
-const program_center_validation_meta_ref = ref<any[]>([]);
-const program_center_validation_meta_q = useQuery({
-  queryKey: ['program_center_validation_meta'],
-  queryFn: async () => {
-    try { const r = await api.get("/jaxrs/program_center/validation/meta"); return (r.data ?? []) as any[]; }
-    catch { return []; }
-  },
-  staleTime: 60000,
-});
-const jest_clear_cache_es_ref = ref<any[]>([]);
-const jest_clear_cache_es_q = useQuery({
-  queryKey: ['jest_clear_cache_es'],
-  queryFn: async () => {
-    try { const r = await api.get("/jaxrs/program_center/jest/clear/cache/es"); return (r.data ?? []) as any[]; }
-    catch { return []; }
-  },
-  staleTime: 60000,
-});
-const program_center_collect_resetpassword_ref = ref<any[]>([]);
-const program_center_collect_resetpassword_q = useQuery({
-  queryKey: ['program_center_collect_resetpassword'],
-  queryFn: async () => {
-    try { const r = await api.get("/jaxrs/program_center/collect/resetpassword"); return (r.data ?? []) as any[]; }
-    catch { return []; }
-  },
-  staleTime: 60000,
-});
-const program_center_mpweixin_menu_add_ref = ref<any[]>([]);
-const program_center_mpweixin_menu_add_q = useQuery({
-  queryKey: ['program_center_mpweixin_menu_add'],
-  queryFn: async () => {
-    try { const r = await api.get("/jaxrs/program_center/mpweixin/menu/add"); return (r.data ?? []) as any[]; }
-    catch { return []; }
-  },
-  staleTime: 60000,
-});
-const image_menu_logo_focus_ref = ref<any[]>([]);
-const image_menu_logo_focus_q = useQuery({
-  queryKey: ['image_menu_logo_focus'],
-  queryFn: async () => {
-    try { const r = await api.get("/jaxrs/program_center/appstyle/image/menu/logo/focus"); return (r.data ?? []) as any[]; }
-    catch { return []; }
-  },
-  staleTime: 60000,
-});
-const open_run_time_config_ref = ref<any[]>([]);
-const open_run_time_config_q = useQuery({
-  queryKey: ['open_run_time_config'],
-  queryFn: async () => {
-    try { const r = await api.get("/jaxrs/program_center/config/open/run/time/config"); return (r.data ?? []) as any[]; }
-    catch { return []; }
-  },
-  staleTime: 60000,
-});
 const bar_select2_count_10_ref = ref<any[]>([]);
 const bar_select2_count_10_q = useQuery({
   queryKey: ['bar_select2_count_10'],
@@ -977,15 +483,6 @@ const bar_select2_count_count_q = useQuery({
   },
   staleTime: 60000,
 });
-const collect_code_mobile_mobile_ref = ref<any[]>([]);
-const collect_code_mobile_mobile_q = useQuery({
-  queryKey: ['collect_code_mobile_mobile'],
-  queryFn: async () => {
-    try { const r = await api.get("/jaxrs/program_center/collect/code/mobile/mobile"); return (r.data ?? []) as any[]; }
-    catch { return []; }
-  },
-  staleTime: 60000,
-});
 const program_center_agent_a_1_ref = ref<any[]>([]);
 const program_center_agent_a_1_q = useQuery({
   queryKey: ['program_center_agent_a_1'],
@@ -997,128 +494,11 @@ const program_center_agent_a_1_q = useQuery({
 });
 
 
-const dictFlag_path_data_mockputtopost_ref = ref<any[]>([]);
-const dictFlag_path_data_mockputtopost_q = useQuery({
-  queryKey: ['dictFlag_path_data_mockputtopost'],
-  queryFn: async () => {
-    try { const r = await api.get("/jaxrs/program_center/dict/dictFlag/path/data/mockputtopost"); return (r.data ?? []) as any[]; }
-    catch { return []; }
-  },
-  staleTime: 60000,
-});
-const program_center_warnlog_ref = ref<any[]>([]);
-const program_center_warnlog_q = useQuery({
-  queryKey: ['program_center_warnlog'],
-  queryFn: async () => {
-    try { const r = await api.get("/jaxrs/program_center/warnlog"); return (r.data ?? []) as any[]; }
-    catch { return []; }
-  },
-  staleTime: 60000,
-});
 const program_center_test_test2_ref = ref<any[]>([]);
 const program_center_test_test2_q = useQuery({
   queryKey: ['program_center_test_test2'],
   queryFn: async () => {
     try { const r = await api.get("/jaxrs/program_center/test/test2"); return (r.data ?? []) as any[]; }
-    catch { return []; }
-  },
-  staleTime: 60000,
-});
-const flag_install_or_update_ref = ref<any[]>([]);
-const flag_install_or_update_q = useQuery({
-  queryKey: ['flag_install_or_update'],
-  queryFn: async () => {
-    try { const r = await api.get("/jaxrs/program_center/market/flag/install/or/update"); return (r.data ?? []) as any[]; }
-    catch { return []; }
-  },
-  staleTime: 60000,
-});
-const program_center_agent_flag_ref = ref<any[]>([]);
-const program_center_agent_flag_q = useQuery({
-  queryKey: ['program_center_agent_flag'],
-  queryFn: async () => {
-    try { const r = await api.get("/jaxrs/program_center/agent/flag"); return (r.data ?? []) as any[]; }
-    catch { return []; }
-  },
-  staleTime: 60000,
-});
-const program_center_dict_ref = ref<any[]>([]);
-const program_center_dict_q = useQuery({
-  queryKey: ['program_center_dict'],
-  queryFn: async () => {
-    try { const r = await api.get("/jaxrs/program_center/dict"); return (r.data ?? []) as any[]; }
-    catch { return []; }
-  },
-  staleTime: 60000,
-});
-const program_center_input_create_ref = ref<any[]>([]);
-const program_center_input_create_q = useQuery({
-  queryKey: ['program_center_input_create'],
-  queryFn: async () => {
-    try { const r = await api.get("/jaxrs/program_center/input/create"); return (r.data ?? []) as any[]; }
-    catch { return []; }
-  },
-  staleTime: 60000,
-});
-const program_center_script_name_name_ref = ref<any[]>([]);
-const program_center_script_name_name_q = useQuery({
-  queryKey: ['program_center_script_name_name'],
-  queryFn: async () => {
-    try { const r = await api.get("/jaxrs/program_center/script/name/name"); return (r.data ?? []) as any[]; }
-    catch { return []; }
-  },
-  staleTime: 60000,
-});
-const program_center_market_flag_uninstall_ref = ref<any[]>([]);
-const program_center_market_flag_uninstall_q = useQuery({
-  queryKey: ['program_center_market_flag_uninstall'],
-  queryFn: async () => {
-    try { const r = await api.get("/jaxrs/program_center/market/flag/uninstall"); return (r.data ?? []) as any[]; }
-    catch { return []; }
-  },
-  staleTime: 60000,
-});
-const program_center_module_list_ref = ref<any[]>([]);
-const program_center_module_list_q = useQuery({
-  queryKey: ['program_center_module_list'],
-  queryFn: async () => {
-    try { const r = await api.get("/jaxrs/program_center/module/list"); return (r.data ?? []) as any[]; }
-    catch { return []; }
-  },
-  staleTime: 60000,
-});
-const appstyle_image_application_top_ref = ref<any[]>([]);
-const appstyle_image_application_top_q = useQuery({
-  queryKey: ['appstyle_image_application_top'],
-  queryFn: async () => {
-    try { const r = await api.get("/jaxrs/program_center/appstyle/image/application/top"); return (r.data ?? []) as any[]; }
-    catch { return []; }
-  },
-  staleTime: 60000,
-});
-const program_center_datastructure_ref = ref<any[]>([]);
-const program_center_datastructure_q = useQuery({
-  queryKey: ['program_center_datastructure'],
-  queryFn: async () => {
-    try { const r = await api.get("/jaxrs/program_center/datastructure"); return (r.data ?? []) as any[]; }
-    catch { return []; }
-  },
-  staleTime: 60000,
-});
-const program_center_qiyeweixin_pull_sync_ref = ref<any[]>([]);
-const program_center_qiyeweixin_pull_sync_q = useQuery({
-  queryKey: ['program_center_qiyeweixin_pull_sync'],
-  queryFn: async () => {
-    try { const r = await api.get("/jaxrs/program_center/qiyeweixin/pull/sync"); return (r.data ?? []) as any[]; }
-    catch { return []; }
-  },
-  staleTime: 60000,
-});
-const program_center_schedule_list_schedule_ref = ref<any[]>([]);
-const program_center_schedule_list_schedule_q = useQuery({
-  queryKey: ['program_center_schedule_list_schedule'],
-  queryFn: async () => {
-    try { const r = await api.get("/jaxrs/program_center/schedule/list/schedule"); return (r.data ?? []) as any[]; }
     catch { return []; }
   },
   staleTime: 60000,
@@ -1132,105 +512,6 @@ const module_output_m_1_file_q = useQuery({
   },
   staleTime: 60000,
 });
-const program_center_applications_list_ref = ref<any[]>([]);
-const program_center_applications_list_q = useQuery({
-  queryKey: ['program_center_applications_list'],
-  queryFn: async () => {
-    try { const r = await api.get("/jaxrs/program_center/applications/list"); return (r.data ?? []) as any[]; }
-    catch { return []; }
-  },
-  staleTime: 60000,
-});
-const program_center_appstyle_current_style_ref = ref<any[]>([]);
-const program_center_appstyle_current_style_q = useQuery({
-  queryKey: ['program_center_appstyle_current_style'],
-  queryFn: async () => {
-    try { const r = await api.get("/jaxrs/program_center/appstyle/current/style"); return (r.data ?? []) as any[]; }
-    catch { return []; }
-  },
-  staleTime: 60000,
-});
-const program_center_collect_disconnect_ref = ref<any[]>([]);
-const program_center_collect_disconnect_q = useQuery({
-  queryKey: ['program_center_collect_disconnect'],
-  queryFn: async () => {
-    try { const r = await api.get("/jaxrs/program_center/collect/disconnect"); return (r.data ?? []) as any[]; }
-    catch { return []; }
-  },
-  staleTime: 60000,
-});
-const program_center_core_list_ref = ref<any[]>([]);
-const program_center_core_list_q = useQuery({
-  queryKey: ['program_center_core_list'],
-  queryFn: async () => {
-    try { const r = await api.get("/jaxrs/program_center/core/list"); return (r.data ?? []) as any[]; }
-    catch { return []; }
-  },
-  staleTime: 60000,
-});
-const program_center_config_list_entity_ref = ref<any[]>([]);
-const program_center_config_list_entity_q = useQuery({
-  queryKey: ['program_center_config_list_entity'],
-  queryFn: async () => {
-    try { const r = await api.get("/jaxrs/program_center/config/list/entity"); return (r.data ?? []) as any[]; }
-    catch { return []; }
-  },
-  staleTime: 60000,
-});
-const program_center_application_some_id_ref = ref<any[]>([]);
-const program_center_application_some_id_q = useQuery({
-  queryKey: ['program_center_application_some_id'],
-  queryFn: async () => {
-    try { const r = await api.get("/jaxrs/program_center/application/some-id"); return (r.data ?? []) as any[]; }
-    catch { return []; }
-  },
-  staleTime: 60000,
-});
-const program_center_jest_version_ref = ref<any[]>([]);
-const program_center_jest_version_q = useQuery({
-  queryKey: ['program_center_jest_version'],
-  queryFn: async () => {
-    try { const r = await api.get("/jaxrs/program_center/jest/version"); return (r.data ?? []) as any[]; }
-    catch { return []; }
-  },
-  staleTime: 60000,
-});
-const program_center_welink_pull_sync_ref = ref<any[]>([]);
-const program_center_welink_pull_sync_q = useQuery({
-  queryKey: ['program_center_welink_pull_sync'],
-  queryFn: async () => {
-    try { const r = await api.get("/jaxrs/program_center/welink/pull/sync"); return (r.data ?? []) as any[]; }
-    catch { return []; }
-  },
-  staleTime: 60000,
-});
-const list_id_prev_count_ref = ref<any[]>([]);
-const list_id_prev_count_q = useQuery({
-  queryKey: ['list_id_prev_count'],
-  queryFn: async () => {
-    try { const r = await api.get("/jaxrs/program_center/unexpectederrorlog/list/id/prev/count"); return (r.data ?? []) as any[]; }
-    catch { return []; }
-  },
-  staleTime: 60000,
-});
-const program_center_deploy_list_ref = ref<any[]>([]);
-const program_center_deploy_list_q = useQuery({
-  queryKey: ['program_center_deploy_list'],
-  queryFn: async () => {
-    try { const r = await api.get("/jaxrs/program_center/deploy/list"); return (r.data ?? []) as any[]; }
-    catch { return []; }
-  },
-  staleTime: 60000,
-});
-const program_center_deploy_server_resource_ref = ref<any[]>([]);
-const program_center_deploy_server_resource_q = useQuery({
-  queryKey: ['program_center_deploy_server_resource'],
-  queryFn: async () => {
-    try { const r = await api.get("/jaxrs/program_center/deploy/server/resource"); return (r.data ?? []) as any[]; }
-    catch { return []; }
-  },
-  staleTime: 60000,
-});
 const output_f_1_select_file_ref = ref<any[]>([]);
 const output_f_1_select_file_q = useQuery({
   queryKey: ['output_f_1_select_file'],
@@ -1240,130 +521,13 @@ const output_f_1_select_file_q = useQuery({
   },
   staleTime: 60000,
 });
-const id_validate_answer_answer_ref = ref<any[]>([]);
-const id_validate_answer_answer_q = useQuery({
-  queryKey: ['id_validate_answer_answer'],
-  queryFn: async () => {
-    try { const r = await api.get("/jaxrs/program_center/captcha/id/validate/answer/answer"); return (r.data ?? []) as any[]; }
-    catch { return []; }
-  },
-  staleTime: 60000,
-});
-const program_center_module_output_ref = ref<any[]>([]);
-const program_center_module_output_q = useQuery({
-  queryKey: ['program_center_module_output'],
-  queryFn: async () => {
-    try { const r = await api.get("/jaxrs/program_center/module/output"); return (r.data ?? []) as any[]; }
-    catch { return []; }
-  },
-  staleTime: 60000,
-});
-const program_center_module_output_structure_ref = ref<any[]>([]);
-const program_center_module_output_structure_q = useQuery({
-  queryKey: ['program_center_module_output_structure'],
-  queryFn: async () => {
-    try { const r = await api.get("/jaxrs/program_center/module/output/structure"); return (r.data ?? []) as any[]; }
-    catch { return []; }
-  },
-  staleTime: 60000,
-});
 
 
-const program_center_config_change_password_ref = ref<any[]>([]);
-const program_center_config_change_password_q = useQuery({
-  queryKey: ['program_center_config_change_password'],
-  queryFn: async () => {
-    try { const r = await api.get("/jaxrs/program_center/config/change/password"); return (r.data ?? []) as any[]; }
-    catch { return []; }
-  },
-  staleTime: 60000,
-});
-const program_center_unknown_ref = ref<any[]>([]);
-const program_center_unknown_q = useQuery({
-  queryKey: ['program_center_unknown'],
-  queryFn: async () => {
-    try { const r = await api.get("/jaxrs/program_center/unknown"); return (r.data ?? []) as any[]; }
-    catch { return []; }
-  },
-  staleTime: 60000,
-});
-const program_center_collect_connect_ref = ref<any[]>([]);
-const program_center_collect_connect_q = useQuery({
-  queryKey: ['program_center_collect_connect'],
-  queryFn: async () => {
-    try { const r = await api.get("/jaxrs/program_center/collect/connect"); return (r.data ?? []) as any[]; }
-    catch { return []; }
-  },
-  staleTime: 60000,
-});
-const program_center_collect_validate_password_ref = ref<any[]>([]);
-const program_center_collect_validate_password_q = useQuery({
-  queryKey: ['program_center_collect_validate_password'],
-  queryFn: async () => {
-    try { const r = await api.get("/jaxrs/program_center/collect/validate/password"); return (r.data ?? []) as any[]; }
-    catch { return []; }
-  },
-  staleTime: 60000,
-});
-const program_center_dict_d_id_ref = ref<any[]>([]);
-const program_center_dict_d_id_q = useQuery({
-  queryKey: ['program_center_dict_d_id'],
-  queryFn: async () => {
-    try { const r = await api.get("/jaxrs/program_center/dict/d-id"); return (r.data ?? []) as any[]; }
-    catch { return []; }
-  },
-  staleTime: 60000,
-});
-const program_center_input_prepare_create_ref = ref<any[]>([]);
-const program_center_input_prepare_create_q = useQuery({
-  queryKey: ['program_center_input_prepare_create'],
-  queryFn: async () => {
-    try { const r = await api.get("/jaxrs/program_center/input/prepare/create"); return (r.data ?? []) as any[]; }
-    catch { return []; }
-  },
-  staleTime: 60000,
-});
-const program_center_agent_a_flag_ref = ref<any[]>([]);
-const program_center_agent_a_flag_q = useQuery({
-  queryKey: ['program_center_agent_a_flag'],
-  queryFn: async () => {
-    try { const r = await api.get("/jaxrs/program_center/agent/a-flag"); return (r.data ?? []) as any[]; }
-    catch { return []; }
-  },
-  staleTime: 60000,
-});
 const program_center_agent_a_1_disable_ref = ref<any[]>([]);
 const program_center_agent_a_1_disable_q = useQuery({
   queryKey: ['program_center_agent_a_1_disable'],
   queryFn: async () => {
     try { const r = await api.get("/jaxrs/program_center/agent/a-1/disable"); return (r.data ?? []) as any[]; }
-    catch { return []; }
-  },
-  staleTime: 60000,
-});
-const program_center_center_regist_applications_ref = ref<any[]>([]);
-const program_center_center_regist_applications_q = useQuery({
-  queryKey: ['program_center_center_regist_applications'],
-  queryFn: async () => {
-    try { const r = await api.get("/jaxrs/program_center/center/regist/applications"); return (r.data ?? []) as any[]; }
-    catch { return []; }
-  },
-  staleTime: 60000,
-});
-const program_center_dict_dictFlag_data_ref = ref<any[]>([]);
-const program_center_dict_dictFlag_data_q = useQuery({
-  queryKey: ['program_center_dict_dictFlag_data'],
-  queryFn: async () => {
-    try { const r = await api.get("/jaxrs/program_center/dict/dictFlag/data"); return (r.data ?? []) as any[]; }
-    catch { return []; }
-  },
-  staleTime: 60000,
-});
-const program_center_command_list_node_ref = ref<any[]>([]);
-const program_center_command_list_node_q = useQuery({
-  queryKey: ['program_center_command_list_node'],
-  queryFn: async () => {
-    try { const r = await api.get("/jaxrs/program_center/command/list/node"); return (r.data ?? []) as any[]; }
     catch { return []; }
   },
   staleTime: 60000,
@@ -1377,47 +541,11 @@ const c_1_validate_answer_1234_q = useQuery({
   },
   staleTime: 60000,
 });
-const list_with_category_cms_ref = ref<any[]>([]);
-const list_with_category_cms_q = useQuery({
-  queryKey: ['list_with_category_cms'],
-  queryFn: async () => {
-    try { const r = await api.get("/jaxrs/program_center/invoke/list/with/category/cms"); return (r.data ?? []) as any[]; }
-    catch { return []; }
-  },
-  staleTime: 60000,
-});
 const program_center_invoke_i_1_execute_ref = ref<any[]>([]);
 const program_center_invoke_i_1_execute_q = useQuery({
   queryKey: ['program_center_invoke_i_1_execute'],
   queryFn: async () => {
     try { const r = await api.get("/jaxrs/program_center/invoke/i-1/execute"); return (r.data ?? []) as any[]; }
-    catch { return []; }
-  },
-  staleTime: 60000,
-});
-const program_center_script_sc_flag_ref = ref<any[]>([]);
-const program_center_script_sc_flag_q = useQuery({
-  queryKey: ['program_center_script_sc_flag'],
-  queryFn: async () => {
-    try { const r = await api.get("/jaxrs/program_center/script/sc-flag"); return (r.data ?? []) as any[]; }
-    catch { return []; }
-  },
-  staleTime: 60000,
-});
-const program_center_script_flag_ref = ref<any[]>([]);
-const program_center_script_flag_q = useQuery({
-  queryKey: ['program_center_script_flag'],
-  queryFn: async () => {
-    try { const r = await api.get("/jaxrs/program_center/script/flag"); return (r.data ?? []) as any[]; }
-    catch { return []; }
-  },
-  staleTime: 60000,
-});
-const program_center_collect_login_ref = ref<any[]>([]);
-const program_center_collect_login_q = useQuery({
-  queryKey: ['program_center_collect_login'],
-  queryFn: async () => {
-    try { const r = await api.get("/jaxrs/program_center/collect/login"); return (r.data ?? []) as any[]; }
     catch { return []; }
   },
   staleTime: 60000,
@@ -1431,139 +559,13 @@ const program_center_agent_a_1_execute_q = useQuery({
   },
   staleTime: 60000,
 });
-const program_center_market_list_category_ref = ref<any[]>([]);
-const program_center_market_list_category_q = useQuery({
-  queryKey: ['program_center_market_list_category'],
-  queryFn: async () => {
-    try { const r = await api.get("/jaxrs/program_center/market/list/category"); return (r.data ?? []) as any[]; }
-    catch { return []; }
-  },
-  staleTime: 60000,
-});
-const program_center_invoke_list_category_ref = ref<any[]>([]);
-const program_center_invoke_list_category_q = useQuery({
-  queryKey: ['program_center_invoke_list_category'],
-  queryFn: async () => {
-    try { const r = await api.get("/jaxrs/program_center/invoke/list/category"); return (r.data ?? []) as any[]; }
-    catch { return []; }
-  },
-  staleTime: 60000,
-});
 
 
-const program_center_config_license_ref = ref<any[]>([]);
-const program_center_config_license_q = useQuery({
-  queryKey: ['program_center_config_license'],
-  queryFn: async () => {
-    try { const r = await api.get("/jaxrs/program_center/config/license"); return (r.data ?? []) as any[]; }
-    catch { return []; }
-  },
-  staleTime: 60000,
-});
-const program_center_prompterrorlog_ref = ref<any[]>([]);
-const program_center_prompterrorlog_q = useQuery({
-  queryKey: ['program_center_prompterrorlog'],
-  queryFn: async () => {
-    try { const r = await api.get("/jaxrs/program_center/prompterrorlog"); return (r.data ?? []) as any[]; }
-    catch { return []; }
-  },
-  staleTime: 60000,
-});
-const program_center_collect_add_ref = ref<any[]>([]);
-const program_center_collect_add_q = useQuery({
-  queryKey: ['program_center_collect_add'],
-  queryFn: async () => {
-    try { const r = await api.get("/jaxrs/program_center/collect/add"); return (r.data ?? []) as any[]; }
-    catch { return []; }
-  },
-  staleTime: 60000,
-});
-const dingding_sync_organization_callback_ref = ref<any[]>([]);
-const dingding_sync_organization_callback_q = useQuery({
-  queryKey: ['dingding_sync_organization_callback'],
-  queryFn: async () => {
-    try { const r = await api.get("/jaxrs/program_center/dingding/sync/organization/callback"); return (r.data ?? []) as any[]; }
-    catch { return []; }
-  },
-  staleTime: 60000,
-});
-const program_center_appstyle_current_update_ref = ref<any[]>([]);
-const program_center_appstyle_current_update_q = useQuery({
-  queryKey: ['program_center_appstyle_current_update'],
-  queryFn: async () => {
-    try { const r = await api.get("/jaxrs/program_center/appstyle/current/update"); return (r.data ?? []) as any[]; }
-    catch { return []; }
-  },
-  staleTime: 60000,
-});
-const image_launch_logo_erase_ref = ref<any[]>([]);
-const image_launch_logo_erase_q = useQuery({
-  queryKey: ['image_launch_logo_erase'],
-  queryFn: async () => {
-    try { const r = await api.get("/jaxrs/program_center/appstyle/image/launch/logo/erase"); return (r.data ?? []) as any[]; }
-    catch { return []; }
-  },
-  staleTime: 60000,
-});
 const list_id_next_count_1_ref = ref<any[]>([]);
 const list_id_next_count_1_q = useQuery({
   queryKey: ['list_id_next_count_1'],
   queryFn: async () => {
     try { const r = await api.get("/jaxrs/program_center/unexpectederrorlog/list/id/next/count"); return (r.data ?? []) as any[]; }
-    catch { return []; }
-  },
-  staleTime: 60000,
-});
-const webserver_assemble_source_source_ref = ref<any[]>([]);
-const webserver_assemble_source_source_q = useQuery({
-  queryKey: ['webserver_assemble_source_source'],
-  queryFn: async () => {
-    try { const r = await api.get("/jaxrs/program_center/distribute/webserver/assemble/source/source"); return (r.data ?? []) as any[]; }
-    catch { return []; }
-  },
-  staleTime: 60000,
-});
-const script_name_name_imported_ref = ref<any[]>([]);
-const script_name_name_imported_q = useQuery({
-  queryKey: ['script_name_name_imported'],
-  queryFn: async () => {
-    try { const r = await api.get("/jaxrs/program_center/script/name/name/imported"); return (r.data ?? []) as any[]; }
-    catch { return []; }
-  },
-  staleTime: 60000,
-});
-const program_center_apppack_pack_info_ref = ref<any[]>([]);
-const program_center_apppack_pack_info_q = useQuery({
-  queryKey: ['program_center_apppack_pack_info'],
-  queryFn: async () => {
-    try { const r = await api.get("/jaxrs/program_center/apppack/pack/info"); return (r.data ?? []) as any[]; }
-    catch { return []; }
-  },
-  staleTime: 60000,
-});
-const program_center_input_cover_ref = ref<any[]>([]);
-const program_center_input_cover_q = useQuery({
-  queryKey: ['program_center_input_cover'],
-  queryFn: async () => {
-    try { const r = await api.get("/jaxrs/program_center/input/cover"); return (r.data ?? []) as any[]; }
-    catch { return []; }
-  },
-  staleTime: 60000,
-});
-const dingding_get_callback_aes_ref = ref<any[]>([]);
-const dingding_get_callback_aes_q = useQuery({
-  queryKey: ['dingding_get_callback_aes'],
-  queryFn: async () => {
-    try { const r = await api.get("/jaxrs/program_center/dingding/get/callback/aes"); return (r.data ?? []) as any[]; }
-    catch { return []; }
-  },
-  staleTime: 60000,
-});
-const program_center_config_token_ref = ref<any[]>([]);
-const program_center_config_token_q = useQuery({
-  queryKey: ['program_center_config_token'],
-  queryFn: async () => {
-    try { const r = await api.get("/jaxrs/program_center/config/token"); return (r.data ?? []) as any[]; }
     catch { return []; }
   },
   staleTime: 60000,
@@ -1577,26 +579,8 @@ const program_center_market_m_1_download_q = useQuery({
   },
   staleTime: 60000,
 });
-const program_center_script_ref = ref<any[]>([]);
-const program_center_script_q = useQuery({
-  queryKey: ['program_center_script'],
-  queryFn: async () => {
-    try { const r = await api.get("/jaxrs/program_center/script"); return (r.data ?? []) as any[]; }
-    catch { return []; }
-  },
-  staleTime: 60000,
-});
 
 
-const dictFlag_path_data_mockdeletetoget_ref = ref<any[]>([]);
-const dictFlag_path_data_mockdeletetoget_q = useQuery({
-  queryKey: ['dictFlag_path_data_mockdeletetoget'],
-  queryFn: async () => {
-    try { const r = await api.get("/jaxrs/program_center/dict/dictFlag/path/data/mockdeletetoget"); return (r.data ?? []) as any[]; }
-    catch { return []; }
-  },
-  staleTime: 60000,
-});
 const mpweixin_menu_delete_wm_1_ref = ref<any[]>([]);
 const mpweixin_menu_delete_wm_1_q = useQuery({
   queryKey: ['mpweixin_menu_delete_wm_1'],
@@ -1606,134 +590,8 @@ const mpweixin_menu_delete_wm_1_q = useQuery({
   },
   staleTime: 60000,
 });
-const cloud_unit_is_vip_ref = ref<any[]>([]);
-const cloud_unit_is_vip_q = useQuery({
-  queryKey: ['cloud_unit_is_vip'],
-  queryFn: async () => {
-    try { const r = await api.get("/jaxrs/program_center/market/cloud/unit/is/vip"); return (r.data ?? []) as any[]; }
-    catch { return []; }
-  },
-  staleTime: 60000,
-});
-const program_center_config_open_ref = ref<any[]>([]);
-const program_center_config_open_q = useQuery({
-  queryKey: ['program_center_config_open'],
-  queryFn: async () => {
-    try { const r = await api.get("/jaxrs/program_center/config/open"); return (r.data ?? []) as any[]; }
-    catch { return []; }
-  },
-  staleTime: 60000,
-});
-const dingding_request_pull_sync_ref = ref<any[]>([]);
-const dingding_request_pull_sync_q = useQuery({
-  queryKey: ['dingding_request_pull_sync'],
-  queryFn: async () => {
-    try { const r = await api.get("/jaxrs/program_center/dingding/request/pull/sync"); return (r.data ?? []) as any[]; }
-    catch { return []; }
-  },
-  staleTime: 60000,
-});
-const program_center_code_list_ref = ref<any[]>([]);
-const program_center_code_list_q = useQuery({
-  queryKey: ['program_center_code_list'],
-  queryFn: async () => {
-    try { const r = await api.get("/jaxrs/program_center/code/list"); return (r.data ?? []) as any[]; }
-    catch { return []; }
-  },
-  staleTime: 60000,
-});
-const program_center_schedule_schedule_fire_ref = ref<any[]>([]);
-const program_center_schedule_schedule_fire_q = useQuery({
-  queryKey: ['program_center_schedule_schedule_fire'],
-  queryFn: async () => {
-    try { const r = await api.get("/jaxrs/program_center/schedule/schedule/fire"); return (r.data ?? []) as any[]; }
-    catch { return []; }
-  },
-  staleTime: 60000,
-});
-const program_center_storagemappings_ref = ref<any[]>([]);
-const program_center_storagemappings_q = useQuery({
-  queryKey: ['program_center_storagemappings'],
-  queryFn: async () => {
-    try { const r = await api.get("/jaxrs/program_center/storagemappings"); return (r.data ?? []) as any[]; }
-    catch { return []; }
-  },
-  staleTime: 60000,
-});
-const program_center_zhengwudingding_regist_callback_ref = ref<any[]>([]);
-const program_center_zhengwudingding_regist_callback_q = useQuery({
-  queryKey: ['program_center_zhengwudingding_regist_callback'],
-  queryFn: async () => {
-    try { const r = await api.get("/jaxrs/program_center/zhengwudingding/regist/callback"); return (r.data ?? []) as any[]; }
-    catch { return []; }
-  },
-  staleTime: 60000,
-});
-const program_center_config_centerserver_ref = ref<any[]>([]);
-const program_center_config_centerserver_q = useQuery({
-  queryKey: ['program_center_config_centerserver'],
-  queryFn: async () => {
-    try { const r = await api.get("/jaxrs/program_center/config/centerserver"); return (r.data ?? []) as any[]; }
-    catch { return []; }
-  },
-  staleTime: 60000,
-});
-const program_center_validation_scripting_benchmark_ref = ref<any[]>([]);
-const program_center_validation_scripting_benchmark_q = useQuery({
-  queryKey: ['program_center_validation_scripting_benchmark'],
-  queryFn: async () => {
-    try { const r = await api.get("/jaxrs/program_center/validation/scripting/benchmark"); return (r.data ?? []) as any[]; }
-    catch { return []; }
-  },
-  staleTime: 60000,
-});
-const program_center_jest_clear_cache_ref = ref<any[]>([]);
-const program_center_jest_clear_cache_q = useQuery({
-  queryKey: ['program_center_jest_clear_cache'],
-  queryFn: async () => {
-    try { const r = await api.get("/jaxrs/program_center/jest/clear/cache"); return (r.data ?? []) as any[]; }
-    catch { return []; }
-  },
-  staleTime: 60000,
-});
-const collect_mobile_check_connect_ref = ref<any[]>([]);
-const collect_mobile_check_connect_q = useQuery({
-  queryKey: ['collect_mobile_check_connect'],
-  queryFn: async () => {
-    try { const r = await api.get("/jaxrs/program_center/collect/mobile/check/connect"); return (r.data ?? []) as any[]; }
-    catch { return []; }
-  },
-  staleTime: 60000,
-});
-const program_center_application_create_ref = ref<any[]>([]);
-const program_center_application_create_q = useQuery({
-  queryKey: ['program_center_application_create'],
-  queryFn: async () => {
-    try { const r = await api.get("/jaxrs/program_center/application/create"); return (r.data ?? []) as any[]; }
-    catch { return []; }
-  },
-  staleTime: 60000,
-});
-const program_center_collect_updateUnit_ref = ref<any[]>([]);
-const program_center_collect_updateUnit_q = useQuery({
-  queryKey: ['program_center_collect_updateUnit'],
-  queryFn: async () => {
-    try { const r = await api.get("/jaxrs/program_center/collect/updateUnit"); return (r.data ?? []) as any[]; }
-    catch { return []; }
-  },
-  staleTime: 60000,
-});
 
 
-const script_ref = ref<any[]>([]);
-const script_q = useQuery({
-  queryKey: ['script'],
-  queryFn: async () => {
-    try { const r = await api.get("/jaxrs/script"); return (r.data ?? []) as any[]; }
-    catch { return []; }
-  },
-  staleTime: 60000,
-});
 const s_1_app_app_1_imported_ref = ref<any[]>([]);
 const s_1_app_app_1_imported_q = useQuery({
   queryKey: ['s_1_app_app_1_imported'],
@@ -1748,15 +606,6 @@ const script_s_1_q = useQuery({
   queryKey: ['script_s_1'],
   queryFn: async () => {
     try { const r = await api.get("/jaxrs/script/s-1"); return (r.data ?? []) as any[]; }
-    catch { return []; }
-  },
-  staleTime: 60000,
-});
-const script_list_manager_ref = ref<any[]>([]);
-const script_list_manager_q = useQuery({
-  queryKey: ['script_list_manager'],
-  queryFn: async () => {
-    try { const r = await api.get("/jaxrs/script/list/manager"); return (r.data ?? []) as any[]; }
     catch { return []; }
   },
   staleTime: 60000,
@@ -1808,33 +657,6 @@ const scriptversion_list_script_s_1_q = useQuery({
 });
 
 
-const program_center_schedule_report_ref = ref<any[]>([]);
-const program_center_schedule_report_q = useQuery({
-  queryKey: ['program_center_schedule_report'],
-  queryFn: async () => {
-    try { const r = await api.get("/jaxrs/program_center/schedule/report"); return (r.data ?? []) as any[]; }
-    catch { return []; }
-  },
-  staleTime: 60000,
-});
-const image_menu_logo_blur_ref = ref<any[]>([]);
-const image_menu_logo_blur_q = useQuery({
-  queryKey: ['image_menu_logo_blur'],
-  queryFn: async () => {
-    try { const r = await api.get("/jaxrs/program_center/appstyle/image/menu/logo/blur"); return (r.data ?? []) as any[]; }
-    catch { return []; }
-  },
-  staleTime: 60000,
-});
-const program_center_collect_remove_ref = ref<any[]>([]);
-const program_center_collect_remove_q = useQuery({
-  queryKey: ['program_center_collect_remove'],
-  queryFn: async () => {
-    try { const r = await api.get("/jaxrs/program_center/collect/remove"); return (r.data ?? []) as any[]; }
-    catch { return []; }
-  },
-  staleTime: 60000,
-});
 const program_center_warnlog_w_1_ref = ref<any[]>([]);
 const program_center_warnlog_w_1_q = useQuery({
   queryKey: ['program_center_warnlog_w_1'],
@@ -1844,110 +666,11 @@ const program_center_warnlog_w_1_q = useQuery({
   },
   staleTime: 60000,
 });
-const image_setup_about_logo_ref = ref<any[]>([]);
-const image_setup_about_logo_q = useQuery({
-  queryKey: ['image_setup_about_logo'],
-  queryFn: async () => {
-    try { const r = await api.get("/jaxrs/program_center/appstyle/image/setup/about/logo"); return (r.data ?? []) as any[]; }
-    catch { return []; }
-  },
-  staleTime: 60000,
-});
-const program_center_script_id_ref = ref<any[]>([]);
-const program_center_script_id_q = useQuery({
-  queryKey: ['program_center_script_id'],
-  queryFn: async () => {
-    try { const r = await api.get("/jaxrs/program_center/script/id"); return (r.data ?? []) as any[]; }
-    catch { return []; }
-  },
-  staleTime: 60000,
-});
-const qiyeweixin_request_pull_sync_ref = ref<any[]>([]);
-const qiyeweixin_request_pull_sync_q = useQuery({
-  queryKey: ['qiyeweixin_request_pull_sync'],
-  queryFn: async () => {
-    try { const r = await api.get("/jaxrs/program_center/qiyeweixin/request/pull/sync"); return (r.data ?? []) as any[]; }
-    catch { return []; }
-  },
-  staleTime: 60000,
-});
-const program_center_authentication_ref = ref<any[]>([]);
-const program_center_authentication_q = useQuery({
-  queryKey: ['program_center_authentication'],
-  queryFn: async () => {
-    try { const r = await api.get("/jaxrs/program_center/authentication"); return (r.data ?? []) as any[]; }
-    catch { return []; }
-  },
-  staleTime: 60000,
-});
 const module_remove_structure_m_1_ref = ref<any[]>([]);
 const module_remove_structure_m_1_q = useQuery({
   queryKey: ['module_remove_structure_m_1'],
   queryFn: async () => {
     try { const r = await api.get("/jaxrs/program_center/module/remove/structure/m-1"); return (r.data ?? []) as any[]; }
-    catch { return []; }
-  },
-  staleTime: 60000,
-});
-const program_center_config_get_ref = ref<any[]>([]);
-const program_center_config_get_q = useQuery({
-  queryKey: ['program_center_config_get'],
-  queryFn: async () => {
-    try { const r = await api.get("/jaxrs/program_center/config/get"); return (r.data ?? []) as any[]; }
-    catch { return []; }
-  },
-  staleTime: 60000,
-});
-const market_flag_cover_pic_ref = ref<any[]>([]);
-const market_flag_cover_pic_q = useQuery({
-  queryKey: ['market_flag_cover_pic'],
-  queryFn: async () => {
-    try { const r = await api.get("/jaxrs/program_center/market/flag/cover/pic"); return (r.data ?? []) as any[]; }
-    catch { return []; }
-  },
-  staleTime: 60000,
-});
-const program_center_invoke_flag_ref = ref<any[]>([]);
-const program_center_invoke_flag_q = useQuery({
-  queryKey: ['program_center_invoke_flag'],
-  queryFn: async () => {
-    try { const r = await api.get("/jaxrs/program_center/invoke/flag"); return (r.data ?? []) as any[]; }
-    catch { return []; }
-  },
-  staleTime: 60000,
-});
-const output_flag_select_file_ref = ref<any[]>([]);
-const output_flag_select_file_q = useQuery({
-  queryKey: ['output_flag_select_file'],
-  queryFn: async () => {
-    try { const r = await api.get("/jaxrs/program_center/output/flag/select/file"); return (r.data ?? []) as any[]; }
-    catch { return []; }
-  },
-  staleTime: 60000,
-});
-const mpweixin_message_template_send_ref = ref<any[]>([]);
-const mpweixin_message_template_send_q = useQuery({
-  queryKey: ['mpweixin_message_template_send'],
-  queryFn: async () => {
-    try { const r = await api.get("/jaxrs/program_center/mpweixin/message/template/send"); return (r.data ?? []) as any[]; }
-    catch { return []; }
-  },
-  staleTime: 60000,
-});
-const create_mass_from_count_ref = ref<any[]>([]);
-const create_mass_from_count_q = useQuery({
-  queryKey: ['create_mass_from_count'],
-  queryFn: async () => {
-    try { const r = await api.get("/jaxrs/program_center/bar/create/mass/from/count"); return (r.data ?? []) as any[]; }
-    catch { return []; }
-  },
-  staleTime: 60000,
-});
-const program_center_invoke_token_ref = ref<any[]>([]);
-const program_center_invoke_token_q = useQuery({
-  queryKey: ['program_center_invoke_token'],
-  queryFn: async () => {
-    try { const r = await api.get("/jaxrs/program_center/invoke/token"); return (r.data ?? []) as any[]; }
     catch { return []; }
   },
   staleTime: 60000,
@@ -1970,65 +693,11 @@ const distribute_assemble_source_o2_q = useQuery({
   },
   staleTime: 60000,
 });
-const program_center_config_portal_ref = ref<any[]>([]);
-const program_center_config_portal_q = useQuery({
-  queryKey: ['program_center_config_portal'],
-  queryFn: async () => {
-    try { const r = await api.get("/jaxrs/program_center/config/portal"); return (r.data ?? []) as any[]; }
-    catch { return []; }
-  },
-  staleTime: 60000,
-});
-const list_schedulelog_application_application_ref = ref<any[]>([]);
-const list_schedulelog_application_application_q = useQuery({
-  queryKey: ['list_schedulelog_application_application'],
-  queryFn: async () => {
-    try { const r = await api.get("/jaxrs/program_center/schedule/list/schedulelog/application/application"); return (r.data ?? []) as any[]; }
-    catch { return []; }
-  },
-  staleTime: 60000,
-});
-const program_center_market_flag_ref = ref<any[]>([]);
-const program_center_market_flag_q = useQuery({
-  queryKey: ['program_center_market_flag'],
-  queryFn: async () => {
-    try { const r = await api.get("/jaxrs/program_center/market/flag"); return (r.data ?? []) as any[]; }
-    catch { return []; }
-  },
-  staleTime: 60000,
-});
-const module_output_list_structure_ref = ref<any[]>([]);
-const module_output_list_structure_q = useQuery({
-  queryKey: ['module_output_list_structure'],
-  queryFn: async () => {
-    try { const r = await api.get("/jaxrs/program_center/module/output/list/structure"); return (r.data ?? []) as any[]; }
-    catch { return []; }
-  },
-  staleTime: 60000,
-});
-const pack_info_file_publish_ref = ref<any[]>([]);
-const pack_info_file_publish_q = useQuery({
-  queryKey: ['pack_info_file_publish'],
-  queryFn: async () => {
-    try { const r = await api.get("/jaxrs/program_center/apppack/pack/info/file/publish"); return (r.data ?? []) as any[]; }
-    catch { return []; }
-  },
-  staleTime: 60000,
-});
 const program_center_market_m_1_ref = ref<any[]>([]);
 const program_center_market_m_1_q = useQuery({
   queryKey: ['program_center_market_m_1'],
   queryFn: async () => {
     try { const r = await api.get("/jaxrs/program_center/market/m-1"); return (r.data ?? []) as any[]; }
-    catch { return []; }
-  },
-  staleTime: 60000,
-});
-const jest_clear_cache_source_ref = ref<any[]>([]);
-const jest_clear_cache_source_q = useQuery({
-  queryKey: ['jest_clear_cache_source'],
-  queryFn: async () => {
-    try { const r = await api.get("/jaxrs/program_center/jest/clear/cache/source"); return (r.data ?? []) as any[]; }
     catch { return []; }
   },
   staleTime: 60000,
@@ -2042,238 +711,13 @@ const program_center_output_f_1_select_q = useQuery({
   },
   staleTime: 60000,
 });
-const program_center_config_list_ref = ref<any[]>([]);
-const program_center_config_list_q = useQuery({
-  queryKey: ['program_center_config_list'],
-  queryFn: async () => {
-    try { const r = await api.get("/jaxrs/program_center/config/list"); return (r.data ?? []) as any[]; }
-    catch { return []; }
-  },
-  staleTime: 60000,
-});
-const dict_my_flag_my_path_data_ref = ref<any[]>([]);
-const dict_my_flag_my_path_data_q = useQuery({
-  queryKey: ['dict_my_flag_my_path_data'],
-  queryFn: async () => {
-    try { const r = await api.get("/jaxrs/program_center/dict/my-flag/my-path/data"); return (r.data ?? []) as any[]; }
-    catch { return []; }
-  },
-  staleTime: 60000,
-});
-const my_flag_my_path_data_mockdeletetoget_ref = ref<any[]>([]);
-const my_flag_my_path_data_mockdeletetoget_q = useQuery({
-  queryKey: ['my_flag_my_path_data_mockdeletetoget'],
-  queryFn: async () => {
-    try { const r = await api.get("/jaxrs/program_center/dict/my-flag/my-path/data/mockdeletetoget"); return (r.data ?? []) as any[]; }
-    catch { return []; }
-  },
-  staleTime: 60000,
-});
-const program_center_market_installed_version_ref = ref<any[]>([]);
-const program_center_market_installed_version_q = useQuery({
-  queryKey: ['program_center_market_installed_version'],
-  queryFn: async () => {
-    try { const r = await api.get("/jaxrs/program_center/market/installed/version"); return (r.data ?? []) as any[]; }
-    catch { return []; }
-  },
-  staleTime: 60000,
-});
 
 
-const program_center_collect_urlMapping_ref = ref<any[]>([]);
-const program_center_collect_urlMapping_q = useQuery({
-  queryKey: ['program_center_collect_urlMapping'],
-  queryFn: async () => {
-    try { const r = await api.get("/jaxrs/program_center/collect/urlMapping"); return (r.data ?? []) as any[]; }
-    catch { return []; }
-  },
-  staleTime: 60000,
-});
-const program_center_collect_ref = ref<any[]>([]);
-const program_center_collect_q = useQuery({
-  queryKey: ['program_center_collect'],
-  queryFn: async () => {
-    try { const r = await api.get("/jaxrs/program_center/collect"); return (r.data ?? []) as any[]; }
-    catch { return []; }
-  },
-  staleTime: 60000,
-});
-const program_center_datastructure_tables_all_ref = ref<any[]>([]);
-const program_center_datastructure_tables_all_q = useQuery({
-  queryKey: ['program_center_datastructure_tables_all'],
-  queryFn: async () => {
-    try { const r = await api.get("/jaxrs/program_center/datastructure/tables/all"); return (r.data ?? []) as any[]; }
-    catch { return []; }
-  },
-  staleTime: 60000,
-});
-const appstyle_image_process_default_ref = ref<any[]>([]);
-const appstyle_image_process_default_q = useQuery({
-  queryKey: ['appstyle_image_process_default'],
-  queryFn: async () => {
-    try { const r = await api.get("/jaxrs/program_center/appstyle/image/process/default"); return (r.data ?? []) as any[]; }
-    catch { return []; }
-  },
-  staleTime: 60000,
-});
 const program_center_unexpectederrorlog_u_1_ref = ref<any[]>([]);
 const program_center_unexpectederrorlog_u_1_q = useQuery({
   queryKey: ['program_center_unexpectederrorlog_u_1'],
   queryFn: async () => {
     try { const r = await api.get("/jaxrs/program_center/unexpectederrorlog/u-1"); return (r.data ?? []) as any[]; }
-    catch { return []; }
-  },
-  staleTime: 60000,
-});
-const program_center_prompterrorlog_count_exceptionclass_ref = ref<any[]>([]);
-const program_center_prompterrorlog_count_exceptionclass_q = useQuery({
-  queryKey: ['program_center_prompterrorlog_count_exceptionclass'],
-  queryFn: async () => {
-    try { const r = await api.get("/jaxrs/program_center/prompterrorlog/count/exceptionclass"); return (r.data ?? []) as any[]; }
-    catch { return []; }
-  },
-  staleTime: 60000,
-});
-const program_center_config_list_application_ref = ref<any[]>([]);
-const program_center_config_list_application_q = useQuery({
-  queryKey: ['program_center_config_list_application'],
-  queryFn: async () => {
-    try { const r = await api.get("/jaxrs/program_center/config/list/application"); return (r.data ?? []) as any[]; }
-    catch { return []; }
-  },
-  staleTime: 60000,
-});
-const program_center_market_install_offline_ref = ref<any[]>([]);
-const program_center_market_install_offline_q = useQuery({
-  queryKey: ['program_center_market_install_offline'],
-  queryFn: async () => {
-    try { const r = await api.get("/jaxrs/program_center/market/install/offline"); return (r.data ?? []) as any[]; }
-    catch { return []; }
-  },
-  staleTime: 60000,
-});
-const program_center_structure_list_ref = ref<any[]>([]);
-const program_center_structure_list_q = useQuery({
-  queryKey: ['program_center_structure_list'],
-  queryFn: async () => {
-    try { const r = await api.get("/jaxrs/program_center/structure/list"); return (r.data ?? []) as any[]; }
-    catch { return []; }
-  },
-  staleTime: 60000,
-});
-const program_center_agent_flag_execute_ref = ref<any[]>([]);
-const program_center_agent_flag_execute_q = useQuery({
-  queryKey: ['program_center_agent_flag_execute'],
-  queryFn: async () => {
-    try { const r = await api.get("/jaxrs/program_center/agent/flag/execute"); return (r.data ?? []) as any[]; }
-    catch { return []; }
-  },
-  staleTime: 60000,
-});
-const program_center_cachedispatch_ref = ref<any[]>([]);
-const program_center_cachedispatch_q = useQuery({
-  queryKey: ['program_center_cachedispatch'],
-  queryFn: async () => {
-    try { const r = await api.get("/jaxrs/program_center/cachedispatch"); return (r.data ?? []) as any[]; }
-    catch { return []; }
-  },
-  staleTime: 60000,
-});
-const pack_info_file_last_ref = ref<any[]>([]);
-const pack_info_file_last_q = useQuery({
-  queryKey: ['pack_info_file_last'],
-  queryFn: async () => {
-    try { const r = await api.get("/jaxrs/program_center/apppack/pack/info/file/last"); return (r.data ?? []) as any[]; }
-    catch { return []; }
-  },
-  staleTime: 60000,
-});
-const pack_info_android_repack_ref = ref<any[]>([]);
-const pack_info_android_repack_q = useQuery({
-  queryKey: ['pack_info_android_repack'],
-  queryFn: async () => {
-    try { const r = await api.get("/jaxrs/program_center/apppack/pack/info/android/repack"); return (r.data ?? []) as any[]; }
-    catch { return []; }
-  },
-  staleTime: 60000,
-});
-const program_center_dict_id_ref = ref<any[]>([]);
-const program_center_dict_id_q = useQuery({
-  queryKey: ['program_center_dict_id'],
-  queryFn: async () => {
-    try { const r = await api.get("/jaxrs/program_center/dict/id"); return (r.data ?? []) as any[]; }
-    catch { return []; }
-  },
-  staleTime: 60000,
-});
-const my_flag_my_path_data_mockputtopost_ref = ref<any[]>([]);
-const my_flag_my_path_data_mockputtopost_q = useQuery({
-  queryKey: ['my_flag_my_path_data_mockputtopost'],
-  queryFn: async () => {
-    try { const r = await api.get("/jaxrs/program_center/dict/my-flag/my-path/data/mockputtopost"); return (r.data ?? []) as any[]; }
-    catch { return []; }
-  },
-  staleTime: 60000,
-});
-const program_center_input_prepare_cover_ref = ref<any[]>([]);
-const program_center_input_prepare_cover_q = useQuery({
-  queryKey: ['program_center_input_prepare_cover'],
-  queryFn: async () => {
-    try { const r = await api.get("/jaxrs/program_center/input/prepare/cover"); return (r.data ?? []) as any[]; }
-    catch { return []; }
-  },
-  staleTime: 60000,
-});
-const program_list_ref = ref<any[]>([]);
-const program_list_q = useQuery({
-  queryKey: ['program_list'],
-  queryFn: async () => {
-    try { const r = await api.get("/jaxrs/program/list"); return (r.data ?? []) as any[]; }
-    catch { return []; }
-  },
-  staleTime: 60000,
-});
-const program_center_collect_validate_codeanswer_ref = ref<any[]>([]);
-const program_center_collect_validate_codeanswer_q = useQuery({
-  queryKey: ['program_center_collect_validate_codeanswer'],
-  queryFn: async () => {
-    try { const r = await api.get("/jaxrs/program_center/collect/validate/codeanswer"); return (r.data ?? []) as any[]; }
-    catch { return []; }
-  },
-  staleTime: 60000,
-});
-const program_center_ref = ref<any[]>([]);
-const program_center_q = useQuery({
-  queryKey: ['program_center'],
-  queryFn: async () => {
-    try { const r = await api.get("/jaxrs/program_center"); return (r.data ?? []) as any[]; }
-    catch { return []; }
-  },
-  staleTime: 60000,
-});
-const qiyeweixin_send_getprivateinfo_message_ref = ref<any[]>([]);
-const qiyeweixin_send_getprivateinfo_message_q = useQuery({
-  queryKey: ['qiyeweixin_send_getprivateinfo_message'],
-  queryFn: async () => {
-    try { const r = await api.get("/jaxrs/program_center/qiyeweixin/send/getprivateinfo/message"); return (r.data ?? []) as any[]; }
-    catch { return []; }
-  },
-  staleTime: 60000,
-});
-const program_center_center_applications_list_ref = ref<any[]>([]);
-const program_center_center_applications_list_q = useQuery({
-  queryKey: ['program_center_center_applications_list'],
-  queryFn: async () => {
-    try { const r = await api.get("/jaxrs/program_center/center/applications/list"); return (r.data ?? []) as any[]; }
-    catch { return []; }
-  },
-  staleTime: 60000,
-});
-const program_center_collect_validate_direct_ref = ref<any[]>([]);
-const program_center_collect_validate_direct_q = useQuery({
-  queryKey: ['program_center_collect_validate_direct'],
-  queryFn: async () => {
-    try { const r = await api.get("/jaxrs/program_center/collect/validate/direct"); return (r.data ?? []) as any[]; }
     catch { return []; }
   },
   staleTime: 60000,
@@ -2287,56 +731,11 @@ const webserver_assemble_source_o2_q = useQuery({
   },
   staleTime: 60000,
 });
-const program_center_module_write_flag_ref = ref<any[]>([]);
-const program_center_module_write_flag_q = useQuery({
-  queryKey: ['program_center_module_write_flag'],
-  queryFn: async () => {
-    try { const r = await api.get("/jaxrs/program_center/module/write/flag"); return (r.data ?? []) as any[]; }
-    catch { return []; }
-  },
-  staleTime: 60000,
-});
 const program_center_invoke_i_1_file_ref = ref<any[]>([]);
 const program_center_invoke_i_1_file_q = useQuery({
   queryKey: ['program_center_invoke_i_1_file'],
   queryFn: async () => {
     try { const r = await api.get("/jaxrs/program_center/invoke/i-1/file"); return (r.data ?? []) as any[]; }
-    catch { return []; }
-  },
-  staleTime: 60000,
-});
-const program_appstyle_current_style_ref = ref<any[]>([]);
-const program_appstyle_current_style_q = useQuery({
-  queryKey: ['program_appstyle_current_style'],
-  queryFn: async () => {
-    try { const r = await api.get("/jaxrs/program/appstyle/current/style"); return (r.data ?? []) as any[]; }
-    catch { return []; }
-  },
-  staleTime: 60000,
-});
-const image_process_default_erase_ref = ref<any[]>([]);
-const image_process_default_erase_q = useQuery({
-  queryKey: ['image_process_default_erase'],
-  queryFn: async () => {
-    try { const r = await api.get("/jaxrs/program_center/appstyle/image/process/default/erase"); return (r.data ?? []) as any[]; }
-    catch { return []; }
-  },
-  staleTime: 60000,
-});
-const program_datastructure_modules_all_ref = ref<any[]>([]);
-const program_datastructure_modules_all_q = useQuery({
-  queryKey: ['program_datastructure_modules_all'],
-  queryFn: async () => {
-    try { const r = await api.get("/jaxrs/program/datastructure/modules/all"); return (r.data ?? []) as any[]; }
-    catch { return []; }
-  },
-  staleTime: 60000,
-});
-const pack_info_android_start_ref = ref<any[]>([]);
-const pack_info_android_start_q = useQuery({
-  queryKey: ['pack_info_android_start'],
-  queryFn: async () => {
-    try { const r = await api.get("/jaxrs/program_center/apppack/pack/info/android/start"); return (r.data ?? []) as any[]; }
     catch { return []; }
   },
   staleTime: 60000,
@@ -2359,65 +758,11 @@ const program_center_deploy_d_1_q = useQuery({
   },
   staleTime: 60000,
 });
-const mpweixin_menu_list_weixin_ref = ref<any[]>([]);
-const mpweixin_menu_list_weixin_q = useQuery({
-  queryKey: ['mpweixin_menu_list_weixin'],
-  queryFn: async () => {
-    try { const r = await api.get("/jaxrs/program_center/mpweixin/menu/list/weixin"); return (r.data ?? []) as any[]; }
-    catch { return []; }
-  },
-  staleTime: 60000,
-});
-const image_application_top_erase_ref = ref<any[]>([]);
-const image_application_top_erase_q = useQuery({
-  queryKey: ['image_application_top_erase'],
-  queryFn: async () => {
-    try { const r = await api.get("/jaxrs/program_center/appstyle/image/application/top/erase"); return (r.data ?? []) as any[]; }
-    catch { return []; }
-  },
-  staleTime: 60000,
-});
 const code_create_mobile_13800000000_ref = ref<any[]>([]);
 const code_create_mobile_13800000000_q = useQuery({
   queryKey: ['code_create_mobile_13800000000'],
   queryFn: async () => {
     try { const r = await api.get("/jaxrs/program_center/code/create/mobile/13800000000"); return (r.data ?? []) as any[]; }
-    catch { return []; }
-  },
-  staleTime: 60000,
-});
-const program_center_adminlogin_ref = ref<any[]>([]);
-const program_center_adminlogin_q = useQuery({
-  queryKey: ['program_center_adminlogin'],
-  queryFn: async () => {
-    try { const r = await api.get("/jaxrs/program_center/adminlogin"); return (r.data ?? []) as any[]; }
-    catch { return []; }
-  },
-  staleTime: 60000,
-});
-const program_center_apppack_server_connect_ref = ref<any[]>([]);
-const program_center_apppack_server_connect_q = useQuery({
-  queryKey: ['program_center_apppack_server_connect'],
-  queryFn: async () => {
-    try { const r = await api.get("/jaxrs/program_center/apppack/server/connect"); return (r.data ?? []) as any[]; }
-    catch { return []; }
-  },
-  staleTime: 60000,
-});
-const program_center_tokenthreshold_update_ref = ref<any[]>([]);
-const program_center_tokenthreshold_update_q = useQuery({
-  queryKey: ['program_center_tokenthreshold_update'],
-  queryFn: async () => {
-    try { const r = await api.get("/jaxrs/program_center/tokenthreshold/update"); return (r.data ?? []) as any[]; }
-    catch { return []; }
-  },
-  staleTime: 60000,
-});
-const get_disable_export_enable_ref = ref<any[]>([]);
-const get_disable_export_enable_q = useQuery({
-  queryKey: ['get_disable_export_enable'],
-  queryFn: async () => {
-    try { const r = await api.get("/jaxrs/program_center/config-open/get/disable/export/enable"); return (r.data ?? []) as any[]; }
     catch { return []; }
   },
   staleTime: 60000,
@@ -2431,67 +776,13 @@ const program_center_agent_a_1_enable_q = useQuery({
   },
   staleTime: 60000,
 });
-const program_center_application_ref = ref<any[]>([]);
-const program_center_application_q = useQuery({
-  queryKey: ['program_center_application'],
-  queryFn: async () => {
-    try { const r = await api.get("/jaxrs/program_center/application"); return (r.data ?? []) as any[]; }
-    catch { return []; }
-  },
-  staleTime: 60000,
-});
 
 
-const collect_name_name_exist_ref = ref<any[]>([]);
-const collect_name_name_exist_q = useQuery({
-  queryKey: ['collect_name_name_exist'],
-  queryFn: async () => {
-    try { const r = await api.get("/jaxrs/program_center/collect/name/name/exist"); return (r.data ?? []) as any[]; }
-    catch { return []; }
-  },
-  staleTime: 60000,
-});
-const market_list_top_three_ref = ref<any[]>([]);
-const market_list_top_three_q = useQuery({
-  queryKey: ['market_list_top_three'],
-  queryFn: async () => {
-    try { const r = await api.get("/jaxrs/program_center/market/list/top/three"); return (r.data ?? []) as any[]; }
-    catch { return []; }
-  },
-  staleTime: 60000,
-});
 const list_w_1_prev_5_ref = ref<any[]>([]);
 const list_w_1_prev_5_q = useQuery({
   queryKey: ['list_w_1_prev_5'],
   queryFn: async () => {
     try { const r = await api.get("/jaxrs/program_center/warnlog/list/w-1/prev/5"); return (r.data ?? []) as any[]; }
-    catch { return []; }
-  },
-  staleTime: 60000,
-});
-const qiyeweixin_get_callback_aes_ref = ref<any[]>([]);
-const qiyeweixin_get_callback_aes_q = useQuery({
-  queryKey: ['qiyeweixin_get_callback_aes'],
-  queryFn: async () => {
-    try { const r = await api.get("/jaxrs/program_center/qiyeweixin/get/callback/aes"); return (r.data ?? []) as any[]; }
-    catch { return []; }
-  },
-  staleTime: 60000,
-});
-const program_center_config_save_ref = ref<any[]>([]);
-const program_center_config_save_q = useQuery({
-  queryKey: ['program_center_config_save'],
-  queryFn: async () => {
-    try { const r = await api.get("/jaxrs/program_center/config/save"); return (r.data ?? []) as any[]; }
-    catch { return []; }
-  },
-  staleTime: 60000,
-});
-const program_center_center_applications_ref = ref<any[]>([]);
-const program_center_center_applications_q = useQuery({
-  queryKey: ['program_center_center_applications'],
-  queryFn: async () => {
-    try { const r = await api.get("/jaxrs/program_center/center/applications"); return (r.data ?? []) as any[]; }
     catch { return []; }
   },
   staleTime: 60000,
@@ -2505,74 +796,11 @@ const program_center_test_test1_q = useQuery({
   },
   staleTime: 60000,
 });
-const program_center_script_name_demo_ref = ref<any[]>([]);
-const program_center_script_name_demo_q = useQuery({
-  queryKey: ['program_center_script_name_demo'],
-  queryFn: async () => {
-    try { const r = await api.get("/jaxrs/program_center/script/name/demo"); return (r.data ?? []) as any[]; }
-    catch { return []; }
-  },
-  staleTime: 60000,
-});
-const script_name_demo_imported_ref = ref<any[]>([]);
-const script_name_demo_imported_q = useQuery({
-  queryKey: ['script_name_demo_imported'],
-  queryFn: async () => {
-    try { const r = await api.get("/jaxrs/program_center/script/name/demo/imported"); return (r.data ?? []) as any[]; }
-    catch { return []; }
-  },
-  staleTime: 60000,
-});
-const program_center_script_sc_id_ref = ref<any[]>([]);
-const program_center_script_sc_id_q = useQuery({
-  queryKey: ['program_center_script_sc_id'],
-  queryFn: async () => {
-    try { const r = await api.get("/jaxrs/program_center/script/sc-id"); return (r.data ?? []) as any[]; }
-    catch { return []; }
-  },
-  staleTime: 60000,
-});
 const list_u_1_prev_5_ref = ref<any[]>([]);
 const list_u_1_prev_5_q = useQuery({
   queryKey: ['list_u_1_prev_5'],
   queryFn: async () => {
     try { const r = await api.get("/jaxrs/program_center/unexpectederrorlog/list/u-1/prev/5"); return (r.data ?? []) as any[]; }
-    catch { return []; }
-  },
-  staleTime: 60000,
-});
-const appstyle_image_login_avatar_ref = ref<any[]>([]);
-const appstyle_image_login_avatar_q = useQuery({
-  queryKey: ['appstyle_image_login_avatar'],
-  queryFn: async () => {
-    try { const r = await api.get("/jaxrs/program_center/appstyle/image/login/avatar"); return (r.data ?? []) as any[]; }
-    catch { return []; }
-  },
-  staleTime: 60000,
-});
-const program_center_dingding_pull_sync_ref = ref<any[]>([]);
-const program_center_dingding_pull_sync_q = useQuery({
-  queryKey: ['program_center_dingding_pull_sync'],
-  queryFn: async () => {
-    try { const r = await api.get("/jaxrs/program_center/dingding/pull/sync"); return (r.data ?? []) as any[]; }
-    catch { return []; }
-  },
-  staleTime: 60000,
-});
-const program_center_agent_flag_file_ref = ref<any[]>([]);
-const program_center_agent_flag_file_q = useQuery({
-  queryKey: ['program_center_agent_flag_file'],
-  queryFn: async () => {
-    try { const r = await api.get("/jaxrs/program_center/agent/flag/file"); return (r.data ?? []) as any[]; }
-    catch { return []; }
-  },
-  staleTime: 60000,
-});
-const program_center_command_execute_ref = ref<any[]>([]);
-const program_center_command_execute_q = useQuery({
-  queryKey: ['program_center_command_execute'],
-  queryFn: async () => {
-    try { const r = await api.get("/jaxrs/program_center/command/execute"); return (r.data ?? []) as any[]; }
     catch { return []; }
   },
   staleTime: 60000,
@@ -2595,110 +823,11 @@ const pack_info_file_last_1_q = useQuery({
   },
   staleTime: 60000,
 });
-const program_center_agent_ref = ref<any[]>([]);
-const program_center_agent_q = useQuery({
-  queryKey: ['program_center_agent'],
-  queryFn: async () => {
-    try { const r = await api.get("/jaxrs/program_center/agent"); return (r.data ?? []) as any[]; }
-    catch { return []; }
-  },
-  staleTime: 60000,
-});
-const welink_request_pull_sync_ref = ref<any[]>([]);
-const welink_request_pull_sync_q = useQuery({
-  queryKey: ['welink_request_pull_sync'],
-  queryFn: async () => {
-    try { const r = await api.get("/jaxrs/program_center/welink/request/pull/sync"); return (r.data ?? []) as any[]; }
-    catch { return []; }
-  },
-  staleTime: 60000,
-});
-const program_center_config_ternary_management_ref = ref<any[]>([]);
-const program_center_config_ternary_management_q = useQuery({
-  queryKey: ['program_center_config_ternary_management'],
-  queryFn: async () => {
-    try { const r = await api.get("/jaxrs/program_center/config/ternary/management"); return (r.data ?? []) as any[]; }
-    catch { return []; }
-  },
-  staleTime: 60000,
-});
-const mpweixin_menu_update_id_ref = ref<any[]>([]);
-const mpweixin_menu_update_id_q = useQuery({
-  queryKey: ['mpweixin_menu_update_id'],
-  queryFn: async () => {
-    try { const r = await api.get("/jaxrs/program_center/mpweixin/menu/update/id"); return (r.data ?? []) as any[]; }
-    catch { return []; }
-  },
-  staleTime: 60000,
-});
-const program_center_session_list_all_ref = ref<any[]>([]);
-const program_center_session_list_all_q = useQuery({
-  queryKey: ['program_center_session_list_all'],
-  queryFn: async () => {
-    try { const r = await api.get("/jaxrs/program_center/session/list/all"); return (r.data ?? []) as any[]; }
-    catch { return []; }
-  },
-  staleTime: 60000,
-});
 const program_center_module_write_m_1_ref = ref<any[]>([]);
 const program_center_module_write_m_1_q = useQuery({
   queryKey: ['program_center_module_write_m_1'],
   queryFn: async () => {
     try { const r = await api.get("/jaxrs/program_center/module/write/m-1"); return (r.data ?? []) as any[]; }
-    catch { return []; }
-  },
-  staleTime: 60000,
-});
-const program_center_module_compare_upload_ref = ref<any[]>([]);
-const program_center_module_compare_upload_q = useQuery({
-  queryKey: ['program_center_module_compare_upload'],
-  queryFn: async () => {
-    try { const r = await api.get("/jaxrs/program_center/module/compare/upload"); return (r.data ?? []) as any[]; }
-    catch { return []; }
-  },
-  staleTime: 60000,
-});
-const menu_create_to_weixin_ref = ref<any[]>([]);
-const menu_create_to_weixin_q = useQuery({
-  queryKey: ['menu_create_to_weixin'],
-  queryFn: async () => {
-    try { const r = await api.get("/jaxrs/program_center/mpweixin/menu/create/to/weixin"); return (r.data ?? []) as any[]; }
-    catch { return []; }
-  },
-  staleTime: 60000,
-});
-const distribute_assemble_source_source_ref = ref<any[]>([]);
-const distribute_assemble_source_source_q = useQuery({
-  queryKey: ['distribute_assemble_source_source'],
-  queryFn: async () => {
-    try { const r = await api.get("/jaxrs/program_center/distribute/assemble/source/source"); return (r.data ?? []) as any[]; }
-    catch { return []; }
-  },
-  staleTime: 60000,
-});
-const invoke_flag_execute_get_ref = ref<any[]>([]);
-const invoke_flag_execute_get_q = useQuery({
-  queryKey: ['invoke_flag_execute_get'],
-  queryFn: async () => {
-    try { const r = await api.get("/jaxrs/program_center/invoke/flag/execute/get"); return (r.data ?? []) as any[]; }
-    catch { return []; }
-  },
-  staleTime: 60000,
-});
-const program_center_mpweixin_menu_subscribe_ref = ref<any[]>([]);
-const program_center_mpweixin_menu_subscribe_q = useQuery({
-  queryKey: ['program_center_mpweixin_menu_subscribe'],
-  queryFn: async () => {
-    try { const r = await api.get("/jaxrs/program_center/mpweixin/menu/subscribe"); return (r.data ?? []) as any[]; }
-    catch { return []; }
-  },
-  staleTime: 60000,
-});
-const program_center_captcha_list_ref = ref<any[]>([]);
-const program_center_captcha_list_q = useQuery({
-  queryKey: ['program_center_captcha_list'],
-  queryFn: async () => {
-    try { const r = await api.get("/jaxrs/program_center/captcha/list"); return (r.data ?? []) as any[]; }
     catch { return []; }
   },
   staleTime: 60000,
@@ -2728,15 +857,6 @@ const api_program__665_data = ref<any[]>([]);
 const { data: api_program__665_q } = useQuery({queryKey: ['api_program__665', '/jaxrs/program_center/appstyle/index/portal'], queryFn: async () => { try { const r = await api.get("/jaxrs/program_center/appstyle/index/portal"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
 watch(api_program__665_q, (v) => { api_program__665_data.value = v ?? []; });
 
-const jaxrs_program_ref = ref<any[]>([]);
-const jaxrs_program_q = useQuery({
-  queryKey: ['jaxrs_program'],
-  queryFn: async () => {
-    try { const r = await api.get("/jaxrs/program"); return (r.data ?? []) as any[]; }
-    catch { return []; }
-  },
-  staleTime: 60000,
-});
 const api_jaxrs_pr_38_data = ref<any[]>([]);
 const { data: api_jaxrs_pr_38_q } = useQuery({queryKey: ['api_jaxrs_pr_38', '/jaxrs/program/applications'], queryFn: async () => { try { const r = await api.get("/jaxrs/program/applications"); return (r.data ?? []) as any[]; } catch { return []; } }, staleTime: 60000});
 watch(api_jaxrs_pr_38_q, (v) => { api_jaxrs_pr_38_data.value = v ?? []; });
