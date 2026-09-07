@@ -1,0 +1,1 @@
+- [OA4Rust API层优化2026-09-07](oa4rust-api-optimization-sept-2026-07.md) — 删除53个重复属性+修复类型注解,零TS错误,前端main bundle 1124KB→96KB(-91%),lazy load 85 views
