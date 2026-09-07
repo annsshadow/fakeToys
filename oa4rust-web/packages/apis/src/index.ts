@@ -4,6 +4,15 @@
  */
 
 import { api, type ApiResponse, type PagedResponse } from '@oa4rust/sdk';
+/** Unified request helper - reduces duplication across all API modules */
+export const createRequest = (prefix: string) => (method: string, path: string, body?: unknown) => {
+  const url = prefix + path;
+  if (method === 'GET') return api.get(url);
+  if (method === 'POST') return api.post(url, body);
+  if (method === 'PUT') return api.put(url, body);
+  return api.delete(url);
+};
+
 
 // ─────────────────────────────────────────────────────────────
 // 认证模块 (28 routes)
@@ -27,13 +36,7 @@ export const authApi = {
   unitList: () => api.get('/jaxrs/authentication/unit/list'),
   checkToken: (data: { token: string }) => api.post('/jaxrs/authentication/check/token', data),
   safeLogout: () => api.post('/jaxrs/authentication/safe/logout', null),
-  request: (method: string, path: string, body?: unknown) => {
-    const url = "/jaxrs/authentication/login" + path;
-    if (method === "GET") return api.get(url);
-    if (method === "POST") return api.post(url, body);
-    if (method === "PUT") return api.put(url, body);
-    return api.delete(url);
-  },
+  request: createRequest("/jaxrs/authentication"),
 };
 
 // ─────────────────────────────────────────────────────────────
@@ -85,13 +88,7 @@ export const orgApi = {
   empowerDelete: (id: string) => api.delete(`/jaxrs/person/empower/${id}`),
   empowerEnable: (id: string) => api.post(`/jaxrs/person/empower/${id}/enable`),
   empowerDisable: (id: string) => api.post(`/jaxrs/person/empower/${id}/disable`),
-  request: (method: string, path: string, body?: unknown) => {
-    const url = "/jaxrs/authentication/login" + path;
-    if (method === "GET") return api.get(url);
-    if (method === "POST") return api.post(url, body);
-    if (method === "PUT") return api.put(url, body);
-    return api.delete(url);
-  },
+  request: createRequest("/jaxrs/organization/assemble/control"),
 };
 
 // ─────────────────────────────────────────────────────────────
@@ -137,13 +134,7 @@ export const processApi = {
   // 服务处理
   serviceWorkList: (page: number, size: number) =>
     api.post<PagedResponse<unknown>>(`/jaxrs/processplatform/service/processing/work/list/paging/${page}/${size}`),
-  request: (method: string, path: string, body?: unknown) => {
-    const url = "/jaxrs/authentication/login" + path;
-    if (method === "GET") return api.get(url);
-    if (method === "POST") return api.post(url, body);
-    if (method === "PUT") return api.put(url, body);
-    return api.delete(url);
-  },
+  request: createRequest("/jaxrs/processplatform/assemble/surface"),
 };
 
 // ─────────────────────────────────────────────────────────────
@@ -158,13 +149,7 @@ export const portalApi = {
   widgetList: (pageId: string) => api.get(`/jaxrs/portal/assemble/surface/widget/list/${pageId}`),
   designerPageList: () => api.get('/jaxrs/portal/assemble/designer/page/list'),
   designerScriptList: () => api.get('/jaxrs/portal/assemble/designer/script/list'),
-  request: (method: string, path: string, body?: unknown) => {
-    const url = "/jaxrs/authentication/login" + path;
-    if (method === "GET") return api.get(url);
-    if (method === "POST") return api.post(url, body);
-    if (method === "PUT") return api.put(url, body);
-    return api.delete(url);
-  },
+  request: createRequest("/jaxrs/portal/assemble"),
 };
 
 // ─────────────────────────────────────────────────────────────
@@ -183,13 +168,7 @@ export const messageApi = {
     api.post<PagedResponse<unknown>>(`/jaxrs/message/assemble/communicate/collection/list/paging/${page}/${size}`),
   markRead: (conversationId: string) =>
     api.post(`/jaxrs/message/assemble/communicate/conversation/${conversationId}/read`, null),
-  request: (method: string, path: string, body?: unknown) => {
-    const url = "/jaxrs/authentication/login" + path;
-    if (method === "GET") return api.get(url);
-    if (method === "POST") return api.post(url, body);
-    if (method === "PUT") return api.put(url, body);
-    return api.delete(url);
-  },
+  request: createRequest("/jaxrs/message/assemble/communicate"),
 };
 
 // ─────────────────────────────────────────────────────────────
@@ -205,13 +184,7 @@ export const fileApi = {
   fileDelete: (fileId: string) => api.delete(`/jaxrs/file/assemble/control/file/${fileId}`),
   fileShare: (fileId: string, data: unknown) => api.post(`/jaxrs/file/assemble/control/file/${fileId}/share`, data),
   attachmentList: (fileId: string) => api.get(`/jaxrs/file/assemble/control/attachment/list/${fileId}`),
-  request: (method: string, path: string, body?: unknown) => {
-    const url = "/jaxrs/authentication/login" + path;
-    if (method === "GET") return api.get(url);
-    if (method === "POST") return api.post(url, body);
-    if (method === "PUT") return api.put(url, body);
-    return api.delete(url);
-  },
+  request: createRequest("/jaxrs/file/assemble/control"),
 };
 
 // ─────────────────────────────────────────────────────────────
@@ -228,13 +201,7 @@ export const generalApi = {
   invoiceList: (page: number, size: number) =>
     api.post<PagedResponse<unknown>>(`/jaxrs/general/invoice/list/paging/${page}/${size}`),
   worktimeList: (month: string) => api.get(`/jaxrs/general/assemble/control/worktime/${month}`),
-  request: (method: string, path: string, body?: unknown) => {
-    const url = "/jaxrs/authentication/login" + path;
-    if (method === "GET") return api.get(url);
-    if (method === "POST") return api.post(url, body);
-    if (method === "PUT") return api.put(url, body);
-    return api.delete(url);
-  },
+  request: createRequest("/jaxrs/general"),
 };
 
 // ─────────────────────────────────────────────────────────────
@@ -248,13 +215,7 @@ export const apis = {
   message: messageApi,
   file: fileApi,
   general: generalApi,
-  request: (method: string, path: string, body?: unknown) => {
-    const url = "/jaxrs/authentication/login" + path;
-    if (method === "GET") return api.get(url);
-    if (method === "POST") return api.post(url, body);
-    if (method === "PUT") return api.put(url, body);
-    return api.delete(url);
-  },
+  request: createRequest("/jaxrs/export"),
 };
 
 export default apis;
@@ -266,13 +227,7 @@ export const imApi = {
   messageSend: (d: unknown) => api.post('/jaxrs/message/assemble/communicate/im/msg', d),
   markRead: (id: string) => api.post(`/jaxrs/message/assemble/communicate/mark_read/${id}`, null),
   unreadCount: (c?: string) => api.get(`/jaxrs/message/unread/count/${c || 'im'}`),
-  request: (method: string, path: string, body?: unknown) => {
-    const url = "/jaxrs/authentication/login" + path;
-    if (method === "GET") return api.get(url);
-    if (method === "POST") return api.post(url, body);
-    if (method === "PUT") return api.put(url, body);
-    return api.delete(url);
-  },
+  request: createRequest("/jaxrs/message/assemble/communicate"),
 };
 
 // ─────────────────────────────────────────────────────────────
@@ -284,25 +239,13 @@ export const appInfoApi = {
   list: () => api.get('/jaxrs/appinfo/list'),
   detail: (id: string) => api.get(`/jaxrs/appinfo/${id}`),
   filter: (keyword: string) => api.get('/jaxrs/appinfo/filter', { params: { keyword } }),
-  request: (method: string, path: string, body?: unknown) => {
-    const url = "/jaxrs/authentication/login" + path;
-    if (method === "GET") return api.get(url);
-    if (method === "POST") return api.post(url, body);
-    if (method === "PUT") return api.put(url, body);
-    return api.delete(url);
-  },
+  request: createRequest("/jaxrs/appinfo"),
 };
 
 /** 分类信息 */
 export const categoryApi = {
   list: () => api.get('/jaxrs/categoryinfo/list'),
-  request: (method: string, path: string, body?: unknown) => {
-    const url = "/jaxrs/authentication/login" + path;
-    if (method === "GET") return api.get(url);
-    if (method === "POST") return api.post(url, body);
-    if (method === "PUT") return api.put(url, body);
-    return api.delete(url);
-  },
+  request: createRequest("/jaxrs/categoryinfo"),
 };
 
 /** 热帖管理 */
@@ -312,13 +255,7 @@ export const hotpicApi = {
   delete: (id: string) => api.delete(`/jaxrs/hotpic/core/entity/delete/${id}`),
   listByApp: (application: string, infoId: string) =>
     api.get(`/jaxrs/hotpic/core/entity/list/by/${application}/${infoId}`),
-  request: (method: string, path: string, body?: unknown) => {
-    const url = "/jaxrs/authentication/login" + path;
-    if (method === "GET") return api.get(url);
-    if (method === "POST") return api.post(url, body);
-    if (method === "PUT") return api.put(url, body);
-    return api.delete(url);
-  },
+  request: createRequest("/jaxrs/hotpic/core/entity"),
 };
 
 /** JPush 推送 */
@@ -330,13 +267,7 @@ export const jpushApi = {
   templateUpdate: (id: string, data: unknown) => api.put(`/jaxrs/jpush/core/entity/template/${id}`, data),
   assembleDeviceList: () => api.get('/jaxrs/jpush_assemble_control/device/list'),
   assembleTemplateList: () => api.get('/jaxrs/jpush_assemble_control/template/list'),
-  request: (method: string, path: string, body?: unknown) => {
-    const url = "/jaxrs/authentication/login" + path;
-    if (method === "GET") return api.get(url);
-    if (method === "POST") return api.post(url, body);
-    if (method === "PUT") return api.put(url, body);
-    return api.delete(url);
-  },
+  request: createRequest("/jaxrs/jpush/core/entity"),
 };
 
 /** 关联处理 */
@@ -354,25 +285,13 @@ export const correlationApi = {
   link: (data: unknown) => api.post('/jaxrs/correlation/service/processing/link', data),
   unlink: (sourceType: string, sourceId: string, targetType: string, targetId: string) =>
     api.delete(`/jaxrs/correlation/service/processing/unlink/${sourceType}/${sourceId}/${targetType}/${targetId}`),
-  request: (method: string, path: string, body?: unknown) => {
-    const url = "/jaxrs/authentication/login" + path;
-    if (method === "GET") return api.get(url);
-    if (method === "POST") return api.post(url, body);
-    if (method === "PUT") return api.put(url, body);
-    return api.delete(url);
-  },
+  request: createRequest("/jaxrs/correlation/core/entity"),
 };
 
 /** 分享管理 */
 export const shareApi = {
   list: () => api.get('/jaxrs/share/list'),
-  request: (method: string, path: string, body?: unknown) => {
-    const url = "/jaxrs/authentication/login" + path;
-    if (method === "GET") return api.get(url);
-    if (method === "POST") return api.post(url, body);
-    if (method === "PUT") return api.put(url, body);
-    return api.delete(url);
-  },
+  request: createRequest("/jaxrs/share"),
 };
 
 /** 缓存管理 */
@@ -380,73 +299,37 @@ export const cacheApi = {
   detail: () => api.get('/jaxrs/cache/detail'),
   flushCommonScript: () => api.post('/jaxrs/cache/commonscript/flush', null),
   flushConfig: () => api.post('/jaxrs/cache/config/flush', null),
-  request: (method: string, path: string, body?: unknown) => {
-    const url = "/jaxrs/authentication/login" + path;
-    if (method === "GET") return api.get(url);
-    if (method === "POST") return api.post(url, body);
-    if (method === "PUT") return api.put(url, body);
-    return api.delete(url);
-  },
+  request: createRequest("/jaxrs/cache"),
 };
 
 /** 系统资源 */
 export const sysResourceApi = {
   list: () => api.get('/jaxrs/sysresource/list'),
-  request: (method: string, path: string, body?: unknown) => {
-    const url = "/jaxrs/authentication/login" + path;
-    if (method === "GET") return api.get(url);
-    if (method === "POST") return api.post(url, body);
-    if (method === "PUT") return api.put(url, body);
-    return api.delete(url);
-  },
+  request: createRequest("/jaxrs/sysresource"),
 };
 
 /** 日志查看 */
 export const logApi = {
   list: () => api.get('/jaxrs/log/list'),
-  request: (method: string, path: string, body?: unknown) => {
-    const url = "/jaxrs/authentication/login" + path;
-    if (method === "GET") return api.get(url);
-    if (method === "POST") return api.post(url, body);
-    if (method === "PUT") return api.put(url, body);
-    return api.delete(url);
-  },
+  request: createRequest("/jaxrs/log"),
 };
 
 /** 控制台 */
 export const consoleApi = {
   list: () => api.get('/jaxrs/console/list'),
-  request: (method: string, path: string, body?: unknown) => {
-    const url = "/jaxrs/authentication/login" + path;
-    if (method === "GET") return api.get(url);
-    if (method === "POST") return api.post(url, body);
-    if (method === "PUT") return api.put(url, body);
-    return api.delete(url);
-  },
+  request: createRequest("/jaxrs/console"),
 };
 
 /** 导出 */
 export const exportApi = {
   result: (flag: string) => api.get(`/jaxrs/export/result/flag/${flag}`),
-  request: (method: string, path: string, body?: unknown) => {
-    const url = "/jaxrs/authentication/login" + path;
-    if (method === "GET") return api.get(url);
-    if (method === "POST") return api.post(url, body);
-    if (method === "PUT") return api.put(url, body);
-    return api.delete(url);
-  },
+  request: createRequest("/jaxrs/export"),
 };
 
 /** 导入 */
 export const importApi = {
   execute: (id: string) => api.post(`/jaxrs/importmodel/id/${id}/execute`, null),
-  request: (method: string, path: string, body?: unknown) => {
-    const url = "/jaxrs/authentication/login" + path;
-    if (method === "GET") return api.get(url);
-    if (method === "POST") return api.post(url, body);
-    if (method === "PUT") return api.put(url, body);
-    return api.delete(url);
-  },
+  request: createRequest("/jaxrs/import"),
 };
 
 /** 附件 */
@@ -454,38 +337,20 @@ export const attachmentApi = {
   list: (id: string) => api.get(`/jaxrs/attachment2/list/${id}`),
   upload: (formData: FormData) => api.upload('/jaxrs/attachment2/upload', formData),
   delete: (id: string) => api.delete(`/jaxrs/attachment2/${id}`),
-  request: (method: string, path: string, body?: unknown) => {
-    const url = "/jaxrs/authentication/login" + path;
-    if (method === "GET") return api.get(url);
-    if (method === "POST") return api.post(url, body);
-    if (method === "PUT") return api.put(url, body);
-    return api.delete(url);
-  },
+  request: createRequest("/jaxrs/attachment"),
 };
 
 /** 匿名访问 */
 export const anonymousApi = {
   surfaceAppdict: (flag: string) => api.get(`/jaxrs/anonymous/surface/appdict/${flag}`),
-  request: (method: string, path: string, body?: unknown) => {
-    const url = "/jaxrs/authentication/login" + path;
-    if (method === "GET") return api.get(url);
-    if (method === "POST") return api.post(url, body);
-    if (method === "PUT") return api.put(url, body);
-    return api.delete(url);
-  },
+  request: createRequest("/jaxrs/anonymous"),
 };
 
 /** 数据文档 */
 export const dataApi = {
   documentDetail: (id: string, path0?: string) =>
     api.get(path0 ? `/jaxrs/data/document/${id}/${path0}` : `/jaxrs/data/document/${id}`),
-  request: (method: string, path: string, body?: unknown) => {
-    const url = "/jaxrs/authentication/login" + path;
-    if (method === "GET") return api.get(url);
-    if (method === "POST") return api.post(url, body);
-    if (method === "PUT") return api.put(url, body);
-    return api.delete(url);
-  },
+  request: createRequest("/jaxrs/data"),
 };
 
 /** 更新 apis 对象 */
@@ -520,13 +385,7 @@ export const processServiceApi = {
     api.post(`/jaxrs/processplatform/service/processing/work/list/paging/${page}/${size}`, {}),
   applicationDict: (flag: string) =>
     api.get(`/jaxrs/processplatform/service/processing/applicationdict/${flag}`),
-  request: (method: string, path: string, body?: unknown) => {
-    const url = "/jaxrs/processplatform/service" + path;
-    if (method === "GET") return api.get(url);
-    if (method === "POST") return api.post(url, body);
-    if (method === "PUT") return api.put(url, body);
-    return api.delete(url);
-  },
+  request: createRequest("/jaxrs/processplatform/service/processing"),
 };
 
 // ─────────────────────────────────────────────────────────────
@@ -564,13 +423,7 @@ export const queryViewApi = {
   viewDetail: (id: string) => api.get(`/jaxrs/queryview/view/${id}`),
   viewList: (page: number, size: number) =>
     api.post(`/jaxrs/queryview/view/list/paging/${page}/${size}`, {}),
-  request: (method: string, path: string, body?: unknown) => {
-    const url = "/jaxrs/processplatform/service" + path;
-    if (method === "GET") return api.get(url);
-    if (method === "POST") return api.post(url, body);
-    if (method === "PUT") return api.put(url, body);
-    return api.delete(url);
-  },
+  request: createRequest("/jaxrs/queryview"),
 };
 
 // ─────────────────────────────────────────────────────────────
@@ -636,13 +489,7 @@ export const programCenterApi = {
   qywxCode: (code: string) => api.get(`/jaxrs/program_center/qiyeweixin/code/${code}`),
   welinkCode: (code: string) => api.get(`/jaxrs/program_center/welink/code/${code}`),
   zwdCode: (code: string) => api.get(`/jaxrs/program_center/zhengwudingding/code/${code}`),
-  request: (method: string, path: string, body?: unknown) => {
-    const url = "/jaxrs/processplatform/service" + path;
-    if (method === "GET") return api.get(url);
-    if (method === "POST") return api.post(url, body);
-    if (method === "PUT") return api.put(url, body);
-    return api.delete(url);
-  },
+  request: createRequest("/jaxrs/program_center"),
 };
 
 // ─────────────────────────────────────────────────────────────
@@ -680,13 +527,7 @@ export const mindApi = {
   mindView: (id: string) => api.get(`/jaxrs/mind/assemble/control/mind/view/${id}`),
   config: () => api.get('/jaxrs/mind/assemble/control/config'),
   configUpdate: (data: unknown) => api.put('/jaxrs/mind/assemble/control/config/update', data),
-  request: (method: string, path: string, body?: unknown) => {
-    const url = "/jaxrs/processplatform/service" + path;
-    if (method === "GET") return api.get(url);
-    if (method === "POST") return api.post(url, body);
-    if (method === "PUT") return api.put(url, body);
-    return api.delete(url);
-  },
+  request: createRequest("/jaxrs/mind"),
 };
 
 // ─────────────────────────────────────────────────────────────
@@ -706,13 +547,7 @@ export const documentApi = {
   cipherList: (id: string) => api.get(`/jaxrs/document/cipher/list/${id}`),
   publish: (id: string) => api.post(`/jaxrs/document/publish/${id}`, null),
   achive: (id: string) => api.post(`/jaxrs/document/achive/${id}`, null),
-  request: (method: string, path: string, body?: unknown) => {
-    const url = "/jaxrs/processplatform/service" + path;
-    if (method === "GET") return api.get(url);
-    if (method === "POST") return api.post(url, body);
-    if (method === "PUT") return api.put(url, body);
-    return api.delete(url);
-  },
+  request: createRequest("/jaxrs/document"),
 };
 
 // ─────────────────────────────────────────────────────────────
@@ -740,13 +575,7 @@ export const calendarDeepApi = {
   setting: () => api.get('/jaxrs/calendar_assemble_control/setting'),
   settingUpdate: (data: unknown) => api.put('/jaxrs/calendar_assemble_control/setting', data),
   messageList: () => api.get('/jaxrs/calendar_assemble_control/message/list'),
-  request: (method: string, path: string, body?: unknown) => {
-    const url = "/jaxrs/processplatform/service" + path;
-    if (method === "GET") return api.get(url);
-    if (method === "POST") return api.post(url, body);
-    if (method === "PUT") return api.put(url, body);
-    return api.delete(url);
-  },
+  request: createRequest("/jaxrs/calendar_assemble_control"),
 };
 
 // ─────────────────────────────────────────────────────────────
@@ -768,13 +597,7 @@ export const attendanceDeepApi = {
   statisticalList: (params: unknown) => api.post('/jaxrs/attendance/statistical/list', params),
   ruleList: () => api.get('/jaxrs/attendance/rule/list'),
   employeeList: (params: unknown) => api.post('/jaxrs/attendance/employee/list', params),
-  request: (method: string, path: string, body?: unknown) => {
-    const url = "/jaxrs/processplatform/service" + path;
-    if (method === "GET") return api.get(url);
-    if (method === "POST") return api.post(url, body);
-    if (method === "PUT") return api.put(url, body);
-    return api.delete(url);
-  },
+  request: createRequest("/jaxrs/attendance"),
 };
 
 // ─────────────────────────────────────────────────────────────
@@ -799,13 +622,7 @@ export const queryDesignerApi = {
   importModelDelete: (id: string) => api.delete(`/jaxrs/query/assemble/designer/importmodel/delete/${id}`),
   bundle: (view: string, id: string) => api.get(`/jaxrs/query/assemble/designer/bundle/${view}/${id}`),
   surfaceList: () => api.get('/jaxrs/query/assemble/surface/list'),
-  request: (method: string, path: string, body?: unknown) => {
-    const url = "/jaxrs/processplatform/service" + path;
-    if (method === "GET") return api.get(url);
-    if (method === "POST") return api.post(url, body);
-    if (method === "PUT") return api.put(url, body);
-    return api.delete(url);
-  },
+  request: createRequest("/jaxrs/query/assemble/designer"),
 };
 
 // ─────────────────────────────────────────────────────────────
@@ -819,13 +636,7 @@ export const attachmentDeepApi = {
   exist: (id: string) => api.get(`/jaxrs/attachment2/exist/${id}`),
   upload2: (formData: FormData) => api.upload('/jaxrs/attachment2/upload', formData),
   userFiles: () => api.get('/jaxrs/attachment2/user'),
-  request: (method: string, path: string, body?: unknown) => {
-    const url = "/jaxrs/processplatform/service" + path;
-    if (method === "GET") return api.get(url);
-    if (method === "POST") return api.post(url, body);
-    if (method === "PUT") return api.put(url, body);
-    return api.delete(url);
-  },
+  request: createRequest("/jaxrs/attachment"),
 };
 
 // ─────────────────────────────────────────────────────────────
@@ -836,13 +647,7 @@ export const recycleApi = {
   delete: (id: string) => api.delete(`/jaxrs/recycle/${id}`),
   empty: () => api.post('/jaxrs/recycle/empty', null),
   resume: (id: string) => api.post(`/jaxrs/recycle/resume/${id}`, null),
-  request: (method: string, path: string, body?: unknown) => {
-    const url = "/jaxrs/processplatform/service" + path;
-    if (method === "GET") return api.get(url);
-    if (method === "POST") return api.post(url, body);
-    if (method === "PUT") return api.put(url, body);
-    return api.delete(url);
-  },
+  request: createRequest("/jaxrs/recycle"),
 };
 
 // ─────────────────────────────────────────────────────────────
@@ -852,13 +657,7 @@ export const serverApi = {
   execute: (command: string) => api.post('/jaxrs/server/execute', { command }),
   license: () => api.get('/jaxrs/server/license'),
   stop: () => api.post('/jaxrs/server/stop', null),
-  request: (method: string, path: string, body?: unknown) => {
-    const url = "/jaxrs/processplatform/service" + path;
-    if (method === "GET") return api.get(url);
-    if (method === "POST") return api.post(url, body);
-    if (method === "PUT") return api.put(url, body);
-    return api.delete(url);
-  },
+  request: createRequest("/jaxrs/server"),
 };
 
 // ─────────────────────────────────────────────────────────────
@@ -868,13 +667,7 @@ export const unitApi = {
   list: () => api.get('/jaxrs/unit/list'),
   check: (flag: string) => api.get(`/jaxrs/unit/check/${flag}`),
   identity: (flag: string) => api.get(`/jaxrs/unit/identity/${flag}`),
-  request: (method: string, path: string, body?: unknown) => {
-    const url = "/jaxrs/processplatform/service" + path;
-    if (method === "GET") return api.get(url);
-    if (method === "POST") return api.post(url, body);
-    if (method === "PUT") return api.put(url, body);
-    return api.delete(url);
-  },
+  request: createRequest("/jaxrs/unit"),
 };
 
 // ─────────────────────────────────────────────────────────────
@@ -885,13 +678,7 @@ export const formApi = {
   filter: (params: unknown) => api.post('/jaxrs/form/filter', params),
   detail: (id: string) => api.get(`/jaxrs/form/${id}`),
   v2List: () => api.get('/jaxrs/form/v2/list'),
-  request: (method: string, path: string, body?: unknown) => {
-    const url = "/jaxrs/processplatform/service" + path;
-    if (method === "GET") return api.get(url);
-    if (method === "POST") return api.post(url, body);
-    if (method === "PUT") return api.put(url, body);
-    return api.delete(url);
-  },
+  request: createRequest("/jaxrs/form"),
 };
 
 // ─────────────────────────────────────────────────────────────
@@ -902,13 +689,7 @@ export const viewApi = {
   detail: (id: string) => api.get(`/jaxrs/view/${id}`),
   viewData: (id: string, params?: unknown) =>
     api.post(`/jaxrs/view/viewdata/${id}`, params ?? {}),
-  request: (method: string, path: string, body?: unknown) => {
-    const url = "/jaxrs/processplatform/service" + path;
-    if (method === "GET") return api.get(url);
-    if (method === "POST") return api.post(url, body);
-    if (method === "PUT") return api.put(url, body);
-    return api.delete(url);
-  },
+  request: createRequest("/jaxrs/view"),
 };
 
 // ─────────────────────────────────────────────────────────────
@@ -930,13 +711,7 @@ export const fileInfoApi = {
     api.put(`/jaxrs/fileinfo/update/${id}/content`, data),
   batchDownload: (docId: string, site: string) =>
     api.get(`/jaxrs/fileinfo/batch/download/doc/${docId}/site/${site}`),
-  request: (method: string, path: string, body?: unknown) => {
-    const url = "/jaxrs/processplatform/service" + path;
-    if (method === "GET") return api.get(url);
-    if (method === "POST") return api.post(url, body);
-    if (method === "PUT") return api.put(url, body);
-    return api.delete(url);
-  },
+  request: createRequest("/jaxrs/fileinfo"),
 };
 
 // ─────────────────────────────────────────────────────────────
@@ -944,46 +719,22 @@ export const fileInfoApi = {
 // ─────────────────────────────────────────────────────────────
 export const empowerLogApi = {
   list: (p?: Record<string, string>) => api.get('/jaxrs/empowerlog/list', { params: p }),
-  request: (method: string, path: string, body?: unknown) => {
-    const url = "/jaxrs/processplatform/service" + path;
-    if (method === "GET") return api.get(url);
-    if (method === "POST") return api.post(url, body);
-    if (method === "PUT") return api.put(url, body);
-    return api.delete(url);
-  },
+  request: createRequest("/jaxrs/empowerlog"),
 };
 export const commendApi = {
   list: () => api.get('/jaxrs/commend/list'),
   detail: (id: string) => api.get(`/jaxrs/commend/${id}`),
-  request: (method: string, path: string, body?: unknown) => {
-    const url = "/jaxrs/processplatform/service" + path;
-    if (method === "GET") return api.get(url);
-    if (method === "POST") return api.post(url, body);
-    if (method === "PUT") return api.put(url, body);
-    return api.delete(url);
-  },
+  request: createRequest("/jaxrs/commend"),
 };
 export const commentApi = {
   list: () => api.get('/jaxrs/comment/list'),
   detail: (id: string) => api.get(`/jaxrs/comment/${id}`),
-  request: (method: string, path: string, body?: unknown) => {
-    const url = "/jaxrs/processplatform/service" + path;
-    if (method === "GET") return api.get(url);
-    if (method === "POST") return api.post(url, body);
-    if (method === "PUT") return api.put(url, body);
-    return api.delete(url);
-  },
+  request: createRequest("/jaxrs/comment"),
 };
 export const complexApi = {
   folderList: () => api.get('/jaxrs/complex/folder/list'),
   topFiles: () => api.get('/jaxrs/complex/top'),
-  request: (method: string, path: string, body?: unknown) => {
-    const url = "/jaxrs/processplatform/service" + path;
-    if (method === "GET") return api.get(url);
-    if (method === "POST") return api.post(url, body);
-    if (method === "PUT") return api.put(url, body);
-    return api.delete(url);
-  },
+  request: createRequest("/jaxrs/complex"),
 };
 export const componentApi = {
   list: () => api.get('/jaxrs/component_assemble_control/component/list'),
@@ -991,24 +742,12 @@ export const componentApi = {
   get: (id: string) => api.get(`/jaxrs/component_assemble_control/component/${id}`),
   save: (id: string, data: unknown) => api.put(`/jaxrs/component_assemble_control/component/save/${id}`, data),
   delete: (id: string) => api.delete(`/jaxrs/component_assemble_control/component/delete/${id}`),
-  request: (method: string, path: string, body?: unknown) => {
-    const url = "/jaxrs/processplatform/service" + path;
-    if (method === "GET") return api.get(url);
-    if (method === "POST") return api.post(url, body);
-    if (method === "PUT") return api.put(url, body);
-    return api.delete(url);
-  },
+  request: createRequest("/jaxrs/component_assemble_control"),
 };
 export const configApi = {
   isSet: (k: string) => api.get(`/jaxrs/config/is/${k}`),
   systemConfig: () => api.get('/jaxrs/config/system'),
-  request: (method: string, path: string, body?: unknown) => {
-    const url = "/jaxrs/processplatform/service" + path;
-    if (method === "GET") return api.get(url);
-    if (method === "POST") return api.post(url, body);
-    if (method === "PUT") return api.put(url, body);
-    return api.delete(url);
-  },
+  request: createRequest("/jaxrs/config"),
 };
 export const editorApi = { list: () => api.get('/jaxrs/editor/list') };
 export const externalDataSourceApi = {
@@ -1124,13 +863,7 @@ export const processplatformSurfaceApi = {
   create: (data: unknown) => api.post("/jaxrs/processplatform/assemble/surface/create", data),
   save: (id: string, data: unknown) => api.put(`/jaxrs/processplatform/assemble/surface/save/${id}`, data),
   delete: (id: string) => api.delete(`/jaxrs/processplatform/assemble/surface/${id}`),
-  request: (method: string, path: string, body?: unknown) => {
-    const url = "/jaxrs/processplatform/assemble/surface" + path;
-    if (method === "GET") return api.get(url);
-    if (method === "POST") return api.post(url, body);
-    if (method === "PUT") return api.put(url, body);
-    return api.delete(url);
-  },
+  request: createRequest("/jaxrs/processplatform/assemble/surface"),
 };
 
 // ─────────────────────────────────────────────────────────────
@@ -1148,13 +881,7 @@ export const cmsApi = {
   delete: (type: string, id: string) => api.delete(`/jaxrs/cms/${type}/${id}`),
   comment: (id: string) => api.get(`/jaxrs/cms/comment/${id}`),
   document: (id: string) => api.get(`/jaxrs/cms/document/${id}`),
-  request: (method: string, path: string, body?: unknown) => {
-    const url = "/jaxrs/cms" + path;
-    if (method === "GET") return api.get(url);
-    if (method === "POST") return api.post(url, body);
-    if (method === "PUT") return api.put(url, body);
-    return api.delete(url);
-  },
+  request: createRequest("/jaxrs/cms"),
 };
 
 // ─────────────────────────────────────────────────────────────
@@ -1175,13 +902,7 @@ export const organizationControlApi = {
   create: (type: string, data: unknown) => api.post(`/jaxrs/organization/assemble/control/${type}`, data),
   update: (type: string, flag: string, data: unknown) => api.put(`/jaxrs/organization/assemble/control/${type}/${flag}`, data),
   delete: (type: string, flag: string) => api.delete(`/jaxrs/organization/assemble/control/${type}/${flag}`),
-  request: (method: string, path: string, body?: unknown) => {
-    const url = "/jaxrs/organization/assemble/control" + path;
-    if (method === "GET") return api.get(url);
-    if (method === "POST") return api.post(url, body);
-    if (method === "PUT") return api.put(url, body);
-    return api.delete(url);
-  },
+  request: createRequest("/jaxrs/organization/assemble/control"),
 };
 
 // ─────────────────────────────────────────────────────────────
@@ -1252,13 +973,7 @@ export const attendanceControlApi = {
   attendancedetailListPersonsNonesign: () => api.get("/jaxrs/attendance/assemble/control/attendancedetail/list/persons/nonesign"),
   attendancedetailMobileFilterList: () => api.get("/jaxrs/attendance/assemble/control/attendancedetail/mobile/filter/list"),
   attendancedetailMobileMy: () => api.get("/jaxrs/attendance/assemble/control/attendancedetail/mobile/my"),
-  request: (method: string, path: string, body?: unknown) => {
-    const url = "/jaxrs/attendance/assemble/control" + path;
-    if (method === "GET") return api.get(url);
-    if (method === "POST") return api.post(url, body);
-    if (method === "PUT") return api.put(url, body);
-    return api.delete(url);
-  },
+  request: createRequest("/jaxrs/attendance/assemble/control"),
 };
 // ─────────────────────────────────────────────────────────────
 // 工作流表面 (processplatform_assemble_surface — 963 routes)
@@ -1297,13 +1012,7 @@ export const fileControlApi = {
   emptyRecycle: () => api.delete("/jaxrs/file/assemble/control/recycle/empty"),
   deleteShare: (id: string) => api.delete(`/jaxrs/file/assemble/control/share/${id}`),
   deleteFolder: (id: string) => api.delete(`/jaxrs/file/assemble/control/folder/${id}`),
-  request: (method: string, path: string, body?: unknown) => {
-    const url = "/jaxrs/file/assemble/control" + path;
-    if (method === "GET") return api.get(url);
-    if (method === "POST") return api.post(url, body);
-    if (method === "PUT") return api.put(url, body);
-    return api.delete(url);
-  },
+  request: createRequest("/jaxrs/file/assemble/control"),
 };
 
 // ─────────────────────────────────────────────────────────────
@@ -1328,13 +1037,7 @@ export const meetingControlApi = {
   roomDelete: (id: string) => api.delete(`/jaxrs/meeting/assemble/control/room/${id}`),
   meetingDelete: (id: string) => api.delete(`/jaxrs/meeting/assemble/control/meeting/${id}`),
   buildingDelete: (id: string) => api.delete(`/jaxrs/meeting/assemble/control/building/${id}`),
-  request: (method: string, path: string, body?: unknown) => {
-    const url = "/jaxrs/meeting/assemble/control" + path;
-    if (method === "GET") return api.get(url);
-    if (method === "POST") return api.post(url, body);
-    if (method === "PUT") return api.put(url, body);
-    return api.delete(url);
-  },
+  request: createRequest("/jaxrs/meeting/assemble/control"),
 };
 
 // ─────────────────────────────────────────────────────────────
@@ -1375,13 +1078,7 @@ export const portalSurfaceApi = {
   create: (data: Record<string, unknown>) => api.post("/jaxrs/portal/assemble/surface/create", data),
   saveLayout: (data: Record<string, unknown>) => api.put("/jaxrs/portal/assemble/surface/save/layout", data),
   deleteLayout: (data: Record<string, unknown>) => api.delete("/jaxrs/portal/assemble/surface/delete/layout", data),
-  request: (method: string, path: string, body?: unknown) => {
-    const url = "/jaxrs/portal/assemble/surface" + path;
-    if (method === "GET") return api.get(url);
-    if (method === "POST") return api.post(url, body);
-    if (method === "PUT") return api.put(url, body);
-    return api.delete(url);
-  },
+  request: createRequest("/jaxrs/portal/assemble/surface"),
 };
 
 // ─────────────────────────────────────────────────────────────
@@ -1402,13 +1099,7 @@ export const generalControlApi = {
   areaUpdate: (id: string, data: unknown) => api.put(`/jaxrs/general/assemble/control/area/update/${id}`, data),
   areaDelete: (id: string) => api.delete(`/jaxrs/general/assemble/control/area/delete/${id}`),
   qrCodeDelete: (id: string) => api.delete(`/jaxrs/general/assemble/control/qrcode/delete/${id}`),
-  request: (method: string, path: string, body?: unknown) => {
-    const url = "/jaxrs/general/assemble/control" + path;
-    if (method === "GET") return api.get(url);
-    if (method === "POST") return api.post(url, body);
-    if (method === "PUT") return api.put(url, body);
-    return api.delete(url);
-  },
+  request: createRequest("/jaxrs/general/assemble/control"),
 };
 
 // ─────────────────────────────────────────────────────────────
@@ -1433,13 +1124,7 @@ export const messageCommunicateApi = {
   imConversationRead: (id: string) => api.put(`/jaxrs/message/assemble/communicate/im/conversation/${id}/read`, null),
   massDelete: (id: string) => api.delete(`/jaxrs/message/assemble/communicate/mass/${id}`),
   imConversationGroup: (id: string) => api.delete(`/jaxrs/message/assemble/communicate/im/conversation/${id}/group`),
-  request: (method: string, path: string, body?: unknown) => {
-    const url = "/jaxrs/message/assemble/communicate" + path;
-    if (method === "GET") return api.get(url);
-    if (method === "POST") return api.post(url, body);
-    if (method === "PUT") return api.put(url, body);
-    return api.delete(url);
-  },
+  request: createRequest("/jaxrs/message/assemble/communicate"),
 }
 
 /**
@@ -1456,13 +1141,7 @@ export const ai_core_entityApi = {
   getlist_1: () => api.get("/jaxrs/ai/core/entity/model/list"),
   getlist_2: () => api.get("/jaxrs/ai/core/entity/conversation/list"),
   // Generic fallback for 0 remaining paths
-  request: (method: string, path: string, body?: unknown) => {
-    const url = '/jaxrs/' + path;
-    if (method === 'GET') return api.get(url);
-    if (method === 'POST') return api.post(url, body);
-    if (method === 'PUT') return api.put(url, body);
-    return api.delete(url);
-  },
+  request: createRequest("/jaxrs/"),
 };
 
 // ─────────────────────────────────────────────────────────────
@@ -1473,13 +1152,7 @@ export const query_serviceApi = {
   postexecute: (body?: unknown) => api.post("/jaxrs/query/service/processing/execute", body),
   postmodelflag: (model_flag: string, body?: unknown) => api.post("/jaxrs/query/service/neural/generate/:model_flag", body),
   // Generic fallback for 0 remaining paths
-  request: (method: string, path: string, body?: unknown) => {
-    const url = '/jaxrs/' + path;
-    if (method === 'GET') return api.get(url);
-    if (method === 'POST') return api.post(url, body);
-    if (method === 'PUT') return api.put(url, body);
-    return api.delete(url);
-  },
+  request: createRequest("/jaxrs/"),
 };
 
 // ─────────────────────────────────────────────────────────────
@@ -1491,13 +1164,7 @@ export const query_service_processingApi = {
   postreset: (body?: unknown) => api.post("/jaxrs/query/service/processing/reset", body),
   postprocess: (body?: unknown) => api.post("/jaxrs/query/service/processing/process", body),
   // Generic fallback for 0 remaining paths
-  request: (method: string, path: string, body?: unknown) => {
-    const url = '/jaxrs/' + path;
-    if (method === 'GET') return api.get(url);
-    if (method === 'POST') return api.post(url, body);
-    if (method === 'PUT') return api.put(url, body);
-    return api.delete(url);
-  },
+  request: createRequest("/jaxrs/"),
 };
 
 // ─────────────────────────────────────────────────────────────
@@ -1517,13 +1184,7 @@ export const empowerApi = {
   postdisable: (id: string, body?: unknown) => api.post("/jaxrs/person/empower/:id/disable", body),
   postsize: (page: string, size: string, body?: unknown) => api.post("/jaxrs/person/empower/manager/list/paging/:page/size/:size", body),
   // Generic fallback for 4 remaining paths
-  request: (method: string, path: string, body?: unknown) => {
-    const url = '/jaxrs/' + path;
-    if (method === 'GET') return api.get(url);
-    if (method === 'POST') return api.post(url, body);
-    if (method === 'PUT') return api.put(url, body);
-    return api.delete(url);
-  },
+  request: createRequest("/jaxrs/"),
 };
 
 // ─────────────────────────────────────────────────────────────
@@ -1534,13 +1195,7 @@ export const realtimeApi = {
   getroomid: (room_id: string) => api.get("/jaxrs//ws/realtime/room/:room_id"),
   getstats: (room_id: string) => api.get("/jaxrs//ws/realtime/room/:room_id/stats"),
   // Generic fallback for 0 remaining paths
-  request: (method: string, path: string, body?: unknown) => {
-    const url = '/jaxrs/' + path;
-    if (method === 'GET') return api.get(url);
-    if (method === 'POST') return api.post(url, body);
-    if (method === 'PUT') return api.put(url, body);
-    return api.delete(url);
-  },
+  request: createRequest("/jaxrs/"),
 };
 
 // ─────────────────────────────────────────────────────────────
@@ -1557,13 +1212,7 @@ export const baseApi = {
   getclassName: (className: string) => api.get("/jaxrs/base/fireschedule/classname/:className"),
   postcache: (body?: unknown) => api.post("/jaxrs/base/cache", body),
   // Generic fallback for 0 remaining paths
-  request: (method: string, path: string, body?: unknown) => {
-    const url = '/jaxrs/' + path;
-    if (method === 'GET') return api.get(url);
-    if (method === 'POST') return api.post(url, body);
-    if (method === 'PUT') return api.put(url, body);
-    return api.delete(url);
-  },
+  request: createRequest("/jaxrs/"),
 };
 
 // ─────────────────────────────────────────────────────────────
@@ -1573,13 +1222,7 @@ export const previewApi = {
   postupload: (body?: unknown) => api.post("/jaxrs//preview/upload", body),
   postconvert: (body?: unknown) => api.post("/jaxrs//preview/convert", body),
   // Generic fallback for 0 remaining paths
-  request: (method: string, path: string, body?: unknown) => {
-    const url = '/jaxrs/' + path;
-    if (method === 'GET') return api.get(url);
-    if (method === 'POST') return api.post(url, body);
-    if (method === 'PUT') return api.put(url, body);
-    return api.delete(url);
-  },
+  request: createRequest("/jaxrs/"),
 };
 
 // ─────────────────────────────────────────────────────────────
@@ -1590,13 +1233,7 @@ export const signatureApi = {
   poststatus: (body?: unknown) => api.post("/jaxrs//signature/pdf/status", body),
   postverify: (body?: unknown) => api.post("/jaxrs//signature/pdf/verify", body),
   // Generic fallback for 0 remaining paths
-  request: (method: string, path: string, body?: unknown) => {
-    const url = '/jaxrs/' + path;
-    if (method === 'GET') return api.get(url);
-    if (method === 'POST') return api.post(url, body);
-    if (method === 'PUT') return api.put(url, body);
-    return api.delete(url);
-  },
+  request: createRequest("/jaxrs/"),
 };
 
 
@@ -1644,13 +1281,7 @@ export const aiApi = {
   appList: () => api.get("/jaxrs/ai/core/entity/app/list"),
   modelList: () => api.get("/jaxrs/ai/core/entity/model/list"),
   conversationList: () => api.get("/jaxrs/ai/core/entity/conversation/list"),
-  request: (method: string, path: string, body?: unknown) => {
-    const url = "/jaxrs/ai" + path;
-    if (method === "GET") return api.get(url);
-    if (method === "POST") return api.post(url, body);
-    if (method === "PUT") return api.put(url, body);
-    return api.delete(url);
-  },
+  request: createRequest("/jaxrs/ai"),
 };
 
 // ─────────────────────────────────────────────────────────────
@@ -1667,13 +1298,7 @@ export const roleApi = {
   listPrev: (flag: string, count: number) =>
     api.get(`/jaxrs/role/list/${flag}/prev/${count}`),
   expressList: () => api.get("/jaxrs/express/role/list"),
-  request: (method: string, path: string, body?: unknown) => {
-    const url = "/jaxrs/role" + path;
-    if (method === "GET") return api.get(url);
-    if (method === "POST") return api.post(url, body);
-    if (method === "PUT") return api.put(url, body);
-    return api.delete(url);
-  },
+  request: createRequest("/jaxrs/role"),
 };
 
 export const extraApis = {
