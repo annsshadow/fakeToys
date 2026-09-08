@@ -253,6 +253,30 @@ pub async fn security_headers_middleware(request: Request<Body>, next: Next) -> 
     response
         .headers_mut()
         .insert(header::REFERRER_POLICY, HeaderValue::from_static("strict-origin-when-cross-origin"));
+
+    // Strict Content-Security-Policy (enforced, not report-only).
+    // - script-src allows 'unsafe-eval' for ECharts/CodeMirror runtime compilation.
+    // - style-src allows 'unsafe-inline' for Vue dynamic styles and Chart.js injection.
+    // - connect-src allows WebSocket (ws://*) and API calls.
+    // - frame-src/object-src blocked; base-uri/form-action restricted.
+    response.headers_mut().insert(
+        header::CONTENT_SECURITY_POLICY,
+        HeaderValue::from_str(
+            "default-src 'self'; \
+             script-src 'self' 'unsafe-eval'; \
+             style-src 'self' 'unsafe-inline'; \
+             img-src 'self' data: blob:; \
+             connect-src 'self' ws://localhost:* wss://* ws:*; \
+             font-src 'self'; \
+             object-src 'none'; \
+             frame-src 'none'; \
+             base-uri 'self'; \
+             form-action 'self'; \
+             upgrade-insecure-requests",
+        )
+        .unwrap(),
+    );
+
     response
 }
 
