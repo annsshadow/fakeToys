@@ -24,7 +24,7 @@ export default defineConfig({
   build: {
     outDir: '../../dist/web',
     emptyOutDir: true,
-    sourcemap: true,
+    sourcemap: false,
     chunkSizeWarningLimit: 1000,
     rollupOptions: {
       output: {
