@@ -100,32 +100,32 @@ mod tests {
 
     #[test]
     fn test_captcha_ok_and_one_time() {
-        let id = captcha_store().insert("Ab3D".to_string());
-        assert_eq!(captcha_store().verify(&id, "ab3d"), VerifyResult::Ok);
-        assert_eq!(captcha_store().verify(&id, "ab3d"), VerifyResult::NotFound);
+        let id = captcha_store::captcha_store().insert("Ab3D".to_string());
+        assert_eq!(captcha_store::captcha_store().verify(&id, "ab3d"), VerifyResult::Ok);
+        assert_eq!(captcha_store::captcha_store().verify(&id, "ab3d"), VerifyResult::NotFound);
     }
 
     #[test]
     fn test_captcha_wrong_answer_attempts() {
-        let id = captcha_store().insert("1234".to_string());
-        assert_eq!(captcha_store().verify(&id, "0000"), VerifyResult::WrongAnswer);
-        assert_eq!(captcha_store().verify(&id, "0000"), VerifyResult::WrongAnswer);
-        assert_eq!(captcha_store().verify(&id, "0000"), VerifyResult::WrongAnswer);
-        assert_eq!(captcha_store().verify(&id, "0000"), VerifyResult::WrongAnswer);
-        assert_eq!(captcha_store().verify(&id, "0000"), VerifyResult::TooManyAttempts);
-        assert_eq!(captcha_store().verify(&id, "1234"), VerifyResult::NotFound);
+        let id = captcha_store::captcha_store().insert("1234".to_string());
+        assert_eq!(captcha_store::captcha_store().verify(&id, "0000"), VerifyResult::WrongAnswer);
+        assert_eq!(captcha_store::captcha_store().verify(&id, "0000"), VerifyResult::WrongAnswer);
+        assert_eq!(captcha_store::captcha_store().verify(&id, "0000"), VerifyResult::WrongAnswer);
+        assert_eq!(captcha_store::captcha_store().verify(&id, "0000"), VerifyResult::WrongAnswer);
+        assert_eq!(captcha_store::captcha_store().verify(&id, "0000"), VerifyResult::TooManyAttempts);
+        assert_eq!(captcha_store::captcha_store().verify(&id, "1234"), VerifyResult::NotFound);
     }
 
     #[test]
     fn test_captcha_unknown_id() {
-        assert_eq!(captcha_store().verify("nope", "1234"), VerifyResult::NotFound);
+        assert_eq!(captcha_store::captcha_store().verify("nope", "1234"), VerifyResult::NotFound);
     }
 
     #[test]
     #[ignore]
     fn test_captcha_expired() {
-        captcha_store().force_insert("expired-id", "1234", chrono::Utc::now() - chrono::Duration::minutes(1));
-        assert_eq!(captcha_store().verify("expired-id", "1234"), VerifyResult::Expired);
+        captcha_store::captcha_store().force_insert("expired-id", "1234", chrono::Utc::now() - chrono::Duration::minutes(1));
+        assert_eq!(captcha_store::captcha_store().verify("expired-id", "1234"), VerifyResult::Expired);
     }
 
     #[test]
