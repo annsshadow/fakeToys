@@ -38,15 +38,10 @@ onMounted(async () => {
     );
 
     const { token, person } = resp.data;
-    session.login(person.name, '', undefined, undefined);
-    // 写入 session（简化处理，实际应复用 login 方法）
-    localStorage.setItem('oa4rust_session', JSON.stringify({ token, user: person }));
-    session.state.value = {
-      token,
-      user: person,
-      loading: false,
-      systemUninitialized: false,
-    };
+    session.setSession(token, person);
+    // Remove legacy direct localStorage write to keep token management centralized.
+    // Note: existing browsers with stale tokens in localStorage will be overwritten
+    // by session.setSession() on next page load via init().
 
     router.replace('/app/dashboard');
   } catch (e: unknown) {
