@@ -107,4 +107,9 @@ describe('ApiClient', () => {
       expect.objectContaining({ headers: {} }),
     );
   });
+
+  it('accepts timeoutMs option without error', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(jsonResponse({ success: true, data: {} })));
+    await expect(new ApiClient().get('/jaxrs/x', { timeoutMs: 5000 })).resolves.toBeDefined();
+  });
 });
