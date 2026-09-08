@@ -7,7 +7,7 @@ mod u2_tests {
     use axum::body::Body;
     use axum::http::{Request, StatusCode};
     use shared::session::Session;
-    use shared::storage::DbBlobStorage;
+    
     use tower::ServiceExt;
 
     const ADMIN: &str = "admin";
@@ -319,7 +319,7 @@ mod u2_tests {
             .await
             .unwrap();
 
-        let app = crate::router(pool.clone());
+        let _app = crate::router(pool.clone());
         let path = format!("/jaxrs/meeting/assemble/control/meeting/{mid}");
         // 非 owner（且非管理员）→ 403
         let (st, _) = respond_db("DELETE", &path, &[], Body::empty(), NON_ADMIN).await;

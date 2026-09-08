@@ -5,7 +5,7 @@ mod tests {
     use crate::SessionManager;
     use base64::Engine;
     use shared::response::ActionResult;
-    use shared::testing::test_pool;
+    
     use axum::body::Body;
     use axum::http::{Request, StatusCode};
     use tower::util::ServiceExt;
@@ -446,7 +446,7 @@ mod tests {
         assert_eq!(response.token, "test-token");
         assert_eq!(response.token_type, "Bearer");
         assert_eq!(response.role_list, vec!["admin".to_string(), "user".to_string()]);
-        assert_eq!(response.password_expired, false);
+        assert!(!response.password_expired);
         assert_eq!(response.identity_list, vec!["identity1".to_string()]);
         assert_eq!(response.person.unique, "user001");
     }
@@ -473,7 +473,7 @@ mod tests {
             identity_list: vec![],
             person,
         };
-        assert_eq!(response.password_expired, true);
+        assert!(response.password_expired);
         assert!(response.role_list.is_empty());
         assert!(response.identity_list.is_empty());
     }
@@ -511,8 +511,8 @@ mod tests {
             password_expired: false,
             temp_token: "test-temp-token".to_string(),
         };
-        assert_eq!(response.value, true);
-        assert_eq!(response.password_expired, false);
+        assert!(response.value);
+        assert!(!response.password_expired);
         assert_eq!(response.temp_token, "test-temp-token");
     }
 

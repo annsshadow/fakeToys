@@ -177,7 +177,7 @@ async fn test_reset_service_route_exists() {
 
 #[cfg(test)]
 mod u2_contract {
-    use super::*;
+    
     use shared::testing::test_pool;
     use tower::util::ServiceExt;
 

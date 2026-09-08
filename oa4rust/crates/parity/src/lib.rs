@@ -361,7 +361,7 @@ impl ParityReport {
 
 #[cfg(test)]
 mod macro_self_test {
-    use crate::parity_test;
+    
     use tower::util::ServiceExt;
 
     parity_test!(

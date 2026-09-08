@@ -2,10 +2,7 @@
 // Hand-written Top 100 high-frequency routes with behavior contracts.
 // Generated from: docs/audits/o2server-parity-report.json
 
-use crate::parity_test;
 use tower::util::ServiceExt;
-use shared::RateLimiter;
-use shared::SessionManager;
 
 // ── login/auth routes: behavior = login_returns_token ──
 

@@ -1,6 +1,6 @@
 #[cfg(test)]
 mod tests {
-    use crate::{EmpowerCreateRequest, EmpowerInfo, EmpowerListResult, EmpowerUpdateRequest};
+    use crate::{EmpowerCreateRequest, EmpowerInfo, EmpowerUpdateRequest};
     use axum::{body::Body, http::Request, Router};
     use auth::SessionManager;
     use shared::{

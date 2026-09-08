@@ -430,7 +430,7 @@ mod u2b_tests {
     use crate::router;
     use axum::body::Body;
     use axum::http::{Request, StatusCode};
-    use shared::response::ActionResult;
+    
     use shared::storage::{BlobStorage, DbBlobStorage, FsBlobStorage};
     use tower::ServiceExt;
 
@@ -655,7 +655,7 @@ mod u2b_tests {
     async fn u2b_db_placeholder_backend_fails_loud_as_not_implemented() {
         // 绾㈢嚎锛欴bBlobStorage.put 鏄?no-op 鈥斺€?鑻ョ収甯?success 鍗?涓婁紶鍋囨垚鍔?銆?
         // 濂戠害锛氬洖璇绘牎楠屽繀椤绘妸杩欑鎯呭喌鏄犲皠涓烘樉寮?NotImplemented锛圚TTP 501锛夈€?
-        let storage = DbBlobStorage::default();
+        let storage = DbBlobStorage;
         let err = crate::u2_att_persist_verified(&storage, "attachment/a-1/f.bin", b"x")
             .await
             .unwrap_err();
