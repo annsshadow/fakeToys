@@ -59,7 +59,6 @@ const router = createRouter({
         { path: 'query-explorer', name: 'QueryExplorerApp', component: () => import('./views/QueryExplorerApp.vue'), meta: { title: '查询浏览器' } },
         { path: 'query-table-designer', name: 'QueryTableDesignerApp', component: () => import('./views/QueryTableDesignerApp.vue'), meta: { title: '表格设计器' } },
         { path: 'query-view-designer', name: 'QueryViewDesignerApp', component: () => import('./views/QueryViewDesignerApp.vue'), meta: { title: '视图设计器' } },
-        { path: 'query-statement-designer', name: 'QueryStatementDesignerApp', component: () => import('./views/QueryStatementDesignerApp.vue'), meta: { title: 'SQL设计器' } },
         { path: 'query-stat-designer', name: 'QueryStatDesignerApp', component: () => import('./views/QueryStatDesignerApp.vue'), meta: { title: '统计设计器' } },
         { path: 'query-importer-designer', name: 'QueryImporterDesignerApp', component: () => import('./views/QueryImporterDesignerApp.vue'), meta: { title: '导入设计器' } },
         { path: 'cms-column', name: 'CmsColumnApp', component: () => import('./views/CmsColumnApp.vue'), meta: { title: 'CMS列管理' } },
