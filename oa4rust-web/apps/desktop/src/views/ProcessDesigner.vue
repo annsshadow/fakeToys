@@ -1939,24 +1939,6 @@
         </div>
       </div>
     </div>
-    <!-- Layer Panel -->
-    <div v-if="showLayerPanel" class="layer-panel">
-      <div class="lp-header"><span>📑 图层管理</span><button class="btn-sm" @click="showLayerPanel=false">✕</button></div>
-      <div class="lp-body">
-        <button class="btn-sm" @click="addLayer()">+ 添加图层</button>
-        <div class="lp-list">
-          <div v-for="(l, li) in canvasLayers" :key="l.id" class="lp-layer">
-            <span class="lp-name">{{ l.name }}</span>
-            <input type="range" :value="l.opacity" @input="updateLayerOpacity(l.id, +$event.target.value)" min="0" max="1" step="0.1" class="lp-opacity" />
-            <span class="lp-op">{{ Math.round(l.opacity*100) }}%</span>
-            <button :class="['lp-btn',{active:l.visible}]" @click="toggleLayer(l.id)">👁</button>
-            <button class="lp-btn" @click="moveLayerUp(l.id)">↑</button>
-            <button class="lp-btn" @click="moveLayerDown(l.id)">↓</button>
-            <button class="lp-btn btn-danger" @click="removeLayer(l.id)">✕</button>
-          </div>
-        </div>
-      </div>
-    </div>
     <!-- Bookmark Panel -->
     <div v-if="showBookmarkPanel" class="bookmark-panel">
       <div class="bm-header"><span>🔖 视图书签</span><button class="btn-sm" @click="showBookmarkPanel=false">✕</button></div>
@@ -1987,22 +1969,6 @@
             <div class="wtp-tags"><span v-for="tag in tpl.tags" :key="tag" class="wtp-tag">{{ tag }}</span></div>
             <div class="wtp-actions"><button class="btn-sm" @click="loadWorkflowTemplate(ti)">加载</button><button class="btn-sm" @click="exportWorkflowTemplate(ti)">导出</button><button class="btn-sm btn-danger" @click="deleteWorkflowTemplate(ti)">删除</button></div>
           </div>
-        </div>
-      </div>
-    </div>
-    <!-- Topology Panel -->
-    <div v-if="showTopologyPanel" class="topology-panel">
-      <div class="tp-header"><span>🕸 网络拓扑</span><button class="btn-sm" @click="showTopologyPanel=false">✕</button></div>
-      <div class="tp-body">
-        <div class="tp-info"><span>节点: {{ topologyNodes.value.length }}</span><span>边: {{ topologyEdges.value.length }}</span></div>
-        <div class="tp-graph">
-          <div v-for="n in topologyNodes.value" :key="n.id" class="tp-node" :style="{left:n.x+'px', top:n.y+'px', background:n.type==='start'?'rgba(16,185,129,0.3)':n.type==='end'?'rgba(239,68,68,0.3)':'rgba(0,212,255,0.2)', borderColor:getTopoNodeColor(n.type)}">
-            <span class="tp-node-label">{{ n.label }}</span>
-            <span class="tp-node-degree">{{ n.degree }}</span>
-          </div>
-          <svg class="tp-svg" viewBox="0 0 800 500" preserveAspectRatio="xMidYMid meet">
-            <line v-for="e in topologyEdges.value" :key="e.from+e.to" :x1="topologyNodes.find(n=>n.id===e.from)?.x+30" :y1="topologyNodes.find(n=>n.id===e.from)?.y+15" :x2="topologyNodes.find(n=>n.id===e.to)?.x+30" :y2="topologyNodes.find(n=>n.id===e.to)?.y+15" stroke="rgba(0,212,255,0.4)" stroke-width="1.5" marker-end="url(#arrow)" />
-          </svg>
         </div>
       </div>
     </div>
@@ -2596,87 +2562,6 @@
       </div>
     </div>
 
-    <!-- Risk Dashboard Panel -->
-    <div v-if="showRiskDashboard" class="modal-overlay" @click.self="showRiskDashboard=false">
-      <div class="modal glass-card">
-        <div class="modal-header"><span>风险仪表盘</span><button class="btn-close" @click="showRiskDashboard=false">×</button></div>
-        <div class="modal-body">
-          <div class="risk-grid">
-            <div class="risk-card critical"><span class="risk-val">{{riskDashboardData.criticalRisks}}</span><span class="risk-label">严重</span></div>
-            <div class="risk-card high"><span class="risk-val">{{riskDashboardData.highRisks}}</span><span class="risk-label">高</span></div>
-            <div class="risk-card medium"><span class="risk-val">{{riskDashboardData.mediumRisks}}</span><span class="risk-label">中</span></div>
-            <div class="risk-card low"><span class="risk-val">{{riskDashboardData.lowRisks}}</span><span class="risk-label">低</span></div>
-          </div>
-          <div class="risk-total"><span>总风险: {{riskDashboardData.totalRisks}}</span></div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Performance Dashboard Panel -->
-    <div v-if="showPerfDashboard" class="modal-overlay" @click.self="showPerfDashboard=false">
-      <div class="modal glass-card">
-        <div class="modal-header"><span>性能仪表盘</span><button class="btn-close" @click="showPerfDashboard=false">×</button></div>
-        <div class="modal-bd">
-          <div class="perf-grid">
-            <div class="perf-card"><span class="perf-val">{{perfDashboardData.avgResponseMs.toFixed(0)}}ms</span><span class="perf-label">平均响应</span></div>
-            <div class="perf-card"><span class="perf-val">{{perfDashboardData.p99Ms.toFixed(0)}}ms</span><span class="perf-label">P99响应</span></div>
-            <div class="perf-card"><span class="perf-val">{{perfDashboardData.throughput.toFixed(0)}}</span><span class="perf-label">吞吐量/s</span></div>
-            <div class="perf-card"><span class="perf-val">{{(perfDashboardData.errorRate*100).toFixed(2)}}%</span><span class="perf-label">错误率</span></div>
-          </div>
-          <div class="perf-bars">
-            <div class="perf-bar-row"><span>CPU</span><div class="perf-bar-wrap"><div class="perf-bar-fill" :style="{width:perfDashboardData.cpuUsage+'%'}"></div></div><span>{{perfDashboardData.cpuUsage.toFixed(0)}}%</span></div>
-            <div class="perf-bar-row"><span>内存</span><div class="perf-bar-wrap"><div class="perf-bar-fill" :style="{width:perfDashboardData.memUsage+'%'}"></div></div><span>{{perfDashboardData.memUsage.toFixed(0)}}%</span></div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Enhanced Heatmap Panel -->
-    <div v-if="showHeatmapEnhanced" class="modal-overlay" @click.self="showHeatmapEnhanced=false">
-      <div class="modal glass-card">
-        <div class="modal-header"><span>增强热力图</span><button class="btn-close" @click="showHeatmapEnhanced=false">×</button></div>
-        <div class="modal-body">
-          <div class="heatmap-grid">
-            <div v-for="h in heatmapEnhancedData" :key="h.label" class="heatmap-cell" :style="{left:h.x+'%',top:h.y+'%',background:h.color}">
-              <span class="heatmap-label">{{h.label}}</span>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Enhanced Topology Panel -->
-    <div v-if="showTopologyEnhanced" class="modal-overlay" @click.self="showTopologyEnhanced=false">
-      <div class="modal glass-card">
-        <div class="modal-header"><span>拓扑图</span><button class="btn-close" @click="showTopologyEnhanced=false">×</button></div>
-        <div class="modal-body">
-          <div class="topo-canvas">
-            <div v-for="n in topologyNodes" :key="n.id" class="topo-node" :style="{left:n.x+'px',top:n.y+'px'}">
-              <span class="topo-label">{{n.label}}</span>
-              <span class="topo-conns">{{n.connections}}连接</span>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Layer Manager Panel -->
-    <div v-if="showLayerManagerPanel" class="modal-overlay" @click.self="showLayerManagerPanel=false">
-      <div class="modal glass-card">
-        <div class="modal-header"><span>图层管理</span><button class="btn-close" @click="showLayerManagerPanel=false">×</button></div>
-        <div class="modal-body">
-          <div class="layer-list">
-            <div v-for="(l,i) in layerList" :key="l.id" class="layer-item">
-              <span class="layer-color" :style="{background:l.color}"></span>
-              <span class="layer-name">{{l.name}}</span>
-              <label class="layer-vis"><input type="checkbox" :checked="l.visible" @change="toggleLayer(i)"/><span></span></label>
-              <label class="layer-lock"><input type="checkbox" :checked="l.locked" @change="lockLayer(i)"/><span></span></label>
-              <input type="range" min="0" max="100" :value="l.opacity*100" class="layer-opacity" @input="setLayerOpacity(i, $event.target.value/100)" />
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
     <!-- Debug Console -->
     <div v-if="showDebugPanel" class="modal-overlay" @click.self="showDebugPanel=false">
       <div class="modal-box debug-panel">
@@ -7650,25 +7535,7 @@ const lockedNodes = ref<Array<{nodeId: string; nodeIdRef: string; lockedBy: stri
 const showPublishPanel = ref(false)
 const publishHistory = ref<Array<{id: string; version: string; publishedAt: number; publishedBy: string; status: string; changeLog: string}>>([])
 
-// -- Risk Dashboard State
-const showRiskDashboard = ref(false)
-const riskDashboardData = ref<{totalRisks: number; criticalRisks: number; highRisks: number; mediumRisks: number; lowRisks: number; riskTrend: string[]}>({
-  totalRisks: 12, criticalRisks: 2, highRisks: 3, mediumRisks: 4, lowRisks: 3, riskTrend: ['up','stable','down','up','stable','down']
-})
-
-// -- Performance Dashboard State
-const showPerfDashboard = ref(false)
-const perfDashboardData = ref<{avgResponseMs: number; p99Ms: number; throughput: number; errorRate: number; cpuUsage: number; memUsage: number; trend: Array<{label: string; value: number}>}>({
-  avgResponseMs: 234, p99Ms: 1200, throughput: 450, errorRate: 0.02, cpuUsage: 45, memUsage: 62,
-  trend: [{label:'周一',value:200},{label:'周二',value:220},{label:'周三',value:180},{label:'周四',value:250},{label:'周五',value:210},{label:'周六',value:150},{label:'周日',value:120}]
-})
-
-// -- Additional State for expanded features
-const showHeatmapEnhanced = ref(false)
-const heatmapEnhancedData = ref<Array<{x: number; y: number; value: number; color: string; label: string}>>([])
-const showTopologyEnhanced = ref(false)
-const topologyNodes = ref<Array<{id: string; label: string; x: number; y: number; type: string; connections: number}>>([])
-const showLayerManagerPanel = ref(false)
+// -- Dashboard State
 const showDebugPanel = ref(false)
 const showMacroEditor = ref(false)
 const showSnippetLibrary = ref(false)
@@ -7706,12 +7573,6 @@ const dependencyGraphData = ref<{nodes:Array<{id:string;label:string;x:number;y:
 const allProcesses = ref<Array<{id:string;name:string;icon:string;status:string;nodes?:Array<any>;edges?:Array<any>}>>([])
 const pmDisplayNodes = ref<Array<{id:string;label:string;x:number;y:number;type:string}>>([])
 const pmDisplayEdges = ref<Array<{x1:number;y1:number;x2:number;y2:number}>>([])
-const layerList = ref<Array<{id: string; name: string; visible: boolean; locked: boolean; opacity: number; color: string}>>([
-  { id: 'l1', name: '基础节点', visible: true, locked: false, opacity: 1, color: '#3b82f6' },
-  { id: 'l2', name: '连接线', visible: true, locked: false, opacity: 1, color: '#10b981' },
-  { id: 'l3', name: '标注', visible: true, locked: false, opacity: 1, color: '#f59e0b' },
-  { id: 'l4', name: '分组背景', visible: false, locked: true, opacity: 0.3, color: '#8b5cf6' },
-])
 
 // -- Permission Functions
 function openPermissionPanel(): void { showPermissionPanel.value = true }
@@ -7730,65 +7591,6 @@ function publishProcess(): void {
   publishHistory.value.unshift({ id: 'pub_' + Date.now(), version: 'v' + (publishHistory.value.length + 1), publishedAt: Date.now(), publishedBy: '当前用户', status: 'success', changeLog: '流程发布' })
   showToast('流程已发布', 'success')
 }
-
-// -- Risk Dashboard Functions
-function openRiskDashboard(): void { showRiskDashboard.value = true; generateRiskDashboard() }
-function generateRiskDashboard(): void {
-  riskDashboardData.value = {
-    totalRisks: 8 + Math.floor(Math.random() * 10),
-    criticalRisks: Math.floor(Math.random() * 3),
-    highRisks: Math.floor(Math.random() * 4) + 1,
-    mediumRisks: Math.floor(Math.random() * 5) + 2,
-    lowRisks: Math.floor(Math.random() * 4) + 1,
-    riskTrend: ['up','stable','down','up','stable','down','up'].slice(0, 6)
-  }
-}
-
-// -- Performance Dashboard Functions
-function openPerfDashboard(): void { showPerfDashboard.value = true; generatePerfDashboard() }
-function generatePerfDashboard(): void {
-  perfDashboardData.value = {
-    avgResponseMs: 180 + Math.random() * 100,
-    p99Ms: 800 + Math.random() * 600,
-    throughput: 300 + Math.random() * 200,
-    errorRate: Math.random() * 0.05,
-    cpuUsage: 30 + Math.random() * 40,
-    memUsage: 40 + Math.random() * 30,
-    trend: ['周一','周二','周三','周四','周五','周六','周日'].map(d => ({ label: d, value: 150 + Math.random() * 150 }))
-  }
-}
-
-// -- Enhanced Heatmap Functions
-function openHeatmapEnhanced(): void { showHeatmapEnhanced.value = true; generateHeatmapEnhanced() }
-function generateHeatmapEnhanced(): void {
-  const nodes = processDef.value?.nodes || []
-  heatmapEnhancedData.value = nodes.map((n, i) => ({
-    x: (i % 5) * 20 + 10,
-    y: Math.floor(i / 5) * 20 + 10,
-    value: 0.3 + Math.random() * 0.7,
-    color: '#3b82f6',
-    label: n.label || n.type
-  }))
-}
-
-// -- Enhanced Topology Functions
-function openTopologyEnhanced(): void { showTopologyEnhanced.value = true; generateTopology() }
-function generateTopology(): void {
-  const nodes = processDef.value?.nodes || []
-  topologyNodes.value = nodes.map((n, i) => ({
-    id: n.id,
-    label: n.label || n.type,
-    x: 100 + (i % 6) * 120,
-    y: 100 + Math.floor(i / 6) * 80,
-    type: n.type,
-    connections: (processDef.value?.edges || []).filter(e => e.from === n.id || e.to === n.id).length
-  }))
-}
-
-// -- Layer Management Functions
-function toggleLayer(idx: number): void { layerList.value[idx].visible = !layerList.value[idx].visible }
-function lockLayer(idx: number): void { layerList.value[idx].locked = !layerList.value[idx].locked }
-function setLayerOpacity(idx: number, opacity: number): void { layerList.value[idx].opacity = opacity }
 
 // -- Debug Console Functions --
 function openDebugPanel(): void { showDebugPanel.value = true; debugLog.value.push({ts: Date.now(), level: "info", msg: "调试控制台已打开"}); }
