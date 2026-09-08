@@ -7,7 +7,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_folder_route_accessible() {
-        let mut app = mind_router();
+        let app = mind_router();
 
         let request = Request::builder()
             .uri("/jaxrs/mind/folder/tree/my")

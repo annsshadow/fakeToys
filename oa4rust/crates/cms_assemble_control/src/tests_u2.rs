@@ -14,7 +14,7 @@
 #[cfg(test)]
 mod u2_tests {
     use crate::{
-        appinfo_u2_create, comment_u2_create, document_u2_category_change, document_u2_delete,
+        appinfo_u2_create, document_u2_category_change, document_u2_delete,
         permission_u2_app_info, permission_u2_category_info, script_u2_list_manager,
         u2_body_i64, u2_body_str, u2_body_strs,
     };

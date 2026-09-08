@@ -395,7 +395,7 @@ mod tests {
         let sig_bytes = private_key
             .sign(Pkcs1v15Sign::new::<Sha256>(), &hash)
             .expect("sign test JWT");
-        let _public_key = RsaPrivateKey::to_public_key(&private_key);
+        let _public_key = RsaPrivateKey::to_public_key(private_key);
         let _verify_ok = _public_key.verify(Pkcs1v15Sign::new::<Sha256>(), &hash, &sig_bytes).is_ok();
         let sig_b64 =
             base64::encode_engine(sig_bytes, &base64::engine::general_purpose::URL_SAFE);
