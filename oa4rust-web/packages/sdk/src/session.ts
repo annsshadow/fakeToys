@@ -29,8 +29,8 @@ export const useSessionStore = defineStore('session', () => {
     const stored = loadStored();
     if (stored?.token) { state.value.token = stored.token; state.value.user = stored.user; }
     try {
-      const resp = await api.get('/jaxrs/authentication/who');
-      const who = (resp as any)?.data;
+      const resp = await api.get<O2User>('/jaxrs/authentication/who');
+      const who = resp.data;
       if (who) {
         state.value.user = who;
         if (!state.value.token) state.value.token = stored?.token ?? '';
@@ -41,10 +41,12 @@ export const useSessionStore = defineStore('session', () => {
   }
 
   async function login(username: string, password: string, captchaId?: string, captchaAnswer?: string): Promise<O2User> {
-    const resp = await api.post('/jaxrs/authentication/login', { username, password, captchaId, captchaAnswer });
-    const body = (resp as any)?.data;
-    const token = body?.token;
-    const person = body?.person;
+    const resp = await api.post<{ token: string; person: O2User }>(
+      '/jaxrs/authentication/login',
+      { username, password, captchaId, captchaAnswer },
+      { requireAuth: false },
+    );
+    const { token, person } = resp.data;
     if (token && person) { state.value.token = token; state.value.user = person; storeSession(token, person); }
     return person;
   }
@@ -55,8 +57,8 @@ export const useSessionStore = defineStore('session', () => {
   }
 
   async function refresh(): Promise<void> {
-    const resp = await api.post('/jaxrs/authentication/refresh', null, { requireAuth: false });
-    const token = (resp as any)?.data?.token;
+    const resp = await api.post<{ token: string }>('/jaxrs/authentication/refresh', null, { requireAuth: false });
+    const token = resp.data.token;
     if (token) {
       state.value.token = token;
       const stored = loadStored();
@@ -65,8 +67,8 @@ export const useSessionStore = defineStore('session', () => {
   }
 
   async function switchUser(targetUnique: string): Promise<O2User> {
-    const resp = await api.post('/jaxrs/authentication/switchuser', { targetUnique });
-    const user = (resp as any)?.data;
+    const resp = await api.post<O2User>('/jaxrs/authentication/switchuser', { targetUnique });
+    const user = resp.data;
     if (user) { state.value.user = user; storeSession(state.value.token!, user); }
     return user;
   }
