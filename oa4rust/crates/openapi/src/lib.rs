@@ -436,7 +436,9 @@ async fn ai_assemble_control_config_list_enable_model_config_list_enable_model_g
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn ai_assemble_control_config_list_mcp_paging_page_size_size_config_list_mcp_paging_page_size_size_get() {}
+async fn ai_assemble_control_config_list_mcp_paging_page_size_size_config_list_mcp_paging_page_size_size_get(
+) {
+}
 #[utoipa::path(get,
     path = "/jaxrs/ai_assemble_control/config/list/model/paging/{page}/size/{size}",
     tag = "ai",
@@ -565,7 +567,8 @@ async fn ai_assemble_control_file_list_file_list_get() {}
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn ai_assemble_control_file_list_paging_page_size_size_file_list_paging_page_size_size_get() {}
+async fn ai_assemble_control_file_list_paging_page_size_size_file_list_paging_page_size_size_get() {
+}
 #[utoipa::path(get,
     path = "/jaxrs/ai_assemble_control/file/upload",
     tag = "ai",
@@ -646,7 +649,9 @@ async fn ai_assemble_control_index_delete_flag_index_delete_flag_get() {}
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn ai_assemble_control_index_list_paging_page_size_size_index_list_paging_page_size_size_get() {}
+async fn ai_assemble_control_index_list_paging_page_size_size_index_list_paging_page_size_size_get()
+{
+}
 #[utoipa::path(get,
     path = "/jaxrs/ai_assemble_control/index/sync/to/knowledge",
     tag = "ai",
@@ -704,7 +709,9 @@ async fn ai_assemble_control_ai_assemble_control_config_create_mcp_config_create
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn ai_assemble_control_ai_assemble_control_config_delete_mcp_id_config_delete_mcp_flag_post() {}
+async fn ai_assemble_control_ai_assemble_control_config_delete_mcp_id_config_delete_mcp_flag_post()
+{
+}
 #[utoipa::path(post,
     path = "/jaxrs/ai/assemble/control/config/update/mcp/{id}",
     tag = "ai",
@@ -718,7 +725,9 @@ async fn ai_assemble_control_ai_assemble_control_config_delete_mcp_id_config_del
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn ai_assemble_control_ai_assemble_control_config_update_mcp_id_config_update_mcp_flag_post() {}
+async fn ai_assemble_control_ai_assemble_control_config_update_mcp_id_config_update_mcp_flag_post()
+{
+}
 #[utoipa::path(post,
     path = "/jaxrs/ai_assemble_control/chat/completion",
     tag = "ai",
@@ -900,7 +909,9 @@ async fn attendance_assemble_control_18a97d_get() {}
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn attendance_assemble_control_attendance_assemble_control_attendanceadmin_id_attendanceadmin_id_get() {}
+async fn attendance_assemble_control_attendance_assemble_control_attendanceadmin_id_attendanceadmin_id_get(
+) {
+}
 #[utoipa::path(get,
     path = "/jaxrs/attendance/assemble/control/attendanceappealInfo/filter/list/{id}/next/{count}",
     tag = "attendance",
@@ -1101,7 +1112,9 @@ async fn attendance_assemble_control_7a1c28_get() {}
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn attendance_assemble_control_attendance_assemble_control_attendancedetail_id_attendancedetail_id_get() {}
+async fn attendance_assemble_control_attendance_assemble_control_attendancedetail_id_attendancedetail_id_get(
+) {
+}
 #[utoipa::path(get,
     path = "/jaxrs/attendance/assemble/control/attendanceemployeeconfig/list/all",
     tag = "attendance",
@@ -1399,7 +1412,9 @@ async fn attendance_assemble_control_14a800_get() {}
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn attendance_assemble_control_attendance_assemble_control_rule_list_list_control_rules_get() {}
+async fn attendance_assemble_control_attendance_assemble_control_rule_list_list_control_rules_get()
+{
+}
 #[utoipa::path(get,
     path = "/jaxrs/attendance/assemble/control/selfholidaysimple/docId/{docId}",
     tag = "attendance",
@@ -1775,7 +1790,9 @@ async fn attendance_assemble_control_attendance_assemble_control_uuid_random_uui
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn attendance_assemble_control_attendance_assemble_control_workplace_list_all_workplace_list_all_get() {}
+async fn attendance_assemble_control_attendance_assemble_control_workplace_list_all_workplace_list_all_get(
+) {
+}
 #[utoipa::path(get,
     path = "/jaxrs/attendance/assemble/control/workplace/{id}",
     tag = "attendance",
@@ -2035,7 +2052,9 @@ async fn attendance_assemble_control_7bdb0d_post() {}
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn attendance_assemble_control_attendance_assemble_control_rule_id_toggle_toggle_control_rule_post() {}
+async fn attendance_assemble_control_attendance_assemble_control_rule_id_toggle_toggle_control_rule_post(
+) {
+}
 #[utoipa::path(post,
     path = "/jaxrs/attendance/assemble/control/statistic/do",
     tag = "attendance",
@@ -2623,7 +2642,9 @@ async fn bbs_assemble_control_bbs_assemble_control_list_reply_filter_list_reply_
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn bbs_assemble_control_bbs_assemble_control_list_subjects_filtered_list_subjects_filtered_get() {}
+async fn bbs_assemble_control_bbs_assemble_control_list_subjects_filtered_list_subjects_filtered_get(
+) {
+}
 #[utoipa::path(get,
     path = "/jaxrs/bbs/assemble/control/list/subjects/index",
     tag = "bbs",
@@ -2667,7 +2688,9 @@ async fn bbs_assemble_control_bbs_assemble_control_list_topics_creamed_list_topi
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn bbs_assemble_control_bbs_assemble_control_list_topics_recommended_list_topics_recommended_get() {}
+async fn bbs_assemble_control_bbs_assemble_control_list_topics_recommended_list_topics_recommended_get(
+) {
+}
 #[utoipa::path(get,
     path = "/jaxrs/bbs/assemble/control/permission/section/{sectionId}",
     tag = "bbs",
@@ -2777,7 +2800,9 @@ async fn bbs_assemble_control_bbs_assemble_control_section_list_list_control_sec
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn bbs_assemble_control_bbs_assemble_control_section_viewforum_forumid_section_viewforum_forumId_get() {}
+async fn bbs_assemble_control_bbs_assemble_control_section_viewforum_forumid_section_viewforum_forumId_get(
+) {
+}
 #[utoipa::path(get,
     path = "/jaxrs/bbs/assemble/control/shutup/list",
     tag = "bbs",
@@ -2799,7 +2824,8 @@ async fn bbs_assemble_control_bbs_assemble_control_shutup_list_shutup_list_get()
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn bbs_assemble_control_bbs_assemble_control_subject_creamed_list_subject_creamed_list_get() {}
+async fn bbs_assemble_control_bbs_assemble_control_subject_creamed_list_subject_creamed_list_get() {
+}
 #[utoipa::path(get,
     path = "/jaxrs/bbs/assemble/control/subject/filter/list",
     tag = "bbs",
@@ -2857,7 +2883,9 @@ async fn bbs_assemble_control_bbs_assemble_control_subject_statgrade_subject_sta
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn bbs_assemble_control_bbs_assemble_control_subject_top_sectionid_subject_top_sectionId_get() {}
+async fn bbs_assemble_control_bbs_assemble_control_subject_top_sectionid_subject_top_sectionId_get()
+{
+}
 #[utoipa::path(get,
     path = "/jaxrs/bbs/assemble/control/subject/view/{id}",
     tag = "bbs",
@@ -2929,7 +2957,9 @@ async fn bbs_assemble_control_bbs_assemble_control_topic_index_list_topic_index_
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn bbs_assemble_control_bbs_assemble_control_topic_list_forum_forumid_list_topics_by_forum_get() {}
+async fn bbs_assemble_control_bbs_assemble_control_topic_list_forum_forumid_list_topics_by_forum_get(
+) {
+}
 #[utoipa::path(get,
     path = "/jaxrs/bbs/assemble/control/topic/recommended/index",
     tag = "bbs",
@@ -2940,7 +2970,9 @@ async fn bbs_assemble_control_bbs_assemble_control_topic_list_forum_forumid_list
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn bbs_assemble_control_bbs_assemble_control_topic_recommended_index_topic_recommended_index_get() {}
+async fn bbs_assemble_control_bbs_assemble_control_topic_recommended_index_topic_recommended_index_get(
+) {
+}
 #[utoipa::path(get,
     path = "/jaxrs/bbs/assemble/control/topic/recommended/list",
     tag = "bbs",
@@ -2951,7 +2983,9 @@ async fn bbs_assemble_control_bbs_assemble_control_topic_recommended_index_topic
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn bbs_assemble_control_bbs_assemble_control_topic_recommended_list_topic_recommended_list_get() {}
+async fn bbs_assemble_control_bbs_assemble_control_topic_recommended_list_topic_recommended_list_get(
+) {
+}
 #[utoipa::path(get,
     path = "/jaxrs/bbs/assemble/control/topic/search",
     tag = "bbs",
@@ -3072,7 +3106,9 @@ async fn bbs_assemble_control_bbs_assemble_control_topic_create_create_topic_pos
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn bbs_assemble_control_bbs_assemble_control_update_control_config_update_control_config_post() {}
+async fn bbs_assemble_control_bbs_assemble_control_update_control_config_update_control_config_post(
+) {
+}
 #[utoipa::path(delete,
     path = "/jaxrs/bbs/core/entity/forum/{id}",
     tag = "bbs",
@@ -3394,7 +3430,9 @@ async fn calendar_event_update_event_update_post() {}
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn calendar_assemble_control_calendar_assemble_control_calendar_detail_id_get_calendar_detail_get() {}
+async fn calendar_assemble_control_calendar_assemble_control_calendar_detail_id_get_calendar_detail_get(
+) {
+}
 #[utoipa::path(get,
     path = "/jaxrs/calendar_assemble_control/get/control/config",
     tag = "calendar",
@@ -3449,7 +3487,8 @@ async fn calendar_core_entity_calendar_core_entity_calendar_list_my_calendar_lis
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn calendar_core_entity_calendar_core_entity_calendar_list_public_calendar_list_public_get() {}
+async fn calendar_core_entity_calendar_core_entity_calendar_list_public_calendar_list_public_get() {
+}
 #[utoipa::path(get,
     path = "/jaxrs/calendar/core/entity/calendar/{id}",
     tag = "calendar",
@@ -3477,7 +3516,9 @@ async fn calendar_core_entity_calendar_core_entity_calendar_id_calendar_get_get(
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn calendar_core_entity_calendar_core_entity_event_list_calendarid_event_list_by_calendar_get() {}
+async fn calendar_core_entity_calendar_core_entity_event_list_calendarid_event_list_by_calendar_get(
+) {
+}
 #[utoipa::path(post,
     path = "/jaxrs/calendar/core/entity/calendar/create",
     tag = "calendar",
@@ -3649,7 +3690,9 @@ async fn cms_assemble_control_fd5e4b_get() {}
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn cms_assemble_control_appinfo_list_has_document_apptype_appinfo_list_has_document_appType_get() {}
+async fn cms_assemble_control_appinfo_list_has_document_apptype_appinfo_list_has_document_appType_get(
+) {
+}
 #[utoipa::path(get,
     path = "/jaxrs/appinfo/list/manage",
     tag = "cms",
@@ -3674,7 +3717,9 @@ async fn cms_assemble_control_appinfo_list_manage_appinfo_list_manage_get() {}
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn cms_assemble_control_appinfo_list_manage_type_apptype_appinfo_list_manage_type_appType_get() {}
+async fn cms_assemble_control_appinfo_list_manage_type_apptype_appinfo_list_manage_type_appType_get(
+) {
+}
 #[utoipa::path(get,
     path = "/jaxrs/appinfo/list/user/publish",
     tag = "cms",
@@ -3877,7 +3922,9 @@ async fn cms_assemble_control_categoryinfo_list_all_categoryinfo_list_all_get() 
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn cms_assemble_control_categoryinfo_list_manage_app_appid_categoryinfo_list_manage_app_appId_get() {}
+async fn cms_assemble_control_categoryinfo_list_manage_app_appid_categoryinfo_list_manage_app_appId_get(
+) {
+}
 #[utoipa::path(get,
     path = "/jaxrs/categoryinfo/list/objects",
     tag = "cms",
@@ -3902,7 +3949,9 @@ async fn cms_assemble_control_categoryinfo_list_objects_categoryinfo_list_object
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn cms_assemble_control_categoryinfo_list_publish_app_appid_categoryinfo_list_publish_app_appId_get() {}
+async fn cms_assemble_control_categoryinfo_list_publish_app_appid_categoryinfo_list_publish_app_appId_get(
+) {
+}
 #[utoipa::path(get,
     path = "/jaxrs/categoryinfo/list/view/app/{appId}",
     tag = "cms",
@@ -3916,7 +3965,9 @@ async fn cms_assemble_control_categoryinfo_list_publish_app_appid_categoryinfo_l
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn cms_assemble_control_categoryinfo_list_view_app_appid_categoryinfo_list_view_app_appId_get() {}
+async fn cms_assemble_control_categoryinfo_list_view_app_appid_categoryinfo_list_view_app_appId_get(
+) {
+}
 #[utoipa::path(get,
     path = "/jaxrs/categoryinfo/list/view/app/{appId}/all",
     tag = "cms",
@@ -3930,7 +3981,9 @@ async fn cms_assemble_control_categoryinfo_list_view_app_appid_categoryinfo_list
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn cms_assemble_control_categoryinfo_list_view_app_appid_all_categoryinfo_list_view_app_appId_all_get() {}
+async fn cms_assemble_control_categoryinfo_list_view_app_appid_all_categoryinfo_list_view_app_appId_all_get(
+) {
+}
 #[utoipa::path(get,
     path = "/jaxrs/categoryinfo/list/view/app/{appId}/data",
     tag = "cms",
@@ -3944,7 +3997,9 @@ async fn cms_assemble_control_categoryinfo_list_view_app_appid_all_categoryinfo_
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn cms_assemble_control_categoryinfo_list_view_app_appid_data_categoryinfo_list_view_app_appId_data_get() {}
+async fn cms_assemble_control_categoryinfo_list_view_app_appid_data_categoryinfo_list_view_app_appId_data_get(
+) {
+}
 #[utoipa::path(get,
     path = "/jaxrs/categoryinfo/{id}",
     tag = "cms",
@@ -4028,7 +4083,8 @@ async fn cms_assemble_control_b89dcb_get() {}
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn cms_assemble_control_cms_assemble_control_anonymous_form_v2_id_anonymous_form_v2_id_get() {}
+async fn cms_assemble_control_cms_assemble_control_anonymous_form_v2_id_anonymous_form_v2_id_get() {
+}
 #[utoipa::path(get,
     path = "/jaxrs/cms/assemble/control/anonymous/form/{id}",
     tag = "cms",
@@ -4257,7 +4313,9 @@ async fn cms_assemble_control_b93d52_get() {}
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn cms_assemble_control_cms_assemble_control_appinfo_permission_id_appinfo_id_permission_get() {}
+async fn cms_assemble_control_cms_assemble_control_appinfo_permission_id_appinfo_id_permission_get()
+{
+}
 #[utoipa::path(get,
     path = "/jaxrs/cms/assemble/control/categoryinfo/alias/alias",
     tag = "cms",
@@ -4268,7 +4326,9 @@ async fn cms_assemble_control_cms_assemble_control_appinfo_permission_id_appinfo
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn cms_assemble_control_cms_assemble_control_categoryinfo_alias_categoryinfo_alias_alias_get() {}
+async fn cms_assemble_control_cms_assemble_control_categoryinfo_alias_categoryinfo_alias_alias_get()
+{
+}
 #[utoipa::path(get,
     path = "/jaxrs/cms/assemble/control/categoryinfo/control/{id}",
     tag = "cms",
@@ -4282,7 +4342,9 @@ async fn cms_assemble_control_cms_assemble_control_categoryinfo_alias_categoryin
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn cms_assemble_control_cms_assemble_control_categoryinfo_control_id_categoryinfo_id_control_get() {}
+async fn cms_assemble_control_cms_assemble_control_categoryinfo_control_id_categoryinfo_id_control_get(
+) {
+}
 #[utoipa::path(get,
     path = "/jaxrs/cms/assemble/control/categoryinfo/execute/projection/{id}",
     tag = "cms",
@@ -4310,7 +4372,9 @@ async fn cms_assemble_control_bad7cc_get() {}
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn cms_assemble_control_cms_assemble_control_categoryinfo_permission_id_categoryinfo_id_permission_get() {}
+async fn cms_assemble_control_cms_assemble_control_categoryinfo_permission_id_categoryinfo_id_permission_get(
+) {
+}
 #[utoipa::path(get,
     path = "/jaxrs/cms/assemble/control/categoryinfo/{extContent}",
     tag = "cms",
@@ -4324,7 +4388,9 @@ async fn cms_assemble_control_cms_assemble_control_categoryinfo_permission_id_ca
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn cms_assemble_control_cms_assemble_control_categoryinfo_extcontent_categoryinfo_extContent_get() {}
+async fn cms_assemble_control_cms_assemble_control_categoryinfo_extcontent_categoryinfo_extContent_get(
+) {
+}
 #[utoipa::path(get,
     path = "/jaxrs/cms/assemble/control/comment/commend/{id}",
     tag = "cms",
@@ -4352,7 +4418,8 @@ async fn cms_assemble_control_cms_assemble_control_comment_commend_id_comment_id
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn cms_assemble_control_cms_assemble_control_comment_uncommend_id_comment_id_uncommend_get() {}
+async fn cms_assemble_control_cms_assemble_control_comment_uncommend_id_comment_id_uncommend_get() {
+}
 #[utoipa::path(get,
     path = "/jaxrs/cms/assemble/control/design/appdict/mockputtopost/{id}",
     tag = "cms",
@@ -4468,7 +4535,9 @@ async fn cms_assemble_control_cms_assemble_control_file_download_id_file_id_down
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn cms_assemble_control_cms_assemble_control_file_mockputtopost_id_file_id_mockputtopost_get() {}
+async fn cms_assemble_control_cms_assemble_control_file_mockputtopost_id_file_id_mockputtopost_get()
+{
+}
 #[utoipa::path(get,
     path = "/jaxrs/cms/assemble/control/fileinfo/batch/download/doc/site/site/{docId}",
     tag = "cms",
@@ -4511,7 +4580,9 @@ async fn cms_assemble_control_46c84f_get() {}
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn cms_assemble_control_cms_assemble_control_fileinfo_copy_to_doc_docid_fileinfo_copy_to_doc_docId_get() {}
+async fn cms_assemble_control_cms_assemble_control_fileinfo_copy_to_doc_docid_fileinfo_copy_to_doc_docId_get(
+) {
+}
 #[utoipa::path(get,
     path = "/jaxrs/cms/assemble/control/fileinfo/doc/change/seqnumber/{id}/{docId}/{seqNumber}",
     tag = "cms",
@@ -4586,7 +4657,9 @@ async fn cms_assemble_control_118e4b_get() {}
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn cms_assemble_control_cms_assemble_control_fileinfo_edit_doc_id_docid_fileinfo_edit_id_doc_docId_get() {}
+async fn cms_assemble_control_cms_assemble_control_fileinfo_edit_doc_id_docid_fileinfo_edit_id_doc_docId_get(
+) {
+}
 #[utoipa::path(get,
     path = "/jaxrs/cms/assemble/control/fileinfo/online/info/{id}",
     tag = "cms",
@@ -4600,7 +4673,9 @@ async fn cms_assemble_control_cms_assemble_control_fileinfo_edit_doc_id_docid_fi
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn cms_assemble_control_cms_assemble_control_fileinfo_online_info_id_fileinfo_id_online_info_get() {}
+async fn cms_assemble_control_cms_assemble_control_fileinfo_online_info_id_fileinfo_id_online_info_get(
+) {
+}
 #[utoipa::path(get,
     path = "/jaxrs/cms/assemble/control/fileinfo/preview/pdf/{id}",
     tag = "cms",
@@ -4614,7 +4689,9 @@ async fn cms_assemble_control_cms_assemble_control_fileinfo_online_info_id_filei
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn cms_assemble_control_cms_assemble_control_fileinfo_preview_pdf_id_fileinfo_id_preview_pdf_get() {}
+async fn cms_assemble_control_cms_assemble_control_fileinfo_preview_pdf_id_fileinfo_id_preview_pdf_get(
+) {
+}
 #[utoipa::path(get,
     path = "/jaxrs/cms/assemble/control/fileinfo/replace/to/doc/{docId}",
     tag = "cms",
@@ -4657,7 +4734,9 @@ async fn cms_assemble_control_cda740_get() {}
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn cms_assemble_control_cms_assemble_control_form_mockputtopost_id_form_id_mockputtopost_get() {}
+async fn cms_assemble_control_cms_assemble_control_form_mockputtopost_id_form_id_mockputtopost_get()
+{
+}
 #[utoipa::path(get,
     path = "/jaxrs/cms/assemble/control/form/v2/lookup/document/mobile/{docId}",
     tag = "cms",
@@ -4755,7 +4834,9 @@ async fn cms_assemble_control_01042d_get() {}
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn cms_assemble_control_cms_assemble_control_output_select_appinfoflag_output_appInfoFlag_select_get() {}
+async fn cms_assemble_control_cms_assemble_control_output_select_appinfoflag_output_appInfoFlag_select_get(
+) {
+}
 #[utoipa::path(get,
     path = "/jaxrs/cms/assemble/control/permission/management/refresh/{category}/{categoryId}",
     tag = "cms",
@@ -4800,7 +4881,9 @@ async fn cms_assemble_control_0fb931_get() {}
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn cms_assemble_control_cms_assemble_control_script_app_uniquename_flag_script_uniqueName_app_flag_get() {}
+async fn cms_assemble_control_cms_assemble_control_script_app_uniquename_flag_script_uniqueName_app_flag_get(
+) {
+}
 #[utoipa::path(get,
     path = "/jaxrs/cms/assemble/control/script/mockputtopost/{id}",
     tag = "cms",
@@ -4814,7 +4897,9 @@ async fn cms_assemble_control_cms_assemble_control_script_app_uniquename_flag_sc
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn cms_assemble_control_cms_assemble_control_script_mockputtopost_id_script_id_mockputtopost_get() {}
+async fn cms_assemble_control_cms_assemble_control_script_mockputtopost_id_script_id_mockputtopost_get(
+) {
+}
 #[utoipa::path(get,
     path = "/jaxrs/cms/assemble/control/scriptversion/list/script/{scriptId}",
     tag = "cms",
@@ -5142,7 +5227,9 @@ async fn cms_assemble_control_cms_assemble_control_templateform_id_templateform_
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn cms_assemble_control_cms_assemble_control_view_mockputtopost_id_view_id_mockputtopost_get() {}
+async fn cms_assemble_control_cms_assemble_control_view_mockputtopost_id_view_id_mockputtopost_get()
+{
+}
 #[utoipa::path(get,
     path = "/jaxrs/cms/assemble/control/viewfieldconfig/mockputtopost/{id}",
     tag = "cms",
@@ -5203,7 +5290,9 @@ async fn cms_assemble_control_498b4e_get() {}
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn cms_assemble_control_appinfo_filter_list_id_next_count_appinfo_filter_list_id_next_count_get() {}
+async fn cms_assemble_control_appinfo_filter_list_id_next_count_appinfo_filter_list_id_next_count_get(
+) {
+}
 #[utoipa::path(get,
     path = "/jaxrs/cms_assemble_control/appinfo/filter/list/id/prev/count",
     tag = "cms",
@@ -5214,7 +5303,9 @@ async fn cms_assemble_control_appinfo_filter_list_id_next_count_appinfo_filter_l
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn cms_assemble_control_appinfo_filter_list_id_prev_count_appinfo_filter_list_id_prev_count_get() {}
+async fn cms_assemble_control_appinfo_filter_list_id_prev_count_appinfo_filter_list_id_prev_count_get(
+) {
+}
 #[utoipa::path(get,
     path = "/jaxrs/cms_assemble_control/document/search",
     tag = "cms",
@@ -5287,7 +5378,9 @@ async fn cms_assemble_control_commend_list_paging_docid_commend_list_paging_get(
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn cms_assemble_control_commend_list_paging_pagesize_size_commend_list_paging_page_size_size_get() {}
+async fn cms_assemble_control_commend_list_paging_pagesize_size_commend_list_paging_page_size_size_get(
+) {
+}
 #[utoipa::path(get,
     path = "/jaxrs/commend/{id}",
     tag = "cms",
@@ -5442,7 +5535,9 @@ async fn cms_assemble_control_correlation_list_doc_docid_correlation_list_doc_do
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn cms_assemble_control_correlation_list_doc_docid_site_site_correlation_list_doc_docId_site_site_get() {}
+async fn cms_assemble_control_correlation_list_doc_docid_site_site_correlation_list_doc_docId_site_site_get(
+) {
+}
 #[utoipa::path(get,
     path = "/jaxrs/data/document/{id}",
     tag = "cms",
@@ -5484,7 +5579,9 @@ async fn cms_assemble_control_data_document_id_array_data_data_document_id_array
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn cms_assemble_control_data_document_id_mockdeletetoget_data_document_id_mockdeletetoget_get() {}
+async fn cms_assemble_control_data_document_id_mockdeletetoget_data_document_id_mockdeletetoget_get(
+) {
+}
 #[utoipa::path(get,
     path = "/jaxrs/data/document/{id}/path0",
     tag = "cms",
@@ -5554,7 +5651,9 @@ async fn cms_assemble_control_f61339_get() {}
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn cms_assemble_control_data_document_id_path0_path1_path2_data_document_id_path0_path1_path2_get() {}
+async fn cms_assemble_control_data_document_id_path0_path1_path2_data_document_id_path0_path1_path2_get(
+) {
+}
 #[utoipa::path(get,
     path = "/jaxrs/data/document/{id}/path0/path1/path2/mockdeletetoget",
     tag = "cms",
@@ -5722,7 +5821,9 @@ async fn cms_assemble_control_31933f_get() {}
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn cms_assemble_control_design_appdict_list_app_info_appid_design_appdict_list_appInfo_appId_get() {}
+async fn cms_assemble_control_design_appdict_list_app_info_appid_design_appdict_list_appInfo_appId_get(
+) {
+}
 #[utoipa::path(get,
     path = "/jaxrs/design/appdict/list/paging/{pageSize}/{size}",
     tag = "cms",
@@ -5871,7 +5972,9 @@ async fn cms_assemble_control_fileinfo_list_all_fileinfo_list_all_get() {}
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn cms_assemble_control_fileinfo_list_document_documentid_fileinfo_list_document_documentId_get() {}
+async fn cms_assemble_control_fileinfo_list_document_documentid_fileinfo_list_document_documentId_get(
+) {
+}
 #[utoipa::path(get,
     path = "/jaxrs/fileinfo/{id}",
     tag = "cms",
@@ -5953,7 +6056,9 @@ async fn cms_assemble_control_form_list_app_appid_form_list_app_appId_get() {}
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn cms_assemble_control_form_list_formfield_app_info_appid_form_list_formfield_appInfo_appId_get() {}
+async fn cms_assemble_control_form_list_formfield_app_info_appid_form_list_formfield_appInfo_appId_get(
+) {
+}
 #[utoipa::path(get,
     path = "/jaxrs/form/list/{id}/formfield",
     tag = "cms",
@@ -6118,7 +6223,9 @@ async fn cms_assemble_control_output_list_output_list_get() {}
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn cms_assemble_control_permission_app_info_id_manageable_permission_appInfo_id_manageable_get() {}
+async fn cms_assemble_control_permission_app_info_id_manageable_permission_appInfo_id_manageable_get(
+) {
+}
 #[utoipa::path(get,
     path = "/jaxrs/permission/appInfo/{id}/managers",
     tag = "cms",
@@ -6132,7 +6239,8 @@ async fn cms_assemble_control_permission_app_info_id_manageable_permission_appIn
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn cms_assemble_control_permission_app_info_id_managers_permission_appInfo_id_managers_get() {}
+async fn cms_assemble_control_permission_app_info_id_managers_permission_appInfo_id_managers_get() {
+}
 #[utoipa::path(get,
     path = "/jaxrs/permission/appInfo/{id}/publishers",
     tag = "cms",
@@ -6146,7 +6254,9 @@ async fn cms_assemble_control_permission_app_info_id_managers_permission_appInfo
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn cms_assemble_control_permission_app_info_id_publishers_permission_appInfo_id_publishers_get() {}
+async fn cms_assemble_control_permission_app_info_id_publishers_permission_appInfo_id_publishers_get(
+) {
+}
 #[utoipa::path(get,
     path = "/jaxrs/permission/appInfo/{id}/viewers",
     tag = "cms",
@@ -6174,7 +6284,9 @@ async fn cms_assemble_control_permission_app_info_id_viewers_permission_appInfo_
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn cms_assemble_control_permission_category_id_managers_permission_category_id_managers_get() {}
+async fn cms_assemble_control_permission_category_id_managers_permission_category_id_managers_get()
+{
+}
 #[utoipa::path(get,
     path = "/jaxrs/permission/category/{id}/publishers",
     tag = "cms",
@@ -6188,7 +6300,9 @@ async fn cms_assemble_control_permission_category_id_managers_permission_categor
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn cms_assemble_control_permission_category_id_publishers_permission_category_id_publishers_get() {}
+async fn cms_assemble_control_permission_category_id_publishers_permission_category_id_publishers_get(
+) {
+}
 #[utoipa::path(get,
     path = "/jaxrs/permission/category/{id}/viewers",
     tag = "cms",
@@ -6227,7 +6341,9 @@ async fn cms_assemble_control_e3078b_get() {}
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn cms_assemble_control_permission_management_refresh_all_permission_management_refresh_all_get() {}
+async fn cms_assemble_control_permission_management_refresh_all_permission_management_refresh_all_get(
+) {
+}
 #[utoipa::path(get,
     path = "/jaxrs/permission/manager/appInfo/{id}",
     tag = "cms",
@@ -6255,7 +6371,9 @@ async fn cms_assemble_control_permission_manager_app_info_id_permission_manager_
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn cms_assemble_control_permission_manager_category_info_id_permission_manager_categoryInfo_id_get() {}
+async fn cms_assemble_control_permission_manager_category_info_id_permission_manager_categoryInfo_id_get(
+) {
+}
 #[utoipa::path(get,
     path = "/jaxrs/permission/publisher/appInfo/{id}",
     tag = "cms",
@@ -6269,7 +6387,9 @@ async fn cms_assemble_control_permission_manager_category_info_id_permission_man
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn cms_assemble_control_permission_publisher_app_info_id_permission_publisher_appInfo_id_get() {}
+async fn cms_assemble_control_permission_publisher_app_info_id_permission_publisher_appInfo_id_get()
+{
+}
 #[utoipa::path(get,
     path = "/jaxrs/permission/publisher/categoryInfo/{id}",
     tag = "cms",
@@ -6283,7 +6403,9 @@ async fn cms_assemble_control_permission_publisher_app_info_id_permission_publis
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn cms_assemble_control_permission_publisher_category_info_id_permission_publisher_categoryInfo_id_get() {}
+async fn cms_assemble_control_permission_publisher_category_info_id_permission_publisher_categoryInfo_id_get(
+) {
+}
 #[utoipa::path(get,
     path = "/jaxrs/permission/viewer/appInfo/{id}",
     tag = "cms",
@@ -6311,7 +6433,9 @@ async fn cms_assemble_control_permission_viewer_app_info_id_permission_viewer_ap
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn cms_assemble_control_permission_viewer_category_info_id_permission_viewer_categoryInfo_id_get() {}
+async fn cms_assemble_control_permission_viewer_category_info_id_permission_viewer_categoryInfo_id_get(
+) {
+}
 #[utoipa::path(get,
     path = "/jaxrs/queryview/flag/{view_flag}/definition/{query_flag}",
     tag = "cms",
@@ -6326,7 +6450,9 @@ async fn cms_assemble_control_permission_viewer_category_info_id_permission_view
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn cms_assemble_control_queryview_flag_view_flag_definition_query_flag_queryview_flag_definition_get() {}
+async fn cms_assemble_control_queryview_flag_view_flag_definition_query_flag_queryview_flag_definition_get(
+) {
+}
 #[utoipa::path(get,
     path = "/jaxrs/script/flag/appInfo/{appInfoFlag}",
     tag = "cms",
@@ -6340,7 +6466,9 @@ async fn cms_assemble_control_queryview_flag_view_flag_definition_query_flag_que
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn cms_assemble_control_script_flag_app_info_appinfoflag_script_flag_appInfo_appInfoFlag_get() {}
+async fn cms_assemble_control_script_flag_app_info_appinfoflag_script_flag_appInfo_appInfoFlag_get()
+{
+}
 #[utoipa::path(get,
     path = "/jaxrs/script/list/app/{appId}/name/{name}",
     tag = "cms",
@@ -6355,7 +6483,9 @@ async fn cms_assemble_control_script_flag_app_info_appinfoflag_script_flag_appIn
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn cms_assemble_control_script_list_app_appid_name_name_script_list_app_appId_name_name_get() {}
+async fn cms_assemble_control_script_list_app_appid_name_name_script_list_app_appId_name_name_get()
+{
+}
 #[utoipa::path(get,
     path = "/jaxrs/script/list/app/{flag}",
     tag = "cms",
@@ -6395,7 +6525,9 @@ async fn cms_assemble_control_script_list_manager_script_list_manager_get() {}
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn cms_assemble_control_script_list_paging_pagesize_size_script_list_paging_page_size_size_get() {}
+async fn cms_assemble_control_script_list_paging_pagesize_size_script_list_paging_page_size_size_get(
+) {
+}
 #[utoipa::path(get,
     path = "/jaxrs/script/list/{id}/next/count",
     tag = "cms",
@@ -6593,7 +6725,9 @@ async fn cms_assemble_control_view_list_form_formid_view_list_form_formId_get() 
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn cms_assemble_control_view_viewdata_list_id_next_count_view_viewdata_list_id_next_count_get() {}
+async fn cms_assemble_control_view_viewdata_list_id_next_count_view_viewdata_list_id_next_count_get(
+) {
+}
 #[utoipa::path(get,
     path = "/jaxrs/view/{id}",
     tag = "cms",
@@ -6632,7 +6766,9 @@ async fn cms_assemble_control_viewcategory_list_all_viewcategory_list_all_get() 
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn cms_assemble_control_viewcategory_list_category_categoryid_viewcategory_list_category_categoryId_get() {}
+async fn cms_assemble_control_viewcategory_list_category_categoryid_viewcategory_list_category_categoryId_get(
+) {
+}
 #[utoipa::path(get,
     path = "/jaxrs/viewcategory/list/view/{viewId}",
     tag = "cms",
@@ -6685,7 +6821,9 @@ async fn cms_assemble_control_viewfieldconfig_list_all_viewfieldconfig_list_all_
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn cms_assemble_control_viewfieldconfig_list_view_viewid_viewfieldconfig_list_view_viewId_get() {}
+async fn cms_assemble_control_viewfieldconfig_list_view_viewid_viewfieldconfig_list_view_viewId_get(
+) {
+}
 #[utoipa::path(get,
     path = "/jaxrs/viewfieldconfig/{id}",
     tag = "cms",
@@ -6814,7 +6952,9 @@ async fn cms_assemble_control_4e4b31_post() {}
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn cms_assemble_control_cms_assemble_control_appinfo_erase_app_id_appinfo_erase_app_id_post() {}
+async fn cms_assemble_control_cms_assemble_control_appinfo_erase_app_id_appinfo_erase_app_id_post()
+{
+}
 #[utoipa::path(post,
     path = "/jaxrs/cms/assemble/control/appinfo/get/user/publish/{appId}",
     tag = "cms",
@@ -6842,7 +6982,9 @@ async fn cms_assemble_control_d8765d_post() {}
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn cms_assemble_control_cms_assemble_control_appinfo_mockdeletetoget_id_appinfo_id_mockdeletetoget_post() {}
+async fn cms_assemble_control_cms_assemble_control_appinfo_mockdeletetoget_id_appinfo_id_mockdeletetoget_post(
+) {
+}
 #[utoipa::path(post,
     path = "/jaxrs/cms/assemble/control/categoryinfo/bind/view/mockputtopost/{categoryId}",
     tag = "cms",
@@ -6928,7 +7070,9 @@ async fn cms_assemble_control_ef48a4_post() {}
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn cms_assemble_control_cms_assemble_control_comment_mockdeletetoget_id_comment_id_mockdeletetoget_post() {}
+async fn cms_assemble_control_cms_assemble_control_comment_mockdeletetoget_id_comment_id_mockdeletetoget_post(
+) {
+}
 #[utoipa::path(post,
     path = "/jaxrs/cms/assemble/control/correlation/doc/delete/{docId}",
     tag = "cms",
@@ -7006,7 +7150,9 @@ async fn cms_assemble_control_97be44_post() {}
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn cms_assemble_control_cms_assemble_control_file_mockdeletetoget_flag_file_flag_mockdeletetoget_post() {}
+async fn cms_assemble_control_cms_assemble_control_file_mockdeletetoget_flag_file_flag_mockdeletetoget_post(
+) {
+}
 #[utoipa::path(post,
     path = "/jaxrs/cms/assemble/control/file/upload/{id}",
     tag = "cms",
@@ -7034,7 +7180,9 @@ async fn cms_assemble_control_cms_assemble_control_file_upload_id_file_id_upload
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn cms_assemble_control_cms_assemble_control_fileinfo_update_content_id_fileinfo_update_id_content_post() {}
+async fn cms_assemble_control_cms_assemble_control_fileinfo_update_content_id_fileinfo_update_id_content_post(
+) {
+}
 #[utoipa::path(post,
     path = "/jaxrs/cms/assemble/control/fileinfo/update/document/attachment/callback/callback/{docId}/{id}",
     tag = "cms",
@@ -7104,7 +7252,9 @@ async fn cms_assemble_control_479808_post() {}
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn cms_assemble_control_cms_assemble_control_fileinfo_upload_with_url_fileinfo_upload_with_url_post() {}
+async fn cms_assemble_control_cms_assemble_control_fileinfo_upload_with_url_fileinfo_upload_with_url_post(
+) {
+}
 #[utoipa::path(post,
     path = "/jaxrs/cms/assemble/control/form/mockdeletetoget/{id}",
     tag = "cms",
@@ -7118,7 +7268,9 @@ async fn cms_assemble_control_cms_assemble_control_fileinfo_upload_with_url_file
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn cms_assemble_control_cms_assemble_control_form_mockdeletetoget_id_form_id_mockdeletetoget_post() {}
+async fn cms_assemble_control_cms_assemble_control_form_mockdeletetoget_id_form_id_mockdeletetoget_post(
+) {
+}
 #[utoipa::path(post,
     path = "/jaxrs/cms/assemble/control/script/mockdeletetoget/{id}",
     tag = "cms",
@@ -7132,7 +7284,9 @@ async fn cms_assemble_control_cms_assemble_control_form_mockdeletetoget_id_form_
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn cms_assemble_control_cms_assemble_control_script_mockdeletetoget_id_script_id_mockdeletetoget_post() {}
+async fn cms_assemble_control_cms_assemble_control_script_mockdeletetoget_id_script_id_mockdeletetoget_post(
+) {
+}
 #[utoipa::path(post,
     path = "/jaxrs/cms/assemble/control/surface/appdict/path0/data/mockdeletetoget/{appDictFlag}/{appInfo}/{appInfoFlag}",
     tag = "cms",
@@ -7288,7 +7442,9 @@ async fn cms_assemble_control_66e895_post() {}
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn cms_assemble_control_cms_assemble_control_view_mockdeletetoget_id_view_id_mockdeletetoget_post() {}
+async fn cms_assemble_control_cms_assemble_control_view_mockdeletetoget_id_view_id_mockdeletetoget_post(
+) {
+}
 #[utoipa::path(post,
     path = "/jaxrs/cms/assemble/control/viewcategory/mockdeletetoget/{id}",
     tag = "cms",
@@ -7374,7 +7530,8 @@ async fn cms_assemble_control_e1da55_post() {}
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn cms_assemble_control_data_document_id_mockputtopost_data_document_id_mockputtopost_post() {}
+async fn cms_assemble_control_data_document_id_mockputtopost_data_document_id_mockputtopost_post() {
+}
 #[utoipa::path(post,
     path = "/jaxrs/data/document/{id}/path0/mockputtopost",
     tag = "cms",
@@ -7388,7 +7545,9 @@ async fn cms_assemble_control_data_document_id_mockputtopost_data_document_id_mo
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn cms_assemble_control_data_document_id_path0_mockputtopost_data_document_id_path0_mockputtopost_post() {}
+async fn cms_assemble_control_data_document_id_path0_mockputtopost_data_document_id_path0_mockputtopost_post(
+) {
+}
 #[utoipa::path(post,
     path = "/jaxrs/data/document/{id}/path0/path1/mockputtopost",
     tag = "cms",
@@ -7645,7 +7804,9 @@ async fn cms_assemble_control_input_create_mockputtopost_input_create_mockputtop
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn cms_assemble_control_input_prepare_cover_mockputtopost_input_prepare_cover_mockputtopost_post() {}
+async fn cms_assemble_control_input_prepare_cover_mockputtopost_input_prepare_cover_mockputtopost_post(
+) {
+}
 #[utoipa::path(post,
     path = "/jaxrs/input/prepare/create/mockputtopost",
     tag = "cms",
@@ -7656,7 +7817,9 @@ async fn cms_assemble_control_input_prepare_cover_mockputtopost_input_prepare_co
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn cms_assemble_control_input_prepare_create_mockputtopost_input_prepare_create_mockputtopost_post() {}
+async fn cms_assemble_control_input_prepare_create_mockputtopost_input_prepare_create_mockputtopost_post(
+) {
+}
 #[utoipa::path(post,
     path = "/jaxrs/templateform/list/category/mockputtopost",
     tag = "cms",
@@ -7681,7 +7844,9 @@ async fn cms_assemble_control_f90807_post() {}
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn cms_assemble_control_categoryinfo_filter_list_page_size_categoryinfo_filter_list_page_size_size_put() {}
+async fn cms_assemble_control_categoryinfo_filter_list_page_size_categoryinfo_filter_list_page_size_size_put(
+) {
+}
 #[utoipa::path(put,
     path = "/jaxrs/categoryinfo/filter/list/{id}/next/{count}/app/{appId}",
     tag = "cms",
@@ -8163,7 +8328,9 @@ async fn component_assemble_control_update_control_config_update_control_config_
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn component_assemble_control_component_assemble_control_component_delete_all_component_delete_all_post() {}
+async fn component_assemble_control_component_assemble_control_component_delete_all_component_delete_all_post(
+) {
+}
 #[utoipa::path(get,
     path = "/jaxrs/component/core/entity/count",
     tag = "component",
@@ -8358,7 +8525,9 @@ async fn correlation_core_entity_correlation_core_entity_list_list_get() {}
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn correlation_core_entity_correlation_core_entity_list_by_sourcetype_sourceid_list_by_source_get() {}
+async fn correlation_core_entity_correlation_core_entity_list_by_sourcetype_sourceid_list_by_source_get(
+) {
+}
 #[utoipa::path(post,
     path = "/jaxrs/correlation/core/entity/create",
     tag = "correlation",
@@ -8514,7 +8683,9 @@ async fn correlation_service_processing_cecacd_get() {}
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn correlation_service_processing_correlation_service_processing_link_sourcetype_sourceid_get_link_get() {}
+async fn correlation_service_processing_correlation_service_processing_link_sourcetype_sourceid_get_link_get(
+) {
+}
 #[utoipa::path(get,
     path = "/jaxrs/correlation/service/processing/list/{personId}",
     tag = "correlation",
@@ -8528,7 +8699,9 @@ async fn correlation_service_processing_correlation_service_processing_link_sour
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn correlation_service_processing_correlation_service_processing_list_personid_list_correlations_get() {}
+async fn correlation_service_processing_correlation_service_processing_list_personid_list_correlations_get(
+) {
+}
 #[utoipa::path(get,
     path = "/jaxrs/correlation/service/processing/{id}",
     tag = "correlation",
@@ -8609,7 +8782,9 @@ async fn correlation_service_processing_a820a6_post() {}
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn correlation_service_processing_correlation_service_processing_create_create_correlation_post() {}
+async fn correlation_service_processing_correlation_service_processing_create_create_correlation_post(
+) {
+}
 #[utoipa::path(post,
     path = "/jaxrs/correlation/service/processing/delete/{id}",
     tag = "correlation",
@@ -8623,7 +8798,9 @@ async fn correlation_service_processing_correlation_service_processing_create_cr
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn correlation_service_processing_correlation_service_processing_delete_id_delete_correlation_post() {}
+async fn correlation_service_processing_correlation_service_processing_delete_id_delete_correlation_post(
+) {
+}
 #[utoipa::path(post,
     path = "/jaxrs/correlation/service/processing/link",
     tag = "correlation",
@@ -8648,7 +8825,9 @@ async fn correlation_service_processing_correlation_service_processing_link_link
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn correlation_service_processing_correlation_service_processing_save_id_save_correlation_post() {}
+async fn correlation_service_processing_correlation_service_processing_save_id_save_correlation_post(
+) {
+}
 #[utoipa::path(post,
     path = "/jaxrs/correlation/service/processing/unlink/{sourceType}/{sourceId}/{targetType}/{targetId}",
     tag = "correlation",
@@ -9085,7 +9264,9 @@ async fn file_upload_file_upload_post() {}
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn file_assemble_control_anonymous_file_id_download_stream_anonymous_file_id_download_stream_get() {}
+async fn file_assemble_control_anonymous_file_id_download_stream_anonymous_file_id_download_stream_get(
+) {
+}
 #[utoipa::path(get,
     path = "/jaxrs/attachment/download/{attid}/stream",
     tag = "file",
@@ -9099,7 +9280,9 @@ async fn file_assemble_control_anonymous_file_id_download_stream_anonymous_file_
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn file_assemble_control_attachment_download_attid_stream_attachment_id_download_stream_get() {}
+async fn file_assemble_control_attachment_download_attid_stream_attachment_id_download_stream_get()
+{
+}
 #[utoipa::path(get,
     path = "/jaxrs/file/anonymous/file/id/download",
     tag = "file",
@@ -9219,7 +9402,9 @@ async fn file_assemble_control_e7fde8_get() {}
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn file_assemble_control_file_attachment_list_folder_folder_id_attachment_list_folder_folderId_get() {}
+async fn file_assemble_control_file_attachment_list_folder_folder_id_attachment_list_folder_folderId_get(
+) {
+}
 #[utoipa::path(get,
     path = "/jaxrs/file/attachment/list/top",
     tag = "file",
@@ -9241,7 +9426,9 @@ async fn file_assemble_control_file_attachment_list_top_attachment_list_top_get(
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn file_assemble_control_file_attachment2_exist_file_file_md5_attachment2_exist_file_fileMd5_get() {}
+async fn file_assemble_control_file_attachment2_exist_file_file_md5_attachment2_exist_file_fileMd5_get(
+) {
+}
 #[utoipa::path(get,
     path = "/jaxrs/file/attachment2/id",
     tag = "file",
@@ -9263,7 +9450,9 @@ async fn file_assemble_control_file_attachment2_id_attachment2_id_get() {}
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn file_assemble_control_file_attachment2_id_binary_base64_attachment2_id_binary_base64_get() {}
+async fn file_assemble_control_file_attachment2_id_binary_base64_attachment2_id_binary_base64_get()
+{
+}
 #[utoipa::path(get,
     path = "/jaxrs/file/attachment2/id/download",
     tag = "file",
@@ -9296,7 +9485,9 @@ async fn file_assemble_control_e6e913_get() {}
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn file_assemble_control_file_attachment2_id_download_stream_attachment2_id_download_stream_get() {}
+async fn file_assemble_control_file_attachment2_id_download_stream_attachment2_id_download_stream_get(
+) {
+}
 #[utoipa::path(get,
     path = "/jaxrs/file/attachment2/id/image/scale/scale/binary/base64",
     tag = "file",
@@ -9329,7 +9520,9 @@ async fn file_assemble_control_62afdf_get() {}
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn file_assemble_control_file_attachment2_list_filter_name_attachment2_list_filter_name_get() {}
+async fn file_assemble_control_file_attachment2_list_filter_name_attachment2_list_filter_name_get()
+{
+}
 #[utoipa::path(get,
     path = "/jaxrs/file/attachment2/list/folder/folderId",
     tag = "file",
@@ -9340,7 +9533,9 @@ async fn file_assemble_control_file_attachment2_list_filter_name_attachment2_lis
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn file_assemble_control_file_attachment2_list_folder_folder_id_attachment2_list_folder_folderId_get() {}
+async fn file_assemble_control_file_attachment2_list_folder_folder_id_attachment2_list_folder_folderId_get(
+) {
+}
 #[utoipa::path(get,
     path = "/jaxrs/file/attachment2/list/top",
     tag = "file",
@@ -9362,7 +9557,9 @@ async fn file_assemble_control_file_attachment2_list_top_attachment2_list_top_ge
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn file_assemble_control_file_attachment2_list_type_page_size_attachment2_list_type_page_size_size_get() {}
+async fn file_assemble_control_file_attachment2_list_type_page_size_attachment2_list_type_page_size_size_get(
+) {
+}
 #[utoipa::path(get,
     path = "/jaxrs/file/complex/folder/id",
     tag = "file",
@@ -9765,7 +9962,9 @@ async fn file_assemble_control_file_id_download_stream_file_id_download_stream_g
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn file_assemble_control_share_list_my2_sharetype_filetype_share_list_my2_shareType_fileType_get() {}
+async fn file_assemble_control_share_list_my2_sharetype_filetype_share_list_my2_shareType_fileType_get(
+) {
+}
 #[utoipa::path(get,
     path = "/jaxrs/share/list/to/me2/{fileType}",
     tag = "file",
@@ -9793,7 +9992,9 @@ async fn file_assemble_control_share_list_to_me2_filetype_share_list_to_me2_file
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn file_assemble_control_attachment_update_callback_id_attachment_id_update_callback_callback_post() {}
+async fn file_assemble_control_attachment_update_callback_id_attachment_id_update_callback_callback_post(
+) {
+}
 #[utoipa::path(post,
     path = "/jaxrs/attachment/update/{id}",
     tag = "file",
@@ -9835,7 +10036,9 @@ async fn file_assemble_control_79033d_post() {}
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn file_assemble_control_attachment_upload_folder_folderid_attachment_upload_folder_folderId_post() {}
+async fn file_assemble_control_attachment_upload_folder_folderid_attachment_upload_folder_folderId_post(
+) {
+}
 #[utoipa::path(post,
     path = "/jaxrs/attachment2/upload/folder/{folderId}",
     tag = "file",
@@ -9849,7 +10052,9 @@ async fn file_assemble_control_attachment_upload_folder_folderid_attachment_uplo
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn file_assemble_control_attachment2_upload_folder_folderid_attachment2_upload_folder_folderId_post() {}
+async fn file_assemble_control_attachment2_upload_folder_folderid_attachment2_upload_folder_folderId_post(
+) {
+}
 #[utoipa::path(post,
     path = "/jaxrs/file/assemble/control/file/create",
     tag = "file",
@@ -10154,7 +10359,8 @@ async fn general_assemble_control_general_assemble_control_area_id_area_get_get(
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn general_assemble_control_general_assemble_control_attendscope_list_attendscope_list_get() {}
+async fn general_assemble_control_general_assemble_control_attendscope_list_attendscope_list_get() {
+}
 #[utoipa::path(get,
     path = "/jaxrs/general/assemble/control/attendscope/{id}",
     tag = "general",
@@ -10193,7 +10399,9 @@ async fn general_assemble_control_general_assemble_control_ecnet_check_ecnet_che
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn general_assemble_control_general_assemble_control_excel_result_flag_flag_excel_result_flag_get() {}
+async fn general_assemble_control_general_assemble_control_excel_result_flag_flag_excel_result_flag_get(
+) {
+}
 #[utoipa::path(get,
     path = "/jaxrs/general/assemble/control/excel/{excelName}/{excelName}",
     tag = "general",
@@ -10252,7 +10460,9 @@ async fn general_assemble_control_752b27_get() {}
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn general_assemble_control_general_assemble_control_generalfile_flag_flag_generalfile_flag_flag_get() {}
+async fn general_assemble_control_general_assemble_control_generalfile_flag_flag_generalfile_flag_flag_get(
+) {
+}
 #[utoipa::path(get,
     path = "/jaxrs/general/assemble/control/generalfile/flag/{flag}/binary/base64",
     tag = "general",
@@ -10337,7 +10547,9 @@ async fn general_assemble_control_0bb455_get() {}
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn general_assemble_control_general_assemble_control_permissions_module_get_module_permissions_get() {}
+async fn general_assemble_control_general_assemble_control_permissions_module_get_module_permissions_get(
+) {
+}
 #[utoipa::path(get,
     path = "/jaxrs/general/assemble/control/qrcode/list",
     tag = "general",
@@ -10409,7 +10621,9 @@ async fn general_assemble_control_b46a09_get() {}
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn general_assemble_control_general_assemble_control_securityclearance_id_securityclearance_get_get() {}
+async fn general_assemble_control_general_assemble_control_securityclearance_id_securityclearance_get_get(
+) {
+}
 #[utoipa::path(get,
     path = "/jaxrs/general/assemble/control/status",
     tag = "general",
@@ -10420,7 +10634,8 @@ async fn general_assemble_control_general_assemble_control_securityclearance_id_
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn general_assemble_control_general_assemble_control_status_get_general_control_status_get() {}
+async fn general_assemble_control_general_assemble_control_status_get_general_control_status_get() {
+}
 #[utoipa::path(get,
     path = "/jaxrs/general/assemble/control/upgrade/2021090901",
     tag = "general",
@@ -10431,7 +10646,9 @@ async fn general_assemble_control_general_assemble_control_status_get_general_co
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn general_assemble_control_general_assemble_control_upgrade_2021090901_upgrade_2021090901_get() {}
+async fn general_assemble_control_general_assemble_control_upgrade_2021090901_upgrade_2021090901_get(
+) {
+}
 #[utoipa::path(get,
     path = "/jaxrs/general/assemble/control/upgrade/2021090902",
     tag = "general",
@@ -10442,7 +10659,9 @@ async fn general_assemble_control_general_assemble_control_upgrade_2021090901_up
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn general_assemble_control_general_assemble_control_upgrade_2021090902_upgrade_2021090902_get() {}
+async fn general_assemble_control_general_assemble_control_upgrade_2021090902_upgrade_2021090902_get(
+) {
+}
 #[utoipa::path(get,
     path = "/jaxrs/general/assemble/control/worktime/between/holiday/count/start/{startDate}/end/{endDate}",
     tag = "general",
@@ -10633,7 +10852,9 @@ async fn general_assemble_control_general_assemble_control_area_update_id_area_u
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn general_assemble_control_general_assemble_control_attendscope_create_attendscope_create_post() {}
+async fn general_assemble_control_general_assemble_control_attendscope_create_attendscope_create_post(
+) {
+}
 #[utoipa::path(post,
     path = "/jaxrs/general/assemble/control/attendscope/delete/{id}",
     tag = "general",
@@ -10647,7 +10868,9 @@ async fn general_assemble_control_general_assemble_control_attendscope_create_at
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn general_assemble_control_general_assemble_control_attendscope_delete_id_attendscope_delete_post() {}
+async fn general_assemble_control_general_assemble_control_attendscope_delete_id_attendscope_delete_post(
+) {
+}
 #[utoipa::path(post,
     path = "/jaxrs/general/assemble/control/attendscope/save/{id}",
     tag = "general",
@@ -10661,7 +10884,9 @@ async fn general_assemble_control_general_assemble_control_attendscope_delete_id
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn general_assemble_control_general_assemble_control_attendscope_save_id_attendscope_save_post() {}
+async fn general_assemble_control_general_assemble_control_attendscope_save_id_attendscope_save_post(
+) {
+}
 #[utoipa::path(post,
     path = "/jaxrs/general/assemble/control/excel/upload",
     tag = "general",
@@ -10683,7 +10908,9 @@ async fn general_assemble_control_general_assemble_control_excel_upload_excel_up
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn general_assemble_control_general_assemble_control_excel_upload_with_url_excel_upload_with_url_post() {}
+async fn general_assemble_control_general_assemble_control_excel_upload_with_url_excel_upload_with_url_post(
+) {
+}
 #[utoipa::path(post,
     path = "/jaxrs/general/assemble/control/invoice/create",
     tag = "general",
@@ -10708,7 +10935,9 @@ async fn general_assemble_control_general_assemble_control_invoice_create_invoic
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn general_assemble_control_general_assemble_control_invoice_delete_id_invoice_delete_id_post() {}
+async fn general_assemble_control_general_assemble_control_invoice_delete_id_invoice_delete_id_post(
+) {
+}
 #[utoipa::path(post,
     path = "/jaxrs/general/assemble/control/invoice/update/apply/status/{id}",
     tag = "general",
@@ -10736,7 +10965,9 @@ async fn general_assemble_control_a211d6_post() {}
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn general_assemble_control_general_assemble_control_invoice_update_id_invoice_update_id_post() {}
+async fn general_assemble_control_general_assemble_control_invoice_update_id_invoice_update_id_post(
+) {
+}
 #[utoipa::path(post,
     path = "/jaxrs/general/assemble/control/invoice/upload",
     tag = "general",
@@ -10780,7 +11011,9 @@ async fn general_assemble_control_664276_post() {}
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn general_assemble_control_general_assemble_control_office_html_to_word_office_html_to_word_post() {}
+async fn general_assemble_control_general_assemble_control_office_html_to_word_office_html_to_word_post(
+) {
+}
 #[utoipa::path(post,
     path = "/jaxrs/general/assemble/control/qrcode/delete/{id}",
     tag = "general",
@@ -10871,7 +11104,9 @@ async fn general_assemble_control_8d9059_post() {}
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn general_assemble_control_general_assemble_control_status_update_update_general_control_status_post() {}
+async fn general_assemble_control_general_assemble_control_status_update_update_general_control_status_post(
+) {
+}
 #[utoipa::path(get,
     path = "/jaxrs/general/dict/item/list/{dictId}",
     tag = "general",
@@ -11198,7 +11433,9 @@ async fn hotpic_user_hotpic_id_get_by_id_get() {}
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn hotpic_assemble_control_hotpic_assemble_control_cipher_hotpic_bbs_id_cipher_hotpic_bbs_id_get() {}
+async fn hotpic_assemble_control_hotpic_assemble_control_cipher_hotpic_bbs_id_cipher_hotpic_bbs_id_get(
+) {
+}
 #[utoipa::path(get,
     path = "/jaxrs/hotpic/assemble/control/cipher/hotpic/cms/{id}",
     tag = "hotpic",
@@ -11212,7 +11449,9 @@ async fn hotpic_assemble_control_hotpic_assemble_control_cipher_hotpic_bbs_id_ci
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn hotpic_assemble_control_hotpic_assemble_control_cipher_hotpic_cms_id_cipher_hotpic_cms_id_get() {}
+async fn hotpic_assemble_control_hotpic_assemble_control_cipher_hotpic_cms_id_cipher_hotpic_cms_id_get(
+) {
+}
 #[utoipa::path(get,
     path = "/jaxrs/hotpic/assemble/control/cipher/hotpic/filter/list/page/{page}/count/{count}",
     tag = "hotpic",
@@ -11274,7 +11513,9 @@ async fn hotpic_assemble_control_b05f82_get() {}
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn hotpic_assemble_control_hotpic_assemble_control_list_control_panels_list_control_panels_get() {}
+async fn hotpic_assemble_control_hotpic_assemble_control_list_control_panels_list_control_panels_get(
+) {
+}
 #[utoipa::path(get,
     path = "/jaxrs/hotpic/assemble/control/user/hotpic/application/{infoId}",
     tag = "hotpic",
@@ -11507,7 +11748,9 @@ async fn hotpic_assemble_control_update_control_config_update_control_config_get
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn hotpic_assemble_control_user_hotpic_application_info_id_user_hotpic_application_infoId_get() {}
+async fn hotpic_assemble_control_user_hotpic_application_info_id_user_hotpic_application_infoId_get(
+) {
+}
 #[utoipa::path(get,
     path = "/jaxrs/hotpic_assemble_control/user/hotpic/changeTitle",
     tag = "hotpic",
@@ -11562,7 +11805,9 @@ async fn hotpic_assemble_control_user_hotpic_id_user_hotpic_id_get() {}
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn hotpic_assemble_control_hotpic_assemble_control_update_control_config_update_control_config_post() {}
+async fn hotpic_assemble_control_hotpic_assemble_control_update_control_config_update_control_config_post(
+) {
+}
 #[utoipa::path(post,
     path = "/jaxrs/hotpic/assemble/control/user/hotpic/changeTitle",
     tag = "hotpic",
@@ -11661,7 +11906,9 @@ async fn hotpic_core_entity_hotpic_core_entity_list_list_get() {}
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn hotpic_core_entity_hotpic_core_entity_list_by_application_infoid_list_by_app_and_info_get() {}
+async fn hotpic_core_entity_hotpic_core_entity_list_by_application_infoid_list_by_app_and_info_get()
+{
+}
 #[utoipa::path(post,
     path = "/jaxrs/hotpic/core/entity/create",
     tag = "hotpic",
@@ -11788,7 +12035,9 @@ async fn jpush_assemble_control_755468_get() {}
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn jpush_assemble_control_jpush_assemble_control_device_config_push_type_device_config_push_type_get() {}
+async fn jpush_assemble_control_jpush_assemble_control_device_config_push_type_device_config_push_type_get(
+) {
+}
 #[utoipa::path(get,
     path = "/jaxrs/jpush/assemble/control/device/list/pushType",
     tag = "jpush",
@@ -11799,7 +12048,9 @@ async fn jpush_assemble_control_jpush_assemble_control_device_config_push_type_d
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn jpush_assemble_control_jpush_assemble_control_device_list_push_type_device_list_pushType_get() {}
+async fn jpush_assemble_control_jpush_assemble_control_device_list_push_type_device_list_pushType_get(
+) {
+}
 #[utoipa::path(get,
     path = "/jaxrs/jpush/assemble/control/list/control/apps",
     tag = "jpush",
@@ -11879,7 +12130,9 @@ async fn jpush_assemble_control_delete_jpush_delete_jpush_get() {}
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn jpush_assemble_control_device_admin_unbind_all_person_device_admin_unbind_all_person_get() {}
+async fn jpush_assemble_control_device_admin_unbind_all_person_device_admin_unbind_all_person_get()
+{
+}
 #[utoipa::path(get,
     path = "/jaxrs/jpush_assemble_control/device/bind",
     tag = "jpush",
@@ -11934,7 +12187,9 @@ async fn jpush_assemble_control_device_list_push_type_device_list_pushType_get()
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn jpush_assemble_control_device_unbind_device_name_device_type_device_unbind_deviceName_deviceType_get() {}
+async fn jpush_assemble_control_device_unbind_device_name_device_type_device_unbind_deviceName_deviceType_get(
+) {
+}
 #[utoipa::path(get,
     path = "/jaxrs/jpush_assemble_control/device/unbind/new/deviceName/deviceType/pushType",
     tag = "jpush",
@@ -12066,7 +12321,9 @@ async fn jpush_assemble_control_8b0074_post() {}
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn jpush_assemble_control_jpush_assemble_control_update_control_config_update_control_config_post() {}
+async fn jpush_assemble_control_jpush_assemble_control_update_control_config_update_control_config_post(
+) {
+}
 #[utoipa::path(post,
     path = "/jaxrs/jpush/create",
     tag = "jpush",
@@ -12263,7 +12520,9 @@ async fn meeting_create_create_meeting_post() {}
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn meeting_assemble_control_meeting_assemble_control_delete_id_delete_meeting_control_delete() {}
+async fn meeting_assemble_control_meeting_assemble_control_delete_id_delete_meeting_control_delete()
+{
+}
 #[utoipa::path(get,
     path = "/jaxrs/meeting/assemble/control/building/list",
     tag = "meeting",
@@ -12302,7 +12561,9 @@ async fn meeting_assemble_control_890285_get() {}
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn meeting_assemble_control_meeting_assemble_control_building_list_like_key_building_list_like_key_get() {}
+async fn meeting_assemble_control_meeting_assemble_control_building_list_like_key_building_list_like_key_get(
+) {
+}
 #[utoipa::path(get,
     path = "/jaxrs/meeting/assemble/control/building/list/pinyininitial/{key}",
     tag = "meeting",
@@ -12341,7 +12602,9 @@ async fn meeting_assemble_control_meeting_assemble_control_building_id_building_
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn meeting_assemble_control_meeting_assemble_control_config_system_config_config_system_config_get() {}
+async fn meeting_assemble_control_meeting_assemble_control_config_system_config_config_system_config_get(
+) {
+}
 #[utoipa::path(get,
     path = "/jaxrs/meeting/assemble/control/list/meeting/controls",
     tag = "meeting",
@@ -12352,7 +12615,9 @@ async fn meeting_assemble_control_meeting_assemble_control_config_system_config_
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn meeting_assemble_control_meeting_assemble_control_list_meeting_controls_list_meeting_controls_get() {}
+async fn meeting_assemble_control_meeting_assemble_control_list_meeting_controls_list_meeting_controls_get(
+) {
+}
 #[utoipa::path(get,
     path = "/jaxrs/meeting/assemble/control/meeting/list/applied/completed",
     tag = "meeting",
@@ -12662,7 +12927,9 @@ async fn meeting_assemble_control_meeting_assemble_control_meeting_id_meeting_id
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn meeting_assemble_control_meeting_assemble_control_openmeeting_list_room_openmeeting_list_room_get() {}
+async fn meeting_assemble_control_meeting_assemble_control_openmeeting_list_room_openmeeting_list_room_get(
+) {
+}
 #[utoipa::path(get,
     path = "/jaxrs/meeting/assemble/control/room/list",
     tag = "meeting",
@@ -12701,7 +12968,9 @@ async fn meeting_assemble_control_3e1abd_get() {}
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn meeting_assemble_control_meeting_assemble_control_room_list_like_key_room_list_like_key_get() {}
+async fn meeting_assemble_control_meeting_assemble_control_room_list_like_key_room_list_like_key_get(
+) {
+}
 #[utoipa::path(get,
     path = "/jaxrs/meeting/assemble/control/room/list/pinyininitial/{key}",
     tag = "meeting",
@@ -12849,7 +13118,8 @@ async fn meeting_assemble_control_meeting_assemble_control_meeting_create_create
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn meeting_assemble_control_meeting_assemble_control_meeting_delete_id_delete_meeting_post() {}
+async fn meeting_assemble_control_meeting_assemble_control_meeting_delete_id_delete_meeting_post() {
+}
 #[utoipa::path(post,
     path = "/jaxrs/meeting/assemble/control/meeting/list/manage/{page}/{size}/{size}",
     tag = "meeting",
@@ -12893,7 +13163,9 @@ async fn meeting_assemble_control_meeting_assemble_control_meeting_save_id_save_
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn meeting_assemble_control_meeting_assemble_control_meeting_id_accept_meeting_id_accept_post() {}
+async fn meeting_assemble_control_meeting_assemble_control_meeting_id_accept_meeting_id_accept_post(
+) {
+}
 #[utoipa::path(post,
     path = "/jaxrs/meeting/assemble/control/meeting/{id}/add/invite",
     tag = "meeting",
@@ -12907,7 +13179,9 @@ async fn meeting_assemble_control_meeting_assemble_control_meeting_id_accept_mee
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn meeting_assemble_control_meeting_assemble_control_meeting_id_add_invite_meeting_id_add_invite_post() {}
+async fn meeting_assemble_control_meeting_assemble_control_meeting_id_add_invite_meeting_id_add_invite_post(
+) {
+}
 #[utoipa::path(post,
     path = "/jaxrs/meeting/assemble/control/meeting/{id}/checkin",
     tag = "meeting",
@@ -12921,7 +13195,9 @@ async fn meeting_assemble_control_meeting_assemble_control_meeting_id_add_invite
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn meeting_assemble_control_meeting_assemble_control_meeting_id_checkin_meeting_id_checkin_post() {}
+async fn meeting_assemble_control_meeting_assemble_control_meeting_id_checkin_meeting_id_checkin_post(
+) {
+}
 #[utoipa::path(post,
     path = "/jaxrs/meeting/assemble/control/meeting/{id}/confirm/allow",
     tag = "meeting",
@@ -13019,7 +13295,9 @@ async fn meeting_assemble_control_42e67e_post() {}
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn meeting_assemble_control_meeting_assemble_control_meeting_id_reject_meeting_id_reject_post() {}
+async fn meeting_assemble_control_meeting_assemble_control_meeting_id_reject_meeting_id_reject_post(
+) {
+}
 #[utoipa::path(get,
     path = "/jaxrs/meeting/core/entity/meeting/list",
     tag = "meeting",
@@ -13044,7 +13322,8 @@ async fn meeting_core_entity_meeting_core_entity_meeting_list_meeting_list_get()
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn meeting_core_entity_meeting_core_entity_meeting_list_by_roomid_meeting_list_by_room_get() {}
+async fn meeting_core_entity_meeting_core_entity_meeting_list_by_roomid_meeting_list_by_room_get() {
+}
 #[utoipa::path(get,
     path = "/jaxrs/meeting/core/entity/meeting/{id}",
     tag = "meeting",
@@ -13332,7 +13611,9 @@ async fn message_assemble_communicate_c08bcd_get() {}
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn message_assemble_communicate_message_assemble_communicate_consume_type_type_consume_type_type_get() {}
+async fn message_assemble_communicate_message_assemble_communicate_consume_type_type_consume_type_type_get(
+) {
+}
 #[utoipa::path(get,
     path = "/jaxrs/message/assemble/communicate/im/conversation/business/{businessId}",
     tag = "message",
@@ -13382,7 +13663,9 @@ async fn message_assemble_communicate_677fbc_get() {}
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn message_assemble_communicate_message_assemble_communicate_im_conversation_id_im_conversation_id_get() {}
+async fn message_assemble_communicate_message_assemble_communicate_im_conversation_id_im_conversation_id_get(
+) {
+}
 #[utoipa::path(get,
     path = "/jaxrs/message/assemble/communicate/im/conversation/{id}/group",
     tag = "message",
@@ -13435,7 +13718,9 @@ async fn message_assemble_communicate_f4916a_get() {}
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn message_assemble_communicate_message_assemble_communicate_im_manager_config_im_manager_config_get() {}
+async fn message_assemble_communicate_message_assemble_communicate_im_manager_config_im_manager_config_get(
+) {
+}
 #[utoipa::path(get,
     path = "/jaxrs/message/assemble/communicate/im/msg/collection/list/{page}/size/{size}",
     tag = "message",
@@ -13464,7 +13749,9 @@ async fn message_assemble_communicate_4599e8_get() {}
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn message_assemble_communicate_message_assemble_communicate_im_msg_download_id_im_msg_download_id_get() {}
+async fn message_assemble_communicate_message_assemble_communicate_im_msg_download_id_im_msg_download_id_get(
+) {
+}
 #[utoipa::path(get,
     path = "/jaxrs/message/assemble/communicate/im/msg/download/{id}/image/width/{width}/height/{height}",
     tag = "message",
@@ -13491,7 +13778,9 @@ async fn message_assemble_communicate_c06f0a_get() {}
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn message_assemble_communicate_message_assemble_communicate_im_msg_list_object_im_msg_list_object_get() {}
+async fn message_assemble_communicate_message_assemble_communicate_im_msg_list_object_im_msg_list_object_get(
+) {
+}
 #[utoipa::path(get,
     path = "/jaxrs/message/assemble/communicate/im/msg/list/{page}/size/{size}",
     tag = "message",
@@ -13729,7 +14018,9 @@ async fn message_assemble_communicate_a40207_get() {}
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn message_assemble_communicate_message_assemble_communicate_receive_consume_receive_list_get() {}
+async fn message_assemble_communicate_message_assemble_communicate_receive_consume_receive_list_get(
+) {
+}
 #[utoipa::path(post,
     path = "/jaxrs/message/assemble/communicate/consume/type/{type}/mockputtopost",
     tag = "message",
@@ -13769,7 +14060,9 @@ async fn message_assemble_communicate_a914ca_post() {}
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn message_assemble_communicate_message_assemble_communicate_im_conversation_im_conversation_post() {}
+async fn message_assemble_communicate_message_assemble_communicate_im_conversation_im_conversation_post(
+) {
+}
 #[utoipa::path(post,
     path = "/jaxrs/message/assemble/communicate/im/conversation/mockputtopost",
     tag = "message",
@@ -13900,7 +14193,9 @@ async fn message_assemble_communicate_message_assemble_communicate_im_msg_im_msg
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn message_assemble_communicate_message_assemble_communicate_im_msg_clear_im_msg_clear_post() {}
+async fn message_assemble_communicate_message_assemble_communicate_im_msg_clear_im_msg_clear_post()
+{
+}
 #[utoipa::path(post,
     path = "/jaxrs/message/assemble/communicate/im/msg/collection",
     tag = "message",
@@ -13911,7 +14206,9 @@ async fn message_assemble_communicate_message_assemble_communicate_im_msg_clear_
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn message_assemble_communicate_message_assemble_communicate_im_msg_collection_im_msg_collection_post() {}
+async fn message_assemble_communicate_message_assemble_communicate_im_msg_collection_im_msg_collection_post(
+) {
+}
 #[utoipa::path(post,
     path = "/jaxrs/message/assemble/communicate/im/msg/collection/remove",
     tag = "message",
@@ -13936,7 +14233,9 @@ async fn message_assemble_communicate_0ed14a_post() {}
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn message_assemble_communicate_message_assemble_communicate_im_msg_revoke_id_im_msg_revoke_id_post() {}
+async fn message_assemble_communicate_message_assemble_communicate_im_msg_revoke_id_im_msg_revoke_id_post(
+) {
+}
 #[utoipa::path(post,
     path = "/jaxrs/message/assemble/communicate/instant/currentperson/consumed/mockputtopost",
     tag = "message",
@@ -13972,7 +14271,9 @@ async fn message_assemble_communicate_message_assemble_communicate_mark_read_id_
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn message_assemble_communicate_message_assemble_communicate_mass_enable_type_mass_enable_type_post() {}
+async fn message_assemble_communicate_message_assemble_communicate_mass_enable_type_mass_enable_type_post(
+) {
+}
 #[utoipa::path(post,
     path = "/jaxrs/message/assemble/communicate/message/custom/create",
     tag = "message",
@@ -14236,7 +14537,9 @@ async fn mind_assemble_control_mind_assemble_control_config_update_update_contro
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn mind_assemble_control_mind_assemble_control_folder_move_folderid_folder_move_folderId_post() {}
+async fn mind_assemble_control_mind_assemble_control_folder_move_folderid_folder_move_folderId_post(
+) {
+}
 #[utoipa::path(post,
     path = "/jaxrs/mind/assemble/control/folder/save",
     tag = "mind",
@@ -14582,7 +14885,9 @@ async fn organization_assemble_control_identity_id_identity_id_get() {}
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn organization_assemble_control_organization_assemble_control_export_all_export_export_all_get() {}
+async fn organization_assemble_control_organization_assemble_control_export_all_export_export_all_get(
+) {
+}
 #[utoipa::path(get,
     path = "/jaxrs/organization/assemble/control/export/result/flag/{flag}",
     tag = "organization",
@@ -14618,7 +14923,9 @@ async fn organization_assemble_control_1b85c6_get() {}
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn organization_assemble_control_organization_assemble_control_group_list_like_group_list_like_get() {}
+async fn organization_assemble_control_organization_assemble_control_group_list_like_group_list_like_get(
+) {
+}
 #[utoipa::path(get,
     path = "/jaxrs/organization/assemble/control/group/list/like/mockputtopost",
     tag = "organization",
@@ -15066,7 +15373,9 @@ async fn organization_assemble_control_30424f_get() {}
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn organization_assemble_control_organization_assemble_control_identity_flag_identity_flag_get() {}
+async fn organization_assemble_control_organization_assemble_control_identity_flag_identity_flag_get(
+) {
+}
 #[utoipa::path(get,
     path = "/jaxrs/organization/assemble/control/identity/{flag}/mockdeletetoget",
     tag = "organization",
@@ -15145,7 +15454,9 @@ async fn organization_assemble_control_b8d39a_get() {}
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn organization_assemble_control_organization_assemble_control_inputperson_wipe_inputperson_wipe_get() {}
+async fn organization_assemble_control_organization_assemble_control_inputperson_wipe_inputperson_wipe_get(
+) {
+}
 #[utoipa::path(get,
     path = "/jaxrs/organization/assemble/control/loginrecord/{stream}",
     tag = "organization",
@@ -15436,7 +15747,9 @@ async fn organization_assemble_control_5b39a2_get() {}
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn organization_assemble_control_organization_assemble_control_personcard_mylist_personcard_mylist_get() {}
+async fn organization_assemble_control_organization_assemble_control_personcard_mylist_personcard_mylist_get(
+) {
+}
 #[utoipa::path(get,
     path = "/jaxrs/organization/assemble/control/personcard/{flag}",
     tag = "organization",
@@ -15450,7 +15763,9 @@ async fn organization_assemble_control_organization_assemble_control_personcard_
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn organization_assemble_control_organization_assemble_control_personcard_flag_personcard_flag_get() {}
+async fn organization_assemble_control_organization_assemble_control_personcard_flag_personcard_flag_get(
+) {
+}
 #[utoipa::path(get,
     path = "/jaxrs/organization/assemble/control/personcard/{flag}/mockdeletetoget",
     tag = "organization",
@@ -15489,7 +15804,9 @@ async fn organization_assemble_control_b7b033_get() {}
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn organization_assemble_control_organization_assemble_control_role_list_like_role_list_like_get() {}
+async fn organization_assemble_control_organization_assemble_control_role_list_like_role_list_like_get(
+) {
+}
 #[utoipa::path(get,
     path = "/jaxrs/organization/assemble/control/role/list/like/mockputtopost",
     tag = "organization",
@@ -15921,7 +16238,9 @@ async fn organization_assemble_control_2bebc3_get() {}
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn organization_assemble_control_organization_assemble_control_unitduty_flag_unitduty_flag_get() {}
+async fn organization_assemble_control_organization_assemble_control_unitduty_flag_unitduty_flag_get(
+) {
+}
 #[utoipa::path(get,
     path = "/jaxrs/organization/assemble/control/unitduty/{flag}/mockdeletetoget",
     tag = "organization",
@@ -15971,7 +16290,9 @@ async fn organization_assemble_control_f99270_post() {}
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn organization_assemble_express_organization_assemble_express_config_get_get_express_config_get() {}
+async fn organization_assemble_express_organization_assemble_express_config_get_get_express_config_get(
+) {
+}
 #[utoipa::path(get,
     path = "/jaxrs/organization/assemble/express/data/sync",
     tag = "organization",
@@ -15982,7 +16303,9 @@ async fn organization_assemble_express_organization_assemble_express_config_get_
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn organization_assemble_express_organization_assemble_express_data_sync_sync_organization_data_get() {}
+async fn organization_assemble_express_organization_assemble_express_data_sync_sync_organization_data_get(
+) {
+}
 #[utoipa::path(get,
     path = "/jaxrs/organization/assemble/express/status/get",
     tag = "organization",
@@ -15993,7 +16316,9 @@ async fn organization_assemble_express_organization_assemble_express_data_sync_s
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn organization_assemble_express_organization_assemble_express_status_get_get_express_status_get() {}
+async fn organization_assemble_express_organization_assemble_express_status_get_get_express_status_get(
+) {
+}
 #[utoipa::path(get,
     path = "/jaxrs/organization/assemble/express/units/list",
     tag = "organization",
@@ -16004,7 +16329,9 @@ async fn organization_assemble_express_organization_assemble_express_status_get_
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn organization_assemble_express_organization_assemble_express_units_list_list_organization_units_get() {}
+async fn organization_assemble_express_organization_assemble_express_units_list_list_organization_units_get(
+) {
+}
 #[utoipa::path(get,
     path = "/jaxrs/organization/assemble/personal/{id}/role/list",
     tag = "organization_assemble_personal",
@@ -16018,7 +16345,9 @@ async fn organization_assemble_express_organization_assemble_express_units_list_
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn organization_assemble_personal_organization_assemble_personal_id_role_list_user_role_list_get() {}
+async fn organization_assemble_personal_organization_assemble_personal_id_role_list_user_role_list_get(
+) {
+}
 #[utoipa::path(get,
     path = "/jaxrs/organization/assemble/personal/{id}/setting",
     tag = "organization_assemble_personal",
@@ -16032,7 +16361,9 @@ async fn organization_assemble_personal_organization_assemble_personal_id_role_l
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn organization_assemble_personal_organization_assemble_personal_id_setting_user_setting_get() {}
+async fn organization_assemble_personal_organization_assemble_personal_id_setting_user_setting_get()
+{
+}
 #[utoipa::path(delete,
     path = "/jaxrs/organization/bind/{id}",
     tag = "organization",
@@ -16538,7 +16869,8 @@ async fn portal_assemble_designer_portal_assemble_designer_dict_id_dict_id_get()
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn portal_assemble_designer_portal_assemble_designer_file_download_id_file_id_download_get() {}
+async fn portal_assemble_designer_portal_assemble_designer_file_download_id_file_id_download_get() {
+}
 #[utoipa::path(get,
     path = "/jaxrs/portal/assemble/designer/file/list/application/{applicationFlag}",
     tag = "portal",
@@ -16664,7 +16996,9 @@ async fn portal_assemble_designer_9ea2c8_get() {}
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn portal_assemble_designer_portal_assemble_designer_page_list_category_list_pages_by_category_get() {}
+async fn portal_assemble_designer_portal_assemble_designer_page_list_category_list_pages_by_category_get(
+) {
+}
 #[utoipa::path(get,
     path = "/jaxrs/portal/assemble/designer/page/{id}",
     tag = "portal",
@@ -16763,7 +17097,9 @@ async fn portal_assemble_designer_79cfb4_get() {}
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn portal_assemble_designer_portal_assemble_designer_portal_permission_id_portal_id_permission_get() {}
+async fn portal_assemble_designer_portal_assemble_designer_portal_permission_id_portal_id_permission_get(
+) {
+}
 #[utoipa::path(get,
     path = "/jaxrs/portal/assemble/designer/portal/{id}",
     tag = "portal",
@@ -16849,7 +17185,8 @@ async fn portal_assemble_designer_a83aa4_get() {}
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn portal_assemble_designer_portal_assemble_designer_scriptversion_id_scriptversion_id_get() {}
+async fn portal_assemble_designer_portal_assemble_designer_scriptversion_id_scriptversion_id_get() {
+}
 #[utoipa::path(get,
     path = "/jaxrs/portal/assemble/designer/templatepage/{id}",
     tag = "portal",
@@ -17093,7 +17430,9 @@ async fn portal_assemble_surface_98fb58_get() {}
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn portal_assemble_surface_portal_assemble_surface_file_download_flag_file_flag_download_get() {}
+async fn portal_assemble_surface_portal_assemble_surface_file_download_flag_file_flag_download_get()
+{
+}
 #[utoipa::path(get,
     path = "/jaxrs/portal/assemble/surface/file/list/portal/{portalFlag}",
     tag = "portal",
@@ -17201,7 +17540,9 @@ async fn portal_assemble_surface_portal_assemble_surface_list_layouts_list_layou
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn portal_assemble_surface_portal_assemble_surface_list_portal_page_page_list_portal_portal_get() {}
+async fn portal_assemble_surface_portal_assemble_surface_list_portal_page_page_list_portal_portal_get(
+) {
+}
 #[utoipa::path(get,
     path = "/jaxrs/portal/assemble/surface/list/{category}",
     tag = "portal",
@@ -17244,7 +17585,9 @@ async fn portal_assemble_surface_portal_assemble_surface_mobile_page_id_page_id_
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn portal_assemble_surface_portal_assemble_surface_portal_corner_mark_flag_portal_flag_corner_mark_get() {}
+async fn portal_assemble_surface_portal_assemble_surface_portal_corner_mark_flag_portal_flag_corner_mark_get(
+) {
+}
 #[utoipa::path(get,
     path = "/jaxrs/portal/assemble/surface/portal/icon/base64/{id}",
     tag = "portal",
@@ -17258,7 +17601,9 @@ async fn portal_assemble_surface_portal_assemble_surface_portal_corner_mark_flag
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn portal_assemble_surface_portal_assemble_surface_portal_icon_base64_id_portal_id_icon_base64_get() {}
+async fn portal_assemble_surface_portal_assemble_surface_portal_icon_base64_id_portal_id_icon_base64_get(
+) {
+}
 #[utoipa::path(get,
     path = "/jaxrs/portal/assemble/surface/portal/icon/{id}",
     tag = "portal",
@@ -17343,7 +17688,9 @@ async fn portal_assemble_surface_portal_assemble_surface_preview_id_preview_surf
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn portal_assemble_surface_portal_assemble_surface_script_list_portal_script_list_portal_portal_get() {}
+async fn portal_assemble_surface_portal_assemble_surface_script_list_portal_script_list_portal_portal_get(
+) {
+}
 #[utoipa::path(get,
     path = "/jaxrs/portal/assemble/surface/script/portal/portal/{name}/{name}",
     tag = "portal",
@@ -17387,7 +17734,8 @@ async fn portal_assemble_surface_portal_assemble_surface_script_id_script_id_get
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn portal_assemble_surface_portal_assemble_surface_v2_mobile_page_id_page_v2_id_mobile_get() {}
+async fn portal_assemble_surface_portal_assemble_surface_v2_mobile_page_id_page_v2_id_mobile_get() {
+}
 #[utoipa::path(get,
     path = "/jaxrs/portal/assemble/surface/v2/portal/mobile/{page}/{flag}/{portalFlag}",
     tag = "portal",
@@ -17445,7 +17793,9 @@ async fn portal_assemble_surface_portal_assemble_surface_v2_page_id_page_v2_id_g
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn portal_assemble_surface_portal_assemble_surface_widget_list_portal_widget_list_portal_portal_get() {}
+async fn portal_assemble_surface_portal_assemble_surface_widget_list_portal_widget_list_portal_portal_get(
+) {
+}
 #[utoipa::path(get,
     path = "/jaxrs/portal/assemble/surface/widget/mobile/{id}",
     tag = "portal",
@@ -18751,7 +19101,9 @@ async fn processplatform_assemble_designer_8ad5f4_get() {}
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn processplatform_assemble_designer_processplatform_assemble_designer_file_flag_file_flag_get() {}
+async fn processplatform_assemble_designer_processplatform_assemble_designer_file_flag_file_flag_get(
+) {
+}
 #[utoipa::path(get,
     path = "/jaxrs/processplatform/assemble/designer/form/list/application/{applicationId}",
     tag = "process",
@@ -18823,7 +19175,8 @@ async fn processplatform_assemble_designer_24e107_get() {}
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn processplatform_assemble_designer_processplatform_assemble_designer_form_id_form_id_get() {}
+async fn processplatform_assemble_designer_processplatform_assemble_designer_form_id_form_id_get() {
+}
 #[utoipa::path(get,
     path = "/jaxrs/processplatform/assemble/designer/formversion/list/form/{formId}",
     tag = "process",
@@ -18865,7 +19218,8 @@ async fn processplatform_assemble_designer_949c61_get() {}
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn processplatform_assemble_designer_processplatform_assemble_designer_get_id_get_flow_get() {}
+async fn processplatform_assemble_designer_processplatform_assemble_designer_get_id_get_flow_get() {
+}
 #[utoipa::path(get,
     path = "/jaxrs/processplatform/assemble/designer/item/access/path/path",
     tag = "process",
@@ -18932,7 +19286,9 @@ async fn processplatform_assemble_designer_decd66_get() {}
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn processplatform_assemble_designer_processplatform_assemble_designer_list_category_list_flows_get() {}
+async fn processplatform_assemble_designer_processplatform_assemble_designer_list_category_list_flows_get(
+) {
+}
 #[utoipa::path(get,
     path = "/jaxrs/processplatform/assemble/designer/mapping/execute/{flag}",
     tag = "process",
@@ -18990,7 +19346,9 @@ async fn processplatform_assemble_designer_20d307_get() {}
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn processplatform_assemble_designer_processplatform_assemble_designer_mapping_flag_mapping_flag_get() {}
+async fn processplatform_assemble_designer_processplatform_assemble_designer_mapping_flag_mapping_flag_get(
+) {
+}
 #[utoipa::path(get,
     path = "/jaxrs/processplatform/assemble/designer/output/select/{applicationFlag}",
     tag = "process",
@@ -19018,7 +19376,9 @@ async fn processplatform_assemble_designer_ee8cc6_get() {}
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn processplatform_assemble_designer_processplatform_assemble_designer_preview_id_preview_flow_get() {}
+async fn processplatform_assemble_designer_processplatform_assemble_designer_preview_id_preview_flow_get(
+) {
+}
 #[utoipa::path(get,
     path = "/jaxrs/processplatform/assemble/designer/process/activity/{flag}/{activityType}/{activityType}",
     tag = "process",
@@ -19202,7 +19562,9 @@ async fn processplatform_assemble_designer_2e6347_get() {}
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn processplatform_assemble_designer_processplatform_assemble_designer_process_id_process_id_get() {}
+async fn processplatform_assemble_designer_processplatform_assemble_designer_process_id_process_id_get(
+) {
+}
 #[utoipa::path(get,
     path = "/jaxrs/processplatform/assemble/designer/processversion/list/process/{processId}",
     tag = "process",
@@ -19306,7 +19668,9 @@ async fn processplatform_assemble_designer_35a426_get() {}
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn processplatform_assemble_designer_processplatform_assemble_designer_script_id_script_id_get() {}
+async fn processplatform_assemble_designer_processplatform_assemble_designer_script_id_script_id_get(
+) {
+}
 #[utoipa::path(get,
     path = "/jaxrs/processplatform/assemble/designer/scriptversion/list/script/{scriptId}",
     tag = "process",
@@ -19377,7 +19741,9 @@ async fn processplatform_assemble_designer_c10373_get() {}
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn processplatform_assemble_designer_processplatform_assemble_designer_id_count_id_count_get() {}
+async fn processplatform_assemble_designer_processplatform_assemble_designer_id_count_id_count_get()
+{
+}
 #[utoipa::path(post,
     path = "/jaxrs/processplatform/assemble/designer/application/{id}/{onlyRemoveNotCompleted}",
     tag = "process",
@@ -19403,7 +19769,9 @@ async fn processplatform_assemble_designer_9eacab_post() {}
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn processplatform_assemble_designer_processplatform_assemble_designer_create_create_flow_post() {}
+async fn processplatform_assemble_designer_processplatform_assemble_designer_create_create_flow_post(
+) {
+}
 #[utoipa::path(post,
     path = "/jaxrs/processplatform/assemble/designer/delete/{id}",
     tag = "process",
@@ -19417,7 +19785,9 @@ async fn processplatform_assemble_designer_processplatform_assemble_designer_cre
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn processplatform_assemble_designer_processplatform_assemble_designer_delete_id_delete_flow_post() {}
+async fn processplatform_assemble_designer_processplatform_assemble_designer_delete_id_delete_flow_post(
+) {
+}
 #[utoipa::path(post,
     path = "/jaxrs/processplatform/assemble/designer/file/upload/{id}",
     tag = "process",
@@ -19564,7 +19934,9 @@ async fn processplatform_assemble_designer_522ffc_post() {}
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn processplatform_assemble_designer_processplatform_assemble_designer_save_id_save_flow_post() {}
+async fn processplatform_assemble_designer_processplatform_assemble_designer_save_id_save_flow_post(
+) {
+}
 #[utoipa::path(post,
     path = "/jaxrs/processplatform/assemble/designer/workcompleted/application/merge/data/{applicationFlag}",
     tag = "process",
@@ -20065,7 +20437,9 @@ async fn processplatform_assemble_surface_af3a0d_get() {}
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn processplatform_assemble_surface_processplatform_assemble_surface_data_job_data_job_job_get() {}
+async fn processplatform_assemble_surface_processplatform_assemble_surface_data_job_data_job_job_get(
+) {
+}
 #[utoipa::path(get,
     path = "/jaxrs/processplatform/assemble/surface/data/job/job/array/data",
     tag = "process",
@@ -20515,7 +20889,9 @@ async fn processplatform_assemble_surface_7519ae_get() {}
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn processplatform_assemble_surface_processplatform_assemble_surface_data_work_id_data_work_id_get() {}
+async fn processplatform_assemble_surface_processplatform_assemble_surface_data_work_id_data_work_id_get(
+) {
+}
 #[utoipa::path(get,
     path = "/jaxrs/processplatform/assemble/surface/data/workcompleted/from/data/{id}",
     tag = "process",
@@ -20983,7 +21359,8 @@ async fn processplatform_assemble_surface_13bca3_get() {}
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn processplatform_assemble_surface_processplatform_assemble_surface_draft_id_draft_id_get() {}
+async fn processplatform_assemble_surface_processplatform_assemble_surface_draft_id_draft_id_get() {
+}
 #[utoipa::path(get,
     path = "/jaxrs/processplatform/assemble/surface/file/application/content/{flag}/{applicationFlag}",
     tag = "process",
@@ -21149,7 +21526,9 @@ async fn processplatform_assemble_surface_669670_get() {}
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn processplatform_assemble_surface_processplatform_assemble_surface_form_v2_id_form_v2_id_get() {}
+async fn processplatform_assemble_surface_processplatform_assemble_surface_form_v2_id_form_v2_id_get(
+) {
+}
 #[utoipa::path(get,
     path = "/jaxrs/processplatform/assemble/surface/form/{flag}",
     tag = "process",
@@ -21163,7 +21542,9 @@ async fn processplatform_assemble_surface_processplatform_assemble_surface_form_
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn processplatform_assemble_surface_processplatform_assemble_surface_form_flag_form_flag_get() {}
+async fn processplatform_assemble_surface_processplatform_assemble_surface_form_flag_form_flag_get()
+{
+}
 #[utoipa::path(get,
     path = "/jaxrs/processplatform/assemble/surface/get/{id}",
     tag = "process",
@@ -21177,7 +21558,9 @@ async fn processplatform_assemble_surface_processplatform_assemble_surface_form_
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn processplatform_assemble_surface_processplatform_assemble_surface_get_id_get_surface_get() {}
+async fn processplatform_assemble_surface_processplatform_assemble_surface_get_id_get_surface_get()
+{
+}
 #[utoipa::path(get,
     path = "/jaxrs/processplatform/assemble/surface/handover/cancel/{id}",
     tag = "process",
@@ -21235,7 +21618,9 @@ async fn processplatform_assemble_surface_00dfa8_get() {}
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn processplatform_assemble_surface_processplatform_assemble_surface_handover_id_handover_id_get() {}
+async fn processplatform_assemble_surface_processplatform_assemble_surface_handover_id_handover_id_get(
+) {
+}
 #[utoipa::path(get,
     path = "/jaxrs/processplatform/assemble/surface/job/job/allow/visit/person/person",
     tag = "process",
@@ -21290,7 +21675,9 @@ async fn processplatform_assemble_surface_5daf43_get() {}
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn processplatform_assemble_surface_processplatform_assemble_surface_keylock_lock_keylock_lock_get() {}
+async fn processplatform_assemble_surface_processplatform_assemble_surface_keylock_lock_keylock_lock_get(
+) {
+}
 #[utoipa::path(get,
     path = "/jaxrs/processplatform/assemble/surface/keylock/lock/mockputtopost",
     tag = "process",
@@ -21315,7 +21702,9 @@ async fn processplatform_assemble_surface_9c5237_get() {}
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn processplatform_assemble_surface_processplatform_assemble_surface_list_category_list_surfaces_get() {}
+async fn processplatform_assemble_surface_processplatform_assemble_surface_list_category_list_surfaces_get(
+) {
+}
 #[utoipa::path(get,
     path = "/jaxrs/processplatform/assemble/surface/mode/clear/person/person/manager",
     tag = "process",
@@ -21340,7 +21729,9 @@ async fn processplatform_assemble_surface_5b051c_get() {}
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn processplatform_assemble_surface_processplatform_assemble_surface_preview_id_preview_surface_get() {}
+async fn processplatform_assemble_surface_processplatform_assemble_surface_preview_id_preview_surface_get(
+) {
+}
 #[utoipa::path(get,
     path = "/jaxrs/processplatform/assemble/surface/process/activity/activity/{activityType}/{activityType}",
     tag = "process",
@@ -21468,7 +21859,9 @@ async fn processplatform_assemble_surface_eac5fd_get() {}
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn processplatform_assemble_surface_processplatform_assemble_surface_process_flag_process_flag_get() {}
+async fn processplatform_assemble_surface_processplatform_assemble_surface_process_flag_process_flag_get(
+) {
+}
 #[utoipa::path(get,
     path = "/jaxrs/processplatform/assemble/surface/process/{flag}/{onlyRemoveNotCompleted}",
     tag = "process",
@@ -21764,7 +22157,9 @@ async fn processplatform_assemble_surface_f088b1_get() {}
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn processplatform_assemble_surface_processplatform_assemble_surface_read_manage_id_read_id_manage_get() {}
+async fn processplatform_assemble_surface_processplatform_assemble_surface_read_manage_id_read_id_manage_get(
+) {
+}
 #[utoipa::path(get,
     path = "/jaxrs/processplatform/assemble/surface/read/mockputtopost/{id}",
     tag = "process",
@@ -22512,7 +22907,9 @@ async fn processplatform_assemble_surface_fc6ee4_get() {}
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn processplatform_assemble_surface_processplatform_assemble_surface_review_id_review_id_get() {}
+async fn processplatform_assemble_surface_processplatform_assemble_surface_review_id_review_id_get()
+{
+}
 #[utoipa::path(get,
     path = "/jaxrs/processplatform/assemble/surface/route/list/mockputtopost",
     tag = "process",
@@ -22551,7 +22948,8 @@ async fn processplatform_assemble_surface_fc2a1b_get() {}
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn processplatform_assemble_surface_processplatform_assemble_surface_route_id_route_id_get() {}
+async fn processplatform_assemble_surface_processplatform_assemble_surface_route_id_route_id_get() {
+}
 #[utoipa::path(get,
     path = "/jaxrs/processplatform/assemble/surface/script/application/imported/{flag}/{applicationFlag}",
     tag = "process",
@@ -23039,7 +23437,9 @@ async fn processplatform_assemble_surface_3a6c99_get() {}
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn processplatform_assemble_surface_processplatform_assemble_surface_task_manage_id_task_id_manage_get() {}
+async fn processplatform_assemble_surface_processplatform_assemble_surface_task_manage_id_task_id_manage_get(
+) {
+}
 #[utoipa::path(get,
     path = "/jaxrs/processplatform/assemble/surface/task/mockputtopost/{id}",
     tag = "process",
@@ -23127,7 +23527,9 @@ async fn processplatform_assemble_surface_543e67_get() {}
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn processplatform_assemble_surface_processplatform_assemble_surface_task_v3_pin_id_task_v3_id_pin_get() {}
+async fn processplatform_assemble_surface_processplatform_assemble_surface_task_v3_pin_id_task_v3_id_pin_get(
+) {
+}
 #[utoipa::path(get,
     path = "/jaxrs/processplatform/assemble/surface/task/{count}/{credential}",
     tag = "process",
@@ -23915,7 +24317,9 @@ async fn processplatform_assemble_surface_5074dc_get() {}
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn processplatform_assemble_surface_processplatform_assemble_surface_work_manage_id_work_id_manage_get() {}
+async fn processplatform_assemble_surface_processplatform_assemble_surface_work_manage_id_work_id_manage_get(
+) {
+}
 #[utoipa::path(get,
     path = "/jaxrs/processplatform/assemble/surface/work/process/force/{processFlag}",
     tag = "process",
@@ -23971,7 +24375,9 @@ async fn processplatform_assemble_surface_b4ed93_get() {}
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn processplatform_assemble_surface_processplatform_assemble_surface_work_refer_id_work_id_refer_get() {}
+async fn processplatform_assemble_surface_processplatform_assemble_surface_work_refer_id_work_id_refer_get(
+) {
+}
 #[utoipa::path(get,
     path = "/jaxrs/processplatform/assemble/surface/work/relative/manage/{id}",
     tag = "process",
@@ -24770,7 +25176,9 @@ async fn processplatform_assemble_surface_b98cce_post() {}
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn processplatform_assemble_surface_processplatform_assemble_surface_create_create_surface_post() {}
+async fn processplatform_assemble_surface_processplatform_assemble_surface_create_create_surface_post(
+) {
+}
 #[utoipa::path(post,
     path = "/jaxrs/processplatform/assemble/surface/data/work/mockdeletetoget/{id}",
     tag = "process",
@@ -24910,7 +25318,9 @@ async fn processplatform_assemble_surface_204cb7_post() {}
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn processplatform_assemble_surface_processplatform_assemble_surface_delete_id_delete_surface_post() {}
+async fn processplatform_assemble_surface_processplatform_assemble_surface_delete_id_delete_surface_post(
+) {
+}
 #[utoipa::path(post,
     path = "/jaxrs/processplatform/assemble/surface/draft/mockdeletetoget/{id}",
     tag = "process",
@@ -24938,7 +25348,9 @@ async fn processplatform_assemble_surface_a08f59_post() {}
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn processplatform_assemble_surface_processplatform_assemble_surface_draft_start_id_draft_id_start_post() {}
+async fn processplatform_assemble_surface_processplatform_assemble_surface_draft_start_id_draft_id_start_post(
+) {
+}
 #[utoipa::path(post,
     path = "/jaxrs/processplatform/assemble/surface/mode/delete/{id}",
     tag = "process",
@@ -24952,7 +25364,9 @@ async fn processplatform_assemble_surface_processplatform_assemble_surface_draft
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn processplatform_assemble_surface_processplatform_assemble_surface_mode_delete_id_mode_id_delete_post() {}
+async fn processplatform_assemble_surface_processplatform_assemble_surface_mode_delete_id_mode_id_delete_post(
+) {
+}
 #[utoipa::path(post,
     path = "/jaxrs/processplatform/assemble/surface/mode/save",
     tag = "process",
@@ -24963,7 +25377,9 @@ async fn processplatform_assemble_surface_processplatform_assemble_surface_mode_
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn processplatform_assemble_surface_processplatform_assemble_surface_mode_save_mode_save_post() {}
+async fn processplatform_assemble_surface_processplatform_assemble_surface_mode_save_mode_save_post(
+) {
+}
 #[utoipa::path(post,
     path = "/jaxrs/processplatform/assemble/surface/publish/{id}",
     tag = "process",
@@ -24977,7 +25393,9 @@ async fn processplatform_assemble_surface_processplatform_assemble_surface_mode_
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn processplatform_assemble_surface_processplatform_assemble_surface_publish_id_publish_surface_post() {}
+async fn processplatform_assemble_surface_processplatform_assemble_surface_publish_id_publish_surface_post(
+) {
+}
 #[utoipa::path(post,
     path = "/jaxrs/processplatform/assemble/surface/read/manage/mockdeletetoget/{id}",
     tag = "process",
@@ -25359,7 +25777,9 @@ async fn processplatform_assemble_surface_f1e116_post() {}
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn processplatform_assemble_surface_processplatform_assemble_surface_save_id_save_surface_post() {}
+async fn processplatform_assemble_surface_processplatform_assemble_surface_save_id_save_surface_post(
+) {
+}
 #[utoipa::path(post,
     path = "/jaxrs/processplatform/assemble/surface/serialnumber/mockdeletetoget/{id}",
     tag = "process",
@@ -25713,7 +26133,9 @@ async fn processplatform_assemble_surface_b16302_post() {}
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn processplatform_assemble_surface_processplatform_assemble_surface_task_v3_add_id_task_v3_id_add_post() {}
+async fn processplatform_assemble_surface_processplatform_assemble_surface_task_v3_add_id_task_v3_id_add_post(
+) {
+}
 #[utoipa::path(post,
     path = "/jaxrs/processplatform/assemble/surface/task/will/{id}",
     tag = "process",
@@ -25727,7 +26149,9 @@ async fn processplatform_assemble_surface_processplatform_assemble_surface_task_
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn processplatform_assemble_surface_processplatform_assemble_surface_task_will_id_task_id_will_post() {}
+async fn processplatform_assemble_surface_processplatform_assemble_surface_task_will_id_task_id_will_post(
+) {
+}
 #[utoipa::path(post,
     path = "/jaxrs/processplatform/assemble/surface/taskcompleted/manage/mockdeletetoget/{id}",
     tag = "process",
@@ -26094,7 +26518,9 @@ async fn processplatform_core_entity_process_workcompleted_list_workcompleted_li
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn processplatform_core_express_processplatform_task_count_with_person_id_task_count_with_person_get() {}
+async fn processplatform_core_express_processplatform_task_count_with_person_id_task_count_with_person_get(
+) {
+}
 #[utoipa::path(get,
     path = "/jaxrs/processplatform/task/processing/{id}",
     tag = "process",
@@ -26122,7 +26548,9 @@ async fn processplatform_core_express_processplatform_task_processing_id_task_pr
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn processplatform_core_express_processplatform_work_count_with_person_id_work_count_with_person_get() {}
+async fn processplatform_core_express_processplatform_work_count_with_person_id_work_count_with_person_get(
+) {
+}
 #[utoipa::path(get,
     path = "/jaxrs/processplatform/work/processing/{id}",
     tag = "process",
@@ -26393,7 +26821,9 @@ async fn processplatform_service_processing_241b52_get() {}
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn processplatform_service_processing_processplatform_service_processing_data_job_job_data_job_job_get() {}
+async fn processplatform_service_processing_processplatform_service_processing_data_job_job_data_job_job_get(
+) {
+}
 #[utoipa::path(get,
     path = "/jaxrs/processplatform/service/processing/documentversion/{work}/{work}",
     tag = "process",
@@ -26451,7 +26881,9 @@ async fn processplatform_service_processing_b7fd3d_get() {}
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn processplatform_service_processing_processplatform_service_processing_get_id_get_process_get() {}
+async fn processplatform_service_processing_processplatform_service_processing_get_id_get_process_get(
+) {
+}
 #[utoipa::path(get,
     path = "/jaxrs/processplatform/service/processing/instance/{executionId}",
     tag = "process",
@@ -26598,7 +27030,9 @@ async fn processplatform_service_processing_67d515_get() {}
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn processplatform_service_processing_processplatform_service_processing_record_id_record_id_get() {}
+async fn processplatform_service_processing_processplatform_service_processing_record_id_record_id_get(
+) {
+}
 #[utoipa::path(get,
     path = "/jaxrs/processplatform/service/processing/record/{job}/{job}",
     tag = "process",
@@ -26638,7 +27072,9 @@ async fn processplatform_service_processing_9dcee7_get() {}
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn processplatform_service_processing_processplatform_service_processing_review_id_review_id_get() {}
+async fn processplatform_service_processing_processplatform_service_processing_review_id_review_id_get(
+) {
+}
 #[utoipa::path(get,
     path = "/jaxrs/processplatform/service/processing/snap/abandoned/{work}/{workId}/{type}",
     tag = "process",
@@ -26744,7 +27180,9 @@ async fn processplatform_service_processing_ed469f_get() {}
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn processplatform_service_processing_processplatform_service_processing_snap_id_snap_id_get() {}
+async fn processplatform_service_processing_processplatform_service_processing_snap_id_snap_id_get()
+{
+}
 #[utoipa::path(get,
     path = "/jaxrs/processplatform/service/processing/task/expire/{id}",
     tag = "process",
@@ -26800,7 +27238,9 @@ async fn processplatform_service_processing_e18d66_get() {}
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn processplatform_service_processing_processplatform_service_processing_task_urge_id_task_id_urge_get() {}
+async fn processplatform_service_processing_processplatform_service_processing_task_urge_id_task_id_urge_get(
+) {
+}
 #[utoipa::path(get,
     path = "/jaxrs/processplatform/service/processing/task/v2/pause/{id}",
     tag = "process",
@@ -26828,7 +27268,9 @@ async fn processplatform_service_processing_cad543_get() {}
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn processplatform_service_processing_processplatform_service_processing_task_v2_id_task_v2_id_get() {}
+async fn processplatform_service_processing_processplatform_service_processing_task_v2_id_task_v2_id_get(
+) {
+}
 #[utoipa::path(get,
     path = "/jaxrs/processplatform/service/processing/task/{id}",
     tag = "process",
@@ -26842,7 +27284,9 @@ async fn processplatform_service_processing_processplatform_service_processing_t
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn processplatform_service_processing_processplatform_service_processing_task_id_task_id_get() {}
+async fn processplatform_service_processing_processplatform_service_processing_task_id_task_id_get()
+{
+}
 #[utoipa::path(get,
     path = "/jaxrs/processplatform/service/processing/taskcompleted/task/identity/{next}",
     tag = "process",
@@ -26973,7 +27417,9 @@ async fn processplatform_service_processing_dcc9a0_get() {}
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn processplatform_service_processing_processplatform_service_processing_work_list_work_list_get() {}
+async fn processplatform_service_processing_processplatform_service_processing_work_list_work_list_get(
+) {
+}
 #[utoipa::path(get,
     path = "/jaxrs/processplatform/service/processing/workcompleted/process/{processFlag}",
     tag = "process",
@@ -27027,7 +27473,9 @@ async fn processplatform_service_processing_fea484_get() {}
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn processplatform_service_processing_processplatform_service_processing_job_job_job_job_get() {}
+async fn processplatform_service_processing_processplatform_service_processing_job_job_job_job_get()
+{
+}
 #[utoipa::path(post,
     path = "/jaxrs/gateway/{work_id}/{activity_token}/join",
     tag = "process",
@@ -27042,7 +27490,9 @@ async fn processplatform_service_processing_processplatform_service_processing_j
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn processplatform_service_processing_gateway_work_id_activity_token_join_gateway_join_post() {}
+async fn processplatform_service_processing_gateway_work_id_activity_token_join_gateway_join_post()
+{
+}
 #[utoipa::path(post,
     path = "/jaxrs/processplatform/service/processing/attachment/copy/workcompleted/{workCompletedId}",
     tag = "process",
@@ -27110,7 +27560,9 @@ async fn processplatform_service_processing_83ef13_post() {}
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn processplatform_service_processing_processplatform_service_processing_create_create_process_post() {}
+async fn processplatform_service_processing_processplatform_service_processing_create_create_process_post(
+) {
+}
 #[utoipa::path(post,
     path = "/jaxrs/processplatform/service/processing/data/delete/{work}/{id}",
     tag = "process",
@@ -27322,7 +27774,9 @@ async fn processplatform_service_processing_1eaeb4_post() {}
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn processplatform_service_processing_processplatform_service_processing_task_will_id_task_id_will_post() {}
+async fn processplatform_service_processing_processplatform_service_processing_task_will_id_task_id_will_post(
+) {
+}
 #[utoipa::path(post,
     path = "/jaxrs/processplatform/service/processing/taskcompleted/press/{id}/{work}/{work}",
     tag = "process",
@@ -27349,7 +27803,9 @@ async fn processplatform_service_processing_a4bdba_post() {}
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn processplatform_service_processing_processplatform_service_processing_timer_start_start_timer_post() {}
+async fn processplatform_service_processing_processplatform_service_processing_timer_start_start_timer_post(
+) {
+}
 #[utoipa::path(post,
     path = "/jaxrs/processplatform/service/processing/timer/{job_id}/cancel",
     tag = "process",
@@ -27396,7 +27852,9 @@ async fn processplatform_service_processing_a3cf44_post() {}
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn processplatform_service_processing_processplatform_service_processing_touch_merge_touch_merge_post() {}
+async fn processplatform_service_processing_processplatform_service_processing_touch_merge_touch_merge_post(
+) {
+}
 #[utoipa::path(post,
     path = "/jaxrs/processplatform/service/processing/touch/mergeitem",
     tag = "process",
@@ -27429,7 +27887,9 @@ async fn processplatform_service_processing_78b7ed_post() {}
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn processplatform_service_processing_processplatform_service_processing_touch_urge_touch_urge_post() {}
+async fn processplatform_service_processing_processplatform_service_processing_touch_urge_touch_urge_post(
+) {
+}
 #[utoipa::path(post,
     path = "/jaxrs/processplatform/service/processing/v2/add/split/{work}/{id}",
     tag = "process",
@@ -27596,7 +28056,9 @@ async fn processplatform_service_processing_work_id_processing_work_id_processin
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn program_center_appstyle_image_application_top_erase_appstyle_image_application_top_erase_delete() {}
+async fn program_center_appstyle_image_application_top_erase_appstyle_image_application_top_erase_delete(
+) {
+}
 #[utoipa::path(delete,
     path = "/jaxrs/program_center/appstyle/image/launch/logo/erase",
     tag = "program",
@@ -27607,7 +28069,8 @@ async fn program_center_appstyle_image_application_top_erase_appstyle_image_appl
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn program_center_appstyle_image_launch_logo_erase_appstyle_image_launch_logo_erase_delete() {}
+async fn program_center_appstyle_image_launch_logo_erase_appstyle_image_launch_logo_erase_delete() {
+}
 #[utoipa::path(delete,
     path = "/jaxrs/program_center/appstyle/image/login/avatar/erase",
     tag = "program",
@@ -27618,7 +28081,9 @@ async fn program_center_appstyle_image_launch_logo_erase_appstyle_image_launch_l
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn program_center_appstyle_image_login_avatar_erase_appstyle_image_login_avatar_erase_delete() {}
+async fn program_center_appstyle_image_login_avatar_erase_appstyle_image_login_avatar_erase_delete()
+{
+}
 #[utoipa::path(delete,
     path = "/jaxrs/program_center/appstyle/image/menu/logo/blur/erase",
     tag = "program",
@@ -27629,7 +28094,9 @@ async fn program_center_appstyle_image_login_avatar_erase_appstyle_image_login_a
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn program_center_appstyle_image_menu_logo_blur_erase_appstyle_image_menu_logo_blur_erase_delete() {}
+async fn program_center_appstyle_image_menu_logo_blur_erase_appstyle_image_menu_logo_blur_erase_delete(
+) {
+}
 #[utoipa::path(delete,
     path = "/jaxrs/program_center/appstyle/image/menu/logo/focus/erase",
     tag = "program",
@@ -27640,7 +28107,9 @@ async fn program_center_appstyle_image_menu_logo_blur_erase_appstyle_image_menu_
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn program_center_appstyle_image_menu_logo_focus_erase_appstyle_image_menu_logo_focus_erase_delete() {}
+async fn program_center_appstyle_image_menu_logo_focus_erase_appstyle_image_menu_logo_focus_erase_delete(
+) {
+}
 #[utoipa::path(delete,
     path = "/jaxrs/program_center/appstyle/image/process/default/erase",
     tag = "program",
@@ -27651,7 +28120,9 @@ async fn program_center_appstyle_image_menu_logo_focus_erase_appstyle_image_menu
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn program_center_appstyle_image_process_default_erase_appstyle_image_process_default_erase_delete() {}
+async fn program_center_appstyle_image_process_default_erase_appstyle_image_process_default_erase_delete(
+) {
+}
 #[utoipa::path(delete,
     path = "/jaxrs/program_center/appstyle/image/setup/about/logo/erase",
     tag = "program",
@@ -27662,7 +28133,9 @@ async fn program_center_appstyle_image_process_default_erase_appstyle_image_proc
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn program_center_appstyle_image_setup_about_logo_erase_appstyle_image_setup_about_logo_erase_delete() {}
+async fn program_center_appstyle_image_setup_about_logo_erase_appstyle_image_setup_about_logo_erase_delete(
+) {
+}
 #[utoipa::path(delete,
     path = "/jaxrs/program_center/dict/dictFlag/path/data/mockdeletetoget",
     tag = "program",
@@ -27893,7 +28366,9 @@ async fn program_center_appstyle_index_portal_appstyle_index_portal_get() {}
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn program_center_bar_select1_field_value_count_bar_select1_field_field_value_value_count_count_get() {}
+async fn program_center_bar_select1_field_value_count_bar_select1_field_field_value_value_count_count_get(
+) {
+}
 #[utoipa::path(get,
     path = "/jaxrs/program_center/bar/select2/count/count",
     tag = "program",
@@ -27915,7 +28390,9 @@ async fn program_center_bar_select2_count_bar_select2_count_count_get() {}
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn program_center_bar_select3_field_value_count_bar_select3_field_field_value_value_count_count_get() {}
+async fn program_center_bar_select3_field_value_count_bar_select3_field_field_value_value_count_count_get(
+) {
+}
 #[utoipa::path(get,
     path = "/jaxrs/program_center/bar/select4/field/field/value/value/count/count",
     tag = "program",
@@ -27926,7 +28403,9 @@ async fn program_center_bar_select3_field_value_count_bar_select3_field_field_va
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn program_center_bar_select4_field_value_count_bar_select4_field_field_value_value_count_count_get() {}
+async fn program_center_bar_select4_field_value_count_bar_select4_field_field_value_value_count_count_get(
+) {
+}
 #[utoipa::path(get,
     path = "/jaxrs/program_center/captcha/id/validate/answer/answer",
     tag = "program",
@@ -28014,7 +28493,9 @@ async fn program_center_code_list_paging_page_size_code_list_paging_page_size_si
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn program_center_code_validate_mobile_answer_code_validate_mobile_mobile_answer_answer_get() {}
+async fn program_center_code_validate_mobile_answer_code_validate_mobile_mobile_answer_answer_get()
+{
+}
 #[utoipa::path(get,
     path = "/jaxrs/program_center/code/validate/mobile/mobile/answer/answer/cascade",
     tag = "program",
@@ -28355,7 +28836,9 @@ async fn program_center_config_list_dump_data_config_list_dump_data_get() {}
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn program_center_config_list_dump_data_current_node_config_list_dump_data_current_node_get() {}
+async fn program_center_config_list_dump_data_current_node_config_list_dump_data_current_node_get()
+{
+}
 #[utoipa::path(get,
     path = "/jaxrs/program_center/config/list/entity",
     tag = "program",
@@ -28388,7 +28871,9 @@ async fn program_center_config_open_config_open_get() {}
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn program_center_config_open_get_disable_export_enable_config_open_get_disable_export_enable_get() {}
+async fn program_center_config_open_get_disable_export_enable_config_open_get_disable_export_enable_get(
+) {
+}
 #[utoipa::path(get,
     path = "/jaxrs/program_center/config/open/run/time/config",
     tag = "program",
@@ -28652,7 +29137,9 @@ async fn program_center_dingding_request_pull_sync_dingding_request_pull_sync_ge
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn program_center_dingding_sync_organization_callback_dingding_sync_organization_callback_get() {}
+async fn program_center_dingding_sync_organization_callback_dingding_sync_organization_callback_get(
+) {
+}
 #[utoipa::path(get,
     path = "/jaxrs/program_center/dingding/sync/organization/register/callback/enable",
     tag = "program",
@@ -28685,7 +29172,9 @@ async fn program_center_distribute_assemble_source_distribute_assemble_source_so
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn program_center_distribute_webserver_assemble_source_distribute_webserver_assemble_source_source_get() {}
+async fn program_center_distribute_webserver_assemble_source_distribute_webserver_assemble_source_source_get(
+) {
+}
 #[utoipa::path(get,
     path = "/jaxrs/program_center/invoke/flag",
     tag = "program",
@@ -28707,7 +29196,9 @@ async fn program_center_invoke_flag_invoke_flag_get() {}
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn program_center_invoke_flag_client_token_execute_invoke_flag_client_client_token_token_execute_get() {}
+async fn program_center_invoke_flag_client_token_execute_invoke_flag_client_client_token_token_execute_get(
+) {
+}
 #[utoipa::path(get,
     path = "/jaxrs/program_center/invoke/flag/execute",
     tag = "program",
@@ -29048,7 +29539,9 @@ async fn program_center_mpweixin_message_template_send_mpweixin_message_template
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn program_center_prompterrorlog_count_exceptionclass_prompterrorlog_count_exceptionclass_get() {}
+async fn program_center_prompterrorlog_count_exceptionclass_prompterrorlog_count_exceptionclass_get(
+) {
+}
 #[utoipa::path(get,
     path = "/jaxrs/program_center/prompterrorlog/count/loggername",
     tag = "program",
@@ -29202,7 +29695,9 @@ async fn program_center_qiyeweixin_request_pull_sync_qiyeweixin_request_pull_syn
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn program_center_qiyeweixin_send_getprivateinfo_message_qiyeweixin_send_getprivateinfo_message_get() {}
+async fn program_center_qiyeweixin_send_getprivateinfo_message_qiyeweixin_send_getprivateinfo_message_get(
+) {
+}
 #[utoipa::path(get,
     path = "/jaxrs/program_center/schedule/list/schedule",
     tag = "program",
@@ -29367,7 +29862,9 @@ async fn program_center_unexpectederrorlog_id_unexpectederrorlog_id_get() {}
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn program_center_unexpectederrorlog_list_id_next_count_unexpectederrorlog_list_id_next_count_get() {}
+async fn program_center_unexpectederrorlog_list_id_next_count_unexpectederrorlog_list_id_next_count_get(
+) {
+}
 #[utoipa::path(get,
     path = "/jaxrs/program_center/unexpectederrorlog/list/id/next/count/date/date",
     tag = "program",
@@ -29389,7 +29886,9 @@ async fn program_center_e1a48a_get() {}
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn program_center_unexpectederrorlog_list_id_prev_count_unexpectederrorlog_list_id_prev_count_get() {}
+async fn program_center_unexpectederrorlog_list_id_prev_count_unexpectederrorlog_list_id_prev_count_get(
+) {
+}
 #[utoipa::path(get,
     path = "/jaxrs/program_center/unexpectederrorlog/list/id/prev/count/date/date",
     tag = "program",
@@ -29553,7 +30052,9 @@ async fn program_center_bar_create_mass_from_count_bar_create_mass_from_count_po
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn program_center_captcha_v2_create_width_height_captcha_v2_create_width_width_height_height_post() {}
+async fn program_center_captcha_v2_create_width_height_captcha_v2_create_width_width_height_height_post(
+) {
+}
 #[utoipa::path(post,
     path = "/jaxrs/program_center/code/create/mobile/mobile",
     tag = "program",
@@ -29608,7 +30109,9 @@ async fn program_center_config_save_config_save_post() {}
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn program_center_dict_dict_flag_path_data_mockputtopost_dict_dictFlag_path_data_mockputtopost_post() {}
+async fn program_center_dict_dict_flag_path_data_mockputtopost_dict_dictFlag_path_data_mockputtopost_post(
+) {
+}
 #[utoipa::path(post,
     path = "/jaxrs/program_center/foo/create/mass/from/count",
     tag = "program",
@@ -30231,7 +30734,9 @@ async fn query_assemble_designer_query_assemble_designer_list_category_list_desi
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn query_assemble_designer_query_assemble_designer_list_view_id_next_count_view_list_id_next_count_get() {}
+async fn query_assemble_designer_query_assemble_designer_list_view_id_next_count_view_list_id_next_count_get(
+) {
+}
 #[utoipa::path(get,
     path = "/jaxrs/query/assemble/designer/list/{view}/{query}/{flag}",
     tag = "query",
@@ -30247,7 +30752,9 @@ async fn query_assemble_designer_query_assemble_designer_list_view_id_next_count
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn query_assemble_designer_query_assemble_designer_list_view_query_flag_view_list_query_flag_get() {}
+async fn query_assemble_designer_query_assemble_designer_list_view_query_flag_view_list_query_flag_get(
+) {
+}
 #[utoipa::path(get,
     path = "/jaxrs/query/assemble/designer/neural/generate/model/{modelFlag}",
     tag = "query",
@@ -30289,7 +30796,9 @@ async fn query_assemble_designer_942dc5_get() {}
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn query_assemble_designer_query_assemble_designer_neural_model_modelflag_neural_model_modelFlag_get() {}
+async fn query_assemble_designer_query_assemble_designer_neural_model_modelflag_neural_model_modelFlag_get(
+) {
+}
 #[utoipa::path(get,
     path = "/jaxrs/query/assemble/designer/neural/stop/generating/model/{modelFlag}",
     tag = "query",
@@ -30331,7 +30840,9 @@ async fn query_assemble_designer_3a3696_get() {}
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn query_assemble_designer_query_assemble_designer_output_select_file_flag_output_flag_select_file_get() {}
+async fn query_assemble_designer_query_assemble_designer_output_select_file_flag_output_flag_select_file_get(
+) {
+}
 #[utoipa::path(get,
     path = "/jaxrs/query/assemble/designer/output/select/{queryFlag}",
     tag = "query",
@@ -30345,7 +30856,9 @@ async fn query_assemble_designer_query_assemble_designer_output_select_file_flag
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn query_assemble_designer_query_assemble_designer_output_select_queryflag_output_queryFlag_select_get() {}
+async fn query_assemble_designer_query_assemble_designer_output_select_queryflag_output_queryFlag_select_get(
+) {
+}
 #[utoipa::path(get,
     path = "/jaxrs/query/assemble/designer/permission/{query}/{id}",
     tag = "query",
@@ -30360,7 +30873,9 @@ async fn query_assemble_designer_query_assemble_designer_output_select_queryflag
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn query_assemble_designer_query_assemble_designer_permission_query_id_query_id_permission_get() {}
+async fn query_assemble_designer_query_assemble_designer_permission_query_id_query_id_permission_get(
+) {
+}
 #[utoipa::path(get,
     path = "/jaxrs/query/assemble/designer/simulate/{view}/{id}",
     tag = "query",
@@ -30391,7 +30906,9 @@ async fn query_assemble_designer_query_assemble_designer_simulate_view_id_view_i
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn query_assemble_designer_query_assemble_designer_stat_list_id_next_count_stat_list_id_next_count_get() {}
+async fn query_assemble_designer_query_assemble_designer_stat_list_id_next_count_stat_list_id_next_count_get(
+) {
+}
 #[utoipa::path(get,
     path = "/jaxrs/query/assemble/designer/stat/list/{query}/{flag}",
     tag = "query",
@@ -30406,7 +30923,9 @@ async fn query_assemble_designer_query_assemble_designer_stat_list_id_next_count
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn query_assemble_designer_query_assemble_designer_stat_list_query_flag_stat_list_query_flag_get() {}
+async fn query_assemble_designer_query_assemble_designer_stat_list_query_flag_stat_list_query_flag_get(
+) {
+}
 #[utoipa::path(get,
     path = "/jaxrs/query/assemble/designer/stat/permission/{id}",
     tag = "query",
@@ -30420,7 +30939,9 @@ async fn query_assemble_designer_query_assemble_designer_stat_list_query_flag_st
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn query_assemble_designer_query_assemble_designer_stat_permission_id_stat_id_permission_get() {}
+async fn query_assemble_designer_query_assemble_designer_stat_permission_id_stat_id_permission_get()
+{
+}
 #[utoipa::path(get,
     path = "/jaxrs/query/assemble/designer/stat/simulate/{id}",
     tag = "query",
@@ -30477,7 +30998,9 @@ async fn query_assemble_designer_57e7ce_get() {}
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn query_assemble_designer_query_assemble_designer_table_build_flag_status_table_flag_status_build_get() {}
+async fn query_assemble_designer_query_assemble_designer_table_build_flag_status_table_flag_status_build_get(
+) {
+}
 #[utoipa::path(get,
     path = "/jaxrs/query/assemble/designer/table/draft/{flag}/{status}",
     tag = "query",
@@ -30492,7 +31015,9 @@ async fn query_assemble_designer_query_assemble_designer_table_build_flag_status
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn query_assemble_designer_query_assemble_designer_table_draft_flag_status_table_flag_status_draft_get() {}
+async fn query_assemble_designer_query_assemble_designer_table_draft_flag_status_table_flag_status_draft_get(
+) {
+}
 #[utoipa::path(get,
     path = "/jaxrs/query/assemble/designer/table/export/{tableFlag}/{count}/{count}",
     tag = "query",
@@ -30554,7 +31079,9 @@ async fn query_assemble_designer_75f19e_get() {}
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn query_assemble_designer_query_assemble_designer_table_list_query_flag_table_list_query_flag_get() {}
+async fn query_assemble_designer_query_assemble_designer_table_list_query_flag_table_list_query_flag_get(
+) {
+}
 #[utoipa::path(get,
     path = "/jaxrs/query/assemble/designer/table/permission/{id}",
     tag = "query",
@@ -30568,7 +31095,9 @@ async fn query_assemble_designer_query_assemble_designer_table_list_query_flag_t
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn query_assemble_designer_query_assemble_designer_table_permission_id_table_id_permission_get() {}
+async fn query_assemble_designer_query_assemble_designer_table_permission_id_table_id_permission_get(
+) {
+}
 #[utoipa::path(get,
     path = "/jaxrs/query/assemble/designer/table/row/where/where/{tableFlag}/{count}",
     tag = "query",
@@ -30597,7 +31126,9 @@ async fn query_assemble_designer_070aba_get() {}
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn query_assemble_designer_query_assemble_designer_table_row_tableflag_table_tableFlag_row_get() {}
+async fn query_assemble_designer_query_assemble_designer_table_row_tableflag_table_tableFlag_row_get(
+) {
+}
 #[utoipa::path(get,
     path = "/jaxrs/query/assemble/designer/table/row/{tableFlag}/{id}",
     tag = "query",
@@ -30612,7 +31143,9 @@ async fn query_assemble_designer_query_assemble_designer_table_row_tableflag_tab
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn query_assemble_designer_query_assemble_designer_table_row_tableflag_id_table_tableFlag_row_id_get() {}
+async fn query_assemble_designer_query_assemble_designer_table_row_tableflag_id_table_tableFlag_row_id_get(
+) {
+}
 #[utoipa::path(get,
     path = "/jaxrs/query/assemble/designer/table/{flag}",
     tag = "query",
@@ -30752,7 +31285,9 @@ async fn query_assemble_designer_query_assemble_designer_save_id_save_designer_p
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn query_assemble_designer_query_assemble_designer_table_execute_flag_table_flag_execute_post() {}
+async fn query_assemble_designer_query_assemble_designer_table_execute_flag_table_flag_execute_post(
+) {
+}
 #[utoipa::path(post,
     path = "/jaxrs/query/assemble/designer/table/row/delete/all/{tableFlag}",
     tag = "query",
@@ -31060,7 +31595,9 @@ async fn query_assemble_surface_8ac3e3_get() {}
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn query_assemble_surface_queryview_table_list_row_select_tableflag_table_list_tableFlag_row_select_get() {}
+async fn query_assemble_surface_queryview_table_list_row_select_tableflag_table_list_tableFlag_row_select_get(
+) {
+}
 #[utoipa::path(get,
     path = "/jaxrs/queryview/table/list/row/{tableFlag}/{id}/{next}/{count}",
     tag = "query",
@@ -31215,7 +31752,9 @@ async fn query_assemble_surface_queryview_query_flag_query_flag_get() {}
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn query_assemble_surface_queryview_view_flag_flag_query_queryflag_view_flag_flag_query_queryFlag_get() {}
+async fn query_assemble_surface_queryview_view_flag_flag_query_queryflag_view_flag_flag_query_queryFlag_get(
+) {
+}
 #[utoipa::path(post,
     path = "/jaxrs/importmodel/id/{id}/execute",
     tag = "query",
@@ -31301,7 +31840,9 @@ async fn query_assemble_surface_46d5fa_post() {}
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn query_assemble_surface_queryview_bundle_mockputtopost_view_id_view_id_bundle_mockputtopost_post() {}
+async fn query_assemble_surface_queryview_bundle_mockputtopost_view_id_view_id_bundle_mockputtopost_post(
+) {
+}
 #[utoipa::path(post,
     path = "/jaxrs/queryview/excel/mockputtopost/{view}/{flag}/{flag}/{query}/{queryFlag}",
     tag = "query",
@@ -31334,7 +31875,9 @@ async fn query_assemble_surface_cfe48a_post() {}
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn query_assemble_surface_queryview_excel_mockputtopost_view_id_view_id_excel_mockputtopost_post() {}
+async fn query_assemble_surface_queryview_excel_mockputtopost_view_id_view_id_excel_mockputtopost_post(
+) {
+}
 #[utoipa::path(post,
     path = "/jaxrs/queryview/execute/mockputtopost/{view}/{flag}/{flag}/{query}/{queryFlag}",
     tag = "query",
@@ -31367,7 +31910,9 @@ async fn query_assemble_surface_c42d4a_post() {}
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn query_assemble_surface_queryview_execute_mockputtopost_view_id_view_id_execute_mockputtopost_post() {}
+async fn query_assemble_surface_queryview_execute_mockputtopost_view_id_view_id_execute_mockputtopost_post(
+) {
+}
 #[utoipa::path(post,
     path = "/jaxrs/queryview/importmodel/execute/record/{recordId}",
     tag = "query",
@@ -31456,7 +32001,9 @@ async fn query_assemble_surface_210263_post() {}
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn query_assemble_surface_queryview_importmodel_record_recordid_importmodel_record_recordId_post() {}
+async fn query_assemble_surface_queryview_importmodel_record_recordid_importmodel_record_recordId_post(
+) {
+}
 #[utoipa::path(post,
     path = "/jaxrs/queryview/importmodel/record/{recordId}/{status}",
     tag = "query",
@@ -31530,7 +32077,9 @@ async fn query_assemble_surface_c69b5d_post() {}
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn query_assemble_surface_queryview_table_row_delete_all_tableflag_table_tableFlag_row_delete_all_post() {}
+async fn query_assemble_surface_queryview_table_row_delete_all_tableflag_table_tableFlag_row_delete_all_post(
+) {
+}
 #[utoipa::path(post,
     path = "/jaxrs/queryview/table/row/mockdeletetoget/{tableFlag}/{id}",
     tag = "query",
