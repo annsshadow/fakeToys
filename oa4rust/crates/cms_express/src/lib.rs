@@ -37,7 +37,7 @@ pub async fn template_form_list(
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let rows = client
         .query(
-            "SELECT xid, xname, xcategory FROM x_cms_templateform ORDER BY xname LIMIT 50",
+            "SELECT xid::text AS xid, xname::text AS xname, xcategory::text AS xcategory FROM x_cms_templateform ORDER BY xname LIMIT 50",
             &[],
         )
         .await
