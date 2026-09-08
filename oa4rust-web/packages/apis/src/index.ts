@@ -19,13 +19,13 @@ export const createRequest = (prefix: string) => (method: string, path: string, 
 // ─────────────────────────────────────────────────────────────
 export const authApi = {
   login: (data: { username: string; password: string; captchaId?: string; captchaAnswer?: string }) =>
-    api.post<{ data: { token: string; person: import('@oa4rust/sdk').O2User } }>('/jaxrs/authentication/login', data),
-  logout: () => api.post('/jaxrs/authentication/logout', null),
-  who: () => api.get<{ data: import('@oa4rust/sdk').O2User }>('/jaxrs/authentication/who'),
-  refresh: () => api.post<{ data: { token: string } }>('/jaxrs/authentication/refresh', null),
-  captcha: () => api.get<{ data: { image: string; id: string } }>('/jaxrs/authentication/captcha'),
+    api.post<{ token: string; person: import('@oa4rust/sdk').O2User }>('/jaxrs/authentication/login', data, { requireAuth: false }),
+  logout: () => api.post('/jaxrs/authentication/logout', null, { requireAuth: false }),
+  who: () => api.get<import('@oa4rust/sdk').O2User>('/jaxrs/authentication/who'),
+  refresh: () => api.post<{ token: string }>('/jaxrs/authentication/refresh', null, { requireAuth: false }),
+  captcha: () => api.get<{ image: string; id: string }>('/jaxrs/authentication/captcha', { requireAuth: false }),
   captchaSize: (w: number, h: number) =>
-    api.get<{ data: { image: string; id: string } }>(`/jaxrs/authentication/captcha/width/${w}/height/${h}`),
+    api.get<{ image: string; id: string }>(`/jaxrs/authentication/captcha/width/${w}/height/${h}`, { requireAuth: false }),
   oauthList: () => api.get('/jaxrs/authentication/oauth/list'),
   sso: (data: unknown) => api.post('/jaxrs/authentication/sso', data),
   twoFactor: (data: unknown) => api.post('/jaxrs/authentication/two_factor', data),

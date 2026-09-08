@@ -37,11 +37,29 @@ export interface MutationOptions<TData = unknown, TVariables = unknown> {
  * 带自动认证头的 fetch 封装
  * 等价于 o2web 的 MWF.ajax，但更现代
  */
-class ApiClient {
+export interface ApiRequestOptions {
+  params?: Record<string, string>;
+  requireAuth?: boolean;
+  headers?: Record<string, string>;
+}
+
+export class ApiClient {
   private base: string;
 
-  constructor(base: string = '/jaxrs') {
+  constructor(base = '') {
     this.base = base;
+  }
+
+  private resolveUrl(path: string): URL {
+    if (/^https?:\/\//i.test(path)) return new URL(path);
+
+    const base = this.base.replace(/\/+$/, '');
+    let endpoint = path.startsWith('/') ? path : `/${path}`;
+    if (base.endsWith('/jaxrs') && endpoint.startsWith('/jaxrs/')) {
+      endpoint = endpoint.slice('/jaxrs'.length);
+    }
+
+    return new URL(`${base}${endpoint}`, window.location.origin);
   }
 
   private getAuthHeader(): Record<string, string> {
@@ -60,14 +78,9 @@ class ApiClient {
   private async request<T>(
     method: string,
     path: string,
-    options?: {
-      body?: unknown;
-      params?: Record<string, string>;
-      requireAuth?: boolean;
-      headers?: Record<string, string>;
-    },
+    options?: ApiRequestOptions & { body?: unknown },
   ): Promise<ApiResponse<T>> {
-    const url = new URL(`${this.base}${path}`, window.location.origin);
+    const url = this.resolveUrl(path);
     if (options?.params) {
       for (const [k, v] of Object.entries(options.params)) {
         url.searchParams.set(k, v);
@@ -76,7 +89,7 @@ class ApiClient {
 
     const headers: Record<string, string> = {
       'Content-Type': 'application/json',
-      ...this.getAuthHeader(),
+      ...(options?.requireAuth === false ? {} : this.getAuthHeader()),
       ...options?.headers,
     };
 
@@ -107,14 +120,14 @@ class ApiClient {
     return resp.json() as Promise<ApiResponse<T>>;
   }
 
-  get<T>(path: string, options?: { params?: Record<string, string>; requireAuth?: boolean }): Promise<ApiResponse<T>> {
+  get<T>(path: string, options?: ApiRequestOptions): Promise<ApiResponse<T>> {
     return this.request<T>('GET', path, options);
   }
 
   post<T>(
     path: string,
     body?: unknown,
-    options?: { params?: Record<string, string>; requireAuth?: boolean; headers?: Record<string, string> },
+    options?: ApiRequestOptions,
   ): Promise<ApiResponse<T>> {
     return this.request<T>('POST', path, { ...options, body });
   }
@@ -122,21 +135,24 @@ class ApiClient {
   put<T>(
     path: string,
     body?: unknown,
-    options?: { params?: Record<string, string>; requireAuth?: boolean },
+    options?: ApiRequestOptions,
   ): Promise<ApiResponse<T>> {
     return this.request<T>('PUT', path, { ...options, body });
   }
 
-  delete<T>(path: string, options?: { params?: Record<string, string>; requireAuth?: boolean }): Promise<ApiResponse<T>> {
+  delete<T>(path: string, options?: ApiRequestOptions): Promise<ApiResponse<T>> {
     return this.request<T>('DELETE', path, options);
   }
 
   /** 文件上传（multipart/form-data） */
-  async upload<T>(path: string, formData: FormData): Promise<ApiResponse<T>> {
-    const url = new URL(`${this.base}${path}`, window.location.origin);
+  async upload<T>(path: string, formData: FormData, options?: Pick<ApiRequestOptions, 'requireAuth' | 'headers'>): Promise<ApiResponse<T>> {
+    const url = this.resolveUrl(path);
     const resp = await fetch(url.toString(), {
       method: 'POST',
-      headers: this.getAuthHeader(),
+      headers: {
+        ...(options?.requireAuth === false ? {} : this.getAuthHeader()),
+        ...options?.headers,
+      },
       body: formData,
       credentials: 'include',
     });

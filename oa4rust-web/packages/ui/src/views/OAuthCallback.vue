@@ -31,9 +31,10 @@ onMounted(async () => {
 
   try {
     // 调用后端 OAuth 登录端点
-    const resp = await api.post<{ data: { token: string; person: import('@oa4rust/sdk').O2User } }>(
+    const resp = await api.post<{ token: string; person: import('@oa4rust/sdk').O2User }>(
       `/jaxrs/authentication/oauth/login/${platform.value}/code/${code}`,
       null,
+      { requireAuth: false },
     );
 
     const { token, person } = resp.data;

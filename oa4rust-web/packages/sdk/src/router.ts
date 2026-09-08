@@ -58,7 +58,7 @@ export const authRoutes = {
 /** 检查是否需要登录 */
 export async function checkAuth(): Promise<boolean> {
   try {
-    const resp = await api.get<{ data: O2User }>('/jaxrs/authentication/who');
+    const resp = await api.get<O2User>('/jaxrs/authentication/who');
     return !!resp.data;
   } catch {
     return false;
