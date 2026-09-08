@@ -12,11 +12,11 @@ jobs:
       run:
         working-directory: oa4rust
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@b4ffde65e4aa6d8cba74e5f82ac958baa146d45a
       - name: Install Rust
         uses: dtolnay/rust-action@stable
       - name: Cache cargo registry
-        uses: actions/cache@v4
+        uses: actions/cache@0c9099a76cf58ea2386b54529134d8d22980262b
         with:
           path: ~/.cargo/registry
           key: ${{ runner.os }}-cargo-registry-${{ hashFiles('**/Cargo.lock') }}
@@ -34,11 +34,11 @@ jobs:
       matrix:
         dialect: [postgres, mysql]
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@b4ffde65e4aa6d8cba74e5f82ac958baa146d45a
       - name: Install Rust
         uses: dtolnay/rust-action@stable
       - name: Cache cargo registry
-        uses: actions/cache@v4
+        uses: actions/cache@0c9099a76cf58ea2386b54529134d8d22980262b
         with:
           path: ~/.cargo/registry
           key: ${{ runner.os }}-cargo-registry-${{ hashFiles('**/Cargo.lock') }}
@@ -84,11 +84,11 @@ jobs:
           --health-timeout 5s
           --health-retries 5
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@b4ffde65e4aa6d8cba74e5f82ac958baa146d45a
       - name: Install Rust
         uses: dtolnay/rust-action@stable
       - name: Cache cargo registry
-        uses: actions/cache@v4
+        uses: actions/cache@0c9099a76cf58ea2386b54529134d8d22980262b
         with:
           path: ~/.cargo/registry
           key: ${{ runner.os }}-cargo-registry-${{ hashFiles('**/Cargo.lock') }}
@@ -99,6 +99,10 @@ jobs:
           elif [ "${{ matrix.dialect }}" = "mysql" ]; then
             echo "DATABASE_URL=mysql://o2server:password@localhost:3306/oa4rust" >> $GITHUB_ENV
           fi
+      - name: Run parity tests (unit-only)
+        run: cargo test -p parity --lib
+      - name: Run route-conflict probe (u2_probe)
+        run: cargo test --test u2_probe
       - name: Run integration tests (${{ matrix.dialect }})
         run: cargo test --test integration_runner
         env:
@@ -133,13 +137,13 @@ jobs:
       DATABASE_DIALECT: postgres
       RUST_LOG: warn
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@b4ffde65e4aa6d8cba74e5f82ac958baa146d45a
 
       - name: Install Rust
         uses: dtolnay/rust-action@stable
 
       - name: Cache cargo registry
-        uses: actions/cache@v4
+        uses: actions/cache@0c9099a76cf58ea2386b54529134d8d22980262b
         with:
           path: ~/.cargo/registry
           key: ${{ runner.os }}-cargo-registry-${{ hashFiles('**/Cargo.lock') }}
@@ -233,7 +237,7 @@ jobs:
       # ── U1: 聚类产物上传 ─────────────────────────────────────────────────
       - name: Upload diff clustering artifacts
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@5d5d22a31266ced268874388b861e4b58bb5c2f0
         with:
           name: diff-clustering-${{ github.run_id }}
           path: |
@@ -246,7 +250,7 @@ jobs:
       # 上传为 GitHub Actions artifact，FAIL 数变化可在 PR 上直接观察。
       - name: Upload behavior-compare report
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@5d5d22a31266ced268874388b861e4b58bb5c2f0
         with:
           name: behavior-report-${{ github.run_id }}
           path: oa4rust/target/debug/behavior-report.md
@@ -278,10 +282,35 @@ jobs:
       run:
         working-directory: oa4rust
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@b4ffde65e4aa6d8cba74e5f82ac958baa146d45a
       - name: Set up Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@d27e1f650de8b400cb8bacdaae01440cf6283964
         with:
           python-version: "3.x"
       - name: Verify OpenAPI security scheme is present
         run: python scripts/check_openapi_security.py
+
+  frontend-qa:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: oa4rust-web
+    steps:
+      - uses: actions/checkout@b4ffde65e4aa6d8cba74e5f82ac958baa146d45a
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install pnpm
+        run: npm install -g pnpm@10
+      - name: Install dependencies (frozen lockfile)
+        run: pnpm install --frozen-lockfile
+      - name: Run Vitest tests
+        run: pnpm test
+      - name: Type-check all packages
+        run: pnpm typecheck
+      - name: Lint (read-only check)
+        run: pnpm exec biome check .
+      - name: Build desktop
+        run: pnpm build
+

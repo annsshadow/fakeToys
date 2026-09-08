@@ -11,7 +11,8 @@
     "typecheck": "pnpm --recursive run typecheck",
     "test": "vitest run",
     "test:watch": "vitest",
-    "gen-api": "tsx scripts/gen-api.ts"
+    "gen-api": "tsx scripts/gen-api.ts",
+    "lint:check": "biome check ."
   },
   "devDependencies": {
     "@biomejs/biome": "^2.1.0",
