@@ -454,7 +454,7 @@ async function doImport() {
 // --- Page Preview ---
 const showPagePreview = ref(false)
 const previewTargetPage = ref<any>(null)
-function renderLayout(layout: string): string { try { const nodes = JSON.parse(layout); return nodes.map((n: any) => `<div style="padding:12px;border:1px dashed var(--border-subtle);margin:4px;border-radius:var(--radius-sm)">${n.type||"block"}</div>`).join("") } catch { return "<div style=\"padding:12px;color:var(--text-muted)\">解析布局失败</div>" } }
+function renderLayout(layout: string): string { try { const nodes = JSON.parse(layout); return nodes.map((n: any) => { const safeType = String(n.type||'block').replace(/[<>&"']/g, c => ({'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;',"'":'&#x27;'}[c]??c)); return `<div style="padding:12px;border:1px dashed var(--border-subtle);margin:4px;border-radius:var(--radius-sm)">${safeType}</div>` }).join("") } catch { return "<div style=\"padding:12px;color:var(--text-muted)\">解析布局失败</div>" } }
 
 
 const call_designe_345_data = ref<any[]>([]);
