@@ -1400,7 +1400,7 @@
         <div class="modal-body script-editor-body">
           <div class="se-toolbar">
             <select v-model="scriptLang" class="se-lang-select"><option value="javascript">JavaScript</option><option value="typescript">TypeScript</option><option value="python">Python</option></select>
-            <button class="btn-sm" @click="runScriptTest()">▶ 运行测试</button>
+            <button class="btn-sm" @click="runScriptTest()">✓ 校验脚本</button>
             <button class="btn-sm" @click="validateScriptCode()">✓ 验证</button>
             <button class="btn-sm" @click="clearScriptLogs()">清除日志</button>
           </div>
@@ -6116,7 +6116,7 @@ function runScriptTest() {
   const result = validateScriptCode()
   scriptValidation.value = result
   if (!result.valid) { scriptLogs.value = result.errors.map(e => '[ERROR] ' + e); showScriptLogPanel.value = true; return }
-  scriptLogs.value = ['[INFO] 脚本验证通过', '[INFO] 开始执行...', '[INFO] 执行完成，耗时 12ms']
+  scriptLogs.value = ['[INFO] 静态校验通过', '[INFO] 为保护当前会话安全，浏览器内脚本执行已禁用']
   showScriptLogPanel.value = true
 }
 function clearScriptLogs() { scriptLogs.value = [] }
@@ -6276,7 +6276,7 @@ function generateNodeId(prefix: string = 'node'): string { return prefix + '_' +
 function deepClone<T>(obj: T): T { return JSON.parse(JSON.stringify(obj)) }
 // ── Script Code Completion ───────────────────────────────────────────
 const scriptKeywords = ['const','let','var','function','return','if','else','for','while','do','switch','case','break','continue','try','catch','finally','throw','new','this','class','extends','import','export','from','default','async','await','yield','typeof','instanceof','in','of','delete','void','null','undefined','true','false']
-const scriptBuiltins = ['console','Math','JSON','Array','Object','String','Number','Boolean','Date','RegExp','Map','Set','Promise','Error','parseInt','parseFloat','setTimeout','setInterval','clearTimeout','clearInterval','fetch','document','window','navigator','localStorage','sessionStorage']
+const scriptBuiltins = ['console','Math','JSON','Array','Object','String','Number','Boolean','Date','RegExp','Map','Set','Promise','Error','parseInt','parseFloat']
 const scriptFlowVars = ['processId','userId','startTime','endTime','status','result','output','input','context','formData']
 const scriptAutocomplete = ref<Array<{label:string;insertText:string;type:'keyword'|'builtin'|'var'|'method';detail?:string}>>([])
 const showAutocomplete = ref(false)
@@ -6533,12 +6533,6 @@ const showEdgeEditorPanel = ref(false)
 const edgeEditorEdgeIdx = ref<number|null>(null)
 const edgeEditorPoints = ref<Array<{x: number; y: number}>>([])
 // ── Process Sandbox State ────────────────────────────────────────────
-const showSandboxPanel = ref(false)
-const sandboxInput = ref('{}')
-const sandboxOutput = ref('')
-const sandboxLogs = ref<string[]>([])
-const sandboxRunning = ref(false)
-const sandboxResult = ref<any>(null)
 // ── Template Manager State ───────────────────────────────────────────
 const showTemplateManager = ref(false)
 const templateManagerSearch = ref('')
@@ -6641,23 +6635,6 @@ function deleteEdgeEditor() {
   closeEdgeEditor()
   showToast('连线已删除', 'warning')
 }
-// ── Sandbox Functions ────────────────────────────────────────────────
-function runSandbox() {
-  if (!processDef.value) return
-  sandboxRunning.value = true
-  sandboxLogs.value = ['[INFO] 开始执行沙盒测试...', '[INFO] 输入: ' + sandboxInput.value]
-  try {
-    const inputData = JSON.parse(sandboxInput.value)
-    const ctx = { input: inputData, processDef: processDef.value, nodes: processDef.value.nodes, edges: processDef.value.edges || [] }
-    const fn = new Function('input', 'processDef', 'nodes', 'edges', sandboxInput.value.replace(/^{[^}]*}s*/, ''))
-    sandboxResult.value = fn(inputData, processDef.value, ctx.nodes, ctx.edges)
-    sandboxLogs.value.push('[INFO] 执行成功', '[INFO] 输出: ' + JSON.stringify(sandboxResult.value))
-  } catch (e) {
-    sandboxLogs.value.push('[ERROR] ' + String(e))
-  }
-  sandboxRunning.value = false
-}
-function clearSandbox() { sandboxInput.value = '{}'; sandboxOutput.value = ''; sandboxLogs.value = []; sandboxResult.value = null }
 // ── Template Manager Functions ───────────────────────────────────────
 function filterCustomTemplates(): Array<{id: string; name: string; icon: string; description: string; nodeCount: number; tags: string[]; created: number}> {
   if (!templateManagerSearch.value.trim()) return customTemplates.value
