@@ -23,7 +23,9 @@ describe('desktop security regressions', () => {
     expect(source).not.toContain('new Function');
     expect(source).not.toMatch(/\beval\s*\(/);
     expect(source).not.toContain('runSandbox');
-    expect(source).toContain('浏览器内脚本执行已禁用');
+    // Must import the sandbox helper and call runInSandbox instead.
+    expect(source).toContain("from '../utils/sandbox'");
+    expect(source).toContain('runInSandbox');
   });
 
   it('uses the shared safe confirmation dialog in views', () => {
