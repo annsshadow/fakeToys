@@ -61,11 +61,21 @@ function showToast(opts: ToastOptions): void {
     pointer-events: auto; cursor: pointer;
     backdrop-filter: blur(8px);
   `
-  el.innerHTML = `
-    <span style="color:${color};font-size:16px;font-weight:700;flex-shrink:0">${icon}</span>
-    <span style="flex:1;word-break:break-word">${message}</span>
-    <span style="color:${color};font-size:10px;flex-shrink:0;opacity:0.7">auto-hide</span>
-  `
+  const iconEl = document.createElement('span')
+  iconEl.style.cssText = `color:${color};font-size:16px;font-weight:700;flex-shrink:0`
+  iconEl.textContent = icon
+
+  const messageEl = document.createElement('span')
+  messageEl.style.cssText = 'flex:1;word-break:break-word'
+  messageEl.textContent = message
+
+  const statusEl = document.createElement('span')
+  statusEl.style.cssText = `color:${color};font-size:10px;flex-shrink:0;opacity:0.7`
+  statusEl.textContent = 'auto-hide'
+
+  el.appendChild(iconEl)
+  el.appendChild(messageEl)
+  el.appendChild(statusEl)
   el.addEventListener('click', () => removeToast(el))
   container.appendChild(el)
 
@@ -110,18 +120,25 @@ export function useToast() {
   return toast
 }
 
+export async function copyText(text: string): Promise<boolean> {
+  try {
+    await navigator.clipboard.writeText(text)
+    toast.success('已复制到剪贴板')
+    return true
+  } catch {
+    toast.error('复制失败，请检查剪贴板权限')
+    return false
+  }
+}
+
 /**
  * Sci-fi themed confirm dialog — replaces native window.confirm.
  * Returns true if user clicked "确认", false if "取消".
  */
 export function confirmMsg(message: string, title = '确认操作'): Promise<boolean> {
-  return new Promise(resolve => {
-    if (typeof window !== 'undefined' && typeof window.confirm === 'function') {
-      // Fallback for SSR or environments without our overlay
-      resolve(window.confirm(message))
-      return
-    }
+  if (typeof document === 'undefined') return Promise.resolve(false)
 
+  return new Promise(resolve => {
     // Remove existing overlay if any
     const existing = document.getElementById('oa4-confirm-overlay')
     if (existing) existing.remove()
@@ -172,7 +189,14 @@ export function confirmMsg(message: string, title = '确认操作'): Promise<boo
     `
     cancelBtn.onmouseover = () => { cancelBtn.style.borderColor = '#94a3b8'; cancelBtn.style.color = '#e2e8f0' }
     cancelBtn.onmouseout = () => { cancelBtn.style.borderColor = '#475569'; cancelBtn.style.color = '#94a3b8' }
-    cancelBtn.onclick = () => { overlay.remove(); resolve(false) }
+    let onKeyDown: (e: KeyboardEvent) => void
+    const finish = (result: boolean) => {
+      document.removeEventListener('keydown', onKeyDown)
+      overlay.remove()
+      resolve(result)
+    }
+
+    cancelBtn.onclick = () => finish(false)
 
     const okBtn = document.createElement('button')
     okBtn.textContent = '确认'
@@ -185,7 +209,7 @@ export function confirmMsg(message: string, title = '确认操作'): Promise<boo
     `
     okBtn.onmouseover = () => { okBtn.style.background = '#2563eb'; okBtn.style.boxShadow = '0 0 15px rgba(37,99,235,0.5)' }
     okBtn.onmouseout = () => { okBtn.style.background = '#3b82f6'; okBtn.style.boxShadow = '0 0 10px rgba(59,130,246,0.3)' }
-    okBtn.onclick = () => { overlay.remove(); resolve(true) }
+    okBtn.onclick = () => finish(true)
 
     btnRow.appendChild(cancelBtn)
     btnRow.appendChild(okBtn)
@@ -197,12 +221,12 @@ export function confirmMsg(message: string, title = '确认操作'): Promise<boo
 
     // Close on overlay click
     overlay.onclick = (e: MouseEvent) => {
-      if (e.target === overlay) { overlay.remove(); resolve(false) }
+      if (e.target === overlay) finish(false)
     }
 
     // Close on Escape
-    const onKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') { document.removeEventListener('keydown', onKeyDown); overlay.remove(); resolve(false) }
+    onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') finish(false)
     }
     document.addEventListener('keydown', onKeyDown)
   })
