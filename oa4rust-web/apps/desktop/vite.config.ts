@@ -15,6 +15,29 @@ export default defineConfig({
   server: {
     port: 5173,
     host: true,
+    // Inject Content-Security-Policy-Report-Only header for safe debugging.
+    // When ready to enforce, switch to 'Content-Security-Policy' and tighten.
+    headers: {
+      'Content-Security-Policy-Report-Only': [
+        "default-src 'self'",
+        "script-src 'self' 'report-sample'",
+        "style-src 'self' 'unsafe-inline'",
+        "img-src 'self' data: blob:",
+        "connect-src 'self' ws://localhost:* wss://* *",
+        "font-src 'self'",
+        "object-src 'none'",
+        "frame-src 'none'",
+        "base-uri 'self'",
+        "form-action 'self'",
+        "report-uri /csp-report",
+        "report-to csp-endpoint",
+      ].join('; '),
+      'Report-To': JSON.stringify({
+        group: 'csp-endpoint',
+        max_age: 86400,
+        endpoints: [{ url: '/csp-report' }],
+      }),
+    },
     proxy: {
       '/jaxrs': { target: 'http://localhost:3000', changeOrigin: true },
       '/ws': { target: 'ws://localhost:3000', ws: true },
