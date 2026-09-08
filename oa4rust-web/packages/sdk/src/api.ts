@@ -41,6 +41,8 @@ export interface ApiRequestOptions {
   params?: Record<string, string>;
   requireAuth?: boolean;
   headers?: Record<string, string>;
+  /** 请求超时（毫秒）。默认无超时，由 fetch 运行时决定。 */
+  timeoutMs?: number;
 }
 
 export class ApiClient {
@@ -103,7 +105,12 @@ export class ApiClient {
       init.body = JSON.stringify(options.body);
     }
 
-    const resp = await fetch(url.toString(), init);
+    const controller = new AbortController();
+    if (options?.timeoutMs) {
+      setTimeout(() => controller.abort(), options.timeoutMs);
+    }
+
+    const resp = await fetch(url.toString(), { ...init, signal: controller.signal });
 
     if (!resp.ok) {
       if (resp.status === 401) {
