@@ -4341,7 +4341,11 @@ function onCanvasMouseDown(e: MouseEvent) {
   isPanning.value = true
   panStart.value = { x: e.clientX - panX.value, y: e.clientY - panY.value }
   const onMove = (ev: MouseEvent) => { if (isPanning.value) { panX.value = ev.clientX - panStart.value.x; panY.value = ev.clientY - panStart.value.y } }
-  const onUp = () => { isPanning.value = false }
+  const onUp = () => {
+    isPanning.value = false
+    document.removeEventListener('mousemove', onMove)
+    document.removeEventListener('mouseup', onUp)
+  }
   document.addEventListener('mousemove', onMove); document.addEventListener('mouseup', onUp)
 }
 // ── Node body click: arbitrary position edge creation ─────────────────
@@ -4890,33 +4894,36 @@ function runValidation(): void {
   validationResult.value = { totalNodes: nodes.length, totalEdges: edges.length, issues, suggestions, healthScore }
 }
 // ── Lifecycle ─────────────────────────────────────────────────────────
+function onDocumentMouseMove(e: MouseEvent) { onNodeMouseMove(e) }
+function onDocumentMouseUp() { onNodeMouseUp() }
+function onDocumentKeyDown(e: KeyboardEvent) {
+  if (e.ctrlKey && e.key === 'a' && currentProcess.value) {
+    e.preventDefault()
+    multiSelected.value.clear()
+    if (processDef.value) processDef.value.nodes.forEach((n,i) => { multiSelected.value.add(n.id); selectedNode.value = i })
+  }
+  if (e.ctrlKey && e.key === 'z' && !e.shiftKey) { e.preventDefault(); undo() }
+  if (e.ctrlKey && (e.key === 'y' || (e.key === 'z' && e.shiftKey))) { e.preventDefault(); redo() }
+  if (e.ctrlKey && e.key === 'd') { e.preventDefault(); duplicateSelected() }
+  if (e.key === 'Delete' || e.key === 'Backspace') {
+    if (document.activeElement?.tagName !== 'INPUT' && document.activeElement?.tagName !== 'TEXTAREA') {
+      e.preventDefault(); deleteSelected()
+    }
+  }
+  if (e.key === 'Escape') { selectedNode.value = null; selectedEdge.value = null; tempEdge.value = null }
+  if (e.key === 'h' && !e.ctrlKey) { e.preventDefault(); showHelpModal.value = !showHelpModal.value }
+  if (e.key === 'g' && !e.ctrlKey && multiSelected.value.size >= 2) {
+    e.preventDefault()
+    createGroup()
+  }
+  if (e.ctrlKey && e.key === '=') { e.preventDefault(); zoomIn() }
+  if (e.ctrlKey && e.key === '-') { e.preventDefault(); zoomOut() }
+  if (e.ctrlKey && e.key === '0') { e.preventDefault(); zoomToFit() }
+}
 onMounted(() => {
-  document.addEventListener('mousemove', (e) => { onNodeMouseMove(e) })
-  document.addEventListener('mouseup', () => { onNodeMouseUp() })
-document.addEventListener('keydown', (e) => {
-    if (e.ctrlKey && e.key === 'a' && currentProcess.value) {
-      e.preventDefault()
-      multiSelected.value.clear()
-      if (processDef.value) processDef.value.nodes.forEach((n,i) => { multiSelected.value.add(n.id); selectedNode.value = i })
-    }
-    if (e.ctrlKey && e.key === 'z' && !e.shiftKey) { e.preventDefault(); undo() }
-    if (e.ctrlKey && (e.key === 'y' || (e.key === 'z' && e.shiftKey))) { e.preventDefault(); redo() }
-    if (e.ctrlKey && e.key === 'd') { e.preventDefault(); duplicateSelected() }
-    if (e.key === 'Delete' || e.key === 'Backspace') {
-      if (document.activeElement?.tagName !== 'INPUT' && document.activeElement?.tagName !== 'TEXTAREA') {
-        e.preventDefault(); deleteSelected()
-      }
-    }
-    if (e.key === 'Escape') { selectedNode.value = null; selectedEdge.value = null; tempEdge.value = null }
-    if (e.key === 'h' && !e.ctrlKey) { e.preventDefault(); showHelpModal.value = !showHelpModal.value }
-    if (e.key === 'g' && !e.ctrlKey && multiSelected.value.size >= 2) {
-      e.preventDefault()
-      createGroup()
-    }
-    if (e.ctrlKey && e.key === '=') { e.preventDefault(); zoomIn() }
-    if (e.ctrlKey && e.key === '-') { e.preventDefault(); zoomOut() }
-    if (e.ctrlKey && e.key === '0') { e.preventDefault(); zoomToFit() }
-  })
+  document.addEventListener('mousemove', onDocumentMouseMove)
+  document.addEventListener('mouseup', onDocumentMouseUp)
+  document.addEventListener('keydown', onDocumentKeyDown)
   loadProcesses()
 })
 // --- Canvas Annotations ---
@@ -5067,9 +5074,13 @@ function exportDiff():void{}
 function toggleGridFlow(){showGridFlow.value=!showGridFlow.value}
 function updateGridIntensity(v:number){gridIntensity.value=v}
 function updateGridPattern(p:'dot'|'line'|'cross'|'diamond'|'hex'){gridPattern.value=p}
-onUnmounted(()=>{document.removeEventListener('mousemove',()=>{})
-  document.removeEventListener('mousemove', () => {})
-  document.removeEventListener('mouseup', () => {})
+onUnmounted(() => {
+  document.removeEventListener('mousemove', onDocumentMouseMove)
+  document.removeEventListener('mouseup', onDocumentMouseUp)
+  document.removeEventListener('keydown', onDocumentKeyDown)
+  pausePlayback()
+  stopEdgeAnimation()
+  stopAnimationLoop()
 })
 // ── Group Drag ──────────────────────────────────────────────────────
 function onGroupResizeMouseDown(e: MouseEvent, idx: number, dir: string) {
@@ -6511,7 +6522,6 @@ function stopAnimationLoop(): void {
   if (animFrameId) { cancelAnimationFrame(animFrameId); animFrameId = null }
 }
 onMounted(() => { startAnimationLoop(); initEdgeParticles(); initBranchParticles() })
-onUnmounted(() => { stopAnimationLoop() })
 // ── Script Editor Functions ──────────────────────────────────────────
 // ── Node Detail Panel State ─────────────────────────────────────────
 const showNodeDetailPanel = ref(false)
