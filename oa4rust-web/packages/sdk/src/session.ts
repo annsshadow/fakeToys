@@ -73,9 +73,16 @@ export const useSessionStore = defineStore('session', () => {
     return user;
   }
 
+  /** OAuth / SSO 回调专用：跳过登录请求，直接将服务端发放的 token+user 写入 store。 */
+  function setSession(token: string, user: O2User): void {
+    state.value.token = token;
+    state.value.user = user;
+    storeSession(token, user);
+  }
+
   return {
     state: readonly(state),
-    init, login, logout, refresh, switchUser,
+    init, login, logout, refresh, switchUser, setSession,
     get isAuthenticated() { return !!state.value.token && !!state.value.user; },
   };
 });
