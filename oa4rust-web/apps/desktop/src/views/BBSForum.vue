@@ -132,7 +132,7 @@
             <span>💬 {{ viewingTopic.replyCount ?? 0 }} 回复</span>
             <span>👁 {{ viewingTopic.viewCount ?? 0 }} 浏览</span>
           </div>
-          <div class="detail-content" v-html="formatContent(viewingTopic.content)"></div>
+          <div class="detail-content" style="white-space:pre-wrap;word-break:break-word">{{formatContent(viewingTopic.content)}}</div>
         </div>
         <div class="reply-section">
           <h4>回复 ({{ replies.length }})</h4>
@@ -330,7 +330,7 @@ function openTopic(topic: Topic): void {
 
 function formatContent(content?: string): string {
   if (!content) return '';
-  return content.replace(/\n/g, '<br>').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  return content;
 }
 
 function fmtTime(ts?: string): string {
