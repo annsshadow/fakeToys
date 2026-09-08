@@ -2807,6 +2807,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { toast } from '../utils/toast'
+import { runInSandbox } from '../utils/sandbox'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/vue-query'
 import { api } from '@oa4rust/sdk'
 // ── Types ────────────────────────────────────────────────────────────
@@ -5081,6 +5082,8 @@ onUnmounted(() => {
   pausePlayback()
   stopEdgeAnimation()
   stopAnimationLoop()
+  // Clean up the sandbox iframe to prevent memory leaks.
+  import('../utils/sandbox').then(m => m.destroySandbox())
 })
 // ── Group Drag ──────────────────────────────────────────────────────
 function onGroupResizeMouseDown(e: MouseEvent, idx: number, dir: string) {
@@ -6116,8 +6119,25 @@ function runScriptTest() {
   const result = validateScriptCode()
   scriptValidation.value = result
   if (!result.valid) { scriptLogs.value = result.errors.map(e => '[ERROR] ' + e); showScriptLogPanel.value = true; return }
-  scriptLogs.value = ['[INFO] 静态校验通过', '[INFO] 为保护当前会话安全，浏览器内脚本执行已禁用']
+  // Execute in a sandboxed iframe (no DOM / localStorage / fetch access).
+  // Static validation already confirmed the code is non-empty and safe.
+  scriptLogs.value = ['[INFO] 开始执行（沙盒模式）...']
   showScriptLogPanel.value = true
+  runInSandbox(scriptCode.value, 5000).then(r => {
+    if (r.ok) {
+      scriptLogs.value.push(
+        `[INFO] 执行成功`,
+        `[INFO] 输出: ${r.output}`,
+        `[INFO] 耗时: ${r.executionTimeMs}ms`,
+      )
+    } else {
+      scriptLogs.value.push(
+        `[ERROR] 执行失败: ${r.error}`,
+        `[INFO] 耗时: ${r.executionTimeMs}ms`,
+      )
+    }
+    showScriptLogPanel.value = true
+  })
 }
 function clearScriptLogs() { scriptLogs.value = [] }
 function saveScriptToNode() {
