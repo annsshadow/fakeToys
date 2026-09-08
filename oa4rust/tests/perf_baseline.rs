@@ -98,13 +98,13 @@ fn perf_baseline() {
                 .expect("auth request failed");
             let auth_status = auth_resp.status();
             let _ = auth_resp.text().await;
-            let auth_elapsed = start.elapsed().as_secs_f64() * 1000.0;
             if !auth_status.is_success() {
-                println!(
-                    "WARN: POST /jaxrs/authentication returned {} at iter {}",
+                panic!(
+                    "POST /jaxrs/authentication returned {} at iter {}, aborting baseline",
                     auth_status, i
                 );
             }
+            let auth_elapsed = start.elapsed().as_secs_f64() * 1000.0;
             auth_ms.push(auth_elapsed);
 
             // (b) 列表读取路径
@@ -117,23 +117,25 @@ fn perf_baseline() {
                 .expect("list document request failed");
             let list_status = list_resp.status();
             let _ = list_resp.text().await;
-            let list_elapsed = start.elapsed().as_secs_f64() * 1000.0;
             if !list_status.is_success() {
-                println!(
-                    "WARN: GET /jaxrs/cms_assemble_control/data/document returned {} at iter {}",
+                panic!(
+                    "GET /jaxrs/cms_assemble_control/data/document returned {} at iter {}, aborting baseline",
                     list_status, i
                 );
             }
+            let list_elapsed = start.elapsed().as_secs_f64() * 1000.0;
             list_ms.push(list_elapsed);
         }
 
-        // 5) 汇总并打印
+        // 5) 汇总并打印 JSON 产物（供 CI artifact 或脚本消费）
+        let auth_json = json_stats("POST /jaxrs/authentication", &auth_ms);
+        let list_json = json_stats("GET  /jaxrs/cms_assemble_control/data/document", &list_ms);
         println!(
-            "\n=== OA4Rust perf baseline (iterations={}, warmup={}) ===",
-            ITERATIONS, WARMUP
+            "\n=== OA4Rust perf baseline (iterations={}, warmup={}) ===\n{}\n{}",
+            ITERATIONS, WARMUP, auth_json, list_json
         );
-        summarize("POST /jaxrs/authentication (DB password verify)", &auth_ms);
-        summarize("GET  /jaxrs/cms_assemble_control/data/document (list)", &list_ms);
+        info!(target: "perf_baseline", "baseline_result = {}", auth_json);
+        info!(target: "perf_baseline", "baseline_result = {}", list_json);
 
         // 关闭后台 HTTP 服务
         handle.abort();
@@ -169,4 +171,27 @@ fn summarize(name: &str, samples: &[f64]) {
         endpoint = name,
         "perf baseline summary"
     );
+}
+
+/// 输出机器可读的 JSON 统计对象，供 CI artifact 消费。
+fn json_stats(name: &str, samples: &[f64]) -> serde_json::Value {
+    if samples.is_empty() {
+        return json!({"endpoint": name, "sample_count": 0});
+    }
+    let mut v = samples.to_vec();
+    v.sort_by(|a, b| a.partial_cmp(b).unwrap());
+    let n = v.len();
+    let avg = v.iter().sum::<f64>() / n as f64;
+    let pct = |p: f64| -> f64 {
+        let idx = ((p / 100.0) * (n as f64 - 1.0)).round() as usize;
+        v[idx]
+    };
+    json!({
+        "endpoint": name,
+        "sample_count": n,
+        "avg_ms": (avg * 100.0).round() / 100.0,
+        "p50_ms": (pct(50.0) * 100.0).round() / 100.0,
+        "p99_ms": (pct(99.0) * 100.0).round() / 100.0,
+        "max_ms": (v.last().copied().unwrap_or(0.0) * 100.0).round() / 100.0,
+    })
 }
