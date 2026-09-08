@@ -152,8 +152,12 @@ export class ApiClient {
   }
 
   /** 文件上传（multipart/form-data） */
-  async upload<T>(path: string, formData: FormData, options?: Pick<ApiRequestOptions, 'requireAuth' | 'headers'>): Promise<ApiResponse<T>> {
+  async upload<T>(path: string, formData: FormData, options?: ApiRequestOptions & { timeoutMs?: number }): Promise<ApiResponse<T>> {
     const url = this.resolveUrl(path);
+    const controller = new AbortController();
+    if (options?.timeoutMs) {
+      setTimeout(() => controller.abort(), options.timeoutMs);
+    }
     const resp = await fetch(url.toString(), {
       method: 'POST',
       headers: {
@@ -162,6 +166,7 @@ export class ApiClient {
       },
       body: formData,
       credentials: 'include',
+      signal: controller.signal,
     });
     if (!resp.ok) throw new ApiError(`HTTP ${resp.status}`, resp.status);
     return resp.json() as Promise<ApiResponse<T>>;

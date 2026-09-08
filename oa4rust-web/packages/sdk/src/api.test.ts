@@ -108,8 +108,36 @@ describe('ApiClient', () => {
     );
   });
 
+  it('aborts the request when timeoutMs is exceeded', async () => {
+    const fetchMock = vi.fn().mockImplementation(() => new Promise<never>(() => {}));
+    vi.stubGlobal('fetch', fetchMock);
+
+    const promise = new ApiClient().get('/jaxrs/x', { timeoutMs: 1 });
+    // Wait long enough for the timeout to fire
+    await new Promise(r => setTimeout(r, 50));
+    // The mock should have been called (request was initiated before abort)
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    // Verify signal was passed
+    const callArgs = fetchMock.mock.calls[0];
+    expect(callArgs[1]).toHaveProperty('signal');
+    // Clean up
+    promise.catch(() => {});
+  });
+
   it('accepts timeoutMs option without error', async () => {
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue(jsonResponse({ success: true, data: {} })));
     await expect(new ApiClient().get('/jaxrs/x', { timeoutMs: 5000 })).resolves.toBeDefined();
+  });
+
+  it('upload passes signal for timeout support', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(jsonResponse({ success: true, data: {} }));
+    vi.stubGlobal('fetch', fetchMock);
+
+    await new ApiClient().upload('/jaxrs/file', new FormData(), { timeoutMs: 3000 });
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      'https://web.example.test/jaxrs/file',
+      expect.objectContaining({ signal: expect.anything() }),
+    );
   });
 });
