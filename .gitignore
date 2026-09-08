@@ -70,3 +70,7 @@ oa4rust/deploy/.backups/
 
 *.txt
 scripts/cleanup_*.js
+
+# Environment secrets
+oa4rust/.env
+oa4rust/scripts/.token
