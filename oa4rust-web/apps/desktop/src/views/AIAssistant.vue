@@ -21,7 +21,7 @@
           <div class="ch2"><span class="ct3">{{active.title||'对话'}}</span><span class="mt2">{{active.model||'default'}}</span></div>
           <div ref="msgBox" class="cm"><div v-for="m in msgs" :key="m.id" class="msg" :class="m.role">
             <div class="ma2">{{m.role==='user'?'👤':'🤖'}}</div>
-            <div class="mb2" v-html="fmt(m.content)"></div>
+            <div class="mb2" style="white-space:pre-wrap;word-break:break-word">{{fmt(m.content)}}</div>
           </div>
           <div v-if="streaming" class="msg assistant"><div class="ma2">🤖</div><div class="mb2 sb2"><span class="td2"></span><span class="td2"></span><span class="td2"></span></div></div>
           </div>
@@ -69,7 +69,7 @@ const { data } = useQuery({ queryKey:['ai','convs'], queryFn:()=>api.get('/jaxrs
 convs.value = data.value ?? []
 
 function selectConv(c:Conv){ active.value=c; msgs.value=[] }
-function fmt(c:string){ return (c??'').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g,'<br>') }
+function fmt(c:string){ return (c??'') }
 function scrollB(){ msgBox.value?.scrollTo({top:msgBox.value!.scrollHeight,behavior:'smooth'}) }
 
 async function createConv(){

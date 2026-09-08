@@ -70,7 +70,7 @@
             <div v-for="msg in messages" :key="msg.id" class="message" :class="{ outgoing: msg.direction === 'out' }">
               <div class="msg-avatar">{{ msg.sender?.[0] }}</div>
               <div class="msg-bubble">
-                <div class="msg-content" v-html="formatContent(msg.content)"></div>
+                <div class="msg-content" style="white-space:pre-wrap;word-break:break-word">{{formatContent(msg.content)}}</div>
                 <div class="msg-time">{{ msg.time }}</div>
               </div>
             </div>
@@ -315,12 +315,8 @@ function scrollToBottom(): void {
 }
 
 function formatContent(content: string): string {
-  // 简单的 markdown 转义
-  return content
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/\n/g, '<br>');
+  // Return raw text — Vue interpolates safely via text nodes.
+  return content;
 }
 
 onMounted(initWebSocket);
