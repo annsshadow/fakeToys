@@ -6,8 +6,30 @@ on:
     branches: [main, master]
 
 jobs:
+  quality:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: oa4rust
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install Rust
+        uses: dtolnay/rust-action@stable
+      - name: Cache cargo registry
+        uses: actions/cache@v4
+        with:
+          path: ~/.cargo/registry
+          key: ${{ runner.os }}-cargo-registry-${{ hashFiles('**/Cargo.lock') }}
+      - name: Check formatting
+        run: cargo fmt --all -- --check
+      - name: Check workspace
+        run: cargo check --workspace
+
   unit-tests:
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: oa4rust
     strategy:
       matrix:
         dialect: [postgres, mysql]
@@ -27,6 +49,9 @@ jobs:
 
   integration-tests:
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: oa4rust
     strategy:
       matrix:
         dialect: [postgres, mysql]
@@ -85,6 +110,9 @@ jobs:
   # 失败不影响主构建（unit-tests / integration-tests）。
   behavior-compare:
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: oa4rust
     continue-on-error: true
     services:
       postgres:
@@ -177,7 +205,7 @@ jobs:
       - name: Apply behavior-compare seed fixtures
         run: |
           psql "postgres://o2server:password@localhost:5432/oa4rust" \
-            -f oa4rust/tests/behavior_comparison/seeds/seed_fixtures.sql
+            -f tests/behavior_comparison/seeds/seed_fixtures.sql
           echo "Seed fixtures applied successfully"
 
       - name: Run behavior comparison (Rust vs Java)
@@ -193,7 +221,7 @@ jobs:
         if: always()
         run: |
           if [ -f target/debug/behavior-report.md ] && [ -s target/debug/behavior-report.md ]; then
-            python oa4rust/scripts/cluster_behavior_diffs.py \
+            python scripts/cluster_behavior_diffs.py \
               --report target/debug/behavior-report.md \
               --out-dir target/ \
               --format tsv,md
@@ -209,8 +237,8 @@ jobs:
         with:
           name: diff-clustering-${{ github.run_id }}
           path: |
-            target/diff_candidates.tsv
-            target/diff_candidates.md
+            oa4rust/target/diff_candidates.tsv
+            oa4rust/target/diff_candidates.md
           retention-days: 30
 
       # ── U1: 报告产物上传 ─────────────────────────────────────────────────
@@ -221,7 +249,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: behavior-report-${{ github.run_id }}
-          path: target/debug/behavior-report.md
+          path: oa4rust/target/debug/behavior-report.md
           retention-days: 30
 
       # ── U1: 基线注记 ─────────────────────────────────────────────────────
@@ -246,6 +274,9 @@ jobs:
   # 本断言（即先 regenerate 再 check）。
   openapi-guard:
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: oa4rust
     steps:
       - uses: actions/checkout@v4
       - name: Set up Python
@@ -253,4 +284,4 @@ jobs:
         with:
           python-version: "3.x"
       - name: Verify OpenAPI security scheme is present
-        run: python oa4rust/scripts/check_openapi_security.py
+        run: python scripts/check_openapi_security.py
