@@ -6,8 +6,7 @@ use axum::{
 use deadpool_postgres::Pool;
 
 use crate::{
-    clear_cache, execute_command, get_logs, get_metric, get_status,
-    get_system_info, send_message,
+    clear_cache, execute_command, get_logs, get_metric, get_status, get_system_info, send_message,
 };
 
 pub fn router(pool: Pool) -> Router {
