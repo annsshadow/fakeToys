@@ -47,9 +47,18 @@ pub async fn template_form_list(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
-                ("name".to_string(), Value::String(row.get("xname"))),
-                ("category".to_string(), Value::String(row.get("xcategory"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
+                (
+                    "name".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xname").unwrap_or_default()),
+                ),
+                (
+                    "category".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xcategory").unwrap_or_default()),
+                ),
             ]))
         })
         .collect();
