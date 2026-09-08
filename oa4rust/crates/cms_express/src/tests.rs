@@ -6,7 +6,6 @@ use axum::{
 use deadpool_postgres::{Manager, Pool};
 use deadpool_postgres::tokio_postgres::{Config, NoTls};
 use tower::util::ServiceExt;
-use serde_json::Value;
 
 fn build_test_pool() -> Pool {
     let mgr = Manager::new(

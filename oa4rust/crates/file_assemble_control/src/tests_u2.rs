@@ -142,7 +142,7 @@ mod u2_tests {
     /// 绝不能返回"看起来成功但内容丢失"的假成功。
     #[tokio::test]
     async fn u2_persist_verified_db_placeholder_fails_loud() {
-        let storage = DbBlobStorage::default();
+        let storage = DbBlobStorage;
         let result = crate::u2_persist_verified(&storage, "attachment/x/a.txt", b"hello").await;
         match result {
             Err(crate::AppError::NotImplemented) => {}

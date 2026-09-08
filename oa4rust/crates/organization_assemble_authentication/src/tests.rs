@@ -17,7 +17,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri(&format!("/jaxrs/organization/assemble/authentication/person/{}/icon", TEST_PERSON_ID))
+                    .uri(format!("/jaxrs/organization/assemble/authentication/person/{}/icon", TEST_PERSON_ID))
                     .method(axum::http::Method::GET)
                     .body(Body::empty())
                     .unwrap(),
@@ -36,7 +36,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri(&format!("/jaxrs/organization/assemble/authentication/identity/{}", TEST_IDENTITY_ID))
+                    .uri(format!("/jaxrs/organization/assemble/authentication/identity/{}", TEST_IDENTITY_ID))
                     .method(axum::http::Method::GET)
                     .body(Body::empty())
                     .unwrap(),

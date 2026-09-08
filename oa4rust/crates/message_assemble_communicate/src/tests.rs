@@ -1,8 +1,6 @@
 use super::*;
 use axum::body::Body;
 use axum::http::{Request, Method, StatusCode};
-use deadpool_postgres::{Manager, Pool};
-use deadpool_postgres::tokio_postgres::{Config, NoTls};
 use serde_json::json;
 use tower::util::ServiceExt;
 

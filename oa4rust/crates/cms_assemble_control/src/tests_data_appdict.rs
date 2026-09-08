@@ -346,7 +346,7 @@ mod data_appdict_tests {
             ("PUT", format!("/jaxrs/data/document/{DOC}/title")),
             ("DELETE", format!("/jaxrs/data/document/{DOC}/title/deep/body")),
         ] {
-            let (status, _) = call(&method, &uri, Some(json!({"x": 1})), Some(session(STRANGER))).await;
+            let (status, _) = call(method, &uri, Some(json!({"x": 1})), Some(session(STRANGER))).await;
             assert_eq!(status, StatusCode::FORBIDDEN, "{method} {uri}");
         }
 
@@ -565,7 +565,7 @@ mod data_appdict_tests {
             ("DELETE", leaf_url.clone()),
         ] {
             let body = if method == "DELETE" { None } else { Some(json!({"x": 1})) };
-            let (status, _) = call(&method, &uri, body, Some(session(STRANGER))).await;
+            let (status, _) = call(method, &uri, body, Some(session(STRANGER))).await;
             assert_eq!(status, StatusCode::FORBIDDEN, "{method} {uri}");
         }
 

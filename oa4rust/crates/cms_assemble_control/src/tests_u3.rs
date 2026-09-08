@@ -11,8 +11,7 @@
 #[cfg(test)]
 mod u3_tests {
     use crate::{
-        categoryinfo_ext_content_save_u3, comment_commend_u3, correlation_create_u3,
-        design_appdict_create_u3, document_batch_delete_u3, document_batch_modify_u3,
+        categoryinfo_ext_content_save_u3, comment_commend_u3, correlation_create_u3, document_batch_delete_u3, document_batch_modify_u3,
         file_delete_u3, permission_save_manager_app_u3, review_v2_search_u3,
         script_post_nested_u3, u3_normalize_path_levels, viewrecord_unread_u3,
     };

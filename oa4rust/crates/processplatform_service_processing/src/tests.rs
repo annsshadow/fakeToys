@@ -1,13 +1,13 @@
 #[cfg(test)]
 mod tests {
-    use super::*;
+    
     use axum::body::Body;
     use axum::http::{Request, Method, StatusCode};
     use shared::response::ActionResult;
     use deadpool_postgres::{Manager, Pool};
     use deadpool_postgres::tokio_postgres::{Config, NoTls};
     use serde_json::json;
-    use shared::testing::{is_db_available, test_pool};
+    use shared::testing::test_pool;
     use tower::util::ServiceExt;
 
     fn build_test_pool() -> Pool {
@@ -299,7 +299,7 @@ async fn test_get_process_instance_route_exists() {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri(&format!("/jaxrs/work/{}/start", work_id))
+                    .uri(format!("/jaxrs/work/{}/start", work_id))
                     .method(Method::POST)
                     .body(Body::empty())
                     .unwrap(),
@@ -328,13 +328,13 @@ async fn test_get_process_instance_route_exists() {
 
 #[cfg(test)]
 mod u2_contract {
-    use super::*;
+    
     use shared::testing::is_db_available;
     use axum::body::Body;
     use axum::http::{Method, Request, StatusCode};
     use deadpool_postgres::Pool;
     use serde_json::{json, Value};
-    use shared::response::ActionResult;
+    
     use shared::testing::test_pool;
     use tower::util::ServiceExt;
 
@@ -875,7 +875,7 @@ mod u2_contract {
         let (_, v) = send(Method::POST, url, Some(json!({}))).await;
         assert_eq!(v["type"], "success");
         assert!(v["data"]["taskId"].as_str().is_some(), "创建工作必须同步产生首个任务");
-        let n = count(&pool, "SELECT COUNT(*) AS c FROM x_work WHERE process='pd-boot' AND title LIKE 'boot-%'").await;
+        let _n = count(&pool, "SELECT COUNT(*) AS c FROM x_work WHERE process='pd-boot' AND title LIKE 'boot-%'").await;
         let c = pool.get().await.unwrap();
         c.execute("DELETE FROM x_task WHERE work IN (SELECT id FROM x_work WHERE process='pd-boot')", &[]).await.unwrap();
         c.execute("DELETE FROM x_work WHERE process='pd-boot'", &[]).await.unwrap();

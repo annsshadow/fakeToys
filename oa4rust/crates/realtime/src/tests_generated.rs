@@ -2,7 +2,7 @@
 mod tests {
     #![allow(non_snake_case)]
     use axum::body::Body;
-    use axum::http::{Request, Method, StatusCode};
+    use axum::http::{Request, StatusCode};
     use tower::util::ServiceExt;
 
     // SKIPPED: join not accessible

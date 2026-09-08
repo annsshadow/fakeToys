@@ -16,7 +16,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri(&format!("/jaxrs/organization/assemble/personal/{}/setting", TEST_PERSON_ID))
+                    .uri(format!("/jaxrs/organization/assemble/personal/{}/setting", TEST_PERSON_ID))
                     .method(axum::http::Method::GET)
                     .body(Body::empty())
                     .unwrap(),
@@ -35,7 +35,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri(&format!("/jaxrs/organization/assemble/personal/{}/role/list", TEST_PERSON_ID))
+                    .uri(format!("/jaxrs/organization/assemble/personal/{}/role/list", TEST_PERSON_ID))
                     .method(axum::http::Method::GET)
                     .body(Body::empty())
                     .unwrap(),

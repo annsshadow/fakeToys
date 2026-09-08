@@ -251,7 +251,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_ws_route_exists() {
-        use axum::http::{HeaderValue, Version};
+        use axum::http::Version;
         let app = ws_route();
         let response = app
             .oneshot(
@@ -292,7 +292,7 @@ mod tests {
     async fn test_manager_join_leave() {
         let manager = Arc::new(RealtimeManager::new());
         let conn_id = Uuid::new_v4();
-        let mut rx = manager.join("room1", conn_id).await;
+        let _rx = manager.join("room1", conn_id).await;
         assert_eq!(manager.room_connections("room1").await, 1);
         manager.leave("room1", conn_id).await;
         assert_eq!(manager.room_connections("room1").await, 0);

@@ -341,7 +341,7 @@ mod tests {
 
 #[cfg(test)]
 mod u2_contract {
-    use super::*;
+    
     use auth::SessionManager;
     use axum::extract::Path;
     use crate::u2;
