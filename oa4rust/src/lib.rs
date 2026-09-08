@@ -1,7 +1,7 @@
 use axum::Router;
-use shared::Pool;
 use shared::rate_limit::RateLimiter;
 use shared::session::SessionManager;
+use shared::Pool;
 
 pub use ai;
 pub use ai_assemble_control;
@@ -72,11 +72,18 @@ pub async fn create_app(
 
     let app = Router::new()
         .merge(shared::router::router())
-        .merge(auth::router(pool.clone(), rate_limiter.clone(), session_manager.clone()))
+        .merge(auth::router(
+            pool.clone(),
+            rate_limiter.clone(),
+            session_manager.clone(),
+        ))
         .merge(personal::router(pool.clone(), session_manager.clone()))
         .merge(cms_control::cms_control_router(pool.clone()))
         .merge(control::control_router(pool.clone()))
-        .merge(personal_extend::personal_extend_router(pool.clone(), session_manager))
+        .merge(personal_extend::personal_extend_router(
+            pool.clone(),
+            session_manager,
+        ))
         .merge(program_init::program_init_router(pool.clone()))
         .merge(express::router(pool.clone()))
         .merge(message::router(pool.clone()))
@@ -167,8 +174,28 @@ pub async fn create_app(
             shared::middleware::rate_limit_middleware,
         ))
         .layer(shared::middleware::cors_middleware())
-        .layer(axum::middleware::from_fn(shared::middleware::security_headers_middleware))
-        .layer(axum::middleware::from_fn(shared::middleware::trace_middleware));
+        .layer(axum::middleware::from_fn(
+            shared::middleware::security_headers_middleware,
+        ))
+        .layer(axum::middleware::from_fn(
+            shared::middleware::trace_middleware,
+        ));
 
     Ok(app)
+}
+
+#[cfg(test)]
+mod cors_guard {
+    use super::*;
+
+    #[tokio::test]
+    async fn create_app_builds_without_panic() {
+        let pool = shared::testing::test_pool();
+        let session_manager = shared::session::SessionManager::with_pool(pool.clone());
+        let rate_limiter = shared::rate_limit::RateLimiter::new();
+        // Build asserts: panics on route conflicts would surface here.
+        let _app = create_app(pool, session_manager, rate_limiter)
+            .await
+            .expect("unified create_app must build without panic");
+    }
 }
