@@ -4,7 +4,9 @@ use axum::{
     routing::{delete, get, post},
     Json, Router,
 };
+use axum::response::{IntoResponse, Response};
 use chrono::{DateTime, Duration, Utc};
+use cookie::{time::Duration as CookieDuration, Cookie, SameSite};
 use deadpool_postgres::Pool;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
@@ -12,6 +14,37 @@ use shared::{db::dialect, error::AppError, response::{row_opt_json, ActionResult
 use std::collections::HashMap;
 use std::sync::{Mutex, OnceLock};
 use uuid::Uuid;
+
+const SESSION_COOKIE_NAME: &str = "oa4rust_token";
+const SESSION_COOKIE_MAX_AGE_SECS: i64 = 7200;
+
+fn make_session_cookie(token: &str) -> String {
+    Cookie::build((SESSION_COOKIE_NAME, token))
+        .http_only(true)
+        .secure(true)
+        .same_site(SameSite::Lax)
+        .path("/")
+        .max_age(CookieDuration::seconds(SESSION_COOKIE_MAX_AGE_SECS))
+        .to_string()
+}
+
+fn make_clear_cookie() -> String {
+    Cookie::build((SESSION_COOKIE_NAME, ""))
+        .http_only(true)
+        .secure(true)
+        .same_site(SameSite::Lax)
+        .path("/")
+        .max_age(CookieDuration::seconds(0))
+        .to_string()
+}
+
+fn with_session_cookie<T: IntoResponse>(resp: T, cookie_value: &str) -> Response {
+    let mut response = resp.into_response();
+    response
+        .headers_mut()
+        .append(axum::http::header::SET_COOKIE, cookie_value.parse().unwrap());
+    response
+}
 
 mod ldap_auth;
 pub mod andfx;
@@ -93,9 +126,9 @@ pub async fn login(
     pool: Extension<Pool>,
     session_manager: Extension<SessionManager>,
     axum::extract::Json(req): axum::extract::Json<LoginRequest>,
-) -> Result<Json<ActionResult<LoginResponse>>, AppError> {
+) -> Result<Response, AppError> {
     if req.credential.is_empty() || req.password.is_empty() {
-        return Ok(Json(ActionResult::error("invalid credentials")));
+        return Ok(Json(ActionResult::<LoginResponse>::error("invalid credentials")).into_response());
     }
 
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
@@ -132,7 +165,7 @@ pub async fn login(
     // 检查账户是否被锁定
     if locked {
         // 返回通用错误消息，防止账户锁定状态枚举
-        return Ok(Json(ActionResult::error("invalid credentials")));
+        return Ok(Json(ActionResult::<LoginResponse>::error("invalid credentials")).into_response());
     }
 
 
@@ -155,7 +188,7 @@ pub async fn login(
         Some(_) => password::verify_password(&req.password, &password_hash, "", None),
     };
     if !valid {
-        return Ok(Json(ActionResult::error("invalid credentials")));
+        return Ok(Json(ActionResult::<LoginResponse>::error("invalid credentials")).into_response());
     }
 
     // 密码哈希 rehash：检测旧算法（MD5/DES），自动升级为 bcrypt
@@ -204,7 +237,7 @@ pub async fn login(
     let session = session_manager.create_session(person_unique.clone(), token.clone()).await?;
 
     let response = ActionResult::success(LoginResponse {
-        token: session.token,
+        token: session.token.clone(),
         token_type: "Bearer".to_string(),
         role_list,
         password_expired,
@@ -223,7 +256,7 @@ pub async fn login(
         },
     });
 
-    Ok(Json(response))
+    Ok(with_session_cookie(Json(response), &make_session_cookie(&session.token)))
 
 }
 
@@ -237,12 +270,12 @@ pub async fn refresh(
     session_manager: Extension<SessionManager>,
     headers: HeaderMap,
     axum::extract::Json(payload): axum::extract::Json<Value>,
-) -> Result<Json<ActionResult<Value>>, AppError> {
+) -> Result<Response, AppError> {
     let header_token = extract_token_from_headers(&headers).ok_or(AppError::Unauthorized)?;
     let old_token = payload.get("token").and_then(|v| v.as_str()).unwrap_or("");
 
     if header_token != old_token {
-        return Ok(Json(ActionResult::error("token mismatch")));
+        return Ok(Json(ActionResult::<Value>::error("token mismatch")).into_response());
     }
 
     let session = session_manager.validate_session(&header_token).await.ok_or(AppError::Unauthorized)?;
@@ -251,9 +284,9 @@ pub async fn refresh(
     session_manager.create_session(session.person_unique, new_token.clone()).await?;
     session_manager.remove_session(old_token).await;
 
-    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
-        ("token".to_string(), Value::String(new_token)),
-    ])))))
+    Ok(with_session_cookie(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
+        ("token".to_string(), Value::String(new_token.clone())),
+    ])))), &make_session_cookie(&new_token)))
 }
 
 /// 用户登出接口（契约路径 DELETE /jaxrs/authentication，兼容自造路径）
@@ -264,15 +297,15 @@ pub async fn logout(
     session_manager: Extension<SessionManager>,
     headers: HeaderMap,
     axum::extract::Json(payload): axum::extract::Json<Value>,
-) -> Result<Json<ActionResult<Value>>, AppError> {
+) -> Result<Response, AppError> {
     let token = extract_token_from_headers(&headers)
         .or_else(|| payload.get("token").and_then(|v| v.as_str()).map(|s| s.to_string()));
     if let Some(token) = token {
         session_manager.remove_session(&token).await;
     }
-    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
+    Ok(with_session_cookie(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
         ("message".to_string(), Value::String("logged out".to_string())),
-    ])))))
+    ])))), &make_clear_cookie()))
 }
 
 /// 查询当前认证用户信息（契约路径 GET /jaxrs/authentication，兼容自造路径）
