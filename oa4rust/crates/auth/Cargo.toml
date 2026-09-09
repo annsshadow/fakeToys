@@ -39,3 +39,4 @@ sha1.workspace = true
 hex.workspace = true
 hmac.workspace = true
 rsa.workspace = true
+cookie = "0.18"
