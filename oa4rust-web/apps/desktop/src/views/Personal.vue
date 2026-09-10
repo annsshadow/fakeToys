@@ -75,7 +75,7 @@ import { computed, onMounted, ref } from 'vue'
 import { toast } from '../utils/toast'
 
 const session = useSession()
-const user = computed(() => session.state.value?.user ?? null)
+const user = computed(() => session.state.user ?? null)
 
 const pwdForm = ref({ oldPassword: '', newPassword: '', confirmPassword: '' })
 const pwdError = ref('')
