@@ -69,85 +69,97 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue';
-import { toast } from '../utils/toast';
-import { useQuery, useMutation } from '@tanstack/vue-query';
-import { api, useSession } from '@oa4rust/sdk';
+import { api, useSession } from '@oa4rust/sdk'
+import { useMutation, useQuery } from '@tanstack/vue-query'
+import { computed, onMounted, ref } from 'vue'
+import { toast } from '../utils/toast'
 
-const session = useSession();
-const user = computed(() => session.state.value?.user ?? null);
+const session = useSession()
+const user = computed(() => session.state.value?.user ?? null)
 
-const pwdForm = ref({ oldPassword: '', newPassword: '', confirmPassword: '' });
-const pwdError = ref('');
-const pwdSaving = ref(false);
+const pwdForm = ref({ oldPassword: '', newPassword: '', confirmPassword: '' })
+const pwdError = ref('')
+const pwdSaving = ref(false)
 
-const signature = ref('');
+const signature = ref('')
 
 // 加载签名
 const { data: sigData } = useQuery({
   queryKey: ['personal', 'signature'],
   queryFn: async () => {
-    const resp = await api.get('/jaxrs/person/signature/list');
-    const sigs = ((resp as any)?.data ?? []) as Array<{ content: string }>;
-    return sigs[0]?.content ?? '';
+    const resp = await api.get('/jaxrs/person/signature/list')
+    const sigs = ((resp as any)?.data ?? []) as Array<{ content: string }>
+    return sigs[0]?.content ?? ''
   },
-});
-signature.value = sigData.value ?? '';
+})
+signature.value = sigData.value ?? ''
 
 // 修改密码
 const pwdMutation = useMutation({
-  mutationFn: (data: { oldPassword: string; newPassword: string }) =>
-    api.post('/jaxrs/person/password', data),
+  mutationFn: (data: { oldPassword: string; newPassword: string }) => api.post('/jaxrs/person/password', data),
   onSuccess: () => {
-    pwdForm.value = { oldPassword: '', newPassword: '', confirmPassword: '' };
-    pwdError.value = '';
+    pwdForm.value = { oldPassword: '', newPassword: '', confirmPassword: '' }
+    pwdError.value = ''
   },
   onError: (err: any) => {
-    pwdError.value = err?.message ?? '密码修改失败';
+    pwdError.value = err?.message ?? '密码修改失败'
   },
-});
+})
 
 function savePassword(): void {
   if (!pwdForm.value.oldPassword || !pwdForm.value.newPassword) {
-    pwdError.value = '请填写完整密码'; return;
+    pwdError.value = '请填写完整密码'
+    return
   }
   if (pwdForm.value.newPassword !== pwdForm.value.confirmPassword) {
-    pwdError.value = '两次密码不一致'; return;
+    pwdError.value = '两次密码不一致'
+    return
   }
-  pwdSaving.value = true;
-  pwdMutation.mutate({ oldPassword: pwdForm.value.oldPassword, newPassword: pwdForm.value.newPassword }, {
-    onSuccess: () => { toast.success('密码修改成功'); pwdForm.value = { oldPassword: '', newPassword: '', confirmPassword: '' }; },
-    onError: () => { pwdError.value = '修改失败'; pwdSaving.value = false; },
-  });
-  pwdSaving.value = true;
+  pwdSaving.value = true
+  pwdMutation.mutate(
+    { oldPassword: pwdForm.value.oldPassword, newPassword: pwdForm.value.newPassword },
+    {
+      onSuccess: () => {
+        toast.success('密码修改成功')
+        pwdForm.value = { oldPassword: '', newPassword: '', confirmPassword: '' }
+      },
+      onError: () => {
+        pwdError.value = '修改失败'
+        pwdSaving.value = false
+      },
+    },
+  )
+  pwdSaving.value = true
 }
 
 function handleAvatarUpload(e: Event): void {
-  const file = (e.target as HTMLInputElement).files?.[0];
-  if (!file || !user.value) return;
-  const formData = new FormData();
-  formData.append('file', file);
-  avatarMutation.mutate(formData);
+  const file = (e.target as HTMLInputElement).files?.[0]
+  if (!file || !user.value) return
+  const formData = new FormData()
+  formData.append('file', file)
+  avatarMutation.mutate(formData)
 }
 
 const avatarMutation = useMutation({
   mutationFn: (formData: FormData) => api.upload(`/jaxrs/person/icon/${user.value!.unique}`, formData),
-  onSuccess: () => { toast.success('头像上传成功'); },
-  onError: () => { toast.error('头像上传失败'); },
-});
+  onSuccess: () => {
+    toast.success('头像上传成功')
+  },
+  onError: () => {
+    toast.error('头像上传失败')
+  },
+})
 
 function saveSignature(): void {
-  api.post('/jaxrs/person/signature/save', { signature: signature.value })
+  api
+    .post('/jaxrs/person/signature/save', { signature: signature.value })
     .then(() => toast.success('签名已保存'))
-    .catch(() => toast.error('保存失败'));
+    .catch(() => toast.error('保存失败'))
 }
 
 onMounted(() => {
-  if (!user.value) session.init();
-});
-
-
-
+  if (!user.value) session.init()
+})
 </script>
 
 <style scoped>

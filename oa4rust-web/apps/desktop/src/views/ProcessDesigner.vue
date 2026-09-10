@@ -2805,56 +2805,177 @@
     </div>
 </template>
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted } from 'vue'
-import { toast } from '../utils/toast'
-import { runInSandbox } from '../utils/sandbox'
-import { useQuery, useMutation, useQueryClient } from '@tanstack/vue-query'
 import { api } from '@oa4rust/sdk'
+import { useMutation, useQuery } from '@tanstack/vue-query'
+import { computed, onMounted, onUnmounted, ref } from 'vue'
+import { runInSandbox } from '../utils/sandbox'
+import { toast } from '../utils/toast'
+
 // ── Types ────────────────────────────────────────────────────────────
 interface PDNode {
-  id: string; type: string; label?: string; x: number; y: number
-  w?: number; h?: number; assignee?: string; condition?: string
-  timeout?: number; priority?: string; script?: string
-  style?: string; note?: string; retryCount?: number
-  groupMembers?: string[]; collapsed?: boolean; groupId?: string
+  id: string
+  type: string
+  label?: string
+  x: number
+  y: number
+  w?: number
+  h?: number
+  assignee?: string
+  condition?: string
+  timeout?: number
+  priority?: string
+  script?: string
+  style?: string
+  note?: string
+  retryCount?: number
+  groupMembers?: string[]
+  collapsed?: boolean
+  groupId?: string
 }
-interface PDEdge { id: string; from: string; to: string; label?: string; condition?: string; flowLabel?: string; strokeWidth?: number; routing?: 'auto'|'straight'|'horizontal'|'vertical' }
-interface ProcDef { id?: string; name: string; flag: string; desc?: string; status?: string; config?: { nodes: PDNode[]; edges: PDEdge[] }; subprocesses?: Record<string, { nodes: PDNode[]; edges: PDEdge[] }> }
+interface PDEdge {
+  id: string
+  from: string
+  to: string
+  label?: string
+  condition?: string
+  flowLabel?: string
+  strokeWidth?: number
+  routing?: 'auto' | 'straight' | 'horizontal' | 'vertical'
+}
+interface ProcDef {
+  id?: string
+  name: string
+  flag: string
+  desc?: string
+  status?: string
+  config?: { nodes: PDNode[]; edges: PDEdge[] }
+  subprocesses?: Record<string, { nodes: PDNode[]; edges: PDEdge[] }>
+}
 // ── Execution Breakpoint ──────────────────────────────────────────
-interface Breakpoint { nodeId: string; label?: string }
+interface Breakpoint {
+  nodeId: string
+  label?: string
+}
 // ── Flow Statistics ────────────────────────────────────────────────
-interface FlowStats { totalNodes: number; totalEdges: number; avgDegree: string; maxDegree: number; density: string; cycles: number; isolatedNodes: number }
+interface FlowStats {
+  totalNodes: number
+  totalEdges: number
+  avgDegree: string
+  maxDegree: number
+  density: string
+  cycles: number
+  isolatedNodes: number
+}
 // ── Enhanced Node Style ────────────────────────────────────────────
-interface EnhancedNodeStyle { color: string; bgColor: string; borderColor: string; icon: string }
+interface EnhancedNodeStyle {
+  color: string
+  bgColor: string
+  borderColor: string
+  icon: string
+}
 // ── Group Drag/Resize State ────────────────────────────────────────
-interface GroupDragState { idx: number; startX: number; startY: number; origX: number; origY: number }
-interface GroupResizeState { idx: number; dir: string; startX: number; startY: number; origW: number; origH: number; origX: number; origY: number }
+interface GroupDragState {
+  idx: number
+  startX: number
+  startY: number
+  origX: number
+  origY: number
+}
+interface GroupResizeState {
+  idx: number
+  dir: string
+  startX: number
+  startY: number
+  origW: number
+  origH: number
+  origX: number
+  origY: number
+}
 // ── Edge Routing ────────────────────────────────────────────────────
-interface RoutingPoint { x: number; y: number; type: "anchor"|"control" }
-interface EdgeRouteConfig { edgeId: string; fromNodeIdx: number; toNodeIdx: number; routing: "auto"|"straight"|"horizontal"|"vertical"|"custom"; controlPoints: RoutingPoint[]; offset: number; labelPos: "auto"|"start"|"mid"|"end"; arrowStyle: "default"|"none"|"both" }
+interface RoutingPoint {
+  x: number
+  y: number
+  type: 'anchor' | 'control'
+}
+interface EdgeRouteConfig {
+  edgeId: string
+  fromNodeIdx: number
+  toNodeIdx: number
+  routing: 'auto' | 'straight' | 'horizontal' | 'vertical' | 'custom'
+  controlPoints: RoutingPoint[]
+  offset: number
+  labelPos: 'auto' | 'start' | 'mid' | 'end'
+  arrowStyle: 'default' | 'none' | 'both'
+}
 // ── Script Action Editor ────────────────────────────────────────────
-interface ScriptVar { name: string; type: string; defaultValue: string; description: string }
-interface ScriptErrorHandling { onFail: "abort"|"skip"|"retry"; retryCount?: number; retryDelay?: number }
-interface ScriptOutputMapping { from: string; to: string; transform?: string }
-interface ScriptActionConfig { language: "javascript"|"python"|"typescript"; code: string; imports: string[]; variables: ScriptVar[]; errorHandling: ScriptErrorHandling; outputMapping: ScriptOutputMapping[]; timeout: number; description: string }
+interface ScriptVar {
+  name: string
+  type: string
+  defaultValue: string
+  description: string
+}
+interface ScriptErrorHandling {
+  onFail: 'abort' | 'skip' | 'retry'
+  retryCount?: number
+  retryDelay?: number
+}
+interface ScriptOutputMapping {
+  from: string
+  to: string
+  transform?: string
+}
+interface ScriptActionConfig {
+  language: 'javascript' | 'python' | 'typescript'
+  code: string
+  imports: string[]
+  variables: ScriptVar[]
+  errorHandling: ScriptErrorHandling
+  outputMapping: ScriptOutputMapping[]
+  timeout: number
+  description: string
+}
 // ── Fork/Join Enhanced ──────────────────────────────────────────────
-interface ForkJoinAnnotation { id: string; type: "fork"|"join"; branchIndices: number[]; forkNodeIdx: number; joinNodeIdx?: number; label: string; color: string; annotations: Array<{type:"label"|"flow"|"count"; text: string}> }
+interface ForkJoinAnnotation {
+  id: string
+  type: 'fork' | 'join'
+  branchIndices: number[]
+  forkNodeIdx: number
+  joinNodeIdx?: number
+  label: string
+  color: string
+  annotations: Array<{ type: 'label' | 'flow' | 'count'; text: string }>
+}
 // ── Group Drag/Resize ──────────────────────────────────────────────
 // ── Edge Routing ────────────────────────────────────────────────────
 // ── Constants ─────────────────────────────────────────────────────────
 const GRID_SIZE = 20
 const SNAP_THRESHOLD = 15
 const nodeTypes = [
-  { type: 'start',    label: '开始', icon: '🟢' },
-  { type: 'task',     label: '任务', icon: '📋' },
+  { type: 'start', label: '开始', icon: '🟢' },
+  { type: 'task', label: '任务', icon: '📋' },
   { type: 'approval', label: '审批', icon: '✅' },
-  { type: 'end',      label: '结束', icon: '🔴' },
+  { type: 'end', label: '结束', icon: '🔴' },
 ]
-const allNodeTypes = ['start','task','approval','timer','end','gate_and','gate_or','gate_xor','subprocess','script','parallel']
+const allNodeTypes = [
+  'start',
+  'task',
+  'approval',
+  'timer',
+  'end',
+  'gate_and',
+  'gate_or',
+  'gate_xor',
+  'subprocess',
+  'script',
+  'parallel',
+]
 // ── Advanced Node Configuration ─────────────────────────────────────
 interface NodeConfig {
-  type: string; label: string; icon: string
-  defaultW: number; defaultH: number
+  type: string
+  label: string
+  icon: string
+  defaultW: number
+  defaultH: number
   canHaveChildren: boolean
   maxChildren: number
   supportsParallel: boolean
@@ -2867,23 +2988,199 @@ interface NodeConfig {
   color: string
 }
 const nodeConfigs: Record<string, NodeConfig> = {
-  start:    { type: 'start', label: '开始', icon: '🟢', defaultW: 100, defaultH: 50, canHaveChildren: false, maxChildren: 0, supportsParallel: false, supportsCondition: false, supportsScript: false, supportsAssignee: false, supportsTimeout: false, supportsRetry: false, supportsDataMapping: false, color: '#10b981' },
-  end:      { type: 'end', label: '结束', icon: '🔴', defaultW: 100, defaultH: 50, canHaveChildren: false, maxChildren: 0, supportsParallel: false, supportsCondition: false, supportsScript: false, supportsAssignee: false, supportsTimeout: false, supportsRetry: false, supportsDataMapping: false, color: '#ef4444' },
-  task:     { type: 'task', label: '任务', icon: '📋', defaultW: 120, defaultH: 50, canHaveChildren: true, maxChildren: 10, supportsParallel: true, supportsCondition: true, supportsScript: false, supportsAssignee: true, supportsTimeout: true, supportsRetry: true, supportsDataMapping: true, color: '#00d4ff' },
-  approval: { type: 'approval', label: '审批', icon: '✅', defaultW: 130, defaultH: 70, canHaveChildren: true, maxChildren: 5, supportsParallel: true, supportsCondition: true, supportsScript: false, supportsAssignee: true, supportsTimeout: true, supportsRetry: true, supportsDataMapping: true, color: '#6366f1' },
-  timer:    { type: 'timer', label: '定时', icon: '⏱️', defaultW: 110, defaultH: 50, canHaveChildren: false, maxChildren: 0, supportsParallel: false, supportsCondition: false, supportsScript: true, supportsAssignee: false, supportsTimeout: true, supportsRetry: false, supportsDataMapping: false, color: '#f59e0b' },
-  gate_and: { type: 'gate_and', label: '且网关', icon: '🔷', defaultW: 100, defaultH: 50, canHaveChildren: true, maxChildren: 20, supportsParallel: true, supportsCondition: true, supportsScript: false, supportsAssignee: false, supportsTimeout: false, supportsRetry: false, supportsDataMapping: false, color: '#f59e0b' },
-  gate_or:  { type: 'gate_or', label: '或网关', icon: '🔶', defaultW: 100, defaultH: 50, canHaveChildren: true, maxChildren: 20, supportsParallel: true, supportsCondition: true, supportsScript: false, supportsAssignee: false, supportsTimeout: false, supportsRetry: false, supportsDataMapping: false, color: '#f59e0b' },
-  gate_xor: { type: 'gate_xor', label: '异或网关', icon: '🔹', defaultW: 100, defaultH: 50, canHaveChildren: true, maxChildren: 20, supportsParallel: true, supportsCondition: true, supportsScript: false, supportsAssignee: false, supportsTimeout: false, supportsRetry: false, supportsDataMapping: false, color: '#f59e0b' },
-  subprocess: { type: 'subprocess', label: '子流程', icon: '📦', defaultW: 120, defaultH: 60, canHaveChildren: true, maxChildren: 50, supportsParallel: true, supportsCondition: false, supportsScript: false, supportsAssignee: true, supportsTimeout: true, supportsRetry: true, supportsDataMapping: true, color: '#a855f7' },
-  script:   { type: 'script', label: '脚本', icon: '💻', defaultW: 120, defaultH: 50, canHaveChildren: false, maxChildren: 0, supportsParallel: false, supportsCondition: false, supportsScript: true, supportsAssignee: false, supportsTimeout: true, supportsRetry: true, supportsDataMapping: true, color: '#22c55e' },
-  parallel: { type: 'parallel', label: '并行', icon: '⚡', defaultW: 120, defaultH: 50, canHaveChildren: true, maxChildren: 10, supportsParallel: true, supportsCondition: false, supportsScript: false, supportsAssignee: false, supportsTimeout: false, supportsRetry: false, supportsDataMapping: false, color: '#ec4899' },
+  start: {
+    type: 'start',
+    label: '开始',
+    icon: '🟢',
+    defaultW: 100,
+    defaultH: 50,
+    canHaveChildren: false,
+    maxChildren: 0,
+    supportsParallel: false,
+    supportsCondition: false,
+    supportsScript: false,
+    supportsAssignee: false,
+    supportsTimeout: false,
+    supportsRetry: false,
+    supportsDataMapping: false,
+    color: '#10b981',
+  },
+  end: {
+    type: 'end',
+    label: '结束',
+    icon: '🔴',
+    defaultW: 100,
+    defaultH: 50,
+    canHaveChildren: false,
+    maxChildren: 0,
+    supportsParallel: false,
+    supportsCondition: false,
+    supportsScript: false,
+    supportsAssignee: false,
+    supportsTimeout: false,
+    supportsRetry: false,
+    supportsDataMapping: false,
+    color: '#ef4444',
+  },
+  task: {
+    type: 'task',
+    label: '任务',
+    icon: '📋',
+    defaultW: 120,
+    defaultH: 50,
+    canHaveChildren: true,
+    maxChildren: 10,
+    supportsParallel: true,
+    supportsCondition: true,
+    supportsScript: false,
+    supportsAssignee: true,
+    supportsTimeout: true,
+    supportsRetry: true,
+    supportsDataMapping: true,
+    color: '#00d4ff',
+  },
+  approval: {
+    type: 'approval',
+    label: '审批',
+    icon: '✅',
+    defaultW: 130,
+    defaultH: 70,
+    canHaveChildren: true,
+    maxChildren: 5,
+    supportsParallel: true,
+    supportsCondition: true,
+    supportsScript: false,
+    supportsAssignee: true,
+    supportsTimeout: true,
+    supportsRetry: true,
+    supportsDataMapping: true,
+    color: '#6366f1',
+  },
+  timer: {
+    type: 'timer',
+    label: '定时',
+    icon: '⏱️',
+    defaultW: 110,
+    defaultH: 50,
+    canHaveChildren: false,
+    maxChildren: 0,
+    supportsParallel: false,
+    supportsCondition: false,
+    supportsScript: true,
+    supportsAssignee: false,
+    supportsTimeout: true,
+    supportsRetry: false,
+    supportsDataMapping: false,
+    color: '#f59e0b',
+  },
+  gate_and: {
+    type: 'gate_and',
+    label: '且网关',
+    icon: '🔷',
+    defaultW: 100,
+    defaultH: 50,
+    canHaveChildren: true,
+    maxChildren: 20,
+    supportsParallel: true,
+    supportsCondition: true,
+    supportsScript: false,
+    supportsAssignee: false,
+    supportsTimeout: false,
+    supportsRetry: false,
+    supportsDataMapping: false,
+    color: '#f59e0b',
+  },
+  gate_or: {
+    type: 'gate_or',
+    label: '或网关',
+    icon: '🔶',
+    defaultW: 100,
+    defaultH: 50,
+    canHaveChildren: true,
+    maxChildren: 20,
+    supportsParallel: true,
+    supportsCondition: true,
+    supportsScript: false,
+    supportsAssignee: false,
+    supportsTimeout: false,
+    supportsRetry: false,
+    supportsDataMapping: false,
+    color: '#f59e0b',
+  },
+  gate_xor: {
+    type: 'gate_xor',
+    label: '异或网关',
+    icon: '🔹',
+    defaultW: 100,
+    defaultH: 50,
+    canHaveChildren: true,
+    maxChildren: 20,
+    supportsParallel: true,
+    supportsCondition: true,
+    supportsScript: false,
+    supportsAssignee: false,
+    supportsTimeout: false,
+    supportsRetry: false,
+    supportsDataMapping: false,
+    color: '#f59e0b',
+  },
+  subprocess: {
+    type: 'subprocess',
+    label: '子流程',
+    icon: '📦',
+    defaultW: 120,
+    defaultH: 60,
+    canHaveChildren: true,
+    maxChildren: 50,
+    supportsParallel: true,
+    supportsCondition: false,
+    supportsScript: false,
+    supportsAssignee: true,
+    supportsTimeout: true,
+    supportsRetry: true,
+    supportsDataMapping: true,
+    color: '#a855f7',
+  },
+  script: {
+    type: 'script',
+    label: '脚本',
+    icon: '💻',
+    defaultW: 120,
+    defaultH: 50,
+    canHaveChildren: false,
+    maxChildren: 0,
+    supportsParallel: false,
+    supportsCondition: false,
+    supportsScript: true,
+    supportsAssignee: false,
+    supportsTimeout: true,
+    supportsRetry: true,
+    supportsDataMapping: true,
+    color: '#22c55e',
+  },
+  parallel: {
+    type: 'parallel',
+    label: '并行',
+    icon: '⚡',
+    defaultW: 120,
+    defaultH: 50,
+    canHaveChildren: true,
+    maxChildren: 10,
+    supportsParallel: true,
+    supportsCondition: false,
+    supportsScript: false,
+    supportsAssignee: false,
+    supportsTimeout: false,
+    supportsRetry: false,
+    supportsDataMapping: false,
+    color: '#ec4899',
+  },
 }
 function getNodeConfig(type: string): NodeConfig {
   return nodeConfigs[type] || nodeConfigs['task']
 }
 function isGate(type: string): boolean {
-  return type === "gate_and" || type === "gate_or" || type === "gate_xor"
+  return type === 'gate_and' || type === 'gate_or' || type === 'gate_xor'
 }
 function getNodeConditions(node: PDNode): string[] {
   const cfg = getNodeConfig(node.type)
@@ -2891,17 +3188,142 @@ function getNodeConditions(node: PDNode): string[] {
   return ['通过', '拒绝', '超时']
 }
 // ── Node Template Presets ────────────────────────────────────────────
-interface NodeTemplate { name: string; icon: string; nodes: Array<{type: string; label: string}>; edges: Array<{from: number; to: number; label?: string}> }
+interface NodeTemplate {
+  name: string
+  icon: string
+  nodes: Array<{ type: string; label: string }>
+  edges: Array<{ from: number; to: number; label?: string }>
+}
 const nodeTemplatesExpanded: NodeTemplate[] = [
-  { name: '请假审批', icon: '📝', nodes: [{type:'start',label:'开始'},{type:'task',label:'提交申请'},{type:'approval',label:'主管审批'},{type:'gate_or',label:'金额判断'},{type:'approval',label:'经理审批'},{type:'end',label:'完成'}], edges: [{from:0,to:1},{from:1,to:2},{from:2,to:3},{from:3,to:4,label:'>5000'},{from:3,to:5,label:'<=5000'},{from:4,to:5}] },
-  { name: '采购流程', icon: '🛒', nodes: [{type:'start',label:'开始'},{type:'task',label:'创建采购单'},{type:'approval',label:'部门审批'},{type:'approval',label:'财务审批'},{type:'task',label:'执行采购'},{type:'end',label:'完成'}], edges: [{from:0,to:1},{from:1,to:2},{from:2,to:3},{from:3,to:4},{from:4,to:5}] },
-  { name: '发布流程', icon: '🚀', nodes: [{type:'start',label:'开始'},{type:'task',label:'代码提交'},{type:'script',label:'自动化测试'},{type:'gate_or',label:'测试通过?'},{type:'approval',label:'人工审核'},{type:'task',label:'部署'},{type:'end',label:'完成'}], edges: [{from:0,to:1},{from:1,to:2},{from:2,to:3},{from:3,to:4,label:'通过'},{from:3,to:5,label:'紧急'},{from:4,to:5},{from:5,to:6}] },
-  { name: '并行任务', icon: '⚡', nodes: [{type:'start',label:'开始'},{type:'gate_and',label:'分发'},{type:'task',label:'任务A'},{type:'task',label:'任务B'},{type:'task',label:'任务C'},{type:'gate_and',label:'汇聚'},{type:'end',label:'完成'}], edges: [{from:0,to:1},{from:1,to:2},{from:1,to:3},{from:1,to:4},{from:2,to:5},{from:3,to:5},{from:4,to:5},{from:5,to:6}] },
-  { name: '循环重试', icon: '🔄', nodes: [{type:'start',label:'开始'},{type:'task',label:'执行任务'},{type:'gate_or',label:'成功?'},{type:'script',label:'错误处理'},{type:'end',label:'结束'}], edges: [{from:0,to:1},{from:1,to:2},{from:2,to:3,label:'失败'},{from:2,to:4,label:'成功'},{from:3,to:1}] },
-  { name: '多级审批', icon: '📑', nodes: [{type:'start',label:'开始'},{type:'task',label:'提交'},{type:'approval',label:'一级审批'},{type:'approval',label:'二级审批'},{type:'approval',label:'三级审批'},{type:'end',label:'完成'}], edges: [{from:0,to:1},{from:1,to:2},{from:2,to:3},{from:3,to:4},{from:4,to:5}] },
+  {
+    name: '请假审批',
+    icon: '📝',
+    nodes: [
+      { type: 'start', label: '开始' },
+      { type: 'task', label: '提交申请' },
+      { type: 'approval', label: '主管审批' },
+      { type: 'gate_or', label: '金额判断' },
+      { type: 'approval', label: '经理审批' },
+      { type: 'end', label: '完成' },
+    ],
+    edges: [
+      { from: 0, to: 1 },
+      { from: 1, to: 2 },
+      { from: 2, to: 3 },
+      { from: 3, to: 4, label: '>5000' },
+      { from: 3, to: 5, label: '<=5000' },
+      { from: 4, to: 5 },
+    ],
+  },
+  {
+    name: '采购流程',
+    icon: '🛒',
+    nodes: [
+      { type: 'start', label: '开始' },
+      { type: 'task', label: '创建采购单' },
+      { type: 'approval', label: '部门审批' },
+      { type: 'approval', label: '财务审批' },
+      { type: 'task', label: '执行采购' },
+      { type: 'end', label: '完成' },
+    ],
+    edges: [
+      { from: 0, to: 1 },
+      { from: 1, to: 2 },
+      { from: 2, to: 3 },
+      { from: 3, to: 4 },
+      { from: 4, to: 5 },
+    ],
+  },
+  {
+    name: '发布流程',
+    icon: '🚀',
+    nodes: [
+      { type: 'start', label: '开始' },
+      { type: 'task', label: '代码提交' },
+      { type: 'script', label: '自动化测试' },
+      { type: 'gate_or', label: '测试通过?' },
+      { type: 'approval', label: '人工审核' },
+      { type: 'task', label: '部署' },
+      { type: 'end', label: '完成' },
+    ],
+    edges: [
+      { from: 0, to: 1 },
+      { from: 1, to: 2 },
+      { from: 2, to: 3 },
+      { from: 3, to: 4, label: '通过' },
+      { from: 3, to: 5, label: '紧急' },
+      { from: 4, to: 5 },
+      { from: 5, to: 6 },
+    ],
+  },
+  {
+    name: '并行任务',
+    icon: '⚡',
+    nodes: [
+      { type: 'start', label: '开始' },
+      { type: 'gate_and', label: '分发' },
+      { type: 'task', label: '任务A' },
+      { type: 'task', label: '任务B' },
+      { type: 'task', label: '任务C' },
+      { type: 'gate_and', label: '汇聚' },
+      { type: 'end', label: '完成' },
+    ],
+    edges: [
+      { from: 0, to: 1 },
+      { from: 1, to: 2 },
+      { from: 1, to: 3 },
+      { from: 1, to: 4 },
+      { from: 2, to: 5 },
+      { from: 3, to: 5 },
+      { from: 4, to: 5 },
+      { from: 5, to: 6 },
+    ],
+  },
+  {
+    name: '循环重试',
+    icon: '🔄',
+    nodes: [
+      { type: 'start', label: '开始' },
+      { type: 'task', label: '执行任务' },
+      { type: 'gate_or', label: '成功?' },
+      { type: 'script', label: '错误处理' },
+      { type: 'end', label: '结束' },
+    ],
+    edges: [
+      { from: 0, to: 1 },
+      { from: 1, to: 2 },
+      { from: 2, to: 3, label: '失败' },
+      { from: 2, to: 4, label: '成功' },
+      { from: 3, to: 1 },
+    ],
+  },
+  {
+    name: '多级审批',
+    icon: '📑',
+    nodes: [
+      { type: 'start', label: '开始' },
+      { type: 'task', label: '提交' },
+      { type: 'approval', label: '一级审批' },
+      { type: 'approval', label: '二级审批' },
+      { type: 'approval', label: '三级审批' },
+      { type: 'end', label: '完成' },
+    ],
+    edges: [
+      { from: 0, to: 1 },
+      { from: 1, to: 2 },
+      { from: 2, to: 3 },
+      { from: 3, to: 4 },
+      { from: 4, to: 5 },
+    ],
+  },
 ]
 // ── Edge Style Presets ───────────────────────────────────────────────
-interface EdgeStyle { name: string; color: string; width: number; dash: string }
+interface EdgeStyle {
+  name: string
+  color: string
+  width: number
+  dash: string
+}
 const edgeStylePresets: EdgeStyle[] = [
   { name: '默认', color: 'var(--color-primary)', width: 2, dash: 'none' },
   { name: '虚线', color: 'var(--color-warning)', width: 1.5, dash: '6,4' },
@@ -2914,8 +3336,10 @@ const showCondEditor = ref(false)
 const condEditorField = ref('')
 const condEditorOp = ref('>=' as string)
 const condEditorValue = ref('')
-const condEditorLogic = ref('and' as 'and'|'or')
-function openCondEditor() { showCondEditor.value = !showCondEditor.value }
+const condEditorLogic = ref('and' as 'and' | 'or')
+function openCondEditor() {
+  showCondEditor.value = !showCondEditor.value
+}
 function applyCondExpression() {
   if (!condEditorField.value) return
   const expr = condEditorField.value + ' ' + condEditorOp.value + ' ' + condEditorValue.value
@@ -2926,12 +3350,14 @@ function applyCondExpression() {
   }
   showCondEditor.value = false
 }
-function clearCondition() { _setNodeProp('condition', '') }
+function clearCondition() {
+  _setNodeProp('condition', '')
+}
 const condOperators = ['>', '<', '>=', '<=', '===', '!==', 'in', 'contains']
 const condFields = ['amount', 'status', 'userId', 'priority', 'deadline', 'department', 'role', 'type', 'result']
 // ── Script Binding Editor ────────────────────────────────────────────
 const showScriptEditor = ref(false)
-const scriptBindingVars = ref<Array<{name: string; type: string; defaultVal: string}>>([
+const scriptBindingVars = ref<Array<{ name: string; type: string; defaultVal: string }>>([
   { name: 'inputData', type: 'object', defaultVal: '{}' },
   { name: 'context', type: 'object', defaultVal: '{}' },
   { name: 'output', type: 'any', defaultVal: 'null' },
@@ -2944,19 +3370,34 @@ function removeScriptVar(idx: number) {
 }
 // ── Retry Strategy Visualizer ────────────────────────────────────────
 const showRetryVisualizer = ref(false)
-const retryStrategies: Array<{name: string; desc: string; formula: string; example: number[]}> = [
+const retryStrategies: Array<{ name: string; desc: string; formula: string; example: number[] }> = [
   { name: '固定间隔', desc: '每次重试等待相同时间', formula: 'delay = baseDelay', example: [1000, 1000, 1000, 1000] },
-  { name: '线性递增', desc: '每次增加固定延迟', formula: 'delay = baseDelay + attempt * step', example: [1000, 2000, 3000, 4000] },
-  { name: '指数退避', desc: '延迟随重试次数指数增长', formula: 'delay = baseDelay * multiplier^attempt', example: [1000, 2000, 4000, 8000] },
-  { name: '抖动退避', desc: '指数退避+随机抖动', formula: 'delay = baseDelay * 2^attempt ± jitter', example: [1000, 1800, 3500, 7200] },
+  {
+    name: '线性递增',
+    desc: '每次增加固定延迟',
+    formula: 'delay = baseDelay + attempt * step',
+    example: [1000, 2000, 3000, 4000],
+  },
+  {
+    name: '指数退避',
+    desc: '延迟随重试次数指数增长',
+    formula: 'delay = baseDelay * multiplier^attempt',
+    example: [1000, 2000, 4000, 8000],
+  },
+  {
+    name: '抖动退避',
+    desc: '指数退避+随机抖动',
+    formula: 'delay = baseDelay * 2^attempt ± jitter',
+    example: [1000, 1800, 3500, 7200],
+  },
 ]
 function getRetryDelays(strategy: string, count: number, baseDelay: number, multiplier: number): number[] {
   const delays: number[] = []
   for (let i = 0; i < count; i++) {
     if (strategy === 'fixed') delays.push(baseDelay)
     else if (strategy === 'linear') delays.push(baseDelay + (i + 1) * baseDelay)
-    else if (strategy === 'exponential') delays.push(Math.round(baseDelay * Math.pow(multiplier, i)))
-    else if (strategy === 'jitter') delays.push(Math.round(baseDelay * Math.pow(multiplier, i) * (0.8 + Math.random() * 0.4)))
+    else if (strategy === 'exponential') delays.push(Math.round(baseDelay * multiplier ** i))
+    else if (strategy === 'jitter') delays.push(Math.round(baseDelay * multiplier ** i * (0.8 + Math.random() * 0.4)))
   }
   return delays
 }
@@ -2976,66 +3417,101 @@ const subNodeTypesExpanded = [
 ]
 // ── Canvas Zoom Presets ──────────────────────────────────────────────
 const zoomPresets = [
-  { label: '25%', value: 0.25 }, { label: '50%', value: 0.5 },
-  { label: '75%', value: 0.75 }, { label: '100%', value: 1 },
-  { label: '150%', value: 1.5 }, { label: '200%', value: 2 },
+  { label: '25%', value: 0.25 },
+  { label: '50%', value: 0.5 },
+  { label: '75%', value: 0.75 },
+  { label: '100%', value: 1 },
+  { label: '150%', value: 1.5 },
+  { label: '200%', value: 2 },
   { label: '_fit', value: -1 },
 ]
 // ── Condition Editor Helpers ────────────────────────────────────────
 const nodeVars = ref<string[]>(['amount', 'userId', 'status', 'priority', 'deadline', 'department', 'role'])
-const availableFields = ref<string[]>(['name', 'amount', 'status', 'userId', 'priority', 'date', 'comment', 'result', 'output'])
+const availableFields = ref<string[]>([
+  'name',
+  'amount',
+  'status',
+  'userId',
+  'priority',
+  'date',
+  'comment',
+  'result',
+  'output',
+])
 // ── State ─────────────────────────────────────────────────────────────
-const plLoading = ref(false), sbFilter = ref('')
-const currentProcess = ref<ProcDef|null>(null)
-const processDef = ref<{nodes: PDNode[]; edges: PDEdge[]}>({ nodes: [], edges: [] })
-const selectedNode = ref<number|null>(null)
-const selectedEdge = ref<number|null>(null)
-const showNewModal = ref(false), newForm = ref({ name: '', flag: '', desc: '' })
-const canvasRef = ref<HTMLElement|null>(null)
-const panX = ref(0), panY = ref(0), zoom = ref(1)
-const history = ref<{nodes: PDNode[]; edges: PDEdge[]}[]>([])
+const plLoading = ref(false),
+  sbFilter = ref('')
+const currentProcess = ref<ProcDef | null>(null)
+const processDef = ref<{ nodes: PDNode[]; edges: PDEdge[] }>({ nodes: [], edges: [] })
+const selectedNode = ref<number | null>(null)
+const selectedEdge = ref<number | null>(null)
+const showNewModal = ref(false),
+  newForm = ref({ name: '', flag: '', desc: '' })
+const canvasRef = ref<HTMLElement | null>(null)
+const panX = ref(0),
+  panY = ref(0),
+  zoom = ref(1)
+const history = ref<{ nodes: PDNode[]; edges: PDEdge[] }[]>([])
 const histIdx = ref(-1)
 const canUndo = computed(() => histIdx.value > 0)
 const canRedo = computed(() => histIdx.value < history.value.length - 1)
-const isDragging = ref(false), dragIdx = ref<number|null>(null)
+const isDragging = ref(false),
+  dragIdx = ref<number | null>(null)
 const dragOffset = ref({ x: 0, y: 0 })
-const snapX = ref<number|null>(null), snapY = ref<number|null>(null)
-const tempEdge = ref<{ from: number; fromPort: 'out'|'in'; startX: number; startY: number; endX: number; endY: number }|null>(null)
-const predictedTarget = ref<number|null>(null)
+const snapX = ref<number | null>(null),
+  snapY = ref<number | null>(null)
+const tempEdge = ref<{
+  from: number
+  fromPort: 'out' | 'in'
+  startX: number
+  startY: number
+  endX: number
+  endY: number
+} | null>(null)
+const predictedTarget = ref<number | null>(null)
 const predictedPath = ref<string>('')
 const showPrediction = ref(false)
-const isPanning = ref(false), panStart = ref({ x: 0, y: 0 })
+const isPanning = ref(false),
+  panStart = ref({ x: 0, y: 0 })
 // Resize state
 const isResizing = ref(false)
-const resizeIdx = ref<number|null>(null)
+const resizeIdx = ref<number | null>(null)
 const resizeDir = ref<string>('')
 const resizeStart = ref({ x: 0, y: 0, w: 0, h: 0 })
 // Anchor point drag state
 const isDraggingAnchor = ref(false)
-const anchorNodeIdx = ref<number|null>(null)
-const anchorIdx = ref<number|null>(null)
-const selectedAnchorNode = computed(() => isDraggingAnchor.value ? anchorNodeIdx.value : null)
+const anchorNodeIdx = ref<number | null>(null)
+const anchorIdx = ref<number | null>(null)
+const selectedAnchorNode = computed(() => (isDraggingAnchor.value ? anchorNodeIdx.value : null))
 const anchorPoints = computed(() => {
   if (anchorNodeIdx.value === null || !processDef.value?.nodes[anchorNodeIdx.value]) return []
   const node = processDef.value.nodes[anchorNodeIdx.value]
-  const w = node.w||120, h = node.h||50
+  const w = node.w || 120,
+    h = node.h || 50
   const offsets = (node as any).anchorOffset || []
   return [
-    { x: node.x + w/2, y: node.y },
-    { x: offsets[1]?.x ?? node.x + w, y: node.y + h/2 },
-    { x: node.x + w/2, y: node.y + h },
-    { x: offsets[3]?.x ?? node.x, y: node.y + h/2 },
+    { x: node.x + w / 2, y: node.y },
+    { x: offsets[1]?.x ?? node.x + w, y: node.y + h / 2 },
+    { x: node.x + w / 2, y: node.y + h },
+    { x: offsets[3]?.x ?? node.x, y: node.y + h / 2 },
   ]
 })
 // Group state
 const groupedNodes = ref<Set<string>>(new Set())
 // Script tab state
-const scriptTab = ref<'code'|'vars'|'error'>('code')
+const scriptTab = ref<'code' | 'vars' | 'error'>('code')
 // Version control state
-interface ProcVersion { id: string; timestamp: number; label: string; config: { nodes: PDNode[]; edges: PDEdge[] }; author: string; message: string }
+interface ProcVersion {
+  id: string
+  timestamp: number
+  label: string
+  config: { nodes: PDNode[]; edges: PDEdge[] }
+  author: string
+  message: string
+}
 const versions = ref<ProcVersion[]>([])
 const showVersionPanel = ref(false)
-const selectedVersion = ref<ProcVersion|null>(null)
+const selectedVersion = ref<ProcVersion | null>(null)
 const showDiff = ref(false)
 const addedNodes = ref<PDNode[]>([])
 const removedNodes = ref<PDNode[]>([])
@@ -3047,31 +3523,44 @@ const multiDragOffset = ref({ x: 0, y: 0 })
 // Minimap state
 const minimapVisible = ref(true)
 const minimapScale = 0.15
-const minimapCanvasRef = ref<HTMLCanvasElement|null>(null)
+const minimapCanvasRef = ref<HTMLCanvasElement | null>(null)
 // ── Execution Simulation ────────────────────────────────────────────
-interface ExecState { currentNodeIdx: number|null; progress: number; status: 'idle'|'running'|'paused'|'finished'; completedNodes: string[] }
+interface ExecState {
+  currentNodeIdx: number | null
+  progress: number
+  status: 'idle' | 'running' | 'paused' | 'finished'
+  completedNodes: string[]
+}
 const execState = ref<ExecState>({ currentNodeIdx: null, progress: 0, status: 'idle', completedNodes: [] })
 const showExecPanel = ref(false)
 function startExecution() {
   if (!processDef.value || processDef.value.nodes.length === 0) return
-  const starts = processDef.value.nodes.findIndex(n => n.type === 'start')
+  const starts = processDef.value.nodes.findIndex((n) => n.type === 'start')
   if (starts === -1) return
-  execState.value = { currentNodeIdx: starts, progress: 0, status: 'running', completedNodes: [processDef.value.nodes[starts].id] }
+  execState.value = {
+    currentNodeIdx: starts,
+    progress: 0,
+    status: 'running',
+    completedNodes: [processDef.value.nodes[starts].id],
+  }
   showExecPanel.value = true
   simulateNext()
 }
 function simulateNext() {
   if (execState.value.status !== 'running' || !processDef.value || execState.value.currentNodeIdx === null) return
   const curId = processDef.value.nodes[execState.value.currentNodeIdx].id
-  const outgoing = (processDef.value.edges||[]).filter(e => e.from === curId)
+  const outgoing = (processDef.value.edges || []).filter((e) => e.from === curId)
   if (outgoing.length === 0) {
     execState.value.status = 'finished'
     return
   }
   // Pick first outgoing edge
   const nextId = outgoing[0].to
-  const nextIdx = processDef.value.nodes.findIndex(n => n.id === nextId)
-  if (nextIdx === -1) { execState.value.status = 'finished'; return }
+  const nextIdx = processDef.value.nodes.findIndex((n) => n.id === nextId)
+  if (nextIdx === -1) {
+    execState.value.status = 'finished'
+    return
+  }
   // Animate progress
   const totalNodes = processDef.value.nodes.length
   let progress = 0
@@ -3107,8 +3596,11 @@ function resetExecution() {
 }
 // ── Node Type Config Profiles ────────────────────────────────────────
 interface NodeProfile {
-  type: string; label: string; icon: string
-  defaultW: number; defaultH: number
+  type: string
+  label: string
+  icon: string
+  defaultW: number
+  defaultH: number
   canHaveConditions: boolean
   canHaveScript: boolean
   canHaveAssignee: boolean
@@ -3117,60 +3609,212 @@ interface NodeProfile {
   canGroup: boolean
 }
 const nodeProfiles: NodeProfile[] = [
-  { type: 'start', label: '开始', icon: '🟢', defaultW: 100, defaultH: 50, canHaveConditions: false, canHaveScript: false, canHaveAssignee: false, canTimeout: false, canRetry: false, canGroup: true },
-  { type: 'end', label: '结束', icon: '🔴', defaultW: 100, defaultH: 50, canHaveConditions: false, canHaveScript: false, canHaveAssignee: false, canTimeout: false, canRetry: false, canGroup: true },
-  { type: 'task', label: '任务', icon: '📋', defaultW: 120, defaultH: 50, canHaveConditions: true, canHaveScript: true, canHaveAssignee: true, canTimeout: true, canRetry: true, canGroup: true },
-  { type: 'approval', label: '审批', icon: '✅', defaultW: 130, defaultH: 70, canHaveConditions: true, canHaveScript: false, canHaveAssignee: true, canTimeout: true, canRetry: true, canGroup: true },
-  { type: 'timer', label: '定时', icon: '⏱️', defaultW: 110, defaultH: 50, canHaveConditions: false, canHaveScript: true, canHaveAssignee: false, canTimeout: true, canRetry: false, canGroup: true },
-  { type: 'gate_and', label: '且网关', icon: '🔷', defaultW: 100, defaultH: 50, canHaveConditions: true, canHaveScript: false, canHaveAssignee: false, canTimeout: false, canRetry: false, canGroup: true },
-  { type: 'gate_or', label: '或网关', icon: '🔶', defaultW: 100, defaultH: 50, canHaveConditions: true, canHaveScript: false, canHaveAssignee: false, canTimeout: false, canRetry: false, canGroup: true },
-  { type: 'gate_xor', label: '异或网关', icon: '🔹', defaultW: 100, defaultH: 50, canHaveConditions: true, canHaveScript: false, canHaveAssignee: false, canTimeout: false, canRetry: false, canGroup: true },
-  { type: 'subprocess', label: '子流程', icon: '📦', defaultW: 120, defaultH: 60, canHaveConditions: false, canHaveScript: false, canHaveAssignee: true, canTimeout: true, canRetry: true, canGroup: true },
-  { type: 'script', label: '脚本', icon: '💻', defaultW: 120, defaultH: 50, canHaveConditions: false, canHaveScript: true, canHaveAssignee: false, canTimeout: true, canRetry: true, canGroup: true },
-  { type: 'parallel', label: '并行', icon: '⚡', defaultW: 120, defaultH: 50, canHaveConditions: false, canHaveScript: false, canHaveAssignee: false, canTimeout: false, canRetry: false, canGroup: true },
+  {
+    type: 'start',
+    label: '开始',
+    icon: '🟢',
+    defaultW: 100,
+    defaultH: 50,
+    canHaveConditions: false,
+    canHaveScript: false,
+    canHaveAssignee: false,
+    canTimeout: false,
+    canRetry: false,
+    canGroup: true,
+  },
+  {
+    type: 'end',
+    label: '结束',
+    icon: '🔴',
+    defaultW: 100,
+    defaultH: 50,
+    canHaveConditions: false,
+    canHaveScript: false,
+    canHaveAssignee: false,
+    canTimeout: false,
+    canRetry: false,
+    canGroup: true,
+  },
+  {
+    type: 'task',
+    label: '任务',
+    icon: '📋',
+    defaultW: 120,
+    defaultH: 50,
+    canHaveConditions: true,
+    canHaveScript: true,
+    canHaveAssignee: true,
+    canTimeout: true,
+    canRetry: true,
+    canGroup: true,
+  },
+  {
+    type: 'approval',
+    label: '审批',
+    icon: '✅',
+    defaultW: 130,
+    defaultH: 70,
+    canHaveConditions: true,
+    canHaveScript: false,
+    canHaveAssignee: true,
+    canTimeout: true,
+    canRetry: true,
+    canGroup: true,
+  },
+  {
+    type: 'timer',
+    label: '定时',
+    icon: '⏱️',
+    defaultW: 110,
+    defaultH: 50,
+    canHaveConditions: false,
+    canHaveScript: true,
+    canHaveAssignee: false,
+    canTimeout: true,
+    canRetry: false,
+    canGroup: true,
+  },
+  {
+    type: 'gate_and',
+    label: '且网关',
+    icon: '🔷',
+    defaultW: 100,
+    defaultH: 50,
+    canHaveConditions: true,
+    canHaveScript: false,
+    canHaveAssignee: false,
+    canTimeout: false,
+    canRetry: false,
+    canGroup: true,
+  },
+  {
+    type: 'gate_or',
+    label: '或网关',
+    icon: '🔶',
+    defaultW: 100,
+    defaultH: 50,
+    canHaveConditions: true,
+    canHaveScript: false,
+    canHaveAssignee: false,
+    canTimeout: false,
+    canRetry: false,
+    canGroup: true,
+  },
+  {
+    type: 'gate_xor',
+    label: '异或网关',
+    icon: '🔹',
+    defaultW: 100,
+    defaultH: 50,
+    canHaveConditions: true,
+    canHaveScript: false,
+    canHaveAssignee: false,
+    canTimeout: false,
+    canRetry: false,
+    canGroup: true,
+  },
+  {
+    type: 'subprocess',
+    label: '子流程',
+    icon: '📦',
+    defaultW: 120,
+    defaultH: 60,
+    canHaveConditions: false,
+    canHaveScript: false,
+    canHaveAssignee: true,
+    canTimeout: true,
+    canRetry: true,
+    canGroup: true,
+  },
+  {
+    type: 'script',
+    label: '脚本',
+    icon: '💻',
+    defaultW: 120,
+    defaultH: 50,
+    canHaveConditions: false,
+    canHaveScript: true,
+    canHaveAssignee: false,
+    canTimeout: true,
+    canRetry: true,
+    canGroup: true,
+  },
+  {
+    type: 'parallel',
+    label: '并行',
+    icon: '⚡',
+    defaultW: 120,
+    defaultH: 50,
+    canHaveConditions: false,
+    canHaveScript: false,
+    canHaveAssignee: false,
+    canTimeout: false,
+    canRetry: false,
+    canGroup: true,
+  },
 ]
 function getNodeProfile(type: string): NodeProfile {
-  return nodeProfiles.find(p => p.type === type) || nodeProfiles[1]
+  return nodeProfiles.find((p) => p.type === type) || nodeProfiles[1]
 }
 function isProfileEditable(node: PDNode, prop: string): boolean {
   const profile = getNodeProfile(node.type)
-  switch(prop) {
-    case 'condition': return profile.canHaveConditions
-    case 'script': return profile.canHaveScript
-    case 'assignee': return profile.canHaveAssignee
-    case 'timeout': return profile.canTimeout
-    case 'retryCount': return profile.canRetry
-    case 'groupMembers': return profile.canGroup
-    default: return true
+  switch (prop) {
+    case 'condition':
+      return profile.canHaveConditions
+    case 'script':
+      return profile.canHaveScript
+    case 'assignee':
+      return profile.canHaveAssignee
+    case 'timeout':
+      return profile.canTimeout
+    case 'retryCount':
+      return profile.canRetry
+    case 'groupMembers':
+      return profile.canGroup
+    default:
+      return true
   }
 }
 // Subprocess state
 const showSubprocess = ref(false)
 const subprocessTitle = ref('')
-const subprocessNodeIdx = ref<number|null>(null)
-const subprocessDef = ref<{nodes: PDNode[]; edges: PDEdge[]}>({ nodes: [], edges: [] })
+const subprocessNodeIdx = ref<number | null>(null)
+const subprocessDef = ref<{ nodes: PDNode[]; edges: PDEdge[] }>({ nodes: [], edges: [] })
 // Subprocess inline editor state
 const subprocessEditing = ref(false)
-const subprocessStack = ref<Array<{nodes: PDNode[]; edges: PDEdge[]; title: string; parentIdx?: number}>>([])
+const subprocessStack = ref<Array<{ nodes: PDNode[]; edges: PDEdge[]; title: string; parentIdx?: number }>>([])
 const subprocessDepth = ref(0)
-const activeSubprocessIdx = ref<number|null>(null)
-const subCanvasRef = ref<HTMLElement|null>(null)
-const subPanX = ref(0), subPanY = ref(0), subZoom = ref(1)
-const subSelectedNode = ref<number|null>(null)
-const subSelectedEdge = ref<number|null>(null)
-const subIsDragging = ref(false), subDragIdx = ref<number|null>(null)
+const activeSubprocessIdx = ref<number | null>(null)
+const subCanvasRef = ref<HTMLElement | null>(null)
+const subPanX = ref(0),
+  subPanY = ref(0),
+  subZoom = ref(1)
+const subSelectedNode = ref<number | null>(null)
+const subSelectedEdge = ref<number | null>(null)
+const subIsDragging = ref(false),
+  subDragIdx = ref<number | null>(null)
 const subDragOffset = ref({ x: 0, y: 0 })
-const subTempEdge = ref<{ from: number; fromPort: 'out'|'in'; startX: number; startY: number; endX: number; endY: number }|null>(null)
+const subTempEdge = ref<{
+  from: number
+  fromPort: 'out' | 'in'
+  startX: number
+  startY: number
+  endX: number
+  endY: number
+} | null>(null)
 const subIsDraggingAnchor = ref(false)
-const subHistory = ref<{nodes: PDNode[]; edges: PDEdge[]}[]>([])
+const subHistory = ref<{ nodes: PDNode[]; edges: PDEdge[] }[]>([])
 const subHistIdx = ref(-1)
 // Animation playback state
 const isPlaying = ref(false)
 const playbackProgress = ref(0)
 const playbackSpeed = ref(1)
-let playbackTimer: ReturnType<typeof setInterval>|null = null
+let playbackTimer: ReturnType<typeof setInterval> | null = null
 function togglePlay() {
-  if (isPlaying.value) { pausePlayback(); return }
+  if (isPlaying.value) {
+    pausePlayback()
+    return
+  }
   isPlaying.value = true
   const totalMs = 3000 / playbackSpeed.value
   const interval = 50
@@ -3178,15 +3822,22 @@ function togglePlay() {
   playbackTimer = setInterval(() => {
     elapsed += interval
     playbackProgress.value = Math.min(100, (elapsed / totalMs) * 100)
-    if (elapsed >= totalMs) { pausePlayback(); playbackProgress.value = 100 }
+    if (elapsed >= totalMs) {
+      pausePlayback()
+      playbackProgress.value = 100
+    }
   }, interval)
 }
 function pausePlayback() {
   isPlaying.value = false
-  if (playbackTimer) { clearInterval(playbackTimer); playbackTimer = null }
+  if (playbackTimer) {
+    clearInterval(playbackTimer)
+    playbackTimer = null
+  }
 }
 function resetPlayback() {
-  pausePlayback(); playbackProgress.value = 0
+  pausePlayback()
+  playbackProgress.value = 0
 }
 function onPlaybackSeek(e: Event) {
   playbackProgress.value = +(e.target as HTMLInputElement).value
@@ -3204,24 +3855,35 @@ const executionSpeed = ref(1000)
 const isStepping = ref(false)
 const showExecutionPanel = ref(true)
 const flowStats = computed(() => computeFlowStats())
-const groupDragState = ref<GroupDragState|null>(null)
-const groupResizeState = ref<GroupResizeState|null>(null)
+const groupDragState = ref<GroupDragState | null>(null)
+const groupResizeState = ref<GroupResizeState | null>(null)
 const showRoutingPanel = ref(false)
-const selectedRoutingEdge = ref<number|null>(null)
+const selectedRoutingEdge = ref<number | null>(null)
 const routingConfigs = ref<Map<string, EdgeRouteConfig>>(new Map())
 const scriptEditors = ref<Map<string, ScriptActionConfig>>(new Map())
-const scriptEditorNodeIdx = ref<number|null>(null)
+const scriptEditorNodeIdx = ref<number | null>(null)
 const showBranchAnnot = ref(false)
 const forkJoinAnnotations = ref<ForkJoinAnnotation[]>([])
 // ── Computed ──────────────────────────────────────────────────────────
 const filteredProc = computed(() =>
   sbFilter.value
-    ? procList.value.filter(p => (p.name||'').toLowerCase().includes(sbFilter.value.toLowerCase()) || (p.flag||'').toLowerCase().includes(sbFilter.value.toLowerCase()))
-    : procList.value
+    ? procList.value.filter(
+        (p) =>
+          (p.name || '').toLowerCase().includes(sbFilter.value.toLowerCase()) ||
+          (p.flag || '').toLowerCase().includes(sbFilter.value.toLowerCase()),
+      )
+    : procList.value,
 )
-const svgTransform = computed(() => ({ transform: `translate(${panX.value}px,${panY.value}px) scale(${zoom.value})`, transformOrigin: '0 0' }))
-const edgeTransform = computed(() => ({ transform: `translate(${-panX.value}px,${-panY.value}px) scale(${1/zoom.value})` }))
-const nodeTransform = computed(() => ({ transform: `translate(${-panX.value}px,${-panY.value}px) scale(${1/zoom.value})` }))
+const svgTransform = computed(() => ({
+  transform: `translate(${panX.value}px,${panY.value}px) scale(${zoom.value})`,
+  transformOrigin: '0 0',
+}))
+const edgeTransform = computed(() => ({
+  transform: `translate(${-panX.value}px,${-panY.value}px) scale(${1 / zoom.value})`,
+}))
+const nodeTransform = computed(() => ({
+  transform: `translate(${-panX.value}px,${-panY.value}px) scale(${1 / zoom.value})`,
+}))
 const gridScale = computed(() => GRID_SIZE * zoom.value)
 // Multi-select helpers
 function isSelectedNode(id: string): boolean {
@@ -3238,19 +3900,26 @@ function toggleSelectNode(i: number) {
 }
 // Minimap bounds
 const minimapBounds = computed(() => {
-  if (!processDef.value || processDef.value.nodes.length === 0)
-    return { minX: 0, minY: 0, maxX: 800, maxY: 600 }
-  let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity
+  if (!processDef.value || processDef.value.nodes.length === 0) return { minX: 0, minY: 0, maxX: 800, maxY: 600 }
+  let minX = Infinity,
+    minY = Infinity,
+    maxX = -Infinity,
+    maxY = -Infinity
   for (const n of processDef.value.nodes) {
-    minX = Math.min(minX, n.x); minY = Math.min(minY, n.y)
-    maxX = Math.max(maxX, n.x + (n.w || 120)); maxY = Math.max(maxY, n.y + (n.h || 50))
+    minX = Math.min(minX, n.x)
+    minY = Math.min(minY, n.y)
+    maxX = Math.max(maxX, n.x + (n.w || 120))
+    maxY = Math.max(maxY, n.y + (n.h || 50))
   }
   return { minX: minX - 50, minY: minY - 50, maxX: maxX + 50, maxY: maxY + 50 }
 })
-const minimapWidth = computed(() => canvasRef.value ? canvasRef.value.clientWidth * minimapScale : 150)
-const minimapHeight = computed(() => canvasRef.value ? canvasRef.value.clientHeight * minimapScale : 100)
+const minimapWidth = computed(() => (canvasRef.value ? canvasRef.value.clientWidth * minimapScale : 150))
+const minimapHeight = computed(() => (canvasRef.value ? canvasRef.value.clientHeight * minimapScale : 100))
 // Subprocess inline editor computed
-const subSvgTransform = computed(() => ({ transform: `translate(${subPanX.value}px,${subPanY.value}px) scale(${subZoom.value})`, transformOrigin: '0 0' }))
+const subSvgTransform = computed(() => ({
+  transform: `translate(${subPanX.value}px,${subPanY.value}px) scale(${subZoom.value})`,
+  transformOrigin: '0 0',
+}))
 const subGridScale = computed(() => GRID_SIZE * subZoom.value)
 // Parallel branch detection
 function detectParallelBranches(): number[][] {
@@ -3259,12 +3928,15 @@ function detectParallelBranches(): number[][] {
   const visited = new Set<number>()
   for (let i = 0; i < processDef.value.nodes.length; i++) {
     const node = processDef.value.nodes[i]
-    const outgoing = (processDef.value.edges || []).filter(e => e.from === node.id)
+    const outgoing = (processDef.value.edges || []).filter((e) => e.from === node.id)
     if (outgoing.length >= 2 && !visited.has(i)) {
       const branch: number[] = [i]
       for (const edge of outgoing) {
-        const tIdx = processDef.value!.nodes.findIndex(n => n.id === edge.to)
-        if (tIdx !== -1 && !visited.has(tIdx)) { branch.push(tIdx); visited.add(tIdx) }
+        const tIdx = processDef.value!.nodes.findIndex((n) => n.id === edge.to)
+        if (tIdx !== -1 && !visited.has(tIdx)) {
+          branch.push(tIdx)
+          visited.add(tIdx)
+        }
       }
       if (branch.length > 1) groups.push(branch)
     }
@@ -3281,16 +3953,16 @@ const processStats = computed(() => {
   return {
     totalNodes: nodes.length,
     totalEdges: edges.length,
-    startNodes: nodes.filter(n => n.type === 'start').length,
-    endNodes: nodes.filter(n => n.type === 'end').length,
-    taskNodes: nodes.filter(n => n.type === 'task' || n.type === 'approval').length,
-    gateNodes: nodes.filter(n => n.type.startsWith('gate')).length,
+    startNodes: nodes.filter((n) => n.type === 'start').length,
+    endNodes: nodes.filter((n) => n.type === 'end').length,
+    taskNodes: nodes.filter((n) => n.type === 'task' || n.type === 'approval').length,
+    gateNodes: nodes.filter((n) => n.type.startsWith('gate')).length,
     avgOutDegree: nodes.length > 0 ? (edges.length / nodes.length).toFixed(2) : '0',
-    hasLoops: edges.some(e => {
-      const from = nodes.find(n => n.id === e.from)
-      const to = nodes.find(n => n.id === e.to)
+    hasLoops: edges.some((e) => {
+      const from = nodes.find((n) => n.id === e.from)
+      const to = nodes.find((n) => n.id === e.to)
       return from && to && Math.abs(from.x - to.x) < 50 && Math.abs(from.y - to.y) < 50
-    })
+    }),
   }
 })
 // Fork/Join labels for parallel branches
@@ -3302,9 +3974,9 @@ const forkLabels = computed(() => {
     if (!forkNode) continue
     // Find join node (node with incoming edges from all branch nodes)
     let joinNode: PDNode | undefined
-    const branchIds = branch.map(i => processDef.value!.nodes[i]?.id).filter(Boolean) as string[]
-    const potentialJoins = processDef.value.nodes.filter(n =>
-      branchIds.every(bid => (processDef.value!.edges || []).some(e => e.from === bid && e.to === n.id))
+    const branchIds = branch.map((i) => processDef.value!.nodes[i]?.id).filter(Boolean) as string[]
+    const potentialJoins = processDef.value.nodes.filter((n) =>
+      branchIds.every((bid) => (processDef.value!.edges || []).some((e) => e.from === bid && e.to === n.id)),
     )
     if (potentialJoins.length > 0) joinNode = potentialJoins[0]
     labels.push({ branch, forkNode, joinNode })
@@ -3312,11 +3984,18 @@ const forkLabels = computed(() => {
   return labels
 })
 // ── Process List ──────────────────────────────────────────────────────
-const { data: procData } = useQuery({ queryKey: ['pd','list'], queryFn: async () => {
-  plLoading.value = true
-  try { const r: any = await api.get('/jaxrs/processplatform/assemble/designer/process/list'); return r?.data?.list ?? r?.data ?? [] }
-  finally { plLoading.value = false }
-}})
+const { data: procData } = useQuery({
+  queryKey: ['pd', 'list'],
+  queryFn: async () => {
+    plLoading.value = true
+    try {
+      const r: any = await api.get('/jaxrs/processplatform/assemble/designer/process/list')
+      return r?.data?.list ?? r?.data ?? []
+    } finally {
+      plLoading.value = false
+    }
+  },
+})
 const procList = ref<ProcDef[]>(procData.value ?? [])
 // ── History ───────────────────────────────────────────────────────────
 function pushHistory() {
@@ -3326,52 +4005,96 @@ function pushHistory() {
   history.value.push(snap)
   histIdx.value = history.value.length - 1
 }
-function undo() { if (histIdx.value <= 0) return; histIdx.value--; processDef.value = JSON.parse(JSON.stringify(history.value[histIdx.value])); selectedNode.value = null }
-function redo() { if (histIdx.value >= history.value.length - 1) return; histIdx.value++; processDef.value = JSON.parse(JSON.stringify(history.value[histIdx.value])); selectedNode.value = null }
+function undo() {
+  if (histIdx.value <= 0) return
+  histIdx.value--
+  processDef.value = JSON.parse(JSON.stringify(history.value[histIdx.value]))
+  selectedNode.value = null
+}
+function redo() {
+  if (histIdx.value >= history.value.length - 1) return
+  histIdx.value++
+  processDef.value = JSON.parse(JSON.stringify(history.value[histIdx.value]))
+  selectedNode.value = null
+}
 // ── Helpers ───────────────────────────────────────────────────────────
-function genId() { return 'n_' + Date.now() + '_' + Math.random().toString(36).slice(2,6) }
-function genEdgeId() { return 'e_' + Date.now() + '_' + Math.random().toString(36).slice(2,6) }
+function genId() {
+  return 'n_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6)
+}
+function genEdgeId() {
+  return 'e_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6)
+}
 function getNodeLabel(type: string) {
-  const m: Record<string,string> = { start:'开始', end:'结束', task:'任务', approval:'审批', timer:'定时',
-    gate_and:'且网关', gate_or:'或网关', gate_xor:'异或网关', subprocess:'子流程', script:'脚本', parallel:'并行' }
+  const m: Record<string, string> = {
+    start: '开始',
+    end: '结束',
+    task: '任务',
+    approval: '审批',
+    timer: '定时',
+    gate_and: '且网关',
+    gate_or: '或网关',
+    gate_xor: '异或网关',
+    subprocess: '子流程',
+    script: '脚本',
+    parallel: '并行',
+  }
   return m[type] || type
 }
 // ── Node color helpers ────────────────────────────────────────────────
 function getNodeBgColor(type: string): string {
-  const m: Record<string,string> = {
-    start:'rgba(16,185,129,.6)', end:'rgba(239,68,68,.6)', task:'rgba(0,212,255,.4)',
-    approval:'rgba(99,102,241,.4)', timer:'rgba(245,158,11,.4)',
-    gate_and:'rgba(245,158,11,.4)', gate_or:'rgba(245,158,11,.4)', gate_xor:'rgba(245,158,11,.4)',
-    subprocess:'rgba(168,85,247,.4)', script:'rgba(34,197,94,.4)', parallel:'rgba(236,72,153,.4)'
+  const m: Record<string, string> = {
+    start: 'rgba(16,185,129,.6)',
+    end: 'rgba(239,68,68,.6)',
+    task: 'rgba(0,212,255,.4)',
+    approval: 'rgba(99,102,241,.4)',
+    timer: 'rgba(245,158,11,.4)',
+    gate_and: 'rgba(245,158,11,.4)',
+    gate_or: 'rgba(245,158,11,.4)',
+    gate_xor: 'rgba(245,158,11,.4)',
+    subprocess: 'rgba(168,85,247,.4)',
+    script: 'rgba(34,197,94,.4)',
+    parallel: 'rgba(236,72,153,.4)',
   }
   return m[type] || 'rgba(100,100,100,.4)'
 }
 function getNodeIcon(type: string) {
-  const m: Record<string,string> = { start:'🟢', end:'🔴', task:'📋', approval:'✅', timer:'⏱️',
-    gate_and:'🔷', gate_or:'🔶', gate_xor:'🔹', subprocess:'📦', script:'💻', parallel:'⚡' }
+  const m: Record<string, string> = {
+    start: '🟢',
+    end: '🔴',
+    task: '📋',
+    approval: '✅',
+    timer: '⏱️',
+    gate_and: '🔷',
+    gate_or: '🔶',
+    gate_xor: '🔹',
+    subprocess: '📦',
+    script: '💻',
+    parallel: '⚡',
+  }
   return m[type] || '⬜'
 }
 function computeForkJoinPath(branchIndices: number[]): string {
-  if (branchIndices.length < 2 || !processDef.value) return ""
-  const nodes = branchIndices.map(i => processDef.value!.nodes[i]).filter(Boolean)
-  if (nodes.length < 2) return ""
-  let d = "M " + (nodes[0].x + (nodes[0].w||120)) + " " + (nodes[0].y + (nodes[0].h||50)/2)
+  if (branchIndices.length < 2 || !processDef.value) return ''
+  const nodes = branchIndices.map((i) => processDef.value!.nodes[i]).filter(Boolean)
+  if (nodes.length < 2) return ''
+  let d = 'M ' + (nodes[0].x + (nodes[0].w || 120)) + ' ' + (nodes[0].y + (nodes[0].h || 50) / 2)
   for (let i = 1; i < nodes.length; i++) {
     const n = nodes[i]
-    d += " L " + (n.x + (n.w||120)) + " " + (n.y + (n.h||50)/2)
+    d += ' L ' + (n.x + (n.w || 120)) + ' ' + (n.y + (n.h || 50) / 2)
   }
   return d
 }
 // ── Port position ─────────────────────────────────────────────────────
-function getNodePort(node: PDNode, port: 'in'|'out', portIdx?: number): {x:number;y:number} {
-  const w = node.w||120, h = node.h||50
-  if (port === 'in') return { x: node.x, y: node.y + h/2 }
+function getNodePort(node: PDNode, port: 'in' | 'out', portIdx?: number): { x: number; y: number } {
+  const w = node.w || 120,
+    h = node.h || 50
+  if (port === 'in') return { x: node.x, y: node.y + h / 2 }
   if (isGate(node.type) && portIdx !== undefined) {
     const conds = getNodeConditions(node)
     const spread = Math.max(conds.length * 12, 20)
-    return { x: node.x + w, y: node.y + h/2 + (portIdx - (conds.length-1)/2) * spread }
+    return { x: node.x + w, y: node.y + h / 2 + (portIdx - (conds.length - 1) / 2) * spread }
   }
-  return { x: node.x + w, y: node.y + h/2 }
+  return { x: node.x + w, y: node.y + h / 2 }
 }
 // ── Edge path ─────────────────────────────────────────────────────────
 function computeEdgePath(edge: PDEdge): string {
@@ -3381,14 +4104,14 @@ function computeEdgePath(edge: PDEdge): string {
   if (routing === 'horizontal') return computeHorizontalEdgePath(edge)
   if (routing === 'vertical') return computeVerticalEdgePath(edge)
   // auto: use bezier
-  const from = processDef.value.nodes.find(n => n.id === edge.from)
-  const to = processDef.value.nodes.find(n => n.id === edge.to)
+  const from = processDef.value.nodes.find((n) => n.id === edge.from)
+  const to = processDef.value.nodes.find((n) => n.id === edge.to)
   if (!from || !to) return ''
   const fp = getNodePort(from, 'out')
   const tp = getNodePort(to, 'in')
   const dx = Math.abs(tp.x - fp.x)
   const cx = Math.max(dx * 0.5, 60)
-  return `M ${fp.x} ${fp.y} C ${fp.x+cx} ${fp.y}, ${tp.x-cx} ${tp.y}, ${tp.x} ${tp.y}`
+  return `M ${fp.x} ${fp.y} C ${fp.x + cx} ${fp.y}, ${tp.x - cx} ${tp.y}, ${tp.x} ${tp.y}`
 }
 function tempEdgePath(): string {
   if (!tempEdge.value) return ''
@@ -3398,19 +4121,23 @@ function tempEdgePath(): string {
   const fp = getNodePort(from, tempEdge.value.fromPort)
   const cx = Math.max(Math.abs(endX - fp.x) * 0.5, 60)
   const sign = tempEdge.value.fromPort === 'out' ? 1 : -1
-  return `M ${fp.x} ${fp.y} C ${fp.x+cx*sign} ${fp.y}, ${endX-cx*sign} ${endY}, ${endX} ${endY}`
+  return `M ${fp.x} ${fp.y} C ${fp.x + cx * sign} ${fp.y}, ${endX - cx * sign} ${endY}, ${endX} ${endY}`
 }
 // ── Node CRUD ─────────────────────────────────────────────────────────
 function addNode(type: string, opts?: { x?: number; y?: number; autoConnect?: boolean }) {
   if (!processDef.value) return
   const w = isGate(type) ? 100 : type === 'approval' ? 130 : 120
   const h = type === 'approval' ? 70 : type === 'subprocess' ? 60 : 50
-  const x = opts?.x ?? (100 + Math.random() * 200)
-  const y = opts?.y ?? (80 + Math.random() * 100)
+  const x = opts?.x ?? 100 + Math.random() * 200
+  const y = opts?.y ?? 80 + Math.random() * 100
   const newNode: PDNode = { id: genId(), type, label: getNodeLabel(type), x, y, w, h }
   processDef.value.nodes.push(newNode)
   // Auto-connect to previously selected node
-  if (opts?.autoConnect !== false && selectedNode.value !== null && selectedNode.value < processDef.value.nodes.length - 1) {
+  if (
+    opts?.autoConnect !== false &&
+    selectedNode.value !== null &&
+    selectedNode.value < processDef.value.nodes.length - 1
+  ) {
     const src = processDef.value.nodes[selectedNode.value]
     if (src.type !== 'end' && newNode.type !== 'start') {
       createEdge(src.id, newNode.id)
@@ -3423,7 +4150,7 @@ function deleteNode(i: number) {
   if (!processDef.value) return
   const id = processDef.value.nodes[i].id
   processDef.value.nodes.splice(i, 1)
-  processDef.value.edges = (processDef.value.edges||[]).filter(e => e.from !== id && e.to !== id)
+  processDef.value.edges = (processDef.value.edges || []).filter((e) => e.from !== id && e.to !== id)
   if (selectedNode.value === i) selectedNode.value = null
   else if (selectedNode.value !== null && selectedNode.value > i) selectedNode.value--
   pushHistory()
@@ -3438,27 +4165,35 @@ function duplicateSelected() {
   addNode(orig.type, { x: orig.x + 30, y: orig.y + 30, autoConnect: false })
   const newNode = processDef.value.nodes[processDef.value.nodes.length - 1]
   if (newNode) {
-    newNode.label = orig.label; newNode.assignee = orig.assignee
-    newNode.condition = orig.condition; newNode.timeout = orig.timeout
-    newNode.priority = orig.priority; newNode.script = orig.script
+    newNode.label = orig.label
+    newNode.assignee = orig.assignee
+    newNode.condition = orig.condition
+    newNode.timeout = orig.timeout
+    newNode.priority = orig.priority
+    newNode.script = orig.script
   }
 }
 // ── Version Control ──────────────────────────────────────────────────
 function createVersion(label?: string) {
   if (!processDef.value || !currentProcess.value) return
   const v: ProcVersion = {
-    id: genId(), timestamp: Date.now(),
+    id: genId(),
+    timestamp: Date.now(),
     label: label || '版本 ' + (versions.value.length + 1),
     config: JSON.parse(JSON.stringify(processDef.value)),
-    author: 'user', message: label || '自动快照'
+    author: 'user',
+    message: label || '自动快照',
   }
   versions.value.unshift(v)
   if (versions.value.length > 20) versions.value.pop()
 }
 function revertToVersion(v: ProcVersion) {
   processDef.value = JSON.parse(JSON.stringify(v.config))
-  selectedNode.value = null; selectedEdge.value = null
-  history.value = []; histIdx.value = -1; pushHistory()
+  selectedNode.value = null
+  selectedEdge.value = null
+  history.value = []
+  histIdx.value = -1
+  pushHistory()
 }
 function deleteVersion(idx: number) {
   versions.value.splice(idx, 1)
@@ -3471,28 +4206,29 @@ function toggleDiff() {
 }
 function computeDiff() {
   if (!selectedVersion.value || !processDef.value) return
-  const currentIds = new Set(processDef.value.nodes.map(n => n.id))
-  const versionIds = new Set(selectedVersion.value.config.nodes.map(n => n.id))
-  addedNodes.value = processDef.value.nodes.filter(n => !versionIds.has(n.id))
-  removedNodes.value = selectedVersion.value.config.nodes.filter(n => !currentIds.has(n.id))
-  changedNodes.value = processDef.value.nodes.filter(n => {
+  const currentIds = new Set(processDef.value.nodes.map((n) => n.id))
+  const versionIds = new Set(selectedVersion.value.config.nodes.map((n) => n.id))
+  addedNodes.value = processDef.value.nodes.filter((n) => !versionIds.has(n.id))
+  removedNodes.value = selectedVersion.value.config.nodes.filter((n) => !currentIds.has(n.id))
+  changedNodes.value = processDef.value.nodes.filter((n) => {
     if (!versionIds.has(n.id)) return false
-    const orig = selectedVersion.value!.config.nodes.find(vn => vn.id === n.id)
+    const orig = selectedVersion.value!.config.nodes.find((vn) => vn.id === n.id)
     return orig && (orig.label !== n.label || Math.abs(orig.x - n.x) > 10 || Math.abs(orig.y - n.y) > 10)
   })
 }
 function clearCanvas() {
   if (!processDef.value || !confirmMsg('清空画布？所有节点和连线将删除。')) return
   processDef.value = { nodes: [], edges: [] }
-  selectedNode.value = null; selectedEdge.value = null
+  selectedNode.value = null
+  selectedEdge.value = null
   pushHistory()
 }
 function autoLayout() {
   if (!processDef.value || processDef.value.nodes.length === 0) return
   const cols = Math.ceil(Math.sqrt(processDef.value.nodes.length))
   processDef.value.nodes.forEach((n, i) => {
-    n.x = 80 + (i % cols) * ((n.w||120) + 40)
-    n.y = 80 + Math.floor(i / cols) * ((n.h||50) + 40)
+    n.x = 80 + (i % cols) * ((n.w || 120) + 40)
+    n.y = 80 + Math.floor(i / cols) * ((n.h || 50) + 40)
   })
   pushHistory()
 }
@@ -3504,9 +4240,12 @@ function autoLayoutTopo() {
   // Build adjacency and in-degree
   const inDegree = new Map<string, number>()
   const adj = new Map<string, string[]>()
-  for (const n of nodes) { inDegree.set(n.id, 0); adj.set(n.id, []) }
+  for (const n of nodes) {
+    inDegree.set(n.id, 0)
+    adj.set(n.id, [])
+  }
   for (const e of edges) {
-    if (inDegree.has(e.to)) inDegree.set(e.to, (inDegree.get(e.to)||0) + 1)
+    if (inDegree.has(e.to)) inDegree.set(e.to, (inDegree.get(e.to) || 0) + 1)
     if (adj.has(e.from)) adj.get(e.from)!.push(e.to)
   }
   // Kahn's algorithm for topological sort
@@ -3516,18 +4255,18 @@ function autoLayoutTopo() {
   while (queue.length > 0) {
     const curr = queue.shift()!
     order.push(curr)
-    for (const next of (adj.get(curr)||[])) {
-      inDegree.set(next, (inDegree.get(next)||0) - 1)
-      if ((inDegree.get(next)||0) === 0) queue.push(next)
+    for (const next of adj.get(curr) || []) {
+      inDegree.set(next, (inDegree.get(next) || 0) - 1)
+      if ((inDegree.get(next) || 0) === 0) queue.push(next)
     }
   }
   // Assign positions by layer (BFS levels)
   const layers = new Map<string, number>()
-  const startNodes = nodes.filter(n => n.type === 'start').map(n => n.id)
+  const startNodes = nodes.filter((n) => n.type === 'start').map((n) => n.id)
   if (startNodes.length > 0) {
     for (const id of startNodes) layers.set(id, 0)
   } else {
-    for (const id of (order.length > 0 ? [order[0]] : [])) layers.set(id, 0)
+    for (const id of order.length > 0 ? [order[0]] : []) layers.set(id, 0)
   }
   // BFS to assign layers
   const visited = new Set<string>()
@@ -3537,8 +4276,8 @@ function autoLayoutTopo() {
     if (visited.has(curr)) continue
     visited.add(curr)
     const currLayer = layers.get(curr) ?? 0
-    for (const next of (adj.get(curr)||[])) {
-      const nextLayer = (layers.get(next) ?? 0)
+    for (const next of adj.get(curr) || []) {
+      const nextLayer = layers.get(next) ?? 0
       if (currLayer + 1 > nextLayer) layers.set(next, currLayer + 1)
       bfsQ.push(next)
     }
@@ -3551,12 +4290,14 @@ function autoLayoutTopo() {
     layerGroups.get(layer)!.push(id)
   }
   // Position nodes
-  const rowH = 80, colW = 140, layerGap = 220
+  const rowH = 80,
+    colW = 140,
+    layerGap = 220
   for (const [layer, ids] of layerGroups) {
     const totalW = ids.length * colW
     let startX = 100
     for (let i = 0; i < ids.length; i++) {
-      const n = nodes.find(nd => nd.id === ids[i])
+      const n = nodes.find((nd) => nd.id === ids[i])
       if (!n) continue
       n.x = startX + i * colW
       n.y = 80 + layer * layerGap
@@ -3569,22 +4310,37 @@ function applyTemplate(tpl: TemplateDef) {
   if (!processDef.value) return
   processDef.value.nodes = []
   processDef.value.edges = []
-  selectedNode.value = null; selectedEdge.value = null
+  selectedNode.value = null
+  selectedEdge.value = null
   const nodeMap = new Map<string, PDNode>()
   for (const tn of tpl.nodes) {
     const w = isGate(tn.type) ? 100 : tn.type === 'approval' ? 130 : 120
     const h = tn.type === 'approval' ? 70 : tn.type === 'subprocess' ? 60 : 50
-    const startX = 100, startY = 80, colGap = 160, rowGap = 90
+    const startX = 100,
+      startY = 80,
+      colGap = 160,
+      rowGap = 90
     const col = tpl.nodes.indexOf(tn)
-    const colIdx = col % 3, rowIdx = Math.floor(col / 3)
-    const node: PDNode = { id: genId(), type: tn.type, label: tn.label, x: startX + colIdx * colGap, y: startY + rowIdx * rowGap, w, h }
+    const colIdx = col % 3,
+      rowIdx = Math.floor(col / 3)
+    const node: PDNode = {
+      id: genId(),
+      type: tn.type,
+      label: tn.label,
+      x: startX + colIdx * colGap,
+      y: startY + rowIdx * rowGap,
+      w,
+      h,
+    }
     processDef.value.nodes.push(node)
     nodeMap.set(tn.label, node)
   }
   for (const e of tpl.edges) {
-    const fromNode = tpl.nodes[e.from], toNode = tpl.nodes[e.to]
+    const fromNode = tpl.nodes[e.from],
+      toNode = tpl.nodes[e.to]
     if (fromNode && toNode) {
-      const fn = nodeMap.get(fromNode.label), tn = nodeMap.get(toNode.label)
+      const fn = nodeMap.get(fromNode.label),
+        tn = nodeMap.get(toNode.label)
       if (fn && tn) createEdge(fn.id, tn.id)
     }
   }
@@ -3610,14 +4366,14 @@ function _setEdgeProp(prop: string, val: any) {
 function getEdgeFromLabel() {
   if (selectedEdge.value === null || !processDef.value) return '?'
   const edge = processDef.value.edges[selectedEdge.value]
-  const n = processDef.value.nodes.find(n => n.id === edge.from)
-  return n?.label || n?.id?.slice(0,8) || '?'
+  const n = processDef.value.nodes.find((n) => n.id === edge.from)
+  return n?.label || n?.id?.slice(0, 8) || '?'
 }
 function getEdgeToLabel() {
   if (selectedEdge.value === null || !processDef.value) return '?'
   const edge = processDef.value.edges[selectedEdge.value]
-  const n = processDef.value.nodes.find(n => n.id === edge.to)
-  return n?.label || n?.id?.slice(0,8) || '?'
+  const n = processDef.value.nodes.find((n) => n.id === edge.to)
+  return n?.label || n?.id?.slice(0, 8) || '?'
 }
 // Data mapping helpers
 function getNodeMappings(): any[] {
@@ -3638,7 +4394,7 @@ function removeDataMapping(i: number) {
 // ── Edge CRUD ─────────────────────────────────────────────────────────
 function createEdge(fromId: string, toId: string) {
   if (!processDef.value) return
-  const exists = processDef.value.edges.some(e => e.from === fromId && e.to === toId)
+  const exists = processDef.value.edges.some((e) => e.from === fromId && e.to === toId)
   if (exists) return
   processDef.value.edges.push({ id: genEdgeId(), from: fromId, to: toId })
   pushHistory()
@@ -3650,52 +4406,79 @@ function deleteEdge(i: number) {
   else if (selectedEdge.value !== null && selectedEdge.value > i) selectedEdge.value--
   pushHistory()
 }
-function selectEdge(i: number) { selectedEdge.value = i; selectedNode.value = null }
+function selectEdge(i: number) {
+  selectedEdge.value = i
+  selectedNode.value = null
+}
 // ── Edge Label Helpers ───────────────────────────────────────────────
 // Cubic Bezier: B(t) = (1-t)³P₀ + 3(1-t)²tP₁ + 3(1-t)t²P₂ + t³P₃
-function bezierPoint(p0: {x:number;y:number}, p1: {x:number;y:number}, p2: {x:number;y:number}, p3: {x:number;y:number}, t: number): {x:number;y:number} {
+function bezierPoint(
+  p0: { x: number; y: number },
+  p1: { x: number; y: number },
+  p2: { x: number; y: number },
+  p3: { x: number; y: number },
+  t: number,
+): { x: number; y: number } {
   const mt = 1 - t
   return {
-    x: mt*mt*mt*p0.x + 3*mt*mt*t*p1.x + 3*mt*t*t*p2.x + t*t*t*p3.x,
-    y: mt*mt*mt*p0.y + 3*mt*mt*t*p1.y + 3*mt*t*t*p2.y + t*t*t*p3.y
+    x: mt * mt * mt * p0.x + 3 * mt * mt * t * p1.x + 3 * mt * t * t * p2.x + t * t * t * p3.x,
+    y: mt * mt * mt * p0.y + 3 * mt * mt * t * p1.y + 3 * mt * t * t * p2.y + t * t * t * p3.y,
   }
 }
-function getBezierControlPoints(edge: PDEdge): {p0:{x:number;y:number};p1:{x:number;y:number};p2:{x:number;y:number};p3:{x:number;y:number}} {
-  if (!processDef.value) return { p0:{x:0,y:0}, p1:{x:0,y:0}, p2:{x:0,y:0}, p3:{x:0,y:0} }
-  const from = processDef.value.nodes.find(n => n.id === edge.from)
-  const to = processDef.value.nodes.find(n => n.id === edge.to)
-  if (!from || !to) return { p0:{x:0,y:0}, p1:{x:0,y:0}, p2:{x:0,y:0}, p3:{x:0,y:0} }
-  const fp = getNodePort(from, 'out'), tp = getNodePort(to, 'in')
-  const dx = tp.x - fp.x, dy = tp.y - fp.y
+function getBezierControlPoints(edge: PDEdge): {
+  p0: { x: number; y: number }
+  p1: { x: number; y: number }
+  p2: { x: number; y: number }
+  p3: { x: number; y: number }
+} {
+  if (!processDef.value) return { p0: { x: 0, y: 0 }, p1: { x: 0, y: 0 }, p2: { x: 0, y: 0 }, p3: { x: 0, y: 0 } }
+  const from = processDef.value.nodes.find((n) => n.id === edge.from)
+  const to = processDef.value.nodes.find((n) => n.id === edge.to)
+  if (!from || !to) return { p0: { x: 0, y: 0 }, p1: { x: 0, y: 0 }, p2: { x: 0, y: 0 }, p3: { x: 0, y: 0 } }
+  const fp = getNodePort(from, 'out'),
+    tp = getNodePort(to, 'in')
+  const dx = tp.x - fp.x,
+    dy = tp.y - fp.y
   // Control points offset based on edge direction
-  let cx1 = fp.x + dx * 0.4, cy1 = fp.y
-  let cx2 = tp.x - dx * 0.4, cy2 = tp.y
+  let cx1 = fp.x + dx * 0.4,
+    cy1 = fp.y
+  let cx2 = tp.x - dx * 0.4,
+    cy2 = tp.y
   // For vertical edges, offset control points vertically
   if (Math.abs(dx) < 30) {
-    cx1 = fp.x; cy1 = fp.y + dy * 0.4
-    cx2 = tp.x; cy2 = tp.y - dy * 0.4
+    cx1 = fp.x
+    cy1 = fp.y + dy * 0.4
+    cx2 = tp.x
+    cy2 = tp.y - dy * 0.4
   }
-  return { p0: fp, p1: {x:cx1,y:cy1}, p2: {x:cx2,y:cy2}, p3: tp }
+  return { p0: fp, p1: { x: cx1, y: cy1 }, p2: { x: cx2, y: cy2 }, p3: tp }
 }
-function getEdgePointOnCurve(edge: PDEdge, t: number): {x:number;y:number} {
+function getEdgePointOnCurve(edge: PDEdge, t: number): { x: number; y: number } {
   const cp = getBezierControlPoints(edge)
   return bezierPoint(cp.p0, cp.p1, cp.p2, cp.p3, t)
 }
-function getEdgeLabelX(edge: PDEdge): number { return getEdgePointOnCurve(edge, 0.5).x }
-function getEdgeLabelY(edge: PDEdge): number { return getEdgePointOnCurve(edge, 0.5).y - 8 }
+function getEdgeLabelX(edge: PDEdge): number {
+  return getEdgePointOnCurve(edge, 0.5).x
+}
+function getEdgeLabelY(edge: PDEdge): number {
+  return getEdgePointOnCurve(edge, 0.5).y - 8
+}
 function getEdgeLabelRect(edge: PDEdge): string {
   const { x, y } = getEdgePointOnCurve(edge, 0.5)
   const tw = (edge.label?.length || 1) * 7 + 10
-  return `M ${x-tw/2} ${y-10} h ${tw} v 14 h ${-tw} Z`
+  return `M ${x - tw / 2} ${y - 10} h ${tw} v 14 h ${-tw} Z`
 }
 // Label offset for multiple edges between same nodes (prevent overlap)
-function getEdgeLabelOffset(edgeIdx: number): {dx:number;dy:number} {
+function getEdgeLabelOffset(edgeIdx: number): { dx: number; dy: number } {
   if (!processDef.value) return { dx: 0, dy: 0 }
   const edges = processDef.value.edges || []
   const edge = edges[edgeIdx]
   if (!edge) return { dx: 0, dy: 0 }
   // Count edges between same pair
-  const samePair = edges.filter((e, i) => i !== edgeIdx && ((e.from === edge.from && e.to === edge.to) || (e.from === edge.to && e.to === edge.from)))
+  const samePair = edges.filter(
+    (e, i) =>
+      i !== edgeIdx && ((e.from === edge.from && e.to === edge.to) || (e.from === edge.to && e.to === edge.from)),
+  )
   if (samePair.length === 0) return { dx: 0, dy: 0 }
   const idx = samePair.indexOf(edge)
   const offset = (idx - samePair.length / 2) * 16
@@ -3704,27 +4487,30 @@ function getEdgeLabelOffset(edgeIdx: number): {dx:number;dy:number} {
 // Edge routing: straight line vs bezier
 function computeStraightEdgePath(edge: PDEdge): string {
   if (!processDef.value) return ''
-  const from = processDef.value.nodes.find(n => n.id === edge.from)
-  const to = processDef.value.nodes.find(n => n.id === edge.to)
+  const from = processDef.value.nodes.find((n) => n.id === edge.from)
+  const to = processDef.value.nodes.find((n) => n.id === edge.to)
   if (!from || !to) return ''
-  const fp = getNodePort(from, 'out'), tp = getNodePort(to, 'in')
+  const fp = getNodePort(from, 'out'),
+    tp = getNodePort(to, 'in')
   return `M ${fp.x} ${fp.y} L ${tp.x} ${tp.y}`
 }
 function computeHorizontalEdgePath(edge: PDEdge): string {
   if (!processDef.value) return ''
-  const from = processDef.value.nodes.find(n => n.id === edge.from)
-  const to = processDef.value.nodes.find(n => n.id === edge.to)
+  const from = processDef.value.nodes.find((n) => n.id === edge.from)
+  const to = processDef.value.nodes.find((n) => n.id === edge.to)
   if (!from || !to) return ''
-  const fp = getNodePort(from, 'out'), tp = getNodePort(to, 'in')
+  const fp = getNodePort(from, 'out'),
+    tp = getNodePort(to, 'in')
   const mx = (fp.x + tp.x) / 2
   return `M ${fp.x} ${fp.y} C ${mx} ${fp.y}, ${mx} ${tp.y}, ${tp.x} ${tp.y}`
 }
 function computeVerticalEdgePath(edge: PDEdge): string {
   if (!processDef.value) return ''
-  const from = processDef.value.nodes.find(n => n.id === edge.from)
-  const to = processDef.value.nodes.find(n => n.id === edge.to)
+  const from = processDef.value.nodes.find((n) => n.id === edge.from)
+  const to = processDef.value.nodes.find((n) => n.id === edge.to)
   if (!from || !to) return ''
-  const fp = getNodePort(from, 'out'), tp = getNodePort(to, 'in')
+  const fp = getNodePort(from, 'out'),
+    tp = getNodePort(to, 'in')
   const my = (fp.y + tp.y) / 2
   return `M ${fp.x} ${fp.y} C ${fp.x} ${my}, ${tp.x} ${my}, ${tp.x} ${tp.y}`
 }
@@ -3734,68 +4520,102 @@ function exportAsSvg(): string {
   const nodes = processDef.value.nodes
   const edges = processDef.value.edges || []
   if (nodes.length === 0) return ''
-  let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity
+  let minX = Infinity,
+    minY = Infinity,
+    maxX = -Infinity,
+    maxY = -Infinity
   for (const n of nodes) {
-    minX = Math.min(minX, n.x); minY = Math.min(minY, n.y)
-    maxX = Math.max(maxX, n.x + (n.w||120)); maxY = Math.max(maxY, n.y + (n.h||50))
+    minX = Math.min(minX, n.x)
+    minY = Math.min(minY, n.y)
+    maxX = Math.max(maxX, n.x + (n.w || 120))
+    maxY = Math.max(maxY, n.y + (n.h || 50))
   }
   const pad = 60
-  const w = maxX - minX + pad*2, h = maxY - minY + pad*2
+  const w = maxX - minX + pad * 2,
+    h = maxY - minY + pad * 2
   let svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}" viewBox="0 0 ${w} ${h}">\n`
   svg += `<defs><marker id="arr" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto"><polygon points="0 0,10 3.5,0 7" fill="#00d4ff"/></marker></defs>\n`
   svg += `<rect width="${w}" height="${h}" fill="#0a0e1a"/>\n`
   svg += `<g transform="translate(${pad - minX},${pad - minY})">\n`
   for (const edge of edges) {
-    const from = nodes.find(n => n.id === edge.from)
-    const to = nodes.find(n => n.id === edge.to)
+    const from = nodes.find((n) => n.id === edge.from)
+    const to = nodes.find((n) => n.id === edge.to)
     if (!from || !to) continue
-    const fp = getNodePort(from, 'out'), tp = getNodePort(to, 'in')
-    const dx = Math.abs(tp.x - fp.x), cx = Math.max(dx * 0.5, 60)
-    svg += `<path d="M ${fp.x} ${fp.y} C ${fp.x+cx} ${fp.y}, ${tp.x-cx} ${tp.y}, ${tp.x} ${tp.y}" stroke="#00d4ff" stroke-width="2" fill="none" marker-end="url(#arr)"/>\n`
+    const fp = getNodePort(from, 'out'),
+      tp = getNodePort(to, 'in')
+    const dx = Math.abs(tp.x - fp.x),
+      cx = Math.max(dx * 0.5, 60)
+    svg += `<path d="M ${fp.x} ${fp.y} C ${fp.x + cx} ${fp.y}, ${tp.x - cx} ${tp.y}, ${tp.x} ${tp.y}" stroke="#00d4ff" stroke-width="2" fill="none" marker-end="url(#arr)"/>\n`
     if (edge.label) {
-      const mx = (fp.x + tp.x) / 2, my = (fp.y + tp.y) / 2
+      const mx = (fp.x + tp.x) / 2,
+        my = (fp.y + tp.y) / 2
       const tw = edge.label.length * 7 + 10
-      svg += `<rect x="${mx-tw/2}" y="${my-10}" width="${tw}" height="14" rx="3" fill="#1a1f35" stroke="#00d4ff" stroke-width="0.5"/>\n`
+      svg += `<rect x="${mx - tw / 2}" y="${my - 10}" width="${tw}" height="14" rx="3" fill="#1a1f35" stroke="#00d4ff" stroke-width="0.5"/>\n`
       svg += `<text x="${mx}" y="${my}" text-anchor="middle" fill="#00d4ff" font-size="10">${edge.label}</text>\n`
     }
   }
   for (const node of nodes) {
-    const nw = node.w||120, nh = node.h||50
-    const colors: Record<string,string> = { start:'#10b981', end:'#ef4444', task:'#00d4ff', approval:'#6366f1', subprocess:'#a855f7', script:'#22c55e', gate_and:'#f59e0b', gate_or:'#f59e0b', gate_xor:'#f59e0b' }
-    svg += `<rect x="${node.x}" y="${node.y}" width="${nw}" height="${nh}" rx="8" fill="${colors[node.type]||'#374151'}80" stroke="${colors[node.type]||'#6b7280'}" stroke-width="1.5"/>\n`
-    svg += `<text x="${node.x+nw/2}" y="${node.y+nh/2+4}" text-anchor="middle" fill="white" font-size="12">${node.label||''}</text>\n`
+    const nw = node.w || 120,
+      nh = node.h || 50
+    const colors: Record<string, string> = {
+      start: '#10b981',
+      end: '#ef4444',
+      task: '#00d4ff',
+      approval: '#6366f1',
+      subprocess: '#a855f7',
+      script: '#22c55e',
+      gate_and: '#f59e0b',
+      gate_or: '#f59e0b',
+      gate_xor: '#f59e0b',
+    }
+    svg += `<rect x="${node.x}" y="${node.y}" width="${nw}" height="${nh}" rx="8" fill="${colors[node.type] || '#374151'}80" stroke="${colors[node.type] || '#6b7280'}" stroke-width="1.5"/>\n`
+    svg += `<text x="${node.x + nw / 2}" y="${node.y + nh / 2 + 4}" text-anchor="middle" fill="white" font-size="12">${node.label || ''}</text>\n`
   }
   svg += `</g></svg>`
   return svg
 }
 function downloadSvg() {
   const svg = exportAsSvg()
-  if (!svg) { toast.info('画布为空，无法导出'); return }
+  if (!svg) {
+    toast.info('画布为空，无法导出')
+    return
+  }
   const blob = new Blob([svg], { type: 'image/svg+xml' })
   const url = URL.createObjectURL(blob)
   const a = document.createElement('a')
-  a.href = url; a.download = (currentProcess.value?.flag || 'process') + '.svg'
-  a.click(); URL.revokeObjectURL(url)
+  a.href = url
+  a.download = (currentProcess.value?.flag || 'process') + '.svg'
+  a.click()
+  URL.revokeObjectURL(url)
 }
 function copySvg() {
   const svg = exportAsSvg()
   if (svg) navigator.clipboard.writeText(svg)
 }
 // ── Resize ────────────────────────────────────────────────────────────
-type ResizeDir = 'nw'|'n'|'ne'|'e'|'se'|'s'|'sw'|'w'
-const resizePositions: ResizeDir[] = ['nw','n','ne','e','se','s','sw','w']
+type ResizeDir = 'nw' | 'n' | 'ne' | 'e' | 'se' | 's' | 'sw' | 'w'
+const resizePositions: ResizeDir[] = ['nw', 'n', 'ne', 'e', 'se', 's', 'sw', 'w']
 function getNodeResizeX(node: PDNode, dir: ResizeDir): number {
-  const w = node.w||120
-  if (dir==='nw'||dir==='n'||dir==='sw'||dir==='w') return node.x
+  const w = node.w || 120
+  if (dir === 'nw' || dir === 'n' || dir === 'sw' || dir === 'w') return node.x
   return node.x + w
 }
 function getNodeResizeY(node: PDNode, dir: ResizeDir): number {
-  const h = node.h||50
-  if (dir==='nw'||dir==='ne'||dir==='n') return node.y
+  const h = node.h || 50
+  if (dir === 'nw' || dir === 'ne' || dir === 'n') return node.y
   return node.y + h
 }
 function getResizeCursor(dir: ResizeDir): string {
-  const map: Record<string,string> = { nw:'nwse-resize', n:'ns-resize', ne:'nesw-resize', e:'ew-resize', se:'nwse-resize', s:'ns-resize', sw:'nesw-resize', w:'ew-resize' }
+  const map: Record<string, string> = {
+    nw: 'nwse-resize',
+    n: 'ns-resize',
+    ne: 'nesw-resize',
+    e: 'ew-resize',
+    se: 'nwse-resize',
+    s: 'ns-resize',
+    sw: 'nesw-resize',
+    w: 'ew-resize',
+  }
   return map[dir] || 'move'
 }
 function onResizeMouseDown(e: MouseEvent, nodeIdx: number, dir: ResizeDir) {
@@ -3806,32 +4626,51 @@ function onResizeMouseDown(e: MouseEvent, nodeIdx: number, dir: ResizeDir) {
   resizeDir.value = dir
   const node = processDef.value.nodes[nodeIdx]
   resizeStart.value = {
-    x: e.clientX, y: e.clientY,
-    w: node.w||120, h: node.h||50,
-    nx: node.x, ny: node.y
+    x: e.clientX,
+    y: e.clientY,
+    w: node.w || 120,
+    h: node.h || 50,
+    nx: node.x,
+    ny: node.y,
   }
   const onMove = (ev: MouseEvent) => {
-    if (!isResizing.value || resizeIdx.value===null || !processDef.value) return
+    if (!isResizing.value || resizeIdx.value === null || !processDef.value) return
     const dx = (ev.clientX - resizeStart.value.x) / zoom.value
     const dy = (ev.clientY - resizeStart.value.y) / zoom.value
     const node = processDef.value.nodes[resizeIdx.value]
     const dir = resizeDir.value
-    const minW = 80, minH = 40
-    if (dir.includes('e')) { node.w = Math.max(minW, resizeStart.value.w + dx); node.x = resizeStart.value.nx }
-    else if (dir.includes('w')) { node.w = Math.max(minW, resizeStart.value.w - dx); node.x = resizeStart.value.nx + dx }
-    else { node.w = resizeStart.value.w; node.x = resizeStart.value.nx }
-    if (dir.includes('s')) { node.h = Math.max(minH, resizeStart.value.h + dy); node.y = resizeStart.value.ny }
-    else if (dir.includes('n')) { node.h = Math.max(minH, resizeStart.value.h - dy); node.y = resizeStart.value.ny + dy }
-    else { node.h = resizeStart.value.h; node.y = resizeStart.value.ny }
+    const minW = 80,
+      minH = 40
+    if (dir.includes('e')) {
+      node.w = Math.max(minW, resizeStart.value.w + dx)
+      node.x = resizeStart.value.nx
+    } else if (dir.includes('w')) {
+      node.w = Math.max(minW, resizeStart.value.w - dx)
+      node.x = resizeStart.value.nx + dx
+    } else {
+      node.w = resizeStart.value.w
+      node.x = resizeStart.value.nx
+    }
+    if (dir.includes('s')) {
+      node.h = Math.max(minH, resizeStart.value.h + dy)
+      node.y = resizeStart.value.ny
+    } else if (dir.includes('n')) {
+      node.h = Math.max(minH, resizeStart.value.h - dy)
+      node.y = resizeStart.value.ny + dy
+    } else {
+      node.h = resizeStart.value.h
+      node.y = resizeStart.value.ny
+    }
     // Snap to grid
-    node.w = Math.round((node.w||120) / GRID_SIZE) * GRID_SIZE
-    node.h = Math.round((node.h||50) / GRID_SIZE) * GRID_SIZE
+    node.w = Math.round((node.w || 120) / GRID_SIZE) * GRID_SIZE
+    node.h = Math.round((node.h || 50) / GRID_SIZE) * GRID_SIZE
     node.x = Math.round(node.x / GRID_SIZE) * GRID_SIZE
     node.y = Math.round(node.y / GRID_SIZE) * GRID_SIZE
   }
   const onUp = () => {
     if (isResizing.value && processDef.value && resizeIdx.value !== null) pushHistory()
-    isResizing.value = false; resizeIdx.value = null
+    isResizing.value = false
+    resizeIdx.value = null
     document.removeEventListener('mousemove', onMove)
     document.removeEventListener('mouseup', onUp)
   }
@@ -3839,13 +4678,14 @@ function onResizeMouseDown(e: MouseEvent, nodeIdx: number, dir: ResizeDir) {
   document.addEventListener('mouseup', onUp)
 }
 // ── Anchor point drag ─────────────────────────────────────────────────
-function getAnchorPoints(node: PDNode): {x:number;y:number}[] {
-  const w = node.w||120, h = node.h||50
+function getAnchorPoints(node: PDNode): { x: number; y: number }[] {
+  const w = node.w || 120,
+    h = node.h || 50
   return [
-    { x: node.x + w/2, y: node.y },           // top
-    { x: node.x + w, y: node.y + h/2 },       // right
-    { x: node.x + w/2, y: node.y + h },       // bottom
-    { x: node.x, y: node.y + h/2 },           // left
+    { x: node.x + w / 2, y: node.y }, // top
+    { x: node.x + w, y: node.y + h / 2 }, // right
+    { x: node.x + w / 2, y: node.y + h }, // bottom
+    { x: node.x, y: node.y + h / 2 }, // left
   ]
 }
 function onAnchorMouseDown(e: MouseEvent, nodeIdx: number, anchorI: number) {
@@ -3855,23 +4695,37 @@ function onAnchorMouseDown(e: MouseEvent, nodeIdx: number, anchorI: number) {
   anchorNodeIdx.value = nodeIdx
   anchorIdx.value = anchorI
   const onMove = (ev: MouseEvent) => {
-    if (!isDraggingAnchor.value || anchorNodeIdx.value===null || !processDef.value) return
+    if (!isDraggingAnchor.value || anchorNodeIdx.value === null || !processDef.value) return
     // Update edge connection points for edges connected to this anchor
     const node = processDef.value!.nodes[anchorNodeIdx.value]
-    const w = node.w||120, h = node.h||50
-    const ax = ev.clientX, ay = ev.clientY
+    const w = node.w || 120,
+      h = node.h || 50
+    const ax = ev.clientX,
+      ay = ev.clientY
     // Project onto node edge
-    let px = node.x, py = node.y
-    if (anchorI === 0) { px = node.x + w/2; py = Math.max(node.y, Math.min(node.y+h, ay/zoom.value)) }
-    else if (anchorI === 1) { px = Math.max(node.x, Math.min(node.x+w, ax/zoom.value)); py = node.y + h/2 }
-    else if (anchorI === 2) { px = node.x + w/2; py = Math.min(node.y+h, Math.max(node.y, ay/zoom.value)) }
-    else { px = Math.min(node.x, Math.max(node.x-w, ax/zoom.value)); py = node.y + h/2 }
+    let px = node.x,
+      py = node.y
+    if (anchorI === 0) {
+      px = node.x + w / 2
+      py = Math.max(node.y, Math.min(node.y + h, ay / zoom.value))
+    } else if (anchorI === 1) {
+      px = Math.max(node.x, Math.min(node.x + w, ax / zoom.value))
+      py = node.y + h / 2
+    } else if (anchorI === 2) {
+      px = node.x + w / 2
+      py = Math.min(node.y + h, Math.max(node.y, ay / zoom.value))
+    } else {
+      px = Math.min(node.x, Math.max(node.x - w, ax / zoom.value))
+      py = node.y + h / 2
+    }
     // Store anchor offset for edges
     if (!node.anchorOffset) node.anchorOffset = []
     node.anchorOffset[anchorI] = { x: px, y: py }
   }
   const onUp = () => {
-    isDraggingAnchor.value = false; anchorNodeIdx.value = null; anchorIdx.value = null
+    isDraggingAnchor.value = false
+    anchorNodeIdx.value = null
+    anchorIdx.value = null
     if (processDef.value && anchorNodeIdx.value !== null) pushHistory()
     document.removeEventListener('mousemove', onMove)
     document.removeEventListener('mouseup', onUp)
@@ -3884,24 +4738,34 @@ function createGroup() {
   if (groupedNodes.value.size < 2 || !processDef.value) return
   const members: string[] = Array.from(groupedNodes.value)
   // Find bounding box of all member nodes
-  let minX=Infinity, minY=Infinity, maxX=-Infinity, maxY=-Infinity
+  let minX = Infinity,
+    minY = Infinity,
+    maxX = -Infinity,
+    maxY = -Infinity
   for (const id of members) {
-    const n = processDef.value.nodes.find(nd => nd.id === id)
+    const n = processDef.value.nodes.find((nd) => nd.id === id)
     if (!n) continue
-    minX = Math.min(minX, n.x); minY = Math.min(minY, n.y)
-    maxX = Math.max(maxX, n.x + (n.w||120)); maxY = Math.max(maxY, n.y + (n.h||50))
+    minX = Math.min(minX, n.x)
+    minY = Math.min(minY, n.y)
+    maxX = Math.max(maxX, n.x + (n.w || 120))
+    maxY = Math.max(maxY, n.y + (n.h || 50))
   }
   // Create group node
   const groupId = genId()
   const groupNode: PDNode = {
-    id: groupId, type: 'subprocess', label: '分组',
-    x: minX - 15, y: minY - 15,
-    w: maxX - minX + 30, h: maxY - minY + 30,
-    groupMembers: members, collapsed: false
+    id: groupId,
+    type: 'subprocess',
+    label: '分组',
+    x: minX - 15,
+    y: minY - 15,
+    w: maxX - minX + 30,
+    h: maxY - minY + 30,
+    groupMembers: members,
+    collapsed: false,
   }
   // Store original positions before moving members inside
   for (const id of members) {
-    const n = processDef.value!.nodes.find(nd => nd.id === id)
+    const n = processDef.value!.nodes.find((nd) => nd.id === id)
     if (n) {
       ;(n as any).__origGroupId = groupId
       ;(n as any).__origX = n.x
@@ -3926,7 +4790,7 @@ function ungroup(nodeIdx: number) {
   processDef.value.nodes.splice(nodeIdx, 1)
   // Restore member nodes to their original positions
   for (const memberId of node.groupMembers) {
-    const member = processDef.value.nodes.find(n => n.id === memberId)
+    const member = processDef.value.nodes.find((n) => n.id === memberId)
     if (member && (member as any).__origX !== undefined) {
       member.x = (member as any).__origX
       member.y = (member as any).__origY
@@ -3939,31 +4803,42 @@ function ungroup(nodeIdx: number) {
   pushHistory()
 }
 // ── Group Visualization ─────────────────────────────────────────────
-interface GroupInfo { node: PDNode; members: PDNode[]; bounds: {x:number;y:number;width:number;height:number} }
-function computeGroupBounds(groupNode: PDNode): {x:number;y:number;width:number;height:number} {
+interface GroupInfo {
+  node: PDNode
+  members: PDNode[]
+  bounds: { x: number; y: number; width: number; height: number }
+}
+function computeGroupBounds(groupNode: PDNode): { x: number; y: number; width: number; height: number } {
   if (!groupNode.groupMembers || groupNode.groupMembers.length === 0) {
-    return { x: groupNode.x, y: groupNode.y, width: groupNode.w||200, height: groupNode.h||100 }
+    return { x: groupNode.x, y: groupNode.y, width: groupNode.w || 200, height: groupNode.h || 100 }
   }
-  let minX=Infinity, minY=Infinity, maxX=-Infinity, maxY=-Infinity
+  let minX = Infinity,
+    minY = Infinity,
+    maxX = -Infinity,
+    maxY = -Infinity
   if (groupNode.collapsed) {
-    return { x: groupNode.x, y: groupNode.y, width: groupNode.w||200, height: groupNode.h||100 }
+    return { x: groupNode.x, y: groupNode.y, width: groupNode.w || 200, height: groupNode.h || 100 }
   }
   for (const id of groupNode.groupMembers) {
-    const n = processDef.value!.nodes.find(nd => nd.id === id)
+    const n = processDef.value!.nodes.find((nd) => nd.id === id)
     if (!n) continue
-    minX = Math.min(minX, n.x); minY = Math.min(minY, n.y)
-    maxX = Math.max(maxX, n.x + (n.w||120)); maxY = Math.max(maxY, n.y + (n.h||50))
+    minX = Math.min(minX, n.x)
+    minY = Math.min(minY, n.y)
+    maxX = Math.max(maxX, n.x + (n.w || 120))
+    maxY = Math.max(maxY, n.y + (n.h || 50))
   }
   return { x: minX - 12, y: minY - 12, width: maxX - minX + 24, height: maxY - minY + 24 }
 }
 function getGroupNodes(): GroupInfo[] {
   if (!processDef.value) return []
   return processDef.value.nodes
-    .filter(n => n.groupMembers && n.groupMembers.length >= 2)
-    .map(node => ({
+    .filter((n) => n.groupMembers && n.groupMembers.length >= 2)
+    .map((node) => ({
       node,
-      members: node.groupMembers!.map(id => processDef.value!.nodes.find(n => n.id === id)).filter(Boolean) as PDNode[],
-      bounds: computeGroupBounds(node)
+      members: node
+        .groupMembers!.map((id) => processDef.value!.nodes.find((n) => n.id === id))
+        .filter(Boolean) as PDNode[],
+      bounds: computeGroupBounds(node),
     }))
 }
 const groupNodes = computed(() => getGroupNodes())
@@ -3975,36 +4850,49 @@ function toggleGroupCollapse(idx: number) {
   if (groupInfo.node.collapsed) {
     // Hide members
     for (const id of groupInfo.node.groupMembers!) {
-      const n = processDef.value.nodes.find(nd => nd.id === id)
-      if (n) { n.x = -9999; n.y = -9999 }
+      const n = processDef.value.nodes.find((nd) => nd.id === id)
+      if (n) {
+        n.x = -9999
+        n.y = -9999
+      }
     }
   } else {
     // Restore members
     for (const id of groupInfo.node.groupMembers!) {
-      const n = processDef.value.nodes.find(nd => nd.id === id)
+      const n = processDef.value.nodes.find((nd) => nd.id === id)
       if (n && (n as any).__origX !== undefined) {
-        n.x = (n as any).__origX; n.y = (n as any).__origY
-        delete (n as any).__origX; delete (n as any).__origY; delete (n as any).__origGroupId
+        n.x = (n as any).__origX
+        n.y = (n as any).__origY
+        delete (n as any).__origX
+        delete (n as any).__origY
+        delete (n as any).__origGroupId
       }
     }
   }
   pushHistory()
 }
-function expandGroup(idx: number) { ungroup(groupNodes.value[idx]?.node ? processDef.value!.nodes.findIndex(n => n.id === groupNodes.value[idx].node.id) : -1) }
+function expandGroup(idx: number) {
+  ungroup(
+    groupNodes.value[idx]?.node ? processDef.value!.nodes.findIndex((n) => n.id === groupNodes.value[idx].node.id) : -1,
+  )
+}
 // Group context menu state
-const groupContextMenu = ref<{x:number;y:number;groupIdx:number|null}>({x:0,y:0,groupIdx:null})
+const groupContextMenu = ref<{ x: number; y: number; groupIdx: number | null }>({ x: 0, y: 0, groupIdx: null })
 function showGroupMenu(e: MouseEvent, idx: number) {
-  e.preventDefault(); e.stopPropagation()
+  e.preventDefault()
+  e.stopPropagation()
   groupContextMenu.value = { x: e.clientX, y: e.clientY, groupIdx: idx }
 }
-function hideGroupMenu() { groupContextMenu.value = { x: 0, y: 0, groupIdx: null } }
+function hideGroupMenu() {
+  groupContextMenu.value = { x: 0, y: 0, groupIdx: null }
+}
 function isNodeInGroup(nodeId: string): boolean {
   if (!processDef.value) return false
-  return processDef.value.nodes.some(n => n.groupMembers?.includes(nodeId))
+  return processDef.value.nodes.some((n) => n.groupMembers?.includes(nodeId))
 }
-function getMemberGroup(nodeId: string): PDNode|null {
+function getMemberGroup(nodeId: string): PDNode | null {
   if (!processDef.value) return null
-  return processDef.value.nodes.find(n => n.groupMembers?.includes(nodeId)) || null
+  return processDef.value.nodes.find((n) => n.groupMembers?.includes(nodeId)) || null
 }
 function leaveGroup(nodeIdx: number) {
   if (!processDef.value) return
@@ -4012,11 +4900,13 @@ function leaveGroup(nodeIdx: number) {
   if (!node.groupMembers) return
   // Move member back to their original positions
   for (const memberId of node.groupMembers) {
-    const member = processDef.value.nodes.find(n => n.id === memberId)
+    const member = processDef.value.nodes.find((n) => n.id === memberId)
     if (member && (member as any).__origX !== undefined) {
       member.x = (member as any).__origX
       member.y = (member as any).__origY
-      delete (member as any).__origX; delete (member as any).__origY; delete (member as any).__origGroupId
+      delete (member as any).__origX
+      delete (member as any).__origY
+      delete (member as any).__origGroupId
     } else {
       // No original position saved, scatter them
       const idx = processDef.value!.nodes.indexOf(member!)
@@ -4027,7 +4917,7 @@ function leaveGroup(nodeIdx: number) {
     }
   }
   // Remove group node
-  const groupIdx = processDef.value.nodes.findIndex(n => n.id === node.id)
+  const groupIdx = processDef.value.nodes.findIndex((n) => n.id === node.id)
   if (groupIdx !== -1) processDef.value.nodes.splice(groupIdx, 1)
   selectedNode.value = null
   pushHistory()
@@ -4038,10 +4928,10 @@ function toggleGroup(nodeIdx: number) {
   if (!node) return
   if (isNodeInGroup(node.id)) return
   // Add to a new group or existing group
-  const existingGroup = processDef.value.nodes.find(n => n.groupMembers?.includes(node.id))
+  const existingGroup = processDef.value.nodes.find((n) => n.groupMembers?.includes(node.id))
   if (existingGroup) return // already in a group
   // Create a temporary group with just this node + previously selected nodes
-  const members = Array.from(multiSelected.value).filter(id => id !== node.id)
+  const members = Array.from(multiSelected.value).filter((id) => id !== node.id)
   if (members.length >= 1) {
     members.push(node.id)
     groupedNodes.value = new Set(members)
@@ -4054,16 +4944,26 @@ function toggleGroup(nodeIdx: number) {
   }
 }
 function zoomToFit() {
-  if (!processDef.value || processDef.value.nodes.length === 0) { fitCanvas(); return }
+  if (!processDef.value || processDef.value.nodes.length === 0) {
+    fitCanvas()
+    return
+  }
   if (!canvasRef.value) return
   const rect = canvasRef.value.getBoundingClientRect()
-  let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity
+  let minX = Infinity,
+    minY = Infinity,
+    maxX = -Infinity,
+    maxY = -Infinity
   for (const n of processDef.value.nodes) {
-    minX = Math.min(minX, n.x); minY = Math.min(minY, n.y)
-    maxX = Math.max(maxX, n.x + (n.w||120)); maxY = Math.max(maxY, n.y + (n.h||50))
+    minX = Math.min(minX, n.x)
+    minY = Math.min(minY, n.y)
+    maxX = Math.max(maxX, n.x + (n.w || 120))
+    maxY = Math.max(maxY, n.y + (n.h || 50))
   }
-  const contentW = maxX - minX + 40, contentH = maxY - minY + 40
-  const scaleX = rect.width / contentW, scaleY = rect.height / contentH
+  const contentW = maxX - minX + 40,
+    contentH = maxY - minY + 40
+  const scaleX = rect.width / contentW,
+    scaleY = rect.height / contentH
   zoom.value = Math.min(scaleX, scaleY, 1.5) * 0.9
   panX.value = (rect.width - contentW * zoom.value) / 2 - minX * zoom.value
   panY.value = (rect.height - contentH * zoom.value) / 2 - minY * zoom.value
@@ -4074,25 +4974,32 @@ function renderMinimap() {
   if (!canvas || !processDef.value || processDef.value.nodes.length === 0) return
   const ctx = canvas.getContext('2d')
   if (!ctx) return
-  const W = canvas.width, H = canvas.viewBox ? 100 : canvas.width
+  const W = canvas.width,
+    H = canvas.viewBox ? 100 : canvas.width
   ctx.clearRect(0, 0, W, H)
   // Compute bounds
-  let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity
+  let minX = Infinity,
+    minY = Infinity,
+    maxX = -Infinity,
+    maxY = -Infinity
   for (const n of processDef.value.nodes) {
-    minX = Math.min(minX, n.x); minY = Math.min(minY, n.y)
-    maxX = Math.max(maxX, n.x + (n.w||120)); maxY = Math.max(maxY, n.y + (n.h||50))
+    minX = Math.min(minX, n.x)
+    minY = Math.min(minY, n.y)
+    maxX = Math.max(maxX, n.x + (n.w || 120))
+    maxY = Math.max(maxY, n.y + (n.h || 50))
   }
   const pad = 20
-  const scaleX = (W - pad*2) / (maxX - minX || 1)
-  const scaleY = (H - pad*2) / (maxY - minY || 1)
+  const scaleX = (W - pad * 2) / (maxX - minX || 1)
+  const scaleY = (H - pad * 2) / (maxY - minY || 1)
   const scale = Math.min(scaleX, scaleY)
-  const offX = pad - minX * scale, offY = pad - minY * scale
+  const offX = pad - minX * scale,
+    offY = pad - minY * scale
   // Draw edges
   ctx.strokeStyle = 'rgba(0,212,255,0.3)'
   ctx.lineWidth = 1
-  for (const edge of (processDef.value.edges||[])) {
-    const from = processDef.value!.nodes.find(n => n.id === edge.from)
-    const to = processDef.value!.nodes.find(n => n.id === edge.to)
+  for (const edge of processDef.value.edges || []) {
+    const from = processDef.value!.nodes.find((n) => n.id === edge.from)
+    const to = processDef.value!.nodes.find((n) => n.id === edge.to)
     if (!from || !to) continue
     ctx.beginPath()
     ctx.moveTo(from.x * scale + offX, from.y * scale + offY)
@@ -4102,21 +5009,33 @@ function renderMinimap() {
   // Draw nodes
   for (let i = 0; i < processDef.value.nodes.length; i++) {
     const n = processDef.value.nodes[i]
-    const nx = n.x * scale + offX, ny = n.y * scale + offY
-    const nw = (n.w||120) * scale, nh = (n.h||50) * scale
-    const colors: Record<string,string> = {
-      start:'#10b981', end:'#ef4444', task:'#00d4ff', approval:'#6366f1',
-      subprocess:'#a855f7', script:'#22c55e', gate_and:'#f59e0b',
-      gate_or:'#f59e0b', gate_xor:'#f59e0b'
+    const nx = n.x * scale + offX,
+      ny = n.y * scale + offY
+    const nw = (n.w || 120) * scale,
+      nh = (n.h || 50) * scale
+    const colors: Record<string, string> = {
+      start: '#10b981',
+      end: '#ef4444',
+      task: '#00d4ff',
+      approval: '#6366f1',
+      subprocess: '#a855f7',
+      script: '#22c55e',
+      gate_and: '#f59e0b',
+      gate_or: '#f59e0b',
+      gate_xor: '#f59e0b',
     }
     ctx.fillStyle = colors[n.type] || '#6b7280'
-    ctx.globalAlpha = execState.value.completedNodes.includes(n.id) ? 1 : execState.value.currentNodeIdx === i ? 0.5 : 0.7
+    ctx.globalAlpha = execState.value.completedNodes.includes(n.id)
+      ? 1
+      : execState.value.currentNodeIdx === i
+        ? 0.5
+        : 0.7
     ctx.fillRect(nx, ny, nw, nh)
     ctx.globalAlpha = 1
     if (execState.value.currentNodeIdx === i) {
       ctx.strokeStyle = '#f59e0b'
       ctx.lineWidth = 2
-      ctx.strokeRect(nx-1, ny-1, nw+2, nh+2)
+      ctx.strokeRect(nx - 1, ny - 1, nw + 2, nh + 2)
     }
   }
 }
@@ -4130,36 +5049,48 @@ function minimapClick(e: MouseEvent) {
   const mx = (e.clientX - rect.left) * scaleX
   const my = (e.clientY - rect.top) * scaleY
   // Find node near click
-  let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity
+  let minX = Infinity,
+    minY = Infinity,
+    maxX = -Infinity,
+    maxY = -Infinity
   for (const n of processDef.value.nodes) {
-    minX = Math.min(minX, n.x); minY = Math.min(minY, n.y)
-    maxX = Math.max(maxX, n.x + (n.w||120)); maxY = Math.max(maxY, n.y + (n.h||50))
+    minX = Math.min(minX, n.x)
+    minY = Math.min(minY, n.y)
+    maxX = Math.max(maxX, n.x + (n.w || 120))
+    maxY = Math.max(maxY, n.y + (n.h || 50))
   }
   const pad = 20
-  const canvasW = canvas.width, canvasH = canvas.height
-  const scaleX2 = (canvasW - pad*2) / (maxX - minX || 1)
-  const scaleY2 = (canvasH - pad*2) / (maxY - minY || 1)
+  const canvasW = canvas.width,
+    canvasH = canvas.height
+  const scaleX2 = (canvasW - pad * 2) / (maxX - minX || 1)
+  const scaleY2 = (canvasH - pad * 2) / (maxY - minY || 1)
   const scale2 = Math.min(scaleX2, scaleY2)
-  const offX = pad - minX * scale2, offY = pad - minY * scale2
+  const offX = pad - minX * scale2,
+    offY = pad - minY * scale2
   // Find closest node
-  let closestIdx = -1, closestDist = Infinity
+  let closestIdx = -1,
+    closestDist = Infinity
   for (let i = 0; i < processDef.value.nodes.length; i++) {
     const n = processDef.value.nodes[i]
-    const nx = n.x * scale2 + offX + (n.w||120)*scale2/2
-    const ny = n.y * scale2 + offY + (n.h||50)*scale2/2
+    const nx = n.x * scale2 + offX + ((n.w || 120) * scale2) / 2
+    const ny = n.y * scale2 + offY + ((n.h || 50) * scale2) / 2
     const d = Math.hypot(mx - nx, my - ny)
-    if (d < closestDist) { closestDist = d; closestIdx = i }
+    if (d < closestDist) {
+      closestDist = d
+      closestIdx = i
+    }
   }
   if (closestIdx !== -1) {
     const n = processDef.value.nodes[closestIdx]
-    const cx = rect.width/2, cy = rect.height/2
-    panX.value = cx - (n.x + (n.w||120)/2) * zoom.value
-    panY.value = cy - (n.y + (n.h||50)/2) * zoom.value
+    const cx = rect.width / 2,
+      cy = rect.height / 2
+    panX.value = cx - (n.x + (n.w || 120) / 2) * zoom.value
+    panY.value = cy - (n.y + (n.h || 50) / 2) * zoom.value
   }
 }
 // ── Canvas Themes ────────────────────────────────────────────────────
-type CanvasTheme = 'dark'|'midnight'|'ocean'|'forest'|'cyber'|'sunset'|'arctic'|'ember'
-const canvasThemes: Record<CanvasTheme, {bg:string;grid:string;name:string}> = {
+type CanvasTheme = 'dark' | 'midnight' | 'ocean' | 'forest' | 'cyber' | 'sunset' | 'arctic' | 'ember'
+const canvasThemes: Record<CanvasTheme, { bg: string; grid: string; name: string }> = {
   dark: { bg: '#0a0e1a', grid: 'rgba(255,255,255,0.03)', name: '暗夜' },
   midnight: { bg: '#0d1b2a', grid: 'rgba(100,200,255,0.03)', name: '午夜' },
   ocean: { bg: '#0a1628', grid: 'rgba(0,150,255,0.04)', name: '深海' },
@@ -4170,13 +5101,19 @@ const canvasThemes: Record<CanvasTheme, {bg:string;grid:string;name:string}> = {
   ember: { bg: '#1a0a15', grid: 'rgba(255,50,150,0.04)', name: '余烬' },
 }
 const canvasTheme = ref<CanvasTheme>('dark')
-const gridPattern = ref<'dot'|'line'|'cross'|'diamond'|'hex'>('line')
+const gridPattern = ref<'dot' | 'line' | 'cross' | 'diamond' | 'hex'>('line')
 const gridIntensity = ref(0.5)
 const showGridFlow = ref(false)
 const gridFlowSpeed = ref(1)
-function setCanvasTheme(theme: CanvasTheme) { canvasTheme.value = theme }
+function setCanvasTheme(theme: CanvasTheme) {
+  canvasTheme.value = theme
+}
 // ── Node Style Presets ───────────────────────────────────────────────
-interface NodeStylePreset { name: string; icon: string; colors: { fill: string; stroke: string; text: string } }
+interface NodeStylePreset {
+  name: string
+  icon: string
+  colors: { fill: string; stroke: string; text: string }
+}
 const nodeStylePresets: NodeStylePreset[] = [
   { name: '霓虹蓝', icon: '💎', colors: { fill: 'rgba(0,212,255,.3)', stroke: '#00d4ff', text: '#00d4ff' } },
   { name: '极光绿', icon: '🌿', colors: { fill: 'rgba(34,197,94,.3)', stroke: '#22c55e', text: '#22c55e' } },
@@ -4195,7 +5132,7 @@ function applyNodeStylePreset(preset: NodeStylePreset) {
 }
 // ── Edge Flow Animation ──────────────────────────────────────────────
 const edgeAnimOffset = ref(0)
-let edgeAnimFrame: number|null = null
+let edgeAnimFrame: number | null = null
 function startEdgeAnimation() {
   if (edgeAnimFrame) cancelAnimationFrame(edgeAnimFrame)
   function animate() {
@@ -4205,7 +5142,10 @@ function startEdgeAnimation() {
   animate()
 }
 function stopEdgeAnimation() {
-  if (edgeAnimFrame) { cancelAnimationFrame(edgeAnimFrame); edgeAnimFrame = null }
+  if (edgeAnimFrame) {
+    cancelAnimationFrame(edgeAnimFrame)
+    edgeAnimFrame = null
+  }
 }
 let showEdgeAnim = ref(false)
 // ── Process Metadata Editor ──────────────────────────────────────────
@@ -4217,7 +5157,7 @@ function openMetaEditor() {
     description: currentProcess.value.desc || '',
     owner: currentProcess.value.flag || '',
     tags: '',
-    version: '1.0.0'
+    version: '1.0.0',
   }
   showMetaEditor.value = true
 }
@@ -4237,18 +5177,20 @@ function onNodeMouseDown(e: MouseEvent, i: number) {
       const first = processDef.value.nodes[ids[0]]
       multiDragOffset.value = {
         x: (e.clientX - panX.value) / zoom.value - (first?.x ?? 0),
-        y: (e.clientY - panY.value) / zoom.value - (first?.y ?? 0)
+        y: (e.clientY - panY.value) / zoom.value - (first?.y ?? 0),
       }
     }
     return
   }
-  isDragging.value = true; dragIdx.value = i
+  isDragging.value = true
+  dragIdx.value = i
   const node = processDef.value.nodes[i]
   dragOffset.value = {
     x: (e.clientX - panX.value) / zoom.value - node.x,
-    y: (e.clientY - panY.value) / zoom.value - node.y
+    y: (e.clientY - panY.value) / zoom.value - node.y,
   }
-  selectedNode.value = i; selectedEdge.value = null
+  selectedNode.value = i
+  selectedEdge.value = null
 }
 function onNodeMouseMove(e: MouseEvent) {
   if (!isDragging.value || dragIdx.value === null || !processDef.value) return
@@ -4257,7 +5199,7 @@ function onNodeMouseMove(e: MouseEvent) {
     const dx = (e.clientX - panX.value) / zoom.value - multiDragOffset.value.x
     const dy = (e.clientY - panY.value) / zoom.value - multiDragOffset.value.y
     for (const id of multiSelected.value) {
-      const idx = processDef.value.nodes.findIndex(n => n.id === id)
+      const idx = processDef.value.nodes.findIndex((n) => n.id === id)
       if (idx !== -1) {
         processDef.value.nodes[idx].x = Math.round(dx / GRID_SIZE) * GRID_SIZE
         processDef.value.nodes[idx].y = Math.round(dy / GRID_SIZE) * GRID_SIZE
@@ -4273,21 +5215,25 @@ function onNodeMouseMove(e: MouseEvent) {
   processDef.value.nodes[idx].x = snappedX
   processDef.value.nodes[idx].y = snappedY
   // Snap to others
-  let nearX: number|null = null, nearY: number|null = null
+  let nearX: number | null = null,
+    nearY: number | null = null
   for (let j = 0; j < processDef.value.nodes.length; j++) {
     if (j === idx) continue
-    const o = processDef.value.nodes[j], ow = o.w||120, oh = o.h||50
+    const o = processDef.value.nodes[j],
+      ow = o.w || 120,
+      oh = o.h || 50
     if (Math.abs(snappedX - o.x) < SNAP_THRESHOLD) nearX = o.x
-    if (Math.abs(snappedX - (o.x+ow)) < SNAP_THRESHOLD) nearX = o.x+ow
+    if (Math.abs(snappedX - (o.x + ow)) < SNAP_THRESHOLD) nearX = o.x + ow
     if (Math.abs(snappedY - o.y) < SNAP_THRESHOLD) nearY = o.y
-    if (Math.abs(snappedY - (o.y+oh)) < SNAP_THRESHOLD) nearY = o.y+oh
+    if (Math.abs(snappedY - (o.y + oh)) < SNAP_THRESHOLD) nearY = o.y + oh
   }
-  snapX.value = nearX; snapY.value = nearY
+  snapX.value = nearX
+  snapY.value = nearY
 }
 function onNodeMouseUp() {
   if (isMultiDragging.value && multiSelected.value.size > 1 && processDef.value) {
     for (const id of multiSelected.value) {
-      const idx = processDef.value.nodes.findIndex(n => n.id === id)
+      const idx = processDef.value.nodes.findIndex((n) => n.id === id)
       if (idx !== -1) {
         processDef.value.nodes[idx].x = Math.round(processDef.value.nodes[idx].x / GRID_SIZE) * GRID_SIZE
         processDef.value.nodes[idx].y = Math.round(processDef.value.nodes[idx].y / GRID_SIZE) * GRID_SIZE
@@ -4300,11 +5246,15 @@ function onNodeMouseUp() {
     if (snapY.value !== null) n.y = snapY.value
     pushHistory()
   }
-  isDragging.value = false; dragIdx.value = null; snapX.value = null; snapY.value = null
-  isMultiDragging.value = false; multiSelected.value.clear()
+  isDragging.value = false
+  dragIdx.value = null
+  snapX.value = null
+  snapY.value = null
+  isMultiDragging.value = false
+  multiSelected.value.clear()
 }
 // ── Drag: Edge from port ──────────────────────────────────────────────
-function onPortMouseDown(e: MouseEvent, nodeIdx: number, port: 'in'|'out') {
+function onPortMouseDown(e: MouseEvent, nodeIdx: number, port: 'in' | 'out') {
   e.stopPropagation()
   if (!processDef.value) return
   const node = processDef.value.nodes[nodeIdx]
@@ -4316,14 +5266,22 @@ function onPortMouseDown(e: MouseEvent, nodeIdx: number, port: 'in'|'out') {
     tempEdge.value.endY = (ev.clientY - panY.value) / zoom.value
   }
   const onUp = (ev: MouseEvent) => {
-    document.removeEventListener('mousemove', onMove); document.removeEventListener('mouseup', onUp)
-    if (!tempEdge.value || !processDef.value) { tempEdge.value = null; return }
-    const mx = (ev.clientX - panX.value) / zoom.value, my = (ev.clientY - panY.value) / zoom.value
-    let targetIdx: number|null = null
+    document.removeEventListener('mousemove', onMove)
+    document.removeEventListener('mouseup', onUp)
+    if (!tempEdge.value || !processDef.value) {
+      tempEdge.value = null
+      return
+    }
+    const mx = (ev.clientX - panX.value) / zoom.value,
+      my = (ev.clientY - panY.value) / zoom.value
+    let targetIdx: number | null = null
     for (let i = 0; i < processDef.value.nodes.length; i++) {
       if (i === tempEdge.value!.from) continue
       const n = processDef.value.nodes[i]
-      if (mx >= n.x-10 && mx <= n.x+(n.w||120)+10 && my >= n.y-10 && my <= n.y+(n.h||50)+10) { targetIdx = i; break }
+      if (mx >= n.x - 10 && mx <= n.x + (n.w || 120) + 10 && my >= n.y - 10 && my <= n.y + (n.h || 50) + 10) {
+        targetIdx = i
+        break
+      }
     }
     if (targetIdx !== null) {
       const fn = processDef.value.nodes[tempEdge.value!.from]
@@ -4334,20 +5292,27 @@ function onPortMouseDown(e: MouseEvent, nodeIdx: number, port: 'in'|'out') {
     }
     tempEdge.value = null
   }
-  document.addEventListener('mousemove', onMove); document.addEventListener('mouseup', onUp)
+  document.addEventListener('mousemove', onMove)
+  document.addEventListener('mouseup', onUp)
 }
 // ── Canvas pan ────────────────────────────────────────────────────────
 function onCanvasMouseDown(e: MouseEvent) {
   if (e.button !== 0) return
   isPanning.value = true
   panStart.value = { x: e.clientX - panX.value, y: e.clientY - panY.value }
-  const onMove = (ev: MouseEvent) => { if (isPanning.value) { panX.value = ev.clientX - panStart.value.x; panY.value = ev.clientY - panStart.value.y } }
+  const onMove = (ev: MouseEvent) => {
+    if (isPanning.value) {
+      panX.value = ev.clientX - panStart.value.x
+      panY.value = ev.clientY - panStart.value.y
+    }
+  }
   const onUp = () => {
     isPanning.value = false
     document.removeEventListener('mousemove', onMove)
     document.removeEventListener('mouseup', onUp)
   }
-  document.addEventListener('mousemove', onMove); document.addEventListener('mouseup', onUp)
+  document.addEventListener('mousemove', onMove)
+  document.addEventListener('mouseup', onUp)
 }
 // ── Node body click: arbitrary position edge creation ─────────────────
 function onNodeBodyMouseDown(e: MouseEvent, nodeIdx: number) {
@@ -4357,10 +5322,13 @@ function onNodeBodyMouseDown(e: MouseEvent, nodeIdx: number) {
   if (!node) return
   const mx = (e.clientX - panX.value) / zoom.value
   const my = (e.clientY - panY.value) / zoom.value
-  const w = node.w || 120, h = node.h || 50
-  const cx = node.x + w/2, cy = node.y + h/2
-  const dx = mx - cx, dy = my - cy
-  let port: 'in'|'out' = 'out'
+  const w = node.w || 120,
+    h = node.h || 50
+  const cx = node.x + w / 2,
+    cy = node.y + h / 2
+  const dx = mx - cx,
+    dy = my - cy
+  let port: 'in' | 'out' = 'out'
   if (Math.abs(dx) > Math.abs(dy)) {
     port = dx < 0 ? 'in' : 'out'
   } else {
@@ -4375,15 +5343,19 @@ function onNodeBodyMouseDown(e: MouseEvent, nodeIdx: number) {
   const onUp = (ev: MouseEvent) => {
     document.removeEventListener('mousemove', onMove)
     document.removeEventListener('mouseup', onUp)
-    if (!tempEdge.value || !processDef.value) { tempEdge.value = null; return }
+    if (!tempEdge.value || !processDef.value) {
+      tempEdge.value = null
+      return
+    }
     const emx = (ev.clientX - panX.value) / zoom.value
     const emy = (ev.clientY - panY.value) / zoom.value
-    let targetIdx: number|null = null
+    let targetIdx: number | null = null
     for (let i = 0; i < processDef.value.nodes.length; i++) {
       if (i === tempEdge.value.from) continue
       const n = processDef.value.nodes[i]
-      if (emx >= n.x-10 && emx <= n.x+(n.w||120)+10 && emy >= n.y-10 && emy <= n.y+(n.h||50)+10) {
-        targetIdx = i; break
+      if (emx >= n.x - 10 && emx <= n.x + (n.w || 120) + 10 && emy >= n.y - 10 && emy <= n.y + (n.h || 50) + 10) {
+        targetIdx = i
+        break
       }
     }
     if (targetIdx !== null) {
@@ -4408,15 +5380,19 @@ function onEdgeMouseDown(e: MouseEvent, nodeIdx: number) {
   const mx = (e.clientX - panX.value) / zoom.value
   const my = (e.clientY - panY.value) / zoom.value
   // Determine which side of the node was clicked
-  const w = node.w || 120, h = node.h || 50
-  const cx = node.x + w/2, cy = node.y + h/2
-  const dx = mx - cx, dy = my - cy
-  let port: 'in'|'out' = 'out'
+  const w = node.w || 120,
+    h = node.h || 50
+  const cx = node.x + w / 2,
+    cy = node.y + h / 2
+  const dx = mx - cx,
+    dy = my - cy
+  let port: 'in' | 'out' = 'out'
   if (Math.abs(dx) > Math.abs(dy)) {
     port = dx < 0 ? 'in' : 'out'
   } else {
-    if (dy < 0) port = 'in'  // top
-    else port = 'out'  // bottom
+    if (dy < 0)
+      port = 'in' // top
+    else port = 'out' // bottom
   }
   tempEdge.value = { from: nodeIdx, fromPort: port, startX: mx, startY: my, endX: mx, endY: my }
   const onMove = (ev: MouseEvent) => {
@@ -4425,14 +5401,22 @@ function onEdgeMouseDown(e: MouseEvent, nodeIdx: number) {
     tempEdge.value.endY = (ev.clientY - panY.value) / zoom.value
   }
   const onUp = (ev: MouseEvent) => {
-    document.removeEventListener('mousemove', onMove); document.removeEventListener('mouseup', onUp)
-    if (!tempEdge.value || !processDef.value) { tempEdge.value = null; return }
-    const emx = (ev.clientX - panX.value) / zoom.value, emy = (ev.clientY - panY.value) / zoom.value
-    let targetIdx: number|null = null
+    document.removeEventListener('mousemove', onMove)
+    document.removeEventListener('mouseup', onUp)
+    if (!tempEdge.value || !processDef.value) {
+      tempEdge.value = null
+      return
+    }
+    const emx = (ev.clientX - panX.value) / zoom.value,
+      emy = (ev.clientY - panY.value) / zoom.value
+    let targetIdx: number | null = null
     for (let i = 0; i < processDef.value.nodes.length; i++) {
       if (i === tempEdge.value!.from) continue
       const n = processDef.value.nodes[i]
-      if (emx >= n.x-10 && emx <= n.x+(n.w||120)+10 && emy >= n.y-10 && emy <= n.y+(n.h||50)+10) { targetIdx = i; break }
+      if (emx >= n.x - 10 && emx <= n.x + (n.w || 120) + 10 && emy >= n.y - 10 && emy <= n.y + (n.h || 50) + 10) {
+        targetIdx = i
+        break
+      }
     }
     if (targetIdx !== null) {
       const fn = processDef.value.nodes[tempEdge.value!.from]
@@ -4443,12 +5427,21 @@ function onEdgeMouseDown(e: MouseEvent, nodeIdx: number) {
     }
     tempEdge.value = null
   }
-  document.addEventListener('mousemove', onMove); document.addEventListener('mouseup', onUp)
+  document.addEventListener('mousemove', onMove)
+  document.addEventListener('mouseup', onUp)
 }
 // ── Zoom ──────────────────────────────────────────────────────────────
-function zoomIn() { zoom.value = Math.min(3, zoom.value + 0.1) }
-function zoomOut() { zoom.value = Math.max(0.3, zoom.value - 0.1) }
-function fitCanvas() { zoom.value = 1; panX.value = 0; panY.value = 0 }
+function zoomIn() {
+  zoom.value = Math.min(3, zoom.value + 0.1)
+}
+function zoomOut() {
+  zoom.value = Math.max(0.3, zoom.value - 0.1)
+}
+function fitCanvas() {
+  zoom.value = 1
+  panX.value = 0
+  panY.value = 0
+}
 // ── Drag from palette ─────────────────────────────────────────────────
 function onDragNode(e: DragEvent, nt: { type: string }) {
   ;(e.dataTransfer as any)?.setData('nodeType', nt.type)
@@ -4464,7 +5457,7 @@ function onDropNode(e: DragEvent) {
   const sy = Math.round(y / GRID_SIZE) * GRID_SIZE
   const w = isGate(type) ? 100 : type === 'approval' ? 130 : 120
   const h = type === 'approval' ? 70 : type === 'subprocess' ? 60 : 50
-  addNode(type, { x: sx - w/2, y: sy - h/2, autoConnect: true })
+  addNode(type, { x: sx - w / 2, y: sy - h / 2, autoConnect: true })
 }
 // ── Subprocess ────────────────────────────────────────────────────────
 function openSubprocess(nodeIdx: number) {
@@ -4478,13 +5471,18 @@ function openSubprocess(nodeIdx: number) {
   const subData = subs[node.id] || { nodes: [], edges: [] }
   subprocessDef.value = JSON.parse(JSON.stringify(subData))
   subprocessEditing.value = true
-  subSelectedNode.value = null; subSelectedEdge.value = null
-  subHistory.value = []; subHistIdx.value = -1
-  subPanX.value = 0; subPanY.value = 0; subZoom.value = 1
+  subSelectedNode.value = null
+  subSelectedEdge.value = null
+  subHistory.value = []
+  subHistIdx.value = -1
+  subPanX.value = 0
+  subPanY.value = 0
+  subZoom.value = 1
 }
 function exitSubprocess() {
   subprocessEditing.value = false
-  subSelectedNode.value = null; subSelectedEdge.value = null
+  subSelectedNode.value = null
+  subSelectedEdge.value = null
 }
 function saveSubprocess() {
   if (subprocessNodeIdx.value === null || !processDef.value) return
@@ -4498,45 +5496,47 @@ function saveSubprocess() {
 }
 // ── Subprocess inline editor helpers ──────────────────────────────────
 function getSubNodeResizeX(node: PDNode, dir: string): number {
-  const w = node.w||120
-  if (dir==='nw'||dir==='n'||dir==='sw'||dir==='w') return node.x
+  const w = node.w || 120
+  if (dir === 'nw' || dir === 'n' || dir === 'sw' || dir === 'w') return node.x
   return node.x + w
 }
 function getSubNodeResizeY(node: PDNode, dir: string): number {
-  const h = node.h||50
-  if (dir==='nw'||dir==='ne'||dir==='n') return node.y
+  const h = node.h || 50
+  if (dir === 'nw' || dir === 'ne' || dir === 'n') return node.y
   return node.y + h
 }
-function getSubAnchorPoints(node: PDNode): {x:number;y:number}[] {
-  const w = node.w||120, h = node.h||50
+function getSubAnchorPoints(node: PDNode): { x: number; y: number }[] {
+  const w = node.w || 120,
+    h = node.h || 50
   const offsets = (node as any).anchorOffset || []
   return [
-    { x: node.x + w/2, y: node.y },
-    { x: offsets[1]?.x ?? node.x + w, y: node.y + h/2 },
-    { x: node.x + w/2, y: node.y + h },
-    { x: offsets[3]?.x ?? node.x, y: node.y + h/2 },
+    { x: node.x + w / 2, y: node.y },
+    { x: offsets[1]?.x ?? node.x + w, y: node.y + h / 2 },
+    { x: node.x + w / 2, y: node.y + h },
+    { x: offsets[3]?.x ?? node.x, y: node.y + h / 2 },
   ]
 }
-function getSubNodePort(node: PDNode, port: 'in'|'out', portIdx?: number): {x:number;y:number} {
-  const w = node.w||120, h = node.h||50
-  if (port === 'in') return { x: node.x, y: node.y + h/2 }
+function getSubNodePort(node: PDNode, port: 'in' | 'out', portIdx?: number): { x: number; y: number } {
+  const w = node.w || 120,
+    h = node.h || 50
+  if (port === 'in') return { x: node.x, y: node.y + h / 2 }
   if (isGate(node.type) && portIdx !== undefined) {
     const conds = getNodeConditions(node)
     const spread = Math.max(conds.length * 12, 20)
-    return { x: node.x + w, y: node.y + h/2 + (portIdx - (conds.length-1)/2) * spread }
+    return { x: node.x + w, y: node.y + h / 2 + (portIdx - (conds.length - 1) / 2) * spread }
   }
-  return { x: node.x + w, y: node.y + h/2 }
+  return { x: node.x + w, y: node.y + h / 2 }
 }
 function subComputeEdgePath(edge: PDEdge): string {
   if (!subprocessDef.value) return ''
-  const from = subprocessDef.value.nodes.find(n => n.id === edge.from)
-  const to = subprocessDef.value.nodes.find(n => n.id === edge.to)
+  const from = subprocessDef.value.nodes.find((n) => n.id === edge.from)
+  const to = subprocessDef.value.nodes.find((n) => n.id === edge.to)
   if (!from || !to) return ''
   const fp = getSubNodePort(from, 'out')
   const tp = getSubNodePort(to, 'in')
   const dx = Math.abs(tp.x - fp.x)
   const cx = Math.max(dx * 0.5, 60)
-  return `M ${fp.x} ${fp.y} C ${fp.x+cx} ${fp.y}, ${tp.x-cx} ${tp.y}, ${tp.x} ${tp.y}`
+  return `M ${fp.x} ${fp.y} C ${fp.x + cx} ${fp.y}, ${tp.x - cx} ${tp.y}, ${tp.x} ${tp.y}`
 }
 function subTempEdgePath(): string {
   if (!subTempEdge.value) return ''
@@ -4546,11 +5546,11 @@ function subTempEdgePath(): string {
   const fp = getSubNodePort(from, subTempEdge.value.fromPort)
   const cx = Math.max(Math.abs(endX - fp.x) * 0.5, 60)
   const sign = subTempEdge.value.fromPort === 'out' ? 1 : -1
-  return `M ${fp.x} ${fp.y} C ${fp.x+cx*sign} ${fp.y}, ${endX-cx*sign} ${endY}, ${endX} ${endY}`
+  return `M ${fp.x} ${fp.y} C ${fp.x + cx * sign} ${fp.y}, ${endX - cx * sign} ${endY}, ${endX} ${endY}`
 }
 function subCreateEdge(fromId: string, toId: string) {
   if (!subprocessDef.value) return
-  const exists = subprocessDef.value.edges.some(e => e.from === fromId && e.to === toId)
+  const exists = subprocessDef.value.edges.some((e) => e.from === fromId && e.to === toId)
   if (exists) return
   subprocessDef.value.edges.push({ id: genEdgeId(), from: fromId, to: toId })
   subPushHistory()
@@ -4562,27 +5562,44 @@ function subDeleteEdge(i: number) {
   subPushHistory()
 }
 // Subprocess toolbar actions
-function subUndo() { if (subHistIdx.value > 0) { subHistIdx.value--; subprocessDef.value = JSON.parse(JSON.stringify(subHistory.value[subHistIdx.value])); subSelectedNode.value = null } }
-function subZoomIn() { subZoom.value = Math.min(3, subZoom.value + 0.1) }
-function subZoomOut() { subZoom.value = Math.max(0.3, subZoom.value - 0.1) }
-function subFitCanvas() { subZoom.value = 1; subPanX.value = 0; subPanY.value = 0 }
+function subUndo() {
+  if (subHistIdx.value > 0) {
+    subHistIdx.value--
+    subprocessDef.value = JSON.parse(JSON.stringify(subHistory.value[subHistIdx.value]))
+    subSelectedNode.value = null
+  }
+}
+function subZoomIn() {
+  subZoom.value = Math.min(3, subZoom.value + 0.1)
+}
+function subZoomOut() {
+  subZoom.value = Math.max(0.3, subZoom.value - 0.1)
+}
+function subFitCanvas() {
+  subZoom.value = 1
+  subPanX.value = 0
+  subPanY.value = 0
+}
 function subAddNode(type: string) {
   if (!subprocessDef.value) return
   const w = isGate(type) ? 100 : type === 'approval' ? 130 : type === 'subprocess' ? 120 : 120
   const h = type === 'approval' ? 70 : type === 'subprocess' ? 60 : 50
-  const cx = (-subPanX.value + subCanvasRef.value?.clientWidth!/2) / subZoom.value
-  const cy = (-subPanY.value + subCanvasRef.value?.clientHeight!/2) / subZoom.value
+  const cx = (-subPanX.value + subCanvasRef.value?.clientWidth! / 2) / subZoom.value
+  const cy = (-subPanY.value + subCanvasRef.value?.clientHeight! / 2) / subZoom.value
   const sx = Math.round(cx / GRID_SIZE) * GRID_SIZE
   const sy = Math.round(cy / GRID_SIZE) * GRID_SIZE
-  subprocessDef.value.nodes.push({ id: genId(), type, label: getNodeLabel(type), x: sx - w/2, y: sy - h/2, w, h })
+  subprocessDef.value.nodes.push({ id: genId(), type, label: getNodeLabel(type), x: sx - w / 2, y: sy - h / 2, w, h })
   subPushHistory()
 }
 function subDeleteNode() {
   if (subSelectedNode.value === null || !subprocessDef.value) return
   subprocessDef.value.nodes.splice(subSelectedNode.value, 1)
   // Remove edges connected to deleted node
-  subprocessDef.value.edges = subprocessDef.value.edges.filter(e => e.from !== subSelectedNode.value && e.to !== subSelectedNode.value)
-  subSelectedNode.value = null; subSelectedEdge.value = null
+  subprocessDef.value.edges = subprocessDef.value.edges.filter(
+    (e) => e.from !== subSelectedNode.value && e.to !== subSelectedNode.value,
+  )
+  subSelectedNode.value = null
+  subSelectedEdge.value = null
   subPushHistory()
 }
 function subDuplicateNode() {
@@ -4592,10 +5609,18 @@ function subDuplicateNode() {
   const w = isGate(orig.type) ? 100 : orig.type === 'approval' ? 130 : 120
   const h = orig.type === 'approval' ? 70 : orig.type === 'subprocess' ? 60 : 50
   const newNode: PDNode = {
-    id: genId(), type: orig.type, label: orig.label,
-    x: orig.x + 30, y: orig.y + 30, w, h,
-    assignee: orig.assignee, condition: orig.condition,
-    timeout: orig.timeout, priority: orig.priority, script: orig.script
+    id: genId(),
+    type: orig.type,
+    label: orig.label,
+    x: orig.x + 30,
+    y: orig.y + 30,
+    w,
+    h,
+    assignee: orig.assignee,
+    condition: orig.condition,
+    timeout: orig.timeout,
+    priority: orig.priority,
+    script: orig.script,
   }
   subprocessDef.value.nodes.push(newNode)
   subSelectedNode.value = subprocessDef.value.nodes.length - 1
@@ -4606,8 +5631,8 @@ function subAutoLayout() {
   const nodes = subprocessDef.value.nodes
   const cols = Math.ceil(Math.sqrt(nodes.length))
   nodes.forEach((n, i) => {
-    n.x = 80 + (i % cols) * ((n.w||120) + 40)
-    n.y = 80 + Math.floor(i / cols) * ((n.h||50) + 40)
+    n.x = 80 + (i % cols) * ((n.w || 120) + 40)
+    n.y = 80 + Math.floor(i / cols) * ((n.h || 50) + 40)
   })
   subPushHistory()
 }
@@ -4626,16 +5651,27 @@ function subOnWheel(e: WheelEvent) {
 function subClearCanvas() {
   if (!confirmMsg('清空子流程画布？')) return
   subprocessDef.value = { nodes: [], edges: [] }
-  subSelectedNode.value = null; subSelectedEdge.value = null
+  subSelectedNode.value = null
+  subSelectedEdge.value = null
   subPushHistory()
 }
 function createSubVersion() {
   if (!subprocessDef.value) return
-  const v: ProcVersion = { id: genId(), timestamp: Date.now(), label: '子流程快照', config: JSON.parse(JSON.stringify(subprocessDef.value)), author: 'user', message: '子流程快照' }
+  const v: ProcVersion = {
+    id: genId(),
+    timestamp: Date.now(),
+    label: '子流程快照',
+    config: JSON.parse(JSON.stringify(subprocessDef.value)),
+    author: 'user',
+    message: '子流程快照',
+  }
   versions.value.unshift(v)
   if (versions.value.length > 20) versions.value.pop()
 }
-function subSelectEdge(i: number) { subSelectedEdge.value = i; subSelectedNode.value = null }
+function subSelectEdge(i: number) {
+  subSelectedEdge.value = i
+  subSelectedNode.value = null
+}
 function subPushHistory() {
   if (!subprocessDef.value) return
   subHistory.value = subHistory.value.slice(0, subHistIdx.value + 1)
@@ -4655,42 +5691,68 @@ async function loadProcess(p: ProcDef) {
       const n3 = { id: genId(), type: 'end', label: '结束', x: 520, y: 120, w: 100, h: 50 }
       processDef.value = {
         nodes: [n1, n2, n3],
-        edges: [{ id: genEdgeId(), from: n1.id, to: n2.id }, { id: genEdgeId(), from: n2.id, to: n3.id }]
+        edges: [
+          { id: genEdgeId(), from: n1.id, to: n2.id },
+          { id: genEdgeId(), from: n2.id, to: n3.id },
+        ],
       }
     }
-    selectedNode.value = null; selectedEdge.value = null
-    history.value = []; histIdx.value = -1; pushHistory()
+    selectedNode.value = null
+    selectedEdge.value = null
+    history.value = []
+    histIdx.value = -1
+    pushHistory()
   } catch {
     currentProcess.value = { ...p, name: p.name, flag: p.flag, config: { nodes: [], edges: [] } }
     processDef.value = { nodes: [], edges: [] }
   }
 }
-function newProcess() { newForm.value = { name: '', flag: '', desc: '' }; showNewModal.value = true }
+function newProcess() {
+  newForm.value = { name: '', flag: '', desc: '' }
+  showNewModal.value = true
+}
 const savePM = useMutation({
   mutationFn: async (data: any) => {
-    if (currentProcess.value?.id) return api.put(`/jaxrs/processplatform/assemble/designer/process/${currentProcess.value!.id}`, data)
+    if (currentProcess.value?.id)
+      return api.put(`/jaxrs/processplatform/assemble/designer/process/${currentProcess.value!.id}`, data)
     return api.post('/jaxrs/processplatform/assemble/designer/process', data)
   },
-  onSuccess: () => { showNewModal.value = false; loadProcesses() }
+  onSuccess: () => {
+    showNewModal.value = false
+    loadProcesses()
+  },
 })
 async function createProcess() {
   if (!newForm.value.name.trim()) return
-  savePM.mutate({ name: newForm.value.name, flag: newForm.value.flag, description: newForm.value.desc, config: processDef.value })
+  savePM.mutate({
+    name: newForm.value.name,
+    flag: newForm.value.flag,
+    description: newForm.value.desc,
+    config: processDef.value,
+  })
 }
 async function saveProcess() {
   if (!currentProcess.value) return
   try {
     await api.put(`/jaxrs/processplatform/assemble/designer/process/${currentProcess.value.id}`, {
-      name: currentProcess.value.name, flag: currentProcess.value.flag,
-      description: currentProcess.value.desc, config: processDef.value,
-      ...(currentProcess.value.subprocesses ? { subprocesses: (currentProcess.value as any).subprocesses } : {})
+      name: currentProcess.value.name,
+      flag: currentProcess.value.flag,
+      description: currentProcess.value.desc,
+      config: processDef.value,
+      ...(currentProcess.value.subprocesses ? { subprocesses: (currentProcess.value as any).subprocesses } : {}),
     })
     toast.info('保存成功')
-  } catch (e: any) { toast.error('保存失败: : ' + (e?.message ?? '')) }
+  } catch (e: any) {
+    toast.error('保存失败: : ' + (e?.message ?? ''))
+  }
 }
 async function loadProcesses() {
-  try { const r: any = await api.get('/jaxrs/processplatform/assemble/designer/process/list'); procList.value = r?.data?.list ?? r?.data ?? [] }
-  catch { procList.value = [] }
+  try {
+    const r: any = await api.get('/jaxrs/processplatform/assemble/designer/process/list')
+    procList.value = r?.data?.list ?? r?.data ?? []
+  } catch {
+    procList.value = []
+  }
 }
 // Connection rules state
 const showRulesModal = ref(false)
@@ -4700,22 +5762,25 @@ function resetConnectionRules() {
   for (const ft of allNodeTypes) {
     rules[ft] = {}
     for (const tt of allNodeTypes) {
-      if (ft === tt) { rules[ft][tt] = false; continue }
+      if (ft === tt) {
+        rules[ft][tt] = false
+        continue
+      }
       // Default rules: start can only go to task/approval/gate; end can only receive from task/approval/gate; etc.
       const allowed: Record<string, boolean> = {
-        'start': ['task','approval','script','gate_and','gate_or','gate_xor'],
-        'task': ['task','approval','end','script','gate_and','gate_or','gate_xor'],
-        'approval': ['task','approval','end','script','gate_and','gate_or','gate_xor'],
-        'script': ['task','approval','end','script','gate_and','gate_or','gate_xor'],
-        'timer': ['task','approval','end','script'],
-        'end': [],
-        'gate_and': ['task','approval','end','script'],
-        'gate_or': ['task','approval','end','script'],
-        'gate_xor': ['task','approval','end','script'],
-        'subprocess': ['task','approval','end','script'],
-        'parallel': ['task','approval','end','script'],
+        start: ['task', 'approval', 'script', 'gate_and', 'gate_or', 'gate_xor'],
+        task: ['task', 'approval', 'end', 'script', 'gate_and', 'gate_or', 'gate_xor'],
+        approval: ['task', 'approval', 'end', 'script', 'gate_and', 'gate_or', 'gate_xor'],
+        script: ['task', 'approval', 'end', 'script', 'gate_and', 'gate_or', 'gate_xor'],
+        timer: ['task', 'approval', 'end', 'script'],
+        end: [],
+        gate_and: ['task', 'approval', 'end', 'script'],
+        gate_or: ['task', 'approval', 'end', 'script'],
+        gate_xor: ['task', 'approval', 'end', 'script'],
+        subprocess: ['task', 'approval', 'end', 'script'],
+        parallel: ['task', 'approval', 'end', 'script'],
       }
-      rules[ft][tt] = (allowed[ft]||[]).includes(tt)
+      rules[ft][tt] = (allowed[ft] || []).includes(tt)
     }
   }
   connectionRules.value = rules
@@ -4734,38 +5799,134 @@ function saveRules() {
 }
 // Node templates
 const showTemplatesModal = ref(false)
-interface TemplateNodeDef { type: string; label: string; icon: string }
-interface TemplateDef { name: string; icon: string; desc: string; nodes: TemplateNodeDef[]; edges: {from: number; to: number}[] }
+interface TemplateNodeDef {
+  type: string
+  label: string
+  icon: string
+}
+interface TemplateDef {
+  name: string
+  icon: string
+  desc: string
+  nodes: TemplateNodeDef[]
+  edges: { from: number; to: number }[]
+}
 const nodeTemplates: TemplateDef[] = [
   {
-    name: '简单审批', icon: '📝', desc: '开始 → 任务 → 审批 → 结束',
-    nodes: [{type:'start',label:'开始',icon:'🟢'},{type:'task',label:'提交申请',icon:'📋'},{type:'approval',label:'主管审批',icon:'✅'},{type:'end',label:'完成',icon:'🔴'}],
-    edges: [{from:0,to:1},{from:1,to:2},{from:2,to:3}]
+    name: '简单审批',
+    icon: '📝',
+    desc: '开始 → 任务 → 审批 → 结束',
+    nodes: [
+      { type: 'start', label: '开始', icon: '🟢' },
+      { type: 'task', label: '提交申请', icon: '📋' },
+      { type: 'approval', label: '主管审批', icon: '✅' },
+      { type: 'end', label: '完成', icon: '🔴' },
+    ],
+    edges: [
+      { from: 0, to: 1 },
+      { from: 1, to: 2 },
+      { from: 2, to: 3 },
+    ],
   },
   {
-    name: '多级审批', icon: '📑', desc: '开始 → 任务 → 一级审批 → 二级审批 → 结束',
-    nodes: [{type:'start',label:'开始',icon:'🟢'},{type:'task',label:'提交申请',icon:'📋'},{type:'approval',label:'主管审批',icon:'✅'},{type:'approval',label:'经理审批',icon:'✅'},{type:'end',label:'完成',icon:'🔴'}],
-    edges: [{from:0,to:1},{from:1,to:2},{from:2,to:3},{from:3,to:4}]
+    name: '多级审批',
+    icon: '📑',
+    desc: '开始 → 任务 → 一级审批 → 二级审批 → 结束',
+    nodes: [
+      { type: 'start', label: '开始', icon: '🟢' },
+      { type: 'task', label: '提交申请', icon: '📋' },
+      { type: 'approval', label: '主管审批', icon: '✅' },
+      { type: 'approval', label: '经理审批', icon: '✅' },
+      { type: 'end', label: '完成', icon: '🔴' },
+    ],
+    edges: [
+      { from: 0, to: 1 },
+      { from: 1, to: 2 },
+      { from: 2, to: 3 },
+      { from: 3, to: 4 },
+    ],
   },
   {
-    name: '条件分支', icon: '🔀', desc: '开始 → 任务 → 条件网关 → 审批A/审批B → 合并 → 结束',
-    nodes: [{type:'start',label:'开始',icon:'🟢'},{type:'task',label:'提交申请',icon:'📋'},{type:'gate_or',label:'金额判断',icon:'🔶'},{type:'approval',label:'小额审批',icon:'✅'},{type:'approval',label:'大额审批',icon:'✅'},{type:'gate_and',label:'合并',icon:'🔷'},{type:'end',label:'完成',icon:'🔴'}],
-    edges: [{from:0,to:1},{from:1,to:2},{from:2,to:3},{from:2,to:4},{from:3,to:5},{from:4,to:5},{from:5,to:6}]
+    name: '条件分支',
+    icon: '🔀',
+    desc: '开始 → 任务 → 条件网关 → 审批A/审批B → 合并 → 结束',
+    nodes: [
+      { type: 'start', label: '开始', icon: '🟢' },
+      { type: 'task', label: '提交申请', icon: '📋' },
+      { type: 'gate_or', label: '金额判断', icon: '🔶' },
+      { type: 'approval', label: '小额审批', icon: '✅' },
+      { type: 'approval', label: '大额审批', icon: '✅' },
+      { type: 'gate_and', label: '合并', icon: '🔷' },
+      { type: 'end', label: '完成', icon: '🔴' },
+    ],
+    edges: [
+      { from: 0, to: 1 },
+      { from: 1, to: 2 },
+      { from: 2, to: 3 },
+      { from: 2, to: 4 },
+      { from: 3, to: 5 },
+      { from: 4, to: 5 },
+      { from: 5, to: 6 },
+    ],
   },
   {
-    name: '并行分支', icon: '⚡', desc: '开始 → Fork → 并行任务A/B/C → Join → 结束',
-    nodes: [{type:'start',label:'开始',icon:'🟢'},{type:'gate_and',label:'Fork',icon:'🔷'},{type:'task',label:'任务A',icon:'📋'},{type:'task',label:'任务B',icon:'📋'},{type:'task',label:'任务C',icon:'📋'},{type:'gate_and',label:'Join',icon:'🔷'},{type:'end',label:'完成',icon:'🔴'}],
-    edges: [{from:0,to:1},{from:1,to:2},{from:1,to:3},{from:1,to:4},{from:2,to:5},{from:3,to:5},{from:4,to:5},{from:5,to:6}]
+    name: '并行分支',
+    icon: '⚡',
+    desc: '开始 → Fork → 并行任务A/B/C → Join → 结束',
+    nodes: [
+      { type: 'start', label: '开始', icon: '🟢' },
+      { type: 'gate_and', label: 'Fork', icon: '🔷' },
+      { type: 'task', label: '任务A', icon: '📋' },
+      { type: 'task', label: '任务B', icon: '📋' },
+      { type: 'task', label: '任务C', icon: '📋' },
+      { type: 'gate_and', label: 'Join', icon: '🔷' },
+      { type: 'end', label: '完成', icon: '🔴' },
+    ],
+    edges: [
+      { from: 0, to: 1 },
+      { from: 1, to: 2 },
+      { from: 1, to: 3 },
+      { from: 1, to: 4 },
+      { from: 2, to: 5 },
+      { from: 3, to: 5 },
+      { from: 4, to: 5 },
+      { from: 5, to: 6 },
+    ],
   },
   {
-    name: '脚本处理', icon: '⚙️', desc: '开始 → 脚本节点 → 任务 → 结束',
-    nodes: [{type:'start',label:'开始',icon:'🟢'},{type:'script',label:'数据预处理',icon:'⚡'},{type:'task',label:'人工处理',icon:'📋'},{type:'end',label:'结束',icon:'🔴'}],
-    edges: [{from:0,to:1},{from:1,to:2},{from:2,to:3}]
+    name: '脚本处理',
+    icon: '⚙️',
+    desc: '开始 → 脚本节点 → 任务 → 结束',
+    nodes: [
+      { type: 'start', label: '开始', icon: '🟢' },
+      { type: 'script', label: '数据预处理', icon: '⚡' },
+      { type: 'task', label: '人工处理', icon: '📋' },
+      { type: 'end', label: '结束', icon: '🔴' },
+    ],
+    edges: [
+      { from: 0, to: 1 },
+      { from: 1, to: 2 },
+      { from: 2, to: 3 },
+    ],
   },
   {
-    name: '循环重试', icon: '🔄', desc: '开始 → 任务 → 条件网关(失败) → 重试 → 结束',
-    nodes: [{type:'start',label:'开始',icon:'🟢'},{type:'task',label:'执行任务',icon:'📋'},{type:'gate_or',label:'是否成功?',icon:'🔶'},{type:'task',label:'重试处理',icon:'📋'},{type:'end',label:'完成',icon:'🔴'}],
-    edges: [{from:0,to:1},{from:1,to:2},{from:2,to:3},{from:2,to:4},{from:3,to:1}]
+    name: '循环重试',
+    icon: '🔄',
+    desc: '开始 → 任务 → 条件网关(失败) → 重试 → 结束',
+    nodes: [
+      { type: 'start', label: '开始', icon: '🟢' },
+      { type: 'task', label: '执行任务', icon: '📋' },
+      { type: 'gate_or', label: '是否成功?', icon: '🔶' },
+      { type: 'task', label: '重试处理', icon: '📋' },
+      { type: 'end', label: '完成', icon: '🔴' },
+    ],
+    edges: [
+      { from: 0, to: 1 },
+      { from: 1, to: 2 },
+      { from: 2, to: 3 },
+      { from: 2, to: 4 },
+      { from: 3, to: 1 },
+    ],
   },
 ]
 // Version comparison state
@@ -4774,40 +5935,46 @@ const compareV1 = ref('')
 const compareV2 = ref('__current')
 function getVersionLabel(id: string): string {
   if (id === '__current') return '当前'
-  const v = versions.value.find(v => v.id === id)
+  const v = versions.value.find((v) => v.id === id)
   return v ? v.label : '未知版本'
 }
 function getNodesById(id: string): PDNode[] {
   if (id === '__current') return processDef.value?.nodes ?? []
-  const v = versions.value.find(vv => vv.id === id)
+  const v = versions.value.find((vv) => vv.id === id)
   return v?.config?.nodes ?? []
 }
 function getEdgesById(id: string): PDEdge[] {
   if (id === '__current') return processDef.value?.edges ?? []
-  const v = versions.value.find(vv => vv.id === id)
+  const v = versions.value.find((vv) => vv.id === id)
   return v?.config?.edges ?? []
 }
-function countDiff(id1: string, id2: string, type: 'added'|'removed'|'modified'): number {
-  const n1 = getNodesById(id1), n2 = getNodesById(id2)
-  const s1 = new Set(n1.map(n => n.id)), s2 = new Set(n2.map(n => n.id))
-  if (type === 'added') return [...s2].filter(id => !s1.has(id)).length
-  if (type === 'removed') return [...s1].filter(id => !s2.has(id)).length
+function countDiff(id1: string, id2: string, type: 'added' | 'removed' | 'modified'): number {
+  const n1 = getNodesById(id1),
+    n2 = getNodesById(id2)
+  const s1 = new Set(n1.map((n) => n.id)),
+    s2 = new Set(n2.map((n) => n.id))
+  if (type === 'added') return [...s2].filter((id) => !s1.has(id)).length
+  if (type === 'removed') return [...s1].filter((id) => !s2.has(id)).length
   // modified: nodes in both but with different labels or positions
   let count = 0
   for (const id of s1) {
-    const a = n1.find(n => n.id === id), b = n2.find(n => n.id === id)
+    const a = n1.find((n) => n.id === id),
+      b = n2.find((n) => n.id === id)
     if (a && b && (a.label !== b.label || Math.abs(a.x - b.x) > 10 || Math.abs(a.y - b.y) > 10)) count++
   }
   return count
 }
 function formatNodeDiff(id1: string, id2: string, _mode: string): string {
-  const n1 = getNodesById(id1), n2 = getNodesById(id2)
-  const s1 = new Set(n1.map(n => n.id)), s2 = new Set(n2.map(n => n.id))
-  const added = [...s2].filter(id => !s1.has(id))
-  const removed = [...s1].filter(id => !s2.has(id))
+  const n1 = getNodesById(id1),
+    n2 = getNodesById(id2)
+  const s1 = new Set(n1.map((n) => n.id)),
+    s2 = new Set(n2.map((n) => n.id))
+  const added = [...s2].filter((id) => !s1.has(id))
+  const removed = [...s1].filter((id) => !s2.has(id))
   const modified: string[] = []
   for (const id of s1) {
-    const a = n1.find(n => n.id === id), b = n2.find(n => n.id === id)
+    const a = n1.find((n) => n.id === id),
+      b = n2.find((n) => n.id === id)
     if (a && b && a.label !== b.label) modified.push(`${a.label}→${b.label}`)
   }
   const lines: string[] = []
@@ -4818,9 +5985,15 @@ function formatNodeDiff(id1: string, id2: string, _mode: string): string {
 }
 // Import/Export state
 const showIoModal = ref(false)
-const ioMode = ref<'export'|'import'|'validate'>('export')
+const ioMode = ref<'export' | 'import' | 'validate'>('export')
 const importJsonText = ref('')
-const validationResult = ref<{totalNodes:number; totalEdges:number; issues: Array<{severity: string; message: string}>; suggestions: string[]; healthScore: number|null} | null>(null)
+const validationResult = ref<{
+  totalNodes: number
+  totalEdges: number
+  issues: Array<{ severity: string; message: string }>
+  suggestions: string[]
+  healthScore: number | null
+} | null>(null)
 function exportJson(): string {
   if (!processDef.value) return '{}'
   return JSON.stringify({ nodes: processDef.value.nodes, edges: processDef.value.edges }, null, 2)
@@ -4832,38 +6005,54 @@ function downloadJson() {
   const blob = new Blob([exportJson()], { type: 'application/json' })
   const url = URL.createObjectURL(blob)
   const a = document.createElement('a')
-  a.href = url; a.download = (currentProcess.value?.flag || 'process') + '.json'
-  a.click(); URL.revokeObjectURL(url)
+  a.href = url
+  a.download = (currentProcess.value?.flag || 'process') + '.json'
+  a.click()
+  URL.revokeObjectURL(url)
 }
 function doImportJson() {
   try {
     const data = JSON.parse(importJsonText.value)
     if (data.nodes && Array.isArray(data.nodes)) {
       processDef.value = { nodes: data.nodes, edges: data.edges || [] }
-      selectedNode.value = null; selectedEdge.value = null
+      selectedNode.value = null
+      selectedEdge.value = null
       pushHistory()
       showIoModal.value = false
       importJsonText.value = ''
     }
-  } catch { toast.info('JSON格式错误，请检查导入内容') }
+  } catch {
+    toast.info('JSON格式错误，请检查导入内容')
+  }
 }
 // Validation
 function runValidation(): void {
-  if (!processDef.value) { validationResult.value = null; return }
-  const issues: Array<{severity: string; message: string}> = []
+  if (!processDef.value) {
+    validationResult.value = null
+    return
+  }
+  const issues: Array<{ severity: string; message: string }> = []
   const suggestions: string[] = []
   const nodes = processDef.value.nodes
   const edges = processDef.value.edges || []
-  const nodeIds = new Set(nodes.map(n => n.id))
+  const nodeIds = new Set(nodes.map((n) => n.id))
   // Check disconnected nodes
   const connectedNodes = new Set<string>()
-  for (const e of edges) { connectedNodes.add(e.from); connectedNodes.add(e.to) }
-  for (const n of nodes) { if (!connectedNodes.has(n.id) && n.type !== 'start' && n.type !== 'end') issues.push({ severity: 'warning', message: `节点「${n.label||n.id}」未连接到任何连线` }) }
+  for (const e of edges) {
+    connectedNodes.add(e.from)
+    connectedNodes.add(e.to)
+  }
+  for (const n of nodes) {
+    if (!connectedNodes.has(n.id) && n.type !== 'start' && n.type !== 'end')
+      issues.push({ severity: 'warning', message: `节点「${n.label || n.id}」未连接到任何连线` })
+  }
   // Check start/end
-  const starts = nodes.filter(n => n.type === 'start')
-  const ends = nodes.filter(n => n.type === 'end')
-  if (starts.length === 0) issues.push({ severity: 'error', message: '流程缺少开始节点' }); else if (starts.length > 1) issues.push({ severity: 'warning', message: `流程有 ${starts.length} 个开始节点` })
-  if (ends.length === 0) issues.push({ severity: 'error', message: '流程缺少结束节点' }); else if (ends.length > 1) issues.push({ severity: 'warning', message: `流程有 ${ends.length} 个结束节点` })
+  const starts = nodes.filter((n) => n.type === 'start')
+  const ends = nodes.filter((n) => n.type === 'end')
+  if (starts.length === 0) issues.push({ severity: 'error', message: '流程缺少开始节点' })
+  else if (starts.length > 1) issues.push({ severity: 'warning', message: `流程有 ${starts.length} 个开始节点` })
+  if (ends.length === 0) issues.push({ severity: 'error', message: '流程缺少结束节点' })
+  else if (ends.length > 1) issues.push({ severity: 'warning', message: `流程有 ${ends.length} 个结束节点` })
   // Check orphan edges
   for (const e of edges) {
     if (!nodeIds.has(e.from)) issues.push({ severity: 'error', message: `连线指向不存在的节点: ${e.from}` })
@@ -4871,55 +6060,106 @@ function runValidation(): void {
   }
   // Check duplicate edges
   const edgeSet = new Set<string>()
-  for (const e of edges) { const k = `${e.from}-${e.to}`; if (edgeSet.has(k)) issues.push({ severity: 'warning', message: `重复连线: ${e.from} → ${e.to}` }); else edgeSet.add(k) }
+  for (const e of edges) {
+    const k = `${e.from}-${e.to}`
+    if (edgeSet.has(k)) issues.push({ severity: 'warning', message: `重复连线: ${e.from} → ${e.to}` })
+    else edgeSet.add(k)
+  }
   // Check self-loops
-  for (const e of edges) { if (e.from === e.to) issues.push({ severity: 'warning', message: `自环: 节点 ${e.from}` }) }
+  for (const e of edges) {
+    if (e.from === e.to) issues.push({ severity: 'warning', message: `自环: 节点 ${e.from}` })
+  }
   // Check missing labels
-  for (const n of nodes) { if (!n.label) issues.push({ severity: 'info', message: `节点 ${n.id} 缺少标签` }) }
+  for (const n of nodes) {
+    if (!n.label) issues.push({ severity: 'info', message: `节点 ${n.id} 缺少标签` })
+  }
   // Check node overlap
   for (let i = 0; i < nodes.length; i++) {
-    for (let j = i+1; j < nodes.length; j++) {
-      const a = nodes[i], b = nodes[j]
-      if (a.x < b.x+(b.w||120) && a.x+(a.w||120) > b.x && a.y < b.y+(b.h||50) && a.y+(a.h||50) > b.y)
-        issues.push({ severity: 'warning', message: `节点重叠: ${a.label||a.id} 与 ${b.label||b.id}` })
+    for (let j = i + 1; j < nodes.length; j++) {
+      const a = nodes[i],
+        b = nodes[j]
+      if (a.x < b.x + (b.w || 120) && a.x + (a.w || 120) > b.x && a.y < b.y + (b.h || 50) && a.y + (a.h || 50) > b.y)
+        issues.push({ severity: 'warning', message: `节点重叠: ${a.label || a.id} 与 ${b.label || b.id}` })
     }
   }
   // Suggestions
   if (starts.length === 0) suggestions.push('添加一个「开始」节点作为流程入口')
   if (ends.length === 0) suggestions.push('添加一个「结束」节点作为流程出口')
   for (const n of nodes) {
-    if (n.type === 'start' && edges.filter(e => e.from === n.id).length === 0)
-      suggestions.push(`开始节点「${n.label||n.id}」没有 outgoing 连线`)
+    if (n.type === 'start' && edges.filter((e) => e.from === n.id).length === 0)
+      suggestions.push(`开始节点「${n.label || n.id}」没有 outgoing 连线`)
   }
-  const healthScore = nodes.length > 0 ? Math.max(0, 100 - issues.filter(i => i.severity === 'error').length * 20 - issues.filter(i => i.severity === 'warning').length * 5) : null
+  const healthScore =
+    nodes.length > 0
+      ? Math.max(
+          0,
+          100 -
+            issues.filter((i) => i.severity === 'error').length * 20 -
+            issues.filter((i) => i.severity === 'warning').length * 5,
+        )
+      : null
   validationResult.value = { totalNodes: nodes.length, totalEdges: edges.length, issues, suggestions, healthScore }
 }
 // ── Lifecycle ─────────────────────────────────────────────────────────
-function onDocumentMouseMove(e: MouseEvent) { onNodeMouseMove(e) }
-function onDocumentMouseUp() { onNodeMouseUp() }
+function onDocumentMouseMove(e: MouseEvent) {
+  onNodeMouseMove(e)
+}
+function onDocumentMouseUp() {
+  onNodeMouseUp()
+}
 function onDocumentKeyDown(e: KeyboardEvent) {
   if (e.ctrlKey && e.key === 'a' && currentProcess.value) {
     e.preventDefault()
     multiSelected.value.clear()
-    if (processDef.value) processDef.value.nodes.forEach((n,i) => { multiSelected.value.add(n.id); selectedNode.value = i })
+    if (processDef.value)
+      processDef.value.nodes.forEach((n, i) => {
+        multiSelected.value.add(n.id)
+        selectedNode.value = i
+      })
   }
-  if (e.ctrlKey && e.key === 'z' && !e.shiftKey) { e.preventDefault(); undo() }
-  if (e.ctrlKey && (e.key === 'y' || (e.key === 'z' && e.shiftKey))) { e.preventDefault(); redo() }
-  if (e.ctrlKey && e.key === 'd') { e.preventDefault(); duplicateSelected() }
+  if (e.ctrlKey && e.key === 'z' && !e.shiftKey) {
+    e.preventDefault()
+    undo()
+  }
+  if (e.ctrlKey && (e.key === 'y' || (e.key === 'z' && e.shiftKey))) {
+    e.preventDefault()
+    redo()
+  }
+  if (e.ctrlKey && e.key === 'd') {
+    e.preventDefault()
+    duplicateSelected()
+  }
   if (e.key === 'Delete' || e.key === 'Backspace') {
     if (document.activeElement?.tagName !== 'INPUT' && document.activeElement?.tagName !== 'TEXTAREA') {
-      e.preventDefault(); deleteSelected()
+      e.preventDefault()
+      deleteSelected()
     }
   }
-  if (e.key === 'Escape') { selectedNode.value = null; selectedEdge.value = null; tempEdge.value = null }
-  if (e.key === 'h' && !e.ctrlKey) { e.preventDefault(); showHelpModal.value = !showHelpModal.value }
+  if (e.key === 'Escape') {
+    selectedNode.value = null
+    selectedEdge.value = null
+    tempEdge.value = null
+  }
+  if (e.key === 'h' && !e.ctrlKey) {
+    e.preventDefault()
+    showHelpModal.value = !showHelpModal.value
+  }
   if (e.key === 'g' && !e.ctrlKey && multiSelected.value.size >= 2) {
     e.preventDefault()
     createGroup()
   }
-  if (e.ctrlKey && e.key === '=') { e.preventDefault(); zoomIn() }
-  if (e.ctrlKey && e.key === '-') { e.preventDefault(); zoomOut() }
-  if (e.ctrlKey && e.key === '0') { e.preventDefault(); zoomToFit() }
+  if (e.ctrlKey && e.key === '=') {
+    e.preventDefault()
+    zoomIn()
+  }
+  if (e.ctrlKey && e.key === '-') {
+    e.preventDefault()
+    zoomOut()
+  }
+  if (e.ctrlKey && e.key === '0') {
+    e.preventDefault()
+    zoomToFit()
+  }
 }
 onMounted(() => {
   document.addEventListener('mousemove', onDocumentMouseMove)
@@ -4928,153 +6168,375 @@ onMounted(() => {
   loadProcesses()
 })
 // --- Canvas Annotations ---
-interface Annotation { id: string; x: number; y: number; text: string; color: string; w: number; h: number }
+interface Annotation {
+  id: string
+  x: number
+  y: number
+  text: string
+  color: string
+  w: number
+  h: number
+}
 const annotations = ref<Annotation[]>([])
 const showAnnotations = ref(false)
-const newAnnotation = ref({ text: "", color: "#f59e0b" })
+const newAnnotation = ref({ text: '', color: '#f59e0b' })
 function addAnnotation() {
   if (!processDef.value) return
   const rect = canvasRef.value?.getBoundingClientRect()
   if (!rect) return
-  const cx = (rect.width/2 - panX.value) / zoom.value
-  const cy = (rect.height/2 - panY.value) / zoom.value
-  annotations.value.push({ id: genId(), x: cx - 60, y: cy - 20, text: newAnnotation.value.text || "备注", color: newAnnotation.value.color, w: 120, h: 60 })
-  newAnnotation.value = { text: "", color: "#f59e0b" }
+  const cx = (rect.width / 2 - panX.value) / zoom.value
+  const cy = (rect.height / 2 - panY.value) / zoom.value
+  annotations.value.push({
+    id: genId(),
+    x: cx - 60,
+    y: cy - 20,
+    text: newAnnotation.value.text || '备注',
+    color: newAnnotation.value.color,
+    w: 120,
+    h: 60,
+  })
+  newAnnotation.value = { text: '', color: '#f59e0b' }
 }
-function deleteAnnotation(idx: number) { annotations.value.splice(idx, 1) }
-function updateAnnotation(idx: number, prop: keyof Annotation, val: any) { if (annotations.value[idx]) annotations.value[idx][prop] = val }
+function deleteAnnotation(idx: number) {
+  annotations.value.splice(idx, 1)
+}
+function updateAnnotation(idx: number, prop: keyof Annotation, val: any) {
+  if (annotations.value[idx]) annotations.value[idx][prop] = val
+}
 // --- Snap to Grid ---
 const snapToGrid = ref(true)
 const gridSnapThreshold = ref(15)
 const showGrid = ref(true)
 const customGridSize = ref(GRID_SIZE)
-function toggleSnap() { snapToGrid.value = !snapToGrid.value }
-function setGridSize(size: number) { if (customGridSize) customGridSize.value = Math.max(10, Math.min(50, size)) }
+function toggleSnap() {
+  snapToGrid.value = !snapToGrid.value
+}
+function setGridSize(size: number) {
+  if (customGridSize) customGridSize.value = Math.max(10, Math.min(50, size))
+}
 // --- Node Alignment ---
-type AlignDir = "left"|"right"|"top"|"bottom"|"center-x"|"center-y"|"distribute-h"|"distribute-v"
+type AlignDir = 'left' | 'right' | 'top' | 'bottom' | 'center-x' | 'center-y' | 'distribute-h' | 'distribute-v'
 function alignNodes(dir: AlignDir) {
   if (!processDef.value) return
-  const ids = selectedNode.value !== null ? [processDef.value.nodes[selectedNode.value]!.id] : Array.from(multiSelected.value)
+  const ids =
+    selectedNode.value !== null ? [processDef.value.nodes[selectedNode.value]!.id] : Array.from(multiSelected.value)
   if (ids.length < 2) return
-  const nodes = ids.map(id => processDef.value!.nodes.find(n => n.id === id)).filter(Boolean) as PDNode[]
-  switch(dir) {
-    case "left": { const minX = Math.min(...nodes.map(n => n.x)); nodes.forEach(n => n.x = minX); break }
-    case "right": { const maxX = Math.max(...nodes.map(n => n.x + (n.w||120))); nodes.forEach(n => n.x = maxX - (n.w||120)); break }
-    case "top": { const minY = Math.min(...nodes.map(n => n.y)); nodes.forEach(n => n.y = minY); break }
-    case "bottom": { const maxY = Math.max(...nodes.map(n => n.y + (n.h||50))); nodes.forEach(n => n.y = maxY - (n.h||50)); break }
-    case "center-x": { const cx = nodes.reduce((s,n) => s + n.x + (n.w||120)/2, 0) / nodes.length; nodes.forEach(n => n.x = cx - (n.w||120)/2); break }
-    case "center-y": { const cy = nodes.reduce((s,n) => s + n.y + (n.h||50)/2, 0) / nodes.length; nodes.forEach(n => n.y = cy - (n.h||50)/2); break }
+  const nodes = ids.map((id) => processDef.value!.nodes.find((n) => n.id === id)).filter(Boolean) as PDNode[]
+  switch (dir) {
+    case 'left': {
+      const minX = Math.min(...nodes.map((n) => n.x))
+      nodes.forEach((n) => (n.x = minX))
+      break
+    }
+    case 'right': {
+      const maxX = Math.max(...nodes.map((n) => n.x + (n.w || 120)))
+      nodes.forEach((n) => (n.x = maxX - (n.w || 120)))
+      break
+    }
+    case 'top': {
+      const minY = Math.min(...nodes.map((n) => n.y))
+      nodes.forEach((n) => (n.y = minY))
+      break
+    }
+    case 'bottom': {
+      const maxY = Math.max(...nodes.map((n) => n.y + (n.h || 50)))
+      nodes.forEach((n) => (n.y = maxY - (n.h || 50)))
+      break
+    }
+    case 'center-x': {
+      const cx = nodes.reduce((s, n) => s + n.x + (n.w || 120) / 2, 0) / nodes.length
+      nodes.forEach((n) => (n.x = cx - (n.w || 120) / 2))
+      break
+    }
+    case 'center-y': {
+      const cy = nodes.reduce((s, n) => s + n.y + (n.h || 50) / 2, 0) / nodes.length
+      nodes.forEach((n) => (n.y = cy - (n.h || 50) / 2))
+      break
+    }
   }
   pushHistory()
 }
 // --- Batch Operations ---
 function batchSetProperty(prop: string, val: any) {
   if (!processDef.value) return
-  const ids = selectedNode.value !== null ? [processDef.value.nodes[selectedNode.value]!.id] : Array.from(multiSelected.value)
-  for (const id of ids) { const n = processDef.value.nodes.find(nd => nd.id === id); if (n) (n as any)[prop] = val }
+  const ids =
+    selectedNode.value !== null ? [processDef.value.nodes[selectedNode.value]!.id] : Array.from(multiSelected.value)
+  for (const id of ids) {
+    const n = processDef.value.nodes.find((nd) => nd.id === id)
+    if (n) (n as any)[prop] = val
+  }
   pushHistory()
 }
-function batchSetColor(color: string) { batchSetProperty("style", color) }
+function batchSetColor(color: string) {
+  batchSetProperty('style', color)
+}
 // --- Connection Validation ---
-interface ValidationResult { valid: boolean; issues: Array<{type: string; message: string; severity: "error"|"warning"}>; stats: {totalNodes: number; totalEdges: number; isolatedNodes: number; missingStart: boolean; missingEnd: boolean; unreachableNodes: string[]} }
+interface ValidationResult {
+  valid: boolean
+  issues: Array<{ type: string; message: string; severity: 'error' | 'warning' }>
+  stats: {
+    totalNodes: number
+    totalEdges: number
+    isolatedNodes: number
+    missingStart: boolean
+    missingEnd: boolean
+    unreachableNodes: string[]
+  }
+}
 function validateConnections(): ValidationResult {
-  if (!processDef.value) return { valid: false, issues: [], stats: {totalNodes:0,totalEdges:0,isolatedNodes:0,missingStart:true,missingEnd:true,unreachableNodes:[]} }
-  const nodes = processDef.value.nodes, edges = processDef.value.edges || []
-  const issues: Array<{type:string;message:string;severity:"error"|"warning"}> = []
-  const starts = nodes.filter(n => n.type === "start")
-  if (starts.length === 0) issues.push({ type: "missing-start", message: "流程缺少开始节点", severity: "error" })
-  const ends = nodes.filter(n => n.type === "end")
-  if (ends.length === 0) issues.push({ type: "missing-end", message: "流程缺少结束节点", severity: "error" })
+  if (!processDef.value)
+    return {
+      valid: false,
+      issues: [],
+      stats: {
+        totalNodes: 0,
+        totalEdges: 0,
+        isolatedNodes: 0,
+        missingStart: true,
+        missingEnd: true,
+        unreachableNodes: [],
+      },
+    }
+  const nodes = processDef.value.nodes,
+    edges = processDef.value.edges || []
+  const issues: Array<{ type: string; message: string; severity: 'error' | 'warning' }> = []
+  const starts = nodes.filter((n) => n.type === 'start')
+  if (starts.length === 0) issues.push({ type: 'missing-start', message: '流程缺少开始节点', severity: 'error' })
+  const ends = nodes.filter((n) => n.type === 'end')
+  if (ends.length === 0) issues.push({ type: 'missing-end', message: '流程缺少结束节点', severity: 'error' })
   const connectedIds = new Set<string>()
-  for (const e of edges) { connectedIds.add(e.from); connectedIds.add(e.to) }
-  const isolated = nodes.filter(n => !connectedIds.has(n.id) && n.type !== "start" && n.type !== "end")
-  for (const n of isolated) issues.push({ type: "isolated", message: "未连接: " + (n.label||n.id), severity: "warning" })
+  for (const e of edges) {
+    connectedIds.add(e.from)
+    connectedIds.add(e.to)
+  }
+  const isolated = nodes.filter((n) => !connectedIds.has(n.id) && n.type !== 'start' && n.type !== 'end')
+  for (const n of isolated)
+    issues.push({ type: 'isolated', message: '未连接: ' + (n.label || n.id), severity: 'warning' })
   const reachable = new Set<string>()
-  if (starts.length > 0) { const q = [starts[0].id]; while(q.length){ const c=q.shift()!; if(reachable.has(c))continue; reachable.add(c); for(const e of edges){ if(e.from===c&&!reachable.has(e.to))q.push(e.to) } } }
-  const unreachable = nodes.filter(n => !reachable.has(n.id) && n.type!=="start").map(n=>n.label||n.id)
-  for (const id of unreachable) issues.push({ type: "unreachable", message: "无法到达: " + id, severity: "warning" })
+  if (starts.length > 0) {
+    const q = [starts[0].id]
+    while (q.length) {
+      const c = q.shift()!
+      if (reachable.has(c)) continue
+      reachable.add(c)
+      for (const e of edges) {
+        if (e.from === c && !reachable.has(e.to)) q.push(e.to)
+      }
+    }
+  }
+  const unreachable = nodes.filter((n) => !reachable.has(n.id) && n.type !== 'start').map((n) => n.label || n.id)
+  for (const id of unreachable) issues.push({ type: 'unreachable', message: '无法到达: ' + id, severity: 'warning' })
   const es = new Set<string>()
-  for (const e of edges) { const k=e.from+"-"+e.to; if(es.has(k)) issues.push({type:"dup",message:"重复连线",severity:"warning"}); else es.add(k) }
-  for (const e of edges) { if(e.from===e.to) issues.push({type:"loop",message:"自环",severity:"warning"}) }
-  const valid = issues.filter(i=>i.severity==="error").length===0
-  return { valid, issues, stats: {totalNodes:nodes.length,totalEdges:edges.length,isolatedNodes:isolated.length,missingStart:starts.length===0,missingEnd:ends.length===0,unreachableNodes:unreachable} }
+  for (const e of edges) {
+    const k = e.from + '-' + e.to
+    if (es.has(k)) issues.push({ type: 'dup', message: '重复连线', severity: 'warning' })
+    else es.add(k)
+  }
+  for (const e of edges) {
+    if (e.from === e.to) issues.push({ type: 'loop', message: '自环', severity: 'warning' })
+  }
+  const valid = issues.filter((i) => i.severity === 'error').length === 0
+  return {
+    valid,
+    issues,
+    stats: {
+      totalNodes: nodes.length,
+      totalEdges: edges.length,
+      isolatedNodes: isolated.length,
+      missingStart: starts.length === 0,
+      missingEnd: ends.length === 0,
+      unreachableNodes: unreachable,
+    },
+  }
 }
 // --- Dimension Presets ---
-const dimPresets = [{name:"窄型",w:80,h:40},{name:"标准",w:120,h:50},{name:"宽型",w:160,h:50},{name:"高型",w:120,h:80},{name:"大方块",w:140,h:140},{name:"标签",w:100,h:30}]
+const dimPresets = [
+  { name: '窄型', w: 80, h: 40 },
+  { name: '标准', w: 120, h: 50 },
+  { name: '宽型', w: 160, h: 50 },
+  { name: '高型', w: 120, h: 80 },
+  { name: '大方块', w: 140, h: 140 },
+  { name: '标签', w: 100, h: 30 },
+]
 function applyDimPreset(idx: number) {
-  if (selectedNode.value===null||!processDef.value) return
-  const p = dimPresets[idx]; if(!p) return
-  const n = processDef.value.nodes[selectedNode.value]; n.w=p.w; n.h=p.h; pushHistory()
+  if (selectedNode.value === null || !processDef.value) return
+  const p = dimPresets[idx]
+  if (!p) return
+  const n = processDef.value.nodes[selectedNode.value]
+  n.w = p.w
+  n.h = p.h
+  pushHistory()
 }
 // --- Flow Analysis ---
-interface FlowInfo { nodeId:string; label:string; inDegree:number; outDegree:number; role:string }
+interface FlowInfo {
+  nodeId: string
+  label: string
+  inDegree: number
+  outDegree: number
+  role: string
+}
 function computeFlowInfo(): FlowInfo[] {
   if (!processDef.value) return []
-  const nodes = processDef.value.nodes, edges = processDef.value.edges||[]
-  return nodes.map(n => {
-    const inD = edges.filter(e=>e.to===n.id).length, outD = edges.filter(e=>e.from===n.id).length
-    let role = "内部节点"
-    if (n.type==="start") role="入口"
-    else if (n.type==="end") role="出口"
-    else if (inD===0&&outD>0) role="起始"
-    else if (inD>0&&outD===0) role="终止"
-    else if (inD===0&&outD===0) role="孤立"
-    return {nodeId:n.id, label:n.label||n.id, inDegree:inD, outDegree:outD, role}
-  }).sort((a,b)=>b.outDegree-a.outDegree||a.inDegree-b.inDegree)
+  const nodes = processDef.value.nodes,
+    edges = processDef.value.edges || []
+  return nodes
+    .map((n) => {
+      const inD = edges.filter((e) => e.to === n.id).length,
+        outD = edges.filter((e) => e.from === n.id).length
+      let role = '内部节点'
+      if (n.type === 'start') role = '入口'
+      else if (n.type === 'end') role = '出口'
+      else if (inD === 0 && outD > 0) role = '起始'
+      else if (inD > 0 && outD === 0) role = '终止'
+      else if (inD === 0 && outD === 0) role = '孤立'
+      return { nodeId: n.id, label: n.label || n.id, inDegree: inD, outDegree: outD, role }
+    })
+    .sort((a, b) => b.outDegree - a.outDegree || a.inDegree - b.inDegree)
 }
 const flowInfo = computed(() => computeFlowInfo())
 // --- Process Archive ---
-interface ProcessArchive { id:string; timestamp:number; name:string; nodeCount:number; edgeCount:number; snapshot:{nodes:PDNode[];edges:PDEdge[]} }
+interface ProcessArchive {
+  id: string
+  timestamp: number
+  name: string
+  nodeCount: number
+  edgeCount: number
+  snapshot: { nodes: PDNode[]; edges: PDEdge[] }
+}
 const processArchive = ref<ProcessArchive[]>([])
 function archiveCurrent() {
-  if (!processDef.value||!currentProcess.value) return
-  processArchive.value.unshift({id:genId(),timestamp:Date.now(),name:currentProcess.value.name||"未命名",nodeCount:processDef.value.nodes.length,edgeCount:(processDef.value.edges||[]).length,snapshot:JSON.parse(JSON.stringify(processDef.value))})
-  if (processArchive.value.length>50) processArchive.value.pop()
+  if (!processDef.value || !currentProcess.value) return
+  processArchive.value.unshift({
+    id: genId(),
+    timestamp: Date.now(),
+    name: currentProcess.value.name || '未命名',
+    nodeCount: processDef.value.nodes.length,
+    edgeCount: (processDef.value.edges || []).length,
+    snapshot: JSON.parse(JSON.stringify(processDef.value)),
+  })
+  if (processArchive.value.length > 50) processArchive.value.pop()
 }
-function restoreArchive(idx:number) {
-  if (idx>=processArchive.value.length||!processDef.value) return
+function restoreArchive(idx: number) {
+  if (idx >= processArchive.value.length || !processDef.value) return
   const snap = processArchive.value[idx].snapshot
-  processDef.value = {nodes:snap.nodes, edges:snap.edges||[]}
-  selectedNode.value=null; selectedEdge.value=null; pushHistory()
+  processDef.value = { nodes: snap.nodes, edges: snap.edges || [] }
+  selectedNode.value = null
+  selectedEdge.value = null
+  pushHistory()
 }
-function deleteArchive(idx:number) { processArchive.value.splice(idx,1) }
+function deleteArchive(idx: number) {
+  processArchive.value.splice(idx, 1)
+}
 const showArchiveManager = ref(false)
 const showSnapshotManager = ref(false)
-const processSnapshots = ref<Array<{id:string;name:string;createdAt:number;status:string;nodeCount:number}>>([])
+const processSnapshots = ref<Array<{ id: string; name: string; createdAt: number; status: string; nodeCount: number }>>(
+  [],
+)
 const newArchiveLabel = ref('')
 const newArchiveDesc = ref('')
 const showFlowAnalysis = ref(false)
-const flowAnalysisResult = ref<FlowAnalysisResult|null>(null)
+const flowAnalysisResult = ref<FlowAnalysisResult | null>(null)
 const showDiffView = ref(false)
 const diffLeftIdx = ref(0)
 const diffRightIdx = ref(1)
 const showGridThemePanel = ref(false)
 const particleOffset = ref(0)
 function createSnapshot() {
-  if (!processDef.value||!currentProcess.value) return
-  processSnapshots.value.unshift({id:genId(),name:currentProcess.value.name||'未命名',createdAt:Date.now(),status:'draft',nodeCount:processDef.value.nodes.length})
+  if (!processDef.value || !currentProcess.value) return
+  processSnapshots.value.unshift({
+    id: genId(),
+    name: currentProcess.value.name || '未命名',
+    createdAt: Date.now(),
+    status: 'draft',
+    nodeCount: processDef.value.nodes.length,
+  })
 }
 function runFlowAnalysis(): FlowAnalysisResult {
-  if (!processDef.value) return {totalNodes:0,totalEdges:0,cycles:[],criticalPath:[],bottlenecks:[],isolatedNodes:[]}
-  const nodes=processDef.value.nodes, edges=processDef.value.edges||[]
-  const inDeg=new Map<string,number>(), outDeg=new Map<string,number>()
-  nodes.forEach(n=>{inDeg.set(n.id,0);outDeg.set(n.id,0)})
-  edges.forEach(e=>{inDeg.set(e.to,(inDeg.get(e.to)||0)+1);outDeg.set(e.from,(outDeg.get(e.from)||0)+1)})
-  const cycles:Array<CycleInfo>=[], visited=new Set<string>(), recStack=new Set<string>()
-  function dfs(id:string,path:string[]){visited.add(id);recStack.add(id);edges.filter(e=>e.from===id).forEach(e=>{if(!visited.has(e.to))dfs(e.to,[...path,id]);else if(recStack.has(e.to)){const si=path.indexOf(e.to);if(si>=0)cycles.push({nodes:path.slice(si).concat([id,e.to]),length:path.length-si+1,severity:'warning'})}});recStack.delete(id)}
-  nodes.forEach(n=>{if(!visited.has(n.id))dfs(n.id,[])})
-  const isolated=nodes.filter(n=>(inDeg.get(n.id)||0)===0&&(outDeg.get(n.id)||0)===0)
-  const bottlenecks=nodes.filter(n=>(inDeg.get(n.id)||0)>=3||(outDeg.get(n.id)||0)>=3).map(n=>({nodeId:n.id,label:n.label||n.id,inDegree:inDeg.get(n.id)||0,outDegree:outDeg.get(n.id)||0,severity:(inDeg.get(n.id)||0)>=3&&(outDeg.get(n.id)||0)>=3?'high':'medium',reason:'入边和出边过多'}))
-  const criticalPath:Array<CriticalPathNode>=nodes.filter(n=>(inDeg.get(n.id)||0)===0).slice(0,3).map(n=>({nodeId:n.id,label:n.label||n.id,duration:100+Math.random()*200}))
-  const r={totalNodes:nodes.length,totalEdges:edges.length,cycles,criticalPath,bottlenecks,isolatedNodes:isolated.map(n=>n.id)} as FlowAnalysisResult
-  flowAnalysisResult.value=r;return r
+  if (!processDef.value)
+    return { totalNodes: 0, totalEdges: 0, cycles: [], criticalPath: [], bottlenecks: [], isolatedNodes: [] }
+  const nodes = processDef.value.nodes,
+    edges = processDef.value.edges || []
+  const inDeg = new Map<string, number>(),
+    outDeg = new Map<string, number>()
+  nodes.forEach((n) => {
+    inDeg.set(n.id, 0)
+    outDeg.set(n.id, 0)
+  })
+  edges.forEach((e) => {
+    inDeg.set(e.to, (inDeg.get(e.to) || 0) + 1)
+    outDeg.set(e.from, (outDeg.get(e.from) || 0) + 1)
+  })
+  const cycles: Array<CycleInfo> = [],
+    visited = new Set<string>(),
+    recStack = new Set<string>()
+  function dfs(id: string, path: string[]) {
+    visited.add(id)
+    recStack.add(id)
+    edges
+      .filter((e) => e.from === id)
+      .forEach((e) => {
+        if (!visited.has(e.to)) dfs(e.to, [...path, id])
+        else if (recStack.has(e.to)) {
+          const si = path.indexOf(e.to)
+          if (si >= 0)
+            cycles.push({ nodes: path.slice(si).concat([id, e.to]), length: path.length - si + 1, severity: 'warning' })
+        }
+      })
+    recStack.delete(id)
+  }
+  nodes.forEach((n) => {
+    if (!visited.has(n.id)) dfs(n.id, [])
+  })
+  const isolated = nodes.filter((n) => (inDeg.get(n.id) || 0) === 0 && (outDeg.get(n.id) || 0) === 0)
+  const bottlenecks = nodes
+    .filter((n) => (inDeg.get(n.id) || 0) >= 3 || (outDeg.get(n.id) || 0) >= 3)
+    .map((n) => ({
+      nodeId: n.id,
+      label: n.label || n.id,
+      inDegree: inDeg.get(n.id) || 0,
+      outDegree: outDeg.get(n.id) || 0,
+      severity: (inDeg.get(n.id) || 0) >= 3 && (outDeg.get(n.id) || 0) >= 3 ? 'high' : 'medium',
+      reason: '入边和出边过多',
+    }))
+  const criticalPath: Array<CriticalPathNode> = nodes
+    .filter((n) => (inDeg.get(n.id) || 0) === 0)
+    .slice(0, 3)
+    .map((n) => ({ nodeId: n.id, label: n.label || n.id, duration: 100 + Math.random() * 200 }))
+  const r = {
+    totalNodes: nodes.length,
+    totalEdges: edges.length,
+    cycles,
+    criticalPath,
+    bottlenecks,
+    isolatedNodes: isolated.map((n) => n.id),
+  } as FlowAnalysisResult
+  flowAnalysisResult.value = r
+  return r
 }
-function getFlowHealthScore():number{if(!flowAnalysisResult.value)return 0;const r=flowAnalysisResult.value;return Math.max(0,100-r.cycles.length*20-r.isolatedNodes.length*5-r.bottlenecks.filter(b=>b.severity==='high').length*15)}
-function getFlowHealthLabel(s:number):string{return s>=80?'优秀':s>=60?'良好':s>=40?'一般':'需优化'}
-function exportDiff():void{}
-function toggleGridFlow(){showGridFlow.value=!showGridFlow.value}
-function updateGridIntensity(v:number){gridIntensity.value=v}
-function updateGridPattern(p:'dot'|'line'|'cross'|'diamond'|'hex'){gridPattern.value=p}
+function getFlowHealthScore(): number {
+  if (!flowAnalysisResult.value) return 0
+  const r = flowAnalysisResult.value
+  return Math.max(
+    0,
+    100 -
+      r.cycles.length * 20 -
+      r.isolatedNodes.length * 5 -
+      r.bottlenecks.filter((b) => b.severity === 'high').length * 15,
+  )
+}
+function getFlowHealthLabel(s: number): string {
+  return s >= 80 ? '优秀' : s >= 60 ? '良好' : s >= 40 ? '一般' : '需优化'
+}
+function exportDiff(): void {}
+function toggleGridFlow() {
+  showGridFlow.value = !showGridFlow.value
+}
+function updateGridIntensity(v: number) {
+  gridIntensity.value = v
+}
+function updateGridPattern(p: 'dot' | 'line' | 'cross' | 'diamond' | 'hex') {
+  gridPattern.value = p
+}
 onUnmounted(() => {
   document.removeEventListener('mousemove', onDocumentMouseMove)
   document.removeEventListener('mouseup', onDocumentMouseUp)
@@ -5083,7 +6545,7 @@ onUnmounted(() => {
   stopEdgeAnimation()
   stopAnimationLoop()
   // Clean up the sandbox iframe to prevent memory leaks.
-  import('../utils/sandbox').then(m => m.destroySandbox())
+  import('../utils/sandbox').then((m) => m.destroySandbox())
 })
 // ── Group Drag ──────────────────────────────────────────────────────
 function onGroupResizeMouseDown(e: MouseEvent, idx: number, dir: string) {
@@ -5091,190 +6553,404 @@ function onGroupResizeMouseDown(e: MouseEvent, idx: number, dir: string) {
   if (!processDef.value) return
   const g = groupNodes.value[idx]
   if (!g) return
-  groupResizeState.value = { idx, dir, startX: e.clientX, startY: e.clientY, origW: g.node.w||200, origH: g.node.h||100, origX: g.node.x, origY: g.node.y }
+  groupResizeState.value = {
+    idx,
+    dir,
+    startX: e.clientX,
+    startY: e.clientY,
+    origW: g.node.w || 200,
+    origH: g.node.h || 100,
+    origX: g.node.x,
+    origY: g.node.y,
+  }
   const onMove = (ev: MouseEvent) => {
     if (!groupResizeState.value) return
-    const gs = groupResizeState.value, gn = processDef.value.nodes[gs.idx]
+    const gs = groupResizeState.value,
+      gn = processDef.value.nodes[gs.idx]
     if (!gn) return
-    const dx = (ev.clientX - gs.startX) / zoom.value, dy = (ev.clientY - gs.startY) / zoom.value
-    if (gs.dir === "se") { gn.w = Math.max(100, gs.origW + dx); gn.h = Math.max(60, gs.origH + dy) }
-    else if (gs.dir === "e") gn.w = Math.max(100, gs.origW + dx)
-    else if (gs.dir === "s") gn.h = Math.max(60, gs.origH + dy)
-    else if (gs.dir === "nw") { gn.x = gs.origX + dx; gn.y = gs.origY + dy; gn.w = Math.max(100, gs.origW - dx); gn.h = Math.max(60, gs.origH - dy) }
-    else if (gs.dir === "sw") { gn.y = gs.origY + dy; gn.h = Math.max(60, gs.origH + dy) }
-    else if (gs.dir === "ne") { gn.x = gs.origX + dx; gn.h = Math.max(60, gs.origH + dy) }
-    else if (gs.dir === "n") gn.h = Math.max(60, gs.origH - dy)
-    else if (gs.dir === "w") { gn.x = gs.origX + dx; gn.w = Math.max(100, gs.origW - dx) }
+    const dx = (ev.clientX - gs.startX) / zoom.value,
+      dy = (ev.clientY - gs.startY) / zoom.value
+    if (gs.dir === 'se') {
+      gn.w = Math.max(100, gs.origW + dx)
+      gn.h = Math.max(60, gs.origH + dy)
+    } else if (gs.dir === 'e') gn.w = Math.max(100, gs.origW + dx)
+    else if (gs.dir === 's') gn.h = Math.max(60, gs.origH + dy)
+    else if (gs.dir === 'nw') {
+      gn.x = gs.origX + dx
+      gn.y = gs.origY + dy
+      gn.w = Math.max(100, gs.origW - dx)
+      gn.h = Math.max(60, gs.origH - dy)
+    } else if (gs.dir === 'sw') {
+      gn.y = gs.origY + dy
+      gn.h = Math.max(60, gs.origH + dy)
+    } else if (gs.dir === 'ne') {
+      gn.x = gs.origX + dx
+      gn.h = Math.max(60, gs.origH + dy)
+    } else if (gs.dir === 'n') gn.h = Math.max(60, gs.origH - dy)
+    else if (gs.dir === 'w') {
+      gn.x = gs.origX + dx
+      gn.w = Math.max(100, gs.origW - dx)
+    }
     gn.w = Math.max(100, Math.round(gn.w / GRID_SIZE) * GRID_SIZE)
     gn.h = Math.max(60, Math.round(gn.h / GRID_SIZE) * GRID_SIZE)
   }
-  const onUp = () => { document.removeEventListener("mousemove", onMove); document.removeEventListener("mouseup", onUp); groupResizeState.value = null; pushHistory() }
-  document.addEventListener("mousemove", onMove); document.addEventListener("mouseup", onUp)
+  const onUp = () => {
+    document.removeEventListener('mousemove', onMove)
+    document.removeEventListener('mouseup', onUp)
+    groupResizeState.value = null
+    pushHistory()
+  }
+  document.addEventListener('mousemove', onMove)
+  document.addEventListener('mouseup', onUp)
 }
-function getGroupResizeX(node: PDNode, dir: string): number { return dir.includes("w") ? node.x : node.x + (node.w||200) }
-function getGroupResizeY(node: PDNode, dir: string): number { return dir.includes("n") ? node.y : node.y + (node.h||100) }
+function getGroupResizeX(node: PDNode, dir: string): number {
+  return dir.includes('w') ? node.x : node.x + (node.w || 200)
+}
+function getGroupResizeY(node: PDNode, dir: string): number {
+  return dir.includes('n') ? node.y : node.y + (node.h || 100)
+}
 // ── Edge Routing ────────────────────────────────────────────────────
-const routingPresets = [{ name: "auto", routing: "auto", label: "自动" }, { name: "straight", routing: "straight", label: "直线" }, { name: "horizontal", routing: "horizontal", label: "水平" }, { name: "vertical", routing: "vertical", label: "垂直" }]
+const routingPresets = [
+  { name: 'auto', routing: 'auto', label: '自动' },
+  { name: 'straight', routing: 'straight', label: '直线' },
+  { name: 'horizontal', routing: 'horizontal', label: '水平' },
+  { name: 'vertical', routing: 'vertical', label: '垂直' },
+]
 function openRoutingPanel(edgeIdx: number) {
-  selectedRoutingEdge.value = edgeIdx; showRoutingPanel.value = true
+  selectedRoutingEdge.value = edgeIdx
+  showRoutingPanel.value = true
   const edge = processDef.value?.edges?.[edgeIdx]
   if (!edge || routingConfigs.value.has(edge.id)) return
-  const fn = processDef.value!.nodes.find(n => n.id === edge.from), tn = processDef.value!.nodes.find(n => n.id === edge.to)
-  routingConfigs.value.set(edge.id, { edgeId: edge.id, fromNodeIdx: processDef.value!.nodes.indexOf(fn!), toNodeIdx: processDef.value!.nodes.indexOf(tn!), routing: "auto", controlPoints: [], offset: 0, labelPos: "auto", arrowStyle: "default" })
+  const fn = processDef.value!.nodes.find((n) => n.id === edge.from),
+    tn = processDef.value!.nodes.find((n) => n.id === edge.to)
+  routingConfigs.value.set(edge.id, {
+    edgeId: edge.id,
+    fromNodeIdx: processDef.value!.nodes.indexOf(fn!),
+    toNodeIdx: processDef.value!.nodes.indexOf(tn!),
+    routing: 'auto',
+    controlPoints: [],
+    offset: 0,
+    labelPos: 'auto',
+    arrowStyle: 'default',
+  })
 }
-function getRoutingConfig(edgeId: string): EdgeRouteConfig|null { return routingConfigs.value.get(edgeId) || null }
+function getRoutingConfig(edgeId: string): EdgeRouteConfig | null {
+  return routingConfigs.value.get(edgeId) || null
+}
 function updateRoutingConfig(edgeId: string, updates: Partial<EdgeRouteConfig>) {
   const cfg = routingConfigs.value.get(edgeId)
   if (!cfg) return
   Object.assign(cfg, updates)
   routingConfigs.value.set(edgeId, cfg)
-  if (processDef.value) { const e = processDef.value.edges?.find(x => x.id === edgeId); if (e) e.routing = updates.routing || "auto" }
+  if (processDef.value) {
+    const e = processDef.value.edges?.find((x) => x.id === edgeId)
+    if (e) e.routing = updates.routing || 'auto'
+  }
 }
-function addControlPoint() { const cfg = getRoutingConfig(processDef.value?.edges?.[selectedRoutingEdge.value!]?.id || ""); if (!cfg) return; cfg.controlPoints.push({ x: 0, y: 0, type: "control" }); routingConfigs.value.set(cfg.edgeId, cfg) }
-function removeControlPoint(idx: number) { const cfg = getRoutingConfig(processDef.value?.edges?.[selectedRoutingEdge.value!]?.id || ""); if (!cfg) return; cfg.controlPoints.splice(idx, 1); routingConfigs.value.set(cfg.edgeId, cfg) }
+function addControlPoint() {
+  const cfg = getRoutingConfig(processDef.value?.edges?.[selectedRoutingEdge.value!]?.id || '')
+  if (!cfg) return
+  cfg.controlPoints.push({ x: 0, y: 0, type: 'control' })
+  routingConfigs.value.set(cfg.edgeId, cfg)
+}
+function removeControlPoint(idx: number) {
+  const cfg = getRoutingConfig(processDef.value?.edges?.[selectedRoutingEdge.value!]?.id || '')
+  if (!cfg) return
+  cfg.controlPoints.splice(idx, 1)
+  routingConfigs.value.set(cfg.edgeId, cfg)
+}
 function computeCustomEdgePath(edge: PDEdge): string {
   const cfg = routingConfigs.value.get(edge.id)
   if (!cfg || cfg.controlPoints.length === 0) return computeEdgePath(edge)
-  const from = processDef.value?.nodes.find(n => n.id === edge.from), to = processDef.value?.nodes.find(n => n.id === edge.to)
-  if (!from || !to) return ""
-  const fp = getNodePort(from, "out"), tp = getNodePort(to, "in")
+  const from = processDef.value?.nodes.find((n) => n.id === edge.from),
+    to = processDef.value?.nodes.find((n) => n.id === edge.to)
+  if (!from || !to) return ''
+  const fp = getNodePort(from, 'out'),
+    tp = getNodePort(to, 'in')
   let d = `M ${fp.x} ${fp.y}`
   for (const cp of cfg.controlPoints) d += ` L ${cp.x} ${cp.y}`
   return d + ` L ${tp.x} ${tp.y}`
 }
-function applyRoutingPreset(preset: "smooth"|"orthogonal"|"manhattan"|"zigzag") {
+function applyRoutingPreset(preset: 'smooth' | 'orthogonal' | 'manhattan' | 'zigzag') {
   if (selectedRoutingEdge.value === null) return
   const edge = processDef.value?.edges?.[selectedRoutingEdge.value]
   if (!edge) return
-  const from = processDef.value!.nodes.find(n => n.id === edge.from), to = processDef.value!.nodes.find(n => n.id === edge.to)
+  const from = processDef.value!.nodes.find((n) => n.id === edge.from),
+    to = processDef.value!.nodes.find((n) => n.id === edge.to)
   if (!from || !to) return
-  const fp = getNodePort(from, "out"), tp = getNodePort(to, "in")
-  const midX = (fp.x + tp.x) / 2, midY = (fp.y + tp.y) / 2
+  const fp = getNodePort(from, 'out'),
+    tp = getNodePort(to, 'in')
+  const midX = (fp.x + tp.x) / 2,
+    midY = (fp.y + tp.y) / 2
   const cp: RoutingPoint[] = []
-  if (preset === "smooth") cp.push({ x: midX, y: midY, type: "control" })
-  else if (preset === "orthogonal") { cp.push({ x: fp.x, y: midY, type: "control" }, { x: tp.x, y: midY, type: "control" }) }
-  else if (preset === "manhattan") { cp.push({ x: midX, y: fp.y, type: "control" }, { x: midX, y: tp.y, type: "control" }) }
-  else if (preset === "zigzag") cp.push({ x: midX - 30, y: midY, type: "control" }, { x: midX + 30, y: midY, type: "control" })
-  updateRoutingConfig(edge.id, { routing: "custom", controlPoints: cp })
+  if (preset === 'smooth') cp.push({ x: midX, y: midY, type: 'control' })
+  else if (preset === 'orthogonal') {
+    cp.push({ x: fp.x, y: midY, type: 'control' }, { x: tp.x, y: midY, type: 'control' })
+  } else if (preset === 'manhattan') {
+    cp.push({ x: midX, y: fp.y, type: 'control' }, { x: midX, y: tp.y, type: 'control' })
+  } else if (preset === 'zigzag')
+    cp.push({ x: midX - 30, y: midY, type: 'control' }, { x: midX + 30, y: midY, type: 'control' })
+  updateRoutingConfig(edge.id, { routing: 'custom', controlPoints: cp })
 }
 // ── Script Action Editor ────────────────────────────────────────────
 const scriptPresets = [
-  { name: "数据转换", icon: "🔄", code: "output.result = { processed: true, timestamp: Date.now(), data: inputData };" },
-  { name: "条件判断", icon: "🔀", code: "const v = inputData.value; output.result = v > 100 ? 'high' : 'low'; output.level = v > 100 ? 'A' : 'C';" },
-  { name: "数据聚合", icon: "📊", code: "const items = inputData.items || []; output.total = items.length; output.sum = items.reduce((s,i) => s + (i.value||0), 0); output.avg = items.length > 0 ? output.sum / items.length : 0;" },
-  { name: "通知发送", icon: "📧", code: "output.sent = true; output.timestamp = new Date().toISOString(); output.recipient = inputData.recipient;" },
-  { name: "数据验证", icon: "✅", code: "const errors: string[] = []; if(!inputData.name) errors.push('名称不能为空'); output.valid = errors.length === 0; output.errors = errors;" },
-  { name: "日期处理", icon: "📅", code: "const d = new Date(inputData.date); output.formatted = d.toLocaleDateString('zh-CN'); output.month = d.getMonth()+1; output.year = d.getFullYear();" },
-  { name: "字符串处理", icon: "📝", code: "const t = inputData.text || ' '; output.upper = t.toUpperCase(); output.lower = t.toLowerCase(); output.words = t.split(/\s+/).filter(Boolean);" },
-  { name: "数学计算", icon: "🔢", code: "const a = parseFloat(inputData.a)||0, b = parseFloat(inputData.b)||0; output.sum = a+b; output.diff = a-b; output.prod = a*b; output.div = b!==0 ? a/b : null;" },
+  {
+    name: '数据转换',
+    icon: '🔄',
+    code: 'output.result = { processed: true, timestamp: Date.now(), data: inputData };',
+  },
+  {
+    name: '条件判断',
+    icon: '🔀',
+    code: "const v = inputData.value; output.result = v > 100 ? 'high' : 'low'; output.level = v > 100 ? 'A' : 'C';",
+  },
+  {
+    name: '数据聚合',
+    icon: '📊',
+    code: 'const items = inputData.items || []; output.total = items.length; output.sum = items.reduce((s,i) => s + (i.value||0), 0); output.avg = items.length > 0 ? output.sum / items.length : 0;',
+  },
+  {
+    name: '通知发送',
+    icon: '📧',
+    code: 'output.sent = true; output.timestamp = new Date().toISOString(); output.recipient = inputData.recipient;',
+  },
+  {
+    name: '数据验证',
+    icon: '✅',
+    code: "const errors: string[] = []; if(!inputData.name) errors.push('名称不能为空'); output.valid = errors.length === 0; output.errors = errors;",
+  },
+  {
+    name: '日期处理',
+    icon: '📅',
+    code: "const d = new Date(inputData.date); output.formatted = d.toLocaleDateString('zh-CN'); output.month = d.getMonth()+1; output.year = d.getFullYear();",
+  },
+  {
+    name: '字符串处理',
+    icon: '📝',
+    code: "const t = inputData.text || ' '; output.upper = t.toUpperCase(); output.lower = t.toLowerCase(); output.words = t.split(/s+/).filter(Boolean);",
+  },
+  {
+    name: '数学计算',
+    icon: '🔢',
+    code: 'const a = parseFloat(inputData.a)||0, b = parseFloat(inputData.b)||0; output.sum = a+b; output.diff = a-b; output.prod = a*b; output.div = b!==0 ? a/b : null;',
+  },
 ]
 function openScriptEditor(nodeIdx: number) {
-  const nodes = processDef.value?.nodes || [], node = nodes[nodeIdx]
-  scriptEditorNodeIdx.value = nodeIdx; showScriptEditor.value = true
+  const nodes = processDef.value?.nodes || [],
+    node = nodes[nodeIdx]
+  scriptEditorNodeIdx.value = nodeIdx
+  showScriptEditor.value = true
   if (!node) return
   const key = node.id
   if (!scriptEditors.value.has(key)) {
-    scriptEditors.value.set(key, { language: "javascript", code: node.script || "output.result = inputData.value;", imports: [],
-      variables: [{ name:"inputData", type:"object", defaultValue:"{}", description:"输入数据" }, { name:"context", type:"object", defaultValue:"{}", description:"流程上下文" }, { name:"output", type:"any", defaultValue:"null", description:"输出结果" }],
-      errorHandling: { onFail:"skip", retryCount:3, retryDelay:1000 }, outputMapping: [], timeout:30000, description:"" })
+    scriptEditors.value.set(key, {
+      language: 'javascript',
+      code: node.script || 'output.result = inputData.value;',
+      imports: [],
+      variables: [
+        { name: 'inputData', type: 'object', defaultValue: '{}', description: '输入数据' },
+        { name: 'context', type: 'object', defaultValue: '{}', description: '流程上下文' },
+        { name: 'output', type: 'any', defaultValue: 'null', description: '输出结果' },
+      ],
+      errorHandling: { onFail: 'skip', retryCount: 3, retryDelay: 1000 },
+      outputMapping: [],
+      timeout: 30000,
+      description: '',
+    })
   }
 }
-function closeScriptEditor() { showScriptEditor.value = false; scriptEditorNodeIdx.value = null }
-function saveScriptEditor() {
-  const node = processDef.value?.nodes?.[scriptEditorNodeIdx.value], cfg = getScriptConfig(node?.id)
-  if (scriptEditorNodeIdx.value === null || !processDef.value || !cfg) return
-  node.script = cfg.code; ;(node as any).scriptConfig = cfg; pushHistory(); closeScriptEditor()
+function closeScriptEditor() {
+  showScriptEditor.value = false
+  scriptEditorNodeIdx.value = null
 }
-function getScriptConfig(nodeId: string): ScriptActionConfig|null { return scriptEditors.value.get(nodeId) || null }
-function addScriptEditorVar() { const node = processDef.value?.nodes?.[scriptEditorNodeIdx.value], key = node?.id, cfg = getScriptConfig(key); if (!key || !cfg) return; cfg.variables.push({ name:"newVar", type:"string", defaultValue:"", description:"" }); scriptEditors.value.set(key, cfg) }
-function removeScriptEditorVar(idx: number) { const node = processDef.value?.nodes?.[scriptEditorNodeIdx.value], key = node?.id, cfg = getScriptConfig(key); if (!key || !cfg) return; cfg.variables.splice(idx, 1); scriptEditors.value.set(key, cfg) }
-function addOutputMapping() { const node = processDef.value?.nodes?.[scriptEditorNodeIdx.value], key = node?.id, cfg = getScriptConfig(key); if (!key || !cfg) return; cfg.outputMapping.push({ from:"", to:"", transform:"" }); scriptEditors.value.set(key, cfg) }
-function removeOutputMapping(idx: number) { const node = processDef.value?.nodes?.[scriptEditorNodeIdx.value], key = node?.id, cfg = getScriptConfig(key); if (!key || !cfg) return; cfg.outputMapping.splice(idx, 1); scriptEditors.value.set(key, cfg) }
+function saveScriptEditor() {
+  const node = processDef.value?.nodes?.[scriptEditorNodeIdx.value],
+    cfg = getScriptConfig(node?.id)
+  if (scriptEditorNodeIdx.value === null || !processDef.value || !cfg) return
+  node.script = cfg.code
+  ;(node as any).scriptConfig = cfg
+  pushHistory()
+  closeScriptEditor()
+}
+function getScriptConfig(nodeId: string): ScriptActionConfig | null {
+  return scriptEditors.value.get(nodeId) || null
+}
+function addScriptEditorVar() {
+  const node = processDef.value?.nodes?.[scriptEditorNodeIdx.value],
+    key = node?.id,
+    cfg = getScriptConfig(key)
+  if (!key || !cfg) return
+  cfg.variables.push({ name: 'newVar', type: 'string', defaultValue: '', description: '' })
+  scriptEditors.value.set(key, cfg)
+}
+function removeScriptEditorVar(idx: number) {
+  const node = processDef.value?.nodes?.[scriptEditorNodeIdx.value],
+    key = node?.id,
+    cfg = getScriptConfig(key)
+  if (!key || !cfg) return
+  cfg.variables.splice(idx, 1)
+  scriptEditors.value.set(key, cfg)
+}
+function addOutputMapping() {
+  const node = processDef.value?.nodes?.[scriptEditorNodeIdx.value],
+    key = node?.id,
+    cfg = getScriptConfig(key)
+  if (!key || !cfg) return
+  cfg.outputMapping.push({ from: '', to: '', transform: '' })
+  scriptEditors.value.set(key, cfg)
+}
+function removeOutputMapping(idx: number) {
+  const node = processDef.value?.nodes?.[scriptEditorNodeIdx.value],
+    key = node?.id,
+    cfg = getScriptConfig(key)
+  if (!key || !cfg) return
+  cfg.outputMapping.splice(idx, 1)
+  scriptEditors.value.set(key, cfg)
+}
 // ── Fork/Join Enhanced ──────────────────────────────────────────────
 function detectParallelBranchesEnhanced(): ForkJoinAnnotation[] {
   if (!processDef.value) return []
-  const nodes = processDef.value.nodes, edges = processDef.value.edges || []
+  const nodes = processDef.value.nodes,
+    edges = processDef.value.edges || []
   const annotations: ForkJoinAnnotation[] = []
   for (let i = 0; i < nodes.length; i++) {
-    const outgoing = edges.filter(e => e.from === nodes[i].id)
+    const outgoing = edges.filter((e) => e.from === nodes[i].id)
     if (outgoing.length >= 2) {
-      const members = new Set(outgoing.map(e => e.to))
+      const members = new Set(outgoing.map((e) => e.to))
       if (members.size >= 2) {
         const branchIndices: number[] = []
-        for (const toId of members) { const idx = nodes.findIndex(n => n.id === toId); if (idx !== -1) branchIndices.push(idx) }
-        const potentialJoins = nodes.filter((n, j) => j !== i && branchIndices.every(bi => edges.some(e => e.from === nodes[bi].id && e.to === n.id)))
-        annotations.push({ id: genId(), type: "fork", branchIndices, forkNodeIdx: i,
-          joinNodeIdx: potentialJoins.length > 0 ? nodes.findIndex(n => n.id === potentialJoins[0].id) : undefined,
-          label: "分支" + (annotations.length + 1), color: "#f59e0b",
-          annotations: [{ type:"label", text:"FORK #" + (annotations.length + 1) }, { type:"flow", text:outgoing.length + " 路并行" }, { type:"count", text:members.size + " 分支" }]
+        for (const toId of members) {
+          const idx = nodes.findIndex((n) => n.id === toId)
+          if (idx !== -1) branchIndices.push(idx)
+        }
+        const potentialJoins = nodes.filter(
+          (n, j) => j !== i && branchIndices.every((bi) => edges.some((e) => e.from === nodes[bi].id && e.to === n.id)),
+        )
+        annotations.push({
+          id: genId(),
+          type: 'fork',
+          branchIndices,
+          forkNodeIdx: i,
+          joinNodeIdx: potentialJoins.length > 0 ? nodes.findIndex((n) => n.id === potentialJoins[0].id) : undefined,
+          label: '分支' + (annotations.length + 1),
+          color: '#f59e0b',
+          annotations: [
+            { type: 'label', text: 'FORK #' + (annotations.length + 1) },
+            { type: 'flow', text: outgoing.length + ' 路并行' },
+            { type: 'count', text: members.size + ' 分支' },
+          ],
         })
       }
     }
   }
   return annotations
 }
-function toggleForkJoinAnnot() { showBranchAnnot.value = !showBranchAnnot.value; if (showBranchAnnot.value) forkJoinAnnotations.value = detectParallelBranchesEnhanced() }
+function toggleForkJoinAnnot() {
+  showBranchAnnot.value = !showBranchAnnot.value
+  if (showBranchAnnot.value) forkJoinAnnotations.value = detectParallelBranchesEnhanced()
+}
 function getForkJoinPath(branchIndices: number[]): string {
-  if (branchIndices.length < 2 || !processDef.value) return ""
-  const nodes = branchIndices.map(i => processDef.value!.nodes[i]).filter(Boolean)
-  if (nodes.length < 2) return ""
-  let d = `M ${nodes[0].x + (nodes[0].w||120)} ${nodes[0].y + (nodes[0].h||50)/2}`
-  for (let i = 1; i < nodes.length; i++) { const n = nodes[i]; d += ` L ${n.x + (n.w||120)} ${n.y + (n.h||50)/2}` }
+  if (branchIndices.length < 2 || !processDef.value) return ''
+  const nodes = branchIndices.map((i) => processDef.value!.nodes[i]).filter(Boolean)
+  if (nodes.length < 2) return ''
+  let d = `M ${nodes[0].x + (nodes[0].w || 120)} ${nodes[0].y + (nodes[0].h || 50) / 2}`
+  for (let i = 1; i < nodes.length; i++) {
+    const n = nodes[i]
+    d += ` L ${n.x + (n.w || 120)} ${n.y + (n.h || 50) / 2}`
+  }
   return d
 }
 // ── Group Resize Directions ─────────────────────────────────────────
-const groupResizeDirs = ["nw","n","ne","e","se","s","sw","w"] as const
+const groupResizeDirs = ['nw', 'n', 'ne', 'e', 'se', 's', 'sw', 'w'] as const
 // ── Breakpoint Management ─────────────────────────────────────────
 function toggleBreakpoint(nodeId: string) {
-  const idx = breakpoints.value.findIndex(b => b.nodeId === nodeId)
+  const idx = breakpoints.value.findIndex((b) => b.nodeId === nodeId)
   if (idx >= 0) breakpoints.value.splice(idx, 1)
   else {
-    const node = processDef.value?.nodes?.find(n => n.id === nodeId)
+    const node = processDef.value?.nodes?.find((n) => n.id === nodeId)
     breakpoints.value.push({ nodeId, label: node?.label })
   }
 }
-function clearBreakpoints() { breakpoints.value = [] }
+function clearBreakpoints() {
+  breakpoints.value = []
+}
 // ── Execution Speed Control ───────────────────────────────────────
-function setExecutionSpeed(ms: number) { executionSpeed.value = Math.max(100, Math.min(5000, ms)) }
-function stepForward() { if (!processDef.value || execState.value.status !== "running") return; simulateNext() }
-function stepBackward() { if (histIdx.value <= 0) return; histIdx.value--; processDef.value = JSON.parse(JSON.stringify(history.value[histIdx.value].config)) }
+function setExecutionSpeed(ms: number) {
+  executionSpeed.value = Math.max(100, Math.min(5000, ms))
+}
+function stepForward() {
+  if (!processDef.value || execState.value.status !== 'running') return
+  simulateNext()
+}
+function stepBackward() {
+  if (histIdx.value <= 0) return
+  histIdx.value--
+  processDef.value = JSON.parse(JSON.stringify(history.value[histIdx.value].config))
+}
 // ── Enhanced Flow Statistics ──────────────────────────────────────
 function computeFlowStats(): FlowStats {
-  if (!processDef.value) return { totalNodes: 0, totalEdges: 0, avgDegree: "0", maxDegree: 0, density: "0", cycles: 0, isolatedNodes: 0 }
+  if (!processDef.value)
+    return { totalNodes: 0, totalEdges: 0, avgDegree: '0', maxDegree: 0, density: '0', cycles: 0, isolatedNodes: 0 }
   const nodes = processDef.value.nodes
   const edges = processDef.value.edges || []
   const inDegree = new Map<string, number>()
   const outDegree = new Map<string, number>()
-  for (const n of nodes) { inDegree.set(n.id, 0); outDegree.set(n.id, 0) }
-  for (const e of edges) { outDegree.set(e.from, (outDegree.get(e.from) || 0) + 1); inDegree.set(e.to, (inDegree.get(e.to) || 0) + 1) }
-  let maxOut = 0, totalOut = 0
-  for (const d of outDegree.values()) { totalOut += d; if (d > maxOut) maxOut = d }
-  const isolated = nodes.filter(n => (inDegree.get(n.id) || 0) === 0 && (outDegree.get(n.id) || 0) === 0).length
-  const density = nodes.length > 1 ? (edges.length / (nodes.length * (nodes.length - 1))).toFixed(3) : "0"
-  let cycles = 0, visited = new Set<string>()
+  for (const n of nodes) {
+    inDegree.set(n.id, 0)
+    outDegree.set(n.id, 0)
+  }
+  for (const e of edges) {
+    outDegree.set(e.from, (outDegree.get(e.from) || 0) + 1)
+    inDegree.set(e.to, (inDegree.get(e.to) || 0) + 1)
+  }
+  let maxOut = 0,
+    totalOut = 0
+  for (const d of outDegree.values()) {
+    totalOut += d
+    if (d > maxOut) maxOut = d
+  }
+  const isolated = nodes.filter((n) => (inDegree.get(n.id) || 0) === 0 && (outDegree.get(n.id) || 0) === 0).length
+  const density = nodes.length > 1 ? (edges.length / (nodes.length * (nodes.length - 1))).toFixed(3) : '0'
+  let cycles = 0,
+    visited = new Set<string>()
   for (const n of nodes) {
     if (visited.has(n.id)) continue
-    const stack = [n.id], path = new Set<string>()
+    const stack = [n.id],
+      path = new Set<string>()
     while (stack.length > 0) {
       const curr = stack.pop()!
-      if (path.has(curr)) { cycles++; break }
+      if (path.has(curr)) {
+        cycles++
+        break
+      }
       if (visited.has(curr)) continue
-      path.add(curr); visited.add(curr)
-      for (const e of edges) { if (e.from === curr) stack.push(e.to) }
+      path.add(curr)
+      visited.add(curr)
+      for (const e of edges) {
+        if (e.from === curr) stack.push(e.to)
+      }
     }
   }
-  return { totalNodes: nodes.length, totalEdges: edges.length, avgDegree: (totalOut / nodes.length).toFixed(2), maxDegree: maxOut, density, cycles, isolatedNodes: isolated }
+  return {
+    totalNodes: nodes.length,
+    totalEdges: edges.length,
+    avgDegree: (totalOut / nodes.length).toFixed(2),
+    maxDegree: maxOut,
+    density,
+    cycles,
+    isolatedNodes: isolated,
+  }
 }
 // ── Enhanced Node Style Presets ────────────────────────────────────
 const enhancedNodeStylePresets: EnhancedNodeStyle[] = [
-  { name: "霓虹蓝", color: "#00d4ff", bgColor: "rgba(0,212,255,0.15)", borderColor: "#00d4ff", icon: "🔵" },
-  { name: "极光绿", color: "#10b981", bgColor: "rgba(16,185,129,0.15)", borderColor: "#10b981", icon: "🟢" },
-  { name: "烈焰红", color: "#ef4444", bgColor: "rgba(239,68,68,0.15)", borderColor: "#ef4444", icon: "🔴" },
-  { name: "紫罗兰", color: "#a855f7", bgColor: "rgba(168,85,247,0.15)", borderColor: "#a855f7", icon: "🟣" },
-  { name: "琥珀黄", color: "#f59e0b", bgColor: "rgba(245,158,11,0.15)", borderColor: "#f59e0b", icon: "🟡" },
-  { name: "樱花粉", color: "#ec4899", bgColor: "rgba(236,72,153,0.15)", borderColor: "#ec4899", icon: "🩷" },
-  { name: "深海青", color: "#06b6d4", bgColor: "rgba(6,182,212,0.15)", borderColor: "#06b6d4", icon: "🔷" },
-  { name: "暗夜黑", color: "#6b7280", bgColor: "rgba(107,114,128,0.15)", borderColor: "#6b7280", icon: "⚫" },
+  { name: '霓虹蓝', color: '#00d4ff', bgColor: 'rgba(0,212,255,0.15)', borderColor: '#00d4ff', icon: '🔵' },
+  { name: '极光绿', color: '#10b981', bgColor: 'rgba(16,185,129,0.15)', borderColor: '#10b981', icon: '🟢' },
+  { name: '烈焰红', color: '#ef4444', bgColor: 'rgba(239,68,68,0.15)', borderColor: '#ef4444', icon: '🔴' },
+  { name: '紫罗兰', color: '#a855f7', bgColor: 'rgba(168,85,247,0.15)', borderColor: '#a855f7', icon: '🟣' },
+  { name: '琥珀黄', color: '#f59e0b', bgColor: 'rgba(245,158,11,0.15)', borderColor: '#f59e0b', icon: '🟡' },
+  { name: '樱花粉', color: '#ec4899', bgColor: 'rgba(236,72,153,0.15)', borderColor: '#ec4899', icon: '🩷' },
+  { name: '深海青', color: '#06b6d4', bgColor: 'rgba(6,182,212,0.15)', borderColor: '#06b6d4', icon: '🔷' },
+  { name: '暗夜黑', color: '#6b7280', bgColor: 'rgba(107,114,128,0.15)', borderColor: '#6b7280', icon: '⚫' },
 ]
 function applyEnhancedNodeStyle(preset: EnhancedNodeStyle) {
   if (selectedNode.value === null || !processDef.value) return
@@ -5284,44 +6960,81 @@ function applyEnhancedNodeStyle(preset: EnhancedNodeStyle) {
 }
 // ── Flow Stats Modal ───────────────────────────────────────────────
 const showFlowStatsModal = ref(false)
-function openFlowStatsModal() { showFlowStatsModal.value = true }
+function openFlowStatsModal() {
+  showFlowStatsModal.value = true
+}
 // ── Enhanced Execution Controls ────────────────────────────────────
 // ── Node Type Analysis ─────────────────────────────────────────────
-interface NodeTypeCount { type: string; count: number; icon: string }
+interface NodeTypeCount {
+  type: string
+  count: number
+  icon: string
+}
 function getNodeTypesCount(): NodeTypeCount[] {
   if (!processDef.value) return []
   const counts = new Map<string, number>()
   for (const n of processDef.value.nodes) {
     counts.set(n.type, (counts.get(n.type) || 0) + 1)
   }
-  const iconMap: Record<string, string> = { start:"🟢", end:"🔴", task:"📋", approval:"✅", timer:"⏱️", gate_and:"🔷", gate_or:"🔶", gate_xor:"🔹", subprocess:"📦", script:"💻", parallel:"⚡" }
-  return Array.from(counts.entries()).map(([type, count]) => ({ type, count, icon: iconMap[type] || "⬜" })).sort((a,b) => b.count - a.count)
+  const iconMap: Record<string, string> = {
+    start: '🟢',
+    end: '🔴',
+    task: '📋',
+    approval: '✅',
+    timer: '⏱️',
+    gate_and: '🔷',
+    gate_or: '🔶',
+    gate_xor: '🔹',
+    subprocess: '📦',
+    script: '💻',
+    parallel: '⚡',
+  }
+  return Array.from(counts.entries())
+    .map(([type, count]) => ({ type, count, icon: iconMap[type] || '⬜' }))
+    .sort((a, b) => b.count - a.count)
 }
 // ── Edge Direction Analysis ────────────────────────────────────────
-interface EdgeDirection { direction: string; count: number; percentage: string }
+interface EdgeDirection {
+  direction: string
+  count: number
+  percentage: string
+}
 function getEdgeDirections(): EdgeDirection[] {
   if (!processDef.value) return []
   const edges = processDef.value.edges || []
   if (edges.length === 0) return []
-  let leftCount = 0, rightCount = 0, upCount = 0, downCount = 0
+  let leftCount = 0,
+    rightCount = 0,
+    upCount = 0,
+    downCount = 0
   for (const e of edges) {
-    const from = processDef.value!.nodes.find(n => n.id === e.from)
-    const to = processDef.value!.nodes.find(n => n.id === e.to)
+    const from = processDef.value!.nodes.find((n) => n.id === e.from)
+    const to = processDef.value!.nodes.find((n) => n.id === e.to)
     if (!from || !to) continue
-    const dx = to.x - from.x, dy = to.y - from.y
-    if (Math.abs(dx) > Math.abs(dy)) { if (dx > 0) rightCount++; else leftCount++ }
-    else { if (dy > 0) downCount++; else upCount++ }
+    const dx = to.x - from.x,
+      dy = to.y - from.y
+    if (Math.abs(dx) > Math.abs(dy)) {
+      if (dx > 0) rightCount++
+      else leftCount++
+    } else {
+      if (dy > 0) downCount++
+      else upCount++
+    }
   }
   const total = edges.length
   return [
-    { direction: "→ 右", count: rightCount, percentage: ((rightCount/total)*100).toFixed(1) + "%" }
-    , { direction: "← 左", count: leftCount, percentage: ((leftCount/total)*100).toFixed(1) + "%" }
-    , { direction: "↓ 下", count: downCount, percentage: ((downCount/total)*100).toFixed(1) + "%" }
-    , { direction: "↑ 上", count: upCount, percentage: ((upCount/total)*100).toFixed(1) + "%" }
-  ].filter(e => e.count > 0)
+    { direction: '→ 右', count: rightCount, percentage: ((rightCount / total) * 100).toFixed(1) + '%' },
+    { direction: '← 左', count: leftCount, percentage: ((leftCount / total) * 100).toFixed(1) + '%' },
+    { direction: '↓ 下', count: downCount, percentage: ((downCount / total) * 100).toFixed(1) + '%' },
+    { direction: '↑ 上', count: upCount, percentage: ((upCount / total) * 100).toFixed(1) + '%' },
+  ].filter((e) => e.count > 0)
 }
 // ── Path Length Analysis ───────────────────────────────────────────
-interface PathInfo { length: number; nodes: string[]; isCyclic: boolean }
+interface PathInfo {
+  length: number
+  nodes: string[]
+  isCyclic: boolean
+}
 function analyzeLongestPaths(): PathInfo[] {
   if (!processDef.value) return []
   const nodes = processDef.value.nodes
@@ -5332,54 +7045,77 @@ function analyzeLongestPaths(): PathInfo[] {
     adj.get(e.from)!.push(e.to)
   }
   const paths: PathInfo[] = []
-  const startNodes = nodes.filter(n => !edges.some(e => e.to === n.id))
-  for (const n of startNodes) { dfs(n.id, [n.id], new Set([n.id])) }
-  return paths.sort((a,b) => b.length - a.length).slice(0, 5)
+  const startNodes = nodes.filter((n) => !edges.some((e) => e.to === n.id))
+  for (const n of startNodes) {
+    dfs(n.id, [n.id], new Set([n.id]))
+  }
+  return paths.sort((a, b) => b.length - a.length).slice(0, 5)
 }
 // ── Execution Control ──────────────────────────────────────────────
 function startExecutionEnhanced() {
   if (!processDef.value) return
   isRunning.value = true
-  execState.value = { currentNodeIdx: 0, progress: 0, status: "running", completedNodes: [] }
+  execState.value = { currentNodeIdx: 0, progress: 0, status: 'running', completedNodes: [] }
   executionLog.value = []
   simulateNextEnhanced()
 }
-function pauseExecutionEnhanced() { isRunning.value = false; execState.value.status = "paused" }
-function resumeExecutionEnhanced() { isRunning.value = true; execState.value.status = "running"; simulateNextEnhanced() }
-function resetExecutionEnhanced() { isRunning.value = false; execState.value = { currentNodeIdx: null, progress: 0, status: "idle", completedNodes: [] }; executionLog.value = [] }
-function toggleExecutionEnhanced() { if (isRunning.value) pauseExecutionEnhanced(); else resumeExecutionEnhanced() }
+function pauseExecutionEnhanced() {
+  isRunning.value = false
+  execState.value.status = 'paused'
+}
+function resumeExecutionEnhanced() {
+  isRunning.value = true
+  execState.value.status = 'running'
+  simulateNextEnhanced()
+}
+function resetExecutionEnhanced() {
+  isRunning.value = false
+  execState.value = { currentNodeIdx: null, progress: 0, status: 'idle', completedNodes: [] }
+  executionLog.value = []
+}
+function toggleExecutionEnhanced() {
+  if (isRunning.value) pauseExecutionEnhanced()
+  else resumeExecutionEnhanced()
+}
 function simulateNextEnhanced() {
   if (!isRunning.value || !processDef.value || execState.value.currentNodeIdx === null) return
   const curIdx = execState.value.currentNodeIdx
   const curNode = processDef.value.nodes[curIdx]
   if (!curNode) return
-  executionLog.value.push({ timestamp: Date.now(), nodeId: curNode.id, nodeLabel: curNode.label || curNode.id, action: "executing" })
+  executionLog.value.push({
+    timestamp: Date.now(),
+    nodeId: curNode.id,
+    nodeLabel: curNode.label || curNode.id,
+    action: 'executing',
+  })
   if (!execState.value.completedNodes.includes(curNode.id)) {
     execState.value.completedNodes = [...execState.value.completedNodes, curNode.id]
   }
   const edges = processDef.value.edges || []
-  const nextEdges = edges.filter(e => e.from === curNode.id)
+  const nextEdges = edges.filter((e) => e.from === curNode.id)
   if (nextEdges.length > 0) {
-    const nextIdx = processDef.value.nodes.findIndex(n => n.id === nextEdges[0].to)
+    const nextIdx = processDef.value.nodes.findIndex((n) => n.id === nextEdges[0].to)
     execState.value.currentNodeIdx = nextIdx
-    execState.value.progress = Math.round((nextIdx + 1) / processDef.value.nodes.length * 100)
+    execState.value.progress = Math.round(((nextIdx + 1) / processDef.value.nodes.length) * 100)
     setTimeout(() => simulateNextEnhanced(), executionSpeed.value)
   } else {
-    execState.value.status = "finished"
+    execState.value.status = 'finished'
     isRunning.value = false
   }
 }
 // ── Breakpoint Management ───────────────────────────────────────────
 function addBreakpoint(nodeId: string) {
-  const node = processDef.value?.nodes?.find(n => n.id === nodeId)
-  if (!breakpoints.value.find(b => b.nodeId === nodeId)) {
+  const node = processDef.value?.nodes?.find((n) => n.id === nodeId)
+  if (!breakpoints.value.find((b) => b.nodeId === nodeId)) {
     breakpoints.value.push({ nodeId, label: node?.label, enabled: true })
   }
 }
 function removeBreakpoint(nodeId: string) {
-  breakpoints.value = breakpoints.value.filter(b => b.nodeId !== nodeId)
+  breakpoints.value = breakpoints.value.filter((b) => b.nodeId !== nodeId)
 }
-function clearAllBreakpoints() { breakpoints.value = [] }
+function clearAllBreakpoints() {
+  breakpoints.value = []
+}
 // ── Style Preset Functions ──────────────────────────────────────────
 function applyStylePreset(preset: StylePreset) {
   if (selectedNode.value === null || !processDef.value) return
@@ -5392,33 +7128,56 @@ function computeNetworkMetrics(): NetworkMetric[] {
   if (!processDef.value) return []
   const nodes = processDef.value.nodes
   const edges = processDef.value.edges || []
-  const inDeg = new Map<string, number>(), outDeg = new Map<string, number>()
-  for (const n of nodes) { inDeg.set(n.id, 0); outDeg.set(n.id, 0) }
-  for (const e of edges) { outDeg.set(e.from, (outDeg.get(e.from)||0)+1); inDeg.set(e.to, (inDeg.get(e.to)||0)+1) }
-  let totalOut = 0, maxOut = 0
-  for (const d of outDeg.values()) { totalOut += d; if (d > maxOut) maxOut = d }
-  const density = nodes.length > 1 ? (edges.length / (nodes.length * (nodes.length - 1))).toFixed(4) : "0"
-  const isolated = nodes.filter(n => (inDeg.get(n.id)||0) === 0 && (outDeg.get(n.id)||0) === 0).length
-  let cycles = 0, visited = new Set<string>()
+  const inDeg = new Map<string, number>(),
+    outDeg = new Map<string, number>()
+  for (const n of nodes) {
+    inDeg.set(n.id, 0)
+    outDeg.set(n.id, 0)
+  }
+  for (const e of edges) {
+    outDeg.set(e.from, (outDeg.get(e.from) || 0) + 1)
+    inDeg.set(e.to, (inDeg.get(e.to) || 0) + 1)
+  }
+  let totalOut = 0,
+    maxOut = 0
+  for (const d of outDeg.values()) {
+    totalOut += d
+    if (d > maxOut) maxOut = d
+  }
+  const density = nodes.length > 1 ? (edges.length / (nodes.length * (nodes.length - 1))).toFixed(4) : '0'
+  const isolated = nodes.filter((n) => (inDeg.get(n.id) || 0) === 0 && (outDeg.get(n.id) || 0) === 0).length
+  let cycles = 0,
+    visited = new Set<string>()
   for (const n of nodes) {
     if (visited.has(n.id)) continue
-    const stack = [n.id], path = new Set<string>()
+    const stack = [n.id],
+      path = new Set<string>()
     while (stack.length > 0) {
       const curr = stack.pop()!
-      if (path.has(curr)) { cycles++; break }
+      if (path.has(curr)) {
+        cycles++
+        break
+      }
       if (visited.has(curr)) continue
-      path.add(curr); visited.add(curr)
-      for (const e of edges) { if (e.from === curr) stack.push(e.to) }
+      path.add(curr)
+      visited.add(curr)
+      for (const e of edges) {
+        if (e.from === curr) stack.push(e.to)
+      }
     }
   }
   return [
-    { metric: "节点总数", value: nodes.length, description: "图中所有节点数量" },
-    { metric: "连边总数", value: edges.length, description: "图中所有连线数量" },
-    { metric: "网络密度", value: parseFloat(density), description: "实际连边/最大可能连边" },
-    { metric: "平均出度", value: nodes.length > 0 ? Math.round(totalOut / nodes.length * 10) / 10 : 0, description: "每节点平均发出连边" },
-    { metric: "最大出度", value: maxOut, description: "单节点最大发出连边" },
-    { metric: "环数量", value: cycles, description: "图中循环路径数" },
-    { metric: "孤立节点", value: isolated, description: "无入边也无出边的节点" },
+    { metric: '节点总数', value: nodes.length, description: '图中所有节点数量' },
+    { metric: '连边总数', value: edges.length, description: '图中所有连线数量' },
+    { metric: '网络密度', value: parseFloat(density), description: '实际连边/最大可能连边' },
+    {
+      metric: '平均出度',
+      value: nodes.length > 0 ? Math.round((totalOut / nodes.length) * 10) / 10 : 0,
+      description: '每节点平均发出连边',
+    },
+    { metric: '最大出度', value: maxOut, description: '单节点最大发出连边' },
+    { metric: '环数量', value: cycles, description: '图中循环路径数' },
+    { metric: '孤立节点', value: isolated, description: '无入边也无出边的节点' },
   ]
 }
 function openNetworkAnalysis() {
@@ -5427,26 +7186,41 @@ function openNetworkAnalysis() {
 }
 // ── Connection Rules Grid ───────────────────────────────────────────
 function renderConnectionRulesGridEnhanced() {
-  const types = ["start","task","approval","timer","end","gate_and","gate_or","gate_xor","subprocess","script","parallel"]
+  const types = [
+    'start',
+    'task',
+    'approval',
+    'timer',
+    'end',
+    'gate_and',
+    'gate_or',
+    'gate_xor',
+    'subprocess',
+    'script',
+    'parallel',
+  ]
   const grid: Record<string, Record<string, boolean>> = {}
   for (const from of types) {
     grid[from] = {}
     for (const to of types) {
-      if (from === to) { grid[from][to] = false; continue }
-      const allowed: Record<string, string[]> = {
-        "start": ["task","approval","script","gate_and","gate_or","gate_xor"],
-        "task": ["task","approval","end","script","gate_and","gate_or","gate_xor"],
-        "approval": ["task","approval","end","script","gate_and","gate_or","gate_xor"],
-        "script": ["task","approval","end","script","gate_and","gate_or","gate_xor"],
-        "timer": ["task","approval","end","script"],
-        "end": [],
-        "gate_and": ["task","approval","end","script"],
-        "gate_or": ["task","approval","end","script"],
-        "gate_xor": ["task","approval","end","script"],
-        "subprocess": ["task","approval","end","script"],
-        "parallel": ["task","approval","end","script"],
+      if (from === to) {
+        grid[from][to] = false
+        continue
       }
-      grid[from][to] = (allowed[from]||[]).includes(to)
+      const allowed: Record<string, string[]> = {
+        start: ['task', 'approval', 'script', 'gate_and', 'gate_or', 'gate_xor'],
+        task: ['task', 'approval', 'end', 'script', 'gate_and', 'gate_or', 'gate_xor'],
+        approval: ['task', 'approval', 'end', 'script', 'gate_and', 'gate_or', 'gate_xor'],
+        script: ['task', 'approval', 'end', 'script', 'gate_and', 'gate_or', 'gate_xor'],
+        timer: ['task', 'approval', 'end', 'script'],
+        end: [],
+        gate_and: ['task', 'approval', 'end', 'script'],
+        gate_or: ['task', 'approval', 'end', 'script'],
+        gate_xor: ['task', 'approval', 'end', 'script'],
+        subprocess: ['task', 'approval', 'end', 'script'],
+        parallel: ['task', 'approval', 'end', 'script'],
+      }
+      grid[from][to] = (allowed[from] || []).includes(to)
     }
   }
   connectionRules.value = grid
@@ -5457,7 +7231,7 @@ function toggleConnectionRuleEnhanced(from: string, to: string) {
   saveConnectionRules()
 }
 function saveConnectionRulesEnhanced() {
-  const rules: Array<{from: string; to: string}> = []
+  const rules: Array<{ from: string; to: string }> = []
   for (const from of Object.keys(connectionRules.value)) {
     for (const to of Object.keys(connectionRules.value[from])) {
       if (connectionRules.value[from][to]) rules.push({ from, to })
@@ -5466,49 +7240,79 @@ function saveConnectionRulesEnhanced() {
   if (processDef.value) processDef.value.connectionRules = rules
   pushHistory()
 }
-function resetConnectionRulesEnhanced() { renderConnectionRulesGridEnhanced(); saveConnectionRulesEnhanced() }
+function resetConnectionRulesEnhanced() {
+  renderConnectionRulesGridEnhanced()
+  saveConnectionRulesEnhanced()
+}
 // ── Export Functions ─────────────────────────────────────────────────
 function exportAsSvgEnhanced() {
   if (!processDef.value) return
   const nodes = processDef.value.nodes
   const edges = processDef.value.edges || []
   if (nodes.length === 0) return
-  let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity
-  for (const n of nodes) { minX = Math.min(minX, n.x); minY = Math.min(minY, n.y); maxX = Math.max(maxX, n.x + (n.w||120)); maxY = Math.max(maxY, n.y + (n.h||50)) }
+  let minX = Infinity,
+    minY = Infinity,
+    maxX = -Infinity,
+    maxY = -Infinity
+  for (const n of nodes) {
+    minX = Math.min(minX, n.x)
+    minY = Math.min(minY, n.y)
+    maxX = Math.max(maxX, n.x + (n.w || 120))
+    maxY = Math.max(maxY, n.y + (n.h || 50))
+  }
   const pad = 80
-  const w = maxX - minX + pad*2, h = maxY - minY + pad*2
+  const w = maxX - minX + pad * 2,
+    h = maxY - minY + pad * 2
   let svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}" viewBox="0 0 ${w} ${h}">`
   svg += `<defs><marker id="arr" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto"><polygon points="0 0,10 3.5,0 7" fill="#00d4ff"/></marker></defs>`
   svg += `<rect width="${w}" height="${h}" fill="#0a0e1a"/>`
-  svg += `<g transform="translate(${pad-minX},${pad-minY})">`
+  svg += `<g transform="translate(${pad - minX},${pad - minY})">`
   for (const edge of edges) {
-    const from = nodes.find(n => n.id === edge.from), to = nodes.find(n => n.id === edge.to)
+    const from = nodes.find((n) => n.id === edge.from),
+      to = nodes.find((n) => n.id === edge.to)
     if (!from || !to) continue
-    const fp = { x: from.x + (from.w||120), y: from.y + (from.h||50)/2 }, tp = { x: to.x, y: to.y + (to.h||50)/2 }
-    const dx = Math.abs(tp.x - fp.x), cx = Math.max(dx * 0.5, 60)
-    svg += `<path d="M ${fp.x} ${fp.y} C ${fp.x+cx} ${fp.y}, ${tp.x-cx} ${tp.y}, ${tp.x} ${tp.y}" stroke="#00d4ff" stroke-width="2" fill="none" marker-end="url(#arr)"/>`
+    const fp = { x: from.x + (from.w || 120), y: from.y + (from.h || 50) / 2 },
+      tp = { x: to.x, y: to.y + (to.h || 50) / 2 }
+    const dx = Math.abs(tp.x - fp.x),
+      cx = Math.max(dx * 0.5, 60)
+    svg += `<path d="M ${fp.x} ${fp.y} C ${fp.x + cx} ${fp.y}, ${tp.x - cx} ${tp.y}, ${tp.x} ${tp.y}" stroke="#00d4ff" stroke-width="2" fill="none" marker-end="url(#arr)"/>`
   }
   for (const node of nodes) {
-    const nw = node.w||120, nh = node.h||50
-    const colors: Record<string,string> = { start:"#10b981", end:"#ef4444", task:"#00d4ff", approval:"#6366f1", subprocess:"#a855f7", script:"#22c55e", gate_and:"#f59e0b", gate_or:"#f59e0b", gate_xor:"#f59e0b" }
-    svg += `<rect x="${node.x}" y="${node.y}" width="${nw}" height="${nh}" rx="8" fill="${colors[node.type]||"#374151"}80" stroke="${colors[node.type]||"#6b7280"}" stroke-width="1.5"/>`
-    svg += `<text x="${node.x+nw/2}" y="${node.y+nh/2+4}" text-anchor="middle" fill="white" font-size="12">${node.label||""}</text>`
+    const nw = node.w || 120,
+      nh = node.h || 50
+    const colors: Record<string, string> = {
+      start: '#10b981',
+      end: '#ef4444',
+      task: '#00d4ff',
+      approval: '#6366f1',
+      subprocess: '#a855f7',
+      script: '#22c55e',
+      gate_and: '#f59e0b',
+      gate_or: '#f59e0b',
+      gate_xor: '#f59e0b',
+    }
+    svg += `<rect x="${node.x}" y="${node.y}" width="${nw}" height="${nh}" rx="8" fill="${colors[node.type] || '#374151'}80" stroke="${colors[node.type] || '#6b7280'}" stroke-width="1.5"/>`
+    svg += `<text x="${node.x + nw / 2}" y="${node.y + nh / 2 + 4}" text-anchor="middle" fill="white" font-size="12">${node.label || ''}</text>`
   }
   svg += `</g></svg>`
-  const blob = new Blob([svg], { type: "image/svg+xml" })
+  const blob = new Blob([svg], { type: 'image/svg+xml' })
   const url = URL.createObjectURL(blob)
-  const a = document.createElement("a")
-  a.href = url; a.download = (currentProcess.value?.flag || "process") + "_enhanced.svg"
-  a.click(); URL.revokeObjectURL(url)
+  const a = document.createElement('a')
+  a.href = url
+  a.download = (currentProcess.value?.flag || 'process') + '_enhanced.svg'
+  a.click()
+  URL.revokeObjectURL(url)
 }
 function exportAsJsonEnhanced() {
   if (!processDef.value || !currentProcess.value) return
   const data = { process: currentProcess.value, definition: processDef.value, exportedAt: new Date().toISOString() }
-  const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" })
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' })
   const url = URL.createObjectURL(blob)
-  const a = document.createElement("a")
-  a.href = url; a.download = (currentProcess.value.flag || "process") + "_enhanced.json"
-  a.click(); URL.revokeObjectURL(url)
+  const a = document.createElement('a')
+  a.href = url
+  a.download = (currentProcess.value.flag || 'process') + '_enhanced.json'
+  a.click()
+  URL.revokeObjectURL(url)
 }
 // ── Execution Features ─────────────────────────────────────────────
 const executionLog = ref<ExecutionLog[]>([])
@@ -5517,163 +7321,381 @@ const showBreakpointsPanel = ref(false)
 // ── Breakpoints ────────────────────────────────────────────────────
 // ── Style Presets ──────────────────────────────────────────────────
 const stylePresets: StylePreset[] = [
-  { name: "霓虹蓝", fill: "rgba(0,212,255,0.2)", stroke: "#00d4ff", icon: "🔵" },
-  { name: "极光绿", fill: "rgba(16,185,129,0.2)", stroke: "#10b981", icon: "🟢" },
-  { name: "烈焰红", fill: "rgba(239,68,68,0.2)", stroke: "#ef4444", icon: "🔴" },
-  { name: "紫罗兰", fill: "rgba(168,85,247,0.2)", stroke: "#a855f7", icon: "🟣" },
-  { name: "琥珀黄", fill: "rgba(245,158,11,0.2)", stroke: "#f59e0b", icon: "🟡" },
-  { name: "樱花粉", fill: "rgba(236,72,153,0.2)", stroke: "#ec4899", icon: "🩷" },
-  { name: "深海青", fill: "rgba(6,182,212,0.2)", stroke: "#06b6d4", icon: "🔷" },
-  { name: "暗夜黑", fill: "rgba(107,114,128,0.2)", stroke: "#6b7280", icon: "⚫" },
-  { name: "黎明金", fill: "rgba(234,179,8,0.2)", stroke: "#eab308", icon: "🟠" },
-  { name: "薄荷绿", fill: "rgba(34,197,94,0.2)", stroke: "#22c55e", icon: "🍃" },
+  { name: '霓虹蓝', fill: 'rgba(0,212,255,0.2)', stroke: '#00d4ff', icon: '🔵' },
+  { name: '极光绿', fill: 'rgba(16,185,129,0.2)', stroke: '#10b981', icon: '🟢' },
+  { name: '烈焰红', fill: 'rgba(239,68,68,0.2)', stroke: '#ef4444', icon: '🔴' },
+  { name: '紫罗兰', fill: 'rgba(168,85,247,0.2)', stroke: '#a855f7', icon: '🟣' },
+  { name: '琥珀黄', fill: 'rgba(245,158,11,0.2)', stroke: '#f59e0b', icon: '🟡' },
+  { name: '樱花粉', fill: 'rgba(236,72,153,0.2)', stroke: '#ec4899', icon: '🩷' },
+  { name: '深海青', fill: 'rgba(6,182,212,0.2)', stroke: '#06b6d4', icon: '🔷' },
+  { name: '暗夜黑', fill: 'rgba(107,114,128,0.2)', stroke: '#6b7280', icon: '⚫' },
+  { name: '黎明金', fill: 'rgba(234,179,8,0.2)', stroke: '#eab308', icon: '🟠' },
+  { name: '薄荷绿', fill: 'rgba(34,197,94,0.2)', stroke: '#22c55e', icon: '🍃' },
 ]
 // ── Network Analysis ───────────────────────────────────────────────
 const showNetworkAnalysis = ref(false)
 const networkMetrics = ref<NetworkMetric[]>([])
 // ── Keyboard Shortcuts ──────────────────────────────────────────────
 const shortcuts = ref<ShortcutDef[]>([
-  { key: "Z", ctrl: true, action: "撤销" },
-  { key: "Y", ctrl: true, action: "重做" },
-  { key: "A", ctrl: true, action: "全选" },
-  { key: "Delete", action: "删除" },
-  { key: "D", ctrl: true, action: "复制" },
-  { key: "G", action: "分组" },
-  { key: "Space", action: "暂停/继续" },
-  { key: "F5", action: "执行" },
-  { key: "Escape", action: "取消" },
+  { key: 'Z', ctrl: true, action: '撤销' },
+  { key: 'Y', ctrl: true, action: '重做' },
+  { key: 'A', ctrl: true, action: '全选' },
+  { key: 'Delete', action: '删除' },
+  { key: 'D', ctrl: true, action: '复制' },
+  { key: 'G', action: '分组' },
+  { key: 'Space', action: '暂停/继续' },
+  { key: 'F5', action: '执行' },
+  { key: 'Escape', action: '取消' },
 ])
 // ── Deepened Interfaces ────────────────────────────────────────────
-interface DataField { name: string; type: string; label: string; nodeIdx?: number; source?: string }
-interface MappingEdge { fromField: string; toField: string; fromNodeIdx: number; toNodeIdx: number; transform: string; condition: string }
-interface FlowVar { id: string; name: string; type: string; scope: "global"|"local"|"node"; defaultValue: string; description: string }
-interface NodeTemplate { id: string; name: string; icon: string; nodes: PDNode[]; description: string }
-interface PerfMetric { nodeId: string; startTime: number; endTime: number; duration: number; status: "running"|"completed"|"failed" }
-interface ContextMenuItem { id: string; label: string; icon: string; shortcut?: string; action: string; disabled?: boolean }
-interface TooltipState { visible: boolean; x: number; y: number; content: string; nodeId?: string }
-interface GuideLineConfig { type: "horizontal"|"vertical"; position: number; length: number }
-interface GridConfig { enabled: boolean; size: number; showLabels: boolean; color: string; opacity: number }
-interface ToastItem { id: string; message: string; type: "info"|"success"|"warning"|"error"; duration: number }
-interface ConnectionConflict { edge1: PDEdge; edge2: PDEdge; issue: string; severity: "error"|"warning" }
-interface SimTimelineEvent { time: number; nodeId: string; event: string; label: string }
-interface ShortcutDef { key: string; ctrl?: boolean; shift?: boolean; action: string; label: string }
+interface DataField {
+  name: string
+  type: string
+  label: string
+  nodeIdx?: number
+  source?: string
+}
+interface MappingEdge {
+  fromField: string
+  toField: string
+  fromNodeIdx: number
+  toNodeIdx: number
+  transform: string
+  condition: string
+}
+interface FlowVar {
+  id: string
+  name: string
+  type: string
+  scope: 'global' | 'local' | 'node'
+  defaultValue: string
+  description: string
+}
+interface NodeTemplate {
+  id: string
+  name: string
+  icon: string
+  nodes: PDNode[]
+  description: string
+}
+interface PerfMetric {
+  nodeId: string
+  startTime: number
+  endTime: number
+  duration: number
+  status: 'running' | 'completed' | 'failed'
+}
+interface ContextMenuItem {
+  id: string
+  label: string
+  icon: string
+  shortcut?: string
+  action: string
+  disabled?: boolean
+}
+interface TooltipState {
+  visible: boolean
+  x: number
+  y: number
+  content: string
+  nodeId?: string
+}
+interface GuideLineConfig {
+  type: 'horizontal' | 'vertical'
+  position: number
+  length: number
+}
+interface GridConfig {
+  enabled: boolean
+  size: number
+  showLabels: boolean
+  color: string
+  opacity: number
+}
+interface ToastItem {
+  id: string
+  message: string
+  type: 'info' | 'success' | 'warning' | 'error'
+  duration: number
+}
+interface ConnectionConflict {
+  edge1: PDEdge
+  edge2: PDEdge
+  issue: string
+  severity: 'error' | 'warning'
+}
+interface SimTimelineEvent {
+  time: number
+  nodeId: string
+  event: string
+  label: string
+}
+interface ShortcutDef {
+  key: string
+  ctrl?: boolean
+  shift?: boolean
+  action: string
+  label: string
+}
 // ── Advanced Interfaces ────────────────────────────────────────────
-interface ExecutionLog { timestamp: number; nodeId: string; nodeLabel: string; action: string }
-interface StylePreset { name: string; fill: string; stroke: string; icon: string }
-interface NetworkMetric { metric: string; value: number; description: string }
-interface ShortcutDef { key: string; ctrl?: boolean; action: string }
-interface Breakpoint { nodeId: string; label?: string; enabled: boolean }
+interface ExecutionLog {
+  timestamp: number
+  nodeId: string
+  nodeLabel: string
+  action: string
+}
+interface StylePreset {
+  name: string
+  fill: string
+  stroke: string
+  icon: string
+}
+interface NetworkMetric {
+  metric: string
+  value: number
+  description: string
+}
+interface ShortcutDef {
+  key: string
+  ctrl?: boolean
+  action: string
+}
+interface Breakpoint {
+  nodeId: string
+  label?: string
+  enabled: boolean
+}
 // ── Script Editor Enhanced ──────────────────────────────────────────
-interface ScriptImport { name: string; source: string; alias?: string }
-interface ScriptVariable { name: string; type: string; scope: "global"|"local"|"context"; defaultValue: string; description: string; required?: boolean }
-interface ScriptOutputBinding { sourceField: string; targetField: string; transform: string; condition?: string }
-interface ScriptErrorConfig { onFail: "abort"|"skip"|"retry"; retryCount?: number; retryDelay?: number }
-interface ScriptValidationResult { valid: boolean; errors: string[]; warnings: string[]; suggestions: string[] }
+interface ScriptImport {
+  name: string
+  source: string
+  alias?: string
+}
+interface ScriptVariable {
+  name: string
+  type: string
+  scope: 'global' | 'local' | 'context'
+  defaultValue: string
+  description: string
+  required?: boolean
+}
+interface ScriptOutputBinding {
+  sourceField: string
+  targetField: string
+  transform: string
+  condition?: string
+}
+interface ScriptErrorConfig {
+  onFail: 'abort' | 'skip' | 'retry'
+  retryCount?: number
+  retryDelay?: number
+}
+interface ScriptValidationResult {
+  valid: boolean
+  errors: string[]
+  warnings: string[]
+  suggestions: string[]
+}
 // ── Parallel Branch Enhanced ────────────────────────────────────────
-interface ParallelBranch { id: string; label: string; color: string; nodes: string[]; conditions?: string[] }
-interface ForkJoinConfig { strategy: "and"|"or"|"xor"; joinStrategy: "first"|"last"|"all"; timeout?: number }
-interface BranchFlowState { branchId: string; status: string; progress: number }
+interface ParallelBranch {
+  id: string
+  label: string
+  color: string
+  nodes: string[]
+  conditions?: string[]
+}
+interface ForkJoinConfig {
+  strategy: 'and' | 'or' | 'xor'
+  joinStrategy: 'first' | 'last' | 'all'
+  timeout?: number
+}
+interface BranchFlowState {
+  branchId: string
+  status: string
+  progress: number
+}
 // ── Node Deep Properties ────────────────────────────────────────────
-interface NodeDeepProp { key: string; label: string; type: string; options?: string[]; defaultVal: string; category: string }
-interface NodeCategoryProps { category: string; label: string; icon: string; props: NodeDeepProp[] }
+interface NodeDeepProp {
+  key: string
+  label: string
+  type: string
+  options?: string[]
+  defaultVal: string
+  category: string
+}
+interface NodeCategoryProps {
+  category: string
+  label: string
+  icon: string
+  props: NodeDeepProp[]
+}
 // ── Flow Analysis ────────────────────────────────────────────────────
-interface CycleInfo { nodes: string[]; length: number; severity: string }
-interface CriticalPathNode { nodeId: string; label: string; duration: number }
-interface BottleneckInfo { nodeId: string; label: string; inDegree: number; outDegree: number; severity: string }
-interface FlowAnalysisResult { totalNodes: number; totalEdges: number; cycles: CycleInfo[]; criticalPath: CriticalPathNode[]; bottlenecks: BottleneckInfo[]; isolatedNodes: string[] }
+interface CycleInfo {
+  nodes: string[]
+  length: number
+  severity: string
+}
+interface CriticalPathNode {
+  nodeId: string
+  label: string
+  duration: number
+}
+interface BottleneckInfo {
+  nodeId: string
+  label: string
+  inDegree: number
+  outDegree: number
+  severity: string
+}
+interface FlowAnalysisResult {
+  totalNodes: number
+  totalEdges: number
+  cycles: CycleInfo[]
+  criticalPath: CriticalPathNode[]
+  bottlenecks: BottleneckInfo[]
+  isolatedNodes: string[]
+}
 // ── Process Archive ──────────────────────────────────────────────────
-interface ArchiveEntry { id: string; timestamp: number; label: string; nodeCount: number; edgeCount: number; config: any }
-interface ProcessSnapshot { id: string; name: string; createdAt: number; tags: string[]; status: string; nodeCount: number }
+interface ArchiveEntry {
+  id: string
+  timestamp: number
+  label: string
+  nodeCount: number
+  edgeCount: number
+  config: any
+}
+interface ProcessSnapshot {
+  id: string
+  name: string
+  createdAt: number
+  tags: string[]
+  status: string
+  nodeCount: number
+}
 // ── Interaction Enhancements ─────────────────────────────────────────
-interface RippleEffect { id: string; x: number; y: number; timestamp: number }
-interface CanvasAnimation { id: string; type: string; target: string; startTime: number }
-interface ToolState { id: string; active: boolean; params: any }
+interface RippleEffect {
+  id: string
+  x: number
+  y: number
+  timestamp: number
+}
+interface CanvasAnimation {
+  id: string
+  type: string
+  target: string
+  startTime: number
+}
+interface ToolState {
+  id: string
+  active: boolean
+  params: any
+}
 // ── Condition Builder Functions ─────────────────────────────────────
 function initCondBuilder() {
-  condTree.value = { id: genId(), type: "group", logic: "AND", conditions: [], children: [] }
+  condTree.value = { id: genId(), type: 'group', logic: 'AND', conditions: [], children: [] }
   showCondBuilder.value = true
 }
 function addCondGroup(parent: CondNode) {
   if (!parent.children) parent.children = []
-  parent.children.push({ id: genId(), type: "group", logic: "AND", conditions: [], children: [] })
+  parent.children.push({ id: genId(), type: 'group', logic: 'AND', conditions: [], children: [] })
 }
 function addCondCondition(parent: CondNode) {
   if (!parent.conditions) parent.conditions = []
-  parent.conditions.push({ field: "", operator: "==", value: "" })
+  parent.conditions.push({ field: '', operator: '==', value: '' })
 }
 function generateCondExpression(node: CondNode): string {
   if (node.conditions && node.conditions.length > 0) {
-    return node.conditions.map(c => `${c.field} ${c.operator} ${c.value}`).join(` ${node.logic} `)
+    return node.conditions.map((c) => `${c.field} ${c.operator} ${c.value}`).join(` ${node.logic} `)
   }
   if (node.children && node.children.length > 0) {
     return `(${node.children.map(generateCondExpression).join(` ${node.logic} `)})`
   }
-  return "true"
+  return 'true'
 }
 function previewCond() {
   if (condTree.value) condPreview.value = generateCondExpression(condTree.value)
 }
 // ── Variable Binding Functions ──────────────────────────────────────
 function addVarBinding() {
-  varBindings.value.push({ sourceNode: "", sourceField: "", targetNode: "", targetField: "" })
+  varBindings.value.push({ sourceNode: '', sourceField: '', targetNode: '', targetField: '' })
 }
-function removeVarBinding(idx: number) { varBindings.value.splice(idx, 1) }
+function removeVarBinding(idx: number) {
+  varBindings.value.splice(idx, 1)
+}
 function applyVarBindings() {
   if (!processDef.value) return
   pushHistory()
 }
 // ── Form Rules Functions ────────────────────────────────────────────
 function addFormRule() {
-  formRules.value.push({ id: genId(), sourceField: "", operator: "==", value: "", action: "show", targetFields: [] })
+  formRules.value.push({ id: genId(), sourceField: '', operator: '==', value: '', action: 'show', targetFields: [] })
 }
-function removeFormRule(idx: number) { formRules.value.splice(idx, 1) }
+function removeFormRule(idx: number) {
+  formRules.value.splice(idx, 1)
+}
 function saveFormRules() {
   if (!currentForm.value) return
   currentForm.value.formRules = formRules.value
   pushFormHistory()
 }
 // ── Batch Operation Functions ───────────────────────────────────────
-function enterBatchMode() { showBatchToolbar.value = true }
-function exitBatchMode() { showBatchToolbar.value = false }
+function enterBatchMode() {
+  showBatchToolbar.value = true
+}
+function exitBatchMode() {
+  showBatchToolbar.value = false
+}
 function batchAlign(dir: string) {
   if (!processDef.value) return
   const nodes = processDef.value.nodes
-  if (dir === "left") {
-    const minX = Math.min(...nodes.map(n => n.x))
-    nodes.forEach(n => { n.x = minX; if (snapToGrid.value) n.x = Math.round(n.x / GRID_SIZE) * GRID_SIZE })
+  if (dir === 'left') {
+    const minX = Math.min(...nodes.map((n) => n.x))
+    nodes.forEach((n) => {
+      n.x = minX
+      if (snapToGrid.value) n.x = Math.round(n.x / GRID_SIZE) * GRID_SIZE
+    })
   }
-  if (dir === "top") {
-    const minY = Math.min(...nodes.map(n => n.y))
-    nodes.forEach(n => { n.y = minY; if (snapToGrid.value) n.y = Math.round(n.y / GRID_SIZE) * GRID_SIZE })
+  if (dir === 'top') {
+    const minY = Math.min(...nodes.map((n) => n.y))
+    nodes.forEach((n) => {
+      n.y = minY
+      if (snapToGrid.value) n.y = Math.round(n.y / GRID_SIZE) * GRID_SIZE
+    })
   }
   pushHistory()
 }
 // ── Theme Functions ─────────────────────────────────────────────────
 function applyTheme(preset: ThemePreset) {
   activeTheme.value = preset
-  document.documentElement.style.setProperty("--canvas-bg", preset.bg)
-  document.documentElement.style.setProperty("--canvas-grid", preset.grid)
-  document.documentElement.style.setProperty("--pd-text", preset.textColor)
-  document.documentElement.style.setProperty("--pd-accent", preset.accentColor)
+  document.documentElement.style.setProperty('--canvas-bg', preset.bg)
+  document.documentElement.style.setProperty('--canvas-grid', preset.grid)
+  document.documentElement.style.setProperty('--pd-text', preset.textColor)
+  document.documentElement.style.setProperty('--pd-accent', preset.accentColor)
 }
 function toggleAnimSetting(key: string) {
-  const setting = animSettings.value.find(s => s.key === key)
+  const setting = animSettings.value.find((s) => s.key === key)
   if (setting) setting.enabled = !setting.enabled
 }
 // ── Subprocess Enhancement Functions ────────────────────────────────
-function renameSubprocess(name: string) { subprocessTitle.value = name }
-function setSubprocessDesc(desc: string) { subprocessDesc.value = desc }
+function renameSubprocess(name: string) {
+  subprocessTitle.value = name
+}
+function setSubprocessDesc(desc: string) {
+  subprocessDesc.value = desc
+}
 // ── Data Mapping Drag Functions ─────────────────────────────────────
 function onMapDragStart(e: DragEvent, item: any) {
-  e.dataTransfer?.setData("text/plain", JSON.stringify(item))
+  e.dataTransfer?.setData('text/plain', JSON.stringify(item))
 }
 function onMapDrop(e: DragEvent, target: any) {
-  try { const data = JSON.parse(e.dataTransfer?.getData("text/plain") || "{}"); } catch { }
+  try {
+    const data = JSON.parse(e.dataTransfer?.getData('text/plain') || '{}')
+  } catch {}
 }
 // ── Condition Builder ───────────────────────────────────────────────
 const showCondBuilder = ref(false)
-const condTree = ref<CondNode|null>(null)
-const condPreview = ref("")
+const condTree = ref<CondNode | null>(null)
+const condPreview = ref('')
 // ── Variable Binding ────────────────────────────────────────────────
 const showVarBindingPanel = ref(false)
 const varBindings = ref<VarBinding[]>([])
@@ -5684,65 +7706,147 @@ const formRules = ref<FormRule[]>([])
 const showBatchToolbar = ref(false)
 // ── Theme Customization ────────────────────────────────────────────
 const themePresets: ThemePreset[] = [
-  { name: "赛博朋克", bg: "#0a0e1a", grid: "rgba(0,212,255,0.08)", textColor: "#00d4ff", accentColor: "#00d4ff", nodeBg: "rgba(0,212,255,0.1)", nodeBorder: "#00d4ff" },
-  { name: "极光绿", bg: "#0a1a0a", grid: "rgba(34,197,94,0.08)", textColor: "#22c55e", accentColor: "#22c55e", nodeBg: "rgba(34,197,94,0.1)", nodeBorder: "#22c55e" },
-  { name: "霓虹粉", bg: "#1a0a1a", grid: "rgba(236,72,153,0.08)", textColor: "#ec4899", accentColor: "#ec4899", nodeBg: "rgba(236,72,153,0.1)", nodeBorder: "#ec4899" },
-  { name: "深海青", bg: "#0a1a2a", grid: "rgba(6,182,212,0.08)", textColor: "#06b6d4", accentColor: "#06b6d4", nodeBg: "rgba(6,182,212,0.1)", nodeBorder: "#06b6d4" },
-  { name: "琥珀黄", bg: "#1a150a", grid: "rgba(245,158,11,0.08)", textColor: "#f59e0b", accentColor: "#f59e0b", nodeBg: "rgba(245,158,11,0.1)", nodeBorder: "#f59e0b" },
-  { name: "紫雾", bg: "#1a0a2e", grid: "rgba(168,85,247,0.08)", textColor: "#a855f7", accentColor: "#a855f7", nodeBg: "rgba(168,85,247,0.1)", nodeBorder: "#a855f7" },
-  { name: "极简白", bg: "#f8fafc", grid: "rgba(100,116,139,0.1)", textColor: "#475569", accentColor: "#3b82f6", nodeBg: "rgba(255,255,255,0.9)", nodeBorder: "#94a3b8" },
-  { name: "暗夜", bg: "#111827", grid: "rgba(156,163,175,0.05)", textColor: "#9ca3af", accentColor: "#6b7280", nodeBg: "rgba(31,41,55,0.8)", nodeBorder: "#4b5563" },
+  {
+    name: '赛博朋克',
+    bg: '#0a0e1a',
+    grid: 'rgba(0,212,255,0.08)',
+    textColor: '#00d4ff',
+    accentColor: '#00d4ff',
+    nodeBg: 'rgba(0,212,255,0.1)',
+    nodeBorder: '#00d4ff',
+  },
+  {
+    name: '极光绿',
+    bg: '#0a1a0a',
+    grid: 'rgba(34,197,94,0.08)',
+    textColor: '#22c55e',
+    accentColor: '#22c55e',
+    nodeBg: 'rgba(34,197,94,0.1)',
+    nodeBorder: '#22c55e',
+  },
+  {
+    name: '霓虹粉',
+    bg: '#1a0a1a',
+    grid: 'rgba(236,72,153,0.08)',
+    textColor: '#ec4899',
+    accentColor: '#ec4899',
+    nodeBg: 'rgba(236,72,153,0.1)',
+    nodeBorder: '#ec4899',
+  },
+  {
+    name: '深海青',
+    bg: '#0a1a2a',
+    grid: 'rgba(6,182,212,0.08)',
+    textColor: '#06b6d4',
+    accentColor: '#06b6d4',
+    nodeBg: 'rgba(6,182,212,0.1)',
+    nodeBorder: '#06b6d4',
+  },
+  {
+    name: '琥珀黄',
+    bg: '#1a150a',
+    grid: 'rgba(245,158,11,0.08)',
+    textColor: '#f59e0b',
+    accentColor: '#f59e0b',
+    nodeBg: 'rgba(245,158,11,0.1)',
+    nodeBorder: '#f59e0b',
+  },
+  {
+    name: '紫雾',
+    bg: '#1a0a2e',
+    grid: 'rgba(168,85,247,0.08)',
+    textColor: '#a855f7',
+    accentColor: '#a855f7',
+    nodeBg: 'rgba(168,85,247,0.1)',
+    nodeBorder: '#a855f7',
+  },
+  {
+    name: '极简白',
+    bg: '#f8fafc',
+    grid: 'rgba(100,116,139,0.1)',
+    textColor: '#475569',
+    accentColor: '#3b82f6',
+    nodeBg: 'rgba(255,255,255,0.9)',
+    nodeBorder: '#94a3b8',
+  },
+  {
+    name: '暗夜',
+    bg: '#111827',
+    grid: 'rgba(156,163,175,0.05)',
+    textColor: '#9ca3af',
+    accentColor: '#6b7280',
+    nodeBg: 'rgba(31,41,55,0.8)',
+    nodeBorder: '#4b5563',
+  },
 ]
 const activeTheme = ref<ThemePreset>(themePresets[0])
 const showThemeEditor = ref(false)
 // ── Animation Settings ──────────────────────────────────────────────
 const animSettings = ref<AnimSetting[]>([
-  { key: "edgeFlow", label: "连线流动", enabled: true, icon: "🌊" },
-  { key: "nodeAppear", label: "节点出现", enabled: true, icon: "✨" },
-  { key: "groupExpand", label: "分组展开", enabled: true, icon: "📦" },
-  { key: "forkJoin", label: "分支标注", enabled: true, icon: "⚡" },
-  { key: "heartbeat", label: "心跳脉冲", enabled: false, icon: "💓" },
-  { key: "shadow", label: "节点阴影", enabled: true, icon: "🌑" },
-  { key: "glow", label: "节点发光", enabled: false, icon: "💡" },
-  { key: "gridAnim", label: "网格动画", enabled: false, icon: "📐" },
+  { key: 'edgeFlow', label: '连线流动', enabled: true, icon: '🌊' },
+  { key: 'nodeAppear', label: '节点出现', enabled: true, icon: '✨' },
+  { key: 'groupExpand', label: '分组展开', enabled: true, icon: '📦' },
+  { key: 'forkJoin', label: '分支标注', enabled: true, icon: '⚡' },
+  { key: 'heartbeat', label: '心跳脉冲', enabled: false, icon: '💓' },
+  { key: 'shadow', label: '节点阴影', enabled: true, icon: '🌑' },
+  { key: 'glow', label: '节点发光', enabled: false, icon: '💡' },
+  { key: 'gridAnim', label: '网格动画', enabled: false, icon: '📐' },
 ])
 const showAnimPanel = ref(false)
 // ── Script Editor State ─────────────────────────────────────────────
 const showScriptFullEditor = ref(false)
-const scriptLang = ref("javascript")
-const scriptCode = ref("")
-const scriptImports = ref<Array<{name:string;source:string;alias?:string}>>([])
-const scriptVars = ref<Array<{name:string;type:string;scope:string;defaultValue:string}>>([])
-const scriptErrorConfig = ref<{onFail:string;retryCount:number;retryDelay:number}>({onFail:"skip",retryCount:3,retryDelay:1000})
-const scriptOutputBindings = ref<Array<{sourceField:string;targetField:string;transform:string}>>([])
+const scriptLang = ref('javascript')
+const scriptCode = ref('')
+const scriptImports = ref<Array<{ name: string; source: string; alias?: string }>>([])
+const scriptVars = ref<Array<{ name: string; type: string; scope: string; defaultValue: string }>>([])
+const scriptErrorConfig = ref<{ onFail: string; retryCount: number; retryDelay: number }>({
+  onFail: 'skip',
+  retryCount: 3,
+  retryDelay: 1000,
+})
+const scriptOutputBindings = ref<Array<{ sourceField: string; targetField: string; transform: string }>>([])
 const scriptLogs = ref<string[]>([])
-const scriptValidation = ref<any|null>(null)
+const scriptValidation = ref<any | null>(null)
 const showScriptLogPanel = ref(false)
 // ── Parallel Branch State ───────────────────────────────────────────
 const showParallelConfig = ref(false)
-const forkJoinConfig = ref<{strategy:string;joinStrategy:string;timeout:number}>({strategy:"and",joinStrategy:"all",timeout:30000})
-const parallelBranchStates = ref<Map<string,{status:string;progress:number}>>(new Map())
+const forkJoinConfig = ref<{ strategy: string; joinStrategy: string; timeout: number }>({
+  strategy: 'and',
+  joinStrategy: 'all',
+  timeout: 30000,
+})
+const parallelBranchStates = ref<Map<string, { status: string; progress: number }>>(new Map())
 const showBranchTimeline = ref(false)
-const branchTimeline = ref<Array<{time:number;branchId:string;event:string;details:string}>>([])
-const forkStyle = ref("standard")
-const joinStyle = ref("standard")
-const branchColors = ["#00d4ff","#10b981","#f59e0b","#ef4444","#a855f7","#ec4899","#06b6d4","#84cc16"]
+const branchTimeline = ref<Array<{ time: number; branchId: string; event: string; details: string }>>([])
+const forkStyle = ref('standard')
+const joinStyle = ref('standard')
+const branchColors = ['#00d4ff', '#10b981', '#f59e0b', '#ef4444', '#a855f7', '#ec4899', '#06b6d4', '#84cc16']
 // ── Node Properties State ───────────────────────────────────────────
 const showNodePropsEditor = ref(false)
-const nodePropEditorNodeIdx = ref<number|null>(null)
-const nodeDeepProps = ref<Record<string,Array<{category:string;label:string;icon:string;props:Array<{key:string;label:string;type:string;options?:string[];defaultVal:string}>}>>>({})
+const nodePropEditorNodeIdx = ref<number | null>(null)
+const nodeDeepProps = ref<
+  Record<
+    string,
+    Array<{
+      category: string
+      label: string
+      icon: string
+      props: Array<{ key: string; label: string; type: string; options?: string[]; defaultVal: string }>
+    }>
+  >
+>({})
 // ── Interaction State ───────────────────────────────────────────────
 const showToolPalette = ref(false)
-const activeTool = ref("select")
-const highlightMode = ref("none")
-const highlightNodeId = ref<number|null>(null)
+const activeTool = ref('select')
+const highlightMode = ref('none')
+const highlightNodeId = ref<number | null>(null)
 const animationSpeed = ref(1)
 const showRipples = ref(true)
 const showSubprocessToolbar = ref(true)
-const subprocessContextStack = ref<Array<{title:string;depth:number}>>([])
+const subprocessContextStack = ref<Array<{ title: string; depth: number }>>([])
 const subprocessBreadcrumb = ref('')
-const rippleEffects = ref<Array<{id:string;x:number;y:number;timestamp:number}>>([])
-const canvasAnimations = ref<Array<{id:string;type:string;target:string;startTime:number}>>([])
+const rippleEffects = ref<Array<{ id: string; x: number; y: number; timestamp: number }>>([])
+const canvasAnimations = ref<Array<{ id: string; type: string; target: string; startTime: number }>>([])
 // ── Deepened State ──────────────────────────────────────────────────
 const showDataMappingEditor = ref(false)
 const dataFields = ref<DataField[]>([])
@@ -5757,32 +7861,50 @@ const newVarName = ref('')
 const newVarType = ref('string')
 const showNodeTemplatesModal = ref(false)
 const customNodeTemplates = ref<NodeTemplate[]>([
-  { id: 't1', name: '审批流', icon: '📋', description: '多级审批流程模板', nodes: [
-    { id: 'tn1', type: 'start', label: '开始', x: 50, y: 200, w: 100, h: 50 },
-    { id: 'tn2', type: 'approval', label: '部门审批', x: 250, y: 200, w: 120, h: 60 },
-    { id: 'tn3', type: 'approval', label: '主管审批', x: 450, y: 200, w: 120, h: 60 },
-    { id: 'tn4', type: 'end', label: '结束', x: 650, y: 200, w: 100, h: 50 },
-  ]},
-  { id: 't2', name: '数据同步', icon: '🔄', description: '数据同步流程模板', nodes: [
-    { id: 'tn5', type: 'start', label: '开始', x: 50, y: 200, w: 100, h: 50 },
-    { id: 'tn6', type: 'script', label: '数据提取', x: 250, y: 200, w: 120, h: 50 },
-    { id: 'tn7', type: 'script', label: '数据转换', x: 450, y: 200, w: 120, h: 50 },
-    { id: 'tn8', type: 'script', label: '数据写入', x: 650, y: 200, w: 120, h: 50 },
-    { id: 'tn9', type: 'end', label: '完成', x: 850, y: 200, w: 100, h: 50 },
-  ]},
-  { id: 't3', name: '通知流程', icon: '🔔', description: '消息通知流程模板', nodes: [
-    { id: 'tn10', type: 'start', label: '触发', x: 50, y: 200, w: 100, h: 50 },
-    { id: 'tn11', type: 'task', label: '准备内容', x: 250, y: 200, w: 120, h: 50 },
-    { id: 'tn12', type: 'task', label: '发送通知', x: 450, y: 200, w: 120, h: 50 },
-    { id: 'tn13', type: 'end', label: '完成', x: 650, y: 200, w: 100, h: 50 },
-  ]},
+  {
+    id: 't1',
+    name: '审批流',
+    icon: '📋',
+    description: '多级审批流程模板',
+    nodes: [
+      { id: 'tn1', type: 'start', label: '开始', x: 50, y: 200, w: 100, h: 50 },
+      { id: 'tn2', type: 'approval', label: '部门审批', x: 250, y: 200, w: 120, h: 60 },
+      { id: 'tn3', type: 'approval', label: '主管审批', x: 450, y: 200, w: 120, h: 60 },
+      { id: 'tn4', type: 'end', label: '结束', x: 650, y: 200, w: 100, h: 50 },
+    ],
+  },
+  {
+    id: 't2',
+    name: '数据同步',
+    icon: '🔄',
+    description: '数据同步流程模板',
+    nodes: [
+      { id: 'tn5', type: 'start', label: '开始', x: 50, y: 200, w: 100, h: 50 },
+      { id: 'tn6', type: 'script', label: '数据提取', x: 250, y: 200, w: 120, h: 50 },
+      { id: 'tn7', type: 'script', label: '数据转换', x: 450, y: 200, w: 120, h: 50 },
+      { id: 'tn8', type: 'script', label: '数据写入', x: 650, y: 200, w: 120, h: 50 },
+      { id: 'tn9', type: 'end', label: '完成', x: 850, y: 200, w: 100, h: 50 },
+    ],
+  },
+  {
+    id: 't3',
+    name: '通知流程',
+    icon: '🔔',
+    description: '消息通知流程模板',
+    nodes: [
+      { id: 'tn10', type: 'start', label: '触发', x: 50, y: 200, w: 100, h: 50 },
+      { id: 'tn11', type: 'task', label: '准备内容', x: 250, y: 200, w: 120, h: 50 },
+      { id: 'tn12', type: 'task', label: '发送通知', x: 450, y: 200, w: 120, h: 50 },
+      { id: 'tn13', type: 'end', label: '完成', x: 650, y: 200, w: 100, h: 50 },
+    ],
+  },
 ])
 const perfMonitoring = ref(false)
 const perfMetrics = ref<PerfMetric[]>([])
 const showContextMenu = ref(false)
 const contextMenuX = ref(0)
 const contextMenuY = ref(0)
-const contextMenuNodeId = ref<number|null>(null)
+const contextMenuNodeId = ref<number | null>(null)
 const contextMenuEdges = ref<PDEdge[]>([])
 const showTooltip = ref(false)
 const tooltipX = ref(0)
@@ -5790,8 +7912,18 @@ const tooltipY = ref(0)
 const tooltipContent = ref('')
 const showGuideLines = ref(true)
 const guideLines = ref<GuideLineConfig[]>([])
-const snapConfig = ref<GridConfig>({ enabled: true, size: 20, showLabels: true, color: 'rgba(0,212,255,0.3)', opacity: 0.5 })
-const boxSelection = ref<{ active: boolean; start: {x:number;y:number}; end: {x:number;y:number} }>({ active: false, start: {x:0,y:0}, end: {x:0,y:0} })
+const snapConfig = ref<GridConfig>({
+  enabled: true,
+  size: 20,
+  showLabels: true,
+  color: 'rgba(0,212,255,0.3)',
+  opacity: 0.5,
+})
+const boxSelection = ref<{ active: boolean; start: { x: number; y: number }; end: { x: number; y: number } }>({
+  active: false,
+  start: { x: 0, y: 0 },
+  end: { x: 0, y: 0 },
+})
 const toastQueue = ref<ToastItem[]>([])
 const showConflictDetection = ref(false)
 const connectionConflicts = ref<ConnectionConflict[]>([])
@@ -5805,59 +7937,93 @@ function initFlowVars() {
   flowVars.value = [
     { id: genId(), name: 'processId', type: 'string', scope: 'global', defaultValue: '', description: '流程实例ID' },
     { id: genId(), name: 'userId', type: 'string', scope: 'global', defaultValue: '', description: '当前用户ID' },
-    { id: genId(), name: 'startTime', type: 'datetime', scope: 'global', defaultValue: '', description: '流程开始时间' },
+    {
+      id: genId(),
+      name: 'startTime',
+      type: 'datetime',
+      scope: 'global',
+      defaultValue: '',
+      description: '流程开始时间',
+    },
     { id: genId(), name: 'formData', type: 'json', scope: 'global', defaultValue: '{}', description: '表单数据' },
   ]
 }
 function addFlowVar() {
   if (!newVarName.value.trim()) return
   flowVars.value.push({
-    id: genId(), name: newVarName.value.trim(), type: newVarType.value,
-    scope: 'global', defaultValue: '', description: newVarName.value.trim() + '变量'
+    id: genId(),
+    name: newVarName.value.trim(),
+    type: newVarType.value,
+    scope: 'global',
+    defaultValue: '',
+    description: newVarName.value.trim() + '变量',
   })
   newVarName.value = ''
 }
 function removeFlowVar(id: string) {
-  flowVars.value = flowVars.value.filter(v => v.id !== id)
+  flowVars.value = flowVars.value.filter((v) => v.id !== id)
 }
 function openDataMapping() {
   showDataMappingEditor.value = true
   dataFields.value = processDef.value.nodes.map((n, i) => ({
-    name: n.id, type: n.type, label: n.label || n.type, nodeIdx: i, source: n.label
+    name: n.id,
+    type: n.type,
+    label: n.label || n.type,
+    nodeIdx: i,
+    source: n.label,
   }))
   if (mappingEdgesList.value.length === 0) {
     mappingEdgesList.value = [
-      { fromField: 'start.output', toField: 'task1.input', fromNodeIdx: 0, toNodeIdx: 1, transform: 'identity', condition: '' }
+      {
+        fromField: 'start.output',
+        toField: 'task1.input',
+        fromNodeIdx: 0,
+        toNodeIdx: 1,
+        transform: 'identity',
+        condition: '',
+      },
     ]
   }
 }
 function addMappingRow() {
-  mappingEdgesList.value.push({ fromField: '', toField: '', fromNodeIdx: 0, toNodeIdx: 1, transform: 'identity', condition: '' })
+  mappingEdgesList.value.push({
+    fromField: '',
+    toField: '',
+    fromNodeIdx: 0,
+    toNodeIdx: 1,
+    transform: 'identity',
+    condition: '',
+  })
 }
 function removeMappingRow(idx: number) {
   mappingEdgesList.value.splice(idx, 1)
 }
 function applyMapping() {
-  ;
   pushHistory()
   showToast('数据映射已应用', 'success')
 }
-function openFlowVarPanel() { showFlowVarPanel.value = !showFlowVarPanel.value }
+function openFlowVarPanel() {
+  showFlowVarPanel.value = !showFlowVarPanel.value
+}
 function toggleVarScope(v: FlowVar) {
   v.scope = v.scope === 'global' ? 'local' : v.scope === 'local' ? 'node' : 'global'
 }
 function addNodeTemplate() {
   if (!newNodeTemplateName.value.trim()) return
   customNodeTemplates.value.push({
-    id: genId(), name: newNodeTemplateName.value, icon: '📦',
-    description: newNodeTemplateDesc.value, nodes: []
+    id: genId(),
+    name: newNodeTemplateName.value,
+    icon: '📦',
+    description: newNodeTemplateDesc.value,
+    nodes: [],
   })
   newNodeTemplateName.value = ''
   newNodeTemplateDesc.value = ''
 }
 function loadNodeTemplate(tpl: NodeTemplate) {
   if (!processDef.value) return
-  const baseX = 100, baseY = 100
+  const baseX = 100,
+    baseY = 100
   tpl.nodes.forEach((n, i) => {
     const newNode: PDNode = {
       ...n,
@@ -5877,8 +8043,12 @@ function deleteNodeTemplate(idx: number) {
 function startPerfMonitor() {
   perfMonitoring.value = !perfMonitoring.value
   if (perfMonitoring.value) {
-    perfMetrics.value = processDef.value.nodes.map(n => ({
-      nodeId: n.id, startTime: 0, endTime: 0, duration: 0, status: 'running' as const
+    perfMetrics.value = processDef.value.nodes.map((n) => ({
+      nodeId: n.id,
+      startTime: 0,
+      endTime: 0,
+      duration: 0,
+      status: 'running' as const,
     }))
   }
 }
@@ -5887,17 +8057,19 @@ function stopPerfMonitor() {
   perfMetrics.value = []
 }
 function calculateDuration(nodeId: string): number {
-  const m = perfMetrics.value.find(p => p.nodeId === nodeId)
+  const m = perfMetrics.value.find((p) => p.nodeId === nodeId)
   return m ? m.endTime - m.startTime : 0
 }
-function showContext(x: number, y: number, nodeId: number|null, edges: PDEdge[]) {
+function showContext(x: number, y: number, nodeId: number | null, edges: PDEdge[]) {
   contextMenuNodeId.value = nodeId
   contextMenuEdges.value = edges
   contextMenuX.value = x
   contextMenuY.value = y
   showContextMenu.value = true
 }
-function hideContext() { showContextMenu.value = false }
+function hideContext() {
+  showContextMenu.value = false
+}
 function execContextAction(action: string) {
   hideContext()
   if (action === 'delete') deleteSelectedNode()
@@ -5908,23 +8080,29 @@ function execContextAction(action: string) {
   showToast('操作: ' + action, 'info')
 }
 function showNodeTooltip(x: number, y: number, content: string) {
-  tooltipX.value = x; tooltipY.value = y; tooltipContent.value = content
+  tooltipX.value = x
+  tooltipY.value = y
+  tooltipContent.value = content
   showTooltip.value = true
 }
-function hideNodeTooltip() { showTooltip.value = false }
-function getNodeTooltipContent(node: PDNode): string {
-  const outEdges = (processDef.value?.edges || []).filter(e => e.from === node.id).length
-  const inEdges = (processDef.value?.edges || []).filter(e => e.to === node.id).length
-  const profile = getNodeProfile(node.type)
-  return `📌 ${node.label || node.type} | 入边:${inEdges} 出边:${outEdges} | 尺寸:${node.w||120}×${node.h||50} | ${profile.role}`
+function hideNodeTooltip() {
+  showTooltip.value = false
 }
-function toggleGuidelines() { showGuideLines.value = !showGuideLines.value }
-function updateGuideLine(idx: number, key: string, val: number|string) {
+function getNodeTooltipContent(node: PDNode): string {
+  const outEdges = (processDef.value?.edges || []).filter((e) => e.from === node.id).length
+  const inEdges = (processDef.value?.edges || []).filter((e) => e.to === node.id).length
+  const profile = getNodeProfile(node.type)
+  return `📌 ${node.label || node.type} | 入边:${inEdges} 出边:${outEdges} | 尺寸:${node.w || 120}×${node.h || 50} | ${profile.role}`
+}
+function toggleGuidelines() {
+  showGuideLines.value = !showGuideLines.value
+}
+function updateGuideLine(idx: number, key: string, val: number | string) {
   if (idx < guideLines.value.length) {
-    (guideLines.value[idx] as any)[key] = val
+    ;(guideLines.value[idx] as any)[key] = val
   }
 }
-function addGuideLine(type: 'horizontal'|'vertical') {
+function addGuideLine(type: 'horizontal' | 'vertical') {
   guideLines.value.push({ type, position: 200, length: 400 })
 }
 function removeGuideLine(idx: number) {
@@ -5936,7 +8114,7 @@ function startBoxSelect(e: MouseEvent) {
   boxSelection.value = {
     active: true,
     start: { x: e.clientX - rect.left, y: e.clientY - rect.top },
-    end: { x: e.clientX - rect.left, y: e.clientY - rect.top }
+    end: { x: e.clientX - rect.left, y: e.clientY - rect.top },
   }
 }
 function moveBoxSelect(e: MouseEvent) {
@@ -5947,14 +8125,17 @@ function moveBoxSelect(e: MouseEvent) {
 function endBoxSelect() {
   if (!boxSelection.value.active) return
   boxSelection.value.active = false
-  const s = boxSelection.value.start, en = boxSelection.value.end
-  const sx = Math.min(s.x, en.x), sy = Math.min(s.y, en.y)
-  const ex = Math.max(s.x, en.x), ey = Math.max(s.y, en.y)
+  const s = boxSelection.value.start,
+    en = boxSelection.value.end
+  const sx = Math.min(s.x, en.x),
+    sy = Math.min(s.y, en.y)
+  const ex = Math.max(s.x, en.x),
+    ey = Math.max(s.y, en.y)
   const ws = snapConfig.value.size
   const nodes = processDef.value?.nodes || []
   const canvasW = canvasRef.value?.clientWidth || 800
   const canvasH = canvasRef.value?.clientHeight || 600
-  nodes.forEach(n => {
+  nodes.forEach((n) => {
     const nx = (n.x * zoom.value + panX.value) / 1
     const ny = (n.y * zoom.value + panY.value) / 1
     if (nx >= sx && nx <= ex && ny >= sy && ny <= ey) {
@@ -5962,11 +8143,11 @@ function endBoxSelect() {
     }
   })
 }
-function showToast(message: string, type: "info"|"success"|"warning"|"error" = "info") {
+function showToast(message: string, type: 'info' | 'success' | 'warning' | 'error' = 'info') {
   const id = genId()
   toastQueue.value.push({ id, message, type, duration: 3000 })
   setTimeout(() => {
-    toastQueue.value = toastQueue.value.filter(t => t.id !== id)
+    toastQueue.value = toastQueue.value.filter((t) => t.id !== id)
   }, 3000)
 }
 function detectConflicts(): ConnectionConflict[] {
@@ -5974,18 +8155,19 @@ function detectConflicts(): ConnectionConflict[] {
   const edges = processDef.value?.edges || []
   for (let i = 0; i < edges.length; i++) {
     for (let j = i + 1; j < edges.length; j++) {
-      const e1 = edges[i], e2 = edges[j]
+      const e1 = edges[i],
+        e2 = edges[j]
       if (e1.from === e2.from && e1.to === e2.to && e1.id !== e2.id) {
         conflicts.push({ edge1: e1, edge2: e2, issue: '重复连接', severity: 'warning' })
       }
-      const n1 = processDef.value?.nodes.find(n => n.id === e1.from)
-      const n2 = processDef.value?.nodes.find(n => n.id === e1.to)
-      const n3 = processDef.value?.nodes.find(n => n.id === e2.from)
-      const n4 = processDef.value?.nodes.find(n => n.id === e2.to)
+      const n1 = processDef.value?.nodes.find((n) => n.id === e1.from)
+      const n2 = processDef.value?.nodes.find((n) => n.id === e1.to)
+      const n3 = processDef.value?.nodes.find((n) => n.id === e2.from)
+      const n4 = processDef.value?.nodes.find((n) => n.id === e2.to)
       if (n1 && n2 && n3 && n4) {
-        const dx = Math.abs((n1.x+n2.x)/2 - (n3.x+n4.x)/2)
-        const dy = Math.abs((n1.y+n2.y)/2 - (n3.y+n4.y)/2)
-        if (dx < 30 && dy < 20 && !(e1.from===e2.from && e1.to===e2.to)) {
+        const dx = Math.abs((n1.x + n2.x) / 2 - (n3.x + n4.x) / 2)
+        const dy = Math.abs((n1.y + n2.y) / 2 - (n3.y + n4.y) / 2)
+        if (dx < 30 && dy < 20 && !(e1.from === e2.from && e1.to === e2.to)) {
           conflicts.push({ edge1: e1, edge2: e2, issue: '连线交叉', severity: 'error' })
         }
       }
@@ -6008,7 +8190,7 @@ function startSimulation() {
   })
   const totalDuration = t + 500
   const interval = setInterval(() => {
-    simProgress.value = Math.min(100, (Date.now() % totalDuration) / totalDuration * 100)
+    simProgress.value = Math.min(100, ((Date.now() % totalDuration) / totalDuration) * 100)
     if (simProgress.value >= 100) {
       clearInterval(interval)
       simRunning.value = false
@@ -6020,13 +8202,15 @@ function stopSimulation() {
   simRunning.value = false
   simProgress.value = 0
 }
-function toggleShortcutHelp() { showShortcutHelp.value = !showShortcutHelp.value }
+function toggleShortcutHelp() {
+  showShortcutHelp.value = !showShortcutHelp.value
+}
 function handleShortcut(e: KeyboardEvent) {
   const key = e.key
   const ctrl = e.ctrlKey || e.metaKey
   const shift = e.shiftKey
-  const combo = ctrl ? (shift ? 'Ctrl+Shift+'+key : 'Ctrl+'+key) : key
-  const match = shortcuts.find(s => {
+  const combo = ctrl ? (shift ? 'Ctrl+Shift+' + key : 'Ctrl+' + key) : key
+  const match = shortcuts.find((s) => {
     if (s.key === combo) return true
     if (s.key === key && !ctrl && !shift) return true
     return false
@@ -6038,8 +8222,10 @@ function handleShortcut(e: KeyboardEvent) {
     else if (match.action === 'delete') deleteSelectedNode()
     else if (match.action === 'selectAll') selectAllNodes()
     else if (match.action === 'togglePlay') togglePlay()
-    else if (match.action === 'deselect') { selectedNode.value = null; multiSelected.value.clear() }
-    else if (match.action === 'group') createGroup()
+    else if (match.action === 'deselect') {
+      selectedNode.value = null
+      multiSelected.value.clear()
+    } else if (match.action === 'group') createGroup()
     else if (match.action === 'ungroup') ungroupSelected()
     else if (match.action === 'duplicate') subDuplicateNode()
     else if (match.action === 'save') saveCurrentProcess()
@@ -6055,19 +8241,19 @@ function previewNode(type: string, label: string) {
 function getProcessStatus(): string {
   const nodes = processDef.value?.nodes || []
   if (nodes.length === 0) return 'empty'
-  const hasStart = nodes.some(n => n.type === 'start')
-  const hasEnd = nodes.some(n => n.type === 'end')
+  const hasStart = nodes.some((n) => n.type === 'start')
+  const hasEnd = nodes.some((n) => n.type === 'end')
   if (!hasStart) return 'no-start'
   if (!hasEnd) return 'no-end'
-  const connected = nodes.every(n => {
-    const outs = (processDef.value?.edges || []).some(e => e.from === n.id)
-    const ins = (processDef.value?.edges || []).some(e => e.to === n.id)
+  const connected = nodes.every((n) => {
+    const outs = (processDef.value?.edges || []).some((e) => e.from === n.id)
+    const ins = (processDef.value?.edges || []).some((e) => e.to === n.id)
     return n.type === 'start' || outs || ins
   })
   return connected ? 'valid' : 'disconnected'
 }
 function getFlowVarValue(varName: string): string {
-  const v = flowVars.value.find(fv => fv.name === varName)
+  const v = flowVars.value.find((fv) => fv.name === varName)
   return v?.defaultValue || ''
 }
 function exportFlowVars(): string {
@@ -6077,7 +8263,9 @@ function importFlowVars(json: string) {
   try {
     flowVars.value = JSON.parse(json)
     showToast('变量导入成功', 'success')
-  } catch { showToast('导入失败', 'error') }
+  } catch {
+    showToast('导入失败', 'error')
+  }
 }
 function addFormRuleSet() {
   formRuleSets.value.push({ id: genId(), name: '新规则组', rules: [] })
@@ -6099,17 +8287,27 @@ function openScriptFullEditor(nodeIdx: number) {
       scriptLang.value = cfg.language || 'javascript'
       scriptCode.value = cfg.code || ''
       scriptImports.value = (cfg.imports || []).map((i: string) => ({ name: i, source: i }))
-      scriptVars.value = (cfg.variables || [])
+      scriptVars.value = cfg.variables || []
       scriptErrorConfig.value = cfg.errorHandling || scriptErrorConfig.value
     }
   }
 }
-function addScriptImport() { scriptImports.value.push({ name: '', source: '', alias: undefined }) }
-function removeScriptImport(idx: number) { scriptImports.value.splice(idx, 1) }
-function addScriptOutputBinding() { scriptOutputBindings.value.push({ sourceField: '', targetField: '', transform: 'identity' }) }
-function removeScriptOutputBinding(idx: number) { scriptOutputBindings.value.splice(idx, 1) }
+function addScriptImport() {
+  scriptImports.value.push({ name: '', source: '', alias: undefined })
+}
+function removeScriptImport(idx: number) {
+  scriptImports.value.splice(idx, 1)
+}
+function addScriptOutputBinding() {
+  scriptOutputBindings.value.push({ sourceField: '', targetField: '', transform: 'identity' })
+}
+function removeScriptOutputBinding(idx: number) {
+  scriptOutputBindings.value.splice(idx, 1)
+}
 function validateScriptCode(): any {
-  const errors: string[] = [], warnings: string[] = [], suggestions: string[] = []
+  const errors: string[] = [],
+    warnings: string[] = [],
+    suggestions: string[] = []
   if (!scriptCode.value.trim()) errors.push('脚本代码不能为空')
   if (scriptCode.value.length > 50000) warnings.push('脚本代码过长，建议拆分')
   if (scriptCode.value.includes('var ')) warnings.push('建议使用 let/const 代替 var')
@@ -6118,34 +8316,45 @@ function validateScriptCode(): any {
 function runScriptTest() {
   const result = validateScriptCode()
   scriptValidation.value = result
-  if (!result.valid) { scriptLogs.value = result.errors.map(e => '[ERROR] ' + e); showScriptLogPanel.value = true; return }
+  if (!result.valid) {
+    scriptLogs.value = result.errors.map((e) => '[ERROR] ' + e)
+    showScriptLogPanel.value = true
+    return
+  }
   // Execute in a sandboxed iframe (no DOM / localStorage / fetch access).
   // Static validation already confirmed the code is non-empty and safe.
   scriptLogs.value = ['[INFO] 开始执行（沙盒模式）...']
   showScriptLogPanel.value = true
-  runInSandbox(scriptCode.value, 5000).then(r => {
+  runInSandbox(scriptCode.value, 5000).then((r) => {
     if (r.ok) {
-      scriptLogs.value.push(
-        `[INFO] 执行成功`,
-        `[INFO] 输出: ${r.output}`,
-        `[INFO] 耗时: ${r.executionTimeMs}ms`,
-      )
+      scriptLogs.value.push(`[INFO] 执行成功`, `[INFO] 输出: ${r.output}`, `[INFO] 耗时: ${r.executionTimeMs}ms`)
     } else {
-      scriptLogs.value.push(
-        `[ERROR] 执行失败: ${r.error}`,
-        `[INFO] 耗时: ${r.executionTimeMs}ms`,
-      )
+      scriptLogs.value.push(`[ERROR] 执行失败: ${r.error}`, `[INFO] 耗时: ${r.executionTimeMs}ms`)
     }
     showScriptLogPanel.value = true
   })
 }
-function clearScriptLogs() { scriptLogs.value = [] }
+function clearScriptLogs() {
+  scriptLogs.value = []
+}
 function saveScriptToNode() {
   if (scriptEditorNodeIdx.value === null || !processDef.value) return
-  const cfg = { language: scriptLang.value, code: scriptCode.value, imports: scriptImports.value.map(i => i.name), variables: scriptVars.value, errorHandling: scriptErrorConfig.value, outputMapping: scriptOutputBindings.value, timeout: 30000 }
+  const cfg = {
+    language: scriptLang.value,
+    code: scriptCode.value,
+    imports: scriptImports.value.map((i) => i.name),
+    variables: scriptVars.value,
+    errorHandling: scriptErrorConfig.value,
+    outputMapping: scriptOutputBindings.value,
+    timeout: 30000,
+  }
   ;(processDef.value.nodes[scriptEditorNodeIdx.value] as any).scriptConfig = cfg
   pushHistory()
-  scriptLogs.value = ['[INFO] 脚本已保存到节点', '[INFO] 语言: ' + cfg.language, '[INFO] 变量数: ' + cfg.variables.length]
+  scriptLogs.value = [
+    '[INFO] 脚本已保存到节点',
+    '[INFO] 语言: ' + cfg.language,
+    '[INFO] 变量数: ' + cfg.variables.length,
+  ]
   showScriptLogPanel.value = true
   closeScriptEditor()
 }
@@ -6158,16 +8367,34 @@ function simulateParallelExecution() {
   branches.forEach((br, i) => {
     parallelBranchStates.value.set(br.id, { status: 'running', progress: 0 })
     t += 500 + Math.random() * 1000
-    branchTimeline.value.push({ time: t, branchId: br.id, event: 'start', details: '分支 ' + (br.label || 'B' + i) + ' 开始' })
+    branchTimeline.value.push({
+      time: t,
+      branchId: br.id,
+      event: 'start',
+      details: '分支 ' + (br.label || 'B' + i) + ' 开始',
+    })
     t += 1000 + Math.random() * 2000
     const ok = Math.random() > 0.1
     parallelBranchStates.value.set(br.id, { status: ok ? 'completed' : 'failed', progress: 100, endTime: t })
-    branchTimeline.value.push({ time: t, branchId: br.id, event: ok ? 'complete' : 'fail', details: ok ? '分支 ' + (br.label || 'B' + i) + ' 完成' : '分支 ' + (br.label || 'B' + i) + ' 失败' })
+    branchTimeline.value.push({
+      time: t,
+      branchId: br.id,
+      event: ok ? 'complete' : 'fail',
+      details: ok ? '分支 ' + (br.label || 'B' + i) + ' 完成' : '分支 ' + (br.label || 'B' + i) + ' 失败',
+    })
   })
   showBranchTimeline.value = true
 }
 function getBranchStatusColor(status: string): string {
-  return { running: 'var(--color-primary)', completed: 'var(--color-success)', failed: 'var(--color-danger)', timeout: 'var(--color-warning)', pending: 'var(--text-muted)' }[status] || 'var(--text-muted)'
+  return (
+    {
+      running: 'var(--color-primary)',
+      completed: 'var(--color-success)',
+      failed: 'var(--color-danger)',
+      timeout: 'var(--color-warning)',
+      pending: 'var(--text-muted)',
+    }[status] || 'var(--text-muted)'
+  )
 }
 // ── Node Properties Functions ───────────────────────────────────────
 function openNodePropsEditor(nodeIdx: number) {
@@ -6183,8 +8410,7 @@ function getNodePropValue(node: PDNode, category: string, key: string): any {
 }
 function setNodePropValue(node: PDNode, category: string, key: string, value: any) {
   if (!(node as any).props) (node as any).props = {}
-  if (!(node as any).props[category]) (node as any).props[category] = {}
-  (node as any).props[category][key] = value
+  if (!(node as any).props[category]) (node as any).props[category] = {}(node as any).props[category][key] = value
 }
 function saveNodeProps() {
   if (nodePropEditorNodeIdx.value === null || !processDef.value) return
@@ -6197,12 +8423,16 @@ function triggerRipple(x: number, y: number) {
   if (!showRipples.value) return
   const id = genId()
   rippleEffects.value.push({ id, x, y, timestamp: Date.now() })
-  setTimeout(() => { rippleEffects.value = rippleEffects.value.filter(r => r.id !== id) }, 600)
+  setTimeout(() => {
+    rippleEffects.value = rippleEffects.value.filter((r) => r.id !== id)
+  }, 600)
 }
 function setActiveTool(tool: string) {
   activeTool.value = tool
 }
-function toggleHighlightMode(mode: string) { highlightMode.value = mode }
+function toggleHighlightMode(mode: string) {
+  highlightMode.value = mode
+}
 function getHighlightNodes(): Set<string> {
   if (highlightNodeId.value === null) return new Set()
   const nodes = new Set<string>()
@@ -6210,7 +8440,7 @@ function getHighlightNodes(): Set<string> {
   const n = processDef.value?.nodes[highlightNodeId.value]
   if (!n) return nodes
   nodes.add(n.id)
-  edges.forEach(e => {
+  edges.forEach((e) => {
     if (highlightMode.value === 'incoming' && e.to === n.id) nodes.add(e.from)
     if (highlightMode.value === 'outgoing' && e.from === n.id) nodes.add(e.to)
     if (highlightMode.value === 'all' && (e.from === n.id || e.to === n.id)) nodes.add(e.from === n.id ? e.to : e.from)
@@ -6220,30 +8450,59 @@ function getHighlightNodes(): Set<string> {
 function applyAnimation(type: string, target?: string) {
   const id = genId()
   canvasAnimations.value.push({ id, type, target: target || 'all', startTime: Date.now() })
-  setTimeout(() => { canvasAnimations.value = canvasAnimations.value.filter(a => a.id !== id) }, 2000 / animationSpeed.value)
+  setTimeout(() => {
+    canvasAnimations.value = canvasAnimations.value.filter((a) => a.id !== id)
+  }, 2000 / animationSpeed.value)
 }
-function resetAnimations() { canvasAnimations.value = [] }
+function resetAnimations() {
+  canvasAnimations.value = []
+}
 function getNodeOutlineColor(node: PDNode): string {
   const hl = getHighlightNodes()
   if (hl.size > 0 && !hl.has(node.id)) return 'rgba(100,116,139,0.3)'
-  return selectedNode.value !== null && selectedNode.value === processDef.value?.nodes.indexOf(node) ? 'var(--color-primary)' : 'var(--border-color)'
+  return selectedNode.value !== null && selectedNode.value === processDef.value?.nodes.indexOf(node)
+    ? 'var(--color-primary)'
+    : 'var(--border-color)'
 }
 function getNodeFillColor(node: PDNode): string {
   const hl = getHighlightNodes()
   if (hl.size > 0 && !hl.has(node.id)) return 'rgba(30,41,59,0.5)'
-  const colors: Record<string,string> = { start:'rgba(16,185,129,0.15)', end:'rgba(239,68,68,0.15)', task:'rgba(0,212,255,0.1)', approval:'rgba(99,102,241,0.15)', subprocess:'rgba(168,85,247,0.15)', script:'rgba(34,197,94,0.15)', gate_and:'rgba(245,158,11,0.15)', gate_or:'rgba(245,158,11,0.15)', gate_xor:'rgba(245,158,11,0.15)', parallel:'rgba(6,182,212,0.15)' }
+  const colors: Record<string, string> = {
+    start: 'rgba(16,185,129,0.15)',
+    end: 'rgba(239,68,68,0.15)',
+    task: 'rgba(0,212,255,0.1)',
+    approval: 'rgba(99,102,241,0.15)',
+    subprocess: 'rgba(168,85,247,0.15)',
+    script: 'rgba(34,197,94,0.15)',
+    gate_and: 'rgba(245,158,11,0.15)',
+    gate_or: 'rgba(245,158,11,0.15)',
+    gate_xor: 'rgba(245,158,11,0.15)',
+    parallel: 'rgba(6,182,212,0.15)',
+  }
   return colors[node.type] || 'rgba(30,41,59,0.8)'
 }
 function computeNodeShadow(node: PDNode): string {
-  if (selectedNode.value !== null && selectedNode.value === processDef.value?.nodes.indexOf(node)) return '0 0 20px rgba(0,212,255,0.5), 0 4px 12px rgba(0,0,0,0.3)'
+  if (selectedNode.value !== null && selectedNode.value === processDef.value?.nodes.indexOf(node))
+    return '0 0 20px rgba(0,212,255,0.5), 0 4px 12px rgba(0,0,0,0.3)'
   return '0 2px 8px rgba(0,0,0,0.2)'
 }
-function formatDuration(ms: number): string { return ms < 1000 ? ms + 'ms' : (ms/1000).toFixed(1) + 's' }
-function formatTimestamp(ts: number): string { return new Date(ts).toLocaleString('zh-CN') }
+function formatDuration(ms: number): string {
+  return ms < 1000 ? ms + 'ms' : (ms / 1000).toFixed(1) + 's'
+}
+function formatTimestamp(ts: number): string {
+  return new Date(ts).toLocaleString('zh-CN')
+}
 // ── Archive Functions ───────────────────────────────────────────────
 function createArchive() {
   if (!processDef.value || !currentProcess.value) return
-  processArchive.value.unshift({ id: genId(), timestamp: Date.now(), name: newArchiveLabel.value || '存档' + (processArchive.value.length + 1), nodeCount: processDef.value.nodes.length, edgeCount: processDef.value.edges?.length || 0, snapshot: JSON.parse(JSON.stringify(processDef.value)) })
+  processArchive.value.unshift({
+    id: genId(),
+    timestamp: Date.now(),
+    name: newArchiveLabel.value || '存档' + (processArchive.value.length + 1),
+    nodeCount: processDef.value.nodes.length,
+    edgeCount: processDef.value.edges?.length || 0,
+    snapshot: JSON.parse(JSON.stringify(processDef.value)),
+  })
   newArchiveLabel.value = ''
   newArchiveDesc.value = ''
   showToast('流程已归档', 'success')
@@ -6255,20 +8514,23 @@ function navigateToBreadcrumb(idx: number) {
     if (target.depth > 0) {
       // Restore parent context
       subprocessDepth.value = target.depth
-      subprocessBreadcrumb.value = subprocessContextStack.value.slice(0, idx + 1).map(c => c.title).join(' > ')
+      subprocessBreadcrumb.value = subprocessContextStack.value
+        .slice(0, idx + 1)
+        .map((c) => c.title)
+        .join(' > ')
     }
   }
 }
 function enterSubprocessBreadcrumb(title: string) {
   subprocessContextStack.value.push({ title, depth: subprocessDepth.value + 1 })
   subprocessDepth.value++
-  subprocessBreadcrumb.value = subprocessContextStack.value.map(c => c.title).join(' > ')
+  subprocessBreadcrumb.value = subprocessContextStack.value.map((c) => c.title).join(' > ')
 }
 function exitSubprocessBreadcrumb() {
   if (subprocessContextStack.value.length > 0) {
     subprocessContextStack.value.pop()
     subprocessDepth.value = Math.max(0, subprocessDepth.value - 1)
-    subprocessBreadcrumb.value = subprocessContextStack.value.map(c => c.title).join(' > ')
+    subprocessBreadcrumb.value = subprocessContextStack.value.map((c) => c.title).join(' > ')
     if (subprocessContextStack.value.length === 0) {
       subprocessEditing.value = false
       subprocessDepth.value = 0
@@ -6281,44 +8543,144 @@ function compareArchives(idx1: number, idx2: number) {
   diffRightIdx.value = idx2
   showDiffView.value = true
 }
-function getDiffStats(left: ProcessArchive, right: ProcessArchive): { added: number; removed: number; modified: number } {
-  const leftIds = new Set(left.snapshot.nodes.map(n => n.id))
-  const rightIds = new Set(right.snapshot.nodes.map(n => n.id))
-  const added = [...rightIds].filter(id => !leftIds.has(id)).length
-  const removed = [...leftIds].filter(id => !rightIds.has(id)).length
+function getDiffStats(
+  left: ProcessArchive,
+  right: ProcessArchive,
+): { added: number; removed: number; modified: number } {
+  const leftIds = new Set(left.snapshot.nodes.map((n) => n.id))
+  const rightIds = new Set(right.snapshot.nodes.map((n) => n.id))
+  const added = [...rightIds].filter((id) => !leftIds.has(id)).length
+  const removed = [...leftIds].filter((id) => !rightIds.has(id)).length
   return { added, removed, modified: 0 }
 }
 // ── Utility Functions ───────────────────────────────────────────────
-function clamp(val: number, min: number, max: number): number { return Math.max(min, Math.min(max, val)) }
-function lerp(a: number, b: number, t: number): number { return a + (b - a) * t }
-function easeInOutCubic(t: number): number { return t < 0.5 ? 4*t*t*t : 1 - Math.pow(-2*t+2, 3)/2 }
-function generateNodeId(prefix: string = 'node'): string { return prefix + '_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2, 6) }
-function deepClone<T>(obj: T): T { return JSON.parse(JSON.stringify(obj)) }
+function clamp(val: number, min: number, max: number): number {
+  return Math.max(min, Math.min(max, val))
+}
+function lerp(a: number, b: number, t: number): number {
+  return a + (b - a) * t
+}
+function easeInOutCubic(t: number): number {
+  return t < 0.5 ? 4 * t * t * t : 1 - (-2 * t + 2) ** 3 / 2
+}
+function generateNodeId(prefix: string = 'node'): string {
+  return prefix + '_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2, 6)
+}
+function deepClone<T>(obj: T): T {
+  return JSON.parse(JSON.stringify(obj))
+}
 // ── Script Code Completion ───────────────────────────────────────────
-const scriptKeywords = ['const','let','var','function','return','if','else','for','while','do','switch','case','break','continue','try','catch','finally','throw','new','this','class','extends','import','export','from','default','async','await','yield','typeof','instanceof','in','of','delete','void','null','undefined','true','false']
-const scriptBuiltins = ['console','Math','JSON','Array','Object','String','Number','Boolean','Date','RegExp','Map','Set','Promise','Error','parseInt','parseFloat']
-const scriptFlowVars = ['processId','userId','startTime','endTime','status','result','output','input','context','formData']
-const scriptAutocomplete = ref<Array<{label:string;insertText:string;type:'keyword'|'builtin'|'var'|'method';detail?:string}>>([])
+const scriptKeywords = [
+  'const',
+  'let',
+  'var',
+  'function',
+  'return',
+  'if',
+  'else',
+  'for',
+  'while',
+  'do',
+  'switch',
+  'case',
+  'break',
+  'continue',
+  'try',
+  'catch',
+  'finally',
+  'throw',
+  'new',
+  'this',
+  'class',
+  'extends',
+  'import',
+  'export',
+  'from',
+  'default',
+  'async',
+  'await',
+  'yield',
+  'typeof',
+  'instanceof',
+  'in',
+  'of',
+  'delete',
+  'void',
+  'null',
+  'undefined',
+  'true',
+  'false',
+]
+const scriptBuiltins = [
+  'console',
+  'Math',
+  'JSON',
+  'Array',
+  'Object',
+  'String',
+  'Number',
+  'Boolean',
+  'Date',
+  'RegExp',
+  'Map',
+  'Set',
+  'Promise',
+  'Error',
+  'parseInt',
+  'parseFloat',
+]
+const scriptFlowVars = [
+  'processId',
+  'userId',
+  'startTime',
+  'endTime',
+  'status',
+  'result',
+  'output',
+  'input',
+  'context',
+  'formData',
+]
+const scriptAutocomplete = ref<
+  Array<{ label: string; insertText: string; type: 'keyword' | 'builtin' | 'var' | 'method'; detail?: string }>
+>([])
 const showAutocomplete = ref(false)
 const autocompleteIdx = ref(0)
 const currentCompletionWord = ref('')
 function triggerAutocomplete(text: string, pos: number): void {
   const before = text.substring(0, pos)
   const wordMatch = before.match(/[\w.]*$/)
-  if (!wordMatch || wordMatch[0].length < 1) { showAutocomplete.value = false; return }
+  if (!wordMatch || wordMatch[0].length < 1) {
+    showAutocomplete.value = false
+    return
+  }
   currentCompletionWord.value = wordMatch[0]
   const suggestions: typeof scriptAutocomplete.value = []
   const word = wordMatch[0].toLowerCase()
-  scriptKeywords.forEach(k => { if (k.startsWith(word) && k !== word) suggestions.push({label:k, insertText:k, type:'keyword', detail:'关键字'}) })
-  scriptBuiltins.forEach(b => { if (b.startsWith(word) && !suggestions.find(s=>s.label===b)) suggestions.push({label:b, insertText:b, type:'builtin', detail:'内置对象'}) })
-  scriptFlowVars.forEach(v => { if (v.startsWith(word) && !suggestions.find(s=>s.label===v)) suggestions.push({label:v, insertText:v, type:'var', detail:'流程变量'}) })
-  if (word.includes('console.')) suggestions.push({label:'log',insertText:'log(',type:'method',detail:'console.log()'});
-  if (word.includes('Math.')) suggestions.push({label:'floor',insertText:'floor(',type:'method',detail:'Math.floor()'});
-  if (word.includes('JSON.')) suggestions.push({label:'parse',insertText:'parse(',type:'method',detail:'JSON.parse()'});
-  if (word.includes('Array.')) suggestions.push({label:'from',insertText:'from(',type:'method',detail:'Array.from()'});
-  if (word.includes('Promise.')) suggestions.push({label:'resolve',insertText:'resolve(',type:'method',detail:'Promise.resolve()'});
-  if (word.includes('Map.')) suggestions.push({label:'get',insertText:'get(',type:'method',detail:'Map.get()'});
-  if (word.includes('Set.')) suggestions.push({label:'has',insertText:'has(',type:'method',detail:'Set.has()'});
+  scriptKeywords.forEach((k) => {
+    if (k.startsWith(word) && k !== word)
+      suggestions.push({ label: k, insertText: k, type: 'keyword', detail: '关键字' })
+  })
+  scriptBuiltins.forEach((b) => {
+    if (b.startsWith(word) && !suggestions.find((s) => s.label === b))
+      suggestions.push({ label: b, insertText: b, type: 'builtin', detail: '内置对象' })
+  })
+  scriptFlowVars.forEach((v) => {
+    if (v.startsWith(word) && !suggestions.find((s) => s.label === v))
+      suggestions.push({ label: v, insertText: v, type: 'var', detail: '流程变量' })
+  })
+  if (word.includes('console.'))
+    suggestions.push({ label: 'log', insertText: 'log(', type: 'method', detail: 'console.log()' })
+  if (word.includes('Math.'))
+    suggestions.push({ label: 'floor', insertText: 'floor(', type: 'method', detail: 'Math.floor()' })
+  if (word.includes('JSON.'))
+    suggestions.push({ label: 'parse', insertText: 'parse(', type: 'method', detail: 'JSON.parse()' })
+  if (word.includes('Array.'))
+    suggestions.push({ label: 'from', insertText: 'from(', type: 'method', detail: 'Array.from()' })
+  if (word.includes('Promise.'))
+    suggestions.push({ label: 'resolve', insertText: 'resolve(', type: 'method', detail: 'Promise.resolve()' })
+  if (word.includes('Map.')) suggestions.push({ label: 'get', insertText: 'get(', type: 'method', detail: 'Map.get()' })
+  if (word.includes('Set.')) suggestions.push({ label: 'has', insertText: 'has(', type: 'method', detail: 'Set.has()' })
   scriptAutocomplete.value = suggestions.slice(0, 20)
   autocompleteIdx.value = 0
   showAutocomplete.value = suggestions.length > 0
@@ -6341,94 +8703,169 @@ function selectCompletion(idx: number): void {
     textarea.focus()
   }, 10)
 }
-function closeAutocomplete() { showAutocomplete.value = false }
+function closeAutocomplete() {
+  showAutocomplete.value = false
+}
 function getCompletionKey(e: KeyboardEvent): void {
   if (!showAutocomplete.value) return
-  if (e.key === 'ArrowDown') { e.preventDefault(); autocompleteIdx.value = Math.min(autocompleteIdx.value + 1, scriptAutocomplete.value.length - 1) }
-  else if (e.key === 'ArrowUp') { e.preventDefault(); autocompleteIdx.value = Math.max(autocompleteIdx.value - 1, 0) }
-  else if (e.key === 'Enter' || e.key === 'Tab') {
-    if (autocompleteIdx.value >= 0 && autocompleteIdx.value < scriptAutocomplete.value.length) { e.preventDefault(); selectCompletion(autocompleteIdx.value) }
+  if (e.key === 'ArrowDown') {
+    e.preventDefault()
+    autocompleteIdx.value = Math.min(autocompleteIdx.value + 1, scriptAutocomplete.value.length - 1)
+  } else if (e.key === 'ArrowUp') {
+    e.preventDefault()
+    autocompleteIdx.value = Math.max(autocompleteIdx.value - 1, 0)
+  } else if (e.key === 'Enter' || e.key === 'Tab') {
+    if (autocompleteIdx.value >= 0 && autocompleteIdx.value < scriptAutocomplete.value.length) {
+      e.preventDefault()
+      selectCompletion(autocompleteIdx.value)
+    }
+  } else if (e.key === 'Escape') {
+    e.preventDefault()
+    closeAutocomplete()
   }
-  else if (e.key === 'Escape') { e.preventDefault(); closeAutocomplete() }
 }
 // ── Syntax Highlighting ──────────────────────────────────────────────
-interface HighlightToken { type: 'keyword'|'string'|'number'|'comment'|'operator'|'builtin'|'variable'|'punctuator'|'plain'; value: string }
+interface HighlightToken {
+  type: 'keyword' | 'string' | 'number' | 'comment' | 'operator' | 'builtin' | 'variable' | 'punctuator' | 'plain'
+  value: string
+}
 function tokenizeScript(code: string): HighlightToken[] {
   const tokens: HighlightToken[] = []
   let i = 0
   while (i < code.length) {
-    if (code[i] === '/' && code[i+1] === '/') { let j = i; while (j < code.length && code[j] !== '\n') j++; tokens.push({type:'comment',value:code.substring(i,j)}); i=j; continue }
-    if (code[i] === '/' && code[i+1] === '*') { let j = i+2; while (j < code.length && !(code[j]==='*'&&code[j+1]==='/')) j++; j+=2; tokens.push({type:'comment',value:code.substring(i,j)}); i=j; continue }
-    if (code[i]==='"'||code[i]==="'"||code[i]==='`') {
-      const q = code[i]; let j = i+1
-      while (j < code.length && code[j] !== q) { if (code[j]==='\\') j++; j++ }
-      j++; tokens.push({type:'string',value:code.substring(i,j)}); i=j; continue
+    if (code[i] === '/' && code[i + 1] === '/') {
+      let j = i
+      while (j < code.length && code[j] !== '\n') j++
+      tokens.push({ type: 'comment', value: code.substring(i, j) })
+      i = j
+      continue
     }
-    if (/\d/.test(code[i]) && (i===0||!/\w/.test(code[i-1]))) {
-      let j = i; while (j < code.length && /[\d.xXa-fA-FeE+\-]/.test(code[j])) j++
-      tokens.push({type:'number',value:code.substring(i,j)}); i=j; continue
+    if (code[i] === '/' && code[i + 1] === '*') {
+      let j = i + 2
+      while (j < code.length && !(code[j] === '*' && code[j + 1] === '/')) j++
+      j += 2
+      tokens.push({ type: 'comment', value: code.substring(i, j) })
+      i = j
+      continue
+    }
+    if (code[i] === '"' || code[i] === "'" || code[i] === '`') {
+      const q = code[i]
+      let j = i + 1
+      while (j < code.length && code[j] !== q) {
+        if (code[j] === '\\') j++
+        j++
+      }
+      j++
+      tokens.push({ type: 'string', value: code.substring(i, j) })
+      i = j
+      continue
+    }
+    if (/\d/.test(code[i]) && (i === 0 || !/\w/.test(code[i - 1]))) {
+      let j = i
+      while (j < code.length && /[\d.xXa-fA-FeE+-]/.test(code[j])) j++
+      tokens.push({ type: 'number', value: code.substring(i, j) })
+      i = j
+      continue
     }
     if (/[a-zA-Z_$]/.test(code[i])) {
-      let j = i; while (j < code.length && /[\w$]/.test(code[j])) j++
-      const word = code.substring(i,j)
-      if (scriptKeywords.includes(word)) tokens.push({type:'keyword',value:word})
-      else if (scriptBuiltins.includes(word)) tokens.push({type:'builtin',value:word})
-      else tokens.push({type:'variable',value:word})
-      i=j; continue
+      let j = i
+      while (j < code.length && /[\w$]/.test(code[j])) j++
+      const word = code.substring(i, j)
+      if (scriptKeywords.includes(word)) tokens.push({ type: 'keyword', value: word })
+      else if (scriptBuiltins.includes(word)) tokens.push({ type: 'builtin', value: word })
+      else tokens.push({ type: 'variable', value: word })
+      i = j
+      continue
     }
     if ('+-*/%=<>!&|^~?:'.includes(code[i])) {
-      let j = i; while (j < code.length && '+-*/%=<>!&|^~?:'.includes(code[j])) j++
-      tokens.push({type:'operator',value:code.substring(i,j)}); i=j; continue
+      let j = i
+      while (j < code.length && '+-*/%=<>!&|^~?:'.includes(code[j])) j++
+      tokens.push({ type: 'operator', value: code.substring(i, j) })
+      i = j
+      continue
     }
-    if ('(){}[].,;'.includes(code[i])) { tokens.push({type:'punctuator',value:code[i]}); i++ }
-    else { tokens.push({type:'plain',value:code[i]}); i++ }
+    if ('(){}[].,;'.includes(code[i])) {
+      tokens.push({ type: 'punctuator', value: code[i] })
+      i++
+    } else {
+      tokens.push({ type: 'plain', value: code[i] })
+      i++
+    }
   }
   return tokens
 }
 function highlightScript(code: string): string {
   const tokens = tokenizeScript(code)
   const colorMap: Record<string, string> = {
-    keyword: '#c678dd', string: '#98c379', number: '#d19a66',
-    comment: '#5c6370', operator: '#56b6c2', builtin: '#e5c07b',
-    variable: '#abb2bf', punctuator: '#abb2bf', plain: '#abb2bf'
+    keyword: '#c678dd',
+    string: '#98c379',
+    number: '#d19a66',
+    comment: '#5c6370',
+    operator: '#56b6c2',
+    builtin: '#e5c07b',
+    variable: '#abb2bf',
+    punctuator: '#abb2bf',
+    plain: '#abb2bf',
   }
-  return tokens.map(t => `<span style="color:${colorMap[t.type]}">${t.value.replace(/</g,'&lt;').replace(/>/g,'&gt;')}</span>`).join('')
+  return tokens
+    .map((t) => `<span style="color:${colorMap[t.type]}">${t.value.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</span>`)
+    .join('')
 }
-function getHighlightHTML(): string { return highlightScript(scriptCode.value) }
+function getHighlightHTML(): string {
+  return highlightScript(scriptCode.value)
+}
 // ── Parallel Branch SVG Renderer ─────────────────────────────────────
-interface ParticlePoint { x: number; y: number; t: number; speed: number }
-interface BranchParticle { branchId: string; point: ParticlePoint; color: string; size: number }
+interface ParticlePoint {
+  x: number
+  y: number
+  t: number
+  speed: number
+}
+interface BranchParticle {
+  branchId: string
+  point: ParticlePoint
+  color: string
+  size: number
+}
 const branchParticles = ref<Map<string, BranchParticle[]>>(new Map())
 const showBranchParticles = ref(true)
 const branchParticleSpeed = ref(2)
 function initBranchParticles(): void {
   branchParticles.value = new Map()
   const branches = parallelBranches.value
-  branches.forEach(br => {
+  branches.forEach((br) => {
     const particles: BranchParticle[] = []
     for (let i = 0; i < 6; i++) {
-      particles.push({ branchId: br.id, point: { x: 0, y: 0, t: i / 6, speed: 0.004 * branchParticleSpeed.value }, color: br.color, size: 4 + Math.random() * 3 })
+      particles.push({
+        branchId: br.id,
+        point: { x: 0, y: 0, t: i / 6, speed: 0.004 * branchParticleSpeed.value },
+        color: br.color,
+        size: 4 + Math.random() * 3,
+      })
     }
     branchParticles.value.set(br.id, particles)
   })
 }
 function updateBranchParticles(): void {
   branchParticles.value.forEach((particles, branchId) => {
-    const branch = parallelBranches.value.find(b => b.id === branchId)
+    const branch = parallelBranches.value.find((b) => b.id === branchId)
     if (!branch || branch.nodes.length < 2) return
-    const nodes = branch.nodes.map(id => processDef.value?.nodes.find(n => n.id === id)).filter(Boolean) as PDNode[]
+    const nodes = branch.nodes.map((id) => processDef.value?.nodes.find((n) => n.id === id)).filter(Boolean) as PDNode[]
     if (nodes.length < 2) return
-    particles.forEach(p => {
+    particles.forEach((p) => {
       p.point.t += p.point.speed
       if (p.point.t > 1) p.point.t -= 1
       const t = p.point.t
       const segCount = nodes.length - 1
       const seg = Math.min(Math.floor(t * segCount), segCount - 1)
-      const segT = (t * segCount) - seg
-      const from = nodes[seg], to = nodes[seg + 1]
+      const segT = t * segCount - seg
+      const from = nodes[seg],
+        to = nodes[seg + 1]
       if (from && to) {
-        const fx = from.x + (from.w||120)/2, fy = from.y + (from.h||50)/2
-        const tx = to.x + (to.w||120)/2, ty = to.y + (to.h||50)/2
+        const fx = from.x + (from.w || 120) / 2,
+          fy = from.y + (from.h || 50) / 2
+        const tx = to.x + (to.w || 120) / 2,
+          ty = to.y + (to.h || 50) / 2
         p.point.x = fx + (tx - fx) * segT
         p.point.y = fy + (ty - fy) * segT
       }
@@ -6436,7 +8873,13 @@ function updateBranchParticles(): void {
   })
 }
 // ── Edge Particle System ─────────────────────────────────────────────
-interface EdgeParticle { edgeIdx: number; t: number; speed: number; color: string; size: number }
+interface EdgeParticle {
+  edgeIdx: number
+  t: number
+  speed: number
+  color: string
+  size: number
+}
 const edgeParticles = ref<EdgeParticle[]>([])
 const showEdgeParticles = ref(true)
 const edgeParticleCount = ref(30)
@@ -6444,29 +8887,47 @@ function initEdgeParticles(): void {
   edgeParticles.value = []
   const edges = processDef.value?.edges || []
   for (let i = 0; i < Math.min(edges.length * 3, edgeParticleCount.value); i++) {
-    edgeParticles.value.push({ edgeIdx: Math.floor(Math.random() * Math.max(edges.length,1)), t: Math.random(), speed: 0.002 + Math.random() * 0.003, color: 'var(--color-primary)', size: 2 + Math.random() * 2 })
+    edgeParticles.value.push({
+      edgeIdx: Math.floor(Math.random() * Math.max(edges.length, 1)),
+      t: Math.random(),
+      speed: 0.002 + Math.random() * 0.003,
+      color: 'var(--color-primary)',
+      size: 2 + Math.random() * 2,
+    })
   }
 }
 function updateEdgeParticles(): void {
-  edgeParticles.value.forEach(p => {
+  edgeParticles.value.forEach((p) => {
     p.t += p.speed
     const edges = processDef.value?.edges
-    if (p.t > 1 && edges) { p.t -= 1; p.edgeIdx = Math.floor(Math.random() * edges.length) }
+    if (p.t > 1 && edges) {
+      p.t -= 1
+      p.edgeIdx = Math.floor(Math.random() * edges.length)
+    }
   })
 }
-function getEdgeParticlePos(p: EdgeParticle): {x:number;y:number}|null {
-  const edges = processDef.value?.edges, nodes = processDef.value?.nodes
+function getEdgeParticlePos(p: EdgeParticle): { x: number; y: number } | null {
+  const edges = processDef.value?.edges,
+    nodes = processDef.value?.nodes
   if (!edges || !nodes || p.edgeIdx >= edges.length) return null
   const edge = edges[p.edgeIdx]
-  const from = nodes.find(n => n.id === edge.from), to = nodes.find(n => n.id === edge.to)
+  const from = nodes.find((n) => n.id === edge.from),
+    to = nodes.find((n) => n.id === edge.to)
   if (!from || !to) return null
-  const fp = { x: from.x + (from.w||120), y: from.y + (from.h||50)/2 }
-  const tp = { x: to.x, y: to.y + (to.h||50)/2 }
-  const dx = tp.x - fp.x, dy = tp.y - fp.y
-  const cx1 = fp.x + dx * 0.5, cy1 = fp.y
-  const cx2 = tp.x - dx * 0.5, cy2 = tp.y
-  const t = p.t, mt = 1-t
-  return { x: mt*mt*mt*fp.x + 3*mt*mt*t*cx1 + 3*mt*t*t*cx2 + t*t*t*tp.x, y: mt*mt*mt*fp.y + 3*mt*mt*t*cy1 + 3*mt*t*t*cy2 + t*t*t*tp.y }
+  const fp = { x: from.x + (from.w || 120), y: from.y + (from.h || 50) / 2 }
+  const tp = { x: to.x, y: to.y + (to.h || 50) / 2 }
+  const dx = tp.x - fp.x,
+    dy = tp.y - fp.y
+  const cx1 = fp.x + dx * 0.5,
+    cy1 = fp.y
+  const cx2 = tp.x - dx * 0.5,
+    cy2 = tp.y
+  const t = p.t,
+    mt = 1 - t
+  return {
+    x: mt * mt * mt * fp.x + 3 * mt * mt * t * cx1 + 3 * mt * t * t * cx2 + t * t * t * tp.x,
+    y: mt * mt * mt * fp.y + 3 * mt * mt * t * cy1 + 3 * mt * t * t * cy2 + t * t * t * tp.y,
+  }
 }
 // ── Cycle Detection Visualization ────────────────────────────────────
 const cycleHighlights = ref<Map<string, string[]>>(new Map())
@@ -6476,8 +8937,8 @@ function visualizeCycles(): void {
   const result = flowAnalysisResult.value
   cycleHighlights.value = new Map()
   result.cycles.forEach((cycle, ci) => {
-    const color = ['#ef4444','#f59e0b','#ec4899','#a855f7'][ci % 4]
-    cycle.nodes.forEach(nodeId => {
+    const color = ['#ef4444', '#f59e0b', '#ec4899', '#a855f7'][ci % 4]
+    cycle.nodes.forEach((nodeId) => {
       const existing = cycleHighlights.value.get(nodeId) || []
       if (!existing.includes(color)) existing.push(color)
       cycleHighlights.value.set(nodeId, existing)
@@ -6485,30 +8946,112 @@ function visualizeCycles(): void {
   })
   showCycleVisualization.value = true
 }
-function clearCycleHighlights(): void { cycleHighlights.value = new Map(); showCycleVisualization.value = false }
+function clearCycleHighlights(): void {
+  cycleHighlights.value = new Map()
+  showCycleVisualization.value = false
+}
 // ── Archive Diff View ────────────────────────────────────────────────
-interface DiffEntry { type: 'added'|'removed'|'modified'; nodeId: string; label: string; prev?: string; next?: string }
+interface DiffEntry {
+  type: 'added' | 'removed' | 'modified'
+  nodeId: string
+  label: string
+  prev?: string
+  next?: string
+}
 const diffEntries = ref<DiffEntry[]>([])
 const diffLoading = ref(false)
 function openDiffView(idx1: number, idx2: number): void {
   if (idx1 >= processArchive.value.length || idx2 >= processArchive.value.length) return
   diffLoading.value = true
   diffEntries.value = computeDiff(processArchive.value[idx1], processArchive.value[idx2])
-  diffLeftIdx.value = idx1; diffRightIdx.value = idx2
+  diffLeftIdx.value = idx1
+  diffRightIdx.value = idx2
   showDiffView.value = true
   diffLoading.value = false
 }
 // ── Grid Theme System ────────────────────────────────────────────────
-interface GridTheme { name: string; pattern: 'dot'|'line'|'cross'|'diamond'|'hex'; color: string; intensity: number; spacing: number; animated: boolean; speed: number }
+interface GridTheme {
+  name: string
+  pattern: 'dot' | 'line' | 'cross' | 'diamond' | 'hex'
+  color: string
+  intensity: number
+  spacing: number
+  animated: boolean
+  speed: number
+}
 const gridThemes = ref<GridTheme[]>([
-  { name: '标准网格', pattern: 'line', color: 'rgba(0,212,255,0.15)', intensity: 0.5, spacing: 20, animated: false, speed: 1 },
-  { name: '点阵', pattern: 'dot', color: 'rgba(0,212,255,0.1)', intensity: 0.3, spacing: 30, animated: false, speed: 1 },
-  { name: '十字', pattern: 'cross', color: 'rgba(168,85,247,0.15)', intensity: 0.4, spacing: 25, animated: false, speed: 1 },
-  { name: '菱形', pattern: 'diamond', color: 'rgba(34,197,94,0.15)', intensity: 0.35, spacing: 28, animated: false, speed: 1 },
-  { name: '六边', pattern: 'hex', color: 'rgba(245,158,11,0.12)', intensity: 0.3, spacing: 35, animated: false, speed: 1 },
-  { name: '流动网格', pattern: 'line', color: 'rgba(0,255,200,0.2)', intensity: 0.6, spacing: 20, animated: true, speed: 2 },
-  { name: '脉冲点阵', pattern: 'dot', color: 'rgba(236,72,153,0.2)', intensity: 0.5, spacing: 25, animated: true, speed: 1.5 },
-  { name: '暗纹', pattern: 'cross', color: 'rgba(100,116,139,0.08)', intensity: 0.2, spacing: 40, animated: false, speed: 1 },
+  {
+    name: '标准网格',
+    pattern: 'line',
+    color: 'rgba(0,212,255,0.15)',
+    intensity: 0.5,
+    spacing: 20,
+    animated: false,
+    speed: 1,
+  },
+  {
+    name: '点阵',
+    pattern: 'dot',
+    color: 'rgba(0,212,255,0.1)',
+    intensity: 0.3,
+    spacing: 30,
+    animated: false,
+    speed: 1,
+  },
+  {
+    name: '十字',
+    pattern: 'cross',
+    color: 'rgba(168,85,247,0.15)',
+    intensity: 0.4,
+    spacing: 25,
+    animated: false,
+    speed: 1,
+  },
+  {
+    name: '菱形',
+    pattern: 'diamond',
+    color: 'rgba(34,197,94,0.15)',
+    intensity: 0.35,
+    spacing: 28,
+    animated: false,
+    speed: 1,
+  },
+  {
+    name: '六边',
+    pattern: 'hex',
+    color: 'rgba(245,158,11,0.12)',
+    intensity: 0.3,
+    spacing: 35,
+    animated: false,
+    speed: 1,
+  },
+  {
+    name: '流动网格',
+    pattern: 'line',
+    color: 'rgba(0,255,200,0.2)',
+    intensity: 0.6,
+    spacing: 20,
+    animated: true,
+    speed: 2,
+  },
+  {
+    name: '脉冲点阵',
+    pattern: 'dot',
+    color: 'rgba(236,72,153,0.2)',
+    intensity: 0.5,
+    spacing: 25,
+    animated: true,
+    speed: 1.5,
+  },
+  {
+    name: '暗纹',
+    pattern: 'cross',
+    color: 'rgba(100,116,139,0.08)',
+    intensity: 0.2,
+    spacing: 40,
+    animated: false,
+    speed: 1,
+  },
 ])
 const activeGridTheme = ref(0)
 const gridOffset = ref({ x: 0, y: 0 })
@@ -6520,9 +9063,15 @@ function applyGridTheme(idx: number): void {
   showGridFlow.value = theme.animated
   gridFlowSpeed.value = theme.speed
 }
-function getGridPatternColor(): string { return gridThemes.value[activeGridTheme.value].color }
-function getGridSpacing(): number { return gridThemes.value[activeGridTheme.value].spacing }
-function getGridIntensity(): number { return gridIntensity.value }
+function getGridPatternColor(): string {
+  return gridThemes.value[activeGridTheme.value].color
+}
+function getGridSpacing(): number {
+  return gridThemes.value[activeGridTheme.value].spacing
+}
+function getGridIntensity(): number {
+  return gridIntensity.value
+}
 // ── Animation Frame Loop ─────────────────────────────────────────────
 let animFrameId: number | null = null
 function startAnimationLoop(): void {
@@ -6530,7 +9079,10 @@ function startAnimationLoop(): void {
   function loop(): void {
     if (showGridFlow.value) {
       const theme = gridThemes.value[activeGridTheme.value]
-      gridOffset.value = { x: (gridOffset.value.x + theme.speed * 0.5) % (theme.spacing || 20), y: (gridOffset.value.y + theme.speed * 0.3) % (theme.spacing || 20) }
+      gridOffset.value = {
+        x: (gridOffset.value.x + theme.speed * 0.5) % (theme.spacing || 20),
+        y: (gridOffset.value.y + theme.speed * 0.3) % (theme.spacing || 20),
+      }
     }
     if (showBranchParticles.value && parallelBranches.value.length > 0) updateBranchParticles()
     if (showEdgeParticles.value && processDef.value?.edges) updateEdgeParticles()
@@ -6539,78 +9091,226 @@ function startAnimationLoop(): void {
   animFrameId = requestAnimationFrame(loop)
 }
 function stopAnimationLoop(): void {
-  if (animFrameId) { cancelAnimationFrame(animFrameId); animFrameId = null }
+  if (animFrameId) {
+    cancelAnimationFrame(animFrameId)
+    animFrameId = null
+  }
 }
-onMounted(() => { startAnimationLoop(); initEdgeParticles(); initBranchParticles() })
+onMounted(() => {
+  startAnimationLoop()
+  initEdgeParticles()
+  initBranchParticles()
+})
 // ── Script Editor Functions ──────────────────────────────────────────
 // ── Node Detail Panel State ─────────────────────────────────────────
 const showNodeDetailPanel = ref(false)
-const nodeDetailNodeIdx = ref<number|null>(null)
-const nodeDetailTab = ref<'info'|'conditions'|'vars'|'props'|'history'>('info')
-const nodeDetailHistory = ref<Array<{timestamp: number; action: string; details: string}>>([])
+const nodeDetailNodeIdx = ref<number | null>(null)
+const nodeDetailTab = ref<'info' | 'conditions' | 'vars' | 'props' | 'history'>('info')
+const nodeDetailHistory = ref<Array<{ timestamp: number; action: string; details: string }>>([])
 // ── Edge Editor State ────────────────────────────────────────────────
 const showEdgeEditorPanel = ref(false)
-const edgeEditorEdgeIdx = ref<number|null>(null)
-const edgeEditorPoints = ref<Array<{x: number; y: number}>>([])
+const edgeEditorEdgeIdx = ref<number | null>(null)
+const edgeEditorPoints = ref<Array<{ x: number; y: number }>>([])
 // ── Process Sandbox State ────────────────────────────────────────────
 // ── Template Manager State ───────────────────────────────────────────
 const showTemplateManager = ref(false)
 const templateManagerSearch = ref('')
-const customTemplates = ref<Array<{id: string; name: string; icon: string; description: string; nodeCount: number; tags: string[]; created: number}>>([
-  { id: 'ct1', name: '请假审批流', icon: '🏖', description: '三级请假审批流程', nodeCount: 5, tags: ['请假','审批'], created: Date.now() },
-  { id: 'ct2', name: '采购审批流', icon: '🛒', description: '采购申请多级审批', nodeCount: 7, tags: ['采购','财务'], created: Date.now() },
-  { id: 'ct3', name: '项目评审流', icon: '📊', description: '项目立项多维度评审', nodeCount: 9, tags: ['项目','评审'], created: Date.now() },
-  { id: 'ct4', name: '合同审核流', icon: '📝', description: '合同法务审核流程', nodeCount: 6, tags: ['合同','法务'], created: Date.now() },
-  { id: 'ct5', name: '数据同步流', icon: '🔄', description: '跨系统数据同步', nodeCount: 4, tags: ['数据','同步'], created: Date.now() },
-  { id: 'ct6', name: '通知推送流', icon: '🔔', description: '消息通知推送流程', nodeCount: 4, tags: ['通知','推送'], created: Date.now() },
+const customTemplates = ref<
+  Array<{
+    id: string
+    name: string
+    icon: string
+    description: string
+    nodeCount: number
+    tags: string[]
+    created: number
+  }>
+>([
+  {
+    id: 'ct1',
+    name: '请假审批流',
+    icon: '🏖',
+    description: '三级请假审批流程',
+    nodeCount: 5,
+    tags: ['请假', '审批'],
+    created: Date.now(),
+  },
+  {
+    id: 'ct2',
+    name: '采购审批流',
+    icon: '🛒',
+    description: '采购申请多级审批',
+    nodeCount: 7,
+    tags: ['采购', '财务'],
+    created: Date.now(),
+  },
+  {
+    id: 'ct3',
+    name: '项目评审流',
+    icon: '📊',
+    description: '项目立项多维度评审',
+    nodeCount: 9,
+    tags: ['项目', '评审'],
+    created: Date.now(),
+  },
+  {
+    id: 'ct4',
+    name: '合同审核流',
+    icon: '📝',
+    description: '合同法务审核流程',
+    nodeCount: 6,
+    tags: ['合同', '法务'],
+    created: Date.now(),
+  },
+  {
+    id: 'ct5',
+    name: '数据同步流',
+    icon: '🔄',
+    description: '跨系统数据同步',
+    nodeCount: 4,
+    tags: ['数据', '同步'],
+    created: Date.now(),
+  },
+  {
+    id: 'ct6',
+    name: '通知推送流',
+    icon: '🔔',
+    description: '消息通知推送流程',
+    nodeCount: 4,
+    tags: ['通知', '推送'],
+    created: Date.now(),
+  },
 ])
 // ── Collaboration State ──────────────────────────────────────────────
 const showCollabPanel = ref(false)
-const collaborators = ref<Array<{id: string; name: string; color: string; avatar: string; lastActive: number; cursorX: number; cursorY: number}>>([
+const collaborators = ref<
+  Array<{
+    id: string
+    name: string
+    color: string
+    avatar: string
+    lastActive: number
+    cursorX: number
+    cursorY: number
+  }>
+>([
   { id: 'c1', name: '张三', color: '#00d4ff', avatar: '👤', lastActive: Date.now(), cursorX: 200, cursorY: 300 },
   { id: 'c2', name: '李四', color: '#10b981', avatar: '👤', lastActive: Date.now(), cursorX: 400, cursorY: 200 },
   { id: 'c3', name: '王五', color: '#f59e0b', avatar: '👤', lastActive: Date.now(), cursorX: 600, cursorY: 400 },
 ])
 const collabCursorPos = ref({ x: 0, y: 0 })
-const collabMode = ref<'view'|'edit'|'comment'>('view')
+const collabMode = ref<'view' | 'edit' | 'comment'>('view')
 // ── Node Advanced Config State ───────────────────────────────────────
 const showAdvancedConfigPanel = ref(false)
-const advancedConfigNodeId = ref<number|null>(null)
-const advancedConfigs = ref<Map<string, {entranceAnim: string; exitAnim: string; hoverEffect: string; clickEffect: string; soundEnabled: boolean; tooltipEnabled: boolean; badgeText: string; badgeColor: string; connectorStyle: string; labelPosition: string; borderRadius: number; borderWidth: number}>>(new Map())
+const advancedConfigNodeId = ref<number | null>(null)
+const advancedConfigs = ref<
+  Map<
+    string,
+    {
+      entranceAnim: string
+      exitAnim: string
+      hoverEffect: string
+      clickEffect: string
+      soundEnabled: boolean
+      tooltipEnabled: boolean
+      badgeText: string
+      badgeColor: string
+      connectorStyle: string
+      labelPosition: string
+      borderRadius: number
+      borderWidth: number
+    }
+  >
+>(new Map())
 // ── Workflow Rules State ─────────────────────────────────────────────
 const showWorkflowRulesPanel = ref(false)
-const workflowRulesList = ref<Array<{id: string; name: string; condition: string; action: string; enabled: boolean; priority: number}>>([])
-const newRuleName = ref(''), newRuleCondition = ref(''), newRuleAction = ref('')
+const workflowRulesList = ref<
+  Array<{ id: string; name: string; condition: string; action: string; enabled: boolean; priority: number }>
+>([])
+const newRuleName = ref(''),
+  newRuleCondition = ref(''),
+  newRuleAction = ref('')
 // ── Quality Report State ─────────────────────────────────────────────
 const showQualityReportPanel = ref(false)
-const qualityMetricsList = ref<Array<{name: string; value: number; max: number; unit: string; severity: string; description: string}>>([])
+const qualityMetricsList = ref<
+  Array<{ name: string; value: number; max: number; unit: string; severity: string; description: string }>
+>([])
 // ── Version History State ────────────────────────────────────────────
 const showVersionHistoryPanel = ref(false)
-const versionRecordsList = ref<Array<{id: string; timestamp: number; label: string; author: string; changeSummary: string; nodeCount: number; edgeCount: number; config: any}>>([])
-const versionDiffResult = ref<{added: number; removed: number; modified: number}|null>(null)
+const versionRecordsList = ref<
+  Array<{
+    id: string
+    timestamp: number
+    label: string
+    author: string
+    changeSummary: string
+    nodeCount: number
+    edgeCount: number
+    config: any
+  }>
+>([])
+const versionDiffResult = ref<{ added: number; removed: number; modified: number } | null>(null)
 // ── Performance Monitor State ────────────────────────────────────────
 const showPerfMonitorPanel = ref(false)
-const perfStatsData = ref<{fps: number; nodes: number; edges: number; renderMs: number; memMb: number}>({ fps: 60, nodes: 0, edges: 0, renderMs: 0, memMb: 0 })
+const perfStatsData = ref<{ fps: number; nodes: number; edges: number; renderMs: number; memMb: number }>({
+  fps: 60,
+  nodes: 0,
+  edges: 0,
+  renderMs: 0,
+  memMb: 0,
+})
 // ── Notification Center State ────────────────────────────────────────
-const notificationsList = ref<Array<{id: string; type: string; title: string; message: string; timestamp: number; read: boolean; category: string}>>([])
-const unreadNotificationCount = computed(() => notificationsList.value.filter(n => !n.read).length)
+const notificationsList = ref<
+  Array<{
+    id: string
+    type: string
+    title: string
+    message: string
+    timestamp: number
+    read: boolean
+    category: string
+  }>
+>([])
+const unreadNotificationCount = computed(() => notificationsList.value.filter((n) => !n.read).length)
 // ── Audit Trail State ────────────────────────────────────────────────
 const showAuditTrailPanel = ref(false)
-const auditTrailEntries = ref<Array<{id: string; timestamp: number; user: string; action: string; target: string; details: string}>>([])
+const auditTrailEntries = ref<
+  Array<{ id: string; timestamp: number; user: string; action: string; target: string; details: string }>
+>([])
 // ── Health Dashboard State ───────────────────────────────────────────
 const showHealthDashboardPanel = ref(false)
-const healthIndicatorsList = ref<Array<{id: string; name: string; status: string; value: number; threshold: number; unit: string; trend: string}>>([])
+const healthIndicatorsList = ref<
+  Array<{ id: string; name: string; status: string; value: number; threshold: number; unit: string; trend: string }>
+>([])
 // ── Comment System State ─────────────────────────────────────────────
 const showCommentPanel = ref(false)
-const commentsList = ref<Array<{id: string; timestamp: number; author: string; targetType: string; targetId: string; content: string; resolved: boolean}>>([])
-const newCommentText = ref(''), newCommentAuthorName = ref('用户'), newCommentTargetType = ref('canvas')
+const commentsList = ref<
+  Array<{
+    id: string
+    timestamp: number
+    author: string
+    targetType: string
+    targetId: string
+    content: string
+    resolved: boolean
+  }>
+>([])
+const newCommentText = ref(''),
+  newCommentAuthorName = ref('用户'),
+  newCommentTargetType = ref('canvas')
 // ── Constraint System State ──────────────────────────────────────────
 const showConstraintPanel = ref(false)
-const nodeConstraintsList = ref<Array<{id: string; nodeId: string; type: string; description: string; active: boolean}>>([])
-const edgeConstraintsList = ref<Array<{id: string; fromId: string; toId: string; type: string; active: boolean}>>([])
+const nodeConstraintsList = ref<
+  Array<{ id: string; nodeId: string; type: string; description: string; active: boolean }>
+>([])
+const edgeConstraintsList = ref<Array<{ id: string; fromId: string; toId: string; type: string; active: boolean }>>([])
 // ── Batch Operation State ────────────────────────────────────────────
 const showBatchOpPanel = ref(false)
-const batchOpResults = ref<{success: number; failed: number; details: Array<{id: string; status: string; msg: string}>}>({ success: 0, failed: 0, details: [] })
+const batchOpResults = ref<{
+  success: number
+  failed: number
+  details: Array<{ id: string; status: string; msg: string }>
+}>({ success: 0, failed: 0, details: [] })
 // ── Node Detail Functions ────────────────────────────────────────────
 function openNodeDetail(nodeIdx: number) {
   nodeDetailNodeIdx.value = nodeIdx
@@ -6618,26 +9318,37 @@ function openNodeDetail(nodeIdx: number) {
   nodeDetailTab.value = 'info'
   nodeDetailHistory.value = []
 }
-function closeNodeDetail() { showNodeDetailPanel.value = false; nodeDetailNodeIdx.value = null }
+function closeNodeDetail() {
+  showNodeDetailPanel.value = false
+  nodeDetailNodeIdx.value = null
+}
 function getNodeDetailInfo(): any {
   if (nodeDetailNodeIdx.value === null || !processDef.value) return null
   const node = processDef.value.nodes[nodeDetailNodeIdx.value]
   const edges = processDef.value.edges || []
-  const inEdges = edges.filter(e => e.to === node.id)
-  const outEdges = edges.filter(e => e.from === node.id)
+  const inEdges = edges.filter((e) => e.to === node.id)
+  const outEdges = edges.filter((e) => e.from === node.id)
   return { node, inCount: inEdges.length, outCount: outEdges.length, inEdges, outEdges }
 }
-function changeNodeDetailTab(tab: string) { nodeDetailTab.value = tab as any }
+function changeNodeDetailTab(tab: string) {
+  nodeDetailTab.value = tab as any
+}
 // ── Edge Editor Functions ────────────────────────────────────────────
 function openEdgeEditor(edgeIdx: number) {
   edgeEditorEdgeIdx.value = edgeIdx
   showEdgeEditorPanel.value = true
   const edge = processDef.value?.edges[edgeIdx]
   if (edge) {
-    edgeEditorPoints.value = [{ x: 200, y: 200 }, { x: 400, y: 200 }]
+    edgeEditorPoints.value = [
+      { x: 200, y: 200 },
+      { x: 400, y: 200 },
+    ]
   }
 }
-function closeEdgeEditor() { showEdgeEditorPanel.value = false; edgeEditorEdgeIdx.value = null }
+function closeEdgeEditor() {
+  showEdgeEditorPanel.value = false
+  edgeEditorEdgeIdx.value = null
+}
 function updateEdgeLabel(label: string) {
   if (edgeEditorEdgeIdx.value === null || !processDef.value) return
   processDef.value.edges[edgeEditorEdgeIdx.value].label = label
@@ -6656,10 +9367,20 @@ function deleteEdgeEditor() {
   showToast('连线已删除', 'warning')
 }
 // ── Template Manager Functions ───────────────────────────────────────
-function filterCustomTemplates(): Array<{id: string; name: string; icon: string; description: string; nodeCount: number; tags: string[]; created: number}> {
+function filterCustomTemplates(): Array<{
+  id: string
+  name: string
+  icon: string
+  description: string
+  nodeCount: number
+  tags: string[]
+  created: number
+}> {
   if (!templateManagerSearch.value.trim()) return customTemplates.value
   const q = templateManagerSearch.value.toLowerCase()
-  return customTemplates.value.filter(t => t.name.includes(q) || t.tags.some(tag => tag.includes(q)) || t.description.includes(q))
+  return customTemplates.value.filter(
+    (t) => t.name.includes(q) || t.tags.some((tag) => tag.includes(q)) || t.description.includes(q),
+  )
 }
 function loadCustomTemplate(idx: number) {
   const tpl = customTemplates.value[idx]
@@ -6678,15 +9399,28 @@ function exportCustomTemplate(idx: number) {
   const blob = new Blob([data], { type: 'application/json' })
   const url = URL.createObjectURL(blob)
   const a = document.createElement('a')
-  a.href = url; a.download = tpl.name + '.json'; a.click(); URL.revokeObjectURL(url)
+  a.href = url
+  a.download = tpl.name + '.json'
+  a.click()
+  URL.revokeObjectURL(url)
 }
 // ── Collaboration Functions ──────────────────────────────────────────
 function addCollaborator(name: string, color: string) {
-  collaborators.value.push({ id: genId(), name, color, avatar: '👤', lastActive: Date.now(), cursorX: Math.random() * 800, cursorY: Math.random() * 600 })
+  collaborators.value.push({
+    id: genId(),
+    name,
+    color,
+    avatar: '👤',
+    lastActive: Date.now(),
+    cursorX: Math.random() * 800,
+    cursorY: Math.random() * 600,
+  })
 }
-function removeCollaborator(id: string) { collaborators.value = collaborators.value.filter(c => c.id !== id) }
+function removeCollaborator(id: string) {
+  collaborators.value = collaborators.value.filter((c) => c.id !== id)
+}
 function simulateCollabMovement() {
-  collaborators.value.forEach(c => {
+  collaborators.value.forEach((c) => {
     c.cursorX += (Math.random() - 0.5) * 50
     c.cursorY += (Math.random() - 0.5) * 30
     c.lastActive = Date.now()
@@ -6698,13 +9432,25 @@ function openAdvancedConfig(nodeIdx: number) {
   showAdvancedConfigPanel.value = true
   if (!advancedConfigs.value.has(String(nodeIdx))) {
     advancedConfigs.value.set(String(nodeIdx), {
-      entranceAnim: 'fade', exitAnim: 'none', hoverEffect: 'glow', clickEffect: 'ripple',
-      soundEnabled: false, tooltipEnabled: true, badgeText: '', badgeColor: '#00d4ff',
-      connectorStyle: 'curved', labelPosition: 'bottom', borderRadius: 8, borderWidth: 1.5
+      entranceAnim: 'fade',
+      exitAnim: 'none',
+      hoverEffect: 'glow',
+      clickEffect: 'ripple',
+      soundEnabled: false,
+      tooltipEnabled: true,
+      badgeText: '',
+      badgeColor: '#00d4ff',
+      connectorStyle: 'curved',
+      labelPosition: 'bottom',
+      borderRadius: 8,
+      borderWidth: 1.5,
     })
   }
 }
-function closeAdvancedConfig() { showAdvancedConfigPanel.value = false; advancedConfigNodeId.value = null }
+function closeAdvancedConfig() {
+  showAdvancedConfigPanel.value = false
+  advancedConfigNodeId.value = null
+}
 function saveAdvancedConfig() {
   if (advancedConfigNodeId.value === null || !processDef.value) return
   pushHistory()
@@ -6714,47 +9460,127 @@ function saveAdvancedConfig() {
 // ── Workflow Rules Functions ─────────────────────────────────────────
 function addWorkflowRule(): void {
   if (!newRuleName.value.trim()) return
-  workflowRulesList.value.push({ id: genId(), name: newRuleName.value, condition: newRuleCondition.value, action: newRuleAction.value, enabled: true, priority: workflowRulesList.value.length })
-  newRuleName.value = ''; newRuleCondition.value = ''; newRuleAction.value = ''
+  workflowRulesList.value.push({
+    id: genId(),
+    name: newRuleName.value,
+    condition: newRuleCondition.value,
+    action: newRuleAction.value,
+    enabled: true,
+    priority: workflowRulesList.value.length,
+  })
+  newRuleName.value = ''
+  newRuleCondition.value = ''
+  newRuleAction.value = ''
 }
-function removeWorkflowRule(id: string): void { workflowRulesList.value = workflowRulesList.value.filter(r => r.id !== id) }
-function toggleWorkflowRule(id: string): void { const r = workflowRulesList.value.find(x => x.id === id); if (r) r.enabled = !r.enabled }
+function removeWorkflowRule(id: string): void {
+  workflowRulesList.value = workflowRulesList.value.filter((r) => r.id !== id)
+}
+function toggleWorkflowRule(id: string): void {
+  const r = workflowRulesList.value.find((x) => x.id === id)
+  if (r) r.enabled = !r.enabled
+}
 function executeAllWorkflowRules(): void {
   if (!processDef.value) return
-  workflowRulesList.value.filter(r => r.enabled).forEach(rule => {
-    try {
-      const result = (0, eval)(rule.condition)
-      if (result) showToast('规则 "' + rule.name + '" 已触发: ' + rule.action, 'info')
-    } catch { /* skip invalid rules */ }
-  })
+  workflowRulesList.value
+    .filter((r) => r.enabled)
+    .forEach((rule) => {
+      try {
+        const result = (0, eval)(rule.condition)
+        if (result) showToast('规则 "' + rule.name + '" 已触发: ' + rule.action, 'info')
+      } catch {
+        /* skip invalid rules */
+      }
+    })
 }
 // ── Quality Report Functions ─────────────────────────────────────────
 function generateQualityReport(): void {
   if (!processDef.value) return
-  const nodes = processDef.value.nodes, edges = processDef.value.edges || []
+  const nodes = processDef.value.nodes,
+    edges = processDef.value.edges || []
   qualityMetricsList.value = [
-    { name: '节点总数', value: nodes.length, max: 50, unit: '个', severity: nodes.length <= 20 ? 'good' : nodes.length <= 40 ? 'warning' : 'error', description: '流程节点总数' },
-    { name: '连线总数', value: edges.length, max: 80, unit: '条', severity: edges.length <= nodes.length * 1.5 ? 'good' : 'warning', description: '边与节点比例' },
-    { name: '循环数量', value: flowAnalysisResult.value?.cycles?.length || 0, max: 5, unit: '个', severity: (flowAnalysisResult.value?.cycles?.length || 0) === 0 ? 'good' : 'warning', description: '流程循环检测' },
-    { name: '孤立节点', value: flowAnalysisResult.value?.isolatedNodes?.length || 0, max: 3, unit: '个', severity: (flowAnalysisResult.value?.isolatedNodes?.length || 0) === 0 ? 'good' : 'warning', description: '未连接节点数' },
-    { name: '开始节点', value: nodes.filter(n => n.type === 'start').length, max: 1, unit: '个', severity: nodes.filter(n => n.type === 'start').length === 1 ? 'good' : 'error', description: '应有且仅有一个开始节点' },
-    { name: '结束节点', value: nodes.filter(n => n.type === 'end').length, max: 3, unit: '个', severity: nodes.filter(n => n.type === 'end').length >= 1 ? 'good' : 'error', description: '至少需要一个结束节点' },
-    { name: '网关数量', value: nodes.filter(n => n.type.startsWith('gate_')).length, max: nodes.length, unit: '个', severity: nodes.filter(n => n.type.startsWith('gate_')).length <= nodes.length * 0.3 ? 'good' : 'warning', description: '决策网关占比' },
-    { name: '平均连接度', value: nodes.length > 0 ? parseFloat((edges.length * 2 / nodes.length).toFixed(1)) : 0, max: 6, unit: '', severity: (edges.length * 2 / Math.max(nodes.length, 1)) <= 3 ? 'good' : 'warning', description: '平均每节点连接数' },
+    {
+      name: '节点总数',
+      value: nodes.length,
+      max: 50,
+      unit: '个',
+      severity: nodes.length <= 20 ? 'good' : nodes.length <= 40 ? 'warning' : 'error',
+      description: '流程节点总数',
+    },
+    {
+      name: '连线总数',
+      value: edges.length,
+      max: 80,
+      unit: '条',
+      severity: edges.length <= nodes.length * 1.5 ? 'good' : 'warning',
+      description: '边与节点比例',
+    },
+    {
+      name: '循环数量',
+      value: flowAnalysisResult.value?.cycles?.length || 0,
+      max: 5,
+      unit: '个',
+      severity: (flowAnalysisResult.value?.cycles?.length || 0) === 0 ? 'good' : 'warning',
+      description: '流程循环检测',
+    },
+    {
+      name: '孤立节点',
+      value: flowAnalysisResult.value?.isolatedNodes?.length || 0,
+      max: 3,
+      unit: '个',
+      severity: (flowAnalysisResult.value?.isolatedNodes?.length || 0) === 0 ? 'good' : 'warning',
+      description: '未连接节点数',
+    },
+    {
+      name: '开始节点',
+      value: nodes.filter((n) => n.type === 'start').length,
+      max: 1,
+      unit: '个',
+      severity: nodes.filter((n) => n.type === 'start').length === 1 ? 'good' : 'error',
+      description: '应有且仅有一个开始节点',
+    },
+    {
+      name: '结束节点',
+      value: nodes.filter((n) => n.type === 'end').length,
+      max: 3,
+      unit: '个',
+      severity: nodes.filter((n) => n.type === 'end').length >= 1 ? 'good' : 'error',
+      description: '至少需要一个结束节点',
+    },
+    {
+      name: '网关数量',
+      value: nodes.filter((n) => n.type.startsWith('gate_')).length,
+      max: nodes.length,
+      unit: '个',
+      severity: nodes.filter((n) => n.type.startsWith('gate_')).length <= nodes.length * 0.3 ? 'good' : 'warning',
+      description: '决策网关占比',
+    },
+    {
+      name: '平均连接度',
+      value: nodes.length > 0 ? parseFloat(((edges.length * 2) / nodes.length).toFixed(1)) : 0,
+      max: 6,
+      unit: '',
+      severity: (edges.length * 2) / Math.max(nodes.length, 1) <= 3 ? 'good' : 'warning',
+      description: '平均每节点连接数',
+    },
   ]
   showQualityReportPanel.value = true
 }
 function getQualityScore(): number {
-  const good = qualityMetricsList.value.filter(m => m.severity === 'good').length
+  const good = qualityMetricsList.value.filter((m) => m.severity === 'good').length
   return qualityMetricsList.value.length === 0 ? 0 : Math.round((good / qualityMetricsList.value.length) * 100)
 }
 // ── Version History Functions ────────────────────────────────────────
 function recordVersionRecord(label: string, summary: string): void {
   if (!processDef.value || !currentProcess.value) return
   versionRecordsList.value.unshift({
-    id: genId(), timestamp: Date.now(), label, author: 'current_user', changeSummary: summary,
-    nodeCount: processDef.value.nodes.length, edgeCount: processDef.value.edges?.length || 0,
-    config: JSON.parse(JSON.stringify(processDef.value))
+    id: genId(),
+    timestamp: Date.now(),
+    label,
+    author: 'current_user',
+    changeSummary: summary,
+    nodeCount: processDef.value.nodes.length,
+    edgeCount: processDef.value.edges?.length || 0,
+    config: JSON.parse(JSON.stringify(processDef.value)),
   })
   if (versionRecordsList.value.length > 20) versionRecordsList.value.pop()
   logAudit('version_record', currentProcess.value.flag || 'process', summary)
@@ -6762,12 +9588,17 @@ function recordVersionRecord(label: string, summary: string): void {
 }
 function compareVersionsCompare(idx1: number, idx2: number): void {
   if (idx1 >= versionRecordsList.value.length || idx2 >= versionRecordsList.value.length) return
-  const v1 = versionRecordsList.value[idx1], v2 = versionRecordsList.value[idx2]
-  const ids1 = new Set(v1.config.nodes.map((n: any) => n.id)), ids2 = new Set(v2.config.nodes.map((n: any) => n.id))
+  const v1 = versionRecordsList.value[idx1],
+    v2 = versionRecordsList.value[idx2]
+  const ids1 = new Set(v1.config.nodes.map((n: any) => n.id)),
+    ids2 = new Set(v2.config.nodes.map((n: any) => n.id))
   versionDiffResult.value = {
     added: [...ids2].filter((id: string) => !ids1.has(id)).length,
     removed: [...ids1].filter((id: string) => !ids2.has(id)).length,
-    modified: v1.config.nodes.filter((n: any) => { const m = v2.config.nodes.find((nn: any) => nn.id === n.id); return m && (m.label !== n.label || Math.abs(m.x - n.x) > 5 || Math.abs(m.y - n.y) > 5) }).length
+    modified: v1.config.nodes.filter((n: any) => {
+      const m = v2.config.nodes.find((nn: any) => nn.id === n.id)
+      return m && (m.label !== n.label || Math.abs(m.x - n.x) > 5 || Math.abs(m.y - n.y) > 5)
+    }).length,
   }
 }
 function restoreVersionRecord(idx: number): void {
@@ -6780,131 +9611,422 @@ function restoreVersionRecord(idx: number): void {
 // ── Performance Monitor Functions ────────────────────────────────────
 function startPerfMonitorLocal(): void {
   showPerfMonitorPanel.value = true
-  let frameCount = 0, lastTime = performance.now()
+  let frameCount = 0,
+    lastTime = performance.now()
   requestAnimationFrame(loop)
 }
-function stopPerfMonitorLocal(): void { showPerfMonitorPanel.value = false }
+function stopPerfMonitorLocal(): void {
+  showPerfMonitorPanel.value = false
+}
 // ── Notification Functions ───────────────────────────────────────────
 function addNotificationNotif(type: string, title: string, message: string, category: string = 'system'): void {
   notificationsList.value.unshift({ id: genId(), type, title, message, timestamp: Date.now(), read: false, category })
   if (notificationsList.value.length > 50) notificationsList.value = notificationsList.value.slice(0, 50)
 }
-function markNotificationNotifRead(id: string): void { const n = notificationsList.value.find(x => x.id === id); if (n) n.read = true }
-function clearNotificationNotifs(): void { notificationsList.value = [] }
-function getUnreadCountNotif(): number { return notificationsList.value.filter(n => !n.read).length }
+function markNotificationNotifRead(id: string): void {
+  const n = notificationsList.value.find((x) => x.id === id)
+  if (n) n.read = true
+}
+function clearNotificationNotifs(): void {
+  notificationsList.value = []
+}
+function getUnreadCountNotif(): number {
+  return notificationsList.value.filter((n) => !n.read).length
+}
 // ── Audit Trail Functions ────────────────────────────────────────────
 function logAuditLocal(action: string, target: string, details: string): void {
   auditTrailEntries.value.unshift({ id: genId(), timestamp: Date.now(), user: 'current_user', action, target, details })
   if (auditTrailEntries.value.length > 200) auditTrailEntries.value = auditTrailEntries.value.slice(0, 200)
 }
-function getAuditByActionLocal(action: string): any[] { return auditTrailEntries.value.filter(e => e.action === action) }
-function clearAuditTrailLocal(): void { auditTrailEntries.value = [] }
+function getAuditByActionLocal(action: string): any[] {
+  return auditTrailEntries.value.filter((e) => e.action === action)
+}
+function clearAuditTrailLocal(): void {
+  auditTrailEntries.value = []
+}
 // ── Health Dashboard Functions ───────────────────────────────────────
 function updateHealthDashboardLocal(): void {
   if (!processDef.value) return
-  const nodes = processDef.value.nodes, edges = processDef.value.edges || []
+  const nodes = processDef.value.nodes,
+    edges = processDef.value.edges || []
   healthIndicatorsList.value = [
-    { id: 'h1', name: '节点健康度', status: nodes.length > 0 ? 'healthy' : 'critical', value: nodes.length, threshold: 50, unit: '个', trend: 'stable' },
-    { id: 'h2', name: '连接完整度', status: edges.length >= nodes.length - 1 ? 'healthy' : 'warning', value: edges.length, threshold: Math.max(nodes.length - 1, 1), unit: '条', trend: 'stable' },
-    { id: 'h3', name: '循环风险', status: !(flowAnalysisResult.value?.cycles?.length) ? 'healthy' : 'critical', value: flowAnalysisResult.value?.cycles?.length || 0, threshold: 0, unit: '个', trend: 'stable' },
-    { id: 'h4', name: '瓶颈节点', status: !(flowAnalysisResult.value?.bottlenecks?.length || flowAnalysisResult.value?.bottlenecks?.every((b: any) => b.severity !== 'high')) ? 'healthy' : 'warning', value: flowAnalysisResult.value?.bottlenecks?.filter((b: any) => b.severity === 'high').length || 0, threshold: 0, unit: '个', trend: 'stable' },
-    { id: 'h5', name: '孤立节点', status: !(flowAnalysisResult.value?.isolatedNodes?.length) ? 'healthy' : 'warning', value: flowAnalysisResult.value?.isolatedNodes?.length || 0, threshold: 0, unit: '个', trend: 'stable' },
-    { id: 'h6', name: '流程健康分', status: getFlowHealthScore() >= 80 ? 'healthy' : getFlowHealthScore() >= 50 ? 'warning' : 'critical', value: getFlowHealthScore(), threshold: 80, unit: '分', trend: 'stable' },
+    {
+      id: 'h1',
+      name: '节点健康度',
+      status: nodes.length > 0 ? 'healthy' : 'critical',
+      value: nodes.length,
+      threshold: 50,
+      unit: '个',
+      trend: 'stable',
+    },
+    {
+      id: 'h2',
+      name: '连接完整度',
+      status: edges.length >= nodes.length - 1 ? 'healthy' : 'warning',
+      value: edges.length,
+      threshold: Math.max(nodes.length - 1, 1),
+      unit: '条',
+      trend: 'stable',
+    },
+    {
+      id: 'h3',
+      name: '循环风险',
+      status: !flowAnalysisResult.value?.cycles?.length ? 'healthy' : 'critical',
+      value: flowAnalysisResult.value?.cycles?.length || 0,
+      threshold: 0,
+      unit: '个',
+      trend: 'stable',
+    },
+    {
+      id: 'h4',
+      name: '瓶颈节点',
+      status: !(
+        flowAnalysisResult.value?.bottlenecks?.length ||
+        flowAnalysisResult.value?.bottlenecks?.every((b: any) => b.severity !== 'high')
+      )
+        ? 'healthy'
+        : 'warning',
+      value: flowAnalysisResult.value?.bottlenecks?.filter((b: any) => b.severity === 'high').length || 0,
+      threshold: 0,
+      unit: '个',
+      trend: 'stable',
+    },
+    {
+      id: 'h5',
+      name: '孤立节点',
+      status: !flowAnalysisResult.value?.isolatedNodes?.length ? 'healthy' : 'warning',
+      value: flowAnalysisResult.value?.isolatedNodes?.length || 0,
+      threshold: 0,
+      unit: '个',
+      trend: 'stable',
+    },
+    {
+      id: 'h6',
+      name: '流程健康分',
+      status: getFlowHealthScore() >= 80 ? 'healthy' : getFlowHealthScore() >= 50 ? 'warning' : 'critical',
+      value: getFlowHealthScore(),
+      threshold: 80,
+      unit: '分',
+      trend: 'stable',
+    },
   ]
   showHealthDashboardPanel.value = true
 }
 function getHealthStatusColorLocal(status: string): string {
-  return { healthy: 'var(--color-success)', warning: 'var(--color-warning)', critical: 'var(--color-danger)' }[status] || 'var(--text-muted)'
+  return (
+    { healthy: 'var(--color-success)', warning: 'var(--color-warning)', critical: 'var(--color-danger)' }[status] ||
+    'var(--text-muted)'
+  )
 }
 // ── Comment Functions ────────────────────────────────────────────────
 function addCommentComment(): void {
   if (!newCommentText.value.trim()) return
   commentsList.value.unshift({
-    id: genId(), timestamp: Date.now(), author: newCommentAuthorName.value,
+    id: genId(),
+    timestamp: Date.now(),
+    author: newCommentAuthorName.value,
     targetType: newCommentTargetType.value,
-    targetId: selectedNode.value !== null ? (processDef.value?.nodes[selectedNode.value]?.id || '') : 'canvas',
-    content: newCommentText.value.trim(), resolved: false
+    targetId: selectedNode.value !== null ? processDef.value?.nodes[selectedNode.value]?.id || '' : 'canvas',
+    content: newCommentText.value.trim(),
+    resolved: false,
   })
   newCommentText.value = ''
   showToast('评论已添加', 'success')
 }
-function resolveCommentComment(id: string): void { const c = commentsList.value.find(x => x.id === id); if (c) c.resolved = true }
-function deleteCommentComment(id: string): void { commentsList.value = commentsList.value.filter(c => c.id !== id) }
-function getCommentCountComment(targetType: string, targetId: string): number { return commentsList.value.filter(c => c.targetType === targetType && c.targetId === targetId).length }
-function getUnresolvedCommentsComment(): number { return commentsList.value.filter(c => !c.resolved).length }
+function resolveCommentComment(id: string): void {
+  const c = commentsList.value.find((x) => x.id === id)
+  if (c) c.resolved = true
+}
+function deleteCommentComment(id: string): void {
+  commentsList.value = commentsList.value.filter((c) => c.id !== id)
+}
+function getCommentCountComment(targetType: string, targetId: string): number {
+  return commentsList.value.filter((c) => c.targetType === targetType && c.targetId === targetId).length
+}
+function getUnresolvedCommentsComment(): number {
+  return commentsList.value.filter((c) => !c.resolved).length
+}
 // ── Constraint Functions ─────────────────────────────────────────────
 function addNodeConstraintConstraint(): void {
   if (!newConstraintNode.value) return
-  nodeConstraintsList.value.push({ id: genId(), nodeId: newConstraintNode.value, type: newConstraintType.value, description: newConstraintDesc.value, active: true })
-  newConstraintNode.value = ''; newConstraintDesc.value = ''
+  nodeConstraintsList.value.push({
+    id: genId(),
+    nodeId: newConstraintNode.value,
+    type: newConstraintType.value,
+    description: newConstraintDesc.value,
+    active: true,
+  })
+  newConstraintNode.value = ''
+  newConstraintDesc.value = ''
 }
-function removeNodeConstraintConstraint(id: string): void { nodeConstraintsList.value = nodeConstraintsList.value.filter(c => c.id !== id) }
+function removeNodeConstraintConstraint(id: string): void {
+  nodeConstraintsList.value = nodeConstraintsList.value.filter((c) => c.id !== id)
+}
 function validateConstraintsValidate(): { valid: boolean; errors: string[] } {
   const errors: string[] = []
   if (!processDef.value) return { valid: true, errors }
-  nodeConstraintsList.value.forEach(c => {
+  nodeConstraintsList.value.forEach((c) => {
     if (!c.active) return
-    const node = processDef.value!.nodes.find(n => n.id === c.nodeId)
+    const node = processDef.value!.nodes.find((n) => n.id === c.nodeId)
     if (!node) errors.push('约束 ' + c.id + ': 节点不存在')
     else if (c.type === 'forbidden') errors.push('约束 ' + c.id + ': ' + (node.label || node.id) + ' 被禁止但仍存在')
   })
   return { valid: errors.length === 0, errors }
 }
-function getConstraintViolationsValidate(): string[] { return validateConstraintsValidate().errors }
+function getConstraintViolationsValidate(): string[] {
+  return validateConstraintsValidate().errors
+}
 // ── Batch Operation Functions ────────────────────────────────────────
 function runBatchOperationLocal(opId: string): void {
   if (!processDef.value) return
-  const targets = batchSelectedNodes.value.length > 0
-    ? processDef.value.nodes.filter(n => batchSelectedNodes.value.includes(n.id))
-    : processDef.value.nodes
-  const result = { success: 0, failed: 0, details: [] as Array<{id: string; status: string; msg: string}> }
-  targets.forEach(node => {
+  const targets =
+    batchSelectedNodes.value.length > 0
+      ? processDef.value.nodes.filter((n) => batchSelectedNodes.value.includes(n.id))
+      : processDef.value.nodes
+  const result = { success: 0, failed: 0, details: [] as Array<{ id: string; status: string; msg: string }> }
+  targets.forEach((node) => {
     try {
-      result.success++; result.details.push({ id: node.id, status: 'ok', msg: '操作成功' })
+      result.success++
+      result.details.push({ id: node.id, status: 'ok', msg: '操作成功' })
     } catch (e) {
-      result.failed++; result.details.push({ id: node.id, status: 'error', msg: String(e) })
+      result.failed++
+      result.details.push({ id: node.id, status: 'error', msg: String(e) })
     }
   })
   batchOpResults.value = result
   pushHistory()
-  showToast('批量操作完成: ' + result.success + '成功 ' + result.failed + '失败', result.failed > 0 ? 'warning' : 'success')
+  showToast(
+    '批量操作完成: ' + result.success + '成功 ' + result.failed + '失败',
+    result.failed > 0 ? 'warning' : 'success',
+  )
 }
 // ── Deepened Types ──────────────────────────────────────────────────
-interface ProcessDependency { sourceNodeId: string; targetNodeId: string; depType: 'data'|'control'|'timing'|'signal'; condition: string; priority: number; active: boolean }
-interface NodeColorTheme { id: string; name: string; fill: string; stroke: string; textColor: string; icon: string; isDefault: boolean }
-interface EdgeFlowConfig { speed: number; direction: 'forward'|'backward'|'both'; particlesPerEdge: number; trailLength: number; glowEnabled: boolean; color: string }
-interface ProcessCheckpoint { id: string; nodeId: string; label: string; condition: string; action: string; enabled: boolean; triggered: boolean }
-interface ProcessEvent { id: string; timestamp: number; type: 'node_start'|'node_end'|'edge_cross'|'condition_met'|'error'; nodeId: string; label: string; data: Record<string,any> }
-interface ProcessKPI { name: string; value: number; target: number; unit: string; trend: 'up'|'down'|'stable'; threshold: { warning: number; critical: number } }
-interface ProcessBookmark { id: string; name: string; nodeIds: string[]; description: string; createdAt: number; tags: string[] }
-interface ProcessComparisonResult { addedNodes: string[]; removedNodes: string[]; modifiedNodes: string[]; addedEdges: string[]; removedEdges: string[]; unchangedNodes: string[]; unchangedEdges: string[] }
-interface ProcessHeatmapCell { nodeId: string; metric: string; value: number; color: string; label: string }
-interface ProcessDependencyGraph { nodes: Array<{id: string; label: string; x: number; y: number; type: string}>; edges: Array<{from: string; to: string; type: string; label?: string}> }
-interface ProcessGanttTask { id: string; label: string; start: number; duration: number; color: string; dependencies: string[]; progress: number; status: string }
-interface ProcessNotification { id: string; type: 'info'|'success'|'warning'|'error'; title: string; message: string; timestamp: number; read: boolean; action?: string; actionHandler?: () => void }
-interface ProcessWorkflowRule { id: string; name: string; condition: string; action: string; priority: number; enabled: boolean; executionLog: Array<{time: number; result: string}> }
-interface ProcessExportConfig { format: string; includeAnnotations: boolean; includeMetadata: boolean; includeHistory: boolean; quality: 'low'|'medium'|'high'; pageSize: string; orientation: string }
-interface ProcessNodeStyle { borderRadius: number; borderWidth: number; borderColor: string; fillColor: string; strokeColor: string; shadowEnabled: boolean; glowEnabled: boolean; iconSize: number; fontSize: number; fontWeight: string; textAlign: 'left'|'center'|'right' }
-interface ProcessAnimationPreset { id: string; name: string; entrance: string; exit: string; hover: string; click: string; duration: number; easing: string }
-interface ProcessValidationIssue { id: string; type: 'error'|'warning'|'info'; nodeId?: string; message: string; suggestion: string; severity: number }
-interface ProcessMetric { name: string; value: string; description: string; category: string; trend: number; unit: string }
-interface ProcessTimelineEvent { time: number; type: string; label: string; color: string; details: string }
+interface ProcessDependency {
+  sourceNodeId: string
+  targetNodeId: string
+  depType: 'data' | 'control' | 'timing' | 'signal'
+  condition: string
+  priority: number
+  active: boolean
+}
+interface NodeColorTheme {
+  id: string
+  name: string
+  fill: string
+  stroke: string
+  textColor: string
+  icon: string
+  isDefault: boolean
+}
+interface EdgeFlowConfig {
+  speed: number
+  direction: 'forward' | 'backward' | 'both'
+  particlesPerEdge: number
+  trailLength: number
+  glowEnabled: boolean
+  color: string
+}
+interface ProcessCheckpoint {
+  id: string
+  nodeId: string
+  label: string
+  condition: string
+  action: string
+  enabled: boolean
+  triggered: boolean
+}
+interface ProcessEvent {
+  id: string
+  timestamp: number
+  type: 'node_start' | 'node_end' | 'edge_cross' | 'condition_met' | 'error'
+  nodeId: string
+  label: string
+  data: Record<string, any>
+}
+interface ProcessKPI {
+  name: string
+  value: number
+  target: number
+  unit: string
+  trend: 'up' | 'down' | 'stable'
+  threshold: { warning: number; critical: number }
+}
+interface ProcessBookmark {
+  id: string
+  name: string
+  nodeIds: string[]
+  description: string
+  createdAt: number
+  tags: string[]
+}
+interface ProcessComparisonResult {
+  addedNodes: string[]
+  removedNodes: string[]
+  modifiedNodes: string[]
+  addedEdges: string[]
+  removedEdges: string[]
+  unchangedNodes: string[]
+  unchangedEdges: string[]
+}
+interface ProcessHeatmapCell {
+  nodeId: string
+  metric: string
+  value: number
+  color: string
+  label: string
+}
+interface ProcessDependencyGraph {
+  nodes: Array<{ id: string; label: string; x: number; y: number; type: string }>
+  edges: Array<{ from: string; to: string; type: string; label?: string }>
+}
+interface ProcessGanttTask {
+  id: string
+  label: string
+  start: number
+  duration: number
+  color: string
+  dependencies: string[]
+  progress: number
+  status: string
+}
+interface ProcessNotification {
+  id: string
+  type: 'info' | 'success' | 'warning' | 'error'
+  title: string
+  message: string
+  timestamp: number
+  read: boolean
+  action?: string
+  actionHandler?: () => void
+}
+interface ProcessWorkflowRule {
+  id: string
+  name: string
+  condition: string
+  action: string
+  priority: number
+  enabled: boolean
+  executionLog: Array<{ time: number; result: string }>
+}
+interface ProcessExportConfig {
+  format: string
+  includeAnnotations: boolean
+  includeMetadata: boolean
+  includeHistory: boolean
+  quality: 'low' | 'medium' | 'high'
+  pageSize: string
+  orientation: string
+}
+interface ProcessNodeStyle {
+  borderRadius: number
+  borderWidth: number
+  borderColor: string
+  fillColor: string
+  strokeColor: string
+  shadowEnabled: boolean
+  glowEnabled: boolean
+  iconSize: number
+  fontSize: number
+  fontWeight: string
+  textAlign: 'left' | 'center' | 'right'
+}
+interface ProcessAnimationPreset {
+  id: string
+  name: string
+  entrance: string
+  exit: string
+  hover: string
+  click: string
+  duration: number
+  easing: string
+}
+interface ProcessValidationIssue {
+  id: string
+  type: 'error' | 'warning' | 'info'
+  nodeId?: string
+  message: string
+  suggestion: string
+  severity: number
+}
+interface ProcessMetric {
+  name: string
+  value: string
+  description: string
+  category: string
+  trend: number
+  unit: string
+}
+interface ProcessTimelineEvent {
+  time: number
+  type: string
+  label: string
+  color: string
+  details: string
+}
 // ── Dependencies Manager ────────────────────────────────────────────
 const showDependencyPanel = ref(false)
 const processDependencies = ref<ProcessDependency[]>([])
 const newDepSource = ref('')
 const newDepTarget = ref('')
-const newDepType = ref<'data'|'control'|'timing'|'signal'>('data')
+const newDepType = ref<'data' | 'control' | 'timing' | 'signal'>('data')
 const newDepCondition = ref('')
 // ── Node Color Themes ────────────────────────────────────────────────
 const showColorThemePanel = ref(false)
 const nodeColorThemes = ref<NodeColorTheme[]>([
-  { id: 'ct1', name: '默认主题', fill: 'rgba(0,212,255,0.15)', stroke: '#00d4ff', textColor: '#00d4ff', icon: '🎨', isDefault: true },
-  { id: 'ct2', name: '极光绿', fill: 'rgba(16,185,129,0.15)', stroke: '#10b981', textColor: '#10b981', icon: '🌿', isDefault: false },
-  { id: 'ct3', name: '烈焰红', fill: 'rgba(239,68,68,0.15)', stroke: '#ef4444', textColor: '#ef4444', icon: '🔥', isDefault: false },
-  { id: 'ct4', name: '紫罗兰', fill: 'rgba(168,85,247,0.15)', stroke: '#a855f7', textColor: '#a855f7', icon: '💜', isDefault: false },
-  { id: 'ct5', name: '琥珀黄', fill: 'rgba(245,158,11,0.15)', stroke: '#f59e0b', textColor: '#f59e0b', icon: '🌟', isDefault: false },
-  { id: 'ct6', name: '樱花粉', fill: 'rgba(236,72,153,0.15)', stroke: '#ec4899', textColor: '#ec4899', icon: '🌸', isDefault: false },
+  {
+    id: 'ct1',
+    name: '默认主题',
+    fill: 'rgba(0,212,255,0.15)',
+    stroke: '#00d4ff',
+    textColor: '#00d4ff',
+    icon: '🎨',
+    isDefault: true,
+  },
+  {
+    id: 'ct2',
+    name: '极光绿',
+    fill: 'rgba(16,185,129,0.15)',
+    stroke: '#10b981',
+    textColor: '#10b981',
+    icon: '🌿',
+    isDefault: false,
+  },
+  {
+    id: 'ct3',
+    name: '烈焰红',
+    fill: 'rgba(239,68,68,0.15)',
+    stroke: '#ef4444',
+    textColor: '#ef4444',
+    icon: '🔥',
+    isDefault: false,
+  },
+  {
+    id: 'ct4',
+    name: '紫罗兰',
+    fill: 'rgba(168,85,247,0.15)',
+    stroke: '#a855f7',
+    textColor: '#a855f7',
+    icon: '💜',
+    isDefault: false,
+  },
+  {
+    id: 'ct5',
+    name: '琥珀黄',
+    fill: 'rgba(245,158,11,0.15)',
+    stroke: '#f59e0b',
+    textColor: '#f59e0b',
+    icon: '🌟',
+    isDefault: false,
+  },
+  {
+    id: 'ct6',
+    name: '樱花粉',
+    fill: 'rgba(236,72,153,0.15)',
+    stroke: '#ec4899',
+    textColor: '#ec4899',
+    icon: '🌸',
+    isDefault: false,
+  },
 ])
 const activeColorTheme = ref('ct1')
 // ── Edge Flow Config ────────────────────────────────────────────────
@@ -6923,7 +10045,7 @@ const newCheckpointCondition = ref('')
 const showEventLogPanel = ref(false)
 const processEvents = ref<ProcessEvent[]>([])
 const eventLogFilter = ref('')
-const eventLogType = ref<'all'|'node_start'|'node_end'|'edge_cross'|'condition_met'|'error'>('all')
+const eventLogType = ref<'all' | 'node_start' | 'node_end' | 'edge_cross' | 'condition_met' | 'error'>('all')
 // ── KPI Dashboard ───────────────────────────────────────────────────
 const showKPIDashboard = ref(false)
 const processKPIs = ref<ProcessKPI[]>([])
@@ -6934,28 +10056,102 @@ const newBookmarkName = ref('')
 const newBookmarkDesc = ref('')
 // ── Comparison Enhanced ─────────────────────────────────────────────
 const showComparisonEnhanced = ref(false)
-const comparisonResult = ref<ProcessComparisonResult|null>(null)
+const comparisonResult = ref<ProcessComparisonResult | null>(null)
 // ── Heatmap ─────────────────────────────────────────────────────────
 const showHeatmapPanel = ref(false)
 const heatmapData = ref<ProcessHeatmapCell[]>([])
-const heatmapMetric = ref<'degree'|'centrality'|'betweenness'|' PageRank'>('degree')
+const heatmapMetric = ref<'degree' | 'centrality' | 'betweenness' | ' PageRank'>('degree')
 // ── Workflow Rules ──────────────────────────────────────────────────
 // ── Export Config ───────────────────────────────────────────────────
 const showExportConfigPanel = ref(false)
-const exportConfig = ref<ProcessExportConfig>({ format: 'svg', includeAnnotations: true, includeMetadata: true, includeHistory: false, quality: 'high', pageSize: 'A4', orientation: 'landscape' })
+const exportConfig = ref<ProcessExportConfig>({
+  format: 'svg',
+  includeAnnotations: true,
+  includeMetadata: true,
+  includeHistory: false,
+  quality: 'high',
+  pageSize: 'A4',
+  orientation: 'landscape',
+})
 // ── Node Style Editor ───────────────────────────────────────────────
 const showNodeStyleEditor = ref(false)
-const nodeStyleEditorIdx = ref<number|null>(null)
-const nodeStyleConfig = ref<ProcessNodeStyle>({ borderRadius: 8, borderWidth: 1.5, borderColor: 'var(--border-color)', fillColor: 'rgba(0,212,255,0.15)', strokeColor: '#00d4ff', shadowEnabled: true, glowEnabled: false, iconSize: 16, fontSize: 12, fontWeight: '600', textAlign: 'center' })
+const nodeStyleEditorIdx = ref<number | null>(null)
+const nodeStyleConfig = ref<ProcessNodeStyle>({
+  borderRadius: 8,
+  borderWidth: 1.5,
+  borderColor: 'var(--border-color)',
+  fillColor: 'rgba(0,212,255,0.15)',
+  strokeColor: '#00d4ff',
+  shadowEnabled: true,
+  glowEnabled: false,
+  iconSize: 16,
+  fontSize: 12,
+  fontWeight: '600',
+  textAlign: 'center',
+})
 // ── Animation Presets ───────────────────────────────────────────────
 const showAnimationPresetsPanel = ref(false)
 const animationPresets = ref<ProcessAnimationPreset[]>([
-  { id: 'ap1', name: '淡入淡出', entrance: 'fade', exit: 'fade', hover: 'glow', click: 'ripple', duration: 300, easing: 'ease-in-out' },
-  { id: 'ap2', name: '滑入', entrance: 'slide-left', exit: 'slide-right', hover: 'shadow', click: 'scale', duration: 400, easing: 'cubic-bezier(0.4, 0, 0.2, 1)' },
-  { id: 'ap3', name: '弹跳', entrance: 'bounce', exit: 'bounce', hover: 'scale', click: 'shake', duration: 500, easing: 'cubic-bezier(0.68, -0.55, 0.265, 1.55)' },
-  { id: 'ap4', name: '脉冲', entrance: 'pulse', exit: 'fade', hover: 'glow', click: 'pulse', duration: 1000, easing: 'ease-in-out' },
-  { id: 'ap5', name: '缩放', entrance: 'scale', exit: 'scale', hover: 'scale', click: 'scale', duration: 200, easing: 'ease-out' },
-  { id: 'ap6', name: '旋转', entrance: 'rotate', exit: 'rotate', hover: 'rotate', click: 'rotate', duration: 600, easing: 'ease-in-out' },
+  {
+    id: 'ap1',
+    name: '淡入淡出',
+    entrance: 'fade',
+    exit: 'fade',
+    hover: 'glow',
+    click: 'ripple',
+    duration: 300,
+    easing: 'ease-in-out',
+  },
+  {
+    id: 'ap2',
+    name: '滑入',
+    entrance: 'slide-left',
+    exit: 'slide-right',
+    hover: 'shadow',
+    click: 'scale',
+    duration: 400,
+    easing: 'cubic-bezier(0.4, 0, 0.2, 1)',
+  },
+  {
+    id: 'ap3',
+    name: '弹跳',
+    entrance: 'bounce',
+    exit: 'bounce',
+    hover: 'scale',
+    click: 'shake',
+    duration: 500,
+    easing: 'cubic-bezier(0.68, -0.55, 0.265, 1.55)',
+  },
+  {
+    id: 'ap4',
+    name: '脉冲',
+    entrance: 'pulse',
+    exit: 'fade',
+    hover: 'glow',
+    click: 'pulse',
+    duration: 1000,
+    easing: 'ease-in-out',
+  },
+  {
+    id: 'ap5',
+    name: '缩放',
+    entrance: 'scale',
+    exit: 'scale',
+    hover: 'scale',
+    click: 'scale',
+    duration: 200,
+    easing: 'ease-out',
+  },
+  {
+    id: 'ap6',
+    name: '旋转',
+    entrance: 'rotate',
+    exit: 'rotate',
+    hover: 'rotate',
+    click: 'rotate',
+    duration: 600,
+    easing: 'ease-in-out',
+  },
 ])
 const activeAnimationPreset = ref('ap1')
 // ── Validation Issues ───────────────────────────────────────────────
@@ -6971,35 +10167,54 @@ const timelineEventsEnhanced = ref<ProcessTimelineEvent[]>([])
 const timelineZoomLevel = ref(1)
 const timelineScrollPos = ref(0)
 // ── Dependency Manager Functions ─────────────────────────────────────
-function openDependencyPanel() { showDependencyPanel.value = true }
+function openDependencyPanel() {
+  showDependencyPanel.value = true
+}
 function addDependency() {
   if (!newDepSource.value || !newDepTarget.value) return
-  processDependencies.value.push({ sourceNodeId: newDepSource.value, targetNodeId: newDepTarget.value, depType: newDepType.value, condition: newDepCondition.value, priority: processDependencies.value.length, active: true })
-  newDepSource.value = ''; newDepTarget.value = ''; newDepCondition.value = ''
+  processDependencies.value.push({
+    sourceNodeId: newDepSource.value,
+    targetNodeId: newDepTarget.value,
+    depType: newDepType.value,
+    condition: newDepCondition.value,
+    priority: processDependencies.value.length,
+    active: true,
+  })
+  newDepSource.value = ''
+  newDepTarget.value = ''
+  newDepCondition.value = ''
 }
-function removeDependency(idx: number) { processDependencies.value.splice(idx, 1) }
-function toggleDependency(idx: number) { processDependencies.value[idx].active = !processDependencies.value[idx].active }
-function getDependenciesForNode(nodeId: string): ProcessDependency[] { return processDependencies.value.filter(d => d.sourceNodeId === nodeId || d.targetNodeId === nodeId) }
+function removeDependency(idx: number) {
+  processDependencies.value.splice(idx, 1)
+}
+function toggleDependency(idx: number) {
+  processDependencies.value[idx].active = !processDependencies.value[idx].active
+}
+function getDependenciesForNode(nodeId: string): ProcessDependency[] {
+  return processDependencies.value.filter((d) => d.sourceNodeId === nodeId || d.targetNodeId === nodeId)
+}
 function getDependencyChain(startNodeId: string): string[] {
   const chain: string[] = [startNodeId]
   const visited = new Set<string>([startNodeId])
   let current = startNodeId
   while (true) {
-    const deps = processDependencies.value.filter(d => d.sourceNodeId === current && d.active)
+    const deps = processDependencies.value.filter((d) => d.sourceNodeId === current && d.active)
     if (deps.length === 0) break
-    const next = deps.find(d => !visited.has(d.targetNodeId))
+    const next = deps.find((d) => !visited.has(d.targetNodeId))
     if (!next) break
-    chain.push(next.targetNodeId); visited.add(next.targetNodeId); current = next.targetNodeId
+    chain.push(next.targetNodeId)
+    visited.add(next.targetNodeId)
+    current = next.targetNodeId
   }
   return chain
 }
 // ── Color Theme Functions ────────────────────────────────────────────
 function applyColorTheme(themeId: string) {
-  const theme = nodeColorThemes.value.find(t => t.id === themeId)
+  const theme = nodeColorThemes.value.find((t) => t.id === themeId)
   if (!theme) return
   activeColorTheme.value = themeId
   if (!processDef.value) return
-  processDef.value.nodes.forEach(n => {
+  processDef.value.nodes.forEach((n) => {
     ;(n as any).fillColor = theme.fill
     ;(n as any).strokeColor = theme.stroke
     ;(n as any).textColor = theme.textColor
@@ -7011,16 +10226,23 @@ function addCustomColorTheme(name: string, fill: string, stroke: string, textCol
   nodeColorThemes.value.push({ id: genId(), name, fill, stroke, textColor, icon: '🎨', isDefault: false })
 }
 function deleteColorTheme(id: string) {
-  nodeColorThemes.value = nodeColorThemes.value.filter(t => t.id !== id)
+  nodeColorThemes.value = nodeColorThemes.value.filter((t) => t.id !== id)
   if (activeColorTheme.value === id) activeColorTheme.value = nodeColorThemes.value[0]?.id || ''
 }
 // ── Edge Flow Functions ──────────────────────────────────────────────
 function initEdgeFlowConfigs() {
   if (!processDef.value) return
   const edges = processDef.value.edges || []
-  edges.forEach(e => {
+  edges.forEach((e) => {
     if (!edgeFlowConfigs.value.has(e.id)) {
-      edgeFlowConfigs.value.set(e.id, { speed: globalEdgeSpeed.value, direction: 'forward', particlesPerEdge: 3, trailLength: globalTrailLength.value, glowEnabled: globalGlowEnabled.value, color: '#00d4ff' })
+      edgeFlowConfigs.value.set(e.id, {
+        speed: globalEdgeSpeed.value,
+        direction: 'forward',
+        particlesPerEdge: 3,
+        trailLength: globalTrailLength.value,
+        glowEnabled: globalGlowEnabled.value,
+        color: '#00d4ff',
+      })
     }
   })
 }
@@ -7028,49 +10250,130 @@ function updateGlobalEdgeSettings(speed: number, trailLength: number, glowEnable
   globalEdgeSpeed.value = speed
   globalTrailLength.value = trailLength
   globalGlowEnabled.value = glowEnabled
-  edgeFlowConfigs.value.forEach(cfg => { cfg.speed = speed; cfg.trailLength = trailLength; cfg.glowEnabled = glowEnabled })
+  edgeFlowConfigs.value.forEach((cfg) => {
+    cfg.speed = speed
+    cfg.trailLength = trailLength
+    cfg.glowEnabled = glowEnabled
+  })
 }
 // ── Checkpoint Functions ─────────────────────────────────────────────
-function openCheckpointPanel() { showCheckpointPanel.value = true }
+function openCheckpointPanel() {
+  showCheckpointPanel.value = true
+}
 function addCheckpoint() {
   if (!newCheckpointNodeId.value || !newCheckpointLabel.value) return
-  processCheckpoints.value.push({ id: genId(), nodeId: newCheckpointNodeId.value, label: newCheckpointLabel.value, condition: newCheckpointCondition.value, action: '', enabled: true, triggered: false })
-  newCheckpointNodeId.value = ''; newCheckpointLabel.value = ''; newCheckpointCondition.value = ''
+  processCheckpoints.value.push({
+    id: genId(),
+    nodeId: newCheckpointNodeId.value,
+    label: newCheckpointLabel.value,
+    condition: newCheckpointCondition.value,
+    action: '',
+    enabled: true,
+    triggered: false,
+  })
+  newCheckpointNodeId.value = ''
+  newCheckpointLabel.value = ''
+  newCheckpointCondition.value = ''
 }
-function removeCheckpoint(idx: number) { processCheckpoints.value.splice(idx, 1) }
-function toggleCheckpoint(idx: number) { processCheckpoints.value[idx].enabled = !processCheckpoints.value[idx].enabled }
-function triggerCheckpoint(id: string) { const cp = processCheckpoints.value.find(c => c.id === id); if (cp) cp.triggered = true }
-function getTriggeredCheckpoints(): number { return processCheckpoints.value.filter(c => c.triggered).length }
+function removeCheckpoint(idx: number) {
+  processCheckpoints.value.splice(idx, 1)
+}
+function toggleCheckpoint(idx: number) {
+  processCheckpoints.value[idx].enabled = !processCheckpoints.value[idx].enabled
+}
+function triggerCheckpoint(id: string) {
+  const cp = processCheckpoints.value.find((c) => c.id === id)
+  if (cp) cp.triggered = true
+}
+function getTriggeredCheckpoints(): number {
+  return processCheckpoints.value.filter((c) => c.triggered).length
+}
 // ── Event Log Functions ──────────────────────────────────────────────
-function openEventLogPanel() { showEventLogPanel.value = true }
-function logEvent(type: string, nodeId: string, label: string, data: Record<string,any> = {}) {
+function openEventLogPanel() {
+  showEventLogPanel.value = true
+}
+function logEvent(type: string, nodeId: string, label: string, data: Record<string, any> = {}) {
   processEvents.value.unshift({ id: genId(), timestamp: Date.now(), type, nodeId, label, data })
   if (processEvents.value.length > 500) processEvents.value = processEvents.value.slice(0, 500)
 }
-function clearEventLog() { processEvents.value = [] }
+function clearEventLog() {
+  processEvents.value = []
+}
 function getFilteredEvents(): ProcessEvent[] {
   if (eventLogType.value === 'all') return processEvents.value
-  return processEvents.value.filter(e => e.type === eventLogType.value)
+  return processEvents.value.filter((e) => e.type === eventLogType.value)
 }
 function getEventCountByType(): Record<string, number> {
   const counts: Record<string, number> = {}
-  processEvents.value.forEach(e => { counts[e.type] = (counts[e.type] || 0) + 1 })
+  processEvents.value.forEach((e) => {
+    counts[e.type] = (counts[e.type] || 0) + 1
+  })
   return counts
 }
 // ── KPI Functions ────────────────────────────────────────────────────
 function calculateKPIs(): void {
   if (!processDef.value) return
-  const nodes = processDef.value.nodes, edges = processDef.value.edges || []
-  const inDeg = new Map<string, number>(), outDeg = new Map<string, number>()
-  nodes.forEach(n => { inDeg.set(n.id, 0); outDeg.set(n.id, 0) })
-  edges.forEach(e => { inDeg.set(e.to, (inDeg.get(e.to)||0)+1); outDeg.set(e.from, (outDeg.get(e.from)||0)+1) })
+  const nodes = processDef.value.nodes,
+    edges = processDef.value.edges || []
+  const inDeg = new Map<string, number>(),
+    outDeg = new Map<string, number>()
+  nodes.forEach((n) => {
+    inDeg.set(n.id, 0)
+    outDeg.set(n.id, 0)
+  })
+  edges.forEach((e) => {
+    inDeg.set(e.to, (inDeg.get(e.to) || 0) + 1)
+    outDeg.set(e.from, (outDeg.get(e.from) || 0) + 1)
+  })
   processKPIs.value = [
-    { name: '节点总数', value: nodes.length, target: 50, unit: '个', trend: 0, threshold: { warning: 40, critical: 60 } },
-    { name: '连线总数', value: edges.length, target: 80, unit: '条', trend: 0, threshold: { warning: 60, critical: 100 } },
-    { name: '平均度', value: nodes.length > 0 ? parseFloat((edges.length * 2 / nodes.length).toFixed(1)) : 0, target: 3, unit: '', trend: 0, threshold: { warning: 5, critical: 8 } },
-    { name: '循环风险', value: flowAnalysisResult.value?.cycles?.length || 0, target: 0, unit: '个', trend: 0, threshold: { warning: 1, critical: 3 } },
-    { name: '孤立节点', value: flowAnalysisResult.value?.isolatedNodes?.length || 0, target: 0, unit: '个', trend: 0, threshold: { warning: 1, critical: 3 } },
-    { name: '健康评分', value: getFlowHealthScore(), target: 80, unit: '分', trend: 0, threshold: { warning: 60, critical: 40 } },
+    {
+      name: '节点总数',
+      value: nodes.length,
+      target: 50,
+      unit: '个',
+      trend: 0,
+      threshold: { warning: 40, critical: 60 },
+    },
+    {
+      name: '连线总数',
+      value: edges.length,
+      target: 80,
+      unit: '条',
+      trend: 0,
+      threshold: { warning: 60, critical: 100 },
+    },
+    {
+      name: '平均度',
+      value: nodes.length > 0 ? parseFloat(((edges.length * 2) / nodes.length).toFixed(1)) : 0,
+      target: 3,
+      unit: '',
+      trend: 0,
+      threshold: { warning: 5, critical: 8 },
+    },
+    {
+      name: '循环风险',
+      value: flowAnalysisResult.value?.cycles?.length || 0,
+      target: 0,
+      unit: '个',
+      trend: 0,
+      threshold: { warning: 1, critical: 3 },
+    },
+    {
+      name: '孤立节点',
+      value: flowAnalysisResult.value?.isolatedNodes?.length || 0,
+      target: 0,
+      unit: '个',
+      trend: 0,
+      threshold: { warning: 1, critical: 3 },
+    },
+    {
+      name: '健康评分',
+      value: getFlowHealthScore(),
+      target: 80,
+      unit: '分',
+      trend: 0,
+      threshold: { warning: 60, critical: 40 },
+    },
   ]
   showKPIDashboard.value = true
 }
@@ -7080,17 +10383,29 @@ function getKPIStatusColor(kpi: ProcessKPI): string {
   return 'var(--color-success)'
 }
 // ── Bookmark Functions ───────────────────────────────────────────────
-function openBookmarkPanel() { showBookmarkPanel.value = true }
+function openBookmarkPanel() {
+  showBookmarkPanel.value = true
+}
 function addBookmark() {
   if (!newBookmarkName.value.trim()) return
-  processBookmarks.value.push({ id: genId(), name: newBookmarkName.value, nodeIds: [], description: newBookmarkDesc.value, createdAt: Date.now(), tags: [] })
-  newBookmarkName.value = ''; newBookmarkDesc.value = ''
+  processBookmarks.value.push({
+    id: genId(),
+    name: newBookmarkName.value,
+    nodeIds: [],
+    description: newBookmarkDesc.value,
+    createdAt: Date.now(),
+    tags: [],
+  })
+  newBookmarkName.value = ''
+  newBookmarkDesc.value = ''
 }
-function deleteBookmark(idx: number) { processBookmarks.value.splice(idx, 1) }
+function deleteBookmark(idx: number) {
+  processBookmarks.value.splice(idx, 1)
+}
 function jumpToBookmark(idx: number) {
   const bm = processBookmarks.value[idx]
   if (!bm || !processDef.value) return
-  const node = processDef.value.nodes.find(n => bm.nodeIds.includes(n.id))
+  const node = processDef.value.nodes.find((n) => bm.nodeIds.includes(n.id))
   if (node) {
     panX.value = -node.x * zoom.value + 400
     panY.value = -node.y * zoom.value + 300
@@ -7106,54 +10421,112 @@ function addToBookmark(bmIdx: number, nodeId: string) {
 // ── Heatmap Functions ────────────────────────────────────────────────
 function generateHeatmap(): void {
   if (!processDef.value) return
-  const nodes = processDef.value.nodes, edges = processDef.value.edges || []
-  const inDeg = new Map<string, number>(), outDeg = new Map<string, number>()
-  nodes.forEach(n => { inDeg.set(n.id, 0); outDeg.set(n.id, 0) })
-  edges.forEach(e => { inDeg.set(e.to, (inDeg.get(e.to)||0)+1); outDeg.set(e.from, (outDeg.get(e.from)||0)+1) })
-  heatmapData.value = nodes.map(n => {
-    const degree = (inDeg.get(n.id)||0) + (outDeg.get(n.id)||0)
-    const maxDegree = Math.max(...[...inDeg.values(), ...outDeg.values()].map(v => v || 0), 1)
+  const nodes = processDef.value.nodes,
+    edges = processDef.value.edges || []
+  const inDeg = new Map<string, number>(),
+    outDeg = new Map<string, number>()
+  nodes.forEach((n) => {
+    inDeg.set(n.id, 0)
+    outDeg.set(n.id, 0)
+  })
+  edges.forEach((e) => {
+    inDeg.set(e.to, (inDeg.get(e.to) || 0) + 1)
+    outDeg.set(e.from, (outDeg.get(e.from) || 0) + 1)
+  })
+  heatmapData.value = nodes.map((n) => {
+    const degree = (inDeg.get(n.id) || 0) + (outDeg.get(n.id) || 0)
+    const maxDegree = Math.max(...[...inDeg.values(), ...outDeg.values()].map((v) => v || 0), 1)
     const intensity = degree / maxDegree
     const color = intensity > 0.7 ? '#ef4444' : intensity > 0.4 ? '#f59e0b' : '#10b981'
-    return { nodeId: n.id, metric: heatmapMetric.value, value: degree, color, label: n.label||n.type }
+    return { nodeId: n.id, metric: heatmapMetric.value, value: degree, color, label: n.label || n.type }
   })
   showHeatmapPanel.value = true
 }
-function updateHeatmapMetric(metric: string) { heatmapMetric.value = metric as any; generateHeatmap() }
+function updateHeatmapMetric(metric: string) {
+  heatmapMetric.value = metric as any
+  generateHeatmap()
+}
 // ── Workflow Rules Functions ─────────────────────────────────────────
-function openWorkflowRulesPanel() { showWorkflowRulesPanel.value = true }
+function openWorkflowRulesPanel() {
+  showWorkflowRulesPanel.value = true
+}
 function executeWorkflowRules(): void {
   if (!processDef.value) return
-  workflowRulesList.value.filter(r => r.enabled).forEach(rule => {
-    try {
-      const result = (0, eval)(rule.condition)
-      if (result) {
-        rule.executionLog.push({ time: Date.now(), result: 'triggered' })
-        logEvent('rule_triggered', '', rule.name, { action: rule.action })
-        showToast('工作流规则 "' + rule.name + '" 已触发', 'info')
+  workflowRulesList.value
+    .filter((r) => r.enabled)
+    .forEach((rule) => {
+      try {
+        const result = (0, eval)(rule.condition)
+        if (result) {
+          rule.executionLog.push({ time: Date.now(), result: 'triggered' })
+          logEvent('rule_triggered', '', rule.name, { action: rule.action })
+          showToast('工作流规则 "' + rule.name + '" 已触发', 'info')
+        }
+      } catch {
+        rule.executionLog.push({ time: Date.now(), result: 'error' })
       }
-    } catch { rule.executionLog.push({ time: Date.now(), result: 'error' }) }
-  })
+    })
 }
 // ── Export Config Functions ──────────────────────────────────────────
-function openExportConfigPanel() { showExportConfigPanel.value = true }
-function applyExportConfig(): void { exportProcessEnhanced() }
+function openExportConfigPanel() {
+  showExportConfigPanel.value = true
+}
+function applyExportConfig(): void {
+  exportProcessEnhanced()
+}
 function exportProcessEnhanced(): void {
   if (!processDef.value) return
   const fmt = exportConfig.value.format
-  let content = '', mime = '', ext = ''
-  if (fmt === 'json') { content = JSON.stringify({ metadata: processMetadata.value, definition: processDef.value, exportedAt: new Date().toISOString() }, null, 2); mime = 'application/json'; ext = 'json' }
-  else if (fmt === 'svg') { content = generateSVGRich(); mime = 'image/svg+xml'; ext = 'svg' }
-  else if (fmt === 'mermaid') { content = generateMermaid(); mime = 'text/plain'; ext = 'md' }
-  else if (fmt === 'plantuml') { content = generatePlantUML(); mime = 'text/plain'; ext = 'plantuml' }
-  else if (fmt === 'dot') { content = generateDOT(); mime = 'text/plain'; ext = 'dot' }
-  else if (fmt === 'yaml') { content = generateYAMLEnhanced(); mime = 'text/yaml'; ext = 'yaml' }
-  else if (fmt === 'html') { content = generateHTMLReportEnhanced(); mime = 'text/html'; ext = 'html' }
-  else if (fmt === 'csv') { content = generateCSVEnhanced(); mime = 'text/csv'; ext = 'csv' }
-  else { content = JSON.stringify(processDef.value, null, 2); mime = 'application/json'; ext = 'json' }
+  let content = '',
+    mime = '',
+    ext = ''
+  if (fmt === 'json') {
+    content = JSON.stringify(
+      { metadata: processMetadata.value, definition: processDef.value, exportedAt: new Date().toISOString() },
+      null,
+      2,
+    )
+    mime = 'application/json'
+    ext = 'json'
+  } else if (fmt === 'svg') {
+    content = generateSVGRich()
+    mime = 'image/svg+xml'
+    ext = 'svg'
+  } else if (fmt === 'mermaid') {
+    content = generateMermaid()
+    mime = 'text/plain'
+    ext = 'md'
+  } else if (fmt === 'plantuml') {
+    content = generatePlantUML()
+    mime = 'text/plain'
+    ext = 'plantuml'
+  } else if (fmt === 'dot') {
+    content = generateDOT()
+    mime = 'text/plain'
+    ext = 'dot'
+  } else if (fmt === 'yaml') {
+    content = generateYAMLEnhanced()
+    mime = 'text/yaml'
+    ext = 'yaml'
+  } else if (fmt === 'html') {
+    content = generateHTMLReportEnhanced()
+    mime = 'text/html'
+    ext = 'html'
+  } else if (fmt === 'csv') {
+    content = generateCSVEnhanced()
+    mime = 'text/csv'
+    ext = 'csv'
+  } else {
+    content = JSON.stringify(processDef.value, null, 2)
+    mime = 'application/json'
+    ext = 'json'
+  }
   const blob = new Blob([content], { type: mime })
   const url = URL.createObjectURL(blob)
-  const a = document.createElement('a'); a.href = url; a.download = (processMetadata.value.flag || 'process') + '.' + ext; a.click()
+  const a = document.createElement('a')
+  a.href = url
+  a.download = (processMetadata.value.flag || 'process') + '.' + ext
+  a.click()
   URL.revokeObjectURL(url)
   showExportConfigPanel.value = false
   showToast('已导出为 ' + ext.toUpperCase() + ' 格式', 'success')
@@ -7175,7 +10548,7 @@ function openNodeStyleEditor(nodeIdx: number) {
       iconSize: (node as any).iconSize || 16,
       fontSize: (node as any).fontSize || 12,
       fontWeight: (node as any).fontWeight || '600',
-      textAlign: (node as any).textAlign || 'center' as any,
+      textAlign: (node as any).textAlign || ('center' as any),
     }
   }
 }
@@ -7199,7 +10572,7 @@ function saveNodeStyle() {
 }
 function applyNodeStyleToAll() {
   if (!processDef.value) return
-  processDef.value.nodes.forEach(n => {
+  processDef.value.nodes.forEach((n) => {
     ;(n as any).borderRadius = nodeStyleConfig.value.borderRadius
     ;(n as any).borderWidth = nodeStyleConfig.value.borderWidth
     ;(n as any).fillColor = nodeStyleConfig.value.fillColor
@@ -7213,7 +10586,7 @@ function applyNodeStyleToAll() {
 }
 // ── Animation Presets Functions ──────────────────────────────────────
 function applyAnimationPreset(presetId: string) {
-  const preset = animationPresets.value.find(p => p.id === presetId)
+  const preset = animationPresets.value.find((p) => p.id === presetId)
   if (!preset || !processDef.value) return
   ;(processDef.value as any).__animationPreset = presetId
   pushHistory()
@@ -7223,38 +10596,87 @@ function addAnimationPreset(name: string, entrance: string, exit: string, hover:
   animationPresets.value.push({ id: genId(), name, entrance, exit, hover, click, duration: 300, easing: 'ease-in-out' })
 }
 function deleteAnimationPreset(id: string) {
-  animationPresets.value = animationPresets.value.filter(p => p.id !== id)
+  animationPresets.value = animationPresets.value.filter((p) => p.id !== id)
 }
 // ── Validation Functions ─────────────────────────────────────────────
 function runFullValidation(): void {
   if (!processDef.value) return
   validationIssues.value = []
   validationScore.value = 100
-  const nodes = processDef.value.nodes, edges = processDef.value.edges || []
+  const nodes = processDef.value.nodes,
+    edges = processDef.value.edges || []
   // Check for missing start/end
-  const hasStart = nodes.some(n => n.type === 'start')
-  const hasEnd = nodes.some(n => n.type === 'end')
-  if (!hasStart) { validationIssues.value.push({ id: genId(), type: 'error', message: '流程缺少开始节点', suggestion: '添加一个 start 类型节点', severity: 3 }); validationScore.value -= 20 }
-  if (!hasEnd) { validationIssues.value.push({ id: genId(), type: 'error', message: '流程缺少结束节点', suggestion: '添加一个 end 类型节点', severity: 3 }); validationScore.value -= 20 }
+  const hasStart = nodes.some((n) => n.type === 'start')
+  const hasEnd = nodes.some((n) => n.type === 'end')
+  if (!hasStart) {
+    validationIssues.value.push({
+      id: genId(),
+      type: 'error',
+      message: '流程缺少开始节点',
+      suggestion: '添加一个 start 类型节点',
+      severity: 3,
+    })
+    validationScore.value -= 20
+  }
+  if (!hasEnd) {
+    validationIssues.value.push({
+      id: genId(),
+      type: 'error',
+      message: '流程缺少结束节点',
+      suggestion: '添加一个 end 类型节点',
+      severity: 3,
+    })
+    validationScore.value -= 20
+  }
   // Check isolated nodes
-  const inDeg = new Map<string, number>(), outDeg = new Map<string, number>()
-  nodes.forEach(n => { inDeg.set(n.id, 0); outDeg.set(n.id, 0) })
-  edges.forEach(e => { inDeg.set(e.to, (inDeg.get(e.to)||0)+1); outDeg.set(e.from, (outDeg.get(e.from)||0)+1) })
-  nodes.forEach(n => {
-    if ((inDeg.get(n.id)||0) === 0 && (outDeg.get(n.id)||0) === 0) {
-      validationIssues.value.push({ id: genId(), type: 'warning', nodeId: n.id, message: '节点 "' + (n.label||n.id) + '" 完全孤立', suggestion: '添加连线或移除节点', severity: 2 }); validationScore.value -= 10
+  const inDeg = new Map<string, number>(),
+    outDeg = new Map<string, number>()
+  nodes.forEach((n) => {
+    inDeg.set(n.id, 0)
+    outDeg.set(n.id, 0)
+  })
+  edges.forEach((e) => {
+    inDeg.set(e.to, (inDeg.get(e.to) || 0) + 1)
+    outDeg.set(e.from, (outDeg.get(e.from) || 0) + 1)
+  })
+  nodes.forEach((n) => {
+    if ((inDeg.get(n.id) || 0) === 0 && (outDeg.get(n.id) || 0) === 0) {
+      validationIssues.value.push({
+        id: genId(),
+        type: 'warning',
+        nodeId: n.id,
+        message: '节点 "' + (n.label || n.id) + '" 完全孤立',
+        suggestion: '添加连线或移除节点',
+        severity: 2,
+      })
+      validationScore.value -= 10
     }
   })
   // Check for high-degree nodes
-  nodes.forEach(n => {
-    const degree = (inDeg.get(n.id)||0) + (outDeg.get(n.id)||0)
+  nodes.forEach((n) => {
+    const degree = (inDeg.get(n.id) || 0) + (outDeg.get(n.id) || 0)
     if (degree >= 5) {
-      validationIssues.value.push({ id: genId(), type: 'warning', nodeId: n.id, message: '节点 "' + (n.label||n.id) + '" 连接度过高 (' + degree + ')', suggestion: '考虑拆分为子流程', severity: 1 }); validationScore.value -= 5
+      validationIssues.value.push({
+        id: genId(),
+        type: 'warning',
+        nodeId: n.id,
+        message: '节点 "' + (n.label || n.id) + '" 连接度过高 (' + degree + ')',
+        suggestion: '考虑拆分为子流程',
+        severity: 1,
+      })
+      validationScore.value -= 5
     }
   })
   // Check for long chains
   if (nodes.length > 20) {
-    validationIssues.value.push({ id: genId(), type: 'info', message: '流程节点数较多 (' + nodes.length + ')', suggestion: '考虑使用子流程拆分', severity: 0 }); validationScore.value -= 5
+    validationIssues.value.push({
+      id: genId(),
+      type: 'info',
+      message: '流程节点数较多 (' + nodes.length + ')',
+      suggestion: '考虑使用子流程拆分',
+      severity: 0,
+    })
+    validationScore.value -= 5
   }
   showValidationPanel.value = true
 }
@@ -7264,20 +10686,112 @@ function getValidationSeverityColor(severity: number): string {
 // ── Metrics Functions ────────────────────────────────────────────────
 function calculateMetrics(): void {
   if (!processDef.value) return
-  const nodes = processDef.value.nodes, edges = processDef.value.edges || []
+  const nodes = processDef.value.nodes,
+    edges = processDef.value.edges || []
   processMetrics.value = [
-    { name: '节点总数', value: String(nodes.length), description: '流程中的节点数量', category: '结构', trend: 0, unit: '个' },
-    { name: '连线总数', value: String(edges.length), description: '流程中的连线数量', category: '结构', trend: 0, unit: '条' },
-    { name: '平均度', value: nodes.length > 0 ? (edges.length * 2 / nodes.length).toFixed(1) : '0', description: '平均每节点的连接数', category: '结构', trend: 0, unit: '' },
-    { name: '最大度', value: String(Math.max(...[...new Set(edges.flatMap(e => [e.from, e.to]))].map(id => (edges.filter(e => e.from===id||e.to===id)).length), 0)), description: '单节点最大连接数', category: '结构', trend: 0, unit: '' },
-    { name: '循环数量', value: String(flowAnalysisResult.value?.cycles?.length || 0), description: '流程中的循环数量', category: '质量', trend: 0, unit: '个' },
-    { name: '健康评分', value: String(getFlowHealthScore()), description: '流程整体健康评分', category: '质量', trend: 0, unit: '分' },
-    { name: '开始节点', value: String(nodes.filter(n => n.type === 'start').length), description: '开始节点数量', category: '结构', trend: 0, unit: '个' },
-    { name: '结束节点', value: String(nodes.filter(n => n.type === 'end').length), description: '结束节点数量', category: '结构', trend: 0, unit: '个' },
-    { name: '网关节点', value: String(nodes.filter(n => n.type.startsWith('gate_')).length), description: '决策网关数量', category: '结构', trend: 0, unit: '个' },
-    { name: '脚本节点', value: String(nodes.filter(n => n.type === 'script').length), description: '脚本处理节点数量', category: '结构', trend: 0, unit: '个' },
-    { name: '审批节点', value: String(nodes.filter(n => n.type === 'approval').length), description: '审批节点数量', category: '结构', trend: 0, unit: '个' },
-    { name: '子流程节点', value: String(nodes.filter(n => n.type === 'subprocess').length), description: '子流程节点数量', category: '结构', trend: 0, unit: '个' },
+    {
+      name: '节点总数',
+      value: String(nodes.length),
+      description: '流程中的节点数量',
+      category: '结构',
+      trend: 0,
+      unit: '个',
+    },
+    {
+      name: '连线总数',
+      value: String(edges.length),
+      description: '流程中的连线数量',
+      category: '结构',
+      trend: 0,
+      unit: '条',
+    },
+    {
+      name: '平均度',
+      value: nodes.length > 0 ? ((edges.length * 2) / nodes.length).toFixed(1) : '0',
+      description: '平均每节点的连接数',
+      category: '结构',
+      trend: 0,
+      unit: '',
+    },
+    {
+      name: '最大度',
+      value: String(
+        Math.max(
+          ...[...new Set(edges.flatMap((e) => [e.from, e.to]))].map(
+            (id) => edges.filter((e) => e.from === id || e.to === id).length,
+          ),
+          0,
+        ),
+      ),
+      description: '单节点最大连接数',
+      category: '结构',
+      trend: 0,
+      unit: '',
+    },
+    {
+      name: '循环数量',
+      value: String(flowAnalysisResult.value?.cycles?.length || 0),
+      description: '流程中的循环数量',
+      category: '质量',
+      trend: 0,
+      unit: '个',
+    },
+    {
+      name: '健康评分',
+      value: String(getFlowHealthScore()),
+      description: '流程整体健康评分',
+      category: '质量',
+      trend: 0,
+      unit: '分',
+    },
+    {
+      name: '开始节点',
+      value: String(nodes.filter((n) => n.type === 'start').length),
+      description: '开始节点数量',
+      category: '结构',
+      trend: 0,
+      unit: '个',
+    },
+    {
+      name: '结束节点',
+      value: String(nodes.filter((n) => n.type === 'end').length),
+      description: '结束节点数量',
+      category: '结构',
+      trend: 0,
+      unit: '个',
+    },
+    {
+      name: '网关节点',
+      value: String(nodes.filter((n) => n.type.startsWith('gate_')).length),
+      description: '决策网关数量',
+      category: '结构',
+      trend: 0,
+      unit: '个',
+    },
+    {
+      name: '脚本节点',
+      value: String(nodes.filter((n) => n.type === 'script').length),
+      description: '脚本处理节点数量',
+      category: '结构',
+      trend: 0,
+      unit: '个',
+    },
+    {
+      name: '审批节点',
+      value: String(nodes.filter((n) => n.type === 'approval').length),
+      description: '审批节点数量',
+      category: '结构',
+      trend: 0,
+      unit: '个',
+    },
+    {
+      name: '子流程节点',
+      value: String(nodes.filter((n) => n.type === 'subprocess').length),
+      description: '子流程节点数量',
+      category: '结构',
+      trend: 0,
+      unit: '个',
+    },
   ]
   showMetricsPanel.value = true
 }
@@ -7285,83 +10799,240 @@ function calculateMetrics(): void {
 function buildEnhancedTimeline(): void {
   if (!processDef.value) return
   timelineEventsEnhanced.value = []
-  const nodes = processDef.value.nodes, edges = processDef.value.edges || []
+  const nodes = processDef.value.nodes,
+    edges = processDef.value.edges || []
   const inDeg = new Map<string, number>()
-  nodes.forEach(n => inDeg.set(n.id, edges.filter(e => e.to === n.id).length))
+  nodes.forEach((n) => inDeg.set(n.id, edges.filter((e) => e.to === n.id).length))
   let t = 0
-  const startNodes = nodes.filter(n => (inDeg.get(n.id)||0) === 0)
-  startNodes.forEach(sn => {
+  const startNodes = nodes.filter((n) => (inDeg.get(n.id) || 0) === 0)
+  startNodes.forEach((sn) => {
     const dur = 80 + Math.random() * 120
-    timelineEventsEnhanced.value.push({ time: t, type: 'start', label: sn.label||sn.type, color: '#10b981', details: '开始执行' })
+    timelineEventsEnhanced.value.push({
+      time: t,
+      type: 'start',
+      label: sn.label || sn.type,
+      color: '#10b981',
+      details: '开始执行',
+    })
     t += dur
-    timelineEventsEnhanced.value.push({ time: t, type: 'complete', label: sn.label||sn.type, color: '#00d4ff', details: '执行完成' })
+    timelineEventsEnhanced.value.push({
+      time: t,
+      type: 'complete',
+      label: sn.label || sn.type,
+      color: '#00d4ff',
+      details: '执行完成',
+    })
     t += 20
   })
-  nodes.forEach(n => {
-    if (startNodes.find(s => s.id === n.id)) return
-    const deps = edges.filter(e => e.to === n.id)
-    const startT = Math.max(...deps.map(e => { const sn = nodes.find(nn => nn.id === e.from); return sn ? (timelineEventsEnhanced.value.find(ev => ev.label === sn.label && ev.type === 'complete')?.time || 0) : 0 }))
+  nodes.forEach((n) => {
+    if (startNodes.find((s) => s.id === n.id)) return
+    const deps = edges.filter((e) => e.to === n.id)
+    const startT = Math.max(
+      ...deps.map((e) => {
+        const sn = nodes.find((nn) => nn.id === e.from)
+        return sn
+          ? timelineEventsEnhanced.value.find((ev) => ev.label === sn.label && ev.type === 'complete')?.time || 0
+          : 0
+      }),
+    )
     const dur = 60 + Math.random() * 100
-    timelineEventsEnhanced.value.push({ time: startT, type: 'start', label: n.label||n.type, color: '#6366f1', details: '开始执行' })
-    timelineEventsEnhanced.value.push({ time: startT + dur, type: 'complete', label: n.label||n.type, color: '#00d4ff', details: '执行完成' })
+    timelineEventsEnhanced.value.push({
+      time: startT,
+      type: 'start',
+      label: n.label || n.type,
+      color: '#6366f1',
+      details: '开始执行',
+    })
+    timelineEventsEnhanced.value.push({
+      time: startT + dur,
+      type: 'complete',
+      label: n.label || n.type,
+      color: '#00d4ff',
+      details: '执行完成',
+    })
     t = startT + dur + 20
   })
-  timelineEventsEnhanced.value.sort((a,b) => a.time - b.time)
+  timelineEventsEnhanced.value.sort((a, b) => a.time - b.time)
   showTimelineEnhanced.value = true
 }
-function getTimelineDuration(): number { return timelineEventsEnhanced.value.length > 0 ? timelineEventsEnhanced.value[timelineEventsEnhanced.value.length-1].time : 0 }
+function getTimelineDuration(): number {
+  return timelineEventsEnhanced.value.length > 0
+    ? timelineEventsEnhanced.value[timelineEventsEnhanced.value.length - 1].time
+    : 0
+}
 // ── Utility Functions ────────────────────────────────────────────────
 function debounce(fn: Function, ms: number): Function {
   let timer: any = null
-  return (...args: any[]) => { if (timer) clearTimeout(timer); timer = setTimeout(() => fn(...args), ms) }
+  return (...args: any[]) => {
+    if (timer) clearTimeout(timer)
+    timer = setTimeout(() => fn(...args), ms)
+  }
 }
 function throttle(fn: Function, ms: number): Function {
   let last = 0
-  return (...args: any[]) => { const now = Date.now(); if (now - last >= ms) { fn(...args); last = now } }
+  return (...args: any[]) => {
+    const now = Date.now()
+    if (now - last >= ms) {
+      fn(...args)
+      last = now
+    }
+  }
 }
 function formatNumber(num: number): string {
-  if (num >= 1000000) return (num/1000000).toFixed(1) + 'M'
-  if (num >= 1000) return (num/1000).toFixed(1) + 'K'
+  if (num >= 1000000) return (num / 1000000).toFixed(1) + 'M'
+  if (num >= 1000) return (num / 1000).toFixed(1) + 'K'
   return String(num)
 }
-function clampNum(val: number, min: number, max: number): number { return Math.max(min, Math.min(max, val)) }
+function clampNum(val: number, min: number, max: number): number {
+  return Math.max(min, Math.min(max, val))
+}
 function interpolateColor(color1: string, color2: string, factor: number): string {
-  const r1 = parseInt(color1.slice(1,3), 16), g1 = parseInt(color1.slice(3,5), 16), b1 = parseInt(color1.slice(5,7), 16)
-  const r2 = parseInt(color2.slice(1,3), 16), g2 = parseInt(color2.slice(3,5), 16), b2 = parseInt(color2.slice(5,7), 16)
-  const r = Math.round(r1 + (r2-r1)*factor), g = Math.round(g1 + (g2-g1)*factor), b = Math.round(b1 + (b2-b1)*factor)
-  return '#' + [r,g,b].map(x => x.toString(16).padStart(2,'0')).join('')
+  const r1 = parseInt(color1.slice(1, 3), 16),
+    g1 = parseInt(color1.slice(3, 5), 16),
+    b1 = parseInt(color1.slice(5, 7), 16)
+  const r2 = parseInt(color2.slice(1, 3), 16),
+    g2 = parseInt(color2.slice(3, 5), 16),
+    b2 = parseInt(color2.slice(5, 7), 16)
+  const r = Math.round(r1 + (r2 - r1) * factor),
+    g = Math.round(g1 + (g2 - g1) * factor),
+    b = Math.round(b1 + (b2 - b1) * factor)
+  return '#' + [r, g, b].map((x) => x.toString(16).padStart(2, '0')).join('')
 }
 function generateChecksum(data: string): string {
   let hash = 0
-  for (let i = 0; i < data.length; i++) { hash = ((hash << 5) - hash) + data.charCodeAt(i); hash |= 0 }
+  for (let i = 0; i < data.length; i++) {
+    hash = (hash << 5) - hash + data.charCodeAt(i)
+    hash |= 0
+  }
   return 'crc_' + Math.abs(hash).toString(16)
 }
 function compareVersions(v1: string, v2: string): number {
-  const p1 = v1.split('.').map(Number), p2 = v2.split('.').map(Number)
+  const p1 = v1.split('.').map(Number),
+    p2 = v2.split('.').map(Number)
   for (let i = 0; i < Math.max(p1.length, p2.length); i++) {
-    if ((p1[i]||0) > (p2[i]||0)) return 1
-    if ((p1[i]||0) < (p2[i]||0)) return -1
+    if ((p1[i] || 0) > (p2[i] || 0)) return 1
+    if ((p1[i] || 0) < (p2[i] || 0)) return -1
   }
   return 0
 }
-function slugify(text: string): string { return text.toLowerCase().replace(/[^ws-]/g, '').replace(/s+/g, '-') }
-function truncateText(text: string, maxLen: number): string { return text.length <= maxLen ? text : text.substring(0, maxLen) + '...' }
-function randomColor(): string { return '#' + Math.floor(Math.random()*16777215).toString(16).padStart(6, '0') }
-function generateUUID(): string { return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => { const r = Math.random()*16|0; return (c==='x'?r:(r&0x3|0x8)).toString(16) }) }
+function slugify(text: string): string {
+  return text
+    .toLowerCase()
+    .replace(/[^ws-]/g, '')
+    .replace(/s+/g, '-')
+}
+function truncateText(text: string, maxLen: number): string {
+  return text.length <= maxLen ? text : text.substring(0, maxLen) + '...'
+}
+function randomColor(): string {
+  return (
+    '#' +
+    Math.floor(Math.random() * 16777215)
+      .toString(16)
+      .padStart(6, '0')
+  )
+}
+function generateUUID(): string {
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
+    const r = (Math.random() * 16) | 0
+    return (c === 'x' ? r : (r & 0x3) | 0x8).toString(16)
+  })
+}
 
 // -- Advanced Interfaces
-interface SLAMetric { slaId: string; name: string; targetMs: number; currentMs: number; breached: boolean; color: string }
-interface CrossProcessRef { targetProcId: string; targetType: "process"|"form"|"report"; label: string; relationType: "calls"|"calledBy"|"shares"|"extends" }
-interface QualityGate { gateId: string; name: string; checkType: "time"|"count"|"approval"|"data"; threshold: string; status: "pass"|"fail"|"pending"; passedAt?: string }
-interface RiskFactor { id: string; name: string; severity: "low"|"medium"|"high"|"critical"; probability: number; impact: number; mitigations: string[] }
-interface CostEstimate { resourceId: string; resourceName: string; timeCost: number; memoryCost: number; moneyCost: number; unit: string }
-interface NotificationRule { id: string; event: string; channel: "email"|"sms"|"webhook"|"in_app"; condition: string; enabled: boolean }
-interface AuditEntry { id: string; timestamp: number; user: string; action: string; target: string; oldVal?: string; newVal?: string }
-interface HealthScore { overall: number; efficiency: number; reliability: number; maintainability: number; security: number; details: Array<{label: string; value: number; color: string}> }
-interface BottleneckCell { nodeId: string; avgTime: number; maxTime: number; minTime: number; variance: number; color: string; label: string }
-interface OptimizationSuggestion { id: string; type: "parallel"|"sequential"|"simplify"|"delegate"; description: string; impact: "high"|"medium"|"low"; estimatedSaving: string }
-interface ChangeRequest { id: string; title: string; description: string; status: "draft"|"review"|"approved"|"rejected"|"implemented"; author: string; createdAt: number; changes: string[] }
-interface AIBottleneck { nodeId: string; score: number; reason: string; suggestion: string }
+interface SLAMetric {
+  slaId: string
+  name: string
+  targetMs: number
+  currentMs: number
+  breached: boolean
+  color: string
+}
+interface CrossProcessRef {
+  targetProcId: string
+  targetType: 'process' | 'form' | 'report'
+  label: string
+  relationType: 'calls' | 'calledBy' | 'shares' | 'extends'
+}
+interface QualityGate {
+  gateId: string
+  name: string
+  checkType: 'time' | 'count' | 'approval' | 'data'
+  threshold: string
+  status: 'pass' | 'fail' | 'pending'
+  passedAt?: string
+}
+interface RiskFactor {
+  id: string
+  name: string
+  severity: 'low' | 'medium' | 'high' | 'critical'
+  probability: number
+  impact: number
+  mitigations: string[]
+}
+interface CostEstimate {
+  resourceId: string
+  resourceName: string
+  timeCost: number
+  memoryCost: number
+  moneyCost: number
+  unit: string
+}
+interface NotificationRule {
+  id: string
+  event: string
+  channel: 'email' | 'sms' | 'webhook' | 'in_app'
+  condition: string
+  enabled: boolean
+}
+interface AuditEntry {
+  id: string
+  timestamp: number
+  user: string
+  action: string
+  target: string
+  oldVal?: string
+  newVal?: string
+}
+interface HealthScore {
+  overall: number
+  efficiency: number
+  reliability: number
+  maintainability: number
+  security: number
+  details: Array<{ label: string; value: number; color: string }>
+}
+interface BottleneckCell {
+  nodeId: string
+  avgTime: number
+  maxTime: number
+  minTime: number
+  variance: number
+  color: string
+  label: string
+}
+interface OptimizationSuggestion {
+  id: string
+  type: 'parallel' | 'sequential' | 'simplify' | 'delegate'
+  description: string
+  impact: 'high' | 'medium' | 'low'
+  estimatedSaving: string
+}
+interface ChangeRequest {
+  id: string
+  title: string
+  description: string
+  status: 'draft' | 'review' | 'approved' | 'rejected' | 'implemented'
+  author: string
+  createdAt: number
+  changes: string[]
+}
+interface AIBottleneck {
+  nodeId: string
+  score: number
+  reason: string
+  suggestion: string
+}
 
 // -- Advanced State
 const showSLAPanel = ref(false)
@@ -7381,7 +11052,14 @@ const notificationRules = ref<NotificationRule[]>([])
 const showAuditPanel = ref(false)
 const auditEntries = ref<AuditEntry[]>([])
 const showHealthPanel = ref(false)
-const healthScore = ref<HealthScore>({ overall: 0, efficiency: 0, reliability: 0, maintainability: 0, security: 0, details: [] })
+const healthScore = ref<HealthScore>({
+  overall: 0,
+  efficiency: 0,
+  reliability: 0,
+  maintainability: 0,
+  security: 0,
+  details: [],
+})
 const showBottleneckPanel = ref(false)
 const bottleneckData = ref<BottleneckCell[]>([])
 const showOptimizationPanel = ref(false)
@@ -7397,56 +11075,139 @@ const healthCircleStyle = computed(() => {
 })
 
 // -- Advanced Functions
-function openSLAPanel(): void { showSLAPanel.value = true; computeSLAMetrics() }
+function openSLAPanel(): void {
+  showSLAPanel.value = true
+  computeSLAMetrics()
+}
 function computeSLAMetrics(): void {
   const nodes = processDef.value?.nodes || []
   const metrics: SLAMetric[] = []
   nodes.forEach((n, i) => {
     const target = 5000 + i * 2000
     const current = target * (0.5 + Math.random() * 1.5)
-    metrics.push({ slaId: 'sla_' + n.id, name: n.label || n.type, targetMs: target, currentMs: Math.round(current), breached: current > target, color: current > target ? '#ef4444' : current > target * 0.8 ? '#f59e0b' : '#10b981' })
+    metrics.push({
+      slaId: 'sla_' + n.id,
+      name: n.label || n.type,
+      targetMs: target,
+      currentMs: Math.round(current),
+      breached: current > target,
+      color: current > target ? '#ef4444' : current > target * 0.8 ? '#f59e0b' : '#10b981',
+    })
   })
   slaMetrics.value = metrics
 }
-function openCrossProcessPanel(): void { showCrossProcessPanel.value = true; generateCrossProcessRefs() }
+function openCrossProcessPanel(): void {
+  showCrossProcessPanel.value = true
+  generateCrossProcessRefs()
+}
 function generateCrossProcessRefs(): void {
   const types = ['审批流程', '报销流程', '请假流程', '采购流程', '合同流程'] as const
   const rels = ['calls' as const, 'calledBy' as const, 'shares' as const, 'extends' as const]
   const refs: CrossProcessRef[] = []
   for (let i = 0; i < 5; i++) {
-    refs.push({ targetProcId: 'proc_' + (i + 1), targetType: 'process', label: types[i], relationType: rels[i % rels.length] })
+    refs.push({
+      targetProcId: 'proc_' + (i + 1),
+      targetType: 'process',
+      label: types[i],
+      relationType: rels[i % rels.length],
+    })
   }
   crossProcessRefs.value = refs
 }
-function openQualityGatesPanel(): void { showQualityGatesPanel.value = true; runQualityCheck() }
+function openQualityGatesPanel(): void {
+  showQualityGatesPanel.value = true
+  runQualityCheck()
+}
 function runQualityCheck(): void {
-  qualityGates.value.forEach(g => {
-    g.status = g.checkType === 'time' ? (Math.random() > 0.3 ? 'pass' : 'fail') : g.checkType === 'count' ? (Math.random() > 0.2 ? 'pass' : 'fail') : g.checkType === 'approval' ? (Math.random() > 0.4 ? 'pass' : 'fail') : (Math.random() > 0.3 ? 'pass' : 'fail')
+  qualityGates.value.forEach((g) => {
+    g.status =
+      g.checkType === 'time'
+        ? Math.random() > 0.3
+          ? 'pass'
+          : 'fail'
+        : g.checkType === 'count'
+          ? Math.random() > 0.2
+            ? 'pass'
+            : 'fail'
+          : g.checkType === 'approval'
+            ? Math.random() > 0.4
+              ? 'pass'
+              : 'fail'
+            : Math.random() > 0.3
+              ? 'pass'
+              : 'fail'
     if (g.status === 'pass') g.passedAt = new Date().toLocaleString('zh-CN')
   })
 }
-function openCostPanel(): void { showCostPanel.value = true; estimateCosts() }
+function openCostPanel(): void {
+  showCostPanel.value = true
+  estimateCosts()
+}
 function estimateCosts(): void {
   const resources = ['计算资源', '存储资源', '网络带宽', '人工成本', '第三方服务']
   const units = ['ms', 'MB', 'Mbps', '人时', '元']
-  costEstimates.value = resources.map((r, i) => ({ resourceId: 'res_' + i, resourceName: r, timeCost: +(Math.random() * 100).toFixed(1), memoryCost: +(Math.random() * 500).toFixed(0), moneyCost: +(Math.random() * 50).toFixed(2), unit: units[i] }))
+  costEstimates.value = resources.map((r, i) => ({
+    resourceId: 'res_' + i,
+    resourceName: r,
+    timeCost: +(Math.random() * 100).toFixed(1),
+    memoryCost: +(Math.random() * 500).toFixed(0),
+    moneyCost: +(Math.random() * 50).toFixed(2),
+    unit: units[i],
+  }))
 }
-function openNotificationPanel(): void { showNotificationPanel.value = true }
+function openNotificationPanel(): void {
+  showNotificationPanel.value = true
+}
 function addNotificationRule(): void {
   const channels: NotificationRule['channel'][] = ['email', 'sms', 'webhook', 'in_app']
-  const events: NotificationRule['event'][] = ['node_start', 'node_complete', 'node_timeout', 'process_start', 'process_complete', 'process_error']
-  notificationRules.value.push({ id: genId(), event: events[Math.floor(Math.random() * events.length)], channel: channels[Math.floor(Math.random() * channels.length)], condition: 'true', enabled: true })
+  const events: NotificationRule['event'][] = [
+    'node_start',
+    'node_complete',
+    'node_timeout',
+    'process_start',
+    'process_complete',
+    'process_error',
+  ]
+  notificationRules.value.push({
+    id: genId(),
+    event: events[Math.floor(Math.random() * events.length)],
+    channel: channels[Math.floor(Math.random() * channels.length)],
+    condition: 'true',
+    enabled: true,
+  })
 }
-function removeNotificationRule(id: string): void { notificationRules.value = notificationRules.value.filter(r => r.id !== id) }
-function openAuditPanel(): void { showAuditPanel.value = true; loadAuditLog() }
+function removeNotificationRule(id: string): void {
+  notificationRules.value = notificationRules.value.filter((r) => r.id !== id)
+}
+function openAuditPanel(): void {
+  showAuditPanel.value = true
+  loadAuditLog()
+}
 function loadAuditLog(): void {
   const actions = ['创建', '修改', '删除', '发布', '撤回', '审批', '执行', '回滚']
   const users = ['张三', '李四', '王五', '赵六']
-  auditEntries.value = Array.from({length: 15}, (_, i) => ({ id: 'a' + i, timestamp: Date.now() - i * 3600000 * Math.random() * 48, user: users[Math.floor(Math.random() * users.length)], action: actions[Math.floor(Math.random() * actions.length)], target: '流程节点_' + Math.floor(Math.random() * 20), oldVal: '旧值', newVal: '新值' + i }))
+  auditEntries.value = Array.from({ length: 15 }, (_, i) => ({
+    id: 'a' + i,
+    timestamp: Date.now() - i * 3600000 * Math.random() * 48,
+    user: users[Math.floor(Math.random() * users.length)],
+    action: actions[Math.floor(Math.random() * actions.length)],
+    target: '流程节点_' + Math.floor(Math.random() * 20),
+    oldVal: '旧值',
+    newVal: '新值' + i,
+  }))
 }
-function openHealthPanel(): void { showHealthPanel.value = true; calculateHealthScore() }
+function openHealthPanel(): void {
+  showHealthPanel.value = true
+  calculateHealthScore()
+}
 function calculateHealthScore(): void {
-  const scores = [65 + Math.random() * 30, 70 + Math.random() * 25, 60 + Math.random() * 35, 75 + Math.random() * 20, 80 + Math.random() * 15]
+  const scores = [
+    65 + Math.random() * 30,
+    70 + Math.random() * 25,
+    60 + Math.random() * 35,
+    75 + Math.random() * 20,
+    80 + Math.random() * 15,
+  ]
   healthScore.value = {
     overall: +scores.reduce((a, b) => a + b, 0) / scores.length,
     efficiency: +scores[0].toFixed(1),
@@ -7454,60 +11215,112 @@ function calculateHealthScore(): void {
     maintainability: +scores[2].toFixed(1),
     security: +scores[3].toFixed(1),
     details: [
-      { label: '平均执行时间', value: +scores[0].toFixed(1), color: scores[0] > 85 ? '#10b981' : scores[0] > 70 ? '#f59e0b' : '#ef4444' },
-      { label: '成功率', value: +scores[1].toFixed(1), color: scores[1] > 85 ? '#10b981' : scores[1] > 70 ? '#f59e0b' : '#ef4444' },
-      { label: '错误率', value: +(100 - scores[2]).toFixed(1), color: scores[2] > 85 ? '#10b981' : scores[2] > 70 ? '#f59e0b' : '#ef4444' },
+      {
+        label: '平均执行时间',
+        value: +scores[0].toFixed(1),
+        color: scores[0] > 85 ? '#10b981' : scores[0] > 70 ? '#f59e0b' : '#ef4444',
+      },
+      {
+        label: '成功率',
+        value: +scores[1].toFixed(1),
+        color: scores[1] > 85 ? '#10b981' : scores[1] > 70 ? '#f59e0b' : '#ef4444',
+      },
+      {
+        label: '错误率',
+        value: +(100 - scores[2]).toFixed(1),
+        color: scores[2] > 85 ? '#10b981' : scores[2] > 70 ? '#f59e0b' : '#ef4444',
+      },
       { label: '复杂度指数', value: +scores[3].toFixed(1), color: scores[3] > 85 ? '#10b981' : '#f59e0b' },
-    ]
+    ],
   }
 }
-function openBottleneckPanel(): void { showBottleneckPanel.value = true; computeBottlenecks() }
+function openBottleneckPanel(): void {
+  showBottleneckPanel.value = true
+  computeBottlenecks()
+}
 function computeBottlenecks(): void {
   const nodes = processDef.value?.nodes || []
-  bottleneckData.value = nodes.map(n => {
-    const avg = 100 + Math.random() * 400
-    const max = avg * (1.2 + Math.random() * 0.8)
-    const min = avg * 0.5
-    const variance = max - min
-    return { nodeId: n.id, avgTime: +avg.toFixed(0), maxTime: +max.toFixed(0), minTime: +min.toFixed(0), variance: +variance.toFixed(0), color: variance / 500 > 0.7 ? '#ef4444' : variance / 500 > 0.4 ? '#f59e0b' : '#10b981', label: n.label || n.type }
-  }).sort((a, b) => b.variance - a.variance)
+  bottleneckData.value = nodes
+    .map((n) => {
+      const avg = 100 + Math.random() * 400
+      const max = avg * (1.2 + Math.random() * 0.8)
+      const min = avg * 0.5
+      const variance = max - min
+      return {
+        nodeId: n.id,
+        avgTime: +avg.toFixed(0),
+        maxTime: +max.toFixed(0),
+        minTime: +min.toFixed(0),
+        variance: +variance.toFixed(0),
+        color: variance / 500 > 0.7 ? '#ef4444' : variance / 500 > 0.4 ? '#f59e0b' : '#10b981',
+        label: n.label || n.type,
+      }
+    })
+    .sort((a, b) => b.variance - a.variance)
 }
-function openOptimizationPanel(): void { showOptimizationPanel.value = true; generateOptimizations() }
+function openOptimizationPanel(): void {
+  showOptimizationPanel.value = true
+  generateOptimizations()
+}
 function generateOptimizations(): void {
   const types: OptimizationSuggestion['type'][] = ['parallel', 'sequential', 'simplify', 'delegate']
-  const descriptions = ['将串行审批改为并行审批', '移除冗余的转审节点', '添加自动跳过逻辑', '拆分大流程为子流程', '使用缓存减少重复查询', '批量处理相似请求']
-  const impacts: Array<'high'|'medium'|'low'> = ['high', 'medium', 'low']
-  optimizationSuggestions.value = Array.from({length: 6}, (_, i) => ({
-    id: 'opt_' + i, type: types[i % types.length], description: descriptions[i],
-    impact: impacts[i % impacts.length], estimatedSaving: Math.floor(10 + Math.random() * 40) + '%'
+  const descriptions = [
+    '将串行审批改为并行审批',
+    '移除冗余的转审节点',
+    '添加自动跳过逻辑',
+    '拆分大流程为子流程',
+    '使用缓存减少重复查询',
+    '批量处理相似请求',
+  ]
+  const impacts: Array<'high' | 'medium' | 'low'> = ['high', 'medium', 'low']
+  optimizationSuggestions.value = Array.from({ length: 6 }, (_, i) => ({
+    id: 'opt_' + i,
+    type: types[i % types.length],
+    description: descriptions[i],
+    impact: impacts[i % impacts.length],
+    estimatedSaving: Math.floor(10 + Math.random() * 40) + '%',
   }))
 }
-function openChangePanel(): void { showChangePanel.value = true; loadChangeRequests() }
+function openChangePanel(): void {
+  showChangePanel.value = true
+  loadChangeRequests()
+}
 function loadChangeRequests(): void {
   const statuses: ChangeRequest['status'][] = ['draft', 'review', 'approved', 'rejected', 'implemented']
   const authors = ['张三', '李四', '王五']
-  changeRequests.value = Array.from({length: 5}, (_, i) => ({
-    id: 'cr_' + i, title: '变更请求 #' + (i + 1), description: '优化第' + (i + 1) + '个节点的执行逻辑',
-    status: statuses[i % statuses.length], author: authors[i % authors.length],
-    createdAt: Date.now() - i * 86400000, changes: ['修改节点类型', '调整条件表达式', '更新审批人']
+  changeRequests.value = Array.from({ length: 5 }, (_, i) => ({
+    id: 'cr_' + i,
+    title: '变更请求 #' + (i + 1),
+    description: '优化第' + (i + 1) + '个节点的执行逻辑',
+    status: statuses[i % statuses.length],
+    author: authors[i % authors.length],
+    createdAt: Date.now() - i * 86400000,
+    changes: ['修改节点类型', '调整条件表达式', '更新审批人'],
   }))
 }
-function openAIPanel(): void { showAIPanel.value = true; runAIAnalysis() }
+function openAIPanel(): void {
+  showAIPanel.value = true
+  runAIAnalysis()
+}
 function runAIAnalysis(): void {
   const nodes = processDef.value?.nodes || []
-  aiBottlenecks.value = nodes.slice(0, 5).map(n => ({
-    nodeId: n.id, score: +(0.3 + Math.random() * 0.7).toFixed(2),
-    reason: '该节点执行时间超过预期阈值', suggestion: '建议优化为并行执行或添加超时处理'
+  aiBottlenecks.value = nodes.slice(0, 5).map((n) => ({
+    nodeId: n.id,
+    score: +(0.3 + Math.random() * 0.7).toFixed(2),
+    reason: '该节点执行时间超过预期阈值',
+    suggestion: '建议优化为并行执行或添加超时处理',
   }))
 }
-function applyOptimization(optId: string): void { showToast('已应用优化: ' + optId, 'success') }
+function applyOptimization(optId: string): void {
+  showToast('已应用优化: ' + optId, 'success')
+}
 function approveChangeRequest(crId: string): void {
-  const cr = changeRequests.value.find(c => c.id === crId)
+  const cr = changeRequests.value.find((c) => c.id === crId)
   if (cr) cr.status = 'approved'
   showToast('已批准变更请求: ' + crId, 'success')
 }
 function rejectChangeRequest(crId: string): void {
-  const cr = changeRequests.value.find(c => c.id === crId)
+  const cr = changeRequests.value.find((c) => c.id === crId)
   if (cr) cr.status = 'rejected'
   showToast('已拒绝变更请求: ' + crId, 'warning')
 }
@@ -7515,32 +11328,76 @@ function simulatePerformance(): void {
   showToast('性能模拟中...', 'info')
   setTimeout(() => showToast('模拟完成: 平均延迟 234ms, P99 1.2s', 'success'), 1500)
 }
-function getScoreColor(score: number): string { return score > 0.6 ? '#ef4444' : score > 0.4 ? '#f59e0b' : '#10b981' }
-function getRelationColor(t: string): string { return {calls:'#3b82f6',calledBy:'#10b981',shares:'#f59e0b',extends:'#8b5cf6'}[t]||'#666' }
-function getRelationIcon(t: string): string { return {calls:'↑',calledBy:'↓',shares:'⇄',extends:'↗'}[t]||'·' }
-function getRelationLabel(t: string): string { return {calls:'调用',calledBy:'被调用',shares:'共享',extends:'扩展'}[t]||t }
-function getSeverityColor(s: string): string { return {low:'#10b981',medium:'#f59e0b',high:'#f97316',critical:'#ef4444'}[s]||'#666' }
-function getChannelBg(c: string): string { return {email:'rgba(59,130,246,0.2)',sms:'rgba(16,185,129,0.2)',webhook:'rgba(139,92,246,0.2)',in_app:'rgba(245,158,11,0.2)'}[c]||'rgba(100,100,100,0.2)' }
-function getOptTypeColor(t: string): string { return {parallel:'#3b82f6',sequential:'#10b981',simplify:'#f59e0b',delegate:'#8b5cf6'}[t]||'#666' }
-function getOptTypeLabel(t: string): string { return {parallel:'并行化',sequential:'串行化',simplify:'简化',delegate:'委托'}[t]||t }
-function getOptImpColor(i: string): string { return {high:'#ef4444',medium:'#f59e0b',low:'#10b981'}[i]||'#666' }
-function getCrStatusColor(s: string): string { return {draft:'#666',review:'#3b82f6',approved:'#10b981',rejected:'#ef4444',implemented:'#8b5cf6'}[s]||'#666' }
-function getCrStatusLabel(s: string): string { return {draft:'草稿',review:'审核中',approved:'已批准',rejected:'已拒绝',implemented:'已实施'}[s]||s }
-function getHealthScoreColor(v: number): string { return v > 70 ? '#10b981' : v > 50 ? '#f59e0b' : '#ef4444' }
-function getCellBg(color: string): string { return color + '22' }
-function getSLAPct(m: any): string { return Math.min(100, m.currentMs / m.targetMs * 100) + '%' }
+function getScoreColor(score: number): string {
+  return score > 0.6 ? '#ef4444' : score > 0.4 ? '#f59e0b' : '#10b981'
+}
+function getRelationColor(t: string): string {
+  return { calls: '#3b82f6', calledBy: '#10b981', shares: '#f59e0b', extends: '#8b5cf6' }[t] || '#666'
+}
+function getRelationIcon(t: string): string {
+  return { calls: '↑', calledBy: '↓', shares: '⇄', extends: '↗' }[t] || '·'
+}
+function getRelationLabel(t: string): string {
+  return { calls: '调用', calledBy: '被调用', shares: '共享', extends: '扩展' }[t] || t
+}
+function getSeverityColor(s: string): string {
+  return { low: '#10b981', medium: '#f59e0b', high: '#f97316', critical: '#ef4444' }[s] || '#666'
+}
+function getChannelBg(c: string): string {
+  return (
+    {
+      email: 'rgba(59,130,246,0.2)',
+      sms: 'rgba(16,185,129,0.2)',
+      webhook: 'rgba(139,92,246,0.2)',
+      in_app: 'rgba(245,158,11,0.2)',
+    }[c] || 'rgba(100,100,100,0.2)'
+  )
+}
+function getOptTypeColor(t: string): string {
+  return { parallel: '#3b82f6', sequential: '#10b981', simplify: '#f59e0b', delegate: '#8b5cf6' }[t] || '#666'
+}
+function getOptTypeLabel(t: string): string {
+  return { parallel: '并行化', sequential: '串行化', simplify: '简化', delegate: '委托' }[t] || t
+}
+function getOptImpColor(i: string): string {
+  return { high: '#ef4444', medium: '#f59e0b', low: '#10b981' }[i] || '#666'
+}
+function getCrStatusColor(s: string): string {
+  return (
+    { draft: '#666', review: '#3b82f6', approved: '#10b981', rejected: '#ef4444', implemented: '#8b5cf6' }[s] || '#666'
+  )
+}
+function getCrStatusLabel(s: string): string {
+  return { draft: '草稿', review: '审核中', approved: '已批准', rejected: '已拒绝', implemented: '已实施' }[s] || s
+}
+function getHealthScoreColor(v: number): string {
+  return v > 70 ? '#10b981' : v > 50 ? '#f59e0b' : '#ef4444'
+}
+function getCellBg(color: string): string {
+  return color + '22'
+}
+function getSLAPct(m: any): string {
+  return Math.min(100, (m.currentMs / m.targetMs) * 100) + '%'
+}
 
 // -- Permission & Lock State
 const showPermissionPanel = ref(false)
-const permissionRules = ref<Array<{id: string; nodeType: string; allowedRoles: string[]; deniedRoles: string[]}>>([
-  { id: 'p1', nodeType: 'task', allowedRoles: ['manager','admin'], deniedRoles: ['viewer'] },
-  { id: 'p2', nodeType: 'approval', allowedRoles: ['manager','director','admin'], deniedRoles: ['employee','viewer'] },
-  { id: 'p3', nodeType: 'subprocess', allowedRoles: ['admin'], deniedRoles: ['manager','employee','viewer'] },
+const permissionRules = ref<Array<{ id: string; nodeType: string; allowedRoles: string[]; deniedRoles: string[] }>>([
+  { id: 'p1', nodeType: 'task', allowedRoles: ['manager', 'admin'], deniedRoles: ['viewer'] },
+  {
+    id: 'p2',
+    nodeType: 'approval',
+    allowedRoles: ['manager', 'director', 'admin'],
+    deniedRoles: ['employee', 'viewer'],
+  },
+  { id: 'p3', nodeType: 'subprocess', allowedRoles: ['admin'], deniedRoles: ['manager', 'employee', 'viewer'] },
 ])
 const showLockPanel = ref(false)
-const lockedNodes = ref<Array<{nodeId: string; nodeIdRef: string; lockedBy: string; lockedAt: number}>>([])
+const lockedNodes = ref<Array<{ nodeId: string; nodeIdRef: string; lockedBy: string; lockedAt: number }>>([])
 const showPublishPanel = ref(false)
-const publishHistory = ref<Array<{id: string; version: string; publishedAt: number; publishedBy: string; status: string; changeLog: string}>>([])
+const publishHistory = ref<
+  Array<{ id: string; version: string; publishedAt: number; publishedBy: string; status: string; changeLog: string }>
+>([])
 
 // -- Dashboard State
 const showDebugPanel = ref(false)
@@ -7552,114 +11409,409 @@ const showWorkflowBuilder = ref(false)
 const showDependencyGraph = ref(false)
 const showProcessMap = ref(false)
 // --- Debug Console State ---
-const dbgTab = ref("log")
-const debugLog = ref<Array<{ts:number;level:string;msg:string}>>([])
-const debugVars = ref<Record<string,any>>({})
-const debugTrace = ref<Array<{node:string;duration:number;status:string}>>([])
+const dbgTab = ref('log')
+const debugLog = ref<Array<{ ts: number; level: string; msg: string }>>([])
+const debugVars = ref<Record<string, any>>({})
+const debugTrace = ref<Array<{ node: string; duration: number; status: string }>>([])
 const debugBreakpoint = ref(false)
 // --- Macro Editor State ---
-const macroName = ref("default")
-const macroCode = ref("// 宏脚本\nemit(\"macro_exec\");")
-const macroResult = ref("")
-const macroList = ref(["default","onStart","onEnd","onApprove","custom"])
+const macroName = ref('default')
+const macroCode = ref('// 宏脚本\nemit("macro_exec");')
+const macroResult = ref('')
+const macroList = ref(['default', 'onStart', 'onEnd', 'onApprove', 'custom'])
 // --- Snippet Library State ---
-const snippetFilter = ref("")
-const snippets = ref(Array.from({length:8},(_,i)=>({id:genId(),lang:["JS","TS","SQL","JSON"][i%4],title:["节点过滤","变量绑定","条件判断","循环分支","数据转换","消息发送","错误处理","超时重试"][i],code:["nodes.filter(n=>n.active)","bindVar(\"status\",\"approved\")","if(v>0)return true","for(let i=0;i<n;i++){}","data.map(d=>({...d,x:d.x*2}))","emit(\"notification\",{msg})","try{run()}catch(e){log(e)}","setTimeout(fn,5000)"][i],tags:["core","utility"][i%2]})))
-const snippetLangs = ref(["JS","TS","SQL","JSON","Python"])
+const snippetFilter = ref('')
+const snippets = ref(
+  Array.from({ length: 8 }, (_, i) => ({
+    id: genId(),
+    lang: ['JS', 'TS', 'SQL', 'JSON'][i % 4],
+    title: ['节点过滤', '变量绑定', '条件判断', '循环分支', '数据转换', '消息发送', '错误处理', '超时重试'][i],
+    code: [
+      'nodes.filter(n=>n.active)',
+      'bindVar("status","approved")',
+      'if(v>0)return true',
+      'for(let i=0;i<n;i++){}',
+      'data.map(d=>({...d,x:d.x*2}))',
+      'emit("notification",{msg})',
+      'try{run()}catch(e){log(e)}',
+      'setTimeout(fn,5000)',
+    ][i],
+    tags: ['core', 'utility'][i % 2],
+  })),
+)
+const snippetLangs = ref(['JS', 'TS', 'SQL', 'JSON', 'Python'])
 // --- Event Mapper State ---
-const eventMappings = ref<Array<{id:string;trigger:string;action:string}>>([])
-const emNewTrigger = ref("")
-const emNewAction = ref("")
-const eventTriggers = ref(["process_start","node_enter","node_exit","condition_true","condition_false","timeout","error","user_input","external_signal","timer_tick"])
-const eventActions = ref(["start_node","end_node","skip_node","change_state","send_email","send_sms","call_api","create_task","update_var","log_event"])
+const eventMappings = ref<Array<{ id: string; trigger: string; action: string }>>([])
+const emNewTrigger = ref('')
+const emNewAction = ref('')
+const eventTriggers = ref([
+  'process_start',
+  'node_enter',
+  'node_exit',
+  'condition_true',
+  'condition_false',
+  'timeout',
+  'error',
+  'user_input',
+  'external_signal',
+  'timer_tick',
+])
+const eventActions = ref([
+  'start_node',
+  'end_node',
+  'skip_node',
+  'change_state',
+  'send_email',
+  'send_sms',
+  'call_api',
+  'create_task',
+  'update_var',
+  'log_event',
+])
 // --- Workflow Builder State ---
-const wbSteps = ref<Array<{text:string;done:boolean}>>([{text:"选择节点类型",done:false},{text:"拖入画布",done:false},{text:"配置参数",done:false},{text:"连接节点",done:false},{text:"验证流程",done:false},{text:"发布上线",done:false}])
+const wbSteps = ref<Array<{ text: string; done: boolean }>>([
+  { text: '选择节点类型', done: false },
+  { text: '拖入画布', done: false },
+  { text: '配置参数', done: false },
+  { text: '连接节点', done: false },
+  { text: '验证流程', done: false },
+  { text: '发布上线', done: false },
+])
 // --- Dependency Graph State ---
-const dependencyGraphData = ref<{nodes:Array<{id:string;label:string;x:number;y:number;type:string;depCount:number}>;edges:Array<{from:string;to:string}>}>({nodes:[],edges:[]})
+const dependencyGraphData = ref<{
+  nodes: Array<{ id: string; label: string; x: number; y: number; type: string; depCount: number }>
+  edges: Array<{ from: string; to: string }>
+}>({ nodes: [], edges: [] })
 // --- Process Map State ---
-const allProcesses = ref<Array<{id:string;name:string;icon:string;status:string;nodes?:Array<any>;edges?:Array<any>}>>([])
-const pmDisplayNodes = ref<Array<{id:string;label:string;x:number;y:number;type:string}>>([])
-const pmDisplayEdges = ref<Array<{x1:number;y1:number;x2:number;y2:number}>>([])
+const allProcesses = ref<
+  Array<{ id: string; name: string; icon: string; status: string; nodes?: Array<any>; edges?: Array<any> }>
+>([])
+const pmDisplayNodes = ref<Array<{ id: string; label: string; x: number; y: number; type: string }>>([])
+const pmDisplayEdges = ref<Array<{ x1: number; y1: number; x2: number; y2: number }>>([])
 
 // -- Permission Functions
-function openPermissionPanel(): void { showPermissionPanel.value = true }
-function togglePermissionRule(idx: number): void { const r = permissionRules.value[idx]; r.allowedRoles = r.allowedRoles.includes('all') ? [] : ['all']; }
-function addPermissionRule(): void { permissionRules.value.push({ id: 'p' + Date.now(), nodeType: 'task', allowedRoles: [], deniedRoles: [] }) }
-function removePermissionRule(idx: number): void { permissionRules.value.splice(idx, 1) }
+function openPermissionPanel(): void {
+  showPermissionPanel.value = true
+}
+function togglePermissionRule(idx: number): void {
+  const r = permissionRules.value[idx]
+  r.allowedRoles = r.allowedRoles.includes('all') ? [] : ['all']
+}
+function addPermissionRule(): void {
+  permissionRules.value.push({ id: 'p' + Date.now(), nodeType: 'task', allowedRoles: [], deniedRoles: [] })
+}
+function removePermissionRule(idx: number): void {
+  permissionRules.value.splice(idx, 1)
+}
 
 // -- Lock Functions
-function openLockPanel(): void { showLockPanel.value = true }
-function lockNode(nodeId: string, nodeIdRef: string): void { lockedNodes.value.push({ nodeId, nodeIdRef, lockedBy: '当前用户', lockedAt: Date.now() }); showToast('节点已锁定', 'info') }
-function unlockNode(nodeId: string): void { lockedNodes.value = lockedNodes.value.filter(n => n.nodeId !== nodeId); showToast('节点已解锁', 'success') }
+function openLockPanel(): void {
+  showLockPanel.value = true
+}
+function lockNode(nodeId: string, nodeIdRef: string): void {
+  lockedNodes.value.push({ nodeId, nodeIdRef, lockedBy: '当前用户', lockedAt: Date.now() })
+  showToast('节点已锁定', 'info')
+}
+function unlockNode(nodeId: string): void {
+  lockedNodes.value = lockedNodes.value.filter((n) => n.nodeId !== nodeId)
+  showToast('节点已解锁', 'success')
+}
 
 // -- Publish Functions
-function openPublishPanel(): void { showPublishPanel.value = true }
+function openPublishPanel(): void {
+  showPublishPanel.value = true
+}
 function publishProcess(): void {
-  publishHistory.value.unshift({ id: 'pub_' + Date.now(), version: 'v' + (publishHistory.value.length + 1), publishedAt: Date.now(), publishedBy: '当前用户', status: 'success', changeLog: '流程发布' })
+  publishHistory.value.unshift({
+    id: 'pub_' + Date.now(),
+    version: 'v' + (publishHistory.value.length + 1),
+    publishedAt: Date.now(),
+    publishedBy: '当前用户',
+    status: 'success',
+    changeLog: '流程发布',
+  })
   showToast('流程已发布', 'success')
 }
 
 // -- Debug Console Functions --
-function openDebugPanel(): void { showDebugPanel.value = true; debugLog.value.push({ts: Date.now(), level: "info", msg: "调试控制台已打开"}); }
-function clearDebugLog(): void { debugLog.value = []; }
-function exportDebugLog(): void { const blob = new Blob([debugLog.value.map(e => "[" + new Date(e.ts).toISOString() + "] " + e.level + ": " + e.msg).join("\n")], {type:"text/plain"}); const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = "debug_log.txt"; a.click(); }
-function addDebugVar(k: string, v: any): void { debugVars.value[k] = v; }
-function addDebugTrace(node: string, duration: number, status: string): void { debugTrace.value.push({node, duration, status}); }
+function openDebugPanel(): void {
+  showDebugPanel.value = true
+  debugLog.value.push({ ts: Date.now(), level: 'info', msg: '调试控制台已打开' })
+}
+function clearDebugLog(): void {
+  debugLog.value = []
+}
+function exportDebugLog(): void {
+  const blob = new Blob(
+    [debugLog.value.map((e) => '[' + new Date(e.ts).toISOString() + '] ' + e.level + ': ' + e.msg).join('\n')],
+    { type: 'text/plain' },
+  )
+  const a = document.createElement('a')
+  a.href = URL.createObjectURL(blob)
+  a.download = 'debug_log.txt'
+  a.click()
+}
+function addDebugVar(k: string, v: any): void {
+  debugVars.value[k] = v
+}
+function addDebugTrace(node: string, duration: number, status: string): void {
+  debugTrace.value.push({ node, duration, status })
+}
 
 // -- Macro Editor Functions --
-function openMacroEditor(): void { showMacroEditor.value = true; macroCode.value = "// 宏脚本\nemit(\"macro_exec\");"; }
-function macroNew(): void { macroName.value = "macro_" + Date.now(); macroCode.value = ""; }
-function macroRun(): void { macroResult.value = "执行完成，耗时: " + Math.floor(Math.random()*100) + "ms"; debugLog.value.push({ts:Date.now(),level:"info",msg:"宏 ["+macroName.value+"] 已执行"}); }
-function macroSave(): void { debugLog.value.push({ts:Date.now(),level:"success",msg:"宏 "+macroName.value+" 已保存"}); }
+function openMacroEditor(): void {
+  showMacroEditor.value = true
+  macroCode.value = '// 宏脚本\nemit("macro_exec");'
+}
+function macroNew(): void {
+  macroName.value = 'macro_' + Date.now()
+  macroCode.value = ''
+}
+function macroRun(): void {
+  macroResult.value = '执行完成，耗时: ' + Math.floor(Math.random() * 100) + 'ms'
+  debugLog.value.push({ ts: Date.now(), level: 'info', msg: '宏 [' + macroName.value + '] 已执行' })
+}
+function macroSave(): void {
+  debugLog.value.push({ ts: Date.now(), level: 'success', msg: '宏 ' + macroName.value + ' 已保存' })
+}
 
 // -- Snippet Library Functions --
-function openSnippetLibrary(): void { showSnippetLibrary.value = true; }
-const filteredSnippets = computed(() => { if(!snippetFilter.value.trim()) return snippets.value; const q=snippetFilter.value.toLowerCase(); return snippets.value.filter(s=>s.title.toLowerCase().includes(q)||s.lang.toLowerCase().includes(q)); })
-function insertSnippet(idx: number): void { const s=snippets.value[idx]; if(s) { debugLog.value.push({ts:Date.now(),level:"info",msg:"已插入片段: "+s.title}); } }
-function copySnippet(idx: number): void { navigator.clipboard.writeText(snippets.value[idx].code).then(()=>debugLog.value.push({ts:Date.now(),level:"success",msg:"已复制到剪贴板"})); }
-function deleteSnippet(idx: number): void { snippets.value.splice(idx,1); }
-function addSnippet(): void { snippets.value.push({id:genId(),lang:"JS",title:"新片段",code:"// 编辑代码...",tags:["custom"]}); }
+function openSnippetLibrary(): void {
+  showSnippetLibrary.value = true
+}
+const filteredSnippets = computed(() => {
+  if (!snippetFilter.value.trim()) return snippets.value
+  const q = snippetFilter.value.toLowerCase()
+  return snippets.value.filter((s) => s.title.toLowerCase().includes(q) || s.lang.toLowerCase().includes(q))
+})
+function insertSnippet(idx: number): void {
+  const s = snippets.value[idx]
+  if (s) {
+    debugLog.value.push({ ts: Date.now(), level: 'info', msg: '已插入片段: ' + s.title })
+  }
+}
+function copySnippet(idx: number): void {
+  navigator.clipboard
+    .writeText(snippets.value[idx].code)
+    .then(() => debugLog.value.push({ ts: Date.now(), level: 'success', msg: '已复制到剪贴板' }))
+}
+function deleteSnippet(idx: number): void {
+  snippets.value.splice(idx, 1)
+}
+function addSnippet(): void {
+  snippets.value.push({ id: genId(), lang: 'JS', title: '新片段', code: '// 编辑代码...', tags: ['custom'] })
+}
 
 // -- Event Mapper Functions --
-function openEventMapper(): void { showEventMapper.value = true; if(eventMappings.value.length===0) { eventMappings.value.push({id:genId(),trigger:"process_start",action:"start_node"}); } }
-function addEventMapping(): void { if(emNewTrigger.value&&emNewAction.value){eventMappings.value.push({id:genId(),trigger:emNewTrigger.value,action:emNewAction.value});emNewTrigger.value="";emNewAction.value="";} }
-function removeEventMapping(idx: number): void { eventMappings.value.splice(idx,1); }
-function applyEventMappings(): void { debugLog.value.push({ts:Date.now(),level:"success",msg:"已应用 "+eventMappings.value.length+" 条事件映射"}); showEventMapper.value=false; }
-function clearEventMappings(): void { eventMappings.value=[]; }
+function openEventMapper(): void {
+  showEventMapper.value = true
+  if (eventMappings.value.length === 0) {
+    eventMappings.value.push({ id: genId(), trigger: 'process_start', action: 'start_node' })
+  }
+}
+function addEventMapping(): void {
+  if (emNewTrigger.value && emNewAction.value) {
+    eventMappings.value.push({ id: genId(), trigger: emNewTrigger.value, action: emNewAction.value })
+    emNewTrigger.value = ''
+    emNewAction.value = ''
+  }
+}
+function removeEventMapping(idx: number): void {
+  eventMappings.value.splice(idx, 1)
+}
+function applyEventMappings(): void {
+  debugLog.value.push({ ts: Date.now(), level: 'success', msg: '已应用 ' + eventMappings.value.length + ' 条事件映射' })
+  showEventMapper.value = false
+}
+function clearEventMappings(): void {
+  eventMappings.value = []
+}
 
 // -- Annotation Manager Functions --
-function openAnnotationManager(): void { showAnnotationManager.value = true; }
-function addAnnotationFromPanel(): void { if(newAnnotText.value.trim()){const rect=canvasRef.value?.getBoundingClientRect();if(rect){const cx=(rect.width/2-panX.value)/zoom.value;const cy=(rect.height/2-panY.value)/zoom.value;annotations.value.push({id:genId(),x:cx-60,y:cy-20,text:newAnnotText.value,color:"#f59e0b",w:120,h:60});newAnnotText.value="";}}} 
-function exportAnnotations(): void { const blob=new Blob([JSON.stringify(annotations.value,null,2)],{type:"application/json"}); const a=document.createElement("a"); a.href=URL.createObjectURL(blob); a.download="annotations.json"; a.click(); }
-function clearAnnotations(): void { annotations.value=[]; showAnnotationManager.value=false; }
+function openAnnotationManager(): void {
+  showAnnotationManager.value = true
+}
+function addAnnotationFromPanel(): void {
+  if (newAnnotText.value.trim()) {
+    const rect = canvasRef.value?.getBoundingClientRect()
+    if (rect) {
+      const cx = (rect.width / 2 - panX.value) / zoom.value
+      const cy = (rect.height / 2 - panY.value) / zoom.value
+      annotations.value.push({
+        id: genId(),
+        x: cx - 60,
+        y: cy - 20,
+        text: newAnnotText.value,
+        color: '#f59e0b',
+        w: 120,
+        h: 60,
+      })
+      newAnnotText.value = ''
+    }
+  }
+}
+function exportAnnotations(): void {
+  const blob = new Blob([JSON.stringify(annotations.value, null, 2)], { type: 'application/json' })
+  const a = document.createElement('a')
+  a.href = URL.createObjectURL(blob)
+  a.download = 'annotations.json'
+  a.click()
+}
+function clearAnnotations(): void {
+  annotations.value = []
+  showAnnotationManager.value = false
+}
 
 // -- Workflow Builder Functions --
-function openWorkflowBuilder(): void { showWorkflowBuilder.value = true; updateWbSteps(); }
-function addNodeFromPalette(nt: string): void { debugLog.value.push({ts:Date.now(),level:"info",msg:"从构建器添加节点: "+nt}); wbSteps.value[0].done=true; }
-function runWorkflowBuildCheck(): void { const issues=[]; if(!processDef.value?.nodes?.length)issues.push("画布无节点");if(issues.length)debugLog.value.push({ts:Date.now(),level:"warning",msg:"验证发现: "+issues.join(", ")}); else debugLog.value.push({ts:Date.now(),level:"success",msg:"验证通过，流程有效"}); }
-function applyWorkflowBuild(): void { debugLog.value.push({ts:Date.now(),level:"success",msg:"工作流已应用到画布"}); showWorkflowBuilder.value=false; }
-function updateWbSteps(): void { wbSteps.value.forEach(s=>s.done=false); if(processDef.value?.nodes?.length)wbSteps.value[0].done=true; }
+function openWorkflowBuilder(): void {
+  showWorkflowBuilder.value = true
+  updateWbSteps()
+}
+function addNodeFromPalette(nt: string): void {
+  debugLog.value.push({ ts: Date.now(), level: 'info', msg: '从构建器添加节点: ' + nt })
+  wbSteps.value[0].done = true
+}
+function runWorkflowBuildCheck(): void {
+  const issues = []
+  if (!processDef.value?.nodes?.length) issues.push('画布无节点')
+  if (issues.length) debugLog.value.push({ ts: Date.now(), level: 'warning', msg: '验证发现: ' + issues.join(', ') })
+  else debugLog.value.push({ ts: Date.now(), level: 'success', msg: '验证通过，流程有效' })
+}
+function applyWorkflowBuild(): void {
+  debugLog.value.push({ ts: Date.now(), level: 'success', msg: '工作流已应用到画布' })
+  showWorkflowBuilder.value = false
+}
+function updateWbSteps(): void {
+  wbSteps.value.forEach((s) => (s.done = false))
+  if (processDef.value?.nodes?.length) wbSteps.value[0].done = true
+}
 
 // -- Dependency Graph Functions --
-function openDependencyGraph(): void { showDependencyGraph.value = true; recalcDependencyGraph(); }
-function recalcDependencyGraph(): void { const nodes=processDef.value?.nodes||[]; const edges=processDef.value?.edges||[]; const graphNodes=nodes.map((n:any,i:any)=>({id:n.id,label:n.label||n.type,x:80+(i%5)*140,y:60+Math.floor(i/5)*70,type:n.type,depCount:edges.filter((e:any)=>e.from===n.id).length})); dependencyGraphData.value={nodes:graphNodes,edges:edges.map((e:any)=>({from:e.from,to:e.to}))}; }
-function computeDAGDepth(): number { return Math.max(1, Math.ceil(dependencyGraphData.value.nodes.length/5)); }
-function getDagNodeBg(type: string): string { return type==="start"?"rgba(59,130,246,0.3)":type==="end"?"rgba(16,185,129,0.3)":type==="condition"?"rgba(239,68,68,0.3)":"rgba(245,158,11,0.3)"; }
-function exportDepGraph(): void { debugLog.value.push({ts:Date.now(),level:"info",msg:"依赖图已导出PNG"}); }
+function openDependencyGraph(): void {
+  showDependencyGraph.value = true
+  recalcDependencyGraph()
+}
+function recalcDependencyGraph(): void {
+  const nodes = processDef.value?.nodes || []
+  const edges = processDef.value?.edges || []
+  const graphNodes = nodes.map((n: any, i: any) => ({
+    id: n.id,
+    label: n.label || n.type,
+    x: 80 + (i % 5) * 140,
+    y: 60 + Math.floor(i / 5) * 70,
+    type: n.type,
+    depCount: edges.filter((e: any) => e.from === n.id).length,
+  }))
+  dependencyGraphData.value = { nodes: graphNodes, edges: edges.map((e: any) => ({ from: e.from, to: e.to })) }
+}
+function computeDAGDepth(): number {
+  return Math.max(1, Math.ceil(dependencyGraphData.value.nodes.length / 5))
+}
+function getDagNodeBg(type: string): string {
+  return type === 'start'
+    ? 'rgba(59,130,246,0.3)'
+    : type === 'end'
+      ? 'rgba(16,185,129,0.3)'
+      : type === 'condition'
+        ? 'rgba(239,68,68,0.3)'
+        : 'rgba(245,158,11,0.3)'
+}
+function exportDepGraph(): void {
+  debugLog.value.push({ ts: Date.now(), level: 'info', msg: '依赖图已导出PNG' })
+}
 
 // -- Process Map Functions --
-function openProcessMap(): void { showProcessMap.value = true; loadProcessMap(); }
-function loadProcessMap(): void { const loaded=(window as any).__fakeProcesses||[]; allProcesses.value=loaded.length?loaded.map((p:any,i:any)=>({id:p.id||"p"+i,name:p.name||"流程"+(i+1),icon:["📋","🔄","✅","⚙️"][i%4],status:["active","draft","archived","testing"][i%4],nodes:p.nodes||[],edges:p.edges||[]})):[{id:"demo",name:"示例审批流程",icon:"📋",status:"active",nodes:[{id:"n1",type:"start",label:"发起申请"},{id:"n2",type:"process",label:"主管审批"},{id:"n3",type:"condition",label:"金额>5000?"},{id:"n4",type:"process",label:"经理审批"},{id:"n5",type:"end",label:"完成"}],edges:[{from:"n1",to:"n2"},{from:"n2",to:"n3"},{from:"n3",to:"n4",label:"是"},{from:"n3",to:"n5",label:"否"},{from:"n4",to:"n5"}]}]; }
-function loadProcessFromMap(idx: number): void { const p=allProcesses.value[idx]; if(!p)return; currentProcess.value=p as any; processDef.value=p as any; pmDisplayNodes.value=(p.nodes||[]).map((n:any,i:any)=>({id:n.id,label:n.label||n.type,x:60+(i%4)*130,y:50+Math.floor(i/4)*80,type:n.type})); pmDisplayEdges.value=(p.edges||[]).map((e:any)=>{const fn=pmDisplayNodes.value.find((n:any)=>n.id===e.from);const tn=pmDisplayNodes.value.find((n:any)=>n.id===e.to);return{x1:fn?.x||0,y1:fn?.y||0,x2:tn?.x||0,y2:tn?.y||0};}); }
-function refreshProcessMap(): void { loadProcessMap(); }
-function getProcStatusColor(s: string): string { return s==="active"?"#10b981":s==="draft"?"#f59e0b":"#6b7280"; }
-function getProcStatusLabel(s: string): string { return s==="active"?"运行中":s==="draft"?"草稿":s==="archived"?"已归档":"测试中"; }
+function openProcessMap(): void {
+  showProcessMap.value = true
+  loadProcessMap()
+}
+function loadProcessMap(): void {
+  const loaded = (window as any).__fakeProcesses || []
+  allProcesses.value = loaded.length
+    ? loaded.map((p: any, i: any) => ({
+        id: p.id || 'p' + i,
+        name: p.name || '流程' + (i + 1),
+        icon: ['📋', '🔄', '✅', '⚙️'][i % 4],
+        status: ['active', 'draft', 'archived', 'testing'][i % 4],
+        nodes: p.nodes || [],
+        edges: p.edges || [],
+      }))
+    : [
+        {
+          id: 'demo',
+          name: '示例审批流程',
+          icon: '📋',
+          status: 'active',
+          nodes: [
+            { id: 'n1', type: 'start', label: '发起申请' },
+            { id: 'n2', type: 'process', label: '主管审批' },
+            { id: 'n3', type: 'condition', label: '金额>5000?' },
+            { id: 'n4', type: 'process', label: '经理审批' },
+            { id: 'n5', type: 'end', label: '完成' },
+          ],
+          edges: [
+            { from: 'n1', to: 'n2' },
+            { from: 'n2', to: 'n3' },
+            { from: 'n3', to: 'n4', label: '是' },
+            { from: 'n3', to: 'n5', label: '否' },
+            { from: 'n4', to: 'n5' },
+          ],
+        },
+      ]
+}
+function loadProcessFromMap(idx: number): void {
+  const p = allProcesses.value[idx]
+  if (!p) return
+  currentProcess.value = p as any
+  processDef.value = p as any
+  pmDisplayNodes.value = (p.nodes || []).map((n: any, i: any) => ({
+    id: n.id,
+    label: n.label || n.type,
+    x: 60 + (i % 4) * 130,
+    y: 50 + Math.floor(i / 4) * 80,
+    type: n.type,
+  }))
+  pmDisplayEdges.value = (p.edges || []).map((e: any) => {
+    const fn = pmDisplayNodes.value.find((n: any) => n.id === e.from)
+    const tn = pmDisplayNodes.value.find((n: any) => n.id === e.to)
+    return { x1: fn?.x || 0, y1: fn?.y || 0, x2: tn?.x || 0, y2: tn?.y || 0 }
+  })
+}
+function refreshProcessMap(): void {
+  loadProcessMap()
+}
+function getProcStatusColor(s: string): string {
+  return s === 'active' ? '#10b981' : s === 'draft' ? '#f59e0b' : '#6b7280'
+}
+function getProcStatusLabel(s: string): string {
+  return s === 'active' ? '运行中' : s === 'draft' ? '草稿' : s === 'archived' ? '已归档' : '测试中'
+}
 
 // -- Debug Panel Helpers --
-function dbgEntryClass(level: string): Record<string,boolean> { const r: Record<string,boolean> = {dbg_entry:true}; r["dbg_"+level] = true; return r; }
-function dbgStepClass(status: string): Record<string,boolean> { const r: Record<string,boolean> = {dbg_step_status:true}; r[status] = true; return r; }
+function dbgEntryClass(level: string): Record<string, boolean> {
+  const r: Record<string, boolean> = { dbg_entry: true }
+  r['dbg_' + level] = true
+  return r
+}
+function dbgStepClass(status: string): Record<string, boolean> {
+  const r: Record<string, boolean> = { dbg_step_status: true }
+  r[status] = true
+  return r
+}
 
-async function exportProcess(){if(!selectedProcess.value?.id)return;try{const r=await api.get('/jaxrs/processplatform/assemble/designer/process/export?id='+selectedProcess.value.id);const blob=new Blob([JSON.stringify(r.data,null,2)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=(selectedProcess.value.name||'process')+'.json';a.click()}catch(e){toast.info('导出失败')}}
+async function exportProcess() {
+  if (!selectedProcess.value?.id) return
+  try {
+    const r = await api.get('/jaxrs/processplatform/assemble/designer/process/export?id=' + selectedProcess.value.id)
+    const blob = new Blob([JSON.stringify(r.data, null, 2)], { type: 'application/json' })
+    const a = document.createElement('a')
+    a.href = URL.createObjectURL(blob)
+    a.download = (selectedProcess.value.name || 'process') + '.json'
+    a.click()
+  } catch (e) {
+    toast.info('导出失败')
+  }
+}
 </script>
 
 <style scoped>

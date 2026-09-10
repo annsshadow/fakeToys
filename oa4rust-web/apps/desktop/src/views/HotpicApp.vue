@@ -35,8 +35,8 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
 import { api } from '@oa4rust/sdk'
+import { computed, ref } from 'vue'
 
 const keyword = ref('')
 const loading = ref(false)
@@ -44,8 +44,8 @@ const items = ref<any[]>([])
 
 const stats = computed(() => [
   { label: '总计', value: items.value.length, color: 'var(--color-primary)' },
-  { label: '今日热门', value: items.value.filter(i => i.isHot).length, color: 'var(--color-warning)' },
-  { label: '精华', value: items.value.filter(i => i.isCream).length, color: 'var(--color-success)' },
+  { label: '今日热门', value: items.value.filter((i) => i.isHot).length, color: 'var(--color-warning)' },
+  { label: '精华', value: items.value.filter((i) => i.isCream).length, color: 'var(--color-success)' },
   { label: '加载中', value: loading.value ? 1 : 0, color: 'var(--color-error)' },
 ])
 
@@ -54,251 +54,568 @@ async function doSearch() {
   try {
     const r = await api.get('/jaxrs/hotpic/core/entity/list')
     items.value = r.data ?? []
-  } catch { items.value = [] } finally { loading.value = false }
+  } catch {
+    items.value = []
+  } finally {
+    loading.value = false
+  }
 }
 
 async function onDelete(item: any) {
   if (!confirmMsg(`确定删除热帖「${item.title || item.id}」？`)) return
   try {
     await api.delete(`/jaxrs/hotpic/core/entity/delete/${item.id}`)
-    items.value = items.value.filter(i => i.id !== item.id)
-  } catch (e: any) { toast.error('删除失败: : ' + (e?.message ?? '未知错误')) }
+    items.value = items.value.filter((i) => i.id !== item.id)
+  } catch (e: any) {
+    toast.error('删除失败: : ' + (e?.message ?? '未知错误'))
+  }
 }
 
 doSearch()
 
-const user_hotpic_CMS_doc_123_ref = ref<any[]>([]);
+const user_hotpic_CMS_doc_123_ref = ref<any[]>([])
 const user_hotpic_CMS_doc_123_q = useQuery({
   queryKey: ['user_hotpic_CMS_doc_123'],
   queryFn: async () => {
-    try { const r = await api.get("/jaxrs/hotpic/user/hotpic/CMS/doc-123"); return (r.data ?? []) as any[]; }
-    catch { return []; }
+    try {
+      const r = await api.get('/jaxrs/hotpic/user/hotpic/CMS/doc-123')
+      return (r.data ?? []) as any[]
+    } catch {
+      return []
+    }
   },
-  
-});
-const hotpic_save_hotpic_ref = ref<any[]>([]);
+})
+const hotpic_save_hotpic_ref = ref<any[]>([])
 const hotpic_save_hotpic_q = useQuery({
   queryKey: ['hotpic_save_hotpic'],
   queryFn: async () => {
-    try { const r = await api.get("/jaxrs/hotpic/save/hotpic"); return (r.data ?? []) as any[]; }
-    catch { return []; }
+    try {
+      const r = await api.get('/jaxrs/hotpic/save/hotpic')
+      return (r.data ?? []) as any[]
+    } catch {
+      return []
+    }
   },
-  
-});
-const hotpic_delete_hotpic_ref = ref<any[]>([]);
+})
+const hotpic_delete_hotpic_ref = ref<any[]>([])
 const hotpic_delete_hotpic_q = useQuery({
   queryKey: ['hotpic_delete_hotpic'],
   queryFn: async () => {
-    try { const r = await api.get("/jaxrs/hotpic/delete/hotpic"); return (r.data ?? []) as any[]; }
-    catch { return []; }
+    try {
+      const r = await api.get('/jaxrs/hotpic/delete/hotpic')
+      return (r.data ?? []) as any[]
+    } catch {
+      return []
+    }
   },
-  
-});
-const hotpic_core_entity_create_ref = ref<any[]>([]);
+})
+const hotpic_core_entity_create_ref = ref<any[]>([])
 const hotpic_core_entity_create_q = useQuery({
   queryKey: ['hotpic_core_entity_create'],
   queryFn: async () => {
-    try { const r = await api.get("/jaxrs/hotpic/core/entity/create"); return (r.data ?? []) as any[]; }
-    catch { return []; }
+    try {
+      const r = await api.get('/jaxrs/hotpic/core/entity/create')
+      return (r.data ?? []) as any[]
+    } catch {
+      return []
+    }
   },
-  
-});
-const hotpic_core_list_ref = ref<any[]>([]);
+})
+const hotpic_core_list_ref = ref<any[]>([])
 const hotpic_core_list_q = useQuery({
   queryKey: ['hotpic_core_list'],
   queryFn: async () => {
-    try { const r = await api.get("/jaxrs/hotpic/core/list"); return (r.data ?? []) as any[]; }
-    catch { return []; }
+    try {
+      const r = await api.get('/jaxrs/hotpic/core/list')
+      return (r.data ?? []) as any[]
+    } catch {
+      return []
+    }
   },
-  
-});
-const hotpic_user_hotpic_hotpic_001_ref = ref<any[]>([]);
+})
+const hotpic_user_hotpic_hotpic_001_ref = ref<any[]>([])
 const hotpic_user_hotpic_hotpic_001_q = useQuery({
   queryKey: ['hotpic_user_hotpic_hotpic_001'],
   queryFn: async () => {
-    try { const r = await api.get("/jaxrs/hotpic/user/hotpic/hotpic-001"); return (r.data ?? []) as any[]; }
-    catch { return []; }
+    try {
+      const r = await api.get('/jaxrs/hotpic/user/hotpic/hotpic-001')
+      return (r.data ?? []) as any[]
+    } catch {
+      return []
+    }
   },
-  
-});
-const hotpic_assemble_list_ref = ref<any[]>([]);
+})
+const hotpic_assemble_list_ref = ref<any[]>([])
 const hotpic_assemble_list_q = useQuery({
   queryKey: ['hotpic_assemble_list'],
   queryFn: async () => {
-    try { const r = await api.get("/jaxrs/hotpic/assemble/list"); return (r.data ?? []) as any[]; }
-    catch { return []; }
+    try {
+      const r = await api.get('/jaxrs/hotpic/assemble/list')
+      return (r.data ?? []) as any[]
+    } catch {
+      return []
+    }
   },
-  
-});
-const hotpic_create_hotpic_ref = ref<any[]>([]);
+})
+const hotpic_create_hotpic_ref = ref<any[]>([])
 const hotpic_create_hotpic_q = useQuery({
   queryKey: ['hotpic_create_hotpic'],
   queryFn: async () => {
-    try { const r = await api.get("/jaxrs/hotpic/create/hotpic"); return (r.data ?? []) as any[]; }
-    catch { return []; }
+    try {
+      const r = await api.get('/jaxrs/hotpic/create/hotpic')
+      return (r.data ?? []) as any[]
+    } catch {
+      return []
+    }
   },
-  
-});
-const hotpic_upload_ref = ref<any[]>([]);
+})
+const hotpic_upload_ref = ref<any[]>([])
 const hotpic_upload_q = useQuery({
   queryKey: ['hotpic_upload'],
   queryFn: async () => {
-    try { const r = await api.get("/jaxrs/hotpic/upload"); return (r.data ?? []) as any[]; }
-    catch { return []; }
+    try {
+      const r = await api.get('/jaxrs/hotpic/upload')
+      return (r.data ?? []) as any[]
+    } catch {
+      return []
+    }
   },
-  
-});
-const core_entity_delete_hotpic_test_001_ref = ref<any[]>([]);
+})
+const core_entity_delete_hotpic_test_001_ref = ref<any[]>([])
 const core_entity_delete_hotpic_test_001_q = useQuery({
   queryKey: ['core_entity_delete_hotpic_test_001'],
   queryFn: async () => {
-    try { const r = await api.get("/jaxrs/hotpic/core/entity/delete/hotpic-test-001"); return (r.data ?? []) as any[]; }
-    catch { return []; }
+    try {
+      const r = await api.get('/jaxrs/hotpic/core/entity/delete/hotpic-test-001')
+      return (r.data ?? []) as any[]
+    } catch {
+      return []
+    }
   },
-  
-});
-const user_hotpic_exists_check_ref = ref<any[]>([]);
+})
+const user_hotpic_exists_check_ref = ref<any[]>([])
 const user_hotpic_exists_check_q = useQuery({
   queryKey: ['user_hotpic_exists_check'],
   queryFn: async () => {
-    try { const r = await api.get("/jaxrs/hotpic/user/hotpic/exists/check"); return (r.data ?? []) as any[]; }
-    catch { return []; }
+    try {
+      const r = await api.get('/jaxrs/hotpic/user/hotpic/exists/check')
+      return (r.data ?? []) as any[]
+    } catch {
+      return []
+    }
   },
-  
-});
-const hotpic_list_hotpics_ref = ref<any[]>([]);
+})
+const hotpic_list_hotpics_ref = ref<any[]>([])
 const hotpic_list_hotpics_q = useQuery({
   queryKey: ['hotpic_list_hotpics'],
   queryFn: async () => {
-    try { const r = await api.get("/jaxrs/hotpic/list/hotpics"); return (r.data ?? []) as any[]; }
-    catch { return []; }
+    try {
+      const r = await api.get('/jaxrs/hotpic/list/hotpics')
+      return (r.data ?? []) as any[]
+    } catch {
+      return []
+    }
   },
-  
-});
-const hotpic_assemble_control_config_ref = ref<any[]>([]);
+})
+const hotpic_assemble_control_config_ref = ref<any[]>([])
 const hotpic_assemble_control_config_q = useQuery({
   queryKey: ['hotpic_assemble_control_config'],
   queryFn: async () => {
-    try { const r = await api.get("/jaxrs/hotpic/assemble/control/config"); return (r.data ?? []) as any[]; }
-    catch { return []; }
+    try {
+      const r = await api.get('/jaxrs/hotpic/assemble/control/config')
+      return (r.data ?? []) as any[]
+    } catch {
+      return []
+    }
   },
-  
-});
-const hotpic_get_hotpic_hotpic_001_ref = ref<any[]>([]);
+})
+const hotpic_get_hotpic_hotpic_001_ref = ref<any[]>([])
 const hotpic_get_hotpic_hotpic_001_q = useQuery({
   queryKey: ['hotpic_get_hotpic_hotpic_001'],
   queryFn: async () => {
-    try { const r = await api.get("/jaxrs/hotpic/get/hotpic/hotpic-001"); return (r.data ?? []) as any[]; }
-    catch { return []; }
+    try {
+      const r = await api.get('/jaxrs/hotpic/get/hotpic/hotpic-001')
+      return (r.data ?? []) as any[]
+    } catch {
+      return []
+    }
   },
-  
-});
-const assemble_control_user_hotpic_ref = ref<any[]>([]);
+})
+const assemble_control_user_hotpic_ref = ref<any[]>([])
 const assemble_control_user_hotpic_q = useQuery({
   queryKey: ['assemble_control_user_hotpic'],
   queryFn: async () => {
-    try { const r = await api.get("/jaxrs/hotpic/assemble/control/user/hotpic"); return (r.data ?? []) as any[]; }
-    catch { return []; }
+    try {
+      const r = await api.get('/jaxrs/hotpic/assemble/control/user/hotpic')
+      return (r.data ?? []) as any[]
+    } catch {
+      return []
+    }
   },
-  
-});
-const hotpic_list_ref = ref<any[]>([]);
+})
+const hotpic_list_ref = ref<any[]>([])
 const hotpic_list_q = useQuery({
   queryKey: ['hotpic_list'],
   queryFn: async () => {
-    try { const r = await api.get("/jaxrs/hotpic/list"); return (r.data ?? []) as any[]; }
-    catch { return []; }
+    try {
+      const r = await api.get('/jaxrs/hotpic/list')
+      return (r.data ?? []) as any[]
+    } catch {
+      return []
+    }
   },
-  
-});
+})
 
+const api_hotpic_a_81_data = ref<any[]>([])
+const { data: api_hotpic_a_81_q } = useQuery({
+  queryKey: ['api_hotpic_a_81', '/jaxrs/hotpic_assemble_control'],
+  queryFn: async () => {
+    try {
+      const r = await api.get('/jaxrs/hotpic_assemble_control')
+      return (r.data ?? []) as any[]
+    } catch {
+      return []
+    }
+  },
+})
 
-const api_hotpic_a_81_data = ref<any[]>([]);
-const { data: api_hotpic_a_81_q } = useQuery({queryKey: ['api_hotpic_a_81', '/jaxrs/hotpic_assemble_control'], queryFn: async () => { try { const r = await api.get("/jaxrs/hotpic_assemble_control"); return (r.data ?? []) as any[]; } catch { return []; } }});
+const api_hotpic_a_902_data = ref<any[]>([])
+const { data: api_hotpic_a_902_q } = useQuery({
+  queryKey: ['api_hotpic_a_902', '/jaxrs/hotpic_assemble_control/save/hotpic'],
+  queryFn: async () => {
+    try {
+      const r = await api.get('/jaxrs/hotpic_assemble_control/save/hotpic')
+      return (r.data ?? []) as any[]
+    } catch {
+      return []
+    }
+  },
+})
 
-const api_hotpic_a_902_data = ref<any[]>([]);
-const { data: api_hotpic_a_902_q } = useQuery({queryKey: ['api_hotpic_a_902', '/jaxrs/hotpic_assemble_control/save/hotpic'], queryFn: async () => { try { const r = await api.get("/jaxrs/hotpic_assemble_control/save/hotpic"); return (r.data ?? []) as any[]; } catch { return []; } }});
+const api_hotpic_a_553_data = ref<any[]>([])
+const { data: api_hotpic_a_553_q } = useQuery({
+  queryKey: ['api_hotpic_a_553', '/jaxrs/hotpic_assemble_control/list/hotpics'],
+  queryFn: async () => {
+    try {
+      const r = await api.get('/jaxrs/hotpic_assemble_control/list/hotpics')
+      return (r.data ?? []) as any[]
+    } catch {
+      return []
+    }
+  },
+})
 
-const api_hotpic_a_553_data = ref<any[]>([]);
-const { data: api_hotpic_a_553_q } = useQuery({queryKey: ['api_hotpic_a_553', '/jaxrs/hotpic_assemble_control/list/hotpics'], queryFn: async () => { try { const r = await api.get("/jaxrs/hotpic_assemble_control/list/hotpics"); return (r.data ?? []) as any[]; } catch { return []; } }});
+const api_hotpic_a_938_data = ref<any[]>([])
+const { data: api_hotpic_a_938_q } = useQuery({
+  queryKey: ['api_hotpic_a_938', '/jaxrs/hotpic_assemble_control/cipher/hotpic/id'],
+  queryFn: async () => {
+    try {
+      const r = await api.get('/jaxrs/hotpic_assemble_control/cipher/hotpic/id')
+      return (r.data ?? []) as any[]
+    } catch {
+      return []
+    }
+  },
+})
 
-const api_hotpic_a_938_data = ref<any[]>([]);
-const { data: api_hotpic_a_938_q } = useQuery({queryKey: ['api_hotpic_a_938', '/jaxrs/hotpic_assemble_control/cipher/hotpic/id'], queryFn: async () => { try { const r = await api.get("/jaxrs/hotpic_assemble_control/cipher/hotpic/id"); return (r.data ?? []) as any[]; } catch { return []; } }});
+const api_hotpic_a_451_data = ref<any[]>([])
+const { data: api_hotpic_a_451_q } = useQuery({
+  queryKey: ['api_hotpic_a_451', '/jaxrs/hotpic_assemble_control/create/hotpic'],
+  queryFn: async () => {
+    try {
+      const r = await api.get('/jaxrs/hotpic_assemble_control/create/hotpic')
+      return (r.data ?? []) as any[]
+    } catch {
+      return []
+    }
+  },
+})
 
-const api_hotpic_a_451_data = ref<any[]>([]);
-const { data: api_hotpic_a_451_q } = useQuery({queryKey: ['api_hotpic_a_451', '/jaxrs/hotpic_assemble_control/create/hotpic'], queryFn: async () => { try { const r = await api.get("/jaxrs/hotpic_assemble_control/create/hotpic"); return (r.data ?? []) as any[]; } catch { return []; } }});
+const api_hotpic_a_267_data = ref<any[]>([])
+const { data: api_hotpic_a_267_q } = useQuery({
+  queryKey: ['api_hotpic_a_267', '/jaxrs/hotpic_assemble_control/user/hotpic/changeTitle'],
+  queryFn: async () => {
+    try {
+      const r = await api.get('/jaxrs/hotpic_assemble_control/user/hotpic/changeTitle')
+      return (r.data ?? []) as any[]
+    } catch {
+      return []
+    }
+  },
+})
 
-const api_hotpic_a_267_data = ref<any[]>([]);
-const { data: api_hotpic_a_267_q } = useQuery({queryKey: ['api_hotpic_a_267', '/jaxrs/hotpic_assemble_control/user/hotpic/changeTitle'], queryFn: async () => { try { const r = await api.get("/jaxrs/hotpic_assemble_control/user/hotpic/changeTitle"); return (r.data ?? []) as any[]; } catch { return []; } }});
+const api_hotpic_a_853_data = ref<any[]>([])
+const { data: api_hotpic_a_853_q } = useQuery({
+  queryKey: ['api_hotpic_a_853', '/jaxrs/hotpic_assemble_control/list/control/applications'],
+  queryFn: async () => {
+    try {
+      const r = await api.get('/jaxrs/hotpic_assemble_control/list/control/applications')
+      return (r.data ?? []) as any[]
+    } catch {
+      return []
+    }
+  },
+})
 
-const api_hotpic_a_853_data = ref<any[]>([]);
-const { data: api_hotpic_a_853_q } = useQuery({queryKey: ['api_hotpic_a_853', '/jaxrs/hotpic_assemble_control/list/control/applications'], queryFn: async () => { try { const r = await api.get("/jaxrs/hotpic_assemble_control/list/control/applications"); return (r.data ?? []) as any[]; } catch { return []; } }});
+const api_hotpic_a_727_data = ref<any[]>([])
+const { data: api_hotpic_a_727_q } = useQuery({
+  queryKey: ['api_hotpic_a_727', '/jaxrs/hotpic_assemble_control/delete/hotpic'],
+  queryFn: async () => {
+    try {
+      const r = await api.get('/jaxrs/hotpic_assemble_control/delete/hotpic')
+      return (r.data ?? []) as any[]
+    } catch {
+      return []
+    }
+  },
+})
 
-const api_hotpic_a_727_data = ref<any[]>([]);
-const { data: api_hotpic_a_727_q } = useQuery({queryKey: ['api_hotpic_a_727', '/jaxrs/hotpic_assemble_control/delete/hotpic'], queryFn: async () => { try { const r = await api.get("/jaxrs/hotpic_assemble_control/delete/hotpic"); return (r.data ?? []) as any[]; } catch { return []; } }});
+const api_user_hot_589_data = ref<any[]>([])
+const { data: api_user_hot_589_q } = useQuery({
+  queryKey: ['api_user_hot_589', '/jaxrs/hotpic_assemble_control/user/hotpic/exists/check'],
+  queryFn: async () => {
+    try {
+      const r = await api.get('/jaxrs/hotpic_assemble_control/user/hotpic/exists/check')
+      return (r.data ?? []) as any[]
+    } catch {
+      return []
+    }
+  },
+})
 
-const api_user_hot_589_data = ref<any[]>([]);
-const { data: api_user_hot_589_q } = useQuery({queryKey: ['api_user_hot_589', '/jaxrs/hotpic_assemble_control/user/hotpic/exists/check'], queryFn: async () => { try { const r = await api.get("/jaxrs/hotpic_assemble_control/user/hotpic/exists/check"); return (r.data ?? []) as any[]; } catch { return []; } }});
+const api_hotpic_a_155_data = ref<any[]>([])
+const { data: api_hotpic_a_155_q } = useQuery({
+  queryKey: ['api_hotpic_a_155', '/jaxrs/hotpic_assemble_control/get/hotpic'],
+  queryFn: async () => {
+    try {
+      const r = await api.get('/jaxrs/hotpic_assemble_control/get/hotpic')
+      return (r.data ?? []) as any[]
+    } catch {
+      return []
+    }
+  },
+})
 
-const api_hotpic_a_155_data = ref<any[]>([]);
-const { data: api_hotpic_a_155_q } = useQuery({queryKey: ['api_hotpic_a_155', '/jaxrs/hotpic_assemble_control/get/hotpic'], queryFn: async () => { try { const r = await api.get("/jaxrs/hotpic_assemble_control/get/hotpic"); return (r.data ?? []) as any[]; } catch { return []; } }});
+const api_hotpic_a_48_data = ref<any[]>([])
+const { data: api_hotpic_a_48_q } = useQuery({
+  queryKey: ['api_hotpic_a_48', '/jaxrs/hotpic_assemble_control/update/control/config'],
+  queryFn: async () => {
+    try {
+      const r = await api.get('/jaxrs/hotpic_assemble_control/update/control/config')
+      return (r.data ?? []) as any[]
+    } catch {
+      return []
+    }
+  },
+})
 
-const api_hotpic_a_48_data = ref<any[]>([]);
-const { data: api_hotpic_a_48_q } = useQuery({queryKey: ['api_hotpic_a_48', '/jaxrs/hotpic_assemble_control/update/control/config'], queryFn: async () => { try { const r = await api.get("/jaxrs/hotpic_assemble_control/update/control/config"); return (r.data ?? []) as any[]; } catch { return []; } }});
+const api_hotpic_a_594_data = ref<any[]>([])
+const { data: api_hotpic_a_594_q } = useQuery({
+  queryKey: ['api_hotpic_a_594', '/jaxrs/hotpic_assemble_control/user/hotpic/id'],
+  queryFn: async () => {
+    try {
+      const r = await api.get('/jaxrs/hotpic_assemble_control/user/hotpic/id')
+      return (r.data ?? []) as any[]
+    } catch {
+      return []
+    }
+  },
+})
 
-const api_hotpic_a_594_data = ref<any[]>([]);
-const { data: api_hotpic_a_594_q } = useQuery({queryKey: ['api_hotpic_a_594', '/jaxrs/hotpic_assemble_control/user/hotpic/id'], queryFn: async () => { try { const r = await api.get("/jaxrs/hotpic_assemble_control/user/hotpic/id"); return (r.data ?? []) as any[]; } catch { return []; } }});
+const api_hotpic_a_441_data = ref<any[]>([])
+const { data: api_hotpic_a_441_q } = useQuery({
+  queryKey: ['api_hotpic_a_441', '/jaxrs/hotpic_assemble_control/get/control/config'],
+  queryFn: async () => {
+    try {
+      const r = await api.get('/jaxrs/hotpic_assemble_control/get/control/config')
+      return (r.data ?? []) as any[]
+    } catch {
+      return []
+    }
+  },
+})
 
-const api_hotpic_a_441_data = ref<any[]>([]);
-const { data: api_hotpic_a_441_q } = useQuery({queryKey: ['api_hotpic_a_441', '/jaxrs/hotpic_assemble_control/get/control/config'], queryFn: async () => { try { const r = await api.get("/jaxrs/hotpic_assemble_control/get/control/config"); return (r.data ?? []) as any[]; } catch { return []; } }});
+const api_user_hot_763_data = ref<any[]>([])
+const { data: api_user_hot_763_q } = useQuery({
+  queryKey: ['api_user_hot_763', '/jaxrs/hotpic_assemble_control/user/hotpic/application/infoId'],
+  queryFn: async () => {
+    try {
+      const r = await api.get('/jaxrs/hotpic_assemble_control/user/hotpic/application/infoId')
+      return (r.data ?? []) as any[]
+    } catch {
+      return []
+    }
+  },
+})
 
-const api_user_hot_763_data = ref<any[]>([]);
-const { data: api_user_hot_763_q } = useQuery({queryKey: ['api_user_hot_763', '/jaxrs/hotpic_assemble_control/user/hotpic/application/infoId'], queryFn: async () => { try { const r = await api.get("/jaxrs/hotpic_assemble_control/user/hotpic/application/infoId"); return (r.data ?? []) as any[]; } catch { return []; } }});
+const api_hotpic_a_799_data = ref<any[]>([])
+const { data: api_hotpic_a_799_q } = useQuery({
+  queryKey: ['api_hotpic_a_799', '/jaxrs/hotpic_assemble_control/list/control/panels'],
+  queryFn: async () => {
+    try {
+      const r = await api.get('/jaxrs/hotpic_assemble_control/list/control/panels')
+      return (r.data ?? []) as any[]
+    } catch {
+      return []
+    }
+  },
+})
 
-const api_hotpic_a_799_data = ref<any[]>([]);
-const { data: api_hotpic_a_799_q } = useQuery({queryKey: ['api_hotpic_a_799', '/jaxrs/hotpic_assemble_control/list/control/panels'], queryFn: async () => { try { const r = await api.get("/jaxrs/hotpic_assemble_control/list/control/panels"); return (r.data ?? []) as any[]; } catch { return []; } }});
+const api_cipher_h_274_data = ref<any[]>([])
+const { data: api_cipher_h_274_q } = useQuery({
+  queryKey: ['api_cipher_h_274', '/jaxrs/hotpic_assemble_control/cipher/hotpic/bbs/id'],
+  queryFn: async () => {
+    try {
+      const r = await api.get('/jaxrs/hotpic_assemble_control/cipher/hotpic/bbs/id')
+      return (r.data ?? []) as any[]
+    } catch {
+      return []
+    }
+  },
+})
 
+const api_cipher_h_765_data = ref<any[]>([])
+const { data: api_cipher_h_765_q } = useQuery({
+  queryKey: ['api_cipher_h_765', '/jaxrs/hotpic_assemble_control/cipher/hotpic/cms/id'],
+  queryFn: async () => {
+    try {
+      const r = await api.get('/jaxrs/hotpic_assemble_control/cipher/hotpic/cms/id')
+      return (r.data ?? []) as any[]
+    } catch {
+      return []
+    }
+  },
+})
 
+const api_control__12_data = ref<any[]>([])
+const { data: api_control__12_q } = useQuery({
+  queryKey: ['api_control__12', '/jaxrs/hotpic/assemble/control/user/hotpic/changeTitle'],
+  queryFn: async () => {
+    try {
+      const r = await api.get('/jaxrs/hotpic/assemble/control/user/hotpic/changeTitle')
+      return (r.data ?? []) as any[]
+    } catch {
+      return []
+    }
+  },
+})
 
-const api_cipher_h_274_data = ref<any[]>([]);
-const { data: api_cipher_h_274_q } = useQuery({queryKey: ['api_cipher_h_274', '/jaxrs/hotpic_assemble_control/cipher/hotpic/bbs/id'], queryFn: async () => { try { const r = await api.get("/jaxrs/hotpic_assemble_control/cipher/hotpic/bbs/id"); return (r.data ?? []) as any[]; } catch { return []; } }});
+const api_control__542_data = ref<any[]>([])
+const { data: api_control__542_q } = useQuery({
+  queryKey: ['api_control__542', '/jaxrs/hotpic/assemble/control/update/control/config'],
+  queryFn: async () => {
+    try {
+      const r = await api.get('/jaxrs/hotpic/assemble/control/update/control/config')
+      return (r.data ?? []) as any[]
+    } catch {
+      return []
+    }
+  },
+})
 
-const api_cipher_h_765_data = ref<any[]>([]);
-const { data: api_cipher_h_765_q } = useQuery({queryKey: ['api_cipher_h_765', '/jaxrs/hotpic_assemble_control/cipher/hotpic/cms/id'], queryFn: async () => { try { const r = await api.get("/jaxrs/hotpic_assemble_control/cipher/hotpic/cms/id"); return (r.data ?? []) as any[]; } catch { return []; } }});
+const api_control_list_con_641_data = ref<any[]>([])
+const { data: api_control_list_con_641_q } = useQuery({
+  queryKey: ['api_control_list_con_641', '/jaxrs/hotpic/assemble/control/list/control/applications'],
+  queryFn: async () => {
+    try {
+      const r = await api.get('/jaxrs/hotpic/assemble/control/list/control/applications')
+      return (r.data ?? []) as any[]
+    } catch {
+      return []
+    }
+  },
+})
 
+const api_control_user_hot_220_data = ref<any[]>([])
+const { data: api_control_user_hot_220_q } = useQuery({
+  queryKey: ['api_control_user_hot_220', '/jaxrs/hotpic/assemble/control/user/hotpic/hotpic-001'],
+  queryFn: async () => {
+    try {
+      const r = await api.get('/jaxrs/hotpic/assemble/control/user/hotpic/hotpic-001')
+      return (r.data ?? []) as any[]
+    } catch {
+      return []
+    }
+  },
+})
 
+const api_control_list_con_584_data = ref<any[]>([])
+const { data: api_control_list_con_584_q } = useQuery({
+  queryKey: ['api_control_list_con_584', '/jaxrs/hotpic/assemble/control/list/control/panels'],
+  queryFn: async () => {
+    try {
+      const r = await api.get('/jaxrs/hotpic/assemble/control/list/control/panels')
+      return (r.data ?? []) as any[]
+    } catch {
+      return []
+    }
+  },
+})
 
-const api_control__12_data = ref<any[]>([]);
-const { data: api_control__12_q } = useQuery({queryKey: ['api_control__12', '/jaxrs/hotpic/assemble/control/user/hotpic/changeTitle'], queryFn: async () => { try { const r = await api.get("/jaxrs/hotpic/assemble/control/user/hotpic/changeTitle"); return (r.data ?? []) as any[]; } catch { return []; } }});
+const api_jaxrs_hotpic_ass_634_data = ref<any[]>([])
+const { data: api_jaxrs_hotpic_ass_634_q } = useQuery({
+  queryKey: ['api_jaxrs_hotpic_ass_634', '/jaxrs/hotpic/assemble/control/cipher/hotpic/filter/list/page/1/count/1'],
+  queryFn: async () => {
+    try {
+      const r = await api.get('/jaxrs/hotpic/assemble/control/cipher/hotpic/filter/list/page/1/count/1')
+      return (r.data ?? []) as any[]
+    } catch {
+      return []
+    }
+  },
+})
 
-const api_control__542_data = ref<any[]>([]);
-const { data: api_control__542_q } = useQuery({queryKey: ['api_control__542', '/jaxrs/hotpic/assemble/control/update/control/config'], queryFn: async () => { try { const r = await api.get("/jaxrs/hotpic/assemble/control/update/control/config"); return (r.data ?? []) as any[]; } catch { return []; } }});
+const api_jaxrs_hotpic_ass_799_data = ref<any[]>([])
+const { data: api_jaxrs_hotpic_ass_799_q } = useQuery({
+  queryKey: ['api_jaxrs_hotpic_ass_799', '/jaxrs/hotpic/assemble/control/user/hotpic/exists/check'],
+  queryFn: async () => {
+    try {
+      const r = await api.get('/jaxrs/hotpic/assemble/control/user/hotpic/exists/check')
+      return (r.data ?? []) as any[]
+    } catch {
+      return []
+    }
+  },
+})
 
-const api_control_list_con_641_data = ref<any[]>([]);
-const { data: api_control_list_con_641_q } = useQuery({queryKey: ['api_control_list_con_641', '/jaxrs/hotpic/assemble/control/list/control/applications'], queryFn: async () => { try { const r = await api.get("/jaxrs/hotpic/assemble/control/list/control/applications"); return (r.data ?? []) as any[]; } catch { return []; } }});
+const api_jaxrs_hotpic_ass_316_data = ref<any[]>([])
+const { data: api_jaxrs_hotpic_ass_316_q } = useQuery({
+  queryKey: ['api_jaxrs_hotpic_ass_316', '/jaxrs/hotpic/assemble/control/user/hotpic/filter/list/page/1/count/1'],
+  queryFn: async () => {
+    try {
+      const r = await api.get('/jaxrs/hotpic/assemble/control/user/hotpic/filter/list/page/1/count/1')
+      return (r.data ?? []) as any[]
+    } catch {
+      return []
+    }
+  },
+})
 
-const api_control_user_hot_220_data = ref<any[]>([]);
-const { data: api_control_user_hot_220_q } = useQuery({queryKey: ['api_control_user_hot_220', '/jaxrs/hotpic/assemble/control/user/hotpic/hotpic-001'], queryFn: async () => { try { const r = await api.get("/jaxrs/hotpic/assemble/control/user/hotpic/hotpic-001"); return (r.data ?? []) as any[]; } catch { return []; } }});
+const api_jaxrs_hotpic_cor_130_data = ref<any[]>([])
+const { data: api_jaxrs_hotpic_cor_130_q } = useQuery({
+  queryKey: ['api_jaxrs_hotpic_cor_130', '/jaxrs/hotpic/core/entity/exists/check/app/app-001/info-001'],
+  queryFn: async () => {
+    try {
+      const r = await api.get('/jaxrs/hotpic/core/entity/exists/check/app/app-001/info-001')
+      return (r.data ?? []) as any[]
+    } catch {
+      return []
+    }
+  },
+})
 
-const api_control_list_con_584_data = ref<any[]>([]);
-const { data: api_control_list_con_584_q } = useQuery({queryKey: ['api_control_list_con_584', '/jaxrs/hotpic/assemble/control/list/control/panels'], queryFn: async () => { try { const r = await api.get("/jaxrs/hotpic/assemble/control/list/control/panels"); return (r.data ?? []) as any[]; } catch { return []; } }});
-
-
-const api_jaxrs_hotpic_ass_634_data = ref<any[]>([]);
-const { data: api_jaxrs_hotpic_ass_634_q } = useQuery({queryKey: ['api_jaxrs_hotpic_ass_634', '/jaxrs/hotpic/assemble/control/cipher/hotpic/filter/list/page/1/count/1'], queryFn: async () => { try { const r = await api.get("/jaxrs/hotpic/assemble/control/cipher/hotpic/filter/list/page/1/count/1"); return (r.data ?? []) as any[]; } catch { return []; } }});
-
-const api_jaxrs_hotpic_ass_799_data = ref<any[]>([]);
-const { data: api_jaxrs_hotpic_ass_799_q } = useQuery({queryKey: ['api_jaxrs_hotpic_ass_799', '/jaxrs/hotpic/assemble/control/user/hotpic/exists/check'], queryFn: async () => { try { const r = await api.get("/jaxrs/hotpic/assemble/control/user/hotpic/exists/check"); return (r.data ?? []) as any[]; } catch { return []; } }});
-
-const api_jaxrs_hotpic_ass_316_data = ref<any[]>([]);
-const { data: api_jaxrs_hotpic_ass_316_q } = useQuery({queryKey: ['api_jaxrs_hotpic_ass_316', '/jaxrs/hotpic/assemble/control/user/hotpic/filter/list/page/1/count/1'], queryFn: async () => { try { const r = await api.get("/jaxrs/hotpic/assemble/control/user/hotpic/filter/list/page/1/count/1"); return (r.data ?? []) as any[]; } catch { return []; } }});
-
-const api_jaxrs_hotpic_cor_130_data = ref<any[]>([]);
-const { data: api_jaxrs_hotpic_cor_130_q } = useQuery({queryKey: ['api_jaxrs_hotpic_cor_130', '/jaxrs/hotpic/core/entity/exists/check/app/app-001/info-001'], queryFn: async () => { try { const r = await api.get("/jaxrs/hotpic/core/entity/exists/check/app/app-001/info-001"); return (r.data ?? []) as any[]; } catch { return []; } }});
-
-const api_jaxrs_hotpic_cor_93_data = ref<any[]>([]);
-const { data: api_jaxrs_hotpic_cor_93_q } = useQuery({queryKey: ['api_jaxrs_hotpic_cor_93', '/jaxrs/hotpic/core/entity/list/by/app/app-001/info-001'], queryFn: async () => { try { const r = await api.get("/jaxrs/hotpic/core/entity/list/by/app/app-001/info-001"); return (r.data ?? []) as any[]; } catch { return []; } }});
-
+const api_jaxrs_hotpic_cor_93_data = ref<any[]>([])
+const { data: api_jaxrs_hotpic_cor_93_q } = useQuery({
+  queryKey: ['api_jaxrs_hotpic_cor_93', '/jaxrs/hotpic/core/entity/list/by/app/app-001/info-001'],
+  queryFn: async () => {
+    try {
+      const r = await api.get('/jaxrs/hotpic/core/entity/list/by/app/app-001/info-001')
+      return (r.data ?? []) as any[]
+    } catch {
+      return []
+    }
+  },
+})
 </script>
 
 <style scoped>

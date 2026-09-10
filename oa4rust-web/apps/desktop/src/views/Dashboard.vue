@@ -76,27 +76,35 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted } from 'vue';
-import { useRouter } from 'vue-router';
-import { useQuery } from '@tanstack/vue-query';
-import { api, useSession } from '@oa4rust/sdk';
+import { api, useSession } from '@oa4rust/sdk'
+import { useQuery } from '@tanstack/vue-query'
+import { computed, onMounted, onUnmounted, ref } from 'vue'
+import { useRouter } from 'vue-router'
 
-const router = useRouter();
-const session = useSession();
-const user = computed(() => session.state.value?.user ?? null);
-const currentTime = ref('');
-const currentDate = ref('');
+const router = useRouter()
+const session = useSession()
+const user = computed(() => session.state.value?.user ?? null)
+const currentTime = ref('')
+const currentDate = ref('')
 
-let timer: ReturnType<typeof setInterval>;
+let timer: ReturnType<typeof setInterval>
 
 function updateTime(): void {
-  const now = new Date();
-  currentTime.value = now.toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' });
-  currentDate.value = now.toLocaleDateString('zh-CN', { year: 'numeric', month: 'long', day: 'numeric', weekday: 'long' });
+  const now = new Date()
+  currentTime.value = now.toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' })
+  currentDate.value = now.toLocaleDateString('zh-CN', {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+    weekday: 'long',
+  })
 }
 
-onMounted(() => { updateTime(); timer = setInterval(updateTime, 1000); });
-onUnmounted(() => clearInterval(timer));
+onMounted(() => {
+  updateTime()
+  timer = setInterval(updateTime, 1000)
+})
+onUnmounted(() => clearInterval(timer))
 
 const quickApps = [
   { id: 'org', label: '组织架构', icon: '🏢', path: '/app/org' },
@@ -107,76 +115,176 @@ const quickApps = [
   { id: 'file', label: '文件', icon: '📁', path: '/app/file' },
   { id: 'bbs', label: '论坛', icon: '💭', path: '/app/bbs' },
   { id: 'ai', label: 'AI助手', icon: '🤖', path: '/app/admin' },
-];
+]
 
 // 实时统计数据
-const { data: procCounts } = useQuery({ queryKey: ['dash', 'proc'], queryFn: () => Promise.all([
-  api.get('/jaxrs/processplatform/assemble/surface/work/count/currentperson'),
-  api.get('/jaxrs/processplatform/assemble/surface/work/count/completedperson'),
-]) });
-const { data: msgCount } = useQuery({ queryKey: ['dash', 'msg'], queryFn: () =>
-  api.get('/jaxrs/message/unread/count/im') }, { staleTime: 15000, refetchInterval: 30000 });
+const { data: procCounts } = useQuery({
+  queryKey: ['dash', 'proc'],
+  queryFn: () =>
+    Promise.all([
+      api.get('/jaxrs/processplatform/assemble/surface/work/count/currentperson'),
+      api.get('/jaxrs/processplatform/assemble/surface/work/count/completedperson'),
+    ]),
+})
+const { data: msgCount } = useQuery(
+  { queryKey: ['dash', 'msg'], queryFn: () => api.get('/jaxrs/message/unread/count/im') },
+  { staleTime: 15000, refetchInterval: 30000 },
+)
 
 const stats = computed(() => [
-  { icon: '📋', label: '待审批', value: ((procCounts.value?.[0] as any)?.data?.count ?? 0) as number, color: 'var(--color-warning)', trendText: '↑ 较昨日', trendDir: 'up' },
-  { icon: '💬', label: '未读消息', value: ((msgCount.value as any)?.data?.count ?? 0) as number, color: 'var(--color-primary)', trendText: '实时', trendDir: 'neutral' },
-  { icon: '✅', label: '已办结', value: ((procCounts.value?.[1] as any)?.data?.count ?? 0) as number, color: 'var(--color-success)', trendText: '本月累计', trendDir: 'neutral' },
+  {
+    icon: '📋',
+    label: '待审批',
+    value: ((procCounts.value?.[0] as any)?.data?.count ?? 0) as number,
+    color: 'var(--color-warning)',
+    trendText: '↑ 较昨日',
+    trendDir: 'up',
+  },
+  {
+    icon: '💬',
+    label: '未读消息',
+    value: ((msgCount.value as any)?.data?.count ?? 0) as number,
+    color: 'var(--color-primary)',
+    trendText: '实时',
+    trendDir: 'neutral',
+  },
+  {
+    icon: '✅',
+    label: '已办结',
+    value: ((procCounts.value?.[1] as any)?.data?.count ?? 0) as number,
+    color: 'var(--color-success)',
+    trendText: '本月累计',
+    trendDir: 'neutral',
+  },
   { icon: '📅', label: '今日会议', value: 0, color: 'var(--color-accent)', trendText: '暂无安排', trendDir: 'neutral' },
-]);
+])
 
 // 待办列表
-const pendingLoading = ref(false);
-const pendingItems = ref<Array<{ id: string; title?: string; processName?: string; appName?: string; createTime?: string }>>([]);
+const pendingLoading = ref(false)
+const pendingItems = ref<
+  Array<{ id: string; title?: string; processName?: string; appName?: string; createTime?: string }>
+>([])
 
 async function loadPending(): Promise<void> {
-  pendingLoading.value = true;
+  pendingLoading.value = true
   try {
-    const resp = await api.post('/jaxrs/processplatform/assemble/surface/work/list/filter/manage/1/5/manage', {});
-    pendingItems.value = ((resp as any)?.data ?? []).slice(0, 5);
-  } catch { pendingItems.value = []; }
-  finally { pendingLoading.value = false; }
+    const resp = await api.post('/jaxrs/processplatform/assemble/surface/work/list/filter/manage/1/5/manage', {})
+    pendingItems.value = ((resp as any)?.data ?? []).slice(0, 5)
+  } catch {
+    pendingItems.value = []
+  } finally {
+    pendingLoading.value = false
+  }
 }
 
 // 最近动态
-const recentItems = ref<Array<{ icon: string; text: string; time: string }>>([]);
+const recentItems = ref<Array<{ icon: string; text: string; time: string }>>([])
 async function loadRecent(): Promise<void> {
-  await loadPending();
+  await loadPending()
   // Simulate dynamic events (in production would come from /jaxrs/message/unread/count or similar)
   recentItems.value = [
     { icon: '📋', text: '您的报销申请已通过审批', time: '10 分钟前' },
     { icon: '💬', text: '张三 给您发了一条消息', time: '30 分钟前' },
     { icon: '📅', text: '明天 14:00 有部门例会', time: '1 小时前' },
     { icon: '🔔', text: '系统通知：本月考勤已生成', time: '2 小时前' },
-  ];
+  ]
 }
 
-function navigateTo(path: string): void { router.push(path); }
+function navigateTo(path: string): void {
+  router.push(path)
+}
 function fmtTime(ts?: string): string {
-  if (!ts) return '';
-  try { return new Date(ts).toLocaleString('zh-CN', { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' }); }
-  catch { return String(ts); }
+  if (!ts) return ''
+  try {
+    return new Date(ts).toLocaleString('zh-CN', {
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+    })
+  } catch {
+    return String(ts)
+  }
 }
 
-onMounted(loadPending);
+onMounted(loadPending)
 
-const api_data_doc_692_data = ref<any[]>([]);
-const { data: api_data_doc_692_q } = useQuery({queryKey: ['api_data_doc_692', '/jaxrs/data/document/d-1/path0'], queryFn: async () => { try { const r = await api.get("/jaxrs/data/document/d-1/path0"); return (r.data ?? []) as any[]; } catch { return []; } }});
+const api_data_doc_692_data = ref<any[]>([])
+const { data: api_data_doc_692_q } = useQuery({
+  queryKey: ['api_data_doc_692', '/jaxrs/data/document/d-1/path0'],
+  queryFn: async () => {
+    try {
+      const r = await api.get('/jaxrs/data/document/d-1/path0')
+      return (r.data ?? []) as any[]
+    } catch {
+      return []
+    }
+  },
+})
 
-const api_document_46_data = ref<any[]>([]);
-const { data: api_document_46_q } = useQuery({queryKey: ['api_document_46', '/jaxrs/data/document/d-1/array/data'], queryFn: async () => { try { const r = await api.get("/jaxrs/data/document/d-1/array/data"); return (r.data ?? []) as any[]; } catch { return []; } }});
+const api_document_46_data = ref<any[]>([])
+const { data: api_document_46_q } = useQuery({
+  queryKey: ['api_document_46', '/jaxrs/data/document/d-1/array/data'],
+  queryFn: async () => {
+    try {
+      const r = await api.get('/jaxrs/data/document/d-1/array/data')
+      return (r.data ?? []) as any[]
+    } catch {
+      return []
+    }
+  },
+})
 
-const api_data_doc_868_data = ref<any[]>([]);
-const { data: api_data_doc_868_q } = useQuery({queryKey: ['api_data_doc_868', '/jaxrs/data/document/d-1/field'], queryFn: async () => { try { const r = await api.get("/jaxrs/data/document/d-1/field"); return (r.data ?? []) as any[]; } catch { return []; } }});
+const api_data_doc_868_data = ref<any[]>([])
+const { data: api_data_doc_868_q } = useQuery({
+  queryKey: ['api_data_doc_868', '/jaxrs/data/document/d-1/field'],
+  queryFn: async () => {
+    try {
+      const r = await api.get('/jaxrs/data/document/d-1/field')
+      return (r.data ?? []) as any[]
+    } catch {
+      return []
+    }
+  },
+})
 
-const api_data_doc_344_data = ref<any[]>([]);
-const { data: api_data_doc_344_q } = useQuery({queryKey: ['api_data_doc_344', '/jaxrs/data/document/d-1'], queryFn: async () => { try { const r = await api.get("/jaxrs/data/document/d-1"); return (r.data ?? []) as any[]; } catch { return []; } }});
+const api_data_doc_344_data = ref<any[]>([])
+const { data: api_data_doc_344_q } = useQuery({
+  queryKey: ['api_data_doc_344', '/jaxrs/data/document/d-1'],
+  queryFn: async () => {
+    try {
+      const r = await api.get('/jaxrs/data/document/d-1')
+      return (r.data ?? []) as any[]
+    } catch {
+      return []
+    }
+  },
+})
 
-const api_d_1_a_b_c_data = ref<any[]>([]);
-const { data: api_d_1_a_b_c_q } = useQuery({queryKey: ['api_d_1_a_b_c', '/jaxrs/data/document/d-1/a/b/c'], queryFn: async () => { try { const r = await api.get("/jaxrs/data/document/d-1/a/b/c"); return (r.data ?? []) as any[]; } catch { return []; } }});
-const api_data_doc_386_data = ref<any[]>([]);
-const { data: api_data_doc_386_q } = useQuery({queryKey: ['api_data_doc_386', '/jaxrs/data/document/d-1/anything'], queryFn: async () => { try { const r = await api.get("/jaxrs/data/document/d-1/anything"); return (r.data ?? []) as any[]; } catch { return []; } }});
-
-
+const api_d_1_a_b_c_data = ref<any[]>([])
+const { data: api_d_1_a_b_c_q } = useQuery({
+  queryKey: ['api_d_1_a_b_c', '/jaxrs/data/document/d-1/a/b/c'],
+  queryFn: async () => {
+    try {
+      const r = await api.get('/jaxrs/data/document/d-1/a/b/c')
+      return (r.data ?? []) as any[]
+    } catch {
+      return []
+    }
+  },
+})
+const api_data_doc_386_data = ref<any[]>([])
+const { data: api_data_doc_386_q } = useQuery({
+  queryKey: ['api_data_doc_386', '/jaxrs/data/document/d-1/anything'],
+  queryFn: async () => {
+    try {
+      const r = await api.get('/jaxrs/data/document/d-1/anything')
+      return (r.data ?? []) as any[]
+    } catch {
+      return []
+    }
+  },
+})
 </script>
 
 <style scoped>

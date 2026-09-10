@@ -49,52 +49,95 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
-import { useQuery } from '@tanstack/vue-query'
 import { api } from '@oa4rust/sdk'
+import { useQuery } from '@tanstack/vue-query'
+import { onMounted, ref } from 'vue'
 
-interface Conv { id:string; title?:string; model?:string; time:string }
-interface Msg { id:string; role:'user'|'assistant'; content:string }
+interface Conv {
+  id: string
+  title?: string
+  model?: string
+  time: string
+}
+interface Msg {
+  id: string
+  role: 'user' | 'assistant'
+  content: string
+}
 
 const convs = ref<Conv[]>([])
-const active = ref<Conv|null>(null)
+const active = ref<Conv | null>(null)
 const msgs = ref<Msg[]>([])
 const inputTxt = ref('')
 const streaming = ref(false)
 const showMcp = ref(false)
 const msgBox = ref<HTMLElement>()
-const mcps = ref<Array<{id:string;name:string;endpoint:string;enabled:boolean}>>([])
+const mcps = ref<Array<{ id: string; name: string; endpoint: string; enabled: boolean }>>([])
 
-const { data } = useQuery({ queryKey:['ai','convs'], queryFn:()=>api.get('/jaxrs/ai/conversation/list').then((r:any)=>(r.data??[]) as Conv[]) })
+const { data } = useQuery({
+  queryKey: ['ai', 'convs'],
+  queryFn: () => api.get('/jaxrs/ai/conversation/list').then((r: any) => (r.data ?? []) as Conv[]),
+})
 convs.value = data.value ?? []
 
-function selectConv(c:Conv){ active.value=c; msgs.value=[] }
-function fmt(c:string){ return (c??'') }
-function scrollB(){ msgBox.value?.scrollTo({top:msgBox.value!.scrollHeight,behavior:'smooth'}) }
-
-async function createConv(){
-  const r = await api.post('/jaxrs/ai_assemble_control/chat/write/completion/extra',{})
-  const nc = ((r as any)?.data??{}) as Conv
-  convs.value.unshift(nc); active.value=nc; msgs.value=[]
+function selectConv(c: Conv) {
+  active.value = c
+  msgs.value = []
+}
+function fmt(c: string) {
+  return c ?? ''
+}
+function scrollB() {
+  msgBox.value?.scrollTo({ top: msgBox.value!.scrollHeight, behavior: 'smooth' })
 }
 
-async function sendMsg(){
-  const txt=inputTxt.value.trim(); if(!txt||!active.value||streaming.value) return
-  msgs.value.push({id:`u-${Date.now()}`,role:'user',content:txt}); inputTxt.value=''
-  streaming.value=true; scrollB()
+async function createConv() {
+  const r = await api.post('/jaxrs/ai_assemble_control/chat/write/completion/extra', {})
+  const nc = ((r as any)?.data ?? {}) as Conv
+  convs.value.unshift(nc)
+  active.value = nc
+  msgs.value = []
+}
+
+async function sendMsg() {
+  const txt = inputTxt.value.trim()
+  if (!txt || !active.value || streaming.value) return
+  msgs.value.push({ id: `u-${Date.now()}`, role: 'user', content: txt })
+  inputTxt.value = ''
+  streaming.value = true
+  scrollB()
   try {
-    const r = await api.post('/jaxrs/ai_assemble_control/chat/completion/stream',{conversationId:active.value!.id,message:txt})
-    const c = ((r as any)?.data?.content??'收到回复') as string
-    msgs.value.push({id:`a-${Date.now()}`,role:'assistant',content:c})
-  } catch(e){ msgs.value.push({id:`a-${Date.now()}`,role:'assistant',content:`⚠ ${(e as Error).message}`}) }
-  finally { streaming.value=false; scrollB() }
+    const r = await api.post('/jaxrs/ai_assemble_control/chat/completion/stream', {
+      conversationId: active.value!.id,
+      message: txt,
+    })
+    const c = ((r as any)?.data?.content ?? '收到回复') as string
+    msgs.value.push({ id: `a-${Date.now()}`, role: 'assistant', content: c })
+  } catch (e) {
+    msgs.value.push({ id: `a-${Date.now()}`, role: 'assistant', content: `⚠ ${(e as Error).message}` })
+  } finally {
+    streaming.value = false
+    scrollB()
+  }
 }
 
-async function toggleMcp(m:any){ m.enabled=!m.enabled; await api.post(`/jaxrs/ai_assemble_control/config/${m.enabled?'create':'delete'}/mcp`,{id:m.id}) }
-async function delMcp(id:string){ await api.delete(`/jaxrs/ai_assemble_control/config/delete/mcp/${id}`); mcps.value=mcps.value.filter(x=>x.id!==id) }
-function addMcp(){ /* future dialog */ }
+async function toggleMcp(m: any) {
+  m.enabled = !m.enabled
+  await api.post(`/jaxrs/ai_assemble_control/config/${m.enabled ? 'create' : 'delete'}/mcp`, { id: m.id })
+}
+async function delMcp(id: string) {
+  await api.delete(`/jaxrs/ai_assemble_control/config/delete/mcp/${id}`)
+  mcps.value = mcps.value.filter((x) => x.id !== id)
+}
+function addMcp() {
+  /* future dialog */
+}
 
-onMounted(()=>{ api.get('/jaxrs/ai_assemble_control/config/list/mcp/paging/1/20').then((r:any)=>{ mcps.value=(r.data??[]) as typeof mcps.value }) })
+onMounted(() => {
+  api.get('/jaxrs/ai_assemble_control/config/list/mcp/paging/1/20').then((r: any) => {
+    mcps.value = (r.data ?? []) as typeof mcps.value
+  })
+})
 </script>
 
 <style scoped>

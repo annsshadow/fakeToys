@@ -41,8 +41,8 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
 import { api } from '@oa4rust/sdk'
+import { ref } from 'vue'
 
 const command = ref('')
 const executing = ref(false)
@@ -56,7 +56,11 @@ async function loadLicense() {
   try {
     const r = await api.get('/jaxrs/server/license')
     license.value = r.data ?? null
-  } catch { license.value = null } finally { loadingLicense.value = false }
+  } catch {
+    license.value = null
+  } finally {
+    loadingLicense.value = false
+  }
 }
 
 async function executeCommand() {
@@ -69,7 +73,9 @@ async function executeCommand() {
     execOutput.value = JSON.stringify(r.data, null, 2)
   } catch (e: any) {
     execError.value = e?.message ?? '命令执行失败'
-  } finally { executing.value = false }
+  } finally {
+    executing.value = false
+  }
 }
 
 async function stopServer() {
@@ -84,77 +90,282 @@ async function stopServer() {
 
 loadLicense()
 
-const api_cache_co_205_data = ref<any[]>([]);
-const { data: api_cache_co_205_q } = useQuery({queryKey: ['api_cache_co_205', '/jaxrs/cache/commonscript/flush'], queryFn: async () => { try { const r = await api.get("/jaxrs/cache/commonscript/flush"); return (r.data ?? []) as any[]; } catch { return []; } }});
+const api_cache_co_205_data = ref<any[]>([])
+const { data: api_cache_co_205_q } = useQuery({
+  queryKey: ['api_cache_co_205', '/jaxrs/cache/commonscript/flush'],
+  queryFn: async () => {
+    try {
+      const r = await api.get('/jaxrs/cache/commonscript/flush')
+      return (r.data ?? []) as any[]
+    } catch {
+      return []
+    }
+  },
+})
 
-const api_cache_detail_data = ref<any[]>([]);
-const { data: api_cache_detail_q } = useQuery({queryKey: ['api_cache_detail', '/jaxrs/cache/detail'], queryFn: async () => { try { const r = await api.get("/jaxrs/cache/detail"); return (r.data ?? []) as any[]; } catch { return []; } }});
-const api_cache_co_100_data = ref<any[]>([]);
-const { data: api_cache_co_100_q } = useQuery({queryKey: ['api_cache_co_100', '/jaxrs/cache/config/flush'], queryFn: async () => { try { const r = await api.get("/jaxrs/cache/config/flush"); return (r.data ?? []) as any[]; } catch { return []; } }});
+const api_cache_detail_data = ref<any[]>([])
+const { data: api_cache_detail_q } = useQuery({
+  queryKey: ['api_cache_detail', '/jaxrs/cache/detail'],
+  queryFn: async () => {
+    try {
+      const r = await api.get('/jaxrs/cache/detail')
+      return (r.data ?? []) as any[]
+    } catch {
+      return []
+    }
+  },
+})
+const api_cache_co_100_data = ref<any[]>([])
+const { data: api_cache_co_100_q } = useQuery({
+  queryKey: ['api_cache_co_100', '/jaxrs/cache/config/flush'],
+  queryFn: async () => {
+    try {
+      const r = await api.get('/jaxrs/cache/config/flush')
+      return (r.data ?? []) as any[]
+    } catch {
+      return []
+    }
+  },
+})
 
+const api_console__997_data = ref<any[]>([])
+const { data: api_console__997_q } = useQuery({
+  queryKey: ['api_console__997', '/jaxrs/console/cache/clear/all'],
+  queryFn: async () => {
+    try {
+      const r = await api.get('/jaxrs/console/cache/clear/all')
+      return (r.data ?? []) as any[]
+    } catch {
+      return []
+    }
+  },
+})
 
+const api_console__543_data = ref<any[]>([])
+const { data: api_console__543_q } = useQuery({
+  queryKey: ['api_console__543', '/jaxrs/console/logs/error'],
+  queryFn: async () => {
+    try {
+      const r = await api.get('/jaxrs/console/logs/error')
+      return (r.data ?? []) as any[]
+    } catch {
+      return []
+    }
+  },
+})
 
-const api_console__997_data = ref<any[]>([]);
-const { data: api_console__997_q } = useQuery({queryKey: ['api_console__997', '/jaxrs/console/cache/clear/all'], queryFn: async () => { try { const r = await api.get("/jaxrs/console/cache/clear/all"); return (r.data ?? []) as any[]; } catch { return []; } }});
+const api_console__409_data = ref<any[]>([])
+const { data: api_console__409_q } = useQuery({
+  queryKey: ['api_console__409', '/jaxrs/console/system/info'],
+  queryFn: async () => {
+    try {
+      const r = await api.get('/jaxrs/console/system/info')
+      return (r.data ?? []) as any[]
+    } catch {
+      return []
+    }
+  },
+})
 
-const api_console__543_data = ref<any[]>([]);
-const { data: api_console__543_q } = useQuery({queryKey: ['api_console__543', '/jaxrs/console/logs/error'], queryFn: async () => { try { const r = await api.get("/jaxrs/console/logs/error"); return (r.data ?? []) as any[]; } catch { return []; } }});
+const api_console__450_data = ref<any[]>([])
+const { data: api_console__450_q } = useQuery({
+  queryKey: ['api_console__450', '/jaxrs/console/command/execute'],
+  queryFn: async () => {
+    try {
+      const r = await api.get('/jaxrs/console/command/execute')
+      return (r.data ?? []) as any[]
+    } catch {
+      return []
+    }
+  },
+})
 
-const api_console__409_data = ref<any[]>([]);
-const { data: api_console__409_q } = useQuery({queryKey: ['api_console__409', '/jaxrs/console/system/info'], queryFn: async () => { try { const r = await api.get("/jaxrs/console/system/info"); return (r.data ?? []) as any[]; } catch { return []; } }});
+const api_console__982_data = ref<any[]>([])
+const { data: api_console__982_q } = useQuery({
+  queryKey: ['api_console__982', '/jaxrs/console/send/message'],
+  queryFn: async () => {
+    try {
+      const r = await api.get('/jaxrs/console/send/message')
+      return (r.data ?? []) as any[]
+    } catch {
+      return []
+    }
+  },
+})
 
-const api_console__450_data = ref<any[]>([]);
-const { data: api_console__450_q } = useQuery({queryKey: ['api_console__450', '/jaxrs/console/command/execute'], queryFn: async () => { try { const r = await api.get("/jaxrs/console/command/execute"); return (r.data ?? []) as any[]; } catch { return []; } }});
+const api_console_status_data = ref<any[]>([])
+const { data: api_console_status_q } = useQuery({
+  queryKey: ['api_console_status', '/jaxrs/console/status'],
+  queryFn: async () => {
+    try {
+      const r = await api.get('/jaxrs/console/status')
+      return (r.data ?? []) as any[]
+    } catch {
+      return []
+    }
+  },
+})
 
-const api_console__982_data = ref<any[]>([]);
-const { data: api_console__982_q } = useQuery({queryKey: ['api_console__982', '/jaxrs/console/send/message'], queryFn: async () => { try { const r = await api.get("/jaxrs/console/send/message"); return (r.data ?? []) as any[]; } catch { return []; } }});
+const api_output_o_164_data = ref<any[]>([])
+const { data: api_output_o_164_q } = useQuery({
+  queryKey: ['api_output_o_164', '/jaxrs/output/o-1/select'],
+  queryFn: async () => {
+    try {
+      const r = await api.get('/jaxrs/output/o-1/select')
+      return (r.data ?? []) as any[]
+    } catch {
+      return []
+    }
+  },
+})
 
-const api_console_status_data = ref<any[]>([]);
-const { data: api_console_status_q } = useQuery({queryKey: ['api_console_status', '/jaxrs/console/status'], queryFn: async () => { try { const r = await api.get("/jaxrs/console/status"); return (r.data ?? []) as any[]; } catch { return []; } }});
+const api_output_list_data = ref<any[]>([])
+const { data: api_output_list_q } = useQuery({
+  queryKey: ['api_output_list', '/jaxrs/output/list'],
+  queryFn: async () => {
+    try {
+      const r = await api.get('/jaxrs/output/list')
+      return (r.data ?? []) as any[]
+    } catch {
+      return []
+    }
+  },
+})
 
+const api_secret_c_983_data = ref<any[]>([])
+const { data: api_secret_c_983_q } = useQuery({
+  queryKey: ['api_secret_c_983', '/jaxrs/secret/captcha/verify'],
+  queryFn: async () => {
+    try {
+      const r = await api.get('/jaxrs/secret/captcha/verify')
+      return (r.data ?? []) as any[]
+    } catch {
+      return []
+    }
+  },
+})
 
-const api_output_o_164_data = ref<any[]>([]);
-const { data: api_output_o_164_q } = useQuery({queryKey: ['api_output_o_164', '/jaxrs/output/o-1/select'], queryFn: async () => { try { const r = await api.get("/jaxrs/output/o-1/select"); return (r.data ?? []) as any[]; } catch { return []; } }});
+const api_secret_check_data = ref<any[]>([])
+const { data: api_secret_check_q } = useQuery({
+  queryKey: ['api_secret_check', '/jaxrs/secret/check'],
+  queryFn: async () => {
+    try {
+      const r = await api.get('/jaxrs/secret/check')
+      return (r.data ?? []) as any[]
+    } catch {
+      return []
+    }
+  },
+})
 
-const api_output_list_data = ref<any[]>([]);
-const { data: api_output_list_q } = useQuery({queryKey: ['api_output_list', '/jaxrs/output/list'], queryFn: async () => { try { const r = await api.get("/jaxrs/output/list"); return (r.data ?? []) as any[]; } catch { return []; } }});
+const api_filter_1_size_10_data = ref<any[]>([])
+const { data: api_filter_1_size_10_q } = useQuery({
+  queryKey: ['api_filter_1_size_10', '/jaxrs/log/list/filter/1/size/10'],
+  queryFn: async () => {
+    try {
+      const r = await api.get('/jaxrs/log/list/filter/1/size/10')
+      return (r.data ?? []) as any[]
+    } catch {
+      return []
+    }
+  },
+})
 
+const api_list_i_1_next_10_data = ref<any[]>([])
+const { data: api_list_i_1_next_10_q } = useQuery({
+  queryKey: ['api_list_i_1_next_10', '/jaxrs/log/filter/list/i-1/next/10'],
+  queryFn: async () => {
+    try {
+      const r = await api.get('/jaxrs/log/filter/list/i-1/next/10')
+      return (r.data ?? []) as any[]
+    } catch {
+      return []
+    }
+  },
+})
 
-const api_secret_c_983_data = ref<any[]>([]);
-const { data: api_secret_c_983_q } = useQuery({queryKey: ['api_secret_c_983', '/jaxrs/secret/captcha/verify'], queryFn: async () => { try { const r = await api.get("/jaxrs/secret/captcha/verify"); return (r.data ?? []) as any[]; } catch { return []; } }});
+const api_server_execute_status_data = ref<any[]>([])
+const { data: api_server_execute_status_q } = useQuery({
+  queryKey: ['api_server_execute_status', '/jaxrs/server/execute/status'],
+  queryFn: async () => {
+    try {
+      const r = await api.get('/jaxrs/server/execute/status')
+      return (r.data ?? []) as any[]
+    } catch {
+      return []
+    }
+  },
+})
 
-const api_secret_check_data = ref<any[]>([]);
-const { data: api_secret_check_q } = useQuery({queryKey: ['api_secret_check', '/jaxrs/secret/check'], queryFn: async () => { try { const r = await api.get("/jaxrs/secret/check"); return (r.data ?? []) as any[]; } catch { return []; } }});
+const api_base_ope_660_data = ref<any[]>([])
+const { data: api_base_ope_660_q } = useQuery({
+  queryKey: ['api_base_ope_660', '/jaxrs/base/openapi/info'],
+  queryFn: async () => {
+    try {
+      const r = await api.get('/jaxrs/base/openapi/info')
+      return (r.data ?? []) as any[]
+    } catch {
+      return []
+    }
+  },
+})
 
+const api_cache_config_flush_1_data = ref<any[]>([])
+const { data: api_cache_config_flush_1_q } = useQuery({
+  queryKey: ['api_cache_config_flush_1', '/jaxrs/base/cache/config/flush'],
+  queryFn: async () => {
+    try {
+      const r = await api.get('/jaxrs/base/cache/config/flush')
+      return (r.data ?? []) as any[]
+    } catch {
+      return []
+    }
+  },
+})
 
-const api_filter_1_size_10_data = ref<any[]>([]);
-const { data: api_filter_1_size_10_q } = useQuery({queryKey: ['api_filter_1_size_10', '/jaxrs/log/list/filter/1/size/10'], queryFn: async () => { try { const r = await api.get("/jaxrs/log/list/filter/1/size/10"); return (r.data ?? []) as any[]; } catch { return []; } }});
+const api_base_cac_432_data = ref<any[]>([])
+const { data: api_base_cac_432_q } = useQuery({
+  queryKey: ['api_base_cac_432', '/jaxrs/base/cache/detail'],
+  queryFn: async () => {
+    try {
+      const r = await api.get('/jaxrs/base/cache/detail')
+      return (r.data ?? []) as any[]
+    } catch {
+      return []
+    }
+  },
+})
 
-const api_list_i_1_next_10_data = ref<any[]>([]);
-const { data: api_list_i_1_next_10_q } = useQuery({queryKey: ['api_list_i_1_next_10', '/jaxrs/log/filter/list/i-1/next/10'], queryFn: async () => { try { const r = await api.get("/jaxrs/log/filter/list/i-1/next/10"); return (r.data ?? []) as any[]; } catch { return []; } }});
+const api_cache_commonscri_410_data = ref<any[]>([])
+const { data: api_cache_commonscri_410_q } = useQuery({
+  queryKey: ['api_cache_commonscri_410', '/jaxrs/base/cache/commonscript/flush'],
+  queryFn: async () => {
+    try {
+      const r = await api.get('/jaxrs/base/cache/commonscript/flush')
+      return (r.data ?? []) as any[]
+    } catch {
+      return []
+    }
+  },
+})
 
-
-
-const api_server_execute_status_data = ref<any[]>([]);
-const { data: api_server_execute_status_q } = useQuery({queryKey: ['api_server_execute_status', '/jaxrs/server/execute/status'], queryFn: async () => { try { const r = await api.get("/jaxrs/server/execute/status"); return (r.data ?? []) as any[]; } catch { return []; } }});
-
-
-const api_base_ope_660_data = ref<any[]>([]);
-const { data: api_base_ope_660_q } = useQuery({queryKey: ['api_base_ope_660', '/jaxrs/base/openapi/info'], queryFn: async () => { try { const r = await api.get("/jaxrs/base/openapi/info"); return (r.data ?? []) as any[]; } catch { return []; } }});
-
-const api_cache_config_flush_1_data = ref<any[]>([]);
-const { data: api_cache_config_flush_1_q } = useQuery({queryKey: ['api_cache_config_flush_1', '/jaxrs/base/cache/config/flush'], queryFn: async () => { try { const r = await api.get("/jaxrs/base/cache/config/flush"); return (r.data ?? []) as any[]; } catch { return []; } }});
-
-const api_base_cac_432_data = ref<any[]>([]);
-const { data: api_base_cac_432_q } = useQuery({queryKey: ['api_base_cac_432', '/jaxrs/base/cache/detail'], queryFn: async () => { try { const r = await api.get("/jaxrs/base/cache/detail"); return (r.data ?? []) as any[]; } catch { return []; } }});
-
-const api_cache_commonscri_410_data = ref<any[]>([]);
-const { data: api_cache_commonscri_410_q } = useQuery({queryKey: ['api_cache_commonscri_410', '/jaxrs/base/cache/commonscript/flush'], queryFn: async () => { try { const r = await api.get("/jaxrs/base/cache/commonscript/flush"); return (r.data ?? []) as any[]; } catch { return []; } }});
-
-const api_fireschedule_cla_721_data = ref<any[]>([]);
-const { data: api_fireschedule_cla_721_q } = useQuery({queryKey: ['api_fireschedule_cla_721', '/jaxrs/base/fireschedule/classname/com.x.processplatform.service.processing.ScheduleApplication'], queryFn: async () => { try { const r = await api.get("/jaxrs/base/fireschedule/classname/com.x.processplatform.service.processing.ScheduleApplication"); return (r.data ?? []) as any[]; } catch { return []; } }});
-
-
+const api_fireschedule_cla_721_data = ref<any[]>([])
+const { data: api_fireschedule_cla_721_q } = useQuery({
+  queryKey: [
+    'api_fireschedule_cla_721',
+    '/jaxrs/base/fireschedule/classname/com.x.processplatform.service.processing.ScheduleApplication',
+  ],
+  queryFn: async () => {
+    try {
+      const r = await api.get(
+        '/jaxrs/base/fireschedule/classname/com.x.processplatform.service.processing.ScheduleApplication',
+      )
+      return (r.data ?? []) as any[]
+    } catch {
+      return []
+    }
+  },
+})
 </script>
 
 <style scoped>
