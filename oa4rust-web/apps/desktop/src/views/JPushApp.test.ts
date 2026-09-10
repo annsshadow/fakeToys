@@ -98,4 +98,8 @@ describe('JPushApp contracts', () => {
     expect(source).not.toContain("api.get('/jaxrs/jpush/core/entity/template/list')")
     expect(source).not.toContain("queryKey: ['core_entity_template_list']")
   })
+  it('does not duplicate the mounted device load with an unused jpush query', () => {
+    expect(source).not.toContain("api.get('/jaxrs/jpush/device/list')")
+    expect(source).not.toContain("queryKey: ['jpush_device_list']")
+  })
 })
