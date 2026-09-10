@@ -130,18 +130,6 @@ const core_entity_template_list_q = useQuery({
     }
   },
 })
-const jpush_get_jpush_001_ref = ref<any[]>([])
-const jpush_get_jpush_001_q = useQuery({
-  queryKey: ['jpush_get_jpush_001'],
-  queryFn: async () => {
-    try {
-      const r = await api.get('/jaxrs/jpush/get/jpush-001')
-      return (r.data ?? []) as any[]
-    } catch {
-      return []
-    }
-  },
-})
 const jpush_device_list_ref = ref<any[]>([])
 const jpush_device_list_q = useQuery({
   queryKey: ['jpush_device_list'],
