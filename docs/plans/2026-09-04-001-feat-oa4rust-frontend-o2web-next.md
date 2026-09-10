@@ -1,6 +1,8 @@
 # oa4rust 前端架构设计——o2web-next
 
 > 状态：Phase 0-4 全部完成 ✅ | 日期：2026-09-04 | 前端 124KB gzip, TS 零错误, Rust 编译通过, 7 commits | 关联后端：oa4rust（Axum + SeaORM）
+>
+> **2026-09-09 安全与工具链修订：** 浏览器认证已由本计划最初的 JavaScript 可读 Bearer/token 设计迁移为服务端 `oa4rust_session` HttpOnly Cookie；刷新、OAuth/SSO 和路由恢复均以 current-user 为权威，不再持久化或从 URL 读取 token。Biome 与前端 QA 的后续规范由 `docs/plans/2026-09-09-001-refactor-httponly-cookie-cargo-audit-rustsec-db-biome-2-5-11-plan.md` 接管；本计划其余前端架构决策仍有效。
 
 ---
 
