@@ -1,4 +1,5 @@
 use axum::{extract::Extension, extract::Path, Json};
+use axum::response::{IntoResponse, Response};
 use base64::Engine;
 use chrono::{Duration, Utc};
 use deadpool_postgres::Pool;
@@ -23,7 +24,6 @@ const ANDFX_TOKEN_TTL_MINUTES: i64 = 5;
 
 #[derive(Debug, Serialize)]
 pub struct AndfxLoginResponse {
-    pub token: String,
     pub person: AndfxPersonInfo,
 }
 
@@ -41,16 +41,16 @@ pub async fn andfx_moa_sso(
     pool: Extension<Pool>,
     session_manager: Extension<SessionManager>,
     Path((token, enter_id)): Path<(String, String)>,
-) -> Result<Json<ActionResult<AndfxLoginResponse>>, AppError> {
+) -> Result<Response, AppError> {
     if token.is_empty() || enter_id.is_empty() {
-        return Ok(Json(ActionResult::error("token and enterId are required")));
+        return Ok(Json(ActionResult::<AndfxLoginResponse>::error("token and enterId are required")).into_response());
     }
 
     let key = std::env::var("ANDFX_KEY").map_err(|_| AppError::Internal)?;
     let expected_enter_id = std::env::var("ANDFX_ENTER_ID").map_err(|_| AppError::Internal)?;
 
     if enter_id != expected_enter_id {
-        return Ok(Json(ActionResult::error("invalid enterId")));
+        return Ok(Json(ActionResult::<AndfxLoginResponse>::error("invalid enterId")).into_response());
     }
 
     let decrypted = decrypt_andfx_token(&token, &key)?;
@@ -78,25 +78,28 @@ pub async fn andfx_moa_sso(
             r.get::<_, Option<String>>("icon"),
         ),
         None => {
-            return Ok(Json(ActionResult::error("user not found")));
+            return Ok(Json(ActionResult::<AndfxLoginResponse>::error("user not found")).into_response());
         }
     };
 
     let token_val = uuid::Uuid::new_v4().to_string();
-    let session = session_manager
+    session_manager
         .create_session(person_unique.clone(), token_val.clone())
         .await?;
 
-    Ok(Json(ActionResult::success(AndfxLoginResponse {
-        token: session.token,
-        person: AndfxPersonInfo {
-            unique: person_unique,
-            name: person_name,
-            mobile: person_mobile,
-            email: person_email,
-            icon: person_icon,
+    Ok(crate::session_response(
+        AndfxLoginResponse {
+            person: AndfxPersonInfo {
+                unique: person_unique,
+                name: person_name,
+                mobile: person_mobile,
+                email: person_email,
+                icon: person_icon,
+            },
         },
-    })))
+        &token_val,
+        &session_manager,
+    ))
 }
 
 // ──────────────────────────────────────────────────────────────────────────────

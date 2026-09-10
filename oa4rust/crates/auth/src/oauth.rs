@@ -1,4 +1,4 @@
-use axum::{extract::Extension, extract::Path, extract::Query, Json};
+use axum::{extract::Extension, extract::Path, extract::Query, response::Response, Json};
 use deadpool_postgres::Pool;
 use serde::Deserialize;
 use serde_json::{json, Value};
@@ -382,7 +382,7 @@ async fn login_or_create_user(
     pool: &Pool,
     session_manager: &SessionManager,
     unique_id: String,
-) -> Result<Value, AppError> {
+) -> Result<Response, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let row = client
@@ -412,16 +412,19 @@ async fn login_or_create_user(
     };
 
     let token = uuid::Uuid::new_v4().to_string();
-    let session = session_manager.create_session(person_unique.clone(), token.clone()).await?;
+    let session = session_manager.create_session(person_unique.clone(), token).await?;
 
-    Ok(json!({
-        "token": session.token,
-        "person": {
-            "id": person_id,
-            "unique": person_unique,
-            "name": person_name,
-        },
-    }))
+    Ok(crate::session_response(
+        json!({
+            "person": {
+                "id": person_id,
+                "unique": person_unique,
+                "name": person_name,
+            },
+        }),
+        &session.token,
+        session_manager,
+    ))
 }
 
 /// GET /jaxrs/authentication/oauth/list —— 可用第三方登录提供方
@@ -499,7 +502,7 @@ async fn provider_login(
     session_manager: Extension<SessionManager>,
     name: &str,
     code: &str,
-) -> Result<Json<ActionResult<Value>>, AppError> {
+) -> Result<Response, AppError> {
     let config = provider_config(name)?;
     let user_id = match name {
         QYWX_NAME => qywx_user_id(&config, code).await?,
@@ -511,8 +514,7 @@ async fn provider_login(
         DINGDING_NAME => DINGDING_UNIQUE_PREFIX,
         _ => unreachable!(),
     };
-    let result = login_or_create_user(&pool, &session_manager, format!("{prefix}{user_id}")).await?;
-    Ok(Json(ActionResult::success(result)))
+    login_or_create_user(&pool, &session_manager, format!("{prefix}{user_id}")).await
 }
 
 #[derive(Deserialize)]
@@ -528,7 +530,7 @@ pub async fn oauth_login_qywx(
     session_manager: Extension<SessionManager>,
     Path(code): Path<String>,
     Query(params): Query<OAuthStateQuery>,
-) -> Result<Json<ActionResult<Value>>, AppError> {
+) -> Result<Response, AppError> {
     if !validate_state(&params.state) {
         return Err(AppError::BadRequest("invalid or expired state".to_string()));
     }
@@ -547,7 +549,7 @@ pub async fn oauth_login_dingding(
     session_manager: Extension<SessionManager>,
     Path(code): Path<String>,
     Query(params): Query<OAuthStateQuery>,
-) -> Result<Json<ActionResult<Value>>, AppError> {
+) -> Result<Response, AppError> {
     if !validate_state(&params.state) {
         return Err(AppError::BadRequest("invalid or expired state".to_string()));
     }
@@ -566,7 +568,7 @@ pub async fn oauth_login_name(
     session_manager: Extension<SessionManager>,
     Path((name, code, redirect_uri)): Path<(String, String, String)>,
     Query(params): Query<OAuthStateQuery>,
-) -> Result<Json<ActionResult<Value>>, AppError> {
+) -> Result<Response, AppError> {
     validate_redirect_uri(&redirect_uri)?;
     if !validate_state(&params.state) {
         return Err(AppError::BadRequest("invalid or expired state".to_string()));
@@ -590,7 +592,7 @@ pub async fn oauth_bind_name(
     session_manager: Extension<SessionManager>,
     Path((name, code, redirect_uri)): Path<(String, String, String)>,
     Query(params): Query<OAuthStateQuery>,
-) -> Result<Json<ActionResult<Value>>, AppError> {
+) -> Result<Response, AppError> {
     validate_redirect_uri(&redirect_uri)?;
     if !validate_state(&params.state) {
         return Err(AppError::BadRequest("invalid or expired state".to_string()));

@@ -1,4 +1,5 @@
 use axum::{extract::Extension, extract::Path, routing::post, routing::get, Json as AxumJson, Router};
+use axum::response::{IntoResponse, Response};
 use deadpool_postgres::Pool;
 use serde::Deserialize;
 use serde_json::{json, Value};
@@ -98,9 +99,9 @@ async fn get_user_detail(config: &(String, String), userid: &str) -> Result<Valu
     Ok(user_resp)
 }
 
-async fn create_session(token: &str, person_unique: &str, session_manager: &SessionManager) -> Result<String, AppError> {
-    let session = session_manager.create_session(person_unique.to_string(), token.to_string()).await?;
-    Ok(session.token)
+async fn create_session(token: &str, person_unique: &str, session_manager: &SessionManager) -> Result<(), AppError> {
+    session_manager.create_session(person_unique.to_string(), token.to_string()).await?;
+    Ok(())
 }
 
 /// GET /jaxrs/qiyeweixin/code/{code}
@@ -108,7 +109,7 @@ pub async fn qiyeweixin_login(
     pool: Extension<Pool>,
     session_manager: Extension<SessionManager>,
     Path(code): Path<String>,
-) -> Result<AxumJson<ActionResult<Value>>, AppError> {
+) -> Result<Response, AppError> {
     let config = qywxpos_config().ok_or(AppError::Internal)?;
     let userid = exchange_code_for_userid(&config, &code).await?;
     let unique_id = format!("{}{}", QYWXPOS_UNIQUE_PREFIX, userid);
@@ -133,7 +134,7 @@ pub async fn qiyeweixin_login(
             let person_icon: Option<String> = r.get("icon");
 
             let token = uuid::Uuid::new_v4().to_string();
-            let session_token = create_session(&token, &person_unique, &session_manager).await?;
+            create_session(&token, &person_unique, &session_manager).await?;
 
             let person = json!({
                 "unique": person_unique,
@@ -143,17 +144,20 @@ pub async fn qiyeweixin_login(
                 "icon": person_icon,
             });
 
-            Ok(AxumJson(ActionResult::success(json!({
-                "token": session_token,
-                "person": person,
-                "unbind": false,
-            }))))
+            Ok(crate::session_response(
+                json!({
+                    "person": person,
+                    "unbind": false,
+                }),
+                &token,
+                &session_manager,
+            ))
         }
         None => {
             Ok(AxumJson(ActionResult::success(json!({
                 "userid": userid,
                 "unbind": true,
-            }))))
+            }))).into_response())
         }
     }
 }
@@ -163,7 +167,7 @@ pub async fn qiyeweixin_update_person_detail(
     pool: Extension<Pool>,
     session_manager: Extension<SessionManager>,
     Path(code): Path<String>,
-) -> Result<AxumJson<ActionResult<Value>>, AppError> {
+) -> Result<Response, AppError> {
     let config = qywxpos_config().ok_or(AppError::Internal)?;
     let userid = exchange_code_for_userid(&config, &code).await?;
     let unique_id = format!("{}{}", QYWXPOS_UNIQUE_PREFIX, userid);
@@ -222,7 +226,7 @@ pub async fn qiyeweixin_update_person_detail(
     }
 
     let token = uuid::Uuid::new_v4().to_string();
-    let session_token = create_session(&token, &person_unique, &session_manager).await?;
+    create_session(&token, &person_unique, &session_manager).await?;
 
     let icon: Option<String> = client
         .query_opt(
@@ -233,18 +237,21 @@ pub async fn qiyeweixin_update_person_detail(
         .map_err(|_| AppError::Internal)?
         .and_then(|r| r.get::<_, Option<String>>("icon"));
 
-    Ok(AxumJson(ActionResult::success(json!({
-        "token": session_token,
-        "person": {
-            "id": person_id,
-            "unique": person_unique,
-            "name": name.unwrap_or_default(),
-            "mobile": mobile,
-            "email": email,
-            "icon": icon,
-        },
-        "unbind": false,
-    }))))
+    Ok(crate::session_response(
+        json!({
+            "person": {
+                "id": person_id,
+                "unique": person_unique,
+                "name": name.unwrap_or_default(),
+                "mobile": mobile,
+                "email": email,
+                "icon": icon,
+            },
+            "unbind": false,
+        }),
+        &token,
+        &session_manager,
+    ))
 }
 
 #[derive(Debug, Deserialize)]

@@ -9,6 +9,7 @@ use tokio::sync::RwLock;
 use tracing::warn;
 use base64::Engine;
 
+use crate::config::{AuthConfig, DEFAULT_SESSION_TTL_SECONDS};
 use crate::error::AppError;
 use crate::messaging::{MessageBus, TokenThresholdEvent};
 use crate::redis::RedisPool;
@@ -23,7 +24,6 @@ use crate::redis::RedisPool;
 type HmacSha256 = Hmac<Sha256>;
 
 const SESSION_KEY_PREFIX: &str = "oa4rust:session:";
-const SESSION_TTL_SECONDS: u64 = 7200;
 
 #[derive(Clone, Serialize, Deserialize)]
 pub struct Session {
@@ -38,6 +38,7 @@ pub struct SessionManager {
     pub sessions: Arc<RwLock<std::collections::HashMap<String, Session>>>,
     pub pool: Option<Pool>,
     pub hmac_secret: Option<String>,
+    pub auth_config: AuthConfig,
     pub redis_pool: Arc<std::sync::Mutex<Option<RedisPool>>>,
     pub message_bus: Option<Arc<dyn MessageBus<TokenThresholdEvent>>>,
 }
@@ -50,10 +51,19 @@ impl Default for SessionManager {
 
 impl SessionManager {
     pub fn new() -> Self {
+        Self::with_config(AuthConfig {
+            public_origin: "http://localhost:3000".to_string(),
+            cookie_secure: false,
+            session_ttl_seconds: DEFAULT_SESSION_TTL_SECONDS,
+        })
+    }
+
+    pub fn with_config(auth_config: AuthConfig) -> Self {
         let manager = Self {
             sessions: Arc::new(RwLock::new(std::collections::HashMap::new())),
             pool: None,
             hmac_secret: std::env::var("SESSION_HMAC_SECRET").ok(),
+            auth_config,
             redis_pool: Arc::new(std::sync::Mutex::new(None)),
             message_bus: None,
         };
@@ -61,10 +71,19 @@ impl SessionManager {
     }
 
     pub fn with_pool(pool: Pool) -> Self {
+        Self::with_pool_and_config(pool, AuthConfig {
+            public_origin: "http://localhost:3000".to_string(),
+            cookie_secure: false,
+            session_ttl_seconds: DEFAULT_SESSION_TTL_SECONDS,
+        })
+    }
+
+    pub fn with_pool_and_config(pool: Pool, auth_config: AuthConfig) -> Self {
         let manager = Self {
             sessions: Arc::new(RwLock::new(std::collections::HashMap::new())),
             pool: Some(pool),
             hmac_secret: std::env::var("SESSION_HMAC_SECRET").ok(),
+            auth_config,
             redis_pool: Arc::new(std::sync::Mutex::new(None)),
             message_bus: None,
         };
@@ -207,7 +226,7 @@ impl SessionManager {
             return Err(AppError::BadRequest("too many active sessions".to_string()));
         }
 
-        let expires_at = now + Duration::hours(2).to_std().unwrap_or_default();
+        let expires_at = now + Duration::seconds(self.auth_config.session_ttl_seconds as i64);
         let session = Session {
             token: token.clone(),
             person_unique,
@@ -229,7 +248,7 @@ impl SessionManager {
             };
             let mut guard = pool.0.manager.lock().await;
             if let Some(conn) = guard.as_mut() {
-                let _ = conn.set_ex::<_, _, ()>(key, session_json, SESSION_TTL_SECONDS).await;
+                let _ = conn.set_ex::<_, _, ()>(key, session_json, self.auth_config.session_ttl_seconds).await;
             }
         }
 

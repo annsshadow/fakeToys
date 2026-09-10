@@ -4,6 +4,7 @@ use axum::{
     routing::get,
     Json, Router,
 };
+use axum::response::{IntoResponse, Response};
 use deadpool_postgres::Pool;
 use serde_json::{json, Value};
 use shared::error::AppError;
@@ -36,7 +37,7 @@ pub async fn zwdingding_login(
     pool: Extension<Pool>,
     session_manager: Extension<SessionManager>,
     Path(code): Path<String>,
-) -> Result<Json<ActionResult<Value>>, AppError> {
+) -> Result<Response, AppError> {
     let api_base = std::env::var("ZWDINGDING_API_BASE").map_err(|_| AppError::Internal)?;
     let corp_token = std::env::var("ZWDINGDING_CORP_ACCESS_TOKEN").map_err(|_| AppError::Internal)?;
     let app_token = std::env::var("ZWDINGDING_APP_ACCESS_TOKEN").map_err(|_| AppError::Internal)?;
@@ -100,25 +101,28 @@ pub async fn zwdingding_login(
             r.get::<_, Option<String>>("email"),
             r.get::<_, Option<String>>("icon"),
         ),
-        None => return Ok(Json(ActionResult::error("user not found"))),
+        None => return Ok(Json(ActionResult::<Value>::error("user not found")).into_response()),
     };
 
     // Step 4: 签发会话
     let token = uuid::Uuid::new_v4().to_string();
-    let session = session_manager
+    session_manager
         .create_session(person_unique.clone(), token.clone())
         .await?;
 
-    Ok(Json(ActionResult::success(json!({
-        "token": session.token,
-        "person": {
-            "unique": person_unique,
-            "name": person_name,
-            "mobile": person_mobile,
-            "email": person_email,
-            "icon": person_icon,
-        },
-    }))))
+    Ok(crate::session_response(
+        json!({
+            "person": {
+                "unique": person_unique,
+                "name": person_name,
+                "mobile": person_mobile,
+                "email": person_email,
+                "icon": person_icon,
+            },
+        }),
+        &token,
+        &session_manager,
+    ))
 }
 
 /// GET /jaxrs/zhengwudingding/info — 配置状态
