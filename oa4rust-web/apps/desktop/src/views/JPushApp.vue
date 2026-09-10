@@ -471,22 +471,6 @@ const { data: api_jaxrs_jpush_asse_429_q } = useQuery({
     }
   },
 })
-
-const api_jaxrs_jpush_asse_984_data = ref<any[]>([])
-const { data: api_jaxrs_jpush_asse_984_q } = useQuery({
-  queryKey: [
-    'api_jaxrs_jpush_asse_984',
-    '/jaxrs/jpush/assemble/control/device/unbind/new/deviceName/deviceType/pushType',
-  ],
-  queryFn: async () => {
-    try {
-      const r = await api.get('/jaxrs/jpush/assemble/control/device/unbind/new/deviceName/deviceType/pushType')
-      return (r.data ?? []) as any[]
-    } catch {
-      return []
-    }
-  },
-})
 </script>
 
 <style scoped>

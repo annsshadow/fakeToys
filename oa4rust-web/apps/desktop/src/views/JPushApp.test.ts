@@ -56,4 +56,10 @@ describe('JPushApp contracts', () => {
     expect(source).not.toContain("api.get('/jaxrs/jpush_assemble_control/device/unbind/deviceName/deviceType')")
     expect(source).not.toContain("api.get('/jaxrs/jpush/assemble/control/device/unbind/deviceName/deviceType')")
   })
+  it('does not auto-run new unbind with placeholder identifiers', () => {
+    expect(source).not.toContain(
+      "api.get('/jaxrs/jpush/assemble/control/device/unbind/new/deviceName/deviceType/pushType')",
+    )
+    expect(source).not.toContain("'/jaxrs/jpush/assemble/control/device/unbind/new/deviceName/deviceType/pushType'")
+  })
 })
