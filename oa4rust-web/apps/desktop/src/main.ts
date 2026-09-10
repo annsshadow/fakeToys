@@ -1,10 +1,11 @@
 import { createApp, h } from 'vue';
 import { createPinia } from 'pinia';
-import { createRouter, createWebHistory } from 'vue-router';
+import { createRouter, createWebHistory, RouterView } from 'vue-router';
 import { QueryClient, VueQueryPlugin } from '@tanstack/vue-query';
 import { createI18n } from 'vue-i18n';
 import { createThemeProvider, useSession } from '@oa4rust/sdk';
 import { NConfigProvider } from 'naive-ui';
+import '@oa4rust/ui';
 import AppShell from '@oa4rust/ui/components/AppShell.vue';
 import LoginScreen from '@oa4rust/ui/components/LoginScreen.vue';
 import OAuthCallback from '@oa4rust/ui/views/OAuthCallback.vue';
@@ -130,11 +131,9 @@ const queryClient = new QueryClient({
 const themeProvider = createThemeProvider();
 themeProvider.init();
 
-const app = createApp({ template: '<n-config-provider><router-view /></n-config-provider>', components: { NConfigProvider } });
+const app = createApp({ render: () => h(NConfigProvider, null, { default: () => h(RouterView) }) });
 app.use(createPinia());
 app.use(router);
 app.use(i18n);
 app.use(VueQueryPlugin, { queryClient });
 app.mount('#o2-app-root');
-
-import { registerSW } from './registerSW';

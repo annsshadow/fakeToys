@@ -10,44 +10,40 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, ref } from 'vue';
-import { useRouter, useRoute } from 'vue-router';
-import { useSession } from '@oa4rust/sdk';
-import { api } from '@oa4rust/sdk';
+import { useSession } from '@oa4rust/sdk'
+import { onMounted, ref } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 
-const router = useRouter();
-const route = useRoute();
-const session = useSession();
+const router = useRouter()
+const route = useRoute()
+const session = useSession()
 
-const platform = ref(route.params.platform as string || '第三方');
-const error = ref('');
+const platform = ref((route.params.platform as string) || '第三方')
+const error = ref('')
 
 onMounted(async () => {
-  const code = route.query.code as string;
-  if (!code) {
-    error.value = '缺少授权码';
-    return;
+  const code = route.query.code as string
+  const state = route.query.state as string
+  if (!code || !state) {
+    error.value = '缺少 OAuth 回调参数'
+    return
   }
 
   try {
-    // 调用后端 OAuth 登录端点
-    const resp = await api.post<{ token: string; person: import('@oa4rust/sdk').O2User }>(
-      `/jaxrs/authentication/oauth/login/${platform.value}/code/${code}`,
-      null,
-      { requireAuth: false },
-    );
+    const query = new URLSearchParams({ state })
+    const response = await fetch(
+      `/jaxrs/authentication/oauth/login/${encodeURIComponent(platform.value)}/code/${encodeURIComponent(code)}?${query}`,
+      { credentials: 'include' },
+    )
+    if (!response.ok) throw new Error(`OAuth 登录失败 (${response.status})`)
 
-    const { token, person } = resp.data;
-    session.setSession(token, person);
-    // Remove legacy direct localStorage write to keep token management centralized.
-    // Note: existing browsers with stale tokens in localStorage will be overwritten
-    // by session.setSession() on next page load via init().
-
-    router.replace('/app/dashboard');
+    await session.init(true)
+    if (!session.isAuthenticated) throw new Error('OAuth 登录未建立会话')
+    router.replace('/app/dashboard')
   } catch (e: unknown) {
-    error.value = e instanceof Error ? e.message : 'OAuth 登录失败';
+    error.value = e instanceof Error ? e.message : 'OAuth 登录失败'
   }
-});
+})
 </script>
 
 <style scoped>
