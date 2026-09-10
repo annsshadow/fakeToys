@@ -70,6 +70,7 @@ oa4rust/check_tables.sql
 oa4rust/deploy/.backups/
 
 *.txt
+!oa4rust/docs/ops/*.txt
 scripts/cleanup_*.js
 
 # Environment secrets

@@ -1,0 +1,43 @@
+=== W4 auth rollback drill (Rust-side) 2026-09-10T08:42:49Z ===
+-- 1. login (no credentials) -> Set-Cookie; body must NOT carry a token
+status=200 cookie_attr=[HttpOnly SameSite=Lax Path=/ Max-Age=900 ] set_token_sha=bc26313d7cf6b329 body_token_field=0
+0
+   session token sha=bc26313d7cf6b329 (value never printed)
+-- 2. current-user with session cookie -> 200, body no token
+status=200 cookie_attr=[] set_token_sha=none body_token_field=0
+0
+-- 3. refresh via cookie rotates: old cookie then 401
+status=200 cookie_attr=[HttpOnly SameSite=Lax Path=/ Max-Age=900 ] set_token_sha=6513400123fe49ea body_token_field=0
+0
+status=401 cookie_attr=[] set_token_sha=none body_token_field=0
+0
+-- 4. refresh is cookie-only: valid Bearer (no Cookie header) -> 401
+status=401 cookie_attr=[] set_token_sha=none body_token_field=0
+0
+-- 5. logout idempotent (cookie-auth delete needs exact Origin to pass CSRF)
+status=200 cookie_attr=[HttpOnly SameSite=Lax Path=/ Max-Age=0 ] set_token_sha=none body_token_field=0
+0
+status=200 cookie_attr=[HttpOnly SameSite=Lax Path=/ Max-Age=0 ] set_token_sha=none body_token_field=0
+0
+-- 6. invalid cookie never falls back to a valid Bearer -> 401
+status=401 cookie_attr=[] set_token_sha=none body_token_field=0
+0
+-- 7. CSRF: cookie-auth writes require exact APP_PUBLIC_ORIGIN (probe = POST logout)
+status=403 cookie_attr=[] set_token_sha=none body_token_field=0
+0
+status=403 cookie_attr=[] set_token_sha=none body_token_field=0
+0
+status=200 cookie_attr=[HttpOnly SameSite=Lax Path=/ Max-Age=0 ] set_token_sha=none body_token_field=0
+0
+status=200 cookie_attr=[HttpOnly SameSite=Lax Path=/ Max-Age=0 ] set_token_sha=none body_token_field=0
+0
+-- 8. rollback simulation: logout (clear, cookie+origin) -> re-login recovers; revoked cookie stays dead
+status=200 cookie_attr=[HttpOnly SameSite=Lax Path=/ Max-Age=0 ] set_token_sha=none body_token_field=0
+0
+status=200 cookie_attr=[HttpOnly SameSite=Lax Path=/ Max-Age=900 ] set_token_sha=b414dae7c48eaabe body_token_field=0
+0
+status=200 cookie_attr=[] set_token_sha=none body_token_field=0
+0
+status=401 cookie_attr=[] set_token_sha=none body_token_field=0
+0
+=== end drill ===
