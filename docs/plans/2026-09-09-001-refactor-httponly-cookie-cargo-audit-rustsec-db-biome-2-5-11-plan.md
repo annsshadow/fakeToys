@@ -365,7 +365,7 @@ problem_type: security-and-tooling-migration
 - [x] store 不保存 token
 - [x] route guard 使用 current-user
 - [x] OAuth URL/JSON token 暴露为零
-- [ ] 浏览器端到端流程通过
+- [x] 浏览器端到端流程通过（认证 cookie 流：login→Set-Cookie、reload 恢复、refresh 旋转、logout 失效，IAB 实测 `docs/ops/browser-e2e-2026-09-10.md`；登录经 requestSubmit 触发——IAB 指针/键盘 actuator 取不到点击点。`/app/*` 应用壳空白为独立既有渲染缺陷，非认证问题，另行跟踪；真实 OAuth provider 流程仍 BLOCKED）
 
 ### Phase 3：RustSec 风险处置与审计门禁
 
@@ -437,9 +437,9 @@ problem_type: security-and-tooling-migration
 **Commit:** `ci(oa4rust): add pinned cargo-audit RustSec gate`
 
 - [x] scanner 版本已固定
-- [x] pinned/floating 双轨可运行
-- [x] DB cache SHA 校验有效
-- [ ] required check 已配置
+- [x] pinned/floating 双轨已定义（本地 cargo-audit/cargo-deny 通过；远端 workflow 实际触发未验证，未 push）
+- [x] pinned RustSec DB SHA 校验有效（`security/rustsec-db.rev`，非 cache；审计命令打印 DB HEAD 与 lock hash）
+- [ ] required check 已配置（EXTERNAL：需 push + 在 repository ruleset 22504571 加 required status checks，本轮不做）
 
 #### U8. 收敛 cargo-deny 边界与 license 基线
 
@@ -599,8 +599,8 @@ problem_type: security-and-tooling-migration
 
 **Commit:** `test(auth): verify cookie lifecycle and csrf protection`，兼容退出另作 `refactor(auth): retire browser bearer compatibility`。
 
-- [ ] 10 类测试矩阵全部通过
-- [ ] 兼容流量和退出阈值有证据
+- [ ] 10 类测试矩阵全部通过（本地已验证 1–9 项；第 10 项 OAuth callback 仅有静态源码断言，真实 provider 流程 BLOCKED）
+- [ ] 兼容流量和退出阈值有证据（telemetry 已就位；“零阈值需真实流量窗口”未观测）
 - [x] Browser Bearer/JSON token 已退场
 
 #### U13. CI 合并、文档和计划状态收口
@@ -832,8 +832,10 @@ git diff --stat -- oa4rust oa4rust-web .github docs
 - [x] 登录/current-user/refresh/logout/OAuth 契约一致
 - [x] 浏览器存储、Authorization 注入、URL/JSON token 暴露清零
 - [x] CSRF Origin 与 CORS 正负测试全部通过
-- [x] Java/Rust session 互操作和回滚演练完成
-- [x] 浏览器 Bearer 兼容按指标安全退出
+- [x] Rust 侧回滚演练完成（`docs/ops/auth-rollback-drill-2026-09-10.md`，功能矩阵 + nginx -t + 脱敏 manifest）
+- [ ] Java/Rust session 互操作品证（两侧 token 存储不互通，Java 侧为 EXTERNAL/BLOCKED，演练中仅文档化）
+- [ ] 浏览器 Bearer 兼容按指标安全退出（`auth_compat="bearer"` telemetry 已加，但“零阈值”需真实流量观察窗口，尚未观测）
+- [x] refresh 收紧为 Cookie-only、whoami 无效凭据 401、无效 Cookie 不回退 Bearer（W1 语义对齐 + 矩阵测试）
 
 ### RustSec
 
@@ -857,9 +859,9 @@ git diff --stat -- oa4rust oa4rust-web .github docs
 
 - [x] 原有未提交 Rust 变更未被覆盖或误混入
 - [x] 所有 skipped、环境阻塞、未验证项已明确记录
-- [ ] 回滚剧本和实际演练证据已归档
+- [x] 回滚剧本和实际演练证据已归档（`docs/ops/auth-rollback-drill-2026-09-10.md` + 脱敏 manifest；Java 侧仅文档化）
 - [x] 文档、旧计划关联、required checks 与代码一致
-- [ ] 本计划 frontmatter 已在收官提交改为 `completed`
+- [ ] 本计划 frontmatter 已在收官提交改为 `completed`（因外部项未闭合，保持 `active`）
 
 
 ## Completion Evidence (2026-09-09)
@@ -878,6 +880,38 @@ git diff --stat -- oa4rust oa4rust-web .github docs
 - Browser automation could fill both fields, but the IAB click actuator timed out before dispatch; no request reached the backend. The login transition is therefore **not** marked passed.
 - Direct local HTTP verification through the same Vite proxy proved login emits `oa4rust_session` and current-user accepts it, but this is transport evidence rather than GUI evidence.
 - OAuth/SSO end-to-end remains blocked by unavailable real provider credentials.
+
+## Local Closure Evidence (2026-09-10)
+
+Second closure pass (W1–W6), local-only, no push. Verified in this order:
+- **Rust**: `cargo check --workspace --locked` pass. Targeted tests: auth 84/0/3,
+  shared 111/0/11, signature 5/0, search 7/0. New U12 matrix tests:
+  refresh cookie-only (Bearer→401), whoami no-cred→anon / invalid-cred→401 /
+  invalid-cookie+valid-Bearer→401, CSRF 4-method×(missing/null/wrong/exact origin),
+  CORS read-methods + foreign-origin invariant, invalid-cookie-never-falls-back.
+- **Bearer telemetry**: `auth_middleware` now emits `auth_compat="bearer"` on
+  protected routes when Bearer is the selected source (no token/UA logged).
+- **Frontend**: fixed two real defects the new session tests exposed —
+  `isAuthenticated` was an object-literal getter (snapshot false) → `computed`;
+  consumers read `session.state.value?.user` (undefined, Pinia unwraps `state`) →
+  `session.state.user` (AppShell/Dashboard/Personal). SSO view now posts the
+  backend `{client, token}` contract. `session.test.ts` (5 behavioral tests).
+  Full gates: pnpm frozen install, 24/24 vitest, 0 TS errors, repo-wide
+  Biome error-level (146 files), Vite build.
+- **Rollback drill** (Rust-side): live matrix + `nginx -t` of Rust/Java auth-route
+  configs; Java fallback documented, not executed. Sanitized evidence +
+  `manifest.sha256` in `oa4rust/docs/ops/`.
+- **Browser E2E** (IAB): login Set-Cookie → reload restore → logout→who anonymous.
+  Auth flow PASS. `/app/*` shell renders blank (pre-existing separate defect).
+- **RustSec**: `cargo audit` (pinned-DB semantics, `--no-yanked --deny unsound`)
+  passes with 2 allowed unmaintained; RSA exception valid to 2026-10-09.
+  Fixed `.cargo/audit.toml` (removed `yanked` field, invalid for cargo-audit 0.22.2).
+  `cargo deny check bans licenses sources` pass.
+
+Still open (externally blocked, kept unchecked above): GitHub required-checks +
+remote workflow activation (no push), real OAuth/OIDC provider E2E, Java↔Rust
+session interop, Bearer zero-threshold observation, and the `/app/*` blank-shell
+rendering defect. Plan stays `status: active`.
 
 ## Sources and References
 
