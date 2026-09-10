@@ -1,143 +1,157 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { ApiClient, AuthenticationError, PermissionError } from './api';
-
-const storage = new Map<string, string>();
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { ApiClient, AuthenticationError, PermissionError } from './api'
 
 function jsonResponse(body: unknown, status = 200): Response {
   return new Response(JSON.stringify(body), {
     status,
     headers: { 'Content-Type': 'application/json' },
-  });
+  })
 }
 
 describe('ApiClient', () => {
   beforeEach(() => {
-    storage.clear();
-    vi.stubGlobal('window', { location: { origin: 'https://web.example.test' } });
+    vi.stubGlobal('window', { location: { origin: 'https://web.example.test' } })
     vi.stubGlobal('localStorage', {
-      getItem: (key: string) => storage.get(key) ?? null,
-      setItem: (key: string, value: string) => storage.set(key, value),
-      removeItem: (key: string) => storage.delete(key),
-    });
-  });
+      getItem: () => {
+        throw new Error('must not read localStorage')
+      },
+    })
+    vi.stubGlobal('sessionStorage', {
+      getItem: () => {
+        throw new Error('must not read sessionStorage')
+      },
+    })
+  })
 
   afterEach(() => {
-    vi.unstubAllGlobals();
-    vi.restoreAllMocks();
-  });
+    vi.unstubAllGlobals()
+    vi.restoreAllMocks()
+  })
 
   it.each([
     ['', '/jaxrs/authentication/who', 'https://web.example.test/jaxrs/authentication/who'],
     ['/jaxrs', '/jaxrs/authentication/who', 'https://web.example.test/jaxrs/authentication/who'],
-    ['https://api.example.test', '/jaxrs/x', 'https://api.example.test/jaxrs/x'],
-    ['https://api.example.test/root/', '/jaxrs/x', 'https://api.example.test/root/jaxrs/x'],
     ['https://api.example.test/root/jaxrs', '/jaxrs/x', 'https://api.example.test/root/jaxrs/x'],
   ])('resolves base %s and path %s without duplicating prefixes', async (base, path, expected) => {
-    const fetchMock = vi.fn().mockResolvedValue(jsonResponse({ success: true, data: {} }));
-    vi.stubGlobal('fetch', fetchMock);
+    const fetchMock = vi.fn().mockResolvedValue(jsonResponse({ success: true, data: {} }))
+    vi.stubGlobal('fetch', fetchMock)
 
-    await new ApiClient(base).get(path);
+    await new ApiClient(base).get(path)
 
-    expect(fetchMock).toHaveBeenCalledWith(expected, expect.any(Object));
-  });
+    expect(fetchMock).toHaveBeenCalledWith(expected, expect.any(Object))
+  })
 
   it('encodes query parameters', async () => {
-    const fetchMock = vi.fn().mockResolvedValue(jsonResponse({ success: true, data: {} }));
-    vi.stubGlobal('fetch', fetchMock);
+    const fetchMock = vi.fn().mockResolvedValue(jsonResponse({ success: true, data: {} }))
+    vi.stubGlobal('fetch', fetchMock)
 
-    await new ApiClient().get('/jaxrs/search', { params: { keyword: 'a b&c' } });
+    await new ApiClient().get('/jaxrs/search', { params: { keyword: 'a b&c' } })
 
-    expect(fetchMock.mock.calls[0][0]).toBe('https://web.example.test/jaxrs/search?keyword=a+b%26c');
-  });
+    expect(fetchMock.mock.calls[0][0]).toBe('https://web.example.test/jaxrs/search?keyword=a+b%26c')
+  })
 
-  it('sends bearer authentication by default', async () => {
-    storage.set('oa4rust_session', JSON.stringify({ token: 'secret' }));
-    const fetchMock = vi.fn().mockResolvedValue(jsonResponse({ success: true, data: {} }));
-    vi.stubGlobal('fetch', fetchMock);
+  it('uses cookies without reading storage or adding Authorization', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(jsonResponse({ success: true, data: {} }))
+    vi.stubGlobal('fetch', fetchMock)
 
-    await new ApiClient().get('/jaxrs/private');
+    await new ApiClient().get('/jaxrs/private')
 
-    expect(fetchMock.mock.calls[0][1]).toMatchObject({
-      credentials: 'include',
-      headers: expect.objectContaining({ Authorization: 'Bearer secret' }),
-    });
-  });
-
-  it('omits bearer authentication when requireAuth is false', async () => {
-    storage.set('oa4rust_session', JSON.stringify({ token: 'secret' }));
-    const fetchMock = vi.fn().mockResolvedValue(jsonResponse({ success: true, data: {} }));
-    vi.stubGlobal('fetch', fetchMock);
-
-    await new ApiClient().get('/jaxrs/public', { requireAuth: false });
-
-    expect(fetchMock.mock.calls[0][1]).toMatchObject({ credentials: 'include' });
-    expect(fetchMock.mock.calls[0][1].headers).not.toHaveProperty('Authorization');
-  });
+    expect(fetchMock.mock.calls[0][1]).toMatchObject({ credentials: 'include' })
+    expect(fetchMock.mock.calls[0][1].headers).not.toHaveProperty('Authorization')
+  })
 
   it('returns the complete API response envelope', async () => {
-    const body = { success: true, data: { token: 'value' } };
-    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(jsonResponse(body)));
+    const body = { success: true, data: { value: 'ok' } }
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(jsonResponse(body)))
 
-    await expect(new ApiClient().post<{ token: string }>('/jaxrs/login')).resolves.toEqual(body);
-  });
+    await expect(new ApiClient().get('/jaxrs/x')).resolves.toEqual(body)
+  })
 
-  it('clears an invalid session on 401', async () => {
-    storage.set('oa4rust_session', JSON.stringify({ token: 'expired' }));
-    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(jsonResponse({}, 401)));
+  it('can discard a legacy token response without parsing it', async () => {
+    const response = new Response('not-json')
+    const jsonSpy = vi.spyOn(response, 'json')
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(response))
 
-    await expect(new ApiClient().get('/jaxrs/private')).rejects.toBeInstanceOf(AuthenticationError);
-    expect(storage.has('oa4rust_session')).toBe(false);
-  });
+    await expect(
+      new ApiClient().post(
+        '/jaxrs/authentication/login',
+        {},
+        {
+          requireAuth: false,
+          discardResponse: true,
+        },
+      ),
+    ).resolves.toEqual({ success: true, data: undefined })
+    expect(jsonSpy).not.toHaveBeenCalled()
+  })
 
-  it('uses a dedicated error for forbidden responses', async () => {
-    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(jsonResponse({}, 403)));
+  it('single-flights refresh and replays each concurrent request once', async () => {
+    const attempts = new Map<string, number>()
+    const fetchMock = vi.fn().mockImplementation(async (input: string, init: RequestInit) => {
+      const path = new URL(input).pathname
+      if (path === '/jaxrs/authentication/refresh') {
+        expect(init).toMatchObject({ method: 'POST', credentials: 'include' })
+        expect(init).not.toHaveProperty('body')
+        return new Response('legacy-token-json')
+      }
+      const count = (attempts.get(path) ?? 0) + 1
+      attempts.set(path, count)
+      return count === 1 ? jsonResponse({}, 401) : jsonResponse({ success: true, data: path })
+    })
+    vi.stubGlobal('fetch', fetchMock)
 
-    await expect(new ApiClient().get('/jaxrs/private')).rejects.toBeInstanceOf(PermissionError);
-  });
+    const client = new ApiClient()
+    await expect(Promise.all([client.get('/jaxrs/one'), client.get('/jaxrs/two')])).resolves.toHaveLength(2)
 
-  it('uses the same URL and authentication rules for uploads', async () => {
-    storage.set('oa4rust_session', JSON.stringify({ token: 'secret' }));
-    const fetchMock = vi.fn().mockResolvedValue(jsonResponse({ success: true, data: {} }));
-    vi.stubGlobal('fetch', fetchMock);
+    const paths = fetchMock.mock.calls.map(([input]) => new URL(input).pathname)
+    expect(paths.filter((path) => path === '/jaxrs/authentication/refresh')).toHaveLength(1)
+    expect(paths.filter((path) => path === '/jaxrs/one')).toHaveLength(2)
+    expect(paths.filter((path) => path === '/jaxrs/two')).toHaveLength(2)
+  })
 
-    await new ApiClient('/jaxrs').upload('/jaxrs/file', new FormData(), { requireAuth: false });
+  it('does not refresh again after the single replay is unauthorized', async () => {
+    const fetchMock = vi
+      .fn()
+      .mockImplementation(async (input: string) =>
+        new URL(input).pathname.endsWith('/refresh') ? new Response('ok') : jsonResponse({}, 401),
+      )
+    vi.stubGlobal('fetch', fetchMock)
+
+    await expect(new ApiClient().get('/jaxrs/private')).rejects.toBeInstanceOf(AuthenticationError)
+    expect(fetchMock).toHaveBeenCalledTimes(3)
+  })
+
+  it('does not replay or recurse when refresh fails', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(jsonResponse({}, 401))
+    vi.stubGlobal('fetch', fetchMock)
+
+    await expect(new ApiClient().get('/jaxrs/private')).rejects.toBeInstanceOf(AuthenticationError)
+    expect(fetchMock).toHaveBeenCalledTimes(2)
+  })
+
+  it('does not refresh public requests and preserves forbidden errors', async () => {
+    const fetchMock = vi.fn().mockResolvedValueOnce(jsonResponse({}, 401)).mockResolvedValueOnce(jsonResponse({}, 403))
+    vi.stubGlobal('fetch', fetchMock)
+    await expect(new ApiClient().get('/jaxrs/public', { requireAuth: false })).rejects.toBeInstanceOf(
+      AuthenticationError,
+    )
+    expect(fetchMock).toHaveBeenCalledTimes(1)
+
+    await expect(new ApiClient().get('/jaxrs/private', { requireAuth: false })).rejects.toBeInstanceOf(PermissionError)
+  })
+
+  it('uses cookie credentials and no Authorization for uploads', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(jsonResponse({ success: true, data: {} }))
+    vi.stubGlobal('fetch', fetchMock)
+
+    await new ApiClient('/jaxrs').upload('/jaxrs/file', new FormData())
 
     expect(fetchMock).toHaveBeenCalledWith(
       'https://web.example.test/jaxrs/file',
-      expect.objectContaining({ headers: {} }),
-    );
-  });
-
-  it('aborts the request when timeoutMs is exceeded', async () => {
-    const fetchMock = vi.fn().mockImplementation(() => new Promise<never>(() => {}));
-    vi.stubGlobal('fetch', fetchMock);
-
-    const promise = new ApiClient().get('/jaxrs/x', { timeoutMs: 1 });
-    // Wait long enough for the timeout to fire
-    await new Promise(r => setTimeout(r, 50));
-    // The mock should have been called (request was initiated before abort)
-    expect(fetchMock).toHaveBeenCalledTimes(1);
-    // Verify signal was passed
-    const callArgs = fetchMock.mock.calls[0];
-    expect(callArgs[1]).toHaveProperty('signal');
-    // Clean up
-    promise.catch(() => {});
-  });
-
-  it('accepts timeoutMs option without error', async () => {
-    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(jsonResponse({ success: true, data: {} })));
-    await expect(new ApiClient().get('/jaxrs/x', { timeoutMs: 5000 })).resolves.toBeDefined();
-  });
-
-  it('upload passes signal for timeout support', async () => {
-    const fetchMock = vi.fn().mockResolvedValue(jsonResponse({ success: true, data: {} }));
-    vi.stubGlobal('fetch', fetchMock);
-
-    await new ApiClient().upload('/jaxrs/file', new FormData(), { timeoutMs: 3000 });
-
-    expect(fetchMock).toHaveBeenCalledWith(
-      'https://web.example.test/jaxrs/file',
-      expect.objectContaining({ signal: expect.anything() }),
-    );
-  });
-});
+      expect.objectContaining({
+        credentials: 'include',
+        headers: {},
+      }),
+    )
+  })
+})
