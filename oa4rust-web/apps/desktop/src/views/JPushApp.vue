@@ -154,18 +154,6 @@ const jpush_device_list_q = useQuery({
     }
   },
 })
-const jpush_core_list_ref = ref<any[]>([])
-const jpush_core_list_q = useQuery({
-  queryKey: ['jpush_core_list'],
-  queryFn: async () => {
-    try {
-      const r = await api.get('/jaxrs/jpush/core/list')
-      return (r.data ?? []) as any[]
-    } catch {
-      return []
-    }
-  },
-})
 const jpush_create_ref = ref<any[]>([])
 const jpush_create_q = useQuery({
   queryKey: ['jpush_create'],
