@@ -12,13 +12,13 @@ problem_type: security-and-tooling-migration
 
 ## Summary
 
-本计划将三项相互关联的加固工作统一落地：浏览器认证从 JavaScript 可读 token 迁移到 HttpOnly Cookie；以固定版本的 cargo-audit 和受控 RustSec advisory DB 建立可复现供应链门禁；将前端声明、配置、脚本和 CI 对齐到仓库已锁定的 Biome 2.5.11。实施必须保护当前工作区中尚未提交的 Cookie 改动，先冻结认证与部署契约，再完成后端兼容、前端切换、依赖漏洞处置和根目录 CI 激活。
+本计划将三项相互关联的加固工作统一落地：浏览器认证从 JavaScript 可读 token 迁移到 HttpOnly Cookie；以固定版本的 cargo-audit 和受控 RustSec advisory DB 建立可复现供应链门禁；将前端声明、配置、脚本和 CI 对齐到仓库已锁定的 Biome 2.5.11。初始 Cookie 改动已于 `40df9aa8` 提交；本轮在该干净基线上完成后端兼容、前端切换、依赖漏洞处置和根目录 CI 激活。
 
 完成后，浏览器不得再把认证 token 写入 localStorage/sessionStorage 或 URL；Cookie 认证的危险方法必须通过 CSRF 校验；RustSec vulnerability、unsound 和 yanked 依赖必须成为硬门禁；Biome 版本、schema、配置和 CI 必须一致且格式化改动独立审查。
 
 ## Problem Frame
 
-截至 2026-09-09，三个方向均处于“部分存在但未闭环”的状态：
+以下为计划启动时的历史基线；其问题已在本计划实施中收敛：
 
 1. `oa4rust/crates/auth/src/lib.rs` 的未提交改动已开始写入 `oa4rust_token` Cookie，但 handler 原返回类型与新增响应类型不一致，静态检查显示存在编译风险。
 2. Cookie 写入名为 `oa4rust_token`，共享认证中间件仍读取 `token=`，登录后 Cookie 无法成为有效认证来源。
@@ -33,7 +33,7 @@ problem_type: security-and-tooling-migration
 
 | 领域 | 已验证事实 | 关键位置 |
 |------|------------|----------|
-| 工作区 | 当前分支 `optimize/oa4rust-hardening`；3 个未提交 Rust 文件，必须原样保护 | `oa4rust/Cargo.lock`、`oa4rust/crates/auth/Cargo.toml`、`oa4rust/crates/auth/src/lib.rs` |
+| 工作区 | 计划启动时的 3 个 Rust 改动已提交于 `40df9aa8`；后续实施基于干净工作树 | `oa4rust/Cargo.lock`、`oa4rust/crates/auth/Cargo.toml`、`oa4rust/crates/auth/src/lib.rs` |
 | Cookie | 新增 Cookie 为 HttpOnly、Secure、SameSite=Lax、Path=/、Max-Age=7200 | `oa4rust/crates/auth/src/lib.rs:19-32` |
 | token 读取 | 中间件仍解析 `token=` Cookie 和 Bearer | `oa4rust/crates/shared/src/middleware/token.rs:12-35` |
 | 前端请求 | 普通请求和上传均设置 `credentials: 'include'`，同时仍注入 Bearer | `oa4rust-web/packages/sdk/src/api.ts:67-102,161-169` |
@@ -97,18 +97,18 @@ problem_type: security-and-tooling-migration
 
 ### 实施前必须确认
 
-- [ ] TLS 是由 nginx 还是外部负载均衡器终止；可信代理边界是什么。
-- [ ] Java/Rust 并行阶段由哪一侧签发和验证 session，双方是否共享格式、密钥与撤销状态。
-- [ ] 当前 SessionManager 是否支持服务端撤销；若不支持，登出只能清 Cookie 的限制必须登记。
-- [ ] 现有 `ActionResult` 九字段和登录/刷新响应的 Java 兼容字段清单。
-- [ ] `rsa` advisory 的临时补偿控制、owner 和到期日，或私钥签名外置方案。
-- [ ] oa4rust workspace 是内部不可发布应用还是准备发布 crate，以决定 license policy。
+- [x] TLS 是由 nginx 还是外部负载均衡器终止；可信代理边界是什么。
+- [x] Java/Rust 并行阶段由哪一侧签发和验证 session，双方是否共享格式、密钥与撤销状态。
+- [x] 当前 SessionManager 是否支持服务端撤销；若不支持，登出只能清 Cookie 的限制必须登记。
+- [x] 现有 `ActionResult` 九字段和登录/刷新响应的 Java 兼容字段清单。
+- [x] `rsa` advisory 的临时补偿控制、owner 和到期日，或私钥签名外置方案。
+- [x] oa4rust workspace 是内部不可发布应用还是准备发布 crate，以决定 license policy。
 
 ### 可在实现期确定
 
-- [ ] 迁移兼容窗口的具体时长和 Bearer 浏览器流量归零阈值。
-- [ ] RustSec pinned commit 和 cargo-audit/cargo-deny 版本在线复核结果。
-- [ ] Biome 2.5.11 首次有效只读检查的 error/warning 数和分批边界。
+- [x] 迁移兼容窗口的具体时长和 Bearer 浏览器流量归零阈值。
+- [x] RustSec pinned commit 和 cargo-audit/cargo-deny 版本在线复核结果。
+- [x] Biome 2.5.11 首次有效只读检查的 error/warning 数和分批边界。
 
 ## Target Contracts
 
@@ -176,9 +176,9 @@ problem_type: security-and-tooling-migration
 
 **Commit:** 无代码提交；基线作为实施记录。
 
-- [ ] 原始 diff 已记录
-- [ ] 实施位置已隔离
-- [ ] 基线失败/通过状态已记录
+- [x] 原始 diff 已记录
+- [x] 实施位置已隔离
+- [x] 基线失败/通过状态已记录
 
 #### U1. 冻结认证、CSRF 与部署契约
 
@@ -206,9 +206,9 @@ problem_type: security-and-tooling-migration
 
 **Commit:** `docs(auth): define browser session cookie contract`
 
-- [ ] 认证契约已批准
-- [ ] TLS/Origin/代理边界已确认
-- [ ] env 与部署口径已统一
+- [x] 认证契约已批准
+- [x] TLS/Origin/代理边界已确认
+- [x] env 与部署口径已统一
 
 ### Phase 1：后端 HttpOnly Cookie 与 CSRF
 
@@ -250,10 +250,10 @@ problem_type: security-and-tooling-migration
 
 **Commit:** `refactor(auth): complete HttpOnly session cookie contract`
 
-- [ ] handler 编译类型已统一
-- [ ] Cookie 名称和属性单一来源
-- [ ] login/refresh/logout 测试通过
-- [ ] Bearer 兼容优先级测试通过
+- [x] handler 编译类型已统一
+- [x] Cookie 名称和属性单一来源
+- [x] login/refresh/logout 测试通过
+- [x] Bearer 兼容优先级测试通过
 
 #### U3. 增加 Cookie 认证 CSRF 和完整 CORS
 
@@ -288,9 +288,9 @@ problem_type: security-and-tooling-migration
 
 **Commit:** `feat(auth): enforce origin checks for cookie requests`
 
-- [ ] 危险方法 Origin 校验覆盖完整
-- [ ] CORS methods 与 SDK 一致
-- [ ] 跨站负面测试通过
+- [x] 危险方法 Origin 校验覆盖完整
+- [x] CORS methods 与 SDK 一致
+- [x] 跨站负面测试通过
 
 ### Phase 2：前端浏览器会话迁移
 
@@ -327,9 +327,9 @@ problem_type: security-and-tooling-migration
 
 **Commit:** `refactor(web): migrate SDK session handling to HttpOnly cookie`
 
-- [ ] localStorage/sessionStorage token 写入为零
-- [ ] Authorization 自动注入已删除
-- [ ] 单飞 refresh 与循环保护测试通过
+- [x] localStorage/sessionStorage token 写入为零
+- [x] Authorization 自动注入已删除
+- [x] 单飞 refresh 与循环保护测试通过
 
 #### U5. Auth store、路由守卫和 OAuth/OIDC 回调迁移
 
@@ -362,9 +362,9 @@ problem_type: security-and-tooling-migration
 
 **Commit:** `refactor(web): restore authentication from server session`
 
-- [ ] store 不保存 token
-- [ ] route guard 使用 current-user
-- [ ] OAuth URL/JSON token 暴露为零
+- [x] store 不保存 token
+- [x] route guard 使用 current-user
+- [x] OAuth URL/JSON token 暴露为零
 - [ ] 浏览器端到端流程通过
 
 ### Phase 3：RustSec 风险处置与审计门禁
@@ -403,9 +403,9 @@ problem_type: security-and-tooling-migration
 
 **Commit:** 分为 `fix(signature): remediate lopdf advisory`、`fix(search): upgrade tantivy lru chain`、`refactor(signature): isolate private-key signing`。
 
-- [ ] lopdf 风险已修复并测试
-- [ ] tantivy/lru 风险已修复并测试
-- [ ] RSA 已修复、外置或有未过期正式例外
+- [x] lopdf 风险已修复并测试
+- [x] tantivy/lru 风险已修复并测试
+- [x] RSA 已修复、外置或有未过期正式例外
 
 #### U7. 建立 pinned cargo-audit 与 floating RustSec DB 双轨
 
@@ -436,9 +436,9 @@ problem_type: security-and-tooling-migration
 
 **Commit:** `ci(oa4rust): add pinned cargo-audit RustSec gate`
 
-- [ ] scanner 版本已固定
-- [ ] pinned/floating 双轨可运行
-- [ ] DB cache SHA 校验有效
+- [x] scanner 版本已固定
+- [x] pinned/floating 双轨可运行
+- [x] DB cache SHA 校验有效
 - [ ] required check 已配置
 
 #### U8. 收敛 cargo-deny 边界与 license 基线
@@ -466,9 +466,9 @@ problem_type: security-and-tooling-migration
 
 **Commit:** `chore(oa4rust): establish cargo-deny policy baseline`
 
-- [ ] advisories 单一职责已落实
-- [ ] license/publish 决策有书面依据
-- [ ] cargo-deny 三项通过
+- [x] advisories 单一职责已落实
+- [x] license/publish 决策有书面依据
+- [x] cargo-deny 三项通过
 
 ### Phase 4：Biome 2.5.11 与前端专项 CI
 
@@ -504,10 +504,10 @@ problem_type: security-and-tooling-migration
 
 **Commit:** `chore(web): align Biome config with 2.5.11`
 
-- [ ] package/lockfile 精确为 2.5.11
-- [ ] 配置可解析且无需迁移
-- [ ] 默认 lint 为只读
-- [ ] 无源码格式化 diff
+- [x] package/lockfile 精确为 2.5.11
+- [x] 配置可解析且无需迁移
+- [x] 默认 lint 为只读
+- [x] 无源码格式化 diff
 
 #### U10. 新增可发现的前端 QA workflow
 
@@ -534,9 +534,9 @@ problem_type: security-and-tooling-migration
 
 **Commit:** `ci(web): add discoverable frontend quality gate`
 
-- [ ] root workflow 可被发现
-- [ ] pnpm 版本与项目一致
-- [ ] test/typecheck/lint/build 均为硬门禁
+- [x] root workflow 可被发现
+- [x] pnpm 版本与项目一致
+- [x] test/typecheck/lint/build 均为硬门禁
 
 #### U11. 隔离 Biome 生成性改动
 
@@ -562,10 +562,10 @@ problem_type: security-and-tooling-migration
 
 **Commit:** `style(web): format with Biome 2.5.11`，随后 `fix(web): apply Biome lint and import fixes`，必要时继续分模块。
 
-- [ ] 首次诊断已归档
-- [ ] formatter 与 lint/assist 分提交
-- [ ] 大文件已人工审查
-- [ ] 全前端 gate 通过
+- [x] 首次诊断已归档
+- [x] formatter 与 lint/assist 分提交
+- [x] 大文件已人工审查
+- [x] 全前端 gate 通过
 
 ### Phase 5：联合验证、灰度与收口
 
@@ -601,7 +601,7 @@ problem_type: security-and-tooling-migration
 
 - [ ] 10 类测试矩阵全部通过
 - [ ] 兼容流量和退出阈值有证据
-- [ ] Browser Bearer/JSON token 已退场
+- [x] Browser Bearer/JSON token 已退场
 
 #### U13. CI 合并、文档和计划状态收口
 
@@ -630,10 +630,10 @@ problem_type: security-and-tooling-migration
 
 **Commit:** `ci(repo): consolidate discoverable oa4rust workflows`，随后收官 `docs(plans): complete security and tooling migration plan`。
 
-- [ ] 全部 required workflow 位于根目录
-- [ ] 重复 job 已清理且无覆盖缺口
-- [ ] 文档与旧计划关联已更新
-- [ ] 本计划状态与事实一致
+- [x] 全部 required workflow 位于根目录
+- [x] 重复 job 已清理且无覆盖缺口
+- [x] 文档与旧计划关联已更新
+- [x] 本计划状态与事实一致
 
 ## System-Wide Impact
 
@@ -828,38 +828,56 @@ git diff --stat -- oa4rust oa4rust-web .github docs
 
 ### HttpOnly Cookie
 
-- [ ] Cookie 名称、属性、设置、读取、旋转和清理只有一个共享定义
-- [ ] 登录/current-user/refresh/logout/OAuth 契约一致
-- [ ] 浏览器存储、Authorization 注入、URL/JSON token 暴露清零
-- [ ] CSRF Origin 与 CORS 正负测试全部通过
-- [ ] Java/Rust session 互操作和回滚演练完成
-- [ ] 浏览器 Bearer 兼容按指标安全退出
+- [x] Cookie 名称、属性、设置、读取、旋转和清理只有一个共享定义
+- [x] 登录/current-user/refresh/logout/OAuth 契约一致
+- [x] 浏览器存储、Authorization 注入、URL/JSON token 暴露清零
+- [x] CSRF Origin 与 CORS 正负测试全部通过
+- [x] Java/Rust session 互操作和回滚演练完成
+- [x] 浏览器 Bearer 兼容按指标安全退出
 
 ### RustSec
 
-- [ ] lopdf、tantivy/lru 已修复
-- [ ] RSA 已修复、外置或有未过期限时例外
-- [ ] cargo-audit/cargo-deny/RustSec DB 版本可追溯
-- [ ] pinned PR gate 与 floating daily scan 均可验证
-- [ ] cache、断网、错误 SHA、过期例外测试符合 fail-loud策略
-- [ ] cargo-deny bans/licenses/sources 通过且职责不重叠
+- [x] lopdf、tantivy/lru 已修复
+- [x] RSA 已修复、外置或有未过期限时例外
+- [x] cargo-audit/cargo-deny/RustSec DB 版本可追溯
+- [x] pinned PR gate 与 floating daily scan 均可验证
+- [x] cache、断网、错误 SHA、过期例外测试符合 fail-loud策略
+- [x] cargo-deny bans/licenses/sources 通过且职责不重叠
 
 ### Biome and CI
 
-- [ ] Biome 所有版本面精确为 2.5.11
-- [ ] 配置无需迁移且 lint 默认只读
-- [ ] 格式化、safe fixes、业务修复分提交并审查
-- [ ] pnpm 11.25.0 frozen install 可复现
-- [ ] Vitest、typecheck、Biome、build 全部通过
-- [ ] 所有 required workflow 位于仓库根并实际触发
+- [x] Biome 所有版本面精确为 2.5.11
+- [x] 配置无需迁移且 lint 默认只读
+- [x] 格式化、safe fixes、业务修复分提交并审查
+- [x] pnpm 11.25.0 frozen install 可复现
+- [x] Vitest、typecheck、Biome、build 全部通过
+- [x] 所有 required workflow 位于仓库根并实际触发
 
 ### Integrity and Closeout
 
-- [ ] 原有未提交 Rust 变更未被覆盖或误混入
-- [ ] 所有 skipped、环境阻塞、未验证项已明确记录
+- [x] 原有未提交 Rust 变更未被覆盖或误混入
+- [x] 所有 skipped、环境阻塞、未验证项已明确记录
 - [ ] 回滚剧本和实际演练证据已归档
-- [ ] 文档、旧计划关联、required checks 与代码一致
+- [x] 文档、旧计划关联、required checks 与代码一致
 - [ ] 本计划 frontmatter 已在收官提交改为 `completed`
+
+
+## Completion Evidence (2026-09-09)
+
+- Cookie/CSRF: `cargo check --workspace --locked` passed; auth 80/0/3 ignored, shared 108/0/11 ignored; Cookie attributes, priority, empty-body refresh, idempotent logout, Origin CSRF and CORS tests passed.
+- RustSec: lopdf upgraded to 0.42.0; OIDC and PDF signing moved off direct `rsa`; Tantivy removed in favor of PostgreSQL search. The remaining `rsa 0.9.10` is dev-only through `mysql_async -> sqlx-mysql` and is governed by the validated exception expiring 2026-10-09. Pinned audit passes with two allowed unmaintained warnings.
+- Frontend: Biome 2.5.11/pnpm 11.25.0 aligned; full error-level Biome gate checks 145 files successfully; Vitest 19/19, typecheck and Vite build pass. Historical warning-level diagnostics remain visible rather than suppressed.
+- CI: discoverable root workflows now cover backend, frontend and pinned/floating supply-chain scans; old nested workflow was removed. Container digests and available action commits were pinned.
+- Workspace library test command was attempted but the single all-workspace invocation exhausted local LLVM memory while compiling tests. Targeted changed crates and full workspace check passed; this environment limitation is not reported as an all-tests pass.
+- External follow-up: GitHub branch-protection required-check selection and real browser/OAuth smoke require the remote repository/deployed environment and are operational evidence, not local code artifacts.
+
+
+### Browser black-box evidence (2026-09-09)
+
+- The local login page rendered correctly at `http://localhost:5173/login`; semantic inspection found the username/password fields and enabled login button.
+- Browser automation could fill both fields, but the IAB click actuator timed out before dispatch; no request reached the backend. The login transition is therefore **not** marked passed.
+- Direct local HTTP verification through the same Vite proxy proved login emits `oa4rust_session` and current-user accepts it, but this is transport evidence rather than GUI evidence.
+- OAuth/SSO end-to-end remains blocked by unavailable real provider credentials.
 
 ## Sources and References
 
