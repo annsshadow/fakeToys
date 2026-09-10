@@ -66,4 +66,8 @@ describe('JPushApp contracts', () => {
     expect(source).not.toContain("api.get('/jaxrs/jpush/assemble/send')")
     expect(source).not.toContain("queryKey: ['jpush_assemble_send']")
   })
+  it('does not query the POST-only device create route', () => {
+    expect(source).not.toContain("api.get('/jaxrs/jpush/device/create')")
+    expect(source).not.toContain("queryKey: ['jpush_device_create']")
+  })
 })

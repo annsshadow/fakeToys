@@ -214,18 +214,6 @@ const jpush_assemble_control_config_q = useQuery({
     }
   },
 })
-const jpush_device_create_ref = ref<any[]>([])
-const jpush_device_create_q = useQuery({
-  queryKey: ['jpush_device_create'],
-  queryFn: async () => {
-    try {
-      const r = await api.get('/jaxrs/jpush/device/create')
-      return (r.data ?? []) as any[]
-    } catch {
-      return []
-    }
-  },
-})
 const jpush_send_ref = ref<any[]>([])
 const jpush_send_q = useQuery({
   queryKey: ['jpush_send'],
