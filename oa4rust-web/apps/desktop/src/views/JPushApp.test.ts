@@ -62,4 +62,8 @@ describe('JPushApp contracts', () => {
     )
     expect(source).not.toContain("'/jaxrs/jpush/assemble/control/device/unbind/new/deviceName/deviceType/pushType'")
   })
+  it('does not query the unmounted assemble send path', () => {
+    expect(source).not.toContain("api.get('/jaxrs/jpush/assemble/send')")
+    expect(source).not.toContain("queryKey: ['jpush_assemble_send']")
+  })
 })
