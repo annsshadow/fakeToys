@@ -937,10 +937,27 @@ Root causes (three stacked layers):
 Verified in Chromium (Tabbit): unauthenticated deep link lands on
 `/login?redirect=/app/dashboard` (no RangeError); login renders the shell
 with dashboard content (welcome bar, stats, quick apps); `/app/org`
-navigates; logout returns to `/login` and `who` is anonymous. Separate
-backend finding (not part of this defect): `GET
-/jaxrs/processplatform/assemble/surface/work/count/*` returns 500 against the
-local DB; Dashboard degrades to zero counts.
+navigates; logout returns to `/login` and `who` is anonymous.
+
+### Backend 500s on dashboard stats (found 2026-09-10, fixed same day)
+
+`GET /jaxrs/processplatform/assemble/surface/work/count/{credential}` and
+the application-list literal routes returned 500 against the local DB:
+- `work_count_credential*` queried `pp_c_work` with an unquoted
+  `xcreatorPerson`; PostgreSQL folds unquoted identifiers to lowercase but
+  the column is mixed-case in the catalog — quoted it (matching the
+  quoting style of every other query in the crate).
+- The three literal `application/list/{person,key,terminal}/{same}` routes
+  were registered with handlers whose `Path<T>` extractors expected an
+  argument the literal path never supplies; they are now thin closures that
+  pin the literal segment as the path argument (parameterized routes
+  unchanged).
+- `application_list_key_key` / `_terminal` filter on `xkey`/`xterminal`,
+  which only exist on the `"PP_E_APPLICATION"` view (upper-case, aliases
+  `xid`), not on the underlying table; both now target the view.
+
+Verified: all five endpoints return 200 (counts 0, empty lists) and the
+dashboard renders with zero server 500s.
 
 ## Sources and References
 
