@@ -118,18 +118,6 @@ const jpush_assemble_send_q = useQuery({
     }
   },
 })
-const core_entity_device_create_ref = ref<any[]>([])
-const core_entity_device_create_q = useQuery({
-  queryKey: ['core_entity_device_create'],
-  queryFn: async () => {
-    try {
-      const r = await api.get('/jaxrs/jpush/core/entity/device/create')
-      return (r.data ?? []) as any[]
-    } catch {
-      return []
-    }
-  },
-})
 const core_entity_device_list_ref = ref<any[]>([])
 const core_entity_device_list_q = useQuery({
   queryKey: ['core_entity_device_list'],
