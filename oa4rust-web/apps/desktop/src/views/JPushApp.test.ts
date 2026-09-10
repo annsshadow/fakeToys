@@ -86,4 +86,8 @@ describe('JPushApp contracts', () => {
     expect(source).not.toContain("api.get('/jaxrs/jpush/get/jpush-001')")
     expect(source).not.toContain("queryKey: ['jpush_get_jpush_001']")
   })
+  it('does not query the unmounted jpush list path', () => {
+    expect(source).not.toContain("api.get('/jaxrs/jpush/list')")
+    expect(source).not.toContain("queryKey: ['jpush_list']")
+  })
 })
