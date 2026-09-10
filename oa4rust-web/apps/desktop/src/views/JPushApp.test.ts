@@ -17,4 +17,9 @@ describe('JPushApp contracts', () => {
     expect(source).not.toContain("api.get('/jaxrs/jpush_assemble_control/template/list')")
     expect(source).toContain('templates.value = r.data ?? []')
   })
+
+  it('does not issue a GET request to the POST-only device creation endpoint', () => {
+    expect(source).not.toContain("api.get('/jaxrs/jpush/core/entity/device/create')")
+    expect(source).not.toContain("queryKey: ['core_entity_device_create']")
+  })
 })
