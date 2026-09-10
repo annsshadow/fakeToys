@@ -365,7 +365,7 @@ problem_type: security-and-tooling-migration
 - [x] store 不保存 token
 - [x] route guard 使用 current-user
 - [x] OAuth URL/JSON token 暴露为零
-- [x] 浏览器端到端流程通过（认证 cookie 流：login→Set-Cookie、reload 恢复、refresh 旋转、logout 失效，IAB 实测 `docs/ops/browser-e2e-2026-09-10.md`；登录经 requestSubmit 触发——IAB 指针/键盘 actuator 取不到点击点。`/app/*` 应用壳空白为独立既有渲染缺陷，非认证问题，另行跟踪；真实 OAuth provider 流程仍 BLOCKED）
+- [x] 浏览器端到端流程通过（认证 cookie 流：login→Set-Cookie、reload 恢复、refresh 旋转、logout 失效，IAB 实测 `docs/ops/browser-e2e-2026-09-10.md`；登录经 requestSubmit 触发——IAB 指针/键盘 actuator 取不到点击点。`/app/*` 应用壳空白缺陷已于同日修复，见 "## /app/* blank-shell defect fixed" 一节；真实 OAuth provider 流程仍 BLOCKED）
 
 ### Phase 3：RustSec 风险处置与审计门禁
 
@@ -902,7 +902,8 @@ Second closure pass (W1–W6), local-only, no push. Verified in this order:
   configs; Java fallback documented, not executed. Sanitized evidence +
   `manifest.sha256` in `oa4rust/docs/ops/`.
 - **Browser E2E** (IAB): login Set-Cookie → reload restore → logout→who anonymous.
-  Auth flow PASS. `/app/*` shell renders blank (pre-existing separate defect).
+  Auth flow PASS. `/app/*` shell rendered blank at the time (separate defect,
+  since fixed same day — see the follow-up section below).
 - **RustSec**: `cargo audit` (pinned-DB semantics, `--no-yanked --deny unsound`)
   passes with 2 allowed unmaintained; RSA exception valid to 2026-10-09.
   Fixed `.cargo/audit.toml` (removed `yanked` field, invalid for cargo-audit 0.22.2).
@@ -910,8 +911,36 @@ Second closure pass (W1–W6), local-only, no push. Verified in this order:
 
 Still open (externally blocked, kept unchecked above): GitHub required-checks +
 remote workflow activation (no push), real OAuth/OIDC provider E2E, Java↔Rust
-session interop, Bearer zero-threshold observation, and the `/app/*` blank-shell
-rendering defect. Plan stays `status: active`.
+session interop, and Bearer zero-threshold observation. Plan stays `status: active`.
+
+## /app/* blank-shell defect fixed (2026-09-10, follow-up)
+
+Root causes (three stacked layers):
+1. `main.ts` declared the AppShell parent as `/app/:appId` with an empty-path
+   redirect child `'' → /app/dashboard`; the child matcher's regex
+   (`^/app/([^/]+?)\/?$`) matched `/app/dashboard` itself before the static
+   child, so every `/app/*` navigation followed the redirect back to
+   `/app/dashboard` — an infinite `pushWithRedirect` recursion
+   (RangeError: Maximum call stack size exceeded), leaving `#o2-app-root`
+   empty on any deep link.
+2. Parent restructured to static `/app` (children now resolve to
+   `/app/dashboard`, `/app/org`, … as the nav links intend); `''` child kept
+   with a name (`AppShellHome`) to silence the vue-router empty-path warning.
+3. `AppShell.vue` used `v-for` + `v-if` on the same element (Vue 3 essential
+   rule B2 — `v-if` cannot see the `v-for` alias): replaced with filtered
+   `enabledNavItems`/`sectionNavItems`.
+4. `Dashboard.vue` passed an options object as the second argument of
+   `useQuery(options, queryClient)` (TanStack Query v5 signature): the object
+   shadowed the injected QueryClient and crashed setup with
+   `client.defaultQueryOptions is not a function`; merged into the options bag.
+
+Verified in Chromium (Tabbit): unauthenticated deep link lands on
+`/login?redirect=/app/dashboard` (no RangeError); login renders the shell
+with dashboard content (welcome bar, stats, quick apps); `/app/org`
+navigates; logout returns to `/login` and `who` is anonymous. Separate
+backend finding (not part of this defect): `GET
+/jaxrs/processplatform/assemble/surface/work/count/*` returns 500 against the
+local DB; Dashboard degrades to zero counts.
 
 ## Sources and References
 
