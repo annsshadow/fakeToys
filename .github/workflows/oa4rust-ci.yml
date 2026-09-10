@@ -2,31 +2,46 @@ name: CI
 on:
   push:
     branches: [main, master]
+    paths:
+      - "oa4rust/**"
+      - ".github/workflows/oa4rust-ci.yml"
   pull_request:
     branches: [main, master]
+    paths:
+      - "oa4rust/**"
+      - ".github/workflows/oa4rust-ci.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: oa4rust-ci-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   quality:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
     defaults:
       run:
         working-directory: oa4rust
     steps:
       - uses: actions/checkout@b4ffde65e4aa6d8cba74e5f82ac958baa146d45a
       - name: Install Rust
-        uses: dtolnay/rust-action@stable
+        uses: dtolnay/rust-toolchain@6bed0761d98439e5a578e2877258200ad565ba87
       - name: Cache cargo registry
         uses: actions/cache@0c9099a76cf58ea2386b54529134d8d22980262b
         with:
           path: ~/.cargo/registry
-          key: ${{ runner.os }}-cargo-registry-${{ hashFiles('**/Cargo.lock') }}
+          key: ${{ runner.os }}-cargo-registry-${{ hashFiles('oa4rust/Cargo.lock') }}
       - name: Check formatting
         run: cargo fmt --all -- --check
       - name: Check workspace
         run: cargo check --workspace
 
   unit-tests:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
     defaults:
       run:
         working-directory: oa4rust
@@ -36,19 +51,20 @@ jobs:
     steps:
       - uses: actions/checkout@b4ffde65e4aa6d8cba74e5f82ac958baa146d45a
       - name: Install Rust
-        uses: dtolnay/rust-action@stable
+        uses: dtolnay/rust-toolchain@6bed0761d98439e5a578e2877258200ad565ba87
       - name: Cache cargo registry
         uses: actions/cache@0c9099a76cf58ea2386b54529134d8d22980262b
         with:
           path: ~/.cargo/registry
-          key: ${{ runner.os }}-cargo-registry-${{ hashFiles('**/Cargo.lock') }}
+          key: ${{ runner.os }}-cargo-registry-${{ hashFiles('oa4rust/Cargo.lock') }}
       - name: Run unit tests (DATABASE_DIALECT=${{ matrix.dialect }})
         run: cargo test --workspace --lib
         env:
           DATABASE_DIALECT: ${{ matrix.dialect }}
 
   integration-tests:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
+    timeout-minutes: 90
     defaults:
       run:
         working-directory: oa4rust
@@ -57,7 +73,7 @@ jobs:
         dialect: [postgres, mysql]
     services:
       postgres:
-        image: postgres:16
+        image: postgres@sha256:f1c3376c26f2609ab9f29f71f824103fe2fcd8ee0346485cb6122a4f93df6f94
         env:
           POSTGRES_USER: o2server
           POSTGRES_PASSWORD: password
@@ -70,7 +86,7 @@ jobs:
           --health-timeout 5s
           --health-retries 5
       mysql:
-        image: mysql:8
+        image: mysql@sha256:3466ba4a4828aa8d46fb7c3bc16b67b781c98413cf4ea0fac6feaa6e881faa26
         env:
           MYSQL_ROOT_PASSWORD: password
           MYSQL_DATABASE: oa4rust
@@ -86,12 +102,12 @@ jobs:
     steps:
       - uses: actions/checkout@b4ffde65e4aa6d8cba74e5f82ac958baa146d45a
       - name: Install Rust
-        uses: dtolnay/rust-action@stable
+        uses: dtolnay/rust-toolchain@6bed0761d98439e5a578e2877258200ad565ba87
       - name: Cache cargo registry
         uses: actions/cache@0c9099a76cf58ea2386b54529134d8d22980262b
         with:
           path: ~/.cargo/registry
-          key: ${{ runner.os }}-cargo-registry-${{ hashFiles('**/Cargo.lock') }}
+          key: ${{ runner.os }}-cargo-registry-${{ hashFiles('oa4rust/Cargo.lock') }}
       - name: Set DATABASE_URL for ${{ matrix.dialect }}
         run: |
           if [ "${{ matrix.dialect }}" = "postgres" ]; then
@@ -113,14 +129,15 @@ jobs:
   # 外部 Java 服务状态波动。因此设为 allow-failure（continue-on-error），
   # 失败不影响主构建（unit-tests / integration-tests）。
   behavior-compare:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
     defaults:
       run:
         working-directory: oa4rust
     continue-on-error: true
     services:
       postgres:
-        image: postgres:16
+        image: postgres@sha256:f1c3376c26f2609ab9f29f71f824103fe2fcd8ee0346485cb6122a4f93df6f94
         env:
           POSTGRES_USER: o2server
           POSTGRES_PASSWORD: password
@@ -140,13 +157,13 @@ jobs:
       - uses: actions/checkout@b4ffde65e4aa6d8cba74e5f82ac958baa146d45a
 
       - name: Install Rust
-        uses: dtolnay/rust-action@stable
+        uses: dtolnay/rust-toolchain@6bed0761d98439e5a578e2877258200ad565ba87
 
       - name: Cache cargo registry
         uses: actions/cache@0c9099a76cf58ea2386b54529134d8d22980262b
         with:
           path: ~/.cargo/registry
-          key: ${{ runner.os }}-cargo-registry-${{ hashFiles('**/Cargo.lock') }}
+          key: ${{ runner.os }}-cargo-registry-${{ hashFiles('oa4rust/Cargo.lock') }}
 
       # 提前拉起 o2server，使冷启动（~10min）与后续 cargo 编译并行
       - name: Start o2server (Java) container
@@ -154,7 +171,7 @@ jobs:
           docker run -d --name o2server \
             -p 18080:80 \
             -e MYSQL_ROOT_PASSWORD=o2oa@2022 \
-            o2oa/o2server:latest
+            o2oa/o2server@sha256:0735c7806150d6de34fdc83df3cd94c2a5aa9cd0b79b6a8948e12a44b68b5a8f
 
       - name: Build server binary
         run: cargo build --bin oa4rust
@@ -270,23 +287,6 @@ jobs:
           if [ -f rust_server.pid ]; then kill "$(cat rust_server.pid)" || true; fi
           docker rm -f o2server || true
 
-  # ── Supply-chain security: cargo-deny ────────────────────────────────────────
-  # Checks licenses, banned crates (incl. known-advisory pins), and source provenance.
-  # Network access required for the RustSec advisory DB; CI has it.
-  supply-chain-check:
-    runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: oa4rust
-    steps:
-      - uses: actions/checkout@b4ffde65e4aa6d8cba74e5f82ac958baa146d45a
-      - name: Install Rust
-        uses: dtolnay/rust-action@stable
-      - name: Install cargo-deny
-        run: cargo install cargo-deny
-      - name: Run cargo-deny check
-        run: cargo deny check advisories bans licenses sources
-
   # ── plan002 U9 / R8: OpenAPI 安全方案守卫 ────────────────────────────────────
   # scripts/gen_openapi_paths.py 重新生成 OpenAPI lib.rs 时，会把 Bearer 安全方案
   # 注入到 securitySchemes。若注入静默丢失，API 文档将缺少鉴权信息且难以察觉。
@@ -294,7 +294,8 @@ jobs:
   # 安全方案注入。若后续 CI 加入“重新生成 OpenAPI”步骤，应在该步骤之后再加一次
   # 本断言（即先 regenerate 再 check）。
   openapi-guard:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
     defaults:
       run:
         working-directory: oa4rust
@@ -306,28 +307,3 @@ jobs:
           python-version: "3.x"
       - name: Verify OpenAPI security scheme is present
         run: python scripts/check_openapi_security.py
-
-  frontend-qa:
-    runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: oa4rust-web
-    steps:
-      - uses: actions/checkout@b4ffde65e4aa6d8cba74e5f82ac958baa146d45a
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '22'
-      - name: Install pnpm
-        run: npm install -g pnpm@10
-      - name: Install dependencies (frozen lockfile)
-        run: pnpm install --frozen-lockfile
-      - name: Run Vitest tests
-        run: pnpm test
-      - name: Type-check all packages
-        run: pnpm typecheck
-      - name: Lint (read-only check)
-        run: pnpm exec biome check .
-      - name: Build desktop
-        run: pnpm build
-

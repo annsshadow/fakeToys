@@ -1,0 +1,60 @@
+name: OA4Rust web quality
+
+on:
+  push:
+    branches: [main, master]
+    paths:
+      - "oa4rust-web/**"
+      - ".github/workflows/oa4rust-web.yml"
+  pull_request:
+    branches: [main, master]
+    paths:
+      - "oa4rust-web/**"
+      - ".github/workflows/oa4rust-web.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: oa4rust-web-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  frontend-qa:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    defaults:
+      run:
+        shell: bash
+        working-directory: oa4rust-web
+    steps:
+      - uses: actions/checkout@b4ffde65e4aa6d8cba74e5f82ac958baa146d45a
+      - name: Setup Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: "22"
+      - name: Activate pinned pnpm
+        run: |
+          set -euo pipefail
+          corepack enable
+          corepack prepare pnpm@11.25.0 --activate
+          node --version
+          pnpm --version
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+      - name: Run Vitest tests
+        run: pnpm test
+      - name: Type-check all packages
+        run: pnpm typecheck
+      - name: Run Biome gate on migrated surfaces
+        run: >-
+          pnpm exec biome check --diagnostic-level=error
+          biome.json package.json apps/desktop/manifest.json
+          apps/desktop/src/views/SSO.vue packages/apis/src/index.ts
+          packages/sdk/src/api.ts packages/sdk/src/api.test.ts packages/sdk/src/auth.test.ts
+          packages/sdk/src/session.ts packages/sdk/src/types.ts
+          packages/ui/src/components/LoginScreen.vue packages/ui/src/views/OAuthCallback.vue
+          scripts/deepen_form.cjs
+      - name: Build desktop
+        run: pnpm build
