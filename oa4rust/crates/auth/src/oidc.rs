@@ -1,17 +1,16 @@
 use axum::{
     extract::{Extension, Query},
-    response::Redirect,
+    response::{Redirect, Response},
     routing::get,
-    Json, Router,
+    Router,
 };
 use deadpool_postgres::Pool;
-use rsa::{pkcs1v15::Pkcs1v15Sign, RsaPublicKey};
+use ring::signature::{RsaPublicKeyComponents, RSA_PKCS1_2048_8192_SHA256};
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
-use sha2::{Digest, Sha256};
 use shared::{
     error::AppError,
-    response::{row_to_json, ActionResult},
+    response::row_to_json,
     session::SessionManager,
 };
 use uuid::Uuid;
@@ -48,19 +47,11 @@ pub struct OidcTokenResponse {
 
 pub fn oidc_router() -> Router {
     Router::new()
-        .route(
-            "/jaxrs/authentication/oidc/authorize",
-            get(oidc_authorize),
-        )
-        .route(
-            "/jaxrs/authentication/oidc/callback",
-            get(oidc_callback),
-        )
+        .route("/jaxrs/authentication/oidc/authorize", get(oidc_authorize))
+        .route("/jaxrs/authentication/oidc/callback", get(oidc_callback))
 }
 
-pub async fn oidc_authorize(
-    Query(req): Query<OidcAuthorizeRequest>,
-) -> Result<Redirect, AppError> {
+pub async fn oidc_authorize(Query(req): Query<OidcAuthorizeRequest>) -> Result<Redirect, AppError> {
     let issuer = std::env::var("OIDC_ISSUER").unwrap_or_default();
     let auth_url = format!(
         "https://{}/authorize?client_id={}&redirect_uri={}&response_type=code&scope={}&state={}",
@@ -77,7 +68,7 @@ pub async fn oidc_callback(
     pool: Extension<Pool>,
     session_manager: Extension<SessionManager>,
     Query(req): Query<OidcCallbackRequest>,
-) -> Result<Json<ActionResult<Value>>, AppError> {
+) -> Result<Response, AppError> {
     let token = exchange_code(req.code).await?;
     let claims = verify_id_token(&token.id_token).await?;
     let person = get_or_create_person(&pool, &claims.sub).await?;
@@ -86,13 +77,14 @@ pub async fn oidc_callback(
         .and_then(|v| v.as_str())
         .unwrap_or_default()
         .to_string();
-    let session_token = session_manager
+    let session = session_manager
         .create_session(person_unique, Uuid::new_v4().to_string())
         .await?;
-    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
-        ("token".to_string(), Value::String(session_token.token)),
-        ("person".to_string(), person),
-    ])))))
+    Ok(crate::session_response(
+        Value::Object(serde_json::Map::from_iter([("person".to_string(), person)])),
+        &session.token,
+        &session_manager,
+    ))
 }
 
 async fn exchange_code(code: String) -> Result<OidcTokenResponse, AppError> {
@@ -122,38 +114,55 @@ async fn exchange_code(code: String) -> Result<OidcTokenResponse, AppError> {
 }
 
 async fn verify_id_token(id_token: &str) -> Result<OidcClaims, AppError> {
-    let jwks: Value = fetch_jwks().await?;
-
-    let header =
-        decode_jwt_header(id_token).map_err(|_| AppError::Unauthorized)?;
-    let kid = header.get("kid").and_then(|v| v.as_str()).ok_or(AppError::Unauthorized)?;
-
-    let (n_hex, e_hex) = extract_rsa_components(&jwks, kid)?;
-    let public_key = build_rsa_public_key(&n_hex, &e_hex).map_err(|_| AppError::Internal)?;
-
-    let signing_input = signing_input(id_token);
-    let signature = base64url_decode(
-        id_token.split('.').nth(2).ok_or(AppError::Unauthorized)?,
-    )
-    .map_err(|_| AppError::Unauthorized)?;
-
-    let message_hash = Sha256::digest(signing_input);
-    public_key
-        .verify(Pkcs1v15Sign::new::<Sha256>(), &message_hash, &signature)
-        .map_err(|_| AppError::Unauthorized)?;
-
-    let payload = base64url_decode(id_token.split('.').nth(1).ok_or(AppError::Unauthorized)?)
-        .map_err(|_| AppError::Unauthorized)?;
-    let claims: OidcClaims =
-        serde_json::from_slice(&payload).map_err(|_| AppError::Unauthorized)?;
-
     let issuer = std::env::var("OIDC_ISSUER").unwrap_or_default();
     let client_id = std::env::var("OIDC_CLIENT_ID").unwrap_or_default();
+    verify_id_token_with_jwks(id_token, &fetch_jwks().await?, &issuer, &client_id)
+}
 
-    if claims.iss != issuer {
+fn verify_id_token_with_jwks(
+    id_token: &str,
+    jwks: &Value,
+    issuer: &str,
+    client_id: &str,
+) -> Result<OidcClaims, AppError> {
+    let mut parts = id_token.split('.');
+    let header_b64 = parts.next().ok_or(AppError::Unauthorized)?;
+    let payload_b64 = parts.next().ok_or(AppError::Unauthorized)?;
+    let signature_b64 = parts.next().ok_or(AppError::Unauthorized)?;
+    if parts.next().is_some() {
         return Err(AppError::Unauthorized);
     }
-    if claims.aud != client_id {
+
+    let header = decode_jwt_part(header_b64)?;
+    if header.get("alg").and_then(Value::as_str) != Some("RS256") {
+        return Err(AppError::Unauthorized);
+    }
+    let kid = header
+        .get("kid")
+        .and_then(Value::as_str)
+        .ok_or(AppError::Unauthorized)?;
+    let (n, e) = extract_rsa_components(jwks, kid)?;
+    let signature = base64url_decode(signature_b64)?;
+    RsaPublicKeyComponents { n: &n, e: &e }
+        .verify(
+            &RSA_PKCS1_2048_8192_SHA256,
+            format!("{header_b64}.{payload_b64}").as_bytes(),
+            &signature,
+        )
+        .map_err(|_| AppError::Unauthorized)?;
+
+    let claims: OidcClaims = serde_json::from_slice(&base64url_decode(payload_b64)?)
+        .map_err(|_| AppError::Unauthorized)?;
+    validate_claims(&claims, issuer, client_id)?;
+    Ok(claims)
+}
+
+fn validate_claims(
+    claims: &OidcClaims,
+    issuer: &str,
+    client_id: &str,
+) -> Result<(), AppError> {
+    if claims.iss != issuer || claims.aud != client_id {
         return Err(AppError::Unauthorized);
     }
 
@@ -161,70 +170,21 @@ async fn verify_id_token(id_token: &str) -> Result<OidcClaims, AppError> {
     if claims.exp <= now {
         return Err(AppError::Unauthorized);
     }
-
-    Ok(claims)
+    Ok(())
 }
 
-fn decode_jwt_header(token: &str) -> Result<Value, AppError> {
-    let header_b64 = token.split('.').next().ok_or(AppError::Unauthorized)?;
-    let header_bytes = base64url_decode(header_b64).map_err(|_| AppError::Unauthorized)?;
-    serde_json::from_slice(&header_bytes).map_err(|_| AppError::Unauthorized)
-}
-
-fn signing_input(token: &str) -> Vec<u8> {
-    let mut parts = token.splitn(3, '.');
-    let header = parts.next().unwrap_or_default();
-    let payload = parts.next().unwrap_or_default();
-    format!("{}.{}", header, payload).into_bytes()
+fn decode_jwt_part(part: &str) -> Result<Value, AppError> {
+    let bytes = base64url_decode(part)?;
+    serde_json::from_slice(&bytes).map_err(|_| AppError::Unauthorized)
 }
 
 fn base64url_decode(input: &str) -> Result<Vec<u8>, AppError> {
-    let normalized = input.replace('-', "+").replace('_', "/");
-    let pad = (4 - normalized.len() % 4) % 4;
-    let padded = format!("{}{}", normalized, "=".repeat(pad));
-    base64::Engine::decode(&base64::engine::general_purpose::STANDARD, &padded)
-        .map_err(|_| AppError::Internal)
-}
+    use base64::Engine as _;
 
-fn build_rsa_public_key(n_hex: &str, e_hex: &str) -> Result<RsaPublicKey, AppError> {
-    let n_biguint = hex_to_biguint(n_hex).map_err(|_| AppError::Internal)?;
-    let e_biguint = hex_to_biguint(e_hex).map_err(|_| AppError::Internal)?;
-    RsaPublicKey::new(n_biguint, e_biguint).map_err(|_| AppError::Internal)
-}
-
-fn hex_to_biguint(hex_str: &str) -> Result<rsa::BigUint, ()> {
-    let normalized = if hex_str.len() % 2 != 0 {
-        format!("0{}", hex_str)
-    } else {
-        hex_str.to_string()
-    };
-    let bytes = normalized
-        .as_bytes()
-        .chunks(2)
-        .map(|chunk| {
-            let hex = std::str::from_utf8(chunk).map_err(|_| ())?;
-            u8::from_str_radix(hex, 16).map_err(|_| ())
-        })
-        .collect::<Result<Vec<u8>, ()>>()?;
-    Ok(rsa::BigUint::from_bytes_be(&bytes))
-}
-
-/// Convert a JWKS base64url-encoded n value directly to bytes (no hex round-trip).
-#[allow(dead_code)]
-fn jwks_n_to_bytes(n_b64: &str) -> Result<Vec<u8>, ()> {
-    let normalized = n_b64.replace('-', "+").replace('_', "/");
-    let pad = (4 - normalized.len() % 4) % 4;
-    let padded = format!("{}{}", normalized, "=".repeat(pad));
-    base64::Engine::decode(&base64::engine::general_purpose::STANDARD, padded).map_err(|_| ())
-}
-
-/// Convert a JWKS base64url-encoded e value directly to bytes.
-#[allow(dead_code)]
-fn jwks_e_to_bytes(e_b64: &str) -> Result<Vec<u8>, ()> {
-    let normalized = e_b64.replace('-', "+").replace('_', "/");
-    let pad = (4 - normalized.len() % 4) % 4;
-    let padded = format!("{}{}", normalized, "=".repeat(pad));
-    base64::Engine::decode(&base64::engine::general_purpose::STANDARD, padded).map_err(|_| ())
+    base64::engine::general_purpose::URL_SAFE_NO_PAD
+        .decode(input)
+        .or_else(|_| base64::engine::general_purpose::URL_SAFE.decode(input))
+        .map_err(|_| AppError::Unauthorized)
 }
 
 async fn fetch_jwks() -> Result<Value, AppError> {
@@ -244,7 +204,7 @@ async fn fetch_jwks() -> Result<Value, AppError> {
 pub(crate) fn extract_rsa_components(
     jwks: &Value,
     kid: &str,
-) -> Result<(String, String), AppError> {
+) -> Result<(Vec<u8>, Vec<u8>), AppError> {
     let keys = jwks
         .get("keys")
         .and_then(|k| k.as_array())
@@ -260,14 +220,17 @@ pub(crate) fn extract_rsa_components(
 
         let n = key
             .get("n")
-            .and_then(|v| v.as_str())
-            .ok_or(AppError::Internal)?
-            .to_string();
+            .and_then(Value::as_str)
+            .ok_or(AppError::Internal)
+            .and_then(base64url_decode)?;
         let e = key
             .get("e")
-            .and_then(|v| v.as_str())
-            .ok_or(AppError::Internal)?
-            .to_string();
+            .and_then(Value::as_str)
+            .ok_or(AppError::Internal)
+            .and_then(base64url_decode)?;
+        if n.is_empty() || e.is_empty() {
+            return Err(AppError::Unauthorized);
+        }
 
         return Ok((n, e));
     }
@@ -275,10 +238,7 @@ pub(crate) fn extract_rsa_components(
     Err(AppError::Unauthorized)
 }
 
-pub(crate) async fn get_or_create_person(
-    pool: &Pool,
-    sub: &str,
-) -> Result<Value, AppError> {
+pub(crate) async fn get_or_create_person(pool: &Pool, sub: &str) -> Result<Value, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let unique_id = format!("oidc_{}", sub);
 
@@ -298,7 +258,12 @@ pub(crate) async fn get_or_create_person(
     client
         .execute(
             "INSERT INTO auth_person (id, unique_id, name, password_hash) VALUES ($1, $2, $3, $4)",
-            &[&new_id, &unique_id, &format!("OIDC User {}", sub), &"{bcrypt}$2b$12$dummy"],
+            &[
+                &new_id,
+                &unique_id,
+                &format!("OIDC User {}", sub),
+                &"{bcrypt}$2b$12$dummy",
+            ],
         )
         .await
         .map_err(|_| AppError::Internal)?;
@@ -310,96 +275,16 @@ pub(crate) async fn get_or_create_person(
 }
 
 #[cfg(test)]
-pub(crate) async fn verify_id_token_with_jwks(
-    id_token: &str,
-    jwks_override: &Value,
-) -> Result<OidcClaims, AppError> {
-    let header = decode_jwt_header(id_token).map_err(|_| AppError::Unauthorized)?;
-    let kid = header.get("kid").and_then(|v| v.as_str()).ok_or(AppError::Unauthorized)?;
-    let (n_hex, e_hex) = extract_rsa_components(jwks_override, kid)?;
-    let public_key = build_rsa_public_key(&n_hex, &e_hex).map_err(|_| AppError::Internal)?;
-
-    let signing_input_val = signing_input(id_token);
-    let signature = base64url_decode(
-        id_token.split('.').nth(2).ok_or(AppError::Unauthorized)?,
-    )
-    .map_err(|_| AppError::Unauthorized)?;
-
-    let message_hash = Sha256::digest(&signing_input_val);
-    public_key
-        .verify(Pkcs1v15Sign::new::<Sha256>(), &message_hash, &signature)
-        .map_err(|_| AppError::Unauthorized)?;
-
-    let payload = base64url_decode(
-        id_token.split('.').nth(1).ok_or(AppError::Unauthorized)?,
-    )
-    .map_err(|_| AppError::Unauthorized)?;
-    let claims: OidcClaims =
-        serde_json::from_slice(&payload).map_err(|_| AppError::Unauthorized)?;
-
-    let issuer = std::env::var("OIDC_ISSUER").unwrap_or_default();
-    let client_id = std::env::var("OIDC_CLIENT_ID").unwrap_or_default();
-
-    if claims.iss != issuer || claims.aud != client_id {
-        return Err(AppError::Unauthorized);
-    }
-
-    let now = chrono::Utc::now().timestamp() as usize;
-    if claims.exp <= now {
-        return Err(AppError::Unauthorized);
-    }
-
-    Ok(claims)
-}
-
-#[cfg(test)]
 mod tests {
     use super::*;
-    use rsa::{
-        pkcs1v15::Pkcs1v15Sign,
-        traits::PublicKeyParts,
-        RsaPrivateKey,
-    };
 
-    fn generate_test_jwks(
-        kid: &str,
-        private_key: &RsaPrivateKey,
-    ) -> (Value, String, String) {
-        let public_key = RsaPrivateKey::to_public_key(private_key);
-        let n_hex = public_key.n().to_str_radix(16);
-        let e_hex = public_key.e().to_str_radix(16);
+    const TEST_N: &str = "2LWCJow7CWbkfYUbkVUpAKQGSXLIGVhUW8DZY_G1r2P8rrbb6QlIKjr0TUh7IffnM1NNxUknxekdJ69Nbad6Vh6FoQfVHKoIIvEGKDpDLUtIspOy_CAMGeTqFn5EEfd17llA93YVEd7zHoFfBxlDk0XZ3w71atNR5JzKSaozok2vHo5mECRVtexQUdp4nYuTm9rZL68LaqlUCOqFsZBOTOX_0ZrkJpVTBIXQG5O6zIFyl_tnK_tMIS-rCSNE6Hv5pKv4pN7gDwlW0UaA75RYKadsDoOqn43utSjZoLOtAY-ZYbve0zVFoU7pB-XcmGazlg19NLx1EZmIqqNXDMZJpQ";
+    const TEST_E: &str = "AQAB";
+    const VALID_TOKEN: &str = "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCIsImtpZCI6InRlc3Qta2lkIn0.eyJzdWIiOiJvaWRjLXVzZXItNDIiLCJpc3MiOiJodHRwczovL2lkcC50ZXN0LmV4YW1wbGUuY29tIiwiYXVkIjoidGVzdC1jbGllbnQtaWQiLCJleHAiOjQxMDI0NDQ4MDB9.TVaB5LADwQ8ot-X3VzjUk46-V57aeYS2mICgJRuyqmOXERzCbJjY7iLj-D1iQVRx50hpavczZxURi49_bdPvWEy0psESz8UfAVTs3DWrj6cXsI4KCgMRVhnv3I5X2mVQ-4denZMRfPm3qqFyv4TC5iCbf0zZXswLflAnmQfYjLXWrr4UJaHDjFd1UaWilORaY0qSY63C-lqWPj-vtsXP5zlY-n_ZBhmcz8CTpyaEzR0BB9E8GgrJMBPH9hJZmdIQSUIS1MvwcdycBJtPv1JcKZUyiuWq1yy6rBpOVlO3qeZsxGOjlkev6bd5ljW5JoRfy3lNzUVA2nW3JSumrlQuHg";
+    const EXPIRED_TOKEN: &str = "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCIsImtpZCI6InRlc3Qta2lkIn0.eyJzdWIiOiJvaWRjLXVzZXItNDIiLCJpc3MiOiJodHRwczovL2lkcC50ZXN0LmV4YW1wbGUuY29tIiwiYXVkIjoidGVzdC1jbGllbnQtaWQiLCJleHAiOjk0NjY4NDgwMH0.VjLH7vcov0qVnQfbJ2sJA4nmP9Uas7OexeZKpQA_Q1R7M4pvmS9oSDjU1g50NZR9KUUYdBgK3Q9MNl-WVc4oHGmYRvEA0au7giJWAbHbMgtX8Crzz33kfuEALGWdgPJ30tUVDV9mjAsTTwZuzEZV4Xb2XOtbvDobEKdtDsRa0e8XgFY5D1DIpKsaugNCiMKFIbKyFJz7wjoOGXm_qNO7sGL1GwGiwG_dNe_wdzrX_q_MYUVODtHkyDYajX6IsghTYyMifXEknJnpvOiGVmYz009HDambRJbp87h5D4TArPGkPIT6EZVSCnMs7fte2DKwimiLAxk_RoVygfZ_QVTBWw";
 
-        let jwks = serde_json::json!({
-            "keys": [{
-                "kty": "RSA",
-                "kid": kid,
-                "n": n_hex,
-                "e": e_hex,
-            }]
-        });
-        (jwks, n_hex, e_hex)
-    }
-
-    fn encode_test_jwt(
-        private_key: &RsaPrivateKey,
-        claims: &OidcClaims,
-        kid: &str,
-    ) -> String {
-        let header = serde_json::json!({"alg":"RS256","typ":"JWT","kid":kid});
-        let header_b64 =
-            base64::encode_engine(serde_json::to_vec(&header).unwrap(), &base64::engine::general_purpose::URL_SAFE);
-        let payload_b64 =
-            base64::encode_engine(serde_json::to_vec(claims).unwrap(), &base64::engine::general_purpose::URL_SAFE);
-        let signing_input = format!("{}.{}", header_b64, payload_b64);
-        let hash = Sha256::digest(signing_input.as_bytes());
-        let sig_bytes = private_key
-            .sign(Pkcs1v15Sign::new::<Sha256>(), &hash)
-            .expect("sign test JWT");
-        let _public_key = RsaPrivateKey::to_public_key(private_key);
-        let _verify_ok = _public_key.verify(Pkcs1v15Sign::new::<Sha256>(), &hash, &sig_bytes).is_ok();
-        let sig_b64 =
-            base64::encode_engine(sig_bytes, &base64::engine::general_purpose::URL_SAFE);
-        format!("{}.{}.{}", header_b64, payload_b64, sig_b64)
+    fn test_jwks() -> Value {
+        serde_json::json!({"keys": [{"kty": "RSA", "kid": "test-kid", "n": TEST_N, "e": TEST_E}]})
     }
 
     #[test]
@@ -415,10 +300,9 @@ mod tests {
             ]
         });
 
-        let (n, e) =
-            crate::oidc::extract_rsa_components(&jwks, "key-1").expect("should find key");
-        assert_eq!(e, "AQAB");
-        assert!(n.len() > 100, "modulus should be a long base64url string");
+        let (n, e) = crate::oidc::extract_rsa_components(&jwks, "key-1").expect("should find key");
+        assert_eq!(e, vec![0x01, 0x00, 0x01]);
+        assert!(n.len() > 100, "modulus should decode to RSA key bytes");
     }
 
     #[test]
@@ -438,156 +322,58 @@ mod tests {
     }
 
     #[test]
-    #[ignore = "flaky: depends on external OIDC service"]
     fn test_oidc_verify_id_token_valid() {
-        let rt = tokio::runtime::Runtime::new().unwrap();
-        rt.block_on(async {
-            let _guard = EnvGuard::new()
-                .set("OIDC_ISSUER", "https://idp.test.example.com")
-                .set("OIDC_CLIENT_ID", "test-client-id");
-
-            let private_key =
-                RsaPrivateKey::new(&mut rand::thread_rng(), 2048).expect("generate RSA key");
-
-            // Raw sign/verify test
-            let msg = b"test message for rsa";
-            let msg_hash = Sha256::digest(msg);
-            let sig1 = private_key
-                .sign(Pkcs1v15Sign::new::<Sha256>(), &msg_hash)
-                .expect("sign");
-            let pub_key1 = RsaPrivateKey::to_public_key(&private_key);
-            let ok1 = pub_key1.verify(Pkcs1v15Sign::new::<Sha256>(), &msg_hash, &sig1);
-            eprintln!("DEBUG raw ok={:?} sig[0..4]={:02x?}", ok1.is_ok(), &sig1[..4]);
-
-            // Second sign with same inputs
-            let sig2 = private_key
-                .sign(Pkcs1v15Sign::new::<Sha256>(), &msg_hash)
-                .expect("sign2");
-            let ok2 = pub_key1.verify(Pkcs1v15Sign::new::<Sha256>(), &msg_hash, &sig2);
-            eprintln!("DEBUG raw2 ok={:?} sig[0..4]={:02x?} same={}", ok2.is_ok(), &sig2[..4], sig1 == sig2);
-
-            let (jwks, _, _) = generate_test_jwks("test-kid", &private_key);
-
-            let claims = OidcClaims {
-                sub: "oidc-user-42".to_string(),
-                iss: "https://idp.test.example.com".to_string(),
-                aud: "test-client-id".to_string(),
-                exp: (chrono::Utc::now() + chrono::Duration::hours(1)).timestamp() as usize,
-            };
-
-            let token = encode_test_jwt(&private_key, &claims, "test-kid");
-
-            let decoded =
-                crate::oidc::verify_id_token_with_jwks(&token, &jwks)
-                    .await
-                    .expect("id_token should verify");
-            assert_eq!(decoded.sub, "oidc-user-42");
-            assert_eq!(decoded.iss, "https://idp.test.example.com");
-            assert_eq!(decoded.aud, "test-client-id");
-        });
+        let decoded = verify_id_token_with_jwks(
+            VALID_TOKEN,
+            &test_jwks(),
+            "https://idp.test.example.com",
+            "test-client-id",
+        )
+        .expect("fixed RS256 fixture should verify");
+        assert_eq!(decoded.sub, "oidc-user-42");
     }
 
     #[test]
     fn test_oidc_verify_id_token_wrong_issuer_rejected() {
-        let rt = tokio::runtime::Runtime::new().unwrap();
-        rt.block_on(async {
-            let _guard = EnvGuard::new()
-                .set("OIDC_ISSUER", "https://idp.test.example.com")
-                .set("OIDC_CLIENT_ID", "test-client-id");
-
-            let private_key =
-                RsaPrivateKey::new(&mut rand::thread_rng(), 2048).expect("generate RSA key");
-            let (jwks, _, _) = generate_test_jwks("test-kid", &private_key);
-
-            let claims = OidcClaims {
-                sub: "oidc-user-42".to_string(),
-                iss: "https://evil-idp.example.com".to_string(),
-                aud: "test-client-id".to_string(),
-                exp: (chrono::Utc::now() + chrono::Duration::hours(1)).timestamp() as usize,
-            };
-
-            let token = encode_test_jwt(&private_key, &claims, "test-kid");
-
-            assert!(
-                crate::oidc::verify_id_token_with_jwks(&token, &jwks)
-                    .await
-                    .is_err(),
-                "token with wrong issuer should be rejected"
-            );
-        });
+        assert!(
+            verify_id_token_with_jwks(
+                VALID_TOKEN,
+                &test_jwks(),
+                "https://evil-idp.example.com",
+                "test-client-id",
+            )
+            .is_err()
+        );
     }
 
     #[test]
     fn test_oidc_verify_id_token_expired_rejected() {
-        let rt = tokio::runtime::Runtime::new().unwrap();
-        rt.block_on(async {
-            let _guard = EnvGuard::new()
-                .set("OIDC_ISSUER", "https://idp.test.example.com")
-                .set("OIDC_CLIENT_ID", "test-client-id");
-
-            let private_key =
-                RsaPrivateKey::new(&mut rand::thread_rng(), 2048).expect("generate RSA key");
-            let (jwks, _, _) = generate_test_jwks("test-kid", &private_key);
-
-            let claims = OidcClaims {
-                sub: "oidc-user-42".to_string(),
-                iss: "https://idp.test.example.com".to_string(),
-                aud: "test-client-id".to_string(),
-                exp: (chrono::Utc::now() - chrono::Duration::hours(1)).timestamp() as usize,
-            };
-
-            let token = encode_test_jwt(&private_key, &claims, "test-kid");
-
-            assert!(
-                crate::oidc::verify_id_token_with_jwks(&token, &jwks)
-                    .await
-                    .is_err(),
-                "expired token should be rejected"
-            );
-        });
+        assert!(
+            verify_id_token_with_jwks(
+                EXPIRED_TOKEN,
+                &test_jwks(),
+                "https://idp.test.example.com",
+                "test-client-id",
+            )
+            .is_err()
+        );
     }
 
-    async fn verify_id_token_with_jwks(
-        id_token: &str,
-        jwks_override: &Value,
-    ) -> Result<OidcClaims, AppError> {
-        let header =
-            decode_jwt_header(id_token).map_err(|_| AppError::Unauthorized)?;
-        let kid = header.get("kid").and_then(|v| v.as_str()).ok_or(AppError::Unauthorized)?;
-        let (n_hex, e_hex) = extract_rsa_components(jwks_override, kid)?;
-        let public_key = build_rsa_public_key(&n_hex, &e_hex).map_err(|_| AppError::Internal)?;
+    #[test]
+    fn test_oidc_verify_id_token_tampered_signature_rejected() {
+        let mut tampered = VALID_TOKEN.to_string();
+        tampered.pop();
+        tampered.push('A');
 
-        let signing_input = signing_input(id_token);
-        let signature = base64url_decode(
-            id_token.split('.').nth(2).ok_or(AppError::Unauthorized)?,
-        )
-        .map_err(|_| AppError::Unauthorized)?;
-
-        let message_hash = Sha256::digest(signing_input);
-        public_key
-            .verify(Pkcs1v15Sign::new::<Sha256>(), &message_hash, &signature)
-            .map_err(|_| AppError::Unauthorized)?;
-
-        let payload = base64url_decode(
-            id_token.split('.').nth(1).ok_or(AppError::Unauthorized)?,
-        )
-        .map_err(|_| AppError::Unauthorized)?;
-        let claims: OidcClaims =
-            serde_json::from_slice(&payload).map_err(|_| AppError::Unauthorized)?;
-
-        let issuer = std::env::var("OIDC_ISSUER").unwrap_or_default();
-        let client_id = std::env::var("OIDC_CLIENT_ID").unwrap_or_default();
-
-        if claims.iss != issuer || claims.aud != client_id {
-            return Err(AppError::Unauthorized);
-        }
-
-        let now = chrono::Utc::now().timestamp() as usize;
-        if claims.exp <= now {
-            return Err(AppError::Unauthorized);
-        }
-
-        Ok(claims)
+        assert!(
+            verify_id_token_with_jwks(
+                &tampered,
+                &test_jwks(),
+                "https://idp.test.example.com",
+                "test-client-id",
+            )
+            .is_err()
+        );
     }
 
     #[tokio::test]
@@ -595,7 +381,9 @@ mod tests {
         use shared::testing::is_db_available;
 
         if !is_db_available().await {
-            eprintln!("skipping test_oidc_get_or_create_person_inserts: DATABASE_URL not reachable");
+            eprintln!(
+                "skipping test_oidc_get_or_create_person_inserts: DATABASE_URL not reachable"
+            );
             return;
         }
 
@@ -630,7 +418,9 @@ mod tests {
         use shared::testing::is_db_available;
 
         if !is_db_available().await {
-            eprintln!("skipping test_oidc_get_or_create_person_existing: DATABASE_URL not reachable");
+            eprintln!(
+                "skipping test_oidc_get_or_create_person_existing: DATABASE_URL not reachable"
+            );
             return;
         }
 
@@ -645,7 +435,12 @@ mod tests {
                     "INSERT INTO auth_person (id, unique_id, name, password_hash) \
                      VALUES ($1, $2, $3, $4) \
                      ON CONFLICT (unique_id) DO UPDATE SET name = EXCLUDED.name",
-                    &[&"person-oidc-existing", &unique_id, &"Pre-existing OIDC User", &"{bcrypt}$2b$12$dummy"],
+                    &[
+                        &"person-oidc-existing",
+                        &unique_id,
+                        &"Pre-existing OIDC User",
+                        &"{bcrypt}$2b$12$dummy",
+                    ],
                 )
                 .await;
         }
@@ -662,32 +457,5 @@ mod tests {
             result.get("name").and_then(|v| v.as_str()),
             Some("Pre-existing OIDC User")
         );
-    }
-
-    struct EnvGuard {
-        vars: Vec<(&'static str, Option<String>)>,
-    }
-
-    impl EnvGuard {
-        fn new() -> Self {
-            Self { vars: Vec::new() }
-        }
-        fn set(mut self, key: &'static str, value: impl Into<String>) -> Self {
-            let prev = std::env::var(key).ok();
-            self.vars.push((key, prev));
-            std::env::set_var(key, value.into());
-            self
-        }
-    }
-
-    impl Drop for EnvGuard {
-        fn drop(&mut self) {
-            for (key, prev) in self.vars.drain(..).rev() {
-                match prev {
-                    Some(v) => std::env::set_var(key, v),
-                    None => std::env::remove_var(key),
-                }
-            }
-        }
     }
 }

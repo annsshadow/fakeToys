@@ -4,6 +4,7 @@ use axum::{
     routing::get,
     Json, Router,
 };
+use axum::response::{IntoResponse, Response};
 use chrono::{DateTime, Duration, Utc};
 use serde_json::{json, Value};
 use shared::error::AppError;
@@ -19,7 +20,7 @@ use uuid::Uuid;
 //
 // 流程：GET /jaxrs/authentication/bind 生成二维码内容（meta）→ 已登录用户
 // 扫码确认（POST /jaxrs/authentication/bind/meta/{meta}，需携带会话令牌）→
-// 客户端轮询 GET /jaxrs/authentication/bind/meta/{meta}，确认后返回会话 token。
+// 客户端轮询 GET /jaxrs/authentication/bind/meta/{meta}，确认后通过 HttpOnly Cookie 建立会话。
 //
 // 安全：仅在已确认扫码授权后签发会话（meta 一次性，5 分钟过期）。
 // 此路径豁免认证中间件（见 shared AUTH_EXEMPT_PATHS），确认端点
@@ -149,22 +150,23 @@ pub async fn bind_confirm(
 pub async fn bind_poll(
     session_manager: Extension<SessionManager>,
     Path(meta): Path<String>,
-) -> Result<Json<ActionResult<Value>>, AppError> {
+) -> Result<Response, AppError> {
     match bind_store().poll(&meta) {
         Some(person_unique) => {
             let token = Uuid::new_v4().to_string();
-            let session = session_manager
+            session_manager
                 .create_session(person_unique.clone(), token.clone())
                 .await?;
-            Ok(Json(ActionResult::success(json!({
-                "status": "confirmed",
-                "token": session.token,
-                "name": person_unique,
-                "id": session.token,
-                "tokenType": "Bearer",
-            }))))
+            Ok(crate::session_response(
+                json!({
+                    "status": "confirmed",
+                    "name": person_unique,
+                }),
+                &token,
+                &session_manager,
+            ))
         }
-        None => Ok(Json(ActionResult::success(json!({ "status": "pending" })))),
+        None => Ok(Json(ActionResult::success(json!({ "status": "pending" }))).into_response()),
     }
 }
 

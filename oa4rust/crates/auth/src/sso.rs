@@ -1,5 +1,6 @@
 use axum::{
     extract::{Extension, Path},
+    response::{IntoResponse, Response},
     Json,
 };
 use base64::Engine;
@@ -42,7 +43,6 @@ pub struct SsoEncryptRequest {
 
 #[derive(Debug, Serialize)]
 pub struct SsoLoginResponse {
-    pub token: String,
     pub person: SsoPersonInfo,
 }
 
@@ -57,9 +57,9 @@ pub async fn sso_post_login(
     pool: Extension<Pool>,
     session_manager: Extension<SessionManager>,
     Json(req): Json<SsoLoginRequest>,
-) -> Result<Json<ActionResult<SsoLoginResponse>>, AppError> {
+) -> Result<Response, AppError> {
     if req.client.is_empty() || req.token.is_empty() {
-        return Ok(Json(ActionResult::error("client and token are required")));
+        return Ok(Json(ActionResult::<SsoLoginResponse>::error("client and token are required")).into_response());
     }
     let key = lookup_sso_key(&pool, &req.client).await?;
     let decrypted = decrypt_sso_token(&req.token, &key)?;
@@ -76,9 +76,9 @@ pub async fn sso_get_login(
     pool: Extension<Pool>,
     session_manager: Extension<SessionManager>,
     Path((client, token)): Path<(String, String)>,
-) -> Result<Json<ActionResult<SsoLoginResponse>>, AppError> {
+) -> Result<Response, AppError> {
     if client.is_empty() || token.is_empty() {
-        return Ok(Json(ActionResult::error("client and token are required")));
+        return Ok(Json(ActionResult::<SsoLoginResponse>::error("client and token are required")).into_response());
     }
     let key = lookup_sso_key(&pool, &client).await?;
     let decrypted = decrypt_sso_token(&token, &key)?;
@@ -159,7 +159,7 @@ async fn create_sso_session(
     pool: &Pool,
     session_manager: &SessionManager,
     credential: &str,
-) -> Result<Json<ActionResult<SsoLoginResponse>>, AppError> {
+) -> Result<Response, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let row = client
         .query_one(
@@ -174,19 +174,22 @@ async fn create_sso_session(
     let person_name: String = row.get("name");
 
     if person_unique.is_empty() {
-        return Ok(Json(ActionResult::error("user not found")));
+        return Ok(Json(ActionResult::<SsoLoginResponse>::error("user not found")).into_response());
     }
 
     let token = uuid::Uuid::new_v4().to_string();
-    let session = session_manager.create_session(person_unique.clone(), token.clone()).await?;
+    let session = session_manager.create_session(person_unique.clone(), token).await?;
 
-    Ok(Json(ActionResult::success(SsoLoginResponse {
-        token: session.token,
-        person: SsoPersonInfo {
-            unique: person_unique,
-            name: person_name,
+    Ok(crate::session_response(
+        SsoLoginResponse {
+            person: SsoPersonInfo {
+                unique: person_unique,
+                name: person_name,
+            },
         },
-    })))
+        &session.token,
+        session_manager,
+    ))
 }
 
 #[cfg(test)]

@@ -2,6 +2,7 @@ use axum::{
     extract::{Extension, Json},
     http::HeaderMap,
 };
+use axum::response::{IntoResponse, Response};
 use serde::Deserialize;
 use shared::error::AppError;
 use shared::middleware::extract_token_from_headers;
@@ -12,7 +13,7 @@ use tracing;
 /// POST /jaxrs/authentication/switchuser — 用户切换（管理员）
 ///
 /// 管理员临时切换为其他用户身份操作。
-/// 原管理员 session 保持有效，返回新 token 用作目标用户身份。
+/// 原管理员 session 保持有效，新 session 通过 HttpOnly Cookie 返回。
 /// 权限：仅 admin 可调用。
 #[derive(Debug, Deserialize)]
 pub struct SwitchUserRequest {
@@ -24,13 +25,13 @@ pub async fn switch_user(
     session_manager: Extension<SessionManager>,
     headers: HeaderMap,
     Json(req): Json<SwitchUserRequest>,
-) -> Result<Json<ActionResult<serde_json::Value>>, AppError> {
+) -> Result<Response, AppError> {
     // 验证当前用户是 admin
     let token = extract_token_from_headers(&headers).ok_or(AppError::Unauthorized)?;
     let session = session_manager.validate_session(&token).await.ok_or(AppError::Unauthorized)?;
 
     if !shared::middleware::is_admin(&pool, &session.person_unique).await {
-        return Ok(Json(ActionResult::error("forbidden")));
+        return Ok(Json(ActionResult::<serde_json::Value>::error("forbidden")).into_response());
     }
 
     // 查找目标用户
@@ -77,7 +78,7 @@ pub async fn switch_user(
 
     // 为目标用户签发新 session
     let new_token = uuid::Uuid::new_v4().to_string();
-    let new_session = session_manager.create_session(target_unique.clone(), new_token.clone()).await?;
+    session_manager.create_session(target_unique.clone(), new_token.clone()).await?;
 
     tracing::info!(
         switcher = %session.person_unique,
@@ -85,21 +86,23 @@ pub async fn switch_user(
         "admin user switch"
     );
 
-    Ok(Json(ActionResult::success(serde_json::json!({
-        "token": new_session.token,
-        "tokenType": "Bearer",
-        "roleList": role_list,
-        "passwordExpired": password_expired,
-        "person": {
-            "unique": target_unique,
-            "name": target_name,
-            "mobile": target_mobile,
-            "email": target_email,
-            "icon": target_icon,
-            "job": target_job,
-            "department": target_department,
-            "unit": target_unit,
-            "position": target_position,
-        },
-    }))))
+    Ok(crate::session_response(
+        serde_json::json!({
+            "roleList": role_list,
+            "passwordExpired": password_expired,
+            "person": {
+                "unique": target_unique,
+                "name": target_name,
+                "mobile": target_mobile,
+                "email": target_email,
+                "icon": target_icon,
+                "job": target_job,
+                "department": target_department,
+                "unit": target_unit,
+                "position": target_position,
+            },
+        }),
+        &new_token,
+        &session_manager,
+    ))
 }

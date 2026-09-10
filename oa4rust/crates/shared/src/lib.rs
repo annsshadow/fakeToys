@@ -12,6 +12,7 @@
 // ──────────────────────────────────────────────────────────────────────────────
 
 pub mod db;
+pub mod config;
 pub mod error;
 pub mod input_validation;
 pub mod middleware;
