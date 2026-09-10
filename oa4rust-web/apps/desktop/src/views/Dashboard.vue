@@ -126,10 +126,12 @@ const { data: procCounts } = useQuery({
       api.get('/jaxrs/processplatform/assemble/surface/work/count/completedperson'),
     ]),
 })
-const { data: msgCount } = useQuery(
-  { queryKey: ['dash', 'msg'], queryFn: () => api.get('/jaxrs/message/unread/count/im') },
-  { staleTime: 15000, refetchInterval: 30000 },
-)
+const { data: msgCount } = useQuery({
+  queryKey: ['dash', 'msg'],
+  queryFn: () => api.get('/jaxrs/message/unread/count/im'),
+  staleTime: 15000,
+  refetchInterval: 30000,
+})
 
 const stats = computed(() => [
   {

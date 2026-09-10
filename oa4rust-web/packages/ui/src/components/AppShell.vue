@@ -10,23 +10,11 @@
       </div>
 
       <nav class="sidebar-nav">
-        <div
-          v-for="item in navItems"
-          v-if="!item.disabled"
-          :key="item.path"
-          class="nav-item"
-          :class="{ active: isActive(item.path) }"
-          @click="navigate(item)"
-        >
+        <div v-for="item in enabledNavItems" :key="item.path" class="nav-item" :class="{ active: isActive(item.path) }" @click="navigate(item)">
           <span class="nav-icon">{{ item.icon }}</span>
           <span v-show="!sidebarCollapsed" class="nav-label">{{ item.label }}</span>
         </div>
-        <div
-          v-for="item in navItems"
-          v-if="item.disabled"
-          :key="item.label"
-          class="nav-section-label"
-        >
+        <div v-for="item in sectionNavItems" :key="item.label" class="nav-section-label">
           <span class="nav-icon">{{ item.icon }}</span>
           <span v-show="!sidebarCollapsed" class="nav-label">{{ item.label }}</span>
         </div>
@@ -147,7 +135,8 @@ const currentTitle = computed(() => {
 const user = computed(() => session.state.user ?? null)
 
 // PC 端导航项
-const navItems = [
+type NavItem = { path?: string; label: string; icon: string; disabled?: boolean }
+const navItems: NavItem[] = [
   { path: '/app/dashboard', label: '工作台', icon: '🏠' },
   { path: '/app/org', label: '组织', icon: '🏢' },
   { path: '/app/process', label: '工作流', icon: '📋' },
@@ -169,9 +158,11 @@ const navItems = [
   { path: '/app/view', label: '视图管理', icon: '👁️' },
   { path: '/app/fileinfo', label: '文件信息', icon: '📎' },
 ]
+const enabledNavItems = navItems.filter((i) => !i.disabled)
+const sectionNavItems = navItems.filter((i) => i.disabled)
 
 // 移动端导航项（精简）
-const mobileNavItems = [
+const mobileNavItems: NavItem[] = [
   { path: '/app/dashboard', label: '首页', icon: '🏠' },
   { path: '/app/process', label: '待办', icon: '📋' },
   { path: '/app/im', label: '消息', icon: '💬' },
@@ -182,8 +173,8 @@ function isActive(path: string): boolean {
   return route.path.startsWith(path)
 }
 
-function navigate(item: { path: string; label: string; icon: string }): void {
-  router.push(item.path)
+function navigate(item: NavItem): void {
+  if (item.path) router.push(item.path)
   showUserMenu.value = false
 }
 
