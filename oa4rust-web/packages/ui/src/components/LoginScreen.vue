@@ -126,26 +126,26 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, onBeforeUnmount } from 'vue';
-import { useRouter, useRoute } from 'vue-router';
-import { useSession } from '@oa4rust/sdk';
+import { useSession } from '@oa4rust/sdk'
+import { onBeforeUnmount, onMounted, ref } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 
-const router = useRouter();
-const route = useRoute();
-const session = useSession();
+const router = useRouter()
+const route = useRoute()
+const session = useSession()
 
-const username = ref('');
-const password = ref('');
-const captchaAnswer = ref('');
-const showPassword = ref(false);
-const loading = ref(false);
-const error = ref('');
-const systemUninitialized = ref(false);
-const showCaptcha = ref(false);
-const captchaUrl = ref('');
+const username = ref('')
+const password = ref('')
+const captchaAnswer = ref('')
+const showPassword = ref(false)
+const loading = ref(false)
+const error = ref('')
+const systemUninitialized = ref(false)
+const showCaptcha = ref(false)
+const captchaUrl = ref('')
 
-const canvasRef = ref<HTMLCanvasElement>();
-let animFrame: number;
+const canvasRef = ref<HTMLCanvasElement>()
+let animFrame: number
 
 // OAuth 提供商
 const oauthProviders = [
@@ -153,82 +153,73 @@ const oauthProviders = [
   { id: 'dingding', name: '钉钉', icon: '📌', redirect: '/oauth/callback/dingding' },
   { id: 'mpweixin', name: '微信', icon: '💚', redirect: '/oauth/callback/mpweixin' },
   { id: 'sso', name: '统一认证', icon: '🔐', redirect: '/sso' },
-];
+]
 
-const captchaId = ref('');
+const captchaId = ref('')
 
 async function refreshCaptcha(): Promise<void> {
   try {
-    const resp = await fetch('/jaxrs/authentication/captcha');
-    const data = await resp.json() as { data: { image: string; id: string } };
-    captchaUrl.value = `data:image/png;base64,${data.data.image}`;
-    captchaId.value = data.data.id;
+    const resp = await fetch('/jaxrs/authentication/captcha', { credentials: 'include' })
+    const data = (await resp.json()) as { data: { image: string; id: string } }
+    captchaUrl.value = `data:image/png;base64,${data.data.image}`
+    captchaId.value = data.data.id
   } catch {
-    showCaptcha.value = false;
+    showCaptcha.value = false
   }
 }
 
 async function handleLogin(): Promise<void> {
-  if (loading.value || !username.value || !password.value) return;
+  if (loading.value || !username.value || !password.value) return
 
-  loading.value = true;
-  error.value = '';
+  loading.value = true
+  error.value = ''
 
   try {
-    const params: Record<string, string> = {
-      username: username.value,
-      password: password.value,
-    };
-    if (showCaptcha.value && captchaId.value) {
-      params.captchaId = captchaId.value;
-      params.captchaAnswer = captchaAnswer.value;
-    }
-
-    await session.login(username.value, password.value, captchaId.value, captchaAnswer.value);
+    await session.login(username.value, password.value, captchaId.value, captchaAnswer.value)
 
     // 登录后跳转
-    const redirect = (route.query.redirect as string) || '/app/dashboard';
-    router.replace(redirect);
+    const redirect = (route.query.redirect as string) || '/app/dashboard'
+    router.replace(redirect)
   } catch (e: unknown) {
-    const msg = e instanceof Error ? e.message : '登录失败，请重试';
-    error.value = msg;
+    const msg = e instanceof Error ? e.message : '登录失败，请重试'
+    error.value = msg
 
     // 如果是 401 可能需要验证码
     if (msg.includes('captcha') || msg.includes('验证码')) {
-      showCaptcha.value = true;
-      refreshCaptcha();
+      showCaptcha.value = true
+      refreshCaptcha()
     }
   } finally {
-    loading.value = false;
+    loading.value = false
   }
 }
 
 function handleOauth(provider: { id: string; name: string; icon: string; redirect: string }): void {
-  window.location.href = `/jaxrs/authentication/oauth/login/${provider.id}/code/redirect`;
+  window.location.href = `/jaxrs/authentication/oauth/login/${provider.id}/code/redirect`
 }
 
 // 粒子背景动画
 function initParticles(): void {
-  const canvas = canvasRef.value;
-  if (!canvas) return;
+  const canvas = canvasRef.value
+  if (!canvas) return
 
-  const ctx = canvas.getContext('2d');
-  if (!ctx) return;
+  const ctx = canvas.getContext('2d')
+  if (!ctx) return
 
-  canvas.width = window.innerWidth;
-  canvas.height = window.innerHeight;
+  canvas.width = window.innerWidth
+  canvas.height = window.innerHeight
 
   interface Particle {
-    x: number;
-    y: number;
-    vx: number;
-    vy: number;
-    size: number;
-    opacity: number;
+    x: number
+    y: number
+    vx: number
+    vy: number
+    size: number
+    opacity: number
   }
 
-  const particles: Particle[] = [];
-  const count = Math.min(80, Math.floor(canvas.width * canvas.height / 15000));
+  const particles: Particle[] = []
+  const count = Math.min(80, Math.floor((canvas.width * canvas.height) / 15000))
 
   for (let i = 0; i < count; i++) {
     particles.push({
@@ -238,68 +229,68 @@ function initParticles(): void {
       vy: (Math.random() - 0.5) * 0.5,
       size: Math.random() * 2 + 1,
       opacity: Math.random() * 0.5 + 0.2,
-    });
+    })
   }
 
   function animate(): void {
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.clearRect(0, 0, canvas.width, canvas.height)
 
     // 绘制粒子
     for (const p of particles) {
-      p.x += p.vx;
-      p.y += p.vy;
+      p.x += p.vx
+      p.y += p.vy
 
-      if (p.x < 0 || p.x > canvas.width) p.vx *= -1;
-      if (p.y < 0 || p.y > canvas.height) p.vy *= -1;
+      if (p.x < 0 || p.x > canvas.width) p.vx *= -1
+      if (p.y < 0 || p.y > canvas.height) p.vy *= -1
 
-      ctx.beginPath();
-      ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
-      ctx.fillStyle = `rgba(0, 212, 255, ${p.opacity})`;
-      ctx.fill();
+      ctx.beginPath()
+      ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2)
+      ctx.fillStyle = `rgba(0, 212, 255, ${p.opacity})`
+      ctx.fill()
     }
 
     // 绘制连线
     for (let i = 0; i < particles.length; i++) {
       for (let j = i + 1; j < particles.length; j++) {
-        const dx = particles[i].x - particles[j].x;
-        const dy = particles[i].y - particles[j].y;
-        const dist = Math.sqrt(dx * dx + dy * dy);
+        const dx = particles[i].x - particles[j].x
+        const dy = particles[i].y - particles[j].y
+        const dist = Math.sqrt(dx * dx + dy * dy)
 
         if (dist < 150) {
-          ctx.beginPath();
-          ctx.moveTo(particles[i].x, particles[i].y);
-          ctx.lineTo(particles[j].x, particles[j].y);
-          ctx.strokeStyle = `rgba(0, 212, 255, ${0.1 * (1 - dist / 150)})`;
-          ctx.lineWidth = 0.5;
-          ctx.stroke();
+          ctx.beginPath()
+          ctx.moveTo(particles[i].x, particles[i].y)
+          ctx.lineTo(particles[j].x, particles[j].y)
+          ctx.strokeStyle = `rgba(0, 212, 255, ${0.1 * (1 - dist / 150)})`
+          ctx.lineWidth = 0.5
+          ctx.stroke()
         }
       }
     }
 
-    animFrame = requestAnimationFrame(animate);
+    animFrame = requestAnimationFrame(animate)
   }
 
-  animate();
+  animate()
 }
 
 function cleanupParticles(): void {
-  if (animFrame) cancelAnimationFrame(animFrame);
+  if (animFrame) cancelAnimationFrame(animFrame)
 }
 
 onMounted(() => {
-  initParticles();
+  initParticles()
   window.addEventListener('resize', () => {
-    const canvas = canvasRef.value;
+    const canvas = canvasRef.value
     if (canvas) {
-      canvas.width = window.innerWidth;
-      canvas.height = window.innerHeight;
+      canvas.width = window.innerWidth
+      canvas.height = window.innerHeight
     }
-  });
-});
+  })
+})
 
 onBeforeUnmount(() => {
-  cleanupParticles();
-});
+  cleanupParticles()
+})
 </script>
 
 <style scoped>

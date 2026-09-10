@@ -11,45 +11,38 @@
   </div>
 </template>
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue';
-import { useRoute, useRouter } from 'vue-router';
-import { api } from '@oa4rust/sdk';
+import { useSession } from '@oa4rust/sdk'
+import { onMounted, ref } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 
-const route = useRoute();
-const router = useRouter();
-const status = ref<'loading' | 'success' | 'error'>('loading');
-const detail = ref('');
-
-const statusText = computed(() => {
-  if (status.value === 'loading') return '正在处理 SSO 登录...';
-  if (status.value === 'success') return '登录成功，正在跳转...';
-  return '登录失败，请重试';
-});
-const statusClass = computed(() => status.value);
+const route = useRoute()
+const router = useRouter()
+const session = useSession()
+const status = ref<'loading' | 'success' | 'error'>('loading')
+const detail = ref('')
 
 onMounted(async () => {
-  const platform = route.params.platform as string;
-  const token = route.query.token as string;
-  const code = route.query.code as string;
+  const platform = route.params.platform as string
+  const code = route.query.code as string
   try {
-    if (token) {
-      await api.post('/jaxrs/authentication/sso', { token });
-      status.value = 'success';
-      detail.value = `SSO 平台: ${platform}`;
-      setTimeout(() => router.replace('/app/dashboard'), 1000);
-    } else if (code) {
-      await api.post('/jaxrs/authentication/sso', { platform, code });
-      status.value = 'success';
-      detail.value = `${platform} OAuth 授权成功`;
-      setTimeout(() => router.replace('/app/dashboard'), 1000);
-    } else {
-      throw new Error('缺少 token 或 code 参数');
-    }
-  } catch (e: any) {
-    status.value = 'error';
-    detail.value = e?.message ?? '认证失败';
+    if (!code) throw new Error('缺少 code 参数')
+    const response = await fetch('/jaxrs/authentication/sso', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({ platform, code }),
+    })
+    if (!response.ok) throw new Error(`认证失败 (${response.status})`)
+    await session.init(true)
+    if (!session.isAuthenticated) throw new Error('SSO 登录未建立会话')
+    status.value = 'success'
+    detail.value = `${platform} OAuth 授权成功`
+    setTimeout(() => router.replace('/app/dashboard'), 1000)
+  } catch (e: unknown) {
+    status.value = 'error'
+    detail.value = e instanceof Error ? e.message : '认证失败'
   }
-});
+})
 </script>
 <style scoped>
 .sso-view{display:flex;align-items:center;justify-content:center;min-height:100vh;background:var(--bg-base)}
