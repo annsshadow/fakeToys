@@ -154,18 +154,6 @@ const jpush_template_list_q = useQuery({
     }
   },
 })
-const jpush_list_ref = ref<any[]>([])
-const jpush_list_q = useQuery({
-  queryKey: ['jpush_list'],
-  queryFn: async () => {
-    try {
-      const r = await api.get('/jaxrs/jpush/list')
-      return (r.data ?? []) as any[]
-    } catch {
-      return []
-    }
-  },
-})
 const jpush_assemble_control_config_ref = ref<any[]>([])
 const jpush_assemble_control_config_q = useQuery({
   queryKey: ['jpush_assemble_control_config'],
