@@ -159,143 +159,314 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
-import { toast, confirmMsg } from '../utils/toast'
-import { useQuery, useMutation, useQueryClient } from '@tanstack/vue-query'
 import { api } from '@oa4rust/sdk'
+import { useQuery, useQueryClient } from '@tanstack/vue-query'
+import { computed, onMounted, ref } from 'vue'
+import { confirmMsg, toast } from '../utils/toast'
 
-interface ConfigItem { id:string; name?:string; flag?:string; category?:string; config?:string; updateTime?:string; createTime?:string }
+interface ConfigItem {
+  id: string
+  name?: string
+  flag?: string
+  category?: string
+  config?: string
+  updateTime?: string
+  createTime?: string
+}
 
-const loading = ref(false), searchKey = ref(''), sbTab = ref('all')
-const selected = ref<ConfigItem|null>(null), config = ref('')
-const editorLang = ref('json'), editorTheme = ref('dark')
+const loading = ref(false),
+  searchKey = ref(''),
+  sbTab = ref('all')
+const selected = ref<ConfigItem | null>(null),
+  config = ref('')
+const editorLang = ref('json'),
+  editorTheme = ref('dark')
 const configLines = computed(() => config.value.split('\n').length)
-const statusText = computed(() => selected.value ? `已选择: ${selected.value.name||selected.value.flag}` : '未选择配置')
-const formattedOutput = computed(() => { try { return JSON.stringify(JSON.parse(config.value), null, 2) } catch { return config.value } })
-const showFormat = ref(false), showHistory = ref(false), showImportExport = ref(false)
-const configHistory = ref<Array<{time:string;size:number;snapshot:string;isAuto:boolean}>>([])
-const importData = ref(''), importMsg = ref<{ok:boolean;txt:string}|null>(null)
+const statusText = computed(() =>
+  selected.value ? `已选择: ${selected.value.name || selected.value.flag}` : '未选择配置',
+)
+const formattedOutput = computed(() => {
+  try {
+    return JSON.stringify(JSON.parse(config.value), null, 2)
+  } catch {
+    return config.value
+  }
+})
+const showFormat = ref(false),
+  showHistory = ref(false),
+  showImportExport = ref(false)
+const configHistory = ref<Array<{ time: string; size: number; snapshot: string; isAuto: boolean }>>([])
+const importData = ref(''),
+  importMsg = ref<{ ok: boolean; txt: string } | null>(null)
 
 const qc = useQueryClient()
-const { data } = useQuery({ queryKey: ['config','list'], queryFn: async () => { loading.value=true; try { const r:any = await api.get('/jaxrs/config/list'); return r?.data ?? [] } finally { loading.value=false } } })
+const { data } = useQuery({
+  queryKey: ['config', 'list'],
+  queryFn: async () => {
+    loading.value = true
+    try {
+      const r: any = await api.get('/jaxrs/config/list')
+      return r?.data ?? []
+    } finally {
+      loading.value = false
+    }
+  },
+})
 const items = ref<ConfigItem[]>(data.value ?? [])
 
 const filteredItems = computed(() => {
   let list = items.value
-  if (searchKey.value) { const q = searchKey.value.toLowerCase(); list = list.filter(i => (i.name||i.flag||'').toLowerCase().includes(q)) }
-  if (sbTab.value !== 'all') list = list.filter(i => (i.category||'').toLowerCase() === sbTab.value)
+  if (searchKey.value) {
+    const q = searchKey.value.toLowerCase()
+    list = list.filter((i) => (i.name || i.flag || '').toLowerCase().includes(q))
+  }
+  if (sbTab.value !== 'all') list = list.filter((i) => (i.category || '').toLowerCase() === sbTab.value)
   return list
 })
 
 function itemIcon(item: ConfigItem) {
-  const cat = (item.category||'').toLowerCase()
+  const cat = (item.category || '').toLowerCase()
   if (cat === 'system') return '⚙'
   if (cat === 'business') return '📋'
   return '🔧'
 }
 
-function selectItem(item: ConfigItem) { selected.value = item; config.value = item.config ? '\n' + item.config : '{}' }
-function createNew() {
-  const n: ConfigItem = { id: 'c'+Date.now(), name: '未命名', flag: '', config: '{}', category: 'business' }
-  items.value = [n, ...items.value]; selectItem(n)
+function selectItem(item: ConfigItem) {
+  selected.value = item
+  config.value = item.config ? '\n' + item.config : '{}'
 }
-function editItem(item: ConfigItem) { selectItem(item) }
+function createNew() {
+  const n: ConfigItem = { id: 'c' + Date.now(), name: '未命名', flag: '', config: '{}', category: 'business' }
+  items.value = [n, ...items.value]
+  selectItem(n)
+}
+function editItem(item: ConfigItem) {
+  selectItem(item)
+}
 async function deleteItem(item: ConfigItem) {
-  if (!confirmMsg(`删除配置「${item.name||item.flag}」？`)) return
-  try { await api.delete('/jaxrs/config/delete/'+item.id) } catch {}
-  items.value = items.value.filter(i => i.id !== item.id)
+  if (!confirmMsg(`删除配置「${item.name || item.flag}」？`)) return
+  try {
+    await api.delete('/jaxrs/config/delete/' + item.id)
+  } catch {}
+  items.value = items.value.filter((i) => i.id !== item.id)
   if (selected.value?.id === item.id) selected.value = null
 }
 
 async function save() {
   if (!selected.value) return
   try {
-    await api.put('/jaxrs/config/update/'+selected.value.id, { ...selected.value, config: config.value })
-    qc.invalidateQueries({ queryKey: ['config','list'] })
+    await api.put('/jaxrs/config/update/' + selected.value.id, { ...selected.value, config: config.value })
+    qc.invalidateQueries({ queryKey: ['config', 'list'] })
     addHistory(true)
-  } catch (e: any) { toast.error('保存失败: : ' + (e?.message??'')) }
+  } catch (e: any) {
+    toast.error('保存失败: : ' + (e?.message ?? ''))
+  }
 }
-async function preview() { toast.info('配置预览: ' + config.value) }
-function clearConfig() { if(confirmMsg('清空配置？')) config.value = '{}' }
-function formatConfig() { try { config.value = JSON.stringify(JSON.parse(config.value), null, 2) } catch { toast.info('JSON格式错误') } }
-function validateConfig() { try { JSON.parse(config.value); toast.info('JSON格式有效') } catch (e: any) { toast.error('JSON格式错误: ' + e.message) } }
-function applyFormat() { config.value = formattedOutput.value; showFormat.value = false }
-function copyConfig() { navigator.clipboard.writeText(config.value); toast.info('已复制') }
+async function preview() {
+  toast.info('配置预览: ' + config.value)
+}
+function clearConfig() {
+  if (confirmMsg('清空配置？')) config.value = '{}'
+}
+function formatConfig() {
+  try {
+    config.value = JSON.stringify(JSON.parse(config.value), null, 2)
+  } catch {
+    toast.info('JSON格式错误')
+  }
+}
+function validateConfig() {
+  try {
+    JSON.parse(config.value)
+    toast.info('JSON格式有效')
+  } catch (e: any) {
+    toast.error('JSON格式错误: ' + e.message)
+  }
+}
+function applyFormat() {
+  config.value = formattedOutput.value
+  showFormat.value = false
+}
+function copyConfig() {
+  navigator.clipboard.writeText(config.value)
+  toast.info('已复制')
+}
 function downloadConfig() {
   const blob = new Blob([config.value], { type: 'application/json' })
-  const a = document.createElement('a'); a.href = URL.createObjectURL(blob)
-  a.download = (selected.value?.flag || 'config') + '.json'; a.click()
+  const a = document.createElement('a')
+  a.href = URL.createObjectURL(blob)
+  a.download = (selected.value?.flag || 'config') + '.json'
+  a.click()
 }
 function exportConfigs() {
-  const data = items.value.map(i => ({ name: i.name, flag: i.flag, category: i.category, config: i.config }))
+  const data = items.value.map((i) => ({ name: i.name, flag: i.flag, category: i.category, config: i.config }))
   const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' })
-  const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'configs_'+new Date().toISOString().slice(0,10)+'.json'; a.click()
+  const a = document.createElement('a')
+  a.href = URL.createObjectURL(blob)
+  a.download = 'configs_' + new Date().toISOString().slice(0, 10) + '.json'
+  a.click()
 }
 function exportSelected() {
   if (!selected.value) return
-  const blob = new Blob([JSON.stringify({ name: selected.value.name, flag: selected.value.flag, config: config.value }, null, 2)], { type: 'application/json' })
-  const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = (selected.value.flag||'config')+'.json'; a.click()
+  const blob = new Blob(
+    [JSON.stringify({ name: selected.value.name, flag: selected.value.flag, config: config.value }, null, 2)],
+    { type: 'application/json' },
+  )
+  const a = document.createElement('a')
+  a.href = URL.createObjectURL(blob)
+  a.download = (selected.value.flag || 'config') + '.json'
+  a.click()
 }
 function importConfigs() {
   try {
     const data = JSON.parse(importData.value)
     if (Array.isArray(data)) {
-      for (const item of data) { try { api.post('/jaxrs/config/create', item) } catch {} }
-      importMsg.value = { ok: true, txt: '成功导入 '+data.length+' 项' }
-    } else { importMsg.value = { ok: false, txt: '格式错误: 期望数组' } }
-    qc.invalidateQueries({ queryKey: ['config','list'] })
-  } catch(e: any) { importMsg.value = { ok: false, txt: '导入失败: '+e.message } }
+      for (const item of data) {
+        try {
+          api.post('/jaxrs/config/create', item)
+        } catch {}
+      }
+      importMsg.value = { ok: true, txt: '成功导入 ' + data.length + ' 项' }
+    } else {
+      importMsg.value = { ok: false, txt: '格式错误: 期望数组' }
+    }
+    qc.invalidateQueries({ queryKey: ['config', 'list'] })
+  } catch (e: any) {
+    importMsg.value = { ok: false, txt: '导入失败: ' + e.message }
+  }
 }
 function addHistory(isAuto: boolean) {
-  configHistory.value.unshift({ time: new Date().toLocaleTimeString('zh-CN'), size: config.value.length, snapshot: config.value.substring(0, 100), isAuto })
+  configHistory.value.unshift({
+    time: new Date().toLocaleTimeString('zh-CN'),
+    size: config.value.length,
+    snapshot: config.value.substring(0, 100),
+    isAuto,
+  })
 }
 function restoreHistory(idx: number) {
   const h = configHistory.value[idx]
-  if (h) { try { config.value = JSON.stringify(JSON.parse(h.snapshot), null, 2) } catch { config.value = h.snapshot } }
+  if (h) {
+    try {
+      config.value = JSON.stringify(JSON.parse(h.snapshot), null, 2)
+    } catch {
+      config.value = h.snapshot
+    }
+  }
 }
-function onConfigChange() { /* auto-save debounce could go here */ }
-function fmtTime(t?: string) { if (!t) return ''; try { return new Date(t).toLocaleString('zh-CN',{month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'}) } catch { return String(t) } }
-onMounted(() => { qc.invalidateQueries({ queryKey: ['config','list'] }) })
+function onConfigChange() {
+  /* auto-save debounce could go here */
+}
+function fmtTime(t?: string) {
+  if (!t) return ''
+  try {
+    return new Date(t).toLocaleString('zh-CN', { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' })
+  } catch {
+    return String(t)
+  }
+}
+onMounted(() => {
+  qc.invalidateQueries({ queryKey: ['config', 'list'] })
+})
 
-const api_input_pr_78_data = ref<any[]>([]);
-const { data: api_input_pr_78_q } = useQuery({queryKey: ['api_input_pr_78', '/jaxrs/input/prepare/create'], queryFn: async () => { try { const r = await api.get("/jaxrs/input/prepare/create"); return (r.data ?? []) as any[]; } catch { return []; } }});
+const api_input_pr_78_data = ref<any[]>([])
+const { data: api_input_pr_78_q } = useQuery({
+  queryKey: ['api_input_pr_78', '/jaxrs/input/prepare/create'],
+  queryFn: async () => {
+    try {
+      const r = await api.get('/jaxrs/input/prepare/create')
+      return (r.data ?? []) as any[]
+    } catch {
+      return []
+    }
+  },
+})
 
-const input_prepare_cover_ref = ref<any[]>([]);
+const input_prepare_cover_ref = ref<any[]>([])
 const input_prepare_cover_q = useQuery({
   queryKey: ['input_prepare_cover'],
   queryFn: async () => {
-    try { const r = await api.get("/jaxrs/input/prepare/cover"); return (r.data ?? []) as any[]; }
-    catch { return []; }
+    try {
+      const r = await api.get('/jaxrs/input/prepare/cover')
+      return (r.data ?? []) as any[]
+    } catch {
+      return []
+    }
   },
-  
-});
-const api_input_compare_data = ref<any[]>([]);
-const { data: api_input_compare_q } = useQuery({queryKey: ['api_input_compare', '/jaxrs/input/compare'], queryFn: async () => { try { const r = await api.get("/jaxrs/input/compare"); return (r.data ?? []) as any[]; } catch { return []; } }});
-const input_cover_ref = ref<any[]>([]);
+})
+const api_input_compare_data = ref<any[]>([])
+const { data: api_input_compare_q } = useQuery({
+  queryKey: ['api_input_compare', '/jaxrs/input/compare'],
+  queryFn: async () => {
+    try {
+      const r = await api.get('/jaxrs/input/compare')
+      return (r.data ?? []) as any[]
+    } catch {
+      return []
+    }
+  },
+})
+const input_cover_ref = ref<any[]>([])
 const input_cover_q = useQuery({
   queryKey: ['input_cover'],
   queryFn: async () => {
-    try { const r = await api.get("/jaxrs/input/cover"); return (r.data ?? []) as any[]; }
-    catch { return []; }
+    try {
+      const r = await api.get('/jaxrs/input/cover')
+      return (r.data ?? []) as any[]
+    } catch {
+      return []
+    }
   },
-  
-});
-const api_input_create_data = ref<any[]>([]);
-const { data: api_input_create_q } = useQuery({queryKey: ['api_input_create', '/jaxrs/input/create'], queryFn: async () => { try { const r = await api.get("/jaxrs/input/create"); return (r.data ?? []) as any[]; } catch { return []; } }});
+})
+const api_input_create_data = ref<any[]>([])
+const { data: api_input_create_q } = useQuery({
+  queryKey: ['api_input_create', '/jaxrs/input/create'],
+  queryFn: async () => {
+    try {
+      const r = await api.get('/jaxrs/input/create')
+      return (r.data ?? []) as any[]
+    } catch {
+      return []
+    }
+  },
+})
 
+const api_config_data = ref<any[]>([])
+const { data: api_config_q } = useQuery({
+  queryKey: ['api_config', '/jaxrs/config'],
+  queryFn: async () => {
+    try {
+      const r = await api.get('/jaxrs/config')
+      return (r.data ?? []) as any[]
+    } catch {
+      return []
+    }
+  },
+})
+const api_config_s_497_data = ref<any[]>([])
+const { data: api_config_s_497_q } = useQuery({
+  queryKey: ['api_config_s_497', '/jaxrs/config/system/config'],
+  queryFn: async () => {
+    try {
+      const r = await api.get('/jaxrs/config/system/config')
+      return (r.data ?? []) as any[]
+    } catch {
+      return []
+    }
+  },
+})
 
-
-
-
-const api_config_data = ref<any[]>([]);
-const { data: api_config_q } = useQuery({queryKey: ['api_config', '/jaxrs/config'], queryFn: async () => { try { const r = await api.get("/jaxrs/config"); return (r.data ?? []) as any[]; } catch { return []; } }});
-const api_config_s_497_data = ref<any[]>([]);
-const { data: api_config_s_497_q } = useQuery({queryKey: ['api_config_s_497', '/jaxrs/config/system/config'], queryFn: async () => { try { const r = await api.get("/jaxrs/config/system/config"); return (r.data ?? []) as any[]; } catch { return []; } }});
-
-const api_config_i_771_data = ref<any[]>([]);
-const { data: api_config_i_771_q } = useQuery({queryKey: ['api_config_i_771', '/jaxrs/config/is/file/manager'], queryFn: async () => { try { const r = await api.get("/jaxrs/config/is/file/manager"); return (r.data ?? []) as any[]; } catch { return []; } }});
-
-
+const api_config_i_771_data = ref<any[]>([])
+const { data: api_config_i_771_q } = useQuery({
+  queryKey: ['api_config_i_771', '/jaxrs/config/is/file/manager'],
+  queryFn: async () => {
+    try {
+      const r = await api.get('/jaxrs/config/is/file/manager')
+      return (r.data ?? []) as any[]
+    } catch {
+      return []
+    }
+  },
+})
 </script>
 
 <style scoped>

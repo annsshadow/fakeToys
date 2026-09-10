@@ -94,9 +94,9 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, nextTick } from 'vue'
-import { toast, confirmMsg } from '../utils/toast'
 import { api } from '@oa4rust/sdk'
+import { nextTick, ref } from 'vue'
+import { confirmMsg, toast } from '../utils/toast'
 
 type Message = { role: 'user' | 'assistant'; content: string; timestamp?: string }
 type ChatItem = { id: string; title?: string; name?: string; updatedAt?: string }
@@ -114,7 +114,9 @@ async function loadConversations() {
   try {
     const r = await api.get('/jaxrs/ai_assemble_control/chat/list/paging/1/20')
     conversations.value = r.data?.list ?? r.data ?? []
-  } catch { conversations.value = [] }
+  } catch {
+    conversations.value = []
+  }
 }
 
 async function selectChat(chat: ChatItem) {
@@ -127,7 +129,9 @@ async function selectChat(chat: ChatItem) {
       role: m.type === 'user' ? 'user' : 'assistant',
       content: m.content ?? m.text ?? '',
     }))
-  } catch { messages.value = [] }
+  } catch {
+    messages.value = []
+  }
   await nextTick(() => scrollToBottom())
 }
 
@@ -137,16 +141,23 @@ async function createNewChat() {
     const newChat = r.data ?? { id: 'new', title: '新对话' }
     conversations.value.unshift(newChat as ChatItem)
     selectChat(newChat as ChatItem)
-  } catch { toast.info('创建对话失败') }
+  } catch {
+    toast.info('创建对话失败')
+  }
 }
 
 async function deleteChat(chat: ChatItem) {
   if (!confirmMsg(`删除对话「${chat.title || chat.id}」？`)) return
   try {
     await api.delete(`/jaxrs/ai_assemble_control/chat/delete/${chat.id}`)
-    if (currentChat.value?.id === chat.id) { currentChat.value = null; messages.value = [] }
-    conversations.value = conversations.value.filter(c => c.id !== chat.id)
-  } catch { toast.info('删除失败') }
+    if (currentChat.value?.id === chat.id) {
+      currentChat.value = null
+      messages.value = []
+    }
+    conversations.value = conversations.value.filter((c) => c.id !== chat.id)
+  } catch {
+    toast.info('删除失败')
+  }
 }
 
 async function sendMessage() {
@@ -175,521 +186,1204 @@ function scrollToBottom() {
 }
 
 function formatDate(d?: string) {
-  return d ? new Date(d).toLocaleString('zh-CN', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : ''
+  return d
+    ? new Date(d).toLocaleString('zh-CN', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })
+    : ''
 }
 
 loadConversations()
 
-const api_list_ena_175_data = ref<any[]>([]);
-const { data: api_list_ena_175_q } = useQuery({queryKey: ['api_list_ena_175', '/jaxrs/ai/config/list/enable/model'], queryFn: async () => { try { const r = await api.get("/jaxrs/ai/config/list/enable/model"); return (r.data ?? []) as any[]; } catch { return []; } }});
+const api_list_ena_175_data = ref<any[]>([])
+const { data: api_list_ena_175_q } = useQuery({
+  queryKey: ['api_list_ena_175', '/jaxrs/ai/config/list/enable/model'],
+  queryFn: async () => {
+    try {
+      const r = await api.get('/jaxrs/ai/config/list/enable/model')
+      return (r.data ?? []) as any[]
+    } catch {
+      return []
+    }
+  },
+})
 
-const api_get_usag_355_data = ref<any[]>([]);
-const { data: api_get_usag_355_q } = useQuery({queryKey: ['api_get_usag_355', '/jaxrs/ai_assemble_control/get/usage/stats'], queryFn: async () => { try { const r = await api.get("/jaxrs/ai_assemble_control/get/usage/stats"); return (r.data ?? []) as any[]; } catch { return []; } }});
+const api_get_usag_355_data = ref<any[]>([])
+const { data: api_get_usag_355_q } = useQuery({
+  queryKey: ['api_get_usag_355', '/jaxrs/ai_assemble_control/get/usage/stats'],
+  queryFn: async () => {
+    try {
+      const r = await api.get('/jaxrs/ai_assemble_control/get/usage/stats')
+      return (r.data ?? []) as any[]
+    } catch {
+      return []
+    }
+  },
+})
 
-const api_delete_m_589_data = ref<any[]>([]);
-const { data: api_delete_m_589_q } = useQuery({queryKey: ['api_delete_m_589', '/jaxrs/ai_assemble_control/config/delete/mcp/flag'], queryFn: async () => { try { const r = await api.get("/jaxrs/ai_assemble_control/config/delete/mcp/flag"); return (r.data ?? []) as any[]; } catch { return []; } }});
+const api_delete_m_589_data = ref<any[]>([])
+const { data: api_delete_m_589_q } = useQuery({
+  queryKey: ['api_delete_m_589', '/jaxrs/ai_assemble_control/config/delete/mcp/flag'],
+  queryFn: async () => {
+    try {
+      const r = await api.get('/jaxrs/ai_assemble_control/config/delete/mcp/flag')
+      return (r.data ?? []) as any[]
+    } catch {
+      return []
+    }
+  },
+})
 
-const api_sync_to__866_data = ref<any[]>([]);
-const { data: api_sync_to__866_q } = useQuery({queryKey: ['api_sync_to__866', '/jaxrs/ai/index/sync/to/knowledge'], queryFn: async () => { try { const r = await api.get("/jaxrs/ai/index/sync/to/knowledge"); return (r.data ?? []) as any[]; } catch { return []; } }});
+const api_sync_to__866_data = ref<any[]>([])
+const { data: api_sync_to__866_q } = useQuery({
+  queryKey: ['api_sync_to__866', '/jaxrs/ai/index/sync/to/knowledge'],
+  queryFn: async () => {
+    try {
+      const r = await api.get('/jaxrs/ai/index/sync/to/knowledge')
+      return (r.data ?? []) as any[]
+    } catch {
+      return []
+    }
+  },
+})
 
-const api_1_size_1_data = ref<any[]>([]);
-const { data: api_1_size_1_q } = useQuery({queryKey: ['api_1_size_1', '/jaxrs/ai_assemble_control/index/list/paging/1/size/1'], queryFn: async () => { try { const r = await api.get("/jaxrs/ai_assemble_control/index/list/paging/1/size/1"); return (r.data ?? []) as any[]; } catch { return []; } }});
+const api_1_size_1_data = ref<any[]>([])
+const { data: api_1_size_1_q } = useQuery({
+  queryKey: ['api_1_size_1', '/jaxrs/ai_assemble_control/index/list/paging/1/size/1'],
+  queryFn: async () => {
+    try {
+      const r = await api.get('/jaxrs/ai_assemble_control/index/list/paging/1/size/1')
+      return (r.data ?? []) as any[]
+    } catch {
+      return []
+    }
+  },
+})
 
-const api_delete_m_776_data = ref<any[]>([]);
-const { data: api_delete_m_776_q } = useQuery({queryKey: ['api_delete_m_776', '/jaxrs/ai_assemble_control/config/delete/model/u2t'], queryFn: async () => { try { const r = await api.get("/jaxrs/ai_assemble_control/config/delete/model/u2t"); return (r.data ?? []) as any[]; } catch { return []; } }});
+const api_delete_m_776_data = ref<any[]>([])
+const { data: api_delete_m_776_q } = useQuery({
+  queryKey: ['api_delete_m_776', '/jaxrs/ai_assemble_control/config/delete/model/u2t'],
+  queryFn: async () => {
+    try {
+      const r = await api.get('/jaxrs/ai_assemble_control/config/delete/model/u2t')
+      return (r.data ?? []) as any[]
+    } catch {
+      return []
+    }
+  },
+})
 
-const api_ai_chat_data = ref<any[]>([]);
-const { data: api_ai_chat_q } = useQuery({queryKey: ['api_ai_chat', '/jaxrs/ai/chat'], queryFn: async () => { try { const r = await api.get("/jaxrs/ai/chat"); return (r.data ?? []) as any[]; } catch { return []; } }});
-const api_file_id__998_data = ref<any[]>([]);
-const { data: api_file_id__998_q } = useQuery({queryKey: ['api_file_id__998', '/jaxrs/ai_assemble_control/file/id/download'], queryFn: async () => { try { const r = await api.get("/jaxrs/ai_assemble_control/file/id/download"); return (r.data ?? []) as any[]; } catch { return []; } }});
+const api_ai_chat_data = ref<any[]>([])
+const { data: api_ai_chat_q } = useQuery({
+  queryKey: ['api_ai_chat', '/jaxrs/ai/chat'],
+  queryFn: async () => {
+    try {
+      const r = await api.get('/jaxrs/ai/chat')
+      return (r.data ?? []) as any[]
+    } catch {
+      return []
+    }
+  },
+})
+const api_file_id__998_data = ref<any[]>([])
+const { data: api_file_id__998_q } = useQuery({
+  queryKey: ['api_file_id__998', '/jaxrs/ai_assemble_control/file/id/download'],
+  queryFn: async () => {
+    try {
+      const r = await api.get('/jaxrs/ai_assemble_control/file/id/download')
+      return (r.data ?? []) as any[]
+    } catch {
+      return []
+    }
+  },
+})
 
-const get_model_test_model_ref = ref<any[]>([]);
+const get_model_test_model_ref = ref<any[]>([])
 const get_model_test_model_q = useQuery({
   queryKey: ['get_model_test_model'],
   queryFn: async () => {
-    try { const r = await api.get("/jaxrs/ai/config/get/model/test-model"); return (r.data ?? []) as any[]; }
-    catch { return []; }
+    try {
+      const r = await api.get('/jaxrs/ai/config/get/model/test-model')
+      return (r.data ?? []) as any[]
+    } catch {
+      return []
+    }
   },
-  
-});
-const api_config_c_366_data = ref<any[]>([]);
-const { data: api_config_c_366_q } = useQuery({queryKey: ['api_config_c_366', '/jaxrs/ai_assemble_control/config/create/model'], queryFn: async () => { try { const r = await api.get("/jaxrs/ai_assemble_control/config/create/model"); return (r.data ?? []) as any[]; } catch { return []; } }});
+})
+const api_config_c_366_data = ref<any[]>([])
+const { data: api_config_c_366_q } = useQuery({
+  queryKey: ['api_config_c_366', '/jaxrs/ai_assemble_control/config/create/model'],
+  queryFn: async () => {
+    try {
+      const r = await api.get('/jaxrs/ai_assemble_control/config/create/model')
+      return (r.data ?? []) as any[]
+    } catch {
+      return []
+    }
+  },
+})
 
-const api_get_model_flag_data = ref<any[]>([]);
-const { data: api_get_model_flag_q } = useQuery({queryKey: ['api_get_model_flag', '/jaxrs/ai_assemble_control/config/get/model/flag'], queryFn: async () => { try { const r = await api.get("/jaxrs/ai_assemble_control/config/get/model/flag"); return (r.data ?? []) as any[]; } catch { return []; } }});
-const api_index_de_745_data = ref<any[]>([]);
-const { data: api_index_de_745_q } = useQuery({queryKey: ['api_index_de_745', '/jaxrs/ai_assemble_control/index/delete/flag'], queryFn: async () => { try { const r = await api.get("/jaxrs/ai_assemble_control/index/delete/flag"); return (r.data ?? []) as any[]; } catch { return []; } }});
+const api_get_model_flag_data = ref<any[]>([])
+const { data: api_get_model_flag_q } = useQuery({
+  queryKey: ['api_get_model_flag', '/jaxrs/ai_assemble_control/config/get/model/flag'],
+  queryFn: async () => {
+    try {
+      const r = await api.get('/jaxrs/ai_assemble_control/config/get/model/flag')
+      return (r.data ?? []) as any[]
+    } catch {
+      return []
+    }
+  },
+})
+const api_index_de_745_data = ref<any[]>([])
+const { data: api_index_de_745_q } = useQuery({
+  queryKey: ['api_index_de_745', '/jaxrs/ai_assemble_control/index/delete/flag'],
+  queryFn: async () => {
+    try {
+      const r = await api.get('/jaxrs/ai_assemble_control/index/delete/flag')
+      return (r.data ?? []) as any[]
+    } catch {
+      return []
+    }
+  },
+})
 
-const api_file_u2t_729_data = ref<any[]>([]);
-const { data: api_file_u2t_729_q } = useQuery({queryKey: ['api_file_u2t_729', '/jaxrs/ai_assemble_control/file/u2t/download'], queryFn: async () => { try { const r = await api.get("/jaxrs/ai_assemble_control/file/u2t/download"); return (r.data ?? []) as any[]; } catch { return []; } }});
+const api_file_u2t_729_data = ref<any[]>([])
+const { data: api_file_u2t_729_q } = useQuery({
+  queryKey: ['api_file_u2t_729', '/jaxrs/ai_assemble_control/file/u2t/download'],
+  queryFn: async () => {
+    try {
+      const r = await api.get('/jaxrs/ai_assemble_control/file/u2t/download')
+      return (r.data ?? []) as any[]
+    } catch {
+      return []
+    }
+  },
+})
 
-const api_config_c_878_data = ref<any[]>([]);
-const { data: api_config_c_878_q } = useQuery({queryKey: ['api_config_c_878', '/jaxrs/ai_assemble_control/config/create/mcp'], queryFn: async () => { try { const r = await api.get("/jaxrs/ai_assemble_control/config/create/mcp"); return (r.data ?? []) as any[]; } catch { return []; } }});
+const api_config_c_878_data = ref<any[]>([])
+const { data: api_config_c_878_q } = useQuery({
+  queryKey: ['api_config_c_878', '/jaxrs/ai_assemble_control/config/create/mcp'],
+  queryFn: async () => {
+    try {
+      const r = await api.get('/jaxrs/ai_assemble_control/config/create/mcp')
+      return (r.data ?? []) as any[]
+    } catch {
+      return []
+    }
+  },
+})
 
-const api_ai_assem_462_data = ref<any[]>([]);
-const { data: api_ai_assem_462_q } = useQuery({queryKey: ['api_ai_assem_462', '/jaxrs/ai_assemble_control/file/list'], queryFn: async () => { try { const r = await api.get("/jaxrs/ai_assemble_control/file/list"); return (r.data ?? []) as any[]; } catch { return []; } }});
+const api_ai_assem_462_data = ref<any[]>([])
+const { data: api_ai_assem_462_q } = useQuery({
+  queryKey: ['api_ai_assem_462', '/jaxrs/ai_assemble_control/file/list'],
+  queryFn: async () => {
+    try {
+      const r = await api.get('/jaxrs/ai_assemble_control/file/list')
+      return (r.data ?? []) as any[]
+    } catch {
+      return []
+    }
+  },
+})
 
-const api_index_de_239_data = ref<any[]>([]);
-const { data: api_index_de_239_q } = useQuery({queryKey: ['api_index_de_239', '/jaxrs/ai_assemble_control/index/delete/u2t'], queryFn: async () => { try { const r = await api.get("/jaxrs/ai_assemble_control/index/delete/u2t"); return (r.data ?? []) as any[]; } catch { return []; } }});
+const api_index_de_239_data = ref<any[]>([])
+const { data: api_index_de_239_q } = useQuery({
+  queryKey: ['api_index_de_239', '/jaxrs/ai_assemble_control/index/delete/u2t'],
+  queryFn: async () => {
+    try {
+      const r = await api.get('/jaxrs/ai_assemble_control/index/delete/u2t')
+      return (r.data ?? []) as any[]
+    } catch {
+      return []
+    }
+  },
+})
 
-const api_chat_del_208_data = ref<any[]>([]);
-const { data: api_chat_del_208_q } = useQuery({queryKey: ['api_chat_del_208', '/jaxrs/ai_assemble_control/chat/delete/u2t'], queryFn: async () => { try { const r = await api.get("/jaxrs/ai_assemble_control/chat/delete/u2t"); return (r.data ?? []) as any[]; } catch { return []; } }});
+const api_chat_del_208_data = ref<any[]>([])
+const { data: api_chat_del_208_q } = useQuery({
+  queryKey: ['api_chat_del_208', '/jaxrs/ai_assemble_control/chat/delete/u2t'],
+  queryFn: async () => {
+    try {
+      const r = await api.get('/jaxrs/ai_assemble_control/chat/delete/u2t')
+      return (r.data ?? []) as any[]
+    } catch {
+      return []
+    }
+  },
+})
 
-const api_id_downl_768_data = ref<any[]>([]);
-const { data: api_id_downl_768_q } = useQuery({queryKey: ['api_id_downl_768', '/jaxrs/ai_assemble_control/file/id/download/scale'], queryFn: async () => { try { const r = await api.get("/jaxrs/ai_assemble_control/file/id/download/scale"); return (r.data ?? []) as any[]; } catch { return []; } }});
+const api_id_downl_768_data = ref<any[]>([])
+const { data: api_id_downl_768_q } = useQuery({
+  queryKey: ['api_id_downl_768', '/jaxrs/ai_assemble_control/file/id/download/scale'],
+  queryFn: async () => {
+    try {
+      const r = await api.get('/jaxrs/ai_assemble_control/file/id/download/scale')
+      return (r.data ?? []) as any[]
+    } catch {
+      return []
+    }
+  },
+})
 
-const api_cms_doc_docid_data = ref<any[]>([]);
-const { data: api_cms_doc_docid_q } = useQuery({queryKey: ['api_cms_doc_docid', '/jaxrs/ai_assemble_control/index/cms/doc/docId'], queryFn: async () => { try { const r = await api.get("/jaxrs/ai_assemble_control/index/cms/doc/docId"); return (r.data ?? []) as any[]; } catch { return []; } }});
-const cms_doc_test_doc_ref = ref<any[]>([]);
+const api_cms_doc_docid_data = ref<any[]>([])
+const { data: api_cms_doc_docid_q } = useQuery({
+  queryKey: ['api_cms_doc_docid', '/jaxrs/ai_assemble_control/index/cms/doc/docId'],
+  queryFn: async () => {
+    try {
+      const r = await api.get('/jaxrs/ai_assemble_control/index/cms/doc/docId')
+      return (r.data ?? []) as any[]
+    } catch {
+      return []
+    }
+  },
+})
+const cms_doc_test_doc_ref = ref<any[]>([])
 const cms_doc_test_doc_q = useQuery({
   queryKey: ['cms_doc_test_doc'],
   queryFn: async () => {
-    try { const r = await api.get("/jaxrs/ai/index/cms/doc/test-doc"); return (r.data ?? []) as any[]; }
-    catch { return []; }
+    try {
+      const r = await api.get('/jaxrs/ai/index/cms/doc/test-doc')
+      return (r.data ?? []) as any[]
+    } catch {
+      return []
+    }
   },
-  
-});
+})
 
-
-const ai_assemble_control_file_any_file_flag_ref = ref<any[]>([]);
+const ai_assemble_control_file_any_file_flag_ref = ref<any[]>([])
 const ai_assemble_control_file_any_file_flag_q = useQuery({
   queryKey: ['ai_assemble_control_file_any_file_flag'],
   queryFn: async () => {
-    try { const r = await api.get("/jaxrs/ai_assemble_control/file/any-file-flag"); return (r.data ?? []) as any[]; }
-    catch { return []; }
+    try {
+      const r = await api.get('/jaxrs/ai_assemble_control/file/any-file-flag')
+      return (r.data ?? []) as any[]
+    } catch {
+      return []
+    }
   },
-  
-});
-const ai_assemble_control_file_copy_file_ref = ref<any[]>([]);
+})
+const ai_assemble_control_file_copy_file_ref = ref<any[]>([])
 const ai_assemble_control_file_copy_file_q = useQuery({
   queryKey: ['ai_assemble_control_file_copy_file'],
   queryFn: async () => {
-    try { const r = await api.get("/jaxrs/ai_assemble_control/file/copy/file"); return (r.data ?? []) as any[]; }
-    catch { return []; }
+    try {
+      const r = await api.get('/jaxrs/ai_assemble_control/file/copy/file')
+      return (r.data ?? []) as any[]
+    } catch {
+      return []
+    }
   },
-  
-});
-const ai_assemble_control_list_ai_models_ref = ref<any[]>([]);
+})
+const ai_assemble_control_list_ai_models_ref = ref<any[]>([])
 const ai_assemble_control_list_ai_models_q = useQuery({
   queryKey: ['ai_assemble_control_list_ai_models'],
   queryFn: async () => {
-    try { const r = await api.get("/jaxrs/ai_assemble_control/list/ai/models"); return (r.data ?? []) as any[]; }
-    catch { return []; }
+    try {
+      const r = await api.get('/jaxrs/ai_assemble_control/list/ai/models')
+      return (r.data ?? []) as any[]
+    } catch {
+      return []
+    }
   },
-  
-});
-const ai_assemble_control_config_save_ref = ref<any[]>([]);
+})
+const ai_assemble_control_config_save_ref = ref<any[]>([])
 const ai_assemble_control_config_save_q = useQuery({
   queryKey: ['ai_assemble_control_config_save'],
   queryFn: async () => {
-    try { const r = await api.get("/jaxrs/ai_assemble_control/config/save"); return (r.data ?? []) as any[]; }
-    catch { return []; }
+    try {
+      const r = await api.get('/jaxrs/ai_assemble_control/config/save')
+      return (r.data ?? []) as any[]
+    } catch {
+      return []
+    }
   },
-  
-});
-const ai_assemble_control_ref = ref<any[]>([]);
+})
+const ai_assemble_control_ref = ref<any[]>([])
 const ai_assemble_control_q = useQuery({
   queryKey: ['ai_assemble_control'],
   queryFn: async () => {
-    try { const r = await api.get("/jaxrs/ai_assemble_control"); return (r.data ?? []) as any[]; }
-    catch { return []; }
+    try {
+      const r = await api.get('/jaxrs/ai_assemble_control')
+      return (r.data ?? []) as any[]
+    } catch {
+      return []
+    }
   },
-  
-});
-const config_get_mcp_flag_ref = ref<any[]>([]);
+})
+const config_get_mcp_flag_ref = ref<any[]>([])
 const config_get_mcp_flag_q = useQuery({
   queryKey: ['config_get_mcp_flag'],
   queryFn: async () => {
-    try { const r = await api.get("/jaxrs/ai_assemble_control/config/get/mcp/flag"); return (r.data ?? []) as any[]; }
-    catch { return []; }
+    try {
+      const r = await api.get('/jaxrs/ai_assemble_control/config/get/mcp/flag')
+      return (r.data ?? []) as any[]
+    } catch {
+      return []
+    }
   },
-  
-});
-const update_ai_control_config_ref = ref<any[]>([]);
+})
+const update_ai_control_config_ref = ref<any[]>([])
 const update_ai_control_config_q = useQuery({
   queryKey: ['update_ai_control_config'],
   queryFn: async () => {
-    try { const r = await api.get("/jaxrs/ai_assemble_control/update/ai/control/config"); return (r.data ?? []) as any[]; }
-    catch { return []; }
+    try {
+      const r = await api.get('/jaxrs/ai_assemble_control/update/ai/control/config')
+      return (r.data ?? []) as any[]
+    } catch {
+      return []
+    }
   },
-  
-});
-const config_update_mcp_u2t_ref = ref<any[]>([]);
+})
+const config_update_mcp_u2t_ref = ref<any[]>([])
 const config_update_mcp_u2t_q = useQuery({
   queryKey: ['config_update_mcp_u2t'],
   queryFn: async () => {
-    try { const r = await api.get("/jaxrs/ai_assemble_control/config/update/mcp/u2t"); return (r.data ?? []) as any[]; }
-    catch { return []; }
+    try {
+      const r = await api.get('/jaxrs/ai_assemble_control/config/update/mcp/u2t')
+      return (r.data ?? []) as any[]
+    } catch {
+      return []
+    }
   },
-  
-});
-const file_u2t_download_scale_ref = ref<any[]>([]);
+})
+const file_u2t_download_scale_ref = ref<any[]>([])
 const file_u2t_download_scale_q = useQuery({
   queryKey: ['file_u2t_download_scale'],
   queryFn: async () => {
-    try { const r = await api.get("/jaxrs/ai_assemble_control/file/u2t/download/scale"); return (r.data ?? []) as any[]; }
-    catch { return []; }
+    try {
+      const r = await api.get('/jaxrs/ai_assemble_control/file/u2t/download/scale')
+      return (r.data ?? []) as any[]
+    } catch {
+      return []
+    }
   },
-  
-});
-const ai_assemble_control_config_get_ref = ref<any[]>([]);
+})
+const ai_assemble_control_config_get_ref = ref<any[]>([])
 const ai_assemble_control_config_get_q = useQuery({
   queryKey: ['ai_assemble_control_config_get'],
   queryFn: async () => {
-    try { const r = await api.get("/jaxrs/ai_assemble_control/config/get"); return (r.data ?? []) as any[]; }
-    catch { return []; }
+    try {
+      const r = await api.get('/jaxrs/ai_assemble_control/config/get')
+      return (r.data ?? []) as any[]
+    } catch {
+      return []
+    }
   },
-  
-});
-const config_delete_mcp_u2t_ref = ref<any[]>([]);
+})
+const config_delete_mcp_u2t_ref = ref<any[]>([])
 const config_delete_mcp_u2t_q = useQuery({
   queryKey: ['config_delete_mcp_u2t'],
   queryFn: async () => {
-    try { const r = await api.get("/jaxrs/ai_assemble_control/config/delete/mcp/u2t"); return (r.data ?? []) as any[]; }
-    catch { return []; }
+    try {
+      const r = await api.get('/jaxrs/ai_assemble_control/config/delete/mcp/u2t')
+      return (r.data ?? []) as any[]
+    } catch {
+      return []
+    }
   },
-  
-});
-const config_update_mcp_flag_ref = ref<any[]>([]);
+})
+const config_update_mcp_flag_ref = ref<any[]>([])
 const config_update_mcp_flag_q = useQuery({
   queryKey: ['config_update_mcp_flag'],
   queryFn: async () => {
-    try { const r = await api.get("/jaxrs/ai_assemble_control/config/update/mcp/flag"); return (r.data ?? []) as any[]; }
-    catch { return []; }
+    try {
+      const r = await api.get('/jaxrs/ai_assemble_control/config/update/mcp/flag')
+      return (r.data ?? []) as any[]
+    } catch {
+      return []
+    }
   },
-  
-});
-const ai_assemble_control_file_upload_ref = ref<any[]>([]);
+})
+const ai_assemble_control_file_upload_ref = ref<any[]>([])
 const ai_assemble_control_file_upload_q = useQuery({
   queryKey: ['ai_assemble_control_file_upload'],
   queryFn: async () => {
-    try { const r = await api.get("/jaxrs/ai_assemble_control/file/upload"); return (r.data ?? []) as any[]; }
-    catch { return []; }
+    try {
+      const r = await api.get('/jaxrs/ai_assemble_control/file/upload')
+      return (r.data ?? []) as any[]
+    } catch {
+      return []
+    }
   },
-  
-});
-const index_cms_doc_u2t_ref = ref<any[]>([]);
+})
+const index_cms_doc_u2t_ref = ref<any[]>([])
 const index_cms_doc_u2t_q = useQuery({
   queryKey: ['index_cms_doc_u2t'],
   queryFn: async () => {
-    try { const r = await api.get("/jaxrs/ai_assemble_control/index/cms/doc/u2t"); return (r.data ?? []) as any[]; }
-    catch { return []; }
+    try {
+      const r = await api.get('/jaxrs/ai_assemble_control/index/cms/doc/u2t')
+      return (r.data ?? []) as any[]
+    } catch {
+      return []
+    }
   },
-  
-});
-const config_update_model_u2t_ref = ref<any[]>([]);
+})
+const config_update_model_u2t_ref = ref<any[]>([])
 const config_update_model_u2t_q = useQuery({
   queryKey: ['config_update_model_u2t'],
   queryFn: async () => {
-    try { const r = await api.get("/jaxrs/ai_assemble_control/config/update/model/u2t"); return (r.data ?? []) as any[]; }
-    catch { return []; }
+    try {
+      const r = await api.get('/jaxrs/ai_assemble_control/config/update/model/u2t')
+      return (r.data ?? []) as any[]
+    } catch {
+      return []
+    }
   },
-  
-});
-const ai_assemble_control_file_u2t_ref = ref<any[]>([]);
+})
+const ai_assemble_control_file_u2t_ref = ref<any[]>([])
 const ai_assemble_control_file_u2t_q = useQuery({
   queryKey: ['ai_assemble_control_file_u2t'],
   queryFn: async () => {
-    try { const r = await api.get("/jaxrs/ai_assemble_control/file/u2t"); return (r.data ?? []) as any[]; }
-    catch { return []; }
+    try {
+      const r = await api.get('/jaxrs/ai_assemble_control/file/u2t')
+      return (r.data ?? []) as any[]
+    } catch {
+      return []
+    }
   },
-  
-});
-const ai_assemble_control_file_delete_u2t_ref = ref<any[]>([]);
+})
+const ai_assemble_control_file_delete_u2t_ref = ref<any[]>([])
 const ai_assemble_control_file_delete_u2t_q = useQuery({
   queryKey: ['ai_assemble_control_file_delete_u2t'],
   queryFn: async () => {
-    try { const r = await api.get("/jaxrs/ai_assemble_control/file/delete/u2t"); return (r.data ?? []) as any[]; }
-    catch { return []; }
+    try {
+      const r = await api.get('/jaxrs/ai_assemble_control/file/delete/u2t')
+      return (r.data ?? []) as any[]
+    } catch {
+      return []
+    }
   },
-  
-});
-const config_get_mcp_u2t_ref = ref<any[]>([]);
+})
+const config_get_mcp_u2t_ref = ref<any[]>([])
 const config_get_mcp_u2t_q = useQuery({
   queryKey: ['config_get_mcp_u2t'],
   queryFn: async () => {
-    try { const r = await api.get("/jaxrs/ai_assemble_control/config/get/mcp/u2t"); return (r.data ?? []) as any[]; }
-    catch { return []; }
+    try {
+      const r = await api.get('/jaxrs/ai_assemble_control/config/get/mcp/u2t')
+      return (r.data ?? []) as any[]
+    } catch {
+      return []
+    }
   },
-  
-});
-const config_get_mcp_any_id_here_ref = ref<any[]>([]);
+})
+const config_get_mcp_any_id_here_ref = ref<any[]>([])
 const config_get_mcp_any_id_here_q = useQuery({
   queryKey: ['config_get_mcp_any_id_here'],
   queryFn: async () => {
-    try { const r = await api.get("/jaxrs/ai_assemble_control/config/get/mcp/any-id-here"); return (r.data ?? []) as any[]; }
-    catch { return []; }
+    try {
+      const r = await api.get('/jaxrs/ai_assemble_control/config/get/mcp/any-id-here')
+      return (r.data ?? []) as any[]
+    } catch {
+      return []
+    }
   },
-  
-});
-const ai_assemble_control_chat_delete_clue_1_ref = ref<any[]>([]);
+})
+const ai_assemble_control_chat_delete_clue_1_ref = ref<any[]>([])
 const ai_assemble_control_chat_delete_clue_1_q = useQuery({
   queryKey: ['ai_assemble_control_chat_delete_clue_1'],
   queryFn: async () => {
-    try { const r = await api.get("/jaxrs/ai_assemble_control/chat/delete/clue-1"); return (r.data ?? []) as any[]; }
-    catch { return []; }
+    try {
+      const r = await api.get('/jaxrs/ai_assemble_control/chat/delete/clue-1')
+      return (r.data ?? []) as any[]
+    } catch {
+      return []
+    }
   },
-  
-});
-const config_list_enable_model_ref = ref<any[]>([]);
+})
+const config_list_enable_model_ref = ref<any[]>([])
 const config_list_enable_model_q = useQuery({
   queryKey: ['config_list_enable_model'],
   queryFn: async () => {
-    try { const r = await api.get("/jaxrs/ai_assemble_control/config/list/enable/model"); return (r.data ?? []) as any[]; }
-    catch { return []; }
+    try {
+      const r = await api.get('/jaxrs/ai_assemble_control/config/list/enable/model')
+      return (r.data ?? []) as any[]
+    } catch {
+      return []
+    }
   },
-  
-});
-const config_delete_model_flag_ref = ref<any[]>([]);
+})
+const config_delete_model_flag_ref = ref<any[]>([])
 const config_delete_model_flag_q = useQuery({
   queryKey: ['config_delete_model_flag'],
   queryFn: async () => {
-    try { const r = await api.get("/jaxrs/ai_assemble_control/config/delete/model/flag"); return (r.data ?? []) as any[]; }
-    catch { return []; }
+    try {
+      const r = await api.get('/jaxrs/ai_assemble_control/config/delete/model/flag')
+      return (r.data ?? []) as any[]
+    } catch {
+      return []
+    }
   },
-  
-});
-const ai_assemble_control_file_delete_flag_ref = ref<any[]>([]);
+})
+const ai_assemble_control_file_delete_flag_ref = ref<any[]>([])
 const ai_assemble_control_file_delete_flag_q = useQuery({
   queryKey: ['ai_assemble_control_file_delete_flag'],
   queryFn: async () => {
-    try { const r = await api.get("/jaxrs/ai_assemble_control/file/delete/flag"); return (r.data ?? []) as any[]; }
-    catch { return []; }
+    try {
+      const r = await api.get('/jaxrs/ai_assemble_control/file/delete/flag')
+      return (r.data ?? []) as any[]
+    } catch {
+      return []
+    }
   },
-  
-});
-const ai_assemble_control_config_base_config_ref = ref<any[]>([]);
+})
+const ai_assemble_control_config_base_config_ref = ref<any[]>([])
 const ai_assemble_control_config_base_config_q = useQuery({
   queryKey: ['ai_assemble_control_config_base_config'],
   queryFn: async () => {
-    try { const r = await api.get("/jaxrs/ai_assemble_control/config/base/config"); return (r.data ?? []) as any[]; }
-    catch { return []; }
+    try {
+      const r = await api.get('/jaxrs/ai_assemble_control/config/base/config')
+      return (r.data ?? []) as any[]
+    } catch {
+      return []
+    }
   },
-  
-});
-const config_update_model_flag_ref = ref<any[]>([]);
+})
+const config_update_model_flag_ref = ref<any[]>([])
 const config_update_model_flag_q = useQuery({
   queryKey: ['config_update_model_flag'],
   queryFn: async () => {
-    try { const r = await api.get("/jaxrs/ai_assemble_control/config/update/model/flag"); return (r.data ?? []) as any[]; }
-    catch { return []; }
+    try {
+      const r = await api.get('/jaxrs/ai_assemble_control/config/update/model/flag')
+      return (r.data ?? []) as any[]
+    } catch {
+      return []
+    }
   },
-  
-});
+})
 
-
-const ai_chat_delete_test_clue_ref = ref<any[]>([]);
+const ai_chat_delete_test_clue_ref = ref<any[]>([])
 const ai_chat_delete_test_clue_q = useQuery({
   queryKey: ['ai_chat_delete_test_clue'],
   queryFn: async () => {
-    try { const r = await api.get("/jaxrs/ai/chat/delete/test-clue"); return (r.data ?? []) as any[]; }
-    catch { return []; }
+    try {
+      const r = await api.get('/jaxrs/ai/chat/delete/test-clue')
+      return (r.data ?? []) as any[]
+    } catch {
+      return []
+    }
   },
-  
-});
-const api_ai_confi_6_data = ref<any[]>([]);
-const { data: api_ai_confi_6_q } = useQuery({queryKey: ['api_ai_confi_6', '/jaxrs/ai/config/base/config'], queryFn: async () => { try { const r = await api.get("/jaxrs/ai/config/base/config"); return (r.data ?? []) as any[]; } catch { return []; } }});
+})
+const api_ai_confi_6_data = ref<any[]>([])
+const { data: api_ai_confi_6_q } = useQuery({
+  queryKey: ['api_ai_confi_6', '/jaxrs/ai/config/base/config'],
+  queryFn: async () => {
+    try {
+      const r = await api.get('/jaxrs/ai/config/base/config')
+      return (r.data ?? []) as any[]
+    } catch {
+      return []
+    }
+  },
+})
 
-const ai_ref = ref<any[]>([]);
+const ai_ref = ref<any[]>([])
 const ai_q = useQuery({
   queryKey: ['ai'],
   queryFn: async () => {
-    try { const r = await api.get("/jaxrs/ai"); return (r.data ?? []) as any[]; }
-    catch { return []; }
+    try {
+      const r = await api.get('/jaxrs/ai')
+      return (r.data ?? []) as any[]
+    } catch {
+      return []
+    }
   },
-  
-});
-const api_config_g_480_data = ref<any[]>([]);
-const { data: api_config_g_480_q } = useQuery({queryKey: ['api_config_g_480', '/jaxrs/ai_assemble_control/config/get/model/u2t'], queryFn: async () => { try { const r = await api.get("/jaxrs/ai_assemble_control/config/get/model/u2t"); return (r.data ?? []) as any[]; } catch { return []; } }});
+})
+const api_config_g_480_data = ref<any[]>([])
+const { data: api_config_g_480_q } = useQuery({
+  queryKey: ['api_config_g_480', '/jaxrs/ai_assemble_control/config/get/model/u2t'],
+  queryFn: async () => {
+    try {
+      const r = await api.get('/jaxrs/ai_assemble_control/config/get/model/u2t')
+      return (r.data ?? []) as any[]
+    } catch {
+      return []
+    }
+  },
+})
 
-const api_ai_chat_delete_data = ref<any[]>([]);
-const { data: api_ai_chat_delete_q } = useQuery({queryKey: ['api_ai_chat_delete', '/jaxrs/ai/chat/delete'], queryFn: async () => { try { const r = await api.get("/jaxrs/ai/chat/delete"); return (r.data ?? []) as any[]; } catch { return []; } }});
-const ai_file_delete_test_flag_ref = ref<any[]>([]);
+const api_ai_chat_delete_data = ref<any[]>([])
+const { data: api_ai_chat_delete_q } = useQuery({
+  queryKey: ['api_ai_chat_delete', '/jaxrs/ai/chat/delete'],
+  queryFn: async () => {
+    try {
+      const r = await api.get('/jaxrs/ai/chat/delete')
+      return (r.data ?? []) as any[]
+    } catch {
+      return []
+    }
+  },
+})
+const ai_file_delete_test_flag_ref = ref<any[]>([])
 const ai_file_delete_test_flag_q = useQuery({
   queryKey: ['ai_file_delete_test_flag'],
   queryFn: async () => {
-    try { const r = await api.get("/jaxrs/ai/file/delete/test-flag"); return (r.data ?? []) as any[]; }
-    catch { return []; }
+    try {
+      const r = await api.get('/jaxrs/ai/file/delete/test-flag')
+      return (r.data ?? []) as any[]
+    } catch {
+      return []
+    }
   },
-  
-});
-const api_ai_assem_983_data = ref<any[]>([]);
-const { data: api_ai_assem_983_q } = useQuery({queryKey: ['api_ai_assem_983', '/jaxrs/ai_assemble_control/file/flag'], queryFn: async () => { try { const r = await api.get("/jaxrs/ai_assemble_control/file/flag"); return (r.data ?? []) as any[]; } catch { return []; } }});
+})
+const api_ai_assem_983_data = ref<any[]>([])
+const { data: api_ai_assem_983_q } = useQuery({
+  queryKey: ['api_ai_assem_983', '/jaxrs/ai_assemble_control/file/flag'],
+  queryFn: async () => {
+    try {
+      const r = await api.get('/jaxrs/ai_assemble_control/file/flag')
+      return (r.data ?? []) as any[]
+    } catch {
+      return []
+    }
+  },
+})
 
-const api_ai_assem_794_data = ref<any[]>([]);
-const { data: api_ai_assem_794_q } = useQuery({queryKey: ['api_ai_assem_794', '/jaxrs/ai/assemble/config'], queryFn: async () => { try { const r = await api.get("/jaxrs/ai/assemble/config"); return (r.data ?? []) as any[]; } catch { return []; } }});
+const api_ai_assem_794_data = ref<any[]>([])
+const { data: api_ai_assem_794_q } = useQuery({
+  queryKey: ['api_ai_assem_794', '/jaxrs/ai/assemble/config'],
+  queryFn: async () => {
+    try {
+      const r = await api.get('/jaxrs/ai/assemble/config')
+      return (r.data ?? []) as any[]
+    } catch {
+      return []
+    }
+  },
+})
 
-const ai_file_test_flag_ref = ref<any[]>([]);
+const ai_file_test_flag_ref = ref<any[]>([])
 const ai_file_test_flag_q = useQuery({
   queryKey: ['ai_file_test_flag'],
   queryFn: async () => {
-    try { const r = await api.get("/jaxrs/ai/file/test-flag"); return (r.data ?? []) as any[]; }
-    catch { return []; }
+    try {
+      const r = await api.get('/jaxrs/ai/file/test-flag')
+      return (r.data ?? []) as any[]
+    } catch {
+      return []
+    }
   },
-  
-});
-const api_get_mcp__345_data = ref<any[]>([]);
-const { data: api_get_mcp__345_q } = useQuery({queryKey: ['api_get_mcp__345', '/jaxrs/ai_assemble_control/config/get/mcp/ext/u2t'], queryFn: async () => { try { const r = await api.get("/jaxrs/ai_assemble_control/config/get/mcp/ext/u2t"); return (r.data ?? []) as any[]; } catch { return []; } }});
+})
+const api_get_mcp__345_data = ref<any[]>([])
+const { data: api_get_mcp__345_q } = useQuery({
+  queryKey: ['api_get_mcp__345', '/jaxrs/ai_assemble_control/config/get/mcp/ext/u2t'],
+  queryFn: async () => {
+    try {
+      const r = await api.get('/jaxrs/ai_assemble_control/config/get/mcp/ext/u2t')
+      return (r.data ?? []) as any[]
+    } catch {
+      return []
+    }
+  },
+})
 
-const api_control__847_data = ref<any[]>([]);
-const { data: api_control__847_q } = useQuery({queryKey: ['api_control__847', '/jaxrs/ai/assemble/control/config/create/mcp'], queryFn: async () => { try { const r = await api.get("/jaxrs/ai/assemble/control/config/create/mcp"); return (r.data ?? []) as any[]; } catch { return []; } }});
+const api_control__847_data = ref<any[]>([])
+const { data: api_control__847_q } = useQuery({
+  queryKey: ['api_control__847', '/jaxrs/ai/assemble/control/config/create/mcp'],
+  queryFn: async () => {
+    try {
+      const r = await api.get('/jaxrs/ai/assemble/control/config/create/mcp')
+      return (r.data ?? []) as any[]
+    } catch {
+      return []
+    }
+  },
+})
 
-const api_ai_core_list_data = ref<any[]>([]);
-const { data: api_ai_core_list_q } = useQuery({queryKey: ['api_ai_core_list', '/jaxrs/ai/core/list'], queryFn: async () => { try { const r = await api.get("/jaxrs/ai/core/list"); return (r.data ?? []) as any[]; } catch { return []; } }});
-const api_ai_app_list_data = ref<any[]>([]);
-const { data: api_ai_app_list_q } = useQuery({queryKey: ['api_ai_app_list', '/jaxrs/ai/app/list'], queryFn: async () => { try { const r = await api.get("/jaxrs/ai/app/list"); return (r.data ?? []) as any[]; } catch { return []; } }});
-const api_get_ai_c_25_data = ref<any[]>([]);
-const { data: api_get_ai_c_25_q } = useQuery({queryKey: ['api_get_ai_c_25', '/jaxrs/ai_assemble_control/get/ai/control/config'], queryFn: async () => { try { const r = await api.get("/jaxrs/ai_assemble_control/get/ai/control/config"); return (r.data ?? []) as any[]; } catch { return []; } }});
+const api_ai_core_list_data = ref<any[]>([])
+const { data: api_ai_core_list_q } = useQuery({
+  queryKey: ['api_ai_core_list', '/jaxrs/ai/core/list'],
+  queryFn: async () => {
+    try {
+      const r = await api.get('/jaxrs/ai/core/list')
+      return (r.data ?? []) as any[]
+    } catch {
+      return []
+    }
+  },
+})
+const api_ai_app_list_data = ref<any[]>([])
+const { data: api_ai_app_list_q } = useQuery({
+  queryKey: ['api_ai_app_list', '/jaxrs/ai/app/list'],
+  queryFn: async () => {
+    try {
+      const r = await api.get('/jaxrs/ai/app/list')
+      return (r.data ?? []) as any[]
+    } catch {
+      return []
+    }
+  },
+})
+const api_get_ai_c_25_data = ref<any[]>([])
+const { data: api_get_ai_c_25_q } = useQuery({
+  queryKey: ['api_get_ai_c_25', '/jaxrs/ai_assemble_control/get/ai/control/config'],
+  queryFn: async () => {
+    try {
+      const r = await api.get('/jaxrs/ai_assemble_control/get/ai/control/config')
+      return (r.data ?? []) as any[]
+    } catch {
+      return []
+    }
+  },
+})
 
-const api_index_sy_499_data = ref<any[]>([]);
-const { data: api_index_sy_499_q } = useQuery({queryKey: ['api_index_sy_499', '/jaxrs/ai_assemble_control/index/sync/to/knowledge'], queryFn: async () => { try { const r = await api.get("/jaxrs/ai_assemble_control/index/sync/to/knowledge"); return (r.data ?? []) as any[]; } catch { return []; } }});
+const api_index_sy_499_data = ref<any[]>([])
+const { data: api_index_sy_499_q } = useQuery({
+  queryKey: ['api_index_sy_499', '/jaxrs/ai_assemble_control/index/sync/to/knowledge'],
+  queryFn: async () => {
+    try {
+      const r = await api.get('/jaxrs/ai_assemble_control/index/sync/to/knowledge')
+      return (r.data ?? []) as any[]
+    } catch {
+      return []
+    }
+  },
+})
 
-
-
-const api_neural_list_data = ref<any[]>([]);
-const { data: api_neural_list_q } = useQuery({queryKey: ['api_neural_list', '/jaxrs/neural/list'], queryFn: async () => { try { const r = await api.get("/jaxrs/neural/list"); return (r.data ?? []) as any[]; } catch { return []; } }});
-const neural_ref = ref<any[]>([]);
+const api_neural_list_data = ref<any[]>([])
+const { data: api_neural_list_q } = useQuery({
+  queryKey: ['api_neural_list', '/jaxrs/neural/list'],
+  queryFn: async () => {
+    try {
+      const r = await api.get('/jaxrs/neural/list')
+      return (r.data ?? []) as any[]
+    } catch {
+      return []
+    }
+  },
+})
+const neural_ref = ref<any[]>([])
 const neural_q = useQuery({
   queryKey: ['neural'],
   queryFn: async () => {
-    try { const r = await api.get("/jaxrs/neural"); return (r.data ?? []) as any[]; }
-    catch { return []; }
+    try {
+      const r = await api.get('/jaxrs/neural')
+      return (r.data ?? []) as any[]
+    } catch {
+      return []
+    }
   },
-  
-});
+})
 
-
-
-
-
-const config_get_mcp_test_mcp_ref = ref<any[]>([]);
+const config_get_mcp_test_mcp_ref = ref<any[]>([])
 const config_get_mcp_test_mcp_q = useQuery({
   queryKey: ['config_get_mcp_test_mcp'],
   queryFn: async () => {
-    try { const r = await api.get("/jaxrs/ai/config/get/mcp/test-mcp"); return (r.data ?? []) as any[]; }
-    catch { return []; }
+    try {
+      const r = await api.get('/jaxrs/ai/config/get/mcp/test-mcp')
+      return (r.data ?? []) as any[]
+    } catch {
+      return []
+    }
   },
-  
-});
-const ai_index_delete_test_flag_ref = ref<any[]>([]);
+})
+const ai_index_delete_test_flag_ref = ref<any[]>([])
 const ai_index_delete_test_flag_q = useQuery({
   queryKey: ['ai_index_delete_test_flag'],
   queryFn: async () => {
-    try { const r = await api.get("/jaxrs/ai/index/delete/test-flag"); return (r.data ?? []) as any[]; }
-    catch { return []; }
+    try {
+      const r = await api.get('/jaxrs/ai/index/delete/test-flag')
+      return (r.data ?? []) as any[]
+    } catch {
+      return []
+    }
   },
-  
-});
-const api_ai_config_get_data = ref<any[]>([]);
-const { data: api_ai_config_get_q } = useQuery({queryKey: ['api_ai_config_get', '/jaxrs/ai/config/get'], queryFn: async () => { try { const r = await api.get("/jaxrs/ai/config/get"); return (r.data ?? []) as any[]; } catch { return []; } }});
-const api_ai_model_list_data = ref<any[]>([]);
-const { data: api_ai_model_list_q } = useQuery({queryKey: ['api_ai_model_list', '/jaxrs/ai/model/list'], queryFn: async () => { try { const r = await api.get("/jaxrs/ai/model/list"); return (r.data ?? []) as any[]; } catch { return []; } }});
-const api_get_mcp__105_data = ref<any[]>([]);
-const { data: api_get_mcp__105_q } = useQuery({queryKey: ['api_get_mcp__105', '/jaxrs/ai_assemble_control/config/get/mcp/ext/flag'], queryFn: async () => { try { const r = await api.get("/jaxrs/ai_assemble_control/config/get/mcp/ext/flag"); return (r.data ?? []) as any[]; } catch { return []; } }});
+})
+const api_ai_config_get_data = ref<any[]>([])
+const { data: api_ai_config_get_q } = useQuery({
+  queryKey: ['api_ai_config_get', '/jaxrs/ai/config/get'],
+  queryFn: async () => {
+    try {
+      const r = await api.get('/jaxrs/ai/config/get')
+      return (r.data ?? []) as any[]
+    } catch {
+      return []
+    }
+  },
+})
+const api_ai_model_list_data = ref<any[]>([])
+const { data: api_ai_model_list_q } = useQuery({
+  queryKey: ['api_ai_model_list', '/jaxrs/ai/model/list'],
+  queryFn: async () => {
+    try {
+      const r = await api.get('/jaxrs/ai/model/list')
+      return (r.data ?? []) as any[]
+    } catch {
+      return []
+    }
+  },
+})
+const api_get_mcp__105_data = ref<any[]>([])
+const { data: api_get_mcp__105_q } = useQuery({
+  queryKey: ['api_get_mcp__105', '/jaxrs/ai_assemble_control/config/get/mcp/ext/flag'],
+  queryFn: async () => {
+    try {
+      const r = await api.get('/jaxrs/ai_assemble_control/config/get/mcp/ext/flag')
+      return (r.data ?? []) as any[]
+    } catch {
+      return []
+    }
+  },
+})
 
-const api_core_ent_791_data = ref<any[]>([]);
-const { data: api_core_ent_791_q } = useQuery({queryKey: ['api_core_ent_791', '/jaxrs/ai/core/entity/conversation/list'], queryFn: async () => { try { const r = await api.get("/jaxrs/ai/core/entity/conversation/list"); return (r.data ?? []) as any[]; } catch { return []; } }});
+const api_core_ent_791_data = ref<any[]>([])
+const { data: api_core_ent_791_q } = useQuery({
+  queryKey: ['api_core_ent_791', '/jaxrs/ai/core/entity/conversation/list'],
+  queryFn: async () => {
+    try {
+      const r = await api.get('/jaxrs/ai/core/entity/conversation/list')
+      return (r.data ?? []) as any[]
+    } catch {
+      return []
+    }
+  },
+})
 
-const ai_nonexistent_ref = ref<any[]>([]);
+const ai_nonexistent_ref = ref<any[]>([])
 const ai_nonexistent_q = useQuery({
   queryKey: ['ai_nonexistent'],
   queryFn: async () => {
-    try { const r = await api.get("/jaxrs/ai/nonexistent"); return (r.data ?? []) as any[]; }
-    catch { return []; }
+    try {
+      const r = await api.get('/jaxrs/ai/nonexistent')
+      return (r.data ?? []) as any[]
+    } catch {
+      return []
+    }
   },
-  
-});
-const api_core_ent_245_data = ref<any[]>([]);
-const { data: api_core_ent_245_q } = useQuery({queryKey: ['api_core_ent_245', '/jaxrs/ai/core/entity/app/list'], queryFn: async () => { try { const r = await api.get("/jaxrs/ai/core/entity/app/list"); return (r.data ?? []) as any[]; } catch { return []; } }});
+})
+const api_core_ent_245_data = ref<any[]>([])
+const { data: api_core_ent_245_q } = useQuery({
+  queryKey: ['api_core_ent_245', '/jaxrs/ai/core/entity/app/list'],
+  queryFn: async () => {
+    try {
+      const r = await api.get('/jaxrs/ai/core/entity/app/list')
+      return (r.data ?? []) as any[]
+    } catch {
+      return []
+    }
+  },
+})
 
-const api_core_ent_9_data = ref<any[]>([]);
-const { data: api_core_ent_9_q } = useQuery({queryKey: ['api_core_ent_9', '/jaxrs/ai/core/entity/model/list'], queryFn: async () => { try { const r = await api.get("/jaxrs/ai/core/entity/model/list"); return (r.data ?? []) as any[]; } catch { return []; } }});
+const api_core_ent_9_data = ref<any[]>([])
+const { data: api_core_ent_9_q } = useQuery({
+  queryKey: ['api_core_ent_9', '/jaxrs/ai/core/entity/model/list'],
+  queryFn: async () => {
+    try {
+      const r = await api.get('/jaxrs/ai/core/entity/model/list')
+      return (r.data ?? []) as any[]
+    } catch {
+      return []
+    }
+  },
+})
 
+const api_jaxrs_ai_825_data = ref<any[]>([])
+const { data: api_jaxrs_ai_825_q } = useQuery({
+  queryKey: ['api_jaxrs_ai_825', '/jaxrs/ai/assemble/control/config/list/mcp/paging/1/size/1'],
+  queryFn: async () => {
+    try {
+      const r = await api.get('/jaxrs/ai/assemble/control/config/list/mcp/paging/1/size/1')
+      return (r.data ?? []) as any[]
+    } catch {
+      return []
+    }
+  },
+})
 
-const api_jaxrs_ai_825_data = ref<any[]>([]);
-const { data: api_jaxrs_ai_825_q } = useQuery({queryKey: ['api_jaxrs_ai_825', '/jaxrs/ai/assemble/control/config/list/mcp/paging/1/size/1'], queryFn: async () => { try { const r = await api.get("/jaxrs/ai/assemble/control/config/list/mcp/paging/1/size/1"); return (r.data ?? []) as any[]; } catch { return []; } }});
-
-const jaxrs_ai_chat_list_completion_test_clue_paging_1_size_10_ref = ref<any[]>([]);
+const jaxrs_ai_chat_list_completion_test_clue_paging_1_size_10_ref = ref<any[]>([])
 const jaxrs_ai_chat_list_completion_test_clue_paging_1_size_10_q = useQuery({
   queryKey: ['jaxrs_ai_chat_list_completion_test_clue_paging_1_size_10'],
   queryFn: async () => {
-    try { const r = await api.get("/jaxrs/ai/chat/list/completion/test-clue/paging/1/size/10"); return (r.data ?? []) as any[]; }
-    catch { return []; }
+    try {
+      const r = await api.get('/jaxrs/ai/chat/list/completion/test-clue/paging/1/size/10')
+      return (r.data ?? []) as any[]
+    } catch {
+      return []
+    }
   },
-  
-});
-const api_jaxrs_ai_570_data = ref<any[]>([]);
-const { data: api_jaxrs_ai_570_q } = useQuery({queryKey: ['api_jaxrs_ai_570', '/jaxrs/ai/chat/list/paging/1/size/1'], queryFn: async () => { try { const r = await api.get("/jaxrs/ai/chat/list/paging/1/size/1"); return (r.data ?? []) as any[]; } catch { return []; } }});
+})
+const api_jaxrs_ai_570_data = ref<any[]>([])
+const { data: api_jaxrs_ai_570_q } = useQuery({
+  queryKey: ['api_jaxrs_ai_570', '/jaxrs/ai/chat/list/paging/1/size/1'],
+  queryFn: async () => {
+    try {
+      const r = await api.get('/jaxrs/ai/chat/list/paging/1/size/1')
+      return (r.data ?? []) as any[]
+    } catch {
+      return []
+    }
+  },
+})
 
-const api_jaxrs_ai_742_data = ref<any[]>([]);
-const { data: api_jaxrs_ai_742_q } = useQuery({queryKey: ['api_jaxrs_ai_742', '/jaxrs/ai/chat/list/paging/1/size/10'], queryFn: async () => { try { const r = await api.get("/jaxrs/ai/chat/list/paging/1/size/10"); return (r.data ?? []) as any[]; } catch { return []; } }});
+const api_jaxrs_ai_742_data = ref<any[]>([])
+const { data: api_jaxrs_ai_742_q } = useQuery({
+  queryKey: ['api_jaxrs_ai_742', '/jaxrs/ai/chat/list/paging/1/size/10'],
+  queryFn: async () => {
+    try {
+      const r = await api.get('/jaxrs/ai/chat/list/paging/1/size/10')
+      return (r.data ?? []) as any[]
+    } catch {
+      return []
+    }
+  },
+})
 
-const api_jaxrs_ai_373_data = ref<any[]>([]);
-const { data: api_jaxrs_ai_373_q } = useQuery({queryKey: ['api_jaxrs_ai_373', '/jaxrs/ai/config/list/mcp/paging/1/size/1'], queryFn: async () => { try { const r = await api.get("/jaxrs/ai/config/list/mcp/paging/1/size/1"); return (r.data ?? []) as any[]; } catch { return []; } }});
+const api_jaxrs_ai_373_data = ref<any[]>([])
+const { data: api_jaxrs_ai_373_q } = useQuery({
+  queryKey: ['api_jaxrs_ai_373', '/jaxrs/ai/config/list/mcp/paging/1/size/1'],
+  queryFn: async () => {
+    try {
+      const r = await api.get('/jaxrs/ai/config/list/mcp/paging/1/size/1')
+      return (r.data ?? []) as any[]
+    } catch {
+      return []
+    }
+  },
+})
 
-const api_jaxrs_ai_814_data = ref<any[]>([]);
-const { data: api_jaxrs_ai_814_q } = useQuery({queryKey: ['api_jaxrs_ai_814', '/jaxrs/ai/config/list/mcp/paging/1/size/10'], queryFn: async () => { try { const r = await api.get("/jaxrs/ai/config/list/mcp/paging/1/size/10"); return (r.data ?? []) as any[]; } catch { return []; } }});
+const api_jaxrs_ai_814_data = ref<any[]>([])
+const { data: api_jaxrs_ai_814_q } = useQuery({
+  queryKey: ['api_jaxrs_ai_814', '/jaxrs/ai/config/list/mcp/paging/1/size/10'],
+  queryFn: async () => {
+    try {
+      const r = await api.get('/jaxrs/ai/config/list/mcp/paging/1/size/10')
+      return (r.data ?? []) as any[]
+    } catch {
+      return []
+    }
+  },
+})
 
-const api_jaxrs_ai_703_data = ref<any[]>([]);
-const { data: api_jaxrs_ai_703_q } = useQuery({queryKey: ['api_jaxrs_ai_703', '/jaxrs/ai/config/list/model/paging/1/size/1'], queryFn: async () => { try { const r = await api.get("/jaxrs/ai/config/list/model/paging/1/size/1"); return (r.data ?? []) as any[]; } catch { return []; } }});
+const api_jaxrs_ai_703_data = ref<any[]>([])
+const { data: api_jaxrs_ai_703_q } = useQuery({
+  queryKey: ['api_jaxrs_ai_703', '/jaxrs/ai/config/list/model/paging/1/size/1'],
+  queryFn: async () => {
+    try {
+      const r = await api.get('/jaxrs/ai/config/list/model/paging/1/size/1')
+      return (r.data ?? []) as any[]
+    } catch {
+      return []
+    }
+  },
+})
 
-const api_jaxrs_ai_43_data = ref<any[]>([]);
-const { data: api_jaxrs_ai_43_q } = useQuery({queryKey: ['api_jaxrs_ai_43', '/jaxrs/ai/config/list/model/paging/1/size/10'], queryFn: async () => { try { const r = await api.get("/jaxrs/ai/config/list/model/paging/1/size/10"); return (r.data ?? []) as any[]; } catch { return []; } }});
+const api_jaxrs_ai_43_data = ref<any[]>([])
+const { data: api_jaxrs_ai_43_q } = useQuery({
+  queryKey: ['api_jaxrs_ai_43', '/jaxrs/ai/config/list/model/paging/1/size/10'],
+  queryFn: async () => {
+    try {
+      const r = await api.get('/jaxrs/ai/config/list/model/paging/1/size/10')
+      return (r.data ?? []) as any[]
+    } catch {
+      return []
+    }
+  },
+})
 
-const jaxrs_ai_index_cms_doc_with_app_test_app_ref = ref<any[]>([]);
+const jaxrs_ai_index_cms_doc_with_app_test_app_ref = ref<any[]>([])
 const jaxrs_ai_index_cms_doc_with_app_test_app_q = useQuery({
   queryKey: ['jaxrs_ai_index_cms_doc_with_app_test_app'],
   queryFn: async () => {
-    try { const r = await api.get("/jaxrs/ai/index/cms/doc/with/app/test-app"); return (r.data ?? []) as any[]; }
-    catch { return []; }
+    try {
+      const r = await api.get('/jaxrs/ai/index/cms/doc/with/app/test-app')
+      return (r.data ?? []) as any[]
+    } catch {
+      return []
+    }
   },
-  
-});
-const api_jaxrs_ai_934_data = ref<any[]>([]);
-const { data: api_jaxrs_ai_934_q } = useQuery({queryKey: ['api_jaxrs_ai_934', '/jaxrs/ai_assemble_control/chat/list/completion/clue-1/paging/1/size/20'], queryFn: async () => { try { const r = await api.get("/jaxrs/ai_assemble_control/chat/list/completion/clue-1/paging/1/size/20"); return (r.data ?? []) as any[]; } catch { return []; } }});
+})
+const api_jaxrs_ai_934_data = ref<any[]>([])
+const { data: api_jaxrs_ai_934_q } = useQuery({
+  queryKey: ['api_jaxrs_ai_934', '/jaxrs/ai_assemble_control/chat/list/completion/clue-1/paging/1/size/20'],
+  queryFn: async () => {
+    try {
+      const r = await api.get('/jaxrs/ai_assemble_control/chat/list/completion/clue-1/paging/1/size/20')
+      return (r.data ?? []) as any[]
+    } catch {
+      return []
+    }
+  },
+})
 
-const api_jaxrs_ai_378_data = ref<any[]>([]);
-const { data: api_jaxrs_ai_378_q } = useQuery({queryKey: ['api_jaxrs_ai_378', '/jaxrs/ai_assemble_control/chat/list/completion/u2t/paging/1/size/20'], queryFn: async () => { try { const r = await api.get("/jaxrs/ai_assemble_control/chat/list/completion/u2t/paging/1/size/20"); return (r.data ?? []) as any[]; } catch { return []; } }});
+const api_jaxrs_ai_378_data = ref<any[]>([])
+const { data: api_jaxrs_ai_378_q } = useQuery({
+  queryKey: ['api_jaxrs_ai_378', '/jaxrs/ai_assemble_control/chat/list/completion/u2t/paging/1/size/20'],
+  queryFn: async () => {
+    try {
+      const r = await api.get('/jaxrs/ai_assemble_control/chat/list/completion/u2t/paging/1/size/20')
+      return (r.data ?? []) as any[]
+    } catch {
+      return []
+    }
+  },
+})
 
-const api_jaxrs_ai_463_data = ref<any[]>([]);
-const { data: api_jaxrs_ai_463_q } = useQuery({queryKey: ['api_jaxrs_ai_463', '/jaxrs/ai_assemble_control/chat/list/paging/1/size/20'], queryFn: async () => { try { const r = await api.get("/jaxrs/ai_assemble_control/chat/list/paging/1/size/20"); return (r.data ?? []) as any[]; } catch { return []; } }});
+const api_jaxrs_ai_463_data = ref<any[]>([])
+const { data: api_jaxrs_ai_463_q } = useQuery({
+  queryKey: ['api_jaxrs_ai_463', '/jaxrs/ai_assemble_control/chat/list/paging/1/size/20'],
+  queryFn: async () => {
+    try {
+      const r = await api.get('/jaxrs/ai_assemble_control/chat/list/paging/1/size/20')
+      return (r.data ?? []) as any[]
+    } catch {
+      return []
+    }
+  },
+})
 
-const api_jaxrs_ai_256_data = ref<any[]>([]);
-const { data: api_jaxrs_ai_256_q } = useQuery({queryKey: ['api_jaxrs_ai_256', '/jaxrs/ai_assemble_control/config/list/mcp/paging/1/size/20'], queryFn: async () => { try { const r = await api.get("/jaxrs/ai_assemble_control/config/list/mcp/paging/1/size/20"); return (r.data ?? []) as any[]; } catch { return []; } }});
+const api_jaxrs_ai_256_data = ref<any[]>([])
+const { data: api_jaxrs_ai_256_q } = useQuery({
+  queryKey: ['api_jaxrs_ai_256', '/jaxrs/ai_assemble_control/config/list/mcp/paging/1/size/20'],
+  queryFn: async () => {
+    try {
+      const r = await api.get('/jaxrs/ai_assemble_control/config/list/mcp/paging/1/size/20')
+      return (r.data ?? []) as any[]
+    } catch {
+      return []
+    }
+  },
+})
 
-const api_jaxrs_ai_110_data = ref<any[]>([]);
-const { data: api_jaxrs_ai_110_q } = useQuery({queryKey: ['api_jaxrs_ai_110', '/jaxrs/ai_assemble_control/config/list/mcp/paging/page/size/size'], queryFn: async () => { try { const r = await api.get("/jaxrs/ai_assemble_control/config/list/mcp/paging/page/size/size"); return (r.data ?? []) as any[]; } catch { return []; } }});
+const api_jaxrs_ai_110_data = ref<any[]>([])
+const { data: api_jaxrs_ai_110_q } = useQuery({
+  queryKey: ['api_jaxrs_ai_110', '/jaxrs/ai_assemble_control/config/list/mcp/paging/page/size/size'],
+  queryFn: async () => {
+    try {
+      const r = await api.get('/jaxrs/ai_assemble_control/config/list/mcp/paging/page/size/size')
+      return (r.data ?? []) as any[]
+    } catch {
+      return []
+    }
+  },
+})
 
-const api_jaxrs_ai_593_data = ref<any[]>([]);
-const { data: api_jaxrs_ai_593_q } = useQuery({queryKey: ['api_jaxrs_ai_593', '/jaxrs/ai_assemble_control/config/list/model/paging/1/size/1'], queryFn: async () => { try { const r = await api.get("/jaxrs/ai_assemble_control/config/list/model/paging/1/size/1"); return (r.data ?? []) as any[]; } catch { return []; } }});
+const api_jaxrs_ai_593_data = ref<any[]>([])
+const { data: api_jaxrs_ai_593_q } = useQuery({
+  queryKey: ['api_jaxrs_ai_593', '/jaxrs/ai_assemble_control/config/list/model/paging/1/size/1'],
+  queryFn: async () => {
+    try {
+      const r = await api.get('/jaxrs/ai_assemble_control/config/list/model/paging/1/size/1')
+      return (r.data ?? []) as any[]
+    } catch {
+      return []
+    }
+  },
+})
 
-const api_jaxrs_ai_431_data = ref<any[]>([]);
-const { data: api_jaxrs_ai_431_q } = useQuery({queryKey: ['api_jaxrs_ai_431', '/jaxrs/ai_assemble_control/config/list/model/paging/1/size/20'], queryFn: async () => { try { const r = await api.get("/jaxrs/ai_assemble_control/config/list/model/paging/1/size/20"); return (r.data ?? []) as any[]; } catch { return []; } }});
+const api_jaxrs_ai_431_data = ref<any[]>([])
+const { data: api_jaxrs_ai_431_q } = useQuery({
+  queryKey: ['api_jaxrs_ai_431', '/jaxrs/ai_assemble_control/config/list/model/paging/1/size/20'],
+  queryFn: async () => {
+    try {
+      const r = await api.get('/jaxrs/ai_assemble_control/config/list/model/paging/1/size/20')
+      return (r.data ?? []) as any[]
+    } catch {
+      return []
+    }
+  },
+})
 
-const api_jaxrs_ai_assembl_357_data = ref<any[]>([]);
-const { data: api_jaxrs_ai_assembl_357_q } = useQuery({queryKey: ['api_jaxrs_ai_assembl_357', '/jaxrs/ai_assemble_control/config/list/model/paging/page/size/size'], queryFn: async () => { try { const r = await api.get("/jaxrs/ai_assemble_control/config/list/model/paging/page/size/size"); return (r.data ?? []) as any[]; } catch { return []; } }});
+const api_jaxrs_ai_assembl_357_data = ref<any[]>([])
+const { data: api_jaxrs_ai_assembl_357_q } = useQuery({
+  queryKey: ['api_jaxrs_ai_assembl_357', '/jaxrs/ai_assemble_control/config/list/model/paging/page/size/size'],
+  queryFn: async () => {
+    try {
+      const r = await api.get('/jaxrs/ai_assemble_control/config/list/model/paging/page/size/size')
+      return (r.data ?? []) as any[]
+    } catch {
+      return []
+    }
+  },
+})
 
-const api_jaxrs_ai_assembl_232_data = ref<any[]>([]);
-const { data: api_jaxrs_ai_assembl_232_q } = useQuery({queryKey: ['api_jaxrs_ai_assembl_232', '/jaxrs/ai_assemble_control/file/list/paging/1/size/1'], queryFn: async () => { try { const r = await api.get("/jaxrs/ai_assemble_control/file/list/paging/1/size/1"); return (r.data ?? []) as any[]; } catch { return []; } }});
+const api_jaxrs_ai_assembl_232_data = ref<any[]>([])
+const { data: api_jaxrs_ai_assembl_232_q } = useQuery({
+  queryKey: ['api_jaxrs_ai_assembl_232', '/jaxrs/ai_assemble_control/file/list/paging/1/size/1'],
+  queryFn: async () => {
+    try {
+      const r = await api.get('/jaxrs/ai_assemble_control/file/list/paging/1/size/1')
+      return (r.data ?? []) as any[]
+    } catch {
+      return []
+    }
+  },
+})
 
-const api_jaxrs_ai_assembl_676_data = ref<any[]>([]);
-const { data: api_jaxrs_ai_assembl_676_q } = useQuery({queryKey: ['api_jaxrs_ai_assembl_676', '/jaxrs/ai_assemble_control/file/list/paging/1/size/20'], queryFn: async () => { try { const r = await api.get("/jaxrs/ai_assemble_control/file/list/paging/1/size/20"); return (r.data ?? []) as any[]; } catch { return []; } }});
+const api_jaxrs_ai_assembl_676_data = ref<any[]>([])
+const { data: api_jaxrs_ai_assembl_676_q } = useQuery({
+  queryKey: ['api_jaxrs_ai_assembl_676', '/jaxrs/ai_assemble_control/file/list/paging/1/size/20'],
+  queryFn: async () => {
+    try {
+      const r = await api.get('/jaxrs/ai_assemble_control/file/list/paging/1/size/20')
+      return (r.data ?? []) as any[]
+    } catch {
+      return []
+    }
+  },
+})
 
-const api_jaxrs_ai_assembl_616_data = ref<any[]>([]);
-const { data: api_jaxrs_ai_assembl_616_q } = useQuery({queryKey: ['api_jaxrs_ai_assembl_616', '/jaxrs/ai_assemble_control/file/list/paging/page/size/size'], queryFn: async () => { try { const r = await api.get("/jaxrs/ai_assemble_control/file/list/paging/page/size/size"); return (r.data ?? []) as any[]; } catch { return []; } }});
+const api_jaxrs_ai_assembl_616_data = ref<any[]>([])
+const { data: api_jaxrs_ai_assembl_616_q } = useQuery({
+  queryKey: ['api_jaxrs_ai_assembl_616', '/jaxrs/ai_assemble_control/file/list/paging/page/size/size'],
+  queryFn: async () => {
+    try {
+      const r = await api.get('/jaxrs/ai_assemble_control/file/list/paging/page/size/size')
+      return (r.data ?? []) as any[]
+    } catch {
+      return []
+    }
+  },
+})
 
-const api_jaxrs_ai_assembl_13_data = ref<any[]>([]);
-const { data: api_jaxrs_ai_assembl_13_q } = useQuery({queryKey: ['api_jaxrs_ai_assembl_13', '/jaxrs/ai_assemble_control/index/cms/doc/with/app/appId'], queryFn: async () => { try { const r = await api.get("/jaxrs/ai_assemble_control/index/cms/doc/with/app/appId"); return (r.data ?? []) as any[]; } catch { return []; } }});
+const api_jaxrs_ai_assembl_13_data = ref<any[]>([])
+const { data: api_jaxrs_ai_assembl_13_q } = useQuery({
+  queryKey: ['api_jaxrs_ai_assembl_13', '/jaxrs/ai_assemble_control/index/cms/doc/with/app/appId'],
+  queryFn: async () => {
+    try {
+      const r = await api.get('/jaxrs/ai_assemble_control/index/cms/doc/with/app/appId')
+      return (r.data ?? []) as any[]
+    } catch {
+      return []
+    }
+  },
+})
 
-const api_jaxrs_ai_assembl_934_data = ref<any[]>([]);
-const { data: api_jaxrs_ai_assembl_934_q } = useQuery({queryKey: ['api_jaxrs_ai_assembl_934', '/jaxrs/ai_assemble_control/index/cms/doc/with/app/u2t'], queryFn: async () => { try { const r = await api.get("/jaxrs/ai_assemble_control/index/cms/doc/with/app/u2t"); return (r.data ?? []) as any[]; } catch { return []; } }});
+const api_jaxrs_ai_assembl_934_data = ref<any[]>([])
+const { data: api_jaxrs_ai_assembl_934_q } = useQuery({
+  queryKey: ['api_jaxrs_ai_assembl_934', '/jaxrs/ai_assemble_control/index/cms/doc/with/app/u2t'],
+  queryFn: async () => {
+    try {
+      const r = await api.get('/jaxrs/ai_assemble_control/index/cms/doc/with/app/u2t')
+      return (r.data ?? []) as any[]
+    } catch {
+      return []
+    }
+  },
+})
 
-const api_jaxrs_ai_assembl_627_data = ref<any[]>([]);
-const { data: api_jaxrs_ai_assembl_627_q } = useQuery({queryKey: ['api_jaxrs_ai_assembl_627', '/jaxrs/ai_assemble_control/index/list/paging/1/size/20'], queryFn: async () => { try { const r = await api.get("/jaxrs/ai_assemble_control/index/list/paging/1/size/20"); return (r.data ?? []) as any[]; } catch { return []; } }});
+const api_jaxrs_ai_assembl_627_data = ref<any[]>([])
+const { data: api_jaxrs_ai_assembl_627_q } = useQuery({
+  queryKey: ['api_jaxrs_ai_assembl_627', '/jaxrs/ai_assemble_control/index/list/paging/1/size/20'],
+  queryFn: async () => {
+    try {
+      const r = await api.get('/jaxrs/ai_assemble_control/index/list/paging/1/size/20')
+      return (r.data ?? []) as any[]
+    } catch {
+      return []
+    }
+  },
+})
 
-const api_jaxrs_ai_assembl_83_data = ref<any[]>([]);
-const { data: api_jaxrs_ai_assembl_83_q } = useQuery({queryKey: ['api_jaxrs_ai_assembl_83', '/jaxrs/ai_assemble_control/index/list/paging/page/size/size'], queryFn: async () => { try { const r = await api.get("/jaxrs/ai_assemble_control/index/list/paging/page/size/size"); return (r.data ?? []) as any[]; } catch { return []; } }});
-
+const api_jaxrs_ai_assembl_83_data = ref<any[]>([])
+const { data: api_jaxrs_ai_assembl_83_q } = useQuery({
+  queryKey: ['api_jaxrs_ai_assembl_83', '/jaxrs/ai_assemble_control/index/list/paging/page/size/size'],
+  queryFn: async () => {
+    try {
+      const r = await api.get('/jaxrs/ai_assemble_control/index/list/paging/page/size/size')
+      return (r.data ?? []) as any[]
+    } catch {
+      return []
+    }
+  },
+})
 </script>
 
 <style scoped>

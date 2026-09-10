@@ -61,35 +61,35 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue';
-import { toast } from '../utils/toast';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/vue-query';
-import { api } from '@oa4rust/sdk';
+import { api } from '@oa4rust/sdk'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/vue-query'
+import { computed, ref } from 'vue'
+import { toast } from '../utils/toast'
 
 interface TaskItem {
-  id: string;
-  title?: string;
-  processName?: string;
-  appName?: string;
-  createTime?: string;
-  updateTime?: string;
-  status?: string;
-  [key: string]: unknown;
+  id: string
+  title?: string
+  processName?: string
+  appName?: string
+  createTime?: string
+  updateTime?: string
+  status?: string
+  [key: string]: unknown
 }
 
-type TabKey = 'pending' | 'started' | 'completed' | 'my';
+type TabKey = 'pending' | 'started' | 'completed' | 'my'
 
 const tabs = [
   { key: 'pending' as TabKey, label: '待我处理', count: 0 },
   { key: 'started' as TabKey, label: '我发起的', count: 0 },
   { key: 'completed' as TabKey, label: '已完成', count: 0 },
   { key: 'my' as TabKey, label: '我的任务', count: 0 },
-];
+]
 
-const activeTab = ref<TabKey>('pending');
-const queryClient = useQueryClient();
+const activeTab = ref<TabKey>('pending')
+const queryClient = useQueryClient()
 
-const tabLabel = computed(() => tabs.find(t => t.key === activeTab.value)?.label ?? '');
+const tabLabel = computed(() => tabs.find((t) => t.key === activeTab.value)?.label ?? '')
 
 // 统计数据
 const { data: counts } = useQuery({
@@ -99,28 +99,28 @@ const { data: counts } = useQuery({
       api.get('/jaxrs/processplatform/assemble/surface/work/count/currentperson'),
       api.get('/jaxrs/processplatform/assemble/surface/work/count/startperson'),
       api.get('/jaxrs/processplatform/assemble/surface/work/count/completedperson'),
-    ]);
+    ])
     return {
       pending: ((pending as any)?.data?.count ?? 0) as number,
       started: ((started as any)?.data?.count ?? 0) as number,
       completed: ((completed as any)?.data?.count ?? 0) as number,
-    };
+    }
   },
   staleTime: 30 * 1000,
-});
+})
 
 const stats = computed(() => [
   { label: '待处理', value: counts.value?.pending ?? 0, color: 'var(--color-warning)' },
   { label: '已发起', value: counts.value?.started ?? 0, color: 'var(--color-info)' },
   { label: '已完成', value: counts.value?.completed ?? 0, color: 'var(--color-success)' },
   { label: '已超时', value: 0, color: 'var(--color-error)' },
-]);
+])
 
 // 更新 tab 计数
 for (const t of tabs) {
-  if (t.key === 'pending') t.count = computed(() => counts.value?.pending ?? 0).value;
-  else if (t.key === 'started') t.count = computed(() => counts.value?.started ?? 0).value;
-  else if (t.key === 'completed') t.count = computed(() => counts.value?.completed ?? 0).value;
+  if (t.key === 'pending') t.count = computed(() => counts.value?.pending ?? 0).value
+  else if (t.key === 'started') t.count = computed(() => counts.value?.started ?? 0).value
+  else if (t.key === 'completed') t.count = computed(() => counts.value?.completed ?? 0).value
 }
 
 // 任务列表（通过 queryKey 切换）
@@ -132,677 +132,879 @@ const query = useQuery<TaskItem[]>({
       started: '/jaxrs/processplatform/assemble/surface/work/list/my/paging/1/10',
       completed: '/jaxrs/processplatform/assemble/surface/work/list/filter/manage/1/10/manage',
       my: '/jaxrs/processplatform/assemble/surface/work/list/filter/manage/1/10/manage',
-    };
-    const resp = await api.post<{ data: unknown[] }>(endpoints[activeTab.value], {});
-    return ((resp as any)?.data ?? []) as TaskItem[];
+    }
+    const resp = await api.post<{ data: unknown[] }>(endpoints[activeTab.value], {})
+    return ((resp as any)?.data ?? []) as TaskItem[]
   },
   staleTime: 30 * 1000,
   retry: 2,
-});
+})
 
-const items = computed(() => query.data ?? []);
+const items = computed(() => query.data ?? [])
 
 // 审批操作（带乐观更新）
 const approveMutation = useMutation({
-  mutationFn: (id: string) =>
-    api.post(`/jaxrs/processplatform/assemble/surface/work/${id}/approve`, {}),
+  mutationFn: (id: string) => api.post(`/jaxrs/processplatform/assemble/surface/work/${id}/approve`, {}),
   // 乐观更新：提交前先从列表移除
   onMutate: async (id) => {
-    await queryClient.cancelQueries({ queryKey: ['process', 'tasks', activeTab] });
-    const previous = queryClient.getQueryData<TaskItem[]>(['process', 'tasks', activeTab]);
+    await queryClient.cancelQueries({ queryKey: ['process', 'tasks', activeTab] })
+    const previous = queryClient.getQueryData<TaskItem[]>(['process', 'tasks', activeTab])
     if (previous) {
-      queryClient.setQueryData(['process', 'tasks', activeTab],
-        previous.filter((t: TaskItem) => t.id !== id));
+      queryClient.setQueryData(
+        ['process', 'tasks', activeTab],
+        previous.filter((t: TaskItem) => t.id !== id),
+      )
     }
-    return { previous };
+    return { previous }
   },
   onError: (_err, _id, context) => {
     if (context?.previous) {
-      queryClient.setQueryData(['process', 'tasks', activeTab], context.previous);
+      queryClient.setQueryData(['process', 'tasks', activeTab], context.previous)
     }
   },
   onSettled: () => {
-    queryClient.invalidateQueries({ queryKey: ['process', 'tasks'] });
-    queryClient.invalidateQueries({ queryKey: ['process', 'counts'] });
+    queryClient.invalidateQueries({ queryKey: ['process', 'tasks'] })
+    queryClient.invalidateQueries({ queryKey: ['process', 'counts'] })
   },
-});
+})
 
 function taskIcon(item: TaskItem): string {
-  const status = (item.status as string) ?? '';
-  if (status === 'completed' || status === 'Approved') return '✅';
-  if (status === 'timeout' || status === 'expired') return '⚠️';
-  return '📋';
+  const status = (item.status as string) ?? ''
+  if (status === 'completed' || status === 'Approved') return '✅'
+  if (status === 'timeout' || status === 'expired') return '⚠️'
+  return '📋'
 }
 
 function fmtTime(ts: unknown): string {
-  if (!ts) return '';
+  if (!ts) return ''
   try {
     return new Date(ts as string).toLocaleString('zh-CN', {
-      month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit',
-    });
-  } catch { return String(ts); }
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+    })
+  } catch {
+    return String(ts)
+  }
 }
 
 function handleApprove(item: TaskItem): void {
   approveMutation.mutate(item.id, {
     onSuccess: () => toast.success('审批通过'),
     onError: () => toast.error('审批失败'),
-  });
+  })
 }
 
 const rejectMutation = useMutation({
-  mutationFn: (id: string) =>
-    api.post(`/jaxrs/processplatform/assemble/surface/work/${id}/reject`, {}),
+  mutationFn: (id: string) => api.post(`/jaxrs/processplatform/assemble/surface/work/${id}/reject`, {}),
   onSettled: () => {
-    queryClient.invalidateQueries({ queryKey: ['process', 'tasks'] });
-    queryClient.invalidateQueries({ queryKey: ['process', 'counts'] });
+    queryClient.invalidateQueries({ queryKey: ['process', 'tasks'] })
+    queryClient.invalidateQueries({ queryKey: ['process', 'counts'] })
   },
-});
+})
 function handleReject(item: TaskItem): void {
-  if (!confirmMsg('确定驳回该任务？')) return;
+  if (!confirmMsg('确定驳回该任务？')) return
   rejectMutation.mutate(item.id, {
     onSuccess: () => toast.success('已驳回'),
     onError: () => toast.error('驳回失败'),
-  });
+  })
 }
 
 const delegateMutation = useMutation({
   mutationFn: ({ id, targetId }: { id: string; targetId: string }) =>
     api.post(`/jaxrs/processplatform/assemble/surface/work/${id}/delegate`, { targetId }),
   onSettled: () => {
-    queryClient.invalidateQueries({ queryKey: ['process', 'tasks'] });
-    queryClient.invalidateQueries({ queryKey: ['process', 'counts'] });
+    queryClient.invalidateQueries({ queryKey: ['process', 'tasks'] })
+    queryClient.invalidateQueries({ queryKey: ['process', 'counts'] })
   },
-});
+})
 async function handleDelegate(item: TaskItem): void {
-  const targetId = prompt('请输入转办对象ID:', '');
-  if (!targetId) return;
-  delegateMutation.mutate({ id: item.id, targetId }, {
-    onSuccess: () => toast.success('转办成功'),
-    onError: () => toast.error('转办失败'),
-  });
+  const targetId = prompt('请输入转办对象ID:', '')
+  if (!targetId) return
+  delegateMutation.mutate(
+    { id: item.id, targetId },
+    {
+      onSuccess: () => toast.success('转办成功'),
+      onError: () => toast.error('转办失败'),
+    },
+  )
 }
 
 const forwardMutation = useMutation({
   mutationFn: ({ id, targetId }: { id: string; targetId: string }) =>
     api.post(`/jaxrs/processplatform/assemble/surface/work/${id}/forward`, { targetId }),
   onSettled: () => {
-    queryClient.invalidateQueries({ queryKey: ['process', 'tasks'] });
-    queryClient.invalidateQueries({ queryKey: ['process', 'counts'] });
+    queryClient.invalidateQueries({ queryKey: ['process', 'tasks'] })
+    queryClient.invalidateQueries({ queryKey: ['process', 'counts'] })
   },
-});
+})
 async function handleForward(item: TaskItem): void {
-  const targetId = prompt('请输入抄送对象ID:', '');
-  if (!targetId) return;
-  forwardMutation.mutate({ id: item.id, targetId }, {
-    onSuccess: () => toast.success('抄送成功'),
-    onError: () => toast.error('抄送失败'),
-  });
+  const targetId = prompt('请输入抄送对象ID:', '')
+  if (!targetId) return
+  forwardMutation.mutate(
+    { id: item.id, targetId },
+    {
+      onSuccess: () => toast.success('抄送成功'),
+      onError: () => toast.error('抄送失败'),
+    },
+  )
 }
 
 function handleView(_item: TaskItem): void {
   // Navigate to detail (future)
-
 }
 
 async function handleComment(item) {
-  const comment = prompt('添加评论:');
-  if(!comment) return;
-  await api.post('/jaxrs/processplatform/assemble/surface/work/comment',{id:item.id,comment});
-  query.refetch();
-  toast.success('评论已提交');
+  const comment = prompt('添加评论:')
+  if (!comment) return
+  await api.post('/jaxrs/processplatform/assemble/surface/work/comment', { id: item.id, comment })
+  query.refetch()
+  toast.success('评论已提交')
 }
-
-
 
 // 工作管理扩展操作
 const workManageM = useMutation({
   mutationFn: (id: string) => api.get(`/jaxrs/processplatform/assemble/surface/work/manage/${id}`),
-  onSettled: () => { queryClient.invalidateQueries({ queryKey: ['process', 'tasks'] }); queryClient.invalidateQueries({ queryKey: ['process', 'counts'] }); },
-});
-function handleManage(item: TaskItem): void { workManageM.mutate(item.id); }
+  onSettled: () => {
+    queryClient.invalidateQueries({ queryKey: ['process', 'tasks'] })
+    queryClient.invalidateQueries({ queryKey: ['process', 'counts'] })
+  },
+})
+function handleManage(item: TaskItem): void {
+  workManageM.mutate(item.id)
+}
 
 const workAssignmentM = useMutation({
   mutationFn: (id: string) => api.get(`/jaxrs/processplatform/assemble/surface/work/assignment/manage/${id}`),
-  onSettled: () => { queryClient.invalidateQueries({ queryKey: ['process', 'tasks'] }); },
-});
-function handleAssignment(item: TaskItem): void { workAssignmentM.mutate(item.id); }
+  onSettled: () => {
+    queryClient.invalidateQueries({ queryKey: ['process', 'tasks'] })
+  },
+})
+function handleAssignment(item: TaskItem): void {
+  workAssignmentM.mutate(item.id)
+}
 
 const workForceM = useMutation({
-  mutationFn: (processFlag: string) => api.post(`/jaxrs/processplatform/assemble/surface/work/process/force/${processFlag}`, null),
-  onSettled: () => { queryClient.invalidateQueries({ queryKey: ['process', 'tasks'] }); },
-});
+  mutationFn: (processFlag: string) =>
+    api.post(`/jaxrs/processplatform/assemble/surface/work/process/force/${processFlag}`, null),
+  onSettled: () => {
+    queryClient.invalidateQueries({ queryKey: ['process', 'tasks'] })
+  },
+})
 async function handleForce(item: TaskItem): void {
-  const flag = prompt('输入流程Flag:', '');
-  if (!flag) return;
-  workForceM.mutate(flag);
+  const flag = prompt('输入流程Flag:', '')
+  if (!flag) return
+  workForceM.mutate(flag)
 }
 
 const workRerouteM = useMutation({
   mutationFn: (id: string) => api.post(`/jaxrs/processplatform/assemble/surface/work/v2/reroute/${id}`, null),
-  onSettled: () => { queryClient.invalidateQueries({ queryKey: ['process', 'tasks'] }); },
-});
-function handleReroute(item: TaskItem): void { if(confirmMsg('确认重路由该任务？')) workRerouteM.mutate(item.id); }
+  onSettled: () => {
+    queryClient.invalidateQueries({ queryKey: ['process', 'tasks'] })
+  },
+})
+function handleReroute(item: TaskItem): void {
+  if (confirmMsg('确认重路由该任务？')) workRerouteM.mutate(item.id)
+}
 
 const workRetractM = useMutation({
   mutationFn: (id: string) => api.post(`/jaxrs/processplatform/assemble/surface/work/v2/retract/${id}`, null),
-  onSettled: () => { queryClient.invalidateQueries({ queryKey: ['process', 'tasks'] }); },
-});
-function handleRetract(item: TaskItem): void { if(confirmMsg('确认撤回该任务？')) workRetractM.mutate(item.id); }
-const review_v2_count_ref = ref<any[]>([]);
+  onSettled: () => {
+    queryClient.invalidateQueries({ queryKey: ['process', 'tasks'] })
+  },
+})
+function handleRetract(item: TaskItem): void {
+  if (confirmMsg('确认撤回该任务？')) workRetractM.mutate(item.id)
+}
+const review_v2_count_ref = ref<any[]>([])
 const review_v2_count_q = useQuery({
   queryKey: ['review_v2_count'],
   queryFn: async () => {
-    try { const r = await api.get("/jaxrs/processplatform/assemble/surface/review/v2/count"); return (r.data ?? []) as any[]; }
-    catch { return []; }
+    try {
+      const r = await api.get('/jaxrs/processplatform/assemble/surface/review/v2/count')
+      return (r.data ?? []) as any[]
+    } catch {
+      return []
+    }
   },
-  
-});
-const review_v2_search_ref = ref<any[]>([]);
+})
+const review_v2_search_ref = ref<any[]>([])
 const review_v2_search_q = useQuery({
   queryKey: ['review_v2_search'],
   queryFn: async () => {
-    try { const r = await api.get("/jaxrs/processplatform/assemble/surface/review/v2/search"); return (r.data ?? []) as any[]; }
-    catch { return []; }
+    try {
+      const r = await api.get('/jaxrs/processplatform/assemble/surface/review/v2/search')
+      return (r.data ?? []) as any[]
+    } catch {
+      return []
+    }
   },
-  
-});
-const task_processing_task_001_ref = ref<any[]>([]);
+})
+const task_processing_task_001_ref = ref<any[]>([])
 const task_processing_task_001_q = useQuery({
   queryKey: ['task_processing_task_001'],
   queryFn: async () => {
-    try { const r = await api.get("/jaxrs/processplatform/task/processing/task-001"); return (r.data ?? []) as any[]; }
-    catch { return []; }
+    try {
+      const r = await api.get('/jaxrs/processplatform/task/processing/task-001')
+      return (r.data ?? []) as any[]
+    } catch {
+      return []
+    }
   },
-  
-});
+})
 
-const assemble_designer_save_flow_1_ref = ref<any[]>([]);
+const assemble_designer_save_flow_1_ref = ref<any[]>([])
 const assemble_designer_save_flow_1_q = useQuery({
   queryKey: ['assemble_designer_save_flow_1'],
   queryFn: async () => {
-    try { const r = await api.get("/jaxrs/processplatform/assemble/designer/save/flow-1"); return (r.data ?? []) as any[]; }
-    catch { return []; }
+    try {
+      const r = await api.get('/jaxrs/processplatform/assemble/designer/save/flow-1')
+      return (r.data ?? []) as any[]
+    } catch {
+      return []
+    }
   },
-  
-});
-const assemble_surface_save_surface_1_ref = ref<any[]>([]);
+})
+const assemble_surface_save_surface_1_ref = ref<any[]>([])
 const assemble_surface_save_surface_1_q = useQuery({
   queryKey: ['assemble_surface_save_surface_1'],
   queryFn: async () => {
-    try { const r = await api.get("/jaxrs/processplatform/assemble/surface/save/surface-1"); return (r.data ?? []) as any[]; }
-    catch { return []; }
+    try {
+      const r = await api.get('/jaxrs/processplatform/assemble/surface/save/surface-1')
+      return (r.data ?? []) as any[]
+    } catch {
+      return []
+    }
   },
-  
-});
-const assemble_designer_preview_flow_1_ref = ref<any[]>([]);
+})
+const assemble_designer_preview_flow_1_ref = ref<any[]>([])
 const assemble_designer_preview_flow_1_q = useQuery({
   queryKey: ['assemble_designer_preview_flow_1'],
   queryFn: async () => {
-    try { const r = await api.get("/jaxrs/processplatform/assemble/designer/preview/flow-1"); return (r.data ?? []) as any[]; }
-    catch { return []; }
+    try {
+      const r = await api.get('/jaxrs/processplatform/assemble/designer/preview/flow-1')
+      return (r.data ?? []) as any[]
+    } catch {
+      return []
+    }
   },
-  
-});
-const assemble_designer_delete_flow_1_ref = ref<any[]>([]);
+})
+const assemble_designer_delete_flow_1_ref = ref<any[]>([])
 const assemble_designer_delete_flow_1_q = useQuery({
   queryKey: ['assemble_designer_delete_flow_1'],
   queryFn: async () => {
-    try { const r = await api.get("/jaxrs/processplatform/assemble/designer/delete/flow-1"); return (r.data ?? []) as any[]; }
-    catch { return []; }
+    try {
+      const r = await api.get('/jaxrs/processplatform/assemble/designer/delete/flow-1')
+      return (r.data ?? []) as any[]
+    } catch {
+      return []
+    }
   },
-  
-});
-const assemble_surface_get_surface_1_ref = ref<any[]>([]);
+})
+const assemble_surface_get_surface_1_ref = ref<any[]>([])
 const assemble_surface_get_surface_1_q = useQuery({
   queryKey: ['assemble_surface_get_surface_1'],
   queryFn: async () => {
-    try { const r = await api.get("/jaxrs/processplatform/assemble/surface/get/surface-1"); return (r.data ?? []) as any[]; }
-    catch { return []; }
+    try {
+      const r = await api.get('/jaxrs/processplatform/assemble/surface/get/surface-1')
+      return (r.data ?? []) as any[]
+    } catch {
+      return []
+    }
   },
-  
-});
-const assemble_surface_publish_surface_1_ref = ref<any[]>([]);
+})
+const assemble_surface_publish_surface_1_ref = ref<any[]>([])
 const assemble_surface_publish_surface_1_q = useQuery({
   queryKey: ['assemble_surface_publish_surface_1'],
   queryFn: async () => {
-    try { const r = await api.get("/jaxrs/processplatform/assemble/surface/publish/surface-1"); return (r.data ?? []) as any[]; }
-    catch { return []; }
+    try {
+      const r = await api.get('/jaxrs/processplatform/assemble/surface/publish/surface-1')
+      return (r.data ?? []) as any[]
+    } catch {
+      return []
+    }
   },
-  
-});
+})
 
-const surface_work_v2_list_ref = ref<any[]>([]);
+const surface_work_v2_list_ref = ref<any[]>([])
 const surface_work_v2_list_q = useQuery({
   queryKey: ['surface_work_v2_list'],
   queryFn: async () => {
-    try { const r = await api.get("/jaxrs/processplatform/assemble/surface/work/v2/list"); return (r.data ?? []) as any[]; }
-    catch { return []; }
+    try {
+      const r = await api.get('/jaxrs/processplatform/assemble/surface/work/v2/list')
+      return (r.data ?? []) as any[]
+    } catch {
+      return []
+    }
   },
-  
-});
-const processplatform_work_retract_work_001_ref = ref<any[]>([]);
+})
+const processplatform_work_retract_work_001_ref = ref<any[]>([])
 const processplatform_work_retract_work_001_q = useQuery({
   queryKey: ['processplatform_work_retract_work_001'],
   queryFn: async () => {
-    try { const r = await api.get("/jaxrs/processplatform/work/retract/work-001"); return (r.data ?? []) as any[]; }
-    catch { return []; }
+    try {
+      const r = await api.get('/jaxrs/processplatform/work/retract/work-001')
+      return (r.data ?? []) as any[]
+    } catch {
+      return []
+    }
   },
-  
-});
-const assemble_surface_snap_snap_1_ref = ref<any[]>([]);
+})
+const assemble_surface_snap_snap_1_ref = ref<any[]>([])
 const assemble_surface_snap_snap_1_q = useQuery({
   queryKey: ['assemble_surface_snap_snap_1'],
   queryFn: async () => {
-    try { const r = await api.get("/jaxrs/processplatform/assemble/surface/snap/snap-1"); return (r.data ?? []) as any[]; }
-    catch { return []; }
+    try {
+      const r = await api.get('/jaxrs/processplatform/assemble/surface/snap/snap-1')
+      return (r.data ?? []) as any[]
+    } catch {
+      return []
+    }
   },
-  
-});
-const surface_work_v3_retract_ref = ref<any[]>([]);
+})
+const surface_work_v3_retract_ref = ref<any[]>([])
 const surface_work_v3_retract_q = useQuery({
   queryKey: ['surface_work_v3_retract'],
   queryFn: async () => {
-    try { const r = await api.get("/jaxrs/processplatform/assemble/surface/work/v3/retract"); return (r.data ?? []) as any[]; }
-    catch { return []; }
+    try {
+      const r = await api.get('/jaxrs/processplatform/assemble/surface/work/v3/retract')
+      return (r.data ?? []) as any[]
+    } catch {
+      return []
+    }
   },
-  
-});
-const surface_snap_snap_1_restore_ref = ref<any[]>([]);
+})
+const surface_snap_snap_1_restore_ref = ref<any[]>([])
 const surface_snap_snap_1_restore_q = useQuery({
   queryKey: ['surface_snap_snap_1_restore'],
   queryFn: async () => {
-    try { const r = await api.get("/jaxrs/processplatform/assemble/surface/snap/snap-1/restore"); return (r.data ?? []) as any[]; }
-    catch { return []; }
+    try {
+      const r = await api.get('/jaxrs/processplatform/assemble/surface/snap/snap-1/restore')
+      return (r.data ?? []) as any[]
+    } catch {
+      return []
+    }
   },
-  
-});
+})
 
-const assemble_designer_get_flow_1_ref = ref<any[]>([]);
+const assemble_designer_get_flow_1_ref = ref<any[]>([])
 const assemble_designer_get_flow_1_q = useQuery({
   queryKey: ['assemble_designer_get_flow_1'],
   queryFn: async () => {
-    try { const r = await api.get("/jaxrs/processplatform/assemble/designer/get/flow-1"); return (r.data ?? []) as any[]; }
-    catch { return []; }
+    try {
+      const r = await api.get('/jaxrs/processplatform/assemble/designer/get/flow-1')
+      return (r.data ?? []) as any[]
+    } catch {
+      return []
+    }
   },
-  
-});
-const surface_taskcompleted_v2_list_ref = ref<any[]>([]);
+})
+const surface_taskcompleted_v2_list_ref = ref<any[]>([])
 const surface_taskcompleted_v2_list_q = useQuery({
   queryKey: ['surface_taskcompleted_v2_list'],
   queryFn: async () => {
-    try { const r = await api.get("/jaxrs/processplatform/assemble/surface/taskcompleted/v2/list"); return (r.data ?? []) as any[]; }
-    catch { return []; }
+    try {
+      const r = await api.get('/jaxrs/processplatform/assemble/surface/taskcompleted/v2/list')
+      return (r.data ?? []) as any[]
+    } catch {
+      return []
+    }
   },
-  
-});
-const surface_attachment_att_1_available_ref = ref<any[]>([]);
+})
+const surface_attachment_att_1_available_ref = ref<any[]>([])
 const surface_attachment_att_1_available_q = useQuery({
   queryKey: ['surface_attachment_att_1_available'],
   queryFn: async () => {
-    try { const r = await api.get("/jaxrs/processplatform/assemble/surface/attachment/att-1/available"); return (r.data ?? []) as any[]; }
-    catch { return []; }
+    try {
+      const r = await api.get('/jaxrs/processplatform/assemble/surface/attachment/att-1/available')
+      return (r.data ?? []) as any[]
+    } catch {
+      return []
+    }
   },
-  
-});
-const assemble_designer_mapping_m_1_ref = ref<any[]>([]);
+})
+const assemble_designer_mapping_m_1_ref = ref<any[]>([])
 const assemble_designer_mapping_m_1_q = useQuery({
   queryKey: ['assemble_designer_mapping_m_1'],
   queryFn: async () => {
-    try { const r = await api.get("/jaxrs/processplatform/assemble/designer/mapping/m-1"); return (r.data ?? []) as any[]; }
-    catch { return []; }
+    try {
+      const r = await api.get('/jaxrs/processplatform/assemble/designer/mapping/m-1')
+      return (r.data ?? []) as any[]
+    } catch {
+      return []
+    }
   },
-  
-});
-const surface_readcompleted_v2_list_ref = ref<any[]>([]);
+})
+const surface_readcompleted_v2_list_ref = ref<any[]>([])
 const surface_readcompleted_v2_list_q = useQuery({
   queryKey: ['surface_readcompleted_v2_list'],
   queryFn: async () => {
-    try { const r = await api.get("/jaxrs/processplatform/assemble/surface/readcompleted/v2/list"); return (r.data ?? []) as any[]; }
-    catch { return []; }
+    try {
+      const r = await api.get('/jaxrs/processplatform/assemble/surface/readcompleted/v2/list')
+      return (r.data ?? []) as any[]
+    } catch {
+      return []
+    }
   },
-  
-});
-const designer_mapping_m_1_execute_ref = ref<any[]>([]);
+})
+const designer_mapping_m_1_execute_ref = ref<any[]>([])
 const designer_mapping_m_1_execute_q = useQuery({
   queryKey: ['designer_mapping_m_1_execute'],
   queryFn: async () => {
-    try { const r = await api.get("/jaxrs/processplatform/assemble/designer/mapping/m-1/execute"); return (r.data ?? []) as any[]; }
-    catch { return []; }
+    try {
+      const r = await api.get('/jaxrs/processplatform/assemble/designer/mapping/m-1/execute')
+      return (r.data ?? []) as any[]
+    } catch {
+      return []
+    }
   },
-  
-});
+})
 
-const processplatform_work_processing_work_001_ref = ref<any[]>([]);
+const processplatform_work_processing_work_001_ref = ref<any[]>([])
 const processplatform_work_processing_work_001_q = useQuery({
   queryKey: ['processplatform_work_processing_work_001'],
   queryFn: async () => {
-    try { const r = await api.get("/jaxrs/processplatform/work/processing/work-001"); return (r.data ?? []) as any[]; }
-    catch { return []; }
+    try {
+      const r = await api.get('/jaxrs/processplatform/work/processing/work-001')
+      return (r.data ?? []) as any[]
+    } catch {
+      return []
+    }
   },
-  
-});
-const service_processing_instance_proc_1_ref = ref<any[]>([]);
+})
+const service_processing_instance_proc_1_ref = ref<any[]>([])
 const service_processing_instance_proc_1_q = useQuery({
   queryKey: ['service_processing_instance_proc_1'],
   queryFn: async () => {
-    try { const r = await api.get("/jaxrs/processplatform/service/processing/instance/proc-1"); return (r.data ?? []) as any[]; }
-    catch { return []; }
+    try {
+      const r = await api.get('/jaxrs/processplatform/service/processing/instance/proc-1')
+      return (r.data ?? []) as any[]
+    } catch {
+      return []
+    }
   },
-  
-});
-const surface_task_v2_list_ref = ref<any[]>([]);
+})
+const surface_task_v2_list_ref = ref<any[]>([])
 const surface_task_v2_list_q = useQuery({
   queryKey: ['surface_task_v2_list'],
   queryFn: async () => {
-    try { const r = await api.get("/jaxrs/processplatform/assemble/surface/task/v2/list"); return (r.data ?? []) as any[]; }
-    catch { return []; }
+    try {
+      const r = await api.get('/jaxrs/processplatform/assemble/surface/task/v2/list')
+      return (r.data ?? []) as any[]
+    } catch {
+      return []
+    }
   },
-  
-});
-const processing_work_v3_retract_ref = ref<any[]>([]);
+})
+const processing_work_v3_retract_ref = ref<any[]>([])
 const processing_work_v3_retract_q = useQuery({
   queryKey: ['processing_work_v3_retract'],
   queryFn: async () => {
-    try { const r = await api.get("/jaxrs/processplatform/service/processing/work/v3/retract"); return (r.data ?? []) as any[]; }
-    catch { return []; }
+    try {
+      const r = await api.get('/jaxrs/processplatform/service/processing/work/v3/retract')
+      return (r.data ?? []) as any[]
+    } catch {
+      return []
+    }
   },
-  
-});
-const service_processing_cancel_proc_1_ref = ref<any[]>([]);
+})
+const service_processing_cancel_proc_1_ref = ref<any[]>([])
 const service_processing_cancel_proc_1_q = useQuery({
   queryKey: ['service_processing_cancel_proc_1'],
   queryFn: async () => {
-    try { const r = await api.get("/jaxrs/processplatform/service/processing/cancel/proc-1"); return (r.data ?? []) as any[]; }
-    catch { return []; }
+    try {
+      const r = await api.get('/jaxrs/processplatform/service/processing/cancel/proc-1')
+      return (r.data ?? []) as any[]
+    } catch {
+      return []
+    }
   },
-  
-});
-const service_processing_get_proc_1_ref = ref<any[]>([]);
+})
+const service_processing_get_proc_1_ref = ref<any[]>([])
 const service_processing_get_proc_1_q = useQuery({
   queryKey: ['service_processing_get_proc_1'],
   queryFn: async () => {
-    try { const r = await api.get("/jaxrs/processplatform/service/processing/get/proc-1"); return (r.data ?? []) as any[]; }
-    catch { return []; }
+    try {
+      const r = await api.get('/jaxrs/processplatform/service/processing/get/proc-1')
+      return (r.data ?? []) as any[]
+    } catch {
+      return []
+    }
   },
-  
-});
-const surface_taskcompleted_v2_count_ref = ref<any[]>([]);
+})
+const surface_taskcompleted_v2_count_ref = ref<any[]>([])
 const surface_taskcompleted_v2_count_q = useQuery({
   queryKey: ['surface_taskcompleted_v2_count'],
   queryFn: async () => {
-    try { const r = await api.get("/jaxrs/processplatform/assemble/surface/taskcompleted/v2/count"); return (r.data ?? []) as any[]; }
-    catch { return []; }
+    try {
+      const r = await api.get('/jaxrs/processplatform/assemble/surface/taskcompleted/v2/count')
+      return (r.data ?? []) as any[]
+    } catch {
+      return []
+    }
   },
-  
-});
-const assemble_surface_delete_surface_1_ref = ref<any[]>([]);
+})
+const assemble_surface_delete_surface_1_ref = ref<any[]>([])
 const assemble_surface_delete_surface_1_q = useQuery({
   queryKey: ['assemble_surface_delete_surface_1'],
   queryFn: async () => {
-    try { const r = await api.get("/jaxrs/processplatform/assemble/surface/delete/surface-1"); return (r.data ?? []) as any[]; }
-    catch { return []; }
+    try {
+      const r = await api.get('/jaxrs/processplatform/assemble/surface/delete/surface-1')
+      return (r.data ?? []) as any[]
+    } catch {
+      return []
+    }
   },
-  
-});
-const surface_task_v2_count_ref = ref<any[]>([]);
+})
+const surface_task_v2_count_ref = ref<any[]>([])
 const surface_task_v2_count_q = useQuery({
   queryKey: ['surface_task_v2_count'],
   queryFn: async () => {
-    try { const r = await api.get("/jaxrs/processplatform/assemble/surface/task/v2/count"); return (r.data ?? []) as any[]; }
-    catch { return []; }
+    try {
+      const r = await api.get('/jaxrs/processplatform/assemble/surface/task/v2/count')
+      return (r.data ?? []) as any[]
+    } catch {
+      return []
+    }
   },
-  
-});
+})
 
-const correlation_doc_d_1_ref = ref<any[]>([]);
+const correlation_doc_d_1_ref = ref<any[]>([])
 const correlation_doc_d_1_q = useQuery({
   queryKey: ['correlation_doc_d_1'],
   queryFn: async () => {
-    try { const r = await api.get("/jaxrs/correlation/doc/d-1"); return (r.data ?? []) as any[]; }
-    catch { return []; }
+    try {
+      const r = await api.get('/jaxrs/correlation/doc/d-1')
+      return (r.data ?? []) as any[]
+    } catch {
+      return []
+    }
   },
-  
-});
-const processing_link_message_msg_1_ref = ref<any[]>([]);
+})
+const processing_link_message_msg_1_ref = ref<any[]>([])
 const processing_link_message_msg_1_q = useQuery({
   queryKey: ['processing_link_message_msg_1'],
   queryFn: async () => {
-    try { const r = await api.get("/jaxrs/correlation/service/processing/link/message/msg-1"); return (r.data ?? []) as any[]; }
-    catch { return []; }
+    try {
+      const r = await api.get('/jaxrs/correlation/service/processing/link/message/msg-1')
+      return (r.data ?? []) as any[]
+    } catch {
+      return []
+    }
   },
-  
-});
-const correlation_doc_doc_9_delete_ref = ref<any[]>([]);
+})
+const correlation_doc_doc_9_delete_ref = ref<any[]>([])
 const correlation_doc_doc_9_delete_q = useQuery({
   queryKey: ['correlation_doc_doc_9_delete'],
   queryFn: async () => {
-    try { const r = await api.get("/jaxrs/correlation/doc/doc-9/delete"); return (r.data ?? []) as any[]; }
-    catch { return []; }
+    try {
+      const r = await api.get('/jaxrs/correlation/doc/doc-9/delete')
+      return (r.data ?? []) as any[]
+    } catch {
+      return []
+    }
   },
-  
-});
-const core_entity_delete_corr_test_001_ref = ref<any[]>([]);
+})
+const core_entity_delete_corr_test_001_ref = ref<any[]>([])
 const core_entity_delete_corr_test_001_q = useQuery({
   queryKey: ['core_entity_delete_corr_test_001'],
   queryFn: async () => {
-    try { const r = await api.get("/jaxrs/correlation/core/entity/delete/corr-test-001"); return (r.data ?? []) as any[]; }
-    catch { return []; }
+    try {
+      const r = await api.get('/jaxrs/correlation/core/entity/delete/corr-test-001')
+      return (r.data ?? []) as any[]
+    } catch {
+      return []
+    }
   },
-  
-});
+})
 
-const processplatform_work_terminate_work_001_ref = ref<any[]>([]);
+const processplatform_work_terminate_work_001_ref = ref<any[]>([])
 const processplatform_work_terminate_work_001_q = useQuery({
   queryKey: ['processplatform_work_terminate_work_001'],
   queryFn: async () => {
-    try { const r = await api.get("/jaxrs/processplatform/work/terminate/work-001"); return (r.data ?? []) as any[]; }
-    catch { return []; }
+    try {
+      const r = await api.get('/jaxrs/processplatform/work/terminate/work-001')
+      return (r.data ?? []) as any[]
+    } catch {
+      return []
+    }
   },
-  
-});
-const surface_readcompleted_v2_count_ref = ref<any[]>([]);
+})
+const surface_readcompleted_v2_count_ref = ref<any[]>([])
 const surface_readcompleted_v2_count_q = useQuery({
   queryKey: ['surface_readcompleted_v2_count'],
   queryFn: async () => {
-    try { const r = await api.get("/jaxrs/processplatform/assemble/surface/readcompleted/v2/count"); return (r.data ?? []) as any[]; }
-    catch { return []; }
+    try {
+      const r = await api.get('/jaxrs/processplatform/assemble/surface/readcompleted/v2/count')
+      return (r.data ?? []) as any[]
+    } catch {
+      return []
+    }
   },
-  
-});
-const designer_application_app_1_permission_ref = ref<any[]>([]);
+})
+const designer_application_app_1_permission_ref = ref<any[]>([])
 const designer_application_app_1_permission_q = useQuery({
   queryKey: ['designer_application_app_1_permission'],
   queryFn: async () => {
-    try { const r = await api.get("/jaxrs/processplatform/assemble/designer/application/app-1/permission"); return (r.data ?? []) as any[]; }
-    catch { return []; }
+    try {
+      const r = await api.get('/jaxrs/processplatform/assemble/designer/application/app-1/permission')
+      return (r.data ?? []) as any[]
+    } catch {
+      return []
+    }
   },
-  
-});
-const count_with_person_person_001_ref = ref<any[]>([]);
+})
+const count_with_person_person_001_ref = ref<any[]>([])
 const count_with_person_person_001_q = useQuery({
   queryKey: ['count_with_person_person_001'],
   queryFn: async () => {
-    try { const r = await api.get("/jaxrs/processplatform/task/count/with/person/person-001"); return (r.data ?? []) as any[]; }
-    catch { return []; }
+    try {
+      const r = await api.get('/jaxrs/processplatform/task/count/with/person/person-001')
+      return (r.data ?? []) as any[]
+    } catch {
+      return []
+    }
   },
-  
-});
+})
 
-const designer_application_app_1_icon_ref = ref<any[]>([]);
+const designer_application_app_1_icon_ref = ref<any[]>([])
 const designer_application_app_1_icon_q = useQuery({
   queryKey: ['designer_application_app_1_icon'],
   queryFn: async () => {
-    try { const r = await api.get("/jaxrs/processplatform/assemble/designer/application/app-1/icon"); return (r.data ?? []) as any[]; }
-    catch { return []; }
+    try {
+      const r = await api.get('/jaxrs/processplatform/assemble/designer/application/app-1/icon')
+      return (r.data ?? []) as any[]
+    } catch {
+      return []
+    }
   },
-  
-});
-const surface_review_v2_list_ref = ref<any[]>([]);
+})
+const surface_review_v2_list_ref = ref<any[]>([])
 const surface_review_v2_list_q = useQuery({
   queryKey: ['surface_review_v2_list'],
   queryFn: async () => {
-    try { const r = await api.get("/jaxrs/processplatform/assemble/surface/review/v2/list"); return (r.data ?? []) as any[]; }
-    catch { return []; }
+    try {
+      const r = await api.get('/jaxrs/processplatform/assemble/surface/review/v2/list')
+      return (r.data ?? []) as any[]
+    } catch {
+      return []
+    }
   },
-  
-});
-const processing_data_work_dw_1_ref = ref<any[]>([]);
+})
+const processing_data_work_dw_1_ref = ref<any[]>([])
 const processing_data_work_dw_1_q = useQuery({
   queryKey: ['processing_data_work_dw_1'],
   queryFn: async () => {
-    try { const r = await api.get("/jaxrs/processplatform/service/processing/data/work/dw-1"); return (r.data ?? []) as any[]; }
-    catch { return []; }
+    try {
+      const r = await api.get('/jaxrs/processplatform/service/processing/data/work/dw-1')
+      return (r.data ?? []) as any[]
+    } catch {
+      return []
+    }
   },
-  
-});
-const assemble_surface_preview_surface_1_ref = ref<any[]>([]);
+})
+const assemble_surface_preview_surface_1_ref = ref<any[]>([])
 const assemble_surface_preview_surface_1_q = useQuery({
   queryKey: ['assemble_surface_preview_surface_1'],
   queryFn: async () => {
-    try { const r = await api.get("/jaxrs/processplatform/assemble/surface/preview/surface-1"); return (r.data ?? []) as any[]; }
-    catch { return []; }
+    try {
+      const r = await api.get('/jaxrs/processplatform/assemble/surface/preview/surface-1')
+      return (r.data ?? []) as any[]
+    } catch {
+      return []
+    }
   },
-  
-});
-const count_with_person_person_001_1_ref = ref<any[]>([]);
+})
+const count_with_person_person_001_1_ref = ref<any[]>([])
 const count_with_person_person_001_1_q = useQuery({
   queryKey: ['count_with_person_person_001_1'],
   queryFn: async () => {
-    try { const r = await api.get("/jaxrs/processplatform/work/count/with/person/person-001"); return (r.data ?? []) as any[]; }
-    catch { return []; }
+    try {
+      const r = await api.get('/jaxrs/processplatform/work/count/with/person/person-001')
+      return (r.data ?? []) as any[]
+    } catch {
+      return []
+    }
   },
-  
-});
-const surface_read_v2_count_ref = ref<any[]>([]);
+})
+const surface_read_v2_count_ref = ref<any[]>([])
 const surface_read_v2_count_q = useQuery({
   queryKey: ['surface_read_v2_count'],
   queryFn: async () => {
-    try { const r = await api.get("/jaxrs/processplatform/assemble/surface/read/v2/count"); return (r.data ?? []) as any[]; }
-    catch { return []; }
+    try {
+      const r = await api.get('/jaxrs/processplatform/assemble/surface/read/v2/count')
+      return (r.data ?? []) as any[]
+    } catch {
+      return []
+    }
   },
-  
-});
+})
 
-const correlation_update_doc_u3_cor_doc_ref = ref<any[]>([]);
+const correlation_update_doc_u3_cor_doc_ref = ref<any[]>([])
 const correlation_update_doc_u3_cor_doc_q = useQuery({
   queryKey: ['correlation_update_doc_u3_cor_doc'],
   queryFn: async () => {
-    try { const r = await api.get("/jaxrs/correlation/update/doc/u3-cor-doc"); return (r.data ?? []) as any[]; }
-    catch { return []; }
+    try {
+      const r = await api.get('/jaxrs/correlation/update/doc/u3-cor-doc')
+      return (r.data ?? []) as any[]
+    } catch {
+      return []
+    }
   },
-  
-});
-const correlation_update_doc_d_1_ref = ref<any[]>([]);
+})
+const correlation_update_doc_d_1_ref = ref<any[]>([])
 const correlation_update_doc_d_1_q = useQuery({
   queryKey: ['correlation_update_doc_d_1'],
   queryFn: async () => {
-    try { const r = await api.get("/jaxrs/correlation/update/doc/d-1"); return (r.data ?? []) as any[]; }
-    catch { return []; }
+    try {
+      const r = await api.get('/jaxrs/correlation/update/doc/d-1')
+      return (r.data ?? []) as any[]
+    } catch {
+      return []
+    }
   },
-  
-});
+})
 
-const service_processing_execute_proc_1_ref = ref<any[]>([]);
+const service_processing_execute_proc_1_ref = ref<any[]>([])
 const service_processing_execute_proc_1_q = useQuery({
   queryKey: ['service_processing_execute_proc_1'],
   queryFn: async () => {
-    try { const r = await api.get("/jaxrs/processplatform/service/processing/execute/proc-1"); return (r.data ?? []) as any[]; }
-    catch { return []; }
+    try {
+      const r = await api.get('/jaxrs/processplatform/service/processing/execute/proc-1')
+      return (r.data ?? []) as any[]
+    } catch {
+      return []
+    }
   },
-  
-});
-const surface_read_v2_list_ref = ref<any[]>([]);
+})
+const surface_read_v2_list_ref = ref<any[]>([])
 const surface_read_v2_list_q = useQuery({
   queryKey: ['surface_read_v2_list'],
   queryFn: async () => {
-    try { const r = await api.get("/jaxrs/processplatform/assemble/surface/read/v2/list"); return (r.data ?? []) as any[]; }
-    catch { return []; }
+    try {
+      const r = await api.get('/jaxrs/processplatform/assemble/surface/read/v2/list')
+      return (r.data ?? []) as any[]
+    } catch {
+      return []
+    }
   },
-  
-});
+})
 
-const jaxrs_processplatform_assemble_bam_period_list_count_completed_task_application__92e84b_ref = ref<any[]>([]);
+const jaxrs_processplatform_assemble_bam_period_list_count_completed_task_application__92e84b_ref = ref<any[]>([])
 const jaxrs_processplatform_assemble_bam_period_list_count_completed_task_application__92e84b_q = useQuery({
   queryKey: ['jaxrs_processplatform_assemble_bam_period_list_count_completed_task_application__92e84b'],
   queryFn: async () => {
-    try { const r = await api.get("/jaxrs/processplatform/assemble/bam/period/list/count/completed/task/application/app1/process/p1/activity/a1/by/unit"); return (r.data ?? []) as any[]; }
-    catch { return []; }
+    try {
+      const r = await api.get(
+        '/jaxrs/processplatform/assemble/bam/period/list/count/completed/task/application/app1/process/p1/activity/a1/by/unit',
+      )
+      return (r.data ?? []) as any[]
+    } catch {
+      return []
+    }
   },
-  
-});
-const jaxrs_processplatform_assemble_bam_period_list_count_start_work_application_app1_31fe10_ref = ref<any[]>([]);
+})
+const jaxrs_processplatform_assemble_bam_period_list_count_start_work_application_app1_31fe10_ref = ref<any[]>([])
 const jaxrs_processplatform_assemble_bam_period_list_count_start_work_application_app1_31fe10_q = useQuery({
   queryKey: ['jaxrs_processplatform_assemble_bam_period_list_count_start_work_application_app1_31fe10'],
   queryFn: async () => {
-    try { const r = await api.get("/jaxrs/processplatform/assemble/bam/period/list/count/start/work/application/app1/process/p1/unit/u1/person/per1"); return (r.data ?? []) as any[]; }
-    catch { return []; }
+    try {
+      const r = await api.get(
+        '/jaxrs/processplatform/assemble/bam/period/list/count/start/work/application/app1/process/p1/unit/u1/person/per1',
+      )
+      return (r.data ?? []) as any[]
+    } catch {
+      return []
+    }
   },
-  
-});
-const jaxrs_processplatform_assemble_surface_applicationdict_d1_application_a1_p0_data_ref = ref<any[]>([]);
+})
+const jaxrs_processplatform_assemble_surface_applicationdict_d1_application_a1_p0_data_ref = ref<any[]>([])
 const jaxrs_processplatform_assemble_surface_applicationdict_d1_application_a1_p0_data_q = useQuery({
   queryKey: ['jaxrs_processplatform_assemble_surface_applicationdict_d1_application_a1_p0_data'],
   queryFn: async () => {
-    try { const r = await api.get("/jaxrs/processplatform/assemble/surface/applicationdict/d1/application/a1/p0/data"); return (r.data ?? []) as any[]; }
-    catch { return []; }
+    try {
+      const r = await api.get('/jaxrs/processplatform/assemble/surface/applicationdict/d1/application/a1/p0/data')
+      return (r.data ?? []) as any[]
+    } catch {
+      return []
+    }
   },
-  
-});
-const jaxrs_processplatform_assemble_surface_attachment_att_1_work_work_1_ref = ref<any[]>([]);
+})
+const jaxrs_processplatform_assemble_surface_attachment_att_1_work_work_1_ref = ref<any[]>([])
 const jaxrs_processplatform_assemble_surface_attachment_att_1_work_work_1_q = useQuery({
   queryKey: ['jaxrs_processplatform_assemble_surface_attachment_att_1_work_work_1'],
   queryFn: async () => {
-    try { const r = await api.get("/jaxrs/processplatform/assemble/surface/attachment/att-1/work/work-1"); return (r.data ?? []) as any[]; }
-    catch { return []; }
+    try {
+      const r = await api.get('/jaxrs/processplatform/assemble/surface/attachment/att-1/work/work-1')
+      return (r.data ?? []) as any[]
+    } catch {
+      return []
+    }
   },
-  
-});
-const jaxrs_processplatform_assemble_surface_attachment_att_1_work_work_1_text_ref = ref<any[]>([]);
+})
+const jaxrs_processplatform_assemble_surface_attachment_att_1_work_work_1_text_ref = ref<any[]>([])
 const jaxrs_processplatform_assemble_surface_attachment_att_1_work_work_1_text_q = useQuery({
   queryKey: ['jaxrs_processplatform_assemble_surface_attachment_att_1_work_work_1_text'],
   queryFn: async () => {
-    try { const r = await api.get("/jaxrs/processplatform/assemble/surface/attachment/att-1/work/work-1/text"); return (r.data ?? []) as any[]; }
-    catch { return []; }
+    try {
+      const r = await api.get('/jaxrs/processplatform/assemble/surface/attachment/att-1/work/work-1/text')
+      return (r.data ?? []) as any[]
+    } catch {
+      return []
+    }
   },
-  
-});
-const jaxrs_processplatform_assemble_surface_attachment_v2_upload_workorworkcompleted__5df9f8_ref = ref<any[]>([]);
+})
+const jaxrs_processplatform_assemble_surface_attachment_v2_upload_workorworkcompleted__5df9f8_ref = ref<any[]>([])
 const jaxrs_processplatform_assemble_surface_attachment_v2_upload_workorworkcompleted__5df9f8_q = useQuery({
   queryKey: ['jaxrs_processplatform_assemble_surface_attachment_v2_upload_workorworkcompleted__5df9f8'],
   queryFn: async () => {
-    try { const r = await api.get("/jaxrs/processplatform/assemble/surface/attachment/v2/upload/workorworkcompleted/either-1/base64"); return (r.data ?? []) as any[]; }
-    catch { return []; }
+    try {
+      const r = await api.get(
+        '/jaxrs/processplatform/assemble/surface/attachment/v2/upload/workorworkcompleted/either-1/base64',
+      )
+      return (r.data ?? []) as any[]
+    } catch {
+      return []
+    }
   },
-  
-});
-const jaxrs_processplatform_assemble_surface_data_job_job_path0_path1_path2_ref = ref<any[]>([]);
+})
+const jaxrs_processplatform_assemble_surface_data_job_job_path0_path1_path2_ref = ref<any[]>([])
 const jaxrs_processplatform_assemble_surface_data_job_job_path0_path1_path2_q = useQuery({
   queryKey: ['jaxrs_processplatform_assemble_surface_data_job_job_path0_path1_path2'],
   queryFn: async () => {
-    try { const r = await api.get("/jaxrs/processplatform/assemble/surface/data/job/job/path0/path1/path2"); return (r.data ?? []) as any[]; }
-    catch { return []; }
+    try {
+      const r = await api.get('/jaxrs/processplatform/assemble/surface/data/job/job/path0/path1/path2')
+      return (r.data ?? []) as any[]
+    } catch {
+      return []
+    }
   },
-  
-});
-const jaxrs_processplatform_assemble_surface_data_job_job_path0_path1_path2_path3_ref = ref<any[]>([]);
+})
+const jaxrs_processplatform_assemble_surface_data_job_job_path0_path1_path2_path3_ref = ref<any[]>([])
 const jaxrs_processplatform_assemble_surface_data_job_job_path0_path1_path2_path3_q = useQuery({
   queryKey: ['jaxrs_processplatform_assemble_surface_data_job_job_path0_path1_path2_path3'],
   queryFn: async () => {
-    try { const r = await api.get("/jaxrs/processplatform/assemble/surface/data/job/job/path0/path1/path2/path3"); return (r.data ?? []) as any[]; }
-    catch { return []; }
+    try {
+      const r = await api.get('/jaxrs/processplatform/assemble/surface/data/job/job/path0/path1/path2/path3')
+      return (r.data ?? []) as any[]
+    } catch {
+      return []
+    }
   },
-  
-});
-const jaxrs_processplatform_assemble_surface_job_v2_job_projection_ref = ref<any[]>([]);
+})
+const jaxrs_processplatform_assemble_surface_job_v2_job_projection_ref = ref<any[]>([])
 const jaxrs_processplatform_assemble_surface_job_v2_job_projection_q = useQuery({
   queryKey: ['jaxrs_processplatform_assemble_surface_job_v2_job_projection'],
   queryFn: async () => {
-    try { const r = await api.get("/jaxrs/processplatform/assemble/surface/job/v2/job/projection"); return (r.data ?? []) as any[]; }
-    catch { return []; }
+    try {
+      const r = await api.get('/jaxrs/processplatform/assemble/surface/job/v2/job/projection')
+      return (r.data ?? []) as any[]
+    } catch {
+      return []
+    }
   },
-  
-});
+})
 </script>
 
 <style scoped>

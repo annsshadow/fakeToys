@@ -39,11 +39,19 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
-import { toast, confirmMsg } from '../utils/toast'
 import { api } from '@oa4rust/sdk'
+import { computed, ref } from 'vue'
+import { confirmMsg, toast } from '../utils/toast'
 
-type RecycleItem = { id: string; name?: string; title?: string; fileName?: string; deleted?: boolean; deletedAt?: string; deleteTime?: string }
+type RecycleItem = {
+  id: string
+  name?: string
+  title?: string
+  fileName?: string
+  deleted?: boolean
+  deletedAt?: string
+  deleteTime?: string
+}
 
 const loading = ref(false)
 const items = ref<RecycleItem[]>([])
@@ -55,22 +63,30 @@ async function loadItems() {
   try {
     const r = await api.get('/jaxrs/recycle/list')
     items.value = r.data ?? []
-  } catch { items.value = [] } finally { loading.value = false }
+  } catch {
+    items.value = []
+  } finally {
+    loading.value = false
+  }
 }
 
 async function resume(item: RecycleItem) {
   try {
     await api.post(`/jaxrs/recycle/resume/${item.id}`, null)
-    items.value = items.value.filter(i => i.id !== item.id)
-  } catch (e: any) { toast.error('恢复失败: : ' + (e?.message ?? '')) }
+    items.value = items.value.filter((i) => i.id !== item.id)
+  } catch (e: any) {
+    toast.error('恢复失败: : ' + (e?.message ?? ''))
+  }
 }
 
 async function permanentDelete(item: RecycleItem) {
   if (!confirmMsg(`确定永久删除「${item.name || item.id}」？此操作不可恢复。`)) return
   try {
     await api.delete(`/jaxrs/recycle/${item.id}`)
-    items.value = items.value.filter(i => i.id !== item.id)
-  } catch (e: any) { toast.error('删除失败: : ' + (e?.message ?? '')) }
+    items.value = items.value.filter((i) => i.id !== item.id)
+  } catch (e: any) {
+    toast.error('删除失败: : ' + (e?.message ?? ''))
+  }
 }
 
 async function emptyRecycle() {
@@ -78,7 +94,9 @@ async function emptyRecycle() {
   try {
     await api.post('/jaxrs/recycle/empty', null)
     items.value = []
-  } catch (e: any) { toast.error('清空失败: : ' + (e?.message ?? '')) }
+  } catch (e: any) {
+    toast.error('清空失败: : ' + (e?.message ?? ''))
+  }
 }
 
 function formatDate(d?: string) {
@@ -86,13 +104,6 @@ function formatDate(d?: string) {
 }
 
 loadItems()
-
-
-
-
-
-
-
 </script>
 
 <style scoped>

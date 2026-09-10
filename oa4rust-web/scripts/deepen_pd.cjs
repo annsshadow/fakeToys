@@ -1,21 +1,22 @@
-const fs = require('fs');
-let content = fs.readFileSync('D:/WORKSPACE/fakeToys/oa4rust-web/apps/desktop/src/views/ProcessDesigner.vue', 'utf8');
+const fs = require('fs')
+let content = fs.readFileSync('D:/WORKSPACE/fakeToys/oa4rust-web/apps/desktop/src/views/ProcessDesigner.vue', 'utf8')
 
 // === 1. Add path prediction state after tempEdge ===
-const tempEdgeMarker = 'const tempEdge = ref<{ from: number; fromPort: \'out\'|\'in\'; startX: number; startY: number; endX: number; endY: number }|null>(null)';
+const tempEdgeMarker =
+  "const tempEdge = ref<{ from: number; fromPort: 'out'|'in'; startX: number; startY: number; endX: number; endY: number }|null>(null)"
 const tempEdgeExtra = `const tempEdge = ref<{ from: number; fromPort: 'out'|'in'; startX: number; startY: number; endX: number; endY: number }|null>(null)
 const predictedTarget = ref<number|null>(null)
 const predictedPath = ref<string>('')
-const showPrediction = ref(false)`;
-content = content.replace(tempEdgeMarker, tempEdgeExtra);
+const showPrediction = ref(false)`
+content = content.replace(tempEdgeMarker, tempEdgeExtra)
 
 // === 2. Add subprocess stack state ===
-const subEditMarker = 'const subprocessEditing = ref(false)';
+const subEditMarker = 'const subprocessEditing = ref(false)'
 const subEditExtra = `const subprocessEditing = ref(false)
 const subprocessStack = ref<Array<{nodes: PDNode[]; edges: PDEdge[]; title: string; parentIdx?: number}>>([])
 const subprocessDepth = ref(0)
-const activeSubprocessIdx = ref<number|null>(null)`;
-content = content.replace(subEditMarker, subEditExtra);
+const activeSubprocessIdx = ref<number|null>(null)`
+content = content.replace(subEditMarker, subEditExtra)
 
 // === 3. Replace onPortMouseDown with enhanced version including prediction ===
 const oldPortMouseDown = `function onPortMouseDown(e: MouseEvent, nodeIdx: number, port: 'in'|'out') {
@@ -49,7 +50,7 @@ const oldPortMouseDown = `function onPortMouseDown(e: MouseEvent, nodeIdx: numbe
     tempEdge.value = null
   }
   document.addEventListener('mousemove', onMove); document.addEventListener('mouseup', onUp)
-}`;
+}`
 
 const newPortMouseDown = `function onPortMouseDown(e: MouseEvent, nodeIdx: number, port: 'in'|'out') {
   e.stopPropagation()
@@ -119,20 +120,21 @@ function predictedEdgePath(): string { return predictedPath.value }
 function getPredictedTargetNode(): PDNode|undefined {
   if (predictedTarget.value === null || !processDef.value) return undefined
   return processDef.value.nodes[predictedTarget.value]
-}`;
+}`
 
-content = content.replace(oldPortMouseDown, newPortMouseDown);
+content = content.replace(oldPortMouseDown, newPortMouseDown)
 
 // === 4. Add predicted edge to SVG template ===
-const tempEdgeSvgMarker = '<path v-if="tempEdge" :d="tempEdgePath()" class="edge-temp" marker-end="url(#arrowhead-temp)" />';
+const tempEdgeSvgMarker =
+  '<path v-if="tempEdge" :d="tempEdgePath()" class="edge-temp" marker-end="url(#arrowhead-temp)" />'
 const tempEdgeSvgExtra = `<path v-if="tempEdge" :d="tempEdgePath()" class="edge-temp" marker-end="url(#arrowhead-temp)" />
           <!-- Predicted connection path -->
           <path v-if="showPrediction && predictedPath" :d="predictedPath" class="edge-predicted" stroke-dasharray="6,3" />
           <!-- Target highlight -->
           <rect v-if="predictedTarget !== null && processDef" :x="(processDef.nodes[predictedTarget]!.x)-6" :y="(processDef.nodes[predictedTarget]!.y)-6"
             :width="(processDef.nodes[predictedTarget]!.w||120)+12" :height="(processDef.nodes[predictedTarget]!.h||50)+12"
-            rx="10" fill="rgba(0,212,255,0.15)" stroke="var(--color-primary)" stroke-width="2" stroke-dasharray="4,2" pointer-events="none" />`;
-content = content.replace(tempEdgeSvgMarker, tempEdgeSvgExtra);
+            rx="10" fill="rgba(0,212,255,0.15)" stroke="var(--color-primary)" stroke-width="2" stroke-dasharray="4,2" pointer-events="none" />`
+content = content.replace(tempEdgeSvgMarker, tempEdgeSvgExtra)
 
 // === 5. Enhance enterSubprocess for recursive depth support ===
 const oldEnterSub = `function enterSubprocess(nodeIdx: number) {
@@ -149,7 +151,7 @@ const oldEnterSub = `function enterSubprocess(nodeIdx: number) {
   subSelectedNode.value = null; subSelectedEdge.value = null
   subHistory.value = []; subHistIdx.value = -1
   subPanX.value = 0; subPanY.value = 0; subZoom.value = 1
-}`;
+}`
 
 const newEnterSub = `function enterSubprocess(nodeIdx: number) {
   if (!processDef.value) return
@@ -208,14 +210,14 @@ function getBreadcrumbs(): Array<{label: string; idx: number|null; depth: number
     crumbs.push({ label: subprocessTitle.value, idx: subprocessNodeIdx.value, depth: subprocessDepth.value })
   }
   return crumbs
-}`;
+}`
 
-content = content.replace(oldEnterSub, newEnterSub);
+content = content.replace(oldEnterSub, newEnterSub)
 
 // === 6. Enhance template breadcrumb area ===
-const oldBreadcrumb = '<span v-if="subprocessEditing">← 返回主流程 | 拖拽节点 | 点击边缘拖出连线 | Shift+多选</span>';
-const newBreadcrumb = '<span v-if="subprocessEditing">';
-const breadcrumbHtml = `<span v-if="subprocessEditing">`;
+const oldBreadcrumb = '<span v-if="subprocessEditing">← 返回主流程 | 拖拽节点 | 点击边缘拖出连线 | Shift+多选</span>'
+const newBreadcrumb = '<span v-if="subprocessEditing">'
+const breadcrumbHtml = `<span v-if="subprocessEditing">`
 const breadcrumbContent = `
           <button class="tb-btn" @click="jumpToLevel(0)" title="返回主流程">🏠 主页</button>
           <template v-for="(crumb, ci) in getBreadcrumbs()" :key="ci">
@@ -225,18 +227,19 @@ const breadcrumbContent = `
           </template>
           <span class="breadcrumb-sep">|</span>
           <button class="tb-btn" @click="exitSubprocess">✕ 退出层级</button>
-          <span> | 拖拽节点 | 点击边缘拖出连线 | Shift+多选</span>`;
-const newBreadcrumbFull = breadcrumbHtml + breadcrumbContent + '</span>';
-content = content.replace(oldBreadcrumb, newBreadcrumbFull);
+          <span> | 拖拽节点 | 点击边缘拖出连线 | Shift+多选</span>`
+const newBreadcrumbFull = breadcrumbHtml + breadcrumbContent + '</span>'
+content = content.replace(oldBreadcrumb, newBreadcrumbFull)
 
 // === 7. Add condition expression editor, script variable binding, retry visualization to props ===
-const oldConditionProp = '<div class="pg"><label>流转条件</label><input :value="getNodeProp(\'condition\')" @input="_setNodeProp(\'condition\', $event.target.value)" class="pi" placeholder="如: amount > 1000" /></div>';
+const oldConditionProp =
+  '<div class="pg"><label>流转条件</label><input :value="getNodeProp(\'condition\')" @input="_setNodeProp(\'condition\', $event.target.value)" class="pi" placeholder="如: amount > 1000" /></div>'
 const newConditionProp = `<div class="pg"><label>流转条件</label>
               <input :value="getNodeProp('condition')" @input="_setNodeProp('condition',$event.target.value)" class="pi" placeholder="如: amount > 1000" />
               <div class="cond-editor" v-if="getNodeProp('type')==='approval' || getNodeProp('type')==='task'">
                 <div class="cond-presets">
                   <button class="cond-preset" @click="_setNodeProp('condition','amount > 1000')">金额>1000</button>
-                  <button class="cond-preset" @click="_setNodeProp('condition','status === \'pending\'')">状态=pending</button>
+                  <button class="cond-preset" @click="_setNodeProp('condition','status === 'pending'')">状态=pending</button>
                   <button class="cond-preset" @click="_setNodeProp('condition','userId === currentUser')">当前用户</button>
                   <button class="cond-preset" @click="_setNodeProp('condition','')">清空</button>
                 </div>
@@ -245,11 +248,12 @@ const newConditionProp = `<div class="pg"><label>流转条件</label>
                   <span v-for="v in nodeVars" :key="v" class="cond-var" @click="_setNodeProp('condition', getNodeProp('condition') + ' ' + v)">{{ v }}</span>
                 </div>
               </div>
-            </div>`;
-content = content.replace(oldConditionProp, newConditionProp);
+            </div>`
+content = content.replace(oldConditionProp, newConditionProp)
 
 // === 8. Add script variable binding editor ===
-const oldScriptVars = '<div v-if="scriptTab===\'vars\'" class="script-vars">\n                  <div class="var-row"><span class="var-label">输入变量</span><input class="var-input" placeholder="inputData" /></div>\n                  <div class="var-row"><span class="var-label">输出变量</span><input class="var-input" placeholder="output" /></div>\n                  <div class="var-row"><span class="var-label">上下文</span><input class="var-input" placeholder="context" /></div>\n                </div>';
+const oldScriptVars =
+  '<div v-if="scriptTab===\'vars\'" class="script-vars">\n                  <div class="var-row"><span class="var-label">输入变量</span><input class="var-input" placeholder="inputData" /></div>\n                  <div class="var-row"><span class="var-label">输出变量</span><input class="var-input" placeholder="output" /></div>\n                  <div class="var-row"><span class="var-label">上下文</span><input class="var-input" placeholder="context" /></div>\n                </div>'
 const newScriptVars = `<div v-if="scriptTab==='vars'" class="script-vars">
                   <div class="var-section-title">变量绑定配置</div>
                   <div class="var-row"><span class="var-label">输入变量</span><input class="var-input" :value="getNodeProp('inputVar')" @input="_setNodeProp('inputVar',$event.target.value)" placeholder="inputData" /></div>
@@ -268,11 +272,12 @@ const newScriptVars = `<div v-if="scriptTab==='vars'" class="script-vars">
                     </div>
                     <button class="var-mapping-add" @click="addDataMapping">+ 添加映射</button>
                   </div>
-                </div>`;
-content = content.replace(oldScriptVars, newScriptVars);
+                </div>`
+content = content.replace(oldScriptVars, newScriptVars)
 
 // === 9. Add retry strategy visualization ===
-const oldRetryProp = '<div class="pg"><label>重试次数</label><input :value="getNodeProp(\'retryCount\')" type="number" @input="_setNodeProp(\'retryCount\',+$event.target.value)" class="pi" min="0" max="10" /></div>';
+const oldRetryProp =
+  '<div class="pg"><label>重试次数</label><input :value="getNodeProp(\'retryCount\')" type="number" @input="_setNodeProp(\'retryCount\',+$event.target.value)" class="pi" min="0" max="10" /></div>'
 const newRetryProp = `<div class="pg"><label>重试策略</label>
               <select :value="getNodeProp('retryStrategy')" @change="_setNodeProp('retryStrategy',$event.target.value)" class="pi">
                 <option value="none">不重试</option>
@@ -300,20 +305,21 @@ const newRetryProp = `<div class="pg"><label>重试策略</label>
             <div class="pg" v-if="getNodeProp('retryStrategy')==='fixed'">
               <label>固定间隔(ms)</label>
               <input :value="getNodeProp('retryDelay')" type="number" @input="_setNodeProp('retryDelay',+$event.target.value)" class="pi" min="100" step="100" placeholder="1000" />
-            </div>`;
-content = content.replace(oldRetryProp, newRetryProp);
+            </div>`
+content = content.replace(oldRetryProp, newRetryProp)
 
 // === 10. Add nodeVars and availableFields computed ===
-const nodeTypesEnd = 'const allNodeTypes = [\'start\',\'task\',\'approval\',\'timer\',\'end\',\'gate_and\',\'gate_or\',\'gate_xor\',\'subprocess\',\'script\',\'parallel\']';
+const nodeTypesEnd =
+  "const allNodeTypes = ['start','task','approval','timer','end','gate_and','gate_or','gate_xor','subprocess','script','parallel']"
 const nodeTypesExtra = `const allNodeTypes = ['start','task','approval','timer','end','gate_and','gate_or','gate_xor','subprocess','script','parallel']
 
 // ── Condition Editor Helpers ────────────────────────────────────────
 const nodeVars = ref<string[]>(['amount', 'userId', 'status', 'priority', 'deadline', 'department', 'role'])
-const availableFields = ref<string[]>(['name', 'amount', 'status', 'userId', 'priority', 'date', 'comment', 'result', 'output'])`;
-content = content.replace(nodeTypesEnd, nodeTypesExtra);
+const availableFields = ref<string[]>(['name', 'amount', 'status', 'userId', 'priority', 'date', 'comment', 'result', 'output'])`
+content = content.replace(nodeTypesEnd, nodeTypesExtra)
 
 // === 11. Add predicted edge CSS and new UI styles ===
-const styleEndMarker = '</style>';
+const styleEndMarker = '</style>'
 const newStyles = `
 /* Path prediction */
 .edge-predicted{fill:none;stroke:var(--color-primary);stroke-width:2;opacity:0.7;animation:dashFlow 0.5s linear infinite}
@@ -353,9 +359,9 @@ const newStyles = `
 .sp-breadcrumbs{display:flex;align-items:center;gap:2px;padding:4px 8px;border-bottom:1px solid var(--border-color);background:rgba(0,212,255,.05);flex-shrink:0}
 .sp-depth-badge{padding:1px 6px;border-radius:var(--radius-sm);background:var(--color-primary);color:#000;font-size:9px;font-weight:700;margin-left:8px}
 /* Prediction target highlight is handled in SVG */
-`;
-content = content.replace(styleEndMarker, newStyles + '</style>');
+`
+content = content.replace(styleEndMarker, newStyles + '</style>')
 
 // Write back
-fs.writeFileSync('D:/WORKSPACE/fakeToys/oa4rust-web/apps/desktop/src/views/ProcessDesigner.vue', content);
-console.log('Done. Lines:', content.split('\n').length);
+fs.writeFileSync('D:/WORKSPACE/fakeToys/oa4rust-web/apps/desktop/src/views/ProcessDesigner.vue', content)
+console.log('Done. Lines:', content.split('\n').length)

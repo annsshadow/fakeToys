@@ -30,8 +30,8 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
 import { api } from '@oa4rust/sdk'
+import { computed, ref } from 'vue'
 
 const loading = ref(false)
 const items = ref<any[]>([])
@@ -48,116 +48,160 @@ async function load() {
   try {
     const r = await api.get('/jaxrs/categoryinfo/list')
     items.value = r.data ?? []
-  } catch { items.value = [] } finally { loading.value = false }
+  } catch {
+    items.value = []
+  } finally {
+    loading.value = false
+  }
 }
 
 load()
 
-const categoryinfo_ref = ref<any[]>([]);
+const categoryinfo_ref = ref<any[]>([])
 const categoryinfo_q = useQuery({
   queryKey: ['categoryinfo'],
   queryFn: async () => {
-    try { const r = await api.get("/jaxrs/categoryinfo"); return (r.data ?? []) as any[]; }
-    catch { return []; }
+    try {
+      const r = await api.get('/jaxrs/categoryinfo')
+      return (r.data ?? []) as any[]
+    } catch {
+      return []
+    }
   },
-  
-});
-const categoryinfo_alias_alpha_ref = ref<any[]>([]);
+})
+const categoryinfo_alias_alpha_ref = ref<any[]>([])
 const categoryinfo_alias_alpha_q = useQuery({
   queryKey: ['categoryinfo_alias_alpha'],
   queryFn: async () => {
-    try { const r = await api.get("/jaxrs/categoryinfo/alias/alpha"); return (r.data ?? []) as any[]; }
-    catch { return []; }
+    try {
+      const r = await api.get('/jaxrs/categoryinfo/alias/alpha')
+      return (r.data ?? []) as any[]
+    } catch {
+      return []
+    }
   },
-  
-});
-const categoryinfo_list_objects_ref = ref<any[]>([]);
+})
+const categoryinfo_list_objects_ref = ref<any[]>([])
 const categoryinfo_list_objects_q = useQuery({
   queryKey: ['categoryinfo_list_objects'],
   queryFn: async () => {
-    try { const r = await api.get("/jaxrs/categoryinfo/list/objects"); return (r.data ?? []) as any[]; }
-    catch { return []; }
+    try {
+      const r = await api.get('/jaxrs/categoryinfo/list/objects')
+      return (r.data ?? []) as any[]
+    } catch {
+      return []
+    }
   },
-  
-});
-const categoryinfo_list_all_ref = ref<any[]>([]);
+})
+const categoryinfo_list_all_ref = ref<any[]>([])
 const categoryinfo_list_all_q = useQuery({
   queryKey: ['categoryinfo_list_all'],
   queryFn: async () => {
-    try { const r = await api.get("/jaxrs/categoryinfo/list/all"); return (r.data ?? []) as any[]; }
-    catch { return []; }
+    try {
+      const r = await api.get('/jaxrs/categoryinfo/list/all')
+      return (r.data ?? []) as any[]
+    } catch {
+      return []
+    }
   },
-  
-});
-const categoryinfo_extContent_ref = ref<any[]>([]);
+})
+const categoryinfo_extContent_ref = ref<any[]>([])
 const categoryinfo_extContent_q = useQuery({
   queryKey: ['categoryinfo_extContent'],
   queryFn: async () => {
-    try { const r = await api.get("/jaxrs/categoryinfo/extContent"); return (r.data ?? []) as any[]; }
-    catch { return []; }
+    try {
+      const r = await api.get('/jaxrs/categoryinfo/extContent')
+      return (r.data ?? []) as any[]
+    } catch {
+      return []
+    }
   },
-  
-});
-const categoryinfo_c_1_permission_ref = ref<any[]>([]);
+})
+const categoryinfo_c_1_permission_ref = ref<any[]>([])
 const categoryinfo_c_1_permission_q = useQuery({
   queryKey: ['categoryinfo_c_1_permission'],
   queryFn: async () => {
-    try { const r = await api.get("/jaxrs/categoryinfo/c-1/permission"); return (r.data ?? []) as any[]; }
-    catch { return []; }
+    try {
+      const r = await api.get('/jaxrs/categoryinfo/c-1/permission')
+      return (r.data ?? []) as any[]
+    } catch {
+      return []
+    }
   },
-  
-});
-const categoryinfo_flag_ref = ref<any[]>([]);
+})
+const categoryinfo_flag_ref = ref<any[]>([])
 const categoryinfo_flag_q = useQuery({
   queryKey: ['categoryinfo_flag'],
   queryFn: async () => {
-    try { const r = await api.get("/jaxrs/categoryinfo/flag"); return (r.data ?? []) as any[]; }
-    catch { return []; }
+    try {
+      const r = await api.get('/jaxrs/categoryinfo/flag')
+      return (r.data ?? []) as any[]
+    } catch {
+      return []
+    }
   },
-  
-});
-const categoryinfo_c_1_control_ref = ref<any[]>([]);
+})
+const categoryinfo_c_1_control_ref = ref<any[]>([])
 const categoryinfo_c_1_control_q = useQuery({
   queryKey: ['categoryinfo_c_1_control'],
   queryFn: async () => {
-    try { const r = await api.get("/jaxrs/categoryinfo/c-1/control"); return (r.data ?? []) as any[]; }
-    catch { return []; }
+    try {
+      const r = await api.get('/jaxrs/categoryinfo/c-1/control')
+      return (r.data ?? []) as any[]
+    } catch {
+      return []
+    }
   },
-  
-});
-const categoryinfo_c_1_execute_projection_ref = ref<any[]>([]);
+})
+const categoryinfo_c_1_execute_projection_ref = ref<any[]>([])
 const categoryinfo_c_1_execute_projection_q = useQuery({
   queryKey: ['categoryinfo_c_1_execute_projection'],
   queryFn: async () => {
-    try { const r = await api.get("/jaxrs/categoryinfo/c-1/execute/projection"); return (r.data ?? []) as any[]; }
-    catch { return []; }
+    try {
+      const r = await api.get('/jaxrs/categoryinfo/c-1/execute/projection')
+      return (r.data ?? []) as any[]
+    } catch {
+      return []
+    }
   },
-  
-});
-const categoryinfo_c_1_ref = ref<any[]>([]);
+})
+const categoryinfo_c_1_ref = ref<any[]>([])
 const categoryinfo_c_1_q = useQuery({
   queryKey: ['categoryinfo_c_1'],
   queryFn: async () => {
-    try { const r = await api.get("/jaxrs/categoryinfo/c-1"); return (r.data ?? []) as any[]; }
-    catch { return []; }
+    try {
+      const r = await api.get('/jaxrs/categoryinfo/c-1')
+      return (r.data ?? []) as any[]
+    } catch {
+      return []
+    }
   },
-  
-});
-const categoryinfo_bind_c_1_view_ref = ref<any[]>([]);
+})
+const categoryinfo_bind_c_1_view_ref = ref<any[]>([])
 const categoryinfo_bind_c_1_view_q = useQuery({
   queryKey: ['categoryinfo_bind_c_1_view'],
   queryFn: async () => {
-    try { const r = await api.get("/jaxrs/categoryinfo/bind/c-1/view"); return (r.data ?? []) as any[]; }
-    catch { return []; }
+    try {
+      const r = await api.get('/jaxrs/categoryinfo/bind/c-1/view')
+      return (r.data ?? []) as any[]
+    } catch {
+      return []
+    }
   },
-  
-});
+})
 
-
-const api_list_p_1_860_data = ref<any[]>([]);
-const { data: api_list_p_1_860_q } = useQuery({queryKey: ['api_list_p_1_860', '/jaxrs/categoryinfo/filter/list/p-1/size/10'], queryFn: async () => { try { const r = await api.get("/jaxrs/categoryinfo/filter/list/p-1/size/10"); return (r.data ?? []) as any[]; } catch { return []; } }});
-
-
+const api_list_p_1_860_data = ref<any[]>([])
+const { data: api_list_p_1_860_q } = useQuery({
+  queryKey: ['api_list_p_1_860', '/jaxrs/categoryinfo/filter/list/p-1/size/10'],
+  queryFn: async () => {
+    try {
+      const r = await api.get('/jaxrs/categoryinfo/filter/list/p-1/size/10')
+      return (r.data ?? []) as any[]
+    } catch {
+      return []
+    }
+  },
+})
 </script>
 
 <style scoped>

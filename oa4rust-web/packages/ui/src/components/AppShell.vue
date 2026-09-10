@@ -125,27 +125,26 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted } from 'vue';
-import { useRouter, useRoute } from 'vue-router';
-import { useSession } from '@oa4rust/sdk';
-import { useTheme } from '@oa4rust/sdk';
+import { useSession, useTheme } from '@oa4rust/sdk'
+import { computed, onMounted, onUnmounted, ref } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 
-const router = useRouter();
-const route = useRoute();
-const session = useSession();
-const { theme, toggleTheme } = useTheme();
+const router = useRouter()
+const route = useRoute()
+const session = useSession()
+const { theme, toggleTheme } = useTheme()
 
-const sidebarCollapsed = ref(false);
-const showUserMenu = ref(false);
-const searchQuery = ref('');
-const unreadCount = ref(0);
-const isMobile = ref(false);
+const sidebarCollapsed = ref(false)
+const showUserMenu = ref(false)
+const searchQuery = ref('')
+const unreadCount = ref(0)
+const isMobile = ref(false)
 
 const currentTitle = computed(() => {
-  return route.meta.title as string || 'OA4Rust';
-});
+  return (route.meta.title as string) || 'OA4Rust'
+})
 
-const user = computed(() => session.state.value?.user ?? null);
+const user = computed(() => session.state.value?.user ?? null)
 
 // PC 端导航项
 const navItems = [
@@ -169,7 +168,7 @@ const navItems = [
   { path: '/app/form', label: '表单管理', icon: '📝' },
   { path: '/app/view', label: '视图管理', icon: '👁️' },
   { path: '/app/fileinfo', label: '文件信息', icon: '📎' },
-];
+]
 
 // 移动端导航项（精简）
 const mobileNavItems = [
@@ -177,48 +176,48 @@ const mobileNavItems = [
   { path: '/app/process', label: '待办', icon: '📋' },
   { path: '/app/im', label: '消息', icon: '💬' },
   { path: '/app/personal', label: '我的', icon: '👤' },
-];
+]
 
 function isActive(path: string): boolean {
-  return route.path.startsWith(path);
+  return route.path.startsWith(path)
 }
 
 function navigate(item: { path: string; label: string; icon: string }): void {
-  router.push(item.path);
-  showUserMenu.value = false;
+  router.push(item.path)
+  showUserMenu.value = false
 }
 
 function focusSearch(): void {
-  const input = document.querySelector('.search-input') as HTMLInputElement;
-  input?.focus();
+  const input = document.querySelector('.search-input') as HTMLInputElement
+  input?.focus()
 }
 
 async function handleLogout(): void {
-  showUserMenu.value = false;
-  await session.logout();
-  router.replace('/login');
+  showUserMenu.value = false
+  await session.logout()
+  router.replace('/login')
 }
 
 function checkMobile(): void {
-  isMobile.value = window.innerWidth < 768;
+  isMobile.value = window.innerWidth < 768
 }
 
 onMounted(() => {
-  checkMobile();
-  window.addEventListener('resize', checkMobile);
-});
+  checkMobile()
+  window.addEventListener('resize', checkMobile)
+})
 
 onUnmounted(() => {
-  window.removeEventListener('resize', checkMobile);
-});
+  window.removeEventListener('resize', checkMobile)
+})
 
 // 点击外部关闭菜单
 document.addEventListener('click', (e) => {
-  const target = e.target as HTMLElement;
+  const target = e.target as HTMLElement
   if (!target.closest('.user-menu')) {
-    showUserMenu.value = false;
+    showUserMenu.value = false
   }
-});
+})
 </script>
 
 <style scoped>
