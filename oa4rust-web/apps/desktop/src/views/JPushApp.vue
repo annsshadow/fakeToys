@@ -178,18 +178,6 @@ const jpush_core_list_q = useQuery({
     }
   },
 })
-const assemble_control_device_bind_ref = ref<any[]>([])
-const assemble_control_device_bind_q = useQuery({
-  queryKey: ['assemble_control_device_bind'],
-  queryFn: async () => {
-    try {
-      const r = await api.get('/jaxrs/jpush/assemble/control/device/bind')
-      return (r.data ?? []) as any[]
-    } catch {
-      return []
-    }
-  },
-})
 const jpush_create_ref = ref<any[]>([])
 const jpush_create_q = useQuery({
   queryKey: ['jpush_create'],
@@ -398,19 +386,6 @@ const { data: api_device_c_516_q } = useQuery({
   queryFn: async () => {
     try {
       const r = await api.get('/jaxrs/jpush_assemble_control/device/config/push/type')
-      return (r.data ?? []) as any[]
-    } catch {
-      return []
-    }
-  },
-})
-
-const api_jpush_as_148_data = ref<any[]>([])
-const { data: api_jpush_as_148_q } = useQuery({
-  queryKey: ['api_jpush_as_148', '/jaxrs/jpush_assemble_control/device/bind'],
-  queryFn: async () => {
-    try {
-      const r = await api.get('/jaxrs/jpush_assemble_control/device/bind')
       return (r.data ?? []) as any[]
     } catch {
       return []
