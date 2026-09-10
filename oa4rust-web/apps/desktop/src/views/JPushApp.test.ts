@@ -11,4 +11,10 @@ describe('JPushApp contracts', () => {
     expect(source).toMatch(/loadDevices\(\)[\s\S]*loadTemplates\(\)/)
     expect(source).toContain('devices.value = r.data ?? []')
   })
+
+  it('loads templates from the mounted template-list route', () => {
+    expect(source).toContain("api.get('/jaxrs/jpush/template/list')")
+    expect(source).not.toContain("api.get('/jaxrs/jpush_assemble_control/template/list')")
+    expect(source).toContain('templates.value = r.data ?? []')
+  })
 })
