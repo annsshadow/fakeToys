@@ -442,9 +442,12 @@ pub async fn application_list_key_key(
     axum::extract::Path(key): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    // The "PP_E_APPLICATION" view maps the legacy key semantics (xid AS xkey);
+    // the underlying table has no xkey column and its mixed-case columns must
+    // be quoted.
     let rows = client
         .query(
-            "SELECT xid, xname, xalias, xdescription, xapplicationCategory, xicon, xiconHue, xcreatorPerson, xlastUpdateTime, xlastUpdatePerson, xproperties, xcreateTime, xupdateTime FROM PP_E_APPLICATION WHERE xkey = $1 ORDER BY xcreateTime DESC",
+            "SELECT xid, xname, xalias, xdescription, \"xapplicationCategory\", xicon, \"xiconHue\", \"xcreatorPerson\", \"xlastUpdateTime\", \"xlastUpdatePerson\", xproperties, \"xcreateTime\", \"xupdateTime\" FROM \"PP_E_APPLICATION\" WHERE xkey = $1 ORDER BY \"xcreateTime\" DESC",
             &[&key],
         )
         .await
@@ -500,7 +503,7 @@ pub async fn application_list_terminal_terminal(
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let rows = client
         .query(
-            "SELECT xid, xname, xalias, xdescription, \"xapplicationCategory\", xicon, \"xiconHue\", \"xcreatorPerson\", \"xlastUpdateTime\", \"xlastUpdatePerson\", xproperties, \"xcreateTime\", \"xupdateTime\" FROM PP_E_APPLICATION WHERE xterminal = $1 ORDER BY \"xcreateTime\" DESC",
+            "SELECT xid, xname, xalias, xdescription, \"xapplicationCategory\", xicon, \"xiconHue\", \"xcreatorPerson\", \"xlastUpdateTime\", \"xlastUpdatePerson\", xproperties, \"xcreateTime\", \"xupdateTime\" FROM \"PP_E_APPLICATION\" WHERE xterminal = $1 ORDER BY \"xcreateTime\" DESC",
             &[&terminal],
         )
         .await
@@ -12032,7 +12035,7 @@ pub async fn work_count_credential(
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let count: i64 = client
         .query_one(
-            "SELECT COUNT(*) FROM pp_c_work WHERE xcreatorPerson = $1",
+            "SELECT COUNT(*) FROM pp_c_work WHERE \"xcreatorPerson\" = $1",
             &[&credential],
         )
         .await
@@ -12054,7 +12057,7 @@ pub async fn work_count_credential_application_appId(
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let count: i64 = client
         .query_one(
-            "SELECT COUNT(*) FROM pp_c_work WHERE xcreatorPerson = $1",
+            "SELECT COUNT(*) FROM pp_c_work WHERE \"xcreatorPerson\" = $1",
             &[&credential],
         )
         .await
