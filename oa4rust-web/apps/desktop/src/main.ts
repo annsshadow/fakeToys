@@ -15,12 +15,12 @@ const router = createRouter({
   routes: [
     { path: '/login', name: 'Login', component: LoginScreen, meta: { requiresAuth: false } },
     {
-      path: '/app/:appId',
+      path: '/app',
       name: 'AppShell',
       component: AppShell,
       meta: { requiresAuth: true },
       children: [
-        { path: '', redirect: '/app/dashboard' },
+        { path: '', redirect: '/app/dashboard', name: 'AppShellHome' },
         {
           path: 'dashboard',
           name: 'Dashboard',
