@@ -303,19 +303,6 @@ const { data: api_jpush_as_394_q } = useQuery({
   },
 })
 
-const api_device_u_877_data = ref<any[]>([])
-const { data: api_device_u_877_q } = useQuery({
-  queryKey: ['api_device_u_877', '/jaxrs/jpush_assemble_control/device/unbind/deviceName/deviceType'],
-  queryFn: async () => {
-    try {
-      const r = await api.get('/jaxrs/jpush_assemble_control/device/unbind/deviceName/deviceType')
-      return (r.data ?? []) as any[]
-    } catch {
-      return []
-    }
-  },
-})
-
 const api_jpush_as_398_data = ref<any[]>([])
 const { data: api_jpush_as_398_q } = useQuery({
   queryKey: ['api_jpush_as_398', '/jaxrs/jpush_assemble_control/get/control/config'],
@@ -478,19 +465,6 @@ const { data: api_jaxrs_jpush_asse_429_q } = useQuery({
   queryFn: async () => {
     try {
       const r = await api.get('/jaxrs/jpush/assemble/control/device/config/push/type')
-      return (r.data ?? []) as any[]
-    } catch {
-      return []
-    }
-  },
-})
-
-const api_jaxrs_jpush_asse_313_data = ref<any[]>([])
-const { data: api_jaxrs_jpush_asse_313_q } = useQuery({
-  queryKey: ['api_jaxrs_jpush_asse_313', '/jaxrs/jpush/assemble/control/device/unbind/deviceName/deviceType'],
-  queryFn: async () => {
-    try {
-      const r = await api.get('/jaxrs/jpush/assemble/control/device/unbind/deviceName/deviceType')
       return (r.data ?? []) as any[]
     } catch {
       return []
