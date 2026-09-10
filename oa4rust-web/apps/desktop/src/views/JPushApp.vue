@@ -276,19 +276,6 @@ const jpush_assemble_control_message_test_send_q = useQuery({
     }
   },
 })
-const api_jpush_as_598_data = ref<any[]>([])
-const { data: api_jpush_as_598_q } = useQuery({
-  queryKey: ['api_jpush_as_598', '/jaxrs/jpush_assemble_control/message/send'],
-  queryFn: async () => {
-    try {
-      const r = await api.get('/jaxrs/jpush_assemble_control/message/send')
-      return (r.data ?? []) as any[]
-    } catch {
-      return []
-    }
-  },
-})
-
 const api_device_u_56_data = ref<any[]>([])
 const { data: api_device_u_56_q } = useQuery({
   queryKey: ['api_device_u_56', '/jaxrs/jpush_assemble_control/device/unbind/a/b'],

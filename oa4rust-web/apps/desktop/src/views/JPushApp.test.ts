@@ -29,4 +29,9 @@ describe('JPushApp contracts', () => {
     expect(source).not.toContain("queryKey: ['assemble_control_device_bind']")
     expect(source).not.toContain("'/jaxrs/jpush_assemble_control/device/bind']")
   })
+
+  it('does not issue a GET request to the POST-only message send endpoint', () => {
+    expect(source).not.toContain("api.get('/jaxrs/jpush_assemble_control/message/send')")
+    expect(source).not.toContain("'/jaxrs/jpush_assemble_control/message/send']")
+  })
 })
