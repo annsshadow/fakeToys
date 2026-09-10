@@ -290,19 +290,6 @@ const { data: api_jpush_as_458_q } = useQuery({
   },
 })
 
-const api_admin_un_510_data = ref<any[]>([])
-const { data: api_admin_un_510_q } = useQuery({
-  queryKey: ['api_admin_un_510', '/jaxrs/jpush_assemble_control/device/admin/unbind/all/person'],
-  queryFn: async () => {
-    try {
-      const r = await api.get('/jaxrs/jpush_assemble_control/device/admin/unbind/all/person')
-      return (r.data ?? []) as any[]
-    } catch {
-      return []
-    }
-  },
-})
-
 const api_jpush_as_890_data = ref<any[]>([])
 const { data: api_jpush_as_890_q } = useQuery({
   queryKey: ['api_jpush_as_890', '/jaxrs/jpush_assemble_control'],
@@ -478,19 +465,6 @@ const { data: api_control_update_c_655_q } = useQuery({
   queryFn: async () => {
     try {
       const r = await api.get('/jaxrs/jpush/assemble/control/update/control/config')
-      return (r.data ?? []) as any[]
-    } catch {
-      return []
-    }
-  },
-})
-
-const api_jaxrs_jpush_asse_42_data = ref<any[]>([])
-const { data: api_jaxrs_jpush_asse_42_q } = useQuery({
-  queryKey: ['api_jaxrs_jpush_asse_42', '/jaxrs/jpush/assemble/control/device/admin/unbind/all/person'],
-  queryFn: async () => {
-    try {
-      const r = await api.get('/jaxrs/jpush/assemble/control/device/admin/unbind/all/person')
       return (r.data ?? []) as any[]
     } catch {
       return []
