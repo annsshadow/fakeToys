@@ -1,9 +1,5 @@
-# cargo-deny configuration for oa4rust
-# Allows known vulnerabilities that require deeper dependency restructuring to fix.
-# Re-evaluate and remove entries as upstream dependencies are updated.
-
-[advisories]
-yanked = "deny"
+# cargo-deny configuration for oa4rust.
+# RustSec advisories are enforced by cargo-audit in the supply-chain workflow.
 
 [licenses]
 allow = [
@@ -21,7 +17,11 @@ allow = [
     "Unlicense",
     "CC0-1.0",
     "OpenSSL",
+    "CDLA-Permissive-2.0",
 ]
+
+[licenses.private]
+ignore = true
 
 [[licenses.exceptions]]
 name = "ring"
@@ -30,18 +30,6 @@ allow = ["OpenSSL"]
 [[licenses.exceptions]]
 name = "webpki-roots"
 allow = ["MPL-2.0"]
-
-# Block lru 0.12.5 which has RUSTSEC-2026-0002 and RUSTSEC-2026-0253.
-# Both advisories are fixed in lru >= 0.13, but 0.12.5 is pinned by tantivy 0.22.
-[[bans.deny]]
-name = "lru"
-version = "=0.12.5"
-reason = "RUSTSEC-2026-0002: unsound IterMut (Stacked Borrows violation)"
-
-[[bans.deny]]
-name = "lru"
-version = "=0.12.5"
-reason = "RUSTSEC-2026-0253: use-after-free in LruCache::pop() panic safety"
 
 # Require all crates to come from trusted registries
 [sources]

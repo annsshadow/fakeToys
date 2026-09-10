@@ -1,0 +1,15 @@
+# Temporary RustSec exceptions.
+# Every field is validated by scripts/validate_rustsec_exceptions.py.
+
+[[exception]]
+advisory = "RUSTSEC-2023-0071"
+package = "rsa"
+version = "0.9.10"
+dependency_path = "dev-dependencies: mysql_async 0.37.1 -> sqlx-mysql 0.8.6 -> rsa 0.9.10"
+owner = "oa4rust-security"
+tracking_url = "docs/plans/2026-09-09-001-refactor-httponly-cookie-cargo-audit-rustsec-db-biome-2-5-11-plan.md"
+created = "2026-09-09"
+expires = "2026-10-09"
+reason = "The remaining rsa crate is reachable only from the MySQL integration-test driver; production OIDC and PDF signing no longer use it. Upstream sqlx-mysql has no patched rsa release."
+compensating_control = "Production packages do not depend on mysql_async; private-key operations use ring. CI audits the exact package and the exception expires after 30 days."
+approved_by = "project-owner"
