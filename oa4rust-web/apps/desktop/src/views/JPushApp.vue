@@ -106,18 +106,6 @@ async function delDevice(d: any) {
 loadDevices()
 loadTemplates()
 
-const jpush_template_list_ref = ref<any[]>([])
-const jpush_template_list_q = useQuery({
-  queryKey: ['jpush_template_list'],
-  queryFn: async () => {
-    try {
-      const r = await api.get('/jaxrs/jpush/template/list')
-      return (r.data ?? []) as any[]
-    } catch {
-      return []
-    }
-  },
-})
 const jpush_assemble_control_config_ref = ref<any[]>([])
 const jpush_assemble_control_config_q = useQuery({
   queryKey: ['jpush_assemble_control_config'],
