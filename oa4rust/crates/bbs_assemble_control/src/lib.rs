@@ -1020,11 +1020,11 @@ pub async fn shutup_list(
             &[&count, &offset],
         )
         .await
-        .unwrap_or_default();
+        .map_err(|_| AppError::Internal)?;
     let total_row = client
         .query_one("SELECT COUNT(*) FROM x_bbs_shutup", &[])
         .await
-        .unwrap_or_else(|_| panic!("shutup count query failed"));
+        .map_err(|_| AppError::Internal)?;
     let total: i64 = total_row.get(0);
     let data: Vec<Value> = rows
         .iter()

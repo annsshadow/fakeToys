@@ -347,6 +347,26 @@ async fn test_uuid_random_returns_valid_uuid() {
 }
 
 #[tokio::test]
+async fn test_shutup_list_db_failure_returns_internal_error_without_panicking() {
+    let response = app()
+        .oneshot(
+            Request::builder()
+                .method(Method::POST)
+                .uri(format!("{}/shutup/list/paging/1/size/20", BASE))
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .expect("数据库不可达时请求 future 也必须正常完成");
+    assert_eq!(response.status(), StatusCode::INTERNAL_SERVER_ERROR);
+
+    let bytes = axum::body::to_bytes(response.into_body(), 4096).await.unwrap();
+    let body: serde_json::Value = serde_json::from_slice(&bytes).unwrap();
+    assert_eq!(body["type"], "error");
+    assert_eq!(body["message"], "internal server error");
+}
+
+#[tokio::test]
 async fn test_legacy_extended_routes_survive() {
     // 扩展端点（非 Java 全集成员）不得因本轮改造丢失。
     for (method, uri) in [
