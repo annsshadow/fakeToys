@@ -41,4 +41,11 @@ describe('JPushApp contracts', () => {
     expect(source).not.toContain("queryKey: ['jpush_assemble_control_message_test_send']")
     expect(source).not.toContain("queryKey: ['control_message_test_send']")
   })
+
+  it('does not auto-run destructive admin unbind requests', () => {
+    expect(source).not.toContain("api.get('/jaxrs/jpush_assemble_control/device/admin/unbind/all/person')")
+    expect(source).not.toContain("api.get('/jaxrs/jpush/assemble/control/device/admin/unbind/all/person')")
+    expect(source).not.toContain("'/jaxrs/jpush_assemble_control/device/admin/unbind/all/person']")
+    expect(source).not.toContain("'/jaxrs/jpush/assemble/control/device/admin/unbind/all/person']")
+  })
 })
