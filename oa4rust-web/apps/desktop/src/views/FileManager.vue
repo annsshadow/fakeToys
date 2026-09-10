@@ -79,153 +79,185 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue';
-import { confirmMsg } from '../utils/toast';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/vue-query';
-import { api } from '@oa4rust/sdk';
+import { api } from '@oa4rust/sdk'
+import { useMutation, useQueryClient } from '@tanstack/vue-query'
+import { ref } from 'vue'
+import { confirmMsg } from '../utils/toast'
 
 interface FileItem {
-  id: string;
-  name: string;
-  size?: number;
-  type: 'file' | 'folder';
-  updateTime?: string;
-  parentId?: string;
-  [key: string]: unknown;
+  id: string
+  name: string
+  size?: number
+  type: 'file' | 'folder'
+  updateTime?: string
+  parentId?: string
+  [key: string]: unknown
 }
 
-const currentFolder = ref<string>('');
-const breadcrumbs = ref<string[]>(['根目录']);
-const viewType = ref<'grid' | 'list'>('list');
-const loading = ref(false);
-const files = ref<FileItem[]>([]);
-const showUpload = ref(false);
-const uploadProgress = ref(0);
-const queryClient = useQueryClient();
+const currentFolder = ref<string>('')
+const breadcrumbs = ref<string[]>(['根目录'])
+const viewType = ref<'grid' | 'list'>('list')
+const loading = ref(false)
+const files = ref<FileItem[]>([])
+const showUpload = ref(false)
+const uploadProgress = ref(0)
+const queryClient = useQueryClient()
 
 // 加载文件列表
 async function loadFiles(folderId?: string): Promise<void> {
-  loading.value = true;
+  loading.value = true
   try {
-    const resp = await api.get(`/jaxrs/file/assemble/control/file/list/${folderId || ''}`);
-    files.value = ((resp as any)?.data ?? []) as FileItem[];
+    const resp = await api.get(`/jaxrs/file/assemble/control/file/list/${folderId || ''}`)
+    files.value = ((resp as any)?.data ?? []) as FileItem[]
   } catch {
-    files.value = [];
+    files.value = []
   } finally {
-    loading.value = false;
+    loading.value = false
   }
 }
 
-loadFiles();
+loadFiles()
 
 function openItem(f: FileItem): void {
   if (f.type === 'folder' || (f as any).isFolder) {
-    currentFolder.value = f.id;
-    breadcrumbs.value = [...breadcrumbs.value, f.name];
-    loadFiles(f.id);
+    currentFolder.value = f.id
+    breadcrumbs.value = [...breadcrumbs.value, f.name]
+    loadFiles(f.id)
   }
 }
 
 function navigateTo(index: number): void {
-  breadcrumbs.value = breadcrumbs.value.slice(0, index + 1);
-  currentFolder.value = index === 0 ? '' : (files.value[index - 1] as FileItem | undefined)?.id ?? '';
-  loadFiles(currentFolder.value);
+  breadcrumbs.value = breadcrumbs.value.slice(0, index + 1)
+  currentFolder.value = index === 0 ? '' : ((files.value[index - 1] as FileItem | undefined)?.id ?? '')
+  loadFiles(currentFolder.value)
 }
 
 function toggleView(): void {
-  viewType.value = viewType.value === 'grid' ? 'list' : 'grid';
+  viewType.value = viewType.value === 'grid' ? 'list' : 'grid'
 }
 
 function iconForFile(f: FileItem): string {
-  if ((f as any).type === 'folder' || f.type === 'folder') return '📁';
-  const ext = (f.name.split('.').pop() ?? '').toLowerCase();
+  if ((f as any).type === 'folder' || f.type === 'folder') return '📁'
+  const ext = (f.name.split('.').pop() ?? '').toLowerCase()
   const icons: Record<string, string> = {
-    pdf: '📄', doc: '📝', docx: '📝', txt: '📃',
-    xls: '📊', xlsx: '📊', csv: '📊',
-    ppt: '📑', pptx: '📑',
-    jpg: '🖼', jpeg: '🖼', png: '🖼', gif: '🖼', svg: '🖼',
-    mp4: '🎬', mp3: '🎵', avi: '🎬',
-    zip: '📦', rar: '📦', '7z': '📦',
-    js: '⚡', ts: '⚡', py: '🐍', rust: '🦀',
-    json: '📋', xml: '📋', html: '🌐', css: '🎨',
-  };
-  return icons[ext] ?? '📄';
+    pdf: '📄',
+    doc: '📝',
+    docx: '📝',
+    txt: '📃',
+    xls: '📊',
+    xlsx: '📊',
+    csv: '📊',
+    ppt: '📑',
+    pptx: '📑',
+    jpg: '🖼',
+    jpeg: '🖼',
+    png: '🖼',
+    gif: '🖼',
+    svg: '🖼',
+    mp4: '🎬',
+    mp3: '🎵',
+    avi: '🎬',
+    zip: '📦',
+    rar: '📦',
+    '7z': '📦',
+    js: '⚡',
+    ts: '⚡',
+    py: '🐍',
+    rust: '🦀',
+    json: '📋',
+    xml: '📋',
+    html: '🌐',
+    css: '🎨',
+  }
+  return icons[ext] ?? '📄'
 }
 
 function formatSize(bytes?: number): string {
-  if (!bytes) return '—';
-  if (bytes < 1024) return bytes + ' B';
-  if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
-  return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+  if (!bytes) return '—'
+  if (bytes < 1024) return bytes + ' B'
+  if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB'
+  return (bytes / (1024 * 1024)).toFixed(1) + ' MB'
 }
 
 function fmtTime(ts?: string): string {
-  if (!ts) return '—';
+  if (!ts) return '—'
   try {
-    return new Date(ts).toLocaleString('zh-CN', { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' });
-  } catch { return String(ts); }
+    return new Date(ts).toLocaleString('zh-CN', {
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+    })
+  } catch {
+    return String(ts)
+  }
 }
 
 // 删除文件
 const deleteMutation = useMutation({
   mutationFn: (id: string) => api.delete(`/jaxrs/file/assemble/control/file/${id}`),
   onSuccess: () => {
-    queryClient.invalidateQueries({ queryKey: ['file', currentFolder.value] });
-    loadFiles(currentFolder.value);
+    queryClient.invalidateQueries({ queryKey: ['file', currentFolder.value] })
+    loadFiles(currentFolder.value)
   },
-});
+})
 
 function deleteFile(f: FileItem): void {
   if (confirmMsg(`确定删除「${f.name}」？`)) {
     deleteMutation.mutate(f.id, {
       onSuccess: () => toast.success('文件已删除'),
       onError: () => toast.error('删除失败'),
-    });
+    })
   }
 }
 
 function downloadFile(f: FileItem): void {
-  window.open(`/jaxrs/file/core/entity/file/${f.id}/download`);
+  window.open(`/jaxrs/file/core/entity/file/${f.id}/download`)
 }
 
 function shareFile(_f: FileItem): void {
   // Share functionality (future)
 }
 
-function handleUpload(): void { showUpload.value = true; }
+function handleUpload(): void {
+  showUpload.value = true
+}
 
 function handleFileSelect(e: Event): void {
-  const files = (e.target as HTMLInputElement).files;
-  if (!files?.length) return;
-  uploadFile(files[0]);
+  const files = (e.target as HTMLInputElement).files
+  if (!files?.length) return
+  uploadFile(files[0])
 }
 
 function handleDrop(e: DragEvent): void {
-  const file = e.dataTransfer?.files[0];
-  if (file) uploadFile(file);
+  const file = e.dataTransfer?.files[0]
+  if (file) uploadFile(file)
 }
 
 function uploadFile(file: File): void {
-  uploadProgress.value = 0;
-  const formData = new FormData();
-  formData.append('file', file);
+  uploadProgress.value = 0
+  const formData = new FormData()
+  formData.append('file', file)
   // Simulate progress
   const interval = setInterval(() => {
-    uploadProgress.value = Math.min(99, uploadProgress.value + 10);
-  }, 200);
-  api.upload('/jaxrs/file/assemble/control/file/upload', formData)
+    uploadProgress.value = Math.min(99, uploadProgress.value + 10)
+  }, 200)
+  api
+    .upload('/jaxrs/file/assemble/control/file/upload', formData)
     .then(() => {
-      clearInterval(interval);
-      uploadProgress.value = 100;
-      setTimeout(() => { showUpload.value = false; uploadProgress.value = 0; loadFiles(currentFolder.value); }, 500);
+      clearInterval(interval)
+      uploadProgress.value = 100
+      setTimeout(() => {
+        showUpload.value = false
+        uploadProgress.value = 0
+        loadFiles(currentFolder.value)
+      }, 500)
     })
     .catch(() => {
-      clearInterval(interval);
-      uploadProgress.value = 0;
-    });
+      clearInterval(interval)
+      uploadProgress.value = 0
+    })
 }
-
-
 </script>
 
 <style scoped>

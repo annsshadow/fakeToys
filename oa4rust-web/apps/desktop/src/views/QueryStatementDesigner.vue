@@ -871,56 +871,87 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
-import { useQuery, useMutation, useQueryClient } from '@tanstack/vue-query'
 import { api } from '@oa4rust/sdk'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/vue-query'
+import { computed, onMounted, ref } from 'vue'
 
 interface Stmt {
-  id: string; name?: string; statementName?: string; flag?: string
-  category?: string; entityCategory?: string; icon?: string
-  sql?: string; desc?: string; updateTime?: string; createTime?: string
+  id: string
+  name?: string
+  statementName?: string
+  flag?: string
+  category?: string
+  entityCategory?: string
+  icon?: string
+  sql?: string
+  desc?: string
+  updateTime?: string
+  createTime?: string
 }
 
-const loading = ref(false), loadingResult = ref(false)
-const filter = ref(''), filterTab = ref<'all'|'recent'>('all')
-const currentStatement = ref<Stmt|null>(null)
-const sql = ref(''), sqlLines = computed(() => sql.value.split('\n').length)
-const showModal = ref(false), editing = ref(false)
+const loading = ref(false),
+  loadingResult = ref(false)
+const filter = ref(''),
+  filterTab = ref<'all' | 'recent'>('all')
+const currentStatement = ref<Stmt | null>(null)
+const sql = ref(''),
+  sqlLines = computed(() => sql.value.split('\n').length)
+const showModal = ref(false),
+  editing = ref(false)
 const modalForm = ref({ name: '', flag: '', sql: '', desc: '' })
 
 // Results
 const resultData = ref<any[]>([])
 const resultHeaders = ref<string[]>([])
 const resultFilter = ref('')
-const sortCol = ref(''), sortAsc = ref(true)
-const page = ref(1), pageSize = 50
+const sortCol = ref(''),
+  sortAsc = ref(true)
+const page = ref(1),
+  pageSize = 50
 const hasResults = ref(false)
 
 const queryClient = useQueryClient()
 const { data: stmts } = useQuery({
   queryKey: ['stmt', 'list'],
-  queryFn: async () => { loading.value = true; try { const r: any = await api.get('/jaxrs/query/assemble/designer/list'); return r?.data ?? [] } finally { loading.value = false } }
+  queryFn: async () => {
+    loading.value = true
+    try {
+      const r: any = await api.get('/jaxrs/query/assemble/designer/list')
+      return r?.data ?? []
+    } finally {
+      loading.value = false
+    }
+  },
 })
 const statements = ref<Stmt[]>(stmts.value ?? [])
 
 const filtered = computed(() => {
   let list = statements.value
-  if (filter.value) list = list.filter(s => (s.name||'').toLowerCase().includes(filter.value.toLowerCase()) || (s.flag||'').toLowerCase().includes(filter.value.toLowerCase()))
-  if (filterTab.value === 'recent') list = [...list].sort((a,b) => String(b.updateTime||'').localeCompare(a.updateTime||''))
+  if (filter.value)
+    list = list.filter(
+      (s) =>
+        (s.name || '').toLowerCase().includes(filter.value.toLowerCase()) ||
+        (s.flag || '').toLowerCase().includes(filter.value.toLowerCase()),
+    )
+  if (filterTab.value === 'recent')
+    list = [...list].sort((a, b) => String(b.updateTime || '').localeCompare(a.updateTime || ''))
   return list
 })
 
 const sortedResult = computed(() => {
-  let data = resultFilter.value ? resultData.value.filter(row =>
-    Object.values(row).some(v => String(v).toLowerCase().includes(resultFilter.value.toLowerCase()))
-  ) : resultData.value
+  let data = resultFilter.value
+    ? resultData.value.filter((row) =>
+        Object.values(row).some((v) => String(v).toLowerCase().includes(resultFilter.value.toLowerCase())),
+      )
+    : resultData.value
   if (sortCol.value) {
-    data = [...data].sort((a,b) => {
-      const av = a[sortCol.value], bv = b[sortCol.value]
+    data = [...data].sort((a, b) => {
+      const av = a[sortCol.value],
+        bv = b[sortCol.value]
       return sortAsc.value ? String(av).localeCompare(String(bv)) : String(bv).localeCompare(String(av))
     })
   }
-  return data.slice((page.value-1)*pageSize, page.value*pageSize)
+  return data.slice((page.value - 1) * pageSize, page.value * pageSize)
 })
 const totalPages = computed(() => Math.ceil(resultData.value.length / pageSize))
 
@@ -940,35 +971,51 @@ function newStatement() {
 }
 function editStatement(s: Stmt) {
   editing.value = true
-  modalForm.value = { name: s.name||'', flag: s.flag||'', sql: s.sql??'', desc: s.desc||'' }
+  modalForm.value = { name: s.name || '', flag: s.flag || '', sql: s.sql ?? '', desc: s.desc || '' }
   showModal.value = true
 }
 const saveM = useMutation({
   mutationFn: async (data: any) => {
-    if (editing.value && currentStatement.value?.id) return api.put(`/jaxrs/query/assemble/designer/update/${currentStatement.value!.id}`, data)
+    if (editing.value && currentStatement.value?.id)
+      return api.put(`/jaxrs/query/assemble/designer/update/${currentStatement.value!.id}`, data)
     return api.post('/jaxrs/query/assemble/designer/create', data)
   },
-  onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['stmt','list'] }); showModal.value = false }
+  onSuccess: () => {
+    queryClient.invalidateQueries({ queryKey: ['stmt', 'list'] })
+    showModal.value = false
+  },
 })
 function modalSave() {
   if (!modalForm.value.name.trim()) return
-  const payload = { name: modalForm.value.name, flag: modalForm.value.flag, sql: modalForm.value.sql, description: modalForm.value.desc }
+  const payload = {
+    name: modalForm.value.name,
+    flag: modalForm.value.flag,
+    sql: modalForm.value.sql,
+    description: modalForm.value.desc,
+  }
   saveM.mutate(payload)
 }
 const delM = useMutation({
   mutationFn: (id: string) => api.delete(`/jaxrs/query/assemble/designer/delete/${id}`),
-  onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['stmt','list'] }); if (currentStatement.value?.id) currentStatement.value = null }
+  onSuccess: () => {
+    queryClient.invalidateQueries({ queryKey: ['stmt', 'list'] })
+    if (currentStatement.value?.id) currentStatement.value = null
+  },
 })
 function deleteStatement(s: Stmt) {
-  if (!confirmMsg(`删除语句「${s.name||s.id}」？`)) return
+  if (!confirmMsg(`删除语句「${s.name || s.id}」？`)) return
   delM.mutate(s.id)
 }
 
 async function executeSQL() {
   if (!sql.value.trim()) return
-  loadingResult.value = true; hasResults.value = true
+  loadingResult.value = true
+  hasResults.value = true
   try {
-    const r: any = await api.post('/jaxrs/query/assemble/designer/execute', { sql: sql.value, id: currentStatement.value?.id })
+    const r: any = await api.post('/jaxrs/query/assemble/designer/execute', {
+      sql: sql.value,
+      id: currentStatement.value?.id,
+    })
     resultData.value = r?.data?.list ?? r?.data ?? []
     resultHeaders.value = resultData.value.length > 0 ? Object.keys(resultData.value[0]) : []
     page.value = 1
@@ -977,22 +1024,29 @@ async function executeSQL() {
     resultHeaders.value = []
     toast.error('执行失败: : ' + (e?.message ?? '未知错误'))
     lastExecDuration.value = Date.now() - t0
-  } finally { loadingResult.value = false }
+  } finally {
+    loadingResult.value = false
+  }
 }
 
 function formatSQL() {
   sql.value = sql.value.replace(/\s+/g, ' ').replace(/;/g, ';\n').trim()
 }
-function clearSQL() { sql.value = '' }
+function clearSQL() {
+  sql.value = ''
+}
 function sortResult(col: string) {
   if (sortCol.value === col) sortAsc.value = !sortAsc.value
-  else { sortCol.value = col; sortAsc.value = true }
+  else {
+    sortCol.value = col
+    sortAsc.value = true
+  }
 }
 function exportCSV() {
   if (!resultData.value.length) return
   const header = resultHeaders.value.join(',')
-  const rows = resultData.value.map(r =>
-    resultHeaders.value.map(h => '"' + String(r[h] ?? '').replace(/"/g, '""') + '"').join(',')
+  const rows = resultData.value.map((r) =>
+    resultHeaders.value.map((h) => '"' + String(r[h] ?? '').replace(/"/g, '""') + '"').join(','),
   )
   const blob = new Blob([header + '\n' + rows.join('\n')], { type: 'text/csv;charset=utf-8' })
   const a = document.createElement('a')
@@ -1001,68 +1055,130 @@ function exportCSV() {
   a.click()
 }
 
-function loadStatements() { queryClient.invalidateQueries({ queryKey: ['stmt','list'] }) }
-function fmtTime(t?: string) { if (!t) return ''; try { return new Date(t).toLocaleString('zh-CN',{month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'}) } catch { return String(t) } }
+function loadStatements() {
+  queryClient.invalidateQueries({ queryKey: ['stmt', 'list'] })
+}
+function fmtTime(t?: string) {
+  if (!t) return ''
+  try {
+    return new Date(t).toLocaleString('zh-CN', { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' })
+  } catch {
+    return String(t)
+  }
+}
 onMounted(loadStatements)
 
 // --- Enhanced State ---
-const showSchemaPanel = ref(false), showTemplatePanel = ref(false)
-const showHistoryPanel = ref(false), showBatchPanel = ref(false)
-const showComparePanel = ref(false), showStatsPanel = ref(false)
-const showParamPanel = ref(false), showFavoritePanel = ref(false)
+const showSchemaPanel = ref(false),
+  showTemplatePanel = ref(false)
+const showHistoryPanel = ref(false),
+  showBatchPanel = ref(false)
+const showComparePanel = ref(false),
+  showStatsPanel = ref(false)
+const showParamPanel = ref(false),
+  showFavoritePanel = ref(false)
 const showNewTemplate = ref(false)
-const schTab = ref("tables"), tmplCat = ref("all")
-const schemaSearch = ref(""), selectedTableForFields = ref("")
-const execHistory = ref<Array<{ts:number;sql:string;duration:number;rows:number;success:boolean}>>([])
-const allTables = ref<Array<{name:string;rowCount?:number}>>([])
-const tableFields = ref<Array<{name:string;type:string;nullable:boolean}>>([])
-const paramBindings = ref<Array<{name:string;value:string;type:string;defaultValue:string}>>([])
-const templates = ref<Array<{id:string;name:string;category:string;code:string;icon:string}>>([
-  {id:"t1",name:"基础SELECT",category:"select",code:"SELECT * FROM table_name WHERE condition\nLIMIT 100;",icon:"📋"},
-  {id:"t2",name:"JOIN查询",category:"join",code:"SELECT a.*, b.* FROM table_a a LEFT JOIN table_b b ON a.id = b.a_id",icon:"🔗"},
-  {id:"t3",name:"聚合统计",category:"agg",code:"SELECT category, COUNT(*) as cnt FROM orders GROUP BY category ORDER BY cnt DESC",icon:"📊"},
-  {id:"t4",name:"子查询",category:"sub",code:"SELECT * FROM users WHERE id IN (SELECT user_id FROM orders WHERE amount > 1000)",icon:"🔃"},
-  {id:"t5",name:"分页查询",category:"select",code:"SELECT * FROM table_name ORDER BY id LIMIT 50 OFFSET 0",icon:"📄"},
+const schTab = ref('tables'),
+  tmplCat = ref('all')
+const schemaSearch = ref(''),
+  selectedTableForFields = ref('')
+const execHistory = ref<Array<{ ts: number; sql: string; duration: number; rows: number; success: boolean }>>([])
+const allTables = ref<Array<{ name: string; rowCount?: number }>>([])
+const tableFields = ref<Array<{ name: string; type: string; nullable: boolean }>>([])
+const paramBindings = ref<Array<{ name: string; value: string; type: string; defaultValue: string }>>([])
+const templates = ref<Array<{ id: string; name: string; category: string; code: string; icon: string }>>([
+  {
+    id: 't1',
+    name: '基础SELECT',
+    category: 'select',
+    code: 'SELECT * FROM table_name WHERE condition\nLIMIT 100;',
+    icon: '📋',
+  },
+  {
+    id: 't2',
+    name: 'JOIN查询',
+    category: 'join',
+    code: 'SELECT a.*, b.* FROM table_a a LEFT JOIN table_b b ON a.id = b.a_id',
+    icon: '🔗',
+  },
+  {
+    id: 't3',
+    name: '聚合统计',
+    category: 'agg',
+    code: 'SELECT category, COUNT(*) as cnt FROM orders GROUP BY category ORDER BY cnt DESC',
+    icon: '📊',
+  },
+  {
+    id: 't4',
+    name: '子查询',
+    category: 'sub',
+    code: 'SELECT * FROM users WHERE id IN (SELECT user_id FROM orders WHERE amount > 1000)',
+    icon: '🔃',
+  },
+  {
+    id: 't5',
+    name: '分页查询',
+    category: 'select',
+    code: 'SELECT * FROM table_name ORDER BY id LIMIT 50 OFFSET 0',
+    icon: '📄',
+  },
 ])
-const myTemplates = ref<Array<{id:string;name:string;category:string;code:string;icon:string}>>([])
-const batchSql = ref(""), batchRunning = ref(false), batchResults = ref<Array<{success:boolean;message:string;duration:number}>>([])
+const myTemplates = ref<Array<{ id: string; name: string; category: string; code: string; icon: string }>>([])
+const batchSql = ref(''),
+  batchRunning = ref(false),
+  batchResults = ref<Array<{ success: boolean; message: string; duration: number }>>([])
 const batchStopOnError = ref(true)
-const compareRight = ref<{sql?:string;name?:string}|null>(null)
-const newTmpl = ref({name:"",category:"select",code:""})
+const compareRight = ref<{ sql?: string; name?: string } | null>(null)
+const newTmpl = ref({ name: '', category: 'select', code: '' })
 const favoriteIds = ref<string[]>([])
 
 // Computed helpers
 const filteredTables = computed(() => {
   if (!schemaSearch.value.trim()) return allTables.value
   const q = schemaSearch.value.toLowerCase()
-  return allTables.value.filter(t => t.name.toLowerCase().includes(q))
+  return allTables.value.filter((t) => t.name.toLowerCase().includes(q))
 })
-const favoriteStmts = computed(() => statements.value.filter(s => favoriteIds.value.includes(s.id)))
+const favoriteStmts = computed(() => statements.value.filter((s) => favoriteIds.value.includes(s.id)))
 const detectedSqlParams = computed(() => {
   const matches = sql.value.match(/[:@#](\w+)/g) || []
-  return [...new Set(matches.map(m => m.substring(1)))]
+  return [...new Set(matches.map((m) => m.substring(1)))]
 })
 const avgDuration = computed(() => {
   if (!execHistory.value.length) return 0
-  const sum = execHistory.value.reduce((a,h) => a + h.duration, 0)
+  const sum = execHistory.value.reduce((a, h) => a + h.duration, 0)
   return Math.round(sum / execHistory.value.length)
 })
-const maxDuration = computed(() => execHistory.value.length ? Math.max(...execHistory.value.map(h => h.duration)) : 0)
+const maxDuration = computed(() =>
+  execHistory.value.length ? Math.max(...execHistory.value.map((h) => h.duration)) : 0,
+)
 const successRate = computed(() => {
-  if (!execHistory.value.length) return "100%"
-  const ok = execHistory.value.filter(h => h.success).length
-  return Math.round(ok / execHistory.value.length * 100) + "%"
+  if (!execHistory.value.length) return '100%'
+  const ok = execHistory.value.filter((h) => h.success).length
+  return Math.round((ok / execHistory.value.length) * 100) + '%'
 })
-const totalRows = computed(() => execHistory.value.reduce((a,h) => a + h.rows, 0))
-const errCount = computed(() => execHistory.value.filter(h => !h.success).length)
+const totalRows = computed(() => execHistory.value.reduce((a, h) => a + h.rows, 0))
+const errCount = computed(() => execHistory.value.filter((h) => !h.success).length)
 const durationDistribution = computed(() => {
-  const buckets = [{range:"<100ms",min:0,max:100},{range:"100-500ms",min:100,max:500},{range:"500ms-1s",min:500,max:1000},{range:"1-5s",min:1000,max:5000},{range:">5s",min:5000,max:Infinity}]
-  const maxC = Math.max(1, ...buckets.map(b => execHistory.value.filter(h => h.duration >= b.min && h.duration < b.max).length))
-  return buckets.map(b => ({ ...b, count: execHistory.value.filter(h => h.duration >= b.min && h.duration < b.max).length, h: Math.round(execHistory.value.filter(h => h.duration >= b.min && h.duration < b.max).length / maxC * 80) }))
+  const buckets = [
+    { range: '<100ms', min: 0, max: 100 },
+    { range: '100-500ms', min: 100, max: 500 },
+    { range: '500ms-1s', min: 500, max: 1000 },
+    { range: '1-5s', min: 1000, max: 5000 },
+    { range: '>5s', min: 5000, max: Infinity },
+  ]
+  const maxC = Math.max(
+    1,
+    ...buckets.map((b) => execHistory.value.filter((h) => h.duration >= b.min && h.duration < b.max).length),
+  )
+  return buckets.map((b) => ({
+    ...b,
+    count: execHistory.value.filter((h) => h.duration >= b.min && h.duration < b.max).length,
+    h: Math.round((execHistory.value.filter((h) => h.duration >= b.min && h.duration < b.max).length / maxC) * 80),
+  }))
 })
 
 // Functions
-function toggleFav(s: Stmt|null) {
+function toggleFav(s: Stmt | null) {
   if (!s?.id) return
   const idx = favoriteIds.value.indexOf(s.id)
   if (idx >= 0) favoriteIds.value.splice(idx, 1)
@@ -1071,76 +1187,135 @@ function toggleFav(s: Stmt|null) {
 
 async function loadSchema() {
   try {
-    const r: any = await api.get("/jaxrs/query/assemble/designer/table/list")
+    const r: any = await api.get('/jaxrs/query/assemble/designer/table/list')
     allTables.value = (r?.data ?? []).map((t: any) => ({ name: t.tableFlag || t.name, rowCount: t.rowCount }))
-  } catch { allTables.value = [{name:"users",rowCount:1000},{name:"orders",rowCount:5000},{name:"products",rowCount:200},{name:"departments",rowCount:50}] }
+  } catch {
+    allTables.value = [
+      { name: 'users', rowCount: 1000 },
+      { name: 'orders', rowCount: 5000 },
+      { name: 'products', rowCount: 200 },
+      { name: 'departments', rowCount: 50 },
+    ]
+  }
 }
 async function loadTableFields() {
-  if (!selectedTableForFields.value) { tableFields.value = []; return }
+  if (!selectedTableForFields.value) {
+    tableFields.value = []
+    return
+  }
   try {
-    const r: any = await api.get(`/jaxrs/query/assemble/designer/entity/entity/properties/${selectedTableForFields.value}/default/default`)
-    tableFields.value = (r?.data ?? []).map((f: any) => ({ name: f.fieldName||f.name, type: f.fieldType||f.type||"varchar", nullable: f.nullable!==false }))
-  } catch { tableFields.value = [] }
+    const r: any = await api.get(
+      `/jaxrs/query/assemble/designer/entity/entity/properties/${selectedTableForFields.value}/default/default`,
+    )
+    tableFields.value = (r?.data ?? []).map((f: any) => ({
+      name: f.fieldName || f.name,
+      type: f.fieldType || f.type || 'varchar',
+      nullable: f.nullable !== false,
+    }))
+  } catch {
+    tableFields.value = []
+  }
 }
-function selectTable(t: any) { selectedTableForFields.value = t.name; loadTableFields() }
-function insertField(name: string) { sql.value += (sql.value.endsWith("\n") ? "" : "\n") + "    " + name + ", "; showSchemaPanel.value = false }
+function selectTable(t: any) {
+  selectedTableForFields.value = t.name
+  loadTableFields()
+}
+function insertField(name: string) {
+  sql.value += (sql.value.endsWith('\n') ? '' : '\n') + '    ' + name + ', '
+  showSchemaPanel.value = false
+}
 
-function applyTemplate(t: any) { sql.value = t.code + "\n"; showTemplatePanel.value = false }
+function applyTemplate(t: any) {
+  sql.value = t.code + '\n'
+  showTemplatePanel.value = false
+}
 function saveNewTemplate() {
   if (!newTmpl.value.name.trim()) return
-  templates.value.push({ id: "t"+Date.now(), name: newTmpl.value.name, category: newTmpl.value.category, code: newTmpl.value.code, icon: "📝" })
+  templates.value.push({
+    id: 't' + Date.now(),
+    name: newTmpl.value.name,
+    category: newTmpl.value.category,
+    code: newTmpl.value.code,
+    icon: '📝',
+  })
   showNewTemplate.value = false
 }
 function saveAsMyTemplate(t: any) {
-  if (myTemplates.value.some(m => m.id === t.id)) return
-  myTemplates.value.push({ ...t, id: "mt"+Date.now() })
+  if (myTemplates.value.some((m) => m.id === t.id)) return
+  myTemplates.value.push({ ...t, id: 'mt' + Date.now() })
 }
 
-function replayHistory(idx: number) { const h = execHistory.value[idx]; if (h) { sql.value = h.sql; executeSQL() } }
-function copyHistorySql(idx: number) { navigator.clipboard.writeText(execHistory.value[idx]?.sql ?? "") }
+function replayHistory(idx: number) {
+  const h = execHistory.value[idx]
+  if (h) {
+    sql.value = h.sql
+    executeSQL()
+  }
+}
+function copyHistorySql(idx: number) {
+  navigator.clipboard.writeText(execHistory.value[idx]?.sql ?? '')
+}
 function exportHistory() {
-  const blob = new Blob([execHistory.value.map(h => `[${fmtTime(new Date(h.ts).toISOString())}] ${h.duration}ms ${h.success?"OK":"ERR"}: ${h.sql}`).join("\n---\n")], {type:"text/plain"})
-  const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = "exec_history.txt"; a.click()
+  const blob = new Blob(
+    [
+      execHistory.value
+        .map((h) => `[${fmtTime(new Date(h.ts).toISOString())}] ${h.duration}ms ${h.success ? 'OK' : 'ERR'}: ${h.sql}`)
+        .join('\n---\n'),
+    ],
+    { type: 'text/plain' },
+  )
+  const a = document.createElement('a')
+  a.href = URL.createObjectURL(blob)
+  a.download = 'exec_history.txt'
+  a.click()
 }
 
 async function runBatch() {
   if (!batchSql.value.trim()) return
-  batchRunning.value = true; batchResults.value = []
-  const stmts = batchSql.value.split(/;\n|;\s*\n|\n/).filter(s => s.trim())
+  batchRunning.value = true
+  batchResults.value = []
+  const stmts = batchSql.value.split(/;\n|;\s*\n|\n/).filter((s) => s.trim())
   for (const stmt of stmts) {
     if (!batchRunning.value) break
     const t0 = Date.now()
     try {
-      await api.post("/jaxrs/query/assemble/designer/execute", { sql: stmt.trim() })
-      batchResults.value.push({ success: true, message: "执行成功", duration: Date.now()-t0 })
+      await api.post('/jaxrs/query/assemble/designer/execute', { sql: stmt.trim() })
+      batchResults.value.push({ success: true, message: '执行成功', duration: Date.now() - t0 })
     } catch (e: any) {
-      batchResults.value.push({ success: false, message: e?.message ?? "执行失败", duration: Date.now()-t0 })
+      batchResults.value.push({ success: false, message: e?.message ?? '执行失败', duration: Date.now() - t0 })
       if (batchStopOnError.value) break
     }
   }
   batchRunning.value = false
 }
 
-function doCompare() { compareRight.value = { sql: sql.value, name: "当前编辑" }; }
-function applyCompareRight() { if (compareRight.value?.sql) { sql.value = compareRight.value.sql } showComparePanel.value = false }
+function doCompare() {
+  compareRight.value = { sql: sql.value, name: '当前编辑' }
+}
+function applyCompareRight() {
+  if (compareRight.value?.sql) {
+    sql.value = compareRight.value.sql
+  }
+  showComparePanel.value = false
+}
 
 function getDurationColor(range: string): string {
-  if (range.includes("<100")) return "#10b981"
-  if (range.includes("100-500")) return "#3b82f6"
-  if (range.includes("500ms")) return "#f59e0b"
-  if (range.includes("1-5")) return "#f97316"
-  return "#ef4444"
+  if (range.includes('<100')) return '#10b981'
+  if (range.includes('100-500')) return '#3b82f6'
+  if (range.includes('500ms')) return '#f59e0b'
+  if (range.includes('1-5')) return '#f97316'
+  return '#ef4444'
 }
 
 function addAllDetectedParams() {
   for (const p of detectedSqlParams.value) {
-    if (!paramBindings.value.some(bp => bp.name === p))
-      paramBindings.value.push({ name: p, value: "", type: "string", defaultValue: "" })
+    if (!paramBindings.value.some((bp) => bp.name === p))
+      paramBindings.value.push({ name: p, value: '', type: 'string', defaultValue: '' })
   }
 }
 
 // --- SQL Execution with Timing ---
-const execTimestamp = ref<number|null>(null)
+const execTimestamp = ref<number | null>(null)
 const lastExecDuration = ref(0)
 const execRowsPerSec = computed(() => {
   if (!lastExecMs.value || !resultData.value.length) return 0
@@ -1149,42 +1324,54 @@ const execRowsPerSec = computed(() => {
 
 // --- SQL Result Visualization ---
 const showVisualization = ref(false)
-const chartType = ref<"bar"|"pie"|"line">("bar")
-const chartXAxis = ref(""), chartYAxis = ref("")
+const chartType = ref<'bar' | 'pie' | 'line'>('bar')
+const chartXAxis = ref(''),
+  chartYAxis = ref('')
 const chartData = computed(() => {
   if (!resultData.value.length || !chartXAxis.value || !chartYAxis.value) return []
-  const map = new Map<string,number>()
-  resultData.value.forEach(row => {
+  const map = new Map<string, number>()
+  resultData.value.forEach((row) => {
     const key = String(row[chartXAxis.value])
     const val = Number(row[chartYAxis.value]) || 1
     map.set(key, (map.get(key) || 0) + val)
   })
   return [...map.entries()].map(([label, value]) => ({ label, value }))
 })
-const maxChartData = computed(() => Math.max(1, ...chartData.value.map(d => d.value)))
+const maxChartData = computed(() => Math.max(1, ...chartData.value.map((d) => d.value)))
 
 // --- Save Snapshot ---
-const snapshots = ref<Array<{id:string;name:string;sql:string;ts:number}>>([])
+const snapshots = ref<Array<{ id: string; name: string; sql: string; ts: number }>>([])
 function saveSnapshot() {
-  const name = prompt("快照名称:", "快照_" + Date.now())
+  const name = prompt('快照名称:', '快照_' + Date.now())
   if (!name) return
   snapshots.value.unshift({ id: genId?.() ?? String(Date.now()), name, sql: sql.value, ts: Date.now() })
 }
 function loadSnapshot(idx: number) {
   const snap = snapshots.value[idx]
-  if (snap) { sql.value = snap.sql; currentStatement.value = { id: snap.id, name: snap.name, sql: snap.sql } as any }
+  if (snap) {
+    sql.value = snap.sql
+    currentStatement.value = { id: snap.id, name: snap.name, sql: snap.sql } as any
+  }
 }
-function deleteSnapshot(idx: number) { snapshots.value.splice(idx, 1) }
+function deleteSnapshot(idx: number) {
+  snapshots.value.splice(idx, 1)
+}
 
 // --- Column Summary ---
 const columnSummary = computed(() => {
   if (!resultHeaders.value.length) return []
-  return resultHeaders.value.map(h => {
-    const vals = resultData.value.map(r => r[h])
-    const nulls = vals.filter(v => v === null || v === undefined).length
-    const nonNull = vals.filter(v => v !== null && v !== undefined).length
-    const sample = vals.find(v => v !== null && v !== undefined)
-    return { name: h, count: resultData.value.length, nulls, nonNull, sampleType: sample !== undefined ? typeof sample : "unknown" }
+  return resultHeaders.value.map((h) => {
+    const vals = resultData.value.map((r) => r[h])
+    const nulls = vals.filter((v) => v === null || v === undefined).length
+    const nonNull = vals.filter((v) => v !== null && v !== undefined).length
+    const sample = vals.find((v) => v !== null && v !== undefined)
+    return {
+      name: h,
+      count: resultData.value.length,
+      nulls,
+      nonNull,
+      sampleType: sample !== undefined ? typeof sample : 'unknown',
+    }
   })
 })
 
@@ -1192,54 +1379,68 @@ const columnSummary = computed(() => {
 const resultStats = computed(() => {
   if (!resultHeaders.value.length || !resultData.value.length) return null
   const stats: Record<string, any> = {}
-  resultHeaders.value.forEach(h => {
-    const vals = resultData.value.map(r => r[h]).filter(v => v !== null && v !== undefined)
-    const nums = vals.filter(v => typeof v === "number")
-    stats[h] = { distinct: new Set(vals).size, sum: nums.reduce((a:number,b:number) => a+b, 0), avg: nums.length ? nums.reduce((a:number,b:number) => a+b,0)/nums.length : 0 }
-  })
-
-// --- Enhanced Result Statistics ---
-const resultNumericStats = computed(() => {
-  if (!resultHeaders.value.length || !resultData.value.length) return {}
-  const stats: Record<string, any> = {}
-  resultHeaders.value.forEach(h => {
-    const nums = resultData.value.map(r => Number(r[h])).filter(v => !isNaN(v))
-    if (nums.length) {
-      const sorted = [...nums].sort((a:number,b:number) => a-b)
-      stats[h] = { min: sorted[0], max: sorted[sorted.length-1], mean: nums.reduce((a:number,b:number)=>a+b,0)/nums.length, median: sorted[Math.floor(sorted.length/2)] }
+  resultHeaders.value.forEach((h) => {
+    const vals = resultData.value.map((r) => r[h]).filter((v) => v !== null && v !== undefined)
+    const nums = vals.filter((v) => typeof v === 'number')
+    stats[h] = {
+      distinct: new Set(vals).size,
+      sum: nums.reduce((a: number, b: number) => a + b, 0),
+      avg: nums.length ? nums.reduce((a: number, b: number) => a + b, 0) / nums.length : 0,
     }
   })
-  return stats
-})
-const numResultHeaders = computed(() => resultHeaders.value.filter(h => {
-  if (!resultData.value.length) return false
-  const v = resultData.value[0][h]
-  return typeof v === "number" || (!isNaN(Number(v)) && v !== null && v !== undefined)
-}))
-const stringResultHeaders = computed(() => resultHeaders.value.filter(h => {
-  if (!resultData.value.length) return false
-  const v = resultData.value[0][h]
-  return typeof v === "string"
-}))
-const resultSizeKB = computed(() => {
-  if (!resultData.value.length) return 0
-  const str = JSON.stringify(resultData.value)
-  return Math.round(str.length / 1024 * 10) / 10
-})
-  return stats
-})
 
+  // --- Enhanced Result Statistics ---
+  const resultNumericStats = computed(() => {
+    if (!resultHeaders.value.length || !resultData.value.length) return {}
+    const stats: Record<string, any> = {}
+    resultHeaders.value.forEach((h) => {
+      const nums = resultData.value.map((r) => Number(r[h])).filter((v) => !isNaN(v))
+      if (nums.length) {
+        const sorted = [...nums].sort((a: number, b: number) => a - b)
+        stats[h] = {
+          min: sorted[0],
+          max: sorted[sorted.length - 1],
+          mean: nums.reduce((a: number, b: number) => a + b, 0) / nums.length,
+          median: sorted[Math.floor(sorted.length / 2)],
+        }
+      }
+    })
+    return stats
+  })
+  const numResultHeaders = computed(() =>
+    resultHeaders.value.filter((h) => {
+      if (!resultData.value.length) return false
+      const v = resultData.value[0][h]
+      return typeof v === 'number' || (!isNaN(Number(v)) && v !== null && v !== undefined)
+    }),
+  )
+  const stringResultHeaders = computed(() =>
+    resultHeaders.value.filter((h) => {
+      if (!resultData.value.length) return false
+      const v = resultData.value[0][h]
+      return typeof v === 'string'
+    }),
+  )
+  const resultSizeKB = computed(() => {
+    if (!resultData.value.length) return 0
+    const str = JSON.stringify(resultData.value)
+    return Math.round((str.length / 1024) * 10) / 10
+  })
+  return stats
+})
 
 // --- Visual Editor State ---
 const showVisualEditor = ref(false)
-const veSelectFields = ref<string[]>(["id", "name"])
-const veFromTable = ref(""), veOrderBy = ref(""), veOrderDir = ref("DESC")
-const veWhereConditions = ref<Array<{field:string;op:string;value:string}>>([])
+const veSelectFields = ref<string[]>(['id', 'name'])
+const veFromTable = ref(''),
+  veOrderBy = ref(''),
+  veOrderDir = ref('DESC')
+const veWhereConditions = ref<Array<{ field: string; op: string; value: string }>>([])
 const veLimit = ref(100)
 
 // --- Rule Chain State ---
 const showRuleChain = ref(false)
-const ruleChain = ref<Array<{type:string;field:string;op:string;value:string;enabled:boolean}>>([])
+const ruleChain = ref<Array<{ type: string; field: string; op: string; value: string; enabled: boolean }>>([])
 
 // --- Field Drag State ---
 const showFieldDrag = ref(false)
@@ -1249,7 +1450,10 @@ const fdWhereFields = ref<string[]>([])
 
 // --- Chart Linkage State ---
 const showChartLinkage = ref(false)
-const clMode = ref("filter"), clXAxis = ref(""), clYAxis = ref(""), clFilterField = ref("")
+const clMode = ref('filter'),
+  clXAxis = ref(''),
+  clYAxis = ref(''),
+  clFilterField = ref('')
 const clPreviewData = ref<string[]>([])
 
 // --- Advanced Templates State ---
@@ -1257,72 +1461,146 @@ const showAdvancedTemplates = ref(false)
 
 // Computed
 const generatedVisualSql = computed(() => {
-  let s = "SELECT " + (veSelectFields.value.length ? veSelectFields.value.join(", ") : "*")
-  if (veFromTable.value) s += " FROM " + veFromTable.value
+  let s = 'SELECT ' + (veSelectFields.value.length ? veSelectFields.value.join(', ') : '*')
+  if (veFromTable.value) s += ' FROM ' + veFromTable.value
   if (veWhereConditions.value.length) {
-    const wh = veWhereConditions.value.filter(c => c.field && c.value).map(c => c.field + " " + c.op + " " + String.fromCharCode(39) + c.value + String.fromCharCode(39)).join(" AND ")
-    if (wh) s += "\nWHERE " + wh
+    const wh = veWhereConditions.value
+      .filter((c) => c.field && c.value)
+      .map((c) => c.field + ' ' + c.op + ' ' + String.fromCharCode(39) + c.value + String.fromCharCode(39))
+      .join(' AND ')
+    if (wh) s += '\nWHERE ' + wh
   }
-  if (veOrderBy.value) s += "\nORDER BY " + veOrderBy.value + " " + veOrderDir.value
-  if (veLimit.value) s += "\nLIMIT " + veLimit.value
+  if (veOrderBy.value) s += '\nORDER BY ' + veOrderBy.value + ' ' + veOrderDir.value
+  if (veLimit.value) s += '\nLIMIT ' + veLimit.value
   return s
 })
 const generatedFieldDragSql = computed(() => {
-  let s = "SELECT " + (fdSelectFields.value.length ? fdSelectFields.value.join(", ") : "*")
-  if (allSchemaFields.value[0]) s += " FROM " + allSchemaFields.value[0].split(".")[0]
-  if (fdWhereFields.value.length) s += "\nWHERE " + fdWhereFields.value.map(f => f + " IS NOT NULL").join(" AND ")
+  let s = 'SELECT ' + (fdSelectFields.value.length ? fdSelectFields.value.join(', ') : '*')
+  if (allSchemaFields.value[0]) s += ' FROM ' + allSchemaFields.value[0].split('.')[0]
+  if (fdWhereFields.value.length) s += '\nWHERE ' + fdWhereFields.value.map((f) => f + ' IS NOT NULL').join(' AND ')
   return s
 })
 
 // Functions
-function addVeSelectField() { veSelectFields.value.push("") }
-function addVeWhereCondition() { veWhereConditions.value.push({ field: "", op: "eq", value: "" }) }
-function applyVisualEditor() { sql.value = generatedVisualSql.value; showVisualEditor.value = false }
-function clearVisualEditor() { veSelectFields.value = []; veFromTable.value = ""; veWhereConditions.value = []; veOrderBy.value = ""; veLimit.value = 100 }
-function addRuleToChain() { ruleChain.value.push({ type: "过滤", field: "", op: "eq", value: "", enabled: true }) }
-function toggleRule(idx: number) { ruleChain.value[idx].enabled = !ruleChain.value[idx].enabled }
+function addVeSelectField() {
+  veSelectFields.value.push('')
+}
+function addVeWhereCondition() {
+  veWhereConditions.value.push({ field: '', op: 'eq', value: '' })
+}
+function applyVisualEditor() {
+  sql.value = generatedVisualSql.value
+  showVisualEditor.value = false
+}
+function clearVisualEditor() {
+  veSelectFields.value = []
+  veFromTable.value = ''
+  veWhereConditions.value = []
+  veOrderBy.value = ''
+  veLimit.value = 100
+}
+function addRuleToChain() {
+  ruleChain.value.push({ type: '过滤', field: '', op: 'eq', value: '', enabled: true })
+}
+function toggleRule(idx: number) {
+  ruleChain.value[idx].enabled = !ruleChain.value[idx].enabled
+}
 function applyRuleChain() {
-  const r = ruleChain.value.filter(x => x.enabled && x.field && x.value)
+  const r = ruleChain.value.filter((x) => x.enabled && x.field && x.value)
   if (!r.length) return
-  const w = r.map(x => x.field + " " + x.op + " " + String.fromCharCode(39) + x.value + String.fromCharCode(39)).join(" AND ")
+  const w = r
+    .map((x) => x.field + ' ' + x.op + ' ' + String.fromCharCode(39) + x.value + String.fromCharCode(39))
+    .join(' AND ')
   if (/WHERE/i.test(sql.value)) sql.value = sql.value.replace(/WHEREs+[^;]+/i, w)
-  else sql.value += "\nWHERE " + w
+  else sql.value += '\nWHERE ' + w
   showRuleChain.value = false
 }
-function fdApply() { sql.value = generatedFieldDragSql.value; showFieldDrag.value = false }
-function fdAutoFill() { fdSelectFields.value = resultHeaders.value.slice(0,5); fdWhereFields.value = resultHeaders.value.filter(h=>h.includes("status")||h.includes("flag")).slice(0,2) }
-function fdReset() { fdSelectFields.value = []; fdWhereFields.value = [] }
-function applyChartLinkage() { showChartLinkage.value = false }
-function testChartLinkage() {
-  if (clXAxis.value && clFilterField.value) clPreviewData.value = resultData.value.slice(0,3).map(r => r[clXAxis.value] + " | " + r[clFilterField.value]).filter(Boolean)
-  else clPreviewData.value = ["请先选择X轴和过滤字段"]
+function fdApply() {
+  sql.value = generatedFieldDragSql.value
+  showFieldDrag.value = false
 }
-function showAdvancedTemplatesFn() { showAdvancedTemplates.value = true }
-function applyAdvancedTemplate(t: any) { sql.value = t.code + "\n"; showAdvancedTemplates.value = false }
-function saveAdvancedTemplate(t: any) { templates.value.push({id:"t"+Date.now(),name:t.name,category:t.category,code:t.code,icon:t.icon}); showAdvancedTemplates.value = false }
+function fdAutoFill() {
+  fdSelectFields.value = resultHeaders.value.slice(0, 5)
+  fdWhereFields.value = resultHeaders.value.filter((h) => h.includes('status') || h.includes('flag')).slice(0, 2)
+}
+function fdReset() {
+  fdSelectFields.value = []
+  fdWhereFields.value = []
+}
+function applyChartLinkage() {
+  showChartLinkage.value = false
+}
+function testChartLinkage() {
+  if (clXAxis.value && clFilterField.value)
+    clPreviewData.value = resultData.value
+      .slice(0, 3)
+      .map((r) => r[clXAxis.value] + ' | ' + r[clFilterField.value])
+      .filter(Boolean)
+  else clPreviewData.value = ['请先选择X轴和过滤字段']
+}
+function showAdvancedTemplatesFn() {
+  showAdvancedTemplates.value = true
+}
+function applyAdvancedTemplate(t: any) {
+  sql.value = t.code + '\n'
+  showAdvancedTemplates.value = false
+}
+function saveAdvancedTemplate(t: any) {
+  templates.value.push({ id: 't' + Date.now(), name: t.name, category: t.category, code: t.code, icon: t.icon })
+  showAdvancedTemplates.value = false
+}
 
 // --- Debug Console ---
 const showDebugConsole = ref(false)
-const dbgTab = ref("logs")
-const debugLogs = ref<Array<{type:'info'|'warn'|'error';msg:string;time:string}>>([])
+const dbgTab = ref('logs')
+const debugLogs = ref<Array<{ type: 'info' | 'warn' | 'error'; msg: string; time: string }>>([])
 const dbgVarList = computed(() => ({
-  sqlLength: sql.value.length, rowCount: resultData.value.length,
-  filter: filter.value, hasResults: hasResults.value, loading: loading.value
+  sqlLength: sql.value.length,
+  rowCount: resultData.value.length,
+  filter: filter.value,
+  hasResults: hasResults.value,
+  loading: loading.value,
 }))
-function dbgLog(type: 'info'|'warn'|'error', msg: string) {
+function dbgLog(type: 'info' | 'warn' | 'error', msg: string) {
   const now = new Date().toLocaleTimeString('zh-CN')
-  debugLogs.value.unshift({type, msg, time: now})
+  debugLogs.value.unshift({ type, msg, time: now })
 }
 
 // --- SQL Formatter ---
 const showSqlFormatter = ref(false)
-const fmtUpper = ref(true), fmtIndent = ref(true)
+const fmtUpper = ref(true),
+  fmtIndent = ref(true)
 const formattedSql = computed(() => formatSql(sql.value))
 function formatSql(raw: string): string {
   if (!raw.trim()) return raw
   let s = raw.trim()
-  if (fmtUpper.value) s = s.replace(/\b(SELECT|FROM|WHERE|AND|OR|ORDER BY|GROUP BY|HAVING|LIMIT|JOIN|LEFT|RIGHT|INNER|ON|SET|VALUES|INSERT|INTO|DELETE|UNION|NOT|NULL|IN|LIKE|CASE|WHEN|THEN|ELSE|END)\b/gi, m => m.toUpperCase())
-  const kw = ['SELECT','FROM','WHERE','AND','OR','ORDER BY','GROUP BY','HAVING','LIMIT','JOIN','LEFT JOIN','RIGHT JOIN','INNER JOIN','ON','SET','VALUES','INSERT INTO','DELETE FROM','UNION ALL','UNION']
+  if (fmtUpper.value)
+    s = s.replace(
+      /\b(SELECT|FROM|WHERE|AND|OR|ORDER BY|GROUP BY|HAVING|LIMIT|JOIN|LEFT|RIGHT|INNER|ON|SET|VALUES|INSERT|INTO|DELETE|UNION|NOT|NULL|IN|LIKE|CASE|WHEN|THEN|ELSE|END)\b/gi,
+      (m) => m.toUpperCase(),
+    )
+  const kw = [
+    'SELECT',
+    'FROM',
+    'WHERE',
+    'AND',
+    'OR',
+    'ORDER BY',
+    'GROUP BY',
+    'HAVING',
+    'LIMIT',
+    'JOIN',
+    'LEFT JOIN',
+    'RIGHT JOIN',
+    'INNER JOIN',
+    'ON',
+    'SET',
+    'VALUES',
+    'INSERT INTO',
+    'DELETE FROM',
+    'UNION ALL',
+    'UNION',
+  ]
   for (const k of kw) {
     const re = new RegExp(k.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'gi')
     s = s.replace(re, '\n' + k + ' ')
@@ -1330,25 +1608,36 @@ function formatSql(raw: string): string {
   s = s.replace(/\n\s*\n/g, '\n').trim()
   if (fmtIndent.value) {
     let indent = 0
-    s = s.split('\n').map(l => {
-      const t = l.trim()
-      if (!t) return ''
-      let p = '  '.repeat(indent)
-      if (t.startsWith(')')) indent = Math.max(0, indent - 1)
-      const line = p + t
-      if (t.endsWith('(') || t.endsWith(',')) indent++
-      return line
-    }).join('\n')
+    s = s
+      .split('\n')
+      .map((l) => {
+        const t = l.trim()
+        if (!t) return ''
+        let p = '  '.repeat(indent)
+        if (t.startsWith(')')) indent = Math.max(0, indent - 1)
+        const line = p + t
+        if (t.endsWith('(') || t.endsWith(',')) indent++
+        return line
+      })
+      .join('\n')
   }
   return s
 }
-function applyFormatted() { sql.value = formattedSql.value; showSqlFormatter.value = false }
-function copyFormatted() { navigator.clipboard.writeText(formattedSql.value) }
+function applyFormatted() {
+  sql.value = formattedSql.value
+  showSqlFormatter.value = false
+}
+function copyFormatted() {
+  navigator.clipboard.writeText(formattedSql.value)
+}
 
 // --- SQL Validator ---
 const showSqlValidator = ref(false)
-const valResult = ref<{status:'valid'|'error';message:string}>({status:'pending',message:'点击下方按钮验证'})
-const valChecks = ref<Array<{name:string;pass:boolean;detail:string}>>([])
+const valResult = ref<{ status: 'valid' | 'error'; message: string }>({
+  status: 'pending',
+  message: '点击下方按钮验证',
+})
+const valChecks = ref<Array<{ name: string; pass: boolean; detail: string }>>([])
 const valSuggestions = ref<string[]>([])
 function runValidation() {
   const checks: typeof valChecks.value = []
@@ -1357,7 +1646,11 @@ function runValidation() {
   checks.push({ name: 'SQL非空', pass: !!sql.value.trim(), detail: sql.value.trim() ? '有内容' : '无内容' })
   checks.push({ name: 'SELECT关键字', pass: /\bselect\b/.test(sl), detail: sl.includes('select') ? '已包含' : '缺失' })
   checks.push({ name: 'FROM子句', pass: /\bfrom\b/.test(sl), detail: sl.includes('from') ? '已包含' : '缺失' })
-  checks.push({ name: '括号匹配', pass: (sql.value.match(/\(/g)||[]).length === (sql.value.match(/\)/g)||[]).length, detail: `左${(sql.value.match(/\(/g)||[]).length} 右${(sql.value.match(/\)/g)||[]).length}` })
+  checks.push({
+    name: '括号匹配',
+    pass: (sql.value.match(/\(/g) || []).length === (sql.value.match(/\)/g) || []).length,
+    detail: `左${(sql.value.match(/\(/g) || []).length} 右${(sql.value.match(/\)/g) || []).length}`,
+  })
   checks.push({ name: '分号结尾', pass: sl.endsWith(';'), detail: sl.endsWith(';') ? '有分号' : '建议加分号' })
   if (!/\blimit\s/i.test(sl)) sug.push('缺少LIMIT，建议限制返回行数')
   if (/select\s+\*/.test(sl) && !/from\s+\w+\s+join/i.test(sl)) sug.push('使用SELECT *可能影响性能')
@@ -1371,144 +1664,275 @@ function runValidation() {
 
 // --- Result Visualization ---
 const showResultViz = ref(false)
-const vizType = ref("bar"), vizXAxis = ref(""), vizYAxis = ref("")
+const vizType = ref('bar'),
+  vizXAxis = ref(''),
+  vizYAxis = ref('')
 const vizRendered = ref(false)
-const vizColors = ["#3b82f6","#10b981","#f59e0b","#ef4444","#8b5cf6","#ec4899","#06b6d4","#f97316"]
-const vizBars = ref<Array<{label:string;value:number;h:number}>>([])
-const vizStats = ref<{count:number;max:number;min:number;avg:number}|null>(null)
+const vizColors = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#06b6d4', '#f97316']
+const vizBars = ref<Array<{ label: string; value: number; h: number }>>([])
+const vizStats = ref<{ count: number; max: number; min: number; avg: number } | null>(null)
 function renderChart() {
   if (!resultData.value.length || !vizXAxis.value || !vizYAxis.value) return
-  const map = new Map<string,number>()
-  resultData.value.forEach(r => {
+  const map = new Map<string, number>()
+  resultData.value.forEach((r) => {
     const key = String(r[vizXAxis.value])
     const val = Number(r[vizYAxis.value]) || 0
     map.set(key, (map.get(key) || 0) + val)
   })
-  const entries = [...map.entries()].sort((a,b) => b[1]-a[1]).slice(0, 20)
-  const maxVal = Math.max(1, ...entries.map(([,v]) => v))
-  const nums = entries.map(([,v]) => v)
-  vizBars.value = entries.map(([label, value], i) => ({ label, value, h: Math.round(value/maxVal*140) }))
-  vizStats.value = { count: resultData.value.length, max: Math.max(...nums), min: Math.min(...nums), avg: Math.round(nums.reduce((a:number,b:number)=>a+b,0)/nums.length) }
+  const entries = [...map.entries()].sort((a, b) => b[1] - a[1]).slice(0, 20)
+  const maxVal = Math.max(1, ...entries.map(([, v]) => v))
+  const nums = entries.map(([, v]) => v)
+  vizBars.value = entries.map(([label, value], i) => ({ label, value, h: Math.round((value / maxVal) * 140) }))
+  vizStats.value = {
+    count: resultData.value.length,
+    max: Math.max(...nums),
+    min: Math.min(...nums),
+    avg: Math.round(nums.reduce((a: number, b: number) => a + b, 0) / nums.length),
+  }
   vizRendered.value = true
   dbgLog('info', '图表已渲染: ' + entries.length + ' 个数据点')
 }
 function exportVizData() {
   if (!vizBars.value.length) return
-  const csv = 'label,value\n' + vizBars.value.map(d => d.label+','+d.value).join('\n')
-  const blob = new Blob([csv], {type:'text/csv'})
-  const a = document.createElement('a'); a.href = URL.createObjectURL(blob)
-  a.download = 'chart_data.csv'; a.click()
+  const csv = 'label,value\n' + vizBars.value.map((d) => d.label + ',' + d.value).join('\n')
+  const blob = new Blob([csv], { type: 'text/csv' })
+  const a = document.createElement('a')
+  a.href = URL.createObjectURL(blob)
+  a.download = 'chart_data.csv'
+  a.click()
 }
 
 // --- Snippet Library ---
 const showSnippetLibrary = ref(false)
-const snippetSearch = ref(""), snippetCat = ref("all")
-const snippetLibrary = ref<Array<{name:string;category:string;code:string}>>([
-  {name:"日期范围过滤",category:"filter",code:"WHERE created_at BETWEEN '2024-01-01' AND '2024-12-31'\n  AND status IN ('active','pending')"},
-  {name:"模糊搜索",category:"filter",code:"WHERE name LIKE '%关键词%'\n  OR description ILIKE '%关键词%'"},
-  {name:"左连接防重复",category:"join",code:"LEFT JOIN orders o ON u.id = o.user_id\n  AND o.status != 'cancelled'"},
-  {name:"计数聚合",category:"agg",code:"SELECT dept_id,\n  COUNT(*) as total,\n  SUM(amount) as total_amount,\n  AVG(amount) as avg_amount\nFROM orders GROUP BY dept_id"},
-  {name:"排名分析",category:"window",code:"SELECT *,\n  RANK() OVER (PARTITION BY dept_id ORDER BY salary DESC) as rank,\n  LAG(salary, 1) OVER (ORDER BY salary) as prev_sal\nFROM employees"},
-  {name:"递归层级",category:"cte",code:"WITH RECURSIVE tree AS (\n  SELECT id, name, manager_id, 1 as lvl\n  FROM employees WHERE manager_id IS NULL\n  UNION ALL\n  SELECT e.id, e.name, e.manager_id, t.lvl+1\n  FROM employees e JOIN tree t ON e.manager_id = t.id\n)\nSELECT * FROM tree ORDER BY lvl"},
-  {name:"累计求和",category:"window",code:"SELECT date, amount,\n  SUM(amount) OVER (ORDER BY date\n    ROWS UNBOUNDED PRECEDING) as cumulative\nFROM daily_sales"},
-  {name:"TOP-N每组",category:"agg",code:"WITH ranked AS (\n  SELECT dept_id, name, salary,\n    RANK() OVER (PARTITION BY dept_id ORDER BY salary DESC) as r\n  FROM employees\n)\nSELECT * FROM ranked WHERE r <= 3"},
-  {id:"at19",name:"并行查询优化",category:"optimize",icon:"⚡",code:"-- 并行查询优化示例\nSET max_parallel_workers_per_gather = 4;\nSELECT /*+ PARALLEL(4) */\n  dept_id, COUNT(*) as cnt\nFROM employees\nGROUP BY dept_id\nORDER BY cnt DESC"},
-  {id:"at20",name:"物化视图刷新",category:"admin",icon:"🗄️",code:"-- 物化视图刷新\nREFRESH MATERIALIZED VIEW CONCURRENTLY\n  mv_sales_summary;\n\n-- 查看刷新时间\nSELECT * FROM pg_matviews\nWHERE matviewname = 'mv_sales_summary'"},
-  {id:"at21",name:"JSON聚合查询",category:"analytics",icon:"🔑",code:"-- JSON聚合查询\nSELECT user_id,\n  jsonb_object_agg(key, value) as attrs,\n  array_agg(tag) as tags\nFROM user_metadata\nGROUP BY user_id\nHAVING count(*) > 1"},
-  {id:"at22",name:"增量数据同步",category:"admin",icon:"🔄",code:"-- 增量数据同步\nINSERT INTO target_table\nSELECT * FROM source_table\nWHERE updated_at > :last_sync_time\nON CONFLICT (id)\nDO UPDATE SET\n  name = EXCLUDED.name,\n  updated_at = EXCLUDED.updated_at"},
-  {id:"at23",name:"数据归档策略",category:"admin",icon:"📦",code:"-- 数据归档到历史表\nINSERT INTO orders_archive\nSELECT * FROM orders\nWHERE created_at < '2023-01-01'\nRETURNING id;\n\nDELETE FROM orders\nWHERE created_at < '2023-01-01';"},
-  {id:"at24",name:"CAGR复合增长率",category:"report",icon:"📈",code:"-- CAGR复合年增长率\nSELECT product_name,\n  start_value, end_value,\n  years,\n  ROUND(\n    (POWER(end_value/start_value, 1.0/years) - 1) * 100, 2\n  ) as cagr_pct\nFROM product_growth"},
-  {id:"at25",name:"用户留存分析",category:"analytics",icon:"👥",code:"-- 用户留存率分析\nWITH first_login AS (\n  SELECT user_id, MIN(created_at) as first_day\n  FROM user_events\n  WHERE action = 'signup'\n  GROUP BY user_id\n),\nlogins AS (\n  SELECT user_id, DATE(created_at) as login_day\n  FROM user_events\n  WHERE action = 'login'\n)\nSELECT \n  DATE_PART('day', l.login_day - f.first_day) as day_offset,\n  COUNT(DISTINCT l.user_id) as retained_users\nFROM first_login f\nJOIN logins l ON f.user_id = l.user_id\nGROUP BY 1 ORDER BY 1"},
-  {id:"at26",name:"时间序列插值",category:"analytics",icon:"📉",code:"-- 时间序列数据插值\nSELECT time_bucket,\n  value,\n  COALESCE(value,\n    AVG(value) OVER (\n      ORDER BY time_bucket\n      ROWS BETWEEN 2 PRECEDING AND 2 FOLLOWING\n    )\n  ) as interpolated\nFROM time_series_data\nORDER BY time_bucket"},
+const snippetSearch = ref(''),
+  snippetCat = ref('all')
+const snippetLibrary = ref<Array<{ name: string; category: string; code: string }>>([
+  {
+    name: '日期范围过滤',
+    category: 'filter',
+    code: "WHERE created_at BETWEEN '2024-01-01' AND '2024-12-31'\n  AND status IN ('active','pending')",
+  },
+  { name: '模糊搜索', category: 'filter', code: "WHERE name LIKE '%关键词%'\n  OR description ILIKE '%关键词%'" },
+  {
+    name: '左连接防重复',
+    category: 'join',
+    code: "LEFT JOIN orders o ON u.id = o.user_id\n  AND o.status != 'cancelled'",
+  },
+  {
+    name: '计数聚合',
+    category: 'agg',
+    code: 'SELECT dept_id,\n  COUNT(*) as total,\n  SUM(amount) as total_amount,\n  AVG(amount) as avg_amount\nFROM orders GROUP BY dept_id',
+  },
+  {
+    name: '排名分析',
+    category: 'window',
+    code: 'SELECT *,\n  RANK() OVER (PARTITION BY dept_id ORDER BY salary DESC) as rank,\n  LAG(salary, 1) OVER (ORDER BY salary) as prev_sal\nFROM employees',
+  },
+  {
+    name: '递归层级',
+    category: 'cte',
+    code: 'WITH RECURSIVE tree AS (\n  SELECT id, name, manager_id, 1 as lvl\n  FROM employees WHERE manager_id IS NULL\n  UNION ALL\n  SELECT e.id, e.name, e.manager_id, t.lvl+1\n  FROM employees e JOIN tree t ON e.manager_id = t.id\n)\nSELECT * FROM tree ORDER BY lvl',
+  },
+  {
+    name: '累计求和',
+    category: 'window',
+    code: 'SELECT date, amount,\n  SUM(amount) OVER (ORDER BY date\n    ROWS UNBOUNDED PRECEDING) as cumulative\nFROM daily_sales',
+  },
+  {
+    name: 'TOP-N每组',
+    category: 'agg',
+    code: 'WITH ranked AS (\n  SELECT dept_id, name, salary,\n    RANK() OVER (PARTITION BY dept_id ORDER BY salary DESC) as r\n  FROM employees\n)\nSELECT * FROM ranked WHERE r <= 3',
+  },
+  {
+    id: 'at19',
+    name: '并行查询优化',
+    category: 'optimize',
+    icon: '⚡',
+    code: '-- 并行查询优化示例\nSET max_parallel_workers_per_gather = 4;\nSELECT /*+ PARALLEL(4) */\n  dept_id, COUNT(*) as cnt\nFROM employees\nGROUP BY dept_id\nORDER BY cnt DESC',
+  },
+  {
+    id: 'at20',
+    name: '物化视图刷新',
+    category: 'admin',
+    icon: '🗄️',
+    code: "-- 物化视图刷新\nREFRESH MATERIALIZED VIEW CONCURRENTLY\n  mv_sales_summary;\n\n-- 查看刷新时间\nSELECT * FROM pg_matviews\nWHERE matviewname = 'mv_sales_summary'",
+  },
+  {
+    id: 'at21',
+    name: 'JSON聚合查询',
+    category: 'analytics',
+    icon: '🔑',
+    code: '-- JSON聚合查询\nSELECT user_id,\n  jsonb_object_agg(key, value) as attrs,\n  array_agg(tag) as tags\nFROM user_metadata\nGROUP BY user_id\nHAVING count(*) > 1',
+  },
+  {
+    id: 'at22',
+    name: '增量数据同步',
+    category: 'admin',
+    icon: '🔄',
+    code: '-- 增量数据同步\nINSERT INTO target_table\nSELECT * FROM source_table\nWHERE updated_at > :last_sync_time\nON CONFLICT (id)\nDO UPDATE SET\n  name = EXCLUDED.name,\n  updated_at = EXCLUDED.updated_at',
+  },
+  {
+    id: 'at23',
+    name: '数据归档策略',
+    category: 'admin',
+    icon: '📦',
+    code: "-- 数据归档到历史表\nINSERT INTO orders_archive\nSELECT * FROM orders\nWHERE created_at < '2023-01-01'\nRETURNING id;\n\nDELETE FROM orders\nWHERE created_at < '2023-01-01';",
+  },
+  {
+    id: 'at24',
+    name: 'CAGR复合增长率',
+    category: 'report',
+    icon: '📈',
+    code: '-- CAGR复合年增长率\nSELECT product_name,\n  start_value, end_value,\n  years,\n  ROUND(\n    (POWER(end_value/start_value, 1.0/years) - 1) * 100, 2\n  ) as cagr_pct\nFROM product_growth',
+  },
+  {
+    id: 'at25',
+    name: '用户留存分析',
+    category: 'analytics',
+    icon: '👥',
+    code: "-- 用户留存率分析\nWITH first_login AS (\n  SELECT user_id, MIN(created_at) as first_day\n  FROM user_events\n  WHERE action = 'signup'\n  GROUP BY user_id\n),\nlogins AS (\n  SELECT user_id, DATE(created_at) as login_day\n  FROM user_events\n  WHERE action = 'login'\n)\nSELECT \n  DATE_PART('day', l.login_day - f.first_day) as day_offset,\n  COUNT(DISTINCT l.user_id) as retained_users\nFROM first_login f\nJOIN logins l ON f.user_id = l.user_id\nGROUP BY 1 ORDER BY 1",
+  },
+  {
+    id: 'at26',
+    name: '时间序列插值',
+    category: 'analytics',
+    icon: '📉',
+    code: '-- 时间序列数据插值\nSELECT time_bucket,\n  value,\n  COALESCE(value,\n    AVG(value) OVER (\n      ORDER BY time_bucket\n      ROWS BETWEEN 2 PRECEDING AND 2 FOLLOWING\n    )\n  ) as interpolated\nFROM time_series_data\nORDER BY time_bucket',
+  },
 ])
 const filteredSnippets = computed(() => {
   let list = snippetLibrary.value
   if (snippetSearch.value) {
     const q = snippetSearch.value.toLowerCase()
-    list = list.filter(s => s.name.toLowerCase().includes(q) || s.code.toLowerCase().includes(q))
+    list = list.filter((s) => s.name.toLowerCase().includes(q) || s.code.toLowerCase().includes(q))
   }
-  if (snippetCat.value !== "all") list = list.filter(s => s.category === snippetCat.value)
+  if (snippetCat.value !== 'all') list = list.filter((s) => s.category === snippetCat.value)
   return list
 })
 function insertSnippet(s: any) {
-  sql.value += (sql.value.endsWith("\n") ? "" : "\n") + s.code + "\n"
+  sql.value += (sql.value.endsWith('\n') ? '' : '\n') + s.code + '\n'
   showSnippetLibrary.value = false
 }
-function copySnip(code: string) { navigator.clipboard.writeText(code); dbgLog('info', '片段已复制') }
-
+function copySnip(code: string) {
+  navigator.clipboard.writeText(code)
+  dbgLog('info', '片段已复制')
+}
 
 // --- Execution Plan ---
 const showExecPlan = ref(false)
-const planSteps = ref<Array<{type:string;desc:string;detail?:string}>>([])
+const planSteps = ref<Array<{ type: string; desc: string; detail?: string }>>([])
 const activeStep = ref(0)
 function generatePlan() {
   const sl = sql.value.toLowerCase()
   const steps: typeof planSteps.value = []
-  if (/with\s/i.test(sl)) steps.push({type:"CTE解析",desc:"解析公用表表达式",detail:"递归或非递归CTE"})
-  if (/\bselect\b/.test(sl)) steps.push({type:"选择阶段",desc:"解析SELECT列表",detail:"确定输出列和表达式"})
-  if (/\bfrom\b/.test(sl)) steps.push({type:"FROM/JOIN",desc:"处理FROM和JOIN",detail:sl.includes("join")?"检测到JOIN操作":"单表扫描"})
-  if (/\bwhere\b/.test(sl)) steps.push({type:"过滤阶段",desc:"应用WHERE条件",detail:"根据条件筛选行"})
-  if (/\bgroup\s+by\b/.test(sl)) steps.push({type:"分组聚合",desc:"GROUP BY分组",detail:"可能的HASH GROUP或SORT GROUP"})
-  if (/\bhaving\b/.test(sl)) steps.push({type:"HAVING过滤",desc:"HAVING二次筛选",detail:"对聚合结果进行筛选"})
-  if (/\border\s+by\b/.test(sl)) steps.push({type:"排序阶段",desc:"ORDER BY排序",detail:"可能有文件排序或索引排序"})
-  if (/\blimit\s/.test(sl) || /\boffset\b/.test(sl)) steps.push({type:"限制输出",desc:"LIMIT/OFFSET分页",detail:"控制返回行数"})
-  if (/\bunion\b/.test(sl)) steps.push({type:"UNION操作",desc:"合并多个结果集",detail:"UNION ALL或去重UNION"})
-  if (steps.length===0) steps.push({type:"默认",desc:"完整SQL解析",detail:"请执行SQL后查看实际执行计划"})
+  if (/with\s/i.test(sl)) steps.push({ type: 'CTE解析', desc: '解析公用表表达式', detail: '递归或非递归CTE' })
+  if (/\bselect\b/.test(sl)) steps.push({ type: '选择阶段', desc: '解析SELECT列表', detail: '确定输出列和表达式' })
+  if (/\bfrom\b/.test(sl))
+    steps.push({
+      type: 'FROM/JOIN',
+      desc: '处理FROM和JOIN',
+      detail: sl.includes('join') ? '检测到JOIN操作' : '单表扫描',
+    })
+  if (/\bwhere\b/.test(sl)) steps.push({ type: '过滤阶段', desc: '应用WHERE条件', detail: '根据条件筛选行' })
+  if (/\bgroup\s+by\b/.test(sl))
+    steps.push({ type: '分组聚合', desc: 'GROUP BY分组', detail: '可能的HASH GROUP或SORT GROUP' })
+  if (/\bhaving\b/.test(sl)) steps.push({ type: 'HAVING过滤', desc: 'HAVING二次筛选', detail: '对聚合结果进行筛选' })
+  if (/\border\s+by\b/.test(sl))
+    steps.push({ type: '排序阶段', desc: 'ORDER BY排序', detail: '可能有文件排序或索引排序' })
+  if (/\blimit\s/.test(sl) || /\boffset\b/.test(sl))
+    steps.push({ type: '限制输出', desc: 'LIMIT/OFFSET分页', detail: '控制返回行数' })
+  if (/\bunion\b/.test(sl)) steps.push({ type: 'UNION操作', desc: '合并多个结果集', detail: 'UNION ALL或去重UNION' })
+  if (steps.length === 0) steps.push({ type: '默认', desc: '完整SQL解析', detail: '请执行SQL后查看实际执行计划' })
   planSteps.value = steps
   activeStep.value = 0
-  dbgLog('info', '执行计划已生成: '+steps.length+' 个步骤')
+  dbgLog('info', '执行计划已生成: ' + steps.length + ' 个步骤')
 }
 
 // --- SQL Diff ---
 const showSqlDiff = ref(false)
-const diffLeft = ref(""), diffRight = ref("")
-const diffLines = ref<Array<{type:'added'|'removed'|'equal';line:number;text:string}>>([])
+const diffLeft = ref(''),
+  diffRight = ref('')
+const diffLines = ref<Array<{ type: 'added' | 'removed' | 'equal'; line: number; text: string }>>([])
 function computeDiff() {
-  const l = diffLeft.value.split('\n'), r = diffRight.value.split('\n')
+  const l = diffLeft.value.split('\n'),
+    r = diffRight.value.split('\n')
   const max = Math.max(l.length, r.length)
   diffLines.value = []
   for (let i = 0; i < max; i++) {
-    const a = l[i]||'', b = r[i]||''
-    if (a===b) diffLines.value.push({type:'equal',line:i+1,text:a})
-    else { if(a) diffLines.value.push({type:'removed',line:i+1,text:a}); if(b) diffLines.value.push({type:'added',line:i+1,text:b}); }
+    const a = l[i] || '',
+      b = r[i] || ''
+    if (a === b) diffLines.value.push({ type: 'equal', line: i + 1, text: a })
+    else {
+      if (a) diffLines.value.push({ type: 'removed', line: i + 1, text: a })
+      if (b) diffLines.value.push({ type: 'added', line: i + 1, text: b })
+    }
   }
 }
-function applyDiffRight() { if(diffRight.value){ sql.value=diffRight.value; showSqlDiff.value=false; } }
+function applyDiffRight() {
+  if (diffRight.value) {
+    sql.value = diffRight.value
+    showSqlDiff.value = false
+  }
+}
 
 // --- Export/Import ---
 const showExportImport = ref(false)
-const eiTab = ref<"export"|"import">("export")
-const exportFmt = ref<"json"|"sql"|"csv">("json")
-const importData = ref(""), importMsg = ref<{ok:boolean;txt:string}|null>(null)
+const eiTab = ref<'export' | 'import'>('export')
+const exportFmt = ref<'json' | 'sql' | 'csv'>('json')
+const importData = ref(''),
+  importMsg = ref<{ ok: boolean; txt: string } | null>(null)
 function doExport() {
-  const data = statements.value.map(s => ({name:s.name,flag:s.flag,sql:s.sql,description:s.desc,category:s.category}))
-  if (exportFmt.value==='json') {
-    const blob = new Blob([JSON.stringify(data,null,2)], {type:'application/json'})
-    downloadBlob(blob, 'statements_'+new Date().toISOString().slice(0,10)+'.json')
-  } else if (exportFmt.value==='sql') {
-    const sqlStr = data.map(d => `-- ${d.name}\n${d.sql}`).join('\n\n')
-    downloadBlob(new Blob([sqlStr],{type:'text/plain'}), 'statements_'+new Date().toISOString().slice(0,10)+'.sql')
+  const data = statements.value.map((s) => ({
+    name: s.name,
+    flag: s.flag,
+    sql: s.sql,
+    description: s.desc,
+    category: s.category,
+  }))
+  if (exportFmt.value === 'json') {
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' })
+    downloadBlob(blob, 'statements_' + new Date().toISOString().slice(0, 10) + '.json')
+  } else if (exportFmt.value === 'sql') {
+    const sqlStr = data.map((d) => `-- ${d.name}\n${d.sql}`).join('\n\n')
+    downloadBlob(
+      new Blob([sqlStr], { type: 'text/plain' }),
+      'statements_' + new Date().toISOString().slice(0, 10) + '.sql',
+    )
   } else {
-    const csv = 'name,flag,sql,category\n' + data.map(d => `"${d.name}","${d.flag||''}","${(d.sql||'').replace(/"/g,'""')}","${d.category||''}"`).join('\n')
-    downloadBlob(new Blob([csv],{type:'text/csv'}), 'statements_'+new Date().toISOString().slice(0,10)+'.csv')
+    const csv =
+      'name,flag,sql,category\n' +
+      data
+        .map((d) => `"${d.name}","${d.flag || ''}","${(d.sql || '').replace(/"/g, '""')}","${d.category || ''}"`)
+        .join('\n')
+    downloadBlob(new Blob([csv], { type: 'text/csv' }), 'statements_' + new Date().toISOString().slice(0, 10) + '.csv')
   }
   showExportImport.value = false
 }
 function downloadBlob(blob: Blob, filename: string) {
-  const a = document.createElement('a'); a.href = URL.createObjectURL(blob)
-  a.download = filename; a.click()
+  const a = document.createElement('a')
+  a.href = URL.createObjectURL(blob)
+  a.download = filename
+  a.click()
 }
 async function doImport() {
   if (!importData.value.trim()) return
   try {
     const data = JSON.parse(importData.value)
-    if (!Array.isArray(data)) { importMsg.value={ok:false,txt:'数据格式错误: 期望数组'}; return }
-    for (const stmt of data) {
-      try { await api.post('/jaxrs/query/assemble/designer/create', stmt) } catch {}
+    if (!Array.isArray(data)) {
+      importMsg.value = { ok: false, txt: '数据格式错误: 期望数组' }
+      return
     }
-    importMsg.value={ok:true,txt:`成功导入 ${data.length} 条语句`}; showExportImport.value=false
-    queryClient.invalidateQueries({queryKey:['stmt','list']})
-  } catch(e: any) { importMsg.value={ok:false,txt:'导入失败: '+e.message} }
+    for (const stmt of data) {
+      try {
+        await api.post('/jaxrs/query/assemble/designer/create', stmt)
+      } catch {}
+    }
+    importMsg.value = { ok: true, txt: `成功导入 ${data.length} 条语句` }
+    showExportImport.value = false
+    queryClient.invalidateQueries({ queryKey: ['stmt', 'list'] })
+  } catch (e: any) {
+    importMsg.value = { ok: false, txt: '导入失败: ' + e.message }
+  }
 }
 
 // --- Bulk Delete ---
@@ -1517,95 +1941,201 @@ const bulkIds = ref<string[]>([])
 const bulkSelectAll = computed(() => bulkIds.value.length === filtered.value.length && filtered.value.length > 0)
 function toggleBulk(id: string) {
   const idx = bulkIds.value.indexOf(id)
-  if (idx >= 0) bulkIds.value.splice(idx, 1); else bulkIds.value.push(id)
+  if (idx >= 0) bulkIds.value.splice(idx, 1)
+  else bulkIds.value.push(id)
 }
-function selectAllBulk() { bulkIds.value = filtered.value.map(s => s.id) }
-function clearBulk() { bulkIds.value = [] }
+function selectAllBulk() {
+  bulkIds.value = filtered.value.map((s) => s.id)
+}
+function clearBulk() {
+  bulkIds.value = []
+}
 function confirmBulkDelete() {
   showBulkDelete.value = true
 }
 async function executeBulkDelete() {
   if (!bulkIds.value.length) return
-  for (const id of bulkIds.value) { try { await api.delete(`/jaxrs/query/assemble/designer/delete/${id}`) } catch {} }
-  bulkIds.value = []; showBulkDelete.value = false
-  queryClient.invalidateQueries({queryKey:['stmt','list']})
+  for (const id of bulkIds.value) {
+    try {
+      await api.delete(`/jaxrs/query/assemble/designer/delete/${id}`)
+    } catch {}
+  }
+  bulkIds.value = []
+  showBulkDelete.value = false
+  queryClient.invalidateQueries({ queryKey: ['stmt', 'list'] })
 }
-
 
 // --- Bookmark ---
 const showBookmark = ref(false)
-const bookmarks = ref<Array<{id:string;name:string;sql:string;ts:number}>>([])
-const bmName = ref("")
+const bookmarks = ref<Array<{ id: string; name: string; sql: string; ts: number }>>([])
+const bmName = ref('')
 function addBookmark() {
   if (!bmName.value.trim() || !sql.value.trim()) return
-  bookmarks.value.unshift({ id: "bm"+Date.now(), name: bmName.value, sql: sql.value, ts: Date.now() })
-  bmName.value = ""
+  bookmarks.value.unshift({ id: 'bm' + Date.now(), name: bmName.value, sql: sql.value, ts: Date.now() })
+  bmName.value = ''
 }
-function loadBookmark(idx: number) { const b = bookmarks.value[idx]; if (b) { sql.value = b.sql; showBookmark.value = false } }
-function deleteBookmark(idx: number) { bookmarks.value.splice(idx, 1) }
+function loadBookmark(idx: number) {
+  const b = bookmarks.value[idx]
+  if (b) {
+    sql.value = b.sql
+    showBookmark.value = false
+  }
+}
+function deleteBookmark(idx: number) {
+  bookmarks.value.splice(idx, 1)
+}
 
 // --- Template CRUD ---
 const showTemplateCRUD = ref(false)
-const tplSearch = ref(""), tplCat = ref("all")
-const tplCategories = computed(() => [...new Set(templates.value.map(t => t.category))])
+const tplSearch = ref(''),
+  tplCat = ref('all')
+const tplCategories = computed(() => [...new Set(templates.value.map((t) => t.category))])
 const filteredTpls = computed(() => {
   let list = templates.value
-  if (tplSearch.value) { const q = tplSearch.value.toLowerCase(); list = list.filter(t => t.name.toLowerCase().includes(q) || t.code.toLowerCase().includes(q)) }
-  if (tplCat.value !== "all") list = list.filter(t => t.category === tplCat.value)
+  if (tplSearch.value) {
+    const q = tplSearch.value.toLowerCase()
+    list = list.filter((t) => t.name.toLowerCase().includes(q) || t.code.toLowerCase().includes(q))
+  }
+  if (tplCat.value !== 'all') list = list.filter((t) => t.category === tplCat.value)
   return list
 })
 const showTplEditor = ref(false)
-const tplEditingId = ref<string|null>(null)
-const tplForm = ref({name:"",category:"select",icon:"📋",code:""})
+const tplEditingId = ref<string | null>(null)
+const tplForm = ref({ name: '', category: 'select', icon: '📋', code: '' })
 function openTplEditor(t: any) {
-  if (t) { tplEditingId.value = t.id; tplForm.value = {name:t.name,category:t.category,icon:t.icon,code:t.code} }
-  else { tplEditingId.value = null; tplForm.value = {name:"",category:"select",icon:"📋",code:""} }
+  if (t) {
+    tplEditingId.value = t.id
+    tplForm.value = { name: t.name, category: t.category, icon: t.icon, code: t.code }
+  } else {
+    tplEditingId.value = null
+    tplForm.value = { name: '', category: 'select', icon: '📋', code: '' }
+  }
   showTplEditor.value = true
 }
-function editTemplate(t: any) { openTplEditor(t) }
+function editTemplate(t: any) {
+  openTplEditor(t)
+}
 function saveTpl() {
   if (!tplForm.value.name.trim()) return
   if (tplEditingId.value) {
-    const t = templates.value.find(x => x.id === tplEditingId.value)
+    const t = templates.value.find((x) => x.id === tplEditingId.value)
     if (t) Object.assign(t, tplForm.value)
   } else {
-    templates.value.push({ id: "t"+Date.now(), ...tplForm.value })
+    templates.value.push({ id: 't' + Date.now(), ...tplForm.value })
   }
   showTplEditor.value = false
 }
 function deleteTpl(idx: number) {
-  if (!confirmMsg("确定删除此模板？")) return
+  if (!confirmMsg('确定删除此模板？')) return
   templates.value.splice(idx, 1)
 }
 
-
 // --- Parameter Presets ---
 const showParamPresets = ref(false)
-const paramPresets = ref<Array<{id:string;name:string;value:string;type:string;defaultValue:string}>>([])
+const paramPresets = ref<Array<{ id: string; name: string; value: string; type: string; defaultValue: string }>>([])
 const detectedParams = computed(() => {
   const matches = sql.value.match(/[:@#](\w+)/g) || []
-  return [...new Set(matches.map(m => m.substring(1)))]
+  return [...new Set(matches.map((m) => m.substring(1)))]
 })
 function addParamPreset(name: string) {
-  if (!paramPresets.value.some(p => p.name === name))
-    paramPresets.value.push({ id: "p"+Date.now(), name, value: "", type: "string", defaultValue: "" })
+  if (!paramPresets.value.some((p) => p.name === name))
+    paramPresets.value.push({ id: 'p' + Date.now(), name, value: '', type: 'string', defaultValue: '' })
 }
-function addAllParams() { detectedParams.value.forEach(addParamPreset) }
+function addAllParams() {
+  detectedParams.value.forEach(addParamPreset)
+}
 function applyParamPresets() {
   let s = sql.value
-  paramPresets.value.forEach(p => {
-    if (p.name && p.value) s = s.replace(new RegExp(':'+p.name+'|@'+p.name+'|#'+p.name, 'g'), p.value)
+  paramPresets.value.forEach((p) => {
+    if (p.name && p.value) s = s.replace(new RegExp(':' + p.name + '|@' + p.name + '|#' + p.name, 'g'), p.value)
   })
-  sql.value = s; showParamPresets.value = false
+  sql.value = s
+  showParamPresets.value = false
 }
 
 // --- SQL Auto-Hint ---
 const showSqlHints = ref(false)
-const selectedTableForHints = ref("")
-const sqlKeywords = ["SELECT","FROM","WHERE","AND","OR","ORDER BY","GROUP BY","HAVING","LIMIT","OFFSET","JOIN","LEFT JOIN","RIGHT JOIN","INNER JOIN","CROSS JOIN","ON","SET","VALUES","INSERT INTO","DELETE FROM","CREATE TABLE","ALTER TABLE","DROP TABLE","UNION ALL","UNION","NOT NULL","IS NULL","IS NOT NULL","IN","EXISTS","BETWEEN","LIKE","CASE","WHEN","THEN","ELSE","END","DISTINCT","AS","WITH","RECURSIVE"]
-const sqlFunctions = ["COUNT","SUM","AVG","MAX","MIN","ROW_NUMBER","RANK","DENSE_RANK","LAG","LEAD","FIRST_VALUE","LAST_VALUE","COALESCE","NULLIF","CAST","CONVERT","SUBSTRING","LENGTH","TRIM","UPPER","LOWER","REPLACE","NOW","CURRENT_DATE","DATE_TRUNC","DATE_PART","ABS","ROUND","FLOOR","CEIL","MOD","POWER","SQRT"]
+const selectedTableForHints = ref('')
+const sqlKeywords = [
+  'SELECT',
+  'FROM',
+  'WHERE',
+  'AND',
+  'OR',
+  'ORDER BY',
+  'GROUP BY',
+  'HAVING',
+  'LIMIT',
+  'OFFSET',
+  'JOIN',
+  'LEFT JOIN',
+  'RIGHT JOIN',
+  'INNER JOIN',
+  'CROSS JOIN',
+  'ON',
+  'SET',
+  'VALUES',
+  'INSERT INTO',
+  'DELETE FROM',
+  'CREATE TABLE',
+  'ALTER TABLE',
+  'DROP TABLE',
+  'UNION ALL',
+  'UNION',
+  'NOT NULL',
+  'IS NULL',
+  'IS NOT NULL',
+  'IN',
+  'EXISTS',
+  'BETWEEN',
+  'LIKE',
+  'CASE',
+  'WHEN',
+  'THEN',
+  'ELSE',
+  'END',
+  'DISTINCT',
+  'AS',
+  'WITH',
+  'RECURSIVE',
+]
+const sqlFunctions = [
+  'COUNT',
+  'SUM',
+  'AVG',
+  'MAX',
+  'MIN',
+  'ROW_NUMBER',
+  'RANK',
+  'DENSE_RANK',
+  'LAG',
+  'LEAD',
+  'FIRST_VALUE',
+  'LAST_VALUE',
+  'COALESCE',
+  'NULLIF',
+  'CAST',
+  'CONVERT',
+  'SUBSTRING',
+  'LENGTH',
+  'TRIM',
+  'UPPER',
+  'LOWER',
+  'REPLACE',
+  'NOW',
+  'CURRENT_DATE',
+  'DATE_TRUNC',
+  'DATE_PART',
+  'ABS',
+  'ROUND',
+  'FLOOR',
+  'CEIL',
+  'MOD',
+  'POWER',
+  'SQRT',
+]
 function insertHint(text: string) {
-  sql.value += text + " "
+  sql.value += text + ' '
   showSqlHints.value = false
 }
 
@@ -1615,7 +2145,6 @@ function copySqlWithTimestamp() {
   navigator.clipboard.writeText(`-- ${ts}\n${sql.value}`)
   dbgLog('success', 'SQL已复制（含时间戳）')
 }
-
 </script>
 
 <style scoped>

@@ -58,9 +58,9 @@
 </template>
 
 <script setup lang="ts">
+import { api } from '@oa4rust/sdk'
 import { ref } from 'vue'
 import { toast } from '../utils/toast'
-import { api } from '@oa4rust/sdk'
 
 type ViewItem = { id?: string; flag?: string; name?: string; viewName?: string; title?: string }
 
@@ -76,7 +76,11 @@ async function doSearch() {
   try {
     const r = await api.get('/jaxrs/queryview/search', { params: { keyword: keyword.value } })
     views.value = r.data ?? []
-  } catch { views.value = [] } finally { loading.value = false }
+  } catch {
+    views.value = []
+  } finally {
+    loading.value = false
+  }
 }
 
 async function loadViews() {
@@ -84,7 +88,11 @@ async function loadViews() {
   try {
     const r = await api.post('/jaxrs/queryview/view/list/paging/1/20', {})
     views.value = r.data?.list ?? r.data ?? []
-  } catch { views.value = [] } finally { loading.value = false }
+  } catch {
+    views.value = []
+  } finally {
+    loading.value = false
+  }
 }
 
 async function executeView(v: ViewItem) {
@@ -94,7 +102,11 @@ async function executeView(v: ViewItem) {
   try {
     const r = await api.post(`/jaxrs/queryview/execute/${v.flag || v.id}`, {})
     execResult.value = r.data?.list ?? r.data ?? []
-  } catch (e: any) { toast.error('执行失败: : ' + (e?.message ?? '未知错误')) } finally { execLoading.value = false }
+  } catch (e: any) {
+    toast.error('执行失败: : ' + (e?.message ?? '未知错误'))
+  } finally {
+    execLoading.value = false
+  }
 }
 
 async function exportExcel(v: ViewItem) {
@@ -105,290 +117,494 @@ async function exportExcel(v: ViewItem) {
     } else {
       toast.info('Excel导出暂未生成URL')
     }
-  } catch (e: any) { toast.error('导出失败: : ' + (e?.message ?? '')) }
+  } catch (e: any) {
+    toast.error('导出失败: : ' + (e?.message ?? ''))
+  }
 }
 
 loadViews()
 
-const queryview_query_qf_1_ref = ref<any[]>([]);
+const queryview_query_qf_1_ref = ref<any[]>([])
 const queryview_query_qf_1_q = useQuery({
   queryKey: ['queryview_query_qf_1'],
   queryFn: async () => {
-    try { const r = await api.get("/jaxrs/queryview/query/qf-1"); return (r.data ?? []) as any[]; }
-    catch { return []; }
+    try {
+      const r = await api.get('/jaxrs/queryview/query/qf-1')
+      return (r.data ?? []) as any[]
+    } catch {
+      return []
+    }
   },
-  
-});
-const importmodel_record_r_1_status_ref = ref<any[]>([]);
+})
+const importmodel_record_r_1_status_ref = ref<any[]>([])
 const importmodel_record_r_1_status_q = useQuery({
   queryKey: ['importmodel_record_r_1_status'],
   queryFn: async () => {
-    try { const r = await api.get("/jaxrs/queryview/importmodel/record/r-1/status"); return (r.data ?? []) as any[]; }
-    catch { return []; }
+    try {
+      const r = await api.get('/jaxrs/queryview/importmodel/record/r-1/status')
+      return (r.data ?? []) as any[]
+    } catch {
+      return []
+    }
   },
-  
-});
-const queryview_importmodel_record_r_1_ref = ref<any[]>([]);
+})
+const queryview_importmodel_record_r_1_ref = ref<any[]>([])
 const queryview_importmodel_record_r_1_q = useQuery({
   queryKey: ['queryview_importmodel_record_r_1'],
   queryFn: async () => {
-    try { const r = await api.get("/jaxrs/queryview/importmodel/record/r-1"); return (r.data ?? []) as any[]; }
-    catch { return []; }
+    try {
+      const r = await api.get('/jaxrs/queryview/importmodel/record/r-1')
+      return (r.data ?? []) as any[]
+    } catch {
+      return []
+    }
   },
-  
-});
-const importmodel_execute_record_record_1_ref = ref<any[]>([]);
+})
+const importmodel_execute_record_record_1_ref = ref<any[]>([])
 const importmodel_execute_record_record_1_q = useQuery({
   queryKey: ['importmodel_execute_record_record_1'],
   queryFn: async () => {
-    try { const r = await api.get("/jaxrs/queryview/importmodel/execute/record/record-1"); return (r.data ?? []) as any[]; }
-    catch { return []; }
+    try {
+      const r = await api.get('/jaxrs/queryview/importmodel/execute/record/record-1')
+      return (r.data ?? []) as any[]
+    } catch {
+      return []
+    }
   },
-  
-});
-const queryview_list_ref = ref<any[]>([]);
+})
+const queryview_list_ref = ref<any[]>([])
 const queryview_list_q = useQuery({
   queryKey: ['queryview_list'],
   queryFn: async () => {
-    try { const r = await api.get("/jaxrs/queryview/list"); return (r.data ?? []) as any[]; }
-    catch { return []; }
+    try {
+      const r = await api.get('/jaxrs/queryview/list')
+      return (r.data ?? []) as any[]
+    } catch {
+      return []
+    }
   },
-  
-});
-const queryview_view_v_1_bundle_ref = ref<any[]>([]);
+})
+const queryview_view_v_1_bundle_ref = ref<any[]>([])
 const queryview_view_v_1_bundle_q = useQuery({
   queryKey: ['queryview_view_v_1_bundle'],
   queryFn: async () => {
-    try { const r = await api.get("/jaxrs/queryview/view/v-1/bundle"); return (r.data ?? []) as any[]; }
-    catch { return []; }
+    try {
+      const r = await api.get('/jaxrs/queryview/view/v-1/bundle')
+      return (r.data ?? []) as any[]
+    } catch {
+      return []
+    }
   },
-  
-});
-const query_list_key_kw_ref = ref<any[]>([]);
+})
+const query_list_key_kw_ref = ref<any[]>([])
 const query_list_key_kw_q = useQuery({
   queryKey: ['query_list_key_kw'],
   queryFn: async () => {
-    try { const r = await api.get("/jaxrs/queryview/query/list/key/kw"); return (r.data ?? []) as any[]; }
-    catch { return []; }
+    try {
+      const r = await api.get('/jaxrs/queryview/query/list/key/kw')
+      return (r.data ?? []) as any[]
+    } catch {
+      return []
+    }
   },
-  
-});
-const queryview_morelikethis_ref = ref<any[]>([]);
+})
+const queryview_morelikethis_ref = ref<any[]>([])
 const queryview_morelikethis_q = useQuery({
   queryKey: ['queryview_morelikethis'],
   queryFn: async () => {
-    try { const r = await api.get("/jaxrs/queryview/morelikethis"); return (r.data ?? []) as any[]; }
-    catch { return []; }
+    try {
+      const r = await api.get('/jaxrs/queryview/morelikethis')
+      return (r.data ?? []) as any[]
+    } catch {
+      return []
+    }
   },
-  
-});
-const queryview_statement_st_1_format_ref = ref<any[]>([]);
+})
+const queryview_statement_st_1_format_ref = ref<any[]>([])
 const queryview_statement_st_1_format_q = useQuery({
   queryKey: ['queryview_statement_st_1_format'],
   queryFn: async () => {
-    try { const r = await api.get("/jaxrs/queryview/statement/st-1/format"); return (r.data ?? []) as any[]; }
-    catch { return []; }
+    try {
+      const r = await api.get('/jaxrs/queryview/statement/st-1/format')
+      return (r.data ?? []) as any[]
+    } catch {
+      return []
+    }
   },
-  
-});
-const queryview_importmodel_im_1_execute_ref = ref<any[]>([]);
+})
+const queryview_importmodel_im_1_execute_ref = ref<any[]>([])
 const queryview_importmodel_im_1_execute_q = useQuery({
   queryKey: ['queryview_importmodel_im_1_execute'],
   queryFn: async () => {
-    try { const r = await api.get("/jaxrs/queryview/importmodel/im-1/execute"); return (r.data ?? []) as any[]; }
-    catch { return []; }
+    try {
+      const r = await api.get('/jaxrs/queryview/importmodel/im-1/execute')
+      return (r.data ?? []) as any[]
+    } catch {
+      return []
+    }
   },
-  
-});
-const queryview_table_reload_dynamic_ref = ref<any[]>([]);
+})
+const queryview_table_reload_dynamic_ref = ref<any[]>([])
 const queryview_table_reload_dynamic_q = useQuery({
   queryKey: ['queryview_table_reload_dynamic'],
   queryFn: async () => {
-    try { const r = await api.get("/jaxrs/queryview/table/reload/dynamic"); return (r.data ?? []) as any[]; }
-    catch { return []; }
+    try {
+      const r = await api.get('/jaxrs/queryview/table/reload/dynamic')
+      return (r.data ?? []) as any[]
+    } catch {
+      return []
+    }
   },
-  
-});
-const queryview_importmodel_uuid_ref = ref<any[]>([]);
+})
+const queryview_importmodel_uuid_ref = ref<any[]>([])
 const queryview_importmodel_uuid_q = useQuery({
   queryKey: ['queryview_importmodel_uuid'],
   queryFn: async () => {
-    try { const r = await api.get("/jaxrs/queryview/importmodel/uuid"); return (r.data ?? []) as any[]; }
-    catch { return []; }
+    try {
+      const r = await api.get('/jaxrs/queryview/importmodel/uuid')
+      return (r.data ?? []) as any[]
+    } catch {
+      return []
+    }
   },
-  
-});
-const table_row_insert_tbl_1_ref = ref<any[]>([]);
+})
+const table_row_insert_tbl_1_ref = ref<any[]>([])
 const table_row_insert_tbl_1_q = useQuery({
   queryKey: ['table_row_insert_tbl_1'],
   queryFn: async () => {
-    try { const r = await api.get("/jaxrs/queryview/table/row/insert/tbl-1"); return (r.data ?? []) as any[]; }
-    catch { return []; }
+    try {
+      const r = await api.get('/jaxrs/queryview/table/row/insert/tbl-1')
+      return (r.data ?? []) as any[]
+    } catch {
+      return []
+    }
   },
-  
-});
-const importmodel_record_delete_record_1_ref = ref<any[]>([]);
+})
+const importmodel_record_delete_record_1_ref = ref<any[]>([])
 const importmodel_record_delete_record_1_q = useQuery({
   queryKey: ['importmodel_record_delete_record_1'],
   queryFn: async () => {
-    try { const r = await api.get("/jaxrs/queryview/importmodel/record/delete/record-1"); return (r.data ?? []) as any[]; }
-    catch { return []; }
+    try {
+      const r = await api.get('/jaxrs/queryview/importmodel/record/delete/record-1')
+      return (r.data ?? []) as any[]
+    } catch {
+      return []
+    }
   },
-  
-});
-const queryview_query_list_ref = ref<any[]>([]);
+})
+const queryview_query_list_ref = ref<any[]>([])
 const queryview_query_list_q = useQuery({
   queryKey: ['queryview_query_list'],
   queryFn: async () => {
-    try { const r = await api.get("/jaxrs/queryview/query/list"); return (r.data ?? []) as any[]; }
-    catch { return []; }
+    try {
+      const r = await api.get('/jaxrs/queryview/query/list')
+      return (r.data ?? []) as any[]
+    } catch {
+      return []
+    }
   },
-  
-});
-const queryview_stat_stat_1_ref = ref<any[]>([]);
+})
+const queryview_stat_stat_1_ref = ref<any[]>([])
 const queryview_stat_stat_1_q = useQuery({
   queryKey: ['queryview_stat_stat_1'],
   queryFn: async () => {
-    try { const r = await api.get("/jaxrs/queryview/stat/stat-1"); return (r.data ?? []) as any[]; }
-    catch { return []; }
+    try {
+      const r = await api.get('/jaxrs/queryview/stat/stat-1')
+      return (r.data ?? []) as any[]
+    } catch {
+      return []
+    }
   },
-  
-});
-const queryview_view_list_ref = ref<any[]>([]);
+})
+const queryview_view_list_ref = ref<any[]>([])
 const queryview_view_list_q = useQuery({
   queryKey: ['queryview_view_list'],
   queryFn: async () => {
-    try { const r = await api.get("/jaxrs/queryview/view/list"); return (r.data ?? []) as any[]; }
-    catch { return []; }
+    try {
+      const r = await api.get('/jaxrs/queryview/view/list')
+      return (r.data ?? []) as any[]
+    } catch {
+      return []
+    }
   },
-  
-});
-const queryview_stat_list_ref = ref<any[]>([]);
+})
+const queryview_stat_list_ref = ref<any[]>([])
 const queryview_stat_list_q = useQuery({
   queryKey: ['queryview_stat_list'],
   queryFn: async () => {
-    try { const r = await api.get("/jaxrs/queryview/stat/list"); return (r.data ?? []) as any[]; }
-    catch { return []; }
+    try {
+      const r = await api.get('/jaxrs/queryview/stat/list')
+      return (r.data ?? []) as any[]
+    } catch {
+      return []
+    }
   },
-  
-});
-const stat_list_query_query_1_ref = ref<any[]>([]);
+})
+const stat_list_query_query_1_ref = ref<any[]>([])
 const stat_list_query_query_1_q = useQuery({
   queryKey: ['stat_list_query_query_1'],
   queryFn: async () => {
-    try { const r = await api.get("/jaxrs/queryview/stat/list/query/query-1"); return (r.data ?? []) as any[]; }
-    catch { return []; }
+    try {
+      const r = await api.get('/jaxrs/queryview/stat/list/query/query-1')
+      return (r.data ?? []) as any[]
+    } catch {
+      return []
+    }
   },
-  
-});
-const queryview_ref = ref<any[]>([]);
+})
+const queryview_ref = ref<any[]>([])
 const queryview_q = useQuery({
   queryKey: ['queryview'],
   queryFn: async () => {
-    try { const r = await api.get("/jaxrs/queryview"); return (r.data ?? []) as any[]; }
-    catch { return []; }
+    try {
+      const r = await api.get('/jaxrs/queryview')
+      return (r.data ?? []) as any[]
+    } catch {
+      return []
+    }
   },
-  
-});
-const queryview_view_v_1_execute_ref = ref<any[]>([]);
+})
+const queryview_view_v_1_execute_ref = ref<any[]>([])
 const queryview_view_v_1_execute_q = useQuery({
   queryKey: ['queryview_view_v_1_execute'],
   queryFn: async () => {
-    try { const r = await api.get("/jaxrs/queryview/view/v-1/execute"); return (r.data ?? []) as any[]; }
-    catch { return []; }
+    try {
+      const r = await api.get('/jaxrs/queryview/view/v-1/execute')
+      return (r.data ?? []) as any[]
+    } catch {
+      return []
+    }
   },
-  
-});
-const queryview_view_v_1_excel_ref = ref<any[]>([]);
+})
+const queryview_view_v_1_excel_ref = ref<any[]>([])
 const queryview_view_v_1_excel_q = useQuery({
   queryKey: ['queryview_view_v_1_excel'],
   queryFn: async () => {
-    try { const r = await api.get("/jaxrs/queryview/view/v-1/excel"); return (r.data ?? []) as any[]; }
-    catch { return []; }
+    try {
+      const r = await api.get('/jaxrs/queryview/view/v-1/excel')
+      return (r.data ?? []) as any[]
+    } catch {
+      return []
+    }
   },
-  
-});
-const view_list_all_ref = ref<any[]>([]);
+})
+const view_list_all_ref = ref<any[]>([])
 const view_list_all_q = useQuery({
   queryKey: ['view_list_all'],
   queryFn: async () => {
-    try { const r = await api.get("/jaxrs/view/list/all"); return (r.data ?? []) as any[]; }
-    catch { return []; }
+    try {
+      const r = await api.get('/jaxrs/view/list/all')
+      return (r.data ?? []) as any[]
+    } catch {
+      return []
+    }
   },
-  
-});
-const view_ref = ref<any[]>([]);
+})
+const view_ref = ref<any[]>([])
 const view_q = useQuery({
   queryKey: ['view'],
   queryFn: async () => {
-    try { const r = await api.get("/jaxrs/view"); return (r.data ?? []) as any[]; }
-    catch { return []; }
+    try {
+      const r = await api.get('/jaxrs/view')
+      return (r.data ?? []) as any[]
+    } catch {
+      return []
+    }
   },
-  
-});
+})
 
-
-const viewcategory_vc_1_ref = ref<any[]>([]);
+const viewcategory_vc_1_ref = ref<any[]>([])
 const viewcategory_vc_1_q = useQuery({
   queryKey: ['viewcategory_vc_1'],
   queryFn: async () => {
-    try { const r = await api.get("/jaxrs/viewcategory/vc-1"); return (r.data ?? []) as any[]; }
-    catch { return []; }
+    try {
+      const r = await api.get('/jaxrs/viewcategory/vc-1')
+      return (r.data ?? []) as any[]
+    } catch {
+      return []
+    }
   },
-  
-});
-const viewcategory_ref = ref<any[]>([]);
+})
+const viewcategory_ref = ref<any[]>([])
 const viewcategory_q = useQuery({
   queryKey: ['viewcategory'],
   queryFn: async () => {
-    try { const r = await api.get("/jaxrs/viewcategory"); return (r.data ?? []) as any[]; }
-    catch { return []; }
+    try {
+      const r = await api.get('/jaxrs/viewcategory')
+      return (r.data ?? []) as any[]
+    } catch {
+      return []
+    }
   },
-  
-});
-const api_viewcate_548_data = ref<any[]>([]);
-const { data: api_viewcate_548_q } = useQuery({queryKey: ['api_viewcate_548', '/jaxrs/viewcategory/list/all'], queryFn: async () => { try { const r = await api.get("/jaxrs/viewcategory/list/all"); return (r.data ?? []) as any[]; } catch { return []; } }});
+})
+const api_viewcate_548_data = ref<any[]>([])
+const { data: api_viewcate_548_q } = useQuery({
+  queryKey: ['api_viewcate_548', '/jaxrs/viewcategory/list/all'],
+  queryFn: async () => {
+    try {
+      const r = await api.get('/jaxrs/viewcategory/list/all')
+      return (r.data ?? []) as any[]
+    } catch {
+      return []
+    }
+  },
+})
 
+const api_viewfiel_567_data = ref<any[]>([])
+const { data: api_viewfiel_567_q } = useQuery({
+  queryKey: ['api_viewfiel_567', '/jaxrs/viewfieldconfig/list/all'],
+  queryFn: async () => {
+    try {
+      const r = await api.get('/jaxrs/viewfieldconfig/list/all')
+      return (r.data ?? []) as any[]
+    } catch {
+      return []
+    }
+  },
+})
 
+const api_viewfiel_215_data = ref<any[]>([])
+const { data: api_viewfiel_215_q } = useQuery({
+  queryKey: ['api_viewfiel_215', '/jaxrs/viewfieldconfig/vfc-1'],
+  queryFn: async () => {
+    try {
+      const r = await api.get('/jaxrs/viewfieldconfig/vfc-1')
+      return (r.data ?? []) as any[]
+    } catch {
+      return []
+    }
+  },
+})
 
-const api_viewfiel_567_data = ref<any[]>([]);
-const { data: api_viewfiel_567_q } = useQuery({queryKey: ['api_viewfiel_567', '/jaxrs/viewfieldconfig/list/all'], queryFn: async () => { try { const r = await api.get("/jaxrs/viewfieldconfig/list/all"); return (r.data ?? []) as any[]; } catch { return []; } }});
+const api_viewfiel_260_data = ref<any[]>([])
+const { data: api_viewfiel_260_q } = useQuery({
+  queryKey: ['api_viewfiel_260', '/jaxrs/viewfieldconfig'],
+  queryFn: async () => {
+    try {
+      const r = await api.get('/jaxrs/viewfieldconfig')
+      return (r.data ?? []) as any[]
+    } catch {
+      return []
+    }
+  },
+})
 
-const api_viewfiel_215_data = ref<any[]>([]);
-const { data: api_viewfiel_215_q } = useQuery({queryKey: ['api_viewfiel_215', '/jaxrs/viewfieldconfig/vfc-1'], queryFn: async () => { try { const r = await api.get("/jaxrs/viewfieldconfig/vfc-1"); return (r.data ?? []) as any[]; } catch { return []; } }});
+const api_viewreco_372_data = ref<any[]>([])
+const { data: api_viewreco_372_q } = useQuery({
+  queryKey: ['api_viewreco_372', '/jaxrs/viewrecord/unread'],
+  queryFn: async () => {
+    try {
+      const r = await api.get('/jaxrs/viewrecord/unread')
+      return (r.data ?? []) as any[]
+    } catch {
+      return []
+    }
+  },
+})
 
-const api_viewfiel_260_data = ref<any[]>([]);
-const { data: api_viewfiel_260_q } = useQuery({queryKey: ['api_viewfiel_260', '/jaxrs/viewfieldconfig'], queryFn: async () => { try { const r = await api.get("/jaxrs/viewfieldconfig"); return (r.data ?? []) as any[]; } catch { return []; } }});
+const api_viewrecord_person_p_1_data = ref<any[]>([])
+const { data: api_viewrecord_person_p_1_q } = useQuery({
+  queryKey: ['api_viewrecord_person_p_1', '/jaxrs/viewrecord/person/p-1'],
+  queryFn: async () => {
+    try {
+      const r = await api.get('/jaxrs/viewrecord/person/p-1')
+      return (r.data ?? []) as any[]
+    } catch {
+      return []
+    }
+  },
+})
 
+const api_document_d_1_has_view_data = ref<any[]>([])
+const { data: api_document_d_1_has_view_q } = useQuery({
+  queryKey: ['api_document_d_1_has_view', '/jaxrs/viewrecord/document/d-1/has/view'],
+  queryFn: async () => {
+    try {
+      const r = await api.get('/jaxrs/viewrecord/document/d-1/has/view')
+      return (r.data ?? []) as any[]
+    } catch {
+      return []
+    }
+  },
+})
 
+const api_jaxrs_queryview__77_data = ref<any[]>([])
+const { data: api_jaxrs_queryview__77_q } = useQuery({
+  queryKey: ['api_jaxrs_queryview__77', '/jaxrs/queryview/stat/flag/s-1/query/qf-1/execute'],
+  queryFn: async () => {
+    try {
+      const r = await api.get('/jaxrs/queryview/stat/flag/s-1/query/qf-1/execute')
+      return (r.data ?? []) as any[]
+    } catch {
+      return []
+    }
+  },
+})
 
-const api_viewreco_372_data = ref<any[]>([]);
-const { data: api_viewreco_372_q } = useQuery({queryKey: ['api_viewreco_372', '/jaxrs/viewrecord/unread'], queryFn: async () => { try { const r = await api.get("/jaxrs/viewrecord/unread"); return (r.data ?? []) as any[]; } catch { return []; } }});
+const api_jaxrs_queryview__469_data = ref<any[]>([])
+const { data: api_jaxrs_queryview__469_q } = useQuery({
+  queryKey: ['api_jaxrs_queryview__469', '/jaxrs/queryview/statement/execute/st-1/page/1/size/20'],
+  queryFn: async () => {
+    try {
+      const r = await api.get('/jaxrs/queryview/statement/execute/st-1/page/1/size/20')
+      return (r.data ?? []) as any[]
+    } catch {
+      return []
+    }
+  },
+})
 
-const api_viewrecord_person_p_1_data = ref<any[]>([]);
-const { data: api_viewrecord_person_p_1_q } = useQuery({queryKey: ['api_viewrecord_person_p_1', '/jaxrs/viewrecord/person/p-1'], queryFn: async () => { try { const r = await api.get("/jaxrs/viewrecord/person/p-1"); return (r.data ?? []) as any[]; } catch { return []; } }});
+const api_jaxrs_queryview__994_data = ref<any[]>([])
+const { data: api_jaxrs_queryview__994_q } = useQuery({
+  queryKey: ['api_jaxrs_queryview__994', '/jaxrs/queryview/statement/st-1/execute/page/1/size/20'],
+  queryFn: async () => {
+    try {
+      const r = await api.get('/jaxrs/queryview/statement/st-1/execute/page/1/size/20')
+      return (r.data ?? []) as any[]
+    } catch {
+      return []
+    }
+  },
+})
 
-const api_document_d_1_has_view_data = ref<any[]>([]);
-const { data: api_document_d_1_has_view_q } = useQuery({queryKey: ['api_document_d_1_has_view', '/jaxrs/viewrecord/document/d-1/has/view'], queryFn: async () => { try { const r = await api.get("/jaxrs/viewrecord/document/d-1/has/view"); return (r.data ?? []) as any[]; } catch { return []; } }});
+const api_jaxrs_queryview__229_data = ref<any[]>([])
+const { data: api_jaxrs_queryview__229_q } = useQuery({
+  queryKey: ['api_jaxrs_queryview__229', '/jaxrs/queryview/table/list/paging/1/size/20'],
+  queryFn: async () => {
+    try {
+      const r = await api.get('/jaxrs/queryview/table/list/paging/1/size/20')
+      return (r.data ?? []) as any[]
+    } catch {
+      return []
+    }
+  },
+})
 
-const api_jaxrs_queryview__77_data = ref<any[]>([]);
-const { data: api_jaxrs_queryview__77_q } = useQuery({queryKey: ['api_jaxrs_queryview__77', '/jaxrs/queryview/stat/flag/s-1/query/qf-1/execute'], queryFn: async () => { try { const r = await api.get("/jaxrs/queryview/stat/flag/s-1/query/qf-1/execute"); return (r.data ?? []) as any[]; } catch { return []; } }});
+const api_jaxrs_queryview__320_data = ref<any[]>([])
+const { data: api_jaxrs_queryview__320_q } = useQuery({
+  queryKey: ['api_jaxrs_queryview__320', '/jaxrs/queryview/table/list/table/tf-1/row/paging/1/size/20'],
+  queryFn: async () => {
+    try {
+      const r = await api.get('/jaxrs/queryview/table/list/table/tf-1/row/paging/1/size/20')
+      return (r.data ?? []) as any[]
+    } catch {
+      return []
+    }
+  },
+})
 
-const api_jaxrs_queryview__469_data = ref<any[]>([]);
-const { data: api_jaxrs_queryview__469_q } = useQuery({queryKey: ['api_jaxrs_queryview__469', '/jaxrs/queryview/statement/execute/st-1/page/1/size/20'], queryFn: async () => { try { const r = await api.get("/jaxrs/queryview/statement/execute/st-1/page/1/size/20"); return (r.data ?? []) as any[]; } catch { return []; } }});
-
-const api_jaxrs_queryview__994_data = ref<any[]>([]);
-const { data: api_jaxrs_queryview__994_q } = useQuery({queryKey: ['api_jaxrs_queryview__994', '/jaxrs/queryview/statement/st-1/execute/page/1/size/20'], queryFn: async () => { try { const r = await api.get("/jaxrs/queryview/statement/st-1/execute/page/1/size/20"); return (r.data ?? []) as any[]; } catch { return []; } }});
-
-const api_jaxrs_queryview__229_data = ref<any[]>([]);
-const { data: api_jaxrs_queryview__229_q } = useQuery({queryKey: ['api_jaxrs_queryview__229', '/jaxrs/queryview/table/list/paging/1/size/20'], queryFn: async () => { try { const r = await api.get("/jaxrs/queryview/table/list/paging/1/size/20"); return (r.data ?? []) as any[]; } catch { return []; } }});
-
-const api_jaxrs_queryview__320_data = ref<any[]>([]);
-const { data: api_jaxrs_queryview__320_q } = useQuery({queryKey: ['api_jaxrs_queryview__320', '/jaxrs/queryview/table/list/table/tf-1/row/paging/1/size/20'], queryFn: async () => { try { const r = await api.get("/jaxrs/queryview/table/list/table/tf-1/row/paging/1/size/20"); return (r.data ?? []) as any[]; } catch { return []; } }});
-
-const api_jaxrs_queryview__430_data = ref<any[]>([]);
-const { data: api_jaxrs_queryview__430_q } = useQuery({queryKey: ['api_jaxrs_queryview__430', '/jaxrs/queryview/view/flag/v-1/query/qf-1/execute/v2/page/1/size/20'], queryFn: async () => { try { const r = await api.get("/jaxrs/queryview/view/flag/v-1/query/qf-1/execute/v2/page/1/size/20"); return (r.data ?? []) as any[]; } catch { return []; } }});
-
+const api_jaxrs_queryview__430_data = ref<any[]>([])
+const { data: api_jaxrs_queryview__430_q } = useQuery({
+  queryKey: ['api_jaxrs_queryview__430', '/jaxrs/queryview/view/flag/v-1/query/qf-1/execute/v2/page/1/size/20'],
+  queryFn: async () => {
+    try {
+      const r = await api.get('/jaxrs/queryview/view/flag/v-1/query/qf-1/execute/v2/page/1/size/20')
+      return (r.data ?? []) as any[]
+    } catch {
+      return []
+    }
+  },
+})
 </script>
 
 <style scoped>

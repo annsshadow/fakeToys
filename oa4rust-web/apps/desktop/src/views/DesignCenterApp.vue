@@ -70,84 +70,237 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { computed, ref } from 'vue'
+
 const searchQuery = ref('')
 const showStats = ref(false)
 const showAllList = ref(false)
 const totalRoutes = ref(3092)
 const coveredRoutes = ref(2847)
 const activeViews = ref(30)
-const coveragePct = computed(() => totalRoutes.value ? Math.round(coveredRoutes.value / totalRoutes.value * 100) : 0)
+const coveragePct = computed(() =>
+  totalRoutes.value ? Math.round((coveredRoutes.value / totalRoutes.value) * 100) : 0,
+)
 
 interface Designer {
-  id: string; name: string; icon: string; desc: string; path: string; href: string
-  badge?: string; newBadge?: boolean; disabled?: boolean; status: 'done'|'partial'|'todo'
+  id: string
+  name: string
+  icon: string
+  desc: string
+  path: string
+  href: string
+  badge?: string
+  newBadge?: boolean
+  disabled?: boolean
+  status: 'done' | 'partial' | 'todo'
   statusText: string
 }
 
 const allDesigners = ref<Designer[]>([
-  {id:'process',name:'流程设计器',icon:'⚡',desc:'可视化流程编排与节点配置',path:'/app/process-designer',href:'/app/process-designer',status:'done',statusText:'已完成'},
-  {id:'form',name:'表单设计器',icon:'📋',desc:'JSON表单构建与字段拖拽',path:'/app/form-designer',href:'/app/form-designer',status:'done',statusText:'已完成'},
-  {id:'query',name:'查询设计器',icon:'🔍',desc:'SQL与可视化查询构建',path:'/app/query-designer',href:'/app/query-designer',status:'done',statusText:'已完成'},
-  {id:'query-stat',name:'语句设计器',icon:'💻',desc:'SQL语句管理与执行',path:'/app/query-statement-designer',href:'/app/query-statement-designer',status:'done',statusText:'已完成'},
-  {id:'portal',name:'门户设计器',icon:'🖼',desc:'页面与组件可视化设计',path:'/app/portal-designer',href:'/app/portal-designer',status:'done',statusText:'已完成'},
-  {id:'cms-form',name:'CMS表单设计',icon:'📝',desc:'内容模型表单配置',path:'/app/cms-form-designer',href:'/app/cms-form-designer',status:'partial',statusText:'部分完成'},
-  {id:'cms-view',name:'CMS视图设计',icon:'👁',desc:'内容展示视图配置',path:'/app/cms-view-designer',href:'/app/cms-view-designer',status:'partial',statusText:'部分完成'},
-  {id:'cms-script',name:'CMS脚本设计',icon:'💻',desc:'内容处理脚本编辑',path:'/app/cms-script-designer',href:'/app/cms-script-designer',status:'todo',statusText:'待开发'},
-  {id:'cms-dict',name:'CMS字典设计',icon:'📚',desc:'内容字典配置管理',path:'/app/cms-dict-designer',href:'/app/cms-dict-designer',status:'todo',statusText:'待开发'},
-  {id:'query-view',name:'查询视图设计',icon:'🗂',desc:'查询视图定义与管理',path:'/app/query-view-designer',href:'/app/query-view-designer',status:'partial',statusText:'部分完成'},
-  {id:'query-stat-designer',name:'查询统计设计',icon:'📈',desc:'统计报表配置与设计',path:'/app/query-stat-designer',href:'/app/query-stat-designer',status:'todo',statusText:'待开发'},
-  {id:'config',name:'配置设计器',icon:'⚙',desc:'系统配置与参数设计',path:'/app/config-designer',href:'/app/config-designer',status:'partial',statusText:'部分完成'},
-  {id:'xform',name:'XFORM设计',icon:'🔄',desc:'表单转换规则设计',path:'/app/cms-xform-designer',href:'/app/cms-xform-designer',status:'todo',statusText:'待开发'},
-  {id:'script',name:'脚本设计器',icon:'📜',desc:'前端脚本与插件开发',path:'/app/script-designer',href:'/app/script-designer',status:'todo',statusText:'待开发'},
+  {
+    id: 'process',
+    name: '流程设计器',
+    icon: '⚡',
+    desc: '可视化流程编排与节点配置',
+    path: '/app/process-designer',
+    href: '/app/process-designer',
+    status: 'done',
+    statusText: '已完成',
+  },
+  {
+    id: 'form',
+    name: '表单设计器',
+    icon: '📋',
+    desc: 'JSON表单构建与字段拖拽',
+    path: '/app/form-designer',
+    href: '/app/form-designer',
+    status: 'done',
+    statusText: '已完成',
+  },
+  {
+    id: 'query',
+    name: '查询设计器',
+    icon: '🔍',
+    desc: 'SQL与可视化查询构建',
+    path: '/app/query-designer',
+    href: '/app/query-designer',
+    status: 'done',
+    statusText: '已完成',
+  },
+  {
+    id: 'query-stat',
+    name: '语句设计器',
+    icon: '💻',
+    desc: 'SQL语句管理与执行',
+    path: '/app/query-statement-designer',
+    href: '/app/query-statement-designer',
+    status: 'done',
+    statusText: '已完成',
+  },
+  {
+    id: 'portal',
+    name: '门户设计器',
+    icon: '🖼',
+    desc: '页面与组件可视化设计',
+    path: '/app/portal-designer',
+    href: '/app/portal-designer',
+    status: 'done',
+    statusText: '已完成',
+  },
+  {
+    id: 'cms-form',
+    name: 'CMS表单设计',
+    icon: '📝',
+    desc: '内容模型表单配置',
+    path: '/app/cms-form-designer',
+    href: '/app/cms-form-designer',
+    status: 'partial',
+    statusText: '部分完成',
+  },
+  {
+    id: 'cms-view',
+    name: 'CMS视图设计',
+    icon: '👁',
+    desc: '内容展示视图配置',
+    path: '/app/cms-view-designer',
+    href: '/app/cms-view-designer',
+    status: 'partial',
+    statusText: '部分完成',
+  },
+  {
+    id: 'cms-script',
+    name: 'CMS脚本设计',
+    icon: '💻',
+    desc: '内容处理脚本编辑',
+    path: '/app/cms-script-designer',
+    href: '/app/cms-script-designer',
+    status: 'todo',
+    statusText: '待开发',
+  },
+  {
+    id: 'cms-dict',
+    name: 'CMS字典设计',
+    icon: '📚',
+    desc: '内容字典配置管理',
+    path: '/app/cms-dict-designer',
+    href: '/app/cms-dict-designer',
+    status: 'todo',
+    statusText: '待开发',
+  },
+  {
+    id: 'query-view',
+    name: '查询视图设计',
+    icon: '🗂',
+    desc: '查询视图定义与管理',
+    path: '/app/query-view-designer',
+    href: '/app/query-view-designer',
+    status: 'partial',
+    statusText: '部分完成',
+  },
+  {
+    id: 'query-stat-designer',
+    name: '查询统计设计',
+    icon: '📈',
+    desc: '统计报表配置与设计',
+    path: '/app/query-stat-designer',
+    href: '/app/query-stat-designer',
+    status: 'todo',
+    statusText: '待开发',
+  },
+  {
+    id: 'config',
+    name: '配置设计器',
+    icon: '⚙',
+    desc: '系统配置与参数设计',
+    path: '/app/config-designer',
+    href: '/app/config-designer',
+    status: 'partial',
+    statusText: '部分完成',
+  },
+  {
+    id: 'xform',
+    name: 'XFORM设计',
+    icon: '🔄',
+    desc: '表单转换规则设计',
+    path: '/app/cms-xform-designer',
+    href: '/app/cms-xform-designer',
+    status: 'todo',
+    statusText: '待开发',
+  },
+  {
+    id: 'script',
+    name: '脚本设计器',
+    icon: '📜',
+    desc: '前端脚本与插件开发',
+    path: '/app/script-designer',
+    href: '/app/script-designer',
+    status: 'todo',
+    statusText: '待开发',
+  },
 ])
 
 const filteredDesigners = computed(() => {
   if (!searchQuery.value.trim()) return allDesigners.value
   const q = searchQuery.value.toLowerCase()
-  return allDesigners.value.filter(d => d.name.toLowerCase().includes(q) || d.desc.toLowerCase().includes(q))
+  return allDesigners.value.filter((d) => d.name.toLowerCase().includes(q) || d.desc.toLowerCase().includes(q))
 })
 
-function filterDesigners() { /* reactive via computed */ }
-function refreshAll() { coveredRoutes.value = 2847; activeViews.value = 30 }
+function filterDesigners() {
+  /* reactive via computed */
+}
+function refreshAll() {
+  coveredRoutes.value = 2847
+  activeViews.value = 30
+}
 
-const design_appdict_da_1_ref = ref<any[]>([]);
+const design_appdict_da_1_ref = ref<any[]>([])
 const design_appdict_da_1_q = useQuery({
   queryKey: ['design_appdict_da_1'],
   queryFn: async () => {
-    try { const r = await api.get("/jaxrs/design/appdict/da-1"); return (r.data ?? []) as any[]; }
-    catch { return []; }
+    try {
+      const r = await api.get('/jaxrs/design/appdict/da-1')
+      return (r.data ?? []) as any[]
+    } catch {
+      return []
+    }
   },
-  
-});
-const design_appdict_ref = ref<any[]>([]);
+})
+const design_appdict_ref = ref<any[]>([])
 const design_appdict_q = useQuery({
   queryKey: ['design_appdict'],
   queryFn: async () => {
-    try { const r = await api.get("/jaxrs/design/appdict"); return (r.data ?? []) as any[]; }
-    catch { return []; }
+    try {
+      const r = await api.get('/jaxrs/design/appdict')
+      return (r.data ?? []) as any[]
+    } catch {
+      return []
+    }
   },
-  
-});
-const designer_search_ref = ref<any[]>([]);
+})
+const designer_search_ref = ref<any[]>([])
 const designer_search_q = useQuery({
   queryKey: ['designer_search'],
   queryFn: async () => {
-    try { const r = await api.get("/jaxrs/designer/search"); return (r.data ?? []) as any[]; }
-    catch { return []; }
+    try {
+      const r = await api.get('/jaxrs/designer/search')
+      return (r.data ?? []) as any[]
+    } catch {
+      return []
+    }
   },
-  
-});
-const design_appdict_u3_dedup_target_ref = ref<any[]>([]);
+})
+const design_appdict_u3_dedup_target_ref = ref<any[]>([])
 const design_appdict_u3_dedup_target_q = useQuery({
   queryKey: ['design_appdict_u3_dedup_target'],
   queryFn: async () => {
-    try { const r = await api.get("/jaxrs/design/appdict/u3-dedup-target"); return (r.data ?? []) as any[]; }
-    catch { return []; }
+    try {
+      const r = await api.get('/jaxrs/design/appdict/u3-dedup-target')
+      return (r.data ?? []) as any[]
+    } catch {
+      return []
+    }
   },
-  
-});
-
+})
 </script>
 
 <style scoped>

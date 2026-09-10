@@ -1,7 +1,7 @@
-import { defineConfig } from 'vite';
-import vue from '@vitejs/plugin-vue';
-import UnoCSS from '@unocss/vite';
-import { resolve } from 'path';
+import UnoCSS from '@unocss/vite'
+import vue from '@vitejs/plugin-vue'
+import { resolve } from 'path'
+import { defineConfig } from 'vite'
 
 export default defineConfig({
   plugins: [vue(), UnoCSS()],
@@ -29,8 +29,8 @@ export default defineConfig({
         "frame-src 'none'",
         "base-uri 'self'",
         "form-action 'self'",
-        "report-uri /csp-report",
-        "report-to csp-endpoint",
+        'report-uri /csp-report',
+        'report-to csp-endpoint',
       ].join('; '),
       'Report-To': JSON.stringify({
         group: 'csp-endpoint',
@@ -56,7 +56,15 @@ export default defineConfig({
           naive: ['naive-ui'],
           query: ['@tanstack/vue-query'],
           echarts: ['echarts'],
-          codemirror: ['codemirror', '@codemirror/state', '@codemirror/view', '@codemirror/language', '@codemirror/autocomplete', '@codemirror/commands', '@codemirror/lang-sql'],
+          codemirror: [
+            'codemirror',
+            '@codemirror/state',
+            '@codemirror/view',
+            '@codemirror/language',
+            '@codemirror/autocomplete',
+            '@codemirror/commands',
+            '@codemirror/lang-sql',
+          ],
         },
       },
     },
@@ -64,4 +72,4 @@ export default defineConfig({
   optimizeDeps: {
     include: ['vue', 'vue-router', 'pinia', '@tanstack/vue-query', 'naive-ui'],
   },
-});
+})

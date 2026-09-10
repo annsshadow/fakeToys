@@ -42,8 +42,8 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
 import { api } from '@oa4rust/sdk'
+import { computed, ref } from 'vue'
 
 const keyword = ref('')
 const loading = ref(false)
@@ -52,8 +52,8 @@ const detailItem = ref<any | null>(null)
 
 const stats = computed(() => [
   { label: '总计', value: items.value.length, color: 'var(--color-primary)' },
-  { label: '已启用', value: items.value.filter(i => i.status !== 'disabled').length, color: 'var(--color-success)' },
-  { label: '已禁用', value: items.value.filter(i => i.status === 'disabled').length, color: 'var(--color-error)' },
+  { label: '已启用', value: items.value.filter((i) => i.status !== 'disabled').length, color: 'var(--color-success)' },
+  { label: '已禁用', value: items.value.filter((i) => i.status === 'disabled').length, color: 'var(--color-error)' },
   { label: '加载中', value: loading.value ? 1 : 0, color: 'var(--color-warning)' },
 ])
 
@@ -67,189 +67,266 @@ async function doSearch() {
       const r = await api.get('/jaxrs/appinfo/list')
       items.value = r.data ?? []
     }
-  } catch { items.value = [] } finally { loading.value = false }
+  } catch {
+    items.value = []
+  } finally {
+    loading.value = false
+  }
 }
 
 async function viewDetail(item: any) {
   try {
     const r = await api.get(`/jaxrs/appinfo/${item.id}`)
     detailItem.value = r.data ?? item
-  } catch { detailItem.value = item }
+  } catch {
+    detailItem.value = item
+  }
 }
 
 doSearch()
 
-const appinfo_list_user_view_ref = ref<any[]>([]);
+const appinfo_list_user_view_ref = ref<any[]>([])
 const appinfo_list_user_view_q = useQuery({
   queryKey: ['appinfo_list_user_view'],
   queryFn: async () => {
-    try { const r = await api.get("/jaxrs/appinfo/list/user/view"); return (r.data ?? []) as any[]; }
-    catch { return []; }
+    try {
+      const r = await api.get('/jaxrs/appinfo/list/user/view')
+      return (r.data ?? []) as any[]
+    } catch {
+      return []
+    }
   },
-  
-});
-const a_1_icon_size_64_ref = ref<any[]>([]);
+})
+const a_1_icon_size_64_ref = ref<any[]>([])
 const a_1_icon_size_64_q = useQuery({
   queryKey: ['a_1_icon_size_64'],
   queryFn: async () => {
-    try { const r = await api.get("/jaxrs/appinfo/a-1/icon/size/64"); return (r.data ?? []) as any[]; }
-    catch { return []; }
+    try {
+      const r = await api.get('/jaxrs/appinfo/a-1/icon/size/64')
+      return (r.data ?? []) as any[]
+    } catch {
+      return []
+    }
   },
-  
-});
-const appinfo_a_1_permission_ref = ref<any[]>([]);
+})
+const appinfo_a_1_permission_ref = ref<any[]>([])
 const appinfo_a_1_permission_q = useQuery({
   queryKey: ['appinfo_a_1_permission'],
   queryFn: async () => {
-    try { const r = await api.get("/jaxrs/appinfo/a-1/permission"); return (r.data ?? []) as any[]; }
-    catch { return []; }
+    try {
+      const r = await api.get('/jaxrs/appinfo/a-1/permission')
+      return (r.data ?? []) as any[]
+    } catch {
+      return []
+    }
   },
-  
-});
-const list_user_view_all_ref = ref<any[]>([]);
+})
+const list_user_view_all_ref = ref<any[]>([])
 const list_user_view_all_q = useQuery({
   queryKey: ['list_user_view_all'],
   queryFn: async () => {
-    try { const r = await api.get("/jaxrs/appinfo/list/user/view/all"); return (r.data ?? []) as any[]; }
-    catch { return []; }
+    try {
+      const r = await api.get('/jaxrs/appinfo/list/user/view/all')
+      return (r.data ?? []) as any[]
+    } catch {
+      return []
+    }
   },
-  
-});
-const appinfo_list_appType_manager_ref = ref<any[]>([]);
+})
+const appinfo_list_appType_manager_ref = ref<any[]>([])
 const appinfo_list_appType_manager_q = useQuery({
   queryKey: ['appinfo_list_appType_manager'],
   queryFn: async () => {
-    try { const r = await api.get("/jaxrs/appinfo/list/appType/manager"); return (r.data ?? []) as any[]; }
-    catch { return []; }
+    try {
+      const r = await api.get('/jaxrs/appinfo/list/appType/manager')
+      return (r.data ?? []) as any[]
+    } catch {
+      return []
+    }
   },
-  
-});
-const appinfo_list_has_document_ref = ref<any[]>([]);
+})
+const appinfo_list_has_document_ref = ref<any[]>([])
 const appinfo_list_has_document_q = useQuery({
   queryKey: ['appinfo_list_has_document'],
   queryFn: async () => {
-    try { const r = await api.get("/jaxrs/appinfo/list/has/document"); return (r.data ?? []) as any[]; }
-    catch { return []; }
+    try {
+      const r = await api.get('/jaxrs/appinfo/list/has/document')
+      return (r.data ?? []) as any[]
+    } catch {
+      return []
+    }
   },
-  
-});
-const appinfo_ref = ref<any[]>([]);
+})
+const appinfo_ref = ref<any[]>([])
 const appinfo_q = useQuery({
   queryKey: ['appinfo'],
   queryFn: async () => {
-    try { const r = await api.get("/jaxrs/appinfo"); return (r.data ?? []) as any[]; }
-    catch { return []; }
+    try {
+      const r = await api.get('/jaxrs/appinfo')
+      return (r.data ?? []) as any[]
+    } catch {
+      return []
+    }
   },
-  
-});
-const appinfo_list_manage_ref = ref<any[]>([]);
+})
+const appinfo_list_manage_ref = ref<any[]>([])
 const appinfo_list_manage_q = useQuery({
   queryKey: ['appinfo_list_manage'],
   queryFn: async () => {
-    try { const r = await api.get("/jaxrs/appinfo/list/manage"); return (r.data ?? []) as any[]; }
-    catch { return []; }
+    try {
+      const r = await api.get('/jaxrs/appinfo/list/manage')
+      return (r.data ?? []) as any[]
+    } catch {
+      return []
+    }
   },
-  
-});
-const appinfo_list_all_ref = ref<any[]>([]);
+})
+const appinfo_list_all_ref = ref<any[]>([])
 const appinfo_list_all_q = useQuery({
   queryKey: ['appinfo_list_all'],
   queryFn: async () => {
-    try { const r = await api.get("/jaxrs/appinfo/list/all"); return (r.data ?? []) as any[]; }
-    catch { return []; }
+    try {
+      const r = await api.get('/jaxrs/appinfo/list/all')
+      return (r.data ?? []) as any[]
+    } catch {
+      return []
+    }
   },
-  
-});
-const list_user_view_data_ref = ref<any[]>([]);
+})
+const list_user_view_data_ref = ref<any[]>([])
 const list_user_view_data_q = useQuery({
   queryKey: ['list_user_view_data'],
   queryFn: async () => {
-    try { const r = await api.get("/jaxrs/appinfo/list/user/view/data"); return (r.data ?? []) as any[]; }
-    catch { return []; }
+    try {
+      const r = await api.get('/jaxrs/appinfo/list/user/view/data')
+      return (r.data ?? []) as any[]
+    } catch {
+      return []
+    }
   },
-  
-});
-const appinfo_a_1_ref = ref<any[]>([]);
+})
+const appinfo_a_1_ref = ref<any[]>([])
 const appinfo_a_1_q = useQuery({
   queryKey: ['appinfo_a_1'],
   queryFn: async () => {
-    try { const r = await api.get("/jaxrs/appinfo/a-1"); return (r.data ?? []) as any[]; }
-    catch { return []; }
+    try {
+      const r = await api.get('/jaxrs/appinfo/a-1')
+      return (r.data ?? []) as any[]
+    } catch {
+      return []
+    }
   },
-  
-});
-const appinfo_flag_ref = ref<any[]>([]);
+})
+const appinfo_flag_ref = ref<any[]>([])
 const appinfo_flag_q = useQuery({
   queryKey: ['appinfo_flag'],
   queryFn: async () => {
-    try { const r = await api.get("/jaxrs/appinfo/flag"); return (r.data ?? []) as any[]; }
-    catch { return []; }
+    try {
+      const r = await api.get('/jaxrs/appinfo/flag')
+      return (r.data ?? []) as any[]
+    } catch {
+      return []
+    }
   },
-  
-});
-const appinfo_alias_alpha_ref = ref<any[]>([]);
+})
+const appinfo_alias_alpha_ref = ref<any[]>([])
 const appinfo_alias_alpha_q = useQuery({
   queryKey: ['appinfo_alias_alpha'],
   queryFn: async () => {
-    try { const r = await api.get("/jaxrs/appinfo/alias/alpha"); return (r.data ?? []) as any[]; }
-    catch { return []; }
+    try {
+      const r = await api.get('/jaxrs/appinfo/alias/alpha')
+      return (r.data ?? []) as any[]
+    } catch {
+      return []
+    }
   },
-  
-});
-const appinfo_list_appType_ref = ref<any[]>([]);
+})
+const appinfo_list_appType_ref = ref<any[]>([])
 const appinfo_list_appType_q = useQuery({
   queryKey: ['appinfo_list_appType'],
   queryFn: async () => {
-    try { const r = await api.get("/jaxrs/appinfo/list/appType"); return (r.data ?? []) as any[]; }
-    catch { return []; }
+    try {
+      const r = await api.get('/jaxrs/appinfo/list/appType')
+      return (r.data ?? []) as any[]
+    } catch {
+      return []
+    }
   },
-  
-});
-const get_user_publish_app_1_ref = ref<any[]>([]);
+})
+const get_user_publish_app_1_ref = ref<any[]>([])
 const get_user_publish_app_1_q = useQuery({
   queryKey: ['get_user_publish_app_1'],
   queryFn: async () => {
-    try { const r = await api.get("/jaxrs/appinfo/get/user/publish/app-1"); return (r.data ?? []) as any[]; }
-    catch { return []; }
+    try {
+      const r = await api.get('/jaxrs/appinfo/get/user/publish/app-1')
+      return (r.data ?? []) as any[]
+    } catch {
+      return []
+    }
   },
-  
-});
-const list_has_document_appType_ref = ref<any[]>([]);
+})
+const list_has_document_appType_ref = ref<any[]>([])
 const list_has_document_appType_q = useQuery({
   queryKey: ['list_has_document_appType'],
   queryFn: async () => {
-    try { const r = await api.get("/jaxrs/appinfo/list/has/document/appType"); return (r.data ?? []) as any[]; }
-    catch { return []; }
+    try {
+      const r = await api.get('/jaxrs/appinfo/list/has/document/appType')
+      return (r.data ?? []) as any[]
+    } catch {
+      return []
+    }
   },
-  
-});
-const appinfo_list_user_publish_ref = ref<any[]>([]);
+})
+const appinfo_list_user_publish_ref = ref<any[]>([])
 const appinfo_list_user_publish_q = useQuery({
   queryKey: ['appinfo_list_user_publish'],
   queryFn: async () => {
-    try { const r = await api.get("/jaxrs/appinfo/list/user/publish"); return (r.data ?? []) as any[]; }
-    catch { return []; }
+    try {
+      const r = await api.get('/jaxrs/appinfo/list/user/publish')
+      return (r.data ?? []) as any[]
+    } catch {
+      return []
+    }
   },
-  
-});
-const appinfo_a_1_control_ref = ref<any[]>([]);
+})
+const appinfo_a_1_control_ref = ref<any[]>([])
 const appinfo_a_1_control_q = useQuery({
   queryKey: ['appinfo_a_1_control'],
   queryFn: async () => {
-    try { const r = await api.get("/jaxrs/appinfo/a-1/control"); return (r.data ?? []) as any[]; }
-    catch { return []; }
+    try {
+      const r = await api.get('/jaxrs/appinfo/a-1/control')
+      return (r.data ?? []) as any[]
+    } catch {
+      return []
+    }
   },
-  
-});
+})
 
+const api_user_pub_261_data = ref<any[]>([])
+const { data: api_user_pub_261_q } = useQuery({
+  queryKey: ['api_user_pub_261', '/jaxrs/appinfo/list/user/publish/with/process'],
+  queryFn: async () => {
+    try {
+      const r = await api.get('/jaxrs/appinfo/list/user/publish/with/process')
+      return (r.data ?? []) as any[]
+    } catch {
+      return []
+    }
+  },
+})
 
-const api_user_pub_261_data = ref<any[]>([]);
-const { data: api_user_pub_261_q } = useQuery({queryKey: ['api_user_pub_261', '/jaxrs/appinfo/list/user/publish/with/process'], queryFn: async () => { try { const r = await api.get("/jaxrs/appinfo/list/user/publish/with/process"); return (r.data ?? []) as any[]; } catch { return []; } }});
-
-const api_list_i_1_574_data = ref<any[]>([]);
-const { data: api_list_i_1_574_q } = useQuery({queryKey: ['api_list_i_1_574', '/jaxrs/appinfo/filter/list/i-1/next/10'], queryFn: async () => { try { const r = await api.get("/jaxrs/appinfo/filter/list/i-1/next/10"); return (r.data ?? []) as any[]; } catch { return []; } }});
-
-
+const api_list_i_1_574_data = ref<any[]>([])
+const { data: api_list_i_1_574_q } = useQuery({
+  queryKey: ['api_list_i_1_574', '/jaxrs/appinfo/filter/list/i-1/next/10'],
+  queryFn: async () => {
+    try {
+      const r = await api.get('/jaxrs/appinfo/filter/list/i-1/next/10')
+      return (r.data ?? []) as any[]
+    } catch {
+      return []
+    }
+  },
+})
 </script>
 
 <style scoped>

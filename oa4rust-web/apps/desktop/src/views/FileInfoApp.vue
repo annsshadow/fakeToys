@@ -36,9 +36,9 @@
 </template>
 
 <script setup lang="ts">
+import { api } from '@oa4rust/sdk'
 import { ref } from 'vue'
 import { toast } from '../utils/toast'
-import { api } from '@oa4rust/sdk'
 
 type FileInfo = {
   id: string
@@ -75,7 +75,9 @@ async function downloadFile(f: FileInfo) {
     const r = await api.get(`/jaxrs/fileinfo/download/document/${f.id}`)
     if (r.data?.url) window.open(r.data.url, '_blank')
     else toast.info('下载链接未生成')
-  } catch (e: any) { toast.error('下载失败: : ' + (e?.message ?? '')) }
+  } catch (e: any) {
+    toast.error('下载失败: : ' + (e?.message ?? ''))
+  }
 }
 
 async function loadFiles() {
@@ -83,7 +85,11 @@ async function loadFiles() {
   try {
     const r = await api.get('/jaxrs/fileinfo/list/all')
     files.value = r.data ?? []
-  } catch { files.value = [] } finally { loading.value = false }
+  } catch {
+    files.value = []
+  } finally {
+    loading.value = false
+  }
 }
 
 loadFiles()

@@ -10,7 +10,7 @@ interface ToastOptions {
 }
 
 let container: HTMLDivElement | null = null
-let queue: ToastOptions[] = []
+const queue: ToastOptions[] = []
 const MAX_VISIBLE = 4
 
 function getContainer(): HTMLDivElement {
@@ -138,7 +138,7 @@ export async function copyText(text: string): Promise<boolean> {
 export function confirmMsg(message: string, title = '确认操作'): Promise<boolean> {
   if (typeof document === 'undefined') return Promise.resolve(false)
 
-  return new Promise(resolve => {
+  return new Promise((resolve) => {
     // Remove existing overlay if any
     const existing = document.getElementById('oa4-confirm-overlay')
     if (existing) existing.remove()
@@ -187,8 +187,14 @@ export function confirmMsg(message: string, title = '确认操作'): Promise<boo
       font-size: 13px; font-family: 'JetBrains Mono', monospace;
       transition: all 0.15s;
     `
-    cancelBtn.onmouseover = () => { cancelBtn.style.borderColor = '#94a3b8'; cancelBtn.style.color = '#e2e8f0' }
-    cancelBtn.onmouseout = () => { cancelBtn.style.borderColor = '#475569'; cancelBtn.style.color = '#94a3b8' }
+    cancelBtn.onmouseover = () => {
+      cancelBtn.style.borderColor = '#94a3b8'
+      cancelBtn.style.color = '#e2e8f0'
+    }
+    cancelBtn.onmouseout = () => {
+      cancelBtn.style.borderColor = '#475569'
+      cancelBtn.style.color = '#94a3b8'
+    }
     let onKeyDown: (e: KeyboardEvent) => void
     const finish = (result: boolean) => {
       document.removeEventListener('keydown', onKeyDown)
@@ -207,8 +213,14 @@ export function confirmMsg(message: string, title = '确认操作'): Promise<boo
       font-weight: 600; transition: all 0.15s;
       box-shadow: 0 0 10px rgba(59,130,246,0.3);
     `
-    okBtn.onmouseover = () => { okBtn.style.background = '#2563eb'; okBtn.style.boxShadow = '0 0 15px rgba(37,99,235,0.5)' }
-    okBtn.onmouseout = () => { okBtn.style.background = '#3b82f6'; okBtn.style.boxShadow = '0 0 10px rgba(59,130,246,0.3)' }
+    okBtn.onmouseover = () => {
+      okBtn.style.background = '#2563eb'
+      okBtn.style.boxShadow = '0 0 15px rgba(37,99,235,0.5)'
+    }
+    okBtn.onmouseout = () => {
+      okBtn.style.background = '#3b82f6'
+      okBtn.style.boxShadow = '0 0 10px rgba(59,130,246,0.3)'
+    }
     okBtn.onclick = () => finish(true)
 
     btnRow.appendChild(cancelBtn)

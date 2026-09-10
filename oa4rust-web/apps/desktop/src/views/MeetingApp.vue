@@ -42,264 +42,805 @@
   </div>
 </template>
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
-import { toast, confirmMsg } from '../utils/toast'
-import { useQuery, useMutation, useQueryClient } from '@tanstack/vue-query'
 import { api } from '@oa4rust/sdk'
-interface M{id:string;title?:string;name?:string;buildingId?:string;roomId?:string;buildingName?:string;roomName?:string;startTime?:string;attendeeCount?:number;status?:string}
-interface Bldg{id:string;name:string}
-interface Room{id:string;name:string}
-const searchKey=ref(''),statusFilter=ref(''),meetings=ref<M[]>([]),buildings=ref<Bldg[]>([]),rooms=ref<Room[]>([]),loading=ref(false),showCreate=ref(false),err=ref(''),qc=useQueryClient()
-const form=ref({title:'',buildingId:'',roomId:'',startTime:''})
-const{data:bData}=useQuery({queryKey:['meeting','bldgs'],queryFn:()=>api.get('/jaxrs/meeting/assemble/control/building/list').then((r:any)=>(r.data??[])as Bldg[]),staleTime:120000})
-buildings.value=bData.value??[]
-async function loadRooms(){if(!form.value.buildingId){rooms.value=[];return} const r=await api.get(`/jaxrs/meeting/assemble/control/room/list?buildingId=${form.value.buildingId}`);rooms.value=(r.data??[])as Room[]}
-async function loadMeetings(){loading.value=true;try{const p:Record<string,string>={};if(searchKey.value)p.key=searchKey.value;if(statusFilter.value!=='')p.status=statusFilter.value;const r=await api.get('/jaxrs/meeting/assemble/control/meeting/list',{params:p});meetings.value=(r.data??[])as M[]}catch{meetings.value=[]}finally{loading.value=false}}
-function statusTxt(m:M){return m.status==='1'?'进行中':m.status==='2'?'已结束':'未开始'}
-function statusCls(m:M){return m.status==='1'?'active':m.status==='2'?'ended':'pending'}
-function fmtTime(t?:string){if(!t)return'';try{return new Date(t).toLocaleString('zh-CN',{month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'})}catch{return String(t)}}
-const cm=useMutation({mutationFn:()=>api.post('/jaxrs/meeting/assemble/control/meeting/create',form.value),onSuccess:()=>{showCreate.value=false;qc.invalidateQueries({queryKey:['meeting','list']});loadMeetings()},onError:(e:any)=>{err.value=e?.message??'创建失败'}})
-function createMeeting(){if(!form.value.title)return;cm.mutate()}
-function viewMeeting(_m:M){}
+import { useMutation, useQuery, useQueryClient } from '@tanstack/vue-query'
+import { onMounted, ref } from 'vue'
+import { confirmMsg, toast } from '../utils/toast'
+
+interface M {
+  id: string
+  title?: string
+  name?: string
+  buildingId?: string
+  roomId?: string
+  buildingName?: string
+  roomName?: string
+  startTime?: string
+  attendeeCount?: number
+  status?: string
+}
+interface Bldg {
+  id: string
+  name: string
+}
+interface Room {
+  id: string
+  name: string
+}
+const searchKey = ref(''),
+  statusFilter = ref(''),
+  meetings = ref<M[]>([]),
+  buildings = ref<Bldg[]>([]),
+  rooms = ref<Room[]>([]),
+  loading = ref(false),
+  showCreate = ref(false),
+  err = ref(''),
+  qc = useQueryClient()
+const form = ref({ title: '', buildingId: '', roomId: '', startTime: '' })
+const { data: bData } = useQuery({
+  queryKey: ['meeting', 'bldgs'],
+  queryFn: () => api.get('/jaxrs/meeting/assemble/control/building/list').then((r: any) => (r.data ?? []) as Bldg[]),
+  staleTime: 120000,
+})
+buildings.value = bData.value ?? []
+async function loadRooms() {
+  if (!form.value.buildingId) {
+    rooms.value = []
+    return
+  }
+  const r = await api.get(`/jaxrs/meeting/assemble/control/room/list?buildingId=${form.value.buildingId}`)
+  rooms.value = (r.data ?? []) as Room[]
+}
+async function loadMeetings() {
+  loading.value = true
+  try {
+    const p: Record<string, string> = {}
+    if (searchKey.value) p.key = searchKey.value
+    if (statusFilter.value !== '') p.status = statusFilter.value
+    const r = await api.get('/jaxrs/meeting/assemble/control/meeting/list', { params: p })
+    meetings.value = (r.data ?? []) as M[]
+  } catch {
+    meetings.value = []
+  } finally {
+    loading.value = false
+  }
+}
+function statusTxt(m: M) {
+  return m.status === '1' ? '进行中' : m.status === '2' ? '已结束' : '未开始'
+}
+function statusCls(m: M) {
+  return m.status === '1' ? 'active' : m.status === '2' ? 'ended' : 'pending'
+}
+function fmtTime(t?: string) {
+  if (!t) return ''
+  try {
+    return new Date(t).toLocaleString('zh-CN', { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' })
+  } catch {
+    return String(t)
+  }
+}
+const cm = useMutation({
+  mutationFn: () => api.post('/jaxrs/meeting/assemble/control/meeting/create', form.value),
+  onSuccess: () => {
+    showCreate.value = false
+    qc.invalidateQueries({ queryKey: ['meeting', 'list'] })
+    loadMeetings()
+  },
+  onError: (e: any) => {
+    err.value = e?.message ?? '创建失败'
+  },
+})
+function createMeeting() {
+  if (!form.value.title) return
+  cm.mutate()
+}
+function viewMeeting(_m: M) {}
 onMounted(loadMeetings)
 
 async function updateMeeting(m: M) {
   const title = prompt('修改会议标题:', m.title || m.name)
   if (!title) return
-  try { await api.put('/jaxrs/meeting/assemble/control/meeting/update', { id: m.id, title })
+  try {
+    await api.put('/jaxrs/meeting/assemble/control/meeting/update', { id: m.id, title })
     loadMeetings()
-  } catch (e: any) { toast.error('更新失败: : ' + (e?.message ?? '')) }
+  } catch (e: any) {
+    toast.error('更新失败: : ' + (e?.message ?? ''))
+  }
 }
 async function cancelMeeting(m: M) {
   if (!confirmMsg('确定取消该会议？')) return
-  try { await api.post('/jaxrs/meeting/assemble/control/meeting/cancel', { id: m.id })
+  try {
+    await api.post('/jaxrs/meeting/assemble/control/meeting/cancel', { id: m.id })
     loadMeetings()
-  } catch (e: any) { toast.error('取消失败: : ' + (e?.message ?? '')) }
+  } catch (e: any) {
+    toast.error('取消失败: : ' + (e?.message ?? ''))
+  }
 }
 async function approveMeeting(m: M) {
-  try { await api.post('/jaxrs/meeting/assemble/control/meeting/approve', { id: m.id })
+  try {
+    await api.post('/jaxrs/meeting/assemble/control/meeting/approve', { id: m.id })
     loadMeetings()
-  } catch (e: any) { toast.error('审批失败: : ' + (e?.message ?? '')) }
+  } catch (e: any) {
+    toast.error('审批失败: : ' + (e?.message ?? ''))
+  }
 }
 async function joinMeeting(m: M) {
-  try { await api.post('/jaxrs/meeting/assemble/control/meeting/join', { id: m.id })
-    toast.info('已加入会议'); loadMeetings()
-  } catch (e: any) { toast.error('加入失败: : ' + (e?.message ?? '')) }
+  try {
+    await api.post('/jaxrs/meeting/assemble/control/meeting/join', { id: m.id })
+    toast.info('已加入会议')
+    loadMeetings()
+  } catch (e: any) {
+    toast.error('加入失败: : ' + (e?.message ?? ''))
+  }
 }
 async function leaveMeeting(m: M) {
-  try { await api.post('/jaxrs/meeting/assemble/control/meeting/leave', { id: m.id })
+  try {
+    await api.post('/jaxrs/meeting/assemble/control/meeting/leave', { id: m.id })
     loadMeetings()
-  } catch (e: any) { toast.error('离开失败: : ' + (e?.message ?? '')) }
+  } catch (e: any) {
+    toast.error('离开失败: : ' + (e?.message ?? ''))
+  }
 }
 
+async function loadReservations() {
+  try {
+    const r = await api.get('/jaxrs/meeting/assemble/control/reservation/list')
+    reservations.value = r.data ?? []
+  } catch {
+    reservations.value = []
+  }
+}
 
-async function loadReservations(){try{const r=await api.get('/jaxrs/meeting/assemble/control/reservation/list');reservations.value=(r.data??[])}catch{reservations.value=[]}}
+const call_meeting_data = ref<any[]>([])
+const { data: call_meeting_q } = useQuery({
+  queryKey: ['call_meeting', '/jaxrs/meeting'],
+  queryFn: async () => {
+    try {
+      const r = await api.get('/jaxrs/meeting')
+      return (r.data ?? []) as any[]
+    } catch {
+      return []
+    }
+  },
+})
+const call_meeting_630_data = ref<any[]>([])
+const { data: call_meeting_630_q } = useQuery({
+  queryKey: ['call_meeting_630', '/jaxrs/meeting/assemble/control'],
+  queryFn: async () => {
+    try {
+      const r = await api.get('/jaxrs/meeting/assemble/control')
+      return (r.data ?? []) as any[]
+    } catch {
+      return []
+    }
+  },
+})
 
-const call_meeting_data = ref<any[]>([]);
-const { data: call_meeting_q } = useQuery({queryKey: ['call_meeting', '/jaxrs/meeting'], queryFn: async () => { try { const r = await api.get("/jaxrs/meeting"); return (r.data ?? []) as any[]; } catch { return []; } }});
-const call_meeting_630_data = ref<any[]>([]);
-const { data: call_meeting_630_q } = useQuery({queryKey: ['call_meeting_630', '/jaxrs/meeting/assemble/control'], queryFn: async () => { try { const r = await api.get("/jaxrs/meeting/assemble/control"); return (r.data ?? []) as any[]; } catch { return []; } }});
+const call_assembl_257_data = ref<any[]>([])
+const { data: call_assembl_257_q } = useQuery({
+  queryKey: ['call_assembl_257', '/jaxrs/meeting/assemble/control/attachment'],
+  queryFn: async () => {
+    try {
+      const r = await api.get('/jaxrs/meeting/assemble/control/attachment')
+      return (r.data ?? []) as any[]
+    } catch {
+      return []
+    }
+  },
+})
 
-const call_assembl_257_data = ref<any[]>([]);
-const { data: call_assembl_257_q } = useQuery({queryKey: ['call_assembl_257', '/jaxrs/meeting/assemble/control/attachment'], queryFn: async () => { try { const r = await api.get("/jaxrs/meeting/assemble/control/attachment"); return (r.data ?? []) as any[]; } catch { return []; } }});
+const call_assembl_154_data = ref<any[]>([])
+const { data: call_assembl_154_q } = useQuery({
+  queryKey: ['call_assembl_154', '/jaxrs/meeting/assemble/control/building'],
+  queryFn: async () => {
+    try {
+      const r = await api.get('/jaxrs/meeting/assemble/control/building')
+      return (r.data ?? []) as any[]
+    } catch {
+      return []
+    }
+  },
+})
 
-const call_assembl_154_data = ref<any[]>([]);
-const { data: call_assembl_154_q } = useQuery({queryKey: ['call_assembl_154', '/jaxrs/meeting/assemble/control/building'], queryFn: async () => { try { const r = await api.get("/jaxrs/meeting/assemble/control/building"); return (r.data ?? []) as any[]; } catch { return []; } }});
+const call_assembl_617_data = ref<any[]>([])
+const { data: call_assembl_617_q } = useQuery({
+  queryKey: ['call_assembl_617', '/jaxrs/meeting/assemble/control/config'],
+  queryFn: async () => {
+    try {
+      const r = await api.get('/jaxrs/meeting/assemble/control/config')
+      return (r.data ?? []) as any[]
+    } catch {
+      return []
+    }
+  },
+})
 
-const call_assembl_617_data = ref<any[]>([]);
-const { data: call_assembl_617_q } = useQuery({queryKey: ['call_assembl_617', '/jaxrs/meeting/assemble/control/config'], queryFn: async () => { try { const r = await api.get("/jaxrs/meeting/assemble/control/config"); return (r.data ?? []) as any[]; } catch { return []; } }});
+const call_control_15_data = ref<any[]>([])
+const { data: call_control_15_q } = useQuery({
+  queryKey: ['call_control_15', '/jaxrs/meeting/assemble/control/config/system'],
+  queryFn: async () => {
+    try {
+      const r = await api.get('/jaxrs/meeting/assemble/control/config/system')
+      return (r.data ?? []) as any[]
+    } catch {
+      return []
+    }
+  },
+})
 
-const call_control_15_data = ref<any[]>([]);
-const { data: call_control_15_q } = useQuery({queryKey: ['call_control_15', '/jaxrs/meeting/assemble/control/config/system'], queryFn: async () => { try { const r = await api.get("/jaxrs/meeting/assemble/control/config/system"); return (r.data ?? []) as any[]; } catch { return []; } }});
+const call_assembl_499_data = ref<any[]>([])
+const { data: call_assembl_499_q } = useQuery({
+  queryKey: ['call_assembl_499', '/jaxrs/meeting/assemble/control/create'],
+  queryFn: async () => {
+    try {
+      const r = await api.get('/jaxrs/meeting/assemble/control/create')
+      return (r.data ?? []) as any[]
+    } catch {
+      return []
+    }
+  },
+})
 
-const call_assembl_499_data = ref<any[]>([]);
-const { data: call_assembl_499_q } = useQuery({queryKey: ['call_assembl_499', '/jaxrs/meeting/assemble/control/create'], queryFn: async () => { try { const r = await api.get("/jaxrs/meeting/assemble/control/create"); return (r.data ?? []) as any[]; } catch { return []; } }});
+const call_control_628_data = ref<any[]>([])
+const { data: call_control_628_q } = useQuery({
+  queryKey: ['call_control_628', '/jaxrs/meeting/assemble/control/list/meeting-001'],
+  queryFn: async () => {
+    try {
+      const r = await api.get('/jaxrs/meeting/assemble/control/list/meeting-001')
+      return (r.data ?? []) as any[]
+    } catch {
+      return []
+    }
+  },
+})
 
-const call_control_628_data = ref<any[]>([]);
-const { data: call_control_628_q } = useQuery({queryKey: ['call_control_628', '/jaxrs/meeting/assemble/control/list/meeting-001'], queryFn: async () => { try { const r = await api.get("/jaxrs/meeting/assemble/control/list/meeting-001"); return (r.data ?? []) as any[]; } catch { return []; } }});
+const call_assembl_55_data = ref<any[]>([])
+const { data: call_assembl_55_q } = useQuery({
+  queryKey: ['call_assembl_55', '/jaxrs/meeting/assemble/control/meeting'],
+  queryFn: async () => {
+    try {
+      const r = await api.get('/jaxrs/meeting/assemble/control/meeting')
+      return (r.data ?? []) as any[]
+    } catch {
+      return []
+    }
+  },
+})
 
-const call_assembl_55_data = ref<any[]>([]);
-const { data: call_assembl_55_q } = useQuery({queryKey: ['call_assembl_55', '/jaxrs/meeting/assemble/control/meeting'], queryFn: async () => { try { const r = await api.get("/jaxrs/meeting/assemble/control/meeting"); return (r.data ?? []) as any[]; } catch { return []; } }});
+const call_control_749_data = ref<any[]>([])
+const { data: call_control_749_q } = useQuery({
+  queryKey: ['call_control_749', '/jaxrs/meeting/assemble/control/meeting/calendar'],
+  queryFn: async () => {
+    try {
+      const r = await api.get('/jaxrs/meeting/assemble/control/meeting/calendar')
+      return (r.data ?? []) as any[]
+    } catch {
+      return []
+    }
+  },
+})
 
-const call_control_749_data = ref<any[]>([]);
-const { data: call_control_749_q } = useQuery({queryKey: ['call_control_749', '/jaxrs/meeting/assemble/control/meeting/calendar'], queryFn: async () => { try { const r = await api.get("/jaxrs/meeting/assemble/control/meeting/calendar"); return (r.data ?? []) as any[]; } catch { return []; } }});
+const api_entity_m_438_data = ref<any[]>([])
+const { data: api_entity_m_438_q } = useQuery({
+  queryKey: ['api_entity_m_438', '/jaxrs/meeting/core/entity/meeting/list'],
+  queryFn: async () => {
+    try {
+      const r = await api.get('/jaxrs/meeting/core/entity/meeting/list')
+      return (r.data ?? []) as any[]
+    } catch {
+      return []
+    }
+  },
+})
 
+const api_meeting__149_data = ref<any[]>([])
+const { data: api_meeting__149_q } = useQuery({
+  queryKey: ['api_meeting__149', '/jaxrs/meeting/building/list'],
+  queryFn: async () => {
+    try {
+      const r = await api.get('/jaxrs/meeting/building/list')
+      return (r.data ?? []) as any[]
+    } catch {
+      return []
+    }
+  },
+})
 
+const api_list_inv_181_data = ref<any[]>([])
+const { data: api_list_inv_181_q } = useQuery({
+  queryKey: ['api_list_inv_181', '/jaxrs/meeting/assemble/control/meeting/list/invited/processing'],
+  queryFn: async () => {
+    try {
+      const r = await api.get('/jaxrs/meeting/assemble/control/meeting/list/invited/processing')
+      return (r.data ?? []) as any[]
+    } catch {
+      return []
+    }
+  },
+})
 
-const api_entity_m_438_data = ref<any[]>([]);
-const { data: api_entity_m_438_q } = useQuery({queryKey: ['api_entity_m_438', '/jaxrs/meeting/core/entity/meeting/list'], queryFn: async () => { try { const r = await api.get("/jaxrs/meeting/core/entity/meeting/list"); return (r.data ?? []) as any[]; } catch { return []; } }});
+const api_list_wai_285_data = ref<any[]>([])
+const { data: api_list_wai_285_q } = useQuery({
+  queryKey: ['api_list_wai_285', '/jaxrs/meeting/assemble/control/meeting/list/wait/confirm'],
+  queryFn: async () => {
+    try {
+      const r = await api.get('/jaxrs/meeting/assemble/control/meeting/list/wait/confirm')
+      return (r.data ?? []) as any[]
+    } catch {
+      return []
+    }
+  },
+})
 
-const api_meeting__149_data = ref<any[]>([]);
-const { data: api_meeting__149_q } = useQuery({queryKey: ['api_meeting__149', '/jaxrs/meeting/building/list'], queryFn: async () => { try { const r = await api.get("/jaxrs/meeting/building/list"); return (r.data ?? []) as any[]; } catch { return []; } }});
+const api_entity_r_36_data = ref<any[]>([])
+const { data: api_entity_r_36_q } = useQuery({
+  queryKey: ['api_entity_r_36', '/jaxrs/meeting/core/entity/room/room-001'],
+  queryFn: async () => {
+    try {
+      const r = await api.get('/jaxrs/meeting/core/entity/room/room-001')
+      return (r.data ?? []) as any[]
+    } catch {
+      return []
+    }
+  },
+})
 
-const api_list_inv_181_data = ref<any[]>([]);
-const { data: api_list_inv_181_q } = useQuery({queryKey: ['api_list_inv_181', '/jaxrs/meeting/assemble/control/meeting/list/invited/processing'], queryFn: async () => { try { const r = await api.get("/jaxrs/meeting/assemble/control/meeting/list/invited/processing"); return (r.data ?? []) as any[]; } catch { return []; } }});
+const api_config_s_783_data = ref<any[]>([])
+const { data: api_config_s_783_q } = useQuery({
+  queryKey: ['api_config_s_783', '/jaxrs/meeting/assemble/control/config/system/config'],
+  queryFn: async () => {
+    try {
+      const r = await api.get('/jaxrs/meeting/assemble/control/config/system/config')
+      return (r.data ?? []) as any[]
+    } catch {
+      return []
+    }
+  },
+})
 
-const api_list_wai_285_data = ref<any[]>([]);
-const { data: api_list_wai_285_q } = useQuery({queryKey: ['api_list_wai_285', '/jaxrs/meeting/assemble/control/meeting/list/wait/confirm'], queryFn: async () => { try { const r = await api.get("/jaxrs/meeting/assemble/control/meeting/list/wait/confirm"); return (r.data ?? []) as any[]; } catch { return []; } }});
+const api_assemble_563_data = ref<any[]>([])
+const { data: api_assemble_563_q } = useQuery({
+  queryKey: ['api_assemble_563', '/jaxrs/meeting/assemble/control/openmeeting'],
+  queryFn: async () => {
+    try {
+      const r = await api.get('/jaxrs/meeting/assemble/control/openmeeting')
+      return (r.data ?? []) as any[]
+    } catch {
+      return []
+    }
+  },
+})
 
-const api_entity_r_36_data = ref<any[]>([]);
-const { data: api_entity_r_36_q } = useQuery({queryKey: ['api_entity_r_36', '/jaxrs/meeting/core/entity/room/room-001'], queryFn: async () => { try { const r = await api.get("/jaxrs/meeting/core/entity/room/room-001"); return (r.data ?? []) as any[]; } catch { return []; } }});
+const api_control__849_data = ref<any[]>([])
+const { data: api_control__849_q } = useQuery({
+  queryKey: ['api_control__849', '/jaxrs/meeting/assemble/control/mroom/list'],
+  queryFn: async () => {
+    try {
+      const r = await api.get('/jaxrs/meeting/assemble/control/mroom/list')
+      return (r.data ?? []) as any[]
+    } catch {
+      return []
+    }
+  },
+})
 
-const api_config_s_783_data = ref<any[]>([]);
-const { data: api_config_s_783_q } = useQuery({queryKey: ['api_config_s_783', '/jaxrs/meeting/assemble/control/config/system/config'], queryFn: async () => { try { const r = await api.get("/jaxrs/meeting/assemble/control/config/system/config"); return (r.data ?? []) as any[]; } catch { return []; } }});
+const api_entity_r_309_data = ref<any[]>([])
+const { data: api_entity_r_309_q } = useQuery({
+  queryKey: ['api_entity_r_309', '/jaxrs/meeting/core/entity/room/list'],
+  queryFn: async () => {
+    try {
+      const r = await api.get('/jaxrs/meeting/core/entity/room/list')
+      return (r.data ?? []) as any[]
+    } catch {
+      return []
+    }
+  },
+})
 
-const api_assemble_563_data = ref<any[]>([]);
-const { data: api_assemble_563_q } = useQuery({queryKey: ['api_assemble_563', '/jaxrs/meeting/assemble/control/openmeeting'], queryFn: async () => { try { const r = await api.get("/jaxrs/meeting/assemble/control/openmeeting"); return (r.data ?? []) as any[]; } catch { return []; } }});
+const api_meeting__810_data = ref<any[]>([])
+const { data: api_meeting__810_q } = useQuery({
+  queryKey: ['api_meeting__810', '/jaxrs/meeting/assemble/summary'],
+  queryFn: async () => {
+    try {
+      const r = await api.get('/jaxrs/meeting/assemble/summary')
+      return (r.data ?? []) as any[]
+    } catch {
+      return []
+    }
+  },
+})
 
-const api_control__849_data = ref<any[]>([]);
-const { data: api_control__849_q } = useQuery({queryKey: ['api_control__849', '/jaxrs/meeting/assemble/control/mroom/list'], queryFn: async () => { try { const r = await api.get("/jaxrs/meeting/assemble/control/mroom/list"); return (r.data ?? []) as any[]; } catch { return []; } }});
+const api_room_del_202_data = ref<any[]>([])
+const { data: api_room_del_202_q } = useQuery({
+  queryKey: ['api_room_del_202', '/jaxrs/meeting/core/entity/room/delete/room-001'],
+  queryFn: async () => {
+    try {
+      const r = await api.get('/jaxrs/meeting/core/entity/room/delete/room-001')
+      return (r.data ?? []) as any[]
+    } catch {
+      return []
+    }
+  },
+})
 
-const api_entity_r_309_data = ref<any[]>([]);
-const { data: api_entity_r_309_q } = useQuery({queryKey: ['api_entity_r_309', '/jaxrs/meeting/core/entity/room/list'], queryFn: async () => { try { const r = await api.get("/jaxrs/meeting/core/entity/room/list"); return (r.data ?? []) as any[]; } catch { return []; } }});
+const api_list_app_245_data = ref<any[]>([])
+const { data: api_list_app_245_q } = useQuery({
+  queryKey: ['api_list_app_245', '/jaxrs/meeting/assemble/control/meeting/list/applied/processing'],
+  queryFn: async () => {
+    try {
+      const r = await api.get('/jaxrs/meeting/assemble/control/meeting/list/applied/processing')
+      return (r.data ?? []) as any[]
+    } catch {
+      return []
+    }
+  },
+})
 
-const api_meeting__810_data = ref<any[]>([]);
-const { data: api_meeting__810_q } = useQuery({queryKey: ['api_meeting__810', '/jaxrs/meeting/assemble/summary'], queryFn: async () => { try { const r = await api.get("/jaxrs/meeting/assemble/summary"); return (r.data ?? []) as any[]; } catch { return []; } }});
+const api_meeting_create_data = ref<any[]>([])
+const { data: api_meeting_create_q } = useQuery({
+  queryKey: ['api_meeting_create', '/jaxrs/meeting/create'],
+  queryFn: async () => {
+    try {
+      const r = await api.get('/jaxrs/meeting/create')
+      return (r.data ?? []) as any[]
+    } catch {
+      return []
+    }
+  },
+})
+const api_meeting__837_data = ref<any[]>([])
+const { data: api_meeting__837_q } = useQuery({
+  queryKey: ['api_meeting__837', '/jaxrs/meeting/assemble/control/meeting/room/list'],
+  queryFn: async () => {
+    try {
+      const r = await api.get('/jaxrs/meeting/assemble/control/meeting/room/list')
+      return (r.data ?? []) as any[]
+    } catch {
+      return []
+    }
+  },
+})
 
-const api_room_del_202_data = ref<any[]>([]);
-const { data: api_room_del_202_q } = useQuery({queryKey: ['api_room_del_202', '/jaxrs/meeting/core/entity/room/delete/room-001'], queryFn: async () => { try { const r = await api.get("/jaxrs/meeting/core/entity/room/delete/room-001"); return (r.data ?? []) as any[]; } catch { return []; } }});
+const api_list_by__554_data = ref<any[]>([])
+const { data: api_list_by__554_q } = useQuery({
+  queryKey: ['api_list_by__554', '/jaxrs/meeting/core/entity/meeting/list/by/room-001'],
+  queryFn: async () => {
+    try {
+      const r = await api.get('/jaxrs/meeting/core/entity/meeting/list/by/room-001')
+      return (r.data ?? []) as any[]
+    } catch {
+      return []
+    }
+  },
+})
 
-const api_list_app_245_data = ref<any[]>([]);
-const { data: api_list_app_245_q } = useQuery({queryKey: ['api_list_app_245', '/jaxrs/meeting/assemble/control/meeting/list/applied/processing'], queryFn: async () => { try { const r = await api.get("/jaxrs/meeting/assemble/control/meeting/list/applied/processing"); return (r.data ?? []) as any[]; } catch { return []; } }});
+const api_list_wait_accept_data = ref<any[]>([])
+const { data: api_list_wait_accept_q } = useQuery({
+  queryKey: ['api_list_wait_accept', '/jaxrs/meeting/assemble/control/meeting/list/wait/accept'],
+  queryFn: async () => {
+    try {
+      const r = await api.get('/jaxrs/meeting/assemble/control/meeting/list/wait/accept')
+      return (r.data ?? []) as any[]
+    } catch {
+      return []
+    }
+  },
+})
+const api_control_meeting_room_data = ref<any[]>([])
+const { data: api_control_meeting_room_q } = useQuery({
+  queryKey: ['api_control_meeting_room', '/jaxrs/meeting/assemble/control/meeting/room'],
+  queryFn: async () => {
+    try {
+      const r = await api.get('/jaxrs/meeting/assemble/control/meeting/room')
+      return (r.data ?? []) as any[]
+    } catch {
+      return []
+    }
+  },
+})
+const api_list_invited_rejected_data = ref<any[]>([])
+const { data: api_list_invited_rejected_q } = useQuery({
+  queryKey: ['api_list_invited_rejected', '/jaxrs/meeting/assemble/control/meeting/list/invited/rejected'],
+  queryFn: async () => {
+    try {
+      const r = await api.get('/jaxrs/meeting/assemble/control/meeting/list/invited/rejected')
+      return (r.data ?? []) as any[]
+    } catch {
+      return []
+    }
+  },
+})
+const api_entity_meeting_create_data = ref<any[]>([])
+const { data: api_entity_meeting_create_q } = useQuery({
+  queryKey: ['api_entity_meeting_create', '/jaxrs/meeting/core/entity/meeting/create'],
+  queryFn: async () => {
+    try {
+      const r = await api.get('/jaxrs/meeting/core/entity/meeting/create')
+      return (r.data ?? []) as any[]
+    } catch {
+      return []
+    }
+  },
+})
 
-const api_meeting_create_data = ref<any[]>([]);
-const { data: api_meeting_create_q } = useQuery({queryKey: ['api_meeting_create', '/jaxrs/meeting/create'], queryFn: async () => { try { const r = await api.get("/jaxrs/meeting/create"); return (r.data ?? []) as any[]; } catch { return []; } }});
-const api_meeting__837_data = ref<any[]>([]);
-const { data: api_meeting__837_q } = useQuery({queryKey: ['api_meeting__837', '/jaxrs/meeting/assemble/control/meeting/room/list'], queryFn: async () => { try { const r = await api.get("/jaxrs/meeting/assemble/control/meeting/room/list"); return (r.data ?? []) as any[]; } catch { return []; } }});
-
-const api_list_by__554_data = ref<any[]>([]);
-const { data: api_list_by__554_q } = useQuery({queryKey: ['api_list_by__554', '/jaxrs/meeting/core/entity/meeting/list/by/room-001'], queryFn: async () => { try { const r = await api.get("/jaxrs/meeting/core/entity/meeting/list/by/room-001"); return (r.data ?? []) as any[]; } catch { return []; } }});
-
-const api_list_wait_accept_data = ref<any[]>([]);
-const { data: api_list_wait_accept_q } = useQuery({queryKey: ['api_list_wait_accept', '/jaxrs/meeting/assemble/control/meeting/list/wait/accept'], queryFn: async () => { try { const r = await api.get("/jaxrs/meeting/assemble/control/meeting/list/wait/accept"); return (r.data ?? []) as any[]; } catch { return []; } }});
-const api_control_meeting_room_data = ref<any[]>([]);
-const { data: api_control_meeting_room_q } = useQuery({queryKey: ['api_control_meeting_room', '/jaxrs/meeting/assemble/control/meeting/room'], queryFn: async () => { try { const r = await api.get("/jaxrs/meeting/assemble/control/meeting/room"); return (r.data ?? []) as any[]; } catch { return []; } }});
-const api_list_invited_rejected_data = ref<any[]>([]);
-const { data: api_list_invited_rejected_q } = useQuery({queryKey: ['api_list_invited_rejected', '/jaxrs/meeting/assemble/control/meeting/list/invited/rejected'], queryFn: async () => { try { const r = await api.get("/jaxrs/meeting/assemble/control/meeting/list/invited/rejected"); return (r.data ?? []) as any[]; } catch { return []; } }});
-const api_entity_meeting_create_data = ref<any[]>([]);
-const { data: api_entity_meeting_create_q } = useQuery({queryKey: ['api_entity_meeting_create', '/jaxrs/meeting/core/entity/meeting/create'], queryFn: async () => { try { const r = await api.get("/jaxrs/meeting/core/entity/meeting/create"); return (r.data ?? []) as any[]; } catch { return []; } }});
-
-
-const core_entity_room_create_ref = ref<any[]>([]);
+const core_entity_room_create_ref = ref<any[]>([])
 const core_entity_room_create_q = useQuery({
   queryKey: ['core_entity_room_create'],
   queryFn: async () => {
-    try { const r = await api.get("/jaxrs/meeting/core/entity/room/create"); return (r.data ?? []) as any[]; }
-    catch { return []; }
+    try {
+      const r = await api.get('/jaxrs/meeting/core/entity/room/create')
+      return (r.data ?? []) as any[]
+    } catch {
+      return []
+    }
   },
-  
-});
-const assemble_control_room_list_ref = ref<any[]>([]);
+})
+const assemble_control_room_list_ref = ref<any[]>([])
 const assemble_control_room_list_q = useQuery({
   queryKey: ['assemble_control_room_list'],
   queryFn: async () => {
-    try { const r = await api.get("/jaxrs/meeting/assemble/control/room/list"); return (r.data ?? []) as any[]; }
-    catch { return []; }
+    try {
+      const r = await api.get('/jaxrs/meeting/assemble/control/room/list')
+      return (r.data ?? []) as any[]
+    } catch {
+      return []
+    }
   },
-  
-});
-const assemble_control_meeting_coming_ref = ref<any[]>([]);
+})
+const assemble_control_meeting_coming_ref = ref<any[]>([])
 const assemble_control_meeting_coming_q = useQuery({
   queryKey: ['assemble_control_meeting_coming'],
   queryFn: async () => {
-    try { const r = await api.get("/jaxrs/meeting/assemble/control/meeting/coming"); return (r.data ?? []) as any[]; }
-    catch { return []; }
+    try {
+      const r = await api.get('/jaxrs/meeting/assemble/control/meeting/coming')
+      return (r.data ?? []) as any[]
+    } catch {
+      return []
+    }
   },
-  
-});
-const meeting_core_list_ref = ref<any[]>([]);
+})
+const meeting_core_list_ref = ref<any[]>([])
 const meeting_core_list_q = useQuery({
   queryKey: ['meeting_core_list'],
   queryFn: async () => {
-    try { const r = await api.get("/jaxrs/meeting/core/list"); return (r.data ?? []) as any[]; }
-    catch { return []; }
+    try {
+      const r = await api.get('/jaxrs/meeting/core/list')
+      return (r.data ?? []) as any[]
+    } catch {
+      return []
+    }
   },
-  
-});
-const meeting_room_list_1_ref = ref<any[]>([]);
+})
+const meeting_room_list_1_ref = ref<any[]>([])
 const meeting_room_list_1_q = useQuery({
   queryKey: ['meeting_room_list_1'],
   queryFn: async () => {
-    try { const r = await api.get("/jaxrs/meeting/room/list"); return (r.data ?? []) as any[]; }
-    catch { return []; }
+    try {
+      const r = await api.get('/jaxrs/meeting/room/list')
+      return (r.data ?? []) as any[]
+    } catch {
+      return []
+    }
   },
-  
-});
-const meeting_openmeeting_list_room_ref = ref<any[]>([]);
+})
+const meeting_openmeeting_list_room_ref = ref<any[]>([])
 const meeting_openmeeting_list_room_q = useQuery({
   queryKey: ['meeting_openmeeting_list_room'],
   queryFn: async () => {
-    try { const r = await api.get("/jaxrs/meeting/openmeeting/list/room"); return (r.data ?? []) as any[]; }
-    catch { return []; }
+    try {
+      const r = await api.get('/jaxrs/meeting/openmeeting/list/room')
+      return (r.data ?? []) as any[]
+    } catch {
+      return []
+    }
   },
-  
-});
-const meeting_list_ref = ref<any[]>([]);
+})
+const meeting_list_ref = ref<any[]>([])
 const meeting_list_q = useQuery({
   queryKey: ['meeting_list'],
   queryFn: async () => {
-    try { const r = await api.get("/jaxrs/meeting/list"); return (r.data ?? []) as any[]; }
-    catch { return []; }
+    try {
+      const r = await api.get('/jaxrs/meeting/list')
+      return (r.data ?? []) as any[]
+    } catch {
+      return []
+    }
   },
-  
-});
-const meeting_assemble_control_room_ref = ref<any[]>([]);
+})
+const meeting_assemble_control_room_ref = ref<any[]>([])
 const meeting_assemble_control_room_q = useQuery({
   queryKey: ['meeting_assemble_control_room'],
   queryFn: async () => {
-    try { const r = await api.get("/jaxrs/meeting/assemble/control/room"); return (r.data ?? []) as any[]; }
-    catch { return []; }
+    try {
+      const r = await api.get('/jaxrs/meeting/assemble/control/room')
+      return (r.data ?? []) as any[]
+    } catch {
+      return []
+    }
   },
-  
-});
+})
 
+const api_control_meeting__768_data = ref<any[]>([])
+const { data: api_control_meeting__768_q } = useQuery({
+  queryKey: ['api_control_meeting__768', '/jaxrs/meeting/assemble/control/meeting/calendar/list'],
+  queryFn: async () => {
+    try {
+      const r = await api.get('/jaxrs/meeting/assemble/control/meeting/calendar/list')
+      return (r.data ?? []) as any[]
+    } catch {
+      return []
+    }
+  },
+})
 
+const api_control_list_mee_599_data = ref<any[]>([])
+const { data: api_control_list_mee_599_q } = useQuery({
+  queryKey: ['api_control_list_mee_599', '/jaxrs/meeting/assemble/control/list/meeting/controls'],
+  queryFn: async () => {
+    try {
+      const r = await api.get('/jaxrs/meeting/assemble/control/list/meeting/controls')
+      return (r.data ?? []) as any[]
+    } catch {
+      return []
+    }
+  },
+})
 
+const api_control_meeting__341_data = ref<any[]>([])
+const { data: api_control_meeting__341_q } = useQuery({
+  queryKey: ['api_control_meeting__341', '/jaxrs/meeting/assemble/control/meeting/coming/list'],
+  queryFn: async () => {
+    try {
+      const r = await api.get('/jaxrs/meeting/assemble/control/meeting/coming/list')
+      return (r.data ?? []) as any[]
+    } catch {
+      return []
+    }
+  },
+})
 
+const api_meeting_assemble_599_data = ref<any[]>([])
+const { data: api_meeting_assemble_599_q } = useQuery({
+  queryKey: ['api_meeting_assemble_599', '/jaxrs/meeting_assemble_control'],
+  queryFn: async () => {
+    try {
+      const r = await api.get('/jaxrs/meeting_assemble_control')
+      return (r.data ?? []) as any[]
+    } catch {
+      return []
+    }
+  },
+})
 
-const api_control_meeting__768_data = ref<any[]>([]);
-const { data: api_control_meeting__768_q } = useQuery({queryKey: ['api_control_meeting__768', '/jaxrs/meeting/assemble/control/meeting/calendar/list'], queryFn: async () => { try { const r = await api.get("/jaxrs/meeting/assemble/control/meeting/calendar/list"); return (r.data ?? []) as any[]; } catch { return []; } }});
+const api_entity_room_save_468_data = ref<any[]>([])
+const { data: api_entity_room_save_468_q } = useQuery({
+  queryKey: ['api_entity_room_save_468', '/jaxrs/meeting/core/entity/room/save/room-001'],
+  queryFn: async () => {
+    try {
+      const r = await api.get('/jaxrs/meeting/core/entity/room/save/room-001')
+      return (r.data ?? []) as any[]
+    } catch {
+      return []
+    }
+  },
+})
 
-const api_control_list_mee_599_data = ref<any[]>([]);
-const { data: api_control_list_mee_599_q } = useQuery({queryKey: ['api_control_list_mee_599', '/jaxrs/meeting/assemble/control/list/meeting/controls'], queryFn: async () => { try { const r = await api.get("/jaxrs/meeting/assemble/control/list/meeting/controls"); return (r.data ?? []) as any[]; } catch { return []; } }});
+const api_control_openmeet_497_data = ref<any[]>([])
+const { data: api_control_openmeet_497_q } = useQuery({
+  queryKey: ['api_control_openmeet_497', '/jaxrs/meeting/assemble/control/openmeeting/list/room'],
+  queryFn: async () => {
+    try {
+      const r = await api.get('/jaxrs/meeting/assemble/control/openmeeting/list/room')
+      return (r.data ?? []) as any[]
+    } catch {
+      return []
+    }
+  },
+})
 
-const api_control_meeting__341_data = ref<any[]>([]);
-const { data: api_control_meeting__341_q } = useQuery({queryKey: ['api_control_meeting__341', '/jaxrs/meeting/assemble/control/meeting/coming/list'], queryFn: async () => { try { const r = await api.get("/jaxrs/meeting/assemble/control/meeting/coming/list"); return (r.data ?? []) as any[]; } catch { return []; } }});
+const api_jaxrs_meeting_as_202_data = ref<any[]>([])
+const { data: api_jaxrs_meeting_as_202_q } = useQuery({
+  queryKey: ['api_jaxrs_meeting_as_202', '/jaxrs/meeting/assemble/control/attachment/create/from/processplatform'],
+  queryFn: async () => {
+    try {
+      const r = await api.get('/jaxrs/meeting/assemble/control/attachment/create/from/processplatform')
+      return (r.data ?? []) as any[]
+    } catch {
+      return []
+    }
+  },
+})
 
-const api_meeting_assemble_599_data = ref<any[]>([]);
-const { data: api_meeting_assemble_599_q } = useQuery({queryKey: ['api_meeting_assemble_599', '/jaxrs/meeting_assemble_control'], queryFn: async () => { try { const r = await api.get("/jaxrs/meeting_assemble_control"); return (r.data ?? []) as any[]; } catch { return []; } }});
+const api_jaxrs_meeting_as_324_data = ref<any[]>([])
+const { data: api_jaxrs_meeting_as_324_q } = useQuery({
+  queryKey: ['api_jaxrs_meeting_as_324', '/jaxrs/meeting/assemble/control/config/system/config/manage'],
+  queryFn: async () => {
+    try {
+      const r = await api.get('/jaxrs/meeting/assemble/control/config/system/config/manage')
+      return (r.data ?? []) as any[]
+    } catch {
+      return []
+    }
+  },
+})
 
-const api_entity_room_save_468_data = ref<any[]>([]);
-const { data: api_entity_room_save_468_q } = useQuery({queryKey: ['api_entity_room_save_468', '/jaxrs/meeting/core/entity/room/save/room-001'], queryFn: async () => { try { const r = await api.get("/jaxrs/meeting/core/entity/room/save/room-001"); return (r.data ?? []) as any[]; } catch { return []; } }});
+const api_jaxrs_meeting_as_890_data = ref<any[]>([])
+const { data: api_jaxrs_meeting_as_890_q } = useQuery({
+  queryKey: ['api_jaxrs_meeting_as_890', '/jaxrs/meeting/assemble/control/meeting/list/applied/completed'],
+  queryFn: async () => {
+    try {
+      const r = await api.get('/jaxrs/meeting/assemble/control/meeting/list/applied/completed')
+      return (r.data ?? []) as any[]
+    } catch {
+      return []
+    }
+  },
+})
 
-const api_control_openmeet_497_data = ref<any[]>([]);
-const { data: api_control_openmeet_497_q } = useQuery({queryKey: ['api_control_openmeet_497', '/jaxrs/meeting/assemble/control/openmeeting/list/room'], queryFn: async () => { try { const r = await api.get("/jaxrs/meeting/assemble/control/openmeeting/list/room"); return (r.data ?? []) as any[]; } catch { return []; } }});
+const api_jaxrs_meeting_as_804_data = ref<any[]>([])
+const { data: api_jaxrs_meeting_as_804_q } = useQuery({
+  queryKey: ['api_jaxrs_meeting_as_804', '/jaxrs/meeting/assemble/control/meeting/list/applied/wait'],
+  queryFn: async () => {
+    try {
+      const r = await api.get('/jaxrs/meeting/assemble/control/meeting/list/applied/wait')
+      return (r.data ?? []) as any[]
+    } catch {
+      return []
+    }
+  },
+})
 
+const api_jaxrs_meeting_as_189_data = ref<any[]>([])
+const { data: api_jaxrs_meeting_as_189_q } = useQuery({
+  queryKey: ['api_jaxrs_meeting_as_189', '/jaxrs/meeting/assemble/control/meeting/list/invited/completed'],
+  queryFn: async () => {
+    try {
+      const r = await api.get('/jaxrs/meeting/assemble/control/meeting/list/invited/completed')
+      return (r.data ?? []) as any[]
+    } catch {
+      return []
+    }
+  },
+})
 
-const api_jaxrs_meeting_as_202_data = ref<any[]>([]);
-const { data: api_jaxrs_meeting_as_202_q } = useQuery({queryKey: ['api_jaxrs_meeting_as_202', '/jaxrs/meeting/assemble/control/attachment/create/from/processplatform'], queryFn: async () => { try { const r = await api.get("/jaxrs/meeting/assemble/control/attachment/create/from/processplatform"); return (r.data ?? []) as any[]; } catch { return []; } }});
+const api_jaxrs_meeting_as_149_data = ref<any[]>([])
+const { data: api_jaxrs_meeting_as_149_q } = useQuery({
+  queryKey: ['api_jaxrs_meeting_as_149', '/jaxrs/meeting/assemble/control/meeting/list/invited/wait'],
+  queryFn: async () => {
+    try {
+      const r = await api.get('/jaxrs/meeting/assemble/control/meeting/list/invited/wait')
+      return (r.data ?? []) as any[]
+    } catch {
+      return []
+    }
+  },
+})
 
-const api_jaxrs_meeting_as_324_data = ref<any[]>([]);
-const { data: api_jaxrs_meeting_as_324_q } = useQuery({queryKey: ['api_jaxrs_meeting_as_324', '/jaxrs/meeting/assemble/control/config/system/config/manage'], queryFn: async () => { try { const r = await api.get("/jaxrs/meeting/assemble/control/config/system/config/manage"); return (r.data ?? []) as any[]; } catch { return []; } }});
+const api_jaxrs_meeting_as_443_data = ref<any[]>([])
+const { data: api_jaxrs_meeting_as_443_q } = useQuery({
+  queryKey: ['api_jaxrs_meeting_as_443', '/jaxrs/meeting/assemble/control/meeting/meeting-001/add/invite'],
+  queryFn: async () => {
+    try {
+      const r = await api.get('/jaxrs/meeting/assemble/control/meeting/meeting-001/add/invite')
+      return (r.data ?? []) as any[]
+    } catch {
+      return []
+    }
+  },
+})
 
-const api_jaxrs_meeting_as_890_data = ref<any[]>([]);
-const { data: api_jaxrs_meeting_as_890_q } = useQuery({queryKey: ['api_jaxrs_meeting_as_890', '/jaxrs/meeting/assemble/control/meeting/list/applied/completed'], queryFn: async () => { try { const r = await api.get("/jaxrs/meeting/assemble/control/meeting/list/applied/completed"); return (r.data ?? []) as any[]; } catch { return []; } }});
-
-const api_jaxrs_meeting_as_804_data = ref<any[]>([]);
-const { data: api_jaxrs_meeting_as_804_q } = useQuery({queryKey: ['api_jaxrs_meeting_as_804', '/jaxrs/meeting/assemble/control/meeting/list/applied/wait'], queryFn: async () => { try { const r = await api.get("/jaxrs/meeting/assemble/control/meeting/list/applied/wait"); return (r.data ?? []) as any[]; } catch { return []; } }});
-
-const api_jaxrs_meeting_as_189_data = ref<any[]>([]);
-const { data: api_jaxrs_meeting_as_189_q } = useQuery({queryKey: ['api_jaxrs_meeting_as_189', '/jaxrs/meeting/assemble/control/meeting/list/invited/completed'], queryFn: async () => { try { const r = await api.get("/jaxrs/meeting/assemble/control/meeting/list/invited/completed"); return (r.data ?? []) as any[]; } catch { return []; } }});
-
-const api_jaxrs_meeting_as_149_data = ref<any[]>([]);
-const { data: api_jaxrs_meeting_as_149_q } = useQuery({queryKey: ['api_jaxrs_meeting_as_149', '/jaxrs/meeting/assemble/control/meeting/list/invited/wait'], queryFn: async () => { try { const r = await api.get("/jaxrs/meeting/assemble/control/meeting/list/invited/wait"); return (r.data ?? []) as any[]; } catch { return []; } }});
-
-const api_jaxrs_meeting_as_443_data = ref<any[]>([]);
-const { data: api_jaxrs_meeting_as_443_q } = useQuery({queryKey: ['api_jaxrs_meeting_as_443', '/jaxrs/meeting/assemble/control/meeting/meeting-001/add/invite'], queryFn: async () => { try { const r = await api.get("/jaxrs/meeting/assemble/control/meeting/meeting-001/add/invite"); return (r.data ?? []) as any[]; } catch { return []; } }});
-
-const api_jaxrs_meeting_as_895_data = ref<any[]>([]);
-const { data: api_jaxrs_meeting_as_895_q } = useQuery({queryKey: ['api_jaxrs_meeting_as_895', '/jaxrs/meeting/assemble/control/meeting/meeting-001/delete/invite'], queryFn: async () => { try { const r = await api.get("/jaxrs/meeting/assemble/control/meeting/meeting-001/delete/invite"); return (r.data ?? []) as any[]; } catch { return []; } }});
-
+const api_jaxrs_meeting_as_895_data = ref<any[]>([])
+const { data: api_jaxrs_meeting_as_895_q } = useQuery({
+  queryKey: ['api_jaxrs_meeting_as_895', '/jaxrs/meeting/assemble/control/meeting/meeting-001/delete/invite'],
+  queryFn: async () => {
+    try {
+      const r = await api.get('/jaxrs/meeting/assemble/control/meeting/meeting-001/delete/invite')
+      return (r.data ?? []) as any[]
+    } catch {
+      return []
+    }
+  },
+})
 </script>
 <style scoped>
 .meeting-view{display:flex;flex-direction:column;gap:16px;height:100%}

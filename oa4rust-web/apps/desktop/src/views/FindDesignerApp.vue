@@ -28,19 +28,54 @@
   </div>
 </template>
 <script setup lang="ts">
+import { api } from '@oa4rust/sdk'
+import { useQuery } from '@tanstack/vue-query'
 import { ref } from 'vue'
 import { toast } from '../utils/toast'
-import { useQuery } from '@tanstack/vue-query'
-import { api } from '@oa4rust/sdk'
-interface Item { id:string; name?:string; flag?:string; config?:string }
-const loading=ref(false),items=ref<Item[]>([]),selected=ref<Item|null>(null),config=ref('')
-const ep='/jaxrs/query/assemble/designer/find/list';
-const {data}=useQuery({queryKey:['FindDesigner','list'],queryFn:async()=>{loading.value=true;try{const r=await api.get(ep);return(r as any)?.data??[]}finally{loading.value=false}}})
-items.value=data.value??[]
-function selectItem(item:Item){selected.value=item;config.value=item.config?'\n'+item.config:'{}'}
-function createNew(){const n:Item={id:Date.now().toString(),name:'未命名',flag:'',config:'{}'};items.value=[n,...items.value];selectItem(n)}
-function preview(){toast.info('配置预览: '+config.value)}
-function save(){if(selected.value&&config.value){api.put(ep+'/'+selected.value.id,{...selected.value,config:config.value}).then(()=>toast.info('保存成功'))}}
+
+interface Item {
+  id: string
+  name?: string
+  flag?: string
+  config?: string
+}
+const loading = ref(false),
+  items = ref<Item[]>([]),
+  selected = ref<Item | null>(null),
+  config = ref('')
+const ep = '/jaxrs/query/assemble/designer/find/list'
+const { data } = useQuery({
+  queryKey: ['FindDesigner', 'list'],
+  queryFn: async () => {
+    loading.value = true
+    try {
+      const r = await api.get(ep)
+      return (r as any)?.data ?? []
+    } finally {
+      loading.value = false
+    }
+  },
+})
+items.value = data.value ?? []
+function selectItem(item: Item) {
+  selected.value = item
+  config.value = item.config ? '\n' + item.config : '{}'
+}
+function createNew() {
+  const n: Item = { id: Date.now().toString(), name: '未命名', flag: '', config: '{}' }
+  items.value = [n, ...items.value]
+  selectItem(n)
+}
+function preview() {
+  toast.info('配置预览: ' + config.value)
+}
+function save() {
+  if (selected.value && config.value) {
+    api
+      .put(ep + '/' + selected.value.id, { ...selected.value, config: config.value })
+      .then(() => toast.info('保存成功'))
+  }
+}
 </script>
 <style scoped>
 .editor-view{display:flex;flex-direction:column;gap:16px;height:100%}

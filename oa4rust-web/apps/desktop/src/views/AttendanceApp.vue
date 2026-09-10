@@ -51,66 +51,156 @@
   </div>
 </template>
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
-import { toast } from '../utils/toast'
-import { useQuery, useMutation, useQueryClient } from '@tanstack/vue-query'
 import { api } from '@oa4rust/sdk'
-interface R{id:string;personName?:string;name?:string;date?:string;checkInTime?:string;checkOutTime?:string;workHours?:number;status?:string;isLate?:boolean}
-interface A{id:string;personName?:string;type?:string;typeName?:string;startDate?:string;endDate?:string;status?:string}
-const month=ref(new Date().toISOString().slice(0,7)),page=ref(1),records=ref<R[]>([]),appeals=ref<A[]>([]),loading=ref(false),totalPages=ref(1),qc=useQueryClient()
-const stats=computed(()=>[{label:'应出勤',value:45,color:'var(--color-info)'},{label:'实际出勤',value:42,color:'var(--color-success)'},{label:'迟到',value:3,color:'var(--color-warning)'},{label:'请假',value:2,color:'var(--color-accent)'}])
-const{data}=useQuery({queryKey:['att','recs',month,page],queryFn:()=>api.get(`/jaxrs/attendance/assemble/control/attendancedetail?month=${month.value}&page=${page.value}&size=20`).then((r:any)=>{records.value=(r.data?.list??[]);totalPages.value=Math.ceil((r.data?.total??1)/20);return r})})
-useQuery({queryKey:['att','apps'],queryFn:()=>api.get('/jaxrs/attendance/appeal/list').then((r:any)=>appeals.value=(r.data??[])as A[]),staleTime:120000})
-function loadData(){data.value?.refetch()}
-function fmtDate(d?:string){if(!d)return'—';try{return new Date(d).toLocaleDateString('zh-CN',{month:'2-digit',day:'2-digit'})}catch{return String(d)}}
-function statusTxt(s?:string){return s==='1'?'正常':s==='2'?'迟到':'—'}
-function statusClass(s?:string){return s==='1'?'normal':s==='2'?'late':''}
-function appealClass(s?:string){return s==='approved'?'approved':s==='rejected'?'rejected':s==='pending'?'pending':''}
-function appealStatus(s?:string){return s==='approved'?'已通过':s==='rejected'?'已驳回':s==='pending'?'待审批':'—'}
-const am=useMutation({mutationFn:({id,status}:{id:string;status:string})=>api.post('/jaxrs/attendance/appeal/audit',{id,status}),onSuccess:()=>qc.invalidateQueries({queryKey:['att','apps']})})
-function audit(a:A,action:string){am.mutate({id:a.id,status:action})}
-function exportData(){window.open('/jaxrs/attendance/assemble/control/export')}
+import { useMutation, useQuery, useQueryClient } from '@tanstack/vue-query'
+import { computed, onMounted, ref } from 'vue'
+import { toast } from '../utils/toast'
+
+interface R {
+  id: string
+  personName?: string
+  name?: string
+  date?: string
+  checkInTime?: string
+  checkOutTime?: string
+  workHours?: number
+  status?: string
+  isLate?: boolean
+}
+interface A {
+  id: string
+  personName?: string
+  type?: string
+  typeName?: string
+  startDate?: string
+  endDate?: string
+  status?: string
+}
+const month = ref(new Date().toISOString().slice(0, 7)),
+  page = ref(1),
+  records = ref<R[]>([]),
+  appeals = ref<A[]>([]),
+  loading = ref(false),
+  totalPages = ref(1),
+  qc = useQueryClient()
+const stats = computed(() => [
+  { label: '应出勤', value: 45, color: 'var(--color-info)' },
+  { label: '实际出勤', value: 42, color: 'var(--color-success)' },
+  { label: '迟到', value: 3, color: 'var(--color-warning)' },
+  { label: '请假', value: 2, color: 'var(--color-accent)' },
+])
+const { data } = useQuery({
+  queryKey: ['att', 'recs', month, page],
+  queryFn: () =>
+    api
+      .get(`/jaxrs/attendance/assemble/control/attendancedetail?month=${month.value}&page=${page.value}&size=20`)
+      .then((r: any) => {
+        records.value = r.data?.list ?? []
+        totalPages.value = Math.ceil((r.data?.total ?? 1) / 20)
+        return r
+      }),
+})
+useQuery({
+  queryKey: ['att', 'apps'],
+  queryFn: () => api.get('/jaxrs/attendance/appeal/list').then((r: any) => (appeals.value = (r.data ?? []) as A[])),
+  staleTime: 120000,
+})
+function loadData() {
+  data.value?.refetch()
+}
+function fmtDate(d?: string) {
+  if (!d) return '—'
+  try {
+    return new Date(d).toLocaleDateString('zh-CN', { month: '2-digit', day: '2-digit' })
+  } catch {
+    return String(d)
+  }
+}
+function statusTxt(s?: string) {
+  return s === '1' ? '正常' : s === '2' ? '迟到' : '—'
+}
+function statusClass(s?: string) {
+  return s === '1' ? 'normal' : s === '2' ? 'late' : ''
+}
+function appealClass(s?: string) {
+  return s === 'approved' ? 'approved' : s === 'rejected' ? 'rejected' : s === 'pending' ? 'pending' : ''
+}
+function appealStatus(s?: string) {
+  return s === 'approved' ? '已通过' : s === 'rejected' ? '已驳回' : s === 'pending' ? '待审批' : '—'
+}
+const am = useMutation({
+  mutationFn: ({ id, status }: { id: string; status: string }) =>
+    api.post('/jaxrs/attendance/appeal/audit', { id, status }),
+  onSuccess: () => qc.invalidateQueries({ queryKey: ['att', 'apps'] }),
+})
+function audit(a: A, action: string) {
+  am.mutate({ id: a.id, status: action })
+}
+function exportData() {
+  window.open('/jaxrs/attendance/assemble/control/export')
+}
 onMounted(loadData)
 
 // Additional attendance API calls
-const ruleList = ref<Array<{id:string;name?:string;type?:string;config?:string}>>([])
+const ruleList = ref<Array<{ id: string; name?: string; type?: string; config?: string }>>([])
 async function loadRules() {
-  try { const r = await api.get('/jaxrs/attendance/assemble/control/rule/list')
+  try {
+    const r = await api.get('/jaxrs/attendance/assemble/control/rule/list')
     ruleList.value = (r.data ?? []) as any[]
-  } catch { ruleList.value = [] }
+  } catch {
+    ruleList.value = []
+  }
 }
 async function createRule() {
   const name = prompt('规则名称:')
   if (!name) return
-  try { await api.post('/jaxrs/attendance/assemble/control/rule/create', { name })
+  try {
+    await api.post('/jaxrs/attendance/assemble/control/rule/create', { name })
     loadRules()
-  } catch (e: any) { toast.error('创建失败: ' + (e?.message ?? '')) }
+  } catch (e: any) {
+    toast.error('创建失败: ' + (e?.message ?? ''))
+  }
 }
 async function deleteRule(rule: any) {
-  if (!confirmMsg('确定删除规则「' + (rule.name||rule.id) + '」？')) return
-  try { await api.delete('/jaxrs/attendance/assemble/control/rule/' + rule.id)
+  if (!confirmMsg('确定删除规则「' + (rule.name || rule.id) + '」？')) return
+  try {
+    await api.delete('/jaxrs/attendance/assemble/control/rule/' + rule.id)
     loadRules()
-  } catch (e: any) { toast.error('删除失败: : ' + (e?.message ?? '')) }
+  } catch (e: any) {
+    toast.error('删除失败: : ' + (e?.message ?? ''))
+  }
 }
 async function submitAppeal() {
   const type = prompt('请假类型 (sick/personal/vacation):', 'sick')
   if (!type) return
-  const start = prompt('开始日期:', new Date().toISOString().slice(0,10))
-  const end = prompt('结束日期:', new Date().toISOString().slice(0,10))
+  const start = prompt('开始日期:', new Date().toISOString().slice(0, 10))
+  const end = prompt('结束日期:', new Date().toISOString().slice(0, 10))
   if (!start || !end) return
-  try { await api.post('/jaxrs/attendance/appeal/create', { type, startDate: start, endDate: end })
+  try {
+    await api.post('/jaxrs/attendance/appeal/create', { type, startDate: start, endDate: end })
     loadAppeals()
-  } catch (e: any) { toast.error('申请失败: : ' + (e?.message ?? '')) }
+  } catch (e: any) {
+    toast.error('申请失败: : ' + (e?.message ?? ''))
+  }
 }
 async function loadAppeals() {
-  try { const r = await api.get('/jaxrs/attendance/appeal/list')
+  try {
+    const r = await api.get('/jaxrs/attendance/appeal/list')
     appeals.value = (r.data ?? []) as A[]
-  } catch { appeals.value = [] }
+  } catch {
+    appeals.value = []
+  }
 }
 loadRules()
 
-async function loadStatistics(){try{const r=await api.get('/jaxrs/attendance/assemble/control/statistics/list?month='+month.value);attStats.value=(r.data??[])}catch{attStats.value=[]}}
-
+async function loadStatistics() {
+  try {
+    const r = await api.get('/jaxrs/attendance/assemble/control/statistics/list?month=' + month.value)
+    attStats.value = r.data ?? []
+  } catch {
+    attStats.value = []
+  }
+}
 </script>
 <style scoped>
 .attendance-view{display:flex;flex-direction:column;gap:16px;height:100%}

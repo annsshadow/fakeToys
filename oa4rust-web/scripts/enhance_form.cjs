@@ -1,5 +1,5 @@
-const fs = require('fs');
-let content = fs.readFileSync('D:/WORKSPACE/fakeToys/oa4rust-web/apps/desktop/src/views/FormDesigner.vue', 'utf8');
+const fs = require('fs')
+let content = fs.readFileSync('D:/WORKSPACE/fakeToys/oa4rust-web/apps/desktop/src/views/FormDesigner.vue', 'utf8')
 
 // 1. Enhance interfaces
 content = content.replace(
@@ -21,8 +21,8 @@ interface FormDef {
   layout?: 'single'|'two_col'|'three_col'
   fields: FormField[]; updatedAt?: string; version?: string
   settings?: { showReset?: boolean; showSubmit?: boolean; layoutClass?: string }
-}`
-);
+}`,
+)
 
 // 2. Add more field types
 content = content.replace(
@@ -46,8 +46,8 @@ const extraFieldTypes = [
   { type: 'upload', label: '上传', icon: '📤' },
   { type: 'map', label: '地图', icon: '🗺️' },
   { type: 'code', label: '代码', icon: '</>' },
-]`
-);
+]`,
+)
 
 // 3. Add new state variables
 content = content.replace(
@@ -64,8 +64,8 @@ const historyIdx = ref(-1)
 const canUndo = computed(() => historyIdx.value > 0)
 const canRedo = computed(() => historyIdx.value < formHistory.value.length - 1)
 const previewData = ref<Record<string,any>>({})
-const previewErrors = ref<Record<string,string>>({})`
-);
+const previewErrors = ref<Record<string,string>>({})`,
+)
 
 // 4. Enhance makeField
 content = content.replace(
@@ -90,8 +90,8 @@ content = content.replace(
     upload: { label: '文件上传', key: 'upload_field' },
     map: { label: '地图', key: 'map_field' },
     code: { label: '代码编辑', key: 'code_field' },
-  }`
-);
+  }`,
+)
 
 // 5. Add advanced functions before onMounted
 content = content.replace(
@@ -196,11 +196,11 @@ function removeCondition(i:number) {
   if (Array.isArray(conds)) conds.splice(i, 1)
 }
 
-onMounted(loadForms)`
-);
+onMounted(loadForms)`,
+)
 
 // 6. Add CSS
-const styleEnd = '</style>';
+const styleEnd = '</style>'
 const extraCss = `
 /* Templates modal */
 .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.6);display:flex;align-items:center;justify-content:center;z-index:200}
@@ -239,8 +239,8 @@ const extraCss = `
 .canvas-form.three-col .field-row.span-3{grid-column:span 3}
 .spacer-preview{height:16px;background:repeating-linear-gradient(90deg,var(--border-color),var(--border-color) 4px,transparent 4px,transparent 8px);border-radius:2px;margin:4px 0}
 .divider-preview{height:1px;background:var(--border-color);margin:8px 0}
-`;
-content = content.replace(styleEnd, extraCss + '\n</style>');
+`
+content = content.replace(styleEnd, extraCss + '\n</style>')
 
-fs.writeFileSync('D:/WORKSPACE/fakeToys/oa4rust-web/apps/desktop/src/views/FormDesigner.vue', content);
-console.log('Lines:', content.split('\n').length);
+fs.writeFileSync('D:/WORKSPACE/fakeToys/oa4rust-web/apps/desktop/src/views/FormDesigner.vue', content)
+console.log('Lines:', content.split('\n').length)

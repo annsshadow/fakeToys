@@ -1,8 +1,8 @@
-import { ref, type Ref } from 'vue';
+import { type Ref, ref } from 'vue'
 
-export type ThemeMode = 'dark' | 'light';
+export type ThemeMode = 'dark' | 'light'
 
-let _theme = ref<ThemeMode>('dark');
+const _theme = ref<ThemeMode>('dark')
 
 /**
  * 主题管理
@@ -10,21 +10,21 @@ let _theme = ref<ThemeMode>('dark');
  */
 export function createThemeProvider() {
   function setTheme(mode: ThemeMode): void {
-    _theme.value = mode;
-    document.documentElement.setAttribute('data-theme', mode);
-    localStorage.setItem('oa4rust_theme', mode);
+    _theme.value = mode
+    document.documentElement.setAttribute('data-theme', mode)
+    localStorage.setItem('oa4rust_theme', mode)
   }
 
   function toggleTheme(): void {
-    setTheme(_theme.value === 'dark' ? 'light' : 'dark');
+    setTheme(_theme.value === 'dark' ? 'light' : 'dark')
   }
 
   function init(): void {
-    const stored = localStorage.getItem('oa4rust_theme') as ThemeMode | null;
+    const stored = localStorage.getItem('oa4rust_theme') as ThemeMode | null
     if (stored) {
-      _theme.value = stored;
+      _theme.value = stored
     }
-    document.documentElement.setAttribute('data-theme', _theme.value);
+    document.documentElement.setAttribute('data-theme', _theme.value)
   }
 
   return {
@@ -32,12 +32,12 @@ export function createThemeProvider() {
     setTheme,
     toggleTheme,
     init,
-  };
+  }
 }
 
-export const themeProvider = createThemeProvider();
+export const themeProvider = createThemeProvider()
 
 /** Composable 入口 */
 export function useTheme() {
-  return themeProvider;
+  return themeProvider
 }

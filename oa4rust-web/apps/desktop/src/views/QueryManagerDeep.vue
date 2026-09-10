@@ -332,45 +332,70 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
-import { useQuery, useMutation, useQueryClient } from '@tanstack/vue-query'
 import { api } from '@oa4rust/sdk'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/vue-query'
+import { computed, ref } from 'vue'
 
 interface QueryDef {
-  id: string; name?: string; queryName?: string; icon?: string
-  category?: string; entityCategory?: string; sql?: string
-  updateTime?: string; createTime?: string; importModel?: boolean
+  id: string
+  name?: string
+  queryName?: string
+  icon?: string
+  category?: string
+  entityCategory?: string
+  sql?: string
+  updateTime?: string
+  createTime?: string
+  importModel?: boolean
 }
 
-const search = ref(''), qsTab = ref('all'), qsLoading = ref(false)
-const selected = ref<QueryDef|null>(null), mode = ref('sql')
-const sqlText = ref(''), sqlStatus = ref('')
-const resultData = ref<any[]>([]), resultHeaders = ref<string[]>([]), resultLoading = ref(false)
-const showCreate = ref(false), nform = ref({ name: '', sql: '', category: '' })
+const search = ref(''),
+  qsTab = ref('all'),
+  qsLoading = ref(false)
+const selected = ref<QueryDef | null>(null),
+  mode = ref('sql')
+const sqlText = ref(''),
+  sqlStatus = ref('')
+const resultData = ref<any[]>([]),
+  resultHeaders = ref<string[]>([]),
+  resultLoading = ref(false)
+const showCreate = ref(false),
+  nform = ref({ name: '', sql: '', category: '' })
 
 const viewConfig = ref({ columns: '', filter: '', sort: '', pageSize: 100 })
 const tableConfig = ref({ theme: 'default', sortable: true, filterable: false, rowSelect: false })
 const statConfig = ref({ dimension: '', metric: '', chartType: 'bar' })
-const statResult = ref<Record<string,number>|null>(null)
+const statResult = ref<Record<string, number> | null>(null)
 const importConfig = ref({ delimiter: ',' })
 
 const qc = useQueryClient()
-const { data } = useQuery({ queryKey: ['qm','list'], queryFn: async () => { qsLoading.value = true; try { const r: any = await api.get('/jaxrs/query/assemble/designer/list'); return r?.data ?? [] } finally { qsLoading.value = false } } })
+const { data } = useQuery({
+  queryKey: ['qm', 'list'],
+  queryFn: async () => {
+    qsLoading.value = true
+    try {
+      const r: any = await api.get('/jaxrs/query/assemble/designer/list')
+      return r?.data ?? []
+    } finally {
+      qsLoading.value = false
+    }
+  },
+})
 const queries = ref<QueryDef[]>(data.value ?? [])
 
 const qsFiltered = computed(() => {
   let list = queries.value
-  if (search.value) list = list.filter(q => (q.name||'').toLowerCase().includes(search.value.toLowerCase()))
-  if (qsTab.value !== 'all') list = list.filter(q => (q.category||'').toLowerCase() === qsTab.value)
+  if (search.value) list = list.filter((q) => (q.name || '').toLowerCase().includes(search.value.toLowerCase()))
+  if (qsTab.value !== 'all') list = list.filter((q) => (q.category || '').toLowerCase() === qsTab.value)
   return list
 })
 
 function queryIcon(q: QueryDef) {
   if (q.icon) return q.icon
-  const cat = (q.category||'').toLowerCase()
-  if (cat==='stat') return '📈'
-  if (cat==='view') return '👁'
-  if (cat==='statement') return '💻'
+  const cat = (q.category || '').toLowerCase()
+  if (cat === 'stat') return '📈'
+  if (cat === 'view') return '👁'
+  if (cat === 'statement') return '💻'
   return '📄'
 }
 
@@ -386,29 +411,46 @@ async function runQuery() {
   if (!sqlText.value.trim() || !selected.value) return
   resultLoading.value = true
   try {
-    const r: any = await api.post('/jaxrs/query/assemble/designer/execute', { id: selected.value.id, sql: sqlText.value })
+    const r: any = await api.post('/jaxrs/query/assemble/designer/execute', {
+      id: selected.value.id,
+      sql: sqlText.value,
+    })
     resultData.value = r?.data?.list ?? r?.data ?? []
     resultHeaders.value = resultData.value.length > 0 ? Object.keys(resultData.value[0]) : []
     sqlStatus.value = `执行成功: ${resultData.value.length} 行`
   } catch (e: any) {
     sqlStatus.value = '执行失败: ' + (e?.message ?? '未知错误')
-    resultData.value = []; resultHeaders.value = []
-  } finally { resultLoading.value = false }
+    resultData.value = []
+    resultHeaders.value = []
+  } finally {
+    resultLoading.value = false
+  }
 }
 
 async function runStats() {
   if (!selected.value) return
   resultLoading.value = true
   try {
-    const r: any = await api.post('/jaxrs/query/assemble/designer/stat/do', { id: selected.value.id, dimension: statConfig.value.dimension, metric: statConfig.value.metric })
+    const r: any = await api.post('/jaxrs/query/assemble/designer/stat/do', {
+      id: selected.value.id,
+      dimension: statConfig.value.dimension,
+      metric: statConfig.value.metric,
+    })
     statResult.value = r?.data ?? null
     resultData.value = []
-  } catch { statResult.value = null } finally { resultLoading.value = false }
+  } catch {
+    statResult.value = null
+  } finally {
+    resultLoading.value = false
+  }
 }
 
 const delM = useMutation({
   mutationFn: (id: string) => api.delete(`/jaxrs/query/assemble/designer/delete/${id}`),
-  onSuccess: () => { qc.invalidateQueries({ queryKey: ['qm','list'] }); if (selected.value?.id) selected.value = null }
+  onSuccess: () => {
+    qc.invalidateQueries({ queryKey: ['qm', 'list'] })
+    if (selected.value?.id) selected.value = null
+  },
 })
 function deleteQuery() {
   if (!selected.value || !confirmMsg('确定删除此查询？')) return
@@ -416,19 +458,35 @@ function deleteQuery() {
 }
 
 const cm = useMutation({
-  mutationFn: () => api.post('/jaxrs/query/assemble/designer/create', { name: nform.value.name, sql: nform.value.sql, category: nform.value.category }),
-  onSuccess: () => { showCreate.value = false; qc.invalidateQueries({ queryKey: ['qm','list'] }) }
+  mutationFn: () =>
+    api.post('/jaxrs/query/assemble/designer/create', {
+      name: nform.value.name,
+      sql: nform.value.sql,
+      category: nform.value.category,
+    }),
+  onSuccess: () => {
+    showCreate.value = false
+    qc.invalidateQueries({ queryKey: ['qm', 'list'] })
+  },
 })
-function createQuery() { if (nform.value.name) cm.mutate() }
+function createQuery() {
+  if (nform.value.name) cm.mutate()
+}
 
-function refresh() { qc.invalidateQueries({ queryKey: ['qm','list'] }) }
-function applyViewConfig() { /* apply config to current query */ }
-function importData() { toast.warning('导入功能开发中') }
+function refresh() {
+  qc.invalidateQueries({ queryKey: ['qm', 'list'] })
+}
+function applyViewConfig() {
+  /* apply config to current query */
+}
+function importData() {
+  toast.warning('导入功能开发中')
+}
 function exportResults() {
   if (!resultData.value.length) return
   const header = resultHeaders.value.join(',')
-  const rows = resultData.value.map(r =>
-    resultHeaders.value.map(h => '"' + String(r[h] ?? '').replace(/"/g, '""') + '"').join(',')
+  const rows = resultData.value.map((r) =>
+    resultHeaders.value.map((h) => '"' + String(r[h] ?? '').replace(/"/g, '""') + '"').join(','),
   )
   const blob = new Blob([header + '\n' + rows.join('\n')], { type: 'text/csv;charset=utf-8' })
   const a = document.createElement('a')
@@ -436,24 +494,35 @@ function exportResults() {
   a.download = 'query_result.csv'
   a.click()
 }
-function fmtTime(t?: string) { if (!t) return ''; try { return new Date(t).toLocaleString('zh-CN',{month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'}) } catch { return String(t) } }
+function fmtTime(t?: string) {
+  if (!t) return ''
+  try {
+    return new Date(t).toLocaleString('zh-CN', { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' })
+  } catch {
+    return String(t)
+  }
+}
 
 // --- Batch Execute ---
 const showBatchExec = ref(false)
-const batchSql = ref(''), batchRunning = ref(false), batchStopOnError = ref(true), batchSequential = ref(true)
-const batchResults = ref<Array<{success:boolean;message:string;duration:number}>>([])
+const batchSql = ref(''),
+  batchRunning = ref(false),
+  batchStopOnError = ref(true),
+  batchSequential = ref(true)
+const batchResults = ref<Array<{ success: boolean; message: string; duration: number }>>([])
 async function runBatch() {
   if (!batchSql.value.trim()) return
-  batchRunning.value = true; batchResults.value = []
-  const stmts = batchSql.value.split(/;\n|;\s*\n|\n/).filter(s => s.trim())
+  batchRunning.value = true
+  batchResults.value = []
+  const stmts = batchSql.value.split(/;\n|;\s*\n|\n/).filter((s) => s.trim())
   for (const stmt of stmts) {
     if (!batchRunning.value) break
     const t0 = Date.now()
     try {
       await api.post('/jaxrs/query/assemble/designer/execute', { sql: stmt.trim() })
-      batchResults.value.push({ success: true, message: '执行成功', duration: Date.now()-t0 })
+      batchResults.value.push({ success: true, message: '执行成功', duration: Date.now() - t0 })
     } catch (e: any) {
-      batchResults.value.push({ success: false, message: e?.message ?? '执行失败', duration: Date.now()-t0 })
+      batchResults.value.push({ success: false, message: e?.message ?? '执行失败', duration: Date.now() - t0 })
       if (batchStopOnError.value) break
     }
   }
@@ -462,45 +531,68 @@ async function runBatch() {
 
 // --- Compare ---
 const showCompare = ref(false)
-const compareA = ref(''), compareB = ref('')
-const compareResult = ref<Array<{type:'added'|'removed'|'equal';line:number;text:string}>>([])
+const compareA = ref(''),
+  compareB = ref('')
+const compareResult = ref<Array<{ type: 'added' | 'removed' | 'equal'; line: number; text: string }>>([])
 function doCompare() {
-  const a = compareA.value.split('\n'), b = compareB.value.split('\n')
+  const a = compareA.value.split('\n'),
+    b = compareB.value.split('\n')
   const max = Math.max(a.length, b.length)
   compareResult.value = []
   for (let i = 0; i < max; i++) {
-    const x = a[i]||'', y = b[i]||''
-    if (x===y) compareResult.value.push({type:'equal',line:i+1,text:x})
-    else { if(x) compareResult.value.push({type:'removed',line:i+1,text:x}); if(y) compareResult.value.push({type:'added',line:i+1,text:y}); }
+    const x = a[i] || '',
+      y = b[i] || ''
+    if (x === y) compareResult.value.push({ type: 'equal', line: i + 1, text: x })
+    else {
+      if (x) compareResult.value.push({ type: 'removed', line: i + 1, text: x })
+      if (y) compareResult.value.push({ type: 'added', line: i + 1, text: y })
+    }
   }
 }
-function applyCompareB() { if(compareB.value){ sqlText.value=compareB.value; mode.value='sql'; showCompare.value=false } }
+function applyCompareB() {
+  if (compareB.value) {
+    sqlText.value = compareB.value
+    mode.value = 'sql'
+    showCompare.value = false
+  }
+}
 
 // --- Execution Plan ---
 const showPlan = ref(false)
-const planSteps = ref<Array<{type:string;desc:string;detail?:string}>>([])
+const planSteps = ref<Array<{ type: string; desc: string; detail?: string }>>([])
 const activeStep = ref(0)
 function generatePlan() {
   const sl = sqlText.value.toLowerCase()
   const steps: typeof planSteps.value = []
-  if (/with\s/i.test(sl)) steps.push({type:"CTE解析",desc:"解析公用表表达式",detail:"递归或非递归CTE"})
-  if (/\bselect\b/.test(sl)) steps.push({type:"选择阶段",desc:"解析SELECT列表",detail:"确定输出列和表达式"})
-  if (/\bfrom\b/.test(sl)) steps.push({type:"FROM/JOIN",desc:"处理FROM和JOIN",detail:sl.includes("join")?"检测到JOIN操作":"单表扫描"})
-  if (/\bwhere\b/.test(sl)) steps.push({type:"过滤阶段",desc:"应用WHERE条件",detail:"根据条件筛选行"})
-  if (/\bgroup\s+by\b/.test(sl)) steps.push({type:"分组聚合",desc:"GROUP BY分组",detail:"可能的HASH GROUP或SORT GROUP"})
-  if (/\border\s+by\b/.test(sl)) steps.push({type:"排序阶段",desc:"ORDER BY排序",detail:"可能有文件排序或索引排序"})
-  if (/\blimit\s/.test(sl)) steps.push({type:"限制输出",desc:"LIMIT分页",detail:"控制返回行数"})
-  if (/\bunion\b/.test(sl)) steps.push({type:"UNION操作",desc:"合并结果集",detail:"UNION ALL或去重UNION"})
-  if (steps.length===0) steps.push({type:"默认",desc:"完整SQL解析",detail:"请执行SQL后查看实际执行计划"})
-  planSteps.value = steps; activeStep.value = 0
+  if (/with\s/i.test(sl)) steps.push({ type: 'CTE解析', desc: '解析公用表表达式', detail: '递归或非递归CTE' })
+  if (/\bselect\b/.test(sl)) steps.push({ type: '选择阶段', desc: '解析SELECT列表', detail: '确定输出列和表达式' })
+  if (/\bfrom\b/.test(sl))
+    steps.push({
+      type: 'FROM/JOIN',
+      desc: '处理FROM和JOIN',
+      detail: sl.includes('join') ? '检测到JOIN操作' : '单表扫描',
+    })
+  if (/\bwhere\b/.test(sl)) steps.push({ type: '过滤阶段', desc: '应用WHERE条件', detail: '根据条件筛选行' })
+  if (/\bgroup\s+by\b/.test(sl))
+    steps.push({ type: '分组聚合', desc: 'GROUP BY分组', detail: '可能的HASH GROUP或SORT GROUP' })
+  if (/\border\s+by\b/.test(sl))
+    steps.push({ type: '排序阶段', desc: 'ORDER BY排序', detail: '可能有文件排序或索引排序' })
+  if (/\blimit\s/.test(sl)) steps.push({ type: '限制输出', desc: 'LIMIT分页', detail: '控制返回行数' })
+  if (/\bunion\b/.test(sl)) steps.push({ type: 'UNION操作', desc: '合并结果集', detail: 'UNION ALL或去重UNION' })
+  if (steps.length === 0) steps.push({ type: '默认', desc: '完整SQL解析', detail: '请执行SQL后查看实际执行计划' })
+  planSteps.value = steps
+  activeStep.value = 0
 }
 
 // --- History ---
 const showHistory = ref(false)
-const execHistory = ref<Array<{time:string;sql:string;duration:number;rows:number;success:boolean}>>([])
+const execHistory = ref<Array<{ time: string; sql: string; duration: number; rows: number; success: boolean }>>([])
 function replayHistory(idx: number) {
   const h = execHistory.value[idx]
-  if (h) { sqlText.value = h.sql; runQuery() }
+  if (h) {
+    sqlText.value = h.sql
+    runQuery()
+  }
 }
 function copyHistorySql(idx: number) {
   const h = execHistory.value[idx]
@@ -509,75 +601,205 @@ function copyHistorySql(idx: number) {
 
 // --- Export/Import ---
 const showExportImport = ref(false)
-const eiTab = ref<'export'|'import'>('export')
-const exportFmt = ref<'json'|'csv'|'sql'>('json')
+const eiTab = ref<'export' | 'import'>('export')
+const exportFmt = ref<'json' | 'csv' | 'sql'>('json')
 const importJson = ref('')
-const importMsg = ref<{ok:boolean;txt:string}|null>(null)
+const importMsg = ref<{ ok: boolean; txt: string } | null>(null)
 function doExport() {
-  const data = queries.value.map(q => ({name:q.name||q.queryName,category:q.category||q.entityCategory,sql:q.sql}))
-  if (exportFmt.value==='json') {
-    downloadBlob(new Blob([JSON.stringify(data,null,2)],{type:'application/json'}), 'queries_'+new Date().toISOString().slice(0,10)+'.json')
-  } else if (exportFmt.value==='csv') {
-    const csv = 'name,category,sql\n' + data.map(d => `"${d.name}","${d.category}","${(d.sql||'').replace(/"/g,'""')}"`).join('\n')
-    downloadBlob(new Blob([csv],{type:'text/csv'}), 'queries_'+new Date().toISOString().slice(0,10)+'.csv')
+  const data = queries.value.map((q) => ({
+    name: q.name || q.queryName,
+    category: q.category || q.entityCategory,
+    sql: q.sql,
+  }))
+  if (exportFmt.value === 'json') {
+    downloadBlob(
+      new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' }),
+      'queries_' + new Date().toISOString().slice(0, 10) + '.json',
+    )
+  } else if (exportFmt.value === 'csv') {
+    const csv =
+      'name,category,sql\n' +
+      data.map((d) => `"${d.name}","${d.category}","${(d.sql || '').replace(/"/g, '""')}"`).join('\n')
+    downloadBlob(new Blob([csv], { type: 'text/csv' }), 'queries_' + new Date().toISOString().slice(0, 10) + '.csv')
   } else {
-    const sqlStr = data.map(d => `-- ${d.name}\n${d.sql}`).join('\n\n')
-    downloadBlob(new Blob([sqlStr],{type:'text/plain'}), 'queries_'+new Date().toISOString().slice(0,10)+'.sql')
+    const sqlStr = data.map((d) => `-- ${d.name}\n${d.sql}`).join('\n\n')
+    downloadBlob(
+      new Blob([sqlStr], { type: 'text/plain' }),
+      'queries_' + new Date().toISOString().slice(0, 10) + '.sql',
+    )
   }
   showExportImport.value = false
 }
 function downloadBlob(blob: Blob, filename: string) {
-  const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = filename; a.click()
+  const a = document.createElement('a')
+  a.href = URL.createObjectURL(blob)
+  a.download = filename
+  a.click()
 }
 async function doImport() {
   if (!importJson.value.trim()) return
   try {
     const data = JSON.parse(importJson.value)
-    if (!Array.isArray(data)) { importMsg.value={ok:false,txt:'格式错误'}; return }
-    for (const q of data) { try { await api.post('/jaxrs/query/assemble/designer/create', q) } catch {} }
-    importMsg.value={ok:true,txt:`成功导入 ${data.length} 条`}; showExportImport.value=false
+    if (!Array.isArray(data)) {
+      importMsg.value = { ok: false, txt: '格式错误' }
+      return
+    }
+    for (const q of data) {
+      try {
+        await api.post('/jaxrs/query/assemble/designer/create', q)
+      } catch {}
+    }
+    importMsg.value = { ok: true, txt: `成功导入 ${data.length} 条` }
+    showExportImport.value = false
     refresh()
-  } catch(e: any) { importMsg.value={ok:false,txt:'导入失败: '+e.message} }
+  } catch (e: any) {
+    importMsg.value = { ok: false, txt: '导入失败: ' + e.message }
+  }
 }
 
 // --- Query Properties ---
 const showProps = ref(false)
-const execCounts = ref<Record<string,number>>({})
-const lastRuns = ref<Record<string,string>>({})
-function getQueryExecCount(id: string) { return execCounts.value[id] || 0 }
-function getQueryLastRun(id: string) { return lastRuns.value[id] || '—' }
-function openProps() { if(selected.value) showProps.value = true }
+const execCounts = ref<Record<string, number>>({})
+const lastRuns = ref<Record<string, string>>({})
+function getQueryExecCount(id: string) {
+  return execCounts.value[id] || 0
+}
+function getQueryLastRun(id: string) {
+  return lastRuns.value[id] || '—'
+}
+function openProps() {
+  if (selected.value) showProps.value = true
+}
 
-const api_jaxrs_qu_102_data = ref<any[]>([]);
-const { data: api_jaxrs_qu_102_q } = useQuery({queryKey: ['api_jaxrs_qu_102', '/jaxrs/query/assemble/designer/neural/model/m1/reset/status'], queryFn: async () => { try { const r = await api.get("/jaxrs/query/assemble/designer/neural/model/m1/reset/status"); return (r.data ?? []) as any[]; } catch { return []; } }});
+const api_jaxrs_qu_102_data = ref<any[]>([])
+const { data: api_jaxrs_qu_102_q } = useQuery({
+  queryKey: ['api_jaxrs_qu_102', '/jaxrs/query/assemble/designer/neural/model/m1/reset/status'],
+  queryFn: async () => {
+    try {
+      const r = await api.get('/jaxrs/query/assemble/designer/neural/model/m1/reset/status')
+      return (r.data ?? []) as any[]
+    } catch {
+      return []
+    }
+  },
+})
 
-const api_jaxrs_qu_109_data = ref<any[]>([]);
-const { data: api_jaxrs_qu_109_q } = useQuery({queryKey: ['api_jaxrs_qu_109', '/jaxrs/query/assemble/designer/statement/execute/st-1/mode/count/page/1/size/20'], queryFn: async () => { try { const r = await api.get("/jaxrs/query/assemble/designer/statement/execute/st-1/mode/count/page/1/size/20"); return (r.data ?? []) as any[]; } catch { return []; } }});
+const api_jaxrs_qu_109_data = ref<any[]>([])
+const { data: api_jaxrs_qu_109_q } = useQuery({
+  queryKey: ['api_jaxrs_qu_109', '/jaxrs/query/assemble/designer/statement/execute/st-1/mode/count/page/1/size/20'],
+  queryFn: async () => {
+    try {
+      const r = await api.get('/jaxrs/query/assemble/designer/statement/execute/st-1/mode/count/page/1/size/20')
+      return (r.data ?? []) as any[]
+    } catch {
+      return []
+    }
+  },
+})
 
-const api_jaxrs_qu_615_data = ref<any[]>([]);
-const { data: api_jaxrs_qu_615_q } = useQuery({queryKey: ['api_jaxrs_qu_615', '/jaxrs/query/assemble/designer/statement/execute/st-1/page/1/size/20'], queryFn: async () => { try { const r = await api.get("/jaxrs/query/assemble/designer/statement/execute/st-1/page/1/size/20"); return (r.data ?? []) as any[]; } catch { return []; } }});
+const api_jaxrs_qu_615_data = ref<any[]>([])
+const { data: api_jaxrs_qu_615_q } = useQuery({
+  queryKey: ['api_jaxrs_qu_615', '/jaxrs/query/assemble/designer/statement/execute/st-1/page/1/size/20'],
+  queryFn: async () => {
+    try {
+      const r = await api.get('/jaxrs/query/assemble/designer/statement/execute/st-1/page/1/size/20')
+      return (r.data ?? []) as any[]
+    } catch {
+      return []
+    }
+  },
+})
 
-const api_jaxrs_qu_186_data = ref<any[]>([]);
-const { data: api_jaxrs_qu_186_q } = useQuery({queryKey: ['api_jaxrs_qu_186', '/jaxrs/query/assemble/designer/statement/st-1/execute/mode/count/page/1/size/20'], queryFn: async () => { try { const r = await api.get("/jaxrs/query/assemble/designer/statement/st-1/execute/mode/count/page/1/size/20"); return (r.data ?? []) as any[]; } catch { return []; } }});
+const api_jaxrs_qu_186_data = ref<any[]>([])
+const { data: api_jaxrs_qu_186_q } = useQuery({
+  queryKey: ['api_jaxrs_qu_186', '/jaxrs/query/assemble/designer/statement/st-1/execute/mode/count/page/1/size/20'],
+  queryFn: async () => {
+    try {
+      const r = await api.get('/jaxrs/query/assemble/designer/statement/st-1/execute/mode/count/page/1/size/20')
+      return (r.data ?? []) as any[]
+    } catch {
+      return []
+    }
+  },
+})
 
-const api_jaxrs_qu_731_data = ref<any[]>([]);
-const { data: api_jaxrs_qu_731_q } = useQuery({queryKey: ['api_jaxrs_qu_731', '/jaxrs/query/assemble/designer/statement/st-1/execute/page/1/size/20'], queryFn: async () => { try { const r = await api.get("/jaxrs/query/assemble/designer/statement/st-1/execute/page/1/size/20"); return (r.data ?? []) as any[]; } catch { return []; } }});
+const api_jaxrs_qu_731_data = ref<any[]>([])
+const { data: api_jaxrs_qu_731_q } = useQuery({
+  queryKey: ['api_jaxrs_qu_731', '/jaxrs/query/assemble/designer/statement/st-1/execute/page/1/size/20'],
+  queryFn: async () => {
+    try {
+      const r = await api.get('/jaxrs/query/assemble/designer/statement/st-1/execute/page/1/size/20')
+      return (r.data ?? []) as any[]
+    } catch {
+      return []
+    }
+  },
+})
 
-const api_jaxrs_qu_720_data = ref<any[]>([]);
-const { data: api_jaxrs_qu_720_q } = useQuery({queryKey: ['api_jaxrs_qu_720', '/jaxrs/query/service/processing/index/directory/document/count'], queryFn: async () => { try { const r = await api.get("/jaxrs/query/service/processing/index/directory/document/count"); return (r.data ?? []) as any[]; } catch { return []; } }});
+const api_jaxrs_qu_720_data = ref<any[]>([])
+const { data: api_jaxrs_qu_720_q } = useQuery({
+  queryKey: ['api_jaxrs_qu_720', '/jaxrs/query/service/processing/index/directory/document/count'],
+  queryFn: async () => {
+    try {
+      const r = await api.get('/jaxrs/query/service/processing/index/directory/document/count')
+      return (r.data ?? []) as any[]
+    } catch {
+      return []
+    }
+  },
+})
 
-const api_jaxrs_qu_81_data = ref<any[]>([]);
-const { data: api_jaxrs_qu_81_q } = useQuery({queryKey: ['api_jaxrs_qu_81', '/jaxrs/query/service/processing/index/update/extra/document'], queryFn: async () => { try { const r = await api.get("/jaxrs/query/service/processing/index/update/extra/document"); return (r.data ?? []) as any[]; } catch { return []; } }});
+const api_jaxrs_qu_81_data = ref<any[]>([])
+const { data: api_jaxrs_qu_81_q } = useQuery({
+  queryKey: ['api_jaxrs_qu_81', '/jaxrs/query/service/processing/index/update/extra/document'],
+  queryFn: async () => {
+    try {
+      const r = await api.get('/jaxrs/query/service/processing/index/update/extra/document')
+      return (r.data ?? []) as any[]
+    } catch {
+      return []
+    }
+  },
+})
 
-const api_jaxrs_qu_760_data = ref<any[]>([]);
-const { data: api_jaxrs_qu_760_q } = useQuery({queryKey: ['api_jaxrs_qu_760', '/jaxrs/query/service/processing/touch/high/freq/work/node/u2node/reset'], queryFn: async () => { try { const r = await api.get("/jaxrs/query/service/processing/touch/high/freq/work/node/u2node/reset"); return (r.data ?? []) as any[]; } catch { return []; } }});
+const api_jaxrs_qu_760_data = ref<any[]>([])
+const { data: api_jaxrs_qu_760_q } = useQuery({
+  queryKey: ['api_jaxrs_qu_760', '/jaxrs/query/service/processing/touch/high/freq/work/node/u2node/reset'],
+  queryFn: async () => {
+    try {
+      const r = await api.get('/jaxrs/query/service/processing/touch/high/freq/work/node/u2node/reset')
+      return (r.data ?? []) as any[]
+    } catch {
+      return []
+    }
+  },
+})
 
-const api_jaxrs_qu_523_data = ref<any[]>([]);
-const { data: api_jaxrs_qu_523_q } = useQuery({queryKey: ['api_jaxrs_qu_523', '/jaxrs/query/service/processing/touch/high/freq/work/node/u2node/touch'], queryFn: async () => { try { const r = await api.get("/jaxrs/query/service/processing/touch/high/freq/work/node/u2node/touch"); return (r.data ?? []) as any[]; } catch { return []; } }});
+const api_jaxrs_qu_523_data = ref<any[]>([])
+const { data: api_jaxrs_qu_523_q } = useQuery({
+  queryKey: ['api_jaxrs_qu_523', '/jaxrs/query/service/processing/touch/high/freq/work/node/u2node/touch'],
+  queryFn: async () => {
+    try {
+      const r = await api.get('/jaxrs/query/service/processing/touch/high/freq/work/node/u2node/touch')
+      return (r.data ?? []) as any[]
+    } catch {
+      return []
+    }
+  },
+})
 
-const api_jaxrs_qu_39_data = ref<any[]>([]);
-const { data: api_jaxrs_qu_39_q } = useQuery({queryKey: ['api_jaxrs_qu_39', '/jaxrs/query/service/processing/touch/optimize/index/n0/touch'], queryFn: async () => { try { const r = await api.get("/jaxrs/query/service/processing/touch/optimize/index/n0/touch"); return (r.data ?? []) as any[]; } catch { return []; } }});
-
+const api_jaxrs_qu_39_data = ref<any[]>([])
+const { data: api_jaxrs_qu_39_q } = useQuery({
+  queryKey: ['api_jaxrs_qu_39', '/jaxrs/query/service/processing/touch/optimize/index/n0/touch'],
+  queryFn: async () => {
+    try {
+      const r = await api.get('/jaxrs/query/service/processing/touch/optimize/index/n0/touch')
+      return (r.data ?? []) as any[]
+    } catch {
+      return []
+    }
+  },
+})
 </script>
 
 <style scoped>

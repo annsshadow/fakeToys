@@ -47,21 +47,87 @@
   </div>
 </template>
 <script setup lang="ts">
-import { ref, computed } from 'vue'
-import { useQuery, useMutation, useQueryClient } from '@tanstack/vue-query'
 import { api } from '@oa4rust/sdk'
-interface Q{id:string;name?:string;queryName?:string;icon?:string;category?:string;entityCategory?:string;updateTime?:string;sql?:string}
-const sq=ref(''),qs2=ref<Q[]>([]),selected=ref<Q|null>(null),filterText=ref(''),rdata=ref<any[]>([]),rheaders=ref<string[]>([]),rloading=ref(false),showCreate=ref(false),nform=ref({name:'',sql:''}),qc=useQueryClient()
-const{data}=useQuery({queryKey:['query','defs'],queryFn:()=>api.get('/jaxrs/query/assemble/designer/list').then((r:any)=>(r.data??[])as Q[])})
-qs2.value=data.value??[]
-const qsFiltered=computed(()=>sq.value?qs2.value.filter(q=>(q.name||'').toLowerCase().includes(sq.value.toLowerCase())):qs2.value)
-function selQ(q:Q){selected.value=q;rdata.value=[];rheaders.value=[]}
-async function runQ(){if(!selected.value)return;rloading.value=true;try{const r=await api.post('/jaxrs/query/assemble/designer/execute',{id:selected.value!.id,filter:filterText.value});const d=(r as any)?.data;rdata.value=d?.list??[];if(rdata.value.length>0)rheaders.value=Object.keys(rdata.value[0])}catch{}finally{rloading.value=false}}
-const dm=useMutation({mutationFn:(id:string)=>api.delete(`/jaxrs/query/assemble/designer/delete/${id}`),onSuccess:()=>{qc.invalidateQueries({queryKey:['query','defs']});if(selected.value?.id)selected.value=null}})
-function delQ(){if(selected.value&&confirmMsg('确定删除？'))dm.mutate(selected.value.id)}
-const cm=useMutation({mutationFn:()=>api.post('/jaxrs/query/assemble/designer/create',nform.value),onSuccess:()=>{showCreate.value=false;qc.invalidateQueries({queryKey:['query','defs']})}})
-function createQ(){if(nform.value.name)cm.mutate()}
-function fmtT(t?:string){if(!t)return'';try{return new Date(t).toLocaleString('zh-CN',{month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'})}catch{return String(t)}}
+import { useMutation, useQuery, useQueryClient } from '@tanstack/vue-query'
+import { computed, ref } from 'vue'
+
+interface Q {
+  id: string
+  name?: string
+  queryName?: string
+  icon?: string
+  category?: string
+  entityCategory?: string
+  updateTime?: string
+  sql?: string
+}
+const sq = ref(''),
+  qs2 = ref<Q[]>([]),
+  selected = ref<Q | null>(null),
+  filterText = ref(''),
+  rdata = ref<any[]>([]),
+  rheaders = ref<string[]>([]),
+  rloading = ref(false),
+  showCreate = ref(false),
+  nform = ref({ name: '', sql: '' }),
+  qc = useQueryClient()
+const { data } = useQuery({
+  queryKey: ['query', 'defs'],
+  queryFn: () => api.get('/jaxrs/query/assemble/designer/list').then((r: any) => (r.data ?? []) as Q[]),
+})
+qs2.value = data.value ?? []
+const qsFiltered = computed(() =>
+  sq.value ? qs2.value.filter((q) => (q.name || '').toLowerCase().includes(sq.value.toLowerCase())) : qs2.value,
+)
+function selQ(q: Q) {
+  selected.value = q
+  rdata.value = []
+  rheaders.value = []
+}
+async function runQ() {
+  if (!selected.value) return
+  rloading.value = true
+  try {
+    const r = await api.post('/jaxrs/query/assemble/designer/execute', {
+      id: selected.value!.id,
+      filter: filterText.value,
+    })
+    const d = (r as any)?.data
+    rdata.value = d?.list ?? []
+    if (rdata.value.length > 0) rheaders.value = Object.keys(rdata.value[0])
+  } catch {
+  } finally {
+    rloading.value = false
+  }
+}
+const dm = useMutation({
+  mutationFn: (id: string) => api.delete(`/jaxrs/query/assemble/designer/delete/${id}`),
+  onSuccess: () => {
+    qc.invalidateQueries({ queryKey: ['query', 'defs'] })
+    if (selected.value?.id) selected.value = null
+  },
+})
+function delQ() {
+  if (selected.value && confirmMsg('确定删除？')) dm.mutate(selected.value.id)
+}
+const cm = useMutation({
+  mutationFn: () => api.post('/jaxrs/query/assemble/designer/create', nform.value),
+  onSuccess: () => {
+    showCreate.value = false
+    qc.invalidateQueries({ queryKey: ['query', 'defs'] })
+  },
+})
+function createQ() {
+  if (nform.value.name) cm.mutate()
+}
+function fmtT(t?: string) {
+  if (!t) return ''
+  try {
+    return new Date(t).toLocaleString('zh-CN', { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' })
+  } catch {
+    return String(t)
+  }
+}
 </script>
 <style scoped>
 .query-view{display:flex;flex-direction:column;gap:16px;height:100%}

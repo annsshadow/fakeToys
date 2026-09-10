@@ -159,166 +159,317 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
-import { toast, confirmMsg } from '../utils/toast'
 import { api } from '@oa4rust/sdk'
+import { computed, ref } from 'vue'
+import { confirmMsg, toast } from '../utils/toast'
 
 type Tab = 'list' | 'v2' | 'versions' | 'templates'
-type FormItem = { id: string; name?: string; title?: string; flag?: string; formFlag?: string; version?: string; category?: string; schema?: string; fieldCount?: number; updateTime?: string; snapshot?: string; size?: number }
+type FormItem = {
+  id: string
+  name?: string
+  title?: string
+  flag?: string
+  formFlag?: string
+  version?: string
+  category?: string
+  schema?: string
+  fieldCount?: number
+  updateTime?: string
+  snapshot?: string
+  size?: number
+}
 
 const tab = ref<Tab>('list')
-const loading = ref(false), loadingV2 = ref(false)
+const loading = ref(false),
+  loadingV2 = ref(false)
 const items = ref<FormItem[]>([])
 const itemsV2 = ref<FormItem[]>([])
 const detailItem = ref<FormItem | null>(null)
-const showCreate = ref(false), editingForm = ref<FormItem|null>(null)
+const showCreate = ref(false),
+  editingForm = ref<FormItem | null>(null)
 const mform = ref({ name: '', flag: '', category: '', schema: '{}' })
-const showSearch = ref(false), searchQuery = ref('')
-const showImportExport = ref(false), exportFmt = ref<'json'|'csv'>('json')
-const importData = ref(''), importMsg = ref<{ok:boolean;txt:string}|null>(null)
-const selectedVersionForm = ref<FormItem|null>(null)
-const versionList = ref<Array<{version:string;updateTime?:string;snapshot?:string;size?:number}>>([])
-const formTemplates = ref<Array<{name:string;icon:string;desc:string;fields:Array<{name:string;type:string;label:string}>}>>([
-  {name:'人员信息',icon:'👤',desc:'包含姓名、工号、部门等基础信息',fields:[{name:'name',type:'string',label:'姓名'},{name:'empId',type:'string',label:'工号'},{name:'dept',type:'string',label:'部门'}]},
-  {name:'考勤记录',icon:'📅',desc:'包含打卡时间、出勤状态等',fields:[{name:'date',type:'date',label:'日期'},{name:'checkIn',type:'time',label:'签到'},{name:'checkOut',type:'time',label:'签退'}]},
-  {name:'报销申请',icon:'💰',desc:'包含金额、事由、附件等',fields:[{name:'amount',type:'number',label:'金额'},{name:'reason',type:'text',label:'事由'},{name:'attachment',type:'file',label:'附件'}]},
-  {name:'会议预约',icon:'👥',desc:'包含会议时间、地点、参与人等',fields:[{name:'title',type:'string',label:'会议主题'},{name:'time',type:'datetime',label:'时间'},{name:'room',type:'string',label:'会议室'}]},
+const showSearch = ref(false),
+  searchQuery = ref('')
+const showImportExport = ref(false),
+  exportFmt = ref<'json' | 'csv'>('json')
+const importData = ref(''),
+  importMsg = ref<{ ok: boolean; txt: string } | null>(null)
+const selectedVersionForm = ref<FormItem | null>(null)
+const versionList = ref<Array<{ version: string; updateTime?: string; snapshot?: string; size?: number }>>([])
+const formTemplates = ref<
+  Array<{ name: string; icon: string; desc: string; fields: Array<{ name: string; type: string; label: string }> }>
+>([
+  {
+    name: '人员信息',
+    icon: '👤',
+    desc: '包含姓名、工号、部门等基础信息',
+    fields: [
+      { name: 'name', type: 'string', label: '姓名' },
+      { name: 'empId', type: 'string', label: '工号' },
+      { name: 'dept', type: 'string', label: '部门' },
+    ],
+  },
+  {
+    name: '考勤记录',
+    icon: '📅',
+    desc: '包含打卡时间、出勤状态等',
+    fields: [
+      { name: 'date', type: 'date', label: '日期' },
+      { name: 'checkIn', type: 'time', label: '签到' },
+      { name: 'checkOut', type: 'time', label: '签退' },
+    ],
+  },
+  {
+    name: '报销申请',
+    icon: '💰',
+    desc: '包含金额、事由、附件等',
+    fields: [
+      { name: 'amount', type: 'number', label: '金额' },
+      { name: 'reason', type: 'text', label: '事由' },
+      { name: 'attachment', type: 'file', label: '附件' },
+    ],
+  },
+  {
+    name: '会议预约',
+    icon: '👥',
+    desc: '包含会议时间、地点、参与人等',
+    fields: [
+      { name: 'title', type: 'string', label: '会议主题' },
+      { name: 'time', type: 'datetime', label: '时间' },
+      { name: 'room', type: 'string', label: '会议室' },
+    ],
+  },
 ])
 
 const searchedForms = computed(() => {
   if (!searchQuery.value.trim()) return []
   const q = searchQuery.value.toLowerCase()
-  return [...items.value, ...itemsV2.value].filter(f => (f.name||'').toLowerCase().includes(q) || (f.flag||'').toLowerCase().includes(q))
+  return [...items.value, ...itemsV2.value].filter(
+    (f) => (f.name || '').toLowerCase().includes(q) || (f.flag || '').toLowerCase().includes(q),
+  )
 })
 
 async function loadList() {
   loading.value = true
-  try { const r = await api.get('/jaxrs/form/list'); items.value = r.data ?? [] }
-  catch { items.value = [] } finally { loading.value = false }
+  try {
+    const r = await api.get('/jaxrs/form/list')
+    items.value = r.data ?? []
+  } catch {
+    items.value = []
+  } finally {
+    loading.value = false
+  }
 }
 
 async function loadV2() {
   loadingV2.value = true
-  try { const r = await api.get('/jaxrs/form/v2/list'); itemsV2.value = r.data ?? [] }
-  catch { itemsV2.value = [] } finally { loadingV2.value = false }
+  try {
+    const r = await api.get('/jaxrs/form/v2/list')
+    itemsV2.value = r.data ?? []
+  } catch {
+    itemsV2.value = []
+  } finally {
+    loadingV2.value = false
+  }
 }
 
-function viewDetail(f: FormItem) { api.get('/jaxrs/form/' + f.id).then(r => { detailItem.value = r.data ?? f }).catch(() => { detailItem.value = f }) }
-function viewDetailV2(f: FormItem) { detailItem.value = f }
-function editForm(f: FormItem) { editingForm.value = f; mform.value = { name: f.name||'', flag: f.flag||'', category: f.category||'', schema: f.schema||'{}' }; showCreate.value = true }
-function editFormV2(f: FormItem) { editForm(f as FormItem) }
-function previewForm(f: FormItem) { toast.info('预览表单: ' + (f.name||f.id)) }
-function previewFormV2(f: FormItem) { previewForm(f as FormItem) }
+function viewDetail(f: FormItem) {
+  api
+    .get('/jaxrs/form/' + f.id)
+    .then((r) => {
+      detailItem.value = r.data ?? f
+    })
+    .catch(() => {
+      detailItem.value = f
+    })
+}
+function viewDetailV2(f: FormItem) {
+  detailItem.value = f
+}
+function editForm(f: FormItem) {
+  editingForm.value = f
+  mform.value = { name: f.name || '', flag: f.flag || '', category: f.category || '', schema: f.schema || '{}' }
+  showCreate.value = true
+}
+function editFormV2(f: FormItem) {
+  editForm(f as FormItem)
+}
+function previewForm(f: FormItem) {
+  toast.info('预览表单: ' + (f.name || f.id))
+}
+function previewFormV2(f: FormItem) {
+  previewForm(f as FormItem)
+}
 
 async function saveForm() {
-  if (!mform.value.name.trim()) { toast.info('请输入表单名称'); return }
+  if (!mform.value.name.trim()) {
+    toast.info('请输入表单名称')
+    return
+  }
   try {
-    if (editingForm.value?.id) { await api.put('/jaxrs/form/update/' + editingForm.value.id, mform.value) }
-    else { await api.post('/jaxrs/form/create', mform.value) }
-    showCreate.value = false; loadList()
-  } catch (e: any) { toast.error('保存失败: : ' + (e?.message ?? '')) }
+    if (editingForm.value?.id) {
+      await api.put('/jaxrs/form/update/' + editingForm.value.id, mform.value)
+    } else {
+      await api.post('/jaxrs/form/create', mform.value)
+    }
+    showCreate.value = false
+    loadList()
+  } catch (e: any) {
+    toast.error('保存失败: : ' + (e?.message ?? ''))
+  }
 }
 
 async function deleteForm(f: FormItem) {
-  if (!confirmMsg('确定删除表单「' + (f.name||f.id) + '」？')) return
-  try { await api.delete('/jaxrs/form/delete/' + f.id); items.value = items.value.filter(x => x.id !== f.id) }
-  catch (e: any) { toast.error('删除失败: : ' + (e?.message ?? '')) }
+  if (!confirmMsg('确定删除表单「' + (f.name || f.id) + '」？')) return
+  try {
+    await api.delete('/jaxrs/form/delete/' + f.id)
+    items.value = items.value.filter((x) => x.id !== f.id)
+  } catch (e: any) {
+    toast.error('删除失败: : ' + (e?.message ?? ''))
+  }
 }
 
 function useTemplate(t: any) {
-  mform.value = { name: t.name, flag: t.name.toLowerCase() + '_form', category: 'biz', schema: JSON.stringify({ fields: t.fields }, null, 2) }
-  editingForm.value = null; showCreate.value = true
+  mform.value = {
+    name: t.name,
+    flag: t.name.toLowerCase() + '_form',
+    category: 'biz',
+    schema: JSON.stringify({ fields: t.fields }, null, 2),
+  }
+  editingForm.value = null
+  showCreate.value = true
 }
 
-function restoreVersion(vi: number) { toast.info('恢复版本 ' + (versionList.value[vi]?.version || '?')) }
-function compareVersion(vi: number) { toast.info('对比版本 ' + (vi + 1)) }
+function restoreVersion(vi: number) {
+  toast.info('恢复版本 ' + (versionList.value[vi]?.version || '?'))
+}
+function compareVersion(vi: number) {
+  toast.info('对比版本 ' + (vi + 1))
+}
 
 function doExport() {
-  const data = items.value.map(f => ({ name: f.name, flag: f.flag, version: f.version, schema: f.schema }))
+  const data = items.value.map((f) => ({ name: f.name, flag: f.flag, version: f.version, schema: f.schema }))
   if (exportFmt.value === 'json') {
-    downloadBlob(new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' }), 'forms_' + new Date().toISOString().slice(0, 10) + '.json')
+    downloadBlob(
+      new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' }),
+      'forms_' + new Date().toISOString().slice(0, 10) + '.json',
+    )
   } else {
-    const csv = 'name,flag,version\n' + data.map(d => '"' + d.name + '","' + d.flag + '","' + d.version + '"').join('\n')
+    const csv =
+      'name,flag,version\n' + data.map((d) => '"' + d.name + '","' + d.flag + '","' + d.version + '"').join('\n')
     downloadBlob(new Blob([csv], { type: 'text/csv' }), 'forms_' + new Date().toISOString().slice(0, 10) + '.csv')
   }
   showImportExport.value = false
 }
 function downloadBlob(blob: Blob, filename: string) {
-  const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = filename; a.click()
+  const a = document.createElement('a')
+  a.href = URL.createObjectURL(blob)
+  a.download = filename
+  a.click()
 }
 async function doImport() {
   if (!importData.value.trim()) return
   try {
     const data = JSON.parse(importData.value)
-    if (!Array.isArray(data)) { importMsg.value = { ok: false, txt: '格式错误' }; return }
-    for (const f of data) { try { await api.post('/jaxrs/form/create', f) } catch {} }
+    if (!Array.isArray(data)) {
+      importMsg.value = { ok: false, txt: '格式错误' }
+      return
+    }
+    for (const f of data) {
+      try {
+        await api.post('/jaxrs/form/create', f)
+      } catch {}
+    }
     importMsg.value = { ok: true, txt: '成功导入 ' + data.length + ' 个表单' }
     loadList()
     showImportExport.value = false
-  } catch (e: any) { importMsg.value = { ok: false, txt: '导入失败: ' + e.message } }
+  } catch (e: any) {
+    importMsg.value = { ok: false, txt: '导入失败: ' + e.message }
+  }
 }
 
-function fmtTime(t?: string) { if (!t) return ''; try { return new Date(t).toLocaleString('zh-CN', { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' }) } catch { return String(t) } }
+function fmtTime(t?: string) {
+  if (!t) return ''
+  try {
+    return new Date(t).toLocaleString('zh-CN', { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' })
+  } catch {
+    return String(t)
+  }
+}
 loadList()
 
-
-
-
-const form_f_1_appinfo_app_1_ref = ref<any[]>([]);
+const form_f_1_appinfo_app_1_ref = ref<any[]>([])
 const form_f_1_appinfo_app_1_q = useQuery({
   queryKey: ['form_f_1_appinfo_app_1'],
   queryFn: async () => {
-    try { const r = await api.get("/jaxrs/form/f-1/appinfo/app-1"); return (r.data ?? []) as any[]; }
-    catch { return []; }
+    try {
+      const r = await api.get('/jaxrs/form/f-1/appinfo/app-1')
+      return (r.data ?? []) as any[]
+    } catch {
+      return []
+    }
   },
-  
-});
-const form_v2_f_1_mobile_ref = ref<any[]>([]);
+})
+const form_v2_f_1_mobile_ref = ref<any[]>([])
 const form_v2_f_1_mobile_q = useQuery({
   queryKey: ['form_v2_f_1_mobile'],
   queryFn: async () => {
-    try { const r = await api.get("/jaxrs/form/v2/f-1/mobile"); return (r.data ?? []) as any[]; }
-    catch { return []; }
+    try {
+      const r = await api.get('/jaxrs/form/v2/f-1/mobile')
+      return (r.data ?? []) as any[]
+    } catch {
+      return []
+    }
   },
-  
-});
-const form_list_all_ref = ref<any[]>([]);
+})
+const form_list_all_ref = ref<any[]>([])
 const form_list_all_q = useQuery({
   queryKey: ['form_list_all'],
   queryFn: async () => {
-    try { const r = await api.get("/jaxrs/form/list/all"); return (r.data ?? []) as any[]; }
-    catch { return []; }
+    try {
+      const r = await api.get('/jaxrs/form/list/all')
+      return (r.data ?? []) as any[]
+    } catch {
+      return []
+    }
   },
-  
-});
-const form_f_1_ref = ref<any[]>([]);
+})
+const form_f_1_ref = ref<any[]>([])
 const form_f_1_q = useQuery({
   queryKey: ['form_f_1'],
   queryFn: async () => {
-    try { const r = await api.get("/jaxrs/form/f-1"); return (r.data ?? []) as any[]; }
-    catch { return []; }
+    try {
+      const r = await api.get('/jaxrs/form/f-1')
+      return (r.data ?? []) as any[]
+    } catch {
+      return []
+    }
   },
-  
-});
-const formversion_list_form_f_1_ref = ref<any[]>([]);
+})
+const formversion_list_form_f_1_ref = ref<any[]>([])
 const formversion_list_form_f_1_q = useQuery({
   queryKey: ['formversion_list_form_f_1'],
   queryFn: async () => {
-    try { const r = await api.get("/jaxrs/formversion/list/form/f-1"); return (r.data ?? []) as any[]; }
-    catch { return []; }
+    try {
+      const r = await api.get('/jaxrs/formversion/list/form/f-1')
+      return (r.data ?? []) as any[]
+    } catch {
+      return []
+    }
   },
-  
-});
-const formversion_fv_1_ref = ref<any[]>([]);
+})
+const formversion_fv_1_ref = ref<any[]>([])
 const formversion_fv_1_q = useQuery({
   queryKey: ['formversion_fv_1'],
   queryFn: async () => {
-    try { const r = await api.get("/jaxrs/formversion/fv-1"); return (r.data ?? []) as any[]; }
-    catch { return []; }
+    try {
+      const r = await api.get('/jaxrs/formversion/fv-1')
+      return (r.data ?? []) as any[]
+    } catch {
+      return []
+    }
   },
-  
-});
-
+})
 </script>
 
 <style scoped>

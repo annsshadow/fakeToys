@@ -69,35 +69,46 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
-import { useQuery } from '@tanstack/vue-query'
 import { api } from '@oa4rust/sdk'
+import { useQuery } from '@tanstack/vue-query'
+import { ref } from 'vue'
 
 const activeSection = ref('basic')
 
 const sections = [
-  { id:'basic', label:'基础配置', icon:'⚙' },
-  { id:'security', label:'安全设置', icon:'🔒' },
-  { id:'notify', label:'通知配置', icon:'🔔' },
-  { id:'about', label:'关于', icon:'ℹ' },
+  { id: 'basic', label: '基础配置', icon: '⚙' },
+  { id: 'security', label: '安全设置', icon: '🔒' },
+  { id: 'notify', label: '通知配置', icon: '🔔' },
+  { id: 'about', label: '关于', icon: 'ℹ' },
 ]
 
-const cfg = ref({ systemName:'OA4Rust', logoUrl:'', timezone:'Asia/Shanghai', locale:'zh-cn', minPwdLen:8, lockAttempts:5, sessionTimeout:7200, allowRegister:false })
+const cfg = ref({
+  systemName: 'OA4Rust',
+  logoUrl: '',
+  timezone: 'Asia/Shanghai',
+  locale: 'zh-cn',
+  minPwdLen: 8,
+  lockAttempts: 5,
+  sessionTimeout: 7200,
+  allowRegister: false,
+})
 const toggles = ref([
-  { key:'emailNotify', label:'邮件通知', on:true },
-  { key:'smsNotify', label:'短信通知', on:false },
-  { key:'wsNotify', label:'WebSocket 实时通知', on:true },
-  { key:'captchaLogin', label:'登录验证码', on:true },
-  { key:'twoFactor', label:'双重认证', on:false },
+  { key: 'emailNotify', label: '邮件通知', on: true },
+  { key: 'smsNotify', label: '短信通知', on: false },
+  { key: 'wsNotify', label: 'WebSocket 实时通知', on: true },
+  { key: 'captchaLogin', label: '登录验证码', on: true },
+  { key: 'twoFactor', label: '双重认证', on: false },
 ])
 
-const { data } = useQuery({ queryKey:['settings'], queryFn:()=>api.get('/jaxrs/systemconfig/list').then((r:any)=>(r.data??{})), staleTime:300_000 })
-if(data.value) Object.assign(cfg.value, data.value)
+const { data } = useQuery({
+  queryKey: ['settings'],
+  queryFn: () => api.get('/jaxrs/systemconfig/list').then((r: any) => r.data ?? {}),
+  staleTime: 300_000,
+})
+if (data.value) Object.assign(cfg.value, data.value)
 
-function saveCfg(_section:string){
- }
-function saveToggles(){
- }
+function saveCfg(_section: string) {}
+function saveToggles() {}
 </script>
 
 <style scoped>

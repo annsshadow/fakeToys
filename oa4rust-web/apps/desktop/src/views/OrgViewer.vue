@@ -53,19 +53,56 @@
   </div>
 </template>
 <script setup lang="ts">
-import { ref } from 'vue'
-import { useQuery } from '@tanstack/vue-query'
 import { api } from '@oa4rust/sdk'
-interface N { id: string; name: string; type: 'group' | 'person'; _exp?: boolean; children?: N[]; childCount?: number }
+import { useQuery } from '@tanstack/vue-query'
+import { ref } from 'vue'
+
+interface N {
+  id: string
+  name: string
+  type: 'group' | 'person'
+  _exp?: boolean
+  children?: N[]
+  childCount?: number
+}
 const keyword = ref('')
 const nodes = ref<N[]>([])
 const selected = ref<N | null>(null)
 const treeLoading = ref(false)
 let timer: ReturnType<typeof setTimeout>
-const { data } = useQuery({ queryKey: ['org', 'tree'], queryFn: () => api.get('/jaxrs/organization/assemble/control/group/list').then((r: any) => { nodes.value = (r.data ?? []) as N[]; return r }), staleTime: 300000 })
-function toggleNode(n: N) { n._exp = !n._exp; if (n._exp && !n.children) { const id = n.id; api.get('/jaxrs/organization/assemble/control/group/' + id + '/sub/nested').then((r: any) => { n.children = (r.data ?? []) as N[] }) } }
-function selectNode(n: N) { selected.value = n }
-async function handleSearch() { if (!keyword.value.trim()) { nodes.value = []; return } try { const r = await api.get('/jaxrs/organization/assemble/control/group/list/like', { params: { keyword: keyword.value } }); nodes.value = (r.data ?? []) as N[] } catch {} }
+const { data } = useQuery({
+  queryKey: ['org', 'tree'],
+  queryFn: () =>
+    api.get('/jaxrs/organization/assemble/control/group/list').then((r: any) => {
+      nodes.value = (r.data ?? []) as N[]
+      return r
+    }),
+  staleTime: 300000,
+})
+function toggleNode(n: N) {
+  n._exp = !n._exp
+  if (n._exp && !n.children) {
+    const id = n.id
+    api.get('/jaxrs/organization/assemble/control/group/' + id + '/sub/nested').then((r: any) => {
+      n.children = (r.data ?? []) as N[]
+    })
+  }
+}
+function selectNode(n: N) {
+  selected.value = n
+}
+async function handleSearch() {
+  if (!keyword.value.trim()) {
+    nodes.value = []
+    return
+  }
+  try {
+    const r = await api.get('/jaxrs/organization/assemble/control/group/list/like', {
+      params: { keyword: keyword.value },
+    })
+    nodes.value = (r.data ?? []) as N[]
+  } catch {}
+}
 </script>
 <style scoped>
 .org-view{display:flex;flex-direction:column;gap:16px;height:100%}
