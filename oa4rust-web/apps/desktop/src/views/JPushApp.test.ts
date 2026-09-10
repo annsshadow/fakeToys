@@ -34,4 +34,11 @@ describe('JPushApp contracts', () => {
     expect(source).not.toContain("api.get('/jaxrs/jpush_assemble_control/message/send')")
     expect(source).not.toContain("'/jaxrs/jpush_assemble_control/message/send']")
   })
+
+  it('does not auto-run test sends through either route alias', () => {
+    expect(source).not.toContain("api.get('/jaxrs/jpush_assemble_control/message/test/send')")
+    expect(source).not.toContain("api.get('/jaxrs/jpush/assemble/control/message/test/send')")
+    expect(source).not.toContain("queryKey: ['jpush_assemble_control_message_test_send']")
+    expect(source).not.toContain("queryKey: ['control_message_test_send']")
+  })
 })
