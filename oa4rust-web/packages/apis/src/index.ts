@@ -272,7 +272,8 @@ export const jpushApi = {
   deviceDelete: (id: string) => api.delete(`/jaxrs/jpush/core/entity/device/${id}`),
   templateList: () => api.get('/jaxrs/jpush/core/entity/template/list'),
   templateUpdate: (id: string, data: unknown) => api.put(`/jaxrs/jpush/core/entity/template/${id}`, data),
-  assembleDeviceList: () => api.get('/jaxrs/jpush_assemble_control/device/list'),
+  assembleDeviceList: (pushType: string) =>
+    api.get(`/jaxrs/jpush_assemble_control/device/list/${encodeURIComponent(pushType)}`),
   assembleTemplateList: () => api.get('/jaxrs/jpush_assemble_control/template/list'),
   request: createRequest('/jaxrs/jpush/core/entity'),
 }
