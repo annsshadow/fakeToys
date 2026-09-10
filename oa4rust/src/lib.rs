@@ -64,6 +64,10 @@ pub async fn create_app(
     session_manager: SessionManager,
     rate_limiter: RateLimiter,
 ) -> anyhow::Result<Router> {
+    let auth_config = shared::config::AuthConfig::from_env()?;
+    let public_origin = auth_config.public_origin.clone();
+    let mut session_manager = session_manager;
+    session_manager.auth_config = auth_config.clone();
     let security_state = shared::middleware::SecurityState {
         session_manager: session_manager.clone(),
         rate_limiter: rate_limiter.clone(),
@@ -171,9 +175,15 @@ pub async fn create_app(
         ))
         .layer(axum::middleware::from_fn_with_state(
             security_state.clone(),
+            shared::middleware::csrf_middleware,
+        ))
+        .layer(axum::middleware::from_fn_with_state(
+            security_state.clone(),
             shared::middleware::rate_limit_middleware,
         ))
-        .layer(shared::middleware::cors_middleware())
+        .layer(shared::middleware::cors_middleware_for_origin(
+            &public_origin,
+        ))
         .layer(axum::middleware::from_fn(
             shared::middleware::security_headers_middleware,
         ))

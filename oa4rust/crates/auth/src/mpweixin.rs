@@ -5,6 +5,7 @@ use axum::{
     routing::{get, post},
     Json, Router,
 };
+use axum::response::{IntoResponse, Response};
 use deadpool_postgres::Pool;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
@@ -196,12 +197,12 @@ async fn mpweixin_access_token() -> Result<String, AppError> {
     Ok(token)
 }
 
-/// 按 openid 查找或创建本地用户，并签发会话 token
+/// 按 openid 查找或创建本地用户，并签发会话
 async fn mpweixin_login_or_create(
     pool: &Pool,
     session_manager: &SessionManager,
     openid: &str,
-) -> Result<Value, AppError> {
+) -> Result<(Value, Option<String>), AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let unique_id = format!("{MPWEXIN_UNIQUE_PREFIX}{openid}");
@@ -224,10 +225,9 @@ async fn mpweixin_login_or_create(
             let person_email: Option<String> = r.get("email");
 
             let token = uuid::Uuid::new_v4().to_string();
-            let session = session_manager.create_session(person_unique.clone(), token.clone()).await?;
+            session_manager.create_session(person_unique.clone(), token.clone()).await?;
 
-            Ok(serde_json::json!({
-                "token": session.token,
+            Ok((serde_json::json!({
                 "person": {
                     "id": person_id,
                     "unique": person_unique,
@@ -235,12 +235,12 @@ async fn mpweixin_login_or_create(
                     "mobile": person_mobile.unwrap_or_default(),
                     "email": person_email.unwrap_or_default(),
                 },
-            }))
+            }), Some(token)))
         }
-        None => Ok(serde_json::json!({
+        None => Ok((serde_json::json!({
             "unbind": true,
             "mpwxopenId": openid,
-        })),
+        }), None)),
     }
 }
 
@@ -249,13 +249,16 @@ pub async fn mpweixin_login(
     pool: Extension<Pool>,
     session_manager: Extension<SessionManager>,
     Path(code): Path<String>,
-) -> Result<Json<ActionResult<Value>>, AppError> {
+) -> Result<Response, AppError> {
     if code.is_empty() {
-        return Ok(Json(ActionResult::error("code is required")));
+        return Ok(Json(ActionResult::<Value>::error("code is required")).into_response());
     }
     let openid = mpweixin_openid(&code).await?;
-    let result = mpweixin_login_or_create(&pool, &session_manager, &openid).await?;
-    Ok(Json(ActionResult::success(result)))
+    let (result, session_token) = mpweixin_login_or_create(&pool, &session_manager, &openid).await?;
+    match session_token {
+        Some(token) => Ok(crate::session_response(result, &token, &session_manager)),
+        None => Ok(Json(ActionResult::success(result)).into_response()),
+    }
 }
 
 /// GET /jaxrs/mpweixin/bind/code/{code} —— 绑定 openid 到当前登录用户

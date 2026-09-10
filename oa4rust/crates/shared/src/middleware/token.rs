@@ -1,6 +1,6 @@
 use axum::body::Body;
 use axum::extract::State;
-use axum::http::{header, HeaderMap, Request};
+use axum::http::{header, HeaderMap, Method, Request};
 use axum::middleware::Next;
 use axum::response::{IntoResponse, Response};
 use deadpool_postgres::Pool;
@@ -9,72 +9,96 @@ use super::constants::*;
 use super::security::{is_auth_exempt, path_matches, SecurityState};
 use crate::error::AppError;
 
-/// 从 HeaderMap 提取会话令牌：优先 Authorization: Bearer <token>，
-/// 回退 Cookie 中的 `token` 字段。
-pub fn extract_token_from_headers(headers: &HeaderMap) -> Option<String> {
-    if let Some(auth) = headers
-        .get(header::AUTHORIZATION)
-        .and_then(|h| h.to_str().ok())
-    {
-        if let Some(token) = auth.strip_prefix("Bearer ") {
-            let token = token.trim();
-            if !token.is_empty() {
-                return Some(token.to_string());
-            }
+pub const SESSION_COOKIE_NAME: &str = "oa4rust_session";
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum Authentication {
+    Cookie(String),
+    Bearer(String),
+}
+
+impl Authentication {
+    pub fn token(&self) -> &str {
+        match self {
+            Self::Cookie(token) | Self::Bearer(token) => token,
         }
     }
+}
 
-    let cookie = headers.get(header::COOKIE)?.to_str().ok()?;
-    for part in cookie.split(';') {
-        if let Some(v) = part.trim().strip_prefix("token=") {
-            let v = v.trim().trim_matches('"');
-            if !v.is_empty() {
-                return Some(v.to_string());
+/// Cookie 一旦存在就优先使用；空值或无效值也不回退 Bearer。
+pub fn extract_authentication(headers: &HeaderMap) -> Option<Authentication> {
+    if let Some(token) = session_cookie(headers) {
+        return Some(Authentication::Cookie(token.to_string()));
+    }
+    let auth = headers.get(header::AUTHORIZATION)?.to_str().ok()?;
+    let token = auth.strip_prefix("Bearer ")?.trim();
+    (!token.is_empty()).then(|| Authentication::Bearer(token.to_string()))
+}
+
+pub fn extract_token_from_headers(headers: &HeaderMap) -> Option<String> {
+    extract_authentication(headers).and_then(|authentication| {
+        let token = authentication.token();
+        (!token.is_empty()).then(|| token.to_string())
+    })
+}
+
+fn session_cookie(headers: &HeaderMap) -> Option<&str> {
+    for cookie in headers.get_all(header::COOKIE) {
+        let Ok(cookie) = cookie.to_str() else { continue };
+        for part in cookie.split(';') {
+            let Some((name, value)) = part.trim().split_once('=') else { continue };
+            if name.trim() == SESSION_COOKIE_NAME {
+                return Some(value.trim().trim_matches('"'));
             }
         }
     }
     None
 }
 
-/// 从请求提取会话令牌：优先 Authorization: Bearer <token>，
-/// 回退 Cookie 中的 `token` 字段。
-pub(crate) fn extract_token(request: &Request<Body>) -> Option<String> {
-    extract_token_from_headers(request.headers())
+pub async fn csrf_middleware(
+    State(state): State<SecurityState>,
+    request: Request<Body>,
+    next: Next,
+) -> Response {
+    if !matches!(*request.method(), Method::POST | Method::PUT | Method::PATCH | Method::DELETE) {
+        return next.run(request).await;
+    }
+    if !matches!(extract_authentication(request.headers()), Some(Authentication::Cookie(_))) {
+        return next.run(request).await;
+    }
+    let matches = request.headers().get(header::ORIGIN)
+        .and_then(|value| value.to_str().ok())
+        .map(|origin| origin == state.session_manager.auth_config.public_origin)
+        .unwrap_or(false);
+    if !matches {
+        return AppError::Forbidden.into_response();
+    }
+    next.run(request).await
 }
 
-/// 系统是否未初始化：auth_person 中不存在任何未删除（deleted_at IS NULL）且
-/// 未锁定（locked = false）的用户。查询失败时 fail-closed（按已初始化处理，
-/// 要求认证），避免在系统状态未知时放开认证。
+/// 系统是否未初始化：查询失败时 fail-closed。
 pub(crate) async fn system_uninitialized(pool: &Pool) -> bool {
     let client = match pool.get().await {
         Ok(c) => c,
         Err(_) => return false,
     };
-    match client
-        .query(
-            "SELECT 1 FROM auth_person WHERE locked = false AND deleted_at IS NULL LIMIT 1",
-            &[],
-        )
-        .await
-    {
+    match client.query(
+        "SELECT 1 FROM auth_person WHERE locked = false AND deleted_at IS NULL LIMIT 1",
+        &[],
+    ).await {
         Ok(rows) => rows.is_empty(),
         Err(_) => false,
     }
 }
 
-/// 认证中间件：为所有非豁免端点验证会话令牌（Authorization: Bearer <token>
-/// 或 Cookie `token`），并注入 Extension<Session>。未认证返回 401。
-/// /jaxrs/secret/check|set 仅在系统未初始化时豁免。
 pub async fn auth_middleware(
     State(state): State<SecurityState>,
     mut request: Request<Body>,
     next: Next,
 ) -> Response {
-
     let path = request.uri().path().to_string();
 
     if is_auth_exempt(&path) {
-        // 系统初始化端点仅在系统未初始化时豁免
         if !SECRET_INIT_PATHS.iter().any(|p| path_matches(&path, p))
             || system_uninitialized(&state.pool).await
         {
@@ -82,11 +106,14 @@ pub async fn auth_middleware(
         }
     }
 
-    let Some(token) = extract_token(&request) else {
+    let Some(authentication) = extract_authentication(request.headers()) else {
         return AppError::Unauthorized.into_response();
     };
-
-    match state.session_manager.validate_session(&token).await {
+    let token = authentication.token();
+    if token.is_empty() {
+        return AppError::Unauthorized.into_response();
+    }
+    match state.session_manager.validate_session(token).await {
         Some(session) => {
             request.extensions_mut().insert(session);
             next.run(request).await

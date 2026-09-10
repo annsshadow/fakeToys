@@ -5,10 +5,60 @@ mod tests {
     use crate::SessionManager;
     use base64::Engine;
     use shared::response::ActionResult;
-    
+
     use axum::body::Body;
     use axum::http::{Request, StatusCode};
     use tower::util::ServiceExt;
+
+    fn auth_config(secure: bool) -> shared::config::AuthConfig {
+        shared::config::AuthConfig {
+            public_origin: "http://localhost:3000".to_string(),
+            cookie_secure: secure,
+            session_ttl_seconds: 7200,
+        }
+    }
+
+    #[test]
+    fn test_session_cookie_attributes() {
+        for secure in [false, true] {
+            let cookie = crate::make_session_cookie("token", &auth_config(secure));
+            assert!(cookie.starts_with("oa4rust_session=token"));
+            for attribute in ["HttpOnly", "SameSite=Lax", "Path=/", "Max-Age=7200", "Expires="] {
+                assert!(cookie.contains(attribute));
+            }
+            assert!(!cookie.contains("Domain="));
+            assert_eq!(cookie.contains("Secure"), secure);
+        }
+        let clear = crate::make_clear_cookie(&auth_config(true));
+        for attribute in ["Max-Age=0", "Expires=", "HttpOnly", "Secure", "SameSite=Lax", "Path=/"] {
+            assert!(clear.contains(attribute));
+        }
+        assert!(!clear.contains("Domain="));
+    }
+
+    #[tokio::test]
+    async fn test_refresh_empty_body_and_logout_idempotent() {
+        let pool = shared::testing::test_pool();
+        let mut manager = SessionManager::new();
+        manager.auth_config = auth_config(false);
+        manager.create_session("user".to_string(), "old".to_string()).await.unwrap();
+        let app = crate::router(pool, RateLimiter::new(), manager.clone());
+        let response = app.clone().oneshot(Request::builder()
+            .method("POST").uri("/jaxrs/authentication/refresh")
+            .header("cookie", "oa4rust_session=old").body(Body::empty()).unwrap()).await.unwrap();
+        assert_eq!(response.status(), StatusCode::OK);
+        assert!(response.headers()["set-cookie"].to_str().unwrap().starts_with("oa4rust_session="));
+        assert!(manager.validate_session("old").await.is_none());
+
+        for _ in 0..2 {
+            let response = app.clone().oneshot(Request::builder()
+                .method("DELETE").uri("/jaxrs/authentication")
+                .body(Body::empty()).unwrap()).await.unwrap();
+            assert_eq!(response.status(), StatusCode::OK);
+            assert_eq!(response.headers()["cache-control"], "no-store");
+            assert!(response.headers()["set-cookie"].to_str().unwrap().contains("Max-Age=0"));
+        }
+    }
 
     #[test]
     fn test_verify_password_md5() {
@@ -436,15 +486,11 @@ mod tests {
             position: None,
         };
         let response = crate::LoginResponse {
-            token: "test-token".to_string(),
-            token_type: "Bearer".to_string(),
             role_list: vec!["admin".to_string(), "user".to_string()],
             password_expired: false,
             identity_list: vec!["identity1".to_string()],
             person,
         };
-        assert_eq!(response.token, "test-token");
-        assert_eq!(response.token_type, "Bearer");
         assert_eq!(response.role_list, vec!["admin".to_string(), "user".to_string()]);
         assert!(!response.password_expired);
         assert_eq!(response.identity_list, vec!["identity1".to_string()]);
@@ -466,8 +512,6 @@ mod tests {
             position: None,
         };
         let response = crate::LoginResponse {
-            token: "expired-token".to_string(),
-            token_type: "Bearer".to_string(),
             role_list: vec![],
             password_expired: true,
             identity_list: vec![],
@@ -564,8 +608,6 @@ mod tests {
             position: None,
         };
         let response = crate::LoginResponse {
-            token: "t".to_string(),
-            token_type: "Bearer".to_string(),
             role_list: vec!["admin".to_string()],
             password_expired: false,
             identity_list: vec![],
@@ -575,8 +617,7 @@ mod tests {
         assert_eq!(result.r#type, Some("success".to_string()));
         assert!(result.data.is_some());
         let data = result.data.unwrap();
-        assert_eq!(data.token, "t");
-        assert_eq!(data.token_type, "Bearer");
+        assert_eq!(data.role_list, vec!["admin".to_string()]);
     }
 
     // --- U3 新增测试用例：安全注销广播 ---
@@ -795,8 +836,8 @@ mod tests {
         let bytes = axum::body::to_bytes(response.into_body(), 4096).await.unwrap();
         let json: serde_json::Value = serde_json::from_slice(&bytes).unwrap();
         assert_eq!(json["type"], "success");
-        assert!(json["data"]["token"].as_str().is_some());
-        assert!(!json["data"]["token"].as_str().unwrap().is_empty());
+        assert!(json["data"].get("token").is_none());
+        assert!(json["data"].get("token_type").is_none());
     }
 
     // --- U6 新增测试用例：LDAP + two_factor 安全验证 ---
@@ -1042,7 +1083,7 @@ mod tests {
         let bytes = axum::body::to_bytes(response.into_body(), 4096).await.unwrap();
         let json: serde_json::Value = serde_json::from_slice(&bytes).unwrap();
         assert_eq!(json["type"], "success");
-        assert!(!json["data"]["token"].as_str().unwrap().is_empty());
+        assert!(json["data"].get("token").is_none());
     }
 
     #[tokio::test]

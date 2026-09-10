@@ -11,6 +11,7 @@ use tower_http::cors::CorsLayer;
 use tracing::warn;
 
 use super::constants::*;
+use crate::config::AuthConfig;
 use crate::error::AppError;
 use crate::rate_limit::RateLimiter;
 use crate::session::SessionManager;
@@ -19,41 +20,27 @@ use crate::session::SessionManager;
 // CORS 中间件
 //
 // 允许 o2web 前端跨域访问，支持凭据（Authorization/Cookie）。
-// 仅允许 GET/POST/HEAD/OPTIONS 方法，允许 Authorization/Content-Type 头。
+// 允许常用读写方法，允许 Authorization/Content-Type 头。
 // ──────────────────────────────────────────────────────────────────────────────
 pub fn cors_middleware() -> CorsLayer {
+    let config = AuthConfig::from_env().expect("invalid browser authentication configuration");
+    cors_middleware_for_origin(&config.public_origin)
+}
+
+pub fn cors_middleware_for_origin(public_origin: &str) -> CorsLayer {
     use tower_http::cors::AllowOrigin;
 
-    let origins: Vec<String> = env::var("CORS_ALLOW_ORIGIN")
-        .unwrap_or_default()
-        .split(',')
-        .map(|s| s.trim().to_string())
-        .filter(|s| !s.is_empty())
-        .collect();
-
-    let allow_origin = if origins.is_empty() {
-        AllowOrigin::exact(
-            "http://localhost:3000"
-                .parse::<HeaderValue>()
-                .expect("default origin parse"),
-        )
-    } else {
-        let header_values: Vec<HeaderValue> = origins
-            .into_iter()
-            .filter_map(|o| o.parse::<HeaderValue>().ok())
-            .collect();
-        if header_values.len() == 1 {
-            AllowOrigin::exact(header_values.into_iter().next().unwrap())
-        } else {
-            AllowOrigin::list(header_values)
-        }
-    };
+    let allow_origin = AllowOrigin::exact(public_origin.parse::<HeaderValue>()
+        .expect("validated APP_PUBLIC_ORIGIN must be a valid header value"));
 
     CorsLayer::new()
         .allow_origin(allow_origin)
         .allow_methods([
             axum::http::Method::GET,
             axum::http::Method::POST,
+            axum::http::Method::PUT,
+            axum::http::Method::PATCH,
+            axum::http::Method::DELETE,
             axum::http::Method::HEAD,
             axum::http::Method::OPTIONS,
         ])

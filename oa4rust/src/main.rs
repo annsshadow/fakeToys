@@ -7,8 +7,8 @@ use mcp_server::tool_bridge::ToolBridge;
 use openapi::ApiDoc;
 use shared::db::create_pool;
 use shared::middleware::{
-    auth_middleware, authorize_middleware, rate_limit_middleware,
-    security_headers_middleware, trace_middleware,
+    auth_middleware, authorize_middleware, rate_limit_middleware, security_headers_middleware,
+    trace_middleware,
 };
 use shared::rate_limit::RateLimiter;
 use shared::session::SessionManager;
@@ -31,6 +31,9 @@ async fn main() -> anyhow::Result<()> {
         .init();
 
     dotenvy::dotenv().ok();
+
+    let auth_config = shared::config::AuthConfig::from_env()
+        .context("invalid browser authentication configuration")?;
 
     let args: Vec<String> = env::args().collect();
     let http_flag = args.iter().any(|a| a == "--http");
@@ -55,7 +58,7 @@ async fn main() -> anyhow::Result<()> {
         return Ok(());
     }
 
-    let session_manager = SessionManager::with_pool(pool.clone());
+    let session_manager = SessionManager::with_pool_and_config(pool.clone(), auth_config.clone());
     let rate_limiter = RateLimiter::new();
 
     // Phase B-U-B2: Redis 为默认 session 存储，不可达时降级为内存+DB 模式
@@ -183,6 +186,10 @@ fn mcp_app(bridge: Arc<ToolBridge>, security_state: shared::middleware::Security
         .layer(middleware::from_fn_with_state(
             security_state.clone(),
             auth_middleware,
+        ))
+        .layer(middleware::from_fn_with_state(
+            security_state.clone(),
+            shared::middleware::csrf_middleware,
         ))
         .layer(middleware::from_fn_with_state(
             security_state.clone(),

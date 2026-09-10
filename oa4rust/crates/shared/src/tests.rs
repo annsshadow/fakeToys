@@ -13,8 +13,9 @@ mod tests {
 
     use crate::error::AppError;
     use crate::middleware::{
-        auth_middleware, authorize_middleware, client_ip, extract_token, rate_limit_middleware,
-        security_headers_middleware, trace_middleware, SecurityState,
+        auth_middleware, authorize_middleware, client_ip, csrf_middleware,
+        extract_authentication, rate_limit_middleware, security_headers_middleware,
+        trace_middleware, Authentication, SecurityState, SESSION_COOKIE_NAME,
     };
     use crate::rate_limit::RateLimiter;
     use crate::response::ActionResult;
@@ -68,6 +69,10 @@ mod tests {
             .layer(middleware::from_fn_with_state(
                 state.clone(),
                 auth_middleware,
+            ))
+            .layer(middleware::from_fn_with_state(
+                state.clone(),
+                csrf_middleware,
             ))
             .layer(middleware::from_fn_with_state(
                 state.clone(),
@@ -148,7 +153,7 @@ mod tests {
         let req = Request::builder()
             .method(Method::GET)
             .uri("/jaxrs/unit/list")
-            .header(header::COOKIE, format!("token={}", token))
+            .header(header::COOKIE, format!("{}={}", SESSION_COOKIE_NAME, token))
             .body(Body::empty())
             .unwrap();
         let status = app.clone().oneshot(req).await.unwrap().status();
@@ -177,26 +182,85 @@ mod tests {
 
     #[test]
     fn test_extract_token_priority() {
-        // Authorization 头优先于 Cookie
-        let req = Request::builder()
-            .uri("/x")
-            .header(header::AUTHORIZATION, "Bearer abc123")
-            .header(header::COOKIE, "token=cookie-token")
+        let mut headers = axum::http::HeaderMap::new();
+        headers.insert(header::AUTHORIZATION, "Bearer bearer-token".parse().unwrap());
+        headers.insert(
+            header::COOKIE,
+            format!("{}=cookie-token", SESSION_COOKIE_NAME).parse().unwrap(),
+        );
+        assert_eq!(
+            extract_authentication(&headers),
+            Some(Authentication::Cookie("cookie-token".to_string()))
+        );
+
+        headers.insert(
+            header::COOKIE,
+            format!("{}=", SESSION_COOKIE_NAME).parse().unwrap(),
+        );
+        assert_eq!(
+            extract_authentication(&headers),
+            Some(Authentication::Cookie(String::new())),
+            "空 Cookie 不得回退 Bearer"
+        );
+
+        headers.remove(header::COOKIE);
+        assert_eq!(
+            extract_authentication(&headers),
+            Some(Authentication::Bearer("bearer-token".to_string()))
+        );
+    }
+
+    #[tokio::test]
+    async fn test_csrf_cookie_write_requires_exact_origin_and_bearer_is_exempt() {
+        let state = security_state();
+        let token = make_token(&state.session_manager, "user").await;
+        let app = test_app(state);
+
+        let request = Request::builder()
+            .method(Method::POST)
+            .uri("/jaxrs/reset")
+            .header(header::COOKIE, format!("{}={}", SESSION_COOKIE_NAME, token))
             .body(Body::empty())
             .unwrap();
-        assert_eq!(extract_token(&req).as_deref(), Some("abc123"));
+        assert_eq!(app.clone().oneshot(request).await.unwrap().status(), StatusCode::FORBIDDEN);
 
-        // Cookie 回退：多 cookie 中取 token 字段
-        let req = Request::builder()
-            .uri("/x")
-            .header(header::COOKIE, "other=1; token=cookie-token")
+        let request = Request::builder()
+            .method(Method::POST)
+            .uri("/jaxrs/reset")
+            .header(header::COOKIE, format!("{}={}", SESSION_COOKIE_NAME, token))
+            .header(header::ORIGIN, "http://localhost:3000")
             .body(Body::empty())
             .unwrap();
-        assert_eq!(extract_token(&req).as_deref(), Some("cookie-token"));
+        assert_eq!(app.clone().oneshot(request).await.unwrap().status(), StatusCode::OK);
 
-        // 无任何凭证
-        let req = Request::builder().uri("/x").body(Body::empty()).unwrap();
-        assert_eq!(extract_token(&req), None);
+        let request = Request::builder()
+            .method(Method::POST)
+            .uri("/jaxrs/reset")
+            .header(header::AUTHORIZATION, format!("Bearer {}", token))
+            .body(Body::empty())
+            .unwrap();
+        assert_eq!(app.oneshot(request).await.unwrap().status(), StatusCode::OK);
+    }
+
+    #[tokio::test]
+    async fn test_cors_preflight_allows_write_methods() {
+        let app = Router::new()
+            .route("/write", post(|| async { "ok" }))
+            .layer(crate::middleware::cors_middleware_for_origin("http://localhost:3000"));
+        for method in ["PUT", "PATCH", "DELETE"] {
+            let response = app.clone().oneshot(
+                Request::builder()
+                    .method(Method::OPTIONS)
+                    .uri("/write")
+                    .header(header::ORIGIN, "http://localhost:3000")
+                    .header(header::ACCESS_CONTROL_REQUEST_METHOD, method)
+                    .body(Body::empty())
+                    .unwrap(),
+            ).await.unwrap();
+            assert_eq!(response.status(), StatusCode::OK);
+            let allowed = response.headers()[header::ACCESS_CONTROL_ALLOW_METHODS].to_str().unwrap();
+            assert!(allowed.split(',').any(|value| value.trim() == method));
+        }
     }
 
     // ──────────────────────────────────────────────────────────────────────────
