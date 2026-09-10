@@ -214,19 +214,6 @@ const jpush_assemble_control_config_q = useQuery({
     }
   },
 })
-const jpush_send_ref = ref<any[]>([])
-const jpush_send_q = useQuery({
-  queryKey: ['jpush_send'],
-  queryFn: async () => {
-    try {
-      const r = await api.get('/jaxrs/jpush/send')
-      return (r.data ?? []) as any[]
-    } catch {
-      return []
-    }
-  },
-})
-
 const api_jpush_as_362_data = ref<any[]>([])
 const { data: api_jpush_as_362_q } = useQuery({
   queryKey: ['api_jpush_as_362', '/jaxrs/jpush_assemble_control/save/jpush'],
