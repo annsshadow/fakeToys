@@ -48,4 +48,8 @@ describe('JPushApp contracts', () => {
     expect(source).not.toContain("'/jaxrs/jpush_assemble_control/device/admin/unbind/all/person']")
     expect(source).not.toContain("'/jaxrs/jpush/assemble/control/device/admin/unbind/all/person']")
   })
+  it('does not auto-run device unbind with placeholder identifiers', () => {
+    expect(source).not.toContain("api.get('/jaxrs/jpush_assemble_control/device/unbind/a/b')")
+    expect(source).not.toContain("'/jaxrs/jpush_assemble_control/device/unbind/a/b']")
+  })
 })
