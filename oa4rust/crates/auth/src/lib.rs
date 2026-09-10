@@ -61,6 +61,37 @@ pub(crate) fn session_response<T: Serialize>(
     )
 }
 
+/// 匿名（无任何凭据）whoami 负载，字段对齐 O2OA v9 Java 匿名响应。
+fn anonymous_whoami_map() -> serde_json::Map<String, Value> {
+    let mut map = serde_json::Map::new();
+    map.insert("tokenType".to_string(), Value::String("anonymous".to_string()));
+    map.insert("roleList".to_string(), Value::Array(vec![]));
+    map.insert("passwordExpired".to_string(), Value::Bool(false));
+    map.insert("identityList".to_string(), Value::Array(vec![]));
+    map.insert("id".to_string(), Value::String(String::new()));
+    map.insert("name".to_string(), Value::String(String::new()));
+    map.insert("employee".to_string(), Value::String(String::new()));
+    map.insert("unique".to_string(), Value::String(String::new()));
+    map.insert("distinguishedName".to_string(), Value::String(String::new()));
+    map.insert("orderNumber".to_string(), Value::Number(serde_json::Number::from(0)));
+    map.insert("controllerList".to_string(), Value::Array(vec![]));
+    map.insert("changePasswordTime".to_string(), Value::String(String::new()));
+    map.insert("lastLoginTime".to_string(), Value::String(String::new()));
+    map.insert("lastLoginAddress".to_string(), Value::String(String::new()));
+    map.insert("lastLoginClient".to_string(), Value::String(String::new()));
+    map.insert("mail".to_string(), Value::String(String::new()));
+    map.insert("mobile".to_string(), Value::String(String::new()));
+    map.insert("failureTime".to_string(), Value::String(String::new()));
+    map.insert("failureCount".to_string(), Value::Number(serde_json::Number::from(0)));
+    map.insert("topUnitList".to_string(), Value::Array(vec![]));
+    map.insert("status".to_string(), Value::String("0".to_string()));
+    map.insert("statusDes".to_string(), Value::String(String::new()));
+    map.insert("createTime".to_string(), Value::String(String::new()));
+    map.insert("updateTime".to_string(), Value::String(String::new()));
+    map.insert("sequence".to_string(), Value::String(String::new()));
+    map
+}
+
 mod ldap_auth;
 pub mod andfx;
 pub mod bind;
@@ -271,7 +302,8 @@ pub async fn login(
 
 // --- 刷新 / 登出 / 当前用户 ---
 
-/// 刷新会话令牌：从认证凭据轮换 token，不接收 body token。
+/// 刷新会话令牌：浏览器契约，只接受 HttpOnly 会话 Cookie 并旋转，
+/// 不接收 body token，也不接受 Bearer（CLI 独立刷新契约留待后续）。
 #[allow(non_snake_case)]
 pub async fn refresh(
     _pool: Extension<Pool>,
@@ -279,15 +311,20 @@ pub async fn refresh(
     headers: HeaderMap,
 ) -> Result<Response, AppError> {
     let authentication = extract_authentication(&headers).ok_or(AppError::Unauthorized)?;
-    let old_token = authentication.token();
+    let old_token = match authentication {
+        shared::middleware::Authentication::Cookie(token) => token,
+        // 存在 Cookie 时 extract_authentication 只会返回 Cookie，因此 Bearer 分支意味着
+        // 请求只携带 Bearer——refresh 是浏览器契约，拒绝。
+        _ => return Err(AppError::Unauthorized),
+    };
     if old_token.is_empty() {
         return Err(AppError::Unauthorized);
     }
-    let session = session_manager.validate_session(old_token).await.ok_or(AppError::Unauthorized)?;
+    let session = session_manager.validate_session(&old_token).await.ok_or(AppError::Unauthorized)?;
 
     let new_token = Uuid::new_v4().to_string();
     session_manager.create_session(session.person_unique, new_token.clone()).await?;
-    session_manager.remove_session(old_token).await;
+    session_manager.remove_session(&old_token).await;
 
     Ok(with_session_cookie(
         Json(ActionResult::success(Value::Object(serde_json::Map::new()))),
@@ -315,79 +352,35 @@ pub async fn logout(
 /// 查询当前认证用户信息（契约路径 GET /jaxrs/authentication，兼容自造路径）
 ///
 /// 从会话解析当前用户身份，按 unique_id 查询数据库（不再取首条记录）。
-/// 未认证时返回匿名 token 信息（对齐 Java 行为）。
+/// 凭据语义（对齐计划 R3，不回退 Bearer）：
+/// - 完全无凭据 → 匿名 200（Java 行为，前端首访/探测）。
+/// - 凭据存在但无效（空/过期/篡改，或 Cookie 存在故不回退 Bearer）→ 401。
 #[allow(non_snake_case)]
 pub async fn whoami(
     pool: Extension<Pool>,
     session_manager: Extension<SessionManager>,
     headers: HeaderMap,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    // 尝试提取会话；未提供时返回匿名信息。
     let session_token = match extract_authentication(&headers) {
-        Some(authentication) if !authentication.token().is_empty() => authentication.token().to_string(),
-        _ => {
-            let mut map = serde_json::Map::new();
-            map.insert("tokenType".to_string(), Value::String("anonymous".to_string()));
-            map.insert("roleList".to_string(), Value::Array(vec![]));
-            map.insert("passwordExpired".to_string(), Value::Bool(false));
-            map.insert("identityList".to_string(), Value::Array(vec![]));
-            map.insert("id".to_string(), Value::String(String::new()));
-            map.insert("name".to_string(), Value::String(String::new()));
-            map.insert("employee".to_string(), Value::String(String::new()));
-            map.insert("unique".to_string(), Value::String(String::new()));
-            map.insert("distinguishedName".to_string(), Value::String(String::new()));
-            map.insert("orderNumber".to_string(), Value::Number(serde_json::Number::from(0)));
-            map.insert("controllerList".to_string(), Value::Array(vec![]));
-            map.insert("changePasswordTime".to_string(), Value::String(String::new()));
-            map.insert("lastLoginTime".to_string(), Value::String(String::new()));
-            map.insert("lastLoginAddress".to_string(), Value::String(String::new()));
-            map.insert("lastLoginClient".to_string(), Value::String(String::new()));
-            map.insert("mail".to_string(), Value::String(String::new()));
-            map.insert("mobile".to_string(), Value::String(String::new()));
-            map.insert("failureTime".to_string(), Value::String(String::new()));
-            map.insert("failureCount".to_string(), Value::Number(serde_json::Number::from(0)));
-            map.insert("topUnitList".to_string(), Value::Array(vec![]));
-            map.insert("status".to_string(), Value::String("0".to_string()));
-            map.insert("statusDes".to_string(), Value::String(String::new()));
-            map.insert("createTime".to_string(), Value::String(String::new()));
-            map.insert("updateTime".to_string(), Value::String(String::new()));
-            map.insert("sequence".to_string(), Value::String(String::new()));
-            return Ok(Json(ActionResult::java_success(Value::Object(map), 0, -1)));
+        None => {
+            return Ok(Json(ActionResult::java_success(
+                Value::Object(anonymous_whoami_map()),
+                0,
+                -1,
+            )))
+        }
+        Some(authentication) => {
+            let token = authentication.token().to_string();
+            if token.is_empty() {
+                return Err(AppError::Unauthorized);
+            }
+            token
         }
     };
 
     let session = match session_manager.validate_session(&session_token).await {
         Some(s) => s,
-        None => {
-            // token 无效也返回匿名信息（Java 行为）
-            let mut map = serde_json::Map::new();
-            map.insert("tokenType".to_string(), Value::String("anonymous".to_string()));
-            map.insert("roleList".to_string(), Value::Array(vec![]));
-            map.insert("passwordExpired".to_string(), Value::Bool(false));
-            map.insert("identityList".to_string(), Value::Array(vec![]));
-            map.insert("id".to_string(), Value::String(String::new()));
-            map.insert("name".to_string(), Value::String(String::new()));
-            map.insert("employee".to_string(), Value::String(String::new()));
-            map.insert("unique".to_string(), Value::String(String::new()));
-            map.insert("distinguishedName".to_string(), Value::String(String::new()));
-            map.insert("orderNumber".to_string(), Value::Number(serde_json::Number::from(0)));
-            map.insert("controllerList".to_string(), Value::Array(vec![]));
-            map.insert("changePasswordTime".to_string(), Value::String(String::new()));
-            map.insert("lastLoginTime".to_string(), Value::String(String::new()));
-            map.insert("lastLoginAddress".to_string(), Value::String(String::new()));
-            map.insert("lastLoginClient".to_string(), Value::String(String::new()));
-            map.insert("mail".to_string(), Value::String(String::new()));
-            map.insert("mobile".to_string(), Value::String(String::new()));
-            map.insert("failureTime".to_string(), Value::String(String::new()));
-            map.insert("failureCount".to_string(), Value::Number(serde_json::Number::from(0)));
-            map.insert("topUnitList".to_string(), Value::Array(vec![]));
-            map.insert("status".to_string(), Value::String("0".to_string()));
-            map.insert("statusDes".to_string(), Value::String(String::new()));
-            map.insert("createTime".to_string(), Value::String(String::new()));
-            map.insert("updateTime".to_string(), Value::String(String::new()));
-            map.insert("sequence".to_string(), Value::String(String::new()));
-            return Ok(Json(ActionResult::java_success(Value::Object(map), 0, -1)));
-        }
+        None => return Err(AppError::Unauthorized),
     };
 
     let client = pool.get().await.map_err(|_| AppError::Internal)?;

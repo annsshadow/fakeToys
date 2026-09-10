@@ -54,10 +54,84 @@ mod tests {
             let response = app.clone().oneshot(Request::builder()
                 .method("DELETE").uri("/jaxrs/authentication")
                 .body(Body::empty()).unwrap()).await.unwrap();
-            assert_eq!(response.status(), StatusCode::OK);
-            assert_eq!(response.headers()["cache-control"], "no-store");
-            assert!(response.headers()["set-cookie"].to_str().unwrap().contains("Max-Age=0"));
-        }
+                assert_eq!(response.status(), StatusCode::OK);
+                assert_eq!(response.headers()["cache-control"], "no-store");
+                assert!(response.headers()["set-cookie"].to_str().unwrap().contains("Max-Age=0"));
+            }
+    }
+
+    // U12 matrix #5: refresh is a browser contract and only accepts the HttpOnly
+    // session cookie; Bearer-only refresh must be rejected.
+    #[tokio::test]
+    async fn test_refresh_rejects_bearer_only() {
+        let pool = shared::testing::test_pool();
+        let mut manager = SessionManager::new();
+        manager.auth_config = auth_config(false);
+        manager.create_session("user".to_string(), "good".to_string()).await.unwrap();
+        let app = crate::router(pool, RateLimiter::new(), manager.clone());
+
+        // Bearer-only: refresh rejects Bearer (cookie-only browser contract).
+        let response = app.clone().oneshot(Request::builder()
+            .method("POST").uri("/jaxrs/authentication/refresh")
+            .header("authorization", "Bearer good")
+            .body(Body::empty()).unwrap()).await.unwrap();
+        assert_eq!(response.status(), StatusCode::UNAUTHORIZED, "Bearer-only refresh must be 401");
+        // Old session must still be valid (no rotation happened).
+        assert!(manager.validate_session("good").await.is_some());
+
+        // Cookie + Bearer: cookie wins, rotation succeeds, old session invalidated.
+        let response = app.clone().oneshot(Request::builder()
+            .method("POST").uri("/jaxrs/authentication/refresh")
+            .header("cookie", "oa4rust_session=good")
+            .header("authorization", "Bearer good")
+            .body(Body::empty()).unwrap()).await.unwrap();
+        assert_eq!(response.status(), StatusCode::OK);
+        assert!(manager.validate_session("good").await.is_none(), "old session should be rotated out");
+    }
+
+    // U12 matrix #4: current-user credential semantics. No credentials at all ->
+    // anonymous 200 (Java probe compatibility); invalid credentials -> 401, and an
+    // invalid cookie never falls back to a valid Bearer.
+    #[tokio::test]
+    async fn test_whoami_no_credentials_is_anonymous() {
+        let pool = shared::testing::test_pool();
+        let manager = SessionManager::new();
+        let app = crate::router(pool, RateLimiter::new(), manager);
+        let response = app.clone().oneshot(Request::builder()
+            .method("GET").uri("/jaxrs/authentication/who")
+            .body(Body::empty()).unwrap()).await.unwrap();
+        assert_eq!(response.status(), StatusCode::OK);
+        let bytes = axum::body::to_bytes(response.into_body(), 8192).await.unwrap();
+        let json: serde_json::Value = serde_json::from_slice(&bytes).unwrap();
+        assert_eq!(json["data"]["tokenType"], "anonymous");
+    }
+
+    #[tokio::test]
+    async fn test_whoami_invalid_cookie_is_unauthorized() {
+        let pool = shared::testing::test_pool();
+        let manager = SessionManager::new();
+        let app = crate::router(pool, RateLimiter::new(), manager);
+        let response = app.clone().oneshot(Request::builder()
+            .method("GET").uri("/jaxrs/authentication/who")
+            .header("cookie", "oa4rust_session=bogus")
+            .body(Body::empty()).unwrap()).await.unwrap();
+        assert_eq!(response.status(), StatusCode::UNAUTHORIZED);
+    }
+
+    #[tokio::test]
+    async fn test_whoami_invalid_cookie_with_valid_bearer_is_unauthorized() {
+        let pool = shared::testing::test_pool();
+        let mut manager = SessionManager::new();
+        manager.create_session("user".to_string(), "good".to_string()).await.unwrap();
+        let app = crate::router(pool, RateLimiter::new(), manager);
+        let response = app.clone().oneshot(Request::builder()
+            .method("GET").uri("/jaxrs/authentication/who")
+            .header("cookie", "oa4rust_session=bogus")
+            .header("authorization", "Bearer good")
+            .body(Body::empty()).unwrap()).await.unwrap();
+        // The invalid cookie must win (no Bearer fallback) -> 401 even though a
+        // valid Bearer session exists.
+        assert_eq!(response.status(), StatusCode::UNAUTHORIZED);
     }
 
     #[test]

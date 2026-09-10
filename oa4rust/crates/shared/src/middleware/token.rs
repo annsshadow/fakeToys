@@ -113,6 +113,16 @@ pub async fn auth_middleware(
     if token.is_empty() {
         return AppError::Unauthorized.into_response();
     }
+    // Migration observability: count legacy Bearer credentials reaching a protected route.
+    // Intentionally no token/cookie/User-Agent value is logged.
+    if matches!(authentication, Authentication::Bearer(_)) {
+        tracing::warn!(
+            auth_compat = "bearer",
+            method = %request.method().as_str(),
+            path = %path,
+            "bearer compatibility credential used on protected route"
+        );
+    }
     match state.session_manager.validate_session(token).await {
         Some(session) => {
             request.extensions_mut().insert(session);

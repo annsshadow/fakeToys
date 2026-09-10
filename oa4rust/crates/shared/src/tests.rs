@@ -260,7 +260,177 @@ mod tests {
             assert_eq!(response.status(), StatusCode::OK);
             let allowed = response.headers()[header::ACCESS_CONTROL_ALLOW_METHODS].to_str().unwrap();
             assert!(allowed.split(',').any(|value| value.trim() == method));
+            assert_eq!(
+                response.headers()[header::ACCESS_CONTROL_ALLOW_CREDENTIALS].to_str().unwrap(),
+                "true"
+            );
+            assert_eq!(
+                response.headers()[header::ACCESS_CONTROL_ALLOW_ORIGIN].to_str().unwrap(),
+                "http://localhost:3000"
+            );
         }
+    }
+
+    #[tokio::test]
+    async fn test_cors_read_methods_not_blocked_and_wrong_origin_rejected() {
+        let app = Router::new()
+            .route("/write", post(|| async { "ok" }))
+            .layer(crate::middleware::cors_middleware_for_origin("http://localhost:3000"));
+        // GET/HEAD preflights are not blocked by the CORS layer.
+        for method in ["GET", "HEAD"] {
+            let response = app.clone().oneshot(
+                Request::builder()
+                    .method(Method::OPTIONS)
+                    .uri("/write")
+                    .header(header::ORIGIN, "http://localhost:3000")
+                    .header(header::ACCESS_CONTROL_REQUEST_METHOD, method)
+                    .body(Body::empty())
+                    .unwrap(),
+            ).await.unwrap();
+            assert_eq!(response.status(), StatusCode::OK, "{method} preflight should pass");
+            let allowed = response.headers()[header::ACCESS_CONTROL_ALLOW_METHODS].to_str().unwrap();
+            assert!(allowed.split(',').any(|value| value.trim() == method));
+        }
+        // A preflight from a foreign origin must not be allowed.
+        let response = app.clone().oneshot(
+            Request::builder()
+                .method(Method::OPTIONS)
+                .uri("/write")
+                .header(header::ORIGIN, "http://evil.example")
+                .header(header::ACCESS_CONTROL_REQUEST_METHOD, "POST")
+                .body(Body::empty())
+                .unwrap(),
+        ).await.unwrap();
+        // A preflight from a foreign origin must never be whitelisted. tower-http's
+        // exact-origin layer replies with the public origin regardless; the browser
+        // enforces the match, so the security invariant we assert is: the foreign
+        // origin is never echoed back as an allowed origin.
+        let allowed_origin = response
+            .headers()
+            .get(header::ACCESS_CONTROL_ALLOW_ORIGIN)
+            .and_then(|v| v.to_str().ok())
+            .unwrap_or("");
+        assert_ne!(
+            allowed_origin, "http://evil.example",
+            "the foreign origin must never be reflected as an allowed origin"
+        );
+    }
+
+    // U12 matrix #7: every state-changing method with a cookie requires the exact
+    // public Origin (missing/null/wrong all 403); Bearer-only requests are exempt
+    // because browsers never attach credentials to them.
+    #[tokio::test]
+    async fn test_csrf_matrix_write_methods_and_origins() {
+        use axum::routing::{delete, patch, put};
+
+        let state = security_state();
+        let token = make_token(&state.session_manager, "user").await;
+        let app = Router::new()
+            .route("/write", post(|| async { "ok" }))
+            .route("/write", put(|| async { "ok" }))
+            .route("/write", patch(|| async { "ok" }))
+            .route("/write", delete(|| async { "ok" }))
+            .layer(middleware::from_fn_with_state(
+                state.clone(),
+                csrf_middleware,
+            ));
+
+        for method in ["POST", "PUT", "PATCH", "DELETE"] {
+            let build = |cookie: Option<&str>, origin: Option<&str>, bearer: Option<&str>| {
+                let mut builder = Request::builder().method(method).uri("/write");
+                if let Some(cookie) = cookie {
+                    builder = builder.header(
+                        header::COOKIE,
+                        format!("{}={}", SESSION_COOKIE_NAME, cookie),
+                    );
+                }
+                if let Some(origin) = origin {
+                    builder = builder.header(header::ORIGIN, origin);
+                }
+                if let Some(bearer) = bearer {
+                    builder = builder.header(header::AUTHORIZATION, format!("Bearer {bearer}"));
+                }
+                app.clone().oneshot(builder.body(Body::empty()).unwrap())
+            };
+            let cookie = Some(token.as_str());
+            let exact = Some("http://localhost:3000");
+
+            // cookie + missing origin
+            assert_eq!(
+                build(cookie, None, None).await.unwrap().status(),
+                StatusCode::FORBIDDEN,
+                "{method} cookie without origin must be 403"
+            );
+
+            // cookie + null origin
+            assert_eq!(
+                build(cookie, Some("null"), None).await.unwrap().status(),
+                StatusCode::FORBIDDEN,
+                "{method} cookie with null origin must be 403"
+            );
+
+            // cookie + wrong origin
+            assert_eq!(
+                build(cookie, Some("http://evil.example"), None).await.unwrap().status(),
+                StatusCode::FORBIDDEN,
+                "{method} cookie with wrong origin must be 403"
+            );
+
+            // cookie + exact origin
+            assert_eq!(
+                build(cookie, exact, None).await.unwrap().status(),
+                StatusCode::OK,
+                "{method} cookie with exact origin must pass"
+            );
+
+            // Bearer-only (no cookie) is exempt: no Origin required.
+            assert_eq!(
+                build(None, None, Some(token.as_str())).await.unwrap().status(),
+                StatusCode::OK,
+                "{method} bearer-only must stay exempt from Origin check"
+            );
+
+            // cookie + Bearer without Origin: the cookie makes this a credential
+            // request, Bearer must NOT bypass the check.
+            assert_eq!(
+                build(cookie, None, Some(token.as_str())).await.unwrap().status(),
+                StatusCode::FORBIDDEN,
+                "{method} cookie+bearer without origin must be 403"
+            );
+        }
+
+        // GET/HEAD are not state-changing: cookie without origin passes the CSRF
+        // layer (the POST/PUT/PATCH/DELETE-only router answers 405, not 403).
+        for method in ["GET", "HEAD"] {
+            let mut builder = Request::builder().method(method).uri("/write");
+            builder = builder.header(
+                header::COOKIE,
+                format!("{}={}", SESSION_COOKIE_NAME, token),
+            );
+            assert_eq!(
+                app.clone().oneshot(builder.body(Body::empty()).unwrap()).await.unwrap().status(),
+                StatusCode::METHOD_NOT_ALLOWED,
+                "{method} is not CSRF-gated (405 from the route, not 403)"
+            );
+        }
+    }
+
+    // U12 matrix #4: a protected route with an invalid cookie must 401 and never
+    // fall back to a valid Bearer.
+    #[tokio::test]
+    async fn test_invalid_cookie_never_falls_back_to_valid_bearer() {
+        let state = security_state();
+        let good = make_token(&state.session_manager, "admin").await;
+        let app = test_app(state);
+
+        let req = Request::builder()
+            .method(Method::GET)
+            .uri("/jaxrs/unit/list")
+            .header(header::COOKIE, format!("{}=bogus", SESSION_COOKIE_NAME))
+            .header(header::AUTHORIZATION, format!("Bearer {good}"))
+            .body(Body::empty())
+            .unwrap();
+        assert_eq!(app.clone().oneshot(req).await.unwrap().status(), StatusCode::UNAUTHORIZED);
     }
 
     // ──────────────────────────────────────────────────────────────────────────
