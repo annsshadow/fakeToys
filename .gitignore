@@ -58,6 +58,7 @@ oa4rust/scripts/**
 !oa4rust/scripts/check_openapi_security.py
 # 差异聚类脚本（U2）：分析 behavior-report.md，产出候选改名对到 target/
 !oa4rust/scripts/cluster_behavior_diffs.py
+!oa4rust/scripts/validate_rustsec_exceptions.py
 
 # log
 *.log
