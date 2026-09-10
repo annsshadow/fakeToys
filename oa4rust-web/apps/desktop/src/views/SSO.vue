@@ -22,21 +22,25 @@ const status = ref<'loading' | 'success' | 'error'>('loading')
 const detail = ref('')
 
 onMounted(async () => {
-  const platform = route.params.platform as string
-  const code = route.query.code as string
+  // SSO redirect delivers the provider-issued client + token; pass them straight to
+  // the backend (never persist or log them). Route has no :platform param, so both
+  // arrive via query.
+  const q = route.query as Record<string, string>
+  const client = q.client ?? ''
+  const ssoToken = q.token ?? ''
   try {
-    if (!code) throw new Error('缺少 code 参数')
+    if (!client || !ssoToken) throw new Error('missing client/token')
     const response = await fetch('/jaxrs/authentication/sso', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       credentials: 'include',
-      body: JSON.stringify({ platform, code }),
+      body: JSON.stringify({ client, token: ssoToken }),
     })
     if (!response.ok) throw new Error(`认证失败 (${response.status})`)
     await session.init(true)
     if (!session.isAuthenticated) throw new Error('SSO 登录未建立会话')
     status.value = 'success'
-    detail.value = `${platform} OAuth 授权成功`
+    detail.value = `${client} SSO 授权成功`
     setTimeout(() => router.replace('/app/dashboard'), 1000)
   } catch (e: unknown) {
     status.value = 'error'

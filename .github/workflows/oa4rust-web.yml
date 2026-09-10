@@ -47,14 +47,7 @@ jobs:
         run: pnpm test
       - name: Type-check all packages
         run: pnpm typecheck
-      - name: Run Biome gate on migrated surfaces
-        run: >-
-          pnpm exec biome check --diagnostic-level=error
-          biome.json package.json apps/desktop/manifest.json
-          apps/desktop/src/views/SSO.vue packages/apis/src/index.ts
-          packages/sdk/src/api.ts packages/sdk/src/api.test.ts packages/sdk/src/auth.test.ts
-          packages/sdk/src/session.ts packages/sdk/src/types.ts
-          packages/ui/src/components/LoginScreen.vue packages/ui/src/views/OAuthCallback.vue
-          scripts/deepen_form.cjs
+      - name: Run Biome gate on the whole frontend
+        run: pnpm lint
       - name: Build desktop
         run: pnpm build

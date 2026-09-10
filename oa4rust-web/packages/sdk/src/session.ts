@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia'
-import { readonly, ref } from 'vue'
+import { computed, readonly, ref } from 'vue'
 import { AuthenticationError, api } from './api.js'
 import type { O2User, SessionState } from './types.js'
 
@@ -82,6 +82,9 @@ export const useSessionStore = defineStore('session', () => {
         requireAuth: false,
         discardResponse: true,
       })
+    } catch {
+      // The local session is ending regardless; a failed server-side call must not
+      // block clearing the local user or surface an error to the caller.
     } finally {
       state.value.user = null
       state.value.initialized = true
@@ -100,16 +103,18 @@ export const useSessionStore = defineStore('session', () => {
     return state.value.user
   }
 
+  // Pinia setup stores snapshot object-literal getters at setup time; a computed
+  // ref stays live so the router guard and views see current auth state.
+  const isAuthenticated = computed(() => isAuthenticatedUser(state.value.user))
+
   return {
     state: readonly(state),
+    isAuthenticated,
     init,
     login,
     logout,
     refresh,
     switchUser,
-    get isAuthenticated() {
-      return isAuthenticatedUser(state.value.user)
-    },
   }
 })
 

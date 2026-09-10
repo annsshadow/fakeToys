@@ -144,7 +144,7 @@ const currentTitle = computed(() => {
   return (route.meta.title as string) || 'OA4Rust'
 })
 
-const user = computed(() => session.state.value?.user ?? null)
+const user = computed(() => session.state.user ?? null)
 
 // PC 端导航项
 const navItems = [

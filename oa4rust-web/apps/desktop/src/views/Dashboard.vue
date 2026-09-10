@@ -83,7 +83,7 @@ import { useRouter } from 'vue-router'
 
 const router = useRouter()
 const session = useSession()
-const user = computed(() => session.state.value?.user ?? null)
+const user = computed(() => session.state.user ?? null)
 const currentTime = ref('')
 const currentDate = ref('')
 
