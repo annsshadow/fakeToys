@@ -1,4 +1,5 @@
 [package]
+publish.workspace = true
 name = "organization_assemble_personal"
 version.workspace = true
 edition.workspace = true

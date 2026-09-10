@@ -1,4 +1,5 @@
 ﻿[package]
+publish.workspace = true
 name = "message_assemble_communicate"
 version.workspace = true
 edition.workspace = true
