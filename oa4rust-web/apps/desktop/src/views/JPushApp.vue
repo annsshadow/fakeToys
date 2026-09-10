@@ -84,7 +84,7 @@ async function loadDevices() {
 async function loadTemplates() {
   loadingT.value = true
   try {
-    const r = await api.get('/jaxrs/jpush_assemble_control/template/list')
+    const r = await api.get('/jaxrs/jpush/template/list')
     templates.value = r.data ?? []
   } catch {
     templates.value = []
