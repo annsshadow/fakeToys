@@ -196,19 +196,21 @@ function checkMobile(): void {
 onMounted(() => {
   checkMobile()
   window.addEventListener('resize', checkMobile)
+  document.addEventListener('click', onDocClick)
 })
 
 onUnmounted(() => {
   window.removeEventListener('resize', checkMobile)
+  document.removeEventListener('click', onDocClick)
 })
 
 // 点击外部关闭菜单
-document.addEventListener('click', (e) => {
+function onDocClick(e: Event): void {
   const target = e.target as HTMLElement
   if (!target.closest('.user-menu')) {
     showUserMenu.value = false
   }
-})
+}
 </script>
 
 <style scoped>
