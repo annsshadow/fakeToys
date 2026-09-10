@@ -1,4 +1,8 @@
+# cargo-audit 0.22.2 configuration.
+# The yanked policy is enforced via CLI flags in the supply-chain workflow
+# (--no-yanked on the pinned PR gate, --deny yanked on the daily floating scan);
+# it is intentionally NOT set here because cargo-audit 0.22.2 does not accept
+# `yanked` as an [advisories] config field.
 [advisories]
-yanked = "deny"
 ignore = []
 informational_warnings = ["unmaintained"]

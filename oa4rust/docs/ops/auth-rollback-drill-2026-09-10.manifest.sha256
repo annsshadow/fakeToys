@@ -1,0 +1,7 @@
+# SHA-256 manifest for the 2026-09-10 auth rollback drill artifacts
+# (values are of the artifact content; no secrets are archived)
+4f4a1a8f7f5ce59434b6bca62092ecedaee09b5cb6894341d3809f13e6880c82 *auth-rollback-drill-2026-09-10.md
+f74c2713af27c39ba376beb67d41fbffde085c00c327ec1e7628b172e7bcf434 *auth-rollback-drill-2026-09-10.results.txt
+cf4723167966d200ed84054495ce76545d07ecb89c43832aa79221930aa06e3f *../../deploy/auth-rollback-drill.sh
+1385d668456caae8cb463d872af87d2308961987aab5c843cc639befd83fe618 *../../deploy/nginx-auth-routes-rust-drill.conf
+4fcf1b8ec0256a7ba1f41f14ef7fada603bfa53d4ae7f53a443d23241ceb9c80 *../../deploy/nginx-auth-routes-java-drill.conf
