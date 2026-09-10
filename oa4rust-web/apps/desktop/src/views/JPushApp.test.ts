@@ -22,4 +22,11 @@ describe('JPushApp contracts', () => {
     expect(source).not.toContain("api.get('/jaxrs/jpush/core/entity/device/create')")
     expect(source).not.toContain("queryKey: ['core_entity_device_create']")
   })
+
+  it('does not issue GET requests to the POST-only device binding aliases', () => {
+    expect(source).not.toContain("api.get('/jaxrs/jpush/assemble/control/device/bind')")
+    expect(source).not.toContain("api.get('/jaxrs/jpush_assemble_control/device/bind')")
+    expect(source).not.toContain("queryKey: ['assemble_control_device_bind']")
+    expect(source).not.toContain("'/jaxrs/jpush_assemble_control/device/bind']")
+  })
 })
