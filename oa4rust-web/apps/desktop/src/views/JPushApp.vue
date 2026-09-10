@@ -72,7 +72,7 @@ const stats = computed(() => ({
 async function loadDevices() {
   loadingD.value = true
   try {
-    const r = await api.get('/jaxrs/jpush_assemble_control/device/list')
+    const r = await api.get('/jaxrs/jpush_assemble_control/device/list/jpush')
     devices.value = r.data ?? []
   } catch {
     devices.value = []
