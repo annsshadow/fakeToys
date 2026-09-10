@@ -102,4 +102,8 @@ describe('JPushApp contracts', () => {
     expect(source).not.toContain("api.get('/jaxrs/jpush/device/list')")
     expect(source).not.toContain("queryKey: ['jpush_device_list']")
   })
+  it('does not duplicate the mounted template load with an unused jpush query', () => {
+    expect(source.match(/api\.get\('\/jaxrs\/jpush\/template\/list'\)/g)).toHaveLength(1)
+    expect(source).not.toContain("queryKey: ['jpush_template_list']")
+  })
 })
