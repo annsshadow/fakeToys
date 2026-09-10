@@ -1,0 +1,97 @@
+name: OA4Rust supply-chain security
+
+on:
+  pull_request:
+    branches: [main, master]
+  push:
+    branches: [main, master]
+  schedule:
+    - cron: "17 3 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: oa4rust-supply-chain-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  pinned-rustsec:
+    if: github.event_name != 'schedule'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    defaults:
+      run:
+        shell: bash
+        working-directory: oa4rust
+    steps:
+      - uses: actions/checkout@b4ffde65e4aa6d8cba74e5f82ac958baa146d45a
+      - name: Install pinned Rust toolchain and scanners
+        run: |
+          set -euo pipefail
+          rustup toolchain install 1.88.0 --profile minimal
+          cargo +1.88.0 install --locked cargo-audit --version 0.22.2
+          cargo +1.88.0 install --locked cargo-deny --version 0.20.2
+          cargo +1.88.0 audit --version
+          cargo +1.88.0 deny --version
+      - name: Checkout pinned RustSec database
+        run: |
+          set -euo pipefail
+          DB="$RUNNER_TEMP/rustsec-advisory-db"
+          REV="$(tr -d '\r\n' < security/rustsec-db.rev)"
+          [[ "$REV" =~ ^[0-9a-f]{40}$ ]]
+          git init "$DB"
+          git -C "$DB" remote add origin https://github.com/RustSec/advisory-db.git
+          git -C "$DB" fetch --no-tags --depth=1 origin "$REV"
+          git -C "$DB" checkout --detach "$REV"
+          test "$(git -C "$DB" rev-parse HEAD)" = "$REV"
+          test "$(git -C "$DB" remote get-url origin)" = "https://github.com/RustSec/advisory-db.git"
+          git -C "$DB" fsck --strict
+          git -C "$DB" log -1 --format='RustSec DB: %H %cI'
+          sha256sum Cargo.lock
+      - name: Audit Cargo.lock against pinned database
+        run: |
+          set -euo pipefail
+          python scripts/validate_rustsec_exceptions.py security/rustsec-exceptions.toml
+          IGNORE_ARGS="$(python scripts/validate_rustsec_exceptions.py security/rustsec-exceptions.toml --print-args)"
+          # shellcheck disable=SC2086
+          cargo +1.88.0 audit --file Cargo.lock \
+            --db "$RUNNER_TEMP/rustsec-advisory-db" \
+            --no-fetch --no-yanked --deny unsound $IGNORE_ARGS
+      - name: Enforce dependency policy
+        run: cargo +1.88.0 deny --locked --workspace check bans licenses sources
+
+  floating-rustsec:
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    defaults:
+      run:
+        shell: bash
+        working-directory: oa4rust
+    steps:
+      - uses: actions/checkout@b4ffde65e4aa6d8cba74e5f82ac958baa146d45a
+      - name: Install pinned scanner
+        run: |
+          set -euo pipefail
+          rustup toolchain install 1.88.0 --profile minimal
+          cargo +1.88.0 install --locked cargo-audit --version 0.22.2
+          cargo +1.88.0 audit --version
+      - name: Fetch current RustSec database
+        run: |
+          set -euo pipefail
+          DB="$RUNNER_TEMP/rustsec-advisory-db"
+          git clone --filter=blob:none https://github.com/RustSec/advisory-db.git "$DB"
+          git -C "$DB" fsck --strict
+          git -C "$DB" log -1 --format='RustSec DB: %H %cI'
+          sha256sum Cargo.lock
+      - name: Audit current advisories and yanked crates
+        run: |
+          set -euo pipefail
+          python scripts/validate_rustsec_exceptions.py security/rustsec-exceptions.toml
+          IGNORE_ARGS="$(python scripts/validate_rustsec_exceptions.py security/rustsec-exceptions.toml --print-args)"
+          # shellcheck disable=SC2086
+          cargo +1.88.0 audit --file Cargo.lock \
+            --db "$RUNNER_TEMP/rustsec-advisory-db" \
+            --no-fetch --deny unsound --deny yanked $IGNORE_ARGS
