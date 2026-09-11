@@ -106,38 +106,12 @@ async function delDevice(d: any) {
 loadDevices()
 loadTemplates()
 
-const api_jpush_as_458_data = ref<any[]>([])
-const { data: api_jpush_as_458_q } = useQuery({
-  queryKey: ['api_jpush_as_458', '/jaxrs/jpush_assemble_control/update/control/config'],
-  queryFn: async () => {
-    try {
-      const r = await api.get('/jaxrs/jpush_assemble_control/update/control/config')
-      return (r.data ?? []) as any[]
-    } catch {
-      return []
-    }
-  },
-})
-
 const api_jpush_as_890_data = ref<any[]>([])
 const { data: api_jpush_as_890_q } = useQuery({
   queryKey: ['api_jpush_as_890', '/jaxrs/jpush_assemble_control'],
   queryFn: async () => {
     try {
       const r = await api.get('/jaxrs/jpush_assemble_control')
-      return (r.data ?? []) as any[]
-    } catch {
-      return []
-    }
-  },
-})
-
-const api_jpush_as_394_data = ref<any[]>([])
-const { data: api_jpush_as_394_q } = useQuery({
-  queryKey: ['api_jpush_as_394', '/jaxrs/jpush_assemble_control/delete/jpush'],
-  queryFn: async () => {
-    try {
-      const r = await api.get('/jaxrs/jpush_assemble_control/delete/jpush')
       return (r.data ?? []) as any[]
     } catch {
       return []
@@ -190,19 +164,6 @@ const { data: api_jpush_as_145_q } = useQuery({
   queryFn: async () => {
     try {
       const r = await api.get('/jaxrs/jpush_assemble_control/list/control/apps')
-      return (r.data ?? []) as any[]
-    } catch {
-      return []
-    }
-  },
-})
-
-const api_jpush_as_45_data = ref<any[]>([])
-const { data: api_jpush_as_45_q } = useQuery({
-  queryKey: ['api_jpush_as_45', '/jaxrs/jpush_assemble_control/create/jpush'],
-  queryFn: async () => {
-    try {
-      const r = await api.get('/jaxrs/jpush_assemble_control/create/jpush')
       return (r.data ?? []) as any[]
     } catch {
       return []
@@ -268,19 +229,6 @@ const { data: api_control_list_con_510_q } = useQuery({
   queryFn: async () => {
     try {
       const r = await api.get('/jaxrs/jpush/assemble/control/list/control/apps')
-      return (r.data ?? []) as any[]
-    } catch {
-      return []
-    }
-  },
-})
-
-const api_control_update_c_655_data = ref<any[]>([])
-const { data: api_control_update_c_655_q } = useQuery({
-  queryKey: ['api_control_update_c_655', '/jaxrs/jpush/assemble/control/update/control/config'],
-  queryFn: async () => {
-    try {
-      const r = await api.get('/jaxrs/jpush/assemble/control/update/control/config')
       return (r.data ?? []) as any[]
     } catch {
       return []
