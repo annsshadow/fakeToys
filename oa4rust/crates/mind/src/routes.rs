@@ -1,7 +1,4 @@
-use axum::{
-    routing::get, routing::post, routing::delete,
-    Router,
-};
+use axum::{routing::delete, routing::get, routing::post, Router};
 
 pub fn mind_routes() -> Router {
     Router::new()
@@ -13,7 +10,10 @@ pub fn mind_routes() -> Router {
         .route("/jaxrs/mind/folder", post(crate::create_folder))
         .route("/jaxrs/mind/folder/{id}", post(crate::update_folder))
         .route("/jaxrs/mind/folder/{id}", delete(crate::delete_folder))
-        .route("/jaxrs/mind/mind/list/{id}/version", get(crate::list_versions_with_mind_id))
+        .route(
+            "/jaxrs/mind/mind/list/{id}/version",
+            get(crate::list_versions_with_mind_id),
+        )
         .route("/jaxrs/mind/version", post(crate::create_version))
         .fallback(axum::routing::any(|| async { "not found" }))
 }

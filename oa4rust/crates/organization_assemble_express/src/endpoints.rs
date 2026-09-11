@@ -82,7 +82,10 @@ pub(crate) fn named_list(key: &str, items: &[String]) -> Value {
 
 /// Java WrapBoolean Wo 序列化形态：{"value": true|false}。
 pub(crate) fn wrap_bool(v: bool) -> Value {
-    Value::Object(serde_json::Map::from_iter([("value".to_string(), Value::Bool(v))]))
+    Value::Object(serde_json::Map::from_iter([(
+        "value".to_string(),
+        Value::Bool(v),
+    )]))
 }
 
 /// 单值字符串字段（缺失/非字符串返回 None）。
@@ -103,7 +106,11 @@ pub(crate) fn int_list(body: &Value, key: &str) -> Result<Vec<i32>, AppError> {
     let raw: Vec<i32> = body
         .get(key)
         .and_then(|v| v.as_array())
-        .map(|arr| arr.iter().filter_map(|x| x.as_i64().map(|n| n as i32)).collect())
+        .map(|arr| {
+            arr.iter()
+                .filter_map(|x| x.as_i64().map(|n| n as i32))
+                .collect()
+        })
         .unwrap_or_default();
     capped(&raw.iter().map(|i| i.to_string()).collect::<Vec<_>>())?;
     Ok(raw)
@@ -146,7 +153,10 @@ pub(crate) const PICK_ANY: &str = "(id = ANY($1) OR name = ANY($1))";
 type Cols = &'static [&'static str];
 
 fn cols_sql(cols: Cols) -> String {
-    cols.iter().map(|c| c.to_string()).collect::<Vec<_>>().join(", ")
+    cols.iter()
+        .map(|c| c.to_string())
+        .collect::<Vec<_>>()
+        .join(", ")
 }
 
 pub(crate) fn row_to_map(row: &deadpool_postgres::tokio_postgres::Row) -> Value {

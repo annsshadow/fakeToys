@@ -4,7 +4,10 @@ use axum::{
     Json, Router,
 };
 use deadpool_postgres::Pool;
-use sea_orm::{ActiveModelTrait, ColumnTrait, DatabaseConnection, EntityTrait, QueryFilter, QueryOrder, QuerySelect};
+use sea_orm::{
+    ActiveModelTrait, ColumnTrait, DatabaseConnection, EntityTrait, QueryFilter, QueryOrder,
+    QuerySelect,
+};
 use serde_json::Value;
 use shared::{error::AppError, response::ActionResult};
 
@@ -64,7 +67,10 @@ pub async fn dict_list(
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(m.id.clone())),
                 ("name".to_string(), Value::String(m.name.clone())),
-                ("application".to_string(), Value::String(m.application.clone())),
+                (
+                    "application".to_string(),
+                    Value::String(m.application.clone()),
+                ),
             ]))
         })
         .collect();
@@ -120,7 +126,11 @@ pub async fn dict_create(
     axum::extract::Json(payload): axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let id = uuid::Uuid::new_v4().to_string();
-    let name = payload.get("name").and_then(|v| v.as_str()).unwrap_or_default().to_string();
+    let name = payload
+        .get("name")
+        .and_then(|v| v.as_str())
+        .unwrap_or_default()
+        .to_string();
     let application = payload
         .get("application")
         .and_then(|v| v.as_str())
@@ -133,7 +143,10 @@ pub async fn dict_create(
         application: sea_orm::ActiveValue::Set(application.clone()),
     };
 
-    active_model.insert(&db.0).await.map_err(|_| AppError::Internal)?;
+    active_model
+        .insert(&db.0)
+        .await
+        .map_err(|_| AppError::Internal)?;
 
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -159,7 +172,10 @@ pub async fn dict_get(
             let result = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(m.id.clone())),
                 ("name".to_string(), Value::String(m.name.clone())),
-                ("application".to_string(), Value::String(m.application.clone())),
+                (
+                    "application".to_string(),
+                    Value::String(m.application.clone()),
+                ),
             ]));
             Ok(Json(ActionResult::success(result)))
         }
@@ -173,7 +189,11 @@ pub async fn dict_update(
     axum::extract::Path(id): axum::extract::Path<String>,
     axum::extract::Json(payload): axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let name = payload.get("name").and_then(|v| v.as_str()).unwrap_or_default().to_string();
+    let name = payload
+        .get("name")
+        .and_then(|v| v.as_str())
+        .unwrap_or_default()
+        .to_string();
     let application = payload
         .get("application")
         .and_then(|v| v.as_str())
@@ -223,7 +243,10 @@ pub async fn dict_delete(
             let result = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(m.id.clone())),
                 ("name".to_string(), Value::String(m.name.clone())),
-                ("application".to_string(), Value::String(m.application.clone())),
+                (
+                    "application".to_string(),
+                    Value::String(m.application.clone()),
+                ),
             ]));
             Ok(Json(ActionResult::success(result)))
         }
@@ -242,8 +265,16 @@ pub async fn dict_item_create(
         .and_then(|v| v.as_str())
         .unwrap_or_default()
         .to_string();
-    let name = payload.get("name").and_then(|v| v.as_str()).unwrap_or_default().to_string();
-    let value = payload.get("value").and_then(|v| v.as_str()).unwrap_or_default().to_string();
+    let name = payload
+        .get("name")
+        .and_then(|v| v.as_str())
+        .unwrap_or_default()
+        .to_string();
+    let value = payload
+        .get("value")
+        .and_then(|v| v.as_str())
+        .unwrap_or_default()
+        .to_string();
 
     let active_model = general_application_dict_item::ActiveModel {
         id: sea_orm::ActiveValue::Set(id.clone()),
@@ -252,7 +283,10 @@ pub async fn dict_item_create(
         value: sea_orm::ActiveValue::Set(value.clone()),
     };
 
-    active_model.insert(&db.0).await.map_err(|_| AppError::Internal)?;
+    active_model
+        .insert(&db.0)
+        .await
+        .map_err(|_| AppError::Internal)?;
 
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -299,8 +333,16 @@ pub async fn dict_item_update(
         .and_then(|v| v.as_str())
         .unwrap_or_default()
         .to_string();
-    let name = payload.get("name").and_then(|v| v.as_str()).unwrap_or_default().to_string();
-    let value = payload.get("value").and_then(|v| v.as_str()).unwrap_or_default().to_string();
+    let name = payload
+        .get("name")
+        .and_then(|v| v.as_str())
+        .unwrap_or_default()
+        .to_string();
+    let value = payload
+        .get("value")
+        .and_then(|v| v.as_str())
+        .unwrap_or_default()
+        .to_string();
 
     let model = general_application_dict_item::Entity::find_by_id(&id)
         .one(&db.0)
@@ -374,7 +416,10 @@ pub async fn file_list(
                 ("id".to_string(), Value::String(m.id.clone())),
                 ("name".to_string(), Value::String(m.name.clone())),
                 ("mimeType".to_string(), Value::String(m.mime_type.clone())),
-                ("size".to_string(), Value::Number(serde_json::Number::from(m.size))),
+                (
+                    "size".to_string(),
+                    Value::Number(serde_json::Number::from(m.size)),
+                ),
             ]))
         })
         .collect();
@@ -411,7 +456,8 @@ pub async fn invoice_list(
                 (
                     "amount".to_string(),
                     Value::Number(
-                        serde_json::Number::from_f64(m.amount).unwrap_or_else(|| serde_json::Number::from(0)),
+                        serde_json::Number::from_f64(m.amount)
+                            .unwrap_or_else(|| serde_json::Number::from(0)),
                     ),
                 ),
                 ("status".to_string(), Value::String(m.status.clone())),
@@ -436,14 +482,21 @@ pub async fn file_create(
     axum::extract::Json(payload): axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let id = uuid::Uuid::new_v4().to_string();
-    let name = payload.get("name").and_then(|v| v.as_str()).unwrap_or_default().to_string();
+    let name = payload
+        .get("name")
+        .and_then(|v| v.as_str())
+        .unwrap_or_default()
+        .to_string();
     let mime_type = payload
         .get("mimeType")
         .and_then(|v| v.as_str())
         .unwrap_or_default()
         .to_string();
     let size = payload.get("size").and_then(|v| v.as_i64()).unwrap_or(0);
-    let creator = payload.get("creator").and_then(|v| v.as_str()).unwrap_or("system");
+    let creator = payload
+        .get("creator")
+        .and_then(|v| v.as_str())
+        .unwrap_or("system");
 
     let active_model = general_file::ActiveModel {
         id: sea_orm::ActiveValue::Set(id.clone()),
@@ -454,14 +507,20 @@ pub async fn file_create(
         create_time: sea_orm::ActiveValue::NotSet,
     };
 
-    active_model.insert(&db.0).await.map_err(|_| AppError::Internal)?;
+    active_model
+        .insert(&db.0)
+        .await
+        .map_err(|_| AppError::Internal)?;
 
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("id".to_string(), Value::String(id)),
             ("name".to_string(), Value::String(name)),
             ("mimeType".to_string(), Value::String(mime_type)),
-            ("size".to_string(), Value::Number(serde_json::Number::from(size))),
+            (
+                "size".to_string(),
+                Value::Number(serde_json::Number::from(size)),
+            ),
         ]),
     ))))
 }
@@ -482,18 +541,17 @@ pub async fn file_get(
                 ("id".to_string(), Value::String(m.id.clone())),
                 ("name".to_string(), Value::String(m.name.clone())),
                 ("mimeType".to_string(), Value::String(m.mime_type.clone())),
-                ("size".to_string(), Value::Number(serde_json::Number::from(m.size))),
+                (
+                    "size".to_string(),
+                    Value::Number(serde_json::Number::from(m.size)),
+                ),
                 (
                     "creator".to_string(),
                     Value::String(m.creator.clone().unwrap_or_default()),
                 ),
                 (
                     "createTime".to_string(),
-                    Value::String(
-                        m.create_time
-                            .map(|dt| dt.to_string())
-                            .unwrap_or_default(),
-                    ),
+                    Value::String(m.create_time.map(|dt| dt.to_string()).unwrap_or_default()),
                 ),
             ]));
             Ok(Json(ActionResult::success(result)))
@@ -508,7 +566,11 @@ pub async fn file_update(
     axum::extract::Path(id): axum::extract::Path<String>,
     axum::extract::Json(payload): axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let name = payload.get("name").and_then(|v| v.as_str()).unwrap_or_default().to_string();
+    let name = payload
+        .get("name")
+        .and_then(|v| v.as_str())
+        .unwrap_or_default()
+        .to_string();
     let mime_type = payload
         .get("mimeType")
         .and_then(|v| v.as_str())
@@ -534,9 +596,7 @@ pub async fn file_update(
                     ("mimeType".to_string(), Value::String(mime_type)),
                     (
                         "size".to_string(),
-                        Value::Number(serde_json::Number::from(
-                            m.size,
-                        )),
+                        Value::Number(serde_json::Number::from(m.size)),
                     ),
                     (
                         "creator".to_string(),
@@ -544,11 +604,7 @@ pub async fn file_update(
                     ),
                     (
                         "createTime".to_string(),
-                        Value::String(
-                            m.create_time
-                                .map(|dt| dt.to_string())
-                                .unwrap_or_default(),
-                        ),
+                        Value::String(m.create_time.map(|dt| dt.to_string()).unwrap_or_default()),
                     ),
                 ]),
             ))))
@@ -587,11 +643,7 @@ pub async fn file_delete(
                 ),
                 (
                     "createTime".to_string(),
-                    Value::String(
-                        m.create_time
-                            .map(|dt| dt.to_string())
-                            .unwrap_or_default(),
-                    ),
+                    Value::String(m.create_time.map(|dt| dt.to_string()).unwrap_or_default()),
                 ),
             ]));
             Ok(Json(ActionResult::success(result)))
@@ -616,18 +668,17 @@ pub async fn file_download(
                 ("id".to_string(), Value::String(m.id.clone())),
                 ("name".to_string(), Value::String(m.name.clone())),
                 ("mimeType".to_string(), Value::String(m.mime_type.clone())),
-                ("size".to_string(), Value::Number(serde_json::Number::from(m.size))),
+                (
+                    "size".to_string(),
+                    Value::Number(serde_json::Number::from(m.size)),
+                ),
                 (
                     "creator".to_string(),
                     Value::String(m.creator.clone().unwrap_or_default()),
                 ),
                 (
                     "createTime".to_string(),
-                    Value::String(
-                        m.create_time
-                            .map(|dt| dt.to_string())
-                            .unwrap_or_default(),
-                    ),
+                    Value::String(m.create_time.map(|dt| dt.to_string()).unwrap_or_default()),
                 ),
             ]));
             Ok(Json(ActionResult::success(result)))
@@ -647,14 +698,24 @@ pub async fn invoice_create(
         .and_then(|v| v.as_str())
         .unwrap_or_default()
         .to_string();
-    let date = payload.get("date").and_then(|v| v.as_str()).unwrap_or_default().to_string();
-    let amount = payload.get("amount").and_then(|v| v.as_f64()).unwrap_or(0.0);
+    let date = payload
+        .get("date")
+        .and_then(|v| v.as_str())
+        .unwrap_or_default()
+        .to_string();
+    let amount = payload
+        .get("amount")
+        .and_then(|v| v.as_f64())
+        .unwrap_or(0.0);
     let status = payload
         .get("status")
         .and_then(|v| v.as_str())
         .unwrap_or("draft")
         .to_string();
-    let creator = payload.get("creator").and_then(|v| v.as_str()).unwrap_or("system");
+    let creator = payload
+        .get("creator")
+        .and_then(|v| v.as_str())
+        .unwrap_or("system");
 
     let active_model = general_invoice::ActiveModel {
         id: sea_orm::ActiveValue::Set(id.clone()),
@@ -666,7 +727,10 @@ pub async fn invoice_create(
         create_time: sea_orm::ActiveValue::NotSet,
     };
 
-    active_model.insert(&db.0).await.map_err(|_| AppError::Internal)?;
+    active_model
+        .insert(&db.0)
+        .await
+        .map_err(|_| AppError::Internal)?;
 
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -676,7 +740,8 @@ pub async fn invoice_create(
             (
                 "amount".to_string(),
                 Value::Number(
-                    serde_json::Number::from_f64(amount).unwrap_or_else(|| serde_json::Number::from(0)),
+                    serde_json::Number::from_f64(amount)
+                        .unwrap_or_else(|| serde_json::Number::from(0)),
                 ),
             ),
             ("status".to_string(), Value::String(status)),
@@ -703,7 +768,8 @@ pub async fn invoice_get(
                 (
                     "amount".to_string(),
                     Value::Number(
-                        serde_json::Number::from_f64(m.amount).unwrap_or_else(|| serde_json::Number::from(0)),
+                        serde_json::Number::from_f64(m.amount)
+                            .unwrap_or_else(|| serde_json::Number::from(0)),
                     ),
                 ),
                 ("status".to_string(), Value::String(m.status.clone())),
@@ -713,11 +779,7 @@ pub async fn invoice_get(
                 ),
                 (
                     "createTime".to_string(),
-                    Value::String(
-                        m.create_time
-                            .map(|dt| dt.to_string())
-                            .unwrap_or_default(),
-                    ),
+                    Value::String(m.create_time.map(|dt| dt.to_string()).unwrap_or_default()),
                 ),
             ]));
             Ok(Json(ActionResult::success(result)))
@@ -737,8 +799,15 @@ pub async fn invoice_update(
         .and_then(|v| v.as_str())
         .unwrap_or_default()
         .to_string();
-    let date = payload.get("date").and_then(|v| v.as_str()).unwrap_or_default().to_string();
-    let amount = payload.get("amount").and_then(|v| v.as_f64()).unwrap_or(0.0);
+    let date = payload
+        .get("date")
+        .and_then(|v| v.as_str())
+        .unwrap_or_default()
+        .to_string();
+    let amount = payload
+        .get("amount")
+        .and_then(|v| v.as_f64())
+        .unwrap_or(0.0);
     let status = payload
         .get("status")
         .and_then(|v| v.as_str())
@@ -767,7 +836,8 @@ pub async fn invoice_update(
                     (
                         "amount".to_string(),
                         Value::Number(
-                            serde_json::Number::from_f64(amount).unwrap_or_else(|| serde_json::Number::from(0)),
+                            serde_json::Number::from_f64(amount)
+                                .unwrap_or_else(|| serde_json::Number::from(0)),
                         ),
                     ),
                     ("status".to_string(), Value::String(status)),
@@ -777,11 +847,7 @@ pub async fn invoice_update(
                     ),
                     (
                         "createTime".to_string(),
-                        Value::String(
-                            m.create_time
-                                .map(|dt| dt.to_string())
-                                .unwrap_or_default(),
-                        ),
+                        Value::String(m.create_time.map(|dt| dt.to_string()).unwrap_or_default()),
                     ),
                 ]),
             ))))
@@ -813,7 +879,8 @@ pub async fn invoice_delete(
                 (
                     "amount".to_string(),
                     Value::Number(
-                        serde_json::Number::from_f64(m.amount).unwrap_or_else(|| serde_json::Number::from(0)),
+                        serde_json::Number::from_f64(m.amount)
+                            .unwrap_or_else(|| serde_json::Number::from(0)),
                     ),
                 ),
                 ("status".to_string(), Value::String(m.status.clone())),
@@ -823,11 +890,7 @@ pub async fn invoice_delete(
                 ),
                 (
                     "createTime".to_string(),
-                    Value::String(
-                        m.create_time
-                            .map(|dt| dt.to_string())
-                            .unwrap_or_default(),
-                    ),
+                    Value::String(m.create_time.map(|dt| dt.to_string()).unwrap_or_default()),
                 ),
             ]));
             Ok(Json(ActionResult::success(result)))
@@ -843,11 +906,20 @@ pub fn general_core_entity_router(_pool: Pool) -> Router {
         .route("/jaxrs/general/dict/{id}", get(dict_get))
         .route("/jaxrs/general/dict/update/{id}", post(dict_update))
         .route("/jaxrs/general/dict/delete/{id}", post(dict_delete))
-        .route("/jaxrs/general/dict/item/list/{dictId}", get(dict_item_list))
+        .route(
+            "/jaxrs/general/dict/item/list/{dictId}",
+            get(dict_item_list),
+        )
         .route("/jaxrs/general/dict/item/create", post(dict_item_create))
         .route("/jaxrs/general/dict/item/{id}", get(dict_item_get))
-        .route("/jaxrs/general/dict/item/update/{id}", post(dict_item_update))
-        .route("/jaxrs/general/dict/item/delete/{id}", post(dict_item_delete))
+        .route(
+            "/jaxrs/general/dict/item/update/{id}",
+            post(dict_item_update),
+        )
+        .route(
+            "/jaxrs/general/dict/item/delete/{id}",
+            post(dict_item_delete),
+        )
         .route("/jaxrs/general/file/list", get(file_list))
         .route("/jaxrs/general/file/create", post(file_create))
         .route("/jaxrs/general/file/{id}", get(file_get))
@@ -865,7 +937,6 @@ pub fn general_core_entity_router(_pool: Pool) -> Router {
 mod tests;
 #[cfg(test)]
 mod tests_generated;
-
 
 pub fn router(pool: deadpool_postgres::Pool) -> axum::Router {
     crate::general_core_entity_router(pool)

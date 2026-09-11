@@ -41,7 +41,9 @@ pub async fn register(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     // 参数校验
     if req.credential.is_empty() || req.password.is_empty() || req.name.is_empty() {
-        return Ok(Json(ActionResult::error("credential, password, and name are required")));
+        return Ok(Json(ActionResult::error(
+            "credential, password, and name are required",
+        )));
     }
 
     // 密码强度校验（复用 reset.rs 中的规则：6-64 位，含字母和数字）
@@ -52,7 +54,10 @@ pub async fn register(
     }
 
     // 验证码校验
-    if let Err(e) = reset_store.verify_and_consume(&req.credential, &req.code).await {
+    if let Err(e) = reset_store
+        .verify_and_consume(&req.credential, &req.code)
+        .await
+    {
         return Ok(Json(ActionResult::error(e.to_string())));
     }
 
@@ -194,7 +199,8 @@ pub async fn send_regist_code(
     reset_store: Extension<ResetCodeStore>,
     Json(req): Json<serde_json::Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let credential = req.get("credential")
+    let credential = req
+        .get("credential")
         .and_then(|v| v.as_str())
         .ok_or_else(|| AppError::BadRequest("credential is required".to_string()))?;
 

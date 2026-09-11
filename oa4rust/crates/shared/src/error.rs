@@ -61,15 +61,33 @@ pub enum AppError {
 impl IntoResponse for AppError {
     fn into_response(self) -> axum::response::Response {
         let (status, prompt_kind) = match &self {
-            AppError::Database(_) => (axum::http::StatusCode::INTERNAL_SERVER_ERROR, "ExceptionInternal"),
-            AppError::Internal => (axum::http::StatusCode::INTERNAL_SERVER_ERROR, "ExceptionInternal"),
-            AppError::Redis(_) => (axum::http::StatusCode::INTERNAL_SERVER_ERROR, "ExceptionInternal"),
-            AppError::InternalAnyhow(_) => (axum::http::StatusCode::INTERNAL_SERVER_ERROR, "ExceptionInternal"),
+            AppError::Database(_) => (
+                axum::http::StatusCode::INTERNAL_SERVER_ERROR,
+                "ExceptionInternal",
+            ),
+            AppError::Internal => (
+                axum::http::StatusCode::INTERNAL_SERVER_ERROR,
+                "ExceptionInternal",
+            ),
+            AppError::Redis(_) => (
+                axum::http::StatusCode::INTERNAL_SERVER_ERROR,
+                "ExceptionInternal",
+            ),
+            AppError::InternalAnyhow(_) => (
+                axum::http::StatusCode::INTERNAL_SERVER_ERROR,
+                "ExceptionInternal",
+            ),
             AppError::BadRequest(_) => (axum::http::StatusCode::BAD_REQUEST, "ExceptionBadRequest"),
-            AppError::Unauthorized => (axum::http::StatusCode::UNAUTHORIZED, "ExceptionUnauthorized"),
+            AppError::Unauthorized => (
+                axum::http::StatusCode::UNAUTHORIZED,
+                "ExceptionUnauthorized",
+            ),
             AppError::Forbidden => (axum::http::StatusCode::FORBIDDEN, "ExceptionAccessDenied"),
             AppError::NotFound => (axum::http::StatusCode::NOT_FOUND, "ExceptionEntityNotExist"),
-            AppError::NotImplemented => (axum::http::StatusCode::NOT_IMPLEMENTED, "ExceptionNotImplemented"),
+            AppError::NotImplemented => (
+                axum::http::StatusCode::NOT_IMPLEMENTED,
+                "ExceptionNotImplemented",
+            ),
         };
 
         // 恒填 prompt：O2OA ResponseFactory 多数 war 的错误路径填充异常类名

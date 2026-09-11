@@ -1,10 +1,8 @@
-use shared::response::ActionResult;
-use serde_json::json;
 use axum::body::Body;
-use axum::http::{Request, Method, StatusCode};
+use axum::http::{Method, Request, StatusCode};
+use serde_json::json;
+use shared::response::ActionResult;
 use tower::util::ServiceExt;
-
-
 
 fn build_test_pool() -> deadpool_postgres::Pool {
     deadpool_postgres::Pool::builder(deadpool_postgres::Manager::new(
@@ -16,7 +14,8 @@ fn build_test_pool() -> deadpool_postgres::Pool {
 }
 #[test]
 fn test_action_result_success_serialization() {
-    let result: ActionResult<serde_json::Value> = ActionResult::success(json!({"count": 2, "data": []}));
+    let result: ActionResult<serde_json::Value> =
+        ActionResult::success(json!({"count": 2, "data": []}));
     let json = serde_json::to_value(&result).unwrap();
     assert_eq!(json["type"], "success");
     assert!(json["data"].is_object());
@@ -294,7 +293,8 @@ async fn test_update_control_config_route() {
     let pool = build_test_pool();
     let app = crate::router(pool);
 
-    let req_body = serde_json::to_string(&json!({"enabled": true, "maxCategoryCount": 300})).unwrap();
+    let req_body =
+        serde_json::to_string(&json!({"enabled": true, "maxCategoryCount": 300})).unwrap();
 
     let response = app
         .oneshot(
@@ -353,7 +353,9 @@ async fn test_document_crud_end_to_end() {
         .unwrap();
 
     assert_eq!(response.status(), StatusCode::OK);
-    let bytes = axum::body::to_bytes(response.into_body(), 4096).await.unwrap();
+    let bytes = axum::body::to_bytes(response.into_body(), 4096)
+        .await
+        .unwrap();
     let json: serde_json::Value = serde_json::from_slice(&bytes).unwrap();
     assert_eq!(json["type"], "success");
     assert_eq!(json["data"]["title"], "Test Title");
@@ -419,7 +421,9 @@ async fn test_document_soft_delete() {
 
     let response = app.oneshot(req).await.unwrap();
     assert_eq!(response.status(), StatusCode::OK);
-    let bytes = axum::body::to_bytes(response.into_body(), 4096).await.unwrap();
+    let bytes = axum::body::to_bytes(response.into_body(), 4096)
+        .await
+        .unwrap();
     let json: serde_json::Value = serde_json::from_slice(&bytes).unwrap();
     assert_eq!(json["type"], "success");
     assert!(json["data"]["deleted"].as_i64().unwrap() >= 1);
@@ -434,7 +438,10 @@ async fn test_document_soft_delete() {
             )
             .await
             .unwrap();
-        assert!(row.is_some(), "document entity should survive data deletion");
+        assert!(
+            row.is_some(),
+            "document entity should survive data deletion"
+        );
         let remaining = client
             .query_one(
                 "SELECT COUNT(*) AS n FROM x_cms_data_document_field \
@@ -446,10 +453,7 @@ async fn test_document_soft_delete() {
         let n: i64 = remaining.get("n");
         assert_eq!(n, 0, "data fields should be soft-deleted");
         let _ = client
-            .execute(
-                "DELETE FROM x_cms_data_document WHERE id = $1",
-                &[&doc_id],
-            )
+            .execute("DELETE FROM x_cms_data_document WHERE id = $1", &[&doc_id])
             .await;
     }
 }
@@ -458,11 +462,8 @@ async fn test_document_soft_delete() {
 mod tests {
     use super::*;
     use axum::body::Body;
-    use axum::http::{Request, Method, StatusCode};
+    use axum::http::{Method, Request, StatusCode};
     use tower::util::ServiceExt;
-
-
-
 
     #[tokio::test]
     async fn test_get_jaxrs_application_id() {

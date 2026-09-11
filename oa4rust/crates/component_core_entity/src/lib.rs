@@ -1,8 +1,4 @@
-use axum::{
-    extract::Extension,
-    routing::get,
-    Json, Router,
-};
+use axum::{extract::Extension, routing::get, Json, Router};
 use deadpool_postgres::Pool;
 use serde_json::Value;
 use shared::{error::AppError, response::ActionResult};
@@ -36,22 +32,34 @@ pub async fn component_list_all(
     let data: Vec<Value> = rows
         .iter()
         .map(|row| {
-            let order_number = row.get::<_, Option<i32>>("order_number")
-                .map(|v| ("orderNumber".to_string(), Value::Number(serde_json::Number::from(v))));
-            Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("name".to_string(), Value::String(row.get("name"))),
-                ("title".to_string(), Value::String(row.get("title"))),
-                ("type".to_string(), Value::String(row.get("type"))),
-                ("visible".to_string(), Value::Bool(row.get("visible"))),
-                ("path".to_string(), Value::String(row.get("path"))),
-                ("iconPath".to_string(), Value::String(row.get("icon_path"))),
-            ].into_iter().chain(order_number)))
+            let order_number = row.get::<_, Option<i32>>("order_number").map(|v| {
+                (
+                    "orderNumber".to_string(),
+                    Value::Number(serde_json::Number::from(v)),
+                )
+            });
+            Value::Object(serde_json::Map::from_iter(
+                [
+                    ("id".to_string(), Value::String(row.get("id"))),
+                    ("name".to_string(), Value::String(row.get("name"))),
+                    ("title".to_string(), Value::String(row.get("title"))),
+                    ("type".to_string(), Value::String(row.get("type"))),
+                    ("visible".to_string(), Value::Bool(row.get("visible"))),
+                    ("path".to_string(), Value::String(row.get("path"))),
+                    ("iconPath".to_string(), Value::String(row.get("icon_path"))),
+                ]
+                .into_iter()
+                .chain(order_number),
+            ))
         })
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
+    Ok(Json(ActionResult::java_success(
+        Value::Array(data),
+        count,
+        0,
+    )))
 }
 
 pub async fn component_get(
@@ -69,25 +77,33 @@ pub async fn component_get(
 
     match row {
         Some(row) => {
-            let order_number = row.get::<_, Option<i32>>("order_number")
-                .map(|v| ("orderNumber".to_string(), Value::Number(serde_json::Number::from(v))));
-            Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("name".to_string(), Value::String(row.get("name"))),
-                ("title".to_string(), Value::String(row.get("title"))),
-                ("type".to_string(), Value::String(row.get("type"))),
-                ("visible".to_string(), Value::Bool(row.get("visible"))),
-                ("path".to_string(), Value::String(row.get("path"))),
-                ("iconPath".to_string(), Value::String(row.get("icon_path"))),
-            ].into_iter().chain(order_number))))))
+            let order_number = row.get::<_, Option<i32>>("order_number").map(|v| {
+                (
+                    "orderNumber".to_string(),
+                    Value::Number(serde_json::Number::from(v)),
+                )
+            });
+            Ok(Json(ActionResult::success(Value::Object(
+                serde_json::Map::from_iter(
+                    [
+                        ("id".to_string(), Value::String(row.get("id"))),
+                        ("name".to_string(), Value::String(row.get("name"))),
+                        ("title".to_string(), Value::String(row.get("title"))),
+                        ("type".to_string(), Value::String(row.get("type"))),
+                        ("visible".to_string(), Value::Bool(row.get("visible"))),
+                        ("path".to_string(), Value::String(row.get("path"))),
+                        ("iconPath".to_string(), Value::String(row.get("icon_path"))),
+                    ]
+                    .into_iter()
+                    .chain(order_number),
+                ),
+            ))))
         }
         None => Err(AppError::NotFound),
     }
 }
 
-pub async fn component_count(
-    pool: Extension<Pool>,
-) -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn component_count(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let row = client
         .query_one(
@@ -98,14 +114,20 @@ pub async fn component_count(
         .map_err(|_| AppError::Internal)?;
     let count: i64 = row.get("cnt");
 
-    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
-        ("count".to_string(), Value::Number(serde_json::Number::from(count))),
-    ])))))
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([(
+            "count".to_string(),
+            Value::Number(serde_json::Number::from(count)),
+        )]),
+    ))))
 }
 
 pub fn component_core_entity_router(pool: Pool) -> Router {
     Router::new()
-        .route("/jaxrs/component/core/entity/list/all", get(component_list_all))
+        .route(
+            "/jaxrs/component/core/entity/list/all",
+            get(component_list_all),
+        )
         .route("/jaxrs/component/core/entity/{flag}", get(component_get))
         .route("/jaxrs/component/core/entity/count", get(component_count))
         .layer(Extension(pool))
@@ -115,7 +137,6 @@ pub fn component_core_entity_router(pool: Pool) -> Router {
 mod tests;
 #[cfg(test)]
 mod tests_generated;
-
 
 pub fn router(pool: deadpool_postgres::Pool) -> axum::Router {
     crate::component_core_entity_router(pool)

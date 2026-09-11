@@ -66,7 +66,12 @@ impl OrganizationBindStore {
     }
 
     /// 创建绑定请求，返回 meta（一次性）
-    pub fn create(&self, person_unique: &str, external_user_id: &str, external_name: Option<String>) -> String {
+    pub fn create(
+        &self,
+        person_unique: &str,
+        external_user_id: &str,
+        external_name: Option<String>,
+    ) -> String {
         self.cleanup();
         let meta = Uuid::new_v4().to_string();
         if let Ok(mut map) = self.entries.lock() {
@@ -106,10 +111,7 @@ impl OrganizationBindStore {
             return None;
         };
         match map.get(meta) {
-            Some(e) if e.confirmed => {
-                
-                map.remove(meta)
-            }
+            Some(e) if e.confirmed => map.remove(meta),
             _ => None,
         }
     }
@@ -187,7 +189,10 @@ async fn qywx_exchange_code(config: &(String, String), code: &str) -> Result<Str
         .await
         .map_err(|_| AppError::Internal)?;
 
-    let errcode = token_resp.get("errcode").and_then(|v| v.as_i64()).unwrap_or(-1);
+    let errcode = token_resp
+        .get("errcode")
+        .and_then(|v| v.as_i64())
+        .unwrap_or(-1);
     if errcode != 0 {
         return Err(AppError::Internal);
     }
@@ -206,7 +211,10 @@ async fn qywx_exchange_code(config: &(String, String), code: &str) -> Result<Str
         .await
         .map_err(|_| AppError::Internal)?;
 
-    let errcode = user_resp.get("errcode").and_then(|v| v.as_i64()).unwrap_or(-1);
+    let errcode = user_resp
+        .get("errcode")
+        .and_then(|v| v.as_i64())
+        .unwrap_or(-1);
     if errcode != 0 {
         return Err(AppError::Internal);
     }
@@ -268,7 +276,9 @@ pub async fn qiyeweixin_bind_confirm(
 
     let store = bind_store();
     let Some(entry) = store.take_confirmed(&meta) else {
-        return Ok(Json(ActionResult::error("meta invalid or expired or not confirmed")));
+        return Ok(Json(ActionResult::error(
+            "meta invalid or expired or not confirmed",
+        )));
     };
 
     // Verify the meta belongs to the same person (or allow if matching)
@@ -411,7 +421,10 @@ async fn dingding_exchange_code(config: &(String, String), code: &str) -> Result
         .await
         .map_err(|_| AppError::Internal)?;
 
-    let errcode = user_resp.get("errcode").and_then(|v| v.as_i64()).unwrap_or(-1);
+    let errcode = user_resp
+        .get("errcode")
+        .and_then(|v| v.as_i64())
+        .unwrap_or(-1);
     if errcode != 0 {
         return Err(AppError::Internal);
     }
@@ -462,7 +475,9 @@ pub async fn dingding_bind_confirm(
 
     let store = bind_store();
     let Some(entry) = store.take_confirmed(&meta) else {
-        return Ok(Json(ActionResult::error("meta invalid or expired or not confirmed")));
+        return Ok(Json(ActionResult::error(
+            "meta invalid or expired or not confirmed",
+        )));
     };
 
     if entry.person_unique != session.person_unique {
@@ -481,12 +496,10 @@ pub async fn dingding_bind_confirm(
         .map_err(|_| AppError::Internal)?;
 
     match existing {
-        Some(_) => {
-            Ok(Json(ActionResult::success(json!({
-                "bound": true,
-                "unique_id": unique_id,
-            }))))
-        }
+        Some(_) => Ok(Json(ActionResult::success(json!({
+            "bound": true,
+            "unique_id": unique_id,
+        })))),
         None => {
             let _ = client
                 .execute(
@@ -569,7 +582,8 @@ pub async fn zhengwudingding_bind_callback(
     Path((meta, code)): Path<(String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let api_base = std::env::var("ZWDINGDING_API_BASE").map_err(|_| AppError::Internal)?;
-    let corp_token = std::env::var("ZWDINGDING_CORP_ACCESS_TOKEN").map_err(|_| AppError::Internal)?;
+    let corp_token =
+        std::env::var("ZWDINGDING_CORP_ACCESS_TOKEN").map_err(|_| AppError::Internal)?;
     let app_token = std::env::var("ZWDINGDING_APP_ACCESS_TOKEN").map_err(|_| AppError::Internal)?;
 
     let client = reqwest::Client::new();
@@ -641,7 +655,9 @@ pub async fn zhengwudingding_bind_confirm(
 
     let store = bind_store();
     let Some(entry) = store.take_confirmed(&meta) else {
-        return Ok(Json(ActionResult::error("meta invalid or expired or not confirmed")));
+        return Ok(Json(ActionResult::error(
+            "meta invalid or expired or not confirmed",
+        )));
     };
 
     if entry.person_unique != session.person_unique {
@@ -660,12 +676,10 @@ pub async fn zhengwudingding_bind_confirm(
         .map_err(|_| AppError::Internal)?;
 
     match existing {
-        Some(_) => {
-            Ok(Json(ActionResult::success(json!({
-                "bound": true,
-                "unique_id": unique_id,
-            }))))
-        }
+        Some(_) => Ok(Json(ActionResult::success(json!({
+            "bound": true,
+            "unique_id": unique_id,
+        })))),
         None => {
             let _ = client
                 .execute(
@@ -689,7 +703,8 @@ pub async fn zhengwudingding_login(
     Path(code): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let api_base = std::env::var("ZWDINGDING_API_BASE").map_err(|_| AppError::Internal)?;
-    let corp_token = std::env::var("ZWDINGDING_CORP_ACCESS_TOKEN").map_err(|_| AppError::Internal)?;
+    let corp_token =
+        std::env::var("ZWDINGDING_CORP_ACCESS_TOKEN").map_err(|_| AppError::Internal)?;
     let app_token = std::env::var("ZWDINGDING_APP_ACCESS_TOKEN").map_err(|_| AppError::Internal)?;
 
     let client = reqwest::Client::new();
@@ -783,96 +798,182 @@ pub async fn oauth_list(_pool: Extension<Pool>) -> Result<Json<ActionResult<Valu
 }
 // oauth_qywx_config
 #[allow(non_snake_case)]
-pub async fn oauth_qywx_config(_pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn oauth_qywx_config(
+    _pool: Extension<Pool>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(serde_json::json!({}))))
 }
 // oauth_dingding_config
 #[allow(non_snake_case)]
-pub async fn oauth_dingding_config(_pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn oauth_dingding_config(
+    _pool: Extension<Pool>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(serde_json::json!({}))))
 }
 // oauth_name
 #[allow(non_snake_case)]
-pub async fn oauth_name(_pool: Extension<Pool>, Path(name): Path<String>) -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(serde_json::json!({"name": name}))))
+pub async fn oauth_name(
+    _pool: Extension<Pool>,
+    Path(name): Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    Ok(Json(ActionResult::success(
+        serde_json::json!({"name": name}),
+    )))
 }
 // oauth_login_name_code_redirecturi
 #[allow(non_snake_case)]
-pub async fn oauth_login_name_code_redirecturi(_pool: Extension<Pool>, Path(name): Path<String>, axum::extract::Query(q): axum::extract::Query<std::collections::HashMap<String, String>>) -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn oauth_login_name_code_redirecturi(
+    _pool: Extension<Pool>,
+    Path(name): Path<String>,
+    axum::extract::Query(q): axum::extract::Query<std::collections::HashMap<String, String>>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
     let code = q.get("code").cloned().unwrap_or_default();
-    Ok(Json(ActionResult::success(serde_json::json!({"name": name, "code": code}))))
+    Ok(Json(ActionResult::success(
+        serde_json::json!({"name": name, "code": code}),
+    )))
 }
 // oauth_login_qywx_code
 #[allow(non_snake_case)]
-pub async fn oauth_login_qywx_code(_pool: Extension<Pool>, Path(code): Path<String>) -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(serde_json::json!({"code": code}))))
+pub async fn oauth_login_qywx_code(
+    _pool: Extension<Pool>,
+    Path(code): Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    Ok(Json(ActionResult::success(
+        serde_json::json!({"code": code}),
+    )))
 }
 // oauth_login_dingding_code
 #[allow(non_snake_case)]
-pub async fn oauth_login_dingding_code(_pool: Extension<Pool>, Path(code): Path<String>) -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(serde_json::json!({"code": code}))))
+pub async fn oauth_login_dingding_code(
+    _pool: Extension<Pool>,
+    Path(code): Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    Ok(Json(ActionResult::success(
+        serde_json::json!({"code": code}),
+    )))
 }
 // oauth_bind_name_code_redirecturi
 #[allow(non_snake_case)]
-pub async fn oauth_bind_name_code_redirecturi(_pool: Extension<Pool>, Path(name): Path<String>, axum::extract::Query(q): axum::extract::Query<std::collections::HashMap<String, String>>) -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn oauth_bind_name_code_redirecturi(
+    _pool: Extension<Pool>,
+    Path(name): Path<String>,
+    axum::extract::Query(q): axum::extract::Query<std::collections::HashMap<String, String>>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
     let code = q.get("code").cloned().unwrap_or_default();
-    Ok(Json(ActionResult::success(serde_json::json!({"name": name, "code": code}))))
+    Ok(Json(ActionResult::success(
+        serde_json::json!({"name": name, "code": code}),
+    )))
 }
 // mpweixin_login_code
 #[allow(non_snake_case)]
-pub async fn mpweixin_login_code(_pool: Extension<Pool>, Path(code): Path<String>) -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(serde_json::json!({"code": code}))))
+pub async fn mpweixin_login_code(
+    _pool: Extension<Pool>,
+    Path(code): Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    Ok(Json(ActionResult::success(
+        serde_json::json!({"code": code}),
+    )))
 }
 // mpweixin_bind_openid
 #[allow(non_snake_case)]
-pub async fn mpweixin_bind_openid(_pool: Extension<Pool>, Path(openid): Path<String>) -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(serde_json::json!({"openid": openid}))))
+pub async fn mpweixin_bind_openid(
+    _pool: Extension<Pool>,
+    Path(openid): Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    Ok(Json(ActionResult::success(
+        serde_json::json!({"openid": openid}),
+    )))
 }
 // mpweixin_bind_code
 #[allow(non_snake_case)]
-pub async fn mpweixin_bind_code(_pool: Extension<Pool>, Path(code): Path<String>) -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(serde_json::json!({"code": code}))))
+pub async fn mpweixin_bind_code(
+    _pool: Extension<Pool>,
+    Path(code): Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    Ok(Json(ActionResult::success(
+        serde_json::json!({"code": code}),
+    )))
 }
 // mpweixin_menu_test_send_to
 #[allow(non_snake_case)]
-pub async fn mpweixin_menu_test_send_to(_pool: Extension<Pool>, Path(person): Path<String>) -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(serde_json::json!({"person": person}))))
+pub async fn mpweixin_menu_test_send_to(
+    _pool: Extension<Pool>,
+    Path(person): Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    Ok(Json(ActionResult::success(
+        serde_json::json!({"person": person}),
+    )))
 }
 // qiyeweixin_code
 #[allow(non_snake_case)]
-pub async fn qiyeweixin_code(_pool: Extension<Pool>, Path(code): Path<String>) -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(serde_json::json!({"code": code}))))
+pub async fn qiyeweixin_code(
+    _pool: Extension<Pool>,
+    Path(code): Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    Ok(Json(ActionResult::success(
+        serde_json::json!({"code": code}),
+    )))
 }
 // qiyeweixin_update_person_detail
 #[allow(non_snake_case)]
-pub async fn qiyeweixin_update_person_detail(_pool: Extension<Pool>, Path(code): Path<String>) -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(serde_json::json!({"code": code}))))
+pub async fn qiyeweixin_update_person_detail(
+    _pool: Extension<Pool>,
+    Path(code): Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    Ok(Json(ActionResult::success(
+        serde_json::json!({"code": code}),
+    )))
 }
 // welink_code
 #[allow(non_snake_case)]
-pub async fn welink_code(_pool: Extension<Pool>, Path(code): Path<String>) -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(serde_json::json!({"code": code}))))
+pub async fn welink_code(
+    _pool: Extension<Pool>,
+    Path(code): Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    Ok(Json(ActionResult::success(
+        serde_json::json!({"code": code}),
+    )))
 }
 // zhengwudingding_code
 #[allow(non_snake_case)]
-pub async fn zhengwudingding_code(_pool: Extension<Pool>, Path(code): Path<String>) -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(serde_json::json!({"code": code}))))
+pub async fn zhengwudingding_code(
+    _pool: Extension<Pool>,
+    Path(code): Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    Ok(Json(ActionResult::success(
+        serde_json::json!({"code": code}),
+    )))
 }
 // authentication_bind_meta_get
 #[allow(non_snake_case)]
-pub async fn authentication_bind_meta_get(_pool: Extension<Pool>, Path(meta): Path<String>) -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(serde_json::json!({"meta": meta}))))
+pub async fn authentication_bind_meta_get(
+    _pool: Extension<Pool>,
+    Path(meta): Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    Ok(Json(ActionResult::success(
+        serde_json::json!({"meta": meta}),
+    )))
 }
 // authentication_bind_meta_post
 #[allow(non_snake_case)]
-pub async fn authentication_bind_meta_post(_pool: Extension<Pool>, Path(meta): Path<String>) -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(serde_json::json!({"meta": meta}))))
+pub async fn authentication_bind_meta_post(
+    _pool: Extension<Pool>,
+    Path(meta): Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    Ok(Json(ActionResult::success(
+        serde_json::json!({"meta": meta}),
+    )))
 }
 // andfx_moa_sso_token_enter
 #[allow(non_snake_case)]
-pub async fn andfx_moa_sso_token_enter(_pool: Extension<Pool>, axum::extract::Query(q): axum::extract::Query<std::collections::HashMap<String, String>>) -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn andfx_moa_sso_token_enter(
+    _pool: Extension<Pool>,
+    axum::extract::Query(q): axum::extract::Query<std::collections::HashMap<String, String>>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
     let token = q.get("token").cloned().unwrap_or_default();
-    Ok(Json(ActionResult::success(serde_json::json!({"token": token}))))
+    Ok(Json(ActionResult::success(
+        serde_json::json!({"token": token}),
+    )))
 }
 
 pub fn organization_assemble_authentication_router() -> Router {
@@ -1039,7 +1140,6 @@ pub fn organization_assemble_authentication_router() -> Router {
         .route("/jaxrs/organization/assemble/authentication/zhengwudingding/code/{code}", get(zhengwudingding_code))
         .route("/jaxrs/organization/assemble/authentication/authentication/bind/meta/{meta}", get(authentication_bind_meta_get).post(authentication_bind_meta_post))
         .route("/jaxrs/organization/assemble/authentication/andfx/moa/sso/token/{token}/enter/{enterId}", get(andfx_moa_sso_token_enter))
-
 }
 
 #[axum::debug_handler]
@@ -1050,10 +1150,7 @@ pub async fn person_id_icon(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let row = client
-        .query_one(
-            "SELECT icon_url FROM auth_person WHERE id = $1",
-            &[&id],
-        )
+        .query_one("SELECT icon_url FROM auth_person WHERE id = $1", &[&id])
         .await
         .map_err(|_| AppError::NotFound)?;
     let icon_url: String = row.get("icon_url");
@@ -1112,7 +1209,9 @@ pub async fn oauth_auth(
     axum::extract::Query(q): axum::extract::Query<std::collections::HashMap<String, String>>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = q.get("client_id").cloned().unwrap_or_default();
-    let _ = oauth_code_store(&pool, &client, "auth-challenge", None, "auth").await.is_ok();
+    let _ = oauth_code_store(&pool, &client, "auth-challenge", None, "auth")
+        .await
+        .is_ok();
     Ok(Json(ActionResult::success(serde_json::json!({
         "authorize_endpoint": format!("/oauth/generate/code?client_id={}", client),
         "client": client
@@ -1128,7 +1227,9 @@ pub async fn oauth_generate_code(
     let person_id = req.get("personId").and_then(|v| v.as_str());
     let code = uuid::Uuid::new_v4().to_string();
     oauth_code_store(&pool, client, &code, person_id, "code").await?;
-    Ok(Json(ActionResult::success(serde_json::json!({ "code": code, "client": client }))))
+    Ok(Json(ActionResult::success(
+        serde_json::json!({ "code": code, "client": client }),
+    )))
 }
 
 #[allow(non_snake_case)]
@@ -1137,7 +1238,9 @@ pub async fn oauth_info_get(
     axum::extract::Query(q): axum::extract::Query<std::collections::HashMap<String, String>>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = q.get("clientId").cloned().unwrap_or_default();
-    Ok(Json(ActionResult::success(serde_json::json!({ "client": client, "granted": true }))))
+    Ok(Json(ActionResult::success(
+        serde_json::json!({ "client": client, "granted": true }),
+    )))
 }
 
 #[allow(non_snake_case)]
@@ -1145,8 +1248,13 @@ pub async fn oauth_info_post(
     _pool: Extension<Pool>,
     axum::extract::Json(req): axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = req.get("clientId").and_then(|v| v.as_str()).unwrap_or_default();
-    Ok(Json(ActionResult::success(serde_json::json!({ "client": client, "granted": true }))))
+    let client = req
+        .get("clientId")
+        .and_then(|v| v.as_str())
+        .unwrap_or_default();
+    Ok(Json(ActionResult::success(
+        serde_json::json!({ "client": client, "granted": true }),
+    )))
 }
 
 #[allow(non_snake_case)]
@@ -1155,7 +1263,9 @@ pub async fn oauth_info_jira_get(
     axum::extract::Query(q): axum::extract::Query<std::collections::HashMap<String, String>>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = q.get("clientId").cloned().unwrap_or_default();
-    Ok(Json(ActionResult::success(serde_json::json!({ "client": client, "type": "jira" }))))
+    Ok(Json(ActionResult::success(
+        serde_json::json!({ "client": client, "type": "jira" }),
+    )))
 }
 
 #[allow(non_snake_case)]
@@ -1163,8 +1273,13 @@ pub async fn oauth_info_jira_post(
     _pool: Extension<Pool>,
     axum::extract::Json(req): axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = req.get("clientId").and_then(|v| v.as_str()).unwrap_or_default();
-    Ok(Json(ActionResult::success(serde_json::json!({ "client": client, "type": "jira" }))))
+    let client = req
+        .get("clientId")
+        .and_then(|v| v.as_str())
+        .unwrap_or_default();
+    Ok(Json(ActionResult::success(
+        serde_json::json!({ "client": client, "type": "jira" }),
+    )))
 }
 
 #[allow(non_snake_case)]
@@ -1199,7 +1314,14 @@ pub async fn oauth_token_post(
     axum::extract::Json(req): axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let code = req.get("code").and_then(|v| v.as_str()).unwrap_or_default();
-    oauth_token_get(pool, axum::extract::Query(std::collections::HashMap::from([("code".to_string(), code.to_string())]))).await
+    oauth_token_get(
+        pool,
+        axum::extract::Query(std::collections::HashMap::from([(
+            "code".to_string(),
+            code.to_string(),
+        )])),
+    )
+    .await
 }
 
 #[allow(non_snake_case)]
@@ -1208,7 +1330,14 @@ pub async fn oauth_token_jira_post(
     axum::extract::Json(req): axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let code = req.get("code").and_then(|v| v.as_str()).unwrap_or_default();
-    oauth_token_get(pool, axum::extract::Query(std::collections::HashMap::from([("code".to_string(), code.to_string())]))).await
+    oauth_token_get(
+        pool,
+        axum::extract::Query(std::collections::HashMap::from([(
+            "code".to_string(),
+            code.to_string(),
+        )])),
+    )
+    .await
 }
 
 #[allow(non_snake_case)]
@@ -1217,8 +1346,14 @@ pub async fn qiyeweixin_info_sign(
     axum::extract::Json(req): axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let _ = pool.get().await.map_err(|_| AppError::Internal)?;
-    let nonce = req.get("nonce").and_then(|v| v.as_str()).unwrap_or_default();
-    let timestamp = req.get("timestamp").and_then(|v| v.as_str()).unwrap_or_default();
+    let nonce = req
+        .get("nonce")
+        .and_then(|v| v.as_str())
+        .unwrap_or_default();
+    let timestamp = req
+        .get("timestamp")
+        .and_then(|v| v.as_str())
+        .unwrap_or_default();
     let mut h: u64 = 1469598103934665603;
     for b in format!("{}{}", nonce, timestamp).bytes() {
         h ^= b as u64;

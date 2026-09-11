@@ -15,7 +15,6 @@ mod tests;
 #[cfg(test)]
 mod tests_generated;
 
-
 pub fn hotpic_assemble_control_router(pool: Pool) -> axum::Router {
     routes::router(pool)
 }
@@ -41,7 +40,10 @@ pub async fn get_control_config(
         serde_json::Map::from_iter([
             ("enabled".to_string(), Value::Bool(enabled)),
             ("cacheEnabled".to_string(), Value::Bool(count > 0)),
-            ("defaultScale".to_string(), Value::Number(serde_json::Number::from_f64(1.0).unwrap())),
+            (
+                "defaultScale".to_string(),
+                Value::Number(serde_json::Number::from_f64(1.0).unwrap()),
+            ),
         ]),
     ))))
 }
@@ -75,7 +77,11 @@ pub async fn list_control_panels(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
+    Ok(Json(ActionResult::java_success(
+        Value::Array(data),
+        count,
+        0,
+    )))
 }
 
 #[axum::debug_handler]
@@ -89,8 +95,15 @@ pub async fn update_control_config(
     tracing::info!("Updating hotpic assemble control config: {:?}", config);
 
     let id = uuid::Uuid::new_v4().to_string();
-    let name = config.get("name").and_then(|v| v.as_str()).unwrap_or("default").to_string();
-    let _enabled = config.get("enabled").and_then(|v| v.as_bool()).unwrap_or(true);
+    let name = config
+        .get("name")
+        .and_then(|v| v.as_str())
+        .unwrap_or("default")
+        .to_string();
+    let _enabled = config
+        .get("enabled")
+        .and_then(|v| v.as_bool())
+        .unwrap_or(true);
 
     let result = client
         .execute(
@@ -127,7 +140,10 @@ pub async fn list_control_applications(
         .map(|row| {
             let application: String = row.get("application");
             Value::Object(serde_json::Map::from_iter([
-                ("application".to_string(), Value::String(row.get("application"))),
+                (
+                    "application".to_string(),
+                    Value::String(row.get("application")),
+                ),
                 ("name".to_string(), Value::String(application.clone())),
                 ("enabled".to_string(), Value::Bool(!application.is_empty())),
             ]))
@@ -135,13 +151,16 @@ pub async fn list_control_applications(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
+    Ok(Json(ActionResult::java_success(
+        Value::Array(data),
+        count,
+        0,
+    )))
 }
 
 pub fn router(pool: deadpool_postgres::Pool) -> axum::Router {
     crate::hotpic_assemble_control_router(pool)
 }
-
 
 #[derive(Debug, serde::Deserialize)]
 #[allow(non_snake_case)]
@@ -152,9 +171,7 @@ pub struct HotpicRequest {
 
 #[axum::debug_handler]
 #[allow(non_snake_case)]
-pub async fn list_hotpics(
-    pool: Extension<Pool>,
-) -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn list_hotpics(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let rows = client
         .query(
@@ -172,13 +189,20 @@ pub async fn list_hotpics(
                 ("title".to_string(), Value::String(row.get("title"))),
                 ("imageUrl".to_string(), Value::String(row.get("image_url"))),
                 ("creator".to_string(), Value::String(row.get("creator"))),
-                ("createTime".to_string(), Value::String(row.get("create_time"))),
+                (
+                    "createTime".to_string(),
+                    Value::String(row.get("create_time")),
+                ),
             ]))
         })
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
+    Ok(Json(ActionResult::java_success(
+        Value::Array(data),
+        count,
+        0,
+    )))
 }
 
 #[axum::debug_handler]
@@ -203,7 +227,10 @@ pub async fn get_hotpic(
                 ("title".to_string(), Value::String(row.get("title"))),
                 ("imageUrl".to_string(), Value::String(row.get("image_url"))),
                 ("creator".to_string(), Value::String(row.get("creator"))),
-                ("createTime".to_string(), Value::String(row.get("create_time"))),
+                (
+                    "createTime".to_string(),
+                    Value::String(row.get("create_time")),
+                ),
             ]));
             Ok(Json(ActionResult::success(result)))
         }
@@ -289,7 +316,9 @@ pub async fn delete_hotpic(
         .map_err(|_| AppError::Internal)?;
 
     if result == 0 {
-        return Ok(Json(ActionResult::error("hotpic not found or already deleted")));
+        return Ok(Json(ActionResult::error(
+            "hotpic not found or already deleted",
+        )));
     }
 
     Ok(Json(ActionResult::success(Value::Object(
@@ -321,7 +350,10 @@ pub async fn cipher_hotpic_bbs_id(
                 ("title".to_string(), Value::String(row.get("title"))),
                 ("imageUrl".to_string(), Value::String(row.get("image_url"))),
                 ("creator".to_string(), Value::String(row.get("creator"))),
-                ("createTime".to_string(), Value::String(row.get("create_time"))),
+                (
+                    "createTime".to_string(),
+                    Value::String(row.get("create_time")),
+                ),
             ]));
             Ok(Json(ActionResult::success(result)))
         }
@@ -350,7 +382,10 @@ pub async fn cipher_hotpic_cms_id(
                 ("title".to_string(), Value::String(row.get("title"))),
                 ("imageUrl".to_string(), Value::String(row.get("image_url"))),
                 ("creator".to_string(), Value::String(row.get("creator"))),
-                ("createTime".to_string(), Value::String(row.get("create_time"))),
+                (
+                    "createTime".to_string(),
+                    Value::String(row.get("create_time")),
+                ),
             ]));
             Ok(Json(ActionResult::success(result)))
         }
@@ -381,13 +416,20 @@ pub async fn cipher_hotpic_filter_list_page_page_count_count(
                 ("title".to_string(), Value::String(row.get("title"))),
                 ("imageUrl".to_string(), Value::String(row.get("image_url"))),
                 ("creator".to_string(), Value::String(row.get("creator"))),
-                ("createTime".to_string(), Value::String(row.get("create_time"))),
+                (
+                    "createTime".to_string(),
+                    Value::String(row.get("create_time")),
+                ),
             ]))
         })
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
+    Ok(Json(ActionResult::java_success(
+        Value::Array(data),
+        count,
+        0,
+    )))
 }
 
 #[allow(non_snake_case)]
@@ -411,7 +453,10 @@ pub async fn cipher_hotpic_id(
                 ("title".to_string(), Value::String(row.get("title"))),
                 ("imageUrl".to_string(), Value::String(row.get("image_url"))),
                 ("creator".to_string(), Value::String(row.get("creator"))),
-                ("createTime".to_string(), Value::String(row.get("create_time"))),
+                (
+                    "createTime".to_string(),
+                    Value::String(row.get("create_time")),
+                ),
             ]));
             Ok(Json(ActionResult::success(result)))
         }
@@ -425,8 +470,16 @@ pub async fn user_hotpic_changeTitle(
     Json(req): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
-    let id = req.get("id").and_then(|v| v.as_str()).unwrap_or("").to_string();
-    let title = req.get("title").and_then(|v| v.as_str()).unwrap_or("").to_string();
+    let id = req
+        .get("id")
+        .and_then(|v| v.as_str())
+        .unwrap_or("")
+        .to_string();
+    let title = req
+        .get("title")
+        .and_then(|v| v.as_str())
+        .unwrap_or("")
+        .to_string();
 
     if id.is_empty() {
         return Ok(Json(ActionResult::error("id is required")));
@@ -460,7 +513,10 @@ pub async fn user_hotpic_exists_check(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let person_id = req.get("personId").and_then(|v| v.as_str()).unwrap_or("");
-    let _application = req.get("application").and_then(|v| v.as_str()).unwrap_or("");
+    let _application = req
+        .get("application")
+        .and_then(|v| v.as_str())
+        .unwrap_or("");
 
     if person_id.is_empty() {
         return Ok(Json(ActionResult::success(Value::Bool(false))));
@@ -501,13 +557,20 @@ pub async fn user_hotpic_filter_list_page_page_count_count(
                 ("title".to_string(), Value::String(row.get("title"))),
                 ("imageUrl".to_string(), Value::String(row.get("image_url"))),
                 ("creator".to_string(), Value::String(row.get("creator"))),
-                ("createTime".to_string(), Value::String(row.get("create_time"))),
+                (
+                    "createTime".to_string(),
+                    Value::String(row.get("create_time")),
+                ),
             ]))
         })
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
+    Ok(Json(ActionResult::java_success(
+        Value::Array(data),
+        count,
+        0,
+    )))
 }
 
 #[allow(non_snake_case)]
@@ -531,7 +594,10 @@ pub async fn user_hotpic_application_infoId(
                 ("title".to_string(), Value::String(row.get("title"))),
                 ("imageUrl".to_string(), Value::String(row.get("image_url"))),
                 ("creator".to_string(), Value::String(row.get("creator"))),
-                ("createTime".to_string(), Value::String(row.get("create_time"))),
+                (
+                    "createTime".to_string(),
+                    Value::String(row.get("create_time")),
+                ),
             ]);
             result.insert("application".to_string(), Value::String(application));
             Ok(Json(ActionResult::success(Value::Object(result))))
@@ -556,10 +622,12 @@ pub async fn user_hotpic_id(
             )
             .await
             .map_err(|_| AppError::Internal)?;
-        return Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
-            ("id".to_string(), Value::String(id)),
-            ("deleted".to_string(), Value::Bool(result > 0)),
-        ])))));
+        return Ok(Json(ActionResult::success(Value::Object(
+            serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(id)),
+                ("deleted".to_string(), Value::Bool(result > 0)),
+            ]),
+        ))));
     }
 
     let row = client
@@ -577,14 +645,16 @@ pub async fn user_hotpic_id(
                 ("title".to_string(), Value::String(row.get("title"))),
                 ("imageUrl".to_string(), Value::String(row.get("image_url"))),
                 ("creator".to_string(), Value::String(row.get("creator"))),
-                ("createTime".to_string(), Value::String(row.get("create_time"))),
+                (
+                    "createTime".to_string(),
+                    Value::String(row.get("create_time")),
+                ),
             ]));
             Ok(Json(ActionResult::success(result)))
         }
         None => Ok(Json(ActionResult::error("hotpic not found"))),
     }
 }
-
 
 #[allow(non_snake_case)]
 pub async fn user_hotpic_delete_by_ids(
@@ -600,9 +670,14 @@ pub async fn user_hotpic_delete_by_ids(
         )
         .await
         .map_err(|_| AppError::Internal)?;
-    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
-        ("id".to_string(), Value::String(id)),
-        ("id2".to_string(), Value::String(id2)),
-        ("deleted".to_string(), Value::Number(serde_json::Number::from(n))),
-    ])))))
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("id".to_string(), Value::String(id)),
+            ("id2".to_string(), Value::String(id2)),
+            (
+                "deleted".to_string(),
+                Value::Number(serde_json::Number::from(n)),
+            ),
+        ]),
+    ))))
 }

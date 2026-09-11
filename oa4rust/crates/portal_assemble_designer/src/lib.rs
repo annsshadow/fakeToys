@@ -1,12 +1,19 @@
 #[allow(dead_code)]
 use axum::{
     extract::{Extension, Path},
-    Json, Router, routing::get, routing::post, routing::put, routing::delete,
+    routing::delete,
+    routing::get,
+    routing::post,
+    routing::put,
+    Json, Router,
 };
 use deadpool_postgres::Pool;
 use serde::Deserialize;
 use serde_json::Value;
-use shared::{error::AppError, response::{option_to_json, ActionResult}};
+use shared::{
+    error::AppError,
+    response::{option_to_json, ActionResult},
+};
 
 pub mod routes;
 
@@ -75,8 +82,13 @@ pub async fn get_design(
             let mut map = serde_json::Map::new();
             map.insert("id".to_string(), Value::String(row.get("id")));
             map.insert("name".to_string(), Value::String(row.get("name")));
-            map.insert("description".to_string(), Value::String(row.get("description")));
-            if let Some(val) = option_to_json::<Value>(content.and_then(|s| serde_json::from_str(&s).ok())) {
+            map.insert(
+                "description".to_string(),
+                Value::String(row.get("description")),
+            );
+            if let Some(val) =
+                option_to_json::<Value>(content.and_then(|s| serde_json::from_str(&s).ok()))
+            {
                 map.insert("components".to_string(), val);
             }
             let result = Value::Object(map);
@@ -87,9 +99,7 @@ pub async fn get_design(
 }
 
 #[allow(non_snake_case)]
-pub async fn list_designs(
-    pool: Extension<Pool>,
-) -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn list_designs(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let rows = client
         .query(
@@ -105,17 +115,31 @@ pub async fn list_designs(
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("name".to_string(), Value::String(row.get("name"))),
-                ("description".to_string(), Value::String(row.get("description"))),
-                ("createTime".to_string(), Value::String(row.get("create_time"))),
-                ("updateTime".to_string(), Value::String(row.get("update_time"))),
+                (
+                    "description".to_string(),
+                    Value::String(row.get("description")),
+                ),
+                (
+                    "createTime".to_string(),
+                    Value::String(row.get("create_time")),
+                ),
+                (
+                    "updateTime".to_string(),
+                    Value::String(row.get("update_time")),
+                ),
             ]))
         })
         .collect();
 
-    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
-        ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
-        ("data".to_string(), Value::Array(data)),
-    ])))))
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            (
+                "count".to_string(),
+                Value::Number(serde_json::Number::from(data.len() as i64)),
+            ),
+            ("data".to_string(), Value::Array(data)),
+        ]),
+    ))))
 }
 
 #[allow(non_snake_case)]
@@ -125,7 +149,10 @@ pub async fn save_design(
     axum::extract::Json(body): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
-    let content = body.get("content").and_then(|v| v.as_str()).unwrap_or("null");
+    let content = body
+        .get("content")
+        .and_then(|v| v.as_str())
+        .unwrap_or("null");
     let content_str = content.to_string();
 
     let result = client
@@ -172,20 +199,33 @@ pub async fn list_pages_by_category(
             map.insert("id".to_string(), Value::String(row.get("id")));
             map.insert("name".to_string(), Value::String(row.get("name")));
             map.insert("category".to_string(), Value::String(row.get("category")));
-            if let Some(val) = option_to_json::<Value>(content.and_then(|s| serde_json::from_str(&s).ok())) {
+            if let Some(val) =
+                option_to_json::<Value>(content.and_then(|s| serde_json::from_str(&s).ok()))
+            {
                 map.insert("content".to_string(), val);
             }
             map.insert("creator".to_string(), Value::String(row.get("creator")));
-            map.insert("createTime".to_string(), Value::String(row.get("create_time")));
-            map.insert("updateTime".to_string(), Value::String(row.get("update_time")));
+            map.insert(
+                "createTime".to_string(),
+                Value::String(row.get("create_time")),
+            );
+            map.insert(
+                "updateTime".to_string(),
+                Value::String(row.get("update_time")),
+            );
             Value::Object(map)
         })
         .collect();
 
-    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
-        ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
-        ("data".to_string(), Value::Array(data)),
-    ])))))
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            (
+                "count".to_string(),
+                Value::Number(serde_json::Number::from(data.len() as i64)),
+            ),
+            ("data".to_string(), Value::Array(data)),
+        ]),
+    ))))
 }
 
 #[allow(non_snake_case)]
@@ -210,12 +250,20 @@ pub async fn get_page(
             map.insert("id".to_string(), Value::String(row.get("id")));
             map.insert("name".to_string(), Value::String(row.get("name")));
             map.insert("category".to_string(), Value::String(row.get("category")));
-            if let Some(val) = option_to_json::<Value>(content.and_then(|s| serde_json::from_str(&s).ok())) {
+            if let Some(val) =
+                option_to_json::<Value>(content.and_then(|s| serde_json::from_str(&s).ok()))
+            {
                 map.insert("content".to_string(), val);
             }
             map.insert("creator".to_string(), Value::String(row.get("creator")));
-            map.insert("createTime".to_string(), Value::String(row.get("create_time")));
-            map.insert("updateTime".to_string(), Value::String(row.get("update_time")));
+            map.insert(
+                "createTime".to_string(),
+                Value::String(row.get("create_time")),
+            );
+            map.insert(
+                "updateTime".to_string(),
+                Value::String(row.get("update_time")),
+            );
             let result = Value::Object(map);
             Ok(Json(ActionResult::success(result)))
         }
@@ -233,7 +281,9 @@ pub async fn create_page(
     let id = uuid::Uuid::new_v4().to_string();
     let name = req.name.unwrap_or_default();
     let category = req.category.unwrap_or_default();
-    let content = req.content.unwrap_or_else(|| Value::Object(serde_json::Map::new()));
+    let content = req
+        .content
+        .unwrap_or_else(|| Value::Object(serde_json::Map::new()));
     let content_str = serde_json::to_string(&content).map_err(|_| AppError::Internal)?;
     let creator = "system";
 
@@ -263,7 +313,9 @@ pub async fn save_page(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
-    let content = req.content.unwrap_or_else(|| Value::Object(serde_json::Map::new()));
+    let content = req
+        .content
+        .unwrap_or_else(|| Value::Object(serde_json::Map::new()));
     let content_str = serde_json::to_string(&content).map_err(|_| AppError::Internal)?;
 
     let result = client
@@ -295,15 +347,14 @@ pub async fn delete_page(
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let result = client
-        .execute(
-            "DELETE FROM x_portal_page WHERE id = $1",
-            &[&id],
-        )
+        .execute("DELETE FROM x_portal_page WHERE id = $1", &[&id])
         .await
         .map_err(|_| AppError::Internal)?;
 
     if result == 0 {
-        return Ok(Json(ActionResult::error("page not found or already deleted")));
+        return Ok(Json(ActionResult::error(
+            "page not found or already deleted",
+        )));
     }
 
     Ok(Json(ActionResult::success(Value::Object(
@@ -315,9 +366,7 @@ pub async fn delete_page(
 }
 
 #[allow(non_snake_case)]
-pub async fn design_list(
-    pool: Extension<Pool>,
-) -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn design_list(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
     list_designs(pool).await
 }
 
@@ -334,8 +383,14 @@ pub async fn design_save(
     pool: Extension<Pool>,
     axum::extract::Json(body): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let id = body.get("id").and_then(|v| v.as_str()).ok_or(AppError::BadRequest("id is required".to_string()))?;
-    let content = body.get("content").and_then(|v| v.as_str()).unwrap_or("null");
+    let id = body
+        .get("id")
+        .and_then(|v| v.as_str())
+        .ok_or(AppError::BadRequest("id is required".to_string()))?;
+    let content = body
+        .get("content")
+        .and_then(|v| v.as_str())
+        .unwrap_or("null");
     let content_str = content.to_string();
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let result = client
@@ -361,83 +416,282 @@ pub async fn design_save(
 
 pub fn portal_assemble_designer_router() -> Router {
     Router::new()
-        .route("/jaxrs/portal/assemble/designer/page/list/{category}", get(list_pages_by_category))
+        .route(
+            "/jaxrs/portal/assemble/designer/page/list/{category}",
+            get(list_pages_by_category),
+        )
         .route("/jaxrs/portal/assemble/designer/page/{id}", get(get_page))
-        .route("/jaxrs/portal/assemble/designer/page/create", post(create_page))
-        .route("/jaxrs/portal/assemble/designer/page/save/{id}", post(save_page))
-        .route("/jaxrs/portal/assemble/designer/page/delete/{id}", post(delete_page))
-        .route("/jaxrs/portal/assemble/designer/create", post(create_design))
+        .route(
+            "/jaxrs/portal/assemble/designer/page/create",
+            post(create_page),
+        )
+        .route(
+            "/jaxrs/portal/assemble/designer/page/save/{id}",
+            post(save_page),
+        )
+        .route(
+            "/jaxrs/portal/assemble/designer/page/delete/{id}",
+            post(delete_page),
+        )
+        .route(
+            "/jaxrs/portal/assemble/designer/create",
+            post(create_design),
+        )
         .route("/jaxrs/portal/assemble/designer/get/{id}", get(get_design))
         .route("/jaxrs/portal/assemble/designer/list", get(list_designs))
-        .route("/jaxrs/portal/assemble/designer/save/{id}", post(save_design))
+        .route(
+            "/jaxrs/portal/assemble/designer/save/{id}",
+            post(save_design),
+        )
         .route("/jaxrs/portal/design/list", get(design_list))
         .route("/jaxrs/portal/design/{id}", get(design_get))
         .route("/jaxrs/portal/design/save", post(design_save))
-        .route("/jaxrs/portal/assemble/designer/dict/{id}", get(crate::dict_id))
-        .route("/jaxrs/portal/assemble/designer/dict/list/paging/{page}/{size}/{size}", get(crate::dict_list_paging_page_size_size))
-        .route("/jaxrs/portal/assemble/designer/dict/list/portal/{portalId}", get(crate::dict_list_portal_portalId))
-        .route("/jaxrs/portal/assemble/designer/file/{flag}", get(crate::file_flag))
-        .route("/jaxrs/portal/assemble/designer/file/download/{id}", get(crate::file_id_download))
-        .route("/jaxrs/portal/assemble/designer/file/upload/{id}", post(crate::file_id_upload))
-        .route("/jaxrs/portal/assemble/designer/file/list/application/{applicationFlag}", get(crate::file_list_application_applicationFlag))
-        .route("/jaxrs/portal/assemble/designer/file/list/{id}/{next}/{count}", get(crate::file_list_id_next_count))
-        .route("/jaxrs/portal/assemble/designer/{id}/{count}", get(crate::id_count))
-        .route("/jaxrs/portal/assemble/designer/output/select/file/{flag}", get(crate::output_flag_select_file))
-        .route("/jaxrs/portal/assemble/designer/output/select/{portalFlag}", get(crate::output_portalFlag_select))
-        .route("/jaxrs/portal/assemble/designer/list/portal/{page}/{portalId}", get(crate::page_list_portal_portalId))
-        .route("/jaxrs/portal/assemble/designer/pageversion/{id}", get(crate::pageversion_id))
-        .route("/jaxrs/portal/assemble/designer/pageversion/list/{page}/{pageId}", get(crate::pageversion_list_page_pageId))
-        .route("/jaxrs/portal/assemble/designer/portal/{id}", get(crate::portal_id))
-        .route("/jaxrs/portal/assemble/designer/portal/icon/{id}", get(crate::portal_id_icon))
-        .route("/jaxrs/portal/assemble/designer/portal/permission/{id}", get(crate::portal_id_permission))
-        .route("/jaxrs/portal/assemble/designer/portal/list/portalcategory/{portalCategory}", get(crate::portal_list_portalcategory_portalCategory))
-        .route("/jaxrs/portal/assemble/designer/portal/list/summary/portalcategory/{portalCategory}", get(crate::portal_list_summary_portalcategory_portalCategory))
-        .route("/jaxrs/portal/assemble/designer/script/{id}", get(crate::script_id))
-        .route("/jaxrs/portal/assemble/designer/script/list/paging/{page}/{size}/{size}", get(crate::script_list_paging_page_size_size))
-        .route("/jaxrs/portal/assemble/designer/script/list/portal/{portalId}", get(crate::script_list_portal_portalId))
-        .route("/jaxrs/portal/assemble/designer/scriptversion/{id}", get(crate::scriptversion_id))
-        .route("/jaxrs/portal/assemble/designer/scriptversion/list/script/{scriptId}", get(crate::scriptversion_list_script_scriptId))
-        .route("/jaxrs/portal/assemble/designer/templatepage/{id}", get(crate::templatepage_id))
-        .route("/jaxrs/portal/assemble/designer/widget/{id}", get(crate::widget_id))
-        .route("/jaxrs/portal/assemble/designer/widget/list/portal/{portalId}", get(crate::widget_list_portal_portalId))
-        .route("/jaxrs/portal/assemble/designer/page/delete/{id}", delete(delete_page))
+        .route(
+            "/jaxrs/portal/assemble/designer/dict/{id}",
+            get(crate::dict_id),
+        )
+        .route(
+            "/jaxrs/portal/assemble/designer/dict/list/paging/{page}/{size}/{size}",
+            get(crate::dict_list_paging_page_size_size),
+        )
+        .route(
+            "/jaxrs/portal/assemble/designer/dict/list/portal/{portalId}",
+            get(crate::dict_list_portal_portalId),
+        )
+        .route(
+            "/jaxrs/portal/assemble/designer/file/{flag}",
+            get(crate::file_flag),
+        )
+        .route(
+            "/jaxrs/portal/assemble/designer/file/download/{id}",
+            get(crate::file_id_download),
+        )
+        .route(
+            "/jaxrs/portal/assemble/designer/file/upload/{id}",
+            post(crate::file_id_upload),
+        )
+        .route(
+            "/jaxrs/portal/assemble/designer/file/list/application/{applicationFlag}",
+            get(crate::file_list_application_applicationFlag),
+        )
+        .route(
+            "/jaxrs/portal/assemble/designer/file/list/{id}/{next}/{count}",
+            get(crate::file_list_id_next_count),
+        )
+        .route(
+            "/jaxrs/portal/assemble/designer/{id}/{count}",
+            get(crate::id_count),
+        )
+        .route(
+            "/jaxrs/portal/assemble/designer/output/select/file/{flag}",
+            get(crate::output_flag_select_file),
+        )
+        .route(
+            "/jaxrs/portal/assemble/designer/output/select/{portalFlag}",
+            get(crate::output_portalFlag_select),
+        )
+        .route(
+            "/jaxrs/portal/assemble/designer/list/portal/{page}/{portalId}",
+            get(crate::page_list_portal_portalId),
+        )
+        .route(
+            "/jaxrs/portal/assemble/designer/pageversion/{id}",
+            get(crate::pageversion_id),
+        )
+        .route(
+            "/jaxrs/portal/assemble/designer/pageversion/list/{page}/{pageId}",
+            get(crate::pageversion_list_page_pageId),
+        )
+        .route(
+            "/jaxrs/portal/assemble/designer/portal/{id}",
+            get(crate::portal_id),
+        )
+        .route(
+            "/jaxrs/portal/assemble/designer/portal/icon/{id}",
+            get(crate::portal_id_icon),
+        )
+        .route(
+            "/jaxrs/portal/assemble/designer/portal/permission/{id}",
+            get(crate::portal_id_permission),
+        )
+        .route(
+            "/jaxrs/portal/assemble/designer/portal/list/portalcategory/{portalCategory}",
+            get(crate::portal_list_portalcategory_portalCategory),
+        )
+        .route(
+            "/jaxrs/portal/assemble/designer/portal/list/summary/portalcategory/{portalCategory}",
+            get(crate::portal_list_summary_portalcategory_portalCategory),
+        )
+        .route(
+            "/jaxrs/portal/assemble/designer/script/{id}",
+            get(crate::script_id),
+        )
+        .route(
+            "/jaxrs/portal/assemble/designer/script/list/paging/{page}/{size}/{size}",
+            get(crate::script_list_paging_page_size_size),
+        )
+        .route(
+            "/jaxrs/portal/assemble/designer/script/list/portal/{portalId}",
+            get(crate::script_list_portal_portalId),
+        )
+        .route(
+            "/jaxrs/portal/assemble/designer/scriptversion/{id}",
+            get(crate::scriptversion_id),
+        )
+        .route(
+            "/jaxrs/portal/assemble/designer/scriptversion/list/script/{scriptId}",
+            get(crate::scriptversion_list_script_scriptId),
+        )
+        .route(
+            "/jaxrs/portal/assemble/designer/templatepage/{id}",
+            get(crate::templatepage_id),
+        )
+        .route(
+            "/jaxrs/portal/assemble/designer/widget/{id}",
+            get(crate::widget_id),
+        )
+        .route(
+            "/jaxrs/portal/assemble/designer/widget/list/portal/{portalId}",
+            get(crate::widget_list_portal_portalId),
+        )
+        .route(
+            "/jaxrs/portal/assemble/designer/page/delete/{id}",
+            delete(delete_page),
+        )
         .route("/jaxrs/portal/design/save", put(design_save))
-        .route("/jaxrs/portal/assemble/designer/save/{id}", put(save_design))
-        .route("/jaxrs/portal/assemble/designer/page/save/{id}", put(save_page))
+        .route(
+            "/jaxrs/portal/assemble/designer/save/{id}",
+            put(save_design),
+        )
+        .route(
+            "/jaxrs/portal/assemble/designer/page/save/{id}",
+            put(save_page),
+        )
         // ── plan002 U2: page/file/import 族 + 动词差 缺口 (20) ──
-        .route("/jaxrs/portal/assemble/designer/page", post(crate::create_page))
-        .route("/jaxrs/portal/assemble/designer/page/list/portal/{portalId}", get(crate::page_list_portal_portalId))
-        .route("/jaxrs/portal/assemble/designer/page/{id}", delete(crate::delete_page))
-        .route("/jaxrs/portal/assemble/designer/page/{id}", put(crate::save_page))
-        .route("/jaxrs/portal/assemble/designer/pageversion/list/page/{pageId}", get(crate::pageversion_list_page_pageId))
-        .route("/jaxrs/portal/assemble/designer/portal", post(crate::create_portal))
-        .route("/jaxrs/portal/assemble/designer/portal/list/summary", get(crate::portal_list_summary))
-        .route("/jaxrs/portal/assemble/designer/portal/list/summary/v2", post(crate::portal_list_summary_v2))
-        .route("/jaxrs/portal/assemble/designer/portal/{id}", delete(crate::delete_portal))
-        .route("/jaxrs/portal/assemble/designer/portal/{id}", put(crate::update_portal))
-        .route("/jaxrs/portal/assemble/designer/portal/{id}/icon", put(crate::update_portal_icon))
-        .route("/jaxrs/portal/assemble/designer/portal/{id}/permission", post(crate::portal_id_permission_post))
-        .route("/jaxrs/portal/assemble/designer/templatepage", post(crate::create_templatepage))
-        .route("/jaxrs/portal/assemble/designer/templatepage/list", get(crate::templatepage_list))
-        .route("/jaxrs/portal/assemble/designer/templatepage/list/category", get(crate::templatepage_list_category))
-        .route("/jaxrs/portal/assemble/designer/templatepage/list/category", put(crate::update_templatepage_category))
-        .route("/jaxrs/portal/assemble/designer/templatepage/{id}", delete(crate::delete_templatepage))
-        .route("/jaxrs/portal/assemble/designer/widget", post(crate::create_widget))
-        .route("/jaxrs/portal/assemble/designer/widget/{id}", delete(crate::delete_widget))
-        .route("/jaxrs/portal/assemble/designer/widget/{id}", put(crate::update_widget))
-          .route("/jaxrs/portal/assemble/designer/designer/search", post(crate::designer_search))
-          .route("/jaxrs/portal/assemble/designer/file/list/{id}/prev/{count}", get(crate::file_list_id_prev_count))
-          
-          .route("/jaxrs/portal/assemble/designer/input/compare", put(crate::input_compare))
-          .route("/jaxrs/portal/assemble/designer/input/cover", put(crate::input_cover))
-          .route("/jaxrs/portal/assemble/designer/input/create", put(crate::input_create))
-          .route("/jaxrs/portal/assemble/designer/input/prepare/cover", put(crate::input_prepare_cover))
-          .route("/jaxrs/portal/assemble/designer/input/prepare/create", put(crate::input_prepare_create))
-          .route("/jaxrs/portal/assemble/designer/output/list", get(crate::output_list))
-
-          .route("/jaxrs/portal/assemble/designer/portal/list", get(crate::portal_list))
-          .route("/jaxrs/portal/assemble/designer/portalcategory/list", get(crate::portalcategory_list))
-          .route("/jaxrs/portal/assemble/designer/script/list/manager", post(crate::script_list_manager))
+        .route(
+            "/jaxrs/portal/assemble/designer/page",
+            post(crate::create_page),
+        )
+        .route(
+            "/jaxrs/portal/assemble/designer/page/list/portal/{portalId}",
+            get(crate::page_list_portal_portalId),
+        )
+        .route(
+            "/jaxrs/portal/assemble/designer/page/{id}",
+            delete(crate::delete_page),
+        )
+        .route(
+            "/jaxrs/portal/assemble/designer/page/{id}",
+            put(crate::save_page),
+        )
+        .route(
+            "/jaxrs/portal/assemble/designer/pageversion/list/page/{pageId}",
+            get(crate::pageversion_list_page_pageId),
+        )
+        .route(
+            "/jaxrs/portal/assemble/designer/portal",
+            post(crate::create_portal),
+        )
+        .route(
+            "/jaxrs/portal/assemble/designer/portal/list/summary",
+            get(crate::portal_list_summary),
+        )
+        .route(
+            "/jaxrs/portal/assemble/designer/portal/list/summary/v2",
+            post(crate::portal_list_summary_v2),
+        )
+        .route(
+            "/jaxrs/portal/assemble/designer/portal/{id}",
+            delete(crate::delete_portal),
+        )
+        .route(
+            "/jaxrs/portal/assemble/designer/portal/{id}",
+            put(crate::update_portal),
+        )
+        .route(
+            "/jaxrs/portal/assemble/designer/portal/{id}/icon",
+            put(crate::update_portal_icon),
+        )
+        .route(
+            "/jaxrs/portal/assemble/designer/portal/{id}/permission",
+            post(crate::portal_id_permission_post),
+        )
+        .route(
+            "/jaxrs/portal/assemble/designer/templatepage",
+            post(crate::create_templatepage),
+        )
+        .route(
+            "/jaxrs/portal/assemble/designer/templatepage/list",
+            get(crate::templatepage_list),
+        )
+        .route(
+            "/jaxrs/portal/assemble/designer/templatepage/list/category",
+            get(crate::templatepage_list_category),
+        )
+        .route(
+            "/jaxrs/portal/assemble/designer/templatepage/list/category",
+            put(crate::update_templatepage_category),
+        )
+        .route(
+            "/jaxrs/portal/assemble/designer/templatepage/{id}",
+            delete(crate::delete_templatepage),
+        )
+        .route(
+            "/jaxrs/portal/assemble/designer/widget",
+            post(crate::create_widget),
+        )
+        .route(
+            "/jaxrs/portal/assemble/designer/widget/{id}",
+            delete(crate::delete_widget),
+        )
+        .route(
+            "/jaxrs/portal/assemble/designer/widget/{id}",
+            put(crate::update_widget),
+        )
+        .route(
+            "/jaxrs/portal/assemble/designer/designer/search",
+            post(crate::designer_search),
+        )
+        .route(
+            "/jaxrs/portal/assemble/designer/file/list/{id}/prev/{count}",
+            get(crate::file_list_id_prev_count),
+        )
+        .route(
+            "/jaxrs/portal/assemble/designer/input/compare",
+            put(crate::input_compare),
+        )
+        .route(
+            "/jaxrs/portal/assemble/designer/input/cover",
+            put(crate::input_cover),
+        )
+        .route(
+            "/jaxrs/portal/assemble/designer/input/create",
+            put(crate::input_create),
+        )
+        .route(
+            "/jaxrs/portal/assemble/designer/input/prepare/cover",
+            put(crate::input_prepare_cover),
+        )
+        .route(
+            "/jaxrs/portal/assemble/designer/input/prepare/create",
+            put(crate::input_prepare_create),
+        )
+        .route(
+            "/jaxrs/portal/assemble/designer/output/list",
+            get(crate::output_list),
+        )
+        .route(
+            "/jaxrs/portal/assemble/designer/portal/list",
+            get(crate::portal_list),
+        )
+        .route(
+            "/jaxrs/portal/assemble/designer/portalcategory/list",
+            get(crate::portalcategory_list),
+        )
+        .route(
+            "/jaxrs/portal/assemble/designer/script/list/manager",
+            post(crate::script_list_manager),
+        )
 }
 
 #[cfg(test)]
@@ -445,17 +699,12 @@ mod tests;
 #[cfg(test)]
 mod tests_generated;
 
-
 pub fn router(pool: deadpool_postgres::Pool) -> axum::Router {
     portal_assemble_designer_router().layer(axum::extract::Extension(pool))
 }
 
-
-
 #[allow(non_snake_case)]
-pub async fn designer_search(
-    pool: Extension<Pool>,
-) -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn designer_search(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let rows = client
@@ -473,16 +722,27 @@ pub async fn designer_search(
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("name".to_string(), Value::String(row.get("name"))),
                 ("category".to_string(), Value::String(row.get("category"))),
-                ("createTime".to_string(), Value::String(row.get("create_time"))),
-                ("updateTime".to_string(), Value::String(row.get("update_time"))),
+                (
+                    "createTime".to_string(),
+                    Value::String(row.get("create_time")),
+                ),
+                (
+                    "updateTime".to_string(),
+                    Value::String(row.get("update_time")),
+                ),
             ]))
         })
         .collect();
 
-    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
-        ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
-        ("data".to_string(), Value::Array(data)),
-    ])))))
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            (
+                "count".to_string(),
+                Value::Number(serde_json::Number::from(data.len() as i64)),
+            ),
+            ("data".to_string(), Value::Array(data)),
+        ]),
+    ))))
 }
 
 #[allow(non_snake_case)]
@@ -508,15 +768,23 @@ pub async fn dict_list_paging_page_size_size(
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("name".to_string(), Value::String(row.get("name"))),
                 ("appName".to_string(), Value::String(row.get("app_name"))),
-                ("createTime".to_string(), Value::String(row.get("create_time"))),
+                (
+                    "createTime".to_string(),
+                    Value::String(row.get("create_time")),
+                ),
             ]))
         })
         .collect();
 
-    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
-        ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
-        ("data".to_string(), Value::Array(data)),
-    ])))))
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            (
+                "count".to_string(),
+                Value::Number(serde_json::Number::from(data.len() as i64)),
+            ),
+            ("data".to_string(), Value::Array(data)),
+        ]),
+    ))))
 }
 
 #[allow(non_snake_case)]
@@ -541,15 +809,23 @@ pub async fn dict_list_portal_portalId(
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("name".to_string(), Value::String(row.get("name"))),
                 ("appName".to_string(), Value::String(row.get("app_name"))),
-                ("createTime".to_string(), Value::String(row.get("create_time"))),
+                (
+                    "createTime".to_string(),
+                    Value::String(row.get("create_time")),
+                ),
             ]))
         })
         .collect();
 
-    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
-        ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
-        ("data".to_string(), Value::Array(data)),
-    ])))))
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            (
+                "count".to_string(),
+                Value::Number(serde_json::Number::from(data.len() as i64)),
+            ),
+            ("data".to_string(), Value::Array(data)),
+        ]),
+    ))))
 }
 
 #[allow(non_snake_case)]
@@ -575,7 +851,10 @@ pub async fn dict_id(
                 ("appName".to_string(), Value::String(row.get("app_name"))),
                 ("appData".to_string(), Value::String(row.get("app_data"))),
                 ("creator".to_string(), Value::String(row.get("creator"))),
-                ("createTime".to_string(), Value::String(row.get("create_time"))),
+                (
+                    "createTime".to_string(),
+                    Value::String(row.get("create_time")),
+                ),
             ]));
             Ok(Json(ActionResult::success(result)))
         }
@@ -607,15 +886,23 @@ pub async fn file_list_application_applicationFlag(
                 ("flag".to_string(), Value::String(row.get("flag"))),
                 ("fileType".to_string(), Value::String(row.get("file_type"))),
                 ("creator".to_string(), Value::String(row.get("creator"))),
-                ("createTime".to_string(), Value::String(row.get("create_time"))),
+                (
+                    "createTime".to_string(),
+                    Value::String(row.get("create_time")),
+                ),
             ]))
         })
         .collect();
 
-    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
-        ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
-        ("data".to_string(), Value::Array(data)),
-    ])))))
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            (
+                "count".to_string(),
+                Value::Number(serde_json::Number::from(data.len() as i64)),
+            ),
+            ("data".to_string(), Value::Array(data)),
+        ]),
+    ))))
 }
 
 #[allow(non_snake_case)]
@@ -643,15 +930,23 @@ pub async fn file_list_id_next_count(
                 ("flag".to_string(), Value::String(row.get("flag"))),
                 ("fileType".to_string(), Value::String(row.get("file_type"))),
                 ("creator".to_string(), Value::String(row.get("creator"))),
-                ("createTime".to_string(), Value::String(row.get("create_time"))),
+                (
+                    "createTime".to_string(),
+                    Value::String(row.get("create_time")),
+                ),
             ]))
         })
         .collect();
 
-    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
-        ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
-        ("data".to_string(), Value::Array(data)),
-    ])))))
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            (
+                "count".to_string(),
+                Value::Number(serde_json::Number::from(data.len() as i64)),
+            ),
+            ("data".to_string(), Value::Array(data)),
+        ]),
+    ))))
 }
 
 #[allow(non_snake_case)]
@@ -679,15 +974,23 @@ pub async fn file_list_id_prev_count(
                 ("flag".to_string(), Value::String(row.get("flag"))),
                 ("fileType".to_string(), Value::String(row.get("file_type"))),
                 ("creator".to_string(), Value::String(row.get("creator"))),
-                ("createTime".to_string(), Value::String(row.get("create_time"))),
+                (
+                    "createTime".to_string(),
+                    Value::String(row.get("create_time")),
+                ),
             ]))
         })
         .collect();
 
-    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
-        ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
-        ("data".to_string(), Value::Array(data)),
-    ])))))
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            (
+                "count".to_string(),
+                Value::Number(serde_json::Number::from(data.len() as i64)),
+            ),
+            ("data".to_string(), Value::Array(data)),
+        ]),
+    ))))
 }
 
 #[allow(non_snake_case)]
@@ -713,7 +1016,10 @@ pub async fn file_flag(
                 ("flag".to_string(), Value::String(row.get("flag"))),
                 ("fileType".to_string(), Value::String(row.get("file_type"))),
                 ("creator".to_string(), Value::String(row.get("creator"))),
-                ("createTime".to_string(), Value::String(row.get("create_time"))),
+                (
+                    "createTime".to_string(),
+                    Value::String(row.get("create_time")),
+                ),
             ]));
             Ok(Json(ActionResult::success(result)))
         }
@@ -744,7 +1050,10 @@ pub async fn file_id(
                 ("flag".to_string(), Value::String(row.get("flag"))),
                 ("fileType".to_string(), Value::String(row.get("file_type"))),
                 ("creator".to_string(), Value::String(row.get("creator"))),
-                ("createTime".to_string(), Value::String(row.get("create_time"))),
+                (
+                    "createTime".to_string(),
+                    Value::String(row.get("create_time")),
+                ),
             ]));
             Ok(Json(ActionResult::success(result)))
         }
@@ -790,7 +1099,10 @@ pub async fn file_id_upload(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
-    let content = body.get("content").and_then(|v| v.as_str()).unwrap_or("null");
+    let content = body
+        .get("content")
+        .and_then(|v| v.as_str())
+        .unwrap_or("null");
     let content_str = content.to_string();
 
     let result = client
@@ -829,8 +1141,14 @@ pub async fn id_count(
 
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
-            ("total".to_string(), Value::Number(serde_json::Number::from(total))),
-            ("count".to_string(), Value::Number(serde_json::Number::from(count))),
+            (
+                "total".to_string(),
+                Value::Number(serde_json::Number::from(total)),
+            ),
+            (
+                "count".to_string(),
+                Value::Number(serde_json::Number::from(count)),
+            ),
         ]),
     ))))
 }
@@ -843,7 +1161,10 @@ pub async fn input_compare(
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let input_id = body.get("id").and_then(|v| v.as_str()).unwrap_or_default();
-    let content_str = body.get("content").and_then(|v| v.as_str()).unwrap_or_default();
+    let content_str = body
+        .get("content")
+        .and_then(|v| v.as_str())
+        .unwrap_or_default();
 
     let row = client
         .query_opt(
@@ -858,10 +1179,15 @@ pub async fn input_compare(
             let old_content: Option<String> = row.get("content");
             let mut result_map = serde_json::Map::new();
             result_map.insert("id".to_string(), Value::String(input_id.to_string()));
-            if let Some(val) = option_to_json(old_content.as_ref().map(|s| Value::String(s.to_string()))) {
+            if let Some(val) =
+                option_to_json(old_content.as_ref().map(|s| Value::String(s.to_string())))
+            {
                 result_map.insert("oldContent".to_string(), val);
             }
-            result_map.insert("newContent".to_string(), Value::String(content_str.to_string()));
+            result_map.insert(
+                "newContent".to_string(),
+                Value::String(content_str.to_string()),
+            );
             let compared = old_content.is_some();
             result_map.insert("compared".to_string(), Value::Bool(compared));
             let result = Value::Object(result_map);
@@ -879,7 +1205,10 @@ pub async fn input_cover(
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let input_id = body.get("id").and_then(|v| v.as_str()).unwrap_or_default();
-    let content_str = body.get("content").and_then(|v| v.as_str()).unwrap_or_default();
+    let content_str = body
+        .get("content")
+        .and_then(|v| v.as_str())
+        .unwrap_or_default();
     let _creator = "system";
 
     let result = client
@@ -910,7 +1239,10 @@ pub async fn input_create(
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let id = uuid::Uuid::new_v4().to_string();
-    let content = body.get("content").and_then(|v| v.as_str()).unwrap_or_default();
+    let content = body
+        .get("content")
+        .and_then(|v| v.as_str())
+        .unwrap_or_default();
     let creator = "system";
 
     let result = client
@@ -965,7 +1297,10 @@ pub async fn input_prepare_create(
     Json(body): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let id = uuid::Uuid::new_v4().to_string();
-    let content = body.get("content").and_then(|v| v.as_str()).unwrap_or_default();
+    let content = body
+        .get("content")
+        .and_then(|v| v.as_str())
+        .unwrap_or_default();
     let creator = "system";
 
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
@@ -987,9 +1322,7 @@ pub async fn input_prepare_create(
 }
 
 #[allow(non_snake_case)]
-pub async fn output_list(
-    pool: Extension<Pool>,
-) -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn output_list(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let rows = client
@@ -1009,15 +1342,23 @@ pub async fn output_list(
                 ("flag".to_string(), Value::String(row.get("flag"))),
                 ("appName".to_string(), Value::String(row.get("app_name"))),
                 ("creator".to_string(), Value::String(row.get("creator"))),
-                ("createTime".to_string(), Value::String(row.get("create_time"))),
+                (
+                    "createTime".to_string(),
+                    Value::String(row.get("create_time")),
+                ),
             ]))
         })
         .collect();
 
-    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
-        ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
-        ("data".to_string(), Value::Array(data)),
-    ])))))
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            (
+                "count".to_string(),
+                Value::Number(serde_json::Number::from(data.len() as i64)),
+            ),
+            ("data".to_string(), Value::Array(data)),
+        ]),
+    ))))
 }
 
 #[allow(non_snake_case)]
@@ -1041,7 +1382,10 @@ pub async fn output_flag_select_file(
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("name".to_string(), Value::String(row.get("name"))),
                 ("flag".to_string(), Value::String(row.get("flag"))),
-                ("selectFile".to_string(), Value::String(row.get("select_file"))),
+                (
+                    "selectFile".to_string(),
+                    Value::String(row.get("select_file")),
+                ),
             ]));
             Ok(Json(ActionResult::success(result)))
         }
@@ -1073,15 +1417,23 @@ pub async fn output_portalFlag_select(
                 ("flag".to_string(), Value::String(row.get("flag"))),
                 ("appName".to_string(), Value::String(row.get("app_name"))),
                 ("creator".to_string(), Value::String(row.get("creator"))),
-                ("createTime".to_string(), Value::String(row.get("create_time"))),
+                (
+                    "createTime".to_string(),
+                    Value::String(row.get("create_time")),
+                ),
             ]))
         })
         .collect();
 
-    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
-        ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
-        ("data".to_string(), Value::Array(data)),
-    ])))))
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            (
+                "count".to_string(),
+                Value::Number(serde_json::Number::from(data.len() as i64)),
+            ),
+            ("data".to_string(), Value::Array(data)),
+        ]),
+    ))))
 }
 
 #[allow(non_snake_case)]
@@ -1107,16 +1459,27 @@ pub async fn page_list_portal_portalId(
                 ("name".to_string(), Value::String(row.get("name"))),
                 ("category".to_string(), Value::String(row.get("category"))),
                 ("creator".to_string(), Value::String(row.get("creator"))),
-                ("createTime".to_string(), Value::String(row.get("create_time"))),
-                ("updateTime".to_string(), Value::String(row.get("update_time"))),
+                (
+                    "createTime".to_string(),
+                    Value::String(row.get("create_time")),
+                ),
+                (
+                    "updateTime".to_string(),
+                    Value::String(row.get("update_time")),
+                ),
             ]))
         })
         .collect();
 
-    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
-        ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
-        ("data".to_string(), Value::Array(data)),
-    ])))))
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            (
+                "count".to_string(),
+                Value::Number(serde_json::Number::from(data.len() as i64)),
+            ),
+            ("data".to_string(), Value::Array(data)),
+        ]),
+    ))))
 }
 
 #[allow(non_snake_case)]
@@ -1141,12 +1504,20 @@ pub async fn page_id(
             map.insert("id".to_string(), Value::String(row.get("id")));
             map.insert("name".to_string(), Value::String(row.get("name")));
             map.insert("category".to_string(), Value::String(row.get("category")));
-            if let Some(val) = option_to_json::<Value>(content.and_then(|s| serde_json::from_str(&s).ok())) {
+            if let Some(val) =
+                option_to_json::<Value>(content.and_then(|s| serde_json::from_str(&s).ok()))
+            {
                 map.insert("content".to_string(), val);
             }
             map.insert("creator".to_string(), Value::String(row.get("creator")));
-            map.insert("createTime".to_string(), Value::String(row.get("create_time")));
-            map.insert("updateTime".to_string(), Value::String(row.get("update_time")));
+            map.insert(
+                "createTime".to_string(),
+                Value::String(row.get("create_time")),
+            );
+            map.insert(
+                "updateTime".to_string(),
+                Value::String(row.get("update_time")),
+            );
             let result = Value::Object(map);
             Ok(Json(ActionResult::success(result)))
         }
@@ -1177,15 +1548,23 @@ pub async fn pageversion_list_page_pageId(
                 ("pageId".to_string(), Value::String(row.get("page_id"))),
                 ("version".to_string(), Value::String(row.get("version"))),
                 ("creator".to_string(), Value::String(row.get("creator"))),
-                ("createTime".to_string(), Value::String(row.get("create_time"))),
+                (
+                    "createTime".to_string(),
+                    Value::String(row.get("create_time")),
+                ),
             ]))
         })
         .collect();
 
-    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
-        ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
-        ("data".to_string(), Value::Array(data)),
-    ])))))
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            (
+                "count".to_string(),
+                Value::Number(serde_json::Number::from(data.len() as i64)),
+            ),
+            ("data".to_string(), Value::Array(data)),
+        ]),
+    ))))
 }
 
 #[allow(non_snake_case)]
@@ -1211,7 +1590,10 @@ pub async fn pageversion_id(
                 ("version".to_string(), Value::String(row.get("version"))),
                 ("content".to_string(), Value::String(row.get("content"))),
                 ("creator".to_string(), Value::String(row.get("creator"))),
-                ("createTime".to_string(), Value::String(row.get("create_time"))),
+                (
+                    "createTime".to_string(),
+                    Value::String(row.get("create_time")),
+                ),
             ]));
             Ok(Json(ActionResult::success(result)))
         }
@@ -1220,9 +1602,7 @@ pub async fn pageversion_id(
 }
 
 #[allow(non_snake_case)]
-pub async fn portal_list(
-    pool: Extension<Pool>,
-) -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn portal_list(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let rows = client
@@ -1242,15 +1622,23 @@ pub async fn portal_list(
                 ("category".to_string(), Value::String(row.get("category"))),
                 ("logo".to_string(), Value::String(row.get("logo"))),
                 ("creator".to_string(), Value::String(row.get("creator"))),
-                ("createTime".to_string(), Value::String(row.get("create_time"))),
+                (
+                    "createTime".to_string(),
+                    Value::String(row.get("create_time")),
+                ),
             ]))
         })
         .collect();
 
-    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
-        ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
-        ("data".to_string(), Value::Array(data)),
-    ])))))
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            (
+                "count".to_string(),
+                Value::Number(serde_json::Number::from(data.len() as i64)),
+            ),
+            ("data".to_string(), Value::Array(data)),
+        ]),
+    ))))
 }
 
 #[allow(non_snake_case)]
@@ -1277,15 +1665,23 @@ pub async fn portal_list_portalcategory_portalCategory(
                 ("category".to_string(), Value::String(row.get("category"))),
                 ("logo".to_string(), Value::String(row.get("logo"))),
                 ("creator".to_string(), Value::String(row.get("creator"))),
-                ("createTime".to_string(), Value::String(row.get("create_time"))),
+                (
+                    "createTime".to_string(),
+                    Value::String(row.get("create_time")),
+                ),
             ]))
         })
         .collect();
 
-    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
-        ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
-        ("data".to_string(), Value::Array(data)),
-    ])))))
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            (
+                "count".to_string(),
+                Value::Number(serde_json::Number::from(data.len() as i64)),
+            ),
+            ("data".to_string(), Value::Array(data)),
+        ]),
+    ))))
 }
 
 #[allow(non_snake_case)]
@@ -1314,10 +1710,15 @@ pub async fn portal_list_summary(
         })
         .collect();
 
-    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
-        ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
-        ("data".to_string(), Value::Array(data)),
-    ])))))
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            (
+                "count".to_string(),
+                Value::Number(serde_json::Number::from(data.len() as i64)),
+            ),
+            ("data".to_string(), Value::Array(data)),
+        ]),
+    ))))
 }
 
 #[allow(non_snake_case)]
@@ -1347,10 +1748,15 @@ pub async fn portal_list_summary_portalcategory_portalCategory(
         })
         .collect();
 
-    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
-        ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
-        ("data".to_string(), Value::Array(data)),
-    ])))))
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            (
+                "count".to_string(),
+                Value::Number(serde_json::Number::from(data.len() as i64)),
+            ),
+            ("data".to_string(), Value::Array(data)),
+        ]),
+    ))))
 }
 
 #[allow(non_snake_case)]
@@ -1375,17 +1781,28 @@ pub async fn portal_list_summary_v2(
                 ("name".to_string(), Value::String(row.get("name"))),
                 ("category".to_string(), Value::String(row.get("category"))),
                 ("logo".to_string(), Value::String(row.get("logo"))),
-                ("description".to_string(), Value::String(row.get("description"))),
+                (
+                    "description".to_string(),
+                    Value::String(row.get("description")),
+                ),
                 ("creator".to_string(), Value::String(row.get("creator"))),
-                ("createTime".to_string(), Value::String(row.get("create_time"))),
+                (
+                    "createTime".to_string(),
+                    Value::String(row.get("create_time")),
+                ),
             ]))
         })
         .collect();
 
-    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
-        ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
-        ("data".to_string(), Value::Array(data)),
-    ])))))
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            (
+                "count".to_string(),
+                Value::Number(serde_json::Number::from(data.len() as i64)),
+            ),
+            ("data".to_string(), Value::Array(data)),
+        ]),
+    ))))
 }
 
 #[allow(non_snake_case)]
@@ -1410,10 +1827,19 @@ pub async fn portal_id(
                 ("name".to_string(), Value::String(row.get("name"))),
                 ("category".to_string(), Value::String(row.get("category"))),
                 ("logo".to_string(), Value::String(row.get("logo"))),
-                ("description".to_string(), Value::String(row.get("description"))),
+                (
+                    "description".to_string(),
+                    Value::String(row.get("description")),
+                ),
                 ("creator".to_string(), Value::String(row.get("creator"))),
-                ("createTime".to_string(), Value::String(row.get("create_time"))),
-                ("updateTime".to_string(), Value::String(row.get("update_time"))),
+                (
+                    "createTime".to_string(),
+                    Value::String(row.get("create_time")),
+                ),
+                (
+                    "updateTime".to_string(),
+                    Value::String(row.get("update_time")),
+                ),
             ]));
             Ok(Json(ActionResult::success(result)))
         }
@@ -1467,7 +1893,10 @@ pub async fn portal_id_permission(
         Some(row) => {
             let result = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
-                ("permission".to_string(), Value::String(row.get("permission"))),
+                (
+                    "permission".to_string(),
+                    Value::String(row.get("permission")),
+                ),
             ]));
             Ok(Json(ActionResult::success(result)))
         }
@@ -1492,16 +1921,22 @@ pub async fn portalcategory_list(
     let data: Vec<Value> = rows
         .iter()
         .map(|row| {
-            Value::Object(serde_json::Map::from_iter([
-                ("category".to_string(), Value::String(row.get("category"))),
-            ]))
+            Value::Object(serde_json::Map::from_iter([(
+                "category".to_string(),
+                Value::String(row.get("category")),
+            )]))
         })
         .collect();
 
-    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
-        ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
-        ("data".to_string(), Value::Array(data)),
-    ])))))
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            (
+                "count".to_string(),
+                Value::Number(serde_json::Number::from(data.len() as i64)),
+            ),
+            ("data".to_string(), Value::Array(data)),
+        ]),
+    ))))
 }
 
 #[allow(non_snake_case)]
@@ -1527,15 +1962,23 @@ pub async fn script_list_manager(
                 ("flag".to_string(), Value::String(row.get("flag"))),
                 ("category".to_string(), Value::String(row.get("category"))),
                 ("creator".to_string(), Value::String(row.get("creator"))),
-                ("createTime".to_string(), Value::String(row.get("create_time"))),
+                (
+                    "createTime".to_string(),
+                    Value::String(row.get("create_time")),
+                ),
             ]))
         })
         .collect();
 
-    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
-        ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
-        ("data".to_string(), Value::Array(data)),
-    ])))))
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            (
+                "count".to_string(),
+                Value::Number(serde_json::Number::from(data.len() as i64)),
+            ),
+            ("data".to_string(), Value::Array(data)),
+        ]),
+    ))))
 }
 
 #[allow(non_snake_case)]
@@ -1563,15 +2006,23 @@ pub async fn script_list_paging_page_size_size(
                 ("flag".to_string(), Value::String(row.get("flag"))),
                 ("category".to_string(), Value::String(row.get("category"))),
                 ("creator".to_string(), Value::String(row.get("creator"))),
-                ("createTime".to_string(), Value::String(row.get("create_time"))),
+                (
+                    "createTime".to_string(),
+                    Value::String(row.get("create_time")),
+                ),
             ]))
         })
         .collect();
 
-    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
-        ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
-        ("data".to_string(), Value::Array(data)),
-    ])))))
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            (
+                "count".to_string(),
+                Value::Number(serde_json::Number::from(data.len() as i64)),
+            ),
+            ("data".to_string(), Value::Array(data)),
+        ]),
+    ))))
 }
 
 #[allow(non_snake_case)]
@@ -1598,15 +2049,23 @@ pub async fn script_list_portal_portalId(
                 ("flag".to_string(), Value::String(row.get("flag"))),
                 ("category".to_string(), Value::String(row.get("category"))),
                 ("creator".to_string(), Value::String(row.get("creator"))),
-                ("createTime".to_string(), Value::String(row.get("create_time"))),
+                (
+                    "createTime".to_string(),
+                    Value::String(row.get("create_time")),
+                ),
             ]))
         })
         .collect();
 
-    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
-        ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
-        ("data".to_string(), Value::Array(data)),
-    ])))))
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            (
+                "count".to_string(),
+                Value::Number(serde_json::Number::from(data.len() as i64)),
+            ),
+            ("data".to_string(), Value::Array(data)),
+        ]),
+    ))))
 }
 
 #[allow(non_snake_case)]
@@ -1633,7 +2092,10 @@ pub async fn script_id(
                 ("category".to_string(), Value::String(row.get("category"))),
                 ("content".to_string(), Value::String(row.get("content"))),
                 ("creator".to_string(), Value::String(row.get("creator"))),
-                ("createTime".to_string(), Value::String(row.get("create_time"))),
+                (
+                    "createTime".to_string(),
+                    Value::String(row.get("create_time")),
+                ),
             ]));
             Ok(Json(ActionResult::success(result)))
         }
@@ -1664,15 +2126,23 @@ pub async fn scriptversion_list_script_scriptId(
                 ("scriptId".to_string(), Value::String(row.get("script_id"))),
                 ("version".to_string(), Value::String(row.get("version"))),
                 ("creator".to_string(), Value::String(row.get("creator"))),
-                ("createTime".to_string(), Value::String(row.get("create_time"))),
+                (
+                    "createTime".to_string(),
+                    Value::String(row.get("create_time")),
+                ),
             ]))
         })
         .collect();
 
-    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
-        ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
-        ("data".to_string(), Value::Array(data)),
-    ])))))
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            (
+                "count".to_string(),
+                Value::Number(serde_json::Number::from(data.len() as i64)),
+            ),
+            ("data".to_string(), Value::Array(data)),
+        ]),
+    ))))
 }
 
 #[allow(non_snake_case)]
@@ -1698,7 +2168,10 @@ pub async fn scriptversion_id(
                 ("version".to_string(), Value::String(row.get("version"))),
                 ("content".to_string(), Value::String(row.get("content"))),
                 ("creator".to_string(), Value::String(row.get("creator"))),
-                ("createTime".to_string(), Value::String(row.get("create_time"))),
+                (
+                    "createTime".to_string(),
+                    Value::String(row.get("create_time")),
+                ),
             ]));
             Ok(Json(ActionResult::success(result)))
         }
@@ -1729,15 +2202,23 @@ pub async fn templatepage_list(
                 ("category".to_string(), Value::String(row.get("category"))),
                 ("content".to_string(), Value::String(row.get("content"))),
                 ("creator".to_string(), Value::String(row.get("creator"))),
-                ("createTime".to_string(), Value::String(row.get("create_time"))),
+                (
+                    "createTime".to_string(),
+                    Value::String(row.get("create_time")),
+                ),
             ]))
         })
         .collect();
 
-    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
-        ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
-        ("data".to_string(), Value::Array(data)),
-    ])))))
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            (
+                "count".to_string(),
+                Value::Number(serde_json::Number::from(data.len() as i64)),
+            ),
+            ("data".to_string(), Value::Array(data)),
+        ]),
+    ))))
 }
 
 #[allow(non_snake_case)]
@@ -1757,16 +2238,22 @@ pub async fn templatepage_list_category(
     let data: Vec<Value> = rows
         .iter()
         .map(|row| {
-            Value::Object(serde_json::Map::from_iter([
-                ("category".to_string(), Value::String(row.get("category"))),
-            ]))
+            Value::Object(serde_json::Map::from_iter([(
+                "category".to_string(),
+                Value::String(row.get("category")),
+            )]))
         })
         .collect();
 
-    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
-        ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
-        ("data".to_string(), Value::Array(data)),
-    ])))))
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            (
+                "count".to_string(),
+                Value::Number(serde_json::Number::from(data.len() as i64)),
+            ),
+            ("data".to_string(), Value::Array(data)),
+        ]),
+    ))))
 }
 
 #[allow(non_snake_case)]
@@ -1791,11 +2278,16 @@ pub async fn templatepage_id(
             map.insert("id".to_string(), Value::String(row.get("id")));
             map.insert("name".to_string(), Value::String(row.get("name")));
             map.insert("category".to_string(), Value::String(row.get("category")));
-            if let Some(val) = option_to_json::<Value>(content.and_then(|s| serde_json::from_str(&s).ok())) {
+            if let Some(val) =
+                option_to_json::<Value>(content.and_then(|s| serde_json::from_str(&s).ok()))
+            {
                 map.insert("content".to_string(), val);
             }
             map.insert("creator".to_string(), Value::String(row.get("creator")));
-            map.insert("createTime".to_string(), Value::String(row.get("create_time")));
+            map.insert(
+                "createTime".to_string(),
+                Value::String(row.get("create_time")),
+            );
             let result = Value::Object(map);
             Ok(Json(ActionResult::success(result)))
         }
@@ -1828,15 +2320,23 @@ pub async fn widget_list_portal_portalId(
                 ("category".to_string(), Value::String(row.get("category"))),
                 ("config".to_string(), Value::String(row.get("config"))),
                 ("creator".to_string(), Value::String(row.get("creator"))),
-                ("createTime".to_string(), Value::String(row.get("create_time"))),
+                (
+                    "createTime".to_string(),
+                    Value::String(row.get("create_time")),
+                ),
             ]))
         })
         .collect();
 
-    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
-        ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
-        ("data".to_string(), Value::Array(data)),
-    ])))))
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            (
+                "count".to_string(),
+                Value::Number(serde_json::Number::from(data.len() as i64)),
+            ),
+            ("data".to_string(), Value::Array(data)),
+        ]),
+    ))))
 }
 
 #[allow(non_snake_case)]
@@ -1863,8 +2363,14 @@ pub async fn widget_id(
                 ("category".to_string(), Value::String(row.get("category"))),
                 ("config".to_string(), Value::String(row.get("config"))),
                 ("creator".to_string(), Value::String(row.get("creator"))),
-                ("createTime".to_string(), Value::String(row.get("create_time"))),
-                ("updateTime".to_string(), Value::String(row.get("update_time"))),
+                (
+                    "createTime".to_string(),
+                    Value::String(row.get("create_time")),
+                ),
+                (
+                    "updateTime".to_string(),
+                    Value::String(row.get("update_time")),
+                ),
             ]));
             Ok(Json(ActionResult::success(result)))
         }
@@ -1951,10 +2457,26 @@ pub async fn update_portal(
     axum::extract::Json(body): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
-    let name = body.get("name").and_then(|v| v.as_str()).unwrap_or_default().to_string();
-    let description = body.get("description").and_then(|v| v.as_str()).unwrap_or_default().to_string();
-    let category = body.get("category").and_then(|v| v.as_str()).unwrap_or_default().to_string();
-    let logo = body.get("logo").and_then(|v| v.as_str()).unwrap_or_default().to_string();
+    let name = body
+        .get("name")
+        .and_then(|v| v.as_str())
+        .unwrap_or_default()
+        .to_string();
+    let description = body
+        .get("description")
+        .and_then(|v| v.as_str())
+        .unwrap_or_default()
+        .to_string();
+    let category = body
+        .get("category")
+        .and_then(|v| v.as_str())
+        .unwrap_or_default()
+        .to_string();
+    let logo = body
+        .get("logo")
+        .and_then(|v| v.as_str())
+        .unwrap_or_default()
+        .to_string();
     let result = client
         .execute(
             "UPDATE x_portal SET name = $1, description = $2, category = $3, logo = $4, update_time = NOW() WHERE id = $5 AND deleted_at IS NULL",
@@ -1980,7 +2502,11 @@ pub async fn update_portal_icon(
     axum::extract::Json(body): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
-    let logo = body.get("logo").and_then(|v| v.as_str()).unwrap_or_default().to_string();
+    let logo = body
+        .get("logo")
+        .and_then(|v| v.as_str())
+        .unwrap_or_default()
+        .to_string();
     let result = client
         .execute(
             "UPDATE x_portal SET logo = $1, update_time = NOW() WHERE id = $2 AND deleted_at IS NULL",
@@ -2031,8 +2557,16 @@ pub async fn create_templatepage(
     axum::extract::Json(body): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
-    let name = body.get("name").and_then(|v| v.as_str()).unwrap_or_default().to_string();
-    let category = body.get("category").and_then(|v| v.as_str()).unwrap_or("default").to_string();
+    let name = body
+        .get("name")
+        .and_then(|v| v.as_str())
+        .unwrap_or_default()
+        .to_string();
+    let category = body
+        .get("category")
+        .and_then(|v| v.as_str())
+        .unwrap_or("default")
+        .to_string();
     let content_str = body
         .get("content")
         .and_then(|v| serde_json::to_string(v).ok())
@@ -2073,7 +2607,11 @@ pub async fn update_templatepage_category(
     axum::extract::Json(body): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
-    let category = body.get("category").and_then(|v| v.as_str()).unwrap_or_default().to_string();
+    let category = body
+        .get("category")
+        .and_then(|v| v.as_str())
+        .unwrap_or_default()
+        .to_string();
     let rows = client
         .query(
             "SELECT id, name, category, content, creator, create_time FROM x_portal_template_page WHERE category = $1 AND deleted_at IS NULL ORDER BY create_time DESC",
@@ -2094,7 +2632,10 @@ pub async fn update_templatepage_category(
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("category".to_string(), Value::String(category)),
-            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
+            (
+                "count".to_string(),
+                Value::Number(serde_json::Number::from(data.len() as i64)),
+            ),
             ("data".to_string(), Value::Array(data)),
         ]),
     ))))
@@ -2130,9 +2671,21 @@ pub async fn create_widget(
     axum::extract::Json(body): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
-    let name = body.get("name").and_then(|v| v.as_str()).unwrap_or_default().to_string();
-    let portal_id = body.get("portalId").and_then(|v| v.as_str()).unwrap_or_default().to_string();
-    let category = body.get("category").and_then(|v| v.as_str()).unwrap_or("default").to_string();
+    let name = body
+        .get("name")
+        .and_then(|v| v.as_str())
+        .unwrap_or_default()
+        .to_string();
+    let portal_id = body
+        .get("portalId")
+        .and_then(|v| v.as_str())
+        .unwrap_or_default()
+        .to_string();
+    let category = body
+        .get("category")
+        .and_then(|v| v.as_str())
+        .unwrap_or("default")
+        .to_string();
     let config_str = body
         .get("config")
         .and_then(|v| serde_json::to_string(v).ok())
@@ -2199,8 +2752,16 @@ pub async fn update_widget(
     axum::extract::Json(body): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
-    let name = body.get("name").and_then(|v| v.as_str()).unwrap_or_default().to_string();
-    let category = body.get("category").and_then(|v| v.as_str()).unwrap_or_default().to_string();
+    let name = body
+        .get("name")
+        .and_then(|v| v.as_str())
+        .unwrap_or_default()
+        .to_string();
+    let category = body
+        .get("category")
+        .and_then(|v| v.as_str())
+        .unwrap_or_default()
+        .to_string();
     let config_str = body
         .get("config")
         .and_then(|v| serde_json::to_string(v).ok())
@@ -2222,5 +2783,3 @@ pub async fn update_widget(
         ]),
     ))))
 }
-
-

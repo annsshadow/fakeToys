@@ -1,9 +1,9 @@
 #[cfg(test)]
 mod tests {
-    
+
     use axum::{
         body::Body,
-        http::{Request, Method, StatusCode},
+        http::{Method, Request, StatusCode},
     };
     use shared::response::ActionResult;
     use tower::ServiceExt;
@@ -327,6 +327,4 @@ mod tests {
             .unwrap();
         assert_ne!(response.status(), StatusCode::NOT_FOUND);
     }
-
-
 }

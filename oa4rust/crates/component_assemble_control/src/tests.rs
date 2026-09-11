@@ -1,22 +1,20 @@
-use shared::response::ActionResult;
-use serde_json::json;
 use axum::body::Body;
-use axum::http::{Request, Method, StatusCode};
-use deadpool_postgres::{Manager, Pool};
+use axum::http::{Method, Request, StatusCode};
 use deadpool_postgres::tokio_postgres::{Config, NoTls};
+use deadpool_postgres::{Manager, Pool};
+use serde_json::json;
+use shared::response::ActionResult;
 use tower::util::ServiceExt;
 
 fn build_test_pool() -> Pool {
-    let mgr = Manager::new(
-        Config::new(),
-        NoTls,
-    );
+    let mgr = Manager::new(Config::new(), NoTls);
     Pool::builder(mgr).max_size(1).build().unwrap()
 }
 
 #[test]
 fn test_action_result_success_serialization() {
-    let result: ActionResult<serde_json::Value> = ActionResult::success(json!({"count": 2, "data": []}));
+    let result: ActionResult<serde_json::Value> =
+        ActionResult::success(json!({"count": 2, "data": []}));
     let json = serde_json::to_value(&result).unwrap();
     assert_eq!(json["type"], "success");
     assert!(json["data"].is_object());
@@ -60,13 +58,14 @@ async fn test_list_control_categories_route() {
     assert_eq!(response.status(), StatusCode::INTERNAL_SERVER_ERROR);
 }
 
-    #[tokio::test]
-    #[ignore = "handler requires DB connection, returns 500 with mock pool"]
-    async fn test_update_control_config_route() {
+#[tokio::test]
+#[ignore = "handler requires DB connection, returns 500 with mock pool"]
+async fn test_update_control_config_route() {
     let pool = build_test_pool();
     let app = crate::router(pool);
 
-    let req_body = serde_json::to_string(&json!({"enabled": true, "maxComponentCount": 200})).unwrap();
+    let req_body =
+        serde_json::to_string(&json!({"enabled": true, "maxComponentCount": 200})).unwrap();
 
     let response = app
         .oneshot(

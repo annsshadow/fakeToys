@@ -30,8 +30,11 @@ pub fn cors_middleware() -> CorsLayer {
 pub fn cors_middleware_for_origin(public_origin: &str) -> CorsLayer {
     use tower_http::cors::AllowOrigin;
 
-    let allow_origin = AllowOrigin::exact(public_origin.parse::<HeaderValue>()
-        .expect("validated APP_PUBLIC_ORIGIN must be a valid header value"));
+    let allow_origin = AllowOrigin::exact(
+        public_origin
+            .parse::<HeaderValue>()
+            .expect("validated APP_PUBLIC_ORIGIN must be a valid header value"),
+    );
 
     CorsLayer::new()
         .allow_origin(allow_origin)
@@ -85,7 +88,9 @@ pub(crate) fn is_auth_exempt(path: &str) -> bool {
 
 pub(crate) fn is_auth_rate_limited(path: &str) -> bool {
     AUTH_RATE_LIMIT_EXACT.contains(&path)
-        || AUTH_RATE_LIMIT_PREFIXES.iter().any(|prefix| path_starts_with_segment(path, prefix))
+        || AUTH_RATE_LIMIT_PREFIXES
+            .iter()
+            .any(|prefix| path_starts_with_segment(path, prefix))
 }
 
 /// 路径段前缀匹配：`path` 等于 `prefix` 或 `prefix + "/"` 开头。
@@ -137,7 +142,10 @@ fn trusted_proxy_ips() -> &'static Vec<String> {
 
 fn first_xff_ip(request: &Request<Body>) -> Option<String> {
     let xff = request.headers().get("x-forwarded-for")?.to_str().ok()?;
-    xff.split(',').next().map(|s| s.trim().to_string()).filter(|s| !s.is_empty())
+    xff.split(',')
+        .next()
+        .map(|s| s.trim().to_string())
+        .filter(|s| !s.is_empty())
 }
 
 /// 从请求提取客户端 IP：可信代理来源的 X-Forwarded-For 第一个值，否则 socket 地址。
@@ -172,7 +180,12 @@ pub async fn trace_middleware(request: Request<Body>, next: Next) -> Response {
 
     // 仅对服务端错误（5xx）打 warning 日志，避免正常请求污染日志
     if response.status().is_server_error() {
-        warn!(?method, ?uri, status = response.status().as_u16(), "server error");
+        warn!(
+            ?method,
+            ?uri,
+            status = response.status().as_u16(),
+            "server error"
+        );
     }
 
     response
@@ -228,18 +241,20 @@ pub async fn security_headers_middleware(request: Request<Body>, next: Next) -> 
     }
 
     let mut response = next.run(request).await;
-    response
-        .headers_mut()
-        .insert(header::X_CONTENT_TYPE_OPTIONS, HeaderValue::from_static("nosniff"));
+    response.headers_mut().insert(
+        header::X_CONTENT_TYPE_OPTIONS,
+        HeaderValue::from_static("nosniff"),
+    );
     response
         .headers_mut()
         .insert(header::X_FRAME_OPTIONS, HeaderValue::from_static("DENY"));
     response
         .headers_mut()
         .insert(header::CACHE_CONTROL, HeaderValue::from_static("no-store"));
-    response
-        .headers_mut()
-        .insert(header::REFERRER_POLICY, HeaderValue::from_static("strict-origin-when-cross-origin"));
+    response.headers_mut().insert(
+        header::REFERRER_POLICY,
+        HeaderValue::from_static("strict-origin-when-cross-origin"),
+    );
 
     // Strict Content-Security-Policy (enforced, not report-only).
     // - script-src allows 'unsafe-eval' for ECharts/CodeMirror runtime compilation.

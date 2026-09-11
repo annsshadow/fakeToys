@@ -5,7 +5,7 @@ use std::time::{SystemTime, UNIX_EPOCH};
 use async_trait::async_trait;
 use futures_util::stream::StreamExt;
 use serde::{Deserialize, Serialize};
-use tokio::sync::{RwLock, mpsc};
+use tokio::sync::{mpsc, RwLock};
 use tracing::{debug, error, info};
 
 use crate::redis::RedisPool;
@@ -56,28 +56,42 @@ impl<T: Serialize + Send + Sync + Clone + 'static> Envelope<T> {
     }
 }
 
-impl<'de, T: Serialize + Send + Sync + Clone + 'static + serde::de::DeserializeOwned> serde::Deserialize<'de> for Envelope<T> {
+impl<'de, T: Serialize + Send + Sync + Clone + 'static + serde::de::DeserializeOwned>
+    serde::Deserialize<'de> for Envelope<T>
+{
     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
     where
         D: serde::Deserializer<'de>,
     {
         let envelope = serde_json::Value::deserialize(deserializer)?;
-        let topic = envelope.get("topic").and_then(|v| v.as_str()).unwrap_or_default().to_string();
-        let payload: T = serde_json::from_value(envelope.get("payload").cloned().unwrap_or_default()).map_err(serde::de::Error::custom)?;
-        let timestamp_ms = envelope.get("timestamp_ms").and_then(|v| v.as_u64()).unwrap_or(0);
-        Ok(Self { topic, payload, timestamp_ms })
+        let topic = envelope
+            .get("topic")
+            .and_then(|v| v.as_str())
+            .unwrap_or_default()
+            .to_string();
+        let payload: T =
+            serde_json::from_value(envelope.get("payload").cloned().unwrap_or_default())
+                .map_err(serde::de::Error::custom)?;
+        let timestamp_ms = envelope
+            .get("timestamp_ms")
+            .and_then(|v| v.as_u64())
+            .unwrap_or(0);
+        Ok(Self {
+            topic,
+            payload,
+            timestamp_ms,
+        })
     }
 }
 
 /// 消息总线 Trait（publish / subscribe）
 #[async_trait]
-pub trait MessageBus<M: Serialize + Send + Sync + Clone + for<'de> Deserialize<'de> + 'static>: Send + Sync {
+pub trait MessageBus<M: Serialize + Send + Sync + Clone + for<'de> Deserialize<'de> + 'static>:
+    Send + Sync
+{
     async fn publish(&self, topic: String, payload: M) -> MessagingResult<()>;
 
-    async fn subscribe(
-        &self,
-        topic: String,
-    ) -> MessagingResult<mpsc::Receiver<Envelope<M>>>;
+    async fn subscribe(&self, topic: String) -> MessagingResult<mpsc::Receiver<Envelope<M>>>;
 }
 
 // ──────────────────────────────────────────────────────────────────────────────
@@ -101,14 +115,18 @@ impl<M: Serialize + Send + Sync + Clone + for<'de> Deserialize<'de> + 'static> I
     }
 }
 
-impl<M: Serialize + Send + Sync + Clone + for<'de> Deserialize<'de> + 'static> Default for InMemoryBus<M> {
+impl<M: Serialize + Send + Sync + Clone + for<'de> Deserialize<'de> + 'static> Default
+    for InMemoryBus<M>
+{
     fn default() -> Self {
         Self::new()
     }
 }
 
 #[async_trait]
-impl<M: Serialize + Send + Sync + Clone + for<'de> Deserialize<'de> + 'static> MessageBus<M> for InMemoryBus<M> {
+impl<M: Serialize + Send + Sync + Clone + for<'de> Deserialize<'de> + 'static> MessageBus<M>
+    for InMemoryBus<M>
+{
     async fn publish(&self, topic: String, payload: M) -> MessagingResult<()> {
         let envelope = Envelope::new(topic.clone(), payload);
         let subscribers = self.subscribers.read().await;
@@ -122,10 +140,7 @@ impl<M: Serialize + Send + Sync + Clone + for<'de> Deserialize<'de> + 'static> M
         Ok(())
     }
 
-    async fn subscribe(
-        &self,
-        topic: String,
-    ) -> MessagingResult<mpsc::Receiver<Envelope<M>>> {
+    async fn subscribe(&self, topic: String) -> MessagingResult<mpsc::Receiver<Envelope<M>>> {
         let (tx, rx) = mpsc::channel::<Envelope<M>>(1024);
         let mut subscribers = self.subscribers.write().await;
         subscribers.entry(topic).or_default().push(tx);
@@ -139,7 +154,8 @@ impl<M: Serialize + Send + Sync + Clone + for<'de> Deserialize<'de> + 'static> M
 
 /// Redis Pub/Sub 消息总线（支持多进程/多实例）
 #[derive(Clone)]
-pub struct RedisPubSubBus<M: Serialize + Send + Sync + Clone + for<'de> Deserialize<'de> + 'static> {
+pub struct RedisPubSubBus<M: Serialize + Send + Sync + Clone + for<'de> Deserialize<'de> + 'static>
+{
     redis_pool: Option<RedisPool>,
     _marker: std::marker::PhantomData<M>,
 }
@@ -159,11 +175,17 @@ impl<M: Serialize + Send + Sync + Clone + for<'de> Deserialize<'de> + 'static> R
 }
 
 #[async_trait]
-impl<M: Serialize + Send + Sync + Clone + for<'de> Deserialize<'de> + 'static> MessageBus<M> for RedisPubSubBus<M> {
+impl<M: Serialize + Send + Sync + Clone + for<'de> Deserialize<'de> + 'static> MessageBus<M>
+    for RedisPubSubBus<M>
+{
     async fn publish(&self, topic: String, payload: M) -> MessagingResult<()> {
         let pool = match &self.redis_pool {
             Some(p) => p,
-            None => return Err(MessagingError::RedisError("Redis pool not initialized".into())),
+            None => {
+                return Err(MessagingError::RedisError(
+                    "Redis pool not initialized".into(),
+                ))
+            }
         };
 
         let envelope = Envelope::new(topic.clone(), payload);
@@ -171,9 +193,9 @@ impl<M: Serialize + Send + Sync + Clone + for<'de> Deserialize<'de> + 'static> M
             .map_err(|e| MessagingError::SerializationError(e.to_string()))?;
 
         let mut guard = pool.0.manager.lock().await;
-        let conn = guard
-            .as_mut()
-            .ok_or_else(|| MessagingError::RedisError("Redis connection manager not initialized".into()))?;
+        let conn = guard.as_mut().ok_or_else(|| {
+            MessagingError::RedisError("Redis connection manager not initialized".into())
+        })?;
 
         use redis::AsyncCommands;
         conn.publish::<_, _, ()>(&topic, serialized)
@@ -184,13 +206,14 @@ impl<M: Serialize + Send + Sync + Clone + for<'de> Deserialize<'de> + 'static> M
         Ok(())
     }
 
-    async fn subscribe(
-        &self,
-        topic: String,
-    ) -> MessagingResult<mpsc::Receiver<Envelope<M>>> {
+    async fn subscribe(&self, topic: String) -> MessagingResult<mpsc::Receiver<Envelope<M>>> {
         let pool = match &self.redis_pool {
             Some(p) => p,
-            None => return Err(MessagingError::RedisError("Redis pool not initialized".into())),
+            None => {
+                return Err(MessagingError::RedisError(
+                    "Redis pool not initialized".into(),
+                ))
+            }
         };
 
         let (tx, rx) = mpsc::channel::<Envelope<M>>(1024);
@@ -297,7 +320,9 @@ mod messaging_tests {
     #[tokio::test]
     async fn test_in_memory_bus_no_subscribers_no_panic() {
         let bus = InMemoryBus::<String>::new();
-        let result = bus.publish("empty-topic".to_string(), "no-one-listening".to_string()).await;
+        let result = bus
+            .publish("empty-topic".to_string(), "no-one-listening".to_string())
+            .await;
         assert!(result.is_ok());
     }
 

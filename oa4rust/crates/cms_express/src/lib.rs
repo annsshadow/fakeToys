@@ -1,7 +1,4 @@
-use axum::{
-    extract::Extension,
-    Json, Router,
-};
+use axum::{extract::Extension, Json, Router};
 use deadpool_postgres::Pool;
 use sea_orm::{DatabaseConnection, EntityTrait, QueryOrder, QuerySelect};
 use serde_json::Value;
@@ -18,7 +15,6 @@ mod tests;
 #[cfg(test)]
 mod tests_generated;
 
-
 pub fn cms_express_router() -> Router {
     routes::cms_express_router()
 }
@@ -27,7 +23,9 @@ pub fn cms_express_router() -> Router {
 pub async fn uuid_random() -> Result<Json<ActionResult<Value>>, AppError> {
     let uuid = Uuid::new_v4().to_string();
     // Java returns Array [String(uuid)]
-    Ok(Json(ActionResult::success(Value::Array(vec![Value::String(uuid)]))))
+    Ok(Json(ActionResult::success(Value::Array(vec![
+        Value::String(uuid),
+    ]))))
 }
 
 #[axum::debug_handler]
@@ -57,7 +55,10 @@ pub async fn template_form_list(
                 ),
                 (
                     "category".to_string(),
-                    Value::String(row.get::<_, Option<String>>("xcategory").unwrap_or_default()),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcategory")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]))
         })
@@ -108,6 +109,5 @@ pub async fn view_list_all(
 }
 
 pub fn router(pool: deadpool_postgres::Pool) -> axum::Router {
-    cms_express_router()
-        .layer(Extension(pool))
+    cms_express_router().layer(Extension(pool))
 }

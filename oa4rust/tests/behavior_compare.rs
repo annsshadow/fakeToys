@@ -12,7 +12,6 @@
 
 mod behavior_comparison;
 
-
 use behavior_comparison::{ComparisonResult, ComparisonStatus, EndpointComparator, EndpointDef};
 
 /// Rust 服务地址（CI 中通过 cargo test 启动，监听 3000 端口）。
@@ -40,7 +39,8 @@ const REPORT_PATH: &str = "target/debug/behavior-report.md";
 /// （401/404 同样证明 HTTP 栈在正常应答；连接拒绝/超时才不可达。
 /// 本机实测：o2server 镜像对未知裸 /jaxrs/* 直接 RST，故 CI 的第二探针
 /// server/execute 在 reqwest 下恒为 Err，不能作为必要条件。）
-async fn probe_java_readiness(base_url: &str) -> bool {    let client = match reqwest::Client::builder()
+async fn probe_java_readiness(base_url: &str) -> bool {
+    let client = match reqwest::Client::builder()
         .timeout(std::time::Duration::from_secs(15))
         .build()
     {
@@ -113,11 +113,25 @@ async fn seed_testadmin(credential: &str, password: &str) {
                VALUES ($1, $2, $3, $4, false, NULL) \
                ON CONFLICT (unique_id) DO UPDATE SET password_hash = EXCLUDED.password_hash";
     match client
-        .execute(sql, &[&"person-behavior-testadmin", &credential, &credential, &hash])
+        .execute(
+            sql,
+            &[
+                &"person-behavior-testadmin",
+                &credential,
+                &credential,
+                &hash,
+            ],
+        )
         .await
     {
-        Ok(_) => eprintln!("[behavior_compare] seeded test account '{}' into Rust DB", credential),
-        Err(e) => eprintln!("[behavior_compare] seed failed: {} — protected endpoints may 401", e),
+        Ok(_) => eprintln!(
+            "[behavior_compare] seeded test account '{}' into Rust DB",
+            credential
+        ),
+        Err(e) => eprintln!(
+            "[behavior_compare] seed failed: {} — protected endpoints may 401",
+            e
+        ),
     }
 }
 
@@ -131,49 +145,63 @@ async fn behavior_compare_rust_vs_java() {
         eprintln!("[behavior_compare] Skipping (set BEHAVIOR_COMPARE=1 to run)");
         return;
     }
-    let java_url = std::env::var("JAVA_SERVICE_URL").unwrap_or_else(|_| DEFAULT_JAVA_BASE_URL.to_string());
+    let java_url =
+        std::env::var("JAVA_SERVICE_URL").unwrap_or_else(|_| DEFAULT_JAVA_BASE_URL.to_string());
 
     eprintln!("[behavior_compare] Rust base: {}", RUST_BASE_URL);
     eprintln!("[behavior_compare] Java base: {}", java_url);
 
     // ── 检查 Rust 服务可达性 ──────────────────────────────────────────────
     if !behavior_comparison::comparator::is_service_reachable(RUST_BASE_URL).await {
-        eprintln!("[behavior_compare] Rust service unreachable at {} — aborting", RUST_BASE_URL);
-        panic!("Rust service unreachable at {} — cannot run behavior comparison", RUST_BASE_URL);
+        eprintln!(
+            "[behavior_compare] Rust service unreachable at {} — aborting",
+            RUST_BASE_URL
+        );
+        panic!(
+            "Rust service unreachable at {} — cannot run behavior comparison",
+            RUST_BASE_URL
+        );
     }
     eprintln!("[behavior_compare] Rust service reachable");
 
     // ── 检查 Java 服务可达性 ──────────────────────────────────────────────
     // O2OA v9 无 /health 端点，/health 探测失败时回退 CI 就绪探针
     // （POST /jaxrs/secret/set + GET /jaxrs/server/execute）。
-    let mut java_reachable =
-        behavior_comparison::comparator::is_service_reachable(&java_url).await;
+    let mut java_reachable = behavior_comparison::comparator::is_service_reachable(&java_url).await;
     if !java_reachable {
         java_reachable = probe_java_readiness(&java_url).await;
     }
     if !java_reachable {
-        eprintln!("[behavior_compare] Java service unreachable at {} — all Java results will be SKIP", java_url);
+        eprintln!(
+            "[behavior_compare] Java service unreachable at {} — all Java results will be SKIP",
+            java_url
+        );
     } else {
         eprintln!("[behavior_compare] Java service reachable");
     }
 
     // ── 加载允许列表 ──────────────────────────────────────────────────────
-    let allowlist_path = std::env::var("BEHAVIOR_ALLOWLIST_PATH").unwrap_or_else(|_| ALLOWLIST_PATH.to_string());
-    let comparator = match EndpointComparator::new(RUST_BASE_URL, &java_url)
-        .with_allowlist(&allowlist_path)
-    {
-        Ok(c) => c,
-        Err(e) => {
-            eprintln!("[behavior_compare] Failed to load allowlist from {}: {}", allowlist_path, e);
-            eprintln!("[behavior_compare] Continuing with empty allowlist");
-            EndpointComparator::new(RUST_BASE_URL, &java_url)
-        }
-    };
+    let allowlist_path =
+        std::env::var("BEHAVIOR_ALLOWLIST_PATH").unwrap_or_else(|_| ALLOWLIST_PATH.to_string());
+    let comparator =
+        match EndpointComparator::new(RUST_BASE_URL, &java_url).with_allowlist(&allowlist_path) {
+            Ok(c) => c,
+            Err(e) => {
+                eprintln!(
+                    "[behavior_compare] Failed to load allowlist from {}: {}",
+                    allowlist_path, e
+                );
+                eprintln!("[behavior_compare] Continuing with empty allowlist");
+                EndpointComparator::new(RUST_BASE_URL, &java_url)
+            }
+        };
     let allowlist_entries = comparator.allowlist.entries.len();
 
     // ── 尝试登录获取认证令牌 ──────────────────────────────────────────────
-    let credential = std::env::var("BEHAVIOR_TEST_CREDENTIAL").unwrap_or_else(|_| DEFAULT_CREDENTIAL.to_string());
-    let password = std::env::var("BEHAVIOR_TEST_PASSWORD").unwrap_or_else(|_| DEFAULT_PASSWORD.to_string());
+    let credential = std::env::var("BEHAVIOR_TEST_CREDENTIAL")
+        .unwrap_or_else(|_| DEFAULT_CREDENTIAL.to_string());
+    let password =
+        std::env::var("BEHAVIOR_TEST_PASSWORD").unwrap_or_else(|_| DEFAULT_PASSWORD.to_string());
 
     // Rust 库种子对比账户（幂等）：CI 的 postgres 服务容器与本地库默认都没有
     // testadmin 账户，缺种子会导致全部保护端点 401（实测 76 个 FAIL 中 ~60 个
@@ -181,17 +209,17 @@ async fn behavior_compare_rust_vs_java() {
     seed_testadmin(&credential, &password).await;
 
     let comparator = if java_reachable {
-        match comparator.login(RUST_BASE_URL, &credential, &password).await {
+        match comparator
+            .login(RUST_BASE_URL, &credential, &password)
+            .await
+        {
             Some(rust_token) => {
                 eprintln!("[behavior_compare] Rust login successful, token acquired");
                 // Java 侧依次尝试：对比账户 → O2OA v9 内置管理员 xadmin
                 // （密码为 /jaxrs/secret/set 初始化的密钥，CI 同款 o2oa@2022）。
                 // Java 登录失败时其保护端点返回带 prompt 的错误信封，与 Rust
                 // 成功信封逐条产生假差异（实测一次 1470 FAIL 中大多数属此类）。
-                let java_login = match comparator
-                    .login(&java_url, &credential, &password)
-                    .await
-                {
+                let java_login = match comparator.login(&java_url, &credential, &password).await {
                     Some(t) => Some(("testadmin".to_string(), t)),
                     None => comparator
                         .login(&java_url, "xadmin", "o2oa@2022")
@@ -199,12 +227,17 @@ async fn behavior_compare_rust_vs_java() {
                         .map(|t| ("xadmin".to_string(), t)),
                 };
                 if let Some((who, java_token)) = java_login {
-                    eprintln!("[behavior_compare] Java login successful as '{}' — token acquired", who);
+                    eprintln!(
+                        "[behavior_compare] Java login successful as '{}' — token acquired",
+                        who
+                    );
                     // 两侧 token 互不通用，必须按侧分发（此前误将 Java token 设为
                     // 全局，导致 Rust 侧全程 401 走错误信封）。
                     comparator.with_tokens(rust_token, java_token)
                 } else {
-                    eprintln!("[behavior_compare] Java login failed — protected endpoints will be SKIP");
+                    eprintln!(
+                        "[behavior_compare] Java login failed — protected endpoints will be SKIP"
+                    );
                     comparator.with_auth_token(rust_token)
                 }
             }
@@ -219,12 +252,17 @@ async fn behavior_compare_rust_vs_java() {
     };
 
     // ── 执行对比 ──────────────────────────────────────────────────────────
-    eprintln!("[behavior_compare] Comparing {} endpoints...", all_endpoints().len());
+    eprintln!(
+        "[behavior_compare] Comparing {} endpoints...",
+        all_endpoints().len()
+    );
 
     // Fast path: when Java is unreachable, skip all Rust calls and emit SKIP report.
     // Without this, 4687 sequential requests with 45s timeout would take hours.
     let results = if !java_reachable {
-        eprintln!("[behavior_compare] Java unreachable — skipping all endpoint comparisons (SKIP all)");
+        eprintln!(
+            "[behavior_compare] Java unreachable — skipping all endpoint comparisons (SKIP all)"
+        );
         all_endpoints()
             .iter()
             .map(|def| ComparisonResult {
@@ -244,11 +282,23 @@ async fn behavior_compare_rust_vs_java() {
         comparator.compare_all(&all_endpoints()).await
     };
 
-    let passed = results.iter().filter(|r| r.status == ComparisonStatus::Pass).count();
-    let failed = results.iter().filter(|r| r.status == ComparisonStatus::Fail).count();
-    let skipped = results.iter().filter(|r| r.status == ComparisonStatus::Skip).count();
+    let passed = results
+        .iter()
+        .filter(|r| r.status == ComparisonStatus::Pass)
+        .count();
+    let failed = results
+        .iter()
+        .filter(|r| r.status == ComparisonStatus::Fail)
+        .count();
+    let skipped = results
+        .iter()
+        .filter(|r| r.status == ComparisonStatus::Skip)
+        .count();
 
-    eprintln!("[behavior_compare] Results: {} passed, {} failed, {} skipped", passed, failed, skipped);
+    eprintln!(
+        "[behavior_compare] Results: {} passed, {} failed, {} skipped",
+        passed, failed, skipped
+    );
 
     // ── 生成报告 ──────────────────────────────────────────────────────────
     let mut report = behavior_comparison::reporter::ComparisonReport::new(&java_url)
@@ -278,5 +328,8 @@ async fn behavior_compare_rust_vs_java() {
         );
     }
 
-    eprintln!("[behavior_compare] All comparisons passed or skipped ({} SKIP due to Java unreachable)", skipped);
+    eprintln!(
+        "[behavior_compare] All comparisons passed or skipped ({} SKIP due to Java unreachable)",
+        skipped
+    );
 }

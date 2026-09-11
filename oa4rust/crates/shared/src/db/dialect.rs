@@ -167,15 +167,33 @@ impl SqlDialect for MySQLDialect {
 pub struct DamengDialect;
 
 impl SqlDialect for DamengDialect {
-    fn name(&self) -> &'static str { "dameng" }
-    fn quote_ident(&self, name: &str) -> String { format!("\"{}\"", name) }
-    fn param(&self, n: usize) -> String { format!("${}", n) }
-    fn now(&self) -> &'static str { "NOW()" }
-    fn json_type(&self) -> &'static str { "jsonb" }
-    fn cast_text(&self, expr: &str) -> String { format!("{}::text", expr) }
-    fn cast_bigint(&self, expr: &str) -> String { format!("{}::bigint", expr) }
-    fn ilike_op(&self) -> &'static str { "ILIKE" }
-    fn format_sql(&self, sql: &str) -> String { sql.to_string() }
+    fn name(&self) -> &'static str {
+        "dameng"
+    }
+    fn quote_ident(&self, name: &str) -> String {
+        format!("\"{}\"", name)
+    }
+    fn param(&self, n: usize) -> String {
+        format!("${}", n)
+    }
+    fn now(&self) -> &'static str {
+        "NOW()"
+    }
+    fn json_type(&self) -> &'static str {
+        "jsonb"
+    }
+    fn cast_text(&self, expr: &str) -> String {
+        format!("{}::text", expr)
+    }
+    fn cast_bigint(&self, expr: &str) -> String {
+        format!("{}::bigint", expr)
+    }
+    fn ilike_op(&self) -> &'static str {
+        "ILIKE"
+    }
+    fn format_sql(&self, sql: &str) -> String {
+        sql.to_string()
+    }
 }
 
 // ──────────────────────────────────────────────────────────────────────────────
@@ -186,32 +204,52 @@ impl SqlDialect for DamengDialect {
 pub struct KingbaseDialect;
 
 impl SqlDialect for KingbaseDialect {
-    fn name(&self) -> &'static str { "kingbase" }
-    fn quote_ident(&self, name: &str) -> String { format!("`{}`", name) }
-    fn param(&self, _n: usize) -> String { "?".to_string() }
-    fn now(&self) -> &'static str { "NOW()" }
-    fn json_type(&self) -> &'static str { "json" }
-    fn cast_text(&self, expr: &str) -> String { format!("CAST({} AS VARCHAR)", expr) }
-    fn cast_bigint(&self, expr: &str) -> String { format!("CAST({} AS BIGINT)", expr) }
-    fn ilike_op(&self) -> &'static str { "LIKE" }
-    fn format_sql(&self, sql: &str) -> String { rewrite_pg_to_mysql(sql) }
+    fn name(&self) -> &'static str {
+        "kingbase"
+    }
+    fn quote_ident(&self, name: &str) -> String {
+        format!("`{}`", name)
+    }
+    fn param(&self, _n: usize) -> String {
+        "?".to_string()
+    }
+    fn now(&self) -> &'static str {
+        "NOW()"
+    }
+    fn json_type(&self) -> &'static str {
+        "json"
+    }
+    fn cast_text(&self, expr: &str) -> String {
+        format!("CAST({} AS VARCHAR)", expr)
+    }
+    fn cast_bigint(&self, expr: &str) -> String {
+        format!("CAST({} AS BIGINT)", expr)
+    }
+    fn ilike_op(&self) -> &'static str {
+        "LIKE"
+    }
+    fn format_sql(&self, sql: &str) -> String {
+        rewrite_pg_to_mysql(sql)
+    }
 }
 
 static DIALECT: OnceLock<Box<dyn SqlDialect>> = OnceLock::new();
 
 pub fn dialect() -> &'static dyn SqlDialect {
-    DIALECT.get_or_init(|| {
-        let raw = std::env::var("DB_DIALECT")
-            .or_else(|_| std::env::var("DATABASE_DIALECT"))
-            .unwrap_or_else(|_| "postgres".to_string())
-            .to_lowercase();
-        match raw.as_str() {
-            "mysql" => Box::new(MySQLDialect::new()),
-            "dameng" => Box::new(DamengDialect),
-            "kingbase" => Box::new(KingbaseDialect),
-            _ => Box::new(PostgresDialect::new()),
-        }
-    }).as_ref()
+    DIALECT
+        .get_or_init(|| {
+            let raw = std::env::var("DB_DIALECT")
+                .or_else(|_| std::env::var("DATABASE_DIALECT"))
+                .unwrap_or_else(|_| "postgres".to_string())
+                .to_lowercase();
+            match raw.as_str() {
+                "mysql" => Box::new(MySQLDialect::new()),
+                "dameng" => Box::new(DamengDialect),
+                "kingbase" => Box::new(KingbaseDialect),
+                _ => Box::new(PostgresDialect::new()),
+            }
+        })
+        .as_ref()
 }
 
 // ──────────────────────────────────────────────────────────────────────────────
@@ -231,26 +269,38 @@ mod tests {
     #[test]
     fn mysql_format_sql_replaces_params() {
         let sql = "SELECT * FROM t WHERE id = $1 AND name = $2";
-        assert_eq!(MySQLDialect::new().format_sql(sql), "SELECT * FROM t WHERE id = ? AND name = ?");
+        assert_eq!(
+            MySQLDialect::new().format_sql(sql),
+            "SELECT * FROM t WHERE id = ? AND name = ?"
+        );
     }
 
     #[test]
     fn mysql_format_sql_handles_multi_digit() {
         let sql = "SELECT * FROM t WHERE a = $10 AND b = $2";
-        assert_eq!(MySQLDialect::new().format_sql(sql), "SELECT * FROM t WHERE a = ? AND b = ?");
+        assert_eq!(
+            MySQLDialect::new().format_sql(sql),
+            "SELECT * FROM t WHERE a = ? AND b = ?"
+        );
     }
 
     #[test]
     fn mysql_format_sql_preserves_dollar_in_string() {
         let sql = "INSERT INTO t (name) VALUES ('price $100') WHERE id = $1";
-        assert_eq!(MySQLDialect::new().format_sql(sql), "INSERT INTO t (name) VALUES ('price $100') WHERE id = ?");
+        assert_eq!(
+            MySQLDialect::new().format_sql(sql),
+            "INSERT INTO t (name) VALUES ('price $100') WHERE id = ?"
+        );
     }
 
     #[test]
     fn postgres_param_and_cast() {
         let d = PostgresDialect::new();
         assert_eq!(d.param(1), "$1");
-        assert_eq!(d.cast_text("change_password_time"), "change_password_time::text");
+        assert_eq!(
+            d.cast_text("change_password_time"),
+            "change_password_time::text"
+        );
         assert_eq!(d.cast_bigint("$1"), "$1::bigint");
     }
 
@@ -258,7 +308,10 @@ mod tests {
     fn mysql_param_and_cast() {
         let d = MySQLDialect::new();
         assert_eq!(d.param(1), "?");
-        assert_eq!(d.cast_text("change_password_time"), "CAST(change_password_time AS CHAR)");
+        assert_eq!(
+            d.cast_text("change_password_time"),
+            "CAST(change_password_time AS CHAR)"
+        );
         assert_eq!(d.cast_bigint("$1"), "CAST($1 AS BIGINT)");
     }
 
@@ -304,7 +357,6 @@ mod tests {
         assert_eq!(MySQLDialect::new().name(), "mysql");
     }
 
-
     #[test]
     fn db_dialect_takes_priority_over_databases_dialect() {
         std::env::set_var("DB_DIALECT", "mysql");
@@ -314,7 +366,6 @@ mod tests {
         std::env::remove_var("DB_DIALECT");
         std::env::remove_var("DATABASE_DIALECT");
     }
-
 
     #[test]
     fn dameng_dialect_name() {
@@ -380,7 +431,9 @@ mod tests {
     #[test]
     fn kingbase_format_sql_uses_mysql_style() {
         let sql = "SELECT * FROM t WHERE id = $1";
-        assert_eq!(KingbaseDialect.format_sql(sql), "SELECT * FROM t WHERE id = ?");
+        assert_eq!(
+            KingbaseDialect.format_sql(sql),
+            "SELECT * FROM t WHERE id = ?"
+        );
     }
-
 }

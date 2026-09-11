@@ -1,10 +1,6 @@
 #[cfg(test)]
 mod tests {
     #![allow(non_snake_case)]
-    
-    
-    
-    
 
     // SKIPPED: create requires Session parameter
     // SKIPPED: get requires Session parameter

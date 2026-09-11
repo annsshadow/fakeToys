@@ -52,7 +52,10 @@ async fn status_json(method: Method, uri: &str, body: serde_json::Value) -> Stat
 #[test]
 fn test_normalize_java_path_joins_class_and_method() {
     assert_eq!(u2::normalize_java_path("forum", "{id}"), "forum/{id}");
-    assert_eq!(u2::normalize_java_path("user/forum", "all"), "user/forum/all");
+    assert_eq!(
+        u2::normalize_java_path("user/forum", "all"),
+        "user/forum/all"
+    );
 }
 
 #[test]
@@ -87,9 +90,17 @@ fn test_topic_flag_column_whitelist_blocks_injection() {
         "locked",
         "completed",
     ] {
-        assert_eq!(u2::topic_flag_column(flag), Some(flag), "flag {} 应在白名单", flag);
+        assert_eq!(
+            u2::topic_flag_column(flag),
+            Some(flag),
+            "flag {} 应在白名单",
+            flag
+        );
     }
-    assert_eq!(u2::topic_flag_column("is_cream; DROP TABLE x_bbs_topic"), None);
+    assert_eq!(
+        u2::topic_flag_column("is_cream; DROP TABLE x_bbs_topic"),
+        None
+    );
     assert_eq!(u2::topic_flag_column("creator"), None);
     assert_eq!(u2::topic_flag_column(""), None);
 }
@@ -125,7 +136,10 @@ const JAVA_ENDPOINTS: &[(&str, &str)] = &[
     ("GET", "attachment/download/{id}/stream/{stream}"),
     ("GET", "attachment/list/subject/{subjectId}"),
     ("POST", "attachment/upload/subject/{subjectId}"),
-    ("POST", "attachment/upload/subject/{subjectId}/callback/{callback}"),
+    (
+        "POST",
+        "attachment/upload/subject/{subjectId}/callback/{callback}",
+    ),
     ("GET", "forum/{id}"),
     ("GET", "forum/view/all"),
     ("POST", "login"),
@@ -151,10 +165,16 @@ const JAVA_ENDPOINTS: &[(&str, &str)] = &[
     ("POST", "shutup/list/paging/{page}/size/{size}"),
     ("POST", "shutup/save"),
     ("GET", "subject/recommended/index/{count}"),
-    ("GET", "subject/statgrade/sectionName/{sectionName}/subjectType/{subjectType}"),
+    (
+        "GET",
+        "subject/statgrade/sectionName/{sectionName}/subjectType/{subjectType}",
+    ),
     ("GET", "subject/top/{sectionId}"),
     ("GET", "subject/view/{id}"),
-    ("POST", "subject/filter/listsubjectinfo/page/{page}/count/{count}"),
+    (
+        "POST",
+        "subject/filter/listsubjectinfo/page/{page}/count/{count}",
+    ),
     ("PUT", "subject/creamed/list/page/{page}/count/{count}"),
     ("PUT", "subject/filter/list/page/{page}/count/{count}"),
     ("PUT", "subject/index/list/page/{page}/count/{count}"),
@@ -221,7 +241,10 @@ const JAVA_ENDPOINTS: &[(&str, &str)] = &[
     ("PUT", "user/subject/change/section"),
     ("PUT", "user/subject/my/list/page/{page}/count/{count}"),
     ("PUT", "user/subject/vote/submit"),
-    ("PUT", "user/subject/voterecord/list/page/{page}/count/{count}"),
+    (
+        "PUT",
+        "user/subject/voterecord/list/page/{page}/count/{count}",
+    ),
     ("GET", "userinfo/update/nick/name/{person}"),
     ("PUT", "userinfo"),
     ("GET", "uuid/random"),
@@ -300,7 +323,11 @@ async fn test_unlandable_endpoints_return_explicit_501() {
         ("GET", "section/syn"),
     ];
     for (method, sub) in UNLANDABLE {
-        let st = status(Method::from_bytes(method.as_bytes()).unwrap(), &format!("{}/{}", BASE, sub)).await;
+        let st = status(
+            Method::from_bytes(method.as_bytes()).unwrap(),
+            &format!("{}/{}", BASE, sub),
+        )
+        .await;
         assert_eq!(
             st,
             StatusCode::NOT_IMPLEMENTED,
@@ -323,7 +350,11 @@ async fn test_login_empty_credentials_contract() {
         json!({"credential": "", "password": ""}),
     )
     .await;
-    assert_eq!(st, StatusCode::OK, "空凭据走 ActionResult.error 而非 HTTP 错误码");
+    assert_eq!(
+        st,
+        StatusCode::OK,
+        "空凭据走 ActionResult.error 而非 HTTP 错误码"
+    );
 }
 
 #[tokio::test]
@@ -339,7 +370,9 @@ async fn test_uuid_random_returns_valid_uuid() {
         .await
         .unwrap();
     assert_eq!(response.status(), StatusCode::OK);
-    let bytes = axum::body::to_bytes(response.into_body(), 4096).await.unwrap();
+    let bytes = axum::body::to_bytes(response.into_body(), 4096)
+        .await
+        .unwrap();
     let v: serde_json::Value = serde_json::from_slice(&bytes).unwrap();
     assert_eq!(v["type"], "success");
     let parsed = uuid::Uuid::parse_str(v["data"]["uuid"].as_str().unwrap());
@@ -360,7 +393,9 @@ async fn test_shutup_list_db_failure_returns_internal_error_without_panicking() 
         .expect("数据库不可达时请求 future 也必须正常完成");
     assert_eq!(response.status(), StatusCode::INTERNAL_SERVER_ERROR);
 
-    let bytes = axum::body::to_bytes(response.into_body(), 4096).await.unwrap();
+    let bytes = axum::body::to_bytes(response.into_body(), 4096)
+        .await
+        .unwrap();
     let body: serde_json::Value = serde_json::from_slice(&bytes).unwrap();
     assert_eq!(body["type"], "error");
     assert_eq!(body["message"], "internal server error");
@@ -377,7 +412,13 @@ async fn test_legacy_extended_routes_survive() {
         ("POST", format!("{}/shutup/create", BASE)),
     ] {
         let st = status(Method::from_bytes(method.as_bytes()).unwrap(), &uri).await;
-        assert_ne!(st, StatusCode::NOT_FOUND, "扩展路由丢失：{} {}", method, uri);
+        assert_ne!(
+            st,
+            StatusCode::NOT_FOUND,
+            "扩展路由丢失：{} {}",
+            method,
+            uri
+        );
     }
 }
 
@@ -416,7 +457,9 @@ async fn send_with_session(
 
     let response = app.oneshot(req).await.unwrap();
     let st = response.status();
-    let bytes = axum::body::to_bytes(response.into_body(), 65536).await.unwrap();
+    let bytes = axum::body::to_bytes(response.into_body(), 65536)
+        .await
+        .unwrap();
     let json = serde_json::from_slice(&bytes).unwrap_or(json!({"error": "no json"}));
     (st, json)
 }
@@ -458,7 +501,11 @@ async fn test_toggle_cream_idor_gate_and_roundtrip() {
         Some(make_session("u2-stranger-bob", "bob")),
     )
     .await;
-    assert_eq!(st_stranger, StatusCode::FORBIDDEN, "非所有者必须被 IDOR 门禁拒绝");
+    assert_eq!(
+        st_stranger,
+        StatusCode::FORBIDDEN,
+        "非所有者必须被 IDOR 门禁拒绝"
+    );
 
     // 所有者 → 落库为 true
     let (st_owner, body) = send_with_session(
@@ -475,13 +522,21 @@ async fn test_toggle_cream_idor_gate_and_roundtrip() {
     let pool = test_pool();
     let client = pool.get().await.unwrap();
     let row = client
-        .query_one("SELECT is_cream FROM x_bbs_topic WHERE id = $1", &[&topic_id])
+        .query_one(
+            "SELECT is_cream FROM x_bbs_topic WHERE id = $1",
+            &[&topic_id],
+        )
         .await
         .unwrap();
-    assert!(row.get::<_, bool>("is_cream"), "toggle 后 is_cream 应真实落库");
+    assert!(
+        row.get::<_, bool>("is_cream"),
+        "toggle 后 is_cream 应真实落库"
+    );
 
     // 清理
-    let _ = client.execute("DELETE FROM x_bbs_topic WHERE id = $1", &[&topic_id]).await;
+    let _ = client
+        .execute("DELETE FROM x_bbs_topic WHERE id = $1", &[&topic_id])
+        .await;
 }
 
 /// BBS_NAME 种子配置必须能被 setting/bbsName 读出（真实 SELECT 往返）。
@@ -528,9 +583,19 @@ async fn test_setting_bbs_name_seeded_and_upsert_by_code() {
 
     let app = crate::router(test_pool());
     // GET bbsName 公开可读。
-    let (st_read, body) = send_with_session(app.clone(), Method::GET, &format!("{}/setting/bbsName", BASE), None, None).await;
+    let (st_read, body) = send_with_session(
+        app.clone(),
+        Method::GET,
+        &format!("{}/setting/bbsName", BASE),
+        None,
+        None,
+    )
+    .await;
     assert_eq!(st_read, StatusCode::OK);
-    assert!(body["data"]["bbsName"].as_str().is_some(), "bbsName 必须返回字符串");
+    assert!(
+        body["data"]["bbsName"].as_str().is_some(),
+        "bbsName 必须返回字符串"
+    );
 
     // 非 admin 更新配置 → 403（管理资源门禁）。
     let (st_non_admin, _) = send_with_session(
@@ -555,8 +620,18 @@ async fn test_setting_bbs_name_seeded_and_upsert_by_code() {
     assert_eq!(st_admin, StatusCode::OK);
     assert_eq!(body_admin["type"], "success");
 
-    let (_, body_after) = send_with_session(crate::router(test_pool()), Method::GET, &format!("{}/setting/bbsName", BASE), None, None).await;
-    assert_eq!(body_after["data"]["bbsName"], "U2测试社区", "upsert 后 bbsName 应变化");
+    let (_, body_after) = send_with_session(
+        crate::router(test_pool()),
+        Method::GET,
+        &format!("{}/setting/bbsName", BASE),
+        None,
+        None,
+    )
+    .await;
+    assert_eq!(
+        body_after["data"]["bbsName"], "U2测试社区",
+        "upsert 后 bbsName 应变化"
+    );
 }
 
 /// 角色域往返：admin 建角色 → 列表可见 → 绑定人 → 按人查回。
@@ -590,7 +665,12 @@ async fn test_role_save_bind_and_query_roundtrip() {
         Some(admin),
     )
     .await;
-    assert_eq!(st_create, StatusCode::OK, "admin 创建角色应成功: {}", created);
+    assert_eq!(
+        st_create,
+        StatusCode::OK,
+        "admin 创建角色应成功: {}",
+        created
+    );
     let role_id = created["data"]["id"].as_str().unwrap().to_string();
 
     // 绑定人到角色
@@ -624,8 +704,15 @@ async fn test_role_save_bind_and_query_roundtrip() {
     // 清理
     let pool = test_pool();
     let client = pool.get().await.unwrap();
-    let _ = client.execute("DELETE FROM x_bbs_role_bind WHERE role_id = $1", &[&role_id]).await;
-    let _ = client.execute("DELETE FROM x_bbs_role WHERE id = $1", &[&role_id]).await;
+    let _ = client
+        .execute(
+            "DELETE FROM x_bbs_role_bind WHERE role_id = $1",
+            &[&role_id],
+        )
+        .await;
+    let _ = client
+        .execute("DELETE FROM x_bbs_role WHERE id = $1", &[&role_id])
+        .await;
 }
 
 /// 投票提交持久化投票记录并累加 vote_count（真实 INSERT+UPDATE 往返）。
@@ -652,9 +739,19 @@ async fn test_vote_submit_persists_record_and_count() {
             )
             .await
             .expect("seed vote topic");
-        let _ = client.execute("UPDATE x_bbs_topic SET vote_count = 0 WHERE id = $1", &[&topic_id]).await;
+        let _ = client
+            .execute(
+                "UPDATE x_bbs_topic SET vote_count = 0 WHERE id = $1",
+                &[&topic_id],
+            )
+            .await;
         // 清理历史运行残留，保证幂等。
-        let _ = client.execute("DELETE FROM x_bbs_vote_record WHERE topic_id = $1", &[&topic_id]).await;
+        let _ = client
+            .execute(
+                "DELETE FROM x_bbs_vote_record WHERE topic_id = $1",
+                &[&topic_id],
+            )
+            .await;
     }
 
     let app = crate::router(test_pool());
@@ -680,11 +777,21 @@ async fn test_vote_submit_persists_record_and_count() {
         .unwrap();
     assert_eq!(rec.get::<_, i64>(0), 1, "投票记录应真实入库");
     let cnt = client
-        .query_one("SELECT vote_count FROM x_bbs_topic WHERE id = $1", &[&topic_id])
+        .query_one(
+            "SELECT vote_count FROM x_bbs_topic WHERE id = $1",
+            &[&topic_id],
+        )
         .await
         .unwrap();
     assert_eq!(cnt.get::<_, i32>("vote_count"), 1, "vote_count 应累加到 1");
 
-    let _ = client.execute("DELETE FROM x_bbs_vote_record WHERE topic_id = $1", &[&topic_id]).await;
-    let _ = client.execute("DELETE FROM x_bbs_topic WHERE id = $1", &[&topic_id]).await;
+    let _ = client
+        .execute(
+            "DELETE FROM x_bbs_vote_record WHERE topic_id = $1",
+            &[&topic_id],
+        )
+        .await;
+    let _ = client
+        .execute("DELETE FROM x_bbs_topic WHERE id = $1", &[&topic_id])
+        .await;
 }

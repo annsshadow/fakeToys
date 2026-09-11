@@ -1,8 +1,6 @@
 pub use crate::RowGet;
 
-use crate::{
-    ControlClient, ControlPool, DynControlPool, error::AppError,
-};
+use crate::{error::AppError, ControlClient, ControlPool, DynControlPool};
 use serde_json::Value;
 use std::sync::Arc;
 use tokio::sync::Mutex;
@@ -74,7 +72,10 @@ impl MockControlClient {
     }
 
     pub fn count(n: u64) -> Arc<Mutex<Vec<MockQueryResult>>> {
-        Arc::new(Mutex::new(vec![MockQueryResult::Row(vec![("count", Value::Number(serde_json::Number::from(n)))])]))
+        Arc::new(Mutex::new(vec![MockQueryResult::Row(vec![(
+            "count",
+            Value::Number(serde_json::Number::from(n)),
+        )])]))
     }
 }
 
@@ -86,9 +87,14 @@ impl ControlClient for MockControlClient {
         _p: &[&(dyn deadpool_postgres::tokio_postgres::types::ToSql + Sync)],
     ) -> Result<Vec<Box<dyn RowGet>>, Box<dyn std::error::Error + Send + Sync>> {
         match self.results.lock().await.pop() {
-            Some(MockQueryResult::Rows(rows)) => Ok(rows.into_iter().map(|v| Box::new(MockRow { values: v }) as Box<dyn RowGet>).collect()),
+            Some(MockQueryResult::Rows(rows)) => Ok(rows
+                .into_iter()
+                .map(|v| Box::new(MockRow { values: v }) as Box<dyn RowGet>)
+                .collect()),
             Some(MockQueryResult::Empty) => Ok(vec![]),
-            Some(MockQueryResult::Error) => Err(Box::<dyn std::error::Error + Send + Sync>::from("mock query error")),
+            Some(MockQueryResult::Error) => Err(Box::<dyn std::error::Error + Send + Sync>::from(
+                "mock query error",
+            )),
             _ => Ok(vec![]),
         }
     }
@@ -102,8 +108,12 @@ impl ControlClient for MockControlClient {
             Some(MockQueryResult::Row(values)) => {
                 Ok(Box::new(MockRow { values }) as Box<dyn RowGet>)
             }
-            Some(MockQueryResult::Error) => Err(Box::<dyn std::error::Error + Send + Sync>::from("mock query error")),
-            _ => Err(Box::<dyn std::error::Error + Send + Sync>::from("mock: no result")),
+            Some(MockQueryResult::Error) => Err(Box::<dyn std::error::Error + Send + Sync>::from(
+                "mock query error",
+            )),
+            _ => Err(Box::<dyn std::error::Error + Send + Sync>::from(
+                "mock: no result",
+            )),
         }
     }
 
@@ -116,11 +126,14 @@ impl ControlClient for MockControlClient {
             Some(MockQueryResult::Row(values)) => {
                 Ok(Some(Box::new(MockRow { values }) as Box<dyn RowGet>))
             }
-            Some(MockQueryResult::Rows(rows)) if rows.len() == 1 => {
-                Ok(Some(Box::new(MockRow { values: rows[0].clone() }) as Box<dyn RowGet>))
-            }
+            Some(MockQueryResult::Rows(rows)) if rows.len() == 1 => Ok(Some(Box::new(MockRow {
+                values: rows[0].clone(),
+            })
+                as Box<dyn RowGet>)),
             Some(MockQueryResult::Empty) | None => Ok(None),
-            Some(MockQueryResult::Error) => Err(Box::<dyn std::error::Error + Send + Sync>::from("mock query error")),
+            Some(MockQueryResult::Error) => Err(Box::<dyn std::error::Error + Send + Sync>::from(
+                "mock query error",
+            )),
             _ => Ok(None),
         }
     }
@@ -131,9 +144,11 @@ impl ControlClient for MockControlClient {
         _p: &[&(dyn deadpool_postgres::tokio_postgres::types::ToSql + Sync)],
     ) -> Result<u64, Box<dyn std::error::Error + Send + Sync>> {
         match self.results.lock().await.pop() {
-            Some(MockQueryResult::Row(values)) => {
-                Ok(values.iter().find(|(k, _)| *k == "count").and_then(|(_, v)| v.as_u64()).unwrap_or(1))
-            }
+            Some(MockQueryResult::Row(values)) => Ok(values
+                .iter()
+                .find(|(k, _)| *k == "count")
+                .and_then(|(_, v)| v.as_u64())
+                .unwrap_or(1)),
             _ => Ok(1),
         }
     }
@@ -155,8 +170,13 @@ impl MockControlPool {
 impl ControlPool for MockControlPool {
     fn acquire<'a>(
         &'a self,
-    ) -> std::pin::Pin<Box<dyn std::future::Future<Output = Result<std::sync::Arc<dyn ControlClient>, AppError>> + Send + 'a>>
-    {
+    ) -> std::pin::Pin<
+        Box<
+            dyn std::future::Future<Output = Result<std::sync::Arc<dyn ControlClient>, AppError>>
+                + Send
+                + 'a,
+        >,
+    > {
         Box::pin(async move { Ok(self.client.clone() as std::sync::Arc<dyn ControlClient>) })
     }
 }

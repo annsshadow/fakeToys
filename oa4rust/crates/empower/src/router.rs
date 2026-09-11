@@ -1,10 +1,13 @@
-use axum::{routing::{delete, get, post, put}, Router};
+use axum::{
+    routing::{delete, get, post, put},
+    Router,
+};
 use deadpool_postgres::Pool;
 
 use super::{
-    create, delete as empower_delete, enable, get as empower_get, list_current_person,
+    create, delete as empower_delete, disable, enable, get as empower_get, list_current_person,
     list_current_person_enable, list_to, list_to_enable, manager_create, manager_delete,
-    manager_list_paging, manager_update, update, disable,
+    manager_list_paging, manager_update, update,
 };
 use auth::SessionManager;
 
@@ -22,7 +25,10 @@ pub fn router(pool: Pool, session_manager: SessionManager) -> Router {
         .route("/jaxrs/person/empower/{id}", put(update))
         .route("/jaxrs/person/empower/{id}", delete(empower_delete))
         // enable/disable 主注册为 POST（防 CSRF），追加 GET 变体对齐 Java 契约
-        .route("/jaxrs/person/empower/{id}/enable", post(enable).get(enable))
+        .route(
+            "/jaxrs/person/empower/{id}/enable",
+            post(enable).get(enable),
+        )
         .route(
             "/jaxrs/person/empower/{id}/disable",
             post(disable).get(disable),
@@ -45,10 +51,7 @@ pub fn router(pool: Pool, session_manager: SessionManager) -> Router {
             get(list_current_person_enable),
         )
         .route("/jaxrs/person/empower/list/to", get(list_to))
-        .route(
-            "/jaxrs/person/empower/list/to/enable",
-            get(list_to_enable),
-        )
+        .route("/jaxrs/person/empower/list/to/enable", get(list_to_enable))
         .with_state(pool)
         .with_state(session_manager)
 }

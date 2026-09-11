@@ -14,9 +14,9 @@
 #[cfg(test)]
 mod u2_tests {
     use crate::{
-        appinfo_u2_create, document_u2_category_change, document_u2_delete,
-        permission_u2_app_info, permission_u2_category_info, script_u2_list_manager,
-        u2_body_i64, u2_body_str, u2_body_strs,
+        appinfo_u2_create, document_u2_category_change, document_u2_delete, permission_u2_app_info,
+        permission_u2_category_info, script_u2_list_manager, u2_body_i64, u2_body_str,
+        u2_body_strs,
     };
     use axum::body::Body;
     use axum::extract::Extension;
@@ -61,7 +61,10 @@ mod u2_tests {
 
     #[tokio::test]
     async fn u2_document_read_routes_reachable() {
-        assert_eq!(status_of("GET", "/jaxrs/document/d-1").await, StatusCode::INTERNAL_SERVER_ERROR);
+        assert_eq!(
+            status_of("GET", "/jaxrs/document/d-1").await,
+            StatusCode::INTERNAL_SERVER_ERROR
+        );
         assert_eq!(
             status_of("GET", "/jaxrs/document/d-1/document/data").await,
             StatusCode::INTERNAL_SERVER_ERROR
@@ -70,39 +73,84 @@ mod u2_tests {
             status_of("GET", "/jaxrs/document/document/fields").await,
             StatusCode::INTERNAL_SERVER_ERROR
         );
-        assert_eq!(status_of("GET", "/jaxrs/document/d-1/top").await, StatusCode::INTERNAL_SERVER_ERROR);
-        assert_eq!(status_of("GET", "/jaxrs/document/d-1/unTop").await, StatusCode::INTERNAL_SERVER_ERROR);
+        assert_eq!(
+            status_of("GET", "/jaxrs/document/d-1/top").await,
+            StatusCode::INTERNAL_SERVER_ERROR
+        );
+        assert_eq!(
+            status_of("GET", "/jaxrs/document/d-1/unTop").await,
+            StatusCode::INTERNAL_SERVER_ERROR
+        );
     }
 
     #[tokio::test]
     async fn u2_document_write_routes_reachable() {
         // 带 Json 提取器的写端点：空 body → 415，仍 ≠404/405
-        assert_ne!(status_of("POST", "/jaxrs/document").await, StatusCode::NOT_FOUND);
-        assert_ne!(status_of("POST", "/jaxrs/document/d-1/update").await, StatusCode::NOT_FOUND);
-        assert_ne!(status_of("PUT", "/jaxrs/document/category/change").await, StatusCode::NOT_FOUND);
-        assert_ne!(status_of("POST", "/jaxrs/document/category/change/mockputtopost").await, StatusCode::NOT_FOUND);
-        assert_ne!(status_of("POST", "/jaxrs/document/list/document").await, StatusCode::NOT_FOUND);
-        assert_ne!(status_of("PUT", "/jaxrs/document/filter/count").await, StatusCode::NOT_FOUND);
-        assert_ne!(status_of("POST", "/jaxrs/document/filter/count/mockputtopost").await, StatusCode::NOT_FOUND);
+        assert_ne!(
+            status_of("POST", "/jaxrs/document").await,
+            StatusCode::NOT_FOUND
+        );
+        assert_ne!(
+            status_of("POST", "/jaxrs/document/d-1/update").await,
+            StatusCode::NOT_FOUND
+        );
+        assert_ne!(
+            status_of("PUT", "/jaxrs/document/category/change").await,
+            StatusCode::NOT_FOUND
+        );
+        assert_ne!(
+            status_of("POST", "/jaxrs/document/category/change/mockputtopost").await,
+            StatusCode::NOT_FOUND
+        );
+        assert_ne!(
+            status_of("POST", "/jaxrs/document/list/document").await,
+            StatusCode::NOT_FOUND
+        );
+        assert_ne!(
+            status_of("PUT", "/jaxrs/document/filter/count").await,
+            StatusCode::NOT_FOUND
+        );
+        assert_ne!(
+            status_of("POST", "/jaxrs/document/filter/count/mockputtopost").await,
+            StatusCode::NOT_FOUND
+        );
         assert_ne!(
             status_of("POST", "/jaxrs/document/publish/d-1/mockputtopost").await,
             StatusCode::NOT_FOUND
         );
         // DELETE / publish / cancel：会话缺失在 handler 前被拒（500），证明已注册
-        assert_eq!(status_of("DELETE", "/jaxrs/document/d-1").await, StatusCode::INTERNAL_SERVER_ERROR);
-        assert_eq!(status_of("PUT", "/jaxrs/document/publish/d-1").await, StatusCode::INTERNAL_SERVER_ERROR);
+        assert_eq!(
+            status_of("DELETE", "/jaxrs/document/d-1").await,
+            StatusCode::INTERNAL_SERVER_ERROR
+        );
+        assert_eq!(
+            status_of("PUT", "/jaxrs/document/publish/d-1").await,
+            StatusCode::INTERNAL_SERVER_ERROR
+        );
         assert_eq!(
             status_of("PUT", "/jaxrs/document/publish/d-1/cancel").await,
             StatusCode::INTERNAL_SERVER_ERROR
         );
-        assert_eq!(status_of("GET", "/jaxrs/document/d-1/commend").await, StatusCode::INTERNAL_SERVER_ERROR);
-        assert_eq!(status_of("GET", "/jaxrs/document/d-1/uncommend").await, StatusCode::INTERNAL_SERVER_ERROR);
+        assert_eq!(
+            status_of("GET", "/jaxrs/document/d-1/commend").await,
+            StatusCode::INTERNAL_SERVER_ERROR
+        );
+        assert_eq!(
+            status_of("GET", "/jaxrs/document/d-1/uncommend").await,
+            StatusCode::INTERNAL_SERVER_ERROR
+        );
     }
 
     #[tokio::test]
     async fn u2_comment_routes_reachable() {
-        assert_ne!(status_of("POST", "/jaxrs/comment").await, StatusCode::NOT_FOUND);
-        assert_eq!(status_of("DELETE", "/jaxrs/comment/c-1").await, StatusCode::INTERNAL_SERVER_ERROR);
+        assert_ne!(
+            status_of("POST", "/jaxrs/comment").await,
+            StatusCode::NOT_FOUND
+        );
+        assert_eq!(
+            status_of("DELETE", "/jaxrs/comment/c-1").await,
+            StatusCode::INTERNAL_SERVER_ERROR
+        );
         assert_eq!(
             status_of("PUT", "/jaxrs/comment/list/1/size/10").await,
             StatusCode::INTERNAL_SERVER_ERROR
@@ -119,12 +167,30 @@ mod u2_tests {
             status_of("POST", "/jaxrs/correlation/doc/doc-9/delete").await,
             StatusCode::NOT_FOUND
         );
-        assert_ne!(status_of("POST", "/jaxrs/file").await, StatusCode::NOT_FOUND);
-        assert_ne!(status_of("POST", "/jaxrs/file/f-1/mockputtopost").await, StatusCode::NOT_FOUND);
-        assert_eq!(status_of("DELETE", "/jaxrs/fileinfo/fi-1").await, StatusCode::INTERNAL_SERVER_ERROR);
-        assert_ne!(status_of("POST", "/jaxrs/fileinfo/list/filter").await, StatusCode::NOT_FOUND);
-        assert_ne!(status_of("POST", "/jaxrs/fileinfo/copy/to/doc/doc-9").await, StatusCode::NOT_FOUND);
-        assert_ne!(status_of("POST", "/jaxrs/fileinfo/replace/to/doc/doc-9").await, StatusCode::NOT_FOUND);
+        assert_ne!(
+            status_of("POST", "/jaxrs/file").await,
+            StatusCode::NOT_FOUND
+        );
+        assert_ne!(
+            status_of("POST", "/jaxrs/file/f-1/mockputtopost").await,
+            StatusCode::NOT_FOUND
+        );
+        assert_eq!(
+            status_of("DELETE", "/jaxrs/fileinfo/fi-1").await,
+            StatusCode::INTERNAL_SERVER_ERROR
+        );
+        assert_ne!(
+            status_of("POST", "/jaxrs/fileinfo/list/filter").await,
+            StatusCode::NOT_FOUND
+        );
+        assert_ne!(
+            status_of("POST", "/jaxrs/fileinfo/copy/to/doc/doc-9").await,
+            StatusCode::NOT_FOUND
+        );
+        assert_ne!(
+            status_of("POST", "/jaxrs/fileinfo/replace/to/doc/doc-9").await,
+            StatusCode::NOT_FOUND
+        );
     }
 
     #[tokio::test]
@@ -137,7 +203,11 @@ mod u2_tests {
             "/jaxrs/viewcategory",
             "/jaxrs/viewfieldconfig",
         ] {
-            assert_ne!(status_of("POST", uri).await, StatusCode::NOT_FOUND, "POST {uri}");
+            assert_ne!(
+                status_of("POST", uri).await,
+                StatusCode::NOT_FOUND,
+                "POST {uri}"
+            );
         }
         for (method, uri) in [
             ("PUT", "/jaxrs/form/f-1"),
@@ -151,7 +221,11 @@ mod u2_tests {
             ("PUT", "/jaxrs/viewfieldconfig/vfc-1"),
             ("DELETE", "/jaxrs/viewfieldconfig/vfc-1"),
         ] {
-            assert_ne!(status_of(method, uri).await, StatusCode::NOT_FOUND, "{method} {uri}");
+            assert_ne!(
+                status_of(method, uri).await,
+                StatusCode::NOT_FOUND,
+                "{method} {uri}"
+            );
             assert_ne!(
                 status_of(method, uri).await,
                 StatusCode::METHOD_NOT_ALLOWED,
@@ -174,7 +248,11 @@ mod u2_tests {
             "/jaxrs/appconfig/app-1",
             "/jaxrs/designer/search",
         ] {
-            assert_ne!(status_of("POST", uri).await, StatusCode::NOT_FOUND, "POST {uri}");
+            assert_ne!(
+                status_of("POST", uri).await,
+                StatusCode::NOT_FOUND,
+                "POST {uri}"
+            );
         }
         assert_eq!(
             status_of("DELETE", "/jaxrs/appinfo/a-1").await,
@@ -184,7 +262,10 @@ mod u2_tests {
             status_of("DELETE", "/jaxrs/categoryinfo/c-1").await,
             StatusCode::INTERNAL_SERVER_ERROR
         );
-        assert_eq!(status_of("GET", "/jaxrs/appconfig/a-1").await, StatusCode::INTERNAL_SERVER_ERROR);
+        assert_eq!(
+            status_of("GET", "/jaxrs/appconfig/a-1").await,
+            StatusCode::INTERNAL_SERVER_ERROR
+        );
     }
 
     // ── 2. 门禁单元测试（mock pool，fail-closed） ──────────────
@@ -199,7 +280,10 @@ mod u2_tests {
         .await;
         match r {
             Err(AppError::Internal) => {}
-            other => panic!("expected Internal(fail closed), got {:?}", other.map(|_| "ok")),
+            other => panic!(
+                "expected Internal(fail closed), got {:?}",
+                other.map(|_| "ok")
+            ),
         }
     }
 
@@ -273,7 +357,10 @@ mod u2_tests {
         assert_eq!(u2_body_str(&body, "title"), Some("t".to_string()));
         assert_eq!(u2_body_str(&body, "missing"), None);
         assert_eq!(u2_body_str(&body, "empty"), Some(String::new()));
-        assert_eq!(u2_body_strs(&body, "ids"), vec!["a".to_string(), "b".to_string()]);
+        assert_eq!(
+            u2_body_strs(&body, "ids"),
+            vec!["a".to_string(), "b".to_string()]
+        );
         assert!(u2_body_strs(&body, "missing").is_empty());
         assert_eq!(u2_body_i64(&body, "size"), Some(7));
         assert_eq!(u2_body_i64(&body, "title"), None);
@@ -301,7 +388,9 @@ mod u2_tests {
         };
         let resp = app.oneshot(req).await.unwrap();
         let status = resp.status();
-        let bytes = axum::body::to_bytes(resp.into_body(), 1_048_576).await.unwrap();
+        let bytes = axum::body::to_bytes(resp.into_body(), 1_048_576)
+            .await
+            .unwrap();
         let json = if bytes.is_empty() {
             serde_json::Value::Null
         } else {
@@ -364,7 +453,13 @@ mod u2_tests {
         assert_eq!(json["data"]["status"], "published");
 
         // 过滤计数命中刚发布的文档（此时仍是 published）
-        let (status, json) = call("PUT", "/jaxrs/document/filter/count", Some(json!({"status": "published"})), None).await;
+        let (status, json) = call(
+            "PUT",
+            "/jaxrs/document/filter/count",
+            Some(json!({"status": "published"})),
+            None,
+        )
+        .await;
         assert_eq!(status, StatusCode::OK);
         assert!(json["data"]["total"].as_i64().unwrap() >= 1);
 
@@ -381,12 +476,24 @@ mod u2_tests {
         assert_eq!(json["data"]["status"], "draft");
 
         // top 标记真实落库
-        let (status, json) = call("GET", &format!("/jaxrs/document/{doc_id}/top"), None, Some(session(OWNER))).await;
+        let (status, json) = call(
+            "GET",
+            &format!("/jaxrs/document/{doc_id}/top"),
+            None,
+            Some(session(OWNER)),
+        )
+        .await;
         assert_eq!(status, StatusCode::OK, "top: {json}");
         assert_eq!(json["data"]["isTop"], true);
 
         // 删除后再读 → 明确 not found 语义
-        let (status, json) = call("DELETE", &format!("/jaxrs/document/{doc_id}"), None, Some(session(OWNER))).await;
+        let (status, json) = call(
+            "DELETE",
+            &format!("/jaxrs/document/{doc_id}"),
+            None,
+            Some(session(OWNER)),
+        )
+        .await;
         assert_eq!(status, StatusCode::OK, "delete: {json}");
         let (status, json) = call("GET", &format!("/jaxrs/document/{doc_id}"), None, None).await;
         assert_eq!(status, StatusCode::OK);
@@ -404,10 +511,7 @@ mod u2_tests {
         {
             let client = test_pool().get().await.unwrap();
             client
-                .execute(
-                    "DELETE FROM x_cms_data_document WHERE id = $1",
-                    &[&doc_id],
-                )
+                .execute("DELETE FROM x_cms_data_document WHERE id = $1", &[&doc_id])
                 .await
                 .unwrap();
             client
@@ -420,14 +524,26 @@ mod u2_tests {
         }
 
         // 非所有者删除 → 403，且文档未被删除
-        let (status, _) = call("DELETE", &format!("/jaxrs/document/{doc_id}"), None, Some(session(STRANGER))).await;
+        let (status, _) = call(
+            "DELETE",
+            &format!("/jaxrs/document/{doc_id}"),
+            None,
+            Some(session(STRANGER)),
+        )
+        .await;
         assert_eq!(status, StatusCode::FORBIDDEN);
         let (status, json) = call("GET", &format!("/jaxrs/document/{doc_id}"), None, None).await;
         assert_eq!(status, StatusCode::OK);
         assert_eq!(json["type"], "success");
 
         // 所有者删除成功
-        let (status, json) = call("DELETE", &format!("/jaxrs/document/{doc_id}"), None, Some(session(OWNER))).await;
+        let (status, json) = call(
+            "DELETE",
+            &format!("/jaxrs/document/{doc_id}"),
+            None,
+            Some(session(OWNER)),
+        )
+        .await;
         assert_eq!(status, StatusCode::OK, "owner delete: {json}");
         assert_eq!(json["data"]["deleted"], true);
     }
@@ -494,7 +610,10 @@ mod u2_tests {
         {
             let client = test_pool().get().await.unwrap();
             client
-                .execute("DELETE FROM x_cms_form WHERE id = 'u2test-form-searchprobe'", &[])
+                .execute(
+                    "DELETE FROM x_cms_form WHERE id = 'u2test-form-searchprobe'",
+                    &[],
+                )
                 .await
                 .unwrap();
             client
@@ -520,7 +639,10 @@ mod u2_tests {
             .get()
             .await
             .unwrap()
-            .execute("DELETE FROM x_cms_form WHERE id = 'u2test-form-searchprobe'", &[])
+            .execute(
+                "DELETE FROM x_cms_form WHERE id = 'u2test-form-searchprobe'",
+                &[],
+            )
             .await;
     }
 
@@ -534,10 +656,7 @@ mod u2_tests {
         {
             let client = test_pool().get().await.unwrap();
             client
-                .execute(
-                    "DELETE FROM x_cms_appinfo WHERE id = $1",
-                    &[&app_id],
-                )
+                .execute("DELETE FROM x_cms_appinfo WHERE id = $1", &[&app_id])
                 .await
                 .unwrap();
             client

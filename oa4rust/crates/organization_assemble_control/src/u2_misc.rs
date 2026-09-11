@@ -19,14 +19,26 @@ pub async fn unit_attribute_create(
     if attr_key.is_empty() {
         return Err(AppError::BadRequest("attributeKey is required".to_string()));
     }
-    let unit_flag = opt(&body, &["unitId", "unit"]).unwrap_or_default().to_string();
+    let unit_flag = opt(&body, &["unitId", "unit"])
+        .unwrap_or_default()
+        .to_string();
     let unit_id = resolve_generic_id(&client, UNIT_TABLE, &unit_flag)
         .await?
         .ok_or_else(|| AppError::BadRequest("unit not found".to_string()))?;
-    if normalized_name_dup(&client, "x_org_unit_attribute", "unit_id", &unit_id, &attr_key).await? {
+    if normalized_name_dup(
+        &client,
+        "x_org_unit_attribute",
+        "unit_id",
+        &unit_id,
+        &attr_key,
+    )
+    .await?
+    {
         return err("unitattribute already exists");
     }
-    let attr_value = opt(&body, &["attributeValue", "value"]).unwrap_or_default().to_string();
+    let attr_value = opt(&body, &["attributeValue", "value"])
+        .unwrap_or_default()
+        .to_string();
     let creator = session.person_unique.clone();
     let id = uuid::Uuid::new_v4().to_string();
     client
@@ -37,7 +49,9 @@ pub async fn unit_attribute_create(
         .await
         .map_err(|_| AppError::Internal)?;
     ok(Value::Object(
-        vec![("id".to_string(), Value::String(id))].into_iter().collect(),
+        vec![("id".to_string(), Value::String(id))]
+            .into_iter()
+            .collect(),
     ))
 }
 
@@ -53,7 +67,9 @@ pub async fn unit_attribute_edit(
     let Some(aid) = resolve_generic_id(&client, "x_org_unit_attribute", &flag).await? else {
         return err("unitattribute not found");
     };
-    let attr_value = opt(&body, &["attributeValue", "value"]).unwrap_or_default().to_string();
+    let attr_value = opt(&body, &["attributeValue", "value"])
+        .unwrap_or_default()
+        .to_string();
     let updated = client
         .execute(
             "UPDATE x_org_unit_attribute SET attribute_value = $2 WHERE id = $1 AND deleted_at IS NULL",
@@ -94,12 +110,13 @@ pub async fn unit_attribute_delete(
     let client = client_of(&pool).await?;
     match soft_delete_generic(&client, "x_org_unit_attribute", &flag).await? {
         Some(id) => ok(Value::Object(
-            vec![("id".to_string(), Value::String(id))].into_iter().collect(),
+            vec![("id".to_string(), Value::String(id))]
+                .into_iter()
+                .collect(),
         )),
         None => err("unitattribute not found"),
     }
 }
-
 
 #[allow(non_snake_case)]
 pub async fn person_attribute_create(
@@ -113,14 +130,26 @@ pub async fn person_attribute_create(
     if attr_key.is_empty() {
         return Err(AppError::BadRequest("attributeKey is required".to_string()));
     }
-    let person_flag = opt(&body, &["personId", "person"]).unwrap_or_default().to_string();
+    let person_flag = opt(&body, &["personId", "person"])
+        .unwrap_or_default()
+        .to_string();
     let person_id = super::u2_person::resolve_person_id(&client, &person_flag)
         .await?
         .ok_or_else(|| AppError::BadRequest("person not found".to_string()))?;
-    if normalized_name_dup(&client, "x_org_person_attribute", "person_id", &person_id, &attr_key).await? {
+    if normalized_name_dup(
+        &client,
+        "x_org_person_attribute",
+        "person_id",
+        &person_id,
+        &attr_key,
+    )
+    .await?
+    {
         return err("personattribute already exists");
     }
-    let attr_value = opt(&body, &["attributeValue", "value"]).unwrap_or_default().to_string();
+    let attr_value = opt(&body, &["attributeValue", "value"])
+        .unwrap_or_default()
+        .to_string();
     let creator = session.person_unique.clone();
     let id = uuid::Uuid::new_v4().to_string();
     client
@@ -131,7 +160,9 @@ pub async fn person_attribute_create(
         .await
         .map_err(|_| AppError::Internal)?;
     ok(Value::Object(
-        vec![("id".to_string(), Value::String(id))].into_iter().collect(),
+        vec![("id".to_string(), Value::String(id))]
+            .into_iter()
+            .collect(),
     ))
 }
 
@@ -147,7 +178,9 @@ pub async fn person_attribute_edit(
     let Some(aid) = resolve_generic_id(&client, "x_org_person_attribute", &flag).await? else {
         return err("personattribute not found");
     };
-    let attr_value = opt(&body, &["attributeValue", "value"]).unwrap_or_default().to_string();
+    let attr_value = opt(&body, &["attributeValue", "value"])
+        .unwrap_or_default()
+        .to_string();
     let updated = client
         .execute(
             "UPDATE x_org_person_attribute SET attribute_value = $2 WHERE id = $1 AND deleted_at IS NULL",
@@ -188,12 +221,13 @@ pub async fn person_attribute_delete(
     let client = client_of(&pool).await?;
     match soft_delete_generic(&client, "x_org_person_attribute", &flag).await? {
         Some(id) => ok(Value::Object(
-            vec![("id".to_string(), Value::String(id))].into_iter().collect(),
+            vec![("id".to_string(), Value::String(id))]
+                .into_iter()
+                .collect(),
         )),
         None => err("personattribute not found"),
     }
 }
-
 
 #[allow(non_snake_case)]
 pub async fn permission_setting_create(
@@ -207,7 +241,9 @@ pub async fn permission_setting_create(
     if name.is_empty() {
         return Err(AppError::BadRequest("name is required".to_string()));
     }
-    let unit_flag = opt(&body, &["unitId", "unit"]).unwrap_or_default().to_string();
+    let unit_flag = opt(&body, &["unitId", "unit"])
+        .unwrap_or_default()
+        .to_string();
     let unit_id = if unit_flag.is_empty() {
         String::new()
     } else {
@@ -228,7 +264,9 @@ pub async fn permission_setting_create(
         .await
         .map_err(|_| AppError::Internal)?;
     ok(Value::Object(
-        vec![("id".to_string(), Value::String(id))].into_iter().collect(),
+        vec![("id".to_string(), Value::String(id))]
+            .into_iter()
+            .collect(),
     ))
 }
 
@@ -285,7 +323,9 @@ pub async fn permission_setting_delete(
     let client = client_of(&pool).await?;
     match soft_delete_generic(&client, PERM_TABLE, &flag).await? {
         Some(id) => ok(Value::Object(
-            vec![("id".to_string(), Value::String(id))].into_iter().collect(),
+            vec![("id".to_string(), Value::String(id))]
+                .into_iter()
+                .collect(),
         )),
         None => err("permission setting not found"),
     }
@@ -306,8 +346,12 @@ pub async fn person_card_create(
     if normalized_name_dup(&client, CARD_TABLE, "creator", "", &name).await? {
         return err("person card already exists");
     }
-    let group_type = opt(&body, &["groupType", "type"]).unwrap_or_default().to_string();
-    let distinguished_name = opt(&body, &["distinguishedName"]).unwrap_or_default().to_string();
+    let group_type = opt(&body, &["groupType", "type"])
+        .unwrap_or_default()
+        .to_string();
+    let distinguished_name = opt(&body, &["distinguishedName"])
+        .unwrap_or_default()
+        .to_string();
     let mobile = opt(&body, &["mobile"]).unwrap_or_default().to_string();
     let office_phone = opt(&body, &["officePhone"]).unwrap_or_default().to_string();
     let address = opt(&body, &["address"]).unwrap_or_default().to_string();
@@ -385,13 +429,21 @@ pub async fn person_card_delete(
     let client = client_of(&pool).await?;
     match soft_delete_generic(&client, CARD_TABLE, &flag).await? {
         Some(id) => ok(Value::Object(
-            vec![("id".to_string(), Value::String(id))].into_iter().collect(),
+            vec![("id".to_string(), Value::String(id))]
+                .into_iter()
+                .collect(),
         )),
         None => err("person card not found"),
     }
 }
 
-async fn card_page(pool: &Pool, page: i64, size: i64, body: &Value, with_group: bool) -> HandlerResult {
+async fn card_page(
+    pool: &Pool,
+    page: i64,
+    size: i64,
+    body: &Value,
+    with_group: bool,
+) -> HandlerResult {
     let client = client_of(pool).await?;
     let page = page.max(1);
     let size = size.clamp(1, MAX_PAGE_SIZE);
@@ -528,8 +580,16 @@ pub async fn input_person_import(
             skipped += 1;
             continue;
         }
-        let mobile = item.get("mobile").and_then(|v| v.as_str()).unwrap_or_default().to_string();
-        let email = item.get("email").and_then(|v| v.as_str()).unwrap_or_default().to_string();
+        let mobile = item
+            .get("mobile")
+            .and_then(|v| v.as_str())
+            .unwrap_or_default()
+            .to_string();
+        let email = item
+            .get("email")
+            .and_then(|v| v.as_str())
+            .unwrap_or_default()
+            .to_string();
         let creator = session.person_unique.clone();
         let id = uuid::Uuid::new_v4().to_string();
         client

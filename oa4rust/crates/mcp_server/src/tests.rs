@@ -6,8 +6,8 @@
 #[cfg(test)]
 mod tests {
     use crate::tool_bridge::{
-        CallToolResponse, JsonRpcResponse, McpError, ToolContent, ToolInputSchema, ToolProperty,
-        ToolCallParams,
+        CallToolResponse, JsonRpcResponse, McpError, ToolCallParams, ToolContent, ToolInputSchema,
+        ToolProperty,
     };
     use serde_json::json;
 
@@ -75,10 +75,8 @@ mod tests {
 
     #[test]
     fn test_json_rpc_response_roundtrip() {
-        let original = JsonRpcResponse::ok(
-            Some(json!("req-1")),
-            json!({"tools": [{"name": "health"}]}),
-        );
+        let original =
+            JsonRpcResponse::ok(Some(json!("req-1")), json!({"tools": [{"name": "health"}]}));
         let value = original.into_json_value();
         assert_eq!(value["jsonrpc"], "2.0");
     }
@@ -163,7 +161,10 @@ mod tests {
         let raw = r#"{"name":"search","arguments":{"query":"SELECT * FROM users","page":"1"}}"#;
         let params: ToolCallParams = serde_json::from_str(raw).unwrap();
         assert_eq!(params.name, "search");
-        assert_eq!(params.arguments.get("query").unwrap(), "SELECT * FROM users");
+        assert_eq!(
+            params.arguments.get("query").unwrap(),
+            "SELECT * FROM users"
+        );
         assert_eq!(params.arguments.get("page").unwrap(), "1");
     }
 

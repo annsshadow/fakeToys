@@ -1,16 +1,13 @@
 use super::*;
 use axum::body::Body;
-use axum::http::{Request, Method, StatusCode};
-use deadpool_postgres::{Manager, Pool};
+use axum::http::{Method, Request, StatusCode};
 use deadpool_postgres::tokio_postgres::{Config, NoTls};
+use deadpool_postgres::{Manager, Pool};
 use serde_json::json;
 use tower::util::ServiceExt;
 
 fn build_test_pool() -> Pool {
-    let mgr = Manager::new(
-        Config::new(),
-        NoTls,
-    );
+    let mgr = Manager::new(Config::new(), NoTls);
     Pool::builder(mgr).max_size(1).build().unwrap()
 }
 
@@ -79,7 +76,8 @@ async fn test_link_service_route_exists() {
         "source_id": "msg-1",
         "target_type": "process",
         "target_id": "proc-1"
-    })).unwrap();
+    }))
+    .unwrap();
     let response = app
         .oneshot(
             Request::builder()
@@ -128,9 +126,9 @@ async fn test_list_links_route_exists() {
     assert_eq!(response.status(), StatusCode::INTERNAL_SERVER_ERROR);
 }
 
-    #[tokio::test]
-    #[ignore = "handler requires DB, returns 500 with mock pool"]
-    async fn test_unlink_service_route_exists() {
+#[tokio::test]
+#[ignore = "handler requires DB, returns 500 with mock pool"]
+async fn test_unlink_service_route_exists() {
     let pool = build_test_pool();
     let app = crate::router(pool);
     let response = app
@@ -169,7 +167,10 @@ async fn test_get_correlation_route_exists() {
 async fn test_create_correlation_route_exists() {
     let pool = build_test_pool();
     let app = crate::router(pool);
-    let body = serde_json::to_string(&json!({"person_id": "p1", "target_id": "t1", "type": "cms/document"})).unwrap();
+    let body = serde_json::to_string(
+        &json!({"person_id": "p1", "target_id": "t1", "type": "cms/document"}),
+    )
+    .unwrap();
     let response = app
         .oneshot(
             Request::builder()
@@ -417,7 +418,8 @@ async fn test_correlation_update_type_cms_document_route_exists() {
 async fn test_correlation_update_type_processplatform_job_route_exists() {
     let pool = build_test_pool();
     let app = crate::router(pool);
-    let body = serde_json::to_string(&json!({"personId": "p1", "type": "processplatform/job"})).unwrap();
+    let body =
+        serde_json::to_string(&json!({"personId": "p1", "type": "processplatform/job"})).unwrap();
     let response = app
         .oneshot(
             Request::builder()
@@ -469,7 +471,9 @@ fn test_action_result_with_count() {
 async fn test_create_correlation_empty_person_id() {
     let pool = build_test_pool();
     let app = crate::router(pool);
-    let body = serde_json::to_string(&json!({"person_id": "", "target_id": "t1", "type": "cms/document"})).unwrap();
+    let body =
+        serde_json::to_string(&json!({"person_id": "", "target_id": "t1", "type": "cms/document"}))
+            .unwrap();
     let response = app
         .oneshot(
             Request::builder()
@@ -541,8 +545,8 @@ async fn test_link_service_empty_body() {
 }
 
 #[tokio::test]
-    #[ignore = "handler requires DB, returns 500 with mock pool"]
-    async fn test_unlink_service_route_ok() {
+#[ignore = "handler requires DB, returns 500 with mock pool"]
+async fn test_unlink_service_route_ok() {
     let pool = build_test_pool();
     let app = crate::router(pool);
     let response = app
@@ -584,8 +588,9 @@ mod u2_contract {
     /// 与 migration 077 等价的幂等 DDL 子集（测试自举，不污染其他用例）
     async fn ensure_schema(pool: &Pool) {
         let client = pool.get().await.unwrap();
-        client.execute(
-            "CREATE TABLE IF NOT EXISTS x_correlation (
+        client
+            .execute(
+                "CREATE TABLE IF NOT EXISTS x_correlation (
                 id TEXT PRIMARY KEY,
                 create_time TIMESTAMP DEFAULT NOW(),
                 update_time TIMESTAMP DEFAULT NOW(),
@@ -603,19 +608,33 @@ mod u2_contract {
                 target_category TEXT,
                 target_start_time TEXT,
                 target_creator_person TEXT
-             )", &[]).await.unwrap();
-        client.execute(
-            "CREATE TABLE IF NOT EXISTS x_work (
+             )",
+                &[],
+            )
+            .await
+            .unwrap();
+        client
+            .execute(
+                "CREATE TABLE IF NOT EXISTS x_work (
                 id VARCHAR(255) PRIMARY KEY,
                 title VARCHAR(500),
                 creator VARCHAR(255)
-             )", &[]).await.unwrap();
-        client.execute(
-            "CREATE TABLE IF NOT EXISTS x_review (
+             )",
+                &[],
+            )
+            .await
+            .unwrap();
+        client
+            .execute(
+                "CREATE TABLE IF NOT EXISTS x_review (
                 id VARCHAR(255) PRIMARY KEY,
                 work_id VARCHAR(255),
                 reviewer VARCHAR(255)
-             )", &[]).await.unwrap();
+             )",
+                &[],
+            )
+            .await
+            .unwrap();
         for col in [
             "from_type TEXT",
             "from_bundle TEXT",
@@ -630,7 +649,10 @@ mod u2_contract {
             "target_creator_person TEXT",
         ] {
             client
-                .execute(&format!("ALTER TABLE x_correlation ADD COLUMN IF NOT EXISTS {col}"), &[])
+                .execute(
+                    &format!("ALTER TABLE x_correlation ADD COLUMN IF NOT EXISTS {col}"),
+                    &[],
+                )
                 .await
                 .unwrap();
         }
@@ -641,7 +663,10 @@ mod u2_contract {
     }
 
     async fn body_bytes(response: axum::response::Response) -> serde_json::Value {
-        let bytes = axum::body::to_bytes(response.into_body(), usize::MAX).await.unwrap().to_vec();
+        let bytes = axum::body::to_bytes(response.into_body(), usize::MAX)
+            .await
+            .unwrap()
+            .to_vec();
         serde_json::from_slice(&bytes).unwrap()
     }
 
@@ -649,16 +674,21 @@ mod u2_contract {
     async fn u2_create_pp_upserts_without_duplicates() {
         use shared::testing::is_db_available;
         if !is_db_available().await {
-            eprintln!("skipping u2_create_pp_upserts_without_duplicates: DATABASE_URL not reachable");
+            eprintln!(
+                "skipping u2_create_pp_upserts_without_duplicates: DATABASE_URL not reachable"
+            );
             return;
         }
         let pool = test_pool();
         ensure_schema(&pool).await;
         {
             let c = pool.get().await.unwrap();
-            c.execute("DELETE FROM x_correlation WHERE from_bundle IN ('job-1','job-2')", &[])
-                .await
-                .unwrap();
+            c.execute(
+                "DELETE FROM x_correlation WHERE from_bundle IN ('job-1','job-2')",
+                &[],
+            )
+            .await
+            .unwrap();
         }
         let body = serde_json::json!({
             "person": "person-a@P",
@@ -684,7 +714,10 @@ mod u2_contract {
         // 首次：success=1 / failure=1；重复创建后行数仍为 1（upsert 语义）
         let client = pool.get().await.unwrap();
         let n: i64 = client
-            .query_one("SELECT COUNT(*) AS c FROM x_correlation WHERE from_bundle = 'job-1'", &[])
+            .query_one(
+                "SELECT COUNT(*) AS c FROM x_correlation WHERE from_bundle = 'job-1'",
+                &[],
+            )
             .await
             .unwrap()
             .get("c");
@@ -702,9 +735,12 @@ mod u2_contract {
         ensure_schema(&pool).await;
         {
             let c = pool.get().await.unwrap();
-            c.execute("DELETE FROM x_correlation WHERE from_bundle IN ('job-1','job-2')", &[])
-                .await
-                .unwrap();
+            c.execute(
+                "DELETE FROM x_correlation WHERE from_bundle IN ('job-1','job-2')",
+                &[],
+            )
+            .await
+            .unwrap();
         }
         let body = serde_json::json!({
             "person": "person-a@P",
@@ -742,7 +778,10 @@ mod u2_contract {
         ensure_schema(&pool).await;
         {
             let client = pool.get().await.unwrap();
-            client.execute("DELETE FROM x_correlation WHERE id = 'row-x'", &[]).await.unwrap();
+            client
+                .execute("DELETE FROM x_correlation WHERE id = 'row-x'", &[])
+                .await
+                .unwrap();
             client.execute(
                 "INSERT INTO x_correlation (id, from_type, from_bundle, target_type, target_bundle) \
                  VALUES ('row-x', 'processplatform', 'job-other', 'cms', 'doc-9')", &[]).await.unwrap();
@@ -766,7 +805,10 @@ mod u2_contract {
 
         let client = pool.get().await.unwrap();
         let n: i64 = client
-            .query_one("SELECT COUNT(*) AS c FROM x_correlation WHERE id = 'row-x'", &[])
+            .query_one(
+                "SELECT COUNT(*) AS c FROM x_correlation WHERE id = 'row-x'",
+                &[],
+            )
             .await
             .unwrap()
             .get("c");
@@ -800,7 +842,10 @@ mod u2_contract {
         // 有 cms 来源 + 文档存在 + 创建者匹配 → value=true
         {
             let client = pool.get().await.unwrap();
-            client.execute("DELETE FROM x_correlation WHERE id = 'row-r'", &[]).await.unwrap();
+            client
+                .execute("DELETE FROM x_correlation WHERE id = 'row-r'", &[])
+                .await
+                .unwrap();
             client.execute(
                 "INSERT INTO x_correlation (id, from_type, from_bundle, target_type, target_bundle) \
                  VALUES ('row-r', 'cms', 'doc-src', 'processplatform', 'job-target')", &[]).await.unwrap();
@@ -838,7 +883,8 @@ mod u2_contract {
         ensure_schema(&pool).await;
         {
             let client = pool.get().await.unwrap();
-            client.execute("DELETE FROM x_correlation WHERE from_bundle = 'doc-l'", &[])
+            client
+                .execute("DELETE FROM x_correlation WHERE from_bundle = 'doc-l'", &[])
                 .await
                 .unwrap();
             for (id, site) in [("l1", "s1"), ("l2", "s2")] {
@@ -877,7 +923,8 @@ mod u2_contract {
         ensure_schema(&pool).await;
         {
             let client = pool.get().await.unwrap();
-            client.execute("DELETE FROM x_correlation WHERE from_bundle = 'doc-u'", &[])
+            client
+                .execute("DELETE FROM x_correlation WHERE from_bundle = 'doc-u'", &[])
                 .await
                 .unwrap();
             client.execute(
@@ -910,7 +957,10 @@ mod u2_contract {
             )
             .await
             .unwrap();
-        let bundles: Vec<String> = rows.iter().map(|r| r.get::<_, String>("target_bundle")).collect();
+        let bundles: Vec<String> = rows
+            .iter()
+            .map(|r| r.get::<_, String>("target_bundle"))
+            .collect();
         assert!(!bundles.contains(&"t-old".to_string()), "旧目标应被替换");
         assert!(bundles.contains(&"t-new".to_string()), "新目标应写入");
     }

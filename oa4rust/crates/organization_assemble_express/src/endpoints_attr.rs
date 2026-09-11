@@ -4,11 +4,7 @@
 //! 属性写入（set/append）在事务内执行真实 INSERT/DELETE，值经归一化查重
 //! （trim、去空、保序去重；append 额外跳过已存在值）。
 
-use axum::{
-    extract::Extension,
-    Json,
-    Json as AxumJson,
-};
+use axum::{extract::Extension, Json, Json as AxumJson};
 use deadpool_postgres::Pool;
 use serde_json::Value;
 use shared::{error::AppError, response::ActionResult};
@@ -36,8 +32,7 @@ pub async fn personattr_list_attribute_person_name(
     pool: Extension<Pool>,
     Json(body): Json<Value>,
 ) -> Result<AxumJson<ActionResult<Value>>, AppError> {
-    let (Some(person), Some(name)) =
-        (string_field(&body, "person"), string_field(&body, "name"))
+    let (Some(person), Some(name)) = (string_field(&body, "person"), string_field(&body, "name"))
     else {
         return Ok(AxumJson(ActionResult::java_success(
             Value::Object(serde_json::Map::from_iter([(
@@ -57,7 +52,10 @@ pub async fn personattr_list_attribute_person_name(
         .query(SQL, &[&person, &name])
         .await
         .map_err(|_| AppError::Internal)?;
-    let values: Vec<String> = rows.iter().map(|r| r.get::<_, Option<String>>(0).unwrap_or_default()).collect();
+    let values: Vec<String> = rows
+        .iter()
+        .map(|r| r.get::<_, Option<String>>(0).unwrap_or_default())
+        .collect();
     let count = values.len() as i64;
     Ok(AxumJson(ActionResult::java_success(
         Value::Object(serde_json::Map::from_iter([(
@@ -86,9 +84,12 @@ pub async fn personattr_list_person_object(
              SELECT id FROM x_org_person WHERE deleted_at IS NULL AND name = ANY($1))) \
          ORDER BY a.person_id, a.attribute_key, a.id";
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
-    let rows = client.query(SQL, &[&flags]).await.map_err(|_| AppError::Internal)?;
+    let rows = client
+        .query(SQL, &[&flags])
+        .await
+        .map_err(|_| AppError::Internal)?;
     let mut data: Vec<Value> = Vec::new();
-    let mut cur: Option<(String, String), > = None;
+    let mut cur: Option<(String, String)> = None;
     for row in &rows {
         let pid: String = row.get("person_id");
         let key: String = row.get("attribute_key");
@@ -134,7 +135,11 @@ async fn attr_write_values(
              WHERE deleted_at IS NULL AND {owner_col} IN (\
                  SELECT id FROM x_org_{owner_tbl} WHERE deleted_at IS NULL \
                  AND (id = $2 OR name = $2)) AND attribute_key = $1",
-            owner_tbl = if owner_col == "person_id" { "person" } else { "unit" },
+            owner_tbl = if owner_col == "person_id" {
+                "person"
+            } else {
+                "unit"
+            },
         );
         tx.query(&real_sql, &[&name, &owner])
             .await
@@ -150,7 +155,11 @@ async fn attr_write_values(
         "INSERT INTO {table} (id, {owner_col}, attribute_key, attribute_value) \
          VALUES ($1, (SELECT id FROM x_org_{owner_tbl} WHERE deleted_at IS NULL \
              AND (id = $2 OR name = $2) ORDER BY id LIMIT 1), $3, $4)",
-        owner_tbl = if owner_col == "person_id" { "person" } else { "unit" },
+        owner_tbl = if owner_col == "person_id" {
+            "person"
+        } else {
+            "unit"
+        },
     );
     if !append {
         let delete_sql = format!(
@@ -158,7 +167,11 @@ async fn attr_write_values(
              WHERE deleted_at IS NULL AND {owner_col} IN (\
                  SELECT id FROM x_org_{owner_tbl} WHERE deleted_at IS NULL \
                  AND (id = $2 OR name = $2)) AND attribute_key = $1",
-            owner_tbl = if owner_col == "person_id" { "person" } else { "unit" },
+            owner_tbl = if owner_col == "person_id" {
+                "person"
+            } else {
+                "unit"
+            },
         );
         tx.execute(&delete_sql, &[&name, &owner])
             .await
@@ -178,7 +191,10 @@ async fn attr_write_values(
 }
 
 fn wrap_true() -> Value {
-    Value::Object(serde_json::Map::from_iter([("value".to_string(), Value::Bool(true))]))
+    Value::Object(serde_json::Map::from_iter([(
+        "value".to_string(),
+        Value::Bool(true),
+    )]))
 }
 
 /// POST /jaxrs/personattribute/set/person/name (Java ActionSetWithPersonWithName，
@@ -212,13 +228,19 @@ async fn named_keys(
     capped(&flags)?;
     if flags.is_empty() {
         return Ok(AxumJson(ActionResult::java_success(
-            Value::Object(serde_json::Map::from_iter([(key.to_string(), Value::Array(vec![]))])),
+            Value::Object(serde_json::Map::from_iter([(
+                key.to_string(),
+                Value::Array(vec![]),
+            )])),
             0,
             0,
         )));
     }
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
-    let rows = client.query(sql, &[&flags]).await.map_err(|_| AppError::Internal)?;
+    let rows = client
+        .query(sql, &[&flags])
+        .await
+        .map_err(|_| AppError::Internal)?;
     let list: Vec<String> = rows.iter().map(|r| r.get(0)).collect();
     let count = list.len() as i64;
     Ok(AxumJson(ActionResult::java_success(
@@ -270,8 +292,10 @@ pub async fn unitattr_list_attribute_unit_name(
         .query(SQL, &[&unit, &name])
         .await
         .map_err(|_| AppError::Internal)?;
-    let values: Vec<String> =
-        rows.iter().map(|r| r.get::<_, Option<String>>(0).unwrap_or_default()).collect();
+    let values: Vec<String> = rows
+        .iter()
+        .map(|r| r.get::<_, Option<String>>(0).unwrap_or_default())
+        .collect();
     let count = values.len() as i64;
     Ok(AxumJson(ActionResult::java_success(
         Value::Object(serde_json::Map::from_iter([(
@@ -299,7 +323,10 @@ pub async fn unitattr_list_unit_object(
              SELECT id FROM x_org_unit WHERE deleted_at IS NULL AND name = ANY($1))) \
          ORDER BY a.unit_id, a.attribute_key, a.id";
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
-    let rows = client.query(SQL, &[&flags]).await.map_err(|_| AppError::Internal)?;
+    let rows = client
+        .query(SQL, &[&flags])
+        .await
+        .map_err(|_| AppError::Internal)?;
     let mut data: Vec<Value> = Vec::new();
     let mut cur: Option<(String, String)> = None;
     for row in &rows {
@@ -356,20 +383,33 @@ pub async fn empower_list_identity_object(
     if flags.is_empty() {
         return ok_java_list(0, vec![]);
     }
-    const SQL: &str = "SELECT id, from_person, to_person, from_identity, to_identity, role_id, enabled \
+    const SQL: &str =
+        "SELECT id, from_person, to_person, from_identity, to_identity, role_id, enabled \
          FROM x_empower WHERE deleted_at IS NULL \
          AND (from_identity = ANY($1) OR to_identity = ANY($1)) ORDER BY id";
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
-    let rows = client.query(SQL, &[&flags]).await.map_err(|_| AppError::Internal)?;
+    let rows = client
+        .query(SQL, &[&flags])
+        .await
+        .map_err(|_| AppError::Internal)?;
     let mut data: Vec<Value> = Vec::new();
     for row in &rows {
         let mut obj = serde_json::Map::new();
         obj.insert("id".to_string(), Value::String(row.get("id")));
-        for col in ["from_person", "to_person", "from_identity", "to_identity", "role_id"] {
+        for col in [
+            "from_person",
+            "to_person",
+            "from_identity",
+            "to_identity",
+            "role_id",
+        ] {
             let v: Option<String> = row.get(col);
             obj.insert(col.to_string(), v.map(Value::String).unwrap_or(Value::Null));
         }
-        obj.insert("enabled".to_string(), Value::Bool(row.get::<_, Option<bool>>("enabled").unwrap_or(false)));
+        obj.insert(
+            "enabled".to_string(),
+            Value::Bool(row.get::<_, Option<bool>>("enabled").unwrap_or(false)),
+        );
         data.push(Value::Object(obj));
     }
     ok_java_list(data.len(), data)
@@ -443,7 +483,10 @@ pub async fn distinguishedname_list(
          UNION SELECT id FROM x_org_duty WHERE deleted_at IS NULL AND {pick}"
     );
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
-    let rows = client.query(&sql, &[&flags]).await.map_err(|_| AppError::Internal)?;
+    let rows = client
+        .query(&sql, &[&flags])
+        .await
+        .map_err(|_| AppError::Internal)?;
     use std::collections::HashSet;
     let found: HashSet<String> = rows.iter().map(|r| r.get::<_, String>(0)).collect();
     let valid: Vec<String> = flags.into_iter().filter(|f| found.contains(f)).collect();

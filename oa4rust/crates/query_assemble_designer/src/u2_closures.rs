@@ -28,9 +28,7 @@ pub fn validate_single_select(sql: &str) -> Result<(), String> {
     }
     match &statements[0] {
         Statement::Query(_) => Ok(()),
-        _ => Err(
-            "only SELECT queries are allowed (INSERT/UPDATE/DELETE/DDL rejected)".to_string(),
-        ),
+        _ => Err("only SELECT queries are allowed (INSERT/UPDATE/DELETE/DDL rejected)".to_string()),
     }
 }
 
@@ -121,7 +119,9 @@ pub fn parameterize_statement_sql(sql: &str, params: &Value) -> (String, Vec<Sql
                 }
             }
             if !name.is_empty() {
-                values.push(SqlParam::from_value(params.get(&name).unwrap_or(&Value::Null)));
+                values.push(SqlParam::from_value(
+                    params.get(&name).unwrap_or(&Value::Null),
+                ));
                 out.push_str(&format!("${}", values.len()));
                 i = j;
                 continue;
@@ -152,11 +152,17 @@ fn statement_row_json(row: &deadpool_postgres::tokio_postgres::Row) -> Value {
         ),
         (
             "queryFlag".to_string(),
-            Value::String(row.get::<_, Option<String>>("query_flag").unwrap_or_default()),
+            Value::String(
+                row.get::<_, Option<String>>("query_flag")
+                    .unwrap_or_default(),
+            ),
         ),
         (
             "entityClassName".to_string(),
-            Value::String(row.get::<_, Option<String>>("entity_class").unwrap_or_default()),
+            Value::String(
+                row.get::<_, Option<String>>("entity_class")
+                    .unwrap_or_default(),
+            ),
         ),
         (
             "type".to_string(),
@@ -168,7 +174,10 @@ fn statement_row_json(row: &deadpool_postgres::tokio_postgres::Row) -> Value {
         ),
         (
             "countingData".to_string(),
-            Value::String(row.get::<_, Option<String>>("counting_data").unwrap_or_default()),
+            Value::String(
+                row.get::<_, Option<String>>("counting_data")
+                    .unwrap_or_default(),
+            ),
         ),
         (
             "creator".to_string(),
@@ -205,8 +214,14 @@ pub async fn statement_create(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
-    let name = body.get("name").and_then(|v| v.as_str()).unwrap_or_default();
-    let alias = body.get("alias").and_then(|v| v.as_str()).unwrap_or_default();
+    let name = body
+        .get("name")
+        .and_then(|v| v.as_str())
+        .unwrap_or_default();
+    let alias = body
+        .get("alias")
+        .and_then(|v| v.as_str())
+        .unwrap_or_default();
     let query_flag = body.get("queryFlag").and_then(|v| v.as_str()).unwrap_or("");
     let entity_class = body
         .get("entityClassName")
@@ -216,7 +231,10 @@ pub async fn statement_create(
         .get("entityCategory")
         .and_then(|v| v.as_str())
         .unwrap_or("");
-    let stmt_type = body.get("type").and_then(|v| v.as_str()).unwrap_or("select");
+    let stmt_type = body
+        .get("type")
+        .and_then(|v| v.as_str())
+        .unwrap_or("select");
     let data = body.get("data").and_then(|v| v.as_str()).unwrap_or("");
     let counting_data = body
         .get("countingData")
@@ -298,7 +316,10 @@ pub async fn statement_edit(
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("id".to_string(), Value::String(flag)),
-            ("updated".to_string(), Value::Number(serde_json::Number::from(result as i64))),
+            (
+                "updated".to_string(),
+                Value::Number(serde_json::Number::from(result as i64)),
+            ),
         ]),
     ))))
 }
@@ -481,7 +502,10 @@ async fn execute_statement_by_flag(
             .await
             .map_err(|_| AppError::Internal)?;
         let total: i64 = count_row.get("total");
-        payload.insert("total".to_string(), Value::Number(serde_json::Number::from(total)));
+        payload.insert(
+            "total".to_string(),
+            Value::Number(serde_json::Number::from(total)),
+        );
     }
 
     let offset = if page > 0 { (page - 1) * size } else { 0 };
@@ -544,7 +568,10 @@ pub async fn importmodel_create(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
-    let name = body.get("name").and_then(|v| v.as_str()).unwrap_or_default();
+    let name = body
+        .get("name")
+        .and_then(|v| v.as_str())
+        .unwrap_or_default();
     if name.trim().is_empty() {
         return Ok(Json(ActionResult::error("name is required")));
     }
@@ -559,7 +586,9 @@ pub async fn importmodel_create(
         .await
         .map_err(|_| AppError::Internal)?;
     if dup_row.get::<_, i64>("cnt") > 0 {
-        return Ok(Json(ActionResult::error("import model name already exists")));
+        return Ok(Json(ActionResult::error(
+            "import model name already exists",
+        )));
     }
 
     let id = uuid::Uuid::new_v4().to_string();
@@ -611,7 +640,10 @@ pub async fn importmodel_edit(
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("id".to_string(), Value::String(id)),
-            ("updated".to_string(), Value::Number(serde_json::Number::from(result as i64))),
+            (
+                "updated".to_string(),
+                Value::Number(serde_json::Number::from(result as i64)),
+            ),
         ]),
     ))))
 }
@@ -702,7 +734,10 @@ pub async fn stat_create(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
-    let name = body.get("name").and_then(|v| v.as_str()).unwrap_or_default();
+    let name = body
+        .get("name")
+        .and_then(|v| v.as_str())
+        .unwrap_or_default();
     if name.trim().is_empty() {
         return Ok(Json(ActionResult::error("name is required")));
     }
@@ -722,7 +757,10 @@ pub async fn stat_create(
 
     let id = uuid::Uuid::new_v4().to_string();
     let query_flag = body.get("queryFlag").and_then(|v| v.as_str()).unwrap_or("");
-    let stat_type = body.get("type").and_then(|v| v.as_str()).unwrap_or("select");
+    let stat_type = body
+        .get("type")
+        .and_then(|v| v.as_str())
+        .unwrap_or("select");
     let config = match body.get("config") {
         Some(v) => serde_json::to_string(v).map_err(|_| AppError::Internal)?,
         None => String::new(),
@@ -772,7 +810,10 @@ pub async fn stat_edit(
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("id".to_string(), Value::String(id)),
-            ("updated".to_string(), Value::Number(serde_json::Number::from(result as i64))),
+            (
+                "updated".to_string(),
+                Value::Number(serde_json::Number::from(result as i64)),
+            ),
         ]),
     ))))
 }
@@ -807,7 +848,10 @@ pub async fn table_create(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
-    let name = body.get("name").and_then(|v| v.as_str()).unwrap_or_default();
+    let name = body
+        .get("name")
+        .and_then(|v| v.as_str())
+        .unwrap_or_default();
     if name.trim().is_empty() {
         return Ok(Json(ActionResult::error("name is required")));
     }
@@ -872,7 +916,10 @@ pub async fn table_edit(
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("tableFlag".to_string(), Value::String(flag)),
-            ("updated".to_string(), Value::Number(serde_json::Number::from(result as i64))),
+            (
+                "updated".to_string(),
+                Value::Number(serde_json::Number::from(result as i64)),
+            ),
         ]),
     ))))
 }
@@ -923,7 +970,10 @@ pub async fn table_tableFlag_row_insert(
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("id".to_string(), Value::String(id)),
-            ("inserted".to_string(), Value::Number(serde_json::Number::from(result as i64))),
+            (
+                "inserted".to_string(),
+                Value::Number(serde_json::Number::from(result as i64)),
+            ),
         ]),
     ))))
 }
@@ -953,7 +1003,10 @@ pub async fn table_tableFlag_row_update(
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("id".to_string(), Value::String(id)),
-            ("updated".to_string(), Value::Number(serde_json::Number::from(result as i64))),
+            (
+                "updated".to_string(),
+                Value::Number(serde_json::Number::from(result as i64)),
+            ),
         ]),
     ))))
 }
@@ -994,7 +1047,10 @@ pub async fn view_create(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
-    let name = body.get("name").and_then(|v| v.as_str()).unwrap_or_default();
+    let name = body
+        .get("name")
+        .and_then(|v| v.as_str())
+        .unwrap_or_default();
     if name.trim().is_empty() {
         return Ok(Json(ActionResult::error("name is required")));
     }
@@ -1067,7 +1123,10 @@ pub async fn view_edit(
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("id".to_string(), Value::String(id)),
-            ("updated".to_string(), Value::Number(serde_json::Number::from(result as i64))),
+            (
+                "updated".to_string(),
+                Value::Number(serde_json::Number::from(result as i64)),
+            ),
         ]),
     ))))
 }
@@ -1173,7 +1232,8 @@ async fn guard_write(
 }
 
 fn body_str<'a>(body: &'a Value, keys: &[&str]) -> Option<&'a str> {
-    keys.iter().find_map(|k| body.get(*k).and_then(|v| v.as_str()))
+    keys.iter()
+        .find_map(|k| body.get(*k).and_then(|v| v.as_str()))
 }
 
 /// POST /designer/search —— 按关键词检索查询设计（真实 ILIKE，拒绝空 key）。
@@ -1216,20 +1276,26 @@ pub async fn designer_search_v2(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
+    Ok(Json(ActionResult::java_success(
+        Value::Array(data),
+        count,
+        0,
+    )))
 }
 
 /// GET /id/{count} —— 生成唯一标识列表（0 < count < 200，对齐 Java ActionGet）。
 #[allow(non_snake_case)]
-pub async fn id_generate(
-    Path(count): Path<i64>,
-) -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn id_generate(Path(count): Path<i64>) -> Result<Json<ActionResult<Value>>, AppError> {
     let n = count.clamp(0, 199);
     let ids: Vec<Value> = (0..n)
         .map(|_| Value::String(uuid::Uuid::new_v4().to_string()))
         .collect();
     let count = ids.len() as i64;
-    Ok(Json(ActionResult::java_success(Value::Array(ids), count, 0)))
+    Ok(Json(ActionResult::java_success(
+        Value::Array(ids),
+        count,
+        0,
+    )))
 }
 
 /// GET /importmodel/{flag} —— 按 id 或 model_flag 获取导入模型。
@@ -1254,17 +1320,26 @@ pub async fn importmodel_get_flag(
             serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("name".to_string(), Value::String(row.get("name"))),
-                ("modelFlag".to_string(), Value::String(row.get("model_flag"))),
+                (
+                    "modelFlag".to_string(),
+                    Value::String(row.get("model_flag")),
+                ),
                 (
                     "queryFlag".to_string(),
-                    Value::String(row.get::<_, Option<String>>("query_flag").unwrap_or_default()),
+                    Value::String(
+                        row.get::<_, Option<String>>("query_flag")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "content".to_string(),
                     Value::String(row.get::<_, Option<String>>("content").unwrap_or_default()),
                 ),
                 ("creator".to_string(), Value::String(row.get("creator"))),
-                ("createTime".to_string(), Value::String(row.get("create_time"))),
+                (
+                    "createTime".to_string(),
+                    Value::String(row.get("create_time")),
+                ),
             ]),
         )))),
         None => Ok(Json(ActionResult::error("import model not found"))),
@@ -1306,7 +1381,9 @@ pub async fn importmodel_edit_flag(
             .await
             .map_err(|_| AppError::Internal)?;
         if dup_row.get::<_, i64>("cnt") > 0 {
-            return Ok(Json(ActionResult::error("import model name already exists")));
+            return Ok(Json(ActionResult::error(
+                "import model name already exists",
+            )));
         }
     }
     let content = body_str(&body, &["data", "content"]).unwrap_or_default();
@@ -1329,7 +1406,10 @@ pub async fn importmodel_edit_flag(
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("id".to_string(), Value::String(flag)),
-            ("updated".to_string(), Value::Number(serde_json::Number::from(result as i64))),
+            (
+                "updated".to_string(),
+                Value::Number(serde_json::Number::from(result as i64)),
+            ),
         ]),
     ))))
 }
@@ -1397,7 +1477,8 @@ pub async fn importmodel_permission_set(
     }
 
     let permission = serde_json::to_string(
-        body.get("permissionList").unwrap_or(&Value::Array(Vec::new())),
+        body.get("permissionList")
+            .unwrap_or(&Value::Array(Vec::new())),
     )
     .map_err(|_| AppError::Internal)?;
 
@@ -1552,7 +1633,9 @@ pub async fn query_delete_flag(
         .map_err(|_| AppError::Internal)?;
 
     if result == 0 {
-        return Ok(Json(ActionResult::error("query not found or already deleted")));
+        return Ok(Json(ActionResult::error(
+            "query not found or already deleted",
+        )));
     }
 
     Ok(Json(ActionResult::success(Value::Object(
@@ -1621,7 +1704,10 @@ pub async fn query_edit_flag(
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("id".to_string(), Value::String(flag)),
-            ("updated".to_string(), Value::Number(serde_json::Number::from(result as i64))),
+            (
+                "updated".to_string(),
+                Value::Number(serde_json::Number::from(result as i64)),
+            ),
         ]),
     ))))
 }
@@ -1687,11 +1773,15 @@ async fn set_permission_generic(
     );
     let found = guard_write(pool, session, &client, &sql, flag).await?;
     if !found {
-        return Ok(Json(ActionResult::error(format!("{} not found", resource.label))));
+        return Ok(Json(ActionResult::error(format!(
+            "{} not found",
+            resource.label
+        ))));
     }
 
     let permission = serde_json::to_string(
-        body.get("permissionList").unwrap_or(&Value::Array(Vec::new())),
+        body.get("permissionList")
+            .unwrap_or(&Value::Array(Vec::new())),
     )
     .map_err(|_| AppError::Internal)?;
 
@@ -1705,7 +1795,10 @@ async fn set_permission_generic(
         .map_err(|_| AppError::Internal)?;
 
     if result == 0 {
-        return Ok(Json(ActionResult::error(format!("{} not found", resource.label))));
+        return Ok(Json(ActionResult::error(format!(
+            "{} not found",
+            resource.label
+        ))));
     }
 
     Ok(Json(ActionResult::success(Value::Object(
@@ -1817,7 +1910,10 @@ pub async fn table_build_dispatch_flag(
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("tableFlag".to_string(), Value::String(flag)),
-            ("dispatched".to_string(), Value::Number(serde_json::Number::from(result as i64))),
+            (
+                "dispatched".to_string(),
+                Value::Number(serde_json::Number::from(result as i64)),
+            ),
         ]),
     ))))
 }
@@ -1854,7 +1950,9 @@ async fn execute_configured_sql(
             Ok((true, Value::Object(payload)))
         }
         _ => {
-            tracing::warn!("simulate requested but no executable config.sql; returning metadata only");
+            tracing::warn!(
+                "simulate requested but no executable config.sql; returning metadata only"
+            );
             Ok((
                 false,
                 serde_json::json!({ "calculated": false, "config": config }),
@@ -1988,7 +2086,7 @@ pub async fn view_simulate_put(
 
     let row = match row {
         Some(r) => r,
-        None => return Ok(Json(ActionResult::error("view not found")))
+        None => return Ok(Json(ActionResult::error("view not found"))),
     };
 
     let content_raw: String = row.get::<_, Option<String>>("content").unwrap_or_default();
@@ -1998,7 +2096,10 @@ pub async fn view_simulate_put(
         payload.insert("id".to_string(), Value::String(row.get("id")));
         payload.insert(
             "viewFlag".to_string(),
-            Value::String(row.get::<_, Option<String>>("view_flag").unwrap_or_default()),
+            Value::String(
+                row.get::<_, Option<String>>("view_flag")
+                    .unwrap_or_default(),
+            ),
         );
         payload.insert("calculated".to_string(), Value::Bool(calculated));
     }
