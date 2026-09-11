@@ -106,19 +106,6 @@ async function delDevice(d: any) {
 loadDevices()
 loadTemplates()
 
-const api_jpush_as_362_data = ref<any[]>([])
-const { data: api_jpush_as_362_q } = useQuery({
-  queryKey: ['api_jpush_as_362', '/jaxrs/jpush_assemble_control/save/jpush'],
-  queryFn: async () => {
-    try {
-      const r = await api.get('/jaxrs/jpush_assemble_control/save/jpush')
-      return (r.data ?? []) as any[]
-    } catch {
-      return []
-    }
-  },
-})
-
 const api_jpush_as_458_data = ref<any[]>([])
 const { data: api_jpush_as_458_q } = useQuery({
   queryKey: ['api_jpush_as_458', '/jaxrs/jpush_assemble_control/update/control/config'],
