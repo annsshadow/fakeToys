@@ -513,7 +513,14 @@ pub async fn appstyle_current_style(
                 ("disable".to_string(), Value::Bool(row.get("disable"))),
             ]),
         )))),
-        None => Err(AppError::NotFound),
+        None => Ok(Json(ActionResult::success(Value::Object(
+            serde_json::Map::from_iter([
+                ("id".to_string(), Value::String("".to_string())),
+                ("name".to_string(), Value::String("".to_string())),
+                ("appId".to_string(), Value::String("".to_string())),
+                ("disable".to_string(), Value::Bool(false)),
+            ]),
+        )))),
     }
 }
 
@@ -540,7 +547,14 @@ pub async fn appstyle_current_update(
                 ("disable".to_string(), Value::Bool(row.get("disable"))),
             ]),
         )))),
-        None => Err(AppError::NotFound),
+        None => Ok(Json(ActionResult::success(Value::Object(
+            serde_json::Map::from_iter([
+                ("id".to_string(), Value::String("".to_string())),
+                ("name".to_string(), Value::String("".to_string())),
+                ("appId".to_string(), Value::String("".to_string())),
+                ("disable".to_string(), Value::Bool(false)),
+            ]),
+        )))),
     }
 }
 
