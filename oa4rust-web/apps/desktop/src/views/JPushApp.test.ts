@@ -110,4 +110,8 @@ describe('JPushApp contracts', () => {
     expect(source).not.toContain("api.get('/jaxrs/jpush/assemble/control/config')")
     expect(source).not.toContain("queryKey: ['jpush_assemble_control_config']")
   })
+  it('does not auto-query the incomplete jpush save path', () => {
+    expect(source).not.toContain("api.get('/jaxrs/jpush_assemble_control/save/jpush')")
+    expect(source).not.toContain("'/jaxrs/jpush_assemble_control/save/jpush']")
+  })
 })
