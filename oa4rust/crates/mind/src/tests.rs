@@ -44,4 +44,3 @@ mod tests {
         assert_ne!(response.status(), StatusCode::NOT_FOUND);
     }
 }
-

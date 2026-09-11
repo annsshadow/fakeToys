@@ -7,8 +7,8 @@
 
 #[cfg(test)]
 mod u2_tests {
-    use crate::router as express_router;
     use crate::endpoints::{capped, include_pii, string_list, ID_COUNT_LIMIT};
+    use crate::router as express_router;
     use axum::body::Body;
     use axum::http::{Request, StatusCode};
     use shared::response::ActionResult;
@@ -66,7 +66,11 @@ mod u2_tests {
             "/jaxrs/person/list/role",
             "/jaxrs/person/list/filter/1/size/20",
         ] {
-            assert_ne!(status_of("POST", uri).await, StatusCode::NOT_FOUND, "POST {uri}");
+            assert_ne!(
+                status_of("POST", uri).await,
+                StatusCode::NOT_FOUND,
+                "POST {uri}"
+            );
         }
     }
 
@@ -79,7 +83,11 @@ mod u2_tests {
             "/jaxrs/identity/list/unit/sub/direct",
             "/jaxrs/identity/list/unit/sub/nested",
         ] {
-            assert_ne!(status_of("POST", uri).await, StatusCode::NOT_FOUND, "POST {uri}");
+            assert_ne!(
+                status_of("POST", uri).await,
+                StatusCode::NOT_FOUND,
+                "POST {uri}"
+            );
         }
     }
 
@@ -102,7 +110,11 @@ mod u2_tests {
             "/jaxrs/unit/list/unit/sup/nested",
             "/jaxrs/unit/check/unit/has/person",
         ] {
-            assert_ne!(status_of("POST", uri).await, StatusCode::NOT_FOUND, "POST {uri}");
+            assert_ne!(
+                status_of("POST", uri).await,
+                StatusCode::NOT_FOUND,
+                "POST {uri}"
+            );
         }
     }
 
@@ -117,7 +129,11 @@ mod u2_tests {
             "/jaxrs/unitduty/list/name",
             "/jaxrs/unitduty/list/name/unit",
         ] {
-            assert_ne!(status_of("POST", uri).await, StatusCode::NOT_FOUND, "POST {uri}");
+            assert_ne!(
+                status_of("POST", uri).await,
+                StatusCode::NOT_FOUND,
+                "POST {uri}"
+            );
         }
     }
 
@@ -125,7 +141,10 @@ mod u2_tests {
     async fn u2_unregistered_java_path_still_missing() {
         // 未实现的路径必须仍是 404；person/detail 已注册为 POST，
         // 其 GET 变体返回 405（方法不匹配）而非 404
-        assert_eq!(status_of("GET", "/jaxrs/person/detail/p1").await, StatusCode::METHOD_NOT_ALLOWED);
+        assert_eq!(
+            status_of("GET", "/jaxrs/person/detail/p1").await,
+            StatusCode::METHOD_NOT_ALLOWED
+        );
         assert_eq!(
             status_of("POST", "/jaxrs/person/no/such/java/action").await,
             StatusCode::NOT_FOUND
@@ -166,19 +185,20 @@ mod u2_tests {
     #[test]
     fn u2_string_list_parses_wi_contract_and_ignores_non_strings() {
         let body = serde_json::json!({"personList": ["a", 1, null, true, "b"]});
-        assert_eq!(string_list(&body, "personList"), vec!["a".to_string(), "b".to_string()]);
+        assert_eq!(
+            string_list(&body, "personList"),
+            vec!["a".to_string(), "b".to_string()]
+        );
         assert!(string_list(&body, "missing").is_empty());
         assert!(string_list(&serde_json::json!({"x": "not-array"}), "x").is_empty());
     }
 
     #[test]
     fn u2_action_result_success_contract() {
-        let result: ActionResult<Value> =
-            ActionResult::success(serde_json::json!({"count": 0}));
+        let result: ActionResult<Value> = ActionResult::success(serde_json::json!({"count": 0}));
         assert_eq!(result.r#type.as_deref(), Some("success"));
         assert!(result.data.is_some());
     }
-
 
     use serde_json::Value;
 }

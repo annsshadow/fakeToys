@@ -8,11 +8,7 @@ use deadpool_postgres::Pool;
 use ring::signature::{RsaPublicKeyComponents, RSA_PKCS1_2048_8192_SHA256};
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
-use shared::{
-    error::AppError,
-    response::row_to_json,
-    session::SessionManager,
-};
+use shared::{error::AppError, response::row_to_json, session::SessionManager};
 use uuid::Uuid;
 
 #[derive(Debug, Deserialize)]
@@ -157,11 +153,7 @@ fn verify_id_token_with_jwks(
     Ok(claims)
 }
 
-fn validate_claims(
-    claims: &OidcClaims,
-    issuer: &str,
-    client_id: &str,
-) -> Result<(), AppError> {
+fn validate_claims(claims: &OidcClaims, issuer: &str, client_id: &str) -> Result<(), AppError> {
     if claims.iss != issuer || claims.aud != client_id {
         return Err(AppError::Unauthorized);
     }
@@ -335,28 +327,24 @@ mod tests {
 
     #[test]
     fn test_oidc_verify_id_token_wrong_issuer_rejected() {
-        assert!(
-            verify_id_token_with_jwks(
-                VALID_TOKEN,
-                &test_jwks(),
-                "https://evil-idp.example.com",
-                "test-client-id",
-            )
-            .is_err()
-        );
+        assert!(verify_id_token_with_jwks(
+            VALID_TOKEN,
+            &test_jwks(),
+            "https://evil-idp.example.com",
+            "test-client-id",
+        )
+        .is_err());
     }
 
     #[test]
     fn test_oidc_verify_id_token_expired_rejected() {
-        assert!(
-            verify_id_token_with_jwks(
-                EXPIRED_TOKEN,
-                &test_jwks(),
-                "https://idp.test.example.com",
-                "test-client-id",
-            )
-            .is_err()
-        );
+        assert!(verify_id_token_with_jwks(
+            EXPIRED_TOKEN,
+            &test_jwks(),
+            "https://idp.test.example.com",
+            "test-client-id",
+        )
+        .is_err());
     }
 
     #[test]
@@ -365,15 +353,13 @@ mod tests {
         tampered.pop();
         tampered.push('A');
 
-        assert!(
-            verify_id_token_with_jwks(
-                &tampered,
-                &test_jwks(),
-                "https://idp.test.example.com",
-                "test-client-id",
-            )
-            .is_err()
-        );
+        assert!(verify_id_token_with_jwks(
+            &tampered,
+            &test_jwks(),
+            "https://idp.test.example.com",
+            "test-client-id",
+        )
+        .is_err());
     }
 
     #[tokio::test]

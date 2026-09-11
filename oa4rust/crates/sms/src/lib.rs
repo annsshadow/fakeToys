@@ -67,11 +67,7 @@ pub trait SmsGateway: Send + Sync {
     ) -> Result<SmsResult, SmsError>;
 
     /// 发送普通通知短信
-    async fn send_notification(
-        &self,
-        phone: &str,
-        content: &str,
-    ) -> Result<SmsResult, SmsError>;
+    async fn send_notification(&self, phone: &str, content: &str) -> Result<SmsResult, SmsError>;
 
     /// 网关名称（用于日志和监控）
     fn name(&self) -> &'static str;
@@ -115,21 +111,14 @@ impl SmsGateway for ConsoleSmsGateway {
         Ok(result)
     }
 
-    async fn send_notification(
-        &self,
-        phone: &str,
-        content: &str,
-    ) -> Result<SmsResult, SmsError> {
+    async fn send_notification(&self, phone: &str, content: &str) -> Result<SmsResult, SmsError> {
         let result = SmsResult {
             message_id: Uuid::new_v4().to_string(),
             phone: phone.to_string(),
             sent_at: chrono::Utc::now().to_rfc3339(),
             status: SmsStatus::Sent,
         };
-        eprintln!(
-            "[SMS:console] to={} content={} status=sent",
-            phone, content
-        );
+        eprintln!("[SMS:console] to={} content={} status=sent", phone, content);
         Ok(result)
     }
 
@@ -159,11 +148,7 @@ impl SmsGateway for MockSmsGateway {
         Ok(result)
     }
 
-    async fn send_notification(
-        &self,
-        phone: &str,
-        _content: &str,
-    ) -> Result<SmsResult, SmsError> {
+    async fn send_notification(&self, phone: &str, _content: &str) -> Result<SmsResult, SmsError> {
         if *self.should_fail.lock().unwrap() {
             return Err(SmsError::Gateway("mock failure".to_string()));
         }
@@ -257,9 +242,7 @@ impl SmsSender {
 
 /// 验证手机号格式（中国大陆手机号）
 pub fn is_valid_phone(phone: &str) -> bool {
-    phone.len() == 11
-        && phone.starts_with('1')
-        && phone.chars().all(|c| c.is_ascii_digit())
+    phone.len() == 11 && phone.starts_with('1') && phone.chars().all(|c| c.is_ascii_digit())
 }
 
 // ──────────────────────────────────────────────────────────────────────────────
@@ -279,7 +262,9 @@ mod tests {
     #[tokio::test]
     async fn test_mock_gateway_send() {
         let gateway = MockSmsGateway::new();
-        let result = gateway.send_verification_code("13800138000", "123456", None).await;
+        let result = gateway
+            .send_verification_code("13800138000", "123456", None)
+            .await;
         assert!(result.is_ok());
         assert_eq!(gateway.sent_count(), 1);
         let r = result.unwrap();
@@ -291,7 +276,9 @@ mod tests {
     async fn test_mock_gateway_failure() {
         let gateway = MockSmsGateway::new();
         gateway.set_fail(true);
-        let result = gateway.send_verification_code("13800138000", "123456", None).await;
+        let result = gateway
+            .send_verification_code("13800138000", "123456", None)
+            .await;
         assert!(result.is_err());
         assert_eq!(gateway.sent_count(), 0);
     }
@@ -299,7 +286,9 @@ mod tests {
     #[tokio::test]
     async fn test_mock_gateway_reset() {
         let gateway = MockSmsGateway::new();
-        let _ = gateway.send_verification_code("13800138000", "123456", None).await;
+        let _ = gateway
+            .send_verification_code("13800138000", "123456", None)
+            .await;
         assert_eq!(gateway.sent_count(), 1);
         gateway.reset();
         assert_eq!(gateway.sent_count(), 0);

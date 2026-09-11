@@ -6,8 +6,8 @@ use axum::{
 use deadpool_postgres::Pool;
 
 use crate::{
-    file_download, file_upload, folder_create,
-    folder_list_with_folder, folder_remove, folder_update, permission_set,
+    file_download, file_upload, folder_create, folder_list_with_folder, folder_remove,
+    folder_update, permission_set,
 };
 
 pub fn router(pool: Pool) -> Router {

@@ -14,10 +14,7 @@ pub async fn index_cms_doc(
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let row = client
-        .query_opt(
-            "SELECT xid FROM x_cms_document WHERE xid = $1",
-            &[&doc_id],
-        )
+        .query_opt("SELECT xid FROM x_cms_document WHERE xid = $1", &[&doc_id])
         .await
         .map_err(|_| AppError::Internal)?;
 
@@ -26,9 +23,7 @@ pub async fn index_cms_doc(
     }
 
     Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("id".to_string(), Value::String(doc_id)),
-        ]),
+        serde_json::Map::from_iter([("id".to_string(), Value::String(doc_id))]),
     ))))
 }
 
@@ -51,8 +46,14 @@ pub async fn index_cms_doc_with_app(
 
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
-            ("count".to_string(), Value::Number(serde_json::Number::from(doc_ids.len() as i64))),
-            ("ids".to_string(), Value::Array(doc_ids.into_iter().map(Value::String).collect())),
+            (
+                "count".to_string(),
+                Value::Number(serde_json::Number::from(doc_ids.len() as i64)),
+            ),
+            (
+                "ids".to_string(),
+                Value::Array(doc_ids.into_iter().map(Value::String).collect()),
+            ),
         ]),
     ))))
 }

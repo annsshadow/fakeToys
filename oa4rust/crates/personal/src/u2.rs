@@ -20,17 +20,13 @@ use base64::Engine;
 use deadpool_postgres::Pool;
 use serde::Deserialize;
 use serde_json::{json, Value};
-use shared::{
-    error::AppError,
-    middleware::is_admin,
-    response::ActionResult,
-};
+use shared::{error::AppError, middleware::is_admin, response::ActionResult};
 
 use auth::SessionManager;
 
-use crate::resolve_current_person_unique;
-use crate::reset::ResetCodeStore;
 use crate::reset::is_password_acceptable;
+use crate::reset::ResetCodeStore;
+use crate::resolve_current_person_unique;
 
 // ═════════════════════════════════════════════════════════════════════════════
 // PersonAction 契约补齐：POST /person/mockputtopost、GET /person/icon、
@@ -131,7 +127,9 @@ pub async fn regist_mode() -> Result<Json<ActionResult<Value>>, AppError> {
         .map(|v| matches!(v.to_ascii_lowercase().as_str(), "1" | "true" | "yes" | "on"))
         .unwrap_or(false);
     // Java Wo 为 WrapString："true"/"false"
-    Ok(Json(ActionResult::success(json!({ "value": if enabled { "enable" } else { "disable" } }))))
+    Ok(Json(ActionResult::success(
+        json!({ "value": if enabled { "enable" } else { "disable" } }),
+    )))
 }
 
 /// GET /jaxrs/person/regist/code/mobile/{mobile} —— 发送注册验证码（短信渠道）
@@ -145,7 +143,9 @@ pub async fn regist_code_mobile(
         return Ok(Json(ActionResult::error("invalid mobile")));
     }
     let _plain = store.issue(mobile).await;
-    Ok(Json(ActionResult::success(json!({ "message": "code sent" }))))
+    Ok(Json(ActionResult::success(
+        json!({ "message": "code sent" }),
+    )))
 }
 
 /// GET /jaxrs/person/regist/check/password/{password}
@@ -156,7 +156,9 @@ pub async fn regist_check_password(
     Path(password): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     if is_password_acceptable(&password) {
-        return Ok(Json(ActionResult::success(json!({ "value": String::new() }))));
+        return Ok(Json(ActionResult::success(
+            json!({ "value": String::new() }),
+        )));
     }
     Ok(Json(ActionResult::success(
         json!({ "value": "8位以上,包含数字、字母和特殊字符." }),
@@ -300,7 +302,11 @@ async fn resolve_person_flag(
     Ok(row.map(|r| r.get::<_, String>("unique_id")))
 }
 
-async fn require_admin(pool: &Pool, session_manager: &SessionManager, headers: &HeaderMap) -> Result<String, AppError> {
+async fn require_admin(
+    pool: &Pool,
+    session_manager: &SessionManager,
+    headers: &HeaderMap,
+) -> Result<String, AppError> {
     let person = resolve_current_person_unique(session_manager, headers).await?;
     if !is_admin(pool, &person).await {
         return Err(AppError::Forbidden);
@@ -441,7 +447,12 @@ pub async fn definition_edit(
         "creator".to_string(),
     ];
     let mut values: Vec<String> = vec![id.clone(), name.clone(), body.clone(), person.clone()];
-    let mut placeholders = vec!["$1".to_string(), "$2".to_string(), "$3".to_string(), "$4".to_string()];
+    let mut placeholders = vec![
+        "$1".to_string(),
+        "$2".to_string(),
+        "$3".to_string(),
+        "$4".to_string(),
+    ];
     for (i, col) in extra.iter().enumerate() {
         columns.push(col.clone());
         values.push(String::new());
@@ -455,16 +466,13 @@ pub async fn definition_edit(
     );
     let params: Vec<&(dyn deadpool_postgres::tokio_postgres::types::ToSql + Sync)> =
         values.iter().map(|v| v as _).collect();
-    client
-        .execute(&sql, &params)
-        .await
-        .map_err(|e| {
-            let msg = e
-                .as_db_error()
-                .map(|d| d.message().to_string())
-                .unwrap_or_else(|| e.to_string());
-            AppError::BadRequest(format!("definition upsert failed: {msg}"))
-        })?;
+    client.execute(&sql, &params).await.map_err(|e| {
+        let msg = e
+            .as_db_error()
+            .map(|d| d.message().to_string())
+            .unwrap_or_else(|| e.to_string());
+        AppError::BadRequest(format!("definition upsert failed: {msg}"))
+    })?;
     Ok(Json(ActionResult::success(json!({ "value": true }))))
 }
 
@@ -524,37 +532,49 @@ async fn empower_page(
     let limit = count.clamp(1, 500);
     let rows = match anchor_id.as_deref() {
         None =>
-            // id 为 "(0)" 或未找到锚点：从头取第一页
+        // id 为 "(0)" 或未找到锚点：从头取第一页
+        {
             if dir_next {
-                client.query(
-                    "SELECT id, from_person, to_person, role_id, enabled FROM x_empower \
+                client
+                    .query(
+                        "SELECT id, from_person, to_person, role_id, enabled FROM x_empower \
                      WHERE deleted_at IS NULL ORDER BY created_at DESC, id DESC LIMIT $1",
-                    &[&limit],
-                ).await
+                        &[&limit],
+                    )
+                    .await
             } else {
-                client.query(
-                    "SELECT id, from_person, to_person, role_id, enabled FROM x_empower \
+                client
+                    .query(
+                        "SELECT id, from_person, to_person, role_id, enabled FROM x_empower \
                      WHERE deleted_at IS NULL ORDER BY created_at ASC, id ASC LIMIT $1",
-                    &[&limit],
-                ).await
-            },
-        Some(aid) => if dir_next {
-            client.query(
-                "SELECT id, from_person, to_person, role_id, enabled FROM x_empower \
+                        &[&limit],
+                    )
+                    .await
+            }
+        }
+        Some(aid) => {
+            if dir_next {
+                client
+                    .query(
+                        "SELECT id, from_person, to_person, role_id, enabled FROM x_empower \
                  WHERE deleted_at IS NULL \
                    AND (created_at, id) < (SELECT (created_at, id) FROM x_empower WHERE id = $1) \
                  ORDER BY created_at DESC, id DESC LIMIT $2",
-                &[&aid.to_string(), &limit],
-            ).await
-        } else {
-            client.query(
-                "SELECT id, from_person, to_person, role_id, enabled FROM x_empower \
+                        &[&aid.to_string(), &limit],
+                    )
+                    .await
+            } else {
+                client
+                    .query(
+                        "SELECT id, from_person, to_person, role_id, enabled FROM x_empower \
                  WHERE deleted_at IS NULL \
                    AND (created_at, id) > (SELECT (created_at, id) FROM x_empower WHERE id = $1) \
                  ORDER BY created_at ASC, id ASC LIMIT $2",
-                &[&aid.to_string(), &limit],
-            ).await
-        },
+                        &[&aid.to_string(), &limit],
+                    )
+                    .await
+            }
+        }
     }
     .map_err(|_| AppError::Internal)?;
 
@@ -591,7 +611,11 @@ pub async fn empower_list_next(
         .map(|r| serde_json::to_value(r).unwrap_or(Value::Null))
         .collect();
     let count = items.len() as i64;
-    Ok(Json(ActionResult::java_success(Value::Array(items), count, 0)))
+    Ok(Json(ActionResult::java_success(
+        Value::Array(items),
+        count,
+        0,
+    )))
 }
 
 /// GET /jaxrs/person/empower/list/{id}/prev/{count} —— 管理员上一页
@@ -617,7 +641,11 @@ pub async fn empower_list_prev(
         .map(|r| serde_json::to_value(r).unwrap_or(Value::Null))
         .collect();
     let count = items.len() as i64;
-    Ok(Json(ActionResult::java_success(Value::Array(items), count, 0)))
+    Ok(Json(ActionResult::java_success(
+        Value::Array(items),
+        count,
+        0,
+    )))
 }
 
 /// GET /jaxrs/person/empower/list/person/{flag} —— 查询指定人员的授权
@@ -654,7 +682,11 @@ pub async fn empower_list_with_person(
         })
         .collect();
     let count = items.len() as i64;
-    Ok(Json(ActionResult::java_success(Value::Array(items), count, 0)))
+    Ok(Json(ActionResult::java_success(
+        Value::Array(items),
+        count,
+        0,
+    )))
 }
 
 // ═════════════════════════════════════════════════════════════════════════════
@@ -692,7 +724,9 @@ pub async fn log_list_next(
     let rows = if id == "(0)" || id.trim().is_empty() {
         client
             .query(
-                &format!("SELECT {LOG_COLUMNS} FROM x_org_empower_log ORDER BY created_at DESC LIMIT $1"),
+                &format!(
+                    "SELECT {LOG_COLUMNS} FROM x_org_empower_log ORDER BY created_at DESC LIMIT $1"
+                ),
                 &[&limit],
             )
             .await
@@ -712,7 +746,11 @@ pub async fn log_list_next(
 
     let items: Vec<Value> = rows.iter().map(log_row_json).collect();
     let count = items.len() as i64;
-    Ok(Json(ActionResult::java_success(Value::Array(items), count, 0)))
+    Ok(Json(ActionResult::java_success(
+        Value::Array(items),
+        count,
+        0,
+    )))
 }
 
 #[allow(non_snake_case)]
@@ -728,7 +766,9 @@ pub async fn log_list_prev(
     let rows = if id == "(0)" || id.trim().is_empty() {
         client
             .query(
-                &format!("SELECT {LOG_COLUMNS} FROM x_org_empower_log ORDER BY created_at ASC LIMIT $1"),
+                &format!(
+                    "SELECT {LOG_COLUMNS} FROM x_org_empower_log ORDER BY created_at ASC LIMIT $1"
+                ),
                 &[&limit],
             )
             .await
@@ -749,7 +789,11 @@ pub async fn log_list_prev(
     let mut items: Vec<Value> = rows.iter().map(log_row_json).collect();
     items.reverse();
     let count = items.len() as i64;
-    Ok(Json(ActionResult::java_success(Value::Array(items), count, 0)))
+    Ok(Json(ActionResult::java_success(
+        Value::Array(items),
+        count,
+        0,
+    )))
 }
 
 #[derive(Debug, Deserialize)]
@@ -784,7 +828,12 @@ async fn log_paging(
 
     // 对齐 Java ActionManagerListPaging：管理员可按 fromPerson 过滤；非管理员仅见本人
     if admin_view && is_admin(pool, person).await {
-        if let Some(fp) = wi.from_person.as_deref().map(str::trim).filter(|s| !s.is_empty()) {
+        if let Some(fp) = wi
+            .from_person
+            .as_deref()
+            .map(str::trim)
+            .filter(|s| !s.is_empty())
+        {
             params.push(format!("%{}%", escape_like_key(fp)));
             where_parts.push(format!("COALESCE(from_person,'') LIKE ${}", params.len()));
         }
@@ -794,11 +843,21 @@ async fn log_paging(
         where_parts.push(format!("COALESCE({col},'') = ${}", params.len()));
     }
 
-    if let Some(start) = wi.start_time.as_deref().map(str::trim).filter(|s| !s.is_empty()) {
+    if let Some(start) = wi
+        .start_time
+        .as_deref()
+        .map(str::trim)
+        .filter(|s| !s.is_empty())
+    {
         params.push(start.to_string());
         where_parts.push(format!("created_at > ${}", params.len()));
     }
-    if let Some(end) = wi.end_time.as_deref().map(str::trim).filter(|s| !s.is_empty()) {
+    if let Some(end) = wi
+        .end_time
+        .as_deref()
+        .map(str::trim)
+        .filter(|s| !s.is_empty())
+    {
         params.push(end.to_string());
         where_parts.push(format!("created_at < ${}", params.len()));
     }
@@ -815,10 +874,11 @@ async fn log_paging(
 
     let count_row = client
         .query_one(
-            &format!(
-                "SELECT COUNT(*) AS c FROM x_org_empower_log {where_clause}"
-            ),
-            &params.iter().map(|s| s as &(dyn ToSqlSync + Sync)).collect::<Vec<_>>(),
+            &format!("SELECT COUNT(*) AS c FROM x_org_empower_log {where_clause}"),
+            &params
+                .iter()
+                .map(|s| s as &(dyn ToSqlSync + Sync))
+                .collect::<Vec<_>>(),
         )
         .await
         .map_err(|_| AppError::Internal)?;
@@ -831,18 +891,27 @@ async fn log_paging(
                  ORDER BY created_at DESC LIMIT {} OFFSET {}",
                 limit, offset
             ),
-            &params.iter().map(|s| s as &(dyn ToSqlSync + Sync)).collect::<Vec<_>>(),
+            &params
+                .iter()
+                .map(|s| s as &(dyn ToSqlSync + Sync))
+                .collect::<Vec<_>>(),
         )
         .await
         .map_err(|_| AppError::Internal)?;
 
     let items: Vec<Value> = rows.iter().map(log_row_json).collect();
-    Ok(Json(ActionResult::java_success(Value::Array(items), total, limit)))
+    Ok(Json(ActionResult::java_success(
+        Value::Array(items),
+        total,
+        limit,
+    )))
 }
 
 /// LIKE 关键字转义（% _ \），对齐 Java StringTools.escapeSqlLikeKey
 fn escape_like_key(key: &str) -> String {
-    key.replace('\\', "\\\\").replace('%', "\\%").replace('_', "\\_")
+    key.replace('\\', "\\\\")
+        .replace('%', "\\%")
+        .replace('_', "\\_")
 }
 
 /// POST /jaxrs/person/empowerlog/list/currentperson/paging/{page}/size/{size}
@@ -966,7 +1035,10 @@ pub async fn exmail_new_count_passive(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let token_ok = extract_token_from_headers_pub(&headers);
     let person_opt = match token_ok {
-        Some(token) => session_manager.validate_session(&token).await.map(|s| s.person_unique),
+        Some(token) => session_manager
+            .validate_session(&token)
+            .await
+            .map(|s| s.person_unique),
         None => None,
     };
 
@@ -989,7 +1061,10 @@ pub async fn exmail_list_title_passive(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let token_ok = extract_token_from_headers_pub(&headers);
     let person_opt = match token_ok {
-        Some(token) => session_manager.validate_session(&token).await.map(|s| s.person_unique),
+        Some(token) => session_manager
+            .validate_session(&token)
+            .await
+            .map(|s| s.person_unique),
         None => None,
     };
 
@@ -1006,7 +1081,11 @@ pub async fn exmail_list_title_passive(
         }
     }
     let count = titles.len() as i64;
-    Ok(Json(ActionResult::java_success(Value::Array(titles), count, 0)))
+    Ok(Json(ActionResult::java_success(
+        Value::Array(titles),
+        count,
+        0,
+    )))
 }
 
 /// GET /jaxrs/person/exmail/sso —— 单点登录地址（模板注入 userid）
@@ -1024,7 +1103,9 @@ pub async fn exmail_sso(
             )))
         }
     };
-    Ok(Json(ActionResult::success(template.replace("{userid}", &person))))
+    Ok(Json(ActionResult::success(
+        template.replace("{userid}", &person),
+    )))
 }
 
 #[derive(Debug, Deserialize)]
@@ -1047,10 +1128,7 @@ fn sha1_hex(input: &str) -> String {
 }
 
 /// 回调签名校验：sha1(sort(token, timestamp, nonce, encrypt))
-fn verify_callback_signature(
-    q: &CallbackQuery,
-    encrypt_text: Option<&str>,
-) -> Result<(), String> {
+fn verify_callback_signature(q: &CallbackQuery, encrypt_text: Option<&str>) -> Result<(), String> {
     let token = std::env::var("EXMAIL_CALLBACK_TOKEN")
         .map_err(|_| "callback not configured".to_string())?;
     let signature = q
@@ -1077,11 +1155,7 @@ fn verify_callback_signature(
 /// 密文 = Base64Decode(text)，IV = 前 16 字节；明文 = random(16) +
 /// msg_len(4, network order) + msg + receiveid，PKCS7 填充。
 /// receive_id 为空时跳过尾部匹配校验。
-fn decrypt_echostr(
-    encode_aes_key: &str,
-    text: &str,
-    receive_id: &str,
-) -> Result<String, String> {
+fn decrypt_echostr(encode_aes_key: &str, text: &str, receive_id: &str) -> Result<String, String> {
     use aes::cipher::{block_padding::Pkcs7, BlockDecryptMut, KeyIvInit};
 
     type Aes128CbcDec = cbc::Decryptor<aes::Aes128>;
@@ -1117,12 +1191,18 @@ fn decrypt_echostr(
     if plain.len() < 2 * BLOCK + 4 {
         return Err("decrypted payload too short".to_string());
     }
-    let msg_len =
-        u32::from_be_bytes([plain[BLOCK], plain[BLOCK + 1], plain[BLOCK + 2], plain[BLOCK + 3]])
-            as usize;
+    let msg_len = u32::from_be_bytes([
+        plain[BLOCK],
+        plain[BLOCK + 1],
+        plain[BLOCK + 2],
+        plain[BLOCK + 3],
+    ]) as usize;
     let rest = &plain[BLOCK + 4..];
     if msg_len > rest.len() {
-        return Err(format!("invalid msg length {msg_len} > payload {}", rest.len()));
+        return Err(format!(
+            "invalid msg length {msg_len} > payload {}",
+            rest.len()
+        ));
     }
     let msg = &rest[..msg_len];
     if !receive_id.is_empty() && rest[msg_len..] != *receive_id.as_bytes() {
@@ -1145,7 +1225,8 @@ pub async fn exmail_callback_get(
         AppError::BadRequest("callback not configured: EXMAIL_CALLBACK_AES_KEY".to_string())
     })?;
     let receive_id = std::env::var("EXMAIL_CALLBACK_RECEIVE_ID").unwrap_or_default();
-    let decrypted = decrypt_echostr(&aes_key, &echostr, &receive_id).map_err(AppError::BadRequest)?;
+    let decrypted =
+        decrypt_echostr(&aes_key, &echostr, &receive_id).map_err(AppError::BadRequest)?;
     Ok(Json(ActionResult::success(decrypted)))
 }
 
@@ -1208,7 +1289,9 @@ pub async fn signature_list_person(
         })
         .collect();
 
-    Ok(Json(ActionResult::success(json!({ "signatures": signatures }))))
+    Ok(Json(ActionResult::success(
+        json!({ "signatures": signatures }),
+    )))
 }
 
 #[cfg(test)]
@@ -1258,4 +1341,3 @@ mod exmail_decrypt_tests {
         assert_eq!(err, "receive_id mismatch");
     }
 }
-

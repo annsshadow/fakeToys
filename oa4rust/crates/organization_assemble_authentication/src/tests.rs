@@ -1,10 +1,10 @@
 #[cfg(test)]
 mod tests {
+    use crate::router;
     use axum::body::Body;
     use axum::http::{Request, StatusCode};
     use shared::testing::test_pool;
     use tower::util::ServiceExt;
-    use crate::router;
 
     const TEST_PERSON_ID: &str = "test-person-id";
     const TEST_IDENTITY_ID: &str = "test-identity-id";
@@ -17,7 +17,10 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri(format!("/jaxrs/organization/assemble/authentication/person/{}/icon", TEST_PERSON_ID))
+                    .uri(format!(
+                        "/jaxrs/organization/assemble/authentication/person/{}/icon",
+                        TEST_PERSON_ID
+                    ))
                     .method(axum::http::Method::GET)
                     .body(Body::empty())
                     .unwrap(),
@@ -36,7 +39,10 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri(format!("/jaxrs/organization/assemble/authentication/identity/{}", TEST_IDENTITY_ID))
+                    .uri(format!(
+                        "/jaxrs/organization/assemble/authentication/identity/{}",
+                        TEST_IDENTITY_ID
+                    ))
                     .method(axum::http::Method::GET)
                     .body(Body::empty())
                     .unwrap(),
@@ -72,7 +78,6 @@ mod tests {
         let _ = router(pool);
     }
 }
-
 
 // ═════════════════════════════════════════════════════════════════════════════
 // plan002 U2：x_organization_assemble_authentication 残余契约端点行为测试
@@ -114,8 +119,9 @@ mod u2_contract {
     async fn seed_person() -> (String, String) {
         let pool = test_pool();
         let client = pool.get().await.unwrap();
-        client.execute(
-            "CREATE TABLE IF NOT EXISTS auth_person (
+        client
+            .execute(
+                "CREATE TABLE IF NOT EXISTS auth_person (
                 id VARCHAR(255) PRIMARY KEY,
                 unique_id VARCHAR(255) UNIQUE,
                 name VARCHAR(255),
@@ -128,29 +134,31 @@ mod u2_contract {
                 created_at TIMESTAMP DEFAULT NOW(),
                 updated_at TIMESTAMP DEFAULT NOW()
              )",
-            &[],
-        )
-        .await
-        .unwrap();
+                &[],
+            )
+            .await
+            .unwrap();
 
         let uid = format!("u2-auth@{}", uuid::Uuid::new_v4());
         let password = "Passw0rd!";
         let hash = auth::password::hash_password(password);
-        client.execute(
-            "INSERT INTO auth_person (id, unique_id, name, password_hash, locked) \
+        client
+            .execute(
+                "INSERT INTO auth_person (id, unique_id, name, password_hash, locked) \
              VALUES ($1, $2, $2, $3, false)",
-            &[&format!("u2-p-{}", uid), &uid, &hash],
-        )
-        .await
-        .unwrap();
+                &[&format!("u2-p-{}", uid), &uid, &hash],
+            )
+            .await
+            .unwrap();
         (uid, password.to_string())
     }
 
     async fn ensure_bind_table() {
         let pool = test_pool();
         let client = pool.get().await.unwrap();
-        client.execute(
-            "CREATE TABLE IF NOT EXISTS x_org_bind_record (
+        client
+            .execute(
+                "CREATE TABLE IF NOT EXISTS x_org_bind_record (
                 id VARCHAR(36) PRIMARY KEY,
                 name TEXT NOT NULL,
                 message TEXT,
@@ -158,20 +166,26 @@ mod u2_contract {
                 create_time TIMESTAMP NOT NULL DEFAULT NOW(),
                 update_time TIMESTAMP NOT NULL DEFAULT NOW()
              )",
-            &[],
-        )
-        .await
-        .unwrap();
+                &[],
+            )
+            .await
+            .unwrap();
     }
 
     #[tokio::test]
     async fn u2_mode_defaults_all_disabled() {
-        let v = body_bytes(app().oneshot(
-            Request::builder()
-                .uri("/jaxrs/organization/assemble/authentication/authentication/mode")
-                .body(Body::empty())
+        let v = body_bytes(
+            app()
+                .oneshot(
+                    Request::builder()
+                        .uri("/jaxrs/organization/assemble/authentication/authentication/mode")
+                        .body(Body::empty())
+                        .unwrap(),
+                )
+                .await
                 .unwrap(),
-        ).await.unwrap()).await;
+        )
+        .await;
         assert_eq!(v["data"]["captchaLogin"], false);
         assert_eq!(v["data"]["codeLogin"], false);
         assert_eq!(v["data"]["twoFactorLogin"], false);
@@ -191,14 +205,20 @@ mod u2_contract {
             "captchaId": "bogus-id",
             "captchaAnswer": "0000"
         });
-        let v = body_bytes(app().oneshot(
-            Request::builder()
-                .uri("/jaxrs/organization/assemble/authentication/authentication/captcha")
-                .method("POST")
-                .header("content-type", "application/json")
-                .body(Body::from(body.to_string()))
+        let v = body_bytes(
+            app()
+                .oneshot(
+                    Request::builder()
+                        .uri("/jaxrs/organization/assemble/authentication/authentication/captcha")
+                        .method("POST")
+                        .header("content-type", "application/json")
+                        .body(Body::from(body.to_string()))
+                        .unwrap(),
+                )
+                .await
                 .unwrap(),
-        ).await.unwrap()).await;
+        )
+        .await;
         assert_eq!(v["type"], "error");
         // 验证码无效时不得泄露凭据信息（统一文案）
         assert!(
@@ -211,7 +231,9 @@ mod u2_contract {
     async fn u2_captcha_login_full_flow_issues_session() {
         use shared::testing::is_db_available;
         if !is_db_available().await {
-            eprintln!("skipping u2_captcha_login_full_flow_issues_session: DATABASE_URL not reachable");
+            eprintln!(
+                "skipping u2_captcha_login_full_flow_issues_session: DATABASE_URL not reachable"
+            );
             return;
         }
         let (uid, password) = seed_person().await;
@@ -223,14 +245,20 @@ mod u2_contract {
             "captchaId": captcha_id,
             "captchaAnswer": "7272"
         });
-        let v = body_bytes(app().oneshot(
-            Request::builder()
-                .uri("/jaxrs/organization/assemble/authentication/authentication/captcha")
-                .method("POST")
-                .header("content-type", "application/json")
-                .body(Body::from(body.to_string()))
+        let v = body_bytes(
+            app()
+                .oneshot(
+                    Request::builder()
+                        .uri("/jaxrs/organization/assemble/authentication/authentication/captcha")
+                        .method("POST")
+                        .header("content-type", "application/json")
+                        .body(Body::from(body.to_string()))
+                        .unwrap(),
+                )
+                .await
                 .unwrap(),
-        ).await.unwrap()).await;
+        )
+        .await;
         assert_eq!(v["type"], "success", "验证码+密码均正确时应登录成功: {v}");
         assert!(!v["data"]["token"].as_str().unwrap_or("").is_empty());
 
@@ -242,14 +270,20 @@ mod u2_contract {
             "captchaId": captcha_id,
             "captchaAnswer": "7373"
         });
-        let v = body_bytes(app().oneshot(
-            Request::builder()
-                .uri("/jaxrs/organization/assemble/authentication/authentication/captcha")
-                .method("POST")
-                .header("content-type", "application/json")
-                .body(Body::from(bad.to_string()))
+        let v = body_bytes(
+            app()
+                .oneshot(
+                    Request::builder()
+                        .uri("/jaxrs/organization/assemble/authentication/authentication/captcha")
+                        .method("POST")
+                        .header("content-type", "application/json")
+                        .body(Body::from(bad.to_string()))
+                        .unwrap(),
+                )
+                .await
                 .unwrap(),
-        ).await.unwrap()).await;
+        )
+        .await;
         assert_eq!(v["type"], "error", "密码错误不得放行");
     }
 
@@ -261,24 +295,36 @@ mod u2_contract {
         let uid = "u2-safe-logout@P";
         let t1 = format!("tok-{}", uuid::Uuid::new_v4());
         let t2 = format!("tok-{}", uuid::Uuid::new_v4());
-        sm.create_session(uid.to_string(), t1.clone()).await.unwrap();
-        sm.create_session(uid.to_string(), t2.clone()).await.unwrap();
+        sm.create_session(uid.to_string(), t1.clone())
+            .await
+            .unwrap();
+        sm.create_session(uid.to_string(), t2.clone())
+            .await
+            .unwrap();
 
         let app = organization_assemble_authentication_router()
             .layer(axum::extract::Extension(sm.clone()))
             .layer(axum::extract::Extension(pool));
-        let v = body_bytes(app.oneshot(
-            Request::builder()
-                .uri("/jaxrs/organization/assemble/authentication/authentication/safe/logout")
-                .header("authorization", format!("Bearer {t1}"))
-                .body(Body::empty())
-                .unwrap(),
-        ).await.unwrap()).await;
+        let v = body_bytes(
+            app.oneshot(
+                Request::builder()
+                    .uri("/jaxrs/organization/assemble/authentication/authentication/safe/logout")
+                    .header("authorization", format!("Bearer {t1}"))
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap(),
+        )
+        .await;
         assert_eq!(v["data"]["name"], "anonymous");
 
         // 本人两个会话都必须失效
         assert!(sm.validate_session(&t1).await.is_none(), "t1 应已失效");
-        assert!(sm.validate_session(&t2).await.is_none(), "t2 也应失效（安全注销语义）");
+        assert!(
+            sm.validate_session(&t2).await.is_none(),
+            "t2 也应失效（安全注销语义）"
+        );
     }
 
     #[tokio::test]
@@ -287,7 +333,9 @@ mod u2_contract {
         let sm = SessionManager::with_pool(pool.clone());
         let uid = "u2-mdtg@P";
         let token = format!("tok-{}", uuid::Uuid::new_v4());
-        sm.create_session(uid.to_string(), token.clone()).await.unwrap();
+        sm.create_session(uid.to_string(), token.clone())
+            .await
+            .unwrap();
 
         let app = organization_assemble_authentication_router()
             .layer(axum::extract::Extension(sm.clone()))
@@ -302,7 +350,10 @@ mod u2_contract {
         assert_ne!(response.status(), StatusCode::NOT_FOUND);
         let v = body_bytes(response).await;
         assert_eq!(v["type"], "success");
-        assert!(sm.validate_session(&token).await.is_none(), "GET 登出应移除会话");
+        assert!(
+            sm.validate_session(&token).await.is_none(),
+            "GET 登出应移除会话"
+        );
     }
 
     #[tokio::test]
@@ -322,14 +373,20 @@ mod u2_contract {
         std::env::remove_var("DINGDING_CORP_ID");
         std::env::remove_var("DINGDING_AGENT_ID");
         std::env::remove_var("DINGDING_JSAPI_TICKET");
-        let v = body_bytes(app().oneshot(
-            Request::builder()
-                .uri("/jaxrs/organization/assemble/authentication/dingding/info")
-                .method("POST")
-                .header("content-type", "application/json")
-                .body(Body::from(r#"{"url":"https://e.x"}"#))
+        let v = body_bytes(
+            app()
+                .oneshot(
+                    Request::builder()
+                        .uri("/jaxrs/organization/assemble/authentication/dingding/info")
+                        .method("POST")
+                        .header("content-type", "application/json")
+                        .body(Body::from(r#"{"url":"https://e.x"}"#))
+                        .unwrap(),
+                )
+                .await
                 .unwrap(),
-        ).await.unwrap()).await;
+        )
+        .await;
         assert_eq!(v["type"], "error");
         assert!(
             v["message"].as_str().unwrap().contains("not configured"),
@@ -348,21 +405,33 @@ mod u2_contract {
         {
             let pool = test_pool();
             let client = pool.get().await.unwrap();
-            client.execute("DELETE FROM x_org_bind_record WHERE id='u2-bind-1'", &[]).await.unwrap();
+            client
+                .execute("DELETE FROM x_org_bind_record WHERE id='u2-bind-1'", &[])
+                .await
+                .unwrap();
             client.execute(
                 "INSERT INTO x_org_bind_record (id, name, message) VALUES ('u2-bind-1', 'qywx', 'hello')",
                 &[],
             ).await.unwrap();
         }
-        let v = body_bytes(app().oneshot(
-            Request::builder()
-                .uri("/jaxrs/organization/assemble/authentication/bind/list")
-                .body(Body::empty())
+        let v = body_bytes(
+            app()
+                .oneshot(
+                    Request::builder()
+                        .uri("/jaxrs/organization/assemble/authentication/bind/list")
+                        .body(Body::empty())
+                        .unwrap(),
+                )
+                .await
                 .unwrap(),
-        ).await.unwrap()).await;
+        )
+        .await;
         assert_eq!(v["type"], "success");
         let arr = v["data"].as_array().expect("bind/list 应返回数组");
-        assert!(arr.iter().any(|r| r["id"] == "u2-bind-1"), "应包含种下的绑定记录");
+        assert!(
+            arr.iter().any(|r| r["id"] == "u2-bind-1"),
+            "应包含种下的绑定记录"
+        );
     }
 
     #[tokio::test]
@@ -407,7 +476,8 @@ mod u2_contract {
     #[tokio::test]
     async fn u2_test_post_qiyeweixin_info_sign_route() {
         let app = router(test_pool());
-        let body = serde_json::to_string(&serde_json::json!({"nonce": "n", "timestamp": "t"})).unwrap();
+        let body =
+            serde_json::to_string(&serde_json::json!({"nonce": "n", "timestamp": "t"})).unwrap();
         let response = app
             .oneshot(
                 axum::http::Request::builder()

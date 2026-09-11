@@ -2,7 +2,7 @@
 mod tests {
     use crate::general_assemble_control_router;
     use axum::body::Body;
-    use axum::http::{Request, Method, StatusCode};
+    use axum::http::{Method, Request, StatusCode};
     use shared::testing::test_pool;
     use tower::ServiceExt;
 
@@ -34,7 +34,9 @@ mod tests {
                     .uri("/jaxrs/general/assemble/control/status/update")
                     .method("POST")
                     .header("content-type", "application/json")
-                    .body(Body::from(r#"{"maintenanceMode":false,"allowRegistration":true}"#))
+                    .body(Body::from(
+                        r#"{"maintenanceMode":false,"allowRegistration":true}"#,
+                    ))
                     .unwrap(),
             )
             .await
@@ -70,7 +72,9 @@ mod tests {
                     .uri("/jaxrs/general/assemble/control/status/update")
                     .method("POST")
                     .header("content-type", "application/json")
-                    .body(Body::from(r#"{"maintenanceMode":true,"allowRegistration":false}"#))
+                    .body(Body::from(
+                        r#"{"maintenanceMode":true,"allowRegistration":false}"#,
+                    ))
                     .unwrap(),
             )
             .await

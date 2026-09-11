@@ -8,7 +8,6 @@ mod tests;
 #[cfg(test)]
 mod tests_generated;
 
-
 pub fn correlation_router(pool: Pool) -> Router {
     routes::correlation_router(pool)
 }

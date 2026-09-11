@@ -11,7 +11,10 @@ use deadpool_postgres::Pool;
 use serde_json::Value;
 use shared::{error::AppError, response::ActionResult};
 
-use crate::endpoints::{capped, normalize_flags, ok_java_list, row_to_map, string_field, string_list, wrap_bool, PICK_ANY};
+use crate::endpoints::{
+    capped, normalize_flags, ok_java_list, row_to_map, string_field, string_list, wrap_bool,
+    PICK_ANY,
+};
 
 const GROUP_COLS: &str = "g.id, g.name, g.parent_id, \"type\", g.unit_id";
 
@@ -59,7 +62,9 @@ pub async fn group_has_role(
         .query_one(SQL, &[&group, &roles])
         .await
         .map_err(|_| AppError::Internal)?;
-    Ok(AxumJson(ActionResult::success(wrap_bool(row.get::<_, bool>(0)))))
+    Ok(AxumJson(ActionResult::success(wrap_bool(
+        row.get::<_, bool>(0),
+    ))))
 }
 
 /// sub/sup × direct/nested × id/object 共用实现。
@@ -114,7 +119,10 @@ async fn group_tree_scope(
         scope_sql
     );
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
-    let rows = client.query(&sql, &[&flags]).await.map_err(|_| AppError::Internal)?;
+    let rows = client
+        .query(&sql, &[&flags])
+        .await
+        .map_err(|_| AppError::Internal)?;
     finish_group_rows(rows, objects)
 }
 
@@ -161,7 +169,10 @@ pub async fn group_list_person_object(
          JOIN x_org_group g ON g.id = m.group_id AND g.deleted_at IS NULL \
          WHERE p.deleted_at IS NULL AND (g.id = ANY($1) OR g.name = ANY($1)) ORDER BY p.id";
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
-    let rows = client.query(SQL, &[&flags]).await.map_err(|_| AppError::Internal)?;
+    let rows = client
+        .query(SQL, &[&flags])
+        .await
+        .map_err(|_| AppError::Internal)?;
     let data: Vec<Value> = rows.iter().map(row_to_map).collect();
     ok_java_list(data.len(), data)
 }
@@ -197,7 +208,10 @@ pub async fn group_list_identity_object(
         return ok_java_list(0, vec![]);
     }
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
-    let rows = client.query(SQL, &[&flags]).await.map_err(|_| AppError::Internal)?;
+    let rows = client
+        .query(SQL, &[&flags])
+        .await
+        .map_err(|_| AppError::Internal)?;
     let data: Vec<Value> = rows.iter().map(row_to_map).collect();
     ok_java_list(data.len(), data)
 }
@@ -210,13 +224,19 @@ async fn named_list_response_group(
 ) -> Result<AxumJson<ActionResult<Value>>, AppError> {
     if flags.is_empty() {
         return Ok(AxumJson(ActionResult::java_success(
-            Value::Object(serde_json::Map::from_iter([(key.to_string(), Value::Array(vec![]))])),
+            Value::Object(serde_json::Map::from_iter([(
+                key.to_string(),
+                Value::Array(vec![]),
+            )])),
             0,
             0,
         )));
     }
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
-    let rows = client.query(sql, &[&flags]).await.map_err(|_| AppError::Internal)?;
+    let rows = client
+        .query(sql, &[&flags])
+        .await
+        .map_err(|_| AppError::Internal)?;
     let list: Vec<String> = rows.iter().map(|r| r.get(0)).collect();
     let count = list.len() as i64;
     Ok(AxumJson(ActionResult::java_success(
@@ -258,7 +278,10 @@ pub async fn group_list_group_tree(
         return ok_java_list(0, vec![]);
     }
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
-    let rows = client.query(SQL, &[&flags]).await.map_err(|_| AppError::Internal)?;
+    let rows = client
+        .query(SQL, &[&flags])
+        .await
+        .map_err(|_| AppError::Internal)?;
 
     use std::collections::{HashMap, HashSet};
     let mut base: HashMap<String, Value> = HashMap::new();
@@ -272,7 +295,10 @@ pub async fn group_list_group_tree(
             m.insert("subGroups".to_string(), Value::Array(vec![]));
             m.insert("subDirectGroupCount".to_string(), Value::Number(0.into()));
             m.insert("subDirectPersonCount".to_string(), Value::Number(0.into()));
-            m.insert("subDirectIdentityCount".to_string(), Value::Number(0.into()));
+            m.insert(
+                "subDirectIdentityCount".to_string(),
+                Value::Number(0.into()),
+            );
         }
         all_ids.push(id.clone());
         base.insert(id, obj);

@@ -3,14 +3,17 @@ use axum::{
     routing::{get, post},
     Json as AxumJson, Router,
 };
-use sea_orm::{ActiveModelTrait, ColumnTrait, ConnectionTrait, DatabaseConnection, EntityTrait, QueryFilter, QueryOrder, Statement};
+use sea_orm::{
+    ActiveModelTrait, ColumnTrait, ConnectionTrait, DatabaseConnection, EntityTrait, QueryFilter,
+    QueryOrder, Statement,
+};
 use serde_json::Value;
 use shared::{error::AppError, response::ActionResult};
 
 pub mod entities;
 pub mod routes;
 
-use entities::{portal, widget, portal_page, script};
+use entities::{portal, portal_page, script, widget};
 
 #[allow(non_snake_case)]
 pub async fn portal_list(
@@ -29,7 +32,10 @@ pub async fn portal_list(
                 ("id".to_string(), Value::String(m.id.clone())),
                 ("name".to_string(), Value::String(m.name.clone())),
                 ("alias".to_string(), Value::String(m.alias.clone())),
-                ("description".to_string(), Value::String(m.description.clone())),
+                (
+                    "description".to_string(),
+                    Value::String(m.description.clone()),
+                ),
                 (
                     "portalCategory".to_string(),
                     Value::String(m.portal_category.clone()),
@@ -107,11 +113,7 @@ pub async fn page_list(
             obj.insert("status".to_string(), Value::String(m.status.clone()));
             obj.insert(
                 "createTime".to_string(),
-                Value::String(
-                    m.create_time
-                        .map(|dt| dt.to_string())
-                        .unwrap_or_default(),
-                ),
+                Value::String(m.create_time.map(|dt| dt.to_string()).unwrap_or_default()),
             );
             Value::Object(obj)
         })
@@ -152,11 +154,7 @@ pub async fn page_get(
             obj.insert("status".to_string(), Value::String(m.status.clone()));
             obj.insert(
                 "createTime".to_string(),
-                Value::String(
-                    m.create_time
-                        .map(|dt| dt.to_string())
-                        .unwrap_or_default(),
-                ),
+                Value::String(m.create_time.map(|dt| dt.to_string()).unwrap_or_default()),
             );
             let result = Value::Object(obj);
             Ok(Json(ActionResult::success(result)))
@@ -204,16 +202,15 @@ pub async fn page_create(
         deleted_at: sea_orm::ActiveValue::Set(None),
     };
 
-    active
-        .insert(&db.0)
-        .await
-        .map_err(|_| AppError::Internal)?;
+    active.insert(&db.0).await.map_err(|_| AppError::Internal)?;
 
-    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
-        ("id".to_string(), Value::String(id)),
-        ("name".to_string(), Value::String(name)),
-        ("status".to_string(), Value::String(status.to_string())),
-    ])))))
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("id".to_string(), Value::String(id)),
+            ("name".to_string(), Value::String(name)),
+            ("status".to_string(), Value::String(status.to_string())),
+        ]),
+    ))))
 }
 
 #[allow(non_snake_case)]
@@ -257,7 +254,10 @@ pub async fn page_update(
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("id".to_string(), Value::String(id)),
-            ("updated".to_string(), Value::Bool(result.rows_affected() > 0)),
+            (
+                "updated".to_string(),
+                Value::Bool(result.rows_affected() > 0),
+            ),
         ]),
     ))))
 }
@@ -275,8 +275,8 @@ pub async fn page_remove(
 
     let now = chrono::Utc::now().naive_utc();
 
-    let result = db.0
-        .execute(Statement::from_sql_and_values(
+    let result =
+        db.0.execute(Statement::from_sql_and_values(
             sea_orm::DbBackend::Postgres,
             "UPDATE portal_page SET deleted_at = $1 WHERE id = $2 AND deleted_at IS NULL",
             vec![now.into(), id.clone().into()],
@@ -291,7 +291,10 @@ pub async fn page_remove(
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("id".to_string(), Value::String(id)),
-            ("deleted".to_string(), Value::Bool(result.rows_affected() > 0)),
+            (
+                "deleted".to_string(),
+                Value::Bool(result.rows_affected() > 0),
+            ),
         ]),
     ))))
 }
@@ -344,7 +347,6 @@ pub fn portal_core_entity_router(_pool: deadpool_postgres::Pool) -> Router {
 mod tests;
 #[cfg(test)]
 mod tests_generated;
-
 
 pub fn router(pool: deadpool_postgres::Pool) -> axum::Router {
     crate::portal_core_entity_router(pool)

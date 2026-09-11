@@ -126,9 +126,7 @@ pub async fn sms_send(phone: &str) -> Result<ActionResult<Value>, AppError> {
 pub async fn sms_send_handler(
     Json(payload): Json<SmsSendRequest>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    sms_send(&payload.phone)
-        .await
-        .map(Json)
+    sms_send(&payload.phone).await.map(Json)
 }
 
 #[derive(Debug, Deserialize)]

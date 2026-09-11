@@ -1,5 +1,5 @@
-use axum::{extract::Extension, extract::Path, Json};
 use axum::response::{IntoResponse, Response};
+use axum::{extract::Extension, extract::Path, Json};
 use base64::Engine;
 use chrono::{Duration, Utc};
 use deadpool_postgres::Pool;
@@ -43,14 +43,19 @@ pub async fn andfx_moa_sso(
     Path((token, enter_id)): Path<(String, String)>,
 ) -> Result<Response, AppError> {
     if token.is_empty() || enter_id.is_empty() {
-        return Ok(Json(ActionResult::<AndfxLoginResponse>::error("token and enterId are required")).into_response());
+        return Ok(Json(ActionResult::<AndfxLoginResponse>::error(
+            "token and enterId are required",
+        ))
+        .into_response());
     }
 
     let key = std::env::var("ANDFX_KEY").map_err(|_| AppError::Internal)?;
     let expected_enter_id = std::env::var("ANDFX_ENTER_ID").map_err(|_| AppError::Internal)?;
 
     if enter_id != expected_enter_id {
-        return Ok(Json(ActionResult::<AndfxLoginResponse>::error("invalid enterId")).into_response());
+        return Ok(
+            Json(ActionResult::<AndfxLoginResponse>::error("invalid enterId")).into_response(),
+        );
     }
 
     let decrypted = decrypt_andfx_token(&token, &key)?;
@@ -78,7 +83,9 @@ pub async fn andfx_moa_sso(
             r.get::<_, Option<String>>("icon"),
         ),
         None => {
-            return Ok(Json(ActionResult::<AndfxLoginResponse>::error("user not found")).into_response());
+            return Ok(
+                Json(ActionResult::<AndfxLoginResponse>::error("user not found")).into_response(),
+            );
         }
     };
 

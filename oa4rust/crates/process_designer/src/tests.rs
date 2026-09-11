@@ -1,8 +1,8 @@
 #[cfg(test)]
 mod tests {
     use crate::routes::process_designer_router;
-    use shared::response::ActionResult;
     use serde_json::json;
+    use shared::response::ActionResult;
 
     #[test]
     fn test_application_list_summary_action_result_format() {
@@ -34,19 +34,17 @@ mod tests {
 
     #[tokio::test]
     async fn test_application_list_route_exists() {
-        let pool = deadpool_postgres::Pool::builder(
-            deadpool_postgres::Manager::new(
-                deadpool_postgres::tokio_postgres::Config::new(),
-                deadpool_postgres::tokio_postgres::NoTls,
-            ),
-        )
+        let pool = deadpool_postgres::Pool::builder(deadpool_postgres::Manager::new(
+            deadpool_postgres::tokio_postgres::Config::new(),
+            deadpool_postgres::tokio_postgres::NoTls,
+        ))
         .build()
         .unwrap();
 
         let app = process_designer_router(pool);
 
         use axum::body::Body;
-        use axum::http::{Request, Method};
+        use axum::http::{Method, Request};
         use tower::util::ServiceExt;
 
         let response = app
@@ -65,19 +63,17 @@ mod tests {
 
     #[tokio::test]
     async fn test_application_get_route_exists() {
-        let pool = deadpool_postgres::Pool::builder(
-            deadpool_postgres::Manager::new(
-                deadpool_postgres::tokio_postgres::Config::new(),
-                deadpool_postgres::tokio_postgres::NoTls,
-            ),
-        )
+        let pool = deadpool_postgres::Pool::builder(deadpool_postgres::Manager::new(
+            deadpool_postgres::tokio_postgres::Config::new(),
+            deadpool_postgres::tokio_postgres::NoTls,
+        ))
         .build()
         .unwrap();
 
         let app = process_designer_router(pool);
 
         use axum::body::Body;
-        use axum::http::{Request, Method};
+        use axum::http::{Method, Request};
         use tower::util::ServiceExt;
 
         let response = app
@@ -96,19 +92,17 @@ mod tests {
 
     #[tokio::test]
     async fn test_application_create_route_exists() {
-        let pool = deadpool_postgres::Pool::builder(
-            deadpool_postgres::Manager::new(
-                deadpool_postgres::tokio_postgres::Config::new(),
-                deadpool_postgres::tokio_postgres::NoTls,
-            ),
-        )
+        let pool = deadpool_postgres::Pool::builder(deadpool_postgres::Manager::new(
+            deadpool_postgres::tokio_postgres::Config::new(),
+            deadpool_postgres::tokio_postgres::NoTls,
+        ))
         .build()
         .unwrap();
 
         let app = process_designer_router(pool);
 
         use axum::body::Body;
-        use axum::http::{Request, Method, header};
+        use axum::http::{header, Method, Request};
         use tower::util::ServiceExt;
 
         let response = app
@@ -128,19 +122,17 @@ mod tests {
 
     #[tokio::test]
     async fn test_application_update_route_exists() {
-        let pool = deadpool_postgres::Pool::builder(
-            deadpool_postgres::Manager::new(
-                deadpool_postgres::tokio_postgres::Config::new(),
-                deadpool_postgres::tokio_postgres::NoTls,
-            ),
-        )
+        let pool = deadpool_postgres::Pool::builder(deadpool_postgres::Manager::new(
+            deadpool_postgres::tokio_postgres::Config::new(),
+            deadpool_postgres::tokio_postgres::NoTls,
+        ))
         .build()
         .unwrap();
 
         let app = process_designer_router(pool);
 
         use axum::body::Body;
-        use axum::http::{Request, Method, header};
+        use axum::http::{header, Method, Request};
         use tower::util::ServiceExt;
 
         let response = app
@@ -160,19 +152,17 @@ mod tests {
 
     #[tokio::test]
     async fn test_application_remove_route_exists() {
-        let pool = deadpool_postgres::Pool::builder(
-            deadpool_postgres::Manager::new(
-                deadpool_postgres::tokio_postgres::Config::new(),
-                deadpool_postgres::tokio_postgres::NoTls,
-            ),
-        )
+        let pool = deadpool_postgres::Pool::builder(deadpool_postgres::Manager::new(
+            deadpool_postgres::tokio_postgres::Config::new(),
+            deadpool_postgres::tokio_postgres::NoTls,
+        ))
         .build()
         .unwrap();
 
         let app = process_designer_router(pool);
 
         use axum::body::Body;
-        use axum::http::{Request, Method, header};
+        use axum::http::{header, Method, Request};
         use tower::util::ServiceExt;
 
         let response = app
@@ -203,7 +193,7 @@ mod tests {
         let app = process_designer_router(pool);
 
         use axum::body::Body;
-        use axum::http::{Request, Method};
+        use axum::http::{Method, Request};
         use tower::util::ServiceExt;
 
         let response = app
@@ -217,7 +207,10 @@ mod tests {
             .await
             .unwrap();
 
-        assert_eq!(response.status(), axum::http::StatusCode::INTERNAL_SERVER_ERROR);
+        assert_eq!(
+            response.status(),
+            axum::http::StatusCode::INTERNAL_SERVER_ERROR
+        );
     }
 
     #[test]

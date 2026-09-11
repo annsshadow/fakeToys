@@ -1,8 +1,10 @@
 #[allow(dead_code)]
 use axum::{
     extract::{Extension, Path},
-    Json, Router, response::Sse,
-    routing::get, routing::post,
+    response::Sse,
+    routing::get,
+    routing::post,
+    Json, Router,
 };
 use deadpool_postgres::Pool;
 use futures_util::StreamExt;
@@ -17,7 +19,6 @@ pub mod routes;
 mod tests;
 #[cfg(test)]
 mod tests_generated;
-
 
 #[derive(Debug, Deserialize)]
 pub struct ChatCompletionRequest {
@@ -54,39 +55,105 @@ pub async fn get_ai_control_config(
         Some(row) => {
             let result = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
-                ("name".to_string(), Value::String(row.get::<_, Option<String>>("name").unwrap_or_default())),
-                ("defaultModel".to_string(), Value::String(row.get("default_model"))),
-                ("temperature".to_string(), Value::Number(serde_json::Number::from_f64(row.get::<_, f64>("temperature")).unwrap_or_else(|| serde_json::Number::from_f64(0.0).unwrap()))),
-                ("maxTokens".to_string(), Value::Number(serde_json::Number::from(row.get::<_, i64>("max_tokens")))),
+                (
+                    "name".to_string(),
+                    Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
+                ),
+                (
+                    "defaultModel".to_string(),
+                    Value::String(row.get("default_model")),
+                ),
+                (
+                    "temperature".to_string(),
+                    Value::Number(
+                        serde_json::Number::from_f64(row.get::<_, f64>("temperature"))
+                            .unwrap_or_else(|| serde_json::Number::from_f64(0.0).unwrap()),
+                    ),
+                ),
+                (
+                    "maxTokens".to_string(),
+                    Value::Number(serde_json::Number::from(row.get::<_, i64>("max_tokens"))),
+                ),
                 ("enabled".to_string(), Value::Bool(row.get("enabled"))),
                 ("creator".to_string(), Value::String(row.get("creator"))),
                 ("o2AiFileList".to_string(), Value::Array(vec![])),
-                ("deepSeekApiUrl".to_string(), Value::String(std::env::var("DEEPSEEK_API_URL").unwrap_or_default())),
-                ("appName".to_string(), Value::String(std::env::var("APP_NAME").unwrap_or_else(|_| "O2OA".to_string()))),
-                ("o2AiToken".to_string(), Value::String(std::env::var("O2_AI_TOKEN").unwrap_or_default())),
-                ("aliApiUrl".to_string(), Value::String(std::env::var("ALI_API_URL").unwrap_or_default())),
-                ("appIconUrl".to_string(), Value::String(std::env::var("APP_ICON_URL").unwrap_or_default())),
+                (
+                    "deepSeekApiUrl".to_string(),
+                    Value::String(std::env::var("DEEPSEEK_API_URL").unwrap_or_default()),
+                ),
+                (
+                    "appName".to_string(),
+                    Value::String(std::env::var("APP_NAME").unwrap_or_else(|_| "O2OA".to_string())),
+                ),
+                (
+                    "o2AiToken".to_string(),
+                    Value::String(std::env::var("O2_AI_TOKEN").unwrap_or_default()),
+                ),
+                (
+                    "aliApiUrl".to_string(),
+                    Value::String(std::env::var("ALI_API_URL").unwrap_or_default()),
+                ),
+                (
+                    "appIconUrl".to_string(),
+                    Value::String(std::env::var("APP_ICON_URL").unwrap_or_default()),
+                ),
                 ("o2AiEnable".to_string(), Value::Bool(row.get("enabled"))),
-                ("o2AiBaseUrl".to_string(), Value::String(std::env::var("O2_AI_BASE_URL").unwrap_or_default())),
-                ("desc".to_string(), Value::String(row.get::<_, Option<String>>("name").unwrap_or_default())),
-                ("title".to_string(), Value::String(row.get::<_, Option<String>>("name").unwrap_or_default())),
+                (
+                    "o2AiBaseUrl".to_string(),
+                    Value::String(std::env::var("O2_AI_BASE_URL").unwrap_or_default()),
+                ),
+                (
+                    "desc".to_string(),
+                    Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
+                ),
+                (
+                    "title".to_string(),
+                    Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
+                ),
             ]));
             Ok(Json(ActionResult::success(result)))
         }
         None => Ok(Json(ActionResult::success(Value::Object(
             serde_json::Map::from_iter([
-                ("defaultModel".to_string(), Value::String("gpt-4".to_string())),
-                ("temperature".to_string(), Value::Number(serde_json::Number::from_f64(0.7).unwrap())),
-                ("maxTokens".to_string(), Value::Number(serde_json::Number::from(4096i64))),
+                (
+                    "defaultModel".to_string(),
+                    Value::String("gpt-4".to_string()),
+                ),
+                (
+                    "temperature".to_string(),
+                    Value::Number(serde_json::Number::from_f64(0.7).unwrap()),
+                ),
+                (
+                    "maxTokens".to_string(),
+                    Value::Number(serde_json::Number::from(4096i64)),
+                ),
                 ("enabled".to_string(), Value::Bool(false)),
                 ("o2AiFileList".to_string(), Value::Array(vec![])),
-                ("deepSeekApiUrl".to_string(), Value::String(std::env::var("DEEPSEEK_API_URL").unwrap_or_default())),
-                ("appName".to_string(), Value::String(std::env::var("APP_NAME").unwrap_or_else(|_| "O2OA".to_string()))),
-                ("o2AiToken".to_string(), Value::String(std::env::var("O2_AI_TOKEN").unwrap_or_default())),
-                ("aliApiUrl".to_string(), Value::String(std::env::var("ALI_API_URL").unwrap_or_default())),
-                ("appIconUrl".to_string(), Value::String(std::env::var("APP_ICON_URL").unwrap_or_default())),
+                (
+                    "deepSeekApiUrl".to_string(),
+                    Value::String(std::env::var("DEEPSEEK_API_URL").unwrap_or_default()),
+                ),
+                (
+                    "appName".to_string(),
+                    Value::String(std::env::var("APP_NAME").unwrap_or_else(|_| "O2OA".to_string())),
+                ),
+                (
+                    "o2AiToken".to_string(),
+                    Value::String(std::env::var("O2_AI_TOKEN").unwrap_or_default()),
+                ),
+                (
+                    "aliApiUrl".to_string(),
+                    Value::String(std::env::var("ALI_API_URL").unwrap_or_default()),
+                ),
+                (
+                    "appIconUrl".to_string(),
+                    Value::String(std::env::var("APP_ICON_URL").unwrap_or_default()),
+                ),
                 ("o2AiEnable".to_string(), Value::Bool(false)),
-                ("o2AiBaseUrl".to_string(), Value::String(std::env::var("O2_AI_BASE_URL").unwrap_or_default())),
+                (
+                    "o2AiBaseUrl".to_string(),
+                    Value::String(std::env::var("O2_AI_BASE_URL").unwrap_or_default()),
+                ),
                 ("desc".to_string(), Value::String(String::new())),
                 ("title".to_string(), Value::String(String::new())),
             ]),
@@ -96,9 +163,7 @@ pub async fn get_ai_control_config(
 
 #[axum::debug_handler]
 #[allow(non_snake_case)]
-pub async fn list_ai_models(
-    pool: Extension<Pool>,
-) -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn list_ai_models(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let rows = client
         .query(
@@ -113,15 +178,25 @@ pub async fn list_ai_models(
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
-                ("name".to_string(), Value::String(row.get::<_, Option<String>>("name").unwrap_or_default())),
+                (
+                    "name".to_string(),
+                    Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
+                ),
                 ("enabled".to_string(), Value::Bool(row.get("enabled"))),
-                ("contextWindow".to_string(), Value::Number(serde_json::Number::from(8192i64))),
+                (
+                    "contextWindow".to_string(),
+                    Value::Number(serde_json::Number::from(8192i64)),
+                ),
             ]))
         })
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
+    Ok(Json(ActionResult::java_success(
+        Value::Array(data),
+        count,
+        0,
+    )))
 }
 
 #[axum::debug_handler]
@@ -133,14 +208,34 @@ pub async fn update_ai_control_config(
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let config = body.0;
 
-    let name = config.get("name").and_then(|v| v.as_str()).unwrap_or("default").to_string();
-    let default_model = config.get("defaultModel").and_then(|v| v.as_str()).unwrap_or("gpt-4").to_string();
-    let temperature = config.get("temperature").and_then(|v| v.as_f64()).unwrap_or(0.7);
-    let max_tokens = config.get("maxTokens").and_then(|v| v.as_i64()).unwrap_or(4096);
-    let enabled = config.get("enabled").and_then(|v| v.as_bool()).unwrap_or(true);
+    let name = config
+        .get("name")
+        .and_then(|v| v.as_str())
+        .unwrap_or("default")
+        .to_string();
+    let default_model = config
+        .get("defaultModel")
+        .and_then(|v| v.as_str())
+        .unwrap_or("gpt-4")
+        .to_string();
+    let temperature = config
+        .get("temperature")
+        .and_then(|v| v.as_f64())
+        .unwrap_or(0.7);
+    let max_tokens = config
+        .get("maxTokens")
+        .and_then(|v| v.as_i64())
+        .unwrap_or(4096);
+    let enabled = config
+        .get("enabled")
+        .and_then(|v| v.as_bool())
+        .unwrap_or(true);
 
     let existing = client
-        .query_opt("SELECT id FROM x_ai_mcp_config WHERE is_base = true LIMIT 1", &[])
+        .query_opt(
+            "SELECT id FROM x_ai_mcp_config WHERE is_base = true LIMIT 1",
+            &[],
+        )
         .await
         .map_err(|_| AppError::Internal)?;
 
@@ -173,9 +268,7 @@ pub async fn update_ai_control_config(
 
 #[axum::debug_handler]
 #[allow(non_snake_case)]
-pub async fn get_usage_stats(
-    pool: Extension<Pool>,
-) -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn get_usage_stats(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let file_count: i64 = client
@@ -194,20 +287,44 @@ pub async fn get_usage_stats(
 
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
-            ("totalRequests".to_string(), Value::Number(serde_json::Number::from(total))),
-            ("totalTokens".to_string(), Value::Number(serde_json::Number::from(total))),
-            ("costThisMonth".to_string(), Value::Number(serde_json::Number::from_f64(total as f64 * 0.001).unwrap())),
+            (
+                "totalRequests".to_string(),
+                Value::Number(serde_json::Number::from(total)),
+            ),
+            (
+                "totalTokens".to_string(),
+                Value::Number(serde_json::Number::from(total)),
+            ),
+            (
+                "costThisMonth".to_string(),
+                Value::Number(serde_json::Number::from_f64(total as f64 * 0.001).unwrap()),
+            ),
         ]),
     ))))
 }
 
 pub fn mcp_router(pool: Option<Pool>) -> axum::Router {
     let router = Router::new()
-        .route("/jaxrs/ai/assemble/control/config/list/mcp/paging/{page}/size/{size}", get(config_list_mcp_paging_page_size_size))
-        .route("/jaxrs/ai/assemble/control/config/get/mcp/{id}", get(config_get_mcp_flag))
-        .route("/jaxrs/ai/assemble/control/config/create/mcp", post(config_create_mcp))
-        .route("/jaxrs/ai/assemble/control/config/update/mcp/{id}", post(config_update_mcp_flag))
-        .route("/jaxrs/ai/assemble/control/config/delete/mcp/{id}", post(config_delete_mcp_flag));
+        .route(
+            "/jaxrs/ai/assemble/control/config/list/mcp/paging/{page}/size/{size}",
+            get(config_list_mcp_paging_page_size_size),
+        )
+        .route(
+            "/jaxrs/ai/assemble/control/config/get/mcp/{id}",
+            get(config_get_mcp_flag),
+        )
+        .route(
+            "/jaxrs/ai/assemble/control/config/create/mcp",
+            post(config_create_mcp),
+        )
+        .route(
+            "/jaxrs/ai/assemble/control/config/update/mcp/{id}",
+            post(config_update_mcp_flag),
+        )
+        .route(
+            "/jaxrs/ai/assemble/control/config/delete/mcp/{id}",
+            post(config_delete_mcp_flag),
+        );
 
     if let Some(pool) = pool {
         router.layer(Extension(pool))
@@ -219,8 +336,6 @@ pub fn mcp_router(pool: Option<Pool>) -> axum::Router {
 pub fn router(pool: deadpool_postgres::Pool) -> axum::Router {
     crate::ai_assemble_control_router(pool)
 }
-
-
 
 #[axum::debug_handler]
 #[allow(non_snake_case)]
@@ -240,10 +355,25 @@ pub async fn config_base_config(
         Some(row) => {
             let result = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
-                ("name".to_string(), Value::String(row.get::<_, Option<String>>("name").unwrap_or_default())),
-                ("defaultModel".to_string(), Value::String(row.get("default_model"))),
-                ("temperature".to_string(), Value::Number(serde_json::Number::from_f64(row.get::<_, f64>("temperature")).unwrap_or_else(|| serde_json::Number::from_f64(0.0).unwrap()))),
-                ("maxTokens".to_string(), Value::Number(serde_json::Number::from(row.get::<_, i64>("max_tokens")))),
+                (
+                    "name".to_string(),
+                    Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
+                ),
+                (
+                    "defaultModel".to_string(),
+                    Value::String(row.get("default_model")),
+                ),
+                (
+                    "temperature".to_string(),
+                    Value::Number(
+                        serde_json::Number::from_f64(row.get::<_, f64>("temperature"))
+                            .unwrap_or_else(|| serde_json::Number::from_f64(0.0).unwrap()),
+                    ),
+                ),
+                (
+                    "maxTokens".to_string(),
+                    Value::Number(serde_json::Number::from(row.get::<_, i64>("max_tokens"))),
+                ),
                 ("enabled".to_string(), Value::Bool(row.get("enabled"))),
                 ("creator".to_string(), Value::String(row.get("creator"))),
             ]));
@@ -251,9 +381,18 @@ pub async fn config_base_config(
         }
         None => Ok(Json(ActionResult::success(Value::Object(
             serde_json::Map::from_iter([
-                ("defaultModel".to_string(), Value::String("gpt-4".to_string())),
-                ("temperature".to_string(), Value::Number(serde_json::Number::from_f64(0.7).unwrap())),
-                ("maxTokens".to_string(), Value::Number(serde_json::Number::from(4096i64))),
+                (
+                    "defaultModel".to_string(),
+                    Value::String("gpt-4".to_string()),
+                ),
+                (
+                    "temperature".to_string(),
+                    Value::Number(serde_json::Number::from_f64(0.7).unwrap()),
+                ),
+                (
+                    "maxTokens".to_string(),
+                    Value::Number(serde_json::Number::from(4096i64)),
+                ),
                 ("enabled".to_string(), Value::Bool(false)),
             ]),
         )))),
@@ -269,8 +408,16 @@ pub async fn config_create_mcp(
     let req = req.map(|r| r.0).unwrap_or_default();
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let id = uuid::Uuid::new_v4().to_string();
-    let name = req.get("name").and_then(|v| v.as_str()).unwrap_or("").to_string();
-    let url = req.get("url").and_then(|v| v.as_str()).unwrap_or("").to_string();
+    let name = req
+        .get("name")
+        .and_then(|v| v.as_str())
+        .unwrap_or("")
+        .to_string();
+    let url = req
+        .get("url")
+        .and_then(|v| v.as_str())
+        .unwrap_or("")
+        .to_string();
     let enabled = req.get("enabled").and_then(|v| v.as_bool()).unwrap_or(true);
     let creator = "system";
 
@@ -278,7 +425,10 @@ pub async fn config_create_mcp(
         return Err(AppError::BadRequest("name required".to_string()));
     }
     if u2_normalized_name_dup(&client, "x_ai_mcp_config", &name).await? {
-        return Err(AppError::BadRequest(format!("mcp config name already exists: {}", name)));
+        return Err(AppError::BadRequest(format!(
+            "mcp config name already exists: {}",
+            name
+        )));
     }
 
     client
@@ -309,8 +459,16 @@ pub async fn config_create_model(
     let req = req.map(|r| r.0).unwrap_or_default();
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let id = uuid::Uuid::new_v4().to_string();
-    let name = req.get("name").and_then(|v| v.as_str()).unwrap_or("").to_string();
-    let url = req.get("url").and_then(|v| v.as_str()).unwrap_or("").to_string();
+    let name = req
+        .get("name")
+        .and_then(|v| v.as_str())
+        .unwrap_or("")
+        .to_string();
+    let url = req
+        .get("url")
+        .and_then(|v| v.as_str())
+        .unwrap_or("")
+        .to_string();
     let enabled = req.get("enabled").and_then(|v| v.as_bool()).unwrap_or(true);
     let creator = "system";
 
@@ -318,7 +476,10 @@ pub async fn config_create_model(
         return Err(AppError::BadRequest("name required".to_string()));
     }
     if u2_normalized_name_dup(&client, "x_ai_model_config", &name).await? {
-        return Err(AppError::BadRequest(format!("model config name already exists: {}", name)));
+        return Err(AppError::BadRequest(format!(
+            "model config name already exists: {}",
+            name
+        )));
     }
 
     client
@@ -348,10 +509,7 @@ pub async fn config_delete_mcp_flag(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let result = client
-        .execute(
-            "DELETE FROM x_ai_mcp_config WHERE id = $1",
-            &[&id],
-        )
+        .execute("DELETE FROM x_ai_mcp_config WHERE id = $1", &[&id])
         .await
         .map_err(|_| AppError::Internal)?;
 
@@ -375,10 +533,7 @@ pub async fn config_delete_model_flag(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let result = client
-        .execute(
-            "DELETE FROM x_ai_model_config WHERE id = $1",
-            &[&id],
-        )
+        .execute("DELETE FROM x_ai_model_config WHERE id = $1", &[&id])
         .await
         .map_err(|_| AppError::Internal)?;
 
@@ -412,12 +567,30 @@ pub async fn config_get_mcp_ext_flag(
         Some(row) => {
             let result = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
-                ("name".to_string(), Value::String(row.get::<_, Option<String>>("name").unwrap_or_default())),
-                ("url".to_string(), Value::String(row.get::<_, Option<String>>("url").unwrap_or_default())),
+                (
+                    "name".to_string(),
+                    Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
+                ),
+                (
+                    "url".to_string(),
+                    Value::String(row.get::<_, Option<String>>("url").unwrap_or_default()),
+                ),
                 ("enabled".to_string(), Value::Bool(row.get("enabled"))),
                 ("creator".to_string(), Value::String(row.get("creator"))),
-                ("createTime".to_string(), Value::String(row.get::<_, Option<String>>("create_time").unwrap_or_default())),
-                ("updateTime".to_string(), Value::String(row.get::<_, Option<String>>("update_time").unwrap_or_default())),
+                (
+                    "createTime".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
+                ),
+                (
+                    "updateTime".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("update_time")
+                            .unwrap_or_default(),
+                    ),
+                ),
             ]));
             Ok(Json(ActionResult::success(result)))
         }
@@ -445,12 +618,30 @@ pub async fn config_get_mcp_flag(
         Some(row) => {
             let result = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
-                ("name".to_string(), Value::String(row.get::<_, Option<String>>("name").unwrap_or_default())),
-                ("url".to_string(), Value::String(row.get::<_, Option<String>>("url").unwrap_or_default())),
+                (
+                    "name".to_string(),
+                    Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
+                ),
+                (
+                    "url".to_string(),
+                    Value::String(row.get::<_, Option<String>>("url").unwrap_or_default()),
+                ),
                 ("enabled".to_string(), Value::Bool(row.get("enabled"))),
                 ("creator".to_string(), Value::String(row.get("creator"))),
-                ("createTime".to_string(), Value::String(row.get::<_, Option<String>>("create_time").unwrap_or_default())),
-                ("updateTime".to_string(), Value::String(row.get::<_, Option<String>>("update_time").unwrap_or_default())),
+                (
+                    "createTime".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
+                ),
+                (
+                    "updateTime".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("update_time")
+                            .unwrap_or_default(),
+                    ),
+                ),
             ]));
             Ok(Json(ActionResult::success(result)))
         }
@@ -477,12 +668,30 @@ pub async fn config_get_model_flag(
         Some(row) => {
             let result = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
-                ("name".to_string(), Value::String(row.get::<_, Option<String>>("name").unwrap_or_default())),
-                ("url".to_string(), Value::String(row.get::<_, Option<String>>("url").unwrap_or_default())),
+                (
+                    "name".to_string(),
+                    Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
+                ),
+                (
+                    "url".to_string(),
+                    Value::String(row.get::<_, Option<String>>("url").unwrap_or_default()),
+                ),
                 ("enabled".to_string(), Value::Bool(row.get("enabled"))),
                 ("creator".to_string(), Value::String(row.get("creator"))),
-                ("createTime".to_string(), Value::String(row.get::<_, Option<String>>("create_time").unwrap_or_default())),
-                ("updateTime".to_string(), Value::String(row.get::<_, Option<String>>("update_time").unwrap_or_default())),
+                (
+                    "createTime".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
+                ),
+                (
+                    "updateTime".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("update_time")
+                            .unwrap_or_default(),
+                    ),
+                ),
             ]));
             Ok(Json(ActionResult::success(result)))
         }
@@ -509,18 +718,40 @@ pub async fn config_list_enable_model(
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
-                ("name".to_string(), Value::String(row.get::<_, Option<String>>("name").unwrap_or_default())),
-                ("url".to_string(), Value::String(row.get::<_, Option<String>>("url").unwrap_or_default())),
+                (
+                    "name".to_string(),
+                    Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
+                ),
+                (
+                    "url".to_string(),
+                    Value::String(row.get::<_, Option<String>>("url").unwrap_or_default()),
+                ),
                 ("enabled".to_string(), Value::Bool(row.get("enabled"))),
                 ("creator".to_string(), Value::String(row.get("creator"))),
-                ("createTime".to_string(), Value::String(row.get::<_, Option<String>>("create_time").unwrap_or_default())),
-                ("updateTime".to_string(), Value::String(row.get::<_, Option<String>>("update_time").unwrap_or_default())),
+                (
+                    "createTime".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
+                ),
+                (
+                    "updateTime".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("update_time")
+                            .unwrap_or_default(),
+                    ),
+                ),
             ]))
         })
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
+    Ok(Json(ActionResult::java_success(
+        Value::Array(data),
+        count,
+        0,
+    )))
 }
 
 #[axum::debug_handler]
@@ -550,18 +781,40 @@ pub async fn config_list_mcp_paging_page_size_size(
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
-                ("name".to_string(), Value::String(row.get::<_, Option<String>>("name").unwrap_or_default())),
-                ("url".to_string(), Value::String(row.get::<_, Option<String>>("url").unwrap_or_default())),
+                (
+                    "name".to_string(),
+                    Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
+                ),
+                (
+                    "url".to_string(),
+                    Value::String(row.get::<_, Option<String>>("url").unwrap_or_default()),
+                ),
                 ("enabled".to_string(), Value::Bool(row.get("enabled"))),
                 ("creator".to_string(), Value::String(row.get("creator"))),
-                ("createTime".to_string(), Value::String(row.get::<_, Option<String>>("create_time").unwrap_or_default())),
-                ("updateTime".to_string(), Value::String(row.get::<_, Option<String>>("update_time").unwrap_or_default())),
+                (
+                    "createTime".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
+                ),
+                (
+                    "updateTime".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("update_time")
+                            .unwrap_or_default(),
+                    ),
+                ),
             ]))
         })
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
+    Ok(Json(ActionResult::java_success(
+        Value::Array(data),
+        count,
+        0,
+    )))
 }
 
 #[axum::debug_handler]
@@ -588,18 +841,40 @@ pub async fn config_list_model_paging_page_size_size(
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
-                ("name".to_string(), Value::String(row.get::<_, Option<String>>("name").unwrap_or_default())),
-                ("url".to_string(), Value::String(row.get::<_, Option<String>>("url").unwrap_or_default())),
+                (
+                    "name".to_string(),
+                    Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
+                ),
+                (
+                    "url".to_string(),
+                    Value::String(row.get::<_, Option<String>>("url").unwrap_or_default()),
+                ),
                 ("enabled".to_string(), Value::Bool(row.get("enabled"))),
                 ("creator".to_string(), Value::String(row.get("creator"))),
-                ("createTime".to_string(), Value::String(row.get::<_, Option<String>>("create_time").unwrap_or_default())),
-                ("updateTime".to_string(), Value::String(row.get::<_, Option<String>>("update_time").unwrap_or_default())),
+                (
+                    "createTime".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
+                ),
+                (
+                    "updateTime".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("update_time")
+                            .unwrap_or_default(),
+                    ),
+                ),
             ]))
         })
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
+    Ok(Json(ActionResult::java_success(
+        Value::Array(data),
+        count,
+        0,
+    )))
 }
 
 #[axum::debug_handler]
@@ -610,14 +885,39 @@ pub async fn config_save(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let req = req.map(|r| r.0).unwrap_or_default();
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
-    let id = req.get("id").and_then(|v| v.as_str()).unwrap_or_default().to_string();
-    let name = req.get("name").and_then(|v| v.as_str()).unwrap_or_default().to_string();
-    let url = req.get("url").and_then(|v| v.as_str()).unwrap_or_default().to_string();
-    let default_model = req.get("defaultModel").and_then(|v| v.as_str()).unwrap_or_default().to_string();
-    let temperature = req.get("temperature").and_then(|v| v.as_f64()).unwrap_or(0.7);
-    let max_tokens = req.get("maxTokens").and_then(|v| v.as_i64()).unwrap_or(4096);
+    let id = req
+        .get("id")
+        .and_then(|v| v.as_str())
+        .unwrap_or_default()
+        .to_string();
+    let name = req
+        .get("name")
+        .and_then(|v| v.as_str())
+        .unwrap_or_default()
+        .to_string();
+    let url = req
+        .get("url")
+        .and_then(|v| v.as_str())
+        .unwrap_or_default()
+        .to_string();
+    let default_model = req
+        .get("defaultModel")
+        .and_then(|v| v.as_str())
+        .unwrap_or_default()
+        .to_string();
+    let temperature = req
+        .get("temperature")
+        .and_then(|v| v.as_f64())
+        .unwrap_or(0.7);
+    let max_tokens = req
+        .get("maxTokens")
+        .and_then(|v| v.as_i64())
+        .unwrap_or(4096);
     let enabled = req.get("enabled").and_then(|v| v.as_bool()).unwrap_or(true);
-    let creator = req.get("creator").and_then(|v| v.as_str()).unwrap_or("system");
+    let creator = req
+        .get("creator")
+        .and_then(|v| v.as_str())
+        .unwrap_or("system");
 
     let existing = client
         .query_opt("SELECT id FROM x_ai_mcp_config WHERE id = $1", &[&id])
@@ -652,14 +952,23 @@ pub async fn config_save(
             ("id".to_string(), Value::String(id.clone())),
             ("name".to_string(), Value::String(name.clone())),
             ("saved".to_string(), Value::Bool(result > 0)),
-            ("value".to_string(), Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(id)),
-                ("name".to_string(), Value::String(name)),
-                ("defaultModel".to_string(), Value::String(default_model)),
-                ("temperature".to_string(), Value::Number(serde_json::Number::from_f64(temperature).unwrap())),
-                ("maxTokens".to_string(), Value::Number(serde_json::Number::from(max_tokens))),
-                ("enabled".to_string(), Value::Bool(enabled)),
-            ]))),
+            (
+                "value".to_string(),
+                Value::Object(serde_json::Map::from_iter([
+                    ("id".to_string(), Value::String(id)),
+                    ("name".to_string(), Value::String(name)),
+                    ("defaultModel".to_string(), Value::String(default_model)),
+                    (
+                        "temperature".to_string(),
+                        Value::Number(serde_json::Number::from_f64(temperature).unwrap()),
+                    ),
+                    (
+                        "maxTokens".to_string(),
+                        Value::Number(serde_json::Number::from(max_tokens)),
+                    ),
+                    ("enabled".to_string(), Value::Bool(enabled)),
+                ])),
+            ),
         ]),
     ))))
 }
@@ -673,8 +982,16 @@ pub async fn config_update_mcp_flag(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let req = req.map(|r| r.0).unwrap_or_default();
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
-    let name = req.get("name").and_then(|v| v.as_str()).unwrap_or("").to_string();
-    let url = req.get("url").and_then(|v| v.as_str()).unwrap_or("").to_string();
+    let name = req
+        .get("name")
+        .and_then(|v| v.as_str())
+        .unwrap_or("")
+        .to_string();
+    let url = req
+        .get("url")
+        .and_then(|v| v.as_str())
+        .unwrap_or("")
+        .to_string();
     let enabled = req.get("enabled").and_then(|v| v.as_bool()).unwrap_or(true);
 
     let result = client
@@ -710,8 +1027,16 @@ pub async fn config_update_model_flag(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let req = req.map(|r| r.0).unwrap_or_default();
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
-    let name = req.get("name").and_then(|v| v.as_str()).unwrap_or("").to_string();
-    let url = req.get("url").and_then(|v| v.as_str()).unwrap_or("").to_string();
+    let name = req
+        .get("name")
+        .and_then(|v| v.as_str())
+        .unwrap_or("")
+        .to_string();
+    let url = req
+        .get("url")
+        .and_then(|v| v.as_str())
+        .unwrap_or("")
+        .to_string();
     let enabled = req.get("enabled").and_then(|v| v.as_bool()).unwrap_or(true);
 
     let result = client
@@ -745,8 +1070,16 @@ pub async fn file_copy_file(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let req = req.map(|r| r.0).unwrap_or_default();
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
-    let source_id = req.get("sourceId").and_then(|v| v.as_str()).unwrap_or("").to_string();
-    let new_name = req.get("name").and_then(|v| v.as_str()).unwrap_or("").to_string();
+    let source_id = req
+        .get("sourceId")
+        .and_then(|v| v.as_str())
+        .unwrap_or("")
+        .to_string();
+    let new_name = req
+        .get("name")
+        .and_then(|v| v.as_str())
+        .unwrap_or("")
+        .to_string();
     let new_id = uuid::Uuid::new_v4().to_string();
     let creator = "system";
 
@@ -775,10 +1108,7 @@ pub async fn file_delete_flag(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let result = client
-        .execute(
-            "DELETE FROM x_ai_file WHERE id = $1",
-            &[&id],
-        )
+        .execute("DELETE FROM x_ai_file WHERE id = $1", &[&id])
         .await
         .map_err(|_| AppError::Internal)?;
 
@@ -823,7 +1153,11 @@ pub async fn file_list_with_ids(
         .collect();
 
     if ids.is_empty() {
-        return Ok(Json(ActionResult::java_success(Value::Array(Vec::new()), 0, 0)));
+        return Ok(Json(ActionResult::java_success(
+            Value::Array(Vec::new()),
+            0,
+            0,
+        )));
     }
 
     let rows = client
@@ -840,9 +1174,15 @@ pub async fn file_list_with_ids(
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
-                ("name".to_string(), Value::String(row.get::<_, Option<String>>("name").unwrap_or_default())),
+                (
+                    "name".to_string(),
+                    Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
+                ),
                 ("fileName".to_string(), Value::String(row.get("file_name"))),
-                ("fileSize".to_string(), Value::Number(serde_json::Number::from(row.get::<_, i64>("file_size")))),
+                (
+                    "fileSize".to_string(),
+                    Value::Number(serde_json::Number::from(row.get::<_, i64>("file_size"))),
+                ),
                 ("fileType".to_string(), Value::String(row.get("file_type"))),
                 ("enabled".to_string(), Value::Bool(row.get("enabled"))),
                 ("creator".to_string(), Value::String(row.get("creator"))),
@@ -851,7 +1191,11 @@ pub async fn file_list_with_ids(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
+    Ok(Json(ActionResult::java_success(
+        Value::Array(data),
+        count,
+        0,
+    )))
 }
 
 #[axum::debug_handler]
@@ -875,9 +1219,15 @@ pub async fn file_list_paging_page_size_size(
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
-                ("name".to_string(), Value::String(row.get::<_, Option<String>>("name").unwrap_or_default())),
+                (
+                    "name".to_string(),
+                    Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
+                ),
                 ("fileName".to_string(), Value::String(row.get("file_name"))),
-                ("fileSize".to_string(), Value::Number(serde_json::Number::from(row.get::<_, i64>("file_size")))),
+                (
+                    "fileSize".to_string(),
+                    Value::Number(serde_json::Number::from(row.get::<_, i64>("file_size"))),
+                ),
                 ("fileType".to_string(), Value::String(row.get("file_type"))),
                 ("enabled".to_string(), Value::Bool(row.get("enabled"))),
             ]))
@@ -885,7 +1235,11 @@ pub async fn file_list_paging_page_size_size(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
+    Ok(Json(ActionResult::java_success(
+        Value::Array(data),
+        count,
+        0,
+    )))
 }
 
 #[axum::debug_handler]
@@ -897,10 +1251,22 @@ pub async fn file_upload(
     let req = req.map(|r| r.0).unwrap_or_default();
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let id = uuid::Uuid::new_v4().to_string();
-    let name = req.get("name").and_then(|v| v.as_str()).unwrap_or("").to_string();
-    let file_name = req.get("fileName").and_then(|v| v.as_str()).unwrap_or("").to_string();
+    let name = req
+        .get("name")
+        .and_then(|v| v.as_str())
+        .unwrap_or("")
+        .to_string();
+    let file_name = req
+        .get("fileName")
+        .and_then(|v| v.as_str())
+        .unwrap_or("")
+        .to_string();
     let file_size = req.get("fileSize").and_then(|v| v.as_i64()).unwrap_or(0);
-    let file_type = req.get("fileType").and_then(|v| v.as_str()).unwrap_or("").to_string();
+    let file_type = req
+        .get("fileType")
+        .and_then(|v| v.as_str())
+        .unwrap_or("")
+        .to_string();
     let enabled = req.get("enabled").and_then(|v| v.as_bool()).unwrap_or(true);
     let creator = "system";
 
@@ -917,15 +1283,33 @@ pub async fn file_upload(
             ("id".to_string(), Value::String(id.clone())),
             ("uploaded".to_string(), Value::Bool(upload_result > 0)),
             ("fileName".to_string(), Value::String(file_name)),
-            ("url".to_string(), Value::String(format!("/download/{}", id))),
+            (
+                "url".to_string(),
+                Value::String(format!("/download/{}", id)),
+            ),
             ("servlet".to_string(), Value::String(String::new())),
             ("status".to_string(), Value::String("success".to_string())),
-            ("size".to_string(), Value::Number(serde_json::Number::from(file_size))),
+            (
+                "size".to_string(),
+                Value::Number(serde_json::Number::from(file_size)),
+            ),
             ("type".to_string(), Value::String(file_type)),
-            ("count".to_string(), Value::Number(serde_json::Number::from(1))),
-            ("position".to_string(), Value::Number(serde_json::Number::from(0))),
-            ("date".to_string(), Value::String(shared::response::java_date_now())),
-            ("spent".to_string(), Value::Number(serde_json::Number::from(0))),
+            (
+                "count".to_string(),
+                Value::Number(serde_json::Number::from(1)),
+            ),
+            (
+                "position".to_string(),
+                Value::Number(serde_json::Number::from(0)),
+            ),
+            (
+                "date".to_string(),
+                Value::String(shared::response::java_date_now()),
+            ),
+            (
+                "spent".to_string(),
+                Value::Number(serde_json::Number::from(0)),
+            ),
         ]),
     ))))
 }
@@ -949,9 +1333,15 @@ pub async fn file_flag(
         Some(row) => {
             let result = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
-                ("name".to_string(), Value::String(row.get::<_, Option<String>>("name").unwrap_or_default())),
+                (
+                    "name".to_string(),
+                    Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
+                ),
                 ("fileName".to_string(), Value::String(row.get("file_name"))),
-                ("fileSize".to_string(), Value::Number(serde_json::Number::from(row.get::<_, i64>("file_size")))),
+                (
+                    "fileSize".to_string(),
+                    Value::Number(serde_json::Number::from(row.get::<_, i64>("file_size"))),
+                ),
                 ("fileType".to_string(), Value::String(row.get("file_type"))),
                 ("enabled".to_string(), Value::Bool(row.get("enabled"))),
                 ("creator".to_string(), Value::String(row.get("creator"))),
@@ -981,9 +1371,18 @@ pub async fn file_id_download(
         Some(row) => {
             let result = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
-                ("name".to_string(), Value::String(row.get::<_, Option<String>>("name").unwrap_or_default())),
-                ("url".to_string(), Value::String(format!("/download/{}", row.get::<_, String>("id")))),
-                ("fileSize".to_string(), Value::Number(serde_json::Number::from(row.get::<_, i64>("file_size")))),
+                (
+                    "name".to_string(),
+                    Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
+                ),
+                (
+                    "url".to_string(),
+                    Value::String(format!("/download/{}", row.get::<_, String>("id"))),
+                ),
+                (
+                    "fileSize".to_string(),
+                    Value::Number(serde_json::Number::from(row.get::<_, i64>("file_size"))),
+                ),
             ]));
             Ok(Json(ActionResult::success(result)))
         }
@@ -1010,8 +1409,14 @@ pub async fn file_id_download_scale(
         Some(_) => {
             let result = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(id.clone())),
-                ("url".to_string(), Value::String(format!("/download/{}?scale=0.5", id))),
-                ("scale".to_string(), Value::Number(serde_json::Number::from_f64(0.5).unwrap())),
+                (
+                    "url".to_string(),
+                    Value::String(format!("/download/{}?scale=0.5", id)),
+                ),
+                (
+                    "scale".to_string(),
+                    Value::Number(serde_json::Number::from_f64(0.5).unwrap()),
+                ),
             ]));
             Ok(Json(ActionResult::success(result)))
         }
@@ -1046,7 +1451,11 @@ pub async fn index_cms_doc_with_app_appId(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
+    Ok(Json(ActionResult::java_success(
+        Value::Array(data),
+        count,
+        0,
+    )))
 }
 
 #[axum::debug_handler]
@@ -1086,10 +1495,7 @@ pub async fn index_delete_flag(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let result = client
-        .execute(
-            "DELETE FROM x_ai_index WHERE id = $1",
-            &[&id],
-        )
+        .execute("DELETE FROM x_ai_index WHERE id = $1", &[&id])
         .await
         .map_err(|_| AppError::Internal)?;
 
@@ -1135,7 +1541,11 @@ pub async fn index_list_paging_page_size_size(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
+    Ok(Json(ActionResult::java_success(
+        Value::Array(data),
+        count,
+        0,
+    )))
 }
 
 /// Java IndexAction.syncToKnowledge（GET /index/sync/to/knowledge，无参数）：
@@ -1158,7 +1568,10 @@ pub async fn index_sync_to_knowledge(
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("synced".to_string(), Value::Bool(true)),
-            ("count".to_string(), Value::Number(serde_json::Number::from(synced_count as i64))),
+            (
+                "count".to_string(),
+                Value::Number(serde_json::Number::from(synced_count as i64)),
+            ),
         ]),
     ))))
 }
@@ -1170,7 +1583,8 @@ fn ai_client() -> &'static reqwest::Client {
 
 async fn call_llm(messages: &[ChatMessage]) -> Result<String, AppError> {
     let api_key = std::env::var("AI_API_KEY").map_err(|_| AppError::Internal)?;
-    let api_base = std::env::var("AI_API_BASE").unwrap_or_else(|_| "https://api.openai.com/v1".to_string());
+    let api_base =
+        std::env::var("AI_API_BASE").unwrap_or_else(|_| "https://api.openai.com/v1".to_string());
     let model = std::env::var("AI_MODEL").unwrap_or_else(|_| "gpt-4".to_string());
 
     let body = serde_json::json!({
@@ -1179,7 +1593,10 @@ async fn call_llm(messages: &[ChatMessage]) -> Result<String, AppError> {
     });
 
     let resp = ai_client()
-        .post(format!("{}/chat/completions", api_base.trim_end_matches('/')))
+        .post(format!(
+            "{}/chat/completions",
+            api_base.trim_end_matches('/')
+        ))
         .header("Authorization", format!("Bearer {}", api_key))
         .json(&body)
         .send()
@@ -1431,7 +1848,8 @@ async fn call_llm_stream(
     messages: &[ChatMessage],
 ) -> Result<impl futures_util::Stream<Item = Result<String, AppError>>, AppError> {
     let api_key = std::env::var("AI_API_KEY").map_err(|_| AppError::Internal)?;
-    let api_base = std::env::var("AI_API_BASE").unwrap_or_else(|_| "https://api.openai.com/v1".to_string());
+    let api_base =
+        std::env::var("AI_API_BASE").unwrap_or_else(|_| "https://api.openai.com/v1".to_string());
     let model = std::env::var("AI_MODEL").unwrap_or_else(|_| "gpt-4".to_string());
 
     let body = serde_json::json!({
@@ -1441,7 +1859,10 @@ async fn call_llm_stream(
     });
 
     let resp = ai_client()
-        .post(format!("{}/chat/completions", api_base.trim_end_matches('/')))
+        .post(format!(
+            "{}/chat/completions",
+            api_base.trim_end_matches('/')
+        ))
         .header("Authorization", format!("Bearer {}", api_key))
         .json(&body)
         .send()
@@ -1511,7 +1932,10 @@ pub async fn chat_completion_stream(
     pool: Extension<Pool>,
     Extension(session): Extension<shared::session::Session>,
     axum::extract::Json(req): Json<ChatCompletionRequest>,
-) -> Result<Sse<impl futures_util::Stream<Item = Result<axum::response::sse::Event, AppError>>>, AppError> {
+) -> Result<
+    Sse<impl futures_util::Stream<Item = Result<axum::response::sse::Event, AppError>>>,
+    AppError,
+> {
     let ctx = process_chat_request(&pool, &session, &req).await?;
 
     let llm_stream = call_llm_stream(&ctx.full_messages).await?;
@@ -1521,12 +1945,13 @@ pub async fn chat_completion_stream(
         async move {
             match chunk {
                 Ok(token) if !token.is_empty() => {
-                    let event = axum::response::sse::Event::default()
-                        .event("token")
-                        .data(serde_json::json!({
+                    let event = axum::response::sse::Event::default().event("token").data(
+                        serde_json::json!({
                             "conversationId": conversation_id,
                             "token": token,
-                        }).to_string());
+                        })
+                        .to_string(),
+                    );
                     Some(Ok(event))
                 }
                 _ => None,
@@ -1545,7 +1970,10 @@ pub async fn chat_completion_stream(
 
 /// 归一化查重键：trim + 小写 + 折叠内部空白（与 meeting_assemble_control 同口径）。
 fn u2_normalize_name(name: &str) -> String {
-    name.split_whitespace().collect::<Vec<_>>().join(" ").to_lowercase()
+    name.split_whitespace()
+        .collect::<Vec<_>>()
+        .join(" ")
+        .to_lowercase()
 }
 
 /// 归一化查重：表中已存在同名（归一化后）记录则为 true。
@@ -1584,7 +2012,9 @@ pub async fn chat_list_paging_page_size_size(
     Path((page, size)): Path<(i64, i64)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     if page < 1 || size < 1 {
-        return Err(AppError::BadRequest("page and size must be >= 1".to_string()));
+        return Err(AppError::BadRequest(
+            "page and size must be >= 1".to_string(),
+        ));
     }
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let offset = (page - 1) * size;
@@ -1610,13 +2040,23 @@ pub async fn chat_list_paging_page_size_size(
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("title".to_string(), Value::String(row.get("title"))),
                 ("userId".to_string(), Value::String(row.get("user_id"))),
-                ("createTime".to_string(), Value::String(row.get::<_, Option<String>>("create_time").unwrap_or_default())),
+                (
+                    "createTime".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
+                ),
             ]))
         })
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
+    Ok(Json(ActionResult::java_success(
+        Value::Array(data),
+        count,
+        0,
+    )))
 }
 
 /// Java ChatAction.listCompletionPaging（GET /chat/list/completion/{clueId}/paging/{page}/size/{size}）：
@@ -1628,7 +2068,9 @@ pub async fn chat_list_completion_clue_id_paging_page_size_size(
     Path((clue_id, page, size)): Path<(String, i64, i64)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     if page < 1 || size < 1 {
-        return Err(AppError::BadRequest("page and size must be >= 1".to_string()));
+        return Err(AppError::BadRequest(
+            "page and size must be >= 1".to_string(),
+        ));
     }
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let offset = (page - 1) * size;
@@ -1656,13 +2098,23 @@ pub async fn chat_list_completion_clue_id_paging_page_size_size(
                 ("role".to_string(), Value::String(row.get("role"))),
                 ("content".to_string(), Value::String(row.get("content"))),
                 ("creator".to_string(), Value::String(row.get("creator"))),
-                ("createTime".to_string(), Value::String(row.get::<_, Option<String>>("create_time").unwrap_or_default())),
+                (
+                    "createTime".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
+                ),
             ]))
         })
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
+    Ok(Json(ActionResult::java_success(
+        Value::Array(data),
+        count,
+        0,
+    )))
 }
 
 /// Java ChatAction.delete（GET /chat/delete/{clueId}）：删除线索及其对话。
@@ -1686,12 +2138,14 @@ pub async fn chat_delete_clue_id(
         .map(|row| row.get("user_id"));
 
     match owner {
-        None => return Ok(Json(ActionResult::success(Value::Object(
-            serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(clue_id)),
-                ("deleted".to_string(), Value::Bool(false)),
-            ]),
-        )))),
+        None => {
+            return Ok(Json(ActionResult::success(Value::Object(
+                serde_json::Map::from_iter([
+                    ("id".to_string(), Value::String(clue_id)),
+                    ("deleted".to_string(), Value::Bool(false)),
+                ]),
+            ))))
+        }
         Some(user_id) if user_id != session.person_unique => return Err(AppError::Forbidden),
         _ => {}
     }
@@ -1716,7 +2170,10 @@ pub async fn chat_delete_clue_id(
         serde_json::Map::from_iter([
             ("id".to_string(), Value::String(clue_id)),
             ("deleted".to_string(), Value::Bool(clue > 0)),
-            ("completionsDeleted".to_string(), Value::Number(serde_json::Number::from(completions as i64))),
+            (
+                "completionsDeleted".to_string(),
+                Value::Number(serde_json::Number::from(completions as i64)),
+            ),
         ]),
     ))))
 }
@@ -1771,5 +2228,3 @@ pub async fn chat_write_completion_extra(
         ]),
     ))))
 }
-
-

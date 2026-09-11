@@ -1,9 +1,9 @@
+use axum::extract::Path;
 use axum::{
     extract::{Extension, Json},
     routing::{get, post},
     Router,
 };
-use axum::extract::Path;
 use deadpool_postgres::Pool;
 use serde_json::Value;
 use shared::{error::AppError, response::ActionResult};
@@ -52,9 +52,7 @@ pub struct QueryImport {
     pub create_time: String,
 }
 
-pub async fn view_list(
-    pool: Extension<Pool>,
-) -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn view_list(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let rows = client
         .query(
@@ -75,9 +73,15 @@ pub async fn view_list(
                         .map(|v| ("description".to_string(), Value::String(v))),
                     row.get::<_, Option<String>>("query_sql")
                         .map(|v| ("querySql".to_string(), Value::String(v))),
-                    Some(("creatorId".to_string(), Value::String(row.get("creator_id")))),
+                    Some((
+                        "creatorId".to_string(),
+                        Value::String(row.get("creator_id")),
+                    )),
                     Some(("status".to_string(), Value::String(row.get("status")))),
-                    Some(("createTime".to_string(), Value::String(row.get::<_, String>("create_time")))),
+                    Some((
+                        "createTime".to_string(),
+                        Value::String(row.get::<_, String>("create_time")),
+                    )),
                 ]
                 .into_iter()
                 .flatten(),
@@ -86,7 +90,11 @@ pub async fn view_list(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
+    Ok(Json(ActionResult::java_success(
+        Value::Array(data),
+        count,
+        0,
+    )))
 }
 
 pub async fn view_get(
@@ -113,9 +121,15 @@ pub async fn view_get(
                         .map(|v| ("description".to_string(), Value::String(v))),
                     row.get::<_, Option<String>>("query_sql")
                         .map(|v| ("querySql".to_string(), Value::String(v))),
-                    Some(("creatorId".to_string(), Value::String(row.get("creator_id")))),
+                    Some((
+                        "creatorId".to_string(),
+                        Value::String(row.get("creator_id")),
+                    )),
                     Some(("status".to_string(), Value::String(row.get("status")))),
-                    Some(("createTime".to_string(), Value::String(row.get::<_, String>("create_time")))),
+                    Some((
+                        "createTime".to_string(),
+                        Value::String(row.get::<_, String>("create_time")),
+                    )),
                 ]
                 .into_iter()
                 .flatten(),
@@ -133,11 +147,29 @@ pub async fn view_create(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let id = uuid::Uuid::new_v4().to_string();
-    let name = payload.get("name").and_then(|v| v.as_str()).unwrap_or_default().to_string();
-    let description = payload.get("description").and_then(|v| v.as_str()).map(|s| s.to_string());
-    let query_sql = payload.get("querySql").and_then(|v| v.as_str()).map(|s| s.to_string());
-    let creator_id = payload.get("creatorId").and_then(|v| v.as_str()).unwrap_or_default().to_string();
-    let status = payload.get("status").and_then(|v| v.as_str()).unwrap_or("active").to_string();
+    let name = payload
+        .get("name")
+        .and_then(|v| v.as_str())
+        .unwrap_or_default()
+        .to_string();
+    let description = payload
+        .get("description")
+        .and_then(|v| v.as_str())
+        .map(|s| s.to_string());
+    let query_sql = payload
+        .get("querySql")
+        .and_then(|v| v.as_str())
+        .map(|s| s.to_string());
+    let creator_id = payload
+        .get("creatorId")
+        .and_then(|v| v.as_str())
+        .unwrap_or_default()
+        .to_string();
+    let status = payload
+        .get("status")
+        .and_then(|v| v.as_str())
+        .unwrap_or("active")
+        .to_string();
 
     client
         .execute(
@@ -147,16 +179,16 @@ pub async fn view_create(
         .await
         .map_err(|_| AppError::Internal)?;
 
-    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
-        ("id".to_string(), Value::String(id)),
-        ("name".to_string(), Value::String(name)),
-        ("creatorId".to_string(), Value::String(creator_id)),
-    ])))))
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("id".to_string(), Value::String(id)),
+            ("name".to_string(), Value::String(name)),
+            ("creatorId".to_string(), Value::String(creator_id)),
+        ]),
+    ))))
 }
 
-pub async fn item_list(
-    pool: Extension<Pool>,
-) -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn item_list(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let rows = client
         .query(
@@ -173,7 +205,10 @@ pub async fn item_list(
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("viewId".to_string(), Value::String(row.get("view_id"))),
                 ("name".to_string(), Value::String(row.get("name"))),
-                ("fieldName".to_string(), Value::String(row.get("field_name"))),
+                (
+                    "fieldName".to_string(),
+                    Value::String(row.get("field_name")),
+                ),
                 ("dataType".to_string(), Value::String(row.get("data_type"))),
                 (
                     "createTime".to_string(),
@@ -184,12 +219,14 @@ pub async fn item_list(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
+    Ok(Json(ActionResult::java_success(
+        Value::Array(data),
+        count,
+        0,
+    )))
 }
 
-pub async fn import_list(
-    pool: Extension<Pool>,
-) -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn import_list(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let rows = client
         .query(
@@ -206,11 +243,17 @@ pub async fn import_list(
                 [
                     Some(("id".to_string(), Value::String(row.get("id")))),
                     Some(("viewId".to_string(), Value::String(row.get("view_id")))),
-                    Some(("\"fileName\"".to_string(), Value::String(row.get("file_name")))),
+                    Some((
+                        "\"fileName\"".to_string(),
+                        Value::String(row.get("file_name")),
+                    )),
                     Some(("status".to_string(), Value::String(row.get("status")))),
                     row.get::<_, Option<String>>("import_time")
                         .map(|v| ("importTime".to_string(), Value::String(v))),
-                    Some(("createTime".to_string(), Value::String(row.get::<_, String>("create_time")))),
+                    Some((
+                        "createTime".to_string(),
+                        Value::String(row.get::<_, String>("create_time")),
+                    )),
                 ]
                 .into_iter()
                 .flatten(),
@@ -219,7 +262,11 @@ pub async fn import_list(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
+    Ok(Json(ActionResult::java_success(
+        Value::Array(data),
+        count,
+        0,
+    )))
 }
 
 pub fn query_core_entity_router(pool: Pool) -> Router {
@@ -236,7 +283,6 @@ pub fn query_core_entity_router(pool: Pool) -> Router {
 mod tests;
 #[cfg(test)]
 mod tests_generated;
-
 
 pub fn router(pool: deadpool_postgres::Pool) -> axum::Router {
     crate::query_core_entity_router(pool)

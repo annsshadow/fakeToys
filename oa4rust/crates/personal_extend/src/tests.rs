@@ -164,9 +164,9 @@ fn test_avatar_info_serialization() {
     assert_eq!(json["url"], "/uploads/avatars/avatar-1.jpg");
 }
 
-    #[test]
-    #[ignore = "requires tokio runtime for SessionManager"]
-    fn test_router_builds() {
+#[test]
+#[ignore = "requires tokio runtime for SessionManager"]
+fn test_router_builds() {
     let pool = Pool::builder(deadpool_postgres::Manager::new(
         deadpool_postgres::tokio_postgres::Config::new(),
         deadpool_postgres::tokio_postgres::NoTls,
@@ -184,7 +184,9 @@ fn test_session_manager_integration() {
     let rt = tokio::runtime::Runtime::new().unwrap();
     rt.block_on(async {
         let sm = SessionManager::new();
-        sm.create_session("test_user".to_string(), "test_token".to_string()).await.unwrap();
+        sm.create_session("test_user".to_string(), "test_token".to_string())
+            .await
+            .unwrap();
 
         let session = sm.validate_session("test_token").await;
         assert!(session.is_some());

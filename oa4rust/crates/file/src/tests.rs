@@ -1,16 +1,13 @@
 #[cfg(test)]
 mod tests {
     use crate::{
-        complex_top, file_download, router as file_router, folder_create, folder_list_top,
-        folder_list_with_folder, upload_file_record,
+        complex_top, file_download, folder_create, folder_list_top, folder_list_with_folder,
+        router as file_router, upload_file_record,
     };
     use axum::extract::{Extension, Json};
-    use shared::{
-        error::AppError,
-        response::ActionResult,
-    };
     use serde_json::Value;
     use shared::testing::test_pool;
+    use shared::{error::AppError, response::ActionResult};
 
     #[test]
     fn test_action_result_success_serialization() {
@@ -82,7 +79,17 @@ mod tests {
     async fn test_file_upload_disallowed_mime_returns_error() {
         let pool = Extension(test_pool());
         let data = vec![0u8; 100];
-        let result = upload_file_record(pool, data, "application/zip".to_string(), None, None, None, None, None).await;
+        let result = upload_file_record(
+            pool,
+            data,
+            "application/zip".to_string(),
+            None,
+            None,
+            None,
+            None,
+            None,
+        )
+        .await;
 
         assert!(result.is_err());
         match result {

@@ -16,7 +16,6 @@ mod tests;
 #[cfg(test)]
 mod tests_generated;
 
-
 #[allow(non_snake_case)]
 pub async fn get_control_config(
     pool: Extension<Pool>,
@@ -33,9 +32,15 @@ pub async fn get_control_config(
     let data = match row {
         Ok(r) => serde_json::Map::from_iter([
             ("id".to_string(), Value::String(r.get("id"))),
-            ("configData".to_string(), Value::String(r.get("config_data"))),
+            (
+                "configData".to_string(),
+                Value::String(r.get("config_data")),
+            ),
             ("creator".to_string(), Value::String(r.get("creator"))),
-            ("createTime".to_string(), Value::String(r.get("create_time"))),
+            (
+                "createTime".to_string(),
+                Value::String(r.get("create_time")),
+            ),
         ]),
         Err(_) => serde_json::Map::from_iter([
             ("id".to_string(), Value::String(String::new())),
@@ -56,7 +61,10 @@ pub async fn update_control_config(
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let config_id = payload.get("id").and_then(|v| v.as_str()).unwrap_or("");
-    let config_data = payload.get("configData").and_then(|v| v.as_str()).unwrap_or("");
+    let config_data = payload
+        .get("configData")
+        .and_then(|v| v.as_str())
+        .unwrap_or("");
 
     if config_id.is_empty() {
         return Ok(Json(ActionResult::error("id is required")));
@@ -70,10 +78,15 @@ pub async fn update_control_config(
         .await
         .map_err(|_| AppError::Internal)?;
 
-    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
-        ("id".to_string(), Value::String(config_id.to_string())),
-        ("updated".to_string(), Value::Number(serde_json::Number::from(result as i64))),
-    ])))))
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("id".to_string(), Value::String(config_id.to_string())),
+            (
+                "updated".to_string(),
+                Value::Number(serde_json::Number::from(result as i64)),
+            ),
+        ]),
+    ))))
 }
 
 pub fn mind_assemble_control_router(pool: Pool) -> Router {
@@ -83,7 +96,6 @@ pub fn mind_assemble_control_router(pool: Pool) -> Router {
 pub fn router(pool: deadpool_postgres::Pool) -> axum::Router {
     crate::routes::mind_assemble_control_routes(pool)
 }
-
 
 #[derive(Debug, serde::Deserialize)]
 #[allow(non_snake_case)]
@@ -95,9 +107,7 @@ pub struct MindFolderRequest {
 
 #[axum::debug_handler]
 #[allow(non_snake_case)]
-pub async fn list_folders(
-    pool: Extension<Pool>,
-) -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn list_folders(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let rows = client
@@ -113,16 +123,35 @@ pub async fn list_folders(
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
-                ("name".to_string(), Value::String(row.get::<_, Option<String>>("name").unwrap_or_default())),
-                ("content".to_string(), Value::String(row.get::<_, Option<String>>("content").unwrap_or_default())),
-                ("creator".to_string(), Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default())),
-                ("createTime".to_string(), Value::String(row.get::<_, Option<String>>("create_time").unwrap_or_default())),
+                (
+                    "name".to_string(),
+                    Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
+                ),
+                (
+                    "content".to_string(),
+                    Value::String(row.get::<_, Option<String>>("content").unwrap_or_default()),
+                ),
+                (
+                    "creator".to_string(),
+                    Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
+                ),
+                (
+                    "createTime".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
+                ),
             ]))
         })
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
+    Ok(Json(ActionResult::java_success(
+        Value::Array(data),
+        count,
+        0,
+    )))
 }
 
 #[axum::debug_handler]
@@ -145,10 +174,25 @@ pub async fn get_folder(
         Some(row) => {
             let result = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
-                ("name".to_string(), Value::String(row.get::<_, Option<String>>("name").unwrap_or_default())),
-                ("content".to_string(), Value::String(row.get::<_, Option<String>>("content").unwrap_or_default())),
-                ("creator".to_string(), Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default())),
-                ("createTime".to_string(), Value::String(row.get::<_, Option<String>>("create_time").unwrap_or_default())),
+                (
+                    "name".to_string(),
+                    Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
+                ),
+                (
+                    "content".to_string(),
+                    Value::String(row.get::<_, Option<String>>("content").unwrap_or_default()),
+                ),
+                (
+                    "creator".to_string(),
+                    Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
+                ),
+                (
+                    "createTime".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
+                ),
             ]));
             Ok(Json(ActionResult::success(result)))
         }
@@ -208,8 +252,16 @@ pub async fn update_folder(
         None => return Ok(Json(ActionResult::error("mind folder not found"))),
     };
 
-    let name = payload.get("name").and_then(|v| v.as_str()).map(|s| s.to_string()).unwrap_or_else(|| row.get::<_, Option<String>>("name").unwrap_or_default());
-    let content = payload.get("content").and_then(|v| v.as_str()).map(|s| s.to_string()).unwrap_or_else(|| row.get::<_, Option<String>>("content").unwrap_or_default());
+    let name = payload
+        .get("name")
+        .and_then(|v| v.as_str())
+        .map(|s| s.to_string())
+        .unwrap_or_else(|| row.get::<_, Option<String>>("name").unwrap_or_default());
+    let content = payload
+        .get("content")
+        .and_then(|v| v.as_str())
+        .map(|s| s.to_string())
+        .unwrap_or_else(|| row.get::<_, Option<String>>("content").unwrap_or_default());
 
     let result = client
         .execute(
@@ -219,11 +271,16 @@ pub async fn update_folder(
         .await
         .map_err(|_| AppError::Internal)?;
 
-    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
-        ("id".to_string(), Value::String(id)),
-        ("name".to_string(), Value::String(name)),
-        ("updated".to_string(), Value::Number(serde_json::Number::from(result as i64))),
-    ])))))
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("id".to_string(), Value::String(id)),
+            ("name".to_string(), Value::String(name)),
+            (
+                "updated".to_string(),
+                Value::Number(serde_json::Number::from(result as i64)),
+            ),
+        ]),
+    ))))
 }
 
 #[allow(non_snake_case)]
@@ -234,7 +291,10 @@ pub async fn folder_move_folderId(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
-    let parent_id = req.get("\"parentId\"").and_then(|v| v.as_str()).map(|s| s.to_string());
+    let parent_id = req
+        .get("\"parentId\"")
+        .and_then(|v| v.as_str())
+        .map(|s| s.to_string());
 
     let result = if let Some(pid) = parent_id {
         if pid.is_empty() {
@@ -271,7 +331,10 @@ pub async fn folder_move_folderId(
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("folderId".to_string(), Value::String(folder_id)),
-            ("moved".to_string(), Value::Number(serde_json::Number::from(result as i64))),
+            (
+                "moved".to_string(),
+                Value::Number(serde_json::Number::from(result as i64)),
+            ),
         ]),
     ))))
 }
@@ -295,10 +358,25 @@ pub async fn folder_id(
         Some(row) => {
             let result = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
-                ("name".to_string(), Value::String(row.get::<_, Option<String>>("name").unwrap_or_default())),
-                ("content".to_string(), Value::String(row.get::<_, Option<String>>("content").unwrap_or_default())),
-                ("creator".to_string(), Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default())),
-                ("createTime".to_string(), Value::String(row.get::<_, Option<String>>("create_time").unwrap_or_default())),
+                (
+                    "name".to_string(),
+                    Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
+                ),
+                (
+                    "content".to_string(),
+                    Value::String(row.get::<_, Option<String>>("content").unwrap_or_default()),
+                ),
+                (
+                    "creator".to_string(),
+                    Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
+                ),
+                (
+                    "createTime".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
+                ),
             ]));
             Ok(Json(ActionResult::success(result)))
         }
@@ -322,13 +400,18 @@ pub async fn folder_id_force(
         .map_err(|_| AppError::Internal)?;
 
     if result == 0 {
-        return Ok(Json(ActionResult::error("mind folder not found or already deleted")));
+        return Ok(Json(ActionResult::error(
+            "mind folder not found or already deleted",
+        )));
     }
 
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("id".to_string(), Value::String(id)),
-            ("deleted".to_string(), Value::Number(serde_json::Number::from(result as i64))),
+            (
+                "deleted".to_string(),
+                Value::Number(serde_json::Number::from(result as i64)),
+            ),
         ]),
     ))))
 }

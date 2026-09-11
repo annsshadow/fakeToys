@@ -244,12 +244,18 @@ impl PersonStore for PgPersonStore {
     async fn list_person_mail(&self) -> Result<HashMap<String, Option<String>>, String> {
         let client = self.pool.get().await.map_err(|e| format!("db pool: {e}"))?;
         let rows = client
-            .query("SELECT unique_id, email FROM auth_person WHERE deleted_at IS NULL", &[])
+            .query(
+                "SELECT unique_id, email FROM auth_person WHERE deleted_at IS NULL",
+                &[],
+            )
             .await
             .map_err(|e| format!("query auth_person: {e}"))?;
         let mut map = HashMap::new();
         for row in rows {
-            map.insert(row.get::<_, String>("unique_id"), row.get::<_, Option<String>>("email"));
+            map.insert(
+                row.get::<_, String>("unique_id"),
+                row.get::<_, Option<String>>("email"),
+            );
         }
         Ok(map)
     }
@@ -291,8 +297,8 @@ fn disabled_login_password_hash() -> String {
 /// 执行一轮真实同步：从环境配置连接 LDAP，并与 auth_person 表比对。
 /// 用法：`sync_users_once(&pool).await`
 pub async fn sync_users_once(pool: &Pool) -> Result<SyncReport, String> {
-    let directory =
-        Ldap3Directory::from_env().ok_or_else(|| "LDAP sync disabled or misconfigured".to_string())?;
+    let directory = Ldap3Directory::from_env()
+        .ok_or_else(|| "LDAP sync disabled or misconfigured".to_string())?;
     let store = PgPersonStore::new(pool.clone());
     sync_from_directory(&directory, &store).await
 }
@@ -422,12 +428,18 @@ mod tests {
     }
 
     fn user(uid: &str, mail: Option<&str>) -> LdapUser {
-        LdapUser { uid: uid.to_string(), mail: mail.map(|s| s.to_string()) }
+        LdapUser {
+            uid: uid.to_string(),
+            mail: mail.map(|s| s.to_string()),
+        }
     }
 
     #[tokio::test]
     async fn test_sync_creates_missing_users() {
-        let dir = MockDirectory::new(vec![user("alice", Some("alice@example.com")), user("bob", None)]);
+        let dir = MockDirectory::new(vec![
+            user("alice", Some("alice@example.com")),
+            user("bob", None),
+        ]);
         let store = InMemoryPersonStore::default();
 
         let report = sync_from_directory(&dir, &store).await.unwrap();
@@ -435,7 +447,10 @@ mod tests {
         assert_eq!(report.created, 2);
         assert_eq!(report.updated, 0);
         assert_eq!(report.skipped, 0);
-        assert_eq!(store.get_mail("alice"), Some(Some("alice@example.com".to_string())));
+        assert_eq!(
+            store.get_mail("alice"),
+            Some(Some("alice@example.com".to_string()))
+        );
         assert_eq!(store.get_mail("bob"), Some(None));
     }
 
@@ -450,12 +465,18 @@ mod tests {
         assert_eq!(report.updated, 1);
         assert_eq!(report.created, 0);
         assert_eq!(report.skipped, 0);
-        assert_eq!(store.get_mail("alice"), Some(Some("alice@new.example.com".to_string())));
+        assert_eq!(
+            store.get_mail("alice"),
+            Some(Some("alice@new.example.com".to_string()))
+        );
     }
 
     #[tokio::test]
     async fn test_sync_skips_unchanged_users() {
-        let dir = MockDirectory::new(vec![user("alice", Some("alice@example.com")), user("bob", None)]);
+        let dir = MockDirectory::new(vec![
+            user("alice", Some("alice@example.com")),
+            user("bob", None),
+        ]);
         let store = InMemoryPersonStore::default();
         store.seed("alice", Some("alice@example.com"));
         store.seed("bob", None);
@@ -499,7 +520,10 @@ mod tests {
         let report = sync_from_directory(&dir, &store).await.unwrap();
 
         assert_eq!(report.created, 1);
-        assert_eq!(store.get_mail("alice"), Some(Some("a@example.com".to_string())));
+        assert_eq!(
+            store.get_mail("alice"),
+            Some(Some("a@example.com".to_string()))
+        );
         assert!(!store.contains(""));
     }
 
@@ -517,10 +541,22 @@ mod tests {
     fn test_interval_parse_fallback_to_default() {
         // 非法/零值必须回退默认 3600，防止 interval(0) panic
         assert_eq!(SyncConfig::parse_interval_secs(Some("1800")), 1800);
-        assert_eq!(SyncConfig::parse_interval_secs(None), DEFAULT_SYNC_INTERVAL_SECS);
-        assert_eq!(SyncConfig::parse_interval_secs(Some("abc")), DEFAULT_SYNC_INTERVAL_SECS);
-        assert_eq!(SyncConfig::parse_interval_secs(Some("0")), DEFAULT_SYNC_INTERVAL_SECS);
-        assert_eq!(SyncConfig::parse_interval_secs(Some("-5")), DEFAULT_SYNC_INTERVAL_SECS);
+        assert_eq!(
+            SyncConfig::parse_interval_secs(None),
+            DEFAULT_SYNC_INTERVAL_SECS
+        );
+        assert_eq!(
+            SyncConfig::parse_interval_secs(Some("abc")),
+            DEFAULT_SYNC_INTERVAL_SECS
+        );
+        assert_eq!(
+            SyncConfig::parse_interval_secs(Some("0")),
+            DEFAULT_SYNC_INTERVAL_SECS
+        );
+        assert_eq!(
+            SyncConfig::parse_interval_secs(Some("-5")),
+            DEFAULT_SYNC_INTERVAL_SECS
+        );
     }
 
     #[test]

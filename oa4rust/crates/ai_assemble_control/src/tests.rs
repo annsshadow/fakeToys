@@ -1,18 +1,14 @@
 #[cfg(test)]
 mod tests {
     use axum::body::Body;
-    use axum::http::{Request, Method, StatusCode};
-    use deadpool_postgres::{Manager, Pool};
+    use axum::http::{Method, Request, StatusCode};
     use deadpool_postgres::tokio_postgres::{Config, NoTls};
+    use deadpool_postgres::{Manager, Pool};
     use shared::response::ActionResult;
     use tower::util::ServiceExt;
-    
 
     fn build_test_pool() -> Pool {
-        let mgr = Manager::new(
-            Config::new(),
-            NoTls,
-        );
+        let mgr = Manager::new(Config::new(), NoTls);
         Pool::builder(mgr).max_size(1).build().unwrap()
     }
 
@@ -154,9 +150,9 @@ mod tests {
 #[cfg(test)]
 mod u2_closure_tests {
     use axum::body::Body;
-    use axum::http::{Request, Method, StatusCode};
-    use deadpool_postgres::{Manager, Pool};
+    use axum::http::{Method, Request, StatusCode};
     use deadpool_postgres::tokio_postgres::{Config, NoTls};
+    use deadpool_postgres::{Manager, Pool};
     use tower::util::ServiceExt;
 
     /// Java x_ai_assemble_control jaxrs 的 33 个唯一端点（类级+方法级 @Path 拼接、
@@ -164,20 +160,35 @@ mod u2_closure_tests {
     const U2_JAVA_ENDPOINTS: &[(&str, &str)] = &[
         // ChatAction（5）
         ("POST", "/jaxrs/ai_assemble_control/chat/completion"),
-        ("GET", "/jaxrs/ai_assemble_control/chat/list/paging/1/size/20"),
-        ("GET", "/jaxrs/ai_assemble_control/chat/list/completion/u2t/paging/1/size/20"),
+        (
+            "GET",
+            "/jaxrs/ai_assemble_control/chat/list/paging/1/size/20",
+        ),
+        (
+            "GET",
+            "/jaxrs/ai_assemble_control/chat/list/completion/u2t/paging/1/size/20",
+        ),
         ("GET", "/jaxrs/ai_assemble_control/chat/delete/u2t"),
-        ("POST", "/jaxrs/ai_assemble_control/chat/write/completion/extra"),
+        (
+            "POST",
+            "/jaxrs/ai_assemble_control/chat/write/completion/extra",
+        ),
         // ConfigAction（15）
         ("GET", "/jaxrs/ai_assemble_control/config/get"),
         ("GET", "/jaxrs/ai_assemble_control/config/base/config"),
         ("POST", "/jaxrs/ai_assemble_control/config/save"),
-        ("GET", "/jaxrs/ai_assemble_control/config/list/model/paging/1/size/20"),
+        (
+            "GET",
+            "/jaxrs/ai_assemble_control/config/list/model/paging/1/size/20",
+        ),
         ("POST", "/jaxrs/ai_assemble_control/config/create/model"),
         ("POST", "/jaxrs/ai_assemble_control/config/update/model/u2t"),
         ("GET", "/jaxrs/ai_assemble_control/config/get/model/u2t"),
         ("GET", "/jaxrs/ai_assemble_control/config/delete/model/u2t"),
-        ("GET", "/jaxrs/ai_assemble_control/config/list/mcp/paging/1/size/20"),
+        (
+            "GET",
+            "/jaxrs/ai_assemble_control/config/list/mcp/paging/1/size/20",
+        ),
         ("POST", "/jaxrs/ai_assemble_control/config/create/mcp"),
         ("POST", "/jaxrs/ai_assemble_control/config/update/mcp/u2t"),
         ("GET", "/jaxrs/ai_assemble_control/config/get/mcp/u2t"),
@@ -190,14 +201,23 @@ mod u2_closure_tests {
         ("POST", "/jaxrs/ai_assemble_control/file/copy/file"),
         ("GET", "/jaxrs/ai_assemble_control/file/u2t/download"),
         ("GET", "/jaxrs/ai_assemble_control/file/u2t/download/scale"),
-        ("POST", "/jaxrs/ai_assemble_control/file/list/paging/1/size/20"),
+        (
+            "POST",
+            "/jaxrs/ai_assemble_control/file/list/paging/1/size/20",
+        ),
         ("GET", "/jaxrs/ai_assemble_control/file/delete/u2t"),
         ("POST", "/jaxrs/ai_assemble_control/file/list"),
         // IndexAction（5）
         ("GET", "/jaxrs/ai_assemble_control/index/cms/doc/u2t"),
-        ("GET", "/jaxrs/ai_assemble_control/index/cms/doc/with/app/u2t"),
+        (
+            "GET",
+            "/jaxrs/ai_assemble_control/index/cms/doc/with/app/u2t",
+        ),
         ("GET", "/jaxrs/ai_assemble_control/index/delete/u2t"),
-        ("POST", "/jaxrs/ai_assemble_control/index/list/paging/1/size/20"),
+        (
+            "POST",
+            "/jaxrs/ai_assemble_control/index/list/paging/1/size/20",
+        ),
         ("GET", "/jaxrs/ai_assemble_control/index/sync/to/knowledge"),
     ];
 
@@ -338,7 +358,11 @@ mod u2_closure_tests {
             )
             .await
             .unwrap();
-        assert_ne!(post.status(), StatusCode::NOT_FOUND, "config/save 必须支持 POST");
+        assert_ne!(
+            post.status(),
+            StatusCode::NOT_FOUND,
+            "config/save 必须支持 POST"
+        );
         assert_ne!(
             post.status(),
             StatusCode::METHOD_NOT_ALLOWED,
@@ -367,7 +391,8 @@ mod u2_closure_tests {
     #[tokio::test]
     async fn test_u2_file_list_post_registered_and_get_rejected() {
         let app = crate::router(build_test_pool());
-        let body = serde_json::to_string(&serde_json::json!({"ids": ["a", "a ", "", "b"]})).unwrap();
+        let body =
+            serde_json::to_string(&serde_json::json!({"ids": ["a", "a ", "", "b"]})).unwrap();
         let post = app
             .clone()
             .oneshot(

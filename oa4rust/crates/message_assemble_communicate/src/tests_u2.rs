@@ -11,8 +11,8 @@
 #[cfg(test)]
 mod u2_tests {
     use crate::{
-        instant_currentperson_consumed_put, mass_create, mass_id_mockdeletetoget,
-        mass_target_list, router as message_router, ws_count_person,
+        instant_currentperson_consumed_put, mass_create, mass_id_mockdeletetoget, mass_target_list,
+        router as message_router, ws_count_person,
     };
     use axum::body::Body;
     use axum::http::{Request, StatusCode};
@@ -69,7 +69,8 @@ mod u2_tests {
         let status = status_of_json(
             "POST",
             "/jaxrs/message/assemble/communicate/connector",
-            json!({"type": "taskCreate", "person": "u1", "title": "t", "body": {"k": 1}}).to_string(),
+            json!({"type": "taskCreate", "person": "u1", "title": "t", "body": {"k": 1}})
+                .to_string(),
         )
         .await;
         assert_eq!(status, StatusCode::INTERNAL_SERVER_ERROR);
@@ -78,22 +79,60 @@ mod u2_tests {
     #[tokio::test]
     async fn u2_ws_family_reachable() {
         assert_eq!(
-            status_of_json("POST", "/jaxrs/message/assemble/communicate/ws", r#"{"person":"u1"}"#.to_string()).await,
+            status_of_json(
+                "POST",
+                "/jaxrs/message/assemble/communicate/ws",
+                r#"{"person":"u1"}"#.to_string()
+            )
+            .await,
             StatusCode::INTERNAL_SERVER_ERROR
         );
-        assert_eq!(status_of("GET", "/jaxrs/message/assemble/communicate/ws/count/person").await, StatusCode::INTERNAL_SERVER_ERROR);
-        assert_eq!(status_of("GET", "/jaxrs/message/assemble/communicate/ws/list/person/current/node").await, StatusCode::INTERNAL_SERVER_ERROR);
-        assert_eq!(status_of("GET", "/jaxrs/message/assemble/communicate/ws/list/person").await, StatusCode::INTERNAL_SERVER_ERROR);
+        assert_eq!(
+            status_of("GET", "/jaxrs/message/assemble/communicate/ws/count/person").await,
+            StatusCode::INTERNAL_SERVER_ERROR
+        );
+        assert_eq!(
+            status_of(
+                "GET",
+                "/jaxrs/message/assemble/communicate/ws/list/person/current/node"
+            )
+            .await,
+            StatusCode::INTERNAL_SERVER_ERROR
+        );
+        assert_eq!(
+            status_of("GET", "/jaxrs/message/assemble/communicate/ws/list/person").await,
+            StatusCode::INTERNAL_SERVER_ERROR
+        );
     }
 
     #[tokio::test]
     async fn u2_mass_family_routes_registered() {
         // POST /mass 与 DELETE /mass/{id}、GET enable/type、GET mockdeletetoget
         // 均带 Session 提取器：router 未注入会话 → 500（而非 404/405）
-        assert_eq!(status_of("POST", "/jaxrs/message/assemble/communicate/mass").await, StatusCode::INTERNAL_SERVER_ERROR);
-        assert_eq!(status_of("DELETE", "/jaxrs/message/assemble/communicate/mass/m-1").await, StatusCode::INTERNAL_SERVER_ERROR);
-        assert_ne!(status_of("GET", "/jaxrs/message/assemble/communicate/mass/m-1/mockdeletetoget").await, StatusCode::NOT_FOUND);
-        assert_ne!(status_of("GET", "/jaxrs/message/assemble/communicate/mass/m-1/mockdeletetoget").await, StatusCode::METHOD_NOT_ALLOWED);
+        assert_eq!(
+            status_of("POST", "/jaxrs/message/assemble/communicate/mass").await,
+            StatusCode::INTERNAL_SERVER_ERROR
+        );
+        assert_eq!(
+            status_of("DELETE", "/jaxrs/message/assemble/communicate/mass/m-1").await,
+            StatusCode::INTERNAL_SERVER_ERROR
+        );
+        assert_ne!(
+            status_of(
+                "GET",
+                "/jaxrs/message/assemble/communicate/mass/m-1/mockdeletetoget"
+            )
+            .await,
+            StatusCode::NOT_FOUND
+        );
+        assert_ne!(
+            status_of(
+                "GET",
+                "/jaxrs/message/assemble/communicate/mass/m-1/mockdeletetoget"
+            )
+            .await,
+            StatusCode::METHOD_NOT_ALLOWED
+        );
     }
 
     // ── 路由可达性：Java 动词链式补齐（405 = 动词仍缺失）───────
@@ -101,34 +140,129 @@ mod u2_tests {
     #[tokio::test]
     async fn u2_java_verb_chains_accept_new_verbs() {
         // Java GET /consume/{id}/type/{type}
-        assert_ne!(status_of("GET", "/jaxrs/message/assemble/communicate/consume/c-1/type/ticket").await, StatusCode::METHOD_NOT_ALLOWED);
+        assert_ne!(
+            status_of(
+                "GET",
+                "/jaxrs/message/assemble/communicate/consume/c-1/type/ticket"
+            )
+            .await,
+            StatusCode::METHOD_NOT_ALLOWED
+        );
         // Java PUT /consume/type/{type}
-        assert_ne!(status_of("PUT", "/jaxrs/message/assemble/communicate/consume/type/ticket").await, StatusCode::METHOD_NOT_ALLOWED);
+        assert_ne!(
+            status_of(
+                "PUT",
+                "/jaxrs/message/assemble/communicate/consume/type/ticket"
+            )
+            .await,
+            StatusCode::METHOD_NOT_ALLOWED
+        );
         // Java POST /im/conversation/list/with/person
-        assert_ne!(status_of("POST", "/jaxrs/message/assemble/communicate/im/conversation/list/with/person").await, StatusCode::METHOD_NOT_ALLOWED);
+        assert_ne!(
+            status_of(
+                "POST",
+                "/jaxrs/message/assemble/communicate/im/conversation/list/with/person"
+            )
+            .await,
+            StatusCode::METHOD_NOT_ALLOWED
+        );
         // Java GET /im/conversation/{id}/group/quit/self
-        assert_ne!(status_of("GET", "/jaxrs/message/assemble/communicate/im/conversation/c-1/group/quit/self").await, StatusCode::METHOD_NOT_ALLOWED);
+        assert_ne!(
+            status_of(
+                "GET",
+                "/jaxrs/message/assemble/communicate/im/conversation/c-1/group/quit/self"
+            )
+            .await,
+            StatusCode::METHOD_NOT_ALLOWED
+        );
         // Java GET /im/msg/revoke/{id}
-        assert_ne!(status_of("GET", "/jaxrs/message/assemble/communicate/im/msg/revoke/m-1").await, StatusCode::METHOD_NOT_ALLOWED);
+        assert_ne!(
+            status_of(
+                "GET",
+                "/jaxrs/message/assemble/communicate/im/msg/revoke/m-1"
+            )
+            .await,
+            StatusCode::METHOD_NOT_ALLOWED
+        );
         // Java POST /im/msg/list/{page}/size/{size} 与 /im/msg/list/object
-        assert_ne!(status_of("POST", "/jaxrs/message/assemble/communicate/im/msg/list/1/size/20").await, StatusCode::METHOD_NOT_ALLOWED);
-        assert_ne!(status_of("POST", "/jaxrs/message/assemble/communicate/im/msg/list/object").await, StatusCode::METHOD_NOT_ALLOWED);
+        assert_ne!(
+            status_of(
+                "POST",
+                "/jaxrs/message/assemble/communicate/im/msg/list/1/size/20"
+            )
+            .await,
+            StatusCode::METHOD_NOT_ALLOWED
+        );
+        assert_ne!(
+            status_of(
+                "POST",
+                "/jaxrs/message/assemble/communicate/im/msg/list/object"
+            )
+            .await,
+            StatusCode::METHOD_NOT_ALLOWED
+        );
         // Java PUT /instant/currentperson/consumed
-        assert_ne!(status_of("PUT", "/jaxrs/message/assemble/communicate/instant/currentperson/consumed").await, StatusCode::METHOD_NOT_ALLOWED);
+        assert_ne!(
+            status_of(
+                "PUT",
+                "/jaxrs/message/assemble/communicate/instant/currentperson/consumed"
+            )
+            .await,
+            StatusCode::METHOD_NOT_ALLOWED
+        );
         // Java POST /message/list/paging/{page}/size/{size}
-        assert_ne!(status_of("POST", "/jaxrs/message/assemble/communicate/message/list/paging/1/size/20").await, StatusCode::METHOD_NOT_ALLOWED);
+        assert_ne!(
+            status_of(
+                "POST",
+                "/jaxrs/message/assemble/communicate/message/list/paging/1/size/20"
+            )
+            .await,
+            StatusCode::METHOD_NOT_ALLOWED
+        );
         // Java GET /mass/enable/type
-        assert_ne!(status_of("GET", "/jaxrs/message/assemble/communicate/mass/enable/type").await, StatusCode::METHOD_NOT_ALLOWED);
+        assert_ne!(
+            status_of(
+                "GET",
+                "/jaxrs/message/assemble/communicate/mass/enable/type"
+            )
+            .await,
+            StatusCode::METHOD_NOT_ALLOWED
+        );
         // Java PUT 主动词：im read / top set
-        assert_ne!(status_of("PUT", "/jaxrs/message/assemble/communicate/im/conversation/c-1/read").await, StatusCode::METHOD_NOT_ALLOWED);
-        assert_ne!(status_of("PUT", "/jaxrs/message/assemble/communicate/im/conversation/c-1/top/set").await, StatusCode::METHOD_NOT_ALLOWED);
+        assert_ne!(
+            status_of(
+                "PUT",
+                "/jaxrs/message/assemble/communicate/im/conversation/c-1/read"
+            )
+            .await,
+            StatusCode::METHOD_NOT_ALLOWED
+        );
+        assert_ne!(
+            status_of(
+                "PUT",
+                "/jaxrs/message/assemble/communicate/im/conversation/c-1/top/set"
+            )
+            .await,
+            StatusCode::METHOD_NOT_ALLOWED
+        );
     }
 
     #[tokio::test]
     async fn u2_im_single_virtual_delete_routes_registered() {
         // Java DELETE /im/conversation/{id}/single + GET single/mockdeletetoget
-        assert_ne!(status_of("DELETE", "/jaxrs/message/assemble/communicate/im/conversation/c-1/single").await, StatusCode::NOT_FOUND);
-        let get_status = status_of("GET", "/jaxrs/message/assemble/communicate/im/conversation/c-1/single/mockdeletetoget").await;
+        assert_ne!(
+            status_of(
+                "DELETE",
+                "/jaxrs/message/assemble/communicate/im/conversation/c-1/single"
+            )
+            .await,
+            StatusCode::NOT_FOUND
+        );
+        let get_status = status_of(
+            "GET",
+            "/jaxrs/message/assemble/communicate/im/conversation/c-1/single/mockdeletetoget",
+        )
+        .await;
         assert_ne!(get_status, StatusCode::NOT_FOUND);
         assert_ne!(get_status, StatusCode::METHOD_NOT_ALLOWED);
     }

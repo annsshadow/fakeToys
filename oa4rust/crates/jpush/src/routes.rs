@@ -1,14 +1,7 @@
-use axum::{
-    extract::Extension,
-    routing::get, routing::post,
-    Router,
-};
+use axum::{extract::Extension, routing::get, routing::post, Router};
 use deadpool_postgres::Pool;
 
-use crate::{
-    hello, device_list, device_get, device_create,
-    template_list, template_get,
-};
+use crate::{device_create, device_get, device_list, hello, template_get, template_list};
 
 pub fn jpush_router(pool: Pool) -> Router {
     Router::new()

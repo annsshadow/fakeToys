@@ -1,7 +1,5 @@
 #[allow(dead_code, non_snake_case)]
-use axum::{
-    extract::Extension, Json, Router,
-};
+use axum::{extract::Extension, Json, Router};
 use deadpool_postgres::Pool;
 use serde_json::Value;
 use shared::{error::AppError, response::ActionResult};
@@ -13,7 +11,6 @@ pub mod routes;
 mod tests;
 #[cfg(test)]
 mod tests_generated;
-
 
 #[axum::debug_handler]
 #[allow(non_snake_case)]
@@ -41,8 +38,14 @@ pub async fn get_control_config(
 
     let data = Value::Object(serde_json::Map::from_iter([
         ("enabled".to_string(), Value::Bool(enabled)),
-        ("maxComponentCount".to_string(), Value::Number(serde_json::Number::from(max_component_count))),
-        ("allowCustomComponents".to_string(), Value::Bool(allow_custom_components)),
+        (
+            "maxComponentCount".to_string(),
+            Value::Number(serde_json::Number::from(max_component_count)),
+        ),
+        (
+            "allowCustomComponents".to_string(),
+            Value::Bool(allow_custom_components),
+        ),
     ]));
 
     Ok(Json(ActionResult::success(data)))
@@ -72,18 +75,27 @@ pub async fn list_control_categories(
             )
             .await
             .ok();
-        let enabled = cnt_row
-            .map(|r| r.get::<_, i64>("cnt") > 0)
-            .unwrap_or(false);
+        let enabled = cnt_row.map(|r| r.get::<_, i64>("cnt") > 0).unwrap_or(false);
         categories.push(Value::Object(serde_json::Map::from_iter([
             ("id".to_string(), Value::String(comp_type.clone())),
-            ("name".to_string(), Value::String(if comp_type == "system" { "System Components".to_string() } else { "Custom Components".to_string() })),
+            (
+                "name".to_string(),
+                Value::String(if comp_type == "system" {
+                    "System Components".to_string()
+                } else {
+                    "Custom Components".to_string()
+                }),
+            ),
             ("enabled".to_string(), Value::Bool(enabled)),
         ])));
     }
 
     let total_categories = categories.len();
-    Ok(Json(ActionResult::java_success(Value::Array(categories), total_categories as i64, 0)))
+    Ok(Json(ActionResult::java_success(
+        Value::Array(categories),
+        total_categories as i64,
+        0,
+    )))
 }
 
 #[axum::debug_handler]
@@ -126,7 +138,10 @@ pub async fn update_control_config(
 
     let updated = result > 0;
 
-    tracing::info!("Updated component assemble control config: {:?}", config_value);
+    tracing::info!(
+        "Updated component assemble control config: {:?}",
+        config_value
+    );
 
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -144,7 +159,6 @@ pub fn router(pool: deadpool_postgres::Pool) -> axum::Router {
     crate::component_assemble_control_router(pool)
 }
 
-
 #[derive(Debug, serde::Deserialize)]
 pub struct ComponentRequest {
     pub name: Option<String>,
@@ -154,9 +168,7 @@ pub struct ComponentRequest {
 
 #[axum::debug_handler]
 #[allow(non_snake_case)]
-pub async fn list_components(
-    pool: Extension<Pool>,
-) -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn list_components(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let rows = client
@@ -175,13 +187,20 @@ pub async fn list_components(
                 ("name".to_string(), Value::String(row.get("name"))),
                 ("type".to_string(), Value::String(row.get("type"))),
                 ("creator".to_string(), Value::String(row.get("creator"))),
-                ("createTime".to_string(), Value::String(row.get("create_time"))),
+                (
+                    "createTime".to_string(),
+                    Value::String(row.get("create_time")),
+                ),
             ]))
         })
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
+    Ok(Json(ActionResult::java_success(
+        Value::Array(data),
+        count,
+        0,
+    )))
 }
 
 #[axum::debug_handler]
@@ -207,7 +226,10 @@ pub async fn get_component(
                 ("name".to_string(), Value::String(row.get("name"))),
                 ("type".to_string(), Value::String(row.get("type"))),
                 ("creator".to_string(), Value::String(row.get("creator"))),
-                ("createTime".to_string(), Value::String(row.get("create_time"))),
+                (
+                    "createTime".to_string(),
+                    Value::String(row.get("create_time")),
+                ),
             ]));
             Ok(Json(ActionResult::success(result)))
         }
@@ -296,7 +318,9 @@ pub async fn delete_component(
         .map_err(|_| AppError::Internal)?;
 
     if result == 0 {
-        return Ok(Json(ActionResult::error("component not found or already deleted")));
+        return Ok(Json(ActionResult::error(
+            "component not found or already deleted",
+        )));
     }
 
     Ok(Json(ActionResult::success(Value::Object(
@@ -324,15 +348,16 @@ pub async fn component_delete_all(
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("deleted".to_string(), Value::Bool(result > 0)),
-            ("count".to_string(), Value::Number(serde_json::Number::from(result as i64))),
+            (
+                "count".to_string(),
+                Value::Number(serde_json::Number::from(result as i64)),
+            ),
         ]),
     ))))
 }
 
 #[allow(non_snake_case)]
-pub async fn status_list(
-    pool: Extension<Pool>,
-) -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn status_list(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let row = client
@@ -348,9 +373,18 @@ pub async fn status_list(
 
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
-            ("total".to_string(), Value::Number(serde_json::Number::from(total))),
-            ("active".to_string(), Value::Number(serde_json::Number::from(active))),
-            ("deleted".to_string(), Value::Number(serde_json::Number::from(total - active))),
+            (
+                "total".to_string(),
+                Value::Number(serde_json::Number::from(total)),
+            ),
+            (
+                "active".to_string(),
+                Value::Number(serde_json::Number::from(active)),
+            ),
+            (
+                "deleted".to_string(),
+                Value::Number(serde_json::Number::from(total - active)),
+            ),
         ]),
     ))))
 }

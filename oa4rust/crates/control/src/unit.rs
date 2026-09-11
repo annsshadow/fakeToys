@@ -66,8 +66,17 @@ pub async fn get(
     let result = Value::Object(serde_json::Map::from_iter([
         ("id".to_string(), Value::String(row.get("id"))),
         ("name".to_string(), Value::String(row.get("name"))),
-        ("parentId".to_string(), Value::String(row.get::<_, Option<String>>("parent_id").unwrap_or_default())),
-        ("level".to_string(), Value::Number(serde_json::Number::from(row.get::<_, i32>("level")))),
+        (
+            "parentId".to_string(),
+            Value::String(
+                row.get::<_, Option<String>>("parent_id")
+                    .unwrap_or_default(),
+            ),
+        ),
+        (
+            "level".to_string(),
+            Value::Number(serde_json::Number::from(row.get::<_, i32>("level"))),
+        ),
     ]));
 
     Ok(Json(ActionResult::success(result)))
@@ -94,16 +103,31 @@ pub async fn list(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, Ap
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("name".to_string(), Value::String(row.get("name"))),
-                ("parentId".to_string(), Value::String(row.get::<_, Option<String>>("parent_id").unwrap_or_default())),
-                ("level".to_string(), Value::Number(serde_json::Number::from(row.get::<_, i32>("level")))),
+                (
+                    "parentId".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("parent_id")
+                            .unwrap_or_default(),
+                    ),
+                ),
+                (
+                    "level".to_string(),
+                    Value::Number(serde_json::Number::from(row.get::<_, i32>("level"))),
+                ),
             ]))
         })
         .collect();
 
     let total = data.len() as i64;
     let result = Value::Object(serde_json::Map::from_iter([
-        ("count".to_string(), Value::Number(serde_json::Number::from(total))),
-        ("size".to_string(), Value::Number(serde_json::Number::from(total))),
+        (
+            "count".to_string(),
+            Value::Number(serde_json::Number::from(total)),
+        ),
+        (
+            "size".to_string(),
+            Value::Number(serde_json::Number::from(total)),
+        ),
         ("data".to_string(), Value::Array(data)),
     ]));
 
@@ -144,7 +168,10 @@ async fn query_page(
     };
 
     let total: i64 = client
-        .query_one("SELECT COUNT(*) as count FROM auth_unit WHERE deleted_at IS NULL", &[])
+        .query_one(
+            "SELECT COUNT(*) as count FROM auth_unit WHERE deleted_at IS NULL",
+            &[],
+        )
         .await
         .map_err(|_| AppError::Internal)?
         .get("count");
@@ -155,8 +182,17 @@ async fn query_page(
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("name".to_string(), Value::String(row.get("name"))),
-                ("parentId".to_string(), Value::String(row.get::<_, Option<String>>("parent_id").unwrap_or_default())),
-                ("level".to_string(), Value::Number(serde_json::Number::from(row.get::<_, i32>("level")))),
+                (
+                    "parentId".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("parent_id")
+                            .unwrap_or_default(),
+                    ),
+                ),
+                (
+                    "level".to_string(),
+                    Value::Number(serde_json::Number::from(row.get::<_, i32>("level"))),
+                ),
             ]))
         })
         .collect();
@@ -234,7 +270,10 @@ pub async fn create(
         ("id".to_string(), Value::String(id)),
         ("name".to_string(), Value::String(req.name)),
         ("parentId".to_string(), Value::String(parent_id)),
-        ("level".to_string(), Value::Number(serde_json::Number::from(req.level))),
+        (
+            "level".to_string(),
+            Value::Number(serde_json::Number::from(req.level)),
+        ),
     ]));
 
     Ok(Json(ActionResult::success(result)))
@@ -278,8 +317,17 @@ pub async fn update(
     let result = Value::Object(serde_json::Map::from_iter([
         ("id".to_string(), Value::String(row.get("id"))),
         ("name".to_string(), Value::String(row.get("name"))),
-        ("parentId".to_string(), Value::String(row.get::<_, Option<String>>("parent_id").unwrap_or_default())),
-        ("level".to_string(), Value::Number(serde_json::Number::from(row.get::<_, i32>("level")))),
+        (
+            "parentId".to_string(),
+            Value::String(
+                row.get::<_, Option<String>>("parent_id")
+                    .unwrap_or_default(),
+            ),
+        ),
+        (
+            "level".to_string(),
+            Value::Number(serde_json::Number::from(row.get::<_, i32>("level"))),
+        ),
     ]));
 
     Ok(Json(ActionResult::success(result)))
@@ -304,14 +352,25 @@ pub async fn delete(
         .map_err(|_| AppError::Internal)?;
 
     let Some(row) = row else {
-        return Ok(Json(ActionResult::error("unit not found or already deleted")));
+        return Ok(Json(ActionResult::error(
+            "unit not found or already deleted",
+        )));
     };
 
     let result = Value::Object(serde_json::Map::from_iter([
         ("id".to_string(), Value::String(row.get("id"))),
         ("name".to_string(), Value::String(row.get("name"))),
-        ("parentId".to_string(), Value::String(row.get::<_, Option<String>>("parent_id").unwrap_or_default())),
-        ("level".to_string(), Value::Number(serde_json::Number::from(row.get::<_, i32>("level")))),
+        (
+            "parentId".to_string(),
+            Value::String(
+                row.get::<_, Option<String>>("parent_id")
+                    .unwrap_or_default(),
+            ),
+        ),
+        (
+            "level".to_string(),
+            Value::Number(serde_json::Number::from(row.get::<_, i32>("level"))),
+        ),
     ]));
 
     Ok(Json(ActionResult::success(result)))

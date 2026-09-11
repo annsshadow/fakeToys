@@ -54,7 +54,10 @@ impl DiffAllowlist {
 
     /// Given a Java field name, return the preferred Rust field name if allowlisted, else None.
     pub fn rust_equivalent(&self, java_field: &str) -> Option<&str> {
-        self.rust_equivalents.get(java_field).and_then(|set| set.iter().next()).map(|s| s.as_str())
+        self.rust_equivalents
+            .get(java_field)
+            .and_then(|set| set.iter().next())
+            .map(|s| s.as_str())
     }
 
     /// Given a Rust field name, return the preferred Java field name if allowlisted, else None.

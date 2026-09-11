@@ -70,10 +70,7 @@ fn validate_id_list(ids: &[String]) -> Result<(), AppError> {
     Ok(())
 }
 
-fn person_row_to_value(
-    row: &deadpool_postgres::tokio_postgres::Row,
-    include_pii: bool,
-) -> Value {
+fn person_row_to_value(row: &deadpool_postgres::tokio_postgres::Row, include_pii: bool) -> Value {
     let mut map = serde_json::Map::new();
     map.insert("id".to_string(), Value::String(row.get("id")));
     map.insert("unique".to_string(), Value::String(row.get("unique_id")));
@@ -123,9 +120,10 @@ pub async fn express_person_list(
         return Ok(Json(ActionResult::error("ids or identities required")));
     }
     if ids.len() + identities.len() > ID_COUNT_LIMIT {
-        return Ok(Json(ActionResult::error(
-            format!("total ids + identities exceeds limit of {}", ID_COUNT_LIMIT),
-        )));
+        return Ok(Json(ActionResult::error(format!(
+            "total ids + identities exceeds limit of {}",
+            ID_COUNT_LIMIT
+        ))));
     }
 
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
@@ -142,14 +140,17 @@ pub async fn express_person_list(
                 .map_err(|_| AppError::Internal)?;
             for row in &rows {
                 let pid = row.get::<_, String>("id");
-                persons.entry(pid).or_insert_with(|| person_row_to_value(row, false));
+                persons
+                    .entry(pid)
+                    .or_insert_with(|| person_row_to_value(row, false));
             }
         }
     }
 
     // Query by identities (look up persons via auth_person_identity)
     if !identities.is_empty() {
-        let identity_ids_sql = "SELECT id, name FROM auth_identity WHERE deleted_at IS NULL AND id = $1";
+        let identity_ids_sql =
+            "SELECT id, name FROM auth_identity WHERE deleted_at IS NULL AND id = $1";
         let mut identity_ids: Vec<String> = Vec::new();
         for id in &identities {
             let rows = client
@@ -182,7 +183,9 @@ pub async fn express_person_list(
                         .map_err(|_| AppError::Internal)?;
                     for row in &rows {
                         let pid = row.get::<_, String>("id");
-                        persons.entry(pid).or_insert_with(|| person_row_to_value(row, false));
+                        persons
+                            .entry(pid)
+                            .or_insert_with(|| person_row_to_value(row, false));
                     }
                 }
             }
@@ -190,7 +193,12 @@ pub async fn express_person_list(
     }
 
     let mut data: Vec<Value> = persons.into_values().collect();
-    data.sort_by(|a, b| a["id"].as_str().unwrap_or("").cmp(b["id"].as_str().unwrap_or("")));
+    data.sort_by(|a, b| {
+        a["id"]
+            .as_str()
+            .unwrap_or("")
+            .cmp(b["id"].as_str().unwrap_or(""))
+    });
 
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -217,9 +225,13 @@ pub async fn express_unit_list(
 
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let mut data: Vec<Value> = Vec::new();
-    let sql = "SELECT id, name, parent_id, level FROM auth_unit WHERE deleted_at IS NULL AND id = $1";
+    let sql =
+        "SELECT id, name, parent_id, level FROM auth_unit WHERE deleted_at IS NULL AND id = $1";
     for id in &ids {
-        let rows = client.query(sql, &[id]).await.map_err(|_| AppError::Internal)?;
+        let rows = client
+            .query(sql, &[id])
+            .await
+            .map_err(|_| AppError::Internal)?;
         for row in &rows {
             let mut unit_map = serde_json::Map::new();
             unit_map.insert("id".to_string(), Value::String(row.get("id")));
@@ -262,7 +274,10 @@ pub async fn express_identity_list(
     let mut data: Vec<Value> = Vec::new();
     let sql = "SELECT id, name FROM auth_identity WHERE deleted_at IS NULL AND id = $1";
     for id in &ids {
-        let rows = client.query(sql, &[id]).await.map_err(|_| AppError::Internal)?;
+        let rows = client
+            .query(sql, &[id])
+            .await
+            .map_err(|_| AppError::Internal)?;
         for row in &rows {
             data.push(Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
@@ -298,7 +313,10 @@ pub async fn express_group_list(
     let mut data: Vec<Value> = Vec::new();
     let sql = "SELECT id, name FROM auth_group WHERE deleted_at IS NULL AND id = $1";
     for id in &ids {
-        let rows = client.query(sql, &[id]).await.map_err(|_| AppError::Internal)?;
+        let rows = client
+            .query(sql, &[id])
+            .await
+            .map_err(|_| AppError::Internal)?;
         for row in &rows {
             data.push(Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
@@ -334,7 +352,10 @@ pub async fn express_role_list(
     let mut data: Vec<Value> = Vec::new();
     let sql = "SELECT id, name, description FROM auth_role WHERE deleted_at IS NULL AND id = $1";
     for id in &ids {
-        let rows = client.query(sql, &[id]).await.map_err(|_| AppError::Internal)?;
+        let rows = client
+            .query(sql, &[id])
+            .await
+            .map_err(|_| AppError::Internal)?;
         for row in &rows {
             let mut role_map = serde_json::Map::new();
             role_map.insert("id".to_string(), Value::String(row.get("id")));
@@ -373,7 +394,10 @@ pub async fn express_person_with_unit(
     let mut data: Vec<Value> = Vec::new();
     let sql = "SELECT p.id, p.unique_id, p.name, p.job, p.department, p.position, p.unit AS unit_id, u.name AS unit_name FROM auth_person p LEFT JOIN auth_unit u ON p.unit = u.id WHERE p.deleted_at IS NULL AND p.id = $1";
     for id in &ids {
-        let rows = client.query(sql, &[id]).await.map_err(|_| AppError::Internal)?;
+        let rows = client
+            .query(sql, &[id])
+            .await
+            .map_err(|_| AppError::Internal)?;
         for row in &rows {
             let mut person_map = serde_json::Map::new();
             person_map.insert("id".to_string(), Value::String(row.get("id")));
@@ -427,7 +451,10 @@ pub async fn express_person_with_identity(
     let mut data: Vec<Value> = Vec::new();
     let sql = "SELECT p.id, p.unique_id, p.name, pi.identity_id, i.name AS identity_name FROM auth_person p JOIN auth_person_identity pi ON pi.person_id = p.id JOIN auth_identity i ON i.id = pi.identity_id WHERE p.deleted_at IS NULL AND p.id = $1 AND i.deleted_at IS NULL";
     for id in &ids {
-        let rows = client.query(sql, &[id]).await.map_err(|_| AppError::Internal)?;
+        let rows = client
+            .query(sql, &[id])
+            .await
+            .map_err(|_| AppError::Internal)?;
         let identities: Vec<Value> = rows
             .iter()
             .map(|row| {
@@ -440,7 +467,10 @@ pub async fn express_person_with_identity(
         let mut person_map = serde_json::Map::new();
         person_map.insert("id".to_string(), Value::String(id.clone()));
         if !rows.is_empty() {
-            person_map.insert("unique".to_string(), Value::String(rows[0].get("unique_id")));
+            person_map.insert(
+                "unique".to_string(),
+                Value::String(rows[0].get("unique_id")),
+            );
             person_map.insert("name".to_string(), Value::String(rows[0].get("name")));
         }
         person_map.insert("identities".to_string(), Value::Array(identities));

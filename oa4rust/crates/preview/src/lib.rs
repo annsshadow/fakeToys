@@ -3,7 +3,7 @@ use std::process::Command;
 use std::sync::Arc;
 
 use async_trait::async_trait;
-use axum::{Router, extract::State, Json};
+use axum::{extract::State, Json, Router};
 use base64::{engine::general_purpose, Engine as _};
 use reqwest::Client;
 use serde::{Deserialize, Serialize};
@@ -58,7 +58,12 @@ pub struct UploadedFile {
 #[async_trait]
 pub trait PreviewService: Send + Sync {
     async fn preview(&self, file_data: &[u8], file_name: &str) -> PreviewResult<PreviewResponse>;
-    async fn convert(&self, file_data: &[u8], file_name: &str, target_format: &str) -> PreviewResult<Vec<u8>>;
+    async fn convert(
+        &self,
+        file_data: &[u8],
+        file_name: &str,
+        target_format: &str,
+    ) -> PreviewResult<Vec<u8>>;
     async fn upload(&self, file_data: &[u8], file_name: &str) -> PreviewResult<UploadedFile>;
     async fn download(&self, file_url: &str) -> PreviewResult<Vec<u8>>;
 }
@@ -85,9 +90,13 @@ impl OnlyOfficePreview {
             .unwrap_or_default();
         match ext.as_str() {
             "pdf" => "application/pdf",
-            "doc" | "docx" => "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+            "doc" | "docx" => {
+                "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+            }
             "xls" | "xlsx" => "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-            "ppt" | "pptx" => "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+            "ppt" | "pptx" => {
+                "application/vnd.openxmlformats-officedocument.presentationml.presentation"
+            }
             "txt" => "text/plain",
             "jpg" | "jpeg" => "image/jpeg",
             "png" => "image/png",
@@ -97,21 +106,25 @@ impl OnlyOfficePreview {
 
     async fn upload_file(&self, file_data: &[u8], file_name: &str) -> PreviewResult<String> {
         let mime = Self::detect_mime_type(file_name);
-        let form = reqwest::multipart::Form::new()
-            .part("file", reqwest::multipart::Part::bytes(file_data.to_vec())
+        let form = reqwest::multipart::Form::new().part(
+            "file",
+            reqwest::multipart::Part::bytes(file_data.to_vec())
                 .file_name(file_name.to_string())
                 .mime_str(mime)
-                .map_err(|e| PreviewError::UploadFailed(e.to_string()))?);
+                .map_err(|e| PreviewError::UploadFailed(e.to_string()))?,
+        );
 
-        let url = format!("{}/FileUploader.ashx", self.doc_server_url.trim_end_matches('/'));
-        let resp = self.client
-            .post(&url)
-            .multipart(form)
-            .send()
-            .await?;
+        let url = format!(
+            "{}/FileUploader.ashx",
+            self.doc_server_url.trim_end_matches('/')
+        );
+        let resp = self.client.post(&url).multipart(form).send().await?;
 
         if !resp.status().is_success() {
-            return Err(PreviewError::UploadFailed(format!("status: {}", resp.status())));
+            return Err(PreviewError::UploadFailed(format!(
+                "status: {}",
+                resp.status()
+            )));
         }
 
         let text = resp.text().await?;
@@ -126,25 +139,30 @@ impl OnlyOfficePreview {
             "async": false,
         });
 
-        let url = format!("{}/ConvertService.ashx", self.doc_server_url.trim_end_matches('/'));
-        let resp = self.client
-            .post(&url)
-            .json(&payload)
-            .send()
-            .await?;
+        let url = format!(
+            "{}/ConvertService.ashx",
+            self.doc_server_url.trim_end_matches('/')
+        );
+        let resp = self.client.post(&url).json(&payload).send().await?;
 
         if !resp.status().is_success() {
-            return Err(PreviewError::ConversionFailed(format!("status: {}", resp.status())));
+            return Err(PreviewError::ConversionFailed(format!(
+                "status: {}",
+                resp.status()
+            )));
         }
 
         let result: serde_json::Value = resp.json().await?;
-        let preview_url = result.get("fileUrl")
+        let preview_url = result
+            .get("fileUrl")
             .and_then(|v| v.as_str())
             .unwrap_or("")
             .to_string();
 
         if preview_url.is_empty() {
-            return Err(PreviewError::ConversionFailed("empty preview url".to_string()));
+            return Err(PreviewError::ConversionFailed(
+                "empty preview url".to_string(),
+            ));
         }
 
         Ok(preview_url)
@@ -166,12 +184,20 @@ impl PreviewService for OnlyOfficePreview {
         })
     }
 
-    async fn convert(&self, file_data: &[u8], file_name: &str, target_format: &str) -> PreviewResult<Vec<u8>> {
+    async fn convert(
+        &self,
+        file_data: &[u8],
+        file_name: &str,
+        target_format: &str,
+    ) -> PreviewResult<Vec<u8>> {
         let file_url = self.upload_file(file_data, file_name).await?;
         let preview_url = self.convert_file(&file_url, target_format).await?;
         let resp = self.client.get(&preview_url).send().await?;
         if !resp.status().is_success() {
-            return Err(PreviewError::DownloadFailed(format!("status: {}", resp.status())));
+            return Err(PreviewError::DownloadFailed(format!(
+                "status: {}",
+                resp.status()
+            )));
         }
         Ok(resp.bytes().await?.to_vec())
     }
@@ -189,7 +215,10 @@ impl PreviewService for OnlyOfficePreview {
     async fn download(&self, file_url: &str) -> PreviewResult<Vec<u8>> {
         let resp = self.client.get(file_url).send().await?;
         if !resp.status().is_success() {
-            return Err(PreviewError::DownloadFailed(format!("status: {}", resp.status())));
+            return Err(PreviewError::DownloadFailed(format!(
+                "status: {}",
+                resp.status()
+            )));
         }
         Ok(resp.bytes().await?.to_vec())
     }
@@ -202,13 +231,17 @@ pub struct LibreOfficePreview {
 
 impl Default for LibreOfficePreview {
     fn default() -> Self {
-        Self { temp_dir: std::env::temp_dir().join("oa4rust_preview") }
+        Self {
+            temp_dir: std::env::temp_dir().join("oa4rust_preview"),
+        }
     }
 }
 
 impl LibreOfficePreview {
     pub fn new(temp_dir: impl Into<PathBuf>) -> Self {
-        Self { temp_dir: temp_dir.into() }
+        Self {
+            temp_dir: temp_dir.into(),
+        }
     }
 
     fn detect_target_format(file_name: &str) -> &'static str {
@@ -230,12 +263,20 @@ impl LibreOfficePreview {
         }
     }
 
-    async fn convert_locally(&self, input_path: &std::path::Path, target_format: &str) -> PreviewResult<PathBuf> {
+    async fn convert_locally(
+        &self,
+        input_path: &std::path::Path,
+        target_format: &str,
+    ) -> PreviewResult<PathBuf> {
         let output_dir = self.temp_dir.join("output");
         std::fs::create_dir_all(&output_dir)?;
-        
-        let output_path = output_dir.join(format!("{}.{}", 
-            input_path.file_stem().and_then(|s| s.to_str()).unwrap_or("output"),
+
+        let output_path = output_dir.join(format!(
+            "{}.{}",
+            input_path
+                .file_stem()
+                .and_then(|s| s.to_str())
+                .unwrap_or("output"),
             target_format
         ));
 
@@ -248,9 +289,13 @@ impl LibreOfficePreview {
             .arg(input_path);
 
         info!(cmd = ?cmd, "running libreoffice conversion");
-        let status = cmd.status().map_err(|e| PreviewError::ConversionFailed(e.to_string()))?;
+        let status = cmd
+            .status()
+            .map_err(|e| PreviewError::ConversionFailed(e.to_string()))?;
         if !status.success() {
-            return Err(PreviewError::ConversionFailed("libreoffice exited with error".to_string()));
+            return Err(PreviewError::ConversionFailed(
+                "libreoffice exited with error".to_string(),
+            ));
         }
 
         Ok(output_path)
@@ -262,8 +307,12 @@ impl PreviewService for LibreOfficePreview {
     async fn preview(&self, file_data: &[u8], file_name: &str) -> PreviewResult<PreviewResponse> {
         let target = Self::detect_target_format(file_name);
         let _converted = self.convert(file_data, file_name, target).await?;
-        let output_path = self.temp_dir.join("output").join(format!("{}.{}", 
-            std::path::Path::new(file_name).file_stem().and_then(|s| s.to_str()).unwrap_or("output"),
+        let output_path = self.temp_dir.join("output").join(format!(
+            "{}.{}",
+            std::path::Path::new(file_name)
+                .file_stem()
+                .and_then(|s| s.to_str())
+                .unwrap_or("output"),
             target
         ));
         let file_url = format!("file://{}", output_path.display());
@@ -276,11 +325,16 @@ impl PreviewService for LibreOfficePreview {
         })
     }
 
-    async fn convert(&self, file_data: &[u8], file_name: &str, target_format: &str) -> PreviewResult<Vec<u8>> {
+    async fn convert(
+        &self,
+        file_data: &[u8],
+        file_name: &str,
+        target_format: &str,
+    ) -> PreviewResult<Vec<u8>> {
         std::fs::create_dir_all(&self.temp_dir)?;
         let input_path = self.temp_dir.join(file_name);
         std::fs::write(&input_path, file_data)?;
-        
+
         let output_path = self.convert_locally(&input_path, target_format).await?;
         let result = std::fs::read(&output_path)?;
         Ok(result)
@@ -375,8 +429,14 @@ pub async fn preview_convert_handler(
 
 pub fn preview_route<S: PreviewService + 'static>(service: S) -> Router {
     Router::new()
-        .route("/preview/upload", axum::routing::post(preview_upload_handler))
-        .route("/preview/convert", axum::routing::post(preview_convert_handler))
+        .route(
+            "/preview/upload",
+            axum::routing::post(preview_upload_handler),
+        )
+        .route(
+            "/preview/convert",
+            axum::routing::post(preview_convert_handler),
+        )
         .with_state(Arc::new(service))
 }
 
@@ -437,10 +497,22 @@ mod tests {
 
     #[test]
     fn test_detect_mime_type() {
-        assert_eq!(OnlyOfficePreview::detect_mime_type("test.pdf"), "application/pdf");
-        assert_eq!(OnlyOfficePreview::detect_mime_type("test.docx"), "application/vnd.openxmlformats-officedocument.wordprocessingml.document");
-        assert_eq!(OnlyOfficePreview::detect_mime_type("test.txt"), "text/plain");
-        assert_eq!(OnlyOfficePreview::detect_mime_type("test.unknown"), "application/octet-stream");
+        assert_eq!(
+            OnlyOfficePreview::detect_mime_type("test.pdf"),
+            "application/pdf"
+        );
+        assert_eq!(
+            OnlyOfficePreview::detect_mime_type("test.docx"),
+            "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+        );
+        assert_eq!(
+            OnlyOfficePreview::detect_mime_type("test.txt"),
+            "text/plain"
+        );
+        assert_eq!(
+            OnlyOfficePreview::detect_mime_type("test.unknown"),
+            "application/octet-stream"
+        );
     }
 
     #[test]

@@ -1,8 +1,4 @@
-use axum::{
-    extract::Extension,
-    routing::get,
-    Json, Router,
-};
+use axum::{extract::Extension, routing::get, Json, Router};
 use sea_orm::{DatabaseConnection, EntityTrait, QueryOrder, QuerySelect};
 use serde_json::Value;
 use shared::{error::AppError, response::ActionResult};
@@ -58,7 +54,10 @@ pub async fn app_list(
                 ("status".to_string(), Value::String(m.status.clone())),
             ]);
             if let Some(description) = &m.description {
-                map.insert("description".to_string(), Value::String(description.clone()));
+                map.insert(
+                    "description".to_string(),
+                    Value::String(description.clone()),
+                );
             }
             Value::Object(map)
         })
@@ -128,17 +127,10 @@ pub async fn conversation_list(
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(m.id.clone())),
                 ("title".to_string(), Value::String(m.title.clone())),
-                (
-                    "\"userId\"".to_string(),
-                    Value::String(m.user_id.clone()),
-                ),
+                ("\"userId\"".to_string(), Value::String(m.user_id.clone())),
                 (
                     "createTime".to_string(),
-                    Value::String(
-                        m.create_time
-                            .map(|dt| dt.to_string())
-                            .unwrap_or_default(),
-                    ),
+                    Value::String(m.create_time.map(|dt| dt.to_string()).unwrap_or_default()),
                 ),
             ]))
         })
@@ -174,7 +166,6 @@ pub fn ai_core_entity_router(_pool: deadpool_postgres::Pool) -> Router {
 mod tests;
 #[cfg(test)]
 mod tests_generated;
-
 
 pub fn router(pool: deadpool_postgres::Pool) -> axum::Router {
     crate::ai_core_entity_router(pool)

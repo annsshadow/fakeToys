@@ -1,16 +1,13 @@
 use super::*;
 use axum::body::Body;
-use axum::http::{Request, Method, StatusCode};
-use deadpool_postgres::{Manager, Pool};
+use axum::http::{Method, Request, StatusCode};
 use deadpool_postgres::tokio_postgres::{Config, NoTls};
+use deadpool_postgres::{Manager, Pool};
 use serde_json::json;
 use tower::util::ServiceExt;
 
 fn build_test_pool() -> Pool {
-    let mgr = Manager::new(
-        Config::new(),
-        NoTls,
-    );
+    let mgr = Manager::new(Config::new(), NoTls);
     Pool::builder(mgr).max_size(1).build().unwrap()
 }
 
@@ -70,7 +67,8 @@ async fn test_create_designer_route_exists() {
     let req = serde_json::to_string(&json!({
         "name": "My Designer",
         "query": "select * from test"
-    })).unwrap();
+    }))
+    .unwrap();
 
     let response = app
         .oneshot(
@@ -133,7 +131,8 @@ async fn test_save_designer_route_exists() {
     let req = serde_json::to_string(&json!({
         "name": "My Designer",
         "query": "select * from test"
-    })).unwrap();
+    }))
+    .unwrap();
 
     let response = app
         .oneshot(
@@ -168,7 +167,6 @@ async fn test_delete_designer_route_exists() {
 
     assert_eq!(response.status(), StatusCode::INTERNAL_SERVER_ERROR);
 }
-
 
 // ──────────────────────────────────────────────────────────────────────────────
 // plan002 U2 缺口闭合测试：新注册路由存在性 + sqlparser 安全约束 + 参数化 + 归一化查重
@@ -354,16 +352,21 @@ async fn test_u2_statement_execute_mode_v2_route_exists() {
 #[test]
 fn test_u2_validate_single_select_rejects_delete() {
     let err = u2_closures::validate_single_select("DELETE FROM x_query_table_data").unwrap_err();
-    assert!(err.contains("only SELECT"), "DELETE must be rejected, got: {}", err);
+    assert!(
+        err.contains("only SELECT"),
+        "DELETE must be rejected, got: {}",
+        err
+    );
 }
 
 #[test]
 fn test_u2_validate_single_select_rejects_multi_statement() {
-    let err = u2_closures::validate_single_select(
-        "SELECT 1; DROP TABLE x_query_statement",
-    )
-    .unwrap_err();
-    assert!(err.contains("single statement"), "multi-statement must be rejected");
+    let err =
+        u2_closures::validate_single_select("SELECT 1; DROP TABLE x_query_statement").unwrap_err();
+    assert!(
+        err.contains("single statement"),
+        "multi-statement must be rejected"
+    );
 }
 
 #[test]
@@ -375,14 +378,19 @@ fn test_u2_validate_single_select_rejects_empty() {
 fn test_u2_validate_single_select_accepts_select() {
     // Java statement.data 为 JPQL 风格，Rust 侧存储可直接执行的 SQL；
     // 此处验证合法 SELECT 通过安全校验。
-    assert!(u2_closures::validate_single_select("SELECT id, name FROM x_query_table WHERE table_flag = 't1'").is_ok());
+    assert!(u2_closures::validate_single_select(
+        "SELECT id, name FROM x_query_table WHERE table_flag = 't1'"
+    )
+    .is_ok());
 }
 
 #[test]
 fn test_u2_parameterize_statement_sql_binds_named_params() {
     let params = json!({"person": "张三@unit", "minAge": 18});
-    let (sql, values) =
-        u2_closures::parameterize_statement_sql("SELECT * FROM t WHERE o.name = :person AND o.age > :minAge", &params);
+    let (sql, values) = u2_closures::parameterize_statement_sql(
+        "SELECT * FROM t WHERE o.name = :person AND o.age > :minAge",
+        &params,
+    );
     assert!(sql.contains("$1"), "named param should become $1: {}", sql);
     assert!(sql.contains("$2"), "named param should become $2: {}", sql);
     assert_eq!(values.len(), 2);
@@ -395,7 +403,10 @@ fn test_u2_parameterize_statement_sql_skips_string_literals_and_casts() {
         "SELECT a::text FROM t WHERE s = 'lit:eral' AND n = :name",
         &params,
     );
-    assert!(!sql.contains("$1::"), "cast :: must not be treated as param");
+    assert!(
+        !sql.contains("$1::"),
+        "cast :: must not be treated as param"
+    );
     assert!(sql.contains("'lit:eral'"), "string literal colon untouched");
     assert_eq!(values.len(), 1, "only the real named param is bound");
 }
@@ -419,7 +430,6 @@ fn test_u2_normalize_identifier_for_dedup() {
     assert_eq!(u2_closures::normalize_identifier("ABC"), "abc");
 }
 
-
 // ──────────────────────────────────────────────────────────────────────────────
 // plan002 U2 v9 缺口闭合测试：Java 精确路径/动词注册 + 纯函数契约
 // 路由存在性口径：空 Config 池 → handler 执行到池获取失败 → 500（404 即路由缺失）
@@ -430,16 +440,22 @@ fn test_v9_id_generate_clamps_count_and_generates_uuids() {
     // Java ActionGet: 0 < count < 200 逐一生成，越界截断
     let rt = tokio::runtime::Runtime::new().unwrap();
     rt.block_on(async {
-        let resp = u2_closures::id_generate(axum::extract::Path(3i64)).await.unwrap();
+        let resp = u2_closures::id_generate(axum::extract::Path(3i64))
+            .await
+            .unwrap();
         let ar = resp.0;
         let data = ar.data.as_ref().unwrap();
         assert_eq!(ar.count.unwrap(), 3, "count=3 应生成 3 个 id");
         assert_eq!(data.as_array().unwrap().len(), 3);
 
-        let resp = u2_closures::id_generate(axum::extract::Path(500i64)).await.unwrap();
+        let resp = u2_closures::id_generate(axum::extract::Path(500i64))
+            .await
+            .unwrap();
         assert_eq!(resp.0.count.unwrap(), 199, "count>200 截断为 199");
 
-        let resp = u2_closures::id_generate(axum::extract::Path(0i64)).await.unwrap();
+        let resp = u2_closures::id_generate(axum::extract::Path(0i64))
+            .await
+            .unwrap();
         assert_eq!(resp.0.count.unwrap(), 0, "count=0 不生成");
     });
 }
@@ -476,7 +492,11 @@ async fn test_v9_importmodel_flag_crud_routes_exist() {
         )
         .await
         .unwrap();
-    assert_eq!(get.status(), StatusCode::INTERNAL_SERVER_ERROR, "GET /importmodel/{{flag}}");
+    assert_eq!(
+        get.status(),
+        StatusCode::INTERNAL_SERVER_ERROR,
+        "GET /importmodel/{{flag}}"
+    );
 
     let put = crate::router(pool.clone())
         .oneshot(
@@ -489,7 +509,11 @@ async fn test_v9_importmodel_flag_crud_routes_exist() {
         )
         .await
         .unwrap();
-    assert_eq!(put.status(), StatusCode::INTERNAL_SERVER_ERROR, "PUT /importmodel/{{flag}}");
+    assert_eq!(
+        put.status(),
+        StatusCode::INTERNAL_SERVER_ERROR,
+        "PUT /importmodel/{{flag}}"
+    );
 
     let del = crate::router(pool)
         .oneshot(
@@ -501,7 +525,11 @@ async fn test_v9_importmodel_flag_crud_routes_exist() {
         )
         .await
         .unwrap();
-    assert_eq!(del.status(), StatusCode::INTERNAL_SERVER_ERROR, "DELETE /importmodel/{{flag}}");
+    assert_eq!(
+        del.status(),
+        StatusCode::INTERNAL_SERVER_ERROR,
+        "DELETE /importmodel/{{flag}}"
+    );
 }
 
 #[tokio::test]
@@ -552,7 +580,11 @@ async fn test_v9_query_put_delete_java_verb_routes_exist() {
         )
         .await
         .unwrap();
-    assert_eq!(put.status(), StatusCode::INTERNAL_SERVER_ERROR, "PUT /query/{{flag}} 动词补齐");
+    assert_eq!(
+        put.status(),
+        StatusCode::INTERNAL_SERVER_ERROR,
+        "PUT /query/{{flag}} 动词补齐"
+    );
 
     let del = crate::router(pool)
         .oneshot(
@@ -564,7 +596,11 @@ async fn test_v9_query_put_delete_java_verb_routes_exist() {
         )
         .await
         .unwrap();
-    assert_eq!(del.status(), StatusCode::INTERNAL_SERVER_ERROR, "DELETE /query/{{flag}} 动词补齐");
+    assert_eq!(
+        del.status(),
+        StatusCode::INTERNAL_SERVER_ERROR,
+        "DELETE /query/{{flag}} 动词补齐"
+    );
 }
 
 #[tokio::test]
@@ -689,7 +725,11 @@ async fn test_v9_view_bundle_simulate_java_verb_routes_exist() {
         )
         .await
         .unwrap();
-    assert_eq!(bundle.status(), StatusCode::INTERNAL_SERVER_ERROR, "PUT /view/{{id}}/bundle");
+    assert_eq!(
+        bundle.status(),
+        StatusCode::INTERNAL_SERVER_ERROR,
+        "PUT /view/{{id}}/bundle"
+    );
 
     let simulate = crate::router(pool)
         .oneshot(
@@ -702,7 +742,11 @@ async fn test_v9_view_bundle_simulate_java_verb_routes_exist() {
         )
         .await
         .unwrap();
-    assert_eq!(simulate.status(), StatusCode::INTERNAL_SERVER_ERROR, "PUT /view/{{id}}/simulate");
+    assert_eq!(
+        simulate.status(),
+        StatusCode::INTERNAL_SERVER_ERROR,
+        "PUT /view/{{id}}/simulate"
+    );
 }
 
 #[test]

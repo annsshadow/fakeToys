@@ -1,9 +1,5 @@
 #[allow(dead_code, non_snake_case)]
-use axum::{
-    extract::Extension,
-    routing::get, routing::post,
-    Json, Router,
-};
+use axum::{extract::Extension, routing::get, routing::post, Json, Router};
 use deadpool_postgres::Pool;
 use serde::Deserialize;
 use serde_json::Value;
@@ -58,8 +54,14 @@ pub async fn process_query(
             let mut map = serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("name".to_string(), Value::String(row.get("name"))),
-                ("queryType".to_string(), Value::String(row.get("query_type"))),
-                ("count".to_string(), Value::Number(serde_json::Number::from(count))),
+                (
+                    "queryType".to_string(),
+                    Value::String(row.get("query_type")),
+                ),
+                (
+                    "count".to_string(),
+                    Value::Number(serde_json::Number::from(count)),
+                ),
                 ("processed".to_string(), Value::Bool(processed)),
             ]);
             if let Some(params) = req.params {
@@ -94,7 +96,10 @@ pub async fn batch_process(
             results.push(Value::Object(serde_json::Map::from_iter([
                 ("queryType".to_string(), Value::String(String::new())),
                 ("processed".to_string(), Value::Bool(false)),
-                ("error".to_string(), Value::String("query_type is required".to_string())),
+                (
+                    "error".to_string(),
+                    Value::String("query_type is required".to_string()),
+                ),
             ])));
             continue;
         }
@@ -117,8 +122,14 @@ pub async fn batch_process(
                 results.push(Value::Object(serde_json::Map::from_iter([
                     ("id".to_string(), Value::String(row.get("id"))),
                     ("name".to_string(), Value::String(row.get("name"))),
-                    ("queryType".to_string(), Value::String(row.get("query_type"))),
-                    ("count".to_string(), Value::Number(serde_json::Number::from(count))),
+                    (
+                        "queryType".to_string(),
+                        Value::String(row.get("query_type")),
+                    ),
+                    (
+                        "count".to_string(),
+                        Value::Number(serde_json::Number::from(count)),
+                    ),
                     ("processed".to_string(), Value::Bool(processed)),
                 ])));
             }
@@ -126,7 +137,10 @@ pub async fn batch_process(
                 results.push(Value::Object(serde_json::Map::from_iter([
                     ("queryType".to_string(), Value::String(query_type)),
                     ("processed".to_string(), Value::Bool(false)),
-                    ("error".to_string(), Value::String("query type not found".to_string())),
+                    (
+                        "error".to_string(),
+                        Value::String("query type not found".to_string()),
+                    ),
                 ])));
             }
         }
@@ -134,7 +148,10 @@ pub async fn batch_process(
 
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
-            ("total".to_string(), Value::Number(serde_json::Number::from(results.len() as i64))),
+            (
+                "total".to_string(),
+                Value::Number(serde_json::Number::from(results.len() as i64)),
+            ),
             ("results".to_string(), Value::Array(results)),
         ]),
     ))))
@@ -193,9 +210,7 @@ pub async fn get_service_status(
 
 /// 重置查询服务
 /// 重置查询服务状态并清除缓存
-pub async fn reset_service(
-    pool: Extension<Pool>,
-) -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn reset_service(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let row = client
         .query_one("SELECT COUNT(*) as count FROM x_query", &[])
@@ -212,20 +227,23 @@ pub async fn reset_service(
         .map_err(|_| AppError::Internal)?;
 
     let reset = client
-        .execute(
-            "UPDATE x_query SET count = '1', update_time = NOW()",
-            &[],
-        )
+        .execute("UPDATE x_query SET count = '1', update_time = NOW()", &[])
         .await
         .map_err(|_| AppError::Internal)?;
 
-    let now = chrono::Utc::now().naive_utc().format("%Y-%m-%dT%H:%M:%SZ").to_string();
+    let now = chrono::Utc::now()
+        .naive_utc()
+        .format("%Y-%m-%dT%H:%M:%SZ")
+        .to_string();
 
     let data = Value::Object(serde_json::Map::from_iter([
         ("reset".to_string(), Value::Bool(reset > 0)),
         ("resetAt".to_string(), Value::String(now)),
         ("clearedCache".to_string(), Value::Bool(cleared_count > 0)),
-        ("processedCount".to_string(), Value::Number(serde_json::Number::from(count))),
+        (
+            "processedCount".to_string(),
+            Value::Number(serde_json::Number::from(count)),
+        ),
     ]));
 
     Ok(Json(ActionResult::success(data)))
@@ -237,12 +255,21 @@ pub fn query_service_processing_router(pool: Pool) -> Router {
     use u2 as u2h;
     let p = "/jaxrs/query/service/processing";
     Router::new()
-        .route("/jaxrs/query/service/processing/process", post(process_query))
+        .route(
+            "/jaxrs/query/service/processing/process",
+            post(process_query),
+        )
         .route("/jaxrs/query/service/processing/batch", post(batch_process))
-        .route("/jaxrs/query/service/processing/status", get(get_service_status))
+        .route(
+            "/jaxrs/query/service/processing/status",
+            get(get_service_status),
+        )
         .route("/jaxrs/query/service/processing/reset", post(reset_service))
         // ── Java x_query_service_processing 契约（u2）───────────────────────
-        .route(format!("{p}/design/search").as_str(), post(u2h::design_search))
+        .route(
+            format!("{p}/design/search").as_str(),
+            post(u2h::design_search),
+        )
         .route(
             format!("{p}/index/directory/document/count").as_str(),
             post(u2h::index_directory_document_count),
@@ -284,19 +311,58 @@ pub fn query_service_processing_router(pool: Pool) -> Router {
             get(u2h::neural_list_calculate_with_work),
         )
         // touch：work / workcompleted / document × high/low × touch/reset + optimize
-        .route(format!("{p}/touch/high/freq/work/node/{{node}}/touch").as_str(), get(u2h::high_freq_work_touch))
-        .route(format!("{p}/touch/high/freq/work/node/{{node}}/reset").as_str(), get(u2h::high_freq_work_reset))
-        .route(format!("{p}/touch/low/freq/work/node/{{node}}/touch").as_str(), get(u2h::low_freq_work_touch))
-        .route(format!("{p}/touch/low/freq/work/node/{{node}}/reset").as_str(), get(u2h::low_freq_work_reset))
-        .route(format!("{p}/touch/high/freq/workcompleted/node/{{node}}/touch").as_str(), get(u2h::high_freq_workcompleted_touch))
-        .route(format!("{p}/touch/high/freq/workcompleted/node/{{node}}/reset").as_str(), get(u2h::high_freq_workcompleted_reset))
-        .route(format!("{p}/touch/low/freq/workcompleted/node/{{node}}/touch").as_str(), get(u2h::low_freq_workcompleted_touch))
-        .route(format!("{p}/touch/low/freq/workcompleted/node/{{node}}/reset").as_str(), get(u2h::low_freq_workcompleted_reset))
-        .route(format!("{p}/touch/high/freq/document/node/{{node}}/touch").as_str(), get(u2h::high_freq_document_touch))
-        .route(format!("{p}/touch/high/freq/document/node/{{node}}/reset").as_str(), get(u2h::high_freq_document_reset))
-        .route(format!("{p}/touch/low/freq/document/node/{{node}}/touch").as_str(), get(u2h::low_freq_document_touch))
-        .route(format!("{p}/touch/low/freq/document/node/{{node}}/reset").as_str(), get(u2h::low_freq_document_reset))
-        .route(format!("{p}/touch/optimize/index/{{node}}/touch").as_str(), get(u2h::optimize_index_touch))
+        .route(
+            format!("{p}/touch/high/freq/work/node/{{node}}/touch").as_str(),
+            get(u2h::high_freq_work_touch),
+        )
+        .route(
+            format!("{p}/touch/high/freq/work/node/{{node}}/reset").as_str(),
+            get(u2h::high_freq_work_reset),
+        )
+        .route(
+            format!("{p}/touch/low/freq/work/node/{{node}}/touch").as_str(),
+            get(u2h::low_freq_work_touch),
+        )
+        .route(
+            format!("{p}/touch/low/freq/work/node/{{node}}/reset").as_str(),
+            get(u2h::low_freq_work_reset),
+        )
+        .route(
+            format!("{p}/touch/high/freq/workcompleted/node/{{node}}/touch").as_str(),
+            get(u2h::high_freq_workcompleted_touch),
+        )
+        .route(
+            format!("{p}/touch/high/freq/workcompleted/node/{{node}}/reset").as_str(),
+            get(u2h::high_freq_workcompleted_reset),
+        )
+        .route(
+            format!("{p}/touch/low/freq/workcompleted/node/{{node}}/touch").as_str(),
+            get(u2h::low_freq_workcompleted_touch),
+        )
+        .route(
+            format!("{p}/touch/low/freq/workcompleted/node/{{node}}/reset").as_str(),
+            get(u2h::low_freq_workcompleted_reset),
+        )
+        .route(
+            format!("{p}/touch/high/freq/document/node/{{node}}/touch").as_str(),
+            get(u2h::high_freq_document_touch),
+        )
+        .route(
+            format!("{p}/touch/high/freq/document/node/{{node}}/reset").as_str(),
+            get(u2h::high_freq_document_reset),
+        )
+        .route(
+            format!("{p}/touch/low/freq/document/node/{{node}}/touch").as_str(),
+            get(u2h::low_freq_document_touch),
+        )
+        .route(
+            format!("{p}/touch/low/freq/document/node/{{node}}/reset").as_str(),
+            get(u2h::low_freq_document_reset),
+        )
+        .route(
+            format!("{p}/touch/optimize/index/{{node}}/touch").as_str(),
+            get(u2h::optimize_index_touch),
+        )
         .layer(Extension(pool))
 }
 
@@ -304,7 +370,6 @@ pub fn query_service_processing_router(pool: Pool) -> Router {
 mod tests;
 #[cfg(test)]
 mod tests_generated;
-
 
 pub fn router(pool: deadpool_postgres::Pool) -> axum::Router {
     query_service_processing_router(pool)

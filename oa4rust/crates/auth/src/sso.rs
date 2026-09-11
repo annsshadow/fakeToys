@@ -59,7 +59,10 @@ pub async fn sso_post_login(
     Json(req): Json<SsoLoginRequest>,
 ) -> Result<Response, AppError> {
     if req.client.is_empty() || req.token.is_empty() {
-        return Ok(Json(ActionResult::<SsoLoginResponse>::error("client and token are required")).into_response());
+        return Ok(Json(ActionResult::<SsoLoginResponse>::error(
+            "client and token are required",
+        ))
+        .into_response());
     }
     let key = lookup_sso_key(&pool, &req.client).await?;
     let decrypted = decrypt_sso_token(&req.token, &key)?;
@@ -78,7 +81,10 @@ pub async fn sso_get_login(
     Path((client, token)): Path<(String, String)>,
 ) -> Result<Response, AppError> {
     if client.is_empty() || token.is_empty() {
-        return Ok(Json(ActionResult::<SsoLoginResponse>::error("client and token are required")).into_response());
+        return Ok(Json(ActionResult::<SsoLoginResponse>::error(
+            "client and token are required",
+        ))
+        .into_response());
     }
     let key = lookup_sso_key(&pool, &client).await?;
     let decrypted = decrypt_sso_token(&token, &key)?;
@@ -88,9 +94,13 @@ pub async fn sso_get_login(
 }
 
 /// POST /jaxrs/authentication/sso/encrypt
-pub async fn sso_encrypt(Json(req): Json<SsoEncryptRequest>) -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn sso_encrypt(
+    Json(req): Json<SsoEncryptRequest>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
     if req.client.is_empty() || req.key.is_empty() || req.credential.is_empty() {
-        return Ok(Json(ActionResult::error("client, key, and credential are required")));
+        return Ok(Json(ActionResult::error(
+            "client, key, and credential are required",
+        )));
     }
     let now = Utc::now();
     let payload = format!("{}#{}", req.credential, now.timestamp_millis());
@@ -110,10 +120,7 @@ pub async fn sso_encrypt(Json(req): Json<SsoEncryptRequest>) -> Result<Json<Acti
 
 /// 从 sso_client 表查找 client_name 对应的 3DES key
 async fn lookup_sso_key(pool: &Pool, client: &str) -> Result<String, AppError> {
-    let client_row = pool
-        .get()
-        .await
-        .map_err(|_| AppError::Internal)?;
+    let client_row = pool.get().await.map_err(|_| AppError::Internal)?;
     let row = client_row
         .query_opt(
             "SELECT key FROM sso_client WHERE client_name = $1 AND deleted_at IS NULL",
@@ -139,8 +146,12 @@ fn parse_sso_payload(decrypted: &[u8]) -> Result<(String, String), AppError> {
     let payload = String::from_utf8(decrypted.to_vec())
         .map_err(|_| AppError::BadRequest("invalid token content".to_string()))?;
     let mut parts = payload.rsplitn(2, '#');
-    let timestamp_str = parts.next().ok_or_else(|| AppError::BadRequest("invalid token format".to_string()))?;
-    let credential = parts.next().ok_or_else(|| AppError::BadRequest("invalid token format".to_string()))?;
+    let timestamp_str = parts
+        .next()
+        .ok_or_else(|| AppError::BadRequest("invalid token format".to_string()))?;
+    let credential = parts
+        .next()
+        .ok_or_else(|| AppError::BadRequest("invalid token format".to_string()))?;
     Ok((credential.to_string(), timestamp_str.to_string()))
 }
 
@@ -178,7 +189,9 @@ async fn create_sso_session(
     }
 
     let token = uuid::Uuid::new_v4().to_string();
-    let session = session_manager.create_session(person_unique.clone(), token).await?;
+    let session = session_manager
+        .create_session(person_unique.clone(), token)
+        .await?;
 
     Ok(crate::session_response(
         SsoLoginResponse {

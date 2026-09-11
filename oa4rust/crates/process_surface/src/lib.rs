@@ -11,9 +11,7 @@ pub mod routes;
 
 pub use routes::process_surface_router;
 
-pub async fn list_ids(
-    pool: Extension<Pool>,
-) -> Json<ActionResult<Value>> {
+pub async fn list_ids(pool: Extension<Pool>) -> Json<ActionResult<Value>> {
     let client = match pool.get().await {
         Ok(client) => client,
         Err(_) => {
@@ -22,7 +20,10 @@ pub async fn list_ids(
     };
 
     let rows = match client
-        .query("SELECT id, flag FROM oa_process ORDER BY create_time LIMIT 20", &[])
+        .query(
+            "SELECT id, flag FROM oa_process ORDER BY create_time LIMIT 20",
+            &[],
+        )
         .await
     {
         Ok(rows) => rows,
@@ -55,15 +56,24 @@ pub async fn get_by_flag(
             return Json(ActionResult::success(Value::Object(
                 serde_json::Map::from_iter([
                     ("flag".to_string(), Value::String(flag)),
-                    ("name".to_string(), Value::String("mock_process".to_string())),
-                    ("description".to_string(), Value::String("mock_description".to_string())),
+                    (
+                        "name".to_string(),
+                        Value::String("mock_process".to_string()),
+                    ),
+                    (
+                        "description".to_string(),
+                        Value::String("mock_description".to_string()),
+                    ),
                 ]),
             )));
         }
     };
 
     let row = match client
-        .query_one("SELECT id, flag, name, description FROM oa_process WHERE flag = $1", &[&flag])
+        .query_one(
+            "SELECT id, flag, name, description FROM oa_process WHERE flag = $1",
+            &[&flag],
+        )
         .await
     {
         Ok(row) => row,
@@ -77,7 +87,10 @@ pub async fn get_by_flag(
             ("id".to_string(), Value::String(row.get("id"))),
             ("flag".to_string(), Value::String(row.get("flag"))),
             ("name".to_string(), Value::String(row.get("name"))),
-            ("description".to_string(), Value::String(row.get("description"))),
+            (
+                "description".to_string(),
+                Value::String(row.get("description")),
+            ),
         ]),
     )))
 }
@@ -108,9 +121,15 @@ pub async fn record_list(
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
-                ("workOrWorkCompleted".to_string(), Value::String(row.get("work_or_work_completed"))),
+                (
+                    "workOrWorkCompleted".to_string(),
+                    Value::String(row.get("work_or_work_completed")),
+                ),
                 ("title".to_string(), Value::String(row.get("title"))),
-                ("createTime".to_string(), Value::String(row.get("create_time"))),
+                (
+                    "createTime".to_string(),
+                    Value::String(row.get("create_time")),
+                ),
             ]))
         })
         .collect();
@@ -123,7 +142,6 @@ pub async fn record_list(
 mod tests;
 #[cfg(test)]
 mod tests_generated;
-
 
 pub fn router(pool: deadpool_postgres::Pool) -> axum::Router {
     crate::process_surface_router(pool)

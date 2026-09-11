@@ -1,8 +1,4 @@
-use axum::{
-    extract::Extension,
-    routing::get,
-    Json, Router,
-};
+use axum::{extract::Extension, routing::get, Json, Router};
 use deadpool_postgres::Pool;
 use serde_json::Value;
 use shared::{error::AppError, response::ActionResult};
@@ -53,21 +49,34 @@ pub async fn list_cms_correlations(
         .map(|row| {
             let mut obj = serde_json::Map::new();
             obj.insert("id".to_string(), Value::String(row.get("id")));
-            obj.insert("fromBundle".to_string(), Value::String(row.get("from_bundle")));
-            obj.insert("targetBundle".to_string(), Value::String(row.get("target_bundle")));
+            obj.insert(
+                "fromBundle".to_string(),
+                Value::String(row.get("from_bundle")),
+            );
+            obj.insert(
+                "targetBundle".to_string(),
+                Value::String(row.get("target_bundle")),
+            );
             obj.insert("person".to_string(), Value::String(row.get("person")));
             if let Some(site) = row.get::<_, Option<String>>("site") {
                 obj.insert("site".to_string(), Value::String(site));
             }
             if let Some(n) = row.get::<_, Option<i32>>("order_number") {
-                obj.insert("orderNumber".to_string(), Value::Number(serde_json::Number::from(n)));
+                obj.insert(
+                    "orderNumber".to_string(),
+                    Value::Number(serde_json::Number::from(n)),
+                );
             }
             Value::Object(obj)
         })
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
+    Ok(Json(ActionResult::java_success(
+        Value::Array(data),
+        count,
+        0,
+    )))
 }
 
 #[utoipa::path(
@@ -99,21 +108,34 @@ pub async fn list_process_platform_correlations(
         .map(|row| {
             let mut obj = serde_json::Map::new();
             obj.insert("id".to_string(), Value::String(row.get("id")));
-            obj.insert("fromBundle".to_string(), Value::String(row.get("from_bundle")));
-            obj.insert("targetBundle".to_string(), Value::String(row.get("target_bundle")));
+            obj.insert(
+                "fromBundle".to_string(),
+                Value::String(row.get("from_bundle")),
+            );
+            obj.insert(
+                "targetBundle".to_string(),
+                Value::String(row.get("target_bundle")),
+            );
             obj.insert("person".to_string(), Value::String(row.get("person")));
             if let Some(site) = row.get::<_, Option<String>>("site") {
                 obj.insert("site".to_string(), Value::String(site));
             }
             if let Some(n) = row.get::<_, Option<i32>>("order_number") {
-                obj.insert("orderNumber".to_string(), Value::Number(serde_json::Number::from(n)));
+                obj.insert(
+                    "orderNumber".to_string(),
+                    Value::Number(serde_json::Number::from(n)),
+                );
             }
             Value::Object(obj)
         })
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
+    Ok(Json(ActionResult::java_success(
+        Value::Array(data),
+        count,
+        0,
+    )))
 }
 
 #[utoipa::path(

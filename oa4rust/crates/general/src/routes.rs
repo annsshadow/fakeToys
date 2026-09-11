@@ -1,12 +1,5 @@
-use crate::{
-    area_list,
-    is_workday,
-    security_clearance_enable,
-};
-use axum::{
-    extract::Extension,
-    Router,
-};
+use crate::{area_list, is_workday, security_clearance_enable};
+use axum::{extract::Extension, Router};
 use deadpool_postgres::Pool;
 
 pub fn general_router(pool: Pool) -> Router {

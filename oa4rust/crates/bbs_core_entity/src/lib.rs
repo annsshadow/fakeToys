@@ -1,9 +1,12 @@
-﻿use axum::{
+use axum::{
     extract::{Extension, Json, Path},
-    routing::{get, post, delete},
+    routing::{delete, get, post},
     Router,
 };
-use sea_orm::{ActiveModelTrait, ColumnTrait, DatabaseConnection, EntityTrait, QueryFilter, QueryOrder, QuerySelect, Set};
+use sea_orm::{
+    ActiveModelTrait, ColumnTrait, DatabaseConnection, EntityTrait, QueryFilter, QueryOrder,
+    QuerySelect, Set,
+};
 use serde_json::Value;
 use shared::{error::AppError, response::ActionResult};
 
@@ -68,7 +71,10 @@ pub async fn section_list(
                 ("id".to_string(), Value::String(m.id.clone())),
                 ("name".to_string(), Value::String(m.name.clone())),
                 ("forumId".to_string(), Value::String(m.forum_id.clone())),
-                ("sort".to_string(), Value::Number(serde_json::Number::from(m.order_number))),
+                (
+                    "sort".to_string(),
+                    Value::Number(serde_json::Number::from(m.order_number)),
+                ),
             ]);
             if let Some(ref desc) = m.description {
                 obj.insert("description".to_string(), Value::String(desc.clone()));
@@ -95,7 +101,8 @@ pub async fn subject_top_list(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let models = bbs_subject_info::Entity::find()
         .filter(
-            bbs_subject_info::Column::SectionId.eq(&section_id)
+            bbs_subject_info::Column::SectionId
+                .eq(&section_id)
                 .and(bbs_subject_info::Column::IsTop.eq(true))
                 .and(bbs_subject_info::Column::Disable.eq(false)),
         )
@@ -111,14 +118,8 @@ pub async fn subject_top_list(
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(m.id.clone())),
                 ("title".to_string(), Value::String(m.title.clone())),
-                (
-                    "authorId".to_string(),
-                    Value::String(m.author_id.clone()),
-                ),
-                (
-                    "sectionId".to_string(),
-                    Value::String(m.section_id.clone()),
-                ),
+                ("authorId".to_string(), Value::String(m.author_id.clone())),
+                ("sectionId".to_string(), Value::String(m.section_id.clone())),
                 (
                     "replyCount".to_string(),
                     Value::Number(serde_json::Number::from(m.reply_count)),
@@ -150,7 +151,8 @@ pub async fn subject_list(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let models = bbs_subject_info::Entity::find()
         .filter(
-            bbs_subject_info::Column::SectionId.eq(&section_id)
+            bbs_subject_info::Column::SectionId
+                .eq(&section_id)
                 .and(bbs_subject_info::Column::Disable.eq(false)),
         )
         .order_by_desc(bbs_subject_info::Column::CreateTime)
@@ -165,14 +167,8 @@ pub async fn subject_list(
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(m.id.clone())),
                 ("title".to_string(), Value::String(m.title.clone())),
-                (
-                    "authorId".to_string(),
-                    Value::String(m.author_id.clone()),
-                ),
-                (
-                    "sectionId".to_string(),
-                    Value::String(m.section_id.clone()),
-                ),
+                ("authorId".to_string(), Value::String(m.author_id.clone())),
+                ("sectionId".to_string(), Value::String(m.section_id.clone())),
                 (
                     "replyCount".to_string(),
                     Value::Number(serde_json::Number::from(m.reply_count)),
@@ -184,11 +180,7 @@ pub async fn subject_list(
                 ("isTop".to_string(), Value::Bool(m.is_top)),
                 (
                     "createTime".to_string(),
-                    Value::String(
-                        m.create_time
-                            .map(|dt| dt.to_string())
-                            .unwrap_or_default(),
-                    ),
+                    Value::String(m.create_time.map(|dt| dt.to_string()).unwrap_or_default()),
                 ),
             ]))
         })
@@ -212,8 +204,15 @@ pub async fn create_forum(
     Json(payload): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let id = uuid::Uuid::new_v4().to_string();
-    let name = payload.get("name").and_then(|v| v.as_str()).unwrap_or_default().to_string();
-    let description = payload.get("description").and_then(|v| v.as_str()).map(|s| s.to_string());
+    let name = payload
+        .get("name")
+        .and_then(|v| v.as_str())
+        .unwrap_or_default()
+        .to_string();
+    let description = payload
+        .get("description")
+        .and_then(|v| v.as_str())
+        .map(|s| s.to_string());
 
     let active_model = bbs_forum_info::ActiveModel {
         id: Set(id.clone()),
@@ -229,10 +228,12 @@ pub async fn create_forum(
         .await
         .map_err(|_| AppError::Internal)?;
 
-    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
-        ("id".to_string(), Value::String(id)),
-        ("name".to_string(), Value::String(name)),
-    ])))))
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("id".to_string(), Value::String(id)),
+            ("name".to_string(), Value::String(name)),
+        ]),
+    ))))
 }
 
 #[axum::debug_handler]
@@ -280,11 +281,16 @@ pub async fn update_forum(
         .await
         .map_err(|_| AppError::Internal)?;
 
-    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
-        ("id".to_string(), Value::String(id)),
-        ("name".to_string(), Value::String(m_name)),
-        ("description".to_string(), Value::String(m_description.unwrap_or_default())),
-    ])))))
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("id".to_string(), Value::String(id)),
+            ("name".to_string(), Value::String(m_name)),
+            (
+                "description".to_string(),
+                Value::String(m_description.unwrap_or_default()),
+            ),
+        ]),
+    ))))
 }
 
 #[axum::debug_handler]
@@ -310,9 +316,9 @@ pub async fn delete_forum(
         .await
         .map_err(|_| AppError::Internal)?;
 
-    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
-        ("id".to_string(), Value::String(deleted_id)),
-    ])))))
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([("id".to_string(), Value::String(deleted_id))]),
+    ))))
 }
 
 #[axum::debug_handler]
@@ -322,14 +328,21 @@ pub async fn create_section(
     Json(payload): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let id = uuid::Uuid::new_v4().to_string();
-    let name = payload.get("name").and_then(|v| v.as_str()).unwrap_or_default().to_string();
+    let name = payload
+        .get("name")
+        .and_then(|v| v.as_str())
+        .unwrap_or_default()
+        .to_string();
     let forum_id = payload
         .get("forumId")
         .and_then(|v| v.as_str())
         .unwrap_or_default()
         .to_string();
     let sort = payload.get("sort").and_then(|v| v.as_i64()).unwrap_or(0) as i32;
-    let description = payload.get("description").and_then(|v| v.as_str()).map(|s| s.to_string());
+    let description = payload
+        .get("description")
+        .and_then(|v| v.as_str())
+        .map(|s| s.to_string());
 
     let active_model = bbs_section_info::ActiveModel {
         id: Set(id.clone()),
@@ -346,11 +359,13 @@ pub async fn create_section(
         .await
         .map_err(|_| AppError::Internal)?;
 
-    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
-        ("id".to_string(), Value::String(id)),
-        ("name".to_string(), Value::String(name)),
-        ("forumId".to_string(), Value::String(forum_id)),
-    ])))))
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("id".to_string(), Value::String(id)),
+            ("name".to_string(), Value::String(name)),
+            ("forumId".to_string(), Value::String(forum_id)),
+        ]),
+    ))))
 }
 
 #[axum::debug_handler]
@@ -411,13 +426,21 @@ pub async fn update_section(
         .await
         .map_err(|_| AppError::Internal)?;
 
-    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
-        ("id".to_string(), Value::String(id)),
-        ("name".to_string(), Value::String(m_name)),
-        ("forumId".to_string(), Value::String(m_forum_id)),
-        ("sort".to_string(), Value::Number(serde_json::Number::from(m_order_number))),
-        ("description".to_string(), Value::String(m_description.unwrap_or_default())),
-    ])))))
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("id".to_string(), Value::String(id)),
+            ("name".to_string(), Value::String(m_name)),
+            ("forumId".to_string(), Value::String(m_forum_id)),
+            (
+                "sort".to_string(),
+                Value::Number(serde_json::Number::from(m_order_number)),
+            ),
+            (
+                "description".to_string(),
+                Value::String(m_description.unwrap_or_default()),
+            ),
+        ]),
+    ))))
 }
 
 #[axum::debug_handler]
@@ -443,9 +466,9 @@ pub async fn delete_section(
         .await
         .map_err(|_| AppError::Internal)?;
 
-    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
-        ("id".to_string(), Value::String(deleted_id)),
-    ])))))
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([("id".to_string(), Value::String(deleted_id))]),
+    ))))
 }
 
 #[axum::debug_handler]
@@ -489,11 +512,13 @@ pub async fn create_subject(
         .await
         .map_err(|_| AppError::Internal)?;
 
-    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
-        ("id".to_string(), Value::String(id)),
-        ("title".to_string(), Value::String(title)),
-        ("sectionId".to_string(), Value::String(section_id)),
-    ])))))
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("id".to_string(), Value::String(id)),
+            ("title".to_string(), Value::String(title)),
+            ("sectionId".to_string(), Value::String(section_id)),
+        ]),
+    ))))
 }
 
 #[axum::debug_handler]
@@ -518,10 +543,7 @@ pub async fn update_subject(
     let m_reply_count = m.reply_count;
     let m_view_count = m.view_count;
     let m_is_top = m.is_top;
-    let m_create_time_str = m
-        .create_time
-        .map(|dt| dt.to_string())
-        .unwrap_or_default();
+    let m_create_time_str = m.create_time.map(|dt| dt.to_string()).unwrap_or_default();
 
     let title = payload
         .get("title")
@@ -533,8 +555,14 @@ pub async fn update_subject(
         .and_then(|v| v.as_str())
         .map(|s| s.to_string())
         .unwrap_or(m_section_id.clone());
-    let is_top = payload.get("isTop").and_then(|v| v.as_bool()).unwrap_or(m_is_top);
-    let disable = payload.get("disable").and_then(|v| v.as_bool()).unwrap_or(m.disable);
+    let is_top = payload
+        .get("isTop")
+        .and_then(|v| v.as_bool())
+        .unwrap_or(m_is_top);
+    let disable = payload
+        .get("disable")
+        .and_then(|v| v.as_bool())
+        .unwrap_or(m.disable);
 
     let active_model = bbs_subject_info::ActiveModel {
         id: Set(id.clone()),
@@ -554,31 +582,24 @@ pub async fn update_subject(
         .await
         .map_err(|_| AppError::Internal)?;
 
-    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
-        ("id".to_string(), Value::String(id)),
-        ("title".to_string(), Value::String(m_title)),
-        (
-            "authorId".to_string(),
-            Value::String(m_author_id),
-        ),
-        (
-            "sectionId".to_string(),
-            Value::String(m_section_id),
-        ),
-        (
-            "replyCount".to_string(),
-            Value::Number(serde_json::Number::from(m_reply_count)),
-        ),
-        (
-            "viewCount".to_string(),
-            Value::Number(serde_json::Number::from(m_view_count)),
-        ),
-        ("isTop".to_string(), Value::Bool(m_is_top)),
-        (
-            "createTime".to_string(),
-            Value::String(m_create_time_str),
-        ),
-    ])))))
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("id".to_string(), Value::String(id)),
+            ("title".to_string(), Value::String(m_title)),
+            ("authorId".to_string(), Value::String(m_author_id)),
+            ("sectionId".to_string(), Value::String(m_section_id)),
+            (
+                "replyCount".to_string(),
+                Value::Number(serde_json::Number::from(m_reply_count)),
+            ),
+            (
+                "viewCount".to_string(),
+                Value::Number(serde_json::Number::from(m_view_count)),
+            ),
+            ("isTop".to_string(), Value::Bool(m_is_top)),
+            ("createTime".to_string(), Value::String(m_create_time_str)),
+        ]),
+    ))))
 }
 
 #[axum::debug_handler]
@@ -604,9 +625,9 @@ pub async fn delete_subject(
         .await
         .map_err(|_| AppError::Internal)?;
 
-    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
-        ("id".to_string(), Value::String(deleted_id)),
-    ])))))
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([("id".to_string(), Value::String(deleted_id))]),
+    ))))
 }
 
 #[axum::debug_handler]
@@ -634,10 +655,12 @@ pub async fn create_reply(
         .unwrap_or("system")
         .to_string();
 
-    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
-        ("id".to_string(), Value::String(id)),
-        ("topicId".to_string(), Value::String(topic_id)),
-    ])))))
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("id".to_string(), Value::String(id)),
+            ("topicId".to_string(), Value::String(topic_id)),
+        ]),
+    ))))
 }
 
 #[allow(non_snake_case)]
@@ -645,7 +668,10 @@ pub async fn search_subjects(
     db: Extension<DatabaseConnection>,
     axum::extract::Query(params): axum::extract::Query<std::collections::HashMap<String, String>>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let keyword = params.get("keyword").map(|s| s.as_str()).unwrap_or_default();
+    let keyword = params
+        .get("keyword")
+        .map(|s| s.as_str())
+        .unwrap_or_default();
     let pattern = format!("%{}%", keyword);
 
     let models = bbs_subject_info::Entity::find()
@@ -666,14 +692,8 @@ pub async fn search_subjects(
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(m.id.clone())),
                 ("title".to_string(), Value::String(m.title.clone())),
-                (
-                    "authorId".to_string(),
-                    Value::String(m.author_id.clone()),
-                ),
-                (
-                    "sectionId".to_string(),
-                    Value::String(m.section_id.clone()),
-                ),
+                ("authorId".to_string(), Value::String(m.author_id.clone())),
+                ("sectionId".to_string(), Value::String(m.section_id.clone())),
                 (
                     "replyCount".to_string(),
                     Value::Number(serde_json::Number::from(m.reply_count)),
@@ -685,11 +705,7 @@ pub async fn search_subjects(
                 ("isTop".to_string(), Value::Bool(m.is_top)),
                 (
                     "createTime".to_string(),
-                    Value::String(
-                        m.create_time
-                            .map(|dt| dt.to_string())
-                            .unwrap_or_default(),
-                    ),
+                    Value::String(m.create_time.map(|dt| dt.to_string()).unwrap_or_default()),
                 ),
             ]))
         })
@@ -718,7 +734,10 @@ pub fn bbs_core_entity_router(_pool: deadpool_postgres::Pool) -> Router {
         )
         .route("/jaxrs/bbs/core/entity/section", post(create_section))
         .route("/jaxrs/bbs/core/entity/section/{id}", post(update_section))
-        .route("/jaxrs/bbs/core/entity/section/{id}", delete(delete_section))
+        .route(
+            "/jaxrs/bbs/core/entity/section/{id}",
+            delete(delete_section),
+        )
         .route(
             "/jaxrs/bbs/core/entity/subject/top/{sectionId}",
             get(subject_top_list),
@@ -729,7 +748,10 @@ pub fn bbs_core_entity_router(_pool: deadpool_postgres::Pool) -> Router {
         )
         .route("/jaxrs/bbs/core/entity/subject", post(create_subject))
         .route("/jaxrs/bbs/core/entity/subject/{id}", post(update_subject))
-        .route("/jaxrs/bbs/core/entity/subject/{id}", delete(delete_subject))
+        .route(
+            "/jaxrs/bbs/core/entity/subject/{id}",
+            delete(delete_subject),
+        )
         .route("/jaxrs/bbs/core/entity/reply", post(create_reply))
         .route(
             "/jaxrs/bbs/core/entity/subject/search",
@@ -742,8 +764,6 @@ mod tests;
 #[cfg(test)]
 mod tests_generated;
 
-
 pub fn router(pool: deadpool_postgres::Pool) -> axum::Router {
     crate::bbs_core_entity_router(pool)
 }
-

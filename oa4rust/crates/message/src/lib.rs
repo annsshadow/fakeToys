@@ -1,7 +1,4 @@
-use axum::{
-    extract::Extension,
-    Json,
-};
+use axum::{extract::Extension, Json};
 use deadpool_postgres::Pool;
 use serde::Deserialize;
 use serde_json::Value;
@@ -46,13 +43,20 @@ pub async fn consume_list(
                 ("type".to_string(), Value::String(row.get("xtype"))),
                 ("consumer".to_string(), Value::String(row.get("xconsumer"))),
                 ("person".to_string(), Value::String(row.get("xperson"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
+                (
+                    "createTime".to_string(),
+                    Value::String(row.get("\"xcreateTime\"")),
+                ),
             ]))
         })
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
+    Ok(Json(ActionResult::java_success(
+        Value::Array(data),
+        count,
+        0,
+    )))
 }
 
 pub async fn update_single(
@@ -137,7 +141,8 @@ pub async fn mark_read(
                 &[&id],
             )
             .await
-            .map_err(|_| AppError::Internal)? > 0
+            .map_err(|_| AppError::Internal)?
+            > 0
     } else {
         false
     };
@@ -167,7 +172,10 @@ pub async fn unread_count(
 
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
-            ("count".to_string(), Value::Number(serde_json::Number::from(count))),
+            (
+                "count".to_string(),
+                Value::Number(serde_json::Number::from(count)),
+            ),
             ("consumer".to_string(), Value::String(consume)),
         ]),
     ))))
@@ -181,6 +189,5 @@ pub fn router(pool: deadpool_postgres::Pool) -> axum::Router {
 mod tests;
 #[cfg(test)]
 mod tests_generated;
-
 
 pub mod routes;

@@ -3,7 +3,10 @@ use axum::{
     routing::get,
     Json, Router,
 };
-use sea_orm::{ColumnTrait, DatabaseConnection, EntityTrait, PaginatorTrait, QueryFilter, QueryOrder, QuerySelect};
+use sea_orm::{
+    ColumnTrait, DatabaseConnection, EntityTrait, PaginatorTrait, QueryFilter, QueryOrder,
+    QuerySelect,
+};
 use serde_json::Value;
 use shared::{error::AppError, response::ActionResult};
 
@@ -105,7 +108,10 @@ pub async fn unread_count(
         .map_err(|_| AppError::Internal)?;
 
     let data = Value::Object(serde_json::Map::from_iter([
-        ("count".to_string(), Value::Number(serde_json::Number::from(count))),
+        (
+            "count".to_string(),
+            Value::Number(serde_json::Number::from(count)),
+        ),
         ("consumer".to_string(), Value::String(consume)),
     ]));
 
@@ -130,7 +136,6 @@ pub fn message_core_entity_router(_pool: deadpool_postgres::Pool) -> Router {
 mod tests;
 #[cfg(test)]
 mod tests_generated;
-
 
 pub fn router(pool: deadpool_postgres::Pool) -> axum::Router {
     crate::message_core_entity_router(pool)

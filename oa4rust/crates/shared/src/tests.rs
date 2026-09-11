@@ -13,9 +13,9 @@ mod tests {
 
     use crate::error::AppError;
     use crate::middleware::{
-        auth_middleware, authorize_middleware, client_ip, csrf_middleware,
-        extract_authentication, rate_limit_middleware, security_headers_middleware,
-        trace_middleware, Authentication, SecurityState, SESSION_COOKIE_NAME,
+        auth_middleware, authorize_middleware, client_ip, csrf_middleware, extract_authentication,
+        rate_limit_middleware, security_headers_middleware, trace_middleware, Authentication,
+        SecurityState, SESSION_COOKIE_NAME,
     };
     use crate::rate_limit::RateLimiter;
     use crate::response::ActionResult;
@@ -84,7 +84,10 @@ mod tests {
 
     async fn make_token(sm: &SessionManager, person: &str) -> String {
         let token = uuid::Uuid::new_v4().to_string();
-        let session = sm.create_session(person.to_string(), token.clone()).await.unwrap();
+        let session = sm
+            .create_session(person.to_string(), token.clone())
+            .await
+            .unwrap();
         session.token
     }
 
@@ -101,8 +104,10 @@ mod tests {
             .body(Body::empty())
             .unwrap();
         if let Some(token) = token {
-            req.headers_mut()
-                .insert(header::AUTHORIZATION, format!("Bearer {}", token).parse().unwrap());
+            req.headers_mut().insert(
+                header::AUTHORIZATION,
+                format!("Bearer {}", token).parse().unwrap(),
+            );
         }
         if let Some(xff) = xff {
             req.headers_mut()
@@ -132,7 +137,14 @@ mod tests {
     #[tokio::test]
     async fn test_invalid_token_rejected() {
         let app = test_app(security_state());
-        let status = send(&app, Method::GET, "/jaxrs/unit/list", Some("bogus-token"), None).await;
+        let status = send(
+            &app,
+            Method::GET,
+            "/jaxrs/unit/list",
+            Some("bogus-token"),
+            None,
+        )
+        .await;
         assert_eq!(status, StatusCode::UNAUTHORIZED);
     }
 
@@ -183,10 +195,15 @@ mod tests {
     #[test]
     fn test_extract_token_priority() {
         let mut headers = axum::http::HeaderMap::new();
-        headers.insert(header::AUTHORIZATION, "Bearer bearer-token".parse().unwrap());
+        headers.insert(
+            header::AUTHORIZATION,
+            "Bearer bearer-token".parse().unwrap(),
+        );
         headers.insert(
             header::COOKIE,
-            format!("{}=cookie-token", SESSION_COOKIE_NAME).parse().unwrap(),
+            format!("{}=cookie-token", SESSION_COOKIE_NAME)
+                .parse()
+                .unwrap(),
         );
         assert_eq!(
             extract_authentication(&headers),
@@ -222,7 +239,10 @@ mod tests {
             .header(header::COOKIE, format!("{}={}", SESSION_COOKIE_NAME, token))
             .body(Body::empty())
             .unwrap();
-        assert_eq!(app.clone().oneshot(request).await.unwrap().status(), StatusCode::FORBIDDEN);
+        assert_eq!(
+            app.clone().oneshot(request).await.unwrap().status(),
+            StatusCode::FORBIDDEN
+        );
 
         let request = Request::builder()
             .method(Method::POST)
@@ -231,7 +251,10 @@ mod tests {
             .header(header::ORIGIN, "http://localhost:3000")
             .body(Body::empty())
             .unwrap();
-        assert_eq!(app.clone().oneshot(request).await.unwrap().status(), StatusCode::OK);
+        assert_eq!(
+            app.clone().oneshot(request).await.unwrap().status(),
+            StatusCode::OK
+        );
 
         let request = Request::builder()
             .method(Method::POST)
@@ -246,26 +269,38 @@ mod tests {
     async fn test_cors_preflight_allows_write_methods() {
         let app = Router::new()
             .route("/write", post(|| async { "ok" }))
-            .layer(crate::middleware::cors_middleware_for_origin("http://localhost:3000"));
+            .layer(crate::middleware::cors_middleware_for_origin(
+                "http://localhost:3000",
+            ));
         for method in ["PUT", "PATCH", "DELETE"] {
-            let response = app.clone().oneshot(
-                Request::builder()
-                    .method(Method::OPTIONS)
-                    .uri("/write")
-                    .header(header::ORIGIN, "http://localhost:3000")
-                    .header(header::ACCESS_CONTROL_REQUEST_METHOD, method)
-                    .body(Body::empty())
-                    .unwrap(),
-            ).await.unwrap();
+            let response = app
+                .clone()
+                .oneshot(
+                    Request::builder()
+                        .method(Method::OPTIONS)
+                        .uri("/write")
+                        .header(header::ORIGIN, "http://localhost:3000")
+                        .header(header::ACCESS_CONTROL_REQUEST_METHOD, method)
+                        .body(Body::empty())
+                        .unwrap(),
+                )
+                .await
+                .unwrap();
             assert_eq!(response.status(), StatusCode::OK);
-            let allowed = response.headers()[header::ACCESS_CONTROL_ALLOW_METHODS].to_str().unwrap();
+            let allowed = response.headers()[header::ACCESS_CONTROL_ALLOW_METHODS]
+                .to_str()
+                .unwrap();
             assert!(allowed.split(',').any(|value| value.trim() == method));
             assert_eq!(
-                response.headers()[header::ACCESS_CONTROL_ALLOW_CREDENTIALS].to_str().unwrap(),
+                response.headers()[header::ACCESS_CONTROL_ALLOW_CREDENTIALS]
+                    .to_str()
+                    .unwrap(),
                 "true"
             );
             assert_eq!(
-                response.headers()[header::ACCESS_CONTROL_ALLOW_ORIGIN].to_str().unwrap(),
+                response.headers()[header::ACCESS_CONTROL_ALLOW_ORIGIN]
+                    .to_str()
+                    .unwrap(),
                 "http://localhost:3000"
             );
         }
@@ -275,32 +310,48 @@ mod tests {
     async fn test_cors_read_methods_not_blocked_and_wrong_origin_rejected() {
         let app = Router::new()
             .route("/write", post(|| async { "ok" }))
-            .layer(crate::middleware::cors_middleware_for_origin("http://localhost:3000"));
+            .layer(crate::middleware::cors_middleware_for_origin(
+                "http://localhost:3000",
+            ));
         // GET/HEAD preflights are not blocked by the CORS layer.
         for method in ["GET", "HEAD"] {
-            let response = app.clone().oneshot(
-                Request::builder()
-                    .method(Method::OPTIONS)
-                    .uri("/write")
-                    .header(header::ORIGIN, "http://localhost:3000")
-                    .header(header::ACCESS_CONTROL_REQUEST_METHOD, method)
-                    .body(Body::empty())
-                    .unwrap(),
-            ).await.unwrap();
-            assert_eq!(response.status(), StatusCode::OK, "{method} preflight should pass");
-            let allowed = response.headers()[header::ACCESS_CONTROL_ALLOW_METHODS].to_str().unwrap();
+            let response = app
+                .clone()
+                .oneshot(
+                    Request::builder()
+                        .method(Method::OPTIONS)
+                        .uri("/write")
+                        .header(header::ORIGIN, "http://localhost:3000")
+                        .header(header::ACCESS_CONTROL_REQUEST_METHOD, method)
+                        .body(Body::empty())
+                        .unwrap(),
+                )
+                .await
+                .unwrap();
+            assert_eq!(
+                response.status(),
+                StatusCode::OK,
+                "{method} preflight should pass"
+            );
+            let allowed = response.headers()[header::ACCESS_CONTROL_ALLOW_METHODS]
+                .to_str()
+                .unwrap();
             assert!(allowed.split(',').any(|value| value.trim() == method));
         }
         // A preflight from a foreign origin must not be allowed.
-        let response = app.clone().oneshot(
-            Request::builder()
-                .method(Method::OPTIONS)
-                .uri("/write")
-                .header(header::ORIGIN, "http://evil.example")
-                .header(header::ACCESS_CONTROL_REQUEST_METHOD, "POST")
-                .body(Body::empty())
-                .unwrap(),
-        ).await.unwrap();
+        let response = app
+            .clone()
+            .oneshot(
+                Request::builder()
+                    .method(Method::OPTIONS)
+                    .uri("/write")
+                    .header(header::ORIGIN, "http://evil.example")
+                    .header(header::ACCESS_CONTROL_REQUEST_METHOD, "POST")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
         // A preflight from a foreign origin must never be whitelisted. tower-http's
         // exact-origin layer replies with the public origin regardless; the browser
         // enforces the match, so the security invariant we assert is: the foreign
@@ -371,7 +422,10 @@ mod tests {
 
             // cookie + wrong origin
             assert_eq!(
-                build(cookie, Some("http://evil.example"), None).await.unwrap().status(),
+                build(cookie, Some("http://evil.example"), None)
+                    .await
+                    .unwrap()
+                    .status(),
                 StatusCode::FORBIDDEN,
                 "{method} cookie with wrong origin must be 403"
             );
@@ -385,7 +439,10 @@ mod tests {
 
             // Bearer-only (no cookie) is exempt: no Origin required.
             assert_eq!(
-                build(None, None, Some(token.as_str())).await.unwrap().status(),
+                build(None, None, Some(token.as_str()))
+                    .await
+                    .unwrap()
+                    .status(),
                 StatusCode::OK,
                 "{method} bearer-only must stay exempt from Origin check"
             );
@@ -393,7 +450,10 @@ mod tests {
             // cookie + Bearer without Origin: the cookie makes this a credential
             // request, Bearer must NOT bypass the check.
             assert_eq!(
-                build(cookie, None, Some(token.as_str())).await.unwrap().status(),
+                build(cookie, None, Some(token.as_str()))
+                    .await
+                    .unwrap()
+                    .status(),
                 StatusCode::FORBIDDEN,
                 "{method} cookie+bearer without origin must be 403"
             );
@@ -403,12 +463,13 @@ mod tests {
         // layer (the POST/PUT/PATCH/DELETE-only router answers 405, not 403).
         for method in ["GET", "HEAD"] {
             let mut builder = Request::builder().method(method).uri("/write");
-            builder = builder.header(
-                header::COOKIE,
-                format!("{}={}", SESSION_COOKIE_NAME, token),
-            );
+            builder = builder.header(header::COOKIE, format!("{}={}", SESSION_COOKIE_NAME, token));
             assert_eq!(
-                app.clone().oneshot(builder.body(Body::empty()).unwrap()).await.unwrap().status(),
+                app.clone()
+                    .oneshot(builder.body(Body::empty()).unwrap())
+                    .await
+                    .unwrap()
+                    .status(),
                 StatusCode::METHOD_NOT_ALLOWED,
                 "{method} is not CSRF-gated (405 from the route, not 403)"
             );
@@ -430,7 +491,10 @@ mod tests {
             .header(header::AUTHORIZATION, format!("Bearer {good}"))
             .body(Body::empty())
             .unwrap();
-        assert_eq!(app.clone().oneshot(req).await.unwrap().status(), StatusCode::UNAUTHORIZED);
+        assert_eq!(
+            app.clone().oneshot(req).await.unwrap().status(),
+            StatusCode::UNAUTHORIZED
+        );
     }
 
     // ──────────────────────────────────────────────────────────────────────────
@@ -442,7 +506,14 @@ mod tests {
     async fn test_auth_path_rate_limited() {
         let app = test_app(security_state());
         for i in 0..11 {
-            let status = send(&app, Method::POST, "/jaxrs/authentication/login", None, None).await;
+            let status = send(
+                &app,
+                Method::POST,
+                "/jaxrs/authentication/login",
+                None,
+                None,
+            )
+            .await;
             if i < 10 {
                 assert_eq!(status, StatusCode::OK, "第 {} 次认证请求应成功", i + 1);
             } else {
@@ -633,11 +704,11 @@ mod tests {
             resp.headers().get(header::X_CONTENT_TYPE_OPTIONS).unwrap(),
             "nosniff"
         );
+        assert_eq!(resp.headers().get(header::X_FRAME_OPTIONS).unwrap(), "DENY");
         assert_eq!(
-            resp.headers().get(header::X_FRAME_OPTIONS).unwrap(),
-            "DENY"
+            resp.headers().get(header::CACHE_CONTROL).unwrap(),
+            "no-store"
         );
-        assert_eq!(resp.headers().get(header::CACHE_CONTROL).unwrap(), "no-store");
     }
 
     // ──────────────────────────────────────────────────────────────────────────
@@ -687,7 +758,8 @@ mod tests {
 
     #[test]
     fn test_action_result_with_count() {
-        let mut result: ActionResult<serde_json::Value> = ActionResult::success(json!({"items": []}));
+        let mut result: ActionResult<serde_json::Value> =
+            ActionResult::success(json!({"items": []}));
         result.count = Some(10);
         result.size = Some(20);
 
@@ -708,7 +780,10 @@ mod tests {
     fn test_app_error_database() {
         let err = AppError::Database(sqlx::Error::RowNotFound);
         let response = err.into_response();
-        assert_eq!(response.status(), axum::http::StatusCode::INTERNAL_SERVER_ERROR);
+        assert_eq!(
+            response.status(),
+            axum::http::StatusCode::INTERNAL_SERVER_ERROR
+        );
     }
 
     #[test]
@@ -736,7 +811,10 @@ mod tests {
     fn test_app_error_internal() {
         let err = AppError::Internal;
         let response = err.into_response();
-        assert_eq!(response.status(), axum::http::StatusCode::INTERNAL_SERVER_ERROR);
+        assert_eq!(
+            response.status(),
+            axum::http::StatusCode::INTERNAL_SERVER_ERROR
+        );
     }
 
     #[test]

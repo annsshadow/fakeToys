@@ -32,11 +32,7 @@ pub async fn query_list(
                 ("queryType".to_string(), Value::String(m.query_type.clone())),
                 (
                     "createTime".to_string(),
-                    Value::String(
-                        m.create_time
-                            .map(|dt| dt.to_string())
-                            .unwrap_or_default(),
-                    ),
+                    Value::String(m.create_time.map(|dt| dt.to_string()).unwrap_or_default()),
                 ),
             ]))
         })
@@ -59,8 +55,16 @@ pub async fn create_query(
     Json(payload): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let id = uuid::Uuid::new_v4().to_string();
-    let name = payload.get("name").and_then(|v| v.as_str()).unwrap_or_default().to_string();
-    let query_type = payload.get("queryType").and_then(|v| v.as_str()).unwrap_or_default().to_string();
+    let name = payload
+        .get("name")
+        .and_then(|v| v.as_str())
+        .unwrap_or_default()
+        .to_string();
+    let query_type = payload
+        .get("queryType")
+        .and_then(|v| v.as_str())
+        .unwrap_or_default()
+        .to_string();
 
     let active_model = query_view::ActiveModel {
         id: Set(id.clone()),
@@ -74,11 +78,13 @@ pub async fn create_query(
         .await
         .map_err(|_| AppError::Internal)?;
 
-    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
-        ("id".to_string(), Value::String(id)),
-        ("name".to_string(), Value::String(name)),
-        ("queryType".to_string(), Value::String(query_type)),
-    ])))))
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("id".to_string(), Value::String(id)),
+            ("name".to_string(), Value::String(name)),
+            ("queryType".to_string(), Value::String(query_type)),
+        ]),
+    ))))
 }
 
 pub fn query_express_router(_pool: Pool) -> Router {
@@ -95,4 +101,3 @@ pub fn router(pool: deadpool_postgres::Pool) -> axum::Router {
 mod tests;
 #[cfg(test)]
 mod tests_generated;
-

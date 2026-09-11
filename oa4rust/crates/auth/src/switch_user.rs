@@ -1,8 +1,8 @@
+use axum::response::{IntoResponse, Response};
 use axum::{
     extract::{Extension, Json},
     http::HeaderMap,
 };
-use axum::response::{IntoResponse, Response};
 use serde::Deserialize;
 use shared::error::AppError;
 use shared::middleware::extract_token_from_headers;
@@ -28,7 +28,10 @@ pub async fn switch_user(
 ) -> Result<Response, AppError> {
     // 验证当前用户是 admin
     let token = extract_token_from_headers(&headers).ok_or(AppError::Unauthorized)?;
-    let session = session_manager.validate_session(&token).await.ok_or(AppError::Unauthorized)?;
+    let session = session_manager
+        .validate_session(&token)
+        .await
+        .ok_or(AppError::Unauthorized)?;
 
     if !shared::middleware::is_admin(&pool, &session.person_unique).await {
         return Ok(Json(ActionResult::<serde_json::Value>::error("forbidden")).into_response());
@@ -73,12 +76,17 @@ pub async fn switch_user(
             )
             .await
             .unwrap_or_default();
-        role_rows.iter().map(|r| r.get::<_, String>("name")).collect()
+        role_rows
+            .iter()
+            .map(|r| r.get::<_, String>("name"))
+            .collect()
     };
 
     // 为目标用户签发新 session
     let new_token = uuid::Uuid::new_v4().to_string();
-    session_manager.create_session(target_unique.clone(), new_token.clone()).await?;
+    session_manager
+        .create_session(target_unique.clone(), new_token.clone())
+        .await?;
 
     tracing::info!(
         switcher = %session.person_unique,

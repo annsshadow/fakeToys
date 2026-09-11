@@ -29,11 +29,8 @@ fn test_get_design_action_result_format() {
 
 #[test]
 fn test_list_designs_action_result_format() {
-    let result: ActionResult<serde_json::Value> = ActionResult::java_success(
-        json!([{"id": "design-1", "name": "Design 1"}]),
-        1,
-        0,
-    );
+    let result: ActionResult<serde_json::Value> =
+        ActionResult::java_success(json!([{"id": "design-1", "name": "Design 1"}]), 1, 0);
     let json = serde_json::to_value(&result).unwrap();
     assert_eq!(json["type"], "success");
     assert_eq!(json["count"], 1);
@@ -57,12 +54,13 @@ async fn test_create_design_returns_error_without_db() {
     let app = portal_assemble_designer_router();
 
     use axum::body::Body;
-    use axum::http::{Request, Method};
+    use axum::http::{Method, Request};
 
     let req = serde_json::to_string(&json!({
         "name": "My Portal",
         "description": "A new portal"
-    })).unwrap();
+    }))
+    .unwrap();
 
     let response = app
         .oneshot(
@@ -76,7 +74,10 @@ async fn test_create_design_returns_error_without_db() {
         .await
         .unwrap();
 
-    assert_eq!(response.status(), axum::http::StatusCode::INTERNAL_SERVER_ERROR);
+    assert_eq!(
+        response.status(),
+        axum::http::StatusCode::INTERNAL_SERVER_ERROR
+    );
 }
 
 #[tokio::test]
@@ -84,7 +85,7 @@ async fn test_get_design_returns_error_without_db() {
     let app = portal_assemble_designer_router();
 
     use axum::body::Body;
-    use axum::http::{Request, Method};
+    use axum::http::{Method, Request};
 
     let response = app
         .oneshot(
@@ -97,7 +98,10 @@ async fn test_get_design_returns_error_without_db() {
         .await
         .unwrap();
 
-    assert_eq!(response.status(), axum::http::StatusCode::INTERNAL_SERVER_ERROR);
+    assert_eq!(
+        response.status(),
+        axum::http::StatusCode::INTERNAL_SERVER_ERROR
+    );
 }
 
 #[tokio::test]
@@ -105,7 +109,7 @@ async fn test_list_designs_returns_error_without_db() {
     let app = portal_assemble_designer_router();
 
     use axum::body::Body;
-    use axum::http::{Request, Method};
+    use axum::http::{Method, Request};
 
     let response = app
         .oneshot(
@@ -118,7 +122,10 @@ async fn test_list_designs_returns_error_without_db() {
         .await
         .unwrap();
 
-    assert_eq!(response.status(), axum::http::StatusCode::INTERNAL_SERVER_ERROR);
+    assert_eq!(
+        response.status(),
+        axum::http::StatusCode::INTERNAL_SERVER_ERROR
+    );
 }
 
 #[tokio::test]
@@ -126,12 +133,13 @@ async fn test_save_design_returns_error_without_db() {
     let app = portal_assemble_designer_router();
 
     use axum::body::Body;
-    use axum::http::{Request, Method};
+    use axum::http::{Method, Request};
 
     let req = serde_json::to_string(&json!({
         "layout": "grid",
         "widgets": []
-    })).unwrap();
+    }))
+    .unwrap();
 
     let response = app
         .oneshot(
@@ -145,7 +153,10 @@ async fn test_save_design_returns_error_without_db() {
         .await
         .unwrap();
 
-    assert_eq!(response.status(), axum::http::StatusCode::INTERNAL_SERVER_ERROR);
+    assert_eq!(
+        response.status(),
+        axum::http::StatusCode::INTERNAL_SERVER_ERROR
+    );
 }
 
 #[tokio::test]
@@ -153,7 +164,7 @@ async fn test_design_list_returns_error_without_db() {
     let app = portal_assemble_designer_router();
 
     use axum::body::Body;
-    use axum::http::{Request, Method};
+    use axum::http::{Method, Request};
 
     let response = app
         .oneshot(
@@ -166,7 +177,10 @@ async fn test_design_list_returns_error_without_db() {
         .await
         .unwrap();
 
-    assert_eq!(response.status(), axum::http::StatusCode::INTERNAL_SERVER_ERROR);
+    assert_eq!(
+        response.status(),
+        axum::http::StatusCode::INTERNAL_SERVER_ERROR
+    );
 }
 
 #[tokio::test]
@@ -174,7 +188,7 @@ async fn test_design_get_returns_error_without_db() {
     let app = portal_assemble_designer_router();
 
     use axum::body::Body;
-    use axum::http::{Request, Method};
+    use axum::http::{Method, Request};
 
     let response = app
         .oneshot(
@@ -187,7 +201,10 @@ async fn test_design_get_returns_error_without_db() {
         .await
         .unwrap();
 
-    assert_eq!(response.status(), axum::http::StatusCode::INTERNAL_SERVER_ERROR);
+    assert_eq!(
+        response.status(),
+        axum::http::StatusCode::INTERNAL_SERVER_ERROR
+    );
 }
 
 #[tokio::test]
@@ -195,51 +212,70 @@ async fn test_design_save_returns_error_without_db() {
     let app = portal_assemble_designer_router();
 
     use axum::body::Body;
-    use axum::http::{Request, Method};
+    use axum::http::{Method, Request};
 
     let req = serde_json::to_string(&json!({
         "id": "design-1",
         "content": {"layout": "grid", "widgets": []}
-    })).unwrap();
+    }))
+    .unwrap();
 
     let response = app
         .oneshot(
             Request::builder()
-        .uri("/jaxrs/portal/design/save")
-        .method(Method::POST)
-        .header("content-type", "application/json")
-        .body(Body::from(req))
-        .unwrap(),
+                .uri("/jaxrs/portal/design/save")
+                .method(Method::POST)
+                .header("content-type", "application/json")
+                .body(Body::from(req))
+                .unwrap(),
         )
         .await
         .unwrap();
 
-    assert_eq!(response.status(), axum::http::StatusCode::INTERNAL_SERVER_ERROR);
+    assert_eq!(
+        response.status(),
+        axum::http::StatusCode::INTERNAL_SERVER_ERROR
+    );
 }
 
 #[tokio::test]
 async fn test_u2_designer_gap_routes_exist() {
     let app = portal_assemble_designer_router();
     use axum::body::Body;
-    use axum::http::{Request, Method, StatusCode};
+    use axum::http::{Method, Request, StatusCode};
 
     let cases: Vec<(&str, &str)> = vec![
         ("POST", "/jaxrs/portal/assemble/designer/page"),
         ("GET", "/jaxrs/portal/assemble/designer/page/list/portal/p1"),
         ("DELETE", "/jaxrs/portal/assemble/designer/page/id1"),
         ("PUT", "/jaxrs/portal/assemble/designer/page/id1"),
-        ("GET", "/jaxrs/portal/assemble/designer/pageversion/list/page/pid1"),
+        (
+            "GET",
+            "/jaxrs/portal/assemble/designer/pageversion/list/page/pid1",
+        ),
         ("POST", "/jaxrs/portal/assemble/designer/portal"),
         ("GET", "/jaxrs/portal/assemble/designer/portal/list/summary"),
-        ("POST", "/jaxrs/portal/assemble/designer/portal/list/summary/v2"),
+        (
+            "POST",
+            "/jaxrs/portal/assemble/designer/portal/list/summary/v2",
+        ),
         ("DELETE", "/jaxrs/portal/assemble/designer/portal/id1"),
         ("PUT", "/jaxrs/portal/assemble/designer/portal/id1"),
         ("PUT", "/jaxrs/portal/assemble/designer/portal/id1/icon"),
-        ("POST", "/jaxrs/portal/assemble/designer/portal/id1/permission"),
+        (
+            "POST",
+            "/jaxrs/portal/assemble/designer/portal/id1/permission",
+        ),
         ("POST", "/jaxrs/portal/assemble/designer/templatepage"),
         ("GET", "/jaxrs/portal/assemble/designer/templatepage/list"),
-        ("GET", "/jaxrs/portal/assemble/designer/templatepage/list/category"),
-        ("PUT", "/jaxrs/portal/assemble/designer/templatepage/list/category"),
+        (
+            "GET",
+            "/jaxrs/portal/assemble/designer/templatepage/list/category",
+        ),
+        (
+            "PUT",
+            "/jaxrs/portal/assemble/designer/templatepage/list/category",
+        ),
         ("DELETE", "/jaxrs/portal/assemble/designer/templatepage/id1"),
         ("POST", "/jaxrs/portal/assemble/designer/widget"),
         ("DELETE", "/jaxrs/portal/assemble/designer/widget/id1"),

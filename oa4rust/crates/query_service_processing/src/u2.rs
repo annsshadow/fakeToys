@@ -72,43 +72,53 @@ async fn search_module(
     pattern: &str,
 ) -> Result<Vec<Value>, AppError> {
     let rows = match module_type {
-        "cms" => client
-            .query(
-                "SELECT id, name FROM x_cms_script \
+        "cms" => {
+            client
+                .query(
+                    "SELECT id, name FROM x_cms_script \
                  WHERE name ILIKE $1 OR script_content ILIKE $1 LIMIT 50",
-                &[&pattern],
-            )
-            .await,
-        "portal" => client
-            .query(
-                "SELECT id, name FROM x_portal_script WHERE name ILIKE $1 LIMIT 50",
-                &[&pattern],
-            )
-            .await,
-        "processPlatform" => client
-            .query(
-                "(SELECT id, name FROM x_process_definition WHERE name ILIKE $1) \
+                    &[&pattern],
+                )
+                .await
+        }
+        "portal" => {
+            client
+                .query(
+                    "SELECT id, name FROM x_portal_script WHERE name ILIKE $1 LIMIT 50",
+                    &[&pattern],
+                )
+                .await
+        }
+        "processPlatform" => {
+            client
+                .query(
+                    "(SELECT id, name FROM x_process_definition WHERE name ILIKE $1) \
                  UNION ALL \
                  (SELECT id, name FROM x_script WHERE name ILIKE $1) LIMIT 50",
-                &[&pattern],
-            )
-            .await,
-        "query" => client
-            .query(
-                "(SELECT id, name FROM x_query_stat WHERE name ILIKE $1) \
+                    &[&pattern],
+                )
+                .await
+        }
+        "query" => {
+            client
+                .query(
+                    "(SELECT id, name FROM x_query_stat WHERE name ILIKE $1) \
                  UNION ALL \
                  (SELECT id, name FROM x_query_view WHERE name ILIKE $1) \
                  UNION ALL \
                  (SELECT id, name FROM x_query_table WHERE name ILIKE $1) LIMIT 50",
-                &[&pattern],
-            )
-            .await,
-        "service" => client
-            .query(
-                "SELECT id, name FROM x_script WHERE name ILIKE $1 LIMIT 50",
-                &[&pattern],
-            )
-            .await,
+                    &[&pattern],
+                )
+                .await
+        }
+        "service" => {
+            client
+                .query(
+                    "SELECT id, name FROM x_script WHERE name ILIKE $1 LIMIT 50",
+                    &[&pattern],
+                )
+                .await
+        }
         _ => Ok(vec![]),
     }
     .map_err(|_| AppError::Internal)?;
@@ -285,12 +295,7 @@ async fn touch_impl(
     node: &str,
     action: TouchAction,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let state_id = format!(
-        "{}:{}:{}",
-        entity_type,
-        freq.unwrap_or("-"),
-        node
-    );
+    let state_id = format!("{}:{}:{}", entity_type, freq.unwrap_or("-"), node);
     let freq_val = freq.unwrap_or("-").to_string();
 
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
@@ -442,7 +447,9 @@ pub async fn table_update_with_bundle(
     Json(data): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     if flag.trim().is_empty() || bundle.trim().is_empty() {
-        return Ok(Json(ActionResult::error("table flag and bundle are required")));
+        return Ok(Json(ActionResult::error(
+            "table flag and bundle are required",
+        )));
     }
 
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
@@ -561,7 +568,10 @@ async fn neural_stop(
 
     if n == 0 {
         // 对齐 Java ExceptionModelNotReady：无可停止的运行中任务
-        return Ok(Json(ActionResult::error(format!("{}: no running {}", NEURAL_NOT_READY, action))));
+        return Ok(Json(ActionResult::error(format!(
+            "{}: no running {}",
+            NEURAL_NOT_READY, action
+        ))));
     }
     Ok(Json(ActionResult::success(json!({
         "value": true,

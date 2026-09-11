@@ -53,8 +53,10 @@ mod tests {
             .unwrap();
 
         // 由于没有数据库，会返回 INTERNAL_SERVER_ERROR (500)
-        assert!(response.status() == StatusCode::INTERNAL_SERVER_ERROR
-            || response.status() == StatusCode::NOT_FOUND);
+        assert!(
+            response.status() == StatusCode::INTERNAL_SERVER_ERROR
+                || response.status() == StatusCode::NOT_FOUND
+        );
     }
 
     #[test]
@@ -100,8 +102,10 @@ mod tests {
             .await
             .unwrap();
 
-        assert!(response.status() == StatusCode::INTERNAL_SERVER_ERROR
-            || response.status() == StatusCode::OK);
+        assert!(
+            response.status() == StatusCode::INTERNAL_SERVER_ERROR
+                || response.status() == StatusCode::OK
+        );
     }
 
     #[tokio::test]
@@ -121,9 +125,11 @@ mod tests {
             .await
             .unwrap();
 
-        assert!(response.status() == StatusCode::INTERNAL_SERVER_ERROR
-            || response.status() == StatusCode::OK
-            || response.status() == StatusCode::NOT_FOUND);
+        assert!(
+            response.status() == StatusCode::INTERNAL_SERVER_ERROR
+                || response.status() == StatusCode::OK
+                || response.status() == StatusCode::NOT_FOUND
+        );
     }
 
     #[test]

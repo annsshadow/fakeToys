@@ -1,6 +1,9 @@
 #[cfg(test)]
 mod tests {
-    use crate::{entities::{meeting_room::Model as MeetingRoom, meeting::Model as Meeting}, meeting_core_entity_router};
+    use crate::{
+        entities::{meeting::Model as Meeting, meeting_room::Model as MeetingRoom},
+        meeting_core_entity_router,
+    };
     use axum::body::Body;
     use axum::http::{Request, StatusCode};
     use deadpool_postgres::{Manager, Pool};
@@ -71,7 +74,10 @@ mod tests {
             .await
             .unwrap();
 
-        assert!(matches!(response.status(), StatusCode::OK | StatusCode::INTERNAL_SERVER_ERROR | StatusCode::NOT_FOUND));
+        assert!(matches!(
+            response.status(),
+            StatusCode::OK | StatusCode::INTERNAL_SERVER_ERROR | StatusCode::NOT_FOUND
+        ));
     }
 
     #[tokio::test]
@@ -134,7 +140,10 @@ mod tests {
             .await
             .unwrap();
 
-        assert!(matches!(response.status(), StatusCode::OK | StatusCode::INTERNAL_SERVER_ERROR | StatusCode::NOT_FOUND));
+        assert!(matches!(
+            response.status(),
+            StatusCode::OK | StatusCode::INTERNAL_SERVER_ERROR | StatusCode::NOT_FOUND
+        ));
     }
 
     #[tokio::test]
@@ -174,8 +183,10 @@ mod tests {
             .await
             .unwrap();
 
-        assert!(response.status() == StatusCode::INTERNAL_SERVER_ERROR
-            || response.status() == StatusCode::NOT_FOUND);
+        assert!(
+            response.status() == StatusCode::INTERNAL_SERVER_ERROR
+                || response.status() == StatusCode::NOT_FOUND
+        );
     }
 
     #[test]

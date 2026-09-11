@@ -12,8 +12,8 @@ use serde_json::Value;
 use shared::{error::AppError, response::ActionResult};
 
 use crate::endpoints::{
-    bool_field, capped, int_list, named_list, normalize_flags, ok_java_list, ok_json,
-    row_to_map, string_field, string_list, wrap_bool,
+    bool_field, capped, int_list, named_list, normalize_flags, ok_java_list, ok_json, row_to_map,
+    string_field, string_list, wrap_bool,
 };
 
 const UNIT_COLS: &str = "id, name, parent_id, level";
@@ -169,7 +169,10 @@ async fn units_of_identities(
             .to_string()
     };
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
-    let rows = client.query(&sql, &[&flags]).await.map_err(|_| AppError::Internal)?;
+    let rows = client
+        .query(&sql, &[&flags])
+        .await
+        .map_err(|_| AppError::Internal)?;
     finish_rows(rows, objects)
 }
 
@@ -216,7 +219,10 @@ async fn sup_nested_of_units(
         cols = if objects { UNIT_COLS } else { "id" }
     );
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
-    let rows = client.query(&sql, &[&flags]).await.map_err(|_| AppError::Internal)?;
+    let rows = client
+        .query(&sql, &[&flags])
+        .await
+        .map_err(|_| AppError::Internal)?;
     finish_rows(rows, objects)
 }
 
@@ -256,7 +262,10 @@ async fn level_query(
         if objects { UNIT_COLS } else { "id" }
     );
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
-    let rows = client.query(&sql, &[&levels]).await.map_err(|_| AppError::Internal)?;
+    let rows = client
+        .query(&sql, &[&levels])
+        .await
+        .map_err(|_| AppError::Internal)?;
     finish_rows(rows, objects)
 }
 
@@ -303,7 +312,10 @@ pub async fn unit_list_level_name_object(
         return ok_java_list(0, vec![]);
     }
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
-    let rows = client.query(SQL, &[&flags]).await.map_err(|_| AppError::Internal)?;
+    let rows = client
+        .query(SQL, &[&flags])
+        .await
+        .map_err(|_| AppError::Internal)?;
     let mut data: Vec<Value> = Vec::new();
     for row in &rows {
         let mut obj = row_to_map(row);
@@ -316,9 +328,18 @@ pub async fn unit_list_level_name_object(
                 m.insert("matchKey".to_string(), Value::String(p.clone()));
                 m.insert("levelName".to_string(), Value::String(p));
             }
-            m.insert("subDirectUnitCount".to_string(), Value::Number(sub_units.into()));
-            m.insert("subDirectIdentityCount".to_string(), Value::Number(sub_ids.into()));
-            m.insert("subDirectDutyCount".to_string(), Value::Number(sub_duties.into()));
+            m.insert(
+                "subDirectUnitCount".to_string(),
+                Value::Number(sub_units.into()),
+            );
+            m.insert(
+                "subDirectIdentityCount".to_string(),
+                Value::Number(sub_ids.into()),
+            );
+            m.insert(
+                "subDirectDutyCount".to_string(),
+                Value::Number(sub_duties.into()),
+            );
         }
         data.push(obj);
     }
@@ -350,7 +371,10 @@ async fn units_of_persons(
             .to_string()
     };
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
-    let rows = client.query(&sql, &[&flags]).await.map_err(|_| AppError::Internal)?;
+    let rows = client
+        .query(&sql, &[&flags])
+        .await
+        .map_err(|_| AppError::Internal)?;
     finish_rows(rows, objects)
 }
 
@@ -370,7 +394,8 @@ pub async fn unit_list_person_object(
     units_of_persons(pool, body, true).await
 }
 
-const SEED_UNITS_OF_PERSONS_SUP: &str = "SELECT DISTINCT par.id, par.parent_id FROM x_org_unit par \
+const SEED_UNITS_OF_PERSONS_SUP: &str =
+    "SELECT DISTINCT par.id, par.parent_id FROM x_org_unit par \
      WHERE par.deleted_at IS NULL AND par.id IN (\
          SELECT p.unit_id FROM x_org_person p WHERE p.deleted_at IS NULL \
          AND p.unit_id IS NOT NULL AND (p.id = ANY($1) OR p.name = ANY($1)))";
@@ -513,7 +538,9 @@ pub async fn unit_check_unit_has_identity(
         .query_one(sql, &[&unit, &identity])
         .await
         .map_err(|_| AppError::Internal)?;
-    Ok(AxumJson(ActionResult::success(wrap_bool(row.get::<_, bool>(0)))))
+    Ok(AxumJson(ActionResult::success(wrap_bool(
+        row.get::<_, bool>(0),
+    ))))
 }
 
 /// POST /jaxrs/unit/check/unit/has/unit (Java ActionHasUnit，Wi{unit, subUnit, recursive})：
@@ -522,7 +549,8 @@ pub async fn unit_check_unit_has_unit(
     pool: Extension<Pool>,
     Json(body): Json<Value>,
 ) -> Result<AxumJson<ActionResult<Value>>, AppError> {
-    let (Some(unit), Some(sub_unit)) = (string_field(&body, "unit"), string_field(&body, "subUnit"))
+    let (Some(unit), Some(sub_unit)) =
+        (string_field(&body, "unit"), string_field(&body, "subUnit"))
     else {
         return Ok(AxumJson(ActionResult::success(wrap_bool(false))));
     };
@@ -545,7 +573,9 @@ pub async fn unit_check_unit_has_unit(
         .query_one(sql, &[&unit, &sub_unit])
         .await
         .map_err(|_| AppError::Internal)?;
-    Ok(AxumJson(ActionResult::success(wrap_bool(row.get::<_, bool>(0)))))
+    Ok(AxumJson(ActionResult::success(wrap_bool(
+        row.get::<_, bool>(0),
+    ))))
 }
 
 async fn types_query(
@@ -562,7 +592,10 @@ async fn types_query(
         if objects { UNIT_COLS_TYPE } else { "id" }
     );
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
-    let rows = client.query(&sql, &[&types]).await.map_err(|_| AppError::Internal)?;
+    let rows = client
+        .query(&sql, &[&types])
+        .await
+        .map_err(|_| AppError::Internal)?;
     let data: Vec<Value> = rows.iter().map(row_to_map).collect();
     ok_java_list(data.len(), data)
 }
@@ -612,7 +645,10 @@ pub async fn unit_list_unit_tree(
         return ok_java_list(0, vec![]);
     }
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
-    let rows = client.query(SQL, &[&flags]).await.map_err(|_| AppError::Internal)?;
+    let rows = client
+        .query(SQL, &[&flags])
+        .await
+        .map_err(|_| AppError::Internal)?;
 
     use std::collections::{HashMap, HashSet};
     let mut base: HashMap<String, Value> = HashMap::new();

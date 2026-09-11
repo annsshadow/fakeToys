@@ -3,7 +3,7 @@ mod tests {
     #![allow(non_snake_case)]
     use axum::body::Body;
     use axum::http::{Request, StatusCode};
-    
+
     use tower::util::ServiceExt;
 
     // SKIPPED: get_control_config not accessible
@@ -24,8 +24,11 @@ mod tests {
             )
             .await
             .unwrap();
-        assert_ne!(response.status(), StatusCode::NOT_FOUND,
-            "list_files route should be registered");
+        assert_ne!(
+            response.status(),
+            StatusCode::NOT_FOUND,
+            "list_files route should be registered"
+        );
     }
 
     #[tokio::test]
@@ -42,8 +45,11 @@ mod tests {
             )
             .await
             .unwrap();
-        assert_ne!(response.status(), StatusCode::NOT_FOUND,
-            "get_file route should be registered");
+        assert_ne!(
+            response.status(),
+            StatusCode::NOT_FOUND,
+            "get_file route should be registered"
+        );
     }
 
     // SKIPPED: upload_file requires Session parameter
@@ -62,8 +68,11 @@ mod tests {
             )
             .await
             .unwrap();
-        assert_ne!(response.status(), StatusCode::NOT_FOUND,
-            "delete_file route should be registered");
+        assert_ne!(
+            response.status(),
+            StatusCode::NOT_FOUND,
+            "delete_file route should be registered"
+        );
     }
 
     #[tokio::test]
@@ -80,8 +89,11 @@ mod tests {
             )
             .await
             .unwrap();
-        assert_ne!(response.status(), StatusCode::NOT_FOUND,
-            "create_file_entity route should be registered");
+        assert_ne!(
+            response.status(),
+            StatusCode::NOT_FOUND,
+            "create_file_entity route should be registered"
+        );
     }
 
     // SKIPPED: update_file_entity requires Session parameter
@@ -100,8 +112,11 @@ mod tests {
             )
             .await
             .unwrap();
-        assert_ne!(response.status(), StatusCode::NOT_FOUND,
-            "anonymous_file_id_download route should be registered");
+        assert_ne!(
+            response.status(),
+            StatusCode::NOT_FOUND,
+            "anonymous_file_id_download route should be registered"
+        );
     }
 
     #[tokio::test]
@@ -118,8 +133,11 @@ mod tests {
             )
             .await
             .unwrap();
-        assert_ne!(response.status(), StatusCode::NOT_FOUND,
-            "anonymous_file_id_download_stream route should be registered");
+        assert_ne!(
+            response.status(),
+            StatusCode::NOT_FOUND,
+            "anonymous_file_id_download_stream route should be registered"
+        );
     }
 
     // SKIPPED: attachment_list_editor_owner requires Session parameter
@@ -137,8 +155,11 @@ mod tests {
             )
             .await
             .unwrap();
-        assert_ne!(response.status(), StatusCode::NOT_FOUND,
-            "attachment_list_folder_folderId route should be registered");
+        assert_ne!(
+            response.status(),
+            StatusCode::NOT_FOUND,
+            "attachment_list_folder_folderId route should be registered"
+        );
     }
 
     // SKIPPED: attachment_list_share_owner requires Session parameter
@@ -157,8 +178,11 @@ mod tests {
             )
             .await
             .unwrap();
-        assert_ne!(response.status(), StatusCode::NOT_FOUND,
-            "attachment_list_top route should be registered");
+        assert_ne!(
+            response.status(),
+            StatusCode::NOT_FOUND,
+            "attachment_list_top route should be registered"
+        );
     }
 
     // SKIPPED: attachment_upload_folder_folderId requires Session parameter
@@ -177,8 +201,11 @@ mod tests {
             )
             .await
             .unwrap();
-        assert_ne!(response.status(), StatusCode::NOT_FOUND,
-            "attachment_id route should be registered");
+        assert_ne!(
+            response.status(),
+            StatusCode::NOT_FOUND,
+            "attachment_id route should be registered"
+        );
     }
 
     #[tokio::test]
@@ -195,8 +222,11 @@ mod tests {
             )
             .await
             .unwrap();
-        assert_ne!(response.status(), StatusCode::NOT_FOUND,
-            "attachment_id_binary_base64 route should be registered");
+        assert_ne!(
+            response.status(),
+            StatusCode::NOT_FOUND,
+            "attachment_id_binary_base64 route should be registered"
+        );
     }
 
     #[tokio::test]
@@ -213,8 +243,11 @@ mod tests {
             )
             .await
             .unwrap();
-        assert_ne!(response.status(), StatusCode::NOT_FOUND,
-            "attachment_id_download route should be registered");
+        assert_ne!(
+            response.status(),
+            StatusCode::NOT_FOUND,
+            "attachment_id_download route should be registered"
+        );
     }
 
     #[tokio::test]
@@ -231,8 +264,11 @@ mod tests {
             )
             .await
             .unwrap();
-        assert_ne!(response.status(), StatusCode::NOT_FOUND,
-            "attachment_id_download_stream route should be registered");
+        assert_ne!(
+            response.status(),
+            StatusCode::NOT_FOUND,
+            "attachment_id_download_stream route should be registered"
+        );
     }
 
     #[tokio::test]
@@ -249,8 +285,11 @@ mod tests {
             )
             .await
             .unwrap();
-        assert_ne!(response.status(), StatusCode::NOT_FOUND,
-            "attachment_id_image_scale_scale_binary_base64 route should be registered");
+        assert_ne!(
+            response.status(),
+            StatusCode::NOT_FOUND,
+            "attachment_id_image_scale_scale_binary_base64 route should be registered"
+        );
     }
 
     #[tokio::test]
@@ -287,8 +326,11 @@ mod tests {
             )
             .await
             .unwrap();
-        assert_ne!(response.status(), StatusCode::NOT_FOUND,
-            "attachment2_exist_file_fileMd5 route should be registered");
+        assert_ne!(
+            response.status(),
+            StatusCode::NOT_FOUND,
+            "attachment2_exist_file_fileMd5 route should be registered"
+        );
     }
 
     // SKIPPED: attachment2_list_editor_owner requires Session parameter
@@ -306,8 +348,11 @@ mod tests {
             )
             .await
             .unwrap();
-        assert_ne!(response.status(), StatusCode::NOT_FOUND,
-            "attachment2_list_filter_name route should be registered");
+        assert_ne!(
+            response.status(),
+            StatusCode::NOT_FOUND,
+            "attachment2_list_filter_name route should be registered"
+        );
     }
 
     #[tokio::test]
@@ -324,8 +369,11 @@ mod tests {
             )
             .await
             .unwrap();
-        assert_ne!(response.status(), StatusCode::NOT_FOUND,
-            "attachment2_list_folder_folderId route should be registered");
+        assert_ne!(
+            response.status(),
+            StatusCode::NOT_FOUND,
+            "attachment2_list_folder_folderId route should be registered"
+        );
     }
 
     // SKIPPED: attachment2_list_share_owner requires Session parameter
@@ -344,8 +392,11 @@ mod tests {
             )
             .await
             .unwrap();
-        assert_ne!(response.status(), StatusCode::NOT_FOUND,
-            "attachment2_list_top route should be registered");
+        assert_ne!(
+            response.status(),
+            StatusCode::NOT_FOUND,
+            "attachment2_list_top route should be registered"
+        );
     }
 
     #[tokio::test]
@@ -362,8 +413,11 @@ mod tests {
             )
             .await
             .unwrap();
-        assert_ne!(response.status(), StatusCode::NOT_FOUND,
-            "attachment2_list_type_page_size_size route should be registered");
+        assert_ne!(
+            response.status(),
+            StatusCode::NOT_FOUND,
+            "attachment2_list_type_page_size_size route should be registered"
+        );
     }
 
     // SKIPPED: attachment2_upload_folder_folderId requires Session parameter
@@ -382,8 +436,11 @@ mod tests {
             )
             .await
             .unwrap();
-        assert_ne!(response.status(), StatusCode::NOT_FOUND,
-            "attachment2_id route should be registered");
+        assert_ne!(
+            response.status(),
+            StatusCode::NOT_FOUND,
+            "attachment2_id route should be registered"
+        );
     }
 
     #[tokio::test]
@@ -400,8 +457,11 @@ mod tests {
             )
             .await
             .unwrap();
-        assert_ne!(response.status(), StatusCode::NOT_FOUND,
-            "attachment2_id_binary_base64 route should be registered");
+        assert_ne!(
+            response.status(),
+            StatusCode::NOT_FOUND,
+            "attachment2_id_binary_base64 route should be registered"
+        );
     }
 
     #[tokio::test]
@@ -418,8 +478,11 @@ mod tests {
             )
             .await
             .unwrap();
-        assert_ne!(response.status(), StatusCode::NOT_FOUND,
-            "attachment2_id_download route should be registered");
+        assert_ne!(
+            response.status(),
+            StatusCode::NOT_FOUND,
+            "attachment2_id_download route should be registered"
+        );
     }
 
     #[tokio::test]
@@ -436,8 +499,11 @@ mod tests {
             )
             .await
             .unwrap();
-        assert_ne!(response.status(), StatusCode::NOT_FOUND,
-            "attachment2_id_download_image_width_width_height_height route should be registered");
+        assert_ne!(
+            response.status(),
+            StatusCode::NOT_FOUND,
+            "attachment2_id_download_image_width_width_height_height route should be registered"
+        );
     }
 
     #[tokio::test]
@@ -454,8 +520,11 @@ mod tests {
             )
             .await
             .unwrap();
-        assert_ne!(response.status(), StatusCode::NOT_FOUND,
-            "attachment2_id_download_stream route should be registered");
+        assert_ne!(
+            response.status(),
+            StatusCode::NOT_FOUND,
+            "attachment2_id_download_stream route should be registered"
+        );
     }
 
     #[tokio::test]
@@ -472,8 +541,11 @@ mod tests {
             )
             .await
             .unwrap();
-        assert_ne!(response.status(), StatusCode::NOT_FOUND,
-            "attachment2_id_image_scale_scale_binary_base64 route should be registered");
+        assert_ne!(
+            response.status(),
+            StatusCode::NOT_FOUND,
+            "attachment2_id_image_scale_scale_binary_base64 route should be registered"
+        );
     }
 
     #[tokio::test]
@@ -509,8 +581,11 @@ mod tests {
             )
             .await
             .unwrap();
-        assert_ne!(response.status(), StatusCode::NOT_FOUND,
-            "complex_folder_id route should be registered");
+        assert_ne!(
+            response.status(),
+            StatusCode::NOT_FOUND,
+            "complex_folder_id route should be registered"
+        );
     }
 
     #[tokio::test]
@@ -527,8 +602,11 @@ mod tests {
             )
             .await
             .unwrap();
-        assert_ne!(response.status(), StatusCode::NOT_FOUND,
-            "complex_top route should be registered");
+        assert_ne!(
+            response.status(),
+            StatusCode::NOT_FOUND,
+            "complex_top route should be registered"
+        );
     }
 
     // SKIPPED: config_is_file_manager requires Session parameter
@@ -547,8 +625,11 @@ mod tests {
             )
             .await
             .unwrap();
-        assert_ne!(response.status(), StatusCode::NOT_FOUND,
-            "editor_list route should be registered");
+        assert_ne!(
+            response.status(),
+            StatusCode::NOT_FOUND,
+            "editor_list route should be registered"
+        );
     }
 
     #[tokio::test]
@@ -565,12 +646,16 @@ mod tests {
             )
             .await
             .unwrap();
-        assert_ne!(response.status(), StatusCode::NOT_FOUND,
-            "file_clean_unused_referencetype_cmsdocument_manage route should be registered");
+        assert_ne!(
+            response.status(),
+            StatusCode::NOT_FOUND,
+            "file_clean_unused_referencetype_cmsdocument_manage route should be registered"
+        );
     }
 
     #[tokio::test]
-    async fn test_file_copy_attachment_attachmentId_referencetype_referenceType_reference_reference_scale_scale() {
+    async fn test_file_copy_attachment_attachmentId_referencetype_referenceType_reference_reference_scale_scale(
+    ) {
         let pool = shared::testing::test_pool();
         let app = crate::router(pool);
         let response = app
@@ -601,8 +686,11 @@ mod tests {
             )
             .await
             .unwrap();
-        assert_ne!(response.status(), StatusCode::NOT_FOUND,
-            "file_list_referencetype route should be registered");
+        assert_ne!(
+            response.status(),
+            StatusCode::NOT_FOUND,
+            "file_list_referencetype route should be registered"
+        );
     }
 
     #[tokio::test]
@@ -619,8 +707,11 @@ mod tests {
             )
             .await
             .unwrap();
-        assert_ne!(response.status(), StatusCode::NOT_FOUND,
-            "file_list_referencetype_referenceType_reference_reference route should be registered");
+        assert_ne!(
+            response.status(),
+            StatusCode::NOT_FOUND,
+            "file_list_referencetype_referenceType_reference_reference route should be registered"
+        );
     }
 
     #[tokio::test]
@@ -637,8 +728,11 @@ mod tests {
             )
             .await
             .unwrap();
-        assert_ne!(response.status(), StatusCode::NOT_FOUND,
-            "file_list_unused_referencetype_cmsdocument_manage route should be registered");
+        assert_ne!(
+            response.status(),
+            StatusCode::NOT_FOUND,
+            "file_list_unused_referencetype_cmsdocument_manage route should be registered"
+        );
     }
 
     #[tokio::test]
@@ -655,8 +749,11 @@ mod tests {
             )
             .await
             .unwrap();
-        assert_ne!(response.status(), StatusCode::NOT_FOUND,
-            "file_list_id_next_count route should be registered");
+        assert_ne!(
+            response.status(),
+            StatusCode::NOT_FOUND,
+            "file_list_id_next_count route should be registered"
+        );
     }
 
     #[tokio::test]
@@ -673,8 +770,11 @@ mod tests {
             )
             .await
             .unwrap();
-        assert_ne!(response.status(), StatusCode::NOT_FOUND,
-            "file_list_id_next_count_all route should be registered");
+        assert_ne!(
+            response.status(),
+            StatusCode::NOT_FOUND,
+            "file_list_id_next_count_all route should be registered"
+        );
     }
 
     #[tokio::test]
@@ -691,8 +791,11 @@ mod tests {
             )
             .await
             .unwrap();
-        assert_ne!(response.status(), StatusCode::NOT_FOUND,
-            "file_list_id_next_count_referencetype_referenceType route should be registered");
+        assert_ne!(
+            response.status(),
+            StatusCode::NOT_FOUND,
+            "file_list_id_next_count_referencetype_referenceType route should be registered"
+        );
     }
 
     #[tokio::test]
@@ -709,8 +812,11 @@ mod tests {
             )
             .await
             .unwrap();
-        assert_ne!(response.status(), StatusCode::NOT_FOUND,
-            "file_list_id_prev_count route should be registered");
+        assert_ne!(
+            response.status(),
+            StatusCode::NOT_FOUND,
+            "file_list_id_prev_count route should be registered"
+        );
     }
 
     #[tokio::test]
@@ -727,8 +833,11 @@ mod tests {
             )
             .await
             .unwrap();
-        assert_ne!(response.status(), StatusCode::NOT_FOUND,
-            "file_list_id_prev_count_all route should be registered");
+        assert_ne!(
+            response.status(),
+            StatusCode::NOT_FOUND,
+            "file_list_id_prev_count_all route should be registered"
+        );
     }
 
     #[tokio::test]
@@ -745,8 +854,11 @@ mod tests {
             )
             .await
             .unwrap();
-        assert_ne!(response.status(), StatusCode::NOT_FOUND,
-            "file_list_id_prev_count_referencetype_referenceType route should be registered");
+        assert_ne!(
+            response.status(),
+            StatusCode::NOT_FOUND,
+            "file_list_id_prev_count_referencetype_referenceType route should be registered"
+        );
     }
 
     #[tokio::test]
@@ -763,8 +875,11 @@ mod tests {
             )
             .await
             .unwrap();
-        assert_ne!(response.status(), StatusCode::NOT_FOUND,
-            "file_referencetype_referenceType_reference_reference route should be registered");
+        assert_ne!(
+            response.status(),
+            StatusCode::NOT_FOUND,
+            "file_referencetype_referenceType_reference_reference route should be registered"
+        );
     }
 
     // SKIPPED: file_upload_referencetype_referenceType_reference_reference_scale_scale requires Session parameter
@@ -784,8 +899,11 @@ mod tests {
             )
             .await
             .unwrap();
-        assert_ne!(response.status(), StatusCode::NOT_FOUND,
-            "file_id route should be registered");
+        assert_ne!(
+            response.status(),
+            StatusCode::NOT_FOUND,
+            "file_id route should be registered"
+        );
     }
 
     #[tokio::test]
@@ -802,8 +920,11 @@ mod tests {
             )
             .await
             .unwrap();
-        assert_ne!(response.status(), StatusCode::NOT_FOUND,
-            "file_id_binary_base64 route should be registered");
+        assert_ne!(
+            response.status(),
+            StatusCode::NOT_FOUND,
+            "file_id_binary_base64 route should be registered"
+        );
     }
 
     #[tokio::test]
@@ -820,8 +941,11 @@ mod tests {
             )
             .await
             .unwrap();
-        assert_ne!(response.status(), StatusCode::NOT_FOUND,
-            "file_id_download route should be registered");
+        assert_ne!(
+            response.status(),
+            StatusCode::NOT_FOUND,
+            "file_id_download route should be registered"
+        );
     }
 
     #[tokio::test]
@@ -838,8 +962,11 @@ mod tests {
             )
             .await
             .unwrap();
-        assert_ne!(response.status(), StatusCode::NOT_FOUND,
-            "file_id_download_stream route should be registered");
+        assert_ne!(
+            response.status(),
+            StatusCode::NOT_FOUND,
+            "file_id_download_stream route should be registered"
+        );
     }
 
     #[tokio::test]
@@ -856,8 +983,11 @@ mod tests {
             )
             .await
             .unwrap();
-        assert_ne!(response.status(), StatusCode::NOT_FOUND,
-            "folder_list_top route should be registered");
+        assert_ne!(
+            response.status(),
+            StatusCode::NOT_FOUND,
+            "folder_list_top route should be registered"
+        );
     }
 
     #[tokio::test]
@@ -874,8 +1004,11 @@ mod tests {
             )
             .await
             .unwrap();
-        assert_ne!(response.status(), StatusCode::NOT_FOUND,
-            "folder_list_id route should be registered");
+        assert_ne!(
+            response.status(),
+            StatusCode::NOT_FOUND,
+            "folder_list_id route should be registered"
+        );
     }
 
     #[tokio::test]
@@ -892,8 +1025,11 @@ mod tests {
             )
             .await
             .unwrap();
-        assert_ne!(response.status(), StatusCode::NOT_FOUND,
-            "folder_id route should be registered");
+        assert_ne!(
+            response.status(),
+            StatusCode::NOT_FOUND,
+            "folder_id route should be registered"
+        );
     }
 
     #[tokio::test]
@@ -910,8 +1046,11 @@ mod tests {
             )
             .await
             .unwrap();
-        assert_ne!(response.status(), StatusCode::NOT_FOUND,
-            "folder2_batch_download route should be registered");
+        assert_ne!(
+            response.status(),
+            StatusCode::NOT_FOUND,
+            "folder2_batch_download route should be registered"
+        );
     }
 
     #[tokio::test]
@@ -928,8 +1067,11 @@ mod tests {
             )
             .await
             .unwrap();
-        assert_ne!(response.status(), StatusCode::NOT_FOUND,
-            "folder2_list_top route should be registered");
+        assert_ne!(
+            response.status(),
+            StatusCode::NOT_FOUND,
+            "folder2_list_top route should be registered"
+        );
     }
 
     #[tokio::test]
@@ -946,8 +1088,11 @@ mod tests {
             )
             .await
             .unwrap();
-        assert_ne!(response.status(), StatusCode::NOT_FOUND,
-            "folder2_list_id route should be registered");
+        assert_ne!(
+            response.status(),
+            StatusCode::NOT_FOUND,
+            "folder2_list_id route should be registered"
+        );
     }
 
     #[tokio::test]
@@ -964,8 +1109,11 @@ mod tests {
             )
             .await
             .unwrap();
-        assert_ne!(response.status(), StatusCode::NOT_FOUND,
-            "folder2_id route should be registered");
+        assert_ne!(
+            response.status(),
+            StatusCode::NOT_FOUND,
+            "folder2_id route should be registered"
+        );
     }
 
     #[tokio::test]
@@ -982,8 +1130,11 @@ mod tests {
             )
             .await
             .unwrap();
-        assert_ne!(response.status(), StatusCode::NOT_FOUND,
-            "folder2_id_download route should be registered");
+        assert_ne!(
+            response.status(),
+            StatusCode::NOT_FOUND,
+            "folder2_id_download route should be registered"
+        );
     }
 
     // SKIPPED: recycle_empty requires Session parameter
@@ -1002,8 +1153,11 @@ mod tests {
             )
             .await
             .unwrap();
-        assert_ne!(response.status(), StatusCode::NOT_FOUND,
-            "recycle_id route should be registered");
+        assert_ne!(
+            response.status(),
+            StatusCode::NOT_FOUND,
+            "recycle_id route should be registered"
+        );
     }
 
     // SKIPPED: recycle_id_delete requires Session parameter
@@ -1022,8 +1176,11 @@ mod tests {
             )
             .await
             .unwrap();
-        assert_ne!(response.status(), StatusCode::NOT_FOUND,
-            "share_download_share_shareId_file_fileId route should be registered");
+        assert_ne!(
+            response.status(),
+            StatusCode::NOT_FOUND,
+            "share_download_share_shareId_file_fileId route should be registered"
+        );
     }
 
     // SKIPPED: share_list requires Session parameter
@@ -1041,8 +1198,11 @@ mod tests {
             )
             .await
             .unwrap();
-        assert_ne!(response.status(), StatusCode::NOT_FOUND,
-            "share_list_att_share_shareId_folder_folderId route should be registered");
+        assert_ne!(
+            response.status(),
+            StatusCode::NOT_FOUND,
+            "share_list_att_share_shareId_folder_folderId route should be registered"
+        );
     }
 
     #[tokio::test]
@@ -1059,8 +1219,11 @@ mod tests {
             )
             .await
             .unwrap();
-        assert_ne!(response.status(), StatusCode::NOT_FOUND,
-            "share_list_folder_share_shareId_folder_folderId route should be registered");
+        assert_ne!(
+            response.status(),
+            StatusCode::NOT_FOUND,
+            "share_list_folder_share_shareId_folder_folderId route should be registered"
+        );
     }
 
     // SKIPPED: share_list_my requires Session parameter
@@ -1081,8 +1244,11 @@ mod tests {
             )
             .await
             .unwrap();
-        assert_ne!(response.status(), StatusCode::NOT_FOUND,
-            "share_share_shareId_file_fileId_folder_folderId route should be registered");
+        assert_ne!(
+            response.status(),
+            StatusCode::NOT_FOUND,
+            "share_share_shareId_file_fileId_folder_folderId route should be registered"
+        );
     }
 
     #[tokio::test]
@@ -1099,8 +1265,11 @@ mod tests {
             )
             .await
             .unwrap();
-        assert_ne!(response.status(), StatusCode::NOT_FOUND,
-            "share_shield_id route should be registered");
+        assert_ne!(
+            response.status(),
+            StatusCode::NOT_FOUND,
+            "share_shield_id route should be registered"
+        );
     }
 
     #[tokio::test]
@@ -1117,8 +1286,11 @@ mod tests {
             )
             .await
             .unwrap();
-        assert_ne!(response.status(), StatusCode::NOT_FOUND,
-            "share_id route should be registered");
+        assert_ne!(
+            response.status(),
+            StatusCode::NOT_FOUND,
+            "share_id route should be registered"
+        );
     }
 
     #[tokio::test]
@@ -1135,8 +1307,10 @@ mod tests {
             )
             .await
             .unwrap();
-        assert_ne!(response.status(), StatusCode::NOT_FOUND,
-            "share_id_password_password route should be registered");
+        assert_ne!(
+            response.status(),
+            StatusCode::NOT_FOUND,
+            "share_id_password_password route should be registered"
+        );
     }
-
 }

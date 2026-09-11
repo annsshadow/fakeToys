@@ -6,4 +6,3 @@ use crate::query_service_processing_router;
 pub fn router(pool: Pool) -> axum::Router {
     query_service_processing_router(pool)
 }
-

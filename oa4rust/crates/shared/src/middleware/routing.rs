@@ -67,10 +67,7 @@ pub fn should_route_to_java(path: &str) -> bool {
 // 记录请求路径、方法、响应状态码和响应体（前 4KB），用于 Rust vs Java
 // 端点行为对比。仅用于测试环境，生产环境自动禁用。
 // ──────────────────────────────────────────────────────────────────────────────
-pub async fn behavior_comparison_middleware(
-    request: Request<Body>,
-    next: Next,
-) -> Response {
+pub async fn behavior_comparison_middleware(request: Request<Body>, next: Next) -> Response {
     let is_comparison = request
         .headers()
         .get("x-behavior-comparison")
@@ -83,13 +80,19 @@ pub async fn behavior_comparison_middleware(
 
     let method = request.method().clone();
     let path = request.uri().path().to_string();
-    let query = request.uri().query().map(|q| format!("?{}", q)).unwrap_or_default();
+    let query = request
+        .uri()
+        .query()
+        .map(|q| format!("?{}", q))
+        .unwrap_or_default();
 
     let response = next.run(request).await;
 
     let status = response.status();
     let headers = response.headers().clone();
-    let body_bytes = axum::body::to_bytes(response.into_body(), 4 * 1024).await.unwrap_or_default();
+    let body_bytes = axum::body::to_bytes(response.into_body(), 4 * 1024)
+        .await
+        .unwrap_or_default();
     let body_str = String::from_utf8_lossy(&body_bytes);
 
     tracing::info!(

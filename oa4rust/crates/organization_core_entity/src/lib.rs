@@ -9,14 +9,15 @@ use sea_orm::{
 };
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
-use shared::{error::AppError, response::{option_to_json, ActionResult}};
+use shared::{
+    error::AppError,
+    response::{option_to_json, ActionResult},
+};
 
 pub mod entities;
 pub mod routes;
 
-use entities::{
-    org_bind, org_custom, org_definition, org_group, org_identity, org_person,
-};
+use entities::{org_bind, org_custom, org_definition, org_group, org_identity, org_person};
 
 // ── Request structs ──────────────────────────────────────────────────────────
 
@@ -162,7 +163,10 @@ pub async fn group_list(
             if let Some(val) = option_to_json(m.parent_id.clone().map(Value::String)) {
                 map.insert("parentId".to_string(), val);
             }
-            map.insert("level".to_string(), Value::Number(serde_json::Number::from(m.level)));
+            map.insert(
+                "level".to_string(),
+                Value::Number(serde_json::Number::from(m.level)),
+            );
             Value::Object(map)
         })
         .collect();
@@ -195,10 +199,7 @@ pub async fn identity_list(
         .map(|m| {
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(m.id.clone())),
-                (
-                    "personId".to_string(),
-                    Value::String(m.person_id.clone()),
-                ),
+                ("personId".to_string(), Value::String(m.person_id.clone())),
                 ("name".to_string(), Value::String(m.name.clone())),
                 ("type".to_string(), Value::String(m.type_.clone())),
             ]))
@@ -262,7 +263,8 @@ pub async fn custom_list(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let models = org_custom::Entity::find()
         .filter(
-            org_custom::Column::IdentityId.eq(&identity_id)
+            org_custom::Column::IdentityId
+                .eq(&identity_id)
                 .and(org_custom::Column::DeletedAt.is_null()),
         )
         .all(&db.0)
@@ -278,10 +280,7 @@ pub async fn custom_list(
                     "identityId".to_string(),
                     Value::String(m.identity_id.clone()),
                 ),
-                (
-                    "fieldName".to_string(),
-                    Value::String(m.field_name.clone()),
-                ),
+                ("fieldName".to_string(), Value::String(m.field_name.clone())),
                 (
                     "fieldValue".to_string(),
                     Value::String(m.field_value.clone()),
@@ -318,7 +317,10 @@ pub async fn bind_list(
         .map(|m| {
             let mut map = serde_json::Map::new();
             map.insert("id".to_string(), Value::String(m.id.clone()));
-            map.insert("identityId".to_string(), Value::String(m.identity_id.clone()));
+            map.insert(
+                "identityId".to_string(),
+                Value::String(m.identity_id.clone()),
+            );
             map.insert("groupId".to_string(), Value::String(m.group_id.clone()));
             if let Some(val) = option_to_json(m.role.clone().map(Value::String)) {
                 map.insert("role".to_string(), val);
@@ -345,10 +347,7 @@ pub async fn definition_create(
     db: Extension<DatabaseConnection>,
     Json(req): Json<DefinitionCreateRequest>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    if req.name.trim().is_empty()
-        || req.category.trim().is_empty()
-        || req.type_.trim().is_empty()
-    {
+    if req.name.trim().is_empty() || req.category.trim().is_empty() || req.type_.trim().is_empty() {
         return Ok(Json(ActionResult::error(
             "name, category and type are required",
         )));
@@ -366,7 +365,10 @@ pub async fn definition_create(
     let result = Value::Object(serde_json::Map::from_iter([
         ("id".to_string(), Value::String(model.id.clone())),
         ("name".to_string(), Value::String(model.name.clone())),
-        ("category".to_string(), Value::String(model.category.clone())),
+        (
+            "category".to_string(),
+            Value::String(model.category.clone()),
+        ),
         ("type".to_string(), Value::String(model.type_.clone())),
     ]));
 
@@ -401,7 +403,10 @@ pub async fn definition_update(
     let result = Value::Object(serde_json::Map::from_iter([
         ("id".to_string(), Value::String(updated.id.clone())),
         ("name".to_string(), Value::String(updated.name.clone())),
-        ("category".to_string(), Value::String(updated.category.clone())),
+        (
+            "category".to_string(),
+            Value::String(updated.category.clone()),
+        ),
         ("type".to_string(), Value::String(updated.type_.clone())),
     ]));
 
@@ -455,7 +460,10 @@ pub async fn group_create(
     if let Some(val) = option_to_json(model.parent_id.clone().map(Value::String)) {
         map.insert("parentId".to_string(), val);
     }
-    map.insert("level".to_string(), Value::Number(serde_json::Number::from(model.level)));
+    map.insert(
+        "level".to_string(),
+        Value::Number(serde_json::Number::from(model.level)),
+    );
     let result = Value::Object(map);
 
     Ok(Json(ActionResult::success(result)))
@@ -492,7 +500,10 @@ pub async fn group_update(
     if let Some(val) = option_to_json(updated.parent_id.clone().map(Value::String)) {
         map.insert("parentId".to_string(), val);
     }
-    map.insert("level".to_string(), Value::Number(serde_json::Number::from(updated.level)));
+    map.insert(
+        "level".to_string(),
+        Value::Number(serde_json::Number::from(updated.level)),
+    );
     let result = Value::Object(map);
 
     Ok(Json(ActionResult::success(result)))
@@ -526,9 +537,7 @@ pub async fn identity_create(
     db: Extension<DatabaseConnection>,
     Json(req): Json<IdentityCreateRequest>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    if req.person_id.trim().is_empty()
-        || req.name.trim().is_empty()
-        || req.type_.trim().is_empty()
+    if req.person_id.trim().is_empty() || req.name.trim().is_empty() || req.type_.trim().is_empty()
     {
         return Ok(Json(ActionResult::error(
             "person_id, name and type are required",
@@ -841,7 +850,10 @@ pub async fn bind_create(
 
     let mut map = serde_json::Map::new();
     map.insert("id".to_string(), Value::String(model.id.clone()));
-    map.insert("identityId".to_string(), Value::String(model.identity_id.clone()));
+    map.insert(
+        "identityId".to_string(),
+        Value::String(model.identity_id.clone()),
+    );
     map.insert("groupId".to_string(), Value::String(model.group_id.clone()));
     if let Some(val) = option_to_json(model.role.clone().map(Value::String)) {
         map.insert("role".to_string(), val);
@@ -878,8 +890,14 @@ pub async fn bind_update(
 
     let mut map = serde_json::Map::new();
     map.insert("id".to_string(), Value::String(updated.id.clone()));
-    map.insert("identityId".to_string(), Value::String(updated.identity_id.clone()));
-    map.insert("groupId".to_string(), Value::String(updated.group_id.clone()));
+    map.insert(
+        "identityId".to_string(),
+        Value::String(updated.identity_id.clone()),
+    );
+    map.insert(
+        "groupId".to_string(),
+        Value::String(updated.group_id.clone()),
+    );
     if let Some(val) = option_to_json(updated.role.clone().map(Value::String)) {
         map.insert("role".to_string(), val);
     }
@@ -925,13 +943,13 @@ pub fn organization_core_entity_router(_pool: deadpool_postgres::Pool) -> Router
         // group
         .route("/jaxrs/organization/group/list", get(group_list))
         .route("/jaxrs/organization/group", post(group_create))
-        .route("/jaxrs/organization/group/{id}", put(group_update).delete(group_delete))
+        .route(
+            "/jaxrs/organization/group/{id}",
+            put(group_update).delete(group_delete),
+        )
         // identity
         .route("/jaxrs/organization/identity/list", get(identity_list))
-        .route(
-            "/jaxrs/organization/identity",
-            post(identity_create),
-        )
+        .route("/jaxrs/organization/identity", post(identity_create))
         .route(
             "/jaxrs/organization/identity/{id}",
             put(identity_update).delete(identity_delete),
@@ -956,14 +974,16 @@ pub fn organization_core_entity_router(_pool: deadpool_postgres::Pool) -> Router
         // bind
         .route("/jaxrs/organization/bind/list", get(bind_list))
         .route("/jaxrs/organization/bind", post(bind_create))
-        .route("/jaxrs/organization/bind/{id}", put(bind_update).delete(bind_delete))
+        .route(
+            "/jaxrs/organization/bind/{id}",
+            put(bind_update).delete(bind_delete),
+        )
 }
 
 #[cfg(test)]
 mod tests;
 #[cfg(test)]
 mod tests_generated;
-
 
 pub fn router(pool: deadpool_postgres::Pool) -> axum::Router {
     crate::organization_core_entity_router(pool)

@@ -11,30 +11,31 @@
 // 并在启动时调用 `shared::db::create_pool()` 获取数据库连接池。
 // ──────────────────────────────────────────────────────────────────────────────
 
-pub mod db;
 pub mod config;
+pub mod db;
 pub mod error;
 pub mod input_validation;
+pub mod messaging;
 pub mod middleware;
 pub mod migrate;
 pub mod mock_client;
 pub mod rate_limit;
 pub mod redis;
-pub mod messaging;
-pub mod scheduler;
 pub mod response;
 pub mod router;
+pub mod scheduler;
 pub mod session;
 pub mod storage;
 pub mod testing;
 
+pub use crate::error::AppError;
 pub use deadpool_postgres::Pool;
 pub use rate_limit::RateLimiter;
 pub use session::SessionManager;
-pub use crate::error::AppError;
 
 pub use messaging::{
-    Envelope, InMemoryBus, MessageBus, MessagingError, MessagingResult, RedisPubSubBus, TokenThresholdEvent,
+    Envelope, InMemoryBus, MessageBus, MessagingError, MessagingResult, RedisPubSubBus,
+    TokenThresholdEvent,
 };
 use std::ops::Deref;
 
@@ -42,7 +43,6 @@ use std::ops::Deref;
 mod tests;
 #[cfg(test)]
 mod tests_generated;
-
 
 // ---- RowGet ----
 // Abstraction over a database row so tests can inject mock data.
@@ -108,7 +108,10 @@ impl ControlClient for deadpool_postgres::Object {
         p: &[&(dyn deadpool_postgres::tokio_postgres::types::ToSql + Sync)],
     ) -> Result<Vec<Box<dyn RowGet>>, Box<dyn std::error::Error + Send + Sync>> {
         let rows = self.deref().query(q, p).await?;
-        Ok(rows.into_iter().map(|r| Box::new(r) as Box<dyn RowGet>).collect())
+        Ok(rows
+            .into_iter()
+            .map(|r| Box::new(r) as Box<dyn RowGet>)
+            .collect())
     }
     async fn ctrl_query_one(
         &self,
@@ -171,8 +174,13 @@ impl ControlClient for std::sync::Arc<dyn ControlClient> {
 // ---- ControlPool ----
 
 /// acquire 的 boxed future 返回类型
-pub type ControlClientFuture<'a> =
-    std::pin::Pin<Box<dyn std::future::Future<Output = Result<std::sync::Arc<dyn ControlClient>, AppError>> + Send + 'a>>;
+pub type ControlClientFuture<'a> = std::pin::Pin<
+    Box<
+        dyn std::future::Future<Output = Result<std::sync::Arc<dyn ControlClient>, AppError>>
+            + Send
+            + 'a,
+    >,
+>;
 
 pub trait ControlPool: Send + Sync {
     fn acquire<'a>(&'a self) -> ControlClientFuture<'a>;
@@ -182,8 +190,13 @@ pub trait ControlPool: Send + Sync {
 impl ControlPool for Pool {
     fn acquire<'a>(
         &'a self,
-    ) -> std::pin::Pin<Box<dyn std::future::Future<Output = Result<std::sync::Arc<dyn ControlClient>, AppError>> + Send + 'a>>
-    {
+    ) -> std::pin::Pin<
+        Box<
+            dyn std::future::Future<Output = Result<std::sync::Arc<dyn ControlClient>, AppError>>
+                + Send
+                + 'a,
+        >,
+    > {
         Box::pin(async move {
             let object = self.get().await.map_err(|_| AppError::Internal)?;
             Ok(std::sync::Arc::new(object) as std::sync::Arc<dyn ControlClient>)
@@ -204,8 +217,13 @@ impl DynControlPool {
 impl ControlPool for DynControlPool {
     fn acquire<'a>(
         &'a self,
-    ) -> std::pin::Pin<Box<dyn std::future::Future<Output = Result<std::sync::Arc<dyn ControlClient>, AppError>> + Send + 'a>>
-    {
+    ) -> std::pin::Pin<
+        Box<
+            dyn std::future::Future<Output = Result<std::sync::Arc<dyn ControlClient>, AppError>>
+                + Send
+                + 'a,
+        >,
+    > {
         self.0.acquire()
     }
 }

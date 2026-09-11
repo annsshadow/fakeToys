@@ -2,7 +2,7 @@ use std::time::Duration;
 
 use axum::Router;
 use deadpool_postgres::Pool;
-use sea_orm::{Database, DatabaseConnection, ConnectOptions};
+use sea_orm::{ConnectOptions, Database, DatabaseConnection};
 
 use crate::middleware::SecurityState;
 
@@ -35,7 +35,10 @@ pub fn test_pool() -> Pool {
 /// 用于集成测试的运行时 DATABASE_URL 守卫。
 pub async fn is_db_available() -> bool {
     let pool = test_pool();
-    matches!(tokio::time::timeout(Duration::from_secs(2), pool.get()).await, Ok(Ok(_)))
+    matches!(
+        tokio::time::timeout(Duration::from_secs(2), pool.get()).await,
+        Ok(Ok(_))
+    )
 }
 
 /// 连接到 PostgreSQL 的 sea_orm::DatabaseConnection，
@@ -68,7 +71,9 @@ pub fn test_app_with(state: SecurityState, pool: Pool) -> Router {
             state.clone(),
             crate::middleware::rate_limit_middleware,
         ))
-        .layer(middleware::from_fn(crate::middleware::security_headers_middleware))
+        .layer(middleware::from_fn(
+            crate::middleware::security_headers_middleware,
+        ))
         .layer(middleware::from_fn(crate::middleware::trace_middleware))
         .layer(axum::extract::Extension(pool))
 }
@@ -90,8 +95,10 @@ pub async fn send(
         .body(Body::empty())
         .unwrap();
     if let Some(token) = token {
-        req.headers_mut()
-            .insert(header::AUTHORIZATION, format!("Bearer {}", token).parse().unwrap());
+        req.headers_mut().insert(
+            header::AUTHORIZATION,
+            format!("Bearer {}", token).parse().unwrap(),
+        );
     }
     if let Some(xff) = xff {
         req.headers_mut()
@@ -112,20 +119,21 @@ pub async fn send_request(
     use axum::http::{header, Request};
     use tower::ServiceExt;
 
-    let mut req = Request::builder()
-        .method(method)
-        .uri(uri);
+    let mut req = Request::builder().method(method).uri(uri);
     if let Some(_body) = &body {
         req = req.header(header::CONTENT_TYPE, "application/json");
     }
     let mut req = if let Some(body) = body {
-        req.body(Body::from(serde_json::to_vec(&body).unwrap())).unwrap()
+        req.body(Body::from(serde_json::to_vec(&body).unwrap()))
+            .unwrap()
     } else {
         req.body(Body::empty()).unwrap()
     };
     if let Some(token) = token {
-        req.headers_mut()
-            .insert(header::AUTHORIZATION, format!("Bearer {}", token).parse().unwrap());
+        req.headers_mut().insert(
+            header::AUTHORIZATION,
+            format!("Bearer {}", token).parse().unwrap(),
+        );
     }
     if let Some(xff) = xff {
         req.headers_mut()
@@ -133,7 +141,10 @@ pub async fn send_request(
     }
     let response = app.clone().oneshot(req).await.unwrap();
     let status = response.status();
-    let bytes = axum::body::to_bytes(response.into_body(), 4096).await.unwrap();
-    let json: serde_json::Value = serde_json::from_slice(&bytes).unwrap_or(serde_json::json!({"error": "invalid json"}));
+    let bytes = axum::body::to_bytes(response.into_body(), 4096)
+        .await
+        .unwrap();
+    let json: serde_json::Value =
+        serde_json::from_slice(&bytes).unwrap_or(serde_json::json!({"error": "invalid json"}));
     (status, json)
 }

@@ -1,4 +1,4 @@
-﻿//! plan002 U2 新增端点的路由可达测试与单元测试。
+//! plan002 U2 新增端点的路由可达测试与单元测试。
 //!
 //! 路由测试使用 mock_pool（无法建连）：请求命中路由后 handler 返回 500，
 //! 断言 500（而非 404）即可证明路由已注册且可达。
@@ -54,7 +54,11 @@ mod u2_tests {
             StatusCode::INTERNAL_SERVER_ERROR
         );
         assert_eq!(
-            status_of("POST", "/jaxrs/attendance/assemble/control/v2/config/person").await,
+            status_of(
+                "POST",
+                "/jaxrs/attendance/assemble/control/v2/config/person"
+            )
+            .await,
             StatusCode::INTERNAL_SERVER_ERROR
         );
     }
@@ -110,11 +114,7 @@ mod u2_tests {
     #[tokio::test]
     async fn u2_v2_group_get_by_id_reachable() {
         assert_eq!(
-            status_of(
-                "GET",
-                "/jaxrs/attendance/assemble/control/v2/group/some-id"
-            )
-            .await,
+            status_of("GET", "/jaxrs/attendance/assemble/control/v2/group/some-id").await,
             StatusCode::INTERNAL_SERVER_ERROR
         );
     }
@@ -128,18 +128,17 @@ mod u2_tests {
             "/jaxrs/attendance/assemble/control/v2/shift/update",
             "/jaxrs/attendance/assemble/control/v2/shift/list/1/size/20",
         ] {
-            assert_eq!(status_of("POST", uri).await, StatusCode::INTERNAL_SERVER_ERROR);
+            assert_eq!(
+                status_of("POST", uri).await,
+                StatusCode::INTERNAL_SERVER_ERROR
+            );
         }
     }
 
     #[tokio::test]
     async fn u2_v2_shift_read_and_delete_reachable() {
         assert_eq!(
-            status_of(
-                "GET",
-                "/jaxrs/attendance/assemble/control/v2/shift/abc"
-            )
-            .await,
+            status_of("GET", "/jaxrs/attendance/assemble/control/v2/shift/abc").await,
             StatusCode::INTERNAL_SERVER_ERROR
         );
         // 静态段 delete 优先于 {id} 参数段
@@ -182,11 +181,7 @@ mod u2_tests {
     #[tokio::test]
     async fn u2_v2_leave_import_and_result_reachable() {
         assert_eq!(
-            status_of(
-                "POST",
-                "/jaxrs/attendance/assemble/control/v2/leave/import"
-            )
-            .await,
+            status_of("POST", "/jaxrs/attendance/assemble/control/v2/leave/import").await,
             StatusCode::INTERNAL_SERVER_ERROR
         );
         assert_eq!(
@@ -204,11 +199,7 @@ mod u2_tests {
     #[tokio::test]
     async fn u2_v2_record_routes_reachable() {
         assert_eq!(
-            status_of(
-                "GET",
-                "/jaxrs/attendance/assemble/control/v2/record/r-1"
-            )
-            .await,
+            status_of("GET", "/jaxrs/attendance/assemble/control/v2/record/r-1").await,
             StatusCode::INTERNAL_SERVER_ERROR
         );
         assert_eq!(
@@ -232,11 +223,7 @@ mod u2_tests {
             StatusCode::INTERNAL_SERVER_ERROR
         );
         assert_eq!(
-            status_of(
-                "POST",
-                "/jaxrs/attendance/assemble/control/v2/my/statistic"
-            )
-            .await,
+            status_of("POST", "/jaxrs/attendance/assemble/control/v2/my/statistic").await,
             StatusCode::INTERNAL_SERVER_ERROR
         );
     }
@@ -251,7 +238,10 @@ mod u2_tests {
             "/jaxrs/attendance/assemble/control/workplace",
             "/jaxrs/attendance/assemble/control/selfholidaysimple",
         ] {
-            assert_eq!(status_of("POST", uri).await, StatusCode::INTERNAL_SERVER_ERROR);
+            assert_eq!(
+                status_of("POST", uri).await,
+                StatusCode::INTERNAL_SERVER_ERROR
+            );
         }
     }
 
@@ -265,7 +255,10 @@ mod u2_tests {
             "/jaxrs/attendance/assemble/control/workplace/w-1",
             "/jaxrs/attendance/assemble/control/selfholidaysimple/docId/doc-1",
         ] {
-            assert_eq!(status_of("DELETE", uri).await, StatusCode::INTERNAL_SERVER_ERROR);
+            assert_eq!(
+                status_of("DELETE", uri).await,
+                StatusCode::INTERNAL_SERVER_ERROR
+            );
         }
     }
 
@@ -273,19 +266,11 @@ mod u2_tests {
     async fn u2_toggle_path_accepts_both_verbs_without_panic() {
         // 原代码对同一路径注册两次会导致 axum 构建 panic；合并后两个动词都应可达
         assert_ne!(
-            status_of(
-                "POST",
-                "/jaxrs/attendance/assemble/control/rule/r-1/toggle"
-            )
-            .await,
+            status_of("POST", "/jaxrs/attendance/assemble/control/rule/r-1/toggle").await,
             StatusCode::NOT_FOUND
         );
         assert_ne!(
-            status_of(
-                "PUT",
-                "/jaxrs/attendance/assemble/control/rule/r-1/toggle"
-            )
-            .await,
+            status_of("PUT", "/jaxrs/attendance/assemble/control/rule/r-1/toggle").await,
             StatusCode::NOT_FOUND
         );
     }
@@ -314,10 +299,7 @@ mod u2_tests {
                 "PUT",
                 "/jaxrs/attendance/assemble/control/statisticshow/filter/unitDay/list/x/next/5",
             ),
-            (
-                "GET",
-                "/jaxrs/attendance/assemble/control/statistic/do",
-            ),
+            ("GET", "/jaxrs/attendance/assemble/control/statistic/do"),
             (
                 "GET",
                 "/jaxrs/attendance/assemble/control/attendancesetting/enable/type",
@@ -327,7 +309,10 @@ mod u2_tests {
                 "/jaxrs/attendance/assemble/control/attendancedetail/mobile/m-1",
             ),
         ] {
-            assert_eq!(status_of(method, uri).await, StatusCode::INTERNAL_SERVER_ERROR);
+            assert_eq!(
+                status_of(method, uri).await,
+                StatusCode::INTERNAL_SERVER_ERROR
+            );
         }
     }
 

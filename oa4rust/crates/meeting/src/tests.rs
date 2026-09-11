@@ -1,6 +1,6 @@
 #[cfg(test)]
 mod tests {
-    use crate::{Building, OpenMeetingRoom, Room, meeting_router};
+    use crate::{meeting_router, Building, OpenMeetingRoom, Room};
     use axum::body::Body;
     use axum::http::{Request, StatusCode};
     use deadpool_postgres::{Manager, Pool};
@@ -74,19 +74,17 @@ mod tests {
 
     #[test]
     fn test_room_list_response() {
-        let rooms = vec![
-            Room {
-                id: "room-001".to_string(),
-                name: "第一会议室".to_string(),
-                building_id: Some("building-001".to_string()),
-                floor: Some("3F".to_string()),
-                capacity: Some(20),
-                equipment: None,
-                description: Some("大型会议室".to_string()),
-                photo: None,
-                order_number: Some(1),
-            },
-        ];
+        let rooms = vec![Room {
+            id: "room-001".to_string(),
+            name: "第一会议室".to_string(),
+            building_id: Some("building-001".to_string()),
+            floor: Some("3F".to_string()),
+            capacity: Some(20),
+            equipment: None,
+            description: Some("大型会议室".to_string()),
+            photo: None,
+            order_number: Some(1),
+        }];
 
         let result: ActionResult<Vec<Room>> = ActionResult::success(rooms);
         assert_eq!(result.r#type, Some("success".to_string()));
@@ -99,15 +97,13 @@ mod tests {
 
     #[test]
     fn test_building_list_response() {
-        let buildings = vec![
-            Building {
-                id: "building-001".to_string(),
-                name: "总部大楼".to_string(),
-                address: Some("北京市朝阳区".to_string()),
-                description: Some("公司总部".to_string()),
-                order_number: Some(1),
-            },
-        ];
+        let buildings = vec![Building {
+            id: "building-001".to_string(),
+            name: "总部大楼".to_string(),
+            address: Some("北京市朝阳区".to_string()),
+            description: Some("公司总部".to_string()),
+            order_number: Some(1),
+        }];
 
         let result: ActionResult<Vec<Building>> = ActionResult::success(buildings);
         assert_eq!(result.r#type, Some("success".to_string()));
@@ -130,7 +126,10 @@ mod tests {
         assert!(result.data.is_some());
         let data = result.data.unwrap();
         assert_eq!(data.len(), 1);
-        assert_eq!(data[0].url, Some("https://meeting.example.com/room/open-001".to_string()));
+        assert_eq!(
+            data[0].url,
+            Some("https://meeting.example.com/room/open-001".to_string())
+        );
     }
 
     #[test]

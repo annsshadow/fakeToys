@@ -10,7 +10,7 @@ use shared::{error::AppError, response::ActionResult};
 pub mod entities;
 pub mod routes;
 
-use entities::{pp_work, pp_task, pp_ticket, pp_work_completed};
+use entities::{pp_task, pp_ticket, pp_work, pp_work_completed};
 
 #[allow(non_snake_case)]
 pub async fn work_list(
@@ -39,19 +39,11 @@ pub async fn work_list(
                 }),
                 (
                     "createTime".to_string(),
-                    Value::String(
-                        m.create_time
-                            .map(|dt| dt.to_string())
-                            .unwrap_or_default(),
-                    ),
+                    Value::String(m.create_time.map(|dt| dt.to_string()).unwrap_or_default()),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(
-                        m.update_time
-                            .map(|dt| dt.to_string())
-                            .unwrap_or_default(),
-                    ),
+                    Value::String(m.update_time.map(|dt| dt.to_string()).unwrap_or_default()),
                 ),
             ]))
         })
@@ -84,7 +76,10 @@ pub async fn work_get(
     let result = Value::Object(serde_json::Map::from_iter([
         ("id".to_string(), Value::String(model.id.clone())),
         ("title".to_string(), Value::String(model.title.clone())),
-        ("creatorId".to_string(), Value::String(model.creator_id.clone())),
+        (
+            "creatorId".to_string(),
+            Value::String(model.creator_id.clone()),
+        ),
         ("status".to_string(), Value::String(model.status.clone())),
         ("formData".to_string(), {
             let fd: Option<String> = model.form_data.clone();
@@ -133,15 +128,14 @@ pub async fn task_list(
                 ("id".to_string(), Value::String(m.id.clone())),
                 ("workId".to_string(), Value::String(m.work_id.clone())),
                 ("title".to_string(), Value::String(m.title.clone())),
-                ("assigneeId".to_string(), Value::String(m.assignee_id.clone())),
+                (
+                    "assigneeId".to_string(),
+                    Value::String(m.assignee_id.clone()),
+                ),
                 ("status".to_string(), Value::String(m.status.clone())),
                 (
                     "createTime".to_string(),
-                    Value::String(
-                        m.create_time
-                            .map(|dt| dt.to_string())
-                            .unwrap_or_default(),
-                    ),
+                    Value::String(m.create_time.map(|dt| dt.to_string()).unwrap_or_default()),
                 ),
             ]))
         })
@@ -175,7 +169,10 @@ pub async fn task_get(
         ("id".to_string(), Value::String(model.id.clone())),
         ("workId".to_string(), Value::String(model.work_id.clone())),
         ("title".to_string(), Value::String(model.title.clone())),
-        ("assigneeId".to_string(), Value::String(model.assignee_id.clone())),
+        (
+            "assigneeId".to_string(),
+            Value::String(model.assignee_id.clone()),
+        ),
         ("status".to_string(), Value::String(model.status.clone())),
         (
             "createTime".to_string(),
@@ -212,19 +209,12 @@ pub async fn ticket_list(
                 ("title".to_string(), Value::String(m.title.clone())),
                 (
                     "description".to_string(),
-                    m.description
-                        .clone()
-                        .map(Value::String)
-                        .unwrap_or_default(),
+                    m.description.clone().map(Value::String).unwrap_or_default(),
                 ),
                 ("status".to_string(), Value::String(m.status.clone())),
                 (
                     "createTime".to_string(),
-                    Value::String(
-                        m.create_time
-                            .map(|dt| dt.to_string())
-                            .unwrap_or_default(),
-                    ),
+                    Value::String(m.create_time.map(|dt| dt.to_string()).unwrap_or_default()),
                 ),
             ]))
         })
@@ -262,11 +252,7 @@ pub async fn workcompleted_list(
                 ("result".to_string(), Value::String(m.result.clone())),
                 (
                     "completeTime".to_string(),
-                    Value::String(
-                        m.complete_time
-                            .map(|dt| dt.to_string())
-                            .unwrap_or_default(),
-                    ),
+                    Value::String(m.complete_time.map(|dt| dt.to_string()).unwrap_or_default()),
                 ),
             ]))
         })
@@ -290,17 +276,13 @@ pub fn processplatform_core_entity_router(_pool: deadpool_postgres::Pool) -> Rou
         .route("/jaxrs/process/task/list", get(task_list))
         .route("/jaxrs/process/task/{id}", get(task_get))
         .route("/jaxrs/process/ticket/list", get(ticket_list))
-        .route(
-            "/jaxrs/process/workcompleted/list",
-            get(workcompleted_list),
-        )
+        .route("/jaxrs/process/workcompleted/list", get(workcompleted_list))
 }
 
 #[cfg(test)]
 mod tests;
 #[cfg(test)]
 mod tests_generated;
-
 
 pub fn router(pool: deadpool_postgres::Pool) -> axum::Router {
     crate::processplatform_core_entity_router(pool)

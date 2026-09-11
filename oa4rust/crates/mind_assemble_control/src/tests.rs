@@ -59,7 +59,9 @@ mod tests {
             .await
             .unwrap();
         let status = response.status();
-        let body = axum::body::to_bytes(response.into_body(), usize::MAX).await.unwrap();
+        let body = axum::body::to_bytes(response.into_body(), usize::MAX)
+            .await
+            .unwrap();
         let body_str = String::from_utf8_lossy(&body);
         // Either route returns non-404 or body contains error message
         assert!(status != StatusCode::NOT_FOUND || body_str.contains("id is required"));
@@ -435,7 +437,10 @@ mod tests {
             .clone()
             .oneshot(
                 Request::builder()
-                    .uri(format!("/jaxrs/mind/assemble/control/mind/list/{}/shareRecords", id))
+                    .uri(format!(
+                        "/jaxrs/mind/assemble/control/mind/list/{}/shareRecords",
+                        id
+                    ))
                     .body(Body::empty())
                     .unwrap(),
             )
@@ -443,7 +448,11 @@ mod tests {
             .unwrap();
         assert_eq!(resp.status(), StatusCode::OK);
 
-        let _ = client.execute("DELETE FROM x_mind_share WHERE mind_id = $1", &[&id]).await;
-        let _ = client.execute("DELETE FROM x_mind WHERE id = $1", &[&id]).await;
+        let _ = client
+            .execute("DELETE FROM x_mind_share WHERE mind_id = $1", &[&id])
+            .await;
+        let _ = client
+            .execute("DELETE FROM x_mind WHERE id = $1", &[&id])
+            .await;
     }
 }

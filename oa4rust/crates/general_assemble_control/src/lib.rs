@@ -16,7 +16,6 @@ mod tests;
 #[cfg(test)]
 mod tests_generated;
 
-
 #[allow(non_snake_case)]
 pub async fn get_general_control_status(
     pool: Extension<Pool>,
@@ -33,9 +32,18 @@ pub async fn get_general_control_status(
     let data = match row {
         Ok(r) => serde_json::Map::from_iter([
             ("id".to_string(), Value::String(r.get("id"))),
-            ("systemName".to_string(), Value::String(r.get("system_name"))),
-            ("\"maintenanceMode\"".to_string(), Value::Bool(r.get("maintenance_mode"))),
-            ("\"allowRegistration\"".to_string(), Value::Bool(r.get("allow_registration"))),
+            (
+                "systemName".to_string(),
+                Value::String(r.get("system_name")),
+            ),
+            (
+                "\"maintenanceMode\"".to_string(),
+                Value::Bool(r.get("maintenance_mode")),
+            ),
+            (
+                "\"allowRegistration\"".to_string(),
+                Value::Bool(r.get("allow_registration")),
+            ),
             ("version".to_string(), Value::String(r.get("version"))),
         ]),
         Err(_) => serde_json::Map::from_iter([
@@ -57,8 +65,14 @@ pub async fn update_general_control_status(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
-    let maintenance_mode: bool = payload.get("\"maintenanceMode\"").and_then(|v| v.as_bool()).unwrap_or(false);
-    let allow_registration: bool = payload.get("\"allowRegistration\"").and_then(|v| v.as_bool()).unwrap_or(true);
+    let maintenance_mode: bool = payload
+        .get("\"maintenanceMode\"")
+        .and_then(|v| v.as_bool())
+        .unwrap_or(false);
+    let allow_registration: bool = payload
+        .get("\"allowRegistration\"")
+        .and_then(|v| v.as_bool())
+        .unwrap_or(true);
 
     let result = client
         .execute(
@@ -68,11 +82,19 @@ pub async fn update_general_control_status(
         .await
         .map_err(|_| AppError::Internal)?;
 
-    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
-        ("\"maintenanceMode\"".to_string(), Value::Bool(maintenance_mode)),
-        ("\"allowRegistration\"".to_string(), Value::Bool(allow_registration)),
-        ("updated".to_string(), Value::Bool(result > 0)),
-    ])))))
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            (
+                "\"maintenanceMode\"".to_string(),
+                Value::Bool(maintenance_mode),
+            ),
+            (
+                "\"allowRegistration\"".to_string(),
+                Value::Bool(allow_registration),
+            ),
+            ("updated".to_string(), Value::Bool(result > 0)),
+        ]),
+    ))))
 }
 
 #[allow(non_snake_case)]
@@ -95,7 +117,10 @@ pub async fn get_module_permissions(
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
-                ("moduleName".to_string(), Value::String(row.get("module_name"))),
+                (
+                    "moduleName".to_string(),
+                    Value::String(row.get("module_name")),
+                ),
                 ("\"userId\"".to_string(), Value::String(row.get("user_id"))),
                 ("canView".to_string(), Value::Bool(row.get("can_view"))),
                 ("canEdit".to_string(), Value::Bool(row.get("can_edit"))),
@@ -105,7 +130,11 @@ pub async fn get_module_permissions(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
+    Ok(Json(ActionResult::java_success(
+        Value::Array(data),
+        count,
+        0,
+    )))
 }
 
 pub fn general_assemble_control_router(pool: Pool) -> Router {
@@ -115,7 +144,6 @@ pub fn general_assemble_control_router(pool: Pool) -> Router {
 pub fn router(pool: deadpool_postgres::Pool) -> axum::Router {
     crate::routes::general_assemble_control_routes(pool)
 }
-
 
 // ---- attendscope handlers ----
 
@@ -146,14 +174,27 @@ pub async fn attendscope_list(
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("name".to_string(), Value::String(row.get("name"))),
                 ("unitId".to_string(), Value::String(row.get("unit_id"))),
-                ("creator".to_string(), Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default())),
-                ("createTime".to_string(), Value::String(row.get::<_, Option<String>>("create_time").unwrap_or_default())),
+                (
+                    "creator".to_string(),
+                    Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
+                ),
+                (
+                    "createTime".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
+                ),
             ]))
         })
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
+    Ok(Json(ActionResult::java_success(
+        Value::Array(data),
+        count,
+        0,
+    )))
 }
 
 #[allow(non_snake_case)]
@@ -177,8 +218,17 @@ pub async fn attendscope_get(
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("name".to_string(), Value::String(row.get("name"))),
                 ("unitId".to_string(), Value::String(row.get("unit_id"))),
-                ("creator".to_string(), Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default())),
-                ("createTime".to_string(), Value::String(row.get::<_, Option<String>>("create_time").unwrap_or_default())),
+                (
+                    "creator".to_string(),
+                    Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
+                ),
+                (
+                    "createTime".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
+                ),
             ]));
             Ok(Json(ActionResult::success(result)))
         }
@@ -257,10 +307,7 @@ pub async fn attendscope_delete(
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let result = client
-        .execute(
-            "DELETE FROM x_general_attend_scope WHERE id = $1",
-            &[&id],
-        )
+        .execute("DELETE FROM x_general_attend_scope WHERE id = $1", &[&id])
         .await
         .map_err(|_| AppError::Internal)?;
 
@@ -276,11 +323,8 @@ pub async fn attendscope_delete(
     ))))
 }
 
-
 #[allow(non_snake_case)]
-pub async fn area_list(
-    pool: Extension<Pool>,
-) -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn area_list(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let rows = client
@@ -297,19 +341,35 @@ pub async fn area_list(
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("name".to_string(), Value::String(row.get("name"))),
-                ("\"parentId\"".to_string(), Value::String(row.get("parent_id"))),
+                (
+                    "\"parentId\"".to_string(),
+                    Value::String(row.get("parent_id")),
+                ),
                 ("level".to_string(), Value::String(row.get("level"))),
                 ("province".to_string(), Value::String(row.get("province"))),
                 ("city".to_string(), Value::String(row.get("city"))),
                 ("district".to_string(), Value::String(row.get("district"))),
-                ("creator".to_string(), Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default())),
-                ("createTime".to_string(), Value::String(row.get::<_, Option<String>>("create_time").unwrap_or_default())),
+                (
+                    "creator".to_string(),
+                    Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
+                ),
+                (
+                    "createTime".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
+                ),
             ]))
         })
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
+    Ok(Json(ActionResult::java_success(
+        Value::Array(data),
+        count,
+        0,
+    )))
 }
 
 #[allow(non_snake_case)]
@@ -333,19 +393,35 @@ pub async fn area_list_province_province(
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("name".to_string(), Value::String(row.get("name"))),
-                ("\"parentId\"".to_string(), Value::String(row.get("parent_id"))),
+                (
+                    "\"parentId\"".to_string(),
+                    Value::String(row.get("parent_id")),
+                ),
                 ("level".to_string(), Value::String(row.get("level"))),
                 ("province".to_string(), Value::String(row.get("province"))),
                 ("city".to_string(), Value::String(row.get("city"))),
                 ("district".to_string(), Value::String(row.get("district"))),
-                ("creator".to_string(), Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default())),
-                ("createTime".to_string(), Value::String(row.get::<_, Option<String>>("create_time").unwrap_or_default())),
+                (
+                    "creator".to_string(),
+                    Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
+                ),
+                (
+                    "createTime".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
+                ),
             ]))
         })
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
+    Ok(Json(ActionResult::java_success(
+        Value::Array(data),
+        count,
+        0,
+    )))
 }
 
 #[allow(non_snake_case)]
@@ -370,19 +446,35 @@ pub async fn area_list_province_province_city_city(
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("name".to_string(), Value::String(row.get("name"))),
-                ("\"parentId\"".to_string(), Value::String(row.get("parent_id"))),
+                (
+                    "\"parentId\"".to_string(),
+                    Value::String(row.get("parent_id")),
+                ),
                 ("level".to_string(), Value::String(row.get("level"))),
                 ("province".to_string(), Value::String(row.get("province"))),
                 ("city".to_string(), Value::String(row.get("city"))),
                 ("district".to_string(), Value::String(row.get("district"))),
-                ("creator".to_string(), Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default())),
-                ("createTime".to_string(), Value::String(row.get::<_, Option<String>>("create_time").unwrap_or_default())),
+                (
+                    "creator".to_string(),
+                    Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
+                ),
+                (
+                    "createTime".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
+                ),
             ]))
         })
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
+    Ok(Json(ActionResult::java_success(
+        Value::Array(data),
+        count,
+        0,
+    )))
 }
 
 #[allow(non_snake_case)]
@@ -408,19 +500,35 @@ pub async fn area_list_province_province_city_city_district_district(
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("name".to_string(), Value::String(row.get("name"))),
-                ("\"parentId\"".to_string(), Value::String(row.get("parent_id"))),
+                (
+                    "\"parentId\"".to_string(),
+                    Value::String(row.get("parent_id")),
+                ),
                 ("level".to_string(), Value::String(row.get("level"))),
                 ("province".to_string(), Value::String(row.get("province"))),
                 ("city".to_string(), Value::String(row.get("city"))),
                 ("district".to_string(), Value::String(row.get("district"))),
-                ("creator".to_string(), Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default())),
-                ("createTime".to_string(), Value::String(row.get::<_, Option<String>>("create_time").unwrap_or_default())),
+                (
+                    "creator".to_string(),
+                    Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
+                ),
+                (
+                    "createTime".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
+                ),
             ]))
         })
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
+    Ok(Json(ActionResult::java_success(
+        Value::Array(data),
+        count,
+        0,
+    )))
 }
 
 // ---- area CRUD ----
@@ -433,13 +541,41 @@ pub async fn area_create(
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let id = uuid::Uuid::new_v4().to_string();
-    let name = payload.get("name").and_then(|v| v.as_str()).unwrap_or_default().to_string();
-    let parent_id = payload.get("\"parentId\"").and_then(|v| v.as_str()).unwrap_or_default().to_string();
-    let level = payload.get("level").and_then(|v| v.as_str()).unwrap_or_default().to_string();
-    let province = payload.get("province").and_then(|v| v.as_str()).unwrap_or_default().to_string();
-    let city = payload.get("city").and_then(|v| v.as_str()).unwrap_or_default().to_string();
-    let district = payload.get("district").and_then(|v| v.as_str()).unwrap_or_default().to_string();
-    let creator = payload.get("creator").and_then(|v| v.as_str()).unwrap_or("system").to_string();
+    let name = payload
+        .get("name")
+        .and_then(|v| v.as_str())
+        .unwrap_or_default()
+        .to_string();
+    let parent_id = payload
+        .get("\"parentId\"")
+        .and_then(|v| v.as_str())
+        .unwrap_or_default()
+        .to_string();
+    let level = payload
+        .get("level")
+        .and_then(|v| v.as_str())
+        .unwrap_or_default()
+        .to_string();
+    let province = payload
+        .get("province")
+        .and_then(|v| v.as_str())
+        .unwrap_or_default()
+        .to_string();
+    let city = payload
+        .get("city")
+        .and_then(|v| v.as_str())
+        .unwrap_or_default()
+        .to_string();
+    let district = payload
+        .get("district")
+        .and_then(|v| v.as_str())
+        .unwrap_or_default()
+        .to_string();
+    let creator = payload
+        .get("creator")
+        .and_then(|v| v.as_str())
+        .unwrap_or("system")
+        .to_string();
 
     client
         .execute(
@@ -449,15 +585,17 @@ pub async fn area_create(
         .await
         .map_err(|_| AppError::Internal)?;
 
-    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
-        ("id".to_string(), Value::String(id)),
-        ("name".to_string(), Value::String(name)),
-        ("\"parentId\"".to_string(), Value::String(parent_id)),
-        ("level".to_string(), Value::String(level)),
-        ("province".to_string(), Value::String(province)),
-        ("city".to_string(), Value::String(city)),
-        ("district".to_string(), Value::String(district)),
-    ])))))
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("id".to_string(), Value::String(id)),
+            ("name".to_string(), Value::String(name)),
+            ("\"parentId\"".to_string(), Value::String(parent_id)),
+            ("level".to_string(), Value::String(level)),
+            ("province".to_string(), Value::String(province)),
+            ("city".to_string(), Value::String(city)),
+            ("district".to_string(), Value::String(district)),
+        ]),
+    ))))
 }
 
 #[allow(non_snake_case)]
@@ -480,13 +618,25 @@ pub async fn area_get(
             let result = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("name".to_string(), Value::String(row.get("name"))),
-                ("\"parentId\"".to_string(), Value::String(row.get("parent_id"))),
+                (
+                    "\"parentId\"".to_string(),
+                    Value::String(row.get("parent_id")),
+                ),
                 ("level".to_string(), Value::String(row.get("level"))),
                 ("province".to_string(), Value::String(row.get("province"))),
                 ("city".to_string(), Value::String(row.get("city"))),
                 ("district".to_string(), Value::String(row.get("district"))),
-                ("creator".to_string(), Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default())),
-                ("createTime".to_string(), Value::String(row.get::<_, Option<String>>("create_time").unwrap_or_default())),
+                (
+                    "creator".to_string(),
+                    Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
+                ),
+                (
+                    "createTime".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
+                ),
             ]));
             Ok(Json(ActionResult::success(result)))
         }
@@ -502,12 +652,36 @@ pub async fn area_update(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
-    let name = payload.get("name").and_then(|v| v.as_str()).unwrap_or_default().to_string();
-    let parent_id = payload.get("\"parentId\"").and_then(|v| v.as_str()).unwrap_or_default().to_string();
-    let level = payload.get("level").and_then(|v| v.as_str()).unwrap_or_default().to_string();
-    let province = payload.get("province").and_then(|v| v.as_str()).unwrap_or_default().to_string();
-    let city = payload.get("city").and_then(|v| v.as_str()).unwrap_or_default().to_string();
-    let district = payload.get("district").and_then(|v| v.as_str()).unwrap_or_default().to_string();
+    let name = payload
+        .get("name")
+        .and_then(|v| v.as_str())
+        .unwrap_or_default()
+        .to_string();
+    let parent_id = payload
+        .get("\"parentId\"")
+        .and_then(|v| v.as_str())
+        .unwrap_or_default()
+        .to_string();
+    let level = payload
+        .get("level")
+        .and_then(|v| v.as_str())
+        .unwrap_or_default()
+        .to_string();
+    let province = payload
+        .get("province")
+        .and_then(|v| v.as_str())
+        .unwrap_or_default()
+        .to_string();
+    let city = payload
+        .get("city")
+        .and_then(|v| v.as_str())
+        .unwrap_or_default()
+        .to_string();
+    let district = payload
+        .get("district")
+        .and_then(|v| v.as_str())
+        .unwrap_or_default()
+        .to_string();
 
     let result = client
         .execute(
@@ -521,11 +695,13 @@ pub async fn area_update(
         return Ok(Json(ActionResult::error("area not found")));
     }
 
-    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
-        ("id".to_string(), Value::String(id)),
-        ("saved".to_string(), Value::Bool(result > 0)),
-        ("name".to_string(), Value::String(name)),
-    ])))))
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("id".to_string(), Value::String(id)),
+            ("saved".to_string(), Value::Bool(result > 0)),
+            ("name".to_string(), Value::String(name)),
+        ]),
+    ))))
 }
 
 #[allow(non_snake_case)]
@@ -544,16 +720,16 @@ pub async fn area_delete(
         return Ok(Json(ActionResult::error("area not found")));
     }
 
-    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
-        ("id".to_string(), Value::String(id)),
-        ("deleted".to_string(), Value::Bool(result > 0)),
-    ])))))
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("id".to_string(), Value::String(id)),
+            ("deleted".to_string(), Value::Bool(result > 0)),
+        ]),
+    ))))
 }
 
 #[allow(non_snake_case)]
-pub async fn ecnet_check(
-    pool: Extension<Pool>,
-) -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn ecnet_check(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let rows = client
@@ -571,14 +747,27 @@ pub async fn ecnet_check(
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("name".to_string(), Value::String(row.get("name"))),
                 ("value".to_string(), Value::String(row.get("value"))),
-                ("creator".to_string(), Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default())),
-                ("createTime".to_string(), Value::String(row.get::<_, Option<String>>("create_time").unwrap_or_default())),
+                (
+                    "creator".to_string(),
+                    Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
+                ),
+                (
+                    "createTime".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
+                ),
             ]))
         })
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
+    Ok(Json(ActionResult::java_success(
+        Value::Array(data),
+        count,
+        0,
+    )))
 }
 
 #[allow(non_snake_case)]
@@ -601,9 +790,21 @@ pub async fn excel_excelName_excelName(
             let result = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("name".to_string(), Value::String(row.get("name"))),
-                ("\"excelName\"".to_string(), Value::String(row.get("excel_name"))),
-                ("creator".to_string(), Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default())),
-                ("createTime".to_string(), Value::String(row.get::<_, Option<String>>("create_time").unwrap_or_default())),
+                (
+                    "\"excelName\"".to_string(),
+                    Value::String(row.get("excel_name")),
+                ),
+                (
+                    "creator".to_string(),
+                    Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
+                ),
+                (
+                    "createTime".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
+                ),
             ]));
             Ok(Json(ActionResult::success(result)))
         }
@@ -631,16 +832,32 @@ pub async fn excel_excelName_excelName_sheetList(
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
-                ("sheetName".to_string(), Value::String(row.get("sheet_name"))),
+                (
+                    "sheetName".to_string(),
+                    Value::String(row.get("sheet_name")),
+                ),
                 ("excelId".to_string(), Value::String(row.get("excel_id"))),
-                ("creator".to_string(), Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default())),
-                ("createTime".to_string(), Value::String(row.get::<_, Option<String>>("create_time").unwrap_or_default())),
+                (
+                    "creator".to_string(),
+                    Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
+                ),
+                (
+                    "createTime".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
+                ),
             ]))
         })
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
+    Ok(Json(ActionResult::java_success(
+        Value::Array(data),
+        count,
+        0,
+    )))
 }
 
 #[allow(non_snake_case)]
@@ -664,8 +881,17 @@ pub async fn excel_result_flag(
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("flag".to_string(), Value::String(row.get("flag"))),
                 ("result".to_string(), Value::String(row.get("result"))),
-                ("creator".to_string(), Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default())),
-                ("createTime".to_string(), Value::String(row.get::<_, Option<String>>("create_time").unwrap_or_default())),
+                (
+                    "creator".to_string(),
+                    Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
+                ),
+                (
+                    "createTime".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
+                ),
             ]));
             Ok(Json(ActionResult::success(result)))
         }
@@ -681,9 +907,21 @@ pub async fn excel_upload(
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let id = uuid::Uuid::new_v4().to_string();
-    let name = payload.get("name").and_then(|v| v.as_str()).unwrap_or("").to_string();
-    let excel_name = payload.get("\"excelName\"").and_then(|v| v.as_str()).unwrap_or("").to_string();
-    let creator = payload.get("creator").and_then(|v| v.as_str()).unwrap_or("system").to_string();
+    let name = payload
+        .get("name")
+        .and_then(|v| v.as_str())
+        .unwrap_or("")
+        .to_string();
+    let excel_name = payload
+        .get("\"excelName\"")
+        .and_then(|v| v.as_str())
+        .unwrap_or("")
+        .to_string();
+    let creator = payload
+        .get("creator")
+        .and_then(|v| v.as_str())
+        .unwrap_or("system")
+        .to_string();
     let flag = uuid::Uuid::new_v4().to_string();
 
     client
@@ -694,12 +932,14 @@ pub async fn excel_upload(
         .await
         .map_err(|_| AppError::Internal)?;
 
-    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
-        ("id".to_string(), Value::String(id)),
-        ("name".to_string(), Value::String(name)),
-        ("\"excelName\"".to_string(), Value::String(excel_name)),
-        ("flag".to_string(), Value::String(flag)),
-    ])))))
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("id".to_string(), Value::String(id)),
+            ("name".to_string(), Value::String(name)),
+            ("\"excelName\"".to_string(), Value::String(excel_name)),
+            ("flag".to_string(), Value::String(flag)),
+        ]),
+    ))))
 }
 
 #[allow(non_snake_case)]
@@ -710,9 +950,21 @@ pub async fn excel_upload_with_url(
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let id = uuid::Uuid::new_v4().to_string();
-    let name = payload.get("name").and_then(|v| v.as_str()).unwrap_or("").to_string();
-    let excel_name = payload.get("\"excelName\"").and_then(|v| v.as_str()).unwrap_or("").to_string();
-    let creator = payload.get("creator").and_then(|v| v.as_str()).unwrap_or("system").to_string();
+    let name = payload
+        .get("name")
+        .and_then(|v| v.as_str())
+        .unwrap_or("")
+        .to_string();
+    let excel_name = payload
+        .get("\"excelName\"")
+        .and_then(|v| v.as_str())
+        .unwrap_or("")
+        .to_string();
+    let creator = payload
+        .get("creator")
+        .and_then(|v| v.as_str())
+        .unwrap_or("system")
+        .to_string();
     let flag = uuid::Uuid::new_v4().to_string();
 
     client
@@ -723,12 +975,14 @@ pub async fn excel_upload_with_url(
         .await
         .map_err(|_| AppError::Internal)?;
 
-    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
-        ("id".to_string(), Value::String(id)),
-        ("name".to_string(), Value::String(name)),
-        ("\"excelName\"".to_string(), Value::String(excel_name)),
-        ("flag".to_string(), Value::String(flag)),
-    ])))))
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("id".to_string(), Value::String(id)),
+            ("name".to_string(), Value::String(name)),
+            ("\"excelName\"".to_string(), Value::String(excel_name)),
+            ("flag".to_string(), Value::String(flag)),
+        ]),
+    ))))
 }
 
 #[allow(non_snake_case)]
@@ -752,9 +1006,21 @@ pub async fn generalfile_download_flag_flag(
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("name".to_string(), Value::String(row.get("name"))),
                 ("flag".to_string(), Value::String(row.get("flag"))),
-                ("size".to_string(), Value::String(row.get::<_, i64>("size").to_string())),
-                ("creator".to_string(), Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default())),
-                ("createTime".to_string(), Value::String(row.get::<_, Option<String>>("create_time").unwrap_or_default())),
+                (
+                    "size".to_string(),
+                    Value::String(row.get::<_, i64>("size").to_string()),
+                ),
+                (
+                    "creator".to_string(),
+                    Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
+                ),
+                (
+                    "createTime".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
+                ),
             ]));
             Ok(Json(ActionResult::success(result)))
         }
@@ -783,9 +1049,21 @@ pub async fn generalfile_flag_flag(
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("name".to_string(), Value::String(row.get("name"))),
                 ("flag".to_string(), Value::String(row.get("flag"))),
-                ("size".to_string(), Value::String(row.get::<_, i64>("size").to_string())),
-                ("creator".to_string(), Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default())),
-                ("createTime".to_string(), Value::String(row.get::<_, Option<String>>("create_time").unwrap_or_default())),
+                (
+                    "size".to_string(),
+                    Value::String(row.get::<_, i64>("size").to_string()),
+                ),
+                (
+                    "creator".to_string(),
+                    Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
+                ),
+                (
+                    "createTime".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
+                ),
             ]));
             Ok(Json(ActionResult::success(result)))
         }
@@ -815,10 +1093,25 @@ pub async fn generalfile_flag_flag_binary_base64(
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("name".to_string(), Value::String(row.get("name"))),
                 ("flag".to_string(), Value::String(row.get("flag"))),
-                ("content".to_string(), Value::String(content.unwrap_or_default())),
-                ("size".to_string(), Value::String(row.get::<_, i64>("size").to_string())),
-                ("creator".to_string(), Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default())),
-                ("createTime".to_string(), Value::String(row.get::<_, Option<String>>("create_time").unwrap_or_default())),
+                (
+                    "content".to_string(),
+                    Value::String(content.unwrap_or_default()),
+                ),
+                (
+                    "size".to_string(),
+                    Value::String(row.get::<_, i64>("size").to_string()),
+                ),
+                (
+                    "creator".to_string(),
+                    Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
+                ),
+                (
+                    "createTime".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
+                ),
             ]));
             Ok(Json(ActionResult::success(result)))
         }
@@ -834,10 +1127,22 @@ pub async fn invoice_create(
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let id = uuid::Uuid::new_v4().to_string();
-    let name = payload.get("name").and_then(|v| v.as_str()).unwrap_or("").to_string();
+    let name = payload
+        .get("name")
+        .and_then(|v| v.as_str())
+        .unwrap_or("")
+        .to_string();
     let flag = uuid::Uuid::new_v4().to_string();
-    let status = payload.get("status").and_then(|v| v.as_str()).unwrap_or("draft").to_string();
-    let creator = payload.get("creator").and_then(|v| v.as_str()).unwrap_or("system").to_string();
+    let status = payload
+        .get("status")
+        .and_then(|v| v.as_str())
+        .unwrap_or("draft")
+        .to_string();
+    let creator = payload
+        .get("creator")
+        .and_then(|v| v.as_str())
+        .unwrap_or("system")
+        .to_string();
 
     client
         .execute(
@@ -847,13 +1152,15 @@ pub async fn invoice_create(
         .await
         .map_err(|_| AppError::Internal)?;
 
-    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
-        ("id".to_string(), Value::String(id)),
-        ("name".to_string(), Value::String(name)),
-        ("flag".to_string(), Value::String(flag)),
-        ("status".to_string(), Value::String(status)),
-        ("creator".to_string(), Value::String(creator)),
-    ])))))
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("id".to_string(), Value::String(id)),
+            ("name".to_string(), Value::String(name)),
+            ("flag".to_string(), Value::String(flag)),
+            ("status".to_string(), Value::String(status)),
+            ("creator".to_string(), Value::String(creator)),
+        ]),
+    ))))
 }
 
 #[allow(non_snake_case)]
@@ -864,7 +1171,10 @@ pub async fn invoice_delete_id(
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let result = client
-        .execute("DELETE FROM x_general_assemble_invoice WHERE id = $1", &[&id])
+        .execute(
+            "DELETE FROM x_general_assemble_invoice WHERE id = $1",
+            &[&id],
+        )
         .await
         .map_err(|_| AppError::Internal)?;
 
@@ -872,10 +1182,12 @@ pub async fn invoice_delete_id(
         return Ok(Json(ActionResult::error("invoice not found")));
     }
 
-    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
-        ("id".to_string(), Value::String(id)),
-        ("deleted".to_string(), Value::Bool(result > 0)),
-    ])))))
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("id".to_string(), Value::String(id)),
+            ("deleted".to_string(), Value::Bool(result > 0)),
+        ]),
+    ))))
 }
 
 #[allow(non_snake_case)]
@@ -900,8 +1212,17 @@ pub async fn invoice_download_flag_flag(
                 ("name".to_string(), Value::String(row.get("name"))),
                 ("flag".to_string(), Value::String(row.get("flag"))),
                 ("status".to_string(), Value::String(row.get("status"))),
-                ("creator".to_string(), Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default())),
-                ("createTime".to_string(), Value::String(row.get::<_, Option<String>>("create_time").unwrap_or_default())),
+                (
+                    "creator".to_string(),
+                    Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
+                ),
+                (
+                    "createTime".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
+                ),
             ]));
             Ok(Json(ActionResult::success(result)))
         }
@@ -931,8 +1252,17 @@ pub async fn invoice_get_id(
                 ("name".to_string(), Value::String(row.get("name"))),
                 ("flag".to_string(), Value::String(row.get("flag"))),
                 ("status".to_string(), Value::String(row.get("status"))),
-                ("creator".to_string(), Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default())),
-                ("createTime".to_string(), Value::String(row.get::<_, Option<String>>("create_time").unwrap_or_default())),
+                (
+                    "creator".to_string(),
+                    Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
+                ),
+                (
+                    "createTime".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
+                ),
             ]));
             Ok(Json(ActionResult::success(result)))
         }
@@ -951,7 +1281,10 @@ pub async fn invoice_list_paging_page_size_size(
     let offset = ((page.max(1) - 1) * size) as i64;
 
     let total_row = client
-        .query_one("SELECT COUNT(*) as cnt FROM x_general_assemble_invoice", &[])
+        .query_one(
+            "SELECT COUNT(*) as cnt FROM x_general_assemble_invoice",
+            &[],
+        )
         .await
         .map_err(|_| AppError::Internal)?;
     let total: i64 = total_row.get("cnt");
@@ -972,13 +1305,26 @@ pub async fn invoice_list_paging_page_size_size(
                 ("name".to_string(), Value::String(row.get("name"))),
                 ("flag".to_string(), Value::String(row.get("flag"))),
                 ("status".to_string(), Value::String(row.get("status"))),
-                ("creator".to_string(), Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default())),
-                ("createTime".to_string(), Value::String(row.get::<_, Option<String>>("create_time").unwrap_or_default())),
+                (
+                    "creator".to_string(),
+                    Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
+                ),
+                (
+                    "createTime".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
+                ),
             ]))
         })
         .collect();
 
-    Ok(Json(ActionResult::java_success(Value::Array(data), total, size as i64)))
+    Ok(Json(ActionResult::java_success(
+        Value::Array(data),
+        total,
+        size as i64,
+    )))
 }
 
 #[allow(non_snake_case)]
@@ -989,7 +1335,11 @@ pub async fn invoice_update_apply_status_id(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
-    let status = payload.get("status").and_then(|v| v.as_str()).unwrap_or("").to_string();
+    let status = payload
+        .get("status")
+        .and_then(|v| v.as_str())
+        .unwrap_or("")
+        .to_string();
 
     let result = client
         .execute(
@@ -1003,11 +1353,13 @@ pub async fn invoice_update_apply_status_id(
         return Ok(Json(ActionResult::error("invoice not found")));
     }
 
-    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
-        ("id".to_string(), Value::String(id)),
-        ("status".to_string(), Value::String(status)),
-        ("updated".to_string(), Value::Bool(result > 0)),
-    ])))))
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("id".to_string(), Value::String(id)),
+            ("status".to_string(), Value::String(status)),
+            ("updated".to_string(), Value::Bool(result > 0)),
+        ]),
+    ))))
 }
 
 #[allow(non_snake_case)]
@@ -1018,8 +1370,16 @@ pub async fn invoice_update_id(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
-    let name = payload.get("name").and_then(|v| v.as_str()).unwrap_or_default().to_string();
-    let status = payload.get("status").and_then(|v| v.as_str()).unwrap_or_default().to_string();
+    let name = payload
+        .get("name")
+        .and_then(|v| v.as_str())
+        .unwrap_or_default()
+        .to_string();
+    let status = payload
+        .get("status")
+        .and_then(|v| v.as_str())
+        .unwrap_or_default()
+        .to_string();
 
     let result = client
         .execute(
@@ -1033,12 +1393,14 @@ pub async fn invoice_update_id(
         return Ok(Json(ActionResult::error("invoice not found")));
     }
 
-    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
-        ("id".to_string(), Value::String(id)),
-        ("name".to_string(), Value::String(name)),
-        ("status".to_string(), Value::String(status)),
-        ("updated".to_string(), Value::Bool(result > 0)),
-    ])))))
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("id".to_string(), Value::String(id)),
+            ("name".to_string(), Value::String(name)),
+            ("status".to_string(), Value::String(status)),
+            ("updated".to_string(), Value::Bool(result > 0)),
+        ]),
+    ))))
 }
 
 #[allow(non_snake_case)]
@@ -1049,9 +1411,17 @@ pub async fn invoice_upload(
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let id = uuid::Uuid::new_v4().to_string();
-    let name = payload.get("name").and_then(|v| v.as_str()).unwrap_or("").to_string();
+    let name = payload
+        .get("name")
+        .and_then(|v| v.as_str())
+        .unwrap_or("")
+        .to_string();
     let flag = uuid::Uuid::new_v4().to_string();
-    let creator = payload.get("creator").and_then(|v| v.as_str()).unwrap_or("system").to_string();
+    let creator = payload
+        .get("creator")
+        .and_then(|v| v.as_str())
+        .unwrap_or("system")
+        .to_string();
 
     client
         .execute(
@@ -1061,12 +1431,14 @@ pub async fn invoice_upload(
         .await
         .map_err(|_| AppError::Internal)?;
 
-    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
-        ("id".to_string(), Value::String(id)),
-        ("name".to_string(), Value::String(name)),
-        ("flag".to_string(), Value::String(flag)),
-        ("status".to_string(), Value::String("draft".to_string())),
-    ])))))
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("id".to_string(), Value::String(id)),
+            ("name".to_string(), Value::String(name)),
+            ("flag".to_string(), Value::String(flag)),
+            ("status".to_string(), Value::String("draft".to_string())),
+        ]),
+    ))))
 }
 
 #[allow(non_snake_case)]
@@ -1077,9 +1449,17 @@ pub async fn invoice_upload_for_create(
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let id = uuid::Uuid::new_v4().to_string();
-    let name = payload.get("name").and_then(|v| v.as_str()).unwrap_or("").to_string();
+    let name = payload
+        .get("name")
+        .and_then(|v| v.as_str())
+        .unwrap_or("")
+        .to_string();
     let flag = uuid::Uuid::new_v4().to_string();
-    let creator = payload.get("creator").and_then(|v| v.as_str()).unwrap_or("system").to_string();
+    let creator = payload
+        .get("creator")
+        .and_then(|v| v.as_str())
+        .unwrap_or("system")
+        .to_string();
 
     client
         .execute(
@@ -1089,12 +1469,14 @@ pub async fn invoice_upload_for_create(
         .await
         .map_err(|_| AppError::Internal)?;
 
-    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
-        ("id".to_string(), Value::String(id)),
-        ("name".to_string(), Value::String(name)),
-        ("flag".to_string(), Value::String(flag)),
-        ("status".to_string(), Value::String("draft".to_string())),
-    ])))))
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("id".to_string(), Value::String(id)),
+            ("name".to_string(), Value::String(name)),
+            ("flag".to_string(), Value::String(flag)),
+            ("status".to_string(), Value::String("draft".to_string())),
+        ]),
+    ))))
 }
 
 #[allow(non_snake_case)]
@@ -1105,9 +1487,17 @@ pub async fn invoice_upload_with_url(
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let id = uuid::Uuid::new_v4().to_string();
-    let name = payload.get("name").and_then(|v| v.as_str()).unwrap_or("").to_string();
+    let name = payload
+        .get("name")
+        .and_then(|v| v.as_str())
+        .unwrap_or("")
+        .to_string();
     let flag = uuid::Uuid::new_v4().to_string();
-    let creator = payload.get("creator").and_then(|v| v.as_str()).unwrap_or("system").to_string();
+    let creator = payload
+        .get("creator")
+        .and_then(|v| v.as_str())
+        .unwrap_or("system")
+        .to_string();
 
     client
         .execute(
@@ -1117,12 +1507,14 @@ pub async fn invoice_upload_with_url(
         .await
         .map_err(|_| AppError::Internal)?;
 
-    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
-        ("id".to_string(), Value::String(id)),
-        ("name".to_string(), Value::String(name)),
-        ("flag".to_string(), Value::String(flag)),
-        ("status".to_string(), Value::String("draft".to_string())),
-    ])))))
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("id".to_string(), Value::String(id)),
+            ("name".to_string(), Value::String(name)),
+            ("flag".to_string(), Value::String(flag)),
+            ("status".to_string(), Value::String("draft".to_string())),
+        ]),
+    ))))
 }
 
 #[allow(non_snake_case)]
@@ -1133,8 +1525,16 @@ pub async fn office_html_to_word(
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let id = uuid::Uuid::new_v4().to_string();
-    let html_content = payload.get("\"htmlContent\"").and_then(|v| v.as_str()).unwrap_or("").to_string();
-    let creator = payload.get("creator").and_then(|v| v.as_str()).unwrap_or("system").to_string();
+    let html_content = payload
+        .get("\"htmlContent\"")
+        .and_then(|v| v.as_str())
+        .unwrap_or("")
+        .to_string();
+    let creator = payload
+        .get("creator")
+        .and_then(|v| v.as_str())
+        .unwrap_or("system")
+        .to_string();
     let word_flag = uuid::Uuid::new_v4().to_string();
 
     client
@@ -1145,10 +1545,12 @@ pub async fn office_html_to_word(
         .await
         .map_err(|_| AppError::Internal)?;
 
-    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
-        ("id".to_string(), Value::String(id)),
-        ("wordFlag".to_string(), Value::String(word_flag)),
-    ])))))
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("id".to_string(), Value::String(id)),
+            ("wordFlag".to_string(), Value::String(word_flag)),
+        ]),
+    ))))
 }
 
 #[allow(non_snake_case)]
@@ -1171,9 +1573,21 @@ pub async fn office_html_to_word_result_flag(
             let result = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("wordFlag".to_string(), Value::String(row.get("word_flag"))),
-                ("\"htmlContent\"".to_string(), Value::String(row.get("html_content"))),
-                ("creator".to_string(), Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default())),
-                ("createTime".to_string(), Value::String(row.get::<_, Option<String>>("create_time").unwrap_or_default())),
+                (
+                    "\"htmlContent\"".to_string(),
+                    Value::String(row.get("html_content")),
+                ),
+                (
+                    "creator".to_string(),
+                    Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
+                ),
+                (
+                    "createTime".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
+                ),
             ]));
             Ok(Json(ActionResult::success(result)))
         }
@@ -1202,20 +1616,26 @@ pub async fn qrcode_width_width_height_height_text_text(
         .await
         .map_err(|_| AppError::Internal)?;
 
-    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
-        ("id".to_string(), Value::String(id)),
-        ("width".to_string(), Value::Number(serde_json::Number::from(width))),
-        ("height".to_string(), Value::Number(serde_json::Number::from(height))),
-        ("text".to_string(), Value::String(text)),
-    ])))))
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("id".to_string(), Value::String(id)),
+            (
+                "width".to_string(),
+                Value::Number(serde_json::Number::from(width)),
+            ),
+            (
+                "height".to_string(),
+                Value::Number(serde_json::Number::from(height)),
+            ),
+            ("text".to_string(), Value::String(text)),
+        ]),
+    ))))
 }
 
 // ---- qrcode CRUD ----
 
 #[allow(non_snake_case)]
-pub async fn qrcode_list(
-    pool: Extension<Pool>,
-) -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn qrcode_list(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let rows = client
@@ -1231,17 +1651,43 @@ pub async fn qrcode_list(
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
-                ("width".to_string(), Value::Number(serde_json::Number::from(row.get::<_, Option<i64>>("width").unwrap_or(0)))),
-                ("height".to_string(), Value::Number(serde_json::Number::from(row.get::<_, Option<i64>>("height").unwrap_or(0)))),
-                ("text".to_string(), Value::String(row.get::<_, Option<String>>("text").unwrap_or_default())),
-                ("creator".to_string(), Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default())),
-                ("createTime".to_string(), Value::String(row.get::<_, Option<String>>("create_time").unwrap_or_default())),
+                (
+                    "width".to_string(),
+                    Value::Number(serde_json::Number::from(
+                        row.get::<_, Option<i64>>("width").unwrap_or(0),
+                    )),
+                ),
+                (
+                    "height".to_string(),
+                    Value::Number(serde_json::Number::from(
+                        row.get::<_, Option<i64>>("height").unwrap_or(0),
+                    )),
+                ),
+                (
+                    "text".to_string(),
+                    Value::String(row.get::<_, Option<String>>("text").unwrap_or_default()),
+                ),
+                (
+                    "creator".to_string(),
+                    Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
+                ),
+                (
+                    "createTime".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
+                ),
             ]))
         })
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
+    Ok(Json(ActionResult::java_success(
+        Value::Array(data),
+        count,
+        0,
+    )))
 }
 
 #[allow(non_snake_case)]
@@ -1263,12 +1709,34 @@ pub async fn qrcode_get(
         Some(row) => {
             let result = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
-                ("width".to_string(), Value::Number(serde_json::Number::from(row.get::<_, Option<i64>>("width").unwrap_or(0)))),
-                ("height".to_string(), Value::Number(serde_json::Number::from(row.get::<_, Option<i64>>("height").unwrap_or(0)))),
-                ("text".to_string(), Value::String(row.get::<_, Option<String>>("text").unwrap_or_default())),
+                (
+                    "width".to_string(),
+                    Value::Number(serde_json::Number::from(
+                        row.get::<_, Option<i64>>("width").unwrap_or(0),
+                    )),
+                ),
+                (
+                    "height".to_string(),
+                    Value::Number(serde_json::Number::from(
+                        row.get::<_, Option<i64>>("height").unwrap_or(0),
+                    )),
+                ),
+                (
+                    "text".to_string(),
+                    Value::String(row.get::<_, Option<String>>("text").unwrap_or_default()),
+                ),
                 ("content".to_string(), Value::String(row.get("content"))),
-                ("creator".to_string(), Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default())),
-                ("createTime".to_string(), Value::String(row.get::<_, Option<String>>("create_time").unwrap_or_default())),
+                (
+                    "creator".to_string(),
+                    Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
+                ),
+                (
+                    "createTime".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
+                ),
             ]));
             Ok(Json(ActionResult::success(result)))
         }
@@ -1284,7 +1752,10 @@ pub async fn qrcode_delete(
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let result = client
-        .execute("DELETE FROM x_general_assemble_qrcode WHERE id = $1", &[&id])
+        .execute(
+            "DELETE FROM x_general_assemble_qrcode WHERE id = $1",
+            &[&id],
+        )
         .await
         .map_err(|_| AppError::Internal)?;
 
@@ -1292,10 +1763,12 @@ pub async fn qrcode_delete(
         return Ok(Json(ActionResult::error("qrcode not found")));
     }
 
-    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
-        ("id".to_string(), Value::String(id)),
-        ("deleted".to_string(), Value::Bool(result > 0)),
-    ])))))
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("id".to_string(), Value::String(id)),
+            ("deleted".to_string(), Value::Bool(result > 0)),
+        ]),
+    ))))
 }
 
 #[allow(non_snake_case)]
@@ -1305,8 +1778,15 @@ pub async fn securityclearance_enable(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
-    let enabled = payload.get("enabled").and_then(|v| v.as_bool()).unwrap_or(false);
-    let name = payload.get("name").and_then(|v| v.as_str()).unwrap_or("").to_string();
+    let enabled = payload
+        .get("enabled")
+        .and_then(|v| v.as_bool())
+        .unwrap_or(false);
+    let name = payload
+        .get("name")
+        .and_then(|v| v.as_str())
+        .unwrap_or("")
+        .to_string();
 
     let row = client
         .query_opt(
@@ -1326,11 +1806,13 @@ pub async fn securityclearance_enable(
                 )
                 .await
                 .map_err(|_| AppError::Internal)?;
-            Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(id)),
-                ("name".to_string(), Value::String(name)),
-                ("enabled".to_string(), Value::Bool(enabled)),
-            ])))))
+            Ok(Json(ActionResult::success(Value::Object(
+                serde_json::Map::from_iter([
+                    ("id".to_string(), Value::String(id)),
+                    ("name".to_string(), Value::String(name)),
+                    ("enabled".to_string(), Value::Bool(enabled)),
+                ]),
+            ))))
         }
         None => {
             let id = uuid::Uuid::new_v4().to_string();
@@ -1341,11 +1823,13 @@ pub async fn securityclearance_enable(
                 )
                 .await
                 .map_err(|_| AppError::Internal)?;
-            Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(id)),
-                ("name".to_string(), Value::String(name)),
-                ("enabled".to_string(), Value::Bool(enabled)),
-            ])))))
+            Ok(Json(ActionResult::success(Value::Object(
+                serde_json::Map::from_iter([
+                    ("id".to_string(), Value::String(id)),
+                    ("name".to_string(), Value::String(name)),
+                    ("enabled".to_string(), Value::Bool(enabled)),
+                ]),
+            ))))
         }
     }
 }
@@ -1432,12 +1916,35 @@ pub async fn securityclearance_create(
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let id = uuid::Uuid::new_v4().to_string();
-    let name = payload.get("name").and_then(|v| v.as_str()).unwrap_or_default().to_string();
-    let clearance_type = payload.get("type").and_then(|v| v.as_str()).unwrap_or("system").to_string();
-    let enabled = payload.get("enabled").and_then(|v| v.as_bool()).unwrap_or(false);
-    let subject = payload.get("subject").and_then(|v| v.as_str()).unwrap_or_default().to_string();
-    let object = payload.get("object").and_then(|v| v.as_str()).unwrap_or_default().to_string();
-    let creator = payload.get("creator").and_then(|v| v.as_str()).unwrap_or("system").to_string();
+    let name = payload
+        .get("name")
+        .and_then(|v| v.as_str())
+        .unwrap_or_default()
+        .to_string();
+    let clearance_type = payload
+        .get("type")
+        .and_then(|v| v.as_str())
+        .unwrap_or("system")
+        .to_string();
+    let enabled = payload
+        .get("enabled")
+        .and_then(|v| v.as_bool())
+        .unwrap_or(false);
+    let subject = payload
+        .get("subject")
+        .and_then(|v| v.as_str())
+        .unwrap_or_default()
+        .to_string();
+    let object = payload
+        .get("object")
+        .and_then(|v| v.as_str())
+        .unwrap_or_default()
+        .to_string();
+    let creator = payload
+        .get("creator")
+        .and_then(|v| v.as_str())
+        .unwrap_or("system")
+        .to_string();
 
     client
         .execute(
@@ -1447,12 +1954,14 @@ pub async fn securityclearance_create(
         .await
         .map_err(|_| AppError::Internal)?;
 
-    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
-        ("id".to_string(), Value::String(id)),
-        ("name".to_string(), Value::String(name)),
-        ("type".to_string(), Value::String(clearance_type)),
-        ("enabled".to_string(), Value::Bool(enabled)),
-    ])))))
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("id".to_string(), Value::String(id)),
+            ("name".to_string(), Value::String(name)),
+            ("type".to_string(), Value::String(clearance_type)),
+            ("enabled".to_string(), Value::Bool(enabled)),
+        ]),
+    ))))
 }
 
 #[allow(non_snake_case)]
@@ -1479,8 +1988,17 @@ pub async fn securityclearance_get(
                 ("enabled".to_string(), Value::Bool(row.get("enabled"))),
                 ("subject".to_string(), Value::String(row.get("subject"))),
                 ("object".to_string(), Value::String(row.get("object"))),
-                ("creator".to_string(), Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default())),
-                ("createTime".to_string(), Value::String(row.get::<_, Option<String>>("create_time").unwrap_or_default())),
+                (
+                    "creator".to_string(),
+                    Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
+                ),
+                (
+                    "createTime".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
+                ),
             ]));
             Ok(Json(ActionResult::success(result)))
         }
@@ -1496,11 +2014,30 @@ pub async fn securityclearance_update(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
-    let name = payload.get("name").and_then(|v| v.as_str()).unwrap_or_default().to_string();
-    let clearance_type = payload.get("type").and_then(|v| v.as_str()).unwrap_or_default().to_string();
-    let enabled = payload.get("enabled").and_then(|v| v.as_bool()).unwrap_or(false);
-    let subject = payload.get("subject").and_then(|v| v.as_str()).unwrap_or_default().to_string();
-    let object = payload.get("object").and_then(|v| v.as_str()).unwrap_or_default().to_string();
+    let name = payload
+        .get("name")
+        .and_then(|v| v.as_str())
+        .unwrap_or_default()
+        .to_string();
+    let clearance_type = payload
+        .get("type")
+        .and_then(|v| v.as_str())
+        .unwrap_or_default()
+        .to_string();
+    let enabled = payload
+        .get("enabled")
+        .and_then(|v| v.as_bool())
+        .unwrap_or(false);
+    let subject = payload
+        .get("subject")
+        .and_then(|v| v.as_str())
+        .unwrap_or_default()
+        .to_string();
+    let object = payload
+        .get("object")
+        .and_then(|v| v.as_str())
+        .unwrap_or_default()
+        .to_string();
 
     let result = client
         .execute(
@@ -1514,11 +2051,13 @@ pub async fn securityclearance_update(
         return Ok(Json(ActionResult::error("security clearance not found")));
     }
 
-    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
-        ("id".to_string(), Value::String(id)),
-        ("saved".to_string(), Value::Bool(result > 0)),
-        ("name".to_string(), Value::String(name)),
-    ])))))
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("id".to_string(), Value::String(id)),
+            ("saved".to_string(), Value::Bool(result > 0)),
+            ("name".to_string(), Value::String(name)),
+        ]),
+    ))))
 }
 
 #[allow(non_snake_case)]
@@ -1529,7 +2068,10 @@ pub async fn securityclearance_delete(
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let result = client
-        .execute("DELETE FROM x_general_assemble_security_clearance WHERE id = $1", &[&id])
+        .execute(
+            "DELETE FROM x_general_assemble_security_clearance WHERE id = $1",
+            &[&id],
+        )
         .await
         .map_err(|_| AppError::Internal)?;
 
@@ -1537,10 +2079,12 @@ pub async fn securityclearance_delete(
         return Ok(Json(ActionResult::error("security clearance not found")));
     }
 
-    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
-        ("id".to_string(), Value::String(id)),
-        ("deleted".to_string(), Value::Bool(result > 0)),
-    ])))))
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("id".to_string(), Value::String(id)),
+            ("deleted".to_string(), Value::Bool(result > 0)),
+        ]),
+    ))))
 }
 
 #[allow(non_snake_case)]
@@ -1558,9 +2102,9 @@ pub async fn upgrade_2021090901(
         .map_err(|_| AppError::Internal)?;
 
     let has_record = row.is_some();
-    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
-        ("value".to_string(), Value::Bool(has_record)),
-    ])))))
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([("value".to_string(), Value::Bool(has_record))]),
+    ))))
 }
 
 #[allow(non_snake_case)]
@@ -1578,9 +2122,9 @@ pub async fn upgrade_2021090902(
         .map_err(|_| AppError::Internal)?;
 
     let has_record = row.is_some();
-    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
-        ("value".to_string(), Value::Bool(has_record)),
-    ])))))
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([("value".to_string(), Value::Bool(has_record))]),
+    ))))
 }
 
 #[allow(non_snake_case)]
@@ -1600,11 +2144,16 @@ pub async fn worktime_betweenholidaycount_start_startDate_end_endDate(
         .map_err(|_| AppError::Internal)?;
     let count: i64 = row.get("cnt");
 
-    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
-        ("count".to_string(), Value::Number(serde_json::Number::from(count))),
-        ("startDate".to_string(), Value::String(start_date)),
-        ("endDate".to_string(), Value::String(end_date)),
-    ])))))
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            (
+                "count".to_string(),
+                Value::Number(serde_json::Number::from(count)),
+            ),
+            ("startDate".to_string(), Value::String(start_date)),
+            ("endDate".to_string(), Value::String(end_date)),
+        ]),
+    ))))
 }
 
 #[allow(non_snake_case)]
@@ -1622,13 +2171,21 @@ pub async fn worktime_betweenminutes_start_start_end_end(
         )
         .await
         .map_err(|_| AppError::Internal)?;
-    let total: Option<i64> = row.get::<_, Option<String>>("total").and_then(|s| s.parse().ok()).or(Some(0));
+    let total: Option<i64> = row
+        .get::<_, Option<String>>("total")
+        .and_then(|s| s.parse().ok())
+        .or(Some(0));
 
-    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
-        ("minutes".to_string(), Value::Number(serde_json::Number::from(total.unwrap_or(0)))),
-        ("start".to_string(), Value::String(start)),
-        ("end".to_string(), Value::String(end)),
-    ])))))
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            (
+                "minutes".to_string(),
+                Value::Number(serde_json::Number::from(total.unwrap_or(0))),
+            ),
+            ("start".to_string(), Value::String(start)),
+            ("end".to_string(), Value::String(end)),
+        ]),
+    ))))
 }
 
 #[allow(non_snake_case)]
@@ -1657,16 +2214,35 @@ pub async fn worktime_forwarddays_start_start_days_days(
                 ("date".to_string(), Value::String(row.get("date"))),
                 ("isHoliday".to_string(), Value::Bool(row.get("is_holiday"))),
                 ("isWorkday".to_string(), Value::Bool(row.get("is_workday"))),
-                ("isWorktime".to_string(), Value::Bool(row.get("is_worktime"))),
-                ("minutes".to_string(), Value::String(row.get::<_, i64>("minutes").to_string())),
-                ("creator".to_string(), Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default())),
-                ("createTime".to_string(), Value::String(row.get::<_, Option<String>>("create_time").unwrap_or_default())),
+                (
+                    "isWorktime".to_string(),
+                    Value::Bool(row.get("is_worktime")),
+                ),
+                (
+                    "minutes".to_string(),
+                    Value::String(row.get::<_, i64>("minutes").to_string()),
+                ),
+                (
+                    "creator".to_string(),
+                    Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
+                ),
+                (
+                    "createTime".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
+                ),
             ]))
         })
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
+    Ok(Json(ActionResult::java_success(
+        Value::Array(data),
+        count,
+        0,
+    )))
 }
 
 #[allow(non_snake_case)]
@@ -1696,8 +2272,14 @@ pub async fn worktime_forwardminutes_start_start_minutes_minutes(
             ("date".to_string(), Value::String(row.get("date"))),
             ("isHoliday".to_string(), Value::Bool(row.get("is_holiday"))),
             ("isWorkday".to_string(), Value::Bool(row.get("is_workday"))),
-            ("isWorktime".to_string(), Value::Bool(row.get("is_worktime"))),
-            ("minutes".to_string(), Value::String(record_minutes.to_string())),
+            (
+                "isWorktime".to_string(),
+                Value::Bool(row.get("is_worktime")),
+            ),
+            (
+                "minutes".to_string(),
+                Value::String(record_minutes.to_string()),
+            ),
         ])));
         if accumulated >= minutes {
             break;
@@ -1705,7 +2287,11 @@ pub async fn worktime_forwardminutes_start_start_minutes_minutes(
     }
 
     let count = worktime_records.len() as i64;
-    Ok(Json(ActionResult::java_success(Value::Array(worktime_records), count, 0)))
+    Ok(Json(ActionResult::java_success(
+        Value::Array(worktime_records),
+        count,
+        0,
+    )))
 }
 
 #[allow(non_snake_case)]
@@ -1733,7 +2319,10 @@ pub async fn worktime_indefinedholiday_date(
             ]))))
         }
         None => {
-            let weekday = if date.len() == 10 && date.chars().nth(4) == Some('-') && date.chars().nth(7) == Some('-') {
+            let weekday = if date.len() == 10
+                && date.chars().nth(4) == Some('-')
+                && date.chars().nth(7) == Some('-')
+            {
                 let year = date[0..4].parse::<i32>().unwrap_or(2000);
                 let month = date[5..7].parse::<u32>().unwrap_or(1);
                 let day = date[8..10].parse::<u32>().unwrap_or(1);
@@ -1779,7 +2368,10 @@ pub async fn worktime_indefinedworkday_date(
             ]))))
         }
         None => {
-            let weekday = if date.len() == 10 && date.chars().nth(4) == Some('-') && date.chars().nth(7) == Some('-') {
+            let weekday = if date.len() == 10
+                && date.chars().nth(4) == Some('-')
+                && date.chars().nth(7) == Some('-')
+            {
                 let year = date[0..4].parse::<i32>().unwrap_or(2000);
                 let month = date[5..7].parse::<u32>().unwrap_or(1);
                 let day = date[8..10].parse::<u32>().unwrap_or(1);
@@ -1825,7 +2417,10 @@ pub async fn worktime_isholiday_date(
             ]))))
         }
         None => {
-            let weekday = if date.len() == 10 && date.chars().nth(4) == Some('-') && date.chars().nth(7) == Some('-') {
+            let weekday = if date.len() == 10
+                && date.chars().nth(4) == Some('-')
+                && date.chars().nth(7) == Some('-')
+            {
                 let year = date[0..4].parse::<i32>().unwrap_or(2000);
                 let month = date[5..7].parse::<u32>().unwrap_or(1);
                 let day = date[8..10].parse::<u32>().unwrap_or(1);
@@ -1870,7 +2465,10 @@ pub async fn worktime_isworkday_date(
             ]))))
         }
         None => {
-            let weekday = if date.len() == 10 && date.chars().nth(4) == Some('-') && date.chars().nth(7) == Some('-') {
+            let weekday = if date.len() == 10
+                && date.chars().nth(4) == Some('-')
+                && date.chars().nth(7) == Some('-')
+            {
                 let year = date[0..4].parse::<i32>().unwrap_or(2000);
                 let month = date[5..7].parse::<u32>().unwrap_or(1);
                 let day = date[8..10].parse::<u32>().unwrap_or(1);
@@ -1908,19 +2506,21 @@ pub async fn worktime_isworktime_date(
     match row {
         Some(row) => {
             let is_worktime: bool = row.get("is_worktime");
-            Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
-                ("date".to_string(), Value::String(row.get("date"))),
-                ("isWorktime".to_string(), Value::Bool(is_worktime)),
-                ("indefined".to_string(), Value::Bool(false)),
-            ])))))
+            Ok(Json(ActionResult::success(Value::Object(
+                serde_json::Map::from_iter([
+                    ("date".to_string(), Value::String(row.get("date"))),
+                    ("isWorktime".to_string(), Value::Bool(is_worktime)),
+                    ("indefined".to_string(), Value::Bool(false)),
+                ]),
+            ))))
         }
-        None => {
-            Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
+        None => Ok(Json(ActionResult::success(Value::Object(
+            serde_json::Map::from_iter([
                 ("date".to_string(), Value::String(date)),
                 ("isWorktime".to_string(), Value::Bool(false)),
                 ("indefined".to_string(), Value::Bool(true)),
-            ])))))
-        }
+            ]),
+        )))),
     }
 }
 
@@ -1937,11 +2537,17 @@ pub async fn worktime_minutesofworkday(
         )
         .await
         .map_err(|_| AppError::Internal)?;
-    let total: Option<i64> = row.get::<_, Option<String>>("total").and_then(|s| s.parse().ok()).or(Some(0));
+    let total: Option<i64> = row
+        .get::<_, Option<String>>("total")
+        .and_then(|s| s.parse().ok())
+        .or(Some(0));
 
-    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
-        ("minutes".to_string(), Value::Number(serde_json::Number::from(total.unwrap_or(0)))),
-    ])))))
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([(
+            "minutes".to_string(),
+            Value::Number(serde_json::Number::from(total.unwrap_or(0))),
+        )]),
+    ))))
 }
 
 #[allow(non_snake_case)]
@@ -1955,7 +2561,10 @@ pub async fn generalfile_create(
     let flag = req.get("flag").and_then(|v| v.as_str()).unwrap_or("");
     let content = req.get("content").and_then(|v| v.as_str()).unwrap_or("");
     let size = req.get("size").and_then(|v| v.as_i64()).unwrap_or(0);
-    let creator = req.get("creator").and_then(|v| v.as_str()).unwrap_or("system");
+    let creator = req
+        .get("creator")
+        .and_then(|v| v.as_str())
+        .unwrap_or("system");
     client
         .execute(
             "INSERT INTO x_general_assemble_general_file (id, name, flag, content, size, creator, create_time) VALUES ($1, $2, $3, $4, $5, $6, NOW())",
@@ -1979,7 +2588,10 @@ pub async fn qrcode_create(
     let height = req.get("height").and_then(|v| v.as_i64()).unwrap_or(200);
     let text = req.get("text").and_then(|v| v.as_str()).unwrap_or("");
     let content = req.get("content").and_then(|v| v.as_str()).unwrap_or("");
-    let creator = req.get("creator").and_then(|v| v.as_str()).unwrap_or("system");
+    let creator = req
+        .get("creator")
+        .and_then(|v| v.as_str())
+        .unwrap_or("system");
     client
         .execute(
             "INSERT INTO x_general_assemble_qrcode (id, width, height, text, content, creator, create_time) VALUES ($1, $2, $3, $4, $5, $6, NOW())",

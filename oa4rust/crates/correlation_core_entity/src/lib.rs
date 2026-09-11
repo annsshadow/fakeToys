@@ -4,7 +4,10 @@ use axum::{
     Router,
 };
 use deadpool_postgres::Pool;
-use sea_orm::{ActiveModelTrait, ColumnTrait, DatabaseConnection, EntityTrait, QueryFilter, QueryOrder, QuerySelect, Set};
+use sea_orm::{
+    ActiveModelTrait, ColumnTrait, DatabaseConnection, EntityTrait, QueryFilter, QueryOrder,
+    QuerySelect, Set,
+};
 use serde_json::Value;
 use shared::{error::AppError, response::ActionResult};
 
@@ -41,17 +44,30 @@ pub async fn list(
         .map(|m| {
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(m.id.clone())),
-                ("sourceType".to_string(), Value::String(m.source_type.clone())),
+                (
+                    "sourceType".to_string(),
+                    Value::String(m.source_type.clone()),
+                ),
                 ("sourceId".to_string(), Value::String(m.source_id.clone())),
-                ("targetType".to_string(), Value::String(m.target_type.clone())),
+                (
+                    "targetType".to_string(),
+                    Value::String(m.target_type.clone()),
+                ),
                 ("targetId".to_string(), Value::String(m.target_id.clone())),
-                ("weight".to_string(), Value::Number(serde_json::Number::from(m.weight))),
+                (
+                    "weight".to_string(),
+                    Value::Number(serde_json::Number::from(m.weight)),
+                ),
             ]))
         })
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
+    Ok(Json(ActionResult::java_success(
+        Value::Array(data),
+        count,
+        0,
+    )))
 }
 
 /// 按类型查询关联
@@ -62,7 +78,8 @@ pub async fn list_by_source(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let models = correlation::Entity::find()
         .filter(
-            correlation::Column::SourceType.eq(&source_type)
+            correlation::Column::SourceType
+                .eq(&source_type)
                 .and(correlation::Column::SourceId.eq(&source_id)),
         )
         .order_by_desc(correlation::Column::Weight)
@@ -76,11 +93,20 @@ pub async fn list_by_source(
         .map(|m| {
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(m.id.clone())),
-                ("sourceType".to_string(), Value::String(m.source_type.clone())),
+                (
+                    "sourceType".to_string(),
+                    Value::String(m.source_type.clone()),
+                ),
                 ("sourceId".to_string(), Value::String(m.source_id.clone())),
-                ("targetType".to_string(), Value::String(m.target_type.clone())),
+                (
+                    "targetType".to_string(),
+                    Value::String(m.target_type.clone()),
+                ),
                 ("targetId".to_string(), Value::String(m.target_id.clone())),
-                ("weight".to_string(), Value::Number(serde_json::Number::from(m.weight))),
+                (
+                    "weight".to_string(),
+                    Value::Number(serde_json::Number::from(m.weight)),
+                ),
             ]))
         })
         .collect();
@@ -102,10 +128,26 @@ pub async fn create(
     Json(payload): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let id = uuid::Uuid::new_v4().to_string();
-    let source_type = payload.get("sourceType").and_then(|v| v.as_str()).unwrap_or_default().to_string();
-    let source_id = payload.get("sourceId").and_then(|v| v.as_str()).unwrap_or_default().to_string();
-    let target_type = payload.get("targetType").and_then(|v| v.as_str()).unwrap_or_default().to_string();
-    let target_id = payload.get("targetId").and_then(|v| v.as_str()).unwrap_or_default().to_string();
+    let source_type = payload
+        .get("sourceType")
+        .and_then(|v| v.as_str())
+        .unwrap_or_default()
+        .to_string();
+    let source_id = payload
+        .get("sourceId")
+        .and_then(|v| v.as_str())
+        .unwrap_or_default()
+        .to_string();
+    let target_type = payload
+        .get("targetType")
+        .and_then(|v| v.as_str())
+        .unwrap_or_default()
+        .to_string();
+    let target_id = payload
+        .get("targetId")
+        .and_then(|v| v.as_str())
+        .unwrap_or_default()
+        .to_string();
     let weight = payload.get("weight").and_then(|v| v.as_i64()).unwrap_or(0) as i32;
 
     let active_model = correlation::ActiveModel {
@@ -124,14 +166,19 @@ pub async fn create(
         .await
         .map_err(|_| AppError::Internal)?;
 
-    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
-        ("id".to_string(), Value::String(id)),
-        ("sourceType".to_string(), Value::String(source_type)),
-        ("sourceId".to_string(), Value::String(source_id)),
-        ("targetType".to_string(), Value::String(target_type)),
-        ("targetId".to_string(), Value::String(target_id)),
-        ("weight".to_string(), Value::Number(serde_json::Number::from(weight))),
-    ])))))
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("id".to_string(), Value::String(id)),
+            ("sourceType".to_string(), Value::String(source_type)),
+            ("sourceId".to_string(), Value::String(source_id)),
+            ("targetType".to_string(), Value::String(target_type)),
+            ("targetId".to_string(), Value::String(target_id)),
+            (
+                "weight".to_string(),
+                Value::Number(serde_json::Number::from(weight)),
+            ),
+        ]),
+    ))))
 }
 
 pub async fn delete_by_id(
@@ -156,7 +203,9 @@ pub async fn delete_by_id(
                 deleted_at: Set(Some(chrono::Utc::now().naive_utc())),
             };
             active.update(&db.0).await.map_err(|_| AppError::Internal)?;
-            Ok(Json(ActionResult::success(serde_json::json!({"success": true}))))
+            Ok(Json(ActionResult::success(
+                serde_json::json!({"success": true}),
+            )))
         }
         None => Ok(Json(ActionResult::error("correlation not found"))),
     }
@@ -176,14 +225,16 @@ pub fn correlation_core_entity_router(_pool: Pool) -> Router {
             get(list_by_source),
         )
         .route("/jaxrs/correlation/core/entity/create", post(create))
-        .route("/jaxrs/correlation/core/entity/delete/{id}", delete(delete_by_id))
+        .route(
+            "/jaxrs/correlation/core/entity/delete/{id}",
+            delete(delete_by_id),
+        )
 }
 
 #[cfg(test)]
 mod tests;
 #[cfg(test)]
 mod tests_generated;
-
 
 pub fn router(pool: deadpool_postgres::Pool) -> axum::Router {
     crate::correlation_core_entity_router(pool)

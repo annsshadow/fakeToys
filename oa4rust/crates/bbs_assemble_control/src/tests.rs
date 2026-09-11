@@ -1,22 +1,20 @@
-use shared::response::ActionResult;
-use serde_json::json;
 use axum::body::Body;
-use axum::http::{Request, Method, StatusCode};
-use deadpool_postgres::{Manager, Pool};
+use axum::http::{Method, Request, StatusCode};
 use deadpool_postgres::tokio_postgres::{Config, NoTls};
+use deadpool_postgres::{Manager, Pool};
+use serde_json::json;
+use shared::response::ActionResult;
 use tower::util::ServiceExt;
 
 fn build_test_pool() -> Pool {
-    let mgr = Manager::new(
-        Config::new(),
-        NoTls,
-    );
+    let mgr = Manager::new(Config::new(), NoTls);
     Pool::builder(mgr).max_size(1).build().unwrap()
 }
 
 #[test]
 fn test_action_result_success_serialization() {
-    let result: ActionResult<serde_json::Value> = ActionResult::success(json!({"count": 2, "data": []}));
+    let result: ActionResult<serde_json::Value> =
+        ActionResult::success(json!({"count": 2, "data": []}));
     let json = serde_json::to_value(&result).unwrap();
     assert_eq!(json["type"], "success");
     assert!(json["data"].is_object());
@@ -103,7 +101,9 @@ async fn test_create_topic_route() {
     let pool = build_test_pool();
     let app = crate::routes::router(pool);
 
-    let body = serde_json::to_string(&json!({"forumId": "f1", "title": "Test", "content": "hello"})).unwrap();
+    let body =
+        serde_json::to_string(&json!({"forumId": "f1", "title": "Test", "content": "hello"}))
+            .unwrap();
 
     let response = app
         .oneshot(

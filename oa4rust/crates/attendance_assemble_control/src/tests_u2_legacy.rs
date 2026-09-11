@@ -36,10 +36,7 @@ mod u2_legacy_tests {
     async fn u2l_dingding_core_routes_reachable() {
         for (method, uri) in [
             ("DELETE", "/dingding/all"),
-            (
-                "GET",
-                "/dingding/sync/from/2026-08-01/to/2026-08-07/start",
-            ),
+            ("GET", "/dingding/sync/from/2026-08-01/to/2026-08-07/start"),
             ("GET", "/dingding/sync/list"),
             ("PUT", "/dingding/attendance/list/x/next/20"),
         ] {
@@ -56,7 +53,11 @@ mod u2_legacy_tests {
     #[tokio::test]
     async fn u2l_dingding_statistic_triggers_reachable() {
         assert_eq!(
-            status_of("GET", &format!("{}/dingding/statistic/person/year/2026/month/08", BASE)).await,
+            status_of(
+                "GET",
+                &format!("{}/dingding/statistic/person/year/2026/month/08", BASE)
+            )
+            .await,
             StatusCode::INTERNAL_SERVER_ERROR
         );
         assert_eq!(
@@ -175,11 +176,7 @@ mod u2_legacy_tests {
         // Java @Path("check/ from/out")：线上请求以 %20 编码传输（裸空格是非法 Uri 字符），
         // %20 形态注册必须可达；handler 因缺 Session 扩展返回 500 而非 404
         assert_eq!(
-            status_of(
-                "POST",
-                &format!("{}/v2/mobile/check/%20from/out", BASE)
-            )
-            .await,
+            status_of("POST", &format!("{}/v2/mobile/check/%20from/out", BASE)).await,
             StatusCode::INTERNAL_SERVER_ERROR
         );
     }
@@ -205,10 +202,7 @@ mod u2_legacy_tests {
             status_of("GET", &format!("{}/v2/my/version", BASE)).await,
             StatusCode::OK
         );
-        for (method, uri) in [
-            ("GET", "/v2/my/controls"),
-            ("POST", "/v2/my/detail/list"),
-        ] {
+        for (method, uri) in [("GET", "/v2/my/controls"), ("POST", "/v2/my/detail/list")] {
             assert_eq!(
                 status_of(method, &format!("{}{}", BASE, uri)).await,
                 StatusCode::INTERNAL_SERVER_ERROR,
@@ -283,13 +277,20 @@ mod u2_legacy_tests {
             StatusCode::UNSUPPORTED_MEDIA_TYPE
         );
         assert_eq!(
-            status_of("GET", &format!("{}/attendancedetail/mobile/mobilepreview", BASE)).await,
+            status_of(
+                "GET",
+                &format!("{}/attendancedetail/mobile/mobilepreview", BASE)
+            )
+            .await,
             StatusCode::UNSUPPORTED_MEDIA_TYPE
         );
         assert_eq!(
             status_of(
                 "PUT",
-                &format!("{}/attendancedetail/mobile/filter/list/page/1/count/20", BASE)
+                &format!(
+                    "{}/attendancedetail/mobile/filter/list/page/1/count/20",
+                    BASE
+                )
             )
             .await,
             StatusCode::INTERNAL_SERVER_ERROR

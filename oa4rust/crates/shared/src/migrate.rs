@@ -76,9 +76,7 @@ pub async fn run_migrations(pool: &Pool) -> anyhow::Result<MigrationReport> {
             execution_ms INTEGER NOT NULL DEFAULT 0\n\
         );",
     );
-    client
-        .batch_execute(&create_table_sql)
-        .await?;
+    client.batch_execute(&create_table_sql).await?;
 
     // 2) 收集正向迁移（排除 archive/ 子目录与 *_rollback.sql），按文件名排序
     let mut entries: Vec<(String, String)> = Vec::new(); // (filename, sql)
@@ -127,7 +125,9 @@ pub async fn run_migrations(pool: &Pool) -> anyhow::Result<MigrationReport> {
             // (the migration SQL was already applied; the file was modified post-deploy).
             tracing::warn!(
                 "migration {} checksum changed ({} -> {}); updating stored checksum",
-                name, existing, checksum
+                name,
+                existing,
+                checksum
             );
             client
                 .execute(

@@ -4,10 +4,7 @@ use deadpool_postgres::Pool;
 use serde_json::Value;
 use shared::response::{option_to_json, row_opt_json, ActionResult};
 
-pub async fn get(
-    pool: Extension<Pool>,
-    Path(flag): Path<String>,
-) -> Json<ActionResult<Value>> {
+pub async fn get(pool: Extension<Pool>, Path(flag): Path<String>) -> Json<ActionResult<Value>> {
     let client = match pool.get().await {
         Ok(c) => c,
         Err(_) => return Json(ActionResult::error("database connection error")),
@@ -54,8 +51,14 @@ pub async fn list(
         Err(_) => return Json(ActionResult::error("database connection error")),
     };
 
-    let page = params.get("page").and_then(|p| p.parse::<i64>().ok()).unwrap_or(1);
-    let size = params.get("size").and_then(|s| s.parse::<i64>().ok()).unwrap_or(20);
+    let page = params
+        .get("page")
+        .and_then(|p| p.parse::<i64>().ok())
+        .unwrap_or(1);
+    let size = params
+        .get("size")
+        .and_then(|s| s.parse::<i64>().ok())
+        .unwrap_or(20);
     let offset = (page - 1) * size;
 
     let count_result = client

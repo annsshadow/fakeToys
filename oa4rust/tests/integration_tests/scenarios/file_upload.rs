@@ -21,9 +21,10 @@ pub async fn file_upload_flow() {
         .expect("test database not initialized; call init_test_database() first")
         .clone();
 
-    let (_addr, server_handle, token) = crate::integration_tests::helpers::setup_test_server(pool.clone())
-        .await
-        .expect("failed to start test server");
+    let (_addr, server_handle, token) =
+        crate::integration_tests::helpers::setup_test_server(pool.clone())
+            .await
+            .expect("failed to start test server");
 
     let client = Client::builder()
         .timeout(Duration::from_secs(10))
@@ -136,7 +137,10 @@ pub async fn file_upload_flow() {
         download_resp.text().await.unwrap_or_default()
     );
 
-    let download_body: serde_json::Value = download_resp.json().await.expect("invalid download response");
+    let download_body: serde_json::Value = download_resp
+        .json()
+        .await
+        .expect("invalid download response");
     assert_eq!(download_body["data"]["id"].as_str(), Some(file_id.as_str()));
     assert_eq!(
         download_body["data"]["name"].as_str(),

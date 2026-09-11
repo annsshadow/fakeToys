@@ -3,7 +3,7 @@ mod tests {
     #![allow(non_snake_case)]
     use axum::body::Body;
     use axum::http::{Request, StatusCode};
-    
+
     use tower::util::ServiceExt;
 
     #[tokio::test]
@@ -24,7 +24,9 @@ mod tests {
             // Route-presence probe: an unregistered path hits the axum fallback
             // (empty 404 body); a matched handler may legitimately answer 404
             // (e.g. NotFound for missing row) but always with a JSON envelope.
-            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX).await.unwrap_or_default();
+            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX)
+                .await
+                .unwrap_or_default();
             assert!(!bytes.is_empty(),
                 "organization_assemble_control_role_list_flag_next_count route should be registered");
         }
@@ -48,9 +50,13 @@ mod tests {
             // Route-presence probe: an unregistered path hits the axum fallback
             // (empty 404 body); a matched handler may legitimately answer 404
             // (e.g. NotFound for missing row) but always with a JSON envelope.
-            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX).await.unwrap_or_default();
-            assert!(!bytes.is_empty(),
-                "organization_assemble_control_role_flag route should be registered");
+            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX)
+                .await
+                .unwrap_or_default();
+            assert!(
+                !bytes.is_empty(),
+                "organization_assemble_control_role_flag route should be registered"
+            );
         }
     }
 
@@ -72,7 +78,9 @@ mod tests {
             // Route-presence probe: an unregistered path hits the axum fallback
             // (empty 404 body); a matched handler may legitimately answer 404
             // (e.g. NotFound for missing row) but always with a JSON envelope.
-            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX).await.unwrap_or_default();
+            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX)
+                .await
+                .unwrap_or_default();
             assert!(!bytes.is_empty(),
                 "organization_assemble_control_unit_list_flag_next_count route should be registered");
         }
@@ -96,9 +104,13 @@ mod tests {
             // Route-presence probe: an unregistered path hits the axum fallback
             // (empty 404 body); a matched handler may legitimately answer 404
             // (e.g. NotFound for missing row) but always with a JSON envelope.
-            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX).await.unwrap_or_default();
-            assert!(!bytes.is_empty(),
-                "organization_assemble_control_unit_flag route should be registered");
+            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX)
+                .await
+                .unwrap_or_default();
+            assert!(
+                !bytes.is_empty(),
+                "organization_assemble_control_unit_flag route should be registered"
+            );
         }
     }
 
@@ -120,7 +132,9 @@ mod tests {
             // Route-presence probe: an unregistered path hits the axum fallback
             // (empty 404 body); a matched handler may legitimately answer 404
             // (e.g. NotFound for missing row) but always with a JSON envelope.
-            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX).await.unwrap_or_default();
+            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX)
+                .await
+                .unwrap_or_default();
             assert!(!bytes.is_empty(),
                 "organization_assemble_control_unit_list_flag_sub_nested route should be registered");
         }
@@ -144,7 +158,9 @@ mod tests {
             // Route-presence probe: an unregistered path hits the axum fallback
             // (empty 404 body); a matched handler may legitimately answer 404
             // (e.g. NotFound for missing row) but always with a JSON envelope.
-            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX).await.unwrap_or_default();
+            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX)
+                .await
+                .unwrap_or_default();
             assert!(!bytes.is_empty(),
                 "organization_assemble_control_unit_list_flag_sup_nested route should be registered");
         }
@@ -168,7 +184,9 @@ mod tests {
             // Route-presence probe: an unregistered path hits the axum fallback
             // (empty 404 body); a matched handler may legitimately answer 404
             // (e.g. NotFound for missing row) but always with a JSON envelope.
-            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX).await.unwrap_or_default();
+            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX)
+                .await
+                .unwrap_or_default();
             assert!(!bytes.is_empty(),
                 "organization_assemble_control_unit_list_flag_sup_nested_type_type route should be registered");
         }
@@ -192,9 +210,13 @@ mod tests {
             // Route-presence probe: an unregistered path hits the axum fallback
             // (empty 404 body); a matched handler may legitimately answer 404
             // (e.g. NotFound for missing row) but always with a JSON envelope.
-            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX).await.unwrap_or_default();
-            assert!(!bytes.is_empty(),
-                "organization_assemble_control_person_list_like route should be registered");
+            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX)
+                .await
+                .unwrap_or_default();
+            assert!(
+                !bytes.is_empty(),
+                "organization_assemble_control_person_list_like route should be registered"
+            );
         }
     }
 
@@ -216,9 +238,13 @@ mod tests {
             // Route-presence probe: an unregistered path hits the axum fallback
             // (empty 404 body); a matched handler may legitimately answer 404
             // (e.g. NotFound for missing row) but always with a JSON envelope.
-            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX).await.unwrap_or_default();
-            assert!(!bytes.is_empty(),
-                "export_export_all route should be registered");
+            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX)
+                .await
+                .unwrap_or_default();
+            assert!(
+                !bytes.is_empty(),
+                "export_export_all route should be registered"
+            );
         }
     }
 
@@ -240,9 +266,13 @@ mod tests {
             // Route-presence probe: an unregistered path hits the axum fallback
             // (empty 404 body); a matched handler may legitimately answer 404
             // (e.g. NotFound for missing row) but always with a JSON envelope.
-            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX).await.unwrap_or_default();
-            assert!(!bytes.is_empty(),
-                "export_result_flag_flag route should be registered");
+            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX)
+                .await
+                .unwrap_or_default();
+            assert!(
+                !bytes.is_empty(),
+                "export_result_flag_flag route should be registered"
+            );
         }
     }
 
@@ -264,9 +294,13 @@ mod tests {
             // Route-presence probe: an unregistered path hits the axum fallback
             // (empty 404 body); a matched handler may legitimately answer 404
             // (e.g. NotFound for missing row) but always with a JSON envelope.
-            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX).await.unwrap_or_default();
-            assert!(!bytes.is_empty(),
-                "export_zhengwudingding_person route should be registered");
+            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX)
+                .await
+                .unwrap_or_default();
+            assert!(
+                !bytes.is_empty(),
+                "export_zhengwudingding_person route should be registered"
+            );
         }
     }
 
@@ -288,9 +322,13 @@ mod tests {
             // Route-presence probe: an unregistered path hits the axum fallback
             // (empty 404 body); a matched handler may legitimately answer 404
             // (e.g. NotFound for missing row) but always with a JSON envelope.
-            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX).await.unwrap_or_default();
-            assert!(!bytes.is_empty(),
-                "group_list_like_mockputtopost route should be registered");
+            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX)
+                .await
+                .unwrap_or_default();
+            assert!(
+                !bytes.is_empty(),
+                "group_list_like_mockputtopost route should be registered"
+            );
         }
     }
 
@@ -312,9 +350,13 @@ mod tests {
             // Route-presence probe: an unregistered path hits the axum fallback
             // (empty 404 body); a matched handler may legitimately answer 404
             // (e.g. NotFound for missing row) but always with a JSON envelope.
-            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX).await.unwrap_or_default();
-            assert!(!bytes.is_empty(),
-                "group_list_like_pinyin route should be registered");
+            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX)
+                .await
+                .unwrap_or_default();
+            assert!(
+                !bytes.is_empty(),
+                "group_list_like_pinyin route should be registered"
+            );
         }
     }
 
@@ -325,7 +367,9 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/organization/assemble/control/group/list/like/pinyin/mockputtopost")
+                    .uri(
+                        "/jaxrs/organization/assemble/control/group/list/like/pinyin/mockputtopost",
+                    )
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -336,9 +380,13 @@ mod tests {
             // Route-presence probe: an unregistered path hits the axum fallback
             // (empty 404 body); a matched handler may legitimately answer 404
             // (e.g. NotFound for missing row) but always with a JSON envelope.
-            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX).await.unwrap_or_default();
-            assert!(!bytes.is_empty(),
-                "group_list_like_pinyin_mockputtopost route should be registered");
+            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX)
+                .await
+                .unwrap_or_default();
+            assert!(
+                !bytes.is_empty(),
+                "group_list_like_pinyin_mockputtopost route should be registered"
+            );
         }
     }
 
@@ -360,9 +408,13 @@ mod tests {
             // Route-presence probe: an unregistered path hits the axum fallback
             // (empty 404 body); a matched handler may legitimately answer 404
             // (e.g. NotFound for missing row) but always with a JSON envelope.
-            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX).await.unwrap_or_default();
-            assert!(!bytes.is_empty(),
-                "group_list_pinyininitial route should be registered");
+            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX)
+                .await
+                .unwrap_or_default();
+            assert!(
+                !bytes.is_empty(),
+                "group_list_pinyininitial route should be registered"
+            );
         }
     }
 
@@ -384,9 +436,13 @@ mod tests {
             // Route-presence probe: an unregistered path hits the axum fallback
             // (empty 404 body); a matched handler may legitimately answer 404
             // (e.g. NotFound for missing row) but always with a JSON envelope.
-            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX).await.unwrap_or_default();
-            assert!(!bytes.is_empty(),
-                "group_list_pinyininitial_mockputtopost route should be registered");
+            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX)
+                .await
+                .unwrap_or_default();
+            assert!(
+                !bytes.is_empty(),
+                "group_list_pinyininitial_mockputtopost route should be registered"
+            );
         }
     }
 
@@ -408,9 +464,13 @@ mod tests {
             // Route-presence probe: an unregistered path hits the axum fallback
             // (empty 404 body); a matched handler may legitimately answer 404
             // (e.g. NotFound for missing row) but always with a JSON envelope.
-            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX).await.unwrap_or_default();
-            assert!(!bytes.is_empty(),
-                "group_list_flag_sub_direct route should be registered");
+            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX)
+                .await
+                .unwrap_or_default();
+            assert!(
+                !bytes.is_empty(),
+                "group_list_flag_sub_direct route should be registered"
+            );
         }
     }
 
@@ -432,9 +492,13 @@ mod tests {
             // Route-presence probe: an unregistered path hits the axum fallback
             // (empty 404 body); a matched handler may legitimately answer 404
             // (e.g. NotFound for missing row) but always with a JSON envelope.
-            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX).await.unwrap_or_default();
-            assert!(!bytes.is_empty(),
-                "group_list_flag_sub_nested route should be registered");
+            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX)
+                .await
+                .unwrap_or_default();
+            assert!(
+                !bytes.is_empty(),
+                "group_list_flag_sub_nested route should be registered"
+            );
         }
     }
 
@@ -456,9 +520,13 @@ mod tests {
             // Route-presence probe: an unregistered path hits the axum fallback
             // (empty 404 body); a matched handler may legitimately answer 404
             // (e.g. NotFound for missing row) but always with a JSON envelope.
-            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX).await.unwrap_or_default();
-            assert!(!bytes.is_empty(),
-                "group_list_flag_sup_direct route should be registered");
+            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX)
+                .await
+                .unwrap_or_default();
+            assert!(
+                !bytes.is_empty(),
+                "group_list_flag_sup_direct route should be registered"
+            );
         }
     }
 
@@ -480,9 +548,13 @@ mod tests {
             // Route-presence probe: an unregistered path hits the axum fallback
             // (empty 404 body); a matched handler may legitimately answer 404
             // (e.g. NotFound for missing row) but always with a JSON envelope.
-            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX).await.unwrap_or_default();
-            assert!(!bytes.is_empty(),
-                "group_list_flag_sup_nested route should be registered");
+            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX)
+                .await
+                .unwrap_or_default();
+            assert!(
+                !bytes.is_empty(),
+                "group_list_flag_sup_nested route should be registered"
+            );
         }
     }
 
@@ -504,9 +576,10 @@ mod tests {
             // Route-presence probe: an unregistered path hits the axum fallback
             // (empty 404 body); a matched handler may legitimately answer 404
             // (e.g. NotFound for missing row) but always with a JSON envelope.
-            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX).await.unwrap_or_default();
-            assert!(!bytes.is_empty(),
-                "group_flag route should be registered");
+            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX)
+                .await
+                .unwrap_or_default();
+            assert!(!bytes.is_empty(), "group_flag route should be registered");
         }
     }
 
@@ -528,9 +601,13 @@ mod tests {
             // Route-presence probe: an unregistered path hits the axum fallback
             // (empty 404 body); a matched handler may legitimately answer 404
             // (e.g. NotFound for missing row) but always with a JSON envelope.
-            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX).await.unwrap_or_default();
-            assert!(!bytes.is_empty(),
-                "group_flag_add_member route should be registered");
+            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX)
+                .await
+                .unwrap_or_default();
+            assert!(
+                !bytes.is_empty(),
+                "group_flag_add_member route should be registered"
+            );
         }
     }
 
@@ -552,9 +629,13 @@ mod tests {
             // Route-presence probe: an unregistered path hits the axum fallback
             // (empty 404 body); a matched handler may legitimately answer 404
             // (e.g. NotFound for missing row) but always with a JSON envelope.
-            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX).await.unwrap_or_default();
-            assert!(!bytes.is_empty(),
-                "group_flag_add_member_mockputtopost route should be registered");
+            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX)
+                .await
+                .unwrap_or_default();
+            assert!(
+                !bytes.is_empty(),
+                "group_flag_add_member_mockputtopost route should be registered"
+            );
         }
     }
 
@@ -576,9 +657,13 @@ mod tests {
             // Route-presence probe: an unregistered path hits the axum fallback
             // (empty 404 body); a matched handler may legitimately answer 404
             // (e.g. NotFound for missing row) but always with a JSON envelope.
-            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX).await.unwrap_or_default();
-            assert!(!bytes.is_empty(),
-                "group_flag_delete_member route should be registered");
+            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX)
+                .await
+                .unwrap_or_default();
+            assert!(
+                !bytes.is_empty(),
+                "group_flag_delete_member route should be registered"
+            );
         }
     }
 
@@ -600,9 +685,13 @@ mod tests {
             // Route-presence probe: an unregistered path hits the axum fallback
             // (empty 404 body); a matched handler may legitimately answer 404
             // (e.g. NotFound for missing row) but always with a JSON envelope.
-            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX).await.unwrap_or_default();
-            assert!(!bytes.is_empty(),
-                "group_flag_delete_member_mockputtopost route should be registered");
+            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX)
+                .await
+                .unwrap_or_default();
+            assert!(
+                !bytes.is_empty(),
+                "group_flag_delete_member_mockputtopost route should be registered"
+            );
         }
     }
 
@@ -624,9 +713,13 @@ mod tests {
             // Route-presence probe: an unregistered path hits the axum fallback
             // (empty 404 body); a matched handler may legitimately answer 404
             // (e.g. NotFound for missing row) but always with a JSON envelope.
-            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX).await.unwrap_or_default();
-            assert!(!bytes.is_empty(),
-                "group_flag_mockdeletetoget route should be registered");
+            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX)
+                .await
+                .unwrap_or_default();
+            assert!(
+                !bytes.is_empty(),
+                "group_flag_mockdeletetoget route should be registered"
+            );
         }
     }
 
@@ -648,9 +741,13 @@ mod tests {
             // Route-presence probe: an unregistered path hits the axum fallback
             // (empty 404 body); a matched handler may legitimately answer 404
             // (e.g. NotFound for missing row) but always with a JSON envelope.
-            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX).await.unwrap_or_default();
-            assert!(!bytes.is_empty(),
-                "group_flag_mockputtopost route should be registered");
+            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX)
+                .await
+                .unwrap_or_default();
+            assert!(
+                !bytes.is_empty(),
+                "group_flag_mockputtopost route should be registered"
+            );
         }
     }
 
@@ -672,9 +769,10 @@ mod tests {
             // Route-presence probe: an unregistered path hits the axum fallback
             // (empty 404 body); a matched handler may legitimately answer 404
             // (e.g. NotFound for missing row) but always with a JSON envelope.
-            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX).await.unwrap_or_default();
-            assert!(!bytes.is_empty(),
-                "identity_id route should be registered");
+            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX)
+                .await
+                .unwrap_or_default();
+            assert!(!bytes.is_empty(), "identity_id route should be registered");
         }
     }
 
@@ -696,9 +794,13 @@ mod tests {
             // Route-presence probe: an unregistered path hits the axum fallback
             // (empty 404 body); a matched handler may legitimately answer 404
             // (e.g. NotFound for missing row) but always with a JSON envelope.
-            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX).await.unwrap_or_default();
-            assert!(!bytes.is_empty(),
-                "identity_list_like_mockputtopost route should be registered");
+            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX)
+                .await
+                .unwrap_or_default();
+            assert!(
+                !bytes.is_empty(),
+                "identity_list_like_mockputtopost route should be registered"
+            );
         }
     }
 
@@ -720,9 +822,13 @@ mod tests {
             // Route-presence probe: an unregistered path hits the axum fallback
             // (empty 404 body); a matched handler may legitimately answer 404
             // (e.g. NotFound for missing row) but always with a JSON envelope.
-            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX).await.unwrap_or_default();
-            assert!(!bytes.is_empty(),
-                "identity_list_like_pinyin route should be registered");
+            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX)
+                .await
+                .unwrap_or_default();
+            assert!(
+                !bytes.is_empty(),
+                "identity_list_like_pinyin route should be registered"
+            );
         }
     }
 
@@ -744,9 +850,13 @@ mod tests {
             // Route-presence probe: an unregistered path hits the axum fallback
             // (empty 404 body); a matched handler may legitimately answer 404
             // (e.g. NotFound for missing row) but always with a JSON envelope.
-            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX).await.unwrap_or_default();
-            assert!(!bytes.is_empty(),
-                "identity_list_like_pinyin_mockputtopost route should be registered");
+            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX)
+                .await
+                .unwrap_or_default();
+            assert!(
+                !bytes.is_empty(),
+                "identity_list_like_pinyin_mockputtopost route should be registered"
+            );
         }
     }
 
@@ -768,9 +878,13 @@ mod tests {
             // Route-presence probe: an unregistered path hits the axum fallback
             // (empty 404 body); a matched handler may legitimately answer 404
             // (e.g. NotFound for missing row) but always with a JSON envelope.
-            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX).await.unwrap_or_default();
-            assert!(!bytes.is_empty(),
-                "identity_list_pinyininitial route should be registered");
+            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX)
+                .await
+                .unwrap_or_default();
+            assert!(
+                !bytes.is_empty(),
+                "identity_list_pinyininitial route should be registered"
+            );
         }
     }
 
@@ -792,9 +906,13 @@ mod tests {
             // Route-presence probe: an unregistered path hits the axum fallback
             // (empty 404 body); a matched handler may legitimately answer 404
             // (e.g. NotFound for missing row) but always with a JSON envelope.
-            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX).await.unwrap_or_default();
-            assert!(!bytes.is_empty(),
-                "identity_list_pinyininitial_mockputtopost route should be registered");
+            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX)
+                .await
+                .unwrap_or_default();
+            assert!(
+                !bytes.is_empty(),
+                "identity_list_pinyininitial_mockputtopost route should be registered"
+            );
         }
     }
 
@@ -816,9 +934,13 @@ mod tests {
             // Route-presence probe: an unregistered path hits the axum fallback
             // (empty 404 body); a matched handler may legitimately answer 404
             // (e.g. NotFound for missing row) but always with a JSON envelope.
-            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX).await.unwrap_or_default();
-            assert!(!bytes.is_empty(),
-                "identity_flag route should be registered");
+            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX)
+                .await
+                .unwrap_or_default();
+            assert!(
+                !bytes.is_empty(),
+                "identity_flag route should be registered"
+            );
         }
     }
 
@@ -840,9 +962,13 @@ mod tests {
             // Route-presence probe: an unregistered path hits the axum fallback
             // (empty 404 body); a matched handler may legitimately answer 404
             // (e.g. NotFound for missing row) but always with a JSON envelope.
-            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX).await.unwrap_or_default();
-            assert!(!bytes.is_empty(),
-                "identity_flag_mockdeletetoget route should be registered");
+            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX)
+                .await
+                .unwrap_or_default();
+            assert!(
+                !bytes.is_empty(),
+                "identity_flag_mockdeletetoget route should be registered"
+            );
         }
     }
 
@@ -864,9 +990,13 @@ mod tests {
             // Route-presence probe: an unregistered path hits the axum fallback
             // (empty 404 body); a matched handler may legitimately answer 404
             // (e.g. NotFound for missing row) but always with a JSON envelope.
-            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX).await.unwrap_or_default();
-            assert!(!bytes.is_empty(),
-                "identity_flag_mockputtopost route should be registered");
+            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX)
+                .await
+                .unwrap_or_default();
+            assert!(
+                !bytes.is_empty(),
+                "identity_flag_mockputtopost route should be registered"
+            );
         }
     }
 
@@ -888,9 +1018,13 @@ mod tests {
             // Route-presence probe: an unregistered path hits the axum fallback
             // (empty 404 body); a matched handler may legitimately answer 404
             // (e.g. NotFound for missing row) but always with a JSON envelope.
-            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX).await.unwrap_or_default();
-            assert!(!bytes.is_empty(),
-                "inputperson_template route should be registered");
+            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX)
+                .await
+                .unwrap_or_default();
+            assert!(
+                !bytes.is_empty(),
+                "inputperson_template route should be registered"
+            );
         }
     }
 
@@ -912,9 +1046,13 @@ mod tests {
             // Route-presence probe: an unregistered path hits the axum fallback
             // (empty 404 body); a matched handler may legitimately answer 404
             // (e.g. NotFound for missing row) but always with a JSON envelope.
-            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX).await.unwrap_or_default();
-            assert!(!bytes.is_empty(),
-                "inputperson_wipe route should be registered");
+            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX)
+                .await
+                .unwrap_or_default();
+            assert!(
+                !bytes.is_empty(),
+                "inputperson_wipe route should be registered"
+            );
         }
     }
 
@@ -936,9 +1074,13 @@ mod tests {
             // Route-presence probe: an unregistered path hits the axum fallback
             // (empty 404 body); a matched handler may legitimately answer 404
             // (e.g. NotFound for missing row) but always with a JSON envelope.
-            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX).await.unwrap_or_default();
-            assert!(!bytes.is_empty(),
-                "permissionsetting_list route should be registered");
+            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX)
+                .await
+                .unwrap_or_default();
+            assert!(
+                !bytes.is_empty(),
+                "permissionsetting_list route should be registered"
+            );
         }
     }
 
@@ -960,9 +1102,13 @@ mod tests {
             // Route-presence probe: an unregistered path hits the axum fallback
             // (empty 404 body); a matched handler may legitimately answer 404
             // (e.g. NotFound for missing row) but always with a JSON envelope.
-            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX).await.unwrap_or_default();
-            assert!(!bytes.is_empty(),
-                "permissionsetting_flag route should be registered");
+            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX)
+                .await
+                .unwrap_or_default();
+            assert!(
+                !bytes.is_empty(),
+                "permissionsetting_flag route should be registered"
+            );
         }
     }
 
@@ -984,9 +1130,13 @@ mod tests {
             // Route-presence probe: an unregistered path hits the axum fallback
             // (empty 404 body); a matched handler may legitimately answer 404
             // (e.g. NotFound for missing row) but always with a JSON envelope.
-            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX).await.unwrap_or_default();
-            assert!(!bytes.is_empty(),
-                "permissionsetting_flag_mockdeletetoget route should be registered");
+            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX)
+                .await
+                .unwrap_or_default();
+            assert!(
+                !bytes.is_empty(),
+                "permissionsetting_flag_mockdeletetoget route should be registered"
+            );
         }
     }
 
@@ -1008,9 +1158,13 @@ mod tests {
             // Route-presence probe: an unregistered path hits the axum fallback
             // (empty 404 body); a matched handler may legitimately answer 404
             // (e.g. NotFound for missing row) but always with a JSON envelope.
-            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX).await.unwrap_or_default();
-            assert!(!bytes.is_empty(),
-                "permissionsetting_flag_mockputtopost route should be registered");
+            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX)
+                .await
+                .unwrap_or_default();
+            assert!(
+                !bytes.is_empty(),
+                "permissionsetting_flag_mockputtopost route should be registered"
+            );
         }
     }
 
@@ -1032,9 +1186,13 @@ mod tests {
             // Route-presence probe: an unregistered path hits the axum fallback
             // (empty 404 body); a matched handler may legitimately answer 404
             // (e.g. NotFound for missing row) but always with a JSON envelope.
-            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX).await.unwrap_or_default();
-            assert!(!bytes.is_empty(),
-                "personattribute_flag route should be registered");
+            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX)
+                .await
+                .unwrap_or_default();
+            assert!(
+                !bytes.is_empty(),
+                "personattribute_flag route should be registered"
+            );
         }
     }
 
@@ -1056,9 +1214,13 @@ mod tests {
             // Route-presence probe: an unregistered path hits the axum fallback
             // (empty 404 body); a matched handler may legitimately answer 404
             // (e.g. NotFound for missing row) but always with a JSON envelope.
-            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX).await.unwrap_or_default();
-            assert!(!bytes.is_empty(),
-                "personattribute_flag_mockdeletetoget route should be registered");
+            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX)
+                .await
+                .unwrap_or_default();
+            assert!(
+                !bytes.is_empty(),
+                "personattribute_flag_mockdeletetoget route should be registered"
+            );
         }
     }
 
@@ -1080,9 +1242,13 @@ mod tests {
             // Route-presence probe: an unregistered path hits the axum fallback
             // (empty 404 body); a matched handler may legitimately answer 404
             // (e.g. NotFound for missing row) but always with a JSON envelope.
-            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX).await.unwrap_or_default();
-            assert!(!bytes.is_empty(),
-                "personattribute_flag_mockputtopost route should be registered");
+            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX)
+                .await
+                .unwrap_or_default();
+            assert!(
+                !bytes.is_empty(),
+                "personattribute_flag_mockputtopost route should be registered"
+            );
         }
     }
 
@@ -1104,9 +1270,13 @@ mod tests {
             // Route-presence probe: an unregistered path hits the axum fallback
             // (empty 404 body); a matched handler may legitimately answer 404
             // (e.g. NotFound for missing row) but always with a JSON envelope.
-            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX).await.unwrap_or_default();
-            assert!(!bytes.is_empty(),
-                "personcard_listgrouptypes route should be registered");
+            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX)
+                .await
+                .unwrap_or_default();
+            assert!(
+                !bytes.is_empty(),
+                "personcard_listgrouptypes route should be registered"
+            );
         }
     }
 
@@ -1128,7 +1298,9 @@ mod tests {
             // Route-presence probe: an unregistered path hits the axum fallback
             // (empty 404 body); a matched handler may legitimately answer 404
             // (e.g. NotFound for missing row) but always with a JSON envelope.
-            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX).await.unwrap_or_default();
+            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX)
+                .await
+                .unwrap_or_default();
             assert!(!bytes.is_empty(),
                 "personcard_listpaging_page_page_size_size_mockputtopost route should be registered");
         }
@@ -1152,7 +1324,9 @@ mod tests {
             // Route-presence probe: an unregistered path hits the axum fallback
             // (empty 404 body); a matched handler may legitimately answer 404
             // (e.g. NotFound for missing row) but always with a JSON envelope.
-            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX).await.unwrap_or_default();
+            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX)
+                .await
+                .unwrap_or_default();
             assert!(!bytes.is_empty(),
                 "personcard_listpagingwithgroup_page_page_size_size_mockputtopost route should be registered");
         }
@@ -1176,9 +1350,13 @@ mod tests {
             // Route-presence probe: an unregistered path hits the axum fallback
             // (empty 404 body); a matched handler may legitimately answer 404
             // (e.g. NotFound for missing row) but always with a JSON envelope.
-            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX).await.unwrap_or_default();
-            assert!(!bytes.is_empty(),
-                "personcard_mylist route should be registered");
+            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX)
+                .await
+                .unwrap_or_default();
+            assert!(
+                !bytes.is_empty(),
+                "personcard_mylist route should be registered"
+            );
         }
     }
 
@@ -1200,9 +1378,13 @@ mod tests {
             // Route-presence probe: an unregistered path hits the axum fallback
             // (empty 404 body); a matched handler may legitimately answer 404
             // (e.g. NotFound for missing row) but always with a JSON envelope.
-            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX).await.unwrap_or_default();
-            assert!(!bytes.is_empty(),
-                "personcard_flag route should be registered");
+            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX)
+                .await
+                .unwrap_or_default();
+            assert!(
+                !bytes.is_empty(),
+                "personcard_flag route should be registered"
+            );
         }
     }
 
@@ -1224,9 +1406,13 @@ mod tests {
             // Route-presence probe: an unregistered path hits the axum fallback
             // (empty 404 body); a matched handler may legitimately answer 404
             // (e.g. NotFound for missing row) but always with a JSON envelope.
-            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX).await.unwrap_or_default();
-            assert!(!bytes.is_empty(),
-                "personcard_flag_mockdeletetoget route should be registered");
+            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX)
+                .await
+                .unwrap_or_default();
+            assert!(
+                !bytes.is_empty(),
+                "personcard_flag_mockdeletetoget route should be registered"
+            );
         }
     }
 
@@ -1248,9 +1434,13 @@ mod tests {
             // Route-presence probe: an unregistered path hits the axum fallback
             // (empty 404 body); a matched handler may legitimately answer 404
             // (e.g. NotFound for missing row) but always with a JSON envelope.
-            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX).await.unwrap_or_default();
-            assert!(!bytes.is_empty(),
-                "role_list_like_mockputtopost route should be registered");
+            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX)
+                .await
+                .unwrap_or_default();
+            assert!(
+                !bytes.is_empty(),
+                "role_list_like_mockputtopost route should be registered"
+            );
         }
     }
 
@@ -1272,9 +1462,13 @@ mod tests {
             // Route-presence probe: an unregistered path hits the axum fallback
             // (empty 404 body); a matched handler may legitimately answer 404
             // (e.g. NotFound for missing row) but always with a JSON envelope.
-            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX).await.unwrap_or_default();
-            assert!(!bytes.is_empty(),
-                "role_list_like_pinyin route should be registered");
+            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX)
+                .await
+                .unwrap_or_default();
+            assert!(
+                !bytes.is_empty(),
+                "role_list_like_pinyin route should be registered"
+            );
         }
     }
 
@@ -1296,9 +1490,13 @@ mod tests {
             // Route-presence probe: an unregistered path hits the axum fallback
             // (empty 404 body); a matched handler may legitimately answer 404
             // (e.g. NotFound for missing row) but always with a JSON envelope.
-            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX).await.unwrap_or_default();
-            assert!(!bytes.is_empty(),
-                "role_list_like_pinyin_mockputtopost route should be registered");
+            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX)
+                .await
+                .unwrap_or_default();
+            assert!(
+                !bytes.is_empty(),
+                "role_list_like_pinyin_mockputtopost route should be registered"
+            );
         }
     }
 
@@ -1320,9 +1518,13 @@ mod tests {
             // Route-presence probe: an unregistered path hits the axum fallback
             // (empty 404 body); a matched handler may legitimately answer 404
             // (e.g. NotFound for missing row) but always with a JSON envelope.
-            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX).await.unwrap_or_default();
-            assert!(!bytes.is_empty(),
-                "role_list_pinyininitial route should be registered");
+            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX)
+                .await
+                .unwrap_or_default();
+            assert!(
+                !bytes.is_empty(),
+                "role_list_pinyininitial route should be registered"
+            );
         }
     }
 
@@ -1344,9 +1546,13 @@ mod tests {
             // Route-presence probe: an unregistered path hits the axum fallback
             // (empty 404 body); a matched handler may legitimately answer 404
             // (e.g. NotFound for missing row) but always with a JSON envelope.
-            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX).await.unwrap_or_default();
-            assert!(!bytes.is_empty(),
-                "role_list_pinyininitial_mockputtopost route should be registered");
+            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX)
+                .await
+                .unwrap_or_default();
+            assert!(
+                !bytes.is_empty(),
+                "role_list_pinyininitial_mockputtopost route should be registered"
+            );
         }
     }
 
@@ -1368,9 +1574,13 @@ mod tests {
             // Route-presence probe: an unregistered path hits the axum fallback
             // (empty 404 body); a matched handler may legitimately answer 404
             // (e.g. NotFound for missing row) but always with a JSON envelope.
-            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX).await.unwrap_or_default();
-            assert!(!bytes.is_empty(),
-                "role_flag_mockdeletetoget route should be registered");
+            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX)
+                .await
+                .unwrap_or_default();
+            assert!(
+                !bytes.is_empty(),
+                "role_flag_mockdeletetoget route should be registered"
+            );
         }
     }
 
@@ -1392,9 +1602,13 @@ mod tests {
             // Route-presence probe: an unregistered path hits the axum fallback
             // (empty 404 body); a matched handler may legitimately answer 404
             // (e.g. NotFound for missing row) but always with a JSON envelope.
-            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX).await.unwrap_or_default();
-            assert!(!bytes.is_empty(),
-                "role_flag_mockputtopost route should be registered");
+            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX)
+                .await
+                .unwrap_or_default();
+            assert!(
+                !bytes.is_empty(),
+                "role_flag_mockputtopost route should be registered"
+            );
         }
     }
 
@@ -1416,9 +1630,13 @@ mod tests {
             // Route-presence probe: an unregistered path hits the axum fallback
             // (empty 404 body); a matched handler may legitimately answer 404
             // (e.g. NotFound for missing row) but always with a JSON envelope.
-            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX).await.unwrap_or_default();
-            assert!(!bytes.is_empty(),
-                "unitattribute_flag route should be registered");
+            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX)
+                .await
+                .unwrap_or_default();
+            assert!(
+                !bytes.is_empty(),
+                "unitattribute_flag route should be registered"
+            );
         }
     }
 
@@ -1440,9 +1658,13 @@ mod tests {
             // Route-presence probe: an unregistered path hits the axum fallback
             // (empty 404 body); a matched handler may legitimately answer 404
             // (e.g. NotFound for missing row) but always with a JSON envelope.
-            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX).await.unwrap_or_default();
-            assert!(!bytes.is_empty(),
-                "unitattribute_flag_mockdeletetoget route should be registered");
+            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX)
+                .await
+                .unwrap_or_default();
+            assert!(
+                !bytes.is_empty(),
+                "unitattribute_flag_mockdeletetoget route should be registered"
+            );
         }
     }
 
@@ -1464,9 +1686,13 @@ mod tests {
             // Route-presence probe: an unregistered path hits the axum fallback
             // (empty 404 body); a matched handler may legitimately answer 404
             // (e.g. NotFound for missing row) but always with a JSON envelope.
-            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX).await.unwrap_or_default();
-            assert!(!bytes.is_empty(),
-                "unitattribute_flag_mockputtopost route should be registered");
+            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX)
+                .await
+                .unwrap_or_default();
+            assert!(
+                !bytes.is_empty(),
+                "unitattribute_flag_mockputtopost route should be registered"
+            );
         }
     }
 
@@ -1488,9 +1714,13 @@ mod tests {
             // Route-presence probe: an unregistered path hits the axum fallback
             // (empty 404 body); a matched handler may legitimately answer 404
             // (e.g. NotFound for missing row) but always with a JSON envelope.
-            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX).await.unwrap_or_default();
-            assert!(!bytes.is_empty(),
-                "unitduty_distinct_name route should be registered");
+            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX)
+                .await
+                .unwrap_or_default();
+            assert!(
+                !bytes.is_empty(),
+                "unitduty_distinct_name route should be registered"
+            );
         }
     }
 
@@ -1512,9 +1742,13 @@ mod tests {
             // Route-presence probe: an unregistered path hits the axum fallback
             // (empty 404 body); a matched handler may legitimately answer 404
             // (e.g. NotFound for missing row) but always with a JSON envelope.
-            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX).await.unwrap_or_default();
-            assert!(!bytes.is_empty(),
-                "unitduty_flag_mockputtopost route should be registered");
+            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX)
+                .await
+                .unwrap_or_default();
+            assert!(
+                !bytes.is_empty(),
+                "unitduty_flag_mockputtopost route should be registered"
+            );
         }
     }
 
@@ -1536,9 +1770,13 @@ mod tests {
             // Route-presence probe: an unregistered path hits the axum fallback
             // (empty 404 body); a matched handler may legitimately answer 404
             // (e.g. NotFound for missing row) but always with a JSON envelope.
-            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX).await.unwrap_or_default();
-            assert!(!bytes.is_empty(),
-                "unitduty_flag_mockdeletetoget route should be registered");
+            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX)
+                .await
+                .unwrap_or_default();
+            assert!(
+                !bytes.is_empty(),
+                "unitduty_flag_mockdeletetoget route should be registered"
+            );
         }
     }
 
@@ -1560,9 +1798,13 @@ mod tests {
             // Route-presence probe: an unregistered path hits the axum fallback
             // (empty 404 body); a matched handler may legitimately answer 404
             // (e.g. NotFound for missing row) but always with a JSON envelope.
-            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX).await.unwrap_or_default();
-            assert!(!bytes.is_empty(),
-                "unitduty_flag route should be registered");
+            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX)
+                .await
+                .unwrap_or_default();
+            assert!(
+                !bytes.is_empty(),
+                "unitduty_flag route should be registered"
+            );
         }
     }
 
@@ -1584,9 +1826,13 @@ mod tests {
             // Route-presence probe: an unregistered path hits the axum fallback
             // (empty 404 body); a matched handler may legitimately answer 404
             // (e.g. NotFound for missing row) but always with a JSON envelope.
-            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX).await.unwrap_or_default();
-            assert!(!bytes.is_empty(),
-                "unitduty_update_member route should be registered");
+            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX)
+                .await
+                .unwrap_or_default();
+            assert!(
+                !bytes.is_empty(),
+                "unitduty_update_member route should be registered"
+            );
         }
     }
 
@@ -1608,9 +1854,13 @@ mod tests {
             // Route-presence probe: an unregistered path hits the axum fallback
             // (empty 404 body); a matched handler may legitimately answer 404
             // (e.g. NotFound for missing row) but always with a JSON envelope.
-            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX).await.unwrap_or_default();
-            assert!(!bytes.is_empty(),
-                "unitduty_list_flag_prev_count route should be registered");
+            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX)
+                .await
+                .unwrap_or_default();
+            assert!(
+                !bytes.is_empty(),
+                "unitduty_list_flag_prev_count route should be registered"
+            );
         }
     }
 
@@ -1632,9 +1882,13 @@ mod tests {
             // Route-presence probe: an unregistered path hits the axum fallback
             // (empty 404 body); a matched handler may legitimately answer 404
             // (e.g. NotFound for missing row) but always with a JSON envelope.
-            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX).await.unwrap_or_default();
-            assert!(!bytes.is_empty(),
-                "unitduty_list_flag_next_count route should be registered");
+            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX)
+                .await
+                .unwrap_or_default();
+            assert!(
+                !bytes.is_empty(),
+                "unitduty_list_flag_next_count route should be registered"
+            );
         }
     }
 
@@ -1656,9 +1910,13 @@ mod tests {
             // Route-presence probe: an unregistered path hits the axum fallback
             // (empty 404 body); a matched handler may legitimately answer 404
             // (e.g. NotFound for missing row) but always with a JSON envelope.
-            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX).await.unwrap_or_default();
-            assert!(!bytes.is_empty(),
-                "unitduty_list_unit_unitFlag route should be registered");
+            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX)
+                .await
+                .unwrap_or_default();
+            assert!(
+                !bytes.is_empty(),
+                "unitduty_list_unit_unitFlag route should be registered"
+            );
         }
     }
 
@@ -1680,9 +1938,13 @@ mod tests {
             // Route-presence probe: an unregistered path hits the axum fallback
             // (empty 404 body); a matched handler may legitimately answer 404
             // (e.g. NotFound for missing row) but always with a JSON envelope.
-            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX).await.unwrap_or_default();
-            assert!(!bytes.is_empty(),
-                "unitduty_list_name_name route should be registered");
+            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX)
+                .await
+                .unwrap_or_default();
+            assert!(
+                !bytes.is_empty(),
+                "unitduty_list_name_name route should be registered"
+            );
         }
     }
 
@@ -1704,9 +1966,13 @@ mod tests {
             // Route-presence probe: an unregistered path hits the axum fallback
             // (empty 404 body); a matched handler may legitimately answer 404
             // (e.g. NotFound for missing row) but always with a JSON envelope.
-            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX).await.unwrap_or_default();
-            assert!(!bytes.is_empty(),
-                "unitduty_list_like route should be registered");
+            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX)
+                .await
+                .unwrap_or_default();
+            assert!(
+                !bytes.is_empty(),
+                "unitduty_list_like route should be registered"
+            );
         }
     }
 
@@ -1728,9 +1994,13 @@ mod tests {
             // Route-presence probe: an unregistered path hits the axum fallback
             // (empty 404 body); a matched handler may legitimately answer 404
             // (e.g. NotFound for missing row) but always with a JSON envelope.
-            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX).await.unwrap_or_default();
-            assert!(!bytes.is_empty(),
-                "unitduty_list_identity_identityFlag route should be registered");
+            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX)
+                .await
+                .unwrap_or_default();
+            assert!(
+                !bytes.is_empty(),
+                "unitduty_list_identity_identityFlag route should be registered"
+            );
         }
     }
 
@@ -1752,9 +2022,13 @@ mod tests {
             // Route-presence probe: an unregistered path hits the axum fallback
             // (empty 404 body); a matched handler may legitimately answer 404
             // (e.g. NotFound for missing row) but always with a JSON envelope.
-            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX).await.unwrap_or_default();
-            assert!(!bytes.is_empty(),
-                "unitduty_distinct_name_like_key route should be registered");
+            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX)
+                .await
+                .unwrap_or_default();
+            assert!(
+                !bytes.is_empty(),
+                "unitduty_distinct_name_like_key route should be registered"
+            );
         }
     }
 
@@ -1776,9 +2050,13 @@ mod tests {
             // Route-presence probe: an unregistered path hits the axum fallback
             // (empty 404 body); a matched handler may legitimately answer 404
             // (e.g. NotFound for missing row) but always with a JSON envelope.
-            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX).await.unwrap_or_default();
-            assert!(!bytes.is_empty(),
-                "unitattribute_list_flag_prev_count route should be registered");
+            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX)
+                .await
+                .unwrap_or_default();
+            assert!(
+                !bytes.is_empty(),
+                "unitattribute_list_flag_prev_count route should be registered"
+            );
         }
     }
 
@@ -1800,9 +2078,13 @@ mod tests {
             // Route-presence probe: an unregistered path hits the axum fallback
             // (empty 404 body); a matched handler may legitimately answer 404
             // (e.g. NotFound for missing row) but always with a JSON envelope.
-            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX).await.unwrap_or_default();
-            assert!(!bytes.is_empty(),
-                "unitattribute_list_flag_next_count route should be registered");
+            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX)
+                .await
+                .unwrap_or_default();
+            assert!(
+                !bytes.is_empty(),
+                "unitattribute_list_flag_next_count route should be registered"
+            );
         }
     }
 
@@ -1824,9 +2106,13 @@ mod tests {
             // Route-presence probe: an unregistered path hits the axum fallback
             // (empty 404 body); a matched handler may legitimately answer 404
             // (e.g. NotFound for missing row) but always with a JSON envelope.
-            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX).await.unwrap_or_default();
-            assert!(!bytes.is_empty(),
-                "unitattribute_list_unit_flag route should be registered");
+            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX)
+                .await
+                .unwrap_or_default();
+            assert!(
+                !bytes.is_empty(),
+                "unitattribute_list_unit_flag route should be registered"
+            );
         }
     }
 
@@ -1848,9 +2134,13 @@ mod tests {
             // Route-presence probe: an unregistered path hits the axum fallback
             // (empty 404 body); a matched handler may legitimately answer 404
             // (e.g. NotFound for missing row) but always with a JSON envelope.
-            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX).await.unwrap_or_default();
-            assert!(!bytes.is_empty(),
-                "role_list_flag_prev_count route should be registered");
+            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX)
+                .await
+                .unwrap_or_default();
+            assert!(
+                !bytes.is_empty(),
+                "role_list_flag_prev_count route should be registered"
+            );
         }
     }
 
@@ -1872,9 +2162,13 @@ mod tests {
             // Route-presence probe: an unregistered path hits the axum fallback
             // (empty 404 body); a matched handler may legitimately answer 404
             // (e.g. NotFound for missing row) but always with a JSON envelope.
-            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX).await.unwrap_or_default();
-            assert!(!bytes.is_empty(),
-                "role_list_person_personFlag route should be registered");
+            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX)
+                .await
+                .unwrap_or_default();
+            assert!(
+                !bytes.is_empty(),
+                "role_list_person_personFlag route should be registered"
+            );
         }
     }
 
@@ -1896,9 +2190,13 @@ mod tests {
             // Route-presence probe: an unregistered path hits the axum fallback
             // (empty 404 body); a matched handler may legitimately answer 404
             // (e.g. NotFound for missing row) but always with a JSON envelope.
-            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX).await.unwrap_or_default();
-            assert!(!bytes.is_empty(),
-                "role_list_like route should be registered");
+            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX)
+                .await
+                .unwrap_or_default();
+            assert!(
+                !bytes.is_empty(),
+                "role_list_like route should be registered"
+            );
         }
     }
 
@@ -1920,9 +2218,13 @@ mod tests {
             // Route-presence probe: an unregistered path hits the axum fallback
             // (empty 404 body); a matched handler may legitimately answer 404
             // (e.g. NotFound for missing row) but always with a JSON envelope.
-            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX).await.unwrap_or_default();
-            assert!(!bytes.is_empty(),
-                "role_list_group_groupFlag route should be registered");
+            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX)
+                .await
+                .unwrap_or_default();
+            assert!(
+                !bytes.is_empty(),
+                "role_list_group_groupFlag route should be registered"
+            );
         }
     }
 
@@ -1944,9 +2246,13 @@ mod tests {
             // Route-presence probe: an unregistered path hits the axum fallback
             // (empty 404 body); a matched handler may legitimately answer 404
             // (e.g. NotFound for missing row) but always with a JSON envelope.
-            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX).await.unwrap_or_default();
-            assert!(!bytes.is_empty(),
-                "personcard_listpagingwithgroup_page_page_size_size route should be registered");
+            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX)
+                .await
+                .unwrap_or_default();
+            assert!(
+                !bytes.is_empty(),
+                "personcard_listpagingwithgroup_page_page_size_size route should be registered"
+            );
         }
     }
 
@@ -1968,9 +2274,13 @@ mod tests {
             // Route-presence probe: an unregistered path hits the axum fallback
             // (empty 404 body); a matched handler may legitimately answer 404
             // (e.g. NotFound for missing row) but always with a JSON envelope.
-            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX).await.unwrap_or_default();
-            assert!(!bytes.is_empty(),
-                "personcard_listpaging_page_page_size_size route should be registered");
+            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX)
+                .await
+                .unwrap_or_default();
+            assert!(
+                !bytes.is_empty(),
+                "personcard_listpaging_page_page_size_size route should be registered"
+            );
         }
     }
 
@@ -1992,9 +2302,13 @@ mod tests {
             // Route-presence probe: an unregistered path hits the axum fallback
             // (empty 404 body); a matched handler may legitimately answer 404
             // (e.g. NotFound for missing row) but always with a JSON envelope.
-            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX).await.unwrap_or_default();
-            assert!(!bytes.is_empty(),
-                "personcard_listVCf_idList route should be registered");
+            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX)
+                .await
+                .unwrap_or_default();
+            assert!(
+                !bytes.is_empty(),
+                "personcard_listVCf_idList route should be registered"
+            );
         }
     }
 
@@ -2016,9 +2330,13 @@ mod tests {
             // Route-presence probe: an unregistered path hits the axum fallback
             // (empty 404 body); a matched handler may legitimately answer 404
             // (e.g. NotFound for missing row) but always with a JSON envelope.
-            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX).await.unwrap_or_default();
-            assert!(!bytes.is_empty(),
-                "personcard_listPersonalVCf_idList route should be registered");
+            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX)
+                .await
+                .unwrap_or_default();
+            assert!(
+                !bytes.is_empty(),
+                "personcard_listPersonalVCf_idList route should be registered"
+            );
         }
     }
 
@@ -2040,9 +2358,13 @@ mod tests {
             // Route-presence probe: an unregistered path hits the axum fallback
             // (empty 404 body); a matched handler may legitimately answer 404
             // (e.g. NotFound for missing row) but always with a JSON envelope.
-            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX).await.unwrap_or_default();
-            assert!(!bytes.is_empty(),
-                "personcard_createQR_cardId route should be registered");
+            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX)
+                .await
+                .unwrap_or_default();
+            assert!(
+                !bytes.is_empty(),
+                "personcard_createQR_cardId route should be registered"
+            );
         }
     }
 
@@ -2064,9 +2386,13 @@ mod tests {
             // Route-presence probe: an unregistered path hits the axum fallback
             // (empty 404 body); a matched handler may legitimately answer 404
             // (e.g. NotFound for missing row) but always with a JSON envelope.
-            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX).await.unwrap_or_default();
-            assert!(!bytes.is_empty(),
-                "personcard_createCode_cardId route should be registered");
+            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX)
+                .await
+                .unwrap_or_default();
+            assert!(
+                !bytes.is_empty(),
+                "personcard_createCode_cardId route should be registered"
+            );
         }
     }
 
@@ -2088,9 +2414,13 @@ mod tests {
             // Route-presence probe: an unregistered path hits the axum fallback
             // (empty 404 body); a matched handler may legitimately answer 404
             // (e.g. NotFound for missing row) but always with a JSON envelope.
-            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX).await.unwrap_or_default();
-            assert!(!bytes.is_empty(),
-                "personattribute_list_flag_prev_count route should be registered");
+            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX)
+                .await
+                .unwrap_or_default();
+            assert!(
+                !bytes.is_empty(),
+                "personattribute_list_flag_prev_count route should be registered"
+            );
         }
     }
 
@@ -2112,9 +2442,13 @@ mod tests {
             // Route-presence probe: an unregistered path hits the axum fallback
             // (empty 404 body); a matched handler may legitimately answer 404
             // (e.g. NotFound for missing row) but always with a JSON envelope.
-            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX).await.unwrap_or_default();
-            assert!(!bytes.is_empty(),
-                "personattribute_list_flag_next_count route should be registered");
+            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX)
+                .await
+                .unwrap_or_default();
+            assert!(
+                !bytes.is_empty(),
+                "personattribute_list_flag_next_count route should be registered"
+            );
         }
     }
 
@@ -2136,9 +2470,13 @@ mod tests {
             // Route-presence probe: an unregistered path hits the axum fallback
             // (empty 404 body); a matched handler may legitimately answer 404
             // (e.g. NotFound for missing row) but always with a JSON envelope.
-            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX).await.unwrap_or_default();
-            assert!(!bytes.is_empty(),
-                "personattribute_list_person_personFlag route should be registered");
+            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX)
+                .await
+                .unwrap_or_default();
+            assert!(
+                !bytes.is_empty(),
+                "personattribute_list_person_personFlag route should be registered"
+            );
         }
     }
 
@@ -2160,9 +2498,13 @@ mod tests {
             // Route-presence probe: an unregistered path hits the axum fallback
             // (empty 404 body); a matched handler may legitimately answer 404
             // (e.g. NotFound for missing row) but always with a JSON envelope.
-            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX).await.unwrap_or_default();
-            assert!(!bytes.is_empty(),
-                "loginrecord_stream route should be registered");
+            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX)
+                .await
+                .unwrap_or_default();
+            assert!(
+                !bytes.is_empty(),
+                "loginrecord_stream route should be registered"
+            );
         }
     }
 
@@ -2184,9 +2526,13 @@ mod tests {
             // Route-presence probe: an unregistered path hits the axum fallback
             // (empty 404 body); a matched handler may legitimately answer 404
             // (e.g. NotFound for missing row) but always with a JSON envelope.
-            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX).await.unwrap_or_default();
-            assert!(!bytes.is_empty(),
-                "inputperson_result_flag_flag route should be registered");
+            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX)
+                .await
+                .unwrap_or_default();
+            assert!(
+                !bytes.is_empty(),
+                "inputperson_result_flag_flag route should be registered"
+            );
         }
     }
 
@@ -2208,9 +2554,13 @@ mod tests {
             // Route-presence probe: an unregistered path hits the axum fallback
             // (empty 404 body); a matched handler may legitimately answer 404
             // (e.g. NotFound for missing row) but always with a JSON envelope.
-            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX).await.unwrap_or_default();
-            assert!(!bytes.is_empty(),
-                "identity_flag_order_before_followFlag route should be registered");
+            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX)
+                .await
+                .unwrap_or_default();
+            assert!(
+                !bytes.is_empty(),
+                "identity_flag_order_before_followFlag route should be registered"
+            );
         }
     }
 
@@ -2232,9 +2582,13 @@ mod tests {
             // Route-presence probe: an unregistered path hits the axum fallback
             // (empty 404 body); a matched handler may legitimately answer 404
             // (e.g. NotFound for missing row) but always with a JSON envelope.
-            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX).await.unwrap_or_default();
-            assert!(!bytes.is_empty(),
-                "identity_list_flag_unitduty_name_unitDutyName route should be registered");
+            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX)
+                .await
+                .unwrap_or_default();
+            assert!(
+                !bytes.is_empty(),
+                "identity_list_flag_unitduty_name_unitDutyName route should be registered"
+            );
         }
     }
 
@@ -2256,9 +2610,13 @@ mod tests {
             // Route-presence probe: an unregistered path hits the axum fallback
             // (empty 404 body); a matched handler may legitimately answer 404
             // (e.g. NotFound for missing row) but always with a JSON envelope.
-            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX).await.unwrap_or_default();
-            assert!(!bytes.is_empty(),
-                "identity_list_flag_prev_count route should be registered");
+            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX)
+                .await
+                .unwrap_or_default();
+            assert!(
+                !bytes.is_empty(),
+                "identity_list_flag_prev_count route should be registered"
+            );
         }
     }
 
@@ -2280,9 +2638,13 @@ mod tests {
             // Route-presence probe: an unregistered path hits the axum fallback
             // (empty 404 body); a matched handler may legitimately answer 404
             // (e.g. NotFound for missing row) but always with a JSON envelope.
-            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX).await.unwrap_or_default();
-            assert!(!bytes.is_empty(),
-                "identity_list_flag_next_count route should be registered");
+            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX)
+                .await
+                .unwrap_or_default();
+            assert!(
+                !bytes.is_empty(),
+                "identity_list_flag_next_count route should be registered"
+            );
         }
     }
 
@@ -2304,9 +2666,13 @@ mod tests {
             // Route-presence probe: an unregistered path hits the axum fallback
             // (empty 404 body); a matched handler may legitimately answer 404
             // (e.g. NotFound for missing row) but always with a JSON envelope.
-            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX).await.unwrap_or_default();
-            assert!(!bytes.is_empty(),
-                "identity_list_unitduty_name_unitDutyName route should be registered");
+            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX)
+                .await
+                .unwrap_or_default();
+            assert!(
+                !bytes.is_empty(),
+                "identity_list_unitduty_name_unitDutyName route should be registered"
+            );
         }
     }
 
@@ -2328,9 +2694,13 @@ mod tests {
             // Route-presence probe: an unregistered path hits the axum fallback
             // (empty 404 body); a matched handler may legitimately answer 404
             // (e.g. NotFound for missing row) but always with a JSON envelope.
-            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX).await.unwrap_or_default();
-            assert!(!bytes.is_empty(),
-                "identity_list_unit_unitFlag route should be registered");
+            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX)
+                .await
+                .unwrap_or_default();
+            assert!(
+                !bytes.is_empty(),
+                "identity_list_unit_unitFlag route should be registered"
+            );
         }
     }
 
@@ -2352,9 +2722,13 @@ mod tests {
             // Route-presence probe: an unregistered path hits the axum fallback
             // (empty 404 body); a matched handler may legitimately answer 404
             // (e.g. NotFound for missing row) but always with a JSON envelope.
-            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX).await.unwrap_or_default();
-            assert!(!bytes.is_empty(),
-                "identity_list_person_personFlag route should be registered");
+            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX)
+                .await
+                .unwrap_or_default();
+            assert!(
+                !bytes.is_empty(),
+                "identity_list_person_personFlag route should be registered"
+            );
         }
     }
 
@@ -2376,9 +2750,13 @@ mod tests {
             // Route-presence probe: an unregistered path hits the axum fallback
             // (empty 404 body); a matched handler may legitimately answer 404
             // (e.g. NotFound for missing row) but always with a JSON envelope.
-            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX).await.unwrap_or_default();
-            assert!(!bytes.is_empty(),
-                "identity_list_like route should be registered");
+            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX)
+                .await
+                .unwrap_or_default();
+            assert!(
+                !bytes.is_empty(),
+                "identity_list_like route should be registered"
+            );
         }
     }
 
@@ -2400,9 +2778,13 @@ mod tests {
             // Route-presence probe: an unregistered path hits the axum fallback
             // (empty 404 body); a matched handler may legitimately answer 404
             // (e.g. NotFound for missing row) but always with a JSON envelope.
-            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX).await.unwrap_or_default();
-            assert!(!bytes.is_empty(),
-                "group_list_flag_prev_count route should be registered");
+            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX)
+                .await
+                .unwrap_or_default();
+            assert!(
+                !bytes.is_empty(),
+                "group_list_flag_prev_count route should be registered"
+            );
         }
     }
 
@@ -2424,9 +2806,13 @@ mod tests {
             // Route-presence probe: an unregistered path hits the axum fallback
             // (empty 404 body); a matched handler may legitimately answer 404
             // (e.g. NotFound for missing row) but always with a JSON envelope.
-            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX).await.unwrap_or_default();
-            assert!(!bytes.is_empty(),
-                "group_list_flag_next_count route should be registered");
+            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX)
+                .await
+                .unwrap_or_default();
+            assert!(
+                !bytes.is_empty(),
+                "group_list_flag_next_count route should be registered"
+            );
         }
     }
 
@@ -2448,9 +2834,13 @@ mod tests {
             // Route-presence probe: an unregistered path hits the axum fallback
             // (empty 404 body); a matched handler may legitimately answer 404
             // (e.g. NotFound for missing row) but always with a JSON envelope.
-            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX).await.unwrap_or_default();
-            assert!(!bytes.is_empty(),
-                "group_list_role_roleFlag route should be registered");
+            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX)
+                .await
+                .unwrap_or_default();
+            assert!(
+                !bytes.is_empty(),
+                "group_list_role_roleFlag route should be registered"
+            );
         }
     }
 
@@ -2461,7 +2851,9 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/organization/assemble/control/group/list/person/test-id/sup/nested")
+                    .uri(
+                        "/jaxrs/organization/assemble/control/group/list/person/test-id/sup/nested",
+                    )
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -2472,9 +2864,13 @@ mod tests {
             // Route-presence probe: an unregistered path hits the axum fallback
             // (empty 404 body); a matched handler may legitimately answer 404
             // (e.g. NotFound for missing row) but always with a JSON envelope.
-            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX).await.unwrap_or_default();
-            assert!(!bytes.is_empty(),
-                "group_list_person_personFlag_sup_nested route should be registered");
+            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX)
+                .await
+                .unwrap_or_default();
+            assert!(
+                !bytes.is_empty(),
+                "group_list_person_personFlag_sup_nested route should be registered"
+            );
         }
     }
 
@@ -2485,7 +2881,9 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/organization/assemble/control/group/list/person/test-id/sup/direct")
+                    .uri(
+                        "/jaxrs/organization/assemble/control/group/list/person/test-id/sup/direct",
+                    )
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -2496,9 +2894,13 @@ mod tests {
             // Route-presence probe: an unregistered path hits the axum fallback
             // (empty 404 body); a matched handler may legitimately answer 404
             // (e.g. NotFound for missing row) but always with a JSON envelope.
-            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX).await.unwrap_or_default();
-            assert!(!bytes.is_empty(),
-                "group_list_person_personFlag_sup_direct route should be registered");
+            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX)
+                .await
+                .unwrap_or_default();
+            assert!(
+                !bytes.is_empty(),
+                "group_list_person_personFlag_sup_direct route should be registered"
+            );
         }
     }
 

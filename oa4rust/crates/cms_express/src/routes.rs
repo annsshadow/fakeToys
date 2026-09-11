@@ -1,11 +1,15 @@
-use crate::{template_form_list, uuid_random, view_list_all, entities::cms_view};
-use axum::{extract::{Extension, Json, Path}, routing::{get, post}, Router};
+use crate::{entities::cms_view, template_form_list, uuid_random, view_list_all};
+use axum::{
+    extract::{Extension, Json, Path},
+    routing::{get, post},
+    Router,
+};
 use deadpool_postgres::Pool;
 use sea_orm::{ActiveModelTrait, DatabaseConnection, EntityTrait, Set};
 use serde_json::Value;
-use shared::{error::AppError, response::ActionResult};
-use shared::session::Session;
 use shared::middleware::rbac::is_admin;
+use shared::session::Session;
+use shared::{error::AppError, response::ActionResult};
 
 /// 检查发布权限（仅 admin 角色）
 async fn check_cms_publish(pool: &Pool, session: &Session) -> Result<(), AppError> {
@@ -38,11 +42,13 @@ pub async fn view_publish(
                 deleted_at: Set(None),
             };
             active.update(&db.0).await.map_err(|_| AppError::Internal)?;
-            Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(m.xid)),
-                ("name".to_string(), Value::String(m.xname)),
-                ("appId".to_string(), Value::String(m.xapp_id)),
-            ])))))
+            Ok(Json(ActionResult::success(Value::Object(
+                serde_json::Map::from_iter([
+                    ("id".to_string(), Value::String(m.xid)),
+                    ("name".to_string(), Value::String(m.xname)),
+                    ("appId".to_string(), Value::String(m.xapp_id)),
+                ]),
+            ))))
         }
         None => Ok(Json(ActionResult::error("cms view not found"))),
     }
@@ -71,11 +77,13 @@ pub async fn view_unpublish(
                 deleted_at: Set(Some(chrono::Utc::now().naive_utc())),
             };
             active.update(&db.0).await.map_err(|_| AppError::Internal)?;
-            Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(m.xid)),
-                ("name".to_string(), Value::String(m.xname)),
-                ("appId".to_string(), Value::String(m.xapp_id)),
-            ])))))
+            Ok(Json(ActionResult::success(Value::Object(
+                serde_json::Map::from_iter([
+                    ("id".to_string(), Value::String(m.xid)),
+                    ("name".to_string(), Value::String(m.xname)),
+                    ("appId".to_string(), Value::String(m.xapp_id)),
+                ]),
+            ))))
         }
         None => Ok(Json(ActionResult::error("cms view not found"))),
     }

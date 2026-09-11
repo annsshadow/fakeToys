@@ -3,15 +3,18 @@ use std::sync::Arc;
 use std::time::Duration;
 
 use axum::{
-    Router,
-    extract::{State, ws::{CloseFrame, Message, WebSocket, WebSocketUpgrade}},
+    extract::{
+        ws::{CloseFrame, Message, WebSocket, WebSocketUpgrade},
+        State,
+    },
     response::Response,
     routing::get,
+    Router,
 };
 use futures_util::{SinkExt, StreamExt};
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
-use tokio::sync::{Mutex, broadcast};
+use tokio::sync::{broadcast, Mutex};
 use tracing::{info, warn};
 use uuid::Uuid;
 
@@ -35,7 +38,12 @@ pub struct RealtimeMessage {
 }
 
 impl RealtimeMessage {
-    pub fn new(room: impl Into<String>, sender: impl Into<String>, content: impl Into<String>, msg_type: impl Into<String>) -> Self {
+    pub fn new(
+        room: impl Into<String>,
+        sender: impl Into<String>,
+        content: impl Into<String>,
+        msg_type: impl Into<String>,
+    ) -> Self {
         Self {
             room: room.into(),
             sender: sender.into(),
@@ -117,7 +125,12 @@ impl RealtimeManager {
     }
 }
 
-async fn handle_connection(socket: WebSocket, manager: Arc<RealtimeManager>, conn_id: Uuid, room_id: String) {
+async fn handle_connection(
+    socket: WebSocket,
+    manager: Arc<RealtimeManager>,
+    conn_id: Uuid,
+    room_id: String,
+) {
     let (mut ws_sender, mut ws_receiver) = socket.split();
     let mut rx = manager.join(&room_id, conn_id).await;
 
@@ -192,7 +205,10 @@ async fn handle_connection(socket: WebSocket, manager: Arc<RealtimeManager>, con
     }
 
     let _ = ws_sender
-        .send(Message::Close(Some(CloseFrame { code: axum::extract::ws::close_code::NORMAL, reason: "bye".into() })))
+        .send(Message::Close(Some(CloseFrame {
+            code: axum::extract::ws::close_code::NORMAL,
+            reason: "bye".into(),
+        })))
         .await;
     manager.leave(&room_id, conn_id).await;
     info!(conn_id = %conn_id, room = %room_id, "ws closed");
@@ -303,10 +319,10 @@ mod tests {
         let manager = Arc::new(RealtimeManager::new());
         let conn_id = Uuid::new_v4();
         let mut rx = manager.join("room1", conn_id).await;
-        
+
         let msg = RealtimeMessage::new("room1", "user1", "hello", "text");
         manager.broadcast("room1", msg.clone()).await;
-        
+
         let received = rx.try_recv().unwrap();
         assert_eq!(received.content, "hello");
         assert_eq!(received.sender, "user1");

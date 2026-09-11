@@ -53,14 +53,16 @@ async fn identities_of_persons_full(
     }
     let sql = "SELECT DISTINCT i.id, i.name, i.unit_id, i.person_id FROM x_org_identity i \
          JOIN x_org_person p ON p.id = i.person_id AND p.deleted_at IS NULL \
-         WHERE i.deleted_at IS NULL AND (p.id = ANY($1) OR p.name = ANY($1)) ORDER BY i.id".to_string();
+         WHERE i.deleted_at IS NULL AND (p.id = ANY($1) OR p.name = ANY($1)) ORDER BY i.id"
+        .to_string();
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let sql_final = if objects {
         sql
     } else {
         "SELECT DISTINCT i.id FROM x_org_identity i \
              JOIN x_org_person p ON p.id = i.person_id AND p.deleted_at IS NULL \
-             WHERE i.deleted_at IS NULL AND (p.id = ANY($1) OR p.name = ANY($1)) ORDER BY i.id".to_string()
+             WHERE i.deleted_at IS NULL AND (p.id = ANY($1) OR p.name = ANY($1)) ORDER BY i.id"
+            .to_string()
     };
     let rows = client
         .query(&sql_final, &[&flags])
@@ -148,7 +150,10 @@ async fn identities_in_groups(
     }
     let sql = if objects { SQL_OBJ } else { SQL_IDS };
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
-    let rows = client.query(sql, &[&flags]).await.map_err(|_| AppError::Internal)?;
+    let rows = client
+        .query(sql, &[&flags])
+        .await
+        .map_err(|_| AppError::Internal)?;
     finish_identity_rows(rows, objects)
 }
 
@@ -188,7 +193,10 @@ async fn major_identities_of_persons(
              WHERE i.deleted_at IS NULL AND i.major AND (p.id = ANY($1) OR p.name = ANY($1)) ORDER BY i.id".to_string()
     };
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
-    let rows = client.query(&sql, &[&flags]).await.map_err(|_| AppError::Internal)?;
+    let rows = client
+        .query(&sql, &[&flags])
+        .await
+        .map_err(|_| AppError::Internal)?;
     finish_identity_rows(rows, objects)
 }
 
@@ -221,7 +229,8 @@ pub async fn identity_list_unit_sub_direct_object(
     pool: Extension<Pool>,
     Json(body): Json<Value>,
 ) -> Result<AxumJson<ActionResult<Value>>, AppError> {
-    const OBJ_SQL: &str = "SELECT DISTINCT i.id, i.name, i.unit_id, i.person_id FROM x_org_identity i \
+    const OBJ_SQL: &str =
+        "SELECT DISTINCT i.id, i.name, i.unit_id, i.person_id FROM x_org_identity i \
          JOIN x_org_unit u ON u.id = i.unit_id AND u.deleted_at IS NULL \
          WHERE i.deleted_at IS NULL AND (u.id = ANY($1) OR u.name = ANY($1)) ORDER BY i.id";
     let flags = normalize_flags(string_list(&body, "unitList"));

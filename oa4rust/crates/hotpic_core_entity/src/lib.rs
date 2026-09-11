@@ -4,7 +4,10 @@ use axum::{
     Json, Router,
 };
 use deadpool_postgres::Pool;
-use sea_orm::{ActiveModelTrait, ColumnTrait, DatabaseConnection, EntityTrait, PaginatorTrait, QueryFilter, QueryOrder, QuerySelect, Set};
+use sea_orm::{
+    ActiveModelTrait, ColumnTrait, DatabaseConnection, EntityTrait, PaginatorTrait, QueryFilter,
+    QueryOrder, QuerySelect, Set,
+};
 use serde_json::Value;
 use shared::{error::AppError, response::ActionResult};
 
@@ -40,10 +43,16 @@ pub async fn list(
         .map(|m| {
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(m.id.clone())),
-                ("application".to_string(), Value::String(m.application.clone())),
+                (
+                    "application".to_string(),
+                    Value::String(m.application.clone()),
+                ),
                 ("infoId".to_string(), Value::String(m.info_id.clone())),
                 ("title".to_string(), Value::String(m.title.clone())),
-                ("base64".to_string(), Value::String(m.base64.clone().unwrap_or_default())),
+                (
+                    "base64".to_string(),
+                    Value::String(m.base64.clone().unwrap_or_default()),
+                ),
             ]))
         })
         .collect();
@@ -67,7 +76,9 @@ pub async fn list_by_app_and_info(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let models = hotpic::Entity::find()
         .filter(
-            hotpic::Column::Application.eq(&application).and(hotpic::Column::InfoId.eq(&info_id)),
+            hotpic::Column::Application
+                .eq(&application)
+                .and(hotpic::Column::InfoId.eq(&info_id)),
         )
         .order_by_desc(hotpic::Column::CreateTime)
         .limit(20)
@@ -80,10 +91,16 @@ pub async fn list_by_app_and_info(
         .map(|m| {
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(m.id.clone())),
-                ("application".to_string(), Value::String(m.application.clone())),
+                (
+                    "application".to_string(),
+                    Value::String(m.application.clone()),
+                ),
                 ("infoId".to_string(), Value::String(m.info_id.clone())),
                 ("title".to_string(), Value::String(m.title.clone())),
-                ("base64".to_string(), Value::String(m.base64.clone().unwrap_or_default())),
+                (
+                    "base64".to_string(),
+                    Value::String(m.base64.clone().unwrap_or_default()),
+                ),
             ]))
         })
         .collect();
@@ -107,7 +124,9 @@ pub async fn exists_check(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let count: u64 = hotpic::Entity::find()
         .filter(
-            hotpic::Column::Application.eq(&application).and(hotpic::Column::InfoId.eq(&info_id)),
+            hotpic::Column::Application
+                .eq(&application)
+                .and(hotpic::Column::InfoId.eq(&info_id)),
         )
         .count(&db.0)
         .await
@@ -115,7 +134,10 @@ pub async fn exists_check(
 
     let data = Value::Object(serde_json::Map::from_iter([
         ("allExists".to_string(), Value::Bool(count > 0)),
-        ("count".to_string(), Value::Number(serde_json::Number::from(count))),
+        (
+            "count".to_string(),
+            Value::Number(serde_json::Number::from(count)),
+        ),
     ]));
 
     Ok(Json(ActionResult::success(data)))
@@ -127,10 +149,25 @@ pub async fn create(
     Json(payload): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let id = uuid::Uuid::new_v4().to_string();
-    let application = payload.get("application").and_then(|v| v.as_str()).unwrap_or_default().to_string();
-    let info_id = payload.get("infoId").and_then(|v| v.as_str()).unwrap_or_default().to_string();
-    let title = payload.get("title").and_then(|v| v.as_str()).unwrap_or_default().to_string();
-    let base64 = payload.get("base64").and_then(|v| v.as_str()).map(|s| s.to_string());
+    let application = payload
+        .get("application")
+        .and_then(|v| v.as_str())
+        .unwrap_or_default()
+        .to_string();
+    let info_id = payload
+        .get("infoId")
+        .and_then(|v| v.as_str())
+        .unwrap_or_default()
+        .to_string();
+    let title = payload
+        .get("title")
+        .and_then(|v| v.as_str())
+        .unwrap_or_default()
+        .to_string();
+    let base64 = payload
+        .get("base64")
+        .and_then(|v| v.as_str())
+        .map(|s| s.to_string());
 
     let active_model = hotpic::ActiveModel {
         id: Set(id.clone()),
@@ -147,12 +184,14 @@ pub async fn create(
         .await
         .map_err(|_| AppError::Internal)?;
 
-    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
-        ("id".to_string(), Value::String(id)),
-        ("application".to_string(), Value::String(application)),
-        ("infoId".to_string(), Value::String(info_id)),
-        ("title".to_string(), Value::String(title)),
-    ])))))
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("id".to_string(), Value::String(id)),
+            ("application".to_string(), Value::String(application)),
+            ("infoId".to_string(), Value::String(info_id)),
+            ("title".to_string(), Value::String(title)),
+        ]),
+    ))))
 }
 
 pub async fn delete_by_id(
@@ -176,7 +215,9 @@ pub async fn delete_by_id(
                 deleted_at: Set(Some(chrono::Utc::now().naive_utc())),
             };
             active.update(&db.0).await.map_err(|_| AppError::Internal)?;
-            Ok(Json(ActionResult::success(serde_json::json!({"success": true}))))
+            Ok(Json(ActionResult::success(
+                serde_json::json!({"success": true}),
+            )))
         }
         None => Ok(Json(ActionResult::error("hotpic not found"))),
     }
@@ -192,20 +233,25 @@ pub async fn delete_by_id(
 pub fn hotpic_core_entity_router(_pool: Pool) -> Router {
     Router::new()
         .route("/jaxrs/hotpic/core/entity/list", get(list))
-        .route("/jaxrs/hotpic/core/entity/list/by/{application}/{infoId}", get(list_by_app_and_info))
+        .route(
+            "/jaxrs/hotpic/core/entity/list/by/{application}/{infoId}",
+            get(list_by_app_and_info),
+        )
         .route(
             "/jaxrs/hotpic/core/entity/exists/check/{application}/{infoId}",
             get(exists_check),
         )
         .route("/jaxrs/hotpic/core/entity/create", post(create))
-        .route("/jaxrs/hotpic/core/entity/delete/{id}", delete(delete_by_id))
+        .route(
+            "/jaxrs/hotpic/core/entity/delete/{id}",
+            delete(delete_by_id),
+        )
 }
 
 #[cfg(test)]
 mod tests;
 #[cfg(test)]
 mod tests_generated;
-
 
 pub fn router(pool: deadpool_postgres::Pool) -> axum::Router {
     crate::hotpic_core_entity_router(pool)

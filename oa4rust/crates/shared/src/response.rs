@@ -17,9 +17,15 @@ pub fn row_to_json(row: &Row) -> Value {
         let name = col.name();
         let val: Option<Value> = match *col.type_() {
             Type::BOOL => row.get::<_, Option<bool>>(name).map(Value::Bool),
-            Type::INT2 => row.get::<_, Option<i16>>(name).map(|v| Value::Number((v as i64).into())),
-            Type::INT4 => row.get::<_, Option<i32>>(name).map(|v| Value::Number((v as i64).into())),
-            Type::INT8 => row.get::<_, Option<i64>>(name).map(|v| Value::Number(v.into())),
+            Type::INT2 => row
+                .get::<_, Option<i16>>(name)
+                .map(|v| Value::Number((v as i64).into())),
+            Type::INT4 => row
+                .get::<_, Option<i32>>(name)
+                .map(|v| Value::Number((v as i64).into())),
+            Type::INT8 => row
+                .get::<_, Option<i64>>(name)
+                .map(|v| Value::Number(v.into())),
             Type::FLOAT4 => row
                 .get::<_, Option<f32>>(name)
                 .and_then(|v| serde_json::Number::from_f64(v as f64).map(Value::Number)),
@@ -45,11 +51,9 @@ pub fn option_to_json<T: Serialize>(opt: Option<T>) -> Option<Value> {
 
 /// 从 row 中安全提取 Option<T>，避免 Value::Null。
 /// 与 row.get::<_, Option<T>>() 类似，但返回 Option<Value> 而非 Value::Null
-pub fn row_opt_json<T: Serialize + for<'a> FromSql<'a>>(
-    row: &Row,
-    col: &str,
-) -> Option<Value> {
-    row.get::<_, Option<T>>(col).map(|v| serde_json::to_value(v).unwrap())
+pub fn row_opt_json<T: Serialize + for<'a> FromSql<'a>>(row: &Row, col: &str) -> Option<Value> {
+    row.get::<_, Option<T>>(col)
+        .map(|v| serde_json::to_value(v).unwrap())
 }
 
 // ──────────────────────────────────────────────────────────────────────────────
@@ -92,10 +96,19 @@ pub enum AppError {
 impl IntoResponse for AppError {
     fn into_response(self) -> axum::response::Response {
         let (status, prompt_kind) = match &self {
-            AppError::Database(_) => (axum::http::StatusCode::INTERNAL_SERVER_ERROR, "ExceptionInternal"),
-            AppError::Internal => (axum::http::StatusCode::INTERNAL_SERVER_ERROR, "ExceptionInternal"),
+            AppError::Database(_) => (
+                axum::http::StatusCode::INTERNAL_SERVER_ERROR,
+                "ExceptionInternal",
+            ),
+            AppError::Internal => (
+                axum::http::StatusCode::INTERNAL_SERVER_ERROR,
+                "ExceptionInternal",
+            ),
             AppError::BadRequest(_) => (axum::http::StatusCode::BAD_REQUEST, "ExceptionBadRequest"),
-            AppError::Unauthorized => (axum::http::StatusCode::UNAUTHORIZED, "ExceptionUnauthorized"),
+            AppError::Unauthorized => (
+                axum::http::StatusCode::UNAUTHORIZED,
+                "ExceptionUnauthorized",
+            ),
             AppError::NotFound => (axum::http::StatusCode::NOT_FOUND, "ExceptionEntityNotExist"),
         };
 
@@ -120,7 +133,10 @@ impl IntoResponse for AppError {
 // 中间件层（认证/授权/限流）统一生成 ActionResult 格式的错误响应。
 // 与 AppError::IntoResponse 保持相同 JSON 结构（Java 实测形状）。
 // ──────────────────────────────────────────────────────────────────────────────
-pub fn error_response(status: axum::http::StatusCode, message: impl Into<String>) -> axum::response::Response {
+pub fn error_response(
+    status: axum::http::StatusCode,
+    message: impl Into<String>,
+) -> axum::response::Response {
     // 恒填 prompt（Java ResponseFactory 多数路径行为，净差异最小策略）。
     let prompt_kind = match status.as_u16() {
         401 => "ExceptionUnauthorized",

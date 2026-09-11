@@ -1,7 +1,4 @@
-use axum::{
-    extract::Extension, extract::Path,
-    Json, Router,
-};
+use axum::{extract::Extension, extract::Path, Json, Router};
 use deadpool_postgres::Pool;
 use serde_json::Value;
 use shared::{error::AppError, response::ActionResult};
@@ -12,7 +9,6 @@ pub mod routes;
 mod tests;
 #[cfg(test)]
 mod tests_generated;
-
 
 pub fn hotpic_router(pool: Pool) -> Router {
     routes::hotpic_router(pool)
@@ -35,7 +31,10 @@ pub async fn exists_check(
 
     let data = Value::Object(serde_json::Map::from_iter([
         ("allExists".to_string(), Value::Bool(count > 0)),
-        ("count".to_string(), Value::Number(serde_json::Number::from(count))),
+        (
+            "count".to_string(),
+            Value::Number(serde_json::Number::from(count)),
+        ),
     ]));
 
     Ok(Json(ActionResult::success(data)))
@@ -60,15 +59,24 @@ pub async fn get_by_id(
         .map_err(|_| AppError::Internal)?;
 
     match row {
-        Some(row) => {
-            Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
+        Some(row) => Ok(Json(ActionResult::success(Value::Object(
+            serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("title".to_string(), Value::String(row.get("title"))),
-                ("base64".to_string(), Value::String(row.get::<_, Option<String>>("image_url").unwrap_or_default())),
+                (
+                    "base64".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("image_url")
+                            .unwrap_or_default(),
+                    ),
+                ),
                 ("creator".to_string(), Value::String(row.get("creator"))),
-                ("createTime".to_string(), Value::String(row.get("create_time"))),
-            ])))))
-        }
+                (
+                    "createTime".to_string(),
+                    Value::String(row.get("create_time")),
+                ),
+            ]),
+        )))),
         None => Err(AppError::NotFound),
     }
 }
@@ -92,17 +100,27 @@ pub async fn list_by_application_and_info_id(
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
-                ("application".to_string(), Value::String(application.clone())),
+                (
+                    "application".to_string(),
+                    Value::String(application.clone()),
+                ),
                 ("infoId".to_string(), Value::String(info_id.clone())),
                 ("title".to_string(), Value::String(row.get("title"))),
                 ("creator".to_string(), Value::String(row.get("creator"))),
-                ("createTime".to_string(), Value::String(row.get("create_time"))),
+                (
+                    "createTime".to_string(),
+                    Value::String(row.get("create_time")),
+                ),
             ]))
         })
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
+    Ok(Json(ActionResult::java_success(
+        Value::Array(data),
+        count,
+        0,
+    )))
 }
 
 pub fn router(pool: deadpool_postgres::Pool) -> axum::Router {

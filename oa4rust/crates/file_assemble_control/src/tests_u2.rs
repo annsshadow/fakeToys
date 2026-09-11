@@ -102,10 +102,14 @@ mod u2_tests {
 
     #[tokio::test]
     async fn u2_engine_less_501_body_is_action_result_error() {
-        let (status, json) = respond("GET", "/jaxrs/config/system/config", &[], Body::empty()).await;
+        let (status, json) =
+            respond("GET", "/jaxrs/config/system/config", &[], Body::empty()).await;
         assert_eq!(status, StatusCode::NOT_IMPLEMENTED);
         assert_eq!(json["type"], "error");
-        assert!(json.get("message").is_some(), "ActionResult.message required");
+        assert!(
+            json.get("message").is_some(),
+            "ActionResult.message required"
+        );
         assert!(json["data"].is_null());
     }
 
@@ -146,15 +150,16 @@ mod u2_tests {
         let result = crate::u2_persist_verified(&storage, "attachment/x/a.txt", b"hello").await;
         match result {
             Err(crate::AppError::NotImplemented) => {}
-            other => panic!("db placeholder upload must be AppError::NotImplemented, got {other:?}"),
+            other => {
+                panic!("db placeholder upload must be AppError::NotImplemented, got {other:?}")
+            }
         }
     }
 
     /// FS 后端：put + 回读校验真实落盘。
     #[tokio::test]
     async fn u2_persist_verified_fs_roundtrip_succeeds() {
-        let dir = std::env::temp_dir()
-            .join(format!("oa4rust_u2_file_{}", uuid::Uuid::new_v4()));
+        let dir = std::env::temp_dir().join(format!("oa4rust_u2_file_{}", uuid::Uuid::new_v4()));
         std::fs::create_dir_all(&dir).unwrap();
         let storage = FsBlobStorage::new(&dir);
         crate::u2_persist_verified(&storage, "attachment/x/a.txt", b"hello")
@@ -212,7 +217,13 @@ mod u2_tests {
 
     #[tokio::test]
     async fn u2_folder_create_validates_name_before_db() {
-        let (status, _) = respond_auth("POST", "/jaxrs/folder", JSON, Body::from(r#"{"name":"  "}"#)).await;
+        let (status, _) = respond_auth(
+            "POST",
+            "/jaxrs/folder",
+            JSON,
+            Body::from(r#"{"name":"  "}"#),
+        )
+        .await;
         assert_eq!(status, StatusCode::BAD_REQUEST);
         let (status, _) = respond_auth("POST", "/jaxrs/folder2", JSON, Body::from("{}")).await;
         assert_eq!(status, StatusCode::BAD_REQUEST);
@@ -237,21 +248,29 @@ mod u2_tests {
             ("GET", format!("{b}/a-1/download/stream")),
             ("POST", format!("{b}/a-1/download/stream")),
             ("GET", format!("{b}/a-1/image/scale/s2/binary/base64")),
-            ("GET", format!("{b}/a-1/image/width/w2/height/h2/binary/base64")),
+            (
+                "GET",
+                format!("{b}/a-1/image/width/w2/height/h2/binary/base64"),
+            ),
             ("PUT", format!("{b}/a-1/update")),
             ("POST", format!("{b}/a-1/update/callback/cb-1")),
         ];
         for (method, path) in cases {
             let needs_body = matches!(method, "PUT" | "POST");
-            let (headers, body): (&[(&str, &str)], Body) = if needs_body && path.ends_with("/update") || path.contains("/update/callback") {
-                (MP, multipart_body("a.txt"))
-            } else if needs_body {
-                (JSON, Body::from("{}"))
-            } else {
-                (&[], Body::empty())
-            };
+            let (headers, body): (&[(&str, &str)], Body) =
+                if needs_body && path.ends_with("/update") || path.contains("/update/callback") {
+                    (MP, multipart_body("a.txt"))
+                } else if needs_body {
+                    (JSON, Body::from("{}"))
+                } else {
+                    (&[], Body::empty())
+                };
             let (status, _) = respond(method, &path, headers, body).await;
-            assert_ne!(status, StatusCode::NOT_FOUND, "route missing: {method} {path}");
+            assert_ne!(
+                status,
+                StatusCode::NOT_FOUND,
+                "route missing: {method} {path}"
+            );
         }
     }
 
@@ -277,7 +296,10 @@ mod u2_tests {
             ("GET", format!("{b}/a-1/download/stream")),
             ("POST", format!("{b}/a-1/download/stream")),
             ("GET", format!("{b}/a-1/image/scale/s2/binary/base64")),
-            ("GET", format!("{b}/a-1/image/width/w2/height/h2/binary/base64")),
+            (
+                "GET",
+                format!("{b}/a-1/image/width/w2/height/h2/binary/base64"),
+            ),
             ("GET", format!("{b}/a-1/office/preview/type/docx")),
         ];
         for (method, path) in cases {
@@ -288,7 +310,11 @@ mod u2_tests {
                 (&[], Body::empty())
             };
             let (status, _) = respond(method, &path, headers, body).await;
-            assert_ne!(status, StatusCode::NOT_FOUND, "route missing: {method} {path}");
+            assert_ne!(
+                status,
+                StatusCode::NOT_FOUND,
+                "route missing: {method} {path}"
+            );
         }
     }
 
@@ -298,18 +324,33 @@ mod u2_tests {
         let cases: Vec<(&str, String)> = vec![
             ("GET", format!("{b}/list/referencetype")),
             ("GET", format!("{b}/list/referencetype/cms/reference/r-1")),
-            ("GET", format!("{b}/list/unused/referencetype/cmsdocument/manage")),
+            (
+                "GET",
+                format!("{b}/list/unused/referencetype/cmsdocument/manage"),
+            ),
             ("GET", format!("{b}/list/id-1/next/20")),
             ("GET", format!("{b}/list/id-1/next/20/all")),
             ("GET", format!("{b}/list/id-1/next/20/referencetype/cms")),
             ("GET", format!("{b}/list/id-1/prev/20")),
             ("GET", format!("{b}/list/id-1/prev/20/all")),
             ("GET", format!("{b}/list/id-1/prev/20/referencetype/cms")),
-            ("DELETE", format!("{b}/clean/unused/referencetype/cmsdocument/manage")),
-            ("GET", format!("{b}/copy/attachment/a-1/referencetype/cms/reference/r-1/scale/1")),
+            (
+                "DELETE",
+                format!("{b}/clean/unused/referencetype/cmsdocument/manage"),
+            ),
+            (
+                "GET",
+                format!("{b}/copy/attachment/a-1/referencetype/cms/reference/r-1/scale/1"),
+            ),
             ("DELETE", format!("{b}/referencetype/cms/reference/r-1")),
-            ("POST", format!("{b}/upload/referencetype/cms/reference/r-1/scale/1")),
-            ("POST", format!("{b}/upload/referencetype/cms/reference/r-1/scale/1/callback/cb")),
+            (
+                "POST",
+                format!("{b}/upload/referencetype/cms/reference/r-1/scale/1"),
+            ),
+            (
+                "POST",
+                format!("{b}/upload/referencetype/cms/reference/r-1/scale/1/callback/cb"),
+            ),
             ("POST", format!("{b}/upload/with/url")),
             ("GET", format!("{b}/id-1/binary/base64")),
             ("GET", format!("{b}/id-1/download")),
@@ -325,7 +366,11 @@ mod u2_tests {
                 (&[], Body::empty())
             };
             let (status, _) = respond(method, &path, headers, body).await;
-            assert_ne!(status, StatusCode::NOT_FOUND, "route missing: {method} {path}");
+            assert_ne!(
+                status,
+                StatusCode::NOT_FOUND,
+                "route missing: {method} {path}"
+            );
         }
     }
 
@@ -352,7 +397,11 @@ mod u2_tests {
                 (&[], Body::empty())
             };
             let (status, _) = respond(method, path, headers, body).await;
-            assert_ne!(status, StatusCode::NOT_FOUND, "route missing: {method} {path}");
+            assert_ne!(
+                status,
+                StatusCode::NOT_FOUND,
+                "route missing: {method} {path}"
+            );
         }
     }
 
@@ -384,7 +433,11 @@ mod u2_tests {
                 (&[], Body::empty())
             };
             let (status, _) = respond(method, path, headers, body).await;
-            assert_ne!(status, StatusCode::NOT_FOUND, "route missing: {method} {path}");
+            assert_ne!(
+                status,
+                StatusCode::NOT_FOUND,
+                "route missing: {method} {path}"
+            );
         }
     }
 
@@ -400,7 +453,11 @@ mod u2_tests {
             ("POST", "/jaxrs/anonymous/file/an-1/download/stream"),
         ] {
             let (status, _) = respond(method, path, &[], Body::empty()).await;
-            assert_ne!(status, StatusCode::NOT_FOUND, "route missing: {method} {path}");
+            assert_ne!(
+                status,
+                StatusCode::NOT_FOUND,
+                "route missing: {method} {path}"
+            );
         }
     }
 

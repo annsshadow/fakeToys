@@ -2,7 +2,7 @@
 mod tests {
     use crate::{attendance_assemble_control_router, ControlRule};
     use axum::body::Body;
-    use axum::http::{Request, Method, StatusCode};
+    use axum::http::{Method, Request, StatusCode};
     use shared::response::ActionResult;
     use shared::testing::test_pool;
     use tower::ServiceExt;
@@ -243,6 +243,4 @@ mod tests {
             .unwrap();
         assert_ne!(response.status(), StatusCode::NOT_FOUND);
     }
-
-
 }

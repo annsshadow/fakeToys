@@ -3,16 +3,13 @@ mod tests {
     use crate::ComponentInfo as Component;
     use axum::body::Body;
     use axum::http::{Request, StatusCode};
-    use deadpool_postgres::{Manager, Pool};
     use deadpool_postgres::tokio_postgres::{Config, NoTls};
+    use deadpool_postgres::{Manager, Pool};
     use shared::response::ActionResult;
     use tower::util::ServiceExt;
 
     fn build_test_pool() -> Pool {
-        let mgr = Manager::new(
-            Config::new(),
-            NoTls,
-        );
+        let mgr = Manager::new(Config::new(), NoTls);
         Pool::builder(mgr).max_size(1).build().unwrap()
     }
 
@@ -53,7 +50,10 @@ mod tests {
             .await
             .unwrap();
 
-        assert!(matches!(response.status(), StatusCode::OK | StatusCode::INTERNAL_SERVER_ERROR | StatusCode::NOT_FOUND));
+        assert!(matches!(
+            response.status(),
+            StatusCode::OK | StatusCode::INTERNAL_SERVER_ERROR | StatusCode::NOT_FOUND
+        ));
     }
 
     #[tokio::test]
@@ -73,7 +73,10 @@ mod tests {
             .await
             .unwrap();
 
-        assert!(matches!(response.status(), StatusCode::OK | StatusCode::INTERNAL_SERVER_ERROR | StatusCode::NOT_FOUND));
+        assert!(matches!(
+            response.status(),
+            StatusCode::OK | StatusCode::INTERNAL_SERVER_ERROR | StatusCode::NOT_FOUND
+        ));
     }
 
     #[test]

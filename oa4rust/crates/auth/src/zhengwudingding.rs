@@ -1,10 +1,5 @@
-use axum::{
-    extract::Extension,
-    extract::Path,
-    routing::get,
-    Json, Router,
-};
 use axum::response::{IntoResponse, Response};
+use axum::{extract::Extension, extract::Path, routing::get, Json, Router};
 use deadpool_postgres::Pool;
 use serde_json::{json, Value};
 use shared::error::AppError;
@@ -39,7 +34,8 @@ pub async fn zwdingding_login(
     Path(code): Path<String>,
 ) -> Result<Response, AppError> {
     let api_base = std::env::var("ZWDINGDING_API_BASE").map_err(|_| AppError::Internal)?;
-    let corp_token = std::env::var("ZWDINGDING_CORP_ACCESS_TOKEN").map_err(|_| AppError::Internal)?;
+    let corp_token =
+        std::env::var("ZWDINGDING_CORP_ACCESS_TOKEN").map_err(|_| AppError::Internal)?;
     let app_token = std::env::var("ZWDINGDING_APP_ACCESS_TOKEN").map_err(|_| AppError::Internal)?;
 
     let client = reqwest::Client::new();

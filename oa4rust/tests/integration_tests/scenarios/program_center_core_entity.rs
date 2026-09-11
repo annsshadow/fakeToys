@@ -20,9 +20,10 @@ pub async fn program_center_core_entity_application_flow() {
         .expect("test database not initialized; call init_test_database() first")
         .clone();
 
-    let (_addr, server_handle, token) = crate::integration_tests::helpers::setup_test_server(pool.clone())
-        .await
-        .expect("failed to start test server");
+    let (_addr, server_handle, token) =
+        crate::integration_tests::helpers::setup_test_server(pool.clone())
+            .await
+            .expect("failed to start test server");
 
     let client = Client::builder()
         .timeout(Duration::from_secs(10))
@@ -34,7 +35,12 @@ pub async fn program_center_core_entity_application_flow() {
 
     // Step 1: Insert a test application record directly into the database
     {
-        let db_client = pool.as_pg().unwrap().get().await.expect("failed to get pool client");
+        let db_client = pool
+            .as_pg()
+            .unwrap()
+            .get()
+            .await
+            .expect("failed to get pool client");
         db_client
             .execute(
                 "INSERT INTO x_applications (id, name, app_id, creator, creator_person) \
@@ -72,16 +78,17 @@ pub async fn program_center_core_entity_application_flow() {
     }
 
     let body: serde_json::Value = list_resp.json().await.expect("invalid list response");
-    let data = body["data"]
-        .as_array()
-        .expect("data array missing");
+    let data = body["data"].as_array().expect("data array missing");
 
     let found = data.iter().any(|app| {
         app["id"].as_str() == Some("app-pc-integration-test-001")
             && app["name"].as_str() == Some("Integration Test App")
             && app["category"].as_str() == Some("Office")
     });
-    assert!(found, "expected integration test application not found in list response");
+    assert!(
+        found,
+        "expected integration test application not found in list response"
+    );
 
     server_handle.abort();
     let _ = server_handle.await;

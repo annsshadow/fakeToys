@@ -64,7 +64,13 @@ pub async fn get(
     let result = Value::Object(serde_json::Map::from_iter([
         ("id".to_string(), Value::String(row.get("id"))),
         ("name".to_string(), Value::String(row.get("name"))),
-        ("description".to_string(), Value::String(row.get::<_, Option<String>>("description").unwrap_or_default())),
+        (
+            "description".to_string(),
+            Value::String(
+                row.get::<_, Option<String>>("description")
+                    .unwrap_or_default(),
+            ),
+        ),
         ("disable".to_string(), Value::Bool(row.get("disable"))),
     ]));
 
@@ -105,7 +111,10 @@ async fn query_page(
     };
 
     let total: i64 = client
-        .query_one("SELECT COUNT(*) as count FROM auth_role WHERE deleted_at IS NULL", &[])
+        .query_one(
+            "SELECT COUNT(*) as count FROM auth_role WHERE deleted_at IS NULL",
+            &[],
+        )
         .await
         .map_err(|_| AppError::Internal)?
         .get("count");
@@ -116,7 +125,13 @@ async fn query_page(
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("name".to_string(), Value::String(row.get("name"))),
-                ("description".to_string(), Value::String(row.get::<_, Option<String>>("description").unwrap_or_default())),
+                (
+                    "description".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("description")
+                            .unwrap_or_default(),
+                    ),
+                ),
                 ("disable".to_string(), Value::Bool(row.get("disable"))),
             ]))
         })
@@ -285,7 +300,13 @@ pub async fn update(
     let result = Value::Object(serde_json::Map::from_iter([
         ("id".to_string(), Value::String(row.get("id"))),
         ("name".to_string(), Value::String(row.get("name"))),
-        ("description".to_string(), Value::String(row.get::<_, Option<String>>("description").unwrap_or_default())),
+        (
+            "description".to_string(),
+            Value::String(
+                row.get::<_, Option<String>>("description")
+                    .unwrap_or_default(),
+            ),
+        ),
         ("disable".to_string(), Value::Bool(row.get("disable"))),
     ]));
 
@@ -324,13 +345,21 @@ pub async fn delete(
         .map_err(|_| AppError::Internal)?;
 
     let Some(row) = row else {
-        return Ok(Json(ActionResult::error("role not found or already deleted")));
+        return Ok(Json(ActionResult::error(
+            "role not found or already deleted",
+        )));
     };
 
     let result = Value::Object(serde_json::Map::from_iter([
         ("id".to_string(), Value::String(row.get("id"))),
         ("name".to_string(), Value::String(row.get("name"))),
-        ("description".to_string(), Value::String(row.get::<_, Option<String>>("description").unwrap_or_default())),
+        (
+            "description".to_string(),
+            Value::String(
+                row.get::<_, Option<String>>("description")
+                    .unwrap_or_default(),
+            ),
+        ),
         ("disable".to_string(), Value::Bool(row.get("disable"))),
     ]));
 

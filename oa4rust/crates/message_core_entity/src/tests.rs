@@ -32,7 +32,10 @@ mod tests {
             .await
             .unwrap();
 
-        assert!(matches!(response.status(), StatusCode::INTERNAL_SERVER_ERROR | StatusCode::NOT_FOUND));
+        assert!(matches!(
+            response.status(),
+            StatusCode::INTERNAL_SERVER_ERROR | StatusCode::NOT_FOUND
+        ));
     }
 
     #[tokio::test]
@@ -52,7 +55,10 @@ mod tests {
             .await
             .unwrap();
 
-        assert!(matches!(response.status(), StatusCode::INTERNAL_SERVER_ERROR | StatusCode::NOT_FOUND));
+        assert!(matches!(
+            response.status(),
+            StatusCode::INTERNAL_SERVER_ERROR | StatusCode::NOT_FOUND
+        ));
     }
 
     #[tokio::test]
@@ -72,7 +78,10 @@ mod tests {
             .await
             .unwrap();
 
-        assert!(matches!(response.status(), StatusCode::INTERNAL_SERVER_ERROR | StatusCode::NOT_FOUND));
+        assert!(matches!(
+            response.status(),
+            StatusCode::INTERNAL_SERVER_ERROR | StatusCode::NOT_FOUND
+        ));
     }
 
     #[tokio::test]
@@ -93,7 +102,10 @@ mod tests {
             .await
             .unwrap();
 
-        assert!(matches!(response.status(), StatusCode::INTERNAL_SERVER_ERROR | StatusCode::NOT_FOUND));
+        assert!(matches!(
+            response.status(),
+            StatusCode::INTERNAL_SERVER_ERROR | StatusCode::NOT_FOUND
+        ));
     }
 
     #[test]

@@ -1,16 +1,11 @@
 mod routes;
 
-use axum::{
-    extract::Extension,
-    Json,
-};
+use axum::{extract::Extension, Json};
 use deadpool_postgres::Pool;
 use serde_json::Value;
 use shared::{error::AppError, response::ActionResult};
 
-pub async fn area_list(
-    pool: Extension<Pool>,
-) -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn area_list(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let rows = client
         .query(
@@ -36,7 +31,11 @@ pub async fn area_list(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
+    Ok(Json(ActionResult::java_success(
+        Value::Array(data),
+        count,
+        0,
+    )))
 }
 
 pub async fn security_clearance_enable(
@@ -52,9 +51,9 @@ pub async fn security_clearance_enable(
         .map_err(|_| AppError::Internal)?;
     let count: i64 = row.get("cnt");
 
-    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
-        ("enable".to_string(), Value::Bool(count > 0)),
-    ])))))
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([("enable".to_string(), Value::Bool(count > 0))]),
+    ))))
 }
 
 pub async fn is_workday(
@@ -75,10 +74,12 @@ pub async fn is_workday(
 
     let is_work = row.is_some();
 
-    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
-        ("date".to_string(), Value::String(date)),
-        ("value".to_string(), Value::Bool(is_work)),
-    ])))))
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("date".to_string(), Value::String(date)),
+            ("value".to_string(), Value::Bool(is_work)),
+        ]),
+    ))))
 }
 
 pub use routes::general_router;
@@ -87,7 +88,6 @@ pub use routes::general_router;
 mod tests;
 #[cfg(test)]
 mod tests_generated;
-
 
 pub fn router(pool: deadpool_postgres::Pool) -> axum::Router {
     crate::general_router(pool)
