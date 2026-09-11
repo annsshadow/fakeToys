@@ -254,53 +254,9 @@ function refreshAll() {
 }
 
 const design_appdict_da_1_ref = ref<any[]>([])
-const design_appdict_da_1_q = useQuery({
-  queryKey: ['design_appdict_da_1'],
-  queryFn: async () => {
-    try {
-      const r = await api.get('/jaxrs/design/appdict/da-1')
-      return (r.data ?? []) as any[]
-    } catch {
-      return []
-    }
-  },
-})
 const design_appdict_ref = ref<any[]>([])
-const design_appdict_q = useQuery({
-  queryKey: ['design_appdict'],
-  queryFn: async () => {
-    try {
-      const r = await api.get('/jaxrs/design/appdict')
-      return (r.data ?? []) as any[]
-    } catch {
-      return []
-    }
-  },
-})
 const designer_search_ref = ref<any[]>([])
-const designer_search_q = useQuery({
-  queryKey: ['designer_search'],
-  queryFn: async () => {
-    try {
-      const r = await api.get('/jaxrs/designer/search')
-      return (r.data ?? []) as any[]
-    } catch {
-      return []
-    }
-  },
-})
 const design_appdict_u3_dedup_target_ref = ref<any[]>([])
-const design_appdict_u3_dedup_target_q = useQuery({
-  queryKey: ['design_appdict_u3_dedup_target'],
-  queryFn: async () => {
-    try {
-      const r = await api.get('/jaxrs/design/appdict/u3-dedup-target')
-      return (r.data ?? []) as any[]
-    } catch {
-      return []
-    }
-  },
-})
 </script>
 
 <style scoped>
