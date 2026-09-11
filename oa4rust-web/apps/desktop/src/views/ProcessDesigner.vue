@@ -2806,7 +2806,7 @@
 </template>
 <script setup lang="ts">
 import { api } from '@oa4rust/sdk'
-import { useMutation, useQuery } from '@tanstack/vue-query'
+import { useMutation } from '@tanstack/vue-query'
 import { computed, onMounted, onUnmounted, ref } from 'vue'
 import { runInSandbox } from '../utils/sandbox'
 import { toast } from '../utils/toast'
@@ -3984,18 +3984,6 @@ const forkLabels = computed(() => {
   return labels
 })
 // ── Process List ──────────────────────────────────────────────────────
-const { data: procData } = useQuery({
-  queryKey: ['pd', 'list'],
-  queryFn: async () => {
-    plLoading.value = true
-    try {
-      const r: any = await api.get('/jaxrs/processplatform/assemble/designer/process/list')
-      return r?.data?.list ?? r?.data ?? []
-    } finally {
-      plLoading.value = false
-    }
-  },
-})
 const procList = ref<ProcDef[]>(procData.value ?? [])
 // ── History ───────────────────────────────────────────────────────────
 function pushHistory() {

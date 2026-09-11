@@ -160,7 +160,7 @@
 
 <script setup lang="ts">
 import { api } from '@oa4rust/sdk'
-import { useQuery, useQueryClient } from '@tanstack/vue-query'
+import { useQueryClient } from '@tanstack/vue-query'
 import { computed, onMounted, ref } from 'vue'
 import { confirmMsg, toast } from '../utils/toast'
 
@@ -200,18 +200,6 @@ const importData = ref(''),
   importMsg = ref<{ ok: boolean; txt: string } | null>(null)
 
 const qc = useQueryClient()
-const { data } = useQuery({
-  queryKey: ['config', 'list'],
-  queryFn: async () => {
-    loading.value = true
-    try {
-      const r: any = await api.get('/jaxrs/config/list')
-      return r?.data ?? []
-    } finally {
-      loading.value = false
-    }
-  },
-})
 const items = ref<ConfigItem[]>(data.value ?? [])
 
 const filteredItems = computed(() => {
@@ -369,104 +357,13 @@ onMounted(() => {
 })
 
 const api_input_pr_78_data = ref<any[]>([])
-const { data: api_input_pr_78_q } = useQuery({
-  queryKey: ['api_input_pr_78', '/jaxrs/input/prepare/create'],
-  queryFn: async () => {
-    try {
-      const r = await api.get('/jaxrs/input/prepare/create')
-      return (r.data ?? []) as any[]
-    } catch {
-      return []
-    }
-  },
-})
-
 const input_prepare_cover_ref = ref<any[]>([])
-const input_prepare_cover_q = useQuery({
-  queryKey: ['input_prepare_cover'],
-  queryFn: async () => {
-    try {
-      const r = await api.get('/jaxrs/input/prepare/cover')
-      return (r.data ?? []) as any[]
-    } catch {
-      return []
-    }
-  },
-})
 const api_input_compare_data = ref<any[]>([])
-const { data: api_input_compare_q } = useQuery({
-  queryKey: ['api_input_compare', '/jaxrs/input/compare'],
-  queryFn: async () => {
-    try {
-      const r = await api.get('/jaxrs/input/compare')
-      return (r.data ?? []) as any[]
-    } catch {
-      return []
-    }
-  },
-})
 const input_cover_ref = ref<any[]>([])
-const input_cover_q = useQuery({
-  queryKey: ['input_cover'],
-  queryFn: async () => {
-    try {
-      const r = await api.get('/jaxrs/input/cover')
-      return (r.data ?? []) as any[]
-    } catch {
-      return []
-    }
-  },
-})
 const api_input_create_data = ref<any[]>([])
-const { data: api_input_create_q } = useQuery({
-  queryKey: ['api_input_create', '/jaxrs/input/create'],
-  queryFn: async () => {
-    try {
-      const r = await api.get('/jaxrs/input/create')
-      return (r.data ?? []) as any[]
-    } catch {
-      return []
-    }
-  },
-})
-
 const api_config_data = ref<any[]>([])
-const { data: api_config_q } = useQuery({
-  queryKey: ['api_config', '/jaxrs/config'],
-  queryFn: async () => {
-    try {
-      const r = await api.get('/jaxrs/config')
-      return (r.data ?? []) as any[]
-    } catch {
-      return []
-    }
-  },
-})
 const api_config_s_497_data = ref<any[]>([])
-const { data: api_config_s_497_q } = useQuery({
-  queryKey: ['api_config_s_497', '/jaxrs/config/system/config'],
-  queryFn: async () => {
-    try {
-      const r = await api.get('/jaxrs/config/system/config')
-      return (r.data ?? []) as any[]
-    } catch {
-      return []
-    }
-  },
-})
-
 const api_config_i_771_data = ref<any[]>([])
-const { data: api_config_i_771_q } = useQuery({
-  queryKey: ['api_config_i_771', '/jaxrs/config/is/file/manager'],
-  queryFn: async () => {
-    try {
-      const r = await api.get('/jaxrs/config/is/file/manager')
-      return (r.data ?? []) as any[]
-    } catch {
-      return []
-    }
-  },
-})
 </script>
 
 <style scoped>
