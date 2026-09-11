@@ -3,7 +3,7 @@ title: "assess: oa4rust + oa4rust-web 能否完全替代 oa/o2server + oa/o2web 
 type: assessment-and-plan
 status: active
 date: 2026-09-11
-rev: 6   # v6：form 域并入 designer_route_match 对账（合并 cms_assemble_control；27 调用点/15 不闭合=4×404+5×405+6 静默）
+rev: 7   # v7：§十 收尾清单；index 已 git reset --mixed 自愈；form 用例待 host cargo 坐实
 module: oa4rust + oa4rust-web vs oa/o2server + oa/o2web
 tags: [replacement-parity, gap-analysis, backend, frontend, designer-engine-contract, form-runtime, greenfield-cutover, seeded-behavior-compare, canary-dogfood]
 problem_type: capability-parity-audit
@@ -283,3 +283,16 @@ W6 后端路由 ─┼─► W3 ProcessDesigner 契约 ─► W4 Form 运行时 
 - form CRUD 三件套（`GET/PUT form/{id}`、`POST form`）**实测路径存在**，但 §3.2 P0-3 的 **schema 写 `{schema}` 而非 `moduleList` 仍是不闭合根因**（route 匹配 ≠ 功能可替代）。
 
 **证据强度分层（fail loud）**：process/query/portal 的 22 条**已于 rev5 用 oneshot 实跑并全绿**（HEAD `ab25b16b`）；form 5 条**本轮加入同一测试但尚未执行**——当前 Linux 沙箱无 Rust 工具链、仅有上轮的旧 Windows `.exe`，无法重跑。其分类由 `cms_assemble_control/src/routes.rs:400-630` **逐字路由表推导**（与 rev5 完全吻合的静态法），`cargo test --test designer_route_match`（Windows/host）跑一次即固化。
+
+---
+
+## 十、收尾清单（本会话遗留，按序勾）
+
+- [x] **git index 自愈**：因上一轮 `git add` 后被超时杀掉的 `git commit` 曾遗留 `.git/index` 与 HEAD 不一致，已于 lock 释放后执行 `git reset --mixed HEAD`（HEAD=`237f5cc9`）对齐；`git status` 对 3 个交付文件恢复干净。**已完成。**
+- [ ] **form 用例坐实**（需 Windows/host 有 Rust）：`cd oa4rust && cargo test --test designer_route_match -- --nocapture`。
+  - 全绿 → 把 §9.4 "form 依 route-table 推导" 措辞升级为"已 oneshot 实测"，并把证据强度分层段的"form 尚未执行"划掉。
+  - 若某 form case 失败 → 以打印的真实 HTTP 码回写 §9.4 对应判定（可能推翻 `POST /form/submit=405` 或 `GET /form/list=静默影子` 的推导）。
+- [ ] **纳入 CI**（可选）：`designer_route_match` 属无 DB 的可编译测试，宜加入与 `92d09e1f` 同侧的 CI 作业，作为设计器路由"死链/影子误路由"回归门。
+- [ ] **随 W6 推进更新期望**：每闭合一条，把该 case 的 `Expect` 改为目标态（通常 `Matched`）并附真实语义，同步 §9.4 计数（15 → 递减）。
+
+> **环境备忘（供后续自动化）**：本沙箱以 uid 1001 挂载 root 所有的 `.git`，被超时杀的 `git commit` 会遗留 root 持有的 `index.lock` 且进程在沙箱 PID namespace 外存活，导致 `rm` 返回 `EIO`、普通 `git commit` 报 "index.lock exists"。规避：`GIT_INDEX_FILE=/tmp/... git read-tree/update-index/write-tree` + `commit-tree` + `update-ref` 绕过默认锁（本轮 rev6 三个提交即此法落地）；lock 随卡死进程退出后自愈，再 `git reset --mixed HEAD` 对账。
