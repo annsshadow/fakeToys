@@ -1,0 +1,13 @@
+# Behavior-compare FAIL regression baseline.
+#
+# The CI `behavior-gate` job compares the observed FAIL count in
+# behavior-report.md against the value on the LAST line of this file.
+# While the last line is the sentinel 'bootstrap', the gate records the
+# observed count and passes. Replace 'bootstrap' with the integer observed
+# in a stable CI run to activate enforcement (the gate then fails the build
+# only on regression: observed > baseline).
+#
+# Reference: local full-seed dual-stack baseline is 1212 PASS / 836 FAIL /
+# 1996 SKIP. CI applies Rust-side seeds only, so its FAIL count is higher
+# than 836 — establish the CI baseline from a green, reachable run.
+bootstrap
