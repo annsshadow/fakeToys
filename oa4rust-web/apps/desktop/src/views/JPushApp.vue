@@ -106,19 +106,6 @@ async function delDevice(d: any) {
 loadDevices()
 loadTemplates()
 
-const api_jpush_as_890_data = ref<any[]>([])
-const { data: api_jpush_as_890_q } = useQuery({
-  queryKey: ['api_jpush_as_890', '/jaxrs/jpush_assemble_control'],
-  queryFn: async () => {
-    try {
-      const r = await api.get('/jaxrs/jpush_assemble_control')
-      return (r.data ?? []) as any[]
-    } catch {
-      return []
-    }
-  },
-})
-
 const api_jpush_as_398_data = ref<any[]>([])
 const { data: api_jpush_as_398_q } = useQuery({
   queryKey: ['api_jpush_as_398', '/jaxrs/jpush_assemble_control/get/control/config'],
@@ -138,19 +125,6 @@ const { data: api_device_c_516_q } = useQuery({
   queryFn: async () => {
     try {
       const r = await api.get('/jaxrs/jpush_assemble_control/device/config/push/type')
-      return (r.data ?? []) as any[]
-    } catch {
-      return []
-    }
-  },
-})
-
-const api_jpush_as_641_data = ref<any[]>([])
-const { data: api_jpush_as_641_q } = useQuery({
-  queryKey: ['api_jpush_as_641', '/jaxrs/jpush_assemble_control/device/list/pushType'],
-  queryFn: async () => {
-    try {
-      const r = await api.get('/jaxrs/jpush_assemble_control/device/list/pushType')
       return (r.data ?? []) as any[]
     } catch {
       return []
@@ -184,64 +158,12 @@ const { data: api_jpush_as_446_q } = useQuery({
   },
 })
 
-const api_check_de_819_data = ref<any[]>([])
-const { data: api_check_de_819_q } = useQuery({
-  queryKey: ['api_check_de_819', '/jaxrs/jpush_assemble_control/device/check/deviceName/deviceType/pushType'],
-  queryFn: async () => {
-    try {
-      const r = await api.get('/jaxrs/jpush_assemble_control/device/check/deviceName/deviceType/pushType')
-      return (r.data ?? []) as any[]
-    } catch {
-      return []
-    }
-  },
-})
-
-const api_jpush_as_867_data = ref<any[]>([])
-const { data: api_jpush_as_867_q } = useQuery({
-  queryKey: ['api_jpush_as_867', '/jaxrs/jpush_assemble_control/get/jpush'],
-  queryFn: async () => {
-    try {
-      const r = await api.get('/jaxrs/jpush_assemble_control/get/jpush')
-      return (r.data ?? []) as any[]
-    } catch {
-      return []
-    }
-  },
-})
-
-const api_control_device_l_732_data = ref<any[]>([])
-const { data: api_control_device_l_732_q } = useQuery({
-  queryKey: ['api_control_device_l_732', '/jaxrs/jpush/assemble/control/device/list/pushType'],
-  queryFn: async () => {
-    try {
-      const r = await api.get('/jaxrs/jpush/assemble/control/device/list/pushType')
-      return (r.data ?? []) as any[]
-    } catch {
-      return []
-    }
-  },
-})
-
 const api_control_list_con_510_data = ref<any[]>([])
 const { data: api_control_list_con_510_q } = useQuery({
   queryKey: ['api_control_list_con_510', '/jaxrs/jpush/assemble/control/list/control/apps'],
   queryFn: async () => {
     try {
       const r = await api.get('/jaxrs/jpush/assemble/control/list/control/apps')
-      return (r.data ?? []) as any[]
-    } catch {
-      return []
-    }
-  },
-})
-
-const api_jaxrs_jpush_asse_288_data = ref<any[]>([])
-const { data: api_jaxrs_jpush_asse_288_q } = useQuery({
-  queryKey: ['api_jaxrs_jpush_asse_288', '/jaxrs/jpush/assemble/control/device/check/deviceName/deviceType/pushType'],
-  queryFn: async () => {
-    try {
-      const r = await api.get('/jaxrs/jpush/assemble/control/device/check/deviceName/deviceType/pushType')
       return (r.data ?? []) as any[]
     } catch {
       return []
