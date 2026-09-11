@@ -48,4 +48,14 @@ describe('BBSForum contracts', () => {
     expect(source).not.toContain("api.get('/jaxrs/bbs_assemble_control')")
     expect(source).not.toContain("api.get('/jaxrs/bbs/assemble/control/list/reply/filter')")
   })
+
+  it('keeps only the consumed section, topic and reply queries', () => {
+    const calls = source.match(/= useQuery\(/g) ?? []
+    expect(calls).toHaveLength(3)
+    expect(source).not.toContain("api.get('/jaxrs/bbs/topic/list')")
+    expect(source).not.toContain("api.get('/jaxrs/bbs/core/entity/section')")
+    expect(source).not.toContain("api.get('/jaxrs/bbs/assemble/control/shutup/list')")
+    expect(source).not.toContain("api.get('/jaxrs/review/v2/search')")
+    expect(source).not.toContain("api.get('/jaxrs/bbs/subject/search')")
+  })
 })
