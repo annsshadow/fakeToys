@@ -68,7 +68,11 @@ pub async fn neural_list_model(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
+    Ok(Json(ActionResult::java_success(
+        Value::Array(data),
+        count,
+        0,
+    )))
 }
 
 pub fn query_service_router(pool: Pool) -> Router {
@@ -112,7 +116,9 @@ pub async fn processing_execute(
     }
 
     if !validate_query(&query) {
-        return Ok(Json(ActionResult::error("query contains disallowed SQL keywords")));
+        return Ok(Json(ActionResult::error(
+            "query contains disallowed SQL keywords",
+        )));
     }
 
     let creator = "system";
@@ -178,4 +184,3 @@ pub async fn processing_execute(
 mod tests;
 #[cfg(test)]
 mod tests_generated;
-

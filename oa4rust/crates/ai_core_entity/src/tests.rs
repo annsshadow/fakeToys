@@ -1,6 +1,6 @@
 #[cfg(test)]
 mod tests {
-    use crate::{AiApp, AiModel, AiConversation};
+    use crate::{AiApp, AiConversation, AiModel};
     use shared::response::ActionResult;
 
     #[test]

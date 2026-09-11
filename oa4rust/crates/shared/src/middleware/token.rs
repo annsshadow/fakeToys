@@ -44,9 +44,13 @@ pub fn extract_token_from_headers(headers: &HeaderMap) -> Option<String> {
 
 fn session_cookie(headers: &HeaderMap) -> Option<&str> {
     for cookie in headers.get_all(header::COOKIE) {
-        let Ok(cookie) = cookie.to_str() else { continue };
+        let Ok(cookie) = cookie.to_str() else {
+            continue;
+        };
         for part in cookie.split(';') {
-            let Some((name, value)) = part.trim().split_once('=') else { continue };
+            let Some((name, value)) = part.trim().split_once('=') else {
+                continue;
+            };
             if name.trim() == SESSION_COOKIE_NAME {
                 return Some(value.trim().trim_matches('"'));
             }
@@ -60,13 +64,21 @@ pub async fn csrf_middleware(
     request: Request<Body>,
     next: Next,
 ) -> Response {
-    if !matches!(*request.method(), Method::POST | Method::PUT | Method::PATCH | Method::DELETE) {
+    if !matches!(
+        *request.method(),
+        Method::POST | Method::PUT | Method::PATCH | Method::DELETE
+    ) {
         return next.run(request).await;
     }
-    if !matches!(extract_authentication(request.headers()), Some(Authentication::Cookie(_))) {
+    if !matches!(
+        extract_authentication(request.headers()),
+        Some(Authentication::Cookie(_))
+    ) {
         return next.run(request).await;
     }
-    let matches = request.headers().get(header::ORIGIN)
+    let matches = request
+        .headers()
+        .get(header::ORIGIN)
         .and_then(|value| value.to_str().ok())
         .map(|origin| origin == state.session_manager.auth_config.public_origin)
         .unwrap_or(false);
@@ -82,10 +94,13 @@ pub(crate) async fn system_uninitialized(pool: &Pool) -> bool {
         Ok(c) => c,
         Err(_) => return false,
     };
-    match client.query(
-        "SELECT 1 FROM auth_person WHERE locked = false AND deleted_at IS NULL LIMIT 1",
-        &[],
-    ).await {
+    match client
+        .query(
+            "SELECT 1 FROM auth_person WHERE locked = false AND deleted_at IS NULL LIMIT 1",
+            &[],
+        )
+        .await
+    {
         Ok(rows) => rows.is_empty(),
         Err(_) => false,
     }

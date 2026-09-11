@@ -66,20 +66,19 @@ mod data_appdict_tests {
     #[tokio::test]
     async fn data_wildcard_routes_reachable() {
         // 通配读：深度 0 与深度 3/7 各抽一档；字面 path0 URL 也应被通配捕获
-        assert!(reachable(status_of("GET", "/jaxrs/data/document/d-1/anything", None).await));
+        assert!(reachable(
+            status_of("GET", "/jaxrs/data/document/d-1/anything", None).await
+        ));
         assert!(reachable(
             status_of("GET", "/jaxrs/data/document/d-1/a/b/c", None).await
         ));
         assert!(reachable(
-            status_of(
-                "GET",
-                "/jaxrs/data/document/d-1/a/b/c/d/e/f/g/h",
-                None
-            )
-            .await
+            status_of("GET", "/jaxrs/data/document/d-1/a/b/c/d/e/f/g/h", None).await
         ));
         // 字面段名 URL 同样命中通配路由（path0 作为参数值）
-        assert!(reachable(status_of("GET", "/jaxrs/data/document/d-1/path0", None).await));
+        assert!(reachable(
+            status_of("GET", "/jaxrs/data/document/d-1/path0", None).await
+        ));
         // 动词别名：mockdeletetoget(GET) / mockputtopost(POST)，静态段优先于参数段
         assert_eq!(
             status_of("GET", "/jaxrs/data/document/d-1/x/mockdeletetoget", None).await,
@@ -117,7 +116,12 @@ mod data_appdict_tests {
     async fn appdict_routes_reachable() {
         // 认证族：Java 段序 {appDictFlag}/appInfo/{appInfoFlag}[/{pathN}/]{data}
         assert_eq!(
-            status_of("GET", &format!("/jaxrs/surface/appdict/{DICT}/appInfo/{APP}"), None).await,
+            status_of(
+                "GET",
+                &format!("/jaxrs/surface/appdict/{DICT}/appInfo/{APP}"),
+                None
+            )
+            .await,
             StatusCode::INTERNAL_SERVER_ERROR
         );
         assert_eq!(
@@ -164,17 +168,29 @@ mod data_appdict_tests {
     async fn appdict_write_routes_reachable() {
         let base = format!("/jaxrs/surface/appdict/{DICT}/appInfo/{APP}");
         // 基座 PUT + mockputtopost 别名
-        assert!(reachable(status_of("PUT", &base, Some(json!({"dataValue": "v"}))).await));
         assert!(reachable(
-            status_of("POST", &format!("{base}/mockputtopost"), Some(json!({"dataValue": "v"}))).await
+            status_of("PUT", &base, Some(json!({"dataValue": "v"}))).await
+        ));
+        assert!(reachable(
+            status_of(
+                "POST",
+                &format!("{base}/mockputtopost"),
+                Some(json!({"dataValue": "v"}))
+            )
+            .await
         ));
         // 路径级 PUT/POST/DELETE + 两类别名（Java 仅深度 ≥2 即 3 段起提供 mockputtopost）
         let leaf = format!("{base}/p0/p1/p2/data");
         for method in ["PUT", "POST"] {
-            assert!(reachable(status_of(method, &leaf, Some(json!({"v": 1}))).await), "{method} {leaf}");
+            assert!(
+                reachable(status_of(method, &leaf, Some(json!({"v": 1}))).await),
+                "{method} {leaf}"
+            );
         }
         assert!(reachable(status_of("DELETE", &leaf, None).await));
-        assert!(reachable(status_of("GET", &format!("{leaf}/mockdeletetoget"), None).await));
+        assert!(reachable(
+            status_of("GET", &format!("{leaf}/mockdeletetoget"), None).await
+        ));
         // 深度 1（2 段）不应注册 mockputtopost —— 与 Java 一致无此路由
         assert_eq!(
             status_of(
@@ -187,7 +203,12 @@ mod data_appdict_tests {
             "mockputtopost must not exist below depth 2"
         );
         assert!(reachable(
-            status_of("POST", &format!("{leaf}/mockputtopost"), Some(json!({"v": 1}))).await
+            status_of(
+                "POST",
+                &format!("{leaf}/mockputtopost"),
+                Some(json!({"v": 1}))
+            )
+            .await
         ));
     }
 
@@ -204,7 +225,10 @@ mod data_appdict_tests {
         .await;
         match r {
             Err(AppError::Internal) => {}
-            other => panic!("expected Internal(fail closed), got {:?}", other.map(|_| "ok")),
+            other => panic!(
+                "expected Internal(fail closed), got {:?}",
+                other.map(|_| "ok")
+            ),
         }
     }
 
@@ -219,7 +243,10 @@ mod data_appdict_tests {
         .await;
         match r {
             Err(AppError::Internal) => {}
-            other => panic!("expected Internal(fail closed), got {:?}", other.map(|_| "ok")),
+            other => panic!(
+                "expected Internal(fail closed), got {:?}",
+                other.map(|_| "ok")
+            ),
         }
     }
 
@@ -245,7 +272,9 @@ mod data_appdict_tests {
         };
         let resp = app.oneshot(req).await.unwrap();
         let status = resp.status();
-        let bytes = axum::body::to_bytes(resp.into_body(), 1_048_576).await.unwrap();
+        let bytes = axum::body::to_bytes(resp.into_body(), 1_048_576)
+            .await
+            .unwrap();
         let json = if bytes.is_empty() {
             serde_json::Value::Null
         } else {
@@ -308,7 +337,13 @@ mod data_appdict_tests {
         assert_eq!(json["data"]["updated"], 2);
 
         // GET 一级路径：精确字段匹配
-        let (status, json) = call("GET", &format!("/jaxrs/data/document/{DOC}/title"), None, None).await;
+        let (status, json) = call(
+            "GET",
+            &format!("/jaxrs/data/document/{DOC}/title"),
+            None,
+            None,
+        )
+        .await;
         assert_eq!(status, StatusCode::OK);
         assert_eq!(json["data"][0]["fieldName"], "title");
         assert_eq!(json["data"][0]["fieldValue"], "hello");
@@ -324,7 +359,13 @@ mod data_appdict_tests {
         assert_eq!(status, StatusCode::OK, "create deep: {json}");
         assert_eq!(json["data"]["created"], true);
 
-        let (_, json) = call("GET", &format!("/jaxrs/data/document/{DOC}/title/deep/body"), None, None).await;
+        let (_, json) = call(
+            "GET",
+            &format!("/jaxrs/data/document/{DOC}/title/deep/body"),
+            None,
+            None,
+        )
+        .await;
         assert_eq!(json["data"][0]["fieldName"], "title.deep.body");
 
         // 组合键真实落库
@@ -344,9 +385,13 @@ mod data_appdict_tests {
         // IDOR：非所有者不能写文档数据
         for (method, uri) in [
             ("PUT", format!("/jaxrs/data/document/{DOC}/title")),
-            ("DELETE", format!("/jaxrs/data/document/{DOC}/title/deep/body")),
+            (
+                "DELETE",
+                format!("/jaxrs/data/document/{DOC}/title/deep/body"),
+            ),
         ] {
-            let (status, _) = call(method, &uri, Some(json!({"x": 1})), Some(session(STRANGER))).await;
+            let (status, _) =
+                call(method, &uri, Some(json!({"x": 1})), Some(session(STRANGER))).await;
             assert_eq!(status, StatusCode::FORBIDDEN, "{method} {uri}");
         }
 
@@ -361,7 +406,13 @@ mod data_appdict_tests {
         assert_eq!(status, StatusCode::OK, "delete deep: {json}");
         assert_eq!(json["data"]["deleted"], true);
 
-        let (status, json) = call("GET", &format!("/jaxrs/data/document/{DOC}/title/deep/body"), None, None).await;
+        let (status, json) = call(
+            "GET",
+            &format!("/jaxrs/data/document/{DOC}/title/deep/body"),
+            None,
+            None,
+        )
+        .await;
         assert_eq!(status, StatusCode::OK);
         assert_eq!(json["type"], "success");
         assert_eq!(json["data"].as_array().unwrap().len(), 0);
@@ -403,7 +454,13 @@ mod data_appdict_tests {
         assert_eq!(status, StatusCode::OK, "mock put base: {json}");
         assert_eq!(json["data"]["updated"], 1);
 
-        let (_, json) = call("GET", &format!("/jaxrs/data/document/{DOC_MOCK}/k1"), None, None).await;
+        let (_, json) = call(
+            "GET",
+            &format!("/jaxrs/data/document/{DOC_MOCK}/k1"),
+            None,
+            None,
+        )
+        .await;
         assert_eq!(json["data"][0]["fieldValue"], "v1");
 
         // 路径级 mockputtopost：沿用 fieldValue 契约更新同一字段
@@ -417,7 +474,13 @@ mod data_appdict_tests {
         assert_eq!(status, StatusCode::OK, "mock put path0: {json}");
         assert_eq!(json["data"]["updated"], true);
 
-        let (_, json) = call("GET", &format!("/jaxrs/data/document/{DOC_MOCK}/k1"), None, None).await;
+        let (_, json) = call(
+            "GET",
+            &format!("/jaxrs/data/document/{DOC_MOCK}/k1"),
+            None,
+            None,
+        )
+        .await;
         assert_eq!(json["data"][0]["fieldValue"], "v2");
 
         // 基座 mockdeletetoget：删除的是文档数据（字段行），而非文档实体
@@ -439,7 +502,10 @@ mod data_appdict_tests {
             )
             .await
             .unwrap();
-        assert!(doc_alive.is_some(), "document entity must survive data deletion");
+        assert!(
+            doc_alive.is_some(),
+            "document entity must survive data deletion"
+        );
         let remaining = client
             .query_one(
                 "SELECT COUNT(*) AS n FROM x_cms_data_document_field \
@@ -542,7 +608,11 @@ mod data_appdict_tests {
         let (status, json) = call("GET", &leaf_url, None, None).await;
         assert_eq!(status, StatusCode::OK);
         let arr = json["data"].as_array().unwrap();
-        assert_eq!(arr.len(), 1, "prefix read should return exactly the child row: {json}");
+        assert_eq!(
+            arr.len(),
+            1,
+            "prefix read should return exactly the child row: {json}"
+        );
         assert_eq!(arr[0]["pathLevels"], json!(["p0"]));
         assert_eq!(arr[0]["dataValue"], "{\"leaf\":true}");
 
@@ -564,7 +634,11 @@ mod data_appdict_tests {
             ("PUT", leaf_url.clone()),
             ("DELETE", leaf_url.clone()),
         ] {
-            let body = if method == "DELETE" { None } else { Some(json!({"x": 1})) };
+            let body = if method == "DELETE" {
+                None
+            } else {
+                Some(json!({"x": 1}))
+            };
             let (status, _) = call(method, &uri, body, Some(session(STRANGER))).await;
             assert_eq!(status, StatusCode::FORBIDDEN, "{method} {uri}");
         }

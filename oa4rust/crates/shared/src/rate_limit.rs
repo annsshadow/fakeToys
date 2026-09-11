@@ -5,7 +5,8 @@ use tracing::warn;
 
 use crate::error::AppError;
 use crate::middleware::rate_limit_distributed::{
-    distributed_rate_key, select_distributed_policy, window_decision, RedisWindowCounter, WindowCounter,
+    distributed_rate_key, select_distributed_policy, window_decision, RedisWindowCounter,
+    WindowCounter,
 };
 use crate::redis::RedisPool;
 use redis::AsyncCommands;
@@ -75,11 +76,7 @@ impl RateLimiter {
         };
 
         let result = rt.block_on(async {
-            tokio::time::timeout(
-                std::time::Duration::from_secs(2),
-                RedisPool::from_url(&url),
-            )
-            .await
+            tokio::time::timeout(std::time::Duration::from_secs(2), RedisPool::from_url(&url)).await
         });
 
         match result {
@@ -96,7 +93,9 @@ impl RateLimiter {
                 false
             }
             Err(_) => {
-                warn!("Redis connection timed out after 2s; rate limiter falling back to in-memory");
+                warn!(
+                    "Redis connection timed out after 2s; rate limiter falling back to in-memory"
+                );
                 false
             }
         }
@@ -113,11 +112,9 @@ impl RateLimiter {
             return true;
         }
 
-        let result = tokio::time::timeout(
-            std::time::Duration::from_secs(2),
-            RedisPool::from_url(&url),
-        )
-        .await;
+        let result =
+            tokio::time::timeout(std::time::Duration::from_secs(2), RedisPool::from_url(&url))
+                .await;
 
         match result {
             Ok(Ok(pool)) => {
@@ -133,7 +130,9 @@ impl RateLimiter {
                 false
             }
             Err(_) => {
-                warn!("Redis connection timed out after 2s; rate limiter falling back to in-memory");
+                warn!(
+                    "Redis connection timed out after 2s; rate limiter falling back to in-memory"
+                );
                 false
             }
         }
@@ -186,7 +185,12 @@ impl RateLimiter {
     /// U7c 策略：REDIS_URL 存在且 Redis 可达时使用分布式滑动窗口
     /// （INCR+EXPIRE，key = rate:{client_ip}:{window_secs}）；
     /// Redis 运行期不可达时降级为内存滑动窗口并 warn。
-    pub async fn check_rate_limit(&self, key: &str, max_attempts: i32, window_minutes: i64) -> Result<(), AppError> {
+    pub async fn check_rate_limit(
+        &self,
+        key: &str,
+        max_attempts: i32,
+        window_minutes: i64,
+    ) -> Result<(), AppError> {
         let window_secs = window_minutes * 60;
 
         if let Some(counter) = self.active_window_counter().await {
@@ -209,7 +213,12 @@ impl RateLimiter {
     }
 
     /// 内存模式检查限流
-    async fn check_rate_limit_in_memory(&self, key: &str, max_attempts: i32, window_minutes: i64) -> Result<(), AppError> {
+    async fn check_rate_limit_in_memory(
+        &self,
+        key: &str,
+        max_attempts: i32,
+        window_minutes: i64,
+    ) -> Result<(), AppError> {
         let mut attempts = self.attempts.write().await;
         let now = Instant::now();
         let window = Duration::from_secs((window_minutes * 60) as u64);
@@ -219,13 +228,11 @@ impl RateLimiter {
         entry.retain(|&t| t > window_start);
 
         if entry.len() >= max_attempts as usize {
-            return Err(AppError::BadRequest(
-                format!(
-                    "rate limit exceeded: {} attempts in last {} minutes",
-                    entry.len(),
-                    window_minutes
-                )
-            ));
+            return Err(AppError::BadRequest(format!(
+                "rate limit exceeded: {} attempts in last {} minutes",
+                entry.len(),
+                window_minutes
+            )));
         }
 
         entry.push(now);

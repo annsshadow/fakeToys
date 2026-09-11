@@ -5,9 +5,7 @@ use axum::{
 };
 use deadpool_postgres::Pool;
 
-use crate::{
-    create_flow, get_flow, list_flows, save_flow, delete_flow, preview_flow,
-};
+use crate::{create_flow, delete_flow, get_flow, list_flows, preview_flow, save_flow};
 
 pub fn router(pool: Pool) -> Router {
     Router::new()

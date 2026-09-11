@@ -26,7 +26,10 @@ pub fn personal_extend_router(pool: Pool, session_manager: SessionManager) -> Ro
     Router::new()
         // 个人信息接口
         .route("/jaxrs/personal/info", get(personal::get_info))
-        .route("/jaxrs/personal/update", axum::routing::put(personal::update_info))
+        .route(
+            "/jaxrs/personal/update",
+            axum::routing::put(personal::update_info),
+        )
         .route("/jaxrs/personal/detail/{id}", get(personal::get_detail))
         // 头像接口（契约路径）
         .route("/jaxrs/person/icon", axum::routing::put(avatar::upload))

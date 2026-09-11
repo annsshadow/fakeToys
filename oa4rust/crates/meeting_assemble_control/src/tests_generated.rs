@@ -3,7 +3,7 @@ mod tests {
     #![allow(non_snake_case)]
     use axum::body::Body;
     use axum::http::{Request, StatusCode};
-    
+
     use tower::util::ServiceExt;
 
     // SKIPPED: list_meeting_controls not accessible
@@ -21,8 +21,11 @@ mod tests {
             )
             .await
             .unwrap();
-        assert_ne!(response.status(), StatusCode::NOT_FOUND,
-            "create_meeting_control route should be registered");
+        assert_ne!(
+            response.status(),
+            StatusCode::NOT_FOUND,
+            "create_meeting_control route should be registered"
+        );
     }
 
     #[tokio::test]
@@ -39,8 +42,11 @@ mod tests {
             )
             .await
             .unwrap();
-        assert_ne!(response.status(), StatusCode::NOT_FOUND,
-            "delete_meeting_control route should be registered");
+        assert_ne!(
+            response.status(),
+            StatusCode::NOT_FOUND,
+            "delete_meeting_control route should be registered"
+        );
     }
 
     #[tokio::test]
@@ -57,8 +63,11 @@ mod tests {
             )
             .await
             .unwrap();
-        assert_ne!(response.status(), StatusCode::NOT_FOUND,
-            "building_list route should be registered");
+        assert_ne!(
+            response.status(),
+            StatusCode::NOT_FOUND,
+            "building_list route should be registered"
+        );
     }
 
     #[tokio::test]
@@ -75,8 +84,11 @@ mod tests {
             )
             .await
             .unwrap();
-        assert_ne!(response.status(), StatusCode::NOT_FOUND,
-            "building_list_like_pinyin_key route should be registered");
+        assert_ne!(
+            response.status(),
+            StatusCode::NOT_FOUND,
+            "building_list_like_pinyin_key route should be registered"
+        );
     }
 
     #[tokio::test]
@@ -93,8 +105,11 @@ mod tests {
             )
             .await
             .unwrap();
-        assert_ne!(response.status(), StatusCode::NOT_FOUND,
-            "building_list_like_key route should be registered");
+        assert_ne!(
+            response.status(),
+            StatusCode::NOT_FOUND,
+            "building_list_like_key route should be registered"
+        );
     }
 
     #[tokio::test]
@@ -111,8 +126,11 @@ mod tests {
             )
             .await
             .unwrap();
-        assert_ne!(response.status(), StatusCode::NOT_FOUND,
-            "building_list_pinyininitial_key route should be registered");
+        assert_ne!(
+            response.status(),
+            StatusCode::NOT_FOUND,
+            "building_list_pinyininitial_key route should be registered"
+        );
     }
 
     // SKIPPED: building_list_start_start_completed_completed not accessible
@@ -132,8 +150,11 @@ mod tests {
             )
             .await
             .unwrap();
-        assert_ne!(response.status(), StatusCode::NOT_FOUND,
-            "building_id route should be registered");
+        assert_ne!(
+            response.status(),
+            StatusCode::NOT_FOUND,
+            "building_id route should be registered"
+        );
     }
 
     #[tokio::test]
@@ -150,8 +171,11 @@ mod tests {
             )
             .await
             .unwrap();
-        assert_ne!(response.status(), StatusCode::NOT_FOUND,
-            "config_system_config route should be registered");
+        assert_ne!(
+            response.status(),
+            StatusCode::NOT_FOUND,
+            "config_system_config route should be registered"
+        );
     }
 
     #[tokio::test]
@@ -168,8 +192,11 @@ mod tests {
             )
             .await
             .unwrap();
-        assert_ne!(response.status(), StatusCode::NOT_FOUND,
-            "config_system_config_manage route should be registered");
+        assert_ne!(
+            response.status(),
+            StatusCode::NOT_FOUND,
+            "config_system_config_manage route should be registered"
+        );
     }
 
     #[tokio::test]
@@ -186,8 +213,11 @@ mod tests {
             )
             .await
             .unwrap();
-        assert_ne!(response.status(), StatusCode::NOT_FOUND,
-            "meeting_list_applied_completed route should be registered");
+        assert_ne!(
+            response.status(),
+            StatusCode::NOT_FOUND,
+            "meeting_list_applied_completed route should be registered"
+        );
     }
 
     #[tokio::test]
@@ -204,8 +234,11 @@ mod tests {
             )
             .await
             .unwrap();
-        assert_ne!(response.status(), StatusCode::NOT_FOUND,
-            "meeting_list_applied_processing route should be registered");
+        assert_ne!(
+            response.status(),
+            StatusCode::NOT_FOUND,
+            "meeting_list_applied_processing route should be registered"
+        );
     }
 
     #[tokio::test]
@@ -222,8 +255,11 @@ mod tests {
             )
             .await
             .unwrap();
-        assert_ne!(response.status(), StatusCode::NOT_FOUND,
-            "meeting_list_applied_wait route should be registered");
+        assert_ne!(
+            response.status(),
+            StatusCode::NOT_FOUND,
+            "meeting_list_applied_wait route should be registered"
+        );
     }
 
     #[tokio::test]
@@ -240,8 +276,11 @@ mod tests {
             )
             .await
             .unwrap();
-        assert_ne!(response.status(), StatusCode::NOT_FOUND,
-            "meeting_list_apply_page_size_size route should be registered");
+        assert_ne!(
+            response.status(),
+            StatusCode::NOT_FOUND,
+            "meeting_list_apply_page_size_size route should be registered"
+        );
     }
 
     #[tokio::test]
@@ -258,8 +297,11 @@ mod tests {
             )
             .await
             .unwrap();
-        assert_ne!(response.status(), StatusCode::NOT_FOUND,
-            "meeting_list_coming_day_count route should be registered");
+        assert_ne!(
+            response.status(),
+            StatusCode::NOT_FOUND,
+            "meeting_list_coming_day_count route should be registered"
+        );
     }
 
     // SKIPPED: meeting_list_coming_month_count not accessible
@@ -280,8 +322,11 @@ mod tests {
             )
             .await
             .unwrap();
-        assert_ne!(response.status(), StatusCode::NOT_FOUND,
-            "meeting_list_invited_completed route should be registered");
+        assert_ne!(
+            response.status(),
+            StatusCode::NOT_FOUND,
+            "meeting_list_invited_completed route should be registered"
+        );
     }
 
     #[tokio::test]
@@ -298,8 +343,11 @@ mod tests {
             )
             .await
             .unwrap();
-        assert_ne!(response.status(), StatusCode::NOT_FOUND,
-            "meeting_list_invited_processing route should be registered");
+        assert_ne!(
+            response.status(),
+            StatusCode::NOT_FOUND,
+            "meeting_list_invited_processing route should be registered"
+        );
     }
 
     #[tokio::test]
@@ -316,8 +364,11 @@ mod tests {
             )
             .await
             .unwrap();
-        assert_ne!(response.status(), StatusCode::NOT_FOUND,
-            "meeting_list_invited_rejected route should be registered");
+        assert_ne!(
+            response.status(),
+            StatusCode::NOT_FOUND,
+            "meeting_list_invited_rejected route should be registered"
+        );
     }
 
     #[tokio::test]
@@ -334,8 +385,11 @@ mod tests {
             )
             .await
             .unwrap();
-        assert_ne!(response.status(), StatusCode::NOT_FOUND,
-            "meeting_list_invited_wait route should be registered");
+        assert_ne!(
+            response.status(),
+            StatusCode::NOT_FOUND,
+            "meeting_list_invited_wait route should be registered"
+        );
     }
 
     #[tokio::test]
@@ -352,8 +406,11 @@ mod tests {
             )
             .await
             .unwrap();
-        assert_ne!(response.status(), StatusCode::NOT_FOUND,
-            "meeting_list_wait_accept route should be registered");
+        assert_ne!(
+            response.status(),
+            StatusCode::NOT_FOUND,
+            "meeting_list_wait_accept route should be registered"
+        );
     }
 
     #[tokio::test]
@@ -370,8 +427,11 @@ mod tests {
             )
             .await
             .unwrap();
-        assert_ne!(response.status(), StatusCode::NOT_FOUND,
-            "meeting_list_wait_confirm route should be registered");
+        assert_ne!(
+            response.status(),
+            StatusCode::NOT_FOUND,
+            "meeting_list_wait_confirm route should be registered"
+        );
     }
 
     #[tokio::test]
@@ -388,8 +448,11 @@ mod tests {
             )
             .await
             .unwrap();
-        assert_ne!(response.status(), StatusCode::NOT_FOUND,
-            "meeting_list_year_year_month_month route should be registered");
+        assert_ne!(
+            response.status(),
+            StatusCode::NOT_FOUND,
+            "meeting_list_year_year_month_month route should be registered"
+        );
     }
 
     #[tokio::test]
@@ -406,8 +469,11 @@ mod tests {
             )
             .await
             .unwrap();
-        assert_ne!(response.status(), StatusCode::NOT_FOUND,
-            "meeting_list_year_year_month_month_all route should be registered");
+        assert_ne!(
+            response.status(),
+            StatusCode::NOT_FOUND,
+            "meeting_list_year_year_month_month_all route should be registered"
+        );
     }
 
     #[tokio::test]
@@ -424,8 +490,11 @@ mod tests {
             )
             .await
             .unwrap();
-        assert_ne!(response.status(), StatusCode::NOT_FOUND,
-            "meeting_list_year_year_month_month_day_day route should be registered");
+        assert_ne!(
+            response.status(),
+            StatusCode::NOT_FOUND,
+            "meeting_list_year_year_month_month_day_day route should be registered"
+        );
     }
 
     #[tokio::test]
@@ -442,8 +511,11 @@ mod tests {
             )
             .await
             .unwrap();
-        assert_ne!(response.status(), StatusCode::NOT_FOUND,
-            "meeting_list_year_year_month_month_day_day_all route should be registered");
+        assert_ne!(
+            response.status(),
+            StatusCode::NOT_FOUND,
+            "meeting_list_year_year_month_month_day_day_all route should be registered"
+        );
     }
 
     // SKIPPED: meeting_list_year_year_month_month_day_day_roomId not accessible
@@ -465,8 +537,11 @@ mod tests {
             )
             .await
             .unwrap();
-        assert_ne!(response.status(), StatusCode::NOT_FOUND,
-            "meeting_id route should be registered");
+        assert_ne!(
+            response.status(),
+            StatusCode::NOT_FOUND,
+            "meeting_id route should be registered"
+        );
     }
 
     #[tokio::test]
@@ -483,8 +558,11 @@ mod tests {
             )
             .await
             .unwrap();
-        assert_ne!(response.status(), StatusCode::NOT_FOUND,
-            "create_meeting route should be registered");
+        assert_ne!(
+            response.status(),
+            StatusCode::NOT_FOUND,
+            "create_meeting route should be registered"
+        );
     }
 
     #[tokio::test]
@@ -501,8 +579,11 @@ mod tests {
             )
             .await
             .unwrap();
-        assert_ne!(response.status(), StatusCode::NOT_FOUND,
-            "save_meeting route should be registered");
+        assert_ne!(
+            response.status(),
+            StatusCode::NOT_FOUND,
+            "save_meeting route should be registered"
+        );
     }
 
     #[tokio::test]
@@ -519,8 +600,11 @@ mod tests {
             )
             .await
             .unwrap();
-        assert_ne!(response.status(), StatusCode::NOT_FOUND,
-            "delete_meeting route should be registered");
+        assert_ne!(
+            response.status(),
+            StatusCode::NOT_FOUND,
+            "delete_meeting route should be registered"
+        );
     }
 
     #[tokio::test]
@@ -537,8 +621,11 @@ mod tests {
             )
             .await
             .unwrap();
-        assert_ne!(response.status(), StatusCode::NOT_FOUND,
-            "meeting_id_accept route should be registered");
+        assert_ne!(
+            response.status(),
+            StatusCode::NOT_FOUND,
+            "meeting_id_accept route should be registered"
+        );
     }
 
     #[tokio::test]
@@ -555,8 +642,11 @@ mod tests {
             )
             .await
             .unwrap();
-        assert_ne!(response.status(), StatusCode::NOT_FOUND,
-            "meeting_id_add_invite route should be registered");
+        assert_ne!(
+            response.status(),
+            StatusCode::NOT_FOUND,
+            "meeting_id_add_invite route should be registered"
+        );
     }
 
     #[tokio::test]
@@ -573,8 +663,11 @@ mod tests {
             )
             .await
             .unwrap();
-        assert_ne!(response.status(), StatusCode::NOT_FOUND,
-            "meeting_id_checkin route should be registered");
+        assert_ne!(
+            response.status(),
+            StatusCode::NOT_FOUND,
+            "meeting_id_checkin route should be registered"
+        );
     }
 
     // SKIPPED: meeting_id_checkin_code not accessible
@@ -592,8 +685,11 @@ mod tests {
             )
             .await
             .unwrap();
-        assert_ne!(response.status(), StatusCode::NOT_FOUND,
-            "meeting_id_confirm_allow route should be registered");
+        assert_ne!(
+            response.status(),
+            StatusCode::NOT_FOUND,
+            "meeting_id_confirm_allow route should be registered"
+        );
     }
 
     #[tokio::test]
@@ -610,8 +706,11 @@ mod tests {
             )
             .await
             .unwrap();
-        assert_ne!(response.status(), StatusCode::NOT_FOUND,
-            "meeting_id_confirm_deny route should be registered");
+        assert_ne!(
+            response.status(),
+            StatusCode::NOT_FOUND,
+            "meeting_id_confirm_deny route should be registered"
+        );
     }
 
     #[tokio::test]
@@ -628,8 +727,11 @@ mod tests {
             )
             .await
             .unwrap();
-        assert_ne!(response.status(), StatusCode::NOT_FOUND,
-            "meeting_id_delete_invite route should be registered");
+        assert_ne!(
+            response.status(),
+            StatusCode::NOT_FOUND,
+            "meeting_id_delete_invite route should be registered"
+        );
     }
 
     #[tokio::test]
@@ -646,8 +748,11 @@ mod tests {
             )
             .await
             .unwrap();
-        assert_ne!(response.status(), StatusCode::NOT_FOUND,
-            "meeting_id_manual_completed route should be registered");
+        assert_ne!(
+            response.status(),
+            StatusCode::NOT_FOUND,
+            "meeting_id_manual_completed route should be registered"
+        );
     }
 
     #[tokio::test]
@@ -664,8 +769,11 @@ mod tests {
             )
             .await
             .unwrap();
-        assert_ne!(response.status(), StatusCode::NOT_FOUND,
-            "meeting_id_modify_completedtime route should be registered");
+        assert_ne!(
+            response.status(),
+            StatusCode::NOT_FOUND,
+            "meeting_id_modify_completedtime route should be registered"
+        );
     }
 
     #[tokio::test]
@@ -682,8 +790,11 @@ mod tests {
             )
             .await
             .unwrap();
-        assert_ne!(response.status(), StatusCode::NOT_FOUND,
-            "meeting_id_modify_starttime route should be registered");
+        assert_ne!(
+            response.status(),
+            StatusCode::NOT_FOUND,
+            "meeting_id_modify_starttime route should be registered"
+        );
     }
 
     #[tokio::test]
@@ -700,8 +811,11 @@ mod tests {
             )
             .await
             .unwrap();
-        assert_ne!(response.status(), StatusCode::NOT_FOUND,
-            "meeting_id_reject route should be registered");
+        assert_ne!(
+            response.status(),
+            StatusCode::NOT_FOUND,
+            "meeting_id_reject route should be registered"
+        );
     }
 
     #[tokio::test]
@@ -718,8 +832,11 @@ mod tests {
             )
             .await
             .unwrap();
-        assert_ne!(response.status(), StatusCode::NOT_FOUND,
-            "openmeeting_list_room route should be registered");
+        assert_ne!(
+            response.status(),
+            StatusCode::NOT_FOUND,
+            "openmeeting_list_room route should be registered"
+        );
     }
 
     #[tokio::test]
@@ -736,8 +853,11 @@ mod tests {
             )
             .await
             .unwrap();
-        assert_ne!(response.status(), StatusCode::NOT_FOUND,
-            "room_list route should be registered");
+        assert_ne!(
+            response.status(),
+            StatusCode::NOT_FOUND,
+            "room_list route should be registered"
+        );
     }
 
     // SKIPPED: room_list_like_pinyin_key not accessible
@@ -757,8 +877,11 @@ mod tests {
             )
             .await
             .unwrap();
-        assert_ne!(response.status(), StatusCode::NOT_FOUND,
-            "room_id route should be registered");
+        assert_ne!(
+            response.status(),
+            StatusCode::NOT_FOUND,
+            "room_id route should be registered"
+        );
     }
 
     // SKIPPED: room_id_photo not accessible

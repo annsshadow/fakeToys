@@ -142,7 +142,7 @@ pub async fn search_messages(
 
 #[cfg(test)]
 mod tests {
-    use crate::{search_documents, search_subjects, search_messages, Document, Subject, Message};
+    use crate::{search_documents, search_messages, search_subjects, Document, Message, Subject};
     use deadpool_postgres::{Manager, Pool};
 
     fn build_test_pool() -> Pool {
@@ -224,7 +224,9 @@ mod tests {
 /// PostgreSQL full-text document search that preserves the endpoint's
 /// historical empty-list fallback when the database query is unavailable.
 pub async fn search_documents_smart(pool: &Pool, query: &str, limit: i32) -> Vec<Document> {
-    search_documents(pool, query, limit).await.unwrap_or_default()
+    search_documents(pool, query, limit)
+        .await
+        .unwrap_or_default()
 }
 
 #[cfg(test)]

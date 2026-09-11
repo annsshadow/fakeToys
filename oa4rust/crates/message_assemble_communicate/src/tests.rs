@@ -1,10 +1,8 @@
 use super::*;
 use axum::body::Body;
-use axum::http::{Request, Method, StatusCode};
+use axum::http::{Method, Request, StatusCode};
 use serde_json::json;
 use tower::util::ServiceExt;
-
-
 
 fn build_test_pool() -> deadpool_postgres::Pool {
     deadpool_postgres::Pool::builder(deadpool_postgres::Manager::new(
@@ -57,7 +55,8 @@ async fn test_send_message_route_exists() {
         "from": "sender",
         "to": "receiver",
         "content": "hello"
-    })).unwrap();
+    }))
+    .unwrap();
 
     let response = app
         .oneshot(
@@ -115,11 +114,8 @@ async fn test_mark_read_route_exists() {
 mod tests {
     use super::*;
     use axum::body::Body;
-    use axum::http::{Request, Method, StatusCode};
+    use axum::http::{Method, Request, StatusCode};
     use tower::util::ServiceExt;
-
-
-
 
     #[tokio::test]
     async fn test_delete_jaxrs_message_assemble_communicate_im_co() {

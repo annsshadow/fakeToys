@@ -1,5 +1,5 @@
-use axum::{extract::Extension, extract::Path, routing::get, Json, Router};
 use axum::response::{IntoResponse, Response};
+use axum::{extract::Extension, extract::Path, routing::get, Json, Router};
 use deadpool_postgres::Pool;
 use serde::Serialize;
 use serde_json::Value;
@@ -59,7 +59,10 @@ async fn welink_access_token(config: &WelinkConfig) -> Result<String, AppError> 
     let client = welink_client();
     let resp: Value = client
         .get(format!("{WELINK_API_BASE}/api/auth/v2/token"))
-        .query(&[("app_key", &config.app_key), ("app_secret", &config.app_secret)])
+        .query(&[
+            ("app_key", &config.app_key),
+            ("app_secret", &config.app_secret),
+        ])
         .send()
         .await
         .map_err(|_| AppError::Internal)?
@@ -142,7 +145,12 @@ pub async fn welink_login(
                 r.get::<_, Option<String>>("email"),
                 r.get::<_, Option<String>>("icon"),
             ),
-            None => return Ok(Json(ActionResult::<WelinkLoginResponse>::error("user not bound to WeLink")).into_response()),
+            None => {
+                return Ok(Json(ActionResult::<WelinkLoginResponse>::error(
+                    "user not bound to WeLink",
+                ))
+                .into_response())
+            }
         };
 
     let role_list = fetch_role_list(&pool, &person_id).await?;
@@ -170,6 +178,5 @@ pub async fn welink_login(
 
 /// WeLink SSO 路由
 pub fn router() -> Router {
-    Router::new()
-        .route("/jaxrs/welink/code/{code}", get(welink_login))
+    Router::new().route("/jaxrs/welink/code/{code}", get(welink_login))
 }

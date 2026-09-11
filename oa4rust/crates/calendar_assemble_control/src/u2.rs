@@ -172,7 +172,11 @@ pub async fn calendar_list_public(pool: Extension<Pool>) -> ApiResult {
         .map_err(|_| AppError::Internal)?;
     let items: Vec<Value> = rows.iter().map(calendar_row_to_value).collect();
     let total_items = items.len();
-    Ok(Json(ActionResult::java_success(Value::Array(items), total_items as i64, 0)))
+    Ok(Json(ActionResult::java_success(
+        Value::Array(items),
+        total_items as i64,
+        0,
+    )))
 }
 
 /// GET /jaxrs/calendar_assemble_control/calendar/{id} —— 按 ID 获取日历信息
@@ -250,7 +254,11 @@ pub async fn setting_list_all(pool: Extension<Pool>) -> ApiResult {
         })
         .collect();
     let total_items = items.len();
-    Ok(Json(ActionResult::java_success(Value::Array(items), total_items as i64, 0)))
+    Ok(Json(ActionResult::java_success(
+        Value::Array(items),
+        total_items as i64,
+        0,
+    )))
 }
 
 /// GET /jaxrs/calendar_assemble_control/setting/ismanager —— 当前用户是否设置管理员
@@ -274,12 +282,32 @@ pub async fn calendar_create(
 ) -> ApiResult {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let id = uuid::Uuid::new_v4().to_string();
-    let name = body.get("name").and_then(|v| v.as_str()).unwrap_or("").to_string();
-    let cal_type = body.get("type").and_then(|v| v.as_str()).unwrap_or("PERSONAL").to_string();
-    let target = body.get("target").and_then(|v| v.as_str()).map(|s| s.to_string());
-    let color = body.get("color").and_then(|v| v.as_str()).map(|s| s.to_string());
-    let description = body.get("description").and_then(|v| v.as_str()).map(|s| s.to_string());
-    let is_public = body.get("isPublic").and_then(|v| v.as_bool()).unwrap_or(false);
+    let name = body
+        .get("name")
+        .and_then(|v| v.as_str())
+        .unwrap_or("")
+        .to_string();
+    let cal_type = body
+        .get("type")
+        .and_then(|v| v.as_str())
+        .unwrap_or("PERSONAL")
+        .to_string();
+    let target = body
+        .get("target")
+        .and_then(|v| v.as_str())
+        .map(|s| s.to_string());
+    let color = body
+        .get("color")
+        .and_then(|v| v.as_str())
+        .map(|s| s.to_string());
+    let description = body
+        .get("description")
+        .and_then(|v| v.as_str())
+        .map(|s| s.to_string());
+    let is_public = body
+        .get("isPublic")
+        .and_then(|v| v.as_bool())
+        .unwrap_or(false);
     let person = session.person_unique.clone();
 
     client
@@ -326,7 +354,9 @@ pub async fn calendar_follow_get(
         .await
         .map_err(|_| AppError::Internal)?
         .get("c");
-    Ok(Json(ActionResult::success(json!({ "followed": count > 0 }))))
+    Ok(Json(ActionResult::success(
+        json!({ "followed": count > 0 }),
+    )))
 }
 
 /// GET /jaxrs/calendar_assemble_control/calendar/follow/{id}/cancel —— 取消关注
@@ -360,13 +390,16 @@ pub async fn calendar_ismanager_calendar(
 
 /// PUT /jaxrs/calendar_assemble_control/calendar/list/filter —— 按条件过滤日历
 #[allow(non_snake_case)]
-pub async fn calendar_list_filter(
-    pool: Extension<Pool>,
-    Json(body): Json<Value>,
-) -> ApiResult {
+pub async fn calendar_list_filter(pool: Extension<Pool>, Json(body): Json<Value>) -> ApiResult {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
-    let name: Option<String> = body.get("name").and_then(|v| v.as_str()).map(|s| s.to_string());
-    let cal_type: Option<String> = body.get("type").and_then(|v| v.as_str()).map(|s| s.to_string());
+    let name: Option<String> = body
+        .get("name")
+        .and_then(|v| v.as_str())
+        .map(|s| s.to_string());
+    let cal_type: Option<String> = body
+        .get("type")
+        .and_then(|v| v.as_str())
+        .map(|s| s.to_string());
     let rows = client
         .query(
             "SELECT id, name, type, target, color, description, createor, is_public, status \
@@ -381,7 +414,11 @@ pub async fn calendar_list_filter(
         .map_err(|_| AppError::Internal)?;
     let items: Vec<Value> = rows.iter().map(calendar_row_to_value).collect();
     let total_items = items.len();
-    Ok(Json(ActionResult::java_success(Value::Array(items), total_items as i64, 0)))
+    Ok(Json(ActionResult::java_success(
+        Value::Array(items),
+        total_items as i64,
+        0,
+    )))
 }
 
 /// GET /jaxrs/calendar_assemble_control/calendar/manager/list/with/person/{id} —— 含某人的日历管理员列表
@@ -408,7 +445,11 @@ pub async fn calendar_manager_list_with_person(
         None => vec![],
     };
     let total_managers = managers.len();
-    Ok(Json(ActionResult::java_success(Value::Array(managers), total_managers as i64, 0)))
+    Ok(Json(ActionResult::java_success(
+        Value::Array(managers),
+        total_managers as i64,
+        0,
+    )))
 }
 
 /// DELETE /jaxrs/calendar_assemble_control/calendar/{id} —— 删除日历（IDOR 门禁）
@@ -419,7 +460,9 @@ pub async fn calendar_delete(
     Path(id): Path<String>,
 ) -> ApiResult {
     if !person_can_manage_calendar(&pool, &session.person_unique, &id).await? {
-        return Ok(Json(ActionResult::error("forbidden: not calendar owner or admin")));
+        return Ok(Json(ActionResult::error(
+            "forbidden: not calendar owner or admin",
+        )));
     }
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let n = client
@@ -441,15 +484,43 @@ pub async fn event_create(
 ) -> ApiResult {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let id = uuid::Uuid::new_v4().to_string();
-    let calendar_id = body.get("calendarId").and_then(|v| v.as_str()).map(|s| s.to_string());
-    let title = body.get("title").and_then(|v| v.as_str()).unwrap_or("").to_string();
-    let content = body.get("content").and_then(|v| v.as_str()).map(|s| s.to_string());
-    let location = body.get("location").and_then(|v| v.as_str()).map(|s| s.to_string());
-    let start_time = body.get("startTime").and_then(|v| v.as_str()).map(|s| s.to_string());
-    let end_time = body.get("endTime").and_then(|v| v.as_str()).map(|s| s.to_string());
-    let all_day = body.get("allDay").and_then(|v| v.as_bool()).unwrap_or(false);
-    let visibility = body.get("visibility").and_then(|v| v.as_str()).map(|s| s.to_string());
-    let master_id = body.get("masterId").and_then(|v| v.as_str()).map(|s| s.to_string());
+    let calendar_id = body
+        .get("calendarId")
+        .and_then(|v| v.as_str())
+        .map(|s| s.to_string());
+    let title = body
+        .get("title")
+        .and_then(|v| v.as_str())
+        .unwrap_or("")
+        .to_string();
+    let content = body
+        .get("content")
+        .and_then(|v| v.as_str())
+        .map(|s| s.to_string());
+    let location = body
+        .get("location")
+        .and_then(|v| v.as_str())
+        .map(|s| s.to_string());
+    let start_time = body
+        .get("startTime")
+        .and_then(|v| v.as_str())
+        .map(|s| s.to_string());
+    let end_time = body
+        .get("endTime")
+        .and_then(|v| v.as_str())
+        .map(|s| s.to_string());
+    let all_day = body
+        .get("allDay")
+        .and_then(|v| v.as_bool())
+        .unwrap_or(false);
+    let visibility = body
+        .get("visibility")
+        .and_then(|v| v.as_str())
+        .map(|s| s.to_string());
+    let master_id = body
+        .get("masterId")
+        .and_then(|v| v.as_str())
+        .map(|s| s.to_string());
     let person = session.person_unique.clone();
 
     client
@@ -490,7 +561,9 @@ pub async fn event_delete_after(
     Path(id): Path<String>,
 ) -> ApiResult {
     if !person_can_manage_event(&pool, &session.person_unique, &id).await? {
-        return Ok(Json(ActionResult::error("forbidden: not event owner or admin")));
+        return Ok(Json(ActionResult::error(
+            "forbidden: not event owner or admin",
+        )));
     }
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let anchor = client
@@ -525,7 +598,9 @@ pub async fn event_delete_all(
     Path(id): Path<String>,
 ) -> ApiResult {
     if !person_can_manage_event(&pool, &session.person_unique, &id).await? {
-        return Ok(Json(ActionResult::error("forbidden: not event owner or admin")));
+        return Ok(Json(ActionResult::error(
+            "forbidden: not event owner or admin",
+        )));
     }
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let master_id: Option<String> = client
@@ -547,8 +622,14 @@ pub async fn event_delete_all(
 #[allow(non_snake_case)]
 pub async fn event_list_filter(pool: Extension<Pool>, Json(body): Json<Value>) -> ApiResult {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
-    let calendar_id: Option<String> = body.get("calendarId").and_then(|v| v.as_str()).map(|s| s.to_string());
-    let title: Option<String> = body.get("title").and_then(|v| v.as_str()).map(|s| s.to_string());
+    let calendar_id: Option<String> = body
+        .get("calendarId")
+        .and_then(|v| v.as_str())
+        .map(|s| s.to_string());
+    let title: Option<String> = body
+        .get("title")
+        .and_then(|v| v.as_str())
+        .map(|s| s.to_string());
     let rows = client
         .query(
             "SELECT id, calendar_id, title, content, location, start_time, end_time, \
@@ -564,14 +645,21 @@ pub async fn event_list_filter(pool: Extension<Pool>, Json(body): Json<Value>) -
         .map_err(|_| AppError::Internal)?;
     let items: Vec<Value> = rows.iter().map(event_row_to_value).collect();
     let total_items = items.len();
-    Ok(Json(ActionResult::java_success(Value::Array(items), total_items as i64, 0)))
+    Ok(Json(ActionResult::java_success(
+        Value::Array(items),
+        total_items as i64,
+        0,
+    )))
 }
 
 /// PUT /jaxrs/calendar_assemble_control/event/list/filter/sample —— 事件过滤样例（限量）
 #[allow(non_snake_case)]
 pub async fn event_list_filter_sample(pool: Extension<Pool>, Json(body): Json<Value>) -> ApiResult {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
-    let calendar_id: Option<String> = body.get("calendarId").and_then(|v| v.as_str()).map(|s| s.to_string());
+    let calendar_id: Option<String> = body
+        .get("calendarId")
+        .and_then(|v| v.as_str())
+        .map(|s| s.to_string());
     let rows = client
         .query(
             "SELECT id, calendar_id, title, start_time, status, createor \
@@ -594,7 +682,11 @@ pub async fn event_list_filter_sample(pool: Extension<Pool>, Json(body): Json<Va
         })
         .collect();
     let total_items = items.len();
-    Ok(Json(ActionResult::java_success(Value::Array(items), total_items as i64, 0)))
+    Ok(Json(ActionResult::java_success(
+        Value::Array(items),
+        total_items as i64,
+        0,
+    )))
 }
 
 /// POST /jaxrs/calendar_assemble_control/event/list/filter/sample/manager —— 管理视角的事件样例
@@ -609,7 +701,10 @@ pub async fn event_list_filter_sample_manager(
         return Ok(Json(ActionResult::error("forbidden: manager only")));
     }
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
-    let calendar_id: Option<String> = body.get("calendarId").and_then(|v| v.as_str()).map(|s| s.to_string());
+    let calendar_id: Option<String> = body
+        .get("calendarId")
+        .and_then(|v| v.as_str())
+        .map(|s| s.to_string());
     let rows = client
         .query(
             "SELECT id, calendar_id, title, start_time, createor \
@@ -632,7 +727,11 @@ pub async fn event_list_filter_sample_manager(
         })
         .collect();
     let total_items = items.len();
-    Ok(Json(ActionResult::java_success(Value::Array(items), total_items as i64, 0)))
+    Ok(Json(ActionResult::java_success(
+        Value::Array(items),
+        total_items as i64,
+        0,
+    )))
 }
 
 /// POST /jaxrs/calendar_assemble_control/event/manage —— 事件管理（更新状态/可见性）
@@ -642,16 +741,28 @@ pub async fn event_manage(
     session: Extension<shared::session::Session>,
     Json(body): Json<Value>,
 ) -> ApiResult {
-    let id = body.get("id").and_then(|v| v.as_str()).unwrap_or("").to_string();
+    let id = body
+        .get("id")
+        .and_then(|v| v.as_str())
+        .unwrap_or("")
+        .to_string();
     if id.is_empty() {
         return Ok(Json(ActionResult::error("id is required")));
     }
     if !person_can_manage_event(&pool, &session.person_unique, &id).await? {
-        return Ok(Json(ActionResult::error("forbidden: not event owner or admin")));
+        return Ok(Json(ActionResult::error(
+            "forbidden: not event owner or admin",
+        )));
     }
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
-    let status = body.get("status").and_then(|v| v.as_str()).map(|s| s.to_string());
-    let visibility = body.get("visibility").and_then(|v| v.as_str()).map(|s| s.to_string());
+    let status = body
+        .get("status")
+        .and_then(|v| v.as_str())
+        .map(|s| s.to_string());
+    let visibility = body
+        .get("visibility")
+        .and_then(|v| v.as_str())
+        .map(|s| s.to_string());
     let n = client
         .execute(
             "UPDATE cal_event SET status = COALESCE($2, status), visibility = COALESCE($3, visibility) \
@@ -708,11 +819,16 @@ pub async fn event_delete_single(
     Path(id): Path<String>,
 ) -> ApiResult {
     if !person_can_manage_event(&pool, &session.person_unique, &id).await? {
-        return Ok(Json(ActionResult::error("forbidden: not event owner or admin")));
+        return Ok(Json(ActionResult::error(
+            "forbidden: not event owner or admin",
+        )));
     }
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let n = client
-        .execute("DELETE FROM cal_event WHERE id = $1 AND status = 'OPEN'", &[&id])
+        .execute(
+            "DELETE FROM cal_event WHERE id = $1 AND status = 'OPEN'",
+            &[&id],
+        )
         .await
         .map_err(|_| AppError::Internal)?;
     if n == 0 {
@@ -730,19 +846,30 @@ pub async fn event_update_after(
     Json(body): Json<Value>,
 ) -> ApiResult {
     if !person_can_manage_event(&pool, &session.person_unique, &id).await? {
-        return Ok(Json(ActionResult::error("forbidden: not event owner or admin")));
+        return Ok(Json(ActionResult::error(
+            "forbidden: not event owner or admin",
+        )));
     }
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let anchor = client
-        .query_opt("SELECT master_id, start_time FROM cal_event WHERE id = $1", &[&id])
+        .query_opt(
+            "SELECT master_id, start_time FROM cal_event WHERE id = $1",
+            &[&id],
+        )
         .await
         .map_err(|_| AppError::Internal)?;
     let (master_id, start_time): (Option<String>, Option<String>) = match anchor {
         Some(r) => (r.get("master_id"), r.get("start_time")),
         None => return Ok(Json(ActionResult::error("event not found"))),
     };
-    let title = body.get("title").and_then(|v| v.as_str()).map(|s| s.to_string());
-    let location = body.get("location").and_then(|v| v.as_str()).map(|s| s.to_string());
+    let title = body
+        .get("title")
+        .and_then(|v| v.as_str())
+        .map(|s| s.to_string());
+    let location = body
+        .get("location")
+        .and_then(|v| v.as_str())
+        .map(|s| s.to_string());
     let n = client
         .execute(
             "UPDATE cal_event SET title = COALESCE($3, title), location = COALESCE($4, location) \
@@ -765,7 +892,9 @@ pub async fn event_update_all(
     Json(body): Json<Value>,
 ) -> ApiResult {
     if !person_can_manage_event(&pool, &session.person_unique, &id).await? {
-        return Ok(Json(ActionResult::error("forbidden: not event owner or admin")));
+        return Ok(Json(ActionResult::error(
+            "forbidden: not event owner or admin",
+        )));
     }
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let master_id: Option<String> = client
@@ -773,8 +902,14 @@ pub async fn event_update_all(
         .await
         .map_err(|_| AppError::Internal)?
         .and_then(|r| r.get("master_id"));
-    let title = body.get("title").and_then(|v| v.as_str()).map(|s| s.to_string());
-    let location = body.get("location").and_then(|v| v.as_str()).map(|s| s.to_string());
+    let title = body
+        .get("title")
+        .and_then(|v| v.as_str())
+        .map(|s| s.to_string());
+    let location = body
+        .get("location")
+        .and_then(|v| v.as_str())
+        .map(|s| s.to_string());
     let n = client
         .execute(
             "UPDATE cal_event SET title = COALESCE($2, title), location = COALESCE($3, location) \
@@ -795,14 +930,31 @@ pub async fn event_update_single(
     Json(body): Json<Value>,
 ) -> ApiResult {
     if !person_can_manage_event(&pool, &session.person_unique, &id).await? {
-        return Ok(Json(ActionResult::error("forbidden: not event owner or admin")));
+        return Ok(Json(ActionResult::error(
+            "forbidden: not event owner or admin",
+        )));
     }
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
-    let title = body.get("title").and_then(|v| v.as_str()).map(|s| s.to_string());
-    let content = body.get("content").and_then(|v| v.as_str()).map(|s| s.to_string());
-    let location = body.get("location").and_then(|v| v.as_str()).map(|s| s.to_string());
-    let start_time = body.get("startTime").and_then(|v| v.as_str()).map(|s| s.to_string());
-    let end_time = body.get("endTime").and_then(|v| v.as_str()).map(|s| s.to_string());
+    let title = body
+        .get("title")
+        .and_then(|v| v.as_str())
+        .map(|s| s.to_string());
+    let content = body
+        .get("content")
+        .and_then(|v| v.as_str())
+        .map(|s| s.to_string());
+    let location = body
+        .get("location")
+        .and_then(|v| v.as_str())
+        .map(|s| s.to_string());
+    let start_time = body
+        .get("startTime")
+        .and_then(|v| v.as_str())
+        .map(|s| s.to_string());
+    let end_time = body
+        .get("endTime")
+        .and_then(|v| v.as_str())
+        .map(|s| s.to_string());
     let n = client
         .execute(
             "UPDATE cal_event SET title = COALESCE($2, title), content = COALESCE($3, content), \
@@ -827,9 +979,19 @@ pub async fn message_create(
 ) -> ApiResult {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let id = uuid::Uuid::new_v4().to_string();
-    let calendar_id = body.get("calendarId").and_then(|v| v.as_str()).map(|s| s.to_string());
-    let title = body.get("title").and_then(|v| v.as_str()).unwrap_or("").to_string();
-    let msg_body = body.get("body").and_then(|v| v.as_str()).map(|s| s.to_string());
+    let calendar_id = body
+        .get("calendarId")
+        .and_then(|v| v.as_str())
+        .map(|s| s.to_string());
+    let title = body
+        .get("title")
+        .and_then(|v| v.as_str())
+        .unwrap_or("")
+        .to_string();
+    let msg_body = body
+        .get("body")
+        .and_then(|v| v.as_str())
+        .map(|s| s.to_string());
     let person = session.person_unique.clone();
     client
         .execute(
@@ -852,12 +1014,28 @@ pub async fn message_create(
 pub async fn setting_create(pool: Extension<Pool>, Json(body): Json<Value>) -> ApiResult {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let id = uuid::Uuid::new_v4().to_string();
-    let code = body.get("code").and_then(|v| v.as_str()).unwrap_or("").to_string();
-    let name = body.get("name").and_then(|v| v.as_str()).map(|s| s.to_string());
-    let description = body.get("description").and_then(|v| v.as_str()).map(|s| s.to_string());
-    let value = body.get("value").and_then(|v| v.as_str()).map(|s| s.to_string());
+    let code = body
+        .get("code")
+        .and_then(|v| v.as_str())
+        .unwrap_or("")
+        .to_string();
+    let name = body
+        .get("name")
+        .and_then(|v| v.as_str())
+        .map(|s| s.to_string());
+    let description = body
+        .get("description")
+        .and_then(|v| v.as_str())
+        .map(|s| s.to_string());
+    let value = body
+        .get("value")
+        .and_then(|v| v.as_str())
+        .map(|s| s.to_string());
     let order_no = body.get("order").and_then(|v| v.as_i64()).unwrap_or(0) as i32;
-    let person = body.get("person").and_then(|v| v.as_str()).map(|s| s.to_string());
+    let person = body
+        .get("person")
+        .and_then(|v| v.as_str())
+        .map(|s| s.to_string());
     client
         .execute(
             "INSERT INTO cal_setting (id, code, name, description, value, order_no, person, create_time) \

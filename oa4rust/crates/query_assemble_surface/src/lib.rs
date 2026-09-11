@@ -1,7 +1,11 @@
 #[allow(dead_code, non_snake_case)]
 use axum::{
     extract::{Extension, Path},
-    Json, Router, routing::get, routing::post, routing::put, routing::delete,
+    routing::delete,
+    routing::get,
+    routing::post,
+    routing::put,
+    Json, Router,
 };
 use deadpool_postgres::Pool;
 use serde::Deserialize;
@@ -43,8 +47,14 @@ pub async fn get_surface(
                 ("category".to_string(), Value::String(row.get("category"))),
                 ("content".to_string(), Value::String(row.get("content"))),
                 ("creator".to_string(), Value::String(row.get("creator"))),
-                ("createTime".to_string(), Value::String(row.get("create_time"))),
-                ("updateTime".to_string(), Value::String(row.get("update_time"))),
+                (
+                    "createTime".to_string(),
+                    Value::String(row.get("create_time")),
+                ),
+                (
+                    "updateTime".to_string(),
+                    Value::String(row.get("update_time")),
+                ),
             ]));
             Ok(Json(ActionResult::success(result)))
         }
@@ -109,8 +119,14 @@ pub async fn list_surfaces(
                 ("category".to_string(), Value::String(row.get("category"))),
                 ("content".to_string(), Value::String(row.get("content"))),
                 ("creator".to_string(), Value::String(row.get("creator"))),
-                ("createTime".to_string(), Value::String(row.get("create_time"))),
-                ("updateTime".to_string(), Value::String(row.get("update_time"))),
+                (
+                    "createTime".to_string(),
+                    Value::String(row.get("create_time")),
+                ),
+                (
+                    "updateTime".to_string(),
+                    Value::String(row.get("update_time")),
+                ),
             ]))
         })
         .collect();
@@ -151,7 +167,10 @@ pub async fn save_surface(
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("id".to_string(), Value::String(id)),
-            ("saved".to_string(), Value::Number(serde_json::Number::from(result as i64))),
+            (
+                "saved".to_string(),
+                Value::Number(serde_json::Number::from(result as i64)),
+            ),
             ("name".to_string(), Value::String(name)),
             ("category".to_string(), Value::String(category)),
             ("content".to_string(), Value::String(content)),
@@ -178,7 +197,10 @@ pub async fn delete_surface(
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("id".to_string(), Value::String(id)),
-            ("updated".to_string(), Value::Number(serde_json::Number::from(result as i64))),
+            (
+                "updated".to_string(),
+                Value::Number(serde_json::Number::from(result as i64)),
+            ),
         ]),
     ))))
 }
@@ -190,8 +212,14 @@ pub async fn preview_surface(
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("id".to_string(), Value::String(id.clone())),
-            ("preview_url".to_string(), Value::String(format!("/preview/query/{}", id))),
-            ("html".to_string(), Value::String("<div>Query Preview</div>".to_string())),
+            (
+                "preview_url".to_string(),
+                Value::String(format!("/preview/query/{}", id)),
+            ),
+            (
+                "html".to_string(),
+                Value::String("<div>Query Preview</div>".to_string()),
+            ),
         ]),
     ))))
 }
@@ -339,12 +367,9 @@ mod tests;
 #[cfg(test)]
 mod tests_generated;
 
-
 pub fn router(pool: deadpool_postgres::Pool) -> axum::Router {
     query_assemble_surface_router().layer(axum::extract::Extension(pool))
 }
-
-
 
 #[allow(non_snake_case)]
 pub async fn importmodel_execute_record_recordId(
@@ -362,15 +387,16 @@ pub async fn importmodel_execute_record_recordId(
         .map_err(|_| AppError::Internal)?;
 
     match row {
-        Some(row) => {
-            Ok(Json(ActionResult::success(Value::Object(
-                serde_json::Map::from_iter([
-                    ("id".to_string(), Value::String(row.get("id"))),
-                    ("modelFlag".to_string(), Value::String(row.get("model_flag"))),
-                    ("data".to_string(), Value::String(row.get("data"))),
-                ]),
-            ))))
-        }
+        Some(row) => Ok(Json(ActionResult::success(Value::Object(
+            serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                (
+                    "modelFlag".to_string(),
+                    Value::String(row.get("model_flag")),
+                ),
+                ("data".to_string(), Value::String(row.get("data"))),
+            ]),
+        )))),
         None => Ok(Json(ActionResult::error("record not found"))),
     }
 }
@@ -396,8 +422,14 @@ pub async fn importmodel_flag_flag_query_queryFlag(
             let result = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("name".to_string(), Value::String(row.get("name"))),
-                ("modelFlag".to_string(), Value::String(row.get("model_flag"))),
-                ("queryFlag".to_string(), Value::String(row.get("query_flag"))),
+                (
+                    "modelFlag".to_string(),
+                    Value::String(row.get("model_flag")),
+                ),
+                (
+                    "queryFlag".to_string(),
+                    Value::String(row.get("query_flag")),
+                ),
             ]));
             Ok(Json(ActionResult::success(result)))
         }
@@ -426,10 +458,19 @@ pub async fn importmodel_list_query_queryFlag(
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("name".to_string(), Value::String(row.get("name"))),
-                ("modelFlag".to_string(), Value::String(row.get("model_flag"))),
-                ("queryFlag".to_string(), Value::String(row.get("query_flag"))),
+                (
+                    "modelFlag".to_string(),
+                    Value::String(row.get("model_flag")),
+                ),
+                (
+                    "queryFlag".to_string(),
+                    Value::String(row.get("query_flag")),
+                ),
                 ("creator".to_string(), Value::String(row.get("creator"))),
-                ("createTime".to_string(), Value::String(row.get("create_time"))),
+                (
+                    "createTime".to_string(),
+                    Value::String(row.get("create_time")),
+                ),
             ]))
         })
         .collect();
@@ -463,10 +504,16 @@ pub async fn importmodel_list_record_item_paging_page_size_size(
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
-                ("modelFlag".to_string(), Value::String(row.get("model_flag"))),
+                (
+                    "modelFlag".to_string(),
+                    Value::String(row.get("model_flag")),
+                ),
                 ("data".to_string(), Value::String(row.get("data"))),
                 ("creator".to_string(), Value::String(row.get("creator"))),
-                ("createTime".to_string(), Value::String(row.get("create_time"))),
+                (
+                    "createTime".to_string(),
+                    Value::String(row.get("create_time")),
+                ),
             ]))
         })
         .collect();
@@ -500,10 +547,16 @@ pub async fn importmodel_list_record_paging_page_size_size(
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
-                ("modelFlag".to_string(), Value::String(row.get("model_flag"))),
+                (
+                    "modelFlag".to_string(),
+                    Value::String(row.get("model_flag")),
+                ),
                 ("data".to_string(), Value::String(row.get("data"))),
                 ("creator".to_string(), Value::String(row.get("creator"))),
-                ("createTime".to_string(), Value::String(row.get("create_time"))),
+                (
+                    "createTime".to_string(),
+                    Value::String(row.get("create_time")),
+                ),
             ]))
         })
         .collect();
@@ -535,10 +588,16 @@ pub async fn importmodel_record_recordId(
         Some(row) => {
             let result = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
-                ("modelFlag".to_string(), Value::String(row.get("model_flag"))),
+                (
+                    "modelFlag".to_string(),
+                    Value::String(row.get("model_flag")),
+                ),
                 ("data".to_string(), Value::String(row.get("data"))),
                 ("creator".to_string(), Value::String(row.get("creator"))),
-                ("createTime".to_string(), Value::String(row.get("create_time"))),
+                (
+                    "createTime".to_string(),
+                    Value::String(row.get("create_time")),
+                ),
             ]));
             Ok(Json(ActionResult::success(result)))
         }
@@ -562,15 +621,16 @@ pub async fn importmodel_record_recordId_mockdeletetoget(
         .map_err(|_| AppError::Internal)?;
 
     match row {
-        Some(row) => {
-            Ok(Json(ActionResult::success(Value::Object(
-                serde_json::Map::from_iter([
-                    ("id".to_string(), Value::String(row.get("id"))),
-                    ("modelFlag".to_string(), Value::String(row.get("model_flag"))),
-                    ("data".to_string(), Value::String(row.get("data"))),
-                ]),
-            ))))
-        }
+        Some(row) => Ok(Json(ActionResult::success(Value::Object(
+            serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                (
+                    "modelFlag".to_string(),
+                    Value::String(row.get("model_flag")),
+                ),
+                ("data".to_string(), Value::String(row.get("data"))),
+            ]),
+        )))),
         None => Ok(Json(ActionResult::error("record not found"))),
     }
 }
@@ -591,14 +651,12 @@ pub async fn importmodel_record_recordId_status(
         .map_err(|_| AppError::Internal)?;
 
     match row {
-        Some(row) => {
-            Ok(Json(ActionResult::success(Value::Object(
-                serde_json::Map::from_iter([
-                    ("id".to_string(), Value::String(row.get("id"))),
-                    ("status".to_string(), Value::String(row.get("status"))),
-                ]),
-            ))))
-        }
+        Some(row) => Ok(Json(ActionResult::success(Value::Object(
+            serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                ("status".to_string(), Value::String(row.get("status"))),
+            ]),
+        )))),
         None => Ok(Json(ActionResult::error("record not found"))),
     }
 }
@@ -632,11 +690,20 @@ pub async fn importmodel_id(
             let result = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("name".to_string(), Value::String(row.get("name"))),
-                ("modelFlag".to_string(), Value::String(row.get("model_flag"))),
-                ("queryFlag".to_string(), Value::String(row.get("query_flag"))),
+                (
+                    "modelFlag".to_string(),
+                    Value::String(row.get("model_flag")),
+                ),
+                (
+                    "queryFlag".to_string(),
+                    Value::String(row.get("query_flag")),
+                ),
                 ("content".to_string(), Value::String(row.get("content"))),
                 ("creator".to_string(), Value::String(row.get("creator"))),
-                ("createTime".to_string(), Value::String(row.get("create_time"))),
+                (
+                    "createTime".to_string(),
+                    Value::String(row.get("create_time")),
+                ),
             ]));
             Ok(Json(ActionResult::success(result)))
         }
@@ -662,7 +729,9 @@ pub async fn importmodel_id_execute(
     match row {
         Some(row) => {
             let record_id = uuid::Uuid::new_v4().to_string();
-            let model_flag = row.get::<_, Option<String>>("model_flag").unwrap_or_default();
+            let model_flag = row
+                .get::<_, Option<String>>("model_flag")
+                .unwrap_or_default();
             let result = client
                 .execute(
                     "INSERT INTO x_query_import_model_record (id, model_flag, import_model_id, create_time) VALUES ($1, $2, $3, to_char(NOW(),'YYYY-MM-DD HH24:MI:SS'))",
@@ -675,7 +744,10 @@ pub async fn importmodel_id_execute(
                 serde_json::Map::from_iter([
                     ("id".to_string(), Value::String(id)),
                     ("recordId".to_string(), Value::String(record_id)),
-                    ("executed".to_string(), Value::Number(serde_json::Number::from(result as i64))),
+                    (
+                        "executed".to_string(),
+                        Value::Number(serde_json::Number::from(result as i64)),
+                    ),
                 ]),
             ))))
         }
@@ -704,11 +776,17 @@ pub async fn neural_list_calculate_model_modelFlag_work_workId(
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
-                ("modelFlag".to_string(), Value::String(row.get("model_flag"))),
+                (
+                    "modelFlag".to_string(),
+                    Value::String(row.get("model_flag")),
+                ),
                 ("workId".to_string(), Value::String(row.get("work_id"))),
                 ("result".to_string(), Value::String(row.get("result"))),
                 ("creator".to_string(), Value::String(row.get("creator"))),
-                ("createTime".to_string(), Value::String(row.get("create_time"))),
+                (
+                    "createTime".to_string(),
+                    Value::String(row.get("create_time")),
+                ),
             ]))
         })
         .collect();
@@ -722,9 +800,7 @@ pub async fn neural_list_calculate_model_modelFlag_work_workId(
 }
 
 #[allow(non_snake_case)]
-pub async fn query_list(
-    pool: Extension<Pool>,
-) -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn query_list(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let rows = client
@@ -743,7 +819,10 @@ pub async fn query_list(
                 ("name".to_string(), Value::String(row.get("name"))),
                 ("category".to_string(), Value::String(row.get("category"))),
                 ("creator".to_string(), Value::String(row.get("creator"))),
-                ("createTime".to_string(), Value::String(row.get("create_time"))),
+                (
+                    "createTime".to_string(),
+                    Value::String(row.get("create_time")),
+                ),
             ]))
         })
         .collect();
@@ -779,7 +858,10 @@ pub async fn query_list_key_key(
                 ("name".to_string(), Value::String(row.get("name"))),
                 ("category".to_string(), Value::String(row.get("category"))),
                 ("creator".to_string(), Value::String(row.get("creator"))),
-                ("createTime".to_string(), Value::String(row.get("create_time"))),
+                (
+                    "createTime".to_string(),
+                    Value::String(row.get("create_time")),
+                ),
             ]))
         })
         .collect();
@@ -813,9 +895,15 @@ pub async fn query_flag(
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("name".to_string(), Value::String(row.get("name"))),
                 ("category".to_string(), Value::String(row.get("category"))),
-                ("query".to_string(), Value::String(row.get("query_definition"))),
+                (
+                    "query".to_string(),
+                    Value::String(row.get("query_definition")),
+                ),
                 ("creator".to_string(), Value::String(row.get("creator"))),
-                ("createTime".to_string(), Value::String(row.get("create_time"))),
+                (
+                    "createTime".to_string(),
+                    Value::String(row.get("create_time")),
+                ),
             ]));
             Ok(Json(ActionResult::success(result)))
         }
@@ -845,9 +933,15 @@ pub async fn table_list_paging_page_size_size(
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("name".to_string(), Value::String(row.get("name"))),
-                ("tableFlag".to_string(), Value::String(row.get("table_flag"))),
+                (
+                    "tableFlag".to_string(),
+                    Value::String(row.get("table_flag")),
+                ),
                 ("creator".to_string(), Value::String(row.get("creator"))),
-                ("createTime".to_string(), Value::String(row.get("create_time"))),
+                (
+                    "createTime".to_string(),
+                    Value::String(row.get("create_time")),
+                ),
             ]))
         })
         .collect();
@@ -882,7 +976,10 @@ pub async fn table_list_table_tableFlag_row_paging_page_size_size(
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
-                ("tableFlag".to_string(), Value::String(row.get("table_flag"))),
+                (
+                    "tableFlag".to_string(),
+                    Value::String(row.get("table_flag")),
+                ),
                 ("data".to_string(), Value::String(row.get("data"))),
             ]))
         })
@@ -917,7 +1014,10 @@ pub async fn table_list_id_next_count(
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
-                ("tableFlag".to_string(), Value::String(row.get("table_flag"))),
+                (
+                    "tableFlag".to_string(),
+                    Value::String(row.get("table_flag")),
+                ),
                 ("data".to_string(), Value::String(row.get("data"))),
             ]))
         })
@@ -952,7 +1052,10 @@ pub async fn table_list_id_prev_count(
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
-                ("tableFlag".to_string(), Value::String(row.get("table_flag"))),
+                (
+                    "tableFlag".to_string(),
+                    Value::String(row.get("table_flag")),
+                ),
                 ("data".to_string(), Value::String(row.get("data"))),
             ]))
         })
@@ -986,7 +1089,10 @@ pub async fn table_list_tableFlag_row_select(
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
-                ("tableFlag".to_string(), Value::String(row.get("table_flag"))),
+                (
+                    "tableFlag".to_string(),
+                    Value::String(row.get("table_flag")),
+                ),
                 ("data".to_string(), Value::String(row.get("data"))),
             ]))
         })
@@ -1021,7 +1127,10 @@ pub async fn table_list_tableFlag_row_select_where_where(
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
-                ("tableFlag".to_string(), Value::String(row.get("table_flag"))),
+                (
+                    "tableFlag".to_string(),
+                    Value::String(row.get("table_flag")),
+                ),
                 ("data".to_string(), Value::String(row.get("data"))),
             ]))
         })
@@ -1057,7 +1166,10 @@ pub async fn table_list_tableFlag_row_id_next_count(
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
-                ("tableFlag".to_string(), Value::String(row.get("table_flag"))),
+                (
+                    "tableFlag".to_string(),
+                    Value::String(row.get("table_flag")),
+                ),
                 ("data".to_string(), Value::String(row.get("data"))),
             ]))
         })
@@ -1093,7 +1205,10 @@ pub async fn table_list_tableFlag_row_id_prev_count(
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
-                ("tableFlag".to_string(), Value::String(row.get("table_flag"))),
+                (
+                    "tableFlag".to_string(),
+                    Value::String(row.get("table_flag")),
+                ),
                 ("data".to_string(), Value::String(row.get("data"))),
             ]))
         })
@@ -1123,9 +1238,18 @@ pub async fn table_reload_dynamic(
 
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
-            ("reloaded".to_string(), Value::Number(serde_json::Number::from(result as i64))),
-            ("success".to_string(), Value::Number(serde_json::Number::from(result as i64))),
-            ("value".to_string(), Value::Number(serde_json::Number::from(result as i64))),
+            (
+                "reloaded".to_string(),
+                Value::Number(serde_json::Number::from(result as i64)),
+            ),
+            (
+                "success".to_string(),
+                Value::Number(serde_json::Number::from(result as i64)),
+            ),
+            (
+                "value".to_string(),
+                Value::Number(serde_json::Number::from(result as i64)),
+            ),
         ]),
     ))))
 }
@@ -1150,9 +1274,15 @@ pub async fn table_flag(
             let result = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("name".to_string(), Value::String(row.get("name"))),
-                ("tableFlag".to_string(), Value::String(row.get("table_flag"))),
+                (
+                    "tableFlag".to_string(),
+                    Value::String(row.get("table_flag")),
+                ),
                 ("creator".to_string(), Value::String(row.get("creator"))),
-                ("createTime".to_string(), Value::String(row.get("create_time"))),
+                (
+                    "createTime".to_string(),
+                    Value::String(row.get("create_time")),
+                ),
             ]));
             Ok(Json(ActionResult::success(result)))
         }
@@ -1180,7 +1310,10 @@ pub async fn table_tableFlag_row(
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
-                ("tableFlag".to_string(), Value::String(row.get("table_flag"))),
+                (
+                    "tableFlag".to_string(),
+                    Value::String(row.get("table_flag")),
+                ),
                 ("data".to_string(), Value::String(row.get("data"))),
             ]))
         })
@@ -1215,7 +1348,10 @@ pub async fn table_tableFlag_row_count_where_where(
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("tableFlag".to_string(), Value::String(table_flag)),
-            ("count".to_string(), Value::Number(serde_json::Number::from(count))),
+            (
+                "count".to_string(),
+                Value::Number(serde_json::Number::from(count)),
+            ),
         ]),
     ))))
 }
@@ -1238,8 +1374,14 @@ pub async fn table_tableFlag_row_delete_all(
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("tableFlag".to_string(), Value::String(table_flag)),
-            ("deleted".to_string(), Value::Number(serde_json::Number::from(result as i64))),
-            ("count".to_string(), Value::Number(serde_json::Number::from(result as i64))),
+            (
+                "deleted".to_string(),
+                Value::Number(serde_json::Number::from(result as i64)),
+            ),
+            (
+                "count".to_string(),
+                Value::Number(serde_json::Number::from(result as i64)),
+            ),
         ]),
     ))))
 }
@@ -1264,7 +1406,10 @@ pub async fn table_tableFlag_row_delete_all_mockdeletetoget(
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
-                ("tableFlag".to_string(), Value::String(row.get("table_flag"))),
+                (
+                    "tableFlag".to_string(),
+                    Value::String(row.get("table_flag")),
+                ),
                 ("data".to_string(), Value::String(row.get("data"))),
             ]))
         })
@@ -1294,15 +1439,16 @@ pub async fn table_tableFlag_row_one(
         .map_err(|_| AppError::Internal)?;
 
     match row {
-        Some(row) => {
-            Ok(Json(ActionResult::success(Value::Object(
-                serde_json::Map::from_iter([
-                    ("id".to_string(), Value::String(row.get("id"))),
-                    ("tableFlag".to_string(), Value::String(row.get("table_flag"))),
-                    ("data".to_string(), Value::String(row.get("data"))),
-                ]),
-            ))))
-        }
+        Some(row) => Ok(Json(ActionResult::success(Value::Object(
+            serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                (
+                    "tableFlag".to_string(),
+                    Value::String(row.get("table_flag")),
+                ),
+                ("data".to_string(), Value::String(row.get("data"))),
+            ]),
+        )))),
         None => Ok(Json(ActionResult::error("row not found"))),
     }
 }
@@ -1324,15 +1470,16 @@ pub async fn table_tableFlag_row_id(
         .map_err(|_| AppError::Internal)?;
 
     match row {
-        Some(row) => {
-            Ok(Json(ActionResult::success(Value::Object(
-                serde_json::Map::from_iter([
-                    ("id".to_string(), Value::String(row.get("id"))),
-                    ("tableFlag".to_string(), Value::String(row.get("table_flag"))),
-                    ("data".to_string(), Value::String(row.get("data"))),
-                ]),
-            ))))
-        }
+        Some(row) => Ok(Json(ActionResult::success(Value::Object(
+            serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                (
+                    "tableFlag".to_string(),
+                    Value::String(row.get("table_flag")),
+                ),
+                ("data".to_string(), Value::String(row.get("data"))),
+            ]),
+        )))),
         None => Ok(Json(ActionResult::error("row not found"))),
     }
 }
@@ -1354,15 +1501,16 @@ pub async fn table_tableFlag_row_id_mockdeletetoget(
         .map_err(|_| AppError::Internal)?;
 
     match row {
-        Some(row) => {
-            Ok(Json(ActionResult::success(Value::Object(
-                serde_json::Map::from_iter([
-                    ("id".to_string(), Value::String(row.get("id"))),
-                    ("tableFlag".to_string(), Value::String(row.get("table_flag"))),
-                    ("data".to_string(), Value::String(row.get("data"))),
-                ]),
-            ))))
-        }
+        Some(row) => Ok(Json(ActionResult::success(Value::Object(
+            serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                (
+                    "tableFlag".to_string(),
+                    Value::String(row.get("table_flag")),
+                ),
+                ("data".to_string(), Value::String(row.get("data"))),
+            ]),
+        )))),
         None => Ok(Json(ActionResult::error("row not found"))),
     }
 }
@@ -1394,7 +1542,10 @@ pub async fn table_tableFlag_row_id_mockputtopost(
         serde_json::Map::from_iter([
             ("id".to_string(), Value::String(id)),
             ("tableFlag".to_string(), Value::String(table_flag)),
-            ("updated".to_string(), Value::Number(serde_json::Number::from(result as i64))),
+            (
+                "updated".to_string(),
+                Value::Number(serde_json::Number::from(result as i64)),
+            ),
         ]),
     ))))
 }
@@ -1429,7 +1580,10 @@ pub async fn table_tableFlag_row_id_part_update(
         serde_json::Map::from_iter([
             ("id".to_string(), Value::String(id)),
             ("tableFlag".to_string(), Value::String(table_flag)),
-            ("saved".to_string(), Value::Number(serde_json::Number::from(result as i64))),
+            (
+                "saved".to_string(),
+                Value::Number(serde_json::Number::from(result as i64)),
+            ),
         ]),
     ))))
 }
@@ -1455,9 +1609,15 @@ pub async fn view_excel_result_flag(
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("viewFlag".to_string(), Value::String(row.get("view_flag"))),
-                ("excelData".to_string(), Value::String(row.get("excel_data"))),
+                (
+                    "excelData".to_string(),
+                    Value::String(row.get("excel_data")),
+                ),
                 ("creator".to_string(), Value::String(row.get("creator"))),
-                ("createTime".to_string(), Value::String(row.get("create_time"))),
+                (
+                    "createTime".to_string(),
+                    Value::String(row.get("create_time")),
+                ),
             ]))
         })
         .collect();
@@ -1492,10 +1652,16 @@ pub async fn view_flag_flag_query_queryFlag(
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("name".to_string(), Value::String(row.get("name"))),
                 ("viewFlag".to_string(), Value::String(row.get("view_flag"))),
-                ("queryFlag".to_string(), Value::String(row.get("query_flag"))),
+                (
+                    "queryFlag".to_string(),
+                    Value::String(row.get("query_flag")),
+                ),
                 ("content".to_string(), Value::String(row.get("content"))),
                 ("creator".to_string(), Value::String(row.get("creator"))),
-                ("createTime".to_string(), Value::String(row.get("create_time"))),
+                (
+                    "createTime".to_string(),
+                    Value::String(row.get("create_time")),
+                ),
             ]));
             Ok(Json(ActionResult::success(result)))
         }
@@ -1520,15 +1686,13 @@ pub async fn view_flag_flag_query_queryFlag_bundle(
         .map_err(|_| AppError::Internal)?;
 
     match row {
-        Some(row) => {
-            Ok(Json(ActionResult::success(Value::Object(
-                serde_json::Map::from_iter([
-                    ("id".to_string(), Value::String(row.get("id"))),
-                    ("viewFlag".to_string(), Value::String(row.get("view_flag"))),
-                    ("bundle".to_string(), Value::String(row.get("bundle_data"))),
-                ]),
-            ))))
-        }
+        Some(row) => Ok(Json(ActionResult::success(Value::Object(
+            serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                ("viewFlag".to_string(), Value::String(row.get("view_flag"))),
+                ("bundle".to_string(), Value::String(row.get("bundle_data"))),
+            ]),
+        )))),
         None => Ok(Json(ActionResult::error("view not found"))),
     }
 }
@@ -1560,7 +1724,10 @@ pub async fn view_flag_flag_query_queryFlag_bundle_mockputtopost(
         serde_json::Map::from_iter([
             ("viewFlag".to_string(), Value::String(flag)),
             ("queryFlag".to_string(), Value::String(query_flag)),
-            ("updated".to_string(), Value::Number(serde_json::Number::from(result as i64))),
+            (
+                "updated".to_string(),
+                Value::Number(serde_json::Number::from(result as i64)),
+            ),
         ]),
     ))))
 }
@@ -1582,15 +1749,16 @@ pub async fn view_flag_flag_query_queryFlag_excel(
         .map_err(|_| AppError::Internal)?;
 
     match row {
-        Some(row) => {
-            Ok(Json(ActionResult::success(Value::Object(
-                serde_json::Map::from_iter([
-                    ("id".to_string(), Value::String(row.get("id"))),
-                    ("viewFlag".to_string(), Value::String(row.get("view_flag"))),
-                    ("excelData".to_string(), Value::String(row.get("excel_data"))),
-                ]),
-            ))))
-        }
+        Some(row) => Ok(Json(ActionResult::success(Value::Object(
+            serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                ("viewFlag".to_string(), Value::String(row.get("view_flag"))),
+                (
+                    "excelData".to_string(),
+                    Value::String(row.get("excel_data")),
+                ),
+            ]),
+        )))),
         None => Ok(Json(ActionResult::error("view not found"))),
     }
 }
@@ -1604,7 +1772,10 @@ pub async fn view_flag_flag_query_queryFlag_excel_mockputtopost(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
-    let excel_str = body.get("excelData").and_then(|v| v.as_str()).unwrap_or_default();
+    let excel_str = body
+        .get("excelData")
+        .and_then(|v| v.as_str())
+        .unwrap_or_default();
 
     let result = client
         .execute(
@@ -1622,7 +1793,10 @@ pub async fn view_flag_flag_query_queryFlag_excel_mockputtopost(
         serde_json::Map::from_iter([
             ("viewFlag".to_string(), Value::String(flag)),
             ("queryFlag".to_string(), Value::String(query_flag)),
-            ("updated".to_string(), Value::Number(serde_json::Number::from(result as i64))),
+            (
+                "updated".to_string(),
+                Value::Number(serde_json::Number::from(result as i64)),
+            ),
         ]),
     ))))
 }
@@ -1651,13 +1825,31 @@ pub async fn view_flag_flag_query_queryFlag_execute(
             Ok(Json(ActionResult::success(Value::Object(
                 serde_json::Map::from_iter([
                     ("id".to_string(), Value::String(row.get("id"))),
-                    ("name".to_string(), Value::String(row.get::<_, Option<String>>("name").unwrap_or_default())),
+                    (
+                        "name".to_string(),
+                        Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
+                    ),
                     ("viewFlag".to_string(), Value::String(view)),
                     ("queryFlag".to_string(), Value::String(app)),
                     ("content".to_string(), content),
-                    ("creator".to_string(), Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default())),
-                    ("createTime".to_string(), Value::String(row.get::<_, Option<String>>("create_time").unwrap_or_default())),
-                    ("updateTime".to_string(), Value::String(row.get::<_, Option<String>>("update_time").unwrap_or_default())),
+                    (
+                        "creator".to_string(),
+                        Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
+                    ),
+                    (
+                        "createTime".to_string(),
+                        Value::String(
+                            row.get::<_, Option<String>>("create_time")
+                                .unwrap_or_default(),
+                        ),
+                    ),
+                    (
+                        "updateTime".to_string(),
+                        Value::String(
+                            row.get::<_, Option<String>>("update_time")
+                                .unwrap_or_default(),
+                        ),
+                    ),
                 ]),
             ))))
         }
@@ -1692,7 +1884,10 @@ pub async fn view_flag_flag_query_queryFlag_execute_mockputtopost(
         serde_json::Map::from_iter([
             ("viewFlag".to_string(), Value::String(flag)),
             ("queryFlag".to_string(), Value::String(query_flag)),
-            ("executed".to_string(), Value::Number(serde_json::Number::from(result as i64))),
+            (
+                "executed".to_string(),
+                Value::Number(serde_json::Number::from(result as i64)),
+            ),
         ]),
     ))))
 }
@@ -1718,10 +1913,16 @@ pub async fn view_flag_flag_query_queryFlag_execute_v2_page_page_size_size(
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("viewFlag".to_string(), Value::String(row.get("view_flag"))),
-                ("queryFlag".to_string(), Value::String(row.get("query_flag"))),
+                (
+                    "queryFlag".to_string(),
+                    Value::String(row.get("query_flag")),
+                ),
                 ("content".to_string(), Value::String(row.get("content"))),
                 ("creator".to_string(), Value::String(row.get("creator"))),
-                ("createTime".to_string(), Value::String(row.get("create_time"))),
+                (
+                    "createTime".to_string(),
+                    Value::String(row.get("create_time")),
+                ),
             ]))
         })
         .collect();
@@ -1756,9 +1957,15 @@ pub async fn view_list_query_queryFlag(
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("name".to_string(), Value::String(row.get("name"))),
                 ("viewFlag".to_string(), Value::String(row.get("view_flag"))),
-                ("queryFlag".to_string(), Value::String(row.get("query_flag"))),
+                (
+                    "queryFlag".to_string(),
+                    Value::String(row.get("query_flag")),
+                ),
                 ("creator".to_string(), Value::String(row.get("creator"))),
-                ("createTime".to_string(), Value::String(row.get("create_time"))),
+                (
+                    "createTime".to_string(),
+                    Value::String(row.get("create_time")),
+                ),
             ]))
         })
         .collect();
@@ -1792,10 +1999,16 @@ pub async fn view_id(
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("name".to_string(), Value::String(row.get("name"))),
                 ("viewFlag".to_string(), Value::String(row.get("view_flag"))),
-                ("queryFlag".to_string(), Value::String(row.get("query_flag"))),
+                (
+                    "queryFlag".to_string(),
+                    Value::String(row.get("query_flag")),
+                ),
                 ("content".to_string(), Value::String(row.get("content"))),
                 ("creator".to_string(), Value::String(row.get("creator"))),
-                ("createTime".to_string(), Value::String(row.get("create_time"))),
+                (
+                    "createTime".to_string(),
+                    Value::String(row.get("create_time")),
+                ),
             ]));
             Ok(Json(ActionResult::success(result)))
         }
@@ -1819,15 +2032,13 @@ pub async fn view_id_bundle(
         .map_err(|_| AppError::Internal)?;
 
     match row {
-        Some(row) => {
-            Ok(Json(ActionResult::success(Value::Object(
-                serde_json::Map::from_iter([
-                    ("id".to_string(), Value::String(row.get("id"))),
-                    ("viewFlag".to_string(), Value::String(row.get("view_flag"))),
-                    ("bundle".to_string(), Value::String(row.get("bundle_data"))),
-                ]),
-            ))))
-        }
+        Some(row) => Ok(Json(ActionResult::success(Value::Object(
+            serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                ("viewFlag".to_string(), Value::String(row.get("view_flag"))),
+                ("bundle".to_string(), Value::String(row.get("bundle_data"))),
+            ]),
+        )))),
         None => Ok(Json(ActionResult::error("view not found"))),
     }
 }
@@ -1857,7 +2068,10 @@ pub async fn view_id_bundle_mockputtopost(
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("id".to_string(), Value::String(id)),
-            ("updated".to_string(), Value::Number(serde_json::Number::from(result as i64))),
+            (
+                "updated".to_string(),
+                Value::Number(serde_json::Number::from(result as i64)),
+            ),
         ]),
     ))))
 }
@@ -1878,15 +2092,16 @@ pub async fn view_id_bundle_v2(
         .map_err(|_| AppError::Internal)?;
 
     match row {
-        Some(row) => {
-            Ok(Json(ActionResult::success(Value::Object(
-                serde_json::Map::from_iter([
-                    ("id".to_string(), Value::String(row.get("id"))),
-                    ("viewFlag".to_string(), Value::String(row.get("view_flag"))),
-                    ("bundle".to_string(), Value::String(row.get("bundle_data_v2"))),
-                ]),
-            ))))
-        }
+        Some(row) => Ok(Json(ActionResult::success(Value::Object(
+            serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                ("viewFlag".to_string(), Value::String(row.get("view_flag"))),
+                (
+                    "bundle".to_string(),
+                    Value::String(row.get("bundle_data_v2")),
+                ),
+            ]),
+        )))),
         None => Ok(Json(ActionResult::error("view not found"))),
     }
 }
@@ -1907,15 +2122,16 @@ pub async fn view_id_excel(
         .map_err(|_| AppError::Internal)?;
 
     match row {
-        Some(row) => {
-            Ok(Json(ActionResult::success(Value::Object(
-                serde_json::Map::from_iter([
-                    ("id".to_string(), Value::String(row.get("id"))),
-                    ("viewFlag".to_string(), Value::String(row.get("view_flag"))),
-                    ("excelData".to_string(), Value::String(row.get("excel_data"))),
-                ]),
-            ))))
-        }
+        Some(row) => Ok(Json(ActionResult::success(Value::Object(
+            serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                ("viewFlag".to_string(), Value::String(row.get("view_flag"))),
+                (
+                    "excelData".to_string(),
+                    Value::String(row.get("excel_data")),
+                ),
+            ]),
+        )))),
         None => Ok(Json(ActionResult::error("view not found"))),
     }
 }
@@ -1928,7 +2144,10 @@ pub async fn view_id_excel_mockputtopost(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
-    let excel_str = body.get("excelData").and_then(|v| v.as_str()).unwrap_or_default();
+    let excel_str = body
+        .get("excelData")
+        .and_then(|v| v.as_str())
+        .unwrap_or_default();
 
     let result = client
         .execute(
@@ -1945,7 +2164,10 @@ pub async fn view_id_excel_mockputtopost(
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("id".to_string(), Value::String(id)),
-            ("updated".to_string(), Value::Number(serde_json::Number::from(result as i64))),
+            (
+                "updated".to_string(),
+                Value::Number(serde_json::Number::from(result as i64)),
+            ),
         ]),
     ))))
 }
@@ -1974,13 +2196,43 @@ pub async fn view_id_execute(
             Ok(Json(ActionResult::success(Value::Object(
                 serde_json::Map::from_iter([
                     ("id".to_string(), Value::String(row.get("id"))),
-                    ("name".to_string(), Value::String(row.get::<_, Option<String>>("name").unwrap_or_default())),
-                    ("viewFlag".to_string(), Value::String(row.get::<_, Option<String>>("view_flag").unwrap_or_default())),
-                    ("queryFlag".to_string(), Value::String(row.get::<_, Option<String>>("query_flag").unwrap_or_default())),
+                    (
+                        "name".to_string(),
+                        Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
+                    ),
+                    (
+                        "viewFlag".to_string(),
+                        Value::String(
+                            row.get::<_, Option<String>>("view_flag")
+                                .unwrap_or_default(),
+                        ),
+                    ),
+                    (
+                        "queryFlag".to_string(),
+                        Value::String(
+                            row.get::<_, Option<String>>("query_flag")
+                                .unwrap_or_default(),
+                        ),
+                    ),
                     ("content".to_string(), content),
-                    ("creator".to_string(), Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default())),
-                    ("createTime".to_string(), Value::String(row.get::<_, Option<String>>("create_time").unwrap_or_default())),
-                    ("updateTime".to_string(), Value::String(row.get::<_, Option<String>>("update_time").unwrap_or_default())),
+                    (
+                        "creator".to_string(),
+                        Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
+                    ),
+                    (
+                        "createTime".to_string(),
+                        Value::String(
+                            row.get::<_, Option<String>>("create_time")
+                                .unwrap_or_default(),
+                        ),
+                    ),
+                    (
+                        "updateTime".to_string(),
+                        Value::String(
+                            row.get::<_, Option<String>>("update_time")
+                                .unwrap_or_default(),
+                        ),
+                    ),
                 ]),
             ))))
         }
@@ -2013,7 +2265,10 @@ pub async fn view_id_execute_mockputtopost(
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("id".to_string(), Value::String(id)),
-            ("executed".to_string(), Value::Number(serde_json::Number::from(result as i64))),
+            (
+                "executed".to_string(),
+                Value::Number(serde_json::Number::from(result as i64)),
+            ),
         ]),
     ))))
 }
@@ -2042,7 +2297,10 @@ pub async fn view_id_execute_v2_page_page_size_size(
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("content".to_string(), Value::String(row.get("content"))),
                 ("creator".to_string(), Value::String(row.get("creator"))),
-                ("createTime".to_string(), Value::String(row.get("create_time"))),
+                (
+                    "createTime".to_string(),
+                    Value::String(row.get("create_time")),
+                ),
             ]))
         })
         .collect();

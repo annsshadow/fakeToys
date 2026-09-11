@@ -38,12 +38,19 @@ pub async fn chat_list_paging(
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("title".to_string(), Value::String(row.get("title"))),
                 ("person".to_string(), Value::String(row.get("person"))),
-                ("createTime".to_string(), Value::String(row.get("create_time"))),
+                (
+                    "createTime".to_string(),
+                    Value::String(row.get("create_time")),
+                ),
             ]))
         })
         .collect();
 
-    Ok(Json(ActionResult::java_success(Value::Array(data), total, size)))
+    Ok(Json(ActionResult::java_success(
+        Value::Array(data),
+        total,
+        size,
+    )))
 }
 
 #[axum::debug_handler]
@@ -58,7 +65,10 @@ pub async fn chat_list_completion_paging(
     let offset = (page - 1) * size;
 
     let total_row = client
-        .query_one("SELECT COUNT(*) as cnt FROM x_ai_completion WHERE \"clueId\" = $1", &[&clue_id])
+        .query_one(
+            "SELECT COUNT(*) as cnt FROM x_ai_completion WHERE \"clueId\" = $1",
+            &[&clue_id],
+        )
         .await
         .map_err(|_| AppError::Internal)?;
     let total: i64 = total_row.get("cnt");
@@ -77,16 +87,29 @@ pub async fn chat_list_completion_paging(
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("person".to_string(), Value::String(row.get("person"))),
-                ("\"clueId\"".to_string(), Value::String(row.get("\"clueId\""))),
+                (
+                    "\"clueId\"".to_string(),
+                    Value::String(row.get("\"clueId\"")),
+                ),
                 ("input".to_string(), Value::String(row.get("input"))),
                 ("content".to_string(), Value::String(row.get("content"))),
-                ("\"generateType\"".to_string(), Value::String(row.get("\"generateType\""))),
-                ("createTime".to_string(), Value::String(row.get("create_time"))),
+                (
+                    "\"generateType\"".to_string(),
+                    Value::String(row.get("\"generateType\"")),
+                ),
+                (
+                    "createTime".to_string(),
+                    Value::String(row.get("create_time")),
+                ),
             ]))
         })
         .collect();
 
-    Ok(Json(ActionResult::java_success(Value::Array(data), total, size)))
+    Ok(Json(ActionResult::java_success(
+        Value::Array(data),
+        total,
+        size,
+    )))
 }
 
 #[axum::debug_handler]
@@ -104,9 +127,7 @@ pub async fn chat_delete(
 
     let Some(row) = row else {
         return Ok(Json(ActionResult::success(Value::Object(
-            serde_json::Map::from_iter([
-                ("deleted".to_string(), Value::Bool(false)),
-            ]),
+            serde_json::Map::from_iter([("deleted".to_string(), Value::Bool(false))]),
         ))));
     };
 
@@ -115,9 +136,12 @@ pub async fn chat_delete(
 
     let tx = client.transaction().await.map_err(|_| AppError::Internal)?;
 
-    tx.execute("DELETE FROM x_ai_completion WHERE \"clueId\" = $1", &[&clue_id])
-        .await
-        .map_err(|_| AppError::Internal)?;
+    tx.execute(
+        "DELETE FROM x_ai_completion WHERE \"clueId\" = $1",
+        &[&clue_id],
+    )
+    .await
+    .map_err(|_| AppError::Internal)?;
 
     let result = tx
         .execute("DELETE FROM x_ai_clue WHERE id = $1", &[&clue_id])
@@ -127,8 +151,6 @@ pub async fn chat_delete(
     tx.commit().await.map_err(|_| AppError::Internal)?;
 
     Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("deleted".to_string(), Value::Bool(result > 0)),
-        ]),
+        serde_json::Map::from_iter([("deleted".to_string(), Value::Bool(result > 0))]),
     ))))
 }

@@ -1,16 +1,21 @@
+use axum::response::{IntoResponse, Response};
 use axum::{
     extract::{Extension, Path},
     http::HeaderMap,
     routing::{delete, get, post},
     Json, Router,
 };
-use axum::response::{IntoResponse, Response};
 use chrono::{DateTime, Duration, Utc};
 use cookie::{time::Duration as CookieDuration, Cookie, Expiration, SameSite};
 use deadpool_postgres::Pool;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
-use shared::{db::dialect, error::AppError, middleware::{extract_authentication, SESSION_COOKIE_NAME}, response::{row_opt_json, ActionResult}};
+use shared::{
+    db::dialect,
+    error::AppError,
+    middleware::{extract_authentication, SESSION_COOKIE_NAME},
+    response::{row_opt_json, ActionResult},
+};
 use std::collections::HashMap;
 use std::sync::{Mutex, OnceLock};
 use uuid::Uuid;
@@ -23,7 +28,9 @@ fn make_session_cookie(token: &str, config: &shared::config::AuthConfig) -> Stri
         .same_site(SameSite::Lax)
         .path("/")
         .max_age(max_age)
-        .expires(Expiration::DateTime(cookie::time::OffsetDateTime::now_utc() + max_age))
+        .expires(Expiration::DateTime(
+            cookie::time::OffsetDateTime::now_utc() + max_age,
+        ))
         .to_string()
 }
 
@@ -34,15 +41,18 @@ fn make_clear_cookie(config: &shared::config::AuthConfig) -> String {
         .same_site(SameSite::Lax)
         .path("/")
         .max_age(CookieDuration::ZERO)
-        .expires(Expiration::DateTime(cookie::time::OffsetDateTime::UNIX_EPOCH))
+        .expires(Expiration::DateTime(
+            cookie::time::OffsetDateTime::UNIX_EPOCH,
+        ))
         .to_string()
 }
 
 fn with_session_cookie<T: IntoResponse>(resp: T, cookie_value: &str) -> Response {
     let mut response = resp.into_response();
-    response
-        .headers_mut()
-        .append(axum::http::header::SET_COOKIE, cookie_value.parse().unwrap());
+    response.headers_mut().append(
+        axum::http::header::SET_COOKIE,
+        cookie_value.parse().unwrap(),
+    );
     response.headers_mut().insert(
         axum::http::header::CACHE_CONTROL,
         axum::http::HeaderValue::from_static("no-store"),
@@ -64,7 +74,10 @@ pub(crate) fn session_response<T: Serialize>(
 /// 匿名（无任何凭据）whoami 负载，字段对齐 O2OA v9 Java 匿名响应。
 fn anonymous_whoami_map() -> serde_json::Map<String, Value> {
     let mut map = serde_json::Map::new();
-    map.insert("tokenType".to_string(), Value::String("anonymous".to_string()));
+    map.insert(
+        "tokenType".to_string(),
+        Value::String("anonymous".to_string()),
+    );
     map.insert("roleList".to_string(), Value::Array(vec![]));
     map.insert("passwordExpired".to_string(), Value::Bool(false));
     map.insert("identityList".to_string(), Value::Array(vec![]));
@@ -72,17 +85,29 @@ fn anonymous_whoami_map() -> serde_json::Map<String, Value> {
     map.insert("name".to_string(), Value::String(String::new()));
     map.insert("employee".to_string(), Value::String(String::new()));
     map.insert("unique".to_string(), Value::String(String::new()));
-    map.insert("distinguishedName".to_string(), Value::String(String::new()));
-    map.insert("orderNumber".to_string(), Value::Number(serde_json::Number::from(0)));
+    map.insert(
+        "distinguishedName".to_string(),
+        Value::String(String::new()),
+    );
+    map.insert(
+        "orderNumber".to_string(),
+        Value::Number(serde_json::Number::from(0)),
+    );
     map.insert("controllerList".to_string(), Value::Array(vec![]));
-    map.insert("changePasswordTime".to_string(), Value::String(String::new()));
+    map.insert(
+        "changePasswordTime".to_string(),
+        Value::String(String::new()),
+    );
     map.insert("lastLoginTime".to_string(), Value::String(String::new()));
     map.insert("lastLoginAddress".to_string(), Value::String(String::new()));
     map.insert("lastLoginClient".to_string(), Value::String(String::new()));
     map.insert("mail".to_string(), Value::String(String::new()));
     map.insert("mobile".to_string(), Value::String(String::new()));
     map.insert("failureTime".to_string(), Value::String(String::new()));
-    map.insert("failureCount".to_string(), Value::Number(serde_json::Number::from(0)));
+    map.insert(
+        "failureCount".to_string(),
+        Value::Number(serde_json::Number::from(0)),
+    );
     map.insert("topUnitList".to_string(), Value::Array(vec![]));
     map.insert("status".to_string(), Value::String("0".to_string()));
     map.insert("statusDes".to_string(), Value::String(String::new()));
@@ -92,11 +117,11 @@ fn anonymous_whoami_map() -> serde_json::Map<String, Value> {
     map
 }
 
-mod ldap_auth;
 pub mod andfx;
 pub mod bind;
 pub mod captcha;
 pub mod check_token;
+mod ldap_auth;
 pub mod model;
 pub mod mpweixin;
 pub mod oauth;
@@ -120,7 +145,6 @@ pub use shared::session::{Session, SessionManager};
 mod tests;
 #[cfg(test)]
 mod tests_generated;
-
 
 // --- 请求/响应 DTO ---
 
@@ -170,7 +194,9 @@ pub async fn login(
     axum::extract::Json(req): axum::extract::Json<LoginRequest>,
 ) -> Result<Response, AppError> {
     if req.credential.is_empty() || req.password.is_empty() {
-        return Ok(Json(ActionResult::<LoginResponse>::error("invalid credentials")).into_response());
+        return Ok(
+            Json(ActionResult::<LoginResponse>::error("invalid credentials")).into_response(),
+        );
     }
 
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
@@ -207,9 +233,10 @@ pub async fn login(
     // 检查账户是否被锁定
     if locked {
         // 返回通用错误消息，防止账户锁定状态枚举
-        return Ok(Json(ActionResult::<LoginResponse>::error("invalid credentials")).into_response());
+        return Ok(
+            Json(ActionResult::<LoginResponse>::error("invalid credentials")).into_response(),
+        );
     }
-
 
     // LDAP 认证优先（若启用）：成功后跳过数据库密码校验
     let ldap_result = match ldap_auth::try_ldap_authenticate(&req.credential, &req.password).await {
@@ -230,7 +257,9 @@ pub async fn login(
         Some(_) => password::verify_password(&req.password, &password_hash, "", None),
     };
     if !valid {
-        return Ok(Json(ActionResult::<LoginResponse>::error("invalid credentials")).into_response());
+        return Ok(
+            Json(ActionResult::<LoginResponse>::error("invalid credentials")).into_response(),
+        );
     }
 
     // 密码哈希 rehash：检测旧算法（MD5/DES），自动升级为 bcrypt
@@ -258,7 +287,10 @@ pub async fn login(
             )
             .await
             .unwrap_or_default();
-        role_rows.iter().map(|r| r.get::<_, String>("name")).collect()
+        role_rows
+            .iter()
+            .map(|r| r.get::<_, String>("name"))
+            .collect()
     };
 
     // 查询用户身份列表
@@ -272,11 +304,16 @@ pub async fn login(
             )
             .await
             .unwrap_or_default();
-        identity_rows.iter().map(|r| r.get::<_, String>("name")).collect()
+        identity_rows
+            .iter()
+            .map(|r| r.get::<_, String>("name"))
+            .collect()
     };
 
     let token = Uuid::new_v4().to_string();
-    let session = session_manager.create_session(person_unique.clone(), token.clone()).await?;
+    let session = session_manager
+        .create_session(person_unique.clone(), token.clone())
+        .await?;
 
     let response = ActionResult::success(LoginResponse {
         role_list,
@@ -296,8 +333,10 @@ pub async fn login(
         },
     });
 
-    Ok(with_session_cookie(Json(response), &make_session_cookie(&session.token, &session_manager.auth_config)))
-
+    Ok(with_session_cookie(
+        Json(response),
+        &make_session_cookie(&session.token, &session_manager.auth_config),
+    ))
 }
 
 // --- 刷新 / 登出 / 当前用户 ---
@@ -320,10 +359,15 @@ pub async fn refresh(
     if old_token.is_empty() {
         return Err(AppError::Unauthorized);
     }
-    let session = session_manager.validate_session(&old_token).await.ok_or(AppError::Unauthorized)?;
+    let session = session_manager
+        .validate_session(&old_token)
+        .await
+        .ok_or(AppError::Unauthorized)?;
 
     let new_token = Uuid::new_v4().to_string();
-    session_manager.create_session(session.person_unique, new_token.clone()).await?;
+    session_manager
+        .create_session(session.person_unique, new_token.clone())
+        .await?;
     session_manager.remove_session(&old_token).await;
 
     Ok(with_session_cookie(
@@ -344,9 +388,15 @@ pub async fn logout(
             session_manager.remove_session(authentication.token()).await;
         }
     }
-    Ok(with_session_cookie(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
-        ("message".to_string(), Value::String("logged out".to_string())),
-    ])))), &make_clear_cookie(&session_manager.auth_config)))
+    Ok(with_session_cookie(
+        Json(ActionResult::success(Value::Object(
+            serde_json::Map::from_iter([(
+                "message".to_string(),
+                Value::String("logged out".to_string()),
+            )]),
+        ))),
+        &make_clear_cookie(&session_manager.auth_config),
+    ))
 }
 
 /// 查询当前认证用户信息（契约路径 GET /jaxrs/authentication，兼容自造路径）
@@ -422,7 +472,10 @@ pub async fn whoami(
                 Value::Number(serde_json::Number::from(0)),
             );
             map.insert("controllerList".to_string(), Value::Array(vec![]));
-            map.insert("changePasswordTime".to_string(), Value::String(String::new()));
+            map.insert(
+                "changePasswordTime".to_string(),
+                Value::String(String::new()),
+            );
             map.insert("lastLoginTime".to_string(), Value::String(String::new()));
             map.insert("lastLoginAddress".to_string(), Value::String(String::new()));
             map.insert("lastLoginClient".to_string(), Value::String(String::new()));
@@ -611,7 +664,9 @@ pub async fn code_send(
     Path(credential): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     if credential.is_empty() {
-        return Err(AppError::BadRequest("credential cannot be empty".to_string()));
+        return Err(AppError::BadRequest(
+            "credential cannot be empty".to_string(),
+        ));
     }
     // 检查凭证是否存在（防止对任意凭据发送验证码）
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
@@ -624,14 +679,20 @@ pub async fn code_send(
         .map_err(|_| AppError::Internal)?;
     if exists.is_none() {
         // 返回通用成功消息，防止凭据枚举
-        return Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
-            ("message".to_string(), Value::String("code sent".to_string())),
-        ])))))
+        return Ok(Json(ActionResult::success(Value::Object(
+            serde_json::Map::from_iter([(
+                "message".to_string(),
+                Value::String("code sent".to_string()),
+            )]),
+        ))));
     }
     let _plain = code_store().issue(&credential);
-    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
-        ("message".to_string(), Value::String("code sent".to_string())),
-    ])))))
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([(
+            "message".to_string(),
+            Value::String("code sent".to_string()),
+        )]),
+    ))))
 }
 
 /// POST /jaxrs/authentication/code —— 双因素登录第二阶段
@@ -660,22 +721,36 @@ pub async fn code(
         .to_string();
 
     if credential.is_empty() || code_answer.is_empty() || temp_token.is_empty() {
-        return Ok(Json(ActionResult::<TwoFactorLoginResponse>::error("invalid request")).into_response());
+        return Ok(Json(ActionResult::<TwoFactorLoginResponse>::error(
+            "invalid request",
+        ))
+        .into_response());
     }
 
     let bound_credential = temp_token_store().verify(&temp_token);
     let bound_credential = match bound_credential {
         Some(cred) => cred,
-        None => return Ok(Json(ActionResult::<TwoFactorLoginResponse>::error("invalid or expired session")).into_response()),
+        None => {
+            return Ok(Json(ActionResult::<TwoFactorLoginResponse>::error(
+                "invalid or expired session",
+            ))
+            .into_response())
+        }
     };
 
     if bound_credential != credential {
-        return Ok(Json(ActionResult::<TwoFactorLoginResponse>::error("credential mismatch")).into_response());
+        return Ok(Json(ActionResult::<TwoFactorLoginResponse>::error(
+            "credential mismatch",
+        ))
+        .into_response());
     }
 
     let code_valid = code_store().verify(&credential, &code_answer);
     if !code_valid {
-        return Ok(Json(ActionResult::<TwoFactorLoginResponse>::error("invalid code")).into_response());
+        return Ok(Json(ActionResult::<TwoFactorLoginResponse>::error(
+            "invalid code",
+        ))
+        .into_response());
     }
 
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
@@ -701,21 +776,23 @@ pub async fn code(
     let person_position: Option<String> = row.get("position");
 
     let token = Uuid::new_v4().to_string();
-    let session = session_manager.create_session(person_unique.clone(), token.clone()).await?;
+    let session = session_manager
+        .create_session(person_unique.clone(), token.clone())
+        .await?;
 
     Ok(with_session_cookie(
         Json(ActionResult::success(TwoFactorLoginResponse {
             person: PersonInfo {
-            id: person_id,
-            unique: person_unique,
-            name: person_name,
-            mobile: person_mobile,
-            email: person_email,
-            icon: person_icon,
-            job: person_job,
-            department: person_department,
-            unit: person_unit,
-            position: person_position,
+                id: person_id,
+                unique: person_unique,
+                name: person_name,
+                mobile: person_mobile,
+                email: person_email,
+                icon: person_icon,
+                job: person_job,
+                department: person_department,
+                unit: person_unit,
+                position: person_position,
             },
         })),
         &make_session_cookie(&session.token, &session_manager.auth_config),
@@ -726,9 +803,7 @@ pub async fn code(
 
 /// 获取组织架构树（部门/单位列表）
 #[allow(non_snake_case)]
-pub async fn unit_list(
-    pool: Extension<Pool>,
-) -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn unit_list(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let rows = client
         .query(
@@ -748,20 +823,25 @@ pub async fn unit_list(
             if let Some(val) = row_opt_json::<String>(row, "parent_id") {
                 map.insert("parentId".to_string(), val);
             }
-            map.insert("level".to_string(), Value::Number(serde_json::Number::from(row.get::<_, i32>("level"))));
+            map.insert(
+                "level".to_string(),
+                Value::Number(serde_json::Number::from(row.get::<_, i32>("level"))),
+            );
             Value::Object(map)
         })
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
+    Ok(Json(ActionResult::java_success(
+        Value::Array(data),
+        count,
+        0,
+    )))
 }
 
 /// 获取角色列表
 #[allow(non_snake_case)]
-pub async fn role_list(
-    pool: Extension<Pool>,
-) -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn role_list(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let rows = client
         .query(
@@ -785,14 +865,16 @@ pub async fn role_list(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
+    Ok(Json(ActionResult::java_success(
+        Value::Array(data),
+        count,
+        0,
+    )))
 }
 
 /// 获取用户组列表
 #[allow(non_snake_case)]
-pub async fn group_list(
-    pool: Extension<Pool>,
-) -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn group_list(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let rows = client
         .query(
@@ -813,7 +895,11 @@ pub async fn group_list(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
+    Ok(Json(ActionResult::java_success(
+        Value::Array(data),
+        count,
+        0,
+    )))
 }
 
 // --- 验证码 + 短信集成函数 ---
@@ -842,9 +928,7 @@ pub async fn captcha_verify(captcha_id: &str, answer: &str) -> Result<bool, AppE
     use captcha_store::VerifyResult;
     match captcha_store::captcha_store().verify(captcha_id, answer) {
         VerifyResult::Ok => Ok(true),
-        VerifyResult::TooManyAttempts => {
-            Err(AppError::BadRequest("too many attempts".to_string()))
-        }
+        VerifyResult::TooManyAttempts => Err(AppError::BadRequest("too many attempts".to_string())),
         VerifyResult::Expired => Err(AppError::BadRequest("captcha expired".to_string())),
         _ => Err(AppError::BadRequest("invalid captcha".to_string())),
     }
@@ -912,16 +996,28 @@ pub fn router(pool: Pool, rate_limiter: RateLimiter, session_manager: SessionMan
         .merge(mpweixin::router())
         .merge(qiyeweixin::router())
         .merge(zhengwudingding::router())
-        .route("/jaxrs/authentication/two_factor", post(two_factor::two_factor_login))
-        .route("/jaxrs/authentication/safe/logout", post(safe_logout::safe_logout))
-        .route("/jaxrs/authentication/check/token", post(check_token::check_token))
+        .route(
+            "/jaxrs/authentication/two_factor",
+            post(two_factor::two_factor_login),
+        )
+        .route(
+            "/jaxrs/authentication/safe/logout",
+            post(safe_logout::safe_logout),
+        )
+        .route(
+            "/jaxrs/authentication/check/token",
+            post(check_token::check_token),
+        )
         .route("/jaxrs/authentication/sso", post(sso::sso_post_login))
         .route("/jaxrs/authentication/sso/encrypt", post(sso::sso_encrypt))
         .route(
             "/jaxrs/authentication/sso/client/{client}/token/{token}",
             get(sso::sso_get_login),
         )
-        .route("/jaxrs/authentication/switchuser", post(switch_user::switch_user))
+        .route(
+            "/jaxrs/authentication/switchuser",
+            post(switch_user::switch_user),
+        )
         .route("/jaxrs/authentication/unit/list", get(unit_list))
         .route("/jaxrs/authentication/role/list", get(role_list))
         .route("/jaxrs/authentication/group/list", get(group_list))
@@ -942,4 +1038,3 @@ pub fn test_router(_pool: deadpool_postgres::Pool) -> axum::Router {
     let session_manager = shared::session::SessionManager::with_pool(pool.clone());
     router(pool, rate_limiter, session_manager)
 }
-

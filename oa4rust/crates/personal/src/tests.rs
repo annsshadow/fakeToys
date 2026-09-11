@@ -111,7 +111,12 @@ mod tests {
     fn test_password_hash_roundtrip_bcrypt() {
         let hash = auth::password::hash_password("new-secret");
         assert!(hash.starts_with("{bcrypt}"));
-        assert!(auth::password::verify_password("new-secret", &hash, "", None));
+        assert!(auth::password::verify_password(
+            "new-secret",
+            &hash,
+            "",
+            None
+        ));
         assert!(!auth::password::verify_password("wrong", &hash, "", None));
     }
 
@@ -190,15 +195,14 @@ mod tests {
 
     #[test]
     fn test_signature_upload_result_serialization() {
-        let result: ActionResult<crate::signature::SignatureInfo> = ActionResult::success(
-            crate::signature::SignatureInfo {
+        let result: ActionResult<crate::signature::SignatureInfo> =
+            ActionResult::success(crate::signature::SignatureInfo {
                 id: "sig-2".to_string(),
                 name: "SIGNATURE_sig-2".to_string(),
                 person: "user2".to_string(),
                 value: "encoded_data".to_string(),
                 created_at: None,
-            },
-        );
+            });
 
         let json = serde_json::to_value(&result).unwrap();
         assert_eq!(json["type"], "success");
@@ -341,10 +345,10 @@ mod tests {
 
 #[cfg(test)]
 mod u2_contract {
-    
+
+    use crate::u2;
     use auth::SessionManager;
     use axum::extract::Path;
-    use crate::u2;
     use shared::testing::test_pool;
     use tower::util::ServiceExt;
 
@@ -366,8 +370,9 @@ mod u2_contract {
         let client = pool.get().await.unwrap();
 
         // 基础表（宿主库可能已有，全部幂等）
-        client.execute(
-            "CREATE TABLE IF NOT EXISTS auth_person (
+        client
+            .execute(
+                "CREATE TABLE IF NOT EXISTS auth_person (
                 id VARCHAR(255) PRIMARY KEY,
                 unique_id VARCHAR(255) UNIQUE,
                 name VARCHAR(255),
@@ -379,26 +384,45 @@ mod u2_contract {
                 deleted_at TIMESTAMP,
                 created_at TIMESTAMP DEFAULT NOW(),
                 updated_at TIMESTAMP DEFAULT NOW()
-             )", &[]).await.unwrap();
-        client.execute(
-            "CREATE TABLE IF NOT EXISTS auth_role (
+             )",
+                &[],
+            )
+            .await
+            .unwrap();
+        client
+            .execute(
+                "CREATE TABLE IF NOT EXISTS auth_role (
                 id VARCHAR(255) PRIMARY KEY,
                 name VARCHAR(255) NOT NULL,
                 description TEXT,
                 disable BOOLEAN DEFAULT FALSE,
                 deleted_at TIMESTAMP
-             )", &[]).await.unwrap();
-        client.execute(
-            "CREATE TABLE IF NOT EXISTS auth_person_role (
+             )",
+                &[],
+            )
+            .await
+            .unwrap();
+        client
+            .execute(
+                "CREATE TABLE IF NOT EXISTS auth_person_role (
                 id VARCHAR(255) PRIMARY KEY,
                 person_id VARCHAR(255),
                 role_id VARCHAR(255)
-             )", &[]).await.unwrap();
-        client.execute(
-            "ALTER TABLE auth_person ADD COLUMN IF NOT EXISTS icon TEXT",
-            &[]).await.unwrap();
-        client.execute(
-            "CREATE TABLE IF NOT EXISTS x_custom (
+             )",
+                &[],
+            )
+            .await
+            .unwrap();
+        client
+            .execute(
+                "ALTER TABLE auth_person ADD COLUMN IF NOT EXISTS icon TEXT",
+                &[],
+            )
+            .await
+            .unwrap();
+        client
+            .execute(
+                "CREATE TABLE IF NOT EXISTS x_custom (
                 id VARCHAR(255) PRIMARY KEY,
                 name VARCHAR(255) NOT NULL,
                 person VARCHAR(255) NOT NULL,
@@ -406,16 +430,25 @@ mod u2_contract {
                 created_at TIMESTAMP DEFAULT NOW(),
                 updated_at TIMESTAMP DEFAULT NOW(),
                 deleted_at TIMESTAMP
-             )", &[]).await.unwrap();
-        client.execute(
-            "CREATE TABLE IF NOT EXISTS x_org_definition (
+             )",
+                &[],
+            )
+            .await
+            .unwrap();
+        client
+            .execute(
+                "CREATE TABLE IF NOT EXISTS x_org_definition (
                 id VARCHAR(36) PRIMARY KEY,
                 name TEXT NOT NULL,
                 data TEXT,
                 creator TEXT,
                 create_time TIMESTAMP NOT NULL DEFAULT NOW(),
                 update_time TIMESTAMP NOT NULL DEFAULT NOW()
-             )", &[]).await.unwrap();
+             )",
+                &[],
+            )
+            .await
+            .unwrap();
         // 宿主库可能存在旧形态表：缺列补齐
         for col_def in [
             "data TEXT",
@@ -423,25 +456,39 @@ mod u2_contract {
             "create_time TIMESTAMP NOT NULL DEFAULT NOW()",
             "update_time TIMESTAMP NOT NULL DEFAULT NOW()",
         ] {
-            client.execute(
-                &format!("ALTER TABLE x_org_definition ADD COLUMN IF NOT EXISTS {col_def}"),
-                &[],
-            ).await.unwrap();
+            client
+                .execute(
+                    &format!("ALTER TABLE x_org_definition ADD COLUMN IF NOT EXISTS {col_def}"),
+                    &[],
+                )
+                .await
+                .unwrap();
         }
-        client.execute(
-            "CREATE UNIQUE INDEX IF NOT EXISTS uq_x_org_definition_name \
-             ON x_org_definition (name)", &[]).await.unwrap();
-        client.execute(
-            "CREATE TABLE IF NOT EXISTS x_org_person_extend (
+        client
+            .execute(
+                "CREATE UNIQUE INDEX IF NOT EXISTS uq_x_org_definition_name \
+             ON x_org_definition (name)",
+                &[],
+            )
+            .await
+            .unwrap();
+        client
+            .execute(
+                "CREATE TABLE IF NOT EXISTS x_org_person_extend (
                 id VARCHAR(36) PRIMARY KEY,
                 person TEXT NOT NULL,
                 type TEXT NOT NULL,
                 extend JSONB NOT NULL DEFAULT '{}'::jsonb,
                 create_time TIMESTAMP NOT NULL DEFAULT NOW(),
                 update_time TIMESTAMP NOT NULL DEFAULT NOW()
-             )", &[]).await.unwrap();
-        client.execute(
-            "CREATE TABLE IF NOT EXISTS x_org_empower_log (
+             )",
+                &[],
+            )
+            .await
+            .unwrap();
+        client
+            .execute(
+                "CREATE TABLE IF NOT EXISTS x_org_empower_log (
                 id VARCHAR(255) PRIMARY KEY,
                 application VARCHAR(255),
                 process VARCHAR(255),
@@ -449,7 +496,11 @@ mod u2_contract {
                 from_identity VARCHAR(255),
                 to_identity VARCHAR(255),
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-             )", &[]).await.unwrap();
+             )",
+                &[],
+            )
+            .await
+            .unwrap();
         // 与 077 一致的补列（宿主库旧表缺列时兜底）
         for col_def in [
             "from_person VARCHAR(255)",
@@ -459,10 +510,13 @@ mod u2_contract {
             "activity VARCHAR(255)",
             "activity_name VARCHAR(255)",
         ] {
-            client.execute(
-                &format!("ALTER TABLE x_org_empower_log ADD COLUMN IF NOT EXISTS {col_def}"),
-                &[],
-            ).await.unwrap();
+            client
+                .execute(
+                    &format!("ALTER TABLE x_org_empower_log ADD COLUMN IF NOT EXISTS {col_def}"),
+                    &[],
+                )
+                .await
+                .unwrap();
         }
 
         // 人员夹具
@@ -470,18 +524,25 @@ mod u2_contract {
         let admin_uid = "u2-admin@P";
         for uid in [user_uid, admin_uid] {
             let pid = format!("u2-person-{}", uid.trim_end_matches("@P"));
-            client.execute(
-                "INSERT INTO auth_person (id, unique_id, name, password_hash) \
+            client
+                .execute(
+                    "INSERT INTO auth_person (id, unique_id, name, password_hash) \
                  VALUES ($1, $2, $3, 'u2-test-noop') \
                  ON CONFLICT (id) DO UPDATE SET unique_id = EXCLUDED.unique_id",
-                &[&pid, &uid.to_string(), &uid.to_string()],
-            ).await.unwrap();
+                    &[&pid, &uid.to_string(), &uid.to_string()],
+                )
+                .await
+                .unwrap();
         }
         // admin 角色
-        client.execute(
-            "INSERT INTO auth_role (id, name) VALUES ('u2-role-admin', 'admin') \
+        client
+            .execute(
+                "INSERT INTO auth_role (id, name) VALUES ('u2-role-admin', 'admin') \
              ON CONFLICT (id) DO UPDATE SET name = EXCLUDED.name",
-            &[]).await.unwrap();
+                &[],
+            )
+            .await
+            .unwrap();
         let link = client
             .execute(
                 "INSERT INTO auth_person_role (person_id, role_id, unit_id) \
@@ -509,10 +570,21 @@ mod u2_contract {
         let sm = SessionManager::with_pool(pool.clone());
         let user_token = format!("u2-tok-{}", uuid::Uuid::new_v4());
         let admin_token = format!("u2-tok-{}", uuid::Uuid::new_v4());
-        sm.create_session(user_uid.to_string(), user_token.clone()).await.unwrap();
-        sm.create_session(admin_uid.to_string(), admin_token.clone()).await.unwrap();
+        sm.create_session(user_uid.to_string(), user_token.clone())
+            .await
+            .unwrap();
+        sm.create_session(admin_uid.to_string(), admin_token.clone())
+            .await
+            .unwrap();
 
-        (pool, user_token, admin_token, user_uid.to_string(), admin_uid.to_string(), sm)
+        (
+            pool,
+            user_token,
+            admin_token,
+            user_uid.to_string(),
+            admin_uid.to_string(),
+            sm,
+        )
     }
 
     #[tokio::test]
@@ -538,7 +610,8 @@ mod u2_contract {
         let router = app(pool.clone(), sm);
 
         // PUT 创建
-        let response = router.clone()
+        let response = router
+            .clone()
             .oneshot(
                 axum::http::Request::builder()
                     .uri("/jaxrs/person/custom/u2cfg")
@@ -552,10 +625,14 @@ mod u2_contract {
             .unwrap();
         let status = response.status();
         let v = body_bytes(response).await;
-        assert_eq!(v["type"], "success", "PUT custom 失败: status={status} body={v}");
+        assert_eq!(
+            v["type"], "success",
+            "PUT custom 失败: status={status} body={v}"
+        );
 
         // GET 读取
-        let response = router.clone()
+        let response = router
+            .clone()
             .oneshot(
                 axum::http::Request::builder()
                     .uri("/jaxrs/person/custom/u2cfg")
@@ -569,7 +646,8 @@ mod u2_contract {
         assert_eq!(v["data"], "hello-custom");
 
         // 再次 PUT：归一化查重，同名单行
-        let _ = router.clone()
+        let _ = router
+            .clone()
             .oneshot(
                 axum::http::Request::builder()
                     .uri("/jaxrs/person/custom/u2cfg")
@@ -592,7 +670,8 @@ mod u2_contract {
         assert_eq!(n, 1, "同 (person,name) 不得产生重复行");
 
         // DELETE 删除
-        let response = router.clone()
+        let response = router
+            .clone()
             .oneshot(
                 axum::http::Request::builder()
                     .uri("/jaxrs/person/custom/u2cfg")
@@ -626,7 +705,8 @@ mod u2_contract {
         let v = body_bytes(put(&router, "def-v1").await.unwrap()).await;
         assert_eq!(v["type"], "success", "definition PUT body={v}");
 
-        let response = router.clone()
+        let response = router
+            .clone()
             .oneshot(
                 axum::http::Request::builder()
                     .uri("/jaxrs/person/definition/u2def")
@@ -642,13 +722,17 @@ mod u2_contract {
         let _ = put(&router, "def-v2").await.unwrap();
         let client = pool.get().await.unwrap();
         let n: i64 = client
-            .query_one("SELECT COUNT(*) AS c FROM x_org_definition WHERE name='u2def'", &[])
+            .query_one(
+                "SELECT COUNT(*) AS c FROM x_org_definition WHERE name='u2def'",
+                &[],
+            )
             .await
             .unwrap()
             .get("c");
         assert_eq!(n, 1, "definition 唯一名约束下仅一行");
 
-        let response = router.clone()
+        let response = router
+            .clone()
             .oneshot(
                 axum::http::Request::builder()
                     .uri("/jaxrs/person/definition/u2def")
@@ -661,7 +745,10 @@ mod u2_contract {
             .unwrap();
         let status = response.status();
         let v = body_bytes(response).await;
-        assert_eq!(v["data"]["value"], true, "delete def: status={status} body={v}");
+        assert_eq!(
+            v["data"]["value"], true,
+            "delete def: status={status} body={v}"
+        );
     }
 
     #[tokio::test]
@@ -672,7 +759,9 @@ mod u2_contract {
         let hint = weak_json["data"]["value"].as_str().unwrap_or("");
         assert!(!hint.is_empty(), "弱密码应返回策略提示, body={weak_json}");
 
-        let strong = u2::regist_check_password(Path("abc123456".into())).await.unwrap();
+        let strong = u2::regist_check_password(Path("abc123456".into()))
+            .await
+            .unwrap();
         let strong_json = serde_json::to_value(&strong.0).unwrap();
         let strong_hint = strong_json["data"]["value"].as_str().unwrap_or("");
         assert!(strong_hint.is_empty(), "强密码不应有提示");
@@ -687,10 +776,13 @@ mod u2_contract {
         // 种两行日志：一行属于当前用户、一行属于他人
         {
             let client = pool.get().await.unwrap();
-            client.execute(
-                "DELETE FROM x_org_empower_log WHERE id IN ('u2-log-me','u2-log-other')",
-                &[],
-            ).await.unwrap();
+            client
+                .execute(
+                    "DELETE FROM x_org_empower_log WHERE id IN ('u2-log-me','u2-log-other')",
+                    &[],
+                )
+                .await
+                .unwrap();
             client.execute(
                 "INSERT INTO x_org_empower_log (id, from_person, to_person, title, from_identity, to_identity) \
                  VALUES ('u2-log-me', $1, 'x@P', 'mine', $1, 'x@I')",
@@ -704,7 +796,8 @@ mod u2_contract {
         }
 
         // 非管理员走 currentperson 分页：只能看到 from_person=自己的行
-        let response = router.clone()
+        let response = router
+            .clone()
             .oneshot(
                 axum::http::Request::builder()
                     .uri("/jaxrs/person/empowerlog/list/currentperson/paging/1/size/10")
@@ -722,7 +815,9 @@ mod u2_contract {
         let titles: Vec<&str> = v["data"]
             .as_array()
             .map(|arr| {
-                arr.iter().map(|r| r["title"].as_str().unwrap_or("")).collect::<Vec<_>>()
+                arr.iter()
+                    .map(|r| r["title"].as_str().unwrap_or(""))
+                    .collect::<Vec<_>>()
             })
             .unwrap_or_default();
         assert!(titles.contains(&"mine"), "应包含本人日志");
@@ -734,20 +829,27 @@ mod u2_contract {
         let (pool, user_token, _, user_uid, _, sm) = fixture().await;
         {
             let client = pool.get().await.unwrap();
-            client.execute(
-                "DELETE FROM x_org_person_extend WHERE person=$1 AND type='exmail'",
-                &[&user_uid],
-            ).await.unwrap();
-            client.execute(
-                "INSERT INTO x_org_person_extend (id, person, type, extend) \
+            client
+                .execute(
+                    "DELETE FROM x_org_person_extend WHERE person=$1 AND type='exmail'",
+                    &[&user_uid],
+                )
+                .await
+                .unwrap();
+            client
+                .execute(
+                    "INSERT INTO x_org_person_extend (id, person, type, extend) \
                  VALUES ('u2-ext-1', $1, 'exmail', '{\"unreadCount\":7,\"titleList\":[\"t1\"]}')",
-                &[&user_uid],
-            ).await.unwrap();
+                    &[&user_uid],
+                )
+                .await
+                .unwrap();
         }
         let auth = format!("Bearer {user_token}");
         let router = app(pool.clone(), sm);
 
-        let response = router.clone()
+        let response = router
+            .clone()
             .oneshot(
                 axum::http::Request::builder()
                     .uri("/jaxrs/person/exmail/new/count/passive")

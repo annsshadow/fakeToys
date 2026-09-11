@@ -1,12 +1,14 @@
-use axum::{extract::Extension, extract::Path, routing::post, routing::get, Json as AxumJson, Router};
 use axum::response::{IntoResponse, Response};
+use axum::{
+    extract::Extension, extract::Path, routing::get, routing::post, Json as AxumJson, Router,
+};
 use deadpool_postgres::Pool;
 use serde::Deserialize;
 use serde_json::{json, Value};
+use sha2::Digest;
 use shared::error::AppError;
 use shared::response::ActionResult;
 use shared::session::SessionManager;
-use sha2::Digest;
 use std::sync::OnceLock;
 
 const QYWXPOS_UNIQUE_PREFIX: &str = "qywxpos_";
@@ -23,7 +25,10 @@ fn qywx_client() -> &'static reqwest::Client {
     CLIENT.get_or_init(reqwest::Client::new)
 }
 
-async fn exchange_code_for_userid(config: &(String, String), code: &str) -> Result<String, AppError> {
+async fn exchange_code_for_userid(
+    config: &(String, String),
+    code: &str,
+) -> Result<String, AppError> {
     let client = qywx_client();
     let token_resp: Value = client
         .get("https://qyapi.weixin.qq.com/cgi-bin/gettoken")
@@ -35,7 +40,10 @@ async fn exchange_code_for_userid(config: &(String, String), code: &str) -> Resu
         .await
         .map_err(|_| AppError::Internal)?;
 
-    let errcode = token_resp.get("errcode").and_then(|v| v.as_i64()).unwrap_or(-1);
+    let errcode = token_resp
+        .get("errcode")
+        .and_then(|v| v.as_i64())
+        .unwrap_or(-1);
     if errcode != 0 {
         return Err(AppError::Internal);
     }
@@ -54,7 +62,10 @@ async fn exchange_code_for_userid(config: &(String, String), code: &str) -> Resu
         .await
         .map_err(|_| AppError::Internal)?;
 
-    let errcode = user_resp.get("errcode").and_then(|v| v.as_i64()).unwrap_or(-1);
+    let errcode = user_resp
+        .get("errcode")
+        .and_then(|v| v.as_i64())
+        .unwrap_or(-1);
     if errcode != 0 {
         return Err(AppError::Internal);
     }
@@ -92,15 +103,24 @@ async fn get_user_detail(config: &(String, String), userid: &str) -> Result<Valu
         .await
         .map_err(|_| AppError::Internal)?;
 
-    let errcode = user_resp.get("errcode").and_then(|v| v.as_i64()).unwrap_or(-1);
+    let errcode = user_resp
+        .get("errcode")
+        .and_then(|v| v.as_i64())
+        .unwrap_or(-1);
     if errcode != 0 {
         return Err(AppError::Internal);
     }
     Ok(user_resp)
 }
 
-async fn create_session(token: &str, person_unique: &str, session_manager: &SessionManager) -> Result<(), AppError> {
-    session_manager.create_session(person_unique.to_string(), token.to_string()).await?;
+async fn create_session(
+    token: &str,
+    person_unique: &str,
+    session_manager: &SessionManager,
+) -> Result<(), AppError> {
+    session_manager
+        .create_session(person_unique.to_string(), token.to_string())
+        .await?;
     Ok(())
 }
 
@@ -153,12 +173,11 @@ pub async fn qiyeweixin_login(
                 &session_manager,
             ))
         }
-        None => {
-            Ok(AxumJson(ActionResult::success(json!({
-                "userid": userid,
-                "unbind": true,
-            }))).into_response())
-        }
+        None => Ok(AxumJson(ActionResult::success(json!({
+            "userid": userid,
+            "unbind": true,
+        })))
+        .into_response()),
     }
 }
 
@@ -173,9 +192,18 @@ pub async fn qiyeweixin_update_person_detail(
     let unique_id = format!("{}{}", QYWXPOS_UNIQUE_PREFIX, userid);
 
     let detail_resp = get_user_detail(&config, &userid).await?;
-    let name: Option<String> = detail_resp.get("name").and_then(|v| v.as_str()).map(|s| s.to_string());
-    let mobile: Option<String> = detail_resp.get("mobile").and_then(|v| v.as_str()).map(|s| s.to_string());
-    let email: Option<String> = detail_resp.get("email").and_then(|v| v.as_str()).map(|s| s.to_string());
+    let name: Option<String> = detail_resp
+        .get("name")
+        .and_then(|v| v.as_str())
+        .map(|s| s.to_string());
+    let mobile: Option<String> = detail_resp
+        .get("mobile")
+        .and_then(|v| v.as_str())
+        .map(|s| s.to_string());
+    let email: Option<String> = detail_resp
+        .get("email")
+        .and_then(|v| v.as_str())
+        .map(|s| s.to_string());
 
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let row = client
@@ -206,7 +234,13 @@ pub async fn qiyeweixin_update_person_detail(
                 )
                 .await
                 .map_err(|_| AppError::Internal)?;
-            (id, unique_id.clone(), name.clone(), mobile.clone(), email.clone())
+            (
+                id,
+                unique_id.clone(),
+                name.clone(),
+                mobile.clone(),
+                email.clone(),
+            )
         }
     };
 
@@ -275,12 +309,17 @@ pub async fn qiyeweixin_jssdk_sign(
     AxumJson(req): AxumJson<JssdkSignRequest>,
 ) -> Result<AxumJson<ActionResult<Value>>, AppError> {
     let ticket = get_jsapi_ticket().ok_or(AppError::Internal)?;
-    let nonce_str = req.nonce_str.unwrap_or_else(|| uuid::Uuid::new_v4().to_string());
+    let nonce_str = req
+        .nonce_str
+        .unwrap_or_else(|| uuid::Uuid::new_v4().to_string());
     let timestamp = chrono::Utc::now().timestamp() as u64;
     let corpid = std::env::var("QYWX_CORP_ID").map_err(|_| AppError::Internal)?;
     let agentid = get_qywx_agent_id().ok_or(AppError::Internal)?;
 
-    let text = format!("jsapi_ticket={}&noncestr={}&timestamp={}&url={}", ticket, nonce_str, timestamp, req.url);
+    let text = format!(
+        "jsapi_ticket={}&noncestr={}&timestamp={}&url={}",
+        ticket, nonce_str, timestamp, req.url
+    );
     let signature = format!("{:x}", sha1::Sha1::digest(text.as_bytes()));
 
     Ok(AxumJson(ActionResult::success(json!({
@@ -295,6 +334,12 @@ pub async fn qiyeweixin_jssdk_sign(
 pub fn router() -> Router {
     Router::new()
         .route("/jaxrs/qiyeweixin/code/{code}", get(qiyeweixin_login))
-        .route("/jaxrs/qiyeweixin/update/person/detail/{code}", get(qiyeweixin_update_person_detail))
-        .route("/jaxrs/qiyeweixin/jssdk/sign/info", post(qiyeweixin_jssdk_sign))
+        .route(
+            "/jaxrs/qiyeweixin/update/person/detail/{code}",
+            get(qiyeweixin_update_person_detail),
+        )
+        .route(
+            "/jaxrs/qiyeweixin/jssdk/sign/info",
+            post(qiyeweixin_jssdk_sign),
+        )
 }

@@ -26,10 +26,16 @@ pub async fn file_get(
             let result = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
                 ("name".to_string(), Value::String(row.get("xname"))),
-                ("length".to_string(), Value::Number(serde_json::Number::from(row.get::<_, i64>("xlength")))),
+                (
+                    "length".to_string(),
+                    Value::Number(serde_json::Number::from(row.get::<_, i64>("xlength"))),
+                ),
                 ("storage".to_string(), Value::String(row.get("xstorage"))),
                 ("creator".to_string(), Value::String(row.get("xcreator"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
+                (
+                    "createTime".to_string(),
+                    Value::String(row.get("\"xcreateTime\"")),
+                ),
             ]));
             Ok(Json(ActionResult::success(result)))
         }
@@ -44,7 +50,10 @@ pub async fn file_download(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let row = client
-        .query_opt("SELECT xid, xname FROM x_ai_file WHERE xid = $1 OR xname = $1", &[&id])
+        .query_opt(
+            "SELECT xid, xname FROM x_ai_file WHERE xid = $1 OR xname = $1",
+            &[&id],
+        )
         .await
         .map_err(|_| AppError::Internal)?;
 
@@ -53,8 +62,14 @@ pub async fn file_download(
             serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(id.clone())),
                 ("name".to_string(), Value::String(format!("{}.bin", id))),
-                ("contentType".to_string(), Value::String("application/octet-stream".to_string())),
-                ("contentDisposition".to_string(), Value::String(format!("attachment; filename=\"{}.bin\"", id))),
+                (
+                    "contentType".to_string(),
+                    Value::String("application/octet-stream".to_string()),
+                ),
+                (
+                    "contentDisposition".to_string(),
+                    Value::String(format!("attachment; filename=\"{}.bin\"", id)),
+                ),
                 ("fastETag".to_string(), Value::String(format!("{}-0", id))),
             ]),
         )))),
@@ -71,8 +86,14 @@ pub async fn file_download_scale(
         serde_json::Map::from_iter([
             ("id".to_string(), Value::String(id.clone())),
             ("name".to_string(), Value::String(format!("{}.png", id))),
-            ("contentType".to_string(), Value::String("image/png".to_string())),
-            ("contentDisposition".to_string(), Value::String(format!("attachment; filename=\"{}.png\"", id))),
+            (
+                "contentType".to_string(),
+                Value::String("image/png".to_string()),
+            ),
+            (
+                "contentDisposition".to_string(),
+                Value::String(format!("attachment; filename=\"{}.png\"", id)),
+            ),
             ("fastETag".to_string(), Value::String(format!("{}-0", id))),
         ]),
     ))))
@@ -87,7 +108,10 @@ pub async fn file_delete(
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let row = client
-        .query_opt("SELECT xcreator FROM x_ai_file WHERE xid = $1 OR xname = $1", &[&flag])
+        .query_opt(
+            "SELECT xcreator FROM x_ai_file WHERE xid = $1 OR xname = $1",
+            &[&flag],
+        )
         .await
         .map_err(|_| AppError::Internal)?;
 
@@ -99,13 +123,14 @@ pub async fn file_delete(
     shared::middleware::require_owner(&pool, &session, &file_creator).await?;
 
     client
-        .execute("DELETE FROM x_ai_file WHERE xid = $1 OR xname = $1", &[&flag])
+        .execute(
+            "DELETE FROM x_ai_file WHERE xid = $1 OR xname = $1",
+            &[&flag],
+        )
         .await
         .map_err(|_| AppError::Internal)?;
 
     Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("id".to_string(), Value::String(flag)),
-        ]),
+        serde_json::Map::from_iter([("id".to_string(), Value::String(flag))]),
     ))))
 }

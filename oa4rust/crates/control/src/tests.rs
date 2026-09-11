@@ -1,12 +1,12 @@
 #[cfg(test)]
 mod tests {
-    use axum::extract::Extension;
     use crate::{group, person, role, routes, unit};
+    use axum::extract::Extension;
+    use deadpool_postgres::tokio_postgres::Config as PgConfig;
     use deadpool_postgres::{Manager, Pool};
     use shared::error::AppError;
     use shared::response::ActionResult;
     use tokio::runtime::Runtime;
-    use deadpool_postgres::tokio_postgres::Config as PgConfig;
 
     /// 测试 ActionResult 成功响应序列化
     #[test]
@@ -176,11 +176,7 @@ mod tests {
                 password: String::new(),
             };
             let result: Result<axum::Json<ActionResult<serde_json::Value>>, AppError> =
-                person::create(
-                    Extension(pool),
-                    axum::extract::Json(req),
-                )
-                .await;
+                person::create(Extension(pool), axum::extract::Json(req)).await;
 
             // 缺少密码应在触达数据库前返回 type=error
             match result {
@@ -210,11 +206,7 @@ mod tests {
                 password: "secret".to_string(),
             };
             let result: Result<axum::Json<ActionResult<serde_json::Value>>, AppError> =
-                person::create(
-                    Extension(pool),
-                    axum::extract::Json(req),
-                )
-                .await;
+                person::create(Extension(pool), axum::extract::Json(req)).await;
 
             match result {
                 Ok(json) => {
@@ -240,11 +232,7 @@ mod tests {
                 level: 1,
             };
             let result: Result<axum::Json<ActionResult<serde_json::Value>>, AppError> =
-                unit::create(
-                    Extension(pool),
-                    axum::extract::Json(req),
-                )
-                .await;
+                unit::create(Extension(pool), axum::extract::Json(req)).await;
 
             match result {
                 Ok(json) => {
@@ -269,11 +257,7 @@ mod tests {
                 description: None,
             };
             let result: Result<axum::Json<ActionResult<serde_json::Value>>, AppError> =
-                role::create(
-                    Extension(pool),
-                    axum::extract::Json(req),
-                )
-                .await;
+                role::create(Extension(pool), axum::extract::Json(req)).await;
 
             match result {
                 Ok(json) => {
@@ -298,11 +282,7 @@ mod tests {
                 description: None,
             };
             let result: Result<axum::Json<ActionResult<serde_json::Value>>, AppError> =
-                group::create(
-                    Extension(pool),
-                    axum::extract::Json(req),
-                )
-                .await;
+                group::create(Extension(pool), axum::extract::Json(req)).await;
 
             match result {
                 Ok(json) => {
@@ -345,10 +325,17 @@ mod tests {
     fn test_password_hash_and_verify() {
         let hash = auth::password::hash_password("secret123");
         assert!(hash.starts_with(auth::password::BCRYPT_PREFIX));
-        assert!(auth::password::verify_password("secret123", &hash, "", None));
+        assert!(auth::password::verify_password(
+            "secret123",
+            &hash,
+            "",
+            None
+        ));
         assert!(!auth::password::verify_password("wrong", &hash, "", None));
 
         let md5_hash = format!("{:x}", md5::compute("legacy".as_bytes()));
-        assert!(auth::password::verify_password("legacy", &md5_hash, "", None));
+        assert!(auth::password::verify_password(
+            "legacy", &md5_hash, "", None
+        ));
     }
 }

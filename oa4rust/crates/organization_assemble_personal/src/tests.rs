@@ -1,10 +1,10 @@
 #[cfg(test)]
 mod tests {
+    use crate::router;
     use axum::body::Body;
     use axum::http::{Request, StatusCode};
     use shared::testing::test_pool;
     use tower::util::ServiceExt;
-    use crate::router;
 
     const TEST_PERSON_ID: &str = "test-person-id-personal";
 
@@ -16,7 +16,10 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri(format!("/jaxrs/organization/assemble/personal/{}/setting", TEST_PERSON_ID))
+                    .uri(format!(
+                        "/jaxrs/organization/assemble/personal/{}/setting",
+                        TEST_PERSON_ID
+                    ))
                     .method(axum::http::Method::GET)
                     .body(Body::empty())
                     .unwrap(),
@@ -35,7 +38,10 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri(format!("/jaxrs/organization/assemble/personal/{}/role/list", TEST_PERSON_ID))
+                    .uri(format!(
+                        "/jaxrs/organization/assemble/personal/{}/role/list",
+                        TEST_PERSON_ID
+                    ))
                     .method(axum::http::Method::GET)
                     .body(Body::empty())
                     .unwrap(),

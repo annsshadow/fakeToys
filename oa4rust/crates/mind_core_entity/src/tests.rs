@@ -81,8 +81,10 @@ mod tests {
                 .unwrap();
 
             // 由于没有数据库，会返回 INTERNAL_SERVER_ERROR (500) 或 NOT_FOUND (404)
-            assert!(response.status() == StatusCode::INTERNAL_SERVER_ERROR
-                || response.status() == StatusCode::NOT_FOUND);
+            assert!(
+                response.status() == StatusCode::INTERNAL_SERVER_ERROR
+                    || response.status() == StatusCode::NOT_FOUND
+            );
         });
     }
 
@@ -106,8 +108,10 @@ mod tests {
                 .await
                 .unwrap();
 
-            assert!(response.status() == StatusCode::INTERNAL_SERVER_ERROR
-                || response.status() == StatusCode::NOT_FOUND);
+            assert!(
+                response.status() == StatusCode::INTERNAL_SERVER_ERROR
+                    || response.status() == StatusCode::NOT_FOUND
+            );
         });
     }
 
@@ -131,8 +135,10 @@ mod tests {
                 .await
                 .unwrap();
 
-            assert!(response.status() == StatusCode::INTERNAL_SERVER_ERROR
-                || response.status() == StatusCode::NOT_FOUND);
+            assert!(
+                response.status() == StatusCode::INTERNAL_SERVER_ERROR
+                    || response.status() == StatusCode::NOT_FOUND
+            );
         });
     }
 
@@ -155,8 +161,10 @@ mod tests {
                 .await
                 .unwrap();
 
-            assert!(response.status() == StatusCode::INTERNAL_SERVER_ERROR
-                || response.status() == StatusCode::NOT_FOUND);
+            assert!(
+                response.status() == StatusCode::INTERNAL_SERVER_ERROR
+                    || response.status() == StatusCode::NOT_FOUND
+            );
         });
     }
 
@@ -180,8 +188,10 @@ mod tests {
                 .await
                 .unwrap();
 
-            assert!(response.status() == StatusCode::INTERNAL_SERVER_ERROR
-                || response.status() == StatusCode::NOT_FOUND);
+            assert!(
+                response.status() == StatusCode::INTERNAL_SERVER_ERROR
+                    || response.status() == StatusCode::NOT_FOUND
+            );
         });
     }
 
@@ -205,8 +215,10 @@ mod tests {
                 .await
                 .unwrap();
 
-            assert!(response.status() == StatusCode::INTERNAL_SERVER_ERROR
-                || response.status() == StatusCode::NOT_FOUND);
+            assert!(
+                response.status() == StatusCode::INTERNAL_SERVER_ERROR
+                    || response.status() == StatusCode::NOT_FOUND
+            );
         });
     }
 
@@ -229,8 +241,10 @@ mod tests {
                 .await
                 .unwrap();
 
-            assert!(response.status() == StatusCode::INTERNAL_SERVER_ERROR
-                || response.status() == StatusCode::NOT_FOUND);
+            assert!(
+                response.status() == StatusCode::INTERNAL_SERVER_ERROR
+                    || response.status() == StatusCode::NOT_FOUND
+            );
         });
     }
 
@@ -254,8 +268,10 @@ mod tests {
                 .await
                 .unwrap();
 
-            assert!(response.status() == StatusCode::INTERNAL_SERVER_ERROR
-                || response.status() == StatusCode::NOT_FOUND);
+            assert!(
+                response.status() == StatusCode::INTERNAL_SERVER_ERROR
+                    || response.status() == StatusCode::NOT_FOUND
+            );
         });
     }
 

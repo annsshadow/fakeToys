@@ -1,13 +1,19 @@
-﻿use axum::{
+use axum::{
     extract::{Extension, Json, Path},
     routing::{get, post},
     Json as AxumJson, Router,
 };
 use chrono::Utc;
-use sea_orm::{ActiveModelTrait, ColumnTrait, DatabaseConnection, EntityTrait, QueryFilter, QueryOrder, QuerySelect, Set};
+use sea_orm::{
+    ActiveModelTrait, ColumnTrait, DatabaseConnection, EntityTrait, QueryFilter, QueryOrder,
+    QuerySelect, Set,
+};
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
-use shared::{error::AppError, response::{option_to_json, ActionResult}};
+use shared::{
+    error::AppError,
+    response::{option_to_json, ActionResult},
+};
 
 pub mod entities;
 pub mod routes;
@@ -190,7 +196,10 @@ pub async fn calendar_list_my(
         serde_json::Map::from_iter([
             ("myCalendars".to_string(), Value::Array(my_calendars)),
             ("unitCalendars".to_string(), Value::Array(unit_calendars)),
-            ("followCalendars".to_string(), Value::Array(Vec::<Value>::new())),
+            (
+                "followCalendars".to_string(),
+                Value::Array(Vec::<Value>::new()),
+            ),
         ]),
     ))))
 }
@@ -232,7 +241,9 @@ pub async fn calendar_create(
     db: Extension<DatabaseConnection>,
     AxumJson(req): AxumJson<CreateCalendarRequest>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let name = req.name.ok_or_else(|| AppError::BadRequest("name is required".to_string()))?;
+    let name = req
+        .name
+        .ok_or_else(|| AppError::BadRequest("name is required".to_string()))?;
     let calendar_type = req
         .calendar_type
         .ok_or_else(|| AppError::BadRequest("type is required".to_string()))?;
@@ -260,7 +271,10 @@ pub async fn calendar_create(
         create_time: Set(Some(now)),
     };
 
-    let m = active_model.insert(&db.0).await.map_err(|_| AppError::Internal)?;
+    let m = active_model
+        .insert(&db.0)
+        .await
+        .map_err(|_| AppError::Internal)?;
 
     let mut map = serde_json::Map::new();
     map.insert("id".to_string(), Value::String(m.id.clone()));
@@ -337,7 +351,10 @@ pub async fn calendar_update(
     if let Some(val) = option_to_json(updated.source.clone().map(Value::String)) {
         map.insert("source".to_string(), val);
     }
-    map.insert("createor".to_string(), Value::String(updated.createor.clone()));
+    map.insert(
+        "createor".to_string(),
+        Value::String(updated.createor.clone()),
+    );
     map.insert("isPublic".to_string(), Value::Bool(updated.is_public));
     map.insert("status".to_string(), Value::String(updated.status.clone()));
     let data = Value::Object(map);
@@ -418,8 +435,12 @@ pub async fn event_create(
 
     let id = uuid::Uuid::new_v4().to_string();
 
-    let start_time: chrono::NaiveDateTime = start_time_str.parse().map_err(|_| AppError::BadRequest("invalid \"startTime\"".to_string()))?;
-    let end_time: chrono::NaiveDateTime = end_time_str.parse().map_err(|_| AppError::BadRequest("invalid \"endTime\"".to_string()))?;
+    let start_time: chrono::NaiveDateTime = start_time_str
+        .parse()
+        .map_err(|_| AppError::BadRequest("invalid \"startTime\"".to_string()))?;
+    let end_time: chrono::NaiveDateTime = end_time_str
+        .parse()
+        .map_err(|_| AppError::BadRequest("invalid \"endTime\"".to_string()))?;
 
     let active_model = cal_event::ActiveModel {
         id: Set(id.clone()),
@@ -436,7 +457,10 @@ pub async fn event_create(
         create_time: Set(Some(Utc::now().naive_utc())),
     };
 
-    let m = active_model.insert(&db.0).await.map_err(|_| AppError::Internal)?;
+    let m = active_model
+        .insert(&db.0)
+        .await
+        .map_err(|_| AppError::Internal)?;
 
     let mut map = serde_json::Map::new();
     map.insert("id".to_string(), Value::String(m.id.clone()));
@@ -455,9 +479,15 @@ pub async fn event_create(
         "\"startTime\"".to_string(),
         Value::String(m.start_time.to_string()),
     );
-    map.insert("\"endTime\"".to_string(), Value::String(m.end_time.to_string()));
+    map.insert(
+        "\"endTime\"".to_string(),
+        Value::String(m.end_time.to_string()),
+    );
     map.insert("allDay".to_string(), Value::Bool(m.all_day));
-    map.insert("visibility".to_string(), Value::String(m.visibility.clone()));
+    map.insert(
+        "visibility".to_string(),
+        Value::String(m.visibility.clone()),
+    );
     map.insert("status".to_string(), Value::String(m.status.clone()));
     map.insert("createor".to_string(), Value::String(m.createor.clone()));
     let data = Value::Object(map);
@@ -491,8 +521,12 @@ pub async fn event_update(
     let visibility = req.visibility.unwrap_or(m.visibility);
     let status = req.status.unwrap_or(m.status);
 
-    let start_time: chrono::NaiveDateTime = start_time_str.parse().map_err(|_| AppError::BadRequest("invalid \"startTime\"".to_string()))?;
-    let end_time: chrono::NaiveDateTime = end_time_str.parse().map_err(|_| AppError::BadRequest("invalid \"endTime\"".to_string()))?;
+    let start_time: chrono::NaiveDateTime = start_time_str
+        .parse()
+        .map_err(|_| AppError::BadRequest("invalid \"startTime\"".to_string()))?;
+    let end_time: chrono::NaiveDateTime = end_time_str
+        .parse()
+        .map_err(|_| AppError::BadRequest("invalid \"endTime\"".to_string()))?;
 
     let active_model = cal_event::ActiveModel {
         id: Set(id.clone()),
@@ -536,9 +570,15 @@ pub async fn event_update(
         Value::String(updated.end_time.to_string()),
     );
     map.insert("allDay".to_string(), Value::Bool(updated.all_day));
-    map.insert("visibility".to_string(), Value::String(updated.visibility.clone()));
+    map.insert(
+        "visibility".to_string(),
+        Value::String(updated.visibility.clone()),
+    );
     map.insert("status".to_string(), Value::String(updated.status.clone()));
-    map.insert("createor".to_string(), Value::String(updated.createor.clone()));
+    map.insert(
+        "createor".to_string(),
+        Value::String(updated.createor.clone()),
+    );
     let data = Value::Object(map);
 
     Ok(Json(ActionResult::success(data)))
@@ -597,7 +637,8 @@ pub async fn event_list_by_calendar(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let models = cal_event::Entity::find()
         .filter(
-            cal_event::Column::CalendarId.eq(&calendar_id)
+            cal_event::Column::CalendarId
+                .eq(&calendar_id)
                 .and(cal_event::Column::Status.eq("OPEN")),
         )
         .order_by_asc(cal_event::Column::StartTime)
@@ -626,9 +667,15 @@ pub async fn event_list_by_calendar(
                 "\"startTime\"".to_string(),
                 Value::String(m.start_time.to_string()),
             );
-            map.insert("\"endTime\"".to_string(), Value::String(m.end_time.to_string()));
+            map.insert(
+                "\"endTime\"".to_string(),
+                Value::String(m.end_time.to_string()),
+            );
             map.insert("allDay".to_string(), Value::Bool(m.all_day));
-            map.insert("visibility".to_string(), Value::String(m.visibility.clone()));
+            map.insert(
+                "visibility".to_string(),
+                Value::String(m.visibility.clone()),
+            );
             map.insert("status".to_string(), Value::String(m.status.clone()));
             map.insert("createor".to_string(), Value::String(m.createor.clone()));
             Value::Object(map)
@@ -641,10 +688,7 @@ pub async fn event_list_by_calendar(
                 "count".to_string(),
                 Value::Number(serde_json::Number::from(data.len() as i64)),
             ),
-            (
-                "calendarId".to_string(),
-                Value::String(calendar_id),
-            ),
+            ("calendarId".to_string(), Value::String(calendar_id)),
             ("data".to_string(), Value::Array(data)),
         ]),
     ))))
@@ -699,8 +743,6 @@ mod tests;
 #[cfg(test)]
 mod tests_generated;
 
-
 pub fn router(pool: deadpool_postgres::Pool) -> axum::Router {
     crate::calendar_core_entity_router(pool)
 }
-

@@ -79,7 +79,13 @@ async fn record_insert(
         .execute(
             "INSERT INTO x_record (id, work_id, record_type, content, creator, create_time) \
              VALUES ($1, $2, $3, $4, $5, NOW())",
-            &[&id, &work_id.to_string(), &record_type.to_string(), &content.to_string(), &creator.to_string()],
+            &[
+                &id,
+                &work_id.to_string(),
+                &record_type.to_string(),
+                &content.to_string(),
+                &creator.to_string(),
+            ],
         )
         .await
         .map_err(|_| AppError::Internal)?;
@@ -97,7 +103,11 @@ async fn record_exists(
         .query_one(
             "SELECT COUNT(*) AS c FROM x_record \
              WHERE work_id = $1 AND COALESCE(record_type,'') = $2 AND COALESCE(content,'') = $3",
-            &[&work_id.to_string(), &record_type.to_string(), &content.to_string()],
+            &[
+                &work_id.to_string(),
+                &record_type.to_string(),
+                &content.to_string(),
+            ],
         )
         .await
         .map_err(|_| AppError::Internal)?
@@ -153,7 +163,9 @@ pub async fn dict_edit(
         )
         .await
         .map_err(|_| AppError::Internal)?;
-    let raw: String = row.get::<_, Option<String>>("data").unwrap_or_else(|| "{}".to_string());
+    let raw: String = row
+        .get::<_, Option<String>>("data")
+        .unwrap_or_else(|| "{}".to_string());
     let data: Value = serde_json::from_str(&raw).unwrap_or(json!({}));
     ok(json!({
         "id": row.get::<_, String>("id"),
@@ -188,7 +200,10 @@ async fn dict_set(pool: &Pool, parts: &[String], body: Value) -> H {
         .await
         .map_err(|_| AppError::Internal)?;
     let raw: String = client
-        .query_one("SELECT COALESCE(data::text, '{}') AS data FROM x_application_dict WHERE id = $1", &[&id])
+        .query_one(
+            "SELECT COALESCE(data::text, '{}') AS data FROM x_application_dict WHERE id = $1",
+            &[&id],
+        )
         .await
         .map_err(|_| AppError::Internal)?
         .get("data");
@@ -483,10 +498,7 @@ pub async fn data_work_update_path(
 }
 
 #[allow(non_snake_case)]
-pub async fn data_work_delete(
-    pool: Extension<Pool>,
-    Path(id): Path<String>,
-) -> H {
+pub async fn data_work_delete(pool: Extension<Pool>, Path(id): Path<String>) -> H {
     data_delete_whole(&pool, DATA_SCOPE_WORK, &id).await
 }
 
@@ -759,10 +771,7 @@ pub async fn job_delete(pool: Extension<Pool>, Path(job): Path<String>) -> H {
 
 /// GET job/v2/{job}/person/{person}/view：该人员视角下的 job 任务视图
 #[allow(non_snake_case)]
-pub async fn job_v2_view(
-    pool: Extension<Pool>,
-    Path((job, person)): Path<(String, String)>,
-) -> H {
+pub async fn job_v2_view(pool: Extension<Pool>, Path((job, person)): Path<(String, String)>) -> H {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let rows = client
         .query(
@@ -779,7 +788,12 @@ pub async fn job_v2_view(
 // ── read（ReadAction）──────────────────────────────────────────────────────
 
 /// 归一化查重：同 (bundle,person,scope) 未删除的已阅只建一条
-async fn read_exists(client: &Client, bundle: &str, person: &str, scope: &str) -> Result<bool, AppError> {
+async fn read_exists(
+    client: &Client,
+    bundle: &str,
+    person: &str,
+    scope: &str,
+) -> Result<bool, AppError> {
     let n = client
         .query_one(
             "SELECT COUNT(*) AS c FROM x_read \
@@ -889,12 +903,9 @@ pub async fn read_processing(pool: Extension<Pool>, Path(id): Path<String>) -> H
     )
     .await
     .map_err(|_| AppError::Internal)?;
-    tx.execute(
-        "UPDATE x_read SET deleted_at = NOW() WHERE id = $1",
-        &[&id],
-    )
-    .await
-    .map_err(|_| AppError::Internal)?;
+    tx.execute("UPDATE x_read SET deleted_at = NOW() WHERE id = $1", &[&id])
+        .await
+        .map_err(|_| AppError::Internal)?;
     tx.commit().await.map_err(|_| AppError::Internal)?;
     ok(json!({ "id": id, "readCompletedId": rc_id, "value": true }))
 }
@@ -935,10 +946,7 @@ pub async fn read_reset(
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let n = if person.is_empty() {
         client
-            .execute(
-                "UPDATE x_read SET deleted_at = NULL WHERE id = $1",
-                &[&id],
-            )
+            .execute("UPDATE x_read SET deleted_at = NULL WHERE id = $1", &[&id])
             .await
             .map_err(|_| AppError::Internal)?
     } else {
@@ -977,13 +985,21 @@ pub async fn readcompleted_delete(pool: Extension<Pool>, Path(id): Path<String>)
 async fn record_create_dedup(pool: &Pool, work_id: &str, body: Value) -> H {
     let r#type = {
         let t = body_str(&body, &["recordType", "type"]);
-        if t.is_empty() { "info".to_string() } else { t.to_lowercase() }
+        if t.is_empty() {
+            "info".to_string()
+        } else {
+            t.to_lowercase()
+        }
     };
     let content_val = body.get("content").cloned().unwrap_or(json!({}));
     let content = content_val.to_string();
     let creator = {
         let c = body_str(&body, &["creator", "person"]);
-        if c.is_empty() { "system".to_string() } else { c }
+        if c.is_empty() {
+            "system".to_string()
+        } else {
+            c
+        }
     };
     if work_id.trim().is_empty() {
         return biz_err("work/job is required");
@@ -1040,10 +1056,7 @@ pub async fn record_edit(
 ) -> H {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let row = client
-        .query_opt(
-            "SELECT id FROM x_record WHERE id = $1",
-            &[&id],
-        )
+        .query_opt("SELECT id FROM x_record WHERE id = $1", &[&id])
         .await
         .map_err(|_| AppError::Internal)?;
     if row.is_none() {
@@ -1156,20 +1169,14 @@ async fn review_create_batch(pool: &Pool, work_id: &str, body: Value, gate_table
 
 /// POST review/create/work
 #[allow(non_snake_case)]
-pub async fn review_create_work(
-    pool: Extension<Pool>,
-    Json(body): Json<Value>,
-) -> H {
+pub async fn review_create_work(pool: Extension<Pool>, Json(body): Json<Value>) -> H {
     let work = body_str(&body, &["work", "workId"]);
     review_create_batch(&pool, &work, body, "x_work").await
 }
 
 /// POST review/create/workcompleted
 #[allow(non_snake_case)]
-pub async fn review_create_workcompleted(
-    pool: Extension<Pool>,
-    Json(body): Json<Value>,
-) -> H {
+pub async fn review_create_workcompleted(pool: Extension<Pool>, Json(body): Json<Value>) -> H {
     let work = body_str(&body, &["workCompleted", "workCompletedId", "work"]);
     review_create_batch(&pool, &work, body, "x_workcompleted").await
 }
@@ -1317,10 +1324,7 @@ async fn snap_take_for_wc(pool: &Pool, wc_id: &str, snap_type: &str) -> H {
 
 /// GET snap/work/{workId}/type/abandoned：放弃工作（快照+取消任务+置状态）
 #[allow(non_snake_case)]
-pub async fn snap_type_abandoned(
-    pool: Extension<Pool>,
-    Path(work_id): Path<String>,
-) -> H {
+pub async fn snap_type_abandoned(pool: Extension<Pool>, Path(work_id): Path<String>) -> H {
     snap_take_for_work(&pool, &work_id, "abandoned", true, Some("abandoned")).await
 }
 
@@ -1332,28 +1336,19 @@ pub async fn snap_type_snap(pool: Extension<Pool>, Path(work_id): Path<String>) 
 
 /// GET snap/work/{workId}/type/suspend：挂起工作
 #[allow(non_snake_case)]
-pub async fn snap_type_suspend(
-    pool: Extension<Pool>,
-    Path(work_id): Path<String>,
-) -> H {
+pub async fn snap_type_suspend(pool: Extension<Pool>, Path(work_id): Path<String>) -> H {
     snap_take_for_work(&pool, &work_id, "suspend", false, Some("suspended")).await
 }
 
 /// GET snap/workcompleted/{workCompletedId}/type/abandonedworkcompleted
 #[allow(non_snake_case)]
-pub async fn snap_wc_type_abandoned(
-    pool: Extension<Pool>,
-    Path(wc_id): Path<String>,
-) -> H {
+pub async fn snap_wc_type_abandoned(pool: Extension<Pool>, Path(wc_id): Path<String>) -> H {
     snap_take_for_wc(&pool, &wc_id, "abandonedWorkCompleted").await
 }
 
 /// GET snap/workcompleted/{workCompletedId}/type/snapworkcompleted
 #[allow(non_snake_case)]
-pub async fn snap_wc_type_snap(
-    pool: Extension<Pool>,
-    Path(wc_id): Path<String>,
-) -> H {
+pub async fn snap_wc_type_snap(pool: Extension<Pool>, Path(wc_id): Path<String>) -> H {
     snap_take_for_wc(&pool, &wc_id, "snapWorkCompleted").await
 }
 
@@ -1400,10 +1395,7 @@ pub async fn taskcompleted_press(
 ) -> H {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let row = client
-        .query_opt(
-            "SELECT work_id FROM x_readcompleted WHERE id = $1",
-            &[&id],
-        )
+        .query_opt("SELECT work_id FROM x_readcompleted WHERE id = $1", &[&id])
         .await
         .map_err(|_| AppError::Internal)?;
     let Some(row) = row else {
@@ -1416,13 +1408,23 @@ pub async fn taskcompleted_press(
     if record_exists(&client, &work, "press", &format!("taskcompleted:{id}")).await? {
         return ok(json!({ "value": true, "duplicated": true }));
     }
-    let rid = record_insert(&client, &work, "press", &format!("taskcompleted:{id}"), "system").await?;
+    let rid = record_insert(
+        &client,
+        &work,
+        "press",
+        &format!("taskcompleted:{id}"),
+        "system",
+    )
+    .await?;
     ok(json!({ "id": rid, "value": true }))
 }
 
 /// PUT taskcompleted/next/task/identity：设置任务的下一处理身份
 #[allow(non_snake_case)]
-pub async fn taskcompleted_update_next_identity(pool: Extension<Pool>, Json(body): Json<Value>) -> H {
+pub async fn taskcompleted_update_next_identity(
+    pool: Extension<Pool>,
+    Json(body): Json<Value>,
+) -> H {
     let id = body_str(&body, &["id", "taskId"]);
     let identity = body_str(&body, &["nextTaskIdentity", "nextIdentity", "identity"]);
     if id.is_empty() || identity.is_empty() {
@@ -1512,9 +1514,15 @@ pub async fn touch_log_long_detained(pool: Extension<Pool>) -> H {
     let mut logged: Vec<String> = Vec::new();
     for row in &rows {
         let work: String = row.get("id");
-        record_insert(&client, &work, "long_detained", "work detained over 24 hours", "system")
-            .await
-            .ok();
+        record_insert(
+            &client,
+            &work,
+            "long_detained",
+            "work detained over 24 hours",
+            "system",
+        )
+        .await
+        .ok();
         logged.push(work);
     }
     ok(json!({ "value": true, "count": logged.len() as i64, "workList": logged }))
@@ -1539,7 +1547,9 @@ pub async fn touch_delay(pool: Extension<Pool>) -> H {
     let mut touched: Vec<String> = Vec::new();
     for row in &rows {
         let work: String = row.get("work");
-        record_insert(&client, &work, "touch_delay", "delay touched", "system").await.ok();
+        record_insert(&client, &work, "touch_delay", "delay touched", "system")
+            .await
+            .ok();
         touched.push(work);
     }
     ok(json!({ "value": true, "count": touched.len() as i64, "workList": touched }))
@@ -1563,7 +1573,9 @@ pub async fn touch_urge(pool: Extension<Pool>) -> H {
         if record_exists(&client, &work, "urge", "urge processing").await? {
             continue;
         }
-        record_insert(&client, &work, "urge", "urge processing", "system").await.ok();
+        record_insert(&client, &work, "urge", "urge processing", "system")
+            .await
+            .ok();
         urged.push(work);
     }
     ok(json!({ "value": true, "count": urged.len() as i64, "workList": urged }))
@@ -1634,7 +1646,11 @@ pub async fn documentversion_create(
     let content_val = body.get("content").cloned().unwrap_or(json!({}));
     let creator = {
         let c = body_str(&body, &["creator", "person"]);
-        if c.is_empty() { "system".to_string() } else { c }
+        if c.is_empty() {
+            "system".to_string()
+        } else {
+            c
+        }
     };
     tx.execute(
         "INSERT INTO x_document_version (id, work_id, version, content, creator) \
@@ -1646,7 +1662,6 @@ pub async fn documentversion_create(
     tx.commit().await.map_err(|_| AppError::Internal)?;
     ok(json!({ "id": id, "work": work, "version": next }))
 }
-
 
 // ── work（WorkAction 补缺）─────────────────────────────────────────────────
 
@@ -1697,7 +1712,11 @@ async fn work_start_impl(
     let process_id = process_id.trim().to_string();
     let title = title_override.unwrap_or_else(|| {
         let t = body_str(&body, &["title", "name"]);
-        if t.is_empty() { format!("work-{process_id}") } else { t }
+        if t.is_empty() {
+            format!("work-{process_id}")
+        } else {
+            t
+        }
     });
     if process_id.is_empty() {
         return biz_err("processId is required");
@@ -1718,7 +1737,11 @@ async fn work_start_impl(
     let id = Uuid::new_v4().to_string();
     let creator = {
         let c = body_str(&body, &["creator", "person"]);
-        if c.is_empty() { "system".to_string() } else { c }
+        if c.is_empty() {
+            "system".to_string()
+        } else {
+            c
+        }
     };
     tx.execute(
         "INSERT INTO x_work (id, title, process, application, work_status, creator, create_time, start_time) \
@@ -1784,17 +1807,17 @@ pub async fn work_edit(
     }
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let n = client
-        .execute(
-            "UPDATE x_work SET title = $2 WHERE id = $1",
-            &[&id, &title],
-        )
+        .execute("UPDATE x_work SET title = $2 WHERE id = $1", &[&id, &title])
         .await
         .map_err(|_| AppError::Internal)?;
     if n == 0 {
         return biz_err("work not found");
     }
     let row = client
-        .query_one("SELECT id, title, work_status FROM x_work WHERE id = $1", &[&id])
+        .query_one(
+            "SELECT id, title, work_status FROM x_work WHERE id = $1",
+            &[&id],
+        )
         .await
         .map_err(|_| AppError::Internal)?;
     ok(row_to_json(&row))
@@ -1847,10 +1870,24 @@ pub async fn work_manual_after(pool: Extension<Pool>, Json(body): Json<Value>) -
     if !entity_exists(&client, "x_work", &work).await? {
         return biz_err("work not found");
     }
-    if record_exists(&client, &work, "manual_after_processing", "manual after processing").await? {
+    if record_exists(
+        &client,
+        &work,
+        "manual_after_processing",
+        "manual after processing",
+    )
+    .await?
+    {
         return ok(json!({ "value": true, "duplicated": true }));
     }
-    let id = record_insert(&client, &work, "manual_after_processing", "manual after processing", "system").await?;
+    let id = record_insert(
+        &client,
+        &work,
+        "manual_after_processing",
+        "manual after processing",
+        "system",
+    )
+    .await?;
     ok(json!({ "id": id, "value": true }))
 }
 
@@ -1896,7 +1933,13 @@ async fn record_insert_tx(
     tx.execute(
         "INSERT INTO x_record (id, work_id, record_type, content, creator, create_time) \
          VALUES ($1, $2, $3, $4, $5, NOW())",
-        &[&id, &work_id.to_string(), &record_type.to_string(), &content.to_string(), &creator.to_string()],
+        &[
+            &id,
+            &work_id.to_string(),
+            &record_type.to_string(),
+            &content.to_string(),
+            &creator.to_string(),
+        ],
     )
     .await
     .map_err(|_| AppError::Internal)?;
@@ -1931,7 +1974,14 @@ pub async fn work_processing_signal(
     )
     .await
     .map_err(|_| AppError::Internal)?;
-    record_insert_tx(&tx, &id, "signal", &format!("activityToken:{activity_token}"), "system").await?;
+    record_insert_tx(
+        &tx,
+        &id,
+        "signal",
+        &format!("activityToken:{activity_token}"),
+        "system",
+    )
+    .await?;
     tx.commit().await.map_err(|_| AppError::Internal)?;
     ok(json!({ "id": id, "taskId": task_id, "signaled": true }))
 }
@@ -2093,7 +2143,14 @@ pub async fn wc_rollback_flag(pool: Extension<Pool>, Path(flag): Path<String>) -
     tx.execute("DELETE FROM x_workcompleted WHERE id = $1", &[&flag])
         .await
         .map_err(|_| AppError::Internal)?;
-    record_insert_tx(&tx, &work_id, "rollback", &format!("workcompleted {flag} rolled back"), "system").await?;
+    record_insert_tx(
+        &tx,
+        &work_id,
+        "rollback",
+        &format!("workcompleted {flag} rolled back"),
+        "system",
+    )
+    .await?;
     tx.commit().await.map_err(|_| AppError::Internal)?;
     ok(json!({ "id": flag, "work": work_id, "rolledBack": true }))
 }
