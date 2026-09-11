@@ -114,4 +114,10 @@ describe('JPushApp contracts', () => {
     expect(source).not.toContain("api.get('/jaxrs/jpush_assemble_control/save/jpush')")
     expect(source).not.toContain("'/jaxrs/jpush_assemble_control/save/jpush']")
   })
+  it('does not auto-query jpush write handlers on mount', () => {
+    expect(source).not.toContain("api.get('/jaxrs/jpush_assemble_control/update/control/config')")
+    expect(source).not.toContain("api.get('/jaxrs/jpush_assemble_control/delete/jpush')")
+    expect(source).not.toContain("api.get('/jaxrs/jpush_assemble_control/create/jpush')")
+    expect(source).not.toContain("api.get('/jaxrs/jpush/assemble/control/update/control/config')")
+  })
 })
