@@ -120,4 +120,12 @@ describe('JPushApp contracts', () => {
     expect(source).not.toContain("api.get('/jaxrs/jpush_assemble_control/create/jpush')")
     expect(source).not.toContain("api.get('/jaxrs/jpush/assemble/control/update/control/config')")
   })
+  it('does not auto-query jpush placeholder or missing-id paths', () => {
+    expect(source).not.toContain("api.get('/jaxrs/jpush_assemble_control')")
+    expect(source).not.toContain("api.get('/jaxrs/jpush_assemble_control/get/jpush')")
+    expect(source).not.toContain("api.get('/jaxrs/jpush_assemble_control/device/list/pushType')")
+    expect(source).not.toContain("api.get('/jaxrs/jpush/assemble/control/device/list/pushType')")
+    expect(source).not.toContain("api.get('/jaxrs/jpush_assemble_control/device/check/deviceName/deviceType/pushType')")
+    expect(source).not.toContain("api.get('/jaxrs/jpush/assemble/control/device/check/deviceName/deviceType/pushType')")
+  })
 })
