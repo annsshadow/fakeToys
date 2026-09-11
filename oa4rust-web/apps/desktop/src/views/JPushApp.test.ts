@@ -106,4 +106,8 @@ describe('JPushApp contracts', () => {
     expect(source.match(/api\.get\('\/jaxrs\/jpush\/template\/list'\)/g)).toHaveLength(1)
     expect(source).not.toContain("queryKey: ['jpush_template_list']")
   })
+  it('does not query the unmounted jpush config path', () => {
+    expect(source).not.toContain("api.get('/jaxrs/jpush/assemble/control/config')")
+    expect(source).not.toContain("queryKey: ['jpush_assemble_control_config']")
+  })
 })
