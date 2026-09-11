@@ -128,4 +128,12 @@ describe('JPushApp contracts', () => {
     expect(source).not.toContain("api.get('/jaxrs/jpush_assemble_control/device/check/deviceName/deviceType/pushType')")
     expect(source).not.toContain("api.get('/jaxrs/jpush/assemble/control/device/check/deviceName/deviceType/pushType')")
   })
+  it('does not auto-query unconsumed jpush read-only lists', () => {
+    expect(source).not.toContain("api.get('/jaxrs/jpush_assemble_control/get/control/config')")
+    expect(source).not.toContain("api.get('/jaxrs/jpush_assemble_control/device/config/push/type')")
+    expect(source).not.toContain("api.get('/jaxrs/jpush_assemble_control/list/control/apps')")
+    expect(source).not.toContain("api.get('/jaxrs/jpush_assemble_control/list/jpushs')")
+    expect(source).not.toContain("api.get('/jaxrs/jpush/assemble/control/list/control/apps')")
+    expect(source).not.toContain("api.get('/jaxrs/jpush/assemble/control/device/config/push/type')")
+  })
 })
