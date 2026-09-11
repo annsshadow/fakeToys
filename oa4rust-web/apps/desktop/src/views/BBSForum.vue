@@ -639,17 +639,6 @@ const { data: api_entity_s_932_q } = useQuery({
 })
 
 const assemble_control_topic_create_ref = ref<any[]>([])
-const assemble_control_topic_create_q = useQuery({
-  queryKey: ['assemble_control_topic_create'],
-  queryFn: async () => {
-    try {
-      const r = await api.get('/jaxrs/bbs/assemble/control/topic/create')
-      return (r.data ?? []) as any[]
-    } catch {
-      return []
-    }
-  },
-})
 const core_entity_forum_forum_001_ref = ref<any[]>([])
 const core_entity_forum_forum_001_q = useQuery({
   queryKey: ['core_entity_forum_forum_001'],
@@ -759,17 +748,6 @@ const core_entity_subject_search_q = useQuery({
   },
 })
 const assemble_control_delete_subject_ref = ref<any[]>([])
-const assemble_control_delete_subject_q = useQuery({
-  queryKey: ['assemble_control_delete_subject'],
-  queryFn: async () => {
-    try {
-      const r = await api.get('/jaxrs/bbs/assemble/control/delete/subject')
-      return (r.data ?? []) as any[]
-    } catch {
-      return []
-    }
-  },
-})
 const bbs_core_topic_list_ref = ref<any[]>([])
 const bbs_core_topic_list_q = useQuery({
   queryKey: ['bbs_core_topic_list'],
@@ -831,17 +809,6 @@ const bbs_assemble_control_config_q = useQuery({
   },
 })
 const bbs_subject_create_ref = ref<any[]>([])
-const bbs_subject_create_q = useQuery({
-  queryKey: ['bbs_subject_create'],
-  queryFn: async () => {
-    try {
-      const r = await api.get('/jaxrs/bbs/subject/create')
-      return (r.data ?? []) as any[]
-    } catch {
-      return []
-    }
-  },
-})
 const bbs_topic_list_ref = ref<any[]>([])
 const bbs_topic_list_q = useQuery({
   queryKey: ['bbs_topic_list'],
@@ -903,29 +870,7 @@ const bbs_forum_view_all_q = useQuery({
   },
 })
 const assemble_control_delete_reply_ref = ref<any[]>([])
-const assemble_control_delete_reply_q = useQuery({
-  queryKey: ['assemble_control_delete_reply'],
-  queryFn: async () => {
-    try {
-      const r = await api.get('/jaxrs/bbs/assemble/control/delete/reply')
-      return (r.data ?? []) as any[]
-    } catch {
-      return []
-    }
-  },
-})
 const assemble_control_delete_forum_ref = ref<any[]>([])
-const assemble_control_delete_forum_q = useQuery({
-  queryKey: ['assemble_control_delete_forum'],
-  queryFn: async () => {
-    try {
-      const r = await api.get('/jaxrs/bbs/assemble/control/delete/forum')
-      return (r.data ?? []) as any[]
-    } catch {
-      return []
-    }
-  },
-})
 const assemble_control_picture_list_ref = ref<any[]>([])
 const assemble_control_picture_list_q = useQuery({
   queryKey: ['assemble_control_picture_list'],
@@ -978,18 +923,6 @@ const { data: api_control__495_q } = useQuery({
 })
 
 const api_control__813_data = ref<any[]>([])
-const { data: api_control__813_q } = useQuery({
-  queryKey: ['api_control__813', '/jaxrs/bbs/assemble/control/update/control/config'],
-  queryFn: async () => {
-    try {
-      const r = await api.get('/jaxrs/bbs/assemble/control/update/control/config')
-      return (r.data ?? []) as any[]
-    } catch {
-      return []
-    }
-  },
-})
-
 const entity_subject_top_test_section_id_ref = ref<any[]>([])
 const entity_subject_top_test_section_id_q = useQuery({
   queryKey: ['entity_subject_top_test_section_id'],
@@ -1068,18 +1001,6 @@ const { data: api_control_list_sub_543_q } = useQuery({
 })
 
 const api_assemble_control_930_data = ref<any[]>([])
-const { data: api_assemble_control_930_q } = useQuery({
-  queryKey: ['api_assemble_control_930', '/jaxrs/bbs/assemble/control/shutup/create'],
-  queryFn: async () => {
-    try {
-      const r = await api.get('/jaxrs/bbs/assemble/control/shutup/create')
-      return (r.data ?? []) as any[]
-    } catch {
-      return []
-    }
-  },
-})
-
 const api_bbs_assemble_top_299_data = ref<any[]>([])
 const { data: api_bbs_assemble_top_299_q } = useQuery({
   queryKey: ['api_bbs_assemble_top_299', '/jaxrs/bbs/assemble/topic/list'],
@@ -1184,17 +1105,6 @@ const { data: api_list_1_size_50_q } = useQuery({
 })
 
 const comment_c_1_commend_ref = ref<any[]>([])
-const comment_c_1_commend_q = useQuery({
-  queryKey: ['comment_c_1_commend'],
-  queryFn: async () => {
-    try {
-      const r = await api.get('/jaxrs/comment/c-1/commend')
-      return (r.data ?? []) as any[]
-    } catch {
-      return []
-    }
-  },
-})
 const comment_ref = ref<any[]>([])
 const comment_q = useQuery({
   queryKey: ['comment'],
@@ -1208,17 +1118,6 @@ const comment_q = useQuery({
   },
 })
 const comment_c_1_uncommend_ref = ref<any[]>([])
-const comment_c_1_uncommend_q = useQuery({
-  queryKey: ['comment_c_1_uncommend'],
-  queryFn: async () => {
-    try {
-      const r = await api.get('/jaxrs/comment/c-1/uncommend')
-      return (r.data ?? []) as any[]
-    } catch {
-      return []
-    }
-  },
-})
 const api_list_1_size_10_data = ref<any[]>([])
 const { data: api_list_1_size_10_q } = useQuery({
   queryKey: ['api_list_1_size_10', '/jaxrs/comment/list/1/size/10'],
@@ -1233,30 +1132,7 @@ const { data: api_list_1_size_10_q } = useQuery({
 })
 
 const comment_u3_cmt_uncommend_ref = ref<any[]>([])
-const comment_u3_cmt_uncommend_q = useQuery({
-  queryKey: ['comment_u3_cmt_uncommend'],
-  queryFn: async () => {
-    try {
-      const r = await api.get('/jaxrs/comment/u3-cmt/uncommend')
-      return (r.data ?? []) as any[]
-    } catch {
-      return []
-    }
-  },
-})
 const comment_u3_cmt_commend_ref = ref<any[]>([])
-const comment_u3_cmt_commend_q = useQuery({
-  queryKey: ['comment_u3_cmt_commend'],
-  queryFn: async () => {
-    try {
-      const r = await api.get('/jaxrs/comment/u3-cmt/commend')
-      return (r.data ?? []) as any[]
-    } catch {
-      return []
-    }
-  },
-})
-
 const api_review_v2_search_data = ref<any[]>([])
 const { data: api_review_v2_search_q } = useQuery({
   queryKey: ['api_review_v2_search', '/jaxrs/review/v2/search'],
@@ -1271,18 +1147,6 @@ const { data: api_review_v2_search_q } = useQuery({
 })
 
 const api_assemble_control_413_data = ref<any[]>([])
-const { data: api_assemble_control_413_q } = useQuery({
-  queryKey: ['api_assemble_control_413', '/jaxrs/bbs/assemble/control/shutup/delete'],
-  queryFn: async () => {
-    try {
-      const r = await api.get('/jaxrs/bbs/assemble/control/shutup/delete')
-      return (r.data ?? []) as any[]
-    } catch {
-      return []
-    }
-  },
-})
-
 const api_control_forum_vi_79_data = ref<any[]>([])
 const { data: api_control_forum_vi_79_q } = useQuery({
   queryKey: ['api_control_forum_vi_79', '/jaxrs/bbs/assemble/control/forum/view/all'],
