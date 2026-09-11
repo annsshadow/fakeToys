@@ -185,6 +185,23 @@ for f in base.rglob("*.rs"):
 
 ---
 
+## 4.1 设计器路由对账回归（跨 crate，一次性）
+
+`oa4rust/tests/designer_route_match.rs` 用 `axum oneshot`（懒建 `deadpool` 池，**无需 DB**）
+把 process/query/portal/form 四大设计器前端真实调用点固化成断言，区分：
+`404`=无路由 / `405`=方法不符（路径被宽 `{id}` 影子捕获）/ 非 404·405（=500/415）=已进 handler（
+GET 类命中宽路由即"静默影子误路由"，生产带 DB 会返 200 错体，最高危）。
+
+**命令**（须在装有 Rust 工具链的 Windows/host 侧执行；本沙箱无 cargo 无法跑）：
+```bash
+cd oa4rust && cargo test --test designer_route_match -- --nocapture
+```
+- 修复某条设计器路由后，把该 case 的 `Expect` 由当前档改为目标态（通常 `Matched`）并补真实语义；
+- 详见 `docs/plans/2026-09-11-001-assess-oa4rust-web-full-replacement-gap-plan.md` §9.4 对账表与 W6。
+- 判据：命令退出 0（全绿）= 当前快照与实测一致；若某 case 失败，说明路由被改动或分类需回写 §9.4。
+
+---
+
 ## 5. 报告格式（每个 crate 完成后回报）
 ```
 crate: <name>
