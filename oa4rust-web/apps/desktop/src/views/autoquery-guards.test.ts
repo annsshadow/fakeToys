@@ -58,27 +58,30 @@ describe('view auto-query invariants', () => {
 
   it('does not auto-query write handlers or placeholder identifiers on mount', () => {
     for (const [view, forbidden] of [
-      ['JPushApp.vue', ["/jaxrs/jpush/assemble/control/update/control/config"]],
-      ['BBSForum.vue', [
-        "/jaxrs/bbs/assemble/control/topic/create",
-        "/jaxrs/bbs/assemble/control/delete/subject",
-        "/jaxrs/bbs/assemble/control/shutup/create",
-        "/jaxrs/comment/c-1/commend",
-      ]],
-      ['AIChatApp.vue', ["/jaxrs/ai_assemble_control/config/delete/mcp/flag", "/jaxrs/ai/chat"]],
-      ['HotpicApp.vue', ["/jaxrs/hotpic/save/hotpic", "/jaxrs/hotpic/delete/hotpic"]],
-      ['DocumentApp.vue', ["/jaxrs/document/d-1/update", "/jaxrs/document/publish/d-1"]],
-      ['ServerApp.vue', ["/jaxrs/cache/commonscript/flush", "/jaxrs/cache/config/flush"]],
-      ['RoleManager.vue', ["/jaxrs/permission/management/refresh/all"]],
-      ['AppInfoApp.vue', ["/jaxrs/appinfo/a-1/permission", "/jaxrs/appinfo/a-1/icon/size/64"]],
-      ['QueryViewApp.vue', ["/jaxrs/queryview/query/qf-1", "/jaxrs/queryview/importmodel/record/r-1"]],
-      ['PortalDesigner.vue', ["/jaxrs/portal/assemble/designer/get/design-1"]],
-      ['MindApp.vue', ["/jaxrs/mind/core/entity/folder/folder-001"]],
+      ['JPushApp.vue', ['/jaxrs/jpush/assemble/control/update/control/config']],
+      [
+        'BBSForum.vue',
+        [
+          '/jaxrs/bbs/assemble/control/topic/create',
+          '/jaxrs/bbs/assemble/control/delete/subject',
+          '/jaxrs/bbs/assemble/control/shutup/create',
+          '/jaxrs/comment/c-1/commend',
+        ],
+      ],
+      ['AIChatApp.vue', ['/jaxrs/ai_assemble_control/config/delete/mcp/flag', '/jaxrs/ai/chat']],
+      ['HotpicApp.vue', ['/jaxrs/hotpic/save/hotpic', '/jaxrs/hotpic/delete/hotpic']],
+      ['DocumentApp.vue', ['/jaxrs/document/d-1/update', '/jaxrs/document/publish/d-1']],
+      ['ServerApp.vue', ['/jaxrs/cache/commonscript/flush', '/jaxrs/cache/config/flush']],
+      ['RoleManager.vue', ['/jaxrs/permission/management/refresh/all']],
+      ['AppInfoApp.vue', ['/jaxrs/appinfo/a-1/permission', '/jaxrs/appinfo/a-1/icon/size/64']],
+      ['QueryViewApp.vue', ['/jaxrs/queryview/query/qf-1', '/jaxrs/queryview/importmodel/record/r-1']],
+      ['PortalDesigner.vue', ['/jaxrs/portal/assemble/designer/get/design-1']],
+      ['MindApp.vue', ['/jaxrs/mind/core/entity/folder/folder-001']],
       ['UnitApp.vue', []],
-      ['ProgramCenterApp.vue', ["/jaxrs/program_center/market/m-1/install/log"]],
-      ['ProcessWork.vue', ["/jaxrs/processplatform/task/processing/task-001"]],
-      ['CommonApp.vue', ["/jaxrs/general/assemble/control/securityclearance/enable"]],
-      ['CalendarApp.vue', ["/jaxrs/calendar/core/entity/calendar/remove"]],
+      ['ProgramCenterApp.vue', ['/jaxrs/program_center/market/m-1/install/log']],
+      ['ProcessWork.vue', ['/jaxrs/processplatform/task/processing/task-001']],
+      ['CommonApp.vue', ['/jaxrs/general/assemble/control/securityclearance/enable']],
+      ['CalendarApp.vue', ['/jaxrs/calendar/core/entity/calendar/remove']],
     ] as Array<[string, string[]]>) {
       const source = read(view)
       for (const path of forbidden) {
