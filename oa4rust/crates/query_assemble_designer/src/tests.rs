@@ -757,3 +757,45 @@ fn test_v9_normalize_dedup_semantics_for_new_create_paths() {
     let b = u2_closures::normalize_identifier("myquery");
     assert_eq!(a, b, "归一化后必须等价，查重才能命中");
 }
+
+#[test]
+fn table_columns_contract_accepts_only_typed_safe_columns() {
+    let columns = parse_table_columns(&json!({
+        "columns": [
+            {"name": "title", "type": "text", "nullable": false},
+            {"name": "created_at", "type": "datetime"}
+        ]
+    }))
+    .expect("valid typed columns");
+    assert_eq!(columns[0].data_type, "text");
+    assert!(!columns[0].nullable);
+    assert!(columns[1].nullable);
+
+    for unsafe_body in [
+        json!({"columns": [{"name": "title; DROP TABLE users", "type": "text"}]}),
+        json!({"columns": [{"name": "title", "type": "text; DROP TABLE users"}]}),
+        json!({"columns": [{"name": "id", "type": "text"}]}),
+        json!({"columns": [{"name": "title", "type": "text", "sql": "DROP TABLE users"}]}),
+    ] {
+        assert!(parse_table_columns(&unsafe_body).is_err());
+    }
+}
+
+#[test]
+fn table_ddl_is_generated_from_whitelisted_metadata() {
+    let columns = vec![
+        TableColumnDefinition {
+            name: "title".to_string(),
+            data_type: "text".to_string(),
+            nullable: false,
+        },
+        TableColumnDefinition {
+            name: "score".to_string(),
+            data_type: "decimal".to_string(),
+            nullable: true,
+        },
+    ];
+    let ddl = create_table_ddl("t_safe_1", &columns).expect("safe DDL");
+    assert_eq!(ddl, "CREATE TABLE \"x_query_data_t_safe_1\" (\"id\" UUID PRIMARY KEY DEFAULT gen_random_uuid(), \"title\" TEXT NOT NULL, \"score\" DOUBLE PRECISION)");
+    assert!(physical_table_name("bad-name").is_err());
+}
