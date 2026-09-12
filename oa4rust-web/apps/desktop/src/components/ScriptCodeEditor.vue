@@ -22,7 +22,8 @@ const emit = defineEmits<(event: 'update:modelValue', value: string) => void>()
 const editorRef = ref<HTMLElement | null>(null)
 let view: EditorView | null = null
 
-export const XSCRIPT_COMPLETIONS = [
+// <script setup> 内不允许 export；补全项仅组件内部使用
+const XSCRIPT_COMPLETIONS = [
   { label: 'this', type: 'keyword', detail: '当前脚本上下文' },
   { label: 'workContext', type: 'variable', detail: '流程工作上下文' },
   { label: 'effectivePerson', type: 'variable', detail: '当前用户' },
