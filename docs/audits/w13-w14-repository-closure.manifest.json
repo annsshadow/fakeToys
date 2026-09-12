@@ -245,37 +245,6 @@
       }
     },
     {
-      "id": "w13:CmsScriptDesignerApp.vue",
-      "workItem": "W13",
-      "kind": "crud_view",
-      "view": "CmsScriptDesignerApp.vue",
-      "route": "/app/cms-script-designer",
-      "title": "CMS脚本设计器",
-      "endpoint": "/jaxrs/cms/assemble/control/script/list",
-      "status": "still_blocked",
-      "replacementClaim": false,
-      "decision": "无代码编辑器、XScript 补全和版本历史。",
-      "blockerCodes": [
-        "NON_REACTIVE_QUERY_COPY",
-        "LIST_ENDPOINT_REUSED_FOR_WRITES",
-        "MISSING_SCRIPT_EDITOR"
-      ],
-      "evidence": {
-        "frontend": [
-          {
-            "file": "oa4rust-web/apps/desktop/src/views/CmsScriptDesignerApp.vue",
-            "contains": "items.value = data.value ?? []"
-          }
-        ],
-        "routing": [
-          {
-            "file": "oa4rust-web/apps/desktop/src/main.ts",
-            "contains": "import('./views/CmsScriptDesignerApp.vue')"
-          }
-        ]
-      }
-    },
-    {
       "id": "w13:CmsViewDesignerApp.vue",
       "workItem": "W13",
       "kind": "crud_view",
@@ -617,37 +586,6 @@
       }
     },
     {
-      "id": "w13:PortalScriptDesignerApp.vue",
-      "workItem": "W13",
-      "kind": "crud_view",
-      "view": "PortalScriptDesignerApp.vue",
-      "route": "/app/portal-script-designer",
-      "title": "门户脚本设计器",
-      "endpoint": "/jaxrs/portal/assemble/designer/script/list",
-      "status": "still_blocked",
-      "replacementClaim": false,
-      "decision": "无代码编辑器、XScript 补全和版本历史。",
-      "blockerCodes": [
-        "NON_REACTIVE_QUERY_COPY",
-        "LIST_ENDPOINT_REUSED_FOR_WRITES",
-        "MISSING_SCRIPT_EDITOR"
-      ],
-      "evidence": {
-        "frontend": [
-          {
-            "file": "oa4rust-web/apps/desktop/src/views/PortalScriptDesignerApp.vue",
-            "contains": "items.value = data.value ?? []"
-          }
-        ],
-        "routing": [
-          {
-            "file": "oa4rust-web/apps/desktop/src/main.ts",
-            "contains": "import('./views/PortalScriptDesignerApp.vue')"
-          }
-        ]
-      }
-    },
-    {
       "id": "w13:PortalWidgetDesignerApp.vue",
       "workItem": "W13",
       "kind": "crud_view",
@@ -798,37 +736,6 @@
           {
             "file": "oa4rust-web/apps/desktop/src/main.ts",
             "contains": "import('./views/ProcessManagerApp.vue')"
-          }
-        ]
-      }
-    },
-    {
-      "id": "w13:ProcessScriptDesignerApp.vue",
-      "workItem": "W13",
-      "kind": "crud_view",
-      "view": "ProcessScriptDesignerApp.vue",
-      "route": "/app/process-script-designer",
-      "title": "流程脚本设计器",
-      "endpoint": "/jaxrs/processplatform/assemble/designer/script/list",
-      "status": "still_blocked",
-      "replacementClaim": false,
-      "decision": "无代码编辑器、XScript 补全和版本历史。",
-      "blockerCodes": [
-        "NON_REACTIVE_QUERY_COPY",
-        "LIST_ENDPOINT_REUSED_FOR_WRITES",
-        "MISSING_SCRIPT_EDITOR"
-      ],
-      "evidence": {
-        "frontend": [
-          {
-            "file": "oa4rust-web/apps/desktop/src/views/ProcessScriptDesignerApp.vue",
-            "contains": "items.value = data.value ?? []"
-          }
-        ],
-        "routing": [
-          {
-            "file": "oa4rust-web/apps/desktop/src/main.ts",
-            "contains": "import('./views/ProcessScriptDesignerApp.vue')"
           }
         ]
       }
@@ -1664,15 +1571,15 @@
     }
   ],
   "summary": {
-    "total": 50,
+    "total": 47,
     "byWorkItem": {
-      "W13": 35,
+      "W13": 32,
       "W14": 15
     },
     "byStatus": {
       "implemented": 1,
       "out_of_scope": 2,
-      "still_blocked": 47
+      "still_blocked": 44
     }
   }
 }

@@ -5581,8 +5581,46 @@ pub async fn script_flag_appInfo_appInfoFlag(
 
 #[axum::debug_handler]
 #[allow(non_snake_case)]
-pub async fn script_id(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
-    list_from_table_filtered_java(&pool, "x_cms_script", "deleted_at IS NULL", &[]).await
+pub async fn script_id(
+    pool: Extension<Pool>,
+    axum::extract::Path(id): axum::extract::Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    // W7：按 id 返回单个脚本（原实现忽略 id 返回全表，设计器无法加载单脚本）
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let row = client
+        .query_opt(
+            "SELECT id, app_id, name, unique_name, script_content, creator, create_time::text \
+             FROM x_cms_script WHERE id = $1 AND deleted_at IS NULL",
+            &[&id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+    match row {
+        Some(row) => Ok(Json(ActionResult::success(Value::Object(
+            serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                ("appId".to_string(), Value::String(row.get("app_id"))),
+                ("name".to_string(), Value::String(row.get("name"))),
+                (
+                    "uniqueName".to_string(),
+                    row.get::<_, Option<String>>("unique_name").into(),
+                ),
+                (
+                    "scriptContent".to_string(),
+                    row.get::<_, Option<String>>("script_content").into(),
+                ),
+                (
+                    "creator".to_string(),
+                    row.get::<_, Option<String>>("creator").into(),
+                ),
+                (
+                    "createTime".to_string(),
+                    row.get::<_, Option<String>>("create_time").into(),
+                ),
+            ]),
+        )))),
+        None => Ok(Json(ActionResult::error("script not found"))),
+    }
 }
 
 #[axum::debug_handler]
@@ -8422,20 +8460,24 @@ pub async fn script_u2_create(
     session: Extension<shared::session::Session>,
     body: axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // W7：全局脚本设计器无应用上下文，缺 appId 时落入 default 桶；
+    // 携带真实 appId 时仍校验应用存在
     let app_id = match u2_body_str(&body, "appId") {
-        Some(a) if !a.is_empty() => a,
-        _ => return Err(AppError::BadRequest("appId required".to_string())),
+        Some(a) if !a.is_empty() => a.to_string(),
+        _ => "default".to_string(),
     };
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
-    let app = client
-        .query_opt(
-            "SELECT 1 FROM x_cms_appinfo WHERE id = $1 AND deleted_at IS NULL",
-            &[&app_id],
-        )
-        .await
-        .map_err(|_| AppError::Internal)?;
-    if app.is_none() {
-        return Ok(Json(ActionResult::error("application not found")));
+    if app_id != "default" {
+        let app = client
+            .query_opt(
+                "SELECT 1 FROM x_cms_appinfo WHERE id = $1 AND deleted_at IS NULL",
+                &[&app_id],
+            )
+            .await
+            .map_err(|_| AppError::Internal)?;
+        if app.is_none() {
+            return Ok(Json(ActionResult::error("application not found")));
+        }
     }
     let id = uuid::Uuid::new_v4().to_string();
     let name = u2_body_str(&body, "name").unwrap_or_default();

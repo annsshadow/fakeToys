@@ -13,6 +13,7 @@ use shared::{error::AppError, response::ActionResult};
 /// 流程平台设计器组装模块
 /// 提供流程设计器相关的接口
 pub mod routes;
+pub mod u2_script;
 
 #[derive(Debug, Deserialize)]
 pub struct ListQuery {
@@ -351,6 +352,25 @@ fn row_to_app_data(row: &Row) -> Value {
         (
             "updateTime".to_string(),
             Value::String(row.get("xupdateTime")),
+        ),
+    ]))
+}
+
+/// W7：脚本行 → JSON（列表与详情共用；详情另附 xcode）
+fn row_to_script_data(row: &Row) -> Value {
+    Value::Object(serde_json::Map::from_iter([
+        ("id".to_string(), Value::String(row.get("xid"))),
+        (
+            "name".to_string(),
+            row.get::<_, Option<String>>("xname").into(),
+        ),
+        (
+            "application".to_string(),
+            row.get::<_, Option<String>>("xapplication").into(),
+        ),
+        (
+            "updateTime".to_string(),
+            row.get::<_, Option<String>>("xupdateTime").into(),
         ),
     ]))
 }
@@ -2828,7 +2848,7 @@ pub async fn script_list_paging_page_size_size(
         .await
         .map_err(|_| AppError::Internal)?;
 
-    let data: Vec<Value> = rows.iter().map(row_to_app_data).collect();
+    let data: Vec<Value> = rows.iter().map(row_to_script_data).collect();
 
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -2904,7 +2924,26 @@ pub async fn script_id(
         .map_err(|_| AppError::Internal)?;
 
     match row {
-        Some(row) => Ok(Json(ActionResult::success(row_to_app_data(&row)))),
+        Some(row) => {
+            // W7：设计器加载需要 name/code（原 row_to_app_data 缺失）
+            let mut data = match row_to_script_data(&row) {
+                Value::Object(map) => map,
+                _ => serde_json::Map::new(),
+            };
+            data.insert(
+                "code".to_string(),
+                row.get::<_, Option<String>>("xcode").into(),
+            );
+            data.insert(
+                "creator".to_string(),
+                row.get::<_, Option<String>>("xcreatorPerson").into(),
+            );
+            data.insert(
+                "createTime".to_string(),
+                row.get::<_, Option<String>>("xcreateTime").into(),
+            );
+            Ok(Json(ActionResult::success(Value::Object(data))))
+        }
         None => Ok(Json(ActionResult::error("script not found"))),
     }
 }
@@ -2932,6 +2971,11 @@ pub async fn scriptversion_list_script_scriptId(
                 (
                     "name".to_string(),
                     Value::String(row.get::<_, Option<String>>("xname").unwrap_or_default()),
+                ),
+                // W7：版本快照携带内容，供设计器版本历史还原
+                (
+                    "code".to_string(),
+                    row.get::<_, Option<String>>("xcode").into(),
                 ),
                 (
                     "version".to_string(),
