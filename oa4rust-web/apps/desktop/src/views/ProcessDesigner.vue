@@ -77,6 +77,11 @@
           <div class="pal-item" @click="addNode('timer')"><span class="ni">⏱️</span><span class="nl">定时</span></div>
           <div class="pal-item" @click="addNode('script')"><span class="ni">💻</span><span class="nl">脚本</span></div>
           <div class="pal-item" @click="addNode('parallel')"><span class="ni">⚡</span><span class="nl">并行</span></div>
+          <div class="pal-item" @click="addNode('merge')"><span class="ni">🔀</span><span class="nl">合并</span></div>
+          <div class="pal-item" @click="addNode('publish')"><span class="ni">📣</span><span class="nl">发布</span></div>
+          <div class="pal-item" @click="addNode('invoke')"><span class="ni">🌐</span><span class="nl">调用</span></div>
+          <div class="pal-item" @click="addNode('service')"><span class="ni">⚙</span><span class="nl">服务</span></div>
+          <div class="pal-item" @click="addNode('cancel')"><span class="ni">⛔</span><span class="nl">取消</span></div>
         </div>
         <div class="pal-sep"></div>
         <div class="pal-title">样式预设</div>
@@ -2806,8 +2811,13 @@
 </template>
 <script setup lang="ts">
 import { api } from '@oa4rust/sdk'
-import { useMutation } from '@tanstack/vue-query'
 import { computed, onMounted, onUnmounted, ref } from 'vue'
+import {
+  parseProcessDefinition,
+  processCreatePayload,
+  serializeProcessDefinition,
+  type JsonObject,
+} from '../contracts/process-definition'
 import { runInSandbox } from '../utils/sandbox'
 import { toast } from '../utils/toast'
 
@@ -2848,6 +2858,9 @@ interface ProcDef {
   flag: string
   desc?: string
   status?: string
+  application?: string
+  edition?: string
+  definition?: JsonObject
   config?: { nodes: PDNode[]; edges: PDEdge[] }
   subprocesses?: Record<string, { nodes: PDNode[]; edges: PDEdge[] }>
 }
@@ -2968,6 +2981,11 @@ const allNodeTypes = [
   'subprocess',
   'script',
   'parallel',
+  'merge',
+  'publish',
+  'invoke',
+  'service',
+  'cancel',
 ]
 // ── Advanced Node Configuration ─────────────────────────────────────
 interface NodeConfig {
@@ -4025,6 +4043,11 @@ function getNodeLabel(type: string) {
     subprocess: '子流程',
     script: '脚本',
     parallel: '并行',
+    merge: '合并',
+    publish: '发布',
+    invoke: '调用',
+    service: '服务',
+    cancel: '取消',
   }
   return m[type] || type
 }
@@ -5669,10 +5692,20 @@ function subPushHistory() {
 // ── Process CRUD ──────────────────────────────────────────────────────
 async function loadProcess(p: ProcDef) {
   try {
-    const r: any = await api.get(`/jaxrs/processplatform/assemble/designer/process/${p.id}`)
+    const r: any = await api.get(`/jaxrs/processplatform/assemble/designer/get/${p.id}`)
     const data = r?.data ?? p
-    currentProcess.value = data
-    processDef.value = data.config ?? { nodes: [], edges: [] }
+    const parsed = parseProcessDefinition(data)
+    currentProcess.value = {
+      ...p,
+      ...data,
+      name: data.name || parsed.definition.name || p.name,
+      flag: data.flag || parsed.definition.alias || p.flag || data.id,
+      desc: data.description || parsed.definition.description || p.desc,
+      application: parsed.definition.application as string,
+      edition: String(parsed.definition.edition || data.version || ''),
+      definition: parsed.definition,
+    }
+    processDef.value = parsed.canvas as { nodes: PDNode[]; edges: PDEdge[] }
     if (!processDef.value.nodes.length) {
       const n1 = { id: genId(), type: 'start', label: '开始', x: 80, y: 120, w: 100, h: 50 }
       const n2 = { id: genId(), type: 'task', label: '审批任务', x: 300, y: 100, w: 120, h: 50 }
@@ -5691,7 +5724,7 @@ async function loadProcess(p: ProcDef) {
     histIdx.value = -1
     pushHistory()
   } catch {
-    currentProcess.value = { ...p, name: p.name, flag: p.flag, config: { nodes: [], edges: [] } }
+    currentProcess.value = { ...p, name: p.name, flag: p.flag, definition: {} }
     processDef.value = { nodes: [], edges: [] }
   }
 }
@@ -5699,47 +5732,66 @@ function newProcess() {
   newForm.value = { name: '', flag: '', desc: '' }
   showNewModal.value = true
 }
-const savePM = useMutation({
-  mutationFn: async (data: any) => {
-    if (currentProcess.value?.id)
-      return api.put(`/jaxrs/processplatform/assemble/designer/process/${currentProcess.value!.id}`, data)
-    return api.post('/jaxrs/processplatform/assemble/designer/process', data)
-  },
-  onSuccess: () => {
-    showNewModal.value = false
-    loadProcesses()
-  },
-})
-async function createProcess() {
-  if (!newForm.value.name.trim()) return
-  savePM.mutate({
-    name: newForm.value.name,
-    flag: newForm.value.flag,
-    description: newForm.value.desc,
-    config: processDef.value,
+function currentO2Definition(
+  meta: { name: string; flag: string; desc?: string },
+  id = currentProcess.value?.id,
+): JsonObject {
+  const routeWaypoints = Object.fromEntries(
+    [...routingConfigs.value].map(([id, config]) => [id, config.controlPoints]),
+  )
+  return serializeProcessDefinition(processDef.value, {
+    id,
+    name: meta.name,
+    alias: meta.flag,
+    description: meta.desc,
+    application: currentProcess.value?.application,
+    edition: currentProcess.value?.edition,
+    fieldPermissions: permissionRules.value,
+    base: currentProcess.value?.definition,
+    routeWaypoints,
   })
 }
-async function saveProcess() {
-  if (!currentProcess.value) return
+async function createProcess() {
+  if (!newForm.value.name.trim()) return
   try {
-    await api.put(`/jaxrs/processplatform/assemble/designer/process/${currentProcess.value.id}`, {
-      name: currentProcess.value.name,
-      flag: currentProcess.value.flag,
-      description: currentProcess.value.desc,
-      config: processDef.value,
-      ...(currentProcess.value.subprocesses ? { subprocesses: (currentProcess.value as any).subprocesses } : {}),
+    const definition = currentO2Definition(newForm.value)
+    const created: any = await api.post(
+      '/jaxrs/processplatform/assemble/designer/create',
+      processCreatePayload(definition),
+    )
+    const id = created?.data?.id
+    if (!id) throw new Error('后端未返回流程 ID')
+    const savedDefinition = currentO2Definition(newForm.value, id)
+    await api.post(`/jaxrs/processplatform/assemble/designer/save/${id}`, { processDefinition: savedDefinition })
+    showNewModal.value = false
+    await loadProcesses()
+    toast.success('流程已创建')
+  } catch (e: any) {
+    toast.error('创建失败: ' + (e?.message ?? ''))
+  }
+}
+async function saveProcess() {
+  if (!currentProcess.value?.id) return
+  try {
+    const definition = currentO2Definition(currentProcess.value)
+    await api.post(`/jaxrs/processplatform/assemble/designer/save/${currentProcess.value.id}`, {
+      processDefinition: definition,
     })
+    currentProcess.value.definition = definition
     toast.info('保存成功')
   } catch (e: any) {
-    toast.error('保存失败: : ' + (e?.message ?? ''))
+    toast.error('保存失败: ' + (e?.message ?? ''))
   }
 }
 async function loadProcesses() {
+  plLoading.value = true
   try {
-    const r: any = await api.get('/jaxrs/processplatform/assemble/designer/process/list')
-    procList.value = r?.data?.list ?? r?.data ?? []
+    const r: any = await api.get('/jaxrs/processplatform/assemble/designer/list/all?page=1&size=100')
+    procList.value = r?.data?.data ?? r?.data?.list ?? r?.data ?? []
   } catch {
     procList.value = []
+  } finally {
+    plLoading.value = false
   }
 }
 // Connection rules state
@@ -11714,44 +11766,20 @@ function openProcessMap(): void {
   loadProcessMap()
 }
 function loadProcessMap(): void {
-  const loaded = (window as any).__fakeProcesses || []
-  allProcesses.value = loaded.length
-    ? loaded.map((p: any, i: any) => ({
-        id: p.id || 'p' + i,
-        name: p.name || '流程' + (i + 1),
-        icon: ['📋', '🔄', '✅', '⚙️'][i % 4],
-        status: ['active', 'draft', 'archived', 'testing'][i % 4],
-        nodes: p.nodes || [],
-        edges: p.edges || [],
-      }))
-    : [
-        {
-          id: 'demo',
-          name: '示例审批流程',
-          icon: '📋',
-          status: 'active',
-          nodes: [
-            { id: 'n1', type: 'start', label: '发起申请' },
-            { id: 'n2', type: 'process', label: '主管审批' },
-            { id: 'n3', type: 'condition', label: '金额>5000?' },
-            { id: 'n4', type: 'process', label: '经理审批' },
-            { id: 'n5', type: 'end', label: '完成' },
-          ],
-          edges: [
-            { from: 'n1', to: 'n2' },
-            { from: 'n2', to: 'n3' },
-            { from: 'n3', to: 'n4', label: '是' },
-            { from: 'n3', to: 'n5', label: '否' },
-            { from: 'n4', to: 'n5' },
-          ],
-        },
-      ]
+  allProcesses.value = procList.value.map((p: any, i: number) => ({
+    id: p.id,
+    name: p.name || `流程${i + 1}`,
+    icon: ['📋', '🔄', '✅', '⚙️'][i % 4],
+    status: p.status || 'draft',
+    nodes: p.config?.nodes || [],
+    edges: p.config?.edges || [],
+  }))
 }
 function loadProcessFromMap(idx: number): void {
   const p = allProcesses.value[idx]
   if (!p) return
-  currentProcess.value = p as any
-  processDef.value = p as any
+  const summary = procList.value.find((item) => item.id === p.id)
+  if (summary) void loadProcess(summary)
   pmDisplayNodes.value = (p.nodes || []).map((n: any, i: any) => ({
     id: n.id,
     label: n.label || n.type,

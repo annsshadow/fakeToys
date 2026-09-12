@@ -1,176 +1,63 @@
 <template>
-  <div class="crud-view">
-    <div class="view-header glass-card">
-      <div>
-        <h1>视图设计器</h1>
-        <p class="subtitle">/jaxrs/query/assemble/designer/view/list</p>
-      </div>
-      <button class="btn-primary" @click="showCreate=true">+ 新建</button>
-    </div>
-    <div class="content-panel glass-card">
-      <div class="toolbar">
-        <input v-model="search" placeholder="搜索..." class="search-input" />
-        <button class="btn-refresh" @click="loadData">🔄 刷新</button>
-      </div>
-      <div v-if="loading" class="loading-state"><div class="skel" v-for="i in 5" :key="i"></div></div>
-      <div v-else-if="items.length===0" class="empty-state"><div class="empty-icon">👁</div><p>暂无数据</p></div>
-      <table v-else class="data-table">
-        <thead><tr>
-          <th>名称</th><th>标识</th><th>更新时间</th><th>操作</th>
-        </tr></thead>
-        <tbody>
-          <tr v-for="item in filtered" :key="item.id">
-            <td>{{ item.name||item.label||item.title||item.flag||'—' }}</td>
-            <td class="mono">{{ item.flag||item.id||'—' }}</td>
-            <td>{{ fmtTime(item.updateTime||item.createTime) }}</td>
-            <td>
-              <button class="btn-sm" @click="editItem(item)">编辑</button>
-              <button class="btn-sm btn-del" @click="deleteItem(item)">删除</button>
-            </td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
-    <div v-if="showCreate||showEdit" class="modal-overlay" @click.self="closeModal">
-      <div class="modal glass-card">
-        <h3>{{ showEdit?'编辑':'新建' }}视图设计器</h3>
-        <div class="form-group"><label>名称</label><input v-model="form.name" placeholder="名称" class="form-input" /></div>
-        <div class="form-group"><label>标识</label><input v-model="form.flag" placeholder="唯一标识" class="form-input" /></div>
-        <div class="form-group"><label>描述</label><textarea v-model="form.desc" rows="3" placeholder="描述" class="form-textarea"></textarea></div>
-        <div class="modal-actions">
-          <button class="btn-cancel" @click="closeModal">取消</button>
-          <button class="btn-save" :disabled="!form.name" @click="saveItem">保存</button>
-        </div>
-      </div>
-    </div>
+  <div class="designer-shell">
+    <header class="designer-header glass-card"><div><h1>查询视图设计器</h1><p>可视化过滤、排序、分页与真实 simulate/bundle</p></div><div class="actions"><button class="btn" @click="newView">新建视图</button><button class="btn primary" :disabled="!canSave||saving" @click="saveView">{{saving?'保存中…':'保存'}}</button><button class="btn" :disabled="!activeId" @click="simulate">模拟</button><button class="btn" :disabled="!activeId" @click="bundle">Bundle</button></div></header>
+    <div class="query-picker glass-card"><label>Query Flag<input v-model="queryFlag" placeholder="输入后加载视图" @change="loadViews" /></label><button class="btn" :disabled="!queryFlag.trim()" @click="loadViews">加载</button><span>后端只提供按 Query Flag 列表，未提供全量视图列表。</span></div>
+    <main class="main-grid"><aside class="list glass-card"><h2>视图</h2><button v-for="item in views" :key="item.id" class="view-item" :class="{active:item.id===activeId}" @click="openView(item.id)"><strong>{{item.name}}</strong><span>{{item.viewFlag}}</span></button><p v-if="!views.length" class="muted">该 Query 下暂无视图</p></aside>
+      <section class="editor glass-card"><div class="form-row"><label>名称<input v-model="form.name" /></label><label>视图 Flag<input :value="form.viewFlag||'保存后生成'" disabled /></label></div><label class="sql-label">只读 SQL<textarea v-model="form.definition.sql" rows="5" placeholder="SELECT ..." /></label>
+        <div class="section-head"><h2>过滤条件</h2><button class="btn" @click="addFilter">添加过滤</button></div><div v-for="(filter,index) in form.definition.filters" :key="index" class="rule-row"><input v-model="filter.field" placeholder="字段" /><select v-model="filter.operator"><option v-for="operator in operators" :key="operator" :value="operator">{{operator}}</option></select><input v-model="filter.value" placeholder="值" /><button class="remove" @click="form.definition.filters.splice(index,1)">删除</button></div>
+        <div class="section-head"><h2>排序</h2><button class="btn" @click="addSort">添加排序</button></div><div v-for="(sort,index) in form.definition.sorts" :key="index" class="rule-row sort-row"><input v-model="sort.field" placeholder="字段" /><select v-model="sort.direction"><option value="asc">升序</option><option value="desc">降序</option></select><button class="remove" @click="form.definition.sorts.splice(index,1)">删除</button></div>
+        <div class="paging"><label>页码<input v-model.number="form.definition.paging.page" type="number" min="1" /></label><label>每页<input v-model.number="form.definition.paging.size" type="number" min="1" max="500" /></label></div>
+        <section class="lookup"><h2>Lookup</h2><p>当前后端 query designer/surface 无 lookup 路由或存储契约，因此不展示伪造配置；可在 SQL 与过滤条件中表达后端实际支持的查询。</p></section>
+        <section v-if="result" class="result"><h2>{{resultTitle}}</h2><pre>{{JSON.stringify(result,null,2)}}</pre></section>
+      </section></main>
   </div>
 </template>
 <script setup lang="ts">
 import { api } from '@oa4rust/sdk'
-import { useMutation, useQuery, useQueryClient } from '@tanstack/vue-query'
 import { computed, ref } from 'vue'
-
-interface Item {
-  id: string
-  name?: string
-  label?: string
-  title?: string
-  flag?: string
-  desc?: string
-  updateTime?: string
-  createTime?: string
+import { designerPaths, extractList, parseViewDefinition, serializeViewDefinition, viewRuntimePayload, type QueryViewDefinition, type QueryViewFilter } from '../contracts/designer'
+import { toast } from '../utils/toast'
+interface ViewSummary{id:string;name:string;viewFlag:string;queryFlag?:string}
+const operators:QueryViewFilter['operator'][]=['eq','ne','contains','gt','gte','lt','lte']
+const queryFlag=ref('')
+const views=ref<ViewSummary[]>([])
+const activeId=ref('')
+const saving=ref(false)
+const result=ref<unknown>(null)
+const resultTitle=ref('')
+const emptyDefinition=():QueryViewDefinition=>({version:1,sql:'',filters:[],sorts:[],paging:{page:1,size:20}})
+const form=ref<{name:string;viewFlag:string;definition:QueryViewDefinition}>({name:'',viewFlag:'',definition:emptyDefinition()})
+const canSave=computed(()=>form.value.name.trim()&&queryFlag.value.trim()&&form.value.definition.sql.trim())
+function newView(){activeId.value='';form.value={name:'',viewFlag:'',definition:emptyDefinition()};result.value=null}
+function addFilter(){form.value.definition.filters.push({field:'',operator:'eq',value:''})}
+function addSort(){form.value.definition.sorts.push({field:'',direction:'asc'})}
+async function loadViews(){
+  if(!queryFlag.value.trim())return
+  try{const response=await api.get<unknown>(designerPaths.viewList(queryFlag.value.trim()));views.value=extractList<ViewSummary>(response.data)}
+  catch(error:any){toast.error(`加载视图失败: ${error?.message??'未知错误'}`)}
 }
-
-const search = ref(''),
-  showCreate = ref(false),
-  showEdit = ref(false),
-  loading = ref(false)
-const items = ref<Item[]>([]),
-  form = ref<Partial<Item>>({}),
-  editingId = ref<string | null>(null)
-const qc = useQueryClient()
-
-const ep = '/jaxrs/query/assemble/designer/view/list'
-const qk = ['query_ViewDesigner', 'list']
-
-const { data } = useQuery({
-  queryKey: qk,
-  queryFn: async () => {
-    loading.value = true
-    try {
-      const r = await api.get(ep)
-      return (r as any)?.data ?? []
-    } finally {
-      loading.value = false
-    }
-  },
-})
-items.value = data.value ?? []
-
-const filtered = computed(() =>
-  search.value
-    ? items.value.filter(
-        (i) =>
-          (i.name || '').toLowerCase().includes(search.value.toLowerCase()) ||
-          (i.flag || '').toLowerCase().includes(search.value.toLowerCase()),
-      )
-    : items.value,
-)
-
-function editItem(item: Item) {
-  form.value = { ...item }
-  editingId.value = item.id
-  showEdit.value = true
+async function openView(id:string){
+  try{const response=await api.get<any>(designerPaths.viewGet(id));activeId.value=id;queryFlag.value=response.data?.queryFlag??queryFlag.value;form.value={name:response.data?.name??'',viewFlag:response.data?.viewFlag??'',definition:parseViewDefinition(response.data?.content)};result.value=null}
+  catch(error:any){toast.error(`加载视图失败: ${error?.message??'未知错误'}`)}
 }
-function closeModal() {
-  showCreate.value = false
-  showEdit.value = false
-  form.value = {}
+async function saveView(){
+  if(!canSave.value)return
+  saving.value=true
+  const payload={name:form.value.name.trim(),queryFlag:queryFlag.value.trim(),data:serializeViewDefinition(form.value.definition)}
+  try{const response=activeId.value?await api.put<any>(designerPaths.viewSave(activeId.value),payload):await api.post<any>(designerPaths.viewCreate,payload);activeId.value=response.data?.id??activeId.value;form.value.viewFlag=response.data?.viewFlag??form.value.viewFlag;toast.success('视图已保存');await loadViews()}
+  catch(error:any){toast.error(`保存失败: ${error?.message??'未知错误'}`)}finally{saving.value=false}
 }
-const saveM = useMutation({
-  mutationFn: async (data: any) => {
-    if (editingId.value) return api.put(ep + '/' + editingId.value, data)
-    return api.post(ep, data)
-  },
-  onSuccess: () => {
-    qc.invalidateQueries({ queryKey: qk })
-    closeModal()
-  },
-})
-function saveItem() {
-  if (form.value.name) saveM.mutate(form.value)
+async function simulate(){
+  if(!activeId.value)return
+  try{await saveView();const response=await api.put<unknown>(designerPaths.viewSimulate(activeId.value),viewRuntimePayload(form.value.definition));result.value=response.data;resultTitle.value='模拟结果'}
+  catch(error:any){toast.error(`模拟失败: ${error?.message??'未知错误'}`)}
 }
-const delM = useMutation({
-  mutationFn: async (id: string) => api.delete(ep + '/' + id),
-  onSuccess: () => {
-    qc.invalidateQueries({ queryKey: qk })
-  },
-})
-function deleteItem(item: Item) {
-  if (confirmMsg('确定删除？')) delM.mutate(item.id)
-}
-function loadData() {
-  qc.invalidateQueries({ queryKey: qk })
-}
-function fmtTime(t?: string) {
-  if (!t) return ''
-  try {
-    return new Date(t).toLocaleString('zh-CN', { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' })
-  } catch {
-    return String(t)
-  }
+async function bundle(){
+  if(!activeId.value)return
+  try{const response=await api.put<unknown>(designerPaths.viewBundle(activeId.value),viewRuntimePayload(form.value.definition));result.value=response.data;resultTitle.value='Bundle 结果'}
+  catch(error:any){toast.error(`Bundle 失败: ${error?.message??'未知错误'}`)}
 }
 </script>
 <style scoped>
-.crud-view{display:flex;flex-direction:column;gap:16px;height:100%}
-.view-header{display:flex;align-items:flex-start;justify-content:space-between;padding:16px 24px}
-.view-header h1{font-family:'Orbitron',sans-serif;font-size:20px;color:var(--color-primary);margin:0 0 4px;text-shadow:0 0 15px var(--color-primary-glow)}
-.subtitle{font-size:12px;color:var(--text-muted);margin:0}
-.btn-primary{padding:8px 16px;border-radius:var(--radius-md);border:none;background:var(--color-primary);color:white;cursor:pointer;font-weight:600}
-.content-panel{padding:16px}
-.toolbar{display:flex;gap:8px;margin-bottom:16px}
-.search-input{flex:1;padding:8px 12px;border-radius:var(--radius-md);border:1px solid var(--border-color);background:var(--bg-elevated);color:var(--text-primary);outline:none}
-.btn-refresh{padding:8px 12px;border-radius:var(--radius-md);border:1px solid var(--border-color);background:var(--bg-elevated);color:var(--text-primary);cursor:pointer}
-.data-table{width:100%;border-collapse:collapse}
-.data-table th,.data-table td{padding:10px 12px;text-align:left;border-bottom:1px solid var(--border-color)}
-.data-table th{color:var(--text-muted);font-weight:600;font-size:12px;text-transform:uppercase}
-.data-table tr:hover{background:var(--bg-hover)}
-.mono{font-family:'Fira Code',monospace;font-size:12px;color:var(--color-secondary)}
-.btn-sm{padding:4px 10px;border-radius:var(--radius-sm);border:1px solid var(--border-color);background:var(--bg-elevated);color:var(--text-primary);cursor:pointer;font-size:12px}
-.btn-del{border-color:var(--color-danger);color:var(--color-danger)}
-.btn-del:hover{background:var(--color-danger-soft)}
-.loading-state,.empty-state{padding:40px;text-align:center;color:var(--text-muted)}
-.empty-icon{font-size:32px;margin-bottom:8px}
-.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.6);display:flex;align-items:center;justify-content:center;z-index:100}
-.modal{padding:24px;width:480px;max-width:90vw}
-.modal h3{font-size:16px;color:var(--color-primary);margin:0 0 16px}
-.form-group{margin-bottom:12px}
-.form-group label{display:block;font-size:12px;color:var(--text-muted);margin-bottom:4px}
-.form-input,.form-textarea{width:100%;padding:8px 12px;border-radius:var(--radius-md);border:1px solid var(--border-color);background:var(--bg-elevated);color:var(--text-primary);outline:none;box-sizing:border-box}
-.modal-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:16px}
-.btn-cancel{padding:8px 16px;border-radius:var(--radius-md);border:1px solid var(--border-color);background:transparent;color:var(--text-primary);cursor:pointer}
-.btn-save{padding:8px 16px;border-radius:var(--radius-md);border:none;background:var(--color-primary);color:white;cursor:pointer;font-weight:600}
-.btn-save:disabled{opacity:0.5;cursor:not-allowed}
-.skel{height:16px;background:var(--bg-elevated);border-radius:4px;margin-bottom:8px;animation:pulse 1.5s infinite}
-@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.4}}
+.designer-shell{display:flex;flex-direction:column;gap:14px;height:100%}.designer-header,.query-picker{display:flex;align-items:center;justify-content:space-between;padding:15px 20px}.designer-header h1,.list h2,.editor h2{margin:0;color:var(--color-primary);font-size:17px}.designer-header p{margin:4px 0 0;color:var(--text-muted);font-size:12px}.actions{display:flex;gap:8px}.query-picker{justify-content:flex-start;gap:10px}.query-picker label{display:flex;align-items:center;gap:8px}.query-picker span,.muted,.lookup p{color:var(--text-muted);font-size:11px}.main-grid{display:grid;grid-template-columns:230px 1fr;gap:14px;min-height:0;flex:1}.list,.editor{padding:14px;overflow:auto}.view-item{display:flex;flex-direction:column;gap:4px;width:100%;padding:10px;margin-top:8px;border:1px solid var(--border-color);border-radius:8px;background:var(--bg-elevated);color:var(--text-primary);text-align:left;cursor:pointer}.view-item.active{border-color:var(--color-primary)}.view-item span{font:10px monospace;color:var(--text-muted)}.form-row,.paging{display:grid;grid-template-columns:1fr 1fr;gap:12px}.editor label{font-size:12px;color:var(--text-muted)}input,select,textarea{box-sizing:border-box;width:100%;padding:8px;border:1px solid var(--border-color);border-radius:6px;background:var(--bg-elevated);color:var(--text-primary)}.sql-label{display:block;margin-top:14px}.section-head{display:flex;align-items:center;justify-content:space-between;margin-top:18px}.rule-row{display:grid;grid-template-columns:1fr 130px 1fr auto;gap:8px;margin-top:8px}.sort-row{grid-template-columns:1fr 130px auto}.paging{width:330px;margin-top:18px}.lookup,.result{margin-top:18px;padding-top:12px;border-top:1px solid var(--border-color)}.result pre{max-height:280px;overflow:auto;padding:12px;border-radius:8px;background:#0005}.btn{padding:8px 13px;border:1px solid var(--border-color);border-radius:7px;background:var(--bg-elevated);color:var(--text-primary);cursor:pointer}.btn.primary{background:var(--color-primary);color:#fff}.btn:disabled{opacity:.45}.remove{border:0;background:transparent;color:var(--color-danger);cursor:pointer}@media(max-width:850px){.main-grid{grid-template-columns:1fr}.rule-row{grid-template-columns:1fr}}
 </style>
