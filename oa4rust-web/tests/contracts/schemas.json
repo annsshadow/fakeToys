@@ -1,0 +1,190 @@
+{
+  "activities": {
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "$id": "oa4rust.activities.schema.json",
+    "type": "object",
+    "required": ["schemaVersion", "edition", "activities", "routes", "fieldPermissions"],
+    "additionalProperties": false,
+    "properties": {
+      "schemaVersion": { "const": 1 },
+      "edition": {
+        "type": "object",
+        "required": ["code", "name", "number", "enabled"],
+        "additionalProperties": false,
+        "properties": {
+          "code": { "type": "string", "minLength": 1 },
+          "name": { "type": "string", "minLength": 1 },
+          "number": { "type": "number", "exclusiveMinimum": 0 },
+          "enabled": { "type": "boolean" },
+          "description": { "type": "string" }
+        }
+      },
+      "activities": {
+        "type": "array",
+        "minItems": 3,
+        "items": {
+          "type": "object",
+          "required": ["id", "activityType", "name", "routeList", "taskIdentityList", "edition"],
+          "additionalProperties": false,
+          "properties": {
+            "id": { "type": "string", "minLength": 1 },
+            "activityType": {
+              "enum": [
+                "agent",
+                "begin",
+                "cancel",
+                "choice",
+                "condition",
+                "delay",
+                "embed",
+                "end",
+                "invoke",
+                "manual",
+                "merge",
+                "parallel",
+                "publish",
+                "service",
+                "split"
+              ]
+            },
+            "name": { "type": "string" },
+            "routeList": { "type": "array", "items": { "type": "string", "minLength": 1 }, "uniqueItems": true },
+            "taskIdentityList": { "type": "array", "items": { "type": "string", "minLength": 1 }, "uniqueItems": true },
+            "edition": { "type": "string", "minLength": 1 }
+          }
+        }
+      },
+      "routes": {
+        "type": "array",
+        "minItems": 2,
+        "items": {
+          "type": "object",
+          "required": ["id", "from", "to", "name", "waypoints", "edition"],
+          "additionalProperties": false,
+          "properties": {
+            "id": { "type": "string", "minLength": 1 },
+            "from": { "type": "string", "minLength": 1 },
+            "to": { "type": "string", "minLength": 1 },
+            "name": { "type": "string" },
+            "waypoints": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "required": ["x", "y"],
+                "additionalProperties": false,
+                "properties": { "x": { "type": "number" }, "y": { "type": "number" } }
+              }
+            },
+            "edition": { "type": "string", "minLength": 1 }
+          }
+        }
+      },
+      "fieldPermissions": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "required": ["field", "activity", "readable", "writable", "required", "hidden"],
+          "additionalProperties": false,
+          "properties": {
+            "field": { "type": "string", "minLength": 1 },
+            "activity": { "type": "string", "minLength": 1 },
+            "readable": { "type": "boolean" },
+            "writable": { "type": "boolean" },
+            "required": { "type": "boolean" },
+            "hidden": { "type": "boolean" }
+          }
+        }
+      }
+    }
+  },
+  "moduleList": {
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "$id": "oa4rust.module-list.schema.json",
+    "type": "object",
+    "required": ["id", "name", "type", "mode", "moduleList", "fieldList"],
+    "additionalProperties": false,
+    "properties": {
+      "id": { "type": "string", "minLength": 1 },
+      "name": { "type": "string", "minLength": 1 },
+      "type": { "const": "Form" },
+      "mode": { "enum": ["PC", "Mobile"] },
+      "moduleList": {
+        "type": "object",
+        "minProperties": 1,
+        "additionalProperties": {
+          "type": "object",
+          "required": ["id", "type", "label", "key", "required"],
+          "additionalProperties": false,
+          "properties": {
+            "id": { "type": "string", "minLength": 1 },
+            "type": { "enum": ["text", "textarea", "number", "date", "select", "checkbox", "email", "phone", "file"] },
+            "label": { "type": "string", "minLength": 1 },
+            "key": { "type": "string", "minLength": 1 },
+            "required": { "type": "boolean" }
+          }
+        }
+      },
+      "fieldList": {
+        "type": "object",
+        "minProperties": 1,
+        "additionalProperties": { "type": "string", "minLength": 1 }
+      }
+    }
+  },
+  "query": {
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "$id": "oa4rust.query.schema.json",
+    "type": "object",
+    "required": ["name", "category", "query"],
+    "additionalProperties": false,
+    "properties": {
+      "name": { "type": "string", "minLength": 1 },
+      "category": { "type": "string", "minLength": 1 },
+      "query": { "type": "string", "minLength": 1 }
+    }
+  },
+  "portal": {
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "$id": "oa4rust.portal.schema.json",
+    "type": "object",
+    "required": ["name", "category", "content"],
+    "additionalProperties": false,
+    "properties": {
+      "name": { "type": "string", "minLength": 1 },
+      "category": { "type": "string", "minLength": 1 },
+      "content": {
+        "type": "object",
+        "required": ["flag", "layout"],
+        "additionalProperties": false,
+        "properties": {
+          "flag": { "type": "string", "minLength": 1 },
+          "layout": {
+            "type": "array",
+            "minItems": 1,
+            "items": {
+              "type": "object",
+              "required": ["type", "widgets"],
+              "additionalProperties": false,
+              "properties": {
+                "type": { "const": "row" },
+                "widgets": {
+                  "type": "array",
+                  "minItems": 1,
+                  "items": {
+                    "type": "object",
+                    "required": ["type", "text"],
+                    "additionalProperties": false,
+                    "properties": {
+                      "type": { "enum": ["text", "chart", "table", "calendar", "todo", "news", "map", "counter"] },
+                      "text": { "type": "string" }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
