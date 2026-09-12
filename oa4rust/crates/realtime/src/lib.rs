@@ -13,6 +13,8 @@ use axum::{
 };
 use futures_util::{SinkExt, StreamExt};
 use serde::{Deserialize, Serialize};
+use serde_json::Value;
+use shared::session::Session;
 use thiserror::Error;
 use tokio::sync::{broadcast, Mutex};
 use tracing::{info, warn};
@@ -302,6 +304,30 @@ mod tests {
         assert_eq!(parsed.content, "hello");
         assert_eq!(parsed.msg_type, "text");
         assert!(parsed.timestamp > 0);
+    }
+
+    #[test]
+    fn w10_client_envelope_is_normalized_to_im_event() {
+        let text = serde_json::json!({
+            "type": "im_create",
+            "data": {
+                "id": "m-1",
+                "conversationId": "c-1",
+                "body": "{\"type\":\"text\",\"body\":\"hello\"}"
+            }
+        })
+        .to_string();
+        let msg = client_message("c-1", "person-1", &text).unwrap();
+        assert_eq!(msg.room, "c-1");
+        assert_eq!(msg.sender, "person-1");
+        assert_eq!(msg.msg_type, "im_create");
+        assert_eq!(msg.data["conversationId"], "c-1");
+    }
+
+    #[test]
+    fn w10_invalid_client_envelope_is_rejected() {
+        assert!(client_message("c-1", "person-1", "plain text").is_err());
+        assert!(client_message("c-1", "person-1", r#"{"type":"ping"}"#).is_err());
     }
 
     #[tokio::test]
