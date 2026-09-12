@@ -14,9 +14,9 @@
 #[cfg(test)]
 mod u2_tests {
     use crate::{
-        appinfo_u2_create, document_u2_category_change, document_u2_delete, permission_u2_app_info,
-        permission_u2_category_info, script_u2_list_manager, u2_body_i64, u2_body_str,
-        u2_body_strs,
+        appinfo_u2_create, document_u2_category_change, document_u2_delete, form_u2_create,
+        form_u2_update, permission_u2_app_info, permission_u2_category_info,
+        script_u2_list_manager, u2_body_i64, u2_body_str, u2_body_strs,
     };
     use axum::body::Body;
     use axum::extract::Extension;
@@ -366,6 +366,43 @@ mod u2_tests {
         assert_eq!(u2_body_i64(&body, "title"), None);
     }
 
+    #[tokio::test]
+    async fn form_create_validates_body_before_database_access() {
+        let missing_app = form_u2_create(
+            Extension(mock_pool()),
+            Extension(session(OWNER)),
+            axum::extract::Json(json!({"definition": {"moduleList": {}}})),
+        )
+        .await;
+        assert!(
+            matches!(missing_app, Err(AppError::BadRequest(message)) if message == "appId required")
+        );
+
+        let malformed_definition = form_u2_create(
+            Extension(mock_pool()),
+            Extension(session(OWNER)),
+            axum::extract::Json(json!({"appId": "app-1", "definition": "{broken"})),
+        )
+        .await;
+        assert!(
+            matches!(malformed_definition, Err(AppError::BadRequest(message)) if message.contains("valid JSON"))
+        );
+    }
+
+    #[tokio::test]
+    async fn form_update_rejects_malformed_definition_before_owner_gate() {
+        let result = form_u2_update(
+            Extension(mock_pool()),
+            Extension(session(OWNER)),
+            axum::extract::Path("form-1".to_string()),
+            axum::extract::Json(json!({"definition": {"moduleList": []}})),
+        )
+        .await;
+        assert!(
+            matches!(result, Err(AppError::BadRequest(message)) if message.contains("moduleList"))
+        );
+    }
+
     // ── 3. 真库端到端 ──────────────────────────────────────────
 
     async fn call(
@@ -599,6 +636,126 @@ mod u2_tests {
         .await;
         assert_eq!(status, StatusCode::OK, "comment delete: {json}");
         assert_eq!(json["data"]["deleted"], true);
+    }
+
+    #[tokio::test]
+    async fn u2_form_contract_roundtrip_real_db() {
+        if !is_db_available().await {
+            eprintln!("skipping u2_form_contract_roundtrip_real_db: db not reachable");
+            return;
+        }
+        let app_id = "u2test-form-contract-app";
+        {
+            let client = test_pool().get().await.unwrap();
+            client
+                .execute("DELETE FROM x_cms_form WHERE app_id = $1", &[&app_id])
+                .await
+                .unwrap();
+            client
+                .execute("DELETE FROM x_cms_appinfo WHERE id = $1", &[&app_id])
+                .await
+                .unwrap();
+            client
+                .execute(
+                    "INSERT INTO x_cms_appinfo (id, alias, app_type, manager) \
+                     VALUES ($1, 'FormContract', 'cms', $2)",
+                    &[&app_id, &OWNER],
+                )
+                .await
+                .unwrap();
+        }
+
+        let definition = json!({
+            "pcData": {
+                "json": {
+                    "mode": "PC",
+                    "moduleList": {"subject": {"type": "Textfield"}},
+                    "actions": {"save": {"script": "save();"}},
+                    "events": {"load": {"code": "load();"}},
+                    "validation": {"subject": {"required": true}}
+                },
+                "html": "<div id=\"subject\"></div>"
+            },
+            "mobileData": {
+                "json": {"mode": "Mobile", "moduleList": {"subjectM": {"type": "Textfield"}}},
+                "html": "<div id=\"subjectM\"></div>"
+            }
+        });
+        let (status, created) = call(
+            "POST",
+            "/jaxrs/form",
+            Some(json!({
+                "appId": app_id,
+                "name": "Contract Form",
+                "definition": definition,
+                "status": "published"
+            })),
+            Some(session(OWNER)),
+        )
+        .await;
+        assert_eq!(status, StatusCode::OK, "create: {created}");
+        assert_eq!(created["data"]["definition"], definition);
+        let form_id = created["data"]["id"].as_str().unwrap().to_string();
+
+        let (_, fetched) = call("GET", &format!("/jaxrs/form/{form_id}"), None, None).await;
+        assert_eq!(fetched["data"]["appId"], app_id);
+        assert_eq!(fetched["data"]["definition"], definition);
+        assert!(fetched["data"].get("app_id").is_none());
+
+        let (_, listed) = call("GET", &format!("/jaxrs/form/list/app/{app_id}"), None, None).await;
+        let listed_form = listed["data"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .find(|form| form["id"] == form_id)
+            .unwrap();
+        assert_eq!(listed_form["definition"], definition);
+
+        let (_, desktop) = call("GET", &format!("/jaxrs/form/v2/{form_id}"), None, None).await;
+        assert_eq!(desktop["data"]["form"]["definition"], definition);
+        assert_eq!(desktop["data"]["form"]["hasMobile"], true);
+        assert!(desktop["data"]["relatedFormMap"].is_object());
+        assert!(desktop["data"]["relatedScriptMap"].is_object());
+        let desktop_data: serde_json::Value =
+            serde_json::from_str(desktop["data"]["form"]["data"].as_str().unwrap()).unwrap();
+        assert_eq!(desktop_data, definition["pcData"]);
+
+        let (_, mobile) = call(
+            "GET",
+            &format!("/jaxrs/form/v2/{form_id}/mobile"),
+            None,
+            None,
+        )
+        .await;
+        let mobile_data: serde_json::Value =
+            serde_json::from_str(mobile["data"]["form"]["data"].as_str().unwrap()).unwrap();
+        assert_eq!(mobile_data, definition["mobileData"]);
+
+        let updated_definition = json!({
+            "moduleList": {"approved": {"type": "Checkbox"}},
+            "actions": {"submit": {"script": "submit();"}},
+            "events": {"change": {"code": "changed();"}},
+            "validation": {"approved": {"required": true}}
+        });
+        let (status, updated) = call(
+            "PUT",
+            &format!("/jaxrs/form/{form_id}"),
+            Some(json!({"definition": updated_definition})),
+            Some(session(OWNER)),
+        )
+        .await;
+        assert_eq!(status, StatusCode::OK, "update: {updated}");
+        assert_eq!(updated["data"]["definition"], updated_definition);
+
+        let client = test_pool().get().await.unwrap();
+        client
+            .execute("DELETE FROM x_cms_form WHERE id = $1", &[&form_id])
+            .await
+            .unwrap();
+        client
+            .execute("DELETE FROM x_cms_appinfo WHERE id = $1", &[&app_id])
+            .await
+            .unwrap();
     }
 
     #[tokio::test]

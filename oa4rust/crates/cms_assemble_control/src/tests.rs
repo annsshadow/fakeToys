@@ -21,6 +21,52 @@ fn test_action_result_success_serialization() {
     assert!(json["data"].is_object());
 }
 
+#[test]
+fn form_definition_roundtrips_o2oa_fields_without_loss() {
+    let definition = json!({
+        "pcData": {
+            "json": {
+                "mode": "PC",
+                "moduleList": {"subject": {"type": "Textfield"}},
+                "actions": {"save": {"script": "return true;"}},
+                "events": {"load": {"code": "init();"}},
+                "validation": {"subject": {"required": true}}
+            },
+            "html": "<div id=\"subject\"></div>"
+        },
+        "mobileData": {
+            "json": {"mode": "Mobile", "moduleList": {}},
+            "html": "<div class=\"mobile\"></div>"
+        }
+    });
+    let parsed = crate::FormDefinition::parse(definition.clone()).unwrap();
+    let stored = parsed.to_db().unwrap();
+    let restored = crate::FormDefinition::from_db(Some(stored)).unwrap();
+
+    assert_eq!(restored.into_value(), definition);
+}
+
+#[test]
+fn form_definition_accepts_legacy_json_string_and_serializes_as_object() {
+    let input = json!(r#"{"moduleList":{"name":{"type":"Textfield"}}}"#);
+    let parsed: crate::FormDefinition = serde_json::from_value(input).unwrap();
+    let output = serde_json::to_value(parsed).unwrap();
+
+    assert!(output.is_object());
+    assert_eq!(output["moduleList"]["name"]["type"], "Textfield");
+}
+
+#[test]
+fn form_definition_rejects_malformed_or_wrong_module_list() {
+    assert!(crate::FormDefinition::parse(json!("{not-json")).is_err());
+    assert!(crate::FormDefinition::parse(json!([])).is_err());
+    assert!(crate::FormDefinition::parse(json!({"moduleList": []})).is_err());
+    assert!(crate::FormDefinition::parse(json!({
+        "pcData": {"json": {"moduleList": []}}
+    }))
+    .is_err());
+}
+
 #[tokio::test]
 async fn test_get_control_config_route() {
     let pool = build_test_pool();
