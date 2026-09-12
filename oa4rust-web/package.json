@@ -14,6 +14,7 @@
     "typecheck": "pnpm --recursive run typecheck",
     "test": "vitest run",
     "test:watch": "vitest",
+    "test:contracts": "vitest run tests/contracts",
     "gen-api": "tsx scripts/gen-api.ts",
     "lint:check": "biome check --diagnostic-level=error ."
   },
