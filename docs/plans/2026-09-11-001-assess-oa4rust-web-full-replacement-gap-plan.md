@@ -3,7 +3,7 @@ title: "assess: oa4rust + oa4rust-web 能否完全替代 oa/o2server + oa/o2web 
 type: assessment-and-plan
 status: active
 date: 2026-09-11
-rev: 9   # v9：S2 闭合——双侧全播种基线 157-158 FAIL，fail_baseline=170；W12 backlog 量化（聚类清单入库）
+rev: 10  # v10：W12 度量闭环验证——input 族收敛实测 158→155→152（gate 观测下降）；S2 基线 170 不变
 module: oa4rust + oa4rust-web vs oa/o2server + oa/o2web
 module: oa4rust + oa4rust-web vs oa/o2server + oa/o2web
 tags: [replacement-parity, gap-analysis, backend, frontend, designer-engine-contract, form-runtime, greenfield-cutover, seeded-behavior-compare, canary-dogfood]
@@ -177,7 +177,7 @@ Minder 无画布编辑器（仅列表）；`service_AgentDesigner`/`ServiceManag
 | W9 Portal & Query | ✅ | PortalDesigner 拖拽版 / QueryTable 类型化列+受限 DDL / QueryView 过滤排序分页 simulate/bundle |
 | W10 IMChat 富媒体 | ✅ | multipart 上传 + 二进制下载 + client_message 规范化；realtime 10/10、communicate 102/102 |
 | W11 API 层质量 | ✅ | 路径参数 encodeURIComponent + 命名占位符消除（4b31fa2d） |
-| W12 深语义收敛 | ▶ 进行中（backlog 已量化） | S2 双侧基线闭环；158 FAIL 分解：117 个 200\|200 字段/信封差 + 16 个 200\|405 + 12 个 200\|500 + 余为安全偏离；聚类清单 docs/audits/behavior-diff-clusters-2026-09-13.md（78 改名对/54 Rust 缺字段），以 gate 观测值下降为度量持续推进 |
+| W12 深语义收敛 | ▶ 进行中（度量闭环已验证：158→155→152） | input 族 10 处理器对齐 Java CompareAppInfo/Wo 信封（首批收敛 -6）；158 FAIL 分解：117×200\|200 字段差 + 16×200\|405 + 12×200\|500 + 余为安全偏离；聚类清单 docs/audits/behavior-diff-clusters-2026-09-13.md 持续更新，gate 观测值下降为度量 |
 | W13 空壳裁决 | ✅ 44/47 实装外 | manifest 47 项（1 implemented + 2 out_of_scope + 44 still_blocked）+ 机器一致守卫；3 脚本设计器本轮转实装移出 |
 | W14 长尾视图 | ✅ 裁决 | Minder 画布实装（47cc0702）；余项 manifest 书面裁决 |
 
