@@ -644,6 +644,8 @@ pub fn query_assemble_designer_router(pool: Option<Pool>) -> Router {
         .route("/jaxrs/query/assemble/designer/output/{flag}/select", put(u2::output_select_put))
         .route("/jaxrs/query/assemble/designer/output/{flag}/select/file", get(crate::output_flag_select_file))
         .route("/jaxrs/query/assemble/designer/query", post(u2::query_create_v2))
+        .route("/jaxrs/query/assemble/designer/execute", post(u2::designer_execute))
+        .route("/jaxrs/query/assemble/designer/stat/do", post(u2::stat_do))
         .route("/jaxrs/query/assemble/designer/query/entity/{entity}/category/{entityCategory}/properties", get(crate::query_entity_entity_category_entityCategory_properties))
         .route("/jaxrs/query/assemble/designer/query/list/all", get(crate::query_list_all))
         .route("/jaxrs/query/assemble/designer/query/list/querycategory/{queryCategory}", get(crate::query_list_querycategory_queryCategory))

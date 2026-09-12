@@ -2106,3 +2106,116 @@ pub async fn view_simulate_put(
 
     Ok(Json(ActionResult::success(payload_map)))
 }
+
+/// POST /jaxrs/query/assemble/designer/execute
+///
+/// W6 ③ 后端补缺：设计器即时 SQL 执行（QueryStatementDesigner/QueryManagerDeep
+/// 的单条执行与批量执行）。与 statement/table 执行链路同轨：sqlparser 仅放行
+/// 单条 SELECT，无 LIMIT 时注入 LIMIT 500，拒绝 DML/DDL/多语句。
+pub async fn designer_execute(
+    pool: Extension<Pool>,
+    Json(body): Json<Value>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let sql = body.get("sql").and_then(Value::as_str).unwrap_or_default();
+    validate_single_select(sql).map_err(AppError::BadRequest)?;
+
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let limited = ensure_limit(sql, 500);
+    let rows = client
+        .query(&limited, &[])
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    let data: Vec<Value> = rows.iter().map(row_to_json).collect();
+    let count = data.len() as i64;
+    Ok(Json(ActionResult::java_success(
+        Value::Array(data),
+        count,
+        0,
+    )))
+}
+
+/// POST /jaxrs/query/assemble/designer/stat/do
+///
+/// W6 ③ 后端补缺：执行统计聚合。数据链路 x_query_stat.query_flag
+/// → x_query_table.table_flag → x_query_table_data.data(JSON 文本行)，
+/// 按 dimension 分组、metric 求和（非数值行计 0），恒附带行数。
+pub async fn stat_do(
+    pool: Extension<Pool>,
+    Json(body): Json<Value>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let id = body_str(&body, &["id"]).unwrap_or_default();
+    if id.trim().is_empty() {
+        return Ok(Json(ActionResult::error("id is required")));
+    }
+    let dimension = body_str(&body, &["dimension"]).unwrap_or_default();
+    let metric = body_str(&body, &["metric"]).unwrap_or_default();
+    if dimension.trim().is_empty() {
+        return Ok(Json(ActionResult::error("dimension is required")));
+    }
+
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let stat = client
+        .query_opt(
+            "SELECT query_flag FROM x_query_stat WHERE id = $1 AND deleted_at IS NULL",
+            &[&id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?
+        .ok_or_else(|| AppError::BadRequest("stat not found".to_string()))?;
+    let query_flag: String = stat.get("query_flag");
+    let table = client
+        .query_opt(
+            "SELECT table_flag FROM x_query_table WHERE query_flag = $1 AND deleted_at IS NULL \
+             ORDER BY create_time DESC LIMIT 1",
+            &[&query_flag],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?
+        .ok_or_else(|| AppError::BadRequest("no query table bound to this stat".to_string()))?;
+    let table_flag: String = table.get("table_flag");
+
+    // 维度/指标均为数据键名，走绑定参数，无拼接注入面
+    let rows = client
+        .query(
+            "SELECT data->>$1 AS dimension, COUNT(*)::bigint AS row_count, \
+             SUM(CASE WHEN data->>$2 ~ '^-?[0-9]+(\\.[0-9]+)?$' THEN (data->>$2)::numeric ELSE 0 END)::text AS metric_total \
+             FROM x_query_table_data WHERE table_flag = $3 AND deleted_at IS NULL \
+             GROUP BY data->>$1 ORDER BY 1 LIMIT 500",
+            &[&dimension, &metric, &table_flag],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    let data: Vec<Value> = rows
+        .iter()
+        .map(|row| {
+            Value::Object(serde_json::Map::from_iter([
+                (
+                    "dimension".to_string(),
+                    row.get::<_, Option<String>>("dimension").into(),
+                ),
+                (
+                    "rowCount".to_string(),
+                    row.get::<_, i64>("row_count").into(),
+                ),
+                (
+                    "metricTotal".to_string(),
+                    row.get::<_, Option<String>>("metric_total").into(),
+                ),
+            ]))
+        })
+        .collect();
+
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("id".to_string(), Value::String(id.to_string())),
+            (
+                "dimension".to_string(),
+                Value::String(dimension.to_string()),
+            ),
+            ("metric".to_string(), Value::String(metric.to_string())),
+            ("data".to_string(), Value::Array(data)),
+        ]),
+    ))))
+}
