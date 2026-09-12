@@ -649,7 +649,7 @@
           </div>
           <div class="props-body">
             <div class="pg"><label>节点标签</label><input :value="getNodeProp('label')" @input="_setNodeProp('label',$event.target.value)" class="pi" /></div>
-            <div class="pg"><label>负责人</label><input :value="getNodeProp('assignee')" @input="_setNodeProp('assignee',$event.target.value)" class="pi" placeholder="如: manager_zhang" /></div>
+            <div class="pg"><label>负责人</label><OrganizationSelector :model-value="assigneeItems" :types="['person','identity']" @update:model-value="setAssignee" /></div>
             <div class="pg"><label>流转条件</label><input :value="getNodeProp('condition')" @input="_setNodeProp('condition',$event.target.value)" class="pi" placeholder="如: amount > 1000" /></div>
             <div class="pg"><label>节点样式</label>
               <select :value="getNodeProp('style')" @change="_setNodeProp('style',$event.target.value)" class="pi">
@@ -2811,6 +2811,8 @@
 </template>
 <script setup lang="ts">
 import { api } from '@oa4rust/sdk'
+// biome-ignore lint/correctness/noUnusedImports: Vue templates consume component imports.
+import { OrganizationSelector, type OrganizationSelectorItem } from '@oa4rust/ui'
 import { computed, onMounted, onUnmounted, ref } from 'vue'
 import {
   type JsonObject,
@@ -4365,6 +4367,17 @@ function getNodeProp(prop: string): any {
 function _setNodeProp(prop: string, val: any) {
   if (selectedNode.value === null || !processDef.value) return
   ;(processDef.value.nodes[selectedNode.value] as any)[prop] = val
+}
+// W8：负责人经组织/身份选择器选择；与节点 assignee（CSV）双向映射
+const assigneeItems = computed<OrganizationSelectorItem[]>(() =>
+  String(getNodeProp('assignee') ?? '')
+    .split(',')
+    .map((value) => value.trim())
+    .filter(Boolean)
+    .map((id) => ({ id, name: id, type: 'person' as const })),
+)
+function setAssignee(items: OrganizationSelectorItem[]): void {
+  _setNodeProp('assignee', items.map((item) => item.id).join(','))
 }
 function getEdgeProp(prop: string): any {
   if (selectedEdge.value === null || !processDef.value?.edges[selectedEdge.value]) return ''
