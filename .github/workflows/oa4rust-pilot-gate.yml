@@ -1,0 +1,136 @@
+name: OA4Rust S4 pilot gate
+
+on:
+  pull_request:
+    branches: [main, master]
+    paths:
+      - "oa4rust/scripts/pilot_gate.py"
+      - "oa4rust/tests/test_pilot_gate.py"
+      - "oa4rust/tests/fixtures/pilot_access.fixture"
+      - ".github/workflows/oa4rust-pilot-gate.yml"
+  push:
+    branches: [main, master]
+    paths:
+      - "oa4rust/scripts/pilot_gate.py"
+      - "oa4rust/tests/test_pilot_gate.py"
+      - "oa4rust/tests/fixtures/pilot_access.fixture"
+      - ".github/workflows/oa4rust-pilot-gate.yml"
+  workflow_dispatch:
+    inputs:
+      service_url:
+        description: "Pilot OA4Rust service URL (recorded as evidence metadata)"
+        required: true
+        type: string
+      window_start:
+        description: "Inclusive ISO-8601 timestamp, for example 2026-09-12T10:00:00Z"
+        required: true
+        type: string
+      window_end:
+        description: "Exclusive ISO-8601 timestamp"
+        required: true
+        type: string
+      max_5xx_rate_percent:
+        description: "Maximum 5xx percentage (0 through 100)"
+        required: true
+        default: "1"
+        type: string
+      min_requests:
+        description: "Minimum real pilot API requests required"
+        required: true
+        default: "1"
+        type: string
+      pilot_users:
+        description: "Comma-separated pilot user identifiers"
+        required: true
+        type: string
+      version:
+        description: "Deployed version, image digest, or Git SHA"
+        required: true
+        type: string
+      access_log_url:
+        description: "HTTPS URL for the dedicated OA4Rust pilot Nginx access log"
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: oa4rust-pilot-gate-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  unit-tests:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    defaults:
+      run:
+        shell: bash
+        working-directory: oa4rust
+    steps:
+      - uses: actions/checkout@b4ffde65e4aa6d8cba74e5f82ac958baa146d45a
+      - name: Run pilot gate tests
+        run: python3 tests/test_pilot_gate.py
+      - name: Check Python syntax
+        run: python3 -m py_compile scripts/pilot_gate.py tests/test_pilot_gate.py
+
+  pilot-gate:
+    if: github.event_name == 'workflow_dispatch'
+    needs: unit-tests
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    defaults:
+      run:
+        shell: bash
+        working-directory: oa4rust
+    env:
+      PILOT_ACCESS_LOG_TOKEN: ${{ secrets.PILOT_ACCESS_LOG_TOKEN }}
+    steps:
+      - uses: actions/checkout@b4ffde65e4aa6d8cba74e5f82ac958baa146d45a
+      - name: Download dedicated pilot access log
+        env:
+          ACCESS_LOG_URL: ${{ inputs.access_log_url }}
+        run: |
+          set -euo pipefail
+          args=(--fail --location --silent --show-error --proto '=https' --proto-redir '=https')
+          if [[ -n "$PILOT_ACCESS_LOG_TOKEN" ]]; then
+            args+=(--header "Authorization: Bearer $PILOT_ACCESS_LOG_TOKEN")
+          fi
+          curl "${args[@]}" --output "$RUNNER_TEMP/oa4rust-pilot-access.log" "$ACCESS_LOG_URL"
+          test -s "$RUNNER_TEMP/oa4rust-pilot-access.log"
+      - name: Evaluate observation window
+        env:
+          SERVICE_URL: ${{ inputs.service_url }}
+          WINDOW_START: ${{ inputs.window_start }}
+          WINDOW_END: ${{ inputs.window_end }}
+          MAX_5XX_RATE_PERCENT: ${{ inputs.max_5xx_rate_percent }}
+          MIN_REQUESTS: ${{ inputs.min_requests }}
+          PILOT_USERS: ${{ inputs.pilot_users }}
+          PILOT_VERSION: ${{ inputs.version }}
+        run: |
+          set -euo pipefail
+          args=(python3 scripts/pilot_gate.py
+            --service-url "$SERVICE_URL"
+            --window-start "$WINDOW_START"
+            --window-end "$WINDOW_END"
+            --max-5xx-rate-percent "$MAX_5XX_RATE_PERCENT"
+            --min-requests "$MIN_REQUESTS"
+            --version "$PILOT_VERSION"
+            --access-log "$RUNNER_TEMP/oa4rust-pilot-access.log"
+            --output target/pilot-gate/report.json
+            --checklist-output target/pilot-gate/manual-checklist.md)
+          IFS=',' read -r -a users <<< "$PILOT_USERS"
+          for user in "${users[@]}"; do
+            user="${user#"${user%%[![:space:]]*}"}"
+            user="${user%"${user##*[![:space:]]}"}"
+            [[ -n "$user" ]] && args+=(--pilot-user "$user")
+          done
+          "${args[@]}"
+      - name: Upload gate evidence
+        if: always()
+        uses: actions/upload-artifact@5d5d22a31266ced268874388b861e4b58bb5c2f0
+        with:
+          name: oa4rust-pilot-gate-${{ github.run_id }}
+          path: oa4rust/target/pilot-gate/
+          if-no-files-found: error
+          retention-days: 90
