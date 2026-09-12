@@ -21,6 +21,8 @@ __pycache__/
 
 # Node
 node_modules/
+oa4rust-web/test-results/
+oa4rust-web/playwright-report/
 
 # IDE
 .idea/
