@@ -6908,244 +6908,249 @@ pub async fn import_app_info_app_info_flag(
     list_from_table_filtered_java(&pool, "x_cms_appinfo", "deleted_at IS NULL", &[]).await
 }
 
-// STUB: input_compare - input processing utility, no DB table mapping
+// ─── W12：CMS 导入（input）族 ───────────────────────────────────────────────
+// 对齐 Java x_cms_assemble_control jaxrs/input（ActionCompare/Cover/Create/
+// PrepareCover/PrepareCreate）。WrapCms 载荷：{id, appName, appAlias, ...}。
+// 说明：x_cms_appinfo 无 appName 列，名称解析按 alias 承载（与既有
+// appinfo 处理器一致）；prepare 族完整导入对账逻辑属 CMS 导入子系统，
+// 当前实现空载荷路径（无子实体载荷时返回空对账列表）。
+
+fn input_app_id(body: &Value) -> Option<&str> {
+    body.get("id")
+        .and_then(Value::as_str)
+        .filter(|s| !s.is_empty())
+}
+
+fn input_app_name(body: &Value) -> Option<&str> {
+    body.get("appName")
+        .and_then(Value::as_str)
+        .filter(|s| !s.is_empty())
+}
+
+fn input_app_alias(body: &Value) -> Option<&str> {
+    body.get("appAlias")
+        .and_then(Value::as_str)
+        .filter(|s| !s.is_empty())
+}
+
+/// Java BaseAction.getAppInfo 解析序：id → name → alias
+async fn input_resolve_appinfo(
+    client: &deadpool_postgres::Client,
+    body: &Value,
+) -> Result<Option<deadpool_postgres::tokio_postgres::Row>, AppError> {
+    if let Some(id) = input_app_id(body) {
+        let row = client
+            .query_opt(
+                "SELECT id, alias FROM x_cms_appinfo WHERE id = $1 AND deleted_at IS NULL",
+                &[&id],
+            )
+            .await
+            .map_err(|_| AppError::Internal)?;
+        if row.is_some() {
+            return Ok(row);
+        }
+    }
+    let key = input_app_name(body).or_else(|| input_app_alias(body));
+    if let Some(key) = key {
+        return client
+            .query_opt(
+                "SELECT id, alias FROM x_cms_appinfo WHERE alias = $1 AND deleted_at IS NULL",
+                &[&key],
+            )
+            .await
+            .map_err(|_| AppError::Internal);
+    }
+    Ok(None)
+}
+
+/// compare / compare(mockputtopost)：导入前存在性对账，返回 CompareAppInfo 形状
+async fn input_compare_impl(
+    pool: &Pool,
+    body: &Value,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let existing = input_resolve_appinfo(&client, body).await?;
+
+    // Java WrapCms 继承 JpaObject：id 缺省时自动生成唯一 token 并回显
+    let echoed_id = input_app_id(body)
+        .map(str::to_string)
+        .unwrap_or_else(|| uuid::Uuid::new_v4().to_string());
+    let mut map = serde_json::Map::new();
+    map.insert("id".to_string(), Value::String(echoed_id));
+    if let Some(name) = input_app_name(body) {
+        map.insert("name".to_string(), Value::String(name.to_string()));
+    }
+    if let Some(alias) = input_app_alias(body) {
+        map.insert("alias".to_string(), Value::String(alias.to_string()));
+    }
+    map.insert("exist".to_string(), Value::Bool(existing.is_some()));
+    if let Some(row) = &existing {
+        let exist_id: String = row.get("id");
+        let exist_alias: String = row.get::<_, Option<String>>("alias").unwrap_or_default();
+        map.insert("existId".to_string(), Value::String(exist_id));
+        map.insert("existName".to_string(), Value::String(exist_alias.clone()));
+        map.insert("existAlias".to_string(), Value::String(exist_alias));
+    }
+    Ok(Json(ActionResult::success(Value::Object(map))))
+}
+
+/// create / create(mockputtopost)：新建导入——id 已存在时报错，否则落库
+async fn input_create_impl(
+    pool: &Pool,
+    body: &Value,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let id = input_app_id(body)
+        .map(str::to_string)
+        .unwrap_or_else(|| uuid::Uuid::new_v4().to_string());
+    let exists = {
+        let row = client
+            .query_opt(
+                "SELECT 1 FROM x_cms_appinfo WHERE id = $1 AND deleted_at IS NULL",
+                &[&id],
+            )
+            .await
+            .map_err(|_| AppError::Internal)?;
+        row.is_some()
+    };
+    if exists {
+        return Ok(Json(ActionResult::error("appinfo already exists")));
+    }
+    let alias = input_app_alias(body)
+        .or_else(|| input_app_name(body))
+        .unwrap_or("");
+    client
+        .execute(
+            "INSERT INTO x_cms_appinfo (id, app_type, alias, enabled, creator) \
+             VALUES ($1, 'cms', NULLIF($2, ''), true, 'system')",
+            &[&id, &alias],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([("id".to_string(), Value::String(id))]),
+    ))))
+}
+
+/// cover / cover(mockputtopost)：覆盖导入——存在则覆盖，否则新建
+async fn input_cover_impl(
+    pool: &Pool,
+    body: &Value,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let id = input_app_id(body)
+        .map(str::to_string)
+        .unwrap_or_else(|| uuid::Uuid::new_v4().to_string());
+    let alias = input_app_alias(body)
+        .or_else(|| input_app_name(body))
+        .unwrap_or("");
+    client
+        .execute(
+            "INSERT INTO x_cms_appinfo (id, app_type, alias, enabled, creator) \
+             VALUES ($1, 'cms', NULLIF($2, ''), true, 'system') \
+             ON CONFLICT (id) DO UPDATE SET alias = EXCLUDED.alias",
+            &[&id, &alias],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([("id".to_string(), Value::String(id))]),
+    ))))
+}
+
+/// prepare/cover、prepare/create：无子实体载荷时返回空对账列表
+async fn input_prepare_impl() -> Result<Json<ActionResult<Value>>, AppError> {
+    Ok(Json(ActionResult::success(Value::Array(Vec::new()))))
+}
+
 #[axum::debug_handler]
 #[allow(non_snake_case)]
 pub async fn input_compare(
     pool: Extension<Pool>,
     body: axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let _ = pool;
-    let a = body.get("a").and_then(|v| v.as_str()).unwrap_or_default();
-    let b = body.get("b").and_then(|v| v.as_str()).unwrap_or_default();
-    let equal = a == b;
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("success".to_string(), Value::Bool(equal)),
-            (
-                "message".to_string(),
-                Value::String("Input compared".to_string()),
-            ),
-            ("equal".to_string(), Value::Bool(equal)),
-        ]),
-    ))))
+    input_compare_impl(&pool, &body).await
 }
 
-// STUB: input_compare_mockputtopost - input processing utility, no DB table mapping
 #[axum::debug_handler]
 #[allow(non_snake_case)]
 pub async fn input_compare_mockputtopost(
     pool: Extension<Pool>,
     body: axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let _ = pool;
-    let a = body.get("a").and_then(|v| v.as_str()).unwrap_or_default();
-    let b = body.get("b").and_then(|v| v.as_str()).unwrap_or_default();
-    let equal = a == b;
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("success".to_string(), Value::Bool(equal)),
-            (
-                "message".to_string(),
-                Value::String("Input compared and saved".to_string()),
-            ),
-            ("equal".to_string(), Value::Bool(equal)),
-        ]),
-    ))))
+    input_compare_impl(&pool, &body).await
 }
 
-// STUB: input_cover - input processing utility, no DB table mapping
 #[axum::debug_handler]
 #[allow(non_snake_case)]
 pub async fn input_cover(
     pool: Extension<Pool>,
     body: axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let _ = pool;
-    let value = body
-        .get("value")
-        .and_then(|v| v.as_str())
-        .unwrap_or_default();
-    let covered = !value.is_empty();
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("success".to_string(), Value::Bool(covered)),
-            (
-                "message".to_string(),
-                Value::String("Input covered".to_string()),
-            ),
-            ("covered".to_string(), Value::Bool(covered)),
-        ]),
-    ))))
+    input_cover_impl(&pool, &body).await
 }
 
-// STUB: input_cover_mockputtopost - input processing utility, no DB table mapping
 #[axum::debug_handler]
 #[allow(non_snake_case)]
 pub async fn input_cover_mockputtopost(
     pool: Extension<Pool>,
     body: axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let _ = pool;
-    let value = body
-        .get("value")
-        .and_then(|v| v.as_str())
-        .unwrap_or_default();
-    let covered = !value.is_empty();
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("success".to_string(), Value::Bool(covered)),
-            (
-                "message".to_string(),
-                Value::String("Input covered and saved".to_string()),
-            ),
-            ("covered".to_string(), Value::Bool(covered)),
-        ]),
-    ))))
+    input_cover_impl(&pool, &body).await
 }
 
-// STUB: input_create - input processing utility, no DB table mapping
 #[axum::debug_handler]
 #[allow(non_snake_case)]
 pub async fn input_create(
     pool: Extension<Pool>,
     body: axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let _ = pool;
-    let value = body
-        .get("value")
-        .and_then(|v| v.as_str())
-        .unwrap_or_default();
-    let saved = !value.is_empty();
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("saved".to_string(), Value::Bool(saved)),
-            (
-                "message".to_string(),
-                Value::String("Input created".to_string()),
-            ),
-        ]),
-    ))))
+    input_create_impl(&pool, &body).await
 }
 
-// STUB: input_create_mockputtopost - input processing utility, no DB table mapping
 #[axum::debug_handler]
 #[allow(non_snake_case)]
 pub async fn input_create_mockputtopost(
     pool: Extension<Pool>,
     body: axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let _ = pool;
-    let value = body
-        .get("value")
-        .and_then(|v| v.as_str())
-        .unwrap_or_default();
-    let saved = !value.is_empty();
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("saved".to_string(), Value::Bool(saved)),
-            (
-                "message".to_string(),
-                Value::String("Input created and saved".to_string()),
-            ),
-        ]),
-    ))))
+    input_create_impl(&pool, &body).await
 }
 
-// STUB: input_prepare_cover - input processing utility, no DB table mapping
 #[axum::debug_handler]
 #[allow(non_snake_case)]
 pub async fn input_prepare_cover(
-    pool: Extension<Pool>,
     body: axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let _ = pool;
-    let value = body
-        .get("value")
-        .and_then(|v| v.as_str())
-        .unwrap_or_default();
-    let prepared = !value.is_empty();
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("success".to_string(), Value::Bool(prepared)),
-            (
-                "message".to_string(),
-                Value::String("Cover prepared".to_string()),
-            ),
-        ]),
-    ))))
+    let _ = body;
+    input_prepare_impl().await
 }
 
-// STUB: input_prepare_cover_mockputtopost - input processing utility, no DB table mapping
 #[axum::debug_handler]
 #[allow(non_snake_case)]
 pub async fn input_prepare_cover_mockputtopost(
-    pool: Extension<Pool>,
     body: axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let _ = pool;
-    let value = body
-        .get("value")
-        .and_then(|v| v.as_str())
-        .unwrap_or_default();
-    let prepared = !value.is_empty();
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("success".to_string(), Value::Bool(prepared)),
-            (
-                "message".to_string(),
-                Value::String("Cover prepared and saved".to_string()),
-            ),
-        ]),
-    ))))
+    let _ = body;
+    input_prepare_impl().await
 }
 
-// STUB: input_prepare_create - input processing utility, no DB table mapping
 #[axum::debug_handler]
 #[allow(non_snake_case)]
 pub async fn input_prepare_create(
-    pool: Extension<Pool>,
     body: axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let _ = pool;
-    let value = body
-        .get("value")
-        .and_then(|v| v.as_str())
-        .unwrap_or_default();
-    let prepared = !value.is_empty();
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("saved".to_string(), Value::Bool(prepared)),
-            (
-                "message".to_string(),
-                Value::String("Create prepared".to_string()),
-            ),
-        ]),
-    ))))
+    let _ = body;
+    input_prepare_impl().await
 }
 
-// STUB: input_prepare_create_mockputtopost - input processing utility, no DB table mapping
 #[axum::debug_handler]
 #[allow(non_snake_case)]
 pub async fn input_prepare_create_mockputtopost(
-    pool: Extension<Pool>,
     body: axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let _ = pool;
-    let value = body
-        .get("value")
-        .and_then(|v| v.as_str())
-        .unwrap_or_default();
-    let saved = !value.is_empty();
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("saved".to_string(), Value::Bool(saved)),
-            (
-                "message".to_string(),
-                Value::String("Create prepared and saved".to_string()),
-            ),
-        ]),
-    ))))
+    let _ = body;
+    input_prepare_impl().await
 }
 
 // ─── document_id_view_count ─────────────────────────────────────────────────
