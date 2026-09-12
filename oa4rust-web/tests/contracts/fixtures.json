@@ -1,0 +1,102 @@
+{
+  "activities": {
+    "schemaVersion": 1,
+    "edition": {
+      "code": "s3-contract-v1",
+      "name": "S3 Contract V1",
+      "number": 1,
+      "enabled": true,
+      "description": "S3 designer-to-engine contract"
+    },
+    "activities": [
+      {
+        "id": "begin-1",
+        "activityType": "begin",
+        "name": "开始",
+        "routeList": ["route-1"],
+        "taskIdentityList": [],
+        "edition": "s3-contract-v1"
+      },
+      {
+        "id": "manual-1",
+        "activityType": "manual",
+        "name": "审批",
+        "routeList": ["route-2"],
+        "taskIdentityList": ["manager@example"],
+        "edition": "s3-contract-v1"
+      },
+      {
+        "id": "end-1",
+        "activityType": "end",
+        "name": "结束",
+        "routeList": [],
+        "taskIdentityList": [],
+        "edition": "s3-contract-v1"
+      }
+    ],
+    "routes": [
+      {
+        "id": "route-1",
+        "from": "begin-1",
+        "to": "manual-1",
+        "name": "提交",
+        "waypoints": [{ "x": 160, "y": 80 }],
+        "edition": "s3-contract-v1"
+      },
+      {
+        "id": "route-2",
+        "from": "manual-1",
+        "to": "end-1",
+        "name": "通过",
+        "waypoints": [{ "x": 360, "y": 80 }],
+        "edition": "s3-contract-v1"
+      }
+    ],
+    "fieldPermissions": [
+      {
+        "field": "reason",
+        "activity": "manual-1",
+        "readable": true,
+        "writable": true,
+        "required": true,
+        "hidden": false
+      }
+    ]
+  },
+  "moduleList": {
+    "id": "s3-form-pc",
+    "name": "S3 申请表",
+    "type": "Form",
+    "mode": "PC",
+    "moduleList": {
+      "reason": {
+        "id": "reason",
+        "type": "textarea",
+        "label": "申请原因",
+        "key": "reason",
+        "required": true
+      }
+    },
+    "fieldList": {
+      "reason": "reason"
+    }
+  },
+  "query": {
+    "name": "S3 Contract Query",
+    "category": "contract",
+    "query": "SELECT 1 AS contract_value"
+  },
+  "portal": {
+    "name": "S3 Contract Portal",
+    "category": "contract",
+    "content": {
+      "flag": "s3-contract-portal",
+      "layout": [
+        {
+          "type": "row",
+          "widgets": [{ "type": "text", "text": "S3 contract portal" }]
+        }
+      ]
+    }
+  }
+}
