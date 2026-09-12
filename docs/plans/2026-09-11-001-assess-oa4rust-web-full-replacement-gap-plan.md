@@ -3,7 +3,7 @@ title: "assess: oa4rust + oa4rust-web 能否完全替代 oa/o2server + oa/o2web 
 type: assessment-and-plan
 status: active
 date: 2026-09-11
-rev: 7   # v7：§十 收尾清单；index 已 git reset --mixed 自愈；form 用例待 host cargo 坐实
+rev: 8   # v8：§9.5 W6 闭合落地（15→4，余项归 W7）；§十收尾清单全部勾销
 module: oa4rust + oa4rust-web vs oa/o2server + oa/o2web
 tags: [replacement-parity, gap-analysis, backend, frontend, designer-engine-contract, form-runtime, greenfield-cutover, seeded-behavior-compare, canary-dogfood]
 problem_type: capability-parity-audit
@@ -282,17 +282,41 @@ W6 后端路由 ─┼─► W3 ProcessDesigner 契约 ─► W4 Form 运行时 
 - **静默影子误路由（6，含 form）**：process `process/list`、`process/export`；query `table/list`；portal `page/list`、`script/list`；**form `GET /form/list`（命中 `form/{id}`，真列表是 `form/list/all`）**。
 - form CRUD 三件套（`GET/PUT form/{id}`、`POST form`）**实测路径存在**，但 §3.2 P0-3 的 **schema 写 `{schema}` 而非 `moduleList` 仍是不闭合根因**（route 匹配 ≠ 功能可替代）。
 
-**证据强度分层（fail loud）**：process/query/portal 的 22 条**已于 rev5 用 oneshot 实跑并全绿**（HEAD `ab25b16b`）；form 5 条**本轮加入同一测试但尚未执行**——当前 Linux 沙箱无 Rust 工具链、仅有上轮的旧 Windows `.exe`，无法重跑。其分类由 `cms_assemble_control/src/routes.rs:400-630` **逐字路由表推导**（与 rev5 完全吻合的静态法），`cargo test --test designer_route_match`（Windows/host）跑一次即固化。
+**证据强度分层（fail loud）**：process/query/portal 的 22 条**已于 rev5 用 oneshot 实跑并全绿**（HEAD `ab25b16b`）；form 5 条~~本轮加入同一测试但尚未执行~~ **已于 rev7 在 host 实跑坐实**（`cargo test --test designer_route_match` 全绿，form 5 条实测码与推导一致：`GET/PUT/POST form` 500/`POST form/submit` 405）。其分类由 `cms_assemble_control/src/routes.rs:400-630` **逐字路由表推导**（与 rev5 完全吻合的静态法）。
+
+### 9.5 rev7 追记（2026-09-12，W6 闭合落地）
+
+**form 用例坐实**：host 实跑全绿，§9.4 form 行判定无需推翻。
+
+**W6 闭合结果**：原 15 条不闭合已闭合 **11 条**，仅剩 4 条（+1 条新增记录）全部来自 **portal 两个 W13 壳视图**（`PortalPageDesignerApp`/`PortalScriptDesignerApp`，属 W7 范畴）：
+
+| 原档位 | 条目 | 闭合方式 |
+|---|---|---|
+| 404 | process `POST /process` | 前端改名 → `POST /create`（8c027ef0） |
+| 404 | query `GET /list` | 前端改名 → `GET /list/all` |
+| 404 | query `POST /execute` | **后端补缺**：`designer_execute`（sqlparser 仅单条 SELECT + LIMIT 500，同 statement/table 执行链） |
+| 405 | query `PUT /update/{id}` | 前端改名 → `PUT /save/{id}`（后端已有 PUT 变体） |
+| 405 | query `POST /stat/do` | **后端补缺**：`stat_do`（stat→query_flag→table_flag→table_data 按 dimension 分组/metric 求和） |
+| 405 | portal `POST /script/run` | 调用点消失（PortalDesigner 重写为拖拽版，不再调用） |
+| 405 | form `POST /submit` | **后端补缺**：`form_submit`（按 formId 校验 definition 必填项，不落库；前端 formFlag→formId） |
+| 影子 | process `process/list` | 前端改名 → `GET /list/all` |
+| 影子 | process `process/export` | 前端改名 → `GET /get/{id}`（新栈存储 x_process_definition，lead_out 读 parity 旧表 PP_E_PROCESS 不适用） |
+| 影子 | query `table/list` | 前端改名 → `GET /table/list/manage` |
+| 影子 | form `form/list` | 前端改名 → `GET /form/list/all`、`/list/app/{appId}` |
+| 404 | portal `POST /script` | **未闭合**（壳视图 W7） |
+| 405 | portal `PUT /script/{id}` | **未闭合**（壳视图 W7） |
+| 405 | portal `DELETE /script/{id}`（新增记录：壳 delete 调用） | **未闭合**（壳视图 W7） |
+| 影子 | portal `page/list`、`script/list` | **未闭合**（壳视图 W7） |
+
+**测试期望已更新为目标态**（§十第 3 项）：`designer_route_match.rs` 现按**当前前端调用面**固化——process/query/form 三域全部 `Matched` 附真实语义；portal 保留壳视图的 4 条旧档 case 并标注 W7 待闭合。该测试已纳入根 CI 的无 DB `check` 作业（§十第 2 项），作为设计器路由死链/影子回归门。
 
 ---
 
 ## 十、收尾清单（本会话遗留，按序勾）
 
 - [x] **git index 自愈**：因上一轮 `git add` 后被超时杀掉的 `git commit` 曾遗留 `.git/index` 与 HEAD 不一致，已于 lock 释放后执行 `git reset --mixed HEAD`（HEAD=`237f5cc9`）对齐；`git status` 对 3 个交付文件恢复干净。**已完成。**
-- [ ] **form 用例坐实**（需 Windows/host 有 Rust）：`cd oa4rust && cargo test --test designer_route_match -- --nocapture`。
-  - 全绿 → 把 §9.4 "form 依 route-table 推导" 措辞升级为"已 oneshot 实测"，并把证据强度分层段的"form 尚未执行"划掉。
-  - 若某 form case 失败 → 以打印的真实 HTTP 码回写 §9.4 对应判定（可能推翻 `POST /form/submit=405` 或 `GET /form/list=静默影子` 的推导）。
-- [ ] **纳入 CI**（可选）：`designer_route_match` 属无 DB 的可编译测试，宜加入与 `92d09e1f` 同侧的 CI 作业，作为设计器路由"死链/影子误路由"回归门。
-- [ ] **随 W6 推进更新期望**：每闭合一条，把该 case 的 `Expect` 改为目标态（通常 `Matched`）并附真实语义，同步 §9.4 计数（15 → 递减）。
+- [x] **form 用例坐实**（rev7 于 host 完成）：`cd oa4rust && cargo test --test designer_route_match -- --nocapture` 全绿，form 5 条实测码与 route-table 推导一致（`GET/PUT/POST form`=500、`POST /form/submit`=405→W6 补缺后=415 Matched），§9.4 措辞已升级为"已实测"。
+- [x] **纳入 CI**：`designer_route_match` 已加入根 CI 无 DB 的 `check` 作业（`cargo test --test designer_route_match`），作为设计器路由死链/影子误路由回归门。
+- [x] **随 W6 推进更新期望**：rev7 将测试 case 更新为当前前端调用面——11 条闭合转 `Matched` 并附真实语义，剩余 4 条 portal 壳视图 case 标注 W7 待闭合，§9.5 计数同步（15 → 4）。
 
 > **环境备忘（供后续自动化）**：本沙箱以 uid 1001 挂载 root 所有的 `.git`，被超时杀的 `git commit` 会遗留 root 持有的 `index.lock` 且进程在沙箱 PID namespace 外存活，导致 `rm` 返回 `EIO`、普通 `git commit` 报 "index.lock exists"。规避：`GIT_INDEX_FILE=/tmp/... git read-tree/update-index/write-tree` + `commit-tree` + `update-ref` 绕过默认锁（本轮 rev6 三个提交即此法落地）；lock 随卡死进程退出后自愈，再 `git reset --mixed HEAD` 对账。

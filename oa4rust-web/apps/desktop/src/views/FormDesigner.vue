@@ -1256,7 +1256,7 @@ function validatePreview(): boolean {
 async function submitPreview() {
   if (!validatePreview()) return
   try {
-    await api.post('/jaxrs/form/submit', { formFlag: currentForm.value.flag, data: previewData.value })
+    await api.post('/jaxrs/form/submit', { formId: currentForm.value.id, data: previewData.value })
     toast.info('提交成功')
     previewData.value = {}
     previewErrors.value = {}

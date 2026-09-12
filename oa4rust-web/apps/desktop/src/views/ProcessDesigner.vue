@@ -11816,7 +11816,7 @@ function dbgStepClass(status: string): Record<string, boolean> {
 async function exportProcess() {
   if (!selectedProcess.value?.id) return
   try {
-    const r = await api.get('/jaxrs/processplatform/assemble/designer/process/export?id=' + selectedProcess.value.id)
+    const r = await api.get(`/jaxrs/processplatform/assemble/designer/get/${selectedProcess.value.id}`)
     const blob = new Blob([JSON.stringify(r.data, null, 2)], { type: 'application/json' })
     const a = document.createElement('a')
     a.href = URL.createObjectURL(blob)

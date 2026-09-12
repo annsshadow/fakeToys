@@ -490,6 +490,7 @@ pub fn router(pool: deadpool_postgres::Pool) -> axum::Router {
         .route("/jaxrs/fileinfo/copy/to/doc/{docId}", post(fileinfo_u2_copy_to_doc))
         .route("/jaxrs/fileinfo/replace/to/doc/{docId}", post(fileinfo_u2_replace_to_doc))
         .route("/jaxrs/form", post(form_u2_create))
+        .route("/jaxrs/form/submit", post(crate::form_submit))
         .route("/jaxrs/form/{id}", put(form_u2_update))
         .route("/jaxrs/form/{id}", delete(form_u2_delete))
         .route("/jaxrs/script", post(script_u2_create))

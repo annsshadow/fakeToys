@@ -8277,6 +8277,88 @@ pub async fn form_u2_create(
     Ok(Json(ActionResult::success(form_row_to_json(&row)?)))
 }
 
+/// POST /jaxrs/form/submit
+///
+/// W6 ③ 后端补缺：表单预览提交的落地校验。按 formId 加载 definition，
+/// 对 moduleList 中 required 模块做必填校验并返回逐字段错误；只校验不落库，
+/// 真实业务提交走文档 form_id 契约（W4）。
+#[allow(non_snake_case)]
+pub async fn form_submit(
+    pool: Extension<Pool>,
+    body: axum::extract::Json<Value>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let form_id = body
+        .get("formId")
+        .or_else(|| body.get("formFlag"))
+        .and_then(Value::as_str)
+        .unwrap_or_default()
+        .to_string();
+    if form_id.trim().is_empty() {
+        return Err(AppError::BadRequest("formId is required".to_string()));
+    }
+    let data = match body.get("data") {
+        Some(data) if data.is_object() => data,
+        _ => {
+            return Err(AppError::BadRequest(
+                "data must be a JSON object".to_string(),
+            ))
+        }
+    };
+
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let row = client
+        .query_opt(
+            "SELECT definition FROM x_cms_form WHERE id = $1 AND deleted_at IS NULL",
+            &[&form_id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?
+        .ok_or_else(|| AppError::BadRequest("form not found".to_string()))?;
+    let definition = FormDefinition::from_db(row.get("definition"))?;
+
+    let mut errors = serde_json::Map::new();
+    if let Some(modules) = definition.0.get("moduleList").and_then(Value::as_object) {
+        for (module_id, module) in modules {
+            let required = module
+                .get("required")
+                .and_then(Value::as_bool)
+                .unwrap_or(false)
+                || module
+                    .get("validation")
+                    .and_then(|validation| validation.get("required"))
+                    .and_then(Value::as_bool)
+                    .unwrap_or(false);
+            if !required {
+                continue;
+            }
+            // 数据键与前端 xform 契约一致：name 优先，其次 key，最后模块 id
+            let key = module
+                .get("name")
+                .and_then(Value::as_str)
+                .or_else(|| module.get("key").and_then(Value::as_str))
+                .unwrap_or(module_id);
+            let missing = match data.get(key) {
+                None | Some(Value::Null) => true,
+                Some(Value::String(text)) => text.is_empty(),
+                Some(Value::Array(items)) => items.is_empty(),
+                _ => false,
+            };
+            if missing {
+                let label = module.get("label").and_then(Value::as_str).unwrap_or(key);
+                errors.insert(key.to_string(), Value::String(format!("{label} 为必填项")));
+            }
+        }
+    }
+
+    let valid = errors.is_empty();
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("valid".to_string(), Value::Bool(valid)),
+            ("errors".to_string(), Value::Object(errors)),
+        ]),
+    ))))
+}
+
 #[axum::debug_handler]
 #[allow(non_snake_case)]
 pub async fn form_u2_update(

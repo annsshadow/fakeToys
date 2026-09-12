@@ -916,7 +916,7 @@ const { data: stmts } = useQuery({
   queryFn: async () => {
     loading.value = true
     try {
-      const r: any = await api.get('/jaxrs/query/assemble/designer/list')
+      const r: any = await api.get('/jaxrs/query/assemble/designer/list/all')
       return r?.data ?? []
     } finally {
       loading.value = false
@@ -977,7 +977,7 @@ function editStatement(s: Stmt) {
 const saveM = useMutation({
   mutationFn: async (data: any) => {
     if (editing.value && currentStatement.value?.id)
-      return api.put(`/jaxrs/query/assemble/designer/update/${currentStatement.value!.id}`, data)
+      return api.put(`/jaxrs/query/assemble/designer/save/${currentStatement.value!.id}`, data)
     return api.post('/jaxrs/query/assemble/designer/create', data)
   },
   onSuccess: () => {
@@ -1187,7 +1187,7 @@ function toggleFav(s: Stmt | null) {
 
 async function loadSchema() {
   try {
-    const r: any = await api.get('/jaxrs/query/assemble/designer/table/list')
+    const r: any = await api.get('/jaxrs/query/assemble/designer/table/list/manage')
     allTables.value = (r?.data ?? []).map((t: any) => ({ name: t.tableFlag || t.name, rowCount: t.rowCount }))
   } catch {
     allTables.value = [
