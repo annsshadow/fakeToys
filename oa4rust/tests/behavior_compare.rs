@@ -214,7 +214,26 @@ async fn behavior_compare_rust_vs_java() {
             .await
         {
             Some(rust_token) => {
-                eprintln!("[behavior_compare] Rust login successful, token acquired");
+                eprintln!(
+                    "[behavior_compare] Rust login successful, token acquired (prefix={}, len={})",
+                    &rust_token[..rust_token.len().min(8)],
+                    rust_token.len()
+                );
+                // 调试：立即自测一个受保护端点，验证 token 是否被中间件接受
+                match reqwest::Client::new()
+                    .get(&format!(
+                        "{RUST_BASE_URL}/jaxrs/calendar_assemble_control/setting/list/all"
+                    ))
+                    .header("Authorization", format!("Bearer {rust_token}"))
+                    .send()
+                    .await
+                {
+                    Ok(resp) => eprintln!(
+                        "[behavior_compare] self-test protected GET -> {}",
+                        resp.status()
+                    ),
+                    Err(e) => eprintln!("[behavior_compare] self-test failed: {e}"),
+                }
                 // Java 侧依次尝试：对比账户 → O2OA v9 内置管理员 xadmin
                 // （密码为 /jaxrs/secret/set 初始化的密钥，CI 同款 o2oa@2022）。
                 // Java 登录失败时其保护端点返回带 prompt 的错误信封，与 Rust
