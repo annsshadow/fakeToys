@@ -26,6 +26,26 @@ fn is_upload_endpoint(path: &str) -> bool {
         .any(|pattern| path.contains(pattern))
 }
 
+/// 对比过程中会销毁对比会话自身的登出端点。
+///
+/// sweep 一旦执行 `DELETE /jaxrs/authentication` 等登出动作，当前 Bearer
+/// 会话即被删除，其后全部受保护请求 401（实测一次运行产生 ~2000 条假
+/// FAIL/SKIP）。与上传类端点同理整类 SKIP；登出语义由 auth crate 单测覆盖。
+fn is_session_destructive_endpoint(method: &str, path: &str) -> bool {
+    let logout_paths = [
+        "/jaxrs/authentication/logout",
+        "/jaxrs/authentication/safe/logout",
+        "/jaxrs/organization/assemble/authentication/authentication/safe/logout",
+        "/jaxrs/organization/assemble/authentication/authentication/mockdeletetoget",
+        "/jaxrs/authentication/switchuser",
+        "/jaxrs/organization/assemble/authentication/authentication/switchuser",
+        "/jaxrs/bbs/assemble/control/logout",
+    ];
+    logout_paths.iter().any(|p| path.contains(p))
+        || (method.eq_ignore_ascii_case("DELETE")
+            && (path.ends_with("/authentication") || path.ends_with("/adminlogin")))
+}
+
 /// Result of comparing a single endpoint.
 #[derive(Debug, Clone)]
 pub struct ComparisonResult {
@@ -180,6 +200,11 @@ impl EndpointComparator {
     }
 
     /// POST one candidate login URL and extract data.token from the response.
+    ///
+    /// 2026-09-10 加固后 Rust 登录不再返回 body token，改为 Set-Cookie
+    /// （`oa4rust_session=<token>`，HttpOnly）。因此先扫 Set-Cookie 提取会话
+    /// 值（后续经 `Authorization: Bearer` 发送，中间件兼容），再回退 data.token
+    /// （Java 侧路径）。
     async fn try_login(&self, url: &str, body: &serde_json::Value) -> Option<String> {
         let resp = self
             .client
@@ -193,6 +218,21 @@ impl EndpointComparator {
         if !resp.status().is_success() {
             return None;
         }
+        for cookie in resp.headers().get_all(reqwest::header::SET_COOKIE) {
+            let Ok(value) = cookie.to_str() else {
+                continue;
+            };
+            for part in value.split(';') {
+                if let Some((name, val)) = part.trim().split_once('=') {
+                    if name.trim() == shared::middleware::token::SESSION_COOKIE_NAME {
+                        let token = val.trim().trim_matches('"');
+                        if !token.is_empty() {
+                            return Some(token.to_string());
+                        }
+                    }
+                }
+            }
+        }
         let json: serde_json::Value = resp.json().await.ok()?;
         json.get("data")
             .and_then(|d| d.get("token"))
@@ -205,6 +245,27 @@ impl EndpointComparator {
         // java_war 为空 = 清单生成时未找到 Java 对应端点（Rust 扩展或伪影），
         // 直接 SKIP 不发请求；否则 O2OA 对未知路径挂起会导致每条 15s 超时。
         if def.java_war.is_empty() {
+            return ComparisonResult {
+                endpoint: def.rust_path.to_string(),
+                method: def.method.to_string(),
+                crate_name: def.crate_name.to_string(),
+                rust_status: None,
+                java_status: None,
+                rust_response: None,
+                java_response: None,
+                is_equivalent: true,
+                differences: vec![],
+                status: ComparisonStatus::Skip,
+            };
+        }
+        // 登出类端点跳过：执行即销毁对比会话，其后 ~2000 条受保护请求全部
+        // 401（实测）。必须在实际发请求之前整类排除；登出语义由 auth
+        // crate 的单元测试覆盖。
+        if is_session_destructive_endpoint(def.method, def.rust_path) {
+            eprintln!(
+                "[behavior_compare] SKIP session-destructive: {} {}",
+                def.method, def.rust_path
+            );
             return ComparisonResult {
                 endpoint: def.rust_path.to_string(),
                 method: def.method.to_string(),

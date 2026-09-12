@@ -1,0 +1,208 @@
+# category	field_a	field_b	freq	example_endpoints
+# type: rename_pair
+rename_pair	data.message	data.id	12	POST /jaxrs/input/compare/mockputtopost ; POST /jaxrs/input/cover/mockputtopost ; POST /jaxrs/input/create/mockputtopost
+rename_pair	data.success	data.id	8	POST /jaxrs/input/compare/mockputtopost ; POST /jaxrs/input/cover/mockputtopost ; PUT /jaxrs/input/compare
+rename_pair	data.value	data.id	6	DELETE /jaxrs/person/custom/{name} ; DELETE /jaxrs/person/definition/{name} ; GET /jaxrs/ai_assemble_control/chat/delete/{clueId}
+rename_pair	data.success	data.value	4	DELETE /jaxrs/recycle/empty ; POST /jaxrs/message/assemble/communicate/instant/currentperson/consumed/mockputtopost
+rename_pair	data.deleted	data.id	4	DELETE /jaxrs/appinfo/erase/app/{id} ; GET /jaxrs/appinfo/erase/app/{id}/mockdeletetoget
+rename_pair	data.deleted	prompt	4	DELETE /jaxrs/appinfo/erase/app/{id} ; GET /jaxrs/appinfo/erase/app/{id}/mockdeletetoget
+rename_pair	data.message	data.exist	4	POST /jaxrs/input/compare/mockputtopost ; PUT /jaxrs/input/compare
+rename_pair	data.success	data.exist	4	POST /jaxrs/input/compare/mockputtopost ; PUT /jaxrs/input/compare
+rename_pair	data.saved	data.id	4	POST /jaxrs/input/create/mockputtopost ; PUT /jaxrs/input/create
+rename_pair	data.count	prompt	4	POST /jaxrs/viewrecord/unread/mockputtopost ; PUT /jaxrs/viewrecord/unread
+rename_pair	data.id	data.indexCentered	2	GET /jaxrs/program_center/appstyle/current/style
+rename_pair	data.id	data.nativeAppList	2	GET /jaxrs/program_center/appstyle/current/style
+rename_pair	data.id	data.promotionPageScript	2	GET /jaxrs/program_center/appstyle/current/style
+rename_pair	data.id	data.indexType	2	GET /jaxrs/program_center/appstyle/current/style
+rename_pair	data.id	data.systemMessageSwitch	2	GET /jaxrs/program_center/appstyle/current/style
+rename_pair	data.id	data.contactPermissionView	2	GET /jaxrs/program_center/appstyle/current/style
+rename_pair	data.id	data.systemMessageCanClick	2	GET /jaxrs/program_center/appstyle/current/style
+rename_pair	data.id	data.speechScript	2	GET /jaxrs/program_center/appstyle/current/style
+rename_pair	data.id	data.simpleMode	2	GET /jaxrs/program_center/appstyle/current/style
+rename_pair	data.id	data.appIndexPages	2	GET /jaxrs/program_center/appstyle/current/style
+rename_pair	data.id	data.indexPortal	2	GET /jaxrs/program_center/appstyle/current/style
+rename_pair	data.id	data.appExitAlert	2	GET /jaxrs/program_center/appstyle/current/style
+rename_pair	data.id	data.images	2	GET /jaxrs/program_center/appstyle/current/style
+rename_pair	data.id	data.needGray	2	GET /jaxrs/program_center/appstyle/current/style
+rename_pair	data.count	data.x_processplatform_assemble_bam	2	GET /jaxrs/program_center/distribute/assemble/source/{source}
+rename_pair	data.count	data.x_file_assemble_control	2	GET /jaxrs/program_center/distribute/assemble/source/{source}
+rename_pair	data.count	data.x_processplatform_assemble_designer	2	GET /jaxrs/program_center/distribute/assemble/source/{source}
+rename_pair	data.count	data.x_processplatform_service_processing	2	GET /jaxrs/program_center/distribute/assemble/source/{source}
+rename_pair	data.count	data.x_query_assemble_designer	2	GET /jaxrs/program_center/distribute/assemble/source/{source}
+rename_pair	data.count	data.x_ai_assemble_control	2	GET /jaxrs/program_center/distribute/assemble/source/{source}
+rename_pair	data.count	data.x_query_service_processing	2	GET /jaxrs/program_center/distribute/assemble/source/{source}
+rename_pair	data.count	data.x_portal_assemble_designer	2	GET /jaxrs/program_center/distribute/assemble/source/{source}
+rename_pair	data.count	data.x_processplatform_assemble_surface	2	GET /jaxrs/program_center/distribute/assemble/source/{source}
+rename_pair	data.count	data.x_component_assemble_control	2	GET /jaxrs/program_center/distribute/assemble/source/{source}
+rename_pair	data.count	data.x_calendar_assemble_control	2	GET /jaxrs/program_center/distribute/assemble/source/{source}
+rename_pair	data.count	data.x_attendance_assemble_control	2	GET /jaxrs/program_center/distribute/assemble/source/{source}
+rename_pair	data.count	data.x_portal_assemble_surface	2	GET /jaxrs/program_center/distribute/assemble/source/{source}
+rename_pair	data.count	data.x_bbs_assemble_control	2	GET /jaxrs/program_center/distribute/assemble/source/{source}
+rename_pair	data.count	data.x_query_assemble_surface	2	GET /jaxrs/program_center/distribute/assemble/source/{source}
+rename_pair	data.count	data.x_organization_assemble_authentication	2	GET /jaxrs/program_center/distribute/assemble/source/{source}
+rename_pair	data.count	data.x_message_assemble_communicate	2	GET /jaxrs/program_center/distribute/assemble/source/{source}
+rename_pair	data.count	data.x_general_assemble_control	2	GET /jaxrs/program_center/distribute/assemble/source/{source}
+rename_pair	data.count	data.x_hotpic_assemble_control	2	GET /jaxrs/program_center/distribute/assemble/source/{source}
+rename_pair	data.count	data.x_jpush_assemble_control	2	GET /jaxrs/program_center/distribute/assemble/source/{source}
+rename_pair	data.count	data.x_organization_assemble_express	2	GET /jaxrs/program_center/distribute/assemble/source/{source}
+rename_pair	data.count	data.x_meeting_assemble_control	2	GET /jaxrs/program_center/distribute/assemble/source/{source}
+rename_pair	data.count	data.x_mind_assemble_control	2	GET /jaxrs/program_center/distribute/assemble/source/{source}
+rename_pair	data.count	data.x_cms_assemble_control	2	GET /jaxrs/program_center/distribute/assemble/source/{source}
+rename_pair	data.count	data.x_organization_assemble_control	2	GET /jaxrs/program_center/distribute/assemble/source/{source}
+rename_pair	data.count	data.x_organization_assemble_personal	2	GET /jaxrs/program_center/distribute/assemble/source/{source}
+rename_pair	data.count	data.x_correlation_service_processing	2	GET /jaxrs/program_center/distribute/assemble/source/{source}
+rename_pair	data.count	data.assembles	2	GET /jaxrs/program_center/distribute/webserver/assemble/source/{source}
+rename_pair	data.count	data.mockConfig	2	GET /jaxrs/program_center/distribute/webserver/assemble/source/{source}
+rename_pair	data.count	data.tokenName	2	GET /jaxrs/program_center/distribute/webserver/assemble/source/{source}
+rename_pair	data.count	data.standalone	2	GET /jaxrs/program_center/distribute/webserver/assemble/source/{source}
+rename_pair	data.count	data.webServer	2	GET /jaxrs/program_center/distribute/webserver/assemble/source/{source}
+rename_pair	data.count	data.value	2	GET /jaxrs/processplatform/assemble/designer/process/upgrade/all
+rename_pair	data.deleted	data.value	2	GET /jaxrs/ai_assemble_control/chat/delete/{clueId}
+rename_pair	data.status	data.name	2	GET /jaxrs/authentication/bind/meta/{meta}
+rename_pair	data.status	data.id	2	GET /jaxrs/authentication/bind/meta/{meta}
+rename_pair	data.status	data.tokenType	2	GET /jaxrs/authentication/bind/meta/{meta}
+rename_pair	data[0].id	data[0].appType	2	GET /jaxrs/appinfo/list/appType
+rename_pair	data[0].id	data[0].count	2	GET /jaxrs/appinfo/list/appType
+rename_pair	data.count	data.successTotal	2	GET /jaxrs/document/batch/{id}/status
+rename_pair	data.count	data.dataTotal	2	GET /jaxrs/document/batch/{id}/status
+rename_pair	data.count	data.errorTotal	2	GET /jaxrs/document/batch/{id}/status
+rename_pair	data.count	data.processTotal	2	GET /jaxrs/document/batch/{id}/status
+rename_pair	data.count	data.fieldNames	2	GET /jaxrs/document/document/fields
+rename_pair	data[0].status	data[0].properties	2	GET /jaxrs/form/list/all
+rename_pair	data[0].status	data[0].editor	2	GET /jaxrs/form/list/all
+rename_pair	data[0].status	data[0].updateTime	2	GET /jaxrs/form/list/all
+rename_pair	data.count	data.task	2	GET /jaxrs/processplatform/assemble/surface/work/count/{credential}
+rename_pair	data.count	data.review	2	GET /jaxrs/processplatform/assemble/surface/work/count/{credential}
+rename_pair	data.count	data.read	2	GET /jaxrs/processplatform/assemble/surface/work/count/{credential}
+rename_pair	data.count	data.taskCompleted	2	GET /jaxrs/processplatform/assemble/surface/work/count/{credential}
+rename_pair	data.count	data.readCompleted	2	GET /jaxrs/processplatform/assemble/surface/work/count/{credential}
+rename_pair	data.deleted	data.allowList	2	GET /jaxrs/component/assemble/control/status/list
+rename_pair	data.saved	data.value	2	POST /jaxrs/message/assemble/communicate/consume/type/{type}/mockputtopost
+# type: single_missing_java
+single_missing_java	data.count		18	GET /jaxrs/portal/assemble/designer/templatepage/list ; GET /jaxrs/program_center/distribute/assemble/source/{source} ; GET /jaxrs/program_center/distribute/webserver/assemble/source/{source}
+single_missing_java	data.success		14	GET /jaxrs/queryview/table/reload/dynamic ; DELETE /jaxrs/recycle/empty ; POST /jaxrs/input/compare/mockputtopost
+single_missing_java	data.message		12	POST /jaxrs/input/compare/mockputtopost ; POST /jaxrs/input/cover/mockputtopost ; POST /jaxrs/input/create/mockputtopost
+single_missing_java	data.value		8	DELETE /jaxrs/person/custom/{name} ; DELETE /jaxrs/person/definition/{name} ; GET /jaxrs/person/custom/{name}/mockdeletetoget
+single_missing_java	data.deleted		8	GET /jaxrs/ai_assemble_control/chat/delete/{clueId} ; DELETE /jaxrs/appinfo/erase/app/{id} ; GET /jaxrs/appinfo/erase/app/{id}/mockdeletetoget
+single_missing_java	data.saved		6	POST /jaxrs/input/create/mockputtopost ; PUT /jaxrs/input/create ; POST /jaxrs/message/assemble/communicate/consume/type/{type}/mockputtopost
+single_missing_java	data.id		4	GET /jaxrs/program_center/appstyle/current/style ; GET /jaxrs/ai_assemble_control/chat/delete/{clueId}
+single_missing_java	data.status		4	GET /jaxrs/authentication/bind ; GET /jaxrs/authentication/bind/meta/{meta}
+single_missing_java	data[0].id		2	GET /jaxrs/appinfo/list/appType
+single_missing_java	data[0].status		2	GET /jaxrs/form/list/all
+# type: single_missing_rust
+single_missing_rust		data.value	28	GET /jaxrs/calendar_assemble_control/calendar/follow/{id} ; GET /jaxrs/calendar_assemble_control/calendar/follow/{id}/cancel ; DELETE /jaxrs/recycle/empty
+single_missing_rust		data.id	28	DELETE /jaxrs/person/custom/{name} ; DELETE /jaxrs/person/definition/{name} ; GET /jaxrs/attendance/assemble/control/statisticshow/unit/sum/{name}/{year}/{month}
+single_missing_rust		prompt	14	GET /jaxrs/bbs/subject/top/{sectionId} ; GET /jaxrs/calendar_assemble_control/calendar/follow/{id} ; GET /jaxrs/calendar_assemble_control/calendar/ismanager/calendar/{id}
+single_missing_rust		data	12	GET /jaxrs/calendar_assemble_control/event/rfc/{id} ; PUT /jaxrs/mind/assemble/control/folder/move/{folderId} ; GET /jaxrs/appinfo/{id}/control
+single_missing_rust		data[0].updateTime	4	PUT /jaxrs/calendar_assemble_control/calendar/list/filter ; GET /jaxrs/form/list/all
+single_missing_rust		data.promotionPageScript	4	GET /jaxrs/program/appstyle/current/style ; GET /jaxrs/program_center/appstyle/current/style
+single_missing_rust		data.contactPermissionView	4	GET /jaxrs/program/appstyle/current/style ; GET /jaxrs/program_center/appstyle/current/style
+single_missing_rust		data.systemMessageSwitch	4	GET /jaxrs/program/appstyle/current/style ; GET /jaxrs/program_center/appstyle/current/style
+single_missing_rust		data.needGray	4	GET /jaxrs/program/appstyle/current/style ; GET /jaxrs/program_center/appstyle/current/style
+single_missing_rust		data.systemMessageCanClick	4	GET /jaxrs/program/appstyle/current/style ; GET /jaxrs/program_center/appstyle/current/style
+single_missing_rust		data.speechScript	4	GET /jaxrs/program/appstyle/current/style ; GET /jaxrs/program_center/appstyle/current/style
+single_missing_rust		data.appExitAlert	4	GET /jaxrs/program/appstyle/current/style ; GET /jaxrs/program_center/appstyle/current/style
+single_missing_rust		data.images	4	GET /jaxrs/program/appstyle/current/style ; GET /jaxrs/program_center/appstyle/current/style
+single_missing_rust		data.simpleMode	4	GET /jaxrs/program/appstyle/current/style ; GET /jaxrs/program_center/appstyle/current/style
+single_missing_rust		data.indexCentered	4	GET /jaxrs/program/appstyle/current/style ; GET /jaxrs/program_center/appstyle/current/style
+single_missing_rust		data.appIndexPages	4	GET /jaxrs/program/appstyle/current/style ; GET /jaxrs/program_center/appstyle/current/style
+single_missing_rust		data.nativeAppList	4	GET /jaxrs/program/appstyle/current/style ; GET /jaxrs/program_center/appstyle/current/style
+single_missing_rust		data.内部	4	GET /jaxrs/general/assemble/control/securityclearance/object ; GET /jaxrs/general/assemble/control/securityclearance/subject
+single_missing_rust		data.docCount	4	POST /jaxrs/document/filter/count/mockputtopost ; PUT /jaxrs/document/filter/count
+single_missing_rust		data.exist	4	POST /jaxrs/input/compare/mockputtopost ; PUT /jaxrs/input/compare
+single_missing_rust		data[0].sequence	2	PUT /jaxrs/calendar_assemble_control/calendar/list/filter
+single_missing_rust		data[0].createTime	2	PUT /jaxrs/calendar_assemble_control/calendar/list/filter
+single_missing_rust		data[0].publishablePersonList	2	PUT /jaxrs/calendar_assemble_control/calendar/list/filter
+single_missing_rust		data[0].manageable	2	PUT /jaxrs/calendar_assemble_control/calendar/list/filter
+single_missing_rust		data[0].viewablePersonList	2	PUT /jaxrs/calendar_assemble_control/calendar/list/filter
+single_missing_rust		data[0].source	2	PUT /jaxrs/calendar_assemble_control/calendar/list/filter
+single_missing_rust		data[0].manageablePersonList	2	PUT /jaxrs/calendar_assemble_control/calendar/list/filter
+single_missing_rust		data[0].publishable	2	PUT /jaxrs/calendar_assemble_control/calendar/list/filter
+single_missing_rust		data.distinguishedName	2	POST /jaxrs/person/detail/{flag}
+single_missing_rust		data.indexType	2	GET /jaxrs/program_center/appstyle/current/style
+single_missing_rust		data.indexPortal	2	GET /jaxrs/program_center/appstyle/current/style
+single_missing_rust		data.date	2	GET /jaxrs/program_center/authentication
+single_missing_rust		data.data	2	GET /jaxrs/program_center/authentication
+single_missing_rust		data.spent	2	GET /jaxrs/program_center/authentication
+single_missing_rust		data.position	2	GET /jaxrs/program_center/authentication
+single_missing_rust		data.type	2	GET /jaxrs/program_center/authentication
+single_missing_rust		data.size	2	GET /jaxrs/program_center/authentication
+single_missing_rust		data.count	2	GET /jaxrs/program_center/authentication
+single_missing_rust		data.message	2	GET /jaxrs/program_center/authentication
+single_missing_rust		data.x_processplatform_assemble_bam	2	GET /jaxrs/program_center/distribute/assemble/source/{source}
+single_missing_rust		data.x_file_assemble_control	2	GET /jaxrs/program_center/distribute/assemble/source/{source}
+single_missing_rust		data.x_processplatform_assemble_designer	2	GET /jaxrs/program_center/distribute/assemble/source/{source}
+single_missing_rust		data.x_processplatform_service_processing	2	GET /jaxrs/program_center/distribute/assemble/source/{source}
+single_missing_rust		data.x_query_assemble_designer	2	GET /jaxrs/program_center/distribute/assemble/source/{source}
+single_missing_rust		data.x_ai_assemble_control	2	GET /jaxrs/program_center/distribute/assemble/source/{source}
+single_missing_rust		data.x_query_service_processing	2	GET /jaxrs/program_center/distribute/assemble/source/{source}
+single_missing_rust		data.x_portal_assemble_designer	2	GET /jaxrs/program_center/distribute/assemble/source/{source}
+single_missing_rust		data.x_processplatform_assemble_surface	2	GET /jaxrs/program_center/distribute/assemble/source/{source}
+single_missing_rust		data.x_component_assemble_control	2	GET /jaxrs/program_center/distribute/assemble/source/{source}
+single_missing_rust		data.x_calendar_assemble_control	2	GET /jaxrs/program_center/distribute/assemble/source/{source}
+single_missing_rust		data.x_attendance_assemble_control	2	GET /jaxrs/program_center/distribute/assemble/source/{source}
+single_missing_rust		data.x_portal_assemble_surface	2	GET /jaxrs/program_center/distribute/assemble/source/{source}
+single_missing_rust		data.x_bbs_assemble_control	2	GET /jaxrs/program_center/distribute/assemble/source/{source}
+single_missing_rust		data.x_query_assemble_surface	2	GET /jaxrs/program_center/distribute/assemble/source/{source}
+single_missing_rust		data.x_organization_assemble_authentication	2	GET /jaxrs/program_center/distribute/assemble/source/{source}
+single_missing_rust		data.x_message_assemble_communicate	2	GET /jaxrs/program_center/distribute/assemble/source/{source}
+single_missing_rust		data.x_general_assemble_control	2	GET /jaxrs/program_center/distribute/assemble/source/{source}
+single_missing_rust		data.x_hotpic_assemble_control	2	GET /jaxrs/program_center/distribute/assemble/source/{source}
+single_missing_rust		data.x_jpush_assemble_control	2	GET /jaxrs/program_center/distribute/assemble/source/{source}
+single_missing_rust		data.x_organization_assemble_express	2	GET /jaxrs/program_center/distribute/assemble/source/{source}
+single_missing_rust		data.x_meeting_assemble_control	2	GET /jaxrs/program_center/distribute/assemble/source/{source}
+single_missing_rust		data.x_mind_assemble_control	2	GET /jaxrs/program_center/distribute/assemble/source/{source}
+single_missing_rust		data.x_cms_assemble_control	2	GET /jaxrs/program_center/distribute/assemble/source/{source}
+single_missing_rust		data.x_organization_assemble_control	2	GET /jaxrs/program_center/distribute/assemble/source/{source}
+single_missing_rust		data.x_organization_assemble_personal	2	GET /jaxrs/program_center/distribute/assemble/source/{source}
+single_missing_rust		data.x_correlation_service_processing	2	GET /jaxrs/program_center/distribute/assemble/source/{source}
+single_missing_rust		data.assembles	2	GET /jaxrs/program_center/distribute/webserver/assemble/source/{source}
+single_missing_rust		data.mockConfig	2	GET /jaxrs/program_center/distribute/webserver/assemble/source/{source}
+single_missing_rust		data.tokenName	2	GET /jaxrs/program_center/distribute/webserver/assemble/source/{source}
+single_missing_rust		data.standalone	2	GET /jaxrs/program_center/distribute/webserver/assemble/source/{source}
+single_missing_rust		data.webServer	2	GET /jaxrs/program_center/distribute/webserver/assemble/source/{source}
+single_missing_rust		data.非密	2	GET /jaxrs/general/assemble/control/securityclearance/object
+single_missing_rust		data.义务	2	GET /jaxrs/general/assemble/control/securityclearance/subject
+single_missing_rust		data.重要	2	GET /jaxrs/general/assemble/control/securityclearance/subject
+single_missing_rust		data.一般	2	GET /jaxrs/general/assemble/control/securityclearance/subject
+single_missing_rust		data.myCalendars	2	GET /jaxrs/calendar/calendar/list/my
+single_missing_rust		data.appIconUrl	2	GET /jaxrs/ai_assemble_control/config/base/config
+single_missing_rust		data.desc	2	GET /jaxrs/ai_assemble_control/config/base/config
+single_missing_rust		data.title	2	GET /jaxrs/ai_assemble_control/config/base/config
+single_missing_rust		data.appName	2	GET /jaxrs/ai_assemble_control/config/base/config
+single_missing_rust		data.o2AiEnable	2	GET /jaxrs/ai_assemble_control/config/base/config
+single_missing_rust		data.onSelfHolidayCount	2	GET /jaxrs/attendance/assemble/control/statisticshow/unit/sum/{name}/{year}/{month}
+single_missing_rust		data.offDutyCount	2	GET /jaxrs/attendance/assemble/control/statisticshow/unit/sum/{name}/{year}/{month}
+single_missing_rust		data.leaveEarlyCount	2	GET /jaxrs/attendance/assemble/control/statisticshow/unit/sum/{name}/{year}/{month}
+single_missing_rust		data.absenceDayCount	2	GET /jaxrs/attendance/assemble/control/statisticshow/unit/sum/{name}/{year}/{month}
+single_missing_rust		data.employeeCount	2	GET /jaxrs/attendance/assemble/control/statisticshow/unit/sum/{name}/{year}/{month}
+single_missing_rust		data.lateCount	2	GET /jaxrs/attendance/assemble/control/statisticshow/unit/sum/{name}/{year}/{month}
+single_missing_rust		data.abNormalDutyCount	2	GET /jaxrs/attendance/assemble/control/statisticshow/unit/sum/{name}/{year}/{month}
+single_missing_rust		data.lackOfTimeCount	2	GET /jaxrs/attendance/assemble/control/statisticshow/unit/sum/{name}/{year}/{month}
+single_missing_rust		data.onDutyCount	2	GET /jaxrs/attendance/assemble/control/statisticshow/unit/sum/{name}/{year}/{month}
+single_missing_rust		data.onDutyEmployeeCount	2	GET /jaxrs/attendance/assemble/control/statisticshow/unit/sum/{name}/{year}/{month}
+single_missing_rust		data.offDutyFastCheckInEnable	2	GET /jaxrs/attendance/assemble/control/v2/config/person
+single_missing_rust		data.offDutyFastCheckInEnd	2	GET /jaxrs/attendance/assemble/control/v2/config/person
+single_missing_rust		data.offDutyFastCheckInBegin	2	GET /jaxrs/attendance/assemble/control/v2/config/person
+single_missing_rust		data.onDutyFastCheckInEnd	2	GET /jaxrs/attendance/assemble/control/v2/config/person
+single_missing_rust		data.onDutyFastCheckInEnable	2	GET /jaxrs/attendance/assemble/control/v2/config/person
+single_missing_rust		data.onDutyFastCheckInBegin	2	GET /jaxrs/attendance/assemble/control/v2/config/person
+single_missing_rust		data.cannotCheckInReason	2	GET /jaxrs/attendance/assemble/control/v2/mobile/check/pre
+single_missing_rust		data.name	2	GET /jaxrs/authentication/bind/meta/{meta}
+single_missing_rust		data.tokenType	2	GET /jaxrs/authentication/bind/meta/{meta}
+single_missing_rust		data[0].appType	2	GET /jaxrs/appinfo/list/appType
+single_missing_rust		data[0].count	2	GET /jaxrs/appinfo/list/appType
+single_missing_rust		data.successTotal	2	GET /jaxrs/document/batch/{id}/status
+single_missing_rust		data.dataTotal	2	GET /jaxrs/document/batch/{id}/status
+single_missing_rust		data.errorTotal	2	GET /jaxrs/document/batch/{id}/status
+single_missing_rust		data.processTotal	2	GET /jaxrs/document/batch/{id}/status
+single_missing_rust		data.fieldNames	2	GET /jaxrs/document/document/fields
+single_missing_rust		data[0].properties	2	GET /jaxrs/form/list/all
+single_missing_rust		data[0].editor	2	GET /jaxrs/form/list/all
+single_missing_rust		data.task	2	GET /jaxrs/processplatform/assemble/surface/work/count/{credential}
+single_missing_rust		data.review	2	GET /jaxrs/processplatform/assemble/surface/work/count/{credential}
+single_missing_rust		data.read	2	GET /jaxrs/processplatform/assemble/surface/work/count/{credential}
+single_missing_rust		data.taskCompleted	2	GET /jaxrs/processplatform/assemble/surface/work/count/{credential}
+single_missing_rust		data.readCompleted	2	GET /jaxrs/processplatform/assemble/surface/work/count/{credential}
+single_missing_rust		data.allowList	2	GET /jaxrs/component/assemble/control/status/list
+# type: type_differs
