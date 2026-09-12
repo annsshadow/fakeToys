@@ -147,6 +147,7 @@ Minder 无画布编辑器（仅列表）；`service_AgentDesigner`/`ServiceManag
 - **W6（A2｜设计器路由闭合，验收即 `tests/designer_route_match.rs` 转绿到"目标态"）**：实测对账已固化为该测试。三类动作按危险度排序——① **先消 5 条静默档**：收窄 `process/{id}`、`table/{flag}`、`page/{id}`、`script/{id}` 宽路由（给字面量段 `list/export` 设专用路由或提优先级），否则"列表页"拿到"单资源"错数据仍 200；② 前端改名命中既有：process 新建 `POST /designer/process`→`/create`（实测 `/create` 匹配）、query 保存 `PUT /update/{id}`→`POST /save/{id}`；③ 后端补缺：query 裸 `list`/`execute`、portal 裸 `POST /script`（实测 404）。每闭合一条，把测试对应 case 从当前实测档改为 `Matched` 并附真实语义 → CI 死链回归（对齐 `92d09e1f` behavior gate）。
 - **W7（A6｜3×ScriptDesigner + service 域）**：`Process/Cms/PortalScriptDesignerApp`（现各 172 行空壳）复用已引入 CodeMirror 落真实编辑器 + XScript 补全 + 版本历史；service 域脚本设计器视图当前缺失，按需补或书面排除。
 - **W8（A6｜Selector 共享组件）**：`packages/ui` 建组织/人员/身份选择器，接入 W3/W4/W5。**（先决：无它则负责人/权限无法闭环。）**
+  - **rev8 落地**：`OrganizationSelector.vue`（person/identity 搜索实调 `/jaxrs/organization/assemble/control`）已接入 **W3 ProcessDesigner 节点"负责人"**（与 `assignee` CSV 双向映射，写入 `taskIdentityList`）——负责人闭环点即此；W4/W5 无身份选择语义（审批人由流程定义决定），无需接入。
 - **W9（A6｜Portal & Query 设计器）**：Portal 拖拽布局 + 模块类型 + widget 设计器；QueryTable 列编辑/建表、QueryView 可视化过滤排序分页/simulate/bundle。
 - **W10（A6｜IMChat 富媒体）**：图片/文件/语音/视频/位置/链接卡片、引用/撤回/合并转发/收藏/拖拽上传；传输走既有 WebSocket，不承诺 XMPP 全协议（对齐 R6）。
 - **W11（A6｜API 层质量）**：修 `packages/apis` 中 11 处未插值路径参数字面量（`:id`/`:model`/`:page` 等，见 §3.3）为正确模板插值、补齐只读壳为真实调用。
