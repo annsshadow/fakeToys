@@ -66,8 +66,8 @@ fn classify(code: u16) -> Expect {
 #[tokio::test]
 async fn designer_route_reconciliation() {
     // (method, path, 实测期望分类, 前端意图)
-    // W6 闭合后（2026-09-12）：前端真实调用点已全部改打真实路由或由 u2 闭合路由承接；
-    // 仍留 Absent/Method/影子 的 case 均来自 W13 仍封锁的壳视图（portal script 族，W7 闭合）。
+    // W6+W7 闭合后（2026-09-12）：前端真实调用点已全部改打真实路由或由 u2 闭合路由承接；
+    // 仍留影子的 case 仅剩 portal 页设计器壳（page/list，W13 待闭合）。
     let cases: Vec<(Method, String, Expect, &str)> = vec![
         // ── Process designer（ProcessDesigner.vue 当前调用面：create/save/get/list 全真实路由）──
         (
@@ -138,7 +138,8 @@ async fn designer_route_reconciliation() {
             Expect::Matched,
             "3 参数匹配 → 真匹配",
         ),
-        // ── Portal designer（新版 PortalDesigner 走 /list /create /get/{id} /save/{id}；壳视图仍打 page/script 旧族）──
+        // ── Portal designer（新版 PortalDesigner 走 /list /create /get/{id} /save/{id}；
+        //    脚本设计器 W7 已实装：u2 写路径 + list/manager；page/list 影子仍来自页壳 W13）──
         (
             Method::GET,
             t_("/list"),
@@ -167,13 +168,31 @@ async fn designer_route_reconciliation() {
             Method::GET,
             t_("/page/list"),
             Expect::Matched,
-            "PortalPageDesignerApp 壳裸 page/list → 影子（W7/W13 待闭合）",
+            "PortalPageDesignerApp 壳裸 page/list → 影子（W13 待闭合）",
         ),
         (
-            Method::GET,
-            t_("/script/list"),
+            Method::POST,
+            t_("/script/list/manager"),
             Expect::Matched,
-            "PortalScriptDesignerApp 壳裸 script/list → 影子（W7/W13 待闭合）",
+            "W7 脚本设计器列表（前端弃裸 script/list 影子）",
+        ),
+        (
+            Method::POST,
+            t_("/script"),
+            Expect::Matched,
+            "W7 脚本设计器新建（u2_script::create + v1 版本快照）",
+        ),
+        (
+            Method::PUT,
+            t_("/script/abc"),
+            Expect::Matched,
+            "W7 脚本设计器保存（u2_script::update + 版本快照）",
+        ),
+        (
+            Method::DELETE,
+            t_("/script/abc"),
+            Expect::Matched,
+            "W7 脚本设计器删除（u2_script::delete 软删）",
         ),
         (
             Method::PUT,
@@ -193,23 +212,24 @@ async fn designer_route_reconciliation() {
             Expect::Matched,
             "DELETE page/{id} → 真匹配",
         ),
+        // ── Process script designer（W7：PP_E_SCRIPT u2 写路径）──
+        (
+            Method::POST,
+            p("/script"),
+            Expect::Matched,
+            "W7 流程脚本新建（u2_script::create + v1 版本快照）",
+        ),
         (
             Method::PUT,
-            t_("/script/abc"),
-            Expect::Method,
-            "壳 PUT script/{id} 后端仅 GET → 405（W7 待闭合）",
+            p("/script/abc"),
+            Expect::Matched,
+            "W7 流程脚本保存（u2_script::update + 版本快照）",
         ),
         (
             Method::DELETE,
-            t_("/script/abc"),
-            Expect::Method,
-            "壳 DELETE script/{id} → 405（W7 待闭合）",
-        ),
-        (
-            Method::POST,
-            t_("/script"),
-            Expect::Absent,
-            "壳裸 POST script → 404（W7 待闭合）",
+            p("/script/abc"),
+            Expect::Matched,
+            "W7 流程脚本删除（u2_script::delete 软删）",
         ),
         // ── Form designer (FormDesigner.vue, base /jaxrs/form, served by cms_assemble_control) ──
         (

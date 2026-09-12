@@ -140,3 +140,44 @@ DELETE /x_organization_assemble_control/jaxrs/unit/{unitId}      ← 共 2 个
 - 重新初始化 o2server 容器后重跑探测矩阵
 - 补充 category/forum 的 Java 侧创建路径验证
 - 验证 meeting 的 flag 解析链（仅认 UUID 主键的实体标记为"不可种"）
+
+## 7. 流程/表单域双侧种子（S1，2026-09-12；与 oa4rust/migrations/091 对应）
+
+目标：让 workflow 域行为比对"两侧命中同一批资源"。Java 侧创建同名实体
+（`seed-approval-flow` 流程 + `seed-leave-form` 表单），Rust 侧由迁移 091 upsert。
+流程定义 JSON 必须与 oa4rust-web `contracts/process-definition.ts`
+serializeProcessDefinition 输出同形（activities/routes/字段级列表/fieldPermissions）。
+
+### 7.1 创建流程（x_processplatform_assemble_designer）
+
+```http
+POST /x_processplatform_assemble_designer/jaxrs/process
+x-token: <token>
+Content-Type: application/json
+
+{"name":"seed-approval-flow","alias":"seedApprovalFlow","description":"S1 双侧种子：直线审批流程","category":"seed"}
+```
+
+创建成功后取 `data.id`，再 `PUT /x_processplatform_assemble_designer/jaxrs/process/{id}`
+写入完整 definition（activities/routes JSON，体与迁移 091 中
+`seed-approval-flow` 的 `process_definition` 字段一致，此处不重复贴出）。
+
+### 7.2 创建表单（x_cms_assemble_control）
+
+```http
+POST /x_cms_assemble_control/jaxrs/form
+x-token: <token>
+Content-Type: application/json
+
+{"name":"seed-leave-form","appId":"<seed-app 的 Java 侧 id>"}
+```
+
+随后 `PUT /jaxrs/form/{id}` 写入 moduleList 定义（与迁移 091 中
+`seed-leave-form` 的 definition 一致：module-days/module-reason 必填、
+module-comment 可选）。
+
+### 7.3 幂等与清理
+
+- Java 设计器创建类调用非幂等：重放 500（ExceptionDuplicateName）即"已就位"。
+- 清理：`DELETE /x_processplatform_assemble_designer/jaxrs/process/{id}`、
+  `DELETE /x_cms_assemble_control/jaxrs/form/{id}`。

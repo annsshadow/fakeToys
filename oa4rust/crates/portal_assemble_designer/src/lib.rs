@@ -16,6 +16,7 @@ use shared::{
 };
 
 pub mod routes;
+pub mod u2_script;
 
 #[derive(Debug, Deserialize)]
 pub struct CreatePortalRequest {
@@ -524,7 +525,13 @@ pub fn portal_assemble_designer_router() -> Router {
         )
         .route(
             "/jaxrs/portal/assemble/designer/script/{id}",
-            get(crate::script_id),
+            get(crate::script_id)
+                .put(crate::u2_script::update)
+                .delete(crate::u2_script::delete),
+        )
+        .route(
+            "/jaxrs/portal/assemble/designer/script",
+            post(crate::u2_script::create),
         )
         .route(
             "/jaxrs/portal/assemble/designer/script/list/paging/{page}/{size}/{size}",
@@ -2112,7 +2119,7 @@ pub async fn scriptversion_list_script_scriptId(
 
     let rows = client
         .query(
-            "SELECT id, script_id, version, creator, create_time FROM x_portal_script_version WHERE script_id = $1 ORDER BY create_time DESC",
+            "SELECT id, script_id, version, content, creator, create_time FROM x_portal_script_version WHERE script_id = $1 ORDER BY create_time DESC",
             &[&script_id],
         )
         .await
@@ -2125,6 +2132,10 @@ pub async fn scriptversion_list_script_scriptId(
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("scriptId".to_string(), Value::String(row.get("script_id"))),
                 ("version".to_string(), Value::String(row.get("version"))),
+                (
+                    "content".to_string(),
+                    option_to_json(row.get::<_, Option<String>>("content")).unwrap_or(Value::Null),
+                ),
                 ("creator".to_string(), Value::String(row.get("creator"))),
                 (
                     "createTime".to_string(),
