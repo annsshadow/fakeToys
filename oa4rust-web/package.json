@@ -15,11 +15,14 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:contracts": "vitest run tests/contracts",
+    "test:e2e": "playwright test",
+    "test:e2e:list": "playwright test --list",
     "gen-api": "tsx scripts/gen-api.ts",
     "lint:check": "biome check --diagnostic-level=error ."
   },
   "devDependencies": {
     "@biomejs/biome": "2.5.11",
+    "@playwright/test": "1.62.1",
     "@tanstack/vue-query": "^5.80.0",
     "@types/node": "^24.0.0",
     "@unocss/vite": "^66.0.0",
