@@ -3,7 +3,8 @@ title: "assess: oa4rust + oa4rust-web 能否完全替代 oa/o2server + oa/o2web 
 type: assessment-and-plan
 status: active
 date: 2026-09-11
-rev: 8   # v8：§9.5 W6 闭合落地（15→4，余项归 W7）；§十收尾清单全部勾销
+rev: 9   # v9：S2 闭合——双侧全播种基线 157-158 FAIL，fail_baseline=170；W12 backlog 量化（聚类清单入库）
+module: oa4rust + oa4rust-web vs oa/o2server + oa/o2web
 module: oa4rust + oa4rust-web vs oa/o2server + oa/o2web
 tags: [replacement-parity, gap-analysis, backend, frontend, designer-engine-contract, form-runtime, greenfield-cutover, seeded-behavior-compare, canary-dogfood]
 problem_type: capability-parity-audit
@@ -133,6 +134,7 @@ Minder 无画布编辑器（仅列表）；`service_AgentDesigner`/`ServiceManag
 - **S1（A2｜双侧匹配种子）**：扩 `tests/behavior_comparison/seeds/` + `seed_fixtures.sql`/`.java.http.md`，使组织/人员/内容/流程/查询域**两侧命中同一批资源**；重点补 **`056` 真实 O2OA activities 流程种子 + 一份 form 定义种子**（当前 `'{}'` 使 workflow 行为比对失效）。目标：把"业务状态不对称"型 FAIL 从"数据缺失假象"转成"可判定的真语义差异"。
   - **rev8 进展**：`migrations/091_seed_real_process_definition.sql` 已 upsert 真实 activities 流程种子（`seed-approval-flow`：begin→manual→end + routes + fieldPermissions，形状 = 前端 serializeProcessDefinition 契约）与 Xform 表单种子（`seed-leave-form` moduleList，两个必填字段）；Java 侧对应创建序列已补入 `seed_fixtures_java.http.md §7`。双侧实跑比对仍需 o2server 参考容器（外部依赖）。
 - **S2（A2/A5｜启用 CI 行为门槛）**：跑一次稳定双侧全种子绿色基线，把 `fail_baseline` 从 `bootstrap` 固化为整数、`BEHAVIOR_COMPARE_MAX_FAILS` 设为该值，CI 增"仅回归（observed>baseline）失败"。→ 替代 R1 成为可自动执行的放行闸门。
+  - **rev9 闭合（2026-09-13）**：全新双侧容器（o2server v9.5.2 + postgres）双侧全播种（Java 经 `scripts/seed_java.py --init --process-form`：init+testadmin+组织域+§7 流程/表单；Rust 经自动迁移+seed_fixtures.sql）。观测 **157 FAIL / 1856 PASS / 2029 SKIP**（N1）与 **158/1855/2029**（N2），跨全新环境 ±1 稳定。`fail_baseline` 固化为 **170**（观测 +8% 环境余量），gate 语义实测（165 过 / 175 拦）。CI behavior-compare 作业增加 Java 播种步骤，与本地口径一致。comparator 修复：登出/切换用户族端点在发请求前整类 SKIP（原实现中它们会销毁对比会话，毒化其后 ~2000 条请求，且旧版 SKIP 标志在请求后计算形同虚设）；Rust 登录改为从 Set-Cookie 提取会话（09-10 加固后登录不再返回 body token）。
 - **S3（A6｜闭环冒烟脚手架）**：建 E2E（如 Playwright + 测试账户）与"设计器→保存→执行"契约测试（pin `activities`/`moduleList`/query/portal JSON schema），作为前端闭环的自动化验收。
 - **S4（A1｜金丝雀/试用替代影子流量）**：无生产镜像流量，改为在小范围 pilot 上**只用新栈产生真实使用数据**，以错误率/接口 5xx 预算 + 抽样人工走查替代"影子比对"，观察期后放大。
 
@@ -163,7 +165,7 @@ Minder 无画布编辑器（仅列表）；`service_AgentDesigner`/`ServiceManag
 | 项 | 状态 | 证据 |
 |---|---|---|
 | S1 双侧种子 | ✅ 代码/文档落地 | 迁移 091（seed-approval-flow activities + seed-leave-form moduleList，已施真库验证）+ seed_fixtures_java.http.md §7；双侧实跑待 o2server 容器 |
-| S2 CI 行为门槛 | ✅ 机件就绪 / ⏳ 基线固化 | CI behavior-gate 读 fail_baseline（bootstrap→记录模式）；整数固化需双侧稳定跑（外部） |
+| S2 CI 行为门槛 | ✅ 闭合（rev9） | 全新双侧容器全播种观测 157-158 FAIL（跨环境 ±1）；fail_baseline=170（gate 实测 165 过/175 拦）；CI 增加 Java 播种步骤 |
 | S3 闭环脚手架 | ✅ | contracts/* 契约测试 + e2e（designer-roundtrip×4 + workflow-runtime，--list 5/5）；实跑需双栈环境 |
 | S4 金丝雀 | ✅ 离线门禁 | scripts/pilot_gate.py + tests/test_pilot_gate.py 4/4 + pilot-gate workflow；真实试点流量待部署 |
 | W3 ProcessDesigner | ✅ | serializeProcessDefinition（15 类 activity/字段权限/edition/waypoints），__fakeProcesses 消除 |
@@ -175,7 +177,7 @@ Minder 无画布编辑器（仅列表）；`service_AgentDesigner`/`ServiceManag
 | W9 Portal & Query | ✅ | PortalDesigner 拖拽版 / QueryTable 类型化列+受限 DDL / QueryView 过滤排序分页 simulate/bundle |
 | W10 IMChat 富媒体 | ✅ | multipart 上传 + 二进制下载 + client_message 规范化；realtime 10/10、communicate 102/102 |
 | W11 API 层质量 | ✅ | 路径参数 encodeURIComponent + 命名占位符消除（4b31fa2d） |
-| W12 深语义收敛 | ⏳ | 依赖 S2 双侧跑与富种子实跑（外部）；基础设施已备 |
+| W12 深语义收敛 | ▶ 进行中（backlog 已量化） | S2 双侧基线闭环；158 FAIL 分解：117 个 200\|200 字段/信封差 + 16 个 200\|405 + 12 个 200\|500 + 余为安全偏离；聚类清单 docs/audits/behavior-diff-clusters-2026-09-13.md（78 改名对/54 Rust 缺字段），以 gate 观测值下降为度量持续推进 |
 | W13 空壳裁决 | ✅ 44/47 实装外 | manifest 47 项（1 implemented + 2 out_of_scope + 44 still_blocked）+ 机器一致守卫；3 脚本设计器本轮转实装移出 |
 | W14 长尾视图 | ✅ 裁决 | Minder 画布实装（47cc0702）；余项 manifest 书面裁决 |
 

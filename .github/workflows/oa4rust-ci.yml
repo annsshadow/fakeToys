@@ -236,11 +236,19 @@ jobs:
             echo "::warning::o2server not ready within timeout; behavior comparison will SKIP Java side"
           fi
 
+      # ── S1/S2: Java 侧全量播种（计划 rev8）─────────────────────────────────
+      # 双侧同种子（组织域 + testadmin + §7 流程/表单）使基线与本地双栈
+      # 全播种环境同口径；创建类调用非幂等，重放 500 即"已就位"。
+      - name: Set up Python
+        uses: actions/setup-python@d27e1f650de8b400cb8bacdaae01440cf6283964
+        with:
+          python-version: "3.x"
+      - name: Seed Java side (full-seed dual-stack baseline)
+        run: python scripts/seed_java.py --process-form
+
       # ── U1: 应用 Rust 侧共享种子 ───────────────────────────────────────────
       # 种子覆盖组织域（unit/person/group/role/identity）与内容域（CMS/BBS/Meeting），
       # 使字面模板 URL 在 Rust 侧命中已建资源。fail-fast：种子失败即终止 job。
-      # 注意：CI 不执行 Java 侧 REST 种子（编排成本高且不稳定），
-      # FAIL 基线预计高于本地双栈全播种环境，属预期偏差。
       - name: Apply behavior-compare seed fixtures
         run: |
           psql "postgres://o2server:password@localhost:5432/oa4rust" \
@@ -297,7 +305,7 @@ jobs:
       - name: Print baseline note
         if: always()
         run: |
-          echo "::notice::CI baseline: Rust-side seeds applied only. Full local run includes Java-side REST seeds (xadmin login + category/forum creation). FAIL count in CI will be higher than local full-seed baseline (1212 PASS / 836 FAIL / 1996 SKIP)."
+          echo "::notice::CI baseline (plan S2, 2026-09-13): dual-stack full-seed — Java seeded via scripts/seed_java.py, Rust via migrations + seed_fixtures.sql. Reference run: 157 FAIL / 1856 PASS / 2029 SKIP; gate baseline 170 (fail_baseline)."
 
       - name: Teardown
         if: always()

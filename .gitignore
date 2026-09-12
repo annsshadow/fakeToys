@@ -79,3 +79,4 @@ scripts/cleanup_*.js
 # Environment secrets
 oa4rust/.env
 oa4rust/scripts/.token
+scripts/.java-seed-ids.json

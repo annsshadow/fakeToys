@@ -380,7 +380,13 @@ impl SessionManager {
 
         match session {
             Some(s) if s.expires_at > Utc::now().naive_utc() => Some(s),
-            Some(_) => {
+            Some(s) => {
+                tracing::debug!(
+                    token_prefix = %&token[..token.len().min(8)],
+                    in_memory_expires_at = %s.expires_at,
+                    now = %Utc::now().naive_utc(),
+                    "session validation: in-memory session expired"
+                );
                 self.remove_session(token).await;
                 None
             }
