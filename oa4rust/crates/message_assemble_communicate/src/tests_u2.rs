@@ -12,9 +12,10 @@
 mod u2_tests {
     use crate::{
         instant_currentperson_consumed_put, mass_create, mass_id_mockdeletetoget, mass_target_list,
-        router as message_router, ws_count_person,
+        parse_im_message, router as message_router, sanitize_filename, ws_count_person,
+        MAX_IM_FILE_SIZE,
     };
-    use axum::body::Body;
+    use axum::body::{to_bytes, Body};
     use axum::http::{Request, StatusCode};
     use axum::Json;
     use serde_json::json;
@@ -269,16 +270,73 @@ mod u2_tests {
 
     #[tokio::test]
     async fn u2_upload_path_normalized_reachable() {
-        // 归一化前路径段是字面量 {\"conversationId\"}；现在为正常参数段，
-        // 真实 URL /upload/<id>/type/<type> 必须命中 handler
-        let status = status_of_json(
-            "POST",
-            "/jaxrs/message/assemble/communicate/im/msg/upload/conv-1/type/image",
-            json!({"fileUrl": "http://x/f.png", "fileName": "f.png"}).to_string(),
-        )
-        .await;
-        assert_eq!(status, StatusCode::INTERNAL_SERVER_ERROR);
+        // IM 富媒体必须使用真实 multipart；JSON 元数据不能冒充文件上传。
+        let boundary = "im-upload-test";
+        let body = format!(
+            "--{boundary}\r\nContent-Disposition: form-data; name=\"fileName\"\r\n\r\nf.png\r\n--{boundary}\r\nContent-Disposition: form-data; name=\"file\"; filename=\"f.png\"\r\nContent-Type: image/png\r\n\r\nPNG\r\n--{boundary}--\r\n"
+        );
+        let app = message_router(mock_pool()).layer(axum::Extension(test_session()));
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/message/assemble/communicate/im/msg/upload/conv-1/type/image")
+                    .method("POST")
+                    .header(
+                        "content-type",
+                        format!("multipart/form-data; boundary={boundary}"),
+                    )
+                    .body(Body::from(body))
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_eq!(response.status(), StatusCode::INTERNAL_SERVER_ERROR);
     }
+
+    #[test]
+    fn w10_im_message_parser_preserves_body_quote_and_file_reference() {
+        let parsed = parse_im_message(&json!({
+            "conversationId": "conv-1",
+            "body": "{\"type\":\"image\",\"fileId\":\"file-1\"}",
+            "quoteMessageId": "msg-0"
+        }))
+        .expect("valid rich message");
+        assert_eq!(parsed.conversation_id, "conv-1");
+        assert_eq!(parsed.body_file_id.as_deref(), Some("file-1"));
+        assert_eq!(parsed.quote_message_id.as_deref(), Some("msg-0"));
+        assert_eq!(parsed.msg_type, "image");
+    }
+
+    #[test]
+    fn w10_im_message_parser_rejects_invalid_or_empty_payloads() {
+        assert!(parse_im_message(&json!({"body": "{}"})).is_err());
+        assert!(parse_im_message(&json!({"conversationId": "conv-1", "body": "not-json"})).is_err());
+        assert!(parse_im_message(&json!({"conversationId": "conv-1", "body": "{}"})).is_err());
+    }
+
+    #[test]
+    fn w10_upload_limits_and_sanitizes_names() {
+        assert_eq!(sanitize_filename("../voice.webm"), "voice.webm");
+        assert_eq!(sanitize_filename("..\\video.mp4"), "video.mp4");
+        assert_eq!(MAX_IM_FILE_SIZE, 50 * 1024 * 1024);
+    }
+
+    #[tokio::test]
+    async fn w10_download_route_is_binary_not_json_metadata() {
+        let app = message_router(mock_pool()).layer(axum::Extension(test_session()));
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/message/assemble/communicate/im/msg/download/file-1")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_eq!(response.status(), StatusCode::INTERNAL_SERVER_ERROR);
+        let _ = to_bytes(response.into_body(), usize::MAX).await.unwrap();
+    }
+
 
     // ── IDOR 门禁：fail-closed 直接调用验证 ────────────────────
 
