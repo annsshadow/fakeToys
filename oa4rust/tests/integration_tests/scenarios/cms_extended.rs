@@ -377,9 +377,9 @@ pub async fn cms_extended_crud_flow() {
     assert_eq!(get_form.status(), reqwest::StatusCode::OK);
     let get_form_body: serde_json::Value = get_form.json().await.expect("bad get form");
     assert_eq!(get_form_body["data"]["id"].as_str(), Some(form_id.as_str()));
-    assert_eq!(get_form_body["data"]["app_id"].as_str(), Some("app-ext"));
+    assert_eq!(get_form_body["data"]["appId"].as_str(), Some("app-ext"));
     assert_eq!(get_form_body["data"]["name"].as_str(), Some("Feedback Form"));
-    assert_eq!(get_form_body["data"]["definition"].as_str(), Some("{\"fields\":[{\"name\":\"q1\"}]}"));
+    assert_eq!(get_form_body["data"]["definition"], json!({"fields":[{"name":"q1"}]}));
     assert_eq!(get_form_body["data"]["status"].as_str(), Some("published"));
 
     let upd_form = client

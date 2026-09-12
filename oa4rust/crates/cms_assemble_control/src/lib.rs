@@ -3,6 +3,7 @@ use axum::{extract::Extension, Json, Router};
 use base64::{engine::general_purpose::STANDARD as BASE64, Engine};
 use deadpool_postgres::tokio_postgres::types::ToSql;
 use deadpool_postgres::Pool;
+use serde::{Deserialize, Deserializer, Serialize, Serializer};
 use serde_json::Value;
 use shared::{error::AppError, response::row_to_json, response::ActionResult};
 use std::collections::HashMap;
@@ -180,6 +181,85 @@ pub fn cms_assemble_control_router(pool: Pool) -> Router {
 
 pub fn router(pool: deadpool_postgres::Pool) -> axum::Router {
     crate::cms_assemble_control_router(pool)
+}
+
+/// O2OA 表单定义以 JSON 文本落库，但 API 始终读写 JSON 对象。
+/// 自定义 Serialize/Deserialize 同时兼容旧调用方传入 JSON 字符串。
+#[derive(Debug, Clone, PartialEq)]
+struct FormDefinition(Value);
+
+impl FormDefinition {
+    fn parse(value: Value) -> Result<Self, String> {
+        fn validate_module_lists(value: &Value) -> Result<(), String> {
+            match value {
+                Value::Object(object) => {
+                    if !object
+                        .get("moduleList")
+                        .map(|modules| modules.is_object())
+                        .unwrap_or(true)
+                    {
+                        return Err("definition.moduleList must be a JSON object".to_string());
+                    }
+                    for child in object.values() {
+                        validate_module_lists(child)?;
+                    }
+                }
+                Value::Array(values) => {
+                    for child in values {
+                        validate_module_lists(child)?;
+                    }
+                }
+                _ => {}
+            }
+            Ok(())
+        }
+
+        let value = match value {
+            Value::String(raw) => serde_json::from_str(&raw)
+                .map_err(|error| format!("definition must be valid JSON: {error}"))?,
+            value => value,
+        };
+        if !value.is_object() {
+            return Err("definition must be a JSON object".to_string());
+        }
+        validate_module_lists(&value)?;
+        Ok(Self(value))
+    }
+
+    fn from_db(raw: Option<String>) -> Result<Self, AppError> {
+        match raw {
+            None => Ok(Self(Value::Object(serde_json::Map::new()))),
+            Some(raw) if raw.trim().is_empty() => Ok(Self(Value::Object(serde_json::Map::new()))),
+            Some(raw) => Self::parse(Value::String(raw))
+                .map_err(|message| AppError::BadRequest(format!("stored {message}"))),
+        }
+    }
+
+    fn to_db(&self) -> Result<String, AppError> {
+        serde_json::to_string(&self.0).map_err(|_| AppError::Internal)
+    }
+
+    fn into_value(self) -> Value {
+        self.0
+    }
+}
+
+impl Serialize for FormDefinition {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        self.0.serialize(serializer)
+    }
+}
+
+impl<'de> Deserialize<'de> for FormDefinition {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        Self::parse(Value::deserialize(deserializer)?).map_err(serde::de::Error::custom)
+    }
 }
 
 // ─── Helper: generic list handler ───────────────────────────────────────────
@@ -4509,52 +4589,252 @@ pub async fn fileinfo_id_preview_pdf(
     }
 }
 
+fn form_definition_from_body(body: &Value) -> Result<Option<FormDefinition>, AppError> {
+    body.get("definition")
+        .cloned()
+        .map(FormDefinition::parse)
+        .transpose()
+        .map_err(AppError::BadRequest)
+}
+
+fn form_row_to_json(row: &deadpool_postgres::tokio_postgres::Row) -> Result<Value, AppError> {
+    let definition = FormDefinition::from_db(
+        row.try_get::<_, Option<String>>("definition")
+            .map_err(|_| AppError::Internal)?,
+    )?;
+    let mut form = serde_json::Map::from_iter([
+        (
+            "id".to_string(),
+            Value::String(row.try_get("id").map_err(|_| AppError::Internal)?),
+        ),
+        (
+            "appId".to_string(),
+            Value::String(row.try_get("app_id").map_err(|_| AppError::Internal)?),
+        ),
+        (
+            "name".to_string(),
+            Value::String(
+                row.try_get::<_, Option<String>>("name")
+                    .map_err(|_| AppError::Internal)?
+                    .unwrap_or_default(),
+            ),
+        ),
+        ("definition".to_string(), definition.into_value()),
+        (
+            "status".to_string(),
+            Value::String(
+                row.try_get::<_, Option<String>>("status")
+                    .map_err(|_| AppError::Internal)?
+                    .unwrap_or_default(),
+            ),
+        ),
+    ]);
+    for (db_name, json_name) in [("creator", "creator"), ("create_time", "createTime")] {
+        if let Ok(Some(value)) = row.try_get::<_, Option<String>>(db_name) {
+            form.insert(json_name.to_string(), Value::String(value));
+        }
+    }
+    Ok(Value::Object(form))
+}
+
+fn form_runtime_envelope(
+    row: &deadpool_postgres::tokio_postgres::Row,
+    mobile: bool,
+) -> Result<Value, AppError> {
+    let definition = FormDefinition::from_db(
+        row.try_get::<_, Option<String>>("definition")
+            .map_err(|_| AppError::Internal)?,
+    )?;
+    let has_mobile =
+        definition.0.get("mobileData").is_some() || definition.0.get("mobile").is_some();
+    let layout = if mobile {
+        definition
+            .0
+            .get("mobileData")
+            .or_else(|| definition.0.get("mobile"))
+    } else {
+        definition
+            .0
+            .get("pcData")
+            .or_else(|| definition.0.get("desktop"))
+    }
+    .unwrap_or(&definition.0);
+    let data = serde_json::to_string(layout).map_err(|_| AppError::Internal)?;
+    let form = serde_json::json!({
+        "id": row.try_get::<_, String>("id").map_err(|_| AppError::Internal)?,
+        "appId": row.try_get::<_, String>("app_id").map_err(|_| AppError::Internal)?,
+        "name": row.try_get::<_, Option<String>>("name").map_err(|_| AppError::Internal)?.unwrap_or_default(),
+        "hasMobile": has_mobile,
+        "data": data,
+        "definition": definition,
+    });
+    Ok(serde_json::json!({
+        "form": form,
+        "relatedFormMap": {},
+        "relatedScriptMap": {},
+    }))
+}
+
+async fn form_runtime_by_id(
+    pool: &Pool,
+    id: &str,
+    mobile: bool,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let row = client
+        .query_opt(
+            "SELECT id, app_id, name, definition FROM x_cms_form \
+             WHERE id = $1 AND deleted_at IS NULL",
+            &[&id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+    match row {
+        Some(row) => Ok(Json(ActionResult::success(form_runtime_envelope(
+            &row, mobile,
+        )?))),
+        None => Ok(Json(ActionResult::error("form not found"))),
+    }
+}
+
+async fn form_runtime_by_document(
+    pool: &Pool,
+    doc_id: &str,
+    mobile: bool,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let row = client
+        .query_opt(
+            "SELECT id, app_id, name, definition FROM x_cms_form \
+             WHERE id = (SELECT form_id FROM x_cms_data_document \
+             WHERE id = $1 AND deleted_at IS NULL) AND deleted_at IS NULL",
+            &[&doc_id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+    match row {
+        Some(row) => Ok(Json(ActionResult::success(form_runtime_envelope(
+            &row, mobile,
+        )?))),
+        None => Ok(Json(ActionResult::error("form not found"))),
+    }
+}
+
 // ─── form_* / form_v2_* stubs ───────────────────────────────────────────────
+
+async fn form_filter_list(
+    pool: &Pool,
+    app_id: &str,
+    count: &str,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let limit = count.parse::<i64>().unwrap_or(20).clamp(1, 1000);
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let rows = client
+        .query(
+            "SELECT id, app_id, name, definition, status, creator, create_time::text \
+             FROM x_cms_form WHERE app_id = $1 AND deleted_at IS NULL \
+             ORDER BY create_time DESC LIMIT $2",
+            &[&app_id, &limit],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+    let forms = rows
+        .iter()
+        .map(form_row_to_json)
+        .collect::<Result<Vec<_>, _>>()?;
+    let count = forms.len() as i64;
+    Ok(Json(ActionResult::java_success(
+        Value::Array(forms),
+        count,
+        0,
+    )))
+}
 
 #[axum::debug_handler]
 #[allow(non_snake_case)]
 pub async fn form_filter_list_id_next_count_app_appId(
     pool: Extension<Pool>,
+    axum::extract::Path((_id, count, app_id)): axum::extract::Path<(String, String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    list_from_table_filtered_java(&pool, "x_cms_form", "deleted_at IS NULL", &[]).await
+    form_filter_list(&pool, &app_id, &count).await
 }
 
 #[axum::debug_handler]
 #[allow(non_snake_case)]
 pub async fn form_filter_list_id_next_count_app_appId_mockputtopost(
     pool: Extension<Pool>,
+    axum::extract::Path((_id, count, app_id)): axum::extract::Path<(String, String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    list_from_table_filtered_java(&pool, "x_cms_form", "deleted_at IS NULL", &[]).await
+    form_filter_list(&pool, &app_id, &count).await
 }
 
 #[axum::debug_handler]
 #[allow(non_snake_case)]
 pub async fn form_filter_list_id_prev_count_app_appId(
     pool: Extension<Pool>,
+    axum::extract::Path((_id, count, app_id)): axum::extract::Path<(String, String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    list_from_table_filtered_java(&pool, "x_cms_form", "deleted_at IS NULL", &[]).await
+    form_filter_list(&pool, &app_id, &count).await
 }
 
 #[axum::debug_handler]
 #[allow(non_snake_case)]
 pub async fn form_filter_list_id_prev_count_app_appId_mockputtopost(
     pool: Extension<Pool>,
+    axum::extract::Path((_id, count, app_id)): axum::extract::Path<(String, String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    list_from_table_filtered_java(&pool, "x_cms_form", "deleted_at IS NULL", &[]).await
+    form_filter_list(&pool, &app_id, &count).await
 }
 
 #[axum::debug_handler]
 #[allow(non_snake_case)]
 pub async fn form_list_all(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
-    list_from_table_filtered_java(&pool, "x_cms_form", "deleted_at IS NULL", &[]).await
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let rows = client
+        .query(
+            "SELECT id, app_id, name, definition, status, creator, create_time::text \
+             FROM x_cms_form WHERE deleted_at IS NULL ORDER BY create_time DESC",
+            &[],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+    let forms = rows
+        .iter()
+        .map(form_row_to_json)
+        .collect::<Result<Vec<_>, _>>()?;
+    let count = forms.len() as i64;
+    Ok(Json(ActionResult::java_success(
+        Value::Array(forms),
+        count,
+        0,
+    )))
 }
 
 #[axum::debug_handler]
 #[allow(non_snake_case)]
 pub async fn form_list_app_appId(
     pool: Extension<Pool>,
+    axum::extract::Path(app_id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    list_from_table_filtered_java(&pool, "x_cms_form", "deleted_at IS NULL", &[]).await
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let rows = client
+        .query(
+            "SELECT id, app_id, name, definition, status, creator, create_time::text \
+             FROM x_cms_form WHERE app_id = $1 AND deleted_at IS NULL ORDER BY create_time DESC",
+            &[&app_id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+    let forms = rows
+        .iter()
+        .map(form_row_to_json)
+        .collect::<Result<Vec<_>, _>>()?;
+    let count = forms.len() as i64;
+    Ok(Json(ActionResult::java_success(
+        Value::Array(forms),
+        count,
+        0,
+    )))
 }
 
 #[axum::debug_handler]
@@ -4579,39 +4859,7 @@ pub async fn anonymous_form_v2_lookup_document_docId(
     pool: Extension<Pool>,
     axum::extract::Path(doc_id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
-    let row = client
-        .query_opt(
-            "SELECT id, app_id, name, definition, status FROM x_cms_form_v2 WHERE id = (SELECT form_id FROM x_cms_data_document WHERE id = $1 AND deleted_at::text IS NULL) AND deleted_at::text IS NULL",
-            &[&doc_id],
-        )
-        .await
-        .map_err(|_| AppError::Internal)?;
-    match row {
-        Some(row) => {
-            let result = Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("appId".to_string(), Value::String(row.get("app_id"))),
-                (
-                    "name".to_string(),
-                    Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
-                ),
-                (
-                    "definition".to_string(),
-                    Value::String(
-                        row.get::<_, Option<String>>("definition")
-                            .unwrap_or_default(),
-                    ),
-                ),
-                (
-                    "status".to_string(),
-                    Value::String(row.get::<_, Option<String>>("status").unwrap_or_default()),
-                ),
-            ]));
-            Ok(Json(ActionResult::success(result)))
-        }
-        None => Ok(Json(ActionResult::error("form not found"))),
-    }
+    form_runtime_by_document(&pool, &doc_id, false).await
 }
 
 #[axum::debug_handler]
@@ -4620,39 +4868,7 @@ pub async fn anonymous_form_v2_lookup_document_docId_mobile(
     pool: Extension<Pool>,
     axum::extract::Path(doc_id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
-    let row = client
-        .query_opt(
-            "SELECT id, app_id, name, definition, status FROM x_cms_form_v2 WHERE id = (SELECT form_id FROM x_cms_data_document WHERE id = $1 AND deleted_at::text IS NULL) AND deleted_at::text IS NULL",
-            &[&doc_id],
-        )
-        .await
-        .map_err(|_| AppError::Internal)?;
-    match row {
-        Some(row) => {
-            let result = Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("appId".to_string(), Value::String(row.get("app_id"))),
-                (
-                    "name".to_string(),
-                    Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
-                ),
-                (
-                    "definition".to_string(),
-                    Value::String(
-                        row.get::<_, Option<String>>("definition")
-                            .unwrap_or_default(),
-                    ),
-                ),
-                (
-                    "status".to_string(),
-                    Value::String(row.get::<_, Option<String>>("status").unwrap_or_default()),
-                ),
-            ]));
-            Ok(Json(ActionResult::success(result)))
-        }
-        None => Ok(Json(ActionResult::error("form not found"))),
-    }
+    form_runtime_by_document(&pool, &doc_id, true).await
 }
 
 #[axum::debug_handler]
@@ -4661,39 +4877,7 @@ pub async fn anonymous_form_v2_id(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
-    let row = client
-        .query_opt(
-            "SELECT id, app_id, name, definition, status FROM x_cms_form_v2 WHERE id = $1 AND deleted_at::text IS NULL",
-            &[&id],
-        )
-        .await
-        .map_err(|_| AppError::Internal)?;
-    match row {
-        Some(row) => {
-            let result = Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("appId".to_string(), Value::String(row.get("app_id"))),
-                (
-                    "name".to_string(),
-                    Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
-                ),
-                (
-                    "definition".to_string(),
-                    Value::String(
-                        row.get::<_, Option<String>>("definition")
-                            .unwrap_or_default(),
-                    ),
-                ),
-                (
-                    "status".to_string(),
-                    Value::String(row.get::<_, Option<String>>("status").unwrap_or_default()),
-                ),
-            ]));
-            Ok(Json(ActionResult::success(result)))
-        }
-        None => Ok(Json(ActionResult::error("form not found"))),
-    }
+    form_runtime_by_id(&pool, &id, false).await
 }
 
 #[axum::debug_handler]
@@ -4702,39 +4886,7 @@ pub async fn anonymous_form_v2_id_mobile(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
-    let row = client
-        .query_opt(
-            "SELECT id, app_id, name, definition, status FROM x_cms_form_v2 WHERE id = $1 AND deleted_at::text IS NULL",
-            &[&id],
-        )
-        .await
-        .map_err(|_| AppError::Internal)?;
-    match row {
-        Some(row) => {
-            let result = Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("appId".to_string(), Value::String(row.get("app_id"))),
-                (
-                    "name".to_string(),
-                    Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
-                ),
-                (
-                    "definition".to_string(),
-                    Value::String(
-                        row.get::<_, Option<String>>("definition")
-                            .unwrap_or_default(),
-                    ),
-                ),
-                (
-                    "status".to_string(),
-                    Value::String(row.get::<_, Option<String>>("status").unwrap_or_default()),
-                ),
-            ]));
-            Ok(Json(ActionResult::success(result)))
-        }
-        None => Ok(Json(ActionResult::error("form not found"))),
-    }
+    form_runtime_by_id(&pool, &id, true).await
 }
 
 #[axum::debug_handler]
@@ -4752,28 +4904,7 @@ pub async fn anonymous_form_id(
         .await
         .map_err(|_| AppError::Internal)?;
     match row {
-        Some(row) => {
-            let result = Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("appId".to_string(), Value::String(row.get("app_id"))),
-                (
-                    "name".to_string(),
-                    Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
-                ),
-                (
-                    "definition".to_string(),
-                    Value::String(
-                        row.get::<_, Option<String>>("definition")
-                            .unwrap_or_default(),
-                    ),
-                ),
-                (
-                    "status".to_string(),
-                    Value::String(row.get::<_, Option<String>>("status").unwrap_or_default()),
-                ),
-            ]));
-            Ok(Json(ActionResult::success(result)))
-        }
+        Some(row) => Ok(Json(ActionResult::success(form_row_to_json(&row)?))),
         None => Ok(Json(ActionResult::error("form not found"))),
     }
 }
@@ -4792,41 +4923,10 @@ pub async fn form_formFlag_appinfo_appFlag(
         )
         .await
         .map_err(|_| AppError::Internal)?;
-    let data: Vec<Value> = rows
+    let data = rows
         .iter()
-        .map(|row| {
-            Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("appId".to_string(), Value::String(row.get("app_id"))),
-                (
-                    "name".to_string(),
-                    Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
-                ),
-                (
-                    "definition".to_string(),
-                    Value::String(
-                        row.get::<_, Option<String>>("definition")
-                            .unwrap_or_default(),
-                    ),
-                ),
-                (
-                    "status".to_string(),
-                    Value::String(row.get::<_, Option<String>>("status").unwrap_or_default()),
-                ),
-                (
-                    "creator".to_string(),
-                    Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
-                ),
-                (
-                    "createTime".to_string(),
-                    Value::String(
-                        row.get::<_, Option<String>>("create_time")
-                            .unwrap_or_default(),
-                    ),
-                ),
-            ]))
-        })
-        .collect();
+        .map(form_row_to_json)
+        .collect::<Result<Vec<_>, _>>()?;
     let count = data.len() as i64;
     Ok(Json(ActionResult::java_success(
         Value::Array(data),
@@ -4850,39 +4950,7 @@ pub async fn form_id(
         .await
         .map_err(|_| AppError::Internal)?;
     match row {
-        Some(row) => {
-            let result = Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("appId".to_string(), Value::String(row.get("app_id"))),
-                (
-                    "name".to_string(),
-                    Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
-                ),
-                (
-                    "definition".to_string(),
-                    Value::String(
-                        row.get::<_, Option<String>>("definition")
-                            .unwrap_or_default(),
-                    ),
-                ),
-                (
-                    "status".to_string(),
-                    Value::String(row.get::<_, Option<String>>("status").unwrap_or_default()),
-                ),
-                (
-                    "creator".to_string(),
-                    Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
-                ),
-                (
-                    "createTime".to_string(),
-                    Value::String(
-                        row.get::<_, Option<String>>("create_time")
-                            .unwrap_or_default(),
-                    ),
-                ),
-            ]));
-            Ok(Json(ActionResult::success(result)))
-        }
+        Some(row) => Ok(Json(ActionResult::success(form_row_to_json(&row)?))),
         None => Ok(Json(ActionResult::error("form not found"))),
     }
 }
@@ -4915,23 +4983,24 @@ pub async fn form_id_mockputtopost(
     body: axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
-    let name = body.get("name").and_then(|v| v.as_str()).unwrap_or("");
-    let definition = body
-        .get("definition")
-        .and_then(|v| v.as_str())
-        .unwrap_or("");
-    let status = body
-        .get("status")
-        .and_then(|v| v.as_str())
-        .unwrap_or("draft");
+    let app_id = u2_body_str(&body, "appId")
+        .filter(|app_id| !app_id.trim().is_empty())
+        .ok_or_else(|| AppError::BadRequest("appId required".to_string()))?;
+    let name = u2_body_str(&body, "name").unwrap_or_default();
+    let definition = form_definition_from_body(&body)?
+        .ok_or_else(|| AppError::BadRequest("definition required".to_string()))?
+        .to_db()?;
+    let status = u2_body_str(&body, "status").unwrap_or_else(|| "draft".to_string());
     let row = client
         .query_one(
-            "INSERT INTO x_cms_form (id, name, definition, status) VALUES ($1, $2, $3, $4) ON CONFLICT (id) DO UPDATE SET name = $2, definition = $3, status = $4 RETURNING *",
-            &[&id, &name, &definition, &status],
+            "INSERT INTO x_cms_form (id, app_id, name, definition, status) VALUES ($1, $2, $3, $4, $5) \
+             ON CONFLICT (id) DO UPDATE SET app_id = $2, name = $3, definition = $4, status = $5 \
+             RETURNING id, app_id, name, definition, status",
+            &[&id, &app_id, &name, &definition, &status],
         )
         .await
         .map_err(|_| AppError::Internal)?;
-    Ok(Json(ActionResult::success(row_to_json(&row))))
+    Ok(Json(ActionResult::success(form_row_to_json(&row)?)))
 }
 
 #[axum::debug_handler]
@@ -4940,39 +5009,7 @@ pub async fn form_v2_lookup_document_docId(
     pool: Extension<Pool>,
     axum::extract::Path(doc_id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
-    let row = client
-        .query_opt(
-            "SELECT id, app_id, name, definition, status, creator, create_time::text FROM x_cms_form_v2 WHERE id = (SELECT form_id FROM x_cms_data_document WHERE id = $1 AND deleted_at::text IS NULL) AND deleted_at::text IS NULL",
-            &[&doc_id],
-        )
-        .await
-        .map_err(|_| AppError::Internal)?;
-    match row {
-        Some(row) => {
-            let result = Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("appId".to_string(), Value::String(row.get("app_id"))),
-                (
-                    "name".to_string(),
-                    Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
-                ),
-                (
-                    "definition".to_string(),
-                    Value::String(
-                        row.get::<_, Option<String>>("definition")
-                            .unwrap_or_default(),
-                    ),
-                ),
-                (
-                    "status".to_string(),
-                    Value::String(row.get::<_, Option<String>>("status").unwrap_or_default()),
-                ),
-            ]));
-            Ok(Json(ActionResult::success(result)))
-        }
-        None => Ok(Json(ActionResult::error("form not found"))),
-    }
+    form_runtime_by_document(&pool, &doc_id, false).await
 }
 
 #[axum::debug_handler]
@@ -4981,45 +5018,16 @@ pub async fn form_v2_lookup_document_docId_mobile(
     pool: Extension<Pool>,
     axum::extract::Path(doc_id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
-    let row = client
-        .query_opt(
-            "SELECT id, app_id, name, definition, status, creator, create_time::text FROM x_cms_form_v2 WHERE id = (SELECT form_id FROM x_cms_data_document WHERE id = $1 AND deleted_at::text IS NULL) AND deleted_at::text IS NULL",
-            &[&doc_id],
-        )
-        .await
-        .map_err(|_| AppError::Internal)?;
-    match row {
-        Some(row) => {
-            let result = Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("appId".to_string(), Value::String(row.get("app_id"))),
-                (
-                    "name".to_string(),
-                    Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
-                ),
-                (
-                    "definition".to_string(),
-                    Value::String(
-                        row.get::<_, Option<String>>("definition")
-                            .unwrap_or_default(),
-                    ),
-                ),
-                (
-                    "status".to_string(),
-                    Value::String(row.get::<_, Option<String>>("status").unwrap_or_default()),
-                ),
-            ]));
-            Ok(Json(ActionResult::success(result)))
-        }
-        None => Ok(Json(ActionResult::error("form not found"))),
-    }
+    form_runtime_by_document(&pool, &doc_id, true).await
 }
 
 #[axum::debug_handler]
 #[allow(non_snake_case)]
-pub async fn form_v2_id(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
-    list_from_table_filtered_java(&pool, "x_cms_form_v2", "deleted_at IS NULL", &[]).await
+pub async fn form_v2_id(
+    pool: Extension<Pool>,
+    axum::extract::Path(id): axum::extract::Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    form_runtime_by_id(&pool, &id, false).await
 }
 
 #[axum::debug_handler]
@@ -5028,39 +5036,7 @@ pub async fn form_v2_id_mobile(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
-    let row = client
-        .query_opt(
-            "SELECT id, app_id, name, definition, status, creator, create_time::text FROM x_cms_form_v2 WHERE id = $1 AND deleted_at::text IS NULL",
-            &[&id],
-        )
-        .await
-        .map_err(|_| AppError::Internal)?;
-    match row {
-        Some(row) => {
-            let result = Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("appId".to_string(), Value::String(row.get("app_id"))),
-                (
-                    "name".to_string(),
-                    Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
-                ),
-                (
-                    "definition".to_string(),
-                    Value::String(
-                        row.get::<_, Option<String>>("definition")
-                            .unwrap_or_default(),
-                    ),
-                ),
-                (
-                    "status".to_string(),
-                    Value::String(row.get::<_, Option<String>>("status").unwrap_or_default()),
-                ),
-            ]));
-            Ok(Json(ActionResult::success(result)))
-        }
-        None => Ok(Json(ActionResult::error("form not found"))),
-    }
+    form_runtime_by_id(&pool, &id, true).await
 }
 
 #[axum::debug_handler]
@@ -8265,6 +8241,9 @@ pub async fn form_u2_create(
         Some(a) if !a.is_empty() => a,
         _ => return Err(AppError::BadRequest("appId required".to_string())),
     };
+    let definition = form_definition_from_body(&body)?
+        .ok_or_else(|| AppError::BadRequest("definition required".to_string()))?
+        .to_db()?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let app = client
         .query_opt(
@@ -8278,21 +8257,24 @@ pub async fn form_u2_create(
     }
     let id = uuid::Uuid::new_v4().to_string();
     let name = u2_body_str(&body, "name").unwrap_or_default();
-    let definition = u2_body_str(&body, "definition").unwrap_or_default();
-    client
-        .execute(
+    let status = u2_body_str(&body, "status").unwrap_or_else(|| "draft".to_string());
+    let row = client
+        .query_one(
             "INSERT INTO x_cms_form (id, app_id, name, definition, status, creator) \
-             VALUES ($1, $2, $3, $4, 'draft', $5)",
-            &[&id, &app_id, &name, &definition, &session.person_unique],
+             VALUES ($1, $2, $3, $4, $5, $6) \
+             RETURNING id, app_id, name, definition, status, creator, create_time::text",
+            &[
+                &id,
+                &app_id,
+                &name,
+                &definition,
+                &status,
+                &session.person_unique,
+            ],
         )
         .await
         .map_err(|_| AppError::Internal)?;
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("id".to_string(), Value::String(id)),
-            ("appId".to_string(), Value::String(app_id)),
-        ]),
-    ))))
+    Ok(Json(ActionResult::success(form_row_to_json(&row)?)))
 }
 
 #[axum::debug_handler]
@@ -8303,34 +8285,29 @@ pub async fn form_u2_update(
     axum::extract::Path(id): axum::extract::Path<String>,
     body: axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    let definition = form_definition_from_body(&body)?
+        .map(|definition| definition.to_db())
+        .transpose()?;
     match u2_check_owner(&pool, "x_cms_form", "creator", &id, &session.person_unique).await? {
         U2Gate::NotFound => Ok(Json(ActionResult::error("form not found"))),
         U2Gate::Forbidden => Err(AppError::Forbidden),
         U2Gate::Allowed => {
             let client = pool.get().await.map_err(|_| AppError::Internal)?;
             let name = u2_body_str(&body, "name");
-            let definition = u2_body_str(&body, "definition");
             let status = u2_body_str(&body, "status");
-            let affected = client
-                .execute(
+            let row = client
+                .query_one(
                     "UPDATE x_cms_form SET \
                      name = COALESCE($2, name), \
                      definition = COALESCE($3, definition), \
                      status = COALESCE($4, status) \
-                     WHERE id = $1 AND deleted_at IS NULL",
+                     WHERE id = $1 AND deleted_at IS NULL \
+                     RETURNING id, app_id, name, definition, status, creator, create_time::text",
                     &[&id, &name, &definition, &status],
                 )
                 .await
                 .map_err(|_| AppError::Internal)?;
-            if affected == 0 {
-                return Ok(Json(ActionResult::error("form not found")));
-            }
-            Ok(Json(ActionResult::success(Value::Object(
-                serde_json::Map::from_iter([
-                    ("id".to_string(), Value::String(id)),
-                    ("updated".to_string(), Value::Bool(true)),
-                ]),
-            ))))
+            Ok(Json(ActionResult::success(form_row_to_json(&row)?)))
         }
     }
 }
@@ -10543,7 +10520,7 @@ pub async fn form_get_with_appinfo_u3(
         .await
         .map_err(|_| AppError::Internal)?;
     match row {
-        Some(row) => Ok(Json(ActionResult::success(row_to_json(&row)))),
+        Some(row) => Ok(Json(ActionResult::success(form_row_to_json(&row)?))),
         None => Ok(Json(ActionResult::error("form not found"))),
     }
 }
