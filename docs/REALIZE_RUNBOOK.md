@@ -202,6 +202,86 @@ cd oa4rust && cargo test --test designer_route_match -- --nocapture
 
 ---
 
+## 4.2 S4 金丝雀 / pilot 观察窗口门禁
+
+S4 不做 Java 影子比对，也不从代码仓库伪造一次 pilot 结果。它只在小范围用户实际使用
+OA4Rust 新栈后，离线核算专用 Nginx access log 的请求总数与 5xx 错误预算。当前服务没有
+Prometheus 请求计数器；`trace_middleware` 又只记录 5xx，无法提供分母，因此以入口 access log
+作为唯一计数源。
+
+### 前置约束
+
+- `service_url` 必须是 pilot 用户实际访问的 OA4Rust 新栈 URL；对应虚拟主机不得混入 Java 流量。
+- 单独记录 pilot 的 `/jaxrs/` API access log。不要拿混合站点、影子请求或人工拼接日志验收。
+- 观察窗口使用带时区的 ISO-8601 时间，脚本按 `[window_start, window_end)` 计算。
+- `5xx` 定义为 HTTP `500..599`；错误率为 `5xx / 窗口内全部已解析请求`。
+- 可用 5xx 个数为 `floor(请求数 × 阈值百分比 / 100)`；另设 `min_requests` 防止空窗口通过。
+- 日志有任何非空行无法解析时整次门禁失败，禁止静默丢行。
+
+现有 `deploy/nginx.conf` 的 `main` 格式可直接解析。建议在 pilot 专用 `server` 中用条件日志仅记录
+API（`map` 位于 `http` 块，`access_log` 位于 pilot `server` 块）：
+
+```nginx
+map $uri $oa4rust_pilot_api {
+    default 0;
+    ~^/jaxrs/ 1;
+}
+
+server {
+    # 此 server 仅承载 OA4Rust pilot 新栈
+    access_log /var/log/nginx/oa4rust-pilot.access.log main if=$oa4rust_pilot_api;
+    # 其余 TLS、静态资源和 proxy 路由保持现场配置。
+}
+```
+
+### 现场执行
+
+先确认健康端点，再在窗口开始前轮转/截取专用日志，记录用户与部署版本。窗口结束后执行：
+
+```bash
+cd oa4rust
+python3 scripts/pilot_gate.py \
+  --service-url "https://pilot.example.com" \
+  --window-start "2026-09-12T10:00:00Z" \
+  --window-end "2026-09-12T18:00:00Z" \
+  --max-5xx-rate-percent "1" \
+  --min-requests "100" \
+  --pilot-user "pilot-user-01" \
+  --pilot-user "pilot-user-02" \
+  --version "image@sha256:..." \
+  --access-log /secure/path/oa4rust-pilot.access.log \
+  --output target/pilot-gate/report.json \
+  --checklist-output target/pilot-gate/manual-checklist.md
+```
+
+退出码语义：`0`=自动日志门禁通过，`1`=请求量/5xx/日志完整性门禁失败，`2`=输入或文件错误。
+无论退出码如何，脚本在可解析输入下都写 `report.json` 和人工清单；报告包含日志 SHA-256、
+pilot 用户、窗口、服务 URL、版本、状态码分布和失败原因。脚本不会请求业务接口制造流量。
+
+也可手工触发独立 workflow `.github/workflows/oa4rust-pilot-gate.yml`。填写相同参数及一个
+`https://` access log 下载地址；私有下载地址可配置仓库 secret `PILOT_ACCESS_LOG_TOKEN`。
+workflow 上传 `report.json` 与 `manual-checklist.md`，但不上传可能含个人信息的原始日志。
+
+### 放大 / 停止判据
+
+1. 自动门禁必须为 `decision=pass`，且 artifact 与现场日志 SHA-256 对得上。
+2. 打开生成的 `manual-checklist.md`，逐项抽检关键旅程、数据正确性、用户反馈与回退准备；
+   生成时所有复选框故意保持未完成，必须由审核人签名并记录 UTC 时间。
+3. 自动或人工任一项失败，立即停止扩大 pilot 范围，保留日志/报告/工单并处置后开启新窗口；
+   不得把失败窗口与后续日志拼接成一次通过。
+4. 只有真实外部窗口执行完、自动门禁通过且人工清单闭合后，现场负责人才能批准下一阶段。
+   仓库 fixture 和 CI 单测只证明算法可运行，**绝不代表实际 pilot 已通过**。
+
+本地设施回归：
+
+```bash
+cd oa4rust
+python3 tests/test_pilot_gate.py
+python3 -m py_compile scripts/pilot_gate.py tests/test_pilot_gate.py
+```
+
+---
+
 ## 5. 报告格式（每个 crate 完成后回报）
 ```
 crate: <name>
