@@ -186,10 +186,13 @@ pub async fn list_components(pool: Extension<Pool>) -> Result<Json<ActionResult<
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("name".to_string(), Value::String(row.get("name"))),
                 ("type".to_string(), Value::String(row.get("type"))),
-                ("creator".to_string(), Value::String(row.get("creator"))),
+                (
+                    "creator".to_string(),
+                    row.get::<_, Option<String>>("creator").into(),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("create_time")),
+                    row.get::<_, Option<String>>("create_time").into(),
                 ),
             ]))
         })
@@ -225,10 +228,13 @@ pub async fn get_component(
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("name".to_string(), Value::String(row.get("name"))),
                 ("type".to_string(), Value::String(row.get("type"))),
-                ("creator".to_string(), Value::String(row.get("creator"))),
+                (
+                    "creator".to_string(),
+                    row.get::<_, Option<String>>("creator").into(),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("create_time")),
+                    row.get::<_, Option<String>>("create_time").into(),
                 ),
             ]));
             Ok(Json(ActionResult::success(result)))
