@@ -1,0 +1,1740 @@
+{
+  "schemaVersion": 1,
+  "auditId": "w13-w14-repository-closure",
+  "auditedAt": "2026-09-12",
+  "statusDefinitions": {
+    "implemented": "真实实现：当前路由、前端消费和后端路由均有代码证据，仅对 acceptance 字段声明的能力成立",
+    "out_of_scope": "范围外：书面接受不纳入本次 greenfield 替代边界，不构成已实现声明",
+    "still_blocked": "仍阻塞：已有占位、薄壳、错路由或能力缺失，不能宣称替代"
+  },
+  "discovery": {
+    "crudView": {
+      "root": "oa4rust-web/apps/desktop/src/views",
+      "glob": "*.vue",
+      "exactMarker": "class=\"crud-view\""
+    },
+    "w14LegacyFamilies": {
+      "root": "oa/o2web/source",
+      "directoryPrefixes": [
+        "x_component_Minder",
+        "x_component_service_",
+        "x_component_AppMarketV2",
+        "x_component_Forum"
+      ]
+    }
+  },
+  "entries": [
+    {
+      "id": "w13:AnnApp.vue",
+      "workItem": "W13",
+      "kind": "crud_view",
+      "view": "AnnApp.vue",
+      "route": "/app/ann",
+      "title": "神经网络AI配置",
+      "endpoint": "/jaxrs/ai/assemble/control/ann/list",
+      "status": "still_blocked",
+      "replacementClaim": false,
+      "decision": "通用名称/标识薄 CRUD，尚不能证明 ANN 配置闭环。",
+      "blockerCodes": [
+        "NON_REACTIVE_QUERY_COPY",
+        "LIST_ENDPOINT_REUSED_FOR_WRITES",
+        "GENERIC_NAME_FLAG_FORM"
+      ],
+      "evidence": {
+        "frontend": [
+          {
+            "file": "oa4rust-web/apps/desktop/src/views/AnnApp.vue",
+            "contains": "items.value = data.value ?? []"
+          }
+        ],
+        "routing": [
+          {
+            "file": "oa4rust-web/apps/desktop/src/main.ts",
+            "contains": "import('./views/AnnApp.vue')"
+          }
+        ]
+      }
+    },
+    {
+      "id": "w13:CmsColumnApp.vue",
+      "workItem": "W13",
+      "kind": "crud_view",
+      "view": "CmsColumnApp.vue",
+      "route": "/app/cms-column",
+      "title": "CMS列管理",
+      "endpoint": "/jaxrs/cms/core/entity/column/list",
+      "status": "still_blocked",
+      "replacementClaim": false,
+      "decision": "通用薄 CRUD 未实现 CMS 列定义语义。",
+      "blockerCodes": [
+        "NON_REACTIVE_QUERY_COPY",
+        "LIST_ENDPOINT_REUSED_FOR_WRITES",
+        "GENERIC_NAME_FLAG_FORM"
+      ],
+      "evidence": {
+        "frontend": [
+          {
+            "file": "oa4rust-web/apps/desktop/src/views/CmsColumnApp.vue",
+            "contains": "items.value = data.value ?? []"
+          }
+        ],
+        "routing": [
+          {
+            "file": "oa4rust-web/apps/desktop/src/main.ts",
+            "contains": "import('./views/CmsColumnApp.vue')"
+          }
+        ]
+      }
+    },
+    {
+      "id": "w13:CmsColumnManagerApp.vue",
+      "workItem": "W13",
+      "kind": "crud_view",
+      "view": "CmsColumnManagerApp.vue",
+      "route": "/app/cms-column-manager",
+      "title": "CMS列管理器",
+      "endpoint": "/jaxrs/cms/core/entity/column_manager/list",
+      "status": "still_blocked",
+      "replacementClaim": false,
+      "decision": "通用薄 CRUD 未实现列管理器业务交互。",
+      "blockerCodes": [
+        "NON_REACTIVE_QUERY_COPY",
+        "LIST_ENDPOINT_REUSED_FOR_WRITES",
+        "GENERIC_NAME_FLAG_FORM"
+      ],
+      "evidence": {
+        "frontend": [
+          {
+            "file": "oa4rust-web/apps/desktop/src/views/CmsColumnManagerApp.vue",
+            "contains": "items.value = data.value ?? []"
+          }
+        ],
+        "routing": [
+          {
+            "file": "oa4rust-web/apps/desktop/src/main.ts",
+            "contains": "import('./views/CmsColumnManagerApp.vue')"
+          }
+        ]
+      }
+    },
+    {
+      "id": "w13:CmsDictDesignerApp.vue",
+      "workItem": "W13",
+      "kind": "crud_view",
+      "view": "CmsDictDesignerApp.vue",
+      "route": "/app/cms-dict-designer",
+      "title": "CMS字典设计器",
+      "endpoint": "/jaxrs/cms/assemble/control/dict/list",
+      "status": "still_blocked",
+      "replacementClaim": false,
+      "decision": "只有名称/标识表单，无字典树和数据编辑。",
+      "blockerCodes": [
+        "NON_REACTIVE_QUERY_COPY",
+        "LIST_ENDPOINT_REUSED_FOR_WRITES",
+        "MISSING_DOMAIN_DESIGNER"
+      ],
+      "evidence": {
+        "frontend": [
+          {
+            "file": "oa4rust-web/apps/desktop/src/views/CmsDictDesignerApp.vue",
+            "contains": "items.value = data.value ?? []"
+          }
+        ],
+        "routing": [
+          {
+            "file": "oa4rust-web/apps/desktop/src/main.ts",
+            "contains": "import('./views/CmsDictDesignerApp.vue')"
+          }
+        ]
+      }
+    },
+    {
+      "id": "w13:CmsFormDesignerApp.vue",
+      "workItem": "W13",
+      "kind": "crud_view",
+      "view": "CmsFormDesignerApp.vue",
+      "route": "/app/cms-form-designer",
+      "title": "CMS表单设计器",
+      "endpoint": "/jaxrs/cms/assemble/control/form/list",
+      "status": "still_blocked",
+      "replacementClaim": false,
+      "decision": "只有名称/标识表单，无表单设计与运行契约。",
+      "blockerCodes": [
+        "NON_REACTIVE_QUERY_COPY",
+        "LIST_ENDPOINT_REUSED_FOR_WRITES",
+        "MISSING_DOMAIN_DESIGNER"
+      ],
+      "evidence": {
+        "frontend": [
+          {
+            "file": "oa4rust-web/apps/desktop/src/views/CmsFormDesignerApp.vue",
+            "contains": "items.value = data.value ?? []"
+          }
+        ],
+        "routing": [
+          {
+            "file": "oa4rust-web/apps/desktop/src/main.ts",
+            "contains": "import('./views/CmsFormDesignerApp.vue')"
+          }
+        ]
+      }
+    },
+    {
+      "id": "w13:CmsIndexApp.vue",
+      "workItem": "W13",
+      "kind": "crud_view",
+      "view": "CmsIndexApp.vue",
+      "route": "/app/cms-index",
+      "title": "CMS索引设计",
+      "endpoint": "/jaxrs/cms/core/entity/index/list",
+      "status": "still_blocked",
+      "replacementClaim": false,
+      "decision": "通用薄 CRUD 未实现索引字段与构建语义。",
+      "blockerCodes": [
+        "NON_REACTIVE_QUERY_COPY",
+        "LIST_ENDPOINT_REUSED_FOR_WRITES",
+        "GENERIC_NAME_FLAG_FORM"
+      ],
+      "evidence": {
+        "frontend": [
+          {
+            "file": "oa4rust-web/apps/desktop/src/views/CmsIndexApp.vue",
+            "contains": "items.value = data.value ?? []"
+          }
+        ],
+        "routing": [
+          {
+            "file": "oa4rust-web/apps/desktop/src/main.ts",
+            "contains": "import('./views/CmsIndexApp.vue')"
+          }
+        ]
+      }
+    },
+    {
+      "id": "w13:CmsModuleApp.vue",
+      "workItem": "W13",
+      "kind": "crud_view",
+      "view": "CmsModuleApp.vue",
+      "route": "/app/cms-module",
+      "title": "CMS模块管理",
+      "endpoint": "/jaxrs/cms/core/entity/module/list",
+      "status": "still_blocked",
+      "replacementClaim": false,
+      "decision": "CSS 类名不是问题；异步结果一次性复制且写操作复用 list URL，模块 CRUD 不能闭环。",
+      "blockerCodes": [
+        "NON_REACTIVE_QUERY_COPY",
+        "LIST_ENDPOINT_REUSED_FOR_WRITES"
+      ],
+      "evidence": {
+        "frontend": [
+          {
+            "file": "oa4rust-web/apps/desktop/src/views/CmsModuleApp.vue",
+            "contains": "items.value = data.value ?? []"
+          },
+          {
+            "file": "oa4rust-web/apps/desktop/src/views/CmsModuleApp.vue",
+            "contains": "return api.post(ep, data)"
+          }
+        ],
+        "routing": [
+          {
+            "file": "oa4rust-web/apps/desktop/src/main.ts",
+            "contains": "import('./views/CmsModuleApp.vue')"
+          }
+        ]
+      }
+    },
+    {
+      "id": "w13:CmsScriptDesignerApp.vue",
+      "workItem": "W13",
+      "kind": "crud_view",
+      "view": "CmsScriptDesignerApp.vue",
+      "route": "/app/cms-script-designer",
+      "title": "CMS脚本设计器",
+      "endpoint": "/jaxrs/cms/assemble/control/script/list",
+      "status": "still_blocked",
+      "replacementClaim": false,
+      "decision": "无代码编辑器、XScript 补全和版本历史。",
+      "blockerCodes": [
+        "NON_REACTIVE_QUERY_COPY",
+        "LIST_ENDPOINT_REUSED_FOR_WRITES",
+        "MISSING_SCRIPT_EDITOR"
+      ],
+      "evidence": {
+        "frontend": [
+          {
+            "file": "oa4rust-web/apps/desktop/src/views/CmsScriptDesignerApp.vue",
+            "contains": "items.value = data.value ?? []"
+          }
+        ],
+        "routing": [
+          {
+            "file": "oa4rust-web/apps/desktop/src/main.ts",
+            "contains": "import('./views/CmsScriptDesignerApp.vue')"
+          }
+        ]
+      }
+    },
+    {
+      "id": "w13:CmsViewDesignerApp.vue",
+      "workItem": "W13",
+      "kind": "crud_view",
+      "view": "CmsViewDesignerApp.vue",
+      "route": "/app/cms-view-designer",
+      "title": "CMS视图设计器",
+      "endpoint": "/jaxrs/cms/assemble/control/view/list",
+      "status": "still_blocked",
+      "replacementClaim": false,
+      "decision": "无 CMS 视图布局和字段设计。",
+      "blockerCodes": [
+        "NON_REACTIVE_QUERY_COPY",
+        "LIST_ENDPOINT_REUSED_FOR_WRITES",
+        "MISSING_DOMAIN_DESIGNER"
+      ],
+      "evidence": {
+        "frontend": [
+          {
+            "file": "oa4rust-web/apps/desktop/src/views/CmsViewDesignerApp.vue",
+            "contains": "items.value = data.value ?? []"
+          }
+        ],
+        "routing": [
+          {
+            "file": "oa4rust-web/apps/desktop/src/main.ts",
+            "contains": "import('./views/CmsViewDesignerApp.vue')"
+          }
+        ]
+      }
+    },
+    {
+      "id": "w13:CmsXformApp.vue",
+      "workItem": "W13",
+      "kind": "crud_view",
+      "view": "CmsXformApp.vue",
+      "route": "/app/cms-xform",
+      "title": "CMS XForm",
+      "endpoint": "/jaxrs/cms/assemble/control/xform/list",
+      "status": "still_blocked",
+      "replacementClaim": false,
+      "decision": "无 XForm 编辑和运行时渲染。",
+      "blockerCodes": [
+        "NON_REACTIVE_QUERY_COPY",
+        "LIST_ENDPOINT_REUSED_FOR_WRITES",
+        "MISSING_XFORM_RUNTIME"
+      ],
+      "evidence": {
+        "frontend": [
+          {
+            "file": "oa4rust-web/apps/desktop/src/views/CmsXformApp.vue",
+            "contains": "items.value = data.value ?? []"
+          }
+        ],
+        "routing": [
+          {
+            "file": "oa4rust-web/apps/desktop/src/main.ts",
+            "contains": "import('./views/CmsXformApp.vue')"
+          }
+        ]
+      }
+    },
+    {
+      "id": "w13:CollectApp.vue",
+      "workItem": "W13",
+      "kind": "crud_view",
+      "view": "CollectApp.vue",
+      "route": "/app/collect",
+      "title": "收集管理",
+      "endpoint": "/jaxrs/program_center/collect/list",
+      "status": "still_blocked",
+      "replacementClaim": false,
+      "decision": "通用薄 CRUD 与后端 collect 动作模型不一致。",
+      "blockerCodes": [
+        "NON_REACTIVE_QUERY_COPY",
+        "LIST_ENDPOINT_REUSED_FOR_WRITES",
+        "WRONG_RESOURCE_MODEL"
+      ],
+      "evidence": {
+        "frontend": [
+          {
+            "file": "oa4rust-web/apps/desktop/src/views/CollectApp.vue",
+            "contains": "items.value = data.value ?? []"
+          }
+        ],
+        "routing": [
+          {
+            "file": "oa4rust-web/apps/desktop/src/main.ts",
+            "contains": "import('./views/CollectApp.vue')"
+          }
+        ]
+      }
+    },
+    {
+      "id": "w13:CommonApp.vue",
+      "workItem": "W13",
+      "kind": "crud_view",
+      "view": "CommonApp.vue",
+      "route": "/app/common",
+      "title": "公共组件库",
+      "endpoint": "/jaxrs/general/assemble/control/list",
+      "status": "still_blocked",
+      "replacementClaim": false,
+      "decision": "把多类公共能力误建模为单一名称/标识 CRUD。",
+      "blockerCodes": [
+        "NON_REACTIVE_QUERY_COPY",
+        "LIST_ENDPOINT_REUSED_FOR_WRITES",
+        "WRONG_RESOURCE_MODEL"
+      ],
+      "evidence": {
+        "frontend": [
+          {
+            "file": "oa4rust-web/apps/desktop/src/views/CommonApp.vue",
+            "contains": "items.value = data.value ?? []"
+          }
+        ],
+        "routing": [
+          {
+            "file": "oa4rust-web/apps/desktop/src/main.ts",
+            "contains": "import('./views/CommonApp.vue')"
+          }
+        ]
+      }
+    },
+    {
+      "id": "w13:DeploymentApp.vue",
+      "workItem": "W13",
+      "kind": "crud_view",
+      "view": "DeploymentApp.vue",
+      "route": "/app/deployment",
+      "title": "部署管理",
+      "endpoint": "/jaxrs/server/deploy/list",
+      "status": "still_blocked",
+      "replacementClaim": false,
+      "decision": "无部署目标、资源和执行状态交互。",
+      "blockerCodes": [
+        "NON_REACTIVE_QUERY_COPY",
+        "LIST_ENDPOINT_REUSED_FOR_WRITES",
+        "WRONG_RESOURCE_MODEL"
+      ],
+      "evidence": {
+        "frontend": [
+          {
+            "file": "oa4rust-web/apps/desktop/src/views/DeploymentApp.vue",
+            "contains": "items.value = data.value ?? []"
+          }
+        ],
+        "routing": [
+          {
+            "file": "oa4rust-web/apps/desktop/src/main.ts",
+            "contains": "import('./views/DeploymentApp.vue')"
+          }
+        ]
+      }
+    },
+    {
+      "id": "w13:FaceSetApp.vue",
+      "workItem": "W13",
+      "kind": "crud_view",
+      "view": "FaceSetApp.vue",
+      "route": "/app/face-set",
+      "title": "人脸设置",
+      "endpoint": "/jaxrs/personal/face/list",
+      "status": "still_blocked",
+      "replacementClaim": false,
+      "decision": "无图片采集、上传或人脸设置语义。",
+      "blockerCodes": [
+        "NON_REACTIVE_QUERY_COPY",
+        "LIST_ENDPOINT_REUSED_FOR_WRITES",
+        "WRONG_RESOURCE_MODEL"
+      ],
+      "evidence": {
+        "frontend": [
+          {
+            "file": "oa4rust-web/apps/desktop/src/views/FaceSetApp.vue",
+            "contains": "items.value = data.value ?? []"
+          }
+        ],
+        "routing": [
+          {
+            "file": "oa4rust-web/apps/desktop/src/main.ts",
+            "contains": "import('./views/FaceSetApp.vue')"
+          }
+        ]
+      }
+    },
+    {
+      "id": "w13:FtSearchApp.vue",
+      "workItem": "W13",
+      "kind": "crud_view",
+      "view": "FtSearchApp.vue",
+      "route": "/app/ftsearch",
+      "title": "全文搜索引擎",
+      "endpoint": "/jaxrs/ftsearch/list",
+      "status": "still_blocked",
+      "replacementClaim": false,
+      "decision": "无索引状态、搜索或运维动作语义。",
+      "blockerCodes": [
+        "NON_REACTIVE_QUERY_COPY",
+        "LIST_ENDPOINT_REUSED_FOR_WRITES",
+        "WRONG_RESOURCE_MODEL"
+      ],
+      "evidence": {
+        "frontend": [
+          {
+            "file": "oa4rust-web/apps/desktop/src/views/FtSearchApp.vue",
+            "contains": "items.value = data.value ?? []"
+          }
+        ],
+        "routing": [
+          {
+            "file": "oa4rust-web/apps/desktop/src/main.ts",
+            "contains": "import('./views/FtSearchApp.vue')"
+          }
+        ]
+      }
+    },
+    {
+      "id": "w13:LogViewerApp.vue",
+      "workItem": "W13",
+      "kind": "crud_view",
+      "view": "LogViewerApp.vue",
+      "route": "/app/log-viewer",
+      "title": "日志查看器",
+      "endpoint": "/jaxrs/log/list",
+      "status": "still_blocked",
+      "replacementClaim": false,
+      "decision": "日志被误建模为可新建/编辑的名称 CRUD，无日志筛选与详情。",
+      "blockerCodes": [
+        "NON_REACTIVE_QUERY_COPY",
+        "LIST_ENDPOINT_REUSED_FOR_WRITES",
+        "WRONG_RESOURCE_MODEL"
+      ],
+      "evidence": {
+        "frontend": [
+          {
+            "file": "oa4rust-web/apps/desktop/src/views/LogViewerApp.vue",
+            "contains": "items.value = data.value ?? []"
+          }
+        ],
+        "routing": [
+          {
+            "file": "oa4rust-web/apps/desktop/src/main.ts",
+            "contains": "import('./views/LogViewerApp.vue')"
+          }
+        ]
+      }
+    },
+    {
+      "id": "w13:NoteApp.vue",
+      "workItem": "W13",
+      "kind": "crud_view",
+      "view": "NoteApp.vue",
+      "route": "/app/note",
+      "title": "笔记管理",
+      "endpoint": "/jaxrs/cms/core/entity/note/list",
+      "status": "still_blocked",
+      "replacementClaim": false,
+      "decision": "无笔记正文编辑，且 list URL 被复用于写操作。",
+      "blockerCodes": [
+        "NON_REACTIVE_QUERY_COPY",
+        "LIST_ENDPOINT_REUSED_FOR_WRITES",
+        "GENERIC_NAME_FLAG_FORM"
+      ],
+      "evidence": {
+        "frontend": [
+          {
+            "file": "oa4rust-web/apps/desktop/src/views/NoteApp.vue",
+            "contains": "items.value = data.value ?? []"
+          }
+        ],
+        "routing": [
+          {
+            "file": "oa4rust-web/apps/desktop/src/main.ts",
+            "contains": "import('./views/NoteApp.vue')"
+          }
+        ]
+      }
+    },
+    {
+      "id": "w13:PortalDictDesignerApp.vue",
+      "workItem": "W13",
+      "kind": "crud_view",
+      "view": "PortalDictDesignerApp.vue",
+      "route": "/app/portal-dict-designer",
+      "title": "门户字典设计器",
+      "endpoint": "/jaxrs/portal/assemble/designer/dict/list",
+      "status": "still_blocked",
+      "replacementClaim": false,
+      "decision": "无字典树和数据编辑。",
+      "blockerCodes": [
+        "NON_REACTIVE_QUERY_COPY",
+        "LIST_ENDPOINT_REUSED_FOR_WRITES",
+        "MISSING_DOMAIN_DESIGNER"
+      ],
+      "evidence": {
+        "frontend": [
+          {
+            "file": "oa4rust-web/apps/desktop/src/views/PortalDictDesignerApp.vue",
+            "contains": "items.value = data.value ?? []"
+          }
+        ],
+        "routing": [
+          {
+            "file": "oa4rust-web/apps/desktop/src/main.ts",
+            "contains": "import('./views/PortalDictDesignerApp.vue')"
+          }
+        ]
+      }
+    },
+    {
+      "id": "w13:PortalPageDesignerApp.vue",
+      "workItem": "W13",
+      "kind": "crud_view",
+      "view": "PortalPageDesignerApp.vue",
+      "route": "/app/portal-page-designer",
+      "title": "门户页面设计器",
+      "endpoint": "/jaxrs/portal/assemble/designer/page/list",
+      "status": "still_blocked",
+      "replacementClaim": false,
+      "decision": "无页面布局、模块和预览能力。",
+      "blockerCodes": [
+        "NON_REACTIVE_QUERY_COPY",
+        "LIST_ENDPOINT_REUSED_FOR_WRITES",
+        "MISSING_DOMAIN_DESIGNER"
+      ],
+      "evidence": {
+        "frontend": [
+          {
+            "file": "oa4rust-web/apps/desktop/src/views/PortalPageDesignerApp.vue",
+            "contains": "items.value = data.value ?? []"
+          }
+        ],
+        "routing": [
+          {
+            "file": "oa4rust-web/apps/desktop/src/main.ts",
+            "contains": "import('./views/PortalPageDesignerApp.vue')"
+          }
+        ]
+      }
+    },
+    {
+      "id": "w13:PortalScriptDesignerApp.vue",
+      "workItem": "W13",
+      "kind": "crud_view",
+      "view": "PortalScriptDesignerApp.vue",
+      "route": "/app/portal-script-designer",
+      "title": "门户脚本设计器",
+      "endpoint": "/jaxrs/portal/assemble/designer/script/list",
+      "status": "still_blocked",
+      "replacementClaim": false,
+      "decision": "无代码编辑器、XScript 补全和版本历史。",
+      "blockerCodes": [
+        "NON_REACTIVE_QUERY_COPY",
+        "LIST_ENDPOINT_REUSED_FOR_WRITES",
+        "MISSING_SCRIPT_EDITOR"
+      ],
+      "evidence": {
+        "frontend": [
+          {
+            "file": "oa4rust-web/apps/desktop/src/views/PortalScriptDesignerApp.vue",
+            "contains": "items.value = data.value ?? []"
+          }
+        ],
+        "routing": [
+          {
+            "file": "oa4rust-web/apps/desktop/src/main.ts",
+            "contains": "import('./views/PortalScriptDesignerApp.vue')"
+          }
+        ]
+      }
+    },
+    {
+      "id": "w13:PortalWidgetDesignerApp.vue",
+      "workItem": "W13",
+      "kind": "crud_view",
+      "view": "PortalWidgetDesignerApp.vue",
+      "route": "/app/portal-widget-designer",
+      "title": "门户组件设计器",
+      "endpoint": "/jaxrs/portal/assemble/designer/widget/list",
+      "status": "still_blocked",
+      "replacementClaim": false,
+      "decision": "无组件主体设计和预览。",
+      "blockerCodes": [
+        "NON_REACTIVE_QUERY_COPY",
+        "LIST_ENDPOINT_REUSED_FOR_WRITES",
+        "MISSING_DOMAIN_DESIGNER"
+      ],
+      "evidence": {
+        "frontend": [
+          {
+            "file": "oa4rust-web/apps/desktop/src/views/PortalWidgetDesignerApp.vue",
+            "contains": "items.value = data.value ?? []"
+          }
+        ],
+        "routing": [
+          {
+            "file": "oa4rust-web/apps/desktop/src/main.ts",
+            "contains": "import('./views/PortalWidgetDesignerApp.vue')"
+          }
+        ]
+      }
+    },
+    {
+      "id": "w13:ProcessApplicationApp.vue",
+      "workItem": "W13",
+      "kind": "crud_view",
+      "view": "ProcessApplicationApp.vue",
+      "route": "/app/process-application",
+      "title": "流程应用管理",
+      "endpoint": "/jaxrs/program_center/application/list",
+      "status": "still_blocked",
+      "replacementClaim": false,
+      "decision": "流程应用被缩减为通用名称/标识 CRUD。",
+      "blockerCodes": [
+        "NON_REACTIVE_QUERY_COPY",
+        "LIST_ENDPOINT_REUSED_FOR_WRITES",
+        "WRONG_RESOURCE_MODEL"
+      ],
+      "evidence": {
+        "frontend": [
+          {
+            "file": "oa4rust-web/apps/desktop/src/views/ProcessApplicationApp.vue",
+            "contains": "items.value = data.value ?? []"
+          }
+        ],
+        "routing": [
+          {
+            "file": "oa4rust-web/apps/desktop/src/main.ts",
+            "contains": "import('./views/ProcessApplicationApp.vue')"
+          }
+        ]
+      }
+    },
+    {
+      "id": "w13:ProcessDictDesignerApp.vue",
+      "workItem": "W13",
+      "kind": "crud_view",
+      "view": "ProcessDictDesignerApp.vue",
+      "route": "/app/process-dict-designer",
+      "title": "流程字典设计器",
+      "endpoint": "/jaxrs/processplatform/assemble/designer/dict/list",
+      "status": "still_blocked",
+      "replacementClaim": false,
+      "decision": "无字典树和流程数据编辑。",
+      "blockerCodes": [
+        "NON_REACTIVE_QUERY_COPY",
+        "LIST_ENDPOINT_REUSED_FOR_WRITES",
+        "MISSING_DOMAIN_DESIGNER"
+      ],
+      "evidence": {
+        "frontend": [
+          {
+            "file": "oa4rust-web/apps/desktop/src/views/ProcessDictDesignerApp.vue",
+            "contains": "items.value = data.value ?? []"
+          }
+        ],
+        "routing": [
+          {
+            "file": "oa4rust-web/apps/desktop/src/main.ts",
+            "contains": "import('./views/ProcessDictDesignerApp.vue')"
+          }
+        ]
+      }
+    },
+    {
+      "id": "w13:ProcessFormDesignerApp.vue",
+      "workItem": "W13",
+      "kind": "crud_view",
+      "view": "ProcessFormDesignerApp.vue",
+      "route": "/app/process-form-designer",
+      "title": "流程表单设计器",
+      "endpoint": "/jaxrs/processplatform/assemble/designer/form/list",
+      "status": "still_blocked",
+      "replacementClaim": false,
+      "decision": "无表单设计与流程运行契约。",
+      "blockerCodes": [
+        "NON_REACTIVE_QUERY_COPY",
+        "LIST_ENDPOINT_REUSED_FOR_WRITES",
+        "MISSING_DOMAIN_DESIGNER"
+      ],
+      "evidence": {
+        "frontend": [
+          {
+            "file": "oa4rust-web/apps/desktop/src/views/ProcessFormDesignerApp.vue",
+            "contains": "items.value = data.value ?? []"
+          }
+        ],
+        "routing": [
+          {
+            "file": "oa4rust-web/apps/desktop/src/main.ts",
+            "contains": "import('./views/ProcessFormDesignerApp.vue')"
+          }
+        ]
+      }
+    },
+    {
+      "id": "w13:ProcessManagerApp.vue",
+      "workItem": "W13",
+      "kind": "crud_view",
+      "view": "ProcessManagerApp.vue",
+      "route": "/app/process-manager",
+      "title": "流程实例管理",
+      "endpoint": "/jaxrs/processplatform/assemble/surface/process_manager/list",
+      "status": "still_blocked",
+      "replacementClaim": false,
+      "decision": "流程实例被误建模为名称 CRUD，无状态、流转和管理动作。",
+      "blockerCodes": [
+        "NON_REACTIVE_QUERY_COPY",
+        "LIST_ENDPOINT_REUSED_FOR_WRITES",
+        "WRONG_RESOURCE_MODEL"
+      ],
+      "evidence": {
+        "frontend": [
+          {
+            "file": "oa4rust-web/apps/desktop/src/views/ProcessManagerApp.vue",
+            "contains": "items.value = data.value ?? []"
+          }
+        ],
+        "routing": [
+          {
+            "file": "oa4rust-web/apps/desktop/src/main.ts",
+            "contains": "import('./views/ProcessManagerApp.vue')"
+          }
+        ]
+      }
+    },
+    {
+      "id": "w13:ProcessScriptDesignerApp.vue",
+      "workItem": "W13",
+      "kind": "crud_view",
+      "view": "ProcessScriptDesignerApp.vue",
+      "route": "/app/process-script-designer",
+      "title": "流程脚本设计器",
+      "endpoint": "/jaxrs/processplatform/assemble/designer/script/list",
+      "status": "still_blocked",
+      "replacementClaim": false,
+      "decision": "无代码编辑器、XScript 补全和版本历史。",
+      "blockerCodes": [
+        "NON_REACTIVE_QUERY_COPY",
+        "LIST_ENDPOINT_REUSED_FOR_WRITES",
+        "MISSING_SCRIPT_EDITOR"
+      ],
+      "evidence": {
+        "frontend": [
+          {
+            "file": "oa4rust-web/apps/desktop/src/views/ProcessScriptDesignerApp.vue",
+            "contains": "items.value = data.value ?? []"
+          }
+        ],
+        "routing": [
+          {
+            "file": "oa4rust-web/apps/desktop/src/main.ts",
+            "contains": "import('./views/ProcessScriptDesignerApp.vue')"
+          }
+        ]
+      }
+    },
+    {
+      "id": "w13:ProcessTaskCenterApp.vue",
+      "workItem": "W13",
+      "kind": "crud_view",
+      "view": "ProcessTaskCenterApp.vue",
+      "route": "/app/process-task-center",
+      "title": "流程任务中心",
+      "endpoint": "/jaxrs/processplatform/service/processing/task/list",
+      "status": "still_blocked",
+      "replacementClaim": false,
+      "decision": "任务被误建模为可编辑名称 CRUD，无办理动作和任务语义。",
+      "blockerCodes": [
+        "NON_REACTIVE_QUERY_COPY",
+        "LIST_ENDPOINT_REUSED_FOR_WRITES",
+        "WRONG_RESOURCE_MODEL"
+      ],
+      "evidence": {
+        "frontend": [
+          {
+            "file": "oa4rust-web/apps/desktop/src/views/ProcessTaskCenterApp.vue",
+            "contains": "items.value = data.value ?? []"
+          }
+        ],
+        "routing": [
+          {
+            "file": "oa4rust-web/apps/desktop/src/main.ts",
+            "contains": "import('./views/ProcessTaskCenterApp.vue')"
+          }
+        ]
+      }
+    },
+    {
+      "id": "w13:ProcessXformApp.vue",
+      "workItem": "W13",
+      "kind": "crud_view",
+      "view": "ProcessXformApp.vue",
+      "route": "/app/process-xform",
+      "title": "流程XForm",
+      "endpoint": "/jaxrs/processplatform/assemble/designer/xform/list",
+      "status": "still_blocked",
+      "replacementClaim": false,
+      "decision": "无 XForm 编辑和运行时渲染。",
+      "blockerCodes": [
+        "NON_REACTIVE_QUERY_COPY",
+        "LIST_ENDPOINT_REUSED_FOR_WRITES",
+        "MISSING_XFORM_RUNTIME"
+      ],
+      "evidence": {
+        "frontend": [
+          {
+            "file": "oa4rust-web/apps/desktop/src/views/ProcessXformApp.vue",
+            "contains": "items.value = data.value ?? []"
+          }
+        ],
+        "routing": [
+          {
+            "file": "oa4rust-web/apps/desktop/src/main.ts",
+            "contains": "import('./views/ProcessXformApp.vue')"
+          }
+        ]
+      }
+    },
+    {
+      "id": "w13:QueryExplorerApp.vue",
+      "workItem": "W13",
+      "kind": "crud_view",
+      "view": "QueryExplorerApp.vue",
+      "route": "/app/query-explorer",
+      "title": "查询浏览器",
+      "endpoint": "/jaxrs/query/assemble/surface/explorer/list",
+      "status": "still_blocked",
+      "replacementClaim": false,
+      "decision": "无查询选择、条件输入、执行和结果浏览。",
+      "blockerCodes": [
+        "NON_REACTIVE_QUERY_COPY",
+        "LIST_ENDPOINT_REUSED_FOR_WRITES",
+        "WRONG_RESOURCE_MODEL"
+      ],
+      "evidence": {
+        "frontend": [
+          {
+            "file": "oa4rust-web/apps/desktop/src/views/QueryExplorerApp.vue",
+            "contains": "items.value = data.value ?? []"
+          }
+        ],
+        "routing": [
+          {
+            "file": "oa4rust-web/apps/desktop/src/main.ts",
+            "contains": "import('./views/QueryExplorerApp.vue')"
+          }
+        ]
+      }
+    },
+    {
+      "id": "w13:QueryImporterDesignerApp.vue",
+      "workItem": "W13",
+      "kind": "crud_view",
+      "view": "QueryImporterDesignerApp.vue",
+      "route": "/app/query-importer-designer",
+      "title": "导入设计器",
+      "endpoint": "/jaxrs/query/assemble/designer/importer/list",
+      "status": "still_blocked",
+      "replacementClaim": false,
+      "decision": "无字段映射、校验和导入设计。",
+      "blockerCodes": [
+        "NON_REACTIVE_QUERY_COPY",
+        "LIST_ENDPOINT_REUSED_FOR_WRITES",
+        "MISSING_DOMAIN_DESIGNER"
+      ],
+      "evidence": {
+        "frontend": [
+          {
+            "file": "oa4rust-web/apps/desktop/src/views/QueryImporterDesignerApp.vue",
+            "contains": "items.value = data.value ?? []"
+          }
+        ],
+        "routing": [
+          {
+            "file": "oa4rust-web/apps/desktop/src/main.ts",
+            "contains": "import('./views/QueryImporterDesignerApp.vue')"
+          }
+        ]
+      }
+    },
+    {
+      "id": "w13:QueryQueryApp.vue",
+      "workItem": "W13",
+      "kind": "crud_view",
+      "view": "QueryQueryApp.vue",
+      "route": "/app/query-query",
+      "title": "查询定义",
+      "endpoint": "/jaxrs/query/assemble/designer/list",
+      "status": "still_blocked",
+      "replacementClaim": false,
+      "decision": "无查询定义结构和执行验证。",
+      "blockerCodes": [
+        "NON_REACTIVE_QUERY_COPY",
+        "LIST_ENDPOINT_REUSED_FOR_WRITES",
+        "MISSING_DOMAIN_DESIGNER"
+      ],
+      "evidence": {
+        "frontend": [
+          {
+            "file": "oa4rust-web/apps/desktop/src/views/QueryQueryApp.vue",
+            "contains": "items.value = data.value ?? []"
+          }
+        ],
+        "routing": [
+          {
+            "file": "oa4rust-web/apps/desktop/src/main.ts",
+            "contains": "import('./views/QueryQueryApp.vue')"
+          }
+        ]
+      }
+    },
+    {
+      "id": "w13:QueryStatDesignerApp.vue",
+      "workItem": "W13",
+      "kind": "crud_view",
+      "view": "QueryStatDesignerApp.vue",
+      "route": "/app/query-stat-designer",
+      "title": "统计设计器",
+      "endpoint": "/jaxrs/query/assemble/designer/stat/list",
+      "status": "still_blocked",
+      "replacementClaim": false,
+      "decision": "无维度、指标、过滤和模拟执行。",
+      "blockerCodes": [
+        "NON_REACTIVE_QUERY_COPY",
+        "LIST_ENDPOINT_REUSED_FOR_WRITES",
+        "MISSING_DOMAIN_DESIGNER"
+      ],
+      "evidence": {
+        "frontend": [
+          {
+            "file": "oa4rust-web/apps/desktop/src/views/QueryStatDesignerApp.vue",
+            "contains": "items.value = data.value ?? []"
+          }
+        ],
+        "routing": [
+          {
+            "file": "oa4rust-web/apps/desktop/src/main.ts",
+            "contains": "import('./views/QueryStatDesignerApp.vue')"
+          }
+        ]
+      }
+    },
+    {
+      "id": "w13:QueryTableDesignerApp.vue",
+      "workItem": "W13",
+      "kind": "crud_view",
+      "view": "QueryTableDesignerApp.vue",
+      "route": "/app/query-table-designer",
+      "title": "表格设计器",
+      "endpoint": "/jaxrs/query/assemble/surface/table/list",
+      "status": "still_blocked",
+      "replacementClaim": false,
+      "decision": "无列编辑、建表或 DDL 语义。",
+      "blockerCodes": [
+        "NON_REACTIVE_QUERY_COPY",
+        "LIST_ENDPOINT_REUSED_FOR_WRITES",
+        "MISSING_DOMAIN_DESIGNER"
+      ],
+      "evidence": {
+        "frontend": [
+          {
+            "file": "oa4rust-web/apps/desktop/src/views/QueryTableDesignerApp.vue",
+            "contains": "items.value = data.value ?? []"
+          }
+        ],
+        "routing": [
+          {
+            "file": "oa4rust-web/apps/desktop/src/main.ts",
+            "contains": "import('./views/QueryTableDesignerApp.vue')"
+          }
+        ]
+      }
+    },
+    {
+      "id": "w13:QueryViewDesignerApp.vue",
+      "workItem": "W13",
+      "kind": "crud_view",
+      "view": "QueryViewDesignerApp.vue",
+      "route": "/app/query-view-designer",
+      "title": "视图设计器",
+      "endpoint": "/jaxrs/query/assemble/designer/view/list",
+      "status": "still_blocked",
+      "replacementClaim": false,
+      "decision": "无可视化过滤、排序、分页、lookup 和模拟。",
+      "blockerCodes": [
+        "NON_REACTIVE_QUERY_COPY",
+        "LIST_ENDPOINT_REUSED_FOR_WRITES",
+        "MISSING_DOMAIN_DESIGNER"
+      ],
+      "evidence": {
+        "frontend": [
+          {
+            "file": "oa4rust-web/apps/desktop/src/views/QueryViewDesignerApp.vue",
+            "contains": "items.value = data.value ?? []"
+          }
+        ],
+        "routing": [
+          {
+            "file": "oa4rust-web/apps/desktop/src/main.ts",
+            "contains": "import('./views/QueryViewDesignerApp.vue')"
+          }
+        ]
+      }
+    },
+    {
+      "id": "w13:ServiceInvokeDesignerApp.vue",
+      "workItem": "W13",
+      "kind": "crud_view",
+      "view": "ServiceInvokeDesignerApp.vue",
+      "route": "/app/service-invoke-designer",
+      "title": "服务调用设计器",
+      "endpoint": "/jaxrs/program_center/invoke/list",
+      "status": "still_blocked",
+      "replacementClaim": false,
+      "decision": "后端真实 CRUD 位于 /invoke 与 /invoke/{flag}；页面把 /invoke/list 同时用于增改删，且无调用参数设计。",
+      "blockerCodes": [
+        "NON_REACTIVE_QUERY_COPY",
+        "LIST_ENDPOINT_REUSED_FOR_WRITES",
+        "MISSING_DOMAIN_DESIGNER"
+      ],
+      "evidence": {
+        "frontend": [
+          {
+            "file": "oa4rust-web/apps/desktop/src/views/ServiceInvokeDesignerApp.vue",
+            "contains": "const ep = '/jaxrs/program_center/invoke/list'"
+          },
+          {
+            "file": "oa4rust-web/apps/desktop/src/views/ServiceInvokeDesignerApp.vue",
+            "contains": "return api.post(ep, data)"
+          }
+        ],
+        "routing": [
+          {
+            "file": "oa4rust-web/apps/desktop/src/main.ts",
+            "contains": "import('./views/ServiceInvokeDesignerApp.vue')"
+          }
+        ],
+        "backend": [
+          {
+            "file": "oa4rust/crates/program_center/src/routes.rs",
+            "contains": ".route(\"/jaxrs/program_center/invoke\", post(crate::u2_invoke_create))"
+          },
+          {
+            "file": "oa4rust/crates/program_center/src/routes.rs",
+            "contains": ".route(\"/jaxrs/program_center/invoke/{flag}\""
+          }
+        ]
+      }
+    },
+    {
+      "id": "w13:TemplateApp.vue",
+      "workItem": "W13",
+      "kind": "crud_view",
+      "view": "TemplateApp.vue",
+      "route": "/app/template",
+      "title": "模板管理",
+      "endpoint": "/jaxrs/templateform/list",
+      "status": "still_blocked",
+      "replacementClaim": false,
+      "decision": "无模板正文、结构或预览编辑。",
+      "blockerCodes": [
+        "NON_REACTIVE_QUERY_COPY",
+        "LIST_ENDPOINT_REUSED_FOR_WRITES",
+        "GENERIC_NAME_FLAG_FORM"
+      ],
+      "evidence": {
+        "frontend": [
+          {
+            "file": "oa4rust-web/apps/desktop/src/views/TemplateApp.vue",
+            "contains": "items.value = data.value ?? []"
+          }
+        ],
+        "routing": [
+          {
+            "file": "oa4rust-web/apps/desktop/src/main.ts",
+            "contains": "import('./views/TemplateApp.vue')"
+          }
+        ]
+      }
+    },
+    {
+      "id": "w13:ThreeMemberApp.vue",
+      "workItem": "W13",
+      "kind": "crud_view",
+      "view": "ThreeMemberApp.vue",
+      "route": "/app/three-member",
+      "title": "三方成员管理",
+      "endpoint": "/jaxrs/organization/assemble/control/threemember/list",
+      "status": "still_blocked",
+      "replacementClaim": false,
+      "decision": "无三方成员身份、同步或权限语义。",
+      "blockerCodes": [
+        "NON_REACTIVE_QUERY_COPY",
+        "LIST_ENDPOINT_REUSED_FOR_WRITES",
+        "WRONG_RESOURCE_MODEL"
+      ],
+      "evidence": {
+        "frontend": [
+          {
+            "file": "oa4rust-web/apps/desktop/src/views/ThreeMemberApp.vue",
+            "contains": "items.value = data.value ?? []"
+          }
+        ],
+        "routing": [
+          {
+            "file": "oa4rust-web/apps/desktop/src/main.ts",
+            "contains": "import('./views/ThreeMemberApp.vue')"
+          }
+        ]
+      }
+    },
+    {
+      "id": "w14:x_component_Minder",
+      "workItem": "W14",
+      "kind": "legacy_family_component",
+      "legacyComponent": "x_component_Minder",
+      "mappedViews": [
+        "MindApp.vue"
+      ],
+      "routes": [
+        "/app/mind"
+      ],
+      "status": "still_blocked",
+      "replacementClaim": false,
+      "decision": "目录树可读取，但脑图列表调用 /mind/mind/list/{folder}/1 与后端路由不匹配，且无创建/编辑入口。",
+      "blockerCodes": [
+        "FRONTEND_BACKEND_ROUTE_MISMATCH",
+        "MISSING_MIND_AUTHORING"
+      ],
+      "evidence": {
+        "frontend": [
+          {
+            "file": "oa4rust-web/apps/desktop/src/views/MindApp.vue",
+            "contains": "api.get(`/jaxrs/mind/mind/list/${folderId}/1`)"
+          }
+        ],
+        "routing": [
+          {
+            "file": "oa4rust-web/apps/desktop/src/main.ts",
+            "contains": "import('./views/MindApp.vue')"
+          }
+        ],
+        "backend": [
+          {
+            "file": "oa4rust/crates/mind/src/routes.rs",
+            "contains": "/jaxrs/mind/mind/list/{id}/version"
+          }
+        ]
+      }
+    },
+    {
+      "id": "w14:x_component_MinderEditor",
+      "workItem": "W14",
+      "kind": "legacy_family_component",
+      "legacyComponent": "x_component_MinderEditor",
+      "mappedViews": [
+        "MindApp.vue"
+      ],
+      "routes": [
+        "/app/mind"
+      ],
+      "status": "still_blocked",
+      "replacementClaim": false,
+      "decision": "后端有 mind/folder/version 写路由，但前端只有 JSON 查看弹窗，没有画布编辑器、保存或版本编辑。",
+      "blockerCodes": [
+        "MISSING_MIND_CANVAS",
+        "UNUSED_BACKEND_WRITE_CAPABILITY"
+      ],
+      "evidence": {
+        "frontend": [
+          {
+            "file": "oa4rust-web/apps/desktop/src/views/MindApp.vue",
+            "contains": "<pre class=\"mind-json\">"
+          }
+        ],
+        "backend": [
+          {
+            "file": "oa4rust/crates/mind/src/routes.rs",
+            "contains": ".route(\"/jaxrs/mind/mind\", post(crate::create_mind))"
+          },
+          {
+            "file": "oa4rust/crates/mind/src/routes.rs",
+            "contains": ".route(\"/jaxrs/mind/version\", post(crate::create_version))"
+          }
+        ]
+      }
+    },
+    {
+      "id": "w14:x_component_service_AgentDesigner",
+      "workItem": "W14",
+      "kind": "legacy_family_component",
+      "legacyComponent": "x_component_service_AgentDesigner",
+      "mappedViews": [
+        "ProgramCenterApp.vue"
+      ],
+      "routes": [
+        "/app/program"
+      ],
+      "status": "still_blocked",
+      "replacementClaim": false,
+      "decision": "程序中心只有 Agent 列表、名称/flag 新建和启停，未提供 Agent 设计属性与编辑器。",
+      "blockerCodes": [
+        "PARTIAL_CONSOLIDATED_UI",
+        "MISSING_DOMAIN_DESIGNER"
+      ],
+      "evidence": {
+        "frontend": [
+          {
+            "file": "oa4rust-web/apps/desktop/src/views/ProgramCenterApp.vue",
+            "contains": "api.get('/jaxrs/program_center/agent/list')"
+          }
+        ],
+        "backend": [
+          {
+            "file": "oa4rust/crates/program_center/src/routes.rs",
+            "contains": "/jaxrs/program_center/agent/{flag}"
+          }
+        ]
+      }
+    },
+    {
+      "id": "w14:x_component_service_DictionaryDesigner",
+      "workItem": "W14",
+      "kind": "legacy_family_component",
+      "legacyComponent": "x_component_service_DictionaryDesigner",
+      "mappedViews": [
+        "ProgramCenterApp.vue"
+      ],
+      "routes": [
+        "/app/program"
+      ],
+      "status": "still_blocked",
+      "replacementClaim": false,
+      "decision": "程序中心只有字典列表和名称/flag 提示框，无树形数据编辑。",
+      "blockerCodes": [
+        "PARTIAL_CONSOLIDATED_UI",
+        "MISSING_DOMAIN_DESIGNER"
+      ],
+      "evidence": {
+        "frontend": [
+          {
+            "file": "oa4rust-web/apps/desktop/src/views/ProgramCenterApp.vue",
+            "contains": "api.get('/jaxrs/program_center/dict/list')"
+          }
+        ],
+        "backend": [
+          {
+            "file": "oa4rust/crates/program_center/src/routes.rs",
+            "contains": "/jaxrs/program_center/dict/{dictFlag}/{path}/data"
+          }
+        ]
+      }
+    },
+    {
+      "id": "w14:x_component_service_InvokeDesigner",
+      "workItem": "W14",
+      "kind": "legacy_family_component",
+      "legacyComponent": "x_component_service_InvokeDesigner",
+      "mappedViews": [
+        "ServiceInvokeDesignerApp.vue"
+      ],
+      "routes": [
+        "/app/service-invoke-designer"
+      ],
+      "status": "still_blocked",
+      "replacementClaim": false,
+      "decision": "专用路由存在，但仍是 W13 薄壳；写操作错误复用 /invoke/list。",
+      "blockerCodes": [
+        "THIN_CRUD_SHELL",
+        "LIST_ENDPOINT_REUSED_FOR_WRITES",
+        "MISSING_DOMAIN_DESIGNER"
+      ],
+      "evidence": {
+        "frontend": [
+          {
+            "file": "oa4rust-web/apps/desktop/src/views/ServiceInvokeDesignerApp.vue",
+            "contains": "const ep = '/jaxrs/program_center/invoke/list'"
+          }
+        ],
+        "routing": [
+          {
+            "file": "oa4rust-web/apps/desktop/src/main.ts",
+            "contains": "import('./views/ServiceInvokeDesignerApp.vue')"
+          }
+        ],
+        "backend": [
+          {
+            "file": "oa4rust/crates/program_center/src/routes.rs",
+            "contains": "/jaxrs/program_center/invoke/{flag}"
+          }
+        ]
+      }
+    },
+    {
+      "id": "w14:x_component_service_ScriptDesigner",
+      "workItem": "W14",
+      "kind": "legacy_family_component",
+      "legacyComponent": "x_component_service_ScriptDesigner",
+      "mappedViews": [
+        "ProgramCenterApp.vue"
+      ],
+      "routes": [
+        "/app/program"
+      ],
+      "status": "still_blocked",
+      "replacementClaim": false,
+      "decision": "程序中心只列出/删除/执行脚本，无代码编辑、补全和版本历史。",
+      "blockerCodes": [
+        "PARTIAL_CONSOLIDATED_UI",
+        "MISSING_SCRIPT_EDITOR"
+      ],
+      "evidence": {
+        "frontend": [
+          {
+            "file": "oa4rust-web/apps/desktop/src/views/ProgramCenterApp.vue",
+            "contains": "api.get('/jaxrs/program_center/script/list')"
+          }
+        ],
+        "backend": [
+          {
+            "file": "oa4rust/crates/program_center/src/routes.rs",
+            "contains": "/jaxrs/program_center/script/{flag}"
+          }
+        ]
+      }
+    },
+    {
+      "id": "w14:x_component_service_ServiceManager",
+      "workItem": "W14",
+      "kind": "legacy_family_component",
+      "legacyComponent": "x_component_service_ServiceManager",
+      "mappedViews": [
+        "ProgramCenterApp.vue",
+        "ServiceInvokeDesignerApp.vue"
+      ],
+      "routes": [
+        "/app/program",
+        "/app/service-invoke-designer"
+      ],
+      "status": "still_blocked",
+      "replacementClaim": false,
+      "decision": "没有服务管理视图；现有 Agent/Invoke 碎片不能替代服务动作、权限和管理闭环。",
+      "blockerCodes": [
+        "MISSING_DEDICATED_CAPABILITY",
+        "PARTIAL_CONSOLIDATED_UI"
+      ],
+      "evidence": {
+        "frontend": [
+          {
+            "file": "oa4rust-web/apps/desktop/src/views/ProgramCenterApp.vue",
+            "contains": "type Tab = 'agent' | 'application' | 'script' | 'dict' | 'market'"
+          }
+        ],
+        "routing": [
+          {
+            "file": "oa4rust-web/apps/desktop/src/main.ts",
+            "contains": "ServiceInvokeDesignerApp"
+          }
+        ]
+      }
+    },
+    {
+      "id": "w14:x_component_AppMarketV2",
+      "workItem": "W14",
+      "kind": "legacy_family_component",
+      "legacyComponent": "x_component_AppMarketV2",
+      "mappedViews": [
+        "ProgramCenterApp.vue"
+      ],
+      "routes": [
+        "/app/program"
+      ],
+      "status": "out_of_scope",
+      "replacementClaim": false,
+      "decision": "外部 O2 应用市场浏览/云端生态不纳入本次无历史数据的 greenfield 内网替代；程序包部署能力另行验收，不据此宣称 AppMarketV2 已实现。",
+      "acceptedBoundary": {
+        "scope": "第三方 O2 云市场目录、账号/VIP、在线安装生态",
+        "impact": "用户不能从旧 O2 市场发现或在线安装应用；必须使用受控程序包部署流程",
+        "owner": "W14 repository audit",
+        "replacementClaim": false
+      },
+      "blockerCodes": [],
+      "evidence": {
+        "frontend": [
+          {
+            "file": "oa4rust-web/apps/desktop/src/views/ProgramCenterApp.vue",
+            "contains": "api.post('/jaxrs/program_center/market/list/paging/1/20', {})"
+          }
+        ],
+        "backend": [
+          {
+            "file": "oa4rust/crates/program_center/src/routes.rs",
+            "contains": "/jaxrs/program_center/market/list/paging/{page}/size/{size}"
+          }
+        ]
+      }
+    },
+    {
+      "id": "w14:x_component_AppMarketV2_Application",
+      "workItem": "W14",
+      "kind": "legacy_family_component",
+      "legacyComponent": "x_component_AppMarketV2_Application",
+      "mappedViews": [
+        "ProgramCenterApp.vue"
+      ],
+      "routes": [
+        "/app/program"
+      ],
+      "status": "out_of_scope",
+      "replacementClaim": false,
+      "decision": "旧市场应用详情、评论、版本和在线安装页随 AppMarketV2 云生态一并排除；不把 ProgramCenter 的 Market 卡片当作实现。",
+      "acceptedBoundary": {
+        "scope": "O2 云市场应用详情、评论、版本与在线安装页面",
+        "impact": "旧市场应用详情链路不可用；仅保留受控程序包部署路径",
+        "owner": "W14 repository audit",
+        "replacementClaim": false
+      },
+      "blockerCodes": [],
+      "evidence": {
+        "frontend": [
+          {
+            "file": "oa4rust-web/apps/desktop/src/views/ProgramCenterApp.vue",
+            "contains": "<button :class=\"{active:tab==='market'}\""
+          }
+        ],
+        "backend": [
+          {
+            "file": "oa4rust/crates/program_center/src/routes.rs",
+            "contains": "/jaxrs/program_center/market/{flag}/install/or/update"
+          }
+        ]
+      }
+    },
+    {
+      "id": "w14:x_component_Forum",
+      "workItem": "W14",
+      "kind": "legacy_family_component",
+      "legacyComponent": "x_component_Forum",
+      "mappedViews": [
+        "BBSForum.vue"
+      ],
+      "routes": [
+        "/app/bbs"
+      ],
+      "status": "implemented",
+      "replacementClaim": true,
+      "acceptance": "论坛主页的版块列表与全部/推荐主题列表读取；不包含搜索、发帖、回复、个人页和管理子页，这些由其余 Forum 条目单独裁决。",
+      "decision": "集成式 BBSForum 路由真实消费版块和主题查询，后端有相同 GET 路由；按限定的论坛主页浏览能力判 implemented。",
+      "blockerCodes": [],
+      "evidence": {
+        "frontend": [
+          {
+            "file": "oa4rust-web/apps/desktop/src/views/BBSForum.vue",
+            "contains": "api.get('/jaxrs/bbs/assemble/control/section/list')"
+          },
+          {
+            "file": "oa4rust-web/apps/desktop/src/views/BBSForum.vue",
+            "contains": "let endpoint = '/jaxrs/bbs/assemble/control/list/subjects/index'"
+          }
+        ],
+        "routing": [
+          {
+            "file": "oa4rust-web/apps/desktop/src/main.ts",
+            "contains": "import('./views/BBSForum.vue')"
+          }
+        ],
+        "backend": [
+          {
+            "file": "oa4rust/crates/bbs_assemble_control/src/routes.rs",
+            "contains": "\"/jaxrs/bbs/assemble/control/section/list\""
+          },
+          {
+            "file": "oa4rust/crates/bbs_assemble_control/src/routes.rs",
+            "contains": "\"/jaxrs/bbs/assemble/control/list/subjects/index\""
+          }
+        ]
+      }
+    },
+    {
+      "id": "w14:x_component_ForumCategory",
+      "workItem": "W14",
+      "kind": "legacy_family_component",
+      "legacyComponent": "x_component_ForumCategory",
+      "mappedViews": [
+        "BBSForum.vue"
+      ],
+      "routes": [
+        "/app/bbs"
+      ],
+      "status": "still_blocked",
+      "replacementClaim": false,
+      "decision": "无论坛分类管理界面；当前加号没有事件处理。",
+      "blockerCodes": [
+        "MISSING_CATEGORY_MANAGEMENT",
+        "INERT_UI_CONTROL"
+      ],
+      "evidence": {
+        "frontend": [
+          {
+            "file": "oa4rust-web/apps/desktop/src/views/BBSForum.vue",
+            "contains": "<button class=\"add-section-btn\" title=\"新建版块\">+</button>"
+          }
+        ],
+        "routing": [
+          {
+            "file": "oa4rust-web/apps/desktop/src/main.ts",
+            "contains": "import('./views/BBSForum.vue')"
+          }
+        ]
+      }
+    },
+    {
+      "id": "w14:x_component_ForumDocument",
+      "workItem": "W14",
+      "kind": "legacy_family_component",
+      "legacyComponent": "x_component_ForumDocument",
+      "mappedViews": [
+        "BBSForum.vue"
+      ],
+      "routes": [
+        "/app/bbs"
+      ],
+      "status": "still_blocked",
+      "replacementClaim": false,
+      "decision": "主题详情仅用列表行数据；发帖调用不存在的 /subject/create，回复虽有真实后端路由但缺完整刷新/详情闭环。",
+      "blockerCodes": [
+        "FRONTEND_BACKEND_ROUTE_MISMATCH",
+        "MISSING_DOCUMENT_DETAIL"
+      ],
+      "evidence": {
+        "frontend": [
+          {
+            "file": "oa4rust-web/apps/desktop/src/views/BBSForum.vue",
+            "contains": "api.post('/jaxrs/bbs/assemble/control/subject/create', data)"
+          }
+        ],
+        "backend": [
+          {
+            "file": "oa4rust/crates/bbs_assemble_control/src/routes.rs",
+            "contains": "\"/jaxrs/bbs/assemble/control/topic/create\""
+          },
+          {
+            "file": "oa4rust/crates/bbs_assemble_control/src/routes.rs",
+            "contains": "\"/jaxrs/bbs/assemble/control/reply/create\""
+          }
+        ]
+      }
+    },
+    {
+      "id": "w14:x_component_ForumPerson",
+      "workItem": "W14",
+      "kind": "legacy_family_component",
+      "legacyComponent": "x_component_ForumPerson",
+      "mappedViews": [
+        "BBSForum.vue"
+      ],
+      "routes": [
+        "/app/bbs"
+      ],
+      "status": "still_blocked",
+      "replacementClaim": false,
+      "decision": "无论坛个人主页、我的主题/回复或个人管理界面。",
+      "blockerCodes": [
+        "MISSING_PERSON_VIEW"
+      ],
+      "evidence": {
+        "frontend": [
+          {
+            "file": "oa4rust-web/apps/desktop/src/views/BBSForum.vue",
+            "contains": "{ key: 'my' as TabKey, label: '我的' }"
+          },
+          {
+            "file": "oa4rust-web/apps/desktop/src/views/BBSForum.vue",
+            "contains": "endpoint = '/jaxrs/bbs/assemble/control/subject/filter/list'"
+          }
+        ]
+      }
+    },
+    {
+      "id": "w14:x_component_ForumSearch",
+      "workItem": "W14",
+      "kind": "legacy_family_component",
+      "legacyComponent": "x_component_ForumSearch",
+      "mappedViews": [
+        "BBSForum.vue"
+      ],
+      "routes": [
+        "/app/bbs"
+      ],
+      "status": "still_blocked",
+      "replacementClaim": false,
+      "decision": "前端 POST /subject/search，而后端该短路径仅注册 GET；实际分页搜索是另一 PUT 路由。",
+      "blockerCodes": [
+        "HTTP_METHOD_MISMATCH"
+      ],
+      "evidence": {
+        "frontend": [
+          {
+            "file": "oa4rust-web/apps/desktop/src/views/BBSForum.vue",
+            "contains": "api.post('/jaxrs/bbs/assemble/control/subject/search'"
+          }
+        ],
+        "backend": [
+          {
+            "file": "oa4rust/crates/bbs_assemble_control/src/routes.rs",
+            "contains": "\"/jaxrs/bbs/assemble/control/subject/search\""
+          },
+          {
+            "file": "oa4rust/crates/bbs_assemble_control/src/routes.rs",
+            "contains": "subject/search/list/page/{page}/count/{count}"
+          }
+        ]
+      }
+    },
+    {
+      "id": "w14:x_component_ForumSection",
+      "workItem": "W14",
+      "kind": "legacy_family_component",
+      "legacyComponent": "x_component_ForumSection",
+      "mappedViews": [
+        "BBSForum.vue"
+      ],
+      "routes": [
+        "/app/bbs"
+      ],
+      "status": "still_blocked",
+      "replacementClaim": false,
+      "decision": "版块列表可读，但按版块筛选使用 POST，后端 /list/subjects/filtered 只注册 GET；也无版块发布/管理。",
+      "blockerCodes": [
+        "HTTP_METHOD_MISMATCH",
+        "MISSING_SECTION_MANAGEMENT"
+      ],
+      "evidence": {
+        "frontend": [
+          {
+            "file": "oa4rust-web/apps/desktop/src/views/BBSForum.vue",
+            "contains": "api.post(`/jaxrs/bbs/assemble/control/list/subjects/filtered`"
+          }
+        ],
+        "backend": [
+          {
+            "file": "oa4rust/crates/bbs_assemble_control/src/routes.rs",
+            "contains": "\"/jaxrs/bbs/assemble/control/list/subjects/filtered\""
+          }
+        ]
+      }
+    }
+  ],
+  "summary": {
+    "total": 52,
+    "byWorkItem": {
+      "W13": 37,
+      "W14": 15
+    },
+    "byStatus": {
+      "still_blocked": 49,
+      "out_of_scope": 2,
+      "implemented": 1
+    }
+  }
+}
