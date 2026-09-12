@@ -131,6 +131,7 @@ Minder 无画布编辑器（仅列表）；`service_AgentDesigner`/`ServiceManag
 ### 阶段 P-Setup —— 验证地基（无影子流量下的替代性验证设施）【最高优先，1–2 周】
 
 - **S1（A2｜双侧匹配种子）**：扩 `tests/behavior_comparison/seeds/` + `seed_fixtures.sql`/`.java.http.md`，使组织/人员/内容/流程/查询域**两侧命中同一批资源**；重点补 **`056` 真实 O2OA activities 流程种子 + 一份 form 定义种子**（当前 `'{}'` 使 workflow 行为比对失效）。目标：把"业务状态不对称"型 FAIL 从"数据缺失假象"转成"可判定的真语义差异"。
+  - **rev8 进展**：`migrations/091_seed_real_process_definition.sql` 已 upsert 真实 activities 流程种子（`seed-approval-flow`：begin→manual→end + routes + fieldPermissions，形状 = 前端 serializeProcessDefinition 契约）与 Xform 表单种子（`seed-leave-form` moduleList，两个必填字段）；Java 侧对应创建序列已补入 `seed_fixtures_java.http.md §7`。双侧实跑比对仍需 o2server 参考容器（外部依赖）。
 - **S2（A2/A5｜启用 CI 行为门槛）**：跑一次稳定双侧全种子绿色基线，把 `fail_baseline` 从 `bootstrap` 固化为整数、`BEHAVIOR_COMPARE_MAX_FAILS` 设为该值，CI 增"仅回归（observed>baseline）失败"。→ 替代 R1 成为可自动执行的放行闸门。
 - **S3（A6｜闭环冒烟脚手架）**：建 E2E（如 Playwright + 测试账户）与"设计器→保存→执行"契约测试（pin `activities`/`moduleList`/query/portal JSON schema），作为前端闭环的自动化验收。
 - **S4（A1｜金丝雀/试用替代影子流量）**：无生产镜像流量，改为在小范围 pilot 上**只用新栈产生真实使用数据**，以错误率/接口 5xx 预算 + 抽样人工走查替代"影子比对"，观察期后放大。
@@ -191,7 +192,7 @@ W6 后端路由 ─┼─► W3 ProcessDesigner 契约 ─► W4 Form 运行时 
 - `docs/audits/behavior-divergence-backlog.md` — 后端语义差异分类
 - `docs/brainstorms/2026-08-25-oa4rust-o2server-residual-gaps-requirements.md` — 后端残差需求 R1–R10（R1 在 v2 中降级为非必需）
 - `oa4rust/tests/behavior_comparison/`（`seeds/`、`fail_baseline`、`behavior_compare.rs:324`）— 无影子流量下的主验证通道
-- `oa4rust/migrations/056_seed_process_definition_test_data.sql` — 流程种子当前为 `'{}'` 占位，S1 待实化
+- `oa4rust/migrations/056_seed_process_definition_test_data.sql` — 流程种子原为 `'{}'` 占位；rev8 已由 `091_seed_real_process_definition.sql` upsert 真实 activities/form 种子覆盖
 - `docs/plans/2026-09-04-003-frontend-completion-audit.md` — 前端旧口径（~8%，已被本计划 §三取代）
 - `docs/plans/2026-09-09-001-...httponly-cookie-cargo-audit-rustsec-db-biome-plan.md` — 安全/工具链加固（正交轨道）
 
@@ -284,11 +285,11 @@ W6 后端路由 ─┼─► W3 ProcessDesigner 契约 ─► W4 Form 运行时 
 
 **证据强度分层（fail loud）**：process/query/portal 的 22 条**已于 rev5 用 oneshot 实跑并全绿**（HEAD `ab25b16b`）；form 5 条~~本轮加入同一测试但尚未执行~~ **已于 rev7 在 host 实跑坐实**（`cargo test --test designer_route_match` 全绿，form 5 条实测码与推导一致：`GET/PUT/POST form` 500/`POST form/submit` 405）。其分类由 `cms_assemble_control/src/routes.rs:400-630` **逐字路由表推导**（与 rev5 完全吻合的静态法）。
 
-### 9.5 rev7 追记（2026-09-12，W6 闭合落地）
+### 9.5 rev7 追记（2026-09-12，W6 闭合落地；rev8 W7 补记）
 
 **form 用例坐实**：host 实跑全绿，§9.4 form 行判定无需推翻。
 
-**W6 闭合结果**：原 15 条不闭合已闭合 **11 条**，仅剩 4 条（+1 条新增记录）全部来自 **portal 两个 W13 壳视图**（`PortalPageDesignerApp`/`PortalScriptDesignerApp`，属 W7 范畴）：
+**W6+W7 闭合结果**：原 15 条不闭合已闭合 **14 条**，仅剩 1 条——`portal GET /page/list` 影子（调用方为 `PortalPageDesignerApp` 壳，W13 范畴）：
 
 | 原档位 | 条目 | 闭合方式 |
 |---|---|---|
@@ -303,12 +304,15 @@ W6 后端路由 ─┼─► W3 ProcessDesigner 契约 ─► W4 Form 运行时 
 | 影子 | process `process/export` | 前端改名 → `GET /get/{id}`（新栈存储 x_process_definition，lead_out 读 parity 旧表 PP_E_PROCESS 不适用） |
 | 影子 | query `table/list` | 前端改名 → `GET /table/list/manage` |
 | 影子 | form `form/list` | 前端改名 → `GET /form/list/all`、`/list/app/{appId}` |
-| 404 | portal `POST /script` | **未闭合**（壳视图 W7） |
-| 405 | portal `PUT /script/{id}` | **未闭合**（壳视图 W7） |
-| 405 | portal `DELETE /script/{id}`（新增记录：壳 delete 调用） | **未闭合**（壳视图 W7） |
-| 影子 | portal `page/list`、`script/list` | **未闭合**（壳视图 W7） |
+| 404 | portal `POST /script` | **W7 闭合**：脚本设计器实装，u2 写路径 `POST /script`（create + v1 版本快照） |
+| 405 | portal `PUT /script/{id}` | **W7 闭合**：`u2_script::update`（保存落新版本快照） |
+| 405 | portal `DELETE /script/{id}`（rev7 新增记录） | **W7 闭合**：`u2_script::delete` 软删 |
+| 影子 | portal `script/list` | **W7 闭合**：前端改打 `POST /script/list/manager` |
+| 影子 | portal `page/list` | **未闭合**（PortalPageDesignerApp 壳，W13 范畴） |
 
-**测试期望已更新为目标态**（§十第 3 项）：`designer_route_match.rs` 现按**当前前端调用面**固化——process/query/form 三域全部 `Matched` 附真实语义；portal 保留壳视图的 4 条旧档 case 并标注 W7 待闭合。该测试已纳入根 CI 的无 DB `check` 作业（§十第 2 项），作为设计器路由死链/影子回归门。
+**W7（3×ScriptDesigner）实装记录**：三个脚本设计器（process/cms/portal）由 172 行 CRUD 壳升级为真实编辑器——共享组件 `ScriptWorkbench.vue`（列表 + CodeMirror + XScript 补全 + 保存/删除 + 版本历史还原），视图改为薄 adapter；后端补 portal/process 脚本 u2 写路径（`u2_script.rs`，x_portal_script/PP_E_SCRIPT + 版本快照表，迁移 092 补 content 列），cms 走既有 u2 CRUD（GET script/{id} 修复为按 id 加载、create 无 appId 落 default 桶）。w13 manifest 同步移除三条壳裁决（52→47）。
+
+**测试期望已更新为目标态**（§十第 3 项）：`designer_route_match.rs` 现按**当前前端调用面**固化——process/query/form/portal-script 全部 `Matched` 附真实语义；仅保留 `page/list` 影子 1 条标注 W13 待闭合。该测试已纳入根 CI 的无 DB `check` 作业（§十第 2 项），作为设计器路由死链/影子回归门。
 
 ---
 
