@@ -1189,8 +1189,8 @@ export const ai_core_entityApi = {
 export const query_serviceApi = {
   getlist: () => api.get('/jaxrs/query/service/neural/list'),
   postexecute: (body?: unknown) => api.post('/jaxrs/query/service/processing/execute', body),
-  postmodelflag: (_model_flag: string, body?: unknown) =>
-    api.post('/jaxrs/query/service/neural/generate/:model_flag', body),
+  postmodelflag: (model_flag: string, body?: unknown) =>
+    api.post(`/jaxrs/query/service/neural/generate/${encodeURIComponent(model_flag)}`, body),
   // Generic fallback for 0 remaining paths
   request: createRequest('/jaxrs/'),
 }
@@ -1211,19 +1211,23 @@ export const query_service_processingApi = {
 // empower (16 unique endpoints)
 // ─────────────────────────────────────────────────────────────
 export const empowerApi = {
-  getid: (_id: string) => api.get('/jaxrs/person/empower/:id'),
+  getid: (id: string) => api.get(`/jaxrs/person/empower/${encodeURIComponent(id)}`),
   getto: () => api.get('/jaxrs/person/empower/list/to'),
-  getenable: (_id: string) => api.get('/jaxrs/person/empower/:id/enable'),
-  getdisable: (_id: string) => api.get('/jaxrs/person/empower/:id/disable'),
+  getenable: (id: string) => api.get(`/jaxrs/person/empower/${encodeURIComponent(id)}/enable`),
+  getdisable: (id: string) => api.get(`/jaxrs/person/empower/${encodeURIComponent(id)}/disable`),
   getenable_4: () => api.get('/jaxrs/person/empower/list/to/enable'),
   getcurrentperson: () => api.get('/jaxrs/person/empower/list/currentperson'),
   getenable_6: () => api.get('/jaxrs/person/empower/list/currentperson/enable'),
   postempower: (body?: unknown) => api.post('/jaxrs/person/empower', body),
   postmanager: (body?: unknown) => api.post('/jaxrs/person/empower/manager', body),
-  postenable: (_id: string, body?: unknown) => api.post('/jaxrs/person/empower/:id/enable', body),
-  postdisable: (_id: string, body?: unknown) => api.post('/jaxrs/person/empower/:id/disable', body),
-  postsize: (_page: string, _size: string, body?: unknown) =>
-    api.post('/jaxrs/person/empower/manager/list/paging/:page/size/:size', body),
+  postenable: (id: string, body?: unknown) => api.post(`/jaxrs/person/empower/${encodeURIComponent(id)}/enable`, body),
+  postdisable: (id: string, body?: unknown) =>
+    api.post(`/jaxrs/person/empower/${encodeURIComponent(id)}/disable`, body),
+  postsize: (page: string, size: string, body?: unknown) =>
+    api.post(
+      `/jaxrs/person/empower/manager/list/paging/${encodeURIComponent(page)}/size/${encodeURIComponent(size)}`,
+      body,
+    ),
   // Generic fallback for 4 remaining paths
   request: createRequest('/jaxrs/'),
 }
@@ -1232,9 +1236,9 @@ export const empowerApi = {
 // realtime (3 unique endpoints)
 // ─────────────────────────────────────────────────────────────
 export const realtimeApi = {
-  getrealtime: () => api.get('/jaxrs//ws/realtime'),
-  getroomid: (_room_id: string) => api.get('/jaxrs//ws/realtime/room/:room_id'),
-  getstats: (_room_id: string) => api.get('/jaxrs//ws/realtime/room/:room_id/stats'),
+  getrealtime: () => api.get('/ws/realtime'),
+  getroomid: (room_id: string) => api.get(`/ws/realtime/room/${encodeURIComponent(room_id)}`),
+  getstats: (room_id: string) => api.get(`/ws/realtime/room/${encodeURIComponent(room_id)}/stats`),
   // Generic fallback for 0 remaining paths
   request: createRequest('/jaxrs/'),
 }
@@ -1249,8 +1253,8 @@ export const baseApi = {
   getinfo: () => api.get('/jaxrs/base/openapi/info'),
   getflush: () => api.get('/jaxrs/base/cache/config/flush'),
   getflush_5: () => api.get('/jaxrs/base/cache/commonscript/flush'),
-  getfilePath: (_filePath: string) => api.get('/jaxrs/base/sysresource/filePath/:filePath'),
-  getclassName: (_className: string) => api.get('/jaxrs/base/fireschedule/classname/:className'),
+  getfilePath: (filePath: string) => api.get(`/jaxrs/base/sysresource/filePath/${encodeURIComponent(filePath)}`),
+  getclassName: (className: string) => api.get(`/jaxrs/base/fireschedule/classname/${encodeURIComponent(className)}`),
   postcache: (body?: unknown) => api.post('/jaxrs/base/cache', body),
   // Generic fallback for 0 remaining paths
   request: createRequest('/jaxrs/'),
