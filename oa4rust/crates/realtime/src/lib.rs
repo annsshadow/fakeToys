@@ -14,7 +14,6 @@ use axum::{
 use futures_util::{SinkExt, StreamExt};
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
-use shared::session::Session;
 use thiserror::Error;
 use tokio::sync::{broadcast, Mutex};
 use tracing::{info, warn};
@@ -24,6 +23,8 @@ use uuid::Uuid;
 pub enum RealtimeError {
     #[error("room not found: {0}")]
     RoomNotFound(String),
+    #[error("client envelope is not a broadcastable event: {0}")]
+    InvalidEnvelope(String),
     #[error("serialization error: {0}")]
     Serialize(#[from] serde_json::Error),
 }
@@ -35,8 +36,12 @@ pub struct RealtimeMessage {
     pub room: String,
     pub sender: String,
     pub content: String,
+    /// 线上格式为 `type`：前端 SDK（websocket.ts）按 `{type, data, timestamp}` 分发事件
+    #[serde(rename = "type")]
     pub msg_type: String,
     pub timestamp: i64,
+    #[serde(default)]
+    pub data: Value,
 }
 
 impl RealtimeMessage {
@@ -52,12 +57,50 @@ impl RealtimeMessage {
             content: content.into(),
             msg_type: msg_type.into(),
             timestamp: chrono::Utc::now().timestamp_millis(),
+            data: Value::Null,
         }
     }
 
     pub fn to_json(&self) -> RealtimeResult<String> {
         Ok(serde_json::to_string(self)?)
     }
+}
+
+/// W10：客户端可上行的 IM 事件类型 —— 与前端 SDK websocket.ts 的 EventMap 一致。
+const CLIENT_EVENT_TYPES: [&str; 5] = [
+    "im_create",
+    "im_revoke",
+    "im_conversation",
+    "notification",
+    "process_task",
+];
+
+/// W10：规范化客户端经 WebSocket 上行的信封。
+///
+/// 仅接受 SDK EventMap 中的 IM 事件（`{type, data}` JSON 对象），归一为
+/// 可广播的 RealtimeMessage；ping 心跳、裸文本等非事件上行一律拒绝，
+/// 绝不转发到房间（否则心跳会广播给所有成员）。
+pub fn client_message(room: &str, sender: &str, text: &str) -> RealtimeResult<RealtimeMessage> {
+    let envelope: Value = serde_json::from_str(text)?;
+    let msg_type = envelope
+        .get("type")
+        .and_then(Value::as_str)
+        .unwrap_or_default();
+    if !CLIENT_EVENT_TYPES.contains(&msg_type) {
+        return Err(RealtimeError::InvalidEnvelope(msg_type.to_string()));
+    }
+    let data = envelope.get("data").cloned().unwrap_or_default();
+    if !data.is_object() {
+        return Err(RealtimeError::InvalidEnvelope(msg_type.to_string()));
+    }
+    Ok(RealtimeMessage {
+        room: room.to_string(),
+        sender: sender.to_string(),
+        content: data.to_string(),
+        msg_type: msg_type.to_string(),
+        timestamp: chrono::Utc::now().timestamp_millis(),
+        data,
+    })
 }
 
 #[allow(dead_code)]
@@ -179,13 +222,12 @@ async fn handle_connection(
             ws_msg = ws_receiver.next() => {
                 match ws_msg {
                     Some(Ok(Message::Text(text))) => {
-                        let msg = RealtimeMessage::new(
-                            room_id.clone(),
-                            conn_id.to_string(),
-                            text.to_string(),
-                            "text",
-                        );
-                        manager.broadcast(&room_id, msg).await;
+                        match client_message(&room_id, &conn_id.to_string(), &text) {
+                            Ok(msg) => manager.broadcast(&room_id, msg).await,
+                            Err(err) => {
+                                warn!(conn_id = %conn_id, error = %err, "ws client message rejected");
+                            }
+                        }
                         last_pong = tokio::time::Instant::now();
                     }
                     Some(Ok(Message::Close(_))) => {

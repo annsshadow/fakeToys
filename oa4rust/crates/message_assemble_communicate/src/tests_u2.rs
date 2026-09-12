@@ -310,7 +310,9 @@ mod u2_tests {
     #[test]
     fn w10_im_message_parser_rejects_invalid_or_empty_payloads() {
         assert!(parse_im_message(&json!({"body": "{}"})).is_err());
-        assert!(parse_im_message(&json!({"conversationId": "conv-1", "body": "not-json"})).is_err());
+        assert!(
+            parse_im_message(&json!({"conversationId": "conv-1", "body": "not-json"})).is_err()
+        );
         assert!(parse_im_message(&json!({"conversationId": "conv-1", "body": "{}"})).is_err());
     }
 
@@ -336,7 +338,6 @@ mod u2_tests {
         assert_eq!(response.status(), StatusCode::INTERNAL_SERVER_ERROR);
         let _ = to_bytes(response.into_body(), usize::MAX).await.unwrap();
     }
-
 
     // ── IDOR 门禁：fail-closed 直接调用验证 ────────────────────
 
