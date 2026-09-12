@@ -15,8 +15,9 @@ describe('W9 designer interactions', () => {
   })
 
   it('QueryTableDesigner uses typed columns and the safe backend execute path without raw SQL', () => {
-    const source = read('QueryTableDesignerApp.vue')
-    expect(source).toContain('tablePayload(form.value.name,form.value.queryFlag,form.value.columns)')
+    // 归一空白后匹配，避免格式化器（biome）重排逗号导致误报
+    const source = read('QueryTableDesignerApp.vue').replace(/\s+/g, ' ')
+    expect(source).toContain('tablePayload(form.value.name, form.value.queryFlag, form.value.columns)')
     expect(source).toContain('designerPaths.tableExecute(activeFlag.value)')
     expect(source).not.toContain('v-model="sql"')
     expect(source).not.toContain('/surface/table/list')

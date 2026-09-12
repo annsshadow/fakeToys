@@ -86,9 +86,28 @@ import { api } from '@oa4rust/sdk'
 import { computed, nextTick, ref } from 'vue'
 
 type Folder = { id: string; name?: string; title?: string; parentId?: string; children?: Folder[] }
-type MindItem = { id: string; name?: string; title?: string; content?: string; folderId?: string; fileVersion?: number; description?: string; shared?: boolean }
+type MindItem = {
+  id: string
+  name?: string
+  title?: string
+  content?: string
+  folderId?: string
+  fileVersion?: number
+  description?: string
+  shared?: boolean
+}
 type MindNode = { id: string; text: string; children: MindNode[] }
-type EditorMind = { id?: string; name: string; folderId: string; description?: string; shared?: boolean; root: MindNode; template: string; theme: string; version: string }
+type EditorMind = {
+  id?: string
+  name: string
+  folderId: string
+  description?: string
+  shared?: boolean
+  root: MindNode
+  template: string
+  theme: string
+  version: string
+}
 type KityNode = { data?: { id?: string; text?: string }; children?: KityNode[] }
 type KityMind = { root?: KityNode; template?: string; theme?: string; version?: string }
 
@@ -110,20 +129,27 @@ const renameInput = ref<HTMLInputElement | null>(null)
 
 function normalizeFolders(raw: unknown): Folder[] {
   const items = responseArray(raw) as Array<Record<string, unknown>>
-  const normalized = items.map((item) => ({
-    id: String(item.id ?? ''),
-    name: typeof item.name === 'string' ? item.name : undefined,
-    title: typeof item.title === 'string' ? item.title : undefined,
-    parentId: typeof (item.parentId ?? item['"parentId"']) === 'string' ? String(item.parentId ?? item['"parentId"']) : undefined,
-    children: normalizeFolders(item.children),
-  })).filter((item) => item.id)
+  const normalized = items
+    .map((item) => ({
+      id: String(item.id ?? ''),
+      name: typeof item.name === 'string' ? item.name : undefined,
+      title: typeof item.title === 'string' ? item.title : undefined,
+      parentId:
+        typeof (item.parentId ?? item['"parentId"']) === 'string'
+          ? String(item.parentId ?? item['"parentId"'])
+          : undefined,
+      children: normalizeFolders(item.children),
+    }))
+    .filter((item) => item.id)
   if (normalized.some((item) => item.children?.length) || !normalized.some((item) => item.parentId)) return normalized
   const byId = new Map(normalized.map((item) => [item.id, item]))
   const roots: Folder[] = []
   for (const item of normalized) {
     const parent = item.parentId ? byId.get(item.parentId) : undefined
-    if (parent) (parent.children ??= []).push(item)
-    else roots.push(item)
+    if (parent) {
+      parent.children ??= []
+      parent.children.push(item)
+    } else roots.push(item)
   }
   return roots
 }
@@ -139,7 +165,9 @@ const folderRows = computed(() => {
   walk(folders.value, 0)
   return rows
 })
-function hasChildren(folder: Folder) { return Boolean(folder.children?.length) }
+function hasChildren(folder: Folder) {
+  return Boolean(folder.children?.length)
+}
 function toggleFolder(folder: Folder) {
   const next = new Set(expandedFolders.value)
   if (next.has(folder.id)) next.delete(folder.id)
@@ -156,7 +184,9 @@ async function loadFolders() {
   } catch (error) {
     folders.value = []
     loadError.value = error instanceof Error ? error.message : '目录加载失败'
-  } finally { loadingFolder.value = false }
+  } finally {
+    loadingFolder.value = false
+  }
 }
 async function selectFolder(folder: Folder) {
   currentFolder.value = folder
@@ -171,23 +201,43 @@ async function loadMinds(folderId: string) {
   loadingMinds.value = true
   loadError.value = ''
   try {
-    const response = await api.put<unknown>(`/jaxrs/mind/assemble/control/mind/filter/list/${encodeURIComponent(folderId)}/next/1`, {})
+    const response = await api.put<unknown>(
+      `/jaxrs/mind/assemble/control/mind/filter/list/${encodeURIComponent(folderId)}/next/1`,
+      {},
+    )
     minds.value = responseArray(response.data) as MindItem[]
   } catch (error) {
     minds.value = []
     loadError.value = error instanceof Error ? error.message : '导图列表加载失败'
-  } finally { loadingMinds.value = false }
+  } finally {
+    loadingMinds.value = false
+  }
 }
-function reloadMinds() { if (currentFolder.value) return loadMinds(currentFolder.value.id) }
-function nodeId() { return globalThis.crypto?.randomUUID?.() ?? `node-${Date.now()}-${Math.random().toString(36).slice(2)}` }
+function reloadMinds() {
+  if (currentFolder.value) return loadMinds(currentFolder.value.id)
+}
+function nodeId() {
+  return globalThis.crypto?.randomUUID?.() ?? `node-${Date.now()}-${Math.random().toString(36).slice(2)}`
+}
 function toNode(value: KityNode | undefined, fallback: string): MindNode {
-  return { id: value?.data?.id || nodeId(), text: value?.data?.text || fallback, children: (value?.children ?? []).map((child) => toNode(child, '新节点')) }
+  return {
+    id: value?.data?.id || nodeId(),
+    text: value?.data?.text || fallback,
+    children: (value?.children ?? []).map((child) => toNode(child, '新节点')),
+  }
 }
 function parseContent(content: unknown, fallback: string) {
   try {
     const parsed = (typeof content === 'string' ? JSON.parse(content) : content) as KityMind
-    return { root: toNode(parsed?.root, fallback), template: parsed?.template || 'structure', theme: parsed?.theme || 'fresh-blue', version: parsed?.version || '1.4.33' }
-  } catch { return { root: toNode(undefined, fallback), template: 'structure', theme: 'fresh-blue', version: '1.4.33' } }
+    return {
+      root: toNode(parsed?.root, fallback),
+      template: parsed?.template || 'structure',
+      theme: parsed?.theme || 'fresh-blue',
+      version: parsed?.version || '1.4.33',
+    }
+  } catch {
+    return { root: toNode(undefined, fallback), template: 'structure', theme: 'fresh-blue', version: '1.4.33' }
+  }
 }
 async function openMind(item: MindItem) {
   loadError.value = ''
@@ -195,24 +245,53 @@ async function openMind(item: MindItem) {
     const response = await api.get<MindItem>(`/jaxrs/mind/assemble/control/mind/${encodeURIComponent(item.id)}`)
     const detail = response.data
     const parsed = parseContent(detail.content, detail.name || item.name || '中心主题')
-    editor.value = { id: detail.id || item.id, name: detail.name || item.name || '未命名导图', folderId: detail.folderId || currentFolder.value?.id || '', description: detail.description, shared: detail.shared, ...parsed }
+    editor.value = {
+      id: detail.id || item.id,
+      name: detail.name || item.name || '未命名导图',
+      folderId: detail.folderId || currentFolder.value?.id || '',
+      description: detail.description,
+      shared: detail.shared,
+      ...parsed,
+    }
     selectedNode.value = editor.value.root
     dirty.value = false
     saveMessage.value = ''
-  } catch (error) { loadError.value = error instanceof Error ? error.message : '导图加载失败' }
+  } catch (error) {
+    loadError.value = error instanceof Error ? error.message : '导图加载失败'
+  }
 }
 function createMind() {
   if (!currentFolder.value) return
   const root = { id: nodeId(), text: '中心主题', children: [] }
-  editor.value = { name: '未命名导图', folderId: currentFolder.value.id, root, template: 'structure', theme: 'fresh-blue', version: '1.4.33' }
+  editor.value = {
+    name: '未命名导图',
+    folderId: currentFolder.value.id,
+    root,
+    template: 'structure',
+    theme: 'fresh-blue',
+    version: '1.4.33',
+  }
   selectedNode.value = root
   dirty.value = true
   saveMessage.value = ''
 }
-function markDirty() { dirty.value = true; saveMessage.value = '' }
-function selectNode(node: MindNode) { selectedNode.value = node }
-function startRename(node: MindNode) { selectedNode.value = node; nextTick(() => { renameInput.value?.focus(); renameInput.value?.select() }) }
-function finishRename() { renameInput.value?.blur() }
+function markDirty() {
+  dirty.value = true
+  saveMessage.value = ''
+}
+function selectNode(node: MindNode) {
+  selectedNode.value = node
+}
+function startRename(node: MindNode) {
+  selectedNode.value = node
+  nextTick(() => {
+    renameInput.value?.focus()
+    renameInput.value?.select()
+  })
+}
+function finishRename() {
+  renameInput.value?.blur()
+}
 function addChild() {
   if (!selectedNode.value) return
   const child = { id: nodeId(), text: '新节点', children: [] }
@@ -229,7 +308,9 @@ function findParent(root: MindNode, id: string): MindNode | null {
   }
   return null
 }
-function containsNode(root: MindNode, id: string): boolean { return root.id === id || root.children.some((child) => containsNode(child, id)) }
+function containsNode(root: MindNode, id: string): boolean {
+  return root.id === id || root.children.some((child) => containsNode(child, id))
+}
 function removeSelected() {
   if (!editor.value || !selectedNode.value || selectedNode.value.id === editor.value.root.id) return
   const parent = findParent(editor.value.root, selectedNode.value.id)
@@ -244,7 +325,13 @@ function startDrag(event: DragEvent, node: MindNode) {
   if (event.dataTransfer) event.dataTransfer.effectAllowed = 'move'
 }
 function dropOn(target: MindNode) {
-  if (!editor.value || !draggedNodeId.value || draggedNodeId.value === target.id || draggedNodeId.value === editor.value.root.id) return
+  if (
+    !editor.value ||
+    !draggedNodeId.value ||
+    draggedNodeId.value === target.id ||
+    draggedNodeId.value === editor.value.root.id
+  )
+    return
   const movingParent = findParent(editor.value.root, draggedNodeId.value)
   const moving = movingParent?.children.find((child) => child.id === draggedNodeId.value)
   if (!moving || containsNode(moving, target.id)) return
@@ -256,13 +343,17 @@ function dropOn(target: MindNode) {
 }
 const outlineRows = computed(() => {
   const rows: Array<{ node: MindNode; depth: number }> = []
-  const walk = (node: MindNode, depth: number) => { rows.push({ node, depth }); node.children.forEach((child) => walk(child, depth + 1)) }
+  const walk = (node: MindNode, depth: number) => {
+    rows.push({ node, depth })
+    node.children.forEach((child) => walk(child, depth + 1))
+  }
   if (editor.value) walk(editor.value.root, 0)
   return rows
 })
 type LayoutNode = { node: MindNode; x: number; y: number; width: number; height: number }
 function buildLayout(root?: MindNode) {
-  if (!root) return { nodes: [] as LayoutNode[], edges: [] as Array<{ id: string; path: string }>, width: 900, height: 540 }
+  if (!root)
+    return { nodes: [] as LayoutNode[], edges: [] as Array<{ id: string; path: string }>, width: 900, height: 540 }
   const nodes: LayoutNode[] = []
   let row = 0
   const place = (node: MindNode, depth: number): number => {
@@ -280,38 +371,67 @@ function buildLayout(root?: MindNode) {
   place(root, 0)
   const byId = new Map(nodes.map((item) => [item.node.id, item]))
   const edges: Array<{ id: string; path: string }> = []
-  for (const parent of nodes) for (const childNode of parent.node.children) {
-    const child = byId.get(childNode.id)
-    if (!child) continue
-    const x1 = parent.x + parent.width
-    const y1 = parent.y + parent.height / 2
-    const x2 = child.x
-    const y2 = child.y + child.height / 2
-    const midpoint = (x1 + x2) / 2
-    edges.push({ id: `${parent.node.id}-${child.node.id}`, path: `M ${x1} ${y1} C ${midpoint} ${y1}, ${midpoint} ${y2}, ${x2} ${y2}` })
+  for (const parent of nodes)
+    for (const childNode of parent.node.children) {
+      const child = byId.get(childNode.id)
+      if (!child) continue
+      const x1 = parent.x + parent.width
+      const y1 = parent.y + parent.height / 2
+      const x2 = child.x
+      const y2 = child.y + child.height / 2
+      const midpoint = (x1 + x2) / 2
+      edges.push({
+        id: `${parent.node.id}-${child.node.id}`,
+        path: `M ${x1} ${y1} C ${midpoint} ${y1}, ${midpoint} ${y2}, ${x2} ${y2}`,
+      })
+    }
+  return {
+    nodes,
+    edges,
+    width: Math.max(900, ...nodes.map((node) => node.x + node.width + 80)),
+    height: Math.max(540, ...nodes.map((node) => node.y + node.height + 80)),
   }
-  return { nodes, edges, width: Math.max(900, ...nodes.map((node) => node.x + node.width + 80)), height: Math.max(540, ...nodes.map((node) => node.y + node.height + 80)) }
 }
 const layout = computed(() => buildLayout(editor.value?.root))
 const canvasViewBox = computed(() => `0 0 ${layout.value.width} ${layout.value.height}`)
-const canvasStyle = computed(() => ({ width: `${layout.value.width}px`, height: `${layout.value.height}px`, transform: `scale(${zoom.value / 100})`, transformOrigin: 'top left' }))
-function toKityNode(node: MindNode): KityNode { return { data: { id: node.id, text: node.text }, children: node.children.map(toKityNode) } }
+const canvasStyle = computed(() => ({
+  width: `${layout.value.width}px`,
+  height: `${layout.value.height}px`,
+  transform: `scale(${zoom.value / 100})`,
+  transformOrigin: 'top left',
+}))
+function toKityNode(node: MindNode): KityNode {
+  return { data: { id: node.id, text: node.text }, children: node.children.map(toKityNode) }
+}
 async function saveMind() {
   if (!editor.value || saving.value) return
   saving.value = true
   saveMessage.value = ''
-  const content = JSON.stringify({ root: toKityNode(editor.value.root), template: editor.value.template, theme: editor.value.theme, version: editor.value.version })
+  const content = JSON.stringify({
+    root: toKityNode(editor.value.root),
+    template: editor.value.template,
+    theme: editor.value.theme,
+    version: editor.value.version,
+  })
   try {
     const response = await api.post<{ id?: string }>('/jaxrs/mind/assemble/control/mind/save', {
-      id: editor.value.id, name: editor.value.name.trim() || editor.value.root.text || '未命名导图', folderId: editor.value.folderId,
-      description: editor.value.description || '', shared: Boolean(editor.value.shared), content,
+      id: editor.value.id,
+      name: editor.value.name.trim() || editor.value.root.text || '未命名导图',
+      folderId: editor.value.folderId,
+      description: editor.value.description || '',
+      shared: Boolean(editor.value.shared),
+      content,
     })
     editor.value.id = response.data?.id || editor.value.id
     dirty.value = false
     saveMessage.value = '已保存到服务器'
     await loadMinds(editor.value.folderId)
-  } catch (error) { saveMessage.value = error instanceof Error ? `保存失败：${error.message}` : '保存失败'; dirty.value = true }
-  finally { saving.value = false }
+  } catch (error) {
+    saveMessage.value = error instanceof Error ? `保存失败：${error.message}` : '保存失败'
+    dirty.value = true
+  } finally {
+    saving.value = false
+  }
 }
 function closeEditor() {
   if (dirty.value && !window.confirm('有未保存的修改，确认关闭？')) return

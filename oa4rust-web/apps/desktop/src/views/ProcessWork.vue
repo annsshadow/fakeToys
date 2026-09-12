@@ -67,12 +67,13 @@
 import { api } from '@oa4rust/sdk'
 import { useQuery, useQueryClient } from '@tanstack/vue-query'
 import { computed, ref } from 'vue'
+// biome-ignore lint/correctness/noUnusedImports: Vue templates consume component imports.
 import XformRuntime from '../components/XformRuntime.vue'
 import {
+  type FormValue,
   initialFormValues,
   parseFormDefinition,
   validateFormValues,
-  type FormValue,
   type XformDefinition,
 } from '../contracts/xform'
 import { toast } from '../utils/toast'
@@ -138,7 +139,7 @@ async function openWork(item: TaskItem): Promise<void> {
     ])
     formDefinition.value = parseFormDefinition((formResponse as any)?.data)
     const data = (dataResponse as any)?.data
-    const values = Array.isArray(data) ? data[0] ?? {} : data ?? {}
+    const values = Array.isArray(data) ? (data[0] ?? {}) : (data ?? {})
     formValues.value = initialFormValues(formDefinition.value, values)
   } catch (error: any) {
     formDefinition.value = null

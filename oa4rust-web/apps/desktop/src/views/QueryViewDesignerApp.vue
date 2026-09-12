@@ -15,47 +15,126 @@
 <script setup lang="ts">
 import { api } from '@oa4rust/sdk'
 import { computed, ref } from 'vue'
-import { designerPaths, extractList, parseViewDefinition, serializeViewDefinition, viewRuntimePayload, type QueryViewDefinition, type QueryViewFilter } from '../contracts/designer'
+import {
+  designerPaths,
+  extractList,
+  parseViewDefinition,
+  type QueryViewDefinition,
+  type QueryViewFilter,
+  serializeViewDefinition,
+  viewRuntimePayload,
+} from '../contracts/designer'
 import { toast } from '../utils/toast'
-interface ViewSummary{id:string;name:string;viewFlag:string;queryFlag?:string}
-const operators:QueryViewFilter['operator'][]=['eq','ne','contains','gt','gte','lt','lte']
-const queryFlag=ref('')
-const views=ref<ViewSummary[]>([])
-const activeId=ref('')
-const saving=ref(false)
-const result=ref<unknown>(null)
-const resultTitle=ref('')
-const emptyDefinition=():QueryViewDefinition=>({version:1,sql:'',filters:[],sorts:[],paging:{page:1,size:20}})
-const form=ref<{name:string;viewFlag:string;definition:QueryViewDefinition}>({name:'',viewFlag:'',definition:emptyDefinition()})
-const canSave=computed(()=>form.value.name.trim()&&queryFlag.value.trim()&&form.value.definition.sql.trim())
-function newView(){activeId.value='';form.value={name:'',viewFlag:'',definition:emptyDefinition()};result.value=null}
-function addFilter(){form.value.definition.filters.push({field:'',operator:'eq',value:''})}
-function addSort(){form.value.definition.sorts.push({field:'',direction:'asc'})}
-async function loadViews(){
-  if(!queryFlag.value.trim())return
-  try{const response=await api.get<unknown>(designerPaths.viewList(queryFlag.value.trim()));views.value=extractList<ViewSummary>(response.data)}
-  catch(error:any){toast.error(`加载视图失败: ${error?.message??'未知错误'}`)}
+
+interface ViewSummary {
+  id: string
+  name: string
+  viewFlag: string
+  queryFlag?: string
 }
-async function openView(id:string){
-  try{const response=await api.get<any>(designerPaths.viewGet(id));activeId.value=id;queryFlag.value=response.data?.queryFlag??queryFlag.value;form.value={name:response.data?.name??'',viewFlag:response.data?.viewFlag??'',definition:parseViewDefinition(response.data?.content)};result.value=null}
-  catch(error:any){toast.error(`加载视图失败: ${error?.message??'未知错误'}`)}
+const operators: QueryViewFilter['operator'][] = ['eq', 'ne', 'contains', 'gt', 'gte', 'lt', 'lte']
+const queryFlag = ref('')
+const views = ref<ViewSummary[]>([])
+const activeId = ref('')
+const saving = ref(false)
+const result = ref<unknown>(null)
+const resultTitle = ref('')
+const emptyDefinition = (): QueryViewDefinition => ({
+  version: 1,
+  sql: '',
+  filters: [],
+  sorts: [],
+  paging: { page: 1, size: 20 },
+})
+const form = ref<{ name: string; viewFlag: string; definition: QueryViewDefinition }>({
+  name: '',
+  viewFlag: '',
+  definition: emptyDefinition(),
+})
+const canSave = computed(() => form.value.name.trim() && queryFlag.value.trim() && form.value.definition.sql.trim())
+function newView() {
+  activeId.value = ''
+  form.value = { name: '', viewFlag: '', definition: emptyDefinition() }
+  result.value = null
 }
-async function saveView(){
-  if(!canSave.value)return
-  saving.value=true
-  const payload={name:form.value.name.trim(),queryFlag:queryFlag.value.trim(),data:serializeViewDefinition(form.value.definition)}
-  try{const response=activeId.value?await api.put<any>(designerPaths.viewSave(activeId.value),payload):await api.post<any>(designerPaths.viewCreate,payload);activeId.value=response.data?.id??activeId.value;form.value.viewFlag=response.data?.viewFlag??form.value.viewFlag;toast.success('视图已保存');await loadViews()}
-  catch(error:any){toast.error(`保存失败: ${error?.message??'未知错误'}`)}finally{saving.value=false}
+function addFilter() {
+  form.value.definition.filters.push({ field: '', operator: 'eq', value: '' })
 }
-async function simulate(){
-  if(!activeId.value)return
-  try{await saveView();const response=await api.put<unknown>(designerPaths.viewSimulate(activeId.value),viewRuntimePayload(form.value.definition));result.value=response.data;resultTitle.value='模拟结果'}
-  catch(error:any){toast.error(`模拟失败: ${error?.message??'未知错误'}`)}
+function addSort() {
+  form.value.definition.sorts.push({ field: '', direction: 'asc' })
 }
-async function bundle(){
-  if(!activeId.value)return
-  try{const response=await api.put<unknown>(designerPaths.viewBundle(activeId.value),viewRuntimePayload(form.value.definition));result.value=response.data;resultTitle.value='Bundle 结果'}
-  catch(error:any){toast.error(`Bundle 失败: ${error?.message??'未知错误'}`)}
+async function loadViews() {
+  if (!queryFlag.value.trim()) return
+  try {
+    const response = await api.get<unknown>(designerPaths.viewList(queryFlag.value.trim()))
+    views.value = extractList<ViewSummary>(response.data)
+  } catch (error: any) {
+    toast.error(`加载视图失败: ${error?.message ?? '未知错误'}`)
+  }
+}
+async function openView(id: string) {
+  try {
+    const response = await api.get<any>(designerPaths.viewGet(id))
+    activeId.value = id
+    queryFlag.value = response.data?.queryFlag ?? queryFlag.value
+    form.value = {
+      name: response.data?.name ?? '',
+      viewFlag: response.data?.viewFlag ?? '',
+      definition: parseViewDefinition(response.data?.content),
+    }
+    result.value = null
+  } catch (error: any) {
+    toast.error(`加载视图失败: ${error?.message ?? '未知错误'}`)
+  }
+}
+async function saveView() {
+  if (!canSave.value) return
+  saving.value = true
+  const payload = {
+    name: form.value.name.trim(),
+    queryFlag: queryFlag.value.trim(),
+    data: serializeViewDefinition(form.value.definition),
+  }
+  try {
+    const response = activeId.value
+      ? await api.put<any>(designerPaths.viewSave(activeId.value), payload)
+      : await api.post<any>(designerPaths.viewCreate, payload)
+    activeId.value = response.data?.id ?? activeId.value
+    form.value.viewFlag = response.data?.viewFlag ?? form.value.viewFlag
+    toast.success('视图已保存')
+    await loadViews()
+  } catch (error: any) {
+    toast.error(`保存失败: ${error?.message ?? '未知错误'}`)
+  } finally {
+    saving.value = false
+  }
+}
+async function simulate() {
+  if (!activeId.value) return
+  try {
+    await saveView()
+    const response = await api.put<unknown>(
+      designerPaths.viewSimulate(activeId.value),
+      viewRuntimePayload(form.value.definition),
+    )
+    result.value = response.data
+    resultTitle.value = '模拟结果'
+  } catch (error: any) {
+    toast.error(`模拟失败: ${error?.message ?? '未知错误'}`)
+  }
+}
+async function bundle() {
+  if (!activeId.value) return
+  try {
+    const response = await api.put<unknown>(
+      designerPaths.viewBundle(activeId.value),
+      viewRuntimePayload(form.value.definition),
+    )
+    result.value = response.data
+    resultTitle.value = 'Bundle 结果'
+  } catch (error: any) {
+    toast.error(`Bundle 失败: ${error?.message ?? '未知错误'}`)
+  }
 }
 </script>
 <style scoped>

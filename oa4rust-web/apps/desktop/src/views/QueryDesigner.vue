@@ -325,13 +325,23 @@ function openCreate() {
   showModal.value = true
 }
 
-function openEdit() {
+async function openEdit() {
   if (!selected.value) return
   editingQuery.value = selected.value
   mform.value = {
     name: selected.value.name || '',
     category: selected.value.category || '',
     sql: selected.value.sql || '',
+  }
+  // 列表接口不返回定义，回读 get/{id} 的 query 字段补全 SQL
+  if (selected.value.id) {
+    try {
+      const r = await api.get(`/jaxrs/query/assemble/designer/get/${encodeURIComponent(selected.value.id)}`)
+      const detail = (r.data ?? {}) as Record<string, unknown>
+      if (typeof detail.query === 'string' && detail.query) mform.value.sql = detail.query
+    } catch {
+      // 回读失败时保留列表态字段
+    }
   }
   showModal.value = true
 }
@@ -345,7 +355,7 @@ async function saveQuery() {
     const data = {
       name: mform.value.name,
       category: mform.value.category,
-      sql: mform.value.sql,
+      query: mform.value.sql,
     }
     if (editingQuery.value?.id) {
       await api.put(`/jaxrs/query/assemble/designer/save/${editingQuery.value.id}`, data)

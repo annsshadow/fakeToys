@@ -2,13 +2,13 @@ import { describe, expect, it } from 'vitest'
 import {
   designerPaths,
   moveItem,
+  type PortalWidget,
   parsePortalContent,
   parseViewDefinition,
   serializePortalContent,
   serializeViewDefinition,
   tablePayload,
   viewRuntimePayload,
-  type PortalWidget,
 } from './designer'
 
 const widgets: PortalWidget[] = [
